@@ -1,0 +1,14 @@
+[project]
+name = "travelos"
+version = "0.1.0"
+description = "A local-first TravelOS product demo built with FastHTML and fh-saas"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "fh-saas>=0.9.14",
+  "nbdev>=2.3",
+  "python-fasthtml>=0.14.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
