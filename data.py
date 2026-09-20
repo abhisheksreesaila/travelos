@@ -11,6 +11,8 @@ import os
 from pathlib import Path
 from typing import Any
 
+from fh_saas import db_host as fh_host
+from fh_saas import db_tenant as fh_tenant
 from fh_saas.db_host import GlobalUser, HostDatabase, Membership, gen_id, timestamp
 from fh_saas.db_tenant import get_or_create_tenant_db
 from fh_saas.utils_db import register_tables
@@ -20,6 +22,39 @@ from models import CreatorSubmission, Trip, TripFork
 DEMO_USER_ID = "travelos-demo-traveler"
 DEMO_TENANT_ID = "travelos-weekend-club"
 DEMO_TENANT_NAME = "Weekend Club"
+
+
+def _normalize_fh_saas_model_fields() -> None:
+    """Keep fh-saas 0.9.14's annotation-only models usable on Python 3.14.
+
+    ``fastsql`` turns these models into dataclasses at first table creation.
+    Some fh-saas models declare a required timestamp after optional fields, which
+    Python 3.14 correctly rejects. Reordering the annotations before fastsql
+    sees them preserves every field and default while making the host/tenant
+    schemas portable. This compatibility shim can be deleted once fh-saas
+    ships models with required fields first.
+    """
+    models = (
+        fh_host.GlobalUser,
+        fh_host.TenantCatalog,
+        fh_host.Membership,
+        fh_host.Subscription,
+        fh_host.HostAuditLog,
+        fh_host.SystemJob,
+        fh_host.PricingPlan,
+        fh_host.StripeWebhookEvent,
+        fh_tenant.TenantUser,
+        fh_tenant.TenantPermission,
+        fh_tenant.TenantSettings,
+    )
+    for model in models:
+        fields = model.__annotations__
+        required = {name: annotation for name, annotation in fields.items() if not hasattr(model, name)}
+        optional = {name: annotation for name, annotation in fields.items() if hasattr(model, name)}
+        model.__annotations__ = required | optional
+
+
+_normalize_fh_saas_model_fields()
 
 PUBLIC_TRIPS: list[dict[str, Any]] = [
     {
