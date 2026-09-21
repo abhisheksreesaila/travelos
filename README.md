@@ -10,7 +10,8 @@ A polished, **local-only** travel discovery and trip-planning demo. It pairs an 
 - Four high-quality, deterministic destination fixtures rendered with original CSS/SVG-style scene treatments—no remotely hosted photos or image APIs.
 - Public itinerary pages that work logged out, with clear fixture weather, maps, price, and availability labels.
 - A local demo sign-in that explains its scope, then lets a traveler fork a public plan into a tenant workspace.
-- A dense, responsive command center that shows itinerary, booking-shaped options, cost ledger, weather window, route context, alerts, and collaborator presence together.
+- Rich creator-led public plans with local field notes, channel-context cards, and clear fixture-only reach language—no social-platform connection.
+- A dense, responsive command center with larger terminal-inspired hierarchy where a traveler can change trip dates, group size, comfort budget, pace, and interests; local fixture itinerary, cost ledger, and prep checklist views recalculate from those saved choices.
 - A creator studio with YouTube/Instagram presence language and a locally persisted route-pitch form.
 - SQLite-backed demo state using `fh-saas`' host database plus an isolated tenant database.
 
@@ -28,7 +29,7 @@ Open `http://localhost:5001` (or the port FastHTML reports). If a system Python 
 The first request creates ignored SQLite files in `data/`:
 
 - `travelos_host.db` — the fh-saas host records (local demo identity, tenant membership)
-- `travelos-weekend-club_db.db` — the isolated Weekend Club tenant records (forks and creator submissions)
+- `travelos-weekend-club_db.db` — the isolated Weekend Club tenant records (forks, per-fork planning preferences, and creator submissions)
 
 Set `TRAVELOS_DATA_DIR=/some/local/path` before starting to store those files elsewhere. Set a unique `SESSION_SECRET` before exposing even a demo instance beyond your machine.
 
@@ -36,7 +37,7 @@ Set `TRAVELOS_DATA_DIR=/some/local/path` before starting to store those files el
 
 1. Browse **Discover** while signed out and open any public plan.
 2. Choose **Sign in to fork this plan**. The app uses the explicit local fixture traveler, Ari Rivera; no OAuth, email, or real identity provider is invoked.
-3. Fork the plan and explore **Trip command center**. Try `⌘/Ctrl + K` or pane keys `1`–`5` for the local interaction polish.
+3. Fork the plan and open **Trip command center**. Set dates, travelers, a comfort budget, pace, and interests, then apply them to see the fixture itinerary, ledger, and prep checklist update and persist locally. Try `⌘/Ctrl + K` or pane keys `1`–`6` for local interaction polish.
 4. Visit **For creators** and submit a route pitch. It is saved in the local tenant SQLite queue only.
 
 ## Design and data notes
@@ -54,6 +55,7 @@ The demo leaves deliberate seams rather than speculative integrations:
 | Account identity / OAuth | `POST /signin` in `main.py` can be replaced with `fh_saas.utils_auth` OAuth handlers. |
 | Workspace authorization | The local session records user/tenant IDs; production routes should apply `fh_saas` auth beforeware and `require_tenant_access`. |
 | Travel inventory | `data.PUBLIC_TRIPS` is the normalized public-plan contract; booking cards are clearly labeled fixture view models. |
+| Fork personalization | `TripPreferences` in `models.py` and `update_trip_preferences()` in `data.py` persist local planning inputs; `workspace_plan_context()` in `main.py` derives the fixture workspace views. |
 | Weather and maps | `workspace()` and `plan_detail()` own their presentational fixture modules, ready for adapter-fed view models. |
 | Collaboration | The command drawer is a visual cue only; its buttons identify realtime invite/share boundaries. |
 | Creator publishing | `CreatorSubmission` in `models.py` persists local pitches. Review, publishing, analytics, and social integrations are future workflows. |
@@ -64,4 +66,4 @@ The demo leaves deliberate seams rather than speculative integrations:
 python -m unittest discover -s tests -v
 ```
 
-The tests use an isolated temporary SQLite location and exercise public discovery, sign-in/fork/workspace state, creator submission, and the no-provider fixture claims.
+The tests use an isolated temporary SQLite location and exercise public discovery, creator context, sign-in/fork/workspace state, persisted fork-personalization updates and validation, creator submission, and the no-provider fixture claims.

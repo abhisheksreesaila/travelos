@@ -10,5 +10,12 @@ dependencies = [
   "python-fasthtml>=0.14.0",
 ]
 
+[tool.setuptools]
+py-modules = ["main", "data", "models"]
+packages = ["assets"]
+
+[tool.setuptools.package-data]
+assets = ["*.css", "*.js"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]

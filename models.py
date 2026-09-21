@@ -29,6 +29,20 @@ class TripFork:
 
 
 @dataclass
+class TripPreferences:
+    """A traveler's local planning choices for one forked trip."""
+
+    id: str
+    trip_id: str
+    start_date: str
+    group_size: int
+    budget: int
+    pace: str
+    interests: str
+    updated_at: str
+
+
+@dataclass
 class CreatorSubmission:
     id: str
     creator_name: str

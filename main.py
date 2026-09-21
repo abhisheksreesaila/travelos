@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import html
 import os
+from datetime import date, timedelta
 from pathlib import Path
 from urllib.parse import quote
 
@@ -15,7 +16,19 @@ from fasthtml.common import FastHTML, serve
 from fh_saas.utils_auth import SessionConfig, create_session_middleware
 from starlette.responses import FileResponse, HTMLResponse, RedirectResponse
 
-from data import DEMO_TENANT_ID, DEMO_USER_ID, bootstrap_store, discovery_trips, fork_plan, latest_workspace_trip, public_trip, save_creator_submission
+from data import (
+    DEMO_TENANT_ID,
+    DEMO_USER_ID,
+    INTEREST_OPTIONS,
+    bootstrap_store,
+    discovery_trips,
+    fork_plan,
+    latest_workspace_trip,
+    public_trip,
+    save_creator_submission,
+    trip_preferences,
+    update_trip_preferences,
+)
 
 APP_DIR = Path(__file__).parent
 ASSETS_DIR = APP_DIR / "assets"
@@ -192,6 +205,12 @@ def plan_detail(request, slug: str, forked: str = "") -> HTMLResponse:
         else f'<a class="primary-button large-button" href="/signin?next=/plans/{quote(slug)}">{icon("spark")} Sign in to fork this plan</a>'
     )
     fork_notice = '<div class="fork-notice">' + icon("check") + ' You’re signed in. Fork this plan to make it yours.</div>' if forked == "ready" and is_signed else ""
+    channel_chips = "".join(
+        f'<span><b>{esc(platform)}</b> {esc(handle)}<small>{esc(audience)}</small></span>'
+        for platform, handle, audience in trip["creator_channels"]
+    )
+    field_notes = "".join(f'<li>{icon("check", 15)}<span>{esc(note)}</span></li>' for note in trip["planning_notes"])
+    creator_context = f"""<section class="creator-context"><article class="creator-profile-module"><div class="creator-profile-heading"><span class="creator-avatar creator-avatar-lg">{esc(trip['avatar'])}</span><div><span class="eyebrow">CREATOR FIELD GUIDE</span><h2>{esc(trip['creator'])}</h2><p>{esc(trip['creator_location'])}</p></div></div><p class="creator-bio">{esc(trip['creator_bio'])}</p><div class="creator-channels" aria-label="Creator channel fixture context">{channel_chips}</div><small class="creator-fixture-label">Channel names and reach are local fixture context; TravelOS does not connect to creator platforms.</small></article><article class="plan-context-module"><span class="eyebrow">WHY THIS ROUTE WORKS</span><h2>Made for {esc(trip['best_for']).lower()}.</h2><p class="creator-quote">“{esc(trip['creator_note'])}”</p><div class="plan-context-grid"><span><b>ROUTE RHYTHM</b>{esc(' · '.join(trip['route']))}</span><span><b>FORK READY</b>Dates, group, budget, pace & interests</span></div></article><article class="field-notes-module"><span class="eyebrow">CREATOR’S USEFUL NOTES</span><h2>Carry these into your fork.</h2><ul>{field_notes}</ul></article></section>"""
     itinerary = "".join(
         [
             plan_day(1, "Check in, then let the city lead", "15:00", "Settle near Plaza Nueva. The first evening is intentionally unbooked for a golden-hour wander."),
@@ -201,8 +220,9 @@ def plan_detail(request, slug: str, forked: str = "") -> HTMLResponse:
         ]
     )
     body = f"""{public_header(request, 'plans')}<main id="main" class="plan-page">
- <section class="plan-hero"><div class="plan-hero-scene">{scene(trip)}<div class="plan-hero-overlay"></div><a href="/discover" class="back-link">← Discover plans</a><div class="plan-hero-copy"><span>{badge('PUBLIC PLAN', 'sun')} {badge('4 days', 'glass')}</span><h1>{esc(trip['title'])}</h1><p>{icon('pin', 17)} {esc(trip['destination'])} <i></i> {esc(trip['dates'])}</p></div></div><aside class="fork-card"><div class="fork-card-top"><span class="creator-avatar creator-avatar-lg">{esc(trip['avatar'])}</span><div><span class="micro-label">CREATED BY</span><strong>{esc(trip['creator'])}</strong><small>{esc(trip['creator_role'])}</small></div></div><p>Everything Lina wishes she knew before her first long weekend in Granada.</p>{fork_notice}{fork_action}<span class="fork-note">No live reservations are made in this demo.</span><div class="fork-stats"><span><b>{esc(trip['saves'])}</b> saves</span><span><b>94%</b> would go again</span></div></aside></section>
+ <section class="plan-hero"><div class="plan-hero-scene">{scene(trip)}<div class="plan-hero-overlay"></div><a href="/discover" class="back-link">← Discover plans</a><div class="plan-hero-copy"><span>{badge('PUBLIC PLAN', 'sun')} {badge(f"{trip['days']} days", 'glass')}</span><h1>{esc(trip['title'])}</h1><p>{icon('pin', 17)} {esc(trip['destination'])} <i></i> {esc(trip['dates'])}</p></div></div><aside class="fork-card"><div class="fork-card-top"><span class="creator-avatar creator-avatar-lg">{esc(trip['avatar'])}</span><div><span class="micro-label">CREATED BY</span><strong>{esc(trip['creator'])}</strong><small>{esc(trip['creator_role'])}</small></div></div><p>{esc(trip['creator_note'])}</p><div class="fork-channel-summary">{channel_chips}</div>{fork_notice}{fork_action}<span class="fork-note">No live reservations are made in this demo. Creator reach is fixture context only.</span><div class="fork-stats"><span><b>{esc(trip['saves'])}</b> local saves</span><span><b>94%</b> fixture return signal</span></div></aside></section>
  <section class="plan-summary"><div><span class="eyebrow">THE VIBE</span><h2>Sun-softened days, late little dinners, and no overstuffed schedule.</h2></div><p>{esc(trip['summary'])} This public route is a useful starting point—not a sales funnel disguised as a plan.</p><div class="summary-tags">{''.join(badge(tag, 'mint') for tag in trip['tags'])}</div></section>
+ {creator_context}
  <section class="plan-content-grid"><div class="plan-itinerary"><div class="section-heading"><div><span class="eyebrow">DAY BY DAY</span><h2>Keep the good parts flexible.</h2></div><button class="outline-button" type="button" data-toast="Download is a follow-up integration">{icon('share', 16)} Share plan</button></div>{itinerary}</div><aside class="plan-side"><div class="side-module weather-module"><div class="module-heading"><span>{icon('cloud', 18)} Local forecast</span><small>Fixture data</small></div><strong>22° <small>clear & warm</small></strong><div class="weather-days"><span><b>THU</b>23°</span><span><b>FRI</b>22°</span><span><b>SAT</b>21°</span><span><b>SUN</b>20°</span></div><p>Pack a light layer for the hillside after sunset.</p></div><div class="side-module route-module"><div class="module-heading"><span>{icon('map', 18)} Route at a glance</span><button type="button" data-toast="Map providers are intentionally not connected">Expand</button></div><div class="mini-map"><i class="map-path"></i><b class="map-stop map-stop-a">1</b><b class="map-stop map-stop-b">2</b><b class="map-stop map-stop-c">3</b><span>Albaicín</span><span>Centro</span><span>Sacromonte</span></div><p>Mostly walkable · <strong>4.6 km/day</strong></p></div><div class="side-module booking-module"><span class="eyebrow">BOOKING BOARD</span><h3>Compare when you’re ready.</h3><p>Flights, stays, and activities are shown as local fixture cards in your workspace—not live inventory.</p><a href="/signin?next=/workspace" class="arrow-link">See the board {icon('arrow')}</a></div></aside></section>
  <section class="plan-creator-cta"><div class="creator-cta-portrait">{icon('spark', 43)}<span>local<br>eyes</span></div><div><span class="eyebrow">MAKE YOUR KNOW-HOW USEFUL</span><h2>Have a route travelers should know?</h2><p>Send it to the TravelOS creator studio and keep your YouTube and Instagram presence front and center.</p></div><a class="outline-button dark-outline" href="/creators">For creators {icon('arrow')}</a></section>
 </main>{public_footer()}"""
@@ -230,21 +250,147 @@ def command_pane(title: str, icon_name: str, body: str, key: str = "", extra: st
     return f'<section class="command-pane {extra}"><header class="pane-header"><h2>{icon(icon_name, 16)} {esc(title)}</h2><div>{shortcut}<button type="button" class="pane-more" data-toast="Pane controls are ready for a future live integration">•••</button></div></header>{body}</section>'
 
 
-def workspace(request) -> HTMLResponse:
+def short_date(value: date) -> str:
+    return f"{value.strftime('%b')} {value.day}"
+
+
+def workspace_plan_context(trip, preferences) -> dict:
+    """Build fixture-only workspace modules from a fork's persisted choices."""
+    start = date.fromisoformat(preferences.start_date)
+    group_size = preferences.group_size
+    interests = tuple(item for item in preferences.interests.split(",") if item in INTEREST_OPTIONS)
+    pace = preferences.pace
+    pace_copy = {
+        "slow": ("Slow & spacious", "one generous anchor, then room to follow the city"),
+        "balanced": ("Balanced rhythm", "a useful anchor with enough air around it"),
+        "full": ("Full but flexible", "early starts and more saved options, never a hard sell"),
+    }[pace]
+    pace_rows = {
+        "slow": ("10:00", "Coffee, courtyard, then one good anchor", "A later start keeps the first day gentle and leaves a long local pause."),
+        "balanced": ("08:15", "Alhambra timed entry", "Generalife gate · an early fixture anchor with breathing room after."),
+        "full": ("07:15", "First-gate Alhambra start", "A focused early slot creates room for one extra neighborhood stop later."),
+    }
+    focus_rows = {
+        "Food-forward": ("12:30", "Realejo tapas loop", "Three small stops, shared plates, and creator notes for a table of your size."),
+        "Culture": ("13:00", "Courtyard and ceramic field notes", "A culture-first pause between the landmark and the evening, kept intentionally local."),
+        "Outdoors": ("15:30", "High path lookout walk", "A walkable hillside option with a generous turn-back buffer."),
+        "Nightlife": ("20:30", "Late room, only if the mood is right", "A flexible evening hold rather than a reservation-shaped obligation."),
+        "Design": ("15:00", "Tile, type, and studio detour", "A small creative stop with room to linger or pass by."),
+    }
+    primary_interest = interests[0] if interests else "Culture"
+    first_time, first_title, first_copy = pace_rows[pace]
+    focus_time, focus_title, focus_copy = focus_rows[primary_interest]
+    group_copy = "solo pace" if group_size == 1 else f"{group_size}-traveler pace"
+    itinerary = (
+        (first_time, first_title, first_copy, "TICKETED"),
+        (focus_time, focus_title, focus_copy, primary_interest.upper()),
+        ("20:00", "Keep the evening open enough to notice things", f"{group_copy.title()} · {pace_copy[1]}", "FLEX"),
+    )
+
+    pace_multiplier = {"slow": 0.82, "balanced": 1, "full": 1.28}[pace]
+    stay = 420 + (46 * group_size) + (22 * max(0, group_size - 2))
+    flight = 119 * group_size
+    moments = round(168 * group_size * pace_multiplier)
+    add_ons = sum(28 * group_size for interest in interests if interest in {"Outdoors", "Nightlife", "Design"})
+    moments += add_ons
+    total = stay + flight + moments
+    remaining = preferences.budget - total
+    cost_state = f"${remaining:,} under your comfort budget" if remaining >= 0 else f"${abs(remaining):,} over your comfort budget"
+    date_labels = []
+    day_titles = {
+        "slow": ("Arrive gently", "One good anchor", "Follow a local thread", "Leave room to return"),
+        "balanced": ("Arrive easy", "Anchor early", "Taste & wander", "High path home"),
+        "full": ("Start with light", "See the anchor", "Add a neighborhood", "Finish with a view"),
+    }[pace]
+    for offset in range(trip.days):
+        current = start + timedelta(days=offset)
+        title = day_titles[min(offset, len(day_titles) - 1)]
+        date_labels.append((offset + 1, title, current.strftime("%b %d").upper()))
+
+    checklist = [
+        f"Confirm the {short_date(start)} start with your {group_copy}.",
+        f"Keep the ${preferences.budget:,} comfort cap visible before saving anything.",
+        {"slow": "Protect one unscheduled block for a long lunch or a repeat stop.", "balanced": "Leave a buffer between the landmark and the evening plan.", "full": "Charge up and keep the first morning deliberately simple."}[pace],
+    ]
+    checklist.extend(
+        {
+            "Food-forward": "Save three tapas notes and one backup table.",
+            "Culture": "Put the early heritage anchor in the local fixture calendar.",
+            "Outdoors": "Pack walkable shoes and a light layer for the high path.",
+            "Nightlife": "Keep a late-night ride cue and a relaxed next morning.",
+            "Design": "Leave room for one studio or independent shop detour.",
+        }[interest]
+        for interest in interests
+    )
+    return {
+        "start": start,
+        "end": start + timedelta(days=trip.days),
+        "interests": interests,
+        "interest_label": " · ".join(interests),
+        "pace_label": pace_copy[0],
+        "pace_copy": pace_copy[1],
+        "group_label": "1 traveler" if group_size == 1 else f"{group_size} travelers",
+        "day_labels": date_labels,
+        "itinerary": itinerary,
+        "stay": stay,
+        "flight": flight,
+        "moments": moments,
+        "total": total,
+        "remaining": remaining,
+        "cost_state": cost_state,
+        "budget_percent": min(100, round(total / preferences.budget * 100)),
+        "checklist": checklist,
+    }
+
+
+def workspace_planning_controls(preferences, context, updated: str = "", error: str = "") -> str:
+    interest_inputs = "".join(
+        f'<label><input type="checkbox" name="interests" value="{esc(interest)}" {"checked" if interest in context["interests"] else ""}><span>{esc(interest)}</span></label>'
+        for interest in INTEREST_OPTIONS
+    )
+    notice = (
+        f'<p class="planning-notice">{icon("check", 14)} Planning inputs saved locally. The itinerary, costs, and prep list below now reflect this trip.</p>'
+        if updated
+        else (f'<p class="planning-error">{esc(error)}</p>' if error else "")
+    )
+    return f"""<section class="planning-console" aria-labelledby="planning-title">
+ <div class="planning-console-heading"><div><span class="eyebrow">LOCAL PLAN CONFIG</span><h2 id="planning-title">Make this fork yours.</h2><p>{esc(short_date(context['start']))}–{esc(short_date(context['end']))} · {esc(context['group_label'])} · {esc(context['pace_label'])}</p></div><div class="planning-live"><i></i><span>Fixture plan recalculates on save</span></div></div>
+ {notice}
+ <form action="/workspace/preferences" method="post" class="planning-form">
+  <label>Start date<input type="date" name="start_date" value="{esc(preferences.start_date)}" required></label>
+  <label>Travelers<input type="number" name="group_size" min="1" max="12" value="{preferences.group_size}" required></label>
+  <label>Comfort budget <span>USD total</span><input type="number" name="budget" min="300" max="25000" step="50" value="{preferences.budget}" required></label>
+  <label>Pace<select name="pace"><option value="slow" {"selected" if preferences.pace == "slow" else ""}>Slow & spacious</option><option value="balanced" {"selected" if preferences.pace == "balanced" else ""}>Balanced rhythm</option><option value="full" {"selected" if preferences.pace == "full" else ""}>Full but flexible</option></select></label>
+  <fieldset><legend>Build around</legend><div class="interest-options">{interest_inputs}</div></fieldset>
+  <button class="planning-save" type="submit">Apply to command center {icon('arrow', 15)}</button>
+ </form>
+</section>"""
+
+
+def workspace(request, updated: str = "", error: str = "") -> HTMLResponse:
     if not signed_in(request):
         return RedirectResponse("/signin?next=/workspace", status_code=303)
-    trip = latest_workspace_trip() or fork_plan("granada-after-dark")
+    trip = latest_workspace_trip(request.session["user_id"]) or fork_plan("granada-after-dark", request.session["user_id"])
+    preferences = trip_preferences(trip)
+    context = workspace_plan_context(trip, preferences)
     day_items = "".join(
-        f'<button class="day-nav {"is-active" if day == 1 else ""}" data-day="{day}" type="button"><span>D{day}</span><b>{title}</b><small>{date}</small></button>'
-        for day, title, date in [(1, "Arrive easy", "APR 12"), (2, "Alhambra early", "APR 13"), (3, "Tapas till late", "APR 14"), (4, "High path home", "APR 15")]
+        f'<button class="day-nav {"is-active" if day == 1 else ""}" data-day="{day}" type="button"><span>D{day}</span><b>{esc(title)}</b><small>{esc(day_date)}</small></button>'
+        for day, title, day_date in context["day_labels"]
     )
-    itinerary = command_pane("Itinerary", "calendar", f"""<div class="command-tabs"><button class="is-active" data-pane-tab="timeline" type="button">Timeline</button><button data-pane-tab="list" type="button">List</button><button data-pane-tab="notes" type="button">Notes</button></div><div class="workspace-timeline"><article><time>08:15</time><div><span class="timeline-kind">TICKETED</span><h3>Alhambra timed entry</h3><p>Generalife gate · walk from the hotel</p><button type="button" class="tiny-action" data-toast="Alhambra marked as ready">{icon('check', 13)} Ready</button></div></article><article><time>12:30</time><div><span class="timeline-kind kind-food">FOOD</span><h3>Realejo tapas loop</h3><p>3 stops · 1.2 km · local favorite notes</p><button type="button" class="tiny-action" data-toast="Added a tapas note">{icon('plus', 13)} Add note</button></div></article><article><time>20:00</time><div><span class="timeline-kind kind-play">EVENING</span><h3>Flamenco, if the mood is right</h3><p>Flexible hold · Sacromonte</p><button type="button" class="tiny-action" data-toast="This flexible hold is on your radar">{icon('bell', 13)} Watch</button></div></article></div><button class="add-row" type="button" data-toast="New itinerary item composer is a follow-up interaction">{icon('plus', 15)} Add an unhurried moment</button>""", "1", "pane-itinerary")
+    itinerary_rows = "".join(
+        f'''<article><time>{esc(time)}</time><div><span class="timeline-kind {"kind-food" if kind in {"FOOD-FORWARD", "CULTURE", "DESIGN"} else "kind-play" if kind in {"OUTDOORS", "NIGHTLIFE", "FLEX"} else ""}">{esc(kind)}</span><h3>{esc(title)}</h3><p>{esc(copy)}</p><button type="button" class="tiny-action" data-toast="This is a local fixture planning cue">{icon('check', 13)} Plan cue</button></div></article>'''
+        for time, title, copy, kind in context["itinerary"]
+    )
+    itinerary = command_pane("Itinerary", "calendar", f"""<div class="command-tabs"><button class="is-active" data-pane-tab="timeline" type="button">Timeline</button><button data-pane-tab="list" type="button">List</button><button data-pane-tab="notes" type="button">Notes</button></div><div class="workspace-plan-signal"><span>{esc(context['pace_label'])}</span><b>{esc(context['interest_label'])}</b><small>{esc(context['group_label'])}</small></div><div class="workspace-timeline">{itinerary_rows}</div><button class="add-row" type="button" data-toast="New itinerary item composer is a follow-up interaction">{icon('plus', 15)} Add an unhurried moment</button>""", "1", "pane-itinerary")
     booking = command_pane("Booking board", "plane", """<div class="booking-tabs"><button class="is-active" type="button" data-booking-tab="stays">Stay</button><button type="button" data-booking-tab="flights">Flight</button><button type="button" data-booking-tab="activities">Do</button></div><article class="booking-card"><div class="booking-thumb hotel-thumb"><span>PLAZA NUEVA</span></div><div><span class="booking-label">TOP FIXTURE MATCH</span><h3>Casa del Laurel</h3><p>4 nights · Old town · 9.1 guest signal</p><div><strong>$512</strong> <small>total / fixture</small><button type="button" data-toast="Saved Casa del Laurel to your local shortlist">Save</button></div></div></article><article class="booking-card booking-muted"><div class="booking-thumb flight-thumb">MAD<br>↔ GRX</div><div><span class="booking-label">FLIGHT SHAPE</span><h3>Morning connection</h3><p>3h 40m · 1 stop · carry-on friendly</p><div><strong>$238</strong> <small>round trip / fixture</small><button type="button" data-toast="Price alerts need a future provider connection">Alert</button></div></div></article><p class="provider-note">No booking providers connected. Cards are local fixtures for planning context.</p>""", "2", "pane-booking")
     map_pane = command_pane("Place context", "map", """<div class="command-map"><span class="map-label label-a">ALBAICÍN</span><span class="map-label label-b">CENTRO</span><span class="map-label label-c">SACROMONTE</span><i class="route-line"></i><button class="route-pin pin-one" type="button" data-toast="Alhambra: 12 min walk from your stay">1</button><button class="route-pin pin-two" type="button" data-toast="Lunch area: reliable vegetarian options">2</button><button class="route-pin pin-three" type="button" data-toast="Tonight: bring a light layer after 21:00">3</button><div class="map-compass">N</div><div class="map-legend"><span><i></i> Today’s route</span><span><i></i> Local note</span></div></div><div class="map-context-copy"><strong>Day 2 stays walkable.</strong><span>3.6 km total · 22 min uphill after lunch</span><button type="button" data-toast="Map routing is intentionally local and illustrative">Open routing cues {icon('arrow', 14)}</button></div>""", "3", "pane-map")
     weather = command_pane("Weather window", "cloud", """<div class="weather-now"><div><span>THU · APR 13</span><strong>22°</strong><p>Clear, soft breeze</p></div><div class="weather-sun">☀</div></div><div class="hourly-weather"><span><b>09</b>19°</span><span><b>12</b>22°</span><span><b>15</b>23°</span><span><b>18</b>20°</span><span><b>21</b>16°</span></div><div class="weather-alert">{icon('spark', 14)} Perfect for your 08:15 garden slot.</div><small class="fixture-label">Local forecast fixture · no weather provider called</small>""", "4", "pane-weather")
-    ledger = command_pane("Cost ledger", "receipt", """<div class="ledger-total"><span>Trip total</span><strong>$1,086</strong><small>$214 under your comfort budget</small></div><div class="budget-bar"><i></i></div><div class="ledger-list"><div><span>Stay <small>Saved</small></span><b>$512</b></div><div><span>Flight <small>Watching</small></span><b>$238</b></div><div><span>Food & moments <small>Est.</small></span><b>$336</b></div></div><button class="ledger-action" type="button" data-toast="Ledger detail is ready for your future live booking adapter">Open ledger {icon('arrow', 14)}</button>""", "5", "pane-ledger")
-    alerts = """<section class="command-drawer"><button class="drawer-label" type="button" data-drawer-toggle>{icon('bell', 15)} <strong>3 trip signals</strong><span>flight price softening · collaborator online · sunny morning</span>{icon('chevron', 14)}</button><div class="drawer-collaborators"><span class="presence"><i></i> Lina is looking at the tapas loop</span><button type="button" data-toast="Invite links are a follow-up collaboration feature">{icon('users', 14)} Invite</button><button type="button" data-toast="Shared notes are ready for a future realtime adapter">{icon('share', 14)} Share view</button></div></section>"""
-    body = f"""{workspace_header(trip)}<main id="main" class="command-center"><aside class="command-sidebar"><div class="sidebar-head"><span class="eyebrow">{esc(trip.destination).upper()}</span><button data-sidebar-toggle type="button" aria-label="Collapse trip days">‹</button></div><h1>{esc(trip.title)}</h1><p>{esc(trip.days)} days · Apr 12–16 · 2 travelers</p><div class="trip-progress"><span><i></i> Planning together</span><b>72%</b></div><nav class="day-nav-list" aria-label="Trip days">{day_items}</nav><div class="sidebar-bottom"><button type="button" data-toast="Packing list added to your local command center">{icon('plus', 15)} Add a list</button><a href="/logout">Sign out</a></div></aside><section class="command-workspace"><div class="command-overview"><div><span class="eyebrow">TRIP COMMAND CENTER</span><h2>Thursday’s rhythm</h2></div><div class="overview-controls"><button class="overview-view is-active" type="button" data-overview="all">All systems</button><button class="overview-view" type="button" data-overview="money">Money</button><button class="overview-view" type="button" data-overview="flow">Flow</button><button class="quick-add" type="button" data-toast="Quick-add composer is ready for a future persistence interaction">{icon('plus', 15)} Add</button></div></div><div class="command-grid">{itinerary}{booking}{map_pane}{weather}{ledger}</div>{alerts}</section></main><div class="command-palette" hidden data-command-dialog><div><button class="palette-close" data-command-close type="button">{icon('close', 18)}</button><span class="eyebrow">COMMAND PALETTE</span><h2>Move through your trip.</h2><input aria-label="Search commands" placeholder="Try “open weather”"><button type="button" data-toast="Weather pane focused">Open weather window <kbd>4</kbd></button><button type="button" data-toast="Booking board focused">Open booking board <kbd>2</kbd></button><button type="button" data-toast="Share link copied locally">Copy trip share link <kbd>⌘</kbd></button></div></div>"""
+    ledger = command_pane("Cost ledger", "receipt", f"""<div class="ledger-total"><span>Trip total · {esc(context['group_label'])}</span><strong>${context['total']:,}</strong><small>{esc(context['cost_state'])}</small></div><div class="budget-bar"><i style="width:{context['budget_percent']}%"></i></div><div class="ledger-list"><div><span>Stay <small>Fixture</small></span><b>${context['stay']:,}</b></div><div><span>Flight <small>Fixture</small></span><b>${context['flight']:,}</b></div><div><span>Food & moments <small>{esc(context['pace_label'])}</small></span><b>${context['moments']:,}</b></div></div><button class="ledger-action" type="button" data-toast="Costs are local planning estimates, not live inventory">Open local cost notes {icon('arrow', 14)}</button>""", "5", "pane-ledger")
+    checklist_items = "".join(f"<li>{icon('check', 13)}<span>{esc(item)}</span></li>" for item in context["checklist"])
+    checklist = command_pane("Prep checklist", "check", f"""<div class="checklist-summary"><span>{len(context['checklist'])} local prep cues</span><b>{esc(context['interest_label'])}</b></div><ul class="workspace-checklist">{checklist_items}</ul><button class="checklist-action" type="button" data-toast="Checklist items are fixture prompts for this local fork">Review local prep cues {icon('arrow', 14)}</button>""", "6", "pane-checklist")
+    alerts = f"""<section class="command-drawer"><button class="drawer-label" type="button" data-drawer-toggle>{icon('bell', 15)} <strong>Local plan signals</strong><span>{esc(context['pace_copy'])} · {esc(context['group_label'])} · ${preferences.budget:,} comfort cap</span>{icon('chevron', 14)}</button><div class="drawer-collaborators"><span class="presence"><i></i> Creator context is fixture-only</span><button type="button" data-toast="Invite links are a follow-up collaboration feature">{icon('users', 14)} Invite</button><button type="button" data-toast="Shared notes are ready for a future realtime adapter">{icon('share', 14)} Share view</button></div></section>"""
+    planning_controls = workspace_planning_controls(preferences, context, updated, error)
+    body = f"""{workspace_header(trip)}<main id="main" class="command-center"><aside class="command-sidebar"><div class="sidebar-head"><span class="eyebrow">{esc(trip.destination).upper()}</span><button data-sidebar-toggle type="button" aria-label="Collapse trip days">‹</button></div><h1>{esc(trip.title)}</h1><p>{esc(trip.days)} days · {esc(short_date(context['start']))}–{esc(short_date(context['end']))} · {esc(context['group_label'])}</p><div class="trip-progress"><span><i></i> Local fork configured</span><b>{context['budget_percent']}%</b></div><nav class="day-nav-list" aria-label="Trip days">{day_items}</nav><div class="sidebar-bottom"><button type="button" data-toast="Prep checklist is tuned from your local plan inputs">{icon('check', 15)} Prep cues active</button><a href="/logout">Sign out</a></div></aside><section class="command-workspace"><div class="command-overview"><div><span class="eyebrow">TRIP COMMAND CENTER / LOCAL FORK</span><h2>{esc(context['pace_label'])}</h2></div><div class="overview-controls"><button class="overview-view is-active" type="button" data-overview="all">All systems</button><button class="overview-view" type="button" data-overview="money">Money</button><button class="overview-view" type="button" data-overview="flow">Flow</button><button class="quick-add" type="button" data-toast="Quick-add composer is ready for a future persistence interaction">{icon('plus', 15)} Add</button></div></div>{planning_controls}<div class="command-grid">{itinerary}{booking}{map_pane}{weather}{ledger}{checklist}</div>{alerts}</section></main><div class="command-palette" hidden data-command-dialog><div><button class="palette-close" data-command-close type="button">{icon('close', 18)}</button><span class="eyebrow">COMMAND PALETTE</span><h2>Move through your trip.</h2><input aria-label="Search commands" placeholder="Try “open weather”"><button type="button" data-toast="Weather pane focused">Open weather window <kbd>4</kbd></button><button type="button" data-toast="Booking board focused">Open booking board <kbd>2</kbd></button><button type="button" data-toast="Share link copied locally">Copy trip share link <kbd>⌘</kbd></button></div></div>"""
     return document("Trip command center", body, "command-shell")
 
 
@@ -304,8 +450,27 @@ def create_app():
         return RedirectResponse("/workspace", status_code=303)
 
     @fast_app.get("/workspace")
-    def trip_workspace(request):
-        return workspace(request)
+    def trip_workspace(request, updated: str = "", error: str = ""):
+        return workspace(request, updated, error)
+
+    @fast_app.post("/workspace/preferences")
+    async def save_workspace_preferences(request):
+        if not signed_in(request):
+            return RedirectResponse("/signin?next=/workspace", status_code=303)
+        form = await request.form()
+        trip = latest_workspace_trip(request.session["user_id"]) or fork_plan("granada-after-dark", request.session["user_id"])
+        try:
+            update_trip_preferences(
+                trip,
+                start_date=str(form.get("start_date", "")),
+                group_size=int(str(form.get("group_size", ""))),
+                budget=int(str(form.get("budget", ""))),
+                pace=str(form.get("pace", "")),
+                interests=[str(item) for item in form.getlist("interests")],
+            )
+        except (TypeError, ValueError) as exc:
+            return RedirectResponse(f"/workspace?error={quote(str(exc))}", status_code=303)
+        return RedirectResponse("/workspace?updated=1", status_code=303)
 
     @fast_app.get("/creators")
     def creator_studio(request, submitted: str = ""):

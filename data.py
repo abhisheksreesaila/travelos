@@ -16,12 +16,18 @@ from fh_saas import db_tenant as fh_tenant
 from fh_saas.db_host import GlobalUser, HostDatabase, Membership, gen_id, timestamp
 from fh_saas.db_tenant import get_or_create_tenant_db
 from fh_saas.utils_db import register_tables
+from sqlalchemy import text
 
-from models import CreatorSubmission, Trip, TripFork
+from models import CreatorSubmission, Trip, TripFork, TripPreferences
 
 DEMO_USER_ID = "travelos-demo-traveler"
 DEMO_TENANT_ID = "travelos-weekend-club"
 DEMO_TENANT_NAME = "Weekend Club"
+
+# fh-saas creates a SQLAlchemy connection for each tenant database object. The
+# demo has one fixed tenant per process, so retain its table registry instead
+# of opening a new pool checkout for every workspace render or save.
+_TENANT_TABLES: tuple[Any, dict[str, Any]] | None = None
 
 
 def _normalize_fh_saas_model_fields() -> None:
@@ -73,7 +79,14 @@ PUBLIC_TRIPS: list[dict[str, Any]] = [
         "tags": ["Food-forward", "Walkable", "Spring"],
         "weather": "22° / clear",
         "dates": "Apr 12–16",
+        "start_date": "2025-04-12",
         "route": ["Albaicín", "Centro", "Sacromonte"],
+        "creator_bio": "Granada city filmmaker who plans around first light, tiled courtyards, and the last useful bus home.",
+        "creator_location": "Granada-based · filming local food and street life",
+        "creator_channels": [("YouTube", "Lina Morales", "42.8K fixture subscribers"), ("Instagram", "@linaafterdark", "18.4K fixture followers")],
+        "creator_note": "Start with one booked anchor, then protect the blank space around it. Granada gets better after you stop trying to win it in a day.",
+        "best_for": "First-time visitors who like a late dinner and a walkable base",
+        "planning_notes": ["Book the Alhambra anchor before choosing the rest of the day.", "Stay near Plaza Nueva so the first and last walks stay easy.", "Carry a light layer—the hillside changes character after sunset."],
     },
     {
         "slug": "kyoto-rainy-season",
@@ -91,7 +104,14 @@ PUBLIC_TRIPS: list[dict[str, Any]] = [
         "tags": ["Culture", "Rain plan", "Couples"],
         "weather": "19° / misty",
         "dates": "Jun 03–08",
+        "start_date": "2025-06-03",
         "route": ["Gion", "Higashiyama", "Arashiyama"],
+        "creator_bio": "A two-person slow-travel notebook for rain-softened lanes, tiny coffee counters, and patient mornings.",
+        "creator_location": "Kyoto field notes · slow travel duo",
+        "creator_channels": [("Instagram", "@hanaandkenji", "116K fixture followers"), ("YouTube", "Hana & Kenji", "24K fixture subscribers")],
+        "creator_note": "Rain is not a backup plan here. Move slowly, keep one dry-room pause nearby, and let the temples empty out.",
+        "best_for": "Couples and solo travelers who prefer a soft-weather rhythm",
+        "planning_notes": ["Keep a covered coffee stop between outdoor anchors.", "Start temple walks early, then let the rain choose the smaller lanes.", "Pack shoes that stay comfortable on damp stone."],
     },
     {
         "slug": "oaxaca-color-weekend",
@@ -109,7 +129,14 @@ PUBLIC_TRIPS: list[dict[str, Any]] = [
         "tags": ["Food-forward", "Design", "Weekend"],
         "weather": "27° / warm",
         "dates": "May 24–27",
+        "start_date": "2025-05-24",
         "route": ["Centro", "Jalatlaco", "Tlacolula"],
+        "creator_bio": "Food and design storyteller with a notebook full of market counters, studio doors, and bright blue facades.",
+        "creator_location": "Oaxaca regular · food + design field notes",
+        "creator_channels": [("YouTube", "Maya Sol", "78K fixture subscribers"), ("Instagram", "@mayasolgoes", "31K fixture followers")],
+        "creator_note": "Eat your first meal in the market, make room for a studio conversation, and never schedule mezcal before the color of the sky changes.",
+        "best_for": "A long weekend with appetite, curiosity, and room for detours",
+        "planning_notes": ["Use the market breakfast to set the day’s direction.", "Ask before photographing a working studio.", "Leave a late-afternoon gap before your mezcal stop."],
     },
     {
         "slug": "cape-town-blue-hour",
@@ -127,7 +154,14 @@ PUBLIC_TRIPS: list[dict[str, Any]] = [
         "tags": ["Outdoors", "Road trip", "Friends"],
         "weather": "20° / breezy",
         "dates": "Nov 09–15",
+        "start_date": "2025-11-09",
         "route": ["City Bowl", "Camps Bay", "Cape Point"],
+        "creator_bio": "Adventure editor balancing an open-road instinct with useful city timing and weather-aware turnarounds.",
+        "creator_location": "Cape Town editor · road and coast routes",
+        "creator_channels": [("Instagram", "@nicobelloutside", "54K fixture followers"), ("YouTube", "Nico Bell", "19K fixture subscribers")],
+        "creator_note": "The coast rewards an early start and a flexible finish. Keep the dramatic bit optional so the good weather can lead.",
+        "best_for": "Friends who want a road-trip feeling without a frantic schedule",
+        "planning_notes": ["Use the peninsula loop only when the weather window is clear.", "Keep a city alternative for windy afternoons.", "Bring layers even when the morning starts warm."],
     },
 ]
 
@@ -175,16 +209,21 @@ def _first(table, where: str, where_args: dict[str, str]):
 
 
 def _tenant_tables():
+    global _TENANT_TABLES
+    if _TENANT_TABLES:
+        return _TENANT_TABLES
     tenant_db = get_or_create_tenant_db(DEMO_TENANT_ID, DEMO_TENANT_NAME)
     tables = register_tables(
         tenant_db,
         [
             (Trip, "trips", "id"),
             (TripFork, "trip_forks", "id"),
+            (TripPreferences, "trip_preferences", "id"),
             (CreatorSubmission, "creator_submissions", "id"),
         ],
     )
-    return tenant_db, tables
+    _TENANT_TABLES = tenant_db, tables
+    return _TENANT_TABLES
 
 
 def bootstrap_store() -> None:
@@ -222,6 +261,95 @@ def bootstrap_store() -> None:
         host_db.commit()
 
 
+PACE_OPTIONS = ("slow", "balanced", "full")
+INTEREST_OPTIONS = ("Food-forward", "Culture", "Outdoors", "Nightlife", "Design")
+
+
+def _default_preferences(trip: Trip) -> TripPreferences:
+    plan = public_trip(trip.slug) or {}
+    return TripPreferences(
+        id=gen_id(),
+        trip_id=trip.id,
+        start_date=str(plan.get("start_date", "2025-04-12")),
+        group_size=2,
+        budget=1300,
+        pace="balanced",
+        interests="Food-forward,Culture",
+        updated_at=timestamp(),
+    )
+
+
+def trip_preferences(trip: Trip) -> TripPreferences:
+    """Return one persisted planning profile, creating the useful local defaults once."""
+    tenant_db, tables = _tenant_tables()
+    preferences = _first(tables["trip_preferences"], "trip_id = :trip_id", {"trip_id": trip.id})
+    if preferences:
+        return preferences
+    preferences = _default_preferences(trip)
+    tables["trip_preferences"].insert(preferences)
+    tenant_db.conn.commit()
+    return preferences
+
+
+def update_trip_preferences(
+    trip: Trip,
+    *,
+    start_date: str,
+    group_size: int,
+    budget: int,
+    pace: str,
+    interests: list[str],
+) -> TripPreferences:
+    """Persist validated local planning inputs for a forked trip.
+
+    The values intentionally tune only fixture-derived workspace views. No price,
+    itinerary, booking, or creator provider is contacted.
+    """
+    from datetime import date
+
+    try:
+        date.fromisoformat(start_date)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Choose a valid trip start date.") from exc
+    if not 1 <= group_size <= 12:
+        raise ValueError("Choose between 1 and 12 travelers.")
+    if not 300 <= budget <= 25000:
+        raise ValueError("Choose a total comfort budget between $300 and $25,000.")
+    if pace not in PACE_OPTIONS:
+        raise ValueError("Choose a supported trip pace.")
+    selected_interests = [interest for interest in INTEREST_OPTIONS if interest in interests]
+    if not selected_interests:
+        raise ValueError("Choose at least one trip interest.")
+
+    tenant_db, tables = _tenant_tables()
+    preferences = _first(tables["trip_preferences"], "trip_id = :trip_id", {"trip_id": trip.id})
+    if not preferences:
+        preferences = _default_preferences(trip)
+        tables["trip_preferences"].insert(preferences)
+
+    # fh-saas gives this demo a SQLite tenant connection; using a parameterized
+    # update keeps the small planning record durable without a provider adapter.
+    tenant_db.conn.execute(
+        text(
+            """UPDATE trip_preferences
+               SET start_date = :start_date, group_size = :group_size, budget = :budget,
+                   pace = :pace, interests = :interests, updated_at = :updated_at
+               WHERE trip_id = :trip_id"""
+        ),
+        {
+            "start_date": start_date,
+            "group_size": group_size,
+            "budget": budget,
+            "pace": pace,
+            "interests": ",".join(selected_interests),
+            "updated_at": timestamp(),
+            "trip_id": trip.id,
+        },
+    )
+    tenant_db.conn.commit()
+    return _first(tables["trip_preferences"], "trip_id = :trip_id", {"trip_id": trip.id})
+
+
 def fork_plan(source_slug: str, user_id: str = DEMO_USER_ID) -> Trip:
     """Copy a public fixture into the signed-in tenant's workspace.
 
@@ -241,6 +369,7 @@ def fork_plan(source_slug: str, user_id: str = DEMO_USER_ID) -> Trip:
     if existing:
         trip = _first(tables["trips"], "id = :id", {"id": existing.trip_id})
         if trip:
+            trip_preferences(trip)
             return trip
 
     trip = Trip(
@@ -263,6 +392,7 @@ def fork_plan(source_slug: str, user_id: str = DEMO_USER_ID) -> Trip:
         )
     )
     tenant_db.conn.commit()
+    trip_preferences(trip)
     return trip
 
 
