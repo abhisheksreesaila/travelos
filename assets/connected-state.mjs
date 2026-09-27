@@ -134,7 +134,7 @@ export function createStore(storage) {
           editor();const c=t.shortlist.find(x=>x.id===p.candidate), f=fixtures.find(x=>x.id===p.candidate);
           if(!c || !f) fail('Candidate unavailable.');
           if(t.blocks.some(x=>x.candidate===c.id)) break;
-          if(!c.query.start || !c.query.end) fail('Undated candidate: assign dates in research and save it again first.');
+          if(!c.query.start || !c.query.end) fail('Undated candidate: explicitly assign dates in this candidate drawer first.');
           const same=t.blocks.filter(x=>x.kind===f.kind);
           if(same.length && !['replace','both'].includes(p.mode)) fail('Choose Replace or Keep both explicitly.');
           checkpoint();if(p.mode==='replace') t.blocks=t.blocks.filter(x=>x.kind!==f.kind);
