@@ -1,4 +1,5 @@
 // Deterministic, tab-local planning. No provider or backend calls.
+import {publicPayload, contributionFrom} from './connected-public.mjs';
 export const KEY = 'travelos.connected.v1';
 export const airports = {LHR:'London · Heathrow (LHR)', GRX:'Granada · Federico García Lorca (GRX)', LIS:'Lisbon · Humberto Delgado (LIS)', JFK:'New York · John F. Kennedy (JFK)'};
 export const defaults = () => ({destination:'Granada',origin:'LHR',airport:'GRX',start:'2026-10-12',end:'2026-10-15',adults:2,children:0,ages:'',rooms:1,flights:true,hotels:true,cabin:'Any',maxPrice:500,family:false,pet:false});
@@ -71,6 +72,27 @@ export function createStore(storage) {
           const transitions={Ready:['Active'],Active:['Success','Ready','Unresolved'],Unresolved:['Ready','Success'],Success:[]};
           if(!transitions[t.checkout].includes(p.next)) fail('Active or unresolved checkout: reconcile explicitly; no duplicate attempt.');
           t.checkout=p.next;record(`Checkout ${p.next} · SIMULATION, no charge`);break;
+        }
+        case 'contribute':
+          editor();result=id('public');s.publications[result]={id:result,owner:person,draft:contributionFrom(t),versions:[]};break;
+        case 'publicDraft': {
+          const c=s.publications[p.id];if(!c || c.owner!==person) fail('Only the local contributor may edit this contribution.');
+          c.draft=publicPayload(p.draft);break;
+        }
+        case 'publish': {
+          const c=s.publications[p.id];if(!c || c.owner!==person) fail('Only the local contributor may publish.');
+          if(!p.reviewed) fail('Review the exact public preview before publishing.');
+          const clean=publicPayload(c.draft), previous=c.versions.at(-1);
+          if(previous && JSON.stringify(publicPayload(previous))===JSON.stringify(clean)) break;
+          c.versions.push({...clean,version:c.versions.length+1,at:new Date().toISOString()});break;
+        }
+        case 'fork': {
+          const c=s.publications[p.id], v=c?.versions.find(x=>x.version===+p.version);
+          if(!v) fail('Published version unavailable.');
+          if(!dateOK(p.start)) fail('Choose a valid start date for the fork.');
+          const clean=publicPayload(v);result=id('trip');
+          s.trips[result]={id:result,title:clean.title,destination:clean.destination,start:p.start,end:shiftDate(p.start,Math.max(...clean.blocks.map(x=>x.day))-1),shortlist:[],blocks:clean.blocks.map(b=>({id:id('block'),title:b.title,kind:b.kind,date:shiftDate(p.start,b.day-1),start:b.start,end:b.end,zone:b.zone})),notes:[],history:[],members:{[person]:'Editor'},organizer:person,payer:person,checkout:'Ready',link:null,lastTab:'calendar',day:p.start,provenance:{id:p.id,version:+p.version,backlink:clean.backlink}};
+          break;
         }
         case 'createTrip': {
           search(p.query); dates(p.query.start,p.query.end);

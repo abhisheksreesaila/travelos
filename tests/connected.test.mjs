@@ -101,6 +101,31 @@ test('storage failure is honest; research isolated by persona and reset only tou
   assert.match(broken.warning,/until reload/);trip(broken);assert.equal(Object.keys(broken.state.trips).length,1);
 });
 
+test('public allowlist, immutable versions and whole-version independent forks', () => {
+  const s=setup(), id=trip(s);
+  s.act('event',{trip:id,title:'PRIVATE Ari secret@example.com REF-123',date:'2026-10-13',start:'10:00',end:'11:30',zone:'UTC'});
+  s.act('note',{trip:id,text:'PRIVATE notes'});
+  const contribution=s.act('contribute',{trip:id});
+  let draft=s.state.publications[contribution].draft;
+  assert.doesNotMatch(JSON.stringify(draft),/PRIVATE|secret@|REF-123|Ari|trip-/);
+  draft.title='Slow mornings';draft.blocks[0].title='Garden wander';
+  s.act('publicDraft',{id:contribution,draft});
+  s.act('publish',{id:contribution,reviewed:true});
+  s.act('publish',{id:contribution,reviewed:true});
+  assert.equal(s.state.publications[contribution].versions.length,1);
+  draft.title='Slow mornings, with a market';
+  s.act('publicDraft',{id:contribution,draft});s.act('publish',{id:contribution,reviewed:true});
+  assert.equal(s.state.publications[contribution].versions[0].title,'Slow mornings');
+  const fork=s.act('fork',{id:contribution,version:1,start:'2026-11-01'});
+  assert.equal(s.state.trips[fork].blocks[0].date,'2026-11-02');
+  assert.equal(s.state.trips[fork].blocks[0].end,'11:30');
+  s.act('deleteEvent',{trip:fork,id:s.state.trips[fork].blocks[0].id});
+  assert.equal(s.state.publications[contribution].versions[0].blocks.length,1);
+  assert.equal(s.state.trips[id].blocks.length,1);
+  draft.title='Email secret@example.com';assert.throws(()=>s.act('publicDraft',{id:contribution,draft}),/public|private|email/i);
+  s.act('persona',{name:'Mina'});assert.throws(()=>s.act('publish',{id:contribution,reviewed:true}),/contributor/i);
+});
+
 test('invalid search is rejected rather than silently interpreted', () => {
   for(const change of [{origin:'GRX'},{end:'2026-10-10'},{adults:0},{rooms:0},{origin:'Unknown'},{children:1},{maxPrice:-1}]) {
     assert.throws(() => api.search(query(change)), /airport|date|adult|room|age|budget/i);
