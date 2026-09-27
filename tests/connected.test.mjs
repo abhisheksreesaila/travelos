@@ -63,6 +63,44 @@ test('calendar fields move and resize; overlap warns, empty gaps stay empty; inv
   assert.equal(s.state.trips[id].blocks.length,2);
 });
 
+test('named/link roles enforced in handlers, revoked previews empty; payer authority transfers and locks persist', () => {
+  const storage=memory(),s=api.createStore(storage),id=trip(s);
+  s.act('invite',{trip:id,name:'Mina',role:'Editor'});
+  s.act('invite',{trip:id,name:'Jo',role:'Commenter'});
+  s.act('invite',{trip:id,name:'Lee',role:'Viewer'});
+  s.act('nominate',{trip:id,name:'Mina'});
+  assert.throws(()=>s.act('checkout',{trip:id,next:'Active'}),/payer/i);
+  s.act('persona',{name:'Mina'});
+  s.act('checkout',{trip:id,next:'Active'});
+  assert.equal(api.createStore(storage).state.trips[id].checkout,'Active');
+  s.act('persona',{name:'Ari'});
+  assert.throws(()=>s.act('nominate',{trip:id,name:'Ari'}),/active|unresolved/i);
+  s.act('persona',{name:'Mina'});
+  s.act('checkout',{trip:id,next:'Unresolved'});
+  assert.throws(()=>s.act('checkout',{trip:id,next:'Active'}),/unresolved/i);
+  s.act('checkout',{trip:id,next:'Ready'});
+  s.act('persona',{name:'Jo'});
+  s.act('note',{trip:id,text:'A comment'});
+  assert.throws(()=>s.act('event',{trip:id,title:'No'}),/Editor/);
+  assert.throws(()=>s.act('invite',{trip:id,name:'Other',role:'Editor'}),/organizer/i);
+  s.act('persona',{name:'Lee'});
+  assert.throws(()=>s.act('note',{trip:id,text:'No'}),/Commenter/);
+  s.act('persona',{name:'Ari'});
+  const token=s.act('link',{trip:id,role:'Viewer'});
+  assert.ok(s.shared(id,token));
+  s.act('revoke',{trip:id});
+  assert.equal(s.shared(id,token),null);
+});
+test('storage failure is honest; research isolated by persona and reset only touches namespace', () => {
+  const storage=memory();storage.setItem('other','keep');const s=api.createStore(storage);
+  s.act('research',{scope:'search',value:{draft:query({origin:'JFK'})}});
+  s.act('persona',{name:'Mina'});
+  assert.equal(s.state.research['Mina:search'],undefined);
+  s.act('reset');assert.equal(storage.getItem('other'),'keep');
+  const broken=api.createStore({getItem:()=>'{broken',setItem:()=>{throw Error();},removeItem:()=>{}});
+  assert.match(broken.warning,/until reload/);trip(broken);assert.equal(Object.keys(broken.state.trips).length,1);
+});
+
 test('invalid search is rejected rather than silently interpreted', () => {
   for(const change of [{origin:'GRX'},{end:'2026-10-10'},{adults:0},{rooms:0},{origin:'Unknown'},{children:1},{maxPrice:-1}]) {
     assert.throws(() => api.search(query(change)), /airport|date|adult|room|age|budget/i);

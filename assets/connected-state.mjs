@@ -38,16 +38,40 @@ export function createStore(storage) {
   const persist = () => {try {if(warning) return;storage.setItem(KEY,JSON.stringify(state));} catch {warning='Storage unavailable. Changes are only kept until reload.';}};
   return {
     get state(){return clone(state);}, get warning(){return warning;},
+    shared(trip,token) {const t=state.trips[trip];return t?.link?.token===token && (!t.link.expires || t.link.expires>Date.now()) ? clone(t) : null;},
     act(type,p={}) {
       const s=clone(state), id=prefix=>`${prefix}-${++s.seq}`;
       const t=p.trip?s.trips[p.trip]:null;
       if(p.trip && !t) fail('Trip no longer available.');
       const person=s.persona;
       const editor=()=>{if(role(t,person)!=='Editor') fail('Editor access required.');};
+      const organizer=()=>{if(t.organizer!==person) fail('Only the organizer can do this.');};
       const record=label=>t.history.unshift({text:label,actor:person,at:new Date().toISOString()});
       const checkpoint=()=>{t.undo={blocks:clone(t.blocks),shortlist:clone(t.shortlist),start:t.start,end:t.end,destination:t.destination};};
       let result;
       switch(type) {
+        case 'reset':
+          try {storage.removeItem(KEY);warning='';} catch {warning='Storage unavailable. Changes are only kept until reload.';}
+          state=fresh();persist();return;
+        case 'persona':if(!p.name?.trim()) fail('Choose a demo persona.');s.persona=p.name.trim();break;
+        case 'invite':
+          organizer();if(!p.name?.trim() || !['Viewer','Commenter','Editor'].includes(p.role)) fail('Choose a named recipient and valid role.');
+          if(p.name.trim()===t.organizer) fail('Organizer remains Editor in this sample.');
+          t.members[p.name.trim()]=p.role;record('Created demo invitation · no email sent');break;
+        case 'link':
+          organizer();if(!['Viewer','Commenter','Editor'].includes(p.role)) fail('Choose a valid link role.');
+          result=id('link');t.link={token:result,role:p.role,expires:p.expired?Date.now()-1:null};record('Changed local link policy');break;
+        case 'revoke':organizer();t.link=null;record('Revoked local link');break;
+        case 'nominate':
+          organizer();if(['Active','Unresolved'].includes(t.checkout)) fail('Active or unresolved checkout blocks reassignment.');
+          if(!t.members[p.name]) fail('Payer must be a named participant.');
+          t.payer=p.name;t.checkout='Ready';record('Transferred designated payer authority');break;
+        case 'checkout': {
+          if(person!==t.payer) fail('Only the designated payer can operate checkout.');
+          const transitions={Ready:['Active'],Active:['Success','Ready','Unresolved'],Unresolved:['Ready','Success'],Success:[]};
+          if(!transitions[t.checkout].includes(p.next)) fail('Active or unresolved checkout: reconcile explicitly; no duplicate attempt.');
+          t.checkout=p.next;record(`Checkout ${p.next} · SIMULATION, no charge`);break;
+        }
         case 'createTrip': {
           search(p.query); dates(p.query.start,p.query.end);
           if(!p.title?.trim()) fail('Give the trip a title.');
