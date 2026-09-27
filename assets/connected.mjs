@@ -1,4 +1,4 @@
-import {createStore,defaults,search,fixtures,role,shiftDate,minutes,clock,warnings} from './connected-state.mjs';
+import {createStore,defaults,search,fixtures,role,shiftDate,minutes,clock} from './connected-state.mjs';
 import {publicPayload,contributionFrom} from './connected-public.mjs';
 import {esc,icon,btn,field,select,check,empty,tag,shell,searchPage,tripHeader,calendar,tripsPage,communityPage,publicPage,publicEditor,creatorPage,itinerary} from './connected-views.mjs';
 let storage;try{storage=window.sessionStorage;}catch{storage={getItem(){throw Error();}};}

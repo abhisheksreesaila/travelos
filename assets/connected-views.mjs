@@ -1,4 +1,4 @@
-import {airports,fixtures,defaults,role,warnings,shiftDate,minutes} from './connected-state.mjs';
+import {airports,fixtures,role,warnings,shiftDate,minutes} from './connected-state.mjs';
 export const esc = value => String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export const icon = (name='sun') => `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${({plane:'<path d="m22 2-7 20-4-9-9-4Z M22 2 11 13"/>',hotel:'<path d="M3 21V5h18v16M8 21v-5h8v5M7 9h2m6 0h2M7 12h2m6 0h2"/>',leaf:'<path d="M20 4C8 2 2 9 6 17c8 4 15-2 14-13ZM5 20 16 9"/>',chat:'<path d="M21 11a9 9 0 0 1-9 9H4l-2 2V11a9 9 0 0 1 19 0Z M7 10h10M7 14h6"/>',sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1 1m12 12 1 1M5 19l1-1M18 6l1-1"/>'})[name]||''}</svg>`;
 export const btn=(text,action,extra='',primary=false)=>`<button type="button" class="btn${primary?' primary':''}" data-action="${action}" ${extra}>${text}</button>`;
