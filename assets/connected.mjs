@@ -3,15 +3,16 @@ import {publicPayload,contributionFrom} from './connected-public.mjs';
 import {esc,icon,btn,field,select,check,empty,tag,shell,searchPage,tripHeader,calendar,tripsPage,communityPage,publicPage,publicEditor,creatorPage,itinerary} from './connected-views.mjs';
 let storage;try{storage=window.sessionStorage;}catch{storage={getItem(){throw Error();}};}
 const store=createStore(storage), app=document.querySelector('#app'), dialog=document.querySelector('#context-drawer');
-let opener='',lastPage='',workingDraft=null,preview=null,snapshot=null,dirty=false,drag=null;
+let opener='',lastPage='',workingDraft=null,preview=null,snapshot=null,dirty=false,drag=null,acceptedHash=location.hash,savedCandidate=null;
 const $=(s,root=document)=>s?root.querySelector(s):null;
 const route=()=>{const [path,query='']=(location.hash.slice(1)||'/search').split('?');return {path,parts:path.split('/').filter(Boolean),params:new URLSearchParams(query)};};
 const currentTrip=()=>store.state.trips[route().parts[1]];
 const currentQuery=()=>{const t=currentTrip(),scope=t?.id||'search';return store.state.research[`${store.state.persona}:${scope}`]||{draft:t?{...defaults(),destination:t.destination,start:t.start,end:t.end,airport:t.destination==='Lisbon'?'LIS':'GRX'}:defaults(),committed:null};};
 function notify(message) {$('#announcer').textContent='';requestAnimationFrame(()=>{$('#announcer').textContent=message;const e=$('#saved-state');if(e)e.textContent=store.warning||message+' · saved in this tab';});}
-function go(path) {if(dialog.open)dialog.close();dirty=false;location.hash=path;}
+function go(path) {if(dirty&&!confirm('Discard unsaved activity edits?'))return;if(dialog.open)dialog.close();dirty=false;location.hash=path;}
 function open(type,params={}) {
-  const focused=document.activeElement;
+  if(dirty&&!confirm('Discard unsaved activity edits?'))return;
+  dirty=false;const focused=document.activeElement;
   if(!dialog.open && focused instanceof HTMLElement) opener=focused.id?`#${CSS.escape(focused.id)}`:focused.dataset.action?`[data-action="${focused.dataset.action}"]${focused.dataset.id?`[data-id="${focused.dataset.id}"]`:''}`:'';
   const r=route(),q=new URLSearchParams();q.set('drawer',type);for(const [k,v] of Object.entries(params))q.set(k,v);
   if(dialog.open){history.replaceState(null,'',`#${r.path}?${q}`);renderDrawer();}else location.hash=`${r.path}?${q}`;
@@ -62,13 +63,15 @@ function render() {
     content=shared?`<section class="page-heading"><h1>${esc(shared.title)}</h1><p>Live local shared view · ${esc(shared.link.role)} link · same tab only</p><p class="notice">Account-free preview. This read-only surface does not expose notes or payer details. To exercise named roles, use People & access → Preview recipient.</p>${btn('Refresh local view','refresh')}</section>${itinerary(contributionFrom(shared))}`:empty('Link unavailable.','It may be revoked, expired or from a different tab. No private content is shown.');
   } else content=empty('A small detour.','This address is not part of the sample. Your plans are still here.','<a class="btn primary" href="#/search">Back to Search</a>');
   app.innerHTML=shell(s,content,active,store.warning);
+  acceptedHash=location.hash;
+  if(savedCandidate){$(`[data-candidate-id="${savedCandidate}"] .saved`)?.classList.add('saved-settle');savedCandidate=null;}
   if($('.calendar-scroll'))$('.calendar-scroll').scrollTop=lastPage===r.path&&scroll!==undefined?scroll:7*45;
   if(lastPage!==r.path){window.scrollTo(0,0);lastPage=r.path;}
   if(r.params.has('drawer'))renderDrawer();else if(dialog.open){dialog.close();requestAnimationFrame(()=>($(opener)||$('#main')).focus());}
 }
 function drawerFrame(title,content) {
   dialog.innerHTML=`<div class="drawer-head"><h2 id="drawer-title" tabindex="-1">${title}</h2>${btn('✕ Close','close','aria-label="Close drawer"')}</div><div class="drawer-body">${content}<p id="drawer-error" class="error" role="alert"></p></div>`;
-  if(!dialog.open)dialog.showModal();$('#drawer-title').focus();dirty=false;
+  if(!dialog.open)dialog.showModal();$('#drawer-title').focus();dirty=false;acceptedHash=location.hash;
 }
 function renderDrawer() {
   const r=route(),s=store.state,t=currentTrip(),type=r.params.get('drawer'),id=r.params.get('id'),scope=r.params.get('scope')||'trip';
@@ -157,12 +160,12 @@ document.addEventListener('click',e=>{
       case 'account':open('account');break;
       case 'blank':open('blank');break;
       case 'save-candidate':
-        if(t){mutate('saveCandidate',{trip:t.id,candidate:id,query:currentQuery().committed||currentQuery().draft},'Saved candidate');render();open('candidate',{id});}
+        if(t){mutate('saveCandidate',{trip:t.id,candidate:id,query:currentQuery().committed||currentQuery().draft},'Saved candidate');savedCandidate=id;open('candidate',{id});render();}
         else open('choose-trip',{id});break;
       case 'create-candidate': {
         const q=currentQuery().committed||currentQuery().draft;
         const trip=mutate('createTrip',{title:$('[name="tripTitle"]').value,query:q},'Private trip created');
-        if(id)mutate('saveCandidate',{trip,candidate:id,query:q},'Candidate saved');go(`/trip/${trip}/research`);break;
+        if(id){mutate('saveCandidate',{trip,candidate:id,query:q},'Candidate saved');savedCandidate=id;}go(`/trip/${trip}/research`);break;
       }
       case 'choose':
         try{mutate('choose',{trip:t.id,candidate:id},'Chosen · not booked');render();}
@@ -253,5 +256,5 @@ document.addEventListener('pointerup',()=>{
   try{mutate('event',p,`${d.mode==='move'?'Moved':'Resized'} ${p.title} to ${p.date} ${p.start}–${p.end} UTC · Undo available`);render();$(`[data-block-id="${p.id}"]`)?.classList.add('landed');}catch(error){notify(error.message);}
 });
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&drag){drag.grip.closest('article').style.transform='';drag.grip.closest('article').classList.remove('dragging');drag=null;notify('Drag cancelled · nothing changed');}if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-drag]')){e.preventDefault();open('event',{id:e.target.dataset.id});}});
-window.addEventListener('hashchange',()=>{dirty=false;render();});
+window.addEventListener('hashchange',()=>{if(dirty&&!confirm('Discard unsaved activity edits?')){history.pushState(null,'',acceptedHash);return;}dirty=false;render();});
 if(!location.hash)history.replaceState(null,'','#/search');render();
