@@ -144,7 +144,7 @@ document.addEventListener('submit',e=>{
     }
   } catch(error){const target=form.querySelector('.form-error')||$('#search-error',form)||$('#drawer-error');if(target)target.textContent=error.message;notify(error.message);}
 });
-function returnTo(){const value=route().params.get('returnTo');return value?.startsWith('/')&&!value.startsWith('//')&&!value.startsWith('/signin')?value:'/search';}
+function returnTo(){const value=route().params.get('returnTo')?.replace(/^#/,'');return value?.startsWith('/')&&!value.startsWith('//')&&!value.startsWith('/signin')?value:'/search';}
 document.addEventListener('click',e=>{
   const target=e.target.closest('[data-action]');if(!target||target.disabled)return;
   const a=target.dataset.action,id=target.dataset.id,r=route(),t=currentTrip();
