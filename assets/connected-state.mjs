@@ -1,5 +1,5 @@
 // Deterministic, tab-local planning. No provider or backend calls.
-import {publicPayload, contributionFrom} from './connected-public.mjs';
+import {publicPayload, contributionFrom, safeLink} from './connected-public.mjs';
 export const KEY = 'travelos.connected.v1';
 export const airports = {LHR:'London · Heathrow (LHR)', GRX:'Granada · Federico García Lorca (GRX)', LIS:'Lisbon · Humberto Delgado (LIS)', JFK:'New York · John F. Kennedy (JFK)'};
 export const defaults = () => ({destination:'Granada',origin:'LHR',airport:'GRX',start:'2026-10-12',end:'2026-10-15',adults:2,children:0,ages:'',rooms:1,flights:true,hotels:true,cabin:'Any',maxPrice:500,family:false,pet:false});
@@ -72,6 +72,20 @@ export function createStore(storage) {
           const transitions={Ready:['Active'],Active:['Success','Ready','Unresolved'],Unresolved:['Ready','Success'],Success:[]};
           if(!transitions[t.checkout].includes(p.next)) fail('Active or unresolved checkout: reconcile explicitly; no duplicate attempt.');
           t.checkout=p.next;record(`Checkout ${p.next} · SIMULATION, no charge`);break;
+        }
+        case 'source':
+          if(s.creator?.source!==p.source) s.creator={source:p.source,reviewed:false,draft:null,owner:person};break;
+        case 'extract': {
+          const source=safeLink(p.source);if(!source) fail('Enter a source HTTPS URL.');
+          s.creator={source,owner:person,reviewed:false,draft:{title:'Lisbon, at walking pace',destination:'Lisbon',backlink:'',blocks:[{title:'Garden wander',kind:'activity',day:1,start:'10:00',end:'11:00',zone:'UTC'},{title:'Market pause',kind:'activity',day:1,start:'12:00',end:'13:00',zone:'UTC'},{title:'Riverside ramble',kind:'activity',day:2,start:'16:00',end:'17:30',zone:'UTC'}]}};break;
+        }
+        case 'creatorReview':
+          if(!s.creator?.draft || s.creator.owner!==person) fail('Generate and review your synthetic example first.');
+          s.creator.draft=publicPayload({...p.draft,backlink:p.backlink?safeLink(s.creator.source):''});s.creator.reviewed=!!p.reviewed;s.creator.published=null;break;
+        case 'creatorPublish': {
+          const c=s.creator;if(!c?.reviewed || c.owner!==person) fail('Review your exact stops before publishing.');
+          if(c.published){result=c.published;break;}
+          const clean=publicPayload(c.draft);result=id('public');s.publications[result]={id:result,owner:person,draft:clone(clean),versions:[{...clean,version:1,at:new Date().toISOString()}]};c.published=result;break;
         }
         case 'contribute':
           editor();result=id('public');s.publications[result]={id:result,owner:person,draft:contributionFrom(t),versions:[]};break;

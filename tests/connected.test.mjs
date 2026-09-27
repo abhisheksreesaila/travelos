@@ -126,6 +126,23 @@ test('public allowlist, immutable versions and whole-version independent forks',
   s.act('persona',{name:'Mina'});assert.throws(()=>s.act('publish',{id:contribution,reviewed:true}),/contributor/i);
 });
 
+test('creator synthetic source, edited preview and publish match; unsafe URLs rejected and source changes invalidate', () => {
+  const s=setup();
+  assert.throws(()=>s.act('extract',{source:'javascript:alert(1)'}),/HTTPS/);
+  s.act('source',{source:'https://example.com/lisbon'});
+  s.act('extract',{source:'https://example.com/lisbon'});
+  const draft=s.state.creator.draft;
+  assert.equal(draft.blocks.length,3);
+  draft.blocks.splice(1,1);draft.blocks[0].title='My reviewed garden';
+  s.act('creatorReview',{draft,backlink:true,reviewed:true});
+  const id=s.act('creatorPublish');
+  assert.deepEqual(s.state.publications[id].versions[0].blocks,draft.blocks);
+  assert.equal(s.act('creatorPublish'),id,'repeated publish must not duplicate');
+  s.act('source',{source:'https://example.com/other'});
+  assert.equal(s.state.creator.reviewed,false);
+  assert.throws(()=>s.act('creatorPublish'),/review/i);
+});
+
 test('invalid search is rejected rather than silently interpreted', () => {
   for(const change of [{origin:'GRX'},{end:'2026-10-10'},{adults:0},{rooms:0},{origin:'Unknown'},{children:1},{maxPrice:-1}]) {
     assert.throws(() => api.search(query(change)), /airport|date|adult|room|age|budget/i);
