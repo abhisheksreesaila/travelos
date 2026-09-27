@@ -143,6 +143,25 @@ test('creator synthetic source, edited preview and publish match; unsafe URLs re
   assert.throws(()=>s.act('creatorPublish'),/review/i);
 });
 
+test('forked hotel edits and deletes do not remove unrelated unlinked activities', () => {
+  const s=setup(),id=trip(s);
+  s.act('saveCandidate',{trip:id,candidate:'h0a',query:query()});s.act('choose',{trip:id,candidate:'h0a'});
+  s.act('event',{trip:id,title:'Garden',date:'2026-10-13',start:'10:00',end:'11:00',zone:'UTC'});
+  const c=s.act('contribute',{trip:id});s.act('publish',{id:c,reviewed:true});
+  const f=s.act('fork',{id:c,version:1,start:'2026-11-01'}),hotel=s.state.trips[f].blocks.find(x=>x.kind==='hotel');
+  s.act('deleteEvent',{trip:f,id:hotel.id});
+  assert.equal(s.state.trips[f].blocks.length,2,'unlinked public hotel is one editable block, not a private reservation');
+});
+test('undated shortlist candidates can be explicitly dated without duplicate saves', () => {
+  const s=setup(),id=trip(s);
+  s.act('saveCandidate',{trip:id,candidate:'h0a',query:query({start:'',end:''})});
+  assert.throws(()=>s.act('choose',{trip:id,candidate:'h0a'}),/Undated/);
+  s.act('dateCandidate',{trip:id,candidate:'h0a',start:'2026-10-14',end:'2026-10-16'});
+  s.act('choose',{trip:id,candidate:'h0a'});
+  assert.equal(s.state.trips[id].shortlist.length,1);
+  assert.equal(s.state.trips[id].blocks[0].date,'2026-10-14');
+});
+
 test('invalid search is rejected rather than silently interpreted', () => {
   for(const change of [{origin:'GRX'},{end:'2026-10-10'},{adults:0},{rooms:0},{origin:'Unknown'},{children:1},{maxPrice:-1}]) {
     assert.throws(() => api.search(query(change)), /airport|date|adult|room|age|budget/i);

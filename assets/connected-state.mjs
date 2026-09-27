@@ -124,6 +124,12 @@ export function createStore(storage) {
           if(!t.shortlist.some(x=>x.id===p.candidate)) {checkpoint();t.shortlist.push({id:p.candidate,query:clone(p.query)});record('Added candidate to shortlist');}
           break;
         }
+        case 'dateCandidate': {
+          editor();dates(p.start,p.end);const c=t.shortlist.find(x=>x.id===p.candidate);
+          if(!c) fail('Candidate unavailable.');
+          if(t.blocks.some(b=>b.candidate===c.id)) fail('Unschedule before changing candidate dates; chosen blocks never move silently.');
+          checkpoint();c.query.start=p.start;c.query.end=p.end;record('Explicitly dated shortlisted candidate');break;
+        }
         case 'choose': {
           editor();const c=t.shortlist.find(x=>x.id===p.candidate), f=fixtures.find(x=>x.id===p.candidate);
           if(!c || !f) fail('Candidate unavailable.');
@@ -144,7 +150,7 @@ export function createStore(storage) {
           if(p.id&&!old) fail('Activity no longer available.');
           const b={...old,id:old?.id||id('block'),kind:old?.kind||'activity',title:p.title?.trim(),date:p.date,start:p.start,end:p.end,zone:p.zone};
           validateEvent(b);
-          if(b.kind==='hotel') {
+          if(b.kind==='hotel' && b.candidate) {
             const other=t.blocks.find(x=>x.candidate===b.candidate&&x.id!==b.id);
             if(other && (b.anchor==='checkin' ? b.date+b.start>=other.date+other.start : b.date+b.start<=other.date+other.start)) fail('Hotel check-out must follow linked check-in.');
           }
@@ -153,7 +159,7 @@ export function createStore(storage) {
         }
         case 'deleteEvent': {
           editor();const b=t.blocks.find(x=>x.id===p.id);if(!b) fail('Activity no longer available.');
-          checkpoint();t.blocks=t.blocks.filter(x=>b.kind==='hotel'?x.candidate!==b.candidate:x.id!==b.id);record('Removed activity (linked hotel anchors together)');break;
+          checkpoint();t.blocks=t.blocks.filter(x=>b.kind==='hotel'&&b.candidate?x.candidate!==b.candidate:x.id!==b.id);record('Removed activity (linked hotel anchors together)');break;
         }
         case 'undo':editor();if(!t.undo) fail('Nothing to undo.');Object.assign(t,t.undo);t.undo=null;record('Undid last itinerary change');break;
         case 'note': {
