@@ -9,6 +9,104 @@ export const fixtures = ['Granada','Lisbon'].flatMap((destination,i) => [
   {id:`h${i}b`,kind:'hotel',title:i?'River Garden Rooms':'Little Garden Rooms',destination,price:165,capacity:4,family:true,pet:false,start:'15:00',end:'11:00'}
 ]);
 export const clone = value => structuredClone(value);
+export const minutes = value => {const [h,m]=value.split(':').map(Number);return h*60+m;};
+export const clock = value => `${String(Math.floor(value/60)).padStart(2,'0')}:${String(value%60).padStart(2,'0')}`;
+export const shiftDate = (date, days) => new Date(Date.parse(date)+days*86400000).toISOString().slice(0,10);
+export function warnings(trip) {
+  const out=[];
+  for(const [i,b] of trip.blocks.entries()) {
+    if(b.date<trip.start || b.date>trip.end) out.push(`${b.title}: outside plan dates.`);
+    if(b.destination && b.destination!==trip.destination) out.push(`${b.title}: different destination.`);
+    if(trip.blocks.slice(i+1).some(c=>c.date===b.date && c.start<b.end && b.start<c.end)) out.push(`${b.title}: overlap — nothing was rescheduled.`);
+  }
+  return out;
+}
+function validateEvent(b) {
+  if(!b.title?.trim()) fail('Give the activity a title.');
+  if(!dateOK(b.date)) fail('Choose a valid date.');
+  if(b.zone!=='UTC') fail('This sample supports UTC planning times only; local/DST conversions are unsupported.');
+  if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(b.start) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(b.end) || b.end<=b.start) fail('End must follow start on the same day; split overnight activities manually.');
+}
+const fresh = () => ({schema:1,seq:0,persona:'Ari',trips:{},research:{},drafts:{},publications:{},creator:null});
+export function role(trip, persona) {return trip?.members[persona] || null;}
+export function createStore(storage) {
+  let state=fresh(), warning='';
+  try {
+    const raw=storage.getItem(KEY);
+    if(raw) {const value=JSON.parse(raw);if(value.schema!==1 || !value.trips || !value.research || !value.publications) throw Error();state=value;}
+  } catch {warning='Storage unavailable or corrupt. Changes are only kept until reload; reset to retry.';}
+  const persist = () => {try {if(warning) return;storage.setItem(KEY,JSON.stringify(state));} catch {warning='Storage unavailable. Changes are only kept until reload.';}};
+  return {
+    get state(){return clone(state);}, get warning(){return warning;},
+    act(type,p={}) {
+      const s=clone(state), id=prefix=>`${prefix}-${++s.seq}`;
+      const t=p.trip?s.trips[p.trip]:null;
+      if(p.trip && !t) fail('Trip no longer available.');
+      const person=s.persona;
+      const editor=()=>{if(role(t,person)!=='Editor') fail('Editor access required.');};
+      const record=label=>t.history.unshift({text:label,actor:person,at:new Date().toISOString()});
+      const checkpoint=()=>{t.undo={blocks:clone(t.blocks),shortlist:clone(t.shortlist),start:t.start,end:t.end,destination:t.destination};};
+      let result;
+      switch(type) {
+        case 'createTrip': {
+          search(p.query); dates(p.query.start,p.query.end);
+          if(!p.title?.trim()) fail('Give the trip a title.');
+          result=id('trip');
+          s.trips[result]={id:result,title:p.title.trim(),destination:p.query.destination||'Flexible',start:p.query.start,end:p.query.end,shortlist:[],blocks:[],notes:[],history:[],members:{[person]:'Editor'},organizer:person,payer:person,checkout:'Ready',link:null,lastTab:'research',day:p.query.start};
+          break;
+        }
+        case 'research': s.research[`${person}:${p.scope||'search'}`]=clone(p.value);break;
+        case 'draft': s.drafts[`${person}:${p.scope}`]=p.text;break;
+        case 'visit': if(!role(t,person)) fail('No access to this trip.');t.lastTab=p.tab;t.day=p.day||t.day;break;
+        case 'saveCandidate': {
+          editor(); const f=fixtures.find(x=>x.id===p.candidate);if(!f) fail('Candidate unavailable.');
+          search(p.query);
+          if(!t.shortlist.some(x=>x.id===p.candidate)) {checkpoint();t.shortlist.push({id:p.candidate,query:clone(p.query)});record('Added candidate to shortlist');}
+          break;
+        }
+        case 'choose': {
+          editor();const c=t.shortlist.find(x=>x.id===p.candidate), f=fixtures.find(x=>x.id===p.candidate);
+          if(!c || !f) fail('Candidate unavailable.');
+          if(t.blocks.some(x=>x.candidate===c.id)) break;
+          if(!c.query.start || !c.query.end) fail('Undated candidate: assign dates in research and save it again first.');
+          const same=t.blocks.filter(x=>x.kind===f.kind);
+          if(same.length && !['replace','both'].includes(p.mode)) fail('Choose Replace or Keep both explicitly.');
+          checkpoint();if(p.mode==='replace') t.blocks=t.blocks.filter(x=>x.kind!==f.kind);
+          const block=(title,date,start,end,anchor)=>({id:id('block'),kind:f.kind,title,date,start,end,zone:'UTC',candidate:c.id,destination:f.destination,anchor});
+          if(f.kind==='flight') t.blocks.push(block(f.title,c.query.start,f.start,f.end,'flight'));
+          else t.blocks.push(block(`${f.title} · check-in`,c.query.start,'15:00','15:30','checkin'),block(`${f.title} · check-out`,c.query.end,'11:00','11:30','checkout'));
+          record('Chose arrangement · planned, not booked');break;
+        }
+        case 'unschedule':editor();checkpoint();t.blocks=t.blocks.filter(x=>x.candidate!==p.candidate);record('Unscheduled linked arrangement');break;
+        case 'applyResearch':editor();search(p.query);dates(p.query.start,p.query.end);checkpoint();Object.assign(t,{start:p.query.start,end:p.query.end,destination:p.query.destination||'Flexible'});record('Applied research dates; existing blocks unchanged');break;
+        case 'event': {
+          editor();const old=p.id?t.blocks.find(x=>x.id===p.id):null;
+          if(p.id&&!old) fail('Activity no longer available.');
+          const b={...old,id:old?.id||id('block'),kind:old?.kind||'activity',title:p.title?.trim(),date:p.date,start:p.start,end:p.end,zone:p.zone};
+          validateEvent(b);
+          if(b.kind==='hotel') {
+            const other=t.blocks.find(x=>x.candidate===b.candidate&&x.id!==b.id);
+            if(other && (b.anchor==='checkin' ? b.date+b.start>=other.date+other.start : b.date+b.start<=other.date+other.start)) fail('Hotel check-out must follow linked check-in.');
+          }
+          checkpoint();if(old) t.blocks[t.blocks.indexOf(old)]=b;else t.blocks.push(b);
+          record(`${old?'Updated':'Added'} ${b.title} · planning only`);result=b.id;break;
+        }
+        case 'deleteEvent': {
+          editor();const b=t.blocks.find(x=>x.id===p.id);if(!b) fail('Activity no longer available.');
+          checkpoint();t.blocks=t.blocks.filter(x=>b.kind==='hotel'?x.candidate!==b.candidate:x.id!==b.id);record('Removed activity (linked hotel anchors together)');break;
+        }
+        case 'undo':editor();if(!t.undo) fail('Nothing to undo.');Object.assign(t,t.undo);t.undo=null;record('Undid last itinerary change');break;
+        case 'note': {
+          if(!['Editor','Commenter'].includes(role(t,person))) fail('Commenter or Editor access required.');
+          if(!p.text?.trim()) fail('Write a note first.');
+          t.notes.push({scope:p.scope||'trip',text:p.text.trim(),actor:person});s.drafts[`${person}:${t.id}:${p.scope||'trip'}`]='';record('Added local note · not sent');break;
+        }
+        default: fail(`Unsupported action: ${type}`);
+      }
+      state=s;persist();return result;
+    }
+  };
+}
 const fail = message => {throw new Error(message);};
 const dateOK = value => /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value)) && new Date(value).toISOString().slice(0,10) === value;
 export function dates(start,end) {
