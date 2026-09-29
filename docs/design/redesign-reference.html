@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TravelOS Field Notes Reference</title>
+<!-- Reference-only font loading. The app must self-host these (spec §2.1). Without network, fallbacks render. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;650;700;750&family=JetBrains+Mono:wght@500;600;700&display=swap">
+<style>
+/* ── Primitives (spec §3.2) ───────────────────────────────── */
+:root{
+  --paper-0:#FFFFFF;--paper-50:#FBF9F4;--paper-100:#F4F0E6;
+  --ink-900:#16181B;--ink-700:#3A4048;--ink-500:#5F6873;--ink-300:#B9B3A6;--rule-l:#E3DDD0;
+  --orange-500:#E8552B;--orange-700:#B63E1C;--orange-100:#FCE6DC;
+  --sun-400:#F5C542;--sun-100:#FDF3D2;
+  --green-600:#17744E;--green-100:#DDF3E8;
+  --blue-600:#2167B8;--blue-100:#E1ECF9;
+  --plum-600:#6A4BD1;--plum-100:#ECE6FB;
+  --red-600:#B3302A;--red-100:#FBE3E1;
+  --night-950:#0F1113;--night-900:#16191C;--night-800:#1E2226;--night-700:#2A2F35;
+  --moon-100:#ECE8DF;--moon-300:#B4AFA5;--moon-500:#8A867E;
+  --orange-400:#F2764F;--sun-300:#F8D56E;--green-400:#4CC08D;--blue-400:#6FA6E6;--plum-400:#9C85EC;--red-400:#EC6B63;
+
+  --font-display:"Fraunces","Iowan Old Style",Georgia,serif;
+  --font-sans:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,"SF Mono","Cascadia Code",monospace;
+  --type-display:clamp(2.75rem,1.6rem + 3.6vw,4.5rem);
+  --type-h1:clamp(2rem,1.4rem + 1.9vw,3rem);
+  --s-1:4px;--s-2:8px;--s-3:12px;--s-4:16px;--s-5:24px;--s-6:32px;--s-7:48px;--s-8:64px;
+  --r-sm:6px;--r-md:10px;--r-lg:12px;--r-xl:20px;
+  --t-fast:120ms;--t-base:200ms;--t-slow:400ms;--ease:cubic-bezier(.2,.7,.2,1);
+}
+/* ── Role tokens (spec §3.3) ─────────────────────────────── */
+:root,:root[data-theme="light"]{
+  --bg:var(--paper-50);--surface-1:var(--paper-0);--surface-2:var(--paper-100);--surface-inverse:var(--ink-900);
+  --ink-1:var(--ink-900);--ink-2:var(--ink-700);--ink-3:var(--ink-500);--rule:var(--rule-l);
+  --accent:var(--orange-500);--accent-ink:var(--orange-700);--accent-tint:var(--orange-100);--on-accent:var(--ink-900);
+  --day:var(--sun-400);--day-tint:var(--sun-100);
+  --ok:var(--green-600);--ok-tint:var(--green-100);
+  --info:var(--blue-600);--info-tint:var(--blue-100);
+  --creator:var(--plum-600);--creator-tint:var(--plum-100);
+  --danger:var(--red-600);--danger-tint:var(--red-100);
+  --shadow-float:0 12px 32px -12px rgb(22 24 27 / .22);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:var(--night-950);--surface-1:var(--night-900);--surface-2:var(--night-800);--surface-inverse:var(--moon-100);
+  --ink-1:var(--moon-100);--ink-2:var(--moon-300);--ink-3:var(--moon-500);--rule:var(--night-700);
+  --accent:var(--orange-400);--accent-ink:var(--orange-400);--accent-tint:color-mix(in oklab,var(--orange-400) 18%,var(--night-900));--on-accent:var(--night-950);
+  --day:var(--sun-300);--day-tint:color-mix(in oklab,var(--sun-300) 18%,var(--night-900));
+  --ok:var(--green-400);--ok-tint:color-mix(in oklab,var(--green-400) 18%,var(--night-900));
+  --info:var(--blue-400);--info-tint:color-mix(in oklab,var(--blue-400) 18%,var(--night-900));
+  --creator:var(--plum-400);--creator-tint:color-mix(in oklab,var(--plum-400) 18%,var(--night-900));
+  --danger:var(--red-400);--danger-tint:color-mix(in oklab,var(--red-400) 18%,var(--night-900));
+  --shadow-float:0 12px 32px -12px rgb(0 0 0 / .6);color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:var(--night-950);--surface-1:var(--night-900);--surface-2:var(--night-800);--surface-inverse:var(--moon-100);
+  --ink-1:var(--moon-100);--ink-2:var(--moon-300);--ink-3:var(--moon-500);--rule:var(--night-700);
+  --accent:var(--orange-400);--accent-ink:var(--orange-400);--accent-tint:color-mix(in oklab,var(--orange-400) 18%,var(--night-900));--on-accent:var(--night-950);
+  --day:var(--sun-300);--day-tint:color-mix(in oklab,var(--sun-300) 18%,var(--night-900));
+  --ok:var(--green-400);--ok-tint:color-mix(in oklab,var(--green-400) 18%,var(--night-900));
+  --info:var(--blue-400);--info-tint:color-mix(in oklab,var(--blue-400) 18%,var(--night-900));
+  --creator:var(--plum-400);--creator-tint:color-mix(in oklab,var(--plum-400) 18%,var(--night-900));
+  --danger:var(--red-400);--danger-tint:color-mix(in oklab,var(--red-400) 18%,var(--night-900));
+  --shadow-float:0 12px 32px -12px rgb(0 0 0 / .6);color-scheme:dark;
+}
+
+/* ── Base ─────────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;min-height:100dvh;display:grid;grid-template-rows:auto auto 1fr auto;grid-template-columns:minmax(0,1fr);background:var(--bg);color:var(--ink-1);font:400 1rem/1.6 var(--font-sans);-webkit-font-smoothing:antialiased}
+body>*{min-width:0}
+a{color:var(--accent-ink)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.container{width:100%;max-width:1200px;margin-inline:auto;padding-inline:clamp(16px,4vw,40px)}
+.label{font:600 .6875rem/1.3 var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.data{font:500 .8125rem/1.4 var(--font-mono);font-variant-numeric:tabular-nums}
+.display{font:600 var(--type-display)/1.02 var(--font-display);letter-spacing:-.025em;font-variation-settings:"opsz" 96;margin:0}
+.display em,.h1 em{font-style:italic;font-weight:500;color:var(--accent-ink)}
+.h1{font:600 var(--type-h1)/1.08 var(--font-display);letter-spacing:-.02em;margin:0}
+.h2{font:700 1.5rem/1.2 var(--font-sans);letter-spacing:-.015em;margin:0}
+.h3{font:650 1.125rem/1.3 var(--font-sans);letter-spacing:-.01em;margin:0}
+.lede{font-size:1.125rem;line-height:1.6;color:var(--ink-2);max-width:56ch;margin:0}
+.small{font-size:.8125rem;line-height:1.45;color:var(--ink-2)}
+section.block{padding-block:var(--s-8);border-top:1px solid var(--rule)}
+.section-head{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:var(--s-4);margin-bottom:var(--s-5)}
+.stack>*+*{margin-top:var(--s-3)}
+
+/* ── Header / demo strip / footer (§5.1, §5.9, §5.11) ─────── */
+.header{height:64px;border-bottom:1px solid var(--rule);background:var(--bg);position:sticky;top:0;z-index:10}
+.header .container{height:100%;display:flex;align-items:center;gap:var(--s-6)}
+.wordmark{display:inline-flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink-1);font:750 1.125rem/1 var(--font-sans);letter-spacing:-.01em}
+.wordmark b{font:700 1.05rem/1 var(--font-mono);color:var(--accent-ink)}
+.mark{width:24px;height:24px;border-radius:7px;background:var(--ink-1);display:grid;place-items:center}
+.nav{display:flex;gap:var(--s-5);margin-right:auto}
+.nav a{font:500 .875rem/1 var(--font-sans);color:var(--ink-2);text-decoration:none;padding-block:22px;border-bottom:2px solid transparent}
+.nav a[aria-current]{color:var(--ink-1);border-color:var(--accent)}
+.demo-strip{background:var(--info-tint);color:var(--info);font-size:.8125rem}
+.demo-strip .container{min-height:32px;display:flex;align-items:center;justify-content:space-between;gap:var(--s-4)}
+.demo-strip a{color:inherit;font-weight:600}
+.footer{background:var(--surface-2);border-top:1px solid var(--rule);padding-block:var(--s-6);margin-top:var(--s-8)}
+.footer .container{display:grid;grid-template-columns:2fr 1fr 1fr;gap:var(--s-5)}
+
+/* ── Buttons (§5.2) ───────────────────────────────────────── */
+.btn{--h:40px;display:inline-flex;align-items:center;justify-content:center;gap:8px;height:var(--h);padding-inline:16px;border-radius:var(--r-md);border:1px solid transparent;font:600 .875rem/1 var(--font-sans);text-decoration:none;cursor:pointer;transition:background var(--t-fast) var(--ease),transform var(--t-fast) var(--ease);white-space:nowrap}
+.btn:active{transform:translateY(1px)}
+.btn-lg{--h:48px;padding-inline:20px;font-size:.9375rem}
+.btn-sm{--h:32px;padding-inline:12px;font-size:.8125rem}
+.btn-primary{background:var(--accent);color:var(--on-accent)}
+.btn-primary:hover{background:color-mix(in oklab,var(--accent) 88%,black)}
+.btn-secondary{background:var(--surface-1);color:var(--ink-1);border-color:var(--rule)}
+.btn-secondary:hover{background:var(--surface-2)}
+.btn-quiet{background:transparent;color:var(--ink-2)}
+.btn-quiet:hover{background:var(--surface-2);color:var(--ink-1)}
+.btn-danger{background:var(--danger-tint);color:var(--danger)}
+.icon-btn{width:40px;padding:0}
+@media (pointer:coarse){.btn{min-height:44px}}
+
+/* ── Tags, status, filters (§5.4) ─────────────────────────── */
+.tag{display:inline-flex;align-items:center;height:24px;padding-inline:8px;border-radius:var(--r-sm);background:var(--surface-2);color:var(--ink-2);font:500 .8125rem/1 var(--font-sans)}
+.status{display:inline-flex;align-items:center;height:20px;padding-inline:6px;border-radius:var(--r-sm);font:600 .6875rem/1 var(--font-mono);letter-spacing:.08em;text-transform:uppercase}
+.st-info{background:var(--info-tint);color:var(--info)}.st-ok{background:var(--ok-tint);color:var(--ok)}
+.st-day{background:var(--day-tint);color:var(--ink-1)}.st-creator{background:var(--creator-tint);color:var(--creator)}
+.st-accent{background:var(--accent-tint);color:var(--accent-ink)}.st-danger{background:var(--danger-tint);color:var(--danger)}
+.segmented{display:inline-flex;max-width:100%;overflow-x:auto;border:1px solid var(--rule);border-radius:var(--r-md);overflow:hidden;background:var(--surface-1)}
+.segmented button{height:36px;padding-inline:14px;border:0;border-right:1px solid var(--rule);background:transparent;color:var(--ink-2);font:500 .875rem/1 var(--font-sans);cursor:pointer}
+.segmented button:last-child{border-right:0}
+.segmented button[aria-checked="true"]{background:var(--ink-1);color:var(--bg)}
+.row{display:flex;flex-wrap:wrap;gap:var(--s-2);align-items:center}
+
+/* ── Search bar (§5.3) ─────────────────────────────────────── */
+.search{display:flex;align-items:stretch;background:var(--surface-1);border:1px solid var(--rule);border-radius:var(--r-lg);box-shadow:var(--shadow-float);padding:8px;gap:0;max-width:720px}
+.search .seg{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;padding:4px 16px;border-right:1px solid var(--rule)}
+.search .seg:nth-last-child(2){border-right:0}
+.search .seg:first-child{flex:1.6}
+.search .fake{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.search input,.search .fake{border:0;background:transparent;color:var(--ink-1);font:500 .9375rem/1.3 var(--font-sans);padding:2px 0;width:100%;min-width:0}
+.search input::placeholder{color:var(--ink-3)}
+.search input:focus{outline:none}
+.search .seg:focus-within{box-shadow:inset 0 -2px 0 var(--accent)}
+.search-md{box-shadow:none;padding:4px;max-width:none}
+.search-md .seg{flex-direction:row;align-items:center;gap:8px}
+@media (max-width:719px){.search:not(.search-md){flex-direction:column;gap:4px}.search:not(.search-md) .seg{border-right:0;border-bottom:1px solid var(--rule);padding:10px 12px}.search:not(.search-md) .btn{width:100%;margin-top:4px}}
+
+/* ── Hero ──────────────────────────────────────────────────── */
+.hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--s-7);align-items:center;padding-block:var(--s-8)}
+.hero .stack>*+*{margin-top:var(--s-5)}
+.hero-cards{position:relative;min-height:420px}
+.hero-cards .card{position:absolute;width:min(300px,70%)}
+.hero-cards .card:nth-child(1){left:4%;top:20px;transform:rotate(-2deg)}
+.hero-cards .card:nth-child(2){right:4%;top:90px;transform:rotate(3deg);box-shadow:var(--shadow-float)}
+.proof{display:flex;flex-wrap:wrap;gap:var(--s-3);color:var(--ink-2)}
+@media (max-width:959px){.hero{grid-template-columns:minmax(0,1fr)}.hero-cards{min-height:0;display:none}}
+
+/* ── Plan card (§5.5) ─────────────────────────────────────── */
+.grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s-5)}
+@media (max-width:1099px){.grid-3{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:719px){.grid-3{grid-template-columns:minmax(0,1fr)}}
+.card{position:relative;display:flex;flex-direction:column;background:var(--surface-1);border:1px solid var(--rule);border-radius:var(--r-xl);overflow:hidden;color:inherit;text-decoration:none}
+.card .cover{aspect-ratio:16/10;overflow:hidden;position:relative;background:var(--surface-2)}
+.card .cover>.route{transition:transform var(--t-slow) var(--ease)}
+.card:hover .cover>.route{transform:scale(1.03)}
+.card:hover .h3{color:var(--accent-ink)}
+.cover .status{position:absolute;left:12px;top:12px;background:var(--surface-1);color:var(--ink-1)}
+.save{position:absolute;right:10px;top:10px;width:36px;height:36px;border-radius:999px;border:1px solid var(--rule);background:var(--surface-1);color:var(--ink-1);display:grid;place-items:center;box-shadow:var(--shadow-float);cursor:pointer}
+.card .body{padding:var(--s-4) var(--s-4) var(--s-4);display:flex;flex-direction:column;gap:6px;flex:1}
+.clamp2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card .foot{margin-top:auto;padding-top:var(--s-3);border-top:1px solid var(--rule);display:flex;align-items:center;justify-content:space-between;gap:var(--s-3)}
+/* route-card fallback: stop names on a dotted line, city in display face */
+.route{position:absolute;inset:0;padding:18px 20px;display:flex;flex-direction:column;justify-content:flex-end;background:
+  radial-gradient(circle at 85% 20%,var(--day-tint) 0 22%,transparent 23%),
+  repeating-linear-gradient(0deg,transparent 0 23px,color-mix(in oklab,var(--rule) 60%,transparent) 23px 24px),var(--surface-2)}
+.route svg{position:absolute;inset:0;width:100%;height:100%}
+.route .city{position:relative;font:600 1.75rem/1 var(--font-display);letter-spacing:-.02em;color:var(--ink-1)}
+.route .stops{position:relative;margin-top:6px;color:var(--ink-3)}
+
+/* ── Attribution (§5.8) ───────────────────────────────────── */
+.attr{display:flex;align-items:center;gap:8px;min-width:0}
+.avatar{flex:none;width:24px;height:24px;border-radius:999px;background:var(--creator-tint);color:var(--creator);display:grid;place-items:center;font:700 .625rem/1 var(--font-mono)}
+.avatar.lg{width:40px;height:40px;font-size:.8125rem}
+.attr strong{font:600 .8125rem/1.2 var(--font-sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ── Itinerary (§5.6) ─────────────────────────────────────── */
+.day{border:1px solid var(--rule);border-radius:var(--r-lg);background:var(--surface-1);overflow:hidden}
+.day-head{display:flex;justify-content:space-between;gap:var(--s-3);padding:12px 16px;border-bottom:1px solid var(--rule);background:var(--surface-1)}
+.items{list-style:none;margin:0;padding:8px 16px 12px}
+.item{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:4px 16px;padding-block:14px;position:relative}
+.item::before{content:"";position:absolute;left:74px;top:0;bottom:0;width:2px;background:var(--rule)}
+.item:first-child::before{top:22px}.item:last-child::before{bottom:calc(100% - 22px)}
+.item .dot{position:absolute;left:70px;top:18px;width:10px;height:10px;border-radius:999px;background:var(--day);box-shadow:0 0 0 3px var(--surface-1)}
+.item.booked .dot{background:var(--ok)}
+.item.next .dot{background:var(--surface-1);border:2px solid var(--accent)}
+.item .time{color:var(--ink-2);padding-top:2px}
+.item .content{padding-left:18px;min-width:0}
+.item .content p{margin:4px 0 0}
+.item .acts{display:flex;gap:4px;margin-top:6px;margin-left:-8px}
+.item.gap .content{color:var(--ink-3);font-size:.8125rem;border-top:1px dashed var(--ink-300);padding-top:6px;margin-top:8px}
+.item.gap .dot{background:transparent;border:2px dotted var(--ink-3)}
+.compact .item{padding-block:8px}.compact .item .content p{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}.compact .acts{display:none}
+@media (max-width:559px){.item{grid-template-columns:minmax(0,1fr) auto}.item::before,.item .dot{display:none}.item .time{grid-column:1/-1}.item .content{padding-left:0}}
+
+/* ── Context rail (§5.7) ──────────────────────────────────── */
+.layout-84{display:grid;grid-template-columns:minmax(0,8fr) minmax(0,4fr);gap:var(--s-6);align-items:start}
+@media (max-width:1099px){.layout-84{grid-template-columns:minmax(0,1fr)}}
+.rail{background:var(--surface-2);border-radius:var(--r-lg);padding:var(--s-4)}
+.rail+.rail{margin-top:var(--s-4)}
+.rail-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:var(--s-3)}
+.rail-head .label{display:inline-flex;align-items:center;gap:8px;color:var(--ink-1)}
+.temp{font:600 1.5rem/1 var(--font-mono)}
+.wx{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-block:var(--s-3);text-align:center;padding-block:10px;border-block:1px solid var(--rule)}
+.place{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 8px;padding-block:10px;border-top:1px solid var(--rule)}
+.place strong{font:600 .875rem/1.3 var(--font-sans)}
+.place p{grid-column:1/-1;margin:0}
+
+/* ── Fork card ─────────────────────────────────────────────── */
+.float{background:var(--surface-1);border:1px solid var(--rule);border-radius:var(--r-lg);box-shadow:var(--shadow-float);padding:var(--s-5)}
+.fork .btn-lg{width:100%}
+
+/* ── Tokens display ────────────────────────────────────────── */
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:var(--s-3)}
+.swatch{border:1px solid var(--rule);border-radius:var(--r-md);overflow:hidden;background:var(--surface-1)}
+.swatch i{display:block;height:56px}
+.swatch div{padding:8px 10px}
+.type-row{display:grid;grid-template-columns:160px minmax(0,1fr);gap:var(--s-4);align-items:baseline;padding-block:var(--s-3);border-top:1px solid var(--rule)}
+@media (max-width:719px){.type-row{grid-template-columns:minmax(0,1fr)}.nav{display:none}.footer .container{grid-template-columns:1fr}}
+@media (max-width:559px){.header .container{gap:var(--s-2)}.wordmark{margin-right:auto}.demo-strip .container{flex-wrap:wrap;gap:0 var(--s-3);padding-block:6px}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:0ms!important;animation-duration:0ms!important}}
+</style>
+</head>
+<body>
+<header class="header">
+  <div class="container">
+    <a class="wordmark" href="#top" aria-label="TravelOS home">
+      <span class="mark" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16"><circle cx="3.5" cy="11.5" r="2" fill="var(--accent)"/><circle cx="12.5" cy="4.5" r="2" fill="var(--day)"/><path d="M5 10.5 C8 10 8 6 11 5.5" stroke="var(--bg)" stroke-width="1.5" fill="none" stroke-dasharray="2 2"/></svg></span>
+      <span>Travel<b>OS</b></span>
+    </a>
+    <nav class="nav" aria-label="Primary"><a href="#home" aria-current="page">Discover</a><a href="#detail">Creators</a><a href="#workspace">My trips</a></nav>
+    <button class="btn btn-quiet icon-btn" type="button" data-theme-toggle aria-label="Toggle dark theme"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+    <a class="btn btn-secondary" href="#">Sign in</a>
+  </div>
+</header>
+<div class="demo-strip" role="note"><div class="container"><span>Demo · sample prices, weather and people. Nothing is booked.</span><a href="#">About this demo</a></div></div>
+
+<main id="top" class="container">
+
+  <!-- ═══ Home hero (§6.1) ═══ -->
+  <section id="home" class="hero" aria-labelledby="hero-title">
+    <div class="stack">
+      <span class="label">Forkable travel plans</span>
+      <h1 id="hero-title" class="display">Borrow a great trip. <em>Make it</em> yours.</h1>
+      <p class="lede">Start from a plan someone already loved. Keep the good parts, move the rest, and leave room for the detour.</p>
+      <form class="search" role="search" onsubmit="return false">
+        <label class="seg"><span class="label">Where</span><input placeholder="City or feeling" value=""></label>
+        <label class="seg"><span class="label">When</span><span class="fake data">Apr 12 – 16</span></label>
+        <label class="seg"><span class="label">Who</span><span class="fake">2 adults, 1 kid</span></label>
+        <button class="btn btn-primary btn-lg" type="submit">Find plans</button>
+      </form>
+      <div class="proof data"><span>48 plans</span><span aria-hidden="true">·</span><span>12,000 forks</span><span aria-hidden="true">·</span><span>4 continents</span><span class="status st-info">Sample</span></div>
+    </div>
+    <div class="hero-cards" aria-hidden="true">
+      <div class="card"><div class="cover"><div class="route"><span class="city">Kyoto</span><span class="stops data">FUSHIMI · GION · ARASHIYAMA</span></div></div><div class="body"><span class="data" style="color:var(--ink-3)">ASIA · 5 DAYS</span><span class="h3">Kyoto in the rain</span></div></div>
+      <div class="card"><div class="cover"><div class="route"><span class="city">Granada</span><span class="stops data">ALBAICÍN · ALHAMBRA · SACROMONTE</span></div></div><div class="body"><span class="data" style="color:var(--ink-3)">EUROPE · 4 DAYS</span><span class="h3">Granada after dark</span></div></div>
+    </div>
+  </section>
+
+  <!-- ═══ Plan grid (§5.5, §6.2) ═══ -->
+  <section class="block" aria-labelledby="grid-title">
+    <div class="section-head">
+      <div class="stack"><span class="label">Curated for right now</span><h2 id="grid-title" class="h2">Plans with a pulse</h2></div>
+      <div class="segmented" role="radiogroup" aria-label="Region">
+        <button role="radio" aria-checked="true">Everywhere</button><button role="radio" aria-checked="false">Europe</button><button role="radio" aria-checked="false">Asia</button><button role="radio" aria-checked="false">Americas</button>
+      </div>
+    </div>
+    <div class="grid-3" id="plan-grid"></div>
+  </section>
+
+  <!-- ═══ Plan detail slice (§6.3) ═══ -->
+  <section id="detail" class="block" aria-labelledby="detail-title">
+    <div class="layout-84">
+      <div class="stack">
+        <span class="data" style="color:var(--ink-3)">DISCOVER / EUROPE / GRANADA</span>
+        <h2 id="detail-title" class="h1">Granada after dark</h2>
+        <p class="data" style="color:var(--ink-2);margin:0">4 DAYS · APR 12–16 · GRANADA, SPAIN</p>
+        <div class="row"><span class="tag">Food-forward</span><span class="tag">Walkable</span><span class="tag">Spring</span></div>
+        <p class="lede">Courtyards, late tapas, an Alhambra sunrise, and the room to wander.</p>
+        <blockquote style="margin:var(--s-5) 0 0;padding-left:var(--s-4);border-left:2px solid var(--creator);font:italic 500 1.375rem/1.4 var(--font-display);color:var(--ink-1)">“Start with one booked anchor, then protect the blank space around it.”</blockquote>
+      </div>
+      <aside class="float fork stack" aria-label="Fork this plan">
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><span class="small">from</span><span class="data" style="font-size:1.25rem;color:var(--ink-1)">$624</span></div>
+        <button class="btn btn-primary btn-lg" type="button">Fork this plan</button>
+        <button class="btn btn-secondary" type="button" style="width:100%">Share</button>
+        <p class="small" style="margin:0;color:var(--ink-3)">⑂ 1.8k forks · No booking happens here.</p>
+        <div class="attr" style="padding-top:var(--s-3);border-top:1px solid var(--rule)"><span class="avatar lg">LM</span><div style="min-width:0"><strong>Lina Morales</strong><div class="small">City filmmaker · YouTube</div></div></div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ═══ Itinerary + context rail (§5.6, §5.7) ═══ -->
+  <section id="workspace" class="block" aria-labelledby="it-title">
+    <div class="section-head">
+      <div class="stack"><span class="label">Day by day</span><h2 id="it-title" class="h2">Keep the good parts flexible</h2></div>
+      <div class="segmented" role="radiogroup" aria-label="Density"><button role="radio" aria-checked="true" data-density="comfortable">Comfortable</button><button role="radio" aria-checked="false" data-density="compact">Compact</button></div>
+    </div>
+    <div class="layout-84">
+      <div id="itinerary" class="stack">
+        <article class="day" aria-labelledby="d1">
+          <header class="day-head"><span id="d1" class="label" style="color:var(--ink-1)">Day 01 · Sat Apr 12</span><span class="data" style="color:var(--ink-3)">☀ 24° · 3 stops</span></header>
+          <ol class="items">
+            <li class="item booked"><span class="dot"></span><span class="time data">15:00</span><div class="content"><h3 class="h3">Check in near Plaza Nueva</h3><p class="small">Drop bags and let the first evening stay open. The walk back is five minutes from everything.</p><div class="acts"><button class="btn btn-quiet btn-sm">♡ Save note</button><button class="btn btn-quiet btn-sm">⌖ Nearby</button></div></div><span class="status st-ok">Booked</span></li>
+            <li class="item next"><span class="dot"></span><span class="time data">19:30</span><div class="content"><h3 class="h3">Tapas route through Realejo</h3><p class="small">Three tiny bars, one viewpoint, and a late flamenco room, each a flexible stop rather than a mandate.</p><div class="acts"><button class="btn btn-quiet btn-sm">♡ Save note</button><button class="btn btn-quiet btn-sm">⌖ Nearby</button></div></div><span class="status st-creator">Creator tip</span></li>
+            <li class="item gap"><span class="dot"></span><span class="time data">·····</span><div class="content">Unscheduled time. Leave it, or add something.</div><span></span></li>
+          </ol>
+        </article>
+        <article class="day" aria-labelledby="d2">
+          <header class="day-head"><span id="d2" class="label" style="color:var(--ink-1)">Day 02 · Sun Apr 13</span><span class="data" style="color:var(--ink-3)">⛅ 26° · 2 stops</span></header>
+          <ol class="items">
+            <li class="item"><span class="dot"></span><span class="time data">08:15</span><div class="content"><h3 class="h3">Alhambra before the crowds</h3><p class="small">A timed-entry slot and a coffee stop leave enough space for the gardens to feel unhurried.</p><div class="acts"><button class="btn btn-quiet btn-sm">♡ Save note</button><button class="btn btn-quiet btn-sm">⌖ Nearby</button></div></div><span class="status st-accent">Ticketed</span></li>
+            <li class="item"><span class="dot"></span><span class="time data">18:00</span><div class="content"><h3 class="h3">Sacromonte send-off</h3><p class="small">Take the high path, browse the ceramics, and keep your transfer buffer honest.</p><div class="acts"><button class="btn btn-quiet btn-sm">♡ Save note</button><button class="btn btn-quiet btn-sm">⌖ Nearby</button></div></div><span class="status st-day">Flex</span></li>
+          </ol>
+        </article>
+      </div>
+      <aside aria-label="Destination context">
+        <div class="rail">
+          <div class="rail-head"><span class="label">☁ Local forecast</span><span class="status st-info">Sample</span></div>
+          <div style="display:flex;align-items:baseline;gap:8px"><span class="temp">24°</span><span class="small">Sunny</span></div>
+          <div class="wx data"><span>MON<br>24°</span><span>TUE<br>26°</span><span>WED<br>23°</span><span>THU<br>22°</span></div>
+          <p class="small" style="margin:0">Monday is the pick. Pack a light layer for the hillside after sunset.</p>
+        </div>
+        <div class="rail">
+          <div class="rail-head"><span class="label">✦ Top places</span><span class="status st-info">Sample</span></div>
+          <div class="place"><strong>Alhambra</strong><span class="data" style="color:var(--ink-3)">HISTORIC</span><p class="small clamp2">A hilltop palace-fortress of carved plaster, reflecting pools, and the Sierra Nevada behind it.</p></div>
+          <div class="place"><strong>Albaicín</strong><span class="data" style="color:var(--ink-3)">NEIGHBORHOOD</span><p class="small clamp2">Whitewashed lanes and tiled courtyards until the city spreads out beneath you.</p></div>
+          <div class="place"><strong>Sacromonte</strong><span class="data" style="color:var(--ink-3)">NEIGHBORHOOD</span><p class="small clamp2">Cave homes, late flamenco, and views that make you forget the climb.</p></div>
+          <button class="btn btn-quiet btn-sm" style="margin-top:8px">Show all 10</button>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ═══ Foundations (§2, §3, §5.2, §5.4) ═══ -->
+  <section class="block" aria-labelledby="found-title">
+    <div class="section-head"><div class="stack"><span class="label">Foundations</span><h2 id="found-title" class="h2">Tokens and primitives</h2></div></div>
+    <h3 class="h3" style="margin-bottom:var(--s-3)">Role colors</h3>
+    <div class="swatches" id="swatches"></div>
+    <h3 class="h3" style="margin:var(--s-6) 0 var(--s-3)">Type</h3>
+    <div>
+      <div class="type-row"><span class="label">display · Fraunces</span><span class="display" style="font-size:3rem">Good trips are shared</span></div>
+      <div class="type-row"><span class="label">h1 · Fraunces</span><span class="h1" style="font-size:2rem">Granada after dark</span></div>
+      <div class="type-row"><span class="label">h2 · Inter 700</span><span class="h2">Keep the good parts flexible</span></div>
+      <div class="type-row"><span class="label">h3 · Inter 650</span><span class="h3">Tapas route through Realejo</span></div>
+      <div class="type-row"><span class="label">body · Inter 400</span><span>Three tiny bars, one viewpoint, and a late flamenco room.</span></div>
+      <div class="type-row"><span class="label">label · mono 600</span><span class="label" style="color:var(--ink-1)">Day 01 · Sat Apr 12</span></div>
+      <div class="type-row"><span class="label">data · mono 500</span><span class="data">15:00 · $624 · 24° · ⑂ 1.8k</span></div>
+    </div>
+    <h3 class="h3" style="margin:var(--s-6) 0 var(--s-3)">Buttons and tags</h3>
+    <div class="row"><button class="btn btn-primary">Fork this plan</button><button class="btn btn-secondary">Share</button><button class="btn btn-quiet">Save note</button><button class="btn btn-danger">Remove stop</button><button class="btn btn-primary" disabled style="opacity:.4;cursor:not-allowed">Disabled</button></div>
+    <div class="row" style="margin-top:var(--s-3)"><span class="tag">Food-forward</span><span class="status st-ok">Booked</span><span class="status st-accent">Ticketed</span><span class="status st-day">Flex</span><span class="status st-creator">Creator tip</span><span class="status st-info">Sample</span><span class="status st-danger">Conflict</span></div>
+    <h3 class="h3" style="margin:var(--s-6) 0 var(--s-3)">Search, medium</h3>
+    <form class="search search-md" role="search" onsubmit="return false"><label class="seg"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="1.75" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input placeholder="City, coast, or feeling" aria-label="Destination"></label><button class="btn btn-primary" type="submit">Search</button></form>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <div class="stack"><span class="wordmark"><span>Travel<b>OS</b></span></span><p class="small" style="margin:0">Plans you can borrow, bend, and share.</p></div>
+    <div class="stack small"><a href="#">Discover</a><br><a href="#">Creators</a><br><a href="#">My trips</a></div>
+    <div class="small">Demo build. Prices, weather, and people are samples. <a href="#">Photo credits</a></div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var root=document.documentElement;
+  try{var saved=localStorage.getItem('travelos-theme');if(saved==='bright')saved='light';if(saved==='light'||saved==='dark')root.dataset.theme=saved;}catch(e){}
+  document.querySelector('[data-theme-toggle]').addEventListener('click',function(){
+    var dark=root.dataset.theme?root.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
+    root.dataset.theme=dark?'light':'dark';
+    try{localStorage.setItem('travelos-theme',root.dataset.theme);}catch(e){}
+  });
+  document.querySelectorAll('.segmented').forEach(function(g){
+    g.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;
+      g.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-checked',x===b?'true':'false')});
+      if(b.dataset.density)document.getElementById('itinerary').classList.toggle('compact',b.dataset.density==='compact');});
+  });
+  var plans=[
+    ['Granada','ALBAICÍN · ALHAMBRA · SACROMONTE','EUROPE · 4 DAYS','Granada after dark','Courtyards, late tapas, an Alhambra sunrise, and the room to wander.','LM','Lina Morales','$624','1.8k'],
+    ['Kyoto','FUSHIMI · GION · ARASHIYAMA','ASIA · 5 DAYS','Kyoto in the rain','Mossy temple paths, tiny coffee bars, and the best hours to be outside.','HK','Hana & Kenji','$918','3.2k'],
+    ['Oaxaca','CENTRO · JALATLACO · MITLA','AMERICAS · 3 DAYS','A color-filled Oaxaca weekend','Market breakfasts, studio visits, mezcal notes, and one brilliant blue hotel.','⑂','Community plan','$441','987']
+  ];
+  var grid=document.getElementById('plan-grid');
+  plans.forEach(function(p){
+    var a=document.createElement('a');a.className='card';a.href='#detail';
+    a.innerHTML='<div class="cover"><div class="route" aria-hidden="true"><span class="city">'+p[0]+'</span><span class="stops data">'+p[1]+'</span></div><span class="status">'+p[2].split(' · ')[1]+'</span><button class="save" type="button" aria-label="Save '+p[3]+'">♡</button></div>'+
+      '<div class="body"><span class="data" style="color:var(--ink-3)">'+p[2].split(' · ')[0]+' · APR 12–16</span><span class="h3 clamp2">'+p[3]+'</span><p class="small clamp2" style="margin:0">'+p[4]+'</p>'+
+      '<div class="foot"><span class="attr"><span class="avatar">'+p[5]+'</span><strong>'+p[6]+'</strong></span><span class="data" style="color:var(--ink-2);white-space:nowrap">from '+p[7]+' · ⑂ '+p[8]+'</span></div></div>';
+    a.querySelector('.save').addEventListener('click',function(e){e.preventDefault();e.stopPropagation();this.textContent=this.textContent==='♡'?'♥':'♡';});
+    grid.appendChild(a);
+  });
+  var roles=[['--bg','page'],['--surface-1','sheet'],['--surface-2','rail'],['--ink-1','ink'],['--ink-3','meta'],['--accent','action'],['--accent-ink','action text'],['--day','day marker'],['--ok','success'],['--info','info'],['--creator','creator'],['--danger','danger']];
+  var sw=document.getElementById('swatches');
+  roles.forEach(function(r){var d=document.createElement('div');d.className='swatch';d.innerHTML='<i style="background:var('+r[0]+')"></i><div><div class="data">'+r[0]+'</div><div class="small">'+r[1]+'</div></div>';sw.appendChild(d);});
+})();
+</script>
+</body>
+</html>
