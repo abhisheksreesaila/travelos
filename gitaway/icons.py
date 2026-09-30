@@ -25,6 +25,11 @@ PATHS = {
     "panes": '<path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"/>',
     "ledger": '<path d="M4 7h16M4 12h10M4 17h7M18 14v6M15 17h6"/>',
     "arrow-right": '<path d="M5 12h14M13 6l6 6-6 6"/>',
+    "lock": '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+    "plus": '<path d="M12 5v14M5 12h14"/>',
+    "chev-left": '<path d="M15 18l-6-6 6-6"/>',
+    "chev-right": '<path d="M9 18l6-6-6-6"/>',
+    "note": '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
 }
 
 

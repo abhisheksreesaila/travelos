@@ -210,11 +210,11 @@ def last_deleted(session, demo=""):
 
 # ---- validation ----------------------------------------------------------------------------------------------------
 
-def _snap(m):
+def snap(m):
     return round(m / SNAP) * SNAP
 
 
-def _minutes(value, what):
+def parse_time(value, what):
     if isinstance(value, int):
         return value
     m = _TIME.match((value or "").strip())
@@ -239,7 +239,7 @@ def _clean(session, demo, *, day, start, end, title, kind):
         raise CalendarError("Pick a day.")
     if not 0 <= day < n:
         raise CalendarError("Pick a day inside your trip.")
-    s, e = _snap(_minutes(start, "start")), _snap(_minutes(end, "end"))
+    s, e = snap(parse_time(start, "start")), snap(parse_time(end, "end"))
     lo = grid_start(blocks)
     if not (lo <= s and e <= GRID_END):
         raise CalendarError(f"Plan between {fmt_time(lo)} and {fmt_time(GRID_END)}.")
