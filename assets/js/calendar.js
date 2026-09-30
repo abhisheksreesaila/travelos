@@ -3,7 +3,8 @@
 //  - drives the day window (prev/next, strip chips, the "Days a-b of n" label),
 //  - shows the "+ Add something fun" ghost on an empty hour,
 //  - moves and resizes activities by pointer (15-minute snap) and by keyboard (Enter edits, arrows move, Shift+arrows resize),
-//  - opens the notes drawer on phones and keeps focus inside the dialog.
+//  - opens the notes drawer on phones and keeps focus inside the dialog,
+//  - copies the fake invite link, and (F-020) a few seconds after load asks the server to play Mom's scripted add.
 // Data only ever reaches the page as text or attributes from the server's HTML; nothing here builds markup from data.
 (() => {
   "use strict";
@@ -43,7 +44,7 @@
     const keep = {
       x: scroller ? scroller.scrollLeft : 0, y: scroller ? scroller.scrollTop : 0, feed: feed ? feed.scrollTop : 0,
       id: document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.id : "",
-      drawer: !!$("#cal-notes.open", cur),
+      drawer: !!$("#cal-notes.open", cur), sel: focusKey(document.activeElement),
     };
     try {
       const res = await fetch(url, { credentials: "same-origin", ...options });
@@ -53,14 +54,33 @@
       const fresh = document.importNode(next, true);
       cur.replaceWith(fresh);
       const path = new URL(res.url, location.href);
-      if (res.ok && path.pathname === "/calendar") history.replaceState(null, "", path.pathname + path.search);
       const p = path.pathname === "/calendar" ? path.searchParams : new URLSearchParams();
-      keep.focus = p.get("undo") ? "undo" : p.get("new") ? p.get("new") : closing ? opener : "";
+      const isLive = !!p.get("live");
+      if (res.ok && path.pathname === "/calendar") {
+        // The "just now" ring belongs to the moment: a reload must show a normal item, so the URL drops new and live.
+        const keepQuery = new URLSearchParams(path.search);
+        if (isLive) { keepQuery.delete("live"); keepQuery.delete("new"); }
+        const qs = keepQuery.toString();
+        history.replaceState(null, "", path.pathname + (qs ? `?${qs}` : ""));
+      }
+      // A friend's live add never steals focus from what the traveler is doing.
+      keep.focus = isLive ? "" : p.get("undo") ? "undo" : p.get("new") ? p.get("new") : closing ? opener : "";
       setup(fresh, keep);
     } catch (err) {
       // A network error: never navigate to the POST url. Reload the calendar page we were on instead.
       location.href = cur.dataset.base || "/calendar";
     }
+  }
+  // A stable selector for the focused control, so a swap (a friend's live add, say) can hand focus back to it.
+  function focusKey(el) {
+    if (!el || el === document.body || !el.closest || !el.closest("#cal-app") || el.closest(".cal-act")) return "";
+    const d = el.dataset || {};
+    if (el.id) return `#${CSS.escape(el.id)}`;
+    if (d.chip != null) return `[data-chip="${d.chip}"]`;
+    if (d.dir != null) return `[data-dir="${d.dir}"]`;
+    if (el.tagName === "A" && el.getAttribute("href")) return `a[href="${CSS.escape(el.getAttribute("href"))}"]`;
+    if (el.name) return `${el.tagName.toLowerCase()}[name="${CSS.escape(el.name)}"]`;
+    return "";
   }
   const post = (url, data) => swap(url, { method: "POST", body: new URLSearchParams(data) });
 
@@ -71,14 +91,17 @@
     if (a.id === "cal-ghost" && a.getAttribute("href") === "#") { e.preventDefault(); return; }
     e.preventDefault();
     const block = a.closest(".cal-act");
-    if (!a.hasAttribute("data-close")) opener = block ? block.dataset.id : "";
+    if (!a.hasAttribute("data-close")) opener = block ? block.dataset.id : a.dataset.id || "";
     swap(a.href, undefined, a.hasAttribute("data-close"));
   });
   document.addEventListener("submit", (e) => {
     const f = e.target.closest("form[data-soft]");
     if (!f || e.defaultPrevented) return;
     e.preventDefault();
-    swap(f.action, { method: "POST", body: new URLSearchParams(new FormData(f)) });
+    // The submitter carries a quick-pick chip's name and value. Older browsers ignore the second argument: add it by hand.
+    const fd = new FormData(f, e.submitter), who = e.submitter;
+    if (who && who.name && !fd.getAll(who.name).includes(who.value)) fd.append(who.name, who.value);
+    swap(f.action, { method: "POST", body: new URLSearchParams(fd) }, !!f.closest(".cal-modal"));
   });
 
   // ---- setup after every render ------------------------------------------------------------------------------------
@@ -105,10 +128,69 @@
     } else if (keep && (keep.focus || keep.id)) {
       const back = $(`[data-id="${CSS.escape(keep.focus || keep.id)}"]`, root);
       if (back) back.focus({ preventScroll: !keep.focus });
+    } else if (keep && keep.sel) {
+      const back = $(keep.sel, root);
+      if (back) back.focus({ preventScroll: true });
     }
+    if (feed && $(".cal-note-live", feed)) feed.scrollTop = feed.scrollHeight;
+    armLive(root);
+    const liveToast = $(".cal-toast-live", root);
+    if (liveToast) setTimeout(() => { if (liveToast.isConnected) liveToast.remove(); }, 9000);
     const toggle = $("#cal-notes-toggle", root);
     if (toggle) toggle.setAttribute("aria-expanded", $("#cal-notes", root).classList.contains("open") ? "true" : "false");
   }
+
+  // ---- scripted liveness (F-020): with Mom invited, the server adds her activity once, a few seconds after load -------
+  // The page says data-live="1" only while it is still pending, so a reload after it happened asks for nothing.
+  let liveTimer = 0;
+  function armLive(root) {
+    clearTimeout(liveTimer);
+    if (root.dataset.live !== "1") return;
+    liveTimer = setTimeout(function fire() {
+      if (!app() || app().dataset.live !== "1") return;
+      // Queued behind any swap in flight, then checked again at the moment it would run: a dialog opened, a drag started
+      // or some typing begun in the meantime all make it wait, because the swap would drop them.
+      queue = queue.then(async () => {
+        const r = app(), a = document.activeElement;
+        if (!r || r.dataset.live !== "1") return;
+        if ($(".cal-modal", r) || drag || (a && r.contains(a) && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName))) { liveTimer = setTimeout(fire, 2000); return; }
+        const data = { view: r.dataset.view };
+        if (r.dataset.demo) data.demo = r.dataset.demo;
+        await doSwap("/calendar/live", { method: "POST", body: new URLSearchParams(data) });
+      }).catch(() => {});
+    }, 4000);
+  }
+  // "Show me" on the live toast jumps the day window to the day she added to (on a phone that day may be off screen).
+  document.addEventListener("click", (e) => {
+    const j = e.target.closest("[data-jump]");
+    const scroller = $("#cal-scroll");
+    if (!j || !scroller) return;
+    e.preventDefault();
+    jump(scroller, +j.dataset.jump);
+  });
+
+  // ---- copy the fake invite link ---------------------------------------------------------------------------------
+  function flash(text) {
+    $$(".cal-flash").forEach((t) => t.remove());
+    const t = document.createElement("div");
+    t.className = "cal-toast cal-toast-live cal-flash";
+    t.setAttribute("role", "status");
+    const s = document.createElement("span");
+    s.textContent = text;
+    t.append(s);
+    document.body.append(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+  document.addEventListener("click", async (e) => {
+    const b = e.target.closest("[data-copy]");
+    if (!b) return;
+    let ok = false;
+    try { await navigator.clipboard.writeText(b.dataset.copy); ok = true; } catch (err) {
+      const f = $(".cal-linkfield");
+      if (f) { f.select(); try { ok = document.execCommand("copy"); } catch (err2) { ok = false; } }
+    }
+    flash(ok ? "Invite link copied" : "Could not copy. Select the link and copy it by hand.");
+  });
 
   // ---- the day window ----------------------------------------------------------------------------------------------
   const cols = (scroller) => $$(".cal-day", scroller);
