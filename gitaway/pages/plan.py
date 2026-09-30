@@ -1,4 +1,4 @@
-"""The booking workspace at /plan (F-015). Context panes (weather, map, news) arrive with F-016.
+"""The booking workspace at /plan (F-015), with the context panes (weather, map, news, community) from F-016.
 
 The picked flight, stay and car live in the URL (?f=&h=&c=). Every price and total is rendered from
 gitaway.catalog; the JS only swaps between quotes the server embedded, it never does arithmetic.
@@ -8,9 +8,9 @@ import json
 from itertools import product
 from urllib.parse import quote as urlquote
 
-from fasthtml.common import A, Button, Div, Figcaption, Figure, Img, Kbd, Link, Main, NotStr, Script, Section, Span, Title
+from fasthtml.common import A, Button, Div, Figcaption, Figure, Img, Kbd, Link, Main, NotStr, Script, Section, Span, Svg, Title
 
-from gitaway import catalog
+from gitaway import catalog, context, itineraries
 from gitaway.icons import icon
 from gitaway.layout import brand, styles
 
@@ -56,7 +56,8 @@ def embedded_data():
             "url": plan_path(f.id, h.id, c.id),
         }
     offers = {o.id: {"name": o.name, "price": catalog.money(o.price_cents)} for k in LANES for o in catalog.offers(k)}
-    return {"quotes": quotes, "offers": offers}
+    maps = {o.id: context.map_for_stay(o) for o in catalog.offers("stay")}
+    return {"quotes": quotes, "offers": offers, "map": maps}
 
 
 def script_json(obj) -> str:
@@ -108,7 +109,7 @@ def car_card(o, picked):
     )
 
 
-def pane(key, num, title, meta, cards, tint, *extra):
+def pane(key, num, title, meta, cards, tint, *extra, cls_extra=""):
     return Section(
         Div(
             Kbd(str(num), cls=f"ws-key {tint}", aria_hidden="true"),
@@ -120,7 +121,7 @@ def pane(key, num, title, meta, cards, tint, *extra):
         ),
         Div(*cards, cls="ws-cards"),
         *extra,
-        cls="ws-pane", data_pane=key, aria_label=title,
+        cls=f"ws-pane {cls_extra}".strip(), data_pane=key, aria_label=title,
     )
 
 
@@ -157,17 +158,81 @@ def top_bar(trip):
         brand(),
         A(Span(f"{trip.origin} → {trip.destination_name}", cls="ws-bold"), Span(f"{fmt(trip.depart)} – {fmt(trip.return_)}"),
           Span(trip.summary), Span("Change", cls="ws-change"), href="/", cls="ws-pill"),
-        Span("Press 1–3 to focus a pane", cls="ws-hint"),
+        Span("Press 1–7 to focus a pane", cls="ws-hint"),
         Span("AR", cls="ws-avatar", aria_hidden="true"),
         cls="ws-bar",
     )
 
 
-def context_placeholder():
-    return Section(
-        Span("Weather, a map, local news and trips others loved will sit here soon.", cls="ws-quiet"),
-        cls="ws-pane ws-context", data_pane="context", aria_label="More context",
+def _pct(v, total):
+    return f"{v / total * 100:.2f}%"
+
+
+def weather_pane():
+    days = [
+        Div(Span(w.day, cls="ws-wday"), icon(w.icon, 22, 2), Span(f"{w.temp_f}°", cls="ws-temp"), Span(w.sky, cls="ws-sky"),
+            cls=f"ws-wcell fill-{w.fill}-tint")
+        for w in context.WEATHER
+    ]
+    return pane("weather", 4, "Weather", "Los Angeles · °F", [Div(*days, cls="ws-weather"), Span(context.SAMPLE_NOTE, cls="ws-sample")], "fill-sun-tint")
+
+
+def _map_label(pt, cls, extra=None):
+    w, h = context.MAP_SIZE
+    return Span(pt.label, cls=f"ws-mark {cls}", style=f"left:{_pct(pt.x, w)};top:{_pct(pt.y, h)}", **(extra or {}))
+
+
+def map_pane(stay):
+    w, h = context.MAP_SIZE
+    m = context.map_for_stay(stay)
+    coast = "M0 0 H96 C110 40 80 70 104 100 S130 140 120 150 H0 Z"
+    road = "M96 0 C110 40 80 70 104 100 S130 140 120 150"
+    art = Svg(
+        NotStr(f'<path d="{coast}" class="ws-sea"/><path d="{road}" class="ws-shore"/>'
+               '<path d="M150 20 C200 50 240 40 300 70" class="ws-road"/><path d="M130 120 C190 110 230 125 310 110" class="ws-road"/>'
+               f'<line id="ws-beach-line" class="ws-beach-line" x1="{m["x"]}" y1="{m["y"]}" x2="{m["bx"]}" y2="{m["by"]}"/>'),
+        cls="ws-map-art", viewBox=f"0 0 {w} {h}", preserveAspectRatio="none", aria_hidden="true",
     )
+    beach = Span(cls="ws-beach-dot", id="ws-beach-dot", style=f"left:{_pct(m['bx'], w)};top:{_pct(m['by'], h)}", aria_hidden="true")
+    canvas = Div(
+        art, beach,
+        _map_label(context.LAX, "ws-mark-airport"), _map_label(context.BUR, "ws-mark-airport"),
+        _map_label(context.LANDMARK, "ws-mark-landmark"),
+        Span(m["label"], cls="ws-mark ws-mark-pin", id="ws-map-pin", style=f"left:{_pct(m['x'], w)};top:{_pct(m['y'], h)}",
+             data_map_pin=stay.id),
+        cls="ws-map",
+    )
+    return pane("map", 5, "Map", "Schematic, not to scale", [
+        canvas, Span(m["caption"], cls="ws-map-caption", id="ws-map-caption", aria_live="polite"),
+        Span(f"{context.SAMPLE_NOTE}: a schematic sketch, not a real map", cls="ws-sample"),
+    ], "fill-mint-tint")
+
+
+def news_pane():
+    events = [
+        Div(Span(e.when, cls=f"ws-when fill-{e.fill}-tint"), Span(Span(e.title, cls="ws-item-title"), Span(e.sub, cls="ws-item-sub"), cls="ws-item"),
+            cls="ws-event")
+        for e in context.EVENTS
+    ]
+    news = [Div(Span(n.title, cls="ws-item-title"), Span(n.sub, cls="ws-item-sub"), cls="ws-news") for n in context.NEWS]
+    return pane("news", 6, "Happening & news", "", [
+        *events, Span("Local news", cls="ws-subhead"), *news, Span(context.SAMPLE_NOTE, cls="ws-sample"),
+    ], "fill-bubble-tint")
+
+
+def community_pane():
+    rows = []
+    for t in itineraries.ITINERARIES.values():
+        kid = any(tag.label == "Kid friendly" for tag in t.tags)
+        facts = " · ".join([f"{len(t.days)} days", *(["kid friendly"] if kid else []), f"{t.forks} forks"])
+        rows.append(Div(
+            Span(Span(t.title, cls="ws-item-title"), Span(facts, cls="ws-item-sub"), cls="ws-item"),
+            A("Fork", href=f"/signin?next=/trips/{t.slug}&intent=fork", cls="ws-fork", aria_label=f"Fork {t.title}"),
+            cls="ws-trip",
+        ))
+    return pane("community", 7, "Trips others loved", "", [
+        *rows, Span("Your forked trips will be listed here soon.", cls="ws-sample"),
+    ], "fill-sun", cls_extra="ws-dark")
 
 
 def workspace(f, h, c):
@@ -181,7 +246,7 @@ def workspace(f, h, c):
             pane("flights", 1, "Flights", f"round trip · {len(catalog.offers('flight'))}", [flight_card(o, f) for o in catalog.offers("flight")], "fill-sun-tint"),
             pane("stays", 2, "Stays", f"{trip.nights} nights", [stay_card(o, h) for o in catalog.offers("stay")], "fill-mint-tint"),
             pane("cars", 3, "Getting around", "", [car_card(o, c) for o in catalog.offers("car")], "fill-sky-tint", tip),
-            context_placeholder(),
+            Div(weather_pane(), map_pane(catalog.offer(h)), news_pane(), community_pane(), cls="ws-context"),
             cls="ws-grid", id="ws-grid", data_focus="flights",
         ),
         cls="ws", id="main", data_theme="sunset",

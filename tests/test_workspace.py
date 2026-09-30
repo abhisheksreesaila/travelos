@@ -87,8 +87,86 @@ def test_placeholder_is_gone_and_brand_is_gitaway(client):
     assert "workspace.css" not in client.get("/").text
 
 
-def test_context_column_is_one_quiet_placeholder(client):
-    assert client.get("/plan").text.count('data-pane="context"') == 1
+def _pane(h, key):
+    m = re.search(r'<section[^>]*data-pane="%s".*?</section>' % key, h, re.S)
+    assert m, key
+    return m.group(0)
+
+
+def test_context_column_has_four_numbered_panes(client):
+    h = client.get("/plan").text
+    assert 'data-pane="context"' not in h
+    for key, num, title in [("weather", 4, "Weather"), ("map", 5, "Map"), ("news", 6, "Happening &amp; news"),
+                            ("community", 7, "Trips others loved")]:
+        pane = _pane(h, key)
+        assert re.search(rf'<kbd[^>]*class="ws-key[^>]*>{num}</kbd>', pane)
+        assert f'data-focus="{key}"' in pane and f'data-expand="{key}"' in pane and title in pane
+        assert f'aria-keyshortcuts="{num}"' in pane
+
+
+def test_hint_and_key_map_cover_seven_panes(client):
+    h = client.get("/plan").text
+    assert "Press 1–7 to focus a pane" in h and "1–3 to focus" not in h
+    js = client.get("/assets/js/workspace.js").text
+    for name in ("weather", "map", "news", "community"):
+        assert name in js
+
+
+def test_weather_shows_the_five_trip_days_in_fahrenheit(client):
+    pane = _pane(client.get("/plan").text, "weather")
+    assert re.findall(r'class="ws-temp"[^>]*>(\d+)°', pane) == ["75", "73", "70", "72", "77"]
+    assert "Fri 16" in pane and "Tue 20" in pane and "Sample" in pane
+
+
+def test_news_pane_lists_sample_events_and_local_news(client):
+    pane = _pane(client.get("/plan").text, "news")
+    assert 2 <= pane.count('class="ws-event"') <= 3
+    assert 1 <= pane.count('class="ws-news"') <= 2
+    assert "Sample" in pane
+
+
+def test_community_pane_forks_the_sample_itinerary(client):
+    pane = _pane(client.get("/plan").text, "community")
+    assert "Sun, tacos &amp; tide pools" in pane and "312 forks" in pane
+    assert 'href="/signin?next=/trips/sun-tacos-and-tide-pools&amp;intent=fork"' in pane
+    assert "Fork" in pane
+
+
+def test_map_shows_area_pin_airports_and_landmark(client):
+    m = _pane(client.get("/plan").text, "map")
+    assert "data-map-pin" in m and "Santa Monica" in m
+    for label in ("LAX", "BUR", "Griffith Park"):
+        assert label in m
+    assert "3 min walk to the beach" in m and "The Tidewater" in m
+    assert "schematic" in m.lower()
+
+
+def test_changing_the_stay_moves_the_map_pin(client):
+    m = _pane(client.get("/plan?h=h2").text, "map")
+    assert "data-map-pin" in m and "Venice" in m and "Casa Palmera" in m
+    assert "8 min walk to the beach" in m and "Tidewater" not in m
+
+
+def test_map_data_for_every_stay_is_embedded(client):
+    h = client.get("/plan").text
+    raw = re.search(r'<script[^>]*id="ws-data"[^>]*>(.*?)</script>', h, re.S).group(1)
+    maps = json.loads(raw)["map"]
+    assert set(maps) == {"h1", "h2", "h3"}
+    for m in maps.values():
+        assert {"x", "y", "bx", "by", "label", "caption"} <= set(m)
+    assert "Casa Palmera" in maps["h2"]["caption"] and maps["h2"]["label"] == "Venice"
+
+
+def test_context_colours_are_tokens():
+    css = open("assets/css/workspace.css").read()
+    ctx = css[css.index("/* Context panes */"):css.index("/* Tablet")]
+    assert not re.search(r"#[0-9A-Fa-f]{3,8}\b", ctx)
+
+
+def test_tablet_shows_context_below_lanes_instead_of_hiding_it():
+    css = open("assets/css/workspace.css").read()
+    tablet = css[css.index("/* Tablet"):css.index("/* Phone")]
+    assert ".ws-context { display: none" not in tablet
 
 
 def test_every_pick_has_offer_data_and_quote_keys_are_flight_stay_car_order(client):
