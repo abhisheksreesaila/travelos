@@ -65,7 +65,7 @@
 .ws-price { margin-left: auto; font-weight: 800; font-size: 17px; font-variant-numeric: tabular-nums; }
 .ws-times { font-family: var(--font-display); font-weight: 800; font-size: 24px; font-variant-numeric: tabular-nums; }
 .ws-detail { overflow-wrap: anywhere; font-size: 14px; font-weight: 700; color: var(--ink-2); }
-.ws-badge { display: inline-flex; align-items: center; height: 24px; padding: 0 9px; border-radius: var(--r-pill); font-size: 12px; font-weight: 800; align-self: flex-start; }
+.ws-badge { white-space: nowrap; display: inline-flex; align-items: center; height: 24px; padding: 0 9px; border-radius: var(--r-pill); font-size: 12px; font-weight: 800; align-self: flex-start; }
 .ws-airport { margin-top: 2px; }
 .ws-price-big { font-family: var(--font-display); font-weight: 800; font-size: 22px; font-variant-numeric: tabular-nums; }
 .ws-offer-car { gap: 4px; }
@@ -139,6 +139,16 @@
   .ws-grid[data-expanded] { grid-template-columns: 1fr; }
   .ws-context { overflow: visible; padding: 0; margin: 0; grid-column: 1 / -1; grid-template-columns: 1fr 1fr; align-items: start; }
   .ws-tip { margin-top: 0; }
+  .ws-ledger { flex-wrap: wrap; padding: 14px 16px 14px 24px; gap: 12px 18px; }
+  .ws-slots { flex: 1 1 100%; }
+  .ws-slot-name { white-space: normal; overflow: visible; text-overflow: clip; }
+  .ws-total-box { flex: 1; align-items: flex-start; padding: 0; }
+  .ws-tags { flex-wrap: wrap; overflow: visible; }
+  .ws-row { row-gap: 4px; }
+  .ws-row .ws-name { order: 1; flex: 1 1 8ch; min-width: 0; }
+  .ws-row::after { content: ""; order: 3; flex-basis: 100%; height: 0; }
+  .ws-row .ws-price { order: 2; }
+  .ws-row .ws-badge { order: 4; }
   .ws-slot-label, .ws-op { display: none; }
   .ws-hint { display: none; }
   .ws-pill { margin-left: auto; }
