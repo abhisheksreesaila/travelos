@@ -1,7 +1,10 @@
 """F-025: Flights and Stays expand into a list sidebar plus a detail panel (server-rendered, JS only toggles)."""
 import re
+from pathlib import Path
 
 from gitaway import catalog
+
+ROOT = Path(__file__).resolve().parent.parent
 
 
 def _article(html, offer_id):
@@ -64,9 +67,28 @@ def test_choose_bar_labels_follow_the_pick(client):
 
 
 def test_list_cards_mark_your_pick(client):
-    h = client.get("/plan").text
-    assert h.count("ws-pickpill") >= 2  # one pill per expandable lane's card set
-    assert 'aria-current' not in h  # nothing is open while the workspace is tiled
+    h = client.get("/plan?h=h2").text
+    css = (ROOT / "assets/css/workspace.css").read_text()
+    # Every card carries the pill; CSS shows it only on the aria-pressed card.
+    assert '.ws-offer[aria-pressed="true"] .ws-pickpill { display: inline-flex' in css
+    assert ".ws-pickpill { display: none" in css
+    pressed = {}
+    for m in re.finditer(r'<button([^>]*data-pick="(\w+)"[^>]*)>(.*?)</button>', h, re.S):
+        attrs, oid, inner = m.groups()
+        kind = catalog.offer(oid).kind
+        if kind == "car":
+            continue
+        assert "ws-pickpill" in inner, oid
+        if 'aria-pressed="true"' in attrs:
+            pressed.setdefault(kind, []).append(oid)
+    assert pressed == {"flight": ["f1"], "stay": ["h2"]}
+    assert "aria-current" not in h  # nothing is open while the workspace is tiled
+
+
+def test_expanding_after_a_pick_opens_that_pick_server_side(client):
+    h = client.get("/plan?h=h2&x=stays").text
+    assert "hidden" not in re.search(r'<article[^>]*data-detail="h2"[^>]*>', h).group(0)
+    assert "hidden" in re.search(r'<article[^>]*data-detail="h1"[^>]*>', h).group(0)
 
 
 def test_tiled_by_default_keeps_old_urls_working(client):
@@ -108,7 +130,7 @@ def test_expanded_panes_show_the_collapse_hint_and_button(client):
 
 def test_js_and_css_contract(client):
     js = client.get("/assets/js/workspace.js").text
-    css = open("assets/css/workspace.css").read()
+    css = (ROOT / "assets/css/workspace.css").open().read()
     assert "prefers-reduced-motion" in js and "Escape" in js and "data-choose" in js.replace("dataset.choose", "data-choose")
     reduced = css[css.rindex("prefers-reduced-motion"):]
     assert "ws-detail-panel" in reduced and "animation: none" in reduced  # reduced motion swaps instantly

@@ -39,7 +39,7 @@
     if (SPLIT[name]) {
       url += '&x=' + name;
       var pane = paneEl(name);
-      if (pane.dataset.screen === 'detail' || viewing[name] !== pick[SPLIT[name]]) url += '&v=' + viewing[name];
+      if (pane.dataset.screen === 'detail') url += '&v=' + viewing[name];
     }
     history.replaceState(null, '', url);
   }
@@ -75,6 +75,8 @@
 
   function selectPick(lane, id) {
     pick[lane] = id;
+    // A pick made while the lane is tiled is what the split view opens on next.
+    Object.keys(SPLIT).forEach(function (n) { if (SPLIT[n] === lane && grid.dataset.expanded !== n) viewing[n] = id; });
     document.querySelectorAll('.ws-offer[data-lane="' + lane + '"]').forEach(function (o) {
       o.setAttribute('aria-pressed', o.dataset.pick === id ? 'true' : 'false');
     });
@@ -197,6 +199,7 @@
     var was = grid.dataset.expanded;
     if (!was) return;
     setExpanded('');
+    if (SPLIT[was]) viewing[was] = pick[SPLIT[was]];
     syncUrl();
     var btn = document.querySelector('.ws-expand[data-expand="' + was + '"]');
     if (btn) btn.focus();
