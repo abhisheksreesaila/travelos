@@ -1,0 +1,13 @@
+[
+  {"goto":"http://localhost:5002/prototype#/creator"},
+  {"fill":["#creator-source","https://example.com/synthetic-itinerary"]},
+  {"click":"#source-form button[type='submit']"},
+  {"fill":["#public-form [name='detail-0']","Public stop details <em>plain text</em> & chairs"]},
+  {"click":"#public-form button[type='submit']"},
+  {"expect_text":"Exact public preview"},
+  {"click":"dialog #summary-day-1 > summary"},
+  {"expect_text":"Public stop details <em>plain text</em> & chairs"},
+  {"click":"#publish-contribution"},
+  {"click":"#public-itinerary #summary-day-1 > summary"},
+  {"expect_text":"Public stop details <em>plain text</em> & chairs"}
+]

@@ -7,6 +7,15 @@ from test_demo import app
 
 
 class ConnectedEntryTests(unittest.TestCase):
+    def test_appearance_prepaint_is_isolated_and_precedes_stylesheet(self):
+        with TestClient(app) as client, patch.dict(os.environ, {"TRAVELOS_PROTOTYPE": "1"}):
+            page = client.get('/prototype').text
+            # F-010 explicitly changes only the missing-preference default to Compass.
+            self.assertIn('data-appearance="compass"', page)
+            self.assertIn("['compass','fieldwork','snap'].includes(p)?p:'compass'", page)
+            self.assertLess(page.index('travelos.connected.appearance.v1'), page.index('rel="stylesheet"'))
+            self.assertNotIn('travelos.connected.appearance.v1', client.get('/').text)
+
     def test_opt_in_entry_loads_only_connected_assets(self):
         with TestClient(app) as client:
             with patch.dict(os.environ, {"TRAVELOS_PROTOTYPE": "0"}):

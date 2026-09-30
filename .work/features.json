@@ -1,0 +1,355 @@
+{
+  "project": "TravelOS",
+  "features": [
+    {
+      "id": "F-001",
+      "title": "Consolidated specification and initial visual/navigation approval package",
+      "status": "review",
+      "agent": "designer",
+      "notes": "Explore mode; recommend A / Sunlit atlas. Await explicit style adoption and frontend approval; no Developer started. Self-contained artifact: .lavish/travelos-approval/travelos-review.html. Requested session-folder copy not written; retained in allowed mockup directory. Validation evidence: .lavish/travelos-approval/validation.json. Artifact relocation (2026-09-26): historical .lavish/ and .reviews/ paths now live under /home/abhisheksreesaila/.copilot/session-state/90ccc776-41f7-45ac-b19d-5493d8f4bb64/files/travelos-review-archive/ with identical relative layout; SHA-256 verified. Session-folder archive now exists; visual adoption status unchanged.",
+      "checks": [
+        {
+          "text": "Read CONTEXT.md and existing design/prototype sources; consolidate settled boundaries",
+          "done": true
+        },
+        {
+          "text": "Show two meaningful visual directions and recommend one without adopting it",
+          "done": true
+        },
+        {
+          "text": "Render search, research/calendar, invitation roles, payer states, publication/version/fork and creator review",
+          "done": true
+        },
+        {
+          "text": "State mock gestures, source uncertainty, public privacy boundary and explicit backend deferrals",
+          "done": true
+        },
+        {
+          "text": "Validate local links, 24 states at four widths, interaction honesty and no external asset requests",
+          "done": true
+        },
+        {
+          "text": "Save requested copy in session files directory",
+          "done": false
+        },
+        {
+          "text": "Obtain explicit direction/adoption approval before Developer builds",
+          "done": false
+        }
+      ],
+      "updated": "2026-09-26"
+    },
+    {
+      "id": "F-002",
+      "title": "Playful Search and shared Calendar visual revision",
+      "status": "review",
+      "agent": "designer",
+      "notes": "Explore only: A / Snap recommended; B / Soft changes only radius/elevation. New local Lavish session 83d0fc4b4f48f6d2. Recovered all 11 stored annotations from original session chat; exact text/selectors in .lavish/travelos-playful-samples/recovered-feedback.json. No external links recovered. Original 24-state artifact preserved. No Developer started or app/house edits. Final poll delivered positive feedback: i love it on form#search-form and I love the theme. User ended the new session; not reopened. Explicit A/B and adoption scope still unselected. Targeted Reviewer fixes applied to authored HTML; full validator PASS (20 viewport, 132 interaction, 12 navigation), targeted PASS (10 airport, 6 ARIA). Evidence: .lavish/travelos-playful-samples/targeted-fix-results.md. Ended session not reopened; no application or token changes. Artifact relocation (2026-09-26): historical .lavish/ and .reviews/ paths now live under /home/abhisheksreesaila/.copilot/session-state/90ccc776-41f7-45ac-b19d-5493d8f4bb64/files/travelos-review-archive/ with identical relative layout; SHA-256 verified. Session-folder archive now exists; visual adoption status unchanged. Current connected-frontend request explicitly selects Snap A and authorizes same-theme propagation across pages. This does not approve the implemented frontend; project system bootstrap record still needs confirmation. New handoff: /home/abhisheksreesaila/.copilot/session-state/90ccc776-41f7-45ac-b19d-5493d8f4bb64/files/.lavish/travelos-connected/HANDOFF.md",
+      "checks": [
+        {
+          "text": "Recover available original-session feedback without reopening it or inspecting unrelated data",
+          "done": true
+        },
+        {
+          "text": "Render only Search and shared Calendar in at most two controlled treatments",
+          "done": true
+        },
+        {
+          "text": "Demonstrate local search, context drawers, flight/stay preferences, calendar anchors, optional recommendation and group notes honestly",
+          "done": true
+        },
+        {
+          "text": "Validate both treatments: desktop/mobile, local links, focus, reduced motion, readable contrast and runtime errors",
+          "done": true
+        },
+        {
+          "text": "Open new artifact in Lavish and invoke feedback poll",
+          "done": true
+        },
+        {
+          "text": "Obtain explicit visual adoption decision before propagation or implementation",
+          "done": true
+        },
+        {
+          "text": "Correct Reviewer airport character roundtrip and explicit treatment aria-current; rerun full and targeted validators",
+          "done": true
+        }
+      ],
+      "updated": "2026-09-26"
+    },
+    {
+      "id": "F-003",
+      "title": "Connected TravelOS frontend design and navigation handoff",
+      "status": "review",
+      "agent": "designer",
+      "updated": "2026-09-26",
+      "notes": "House continuity workflow; current user-selected Snap A reference contract. No new visual exploration or application edits. No project DESIGN-SYSTEM.md exists; project-only bootstrap confirmation requested in rendered handoff, shared default unchanged. Delivered interaction map, exact archived theme tokens, state/role/payment/public-version/fork/creator boundaries, implementation seams and 17 required frontend acceptance checks. Artifact-only validation PASS at 1440 light, 390 light and 1440 dark OS; zero document overflow, broken anchors, duplicate IDs, SVG text overflow, runtime errors or external requests. These are not application test passes. New Lavish session opened and polled; no feedback received at recording time. Frontend approval remains pending; backend work not started. All new artifacts/profile/screenshots are session-only: /home/abhisheksreesaila/.copilot/session-state/90ccc776-41f7-45ac-b19d-5493d8f4bb64/files/.lavish/travelos-connected",
+      "checks": [
+        {
+          "text": "Inspect archived Snap CSS/HTML/precise feedback and all 24 behavior-state mappings",
+          "done": true
+        },
+        {
+          "text": "Specify exact selected visual contract and connected shell/drawer interaction map",
+          "done": true
+        },
+        {
+          "text": "Specify retained local state, airport/hotel search, arrangement calendar and reset",
+          "done": true
+        },
+        {
+          "text": "Specify simulated roles/single payer, private/public boundary, immutable versions and independent whole-version fork",
+          "done": true
+        },
+        {
+          "text": "Specify synthetic creator review/publish and practical frontend seams without application edits",
+          "done": true
+        },
+        {
+          "text": "Render session-only handoff and validate artifact, open and poll new Lavish session",
+          "done": true
+        },
+        {
+          "text": "Confirm project-only design-system bootstrap from already selected Snap contract",
+          "done": false
+        },
+        {
+          "text": "Obtain explicit implemented FRONTEND approval before backend work",
+          "done": false
+        }
+      ]
+    },
+    {
+      "id": "F-004",
+      "title": "Connected Snap frontend prototype",
+      "status": "review",
+      "agent": "developer",
+      "notes": "Targeted Reviewer re-gate PASS on BOTH standards and spec fidelity: B1 and W1-W4 resolved; no remaining actionable findings in the remediation diff atop 7611e44. Independently rerun 16 Node/12 unittest and 27 targeted CDP groups (213 route/drawer scenarios) passed at 1440px, 390px and 720px/scale2. Verified >=44px targets and keyboard reflow; scale2 is 200%-equivalent, not browser-menu zoom. Original browser replay reports inspected. Session-only walkthrough files/.reviews/F-004-connected-snap-regate.html and fresh evidence files/.lavish/travelos-connected/regate/. No application edits, commits or review of unrelated dirty state. Accepted frontend limitations unchanged. Remains review pending HUMAN visual approval; not done.",
+      "checks": [
+        {
+          "text": "Fixture search and validation",
+          "done": true
+        },
+        {
+          "text": "Private shortlist, calendar and retention",
+          "done": true
+        },
+        {
+          "text": "Local roles and single-payer simulation",
+          "done": true
+        },
+        {
+          "text": "Allowlisted immutable publication and independent fork",
+          "done": true
+        },
+        {
+          "text": "Synthetic creator review and publish",
+          "done": true
+        },
+        {
+          "text": "Connected responsive browser walkthrough and isolation",
+          "done": true
+        }
+      ]
+    },
+    {
+      "id": "F-005",
+      "title": "Fieldwork readability and presentation-theme design",
+      "status": "review",
+      "agent": "designer",
+      "updated": "2026-09-27",
+      "notes": "Explore; project-only Fieldwork default proposal with selectable Snap presentation. Two responsive samples, concrete token/disclosure/runtime-seam handoff. Artifact-only 16 viewport/theme/screen and 8 interaction checks PASS, minimum intended text contrast 5.48:1. No application edits, commits, external assets or new archive. Package: /home/abhisheksreesaila/.copilot/session-state/90ccc776-41f7-45ac-b19d-5493d8f4bb64/files/.lavish/travelos-readable. Local Lavish opened/poll invoked; no feedback at delivery. Shared house unchanged.",
+      "checks": [
+        {
+          "text": "Inspect connected CSS/views/controller/prototype mount and local Omarchy font/palette read-only",
+          "done": true
+        },
+        {
+          "text": "Render Search and Calendar with expanded controls, preserved-draft theme swapping and desktop/mobile evidence",
+          "done": true
+        },
+        {
+          "text": "Specify exact tokens, progressive disclosure and preserved behavior seams",
+          "done": true
+        },
+        {
+          "text": "Validate artifact and hand off to Developer without application changes",
+          "done": true
+        }
+      ]
+    },
+    {
+      "id": "F-006",
+      "title": "Connected Fieldwork readability implementation",
+      "status": "review",
+      "agent": "developer",
+      "checks": [
+        {
+          "text": "Independent in-place Fieldwork/Snap appearance preserves editing context",
+          "done": true
+        },
+        {
+          "text": "Shared readable navigation and search disclosure retains validation and values",
+          "done": true
+        },
+        {
+          "text": "Central 96px/hour calendar preserves duration, snap and dense event access",
+          "done": true
+        },
+        {
+          "text": "Both-theme end-to-end and B1/W1\u2013W4 regressions",
+          "done": true
+        },
+        {
+          "text": "320/390/1440 and 200% reflow, keyboard and reduced-motion browser checks",
+          "done": true
+        }
+      ],
+      "notes": "Implemented Fieldwork default and selectable Snap at the connected presentation seam: independent guarded preference, in-place drawer/header selectors, shared readable disclosures, 17px body/16px helpers, 48px controls, 44px targets. Central 96px/hour full-day calendar; dense/short/late or wrapped activity days use exact-duration bands plus individually reachable Timed activity list cards, without changing temporal data. Final 19 Node/13 Python tests and both-theme search-to-publication/versions/fork/creator, pointer edit/resize/delete/Undo, dirty-context, B1/W1-W4, keyboard/reduced-motion/320/390/1440/720@2x checks PASS; wrapped-neighbor boundary additionally tested at 901px. 720@2x is 200%-equivalent reflow, not browser-menu zoom. Pixi/Playwright unavailable: standard verifier could not run; the same .work/verify/F-006.json steps passed through native CDP, without installing dependencies. Browser network assertion retained; isolated Chromium without distro-injected extensions used. Reports/screenshots/profile: /home/abhisheksreesaila/.copilot/session-state/90ccc776-41f7-45ac-b19d-5493d8f4bb64/files/.lavish/travelos-readable/implementation. URL http://localhost:5002/prototype#/search. Original archive and unrelated dirty baseline preserved; state/public modules byte-identical to archived working source. No backend expansion, OS changes, duplicate archive, commits or pushes. Timed activity list is a presentation label, not a new domain term. Ready for parent review; not self-approved.",
+      "updated": "2026-09-27"
+    },
+    {
+      "id": "F-007",
+      "title": "Compact Fieldwork/Snap density and family-example design handoff",
+      "status": "review",
+      "agent": "designer",
+      "updated": "2026-09-27",
+      "checks": [
+        {
+          "text": "Exact density targets and unchanged typography/theme tokens documented at current selectors",
+          "done": true
+        },
+        {
+          "text": "Existing-route Import/Author, Community edition and whole-plan private-copy navigation specified",
+          "done": true
+        },
+        {
+          "text": "Six-day family summary, California timezone and unverified/editable-placement provenance specified",
+          "done": true
+        },
+        {
+          "text": "Grounded five-file Developer seams and objective before/after capture criteria delivered",
+          "done": true
+        }
+      ],
+      "notes": "Targeted maintenance of accepted Fieldwork default/Snap alternate; supersedes excessive readability whitespace, not visual identity. Session files/.lavish/travelos-compact-family/HANDOFF.md only; no HTML/human-review round, app edits, commits, server changes or external fetching. Source-inspected baseline and after targets are explicitly not measured browser results. Developer owns fixtures and necessary validated zone/provenance support; implementation and tests remain pending."
+    },
+    {
+      "id": "F-008",
+      "title": "Compact comparison lists and reviewed California family demo",
+      "status": "review",
+      "agent": "reviewer",
+      "updated": "2026-09-27",
+      "checks": [
+        {
+          "text": "Measure denser default flight/hotel comparisons at unchanged readable type in both themes",
+          "done": true
+        },
+        {
+          "text": "Preserve family content, supplied arrival and endpoint provenance with validated California zone and legacy UTC",
+          "done": true
+        },
+        {
+          "text": "Idempotently seed imported six-day and authored one-day editions without replacing private state",
+          "done": true
+        },
+        {
+          "text": "Editable import and blank authoring through exact safe review, immutable publication and independent whole-version copy",
+          "done": true
+        },
+        {
+          "text": "Family summary before calendar, explicit navigation and California research filters",
+          "done": true
+        },
+        {
+          "text": "Node/Python regressions and both-theme browser lifecycle, reflow, privacy and interaction verification",
+          "done": true
+        },
+        {
+          "text": "Complete frozen allowlisted snapshot prints every stop, endpoint, detail and correct zone independently of disclosures",
+          "done": true
+        },
+        {
+          "text": "Actual PDF text regression covers original import, six-day family, authored/private UTC, selected editions, privacy and regeneration",
+          "done": true
+        }
+      ],
+      "notes": "PASS \u2014 pending human approval. Final independent narrow review of fixes-print/current-turn.diff: no new concrete standards or spec-fidelity findings. Reran 34 Node / 13 Python tests, 58 actual Chromium PDFs (16 lifecycle scenarios plus two selected editions), six public-preview journeys and live shared-view regression. Original UTC import ranges restored; 18 family stops/all six days, Monday 11:30 arrival, Saturday 15:56 departure/17:38 arrival and PDT preserved with supplied/editable-placement labels. Snapshot remains frozen after saved edits until explicit regeneration; disclosures do not affect export; private fields and app navigation excluded. Both axes PASS; core design and earlier public-preview PASS retained, not re-scoped. Session-only evidence: files/.reviews/f008-print-final/review.json and review.html. Chromium PDF verified, not manual OS print/cross-engine certification. Not done: human approval outstanding."
+    },
+    {
+      "id": "F-009",
+      "title": "Compass compact connected journey \u2014 design package",
+      "status": "review",
+      "agent": "designer",
+      "updated": "2026-09-29",
+      "checks": [
+        {
+          "text": "One Explore direction with exact new Compass tokens, preserved Fieldwork/Snap and no application edits",
+          "done": true
+        },
+        {
+          "text": "Rendered desktop/mobile landing, paired search, calendar and community with connected continuation drawers",
+          "done": true
+        },
+        {
+          "text": "Measured 4 complete flights + 3 stays + total at 1440\u00d7900; 13\u201314px body/rows, 12px secondary, 28px close / 44px coarse",
+          "done": true
+        },
+        {
+          "text": "Five verified destination photos, exact source family details, local fixture contract and integer-cent budget tradeoff",
+          "done": true
+        },
+        {
+          "text": "Concise handoff plus detailed selectors, data, architecture, preservation boundaries and functional acceptance checks",
+          "done": true
+        },
+        {
+          "text": "Reference keyboard, contrast, reduced motion, reflow, explicit acknowledgment and source/photo hash verification",
+          "done": true
+        }
+      ],
+      "notes": "Designer package ready for Developer. Session files/.lavish/travelos-parallel-suite/design/: HANDOFF.md, DESIGN-SPEC.md, DATA.md, index.html, styles.css and proof/. Compass recommended as requested project default; shared House unchanged. Prototype selection arithmetic and navigation verified; domain filtering/editing/publishing/persistence remain explicitly labeled reference previews, not app implementation. No application files changed. Existing F-008 acceptance remains intact; implementation requires its own feature/tests. Native 200% zoom and assistive technology not certified: equivalent CSS reflow and keyboard tested."
+    },
+    {
+      "id": "F-010",
+      "title": "Compass frontend travel suite",
+      "status": "review",
+      "agent": "developer",
+      "checks": [
+        {
+          "text": "Local JSON adapter, independent filters, exact whole-party quotes and context",
+          "done": true
+        },
+        {
+          "text": "Saved draft and idempotent simulation into canonical trip",
+          "done": true
+        },
+        {
+          "text": "Compass landing, search, returning home and theme preservation",
+          "done": true
+        },
+        {
+          "text": "Rich local community import, exact preview, immutable publication and whole fork",
+          "done": true
+        },
+        {
+          "text": "Browser density, responsive lifecycle, existing tests and PDF regressions",
+          "done": true
+        }
+      ],
+      "notes": "Reviewer targeted final re-gate: Standards PASS; Spec fidelity PASS. All three prior findings independently verified fixed against supplied working baseline; all five current source hashes match evidence. 50 Node tests, 14 Python tests/27 subtests, 27 browser matrix + 18 touch cases, 15 additional CSS-zoom/reflow probes, atomic negative-submit checks in both lanes, and fresh actual 18-stop PDF PASS. Seven desktop offers: first top 418.15625px, last bottom 866.15625px. Feature gate passed, awaiting human visual approval; keep review, not done. Walkthrough: /home/abhisheksreesaila/.copilot/session-state/90ccc776-41f7-45ac-b19d-5493d8f4bb64/files/.reviews/F010-final-regate.html",
+      "updated": "2026-09-28 22:07",
+      "verified": {
+        "ok": true,
+        "at": "2026-09-28 21:52",
+        "url": "http://localhost:5002/prototype#/search",
+        "steps": 19,
+        "shots": [
+          "/home/abhisheksreesaila/.copilot/session-state/90ccc776-41f7-45ac-b19d-5493d8f4bb64/files/.lavish/travelos-parallel-suite/fixes/.work/shots/F-010-desktop.jpg",
+          "/home/abhisheksreesaila/.copilot/session-state/90ccc776-41f7-45ac-b19d-5493d8f4bb64/files/.lavish/travelos-parallel-suite/fixes/.work/shots/F-010-phone.jpg"
+        ],
+        "problems": []
+      }
+    }
+  ]
+}

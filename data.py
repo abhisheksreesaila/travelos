@@ -62,6 +62,10 @@ def _normalize_fh_saas_model_fields() -> None:
 
 _normalize_fh_saas_model_fields()
 
+# Runtime registry for generated trips (e.g., from creator submissions).
+# These live in memory only and reset on server restart — intentional for the demo.
+_generated_trips: list[dict[str, Any]] = []
+
 PUBLIC_TRIPS: list[dict[str, Any]] = [
     {
         "slug": "granada-after-dark",
@@ -174,7 +178,7 @@ def discovery_trips(query: str = "", region: str = "") -> list[dict[str, Any]]:
     """Filter deterministic public fixtures without calling a travel provider."""
     query = query.strip().lower()
     region = region.strip().lower()
-    results = PUBLIC_TRIPS
+    results = list(PUBLIC_TRIPS) + list(_generated_trips)
     if query:
         results = [
             trip
@@ -184,6 +188,16 @@ def discovery_trips(query: str = "", region: str = "") -> list[dict[str, Any]]:
     if region and region != "all":
         results = [trip for trip in results if trip["region"].lower() == region]
     return results
+
+
+def register_generated_trip(trip: dict[str, Any]) -> str:
+    """Register a dynamically generated trip. Returns the slug."""
+    import uuid
+
+    slug = f"gen-{uuid.uuid4().hex[:8]}"
+    trip["slug"] = slug
+    _generated_trips.append(trip)
+    return slug
 
 
 def _data_directory() -> Path:
@@ -422,3 +436,83 @@ def save_creator_submission(payload: dict[str, str]) -> CreatorSubmission:
     tables["creator_submissions"].insert(submission)
     tenant_db.conn.commit()
     return submission
+
+
+def generate_trip_from_submission(submission: CreatorSubmission) -> dict[str, Any]:
+    """Generate a trip dict from a creator submission and register it in the runtime registry.
+
+    Uses search_fixtures.resolve_city to normalize the destination name. Falls back to
+    "Granada" if the city isn't recognized in the fixture list.
+    """
+    # Function-local import to avoid circular dependency (search_fixtures lazily
+    # imports from data for PUBLIC_TRIPS).
+    from search_fixtures import resolve_city
+
+    resolved = resolve_city(submission.destination)
+    if resolved is None:
+        resolved = "Granada"
+
+    _COUNTRIES: dict[str, str] = {
+        "Granada": "Spain",
+        "London": "UK",
+        "Kyoto": "Japan",
+        "Lisbon": "Portugal",
+        "Copenhagen": "Denmark",
+        "Oaxaca": "Mexico",
+        "Cape Town": "South Africa",
+    }
+    country = _COUNTRIES.get(resolved, "Spain")
+
+    _REGIONS: dict[str, str] = {
+        "Granada": "Europe",
+        "London": "Europe",
+        "Kyoto": "Asia",
+        "Lisbon": "Europe",
+        "Copenhagen": "Europe",
+        "Oaxaca": "North America",
+        "Cape Town": "Africa",
+    }
+    region = _REGIONS.get(resolved, "Europe")
+
+    avatar = submission.creator_name[0].upper() if submission.creator_name else "?"
+
+    channels = [
+        (platform, handle, "New · fixture audience")
+        for platform, handle in [
+            ("YouTube", submission.youtube),
+            ("Instagram", submission.instagram),
+        ]
+        if handle
+    ]
+
+    trip: dict[str, Any] = {
+        "title": submission.story_title,
+        "destination": f"{resolved}, {country}",
+        "region": region,
+        "days": 3,
+        "price": "$???",
+        "hero": resolved.lower().replace(" ", ""),
+        "creator": submission.creator_name,
+        "creator_role": "Creator",
+        "creator_bio": "Content creator · auto-generated trip from their travel story.",
+        "creator_location": resolved,
+        "creator_channels": channels,
+        "creator_note": submission.note[:150] if submission.note else "",
+        "avatar": avatar,
+        "saves": "12 fixture saves",
+        "summary": f"Auto-generated trip from {submission.creator_name}'s travel content.",
+        "tags": ["Creator pick", "Fresh route", "Trending"],
+        "weather": "—",
+        "dates": "Flexible · fixture dates",
+        "start_date": "",
+        "route": ["Day 1: Arrive & explore", "Day 2: Deep dive", "Day 3: Local farewell"],
+        "best_for": "Curious travelers",
+        "planning_notes": [
+            "This trip was auto-generated from a creator submission.",
+            "Fixture itinerary — customize after fork.",
+            "Check local conditions before travel.",
+        ],
+    }
+
+    register_generated_trip(trip)
+    return trip

@@ -12,6 +12,8 @@ from datetime import date, timedelta
 from pathlib import Path
 from urllib.parse import quote
 
+import search_fixtures
+
 from fasthtml.common import FastHTML, serve
 from fh_saas.utils_auth import SessionConfig, create_session_middleware
 from starlette.responses import FileResponse, HTMLResponse, RedirectResponse
@@ -23,12 +25,14 @@ from data import (
     bootstrap_store,
     discovery_trips,
     fork_plan,
+    generate_trip_from_submission,
     latest_workspace_trip,
     public_trip,
     save_creator_submission,
     trip_preferences,
     update_trip_preferences,
 )
+import data
 
 APP_DIR = Path(__file__).parent
 ASSETS_DIR = APP_DIR / "assets"
@@ -68,6 +72,7 @@ def icon(name: str, size: int = 18) -> str:
         "map": '<path d="m9 18-6 3V6l6-3 6 3 6-3v15l-6 3-6-3Z"/><path d="M9 3v15M15 6v15"/>',
         "terminal": '<path d="m5 7 4 4-4 4M12 17h7"/>',
         "bell": '<path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/>',
+        "palette": '<circle cx="13.5" cy="6.5" r="1.5"/><circle cx="17.5" cy="10.5" r="1.5"/><circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12.5" r="1.5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.5-.6 1.5-1.5 0-.4-.1-.7-.3-1-.2-.2-.2-.5 0-.7l.3-.3c.5-.4.8-1 .8-1.7 0-1.4-1.1-2.5-2.5-2.5H12c-4.4 0-8-3.6-8-8s3.6-8.3 8-8.3V2Z"/>',
     }
     return f'<svg class="icon" width="{size}" height="{size}" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">{paths[name]}</svg>'
 
@@ -77,7 +82,36 @@ def logo(dark: bool = False) -> str:
     return f'<a class="logo{flavor}" href="/"><span class="logo-mark">{icon("plane", 19)}</span><span>Travel<span>OS</span></span></a>'
 
 
-def document(title: str, body: str, page_class: str = "") -> HTMLResponse:
+def brand_styles() -> str:
+    """Return a <style> tag with brand gradient CSS used by public pages."""
+    return """<style>
+    .brand-gradient-text {
+      background: linear-gradient(135deg, var(--color-sun) 0%, var(--color-coral) 40%, var(--color-gold) 70%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .color-burst-text {
+      background: linear-gradient(90deg, var(--color-sun) 0%, var(--color-coral) 25%, var(--color-gold) 50%, var(--color-mint) 75%, var(--color-sky) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .dot-pattern-bg {
+      background-image: radial-gradient(circle, currentColor 1px, transparent 1px);
+      background-size: 20px 20px;
+      background-position: 0 0;
+    }
+    .dot-pattern-bg-light {
+      background-image: radial-gradient(circle, var(--color-gold) 1px, transparent 1px);
+      background-size: 20px 20px;
+      opacity: 0.15;
+    }
+    </style>"""
+
+
+def document(title: str, body: str, page_class: str = "", theme: str = "bright") -> HTMLResponse:
+    theme_attr = "dark" if page_class == "command-shell" else theme
     return HTMLResponse(
         f"""<!doctype html>
 <html lang="en">
@@ -85,13 +119,17 @@ def document(title: str, body: str, page_class: str = "") -> HTMLResponse:
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="TravelOS is a vivid local travel discovery and trip-planning demo.">
   <title>{esc(title)} · {APP_NAME}</title>
-  <link rel="stylesheet" href="/assets/theme.css">
+  <link rel="stylesheet" href="/assets/tokens.css">
+  <link rel="stylesheet" href="/assets/components.css">
+  <link rel="stylesheet" href="/assets/public.css">
+  <link rel="stylesheet" href="/assets/workspace.css">
+  <link rel="stylesheet" href="/assets/responsive.css">
 </head>
-<body class="{page_class}">
+<body class="{page_class}" data-theme="{theme_attr}">
   <a class="skip-link" href="#main">Skip to content</a>
   {body}
   <div class="toast-region" aria-live="polite" aria-atomic="true"></div>
-  <script src="/assets/app.js" defer></script>
+  <script type="module" src="/assets/app.js"></script>
 </body></html>"""
     )
 
@@ -112,18 +150,21 @@ def public_header(request, active: str = "") -> str:
    <a class="{'is-active' if active == 'creators' else ''}" href="/creators">For creators</a>
    <a class="{'is-active' if active == 'plans' else ''}" href="/plans/granada-after-dark">Trip plans</a>
   </nav>
-  <div class="header-actions"><a class="text-button" href="{workspace_link}">My trips</a>{account}<button class="mobile-menu" data-menu-toggle aria-label="Open navigation">{icon('menu')}</button></div>
+  <div class="header-actions"><button class="text-button" data-theme-toggle aria-label="Toggle theme">{icon('palette', 16)} Theme</button><a class="text-button" href="{workspace_link}">My trips</a>{account}<button class="mobile-menu" data-menu-toggle aria-label="Open navigation">{icon('menu')}</button></div>
  </div>
 </header>"""
 
 
 def search_bar(compact: bool = False, q: str = "") -> str:
     compact_class = " search-compact" if compact else ""
-    return f"""<form class="travel-search{compact_class}" action="/discover" method="get">
-  <label><span>{icon('pin', 17)}</span><span class="input-label">Where to?</span><input name="q" value="{esc(q)}" placeholder="City, coast, or feeling" autocomplete="off"></label>
-  <label class="search-date"><span>{icon('calendar', 17)}</span><span class="input-label">When</span><input name="dates" value="Anytime" aria-label="Travel dates"></label>
+    city_options = "".join(f'<option value="{esc(city)}">{esc(city)}</option>' for city in search_fixtures.SEARCHABLE_CITIES)
+    return f"""<form class="travel-search{compact_class} p-search-form" action="/search" method="get">
+  <datalist id="searchable-cities">{city_options}</datalist>
+  <label><span>{icon('pin', 17)}</span><span class="input-label">Where to?</span><input name="destination" value="{esc(q)}" placeholder="City, coast, or feeling" autocomplete="off" list="searchable-cities"></label>
+  <label class="search-date"><span>{icon('calendar', 17)}</span><span class="input-label">Check-in</span><input type="date" name="checkin" aria-label="Check-in date"></label>
+  <label class="search-date"><span>{icon('calendar', 17)}</span><span class="input-label">Check-out</span><input type="date" name="checkout" aria-label="Check-out date"></label>
   <label class="search-travelers"><span>{icon('users', 17)}</span><span class="input-label">Travelers</span><input name="travelers" value="2 travelers" aria-label="Travelers"></label>
-  <button class="search-submit" type="submit"><span class="search-label">Search plans</span>{icon('search')}</button>
+  <button class="p-button is-primary search-submit" type="submit"><span class="search-label">Search</span>{icon('search')}</button>
 </form>"""
 
 
@@ -211,6 +252,10 @@ def plan_detail(request, slug: str, forked: str = "") -> HTMLResponse:
     )
     field_notes = "".join(f'<li>{icon("check", 15)}<span>{esc(note)}</span></li>' for note in trip["planning_notes"])
     creator_context = f"""<section class="creator-context"><article class="creator-profile-module"><div class="creator-profile-heading"><span class="creator-avatar creator-avatar-lg">{esc(trip['avatar'])}</span><div><span class="eyebrow">CREATOR FIELD GUIDE</span><h2>{esc(trip['creator'])}</h2><p>{esc(trip['creator_location'])}</p></div></div><p class="creator-bio">{esc(trip['creator_bio'])}</p><div class="creator-channels" aria-label="Creator channel fixture context">{channel_chips}</div><small class="creator-fixture-label">Channel names and reach are local fixture context; TravelOS does not connect to creator platforms.</small></article><article class="plan-context-module"><span class="eyebrow">WHY THIS ROUTE WORKS</span><h2>Made for {esc(trip['best_for']).lower()}.</h2><p class="creator-quote">“{esc(trip['creator_note'])}”</p><div class="plan-context-grid"><span><b>ROUTE RHYTHM</b>{esc(' · '.join(trip['route']))}</span><span><b>FORK READY</b>Dates, group, budget, pace & interests</span></div></article><article class="field-notes-module"><span class="eyebrow">CREATOR’S USEFUL NOTES</span><h2>Carry these into your fork.</h2><ul>{field_notes}</ul></article></section>"""
+    city_name = trip["destination"].split(",")[0].strip()
+    weather_forecast = search_fixtures.weather_for(city_name)
+    top_places = search_fixtures.top_places_for(city_name)
+
     itinerary = "".join(
         [
             plan_day(1, "Check in, then let the city lead", "15:00", "Settle near Plaza Nueva. The first evening is intentionally unbooked for a golden-hour wander."),
@@ -219,14 +264,118 @@ def plan_detail(request, slug: str, forked: str = "") -> HTMLResponse:
             plan_day(4, "Sacromonte send-off", "10:00", "Take the high path, browse the ceramics, and keep your transfer buffer honest."),
         ]
     )
+    
+    # Build weather sidebar from fixture data
+    if weather_forecast:
+        w0 = weather_forecast[0]
+        weather_days_html = "".join(
+            f"<span><b>{esc(w['day'])}</b>{w['high']}°</span>"
+            for w in weather_forecast[:4]
+        )
+        weather_html = f'<div class="side-module weather-module"><div class="module-heading"><span>{icon("cloud", 18)} Local forecast</span><small>FIXTURE DATA</small></div><strong>{w0["high"]}° <small>{esc(w0["condition"])}</small></strong><div class="weather-days">{weather_days_html}</div><p>{esc(w0["icon"])} {esc(w0["day"])} is the pick. Pack a light layer for the hillside after sunset.</p></div>'
+    else:
+        weather_html = f'<div class="side-module weather-module"><div class="module-heading"><span>{icon("cloud", 18)} Local forecast</span><small>FIXTURE DATA</small></div><strong>—° <small>Fixture forecast coming soon.</small></strong><p>Weather data is not yet available for this destination.</p></div>'
+
+    # Build top places sidebar from fixture data
+    if top_places:
+        place_rows = "".join(
+            '<article style="display:flex;gap:10px;padding:12px 0;border-bottom:1px solid var(--border-light);align-items:flex-start"><span style="flex:none;display:inline-block;padding:2px 8px;border-radius:var(--radius-sm);font:var(--text-xs) var(--font-mono);background:color-mix(in srgb,var(--color-' + esc(p["tone"]) + ") 14%,transparent);color:var(--color-" + esc(p["tone"]) + ");border-left:3px solid var(--color-" + esc(p["tone"]) + ')">' + esc(p["name"]) + "</span><div style='min-width:0'><small style='color:var(--text-tertiary);font-size:var(--text-xs)'>" + esc(p["category"]) + "</small><p style='margin:2px 0 0;color:var(--text-secondary);font-size:var(--text-sm)'>" + esc(p["description"]) + "</p></div></article>"
+            for p in top_places[:10]
+        )
+        places_html = f'<div class="side-module places-module"><div class="module-heading"><span>{icon("spark", 18)} Top places in {esc(city_name)}</span><small>SIMULATED</small></div>{place_rows}</div>'
+    else:
+        places_html = f'<div class="side-module places-module"><div class="module-heading"><span>{icon("spark", 18)} Top places in {esc(city_name)}</span><small>SIMULATED</small></div><p style="margin:10px 0 0;color:var(--text-secondary);font-size:var(--text-sm)">Top places coming soon.</p></div>'
+
+    # Build friend recommendations sidebar from fixture data
+    friend_recs = search_fixtures.friend_recs_for(city_name)
+    if friend_recs:
+        friend_rows = "".join(
+            f'<div style="display:flex;gap:10px;padding:12px 0;border-bottom:1px solid var(--border-light);align-items:center"><span style="flex:none;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--color-plum);color:#fff;font:var(--text-sm) var(--font-mono);font-weight:600">{esc(f["avatar"])}</span><div style="min-width:0"><strong style="font-size:var(--text-sm)">{esc(f["friend_name"])}</strong><p style="margin:2px 0 0;color:var(--text-secondary);font-size:var(--text-xs)">"{esc(f["note"])}" · {esc(str(f["saved_places"]))} saved places</p></div></div>'
+            for f in friend_recs
+        )
+        friends_html = f'<div class="side-module friends-module"><div class="module-heading"><span>{icon("users", 18)} Friends in {esc(city_name)}</span><small>FIXTURE DATA</small></div>{friend_rows}</div>'
+    else:
+        friends_html = f'<div class="side-module friends-module"><div class="module-heading"><span>{icon("users", 18)} Friends in {esc(city_name)}</span><small>FIXTURE DATA</small></div><p style="margin:10px 0 0;color:var(--text-secondary);font-size:var(--text-sm)">No friend recommendations yet for this city.</p></div>'
+
+    # Flights & hotels stubs
+    flights = search_fixtures.FLIGHT_STUB
+    hotels = search_fixtures.HOTEL_STUB
+    travel_stub_html = f'<div class="side-module travel-module"><div class="module-heading"><span>{icon("plane", 18)} Flights & stays</span><small>SIMULATED</small></div><div style="padding:12px 0"><div style="margin-bottom:12px"><strong style="font-size:var(--text-sm)">Flights to {esc(city_name)}</strong><p style="margin:2px 0 0;color:var(--text-secondary);font-size:var(--text-xs)">{esc(flights["price_range"])} · {esc(flights["airlines"])}</p></div><div><strong style="font-size:var(--text-sm)">Hotels in {esc(city_name)}</strong><p style="margin:2px 0 0;color:var(--text-secondary);font-size:var(--text-xs)">{esc(hotels["price_range"])} · {esc(hotels["neighborhood"])} · {esc(hotels["rating"])}</p></div><p style="margin:8px 0 0;color:var(--text-tertiary);font-size:var(--text-xs)">{esc(flights["note"])}</p></div></div>'
+
     body = f"""{public_header(request, 'plans')}<main id="main" class="plan-page">
  <section class="plan-hero"><div class="plan-hero-scene">{scene(trip)}<div class="plan-hero-overlay"></div><a href="/discover" class="back-link">← Discover plans</a><div class="plan-hero-copy"><span>{badge('PUBLIC PLAN', 'sun')} {badge(f"{trip['days']} days", 'glass')}</span><h1>{esc(trip['title'])}</h1><p>{icon('pin', 17)} {esc(trip['destination'])} <i></i> {esc(trip['dates'])}</p></div></div><aside class="fork-card"><div class="fork-card-top"><span class="creator-avatar creator-avatar-lg">{esc(trip['avatar'])}</span><div><span class="micro-label">CREATED BY</span><strong>{esc(trip['creator'])}</strong><small>{esc(trip['creator_role'])}</small></div></div><p>{esc(trip['creator_note'])}</p><div class="fork-channel-summary">{channel_chips}</div>{fork_notice}{fork_action}<span class="fork-note">No live reservations are made in this demo. Creator reach is fixture context only.</span><div class="fork-stats"><span><b>{esc(trip['saves'])}</b> local saves</span><span><b>94%</b> fixture return signal</span></div></aside></section>
  <section class="plan-summary"><div><span class="eyebrow">THE VIBE</span><h2>Sun-softened days, late little dinners, and no overstuffed schedule.</h2></div><p>{esc(trip['summary'])} This public route is a useful starting point—not a sales funnel disguised as a plan.</p><div class="summary-tags">{''.join(badge(tag, 'mint') for tag in trip['tags'])}</div></section>
  {creator_context}
- <section class="plan-content-grid"><div class="plan-itinerary"><div class="section-heading"><div><span class="eyebrow">DAY BY DAY</span><h2>Keep the good parts flexible.</h2></div><button class="outline-button" type="button" data-toast="Download is a follow-up integration">{icon('share', 16)} Share plan</button></div>{itinerary}</div><aside class="plan-side"><div class="side-module weather-module"><div class="module-heading"><span>{icon('cloud', 18)} Local forecast</span><small>Fixture data</small></div><strong>22° <small>clear & warm</small></strong><div class="weather-days"><span><b>THU</b>23°</span><span><b>FRI</b>22°</span><span><b>SAT</b>21°</span><span><b>SUN</b>20°</span></div><p>Pack a light layer for the hillside after sunset.</p></div><div class="side-module route-module"><div class="module-heading"><span>{icon('map', 18)} Route at a glance</span><button type="button" data-toast="Map providers are intentionally not connected">Expand</button></div><div class="mini-map"><i class="map-path"></i><b class="map-stop map-stop-a">1</b><b class="map-stop map-stop-b">2</b><b class="map-stop map-stop-c">3</b><span>Albaicín</span><span>Centro</span><span>Sacromonte</span></div><p>Mostly walkable · <strong>4.6 km/day</strong></p></div><div class="side-module booking-module"><span class="eyebrow">BOOKING BOARD</span><h3>Compare when you’re ready.</h3><p>Flights, stays, and activities are shown as local fixture cards in your workspace—not live inventory.</p><a href="/signin?next=/workspace" class="arrow-link">See the board {icon('arrow')}</a></div></aside></section>
+ <section class="plan-content-grid"><div class="plan-itinerary"><div class="section-heading"><div><span class="eyebrow">DAY BY DAY</span><h2>Keep the good parts flexible.</h2></div><button class="outline-button" type="button" data-toast="Download is a follow-up integration">{icon('share', 16)} Share plan</button></div>{itinerary}</div><aside class="plan-side">{weather_html}{places_html}{friends_html}{travel_stub_html}<div class="side-module route-module"><div class="module-heading"><span>{icon("map", 18)} Route at a glance</span><button type="button" data-toast="Map providers are intentionally not connected">Expand</button></div><div class="mini-map"><i class="map-path"></i><b class="map-stop map-stop-a">1</b><b class="map-stop map-stop-b">2</b><b class="map-stop map-stop-c">3</b><span>Albaicín</span><span>Centro</span><span>Sacromonte</span></div><p>Mostly walkable · <strong>4.6 km/day</strong></p></div><div class="side-module booking-module"><span class="eyebrow">BOOKING BOARD</span><h3>Compare when you're ready.</h3><p>Flights, stays, and activities are shown as local fixture cards in your workspace—not live inventory.</p><a href="/signin?next=/workspace" class="arrow-link">See the board {icon('arrow')}</a></div></aside></section>
  <section class="plan-creator-cta"><div class="creator-cta-portrait">{icon('spark', 43)}<span>local<br>eyes</span></div><div><span class="eyebrow">MAKE YOUR KNOW-HOW USEFUL</span><h2>Have a route travelers should know?</h2><p>Send it to the TravelOS creator studio and keep your YouTube and Instagram presence front and center.</p></div><a class="outline-button dark-outline" href="/creators">For creators {icon('arrow')}</a></section>
 </main>{public_footer()}"""
     return document(trip["title"], body, "plan-shell")
+
+
+def preview_workspace_body(trip: dict) -> str:
+    """Build a read-only workspace preview for a public trip — no session required."""
+    city_name = trip["destination"].split(",")[0].strip()
+    weather_forecast = search_fixtures.weather_for(city_name)
+    top_places = search_fixtures.top_places_for(city_name)
+    friend_recs = search_fixtures.friend_recs_for(city_name)
+    flights = search_fixtures.FLIGHT_STUB
+    hotels = search_fixtures.HOTEL_STUB
+
+    # Weather module
+    if weather_forecast:
+        w0 = weather_forecast[0]
+        weather_days_html = "".join(
+            f"<span><b>{esc(w['day'])}</b>{w['high']}°</span>"
+            for w in weather_forecast[:4]
+        )
+        weather_html = f'<div class="side-module weather-module"><div class="module-heading"><span>{icon("cloud", 18)} Local forecast</span><small>FIXTURE DATA</small></div><strong>{w0["high"]}° <small>{esc(w0["condition"])}</small></strong><div class="weather-days">{weather_days_html}</div><p>{esc(w0["icon"])} {esc(w0["day"])} is the pick. Pack a light layer for the hillside after sunset.</p></div>'
+    else:
+        weather_html = f'<div class="side-module weather-module"><div class="module-heading"><span>{icon("cloud", 18)} Local forecast</span><small>FIXTURE DATA</small></div><strong>—° <small>Fixture forecast coming soon.</small></strong><p>Weather data is not yet available for this destination.</p></div>'
+
+    # Places module
+    if top_places:
+        place_rows = "".join(
+            '<article style="display:flex;gap:10px;padding:12px 0;border-bottom:1px solid var(--border-light);align-items:flex-start"><span style="flex:none;display:inline-block;padding:2px 8px;border-radius:var(--radius-sm);font:var(--text-xs) var(--font-mono);background:color-mix(in srgb,var(--color-' + esc(p["tone"]) + " 14%),transparent);color:var(--color-" + esc(p["tone"]) + ");border-left:3px solid var(--color-" + esc(p["tone"]) + ')">' + esc(p["name"]) + "</span><div style='min-width:0'><small style='color:var(--text-tertiary);font-size:var(--text-xs)'>" + esc(p["category"]) + "</small><p style='margin:2px 0 0;color:var(--text-secondary);font-size:var(--text-sm)'>" + esc(p["description"]) + "</p></div></article>"
+            for p in top_places[:10]
+        )
+        places_html = f'<div class="side-module places-module"><div class="module-heading"><span>{icon("spark", 18)} Top places in {esc(city_name)}</span><small>SIMULATED</small></div>{place_rows}</div>'
+    else:
+        places_html = f'<div class="side-module places-module"><div class="module-heading"><span>{icon("spark", 18)} Top places in {esc(city_name)}</span><small>SIMULATED</small></div><p style="margin:10px 0 0;color:var(--text-secondary);font-size:var(--text-sm)">Top places coming soon.</p></div>'
+
+    # Friends module
+    if friend_recs:
+        friend_rows = "".join(
+            f'<div style="display:flex;gap:10px;padding:12px 0;border-bottom:1px solid var(--border-light);align-items:center"><span style="flex:none;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--color-plum);color:#fff;font:var(--text-sm) var(--font-mono);font-weight:600">{esc(f["avatar"])}</span><div style="min-width:0"><strong style="font-size:var(--text-sm)">{esc(f["friend_name"])}</strong><p style="margin:2px 0 0;color:var(--text-secondary);font-size:var(--text-xs)">"{esc(f["note"])}" · {esc(str(f["saved_places"]))} saved places</p></div></div>'
+            for f in friend_recs
+        )
+        friends_html = f'<div class="side-module friends-module"><div class="module-heading"><span>{icon("users", 18)} Friends in {esc(city_name)}</span><small>FIXTURE DATA</small></div>{friend_rows}</div>'
+    else:
+        friends_html = f'<div class="side-module friends-module"><div class="module-heading"><span>{icon("users", 18)} Friends in {esc(city_name)}</span><small>FIXTURE DATA</small></div><p style="margin:10px 0 0;color:var(--text-secondary);font-size:var(--text-sm)">No friend recommendations yet for this city.</p></div>'
+
+    # Flights & hotels stub
+    travel_stub_html = f'<div class="side-module travel-module"><div class="module-heading"><span>{icon("plane", 18)} Flights & stays</span><small>SIMULATED</small></div><div style="padding:12px 0"><div style="margin-bottom:12px"><strong style="font-size:var(--text-sm)">Flights to {esc(city_name)}</strong><p style="margin:2px 0 0;color:var(--text-secondary);font-size:var(--text-xs)">{esc(flights["price_range"])} · {esc(flights["airlines"])}</p></div><div><strong style="font-size:var(--text-sm)">Hotels in {esc(city_name)}</strong><p style="margin:2px 0 0;color:var(--text-secondary);font-size:var(--text-xs)">{esc(hotels["price_range"])} · {esc(hotels["neighborhood"])} · {esc(hotels["rating"])}</p></div><p style="margin:8px 0 0;color:var(--text-tertiary);font-size:var(--text-xs)">{esc(flights["note"])}</p></div></div>'
+
+    itinerary_rows = "".join(
+        f'<article style="padding:16px 0;border-bottom:1px solid var(--border-light)"><time style="color:var(--color-sun);font:var(--text-xs) var(--font-mono);font-weight:600;display:block;margin-bottom:6px">{esc(time)}</time><span style="display:inline-block;padding:1px 8px;border-radius:var(--radius-sm);font:var(--text-xs) var(--font-mono);background:var(--bg-subtle);color:var(--text-tertiary);margin-bottom:6px">{esc(kind)}</span><h3 style="font-size:var(--text-base);font-weight:600;margin:0 0 4px">{esc(title)}</h3><p style="margin:0;color:var(--text-secondary);font-size:var(--text-sm)">{esc(copy)}</p></article>'
+        for time, title, copy, kind in (
+            ("3:00 PM", "Arrive, exhale, find the plaza", "Drop bags, stretch your legs, and let the first evening stay wonderfully open.", "FLEX"),
+            ("9:00 AM", "Anchor day with a soft landing", "An early visit leaves a slow lunch and a quiet hour back near your stay.", "TICKETED"),
+            ("12:30 PM", "Taste & wander through the neighborhood", "Three tiny stops, shared plates, and a local viewpoint kept flexible.", "FOOD-FORWARD"),
+            ("10:00 AM", "High path send-off", "Take the gentler uphill route, pause for the view, and skip any stop that feels like one too many.", "FLEX"),
+        )
+    )
+
+    body = f"""<header class="command-header"><div class="command-brand">{logo(dark=True)}<span class="workspace-divider"></span><span style="color:var(--text-secondary);font:var(--text-sm) var(--font-sans)">{esc(trip["title"])}</span></div><div class="command-status"><button class="icon-control" type="button" data-theme-toggle aria-label="Toggle theme">{icon('palette', 14)}</button><a class="exit-workspace" href="/plans/{esc(trip['slug'])}">← Back to plan</a></div></header>
+    <div class="preview-banner" style="background:linear-gradient(135deg,var(--color-plum),var(--color-coral));color:#fff;text-align:center;padding:10px 16px;font:var(--text-sm) var(--font-sans);display:flex;align-items:center;justify-content:center;gap:10px"><span>{icon('spark', 16)}</span><span>Preview mode — <a href="/signin?next=/plans/{esc(trip['slug'])}" style="color:#fff;font-weight:600;text-decoration:underline">Sign in to fork and personalize this plan</a></span></div>
+    <main id="main" class="command-center">
+    <aside class="command-sidebar"><div class="sidebar-head"><span class="eyebrow">{esc(city_name.upper())}</span></div><h1>{esc(trip["title"])}</h1><p>{esc(str(trip["days"]))} days · {esc(trip["dates"])} · 2 adults, 1 kid</p><div class="trip-progress"><span><i></i> Preview workspace</span><b>read‑only</b></div><div style="padding:16px 0;color:var(--text-tertiary);font:var(--text-xs) var(--font-mono)"><span>budget ${3:,} · laid-back vibe</span></div></aside>
+    <section class="command-workspace"><div class="command-overview"><div><span class="eyebrow">PREVIEW WORKSPACE · READ ONLY</span><h2>Laid-back rhythm</h2></div><div class="overview-controls"><button class="overview-view is-active" type="button" data-overview="all">All systems</button></div></div>
+    <div class="command-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px"><section class="command-pane" style="grid-column:span 2"><header class="pane-header"><h2>{icon("calendar", 16)} Itinerary preview</h2></header><div style="padding:0 16px 16px"><div class="workspace-timeline">{itinerary_rows}</div></div></section>
+    {weather_html.replace('side-module', 'command-pane').replace('weather-module', '').replace('<div class="module-heading">', '<header class="pane-header"><h2>').replace('</div>', '</h2></header>', 1).replace('<small>FIXTURE DATA</small>', '')}
+    <section class="command-pane" style="grid-column:span 2"><header class="pane-header"><h2>{icon("spark", 16)} Top places in {esc(city_name)}</h2><small>SIMULATED</small></header><div style="padding:0 16px 16px">{place_rows}</div></section>
+    <section class="command-pane"><header class="pane-header"><h2>{icon("users", 16)} Friends in {esc(city_name)}</h2><small>FIXTURE DATA</small></header><div style="padding:0 16px 16px">{friend_rows}</div></section>
+    <section class="command-pane"><header class="pane-header"><h2>{icon("plane", 16)} Flights & stays</h2><small>SIMULATED</small></header><div style="padding:0 16px 16px"><div style="margin-bottom:12px"><strong style="font-size:var(--text-sm)">Flights to {esc(city_name)}</strong><p style="margin:2px 0 0;color:var(--text-secondary);font-size:var(--text-xs)">{esc(flights["price_range"])} · {esc(flights["airlines"])}</p></div><div><strong style="font-size:var(--text-sm)">Hotels in {esc(city_name)}</strong><p style="margin:2px 0 0;color:var(--text-secondary);font-size:var(--text-xs)">{esc(hotels["price_range"])} · {esc(hotels["neighborhood"])} · {esc(hotels["rating"])}</p></div><p style="margin:8px 0 0;color:var(--text-tertiary);font-size:var(--text-xs)">{esc(flights["note"])}</p></div></section></div></section></main>"""
+    return body
 
 
 def signin(request, next: str = "/workspace") -> HTMLResponse:
@@ -236,13 +385,21 @@ def signin(request, next: str = "/workspace") -> HTMLResponse:
 
 
 def creators(request, submitted: str = "") -> HTMLResponse:
-    confirmation = '<div class="submission-confirmation">' + icon("check") + '<div><strong>Pitch received in the local creator queue.</strong><p>In a production build, this would create a review workflow and channel-aware onboarding.</p></div></div>' if submitted else ""
+    confirmation = ""
+    if submitted:
+        trip_slug = request.query_params.get("trip", "")
+        if trip_slug:
+            trip = public_trip(trip_slug) or next((t for t in data._generated_trips if t.get("slug") == trip_slug), None)
+            trip_title = esc(trip["title"]) if trip else "your trip"
+            confirmation = '<div class="submission-confirmation">' + icon("check") + f'<div><strong>Your trip is live!</strong><p>"{trip_title}" is now visible in the <a href="/discover">discovery feed</a>. Travelers can find and fork it. <small>(Auto-generated from your content link. Fixture data only.)</small></p></div></div>'
+        else:
+            confirmation = '<div class="submission-confirmation">' + icon("check") + '<div><strong>Pitch received in the local creator queue.</strong><p>In a production build, this would create a review workflow and channel-aware onboarding.</p></div></div>'
     body = f"""{public_header(request, 'creators')}<main id="main" class="creator-page"><section class="creator-hero"><div><span class="eyebrow eyebrow-light">TRAVELOS CREATOR STUDIO</span><h1>Turn your <em>point of view</em> into a plan people use.</h1><p>Make your best routes discoverable, useful, and unmistakably yours—without giving up the audience you’ve built.</p><a class="cream-button" href="#submit">Submit a travel story {icon('arrow')}</a></div><div class="creator-hero-visual"><div class="creator-phone"><div class="phone-bar"><i></i><i></i><i></i></div><div class="phone-scene">{scene(public_trip('oaxaca-color-weekend'), True)}<span class="phone-play">▶</span></div><div class="phone-caption"><b>48 hours in Oaxaca</b><small>the market-first route</small></div></div><span class="reach-bubble bubble-youtube"><b>+42%</b><small>YouTube discovery</small></span><span class="reach-bubble bubble-instagram"><b>+18%</b><small>Instagram saves</small></span><div class="creator-sparkle">✦</div></div></section><section class="creator-benefits"><article><span class="benefit-icon">01</span><h2>Keep your voice.</h2><p>Your recommendations, pacing, and channel links travel with every plan—not just a thumbnail.</p></article><article><span class="benefit-icon">02</span><h2>Earn useful reach.</h2><p>Travelers who fork your route see your YouTube and Instagram calls to action at the moment they matter.</p></article><article><span class="benefit-icon">03</span><h2>Help them go.</h2><p>Give followers an itinerary, practical local context, and an easy way to make the trip their own.</p></article></section><section class="creator-proof"><div class="proof-avatar-grid"><span>LM</span><span>NB</span><span>HK</span><span>MS</span></div><blockquote>“It feels like sharing the part of my travel videos people always ask me to make: the actual plan.”<cite>— Lina Morales, city filmmaker</cite></blockquote><div class="fixture-disclaimer">Illustrative fixture metrics only. TravelOS does not access or promise social-platform reach in this demo.</div></section><section id="submit" class="submission-section"><div class="submission-intro"><span class="eyebrow">PITCH YOUR ROUTE</span><h2>Tell us where your story takes travelers.</h2><p>Submit the bones of a guide. It lands in the local demo tenant queue; live publishing and creator-network connections are intentionally follow-up work.</p><div class="submission-callout">{icon('spark', 18)} <span><strong>What helps:</strong> a strong local angle, your favorite pacing, and the channel you want travelers to find.</span></div></div><div>{confirmation}<form class="creator-form" action="/creators/submit" method="post"><label>Your name<input required name="creator_name" placeholder="e.g. Samira Chen"></label><label>Email<input required type="email" name="email" placeholder="you@example.com"></label><div class="form-two"><label>Destination<input required name="destination" placeholder="e.g. Penang, Malaysia"></label><label>Story title<input required name="story_title" placeholder="e.g. Street food at midnight"></label></div><div class="form-two"><label>YouTube (optional)<input name="youtube" placeholder="youtube.com/@yourchannel"></label><label>Instagram (optional)<input name="instagram" placeholder="@yourhandle"></label></div><label>What makes this route special?<textarea required name="note" rows="4" placeholder="Give travelers the useful detail they cannot get from a generic list…"></textarea></label><button class="primary-button" type="submit">Send my local pitch {icon('arrow')}</button><p class="form-note">By sending, you are adding a fixture record to this machine only.</p></form></div></section></main>{public_footer()}"""
     return document("Creator studio", body, "creator-shell")
 
 
 def workspace_header(trip) -> str:
-    return f"""<header class="command-header"><div class="command-brand">{logo(dark=True)}<span class="workspace-divider"></span><button class="trip-switcher" type="button" data-toast="Trip switcher is a local demo control"><span class="trip-dot"></span>{esc(trip.title if trip else 'Weekend Club')} {icon('chevron', 15)}</button></div><div class="command-status"><span class="sync-status"><i></i> All changes saved locally</span><button class="icon-control" type="button" data-command-palette aria-label="Open command palette">⌘ K</button><button class="avatar-stack" type="button" data-toast="Ari and two fixture collaborators are viewing this plan"><i>AR</i><i>LM</i><i>+2</i></button><a class="exit-workspace" href="/">Exit</a></div></header>"""
+    return f"""<header class="command-header"><div class="command-brand">{logo(dark=True)}<span class="workspace-divider"></span><button class="trip-switcher" type="button" data-toast="Trip switcher is a local demo control"><span class="trip-dot"></span>{esc(trip.title if trip else 'Weekend Club')} {icon('chevron', 15)}</button></div><div class="command-status"><button class="icon-control" type="button" data-theme-toggle aria-label="Toggle theme">{icon('palette', 14)}</button><span class="sync-status"><i></i> All changes saved locally</span><button class="icon-control" type="button" data-command-palette aria-label="Open command palette">⌘ K</button><button class="avatar-stack" type="button" data-toast="Ari and two fixture collaborators are viewing this plan"><i>AR</i><i>LM</i><i>+2</i></button><a class="exit-workspace" href="/">Exit</a></div></header>"""
 
 
 def command_pane(title: str, icon_name: str, body: str, key: str = "", extra: str = "") -> str:
@@ -394,33 +551,142 @@ def workspace(request, updated: str = "", error: str = "") -> HTMLResponse:
     return document("Trip command center", body, "command-shell")
 
 
+def prototype_response(request, page: str, title: str, *, slug: str = "granada-after-dark", query: str = "", search_params: dict | None = None):
+    if os.getenv("TRAVELOS_PROTOTYPE") != "1" or "variant" not in request.query_params:
+        return None
+    from prototype_ui import render_prototype
+
+    variant = request.query_params.get("variant", "A").upper()
+    if variant not in {"A", "B", "C"}:
+        variant = "A"
+    if page == "creators":
+        from prototype_creator import render_creator
+
+        content = render_creator(variant)
+        asset = "prototype_creator"
+    else:
+        from prototype_traveler import render_traveler
+
+        content = render_traveler(page, variant, slug=slug, query=query, search_params=search_params)
+        asset = "prototype_traveler"
+    return HTMLResponse(render_prototype(
+        title, content, page, variant,
+        page_styles=(f"{asset}.css",), page_scripts=(f"{asset}.js",),
+    ))
+
+
 def create_app():
     bootstrap_store()
     fast_app = FastHTML(title=APP_NAME, sess_cls=None)
 
-    @fast_app.get("/assets/theme.css")
-    def theme_css():
-        return FileResponse(ASSETS_DIR / "theme.css", media_type="text/css")
+    @fast_app.get("/assets/tokens.css")
+    def tokens_css():
+        return FileResponse(ASSETS_DIR / "tokens.css", media_type="text/css")
+
+    @fast_app.get("/assets/components.css")
+    def components_css():
+        return FileResponse(ASSETS_DIR / "components.css", media_type="text/css")
+
+    @fast_app.get("/assets/public.css")
+    def public_css():
+        return FileResponse(ASSETS_DIR / "public.css", media_type="text/css")
+
+    @fast_app.get("/assets/workspace.css")
+    def workspace_css():
+        return FileResponse(ASSETS_DIR / "workspace.css", media_type="text/css")
+
+    @fast_app.get("/assets/responsive.css")
+    def responsive_css():
+        return FileResponse(ASSETS_DIR / "responsive.css", media_type="text/css")
 
     @fast_app.get("/assets/app.js")
     def app_js():
         return FileResponse(ASSETS_DIR / "app.js", media_type="text/javascript")
 
+    @fast_app.get("/assets/icons.js")
+    def icons_js():
+        return FileResponse(ASSETS_DIR / "icons.js", media_type="text/javascript")
+
+    @fast_app.get("/assets/brand.js")
+    def brand_js():
+        return FileResponse(ASSETS_DIR / "brand.js", media_type="text/javascript")
+
+    @fast_app.get("/assets/{filename}")
+    def prototype_asset(filename: str):
+        allowed = {
+            "prototype.css", "prototype.js", "prototype_creator.css",
+            "prototype_creator.js", "prototype_traveler.css", "prototype_traveler.js",
+            "connected.css", "connected.mjs", "connected-state.mjs",
+            "connected-public.mjs", "connected-views.mjs",
+            "compass.css", "compass-fixtures.mjs", "compass-model.mjs",
+            "compass-views.mjs", "compass-flow.mjs", "compass-demo.json",
+        }
+        if os.getenv("TRAVELOS_PROTOTYPE") != "1" or filename not in allowed:
+            return HTMLResponse("Not found", status_code=404)
+        media_type = "application/json" if filename.endswith(".json") else "text/css" if filename.endswith(".css") else "text/javascript"
+        return FileResponse(ASSETS_DIR / filename, media_type=media_type)
+
+    @fast_app.get("/assets/photos/compass/{filename}")
+    def compass_photo(filename: str):
+        allowed = {"venice-beach-los-angeles-hero.jpg", "la-jolla-beach.jpg",
+                   "la-jolla-coast-walk.jpg", "san-diego-skyline-from-coronado.jpg",
+                   "santa-monica-beach-pier.jpg"}
+        if os.getenv("TRAVELOS_PROTOTYPE") != "1" or filename not in allowed:
+            return HTMLResponse("Not found", status_code=404)
+        return FileResponse(ASSETS_DIR / "photos" / "compass" / filename, media_type="image/jpeg")
+
+    @fast_app.get("/prototype")
+    def connected_prototype():
+        # Opt-in frontend wiring only: no demo auth/data hooks or shared JS.
+        if os.getenv("TRAVELOS_PROTOTYPE") != "1":
+            return HTMLResponse("Not found", status_code=404)
+        return HTMLResponse('''<!doctype html><html lang="en" class="connected-shell" data-appearance="compass">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light"><link rel="icon" href="data:,">
+<script>try{const p=localStorage.getItem('travelos.connected.appearance.v1');document.documentElement.dataset.appearance=['compass','fieldwork','snap'].includes(p)?p:'compass';}catch{}</script>
+<title>TravelOS / Compass · plan the whole trip</title><link rel="stylesheet" href="/assets/connected.css"><link rel="stylesheet" href="/assets/compass.css"></head>
+<body><a class="skip" href="#main">Skip to content</a><div id="app"></div>
+<dialog id="context-drawer" aria-labelledby="drawer-title"></dialog>
+<div id="announcer" class="sr-only" role="status" aria-live="polite"></div>
+<script type="module" src="/assets/connected.mjs"></script></body></html>''')
+
     @fast_app.get("/")
     def home(request):
-        return landing(request)
+        preview = prototype_response(request, "home", "Travel worth passing on")
+        return preview if preview is not None else landing(request)
 
     @fast_app.get("/discover")
     def discovery(request, q: str = "", region: str = "", dates: str = "", travelers: str = ""):
-        return discover(request, q, region, dates=dates, travelers=travelers)
+        preview = prototype_response(request, "discover", "Discover a starting point", query=q)
+        return preview if preview is not None else discover(request, q, region, dates=dates, travelers=travelers)
+
+    @fast_app.get("/search")
+    def search_results(request, destination: str = "", checkin: str = "", checkout: str = "", travelers: str = "2 travelers", variant: str = "A"):
+        early = prototype_response(request, "search", "Find your next trip")
+        if early:
+            if not destination.strip():
+                return prototype_response(request, "search", "Plan a trip to…", search_params={"destination": "", "checkin": "", "checkout": "", "travelers": travelers, "plans": [], "empty": True})
+            city = search_fixtures.resolve_city(destination)
+            params = {
+                "destination": destination,
+                "checkin": checkin,
+                "checkout": checkout,
+                "travelers": travelers,
+                "plans": search_fixtures.matching_plans(city) if city else [],
+                "empty": False,
+            }
+            return prototype_response(request, "search", f"Explore {destination}", search_params=params)
+        return RedirectResponse("/discover", status_code=303)
 
     @fast_app.get("/plans/{slug}")
     def public_plan(request, slug: str, forked: str = ""):
-        return plan_detail(request, slug, forked)
+        preview = prototype_response(request, "plans", "A plan to make your own", slug=slug)
+        return preview if preview is not None else plan_detail(request, slug, forked)
 
     @fast_app.get("/signin")
     def sign_in_page(request, next: str = "/workspace"):
-        return signin(request, next)
+        preview = prototype_response(request, "signin", "Your next chapter")
+        return preview if preview is not None else signin(request, next)
 
     @fast_app.post("/signin")
     async def sign_in(request):
@@ -449,9 +715,18 @@ def create_app():
             return RedirectResponse("/discover", status_code=303)
         return RedirectResponse("/workspace", status_code=303)
 
+    @fast_app.get("/plans/{slug}/preview")
+    def preview_workspace(request, slug: str):
+        trip = public_trip(slug) or next((t for t in data._generated_trips if t.get("slug") == slug), None)
+        if not trip:
+            return document("Plan not found", f"{public_header(request)}<main id=\"main\" class=\"simple-page\"><h1>This route took a different turn.</h1><a class=\"primary-button\" href=\"/discover\">Back to discovery</a></main>{public_footer()}")
+        body = f"""{preview_workspace_body(trip)}"""
+        return document(f"Preview: {trip['title']}", body, "command-shell")
+
     @fast_app.get("/workspace")
     def trip_workspace(request, updated: str = "", error: str = ""):
-        return workspace(request, updated, error)
+        preview = prototype_response(request, "workspace", "Make the days yours")
+        return preview if preview is not None else workspace(request, updated, error)
 
     @fast_app.post("/workspace/preferences")
     async def save_workspace_preferences(request):
@@ -474,7 +749,8 @@ def create_app():
 
     @fast_app.get("/creators")
     def creator_studio(request, submitted: str = ""):
-        return creators(request, submitted)
+        preview = prototype_response(request, "creators", "From story to shared adventure")
+        return preview if preview is not None else creators(request, submitted)
 
     @fast_app.post("/creators/submit")
     async def creator_submit(request):
@@ -483,8 +759,9 @@ def create_app():
         payload = {key: str(form.get(key, "")) for key in (*required, "youtube", "instagram")}
         if not all(payload[key].strip() for key in required):
             return RedirectResponse("/creators#submit", status_code=303)
-        save_creator_submission(payload)
-        return RedirectResponse("/creators?submitted=1#submit", status_code=303)
+        submission = save_creator_submission(payload)
+        generated = generate_trip_from_submission(submission)
+        return RedirectResponse(f"/creators?submitted=1&trip={generated['slug']}#submit", status_code=303)
 
     session_config = SessionConfig(secure=False, max_age=60 * 60 * 8)
     return create_session_middleware(os.getenv("SESSION_SECRET", "travelos-local-demo-change-me"), session_config)(fast_app)

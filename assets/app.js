@@ -1,4 +1,6 @@
 /* TravelOS browser-only polish. No analytics, maps, providers, or external scripts. */
+import { icon } from '/assets/icons.js';
+
 (() => {
   const toastRegion = document.querySelector('.toast-region');
   const showToast = (message) => {
@@ -13,6 +15,29 @@
     }, 3000);
   };
 
+  /* ── Theme toggle ────────────────────────────────────────────────── */
+  const themeToggle = document.querySelector('[data-theme-toggle]');
+  if (themeToggle) {
+    themeToggle.addEventListener('click', () => {
+      const body = document.body;
+      const current = body.getAttribute('data-theme');
+      const next = current === 'dark' ? 'bright' : 'dark';
+      body.setAttribute('data-theme', next);
+      try { localStorage.setItem('travelos-theme', next); } catch (_) { /* noop */ }
+      const label = next === 'dark' ? 'coding' : 'bright';
+      showToast(`Theme: ${label} 🎨`);
+    });
+  }
+
+  /* Restore saved theme preference (public pages only — workspace always starts dark) */
+  try {
+    const saved = localStorage.getItem('travelos-theme');
+    if (saved && !document.body.classList.contains('command-shell')) {
+      document.body.setAttribute('data-theme', saved);
+    }
+  } catch (_) { /* noop */ }
+
+  /* ── Click delegation ────────────────────────────────────────────── */
   document.addEventListener('click', (event) => {
     const toaster = event.target.closest('[data-toast]');
     if (toaster) showToast(toaster.dataset.toast);
@@ -71,8 +96,19 @@
     if (event.target.closest('[data-command-close]')) {
       document.querySelector('[data-command-dialog]')?.setAttribute('hidden', '');
     }
+
+    /* ── Copy share link ───────────────────────────────────────────── */
+    const copyBtn = event.target.closest('[data-copy-link]');
+    if (copyBtn) {
+      const url = copyBtn.dataset.copyLink || window.location.href;
+      navigator.clipboard.writeText(url).then(
+        () => showToast('Link copied! Share it with your travel crew. 📋'),
+        () => showToast('Could not copy — select and copy manually.')
+      );
+    }
   });
 
+  /* ── Keyboard shortcuts ─────────────────────────────────────────── */
   document.addEventListener('keydown', (event) => {
     const dialog = document.querySelector('[data-command-dialog]');
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
@@ -83,15 +119,19 @@
     if (event.key === 'Escape' && dialog && !dialog.hasAttribute('hidden')) {
       dialog.setAttribute('hidden', '');
     }
-    if (['1', '2', '3', '4', '5'].includes(event.key) && document.body.classList.contains('command-shell')) {
-      const pane = document.querySelector(`.pane-key`)?.closest('.command-pane');
+    /* Pane keys 1–6 — only active in workspace */
+    if (['1', '2', '3', '4', '5', '6'].includes(event.key) && document.body.classList.contains('command-shell')) {
       const target = [...document.querySelectorAll('.pane-key')].find((key) => key.textContent.trim() === event.key)?.closest('.command-pane');
       if (target) {
         target.scrollIntoView({ behavior: 'smooth', block: 'center' });
         target.animate([{ outline: '2px solid #f2c85d' }, { outline: '0 solid transparent' }], { duration: 850 });
         showToast(`Pane ${event.key} focused.`);
       }
-      void pane;
+    }
+    /* Quick theme toggle: Ctrl+Shift+T */
+    if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key.toLowerCase() === 't') {
+      event.preventDefault();
+      themeToggle?.click();
     }
   });
 })();

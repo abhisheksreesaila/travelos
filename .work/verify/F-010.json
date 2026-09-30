@@ -1,0 +1,23 @@
+[
+  {
+    "expect_text": "Plan the whole trip"
+  },
+  {
+    "click": "a[href=\"#/signin\"]"
+  },
+  {
+    "click": "#demo-signin button"
+  },
+  {
+    "expect_text": "Stay bundles"
+  },
+  {
+    "expect_text": "4,135.40"
+  },
+  {
+    "click": "[data-action=\"compass-save\"]"
+  },
+  {
+    "expect_text": "not reserved"
+  }
+]

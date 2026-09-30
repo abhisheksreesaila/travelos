@@ -1,0 +1,53 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   TravelOS Responsive — Shared breakpoints and viewport-adaptive overrides
+   Load after public.css and workspace.css to override as needed.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Shared breakpoints ─────────────────────────────────────────────────── */
+/* These supplement the per-page media queries already in public.css & workspace.css
+   with cross-cutting layout adjustments. */
+
+/* Tablet-ish (≤900px) */
+@media (max-width: 900px) {
+  .site-header-inner { gap: 20px; }
+  .site-nav { gap: 16px; }
+  .header-actions { gap: 10px; }
+  .plan-layout { grid-template-columns: 1fr; }
+  .hero-content { grid-template-columns: 1fr; }
+  .hero-art { display: none; }
+}
+
+/* Phone-ish (≤650px) */
+@media (max-width: 650px) {
+  .site-header-inner { height: 62px; padding: 0 17px; gap: 14px; }
+  .site-nav { display: none; }
+  .mobile-menu { display: flex; }
+  .hero-content { min-height: auto; padding: 50px 18px 90px; }
+  .hero-copy h1 { font-size: 38px; }
+  .travel-search { grid-template-columns: 1fr; }
+  .plan-cover { height: 260px; }
+  .plan-layout { gap: 30px; }
+  .discover-page { padding: 40px 18px 60px; }
+  .discover-toolbar { flex-direction: column; align-items: stretch; }
+  .simple-page { padding: 60px 20px; }
+  .simple-page h1 { font-size: 32px; }
+  .signin-page { margin: 60px auto; }
+  .signin-page h1 { font-size: 34px; }
+}
+
+/* Small phone (≤420px) */
+@media (max-width: 420px) {
+  .header-actions .text-button { display: none; }
+  .trip-card-body { padding: 16px; }
+  .trip-card h3 { font-size: 18px; }
+}
+
+/* ── Reduced motion ─────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  html { scroll-behavior: auto; }
+}

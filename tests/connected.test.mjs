@@ -110,11 +110,11 @@ test('public allowlist, immutable versions and whole-version independent forks',
   assert.doesNotMatch(JSON.stringify(draft),/PRIVATE|secret@|REF-123|Ari|trip-/);
   draft.title='Slow mornings';draft.blocks[0].title='Garden wander';
   s.act('publicDraft',{id:contribution,draft});
-  s.act('publish',{id:contribution,reviewed:true});
-  s.act('publish',{id:contribution,reviewed:true});
+  s.act('publish',{id:contribution,approval:approval(s,contribution)});
+  s.act('publish',{id:contribution,approval:approval(s,contribution)});
   assert.equal(s.state.publications[contribution].versions.length,1);
   draft.title='Slow mornings, with a market';
-  s.act('publicDraft',{id:contribution,draft});s.act('publish',{id:contribution,reviewed:true});
+  s.act('publicDraft',{id:contribution,draft});s.act('publish',{id:contribution,approval:approval(s,contribution)});
   assert.equal(s.state.publications[contribution].versions[0].title,'Slow mornings');
   const fork=s.act('fork',{id:contribution,version:1,start:'2026-11-01'});
   assert.equal(s.state.trips[fork].blocks[0].date,'2026-11-02');
@@ -123,7 +123,7 @@ test('public allowlist, immutable versions and whole-version independent forks',
   assert.equal(s.state.publications[contribution].versions[0].blocks.length,1);
   assert.equal(s.state.trips[id].blocks.length,1);
   draft.title='Email secret@example.com';assert.throws(()=>s.act('publicDraft',{id:contribution,draft}),/public|private|email/i);
-  s.act('persona',{name:'Mina'});assert.throws(()=>s.act('publish',{id:contribution,reviewed:true}),/contributor/i);
+  s.act('persona',{name:'Mina'});assert.throws(()=>s.act('publish',{id:contribution,approval:approval(s,contribution)}),/contributor/i);
 });
 
 test('creator synthetic source, edited preview and publish match; unsafe URLs rejected and source changes invalidate', () => {
@@ -147,7 +147,7 @@ test('forked hotel edits and deletes do not remove unrelated unlinked activities
   const s=setup(),id=trip(s);
   s.act('saveCandidate',{trip:id,candidate:'h0a',query:query()});s.act('choose',{trip:id,candidate:'h0a'});
   s.act('event',{trip:id,title:'Garden',date:'2026-10-13',start:'10:00',end:'11:00',zone:'UTC'});
-  const c=s.act('contribute',{trip:id});s.act('publish',{id:c,reviewed:true});
+  const c=s.act('contribute',{trip:id});s.act('publish',{id:c,approval:approval(s,c)});
   const f=s.act('fork',{id:c,version:1,start:'2026-11-01'}),hotel=s.state.trips[f].blocks.find(x=>x.kind==='hotel');
   s.act('deleteEvent',{trip:f,id:hotel.id});
   assert.equal(s.state.trips[f].blocks.length,2,'unlinked public hotel is one editable block, not a private reservation');
@@ -167,4 +167,90 @@ test('invalid search is rejected rather than silently interpreted', () => {
     assert.throws(() => api.search(query(change)), /airport|date|adult|room|age|budget/i);
   }
   assert.equal(api.search(query({destination:'',origin:'',airport:'',start:'',end:''})).length, 8);
+});
+
+test('new trip research retains the actual Lisbon four-adult Business result query by persona', () => {
+  const storage=memory(), s=api.createStore(storage), committed=query({destination:'Lisbon',airport:'LIS',adults:4,cabin:'Business'});
+  s.act('research',{scope:'search',value:{draft:query(),committed}});
+  const id=s.act('createTrip',{title:'Lisbon together',query:committed});
+  s.act('saveCandidate',{trip:id,candidate:'f1b',query:committed});
+  const value=s.state.research[`Ari:${id}`];
+  assert.deepEqual(value,{draft:committed,committed});
+  assert.deepEqual(api.search(value.committed).map(f=>f.id),['f1b','h1b']);
+  assert.deepEqual(s.state.trips[id].shortlist[0].query,value.committed);
+  assert.deepEqual(api.createStore(storage).state.research[`Ari:${id}`],value);
+  s.act('persona',{name:'Mina'});assert.equal(s.state.research[`Mina:${id}`],undefined);
+});
+
+test('source typing preserves edited creator work across reload and requires confirmed replacement', () => {
+  const storage=memory(),s=api.createStore(storage);
+  s.act('extract',{source:'https://example.com/lisbon'});
+  const draft=s.state.creator.draft;draft.title='My edited route';draft.blocks[0].title='My garden';draft.blocks.splice(1,1);
+  s.act('creatorReview',{draft,reviewed:true});
+  s.act('source',{source:'https://example.com/lisbonx'});
+  assert.deepEqual(s.state.creator.draft,draft);
+  assert.equal(s.state.creator.outdated,true);assert.equal(s.state.creator.reviewed,false);
+  const resumed=api.createStore(storage),before=resumed.state;
+  assert.deepEqual(resumed.state.creator.draft,draft);
+  assert.throws(()=>resumed.act('creatorReview',{draft,reviewed:true}),/source|outdated/i);
+  assert.throws(()=>resumed.act('creatorPublish'),/source|review/i);
+  assert.throws(()=>resumed.act('extract',{source:before.creator.source}),/confirm|replace/i);
+  assert.deepEqual(resumed.state,before,'blocked review/publish/replacement must not discard edits');
+  resumed.act('extract',{source:before.creator.source,replace:true});
+  assert.equal(resumed.state.creator.draft.blocks.length,3);
+  assert.notEqual(resumed.state.creator.draft.title,draft.title);
+  assert.ok(!resumed.state.creator.outdated);
+  resumed.act('creatorReview',{draft:resumed.state.creator.draft,reviewed:true});
+  assert.ok(resumed.act('creatorPublish'));
+});
+
+test('user-controlled inherited entity IDs are unavailable, never executable objects', () => {
+  const s=setup();
+  for(const id of ['constructor','__proto__','toString','hasOwnProperty','valueOf','missing']){
+    const before=s.state;
+    assert.throws(()=>s.act('fork',{id,version:1,start:'2026-10-12'}),/Published version unavailable/);
+    assert.throws(()=>s.act('visit',{trip:id,tab:'research'}),/Trip no longer available/);
+    assert.throws(()=>s.act('publicDraft',{id,draft:{}}),/contributor/);
+    assert.throws(()=>s.act('publish',{id,reviewed:true}),/contributor/);
+    assert.equal(s.shared(id,'token'),null);assert.equal(s.shared(id,undefined),null);
+    assert.deepEqual(s.state,before);
+  }
+});
+
+test('own but malformed trip and publication records also resolve as unavailable', () => {
+  const storage=memory(),s=api.createStore(storage),value=s.state;
+  for(const [id,entry] of Object.entries({null:null,array:[],partial:{id:'partial'},wrong:{id:'wrong',members:{},blocks:[],versions:{}},wrongID:{id:'another'}})){
+    value.trips[id]=entry;value.publications[id]=entry;
+  }
+  storage.setItem(api.KEY,JSON.stringify(value));const resumed=api.createStore(storage);
+  for(const id of Object.keys(value.trips)){
+    assert.throws(()=>resumed.act('fork',{id,version:1,start:'2026-10-12'}),/Published version unavailable/);
+    assert.throws(()=>resumed.act('visit',{trip:id,tab:'research'}),/Trip no longer available/);
+    assert.equal(resumed.shared(id,undefined),null);
+  }
+});
+
+const approval = (s,id) => api.publicPreview(s.state.publications[id]);
+for(const published of [false,true]) test(`publication rejects stale, cross-contribution and changed-back approvals atomically (existing version: ${published})`, () => {
+  const s=setup(), t=trip(s);
+  s.act('event',{trip:t,title:'Garden',date:'2026-10-12',start:'10:00',end:'11:00',zone:'UTC'});
+  const id=s.act('contribute',{trip:t});
+  if(published)s.act('publish',{id,reviewed:true,approval:approval(s,id)});
+  const reviewed=approval(s,id), changed=structuredClone(reviewed.payload);changed.title='Changed after preview';
+  s.act('publicDraft',{id,draft:changed});
+  const before=s.state;
+  assert.throws(()=>s.act('publish',{id,reviewed:true,approval:reviewed}),/preview/i);
+  assert.deepEqual(s.state,before,'rejection must leave all state unchanged');
+  s.act('publicDraft',{id,draft:reviewed.payload});
+  assert.throws(()=>s.act('publish',{id,reviewed:true,approval:reviewed}),/preview/i,'editing back does not restore approval');
+  const other=s.act('contribute',{trip:t});
+  assert.throws(()=>s.act('publish',{id:other,reviewed:true,approval:approval(s,id)}),/preview/i);
+  assert.throws(()=>s.act('publish',{id,reviewed:true}),/preview/i,'a boolean alone is not approval');
+  const fresh=approval(s,id), differentPayload=structuredClone(fresh);
+  differentPayload.payload.title='Not the reviewed wording';
+  const unchanged=s.state;
+  assert.throws(()=>s.act('publish',{id,approval:differentPayload}),/preview/i,'same ID and revision cannot approve a different payload');
+  assert.deepEqual(s.state,unchanged);
+  s.act('publish',{id,approval:fresh});
+  assert.equal(s.state.publications[id].versions.at(-1).title,fresh.payload.title);
 });

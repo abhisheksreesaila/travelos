@@ -6,6 +6,7 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from starlette.testclient import TestClient
 
@@ -24,6 +25,38 @@ class TravelOSDemoTests(unittest.TestCase):
 
     def tearDown(self):
         self.client.__exit__(None, None, None)
+
+    def test_prototype_is_opt_in_and_preserves_normal_auth(self):
+        with patch.dict(os.environ, {"TRAVELOS_PROTOTYPE": "0"}):
+            self.assertNotIn("prototype-shell", self.client.get("/?variant=A").text)
+            self.assertEqual(self.client.get("/assets/prototype.css").status_code, 404)
+            response = self.client.get("/workspace?variant=A", follow_redirects=False)
+            self.assertEqual(response.status_code, 303)
+        with patch.dict(os.environ, {"TRAVELOS_PROTOTYPE": "1"}):
+            self.assertNotIn("prototype-shell", self.client.get("/").text)
+            self.assertEqual(self.client.get("/workspace", follow_redirects=False).status_code, 303)
+            self.assertEqual(self.client.get("/assets/not-a-preview-file.js").status_code, 404)
+
+    def test_prototype_routes_and_assets_render_without_a_session(self):
+        with patch.dict(os.environ, {"TRAVELOS_PROTOTYPE": "1"}):
+            for variant in ("A", "B", "C"):
+                for route in ("/", "/discover", "/creators", "/signin", "/workspace", "/plans/granada-after-dark", "/search"):
+                    with self.subTest(route=route, variant=variant):
+                        qs = "?variant={variant}"
+                        if route == "/search":
+                            qs = "?destination=Granada&variant={variant}"
+                        response = self.client.get(f"{route}{qs.format(variant=variant)}")
+                        self.assertEqual(response.status_code, 200)
+                        self.assertIn("prototype-shell", response.text)
+                        self.assertIn("/assets/prototype.css", response.text)
+                        self.assertIn("/assets/prototype.js", response.text)
+                        self.assertNotIn("/assets/public.css", response.text)
+            for asset in ("prototype", "prototype_creator", "prototype_traveler"):
+                for extension, content_type in (("css", "text/css"), ("js", "text/javascript")):
+                    with self.subTest(asset=asset, extension=extension):
+                        response = self.client.get(f"/assets/{asset}.{extension}")
+                        self.assertEqual(response.status_code, 200)
+                        self.assertTrue(response.headers["content-type"].startswith(content_type))
 
     def test_public_discovery_is_available_without_a_session(self):
         response = self.client.get("/discover?q=granada")
@@ -113,18 +146,44 @@ class TravelOSDemoTests(unittest.TestCase):
             follow_redirects=True,
         )
         self.assertEqual(response.status_code, 200)
-        self.assertIn("Pitch received in the local creator queue", response.text)
+        self.assertIn("Your trip is live!", response.text)
+        self.assertIn("Late tram notes", response.text)  # trip title shown in confirmation
         self.assertTrue((Path(_TEMP_DATA.name) / "travelos_host.db").exists())
         self.assertTrue((Path(_TEMP_DATA.name) / "travelos-weekend-club_db.db").exists())
 
     def test_public_pages_make_fixture_scope_clear(self):
         plan = self.client.get("/plans/granada-after-dark")
-        self.assertIn("Fixture data", plan.text)
+        self.assertIn("FIXTURE DATA", plan.text)
         self.assertIn("CREATOR FIELD GUIDE", plan.text)
         self.assertIn("does not connect to creator platforms", plan.text)
         self.assertIn("No live reservations are made in this demo", plan.text)
         self.assertNotIn("googleapis", plan.text.lower())
         self.assertNotIn("unpkg", plan.text.lower())
+
+    def test_search_results_shows_all_sections(self):
+        with patch.dict(os.environ, {"TRAVELOS_PROTOTYPE": "1"}):
+            response = self.client.get("/search?destination=Granada&variant=A")
+            self.assertEqual(response.status_code, 200)
+            self.assertIn("prototype-shell", response.text)
+            self.assertIn("Granada", response.text)
+            self.assertIn("p-search-plans", response.text)
+            # Verify old dashboard sections have been moved to plan detail
+            self.assertNotIn("p-search-weather", response.text)
+            self.assertNotIn("p-search-places", response.text)
+            self.assertNotIn("p-search-friends", response.text)
+            self.assertNotIn("p-search-travel", response.text)
+
+    def test_search_empty_shows_prompt(self):
+        with patch.dict(os.environ, {"TRAVELOS_PROTOTYPE": "1"}):
+            response = self.client.get("/search?destination=&variant=A")
+            self.assertEqual(response.status_code, 200)
+            self.assertIn("Where would you", response.text)
+
+    def test_search_redirects_without_prototype(self):
+        with patch.dict(os.environ, {"TRAVELOS_PROTOTYPE": "0"}):
+            response = self.client.get("/search?destination=Granada", follow_redirects=False)
+            self.assertEqual(response.status_code, 303)
+            self.assertIn("/discover", response.headers["location"])
 
 
 if __name__ == "__main__":

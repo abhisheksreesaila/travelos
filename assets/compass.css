@@ -1,0 +1,130 @@
+/* New journey layout is usable in every appearance; palette and legacy density are Compass-only. */
+.connected-shell[data-appearance="compass"]{--bg:#f4f6f5;--surface:#fff;--surface-2:#edf2f1;--text:#182d35;--text-mid:#52636a;--border:#d5dfdb;--border-hi:#7b8d87;--accent:#086b5b;--accent-hi:#055346;--blue-dim:#e8efff;--violet-dim:#f0eafa;--green-dim:#e1f1e6;--yellow-dim:#fff1cd;--focus:#245dcb;--danger:#ac3038;--font-sans:Arial,'Liberation Sans',sans-serif;--font-mono:Arial,'Liberation Sans',sans-serif;--font-display:var(--font-sans);--body-size:14px;--small-size:12px;--label-size:12px;--heading-size:24px;--section-size:18px;--content-width:1360px;--radius-sm:8px;--radius-md:12px;--shadow-sm:0 1px 3px #182d350c;--shadow-md:0 6px 24px #182d3510;--panel-edge:1px;--panel-shadow:var(--shadow-sm);--press:0px}
+.connected-shell[data-appearance="compass"] body{line-height:1.45}
+.connected-shell[data-appearance="compass"] h3{font-size:16px}
+.connected-shell[data-appearance="compass"] .btn{min-height:32px;padding:5px 11px;font-size:13px;line-height:20px}
+.connected-shell[data-appearance="compass"] .btn.primary{color:#fff;border-color:var(--accent);box-shadow:none}
+.connected-shell[data-appearance="compass"] .btn.primary:disabled{color:var(--text-mid);border-color:var(--border-hi)}
+.connected-shell[data-appearance="compass"] a{min-height:24px}
+.connected-shell[data-appearance="compass"] label{gap:4px;margin-bottom:8px}
+.connected-shell[data-appearance="compass"] input,.connected-shell[data-appearance="compass"] select,.connected-shell[data-appearance="compass"] textarea{min-height:34px;padding:6px 8px;font:14px/20px var(--font-sans)}
+.connected-shell[data-appearance="compass"] .check{min-height:32px;font-size:14px;gap:8px}
+.connected-shell[data-appearance="compass"] .check input{min-height:20px;height:20px;width:20px}
+.connected-shell[data-appearance="compass"] .notice,.connected-shell[data-appearance="compass"] summary,.connected-shell[data-appearance="compass"] summary span{font-size:13px}
+.connected-shell[data-appearance="compass"] summary{min-height:32px;padding:8px 0}
+.connected-shell[data-appearance="compass"] .tag{font-size:12px;padding:3px 8px}
+.connected-shell[data-appearance="compass"] .site-header{padding:8px 24px;gap:12px;min-height:58px}
+.connected-shell[data-appearance="compass"] #primary-nav a,.connected-shell[data-appearance="compass"] #trip-tabs a{font-size:13px;min-height:34px;padding:6px 10px}
+.connected-shell[data-appearance="compass"] .settings>summary{font-size:13px;padding:6px}
+.connected-shell[data-appearance="compass"] .demo-strip{padding:6px max(24px,calc((100vw - 1312px)/2));gap:8px;line-height:18px}
+.connected-shell[data-appearance="compass"] footer{padding:16px max(24px,calc((100vw - 1312px)/2))}
+.connected-shell[data-appearance="compass"] .drawer-head h2{font-size:20px}
+.connected-shell[data-appearance="compass"] .drawer-head [data-action="close"]{min-height:28px;padding:3px 8px}
+.connected-shell[data-appearance="compass"] dialog{box-shadow:-4px 0 24px #182d351f;border-color:var(--border)}
+.connected-shell[data-appearance="compass"] .form-grid{gap:12px}
+.connected-shell[data-appearance="compass"] .trip-tools{gap:6px}
+.connected-shell[data-appearance="compass"] .day-nav{margin:12px 0}
+.connected-shell[data-appearance="compass"] .tile-open strong,.connected-shell[data-appearance="compass"] .tile-open .meta{font-size:13px}
+.connected-shell[data-appearance="compass"] .calendar-day>h3,.connected-shell[data-appearance="compass"] .hour-line span{font-size:13px}
+.connected-shell[data-appearance="compass"] .calendar-day>h3{padding:8px}
+.connected-shell[data-appearance="compass"] .trip-heading{padding-top:12px}
+.connected-shell[data-appearance="compass"] .card-body{padding:16px}
+.connected-shell[data-appearance="compass"] .settings-panel{width:290px}
+.connected-shell .compass-ui .compass-mark{display:grid;place-items:center;width:30px;height:30px;border:1px solid var(--border);border-radius:8px;background:var(--green-dim);color:var(--text);font-size:22px}
+.connected-shell .compass-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0 8px}
+.connected-shell .compass-heading h1{margin:0}
+.connected-shell .compass-kicker{display:block;font:600 12px/18px var(--font-sans);color:var(--text-mid);margin-bottom:4px}
+.connected-shell .compass-query{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:8px 12px;margin-bottom:10px;box-shadow:var(--shadow-sm)}
+.connected-shell .compass-query-grid{display:grid;grid-template-columns:1.65fr .65fr .8fr .8fr 1.15fr 1.15fr .55fr 1.5fr .55fr auto;gap:8px;align-items:end}
+.connected-shell .compass-query-grid label{margin:0;font-family:var(--font-sans)}
+.connected-shell .compass-query>.meta{margin:8px 0 0}
+.connected-shell .compass-query .error:empty{display:none}
+.connected-shell .compass-total{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:16px;background:var(--surface);border:1px solid var(--accent);border-radius:12px;padding:8px 12px;margin-bottom:10px;box-shadow:var(--shadow-sm)}
+.connected-shell .compass-total p{margin:0 0 2px;font-weight:600}
+.connected-shell .compass-total-price{display:flex;flex-direction:column;text-align:right;margin-left:auto;min-width:185px}
+.connected-shell .compass-total-price>strong{font-size:24px;line-height:28px;letter-spacing:-.02em}
+.connected-shell .compass-lanes{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.connected-shell .compass-lane{min-width:0;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow-sm)}
+.connected-shell .compass-lane>header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 12px;background:var(--surface-2);border-bottom:1px solid var(--border)}
+.connected-shell .compass-lane h2{font-size:16px;margin:0;line-height:22px}
+.connected-shell .compass-lane h2 .meta{margin-left:5px}
+.connected-shell .compass-offer{display:flex;gap:10px;padding:7px 12px;border-bottom:1px solid var(--border);min-height:112px;position:relative;font-size:13px;line-height:19px}
+.connected-shell .compass-offer:last-child{border-bottom:0}
+.connected-shell .compass-offer.is-selected{background:color-mix(in srgb,var(--green-dim) 40%,var(--surface));box-shadow:inset 3px 0 var(--accent)}
+.connected-shell .compass-offer-main{flex:1;min-width:0}
+.connected-shell .compass-offer-title{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:4px}
+.connected-shell .compass-offer p{margin:2px 0}
+.connected-shell .compass-offer-price{display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0;gap:1px;min-width:122px}
+.connected-shell .compass-offer-price>strong{font-size:17px;line-height:22px}
+.connected-shell .compass-offer-price .btn{padding:2px 8px;min-height:26px;font-size:12px;line-height:20px}
+.connected-shell .compass-offer-price [data-action="compass-flight"],.connected-shell .compass-offer-price [data-action="compass-stay"]{border-color:transparent;background:transparent;color:var(--text-mid);text-decoration:underline;min-height:24px;padding:1px 3px}
+.connected-shell .compass-tag{font-size:12px;line-height:18px;padding:1px 6px;border-radius:5px;white-space:nowrap}
+.connected-shell .compass-tag.blue{background:var(--blue-dim)}
+.connected-shell .compass-tag.violet{background:var(--violet-dim)}
+.connected-shell .compass-photo{margin:0;min-width:0}
+.connected-shell .compass-photo img{display:block;width:100%;height:200px;object-fit:cover;border-radius:8px}
+.connected-shell .compass-photo figcaption{font:12px/16px var(--font-sans);color:var(--text-mid);padding:5px 0}
+.connected-shell .compass-stay-thumb{width:84px;flex-shrink:0}
+.connected-shell .compass-stay-thumb img{height:64px;border-radius:6px}
+.connected-shell .compass-stay-thumb figcaption{font-size:12px;line-height:15px;max-height:none}
+.connected-shell .compass-stay{min-height:145px}
+.connected-shell .compass-basis{margin:8px 0;display:flex;gap:8px;align-items:center;justify-content:space-between}
+.connected-shell .compass-basis .btn{flex-shrink:0}
+.connected-shell .is-stale{opacity:.58}
+.connected-shell .compass-empty{padding:24px 16px}
+.connected-shell .compass-context{display:grid;grid-template-columns:1.2fr 1fr;gap:16px}
+.connected-shell .compass-context.context-fresh{animation:compass-fade 180ms ease-out}
+.connected-shell .compass-context>article{border:1px solid var(--border);background:var(--surface);border-radius:12px;padding:14px}
+.connected-shell .compass-context h2{font-size:16px;margin-bottom:4px}
+.connected-shell .compass-weather{display:flex;gap:10px;margin:12px 0;flex-wrap:wrap}
+.connected-shell .compass-weather>div{display:flex;flex-direction:column;gap:2px;flex:1;min-width:70px}
+.connected-shell .compass-cost{width:100%;border-collapse:collapse;margin:16px 0;font-size:13px}
+.connected-shell .compass-cost caption{text-align:left;font-size:16px;font-weight:600;margin-bottom:8px}
+.connected-shell .compass-cost th{text-align:left;font-weight:400}
+.connected-shell .compass-cost td{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.connected-shell .compass-cost th,.connected-shell .compass-cost td{padding:8px;border-bottom:1px solid var(--border);vertical-align:top}
+.connected-shell .compass-cost th .meta{display:block}
+.connected-shell .compass-cost tfoot{background:var(--surface-2);font-weight:700}
+.connected-shell .compass-review{max-width:960px}
+.connected-shell .compass-credit{max-width:700px;margin-bottom:32px}
+.connected-shell .compass-map{border:1px solid var(--border);border-radius:12px;background:var(--surface-2);margin:12px 0;overflow:hidden}
+.connected-shell .compass-map svg{display:block;width:100%;height:220px}
+.connected-shell .compass-map p{padding:8px;margin:0}
+.connected-shell .compass-landing{display:grid;grid-template-columns:1fr 1.05fr;gap:40px;align-items:center;padding:30px 0}
+.connected-shell .compass-landing h1{font-size:36px;line-height:1.08;margin:12px 0 16px;letter-spacing:-.035em;max-width:18ch}
+.connected-shell .compass-landing>div>p{font-size:16px;max-width:55ch}
+.connected-shell .compass-landing>div>.meta{font-size:12px;margin-top:16px}
+.connected-shell .compass-landing .landing-photo img{height:320px;border-radius:16px}
+.connected-shell .compass-benefits{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;padding:20px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.connected-shell .compass-benefits h2{font-size:18px}
+.connected-shell .compass-how{padding:24px 0}
+.connected-shell .compass-how ol{display:grid;grid-template-columns:repeat(3,1fr);gap:32px;padding-left:20px}
+.connected-shell .compass-faq{max-width:900px;margin-bottom:24px}
+.connected-shell .compass-samples{margin:24px 0}
+.connected-shell .compass-sample-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.connected-shell .compass-sample-grid article{border:1px solid var(--border);border-radius:12px;padding:12px;background:var(--surface)}
+.connected-shell .compass-sample-grid article>div{padding:12px 0 0}
+.connected-shell [data-action="compass-query-open"]{display:none}
+.connected-shell[data-appearance="compass"] .compass-stay-thumb{width:76px}
+@keyframes compass-fade{from{opacity:.45}to{opacity:1}}
+@media(max-width:1150px){.connected-shell .compass-query-grid{grid-template-columns:repeat(5,minmax(0,1fr))}.connected-shell .compass-stay-thumb{display:none}.connected-shell .compass-offer{flex-wrap:wrap}.connected-shell .compass-offer-main{flex-basis:60%}.connected-shell .compass-offer-price{flex:1;min-width:110px}}
+@media(max-width:760px){
+ .connected-shell .compass-lanes,.connected-shell .compass-context,.connected-shell .compass-landing,.connected-shell .compass-benefits,.connected-shell .compass-how ol,.connected-shell .compass-sample-grid{grid-template-columns:1fr}
+ .connected-shell .compass-landing{padding:20px 0;gap:16px}.connected-shell .compass-landing h1{font-size:32px}.connected-shell .compass-landing .landing-photo img{height:230px}
+ .connected-shell .compass-query-grid{grid-template-columns:1fr 1fr}.connected-shell .desktop-query{display:none}.connected-shell [data-action="compass-query-open"]{display:inline-flex}
+ .connected-shell .compass-heading{align-items:flex-start}.connected-shell .compass-heading h1{font-size:22px}.connected-shell .compass-heading>.btn{flex-shrink:0}
+ .connected-shell .compass-total{padding:9px;gap:8px;flex-wrap:wrap;box-shadow:0 4px 8px #182d3512}.connected-shell .compass-total>div:first-child{flex-basis:100%}.connected-shell .compass-total>div:first-child p{font-size:12px;line-height:16px}.connected-shell .compass-total-price{text-align:left;margin:0;min-width:0;flex:1}.connected-shell .compass-total-price>strong{font-size:21px}.connected-shell .compass-total-price .meta{font-size:12px}
+ .connected-shell .compass-stay-thumb,.connected-shell[data-appearance="compass"] .compass-stay-thumb{display:block;width:75px}.connected-shell .compass-stay .compass-offer-main{flex-basis:55%}.connected-shell .compass-stay .compass-offer-price{flex-direction:row;align-items:center;flex-wrap:wrap;justify-content:space-between;flex-basis:100%}.connected-shell .compass-stay .compass-offer-price>.meta{flex-basis:100%;order:4}
+ .connected-shell .compass-basis{display:block}.connected-shell .compass-basis .btn{margin-top:8px}
+ .connected-shell[data-appearance="compass"] main{padding:0 12px 32px}.connected-shell[data-appearance="compass"] .site-header{padding:8px 12px;gap:6px}.connected-shell[data-appearance="compass"] .brand{font-size:17px}.connected-shell[data-appearance="compass"] #primary-nav{order:3;flex-basis:100%;justify-content:flex-start;gap:4px}.connected-shell[data-appearance="compass"] .site-header>.btn{margin-left:auto}.connected-shell[data-appearance="compass"] .demo-strip{padding:6px 12px;gap:2px}.connected-shell[data-appearance="compass"] .site-header .settings{margin-left:auto}
+ .connected-shell .compass-benefits{gap:12px}.connected-shell .compass-how ol{gap:12px}.connected-shell .compass-cost th,.connected-shell .compass-cost td{padding:6px 3px}
+}
+/* Keep the search total and Save reachable on the narrowest screens in every appearance. */
+@media(max-width:360px){
+ .connected-shell:has(#compass-total) .site-header{padding:8px 12px;gap:8px}
+ .connected-shell:has(#compass-total) .demo-strip{padding:6px 12px;gap:4px}
+}
+@media(pointer:coarse){.connected-shell .compass-ui .btn,.connected-shell .compass-ui a,.connected-shell .compass-ui summary,.connected-shell[data-appearance="compass"] .btn,.connected-shell[data-appearance="compass"] .drawer-head [data-action="close"],.connected-shell[data-appearance="compass"] input:not([type="checkbox"]),.connected-shell[data-appearance="compass"] select,.connected-shell[data-appearance="compass"] .check,.connected-shell[data-appearance="compass"] #primary-nav a{min-height:44px}.connected-shell .compass-offer-price .btn{min-height:44px}}
+@media(prefers-reduced-motion:reduce){.connected-shell .compass-context.context-fresh{animation:none}.connected-shell .compass-ui *{transition:none;scroll-behavior:auto}}
+@media print{.connected-shell .compass-ui header,.connected-shell .compass-total{position:static}.connected-shell .compass-context.context-fresh{animation:none}}
+

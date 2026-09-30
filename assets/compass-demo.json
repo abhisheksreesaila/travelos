@@ -1,0 +1,2519 @@
+{
+  "schemaVersion": 1,
+  "fixtureRevision": "compass-1",
+  "currency": "USD",
+  "provenance": "synthetic",
+  "supportedDateRange": {
+    "start": "2026-10-01",
+    "end": "2026-10-31",
+    "maxNights": 7
+  },
+  "supportedDestinations": [
+    {
+      "id": "ca",
+      "name": "California coast",
+      "origin": "SFO",
+      "airport": "BUR",
+      "returnOrigin": "SAN",
+      "minNights": 3,
+      "areas": [
+        "Hollywood",
+        "Del Mar",
+        "San Diego"
+      ],
+      "photo": "venice"
+    },
+    {
+      "id": "sd",
+      "name": "San Diego",
+      "origin": "SFO",
+      "airport": "SAN",
+      "returnOrigin": "SAN",
+      "minNights": 1,
+      "areas": [
+        "Harbor",
+        "Coastal San Diego",
+        "Mesa"
+      ],
+      "photo": "skyline"
+    },
+    {
+      "id": "sm",
+      "name": "Santa Monica",
+      "origin": "SFO",
+      "airport": "LAX",
+      "returnOrigin": "LAX",
+      "minNights": 1,
+      "areas": [
+        "Pier",
+        "Ocean Avenue",
+        "Inland Santa Monica"
+      ],
+      "photo": "pier"
+    }
+  ],
+  "photos": [
+    {
+      "id": "venice",
+      "file": "venice-beach-los-angeles-hero.jpg",
+      "depictedPlace": "Venice Beach, Los Angeles, California",
+      "alt": "Looking down Venice Beach",
+      "isPropertyPhoto": false,
+      "author": "Blake Everett",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Venice_Beach,_Los_Angeles,_CA_01.jpg",
+      "license": {
+        "name": "CC0 1.0 Universal",
+        "url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "commons_license_field": "CC0",
+        "commons_license_url_field": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+        "declaration": "{{self|cc-zero}}",
+        "source_claim": "Own work, declared by credited photographer",
+        "public_domain_verified": true,
+        "attribution_required": false,
+        "evidence_file": "license-evidence.json",
+        "evidence_page_id": 43275574,
+        "jurisdiction_note": "CC0 waiver/fallback or creator public-domain release; no hotel affiliation, trademark, privacy or endorsement rights claimed."
+      },
+      "width": 1200,
+      "height": 798,
+      "sha256": "451bbddef90e6c3e189bd7bd2c5192e8a4799679e17e21ba660cbeb109064e1a",
+      "sourceRevision": "https://commons.wikimedia.org/w/index.php?oldid=1047913190"
+    },
+    {
+      "id": "jolla",
+      "file": "la-jolla-beach.jpg",
+      "depictedPlace": "La Jolla, San Diego, California",
+      "alt": "Coastal beach view at La Jolla",
+      "isPropertyPhoto": false,
+      "author": "Gbgiinfras",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:La_Jolla_beach_view.jpg",
+      "license": {
+        "name": "CC0 1.0 Universal",
+        "url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "commons_license_field": "CC0",
+        "commons_license_url_field": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+        "declaration": "{{self|cc-zero}}",
+        "source_claim": "Own work, declared by credited photographer",
+        "public_domain_verified": true,
+        "attribution_required": false,
+        "evidence_file": "license-evidence.json",
+        "evidence_page_id": 145595760,
+        "jurisdiction_note": "CC0 waiver/fallback or creator public-domain release; no hotel affiliation, trademark, privacy or endorsement rights claimed."
+      },
+      "width": 800,
+      "height": 600,
+      "sha256": "2c93be2e8e7bab23a12ce514ad71425a09bf7f93c9d85075c38d6ea8790f5ef7",
+      "sourceRevision": "https://commons.wikimedia.org/w/index.php?oldid=1116627405"
+    },
+    {
+      "id": "walk",
+      "file": "la-jolla-coast-walk.jpg",
+      "depictedPlace": "Coast Walk above La Jolla Cove, San Diego, California",
+      "alt": "Historic Coast Walk above La Jolla Cove",
+      "isPropertyPhoto": false,
+      "author": "Mollymcc",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Coast_Walk,_La_Jolla,_California.jpg",
+      "license": {
+        "name": "CC0 1.0 Universal",
+        "url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "commons_license_field": "CC0",
+        "commons_license_url_field": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+        "declaration": "{{self|cc-zero}}",
+        "source_claim": "Own work, declared by credited photographer",
+        "public_domain_verified": true,
+        "attribution_required": false,
+        "evidence_file": "license-evidence.json",
+        "evidence_page_id": 148659843,
+        "jurisdiction_note": "CC0 waiver/fallback or creator public-domain release; no hotel affiliation, trademark, privacy or endorsement rights claimed."
+      },
+      "width": 640,
+      "height": 480,
+      "sha256": "6e86e54387b33b686563e9675d4f44abe4baf3667002ae02fffd4b9847cbb8e5",
+      "sourceRevision": "https://commons.wikimedia.org/w/index.php?oldid=1103856505"
+    },
+    {
+      "id": "skyline",
+      "file": "san-diego-skyline-from-coronado.jpg",
+      "depictedPlace": "Coronado looking toward downtown San Diego, California",
+      "alt": "Downtown San Diego skyline from Coronado",
+      "isPropertyPhoto": false,
+      "author": "iodine-127",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Downtown_San_Diego_from_Coronado.JPG",
+      "license": {
+        "name": "Public domain \u2014 author release (PD-self)",
+        "url": "https://commons.wikimedia.org/wiki/Template:PD-self",
+        "commons_license_field": "Public domain",
+        "commons_license_url_field": null,
+        "declaration": "{{PD-self}}; Permission=all rights released",
+        "source_claim": "Own work, declared by credited photographer",
+        "public_domain_verified": true,
+        "attribution_required": false,
+        "evidence_file": "license-evidence.json",
+        "evidence_page_id": 1017519,
+        "jurisdiction_note": "CC0 waiver/fallback or creator public-domain release; no hotel affiliation, trademark, privacy or endorsement rights claimed."
+      },
+      "width": 800,
+      "height": 600,
+      "sha256": "269afbaaa24654a7979feb26663efe3054267c09b8b00e5b2f43449549d0f825",
+      "sourceRevision": "https://commons.wikimedia.org/w/index.php?oldid=1212071102"
+    },
+    {
+      "id": "pier",
+      "file": "santa-monica-beach-pier.jpg",
+      "depictedPlace": "Santa Monica State Beach and Pier, California",
+      "alt": "Santa Monica beach and pier area",
+      "isPropertyPhoto": false,
+      "author": "Andrek02",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Santa_Monica_California_001.jpg",
+      "license": {
+        "name": "CC0 1.0 Universal",
+        "url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "commons_license_field": "CC0",
+        "commons_license_url_field": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+        "declaration": "{{self|cc-zero}}",
+        "source_claim": "Own work, declared by credited photographer",
+        "public_domain_verified": true,
+        "attribution_required": false,
+        "evidence_file": "license-evidence.json",
+        "evidence_page_id": 148174050,
+        "jurisdiction_note": "CC0 waiver/fallback or creator public-domain release; no hotel affiliation, trademark, privacy or endorsement rights claimed."
+      },
+      "width": 800,
+      "height": 600,
+      "sha256": "b7c53c9825e9e8921e02def524018aa5575aa2be89a732df169bd70fc19eea2e",
+      "sourceRevision": "https://commons.wikimedia.org/w/index.php?oldid=1062466055"
+    }
+  ],
+  "flightOffers": [
+    {
+      "id": "ca-direct",
+      "destination": "ca",
+      "title": "Direct there. Direct home.",
+      "provenance": "synthetic",
+      "cabin": "Economy",
+      "capacity": 12,
+      "outbound": [
+        {
+          "origin": "SFO",
+          "destination": "BUR",
+          "departure": "09:58",
+          "arrival": "11:30",
+          "zone": "America/Los_Angeles",
+          "carrier": "United fixture",
+          "flight": "Sample 101",
+          "provenance": "synthetic"
+        }
+      ],
+      "returning": [
+        {
+          "origin": "SAN",
+          "destination": "SFO",
+          "departure": "15:56",
+          "arrival": "17:38",
+          "zone": "America/Los_Angeles",
+          "carrier": "United fixture",
+          "flight": "United 2117 fixture",
+          "provenance": "synthetic"
+        }
+      ],
+      "baggage": {
+        "cabin": true,
+        "checked": false,
+        "description": "One cabin bag per traveler; checked bag not included; no paid extras offered."
+      },
+      "refundable": false,
+      "refundPolicy": "Nonrefundable; changes not included",
+      "adultBaseCents": 39500,
+      "childFares": [
+        {
+          "minAge": 0,
+          "maxAge": 11,
+          "baseCents": 32000
+        },
+        {
+          "minAge": 12,
+          "maxAge": 17,
+          "baseCents": 39500
+        }
+      ],
+      "taxPerTravelerCents": 4500,
+      "feePerTravelerCents": 800
+    },
+    {
+      "id": "ca-one-stop",
+      "destination": "ca",
+      "title": "One stop. More room in the budget.",
+      "provenance": "synthetic",
+      "cabin": "Economy",
+      "capacity": 12,
+      "outbound": [
+        {
+          "origin": "SFO",
+          "destination": "LAS",
+          "departure": "07:00",
+          "arrival": "08:35",
+          "zone": "America/Los_Angeles",
+          "carrier": "United fixture",
+          "flight": "Sample 102",
+          "provenance": "synthetic"
+        },
+        {
+          "origin": "LAS",
+          "destination": "BUR",
+          "departure": "09:40",
+          "arrival": "11:30",
+          "zone": "America/Los_Angeles",
+          "carrier": "United fixture",
+          "flight": "Sample 103",
+          "provenance": "synthetic"
+        }
+      ],
+      "returning": [
+        {
+          "origin": "SAN",
+          "destination": "SFO",
+          "departure": "15:56",
+          "arrival": "17:38",
+          "zone": "America/Los_Angeles",
+          "carrier": "United fixture",
+          "flight": "United 2117 fixture",
+          "provenance": "synthetic"
+        }
+      ],
+      "baggage": {
+        "cabin": true,
+        "checked": false,
+        "description": "One cabin bag per traveler; checked bag not included; no paid extras offered."
+      },
+      "refundable": false,
+      "refundPolicy": "Nonrefundable; changes not included",
+      "adultBaseCents": 28500,
+      "childFares": [
+        {
+          "minAge": 0,
+          "maxAge": 11,
+          "baseCents": 24500
+        },
+        {
+          "minAge": 12,
+          "maxAge": 17,
+          "baseCents": 28500
+        }
+      ],
+      "taxPerTravelerCents": 3700,
+      "feePerTravelerCents": 800
+    },
+    {
+      "id": "ca-flex",
+      "destination": "ca",
+      "title": "A little flexibility.",
+      "provenance": "synthetic",
+      "cabin": "Economy",
+      "capacity": 12,
+      "outbound": [
+        {
+          "origin": "SFO",
+          "destination": "BUR",
+          "departure": "09:58",
+          "arrival": "11:30",
+          "zone": "America/Los_Angeles",
+          "carrier": "United fixture",
+          "flight": "Sample 101",
+          "provenance": "synthetic"
+        }
+      ],
+      "returning": [
+        {
+          "origin": "SAN",
+          "destination": "SFO",
+          "departure": "15:56",
+          "arrival": "17:38",
+          "zone": "America/Los_Angeles",
+          "carrier": "United fixture",
+          "flight": "United 2117 fixture",
+          "provenance": "synthetic"
+        }
+      ],
+      "baggage": {
+        "cabin": true,
+        "checked": true,
+        "description": "One cabin bag per traveler; one checked bag included."
+      },
+      "refundable": true,
+      "refundPolicy": "Refundable before outbound departure",
+      "adultBaseCents": 48000,
+      "childFares": [
+        {
+          "minAge": 0,
+          "maxAge": 11,
+          "baseCents": 38000
+        },
+        {
+          "minAge": 12,
+          "maxAge": 17,
+          "baseCents": 48000
+        }
+      ],
+      "taxPerTravelerCents": 4700,
+      "feePerTravelerCents": 800
+    },
+    {
+      "id": "ca-late",
+      "destination": "ca",
+      "title": "A later start.",
+      "provenance": "synthetic",
+      "cabin": "Economy",
+      "capacity": 12,
+      "outbound": [
+        {
+          "origin": "SFO",
+          "destination": "BUR",
+          "departure": "13:15",
+          "arrival": "14:45",
+          "zone": "America/Los_Angeles",
+          "carrier": "United fixture",
+          "flight": "Sample 101",
+          "provenance": "synthetic"
+        }
+      ],
+      "returning": [
+        {
+          "origin": "SAN",
+          "destination": "SFO",
+          "departure": "18:10",
+          "arrival": "19:50",
+          "zone": "America/Los_Angeles",
+          "carrier": "United fixture",
+          "flight": "United 2117 fixture",
+          "provenance": "synthetic"
+        }
+      ],
+      "baggage": {
+        "cabin": true,
+        "checked": false,
+        "description": "One cabin bag per traveler; checked bag not included; no paid extras offered."
+      },
+      "refundable": false,
+      "refundPolicy": "Nonrefundable; changes not included",
+      "adultBaseCents": 37000,
+      "childFares": [
+        {
+          "minAge": 0,
+          "maxAge": 11,
+          "baseCents": 29400
+        },
+        {
+          "minAge": 12,
+          "maxAge": 17,
+          "baseCents": 37000
+        }
+      ],
+      "taxPerTravelerCents": 4000,
+      "feePerTravelerCents": 800
+    },
+    {
+      "id": "sd-direct",
+      "destination": "sd",
+      "title": "Direct there. Direct home.",
+      "provenance": "synthetic",
+      "cabin": "Economy",
+      "capacity": 12,
+      "outbound": [
+        {
+          "origin": "SFO",
+          "destination": "SAN",
+          "departure": "09:58",
+          "arrival": "11:30",
+          "zone": "America/Los_Angeles",
+          "carrier": "Sample Air",
+          "flight": "Sample 101",
+          "provenance": "synthetic"
+        }
+      ],
+      "returning": [
+        {
+          "origin": "SAN",
+          "destination": "SFO",
+          "departure": "15:56",
+          "arrival": "17:38",
+          "zone": "America/Los_Angeles",
+          "carrier": "Sample Air",
+          "flight": "Sample 211",
+          "provenance": "synthetic"
+        }
+      ],
+      "baggage": {
+        "cabin": true,
+        "checked": false,
+        "description": "One cabin bag per traveler; checked bag not included; no paid extras offered."
+      },
+      "refundable": false,
+      "refundPolicy": "Nonrefundable; changes not included",
+      "adultBaseCents": 39500,
+      "childFares": [
+        {
+          "minAge": 0,
+          "maxAge": 11,
+          "baseCents": 32000
+        },
+        {
+          "minAge": 12,
+          "maxAge": 17,
+          "baseCents": 39500
+        }
+      ],
+      "taxPerTravelerCents": 4500,
+      "feePerTravelerCents": 800
+    },
+    {
+      "id": "sd-one-stop",
+      "destination": "sd",
+      "title": "One stop. More room in the budget.",
+      "provenance": "synthetic",
+      "cabin": "Economy",
+      "capacity": 12,
+      "outbound": [
+        {
+          "origin": "SFO",
+          "destination": "LAS",
+          "departure": "07:00",
+          "arrival": "08:35",
+          "zone": "America/Los_Angeles",
+          "carrier": "Sample Air",
+          "flight": "Sample 102",
+          "provenance": "synthetic"
+        },
+        {
+          "origin": "LAS",
+          "destination": "SAN",
+          "departure": "09:40",
+          "arrival": "11:30",
+          "zone": "America/Los_Angeles",
+          "carrier": "Sample Air",
+          "flight": "Sample 103",
+          "provenance": "synthetic"
+        }
+      ],
+      "returning": [
+        {
+          "origin": "SAN",
+          "destination": "SFO",
+          "departure": "15:56",
+          "arrival": "17:38",
+          "zone": "America/Los_Angeles",
+          "carrier": "Sample Air",
+          "flight": "Sample 211",
+          "provenance": "synthetic"
+        }
+      ],
+      "baggage": {
+        "cabin": true,
+        "checked": false,
+        "description": "One cabin bag per traveler; checked bag not included; no paid extras offered."
+      },
+      "refundable": false,
+      "refundPolicy": "Nonrefundable; changes not included",
+      "adultBaseCents": 28500,
+      "childFares": [
+        {
+          "minAge": 0,
+          "maxAge": 11,
+          "baseCents": 24500
+        },
+        {
+          "minAge": 12,
+          "maxAge": 17,
+          "baseCents": 28500
+        }
+      ],
+      "taxPerTravelerCents": 3700,
+      "feePerTravelerCents": 800
+    },
+    {
+      "id": "sd-flex",
+      "destination": "sd",
+      "title": "A little flexibility.",
+      "provenance": "synthetic",
+      "cabin": "Economy",
+      "capacity": 12,
+      "outbound": [
+        {
+          "origin": "SFO",
+          "destination": "SAN",
+          "departure": "09:58",
+          "arrival": "11:30",
+          "zone": "America/Los_Angeles",
+          "carrier": "Sample Air",
+          "flight": "Sample 101",
+          "provenance": "synthetic"
+        }
+      ],
+      "returning": [
+        {
+          "origin": "SAN",
+          "destination": "SFO",
+          "departure": "15:56",
+          "arrival": "17:38",
+          "zone": "America/Los_Angeles",
+          "carrier": "Sample Air",
+          "flight": "Sample 211",
+          "provenance": "synthetic"
+        }
+      ],
+      "baggage": {
+        "cabin": true,
+        "checked": true,
+        "description": "One cabin bag per traveler; one checked bag included."
+      },
+      "refundable": true,
+      "refundPolicy": "Refundable before outbound departure",
+      "adultBaseCents": 48000,
+      "childFares": [
+        {
+          "minAge": 0,
+          "maxAge": 11,
+          "baseCents": 38000
+        },
+        {
+          "minAge": 12,
+          "maxAge": 17,
+          "baseCents": 48000
+        }
+      ],
+      "taxPerTravelerCents": 4700,
+      "feePerTravelerCents": 800
+    },
+    {
+      "id": "sd-late",
+      "destination": "sd",
+      "title": "A later start.",
+      "provenance": "synthetic",
+      "cabin": "Economy",
+      "capacity": 12,
+      "outbound": [
+        {
+          "origin": "SFO",
+          "destination": "SAN",
+          "departure": "13:15",
+          "arrival": "14:45",
+          "zone": "America/Los_Angeles",
+          "carrier": "Sample Air",
+          "flight": "Sample 101",
+          "provenance": "synthetic"
+        }
+      ],
+      "returning": [
+        {
+          "origin": "SAN",
+          "destination": "SFO",
+          "departure": "18:10",
+          "arrival": "19:50",
+          "zone": "America/Los_Angeles",
+          "carrier": "Sample Air",
+          "flight": "Sample 211",
+          "provenance": "synthetic"
+        }
+      ],
+      "baggage": {
+        "cabin": true,
+        "checked": false,
+        "description": "One cabin bag per traveler; checked bag not included; no paid extras offered."
+      },
+      "refundable": false,
+      "refundPolicy": "Nonrefundable; changes not included",
+      "adultBaseCents": 37000,
+      "childFares": [
+        {
+          "minAge": 0,
+          "maxAge": 11,
+          "baseCents": 29400
+        },
+        {
+          "minAge": 12,
+          "maxAge": 17,
+          "baseCents": 37000
+        }
+      ],
+      "taxPerTravelerCents": 4000,
+      "feePerTravelerCents": 800
+    },
+    {
+      "id": "sm-direct",
+      "destination": "sm",
+      "title": "Direct there. Direct home.",
+      "provenance": "synthetic",
+      "cabin": "Economy",
+      "capacity": 12,
+      "outbound": [
+        {
+          "origin": "SFO",
+          "destination": "LAX",
+          "departure": "09:58",
+          "arrival": "11:30",
+          "zone": "America/Los_Angeles",
+          "carrier": "Sample Air",
+          "flight": "Sample 101",
+          "provenance": "synthetic"
+        }
+      ],
+      "returning": [
+        {
+          "origin": "LAX",
+          "destination": "SFO",
+          "departure": "15:56",
+          "arrival": "17:38",
+          "zone": "America/Los_Angeles",
+          "carrier": "Sample Air",
+          "flight": "Sample 211",
+          "provenance": "synthetic"
+        }
+      ],
+      "baggage": {
+        "cabin": true,
+        "checked": false,
+        "description": "One cabin bag per traveler; checked bag not included; no paid extras offered."
+      },
+      "refundable": false,
+      "refundPolicy": "Nonrefundable; changes not included",
+      "adultBaseCents": 39500,
+      "childFares": [
+        {
+          "minAge": 0,
+          "maxAge": 11,
+          "baseCents": 32000
+        },
+        {
+          "minAge": 12,
+          "maxAge": 17,
+          "baseCents": 39500
+        }
+      ],
+      "taxPerTravelerCents": 4500,
+      "feePerTravelerCents": 800
+    },
+    {
+      "id": "sm-one-stop",
+      "destination": "sm",
+      "title": "One stop. More room in the budget.",
+      "provenance": "synthetic",
+      "cabin": "Economy",
+      "capacity": 12,
+      "outbound": [
+        {
+          "origin": "SFO",
+          "destination": "LAS",
+          "departure": "07:00",
+          "arrival": "08:35",
+          "zone": "America/Los_Angeles",
+          "carrier": "Sample Air",
+          "flight": "Sample 102",
+          "provenance": "synthetic"
+        },
+        {
+          "origin": "LAS",
+          "destination": "LAX",
+          "departure": "09:40",
+          "arrival": "11:30",
+          "zone": "America/Los_Angeles",
+          "carrier": "Sample Air",
+          "flight": "Sample 103",
+          "provenance": "synthetic"
+        }
+      ],
+      "returning": [
+        {
+          "origin": "LAX",
+          "destination": "SFO",
+          "departure": "15:56",
+          "arrival": "17:38",
+          "zone": "America/Los_Angeles",
+          "carrier": "Sample Air",
+          "flight": "Sample 211",
+          "provenance": "synthetic"
+        }
+      ],
+      "baggage": {
+        "cabin": true,
+        "checked": false,
+        "description": "One cabin bag per traveler; checked bag not included; no paid extras offered."
+      },
+      "refundable": false,
+      "refundPolicy": "Nonrefundable; changes not included",
+      "adultBaseCents": 28500,
+      "childFares": [
+        {
+          "minAge": 0,
+          "maxAge": 11,
+          "baseCents": 24500
+        },
+        {
+          "minAge": 12,
+          "maxAge": 17,
+          "baseCents": 28500
+        }
+      ],
+      "taxPerTravelerCents": 3700,
+      "feePerTravelerCents": 800
+    },
+    {
+      "id": "sm-flex",
+      "destination": "sm",
+      "title": "A little flexibility.",
+      "provenance": "synthetic",
+      "cabin": "Economy",
+      "capacity": 12,
+      "outbound": [
+        {
+          "origin": "SFO",
+          "destination": "LAX",
+          "departure": "09:58",
+          "arrival": "11:30",
+          "zone": "America/Los_Angeles",
+          "carrier": "Sample Air",
+          "flight": "Sample 101",
+          "provenance": "synthetic"
+        }
+      ],
+      "returning": [
+        {
+          "origin": "LAX",
+          "destination": "SFO",
+          "departure": "15:56",
+          "arrival": "17:38",
+          "zone": "America/Los_Angeles",
+          "carrier": "Sample Air",
+          "flight": "Sample 211",
+          "provenance": "synthetic"
+        }
+      ],
+      "baggage": {
+        "cabin": true,
+        "checked": true,
+        "description": "One cabin bag per traveler; one checked bag included."
+      },
+      "refundable": true,
+      "refundPolicy": "Refundable before outbound departure",
+      "adultBaseCents": 48000,
+      "childFares": [
+        {
+          "minAge": 0,
+          "maxAge": 11,
+          "baseCents": 38000
+        },
+        {
+          "minAge": 12,
+          "maxAge": 17,
+          "baseCents": 48000
+        }
+      ],
+      "taxPerTravelerCents": 4700,
+      "feePerTravelerCents": 800
+    },
+    {
+      "id": "sm-late",
+      "destination": "sm",
+      "title": "A later start.",
+      "provenance": "synthetic",
+      "cabin": "Economy",
+      "capacity": 12,
+      "outbound": [
+        {
+          "origin": "SFO",
+          "destination": "LAX",
+          "departure": "13:15",
+          "arrival": "14:45",
+          "zone": "America/Los_Angeles",
+          "carrier": "Sample Air",
+          "flight": "Sample 101",
+          "provenance": "synthetic"
+        }
+      ],
+      "returning": [
+        {
+          "origin": "LAX",
+          "destination": "SFO",
+          "departure": "18:10",
+          "arrival": "19:50",
+          "zone": "America/Los_Angeles",
+          "carrier": "Sample Air",
+          "flight": "Sample 211",
+          "provenance": "synthetic"
+        }
+      ],
+      "baggage": {
+        "cabin": true,
+        "checked": false,
+        "description": "One cabin bag per traveler; checked bag not included; no paid extras offered."
+      },
+      "refundable": false,
+      "refundPolicy": "Nonrefundable; changes not included",
+      "adultBaseCents": 37000,
+      "childFares": [
+        {
+          "minAge": 0,
+          "maxAge": 11,
+          "baseCents": 29400
+        },
+        {
+          "minAge": 12,
+          "maxAge": 17,
+          "baseCents": 37000
+        }
+      ],
+      "taxPerTravelerCents": 4000,
+      "feePerTravelerCents": 800
+    }
+  ],
+  "stayOffers": [
+    {
+      "id": "ca-standard",
+      "destination": "ca",
+      "title": "Hollywood + the coast",
+      "provenance": "synthetic",
+      "rating": 8.6,
+      "ratingBasis": "Synthetic score / 10; not guest reviews",
+      "amenities": {
+        "wifi": true,
+        "breakfast": null,
+        "parking": null
+      },
+      "cancellable": true,
+      "cancellationCutoff": "2026-09-30T23:59:00-07:00",
+      "cancellationPolicy": "Free cancellation through Sep 30, 2026 23:59 PDT",
+      "stays": [
+        {
+          "id": "ca-standard-0",
+          "name": "Loews Hollywood",
+          "fictional": false,
+          "location": "Hollywood",
+          "nightlyRoomBaseCents": 22500,
+          "taxBasisPoints": 1200,
+          "mandatoryFeePerRoomStayCents": 2000,
+          "occupancyPerRoom": 2,
+          "childPolicy": "Ages 0\u201317 accepted; child counts toward room occupancy.",
+          "roomLabel": "Standard room",
+          "checkin": "15:00",
+          "checkout": "08:00",
+          "walkingMinutes": null,
+          "walkingBasis": "Unknown: beach access and walking distance are not verified.",
+          "photo": "jolla"
+        },
+        {
+          "id": "ca-standard-1",
+          "name": "Del Mar Beach Hotel",
+          "fictional": false,
+          "location": "Del Mar",
+          "nightlyRoomBaseCents": 19500,
+          "taxBasisPoints": 1200,
+          "mandatoryFeePerRoomStayCents": 3000,
+          "occupancyPerRoom": 2,
+          "childPolicy": "Ages 0\u201317 accepted; child counts toward room occupancy.",
+          "roomLabel": "Standard room",
+          "checkin": "15:30",
+          "checkout": "11:00",
+          "walkingMinutes": null,
+          "walkingBasis": "Unknown: beach access and walking distance are not verified.",
+          "photo": "jolla"
+        }
+      ]
+    },
+    {
+      "id": "ca-upgrade",
+      "destination": "ca",
+      "title": "Same route. Better rooms.",
+      "provenance": "synthetic",
+      "rating": 8.6,
+      "ratingBasis": "Synthetic score / 10; not guest reviews",
+      "amenities": {
+        "wifi": true,
+        "breakfast": true,
+        "parking": null
+      },
+      "cancellable": true,
+      "cancellationCutoff": "2026-09-30T23:59:00-07:00",
+      "cancellationPolicy": "Free cancellation through Sep 30, 2026 23:59 PDT",
+      "stays": [
+        {
+          "id": "ca-upgrade-0",
+          "name": "Loews Hollywood",
+          "fictional": false,
+          "location": "Hollywood",
+          "nightlyRoomBaseCents": 27500,
+          "taxBasisPoints": 1200,
+          "mandatoryFeePerRoomStayCents": 3000,
+          "occupancyPerRoom": 2,
+          "childPolicy": "Ages 0\u201317 accepted; child counts toward room occupancy.",
+          "roomLabel": "Room upgrade",
+          "checkin": "15:00",
+          "checkout": "08:00",
+          "walkingMinutes": null,
+          "walkingBasis": "Unknown: beach access and walking distance are not verified.",
+          "photo": "walk"
+        },
+        {
+          "id": "ca-upgrade-1",
+          "name": "Del Mar Beach Hotel",
+          "fictional": false,
+          "location": "Del Mar",
+          "nightlyRoomBaseCents": 24500,
+          "taxBasisPoints": 1200,
+          "mandatoryFeePerRoomStayCents": 4000,
+          "occupancyPerRoom": 2,
+          "childPolicy": "Ages 0\u201317 accepted; child counts toward room occupancy.",
+          "roomLabel": "Room upgrade",
+          "checkin": "15:30",
+          "checkout": "11:00",
+          "walkingMinutes": null,
+          "walkingBasis": "Unknown: beach access and walking distance are not verified.",
+          "photo": "walk"
+        }
+      ]
+    },
+    {
+      "id": "ca-budget",
+      "destination": "ca",
+      "title": "City base. Simpler rooms.",
+      "provenance": "synthetic",
+      "rating": 8.0,
+      "ratingBasis": "Synthetic score / 10; not guest reviews",
+      "amenities": {
+        "wifi": true,
+        "breakfast": null,
+        "parking": false
+      },
+      "cancellable": false,
+      "cancellationCutoff": null,
+      "cancellationPolicy": "Nonrefundable",
+      "stays": [
+        {
+          "id": "ca-budget-0",
+          "name": "Juniper LA",
+          "fictional": true,
+          "location": "Inland Los Angeles",
+          "nightlyRoomBaseCents": 17500,
+          "taxBasisPoints": 1200,
+          "mandatoryFeePerRoomStayCents": 1600,
+          "occupancyPerRoom": 2,
+          "childPolicy": "Ages 0\u201317 accepted; child counts toward room occupancy.",
+          "roomLabel": "Standard room",
+          "checkin": "15:00",
+          "checkout": "11:00",
+          "walkingMinutes": null,
+          "walkingBasis": "Unknown: beach access and walking distance are not verified.",
+          "photo": "skyline"
+        },
+        {
+          "id": "ca-budget-1",
+          "name": "Harbor House SD",
+          "fictional": true,
+          "location": "Inland San Diego",
+          "nightlyRoomBaseCents": 15000,
+          "taxBasisPoints": 1200,
+          "mandatoryFeePerRoomStayCents": 2220,
+          "occupancyPerRoom": 2,
+          "childPolicy": "Ages 0\u201317 accepted; child counts toward room occupancy.",
+          "roomLabel": "Standard room",
+          "checkin": "15:00",
+          "checkout": "11:00",
+          "walkingMinutes": null,
+          "walkingBasis": "Unknown: beach access and walking distance are not verified.",
+          "photo": "skyline"
+        }
+      ]
+    },
+    {
+      "id": "sd-standard",
+      "destination": "sd",
+      "title": "Harbor House SD",
+      "provenance": "synthetic",
+      "rating": 8.6,
+      "ratingBasis": "Synthetic score / 10; not guest reviews",
+      "amenities": {
+        "wifi": true,
+        "breakfast": null,
+        "parking": null
+      },
+      "cancellable": true,
+      "cancellationCutoff": "2026-09-30T23:59:00-07:00",
+      "cancellationPolicy": "Free cancellation through Sep 30, 2026 23:59 PDT",
+      "stays": [
+        {
+          "id": "sd-standard-0",
+          "name": "Harbor House SD",
+          "fictional": true,
+          "location": "Harbor",
+          "nightlyRoomBaseCents": 15000,
+          "taxBasisPoints": 1200,
+          "mandatoryFeePerRoomStayCents": 2000,
+          "occupancyPerRoom": 2,
+          "childPolicy": "Ages 0\u201317 accepted; child counts toward room occupancy.",
+          "roomLabel": "Standard room",
+          "checkin": "15:00",
+          "checkout": "11:00",
+          "walkingMinutes": null,
+          "walkingBasis": "Unknown: beach access and walking distance are not verified.",
+          "photo": "jolla"
+        }
+      ]
+    },
+    {
+      "id": "sd-upgrade",
+      "destination": "sd",
+      "title": "Bay Garden SD",
+      "provenance": "synthetic",
+      "rating": 8.6,
+      "ratingBasis": "Synthetic score / 10; not guest reviews",
+      "amenities": {
+        "wifi": true,
+        "breakfast": true,
+        "parking": null
+      },
+      "cancellable": true,
+      "cancellationCutoff": "2026-09-30T23:59:00-07:00",
+      "cancellationPolicy": "Free cancellation through Sep 30, 2026 23:59 PDT",
+      "stays": [
+        {
+          "id": "sd-upgrade-0",
+          "name": "Bay Garden SD",
+          "fictional": true,
+          "location": "Coastal San Diego",
+          "nightlyRoomBaseCents": 21000,
+          "taxBasisPoints": 1200,
+          "mandatoryFeePerRoomStayCents": 2300,
+          "occupancyPerRoom": 2,
+          "childPolicy": "Ages 0\u201317 accepted; child counts toward room occupancy.",
+          "roomLabel": "Room upgrade",
+          "checkin": "15:00",
+          "checkout": "11:00",
+          "walkingMinutes": null,
+          "walkingBasis": "Unknown: beach access and walking distance are not verified.",
+          "photo": "walk"
+        }
+      ]
+    },
+    {
+      "id": "sd-budget",
+      "destination": "sd",
+      "title": "Mesa Rooms",
+      "provenance": "synthetic",
+      "rating": 8.0,
+      "ratingBasis": "Synthetic score / 10; not guest reviews",
+      "amenities": {
+        "wifi": true,
+        "breakfast": null,
+        "parking": false
+      },
+      "cancellable": false,
+      "cancellationCutoff": null,
+      "cancellationPolicy": "Nonrefundable",
+      "stays": [
+        {
+          "id": "sd-budget-0",
+          "name": "Mesa Rooms",
+          "fictional": true,
+          "location": "Mesa",
+          "nightlyRoomBaseCents": 12500,
+          "taxBasisPoints": 1200,
+          "mandatoryFeePerRoomStayCents": 2600,
+          "occupancyPerRoom": 2,
+          "childPolicy": "Ages 0\u201317 accepted; child counts toward room occupancy.",
+          "roomLabel": "Standard room",
+          "checkin": "15:00",
+          "checkout": "11:00",
+          "walkingMinutes": null,
+          "walkingBasis": "Unknown: beach access and walking distance are not verified.",
+          "photo": "skyline"
+        }
+      ]
+    },
+    {
+      "id": "sm-standard",
+      "destination": "sm",
+      "title": "Pier Lane Rooms",
+      "provenance": "synthetic",
+      "rating": 8.6,
+      "ratingBasis": "Synthetic score / 10; not guest reviews",
+      "amenities": {
+        "wifi": true,
+        "breakfast": null,
+        "parking": null
+      },
+      "cancellable": true,
+      "cancellationCutoff": "2026-09-30T23:59:00-07:00",
+      "cancellationPolicy": "Free cancellation through Sep 30, 2026 23:59 PDT",
+      "stays": [
+        {
+          "id": "sm-standard-0",
+          "name": "Pier Lane Rooms",
+          "fictional": true,
+          "location": "Pier",
+          "nightlyRoomBaseCents": 17500,
+          "taxBasisPoints": 1200,
+          "mandatoryFeePerRoomStayCents": 2000,
+          "occupancyPerRoom": 2,
+          "childPolicy": "Ages 0\u201317 accepted; child counts toward room occupancy.",
+          "roomLabel": "Standard room",
+          "checkin": "15:00",
+          "checkout": "11:00",
+          "walkingMinutes": null,
+          "walkingBasis": "Unknown: beach access and walking distance are not verified.",
+          "photo": "pier"
+        }
+      ]
+    },
+    {
+      "id": "sm-upgrade",
+      "destination": "sm",
+      "title": "Ocean Avenue Base",
+      "provenance": "synthetic",
+      "rating": 8.6,
+      "ratingBasis": "Synthetic score / 10; not guest reviews",
+      "amenities": {
+        "wifi": true,
+        "breakfast": true,
+        "parking": null
+      },
+      "cancellable": true,
+      "cancellationCutoff": "2026-09-30T23:59:00-07:00",
+      "cancellationPolicy": "Free cancellation through Sep 30, 2026 23:59 PDT",
+      "stays": [
+        {
+          "id": "sm-upgrade-0",
+          "name": "Ocean Avenue Base",
+          "fictional": true,
+          "location": "Ocean Avenue",
+          "nightlyRoomBaseCents": 23000,
+          "taxBasisPoints": 1200,
+          "mandatoryFeePerRoomStayCents": 2300,
+          "occupancyPerRoom": 2,
+          "childPolicy": "Ages 0\u201317 accepted; child counts toward room occupancy.",
+          "roomLabel": "Room upgrade",
+          "checkin": "15:00",
+          "checkout": "11:00",
+          "walkingMinutes": null,
+          "walkingBasis": "Unknown: beach access and walking distance are not verified.",
+          "photo": "pier"
+        }
+      ]
+    },
+    {
+      "id": "sm-budget",
+      "destination": "sm",
+      "title": "Inland Court",
+      "provenance": "synthetic",
+      "rating": 8.0,
+      "ratingBasis": "Synthetic score / 10; not guest reviews",
+      "amenities": {
+        "wifi": true,
+        "breakfast": null,
+        "parking": false
+      },
+      "cancellable": false,
+      "cancellationCutoff": null,
+      "cancellationPolicy": "Nonrefundable",
+      "stays": [
+        {
+          "id": "sm-budget-0",
+          "name": "Inland Court",
+          "fictional": true,
+          "location": "Inland Santa Monica",
+          "nightlyRoomBaseCents": 13500,
+          "taxBasisPoints": 1200,
+          "mandatoryFeePerRoomStayCents": 2600,
+          "occupancyPerRoom": 2,
+          "childPolicy": "Ages 0\u201317 accepted; child counts toward room occupancy.",
+          "roomLabel": "Standard room",
+          "checkin": "15:00",
+          "checkout": "11:00",
+          "walkingMinutes": null,
+          "walkingBasis": "Unknown: beach access and walking distance are not verified.",
+          "photo": "pier"
+        }
+      ]
+    }
+  ],
+  "weatherDays": [
+    {
+      "id": "ca-weather-1",
+      "destination": "ca",
+      "date": "2026-10-01",
+      "high": 22,
+      "low": 17,
+      "units": "C",
+      "condition": "Light breeze",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "ca-weather-2",
+      "destination": "ca",
+      "date": "2026-10-02",
+      "high": 21,
+      "low": 17,
+      "units": "C",
+      "condition": "Coastal cloud",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "ca-weather-3",
+      "destination": "ca",
+      "date": "2026-10-03",
+      "high": 23,
+      "low": 17,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "ca-weather-4",
+      "destination": "ca",
+      "date": "2026-10-04",
+      "high": 22,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "ca-weather-5",
+      "destination": "ca",
+      "date": "2026-10-05",
+      "high": 23,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "ca-weather-6",
+      "destination": "ca",
+      "date": "2026-10-06",
+      "high": 24,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "ca-weather-7",
+      "destination": "ca",
+      "date": "2026-10-07",
+      "high": 22,
+      "low": 17,
+      "units": "C",
+      "condition": "Light breeze",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "ca-weather-8",
+      "destination": "ca",
+      "date": "2026-10-08",
+      "high": 21,
+      "low": 17,
+      "units": "C",
+      "condition": "Coastal cloud",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "ca-weather-9",
+      "destination": "ca",
+      "date": "2026-10-09",
+      "high": 23,
+      "low": 17,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "ca-weather-10",
+      "destination": "ca",
+      "date": "2026-10-10",
+      "high": 22,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "ca-weather-11",
+      "destination": "ca",
+      "date": "2026-10-11",
+      "high": 23,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "ca-weather-12",
+      "destination": "ca",
+      "date": "2026-10-12",
+      "high": 24,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "ca-weather-13",
+      "destination": "ca",
+      "date": "2026-10-13",
+      "high": 22,
+      "low": 17,
+      "units": "C",
+      "condition": "Light breeze",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "ca-weather-14",
+      "destination": "ca",
+      "date": "2026-10-14",
+      "high": 21,
+      "low": 17,
+      "units": "C",
+      "condition": "Coastal cloud",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "ca-weather-15",
+      "destination": "ca",
+      "date": "2026-10-15",
+      "high": 23,
+      "low": 17,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "ca-weather-16",
+      "destination": "ca",
+      "date": "2026-10-16",
+      "high": 22,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "ca-weather-17",
+      "destination": "ca",
+      "date": "2026-10-17",
+      "high": 23,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "ca-weather-18",
+      "destination": "ca",
+      "date": "2026-10-18",
+      "high": 24,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "ca-weather-19",
+      "destination": "ca",
+      "date": "2026-10-19",
+      "high": 22,
+      "low": 17,
+      "units": "C",
+      "condition": "Light breeze",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "ca-weather-20",
+      "destination": "ca",
+      "date": "2026-10-20",
+      "high": 21,
+      "low": 17,
+      "units": "C",
+      "condition": "Coastal cloud",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "ca-weather-21",
+      "destination": "ca",
+      "date": "2026-10-21",
+      "high": 23,
+      "low": 17,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "ca-weather-22",
+      "destination": "ca",
+      "date": "2026-10-22",
+      "high": 22,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "ca-weather-23",
+      "destination": "ca",
+      "date": "2026-10-23",
+      "high": 23,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "ca-weather-24",
+      "destination": "ca",
+      "date": "2026-10-24",
+      "high": 24,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "ca-weather-25",
+      "destination": "ca",
+      "date": "2026-10-25",
+      "high": 22,
+      "low": 17,
+      "units": "C",
+      "condition": "Light breeze",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "ca-weather-26",
+      "destination": "ca",
+      "date": "2026-10-26",
+      "high": 21,
+      "low": 17,
+      "units": "C",
+      "condition": "Coastal cloud",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "ca-weather-27",
+      "destination": "ca",
+      "date": "2026-10-27",
+      "high": 23,
+      "low": 17,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "ca-weather-28",
+      "destination": "ca",
+      "date": "2026-10-28",
+      "high": 22,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "ca-weather-29",
+      "destination": "ca",
+      "date": "2026-10-29",
+      "high": 23,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "ca-weather-30",
+      "destination": "ca",
+      "date": "2026-10-30",
+      "high": 24,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "ca-weather-31",
+      "destination": "ca",
+      "date": "2026-10-31",
+      "high": 22,
+      "low": 17,
+      "units": "C",
+      "condition": "Light breeze",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sd-weather-1",
+      "destination": "sd",
+      "date": "2026-10-01",
+      "high": 22,
+      "low": 17,
+      "units": "C",
+      "condition": "Light breeze",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sd-weather-2",
+      "destination": "sd",
+      "date": "2026-10-02",
+      "high": 21,
+      "low": 17,
+      "units": "C",
+      "condition": "Coastal cloud",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sd-weather-3",
+      "destination": "sd",
+      "date": "2026-10-03",
+      "high": 23,
+      "low": 17,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sd-weather-4",
+      "destination": "sd",
+      "date": "2026-10-04",
+      "high": 22,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sd-weather-5",
+      "destination": "sd",
+      "date": "2026-10-05",
+      "high": 22,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sd-weather-6",
+      "destination": "sd",
+      "date": "2026-10-06",
+      "high": 23,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sd-weather-7",
+      "destination": "sd",
+      "date": "2026-10-07",
+      "high": 22,
+      "low": 17,
+      "units": "C",
+      "condition": "Light breeze",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sd-weather-8",
+      "destination": "sd",
+      "date": "2026-10-08",
+      "high": 21,
+      "low": 17,
+      "units": "C",
+      "condition": "Coastal cloud",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sd-weather-9",
+      "destination": "sd",
+      "date": "2026-10-09",
+      "high": 23,
+      "low": 17,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sd-weather-10",
+      "destination": "sd",
+      "date": "2026-10-10",
+      "high": 22,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sd-weather-11",
+      "destination": "sd",
+      "date": "2026-10-11",
+      "high": 22,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sd-weather-12",
+      "destination": "sd",
+      "date": "2026-10-12",
+      "high": 23,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sd-weather-13",
+      "destination": "sd",
+      "date": "2026-10-13",
+      "high": 22,
+      "low": 17,
+      "units": "C",
+      "condition": "Light breeze",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sd-weather-14",
+      "destination": "sd",
+      "date": "2026-10-14",
+      "high": 21,
+      "low": 17,
+      "units": "C",
+      "condition": "Coastal cloud",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sd-weather-15",
+      "destination": "sd",
+      "date": "2026-10-15",
+      "high": 23,
+      "low": 17,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sd-weather-16",
+      "destination": "sd",
+      "date": "2026-10-16",
+      "high": 22,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sd-weather-17",
+      "destination": "sd",
+      "date": "2026-10-17",
+      "high": 22,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sd-weather-18",
+      "destination": "sd",
+      "date": "2026-10-18",
+      "high": 23,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sd-weather-19",
+      "destination": "sd",
+      "date": "2026-10-19",
+      "high": 22,
+      "low": 17,
+      "units": "C",
+      "condition": "Light breeze",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sd-weather-20",
+      "destination": "sd",
+      "date": "2026-10-20",
+      "high": 21,
+      "low": 17,
+      "units": "C",
+      "condition": "Coastal cloud",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sd-weather-21",
+      "destination": "sd",
+      "date": "2026-10-21",
+      "high": 23,
+      "low": 17,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sd-weather-22",
+      "destination": "sd",
+      "date": "2026-10-22",
+      "high": 22,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sd-weather-23",
+      "destination": "sd",
+      "date": "2026-10-23",
+      "high": 22,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sd-weather-24",
+      "destination": "sd",
+      "date": "2026-10-24",
+      "high": 23,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sd-weather-25",
+      "destination": "sd",
+      "date": "2026-10-25",
+      "high": 22,
+      "low": 17,
+      "units": "C",
+      "condition": "Light breeze",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sd-weather-26",
+      "destination": "sd",
+      "date": "2026-10-26",
+      "high": 21,
+      "low": 17,
+      "units": "C",
+      "condition": "Coastal cloud",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sd-weather-27",
+      "destination": "sd",
+      "date": "2026-10-27",
+      "high": 23,
+      "low": 17,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sd-weather-28",
+      "destination": "sd",
+      "date": "2026-10-28",
+      "high": 22,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sd-weather-29",
+      "destination": "sd",
+      "date": "2026-10-29",
+      "high": 22,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sd-weather-30",
+      "destination": "sd",
+      "date": "2026-10-30",
+      "high": 23,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sd-weather-31",
+      "destination": "sd",
+      "date": "2026-10-31",
+      "high": 22,
+      "low": 17,
+      "units": "C",
+      "condition": "Light breeze",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sm-weather-1",
+      "destination": "sm",
+      "date": "2026-10-01",
+      "high": 21,
+      "low": 17,
+      "units": "C",
+      "condition": "Light breeze",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sm-weather-2",
+      "destination": "sm",
+      "date": "2026-10-02",
+      "high": 22,
+      "low": 17,
+      "units": "C",
+      "condition": "Coastal cloud",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sm-weather-3",
+      "destination": "sm",
+      "date": "2026-10-03",
+      "high": 23,
+      "low": 17,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sm-weather-4",
+      "destination": "sm",
+      "date": "2026-10-04",
+      "high": 22,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sm-weather-5",
+      "destination": "sm",
+      "date": "2026-10-05",
+      "high": 22,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sm-weather-6",
+      "destination": "sm",
+      "date": "2026-10-06",
+      "high": 23,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sm-weather-7",
+      "destination": "sm",
+      "date": "2026-10-07",
+      "high": 21,
+      "low": 17,
+      "units": "C",
+      "condition": "Light breeze",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sm-weather-8",
+      "destination": "sm",
+      "date": "2026-10-08",
+      "high": 22,
+      "low": 17,
+      "units": "C",
+      "condition": "Coastal cloud",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sm-weather-9",
+      "destination": "sm",
+      "date": "2026-10-09",
+      "high": 23,
+      "low": 17,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sm-weather-10",
+      "destination": "sm",
+      "date": "2026-10-10",
+      "high": 22,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sm-weather-11",
+      "destination": "sm",
+      "date": "2026-10-11",
+      "high": 22,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sm-weather-12",
+      "destination": "sm",
+      "date": "2026-10-12",
+      "high": 23,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sm-weather-13",
+      "destination": "sm",
+      "date": "2026-10-13",
+      "high": 21,
+      "low": 17,
+      "units": "C",
+      "condition": "Light breeze",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sm-weather-14",
+      "destination": "sm",
+      "date": "2026-10-14",
+      "high": 22,
+      "low": 17,
+      "units": "C",
+      "condition": "Coastal cloud",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sm-weather-15",
+      "destination": "sm",
+      "date": "2026-10-15",
+      "high": 23,
+      "low": 17,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sm-weather-16",
+      "destination": "sm",
+      "date": "2026-10-16",
+      "high": 22,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sm-weather-17",
+      "destination": "sm",
+      "date": "2026-10-17",
+      "high": 22,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sm-weather-18",
+      "destination": "sm",
+      "date": "2026-10-18",
+      "high": 23,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sm-weather-19",
+      "destination": "sm",
+      "date": "2026-10-19",
+      "high": 21,
+      "low": 17,
+      "units": "C",
+      "condition": "Light breeze",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sm-weather-20",
+      "destination": "sm",
+      "date": "2026-10-20",
+      "high": 22,
+      "low": 17,
+      "units": "C",
+      "condition": "Coastal cloud",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sm-weather-21",
+      "destination": "sm",
+      "date": "2026-10-21",
+      "high": 23,
+      "low": 17,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sm-weather-22",
+      "destination": "sm",
+      "date": "2026-10-22",
+      "high": 22,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sm-weather-23",
+      "destination": "sm",
+      "date": "2026-10-23",
+      "high": 22,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sm-weather-24",
+      "destination": "sm",
+      "date": "2026-10-24",
+      "high": 23,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sm-weather-25",
+      "destination": "sm",
+      "date": "2026-10-25",
+      "high": 21,
+      "low": 17,
+      "units": "C",
+      "condition": "Light breeze",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sm-weather-26",
+      "destination": "sm",
+      "date": "2026-10-26",
+      "high": 22,
+      "low": 17,
+      "units": "C",
+      "condition": "Coastal cloud",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sm-weather-27",
+      "destination": "sm",
+      "date": "2026-10-27",
+      "high": 23,
+      "low": 17,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sm-weather-28",
+      "destination": "sm",
+      "date": "2026-10-28",
+      "high": 22,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sm-weather-29",
+      "destination": "sm",
+      "date": "2026-10-29",
+      "high": 22,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sm-weather-30",
+      "destination": "sm",
+      "date": "2026-10-30",
+      "high": 23,
+      "low": 16,
+      "units": "C",
+      "condition": "Clear",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sm-weather-31",
+      "destination": "sm",
+      "date": "2026-10-31",
+      "high": 21,
+      "low": 17,
+      "units": "C",
+      "condition": "Light breeze",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    }
+  ],
+  "localItems": [
+    {
+      "id": "ca-event",
+      "destination": "ca",
+      "kind": "event",
+      "date": "2026-10-08",
+      "start": "14:00",
+      "end": "16:00",
+      "title": "Coastal makers afternoon",
+      "text": "A fictional afternoon of handmade objects and easy browsing at a sample community square.",
+      "venue": "Sample community square",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "ca-story",
+      "destination": "ca",
+      "kind": "story",
+      "title": "A slower route along the coast",
+      "text": "A sample note about leaving room for a leisurely coastal afternoon. Add your own stops after checking current details.",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sd-event",
+      "destination": "sd",
+      "kind": "event",
+      "date": "2026-10-07",
+      "start": "16:00",
+      "end": "17:00",
+      "title": "Harbor sketch hour",
+      "text": "A fictional sketch-and-stroll gathering beside a sample waterfront.",
+      "venue": "Sample community square",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sd-story",
+      "destination": "sd",
+      "kind": "story",
+      "title": "A waterfront afternoon, without a rush",
+      "text": "This sample story groups a walk and a museum idea into one unhurried afternoon.",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sm-event",
+      "destination": "sm",
+      "kind": "event",
+      "date": "2026-10-09",
+      "start": "10:00",
+      "end": "11:30",
+      "title": "Neighborhood photo walk",
+      "text": "A fictional morning walk with time to notice small details.",
+      "venue": "Sample community square",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    },
+    {
+      "id": "sm-story",
+      "destination": "sm",
+      "kind": "story",
+      "title": "Leave an evening for the shore",
+      "text": "A sample planning note about keeping one sunset unscheduled.",
+      "sample": true,
+      "verified": false,
+      "revision": "compass-1"
+    }
+  ],
+  "samplePlans": [
+    {
+      "id": "harbor",
+      "fictional": true,
+      "channel": "YouTube",
+      "description": "Sample Studio \u00b7 fictitious creator. A slow two-day waterfront itinerary; not a real video or account.",
+      "photo": "skyline",
+      "source": "https://example.com/travelos-fixtures/harbor",
+      "draft": {
+        "title": "A harbor weekend",
+        "destination": "San Diego",
+        "startDate": "2026-10-09",
+        "zone": "America/Los_Angeles",
+        "demo": "authored sample",
+        "context": "Sample Studio \u00b7 fictitious creator. A slow two-day waterfront itinerary; not a real video or account.",
+        "backlink": "",
+        "blocks": [
+          {
+            "title": "Waterfront walk",
+            "day": 1,
+            "start": "14:00",
+            "end": "15:30",
+            "kind": "activity",
+            "zone": "America/Los_Angeles",
+            "detail": "A fictional harbor stroll. Verify access and weather independently.",
+            "timing": {
+              "start": "placement",
+              "end": "placement"
+            }
+          },
+          {
+            "title": "Museum idea",
+            "day": 2,
+            "start": "10:00",
+            "end": "12:00",
+            "kind": "activity",
+            "zone": "America/Los_Angeles",
+            "detail": "An optional museum morning; no tickets or opening hours promised.",
+            "timing": {
+              "start": "placement",
+              "end": "placement"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "shore",
+      "fictional": true,
+      "channel": "Instagram",
+      "description": "Sample Shore Notes \u00b7 fictitious creator. A two-day photo-note itinerary; not a real post or account.",
+      "photo": "pier",
+      "source": "https://example.com/travelos-fixtures/shore",
+      "draft": {
+        "title": "Small details by the shore",
+        "destination": "Santa Monica",
+        "startDate": "2026-10-09",
+        "zone": "America/Los_Angeles",
+        "demo": "authored sample",
+        "context": "Sample Shore Notes \u00b7 fictitious creator. A two-day photo-note itinerary; not a real post or account.",
+        "backlink": "",
+        "blocks": [
+          {
+            "title": "Pier photo walk",
+            "day": 1,
+            "start": "10:00",
+            "end": "11:30",
+            "kind": "activity",
+            "zone": "America/Los_Angeles",
+            "detail": "Notice the shoreline and small details; synthetic timing, no host or access promise.",
+            "timing": {
+              "start": "placement",
+              "end": "placement"
+            }
+          },
+          {
+            "title": "An open coastal evening",
+            "day": 2,
+            "start": "17:00",
+            "end": "18:00",
+            "kind": "activity",
+            "zone": "America/Los_Angeles",
+            "detail": "An optional evening stroll. Sunset and weather are not guaranteed.",
+            "timing": {
+              "start": "placement",
+              "end": "placement"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

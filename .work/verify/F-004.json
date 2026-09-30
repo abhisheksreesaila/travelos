@@ -1,0 +1,17 @@
+[
+  {"goto": "http://localhost:5002/prototype#/search"},
+  {"expect_text": "A little more adventure."},
+  {"click": "#search-form button[type=submit]"},
+  {"expect_text": "4 matches"},
+  {"click": "[data-result-id='f0a'] [data-action='details']"},
+  {"expect_text": "Synthetic fixture"},
+  {"click": "#save-candidate"},
+  {"fill": ["[name=tripTitle]", "A verified little escape"]},
+  {"click": "[data-action=create-candidate]"},
+  {"expect_text": "Shortlist"},
+  {"click": "[data-candidate-id='f0a'] [data-action=candidate]"},
+  {"click": "#choose-arrangement"},
+  {"click": "[data-action=close]"},
+  {"click": "#trip-tabs a[data-tab=calendar]"},
+  {"expect_text": "Sierra morning hop"}
+]

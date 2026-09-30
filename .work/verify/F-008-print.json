@@ -1,0 +1,20 @@
+[
+  {"goto":"http://localhost:5002/prototype#/creator"},
+  {"fill":["#creator-source","https://example.com/synthetic-itinerary"]},
+  {"click":"#source-form button[type=submit]"},
+  {"fill":["[name='detail-0']","Stop detail and shaded chairs"]},
+  {"click":"#public-form button[type=submit]"},
+  {"click":"#publish-contribution"},
+  {"click":"[data-action=fork]"},
+  {"click":"[data-action=confirm-fork]"},
+  {"click":"[data-action=snapshot]"},
+  {"expect_text":"Read-only snapshot"},
+  {"expect_text":"10:00 start"},
+  {"expect_text":"11:00 end"},
+  {"expect_text":"12:00 start"},
+  {"expect_text":"13:00 end"},
+  {"expect_text":"16:00 start"},
+  {"expect_text":"17:30 end"},
+  {"expect_text":"Stop detail and shaded chairs"},
+  {"expect_text":"UTC"}
+]
