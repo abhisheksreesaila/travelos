@@ -44,13 +44,13 @@ def test_a_real_screen_replaces_its_placeholder(client):
     from starlette.testclient import TestClient
     from gitaway.pages import register_all
 
-    class RealPlan:
+    class RealDiscover:
         @staticmethod
         def register(app):
-            @app.get("/plan")
-            def plan():
+            @app.get("/discover")
+            def discover():
                 return "the real workspace"
 
     app = FastHTML()
-    register_all(app, extra=[RealPlan])
-    assert "the real workspace" in TestClient(app).get("/plan").text
+    register_all(app, extra=[RealDiscover])
+    assert "the real workspace" in TestClient(app).get("/discover").text
