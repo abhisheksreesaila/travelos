@@ -199,6 +199,9 @@
 /* Tablet: three days, notes under the calendar */
 @media (max-width: 1100px) {
   .cal { --n: 3; }
+  .cal-layout { grid-template-columns: minmax(0, 1fr) 300px; }
+}
+@media (max-width: 900px) {
   .cal-layout { grid-template-columns: minmax(0, 1fr); }
   .cal-notes { position: static; max-height: none; }
   .cal-feed { max-height: 360px; }
@@ -299,4 +302,27 @@
   .cal-avatars { flex: 1 1 100%; margin-left: 0; order: 3; }
   .cal-linkfield { flex-basis: 100%; }
   .cal-toast { left: 16px; right: 16px; margin-inline: 0; width: auto; max-width: none; border-radius: 24px; padding-left: 18px; }
+}
+
+/* Fit (F-019): on desktop and tablet the Days view is exactly one viewport tall. The bar, strip and day headers stay put,
+   the hour grid is the one vertical scroll region, and the notes feed scrolls on its own. Phones scroll the page instead. */
+@media (min-width: 721px) {
+  .cal:not([data-view="whole"]) { height: 100dvh; min-height: 560px; display: flex; flex-direction: column; padding-bottom: 16px; }
+  .cal:not([data-view="whole"]) .cal-bar { flex: 0 0 auto; }
+  .cal:not([data-view="whole"]) .cal-layout { flex: 1 1 0; min-height: 0; grid-template-rows: minmax(0, 1fr); align-items: stretch; }
+  .cal:not([data-view="whole"]) .cal-card { min-height: 0; }
+  .cal:not([data-view="whole"]) .cal-strip, .cal:not([data-view="whole"]) .cal-controls { flex: 0 0 auto; }
+  .cal:not([data-view="whole"]) .cal-grid { flex: 1 1 0; min-height: 160px; }
+  .cal:not([data-view="whole"]) .cal-scroll { height: 100%; overscroll-behavior: contain; }
+  .cal:not([data-view="whole"]) .cal-notes { position: static; max-height: none; min-height: 0; overflow: hidden; }
+  .cal:not([data-view="whole"]) .cal-notes-body { overflow-y: auto; }
+  .cal:not([data-view="whole"]) .cal-feed { max-height: none; }
+}
+@media (min-width: 721px) and (max-width: 900px) {
+  .cal:not([data-view="whole"]) .cal-layout { grid-template-rows: minmax(0, 1fr) auto; }
+  .cal:not([data-view="whole"]) .cal-notes { max-height: 30dvh; }
+}
+/* Phone: the page scrolls, the grid grows to its full height, so there is one natural scroll */
+@media (max-width: 720px) {
+  .cal-scroll { height: auto; overflow-y: hidden; }
 }
