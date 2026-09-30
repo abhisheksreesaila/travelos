@@ -45,7 +45,7 @@ Design: https://claude.ai/artifact/NvLT3Tjf4XUwPbyZ4m6d2Q (sources docs/design/c
 Design: docs/design/itinerary-page.md (option A + board) · Needs: F-012
 - [ ] day-by-day scrapbook layout: photo tiles, sticker tags (kid, pet, couple friendly), route squiggles, source card for the creator
 - [ ] one layout, switchable color themes
-- [ ] Fork button (asks for demo sign-in if signed out) adds the plan to the traveler's forks list
+- [ ] Fork button sends a signed-out viewer to the demo sign-in with intent=fork (adding to the forks list is F-017 + F-021)
 
 ## F-015 Booking workspace: flight, hotel and car lanes with cost ledger [blocked]
 Blocked: look at "Booking workspace (polished)" on the canvas (click a pane title to focus it) and say go, or say what feels too busy.
@@ -63,6 +63,7 @@ Needs: F-015 · First to be trimmed to light stubs if time runs short
 ## F-017 Demo sign-in at save, pay, invite and fork [todo]
 Needs: F-012
 - [ ] everything is browsable signed out; save, pay, invite or fork shows a friendly demo sign-in, then continues the action
+- [ ] after sign-in with intent=fork, the trip lands in the traveler's forks list; `next` only accepts local paths (no open redirect)
 
 ## F-018 One-tap pay and celebration [todo]
 Needs: F-015, F-017
@@ -88,6 +89,7 @@ Needs: F-014, F-019
 Needs: F-014, F-019
 - [ ] one tap on Share turns the trip into a scrapbook itinerary page (no private notes or payment info)
 - [ ] community hub lists shared and creator itineraries, filterable by kid, pet and couple friendly
+- [ ] user-written itinerary text stays escaped and source links only allow http(s)
 
 ## F-023 Creator link import [todo]
 Needs: F-014, F-022
