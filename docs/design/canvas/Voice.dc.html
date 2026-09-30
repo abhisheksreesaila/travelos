@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>GitAway · Talk to plan</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Figtree:wght@400;500;600;700;800&amp;family=Caveat:wght@700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FFF8EE}
+button:focus-visible{outline:3px solid #1E1A2E;outline-offset:3px}
+@keyframes vo-ring{0%{box-shadow:0 0 0 0 rgba(255,115,82,.55)}100%{box-shadow:0 0 0 22px rgba(255,115,82,0)}}
+.vo-ring{animation:vo-ring 1.3s ease-out infinite}
+@keyframes vo-bar{0%,100%{transform:scaleY(.35)}50%{transform:scaleY(1)}}
+.vo-bar{animation:vo-bar .9s ease-in-out infinite;transform-origin:center}
+@keyframes vo-pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.05);opacity:1}100%{transform:scale(1)}}
+.vo-pop{animation:vo-pop .4s cubic-bezier(.2,.9,.3,1.3) both}
+@media (prefers-reduced-motion: reduce){.vo-ring,.vo-bar,.vo-pop{animation:none}}
+</style>
+</helmet>
+<div style="position: relative; width: 1440px; height: 900px; box-sizing: border-box; padding: 0 24px 24px; background: #FFF8EE; color: #1E1A2E; font-family: 'Figtree', 'Segoe UI', system-ui, sans-serif; display: flex; flex-direction: column; gap: 14px; overflow: hidden">
+
+<!-- prototype step control -->
+<div style="position: absolute; right: 24px; top: 18px; z-index: 5; display: flex; gap: 6px; padding: 6px; border-radius: 999px; background: #FFFFFF; box-shadow: 0 0 0 1px rgba(30,26,46,0.08)">
+<sc-for list="{{steps}}" as="s" hint-placeholder-count="4">
+<button onClick="{{s.go}}" aria-pressed="{{s.pressed}}" style="height: 34px; padding: 0 12px; border: 0; border-radius: 999px; background: {{s.bg}}; color: {{s.fg}}; font: 800 13px 'Figtree', sans-serif; cursor: pointer">{{s.label}}</button>
+</sc-for>
+</div>
+
+<header style="height: 72px; flex-shrink: 0; display: flex; align-items: center; gap: 14px; padding: 0 8px">
+<span style="width: 36px; height: 36px; border-radius: 11px; background: #FF7352; box-shadow: 0 3px 0 #C9431F; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1E1A2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="5" r="2.2"></circle><circle cx="18" cy="5" r="2.2"></circle><circle cx="12" cy="19" r="2.2"></circle><path d="M6 7.5v1.5c0 2 1.5 3 3 3h6c1.5 0 3-1 3-3V7.5M12 12v4.5"></path></svg></span>
+<h1 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px">LA with the kids</h1>
+<span style="font-size: 14px; font-weight: 700; color: #4A4460">Fri Oct 16 – Tue Oct 20 · booked</span>
+</header>
+
+<div style="flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 16px">
+
+<!-- Calendar (simplified, 4 days) -->
+<section aria-label="Trip calendar" style="border-radius: 28px; background: #FFFFFF; box-shadow: 0 0 0 1px rgba(0,0,0,0.06), 0 12px 12px -6px rgba(0,0,0,0.06); padding: 16px 18px; display: grid; grid-template-columns: 52px repeat(4, minmax(0, 1fr)); grid-template-rows: 56px 1fr; column-gap: 10px; overflow: hidden">
+<span></span>
+<sc-for list="{{days}}" as="d" hint-placeholder-count="4">
+<div style="padding: 6px 10px; border-radius: 16px; background: {{d.tint}}; display: flex; align-items: center; gap: 10px"><span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px">{{d.num}}</span><span style="font-size: 13px; font-weight: 800">{{d.dow}}</span></div>
+</sc-for>
+<div style="display: flex; flex-direction: column">
+<sc-for list="{{hours}}" as="h" hint-placeholder-count="14"><span style="height: 46px; font-size: 12px; font-weight: 700; color: #5A5470; transform: translateY(-8px)">{{h}}</span></sc-for>
+</div>
+<sc-for list="{{days}}" as="d" hint-placeholder-count="4">
+<div style="position: relative; height: 644px; background-image: repeating-linear-gradient(to bottom, rgba(30,26,46,0.07) 0, rgba(30,26,46,0.07) 1px, transparent 1px, transparent 46px)">
+<sc-for list="{{d.events}}" as="e" hint-placeholder-count="2">
+<div class="{{e.cls}}" style="position: absolute; left: 0; right: 0; top: {{e.top}}; height: {{e.height}}; box-sizing: border-box; padding: 8px 10px; border-radius: 14px; background: {{e.bg}}; color: {{e.fg}}; border: {{e.border}}; display: flex; flex-direction: column; gap: 2px; overflow: hidden">
+<span style="font-size: 12px; font-weight: 800">{{e.time}}</span>
+<span style="font-size: 14px; font-weight: 800; line-height: 1.2">{{e.title}}</span>
+<sc-if value="{{e.tag}}" hint-placeholder-val="{{no}}"><span style="margin-top: auto; align-self: flex-start; height: 22px; padding: 0 8px; border-radius: 999px; background: #FFFFFF; font-size: 11px; font-weight: 800; display: flex; align-items: center; color: #1E1A2E">{{e.tag}}</span></sc-if>
+</div>
+</sc-for>
+</div>
+</sc-for>
+</section>
+
+<!-- Voice panel -->
+<aside aria-label="Talk to plan" style="border-radius: 28px; background: #FFFFFF; box-shadow: 0 0 0 1px rgba(0,0,0,0.06), 0 12px 12px -6px rgba(0,0,0,0.06); padding: 22px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px">Talk to plan</h2>
+<span style="height: 26px; padding: 0 10px; border-radius: 999px; background: #FFF1C2; font-size: 12px; font-weight: 800; display: flex; align-items: center">Demo voice</span>
+</div>
+
+<div style="display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 8px 0">
+<button aria-label="{{micLabel}}" class="{{micCls}}" onClick="{{toNext}}" style="width: 96px; height: 96px; border: 0; border-radius: 999px; background: #FF7352; box-shadow: 0 5px 0 #C9431F; display: flex; align-items: center; justify-content: center; cursor: pointer">
+<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#1E1A2E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"></rect><path d="M5 10a7 7 0 0 0 14 0M12 17v4M8 21h8"></path></svg>
+</button>
+<sc-if value="{{listening}}" hint-placeholder-val="{{no}}">
+<div aria-hidden="true" style="display: flex; gap: 5px; height: 28px; align-items: center">
+<sc-for list="{{bars}}" as="b" hint-placeholder-count="7"><span class="vo-bar" style="width: 5px; height: 28px; border-radius: 999px; background: #FF7352; animation-delay: {{b}}"></span></sc-for>
+</div>
+</sc-if>
+<span style="font-size: 15px; font-weight: 700; color: #4A4460">{{hint}}</span>
+</div>
+
+<sc-if value="{{hasText}}" hint-placeholder-val="{{no}}">
+<div style="padding: 14px 16px; border-radius: 6px 20px 20px 20px; background: #FAF7F2; font-size: 17px; line-height: 1.5; font-weight: 600">
+<span>{{spoken}}</span><sc-if value="{{listening}}" hint-placeholder-val="{{no}}"><span style="color: #FF7352; font-weight: 800"> |</span></sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{asking}}" hint-placeholder-val="{{no}}">
+<div class="vo-pop" style="padding: 14px 16px; border-radius: 20px; background: #FFF1C2; display: flex; flex-direction: column; gap: 10px">
+<span style="font-weight: 800; font-size: 16px">Dinner on which night?</span>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<button onClick="{{toPreview}}" style="height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: #1E1A2E; color: #FFFFFF; font: 800 15px 'Figtree', sans-serif; cursor: pointer">Fri 16, 6:30 PM</button>
+<button onClick="{{toPreview}}" style="height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: #FFFFFF; color: #1E1A2E; font: 800 15px 'Figtree', sans-serif; cursor: pointer; box-shadow: 0 0 0 1px rgba(30,26,46,0.1)">Sat 17, 6:30 PM</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{previewing}}" hint-placeholder-val="{{no}}">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 13px; font-weight: 800; letter-spacing: 0.06em; color: #5A5470">I'LL ADD THESE</span>
+<sc-for list="{{drafts}}" as="p" hint-placeholder-count="3">
+<label style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 16px; background: #FAF7F2">
+<input type="checkbox" checked style="width: 20px; height: 20px; accent-color: #FF7352">
+<span style="flex: 1; display: flex; flex-direction: column"><span style="font-weight: 800; font-size: 15px">{{p.title}}</span><span style="font-size: 13px; font-weight: 700; color: #4A4460">{{p.when}}</span></span>
+</label>
+</sc-for>
+<button onClick="{{toDone}}" style="margin-top: 4px; height: 56px; border: 0; border-radius: 999px; background: #1E1A2E; color: #FFFFFF; box-shadow: 0 4px 0 #000000; font: 800 18px 'Figtree', sans-serif; cursor: pointer">Add 3 plans</button>
+</div>
+</sc-if>
+
+<sc-if value="{{done}}" hint-placeholder-val="{{no}}">
+<div class="vo-pop" style="padding: 16px; border-radius: 20px; background: #D4F7EA; font-weight: 800; font-size: 16px">Added 3 plans. Everyone on the trip can see them.</div>
+</sc-if>
+</aside>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { step: 'listen' }; }
+  renderVals() {
+    var self = this, step = this.state.step;
+    var go = function (s) { return function () { self.setState({ step: s }); }; };
+    var order = ['listen', 'ask', 'preview', 'done'];
+    var labels = { listen: '1 · Listening', ask: '2 · Quick question', preview: '3 · Preview', done: '4 · Added' };
+    var nextOf = { listen: 'ask', ask: 'preview', preview: 'done', done: 'listen' };
+    var full = '“Tacos for dinner, the observatory on Sunday at sunset, and keep Monday morning free for the pool.”';
+    var ghost = step === 'preview' || step === 'ask';
+    function ev(start, end, time, title, kind, extra) {
+      var k = { booked: ['#1E1A2E', '#FFFFFF', '0'], draft: ['#FFF4EF', '#1E1A2E', '2px dashed #FF7352'], solid: ['#FFF1C2', '#1E1A2E', '0'], grape: ['#ECE4FF', '#1E1A2E', '0'] }[kind];
+      return Object.assign({ top: ((start - 8) * 46) + 'px', height: Math.max(40, (end - start) * 46 - 4) + 'px', time: time, title: title, bg: k[0], fg: k[1], border: k[2], tag: false, cls: '' }, extra || {});
+    }
+    function voice(start, end, time, title) {
+      if (step === 'preview') return [ev(start, end, time, title, 'draft', { tag: 'from your voice' })];
+      if (step === 'done') return [ev(start, end, time, title, 'solid', { tag: 'You', cls: 'vo-pop' })];
+      return [];
+    }
+    var hours = []; for (var h = 8; h < 22; h++) hours.push(h === 12 ? '12 PM' : (h < 12 ? h + ' AM' : (h - 12) + ' PM'));
+    return {
+      no: false,
+      steps: order.map(function (s) { var on = s === step; return { label: labels[s], go: go(s), pressed: on ? 'true' : 'false', bg: on ? '#1E1A2E' : '#FFFFFF', fg: on ? '#FFFFFF' : '#1E1A2E' }; }),
+      listening: step === 'listen', asking: step === 'ask', previewing: step === 'preview', done: step === 'done',
+      hasText: true,
+      spoken: step === 'listen' ? '“Tacos for dinner, the observatory on Sunday at' : full,
+      hint: { listen: 'Listening… say what you want to do', ask: 'Got it. One quick question', preview: 'Uncheck anything you don’t want', done: 'Tap to plan more' }[step],
+      micLabel: step === 'listen' ? 'Stop listening' : 'Start talking',
+      micCls: step === 'listen' ? 'vo-ring' : '',
+      bars: ['0s', '.1s', '.2s', '.3s', '.2s', '.1s', '0s'],
+      toNext: go(nextOf[step]), toPreview: go('preview'), toDone: go('done'),
+      drafts: [
+        { title: 'Tacos at Mariscos La Ola', when: 'Fri 16 · 6:30 – 8:00 PM' },
+        { title: 'Griffith Observatory at sunset', when: 'Sun 18 · 5:00 – 7:30 PM' },
+        { title: 'Pool time at The Tidewater', when: 'Mon 19 · 9:00 – 11:30 AM' }
+      ],
+      hours: hours,
+      days: [
+        { num: '16', dow: 'FRI', tint: '#FFF1C2', events: [ev(8.08, 9.55, '8:05 AM', 'Skylark Air 214 · SFO → LAX', 'booked'), ev(15, 15.8, '3:00 PM', 'Check in · The Tidewater', 'booked')].concat(voice(18.5, 20, '6:30 PM', 'Tacos at Mariscos La Ola')) },
+        { num: '17', dow: 'SAT', tint: '#D4F7EA', events: [ev(9, 10.5, '9:00 AM', 'Venice Canals stroll', 'grape', { tag: 'Mom' })] },
+        { num: '18', dow: 'SUN', tint: '#ECE4FF', events: voice(17, 19.5, '5:00 PM', 'Griffith Observatory at sunset') },
+        { num: '19', dow: 'MON', tint: '#DDEEFF', events: voice(9, 11.5, '9:00 AM', 'Pool time at The Tidewater') }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

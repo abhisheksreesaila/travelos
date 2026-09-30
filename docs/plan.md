@@ -100,8 +100,9 @@ Needs: F-014, F-022
 - [ ] paste a YouTube or Instagram link → skeleton with a fade → an AI-drafted (fake) scrapbook itinerary with the creator's source card
 - [ ] edit, then submit; it appears in the community hub and links back to the creator's channel
 
-## F-024 Talk to plan: scripted voice fills the calendar [todo]
-Brief: docs/briefs/voice.md (approved 2026-09-30) · Design: to draw (mic, listening ring, transcript bubble, ghost plans, question chip) · Needs: F-019, F-021 (reuses the apply-preview)
+## F-024 Talk to plan: scripted voice fills the calendar [blocked]
+Blocked: look at "Talk to plan: scripted voice" on the canvas (use its 1-2-3-4 switch) and say go or what to change.
+Brief: docs/briefs/voice.md (approved 2026-09-30) · Design: docs/design/canvas/Voice.dc.html · Needs: F-019, F-021 (reuses the apply-preview)
 - [ ] mic on the trip calendar plays a scripted sentence word by word with a listening animation; no audio captured
 - [ ] the sentence becomes 3–4 draft plans previewed in the right empty slots around bookings and friends' items
 - [ ] one quick question chip resolves an unclear bit (which Friday, what time) and updates the preview
