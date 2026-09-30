@@ -8,7 +8,7 @@ import json
 from itertools import product
 from urllib.parse import quote as urlquote
 
-from fasthtml.common import A, Button, Div, Figcaption, Figure, Img, Kbd, Link, NotStr, Script, Section, Span, Title
+from fasthtml.common import A, Button, Div, Figcaption, Figure, Img, Kbd, Link, Main, NotStr, Script, Section, Span, Title
 
 from gitaway import catalog
 from gitaway.icons import icon
@@ -57,6 +57,11 @@ def embedded_data():
         }
     offers = {o.id: {"name": o.name, "price": catalog.money(o.price_cents)} for k in LANES for o in catalog.offers(k)}
     return {"quotes": quotes, "offers": offers}
+
+
+def script_json(obj) -> str:
+    """JSON safe inside a <script> block: every '<' becomes \\u003c."""
+    return json.dumps(obj).replace("<", "\\u003c")
 
 
 def _offer_attrs(o, picked):
@@ -169,7 +174,7 @@ def workspace(f, h, c):
     trip = catalog.SAMPLE_TRIP
     q = catalog.quote(f, h, c)
     tip = Div("Tip from 312 families: most skipped the car in Santa Monica and rented one for the Griffith Park day only.", cls="ws-tip")
-    body = Div(
+    body = Main(
         top_bar(trip),
         ledger(q, trip),
         Div(
@@ -181,7 +186,7 @@ def workspace(f, h, c):
         ),
         cls="ws", id="main", data_theme="sunset",
     )
-    data = Script(NotStr(json.dumps(embedded_data()).replace("</", "<\\/")), id="ws-data", type="application/json")
+    data = Script(NotStr(script_json(embedded_data())), id="ws-data", type="application/json")
     return (
         Title("GitAway · Plan a trip"),
         *HEAD,

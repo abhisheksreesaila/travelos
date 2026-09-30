@@ -89,3 +89,27 @@ def test_placeholder_is_gone_and_brand_is_gitaway(client):
 
 def test_context_column_is_one_quiet_placeholder(client):
     assert client.get("/plan").text.count('data-pane="context"') == 1
+
+
+def test_every_pick_has_offer_data_and_quote_keys_are_flight_stay_car_order(client):
+    h = client.get("/plan").text
+    raw = re.search(r'<script[^>]*id="ws-data"[^>]*>(.*?)</script>', h, re.S).group(1)
+    data = json.loads(raw)
+    picks = re.findall(r'data-pick="([^"]+)"', h)
+    assert len(picks) == 11 and set(picks) <= set(data["offers"])
+    for key in data["quotes"]:
+        f, s, c = key.split("|")
+        assert catalog.offer(f).kind == "flight" and catalog.offer(s).kind == "stay" and catalog.offer(c).kind == "car"
+
+
+def test_workspace_is_a_main_landmark_the_skip_link_targets(client):
+    h = client.get("/plan").text
+    assert h.count('id="main"') == 1
+    assert re.search(r'<main[^>]*id="main"', h) and 'href="#main"' in h
+
+
+def test_json_is_escaped_against_script_breakout():
+    from gitaway.pages.plan import script_json
+    out = script_json({"x": "</script><b>"})
+    assert "<" not in out
+    assert json.loads(out) == {"x": "</script><b>"}

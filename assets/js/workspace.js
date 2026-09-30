@@ -98,5 +98,16 @@
     toggle.closest('.ws-ledger').classList.toggle('is-open', open);
   });
 
+  // Keep page padding in step with the pinned ledger's real height (phone layout).
+  var ledger = document.querySelector('.ws-ledger');
+  function sizeLedger() {
+    document.documentElement.style.setProperty('--ws-ledger-h', ledger.offsetHeight + 'px');
+  }
+  if (ledger) {
+    sizeLedger();
+    if (window.ResizeObserver) new ResizeObserver(sizeLedger).observe(ledger);
+    else window.addEventListener('resize', sizeLedger);
+  }
+
   focusPane('flights', false);
 })();
