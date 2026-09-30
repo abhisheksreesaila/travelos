@@ -34,6 +34,11 @@ def _pick(t):
     )
 
 
+def cancel_href(next_path):
+    """Cancel goes back to the picks: the pay sheet itself would only bounce a signed-out traveler back here."""
+    return next_path.replace("/plan/pay?", "/plan?", 1) if next_path.startswith("/plan/pay?") else next_path
+
+
 def dialog(next_path, intent):
     return Div(
         Form(
@@ -43,7 +48,7 @@ def dialog(next_path, intent):
             Div(*[_pick(t) for t in ses.TRAVELERS.values()], cls="si-list"),
             Input(type="hidden", name="next", value=next_path),
             Input(type="hidden", name="intent", value=intent),
-            Div(A("Cancel", href=next_path, id="si-cancel", cls="btn btn-sm"), cls="si-actions"),
+            Div(A("Cancel", href=cancel_href(next_path), id="si-cancel", cls="btn btn-sm"), cls="si-actions"),
             P("Real sign-in with Google comes later. Nothing here leaves your browser.", cls="si-note"),
             action="/signin", method="post",
         ),

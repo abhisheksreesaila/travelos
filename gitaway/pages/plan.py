@@ -34,8 +34,15 @@ def plan_path(f, h, c):
     return f"/plan?f={f}&h={h}&c={c}"
 
 
+def pay_path(f, h, c):
+    return f"/plan/pay?f={f}&h={h}&c={c}"
+
+
 def book_href(f, h, c):
-    return f"/signin?next={urlquote(plan_path(f, h, c), safe='')}&intent=pay"
+    """Signed in: straight to the pay sheet. Signed out: sign in first, which comes straight back to the sheet with the same picks."""
+    if session.request_traveler():
+        return pay_path(f, h, c)
+    return f"/signin?next={urlquote(pay_path(f, h, c), safe='')}&intent=pay"
 
 
 def delta_text(q):
@@ -237,7 +244,7 @@ def community_pane():
     ], "fill-sun", cls_extra="ws-dark")
 
 
-def workspace(f, h, c):
+def workspace(f, h, c, overlay=(), head=()):
     trip = catalog.SAMPLE_TRIP
     q = catalog.quote(f, h, c)
     tip = Div("Tip from 312 families: most skipped the car in Santa Monica and rented one for the Griffith Park day only.", cls="ws-tip")
@@ -256,11 +263,12 @@ def workspace(f, h, c):
     data = Script(NotStr(script_json(embedded_data())), id="ws-data", type="application/json")
     return (
         Title("GitAway · Plan a trip"),
-        *styles(*HEAD),
+        *styles(*HEAD, *head),
         A("Skip to content", href="#main", cls="ga-skip"),
         body,
         data,
         Script(src="/assets/js/workspace.js", defer=True),
+        *overlay,
     )
 
 
