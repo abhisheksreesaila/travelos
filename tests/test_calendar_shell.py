@@ -20,3 +20,11 @@ def test_the_calendar_route_is_registered_and_no_longer_a_placeholder(client):
     assert "/calendar" not in placeholders.PLACEHOLDERS
     book(client)
     assert "Your trip calendar" not in client.get("/calendar").text
+
+
+def test_the_grid_start_renders_as_minutes_six_for_an_early_flight_otherwise_seven(client):
+    import re
+    book(client, f="f2")
+    assert re.search(r'data-grid-start="360"', client.get("/calendar").text)
+    book(client)
+    assert re.search(r'data-grid-start="420"', client.get("/calendar").text)
