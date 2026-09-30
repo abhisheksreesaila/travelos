@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>GitAway · Postcard board itinerary</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&amp;family=Figtree:wght@400;500;600;700;800&amp;family=Caveat:wght@700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FFFFFF}
+a{color:#1E1A2E}a:hover{color:#1E1A2E;opacity:.85}
+a:focus-visible,button:focus-visible{outline:3px solid #1E1A2E;outline-offset:3px}
+@keyframes gb-pop{0%{transform:scale(.6) rotate(var(--r,0deg));opacity:0}70%{transform:scale(1.06) rotate(var(--r,0deg));opacity:1}100%{transform:scale(1) rotate(var(--r,0deg))}}
+.gb-pop{animation:gb-pop .7s cubic-bezier(.2,.9,.3,1.3) both}
+@media (prefers-reduced-motion: reduce){.gb-pop{animation:none}}
+</style>
+</helmet>
+<div style="width: 1440px; height: 2140px; box-sizing: border-box; background: #FFFDF8; color: #1E1A2E; font-family: 'Figtree', 'Segoe UI', system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden">
+
+<nav style="height: 84px; box-sizing: border-box; padding: 0 48px; display: flex; align-items: center; justify-content: space-between">
+<a href="#" style="display: flex; align-items: center; gap: 10px; text-decoration: none">
+<span style="width: 42px; height: 42px; border-radius: 999px; background: #1E1A2E; display: flex; align-items: center; justify-content: center">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="{{t.block}}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="5" r="2.2"></circle><circle cx="18" cy="5" r="2.2"></circle><circle cx="12" cy="19" r="2.2"></circle><path d="M6 7.5v1.5c0 2 1.5 3 3 3h6c1.5 0 3-1 3-3V7.5M12 12v4.5"></path></svg>
+</span>
+<span style="font-family: 'Fredoka', 'Figtree', sans-serif; font-weight: 700; font-size: 30px; letter-spacing: -0.01em">gitaway</span>
+</a>
+<div style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 16px">
+<a href="#" style="height: 44px; padding: 0 18px; border-radius: 999px; display: flex; align-items: center; text-decoration: none; background: #F2EEE6">Discover</a>
+<a href="#" style="height: 44px; padding: 0 18px; border-radius: 999px; display: flex; align-items: center; text-decoration: none">Plan a trip</a>
+<a href="#" style="height: 44px; padding: 0 18px; border-radius: 999px; display: flex; align-items: center; text-decoration: none">For creators</a>
+</div>
+<a href="#" style="height: 44px; padding: 0 22px; border-radius: 999px; display: flex; align-items: center; font-weight: 800; text-decoration: none; background: #1E1A2E; color: #FFFFFF">Sign in</a>
+</nav>
+
+<!-- Hero block -->
+<section style="margin: 8px 32px 0; height: 600px; border-radius: 44px; background: {{t.block}}; display: grid; grid-template-columns: minmax(0, 1fr) 600px; gap: 32px; padding: 24px; box-sizing: border-box; position: relative; overflow: hidden">
+<svg style="position: absolute; left: -60px; bottom: -80px; width: 420px; height: 420px; opacity: 0.35" viewBox="0 0 200 200" aria-hidden="true"><circle cx="100" cy="100" r="90" fill="none" stroke="#FFFFFF" stroke-width="10" stroke-dasharray="2 22" stroke-linecap="round"></circle></svg>
+<div style="position: relative; padding: 40px 16px 32px 40px; display: flex; flex-direction: column; gap: 22px">
+<span style="align-self: flex-start; height: 36px; padding: 0 16px; border-radius: 999px; background: rgba(255,255,255,0.7); display: flex; align-items: center; font-weight: 800; font-size: 15px">Los Angeles · 5 days · October</span>
+<h1 style="margin: 0; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 82px; line-height: 0.95; letter-spacing: -0.02em; text-wrap: balance">Sun, tacos &amp; tide pools</h1>
+<p style="margin: 0; font-size: 21px; line-height: 1.45; font-weight: 600; max-width: 520px">An LA week for a family of four: beach mornings, museum afternoons and early bedtimes.</p>
+<div style="display: flex; gap: 10px; flex-wrap: wrap">
+<span style="height: 40px; padding: 0 16px; border-radius: 999px; background: #FFFFFF; display: flex; align-items: center; font-weight: 800; font-size: 15px">Kid friendly</span>
+<span style="height: 40px; padding: 0 16px; border-radius: 999px; background: #FFFFFF; display: flex; align-items: center; font-weight: 800; font-size: 15px">Pet friendly · 3 stops</span>
+<span style="height: 40px; padding: 0 16px; border-radius: 999px; background: #FFFFFF; display: flex; align-items: center; font-weight: 800; font-size: 15px">$3,480 all-in</span>
+</div>
+<div style="margin-top: auto; display: flex; gap: 12px; align-items: center">
+<a href="#" style="height: 60px; padding: 0 30px; border-radius: 999px; background: #1E1A2E; color: #FFFFFF; display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 19px; text-decoration: none; box-shadow: 0 5px 0 rgba(0,0,0,0.25)">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="5" r="2.2"></circle><circle cx="18" cy="5" r="2.2"></circle><circle cx="12" cy="19" r="2.2"></circle><path d="M6 7.5v1.5c0 2 1.5 3 3 3h6c1.5 0 3-1 3-3V7.5M12 12v4.5"></path></svg>Fork this trip</a>
+<a href="#" style="height: 60px; padding: 0 24px; border-radius: 999px; background: #FFFFFF; display: flex; align-items: center; font-weight: 800; font-size: 19px; text-decoration: none">Share</a>
+<span style="margin-left: 8px; font-weight: 800; font-size: 16px">312 families forked this</span>
+</div>
+</div>
+<div style="position: relative; border-radius: 32px; overflow: hidden">
+<img src="/_blob/d45e1ee369230be3c000073b7fe64369" alt="Santa Monica Pier and beach" style="width: 100%; height: 100%; object-fit: cover; display: block">
+<div class="gb-pop" style="--r: -6deg; position: absolute; left: 24px; top: 24px; padding: 14px 18px; border-radius: 22px; background: #FFFFFF; transform: rotate(-6deg); display: flex; align-items: center; gap: 10px; box-shadow: 0 10px 24px -10px rgba(0,0,0,0.4)">
+<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#1E1A2E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path></svg>
+<span style="display: flex; flex-direction: column"><span style="font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 26px; line-height: 1">74°F</span><span style="font-size: 13px; font-weight: 800">mostly sunny</span></span>
+</div>
+<div class="gb-pop" style="--r: 3deg; position: absolute; right: 24px; bottom: 24px; width: 300px; padding: 14px; border-radius: 22px; background: #FFFFFF; transform: rotate(3deg); display: flex; align-items: center; gap: 12px; box-shadow: 0 10px 24px -10px rgba(0,0,0,0.4); animation-delay: .15s">
+<span style="width: 52px; height: 52px; border-radius: 999px; background: #FFC93C; display: flex; align-items: center; justify-content: center; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 20px; flex-shrink: 0">M&amp;T</span>
+<span style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span style="font-weight: 800; font-size: 16px">Maya &amp; Theo Adventures</span><a href="#" style="font-weight: 700; font-size: 14px">Watch the vlog on YouTube</a></span>
+</div>
+</div>
+</section>
+
+<!-- Board -->
+<section style="padding: 56px 32px 0; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; align-items: flex-end; justify-content: space-between; padding: 0 8px">
+<h2 style="margin: 0; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 48px; letter-spacing: -0.01em">The whole trip on one board</h2>
+<div style="display: flex; gap: 8px; font-size: 15px; font-weight: 800">
+<span style="height: 34px; padding: 0 14px; border-radius: 999px; background: #1E1A2E; color: #FFFFFF; display: flex; align-items: center">Booked</span>
+<span style="height: 34px; padding: 0 14px; border-radius: 999px; background: #FFC93C; display: flex; align-items: center">Kid friendly</span>
+<span style="height: 34px; padding: 0 14px; border-radius: 999px; background: #48D1A0; display: flex; align-items: center">Pet friendly</span>
+</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; align-items: start">
+<sc-for list="{{days}}" as="d" hint-placeholder-count="5">
+<div style="padding: 18px 14px 20px; border-radius: 30px; background: {{d.tint}}; display: flex; flex-direction: column; gap: 12px; min-height: 860px; box-sizing: border-box">
+<div style="padding: 4px 8px 6px; display: flex; flex-direction: column; gap: 2px">
+<span style="font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 64px; line-height: 0.9; color: {{d.ink}}">{{d.n}}</span>
+<span style="font-size: 14px; font-weight: 800; letter-spacing: 0.04em">{{d.date}}</span>
+<span style="font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 25px; line-height: 1.1">{{d.title}}</span>
+</div>
+<sc-for list="{{d.stops}}" as="s" hint-placeholder-count="3">
+<div style="padding: 14px 16px; border-radius: 20px; background: {{s.bg}}; color: {{s.fg}}; transform: rotate({{s.tilt}}); box-shadow: 0 1px 0 rgba(30,26,46,0.06), 0 8px 16px -10px rgba(30,26,46,0.35); display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: center; gap: 8px">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{s.fg}}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{s.icon}}"></path></svg>
+<span style="font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums">{{s.time}}</span>
+</div>
+<span style="font-weight: 800; font-size: 17px; line-height: 1.25">{{s.title}}</span>
+<sc-if value="{{s.tag}}" hint-placeholder-val="{{no}}"><span style="align-self: flex-start; height: 26px; padding: 0 10px; border-radius: 999px; background: {{s.tagColor}}; color: #1E1A2E; font-size: 13px; font-weight: 800; display: flex; align-items: center">{{s.tag}}</span></sc-if>
+<sc-if value="{{s.note}}" hint-placeholder-val="{{no}}"><span style="font-family: 'Caveat', cursive; font-weight: 700; font-size: 22px; line-height: 1.1">{{s.note}}</span></sc-if>
+</div>
+</sc-for>
+</div>
+</sc-for>
+</div>
+</section>
+
+<section style="margin: 48px 32px 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px">
+<div style="padding: 32px 36px; border-radius: 32px; background: #F2EEE6; display: flex; flex-direction: column; gap: 12px">
+<span style="font-size: 14px; font-weight: 800; letter-spacing: 0.06em">WHERE THIS CAME FROM</span>
+<span style="font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 30px; line-height: 1.1">Our LA family week: what we'd do again</span>
+<span style="font-size: 17px; font-weight: 600; color: #4A4460">Maya &amp; Theo Adventures · YouTube · 18 min. GitAway turned the vlog into this board; every stop links back to the moment in the video.</span>
+<a href="#" style="align-self: flex-start; margin-top: 4px; height: 48px; padding: 0 20px; border-radius: 999px; background: #FFFFFF; display: flex; align-items: center; font-weight: 800; text-decoration: none">Watch the original</a>
+</div>
+<div style="padding: 32px 36px; border-radius: 32px; background: {{t.block}}; display: flex; flex-direction: column; gap: 12px">
+<span style="font-size: 14px; font-weight: 800; letter-spacing: 0.06em">MAKE IT YOURS</span>
+<span style="font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 30px; line-height: 1.1">Fork it, then drop your favourite days into your own calendar</span>
+<a href="#" style="align-self: flex-start; margin-top: auto; height: 52px; padding: 0 24px; border-radius: 999px; background: #1E1A2E; color: #FFFFFF; display: flex; align-items: center; font-weight: 800; text-decoration: none">Fork this trip</a>
+</div>
+</section>
+
+<footer style="margin-top: auto; padding: 32px 48px; display: flex; justify-content: space-between; font-size: 15px; font-weight: 600; color: #5A5470">
+<span style="font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 22px; color: #1E1A2E">gitaway</span>
+<span>Shared by travelers and creators. Prices are what the author paid; yours may differ.</span>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["Sunset","Pacific"],"default":"Sunset"},"$preview":{"width":1440,"height":2140}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var themes = { Sunset: { block: '#FF8A63' }, Pacific: { block: '#6DB8FF' } };
+    var t = themes[this.props.theme] || themes.Sunset;
+    var I = {
+      plane: 'M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z',
+      bed: 'M2 4v16M2 8h18a2 2 0 0 1 2 2v10M2 17h20M6 8v9',
+      food: 'M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2M7 2v20M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7',
+      star: 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z',
+      pin: 'M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0ZM9 10a3 3 0 1 0 6 0a3 3 0 1 0-6 0'
+    };
+    var Y = '#FFC93C', M = '#48D1A0';
+    var tilts = ['-1.2deg', '0.8deg', '-0.4deg', '1.2deg'];
+    function s(time, icon, title, o) {
+      o = o || {};
+      var booked = !!o.booked;
+      return { time: time, icon: icon, title: title, tag: o.tag || false, tagColor: o.tag === 'Pet friendly' ? M : Y, note: o.note || false, bg: booked ? '#1E1A2E' : '#FFFFFF', fg: booked ? '#FFFFFF' : '#1E1A2E' };
+    }
+    var days = [
+      { n: '01', date: 'FRI, OCT 16', title: 'Touch down & tacos', tint: '#FFF1C2', ink: '#8A6200', stops: [
+        s('8:05 AM', I.plane, 'Skylark Air 214, SFO → LAX', { booked: true }),
+        s('11:00 AM', I.bed, 'Check in: The Tidewater', { booked: true }),
+        s('1:00 PM', I.star, 'Santa Monica Pier & Pacific Park', { tag: 'Kid friendly', note: 'The carousel, three times.' }),
+        s('6:30 PM', I.food, 'Tacos at Mariscos La Ola', { tag: 'Pet friendly' })
+      ]},
+      { n: '02', date: 'SAT, OCT 17', title: 'Canals & boardwalk', tint: '#D4F7EA', ink: '#16865F', stops: [
+        s('9:00 AM', I.pin, 'Venice Canals stroll', { tag: 'Pet friendly' }),
+        s('11:00 AM', I.star, 'Boardwalk & skate park'),
+        s('2:30 PM', I.pin, 'Bike the Strand to Marina del Rey', { tag: 'Kid friendly', note: 'More sunscreen.' })
+      ]},
+      { n: '03', date: 'SUN, OCT 18', title: 'Steam trains & stars', tint: '#ECE4FF', ink: '#6A4FD6', stops: [
+        s('10:00 AM', I.star, 'Travel Town, Griffith Park', { tag: 'Kid friendly', note: 'Best day of his life.' }),
+        s('1:00 PM', I.food, 'Picnic under the oaks', { tag: 'Pet friendly' }),
+        s('4:00 PM', I.star, 'Griffith Observatory at sunset')
+      ]},
+      { n: '04', date: 'MON, OCT 19', title: 'Dinos & tar pits', tint: '#DDEEFF', ink: '#1B6FC9', stops: [
+        s('9:30 AM', I.star, 'Natural History Museum dinosaur hall', { tag: 'Kid friendly' }),
+        s('1:00 PM', I.pin, 'La Brea Tar Pits'),
+        s('5:00 PM', I.bed, 'Pool time back at the hotel', { note: 'Early night, finally.' })
+      ]},
+      { n: '05', date: 'TUE, OCT 20', title: 'Market brunch, fly home', tint: '#FFE3F1', ink: '#C23B82', stops: [
+        s('9:00 AM', I.food, 'Brunch at the Farmers Market', { tag: 'Kid friendly' }),
+        s('11:30 AM', I.bed, 'Check out: The Tidewater', { booked: true }),
+        s('2:10 PM', I.plane, 'Skylark Air 219, LAX → SFO', { booked: true })
+      ]}
+    ];
+    days.forEach(function (d) { d.stops.forEach(function (st, i) { st.tilt = tilts[i % tilts.length]; }); });
+    return { t: t, days: days, no: false };
+  }
+}
+</script>
+</body>
+</html>

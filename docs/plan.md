@@ -20,16 +20,16 @@ Blocked: set STRIPE_SECRET_KEY in Railway, then say go.
 
 Brief: docs/brief.md (approved). Frontend only: FastHTML serves the pages, plain JS for interactions, all data is fake. Numbering continues after the earlier F-001–F-010 prototype work in `.work/`, which is superseded.
 
-## F-011 GitAway visual direction and first artboards [todo]
-Brief: docs/brief.md · Design: docs/design/ (to write) · Needs: none
-- [ ] brand: GitAway wordmark, color palette, type, radius, shadow and motion tokens (Airbnb-playful, Apple-polished, joyful, trustworthy, alive)
-- [ ] polished artboard of the scrapbook itinerary page (the hero screen), in at least two color themes
-- [ ] rough artboard of the booking workspace, to test whether the dense panes feel joyful rather than crowded
-- [ ] navigation map of the whole journey (landing → workspace → pay → calendar → share → community → creator import)
-- [ ] captain signs off on direction before any build ticket starts
+## F-011 GitAway visual direction and first artboards [done]
+Brief: docs/brief.md · Design: https://claude.ai/artifact/NvLT3Tjf4XUwPbyZ4m6d2Q · Handoff: docs/design/itinerary-page.md · System: design-system/DESIGN-SYSTEM.md · Needs: none
+- [x] brand: GitAway wordmark, color palette, type, radius, shadow and motion tokens (Airbnb-playful, Apple-polished, joyful, trustworthy, alive)
+- [x] polished artboard of the scrapbook itinerary page (the hero screen), in at least two color themes
+- [x] rough artboard of the booking workspace, to test whether the dense panes feel joyful rather than crowded
+- [x] navigation map of the whole journey (landing → workspace → pay → calendar → share → community → creator import)
+- [x] captain signs off on direction before any build ticket starts
 
 ## F-012 Clean app shell, fake trip catalog and GitAway rename [todo]
-Design: F-011 · Needs: F-011, captain decision on parking the old uncommitted frontend
+Design: design-system/DESIGN-SYSTEM.md, journey map on the F-011 canvas · Needs: F-011 (old frontend archived on branch archive/travelos-prototype)
 - [ ] new frontend shell with the F-011 tokens and navigation; old TravelOS prototype routes are no longer linked
 - [ ] one fake catalog: SFO → LAX/BUR, made-up dates, airlines, flights, hotels, cars and prices that look real
 - [ ] user-facing name reads GitAway everywhere; README run instructions work
@@ -41,13 +41,13 @@ Design: F-011 · Needs: F-012
 - [ ] two doors: "Plan a trip" opens the booking workspace; "Get inspired" opens the community hub
 
 ## F-014 Scrapbook itinerary page [todo]
-Design: F-011 · Needs: F-012
+Design: docs/design/itinerary-page.md (option A + board) · Needs: F-012
 - [ ] day-by-day scrapbook layout: photo tiles, sticker tags (kid, pet, couple friendly), route squiggles, source card for the creator
 - [ ] one layout, switchable color themes
 - [ ] Fork button (asks for demo sign-in if signed out) adds the plan to the traveler's forks list
 
 ## F-015 Booking workspace: flight, hotel and car lanes with cost ledger [todo]
-Design: F-011 (polished workspace pass first) · Needs: F-012
+Design: F-011 (polished workspace pass first: settle the rough artboard's off-token colours, #BFE3FF #C9C3D6 #D8D3E6 #EAF6E4 #EEF2F7 #F4F0EA #FFE6A8 #FFF3E6, into tokens) · Needs: F-012
 - [ ] tmux-style tiled panes you can resize and focus, with keyboard shortcuts, in a bright rounded look
 - [ ] flights, hotels and cars side by side; picking one in each lane updates the cost ledger on top
 - [ ] ledger highlights the best-value combination

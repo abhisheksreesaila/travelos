@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>GitAway · Booking workspace</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Figtree:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FFF3E6}
+a{color:#1E1A2E}
+.ga-offer{transition:transform .18s cubic-bezier(.2,.9,.3,1.3), box-shadow .18s}
+.ga-offer:hover{transform:translateY(-2px)}
+a:focus-visible,button:focus-visible{outline:3px solid #1E1A2E;outline-offset:3px}
+@media (prefers-reduced-motion: reduce){.ga-offer{transition:none}.ga-offer:hover{transform:none}}
+</style>
+</helmet>
+<div style="width: 1440px; height: 980px; box-sizing: border-box; padding: 0 20px 20px; background: #FFF3E6; color: #1E1A2E; font-family: 'Figtree', 'Segoe UI', system-ui, sans-serif; display: flex; flex-direction: column; gap: 14px; overflow: hidden">
+
+<!-- Top bar -->
+<header style="height: 72px; flex-shrink: 0; display: flex; align-items: center; gap: 20px; padding: 0 8px">
+<span style="display: flex; align-items: center; gap: 10px">
+<span style="width: 36px; height: 36px; border-radius: 11px; background: #FF7352; box-shadow: 0 3px 0 #C9431F; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1E1A2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="5" r="2.2"></circle><circle cx="18" cy="5" r="2.2"></circle><circle cx="12" cy="19" r="2.2"></circle><path d="M6 7.5v1.5c0 2 1.5 3 3 3h6c1.5 0 3-1 3-3V7.5M12 12v4.5"></path></svg></span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 23px">GitAway</span>
+</span>
+<button style="height: 48px; padding: 0 20px; border: 0; border-radius: 999px; background: #FFFFFF; box-shadow: 0 0 0 1px rgba(30,26,46,0.08), 0 3px 0 rgba(30,26,46,0.08); display: flex; align-items: center; gap: 14px; font: 700 16px 'Figtree', sans-serif; color: #1E1A2E; cursor: pointer">
+<span style="font-weight: 800">SFO → LAX</span><span style="width: 1px; height: 20px; background: rgba(30,26,46,0.15)"></span><span>Fri Oct 16 – Tue Oct 20</span><span style="width: 1px; height: 20px; background: rgba(30,26,46,0.15)"></span><span>2 adults, 2 kids</span>
+<span style="font-weight: 800; color: #C9431F">Change</span>
+</button>
+<span style="margin-left: auto; font-size: 15px; font-weight: 700; color: #5A5470">Press 1–7 to focus a pane</span>
+<span style="width: 44px; height: 44px; border-radius: 999px; background: #C3B2FF; border: 3px solid #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 800">AR</span>
+</header>
+
+<!-- Cost ledger -->
+<section aria-label="Cost ledger" style="height: 116px; flex-shrink: 0; border-radius: 28px; background: #FFFFFF; box-shadow: 0 0 0 1px rgba(30,26,46,0.06), 0 3px 3px -1.5px rgba(0,0,0,0.05), 0 12px 12px -6px rgba(0,0,0,0.06); display: flex; align-items: center; gap: 18px; padding: 0 16px 0 24px">
+<sc-for list="{{slots}}" as="sl" hint-placeholder-count="3">
+<div style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1">
+<span style="width: 52px; height: 52px; border-radius: 16px; background: {{sl.bubble}}; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1E1A2E" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{sl.icon}}"></path></svg></span>
+<span style="display: flex; flex-direction: column; min-width: 0">
+<span style="font-size: 13px; font-weight: 800; letter-spacing: 0.06em; color: #5A5470">{{sl.label}}</span>
+<span style="font-weight: 800; font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{sl.name}}</span>
+<span style="font-size: 15px; font-weight: 700; color: #4A4460; font-variant-numeric: tabular-nums">{{sl.price}}</span>
+</span>
+<span style="margin-left: auto; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 28px; color: #C9C3D6">{{sl.op}}</span>
+</div>
+</sc-for>
+<div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px; padding: 0 8px; flex-shrink: 0">
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 44px; line-height: 1; font-variant-numeric: tabular-nums">{{total}}</span>
+<span style="font-size: 14px; font-weight: 700; color: #4A4460">4 people · taxes &amp; fees in</span>
+<span style="height: 26px; padding: 0 10px; border-radius: 999px; background: {{deltaBg}}; font-size: 13px; font-weight: 800; display: flex; align-items: center">{{delta}}</span>
+</div>
+<a href="#" style="height: 64px; padding: 0 28px; border-radius: 999px; background: #1E1A2E; color: #FFFFFF; box-shadow: 0 4px 0 #000000; display: flex; align-items: center; font-weight: 800; font-size: 19px; text-decoration: none; flex-shrink: 0">Book this trip</a>
+</section>
+
+<!-- Panes -->
+<div style="flex: 1; min-height: 0; display: grid; grid-template-columns: 1.1fr 1.1fr 0.85fr 1.05fr; gap: 14px">
+
+<!-- Flights -->
+<section aria-label="Flights" style="border-radius: 26px; background: #FFFFFF; box-shadow: 0 0 0 1px rgba(30,26,46,0.06), 0 12px 12px -6px rgba(0,0,0,0.05); padding: 16px; display: flex; flex-direction: column; gap: 10px; min-height: 0">
+<div style="display: flex; align-items: center; gap: 10px; padding: 2px 4px 4px">
+<kbd style="width: 26px; height: 26px; border-radius: 8px; background: #FFF1C2; font: 800 14px 'Figtree', sans-serif; display: flex; align-items: center; justify-content: center">1</kbd>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 21px">Flights</span>
+<span style="font-size: 14px; font-weight: 700; color: #5A5470">round trip · 4</span>
+<button aria-label="Expand flights pane" style="margin-left: auto; width: 34px; height: 34px; border: 0; border-radius: 10px; background: #F4F0EA; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1E1A2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path></svg></button>
+</div>
+<sc-for list="{{flights}}" as="o" hint-placeholder-count="4">
+<button class="ga-offer" onClick="{{o.pick}}" aria-pressed="{{o.pressed}}" style="text-align: left; border: 0; cursor: pointer; font-family: 'Figtree', sans-serif; color: #1E1A2E; padding: 14px 16px; border-radius: 20px; background: {{o.bg}}; box-shadow: {{o.ring}}; display: flex; flex-direction: column; gap: 6px">
+<span style="display: flex; align-items: center; gap: 8px; width: 100%"><span style="font-weight: 800; font-size: 16px">{{o.name}}</span><sc-if value="{{o.badge}}" hint-placeholder-val="{{no}}"><span style="height: 24px; padding: 0 9px; border-radius: 999px; background: #FFC93C; font-size: 12px; font-weight: 800; display: flex; align-items: center">{{o.badge}}</span></sc-if><span style="margin-left: auto; font-weight: 800; font-size: 17px; font-variant-numeric: tabular-nums">{{o.priceText}}</span></span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 24px; font-variant-numeric: tabular-nums">{{o.times}}</span>
+<span style="font-size: 14px; font-weight: 700; color: #4A4460">{{o.detail}}</span>
+</button>
+</sc-for>
+</section>
+
+<!-- Hotels -->
+<section aria-label="Hotels" style="border-radius: 26px; background: #FFFFFF; box-shadow: 0 0 0 1px rgba(30,26,46,0.06), 0 12px 12px -6px rgba(0,0,0,0.05); padding: 16px; display: flex; flex-direction: column; gap: 10px; min-height: 0">
+<div style="display: flex; align-items: center; gap: 10px; padding: 2px 4px 4px">
+<kbd style="width: 26px; height: 26px; border-radius: 8px; background: #D4F7EA; font: 800 14px 'Figtree', sans-serif; display: flex; align-items: center; justify-content: center">2</kbd>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 21px">Stays</span>
+<span style="font-size: 14px; font-weight: 700; color: #5A5470">4 nights</span>
+<button aria-label="Expand stays pane" style="margin-left: auto; width: 34px; height: 34px; border: 0; border-radius: 10px; background: #F4F0EA; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1E1A2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path></svg></button>
+</div>
+<sc-for list="{{hotels}}" as="o" hint-placeholder-count="3">
+<button class="ga-offer" onClick="{{o.pick}}" aria-pressed="{{o.pressed}}" style="text-align: left; border: 0; cursor: pointer; font-family: 'Figtree', sans-serif; color: #1E1A2E; padding: 10px; border-radius: 20px; background: {{o.bg}}; box-shadow: {{o.ring}}; display: flex; gap: 12px; align-items: stretch">
+<img src="{{o.img}}" alt="{{o.alt}}" style="width: 104px; height: 118px; object-fit: cover; border-radius: 14px; flex-shrink: 0">
+<span style="display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; padding: 4px 4px 4px 0">
+<span style="display: flex; align-items: center; gap: 6px"><span style="font-weight: 800; font-size: 17px">{{o.name}}</span></span>
+<span style="font-size: 14px; font-weight: 700; color: #4A4460">{{o.detail}}</span>
+<span style="display: flex; gap: 6px; flex-wrap: wrap"><sc-for list="{{o.tags}}" as="tg" hint-placeholder-count="2"><span style="height: 24px; padding: 0 9px; border-radius: 999px; background: {{tg.c}}; font-size: 12px; font-weight: 800; display: flex; align-items: center">{{tg.t}}</span></sc-for></span>
+<span style="margin-top: auto; display: flex; align-items: baseline; gap: 6px"><span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 22px; font-variant-numeric: tabular-nums">{{o.priceText}}</span><span style="font-size: 13px; font-weight: 700; color: #5A5470">{{o.rating}}</span></span>
+</span>
+</button>
+</sc-for>
+</section>
+
+<!-- Cars -->
+<section aria-label="Cars" style="border-radius: 26px; background: #FFFFFF; box-shadow: 0 0 0 1px rgba(30,26,46,0.06), 0 12px 12px -6px rgba(0,0,0,0.05); padding: 16px; display: flex; flex-direction: column; gap: 10px; min-height: 0">
+<div style="display: flex; align-items: center; gap: 10px; padding: 2px 4px 4px">
+<kbd style="width: 26px; height: 26px; border-radius: 8px; background: #DDEEFF; font: 800 14px 'Figtree', sans-serif; display: flex; align-items: center; justify-content: center">3</kbd>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 21px">Getting around</span>
+</div>
+<sc-for list="{{cars}}" as="o" hint-placeholder-count="3">
+<button class="ga-offer" onClick="{{o.pick}}" aria-pressed="{{o.pressed}}" style="text-align: left; border: 0; cursor: pointer; font-family: 'Figtree', sans-serif; color: #1E1A2E; padding: 14px 16px; border-radius: 20px; background: {{o.bg}}; box-shadow: {{o.ring}}; display: flex; flex-direction: column; gap: 4px">
+<span style="font-weight: 800; font-size: 16px">{{o.name}}</span>
+<span style="font-size: 14px; font-weight: 700; color: #4A4460">{{o.detail}}</span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 22px; font-variant-numeric: tabular-nums">{{o.priceText}}</span>
+</button>
+</sc-for>
+<div style="margin-top: auto; padding: 14px 16px; border-radius: 20px; background: #FFF1C2; font-size: 14px; font-weight: 700; line-height: 1.4">Tip from 312 families: most skipped the car in Santa Monica and rented one for the Griffith Park day only.</div>
+</section>
+
+<!-- Context column -->
+<div style="display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; gap: 14px; min-height: 0">
+<section aria-label="Weather" style="border-radius: 26px; background: #FFFFFF; box-shadow: 0 0 0 1px rgba(30,26,46,0.06), 0 12px 12px -6px rgba(0,0,0,0.05); padding: 14px 16px; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: center; gap: 10px"><kbd style="width: 26px; height: 26px; border-radius: 8px; background: #FFF1C2; font: 800 14px 'Figtree', sans-serif; display: flex; align-items: center; justify-content: center">4</kbd><span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 19px">Weather</span><span style="font-size: 13px; font-weight: 700; color: #5A5470">Santa Monica</span></div>
+<div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px">
+<sc-for list="{{weather}}" as="w" hint-placeholder-count="5">
+<div style="padding: 8px 4px; border-radius: 14px; background: {{w.bg}}; display: flex; flex-direction: column; align-items: center; gap: 2px">
+<span style="font-size: 13px; font-weight: 800">{{w.d}}</span>
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1E1A2E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{w.icon}}"></path></svg>
+<span style="font-weight: 800; font-size: 16px">{{w.t}}</span>
+</div>
+</sc-for>
+</div>
+</section>
+
+<section aria-label="Map" style="border-radius: 26px; background: #FFFFFF; box-shadow: 0 0 0 1px rgba(30,26,46,0.06), 0 12px 12px -6px rgba(0,0,0,0.05); padding: 14px 16px; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: center; gap: 10px"><kbd style="width: 26px; height: 26px; border-radius: 8px; background: #D4F7EA; font: 800 14px 'Figtree', sans-serif; display: flex; align-items: center; justify-content: center">5</kbd><span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 19px">Map</span><span style="font-size: 13px; font-weight: 700; color: #5A5470">{{mapNote}}</span></div>
+<div style="position: relative; height: 150px; border-radius: 18px; background: #EAF6E4; overflow: hidden">
+<svg style="position: absolute; inset: 0; width: 100%; height: 100%" viewBox="0 0 320 150" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 H96 C 110 40, 80 70, 104 100 S 130 140, 120 150 H0 Z" fill="#BFE3FF"></path><path d="M96 0 C 110 40, 80 70, 104 100 S 130 140, 120 150" stroke="#FFE6A8" stroke-width="8" fill="none"></path><path d="M150 20 C 200 50, 240 40, 300 70" stroke="#FFFFFF" stroke-width="5" fill="none" stroke-linecap="round"></path><path d="M130 120 C 190 110, 230 125, 310 110" stroke="#FFFFFF" stroke-width="5" fill="none" stroke-linecap="round"></path></svg>
+<span style="position: absolute; left: {{mapPin.x}}; top: {{mapPin.y}}; height: 28px; padding: 0 10px; border-radius: 999px; background: #FF7352; border: 2px solid #FFFFFF; font-size: 12px; font-weight: 800; display: flex; align-items: center; box-shadow: 0 4px 10px -4px rgba(0,0,0,0.4)">{{mapPin.label}}</span>
+<span style="position: absolute; left: 150px; top: 92px; height: 28px; padding: 0 10px; border-radius: 999px; background: #5AB0FF; border: 2px solid #FFFFFF; font-size: 12px; font-weight: 800; display: flex; align-items: center">LAX</span>
+<span style="position: absolute; left: 200px; top: 22px; height: 28px; padding: 0 10px; border-radius: 999px; background: #C3B2FF; border: 2px solid #FFFFFF; font-size: 12px; font-weight: 800; display: flex; align-items: center">Griffith Park</span>
+</div>
+</section>
+
+<section aria-label="Events and news" style="border-radius: 26px; background: #FFFFFF; box-shadow: 0 0 0 1px rgba(30,26,46,0.06), 0 12px 12px -6px rgba(0,0,0,0.05); padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow: hidden">
+<div style="display: flex; align-items: center; gap: 10px"><kbd style="width: 26px; height: 26px; border-radius: 8px; background: #FFE3F1; font: 800 14px 'Figtree', sans-serif; display: flex; align-items: center; justify-content: center">6</kbd><span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 19px">Happening &amp; news</span></div>
+<sc-for list="{{events}}" as="e" hint-placeholder-count="3">
+<div style="display: flex; gap: 10px; align-items: center">
+<span style="width: 52px; flex-shrink: 0; padding: 5px 0; border-radius: 12px; background: {{e.bg}}; text-align: center; font-size: 12px; font-weight: 800; line-height: 1.2">{{e.when}}</span>
+<span style="display: flex; flex-direction: column; min-width: 0"><span style="font-weight: 800; font-size: 15px">{{e.title}}</span><span style="font-size: 13px; font-weight: 600; color: #4A4460">{{e.sub}}</span></span>
+</div>
+</sc-for>
+</section>
+
+<section aria-label="Community itineraries" style="border-radius: 26px; background: #1E1A2E; color: #FFFFFF; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: center; gap: 10px"><kbd style="width: 26px; height: 26px; border-radius: 8px; background: #FFC93C; color: #1E1A2E; font: 800 14px 'Figtree', sans-serif; display: flex; align-items: center; justify-content: center">7</kbd><span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 19px">Trips others loved</span></div>
+<div style="display: flex; align-items: center; gap: 10px">
+<span style="display: flex; flex-direction: column; min-width: 0; flex: 1"><span style="font-weight: 800; font-size: 15px">Sun, tacos &amp; tide pools</span><span style="font-size: 13px; font-weight: 600; color: #D8D3E6">5 days · kid friendly · 312 forks</span></span>
+<a href="#" style="height: 36px; padding: 0 14px; border-radius: 999px; background: #FFC93C; color: #1E1A2E; font-weight: 800; font-size: 14px; display: flex; align-items: center; text-decoration: none">Fork</a>
+</div>
+</section>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":980}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { f: 'f1', h: 'h1', c: 'c1' }; }
+  renderVals() {
+    var self = this, st = this.state;
+    var I = {
+      plane: 'M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z',
+      bed: 'M2 4v16M2 8h18a2 2 0 0 1 2 2v10M2 17h20M6 8v9',
+      car: 'M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2M5 17a2 2 0 1 0 4 0a2 2 0 1 0-4 0M9 17h6M15 17a2 2 0 1 0 4 0a2 2 0 1 0-4 0',
+      sun: 'M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41',
+      cloud: 'M12 2v2M4.93 4.93l1.41 1.41M20 12h2M19.07 4.93l-1.41 1.41M15.95 12.65a4 4 0 0 0-5.93-4.61M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z'
+    };
+    var money = function (n) { return '$' + n.toLocaleString('en-US'); };
+    var flights = [
+      { id: 'f1', name: 'Skylark Air 214', times: '8:05 → 9:32', detail: 'Nonstop · 1h 27m · back Tue 2:10 PM', price: 1236, badge: 'Best nonstop' },
+      { id: 'f2', name: 'Pacific Hop 88', times: '6:40 → 8:02', detail: 'Nonstop · 1h 22m · very early start', price: 1104, badge: false },
+      { id: 'f3', name: 'Golden Gate Air 530', times: '11:15 → 12:44', detail: 'Nonstop · 1h 29m · extra legroom', price: 1392, badge: false },
+      { id: 'f4', name: 'Skylark Air 902', times: '9:20 → 12:05', detail: '1 stop in SJC · 2h 45m', price: 968, badge: 'Cheapest' }
+    ];
+    var hotels = [
+      { id: 'h1', name: 'The Tidewater', detail: 'Santa Monica · 2 rooms · 3 min to the beach', price: 1540, rating: '4.8 · 1.2k reviews', img: '/_blob/d45e1ee369230be3c000073b7fe64369', alt: 'Santa Monica beach near the hotel', tags: [{ t: 'Kid friendly', c: '#FFC93C' }, { t: 'Pool', c: '#DDEEFF' }], pin: { x: '40px', y: '52px', label: 'The Tidewater' }, note: 'Hotel to beach: 3 min walk' },
+      { id: 'h2', name: 'Casa Palmera', detail: 'Venice · family suite · 8 min to the beach', price: 1188, rating: '4.6 · 860 reviews', img: '/_blob/c2d0589b565f73ac8c151cb1c5ad996a', alt: 'Venice Beach near the hotel', tags: [{ t: 'Pet friendly', c: '#48D1A0' }, { t: 'Kitchen', c: '#FFE3F1' }], pin: { x: '52px', y: '88px', label: 'Casa Palmera' }, note: 'Hotel to beach: 8 min walk' },
+      { id: 'h3', name: 'Hotel Marigold', detail: 'Downtown · 2 queens · 35 min drive to beach', price: 892, rating: '4.4 · 2.3k reviews', img: '/_blob/d45e1ee369230be3c000073b7fe64369', alt: 'Los Angeles coastline', tags: [{ t: 'Great value', c: '#FFF1C2' }], pin: { x: '230px', y: '60px', label: 'Hotel Marigold' }, note: 'Hotel to beach: 35 min drive' }
+    ];
+    var cars = [
+      { id: 'c1', name: 'Breeze Rentals', detail: 'Compact SUV · 2 car seats', price: 312 },
+      { id: 'c2', name: 'Coastline Cars', detail: 'Minivan · room for strollers', price: 398 },
+      { id: 'c3', name: 'No car', detail: 'Rideshare & Metro, estimated', price: 180 }
+    ];
+    function decorate(list, key) {
+      return list.map(function (o) {
+        var on = st[key] === o.id;
+        return Object.assign({}, o, {
+          priceText: money(o.price), pressed: on ? 'true' : 'false',
+          bg: on ? '#FFF4EF' : '#FAF7F2',
+          ring: on ? '0 0 0 3px #FF7352, 0 8px 18px -10px rgba(201,67,31,0.6)' : '0 0 0 1px rgba(30,26,46,0.06)',
+          pick: function () { var n = {}; n[key] = o.id; self.setState(n); }
+        });
+      });
+    }
+    var f = flights.find(function (x) { return x.id === st.f; });
+    var h = hotels.find(function (x) { return x.id === st.h; });
+    var c = cars.find(function (x) { return x.id === st.c; });
+    var total = f.price + h.price + c.price;
+    var cheapest = 968 + 892 + 180;
+    var diff = total - cheapest;
+    return {
+      no: false,
+      flights: decorate(flights, 'f'), hotels: decorate(hotels, 'h'), cars: decorate(cars, 'c'),
+      slots: [
+        { label: 'FLIGHT', name: f.name, price: money(f.price), icon: I.plane, bubble: '#FFF1C2', op: '+' },
+        { label: 'STAY', name: h.name, price: money(h.price), icon: I.bed, bubble: '#D4F7EA', op: '+' },
+        { label: 'GETTING AROUND', name: c.name, price: money(c.price), icon: I.car, bubble: '#DDEEFF', op: '=' }
+      ],
+      total: money(total),
+      delta: diff === 0 ? 'The cheapest combination' : money(diff) + ' more than the cheapest combo',
+      deltaBg: diff === 0 ? '#48D1A0' : '#FFF1C2',
+      mapPin: h.pin, mapNote: h.note,
+      weather: [
+        { d: 'Fri', t: '75°', icon: I.sun, bg: '#FFF1C2' }, { d: 'Sat', t: '73°', icon: I.sun, bg: '#FFF1C2' },
+        { d: 'Sun', t: '70°', icon: I.cloud, bg: '#EEF2F7' }, { d: 'Mon', t: '72°', icon: I.sun, bg: '#FFF1C2' },
+        { d: 'Tue', t: '77°', icon: I.sun, bg: '#FFF1C2' }
+      ],
+      events: [
+        { when: 'FRI 7PM', title: 'Sunset jazz on the pier', sub: 'Free · 5 min from The Tidewater', bg: '#FFE3F1' },
+        { when: 'SAT', title: 'Kite day at the beach', sub: 'Family event · all afternoon', bg: '#FFF1C2' },
+        { when: 'NEWS', title: 'Metro line to Santa Monica runs every 12 min', sub: 'Weekend service update', bg: '#DDEEFF' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
