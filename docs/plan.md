@@ -53,7 +53,7 @@ Design: docs/design/workspace.md (polished workspace; chosen 2026-09-29) · Need
 - [x] ledger highlights the best-value combination
 - [x] phone width: panes stack, ledger stays pinned
 
-## F-016 Workspace context panes [todo]
+## F-016 Workspace context panes [doing]
 Needs: F-015 · First to be trimmed to light stubs if time runs short
 - [ ] weather, news, map, events and community itineraries for LA on the trip dates
 - [ ] community itinerary pane can fork into the forks list
