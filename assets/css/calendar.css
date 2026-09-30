@@ -80,6 +80,7 @@
 }
 .cal-time { white-space: nowrap; font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; }
 .cal-title { font-size: 14px; font-weight: 800; line-height: 1.2; overflow-wrap: anywhere; }
+.cal-act .cal-title { overflow-wrap: normal; hyphens: auto; }
 .cal-line { display: flex; align-items: center; gap: 6px; }
 .cal-lock { margin-left: auto; display: inline-flex; opacity: .85; }
 .cal-booked { background: var(--ink); color: #fff; }
@@ -92,10 +93,6 @@
 .cal-act:focus-visible { z-index: 5; }
 .cal-meta { margin-top: auto; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .cal-by, .cal-notecount { height: 22px; padding: 0 8px; border-radius: var(--r-pill); background: rgba(255, 255, 255, .8); font-size: 11px; font-weight: 800; display: inline-flex; align-items: center; }
-.cal-act { height: auto; min-height: calc(var(--h) - 4px); }
-.cal-short { display: block; padding-top: 3px; padding-bottom: 3px; line-height: 1.25; z-index: 1; }
-.cal-short .cal-time, .cal-short .cal-title { display: inline; }
-.cal-short .cal-time { margin-right: 6px; }
 .cal-short .cal-meta { display: none; }
 .cal-resize { position: absolute; left: 0; right: 0; bottom: 0; height: 10px; cursor: ns-resize; }
 .cal-resize::after { content: ""; position: absolute; left: 50%; bottom: 3px; width: 28px; height: 3px; margin-left: -14px; border-radius: 2px; background: rgba(30, 26, 46, .25); }
@@ -243,5 +240,27 @@
 /* Side-by-side activities get narrow: smaller type, words kept whole where they fit */
 .cal-lane { padding: 4px 6px; }
 .cal-lane .cal-time { font-size: 11px; }
-.cal-lane .cal-title { font-size: 12px; overflow-wrap: break-word; }
-.cal-lane.cal-short { display: flex; flex-direction: column; }
+
+/* Height is information: an activity always keeps its true height (30 minutes at least). What does not fit is faded
+   at the edge (never an ellipsis or a mid-word break). Hover or focus opens the block in place, over its neighbours. */
+.cal-short { display: block; padding: 2px 10px; line-height: 1.25; white-space: nowrap; overflow: hidden; }
+.cal-short .cal-time, .cal-short .cal-title { display: inline; }
+.cal-short .cal-time { margin-right: 6px; }
+.cal-act.is-cut.cal-short { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); }
+.cal-act.is-cut:not(.cal-short) { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 16px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 16px), transparent); }
+.cal-lane .cal-title { font-size: 12px; }
+.cal-lane.is-timeonly .cal-title { display: none; }
+.cal-act:hover, .cal-act:focus, .cal-act:focus-visible {
+  z-index: 6; height: auto; min-height: calc(var(--h) - 4px); overflow: visible; white-space: normal;
+  box-shadow: var(--shadow-lg); -webkit-mask-image: none; mask-image: none;
+}
+.cal-lane.cal-short.is-cut { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 10px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 10px), transparent); }
+.cal-act.is-cut:hover, .cal-act.is-cut:focus, .cal-act.is-cut:focus-visible { -webkit-mask-image: none; mask-image: none; }
+.cal-act:hover .cal-title, .cal-act:focus .cal-title { display: inline-block; }
+.cal-short:hover .cal-title, .cal-short:focus .cal-title { display: inline; }
+.cal-lane:hover, .cal-lane:focus { left: 0; width: calc(100% - 4px); }
+.cal-act.is-drag { height: calc(var(--h) - 4px); min-height: 0; }
+/* While the script measures whether text is cut, a hovered block is held at its true size. */
+.cal-act.is-measuring { height: calc(var(--h) - 4px) !important; min-height: 0 !important; overflow: hidden !important; left: calc(100% * var(--lane) / var(--lanes)) !important; width: calc(100% / var(--lanes) - 4px) !important; }
+.cal-act.cal-short.is-measuring { white-space: nowrap !important; }
+.cal-act.is-measuring:not(.cal-short) { white-space: normal !important; }

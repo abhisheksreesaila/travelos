@@ -19,6 +19,19 @@
   const clock = (m) => { const h = Math.floor(m / 60); return `${h % 12 || 12}:${pad(m % 60)} ${h < 12 ? "AM" : "PM"}`; };
   const minPerPx = 60 / HOUR;
 
+  // Blocks keep their true height. Mark the ones whose text does not fit (is-cut: CSS fades the edge) and the narrow
+  // side-by-side lanes that cannot fit even one word (is-timeonly: the time shows, hover or focus opens the title).
+  function markCut(root) {
+    $$(".cal-act", root).forEach((b) => {
+      b.classList.add("is-measuring");
+      b.classList.remove("is-cut", "is-timeonly");
+      const title = $(".cal-title", b);
+      if (b.classList.contains("cal-lane") && !b.classList.contains("cal-short") && title.scrollWidth > title.clientWidth + 1) b.classList.add("is-timeonly");
+      if (b.scrollHeight > b.clientHeight + 1 || b.scrollWidth > b.clientWidth + 1) b.classList.add("is-cut");
+      b.classList.remove("is-measuring");
+    });
+  }
+
   // ---- soft navigation: fetch the page, swap #cal-app, keep scroll and focus --------------------------------------
   // Requests run one after another, so a click that arrives mid-flight is queued, never dropped.
   let queue = Promise.resolve();
@@ -70,6 +83,7 @@
 
   // ---- setup after every render ------------------------------------------------------------------------------------
   function setup(root, keep) {
+    markCut(root);
     const scroller = $("#cal-scroll", root);
     if (scroller) {
       const day = +scroller.dataset.w || 0;
@@ -136,7 +150,7 @@
     else if (btn) { jump(scroller, firstVisible(scroller) + +btn.dataset.dir * winSize(scroller)); }
   });
   document.addEventListener("scroll", (e) => { if (e.target && e.target.id === "cal-scroll") updateWindow(e.target); }, true);
-  addEventListener("resize", () => { const s = $("#cal-scroll"); if (s) updateWindow(s); });
+  addEventListener("resize", () => { const s = $("#cal-scroll"); if (s) updateWindow(s); if (app()) markCut(app()); });
 
   // ---- the ghost on an empty hour ----------------------------------------------------------------------------------
   function bodyGeometry(body) {
