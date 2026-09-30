@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Flights expanded: fares and bags</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Figtree:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FFF8EE}
+a{color:#1E1A2E}a:hover{color:#C9431F}
+button{font-family:'Figtree',sans-serif;color:#1E1A2E}
+.ga-lift{transition:transform .18s cubic-bezier(.2,.9,.3,1.3),box-shadow .18s,background .18s}
+.ga-lift:hover{transform:translateY(-2px)}
+.ga-tactile{transition:transform .12s,box-shadow .12s}
+.ga-tactile:hover{transform:translateY(-1px)}
+.ga-tactile:active{transform:translateY(4px);box-shadow:0 0 0 #C9431F !important}
+a:focus-visible,button:focus-visible{outline:3px solid #1E1A2E;outline-offset:3px}
+@media (prefers-reduced-motion: reduce){.ga-lift,.ga-tactile{transition:none}.ga-lift:hover,.ga-tactile:hover{transform:none}}
+</style>
+</helmet>
+<div style="width: 1440px; height: 980px; box-sizing: border-box; padding: 0 20px 20px; background: #FFF8EE; color: #1E1A2E; font-family: 'Figtree', 'Segoe UI', system-ui, sans-serif; display: flex; flex-direction: column; gap: 14px; overflow: hidden">
+
+<header style="height: 72px; flex-shrink: 0; display: flex; align-items: center; gap: 20px; padding: 0 8px">
+<span style="display: flex; align-items: center; gap: 10px">
+<span style="width: 36px; height: 36px; border-radius: 11px; background: #FF7352; box-shadow: 0 3px 0 #C9431F; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1E1A2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"></path><path d="M14 7h7v7"></path></svg></span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 24px; letter-spacing: -0.03em">GitAway</span>
+</span>
+<span style="font-size: 15px; font-weight: 700; color: #4A4460">LA with the kids · Oct 16–20 · 2 adults, 2 kids</span>
+<span style="margin-left: auto; display: flex; align-items: center; gap: 14px; background: #FFFFFF; border-radius: 999px; padding: 8px 8px 8px 22px; box-shadow: 0 0 0 1px rgba(0,0,0,.06), 0 3px 3px -1.5px rgba(0,0,0,.06), 0 12px 12px -6px rgba(0,0,0,.06)">
+<span style="font-size: 14px; font-weight: 700; color: #5A5470">Flight <strong style="color: #1E1A2E">{{flightText}}</strong> · Stay $1,540 · Car $312</span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px; font-variant-numeric: tabular-nums">{{tripText}}</span>
+<a href="#" style="height: 48px; padding: 0 22px; border-radius: 999px; background: #1E1A2E; color: #FFFFFF; font-weight: 800; font-size: 16px; display: flex; align-items: center; text-decoration: none; box-shadow: 0 4px 0 #000000">Book</a>
+</span>
+</header>
+
+<section aria-label="Flights, expanded" style="flex: 1; min-height: 0; background: #FFFFFF; border-radius: 26px; box-shadow: 0 0 0 1px rgba(0,0,0,.06), 0 3px 3px -1.5px rgba(0,0,0,.06), 0 12px 12px -6px rgba(0,0,0,.06); display: flex; flex-direction: column; overflow: hidden">
+<div style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 20px; border-bottom: 1px solid #F2ECE3">
+<span style="width: 26px; height: 26px; border-radius: 8px; background: #DDEEFF; font-weight: 800; font-size: 14px; display: flex; align-items: center; justify-content: center">1</span>
+<h1 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 21px">Flights</h1>
+<span style="font-size: 14px; font-weight: 700; color: #5A5470">5 options · SFO → LA · round trip for 4</span>
+<span style="margin-left: auto; font-size: 13px; font-weight: 700; color: #5A5470; display: flex; align-items: center; gap: 6px"><kbd style="font-family: 'Figtree', sans-serif; font-size: 12px; font-weight: 800; padding: 2px 7px; border-radius: 6px; background: #FAF7F2; box-shadow: 0 1px 0 rgba(0,0,0,.15)">Esc</kbd> back to workspace</span>
+<button aria-label="Collapse to the workspace" style="width: 40px; height: 40px; border: 0; border-radius: 12px; background: #FAF7F2; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1E1A2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"></path></svg></button>
+</div>
+
+<div style="flex: 1; min-height: 0; display: grid; grid-template-columns: 340px minmax(0, 1fr)">
+<nav aria-label="Flights" style="border-right: 1px solid #F2ECE3; padding: 16px; display: flex; flex-direction: column; gap: 10px; overflow: auto; background: #FFFCF8">
+<sc-for list="{{flights}}" as="f" hint-placeholder-count="5">
+<button class="ga-lift" onClick="{{f.open}}" aria-current="{{f.current}}" style="text-align: left; border: 0; cursor: pointer; padding: 14px 16px; border-radius: 20px; background: {{f.bg}}; box-shadow: {{f.ring}}; display: flex; flex-direction: column; gap: 4px">
+<span style="display: flex; align-items: center; gap: 8px"><span style="font-weight: 800; font-size: 15px; color: #4A4460">{{f.name}}</span><sc-if value="{{f.isPick}}" hint-placeholder-val="{{false}}"><span style="margin-left: auto; height: 22px; padding: 0 8px; border-radius: 999px; background: #1E1A2E; color: #FFFFFF; font-size: 11px; font-weight: 800; letter-spacing: .04em; display: flex; align-items: center">YOUR PICK</span></sc-if></span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 24px; font-variant-numeric: tabular-nums">{{f.times}}</span>
+<span style="display: flex; align-items: baseline; gap: 8px"><span style="font-size: 14px; font-weight: 700; color: #4A4460">{{f.short}}</span><span style="margin-left: auto; font-size: 13px; font-weight: 700; color: #5A5470">from</span><span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 19px; font-variant-numeric: tabular-nums">{{f.fromText}}</span></span>
+</button>
+</sc-for>
+</nav>
+
+<div style="min-height: 0; display: flex; flex-direction: column">
+<div style="flex: 1; min-height: 0; overflow: auto; padding: 24px 28px; display: flex; flex-direction: column; gap: 22px">
+<div style="display: flex; align-items: baseline; gap: 14px">
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 36px; letter-spacing: -0.03em">{{cur.name}}</h2>
+<sc-for list="{{cur.badges}}" as="b" hint-placeholder-count="1"><span style="height: 32px; padding: 0 12px; border-radius: 999px; background: #FFC93C; font-size: 13px; font-weight: 800; display: flex; align-items: center; transform: rotate(-2deg)">{{b}}</span></sc-for>
+</div>
+
+<!-- Legs -->
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px">
+<sc-for list="{{cur.legs}}" as="l" hint-placeholder-count="2">
+<div style="border-radius: 20px; background: #F4F9FF; padding: 18px 20px; display: flex; flex-direction: column; gap: 12px">
+<span style="font-size: 13px; font-weight: 800; letter-spacing: .04em; color: #1B5FB8">{{l.label}}</span>
+<div style="display: flex; align-items: center; gap: 14px">
+<span style="display: flex; flex-direction: column"><span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 30px; font-variant-numeric: tabular-nums">{{l.dep}}</span><span style="font-size: 14px; font-weight: 800; color: #4A4460">{{l.from}}</span></span>
+<span style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px"><span style="font-size: 13px; font-weight: 700; color: #4A4460">{{l.dur}}</span><span style="width: 100%; height: 3px; border-radius: 999px; background: #5AB0FF; position: relative; display: flex; justify-content: center; align-items: center"><span style="width: 12px; height: 12px; border-radius: 999px; background: {{l.stopDot}}; border: 3px solid #F4F9FF"></span></span><span style="font-size: 13px; font-weight: 800">{{l.stops}}</span></span>
+<span style="display: flex; flex-direction: column; align-items: flex-end"><span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 30px; font-variant-numeric: tabular-nums">{{l.arr}}</span><span style="font-size: 14px; font-weight: 800; color: #4A4460">{{l.to}}</span></span>
+</div>
+<span style="font-size: 14px; font-weight: 700; color: #4A4460">{{l.aircraft}}</span>
+</div>
+</sc-for>
+</div>
+
+<!-- Fares -->
+<div style="display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; align-items: baseline; gap: 12px"><h3 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 24px">Pick a fare</h3><span style="font-size: 14px; font-weight: 700; color: #5A5470">Round trip for all 4, taxes in</span></div>
+<div role="radiogroup" aria-label="Fare" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px">
+<sc-for list="{{fares}}" as="fa" hint-placeholder-count="3">
+<button class="ga-lift" role="radio" aria-checked="{{fa.checked}}" onClick="{{fa.pick}}" style="text-align: left; border: 0; cursor: pointer; border-radius: 20px; background: {{fa.bg}}; box-shadow: {{fa.ring}}; padding: 18px; display: flex; flex-direction: column; gap: 12px">
+<span style="display: flex; align-items: center; gap: 8px"><span style="width: 22px; height: 22px; border-radius: 999px; border: 3px solid #1E1A2E; box-sizing: border-box; display: flex; align-items: center; justify-content: center"><span style="width: 10px; height: 10px; border-radius: 999px; background: {{fa.dot}}"></span></span><span style="font-weight: 800; font-size: 18px">{{fa.name}}</span></span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 28px; font-variant-numeric: tabular-nums">{{fa.priceText}}</span>
+<span style="display: flex; flex-direction: column; gap: 7px">
+<sc-for list="{{fa.perks}}" as="p" hint-placeholder-count="4"><span style="display: flex; gap: 8px; font-size: 14px; font-weight: 700; color: {{p.color}}"><span style="width: 20px; height: 20px; border-radius: 999px; background: {{p.bg}}; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: #1E1A2E">{{p.mark}}</span>{{p.t}}</span></sc-for>
+</span>
+</button>
+</sc-for>
+</div>
+</div>
+
+<!-- Bags -->
+<div style="display: flex; align-items: center; gap: 16px; padding: 16px 20px; border-radius: 20px; background: #FAF7F2">
+<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1E1A2E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="7" width="14" height="13" rx="3"></rect><path d="M9 7V4h6v3M9 20v1M15 20v1"></path></svg>
+<span style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 800; font-size: 17px">Checked bags</span><span style="font-size: 14px; font-weight: 700; color: #4A4460">{{bagNote}}</span></span>
+<span style="margin-left: auto; display: flex; align-items: center; gap: 4px; background: #FFFFFF; border-radius: 999px; padding: 3px; box-shadow: 0 2px 3px -1px rgba(0,0,0,.1), 0 0 0 1px rgba(25,28,33,.08)">
+<button onClick="{{bagLess}}" aria-label="One fewer checked bag" style="width: 44px; height: 44px; border: 0; border-radius: 999px; background: #FAF7F2; font-size: 20px; font-weight: 800; cursor: pointer">−</button>
+<span style="min-width: 26px; text-align: center; font-weight: 800; font-size: 18px">{{bags}}</span>
+<button onClick="{{bagMore}}" aria-label="One more checked bag" style="width: 44px; height: 44px; border: 0; border-radius: 999px; background: #FF7352; font-size: 20px; font-weight: 800; cursor: pointer">+</button>
+</span>
+</div>
+</div>
+
+<div style="flex-shrink: 0; margin: 0 20px 16px; padding: 12px 12px 12px 22px; border-radius: 999px; background: #1E1A2E; color: #FFFFFF; display: flex; align-items: center; gap: 16px">
+<span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 13px; font-weight: 700; color: #C9C3DA">{{cur.name}}</span><span style="font-size: 16px; font-weight: 800">{{summary}}</span></span>
+<span style="margin-left: auto; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 28px; font-variant-numeric: tabular-nums">{{flightText}}</span>
+<button class="ga-tactile" onClick="{{choose}}" style="height: 56px; padding: 0 28px; border: 0; border-radius: 999px; background: #FF7352; box-shadow: 0 4px 0 #C9431F; font-size: 17px; font-weight: 800; cursor: pointer">{{chooseLabel}}</button>
+</div>
+</div>
+</div>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":980}}'>
+var FLIGHTS = [
+  { id: 'f1', name: 'Skylark Air 214', short: 'Nonstop · LAX', price: 123600, badges: ['Best nonstop'], legs: [['8:05 AM', 'SFO', '9:32 AM', 'LAX', '1h 27m', 'Nonstop', 'Airbus A320'], ['2:10 PM', 'LAX', '3:37 PM', 'SFO', '1h 27m', 'Nonstop', 'Airbus A320']] },
+  { id: 'f2', name: 'Pacific Hop 88', short: 'Nonstop · LAX', price: 110400, badges: [], legs: [['6:40 AM', 'SFO', '8:02 AM', 'LAX', '1h 22m', 'Nonstop', 'Boeing 737-800'], ['12:30 PM', 'LAX', '1:52 PM', 'SFO', '1h 22m', 'Nonstop', 'Boeing 737-800']] },
+  { id: 'f3', name: 'Golden Gate Air 530', short: 'Nonstop · LAX', price: 139200, badges: [], legs: [['11:15 AM', 'SFO', '12:44 PM', 'LAX', '1h 29m', 'Nonstop', 'Airbus A321neo'], ['4:00 PM', 'LAX', '5:29 PM', 'SFO', '1h 29m', 'Nonstop', 'Airbus A321neo']] },
+  { id: 'f4', name: 'Skylark Air 902', short: '1 stop · LAX', price: 96800, badges: ['Cheapest'], legs: [['9:20 AM', 'SFO', '12:05 PM', 'LAX', '2h 45m', '1 stop · SJC', 'Embraer 175'], ['1:05 PM', 'LAX', '3:50 PM', 'SFO', '2h 45m', '1 stop · SJC', 'Embraer 175']] },
+  { id: 'f5', name: 'Pacific Hop 312', short: 'Nonstop · BUR', price: 118000, badges: [], legs: [['10:10 AM', 'SFO', '11:30 AM', 'BUR', '1h 20m', 'Nonstop', 'Boeing 737 MAX 8'], ['3:20 PM', 'BUR', '4:40 PM', 'SFO', '1h 20m', 'Nonstop', 'Boeing 737 MAX 8']] }
+];
+var FARES = [
+  { id: 'basic', name: 'Basic', extra: 0, bagsIncluded: 0, perks: [[0, 'Seats assigned at check-in'], [0, 'Personal item only'], [0, 'No changes'], [0, 'Checked bags extra']] },
+  { id: 'main', name: 'Main', extra: 24000, bagsIncluded: 0, perks: [[1, 'Pick seats together'], [1, 'Carry-on included'], [1, 'Free changes'], [0, 'Checked bags extra']] },
+  { id: 'xl', name: 'Extra legroom', extra: 56000, bagsIncluded: 4, perks: [[1, 'Roomy seats up front'], [1, 'Carry-on included'], [1, 'Free changes'], [1, '1 checked bag each']] }
+];
+var BAG = 7000, STAY = 154000, CAR = 31200, PARTY = 4;
+function money(c) { return '$' + Math.round(c / 100).toLocaleString('en-US'); }
+
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { flight: 'f1', fare: 'basic', bags: 0, pick: 'f1', justChose: false }; }
+  renderVals() {
+    var self = this, s = this.state;
+    var f = FLIGHTS.filter(function (x) { return x.id === s.flight; })[0];
+    var fare = FARES.filter(function (x) { return x.id === s.fare; })[0];
+    var paidBags = Math.max(0, s.bags - fare.bagsIncluded);
+    var total = f.price + fare.extra + paidBags * BAG;
+    var parts = [fare.name + ' fare'];
+    if (s.bags) parts.push(s.bags + ' checked bag' + (s.bags > 1 ? 's' : ''));
+    return {
+      flightText: money(total), tripText: money(total + STAY + CAR), summary: parts.join(' + '), bags: s.bags,
+      bagNote: fare.bagsIncluded ? fare.bagsIncluded + ' included with Extra legroom, then ' + money(BAG) + ' each, round trip' : money(BAG) + ' per bag, round trip',
+      bagLess: function () { self.setState({ bags: Math.max(0, s.bags - 1), justChose: false }); },
+      bagMore: function () { self.setState({ bags: Math.min(8, s.bags + 1), justChose: false }); },
+      chooseLabel: s.justChose && s.pick === f.id ? 'Chosen' : 'Choose this flight',
+      choose: function () { self.setState({ pick: f.id, justChose: true }); },
+      cur: {
+        name: f.name, badges: f.badges,
+        legs: f.legs.map(function (l, i) {
+          return { label: i === 0 ? 'OUT · FRI OCT 16' : 'BACK · TUE OCT 20', dep: l[0], from: l[1], arr: l[2], to: l[3], dur: l[4], stops: l[5], aircraft: l[6], stopDot: l[5] === 'Nonstop' ? '#5AB0FF' : '#FF7352' };
+        })
+      },
+      flights: FLIGHTS.map(function (x) {
+        var on = x.id === s.flight;
+        return {
+          name: x.name, short: x.short, times: x.legs[0][0].replace(' AM', '').replace(' PM', '') + ' → ' + x.legs[0][2].replace(' AM', '').replace(' PM', ''),
+          fromText: money(x.price), isPick: x.id === s.pick, current: on ? 'true' : 'false',
+          bg: on ? '#FFF4EF' : '#FAF7F2', ring: on ? '0 0 0 3px #FF7352' : 'none',
+          open: function () { if (!on) self.setState({ flight: x.id, fare: 'basic', bags: 0, justChose: false }); }
+        };
+      }),
+      fares: FARES.map(function (x) {
+        var on = x.id === s.fare;
+        return {
+          name: x.name, priceText: money(f.price + x.extra), checked: on ? 'true' : 'false',
+          bg: on ? '#FFF4EF' : '#FAF7F2', ring: on ? '0 0 0 3px #FF7352' : 'none', dot: on ? '#FF7352' : 'transparent',
+          perks: x.perks.map(function (p) { return { t: p[1], mark: p[0] ? '✓' : '–', bg: p[0] ? '#48D1A0' : '#F2ECE3', color: p[0] ? '#1E1A2E' : '#5A5470' }; }),
+          pick: function () { self.setState({ fare: x.id, justChose: false }); }
+        };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

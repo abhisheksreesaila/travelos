@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Stays on a phone: list then detail</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Figtree:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FFF8EE}
+button{font-family:'Figtree',sans-serif;color:#1E1A2E}
+a:focus-visible,button:focus-visible{outline:3px solid #1E1A2E;outline-offset:3px}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #FFF8EE; color: #1E1A2E; font-family: 'Figtree', 'Segoe UI', system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden">
+
+<sc-if value="{{onList}}" hint-placeholder-val="{{true}}">
+<div style="flex: 1; min-height: 0; display: flex; flex-direction: column">
+<div style="padding: 18px 16px 10px; display: flex; align-items: center; gap: 10px">
+<button aria-label="Back to the workspace" style="width: 44px; height: 44px; border: 0; border-radius: 14px; background: #FFFFFF; box-shadow: 0 2px 3px -1px rgba(0,0,0,.1), 0 0 0 1px rgba(25,28,33,.08); display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1E1A2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg></button>
+<h1 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px">Stays</h1>
+<span style="margin-left: auto; font-size: 13px; font-weight: 700; color: #5A5470">4 nights</span>
+</div>
+<div style="flex: 1; overflow: auto; padding: 6px 16px 16px; display: flex; flex-direction: column; gap: 12px">
+<sc-for list="{{hotels}}" as="h" hint-placeholder-count="3">
+<button onClick="{{h.open}}" style="text-align: left; border: 0; cursor: pointer; padding: 8px 8px 14px; border-radius: 20px; background: {{h.bg}}; box-shadow: {{h.ring}}; display: flex; flex-direction: column; gap: 8px">
+<span style="height: 140px; border-radius: 14px; background: {{h.thumbBg}}; overflow: hidden; display: flex; position: relative"><img src="{{h.img}}" alt="" style="width: 100%; height: 100%; object-fit: cover; opacity: {{h.imgOpacity}}"><span style="position: absolute; left: 8px; bottom: 8px; height: 24px; padding: 0 9px; border-radius: 999px; background: #FFFFFF; font-size: 11px; font-weight: 800; display: flex; align-items: center">The area · {{h.area}}</span></span>
+<span style="padding: 0 6px; display: flex; align-items: baseline; gap: 8px"><span style="font-weight: 800; font-size: 18px">{{h.name}}</span><span style="margin-left: auto; font-size: 12px; font-weight: 700; color: #5A5470">from</span><span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 20px">{{h.fromText}}</span></span>
+<span style="padding: 0 6px; font-size: 13px; font-weight: 700; color: #4A4460">{{h.rating}}</span>
+</button>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{onDetail}}" hint-placeholder-val="{{false}}">
+<div style="flex: 1; min-height: 0; display: flex; flex-direction: column">
+<div style="flex: 1; overflow: auto; display: flex; flex-direction: column">
+<figure style="margin: 0; height: 220px; flex-shrink: 0; position: relative; background: {{cur.thumbBg}}">
+<img src="{{cur.img}}" alt="{{cur.areaAlt}}" style="width: 100%; height: 100%; object-fit: cover; opacity: {{cur.imgOpacity}}">
+<button onClick="{{back}}" aria-label="Back to all stays" style="position: absolute; left: 16px; top: 16px; height: 44px; padding: 0 14px 0 10px; border: 0; border-radius: 999px; background: #FFFFFF; display: flex; align-items: center; gap: 4px; font-size: 14px; font-weight: 800; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1E1A2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>Stays</button>
+<figcaption style="position: absolute; left: 16px; bottom: 12px; height: 26px; padding: 0 10px; border-radius: 999px; background: #FFFFFF; font-size: 12px; font-weight: 800; display: flex; align-items: center">The area · {{cur.area}}</figcaption>
+</figure>
+<div style="padding: 16px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h1 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 28px; letter-spacing: -0.03em">{{cur.name}}</h1>
+<span style="font-size: 14px; font-weight: 700; color: #4A4460">{{cur.rating}}</span>
+<div style="display: flex; gap: 6px; flex-wrap: wrap"><sc-for list="{{cur.chips}}" as="c" hint-placeholder-count="3"><span style="height: 28px; padding: 0 10px; border-radius: 999px; background: {{c.bg}}; font-size: 12px; font-weight: 800; display: flex; align-items: center">{{c.t}}</span></sc-for></div>
+</div>
+<div style="display: flex; align-items: center; gap: 8px"><h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 20px">Rooms</h2><span style="margin-left: auto; height: 28px; padding: 0 10px; border-radius: 999px; background: {{fit.bg}}; font-size: 12px; font-weight: 800; display: flex; align-items: center">{{fit.text}}</span></div>
+<sc-for list="{{rooms}}" as="r" hint-placeholder-count="3">
+<div style="border-radius: 20px; background: {{r.bg}}; box-shadow: {{r.ring}}; padding: 12px; display: flex; flex-direction: column; gap: 8px">
+<span style="font-weight: 800; font-size: 16px">{{r.name}}</span>
+<span style="font-size: 13px; font-weight: 700; color: #4A4460">{{r.view}} · {{r.beds}} · sleeps {{r.sleeps}}</span>
+<span style="display: flex; align-items: center"><span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 20px">{{r.priceText}}</span>
+<span style="margin-left: auto; display: flex; align-items: center; gap: 4px; background: #FFFFFF; border-radius: 999px; padding: 3px; box-shadow: 0 2px 3px -1px rgba(0,0,0,.1), 0 0 0 1px rgba(25,28,33,.08)">
+<button onClick="{{r.less}}" aria-label="One fewer {{r.name}}" style="width: 44px; height: 44px; border: 0; border-radius: 999px; background: #FAF7F2; font-size: 20px; font-weight: 800">−</button>
+<span style="min-width: 20px; text-align: center; font-weight: 800">{{r.count}}</span>
+<button onClick="{{r.more}}" aria-label="One more {{r.name}}" style="width: 44px; height: 44px; border: 0; border-radius: 999px; background: #FF7352; font-size: 20px; font-weight: 800">+</button>
+</span></span>
+</div>
+</sc-for>
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 20px">Add-ons</h2>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<sc-for list="{{addons}}" as="a" hint-placeholder-count="3"><button onClick="{{a.toggle}}" aria-pressed="{{a.pressed}}" style="height: 44px; padding: 0 14px; border: 0; border-radius: 999px; background: {{a.bg}}; box-shadow: {{a.ring}}; font-size: 14px; font-weight: 800">{{a.name}} <span style="font-weight: 700; color: #4A4460">{{a.priceText}}</span></button></sc-for>
+</div>
+<p style="margin: 0; padding: 12px 14px; border-radius: 16px; background: #D4F7EA; font-size: 13px; font-weight: 700; line-height: 1.45">{{cur.policy}}</p>
+</div>
+</div>
+<div style="flex-shrink: 0; margin: 0 12px 12px; padding: 10px 10px 10px 18px; border-radius: 999px; background: #1E1A2E; color: #FFFFFF; display: flex; align-items: center; gap: 10px">
+<span style="display: flex; flex-direction: column"><span style="font-size: 12px; font-weight: 700; color: #C9C3DA">Stay</span><span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 22px">{{stayText}}</span></span>
+<button onClick="{{choose}}" style="margin-left: auto; height: 52px; padding: 0 22px; border: 0; border-radius: 999px; background: #FF7352; box-shadow: 0 4px 0 #C9431F; font-size: 16px; font-weight: 800">{{chooseLabel}}</button>
+</div>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+var SM = '/_blob/bf29a98a198094297a5954a8f515f9df';
+var VB = '/_blob/cee19f0ec4a190e9fb50e37d526a7789';
+var PARTY = 4;
+var HOTELS = [
+  { id: 'h1', name: 'The Tidewater', area: 'Santa Monica', img: SM, thumbBg: '#DDEEFF', rating: '4.8 · 1.2k reviews',
+    chips: ['Sea view', 'Pool', 'Crib available', '3 min to the beach'],
+    highlights: ['Kids eat free at the pool café', 'Beach towels and sand toys to borrow', 'Quiet floors above the 3rd'],
+    policy: 'Free cancellation until Oct 13. After that, the first night is charged.',
+    samples: ['Lobby', 'Pool', 'Room', 'Breakfast'],
+    rooms: [
+      { id: 'cq', name: 'City-view Double Queen', view: 'City view', beds: '2 queen beds', sleeps: 4, price: 154000, tint: '#ECE4FF' },
+      { id: 'ok', name: 'Ocean-view King', view: 'Ocean view', beds: '1 king bed', sleeps: 2, price: 106000, tint: '#DDEEFF' },
+      { id: 'fs', name: 'Family suite', view: 'Ocean view', beds: 'King + bunk beds', sleeps: 5, price: 198000, tint: '#FFF1C2' }
+    ] },
+  { id: 'h2', name: 'Casa Palmera', area: 'Venice', img: VB, thumbBg: '#D4F7EA', rating: '4.6 · 860 reviews',
+    chips: ['Pet friendly', 'Kitchen', 'Crib available', 'Bikes to borrow'],
+    highlights: ['Full kitchen in every suite', 'Walk to the canals', 'Dogs stay free'],
+    policy: 'Free cancellation until Oct 9. After that, 50% of the stay is charged.',
+    samples: ['Courtyard', 'Kitchen', 'Suite', 'Canals'],
+    rooms: [
+      { id: 'fk', name: 'Family suite with kitchen', view: 'Garden view', beds: 'Queen + sofa bed', sleeps: 4, price: 118800, tint: '#D4F7EA' },
+      { id: 'gs', name: 'Garden studio', view: 'Garden view', beds: '1 queen bed', sleeps: 2, price: 68000, tint: '#FFE3F1' },
+      { id: 'cs', name: 'Canal-view suite', view: 'Canal view', beds: 'King + 2 twins', sleeps: 4, price: 142000, tint: '#DDEEFF' }
+    ] },
+  { id: 'h3', name: 'Hotel Marigold', area: 'Downtown', img: '', thumbBg: '#FFF1C2', rating: '4.4 · 2.3k reviews',
+    chips: ['Great value', 'Rooftop pool', 'Near the Metro'],
+    highlights: ['Metro to the beach in 45 minutes', 'Rooftop pool open till 10', 'Free museum shuttle'],
+    policy: 'Free cancellation until the day before check-in.',
+    samples: ['Rooftop', 'Room', 'Lobby', 'Bar'],
+    rooms: [
+      { id: 'qq', name: 'Double Queen', view: 'City view', beds: '2 queen beds', sleeps: 4, price: 89200, tint: '#FFF1C2' },
+      { id: 'kk', name: 'King room', view: 'City view', beds: '1 king bed', sleeps: 2, price: 52000, tint: '#ECE4FF' },
+      { id: 'cy', name: 'City suite', view: 'Skyline view', beds: 'King + sofa bed', sleeps: 4, price: 116000, tint: '#DDEEFF' }
+    ] }
+];
+var ADDONS = [
+  { id: 'bf', name: 'Breakfast for 4', price: 32000 },
+  { id: 'lc', name: 'Late checkout, 2 PM', price: 4000 },
+  { id: 'pk', name: 'Parking, 4 nights', price: 18000 }
+];
+var FLIGHT = 123600, CAR = 31200;
+var TINTS = ['#FFC93C', '#5AB0FF', '#48D1A0', '#FF8CC6'];
+var TILTS = ['-2deg', '1.5deg', '-1deg', '2deg'];
+var SAMPLE_BG = ['#FFE6DA', '#DDEEFF', '#ECE4FF', '#D4F7EA'];
+function money(c) { return '$' + Math.round(c / 100).toLocaleString('en-US'); }
+function freshCounts(h) { var o = {}; h.rooms.forEach(function (r, i) { o[r.id] = i === 0 ? 1 : 0; }); return o; }
+
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { screen: 'list', hotel: 'h1', counts: freshCounts(HOTELS[0]), addons: {}, pick: 'h1', justChose: false };
+  }
+  renderVals() {
+    var self = this, s = this.state;
+    var h = HOTELS.filter(function (x) { return x.id === s.hotel; })[0];
+    var stay = 0, sleeps = 0;
+    h.rooms.forEach(function (r) { var n = s.counts[r.id] || 0; stay += n * r.price; sleeps += n * r.sleeps; });
+    ADDONS.forEach(function (a) { if (s.addons[a.id]) stay += a.price; });
+    return {
+      onList: s.screen === 'list', onDetail: s.screen === 'detail',
+      back: function () { self.setState({ screen: 'list' }); },
+      stayText: money(stay),
+      fit: sleeps === 0 ? { bg: '#FFE3F1', text: 'Pick a room' } : sleeps < PARTY ? { bg: '#FFF1C2', text: 'Sleeps ' + sleeps + ' of 4' } : { bg: '#D4F7EA', text: 'Room for all 4' },
+      chooseLabel: s.justChose && s.pick === h.id ? 'Chosen' : 'Choose',
+      choose: function () { if (sleeps >= PARTY) self.setState({ pick: h.id, justChose: true }); },
+      cur: {
+        name: h.name, area: h.area, rating: h.rating, policy: h.policy, img: h.img || SM, thumbBg: h.thumbBg,
+        imgOpacity: h.img ? 1 : 0, areaAlt: h.img ? h.area + ', the neighbourhood (not the hotel)' : '',
+        chips: h.chips.slice(0, 3).map(function (t, i) { return { t: t, bg: TINTS[i % 4] }; })
+      },
+      hotels: HOTELS.map(function (x) {
+        var on = x.id === s.pick;
+        return {
+          name: x.name, area: x.area, rating: x.rating, img: x.img || SM, imgOpacity: x.img ? 1 : 0, thumbBg: x.thumbBg,
+          fromText: money(Math.min.apply(null, x.rooms.filter(function (r) { return r.sleeps >= PARTY; }).map(function (r) { return r.price; }))),
+          bg: on ? '#FFF4EF' : '#FFFFFF', ring: on ? '0 0 0 3px #FF7352' : '0 2px 3px -1px rgba(0,0,0,.1), 0 0 0 1px rgba(25,28,33,.08)',
+          open: function () { self.setState(x.id === s.hotel ? { screen: 'detail' } : { screen: 'detail', hotel: x.id, counts: freshCounts(x), addons: {}, justChose: false }); }
+        };
+      }),
+      rooms: h.rooms.map(function (r) {
+        var n = s.counts[r.id] || 0;
+        function set(v) { var c = Object.assign({}, s.counts); c[r.id] = Math.max(0, Math.min(4, v)); self.setState({ counts: c, justChose: false }); }
+        return { name: r.name, view: r.view, beds: r.beds, sleeps: r.sleeps, count: n, priceText: money(r.price),
+          bg: n ? '#FFF4EF' : '#FFFFFF', ring: n ? '0 0 0 3px #FF7352' : '0 2px 3px -1px rgba(0,0,0,.1), 0 0 0 1px rgba(25,28,33,.08)',
+          less: function () { set(n - 1); }, more: function () { set(n + 1); } };
+      }),
+      addons: ADDONS.map(function (a) {
+        var on = !!s.addons[a.id];
+        return { name: a.name, priceText: '+' + money(a.price), pressed: on ? 'true' : 'false',
+          bg: on ? '#FFF4EF' : '#FFFFFF', ring: on ? '0 0 0 3px #FF7352' : '0 2px 3px -1px rgba(0,0,0,.1), 0 0 0 1px rgba(25,28,33,.08)',
+          toggle: function () { var x = Object.assign({}, s.addons); x[a.id] = !on; self.setState({ addons: x, justChose: false }); } };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

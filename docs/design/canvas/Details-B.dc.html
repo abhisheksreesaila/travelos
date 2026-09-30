@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Stays expanded: split view B</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Figtree:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FFF8EE}
+a{color:#1E1A2E}a:hover{color:#C9431F}
+button{font-family:'Figtree',sans-serif;color:#1E1A2E}
+.ga-lift{transition:transform .18s cubic-bezier(.2,.9,.3,1.3),box-shadow .18s,background .18s}
+.ga-lift:hover{transform:translateY(-2px)}
+.ga-tactile{transition:transform .12s,box-shadow .12s}
+.ga-tactile:hover{transform:translateY(-1px)}
+.ga-tactile:active{transform:translateY(4px);box-shadow:0 0 0 #C9431F !important}
+a:focus-visible,button:focus-visible{outline:3px solid #1E1A2E;outline-offset:3px}
+@media (prefers-reduced-motion: reduce){.ga-lift,.ga-tactile{transition:none}.ga-lift:hover,.ga-tactile:hover{transform:none}}
+</style>
+</helmet>
+<div style="width: 1440px; height: 980px; box-sizing: border-box; padding: 0 20px 20px; background: #FFF8EE; color: #1E1A2E; font-family: 'Figtree', 'Segoe UI', system-ui, sans-serif; display: flex; flex-direction: column; gap: 14px; overflow: hidden">
+
+<header style="height: 72px; flex-shrink: 0; display: flex; align-items: center; gap: 20px; padding: 0 8px">
+<span style="display: flex; align-items: center; gap: 10px">
+<span style="width: 36px; height: 36px; border-radius: 11px; background: #FF7352; box-shadow: 0 3px 0 #C9431F; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1E1A2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"></path><path d="M14 7h7v7"></path></svg></span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 24px; letter-spacing: -0.03em">GitAway</span>
+</span>
+<span style="font-size: 15px; font-weight: 700; color: #4A4460">LA with the kids · Oct 16–20 · 2 adults, 2 kids</span>
+<span style="margin-left: auto; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px; font-variant-numeric: tabular-nums">{{tripText}}</span>
+<a href="#" style="height: 48px; padding: 0 22px; border-radius: 999px; background: #1E1A2E; color: #FFFFFF; font-weight: 800; font-size: 16px; display: flex; align-items: center; text-decoration: none; box-shadow: 0 4px 0 #000000">Book</a>
+</header>
+
+<section aria-label="Stays, expanded" style="flex: 1; min-height: 0; display: grid; grid-template-columns: 132px minmax(0, 1fr) 380px; gap: 14px">
+
+<!-- Photo rail -->
+<nav aria-label="Stays" style="background: #FFFFFF; border-radius: 26px; box-shadow: 0 0 0 1px rgba(0,0,0,.06), 0 3px 3px -1.5px rgba(0,0,0,.06), 0 12px 12px -6px rgba(0,0,0,.06); padding: 12px; display: flex; flex-direction: column; gap: 12px; overflow: auto">
+<button aria-label="Collapse to the workspace" style="height: 44px; border: 0; border-radius: 14px; background: #FAF7F2; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; font-size: 13px; font-weight: 800"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1E1A2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>Esc</button>
+<sc-for list="{{hotels}}" as="h" hint-placeholder-count="3">
+<button class="ga-lift" onClick="{{h.open}}" aria-current="{{h.current}}" style="border: 0; cursor: pointer; padding: 6px 6px 10px; border-radius: 20px; background: {{h.bg}}; box-shadow: {{h.ring}}; display: flex; flex-direction: column; gap: 6px; text-align: left">
+<span style="height: 96px; border-radius: 14px; background: {{h.thumbBg}}; overflow: hidden; display: flex"><img src="{{h.img}}" alt="" style="width: 100%; height: 100%; object-fit: cover; opacity: {{h.imgOpacity}}"></span>
+<span style="font-weight: 800; font-size: 14px; line-height: 1.2; padding: 0 4px">{{h.name}}</span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 17px; padding: 0 4px; font-variant-numeric: tabular-nums">{{h.fromText}}</span>
+</button>
+</sc-for>
+</nav>
+
+<!-- Detail -->
+<div style="background: #FFFFFF; border-radius: 26px; box-shadow: 0 0 0 1px rgba(0,0,0,.06), 0 3px 3px -1.5px rgba(0,0,0,.06), 0 12px 12px -6px rgba(0,0,0,.06); overflow: auto; display: flex; flex-direction: column">
+<figure style="margin: 0; height: 250px; flex-shrink: 0; position: relative; background: {{cur.thumbBg}}">
+<img src="{{cur.img}}" alt="{{cur.areaAlt}}" style="width: 100%; height: 100%; object-fit: cover; display: block; opacity: {{cur.imgOpacity}}">
+<figcaption style="position: absolute; left: 16px; bottom: 16px; height: 30px; padding: 0 12px; border-radius: 999px; background: #FFFFFF; font-size: 13px; font-weight: 800; display: flex; align-items: center">The area · {{cur.area}}</figcaption>
+<span style="position: absolute; right: 16px; bottom: 16px; display: flex; gap: 8px">
+<sc-for list="{{samples}}" as="s" hint-placeholder-count="4"><span style="width: 72px; height: 56px; border-radius: 12px; background: {{s.bg}}; border: 3px solid #FFFFFF; box-sizing: border-box; font-size: 11px; font-weight: 800; display: flex; align-items: flex-end; padding: 4px 6px">{{s.label}}</span></sc-for>
+<span style="height: 56px; padding: 0 12px; border-radius: 12px; background: #FFFFFF; font-size: 12px; font-weight: 800; display: flex; align-items: center">Sample photos</span>
+</span>
+</figure>
+<div style="padding: 22px 26px 28px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; flex-direction: column; gap: 10px">
+<h1 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 34px; letter-spacing: -0.03em">{{cur.name}}</h1>
+<span style="font-size: 16px; font-weight: 700; color: #4A4460">{{cur.area}} · {{cur.rating}}</span>
+<div style="display: flex; gap: 8px; flex-wrap: wrap"><sc-for list="{{cur.chips}}" as="c" hint-placeholder-count="4"><span style="height: 32px; padding: 0 12px; border-radius: 999px; background: {{c.bg}}; font-size: 13px; font-weight: 800; display: flex; align-items: center">{{c.t}}</span></sc-for></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 22px">Rooms</h2>
+<sc-for list="{{rooms}}" as="r" hint-placeholder-count="3">
+<div class="ga-lift" style="border-radius: 20px; background: {{r.bg}}; box-shadow: {{r.ring}}; padding: 10px 14px 10px 10px; display: flex; align-items: center; gap: 14px">
+<span style="width: 88px; height: 72px; border-radius: 14px; background: {{r.tint}}; flex-shrink: 0; font-size: 10px; font-weight: 800; display: flex; align-items: flex-end; padding: 5px 7px; box-sizing: border-box">Sample photo</span>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 3px">
+<span style="font-weight: 800; font-size: 17px">{{r.name}}</span>
+<span style="font-size: 14px; font-weight: 700; color: #4A4460">{{r.view}} · {{r.beds}} · sleeps {{r.sleeps}}</span>
+</span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 20px; font-variant-numeric: tabular-nums">{{r.priceText}}</span>
+<span style="display: flex; align-items: center; gap: 4px; background: #FFFFFF; border-radius: 999px; padding: 3px; box-shadow: 0 2px 3px -1px rgba(0,0,0,.1), 0 0 0 1px rgba(25,28,33,.08)">
+<button onClick="{{r.less}}" aria-label="One fewer {{r.name}}" style="width: 38px; height: 38px; border: 0; border-radius: 999px; background: #FAF7F2; font-size: 20px; font-weight: 800; cursor: pointer">−</button>
+<span style="min-width: 22px; text-align: center; font-weight: 800; font-size: 17px">{{r.count}}</span>
+<button onClick="{{r.more}}" aria-label="One more {{r.name}}" style="width: 38px; height: 38px; border: 0; border-radius: 999px; background: #FF7352; font-size: 20px; font-weight: 800; cursor: pointer">+</button>
+</span>
+</div>
+</sc-for>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px">
+<ul style="margin: 0; padding: 14px 18px; border-radius: 20px; background: #FAF7F2; list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 15px; font-weight: 600; color: #4A4460">
+<sc-for list="{{cur.highlights}}" as="hl" hint-placeholder-count="3"><li style="display: flex; gap: 8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16865F" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px"><path d="M5 12l5 5L20 7"></path></svg>{{hl}}</li></sc-for>
+</ul>
+<p style="margin: 0; padding: 14px 18px; border-radius: 20px; background: #D4F7EA; font-size: 14px; font-weight: 700; line-height: 1.45">{{cur.policy}}</p>
+</div>
+</div>
+</div>
+
+<!-- Itemized summary card -->
+<aside aria-label="Your stay" style="background: #FFFFFF; border-radius: 26px; box-shadow: 0 0 0 1px rgba(0,0,0,.06), 0 3px 3px -1.5px rgba(0,0,0,.06), 0 12px 12px -6px rgba(0,0,0,.06); padding: 22px; display: flex; flex-direction: column; gap: 16px">
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 22px">Your stay</h2>
+<span style="align-self: flex-start; height: 30px; padding: 0 12px; border-radius: 999px; background: {{fit.bg}}; font-size: 13px; font-weight: 800; display: flex; align-items: center">{{fit.text}}</span>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<sc-for list="{{lines}}" as="l" hint-placeholder-count="2"><div style="display: flex; gap: 10px; font-size: 15px; font-weight: 700"><span style="flex: 1">{{l.t}}</span><span style="font-variant-numeric: tabular-nums">{{l.p}}</span></div></sc-for>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px; padding-top: 14px; border-top: 2px dashed #F2ECE3">
+<span style="font-size: 13px; font-weight: 800; letter-spacing: .04em; color: #5A5470">ADD-ONS</span>
+<sc-for list="{{addons}}" as="a" hint-placeholder-count="3">
+<button onClick="{{a.toggle}}" role="switch" aria-checked="{{a.pressed}}" style="height: 48px; border: 0; border-radius: 14px; background: #FAF7F2; padding: 0 12px; display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 15px; font-weight: 700; text-align: left">
+<span style="flex: 1">{{a.name}}</span><span style="color: #4A4460">{{a.priceText}}</span>
+<span style="width: 44px; height: 26px; border-radius: 999px; background: {{a.track}}; display: flex; align-items: center; padding: 3px; box-sizing: border-box; justify-content: {{a.justify}}"><span style="width: 20px; height: 20px; border-radius: 999px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(0,0,0,.25)"></span></span>
+</button>
+</sc-for>
+</div>
+<div style="margin-top: auto; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; align-items: baseline; gap: 10px"><span style="font-size: 15px; font-weight: 800">Stay total</span><span style="margin-left: auto; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 32px; font-variant-numeric: tabular-nums">{{stayText}}</span></div>
+<button class="ga-tactile" onClick="{{choose}}" style="height: 60px; border: 0; border-radius: 999px; background: #FF7352; box-shadow: 0 4px 0 #C9431F; font-size: 17px; font-weight: 800; cursor: pointer">{{chooseLabel}}</button>
+</div>
+</aside>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":980}}'>
+var SM = '/_blob/bf29a98a198094297a5954a8f515f9df';
+var VB = '/_blob/cee19f0ec4a190e9fb50e37d526a7789';
+var PARTY = 4;
+var HOTELS = [
+  { id: 'h1', name: 'The Tidewater', area: 'Santa Monica', img: SM, thumbBg: '#DDEEFF', rating: '4.8 · 1.2k reviews',
+    chips: ['Sea view', 'Pool', 'Crib available', '3 min to the beach'],
+    highlights: ['Kids eat free at the pool café', 'Beach towels and sand toys to borrow', 'Quiet floors above the 3rd'],
+    policy: 'Free cancellation until Oct 13. After that, the first night is charged.',
+    samples: ['Lobby', 'Pool', 'Room', 'Breakfast'],
+    rooms: [
+      { id: 'cq', name: 'City-view Double Queen', view: 'City view', beds: '2 queen beds', sleeps: 4, price: 154000, tint: '#ECE4FF' },
+      { id: 'ok', name: 'Ocean-view King', view: 'Ocean view', beds: '1 king bed', sleeps: 2, price: 106000, tint: '#DDEEFF' },
+      { id: 'fs', name: 'Family suite', view: 'Ocean view', beds: 'King + bunk beds', sleeps: 5, price: 198000, tint: '#FFF1C2' }
+    ] },
+  { id: 'h2', name: 'Casa Palmera', area: 'Venice', img: VB, thumbBg: '#D4F7EA', rating: '4.6 · 860 reviews',
+    chips: ['Pet friendly', 'Kitchen', 'Crib available', 'Bikes to borrow'],
+    highlights: ['Full kitchen in every suite', 'Walk to the canals', 'Dogs stay free'],
+    policy: 'Free cancellation until Oct 9. After that, 50% of the stay is charged.',
+    samples: ['Courtyard', 'Kitchen', 'Suite', 'Canals'],
+    rooms: [
+      { id: 'fk', name: 'Family suite with kitchen', view: 'Garden view', beds: 'Queen + sofa bed', sleeps: 4, price: 118800, tint: '#D4F7EA' },
+      { id: 'gs', name: 'Garden studio', view: 'Garden view', beds: '1 queen bed', sleeps: 2, price: 68000, tint: '#FFE3F1' },
+      { id: 'cs', name: 'Canal-view suite', view: 'Canal view', beds: 'King + 2 twins', sleeps: 4, price: 142000, tint: '#DDEEFF' }
+    ] },
+  { id: 'h3', name: 'Hotel Marigold', area: 'Downtown', img: '', thumbBg: '#FFF1C2', rating: '4.4 · 2.3k reviews',
+    chips: ['Great value', 'Rooftop pool', 'Near the Metro'],
+    highlights: ['Metro to the beach in 45 minutes', 'Rooftop pool open till 10', 'Free museum shuttle'],
+    policy: 'Free cancellation until the day before check-in.',
+    samples: ['Rooftop', 'Room', 'Lobby', 'Bar'],
+    rooms: [
+      { id: 'qq', name: 'Double Queen', view: 'City view', beds: '2 queen beds', sleeps: 4, price: 89200, tint: '#FFF1C2' },
+      { id: 'kk', name: 'King room', view: 'City view', beds: '1 king bed', sleeps: 2, price: 52000, tint: '#ECE4FF' },
+      { id: 'cy', name: 'City suite', view: 'Skyline view', beds: 'King + sofa bed', sleeps: 4, price: 116000, tint: '#DDEEFF' }
+    ] }
+];
+var ADDONS = [
+  { id: 'bf', name: 'Breakfast for 4', price: 32000 },
+  { id: 'lc', name: 'Late checkout, 2 PM', price: 4000 },
+  { id: 'pk', name: 'Parking, 4 nights', price: 18000 }
+];
+var FLIGHT = 123600, CAR = 31200;
+var TINTS = ['#FFC93C', '#5AB0FF', '#48D1A0', '#FF8CC6'];
+var TILTS = ['-2deg', '1.5deg', '-1deg', '2deg'];
+var SAMPLE_BG = ['#FFE6DA', '#DDEEFF', '#ECE4FF', '#D4F7EA'];
+function money(c) { return '$' + Math.round(c / 100).toLocaleString('en-US'); }
+function freshCounts(h) { var o = {}; h.rooms.forEach(function (r, i) { o[r.id] = i === 0 ? 1 : 0; }); return o; }
+
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { hotel: 'h1', counts: freshCounts(HOTELS[0]), addons: {}, pick: 'h1', justChose: false };
+  }
+  renderVals() {
+    var self = this, s = this.state;
+    var h = HOTELS.filter(function (x) { return x.id === s.hotel; })[0];
+    var stay = 0, sleeps = 0, lines = [];
+    h.rooms.forEach(function (r) { var n = s.counts[r.id] || 0; if (n) { stay += n * r.price; sleeps += n * r.sleeps; lines.push({ t: r.name + (n > 1 ? ' ×' + n : ''), p: money(n * r.price) }); } });
+    ADDONS.forEach(function (a) { if (s.addons[a.id]) { stay += a.price; lines.push({ t: a.name, p: money(a.price) }); } });
+    var fit = sleeps === 0 ? { bg: '#FFE3F1', text: 'Pick at least one room' }
+      : sleeps < PARTY ? { bg: '#FFF1C2', text: 'Sleeps ' + sleeps + ' of 4 · add a room' }
+      : { bg: '#D4F7EA', text: 'Room for all 4' };
+    return {
+      stayText: money(stay), tripText: money(FLIGHT + stay + CAR), lines: lines, fit: fit,
+      chooseLabel: s.justChose && s.pick === h.id ? 'Chosen' : 'Choose this stay',
+      choose: function () { if (sleeps >= PARTY) self.setState({ pick: h.id, justChose: true }); },
+      cur: {
+        name: h.name, area: h.area, rating: h.rating, policy: h.policy, img: h.img || SM, thumbBg: h.thumbBg,
+        imgOpacity: h.img ? 1 : 0, areaAlt: h.img ? h.area + ', the neighbourhood (not the hotel)' : '',
+        chips: h.chips.map(function (t, i) { return { t: t, bg: TINTS[i % 4] }; }), highlights: h.highlights
+      },
+      samples: h.samples.slice(0, 3).map(function (l, i) { return { label: l, bg: SAMPLE_BG[i % 4] }; }),
+      hotels: HOTELS.map(function (x) {
+        var on = x.id === s.hotel;
+        return {
+          name: x.name, img: x.img || SM, imgOpacity: x.img ? 1 : 0, thumbBg: x.thumbBg, current: on ? 'true' : 'false',
+          fromText: money(Math.min.apply(null, x.rooms.filter(function (r) { return r.sleeps >= PARTY; }).map(function (r) { return r.price; }))),
+          bg: on ? '#FFF4EF' : '#FAF7F2', ring: on ? '0 0 0 3px #FF7352' : 'none',
+          open: function () { if (!on) self.setState({ hotel: x.id, counts: freshCounts(x), addons: {}, justChose: false }); }
+        };
+      }),
+      rooms: h.rooms.map(function (r) {
+        var n = s.counts[r.id] || 0;
+        function set(v) { var c = Object.assign({}, s.counts); c[r.id] = Math.max(0, Math.min(4, v)); self.setState({ counts: c, justChose: false }); }
+        return {
+          name: r.name, view: r.view, beds: r.beds, sleeps: r.sleeps, tint: r.tint, count: n, priceText: money(r.price),
+          bg: n ? '#FFF4EF' : '#FAF7F2', ring: n ? '0 0 0 3px #FF7352' : 'none',
+          less: function () { set(n - 1); }, more: function () { set(n + 1); }
+        };
+      }),
+      addons: ADDONS.map(function (a) {
+        var on = !!s.addons[a.id];
+        return {
+          name: a.name, priceText: '+' + money(a.price), pressed: on ? 'true' : 'false',
+          track: on ? '#16865F' : '#D9D3CB', justify: on ? 'flex-end' : 'flex-start',
+          toggle: function () { var x = Object.assign({}, s.addons); x[a.id] = !on; self.setState({ addons: x, justChose: false }); }
+        };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>
