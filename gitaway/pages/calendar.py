@@ -216,7 +216,7 @@ def note_entry(n, acts_by_id, who, people, fresh=False):
     return Div(
         avatar(author, "cal-noteav"),
         Div(Span(f"{n.by or 'You'} · {where}", cls="cal-notemeta"), Span(n.text, cls="cal-notetext"), cls="cal-noteslip"),
-        cls=f"cal-note{' cal-note-live cal-pop' if fresh else ''}", data_note=n.id,
+        cls=f"cal-note{' cal-note-live' if fresh else ''}", data_note=n.id,
     )
 
 

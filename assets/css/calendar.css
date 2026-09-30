@@ -9,7 +9,9 @@
 .cal-title-box { display: flex; flex-direction: column; min-width: 0; }
 .cal-title-box h1 { font-size: 26px; }
 .cal-tripline { font-size: 14px; font-weight: 700; color: var(--ink-2); }
-.cal-avatars { margin-left: auto; display: flex; align-items: center; }
+.cal-avatars { margin-left: auto; display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; min-width: 0; }
+.cal-faces { display: flex; align-items: center; }
+.cal-faces > * + * { margin-left: -10px; }
 .cal-avatar { width: 40px; height: 40px; border-radius: var(--r-pill); border: 3px solid var(--paper); display: grid; place-items: center; font-weight: 800; font-size: 13px; }
 .cal-actions-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .cal-btn { min-height: 44px; padding: 0 18px; border-radius: var(--r-pill); display: inline-flex; align-items: center; gap: 8px; font-weight: 800; text-decoration: none; color: var(--ink); }
@@ -264,3 +266,37 @@
 .cal-act.is-measuring { height: calc(var(--h) - 4px) !important; min-height: 0 !important; overflow: hidden !important; left: calc(100% * var(--lane) / var(--lanes)) !important; width: calc(100% / var(--lanes) - 4px) !important; }
 .cal-act.cal-short.is-measuring { white-space: nowrap !important; }
 .cal-act.is-measuring:not(.cal-short) { white-space: normal !important; }
+
+
+/* Friends (F-020): overlapping avatars with a presence dot, the dialog, and the live add */
+.cal-friend { position: relative; display: flex; }
+.cal-presence-dot { position: absolute; right: -2px; bottom: -2px; width: 12px; height: 12px; border-radius: var(--r-pill); background: var(--mint); border: 2px solid var(--paper); animation: cal-presence 2s ease-in-out infinite; }
+.cal-presence { font-size: 14px; font-weight: 700; color: var(--mint-ink); }
+.cal-invite { display: flex; flex-direction: column; gap: 8px; }
+.cal-chiprow { display: flex; flex-wrap: wrap; gap: 8px; }
+.cal-chipbtn { min-height: 44px; padding: 0 18px; border: 0; border-radius: var(--r-pill); background: var(--sun-tint); color: var(--ink); font: 800 16px var(--font-body); display: inline-flex; align-items: center; gap: 8px; cursor: pointer; box-shadow: 0 0 0 1px var(--line); }
+.cal-chipbtn:hover { transform: translateY(-1px); }
+.cal-chipbtn.is-in { background: var(--mint-tint); color: var(--mint-ink); cursor: default; }
+.cal-chipbtn.is-in:hover { transform: none; }
+.cal-linkrow { display: flex; flex-wrap: wrap; gap: 8px; }
+.cal-linkfield { flex: 1 1 200px; min-width: 0; min-height: 48px; padding: 0 14px; border: 0; border-radius: 14px; background: var(--paper); box-shadow: inset 0 0 0 1px var(--line); font: 600 15px var(--font-body); color: var(--ink-2); }
+.cal-copy { display: none; min-height: 48px; padding: 0 18px; border: 0; border-radius: var(--r-pill); background: var(--ink); color: #fff; font: 800 15px var(--font-body); align-items: center; gap: 8px; cursor: pointer; }
+.cal-js .cal-copy { display: inline-flex; }
+.cal-act.cal-livering { box-shadow: inset 0 0 0 3px var(--mint); animation: cal-pop .45s var(--ease-spring) both, cal-ring 2s ease-in-out .5s 3; }
+.cal-livering .cal-meta { gap: 4px; }
+.cal-livering .cal-by, .cal-livering .cal-notecount, .cal-livering .cal-justnow { padding: 0 6px; }
+.cal-justnow { height: 22px; padding: 0 8px; border-radius: var(--r-pill); background: var(--mint); color: var(--ink); font-size: 11px; font-weight: 800; display: inline-flex; align-items: center; }
+.cal-note-live { animation: cal-slip .4s var(--ease-spring) both; }
+.cal-note-live .cal-noteslip { background: var(--mint-tint); }
+@keyframes cal-slip { from { transform: translateY(14px); opacity: 0 } to { transform: none; opacity: 1 } }
+@keyframes cal-presence { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--mint) 60%, transparent); } 50% { box-shadow: 0 0 0 6px transparent; } }
+@keyframes cal-ring { 0%, 100% { box-shadow: inset 0 0 0 3px var(--mint); } 50% { box-shadow: inset 0 0 0 7px var(--mint); } }
+@media (prefers-reduced-motion: reduce) {
+  .cal-presence-dot, .cal-act.cal-livering, .cal-note-live { animation: none; }
+  .cal-chipbtn:hover { transform: none; }
+}
+@media (max-width: 720px) {
+  .cal-avatars { flex: 1 1 100%; margin-left: 0; order: 3; }
+  .cal-linkfield { flex-basis: 100%; }
+  .cal-toast { left: 16px; right: 16px; transform: none; max-width: none; border-radius: 24px; padding-left: 18px; }
+}
