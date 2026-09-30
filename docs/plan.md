@@ -147,3 +147,4 @@ Needs: F-025 · Found during F-025 (predates it)
 ## F-029 Browser smoke test for workspace JS [todo]
 Needs: F-025 · Suggested in F-025 review
 - [ ] a small headless-browser test covers tiled pick → expand, Choose updating the ledger, Esc, and phone back → reload
+- [ ] also covers F-026: picking another stay tiled resets the old panel; Choose is held while a room edit waits for its price and recovers if the price fails
