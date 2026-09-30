@@ -229,9 +229,23 @@
     }).catch(function () { if (n === panelSeq[id]) quoteFailed(panel); });
   }
 
-  // The price did not load: Choose goes back to what the last answer allowed, and a polite line says so until the next success.
+  // The price did not load: the editor and Choose go back to what the last answer allowed, and a polite line says so until the next success.
   function quoteFailed(panel) {
     if (!panel) return;
+    // Show the setup the server last answered for (panel.dataset.rooms / .add), so what is shown is what Choose picks.
+    var have = {};
+    for (var k = 0; k < panel.dataset.rooms.length; k += 3) have[panel.dataset.rooms.substr(k, 2)] = Number(panel.dataset.rooms.charAt(k + 2));
+    panel.querySelectorAll('.ws-room').forEach(function (card) {
+      var n = have[card.dataset.room] || 0;
+      card.dataset.count = String(n);
+      card.classList.toggle('is-on', n > 0);
+      card.querySelector('.ws-count').textContent = String(n);
+      card.querySelector('[data-step="-1"]').disabled = n <= 0;
+      card.querySelector('[data-step="1"]').disabled = n >= Number(card.dataset.max);
+    });
+    panel.querySelectorAll('.ws-addon').forEach(function (b) {
+      b.setAttribute('aria-pressed', panel.dataset.add.indexOf(b.dataset.addon) >= 0 ? 'true' : 'false');
+    });
     panel.querySelector('.ws-choose').disabled = panel.dataset.fits !== '1';
     panel.querySelector('[data-cb-err]').hidden = false;
   }

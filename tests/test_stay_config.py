@@ -363,3 +363,10 @@ def test_a_failed_price_request_frees_choose_and_says_so(client):
     a = stay_article(client.get("/plan").text, "h1")
     assert re.search(r'data-cb-err[^>]*role="status"[^>]*aria-live="polite"[^>]*hidden', a)
     assert "Price didn&#x27;t load, try again" in a or "Price didn't load, try again" in a
+
+
+def test_a_failed_price_request_puts_the_editor_back_to_the_last_confirmed_setup(client):
+    js = client.get("/assets/js/workspace.js").text
+    body = js[js.index("function quoteFailed"):]
+    body = body[:body.index("data-cb-err")]
+    assert "panel.dataset.rooms" in body and "panel.dataset.add" in body and "card.dataset.count" in body and "aria-pressed" in body
