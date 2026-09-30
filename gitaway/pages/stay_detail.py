@@ -10,7 +10,6 @@ from gitaway import catalog
 from gitaway.icons import icon
 
 CHIP_FILLS = ["fill-sun", "fill-sky", "fill-mint", "fill-bubble"]
-FIT_FILL = {"full": "fill-mint-tint", "short": "fill-sun-tint", "none": "fill-bubble-tint"}
 KIND = {  # kind -> (pin fill, icon, kicker)
     "hotel": ("ws-k-hotel", "hotel", "Your hotel"),
     "beach": ("fill-sun", "sun", "Beach"),
@@ -83,7 +82,7 @@ def title_row(o, d):
 
 
 def fit_badge(state):
-    return Span(state.fit_text, cls=f"ws-fit {FIT_FILL[state.fit]}", data_fit=state.fit, role="status")
+    return Span(state.fit_text, cls="ws-fit", data_fit=state.fit, role="status")
 
 
 def room_card(r, n):
@@ -117,7 +116,7 @@ def rooms_seam(o, d, state):
 
 def addon_pill(a, on):
     return Button(
-        Span(icon("check", 16, 3) if on else "", cls="ws-dot", aria_hidden="true"),
+        Span(icon("check", 16, 3), cls="ws-dot", aria_hidden="true"),
         a.name, " ", Span(f"+{catalog.money(a.price_cents)}", cls="ws-addon-price"),
         type="button", cls="ws-addon", data_addon=a.id, aria_pressed="true" if on else "false",
     )
@@ -129,10 +128,6 @@ def addons_seam(state):
 
 def policy_seam(d):
     return Div(icon("shield", 20, 2.2), Span(d.policy), cls="ws-policy")
-
-
-def summary_text(state):
-    return state.summary
 
 
 def body(o, state):
@@ -196,7 +191,7 @@ def explore(stay_id):
             Button(icon("rotate", 18, 2.4), type="button", cls="ws-mapbtn", aria_label="Turn the view", data_spin=""),
             cls="ws-mapbtns",
         ),
-        cls="ws-aerial", role="group", aria_label=f"Aerial view around {o.name}", data_tx=str(50 - home.x), data_ty=str(50 - home.y), data_spin_deg="0",
+        cls="ws-aerial", role="group", aria_label=f"Aerial view around {o.name}", style=f"--tx:{50 - home.x}%;--ty:{50 - home.y}%;--spin:0deg",
     )
     side = Div(*[_poi_card(i, p, i == 0) for i, p in enumerate(d.pois)], *[_poi_row(i, p, i == 0) for i, p in enumerate(d.pois)], cls="ws-poi-side")
     return Div(aerial, side, cls="ws-explore")

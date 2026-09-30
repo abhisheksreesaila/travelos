@@ -1,16 +1,29 @@
-// Booking workspace behaviour. The server embeds every combination's figures (from gitaway.catalog)
-// in #ws-data; this file only switches between them, so displayed totals always equal catalog.quote.
+// Booking workspace behaviour. The page never does arithmetic on money: every figure in the ledger, the stay prices and the
+// choose bar comes from GET /plan/quote (computed by gitaway.catalog) and is only swapped in here.
 (function () {
   var dataEl = document.getElementById('ws-data');
   var grid = document.getElementById('ws-grid');
   if (!dataEl || !grid) return;
   var data = JSON.parse(dataEl.textContent);
-  var LANE_KEY = { flight: 'f', stay: 'h', car: 'c' };
   var PANES = { 1: 'flights', 2: 'stays', 3: 'cars', 4: 'weather', 5: 'map', 6: 'news', 7: 'community' };
-  var pick = {};
-  document.querySelectorAll('.ws-offer').forEach(function (b) {
-    if (b.getAttribute('aria-pressed') === 'true') pick[b.dataset.lane] = b.dataset.pick;
-  });
+  var still = window.matchMedia('(prefers-reduced-motion: reduce)');
+  var phone = window.matchMedia('(max-width: 720px)');
+  // The lane picks, plus the stay's rooms and add-ons as compact codes ("cq1", "bf"). null means "the default".
+  var pick = { flight: data.pick.f, stay: data.pick.h, car: data.pick.c, rooms: data.pick.rooms, add: data.pick.add };
+  var base = data.base; // the address-bar URL for the pick, from the server
+
+  // ---- asking the server for figures ------------------------------------------------------------------------------
+  function enc(s) { return encodeURIComponent(s); }
+  function getQuote(qs) {
+    return fetch('/plan/quote?' + qs, { headers: { Accept: 'application/json' } }).then(function (r) {
+      if (!r.ok) throw new Error('quote ' + r.status);
+      return r.json();
+    });
+  }
+  function pickQuery() {
+    return 'f=' + enc(pick.flight) + '&h=' + enc(pick.stay) + '&c=' + enc(pick.car) +
+      (pick.rooms == null ? '' : '&rooms=' + enc(pick.rooms)) + (pick.add == null ? '' : '&add=' + enc(pick.add));
+  }
 
   // Move the schematic map's stay pin and hotel-to-beach line to the picked stay (figures embedded by the server).
   var MAP_W = 320, MAP_H = 150;
@@ -31,11 +44,9 @@
     document.getElementById('ws-map-caption').textContent = m.caption;
   }
 
-  // The address bar keeps the pick (from the server's quote) plus which pane is split open and which offer is being viewed.
+  // The address bar keeps the pick (the server's URL for it) plus which pane is split open and which offer is being viewed.
   function syncUrl() {
-    var q = data.quotes[[pick.flight, pick.stay, pick.car].join('|')];
-    if (!q) return;
-    var url = q.url, name = grid.dataset.expanded;
+    var url = base, name = grid.dataset.expanded;
     if (SPLIT[name]) {
       url += '&x=' + name;
       var pane = paneEl(name);
@@ -44,51 +55,100 @@
     history.replaceState(null, '', url);
   }
 
-  // "Choose" buttons say "Chosen" on the lane's pick; the labels live in the markup.
+  function panelOf(id) { return document.querySelector('.ws-detail-panel[data-detail="' + id + '"]'); }
+
+  // "Choose" buttons say "Chosen" on the lane's pick; for a stay that means these very rooms and add-ons.
   function paintChoose() {
     document.querySelectorAll('.ws-choose').forEach(function (b) {
       var on = pick[b.dataset.chooseLane] === b.dataset.choose;
+      if (on && b.dataset.chooseLane === 'stay') {
+        var p = panelOf(b.dataset.choose);
+        on = !!p && p.dataset.rooms === pick.rooms && p.dataset.add === pick.add;
+      }
       b.setAttribute('aria-pressed', on ? 'true' : 'false');
       b.textContent = on ? 'Chosen' : b.dataset.label;
     });
   }
 
-  function paint() {
-    var key = [pick.flight, pick.stay, pick.car].join('|');
-    var q = data.quotes[key];
-    if (!q) return;
-    ['flight', 'stay', 'car'].forEach(function (lane) {
-      var o = data.offers[pick[lane]];
-      document.querySelector('[data-slot="' + lane + '"]').textContent = o.name;
-      document.querySelector('[data-slot-price="' + lane + '"]').textContent = o.price;
+  // Show one stay's editor state (rooms, add-ons, fit badge, choose bar) exactly as the server described it.
+  function applyStay(panel, s) {
+    if (!panel || !s) return;
+    panel.dataset.rooms = s.rooms_code;
+    panel.dataset.add = s.add_code;
+    panel.querySelectorAll('.ws-room').forEach(function (card) {
+      var n = s.rooms[card.dataset.room] || 0;
+      card.dataset.count = String(n);
+      card.classList.toggle('is-on', n > 0);
+      card.querySelector('.ws-count').textContent = String(n);
+      card.querySelector('[data-step="-1"]').disabled = n <= 0;
+      card.querySelector('[data-step="1"]').disabled = n >= Number(card.dataset.max);
     });
-    document.getElementById('ws-total').textContent = q.total;
+    panel.querySelectorAll('.ws-addon').forEach(function (b) {
+      b.setAttribute('aria-pressed', s.add.indexOf(b.dataset.addon) >= 0 ? 'true' : 'false');
+    });
+    var fit = panel.querySelector('.ws-fit');
+    fit.textContent = s.fit_text;
+    fit.dataset.fit = s.fit;
+    panel.querySelector('[data-cb-sum]').textContent = s.summary;
+    panel.querySelector('[data-cb-price]').textContent = s.price;
+    panel.querySelector('.ws-choose').disabled = !s.fits;
+  }
+
+  // The ledger, the stay cards and the map follow a quote from the server.
+  function applyLedger(j) {
+    var L = j.ledger;
+    pick.flight = L.pick.f; pick.stay = L.pick.h; pick.car = L.pick.c; pick.rooms = L.pick.rooms; pick.add = L.pick.add;
+    base = L.url;
+    ['flight', 'stay', 'car'].forEach(function (lane) {
+      var s = L.slots[lane];
+      document.querySelector('[data-slot="' + lane + '"]').textContent = s.name;
+      document.querySelector('[data-slot-sub="' + lane + '"]').textContent = s.sub;
+      document.querySelector('[data-slot-price="' + lane + '"]').textContent = s.price;
+    });
+    document.getElementById('ws-total').textContent = L.total;
     var chip = document.getElementById('ws-delta');
-    chip.textContent = q.delta;
-    chip.classList.toggle('fill-mint', q.cheapest);
-    chip.classList.toggle('fill-sun-tint', !q.cheapest);
-    document.getElementById('ws-book').setAttribute('href', q.book);
+    chip.textContent = L.delta;
+    chip.classList.toggle('fill-mint', L.cheapest);
+    chip.classList.toggle('fill-sun-tint', !L.cheapest);
+    document.getElementById('ws-book').setAttribute('href', L.book);
+    // The picked stay's card shows the price of its rooms and add-ons; the others show their list price.
+    document.querySelectorAll('[data-stay-price]').forEach(function (el) {
+      el.textContent = el.dataset.stayPrice === pick.stay ? L.slots.stay.price : data.offers[el.dataset.stayPrice].price;
+    });
+    applyStay(panelOf(pick.stay), j.stay);
     syncUrl();
     paintChoose();
     paintMap(data.map && data.map[pick.stay]);
   }
 
-  function selectPick(lane, id) {
+  var quoteSeq = 0;
+  function refresh() {
+    var n = ++quoteSeq;
+    return getQuote(pickQuery()).then(function (j) { if (n === quoteSeq) applyLedger(j); }).catch(function () {});
+  }
+
+  // Pick an offer in a lane. A stay's rooms and add-ons come along only when they are the ones being chosen
+  // (cfg); picking another stay starts from its default room.
+  function selectPick(lane, id, cfg) {
+    if (lane === 'stay') {
+      if (cfg) { pick.rooms = cfg.rooms; pick.add = cfg.add; }
+      else if (id !== pick.stay) { pick.rooms = null; pick.add = null; }
+    }
     pick[lane] = id;
     // A pick made while the lane is tiled is what the split view opens on next.
     Object.keys(SPLIT).forEach(function (n) { if (SPLIT[n] === lane && grid.dataset.expanded !== n) viewing[n] = id; });
     document.querySelectorAll('.ws-offer[data-lane="' + lane + '"]').forEach(function (o) {
       o.setAttribute('aria-pressed', o.dataset.pick === id ? 'true' : 'false');
     });
-    paint();
+    paintChoose();
+    refresh();
   }
 
-  // Split view (F-025). Flights and Stays expand into a list sidebar and a detail panel; the detail is server-rendered,
-  // so this only shows one panel at a time. On a phone the list and the detail are two screens.
+  // ---- split view (F-025) -----------------------------------------------------------------------------------------
+  // Flights and Stays expand into a list sidebar and a detail panel; the detail is server-rendered, so this only shows
+  // one panel at a time. On a phone the list and the detail are two screens.
   var SPLIT = { flights: 'flight', stays: 'stay' };
   var viewing = {};
-  var phone = window.matchMedia('(max-width: 720px)');
-  var still = window.matchMedia('(prefers-reduced-motion: reduce)');
   function paneEl(name) { return document.querySelector('.ws-pane[data-pane="' + name + '"]'); }
   Object.keys(SPLIT).forEach(function (name) {
     var cur = paneEl(name).querySelector('.ws-detail-panel:not([hidden])');
@@ -134,7 +194,109 @@
   });
 
   document.querySelectorAll('.ws-choose').forEach(function (b) {
-    b.addEventListener('click', function () { selectPick(b.dataset.chooseLane, b.dataset.choose); });
+    b.addEventListener('click', function () {
+      if (b.disabled) return;
+      var lane = b.dataset.chooseLane;
+      if (lane === 'stay') {
+        var p = b.closest('.ws-detail-panel');
+        selectPick(lane, b.dataset.choose, { rooms: p.dataset.rooms, add: p.dataset.add });
+      } else selectPick(lane, b.dataset.choose);
+    });
+  });
+
+  // ---- stay editor: rooms, add-ons (each change asks the server for the figures) -------------------------------------
+  var panelSeq = {};
+  function editStay(panel) {
+    var id = panel.dataset.detail, rooms = '', add = '';
+    panel.querySelectorAll('.ws-room').forEach(function (c) { if (Number(c.dataset.count) > 0) rooms += c.dataset.room + c.dataset.count; });
+    panel.querySelectorAll('.ws-addon[aria-pressed="true"]').forEach(function (b) { add += b.dataset.addon; });
+    var n = panelSeq[id] = (panelSeq[id] || 0) + 1;
+    getQuote('h=' + enc(id) + '&rooms=' + enc(rooms) + '&add=' + enc(add)).then(function (j) {
+      if (n !== panelSeq[id]) return;
+      applyStay(panel, j.stay);
+      paintChoose();
+    }).catch(function () {});
+  }
+
+  document.querySelectorAll('.ws-detail-panel[data-rooms]').forEach(function (panel) {
+    panel.addEventListener('click', function (e) {
+      var step = e.target.closest('[data-step]');
+      var addon = e.target.closest('.ws-addon');
+      if (step && !step.disabled) {
+        var card = step.closest('.ws-room');
+        var n = Math.max(0, Math.min(Number(card.dataset.max), Number(card.dataset.count) + Number(step.dataset.step)));
+        if (n === Number(card.dataset.count)) return;
+        card.dataset.count = String(n); // shown at once; the server's answer then confirms it
+        card.querySelector('.ws-count').textContent = String(n);
+        editStay(panel);
+      } else if (addon) {
+        addon.setAttribute('aria-pressed', addon.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+        editStay(panel);
+      }
+    });
+  });
+
+  // ---- look around: Photos / Explore the area in 3D ---------------------------------------------------------------------
+  function selectTab(look, name, focus) {
+    look.querySelectorAll('[role="tab"]').forEach(function (t) {
+      var on = t.dataset.tab === name;
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+      t.tabIndex = on ? 0 : -1;
+      if (on && focus) t.focus();
+    });
+    look.querySelectorAll('[role="tabpanel"]').forEach(function (p) { p.hidden = p.dataset.panel !== name; });
+    if (name === 'explore') loadExplore(look.querySelector('.ws-explore-slot'));
+  }
+
+  // The explorer loads the first time its tab opens (a skeleton, then the map); a failed load tries again on the next open.
+  function loadExplore(slot) {
+    if (slot.dataset.state === 'loading' || slot.dataset.state === 'ready') return;
+    slot.dataset.state = 'loading';
+    slot.innerHTML = '<div class="ws-skel skeleton" role="status">Loading the aerial view…</div>';
+    var t0 = Date.now(), wait = still.matches ? 0 : 400;
+    fetch(slot.dataset.mapSrc).then(function (r) {
+      if (!r.ok) throw new Error('explore ' + r.status);
+      return r.text();
+    }).then(function (html) {
+      setTimeout(function () { slot.innerHTML = html; slot.dataset.state = 'ready'; bindExplore(slot); }, Math.max(0, wait - (Date.now() - t0)));
+    }).catch(function () {
+      slot.dataset.state = 'error';
+      slot.innerHTML = '<div class="ws-skel ws-skel-error" role="status">The aerial view did not load. Open the tab again to retry.</div>';
+    });
+  }
+
+  function bindExplore(slot) {
+    var aerial = slot.querySelector('.ws-aerial');
+    var spin = 0;
+    function select(i, from) {
+      slot.querySelectorAll('[data-poi]').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.poi === i ? 'true' : 'false'); });
+      slot.querySelectorAll('[data-poi-card]').forEach(function (c) { c.hidden = c.dataset.poiCard !== i; });
+      aerial.style.setProperty('--tx', from.dataset.tx + '%');
+      aerial.style.setProperty('--ty', from.dataset.ty + '%');
+    }
+    slot.addEventListener('click', function (e) {
+      var poi = e.target.closest('[data-poi]');
+      if (poi) { select(poi.dataset.poi, poi); return; }
+      if (e.target.closest('[data-recenter]')) { select('0', aerial); return; }
+      if (e.target.closest('[data-spin]')) { spin = (spin + 30) % 360; aerial.style.setProperty('--spin', spin + 'deg'); }
+    });
+  }
+
+  document.querySelectorAll('.ws-look').forEach(function (look) {
+    var tabs = look.querySelector('[role="tablist"]');
+    tabs.addEventListener('click', function (e) {
+      var t = e.target.closest('[role="tab"]');
+      if (t) selectTab(look, t.dataset.tab, false);
+    });
+    tabs.addEventListener('keydown', function (e) {
+      var keys = { ArrowLeft: -1, ArrowRight: 1, Home: 'first', End: 'last' };
+      if (!(e.key in keys)) return;
+      var list = [].slice.call(tabs.querySelectorAll('[role="tab"]'));
+      var at = list.indexOf(document.activeElement);
+      var next = keys[e.key] === 'first' ? 0 : keys[e.key] === 'last' ? list.length - 1 : (at + keys[e.key] + list.length) % list.length;
+      e.preventDefault();
+      selectTab(look, list[next].dataset.tab, true);
+    });
   });
 
   document.querySelectorAll('[data-back="list"]').forEach(function (b) {
