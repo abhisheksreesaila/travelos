@@ -6,14 +6,15 @@ so screens can be built independently.
 
 from pathlib import Path
 
-from fasthtml.common import FastHTML, serve
+from fasthtml.common import Beforeware, FastHTML, serve
 
+from gitaway import session
 from gitaway.layout import HEAD
 from gitaway.pages import register_all
 
 ROOT = Path(__file__).parent
 
-app = FastHTML(hdrs=HEAD, title="GitAway", htmlkw={"lang": "en"}, key_fname=str(ROOT / ".sesskey"))
+app = FastHTML(before=Beforeware(session.bind, skip=[r"/assets/.*"]), hdrs=HEAD, title="GitAway", htmlkw={"lang": "en"}, key_fname=str(ROOT / ".sesskey"))
 app.static_route_exts(prefix="/assets/", static_path=str(ROOT / "assets"))
 register_all(app)
 

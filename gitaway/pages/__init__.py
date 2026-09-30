@@ -4,9 +4,9 @@ A new screen appends its module to SCREENS. Placeholders are registered last, as
 so a real screen on the same path always wins (Starlette serves the first matching route).
 """
 
-from gitaway.pages import home, placeholders, plan, trips
+from gitaway.pages import home, placeholders, plan, signin, trips
 
-SCREENS = [home, trips, plan]
+SCREENS = [home, trips, plan, signin]
 
 
 def register_all(app, extra=()):
