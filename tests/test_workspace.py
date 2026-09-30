@@ -254,7 +254,7 @@ def test_context_column_is_one_fr_and_tip_gap_removed_on_tablet():
 
 def test_fork_link_uses_the_itinerary_view_helper():
     src = open("gitaway/pages/plan.py").read()
-    assert "_fork_href" in src and "intent=fork" not in src
+    assert "fork_href" in src and "intent=fork" not in src
 
 
 def test_tablet_ledger_wraps_and_never_truncates():

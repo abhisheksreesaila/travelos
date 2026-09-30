@@ -24,7 +24,7 @@ WEATHER = [
     Weather("Sat 17", 73, "sunny", "sun", "sun"),
     Weather("Sun 18", 70, "some clouds", "cloud", "sky"),
     Weather("Mon 19", 72, "sunny", "sun", "sun"),
-    Weather("Tue 20", 77, "warm and clear", "sun", "sun"),
+    Weather("Tue 20", 77, "warm", "sun", "sun"),
 ]
 
 

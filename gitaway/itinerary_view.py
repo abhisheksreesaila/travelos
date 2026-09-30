@@ -40,7 +40,7 @@ def resolve_theme(requested, trip: Itinerary) -> str:
     return requested if requested in THEMES else trip.theme
 
 
-def _fork_href(trip):
+def fork_href(trip):
     return f"/signin?next=/trips/{trip.slug}&intent=fork"
 
 
@@ -58,7 +58,7 @@ def _stats(trip):
 
 def _actions(trip):
     return Div(
-        A(icon("fork", 22, 2.4), "Fork this trip", href=_fork_href(trip), cls="btn btn-primary btn-hero"),
+        A(icon("fork", 22, 2.4), "Fork this trip", href=fork_href(trip), cls="btn btn-primary btn-hero"),
         Button(icon("share", 20), "Share", type="button", cls="btn btn-hero"),
         Button(icon("heart", 22, 2.3), type="button", cls="btn btn-round", aria_label="Save to favourites"),
         cls="hero-actions",
@@ -226,7 +226,7 @@ def _yours(trip):
             H2("Make this trip yours"),
             P(f"Fork it into your trips, then drop the days you love into your own calendar. "
               f"The original stays exactly as {who} shared it."),
-            Div(A(icon("fork", 22, 2.4), "Fork this trip", href=_fork_href(trip), cls="btn btn-primary btn-hero"),
+            Div(A(icon("fork", 22, 2.4), "Fork this trip", href=fork_href(trip), cls="btn btn-primary btn-hero"),
                 A("Plan my own trip", href="/plan", cls="btn btn-hero"), cls="hero-actions"),
             cls="yours-copy"),
         Div(Div(cls="fork-back"),

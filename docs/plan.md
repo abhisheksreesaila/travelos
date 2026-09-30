@@ -53,10 +53,10 @@ Design: docs/design/workspace.md (polished workspace; chosen 2026-09-29) · Need
 - [x] ledger highlights the best-value combination
 - [x] phone width: panes stack, ledger stays pinned
 
-## F-016 Workspace context panes [doing]
+## F-016 Workspace context panes [done]
 Needs: F-015 · First to be trimmed to light stubs if time runs short
-- [ ] weather, news, map, events and community itineraries for LA on the trip dates
-- [ ] community itinerary pane can fork into the forks list
+- [x] weather, news, map, events and community itineraries for LA on the trip dates
+- [ ] community itinerary pane can fork into the forks list (Fork link in place; the list itself lands with F-017 + F-021)
 
 ## F-017 Demo sign-in at save, pay, invite and fork [blocked]
 Blocked: look at "Sign in → pay → celebrate" on the canvas (use its 1-2-3 switch) and say go or what to change.
