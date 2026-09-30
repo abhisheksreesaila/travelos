@@ -177,7 +177,7 @@ def workspace(f, h, c):
             pane("stays", 2, "Stays", f"{trip.nights} nights", [stay_card(o, h) for o in catalog.offers("stay")], "fill-mint-tint"),
             pane("cars", 3, "Getting around", "", [car_card(o, c) for o in catalog.offers("car")], "fill-sky-tint", tip),
             context_placeholder(),
-            cls="ws-grid", id="ws-grid", data_focus="flights", data_expanded="",
+            cls="ws-grid", id="ws-grid", data_focus="flights",
         ),
         cls="ws", id="main", data_theme="sunset",
     )

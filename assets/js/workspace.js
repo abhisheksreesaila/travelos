@@ -57,7 +57,7 @@
   }
 
   function setExpanded(name) {
-    grid.dataset.expanded = name || '';
+    if (name) grid.dataset.expanded = name; else delete grid.dataset.expanded;
     document.querySelectorAll('.ws-expand').forEach(function (b) {
       b.setAttribute('aria-expanded', b.dataset.expand === name ? 'true' : 'false');
     });
