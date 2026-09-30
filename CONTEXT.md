@@ -84,7 +84,7 @@ The person who creates the shared trip and centrally controls who is authorized 
 The single participant currently authorized by the organizer to enter payment for the group; nomination transfers rather than duplicates that authority. Even the organizer cannot bypass an ongoing checkout, and itinerary editing permission does not grant payment authority.
 
 **Public publishing**:
-The optional act of making a reusable itinerary discoverable to the wider TravelOS community, not exposing the private group's discussions, participant details, or payment information. Published plans have no platform username; professional creators may optionally attach external social channels as attribution.
+The optional act of making a reusable itinerary discoverable to the wider GitAway community, not exposing the private group's discussions, participant details, or payment information. Published plans have no platform username; professional creators may optionally attach external social channels as attribution.
 _Avoid_: Link sharing, username, profile
 
 **Published version**:
@@ -97,5 +97,5 @@ A viewer's positive signal that a published itinerary is useful. It is distinct 
 Payment-related information intended for the payer and delivered to the payer's email, distinct from the itinerary shared with trip participants.
 
 **Anonymous publishing**:
-Publicly sharing a plan without requiring a platform username or identity. All community-published plans are anonymous by default; the contributor is identified only by the plan itself—not by a TravelOS username. Professional creators may optionally attach their existing social channels (YouTube, Instagram, etc.) as attribution, but those are external identities, not TravelOS accounts.
+Publicly sharing a plan without requiring a platform username or identity. All community-published plans are anonymous by default; the contributor is identified only by the plan itself—not by a GitAway username. Professional creators may optionally attach their existing social channels (YouTube, Instagram, etc.) as attribution, but those are external identities, not GitAway accounts.
 _Avoid_: Username, platform identity, pseudonymous

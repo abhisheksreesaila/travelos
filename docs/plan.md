@@ -28,15 +28,16 @@ Brief: docs/brief.md · Design: https://claude.ai/artifact/NvLT3Tjf4XUwPbyZ4m6d2
 - [x] navigation map of the whole journey (landing → workspace → pay → calendar → share → community → creator import)
 - [x] captain signs off on direction before any build ticket starts
 
-## F-012 Clean app shell, fake trip catalog and GitAway rename [todo]
+## F-012 Clean app shell, fake trip catalog and GitAway rename [done]
 Design: design-system/DESIGN-SYSTEM.md, journey map on the F-011 canvas · Needs: F-011 (old frontend archived on branch archive/travelos-prototype)
-- [ ] new frontend shell with the F-011 tokens and navigation; old TravelOS prototype routes are no longer linked
-- [ ] one fake catalog: SFO → LAX/BUR, made-up dates, airlines, flights, hotels, cars and prices that look real
-- [ ] user-facing name reads GitAway everywhere; README run instructions work
-- [ ] project runs through pixi
+- [x] new frontend shell with the F-011 tokens and navigation; old TravelOS prototype routes are no longer linked
+- [x] one fake catalog: SFO → LAX/BUR, made-up dates, airlines, flights, hotels, cars and prices that look real
+- [x] user-facing name reads GitAway everywhere; README run instructions work
+- [x] project runs through pixi
 
-## F-013 Landing page with split hero [todo]
-Design: F-011 · Needs: F-012
+## F-013 Landing page with split hero [blocked]
+Blocked: pick Landing A (two doors, recommended) or B (search + inspiration rail) on the canvas, then say go.
+Design: https://claude.ai/artifact/NvLT3Tjf4XUwPbyZ4m6d2Q (sources docs/design/canvas/Landing-*.dc.html) · Needs: F-012
 - [ ] cover page explains what makes GitAway different, with delightful motion
 - [ ] two doors: "Plan a trip" opens the booking workspace; "Get inspired" opens the community hub
 

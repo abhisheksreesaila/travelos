@@ -12,3 +12,6 @@ tests/.runtime/
 .hooks-state/
 travelos.egg-info/
 .claude/worktrees/
+.pixi/
+*.egg-info/
+.sesskey

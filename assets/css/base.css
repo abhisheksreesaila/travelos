@@ -1,0 +1,95 @@
+/* GitAway shared components. Tokens live in tokens.css. */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+img { max-width: 100%; display: block; }
+.ga-page { background: var(--ground); min-height: 100vh; display: flex; flex-direction: column; }
+.ga-page > main { flex: 1; }
+.ga-skip { position: absolute; left: 16px; top: -80px; z-index: 10; padding: 12px 18px; border-radius: var(--r-pill); background: var(--ink); color: #FFFFFF; font-weight: 800; text-decoration: none; }
+.ga-skip:focus { top: 16px; color: #FFFFFF; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 800; letter-spacing: -0.02em; line-height: 1.02; margin: 0; text-wrap: balance; }
+p { margin: 0; text-wrap: pretty; }
+a { color: var(--ink); }
+a:hover { color: var(--coral-deep); }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
+}
+.on-ink a:focus-visible, .on-ink button:focus-visible { outline-color: var(--sun); }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+.ga-wrap { width: min(1312px, 100% - 32px); margin-inline: auto; }
+
+/* Header */
+.ga-header { height: 84px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.ga-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.ga-brand-mark { width: 40px; height: 40px; border-radius: var(--r-sm); background: var(--coral); box-shadow: 0 3px 0 var(--coral-deep); display: grid; place-items: center; }
+.ga-brand-name { font-family: var(--font-display); font-weight: 800; font-size: 27px; letter-spacing: -0.02em; color: var(--ink); }
+.ga-nav { display: flex; align-items: center; gap: 32px; font-weight: 600; }
+.ga-nav a { text-decoration: none; }
+.ga-nav a[aria-current="page"] { text-decoration: underline; text-decoration-color: var(--accent-2); text-decoration-thickness: 4px; text-underline-offset: 8px; }
+
+/* Tactile buttons */
+.btn {
+  --btn-bg: var(--card); --btn-fg: var(--ink); --btn-ledge: rgba(30,26,46,.12);
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  min-height: 56px; padding: 0 26px; border: 0; border-radius: var(--r-pill);
+  background: var(--btn-bg); color: var(--btn-fg);
+  font: 800 18px/1 var(--font-body); text-decoration: none; cursor: pointer;
+  box-shadow: 0 0 0 1px var(--line), 0 4px 0 var(--btn-ledge);
+  transition: transform .15s var(--ease-out), box-shadow .15s var(--ease-out);
+}
+.btn:hover { color: var(--btn-fg); transform: translateY(-1px); box-shadow: 0 0 0 1px var(--line), 0 5px 0 var(--btn-ledge); }
+.btn:active { transform: translateY(4px); box-shadow: 0 0 0 1px var(--line), 0 0 0 var(--btn-ledge); }
+.btn-primary { --btn-bg: var(--accent); --btn-ledge: var(--accent-deep); }
+.btn-ink { --btn-bg: var(--ink); --btn-fg: #FFFFFF; --btn-ledge: var(--ink-ledge); }
+.btn-sm { min-height: 44px; padding: 0 20px; font-size: 16px; }
+
+/* Stickers and tags */
+.sticker {
+  display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 18px 0 12px;
+  border-radius: var(--r-pill); border: 3px solid #FFFFFF; box-shadow: var(--shadow-sticker);
+  font-weight: 800; font-size: 16px; background: var(--sun);
+}
+.tag { display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: var(--r-pill); font-size: 13px; font-weight: 800; background: var(--sun); }
+.tag-booked { background: var(--ink); color: #FFFFFF; letter-spacing: .03em; }
+.fill-sun { background: var(--sun); } .fill-mint { background: var(--mint); } .fill-sky { background: var(--sky); }
+.fill-grape { background: var(--grape); } .fill-bubble { background: var(--bubble); }
+
+/* Surfaces */
+.card { background: var(--card); border-radius: var(--r-lg); box-shadow: var(--shadow-md); }
+
+/* Action rows */
+.ga-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.ga-soon .ga-actions { justify-content: center; }
+
+/* Footer */
+.ga-footer { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 40px 0; color: var(--ink-3); font-weight: 600; font-size: 15px; }
+.ga-footer .ga-brand-name { font-size: 22px; }
+
+/* Placeholder pages while a screen is being built */
+.ga-soon { min-height: calc(100vh - 220px); display: grid; place-items: center; text-align: center; }
+.ga-soon h1 { font-size: clamp(40px, 6vw, 72px); }
+.ga-soon p { margin: 16px auto 28px; max-width: 520px; color: var(--ink-2); font-size: 20px; }
+
+/* Motion */
+@keyframes ga-pop { 0% { transform: scale(.6); opacity: 0 } 70% { transform: scale(1.06); opacity: 1 } 100% { transform: scale(1) } }
+@keyframes ga-shimmer { from { background-position: -200% 0 } to { background-position: 200% 0 } }
+.skeleton { background: linear-gradient(90deg, var(--skeleton) 0%, var(--skeleton-band) 50%, var(--skeleton) 100%); background-size: 200% 100%; animation: ga-shimmer 1.4s linear infinite; }
+
+@media (max-width: 720px) {
+  .ga-header { height: auto; padding: 16px 0; flex-wrap: wrap; }
+  .ga-nav { gap: 18px; order: 3; width: 100%; }
+  .ga-footer { flex-direction: column; align-items: flex-start; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

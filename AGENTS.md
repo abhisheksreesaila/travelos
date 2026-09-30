@@ -1,10 +1,14 @@
 # Project agent memory
 
-This file is the project's committed home for project-intrinsic agent knowledge: build, test, release, architecture, and sharp-edge notes that should travel with the code.
+GitAway (repo name `travelos`, the product's former name). Design-first frontend on fake data; read `docs/brief.md` and `docs/plan.md` first.
 
-- App entry point and route/UI composition: `main.py`; start it with `python main.py` after installing the `pyproject.toml` dependencies.
-- Tenant-scoped fixture persistence is implemented in `data.py` with fh-saas host and tenant SQLite databases; generated runtime databases belong under ignored `data/` (or `TRAVELOS_DATA_DIR`).
-- Run the deterministic local smoke suite with `python -m unittest discover -s tests -v`. See `README.md` for the product journey and explicitly deferred provider integrations.
+- Python via pixi only: `pixi run dev` (port 5002), `pixi run test`. Never pip.
+- `main.py` builds the FastHTML app and serves `/assets/…`; every screen is a module in `gitaway/pages/` exposing `register(app)`, appended to `SCREENS` in `gitaway/pages/__init__.py`. Placeholders register last as fallbacks, so a real screen on the same path wins; delete its entry from `placeholders.PLACEHOLDERS` when you ship it. Keep screens in their own modules so tickets can be built in parallel.
+- `gitaway/layout.py` `page()` is the shared shell (fonts, tokens, header, footer, `data-theme` sunset|pacific). `gitaway/icons.py` `icon()` gives inline SVG icons; never use emoji.
+- `gitaway/catalog.py` is the single fake catalog. Money is integer cents; display with `catalog.money()`.
+- Visual rules: `design-system/DESIGN-SYSTEM.md` (tokens in `assets/css/tokens.css`, shared components in `assets/css/base.css`). The artboard sources for each screen are in `docs/design/canvas/`.
+- Photos in `assets/photos/` are CC0 area photos (see `CREDITS.md`), never presented as a hotel or room.
+- Test seams: HTTP routes through Starlette's TestClient (`tests/conftest.py` `client`) and the catalog's public functions.
 
 ## Maintaining this file
 
