@@ -92,6 +92,8 @@
     panel.querySelector('[data-cb-sum]').textContent = s.summary;
     panel.querySelector('[data-cb-price]').textContent = s.price;
     panel.querySelector('.ws-choose').disabled = !s.fits;
+    panel.dataset.fits = s.fits ? '1' : '0'; // the last answer the server gave
+    panel.querySelector('[data-cb-err]').hidden = true;
   }
 
   // The ledger, the stay cards and the map follow a quote from the server.
@@ -208,6 +210,9 @@
 
   // ---- stay editor: rooms, add-ons (each change asks the server for the figures) -------------------------------------
   var panelSeq = {};
+  document.querySelectorAll('.ws-detail-panel[data-rooms]').forEach(function (p) {
+    p.dataset.fits = p.querySelector('.ws-choose').disabled ? '0' : '1';
+  });
   var dirty = {}; // stays whose rooms or add-ons were edited but not chosen
   function editStay(panel) {
     var id = panel.dataset.detail, rooms = '', add = '';
@@ -221,7 +226,14 @@
       if (n !== panelSeq[id]) return;
       applyStay(panel, j.stay);
       paintChoose();
-    }).catch(function () {});
+    }).catch(function () { if (n === panelSeq[id]) quoteFailed(panel); });
+  }
+
+  // The price did not load: Choose goes back to what the last answer allowed, and a polite line says so until the next success.
+  function quoteFailed(panel) {
+    if (!panel) return;
+    panel.querySelector('.ws-choose').disabled = panel.dataset.fits !== '1';
+    panel.querySelector('[data-cb-err]').hidden = false;
   }
 
   // Put a stay's editor back to its default room (what a reload shows for a stay that is not picked).
@@ -232,7 +244,7 @@
     if (panel) panel.querySelector('.ws-choose').disabled = true;
     getQuote('h=' + enc(id)).then(function (j) {
       if (n === panelSeq[id]) { applyStay(panel, j.stay); paintChoose(); }
-    }).catch(function () {});
+    }).catch(function () { if (n === panelSeq[id]) quoteFailed(panel); });
   }
 
   // Leaving the split view drops edits that were not chosen, so opening it again (like a reload) shows the picks.

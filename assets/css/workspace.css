@@ -138,6 +138,8 @@
 .ws-cb-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
 .ws-cb-name { font-size: 13px; font-weight: 700; color: #C9C3DA; }
 .ws-cb-sum { font-size: 16px; font-weight: 800; line-height: 1.25; }
+.ws-cb-err { font-size: 13px; font-weight: 700; color: var(--sun); }
+.ws-cb-err[hidden] { display: none; }
 .ws-cb-price { font-family: var(--font-display); font-weight: 800; font-size: 28px; font-variant-numeric: tabular-nums; flex-shrink: 0; }
 .ws-choose { min-height: 56px; padding: 0 28px; border: 0; border-radius: var(--r-pill); background: var(--coral); color: var(--ink); box-shadow: 0 4px 0 var(--coral-deep); font-size: 17px; font-weight: 800; cursor: pointer; flex-shrink: 0; transition: transform .12s, box-shadow .12s; }
 .ws-choose:hover { transform: translateY(-1px); }

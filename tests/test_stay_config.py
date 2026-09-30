@@ -355,3 +355,11 @@ def test_the_script_resets_the_stay_it_leaves_and_holds_choose_during_an_edit(cl
     js = client.get("/assets/js/workspace.js").text
     assert "resetPanel(pick.stay)" in js
     assert "panel.querySelector('.ws-choose').disabled = true" in js
+
+
+def test_a_failed_price_request_frees_choose_and_says_so(client):
+    js = client.get("/assets/js/workspace.js").text
+    assert "quoteFailed" in js and "panel.dataset.fits" in js
+    a = stay_article(client.get("/plan").text, "h1")
+    assert re.search(r'data-cb-err[^>]*role="status"[^>]*aria-live="polite"[^>]*hidden', a)
+    assert "Price didn&#x27;t load, try again" in a or "Price didn't load, try again" in a

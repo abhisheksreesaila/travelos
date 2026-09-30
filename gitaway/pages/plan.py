@@ -190,7 +190,8 @@ def choose_bar(o, picked, noun, summary, cents=None, chosen=None, disabled=False
     """The pinned ink bar. `cents` is the price shown (a stay shows its rooms and add-ons); `chosen` overrides "is this the lane's pick"."""
     on = (o.id == picked) if chosen is None else chosen
     return Div(
-        Span(Span(o.name, cls="ws-cb-name"), Span(summary, cls="ws-cb-sum", data_cb_sum=""), cls="ws-cb-text"),
+        Span(Span(o.name, cls="ws-cb-name"), Span(summary, cls="ws-cb-sum", data_cb_sum=""),
+             Span("Price didn't load, try again", cls="ws-cb-err", data_cb_err="", role="status", aria_live="polite", hidden=True), cls="ws-cb-text"),
         Span(catalog.money(o.price_cents if cents is None else cents), cls="ws-cb-price", data_cb_price=""),
         Button("Chosen" if on else f"Choose this {noun}", type="button", cls="ws-choose", data_choose=o.id,
                data_choose_lane=o.kind, data_label=f"Choose this {noun}", disabled=disabled),
