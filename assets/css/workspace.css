@@ -151,7 +151,8 @@
   .ws-row .ws-badge { order: 4; }
   .ws-slot-label, .ws-op { display: none; }
   .ws-hint { display: none; }
-  .ws-pill { margin-left: auto; }
+  .ws-bar { height: auto; padding: 12px 8px; flex-wrap: wrap; gap: 12px; }
+  .ws-pill { margin-left: auto; min-width: 0; max-width: 100%; height: auto; min-height: 48px; padding: 8px 16px; flex-wrap: wrap; gap: 4px 12px; white-space: normal; }
 }
 
 /* Phone: stacked panes, ledger pinned at the bottom */
