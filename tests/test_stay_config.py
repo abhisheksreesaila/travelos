@@ -1,0 +1,299 @@
+"""F-026: room types, add-ons and the pick URL, priced by the catalog (the page never does arithmetic)."""
+import json
+import re
+from urllib.parse import parse_qs, quote as q, urlparse
+
+import pytest
+
+from gitaway import catalog
+from tests.test_signin import session_data, sign_in
+
+DONE = "f=f1&h=h1&c=c1&rooms=ok2&add=bf"  # the done-means pick: The Tidewater, Ocean-view King x2 + breakfast
+
+
+# ---- catalog ---------------------------------------------------------------------------------------------------
+
+def test_every_stay_has_three_rooms_and_its_default_room_sleeps_the_party():
+    for stay in catalog.offers("stay"):
+        d = catalog.stay_detail(stay.id)
+        assert len(d.rooms) == 3
+        assert d.rooms[0].sleeps >= catalog.PARTY == 4
+        assert d.rooms[0].price_cents == stay.price_cents  # the default room is the stay's list price
+        assert d.chips and d.highlights and d.policy and len(d.samples) == 4 and d.pois
+
+
+def test_the_default_stay_keeps_todays_totals():
+    assert catalog.quote("f1", "h1", "c1").total_cents == 308_800
+    assert catalog.stay_pick("h1").cents == 154_000
+    assert catalog.stay_pick("h1").summary == "City-view Double Queen"
+
+
+def test_ocean_view_king_twice_plus_breakfast_is_the_done_means_stay():
+    pick = catalog.stay_pick("h1", "ok2", "bf")
+    assert pick.cents == 244_000 and catalog.money(pick.cents) == "$2,440"
+    assert pick.summary == "Ocean-view King ×2 + Breakfast"
+    total = catalog.quote("f1", "h1", "c1", pick).total_cents
+    assert catalog.money(total) == "$3,988" and total == 123_600 + 244_000 + 31_200
+
+
+def test_the_quote_itemizes_rooms_and_add_ons_per_lane():
+    q_ = catalog.quote("f1", "h1", "c1", catalog.stay_pick("h1", "ok2", "bfpk"))
+    stay = [i for i in q_.items if i.lane == "stay"]
+    assert [(i.name, i.qty, i.cents) for i in stay] == [
+        ("Ocean-view King", 2, 212_000), ("Breakfast for 4", 1, 32_000), ("Parking, 4 nights", 1, 18_000)]
+    assert sum(i.cents for i in q_.items) == q_.total_cents
+    assert {i.lane for i in q_.items} == {"flight", "stay", "car"}
+    assert q_.lane_cents("stay") == 262_000
+
+
+@pytest.mark.parametrize("rooms,add,code,addcode", [
+    ("", None, "", ""),                      # nothing given: the default
+    (None, None, "", ""),
+    ("zz9", None, "", ""),                   # junk
+    ("ok5", None, "", ""),                   # count out of range
+    ("ok0", None, "", ""),                   # no rooms at all
+    ("ok1", None, "", ""),                   # sleeps 2 of 4: under capacity is repaired to the default
+    ("cq1", "", "", ""),
+    ("ok2", None, "ok2", ""),
+    ("ok2fs1", None, "ok2fs1", ""),          # catalog order, two rooms types
+    ("fs1ok2", None, "ok2fs1", ""),
+    ("ok2ok1", None, "ok2", ""),             # the first count of a repeated room wins
+    ("OK2", None, "", ""),                   # ids are lower case
+    ("ok2", "bf", "ok2", "bf"),
+    ("ok2", "pkbf", "ok2", "bfpk"),
+    ("ok2", "bfbf", "ok2", "bf"),
+    ("ok2", "xx", "ok2", ""),                # unknown add-on dropped
+    ("ok2", "b", "ok2", ""),
+    ("cq2", None, "cq2", ""),
+    ("cq1", "lc", "", "lc"),
+])
+def test_bad_or_missing_picks_fall_back_to_the_default(rooms, add, code, addcode):
+    p = catalog.stay_pick("h1", rooms, add)
+    assert (p.rooms_code, p.add_code) == (code, addcode)
+    assert p.fits
+
+
+def test_a_room_of_another_stay_is_not_valid_here():
+    assert catalog.stay_pick("h2", "ok2").rooms_code == ""  # ok is the Tidewater's Ocean-view King
+    assert catalog.stay_pick("h2", "gs2").rooms_code == "gs2"
+
+
+def test_an_under_capacity_choice_can_be_looked_at_but_never_priced_into_a_pick():
+    raw = catalog.parse_stay("h1", "ok1", "")
+    assert not raw.fits and raw.sleeps == 2 and raw.fit_text == "Sleeps 2 of 4 · add a room" and raw.fit == "short"
+    none = catalog.parse_stay("h1", "", "")
+    assert none.fit == "none" and none.fit_text == "Pick at least one room" and none.summary == "No room picked yet"
+    assert catalog.parse_stay("h1", "ok2", "").fit_text == "Room for all 4"
+    assert catalog.stay_pick("h1", "ok1").fits  # repaired
+
+
+def test_quote_refuses_a_stay_pick_for_another_stay():
+    with pytest.raises(KeyError):
+        catalog.quote("f1", "h2", "c1", catalog.stay_pick("h1", "ok2"))
+
+
+def test_quote_refuses_a_pick_that_sleeps_fewer_than_the_party():
+    with pytest.raises(ValueError):
+        catalog.quote("f1", "h1", "c1", catalog.parse_stay("h1", "ok1", ""))
+
+
+def test_default_stay_pick_url_params_are_empty_and_others_compact():
+    assert catalog.stay_pick("h1").query == ""
+    assert catalog.stay_pick("h1", "ok2", "bf").query == "&rooms=ok2&add=bf"
+    assert catalog.stay_pick("h1", "cq1", "lc").query == "&add=lc"
+    assert catalog.stay_pick("h1", "cq2").query == "&rooms=cq2"
+
+
+def test_the_cheapest_combination_is_unchanged():
+    assert catalog.cheapest().total_cents == 204_000
+
+
+# ---- /plan ----------------------------------------------------------------------------------------------------
+
+def stay_article(html, stay_id):
+    m = re.search(r'<article[^>]*data-detail="%s"[^>]*>.*?</article>' % stay_id, html, re.S)
+    assert m
+    return m.group(0)
+
+
+def test_done_means_total_on_the_plan_page_and_through_reload(client):
+    h = client.get(f"/plan?{DONE}").text
+    assert re.search(r'id="ws-total"[^>]*>\$3,988<', h)
+    assert re.search(r'data-slot-price="stay"[^>]*>\$2,440<', h)
+    assert "Ocean-view King ×2 + Breakfast" in h
+    a = stay_article(h, "h1")
+    assert re.search(r'data-room="ok"[^>]*data-count="2"', a) and re.search(r'data-addon="bf"[^>]*aria-pressed="true"', a)
+    assert re.search(r'data-addon="pk"[^>]*aria-pressed="false"', a)
+    assert re.search(r'data-choose="h1"[^>]*>\s*Chosen', a)
+
+
+def test_old_pick_urls_keep_working(client):
+    h = client.get("/plan?f=f2&h=h3&c=c2").text
+    assert re.search(r'id="ws-total"[^>]*>%s<' % re.escape(catalog.money(catalog.quote("f2", "h3", "c2").total_cents)), h)
+
+
+def test_junk_rooms_on_plan_fall_back_to_the_default_room(client):
+    for extra in ("&rooms=zz9", "&rooms=ok1", "&rooms=&add=xx", "&rooms=ok9&add=%3Cscript%3E"):
+        h = client.get(f"/plan?f=f1&h=h1&c=c1{extra}").text
+        assert re.search(r'id="ws-total"[^>]*>\$3,088<', h), extra
+        assert "<script>" not in h.split('id="ws-data"')[0].split("ws-choosebar")[-1]
+
+
+def test_stay_panels_show_rooms_add_ons_policy_photos_and_the_map_tab(client):
+    a = stay_article(client.get("/plan").text, "h1")
+    for text in ("Pick your rooms", "City-view Double Queen", "Ocean-view King", "Family suite", "2 queen beds", "1 king bed",
+                 "sleeps 4", "sleeps 2", "sleeps 5", "$1,540", "$1,060", "$1,980", "Room for all 4", "Add-ons", "Breakfast for 4", "+$320",
+                 "Late checkout, 2 PM", "+$40", "Parking, 4 nights", "+$180", "Free cancellation until Oct 13",
+                 "Explore the area in 3D", "Photos", "Sample photo · Lobby", "Sample photo · Pool", "Sample photo · Room",
+                 "Sample photo · Breakfast", "3 min walk", "Kids eat free at the pool café", "Sea view", "Crib available"):
+        assert text in a, text
+    assert 'role="tablist"' in a and a.count('role="tab"') == 2
+    assert "Illustrated map · not to scale" not in a  # the explorer loads on first open only
+    assert "Loading the aerial view" not in a
+    assert 'data-map-src' in a  # where it loads from
+
+
+def test_every_photo_referenced_exists_and_is_credited(client):
+    from pathlib import Path
+    root = Path(__file__).resolve().parent.parent / "assets/photos"
+    credits = (root / "CREDITS.md").read_text()
+    html = client.get("/plan").text
+    names = set(re.findall(r"/assets/photos/([\w.-]+\.jpg)", html))
+    assert len(names) >= 6
+    for n in names:
+        assert (root / n).stat().st_size > 10_000 and n in credits, n
+    for n in names:
+        assert (root / n).stat().st_size < 300_000
+
+
+def test_sample_photos_are_always_labelled_and_never_claim_to_be_the_hotel(client):
+    a = stay_article(client.get("/plan").text, "h1")
+    for m in re.finditer(r'<figure[^>]*data-sample[^>]*>(.*?)</figure>', a, re.S):
+        assert "Sample photo" in m.group(1)
+    assert re.findall(r'alt="([^"]*)"', a)
+    for alt in re.findall(r'<img[^>]*alt="([^"]*)"', a):
+        assert "sample" in alt.lower() or "not the hotel" in alt.lower() or alt == ""
+
+
+def test_the_explorer_fragment_loads_only_on_request(client):
+    r = client.get("/plan/explore?h=h1")
+    assert r.status_code == 200
+    for text in ("Illustrated map · not to scale", "Back to the hotel", "Turn the view", "Santa Monica Beach", "Third Street Promenade",
+                 "3 min walk", "Metro E Line"):
+        assert text in r.text, text
+    assert r.text.count("data-poi=") >= 12  # each point twice: standing pin and list row
+    assert client.get("/plan/explore?h=zz").status_code == 200  # falls back to the default stay
+
+
+# ---- /plan/quote ---------------------------------------------------------------------------------------------
+
+def quote_json(client, qs):
+    r = client.get("/plan/quote?" + qs)
+    assert r.status_code == 200
+    return r.json()
+
+
+def test_quote_route_returns_the_ledger_figures_from_the_catalog(client):
+    j = quote_json(client, DONE)
+    assert j["ledger"]["total"] == "$3,988"
+    assert j["ledger"]["slots"]["stay"] == {"name": "The Tidewater", "price": "$2,440", "sub": "Ocean-view King ×2 + Breakfast"}
+    assert j["ledger"]["slots"]["flight"]["price"] == "$1,236" and j["ledger"]["slots"]["car"]["price"] == "$312"
+    assert j["ledger"]["delta"] == "$1,948 more than the cheapest combo" and j["ledger"]["cheapest"] is False
+    assert j["ledger"]["url"] == "/plan?f=f1&h=h1&c=c1&rooms=ok2&add=bf"
+    assert j["ledger"]["book"].startswith("/signin?next=")
+    assert "rooms%3Dok2%26add%3Dbf" in j["ledger"]["book"]
+    assert j["stay"]["summary"] == "Ocean-view King ×2 + Breakfast" and j["stay"]["price"] == "$2,440"
+    assert j["stay"]["fits"] is True and j["stay"]["fit_text"] == "Room for all 4"
+    assert j["stay"]["rooms"] == {"cq": 0, "ok": 2, "fs": 0} and j["stay"]["add"] == ["bf"]
+
+
+def test_quote_route_signed_in_books_straight_to_the_sheet(client):
+    sign_in(client)
+    j = quote_json(client, DONE)
+    assert j["ledger"]["book"] == "/plan/pay?f=f1&h=h1&c=c1&rooms=ok2&add=bf"
+
+
+def test_quote_route_defaults_and_ignores_junk(client):
+    j = quote_json(client, "f=zz&h=h1&c=c1&rooms=zz&add=xx")
+    assert j["ledger"]["total"] == "$3,088" and j["ledger"]["url"] == "/plan?f=f1&h=h1&c=c1"
+    assert j["stay"]["rooms"] == {"cq": 1, "ok": 0, "fs": 0}
+    assert quote_json(client, "")["ledger"]["total"] == "$3,088"
+
+
+def test_quote_route_describes_an_under_capacity_edit_but_keeps_the_ledger_on_a_real_pick(client):
+    j = quote_json(client, "f=f1&h=h1&c=c1&rooms=ok1&add=bf")
+    assert j["stay"]["fits"] is False and j["stay"]["fit_text"] == "Sleeps 2 of 4 · add a room" and j["stay"]["fit"] == "short"
+    assert j["stay"]["summary"] == "Ocean-view King + Breakfast" and j["stay"]["price"] == "$1,380"
+    assert j["ledger"]["total"] == "$3,088"  # the ledger prices what is actually picked: the repaired default
+    j = quote_json(client, "f=f1&h=h1&c=c1&rooms=&add=")
+    assert j["stay"]["fit"] == "none" and j["stay"]["summary"] == "No room picked yet" and j["stay"]["price"] == "$0"
+
+
+def test_quote_route_totals_match_the_catalog_for_every_room_count(client):
+    for n in range(0, 5):
+        j = quote_json(client, f"f=f3&h=h2&c=c3&rooms=gs{n}")
+        want = catalog.parse_stay("h2", f"gs{n}" if n else "", "")
+        assert j["stay"]["price"] == catalog.money(want.cents)
+
+
+# ---- pay ---------------------------------------------------------------------------------------------------
+
+def test_the_pay_sheet_itemizes_rooms_and_add_ons(client):
+    sign_in(client)
+    html = client.get(f"/plan/pay?{DONE}").text
+    assert "Ocean-view King" in html and "×2" in html and "$2,120" in html
+    assert "Breakfast for 4" in html and "$320" in html
+    assert "Pay $3,988" in html and "$2,440" in html
+    assert 'name="rooms" value="ok2"' in html and 'name="add" value="bf"' in html
+    assert 'href="/plan?f=f1&amp;h=h1&amp;c=c1&amp;rooms=ok2&amp;add=bf"' in html  # back to my picks keeps the rooms
+
+
+def test_default_pay_sheet_has_no_extra_params(client):
+    sign_in(client)
+    html = client.get("/plan/pay?f=f1&h=h1&c=c1").text
+    assert "Pay $3,088" in html and "City-view Double Queen" in html and 'value="ok2"' not in html
+
+
+def test_paying_records_the_rooms_and_recomputes_the_total(client):
+    sign_in(client)
+    client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1", "rooms": "ok2", "add": "bf", "total_cents": "1"})
+    b = session_data(client)["bookings"]["ari"]
+    assert b["total_cents"] == 398_800 and b["rooms"] == "ok2" and b["add"] == "bf"
+    assert "Ocean-view King ×2 + Breakfast" in client.get("/booked").text
+
+
+def test_paying_refuses_under_capacity_by_repairing_to_the_default_room(client):
+    sign_in(client)
+    client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1", "rooms": "ok1", "add": "bf"})
+    b = session_data(client)["bookings"]["ari"]
+    assert b["total_cents"] == 308_800 + 32_000 - 0 and b["rooms"] == ""
+    # the under-capacity rooms were dropped; the add-on was a separate valid choice
+
+
+def test_paying_a_different_room_replaces_the_booking(client):
+    sign_in(client)
+    client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1"})
+    first = session_data(client)["bookings"]["ari"]
+    client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1", "rooms": "ok2"})
+    second = session_data(client)["bookings"]["ari"]
+    assert second["id"] != first["id"] and second["total_cents"] == 123_600 + 212_000 + 31_200
+
+
+def test_signed_out_pay_keeps_the_rooms_through_sign_in(client):
+    r = client.get(f"/plan/pay?{DONE}", follow_redirects=False)
+    nxt = parse_qs(urlparse(r.headers["location"]).query)["next"][0]
+    assert nxt == f"/plan/pay?{DONE}"
+    r = sign_in(client, next=nxt, intent="pay")
+    assert r.headers["location"] == f"/plan/pay?{DONE}"
+    assert "Pay $3,988" in client.get(r.headers["location"]).text
+
+
+# ---- calendar ------------------------------------------------------------------------------------------------
+
+def test_the_calendar_respects_the_picked_rooms(client):
+    sign_in(client)
+    client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1", "rooms": "ok2", "add": "bf"})
+    html = client.get("/calendar").text
+    assert "Check in · The Tidewater · Ocean-view King ×2" in html
+    assert "$3,988" in html
+    assert "Ocean-view King ×2 + Breakfast" in html  # the welcome note
