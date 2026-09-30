@@ -105,13 +105,20 @@
   });
 
   // ---- setup after every render ------------------------------------------------------------------------------------
+  // Open the hour grid at the first booked item, or 8 AM when that is earlier in the day.
+  function firstScroll(root, scroller) {
+    const gs = +root.dataset.gridStart || 0;
+    const booked = $$(".cal-booked", scroller).map((b) => +b.dataset.start).filter((m) => m >= 0);
+    const target = Math.min(8 * 60, ...booked);
+    return Math.max(0, Math.round((target - gs) / 60 * HOUR) - 8);
+  }
   function setup(root, keep) {
     markCut(root);
     const scroller = $("#cal-scroll", root);
     if (scroller) {
       const day = +scroller.dataset.w || 0;
       if (keep) { scroller.scrollLeft = keep.x; scroller.scrollTop = keep.y; }
-      else { jump(scroller, day, false); scroller.scrollTop = 0; }
+      else { jump(scroller, day, false); scroller.scrollTop = firstScroll(root, scroller); }
       updateWindow(scroller);
     }
     const feed = $("#cal-feed", root);
