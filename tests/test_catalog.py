@@ -9,7 +9,7 @@ from gitaway import catalog
 
 def test_the_sample_trip_is_a_friday_to_tuesday_family_trip_to_la():
     trip = catalog.SAMPLE_TRIP
-    assert trip.origin == "SFO" and trip.destination_name == "Los Angeles"
+    assert trip.origin == "SFO" and trip.origin_name == "San Francisco" and trip.destination_name == "Los Angeles"
     assert trip.airports == ("LAX", "BUR")
     assert trip.depart == date(2026, 10, 16) and trip.depart.strftime("%A") == "Friday"
     assert trip.return_ == date(2026, 10, 20) and trip.return_.strftime("%A") == "Tuesday"

@@ -13,9 +13,18 @@ HEAD = (
     Link(rel="preconnect", href="https://fonts.googleapis.com"),
     Link(rel="preconnect", href="https://fonts.gstatic.com", crossorigin=""),
     Link(rel="stylesheet", href=FONTS),
-    Link(rel="stylesheet", href="/assets/css/tokens.css"),
-    Link(rel="stylesheet", href="/assets/css/base.css"),
 )
+
+def styles(*extra):
+    """The shared stylesheets in cascade order (tokens, base), then any page-specific head items.
+
+    page() uses this; a page that builds its own document should too, so page CSS always wins over base.css.
+    """
+    return (
+        Link(rel="stylesheet", href="/assets/css/tokens.css"),
+        Link(rel="stylesheet", href="/assets/css/base.css"),
+        *extra,
+    )
 
 NAV = [("Discover", "/discover"), ("Plan a trip", "/plan"), ("For creators", "/creators")]
 
@@ -51,6 +60,6 @@ def page(title: str, *content, current: str = "", theme: str = "sunset", head=()
     """A full GitAway page. `current` marks the active nav link; `theme` is sunset or pacific."""
     return (
         Title(f"GitAway · {title}" if title else "GitAway"),
-        *head,
+        *styles(*head),
         Div(site_header(current), Main(*content, id="main"), site_footer(), data_theme=theme, cls="ga-page"),
     )

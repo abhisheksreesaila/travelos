@@ -12,6 +12,7 @@ from itertools import product
 @dataclass(frozen=True)
 class TripSearch:
     origin: str
+    origin_name: str
     destination_name: str
     airports: tuple  # airports that serve the destination
     depart: date
@@ -51,7 +52,7 @@ class Offer:
     airport: str = ""  # flights only: where it lands
 
 
-SAMPLE_TRIP = TripSearch("SFO", "Los Angeles", ("LAX", "BUR"), date(2026, 10, 16), date(2026, 10, 20), 2, (4, 7))
+SAMPLE_TRIP = TripSearch("SFO", "San Francisco", "Los Angeles", ("LAX", "BUR"), date(2026, 10, 16), date(2026, 10, 20), 2, (4, 7))
 
 _OFFERS = [
     Offer("f1", "flight", "Skylark Air 214", "8:05 → 9:32", "Nonstop to LAX · 1h 27m · back Tue 2:10 PM", 123_600, ("Best nonstop",), airport="LAX"),

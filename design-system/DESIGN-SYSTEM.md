@@ -31,6 +31,7 @@ Ink text sits on every fill; white text only on Ink.
 | `--sky` / tint #DDEEFF | #5AB0FF | Travel, info, map |
 | `--grape` / tint #ECE4FF | #C3B2FF | Culture |
 | `--bubble` / tint #FFE3F1 | #FF8CC6 | Couple friendly, fun |
+| `--block-sunset` / `--block-pacific` | #FF8A63 / #6DB8FF | Landing hero door panels (door one, door two). Ink text only; not for buttons or small text on other surfaces |
 
 **Itinerary themes** (one layout, the contributor picks a theme):
 

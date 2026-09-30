@@ -12,6 +12,19 @@ def test_home_is_a_gitaway_page_with_the_main_navigation(client):
     assert "/assets/css/tokens.css" in html and "/assets/css/base.css" in html
 
 
+def test_every_page_links_tokens_then_base_exactly_once(client):
+    from main import app
+    paths = {r.path for r in app.routes
+             if "GET" in (getattr(r, "methods", None) or ()) and "{" not in r.path}
+    paths.add("/trips/sun-tacos-and-tide-pools")
+    assert {"/", "/plan"} <= paths
+    for path in sorted(paths):
+        html = client.get(path).text
+        assert html.count("/assets/css/tokens.css") == 1, path
+        assert html.count("/assets/css/base.css") == 1, path
+        assert html.index("/assets/css/tokens.css") < html.index("/assets/css/base.css"), path
+
+
 def test_design_tokens_are_served(client):
     r = client.get("/assets/css/tokens.css")
     assert r.status_code == 200
