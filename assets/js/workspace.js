@@ -6,11 +6,30 @@
   if (!dataEl || !grid) return;
   var data = JSON.parse(dataEl.textContent);
   var LANE_KEY = { flight: 'f', stay: 'h', car: 'c' };
-  var PANES = { 1: 'flights', 2: 'stays', 3: 'cars' };
+  var PANES = { 1: 'flights', 2: 'stays', 3: 'cars', 4: 'weather', 5: 'map', 6: 'news', 7: 'community' };
   var pick = {};
   document.querySelectorAll('.ws-offer').forEach(function (b) {
     if (b.getAttribute('aria-pressed') === 'true') pick[b.dataset.lane] = b.dataset.pick;
   });
+
+  // Move the schematic map's stay pin and hotel-to-beach line to the picked stay (figures embedded by the server).
+  var MAP_W = 320, MAP_H = 150;
+  function paintMap(m) {
+    if (!m) return;
+    var pin = document.getElementById('ws-map-pin');
+    if (!pin) return;
+    pin.textContent = m.label;
+    pin.dataset.mapPin = pick.stay;
+    pin.style.left = (m.x / MAP_W * 100) + '%';
+    pin.style.top = (m.y / MAP_H * 100) + '%';
+    var dot = document.getElementById('ws-beach-dot');
+    dot.style.left = (m.bx / MAP_W * 100) + '%';
+    dot.style.top = (m.by / MAP_H * 100) + '%';
+    var line = document.getElementById('ws-beach-line');
+    line.setAttribute('x1', m.x); line.setAttribute('y1', m.y);
+    line.setAttribute('x2', m.bx); line.setAttribute('y2', m.by);
+    document.getElementById('ws-map-caption').textContent = m.caption;
+  }
 
   function paint() {
     var key = [pick.flight, pick.stay, pick.car].join('|');
@@ -28,6 +47,7 @@
     chip.classList.toggle('fill-sun-tint', !q.cheapest);
     document.getElementById('ws-book').setAttribute('href', q.book);
     history.replaceState(null, '', q.url);
+    paintMap(data.map && data.map[pick.stay]);
   }
 
   document.querySelectorAll('.ws-offer').forEach(function (btn) {
@@ -51,7 +71,7 @@
     });
     if (moveFocus) {
       var pane = document.querySelector('.ws-pane[data-pane="' + name + '"]');
-      var first = pane && (pane.querySelector('.ws-offer[aria-pressed="true"]') || pane.querySelector('.ws-offer'));
+      var first = pane && (pane.querySelector('.ws-offer[aria-pressed="true"]') || pane.querySelector('.ws-offer') || pane.querySelector('.ws-focus'));
       if (first) first.focus({ preventScroll: false });
     }
   }
@@ -87,7 +107,6 @@
       if (grid.dataset.expanded) setExpanded(PANES[e.key]);
       focusPane(PANES[e.key], true);
     }
-    // Keys 4-7 are reserved for the context panes (F-016).
   });
 
   var toggle = document.getElementById('ws-details');

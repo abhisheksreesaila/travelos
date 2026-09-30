@@ -128,7 +128,7 @@ def _sun_tacos() -> Itinerary:
             Stop("5:00 PM", "Pool time", "waves", "sun",
                  meta="Back at the hotel for a long, lazy swim before an early dinner."),
         ], collapsed=True),
-        Day(5, "TUE, OCT 20", "Market brunch, fly home", "71°F, clear skies", [
+        Day(5, "TUE, OCT 20", "Market brunch, fly home", "77°F, warm and clear", [
             Stop("9:00 AM", "Farmers Market brunch", "food", "bubble",
                  meta="Fresh fruit, pastries and a very good breakfast burrito."),
             Stop("11:30 AM", "Check out: The Tidewater", "bed", "sun", booked=True,
