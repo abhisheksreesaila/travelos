@@ -50,16 +50,26 @@ class Offer:
     rating: str = ""
     area_photo: str = ""  # a neighbourhood photo (assets/photos), never a picture of the property
     airport: str = ""  # flights only: where it lands
+    # Flights only, minutes after midnight: out on the first day, back on the last day.
+    depart_min: int = 0
+    arrive_min: int = 0
+    back_depart_min: int = 0
+    back_arrive_min: int = 0
 
 
 SAMPLE_TRIP = TripSearch("SFO", "San Francisco", "Los Angeles", ("LAX", "BUR"), date(2026, 10, 16), date(2026, 10, 20), 2, (4, 7))
 
 _OFFERS = [
-    Offer("f1", "flight", "Skylark Air 214", "8:05 → 9:32", "Nonstop to LAX · 1h 27m · back Tue 2:10 PM", 123_600, ("Best nonstop",), airport="LAX"),
-    Offer("f2", "flight", "Pacific Hop 88", "6:40 → 8:02", "Nonstop to LAX · 1h 22m · very early start", 110_400, airport="LAX"),
-    Offer("f3", "flight", "Golden Gate Air 530", "11:15 → 12:44", "Nonstop to LAX · 1h 29m · extra legroom", 139_200, airport="LAX"),
-    Offer("f4", "flight", "Skylark Air 902", "9:20 → 12:05", "1 stop in SJC, lands LAX · 2h 45m", 96_800, ("Cheapest",), airport="LAX"),
-    Offer("f5", "flight", "Pacific Hop 312", "10:10 → 11:30", "Nonstop to Burbank (BUR) · 1h 20m · tiny, easy airport", 118_000, airport="BUR"),
+    Offer("f1", "flight", "Skylark Air 214", "8:05 → 9:32", "Nonstop to LAX · 1h 27m · back Tue 2:10 PM", 123_600, ("Best nonstop",), airport="LAX",
+          depart_min=485, arrive_min=572, back_depart_min=850, back_arrive_min=937),
+    Offer("f2", "flight", "Pacific Hop 88", "6:40 → 8:02", "Nonstop to LAX · 1h 22m · very early start", 110_400, airport="LAX",
+          depart_min=400, arrive_min=482, back_depart_min=750, back_arrive_min=832),
+    Offer("f3", "flight", "Golden Gate Air 530", "11:15 → 12:44", "Nonstop to LAX · 1h 29m · extra legroom", 139_200, airport="LAX",
+          depart_min=675, arrive_min=764, back_depart_min=960, back_arrive_min=1049),
+    Offer("f4", "flight", "Skylark Air 902", "9:20 → 12:05", "1 stop in SJC, lands LAX · 2h 45m", 96_800, ("Cheapest",), airport="LAX",
+          depart_min=560, arrive_min=725, back_depart_min=785, back_arrive_min=950),
+    Offer("f5", "flight", "Pacific Hop 312", "10:10 → 11:30", "Nonstop to Burbank (BUR) · 1h 20m · tiny, easy airport", 118_000, airport="BUR",
+          depart_min=610, arrive_min=690, back_depart_min=920, back_arrive_min=1000),
     Offer("h1", "stay", "The Tidewater", "Santa Monica", "2 rooms · 3 min walk to the beach", 154_000,
           tags=("Kid friendly", "Pool"), rating="4.8 · 1.2k reviews", area_photo="santa-monica-beach-pier.jpg"),
     Offer("h2", "stay", "Casa Palmera", "Venice", "Family suite · 8 min walk to the beach", 118_800,
