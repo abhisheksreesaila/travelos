@@ -13,6 +13,7 @@ Status: approved (2026-09-30)
 2. **Stay detail**:
    - a photo gallery (CC0/public-domain sample photos, credited, labelled "sample photo")
    - an area note, rating and highlights
+   - **explore the area in 3D** (added 2026-09-30 from the captain's canvas comment): a tab beside the photos that loads only when opened. A tilted aerial map of the hotel's surroundings with pins for the beach, food, parks, transit and sights and their walking times; tapping a pin flies the view there. A one-line "3 min walk to the beach" strip shows even when it's closed.
    - **room types**, e.g. City-view King, Ocean-view King, Family suite, each with its own price, occupancy, bed setup and view
    - **add-ons** toggled on and off: breakfast, late checkout, parking
    - the cancellation policy
@@ -38,6 +39,8 @@ Status: approved (2026-09-30)
 - CC0 sample photos. Pro: looks like a real booking site. Con: they're generic rooms, so they're always labelled "sample photo" and never presented as the real hotel.
 - Room plus add-ons. Pro: fun, real choices and an honest itemized total. Con: a more complex ledger and pick URL.
 - Split view only when expanded. Pro: the tiled "everything side by side" workspace stays the default. Con: the details are one click away.
+
+- Location explorer. v1 is an illustrated map (labelled "not to scale") on fake points of interest. Pro: no API key, no cost, light and fast. Con: it isn't the real place. The real Google Maps 3D view is a later ticket and needs a Maps API key with billing.
 
 ## Open questions
 - None blocking. The photo sources are chosen during design.

@@ -128,6 +128,7 @@ Design: https://claude.ai/artifact/N9nH46TYpma8kyxU6Bad8o (sources docs/design/c
 
 ## F-026 Stay detail: sample photos, room types and add-ons [todo]
 Design: see F-025 · Needs: F-025
+- [ ] "Explore the area in 3D" tab loads only when opened: tilted illustrated map, pins with walking times, tapping a pin flies to it; a nearby-walks strip shows when closed
 - [ ] each hotel has a credited CC0 sample-photo gallery (always labelled "sample photo"), highlights and a cancellation policy
 - [ ] room types (e.g. City-view King, Ocean-view King, Family suite) with price, occupancy, beds and view; pick a room and a count (Ocean-view King ×2 for 4 people)
 - [ ] add-ons toggle on and off: breakfast, late checkout, parking
