@@ -4,6 +4,8 @@ Everything is browsable signed out; save, pay, invite and fork land here, then c
 Choosing a traveler is a POST that stores them in the session (see gitaway.session).
 """
 
+from urllib.parse import quote
+
 from fasthtml.common import A, Button, Div, Form, H2, Input, Link, P, Script, Span
 from starlette.responses import RedirectResponse, Response
 
@@ -54,6 +56,8 @@ def register(app):
     def signin_page(session, next: str = "/", intent: str = "save"):
         next_path, intent = ses.safe_next(next), _intent(intent)
         if ses.current_traveler(session):
+            if intent == "fork":
+                ses.add_fork(session, next_path)
             return RedirectResponse(next_path, status_code=303)
         return page("Sign in", Div(dialog(next_path, intent), cls="si-backdrop"), head=HEAD)
 
@@ -64,6 +68,15 @@ def register(app):
         next_path = ses.safe_next(next)
         if _intent(intent) == "fork":
             ses.add_fork(session, next_path)
+        return RedirectResponse(next_path, status_code=303)
+
+    @app.post("/fork")
+    def fork(session, next: str = "/"):
+        """Fork the trip at `next` (/trips/<slug>) for the signed-in traveler, then go back. Signed out: sign in first."""
+        next_path = ses.safe_next(next)
+        if not ses.current_traveler(session):
+            return RedirectResponse(f"/signin?next={quote(next_path, safe='/')}&intent=fork", status_code=303)
+        ses.add_fork(session, next_path)
         return RedirectResponse(next_path, status_code=303)
 
     @app.post("/signout")

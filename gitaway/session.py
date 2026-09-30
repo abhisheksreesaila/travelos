@@ -10,7 +10,7 @@ request; layout.site_header reads it with `request_traveler()`. Outside a reques
 import re
 from contextvars import ContextVar
 from dataclasses import dataclass
-from urllib.parse import unquote, urlsplit
+from urllib.parse import quote, unquote, urlsplit
 
 
 @dataclass(frozen=True)
@@ -88,6 +88,7 @@ def add_fork(session, next_path):
 
 
 _request_traveler = ContextVar("gitaway_traveler", default=None)
+_request_path = ContextVar("gitaway_path", default="/")
 
 
 async def bind(req, session):
@@ -96,7 +97,16 @@ async def bind(req, session):
     Async on purpose: a sync beforeware runs in a threadpool copy of the context, so the ContextVar set would be lost.
     """
     _request_traveler.set(current_traveler(session))
+    _request_path.set(req.url.path + (f"?{req.url.query}" if req.url.query else ""))
 
 
 def request_traveler():
     return _request_traveler.get()
+
+
+def signin_href(path=None):
+    """The sign-in URL that comes back to `path` (default: the current request's page)."""
+    path = _request_path.get() if path is None else path
+    if not path or path == "/" or path.startswith("/signin"):
+        return "/signin"
+    return f"/signin?next={quote(path, safe='')}"

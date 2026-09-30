@@ -46,7 +46,7 @@ def account(traveler=None):
     """Sign in link, or the traveler's avatar plus Sign out. Defaults to the request's traveler (see gitaway.session)."""
     traveler = traveler or session.request_traveler()
     if not traveler:
-        return A("Sign in", href="/signin", cls="btn btn-sm")
+        return A("Sign in", href=session.signin_href(), cls="btn btn-sm")
     return Div(
         avatar(traveler),
         Form(Button("Sign out", type="submit", cls="ga-signout"), action="/signout", method="post"),
