@@ -137,6 +137,7 @@ def _sun_tacos() -> Itinerary:
                  meta="Home by 3:37 PM, with time for a proper nap."),
         ], collapsed=True),
     ]
+    forks = 312
     return Itinerary(
         slug="sun-tacos-and-tide-pools",
         title="Sun, tacos & tide pools",
@@ -149,13 +150,13 @@ def _sun_tacos() -> Itinerary:
         tags=[Tag("Kid friendly", "sun", "kid", -3), Tag("Pet friendly · 3 stops", "mint", "paw", 2),
               Tag("Easy pace", "sky", "clock", -1.5)],
         stats=[("5 days", "Fri Oct 16 – Tue Oct 20"), ("4 people", "2 adults, kids 4 & 7"),
-               ("$3,480", "all-in, as they booked it"), ("312", "families forked it")],
+               ("$3,480", "all-in, as they booked it"), (str(forks), "families forked it")],
         source=Source("Maya & Theo Adventures · YouTube · 18 min", "Our LA family week: what we'd do again",
                       VENICE, "Venice Beach boardwalk in Los Angeles"),
         polaroids=[Polaroid(PIER, "Santa Monica Pier and beach", "the pier at golden hour"),
                    Polaroid(VENICE, "Venice Beach, Los Angeles", "Venice, day two")],
         author="Maya & Theo",
-        forks=312,
+        forks=forks,
     )
 
 
