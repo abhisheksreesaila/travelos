@@ -58,26 +58,27 @@ Needs: F-015 · First to be trimmed to light stubs if time runs short
 - [x] weather, news, map, events and community itineraries for LA on the trip dates
 - [ ] community itinerary pane can fork into the forks list (Fork link in place; the list itself lands with F-017 + F-021)
 
-## F-017 Demo sign-in at save, pay, invite and fork [blocked]
-Blocked: look at "Sign in → pay → celebrate" on the canvas (use its 1-2-3 switch) and say go or what to change.
+## F-017 Demo sign-in at save, pay, invite and fork [todo]
+Design: approved 2026-09-30 (docs/design/canvas/Checkout.dc.html)
 Needs: F-012
 - [ ] everything is browsable signed out; save, pay, invite or fork shows a friendly demo sign-in, then continues the action
 - [ ] after sign-in with intent=fork, the trip lands in the traveler's forks list; `next` only accepts local paths (no open redirect)
 
-## F-018 One-tap pay and celebration [blocked]
-Blocked: same canvas board as F-017: approve the pay sheet and "You're going to LA!" moment.
+## F-018 One-tap pay and celebration [todo]
+Design: approved 2026-09-30 (docs/design/canvas/Checkout.dc.html)
 Needs: F-015, F-017
 - [ ] Apple Pay-style sheet (clearly simulated) for the selected combination
 - [ ] "You're going to LA!" celebration flows into the trip calendar
 
-## F-019 Trip calendar [blocked]
-Blocked: look at "Trip calendar with live friends" on the canvas and say go or what to change.
+## F-019 Trip calendar [todo]
+Design: approved 2026-09-30 (docs/design/canvas/Calendar.dc.html)
 Needs: F-018
 - [ ] Google-Calendar-like view with flight, check-in and check-out blocks pre-filled from the booking
+- [ ] long trips (e.g. 20 days) stay readable: a whole-trip day strip on top, a window of days that fits the screen (5 desktop, 3 tablet, 1 phone) scrolling sideways, and a compact whole-trip view
 - [ ] gaps stay blank; add, move and resize activities in a fun way; notes on any item
 
-## F-020 Invite and simulated live friends [blocked]
-Blocked: same canvas board as F-019: approve the live-friend avatars, pop-in and notes feed.
+## F-020 Invite and simulated live friends [todo]
+Design: approved 2026-09-30 (docs/design/canvas/Calendar.dc.html)
 Needs: F-019
 - [ ] invite a family member or friend; their avatar appears
 - [ ] a scripted friend adds an activity and a note live, with animation
