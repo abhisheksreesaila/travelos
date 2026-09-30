@@ -1,0 +1,123 @@
+/* Booking workspace (/plan). Page-only styles; tokens come from tokens.css, shared parts from base.css. */
+.fill-sun-tint { background: var(--sun-tint); }
+.fill-mint-tint { background: var(--mint-tint); }
+.fill-sky-tint { background: var(--sky-tint); }
+
+.ws { height: 100vh; min-height: 640px; box-sizing: border-box; padding: 0 20px 20px; background: var(--ground); display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
+.ws button { font-family: inherit; }
+
+/* Top bar */
+.ws-bar { height: 72px; flex-shrink: 0; display: flex; align-items: center; gap: 20px; padding: 0 8px; }
+.ws-pill { height: 48px; padding: 0 20px; border-radius: var(--r-pill); background: var(--card); box-shadow: 0 0 0 1px var(--line), 0 3px 0 var(--line); display: flex; align-items: center; gap: 14px; font-weight: 700; font-size: 16px; text-decoration: none; color: var(--ink); white-space: nowrap; }
+.ws-pill > span + span { padding-left: 14px; border-left: 1px solid rgba(30, 26, 46, .15); }
+.ws-pill:hover { color: var(--ink); box-shadow: 0 0 0 1px var(--line), 0 5px 0 var(--line); }
+.ws-bold { font-weight: 800; }
+.ws-pill > .ws-change { color: var(--coral-deep); font-weight: 800; }
+.ws-hint { margin-left: auto; font-size: 15px; font-weight: 700; color: var(--ink-3); }
+.ws-avatar { width: 44px; height: 44px; border-radius: var(--r-pill); background: var(--grape); border: 3px solid #fff; display: grid; place-items: center; font-weight: 800; }
+
+/* Cost ledger */
+.ws-ledger { min-height: 116px; flex-shrink: 0; border-radius: var(--r-lg); background: var(--card); box-shadow: var(--shadow-md); display: flex; align-items: center; gap: 18px; padding: 0 16px 0 24px; }
+.ws-slots { display: flex; flex: 1; gap: 18px; min-width: 0; }
+.ws-slot { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; }
+.ws-tile { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; flex-shrink: 0; }
+.ws-slot-text { display: flex; flex-direction: column; min-width: 0; }
+.ws-slot-label { font-size: 13px; font-weight: 800; letter-spacing: .06em; color: var(--ink-3); }
+.ws-slot-name { font-weight: 800; font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ws-slot-price { font-size: 15px; font-weight: 700; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.ws-op { margin-left: auto; font-family: var(--font-display); font-weight: 800; font-size: 28px; color: rgba(30, 26, 46, .25); }
+.ws-total-box { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; padding: 0 8px; flex-shrink: 0; }
+.ws-total { font-family: var(--font-display); font-weight: 800; font-size: 44px; line-height: 1; font-variant-numeric: tabular-nums; }
+.ws-total-note { font-size: 14px; font-weight: 700; color: var(--ink-2); }
+.ws-chip { min-height: 26px; padding: 3px 10px; line-height: 1.2; border-radius: var(--r-pill); font-size: 13px; font-weight: 800; display: flex; align-items: center; }
+.ws-book { min-height: 64px; padding: 0 28px; font-size: 19px; flex-shrink: 0; }
+.ws-details-toggle { display: none; }
+
+/* Panes */
+.ws-grid { flex: 1; min-height: 0; display: grid; gap: 14px; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr) minmax(0, .95fr) minmax(0, .9fr); transition: grid-template-columns .3s var(--ease-out); }
+.ws-grid[data-focus="stays"] { grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr) minmax(0, .95fr) minmax(0, .9fr); }
+.ws-grid[data-focus="cars"] { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, .9fr); }
+.ws-grid[data-expanded="flights"], .ws-grid[data-expanded="stays"], .ws-grid[data-expanded="cars"] { grid-template-columns: 1fr; }
+.ws-grid[data-expanded="flights"] > :not([data-pane="flights"]),
+.ws-grid[data-expanded="stays"] > :not([data-pane="stays"]),
+.ws-grid[data-expanded="cars"] > :not([data-pane="cars"]) { display: none; }
+.ws-grid[data-expanded] .ws-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); align-content: start; }
+
+.ws-pane { border-radius: 26px; background: var(--card); box-shadow: 0 0 0 1px var(--line), 0 12px 12px -6px rgba(0, 0, 0, .05); padding: 16px; display: flex; flex-direction: column; gap: 10px; min-height: 0; min-width: 0; }
+.ws-pane.is-focused { box-shadow: 0 0 0 3px var(--ink), 0 12px 24px -12px rgba(30, 26, 46, .35); }
+.ws-pane-head { display: flex; align-items: center; gap: 10px; padding: 2px 4px 4px; }
+.ws-key { width: 26px; height: 26px; border-radius: 8px; font: 800 14px var(--font-body); display: grid; place-items: center; }
+.ws-focus { border: 0; background: transparent; padding: 2px 0; cursor: pointer; font-family: var(--font-display); font-weight: 800; font-size: 21px; color: var(--ink); }
+.ws-meta { font-size: 14px; font-weight: 700; color: var(--ink-3); }
+.ws-expand { margin-left: auto; width: 34px; height: 34px; border: 0; border-radius: 10px; background: #FAF7F2; display: grid; place-items: center; cursor: pointer; color: var(--ink); }
+.ws-cards { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; min-height: 0; padding: 8px; margin: -8px; }
+
+/* Offer cards */
+.ws-offer { min-width: 0; width: 100%; text-align: left; border: 0; cursor: pointer; color: var(--ink); padding: 14px 16px; border-radius: var(--r-md); background: #FAF7F2; box-shadow: 0 0 0 1px var(--line); display: flex; flex-direction: column; gap: 6px; font-size: 16px; line-height: 1.3; transition: transform .18s var(--ease-spring), box-shadow .18s; }
+.ws-offer:hover { transform: translateY(-2px); }
+.ws-offer[aria-pressed="true"] { background: #FFF4EF; box-shadow: 0 0 0 3px var(--coral), 0 8px 18px -10px rgba(201, 67, 31, .6); }
+.ws-row { display: flex; align-items: center; gap: 8px; width: 100%; flex-wrap: wrap; }
+.ws-name { font-weight: 800; font-size: 16px; }
+.ws-price { margin-left: auto; font-weight: 800; font-size: 17px; font-variant-numeric: tabular-nums; }
+.ws-times { font-family: var(--font-display); font-weight: 800; font-size: 24px; font-variant-numeric: tabular-nums; }
+.ws-detail { overflow-wrap: anywhere; font-size: 14px; font-weight: 700; color: var(--ink-2); }
+.ws-badge { display: inline-flex; align-items: center; height: 24px; padding: 0 9px; border-radius: var(--r-pill); font-size: 12px; font-weight: 800; align-self: flex-start; }
+.ws-airport { margin-top: 2px; }
+.ws-price-big { font-family: var(--font-display); font-weight: 800; font-size: 22px; font-variant-numeric: tabular-nums; }
+.ws-offer-car { gap: 4px; }
+
+.ws-offer-stay { flex-direction: row; gap: 12px; padding: 10px; align-items: stretch; }
+.ws-photo { margin: 0; width: 104px; flex-shrink: 0; position: relative; border-radius: 14px; overflow: hidden; min-height: 118px; background: var(--sky-tint); }
+.ws-photo img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
+.ws-photo figcaption { position: absolute; left: 6px; right: 6px; bottom: 6px; padding: 2px 6px; border-radius: 8px; background: rgba(30, 26, 46, .78); color: #fff; font-size: 11px; font-weight: 800; line-height: 1.3; }
+.ws-photo-blank { display: grid; place-items: center; color: var(--sky-ink); }
+.ws-stay-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; padding: 4px 4px 4px 0; }
+.ws-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.ws-foot { margin-top: auto; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.ws-rating { font-size: 13px; font-weight: 700; color: var(--ink-3); }
+.ws-tip { margin-top: auto; padding: 14px 16px; border-radius: var(--r-md); background: var(--sun-tint); font-size: 14px; font-weight: 700; line-height: 1.4; }
+
+.ws-context { justify-content: center; align-items: center; text-align: center; background: transparent; box-shadow: inset 0 0 0 2px var(--line); border-radius: 26px; }
+.ws-quiet { max-width: 220px; color: var(--ink-3); font-weight: 700; font-size: 15px; }
+
+/* Tablet: drop the context column so the three lanes keep room */
+@media (max-width: 1100px) {
+  .ws-grid, .ws-grid[data-focus] { grid-template-columns: 1fr 1fr 1fr; }
+  .ws-grid[data-expanded] { grid-template-columns: 1fr; }
+  .ws-context { display: none; }
+  .ws-slot-label, .ws-op { display: none; }
+  .ws-hint { display: none; }
+  .ws-pill { margin-left: auto; }
+}
+
+/* Phone: stacked panes, ledger pinned at the bottom */
+@media (max-width: 720px) {
+  .ws, .ws-grid[data-expanded] { height: auto; min-height: 0; overflow: visible; }
+  .ws { padding: 0 16px calc(var(--ws-ledger-h, 130px) + env(safe-area-inset-bottom, 0px) + 24px); }
+  .ws-bar { height: auto; padding: 12px 0; flex-wrap: wrap; gap: 12px; }
+  .ws-pill { margin-left: 0; height: auto; min-height: 48px; padding: 8px 16px; flex-wrap: wrap; gap: 4px 12px; white-space: normal; }
+  .ws-pill > span + span { padding-left: 0; border-left: 0; }
+  .ws-avatar { margin-left: auto; }
+  .ws-grid, .ws-grid[data-focus], .ws-grid[data-expanded] { display: flex; flex-direction: column; }
+  .ws-grid[data-expanded] > :not([data-pane]) { display: none; }
+  .ws-context { display: flex; min-height: 90px; padding: 20px; }
+  .ws-pane { padding: 14px; }
+  .ws-cards { overflow: visible; }
+  .ws-grid[data-expanded] .ws-cards { display: flex; }
+  .ws-offer:hover { transform: none; }
+  .ws-ledger { order: 9; position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; min-height: 0; border-radius: 24px 24px 0 0; padding: 12px 16px calc(14px + env(safe-area-inset-bottom, 0px)); flex-wrap: wrap; gap: 10px 12px; box-shadow: 0 -8px 24px -8px rgba(30, 26, 46, .25), 0 0 0 1px var(--line); }
+  .ws-slots { display: none; order: 5; flex-basis: 100%; flex-direction: column; gap: 10px; }
+  .ws-ledger.is-open .ws-slots { display: flex; }
+  .ws-slot-label { display: block; }
+  .ws-total-box { order: 1; align-items: flex-start; gap: 6px; padding: 0; flex: 1; min-width: 0; }
+  .ws-total { font-size: 32px; line-height: 1.05; }
+  .ws-total-note { display: none; }
+  .ws-book { order: 2; min-height: 52px; padding: 0 22px; font-size: 17px; }
+  .ws-details-toggle { display: block; order: 3; align-self: center; border: 0; background: transparent; padding: 10px 4px; font-weight: 800; font-size: 15px; color: var(--coral-deep); cursor: pointer; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ws-grid { transition: none; }
+  .ws-offer { transition: none; }
+  .ws-offer:hover { transform: none; }
+}
