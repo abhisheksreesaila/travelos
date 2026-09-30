@@ -118,14 +118,14 @@ Brief: docs/briefs/voice.md (approved 2026-09-30) · Design: docs/design/canvas/
 
 Brief: docs/briefs/offer-details.md (approved 2026-09-30). Same fake-data rules as above.
 
-## F-025 Split view: expand Flights or Stays into list + detail [doing]
+## F-025 Split view: expand Flights or Stays into list + detail [done]
 Design: docs/design/offer-details.md (layout A approved 2026-09-30; canvas https://claude.ai/artifact/N9nH46TYpma8kyxU6Bad8o) · Needs: F-015
-- [ ] expanding the Flights or Stays pane (button, or its key then Enter) morphs it into a list sidebar plus a detail panel; the picked offer (or the first) opens by default
-- [ ] Esc or the collapse button morphs back to the tiled workspace; reduced motion swaps instantly; focus lands sensibly both ways
-- [ ] detail shows what the catalog already knows (name, headline, detail, rating, tags, area photo labelled as the area); Choose makes it the lane's pick and the ledger updates
-- [ ] phone: list and detail are two screens with a back button; no sideways scroll at 1440/1280/1000/800/390/320
+- [x] expanding the Flights or Stays pane (button, or its key then Enter) morphs it into a list sidebar plus a detail panel; the picked offer (or the first) opens by default
+- [x] Esc or the collapse button morphs back to the tiled workspace; reduced motion swaps instantly; focus lands sensibly both ways
+- [x] detail shows what the catalog already knows (name, headline, detail, rating, tags, area photo labelled as the area); Choose makes it the lane's pick and the ledger updates
+- [x] phone: list and detail are two screens with a back button; no sideways scroll at 1440/1280/1000/800/390/320
 
-## F-026 Stay detail: sample photos, room types and add-ons [todo]
+## F-026 Stay detail: sample photos, room types and add-ons [doing]
 Design: docs/design/offer-details.md · Needs: F-025
 - [ ] "Explore the area in 3D" tab loads only when opened: tilted illustrated map, pins with walking times, tapping a pin flies to it; a nearby-walks strip shows when closed
 - [ ] each hotel has a credited CC0 sample-photo gallery (always labelled "sample photo"), highlights and a cancellation policy
@@ -143,3 +143,7 @@ Design: docs/design/offer-details.md · Needs: F-026 (shares the pick URL and it
 ## F-028 Phone: expanding a non-offer pane hides the context panes [todo]
 Needs: F-025 · Found during F-025 (predates it)
 - [ ] on a phone, expanding Cars or a context pane shows only that pane; the other context panes no longer show underneath (a same-specificity clash between the base and phone rules)
+
+## F-029 Browser smoke test for workspace JS [todo]
+Needs: F-025 · Suggested in F-025 review
+- [ ] a small headless-browser test covers tiled pick → expand, Choose updating the ledger, Esc, and phone back → reload
