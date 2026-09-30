@@ -105,7 +105,7 @@ def test_bad_activities_are_refused_with_a_reason(kw, words):
 
 
 def test_an_activity_may_not_overlap_a_booked_item_and_the_error_names_it():
-    s = booked_session()  # day 0: flight 8:05-9:32, check in 3 PM-4 PM
+    s = booked_session()  # day 0: flight 8:05-9:32, check in 3-4:30 PM
     with pytest.raises(cal.CalendarError) as e:
         cal.add_activity(s, day=0, start="09:00", end="10:00", title="Clash", kind="fun")
     assert "overlaps Skylark Air 214 · SFO → LAX" in str(e.value) and "8:05 AM" in str(e.value)
@@ -115,7 +115,7 @@ def test_an_activity_may_not_overlap_a_booked_item_and_the_error_names_it():
         cal.add_activity(s, day=4, start="13:00", end="14:30", title="Clash", kind="fun")  # return flight 2:10 PM
     touching = cal.add_activity(s, day=0, start="09:45", end="10:45", title="Just after", kind="fun")
     assert touching.start == 9 * 60 + 45
-    cal.add_activity(s, day=0, start="16:00", end="17:00", title="After check in", kind="fun")
+    cal.add_activity(s, day=0, start="16:30", end="17:30", title="After check in", kind="fun")
 
 
 def test_activities_may_overlap_each_other():

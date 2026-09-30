@@ -20,10 +20,11 @@
   const minPerPx = 60 / HOUR;
 
   // ---- soft navigation: fetch the page, swap #cal-app, keep scroll and focus --------------------------------------
-  let inflight = false;
-  async function swap(url, options) {
-    if (inflight) return;
-    inflight = true;
+  // Requests run one after another, so a click that arrives mid-flight is queued, never dropped.
+  let queue = Promise.resolve();
+  let opener = "";  // the block whose edit form is open, so closing the form can hand focus back to it
+  const swap = (url, options, closing) => { queue = queue.then(() => doSwap(url, options, closing)).catch(() => {}); return queue; };
+  async function doSwap(url, options, closing) {
     const cur = app();
     const scroller = $("#cal-scroll", cur), feed = $("#cal-feed", cur);
     const keep = {
@@ -35,16 +36,17 @@
       const res = await fetch(url, { credentials: "same-origin", ...options });
       const doc = new DOMParser().parseFromString(await res.text(), "text/html");
       const next = doc.getElementById("cal-app");
-      if (!next) { location.href = res.url || url; return; }
+      if (!next) { location.href = cur.dataset.base || "/calendar"; return; }
       const fresh = document.importNode(next, true);
       cur.replaceWith(fresh);
       const path = new URL(res.url, location.href);
       if (res.ok && path.pathname === "/calendar") history.replaceState(null, "", path.pathname + path.search);
+      const p = path.pathname === "/calendar" ? path.searchParams : new URLSearchParams();
+      keep.focus = p.get("undo") ? "undo" : p.get("new") ? p.get("new") : closing ? opener : "";
       setup(fresh, keep);
     } catch (err) {
-      location.href = url;
-    } finally {
-      inflight = false;
+      // A network error: never navigate to the POST url. Reload the calendar page we were on instead.
+      location.href = cur.dataset.base || "/calendar";
     }
   }
   const post = (url, data) => swap(url, { method: "POST", body: new URLSearchParams(data) });
@@ -55,7 +57,9 @@
     if (suppressClick) { e.preventDefault(); return; }
     if (a.id === "cal-ghost" && a.getAttribute("href") === "#") { e.preventDefault(); return; }
     e.preventDefault();
-    swap(a.href);
+    const block = a.closest(".cal-act");
+    if (!a.hasAttribute("data-close")) opener = block ? block.dataset.id : "";
+    swap(a.href, undefined, a.hasAttribute("data-close"));
   });
   document.addEventListener("submit", (e) => {
     const f = e.target.closest("form[data-soft]");
@@ -81,9 +85,12 @@
       $$(".cal-bar, .cal-layout", root).forEach((el) => el.setAttribute("inert", ""));
       const first = $("[data-autofocus]", modal) || $("button, a[href], input", modal);
       if (first) first.focus();
-    } else if (keep && keep.id) {
-      const back = $(`[data-id="${CSS.escape(keep.id)}"]`, root);
-      if (back) back.focus({ preventScroll: true });
+    } else if (keep && keep.focus === "undo") {
+      const undo = $(".cal-undo", root);
+      if (undo) undo.focus();
+    } else if (keep && (keep.focus || keep.id)) {
+      const back = $(`[data-id="${CSS.escape(keep.focus || keep.id)}"]`, root);
+      if (back) back.focus({ preventScroll: !keep.focus });
     }
     const toggle = $("#cal-notes-toggle", root);
     if (toggle) toggle.setAttribute("aria-expanded", $("#cal-notes", root).classList.contains("open") ? "true" : "false");
@@ -93,10 +100,12 @@
   const cols = (scroller) => $$(".cal-day", scroller);
   const winSize = (scroller) => Math.max(1, parseInt(getComputedStyle(scroller).getPropertyValue("--n") || getComputedStyle(app()).getPropertyValue("--n"), 10) || 1);
   const gutter = (scroller) => $(".cal-gutter", scroller).offsetWidth;
-  function jump(scroller, day, smooth = true) {
+  function jump(scroller, day, smooth = false) {
     const col = cols(scroller)[Math.max(0, Math.min(day, cols(scroller).length - 1))];
     if (!col) return;
+    // Instant: a smooth scroll fights scroll-snap and an in-flight re-render. The snap itself eases the landing.
     scroller.scrollTo({ left: col.offsetLeft - gutter(scroller), behavior: smooth && !reduced() ? "smooth" : "auto" });
+    updateWindow(scroller);
   }
   function firstVisible(scroller) {
     const left = scroller.scrollLeft + gutter(scroller);
@@ -108,7 +117,11 @@
     const root = app(), list = cols(scroller), n = winSize(scroller), first = firstVisible(scroller);
     const last = Math.min(first + n, list.length);
     const label = $("#cal-range", root);
-    if (label) label.textContent = list.length > 1 ? `Days ${first + 1}–${last} of ${list.length}` : "1 day";
+    if (label) label.textContent = n === 1 ? `Day ${first + 1} of ${list.length}` : `Days ${first + 1}–${last} of ${list.length}`;
+    const strip = $(".cal-strip", root), lead = $$(".cal-chip", root)[first];
+    if (strip && lead && (lead.offsetLeft < strip.scrollLeft || lead.offsetLeft + lead.offsetWidth > strip.scrollLeft + strip.clientWidth)) {
+      strip.scrollLeft = Math.max(0, lead.offsetLeft - 8);
+    }
     $$(".cal-chip", root).forEach((chip, i) => chip.classList.toggle("in-view", i >= first && i < last));
     const prev = $('[data-dir="-1"]', root), next = $('[data-dir="1"]', root);
     if (prev) prev.disabled = first <= 0;
@@ -272,7 +285,12 @@
     } else return;
     e.preventDefault();
     const body = $(`.cal-body[data-day="${day}"]`);
-    if (body && b.parentElement !== body) body.appendChild(b);
+    if (body && b.parentElement !== body) { body.appendChild(b); b.focus({ preventScroll: true }); }
+    const sc = $("#cal-scroll");
+    if (sc && body) {
+      const first = firstVisible(sc), n = winSize(sc);
+      if (day < first) jump(sc, day); else if (day >= first + n) jump(sc, day - n + 1);
+    }
     paint(b, day, start, end);
     b.classList.toggle("is-clash", clashes(day, start, end));
     b.setAttribute("aria-label", `${$(".cal-title", b).textContent}, ${clock(start)} to ${clock(end)}, moving`);
