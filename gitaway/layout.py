@@ -13,6 +13,10 @@ HEAD = (
     Link(rel="preconnect", href="https://fonts.googleapis.com"),
     Link(rel="preconnect", href="https://fonts.gstatic.com", crossorigin=""),
     Link(rel="stylesheet", href=FONTS),
+)
+
+# Loaded by page() ahead of any page-specific head items, so page CSS always wins over base.css.
+STYLES = (
     Link(rel="stylesheet", href="/assets/css/tokens.css"),
     Link(rel="stylesheet", href="/assets/css/base.css"),
 )
@@ -51,6 +55,7 @@ def page(title: str, *content, current: str = "", theme: str = "sunset", head=()
     """A full GitAway page. `current` marks the active nav link; `theme` is sunset or pacific."""
     return (
         Title(f"GitAway · {title}" if title else "GitAway"),
+        *STYLES,
         *head,
         Div(site_header(current), Main(*content, id="main"), site_footer(), data_theme=theme, cls="ga-page"),
     )

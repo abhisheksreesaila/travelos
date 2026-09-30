@@ -70,6 +70,7 @@ class Itinerary:
     days: list
     tags: list = field(default_factory=list)
     stats: list = field(default_factory=list)   # (value, label) pairs
+    forks: int = 0                               # how many families forked this trip
     source: Source | None = None
     polaroids: list = field(default_factory=list)
     weather: tuple = ("74°F", "mostly sunny")
@@ -154,6 +155,7 @@ def _sun_tacos() -> Itinerary:
         polaroids=[Polaroid(PIER, "Santa Monica Pier and beach", "the pier at golden hour"),
                    Polaroid(VENICE, "Venice Beach, Los Angeles", "Venice, day two")],
         author="Maya & Theo",
+        forks=312,
     )
 
 

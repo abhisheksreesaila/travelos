@@ -3,7 +3,10 @@
 /* Motion */
 @keyframes ga-bob { 0%, 100% { transform: translateY(0) rotate(var(--r, 0deg)); } 50% { transform: translateY(-6px) rotate(var(--r, 0deg)); } }
 .ga-bob { animation: ga-bob 4.5s ease-in-out infinite; }
-.door, .trip-card, .feature { animation: ga-pop .5s var(--ease-spring) both; animation-delay: calc(var(--i, 0) * 80ms); }
+/* Cards keep their tilt through the pop; "backwards" lets hover transforms apply once it ends. */
+@keyframes la-pop-tilt { 0% { transform: scale(.6) rotate(var(--r, 0deg)); opacity: 0 } 70% { transform: scale(1.06) rotate(var(--r, 0deg)); opacity: 1 } 100% { transform: scale(1) rotate(var(--r, 0deg)); } }
+.door, .feature { animation: ga-pop .4s var(--ease-spring) backwards; animation-delay: calc(var(--i, 0) * 80ms); }
+.trip-card { animation: la-pop-tilt .4s var(--ease-spring) backwards; animation-delay: calc(var(--i, 0) * 80ms); }
 .door-one { --i: 1; } .door-two { --i: 2; }
 .trip-card.tc-a { --i: 3; } .trip-card.tc-b { --i: 4; }
 .feature:nth-child(1) { --i: 1; } .feature:nth-child(2) { --i: 2; } .feature:nth-child(3) { --i: 3; } .feature:nth-child(4) { --i: 4; }
@@ -39,18 +42,19 @@
 .btn-go { grid-column: 1 / -1; min-height: 60px; font-size: 19px; }
 .btn-white { align-self: flex-start; min-height: 60px; font-size: 19px; --btn-ledge: rgba(30,26,46,.25); }
 
-/* Door two: tilted trip cards */
-.cards { position: relative; flex: 1; min-height: 260px; }
-.trip-card { position: absolute; width: 250px; padding: 10px 10px 16px; border-radius: 22px; background: var(--card); box-shadow: 0 16px 28px -14px rgba(30,26,46,.5); display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: var(--ink); transform: rotate(var(--r)); transition: transform .2s var(--ease-out); }
+/* Door two: tilted trip cards. A grid, so nothing can sit on top of anything else. */
+.cards { flex: 1; display: grid; grid-template-columns: repeat(2, minmax(0, 250px)); justify-content: space-between; align-items: start; padding: 8px 6px; }
+.trip-card { padding: 10px 10px 16px; border-radius: 22px; background: var(--card); box-shadow: 0 16px 28px -14px rgba(30,26,46,.5); display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: var(--ink); transform: rotate(var(--r)); transition: transform .2s var(--ease-out); }
 .trip-card:hover { color: var(--ink); transform: rotate(var(--r)) translateY(-4px); }
-.tc-a { --r: -7deg; left: 10px; top: 40px; }
-.tc-b { --r: 4deg; left: 240px; top: 10px; }
+.tc-a { --r: -5deg; margin-top: 30px; }
+.tc-b { --r: 4deg; }
 .trip-card img { width: 100%; height: 130px; object-fit: cover; border-radius: 14px; }
 .tc-title { font-weight: 800; font-size: 17px; padding: 0 6px; line-height: 1.25; }
 .tc-tags { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 6px; }
 .tc-tag { height: 24px; padding: 0 9px; border-radius: var(--r-pill); font-size: 12px; font-weight: 800; display: flex; align-items: center; white-space: nowrap; }
-.tc-plain { background: #F2EEE6; }
-.fork-sticker { position: absolute; right: 0; top: 150px; width: 120px; height: 120px; border-radius: 50%; background: var(--sun); border: 4px solid #FFFFFF; transform: rotate(var(--r)); display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; box-shadow: 0 10px 24px -10px rgba(30,26,46,.45); }
+.tc-plain { background: var(--skeleton); }
+/* Sits in the top-right corner beside the headline, clear of the cards. */
+.fork-sticker { position: absolute; right: 36px; top: 32px; width: 120px; height: 120px; border-radius: 50%; background: var(--sun); border: 4px solid #FFFFFF; transform: rotate(var(--r)); display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; text-align: center; line-height: 1.15; box-shadow: 0 10px 24px -10px rgba(30,26,46,.45); }
 .sticker-n { font-family: var(--font-display); font-size: 30px; line-height: 1; }
 
 /* Why */
@@ -70,7 +74,7 @@
 .teaser > div:first-child { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 .teaser p { font-size: 20px; line-height: 1.5; }
 .teaser-cal { background: var(--mint-tint); grid-template-columns: minmax(0, 1fr) minmax(0, 620px); }
-.teaser-cal p { color: #3E4A45; }
+.teaser-cal p { color: var(--ink-2); }
 .cal { padding: 20px; border-radius: var(--r-lg); background: var(--card); box-shadow: 0 12px 24px -12px rgba(30,26,46,.35); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .cal-col { display: flex; flex-direction: column; gap: 8px; }
 .cal-day { font-size: 13px; font-weight: 800; color: var(--ink-3); }
@@ -82,9 +86,10 @@
 
 .teaser-creators { margin-top: 24px; background: var(--ink); color: #FFFFFF; grid-template-columns: minmax(0, 1fr) minmax(0, 560px); }
 .teaser-creators .eyebrow { color: var(--sun); }
-.teaser-creators p { color: #D8D3E6; }
+.teaser-creators p { color: rgba(255, 255, 255, .82); }
 .teaser-creators a:hover { color: var(--ink); }
-.btn-sun { align-self: flex-start; margin-top: 6px; min-height: 58px; --btn-bg: var(--sun); --btn-ledge: #B98A10; }
+.btn-sun { align-self: flex-start; margin-top: 6px; min-height: 58px; --btn-bg: var(--sun); --btn-ledge: var(--sun-ink); }
+.teaser-creators .btn-sun:focus-visible { outline-color: #FFFFFF; }
 .paste-row { padding: 12px; border-radius: 26px; background: var(--card); color: var(--ink); display: flex; align-items: center; gap: 12px; }
 .paste { flex: 1; min-width: 0; height: 52px; padding: 0 18px; border-radius: 18px; background: #FAF7F2; display: flex; align-items: center; font-weight: 700; color: var(--ink-2); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .paste-go { height: 52px; padding: 0 20px; border-radius: var(--r-pill); background: var(--coral); box-shadow: 0 4px 0 var(--coral-deep); display: flex; align-items: center; font-weight: 800; white-space: nowrap; }
@@ -95,6 +100,7 @@
   .teaser-cal, .teaser-creators { grid-template-columns: minmax(0, 1fr); }
   .door { padding: 32px; }
   .door h2 { font-size: 42px; }
+  .fork-sticker { position: static; align-self: flex-start; }
 }
 
 /* Phone */
@@ -107,12 +113,14 @@
   .door h2 { font-size: 38px; }
   .search { grid-template-columns: minmax(0, 1fr); }
   .btn-go { font-size: 17px; padding: 0 16px; }
-  .cards { min-height: 300px; }
-  .trip-card { width: min(210px, 54%); }
-  .tc-a { left: 0; top: 60px; }
-  .tc-b { left: auto; right: 0; top: 0; }
-  .trip-card img { height: 100px; }
-  .fork-sticker { width: 96px; height: 96px; top: auto; bottom: 0; right: 4px; }
+  .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; padding: 4px 0; }
+  .trip-card { padding: 8px 8px 12px; }
+  .tc-a { --r: -3deg; margin-top: 18px; }
+  .tc-b { --r: 3deg; }
+  .trip-card img { height: 88px; }
+  .tc-title { font-size: 15px; padding: 0 4px; }
+  .tc-tags { padding: 0 4px; }
+  .fork-sticker { width: 96px; height: 96px; }
   .sticker-n { font-size: 24px; }
   .why { padding-top: 64px; }
   .why h2 { font-size: 38px; }

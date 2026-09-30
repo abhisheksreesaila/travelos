@@ -1,7 +1,6 @@
 """Landing page (F-013): "Two doors". One door books a trip, the other forks a real one."""
 
-from fasthtml.common import (A, Button, Div, Form, H1, H2, H3, Img, Input, Label, Link, NotStr, P,
-                             Section, Span)
+from fasthtml.common import A, Button, Div, Form, H1, H2, H3, Img, Input, Label, Link, NotStr, P, Section, Span
 
 from gitaway import itineraries
 from gitaway.catalog import SAMPLE_TRIP
@@ -10,24 +9,12 @@ from gitaway.layout import page
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/landing.css"),)
 
-CITIES = {"SFO": "San Francisco"}
-
-
-def _svg(path):
-    return NotStr(
-        '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '
-        f'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{path}"/></svg>'
-    )
-
-
-PANES = _svg("M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z")
-LEDGER = _svg("M4 7h16M4 12h10M4 17h7M18 14v6M15 17h6")
 
 FEATURES = [
     ("Everything side by side", "Flights, stays and cars next to weather, news, events and a map. No more twelve tabs.",
-     PANES, "sun", -4),
+     icon("panes", 30, 2), "sun", -4),
     ("One honest total", "A running cost ledger shows what the whole trip costs, and how far you are from the cheapest combo.",
-     LEDGER, "coral", 3),
+     icon("ledger", 30, 2), "coral", 3),
     ("Plan it together", "Invite family and friends to a shared calendar with notes, so everyone knows the plan.",
      icon("users", 30, 2), "mint", -2),
     ("Fork, don’t start over", "Share your trip as a scrapbook page. Others fork it and drop the best days into their own trip.",
@@ -43,9 +30,8 @@ CALENDAR = [
 
 
 def _search_values(trip=SAMPLE_TRIP):
-    origin = f"{CITIES.get(trip.origin, trip.origin)} ({trip.origin})" if trip.origin in CITIES else trip.origin
     return [
-        ("from", "From", origin),
+        ("from", "From", f"{trip.origin_name} ({trip.origin})"),
         ("to", "To", f"{trip.destination_name} ({trip.airports[0]})"),
         ("when", "When", f"{trip.depart:%a %b} {trip.depart.day} – {trip.return_:%a %b} {trip.return_.day}"),
         ("who", "Who", trip.summary),
@@ -86,7 +72,7 @@ def _door_one():
 
 def _door_two():
     sample = itineraries.get("sun-tacos-and-tide-pools")
-    forks = sample.stats[3][0]
+    forks = sample.forks
     return Div(
         Span("DOOR TWO", cls="eyebrow"),
         H2("No plans yet?", NotStr("<br>"), "Fork a real one."),
@@ -96,9 +82,9 @@ def _door_two():
             # Fictional: there is no page for this trip yet, so it opens the discover list.
             _trip_card("/discover", itineraries.PIER, "Santa Monica Pier", "LA for two, slow mornings",
                        "Couple friendly", "fill-bubble", 4, "tc-b"),
-            Span(Span(forks, cls="sticker-n"), "families forked", cls="fork-sticker ga-bob", style="--r:8deg"),
             cls="cards",
         ),
+        Span(Span(forks, cls="sticker-n"), "families forked", cls="fork-sticker ga-bob", style="--r:8deg"),
         A("Browse trips people loved", href="/discover", cls="btn btn-white"),
         cls="door door-two",
     )

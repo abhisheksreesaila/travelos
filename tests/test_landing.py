@@ -32,8 +32,8 @@ def test_search_is_a_get_form_to_plan_with_labelled_prefilled_inputs(client):
     assert 'method="get"' in form and 'action="/plan"' in form
     vals = _inputs(h)
     assert set(vals) == {"from", "to", "when", "who"}
-    assert SAMPLE_TRIP.origin in vals["from"]
-    assert SAMPLE_TRIP.destination_name in vals["to"]
+    assert vals["from"] == f"{SAMPLE_TRIP.origin_name} ({SAMPLE_TRIP.origin})"
+    assert vals["to"] == "Los Angeles (LAX)"
     assert "Oct 16" in vals["when"] and "Oct 20" in vals["when"]
     assert vals["who"] == SAMPLE_TRIP.summary
     for label in ["From", "To", "When", "Who"]:
@@ -68,3 +68,32 @@ def test_page_loads_its_own_stylesheet_and_new_tokens(client):
     assert "/assets/css/landing.css" in _get(client)
     tokens = client.get("/assets/css/tokens.css").text
     assert "--block-sunset: #FF8A63" in tokens and "--block-pacific: #6DB8FF" in tokens
+
+
+def _order(h, *names):
+    idx = [h.index(f"/assets/css/{n}") for n in names]
+    assert idx == sorted(idx), idx
+
+
+def test_stylesheets_load_tokens_then_base_then_page(client):
+    _order(_get(client), "tokens.css", "base.css", "landing.css")
+    _order(client.get("/trips/sun-tacos-and-tide-pools").text, "tokens.css", "base.css", "itinerary.css")
+
+
+def test_fictional_card_links_to_discover(client):
+    h = _get(client)
+    m = re.search(r'<a[^>]*href="([^"]*)"[^>]*class="trip-card[^"]*"[^>]*>(?:(?!</a>).)*slow mornings', h, re.S)
+    assert m and m.group(1) == "/discover"
+
+
+def test_fork_count_comes_from_the_data(client):
+    from dataclasses import replace
+    from gitaway import itineraries
+    slug = "sun-tacos-and-tide-pools"
+    original = itineraries.ITINERARIES[slug]
+    try:
+        itineraries.ITINERARIES[slug] = replace(original, forks=777)
+        assert re.search(r'sticker-n">777<', _get(client))
+    finally:
+        itineraries.ITINERARIES[slug] = original
+    assert re.search(rf'sticker-n">{original.forks}<', _get(client))
