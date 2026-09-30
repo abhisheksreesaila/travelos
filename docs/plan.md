@@ -64,13 +64,13 @@ Needs: F-012
 - [x] everything is browsable signed out; the demo sign-in accepts save, pay, invite or fork and continues to a safe local `next` (pay and fork are wired here; invite is wired in F-020, save in F-021)
 - [x] after sign-in with intent=fork, the trip lands in the traveler's forks list; `next` only accepts local paths (no open redirect)
 
-## F-018 One-tap pay and celebration [todo]
+## F-018 One-tap pay and celebration [done]
 Design: approved 2026-09-30 (docs/design/canvas/Checkout.dc.html)
 Needs: F-015, F-017
-- [ ] Apple Pay-style sheet (clearly simulated) for the selected combination; when signed in, Book skips sign-in and opens the sheet directly
-- [ ] "You're going to LA!" celebration flows into the trip calendar
+- [x] Apple Pay-style sheet (clearly simulated) for the selected combination; when signed in, Book skips sign-in and opens the sheet directly
+- [x] "You're going to LA!" celebration flows into the trip calendar
 
-## F-019 Trip calendar [todo]
+## F-019 Trip calendar [doing]
 Design: docs/design/calendar.md (approved 2026-09-30; artboard docs/design/canvas/Calendar.dc.html)
 Needs: F-018
 - [ ] Google-Calendar-like view with flight, check-in and check-out blocks pre-filled from the booking
