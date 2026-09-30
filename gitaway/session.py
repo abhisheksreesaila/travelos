@@ -1,6 +1,6 @@
 """Demo sign-in state, kept in the FastHTML (signed cookie) session. Public helpers for every screen.
 
-Session shape: {"traveler": "<id>", "forks": {"<id>": ["<trip slug>", ...]}}.
+Session shape: {"traveler": "<id>", "forks": {"<id>": ["<trip slug>", ...]}, "friends": {"<id>": ["<name>", ...]}}.
 Pure functions over a session dict, so tests and later tickets (F-018 pay, F-021 forks list) can use them directly.
 
 For the header, `bind` is a beforeware (see main.py) that records the current traveler in a ContextVar for the
@@ -8,6 +8,7 @@ request; layout.site_header reads it with `request_traveler()`. Outside a reques
 """
 
 import hashlib
+import json
 import re
 from contextvars import ContextVar
 from dataclasses import dataclass
@@ -28,6 +29,11 @@ TRAVELERS = {
     "ari": Traveler("ari", "Ari Rivera", "AR", "Demo traveler · family of four", "grape"),
     "sam": Traveler("sam", "Sam Kim", "SK", "Demo traveler · couple trip", "mint"),
 }
+BUDGET = 2600  # bytes of session JSON; base64 adds a third plus a signature, keeping the whole cookie near 3.4 KB (limit 3.6 KB, browsers drop >4 KB)
+MAX_FRIENDS = 6
+MAX_FRIEND_NAME = 20
+DEMO_FRIENDS = ("Mom", "Sam")
+_FRIEND_COLORS = ("sun", "sky", "grape", "mint", "bubble")
 INTENTS = ("save", "pay", "invite", "fork")
 
 _BAD_CHARS = re.compile(r"[\x00-\x20\x7f\\]")
@@ -119,6 +125,71 @@ def book(session, quote):
     # Reassign the whole dict so the cookie session notices the change.
     session["bookings"] = {**session.get("bookings", {}), t.id: record}
     return record
+
+
+class FriendError(ValueError):
+    """An invite the demo refuses; the message is fit to show the traveler."""
+
+
+@dataclass(frozen=True)
+class Friend:
+    name: str
+    initials: str
+    color: str  # a fill-* class from base.css
+
+
+def _friend(name):
+    words = name.split()
+    initials = (words[0][0] + words[1][0] if len(words) > 1 else name[:2]).upper()
+    color = "bubble" if name.casefold() == "mom" else _FRIEND_COLORS[int(hashlib.sha256(name.casefold().encode()).hexdigest(), 16) % len(_FRIEND_COLORS)]
+    return Friend(name, initials, color)
+
+
+def friends(session):
+    """The signed-in traveler's invited friends, oldest first. Empty when signed out."""
+    t = current_traveler(session)
+    return [_friend(n) for n in (session.get("friends") or {}).get(t.id, [])] if t else []
+
+
+def friend_named(session, name):
+    return next((f for f in friends(session) if f.name.casefold() == (name or "").casefold()), None)
+
+
+def add_friend(session, name):
+    """Invite a friend by name for the current traveler. The same friend (any capitals) is never added twice.
+
+    Returns the Friend. Raises FriendError for a bad name, too many friends or a full session cookie.
+    """
+    t = current_traveler(session)
+    if not t:
+        raise FriendError("Sign in to invite friends.")
+    name = " ".join((name or "").split())
+    if not name:
+        raise FriendError("Type a name first.")
+    if len(name) > MAX_FRIEND_NAME:
+        raise FriendError(f"Keep the name to {MAX_FRIEND_NAME} characters.")
+    if name.casefold() == "you":
+        raise FriendError("That one is you. Pick another name.")
+    if (found := friend_named(session, name)):
+        return found
+    mine = (session.get("friends") or {}).get(t.id, [])
+    if len(mine) >= MAX_FRIENDS:
+        raise FriendError(f"That is {MAX_FRIENDS} friends already. This demo keeps it small.")
+    old = session.get("friends")
+    # Reassign the whole dict so the cookie session notices the change.
+    session["friends"] = {**(old or {}), t.id: [*mine, name]}
+    if len(json.dumps(dict(session))) > BUDGET:
+        if old is None:
+            session.pop("friends", None)
+        else:
+            session["friends"] = old
+        raise FriendError("This demo trip is full. Delete something to make room.")
+    return _friend(name)
+
+
+def invite_link(booking_id):
+    """A fake, stable invite link for a booking."""
+    return f"https://gitaway.example/join/{booking_id}"
 
 
 _request_traveler = ContextVar("gitaway_traveler", default=None)

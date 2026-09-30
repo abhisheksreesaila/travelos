@@ -228,7 +228,7 @@ def test_the_notes_drawer_and_top_bar_buttons_are_present(client):
     html = client.get("/calendar").text
     for label in ["Your forks", "Invite", "Share trip"]:
         assert label in html
-    for href in ["/forks", "/invite", "/share"]:
+    for href in ["/forks", "/share"]:
         assert client.get(href).status_code == 200
     assert 'id="cal-notes"' in html and 'aria-label="Trip notes"' in html
 

@@ -6,8 +6,11 @@ Booked blocks (outbound flight, check in, check out, return flight) are derived 
 time and are never stored. Activities and notes live in the signed cookie session:
 
     session["cal"] = {"<traveler id>[~long]": {"q": last id number, "a": [activity], "n": [note], "x": last deleted}}
-    activity = {"i": "a3", "d": day index, "s": start minute, "e": end minute, "t": title, "k": kind}
-    note     = {"i": "n4", "t": text, "a": activity id or absent}
+    activity = {"i": "a3", "d": day index, "s": start minute, "e": end minute, "t": title, "k": kind, "b": author or absent}
+    note     = {"i": "n4", "t": text, "a": activity id or absent, "b": author or absent}
+
+"b" is the friend who wrote it ("Mom"); absent means the traveler. "l" in the state is set once the scripted live add
+(F-020) has happened or been skipped, so it never repeats.
 
 A cookie holds about 4 KB, so BUDGET caps the session and the calendar refuses more with a friendly message.
 Times are minutes after midnight. Ids are stable; adding with an id that already exists is a no-op (a refresh).
@@ -31,7 +34,13 @@ CHECK_OUT = 11 * 60
 STAY_LEN = 90
 MAX_TITLE = 40
 MAX_NOTE = 140
-BUDGET = 2600  # bytes of session JSON; base64 adds a third plus a signature, keeping the whole cookie near 3.4 KB (limit 3.6 KB, browsers drop >4 KB)
+BUDGET = ses.BUDGET
+LIVE_FRIEND = "Mom"
+LIVE_TITLE = "Travel Town steam trains"
+LIVE_DAY = 2  # Sunday on the sample trip
+LIVE_START = 10 * 60
+LIVE_LEN = 150
+LIVE_NOTE = "Added Travel Town on Sunday. The little one will love the trains."
 
 # kind -> (label, tint token name)
 KINDS = {"fun": ("Fun", "bubble"), "food": ("Food", "sun"), "outdoors": ("Outdoors", "mint"),
@@ -65,6 +74,7 @@ class Activity:
     end: int
     title: str
     kind: str
+    by: str = ""  # the friend who added it; "" is the traveler
 
 
 @dataclass(frozen=True)
@@ -72,6 +82,7 @@ class Note:
     id: str
     text: str
     act: str | None = None
+    by: str = ""
 
 
 # ---- trip and formatting -------------------------------------------------------------------------------------------
@@ -171,11 +182,11 @@ def _context(session, demo):
 
 
 def _act(d):
-    return Activity(d["i"], d["d"], d["s"], d["e"], d["t"], d["k"])
+    return Activity(d["i"], d["d"], d["s"], d["e"], d["t"], d["k"], d.get("b", ""))
 
 
 def _note(d):
-    return Note(d["i"], d["t"], d.get("a"))
+    return Note(d["i"], d["t"], d.get("a"), d.get("b", ""))
 
 
 def _number(id_):
@@ -353,3 +364,55 @@ def add_note(session, text, act=None, demo="", id=None):
     state["n"].append(row)
     _save(session, demo, state)
     return _note(row)
+
+
+# ---- scripted liveness (F-020) -------------------------------------------------------------------------------------
+
+def live_pending(session, demo=""):
+    """True while Mom is invited and her scripted add has not happened (or been skipped) for this trip."""
+    if not (ses.current_traveler(session) and ses.booking(session) and ses.friend_named(session, LIVE_FRIEND)):
+        return False
+    return not _load(session, demo).get("l")
+
+
+def _free_slot(blocks, state, day, gs):
+    """The first start for LIVE_LEN minutes with nothing on it: 10:00, then later mornings, then earlier ones."""
+    taken = [(b.start, b.end) for b in blocks if b.day == day] + [(a["s"], a["e"]) for a in state["a"] if a["d"] == day]
+    later = range(LIVE_START, 12 * 60 + 1, 30)
+    earlier = range(LIVE_START - 30, gs - 1, -30)
+    for s in [*later, *earlier]:
+        if s >= gs and s + LIVE_LEN <= GRID_END and not any(s < e and b < s + LIVE_LEN for b, e in taken):
+            return s
+    return None
+
+
+def live_add(session, demo=""):
+    """Mom adds her activity and a note, once per traveler per trip. Returns the new Activity, or None.
+
+    None means nothing was added: she is not invited, it already happened, or no free slot was left (then the script is
+    marked done so it does not try again). Posting it again is a no-op, so a reload never duplicates it.
+    """
+    if not live_pending(session, demo):
+        return None
+    _, _, blocks = _context(session, demo)
+    friend = ses.friend_named(session, LIVE_FRIEND)
+    state = _load(session, demo)
+    start = _free_slot(blocks, state, LIVE_DAY, grid_start(blocks))
+    state["l"] = 1
+    if start is None:
+        _save(session, demo, state, enforce=False)
+        return None
+    n = state["q"]
+    act = {"i": f"a{n + 1}", "d": LIVE_DAY, "s": start, "e": start + LIVE_LEN, "t": LIVE_TITLE, "k": "fun", "b": friend.name}
+    state["a"].append(act)
+    state["n"].append({"i": f"n{n + 2}", "t": LIVE_NOTE, "a": act["i"], "b": friend.name})
+    state["q"] = n + 2
+    try:
+        _save(session, demo, state)
+    except CalendarError:
+        state["a"].pop()
+        state["n"].pop()
+        state["q"] = n
+        _save(session, demo, state, enforce=False)
+        return None
+    return _act(act)

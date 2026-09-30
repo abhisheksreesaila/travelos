@@ -9,7 +9,6 @@ PLACEHOLDERS = {
     "/discover": ("/discover", "Trips worth forking", "Scrapbook itineraries from travelers and creators land here soon.", "F-022"),
     "/creators": ("/creators", "Turn your vlog into a trip", "Paste a video or post link and watch it become an itinerary. Coming soon.", "F-023"),
     "/forks": ("", "Your forks", "The trips you have forked will be listed here, ready to drop into your calendar. Coming soon.", "F-021"),
-    "/invite": ("", "Invite your crew", "Bring family and friends into your trip calendar so you can plan together. Coming soon.", "F-020"),
     "/share": ("", "Share your trip", "Turn your trip into a scrapbook itinerary the community can fork. Coming soon.", "F-022"),
 }
 

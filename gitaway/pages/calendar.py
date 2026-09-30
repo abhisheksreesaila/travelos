@@ -6,6 +6,9 @@ POST /calendar/activities                        add            POST /calendar/a
 POST /calendar/activities/{id}/move              move/resize    POST /calendar/activities/{id}/delete  delete (then Undo)
 POST /calendar/undo                              undo the last delete
 POST /calendar/notes                             a trip note, or a note on one activity
+GET  /calendar?invite=1                          the invite dialog (GET /invite sends a signed-out traveler through sign-in first)
+POST /calendar/friends                           invite a friend (the same friend twice is a no-op)
+POST /calendar/live                              the scripted "Mom adds Travel Town" (once per traveler per trip; calendar.js calls it)
 
 The server is the source of truth (gitaway.tripcal). Every POST redirects back to a GET (or re-renders with a 409 and the
 reason), so a refresh never repeats a change. calendar.js only enhances: it swaps the server-rendered #cal-app in place,
@@ -120,17 +123,19 @@ def booked_block(b, gs):
     )
 
 
-def activity_block(a, gs, demo, lane, nlanes, n_notes, new):
+def activity_block(a, gs, demo, lane, nlanes, n_notes, new, is_live=False):
     label, tint = cal.KINDS[a.kind]
     short, tight = a.end - a.start <= 45, a.end - a.start <= 60
     pop = " cal-pop" if new == a.id else ""
+    ring = " cal-livering" if is_live and new == a.id and a.by else ""
+    just = Span("just now", cls="cal-justnow") if ring else ""
     return A(
         Span(cal.fmt_time(a.start), cls="cal-time"),
         Span(a.title, cls="cal-title"),
-        Span(Span("You", cls="cal-by"), Span(f"{n_notes} note{'s' if n_notes != 1 else ''}", cls="cal-notecount") if n_notes else "", cls="cal-meta"),
+        Span(Span(a.by or "You", cls="cal-by"), just, Span(f"{n_notes} note{'s' if n_notes != 1 else ''}", cls="cal-notecount") if n_notes else "", cls="cal-meta"),
         Span(cls="cal-resize", aria_hidden="true", title="Drag to resize"),
         href=cal_url(demo, edit=a.id), data_soft="", draggable="false", title=a.title,
-        cls=f"cal-block cal-act k-{tint}{' cal-short' if short else ''}{' cal-tight' if tight else ''}{' cal-lane' if nlanes > 1 else ''}{pop}",
+        cls=f"cal-block cal-act k-{tint}{' cal-short' if short else ''}{' cal-tight' if tight else ''}{' cal-lane' if nlanes > 1 else ''}{pop}{ring}",
         data_id=a.id, data_day=str(a.day), data_start=str(a.start), data_end=str(a.end),
         style=f"--top:{_px(a.start - gs)};--h:{_px(a.end - a.start)};--lane:{lane};--lanes:{nlanes}",
         aria_label=f"{a.title}, {label}, {cal.fmt_time(a.start)} to {cal.fmt_time(a.end)}. Press Enter to edit, arrow keys to move by 15 minutes, Shift and arrows to resize.",
@@ -146,7 +151,7 @@ def day_column(i, date_, ctx):
     n_notes = ctx["note_counts"]
     booked = [b for b in blocks if b.day == i]
     body = [booked_block(b, gs) for b in booked]
-    body += [activity_block(a, gs, demo, *lane[a.id], n_notes.get(a.id, 0), ctx["new"]) for a in acts]
+    body += [activity_block(a, gs, demo, *lane[a.id], n_notes.get(a.id, 0), ctx["new"], ctx["live"]) for a in acts]
     if not booked and not acts:
         body.append(A(Span("wide open!", cls="cal-hand"), Span("Add something fun"), href=cal_url(demo, add=i, at=cal.hhmm(free_start(blocks, i, gs))),
                       data_soft="", cls="cal-empty"))
@@ -204,21 +209,25 @@ def whole_view(dates, ctx):
     return Div(*rows, cls="cal-whole")
 
 
-def note_entry(n, acts_by_id, who):
+def note_entry(n, acts_by_id, who, people, fresh=False):
     on = acts_by_id.get(n.act)
+    author = people.get(n.by.casefold(), who) if n.by else who
+    where = "just now" if fresh else f"on {on.title}" if on else "whole trip"
     return Div(
-        avatar(who, "cal-noteav"),
-        Div(Span(f"You · on {on.title}" if on else "You · whole trip", cls="cal-notemeta"), Span(n.text, cls="cal-notetext"), cls="cal-noteslip"),
-        cls="cal-note", data_note=n.id,
+        avatar(author, "cal-noteav"),
+        Div(Span(f"{n.by or 'You'} · {where}", cls="cal-notemeta"), Span(n.text, cls="cal-notetext"), cls="cal-noteslip"),
+        cls=f"cal-note{' cal-note-live cal-pop' if fresh else ''}", data_note=n.id,
     )
 
 
 def notes_panel(ctx, who, b):
     stay = catalog.offer(b["stay"])
     acts_by_id = {a.id: a for a in ctx["acts"]}
+    people = {f.name.casefold(): f for f in ctx["friends"]}
+    fresh = ctx["new"] if ctx["live"] else ""
     feed = [Div(avatar(who, "cal-noteav"), Div(Span("You · whole trip", cls="cal-notemeta"),
                 Span(f"Booked! Your flights and {stay.name} are on the calendar. Add anything you want to do.", cls="cal-notetext"), cls="cal-noteslip"), cls="cal-note cal-note-first")]
-    feed += [note_entry(n, acts_by_id, who) for n in ctx["notes"]]
+    feed += [note_entry(n, acts_by_id, who, people, bool(fresh) and n.act == fresh and bool(n.by)) for n in ctx["notes"]]
     about = Select(Option("Whole trip", value=""), *[Option(a.title, value=a.id) for a in ctx["acts"]], name="act", aria_label="What is this note about?", cls="cal-about") if ctx["acts"] else ""
     return Aside(
         Button(icon("note", 18, 2.2), Span("Trip notes"), Span(str(len(ctx["notes"])), cls="cal-count"), type="button", id="cal-notes-toggle",
@@ -274,20 +283,52 @@ def form_modal(ctx, vals, error, edit_id=None):
     )
 
 
+def invite_modal(ctx, b, name, error):
+    demo, friends = ctx["demo"], ctx["friends"]
+    close = cal_url(demo, view=ctx["view"])
+    have = {f.name.casefold() for f in friends}
+    chips = [Button(icon("check", 16, 2.6), Span(f"{n} is in"), type="button", disabled=True, cls="cal-chipbtn is-in") if n.casefold() in have
+             else Button(icon("plus", 16, 2.6), Span(n), type="submit", name="name", value=n, cls="cal-chipbtn")
+             for n in ses.DEMO_FRIENDS]
+    link = ses.invite_link(b["id"])
+    return Div(
+        A(href=close, cls="cal-backdrop", data_soft="", data_close="", aria_label="Close", tabindex="-1"),
+        Div(H2("Invite your crew", id="cal-form-title"),
+            P("Friends and family see the calendar and add their own ideas. This is a demo: nobody is really emailed.", cls="cal-sub"),
+            Div(error, role="alert", cls="cal-error") if error else "",
+            Form(Span("Quick picks", cls="cal-sub"), Div(*chips, cls="cal-chiprow"), _demo_field(demo), _hidden("view", ctx["view"]),
+                 action="/calendar/friends", method="post", data_soft="", cls="cal-invite"),
+            Form(Label(Span("Or type a name"), Input(type="text", name="name", value=name, maxlength=str(ses.MAX_FRIEND_NAME), required=True, placeholder="Grandma, Jo, the neighbours", autocomplete="off", data_autofocus="")),
+                 _demo_field(demo), _hidden("view", ctx["view"]),
+                 Button("Add to the trip", type="submit", cls="btn btn-primary cal-save"),
+                 action="/calendar/friends", method="post", data_soft="", cls="cal-form cal-invite"),
+            Div(Span("Or share a link", cls="cal-sub"),
+                Div(Input(type="text", value=link, readonly=True, aria_label="Invite link", cls="cal-linkfield"),
+                    Button(icon("link", 16, 2.4), Span("Copy invite link"), type="button", data_copy=link, cls="cal-copy"), cls="cal-linkrow"),
+                cls="cal-invite"),
+            Div(A("Done", href=close, data_soft="", data_close="", cls="cal-cancel"), cls="cal-actions"),
+            role="dialog", aria_modal="true", aria_labelledby="cal-form-title", cls="cal-dialog"),
+        cls="cal-modal",
+    )
+
+
 def toast(kind, text, *extra):
     return Div(Span(text), *extra, role="alert" if kind == "error" else "status", cls=f"cal-toast cal-toast-{kind}")
 
 
 # ---- page ----------------------------------------------------------------------------------------------------------
 
-def top_bar(t, b, who, session):
+def top_bar(t, b, who, session, ctx):
     forks = len(ses.forks(session))
+    friends = ctx["friends"]
+    people = [avatar(who, "cal-avatar"), *[Span(avatar(f, "cal-avatar"), Span(cls="cal-presence-dot"), cls="cal-friend") for f in friends]]
+    presence = Span(f"{friends[-1].name} is planning with you", cls="cal-presence", role="status") if friends else ""
     return Header(
         brand("/"),
         Div(H1(trip_name(t)), Span(f"{cal.range_label(t.depart, t.return_)} · booked · {catalog.money(b['total_cents'])}", cls="cal-tripline"), cls="cal-title-box"),
-        Div(avatar(who, "cal-avatar"), cls="cal-avatars"),
+        Div(Div(*people, cls="cal-faces"), presence, cls="cal-avatars"),
         Div(A("Your forks", Span(str(forks), cls="cal-count"), href="/forks", cls="cal-btn cal-btn-white"),
-            A("Invite", href="/invite", cls="cal-btn cal-btn-coral"),
+            A("Invite", href=cal_url(ctx["demo"], view=ctx["view"], invite="1"), id="cal-invite-btn", data_id="invite", data_soft="", cls="cal-btn cal-btn-coral"),
             A("Share trip", href="/share", cls="cal-btn cal-btn-ink"), cls="cal-actions-top"),
         cls="cal-bar",
     )
@@ -301,7 +342,7 @@ def view_toggle(demo, view):
     )
 
 
-def calendar_page(session, demo="", view="", form=None, notice=None, new="", undo="", w="", status=200):
+def calendar_page(session, demo="", view="", form=None, notice=None, new="", undo="", w="", status=200, invite=None, live=False):
     who, b = ses.current_traveler(session), ses.booking(session)
     demo = cal.LONG if demo == cal.LONG else ""
     view = "whole" if view == "whole" else ""
@@ -315,7 +356,9 @@ def calendar_page(session, demo="", view="", form=None, notice=None, new="", und
         if n.act:
             counts[n.act] = counts.get(n.act, 0) + 1
     gs = cal.grid_start(blocks)
-    ctx = dict(demo=demo, view=view, t=t, dates=dates, blocks=blocks, acts=acts, notes=notes, note_counts=counts, gs=gs, new=new, next=cal.next_id(session, demo))
+    friends = ses.friends(session)
+    ctx = dict(demo=demo, view=view, t=t, dates=dates, blocks=blocks, acts=acts, notes=notes, note_counts=counts, gs=gs, new=new, next=cal.next_id(session, demo),
+               friends=friends, live=bool(live and any(a.id == new and a.by for a in acts)))
     if view == "whole":
         surface = whole_view(dates, ctx)
     else:
@@ -336,16 +379,22 @@ def calendar_page(session, demo="", view="", form=None, notice=None, new="", und
     layers = []
     if form:
         layers.append(form_modal(ctx, form["vals"], form.get("error"), form.get("edit")))
+    if invite is not None:
+        layers.append(invite_modal(ctx, b, invite.get("name", ""), invite.get("error")))
     if notice:
         layers.append(toast("error", notice))
+    if ctx["live"]:
+        mom = next(a for a in acts if a.id == new)
+        layers.append(toast("live", f"{mom.by} added {mom.title}", A("Show me", href=f"#d{mom.day}", data_jump=str(mom.day), cls="cal-dismiss"),
+                            A("Dismiss", href=cal_url(demo, view=view), data_soft="", cls="cal-dismiss")))
     gone = cal.last_deleted(session, demo)
     if undo and gone and gone.id == undo:
         layers.append(toast("undo", f"Deleted \"{gone.title}\".", Form(_hidden("id", gone.id), _demo_field(demo), _hidden("view", view), Button("Undo", type="submit", cls="cal-undo"),
                                                                      action="/calendar/undo", method="post", data_soft=""),
                            A("Dismiss", href=cal_url(demo, view=view), data_soft="", cls="cal-dismiss")))
-    app = Div(top_bar(t, b, who, session), Div(card, notes_panel(ctx, who, b), cls="cal-layout"), *layers,
+    app = Div(top_bar(t, b, who, session, ctx), Div(card, notes_panel(ctx, who, b), cls="cal-layout"), *layers,
               id="cal-app", cls="cal", data_demo=demo, data_view=view, data_grid_start=str(gs), data_grid_end=str(cal.GRID_END),
-              data_base=cal_url(demo, view=view))
+              data_base=cal_url(demo, view=view), data_live="1" if cal.live_pending(session, demo) else None)
     body = (
         Title(f"GitAway · {trip_name(t)} calendar"),
         *styles(*HEAD),
@@ -388,7 +437,7 @@ def register(app):
         return None
 
     @app.get("/calendar")
-    def calendar(session, demo: str = "", view: str = "", add: str = "", at: str = "", edit: str = "", new: str = "", undo: str = "", w: str = ""):
+    def calendar(session, demo: str = "", view: str = "", add: str = "", at: str = "", edit: str = "", new: str = "", undo: str = "", w: str = "", invite: str = "", live: str = ""):
         if not ses.current_traveler(session):
             return _signin(demo, view)
         if not ses.booking(session):
@@ -410,7 +459,7 @@ def register(app):
                 start = free_start(blocks, day, gs)
             start = cal.snap(min(max(start, gs), cal.GRID_END - cal.MIN_LEN))
             form = {"vals": _vals(id=f"a{nid}", day=day, start=cal.hhmm(start), end=cal.hhmm(default_end(blocks, day, start)))}
-        return calendar_page(session, demo, view, form=form, new=new, undo=undo, w=w)
+        return calendar_page(session, demo, view, form=form, new=new, undo=undo, w=w, invite={} if invite == "1" and not form else None, live=live == "1")
 
     def refuse(session, demo, view, message, form=None):
         return calendar_page(session, demo, view, form=form, notice=None if form else message, status=409)
@@ -471,3 +520,27 @@ def register(app):
         except cal.CalendarError as e:
             return refuse(session, demo, view, str(e))
         return done(demo, view, edit=edit)
+
+    @app.get("/invite")
+    def invite_entry(session):
+        """The Invite entry point: signed out goes through sign-in (intent=invite) and comes back to the calendar."""
+        if not ses.current_traveler(session):
+            return RedirectResponse("/signin?next=/calendar&intent=invite", status_code=303)
+        return RedirectResponse(cal_url("", invite="1") if ses.booking(session) else "/calendar", status_code=303)
+
+    @app.post("/calendar/friends")
+    def add_friend(session, name: str = "", demo: str = "", view: str = ""):
+        if (r := guard(session, demo)):
+            return r
+        try:
+            ses.add_friend(session, name)
+        except ses.FriendError as e:
+            return calendar_page(session, demo, view, invite={"name": name, "error": str(e)}, status=409)
+        return done(demo, view)
+
+    @app.post("/calendar/live")
+    def live_add(session, demo: str = "", view: str = ""):
+        if (r := guard(session, demo)):
+            return r
+        a = cal.live_add(session, demo)
+        return done(demo, view, new=a.id, live="1") if a else done(demo, view)
