@@ -37,6 +37,11 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .ga-nav a { text-decoration: none; }
 .ga-nav a[aria-current="page"] { text-decoration: underline; text-decoration-color: var(--accent-2); text-decoration-thickness: 4px; text-underline-offset: 8px; }
 
+/* Signed-in account: avatar plus Sign out */
+.ga-account { display: flex; align-items: center; gap: 12px; }
+.ga-avatar { width: 44px; height: 44px; border-radius: var(--r-pill); border: 3px solid #fff; display: grid; place-items: center; font-weight: 800; }
+.ga-signout { min-height: 44px; padding: 0 8px; border: 0; background: none; color: var(--ink); font: 700 16px var(--font-body); text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
+
 /* Tactile buttons */
 .btn {
   --btn-bg: var(--card); --btn-fg: var(--ink); --btn-ledge: rgba(30,26,46,.12);

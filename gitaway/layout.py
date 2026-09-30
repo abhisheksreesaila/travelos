@@ -1,7 +1,8 @@
 """The page shell every GitAway screen shares: fonts, tokens, header and footer."""
 
-from fasthtml.common import A, Div, Footer, Header, Link, Main, Nav, Span, Title
+from fasthtml.common import A, Button, Div, Footer, Form, Header, Link, Main, Nav, Span, Title
 
+from gitaway import session
 from gitaway.icons import icon
 
 FONTS = (
@@ -37,13 +38,29 @@ def brand(href: str = "/"):
     )
 
 
-def site_header(current: str = ""):
+def avatar(traveler, cls="ga-avatar"):
+    return Span(traveler.initials, cls=f"{cls} fill-{traveler.color}", title=traveler.name, aria_label=traveler.name)
+
+
+def account(traveler=None):
+    """Sign in link, or the traveler's avatar plus Sign out. Defaults to the request's traveler (see gitaway.session)."""
+    traveler = traveler or session.request_traveler()
+    if not traveler:
+        return A("Sign in", href=session.signin_href(), cls="btn btn-sm")
+    return Div(
+        avatar(traveler),
+        Form(Button("Sign out", type="submit", cls="ga-signout"), action="/signout", method="post"),
+        cls="ga-account",
+    )
+
+
+def site_header(current: str = "", traveler=None):
     links = [A(label, href=href, aria_current="page" if href == current else None) for label, href in NAV]
     return Header(
         A("Skip to content", href="#main", cls="ga-skip"),
         brand(),
         Nav(*links, cls="ga-nav", aria_label="Main"),
-        A("Sign in", href="/signin", cls="btn btn-sm"),
+        account(traveler),
         cls="ga-header ga-wrap",
     )
 

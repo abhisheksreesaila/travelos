@@ -10,10 +10,10 @@ from urllib.parse import quote as urlquote
 
 from fasthtml.common import A, Button, Div, Figcaption, Figure, Img, Kbd, Link, Main, NotStr, Script, Section, Span, Svg, Title
 
-from gitaway import catalog, context, itineraries
+from gitaway import catalog, context, itineraries, session
 from gitaway.icons import icon
 from gitaway.itinerary_view import fork_href
-from gitaway.layout import brand, styles
+from gitaway.layout import avatar, brand, styles
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/workspace.css"),)
 DEFAULTS = {"flight": "f1", "stay": "h1", "car": "c1"}
@@ -155,12 +155,13 @@ def ledger(q, trip):
 def top_bar(trip):
     def fmt(d):
         return d.strftime("%a %b ") + str(d.day)
+    who = session.request_traveler()
     return Div(
         brand(),
         A(Span(f"{trip.origin} → {trip.destination_name}", cls="ws-bold"), Span(f"{fmt(trip.depart)} – {fmt(trip.return_)}"),
           Span(trip.summary), Span("Change", cls="ws-change"), href="/", cls="ws-pill"),
         Span("Press 1–7 to focus a pane", cls="ws-hint"),
-        Span("AR", cls="ws-avatar", aria_hidden="true"),
+        avatar(who, "ws-avatar") if who else A("Sign in", href=session.signin_href(), cls="btn btn-sm"),
         cls="ws-bar",
     )
 

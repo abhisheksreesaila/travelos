@@ -16,7 +16,7 @@
 .ws-bold { font-weight: 800; }
 .ws-pill > .ws-change { color: var(--coral-deep); font-weight: 800; }
 .ws-hint { margin-left: auto; font-size: 15px; font-weight: 700; color: var(--ink-3); }
-.ws-avatar { width: 44px; height: 44px; border-radius: var(--r-pill); background: var(--grape); border: 3px solid #fff; display: grid; place-items: center; font-weight: 800; }
+.ws-avatar { width: 44px; height: 44px; border-radius: var(--r-pill); border: 3px solid #fff; display: grid; place-items: center; font-weight: 800; }
 
 /* Cost ledger */
 .ws-ledger { min-height: 116px; flex-shrink: 0; border-radius: var(--r-lg); background: var(--card); box-shadow: var(--shadow-md); display: flex; align-items: center; gap: 18px; padding: 0 16px 0 24px; }
