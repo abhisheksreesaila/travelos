@@ -77,11 +77,11 @@ Needs: F-018
 - [x] long trips (e.g. 20 days) stay readable: a whole-trip day strip on top, a window of days that fits the screen (5 desktop, 3 tablet, 1 phone) scrolling sideways, and a compact whole-trip view
 - [x] gaps stay blank; add, move and resize activities in a fun way; notes on any item
 
-## F-020 Invite and simulated live friends [doing]
+## F-020 Invite and simulated live friends [done]
 Design: docs/design/calendar.md (approved 2026-09-30; artboard docs/design/canvas/Calendar.dc.html)
 Needs: F-019
-- [ ] invite a family member or friend (signed out: through the demo sign-in with intent=invite); their avatar appears
-- [ ] a scripted friend adds an activity and a note live, with animation
+- [x] invite a family member or friend (signed out: through the demo sign-in with intent=invite); their avatar appears
+- [x] a scripted friend adds an activity and a note live, with animation
 
 ## F-021 Forks list and apply preview [blocked]
 Blocked: look at "Your forks → apply preview" on the canvas (use its step switch) and say go or what to change.
