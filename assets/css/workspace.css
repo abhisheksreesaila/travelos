@@ -81,6 +81,71 @@
 .ws-rating { font-size: 13px; font-weight: 700; color: var(--ink-3); }
 .ws-tip { margin-top: auto; padding: 14px 16px; border-radius: var(--r-md); background: var(--sun-tint); font-size: 14px; font-weight: 700; line-height: 1.4; }
 
+/* Split view (F-025): an expanded Flights or Stays pane is a 340px list sidebar plus a detail panel */
+.ws-expand svg:last-child, .ws-expand[aria-expanded="true"] svg:first-child { display: none; }
+.ws-expand[aria-expanded="true"] svg:last-child { display: block; }
+.ws-dcol, .ws-esc, .ws-pickpill, .ws-back, .ws-fback { display: none; }
+.ws-pickpill { height: 22px; padding: 0 8px; border-radius: var(--r-pill); background: var(--ink); color: #fff; font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; align-items: center; white-space: nowrap; align-self: flex-start; }
+.ws-esc { align-items: center; gap: 6px; margin-left: auto; font-size: 13px; font-weight: 700; color: var(--ink-3); }
+.ws-esc kbd { font: 800 12px var(--font-body); padding: 2px 7px; border-radius: 6px; background: #FAF7F2; box-shadow: 0 1px 0 rgba(0, 0, 0, .15); }
+.ws-esc + .ws-expand { margin-left: 0; }
+
+.ws-grid:is([data-expanded="flights"], [data-expanded="stays"]) > .ws-split { padding: 0; gap: 0; overflow: hidden; display: grid; grid-template-columns: 340px minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+.ws-grid[data-expanded="flights"] > .ws-split:not([data-pane="flights"]),
+.ws-grid[data-expanded="stays"] > .ws-split:not([data-pane="stays"]) { display: none; }
+.ws-grid:is([data-expanded="flights"], [data-expanded="stays"]) > div.ws-context { display: none; }
+.ws-grid:is([data-expanded="flights"], [data-expanded="stays"]) > .ws-split .ws-pane-head { grid-column: 1 / -1; min-height: 64px; padding: 8px 20px; border-bottom: 1px solid var(--skeleton); flex-wrap: wrap; }
+.ws-grid:is([data-expanded="flights"], [data-expanded="stays"]) > .ws-split .ws-esc { display: flex; }
+.ws-grid:is([data-expanded="flights"], [data-expanded="stays"]) > .ws-split .ws-expand { width: 40px; height: 40px; border-radius: 12px; }
+.ws-grid:is([data-expanded="flights"], [data-expanded="stays"]) > .ws-split .ws-cards { display: flex; flex-direction: column; grid-template-columns: none; margin: 0; padding: 16px; background: #FFFCF8; border-right: 1px solid var(--skeleton); overflow: auto; }
+.ws-grid:is([data-expanded="flights"], [data-expanded="stays"]) > .ws-split .ws-tags { flex-wrap: wrap; overflow: visible; }
+.ws-grid:is([data-expanded="flights"], [data-expanded="stays"]) > .ws-split .ws-pickpill { display: none; }
+.ws-grid:is([data-expanded="flights"], [data-expanded="stays"]) > .ws-split .ws-offer[aria-pressed="true"] .ws-pickpill { display: inline-flex; }
+.ws-grid:is([data-expanded="flights"], [data-expanded="stays"]) > .ws-split .ws-offer[aria-current="true"] { box-shadow: 0 0 0 3px var(--ink); }
+.ws-grid:is([data-expanded="flights"], [data-expanded="stays"]) > .ws-split .ws-offer[aria-current="true"][aria-pressed="true"] { background: #FFF4EF; }
+.ws-grid:is([data-expanded="flights"], [data-expanded="stays"]) > .ws-split .ws-dcol { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+
+.ws-detail-panel { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.ws-detail-panel[hidden] { display: none; }
+.ws-grid[data-expanded] .ws-detail-panel:not([hidden]) { animation: ws-rise .3s var(--ease-out); }
+@keyframes ws-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.ws-dscroll { flex: 1; min-height: 0; overflow: auto; padding: 24px 28px; display: flex; flex-direction: column; gap: 22px; }
+.ws-hero { margin: 0; position: relative; height: 280px; flex-shrink: 0; border-radius: var(--r-md); overflow: hidden; background: var(--sky-tint); }
+.ws-hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ws-hero-blank { display: grid; place-items: center; color: var(--sky-ink); }
+.ws-hero figcaption { position: absolute; left: 12px; bottom: 12px; max-width: calc(100% - 24px); min-height: 30px; padding: 4px 12px; border-radius: var(--r-pill); background: var(--card); font-size: 13px; font-weight: 800; line-height: 1.3; display: flex; align-items: center; }
+.ws-back { align-items: center; gap: 4px; min-height: 44px; padding: 0 14px 0 10px; border: 0; border-radius: var(--r-pill); background: var(--card); color: var(--ink); font-size: 14px; font-weight: 800; cursor: pointer; box-shadow: var(--shadow-sm); }
+.ws-dhead { display: flex; flex-direction: column; gap: 8px; }
+.ws-dhead-flight { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.ws-dtitle { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 36px; letter-spacing: -.03em; line-height: 1.1; }
+.ws-drating { font-size: 15px; font-weight: 700; color: var(--ink-2); }
+.ws-dchips { display: flex; flex-wrap: wrap; gap: 8px; }
+.ws-sticker { min-height: 30px; padding: 4px 12px; border-radius: var(--r-pill); font-size: 13px; font-weight: 800; display: inline-flex; align-items: center; transform: rotate(-2deg); }
+.ws-sticker:nth-child(even) { transform: rotate(1.5deg); }
+.ws-dlead { margin: 0; font-size: 16px; font-weight: 700; color: var(--ink-2); line-height: 1.4; }
+.ws-legs { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 14px; }
+.ws-leg { border-radius: var(--r-md); background: var(--ground); padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.ws-leg-label { font-size: 13px; font-weight: 800; letter-spacing: .04em; color: var(--sky-ink); }
+.ws-leg-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; }
+.ws-leg-end { display: flex; flex-direction: column; }
+.ws-leg-time { font-family: var(--font-display); font-weight: 800; font-size: 28px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ws-leg-apt { font-size: 14px; font-weight: 800; color: var(--ink-2); }
+.ws-leg-mid { flex: 1 1 64px; min-width: 64px; white-space: nowrap; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; color: var(--ink-2); text-align: center; }
+.ws-leg-line { width: 100%; height: 3px; border-radius: var(--r-pill); background: var(--sky); }
+.ws-seam:empty { display: none; }
+
+.ws-choosebar { flex-shrink: 0; margin: 0 20px 16px; padding: 12px 12px 12px 22px; border-radius: 32px; background: var(--ink); color: #fff; display: flex; align-items: center; gap: 16px; }
+.ws-cb-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.ws-cb-name { font-size: 13px; font-weight: 700; color: #C9C3DA; }
+.ws-cb-sum { font-size: 16px; font-weight: 800; line-height: 1.25; }
+.ws-cb-price { font-family: var(--font-display); font-weight: 800; font-size: 28px; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+.ws-choose { min-height: 56px; padding: 0 28px; border: 0; border-radius: var(--r-pill); background: var(--coral); color: var(--ink); box-shadow: 0 4px 0 var(--coral-deep); font-size: 17px; font-weight: 800; cursor: pointer; flex-shrink: 0; transition: transform .12s, box-shadow .12s; }
+.ws-choose:hover { transform: translateY(-1px); }
+.ws-choose:active { transform: translateY(4px); box-shadow: 0 0 0 var(--coral-deep); }
+.ws-choose[aria-pressed="true"] { background: var(--mint); box-shadow: 0 4px 0 var(--mint-ink); }
+.ws button:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.ws-choosebar .ws-choose:focus-visible { outline-color: #FFC93C; }
+
 /* Context panes */
 .ws-context { display: grid; grid-template-rows: none; grid-auto-rows: max-content; align-content: start; gap: 14px; min-height: 0; min-width: 0; overflow-y: auto; padding: 3px; margin: -3px; }
 .ws-context .ws-pane { flex-shrink: 0; }
@@ -148,7 +213,7 @@
   .ws-row .ws-name { order: 1; flex: 1 1 8ch; min-width: 0; }
   .ws-row::after { content: ""; order: 3; flex-basis: 100%; height: 0; }
   .ws-row .ws-price { order: 2; }
-  .ws-row .ws-badge { order: 4; }
+  .ws-row .ws-badge, .ws-row .ws-pickpill { order: 4; }
   .ws-slot-label, .ws-op { display: none; }
   .ws-hint { display: none; }
   .ws-bar { height: auto; padding: 12px 8px; flex-wrap: wrap; gap: 12px; }
@@ -156,6 +221,20 @@
 }
 
 /* Phone: stacked panes, ledger pinned at the bottom */
+@media (min-width: 721px) and (max-width: 1100px) {
+  /* The page scrolls here, so the split view gets a bounded height and scrolls inside: the choose bar stays pinned. */
+  .ws-grid:is([data-expanded="flights"], [data-expanded="stays"]) > .ws-split { height: max(560px, calc(100vh - 300px)); }
+}
+
+@media (max-width: 900px) {
+  .ws-grid:is([data-expanded="flights"], [data-expanded="stays"]) > .ws-split { grid-template-columns: 280px minmax(0, 1fr); }
+  .ws-dscroll { padding: 20px; }
+  .ws-dtitle { font-size: 30px; }
+  .ws-choosebar { flex-wrap: wrap; border-radius: 28px; margin: 0 14px 14px; }
+  .ws-cb-text { flex: 1 1 100%; }
+  .ws-cb-price { margin-right: auto; }
+}
+
 @media (max-width: 720px) {
   .ws, .ws-grid[data-expanded] { height: auto; min-height: 0; overflow: visible; }
   .ws { padding: 0 16px calc(var(--ws-ledger-h, 130px) + env(safe-area-inset-bottom, 0px) + 24px); }
@@ -169,6 +248,32 @@
   .ws-pane { padding: 14px; }
   .ws-cards { overflow: visible; }
   .ws-grid[data-expanded] .ws-cards { display: flex; }
+  /* Split view on a phone: two screens (list, then detail with a back pill) */
+  .ws-grid:is([data-expanded="flights"], [data-expanded="stays"]) > .ws-split { display: flex; flex-direction: column; overflow: visible; padding: 14px; }
+  .ws-grid:is([data-expanded="flights"], [data-expanded="stays"]) > .ws-split .ws-pane-head { padding: 0 0 10px; border-bottom: 0; min-height: 0; }
+  .ws-grid:is([data-expanded="flights"], [data-expanded="stays"]) > .ws-split .ws-esc { display: none; }
+  .ws-grid:is([data-expanded="flights"], [data-expanded="stays"]) > .ws-split .ws-meta { margin-left: auto; }
+  .ws-grid:is([data-expanded="flights"], [data-expanded="stays"]) > .ws-split .ws-expand { margin-left: 8px; width: 44px; height: 44px; }
+  .ws-grid:is([data-expanded="flights"], [data-expanded="stays"]) > .ws-split .ws-cards { padding: 0; background: transparent; border-right: 0; overflow: visible; }
+  .ws-grid:is([data-expanded="flights"], [data-expanded="stays"]) > .ws-split .ws-dcol { display: none; }
+  .ws-grid:is([data-expanded="flights"], [data-expanded="stays"]) > .ws-split[data-screen="detail"] { padding: 0 0 4px; }
+  .ws-grid:is([data-expanded="flights"], [data-expanded="stays"]) > .ws-split[data-screen="detail"] .ws-pane-head,
+  .ws-grid:is([data-expanded="flights"], [data-expanded="stays"]) > .ws-split[data-screen="detail"] .ws-cards { display: none; }
+  .ws-grid:is([data-expanded="flights"], [data-expanded="stays"]) > .ws-split[data-screen="detail"] .ws-dcol { display: flex; }
+  .ws-back { display: inline-flex; position: absolute; left: 16px; top: 16px; }
+  .ws-fback { display: flex; padding: 14px 16px 0; }
+  .ws-back-flat { position: static; box-shadow: 0 0 0 1px var(--line); }
+  .ws-hero { height: 220px; border-radius: 26px 26px 0 0; }
+  .ws-dscroll { overflow: visible; padding: 16px; gap: 16px; }
+  .ws-dscroll > .ws-hero { margin: -16px -16px 0; }
+  .ws-dtitle { font-size: 28px; }
+  .ws-choosebar { position: sticky; bottom: calc(var(--ws-ledger-h, 130px) + 10px); margin: 0 12px; z-index: 5; padding: 10px 10px 10px 18px; gap: 10px; }
+  .ws-cb-sum { font-size: 14px; }
+  .ws-cb-price { font-size: 22px; }
+  .ws-choose { min-height: 52px; padding: 0 20px; font-size: 16px; }
+  .ws-leg-time { font-size: 24px; }
+  .ws-leg { padding: 14px; }
+  .ws-legs { grid-template-columns: 1fr; }
   .ws-offer:hover { transform: none; }
   .ws-ledger { order: 9; position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; min-height: 0; border-radius: 24px 24px 0 0; padding: 12px 16px calc(14px + env(safe-area-inset-bottom, 0px)); flex-wrap: wrap; gap: 10px 12px; box-shadow: 0 -8px 24px -8px rgba(30, 26, 46, .25), 0 0 0 1px var(--line); }
   .ws-slots { display: none; order: 5; flex-basis: 100%; flex-direction: column; gap: 10px; }
@@ -183,6 +288,9 @@
 
 @media (prefers-reduced-motion: reduce) {
   .ws-grid { transition: none; }
+  .ws-grid[data-expanded] .ws-detail-panel:not([hidden]) { animation: none; }
+  .ws-choose { transition: none; }
+  .ws-choose:hover, .ws-choose:active { transform: none; }
   .ws-offer { transition: none; }
   .ws-offer:hover { transform: none; }
 }
