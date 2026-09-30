@@ -9,7 +9,7 @@ Every figure comes from catalog.quote; the POST recomputes it from the picks and
 
 from urllib.parse import quote as urlquote
 
-from fasthtml.common import A, Button, Div, Form, H2, Input, Link, P, Script, Span
+from fasthtml.common import A, Button, Div, Form, H2, Input, Link, P, Script, Section, Span
 from starlette.responses import RedirectResponse
 
 from gitaway import catalog, session as ses
@@ -62,7 +62,7 @@ def sheet(q, who):
             Div(
                 Span("DEMO", cls="pay-chip", aria_hidden="true"),
                 Span("Demo card ending 4242", cls="pay-card"),
-                Span(f"{who.name.split()[0]} pays", cls="pay-payer"),
+                Span(f"{who.name} pays", cls="pay-payer"),
                 cls="pay-method",
             ),
             Form(
@@ -95,14 +95,14 @@ def celebration(b):
           for i in range(28)],
         cls="pay-confetti", aria_hidden="true",
     )
-    card = Div(
+    card = Section(
         Span(icon("plane", 48, 2), cls="pay-badge", aria_hidden="true"),
         H2(f"You're going to {PLACE}!", id="pay-done-title"),
         P("Your flights and hotel are on the trip calendar. Now the fun part: fill the gaps with your crew."),
         Div(Span(flight_chip(flight), cls="pay-pill"), Span(f"{stay.name} · {trip.nights} nights", cls="pay-pill"), cls="pay-pills"),
         A("Open my trip calendar", href="/calendar", cls="btn btn-ink pay-cal", id="pay-cal"),
         Span(f"Booking {b['id']} · simulated, nothing was charged", cls="pay-ref"),
-        role="dialog", aria_modal="true", aria_labelledby="pay-done-title", cls="pay-done",
+        aria_labelledby="pay-done-title", cls="pay-done",
     )
     return page("You're booked", Div(confetti, card, cls="pay-stage"), head=HEAD)
 
@@ -113,14 +113,14 @@ def register(app):
         picks = plan.resolve_pick(f, h, c)
         who = ses.current_traveler(session)
         if not who:
-            return signin_for_pay(plan.plan_path(*picks))
+            return signin_for_pay(plan.pay_path(*picks))
         return plan.workspace(*picks, overlay=(sheet(catalog.quote(*picks), who), Script(src="/assets/js/pay.js", defer=True)), head=HEAD)
 
     @app.post("/pay")
     def pay(session, f: str = "", h: str = "", c: str = ""):
         picks = plan.resolve_pick(f, h, c)
         if not ses.book(session, catalog.quote(*picks)):
-            return signin_for_pay(plan.plan_path(*picks))
+            return signin_for_pay(plan.pay_path(*picks))
         return RedirectResponse("/booked", status_code=303)
 
     @app.get("/booked")

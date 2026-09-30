@@ -28,4 +28,6 @@
     if (dialog.dataset.paying) e.preventDefault();
     dialog.dataset.paying = "1";
   });
+  // Back from the next page can restore this one from the bfcache: make the button live again.
+  window.addEventListener("pageshow", () => { delete dialog.dataset.paying; });
 })();

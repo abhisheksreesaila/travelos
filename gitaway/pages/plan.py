@@ -39,10 +39,10 @@ def pay_path(f, h, c):
 
 
 def book_href(f, h, c):
-    """Signed in: straight to the pay sheet. Signed out: sign in first, then back to /plan with the same picks."""
+    """Signed in: straight to the pay sheet. Signed out: sign in first, which comes straight back to the sheet with the same picks."""
     if session.request_traveler():
         return pay_path(f, h, c)
-    return f"/signin?next={urlquote(plan_path(f, h, c), safe='')}&intent=pay"
+    return f"/signin?next={urlquote(pay_path(f, h, c), safe='')}&intent=pay"
 
 
 def delta_text(q):

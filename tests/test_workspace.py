@@ -61,8 +61,8 @@ def test_book_link_carries_next_and_pay_intent(client):
     href = href.group(1).replace("&amp;", "&")
     qs = parse_qs(urlparse(href).query)
     assert qs["intent"] == ["pay"]
-    assert qs["next"] == ["/plan?f=f2&h=h2&c=c2"]
-    assert "%2Fplan" in href  # url-encoded
+    assert qs["next"] == ["/plan/pay?f=f2&h=h2&c=c2"]
+    assert "%2Fplan%2Fpay" in href  # url-encoded
 
 
 def test_embedded_quotes_match_catalog_for_every_combination(client):
@@ -74,7 +74,7 @@ def test_embedded_quotes_match_catalog_for_every_combination(client):
         q = catalog.quote(*key.split("|"))
         assert entry["total"] == catalog.money(q.total_cents)
         assert (entry["delta"] == "The cheapest combination") == (q.above_cheapest_cents == 0)
-        assert entry["book"].startswith("/signin?next=%2Fplan%3Ff%3D") and entry["book"].endswith("&intent=pay")
+        assert entry["book"].startswith("/signin?next=%2Fplan%2Fpay%3Ff%3D") and entry["book"].endswith("&intent=pay")
 
 
 def test_placeholder_is_gone_and_brand_is_gitaway(client):

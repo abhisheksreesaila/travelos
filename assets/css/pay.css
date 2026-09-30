@@ -44,7 +44,7 @@
 .pay-pill { min-height: 34px; padding: 6px 14px; border-radius: var(--r-pill); background: #fff; display: flex; align-items: center; font-weight: 800; font-size: 14px; }
 .pay-cal { margin-top: 6px; min-height: 62px; font-size: 19px; padding: 0 30px; }
 .pay-ref { font-size: 13px; font-weight: 700; color: var(--ink); opacity: .75; }
-.pay-confetti { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 2; }
+.pay-confetti { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; }
 .pay-conf {
   position: absolute; left: var(--x); top: -30px; width: var(--w); height: var(--h); border-radius: 3px; background: var(--c);
   opacity: 0; animation: pay-fall 1.8s var(--ease-out) var(--d) 1 both;
