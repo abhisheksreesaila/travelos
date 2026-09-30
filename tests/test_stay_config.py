@@ -296,3 +296,31 @@ def test_the_calendar_respects_the_picked_rooms(client):
     assert "Check in · The Tidewater · Ocean-view King ×2" in html
     assert "$3,988" in html
     assert "Ocean-view King ×2 + Breakfast" in html  # the welcome note
+
+
+# ---- page script contract (string checks; the behaviour was walked in a browser) -----------------------------------
+
+def test_the_script_asks_the_server_for_figures_and_loads_the_explorer_lazily(client):
+    js = client.get("/assets/js/workspace.js").text
+    assert "/plan/quote?" in js and "data.quotes" not in js
+    assert "loadExplore" in js and "dataset.mapSrc" in js and "Loading the aerial view" in js
+    assert "still.matches" in js  # reduced motion: no skeleton wait
+    assert "discardDrafts" in js  # edits that were not chosen do not outlive the split view
+
+
+def test_reduced_motion_stops_the_fly_to_and_the_skeleton_sweep():
+    from pathlib import Path
+    root = Path(__file__).resolve().parent.parent / "assets/css"
+    ws = (root / "workspace.css").read_text()
+    assert "@media (prefers-reduced-motion: reduce) {\n  .ws-plane, .ws-pin, .ws-addon { transition: none; }" in ws
+    base = (root / "base.css").read_text()
+    assert "animation: none !important" in base[base.rindex("prefers-reduced-motion"):]  # the skeleton sweep
+
+
+def test_the_choose_button_starts_enabled_for_a_default_room_and_every_stay_has_an_editor(client):
+    html = client.get("/plan").text
+    for stay in catalog.offers("stay"):
+        a = stay_article(html, stay.id)
+        assert "disabled" not in re.search(r'<button[^>]*data-choose="%s"[^>]*>' % stay.id, a).group(0)
+        assert a.count('class="ws-room"') == 3 and a.count("data-addon=") == 3
+        assert re.search(r'data-count="1"', a) and a.count('data-count="0"') == 2

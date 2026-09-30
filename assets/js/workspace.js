@@ -206,8 +206,10 @@
 
   // ---- stay editor: rooms, add-ons (each change asks the server for the figures) -------------------------------------
   var panelSeq = {};
+  var dirty = {}; // stays whose rooms or add-ons were edited but not chosen
   function editStay(panel) {
     var id = panel.dataset.detail, rooms = '', add = '';
+    dirty[id] = true;
     panel.querySelectorAll('.ws-room').forEach(function (c) { if (Number(c.dataset.count) > 0) rooms += c.dataset.room + c.dataset.count; });
     panel.querySelectorAll('.ws-addon[aria-pressed="true"]').forEach(function (b) { add += b.dataset.addon; });
     var n = panelSeq[id] = (panelSeq[id] || 0) + 1;
@@ -216,6 +218,16 @@
       applyStay(panel, j.stay);
       paintChoose();
     }).catch(function () {});
+  }
+
+  // Leaving the split view drops edits that were not chosen, so opening it again (like a reload) shows the picks.
+  function discardDrafts() {
+    Object.keys(dirty).forEach(function (id) {
+      delete dirty[id];
+      panelSeq[id] = (panelSeq[id] || 0) + 1; // ignore answers still on their way
+      if (id === pick.stay) { refresh(); return; }
+      getQuote('h=' + enc(id)).then(function (j) { applyStay(panelOf(id), j.stay); paintChoose(); }).catch(function () {});
+    });
   }
 
   document.querySelectorAll('.ws-detail-panel[data-rooms]').forEach(function (panel) {
@@ -324,6 +336,7 @@
   }
 
   function applyExpanded(name) {
+    if (grid.dataset.expanded === 'stays' && name !== 'stays') discardDrafts();
     if (name) grid.dataset.expanded = name; else delete grid.dataset.expanded;
     document.querySelectorAll('.ws-expand').forEach(function (b) {
       var on = b.dataset.expand === name;
