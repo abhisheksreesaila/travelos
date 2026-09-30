@@ -525,7 +525,7 @@ def register(app):
     def invite_entry(session):
         """The Invite entry point: signed out goes through sign-in (intent=invite) and comes back to the calendar."""
         if not ses.current_traveler(session):
-            return RedirectResponse("/signin?next=/calendar&intent=invite", status_code=303)
+            return RedirectResponse(f"/signin?next={urlquote(cal_url('', invite='1'), safe='')}&intent=invite", status_code=303)
         return RedirectResponse(cal_url("", invite="1") if ses.booking(session) else "/calendar", status_code=303)
 
     @app.post("/calendar/friends")

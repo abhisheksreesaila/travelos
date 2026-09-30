@@ -44,7 +44,7 @@
     const keep = {
       x: scroller ? scroller.scrollLeft : 0, y: scroller ? scroller.scrollTop : 0, feed: feed ? feed.scrollTop : 0,
       id: document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.id : "",
-      drawer: !!$("#cal-notes.open", cur),
+      drawer: !!$("#cal-notes.open", cur), sel: focusKey(document.activeElement),
     };
     try {
       const res = await fetch(url, { credentials: "same-origin", ...options });
@@ -71,6 +71,17 @@
       location.href = cur.dataset.base || "/calendar";
     }
   }
+  // A stable selector for the focused control, so a swap (a friend's live add, say) can hand focus back to it.
+  function focusKey(el) {
+    if (!el || el === document.body || !el.closest || !el.closest("#cal-app") || el.closest(".cal-act")) return "";
+    const d = el.dataset || {};
+    if (el.id) return `#${CSS.escape(el.id)}`;
+    if (d.chip != null) return `[data-chip="${d.chip}"]`;
+    if (d.dir != null) return `[data-dir="${d.dir}"]`;
+    if (el.tagName === "A" && el.getAttribute("href")) return `a[href="${CSS.escape(el.getAttribute("href"))}"]`;
+    if (el.name) return `${el.tagName.toLowerCase()}[name="${CSS.escape(el.name)}"]`;
+    return "";
+  }
   const post = (url, data) => swap(url, { method: "POST", body: new URLSearchParams(data) });
 
   document.addEventListener("click", (e) => {
@@ -87,7 +98,10 @@
     const f = e.target.closest("form[data-soft]");
     if (!f || e.defaultPrevented) return;
     e.preventDefault();
-    swap(f.action, { method: "POST", body: new URLSearchParams(new FormData(f, e.submitter)) }, !!f.closest(".cal-modal"));  // the submitter carries a quick-pick chip's name and value
+    // The submitter carries a quick-pick chip's name and value. Older browsers ignore the second argument: add it by hand.
+    const fd = new FormData(f, e.submitter), who = e.submitter;
+    if (who && who.name && !fd.getAll(who.name).includes(who.value)) fd.append(who.name, who.value);
+    swap(f.action, { method: "POST", body: new URLSearchParams(fd) }, !!f.closest(".cal-modal"));
   });
 
   // ---- setup after every render ------------------------------------------------------------------------------------
@@ -114,6 +128,9 @@
     } else if (keep && (keep.focus || keep.id)) {
       const back = $(`[data-id="${CSS.escape(keep.focus || keep.id)}"]`, root);
       if (back) back.focus({ preventScroll: !keep.focus });
+    } else if (keep && keep.sel) {
+      const back = $(keep.sel, root);
+      if (back) back.focus({ preventScroll: true });
     }
     if (feed && $(".cal-note-live", feed)) feed.scrollTop = feed.scrollHeight;
     armLive(root);
@@ -130,14 +147,17 @@
     clearTimeout(liveTimer);
     if (root.dataset.live !== "1") return;
     liveTimer = setTimeout(function fire() {
-      const r = app();
-      if (!r || r.dataset.live !== "1") return;
-      const a = document.activeElement;
-      // Wait while a dialog is open, a block is being dragged or something is being typed: the swap would drop it.
-      if ($(".cal-modal", r) || drag || (a && r.contains(a) && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName))) { liveTimer = setTimeout(fire, 2000); return; }
-      const data = { view: r.dataset.view };
-      if (r.dataset.demo) data.demo = r.dataset.demo;
-      post("/calendar/live", data);
+      if (!app() || app().dataset.live !== "1") return;
+      // Queued behind any swap in flight, then checked again at the moment it would run: a dialog opened, a drag started
+      // or some typing begun in the meantime all make it wait, because the swap would drop them.
+      queue = queue.then(async () => {
+        const r = app(), a = document.activeElement;
+        if (!r || r.dataset.live !== "1") return;
+        if ($(".cal-modal", r) || drag || (a && r.contains(a) && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName))) { liveTimer = setTimeout(fire, 2000); return; }
+        const data = { view: r.dataset.view };
+        if (r.dataset.demo) data.demo = r.dataset.demo;
+        await doSwap("/calendar/live", { method: "POST", body: new URLSearchParams(data) });
+      }).catch(() => {});
     }, 4000);
   }
   // "Show me" on the live toast jumps the day window to the day she added to (on a phone that day may be off screen).

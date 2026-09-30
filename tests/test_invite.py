@@ -78,10 +78,17 @@ def test_bad_invite_name_rerenders_the_dialog_with_the_reason(client):
     assert r.status_code == 409 and 'role="alert"' in r.text and "cal-invite" in r.text
 
 
-def test_signed_out_invite_goes_through_sign_in_with_intent_invite(client):
-    r = client.get("/invite", follow_redirects=False)
-    assert r.status_code == 303 and r.headers["location"] == f"/signin?next={quote('/calendar', safe='/')}&intent=invite"
+def test_signed_out_invite_goes_through_sign_in_and_lands_on_the_dialog(client):
     book(client)
+    client.post("/signout")  # the booking stays in the session; only the traveler goes
+    r = client.get("/invite", follow_redirects=False)
+    want = f"/signin?next={quote('/calendar?invite=1', safe='')}&intent=invite"
+    assert r.status_code == 303 and r.headers["location"] == want
+    assert "invite your crew" in client.get(want).text
+    r = client.post("/signin", data={"traveler": "ari", "next": "/calendar?invite=1", "intent": "invite"}, follow_redirects=False)
+    assert r.headers["location"] == "/calendar?invite=1"
+    page = client.get(r.headers["location"])
+    assert 'role="dialog"' in page.text and "Invite your crew" in page.text
     assert client.get("/invite", follow_redirects=False).headers["location"] == "/calendar?invite=1"
 
 

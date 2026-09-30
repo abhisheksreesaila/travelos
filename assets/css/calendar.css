@@ -173,7 +173,7 @@
 .cal-delete { min-height: 44px; padding: 0; border: 0; background: none; color: var(--coral-deep); font: 800 15px var(--font-body); text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
 
 /* Toasts */
-.cal-toast { position: fixed; left: 50%; bottom: 20px; z-index: 60; transform: translateX(-50%); max-width: calc(100% - 32px); padding: 10px 12px 10px 18px; border-radius: var(--r-pill); background: var(--ink); color: #fff; font-weight: 700; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; box-shadow: var(--shadow-lg); animation: cal-rise .32s var(--ease-spring) both; }
+.cal-toast { position: fixed; left: 0; right: 0; margin-inline: auto; width: max-content; bottom: 20px; z-index: 60; max-width: calc(100% - 32px); box-sizing: border-box; padding: 10px 12px 10px 18px; border-radius: var(--r-pill); background: var(--ink); color: #fff; font-weight: 700; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; box-shadow: var(--shadow-lg); animation: cal-rise .32s var(--ease-spring) both; }
 .cal-toast-error { background: var(--accent-tint); color: var(--ink); box-shadow: 0 0 0 2px var(--coral-deep), var(--shadow-lg); }
 .cal-toast form { display: inline-flex; }
 .cal-undo { min-height: 40px; padding: 0 18px; border: 0; border-radius: var(--r-pill); background: var(--sun); color: var(--ink); font: 800 15px var(--font-body); cursor: pointer; }
@@ -298,5 +298,5 @@
 @media (max-width: 720px) {
   .cal-avatars { flex: 1 1 100%; margin-left: 0; order: 3; }
   .cal-linkfield { flex-basis: 100%; }
-  .cal-toast { left: 16px; right: 16px; transform: none; max-width: none; border-radius: 24px; padding-left: 18px; }
+  .cal-toast { left: 16px; right: 16px; margin-inline: 0; width: auto; max-width: none; border-radius: 24px; padding-left: 18px; }
 }

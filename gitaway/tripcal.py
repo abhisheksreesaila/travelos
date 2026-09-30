@@ -400,6 +400,8 @@ def live_add(session, demo=""):
     start = _free_slot(blocks, state, LIVE_DAY, grid_start(blocks))
     state["l"] = 1
     if start is None:
+        # Unenforced on purpose: the only growth is the one-byte-ish "l": 1 flag (about 6 bytes of JSON), and refusing it
+        # would make the script retry on every load. The same bound applies to the fallback below.
         _save(session, demo, state, enforce=False)
         return None
     n = state["q"]
