@@ -85,7 +85,7 @@
 .cal-booked { background: var(--ink); color: #fff; }
 .cal-booked:hover { color: #fff; }
 .cal-booked .cal-time, .cal-booked .cal-title { color: #fff; }
-.cal-act { cursor: grab; }
+.cal-act { cursor: grab; user-select: none; -webkit-user-drag: none; }
 .cal-act:hover { color: var(--ink); box-shadow: var(--shadow-sm); }
 .cal-act.is-drag { cursor: grabbing; box-shadow: var(--shadow-lg); z-index: 5; opacity: .92; }
 .cal-act.is-clash { box-shadow: 0 0 0 3px var(--coral-deep); }
@@ -217,10 +217,20 @@
   .cal-w-row { grid-template-columns: 1fr; gap: 6px; }
   .cal-w-head { padding: 6px 12px; }
   .cal-dialog { padding: 20px 18px; }
-  .cal-js .cal-notes { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; max-height: 72dvh; padding: 0; border-radius: var(--r-lg) var(--r-lg) 0 0; box-shadow: 0 -12px 30px -12px rgba(30, 26, 46, .35); }
+  .cal-js .cal-notes { position: fixed; top: auto; left: 0; right: 0; bottom: 0; z-index: 30; max-height: 72dvh; padding: 0; border-radius: var(--r-lg) var(--r-lg) 0 0; box-shadow: 0 -12px 30px -12px rgba(30, 26, 46, .35); }
   .cal-js .cal-notes-toggle { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 60px; padding: 0 20px; border: 0; border-radius: inherit; background: var(--card); color: var(--ink); font: 800 17px var(--font-body); cursor: pointer; }
   .cal-js .cal-notes-body { display: none; padding: 0 16px 16px; }
   .cal-js .cal-notes.open .cal-notes-body { display: flex; }
   .cal-js .cal-notes-head h2 { display: none; }
   .cal-js .cal-toast { bottom: 76px; }
 }
+
+/* Booked blocks flow icon, time and title as one text run so a one-hour block still shows the whole title */
+.cal-booked { display: block; padding: 5px 24px 5px 10px; }
+.cal-flow { display: block; font-size: 13px; line-height: 1.25; }
+.cal-flow svg { vertical-align: -2px; }
+.cal-booked .cal-title { display: inline; font-size: 13px; }
+.cal-booked .cal-lock { position: absolute; top: 6px; right: 8px; margin: 0; }
+.cal-tight { padding-top: 3px; padding-bottom: 3px; gap: 0; }
+.cal-tight .cal-meta { display: none; }
+.cal-composer { border-radius: 24px; }

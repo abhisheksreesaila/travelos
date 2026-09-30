@@ -104,8 +104,8 @@ def default_end(blocks, day, start):
 
 def booked_block(b, gs):
     return Div(
-        Span(icon(b.icon, 14, 2.2), Span(cal.fmt_time(b.start), cls="cal-time"), Span(icon("lock", 12, 2.4), cls="cal-lock"), cls="cal-line"),
-        Span(b.title, cls="cal-title"),
+        Span(icon(b.icon, 13, 2.2), " ", Span(cal.fmt_time(b.start), cls="cal-time"), " ", Span(b.title, cls="cal-title"), cls="cal-flow"),
+        Span(icon("lock", 12, 2.4), cls="cal-lock"),
         Span("Booked, locked", cls="sr-only"),
         cls="cal-block cal-booked", data_block=b.id, data_day=str(b.day), data_start=str(b.start), data_end=str(b.end),
         style=f"--top:{_px(b.start - gs)};--h:{_px(b.end - b.start)};--lane:0;--lanes:1",
@@ -116,15 +116,15 @@ def booked_block(b, gs):
 
 def activity_block(a, gs, demo, lane, nlanes, n_notes, new):
     label, tint = cal.KINDS[a.kind]
-    short = a.end - a.start <= 45
+    short, tight = a.end - a.start <= 45, a.end - a.start <= 60
     pop = " cal-pop" if new == a.id else ""
     return A(
         Span(cal.fmt_time(a.start), cls="cal-time"),
         Span(a.title, cls="cal-title"),
         Span(Span("You", cls="cal-by"), Span(f"{n_notes} note{'s' if n_notes != 1 else ''}", cls="cal-notecount") if n_notes else "", cls="cal-meta"),
         Span(cls="cal-resize", aria_hidden="true", title="Drag to resize"),
-        href=cal_url(demo, edit=a.id), data_soft="",
-        cls=f"cal-block cal-act k-{tint}{' cal-short' if short else ''}{pop}",
+        href=cal_url(demo, edit=a.id), data_soft="", draggable="false",
+        cls=f"cal-block cal-act k-{tint}{' cal-short' if short else ''}{' cal-tight' if tight else ''}{pop}",
         data_id=a.id, data_day=str(a.day), data_start=str(a.start), data_end=str(a.end),
         style=f"--top:{_px(a.start - gs)};--h:{_px(a.end - a.start)};--lane:{lane};--lanes:{nlanes}",
         aria_label=f"{a.title}, {label}, {cal.fmt_time(a.start)} to {cal.fmt_time(a.end)}. Press Enter to edit, arrow keys to move by 15 minutes, Shift and arrows to resize.",
