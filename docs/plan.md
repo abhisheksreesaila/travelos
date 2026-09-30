@@ -47,8 +47,9 @@ Design: docs/design/itinerary-page.md (option A + board) · Needs: F-012
 - [ ] one layout, switchable color themes
 - [ ] Fork button (asks for demo sign-in if signed out) adds the plan to the traveler's forks list
 
-## F-015 Booking workspace: flight, hotel and car lanes with cost ledger [todo]
-Design: F-011 (polished workspace pass first: settle the rough artboard's off-token colours, #BFE3FF #C9C3D6 #D8D3E6 #EAF6E4 #EEF2F7 #F4F0EA #FFE6A8 #FFF3E6, into tokens) · Needs: F-012
+## F-015 Booking workspace: flight, hotel and car lanes with cost ledger [blocked]
+Blocked: look at "Booking workspace (polished)" on the canvas (click a pane title to focus it) and say go, or say what feels too busy.
+Design: docs/design/canvas/Workspace-Polish.dc.html (all colours are tokens; panes focus tmux-style) · Needs: F-012
 - [ ] tmux-style tiled panes you can resize and focus, with keyboard shortcuts, in a bright rounded look
 - [ ] flights, hotels and cars side by side; picking one in each lane updates the cost ledger on top
 - [ ] ledger highlights the best-value combination
