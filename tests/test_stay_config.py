@@ -224,7 +224,7 @@ def test_quote_route_describes_an_under_capacity_edit_but_keeps_the_ledger_on_a_
     j = quote_json(client, "f=f1&h=h1&c=c1&rooms=ok1&add=bf")
     assert j["stay"]["fits"] is False and j["stay"]["fit_text"] == "Sleeps 2 of 4 · add a room" and j["stay"]["fit"] == "short"
     assert j["stay"]["summary"] == "Ocean-view King + Breakfast" and j["stay"]["price"] == "$1,380"
-    assert j["ledger"]["total"] == "$3,088"  # the ledger prices what is actually picked: the repaired default
+    assert j["ledger"]["total"] == "$3,408"  # the ledger prices what can be booked: the default room plus the add-on
     j = quote_json(client, "f=f1&h=h1&c=c1&rooms=&add=")
     assert j["stay"]["fit"] == "none" and j["stay"]["summary"] == "No room picked yet" and j["stay"]["price"] == "$0"
 
@@ -266,8 +266,7 @@ def test_paying_refuses_under_capacity_by_repairing_to_the_default_room(client):
     sign_in(client)
     client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1", "rooms": "ok1", "add": "bf"})
     b = session_data(client)["bookings"]["ari"]
-    assert b["total_cents"] == 308_800 + 32_000 - 0 and b["rooms"] == ""
-    # the under-capacity rooms were dropped; the add-on was a separate valid choice
+    assert b["total_cents"] == 308_800 + 32_000 and b["rooms"] == ""  # the short rooms became the default; the add-on stays
 
 
 def test_paying_a_different_room_replaces_the_booking(client):

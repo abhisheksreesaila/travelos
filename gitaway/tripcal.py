@@ -118,13 +118,19 @@ def weather_for(i):
 
 # ---- booked blocks -------------------------------------------------------------------------------------------------
 
+def stay_pick_of(b):
+    """The StayPick (rooms and add-ons) a booking `b` holds. Older bookings have none and mean the default room."""
+    return catalog.stay_pick(b["stay"], b.get("rooms") or None, b.get("add") or None)
+
+
 def booked_blocks(b, t):
     """The locked blocks a booking `b` puts on the calendar of trip `t`."""
     flight, stay = catalog.offer(b["flight"]), catalog.offer(b["stay"])
+    rooms = stay_pick_of(b).rooms_summary
     last = (t.return_ - t.depart).days
     return [
         Block("b-out", 0, flight.depart_min, flight.arrive_min, f"{flight.name} · {t.origin} → {flight.airport}", "booked", True, "plane"),
-        Block("b-in", 0, CHECK_IN, CHECK_IN + STAY_LEN, f"Check in · {stay.name}", "booked", True, "bed"),
+        Block("b-in", 0, CHECK_IN, CHECK_IN + STAY_LEN, f"Check in · {stay.name} · {rooms}", "booked", True, "bed"),
         Block("b-out2", last, CHECK_OUT, CHECK_OUT + STAY_LEN, f"Check out · {stay.name}", "booked", True, "bed"),
         Block("b-back", last, flight.back_depart_min, flight.back_arrive_min, f"{flight.name} · {flight.airport} → {t.origin}", "booked", True, "plane"),
     ]

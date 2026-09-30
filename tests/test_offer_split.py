@@ -31,9 +31,9 @@ def test_stay_detail_shows_what_the_catalog_knows(client):
     assert "not the hotel" in a  # alt text says it is the area
 
 
-def test_stay_without_an_area_photo_has_no_image_but_keeps_the_label(client):
+def test_stay_without_an_area_photo_has_no_area_image_but_keeps_the_label(client):
     a = _article(client.get("/plan").text, "h3")
-    assert "<img" not in a and "The area · Downtown" in a
+    assert "neighbourhood" not in a and "The area · Downtown" in a and "ws-hero-blank" in a
 
 
 def test_flight_detail_shows_out_and_back_times_from_minutes(client):
