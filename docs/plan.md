@@ -35,10 +35,10 @@ Design: design-system/DESIGN-SYSTEM.md, journey map on the F-011 canvas · Needs
 - [x] user-facing name reads GitAway everywhere; README run instructions work
 - [x] project runs through pixi
 
-## F-013 Landing page with split hero [doing]
+## F-013 Landing page with split hero [done]
 Design: docs/design/landing.md (Landing A, two doors; chosen 2026-09-29) · Needs: F-012
-- [ ] cover page explains what makes GitAway different, with delightful motion
-- [ ] two doors: "Plan a trip" opens the booking workspace; "Get inspired" opens the community hub
+- [x] cover page explains what makes GitAway different, with delightful motion
+- [x] two doors: "Plan a trip" opens the booking workspace; "Get inspired" opens the community hub
 
 ## F-014 Scrapbook itinerary page [done]
 Design: docs/design/itinerary-page.md (option A + board) · Needs: F-012
