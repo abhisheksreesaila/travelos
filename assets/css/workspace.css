@@ -36,9 +36,9 @@
 .ws-details-toggle { display: none; }
 
 /* Panes */
-.ws-grid { flex: 1; min-height: 0; display: grid; gap: 14px; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr) minmax(0, .95fr) minmax(0, .9fr); transition: grid-template-columns .3s var(--ease-out); }
-.ws-grid[data-focus="stays"] { grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr) minmax(0, .95fr) minmax(0, .9fr); }
-.ws-grid[data-focus="cars"] { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, .9fr); }
+.ws-grid { flex: 1; min-height: 0; display: grid; gap: 14px; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr) minmax(0, .95fr) minmax(0, 1.2fr); transition: grid-template-columns .3s var(--ease-out); }
+.ws-grid[data-focus="stays"] { grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr) minmax(0, .95fr) minmax(0, 1.2fr); }
+.ws-grid[data-focus="cars"] { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1.2fr); }
 .ws-grid[data-expanded="flights"], .ws-grid[data-expanded="stays"], .ws-grid[data-expanded="cars"] { grid-template-columns: 1fr; }
 .ws-grid[data-expanded="flights"] > :not([data-pane="flights"]),
 .ws-grid[data-expanded="stays"] > :not([data-pane="stays"]),
@@ -49,7 +49,7 @@
 .ws-pane.is-focused { box-shadow: 0 0 0 3px var(--ink), 0 12px 24px -12px rgba(30, 26, 46, .35); }
 .ws-pane-head { display: flex; align-items: center; gap: 10px; padding: 2px 4px 4px; }
 .ws-key { width: 26px; height: 26px; border-radius: 8px; font: 800 14px var(--font-body); display: grid; place-items: center; }
-.ws-focus { border: 0; background: transparent; padding: 2px 0; cursor: pointer; font-family: var(--font-display); font-weight: 800; font-size: 21px; color: var(--ink); }
+.ws-focus { text-align: left; border: 0; background: transparent; padding: 2px 0; cursor: pointer; font-family: var(--font-display); font-weight: 800; font-size: 21px; color: var(--ink); }
 .ws-meta { font-size: 14px; font-weight: 700; color: var(--ink-3); }
 .ws-expand { margin-left: auto; width: 34px; height: 34px; border: 0; border-radius: 10px; background: #FAF7F2; display: grid; place-items: center; cursor: pointer; color: var(--ink); }
 .ws-cards { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; min-height: 0; padding: 8px; margin: -8px; }
@@ -80,7 +80,8 @@
 .ws-tip { margin-top: auto; padding: 14px 16px; border-radius: var(--r-md); background: var(--sun-tint); font-size: 14px; font-weight: 700; line-height: 1.4; }
 
 /* Context panes */
-.ws-context { display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; gap: 14px; min-height: 0; min-width: 0; }
+.ws-context { display: grid; grid-template-rows: none; grid-auto-rows: max-content; align-content: start; gap: 14px; min-height: 0; min-width: 0; overflow-y: auto; padding: 3px; margin: -3px; }
+.ws-context .ws-pane { flex-shrink: 0; }
 .ws-context .ws-pane { padding: 14px 16px; gap: 8px; }
 .ws-context .ws-focus { font-size: 19px; }
 .ws-context .ws-cards { gap: 8px; }
@@ -89,10 +90,10 @@
 .ws-subhead { font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); margin-top: 2px; }
 .ws-weather { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
 .ws-wcell { padding: 8px 2px; border-radius: 14px; display: flex; flex-direction: column; align-items: center; gap: 2px; color: var(--ink); }
-.ws-wday { font-size: 13px; font-weight: 800; }
+.ws-wday { white-space: nowrap; font-size: 12px; font-weight: 800; }
 .ws-temp { font-weight: 800; font-size: 16px; font-variant-numeric: tabular-nums; }
 .ws-sky { font-size: 11px; font-weight: 700; color: var(--ink-2); text-align: center; line-height: 1.2; }
-.ws-map { position: relative; height: 150px; flex-shrink: 0; border-radius: 18px; background: var(--mint-tint); overflow: hidden; }
+.ws-map { position: relative; height: 130px; flex-shrink: 0; border-radius: 18px; background: var(--mint-tint); overflow: hidden; }
 .ws-map-art { position: absolute; inset: 0; width: 100%; height: 100%; }
 .ws-sea { fill: var(--sky-tint); }
 .ws-shore { stroke: var(--sun-tint); stroke-width: 8; fill: none; }
@@ -134,7 +135,7 @@
   .ws { height: auto; min-height: 0; overflow: visible; }
   .ws-grid, .ws-grid[data-focus] { grid-template-columns: 1fr 1fr 1fr; grid-template-rows: none; }
   .ws-grid[data-expanded] { grid-template-columns: 1fr; }
-  .ws-context { grid-column: 1 / -1; grid-template-rows: none; grid-template-columns: 1fr 1fr; align-items: start; }
+  .ws-context { overflow: visible; padding: 0; margin: 0; grid-column: 1 / -1; grid-template-columns: 1fr 1fr; align-items: start; }
   .ws-slot-label, .ws-op { display: none; }
   .ws-hint { display: none; }
   .ws-pill { margin-left: auto; }

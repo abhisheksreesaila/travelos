@@ -174,7 +174,7 @@ def weather_pane():
             cls=f"ws-wcell fill-{w.fill}-tint")
         for w in context.WEATHER
     ]
-    return pane("weather", 4, "Weather", "Los Angeles · °F", [Div(*days, cls="ws-weather"), Span(context.SAMPLE_NOTE, cls="ws-sample")], "fill-sun-tint")
+    return pane("weather", 4, "Weather", "°F", [Div(*days, cls="ws-weather"), Span(context.SAMPLE_NOTE, cls="ws-sample")], "fill-sun-tint")
 
 
 def _map_label(pt, cls, extra=None):
@@ -202,7 +202,7 @@ def map_pane(stay):
              data_map_pin=stay.id),
         cls="ws-map",
     )
-    return pane("map", 5, "Map", "Schematic, not to scale", [
+    return pane("map", 5, "Map", "Schematic", [
         canvas, Span(m["caption"], cls="ws-map-caption", id="ws-map-caption", aria_live="polite"),
         Span(f"{context.SAMPLE_NOTE}: a schematic sketch, not a real map", cls="ws-sample"),
     ], "fill-mint-tint")
