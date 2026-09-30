@@ -113,3 +113,28 @@ Brief: docs/briefs/voice.md (approved 2026-09-30) · Design: docs/design/canvas/
 - [ ] the sentence becomes 3–4 draft plans previewed in the right empty slots around bookings and friends' items
 - [ ] one quick question chip resolves an unclear bit (which Friday, what time) and updates the preview
 - [ ] Apply drops them in with the pop-in, and trip notes log it; reduced motion shows everything instantly
+
+# Flight and stay details
+
+Brief: docs/briefs/offer-details.md (approved 2026-09-30). Same fake-data rules as above.
+
+## F-025 Split view: expand Flights or Stays into list + detail [todo]
+Design: pending (designer, before build) · Needs: F-015
+- [ ] expanding the Flights or Stays pane (button, or its key then Enter) morphs it into a list sidebar plus a detail panel; the picked offer (or the first) opens by default
+- [ ] Esc or the collapse button morphs back to the tiled workspace; reduced motion swaps instantly; focus lands sensibly both ways
+- [ ] detail shows what the catalog already knows (name, headline, detail, rating, tags, area photo labelled as the area); Choose makes it the lane's pick and the ledger updates
+- [ ] phone: list and detail are two screens with a back button; no sideways scroll at 1440/1280/1000/800/390/320
+
+## F-026 Stay detail: sample photos, room types and add-ons [todo]
+Design: pending (with F-025) · Needs: F-025
+- [ ] each hotel has a credited CC0 sample-photo gallery (always labelled "sample photo"), highlights and a cancellation policy
+- [ ] room types (e.g. City-view King, Ocean-view King, Family suite) with price, occupancy, beds and view; pick a room and a count (Ocean-view King ×2 for 4 people)
+- [ ] add-ons toggle on and off: breakfast, late checkout, parking
+- [ ] the pick URL carries room, count and add-ons; the ledger, pay sheet and calendar itemize them, computed by the catalog (the page never does arithmetic); a bad or missing room falls back to the default
+- [ ] sample trip: The Tidewater, Ocean-view King ×2 + breakfast gives the right total through pay and calendar
+
+## F-027 Flight detail: legs, fare types and checked bags [todo]
+Design: pending (with F-025) · Needs: F-026 (shares the pick URL and itemized ledger)
+- [ ] out and back legs with times, duration, stops and aircraft
+- [ ] fare types (Basic, Main, Extra legroom) with price and what each includes (seat choice, carry-on, checked bag, changes)
+- [ ] checked-bag count as an add-on; fare and bags carry through the URL, ledger, pay and calendar like stays

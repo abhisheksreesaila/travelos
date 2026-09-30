@@ -1,6 +1,6 @@
 # Feature brief: flight and stay details (iPad-style list and detail in the workspace)
 
-Status: draft
+Status: approved (2026-09-30)
 
 ## Why
 - A real booking API returns far more than a list: photos, room types, views, meals, fare rules. Today GitAway shows only the list, so travelers can't make an informed choice, which is the whole point of the workspace.
