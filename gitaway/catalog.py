@@ -175,11 +175,11 @@ _STAY_DETAILS = {
         coast=True,
         pois=(
             Poi("hotel", "The Tidewater", "The Tidewater", 44, 50, "", _HOME),
-            Poi("beach", "Santa Monica Beach", "Beach", 33, 45, "3 min walk", "Wide sand, lifeguards, and the bike path."),
-            Poi("sight", "Santa Monica Pier", "Pier", 34, 64, "6 min walk", "Ferris wheel, arcade and the aquarium under the pier."),
-            Poi("food", "Third Street Promenade", "Promenade", 60, 40, "9 min walk", "Car-free shopping street with street performers."),
-            Poi("park", "Tongva Park playground", "Playground", 66, 25, "10 min walk", "Splash pads and hills to roll down."),
-            Poi("train", "Metro E Line", "Metro", 72, 60, "12 min walk", "Train to Culver City and Downtown."),
+            Poi("beach", "Santa Monica Beach", "Beach", 23, 57, "3 min walk", "Wide sand, lifeguards, and the bike path."),
+            Poi("sight", "Santa Monica Pier", "Pier", 25, 77, "6 min walk", "Ferris wheel, arcade and the aquarium under the pier."),
+            Poi("food", "Third Street Promenade", "Promenade", 68, 52, "9 min walk", "Car-free shopping street with street performers."),
+            Poi("park", "Tongva Park playground", "Playground", 68, 33, "10 min walk", "Splash pads and hills to roll down."),
+            Poi("train", "Metro E Line", "Metro", 68, 71, "12 min walk", "Train to Culver City and Downtown."),
         ),
     ),
     "h2": StayDetail(
@@ -195,10 +195,10 @@ _STAY_DETAILS = {
         coast=True,
         pois=(
             Poi("hotel", "Casa Palmera", "Casa Palmera", 46, 52, "", _HOME),
-            Poi("beach", "Venice Beach", "Beach", 33, 50, "8 min walk", "Boardwalk, skate park and muscle beach."),
-            Poi("sight", "Venice Canals", "Canals", 52, 67, "4 min walk", "Footbridges and rowboats, lovely at sunset."),
-            Poi("food", "Abbot Kinney Blvd", "Abbot Kinney", 60, 40, "6 min walk", "Cafés, ice cream and small shops."),
-            Poi("park", "Penmar Park", "Park", 66, 25, "15 min walk", "Playground and a big lawn for dogs."),
+            Poi("beach", "Venice Beach", "Beach", 24, 58, "8 min walk", "Boardwalk, skate park and muscle beach."),
+            Poi("sight", "Venice Canals", "Canals", 48, 81, "4 min walk", "Footbridges and rowboats, lovely at sunset."),
+            Poi("food", "Abbot Kinney Blvd", "Abbot Kinney", 69, 36, "6 min walk", "Cafés, ice cream and small shops."),
+            Poi("park", "Penmar Park", "Park", 69, 56, "15 min walk", "Playground and a big lawn for dogs."),
         ),
     ),
     "h3": StayDetail(
@@ -214,11 +214,11 @@ _STAY_DETAILS = {
         coast=False,
         pois=(
             Poi("hotel", "Hotel Marigold", "Marigold", 48, 50, "", _HOME),
-            Poi("train", "Metro 7th St", "Metro", 56, 61, "3 min walk", "Trains to the beach, Hollywood and Pasadena."),
-            Poi("park", "Grand Park", "Grand Park", 66, 25, "5 min walk", "Fountains the kids can splash in."),
-            Poi("food", "Grand Central Market", "Food hall", 36, 62, "4 min walk", "Forty food stalls under one roof."),
-            Poi("sight", "The Broad", "The Broad", 38, 32, "7 min walk", "Free modern art museum with the mirror room."),
-            Poi("beach", "Santa Monica Beach", "Beach, 35 min", 22, 48, "35 min drive", "Or about 50 minutes on the Metro E Line."),
+            Poi("train", "Metro 7th St", "Metro", 70, 54, "3 min walk", "Trains to the beach, Hollywood and Pasadena."),
+            Poi("park", "Grand Park", "Grand Park", 70, 33, "5 min walk", "Fountains the kids can splash in."),
+            Poi("food", "Grand Central Market", "Food hall", 28, 54, "4 min walk", "Forty food stalls under one roof."),
+            Poi("sight", "The Broad", "The Broad", 28, 35, "7 min walk", "Free modern art museum with the mirror room."),
+            Poi("beach", "Santa Monica Beach", "Beach, 35 min", 36, 80, "35 min drive", "Or about 50 minutes on the Metro E Line."),
         ),
     ),
 }

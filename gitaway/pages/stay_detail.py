@@ -30,7 +30,7 @@ def near_strip(d):
 
 
 def _sample(label, photo, tint):
-    caption = Figcaption(f"Sample photo · {label}")
+    caption = Figcaption(f"Sample photo · {label}" if photo else f"Photo coming · {label}")
     if photo:
         return Figure(Img(src=PHOTOS + photo, alt=f"Sample photo: {label} (not the hotel)", loading="lazy", width="400", height="300"),
                       caption, cls=f"ws-sample-tile {tint}", data_sample=label)
@@ -147,7 +147,7 @@ def _pin(i, p, selected):
     fill, ic, _ = KIND[p.kind]
     label = f"{p.name}, {p.walk}" if p.walk else p.name
     return Button(
-        Span(Span(icon(ic, 14, 2.6), cls="ws-pin-ico", aria_hidden="true"), p.label, cls=f"ws-pin-bub {fill}"),
+        Span(Span(icon(ic, 14, 2.6), cls="ws-pin-ico", aria_hidden="true"), Span(p.label, cls="ws-pin-label"), cls=f"ws-pin-bub {fill}"),
         Span(cls="ws-pin-stem", aria_hidden="true"),
         type="button", cls="ws-pin", style=f"left:{p.x}%;top:{p.y}%", aria_label=label, aria_pressed="true" if selected else "false",
         data_poi=str(i), data_tx=str(50 - p.x), data_ty=str(50 - p.y),
@@ -184,12 +184,15 @@ def explore(stay_id):
         cls="ws-plane",
     )
     aerial = Div(
-        plane,
-        Span("Illustrated map · not to scale", cls="ws-map-note"),
-        Span(
-            Button(icon("target", 18, 2.4), type="button", cls="ws-mapbtn", aria_label="Back to the hotel", data_recenter=""),
-            Button(icon("rotate", 18, 2.4), type="button", cls="ws-mapbtn", aria_label="Turn the view", data_spin=""),
-            cls="ws-mapbtns",
+        Div(plane, cls="ws-viewport"),
+        Div(  # a bar of its own under the 3D view, so nothing the map draws can sit under the controls
+            Span("Illustrated map · not to scale", cls="ws-map-note"),
+            Span(
+                Button(icon("target", 18, 2.4), type="button", cls="ws-mapbtn", aria_label="Back to the hotel", data_recenter=""),
+                Button(icon("rotate", 18, 2.4), type="button", cls="ws-mapbtn", aria_label="Turn the view", data_spin=""),
+                cls="ws-mapbtns",
+            ),
+            cls="ws-mapbar",
         ),
         cls="ws-aerial", role="group", aria_label=f"Aerial view around {o.name}", style=f"--tx:{50 - home.x}%;--ty:{50 - home.y}%;--spin:0deg",
     )

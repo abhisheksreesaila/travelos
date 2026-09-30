@@ -428,8 +428,8 @@ def register(app):
     def plan_quote(f: str = "", h: str = "", c: str = "", rooms: str = None, add: str = None):
         """The ledger figures for a pick, and the stay editor's state for the rooms as asked (even if they sleep too few).
 
-        "ledger" prices what can really be booked (too few beds become the default room); "stay" describes the rooms as asked,
-        so the choose bar can say "Sleeps 2 of 4 · add a room" while the ledger stays on the last real pick.
+        "ledger" prices what can really be booked: for a short pick (rooms that sleep fewer than the party) that is the default
+        room plus the asked add-ons. "stay" describes the rooms as asked, so the choose bar can say "Sleeps 2 of 4 · add a room".
         """
         picks = resolve_pick(f, h, c)
         asked = catalog.parse_stay(picks[1], rooms, add)

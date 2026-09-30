@@ -167,9 +167,13 @@ def test_every_photo_referenced_exists_and_is_credited(client):
 
 
 def test_sample_photos_are_always_labelled_and_never_claim_to_be_the_hotel(client):
-    a = stay_article(client.get("/plan").text, "h1")
+    html = client.get("/plan").text
+    a = stay_article(html, "h1")
     for m in re.finditer(r'<figure[^>]*data-sample[^>]*>(.*?)</figure>', a, re.S):
         assert "Sample photo" in m.group(1)
+    # a tile with no photo yet says so instead of claiming to be a sample photo
+    kitchen = re.search(r'<figure[^>]*data-sample="Kitchen"[^>]*>(.*?)</figure>', stay_article(html, "h2"), re.S).group(1)
+    assert "Photo coming · Kitchen" in kitchen and "Sample photo" not in kitchen and "<img" not in kitchen
     assert re.findall(r'alt="([^"]*)"', a)
     for alt in re.findall(r'<img[^>]*alt="([^"]*)"', a):
         assert "sample" in alt.lower() or "not the hotel" in alt.lower() or alt == ""
@@ -241,9 +245,10 @@ def test_quote_route_totals_match_the_catalog_for_every_room_count(client):
 def test_the_pay_sheet_itemizes_rooms_and_add_ons(client):
     sign_in(client)
     html = client.get(f"/plan/pay?{DONE}").text
-    assert "Ocean-view King" in html and "×2" in html and "$2,120" in html
-    assert "Breakfast for 4" in html and "$320" in html
-    assert "Pay $3,988" in html and "$2,440" in html
+    items = re.findall(r'<li class="pay-item">\s*<span class="pay-item-name">([^<]*)</span>\s*<span class="pay-item-price">([^<]*)</span>', html)
+    assert items == [("Ocean-view King ×2", "$2,120"), ("Breakfast for 4", "$320")]
+    assert re.search(r'pay-name">The Tidewater</span>.*?class="pay-price">\$2,440<', html, re.S)
+    assert "Pay $3,988" in html
     assert 'name="rooms" value="ok2"' in html and 'name="add" value="bf"' in html
     assert 'href="/plan?f=f1&amp;h=h1&amp;c=c1&amp;rooms=ok2&amp;add=bf"' in html  # back to my picks keeps the rooms
 
@@ -294,7 +299,7 @@ def test_the_calendar_respects_the_picked_rooms(client):
     client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1", "rooms": "ok2", "add": "bf"})
     html = client.get("/calendar").text
     assert "Check in · The Tidewater · Ocean-view King ×2" in html
-    assert "$3,988" in html
+    assert re.search(r'class="cal-tripline"[^>]*>[^<]*\$3,988<', html)
     assert "Ocean-view King ×2 + Breakfast" in html  # the welcome note
 
 
@@ -324,3 +329,29 @@ def test_the_choose_button_starts_enabled_for_a_default_room_and_every_stay_has_
         assert "disabled" not in re.search(r'<button[^>]*data-choose="%s"[^>]*>' % stay.id, a).group(0)
         assert a.count('class="ws-room"') == 3 and a.count("data-addon=") == 3
         assert re.search(r'data-count="1"', a) and a.count('data-count="0"') == 2
+
+
+# ---- map pins (measured in a browser at 1440-320; these keep the data inside what was measured) -----------------------
+
+def test_map_points_keep_clear_of_each_other_and_of_the_view_edges():
+    for stay in catalog.offers("stay"):
+        pois = catalog.stay_detail(stay.id).pois
+        for p in pois:
+            assert 18 <= p.x <= 72 and 33 <= p.y <= 82, (stay.id, p.label)  # inside the view centred on the hotel
+        for i, a in enumerate(pois):
+            for b in pois[i + 1:]:
+                assert abs(a.x - b.x) >= 16 or abs(a.y - b.y) >= 16, (stay.id, a.label, b.label)  # labels are ~15% wide and tall
+
+
+def test_the_map_controls_sit_in_a_bar_under_the_view_not_over_the_pins(client):
+    frag = client.get("/plan/explore?h=h1").text
+    view, bar = frag.index('class="ws-viewport"'), frag.index('class="ws-mapbar"')
+    assert view < bar and frag.index("ws-mapbtn") > bar and frag.index("Illustrated map") > bar
+    assert frag.index("ws-pin") < bar  # the pins are in the view
+    assert 'class="ws-pin-label"' in frag  # narrow maps show the pins as icons and keep the name for screen readers
+
+
+def test_the_script_resets_the_stay_it_leaves_and_holds_choose_during_an_edit(client):
+    js = client.get("/assets/js/workspace.js").text
+    assert "resetPanel(pick.stay)" in js
+    assert "panel.querySelector('.ws-choose').disabled = true" in js

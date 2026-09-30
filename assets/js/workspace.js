@@ -131,6 +131,8 @@
   // (cfg); picking another stay starts from its default room.
   function selectPick(lane, id, cfg) {
     if (lane === 'stay') {
+      // The stay being left goes back to its default room, like a reload; the new pick's own panel is set by the server's answer.
+      if (id !== pick.stay) resetPanel(pick.stay);
       if (cfg) { pick.rooms = cfg.rooms; pick.add = cfg.add; }
       else if (id !== pick.stay) { pick.rooms = null; pick.add = null; }
     }
@@ -213,6 +215,8 @@
     panel.querySelectorAll('.ws-room').forEach(function (c) { if (Number(c.dataset.count) > 0) rooms += c.dataset.room + c.dataset.count; });
     panel.querySelectorAll('.ws-addon[aria-pressed="true"]').forEach(function (b) { add += b.dataset.addon; });
     var n = panelSeq[id] = (panelSeq[id] || 0) + 1;
+    // Choose waits for the server's answer, so it can never pick the setup from before this edit.
+    panel.querySelector('.ws-choose').disabled = true;
     getQuote('h=' + enc(id) + '&rooms=' + enc(rooms) + '&add=' + enc(add)).then(function (j) {
       if (n !== panelSeq[id]) return;
       applyStay(panel, j.stay);
@@ -220,13 +224,25 @@
     }).catch(function () {});
   }
 
+  // Put a stay's editor back to its default room (what a reload shows for a stay that is not picked).
+  function resetPanel(id) {
+    delete dirty[id];
+    var n = panelSeq[id] = (panelSeq[id] || 0) + 1; // ignore answers still on their way
+    var panel = panelOf(id);
+    if (panel) panel.querySelector('.ws-choose').disabled = true;
+    getQuote('h=' + enc(id)).then(function (j) {
+      if (n === panelSeq[id]) { applyStay(panel, j.stay); paintChoose(); }
+    }).catch(function () {});
+  }
+
   // Leaving the split view drops edits that were not chosen, so opening it again (like a reload) shows the picks.
   function discardDrafts() {
     Object.keys(dirty).forEach(function (id) {
-      delete dirty[id];
-      panelSeq[id] = (panelSeq[id] || 0) + 1; // ignore answers still on their way
-      if (id === pick.stay) { refresh(); return; }
-      getQuote('h=' + enc(id)).then(function (j) { applyStay(panelOf(id), j.stay); paintChoose(); }).catch(function () {});
+      if (id === pick.stay) {
+        delete dirty[id];
+        panelSeq[id] = (panelSeq[id] || 0) + 1;
+        refresh();
+      } else resetPanel(id);
     });
   }
 
