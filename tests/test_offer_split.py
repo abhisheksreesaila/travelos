@@ -110,5 +110,6 @@ def test_js_and_css_contract(client):
     js = client.get("/assets/js/workspace.js").text
     css = open("assets/css/workspace.css").read()
     assert "prefers-reduced-motion" in js and "Escape" in js and "data-choose" in js.replace("dataset.choose", "data-choose")
-    assert re.search(r"prefers-reduced-motion[^{]*\{[^@]*ws-split|prefers-reduced-motion[\s\S]*ws-dcol", css)
+    reduced = css[css.rindex("prefers-reduced-motion"):]
+    assert "ws-detail-panel" in reduced and "animation: none" in reduced  # reduced motion swaps instantly
     assert "340px" in css
