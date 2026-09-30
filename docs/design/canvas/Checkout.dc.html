@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>GitAway · Sign in, pay, celebrate</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Figtree:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FFF8EE}
+a{color:#1E1A2E}
+a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid #1E1A2E;outline-offset:3px}
+@keyframes co-pop{0%{transform:scale(.7) translateY(20px);opacity:0}70%{transform:scale(1.04);opacity:1}100%{transform:scale(1)}}
+.co-pop{animation:co-pop .45s cubic-bezier(.2,.9,.3,1.3) both}
+@keyframes co-fall{0%{transform:translateY(-40px) rotate(0);opacity:1}100%{transform:translateY(620px) rotate(540deg);opacity:0}}
+.co-conf{animation:co-fall 1.8s cubic-bezier(.2,.6,.4,1) both}
+@media (prefers-reduced-motion: reduce){.co-pop,.co-conf{animation:none}.co-conf{display:none}}
+</style>
+</helmet>
+<div style="position: relative; width: 1440px; height: 900px; box-sizing: border-box; background: #FFF8EE; color: #1E1A2E; font-family: 'Figtree', 'Segoe UI', system-ui, sans-serif; overflow: hidden">
+
+<!-- Step switcher (prototype control) -->
+<div style="position: absolute; left: 24px; top: 20px; z-index: 5; display: flex; gap: 6px; padding: 6px; border-radius: 999px; background: #FFFFFF; box-shadow: 0 0 0 1px rgba(30,26,46,0.08)">
+<sc-for list="{{steps}}" as="s" hint-placeholder-count="3">
+<button onClick="{{s.go}}" aria-pressed="{{s.pressed}}" style="height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: {{s.bg}}; color: {{s.fg}}; font: 800 14px 'Figtree', sans-serif; cursor: pointer">{{s.label}}</button>
+</sc-for>
+</div>
+
+<!-- Dimmed workspace behind -->
+<div aria-hidden="true" style="position: absolute; inset: 0; padding: 90px 24px 24px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: 116px 1fr; gap: 14px; filter: blur(2px); opacity: 0.55">
+<div style="grid-column: 1 / -1; border-radius: 28px; background: #FFFFFF"></div>
+<div style="border-radius: 26px; background: #FFFFFF"></div><div style="border-radius: 26px; background: #FFFFFF"></div><div style="border-radius: 26px; background: #FFFFFF"></div><div style="border-radius: 26px; background: #FFFFFF"></div>
+</div>
+<div style="position: absolute; inset: 0; background: rgba(30,26,46,0.35)"></div>
+
+<!-- Sign in -->
+<sc-if value="{{isSignin}}" hint-placeholder-val="{{yes}}">
+<div role="dialog" aria-modal="true" aria-labelledby="co-si-title" class="co-pop" style="position: absolute; left: 50%; top: 50%; width: 520px; margin: -250px 0 0 -260px; padding: 36px; box-sizing: border-box; border-radius: 32px; background: #FFFFFF; box-shadow: 0 6.7px 5.3px rgba(0,0,0,0.048), 0 22.3px 17.9px rgba(0,0,0,0.072), 0 41.8px 33.4px rgba(0,0,0,0.086); display: flex; flex-direction: column; gap: 18px">
+<span style="align-self: flex-start; transform: rotate(-3deg); height: 36px; padding: 0 14px; border-radius: 999px; background: #FFC93C; border: 3px solid #FFFFFF; box-shadow: 0 6px 14px -6px rgba(30,26,46,0.35); display: flex; align-items: center; font-weight: 800; font-size: 14px">One tiny step</span>
+<h2 id="co-si-title" style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 40px; line-height: 1; letter-spacing: -0.03em">Sign in to book this trip</h2>
+<p style="margin: 0; font-size: 17px; line-height: 1.5; color: #4A4460">We'll keep your picks exactly as they are. This is a demo, so pick a traveler and go.</p>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<button onClick="{{toPay}}" style="height: 64px; padding: 0 18px; border: 0; border-radius: 20px; background: #FFF4EF; box-shadow: 0 0 0 3px #FF7352; display: flex; align-items: center; gap: 14px; font: 800 17px 'Figtree', sans-serif; color: #1E1A2E; cursor: pointer; text-align: left">
+<span style="width: 40px; height: 40px; border-radius: 999px; background: #C3B2FF; display: flex; align-items: center; justify-content: center; font-size: 14px">AR</span><span style="display: flex; flex-direction: column"><span>Continue as Ari Rivera</span><span style="font-size: 14px; font-weight: 600; color: #4A4460">Demo traveler · family of four</span></span></button>
+<button style="height: 64px; padding: 0 18px; border: 0; border-radius: 20px; background: #FAF7F2; display: flex; align-items: center; gap: 14px; font: 800 17px 'Figtree', sans-serif; color: #1E1A2E; cursor: pointer; text-align: left">
+<span style="width: 40px; height: 40px; border-radius: 999px; background: #48D1A0; display: flex; align-items: center; justify-content: center; font-size: 14px">SK</span><span style="display: flex; flex-direction: column"><span>Continue as Sam Kim</span><span style="font-size: 14px; font-weight: 600; color: #4A4460">Demo traveler · couple trip</span></span></button>
+</div>
+<span style="font-size: 14px; font-weight: 600; color: #5A5470">Real sign-in with Google comes later. Nothing here leaves your browser.</span>
+</div>
+</sc-if>
+
+<!-- Pay sheet -->
+<sc-if value="{{isPay}}" hint-placeholder-val="{{no}}">
+<div role="dialog" aria-modal="true" aria-labelledby="co-pay-title" class="co-pop" style="position: absolute; left: 50%; bottom: 0; width: 640px; margin-left: -320px; padding: 16px 36px 36px; box-sizing: border-box; border-radius: 36px 36px 0 0; background: #FFFFFF; box-shadow: 0 -20px 40px -20px rgba(30,26,46,0.45); display: flex; flex-direction: column; gap: 16px">
+<span style="align-self: center; width: 56px; height: 6px; border-radius: 999px; background: rgba(30,26,46,0.15)"></span>
+<div style="display: flex; align-items: flex-end; justify-content: space-between">
+<h2 id="co-pay-title" style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 34px; letter-spacing: -0.02em">LA, Oct 16 – 20</h2>
+<span style="font-size: 15px; font-weight: 700; color: #4A4460">4 travelers</span>
+</div>
+<div style="display: flex; flex-direction: column; border-radius: 22px; background: #FAF7F2; padding: 6px 18px">
+<sc-for list="{{lines}}" as="l" hint-placeholder-count="3">
+<div style="display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid rgba(30,26,46,0.08)">
+<span style="width: 40px; height: 40px; border-radius: 12px; background: {{l.bg}}; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1E1A2E" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{l.icon}}"></path></svg></span>
+<span style="flex: 1; display: flex; flex-direction: column"><span style="font-weight: 800; font-size: 16px">{{l.name}}</span><span style="font-size: 14px; font-weight: 600; color: #4A4460">{{l.detail}}</span></span>
+<span style="font-weight: 800; font-size: 17px; font-variant-numeric: tabular-nums">{{l.price}}</span>
+</div>
+</sc-for>
+<div style="display: flex; align-items: baseline; justify-content: space-between; padding: 14px 0 8px"><span style="font-weight: 800">Total, taxes &amp; fees in</span><span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 34px">$3,088</span></div>
+</div>
+<div style="display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-radius: 18px; box-shadow: 0 0 0 1px rgba(30,26,46,0.1)">
+<span style="width: 48px; height: 32px; border-radius: 6px; background: #1E1A2E; color: #FFC93C; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center">DEMO</span>
+<span style="flex: 1; font-weight: 800">Demo card ending 4242</span>
+<span style="font-size: 14px; font-weight: 700; color: #4A4460">Ari Rivera pays</span>
+</div>
+<button onClick="{{toDone}}" style="height: 68px; border: 0; border-radius: 999px; background: #1E1A2E; color: #FFFFFF; box-shadow: 0 5px 0 #000000; font: 800 21px 'Figtree', sans-serif; cursor: pointer">Pay $3,088</button>
+<span style="text-align: center; font-size: 14px; font-weight: 700; color: #5A5470">Simulated checkout. No money moves and nothing is really booked.</span>
+</div>
+</sc-if>
+
+<!-- Celebration -->
+<sc-if value="{{isDone}}" hint-placeholder-val="{{no}}">
+<div aria-hidden="true" style="position: absolute; inset: 0; pointer-events: none">
+<sc-for list="{{confetti}}" as="c" hint-placeholder-count="24">
+<span class="co-conf" style="position: absolute; left: {{c.x}}; top: {{c.y}}; width: {{c.w}}; height: {{c.h}}; border-radius: 3px; background: {{c.color}}; animation-delay: {{c.delay}}"></span>
+</sc-for>
+</div>
+<div role="dialog" aria-modal="true" aria-labelledby="co-done-title" class="co-pop" style="position: absolute; left: 50%; top: 50%; width: 640px; margin: -250px 0 0 -320px; padding: 44px; box-sizing: border-box; border-radius: 40px; background: #FF8A63; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 18px; box-shadow: 0 41.8px 33.4px rgba(0,0,0,0.086)">
+<span style="width: 96px; height: 96px; border-radius: 999px; background: #FFC93C; border: 5px solid #FFFFFF; display: flex; align-items: center; justify-content: center; transform: rotate(-8deg)"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#1E1A2E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"></path></svg></span>
+<h2 id="co-done-title" style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 64px; line-height: 0.95; letter-spacing: -0.04em">You're going to LA!</h2>
+<p style="margin: 0; font-size: 19px; line-height: 1.5; font-weight: 600; max-width: 460px">Your flights and hotel are on the trip calendar. Now the fun part: fill the gaps with your crew.</p>
+<div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center">
+<span style="height: 34px; padding: 0 14px; border-radius: 999px; background: #FFFFFF; display: flex; align-items: center; font-weight: 800; font-size: 14px">Fri Oct 16, 8:05 AM · SFO → LAX</span>
+<span style="height: 34px; padding: 0 14px; border-radius: 999px; background: #FFFFFF; display: flex; align-items: center; font-weight: 800; font-size: 14px">The Tidewater · 4 nights</span>
+</div>
+<a href="#" style="margin-top: 6px; height: 62px; padding: 0 30px; border-radius: 999px; background: #1E1A2E; color: #FFFFFF; box-shadow: 0 5px 0 #000000; display: flex; align-items: center; font-weight: 800; font-size: 19px; text-decoration: none">Open my trip calendar</a>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { step: 'signin' }; }
+  renderVals() {
+    var self = this, step = this.state.step;
+    var go = function (s) { return function () { self.setState({ step: s }); }; };
+    var labels = [['signin', '1 · Sign in'], ['pay', '2 · Pay'], ['done', '3 · Celebrate']];
+    var colors = ['#FF7352', '#FFC93C', '#48D1A0', '#5AB0FF', '#C3B2FF', '#FF8CC6'];
+    var confetti = [];
+    for (var i = 0; i < 36; i++) {
+      confetti.push({ x: (60 + (i * 37) % 1320) + 'px', y: (-20 - (i % 5) * 18) + 'px', w: (8 + i % 3 * 4) + 'px', h: (14 + i % 4 * 3) + 'px', color: colors[i % colors.length], delay: ((i % 9) * 0.07).toFixed(2) + 's' });
+    }
+    return {
+      yes: true, no: false,
+      isSignin: step === 'signin', isPay: step === 'pay', isDone: step === 'done',
+      toPay: go('pay'), toDone: go('done'),
+      steps: labels.map(function (l) { var on = l[0] === step; return { label: l[1], go: go(l[0]), pressed: on ? 'true' : 'false', bg: on ? '#1E1A2E' : '#FFFFFF', fg: on ? '#FFFFFF' : '#1E1A2E' }; }),
+      lines: [
+        { name: 'Skylark Air 214', detail: 'SFO → LAX, Fri 8:05 AM · back Tue 2:10 PM', price: '$1,236', bg: '#FFF1C2', icon: 'M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z' },
+        { name: 'The Tidewater, Santa Monica', detail: '2 rooms · 4 nights', price: '$1,540', bg: '#D4F7EA', icon: 'M2 4v16M2 8h18a2 2 0 0 1 2 2v10M2 17h20M6 8v9' },
+        { name: 'Breeze Rentals', detail: 'Compact SUV · 2 car seats', price: '$312', bg: '#DDEEFF', icon: 'M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2M9 17h6' }
+      ],
+      confetti: confetti
+    };
+  }
+}
+</script>
+</body>
+</html>
