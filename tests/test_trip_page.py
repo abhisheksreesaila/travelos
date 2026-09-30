@@ -14,6 +14,11 @@ def render(trip):
     return to_xml(itinerary_body(trip))
 
 
+def render_theme(trip):
+    from gitaway.itinerary_view import itinerary_page
+    return to_xml(itinerary_page(trip))
+
+
 def test_known_trip_renders_hero_board_and_every_day(client):
     r = client.get(f"/trips/{SLUG}")
     assert r.status_code == 200
@@ -28,7 +33,9 @@ def test_known_trip_renders_hero_board_and_every_day(client):
         assert f'id="day-{n}"' in h and f'href="#day-{n}"' in h
     for title in ["Touch down &amp; tacos", "Griffith Observatory at sunset", "Farmers Market brunch"]:
         assert title in h
-    assert h.count("BOOKED") >= 4
+    booked = [s.title for d in itineraries.get(SLUG).days for s in d.stops if s.booked]
+    assert len(booked) == 4 and "Skylark Air 219" in booked[-1]
+    assert h.count(">BOOKED<") == 4
     assert "/assets/css/itinerary.css" in h and "/assets/css/base.css" in h
     assert "74°F" in h
 
@@ -48,11 +55,6 @@ def test_trip_record_chooses_the_theme_and_query_overrides_it(client):
     assert 'data-theme="pacific"' in client.get(f"/trips/{SLUG}?theme=pacific").text
     assert 'data-theme="sunset"' in client.get(f"/trips/{SLUG}?theme=bogus").text
     assert 'data-theme="pacific"' in render_theme(replace(itineraries.get(SLUG), theme="pacific"))
-
-
-def render_theme(trip):
-    from gitaway.itinerary_view import itinerary_page
-    return to_xml(itinerary_page(trip))
 
 
 def test_fork_button_links_to_signin_with_intent(client):
@@ -105,3 +107,20 @@ def test_one_day_trip_hides_the_board():
     h = render(replace(trip, days=[replace(trip.days[0])]))
     assert "The whole trip on one board" not in h
     assert 'id="day-1"' in h
+
+
+def test_user_text_is_escaped():
+    trip = itineraries.get(SLUG)
+    evil = "<script>alert(1)</script>"
+    stops = [replace(trip.days[0].stops[0], note=evil)] + list(trip.days[0].stops[1:])
+    h = render(replace(trip, title=evil, days=[replace(trip.days[0], stops=stops)] + list(trip.days[1:])))
+    assert evil not in h and "&lt;script&gt;alert(1)&lt;/script&gt;" in h
+
+
+def test_couple_friendly_tag_and_unknown_icons_do_not_break_the_page():
+    trip = itineraries.get(SLUG)
+    tags = [itineraries.Tag("Couple friendly", "bubble", "couple"), itineraries.Tag("Mystery", "sun", "no-such-icon")]
+    h = render(replace(trip, tags=tags))
+    assert "Couple friendly" in h and "Mystery" in h
+    stops = [replace(trip.days[0].stops[0], kind="no-such-icon")] + list(trip.days[0].stops[1:])
+    render(replace(trip, days=[replace(trip.days[0], stops=stops)] + list(trip.days[1:])))

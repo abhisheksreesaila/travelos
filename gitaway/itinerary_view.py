@@ -16,6 +16,8 @@ _STROKE = 'fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="
 EXTRA = {
     "kid": _SVG.format(a=_STROKE, p='<circle cx="12" cy="8" r="4"/><path d="M6 21v-1a6 6 0 0 1 12 0v1"/>'),
     "clock": _SVG.format(a=_STROKE, p='<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+    "couple": _SVG.format(a=_STROKE, p='<path d="M9 19c-3-2-6-4.2-6-7.5A3.5 3.5 0 0 1 9 9.3a3.5 3.5 0 0 1 6 2.2c0 3.3-3 5.5-6 7.5Z"/>'
+                                       '<path d="M15 13.5c.7-.3 1.4-.5 2.2-.5a3 3 0 0 1 3 3c0 2.6-2.7 4.4-5.2 5.5"/>'),
     "paw": _SVG.format(
         a='fill="currentColor"',
         p='<circle cx="5.5" cy="10" r="2.2"/><circle cx="9.5" cy="5.5" r="2.2"/><circle cx="14.5" cy="5.5" r="2.2"/>'
@@ -25,7 +27,12 @@ EXTRA = {
 
 
 def _icon(name, size=22, stroke=2.2):
-    return NotStr(EXTRA[name]) if name in EXTRA else icon(name, size, stroke)
+    if name in EXTRA:
+        return NotStr(EXTRA[name])
+    try:
+        return icon(name, size, stroke)
+    except KeyError:
+        return ""  # an unknown icon name shows no icon rather than a 500
 
 
 def resolve_theme(requested, trip: Itinerary) -> str:
@@ -81,7 +88,7 @@ def _collage(trip):
                   style="--r:8deg")
     plane = Div(icon("plane", 28, 2), cls="plane-badge")
     route = NotStr('<svg class="squiggle" viewBox="0 0 220 250" fill="none" aria-hidden="true"><path d="M10 240 C 90 230, '
-                   '60 150, 130 130 S 200 70, 170 10" stroke="#1E1A2E" stroke-width="3" stroke-dasharray="2 10" '
+                   '60 150, 130 130 S 200 70, 170 10" stroke="currentColor" stroke-width="3" stroke-dasharray="2 10" '
                    'stroke-linecap="round"/></svg>')
     stamp = Div(trip.route, cls="stamp")
     if trip.polaroids:
@@ -162,7 +169,7 @@ def _stop(s: Stop, last: bool):
         body.append(Img(src=s.photo, alt=s.photo_alt, cls="stop-photo", loading="lazy"))
     return Div(
         Span(s.time, cls="stop-time"),
-        Div(Span(icon(s.kind, 24, 2.1), cls=f"bubble bub-{s.bubble}"), Span(cls="line" + (" line-end" if last else "")),
+        Div(Span(_icon(s.kind, 24, 2.1), cls=f"bubble bub-{s.bubble}"), Span(cls="line" + (" line-end" if last else "")),
             cls="stop-rail"),
         Div(*body, cls="stop-body"),
         cls="stop",
@@ -252,10 +259,19 @@ def skeleton(trip: Itinerary):
 SCRIPT = Script("""
 (function () {
   function openTarget() {
-    var el = location.hash && document.getElementById(decodeURIComponent(location.hash.slice(1)));
+    openId(location.hash);
+  }
+  function openId(hash) {
+    var id = hash ? hash.slice(1) : '';
+    try { id = decodeURIComponent(id); } catch (e) { return; }
+    var el = id && document.getElementById(id);
     if (el && el.tagName === 'DETAILS') el.open = true;
   }
   addEventListener('hashchange', openTarget);
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a.board-col');
+    if (a) openId(a.getAttribute('href'));
+  });
   openTarget();
 })();
 """)
