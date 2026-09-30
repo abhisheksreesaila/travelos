@@ -21,6 +21,7 @@ PATHS = {
     "tree": '<path d="M12 22v-6M8 16h8l-4-6h3l-3-5-3 5h3z"/>',
     "users": '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/><circle cx="9" cy="7" r="4"/>',
     "expand": '<path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>',
+    "collapse": '<path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/>',
     "check": '<path d="M20 6 9 17l-5-5"/>',
     "panes": '<path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"/>',
     "ledger": '<path d="M4 7h16M4 12h10M4 17h7M18 14v6M15 17h6"/>',

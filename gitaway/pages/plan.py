@@ -8,9 +8,10 @@ import json
 from itertools import product
 from urllib.parse import quote as urlquote
 
-from fasthtml.common import A, Button, Div, Figcaption, Figure, Img, Kbd, Link, Main, NotStr, Script, Section, Span, Svg, Title
+from fasthtml.common import A, Article, Button, Div, Figcaption, Figure, H2, Img, Kbd, Link, Main, NotStr, P, Script, Section, Span, Svg, Title
 
 from gitaway import catalog, context, itineraries, session
+from gitaway.tripcal import fmt_time
 from gitaway.icons import icon
 from gitaway.itinerary_view import fork_href
 from gitaway.layout import avatar, brand, styles
@@ -19,6 +20,7 @@ HEAD = (Link(rel="stylesheet", href="/assets/css/workspace.css"),)
 DEFAULTS = {"flight": "f1", "stay": "h1", "car": "c1"}
 LANES = ("flight", "stay", "car")
 TAG_FILLS = ["fill-sun", "fill-sky", "fill-mint", "fill-bubble"]
+SPLIT_LANES = {"flights": "flight", "stays": "stay"}  # panes that expand into a list plus a detail panel
 
 
 def resolve_pick(f, h, c):
@@ -73,22 +75,29 @@ def script_json(obj) -> str:
     return json.dumps(obj).replace("<", "\\u003c")
 
 
-def _offer_attrs(o, picked):
-    return dict(type="button", aria_pressed="true" if o.id == picked else "false", data_lane=o.kind, data_pick=o.id)
+def _offer_attrs(o, picked, viewing=""):
+    attrs = dict(type="button", aria_pressed="true" if o.id == picked else "false", data_lane=o.kind, data_pick=o.id)
+    if viewing and o.id == viewing:
+        attrs["aria_current"] = "true"
+    return attrs
 
 
-def flight_card(o, picked):
+def pick_pill():
+    return Span("Your pick", cls="ws-pickpill")
+
+
+def flight_card(o, picked, viewing=""):
     return Button(
         Span(Span(o.name, cls="ws-name"), *[Span(b, cls="ws-badge fill-sun") for b in o.badges],
-             Span(catalog.money(o.price_cents), cls="ws-price"), cls="ws-row"),
+             pick_pill(), Span(catalog.money(o.price_cents), cls="ws-price"), cls="ws-row"),
         Span(o.headline, cls="ws-times"),
         Span(o.detail, cls="ws-detail"),
         Span(f"Lands {o.airport}", cls="ws-badge fill-sky-tint ws-airport"),
-        cls="ws-offer ws-offer-flight", **_offer_attrs(o, picked),
+        cls="ws-offer ws-offer-flight", **_offer_attrs(o, picked, viewing),
     )
 
 
-def stay_card(o, picked):
+def stay_card(o, picked, viewing=""):
     caption = f"{o.headline} area"
     if o.area_photo:
         photo = Figure(Img(src=f"/assets/photos/{o.area_photo}", alt=caption, loading="lazy", width="104", height="118"),
@@ -101,10 +110,10 @@ def stay_card(o, picked):
             Span(o.name, cls="ws-name"),
             Span(f"{o.headline} · {o.detail}", cls="ws-detail"),
             Span(*[Span(t, cls=f"ws-badge {TAG_FILLS[i % 4]}") for i, t in enumerate(o.tags)], cls="ws-tags"),
-            Span(Span(catalog.money(o.price_cents), cls="ws-price-big"), Span(o.rating, cls="ws-rating"), cls="ws-foot"),
+            Span(Span(catalog.money(o.price_cents), cls="ws-price-big"), Span(o.rating, cls="ws-rating"), pick_pill(), cls="ws-foot"),
             cls="ws-stay-body",
         ),
-        cls="ws-offer ws-offer-stay", **_offer_attrs(o, picked),
+        cls="ws-offer ws-offer-stay", **_offer_attrs(o, picked, viewing),
     )
 
 
@@ -117,20 +126,110 @@ def car_card(o, picked):
     )
 
 
-def pane(key, num, title, meta, cards, tint, *extra, cls_extra=""):
+def pane(key, num, title, meta, cards, tint, *extra, cls_extra="", detail=None, expanded=False, screen="list"):
+    """One workspace pane. `detail` (flights and stays) is the list of detail articles shown beside the cards when expanded."""
+    attrs = dict(data_screen=screen) if detail else {}
     return Section(
         Div(
             Kbd(str(num), cls=f"ws-key {tint}", aria_hidden="true"),
             Button(title, type="button", cls="ws-focus", data_focus=key, aria_pressed="false", aria_keyshortcuts=str(num)),
             Span(meta, cls="ws-meta") if meta else "",
-            Button(icon("expand", 16, 2.4), type="button", cls="ws-expand", data_expand=key,
-                   aria_label=f"Expand {title.lower()} pane", aria_expanded="false"),
+            Span(Kbd("Esc"), " back to workspace", cls="ws-esc", aria_hidden="true") if detail else "",
+            Button(icon("expand", 16, 2.4), icon("collapse", 16, 2.4), type="button", cls="ws-expand", data_expand=key,
+                   aria_label=f"{'Collapse' if expanded else 'Expand'} {title.lower()} pane", data_title=title.lower(),
+                   aria_expanded="true" if expanded else "false", **(dict(aria_keyshortcuts="Escape") if detail else {})),
             cls="ws-pane-head",
         ),
         Div(*cards, cls="ws-cards"),
+        Div(*detail, cls="ws-dcol") if detail else "",
         *extra,
-        cls=f"ws-pane {cls_extra}".strip(), data_pane=key, aria_label=title,
+        cls=f"ws-pane {'ws-split' if detail else ''} {cls_extra}".strip(), data_pane=key, aria_label=title, **attrs,
     )
+
+
+def duration_text(minutes):
+    h, m = divmod(minutes, 60)
+    return f"{h}h {m:02d}m" if h and m else (f"{h}h" if h else f"{m}m")
+
+
+def _date_text(d):
+    return d.strftime("%a %b ") + str(d.day)
+
+
+def choose_bar(o, picked, noun, summary):
+    return Div(
+        Span(Span(o.name, cls="ws-cb-name"), Span(summary, cls="ws-cb-sum"), cls="ws-cb-text"),
+        Span(catalog.money(o.price_cents), cls="ws-cb-price"),
+        Button("Chosen" if o.id == picked else f"Choose this {noun}", type="button", cls="ws-choose", data_choose=o.id,
+               data_choose_lane=o.kind, data_label=f"Choose this {noun}"),
+        cls="ws-choosebar",
+    )
+
+
+def _article(o, picked, viewing, body, bar):
+    return Article(Div(*body, cls="ws-dscroll"), bar, cls="ws-detail-panel", data_detail=o.id, aria_label=o.name,
+                   **({} if o.id == viewing else {"hidden": True}))
+
+
+def stay_detail(o, picked, viewing, back_label="Stays"):
+    area = f"The area · {o.headline}"
+    back = Button(icon("chev-left", 18, 2.4), back_label, type="button", cls="ws-back", data_back="list",
+                  aria_label=f"Back to all {back_label.lower()}")
+    if o.area_photo:
+        photo = Figure(Img(src=f"/assets/photos/{o.area_photo}", alt=f"{o.headline}, the neighbourhood (not the hotel)", loading="lazy"),
+                       Figcaption(area), back, cls="ws-hero")
+    else:
+        photo = Figure(Span(icon("pin", 40), aria_hidden="true"), Figcaption(area), back, cls="ws-hero ws-hero-blank")
+    body = [
+        photo,
+        Div(
+            H2(o.name, cls="ws-dtitle"),
+            Span(o.rating, cls="ws-drating"),
+            Div(*[Span(t, cls=f"ws-sticker {TAG_FILLS[i % 4]}") for i, t in enumerate(o.tags)], cls="ws-dchips"),
+            P(f"{o.headline} · {o.detail}", cls="ws-dlead"),
+            cls="ws-dhead",
+        ),
+        Div(data_seam="look-around", cls="ws-seam"),  # F-026: photo gallery + 3D area explorer
+        Div(data_seam="rooms", cls="ws-seam"),  # F-026: room types and counts
+        Div(data_seam="addons", cls="ws-seam"),  # F-026: add-ons
+        Div(data_seam="policy", cls="ws-seam"),  # F-026: cancellation policy
+    ]
+    return _article(o, picked, viewing, body, choose_bar(o, picked, "stay", f"{o.headline} · {o.detail}"))
+
+
+def _leg(label, date_text, dep, arr, origin, dest, minutes):
+    return Div(
+        Span(f"{label} · {date_text}", cls="ws-leg-label"),
+        Div(
+            Span(Span(fmt_time(dep), cls="ws-leg-time"), Span(origin, cls="ws-leg-apt"), cls="ws-leg-end"),
+            Span(Span(duration_text(minutes), cls="ws-leg-dur"), Span(cls="ws-leg-line"), cls="ws-leg-mid", aria_hidden="true"),
+            Span(Span(fmt_time(arr), cls="ws-leg-time"), Span(dest, cls="ws-leg-apt"), cls="ws-leg-end"),
+            cls="ws-leg-row",
+        ),
+        cls="ws-leg",
+    )
+
+
+def flight_detail(o, picked, viewing):
+    trip = catalog.SAMPLE_TRIP
+    body = [
+        Div(
+            Button(icon("chev-left", 18, 2.4), "Flights", type="button", cls="ws-back ws-back-flat", data_back="list",
+                           aria_label="Back to all flights"),
+            cls="ws-fback",
+        ),
+        Div(H2(o.name, cls="ws-dtitle"), *[Span(b, cls="ws-sticker fill-sun") for b in o.badges], cls="ws-dhead ws-dhead-flight"),
+        Div(
+            _leg("Out", _date_text(trip.depart), o.depart_min, o.arrive_min, trip.origin, o.airport, o.arrive_min - o.depart_min),
+            _leg("Back", _date_text(trip.return_), o.back_depart_min, o.back_arrive_min, o.airport, trip.origin,
+                 o.back_arrive_min - o.back_depart_min),
+            cls="ws-legs",
+        ),
+        P(o.detail, cls="ws-dlead"),
+        Div(data_seam="fares", cls="ws-seam"),  # F-027: fare types
+        Div(data_seam="bags", cls="ws-seam"),  # F-027: checked bags
+    ]
+    return _article(o, picked, viewing, body, choose_bar(o, picked, "flight", o.detail))
 
 
 def ledger(q, trip):
@@ -244,19 +343,39 @@ def community_pane():
     ], "fill-sun", cls_extra="ws-dark")
 
 
-def workspace(f, h, c, overlay=(), head=()):
+def resolve_view(x, v, f, h):
+    """(expanded pane key or '', {lane pane key: offer id being viewed}, screen). Only flights and stays split; a bad x or v is ignored."""
+    picks = {"flights": f, "stays": h}
+    expanded = x if x in SPLIT_LANES else ""
+    viewing = dict(picks)
+    screen = "list"
+    if expanded and v in {o.id for o in catalog.offers(SPLIT_LANES[expanded])}:
+        viewing[expanded] = v
+        screen = "detail"
+    return expanded, viewing, screen
+
+
+def workspace(f, h, c, overlay=(), head=(), x="", v=""):
     trip = catalog.SAMPLE_TRIP
+    expanded, viewing, screen = resolve_view(x, v, f, h)
+    flights, stays = catalog.offers("flight"), catalog.offers("stay")
     q = catalog.quote(f, h, c)
     tip = Div("Tip from 312 families: most skipped the car in Santa Monica and rented one for the Griffith Park day only.", cls="ws-tip")
     body = Main(
         top_bar(trip),
         ledger(q, trip),
         Div(
-            pane("flights", 1, "Flights", f"round trip · {len(catalog.offers('flight'))}", [flight_card(o, f) for o in catalog.offers("flight")], "fill-sun-tint"),
-            pane("stays", 2, "Stays", f"{trip.nights} nights", [stay_card(o, h) for o in catalog.offers("stay")], "fill-mint-tint"),
+            pane("flights", 1, "Flights", f"round trip · {len(flights)}",
+                 [flight_card(o, f, viewing["flights"] if expanded == "flights" else "") for o in flights], "fill-sun-tint",
+                 detail=[flight_detail(o, f, viewing["flights"]) for o in flights], expanded=expanded == "flights",
+                 screen=screen if expanded == "flights" else "list"),
+            pane("stays", 2, "Stays", f"{trip.nights} nights",
+                 [stay_card(o, h, viewing["stays"] if expanded == "stays" else "") for o in stays], "fill-mint-tint",
+                 detail=[stay_detail(o, h, viewing["stays"]) for o in stays], expanded=expanded == "stays",
+                 screen=screen if expanded == "stays" else "list"),
             pane("cars", 3, "Getting around", "", [car_card(o, c) for o in catalog.offers("car")], "fill-sky-tint", tip),
             Div(weather_pane(), map_pane(catalog.offer(h)), news_pane(), community_pane(), cls="ws-context"),
-            cls="ws-grid", id="ws-grid", data_focus="flights",
+            cls="ws-grid", id="ws-grid", data_focus=expanded or "flights", **(dict(data_expanded=expanded) if expanded else {}),
         ),
         cls="ws", id="main", data_theme="sunset",
     )
@@ -274,5 +393,5 @@ def workspace(f, h, c, overlay=(), head=()):
 
 def register(app):
     @app.get("/plan")
-    def plan(f: str = "", h: str = "", c: str = ""):
-        return workspace(*resolve_pick(f, h, c))
+    def plan(f: str = "", h: str = "", c: str = "", x: str = "", v: str = ""):
+        return workspace(*resolve_pick(f, h, c), x=x, v=v)
