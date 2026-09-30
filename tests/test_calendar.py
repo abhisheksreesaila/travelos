@@ -199,7 +199,7 @@ def test_the_long_demo_has_twenty_day_chips_and_a_month_crossing_title(client):
     assert "Sunday Nov 1" in chip["aria-label"]
     assert '<span class="cal-chip-mon">Nov</span><span class="cal-chip-num">1</span>' in html
     assert html.count('<span class="cal-chip-mon">Oct</span>') == 1 and html.count('<span class="cal-chip-mon">Nov</span>') == 1
-    assert "SUN · NOV" in html and "FRI · OCT" in html  # day headers name the month when it changes
+    assert '<span>SUN</span><span class="cal-mon">NOV</span>' in html and '<span>FRI</span><span class="cal-mon">OCT</span>' in html  # day headers name the month when it changes
     assert html.count("data-day-head") == 20
     assert 'data-block="b-back"' in html and tag(html, "data-block", "b-back")["data-day"] == "19"
     assert 'value="long"' in html  # forms carry the demo through

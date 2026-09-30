@@ -42,8 +42,9 @@ def trip_name(t):
 
 
 def day_label(i, d):
-    """'FRI', or 'SUN · NOV' on the first day and whenever the month changes."""
-    return d.strftime("%a").upper() + (f" · {d.strftime('%b').upper()}" if i == 0 or d.day == 1 else "")
+    """'FRI', plus an 'OCT' that may drop to its own line, on the first day and whenever the month changes."""
+    mon = Span(d.strftime("%b").upper(), cls="cal-mon") if i == 0 or d.day == 1 else ""
+    return (Span(d.strftime("%a").upper()), mon)
 
 
 def _hours_label(h):
@@ -129,7 +130,7 @@ def activity_block(a, gs, demo, lane, nlanes, n_notes, new):
         Span(Span("You", cls="cal-by"), Span(f"{n_notes} note{'s' if n_notes != 1 else ''}", cls="cal-notecount") if n_notes else "", cls="cal-meta"),
         Span(cls="cal-resize", aria_hidden="true", title="Drag to resize"),
         href=cal_url(demo, edit=a.id), data_soft="", draggable="false", title=a.title,
-        cls=f"cal-block cal-act k-{tint}{' cal-short' if short else ''}{' cal-tight' if tight else ''}{pop}",
+        cls=f"cal-block cal-act k-{tint}{' cal-short' if short else ''}{' cal-tight' if tight else ''}{' cal-lane' if nlanes > 1 else ''}{pop}",
         data_id=a.id, data_day=str(a.day), data_start=str(a.start), data_end=str(a.end),
         style=f"--top:{_px(a.start - gs)};--h:{_px(a.end - a.start)};--lane:{lane};--lanes:{nlanes}",
         aria_label=f"{a.title}, {label}, {cal.fmt_time(a.start)} to {cal.fmt_time(a.end)}. Press Enter to edit, arrow keys to move by 15 minutes, Shift and arrows to resize.",
@@ -152,7 +153,7 @@ def day_column(i, date_, ctx):
     at = cal.hhmm(free_start(blocks, i, gs))
     head = Div(
         Span(str(date_.day), cls=f"cal-num ink-{tint}"),
-        Span(Span(day_label(i, date_), cls="cal-dow"),
+        Span(Span(*day_label(i, date_), cls="cal-dow"),
              Span(icon(w.icon, 15, 2.2), Span(f"{w.temp_f}°F"), Span(f", {w.sky}", cls="sr-only"), cls="cal-wx", title=w.sky), cls="cal-dayinfo"),
         A(icon("plus", 16, 2.6), href=cal_url(demo, add=i, at=at), data_soft="", cls="cal-dayadd",
           aria_label=f"Add something on {date_.strftime('%A')} {date_.strftime('%b')} {date_.day}"),
@@ -196,7 +197,7 @@ def whole_view(dates, ctx):
                     Span(x.title, cls=f"cal-w-title{' is-booked' if getattr(x, 'locked', False) else ''}"),
                     Span("Booked", cls="cal-w-booked") if getattr(x, "locked", False) else "") for x in items]
         rows.append(Div(
-            Div(Span(str(d.day), cls=f"cal-num ink-{tint}"), Span(day_label(i, d), cls="cal-dow"), cls=f"cal-w-head fill-{tint}-tint"),
+            Div(Span(str(d.day), cls=f"cal-num ink-{tint}"), Span(*day_label(i, d), cls="cal-dow"), cls=f"cal-w-head fill-{tint}-tint"),
             Ul(*lines, cls="cal-w-list") if lines else Div(Span("wide open", cls="cal-hand"), A("Add something fun", href=cal_url(ctx["demo"], add=i, at=cal.hhmm(free_start(ctx["blocks"], i, ctx["gs"]))), data_soft=""), cls="cal-w-empty"),
             id=f"d{i}", cls="cal-w-row", data_whole_day=str(i),
         ))
