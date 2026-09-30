@@ -30,9 +30,7 @@
 .ws-total { font-family: var(--font-display); font-weight: 800; font-size: 44px; line-height: 1; font-variant-numeric: tabular-nums; }
 .ws-total-note { font-size: 14px; font-weight: 700; color: var(--ink-2); }
 .ws-chip { min-height: 26px; padding: 3px 10px; line-height: 1.2; border-radius: var(--r-pill); font-size: 13px; font-weight: 800; display: flex; align-items: center; }
-.ws-book { height: 64px; padding: 0 28px; border-radius: var(--r-pill); background: var(--ink); color: #fff; box-shadow: 0 4px 0 var(--ink-ledge); display: flex; align-items: center; font-weight: 800; font-size: 19px; text-decoration: none; flex-shrink: 0; transition: transform .15s var(--ease-out), box-shadow .15s var(--ease-out); }
-.ws-book:hover { color: #fff; transform: translateY(-1px); box-shadow: 0 5px 0 var(--ink-ledge); }
-.ws-book:active { transform: translateY(4px); box-shadow: 0 0 0 var(--ink-ledge); }
+.ws-book { min-height: 64px; padding: 0 28px; font-size: 19px; flex-shrink: 0; }
 .ws-details-toggle { display: none; }
 
 /* Panes */
@@ -114,7 +112,7 @@
   .ws-total-box { order: 1; align-items: flex-start; gap: 6px; padding: 0; flex: 1; min-width: 0; }
   .ws-total { font-size: 32px; line-height: 1.05; }
   .ws-total-note { display: none; }
-  .ws-book { order: 2; height: 52px; padding: 0 22px; font-size: 17px; }
+  .ws-book { order: 2; min-height: 52px; padding: 0 22px; font-size: 17px; }
   .ws-details-toggle { display: block; order: 3; align-self: center; border: 0; background: transparent; padding: 10px 4px; font-weight: 800; font-size: 15px; color: var(--coral-deep); cursor: pointer; }
 }
 
@@ -122,5 +120,4 @@
   .ws-grid { transition: none; }
   .ws-offer { transition: none; }
   .ws-offer:hover { transform: none; }
-  .ws-book, .ws-book:hover, .ws-book:active { transition: none; transform: none; }
 }

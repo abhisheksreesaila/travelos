@@ -12,7 +12,7 @@ from fasthtml.common import A, Button, Div, Figcaption, Figure, Img, Kbd, Link, 
 
 from gitaway import catalog
 from gitaway.icons import icon
-from gitaway.layout import brand
+from gitaway.layout import brand, styles
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/workspace.css"),)
 DEFAULTS = {"flight": "f1", "stay": "h1", "car": "c1"}
@@ -144,7 +144,7 @@ def ledger(q, trip):
             Span(delta_text(q), cls=f"ws-chip {'fill-mint' if q.above_cheapest_cents == 0 else 'fill-sun-tint'}", id="ws-delta"),
             cls="ws-total-box", aria_live="polite",
         ),
-        A("Book this trip", href=book_href(q.flight_id, q.stay_id, q.car_id), id="ws-book", cls="ws-book"),
+        A("Book this trip", href=book_href(q.flight_id, q.stay_id, q.car_id), id="ws-book", cls="btn btn-ink ws-book"),
         Button("Details", type="button", cls="ws-details-toggle", id="ws-details", aria_expanded="false", aria_controls="ws-slots"),
         cls="ws-ledger", aria_label="Cost ledger",
     )
@@ -189,7 +189,7 @@ def workspace(f, h, c):
     data = Script(NotStr(script_json(embedded_data())), id="ws-data", type="application/json")
     return (
         Title("GitAway · Plan a trip"),
-        *HEAD,
+        *styles(*HEAD),
         A("Skip to content", href="#main", cls="ga-skip"),
         body,
         data,
