@@ -61,13 +61,13 @@ Needs: F-015 · First to be trimmed to light stubs if time runs short
 ## F-017 Demo sign-in at save, pay, invite and fork [todo]
 Design: approved 2026-09-30 (docs/design/canvas/Checkout.dc.html)
 Needs: F-012
-- [ ] everything is browsable signed out; save, pay, invite or fork shows a friendly demo sign-in, then continues the action
+- [ ] everything is browsable signed out; the demo sign-in accepts save, pay, invite or fork and continues to a safe local `next` (pay and fork are wired here; invite is wired in F-020, save in F-021)
 - [ ] after sign-in with intent=fork, the trip lands in the traveler's forks list; `next` only accepts local paths (no open redirect)
 
 ## F-018 One-tap pay and celebration [todo]
 Design: approved 2026-09-30 (docs/design/canvas/Checkout.dc.html)
 Needs: F-015, F-017
-- [ ] Apple Pay-style sheet (clearly simulated) for the selected combination
+- [ ] Apple Pay-style sheet (clearly simulated) for the selected combination; when signed in, Book skips sign-in and opens the sheet directly
 - [ ] "You're going to LA!" celebration flows into the trip calendar
 
 ## F-019 Trip calendar [todo]
@@ -80,12 +80,13 @@ Needs: F-018
 ## F-020 Invite and simulated live friends [todo]
 Design: approved 2026-09-30 (docs/design/canvas/Calendar.dc.html)
 Needs: F-019
-- [ ] invite a family member or friend; their avatar appears
+- [ ] invite a family member or friend (signed out: through the demo sign-in with intent=invite); their avatar appears
 - [ ] a scripted friend adds an activity and a note live, with animation
 
 ## F-021 Forks list and apply preview [todo]
 Needs: F-014, F-019
 - [ ] personal forks list in the workspace; fork any number
+- [ ] the itinerary page's Save heart saves a trip (signed out: through the demo sign-in with intent=save) and saved trips show beside forks
 - [ ] apply one: preview its activities in the empty calendar slots around bookings and friends' items, uncheck the unwanted ones, apply with animation; clashes are clearly shown
 
 ## F-022 Share to the community hub [todo]
