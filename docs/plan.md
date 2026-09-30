@@ -46,12 +46,12 @@ Design: docs/design/itinerary-page.md (option A + board) · Needs: F-012
 - [x] one layout, switchable color themes
 - [x] Fork button sends a signed-out viewer to the demo sign-in with intent=fork (adding to the forks list is F-017 + F-021)
 
-## F-015 Booking workspace: flight, hotel and car lanes with cost ledger [doing]
+## F-015 Booking workspace: flight, hotel and car lanes with cost ledger [done]
 Design: docs/design/workspace.md (polished workspace; chosen 2026-09-29) · Needs: F-012
-- [ ] tmux-style tiled panes you can resize and focus, with keyboard shortcuts, in a bright rounded look
-- [ ] flights, hotels and cars side by side; picking one in each lane updates the cost ledger on top
-- [ ] ledger highlights the best-value combination
-- [ ] phone width: panes stack, ledger stays pinned
+- [x] tmux-style tiled panes you can resize and focus, with keyboard shortcuts, in a bright rounded look
+- [x] flights, hotels and cars side by side; picking one in each lane updates the cost ledger on top
+- [x] ledger highlights the best-value combination
+- [x] phone width: panes stack, ledger stays pinned
 
 ## F-016 Workspace context panes [todo]
 Needs: F-015 · First to be trimmed to light stubs if time runs short
