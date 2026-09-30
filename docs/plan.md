@@ -58,11 +58,11 @@ Needs: F-015 · First to be trimmed to light stubs if time runs short
 - [x] weather, news, map, events and community itineraries for LA on the trip dates
 - [ ] community itinerary pane can fork into the forks list (Fork link in place; the list itself lands with F-017 + F-021)
 
-## F-017 Demo sign-in at save, pay, invite and fork [todo]
+## F-017 Demo sign-in at save, pay, invite and fork [done]
 Design: approved 2026-09-30 (docs/design/canvas/Checkout.dc.html)
 Needs: F-012
-- [ ] everything is browsable signed out; the demo sign-in accepts save, pay, invite or fork and continues to a safe local `next` (pay and fork are wired here; invite is wired in F-020, save in F-021)
-- [ ] after sign-in with intent=fork, the trip lands in the traveler's forks list; `next` only accepts local paths (no open redirect)
+- [x] everything is browsable signed out; the demo sign-in accepts save, pay, invite or fork and continues to a safe local `next` (pay and fork are wired here; invite is wired in F-020, save in F-021)
+- [x] after sign-in with intent=fork, the trip lands in the traveler's forks list; `next` only accepts local paths (no open redirect)
 
 ## F-018 One-tap pay and celebration [todo]
 Design: approved 2026-09-30 (docs/design/canvas/Checkout.dc.html)
