@@ -113,3 +113,9 @@ def test_js_and_css_contract(client):
     reduced = css[css.rindex("prefers-reduced-motion"):]
     assert "ws-detail-panel" in reduced and "animation: none" in reduced  # reduced motion swaps instantly
     assert "340px" in css
+
+
+def test_phone_screen_is_list_until_an_offer_is_named(client):
+    pane = lambda h: re.search(r'<section[^>]*data-pane="stays"[^>]*>', h).group(0)
+    assert 'data-screen="list"' in pane(client.get("/plan?x=stays").text)
+    assert 'data-screen="detail"' in pane(client.get("/plan?x=stays&v=h2").text)
