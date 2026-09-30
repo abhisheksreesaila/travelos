@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>GitAway · Creator link import</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Figtree:wght@400;500;600;700;800&amp;family=Caveat:wght@700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FFF8EE}
+button:focus-visible,input:focus-visible{outline:3px solid #1E1A2E;outline-offset:3px}
+@keyframes cr-sh{from{background-position:-200% 0}to{background-position:200% 0}}
+.cr-sk{background:linear-gradient(90deg,#F2ECE3 0%,#FBF7F1 50%,#F2ECE3 100%);background-size:200% 100%;animation:cr-sh 1.4s linear infinite}
+@keyframes cr-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.cr-in{animation:cr-in .4s cubic-bezier(.2,.8,.2,1) both}
+@media (prefers-reduced-motion: reduce){.cr-sk,.cr-in{animation:none}}
+</style>
+</helmet>
+<div style="position: relative; width: 1440px; height: 1000px; box-sizing: border-box; padding: 0 64px; background: #FFF8EE; color: #1E1A2E; font-family: 'Figtree', 'Segoe UI', system-ui, sans-serif; display: flex; flex-direction: column; gap: 24px; overflow: hidden">
+<div style="position: absolute; right: 24px; top: 18px; z-index: 5; display: flex; gap: 6px; padding: 6px; border-radius: 999px; background: #FFFFFF; box-shadow: 0 0 0 1px rgba(30,26,46,0.08)">
+<sc-for list="{{steps}}" as="s" hint-placeholder-count="4"><button onClick="{{s.go}}" aria-pressed="{{s.pressed}}" style="height: 34px; padding: 0 12px; border: 0; border-radius: 999px; background: {{s.bg}}; color: {{s.fg}}; font: 800 13px 'Figtree', sans-serif; cursor: pointer">{{s.label}}</button></sc-for>
+</div>
+<header style="height: 84px; display: flex; align-items: center; gap: 10px"><span style="width: 40px; height: 40px; border-radius: 12px; background: #FF7352; box-shadow: 0 3px 0 #C9431F; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1E1A2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="5" r="2.2"></circle><circle cx="18" cy="5" r="2.2"></circle><circle cx="12" cy="19" r="2.2"></circle><path d="M6 7.5v1.5c0 2 1.5 3 3 3h6c1.5 0 3-1 3-3V7.5M12 12v4.5"></path></svg></span><span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 27px">GitAway</span><span style="margin-left: 16px; height: 30px; padding: 0 12px; border-radius: 999px; background: #1E1A2E; color: #FFC93C; font-size: 13px; font-weight: 800; display: flex; align-items: center">For creators</span></header>
+
+<section style="display: flex; flex-direction: column; gap: 14px; max-width: 900px">
+<h1 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 60px; letter-spacing: -0.035em; line-height: 1">Your vlog, as a trip people can fork</h1>
+<form style="padding: 10px; border-radius: 999px; background: #FFFFFF; box-shadow: 0 0 0 1px rgba(0,0,0,0.06), 0 12px 12px -6px rgba(0,0,0,0.06); display: flex; gap: 8px; align-items: center">
+<label style="flex: 1; display: flex"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Video or post link</span><input value="https://youtube.com/watch?v=our-la-family-week" style="flex: 1; border: 0; background: transparent; padding: 0 18px; font: 600 18px 'Figtree', sans-serif; color: #1E1A2E"></label>
+<button type="button" onClick="{{toLoading}}" style="height: 56px; padding: 0 26px; border: 0; border-radius: 999px; background: #FF7352; box-shadow: 0 4px 0 #C9431F; font: 800 18px 'Figtree', sans-serif; color: #1E1A2E; cursor: pointer">Make it a trip</button>
+</form>
+<span style="font-size: 15px; font-weight: 700; color: #4A4460">{{status}}</span>
+</section>
+
+<section style="display: grid; grid-template-columns: 380px minmax(0, 1fr); gap: 28px; align-items: start">
+<!-- source card -->
+<div style="padding: 14px; border-radius: 24px; background: #FFFFFF; box-shadow: 0 0 0 1px rgba(0,0,0,0.06), 0 12px 12px -6px rgba(0,0,0,0.06); display: flex; flex-direction: column; gap: 12px">
+<sc-if value="{{isPaste}}" hint-placeholder-val="{{yes}}"><div style="height: 200px; border-radius: 16px; background: #FAF7F2; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #4A4460; text-align: center; padding: 20px">Your video's itinerary will appear here</div></sc-if>
+<sc-if value="{{notPaste}}" hint-placeholder-val="{{no}}">
+<div style="position: relative; height: 200px; border-radius: 16px; overflow: hidden"><img src="/_blob/c2d0589b565f73ac8c151cb1c5ad996a" alt="Venice Beach, from the video" style="width: 100%; height: 100%; object-fit: cover"><span style="position: absolute; left: 50%; top: 50%; margin: -24px 0 0 -24px; width: 48px; height: 48px; border-radius: 999px; background: #FFFFFF; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="#1E1A2E" aria-hidden="true"><path d="M7 4v16l13-8z"></path></svg></span></div>
+<span style="font-weight: 800; font-size: 18px">Our LA family week: what we'd do again</span>
+<span style="font-size: 15px; font-weight: 700; color: #4A4460">Maya &amp; Theo Adventures · YouTube · 18 min</span>
+</sc-if>
+</div>
+<!-- draft -->
+<div style="display: flex; flex-direction: column; gap: 14px">
+<sc-if value="{{isLoading}}" hint-placeholder-val="{{no}}">
+<div class="cr-sk" style="height: 56px; border-radius: 16px; width: 70%"></div>
+<div class="cr-sk" style="height: 22px; border-radius: 10px; width: 45%"></div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px"><div class="cr-sk" style="height: 260px; border-radius: 26px"></div><div class="cr-sk" style="height: 260px; border-radius: 26px"></div><div class="cr-sk" style="height: 260px; border-radius: 26px"></div></div>
+</sc-if>
+<sc-if value="{{hasDraft}}" hint-placeholder-val="{{no}}">
+<div class="cr-in" style="display: flex; align-items: center; gap: 12px"><input value="Sun, tacos &amp; tide pools" aria-label="Trip title" style="flex: 1; border: 0; border-bottom: 3px dashed #FFC93C; background: transparent; font: 800 44px 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em; color: #1E1A2E; padding: 4px 0"></div>
+<div class="cr-in" style="display: flex; gap: 8px; animation-delay: .08s"><button aria-pressed="true" style="height: 40px; padding: 0 14px; border: 0; border-radius: 999px; background: #FFC93C; box-shadow: 0 0 0 3px #1E1A2E; font: 800 14px 'Figtree', sans-serif">Kid friendly</button><button aria-pressed="true" style="height: 40px; padding: 0 14px; border: 0; border-radius: 999px; background: #48D1A0; box-shadow: 0 0 0 3px #1E1A2E; font: 800 14px 'Figtree', sans-serif">Pet friendly</button><button style="height: 40px; padding: 0 14px; border: 0; border-radius: 999px; background: #FFE3F1; font: 800 14px 'Figtree', sans-serif">Couple friendly</button></div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px">
+<sc-for list="{{draftDays}}" as="d" hint-placeholder-count="3">
+<div class="cr-in" style="padding: 16px 12px; border-radius: 26px; background: {{d.tint}}; display: flex; flex-direction: column; gap: 10px; animation-delay: {{d.delay}}">
+<span style="display: flex; align-items: baseline; gap: 8px; padding: 0 4px"><span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 40px; line-height: 0.9; color: {{d.ink}}">{{d.n}}</span><span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 20px">{{d.title}}</span></span>
+<sc-for list="{{d.stops}}" as="s" hint-placeholder-count="3">
+<div style="padding: 10px 12px; border-radius: 16px; background: #FFFFFF; display: flex; flex-direction: column; gap: 2px">
+<span style="display: flex; justify-content: space-between; gap: 8px"><span style="font-size: 13px; font-weight: 800">{{s.time}}</span><span style="font-size: 12px; font-weight: 800; color: #C9431F">at {{s.at}} in video</span></span>
+<span style="font-weight: 800; font-size: 15px; line-height: 1.25">{{s.title}}</span>
+</div>
+</sc-for>
+<button style="height: 40px; border: 2px dashed rgba(30,26,46,0.2); border-radius: 14px; background: transparent; font: 800 14px 'Figtree', sans-serif; color: #1E1A2E; cursor: pointer">+ Add a stop</button>
+</div>
+</sc-for>
+</div>
+<sc-if value="{{isDraft}}" hint-placeholder-val="{{no}}">
+<div style="display: flex; gap: 12px; align-items: center"><button onClick="{{toDone}}" style="height: 58px; padding: 0 28px; border: 0; border-radius: 999px; background: #1E1A2E; color: #FFFFFF; box-shadow: 0 4px 0 #000000; font: 800 18px 'Figtree', sans-serif; cursor: pointer">Submit to GitAway</button><span style="font-size: 15px; font-weight: 700; color: #4A4460">Tap any title, time or stop to fix it. We drafted this from your video.</span></div>
+</sc-if>
+<sc-if value="{{isDone}}" hint-placeholder-val="{{no}}">
+<div class="cr-in" style="padding: 18px 20px; border-radius: 22px; background: #D4F7EA; display: flex; align-items: center; justify-content: space-between; gap: 16px"><span style="font-weight: 800; font-size: 18px">It's live! Every fork links back to your channel.</span><span style="height: 48px; padding: 0 20px; border-radius: 999px; background: #1E1A2E; color: #FFFFFF; font-weight: 800; display: flex; align-items: center">See your trip page</span></div>
+</sc-if>
+</sc-if>
+</div>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { step: 'paste' }; }
+  renderVals() {
+    var self = this, step = this.state.step;
+    var go = function (s) { return function () { self.setState({ step: s }); }; };
+    var labels = [['paste', '1 · Paste'], ['loading', '2 · Drafting'], ['draft', '3 · Edit'], ['done', '4 · Live']];
+    function s(time, at, title) { return { time: time, at: at, title: title }; }
+    return {
+      yes: true, no: false,
+      steps: labels.map(function (l) { var on = l[0] === step; return { label: l[1], go: go(l[0]), pressed: on ? 'true' : 'false', bg: on ? '#1E1A2E' : '#FFFFFF', fg: on ? '#FFFFFF' : '#1E1A2E' }; }),
+      isPaste: step === 'paste', notPaste: step !== 'paste', isLoading: step === 'loading',
+      hasDraft: step === 'draft' || step === 'done', isDraft: step === 'draft', isDone: step === 'done',
+      toLoading: go('loading'), toDone: go('done'),
+      status: { paste: 'Paste a YouTube or Instagram link. Demo: the draft is pre-made, nothing is fetched.', loading: 'Watching your video and drafting the days…', draft: 'Drafted 5 days and 16 stops. Check them over.', done: 'Submitted.' }[step],
+      draftDays: [
+        { n: '01', title: 'Touch down & tacos', tint: '#FFF1C2', ink: '#8A6200', delay: '.12s', stops: [s('1:00 PM', '2:14', 'Santa Monica Pier & Pacific Park'), s('6:30 PM', '4:40', 'Tacos at Mariscos La Ola')] },
+        { n: '02', title: 'Canals & boardwalk', tint: '#D4F7EA', ink: '#16865F', delay: '.24s', stops: [s('9:00 AM', '6:05', 'Venice Canals stroll'), s('2:30 PM', '8:32', 'Bike the Strand')] },
+        { n: '03', title: 'Steam trains & stars', tint: '#ECE4FF', ink: '#6A4FD6', delay: '.36s', stops: [s('10:00 AM', '11:10', 'Travel Town, Griffith Park'), s('4:00 PM', '14:02', 'Griffith Observatory at sunset')] }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

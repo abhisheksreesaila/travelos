@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>GitAway · Your forks and apply</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Figtree:wght@400;500;600;700;800&amp;family=Caveat:wght@700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FFF8EE}
+button:focus-visible,input:focus-visible{outline:3px solid #1E1A2E;outline-offset:3px}
+@keyframes fk-pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.05);opacity:1}100%{transform:scale(1)}}
+.fk-pop{animation:fk-pop .4s cubic-bezier(.2,.9,.3,1.3) both}
+@media (prefers-reduced-motion: reduce){.fk-pop{animation:none}}
+</style>
+</helmet>
+<div style="position: relative; width: 1440px; height: 900px; box-sizing: border-box; padding: 0 24px 24px; background: #FFF8EE; color: #1E1A2E; font-family: 'Figtree', 'Segoe UI', system-ui, sans-serif; display: flex; flex-direction: column; gap: 14px; overflow: hidden">
+<div style="position: absolute; right: 24px; top: 18px; z-index: 5; display: flex; gap: 6px; padding: 6px; border-radius: 999px; background: #FFFFFF; box-shadow: 0 0 0 1px rgba(30,26,46,0.08)">
+<sc-for list="{{steps}}" as="s" hint-placeholder-count="3"><button onClick="{{s.go}}" aria-pressed="{{s.pressed}}" style="height: 34px; padding: 0 12px; border: 0; border-radius: 999px; background: {{s.bg}}; color: {{s.fg}}; font: 800 13px 'Figtree', sans-serif; cursor: pointer">{{s.label}}</button></sc-for>
+</div>
+<header style="height: 72px; flex-shrink: 0; display: flex; align-items: center; gap: 14px; padding: 0 8px">
+<span style="width: 36px; height: 36px; border-radius: 11px; background: #FF7352; box-shadow: 0 3px 0 #C9431F; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1E1A2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="5" r="2.2"></circle><circle cx="18" cy="5" r="2.2"></circle><circle cx="12" cy="19" r="2.2"></circle><path d="M6 7.5v1.5c0 2 1.5 3 3 3h6c1.5 0 3-1 3-3V7.5M12 12v4.5"></path></svg></span>
+<h1 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px">LA with the kids</h1>
+<span style="font-size: 14px; font-weight: 700; color: #4A4460">Your forks · 2</span>
+</header>
+<div style="flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 16px">
+<section aria-label="Trip calendar" style="border-radius: 28px; background: #FFFFFF; box-shadow: 0 0 0 1px rgba(0,0,0,0.06), 0 12px 12px -6px rgba(0,0,0,0.06); padding: 16px 18px; display: grid; grid-template-columns: 52px repeat(4, minmax(0, 1fr)); grid-template-rows: 56px 1fr; column-gap: 10px; overflow: hidden">
+<span></span>
+<sc-for list="{{days}}" as="d" hint-placeholder-count="4"><div style="padding: 6px 10px; border-radius: 16px; background: {{d.tint}}; display: flex; align-items: center; gap: 10px"><span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px">{{d.num}}</span><span style="font-size: 13px; font-weight: 800">{{d.dow}}</span></div></sc-for>
+<div style="display: flex; flex-direction: column"><sc-for list="{{hours}}" as="h" hint-placeholder-count="14"><span style="height: 46px; font-size: 12px; font-weight: 700; color: #5A5470; transform: translateY(-8px)">{{h}}</span></sc-for></div>
+<sc-for list="{{days}}" as="d" hint-placeholder-count="4">
+<div style="position: relative; height: 644px; background-image: repeating-linear-gradient(to bottom, rgba(30,26,46,0.07) 0, rgba(30,26,46,0.07) 1px, transparent 1px, transparent 46px)">
+<sc-for list="{{d.events}}" as="e" hint-placeholder-count="2">
+<div class="{{e.cls}}" style="position: absolute; left: 0; right: 0; top: {{e.top}}; height: {{e.height}}; box-sizing: border-box; padding: 8px 10px; border-radius: 14px; background: {{e.bg}}; color: {{e.fg}}; border: {{e.border}}; display: flex; flex-direction: column; gap: 2px; overflow: hidden">
+<span style="font-size: 12px; font-weight: 800">{{e.time}}</span><span style="font-size: 14px; font-weight: 800; line-height: 1.2">{{e.title}}</span>
+<sc-if value="{{e.tag}}" hint-placeholder-val="{{no}}"><span style="margin-top: auto; align-self: flex-start; height: 22px; padding: 0 8px; border-radius: 999px; background: {{e.tagBg}}; font-size: 11px; font-weight: 800; display: flex; align-items: center; color: #1E1A2E">{{e.tag}}</span></sc-if>
+</div>
+</sc-for>
+</div>
+</sc-for>
+</section>
+<aside aria-label="Your forks" style="border-radius: 28px; background: #FFFFFF; box-shadow: 0 0 0 1px rgba(0,0,0,0.06), 0 12px 12px -6px rgba(0,0,0,0.06); padding: 20px; display: flex; flex-direction: column; gap: 14px; overflow: hidden">
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px">Your forks</h2>
+<sc-if value="{{isList}}" hint-placeholder-val="{{yes}}">
+<div style="display: flex; flex-direction: column; gap: 10px">
+<button onClick="{{toPreview}}" style="text-align: left; border: 0; cursor: pointer; padding: 12px; border-radius: 22px; background: #FFF4EF; box-shadow: 0 0 0 3px #FF7352; display: flex; gap: 12px; align-items: center; font-family: 'Figtree', sans-serif; color: #1E1A2E">
+<img src="/_blob/c2d0589b565f73ac8c151cb1c5ad996a" alt="Venice Beach" style="width: 76px; height: 76px; object-fit: cover; border-radius: 14px">
+<span style="display: flex; flex-direction: column; gap: 4px"><span style="font-weight: 800; font-size: 17px">Sun, tacos &amp; tide pools</span><span style="font-size: 14px; font-weight: 700; color: #4A4460">5 days · Maya &amp; Theo · forked today</span><span style="display: flex; gap: 6px"><span style="height: 24px; padding: 0 9px; border-radius: 999px; background: #FFC93C; font-size: 12px; font-weight: 800; display: flex; align-items: center">Kid friendly</span></span></span>
+</button>
+<div style="padding: 12px; border-radius: 22px; background: #FAF7F2; display: flex; gap: 12px; align-items: center">
+<img src="/_blob/d45e1ee369230be3c000073b7fe64369" alt="Santa Monica Pier" style="width: 76px; height: 76px; object-fit: cover; border-radius: 14px">
+<span style="display: flex; flex-direction: column; gap: 4px"><span style="font-weight: 800; font-size: 17px">LA for two, slow mornings</span><span style="font-size: 14px; font-weight: 700; color: #4A4460">4 days · forked yesterday</span><span style="display: flex; gap: 6px"><span style="height: 24px; padding: 0 9px; border-radius: 999px; background: #FF8CC6; font-size: 12px; font-weight: 800; display: flex; align-items: center">Couple friendly</span></span></span>
+</div>
+<span style="font-size: 14px; font-weight: 700; color: #4A4460">Pick one to preview its plans in your empty slots. Nothing changes until you apply.</span>
+</div>
+</sc-if>
+<sc-if value="{{isPreview}}" hint-placeholder-val="{{no}}">
+<div style="display: flex; flex-direction: column; gap: 10px">
+<span style="font-size: 13px; font-weight: 800; letter-spacing: 0.06em; color: #5A5470">FROM SUN, TACOS &amp; TIDE POOLS</span>
+<sc-for list="{{picks}}" as="p" hint-placeholder-count="5">
+<label style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 16px; background: {{p.bg}}">
+<input type="checkbox" checked="{{p.checked}}" style="width: 20px; height: 20px; accent-color: #FF7352">
+<span style="flex: 1; display: flex; flex-direction: column"><span style="font-weight: 800; font-size: 15px">{{p.title}}</span><span style="font-size: 13px; font-weight: 700; color: #4A4460">{{p.when}}</span></span>
+<sc-if value="{{p.clash}}" hint-placeholder-val="{{no}}"><span style="height: 24px; padding: 0 9px; border-radius: 999px; background: #1E1A2E; color: #FFFFFF; font-size: 12px; font-weight: 800; display: flex; align-items: center">Clashes: {{p.clash}}</span></sc-if>
+</label>
+</sc-for>
+<button onClick="{{toDone}}" style="margin-top: 6px; height: 56px; border: 0; border-radius: 999px; background: #1E1A2E; color: #FFFFFF; box-shadow: 0 4px 0 #000000; font: 800 18px 'Figtree', sans-serif; cursor: pointer">Apply 4 plans</button>
+<span style="font-size: 13px; font-weight: 700; color: #4A4460">Your bookings and your crew's plans stay exactly where they are.</span>
+</div>
+</sc-if>
+<sc-if value="{{isDone}}" hint-placeholder-val="{{no}}">
+<div class="fk-pop" style="padding: 16px; border-radius: 20px; background: #D4F7EA; font-weight: 800; font-size: 16px">Added 4 plans from Maya &amp; Theo. Undo</div>
+</sc-if>
+</aside>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { step: 'list' }; }
+  renderVals() {
+    var self = this, step = this.state.step;
+    var go = function (s) { return function () { self.setState({ step: s }); }; };
+    var labels = [['list', '1 · Your forks'], ['preview', '2 · Preview'], ['done', '3 · Applied']];
+    function ev(start, end, time, title, kind, extra) {
+      var k = { booked: ['#1E1A2E', '#FFFFFF', '0'], draft: ['#FFF4EF', '#1E1A2E', '2px dashed #FF7352'], solid: ['#FFF1C2', '#1E1A2E', '0'], mom: ['#ECE4FF', '#1E1A2E', '0'], clash: ['#FAF7F2', '#5A5470', '2px dashed rgba(30,26,46,0.3)'] }[kind];
+      return Object.assign({ top: ((start - 8) * 46) + 'px', height: Math.max(40, (end - start) * 46 - 4) + 'px', time: time, title: title, bg: k[0], fg: k[1], border: k[2], tag: false, tagBg: '#FFFFFF', cls: '' }, extra || {});
+    }
+    function fork(start, end, time, title) {
+      if (step === 'preview') return [ev(start, end, time, title, 'draft', { tag: 'from fork' })];
+      if (step === 'done') return [ev(start, end, time, title, 'solid', { tag: 'Maya & Theo', cls: 'fk-pop' })];
+      return [];
+    }
+    var hours = []; for (var h = 8; h < 22; h++) hours.push(h === 12 ? '12 PM' : (h < 12 ? h + ' AM' : (h - 12) + ' PM'));
+    return {
+      yes: true, no: false,
+      steps: labels.map(function (l) { var on = l[0] === step; return { label: l[1], go: go(l[0]), pressed: on ? 'true' : 'false', bg: on ? '#1E1A2E' : '#FFFFFF', fg: on ? '#FFFFFF' : '#1E1A2E' }; }),
+      isList: step === 'list', isPreview: step === 'preview', isDone: step === 'done',
+      toPreview: go('preview'), toDone: go('done'),
+      picks: [
+        { title: 'Santa Monica Pier & Pacific Park', when: 'Fri 16 · 1:00 – 4:00 PM', checked: true, clash: false, bg: '#FAF7F2' },
+        { title: 'Tacos at Mariscos La Ola', when: 'Fri 16 · 6:30 – 8:00 PM', checked: true, clash: false, bg: '#FAF7F2' },
+        { title: 'Venice Canals stroll', when: 'Sat 17 · 9:00 – 10:30 AM', checked: false, clash: 'Mom’s plan', bg: '#FFF1C2' },
+        { title: 'Bike the Strand', when: 'Sat 17 · 2:30 – 4:30 PM', checked: true, clash: false, bg: '#FAF7F2' },
+        { title: 'Griffith Observatory at sunset', when: 'Sun 18 · 4:00 – 6:30 PM', checked: true, clash: false, bg: '#FAF7F2' }
+      ],
+      hours: hours,
+      days: [
+        { num: '16', dow: 'FRI', tint: '#FFF1C2', events: [ev(8.08, 9.55, '8:05 AM', 'Skylark Air 214 · SFO → LAX', 'booked'), ev(15, 15.9, '3:00 PM', 'Check in · The Tidewater', 'booked')].concat(fork(13, 14.9, '1:00 PM', 'Santa Monica Pier & Pacific Park')).concat(fork(18.5, 20, '6:30 PM', 'Tacos at Mariscos La Ola')) },
+        { num: '17', dow: 'SAT', tint: '#D4F7EA', events: [ev(9, 10.5, '9:00 AM', 'Venice Canals stroll', 'mom', { tag: 'Mom' })].concat(fork(14.5, 16.5, '2:30 PM', 'Bike the Strand')) },
+        { num: '18', dow: 'SUN', tint: '#ECE4FF', events: [ev(10, 12.5, '10:00 AM', 'Travel Town steam trains', 'mom', { tag: 'Mom' })].concat(fork(16, 18.5, '4:00 PM', 'Griffith Observatory at sunset')) },
+        { num: '19', dow: 'MON', tint: '#DDEEFF', events: [] }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

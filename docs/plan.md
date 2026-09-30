@@ -83,19 +83,25 @@ Needs: F-019
 - [ ] invite a family member or friend (signed out: through the demo sign-in with intent=invite); their avatar appears
 - [ ] a scripted friend adds an activity and a note live, with animation
 
-## F-021 Forks list and apply preview [todo]
+## F-021 Forks list and apply preview [blocked]
+Blocked: look at "Your forks → apply preview" on the canvas (use its step switch) and say go or what to change.
+Design: docs/design/canvas/Forks.dc.html
 Needs: F-014, F-019
 - [ ] personal forks list in the workspace; fork any number
 - [ ] the itinerary page's Save heart saves a trip (signed out: through the demo sign-in with intent=save) and saved trips show beside forks
 - [ ] apply one: preview its activities in the empty calendar slots around bookings and friends' items, uncheck the unwanted ones, apply with animation; clashes are clearly shown
 
-## F-022 Share to the community hub [todo]
+## F-022 Share to the community hub [blocked]
+Blocked: look at "Community hub + share" on the canvas (use its step switch) and say go or what to change.
+Design: docs/design/canvas/Hub.dc.html
 Needs: F-014, F-019
 - [ ] one tap on Share turns the trip into a scrapbook itinerary page (no private notes or payment info)
 - [ ] community hub lists shared and creator itineraries, filterable by kid, pet and couple friendly
 - [ ] user-written itinerary text stays escaped and source links only allow http(s)
 
-## F-023 Creator link import [todo]
+## F-023 Creator link import [blocked]
+Blocked: look at "Creator link import" on the canvas (use its step switch) and say go or what to change.
+Design: docs/design/canvas/Creator.dc.html
 Needs: F-014, F-022
 - [ ] paste a YouTube or Instagram link → skeleton with a fade → an AI-drafted (fake) scrapbook itinerary with the creator's source card
 - [ ] edit, then submit; it appears in the community hub and links back to the creator's channel
