@@ -12,6 +12,7 @@ from fasthtml.common import A, Button, Div, Figcaption, Figure, Img, Kbd, Link, 
 
 from gitaway import catalog, context, itineraries
 from gitaway.icons import icon
+from gitaway.itinerary_view import _fork_href
 from gitaway.layout import brand, styles
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/workspace.css"),)
@@ -227,7 +228,7 @@ def community_pane():
         facts = " · ".join([f"{len(t.days)} days", *(["kid friendly"] if kid else []), f"{t.forks} forks"])
         rows.append(Div(
             Span(Span(t.title, cls="ws-item-title"), Span(facts, cls="ws-item-sub"), cls="ws-item"),
-            A("Fork", href=f"/signin?next=/trips/{t.slug}&intent=fork", cls="ws-fork", aria_label=f"Fork {t.title}"),
+            A("Fork", href=_fork_href(t), cls="ws-fork", aria_label=f"Fork {t.title}"),
             cls="ws-trip",
         ))
     return pane("community", 7, "Trips others loved", "", [

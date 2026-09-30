@@ -191,3 +191,67 @@ def test_json_is_escaped_against_script_breakout():
     out = script_json({"x": "</script><b>"})
     assert "<" not in out
     assert json.loads(out) == {"x": "</script><b>"}
+
+
+PANE_KEYS = ("flights", "stays", "cars", "weather", "map", "news", "community")
+
+
+def test_expanded_rule_makes_every_pane_full_width():
+    css = open("assets/css/workspace.css").read()
+    for key in PANE_KEYS:
+        rule = re.search(r'[^{}]*\[data-expanded="%s"\][^{}]*\{\s*grid-template-columns:\s*1fr;\s*\}' % key, css)
+        assert rule, key
+
+
+def test_key_map_in_js_is_exact(client):
+    js = client.get("/assets/js/workspace.js").text
+    m = re.search(r"var PANES = \{([^}]*)\}", js).group(1)
+    got = dict(re.findall(r"(\d)\s*:\s*'(\w+)'", m))
+    assert got == {str(i + 1): k for i, k in enumerate(PANE_KEYS)}
+
+
+def test_no_sample_prefix_in_titles_but_one_caption_per_pane(client):
+    from gitaway import context
+    for e in context.EVENTS:
+        assert "sample" not in e.title.lower()
+    for n in context.NEWS:
+        assert "sample" not in n.title.lower()
+    h = client.get("/plan").text
+    for key in ("weather", "news"):
+        assert _pane(h, key).count('class="ws-sample"') == 1
+
+
+def test_weather_matches_itinerary_days():
+    from gitaway import context, itineraries
+    t = itineraries.get("sun-tacos-and-tide-pools")
+    temps = [int(d.weather.split("°")[0]) for d in t.days]
+    assert temps == [w.temp_f for w in context.WEATHER]
+
+
+def test_map_data_has_pin_coordinates_for_every_stay(client):
+    h = client.get("/plan").text
+    raw = re.search(r'<script[^>]*id="ws-data"[^>]*>(.*?)</script>', h, re.S).group(1)
+    maps = json.loads(raw)["map"]
+    for o in catalog.offers("stay"):
+        m = maps[o.id]
+        assert all(isinstance(m[k], int) and 0 <= m[k] <= 320 for k in ("x", "bx"))
+        assert all(isinstance(m[k], int) and 0 <= m[k] <= 150 for k in ("y", "by"))
+    js = client.get("/assets/js/workspace.js").text
+    for k in ("m.x", "m.y", "m.bx", "m.by", "m.label", "m.caption"):
+        assert k in js
+
+
+def test_context_column_is_one_fr_and_tip_gap_removed_on_tablet():
+    css = open("assets/css/workspace.css").read()
+    for sel in ('.ws-grid {', '.ws-grid[data-focus="stays"] {', '.ws-grid[data-focus="cars"] {'):
+        line = css[css.index(sel):].split("\n")[0]
+        assert re.search(r"minmax\(0, 1fr\);", line.split("grid-template-columns:")[1]), sel
+    first = re.search(r"\.ws-grid \{[^}]*grid-template-columns: ([^;]*);", css).group(1)
+    assert first.split(" minmax")[-1].strip() == "(0, 1fr)"
+    tablet = css[css.index("/* Tablet"):css.index("/* Phone")]
+    assert ".ws-tip" in tablet and "margin-top: 0" in tablet
+
+
+def test_fork_link_uses_the_itinerary_view_helper():
+    src = open("gitaway/pages/plan.py").read()
+    assert "_fork_href" in src and "intent=fork" not in src

@@ -36,10 +36,12 @@
 .ws-details-toggle { display: none; }
 
 /* Panes */
-.ws-grid { flex: 1; min-height: 0; display: grid; gap: 14px; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr) minmax(0, .95fr) minmax(0, 1.2fr); transition: grid-template-columns .3s var(--ease-out); }
-.ws-grid[data-focus="stays"] { grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr) minmax(0, .95fr) minmax(0, 1.2fr); }
-.ws-grid[data-focus="cars"] { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1.2fr); }
-.ws-grid[data-expanded="flights"], .ws-grid[data-expanded="stays"], .ws-grid[data-expanded="cars"] { grid-template-columns: 1fr; }
+.ws-grid { flex: 1; min-height: 0; display: grid; gap: 14px; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr) minmax(0, .95fr) minmax(0, 1fr); transition: grid-template-columns .3s var(--ease-out); }
+.ws-grid[data-focus="stays"] { grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr) minmax(0, .95fr) minmax(0, 1fr); }
+.ws-grid[data-focus="cars"] { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr); }
+.ws-grid:is([data-focus="weather"], [data-focus="map"], [data-focus="news"], [data-focus="community"]) { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, .95fr) minmax(0, 1.2fr); }
+.ws-grid[data-expanded="flights"], .ws-grid[data-expanded="stays"], .ws-grid[data-expanded="cars"],
+.ws-grid[data-expanded="weather"], .ws-grid[data-expanded="map"], .ws-grid[data-expanded="news"], .ws-grid[data-expanded="community"] { grid-template-columns: 1fr; }
 .ws-grid[data-expanded="flights"] > :not([data-pane="flights"]),
 .ws-grid[data-expanded="stays"] > :not([data-pane="stays"]),
 .ws-grid[data-expanded="cars"] > :not([data-pane="cars"]) { display: none; }
@@ -69,12 +71,12 @@
 .ws-offer-car { gap: 4px; }
 
 .ws-offer-stay { flex-direction: row; gap: 12px; padding: 10px; align-items: stretch; }
-.ws-photo { margin: 0; width: 104px; flex-shrink: 0; position: relative; border-radius: 14px; overflow: hidden; min-height: 118px; background: var(--sky-tint); }
+.ws-photo { margin: 0; width: 88px; flex-shrink: 0; position: relative; border-radius: 14px; overflow: hidden; min-height: 104px; background: var(--sky-tint); }
 .ws-photo img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
 .ws-photo figcaption { position: absolute; left: 6px; right: 6px; bottom: 6px; padding: 2px 6px; border-radius: 8px; background: rgba(30, 26, 46, .78); color: #fff; font-size: 11px; font-weight: 800; line-height: 1.3; }
 .ws-photo-blank { display: grid; place-items: center; color: var(--sky-ink); }
 .ws-stay-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; padding: 4px 4px 4px 0; }
-.ws-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.ws-tags { display: flex; gap: 6px; flex-wrap: nowrap; overflow: hidden; }
 .ws-foot { margin-top: auto; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
 .ws-rating { font-size: 13px; font-weight: 700; color: var(--ink-3); }
 .ws-tip { margin-top: auto; padding: 14px 16px; border-radius: var(--r-md); background: var(--sun-tint); font-size: 14px; font-weight: 700; line-height: 1.4; }
@@ -136,6 +138,7 @@
   .ws-grid, .ws-grid[data-focus] { grid-template-columns: 1fr 1fr 1fr; grid-template-rows: none; }
   .ws-grid[data-expanded] { grid-template-columns: 1fr; }
   .ws-context { overflow: visible; padding: 0; margin: 0; grid-column: 1 / -1; grid-template-columns: 1fr 1fr; align-items: start; }
+  .ws-tip { margin-top: 0; }
   .ws-slot-label, .ws-op { display: none; }
   .ws-hint { display: none; }
   .ws-pill { margin-left: auto; }

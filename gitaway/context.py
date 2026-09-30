@@ -18,7 +18,7 @@ class Weather:
     fill: str       # tint token name
 
 
-# Temperatures match the itinerary page's per-day weather (75 / 73 / 70 / 72 / 77).
+# Temperatures equal the itinerary page's per-day weather for the sample trip (a test keeps them in step).
 WEATHER = [
     Weather("Fri 16", 75, "clear skies", "sun", "sun"),
     Weather("Sat 17", 73, "sunny", "sun", "sun"),
@@ -37,9 +37,9 @@ class Event:
 
 
 EVENTS = [
-    Event("Sat 17", "Sample Boardwalk Chalk Festival", "Venice · free · all day", "mint"),
-    Event("Sun 18", "Sample Family Movie on the Lawn", "Griffith Park · sunset", "grape"),
-    Event("Mon 19", "Sample Tide Pool Ranger Walk", "Point Dume · 10 AM · kids welcome", "sky"),
+    Event("Sat 17", "Boardwalk Chalk Festival", "Venice · free · all day", "mint"),
+    Event("Sun 18", "Family Movie on the Lawn", "Griffith Park · sunset", "grape"),
+    Event("Mon 19", "Tide Pool Ranger Walk", "Point Dume · 10 AM · kids welcome", "sky"),
 ]
 
 
@@ -50,8 +50,8 @@ class News:
 
 
 NEWS = [
-    News("Sample: Pier parking lot reopens after repaving", "Santa Monica · this week"),
-    News("Sample: Extra Metro E Line trains on weekends", "Downtown to the coast · through October"),
+    News("Pier parking lot reopens after repaving", "Santa Monica · this week"),
+    News("Extra Metro E Line trains on weekends", "Downtown to the coast · through October"),
 ]
 
 
