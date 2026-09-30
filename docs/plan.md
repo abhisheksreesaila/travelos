@@ -71,14 +71,14 @@ Needs: F-015, F-017
 - [ ] "You're going to LA!" celebration flows into the trip calendar
 
 ## F-019 Trip calendar [todo]
-Design: approved 2026-09-30 (docs/design/canvas/Calendar.dc.html)
+Design: docs/design/calendar.md (approved 2026-09-30; artboard docs/design/canvas/Calendar.dc.html)
 Needs: F-018
 - [ ] Google-Calendar-like view with flight, check-in and check-out blocks pre-filled from the booking
 - [ ] long trips (e.g. 20 days) stay readable: a whole-trip day strip on top, a window of days that fits the screen (5 desktop, 3 tablet, 1 phone) scrolling sideways, and a compact whole-trip view
 - [ ] gaps stay blank; add, move and resize activities in a fun way; notes on any item
 
 ## F-020 Invite and simulated live friends [todo]
-Design: approved 2026-09-30 (docs/design/canvas/Calendar.dc.html)
+Design: docs/design/calendar.md (approved 2026-09-30; artboard docs/design/canvas/Calendar.dc.html)
 Needs: F-019
 - [ ] invite a family member or friend (signed out: through the demo sign-in with intent=invite); their avatar appears
 - [ ] a scripted friend adds an activity and a note live, with animation
