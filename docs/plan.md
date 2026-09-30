@@ -35,9 +35,8 @@ Design: design-system/DESIGN-SYSTEM.md, journey map on the F-011 canvas · Needs
 - [x] user-facing name reads GitAway everywhere; README run instructions work
 - [x] project runs through pixi
 
-## F-013 Landing page with split hero [blocked]
-Blocked: pick Landing A (two doors, recommended) or B (search + inspiration rail) on the canvas, then say go.
-Design: https://claude.ai/artifact/NvLT3Tjf4XUwPbyZ4m6d2Q (sources docs/design/canvas/Landing-*.dc.html) · Needs: F-012
+## F-013 Landing page with split hero [doing]
+Design: docs/design/landing.md (Landing A, two doors; chosen 2026-09-29) · Needs: F-012
 - [ ] cover page explains what makes GitAway different, with delightful motion
 - [ ] two doors: "Plan a trip" opens the booking workspace; "Get inspired" opens the community hub
 
@@ -47,9 +46,8 @@ Design: docs/design/itinerary-page.md (option A + board) · Needs: F-012
 - [x] one layout, switchable color themes
 - [x] Fork button sends a signed-out viewer to the demo sign-in with intent=fork (adding to the forks list is F-017 + F-021)
 
-## F-015 Booking workspace: flight, hotel and car lanes with cost ledger [blocked]
-Blocked: look at "Booking workspace (polished)" on the canvas (click a pane title to focus it) and say go, or say what feels too busy.
-Design: docs/design/canvas/Workspace-Polish.dc.html (all colours are tokens; panes focus tmux-style) · Needs: F-012
+## F-015 Booking workspace: flight, hotel and car lanes with cost ledger [doing]
+Design: docs/design/workspace.md (polished workspace; chosen 2026-09-29) · Needs: F-012
 - [ ] tmux-style tiled panes you can resize and focus, with keyboard shortcuts, in a bright rounded look
 - [ ] flights, hotels and cars side by side; picking one in each lane updates the cost ledger on top
 - [ ] ledger highlights the best-value combination
