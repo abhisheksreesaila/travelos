@@ -41,6 +41,11 @@ def trip_name(t):
     return f"{pay.PLACE} with the kids" if t.kid_ages else f"{pay.PLACE} trip"
 
 
+def day_label(i, d):
+    """'FRI', or 'SUN · NOV' on the first day and whenever the month changes."""
+    return d.strftime("%a").upper() + (f" · {d.strftime('%b').upper()}" if i == 0 or d.day == 1 else "")
+
+
 def _hours_label(h):
     return f"{h % 12 or 12} {'AM' if h < 12 else 'PM'}"
 
@@ -123,7 +128,7 @@ def activity_block(a, gs, demo, lane, nlanes, n_notes, new):
         Span(a.title, cls="cal-title"),
         Span(Span("You", cls="cal-by"), Span(f"{n_notes} note{'s' if n_notes != 1 else ''}", cls="cal-notecount") if n_notes else "", cls="cal-meta"),
         Span(cls="cal-resize", aria_hidden="true", title="Drag to resize"),
-        href=cal_url(demo, edit=a.id), data_soft="", draggable="false",
+        href=cal_url(demo, edit=a.id), data_soft="", draggable="false", title=a.title,
         cls=f"cal-block cal-act k-{tint}{' cal-short' if short else ''}{' cal-tight' if tight else ''}{pop}",
         data_id=a.id, data_day=str(a.day), data_start=str(a.start), data_end=str(a.end),
         style=f"--top:{_px(a.start - gs)};--h:{_px(a.end - a.start)};--lane:{lane};--lanes:{nlanes}",
@@ -144,11 +149,11 @@ def day_column(i, date_, ctx):
     if not booked and not acts:
         body.append(A(Span("wide open!", cls="cal-hand"), Span("Add something fun"), href=cal_url(demo, add=i, at=cal.hhmm(free_start(blocks, i, gs))),
                       data_soft="", cls="cal-empty"))
-    weekday = date_.strftime("%a")
     at = cal.hhmm(free_start(blocks, i, gs))
     head = Div(
         Span(str(date_.day), cls=f"cal-num ink-{tint}"),
-        Span(Span(weekday.upper(), cls="cal-dow"), Span(f"{w.temp_f}°F {w.sky}", cls="cal-wx"), cls="cal-dayinfo"),
+        Span(Span(day_label(i, date_), cls="cal-dow"),
+             Span(icon(w.icon, 15, 2.2), Span(f"{w.temp_f}°F"), Span(f", {w.sky}", cls="sr-only"), cls="cal-wx", title=w.sky), cls="cal-dayinfo"),
         A(icon("plus", 16, 2.6), href=cal_url(demo, add=i, at=at), data_soft="", cls="cal-dayadd",
           aria_label=f"Add something on {date_.strftime('%A')} {date_.strftime('%b')} {date_.day}"),
         cls=f"cal-dayhead fill-{tint}-tint", data_day_head=str(i),
@@ -191,7 +196,7 @@ def whole_view(dates, ctx):
                     Span(x.title, cls=f"cal-w-title{' is-booked' if getattr(x, 'locked', False) else ''}"),
                     Span("Booked", cls="cal-w-booked") if getattr(x, "locked", False) else "") for x in items]
         rows.append(Div(
-            Div(Span(str(d.day), cls=f"cal-num ink-{tint}"), Span(d.strftime("%a").upper(), cls="cal-dow"), cls=f"cal-w-head fill-{tint}-tint"),
+            Div(Span(str(d.day), cls=f"cal-num ink-{tint}"), Span(day_label(i, d), cls="cal-dow"), cls=f"cal-w-head fill-{tint}-tint"),
             Ul(*lines, cls="cal-w-list") if lines else Div(Span("wide open", cls="cal-hand"), A("Add something fun", href=cal_url(ctx["demo"], add=i, at=cal.hhmm(free_start(ctx["blocks"], i, ctx["gs"]))), data_soft=""), cls="cal-w-empty"),
             id=f"d{i}", cls="cal-w-row", data_whole_day=str(i),
         ))
@@ -210,7 +215,7 @@ def note_entry(n, acts_by_id, who):
 def notes_panel(ctx, who, b):
     stay = catalog.offer(b["stay"])
     acts_by_id = {a.id: a for a in ctx["acts"]}
-    feed = [Div(Span("TR", cls="cal-noteav fill-sun"), Div(Span("Trip · booked", cls="cal-notemeta"),
+    feed = [Div(avatar(who, "cal-noteav"), Div(Span("You · whole trip", cls="cal-notemeta"),
                 Span(f"Booked! Your flights and {stay.name} are on the calendar. Add anything you want to do.", cls="cal-notetext"), cls="cal-noteslip"), cls="cal-note cal-note-first")]
     feed += [note_entry(n, acts_by_id, who) for n in ctx["notes"]]
     about = Select(Option("Whole trip", value=""), *[Option(a.title, value=a.id) for a in ctx["acts"]], name="act", aria_label="What is this note about?", cls="cal-about") if ctx["acts"] else ""
@@ -420,7 +425,7 @@ def register(app):
             a = cal.add_activity(session, day=day, start=start, end=end, title=title, kind=kind, demo=demo, id=id or None)
         except cal.CalendarError as e:
             return refuse(session, demo, view, str(e), {"error": str(e), "vals": _vals(id=id, day=day, start=start, end=end, title=title, kind=kind or "fun")})
-        return done(demo, view, new=a.id)
+        return done(demo, view, new=a.id) if a else done(demo, view)
 
     @app.post("/calendar/activities/{id}")
     def edit_activity(session, id: str, day: str = "", start: str = "", end: str = "", title: str = "", kind: str = "", demo: str = "", view: str = ""):

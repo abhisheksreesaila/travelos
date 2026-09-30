@@ -38,7 +38,8 @@ def test_signed_out_goes_through_sign_in_and_comes_back_to_the_calendar(client):
     assert r.status_code == 303 and r.headers["location"] == f"/signin?next={quote('/calendar', safe='')}"
     r = client.get("/calendar?demo=long", follow_redirects=False)
     assert r.headers["location"] == f"/signin?next={quote('/calendar?demo=long', safe='')}"
-    for method, path in [("post", "/calendar/activities"), ("post", "/calendar/notes"), ("post", "/calendar/undo")]:
+    for method, path in [("post", "/calendar/activities"), ("post", "/calendar/notes"), ("post", "/calendar/undo"),
+                         ("post", "/calendar/activities/a1/move"), ("post", "/calendar/activities/a1/delete"), ("post", "/calendar/activities/a1")]:
         assert getattr(client, method)(path, data={}, follow_redirects=False).status_code == 303
 
 
@@ -194,11 +195,15 @@ def test_the_long_demo_has_twenty_day_chips_and_a_month_crossing_title(client):
     html = client.get("/calendar?demo=long").text
     assert html.count("data-chip=") == 20 and html.count("data-day-head") == 20
     assert "Oct 16 – Nov 4" in html and "Oct 16 – 4" not in html
-    assert "Sun, Nov 1" in html or "Nov 1" in html
+    chip = tag(html, "data-chip", "16")  # Nov 1
+    assert "Sunday Nov 1" in chip["aria-label"]
+    assert '<span class="cal-chip-mon">Nov</span><span class="cal-chip-num">1</span>' in html
+    assert html.count('<span class="cal-chip-mon">Oct</span>') == 1 and html.count('<span class="cal-chip-mon">Nov</span>') == 1
+    assert "SUN · NOV" in html and "FRI · OCT" in html  # day headers name the month when it changes
+    assert html.count("data-day-head") == 20
     assert 'data-block="b-back"' in html and tag(html, "data-block", "b-back")["data-day"] == "19"
     assert 'value="long"' in html  # forms carry the demo through
-    assert len(ids(html)) >= 4
-    assert html.count("data-chip=") == 20 and "Oct 16 – 20" not in html
+    assert len(ids(html)) >= 4 and "Oct 16 – 20" not in html
 
 
 def test_the_default_trip_hides_the_demo_and_keeps_its_own_activities(client):
@@ -232,3 +237,17 @@ def test_calendar_state_survives_the_signed_session_cookie(client):
     book(client)
     add(client)
     assert session_data(client)["cal"]["ari"]["a"][0]["t"] == "Venice Canals stroll"
+
+
+def test_day_headers_show_a_weather_icon_and_temperature_without_cutting_the_words(client):
+    book(client)
+    html = client.get("/calendar").text
+    head = html[html.index('data-day-head="0"'):html.index('data-day-head="1"')]
+    assert "75°F" in head and "<svg" in head and ', clear skies' in head and 'title="clear skies"' in head
+
+
+def test_the_first_trip_note_is_written_by_the_traveler(client):
+    book(client, traveler="sam")
+    html = client.get("/calendar").text
+    feed = html[html.index('id="cal-feed"'):]
+    assert "You · whole trip" in feed and ">SK<" in feed and "Trip · booked" not in html

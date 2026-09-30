@@ -31,7 +31,7 @@ CHECK_OUT = 11 * 60
 STAY_LEN = 60
 MAX_TITLE = 40
 MAX_NOTE = 140
-BUDGET = 2900  # bytes of session JSON; the cookie is base64 of it plus a signature, under the 4 KB browsers keep
+BUDGET = 2600  # bytes of session JSON; base64 adds a third plus a signature, keeping the whole cookie near 3.4 KB (limit 3.6 KB, browsers drop >4 KB)
 
 # kind -> (label, tint token name)
 KINDS = {"fun": ("Fun", "bubble"), "food": ("Food", "sun"), "outdoors": ("Outdoors", "mint"),
@@ -265,10 +265,15 @@ def add_activity(session, *, day, start, end, title, kind="fun", demo="", id=Non
     _valid_id(id)
     day, s, e, title = _clean(session, demo, day=day, start=start, end=end, title=title, kind=kind)
     state = _load(session, demo)
-    if id and any(a["i"] == id for a in state["a"]):
-        return _act(next(a for a in state["a"] if a["i"] == id))
     if id and id[0] != "a":
         raise CalendarError("That id is not valid.")
+    if id and id in state.get("g", []):
+        return None  # deleted a moment ago: a re-posted add must not revive it (Undo does)
+    same = next((a for a in state["a"] if a["i"] == id), None) if id else None
+    if same and (same["d"], same["s"], same["e"], same["t"], same["k"]) == (day, s, e, title, kind):
+        return _act(same)  # the same form posted again: a refresh
+    if same:
+        id = None  # another tab took this id: give this one a fresh id rather than dropping it
     id = id or f"a{state['q'] + 1}"
     state["q"] = max(state["q"], _number(id))
     row = {"i": id, "d": day, "s": s, "e": e, "t": title, "k": kind}
@@ -301,6 +306,7 @@ def delete_activity(session, id_, demo=""):
         return None
     state["a"] = [a for a in state["a"] if a["i"] != id_]
     state["x"] = {"a": row, "n": [n for n in state["n"] if n.get("a") == id_]}
+    state["g"] = [*state.get("g", []), id_][-6:]
     state["n"] = [n for n in state["n"] if n.get("a") != id_]
     _save(session, demo, state, enforce=False)
     return _act(row)
@@ -315,6 +321,7 @@ def undo_delete(session, id_, demo=""):
     state["a"].append(x["a"])
     state["n"] = sorted([*state["n"], *x["n"]], key=lambda n: _number(n["i"]))
     state["x"] = None
+    state["g"] = [g for g in state.get("g", []) if g != id_]
     _save(session, demo, state)
     return _act(x["a"])
 
@@ -331,12 +338,15 @@ def add_note(session, text, act=None, demo="", id=None):
     if len(text) > MAX_NOTE:
         raise CalendarError(f"Keep notes to {MAX_NOTE} characters.")
     state = _load(session, demo)
-    if id and any(n["i"] == id for n in state["n"]):
-        return _note(next(n for n in state["n"] if n["i"] == id))
     if id and id[0] != "n":
         raise CalendarError("That id is not valid.")
+    same = next((n for n in state["n"] if n["i"] == id), None) if id else None
+    if same and (same["t"], same.get("a")) == (text, act):
+        return _note(same)
     if act and not any(a["i"] == act for a in state["a"]):
         raise CalendarError("That activity is gone.")
+    if same:
+        id = None
     id = id or f"n{state['q'] + 1}"
     state["q"] = max(state["q"], _number(id))
     row = {"i": id, "t": text, **({"a": act} if act else {})}
