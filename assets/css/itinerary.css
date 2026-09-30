@@ -257,5 +257,6 @@
 @media (max-width: 360px) {
   .collage { zoom: .53; }
   .hero-actions { flex-wrap: wrap; }
+  .stat-v { font-size: 22px; white-space: nowrap; }
   .hero-actions .btn-hero:not(.btn-round) { padding: 0 14px; font-size: 16px; }
 }

@@ -41,11 +41,11 @@ Design: https://claude.ai/artifact/NvLT3Tjf4XUwPbyZ4m6d2Q (sources docs/design/c
 - [ ] cover page explains what makes GitAway different, with delightful motion
 - [ ] two doors: "Plan a trip" opens the booking workspace; "Get inspired" opens the community hub
 
-## F-014 Scrapbook itinerary page [todo]
+## F-014 Scrapbook itinerary page [done]
 Design: docs/design/itinerary-page.md (option A + board) · Needs: F-012
-- [ ] day-by-day scrapbook layout: photo tiles, sticker tags (kid, pet, couple friendly), route squiggles, source card for the creator
-- [ ] one layout, switchable color themes
-- [ ] Fork button sends a signed-out viewer to the demo sign-in with intent=fork (adding to the forks list is F-017 + F-021)
+- [x] day-by-day scrapbook layout: photo tiles, sticker tags (kid, pet, couple friendly), route squiggles, source card for the creator
+- [x] one layout, switchable color themes
+- [x] Fork button sends a signed-out viewer to the demo sign-in with intent=fork (adding to the forks list is F-017 + F-021)
 
 ## F-015 Booking workspace: flight, hotel and car lanes with cost ledger [blocked]
 Blocked: look at "Booking workspace (polished)" on the canvas (click a pane title to focus it) and say go, or say what feels too busy.
