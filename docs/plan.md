@@ -139,3 +139,7 @@ Design: docs/design/offer-details.md · Needs: F-026 (shares the pick URL and it
 - [ ] out and back legs with times, duration, stops and aircraft
 - [ ] fare types (Basic, Main, Extra legroom) with price and what each includes (seat choice, carry-on, checked bag, changes)
 - [ ] checked-bag count as an add-on; fare and bags carry through the URL, ledger, pay and calendar like stays
+
+## F-028 Phone: expanding a non-offer pane hides the context panes [todo]
+Needs: F-025 · Found during F-025 (predates it)
+- [ ] on a phone, expanding Cars or a context pane shows only that pane; the other context panes no longer show underneath (a same-specificity clash between the base and phone rules)
