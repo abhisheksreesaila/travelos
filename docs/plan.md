@@ -137,7 +137,7 @@ Design: docs/design/offer-details.md · Needs: F-025
 - [x] the pick URL carries room, count and add-ons; the ledger, pay sheet and calendar itemize them, computed by the catalog (the page never does arithmetic); a bad or missing room falls back to the default
 - [x] sample trip: The Tidewater, Ocean-view King ×2 + breakfast gives the right total through pay and calendar
 
-## F-027 Flight detail: legs, fare types and checked bags [todo]
+## F-027 Flight detail: legs, fare types and checked bags [doing]
 Design: docs/design/offer-details.md · Needs: F-026 (shares the pick URL and itemized ledger)
 - [ ] out and back legs with times, duration, stops and aircraft
 - [ ] fare types (Basic, Main, Extra legroom) with price and what each includes (seat choice, carry-on, checked bag, changes)
