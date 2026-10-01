@@ -277,15 +277,15 @@ Found while reviewing F-045: run in reverse order, tests/test_family_storage.py:
 
 ## F-048 Deploy to Railway [doing]
 Needs: none
-- [ ] the app builds and runs on Railway (pixi-based image), with all databases on a persistent volume (working directory on the volume), assets resolved from the code folder
-- [ ] production settings: session cookie https-only, `GITAWAY_DEV_LOGIN` never set, secret key from `GITAWAY_SECRET_KEY`, a health check route; docs/setup.md has a Railway section
+- [x] the app builds and runs on Railway (pixi-based image), with all databases on a persistent volume (working directory on the volume), assets resolved from the code folder
+- [x] production settings: session cookie https-only, `GITAWAY_DEV_LOGIN` never set, secret key from `GITAWAY_SECRET_KEY`, a health check route; docs/setup.md has a Railway section
 - [ ] a new Railway project "gitaway" with a volume and a public *.up.railway.app address; a redeploy keeps a test family's data
 - [ ] Google sign-in works on the live address once the captain adds the keys
 
-## F-049 Stay signed in about 30 days [doing]
+## F-049 Stay signed in about 30 days [done]
 Needs: none
-- [ ] sign-in lasts about 30 days on a device, sliding with use (fh-saas `SessionConfig` / `create_session_middleware`), secure cookie in production
-- [ ] sign-out and removed members still end access immediately
+- [x] sign-in lasts about 30 days on a device, sliding with use (fh-saas `SessionConfig` / `create_session_middleware`), secure cookie in production
+- [x] sign-out and removed members still end access immediately
 
 ## F-050 "Discover" becomes "Community trips" [doing]
 Needs: none
