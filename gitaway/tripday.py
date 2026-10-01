@@ -9,11 +9,10 @@ import re
 from dataclasses import dataclass, replace
 from datetime import datetime
 from urllib.parse import quote_plus
-from zoneinfo import ZoneInfo
 
-from gitaway import tripcal as cal
+from gitaway import catalog, tripcal as cal
 
-TZ = ZoneInfo("America/Los_Angeles")
+TZ = catalog.TZ
 DAY_TINTS = ("sun", "mint", "grape", "sky", "bubble")  # the calendar's day colours, in order
 _PHONE = re.compile(r"iPhone|iPod|Android.+Mobile|Windows Phone|Mobile Safari|Opera Mini|BlackBerry", re.I)
 _APPLE = re.compile(r"iPhone|iPad|iPod|Macintosh", re.I)

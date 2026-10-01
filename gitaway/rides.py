@@ -27,13 +27,12 @@ from dataclasses import dataclass, replace
 from datetime import date, datetime, time, timedelta
 from typing import Protocol
 from urllib.parse import quote
-from zoneinfo import ZoneInfo
 
 from fh_saas.utils_sql import delete_record, insert_only, update_record
 
 from gitaway import catalog, familydb, session as ses
 
-TZ = ZoneInfo("America/Los_Angeles")
+TZ = catalog.TZ
 MODES = ("simulated",)
 SIMULATED_LABEL = "Simulated: no real ride is booked"
 MIN_LEAD = timedelta(minutes=5)

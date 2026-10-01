@@ -51,14 +51,25 @@
 
   document.addEventListener("click", function (e) {
     var tab = e.target.closest("[data-tab-link]");
-    if (tab && tab.closest(".tp-tabs, .tp-up")) { e.preventDefault(); showTab(tab.getAttribute("data-tab-link")); return; }
+    if (tab && tab.closest(".tp-tabs, .tp-up, .tp-notestrip")) { e.preventDefault(); showTab(tab.getAttribute("data-tab-link")); return; }
     var open = e.target.closest("[data-open-sheet]");
     if (open && sheet) { e.preventDefault(); openSheet(open); return; }
     if (e.target.closest("[data-close-sheet]")) { e.preventDefault(); closeSheet(); }
   });
 
+  var FOCUSABLE = 'a[href]:not([tabindex="-1"]), button:not([disabled]), input:not([type=hidden]):not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])';
+
   document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape" && sheet && sheet.hasAttribute("data-open")) closeSheet();
+    if (!sheet || !sheet.hasAttribute("data-open")) return;
+    if (e.key === "Escape") { closeSheet(); return; }
+    if (e.key !== "Tab") return;
+    // keep focus inside the open sheet: wrap at both ends
+    var items = Array.prototype.filter.call(sheet.querySelectorAll(FOCUSABLE), function (el) { return el.offsetParent !== null; });
+    if (!items.length) return;
+    var first = items[0], last = items[items.length - 1];
+    if (!sheet.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+    else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
   });
 
   centreDay();

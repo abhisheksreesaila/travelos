@@ -90,8 +90,8 @@ def up_card(v):
                    A("See all days", href=trip_url(tab="days"), data_tab_link="days", cls="tp-btn tp-btn-white"), cls="tp-up", id="tp-up")
     if not up:
         return ""
-    pulse = Span(cls="tp-pulse", aria_hidden="true")
     item = up.item
+    pulse = Span(cls="tp-pulse", aria_hidden="true") if item else ""  # only UP NEXT and HAPPENING NOW pulse, not "all done"
     buttons = []
     if item and item.place:
         buttons.append(A("Directions", href=td.maps_url(item.place, v["ua"]), target="_blank", rel="noopener", cls="tp-btn tp-btn-coral", id="tp-directions"))
@@ -143,6 +143,7 @@ def today_panel(v):
     else:
         parts.append(Div(Span("wide open!", cls="tp-hand"), A("Add something fun", href=trip_url(add="1", day=sel), data_open_sheet="", cls="tp-btn tp-btn-ink") if editor else Span("Nothing planned yet.", cls="tp-sub"), cls="tp-empty"))
     parts.append(stay_card(v))
+    parts.append(note_strip(v))
     parts.append(A(icon("arrow-right", 18, 2.4), "Open the full calendar", href="/calendar?view=whole", cls="tp-full"))
     return Section(*parts, id="tp-panel-today", cls="tp-panel", role="tabpanel", aria_label="Today", data_title=_title_today(v))
 
@@ -150,6 +151,21 @@ def today_panel(v):
 def _title_today(v):
     d = v["dates"][v["sel"]]
     return d.strftime("%A") if v["sel"] == v["today_idx"] else f"{d.strftime('%a')}, {d.strftime('%b')} {d.day}"
+
+
+def note_strip(v):
+    """The newest one or two trip notes under the hotel card, as slips, with a link to the Notes tab."""
+    if not v["notes"]:
+        return ""
+    people = {f.name.casefold(): f for f in ses.friends(v["session"])}
+    family = members.family_people(v["session"])
+    acts_by_id = {a.id: a for a in v["acts"]}
+    slips = []
+    for i, n in enumerate(v["notes"][-2:]):
+        name, author = calui.note_writer(n, v["who"], people, family)
+        on = acts_by_id.get(n.act)
+        slips.append(_slip(author, f"{name} · {'on ' + on.title if on else 'whole trip'}", n.text, i + 1, n.id))
+    return Div(*slips, A("All notes", href=trip_url(tab="notes"), data_tab_link="notes", cls="tp-full"), cls="tp-notestrip", id="tp-notestrip")
 
 
 def days_panel(v):

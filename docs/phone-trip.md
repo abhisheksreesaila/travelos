@@ -25,3 +25,5 @@ Viewers see no + and no composer; the central write gate (`gitaway/access.py`) r
 ## Hook for F-051
 
 The add sheet's start time is a plain native `<input type="time" data-time-picker>`. The themed picker attaches to `[data-time-picker]`.
+
+After F-051 (themed pickers) merges, `HEAD` in `gitaway/pages/trip.py` must include `*pickers.HEAD` so the picker loads on this page. Whichever of F-051 and F-054 merges second wires it.
