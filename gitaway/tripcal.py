@@ -478,12 +478,13 @@ class Placement:
 
 
 def _short(title):
-    """The title cut at a word to fit MAX_TITLE; never an ellipsis."""
+    """The title cut at a word to fit MAX_TITLE (or hard at MAX_TITLE when there is no word break); never an ellipsis, never empty."""
     title = " ".join(title.split())
     if len(title) <= MAX_TITLE:
-        return title
-    head = title[:MAX_TITLE + 1].rsplit(" ", 1)[0]
-    return head.rstrip(" ,&-:·")
+        return title or "Plan"
+    head = title[:MAX_TITLE + 1]
+    cut = head.rsplit(" ", 1)[0] if " " in head else head[:MAX_TITLE]
+    return cut.rstrip(" ,&-:·") or title[:MAX_TITLE]
 
 
 def stop_start(text):
@@ -568,13 +569,20 @@ def apply_fork(session, itinerary, picks, by="", demo=""):
     return added
 
 
-def remove_activities(session, ids, demo=""):
-    """Take activities (and their notes) back out, e.g. to undo an apply. Returns how many were removed."""
-    gone = set(ids)
+def remove_applied(session, itinerary, ids, by="", demo=""):
+    """Undo an apply: remove the activities in `ids` that came from `itinerary` (same author, day, start and title as one of its plans).
+
+    Anything else in `ids` (the traveler's own plans, a friend's) stays, so a made-up id list cannot delete it.
+    Returns how many were removed.
+    """
+    author = " ".join(by.split())[:MAX_BY]
+    mine = {(p.day, p.start, p.title) for p in fork_plans(itinerary)}
+    gone = {i for i in ids}
     state = _load(session, demo)
-    before = len(state["a"])
-    state["a"] = [a for a in state["a"] if a["i"] not in gone]
-    state["n"] = [n for n in state["n"] if n.get("a") not in gone]
-    if len(state["a"]) != before:
-        _save(session, demo, state, enforce=False)
-    return before - len(state["a"])
+    drop = {a["i"] for a in state["a"] if a["i"] in gone and author and a.get("b") == author and (a["d"], a["s"], a["t"]) in mine}
+    if not drop:
+        return 0
+    state["a"] = [a for a in state["a"] if a["i"] not in drop]
+    state["n"] = [n for n in state["n"] if n.get("a") not in drop]
+    _save(session, demo, state, enforce=False)
+    return len(drop)

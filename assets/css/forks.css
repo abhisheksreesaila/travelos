@@ -7,7 +7,15 @@
 .fk-card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
 .fk-card-title { font-family: var(--font-display); font-weight: 800; font-size: 1.375rem; }
 .fk-link { font-weight: 800; font-size: max(var(--text-min), 0.875rem); }
-.fk-grid { --hh: 3rem; display: grid; grid-template-columns: 3rem repeat(var(--n), minmax(0, 1fr)); column-gap: 0.5rem; min-width: 0; }
+.fk-grid { --hh: 3rem; --w: 5; display: flex; min-width: 0; }
+.fk-gutter { flex: 0 0 3rem; }
+/* The days sit in a scroller that shows a window of --w days (5 desktop, 3 tablet); a 3-night trip fills it, a 20-day trip scrolls */
+.fk-scroll { flex: 1; min-width: 0; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: thin; scroll-behavior: smooth; overscroll-behavior-x: contain; }
+.fk-day { flex: 0 0 calc(100% / min(var(--n), var(--w))); box-sizing: border-box; padding-right: 0.5rem; scroll-snap-align: start; }
+.fk-nav { display: flex; justify-content: flex-end; gap: 0.5rem; }
+.fk-nav[hidden] { display: none; }
+.fk-navbtn { width: 2.5rem; height: 2.5rem; border: 0; border-radius: var(--r-pill); background: var(--card); color: var(--ink); cursor: pointer; display: grid; place-items: center; box-shadow: 0 0 0 1px var(--line), 0 0.1875rem 0 rgba(30, 26, 46, .12); }
+.fk-navbtn:disabled { opacity: .4; cursor: default; }
 .fk-dayhead { height: 3.25rem; box-sizing: border-box; padding: 0.375rem 0.625rem; border-radius: 1rem; display: flex; align-items: center; gap: 0.5rem; min-width: 0; }
 .fk-corner { background: none; padding: 0; }
 .fk-num { font-family: var(--font-display); font-weight: 800; font-size: 1.625rem; line-height: 1; }
@@ -15,7 +23,6 @@
 .fk-wx { margin-left: auto; font-weight: 700; font-size: max(var(--text-min), 0.75rem); color: var(--ink-2); }
 .fk-hours { display: flex; flex-direction: column; }
 .fk-hour { height: var(--hh); flex: none; font-size: max(var(--text-min), 0.75rem); font-weight: 700; color: var(--ink-3); transform: translateY(-0.5rem); }
-.fk-day { min-width: 0; }
 .fk-body { position: relative; margin-top: 0.25rem; background-image: repeating-linear-gradient(to bottom, rgba(30, 26, 46, .07) 0, rgba(30, 26, 46, .07) 1px, transparent 1px, transparent var(--hh)); }
 
 /* Events: height is time, so a short one fades its overflow and opens on hover or focus */
@@ -94,13 +101,17 @@
 @media (max-width: 1020px) { .fk-layout { grid-template-columns: minmax(0, 1fr) 22.5rem; } .fk-thumb { width: 3.75rem; height: 3.75rem; } }
 @media (max-width: 825px) {
   .fk-layout { grid-template-columns: minmax(0, 1fr); }
+  .fk-grid { --w: 3; }
   .fk-side { order: -1; }
   .fk-rows { max-height: none; overflow: visible; }
 }
 /* Phone: the hour grid becomes one list per day, in time order */
 @media (max-width: 720px) {
   .fk { padding-top: 0.5rem; }
-  .fk-grid { grid-template-columns: minmax(0, 1fr); row-gap: 0.75rem; }
+  .fk-grid { display: block; }
+  .fk-scroll { flex-direction: column; overflow: visible; gap: 0.75rem; scroll-snap-type: none; }
+  .fk-day { flex: none; padding-right: 0; }
+  .fk-nav { display: none !important; }
   .fk-gutter { display: none; }
   .fk-dayhead { height: 3rem; }
   .fk-body { height: auto !important; background: none; display: flex; flex-direction: column; gap: 0.375rem; min-height: 0.5rem; }

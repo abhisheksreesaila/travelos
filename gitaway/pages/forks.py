@@ -57,14 +57,15 @@ def _event(cls, start, end, gs, title, tag="", key="", hidden=False, by="", fres
 
 def calendar_view(session, placements=(), author="", fresh=(), demo=""):
     """The traveler's calendar as day columns: bookings, plans, and the fork's draft plans when previewing."""
-    t = cal.trip(demo)
     b = ses.booking(session)
+    t = cal.trip(demo, b)
+    dates = cal.days(t)
     blocks = cal.booked_blocks(b, t)
     gs = cal.grid_start(blocks)
     acts = cal.activities(session, demo)
     drafts = [x for x in placements if not x.hard and x.state != "have"]
     cols = []
-    for i, d in enumerate(cal.days(t)):
+    for i, d in enumerate(dates):
         tint = DAY_TINTS[i % 5]
         body = [_event("fk-booked", x.start, x.end, gs, x.title) for x in blocks if x.day == i]
         body += [_event("fk-mine" if not a.by else "fk-friend", a.start, a.end, gs, a.title, a.by, fresh=a.id in fresh) for a in acts if a.day == i]
@@ -79,7 +80,9 @@ def calendar_view(session, placements=(), author="", fresh=(), demo=""):
     gutter = Div(Div(cls="fk-dayhead fk-corner"), Div(*hours, cls="fk-hours", style=f"height:{_rem(cal.GRID_END - gs)}"), cls="fk-gutter", aria_hidden="true")
     return Section(
         Div(Span("Your calendar", cls="fk-card-title"), A("Open the calendar", href="/calendar?view=days", cls="fk-link"), cls="fk-card-head"),
-        Div(gutter, *cols, cls="fk-grid", style=f"--n:{len(cols)}"),
+        Div(gutter, Div(*cols, cls="fk-scroll", id="fk-scroll", role="region", aria_label="Days", tabindex="0"), cls="fk-grid", style=f"--n:{len(cols)}"),
+        Div(Button(icon("chev-left", 18, 2.6), type="button", data_dir="-1", aria_label="Earlier days", cls="fk-navbtn"),
+            Button(icon("chev-right", 18, 2.6), type="button", data_dir="1", aria_label="Later days", cls="fk-navbtn"), cls="fk-nav", hidden=True) if len(cols) > 3 else "",
         cls="fk-cal card", aria_label="Trip calendar")
 
 
@@ -126,9 +129,9 @@ def list_panel(session, booked, current=""):
 
 # ---- the preview ---------------------------------------------------------------------------------------------------
 
-def _row(x):
+def _row(x, dates):
     p = x.plan
-    day = cal.days(cal.trip())[p.day] if 0 <= p.day < len(cal.days(cal.trip())) else None
+    day = dates[p.day] if 0 <= p.day < len(dates) else None
     when = f"{day.strftime('%a')} {day.day} · " if day else f"Day {p.day + 1} · "
     when += f"{cal.fmt_time(p.start)} – {cal.fmt_time(p.end)}"
     if x.state == "have":
@@ -144,14 +147,14 @@ def _row(x):
         cls=f"fk-row{' is-clash' if x.state == 'clash' else ''}{' is-have' if x.state == 'have' else ''}")
 
 
-def preview_panel(entry, placements):
+def preview_panel(entry, placements, dates):
     free = sum(1 for x in placements if x.checked)
     if not placements:
         body = [P("This trip has no timed plans to add.", cls="fk-hint")]
     else:
         body = [Form(
             Span(f"FROM {entry.title.upper()}", cls="fk-from"),
-            Div(*[_row(x) for x in placements], cls="fk-rows", role="group", aria_label="Plans in this fork", tabindex="0"),
+            Div(*[_row(x, dates) for x in placements], cls="fk-rows", role="group", aria_label="Plans in this fork", tabindex="0"),
             Input(type="hidden", name="slug", value=entry.slug),
             Button(f"Apply {free} plan{'s' if free != 1 else ''}", type="submit", id="fk-apply", cls="btn btn-ink fk-applybtn", disabled=(free == 0) or None, data_count=str(free)),
             Span("Your bookings and your crew's plans stay exactly where they are.", cls="fk-hint"),
@@ -168,7 +171,7 @@ def applied_panel(session, ids, source):
     n = len(got)
     return Div(
         Span(icon("check", 20, 2.6), Span(f"Added {n} plan{'s' if n != 1 else ''} from {who}."), cls="fk-done-text"),
-        Form(Input(type="hidden", name="ids", value=",".join(a.id for a in got)), Button("Undo", type="submit", cls="fk-undo"), action="/forks/undo", method="post"),
+        Form(Input(type="hidden", name="ids", value=",".join(a.id for a in got)), Input(type="hidden", name="src", value=source.slug if source else ""), Button("Undo", type="submit", cls="fk-undo"), action="/forks/undo", method="post"),
         cls="fk-done fk-pop", role="status")
 
 
@@ -182,18 +185,28 @@ def signed_out():
         cls="ga-soon ga-wrap"), head=HEAD)
 
 
+def sorry(message, back="/forks"):
+    """A fork or save the demo cannot hold (the cookie is full): say so, and offer a way back. 409."""
+    out = page("Your forks", Section(
+        Div(Span(icon("fork", 36, 2.2), cls="fk-bigicon"), H1("No room for that"), P(message),
+            A("Back to the trip", href=back, cls="btn btn-primary"), A("Your forks", href="/forks", cls="btn"), cls="fk-signedout"),
+        cls="ga-soon ga-wrap"), head=HEAD)
+    return FtResponse(out, status_code=409)
+
+
 def forks_page(session, open_slug="", applied="", source="", error="", status=200):
     booked = bool(ses.booking(session))
     entry = forks_model.entry(session, open_slug) if open_slug else None
     if entry and entry.slug not in ses.forks(session) + ses.saved(session):
         entry = None  # preview only what is in the traveler's list
-    placements = []
+    placements, dates = [], []
     if entry and booked:
+        dates = cal.days(cal.trip("", ses.booking(session)))
         placements = cal.preview_fork(session, entry.trip)
     ids = _ids(applied)
     src = forks_model.entry(session, source) if source else None
     done = applied_panel(session, ids, src) if ids and booked else None
-    side = preview_panel(entry, placements) if entry and booked else list_panel(session, booked, entry.slug if entry else "")
+    side = preview_panel(entry, placements, dates) if entry and booked else list_panel(session, booked, entry.slug if entry else "")
     notice = Div(error, role="alert", cls="fk-error") if error else ""
     left = calendar_view(session, placements, fresh=set(ids)) if booked else calendar_empty()
     body = Section(
@@ -226,10 +239,12 @@ def register(app):
         return RedirectResponse(forks_url(applied=",".join(a.id for a in added), src=slug), status_code=303)
 
     @app.post("/forks/undo")
-    def undo(session, ids: str = ""):
+    def undo(session, ids: str = "", src: str = ""):
         if not ses.current_traveler(session):
             return RedirectResponse("/signin?next=/forks", status_code=303)
-        cal.remove_activities(session, _ids(ids))
+        trip = forks_model.resolve(session, src) if src else None
+        if trip and ses.booking(session):
+            cal.remove_applied(session, trip, _ids(ids), by=trip.author)
         return RedirectResponse("/forks", status_code=303)
 
     def trip_path(next_path):
@@ -241,7 +256,10 @@ def register(app):
         path = trip_path(next)
         if not ses.current_traveler(session):
             return RedirectResponse(f"/signin?next={quote(path, safe='/')}&intent=save", status_code=303)
-        ses.add_save(session, path)
+        try:
+            ses.add_save(session, path)
+        except ses.KeepError as e:
+            return sorry(str(e), path)
         return RedirectResponse(path, status_code=303)
 
     @app.post("/unsave")

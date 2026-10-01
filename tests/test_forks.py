@@ -218,7 +218,7 @@ def test_undo_takes_the_applied_plans_back_out(client):
     r = apply(client, "d1s2", "d1s3")
     ids = re.search(r"applied=([a0-9,]+)", r.headers["location"]).group(1)
     assert ids == "a2,a3"
-    assert client.post("/forks/undo", data={"ids": ids}, follow_redirects=False).headers["location"] == "/forks"
+    assert client.post("/forks/undo", data={"ids": ids, "src": TRIP}, follow_redirects=False).headers["location"] == "/forks"
     assert titles(client) == ["Mine"]  # only the traveler's own is left
     client.post("/forks/undo", data={"ids": "a1;DROP"})  # junk ids do nothing
     assert titles(client) == ["Mine"]

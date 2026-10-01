@@ -81,20 +81,35 @@ def trip_slug(path):
     return m.group(1) if m else None
 
 
-def add_fork(session, next_path):
-    """Add the trip in a /trips/<slug> path to the current traveler's forks.
+class KeepError(ValueError):
+    """A fork or save the demo refuses because the session cookie has no room; the message is fit to show."""
 
-    False when signed out, when the path is not a trip, or when it is already there.
+
+def _keep(session, key, current, next_path):
+    """Add the trip in a /trips/<slug> path to the traveler's `key` list (forks or saves).
+
+    False when signed out, when the path is not a trip that exists, or when it is already there. Raises KeepError
+    (and changes nothing) when the signed cookie would grow past BUDGET.
     """
+    from gitaway import forks as forks_model  # here, not at the top: forks imports this module
     t, slug = current_traveler(session), trip_slug(next_path)
-    if not t or not slug:
+    if not t or not slug or slug in current or not forks_model.resolve(session, slug):
         return False
-    mine = forks(session)
-    if slug in mine:
-        return False
+    old = session.get(key)
     # Reassign the whole dict so the cookie session notices the change.
-    session["forks"] = {**session.get("forks", {}), t.id: [*mine, slug]}
+    session[key] = {**(old or {}), t.id: [*current, slug]}
+    if len(json.dumps(dict(session))) > BUDGET:
+        if old is None:
+            session.pop(key, None)
+        else:
+            session[key] = old
+        raise KeepError("This demo is full. Delete something from your calendar to make room.")
     return True
+
+
+def add_fork(session, next_path):
+    """Fork the trip in a /trips/<slug> path for the current traveler (see _keep for the False and KeepError cases)."""
+    return _keep(session, "forks", forks(session), next_path)
 
 
 def saved(session):
@@ -107,12 +122,8 @@ def saved(session):
 
 
 def add_save(session, next_path):
-    """Save the trip in a /trips/<slug> path for the current traveler. False when signed out, not a trip, or already saved."""
-    t, slug = current_traveler(session), trip_slug(next_path)
-    if not t or not slug or slug in saved(session):
-        return False
-    session["saves"] = {**(session.get("saves") or {}), t.id: [*saved(session), slug]}
-    return True
+    """Save the trip in a /trips/<slug> path for the current traveler (see _keep for the False and KeepError cases)."""
+    return _keep(session, "saves", saved(session), next_path)
 
 
 def remove_save(session, next_path):

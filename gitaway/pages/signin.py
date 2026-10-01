@@ -61,10 +61,14 @@ def dialog(next_path, intent, asked=None):
 
 def _continue(session, intent, next_path):
     """What the signed-in traveler meant to do before the sign-in: fork or save the trip at `next`."""
-    if intent == "fork":
-        ses.add_fork(session, next_path)
-    elif intent == "save":  # only when asked for: a plain "Sign in" on a trip page must not save it
-        ses.add_save(session, next_path)
+    try:
+        if intent == "fork":
+            ses.add_fork(session, next_path)
+        elif intent == "save":  # only when asked for: a plain "Sign in" on a trip page must not save it
+            ses.add_save(session, next_path)
+    except ses.KeepError as e:
+        from gitaway.pages.forks import sorry
+        return sorry(str(e), next_path)
 
 
 def register(app):
@@ -72,7 +76,8 @@ def register(app):
     def signin_page(session, next: str = "/start", intent: str = ""):
         next_path, asked, intent = ses.safe_next(next), (intent if intent in ses.INTENTS else ""), _intent(intent)
         if ses.current_traveler(session):
-            _continue(session, asked, next_path)
+            if (full := _continue(session, asked, next_path)):
+                return full
             return RedirectResponse(next_path, status_code=303)
         return page("Sign in", Div(dialog(next_path, intent, asked), cls="si-backdrop"), head=HEAD)
 
@@ -81,7 +86,8 @@ def register(app):
         if not ses.sign_in(session, traveler):
             return Response("Unknown demo traveler", status_code=400)
         next_path = ses.safe_next(next)
-        _continue(session, intent if intent in ses.INTENTS else "", next_path)
+        if (full := _continue(session, intent if intent in ses.INTENTS else "", next_path)):
+            return full
         return RedirectResponse(next_path, status_code=303)
 
     @app.post("/fork")
@@ -90,7 +96,11 @@ def register(app):
         next_path = ses.safe_next(next)
         if not ses.current_traveler(session):
             return RedirectResponse(f"/signin?next={quote(next_path, safe='/')}&intent=fork", status_code=303)
-        ses.add_fork(session, next_path)
+        try:
+            ses.add_fork(session, next_path)
+        except ses.KeepError as e:
+            from gitaway.pages.forks import sorry
+            return sorry(str(e), next_path)
         return RedirectResponse(next_path, status_code=303)
 
     @app.post("/signout")

@@ -1,5 +1,24 @@
 /* Your forks (F-021): enhances the server-rendered preview. Without this script everything still works as plain forms. */
 (function () {
+  // Long trips: the day window scrolls by a window of days at a time.
+  var scroller = document.getElementById('fk-scroll');
+  var nav = document.querySelector('.fk-nav');
+  if (scroller && nav) {
+    nav.hidden = false;
+    var prev = nav.querySelector('[data-dir="-1"]');
+    var next = nav.querySelector('[data-dir="1"]');
+    var edges = function () {
+      prev.disabled = scroller.scrollLeft < 2;
+      next.disabled = scroller.scrollLeft + scroller.clientWidth >= scroller.scrollWidth - 2;
+    };
+    nav.addEventListener('click', function (e) {
+      var b = e.target.closest && e.target.closest('[data-dir]');
+      if (b) scroller.scrollBy({ left: Number(b.getAttribute('data-dir')) * scroller.clientWidth, behavior: 'smooth' });
+    });
+    scroller.addEventListener('scroll', edges);
+    edges();
+  }
+
   var form = document.getElementById('fk-form');
   if (!form) return;
   var btn = document.getElementById('fk-apply');
