@@ -28,10 +28,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .on-ink a:focus-visible, .on-ink button:focus-visible { outline-color: var(--sun); }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 
-.ga-wrap { width: min(82rem, 100% - 2rem); margin-inline: auto; }
+.ga-wrap { width: min(82rem, 100% - 2rem - env(safe-area-inset-left) - env(safe-area-inset-right)); margin-inline: auto; }
 
 /* Header */
-.ga-header { height: 5.25rem; display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; }
+.ga-header { height: calc(5.25rem + env(safe-area-inset-top)); padding-top: env(safe-area-inset-top); display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; }
 .ga-brand { display: flex; align-items: center; gap: 0.625rem; text-decoration: none; }
 .ga-brand-mark { width: 2.5rem; height: 2.5rem; border-radius: var(--r-sm); background: var(--coral); box-shadow: 0 0.1875rem 0 var(--coral-deep); display: grid; place-items: center; }
 .ga-brand-name { font-family: var(--font-display); font-weight: 800; font-size: 1.6875rem; letter-spacing: -0.02em; color: var(--ink); }
@@ -79,7 +79,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .ga-soon .ga-actions { justify-content: center; }
 
 /* Footer */
-.ga-footer { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; padding: 2.5rem 0; color: var(--ink-3); font-weight: 600; font-size: 0.9375rem; }
+.ga-footer { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; padding: 2.5rem 0 calc(2.5rem + env(safe-area-inset-bottom)); color: var(--ink-3); font-weight: 600; font-size: 0.9375rem; }
 .ga-footer .ga-brand-name { font-size: 1.375rem; }
 
 /* Placeholder pages while a screen is being built */
@@ -93,7 +93,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .skeleton { background: linear-gradient(90deg, var(--skeleton) 0%, var(--skeleton-band) 50%, var(--skeleton) 100%); background-size: 200% 100%; animation: ga-shimmer 1.4s linear infinite; }
 
 @media (max-width: 720px) {
-  .ga-header { height: auto; padding: 1rem 0; flex-wrap: wrap; }
+  .ga-header { height: auto; padding: calc(1rem + env(safe-area-inset-top)) 0 1rem; flex-wrap: wrap; }
   .ga-nav { gap: 1.125rem; order: 3; width: 100%; }
   .ga-footer { flex-direction: column; align-items: flex-start; }
   .ga-brand { min-height: 2.75rem; }

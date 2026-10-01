@@ -1,6 +1,6 @@
 """The page shell every GitAway screen shares: fonts, tokens, header and footer."""
 
-from fasthtml.common import A, Button, Div, Footer, Form, Header, Link, Main, Nav, Span, Title
+from fasthtml.common import A, Button, Div, Footer, Form, Header, Link, Main, Meta, Nav, Script, Span, Title
 
 from gitaway import session
 from gitaway.icons import icon
@@ -10,7 +10,18 @@ FONTS = (
     "&family=Figtree:wght@400;500;600;700;800&family=Caveat:wght@600;700&display=swap"
 )
 
+PAPER = "#FFF8EE"  # --paper / --ground: the manifest and the status bar match the page
+
 HEAD = (
+    # Install on iPhone (F-044): manifest, theme colour, Apple tags, service worker registration
+    Link(rel="manifest", href="/manifest.webmanifest"),
+    Link(rel="apple-touch-icon", href="/assets/icons/apple-touch-icon.png"),
+    Meta(name="theme-color", content=PAPER),
+    Meta(name="mobile-web-app-capable", content="yes"),
+    Meta(name="apple-mobile-web-app-capable", content="yes"),
+    Meta(name="apple-mobile-web-app-status-bar-style", content="black-translucent"),
+    Meta(name="apple-mobile-web-app-title", content="GitAway"),
+    Script(src="/assets/js/pwa.js", defer=True),
     Link(rel="preconnect", href="https://fonts.googleapis.com"),
     Link(rel="preconnect", href="https://fonts.gstatic.com", crossorigin=""),
     Link(rel="stylesheet", href=FONTS),
