@@ -13,6 +13,17 @@ for _key in ("GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"):
     os.environ.pop(_key, None)
 
 
+@pytest.fixture(scope="session", autouse=True)
+def _work_from_the_data_folder():
+    """fh-saas opens its databases relative to the working directory, and main.py moves there only when it is first imported.
+
+    A test that never imported main (a pure-function test run first, in reverse or random order) made the teardown wipe open a host
+    database in the project folder, and later tests and subprocesses then saw another one. Do the move before any test.
+    """
+    from gitaway import auth
+    auth.configure_storage()
+
+
 @pytest.fixture
 def client():
     from main import app

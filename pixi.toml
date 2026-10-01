@@ -9,6 +9,8 @@ nbdev = "*"  # fh-saas imports nbdev.showdoc at load time but does not declare i
 pytest = "*"
 playwright-python = ">=1.62.0,<2"
 pyyaml = ">=6.0.3,<7"
+pytest-randomly = ">=5.0.0,<6"
+pytest-reverse = ">=1.7.0,<2"
 
 [pypi-dependencies]
 python-fasthtml = ">=0.14.13"
@@ -16,6 +18,7 @@ fh-saas = ">=0.9.14"
 
 [tasks]
 dev = "python main.py"
-test = "pytest -q"
+test = "pytest -q -p no:randomly"
+test-random = "pytest -q -p randomly"
 test-browser-install = "playwright install chromium"  # once per machine: downloads the browser the browser suite drives
-test-browser = "pytest -q tests_browser"
+test-browser = "pytest -q -p no:randomly tests_browser"
