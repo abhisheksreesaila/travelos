@@ -46,7 +46,8 @@ def _item(i):
 
 
 def _line(q, lane, offer, tile):
-    """One lane of the sheet: its name and total, then each priced item in it (rooms and add-ons for the stay)."""
+    """One lane of the sheet: its name and total, then each priced item in it (rooms and add-ons for the stay, fare and bags for a flight that has any)."""
+    items = [i for i in q.items if i.lane == lane]
     icon_name, fill = tile
     detail = f"{q.trip.nights_text} · {offer.headline}" if lane == "stay" else offer.detail
     return Div(
@@ -56,7 +57,7 @@ def _line(q, lane, offer, tile):
             Span(catalog.money(q.lane_cents(lane)), cls="pay-price"),
             cls="pay-line-head",
         ),
-        Ul(*[_item(i) for i in q.items if i.lane == lane], cls="pay-items", aria_label=f"{offer.name}, itemized") if lane == "stay" else "",
+        Ul(*[_item(i) for i in items], cls="pay-items", aria_label=f"{offer.name}, itemized") if lane == "stay" or (lane == "flight" and len(items) > 1) else "",
         cls="pay-line",
     )
 
@@ -86,9 +87,11 @@ def sheet(q, who):
                 Input(type="hidden", name="c", value=q.car_id),
                 *([Input(type="hidden", name="rooms", value=q.stay.rooms_code)] if q.stay.rooms_code else []),
                 *([Input(type="hidden", name="add", value=q.stay.add_code)] if q.stay.addons else []),
+                *([Input(type="hidden", name="fare", value=q.flight.fare_code)] if q.flight.fare_code else []),
+                *([Input(type="hidden", name="bags", value=q.flight.bags_code)] if q.flight.bags else []),
                 *trip_fields(trip),
                 Button(f"Pay {money}", type="submit", cls="btn btn-ink pay-go", id="pay-go"),
-                A("Back to my picks", href=plan.plan_path(q.flight_id, q.stay_id, q.car_id, q.stay, q.trip), id="pay-cancel", cls="pay-back"),
+                A("Back to my picks", href=plan.plan_path(q.flight_id, q.stay_id, q.car_id, q.stay, q.trip, q.flight), id="pay-cancel", cls="pay-back"),
                 action="/pay", method="post", cls="pay-form",
             ),
             P("Simulated checkout. No money moves and nothing is really booked.", cls="pay-note"),
@@ -106,7 +109,7 @@ def flight_chip(o, trip):
 def celebration(b):
     trip = tripcal.trip_of(b)
     flight, stay = catalog.offer(b["flight"]), catalog.offer(b["stay"])
-    pick = tripcal.stay_pick_of(b)
+    pick, fare = tripcal.stay_pick_of(b), tripcal.flight_pick_of(b)
     confetti = Div(
         *[Span(cls="pay-conf", style=f"--c:var(--{CONFETTI[i % 6]});--x:{(i * 37) % 100}%;--d:{(i % 9) * 0.07:.2f}s;"
                                      f"--w:{(8 + i % 3 * 4) / 16:g}rem;--h:{(14 + i % 4 * 3) / 16:g}rem;--r:{(i * 53) % 360}deg")
@@ -118,7 +121,7 @@ def celebration(b):
         H2(f"You're going to {trip.place}!", id="pay-done-title"),
         P("Your flights and hotel are on the trip calendar. Now the fun part: fill the gaps with your crew."),
         Div(Span(flight_chip(flight, trip), cls="pay-pill"), Span(f"{stay.name} · {trip.nights_text}", cls="pay-pill"),
-            Span(pick.summary, cls="pay-pill"), cls="pay-pills"),
+            *([] if fare.is_default else [Span(fare.summary, cls="pay-pill")]), Span(pick.summary, cls="pay-pill"), cls="pay-pills"),
         A("Open my trip calendar", href="/calendar", cls="btn btn-ink pay-cal", id="pay-cal"),
         Span(f"Booking {b['id']} · simulated, nothing was charged", cls="pay-ref"),
         aria_labelledby="pay-done-title", cls="pay-done",
@@ -128,23 +131,26 @@ def celebration(b):
 
 def register(app):
     @app.get("/plan/pay")
-    def pay_sheet(session, f: str = "", h: str = "", c: str = "", rooms: str = None, add: str = None, d: str = "", r: str = "", a: str = "", k: str = ""):
+    def pay_sheet(session, f: str = "", h: str = "", c: str = "", rooms: str = None, add: str = None, fare: str = None, bags: str = None,
+                  d: str = "", r: str = "", a: str = "", k: str = ""):
         picks, trip = plan.resolve_pick(f, h, c), plan.resolve_trip(d, r, a, k)
-        stay = plan.resolve_stay(picks[1], rooms, add, trip)
+        stay, flight = plan.resolve_stay(picks[1], rooms, add, trip), plan.resolve_flight(picks[0], fare, bags, trip)
         who = ses.current_traveler(session)
         if not who:
-            return signin_for_pay(plan.pay_path(*picks, stay))
-        return plan.workspace(*picks, stay=stay, overlay=(sheet(catalog.quote(*picks, stay, trip), who), Script(src="/assets/js/pay.js", defer=True)), head=HEAD)
+            return signin_for_pay(plan.pay_path(*picks, stay, trip, flight))
+        return plan.workspace(*picks, stay=stay, flight=flight,
+                              overlay=(sheet(catalog.quote(*picks, stay, trip, flight), who), Script(src="/assets/js/pay.js", defer=True)), head=HEAD)
 
     @app.post("/pay")
-    def pay(session, f: str = "", h: str = "", c: str = "", rooms: str = None, add: str = None, d: str = "", r: str = "", a: str = "", k: str = ""):
-        """Books the picks. The total is always recomputed here; rooms that sleep too few become the default room."""
+    def pay(session, f: str = "", h: str = "", c: str = "", rooms: str = None, add: str = None, fare: str = None, bags: str = None,
+            d: str = "", r: str = "", a: str = "", k: str = ""):
+        """Books the picks. The total is always recomputed here; rooms that sleep too few become the default room, a bad fare Basic and bad bags none."""
         picks, trip = plan.resolve_pick(f, h, c), plan.resolve_trip(d, r, a, k)
-        stay = plan.resolve_stay(picks[1], rooms, add, trip)
+        stay, flight = plan.resolve_stay(picks[1], rooms, add, trip), plan.resolve_flight(picks[0], fare, bags, trip)
         if catalog.is_past(trip.depart, trip.return_):  # a stale link must not book the past: back to the form, which says why
             return RedirectResponse(f"/start?go=1&to=la&{catalog.trip_query(trip)}&n={len(trip.kid_ages)}" + "".join(f"&k{i}={a}" for i, a in enumerate(trip.kid_ages, 1)), status_code=303)
-        if not ses.book(session, catalog.quote(*picks, stay, trip)):
-            return signin_for_pay(plan.pay_path(*picks, stay))
+        if not ses.book(session, catalog.quote(*picks, stay, trip, flight)):
+            return signin_for_pay(plan.pay_path(*picks, stay, trip, flight))
         return RedirectResponse("/booked", status_code=303)
 
     @app.get("/booked")

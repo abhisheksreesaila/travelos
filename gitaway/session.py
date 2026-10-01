@@ -124,9 +124,9 @@ def remember_plan(session, query):
             session["plan"] = old
 
 
-def booking_id(traveler_id, flight, stay, car, rooms="", add="", trip=""):
-    """A stable id for one traveler's picks, so paying the same trip twice is the same booking. Default rooms, no add-ons and the sample trip hash as before."""
-    digest = hashlib.sha256(f"{traveler_id}|{flight}|{stay}|{car}{'|' + rooms + '|' + add if rooms or add else ''}{'|' + trip if trip else ''}".encode()).hexdigest()
+def booking_id(traveler_id, flight, stay, car, rooms="", add="", trip="", fare="", bags=""):
+    """A stable id for one traveler's picks, so paying the same trip twice is the same booking. Default rooms, no add-ons, the sample trip and a Basic fare with no bags hash as before."""
+    digest = hashlib.sha256(f"{traveler_id}|{flight}|{stay}|{car}{'|' + rooms + '|' + add if rooms or add else ''}{'|' + trip if trip else ''}{'|F' + fare + '|' + bags if fare or bags else ''}".encode()).hexdigest()
     return "GA-" + digest[:8].upper()
 
 
@@ -134,19 +134,20 @@ def book(session, quote):
     """Record `quote` (a catalog.Quote) as the current traveler's booked trip. Idempotent.
 
     Returns the booking, or None when signed out. Paying the same picks again keeps the original booking untouched.
-    Session shape: "bookings": {"<traveler id>": {"id", "flight", "stay", "car", "rooms", "add", "total_cents", "booked_at"}}
-    (rooms and add are the stay's compact pick codes, "" for the default room and no add-ons).
+    Session shape: "bookings": {"<traveler id>": {"id", "flight", "stay", "car", "rooms", "add", "fare", "bags", "total_cents", "booked_at"}}
+    (rooms and add are the stay's compact pick codes, "" for the default room and no add-ons; fare and bags are the flight's, "" for Basic and no bags).
     """
     t = current_traveler(session)
     if not t:
         return None
     rooms, add = (quote.stay.rooms_code, quote.stay.add_code) if quote.stay else ("", "")
+    fare, bags = (quote.flight.fare_code, quote.flight.bags_code) if quote.flight else ("", "")
     trip = catalog.trip_query(quote.trip)  # "" for the sample trip
-    bid = booking_id(t.id, quote.flight_id, quote.stay_id, quote.car_id, rooms, add, trip)
+    bid = booking_id(t.id, quote.flight_id, quote.stay_id, quote.car_id, rooms, add, trip, fare, bags)
     existing = booking(session)
     if existing and existing["id"] == bid:
         return existing
-    record = {"id": bid, "flight": quote.flight_id, "stay": quote.stay_id, "car": quote.car_id, "rooms": rooms, "add": add,
+    record = {"id": bid, "flight": quote.flight_id, "stay": quote.stay_id, "car": quote.car_id, "rooms": rooms, "add": add, "fare": fare, "bags": bags,
               "total_cents": quote.total_cents, "booked_at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
     if trip:
         record["trip"] = trip

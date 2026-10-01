@@ -181,7 +181,7 @@ def test_every_pick_has_offer_data_and_the_current_pick(client):
     data = json.loads(raw)
     picks = re.findall(r'data-pick="([^"]+)"', h)
     assert len(picks) == 11 and set(picks) <= set(data["offers"])
-    assert data["pick"] == {"f": "f1", "h": "h1", "c": "c1", "rooms": "cq1", "add": ""} and data["base"] == "/plan?f=f1&h=h1&c=c1"
+    assert data["pick"] == {"f": "f1", "h": "h1", "c": "c1", "rooms": "cq1", "add": "", "fare": "", "bags": ""} and data["base"] == "/plan?f=f1&h=h1&c=c1"
 
 
 def test_workspace_is_a_main_landmark_the_skip_link_targets(client):
