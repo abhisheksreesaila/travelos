@@ -6,7 +6,7 @@ import re
 
 from playwright.sync_api import expect
 
-from tests_browser.conftest import PHONE
+from tests_browser.helpers import PHONE
 
 QUOTE = "**/plan/quote*"
 
@@ -122,13 +122,8 @@ def test_choose_is_held_while_a_room_edit_waits_for_its_price(open_plan):
     page = open_plan()
     held = []
     page.route(QUOTE, lambda route: held.append(route))
-    panel, choose = edit_room(page)
-    expect(choose).to_be_disabled()
-    for _ in range(100):  # the price request reaches the held list (pumping the browser's events meanwhile)
-        if held:
-            break
-        page.wait_for_timeout(20)
-    assert held
+    with page.expect_request(QUOTE):
+        panel, choose = edit_room(page)
     expect(choose).to_be_disabled()  # still held while the price is outstanding
     for route in held:
         route.continue_()
@@ -147,8 +142,11 @@ def test_choose_recovers_when_the_price_request_fails(open_plan):
     expect(panel.locator('.ws-room[data-room="ok"]')).to_have_attribute("data-count", "0")  # the editor shows what Choose picks
 
 
-def test_skip_the_car_and_undo_restores_the_exact_previous_picks(open_plan):
-    page = open_plan("f=f2&h=h1&c=c2&rooms=ok2&add=bf")
+PICKS = "f=f2&h=h1&c=c2&rooms=ok2&add=bf"  # Ocean-view King x2 with breakfast, a non-default flight and car
+
+
+def test_skip_the_car_and_undo_brings_the_car_back_and_leaves_the_other_picks_alone(open_plan):
+    page = open_plan(PICKS)
     picks = page.evaluate("() => location.search")
     before = total(page)
     page.click('[data-skip="car"]')
@@ -157,6 +155,21 @@ def test_skip_the_car_and_undo_restores_the_exact_previous_picks(open_plan):
     expect(page.locator("#ws-total")).not_to_have_text(before)
     page.click('[data-undo="car"]')
     expect(page.locator('.ws-pane[data-pane="cars"]')).not_to_have_attribute("data-skipped", "1")
-    page.wait_for_function("t => document.getElementById('ws-total').textContent === t", arg=before)
+    expect(page.locator("#ws-total")).to_have_text(before)
     assert page.evaluate("() => location.search") == picks
     expect(page.locator('.ws-offer[data-pick="c2"]')).to_have_attribute("aria-pressed", "true")
+
+
+def test_skip_the_stay_and_undo_brings_back_its_rooms_and_add_ons(open_plan):
+    page = open_plan(PICKS)
+    picks = page.evaluate("() => location.search")
+    before = total(page)
+    page.click('[data-skip="stay"]')
+    url_has(page, "h=none")
+    assert "rooms=" not in page.url and "add=" not in page.url
+    page.click('[data-undo="stay"]')
+    expect(page.locator('.ws-pane[data-pane="stays"]')).not_to_have_attribute("data-skipped", "1")
+    expect(page.locator("#ws-total")).to_have_text(before)
+    assert page.evaluate("() => location.search") == picks  # the rooms and add-ons, not the default room
+    expect(page.locator('.ws-detail-panel[data-detail="h1"]')).to_have_attribute("data-rooms", "ok2")
+    expect(page.locator('.ws-detail-panel[data-detail="h1"]')).to_have_attribute("data-add", "bf")

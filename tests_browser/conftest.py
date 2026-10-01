@@ -12,9 +12,7 @@ import pytest
 import uvicorn
 from playwright.sync_api import sync_playwright
 
-DESKTOP = {"width": 1440, "height": 900}
-PHONE = {"width": 390, "height": 844}
-
+from tests_browser.helpers import DESKTOP
 
 @pytest.fixture(autouse=True)
 def _fixed_today(monkeypatch):
@@ -41,6 +39,7 @@ def base_url():
     yield f"http://127.0.0.1:{port}"
     server.should_exit = True
     thread.join(timeout=5)
+    assert not thread.is_alive(), "the test server did not stop"
 
 
 @pytest.fixture(scope="session")
