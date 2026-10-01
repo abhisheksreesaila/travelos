@@ -186,7 +186,7 @@ def window_message(problem):
     kind, at = problem
     if kind == "land":
         return f"You land at {fmt_time(at)} on the first day. Plan after that."
-    return f"Your flight home needs you at the airport by {fmt_time(at + AIRPORT_BUFFER)}. Finish by {fmt_time(at)}."
+    return f"Your flight home leaves at {fmt_time(at + AIRPORT_BUFFER)}. Finish by {fmt_time(at)}."
 
 
 def window_note(problem):
@@ -299,7 +299,9 @@ def parse_time(value, what):
     return int(m.group(1)) * 60 + int(m.group(2))
 
 
-def _clean(session, demo, *, day, start, end, title, kind):
+def _clean(session, demo, *, day, start, end, title, kind, old=None):
+    """Validate an activity. `old` is the (day, start, end) it already has: when unchanged, the flight window is not re-checked,
+    so renaming an older item (or a friend's) still works."""
     _, t, blocks = _context(session, demo)
     title = " ".join((title or "").split())
     if not title:
@@ -326,7 +328,7 @@ def _clean(session, demo, *, day, start, end, title, kind):
     for b in blocks:
         if b.day == day and s < b.end and b.start < e:
             raise CalendarError(f"That overlaps {b.title} ({fmt_time(b.start)} – {fmt_time(b.end)}). Pick a gap.")
-    if (problem := window_problem(blocks, day, s, e)):
+    if (day, s, e) != old and (problem := window_problem(blocks, day, s, e)):
         raise CalendarError(window_message(problem))
     return day, s, e, title
 
@@ -370,7 +372,8 @@ def update_activity(session, id_, *, day=None, start=None, end=None, title=None,
         raise CalendarError("That activity is gone.")
     day, s, e, title = _clean(
         session, demo, day=row["d"] if day is None else day, start=row["s"] if start is None else start,
-        end=row["e"] if end is None else end, title=row["t"] if title is None else title, kind=row["k"] if kind is None else kind)
+        end=row["e"] if end is None else end, title=row["t"] if title is None else title, kind=row["k"] if kind is None else kind,
+        old=(row["d"], row["s"], row["e"]))
     row.update(d=day, s=s, e=e, t=title, k=kind or row["k"])
     _save(session, demo, state)
     return _act(row)
@@ -445,10 +448,11 @@ def live_pending(session, demo=""):
 def _free_slot(blocks, state, day, gs):
     """The first start for LIVE_LEN minutes with nothing on it: 10:00, then later mornings, then earlier ones."""
     taken = [(b.start, b.end) for b in blocks if b.day == day] + [(a["s"], a["e"]) for a in state["a"] if a["d"] == day]
+    lo, hi = day_window(blocks, day)  # not before you land, not too close to the flight home
     later = range(LIVE_START, 12 * 60 + 1, 30)
     earlier = range(LIVE_START - 30, gs - 1, -30)
     for s in [*later, *earlier]:
-        if s >= gs and s + LIVE_LEN <= GRID_END and not any(s < e and b < s + LIVE_LEN for b, e in taken):
+        if s >= max(gs, lo) and s + LIVE_LEN <= hi and not any(s < e and b < s + LIVE_LEN for b, e in taken):
             return s
     return None
 

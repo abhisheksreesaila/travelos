@@ -167,7 +167,7 @@ def test_the_calendar_refuses_a_plan_before_you_land_with_a_friendly_message(cli
 def test_the_calendar_refuses_a_plan_too_close_to_the_flight_home(client):
     book(client, **THREE_NIGHTS)
     r = add(client, day="3", start="12:30", end="13:15")  # the flight home leaves at 2:10 PM
-    assert r.status_code == 409 and "airport" in r.text and "Finish by 12:10 PM" in r.text
+    assert r.status_code == 409 and "Your flight home leaves at 2:10 PM. Finish by 12:10 PM." in r.text
     assert add(client, id="a2", day="3", start="08:00", end="09:00", title="Brunch").status_code == 303
     assert add(client, id="a3", day="2", start="17:00", end="19:00", title="Dinner").status_code == 303  # other days are free
 
@@ -176,7 +176,7 @@ def test_moving_a_plan_later_than_the_window_is_refused_too(client):
     book(client, **THREE_NIGHTS)
     add(client, id="a1", day="1", start="10:00", end="11:00")
     r = client.post("/calendar/activities/a1/move", data={"day": "3", "start": "16:00", "end": "17:00"}, follow_redirects=False)
-    assert r.status_code == 409 and "airport" in r.text
+    assert r.status_code == 409 and "Your flight home leaves at 2:10 PM" in r.text
     assert any(a["i"] == "a1" and a["d"] == 1 for a in session_data(client)["cal"]["ari"]["a"])
 
 
@@ -214,3 +214,38 @@ def test_a_creator_trip_can_be_forked_saved_and_applied(client):
     r = apply(client, *free, slug=slug)
     assert r.status_code == 303 and "applied=" in r.headers["location"]
     assert len(titles(client)) == len(free)
+
+
+# ---- Mom and old items respect the same window ------------------------------------------------------------------------
+
+TWO_NIGHTS = dict(d="2026-10-16", r="2026-10-18", a="2", k="4,7")  # the last day is index 2, where Mom's scripted add happens
+
+
+def test_moms_scripted_add_stays_inside_the_flight_window_on_a_short_trip(client):
+    book(client, f="f2", **TWO_NIGHTS)  # f2's flight home leaves at 12:30 PM, so the last day closes at 10:30 AM
+    client.post("/calendar/friends", data={"name": "Mom"})
+    client.post("/calendar/live")
+    mom = [a for a in session_data(client)["cal"]["ari"]["a"] if a.get("b") == "Mom"]
+    assert len(mom) == 1 and mom[0]["d"] == 2
+    b = session_data(client)["bookings"]["ari"]
+    blocks = cal.booked_blocks(b, cal.trip_of(b))
+    assert cal.window_problem(blocks, mom[0]["d"], mom[0]["s"], mom[0]["e"]) is None
+    assert mom[0]["e"] <= 10 * 60 + 30
+
+
+def test_moms_add_is_skipped_when_no_slot_fits_the_window(client, monkeypatch):
+    book(client, f="f2", **TWO_NIGHTS)
+    monkeypatch.setattr(cal, "LIVE_LEN", 600)  # ten hours cannot fit anywhere on that last day
+    client.post("/calendar/friends", data={"name": "Mom"})
+    client.post("/calendar/live")
+    assert not [a for a in session_data(client).get("cal", {}).get("ari", {}).get("a", []) if a.get("b") == "Mom"]
+
+
+def test_renaming_an_older_item_still_works_but_moving_it_later_does_not(client):
+    book(client)  # f1: the flight home leaves at 2:10 PM, so the last day closes at 12:10 PM
+    assert add(client, id="a1", day="4", start="09:00", end="10:45", title="Old plan").status_code == 303
+    book(client, f="f2", **{"d": "2026-10-16", "r": "2026-10-20", "a": "2", "k": "4,7"})  # a 12:30 PM flight: closes at 10:30 AM
+    r = client.post("/calendar/activities/a1", data={"title": "Renamed", "day": "4", "start": "09:00", "end": "10:45", "kind": "fun"}, follow_redirects=False)
+    assert r.status_code == 303 and "Renamed" in titles(client)
+    r = client.post("/calendar/activities/a1", data={"title": "Renamed", "day": "4", "start": "09:15", "end": "11:00", "kind": "fun"}, follow_redirects=False)
+    assert r.status_code == 409 and "Finish by 10:30 AM" in r.text
