@@ -62,17 +62,38 @@ def _line(q, lane, offer, tile):
     )
 
 
+def rides_row(r):
+    """The rides estimate on the sheet: shown, labelled, and clearly not part of what is charged."""
+    return Div(
+        Span(icon("car", 22, 2.1), cls="pay-tile fill-sky-tint"),
+        Span(Span("Rides, estimated", cls="pay-name"), Span(f"{r.title} · not charged", cls="pay-detail"), cls="pay-text"),
+        Span(f"about {catalog.money(r.cents)}", cls="pay-price"),
+        cls="pay-rides", id="pay-rides",
+    )
+
+
+def pay_label(q):
+    """The pay button: "Pay $3,088", or "Pay $2,764 now · about $140 in rides later" when rides are estimated."""
+    money = f"Pay {catalog.money(q.paid_cents)}"
+    return f"{money} now · about {catalog.money(q.rides.cents)} in rides later" if q.rides else money
+
+
+def refused(message, back):
+    return page("Not booked", Div(H2("We couldn't book that"), P(message), A("Back to my picks", href=back, cls="btn btn-ink"), cls="pay-stage"), head=HEAD)
+
+
 def sheet(q, who):
     trip = q.trip
-    money = catalog.money(q.total_cents)
+    money = catalog.money(q.paid_cents)
     return Div(
         Div(cls="pay-backdrop", aria_hidden="true"),
         Div(
             Span(cls="pay-grip", aria_hidden="true"),
             Div(H2(trip_title(trip), id="pay-title"), Span(f"{trip.travelers} travelers", cls="pay-who"), cls="pay-head"),
             Div(
-                *[_line(q, lane, o, tile) for lane, o, tile in zip(plan.LANES, q.lines, TILES)],
+                *[_line(q, lane, o, tile) for lane, o, tile in zip(plan.LANES, q.lines, TILES) if o is not None],
                 Div(Span("Total, taxes & fees in"), Span(money, cls="pay-total", id="pay-total"), cls="pay-sum"),
+                rides_row(q.rides) if q.rides else "",
                 cls="pay-lines",
             ),
             Div(
@@ -82,15 +103,15 @@ def sheet(q, who):
                 cls="pay-method",
             ),
             Form(
-                Input(type="hidden", name="f", value=q.flight_id),
-                Input(type="hidden", name="h", value=q.stay_id),
-                Input(type="hidden", name="c", value=q.car_id),
-                *([Input(type="hidden", name="rooms", value=q.stay.rooms_code)] if q.stay.rooms_code else []),
-                *([Input(type="hidden", name="add", value=q.stay.add_code)] if q.stay.addons else []),
-                *([Input(type="hidden", name="fare", value=q.flight.fare_code)] if q.flight.fare_code else []),
-                *([Input(type="hidden", name="bags", value=q.flight.bags_code)] if q.flight.bags else []),
+                Input(type="hidden", name="f", value=plan.lane_id(q.flight_id)),
+                Input(type="hidden", name="h", value=plan.lane_id(q.stay_id)),
+                Input(type="hidden", name="c", value=plan.lane_id(q.car_id)),
+                *([Input(type="hidden", name="rooms", value=q.stay.rooms_code)] if q.stay and q.stay.rooms_code else []),
+                *([Input(type="hidden", name="add", value=q.stay.add_code)] if q.stay and q.stay.addons else []),
+                *([Input(type="hidden", name="fare", value=q.flight.fare_code)] if q.flight and q.flight.fare_code else []),
+                *([Input(type="hidden", name="bags", value=q.flight.bags_code)] if q.flight and q.flight.bags else []),
                 *trip_fields(trip),
-                Button(f"Pay {money}", type="submit", cls="btn btn-ink pay-go", id="pay-go"),
+                Button(pay_label(q), type="submit", cls="btn btn-ink pay-go", id="pay-go"),
                 A("Back to my picks", href=plan.plan_path(q.flight_id, q.stay_id, q.car_id, q.stay, q.trip, q.flight), id="pay-cancel", cls="pay-back"),
                 action="/pay", method="post", cls="pay-form",
             ),
@@ -108,20 +129,25 @@ def flight_chip(o, trip):
 
 def celebration(b):
     trip = tripcal.trip_of(b)
-    flight, stay = catalog.offer(b["flight"]), catalog.offer(b["stay"])
+    flight, stay = tripcal.flight_of(b), tripcal.stay_of(b)
     pick, fare = tripcal.stay_pick_of(b), tripcal.flight_pick_of(b)
+    rides = tripcal.rides_of(b)
     confetti = Div(
         *[Span(cls="pay-conf", style=f"--c:var(--{CONFETTI[i % 6]});--x:{(i * 37) % 100}%;--d:{(i % 9) * 0.07:.2f}s;"
                                      f"--w:{(8 + i % 3 * 4) / 16:g}rem;--h:{(14 + i % 4 * 3) / 16:g}rem;--r:{(i * 53) % 360}deg")
           for i in range(28)],
         cls="pay-confetti", aria_hidden="true",
     )
+    pills = ([Span(flight_chip(flight, trip), cls="pay-pill")] if flight else []) + \
+            ([Span(f"{stay.name} · {trip.nights_text}", cls="pay-pill")] if stay else []) + \
+            ([Span(tripcal.car_of(b).name, cls="pay-pill")] if tripcal.car_of(b) else []) + \
+            ([] if not fare or fare.is_default else [Span(fare.summary, cls="pay-pill")]) + ([Span(pick.summary, cls="pay-pill")] if pick else []) + \
+            ([Span(f"Rides, estimated · about {catalog.money(rides.cents)}, paid later", cls="pay-pill pay-pill-soft")] if rides else [])
     card = Section(
         Span(icon("plane", 48, 2), cls="pay-badge", aria_hidden="true"),
         H2(f"You're going to {trip.place}!", id="pay-done-title"),
-        P("Your flights and hotel are on the trip calendar. Now the fun part: fill the gaps with your crew."),
-        Div(Span(flight_chip(flight, trip), cls="pay-pill"), Span(f"{stay.name} · {trip.nights_text}", cls="pay-pill"),
-            *([] if fare.is_default else [Span(fare.summary, cls="pay-pill")]), Span(pick.summary, cls="pay-pill"), cls="pay-pills"),
+        P(f"Your {tripcal.booked_words(b)} on the trip calendar. Now the fun part: fill the gaps with your crew."),
+        Div(*pills, cls="pay-pills"),
         A("Open my trip calendar", href="/calendar", cls="btn btn-ink pay-cal", id="pay-cal"),
         Span(f"Booking {b['id']} · simulated, nothing was charged", cls="pay-ref"),
         aria_labelledby="pay-done-title", cls="pay-done",
@@ -138,8 +164,11 @@ def register(app):
         who = ses.current_traveler(session)
         if not who:
             return signin_for_pay(plan.pay_path(*picks, stay, trip, flight))
-        return plan.workspace(*picks, stay=stay, flight=flight,
-                              overlay=(sheet(catalog.quote(*picks, stay, trip, flight), who), Script(src="/assets/js/pay.js", defer=True)), head=HEAD)
+        q = catalog.quote(*picks, stay, trip, flight)
+        if q.empty:  # nothing picked: there is nothing to pay for
+            return refused(ses.NOTHING_PICKED, plan.plan_path(*picks, stay, trip, flight))
+        return plan.workspace(*picks, stay=stay, flight=flight, trip=trip,
+                              overlay=(sheet(q, who), Script(src="/assets/js/pay.js", defer=True)), head=HEAD)
 
     @app.post("/pay")
     def pay(session, f: str = "", h: str = "", c: str = "", rooms: str = None, add: str = None, fare: str = None, bags: str = None,
@@ -153,7 +182,7 @@ def register(app):
             booked = ses.book(session, catalog.quote(*picks, stay, trip, flight))
         except ses.BookingError as e:
             back = plan.plan_path(*picks, stay, trip, flight)
-            return page("Not booked", Div(H2("We couldn't book that"), P(str(e)), A("Back to my picks", href=back, cls="btn btn-ink"), cls="pay-stage"), head=HEAD)
+            return refused(str(e), back)
         if not booked:
             return signin_for_pay(plan.pay_path(*picks, stay, trip, flight))
         return RedirectResponse("/booked", status_code=303)

@@ -228,7 +228,6 @@ _OFFERS = [
           tags=("Great value",), rating="4.4 · 2.3k reviews"),
     Offer("c1", "car", "Breeze Rentals", "Compact SUV", "2 car seats included", 31_200),
     Offer("c2", "car", "Coastline Cars", "Minivan", "Room for strollers", 39_800),
-    Offer("c3", "car", "No car", "Rideshare & Metro", "Estimated for the week", 18_000),
 ]
 _BY_ID = {o.id: o for o in _OFFERS}
 
@@ -692,61 +691,178 @@ def flight_pick(flight_id: str, fare_id=None, bags=None, trip=SAMPLE_TRIP) -> Fl
     return FlightPick(flight_id, fare_id, n if n is not None and n <= max_bags(trip) else 0, trip)
 
 
+# ---- rides: Uber and Lyft from the airport, for a trip with no rental car (F-033) ---------------------------------------
+# The old "No car · Rideshare & Metro" offer (c3) became the skip choice; its estimate is now these rides, which follow the
+# flight's airport, the stay's area and the party.
+
+RIDE_PROVIDERS = ("Uber", "Lyft")
+XL_FROM = 5  # more travelers than a standard car seats (4) ride in an XL
+XL_SEATS = 6
+_XL_PERCENT = 160
+# (airport, area) -> dollars for a standard car: Uber and Lyft arriving, Uber and Lyft leaving, minutes on the road.
+# "city" is any trip with no stay picked.
+_RIDE_TABLE = {
+    ("LAX", "Santa Monica"): (38, 36, 35, 34, 25), ("LAX", "Venice"): (34, 32, 31, 30, 20),
+    ("LAX", "Downtown"): (52, 49, 48, 46, 35), ("LAX", "city"): (46, 44, 43, 41, 30),
+    ("BUR", "Santa Monica"): (62, 59, 58, 56, 40), ("BUR", "Venice"): (66, 62, 61, 58, 40),
+    ("BUR", "Downtown"): (34, 32, 31, 30, 22), ("BUR", "city"): (45, 43, 42, 40, 28),
+}
+CURB_MINUTES = 30  # from landing to the curb with bags
+AIRPORT_BUFFER = 120  # arrive this long before the flight home
+
+
+def _clock(m: int) -> str:
+    h, mm = divmod(m, 60)
+    return f"{h % 12 or 12}:{mm:02d} {'AM' if h < 12 else 'PM'}"
+
+
+@dataclass(frozen=True)
+class RideFare:
+    provider: str  # Uber | Lyft
+    product: str  # Standard | XL
+    cents: int  # for all the cars needed
+    minutes: int
+
+
+@dataclass(frozen=True)
+class RideLeg:
+    kind: str  # arrive | depart
+    title: str
+    route: str  # "LAX → Santa Monica"
+    when: str  # "Fri Oct 16"
+    note: str  # "Lands 9:32 AM · pickup around 10:02 AM"
+    fares: tuple  # of RideFare, Uber then Lyft
+
+
+@dataclass(frozen=True)
+class Rides:
+    """Sample Uber and Lyft fares for the way in and the way out, and the estimate that goes in the total (never charged)."""
+    airport: str
+    area: str
+    cars: int
+    xl: bool
+    legs: tuple
+    cents: int  # the cheaper fare each way, all cars
+
+    @property
+    def title(self) -> str:
+        return f"Uber and Lyft from {self.airport}"
+
+    @property
+    def detail(self) -> str:
+        return f"{self.airport} to {self.area}, both ways" if self.area != "Los Angeles" else f"{self.airport} to the city, both ways"
+
+
+def rides(flight: Offer, stay: Offer | None, trip=SAMPLE_TRIP) -> Rides:
+    """The rides card for a flight (its airport and times) and the stay it goes to (its area; None means the city)."""
+    area = stay.headline if stay is not None and (flight.airport, stay.headline) in _RIDE_TABLE else "city"
+    shown = stay.headline if area != "city" else trip.destination_name
+    ua, la, ud, ld, minutes = _RIDE_TABLE[(flight.airport, area)]
+    xl = trip.travelers >= XL_FROM
+    cars = -(-trip.travelers // XL_SEATS) if xl else 1
+
+    def fare(provider, dollars):
+        cents = (dollars * _XL_PERCENT // 100 if xl else dollars) * 100 * cars
+        return RideFare(provider, "XL" if xl else "Standard", cents, minutes)
+
+    pickup = flight.arrive_min + CURB_MINUTES
+    leave = (flight.back_depart_min - AIRPORT_BUFFER - minutes) // 5 * 5
+    day = lambda d: f"{d:%a %b} {d.day}"
+    legs = (
+        RideLeg("arrive", "Arrival", f"{flight.airport} → {shown}", day(trip.depart),
+                f"Lands {_clock(flight.arrive_min)} · pickup around {_clock(pickup)}", (fare("Uber", ua), fare("Lyft", la))),
+        RideLeg("depart", "Departure", f"{shown} → {flight.airport}", day(trip.return_),
+                f"Leave by {_clock(leave)} for your {_clock(flight.back_depart_min)} flight", (fare("Uber", ud), fare("Lyft", ld))),
+    )
+    return Rides(flight.airport, shown, cars, xl, legs, sum(min(f.cents for f in leg.fares) for leg in legs))
+
+
 @dataclass(frozen=True)
 class Quote:
-    flight_id: str
-    stay_id: str
-    car_id: str
-    lines: tuple = field(default=())
-    total_cents: int = 0
+    """The ledger for a pick in each lane; a lane that is skipped is None everywhere (id, line, items)."""
+    flight_id: str | None
+    stay_id: str | None
+    car_id: str | None
+    lines: tuple = field(default=())  # (flight, stay, car) offers, None for a skipped lane
+    total_cents: int = 0  # everything, the rides estimate included
     above_cheapest_cents: int = 0
     items: tuple = field(default=())
     stay: StayPick = None
     trip: TripSearch = SAMPLE_TRIP
     flight: FlightPick = None
+    rides: Rides = None
 
     def lane_cents(self, lane: str) -> int:
         return sum(i.cents for i in self.items if i.lane == lane)
 
+    @property
+    def paid_cents(self) -> int:
+        """What is charged: the total without the rides estimate."""
+        return self.total_cents - self.lane_cents("rides")
 
-def _cheapest_ids(trip=SAMPLE_TRIP):
-    return min(
-        product(*(offers(k, trip) for k in ("flight", "stay", "car"))),
-        key=lambda combo: sum(o.price_cents for o in combo),
-    )
+    @property
+    def empty(self) -> bool:
+        """Nothing picked: a skip in every lane. It shows in the workspace but cannot be booked."""
+        return self.flight_id is None and self.stay_id is None and self.car_id is None
 
 
-def quote(flight_id: str, stay_id: str, car_id: str, stay: StayPick = None, trip=SAMPLE_TRIP, flight: FlightPick = None) -> Quote:
-    """The itemized cost ledger for one pick in each lane. Unknown ids raise KeyError.
+def _floor_cents(trip, flight_on, stay_on, car_on):
+    """The cheapest total for the same lanes (a skipped lane stays skipped), rides estimate included."""
+    best = None
+    for combo in product(*((offers(k, trip) if on else [None]) for k, on in (("flight", flight_on), ("stay", stay_on), ("car", car_on)))):
+        f, h, c = combo
+        total = sum(o.price_cents for o in combo if o) + (rides(f, h, trip).cents if f and not c else 0)
+        best = total if best is None else min(best, total)
+    return best or 0
+
+
+def quote(flight_id, stay_id, car_id, stay: StayPick = None, trip=SAMPLE_TRIP, flight: FlightPick = None) -> Quote:
+    """The itemized cost ledger for one pick in each lane, or None for a lane the traveler skips. Unknown ids raise KeyError.
 
     `trip` sets the nights and travelers every price follows. `stay` (a StayPick for this stay and trip; default: the default
     rooms) sets the rooms and add-ons. A pick for another stay raises KeyError, and one that sleeps fewer than the party
     raises ValueError. `flight` (a FlightPick for this flight and trip; default: Basic, no bags) sets the fare and checked bags;
-    a pick for another flight raises KeyError and one for another trip ValueError.
+    a pick for another flight raises KeyError and one for another trip ValueError. A stay or flight pick without its lane is a KeyError.
+
+    No car but a flight adds a "Rides, estimated" item (see `rides`): it is in `total_cents`, not in `paid_cents`.
     """
-    lines = tuple(offer(i, trip) for i in (flight_id, stay_id, car_id))
+    lines = tuple(offer(i, trip) if i is not None else None for i in (flight_id, stay_id, car_id))
     for line, kind in zip(lines, ("flight", "stay", "car")):
-        if line.kind != kind:
+        if line is not None and line.kind != kind:
             raise KeyError(f"{line.id} is a {line.kind}, not a {kind}")
-    stay = stay or stay_pick(stay_id, trip=trip)
-    if stay.stay_id != stay_id:
-        raise KeyError(f"{stay.stay_id} is not {stay_id}")
-    if stay.trip != trip:
-        raise ValueError("That stay pick is for a different trip")
-    if not stay.fits:
-        raise ValueError(f"{stay.summary}: {stay.fit_text}")
-    flight = flight or flight_pick(flight_id, trip=trip)
-    if flight.flight_id != flight_id:
-        raise KeyError(f"{flight.flight_id} is not {flight_id}")
-    if flight.trip != trip:
-        raise ValueError("That flight pick is for a different trip")
-    car = lines[2]
-    items = (*flight.items, *stay.items, Item("car", car.name, 1, car.price_cents, car.detail))
+    if stay_id is None and stay is not None:
+        raise KeyError(f"{stay.stay_id} is a stay pick but the stay is skipped")
+    if flight_id is None and flight is not None:
+        raise KeyError(f"{flight.flight_id} is a flight pick but the flight is skipped")
+    items = []
+    if flight_id is not None:
+        flight = flight or flight_pick(flight_id, trip=trip)
+        if flight.flight_id != flight_id:
+            raise KeyError(f"{flight.flight_id} is not {flight_id}")
+        if flight.trip != trip:
+            raise ValueError("That flight pick is for a different trip")
+        items += flight.items
+    if stay_id is not None:
+        stay = stay or stay_pick(stay_id, trip=trip)
+        if stay.stay_id != stay_id:
+            raise KeyError(f"{stay.stay_id} is not {stay_id}")
+        if stay.trip != trip:
+            raise ValueError("That stay pick is for a different trip")
+        if not stay.fits:
+            raise ValueError(f"{stay.summary}: {stay.fit_text}")
+        items += stay.items
+    if car_id is not None:
+        car = lines[2]
+        items.append(Item("car", car.name, 1, car.price_cents, car.detail))
+    ride = rides(lines[0], lines[1], trip) if flight_id is not None and car_id is None else None
+    if ride:
+        items.append(Item("rides", "Rides, estimated", 1, ride.cents, ride.detail))
     total = sum(i.cents for i in items)
-    floor = sum(o.price_cents for o in _cheapest_ids(trip))
-    return Quote(flight_id, stay_id, car_id, lines, total, max(0, total - floor), items, stay, trip, flight)
+    floor = _floor_cents(trip, flight_id is not None, stay_id is not None, car_id is not None)
+    return Quote(flight_id, stay_id, car_id, lines, total, max(0, total - floor), tuple(items), stay, trip, flight, ride)
 
 
 def cheapest(trip=SAMPLE_TRIP) -> Quote:
-    f, s, c = _cheapest_ids(trip)
+    """The cheapest flight, stay and car together."""
+    f, s, c = min(product(*(offers(k, trip) for k in ("flight", "stay", "car"))), key=lambda combo: sum(o.price_cents for o in combo))
     return quote(f.id, s.id, c.id, trip=trip)
