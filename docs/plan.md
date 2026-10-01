@@ -292,9 +292,8 @@ Needs: none
 - [ ] the hub is named "Community trips" everywhere (header, landing, links, page title); /discover keeps working and /community is the new path
 - [ ] the page says plainly that these are trips shared by travelers and creators, with "Share yours" and "Turn a link into a trip" up front
 
-## F-051 Themed date pickers and dropdowns [blocked]
-Blocked: open https://claude.ai/artifact/4FeSUmETnJ26kLXdA4EYvN and pick (sign-in A or B; phone A or B; pickers as drawn) or say what to change.
-Design: with F-052/F-054 canvas · Needs: none
+## F-051 Themed date pickers and dropdowns [doing]
+Design: approved 2026-10-01 (docs/design/canvas/GoLive-Pickers.dc.html) · Needs: none
 - [ ] a GitAway date-range picker (rounded, tokens, keyboard and screen-reader accessible, phone-friendly) replaces browser date inputs on "Where to?" and every other date field
 - [ ] dropdowns and number pickers (adults, kids' ages, roles, times) use a GitAway style; no browser-default widgets left
 
