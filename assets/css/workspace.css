@@ -410,7 +410,7 @@
 
 @media (max-width: 720px) {
   .ws, .ws-grid[data-expanded] { height: auto; min-height: 0; overflow: visible; }
-  .ws { padding: 4.5rem 1rem 1.5rem; }
+  .ws { padding: calc(4.5rem + env(safe-area-inset-top)) calc(1rem + env(safe-area-inset-right)) calc(1.5rem + env(safe-area-inset-bottom)) calc(1rem + env(safe-area-inset-left)); }
   .ws-bar { height: auto; padding: 0.75rem 0; flex-wrap: wrap; gap: 0.75rem; }
   .ws-pill { margin-left: 0; height: auto; min-height: 3rem; padding: 0.5rem 1rem; flex-wrap: wrap; gap: 0.25rem 0.75rem; white-space: normal; }
   .ws-pill > span + span { padding-left: 0; border-left: 0; }
