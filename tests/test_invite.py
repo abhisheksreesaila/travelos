@@ -104,7 +104,7 @@ def test_the_invite_dialog_has_a_name_field_chips_and_a_copy_button(client):
     assert 'value="Mom"' in html and 'value="Sam"' in html
     assert "Copy invite link" in html and "data-copy" in html and "https://gitaway.example/join/GA-" in html
     assert "data-close" in html
-    assert tag(html, "id", "cal-invite-btn")["href"] == "/calendar?invite=1"
+    assert tag(html, "id", "cal-invite-btn")["href"] == "/calendar?view=whole&amp;invite=1"
     invite(client)
     chip = client.get("/calendar?invite=1").text
     assert "Mom is in" in chip
@@ -114,10 +114,10 @@ def test_the_invite_dialog_has_a_name_field_chips_and_a_copy_button(client):
 
 def test_invited_friends_show_as_avatars_with_a_presence_line(client):
     book(client)
-    assert "is planning with you" not in client.get("/calendar").text
+    assert "is planning with you" not in client.get("/calendar?view=days").text
     invite(client)
     invite(client, "Sam")
-    html = client.get("/calendar").text
+    html = client.get("/calendar?view=days").text
     bar = html[html.index("cal-avatars"):html.index("cal-actions-top")]
     assert ">AR<" in bar and ">MO<" in bar and ">SA<" in bar and bar.count("cal-presence-dot") == 2
     assert "Sam is planning with you" in bar and "Mom is planning" not in bar
@@ -134,13 +134,13 @@ def test_friend_names_are_escaped_everywhere(client):
 
 def test_live_add_needs_mom_is_idempotent_and_authored_by_mom(client):
     book(client)
-    assert "data-live" not in client.get("/calendar").text
+    assert "data-live" not in client.get("/calendar?view=days").text
     assert live(client).headers["location"] == "/calendar"
     invite(client, "Sam")
     assert live(client).headers["location"] == "/calendar"
-    assert "data-live" not in client.get("/calendar").text
+    assert "data-live" not in client.get("/calendar?view=days").text
     invite(client)
-    assert 'data-live="1"' in client.get("/calendar").text
+    assert 'data-live="1"' in client.get("/calendar?view=days").text
     r = live(client)
     assert r.status_code == 303 and "new=a1" in r.headers["location"] and "live=1" in r.headers["location"]
     st = session_data(client)["cal"]["ari"]
@@ -150,7 +150,7 @@ def test_live_add_needs_mom_is_idempotent_and_authored_by_mom(client):
     assert live(client).headers["location"] == "/calendar"
     st = session_data(client)["cal"]["ari"]
     assert len(st["a"]) == 1 and len(st["n"]) == 1
-    assert "data-live" not in client.get("/calendar").text
+    assert "data-live" not in client.get("/calendar?view=days").text
 
 
 def test_the_live_item_has_a_ring_and_pill_once_then_is_a_normal_item_by_mom(client):
@@ -159,7 +159,7 @@ def test_the_live_item_has_a_ring_and_pill_once_then_is_a_normal_item_by_mom(cli
     first = client.get(live(client).headers["location"]).text
     assert "cal-livering" in first and "just now" in first and "cal-pop" in first
     assert "Travel Town steam trains" in first and "Added Travel Town on Sunday." in first
-    later = client.get("/calendar").text
+    later = client.get("/calendar?view=days").text
     assert "Travel Town steam trains" in later
     assert "cal-livering" not in later and "just now" not in later and "cal-pop" not in later
     assert 'cal-by">Mom<' in later
@@ -193,16 +193,16 @@ def test_live_skips_gracefully_when_the_whole_morning_is_taken(client):
     assert r.status_code == 303 and r.headers["location"] == "/calendar"
     st = session_data(client)["cal"]["ari"]
     assert [a["i"] for a in st["a"]] == ["a1", "a2"] and st["n"] == []
-    assert "data-live" not in client.get("/calendar").text  # it will not try again
+    assert "data-live" not in client.get("/calendar?view=days").text  # it will not try again
 
 
 def test_the_live_add_is_per_trip_so_the_long_demo_gets_its_own(client):
     book(client)
     invite(client)
     live(client)
-    assert 'data-live="1"' in client.get("/calendar?demo=long").text
+    assert 'data-live="1"' in client.get("/calendar?demo=long&view=days").text
     live(client, demo="long")
-    assert "Travel Town steam trains" in client.get("/calendar?demo=long").text
+    assert "Travel Town steam trains" in client.get("/calendar?demo=long&view=days").text
 
 
 def test_live_needs_sign_in_and_a_booking(client):
@@ -216,7 +216,7 @@ def test_live_needs_sign_in_and_a_booking(client):
 def test_the_by_pill_is_you_for_your_own_items(client):
     book(client)
     add(client)
-    html = client.get("/calendar").text
+    html = client.get("/calendar?view=days").text
     assert 'cal-by">You<' in html
 
 
@@ -225,6 +225,6 @@ def test_the_invited_friends_avatar_writes_the_note_feed_entry(client):
     invite(client)
     live(client)
     client.post("/calendar/notes", data={"id": "n9", "text": "mine"})
-    feed = client.get("/calendar").text
+    feed = client.get("/calendar?view=days").text
     feed = feed[feed.index('id="cal-feed"'):]
     assert feed.index("Mom · on Travel Town") < feed.index("You · whole trip", feed.index("Mom · on Travel Town"))

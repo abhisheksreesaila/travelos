@@ -104,7 +104,7 @@ def celebration(b):
     pick = tripcal.stay_pick_of(b)
     confetti = Div(
         *[Span(cls="pay-conf", style=f"--c:var(--{CONFETTI[i % 6]});--x:{(i * 37) % 100}%;--d:{(i % 9) * 0.07:.2f}s;"
-                                     f"--w:{8 + i % 3 * 4}px;--h:{14 + i % 4 * 3}px;--r:{(i * 53) % 360}deg")
+                                     f"--w:{(8 + i % 3 * 4) / 16:g}rem;--h:{(14 + i % 4 * 3) / 16:g}rem;--r:{(i * 53) % 360}deg")
           for i in range(28)],
         cls="pay-confetti", aria_hidden="true",
     )

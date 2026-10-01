@@ -10,7 +10,10 @@
   "use strict";
   document.documentElement.classList.add("cal-js");
 
-  const HOUR = 48, SNAP = 15;
+  // One hour is 3rem tall (calendar.py HH). Sizes are rem so the page scale in tokens.css rules; pointer maths needs px.
+  const HOUR_REM = 3, SNAP = 15;
+  const remPx = () => parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+  const hourPx = () => HOUR_REM * remPx();
   const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -18,7 +21,8 @@
   const pad = (n) => String(n).padStart(2, "0");
   const hhmm = (m) => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
   const clock = (m) => { const h = Math.floor(m / 60); return `${h % 12 || 12}:${pad(m % 60)} ${h < 12 ? "AM" : "PM"}`; };
-  const minPerPx = 60 / HOUR;
+  const minPerPx = () => 60 / hourPx();  // minutes per screen pixel
+  const remPerMin = HOUR_REM / 60;
 
   // Blocks keep their true height. Mark the ones whose text does not fit (is-cut: CSS fades the edge) and the narrow
   // side-by-side lanes that cannot fit even one word (is-timeonly: the time shows, hover or focus opens the title).
@@ -110,7 +114,7 @@
     const gs = +root.dataset.gridStart || 0;
     const booked = $$(".cal-booked", scroller).map((b) => +b.dataset.start).filter((m) => m >= 0);
     const target = Math.min(8 * 60, ...booked);
-    return Math.max(0, Math.round((target - gs) / 60 * HOUR) - 8);
+    return Math.max(0, Math.round((target - gs) / 60 * hourPx()) - 8);
   }
   function setup(root, keep) {
     markCut(root);
@@ -253,7 +257,7 @@
     if (!body || e.target.closest(".cal-block, .cal-empty, .cal-ghost")) { if (!e.target.closest(".cal-ghost")) ghost.hidden = true; return; }
     const gs = +app().dataset.gridStart, ge = +app().dataset.gridEnd;
     const y = e.clientY - body.getBoundingClientRect().top;
-    const start = gs + Math.floor(y / HOUR) * 60;
+    const start = gs + Math.floor(y / hourPx()) * 60;
     if (start + 30 > ge) { ghost.hidden = true; return; }
     let end = Math.min(start + 60, ge);
     for (const [s, en] of bodyGeometry(body)) {
@@ -265,10 +269,10 @@
     if (end - start < 30) { ghost.hidden = true; return; }
     if (ghost.parentElement !== body) body.appendChild(ghost);
     ghost.hidden = false;
-    ghost.style.top = `${(start - gs) / minPerPx}px`;
-    ghost.style.height = `${(end - start) / minPerPx - 4}px`;
+    ghost.style.top = `${(start - gs) * remPerMin}rem`;
+    ghost.style.height = `calc(${(end - start) * remPerMin}rem - 0.25rem)`;
     ghost.style.left = "0";
-    ghost.style.right = "4px";
+    ghost.style.right = "0.25rem";
     const url = new URL(app().dataset.base, location.href);
     url.searchParams.set("add", body.dataset.day);
     url.searchParams.set("at", hhmm(start));
@@ -284,8 +288,8 @@
   function paint(b, day, start, end) {
     const gs = +app().dataset.gridStart;
     b.dataset.day = day; b.dataset.start = start; b.dataset.end = end;
-    b.style.setProperty("--top", `${(start - gs) / minPerPx}px`);
-    b.style.setProperty("--h", `${(end - start) / minPerPx}px`);
+    b.style.setProperty("--top", `${(start - gs) * remPerMin}rem`);
+    b.style.setProperty("--h", `${(end - start) * remPerMin}rem`);
     const time = $(".cal-time", b);
     if (time) time.textContent = clock(start);
   }
@@ -311,7 +315,7 @@
       const g = $("#cal-ghost"); if (g) g.hidden = true;
     }
     const gs = +app().dataset.gridStart, ge = +app().dataset.gridEnd;
-    const delta = Math.round((dy * minPerPx) / SNAP) * SNAP;
+    const delta = Math.round((dy * minPerPx()) / SNAP) * SNAP;
     let { day, start, end } = drag;
     if (drag.mode === "resize") {
       end = Math.max(start + 30, Math.min(ge, drag.end + delta));

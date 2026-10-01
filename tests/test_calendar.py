@@ -45,7 +45,7 @@ def test_signed_out_goes_through_sign_in_and_comes_back_to_the_calendar(client):
 
 def test_signed_in_without_a_booking_gets_a_friendly_book_a_trip_first_page(client):
     sign_in(client)
-    r = client.get("/calendar")
+    r = client.get("/calendar?view=days")
     assert r.status_code == 200 and "Book a trip first" in r.text
     assert 'href="/plan"' in r.text and "cal-block" not in r.text
     assert client.post("/calendar/activities", data={"id": "a1", **FORM}, follow_redirects=False).status_code == 303
@@ -53,7 +53,7 @@ def test_signed_in_without_a_booking_gets_a_friendly_book_a_trip_first_page(clie
 
 def test_booked_blocks_are_locked_and_sit_at_the_picked_flights_times(client):
     book(client)
-    html = client.get("/calendar").text
+    html = client.get("/calendar?view=days").text
     assert "LA with the kids" in html and "Oct 16 – 20" in html and "$3,088" in html
     out = tag(html, "data-block", "b-out")
     assert (out["data-day"], out["data-start"], out["data-end"]) == ("0", "485", "572")
@@ -66,13 +66,13 @@ def test_booked_blocks_are_locked_and_sit_at_the_picked_flights_times(client):
 
 def test_the_picked_flight_changes_the_blocks(client):
     book(client, f="f5", h="h3")
-    html = client.get("/calendar").text
+    html = client.get("/calendar?view=days").text
     assert tag(html, "data-block", "b-out")["data-start"] == "610" and "SFO → BUR" in html and "Check in · Hotel Marigold" in html
 
 
 def test_day_chips_show_the_weather_and_the_weekday(client):
     book(client)
-    html = client.get("/calendar").text
+    html = client.get("/calendar?view=days").text
     assert html.count('data-day-head') == 5
     assert "75°F" in html and "FRI" in html.upper() and "TUE" in html.upper()
 
@@ -81,11 +81,11 @@ def test_adding_an_activity_shows_it_on_the_right_day_and_survives_a_reload(clie
     book(client)
     r = add(client)
     assert r.status_code == 303 and r.headers["location"] == "/calendar?new=a1"
-    html = client.get("/calendar").text
+    html = client.get("/calendar?view=days").text
     assert ids(html) == ["a1"]
     assert where(html, "a1") == (1, 600, 690)
     assert "Venice Canals stroll" in html and "10:00 AM" in html
-    assert ids(client.get("/calendar").text) == ["a1"]
+    assert ids(client.get("/calendar?view=days").text) == ["a1"]
 
 
 def test_a_refreshed_add_does_not_duplicate_and_ids_stay_stable(client):
@@ -93,7 +93,7 @@ def test_a_refreshed_add_does_not_duplicate_and_ids_stay_stable(client):
     add(client)
     add(client)  # the browser re-posts the same form
     add(client, id="a2", title="Bike the Strand", day="2")
-    assert sorted(ids(client.get("/calendar").text)) == ["a1", "a2"]
+    assert sorted(ids(client.get("/calendar?view=days").text)) == ["a1", "a2"]
     assert 'name="id" value="a3"' in client.get("/calendar?add=1&at=13:00").text
 
 
@@ -103,7 +103,7 @@ def test_a_clash_with_a_booked_item_is_refused_and_the_form_shows_it(client):
     assert r.status_code == 409
     assert "overlaps Skylark Air 214 · SFO → LAX" in r.text and 'role="alert"' in r.text
     assert 'value="Clash"' in r.text and 'role="dialog"' in r.text  # the form stays open with what was typed
-    assert ids(client.get("/calendar").text) == []
+    assert ids(client.get("/calendar?view=days").text) == []
 
 
 def test_a_bad_form_is_refused_with_the_reason(client):
@@ -127,7 +127,7 @@ def test_editing_through_the_form_updates_the_block(client):
     assert 'role="dialog"' in html and 'value="Venice Canals stroll"' in html and 'action="/calendar/activities/a1"' in html
     r = client.post("/calendar/activities/a1", data={**FORM, "title": "Canals at sunrise", "start": "09:00", "end": "10:00", "day": "2", "kind": "fun"}, follow_redirects=False)
     assert r.status_code == 303
-    html = client.get("/calendar").text
+    html = client.get("/calendar?view=days").text
     assert "Canals at sunrise" in html and "Venice Canals stroll" not in html and ids(html) == ["a1"]
     assert where(html, "a1")[:2] == (2, 540)
 
@@ -137,10 +137,10 @@ def test_moving_snaps_to_fifteen_minutes_and_a_clash_snaps_it_back(client):
     add(client)
     r = client.post("/calendar/activities/a1/move", data={"day": "3", "start": "14:08", "end": "15:38"}, follow_redirects=False)
     assert r.status_code == 303
-    assert where(client.get("/calendar").text, "a1") == (3, 855, 945)
+    assert where(client.get("/calendar?view=days").text, "a1") == (3, 855, 945)
     r = client.post("/calendar/activities/a1/move", data={"day": "0", "start": "09:00", "end": "10:00"}, follow_redirects=False)
     assert r.status_code == 409 and "overlaps" in r.text
-    assert where(client.get("/calendar").text, "a1")[0] == 3
+    assert where(client.get("/calendar?view=days").text, "a1")[0] == 3
 
 
 def test_a_booked_block_cannot_be_moved(client):
@@ -159,7 +159,7 @@ def test_delete_offers_undo_and_undo_brings_it_back(client):
     assert ids(html) == [] and "Undo" in html and 'action="/calendar/undo"' in html and "Venice Canals stroll" in html
     assert "Go early" not in html
     client.post("/calendar/undo", data={"id": "a1"})
-    html = client.get("/calendar").text
+    html = client.get("/calendar?view=days").text
     assert ids(html) == ["a1"] and "Go early" in html
     assert client.post("/calendar/activities/a1/delete", follow_redirects=False).status_code == 303
     assert client.post("/calendar/activities/a1/delete", follow_redirects=False).status_code == 303  # a refresh
@@ -171,7 +171,7 @@ def test_trip_notes_appear_in_the_feed_with_the_activity_they_are_about(client):
     client.post("/calendar/notes", data={"id": "n2", "text": "Bring hats for everyone"})
     client.post("/calendar/notes", data={"id": "n3", "text": "Pier first thing", "act": "a1"})
     client.post("/calendar/notes", data={"id": "n3", "text": "Pier first thing", "act": "a1"})  # refresh
-    html = client.get("/calendar").text
+    html = client.get("/calendar?view=days").text
     assert "Bring hats for everyone" in html and html.count("Pier first thing") == 1
     assert "on Venice Canals stroll" in html and "Trip notes" in html and 'name="text"' in html
     assert 'value="n4"' in html  # the composer carries the next id
@@ -185,14 +185,14 @@ def test_text_is_escaped_everywhere(client):
     for url in ["/calendar", "/calendar?edit=a1", "/calendar?view=whole", "/calendar?undo=a1"]:
         html = client.get(url).text
         assert "<script>alert" not in html, url
-    assert "&lt;script&gt;alert(1)&lt;/script&gt;" in client.get("/calendar").text
+    assert "&lt;script&gt;alert(1)&lt;/script&gt;" in client.get("/calendar?view=days").text
     r = add(client, id="a9", title='"><img src=x onerror=alert(1)>', day="0", start="09:00", end="10:00")
     assert "<img src=x" not in r.text
 
 
 def test_the_long_demo_has_twenty_day_chips_and_a_month_crossing_title(client):
     book(client)
-    html = client.get("/calendar?demo=long").text
+    html = client.get("/calendar?demo=long&view=days").text
     assert html.count("data-chip=") == 20 and html.count("data-day-head") == 20
     assert "Oct 16 – Nov 4" in html and "Oct 16 – 4" not in html
     chip = tag(html, "data-chip", "16")  # Nov 1
@@ -209,9 +209,9 @@ def test_the_long_demo_has_twenty_day_chips_and_a_month_crossing_title(client):
 def test_the_default_trip_hides_the_demo_and_keeps_its_own_activities(client):
     book(client)
     add(client, demo="long", id="a20", day="10")
-    assert "a20" in ids(client.get("/calendar?demo=long").text)
-    assert "a20" not in ids(client.get("/calendar").text)
-    assert client.get("/calendar").text.count("data-chip=") == 5
+    assert "a20" in ids(client.get("/calendar?demo=long&view=days").text)
+    assert "a20" not in ids(client.get("/calendar?view=days").text)
+    assert client.get("/calendar?view=days").text.count("data-chip=") == 5
 
 
 def test_the_whole_trip_view_lists_every_day_and_calls_out_empty_ones(client):
@@ -225,7 +225,7 @@ def test_the_whole_trip_view_lists_every_day_and_calls_out_empty_ones(client):
 
 def test_the_notes_drawer_and_top_bar_buttons_are_present(client):
     book(client)
-    html = client.get("/calendar").text
+    html = client.get("/calendar?view=days").text
     for label in ["Your forks", "Invite", "Share trip"]:
         assert label in html
     for href in ["/forks", "/share"]:
@@ -241,13 +241,97 @@ def test_calendar_state_survives_the_signed_session_cookie(client):
 
 def test_day_headers_show_a_weather_icon_and_temperature_without_cutting_the_words(client):
     book(client)
-    html = client.get("/calendar").text
+    html = client.get("/calendar?view=days").text
     head = html[html.index('data-day-head="0"'):html.index('data-day-head="1"')]
     assert "75°F" in head and "<svg" in head and ', clear skies' in head and 'title="clear skies"' in head
 
 
 def test_the_first_trip_note_is_written_by_the_traveler(client):
     book(client, traveler="sam")
-    html = client.get("/calendar").text
+    html = client.get("/calendar?view=days").text
     feed = html[html.index('id="cal-feed"'):]
     assert "You · whole trip" in feed and ">SK<" in feed and "Trip · booked" not in html
+
+
+# ---- F-032: the whole-trip view is the first view -------------------------------------------------------------------
+
+def test_calendar_opens_on_the_whole_trip_view_with_a_labelled_switch(client):
+    book(client)
+    add(client)
+    html = client.get("/calendar").text
+    assert html.count("data-whole-day") == 5 and "cal-scroll" not in html and 'data-view="whole"' in html
+    on = [m for m in re.findall(r'<a\s[^>]*cal-seg[^>]*>[^<]*', html) if 'aria-current="true"' in m]
+    assert len(on) == 1 and "Whole trip" in on[0]
+    assert tag(html, "href", "/calendar?view=days") and "Day by day" in html
+
+
+def test_the_day_view_is_chosen_by_the_url_and_survives_a_reload(client):
+    book(client)
+    add(client)
+    for _ in range(2):
+        html = client.get("/calendar?view=days").text
+        assert "cal-scroll" in html and 'data-view="days"' in html and "data-whole-day" not in html
+    assert 'name="view" value="days"' in html  # its forms keep it
+    assert "view=days" in tag(html, "id", "cal-invite-btn")["href"]
+
+
+def test_flows_that_need_the_grid_land_on_the_day_view_without_a_view_param(client):
+    book(client)
+    add(client)
+    for url in ["/calendar?add=1&at=10:00", "/calendar?edit=a1", "/calendar?new=a1", "/calendar?undo=a1"]:
+        html = client.get(url).text
+        assert 'data-view="days"' in html, url
+    r = add(client, id="a2")
+    assert "new=a2" in r.headers["location"]
+    assert 'data-view="days"' in client.get(r.headers["location"]).text
+
+
+def test_the_whole_view_links_each_day_and_each_empty_day_into_the_day_view(client):
+    book(client)
+    html = client.get("/calendar").text
+    heads = re.findall(r'<a\s[^>]*cal-w-head[^>]*>', html)
+    assert len(heads) == 5 and "view=days" in heads[2] and "w=2" in heads[2]
+    assert "view=days&amp;add=" in html
+    assert 'data-w="2"' in client.get("/calendar?view=days&w=2").text
+
+
+def test_the_long_demo_and_posts_from_the_whole_view_keep_the_view(client):
+    book(client)
+    assert client.get("/calendar?demo=long").text.count("data-whole-day") == 20
+    assert client.get("/calendar?demo=long&view=days").text.count("data-chip=") == 20
+    r = client.post("/calendar/notes", data={"text": "hi", "view": "whole"}, follow_redirects=False)
+    assert "view=whole" in r.headers["location"]
+    assert 'name="view" value="days"' in client.get("/calendar?view=days").text.split("cal-composer")[1]
+
+
+def test_the_whole_view_shows_a_hint_and_the_day_view_does_not(client):
+    book(client)
+    assert "plan by the hour" in client.get("/calendar").text
+    assert "plan by the hour" not in client.get("/calendar?view=days").text
+
+
+def test_a_hostile_view_param_renders_the_whole_view_safely(client):
+    book(client)
+    html = client.get("/calendar?view=<script>alert(1)</script>").text
+    assert "<script>alert" not in html and 'data-view="whole"' in html
+    r = client.post("/calendar/notes", data={"text": "hi", "view": "bogus"}, follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"].startswith("/calendar")
+    page = client.get(r.headers["location"]).text
+    assert 'data-view="whole"' in page and "bogus" not in page
+
+
+def test_adding_from_the_whole_view_opens_on_that_day_and_cancel_goes_back_to_the_whole_view(client):
+    book(client)
+    html = client.get("/calendar").text
+    link = re.search(r'href="(/calendar\?[^"]*add=1[^"]*)"', html).group(1).replace("&amp;", "&")
+    assert "w=1" in link and "view=days" in link
+    form = client.get(link).text
+    assert 'data-w="1"' in form and 'data-view="days"' in form
+    closes = re.findall(r'<a\s[^>]*data-close[^>]*>', form)
+    assert closes and all("view=whole" in c for c in closes)
+
+
+def test_day_headers_keep_their_visible_text_in_the_accessible_name(client):
+    book(client)
+    heads = re.findall(r'<a\s[^>]*cal-w-head.*?</a>', client.get("/calendar").text, re.S)
+    assert len(heads) == 5 and all("aria-label" not in h.split(">")[0] and "open in day by day" in h for h in heads)

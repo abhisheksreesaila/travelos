@@ -11,7 +11,7 @@ THEMES = ("sunset", "pacific")
 HEAD = (Link(rel="stylesheet", href="/assets/css/itinerary.css"),)
 
 # Small icons the shared set lacks (used by the sticker tags only).
-_SVG = '<svg width="22" height="22" viewBox="0 0 24 24" {a} aria-hidden="true">{p}</svg>'
+_SVG = '<svg width="22" height="22" style="--ico:1.375rem" viewBox="0 0 24 24" {a} aria-hidden="true">{p}</svg>'
 _STROKE = 'fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"'
 EXTRA = {
     "kid": _SVG.format(a=_STROKE, p='<circle cx="12" cy="8" r="4"/><path d="M6 21v-1a6 6 0 0 1 12 0v1"/>'),

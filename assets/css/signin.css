@@ -1,28 +1,28 @@
 /* Demo sign-in dialog (F-017). Loaded after tokens.css and base.css via layout.styles(). */
-.si-backdrop { min-height: calc(100vh - 84px); padding: 40px 16px; display: grid; place-items: center; background: rgba(30, 26, 46, .35); }
-.si-card { width: min(520px, 100%); padding: 36px; border-radius: var(--r-xl); background: var(--card); box-shadow: var(--shadow-lg); animation: ga-pop .45s var(--ease-spring) both; }
-.si-card form { display: flex; flex-direction: column; gap: 18px; }
-.si-sticker { align-self: flex-start; height: 36px; padding: 0 14px; font-size: 14px; transform: rotate(-3deg); }
-.si-card h2 { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: clamp(30px, 8vw, 40px); line-height: 1; letter-spacing: -0.03em; }
-.si-card p { margin: 0; font-size: 17px; line-height: 1.5; color: var(--ink-2); }
-.si-list { display: flex; flex-direction: column; gap: 10px; }
+.si-backdrop { min-height: calc(100vh - 5.25rem); padding: 2.5rem 1rem; display: grid; place-items: center; background: rgba(30, 26, 46, .35); }
+.si-card { width: min(32.5rem, 100%); padding: 2.25rem; border-radius: var(--r-xl); background: var(--card); box-shadow: var(--shadow-lg); animation: ga-pop .45s var(--ease-spring) both; }
+.si-card form { display: flex; flex-direction: column; gap: 1.125rem; }
+.si-sticker { align-self: flex-start; height: 2.25rem; padding: 0 0.875rem; font-size: max(var(--text-min), 0.875rem); transform: rotate(-3deg); }
+.si-card h2 { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: clamp(1.875rem, 8vw, 2.5rem); line-height: 1; letter-spacing: -0.03em; }
+.si-card p { margin: 0; font-size: 1.0625rem; line-height: 1.5; color: var(--ink-2); }
+.si-list { display: flex; flex-direction: column; gap: 0.625rem; }
 .si-pick {
-  min-height: 64px; padding: 0 18px; border: 0; border-radius: var(--r-md); background: #FAF7F2; color: var(--ink);
-  display: flex; align-items: center; gap: 14px; text-align: left; font: 800 17px var(--font-body); cursor: pointer;
+  min-height: 4rem; padding: 0 1.125rem; border: 0; border-radius: var(--r-md); background: #FAF7F2; color: var(--ink);
+  display: flex; align-items: center; gap: 0.875rem; text-align: left; font: 800 1.0625rem var(--font-body); cursor: pointer;
   transition: box-shadow .15s var(--ease-out), background .15s var(--ease-out);
 }
-.si-pick:first-child { background: var(--accent-tint); box-shadow: 0 0 0 3px var(--accent); }
+.si-pick:first-child { background: var(--accent-tint); box-shadow: 0 0 0 0.1875rem var(--accent); }
 .si-list:hover .si-pick:first-child:not(:hover), .si-list:focus-within .si-pick:first-child:not(:focus) { background: #FAF7F2; box-shadow: none; }
-.si-pick:hover, .si-pick:focus-visible { background: var(--accent-tint); box-shadow: 0 0 0 3px var(--accent); }
-.si-avatar { width: 40px; height: 40px; border-radius: var(--r-pill); display: grid; place-items: center; font-size: 14px; font-weight: 800; flex-shrink: 0; }
+.si-pick:hover, .si-pick:focus-visible { background: var(--accent-tint); box-shadow: 0 0 0 0.1875rem var(--accent); }
+.si-avatar { width: 2.5rem; height: 2.5rem; border-radius: var(--r-pill); display: grid; place-items: center; font-size: max(var(--text-min), 0.875rem); font-weight: 800; flex-shrink: 0; }
 .si-who { display: flex; flex-direction: column; }
-.si-blurb { font-size: 14px; font-weight: 600; color: var(--ink-2); }
+.si-blurb { font-size: max(var(--text-min), 0.875rem); font-weight: 600; color: var(--ink-2); }
 .si-actions { display: flex; }
-.si-note { font-size: 14px !important; font-weight: 600; color: var(--ink-3) !important; }
+.si-note { font-size: max(var(--text-min), 0.875rem) !important; font-weight: 600; color: var(--ink-3) !important; }
 
 
 /* Phones: full-page, not a floating card */
 @media (max-width: 720px) {
   .si-backdrop { padding: 0; background: var(--card); place-items: stretch; }
-  .si-card { width: 100%; border-radius: 0; box-shadow: none; padding: 28px 20px 40px; animation: none; }
+  .si-card { width: 100%; border-radius: 0; box-shadow: none; padding: 1.75rem 1.25rem 2.5rem; animation: none; }
 }
