@@ -162,13 +162,13 @@ Needs: none
 - [x] phone stays readable: body text no smaller than 13px (DESIGN-SYSTEM minimum), touch targets at least 44px
 - [x] DESIGN-SYSTEM.md and tokens updated to the new scale, so new screens are built at it
 
-## F-031 Workspace: the cost ledger becomes a slim line at the top [doing]
+## F-031 Workspace: the cost ledger becomes a slim line at the top [done]
 Captain (said twice): the ledger bar takes too much room. Push it to the top as subtle information so the panes and the details get the space; like Safari's bar or a Dynamic Island.
 Needs: F-030
-- [ ] the ledger moves into the top bar as one slim line beside the trip and dates (flight · stay · car = total, plus Book); the old ledger band is gone and the panes take its height
-- [ ] tapping the total opens a small breakdown popover (itemized lines, the best-value hint); Esc or tapping outside closes it
-- [ ] in the split view, scrolling down the detail shrinks the line further to a pill (total + Book); scrolling up or tapping it restores it; animated, reduced motion instant
-- [ ] the total stays live; phone uses the same pattern pinned at the top
+- [x] the ledger moves into the top bar as one slim line beside the trip and dates (flight · stay · car = total, plus Book); the old ledger band is gone and the panes take its height
+- [x] tapping the total opens a small breakdown popover (itemized lines, the best-value hint); Esc or tapping outside closes it
+- [x] in the split view, scrolling down the detail shrinks the line further to a pill (total + Book); scrolling up or tapping it restores it; animated, reduced motion instant
+- [x] the total stays live; phone uses the same pattern pinned at the top
 
 ## F-032 Calendar opens on the whole-trip view [done]
 Captain: the hour grid is intimidating first; the whole-trip snapshot should be the default, with an easy switch to the day view for editing.
