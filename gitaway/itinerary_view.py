@@ -73,7 +73,7 @@ def _source_card(src):
         Div(Span("From the vlog", cls="src-kicker"),
             Span(src.title, cls="src-title"),
             Span(src.byline, cls="src-by"),
-            A("Watch the original", href=href, rel="noopener noreferrer", target="_blank", cls="src-link") if href else "",
+            A(src.link_label, href=href, rel="noopener noreferrer", target="_blank", cls="src-link") if href else "",
             cls="src-body"),
         cls="source-card",
     )

@@ -43,6 +43,7 @@ class Source:
     thumb: str
     thumb_alt: str
     url: str = ""
+    link_label: str = "Watch the original"
 
 
 @dataclass(frozen=True)
