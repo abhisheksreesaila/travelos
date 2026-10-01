@@ -7,11 +7,11 @@ import pytest
 
 from gitaway import catalog
 from tests.test_calendar import FORM, add, book
-from tests.test_signin import session_data, sign_in
+from tests.test_signin import session_data, sign_in, tid
 
 
 def slug_of(client):
-    return next(e["s"] for e in session_data(client)["hub"]["ari"] if e.get("m"))
+    return next(e["s"] for e in session_data(client)["hub"][tid("ari")] if e.get("m"))
 
 
 def share(client, **data):
@@ -50,7 +50,7 @@ def test_sharing_twice_is_one_page(client):
     book(client)
     share(client)
     share(client)
-    assert len([e for e in session_data(client)["hub"]["ari"] if e.get("m")]) == 1
+    assert len([e for e in session_data(client)["hub"][tid("ari")] if e.get("m")]) == 1
 
 
 def test_the_page_has_bookings_and_activities_by_day(client):
@@ -73,7 +73,7 @@ def test_the_page_never_has_notes_friends_invites_or_money(client):
     html = client.get(f"/trips/{slug_of(client)}").text.split("<main")[1].split("</main>")[0]  # the page, not the viewer's own header
     for private in ["hunter2", "family treasure", "Grandma Zelda", "Ari Rivera", "/join/", "GA-", "gitaway.example"]:
         assert private not in html, private
-    b = session_data(client)["bookings"]["ari"]
+    b = session_data(client)["bookings"][tid("ari")]
     assert catalog.money(b["total_cents"]) not in html and "$" not in html
 
 
@@ -95,7 +95,7 @@ def test_the_community_in_this_browser_sees_each_others_shared_trips(client):
     assert page.status_code == 200 and "Ari only plan" in page.text            # rebuilt from Ari's booking and calendar
     hub_html = client.get("/discover").text
     assert "LA with the kids" in hub_html and "Your trip" not in hub_html
-    client.post("/signout")   # signed out in the same browser
+    client.post("/logout")   # signed out in the same browser
     assert client.get(f"/trips/{slug}").status_code == 200 and client.get("/trips/shared-nope").status_code == 404
     client.cookies.clear()   # a different browser: nothing is shared beyond this one
     assert client.get(f"/trips/{slug}").status_code == 404
@@ -134,7 +134,7 @@ def test_the_shared_trip_shows_in_the_hub_and_filters(client):
 
 def test_the_booking_reference_never_appears_anywhere_it_could_leak(client):
     book(client)
-    ref = session_data(client)["bookings"]["ari"]["id"]
+    ref = session_data(client)["bookings"][tid("ari")]["id"]
     r = share(client)
     pages = [r.headers["location"], client.get("/share/done").text, client.get("/share").text, client.get("/discover").text,
              client.get(f"/trips/{slug_of(client)}").text, client.get("/calendar").text]
@@ -152,14 +152,14 @@ def test_the_slug_is_stable_per_traveler_and_booking(client):
     assert slug_of(client) == first and first.startswith("shared-")
     book(client, "sam")
     share(client)
-    assert next(e["s"] for e in session_data(client)["hub"]["sam"] if e.get("m")) != first
+    assert next(e["s"] for e in session_data(client)["hub"][tid("sam")] if e.get("m")) != first
 
 
 def test_a_one_tap_reshare_keeps_the_chosen_tags_and_theme(client):
     book(client)
     share(client, custom="1", tag=["pet"], theme="pacific")
     share(client)   # the calendar's one tap
-    entry = next(e for e in session_data(client)["hub"]["ari"] if e.get("m"))
+    entry = next(e for e in session_data(client)["hub"][tid("ari")] if e.get("m"))
     assert entry["g"] == ["pet"] and entry["c"] == "pacific"
 
 
@@ -174,7 +174,7 @@ def test_the_customise_form_sets_tags_and_theme(client):
     book(client)
     r = share(client, custom="1", tag=["pet", "couple", "bogus"], theme="pacific")
     assert r.status_code == 303
-    entry = next(e for e in session_data(client)["hub"]["ari"] if e.get("m"))
+    entry = next(e for e in session_data(client)["hub"][tid("ari")] if e.get("m"))
     assert entry["g"] == ["pet", "couple"] and entry["c"] == "pacific"
     html = client.get(f"/trips/{entry['s']}").text
     assert 'data-theme="pacific"' in html and "Pet friendly" in html and "Couple friendly" in html
@@ -186,7 +186,7 @@ def test_the_customise_form_sets_tags_and_theme(client):
 def test_a_custom_share_with_no_tags_keeps_none(client):
     book(client)
     share(client, custom="1", theme="sunset")
-    entry = next(e for e in session_data(client)["hub"]["ari"] if e.get("m"))
+    entry = next(e for e in session_data(client)["hub"][tid("ari")] if e.get("m"))
     assert entry["g"] == []
 
 
@@ -208,7 +208,7 @@ def test_a_full_cookie_is_refused_kindly(client, monkeypatch):
 
 def test_a_failed_publish_leaves_the_older_shared_entry_in_place(monkeypatch):
     from gitaway import hub, session as ses, share as sh
-    s = {"traveler": "ari"}
+    s = {"user_id": "ari"}
     ses.book(s, catalog.quote("f1", "h1", "c1"))
     hub.publish(s, slug="shared-old", title="LA with the kids", place="Los Angeles", days=5, author="a traveler", tags=("kid",), mine=True)
     before = json.dumps(s["hub"], sort_keys=True)

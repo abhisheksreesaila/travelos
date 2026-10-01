@@ -3,7 +3,7 @@
 import re
 from urllib.parse import quote
 
-from tests.test_signin import session_data, sign_in
+from tests.test_signin import session_data, sign_in, tid
 
 PICK = {"f": "f1", "h": "h1", "c": "c1"}
 FORM = {"day": "1", "start": "10:00", "end": "11:30", "title": "Venice Canals stroll", "kind": "outdoors"}
@@ -236,7 +236,7 @@ def test_the_notes_drawer_and_top_bar_buttons_are_present(client):
 def test_calendar_state_survives_the_signed_session_cookie(client):
     book(client)
     add(client)
-    assert session_data(client)["cal"]["ari"]["a"][0]["t"] == "Venice Canals stroll"
+    assert session_data(client)["cal"][tid("ari")]["a"][0]["t"] == "Venice Canals stroll"
 
 
 def test_day_headers_show_a_weather_icon_and_temperature_without_cutting_the_words(client):

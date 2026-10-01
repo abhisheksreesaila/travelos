@@ -129,13 +129,13 @@ def test_start_prefills_from_a_trip_url_and_falls_back_for_a_bad_one(client):
 def test_sign_in_without_a_next_lands_on_start(client):
     page = client.get("/signin").text
     assert 'name="next" value="/start"' in page or 'value="/start" name="next"' in page
-    r = client.post("/signin", data={"traveler": "ari"}, follow_redirects=False)
+    r = client.post("/signin", data={"email": "ari.rivera@example.com"}, follow_redirects=False)
     assert r.headers["location"] == "/start"
     assert client.get("/signin", follow_redirects=False).headers["location"] == "/start"  # already signed in
 
 
 def test_sign_in_with_a_specific_next_still_goes_there(client):
-    assert client.post("/signin", data={"traveler": "ari", "next": "/plan?f=f2"}, follow_redirects=False).headers["location"] == "/plan?f=f2"
+    assert client.post("/signin", data={"email": "ari.rivera@example.com", "next": "/plan?f=f2"}, follow_redirects=False).headers["location"] == "/plan?f=f2"
     assert sign_in(client, next="/").headers["location"] == "/"
 
 
@@ -183,7 +183,7 @@ def test_continue_booked_card_opens_the_calendar_and_wins_over_picks(client):
 def test_the_continue_card_is_per_traveler_and_not_for_the_signed_out(client):
     sign_in(client, "ari")
     client.get("/plan?f=f2")
-    client.post("/signout")
+    client.post("/logout")
     assert "Continue" not in client.get("/start").text
     sign_in(client, "sam")
     assert "Continue" not in client.get("/start").text
@@ -216,7 +216,7 @@ def test_past_departures_are_refused_friendlily(client):
 
 def test_remembering_picks_never_overflows_the_cookie():
     from gitaway import session as ses
-    s = {"traveler": "ari", "pad": "x" * (ses.BUDGET - 20)}
+    s = {"user_id": "ari", "pad": "x" * (ses.BUDGET - 20)}
     ses.remember_plan(s, "f=f2&h=h3&c=c1&d=2026-10-16&r=2026-10-19&a=3&k=4,7")
     assert "plan" not in s
 

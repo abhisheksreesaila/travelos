@@ -55,12 +55,12 @@ def test_junk_filters_are_ignored_and_escaped(client):
 
 
 def test_publish_adds_to_the_hub_and_every_traveler_in_this_browser_sees_it():
-    s = {"traveler": "ari"}
+    s = {"user_id": "ari"}
     card = hub.publish(s, slug="my-reel", title="Reel trip", place="Tokyo", days=3, author="@me", tags=("kid", "nope"), source="Instagram")
     assert card.tags == ("kid",) and card.source == "Instagram"
     assert hub.cards(s)[-1].slug == "my-reel"
     assert [c.mine for c in hub.cards(s) if c.slug == "my-reel"] == [True]
-    others = {"traveler": "sam", "hub": s["hub"]}
+    others = {"user_id": "sam", "hub": s["hub"]}
     assert [c.mine for c in hub.cards(others) if c.slug == "my-reel"] == [False]               # community in this browser
     assert "my-reel" in [c.slug for c in hub.cards({"hub": s["hub"]})]                         # even signed out
     hub.publish(s, slug="my-reel", title="Renamed", place="Tokyo", days=3, author="@me")
@@ -71,8 +71,8 @@ def test_publish_refuses_signed_out_bad_slugs_and_a_full_cookie():
     with pytest.raises(hub.HubError):
         hub.publish({}, slug="a", title="T", place="P", days=1, author="x")
     with pytest.raises(hub.HubError):
-        hub.publish({"traveler": "ari"}, slug="../x", title="T", place="P", days=1, author="x")
-    s = {"traveler": "ari", "pad": "x" * 2600}
+        hub.publish({"user_id": "ari"}, slug="../x", title="T", place="P", days=1, author="x")
+    s = {"user_id": "ari", "pad": "x" * 2600}
     with pytest.raises(hub.HubError):
         hub.publish(s, slug="a", title="T", place="P", days=1, author="x")
     assert "hub" not in s

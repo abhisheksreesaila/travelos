@@ -17,7 +17,7 @@ def booked_page(browser, base_url):
         ctx = browser.new_context(viewport=DESKTOP, reduced_motion="reduce" if reduced else "no-preference")
         ctx.set_default_timeout(8000)
         contexts.append(ctx)
-        ctx.request.post(f"{base_url}/signin", form={"traveler": "ari", "next": "/", "intent": "save"})
+        ctx.request.post(f"{base_url}/signin", form={"email": "ari.rivera@example.com", "next": "/", "intent": "save"})
         ctx.request.post(f"{base_url}/pay", form={"f": "f1", "h": "h1", "c": "c1"})
         page = ctx.new_page()
         page.goto(f"{base_url}/calendar?view=days")
@@ -33,7 +33,7 @@ def test_focus_lands_on_undo_after_a_voice_apply(browser, base_url):
     ctx = browser.new_context(viewport=DESKTOP, reduced_motion="reduce")
     ctx.set_default_timeout(5000)
     try:
-        ctx.request.post(f"{base_url}/signin", form={"traveler": "ari", "next": "/", "intent": "save"})
+        ctx.request.post(f"{base_url}/signin", form={"email": "ari.rivera@example.com", "next": "/", "intent": "save"})
         ctx.request.post(f"{base_url}/pay", form={"f": "f1", "h": "h1", "c": "c1"})
         page = ctx.new_page()
         page.goto(f"{base_url}/calendar?voice=1&night=0")

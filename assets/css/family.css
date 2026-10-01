@@ -1,0 +1,5 @@
+/* Your family (F-039). Loaded after tokens.css and base.css via layout.styles(). */
+.fam { width: min(40rem, 100% - 2rem); margin: 2.5rem auto 4rem; padding: 2rem; border-radius: var(--r-xl); background: var(--card); box-shadow: var(--shadow-md, var(--shadow-sm)); display: flex; flex-direction: column; gap: 0.75rem; }
+.fam h1 { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: clamp(1.875rem, 8vw, 2.5rem); line-height: 1; letter-spacing: -0.03em; }
+.fam p { margin: 0; font-size: 1.0625rem; line-height: 1.5; color: var(--ink-2); overflow-wrap: anywhere; }
+@media (max-width: 720px) { .fam { margin: 0; width: 100%; border-radius: 0; box-shadow: none; padding: 1.75rem 1.25rem 2.5rem; } }

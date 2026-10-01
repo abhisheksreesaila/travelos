@@ -6,7 +6,7 @@ import re
 from gitaway import itineraries, session as ses, tripcal as cal
 from tests.test_calendar import FORM, add, book
 from tests.test_forks import OTHER, SD, TRIP, apply, fork, plan_keys, titles
-from tests.test_signin import session_data, sign_in
+from tests.test_signin import session_data, sign_in, tid
 
 THREE_NIGHTS = dict(d="2026-10-16", r="2026-10-19", a="2", k="4,7")
 TWENTY_DAYS = dict(d="2026-10-16", r="2026-11-04", a="2", k="4,7")
@@ -35,17 +35,18 @@ def test_forks_and_saves_are_refused_before_the_cookie_overflows(client):
         r = add(client, id=f"a{i + 1}", day=str(1 + i % 3), start="12:00", end="12:30", title=f"Plan number {i:02d} " + "x" * 20)
         if r.status_code == 409:
             break
-    refused = []
+    refused, refused_slug = [], None
     for slug in (TRIP, OTHER, SD, "dog-friendly-big-sur-drive"):
         r = client.post("/fork", data={"next": f"/trips/{slug}"}, follow_redirects=False)
         refused.append(r.status_code)
+        refused_slug = refused_slug or (slug if r.status_code == 409 else None)
         assert r.status_code in (303, 409)
         r2 = client.post("/save", data={"next": f"/trips/{slug}"}, follow_redirects=False)
         refused.append(r2.status_code)
         assert len(str(session_data(client)).replace("'", '"')) <= ses.BUDGET + 200
         assert cookie_size(client) <= 3600
     assert 409 in refused, "a nearly full cookie must say no"
-    page = client.post("/fork", data={"next": f"/trips/{SD}"})
+    page = client.post("/fork", data={"next": f"/trips/{refused_slug}"})
     assert page.status_code == 409 and "full" in page.text
 
 
@@ -88,7 +89,7 @@ def test_forks_follow_a_twenty_day_trip_with_a_day_window(client):
     assert plan_keys(html)["d5s0"][0] is True  # a day that exists on a long trip is open
     r = apply(client, "d5s0")
     assert r.status_code == 303 and titles(client) == ["Farmers Market brunch"]
-    assert cal.trip_of(session_data(client)["bookings"]["ari"]).return_.day == 4
+    assert cal.trip_of(session_data(client)["bookings"][tid("ari")]).return_.day == 4
 
 
 # ---- titles ---------------------------------------------------------------------------------------------------------
@@ -114,8 +115,8 @@ def test_undo_only_removes_what_that_apply_added(client):
     add(client, id="a9", title="Mine")
     first = apply(client, "d1s2")
     ids = re.search(r"applied=([a0-9,]+)", first.headers["location"]).group(1)
-    own = [a["i"] for a in session_data(client)["cal"]["ari"]["a"] if a["t"] == "Mine"]
-    mom = [a["i"] for a in session_data(client)["cal"]["ari"]["a"] if a.get("b") == "Mom"]
+    own = [a["i"] for a in session_data(client)["cal"][tid("ari")]["a"] if a["t"] == "Mine"]
+    mom = [a["i"] for a in session_data(client)["cal"][tid("ari")]["a"] if a.get("b") == "Mom"]
     client.post("/forks/undo", data={"ids": ",".join([*own, *mom]), "src": TRIP})  # a hand-made id list
     assert "Mine" in titles(client) and "Travel Town steam trains" in titles(client)
     client.post("/forks/undo", data={"ids": ids, "src": OTHER})  # the wrong fork
@@ -177,7 +178,7 @@ def test_moving_a_plan_later_than_the_window_is_refused_too(client):
     add(client, id="a1", day="1", start="10:00", end="11:00")
     r = client.post("/calendar/activities/a1/move", data={"day": "3", "start": "16:00", "end": "17:00"}, follow_redirects=False)
     assert r.status_code == 409 and "Your flight home leaves at 2:10 PM" in r.text
-    assert any(a["i"] == "a1" and a["d"] == 1 for a in session_data(client)["cal"]["ari"]["a"])
+    assert any(a["i"] == "a1" and a["d"] == 1 for a in session_data(client)["cal"][tid("ari")]["a"])
 
 
 def test_a_fork_plan_after_the_flight_home_cannot_be_applied(client):
@@ -203,7 +204,7 @@ def test_a_creator_trip_can_be_forked_saved_and_applied(client):
     book(client)
     client.post("/creators", data={"link": "https://www.youtube.com/watch?v=our-la-family-week"})
     client.post("/creators/draft", data={"form": "1", "do": "submit", "ok1": "1", "ok2": "1", "title": "Sun, tacos & tides"})
-    slug = session_data(client)["hub"]["ari"][0]["s"]
+    slug = session_data(client)["hub"][tid("ari")][0]["s"]
     assert client.post("/fork", data={"next": f"/trips/{slug}"}, follow_redirects=False).status_code == 303
     assert client.post("/save", data={"next": f"/trips/{slug}"}, follow_redirects=False).status_code == 303
     assert "Sun, tacos &amp; tides" in client.get("/forks").text
@@ -225,9 +226,9 @@ def test_moms_scripted_add_stays_inside_the_flight_window_on_a_short_trip(client
     book(client, f="f2", **TWO_NIGHTS)  # f2's flight home leaves at 12:30 PM, so the last day closes at 10:30 AM
     client.post("/calendar/friends", data={"name": "Mom"})
     client.post("/calendar/live")
-    mom = [a for a in session_data(client)["cal"]["ari"]["a"] if a.get("b") == "Mom"]
+    mom = [a for a in session_data(client)["cal"][tid("ari")]["a"] if a.get("b") == "Mom"]
     assert len(mom) == 1 and mom[0]["d"] == 2
-    b = session_data(client)["bookings"]["ari"]
+    b = session_data(client)["bookings"][tid("ari")]
     blocks = cal.booked_blocks(b, cal.trip_of(b))
     assert cal.window_problem(blocks, mom[0]["d"], mom[0]["s"], mom[0]["e"]) is None
     assert mom[0]["e"] <= 10 * 60 + 30

@@ -1,6 +1,10 @@
-"""Demo sign-in state, kept in the FastHTML (signed cookie) session. Public helpers for every screen.
+"""The signed-in person and the cookie-held trip state. Public helpers for every screen.
 
-Session shape: {"traveler": "<id>", "forks": {"<id>": ["<trip slug>", ...]}, "friends": {"<id>": ["<name>", ...]}}.
+Sign-in is fh-saas's (see gitaway.auth): the session holds `user_id` and `email`, and `current_traveler` is the thin
+adapter that maps that person to the "traveler" every screen speaks of (id = the fh-saas user id, name from the email).
+F-040 and F-041 move the rest of this state into SQLite.
+
+Session shape: {"user_id": "<fh-saas user id>", "email": "<email>", "forks": {"<id>": ["<trip slug>", ...]}, "friends": {"<id>": ["<name>", ...]}}.
 Pure functions over a session dict, so tests and later tickets (F-018 pay, F-021 forks list) can use them directly.
 
 For the header, `bind` is a beforeware (see main.py) that records the current traveler in a ContextVar for the
@@ -27,10 +31,7 @@ class Traveler:
     color: str  # a fill-* class from base.css
 
 
-TRAVELERS = {
-    "ari": Traveler("ari", "Ari Rivera", "AR", "Demo traveler · family of four", "grape"),
-    "sam": Traveler("sam", "Sam Kim", "SK", "Demo traveler · couple trip", "mint"),
-}
+_COLORS = ("sun", "sky", "grape", "mint", "bubble")
 BUDGET = 2600  # bytes of session JSON; base64 adds a third plus a signature, keeping the whole cookie near 3.4 KB (limit 3.6 KB, browsers drop >4 KB)
 MAX_FRIENDS = 6
 MAX_FRIEND_NAME = 20
@@ -54,20 +55,39 @@ def safe_next(value, default="/"):
     return value
 
 
+def _display_name(email):
+    """"ari.rivera@gmail.com" -> "Ari Rivera"; the part before the @, split on dots, dashes and underscores."""
+    local = re.sub(r"[._\-+]+", " ", (email or "").split("@")[0]).strip()
+    return local.title() if local else "Traveler"
+
+
 def current_traveler(session):
-    return TRAVELERS.get((session or {}).get("traveler"))
-
-
-def sign_in(session, traveler_id):
-    """Store the demo traveler; returns it, or None for an unknown id (session untouched)."""
-    if traveler_id not in TRAVELERS:
+    """The signed-in person as a Traveler, or None. Pure over the session dict (`user_id` and `email`)."""
+    uid = (session or {}).get("user_id")
+    if not uid:
         return None
-    session["traveler"] = traveler_id
-    return TRAVELERS[traveler_id]
+    email = session.get("email") or ""
+    name = _display_name(email)
+    words = name.split()
+    initials = (words[0][0] + words[1][0] if len(words) > 1 else name[:2]).upper()
+    color = _COLORS[int(hashlib.sha256((email or str(uid)).encode()).hexdigest(), 16) % len(_COLORS)]
+    return Traveler(str(uid), name, initials, email or "Signed in", color)
+
+
+# Everything fh-saas keeps in the session for the sign-in; sign_out removes exactly these and leaves the rest.
+AUTH_KEYS = ("user_id", "email", "tenant_id", "tenant_role", "is_sys_admin", "login_at", "session_started_at",
+             "_auth_cache", "oauth_state", "login_next", "login_intent")
+
+
+def sign_in(session, user_id, email=""):
+    """Put a person in a plain session dict (what fh-saas's create_user_session does, minus the tenant). For tests and model code."""
+    session["user_id"], session["email"] = user_id, email
+    return current_traveler(session)
 
 
 def sign_out(session):
-    session.pop("traveler", None)
+    for key in AUTH_KEYS:
+        session.pop(key, None)
 
 
 def forks(session):
@@ -292,6 +312,24 @@ async def bind(req, session):
     from gitaway import forks  # here, not at the top: forks imports this module
     _request_forks.set(forks.count(session))
     _request_path.set(req.url.path + (f"?{req.url.query}" if req.url.query else ""))
+
+
+def cache_secret() -> bytes:
+    """The server's session secret, for keys that must not be guessable: GITAWAY_SECRET_KEY, else the .sesskey file
+    (the same two places main.py takes FastHTML's session secret from)."""
+    import os
+    from pathlib import Path
+    if (env := os.getenv("GITAWAY_SECRET_KEY")):
+        return env.encode()
+    try:
+        return (Path(__file__).resolve().parent.parent / ".sesskey").read_bytes().strip() or b"gitaway"
+    except OSError:
+        return b"gitaway"
+
+
+def as_signed_out():
+    """Render the rest of this request as a signed-out visitor (for pages that are cached and shared, like /offline)."""
+    _request_traveler.set(None)
 
 
 def request_traveler():

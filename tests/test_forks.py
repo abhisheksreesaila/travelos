@@ -3,7 +3,7 @@
 import re
 
 from tests.test_calendar import add, book
-from tests.test_signin import session_data, sign_in
+from tests.test_signin import session_data, sign_in, tid
 
 TRIP = "sun-tacos-and-tide-pools"
 OTHER = "la-for-two-slow-mornings"
@@ -27,7 +27,7 @@ def apply(client, *keys, slug=TRIP):
 
 
 def activities(client):
-    return [a for a in session_data(client)["cal"]["ari"]["a"]]
+    return [a for a in session_data(client)["cal"][tid("ari")]["a"]]
 
 
 def titles(client):
@@ -66,12 +66,12 @@ def test_forking_twice_lists_it_once_and_a_vanished_trip_is_not_listed(client):
 def test_a_hub_trip_can_be_forked_like_a_sample_itinerary(client):
     book(client)
     client.post("/share", follow_redirects=False)
-    shared = next(e["s"] for e in session_data(client)["hub"]["ari"] if e.get("m"))
+    shared = next(e["s"] for e in session_data(client)["hub"][tid("ari")] if e.get("m"))
     sign_in(client, "sam")
     assert fork(client, shared).status_code == 303
     html = client.get("/forks").text
     assert "LA with the kids" in html and f'/trips/{shared}"' in html
-    assert session_data(client)["forks"] == {"sam": [shared]}
+    assert session_data(client)["forks"] == {tid("sam"): [shared]}
 
 
 def test_the_trip_page_says_when_it_is_already_in_your_forks(client):
@@ -92,7 +92,7 @@ def test_signed_out_save_goes_through_sign_in_with_intent_save_and_lands_saved(c
     assert "save this trip" in client.get(r.headers["location"]).text
     r = sign_in(client, next=f"/trips/{TRIP}", intent="save")
     assert r.headers["location"] == f"/trips/{TRIP}"
-    assert session_data(client)["saves"] == {"ari": [TRIP]}
+    assert session_data(client)["saves"] == {tid("ari"): [TRIP]}
     html = client.get(f"/trips/{TRIP}").text
     assert 'action="/unsave"' in html and 'aria-pressed="true"' in html
 
@@ -109,12 +109,12 @@ def test_signed_in_save_and_unsave_are_idempotent_and_local_only(client):
     for _ in range(2):
         r = client.post("/save", data={"next": f"/trips/{TRIP}"}, follow_redirects=False)
         assert r.headers["location"] == f"/trips/{TRIP}"
-    assert session_data(client)["saves"] == {"ari": [TRIP]}
+    assert session_data(client)["saves"] == {tid("ari"): [TRIP]}
     assert client.post("/save", data={"next": "//evil.example"}, follow_redirects=False).headers["location"] == "/discover"
     assert client.post("/save", data={"next": "/plan"}, follow_redirects=False).headers["location"] == "/discover"
     for _ in range(2):
         assert client.post("/unsave", data={"next": f"/trips/{TRIP}"}, follow_redirects=False).status_code == 303
-    assert session_data(client)["saves"] == {"ari": []}
+    assert session_data(client)["saves"] == {tid("ari"): []}
 
 
 def test_saved_trips_show_beside_forks_and_a_forked_trip_is_not_listed_twice(client):

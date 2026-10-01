@@ -5,7 +5,7 @@ from datetime import date
 from urllib.parse import quote, urlsplit, parse_qs
 
 from gitaway import catalog
-from tests.test_signin import session_data, sign_in
+from tests.test_signin import session_data, sign_in, tid
 
 SAMPLE = catalog.SAMPLE_TRIP
 THREE_NIGHTS = "d=2026-10-16&r=2026-10-19&a=2&k=4,7"
@@ -114,7 +114,7 @@ def test_booking_keeps_the_trip_and_the_calendar_follows_it(client):
     sign_in(client)
     r = client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1", "d": "2026-10-16", "r": "2026-10-19", "a": "2", "k": "4,7"}, follow_redirects=False)
     assert r.headers["location"] == "/booked"
-    b = session_data(client)["bookings"]["ari"]
+    b = session_data(client)["bookings"][tid("ari")]
     assert b["total_cents"] == catalog.quote("f1", "h1", "c1", trip=T3).total_cents
     assert "3 nights" in client.get("/booked").text
     cal = client.get("/calendar").text
@@ -126,15 +126,15 @@ def test_booking_keeps_the_trip_and_the_calendar_follows_it(client):
 def test_booking_the_same_picks_for_another_trip_is_a_different_booking(client):
     sign_in(client)
     client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1"})
-    first = session_data(client)["bookings"]["ari"]["id"]
+    first = session_data(client)["bookings"][tid("ari")]["id"]
     client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1", "d": "2026-10-16", "r": "2026-10-19", "a": "2", "k": "4,7"})
-    assert session_data(client)["bookings"]["ari"]["id"] != first
+    assert session_data(client)["bookings"][tid("ari")]["id"] != first
 
 
 def test_sample_booking_has_no_trip_field_and_the_same_id_as_before(client):
     sign_in(client)
     client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1"})
-    b = session_data(client)["bookings"]["ari"]
+    b = session_data(client)["bookings"][tid("ari")]
     assert "trip" not in b and b["total_cents"] == 308_800
 
 

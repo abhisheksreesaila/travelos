@@ -1,11 +1,22 @@
+import os
+import tempfile
+
 import pytest
 from starlette.testclient import TestClient
+
+# Before main is imported: a throwaway data folder for the SQLite files, and the local dev sign-in on.
+os.environ["GITAWAY_DATA_DIR"] = tempfile.mkdtemp(prefix="gitaway-test-")
+os.environ["GITAWAY_DEV_LOGIN"] = "1"
+os.environ["DB_TYPE"] = "SQLITE"
+os.environ["DB_NAME"] = "app_host"
+for _key in ("GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"):
+    os.environ.pop(_key, None)
 
 
 @pytest.fixture
 def client():
     from main import app
-    return TestClient(app)
+    return TestClient(app, client=("127.0.0.1", 50000))  # the dev sign-in only answers to this machine
 
 
 @pytest.fixture(autouse=True)

@@ -75,7 +75,7 @@ def entry(session, slug):
 
 def all_entries(session) -> list:
     """(traveler id, entry) for every traveler's published trip held in this browser session. The demo's community."""
-    return [(tid, dict(e)) for tid, rows in (session.get("hub") or {}).items() if tid in ses.TRAVELERS for e in rows]
+    return [(tid, dict(e)) for tid, rows in (session.get("hub") or {}).items() for e in rows]
 
 
 def _card(e, mine=False) -> HubCard:
