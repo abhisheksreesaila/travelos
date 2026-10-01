@@ -19,10 +19,10 @@ import json
 from contextlib import contextmanager
 from dataclasses import asdict
 from datetime import datetime, timezone
+from types import SimpleNamespace
 
-from fastsql import Database
 from fh_saas.utils_sql import delete_record, upsert
-from sqlalchemy import text
+from sqlalchemy import create_engine, text
 
 from gitaway import auth
 from gitaway.itineraries import Day, Itinerary, Polaroid, Source, Stop, Tag
@@ -43,20 +43,24 @@ def _url() -> str:
     return f"sqlite:///{auth.data_dir() / 'community.db'}"
 
 
+_engines: dict = {}
+
+
 @contextmanager
 def connect():
-    """A connection to the community database (made on first use), closed when the block ends."""
+    """A connection to the community database (made on first use), closed when the block ends. One engine is reused for the process."""
     url = _url()
-    db = Database(url)
+    if url not in _engines:
+        _engines[url] = create_engine(url)
+    conn = _engines[url].connect()
     try:
         if url not in _ready:
-            db.conn.execute(text(_SCHEMA))
-            db.conn.commit()
+            conn.execute(text(_SCHEMA))
+            conn.commit()
             _ready.add(url)
-        yield db
+        yield SimpleNamespace(conn=conn)  # what fh-saas's utils_sql helpers read
     finally:
-        db.conn.close()
-        db.engine.dispose()
+        conn.close()
 
 
 def _now() -> str:
@@ -109,6 +113,16 @@ def rows(kind="", owner="") -> list:
         sql, args["o"] = sql + " AND owner_user = :o", str(owner)
     with connect() as db:
         return [_row(r) for r in db.conn.execute(text(sql + " ORDER BY created_at, rowid"), args).fetchall()]
+
+
+def existing(slugs) -> int:
+    """How many of `slugs` are published trips: one query, however many there are."""
+    slugs = list(dict.fromkeys(slugs))
+    if not slugs:
+        return 0
+    marks = ", ".join(f":s{i}" for i in range(len(slugs)))
+    with connect() as db:
+        return db.conn.execute(text(f"SELECT COUNT(*) FROM published WHERE slug IN ({marks})"), {f"s{i}": s for i, s in enumerate(slugs)}).scalar()
 
 
 def find(slug, kind="") -> Itinerary | None:

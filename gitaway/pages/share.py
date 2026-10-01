@@ -12,7 +12,7 @@ from fasthtml.common import A, Button, Div, Form, H1, H2, Img, Input, Label, Lin
 from fasthtml.core import FtResponse
 from starlette.responses import RedirectResponse
 
-from gitaway import hub, session as ses, share
+from gitaway import community, hub, session as ses, share
 from gitaway.icons import icon
 from gitaway.itinerary_view import _icon
 from gitaway.itineraries import PIER
@@ -76,9 +76,12 @@ def done_page(session, entry):
             Div(Span(icon("check", 22, 2.6), "Shared", cls="sticker fill-mint sh-sticker"),
                 H1("Your trip is live"),
                 P("Anyone can fork it now. Your notes, who is coming, the booking reference and what you paid stay private."),
+                P("This is a snapshot. Share again to update it.", cls="sh-snapshot"),
                 Div(A(icon("share", 20), "View your trip page", href=f"/trips/{slug}", cls="btn btn-primary"),
                     A("See it in the hub", href="/discover", cls="btn"), cls="sh-actions"),
-                A("Change tags or theme", href="/share", cls="sh-link"), cls="sh-form"),
+                A("Change tags or theme", href="/share", cls="sh-link"),
+                Form(Input(type="hidden", name="slug", value=slug), Button("Unpublish", type="submit", cls="btn btn-sm"), action="/share/unpublish", method="post"),
+                cls="sh-form"),
             cls="sh-dialog card sh-done", role="status"), cls="sh ga-wrap"), head=HEAD)
 
 
@@ -103,6 +106,14 @@ def register(app):
         except hub.HubError as e:
             return sorry(str(e), 409)
         return RedirectResponse("/share/done", status_code=303)
+
+    @app.post("/share/unpublish")
+    def unpublish(session, slug: str = ""):
+        """Take the signed-in owner's shared trip down. Anyone else's slug does nothing (community.unpublish checks the owner)."""
+        if not ses.current_traveler(session):
+            return _signin("/calendar")
+        community.unpublish(session, slug)
+        return RedirectResponse("/calendar", status_code=303)
 
     @app.get("/share/done")
     def done(session):

@@ -10,6 +10,7 @@ traveler's calendar when they publish, frozen, and served to anyone from the sto
 """
 
 import hashlib
+import hmac
 
 from gitaway import community, hub, session as ses, tripcal as cal
 from gitaway.hub import HubError
@@ -27,8 +28,8 @@ def _lede_lanes(b) -> str:
 
 
 def slug_for(traveler_id, booking) -> str:
-    """A stable public slug per traveler and booking that does not contain the booking reference (a salted hash)."""
-    return "shared-" + hashlib.sha256(f"gitaway-share|{traveler_id}|{booking['id']}".encode()).hexdigest()[:10]
+    """A stable public slug per traveler and booking that does not contain the booking reference (an HMAC keyed with the server secret)."""
+    return "shared-" + hmac.new(ses.cache_secret(), f"gitaway-share|{traveler_id}|{booking['id']}".encode(), hashlib.sha256).hexdigest()[:10]
 
 
 def default_tags(session) -> tuple:

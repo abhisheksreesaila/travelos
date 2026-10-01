@@ -118,3 +118,53 @@ def test_forking_a_community_trip_from_another_family_keeps_it_in_the_forkers_fa
     assert sam.post("/fork", data={"next": f"/trips/{slug}"}, follow_redirects=False).status_code == 303
     assert "LA with the kids" in sam.get("/forks").text
     assert "LA with the kids" not in client.get("/forks").text and social.slugs(session_data(client), "forks") == []  # Ari's family did not fork it
+
+
+def test_the_done_page_and_calendar_explain_the_snapshot_and_offer_unpublish(client):
+    book(client)
+    assert "/share/unpublish" not in client.get("/calendar").text and "Update shared page" not in client.get("/calendar").text
+    share(client)
+    slug = shared_slug()
+    done = client.get("/share/done").text
+    assert "This is a snapshot. Share again to update it." in done and 'action="/share/unpublish"' in done
+    cal = client.get("/calendar").text
+    assert "Update shared page" in cal and 'action="/share/unpublish"' in cal
+    r = client.post("/share/unpublish", data={"slug": slug}, follow_redirects=False)
+    assert r.status_code == 303 and community.get(slug) is None
+    assert "Share trip" in client.get("/calendar").text
+
+
+def test_only_the_owner_can_unpublish_over_http(client):
+    book(client)
+    share(client)
+    slug = shared_slug()
+    assert device(client).post("/share/unpublish", data={"slug": slug}, follow_redirects=False).status_code == 303
+    sam = _signed_in(client, "sam")
+    sam.post("/share/unpublish", data={"slug": slug})
+    assert community.get(slug) is not None
+
+
+def test_the_fork_count_skips_vanished_trips_with_one_community_query(client, monkeypatch):
+    from gitaway import forks
+    book(client)
+    share(client)
+    sam = _signed_in(client, "sam")
+    slug = shared_slug()
+    sam.post("/fork", data={"next": f"/trips/{slug}"})
+    sam.post("/fork", data={"next": f"/trips/{TRIP}"})
+    assert forks.count(session_data(sam)) == 2
+    calls = []
+    real = community.existing
+    monkeypatch.setattr(community, "existing", lambda s: calls.append(list(s)) or real(s))
+    forks.count(session_data(sam))
+    assert calls == [[slug]]
+    community.unpublish(session_data(client), slug)
+    assert forks.count(session_data(sam)) == 1
+
+
+def test_the_share_slug_is_keyed_with_the_server_secret(monkeypatch):
+    from gitaway import session as ses, share as sh
+    b = {"id": "GA-12345678"}
+    first = sh.slug_for("u1", b)
+    monkeypatch.setattr(ses, "cache_secret", lambda: b"another secret")
+    assert sh.slug_for("u1", b) != first and sh.slug_for("u1", b) == sh.slug_for("u1", b)

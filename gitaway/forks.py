@@ -58,4 +58,6 @@ def saved(session) -> list:
 
 def count(session) -> int:
     """How many forks the traveler has (the number on the calendar's Your forks button)."""
-    return len(forked(session))
+    slugs = ses.forks(session)  # one query on the family database
+    samples = sum(1 for s in slugs if s in itineraries.ITINERARIES)
+    return samples + community.existing([s for s in slugs if s not in itineraries.ITINERARIES])  # one query on the community database

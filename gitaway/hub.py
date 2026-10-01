@@ -52,6 +52,7 @@ def _from_itinerary(trip) -> HubCard:
 def all_cards(session) -> list:
     """Every trip in the hub: the fake community's first, then everything published (the signed-in person's marked `mine`)."""
     me = (session or {}).get("user_id")
+    # TODO: paginate; this loads and parses every published snapshot on each hub request.
     published = [(r, _from_itinerary(community.trip_of(r))) for r in community.rows()]
     return [*(_from_itinerary(t) for t in itineraries.ITINERARIES.values()),
             *(replace(c, mine=bool(me) and r["owner_user"] == str(me)) for r, c in published)]
