@@ -80,5 +80,5 @@ def bags_seam(state):
             Button(icon("plus", 16, 3), type="button", cls="ws-step ws-step-more", aria_label="One more checked bag", data_bag_step="1", disabled=n >= state.max_bags),
             cls="ws-stepper",
         ),
-        cls="ws-bags", data_max=str(state.max_bags),
+        cls="ws-bags", data_max=str(state.max_bags), data_count=str(n),
     )

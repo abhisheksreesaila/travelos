@@ -140,6 +140,34 @@
 .ws-leg-apt { font-size: max(var(--text-min), 0.875rem); font-weight: 800; color: var(--ink-2); }
 .ws-leg-mid { flex: 1 1 4rem; min-width: 4rem; white-space: nowrap; display: flex; flex-direction: column; align-items: center; gap: 0.25rem; font-size: max(var(--text-min), 0.8125rem); font-weight: 700; color: var(--ink-2); text-align: center; }
 .ws-leg-line { width: 100%; height: 0.1875rem; border-radius: var(--r-pill); background: var(--sky); }
+.ws-leg-line { display: flex; justify-content: center; align-items: center; }
+.ws-leg-stop { width: 0.75rem; height: 0.75rem; box-sizing: border-box; border-radius: var(--r-pill); background: var(--sky); border: 0.1875rem solid var(--ground); }
+.ws-leg-stop-on { background: var(--coral); }
+.ws-leg-stops { font-weight: 800; color: var(--ink); }
+.ws-leg-craft { font-size: max(var(--text-min), 0.875rem); font-weight: 700; color: var(--ink-2); }
+
+/* fare types and checked bags (F-027) */
+.ws-fare-block { display: flex; flex-direction: column; gap: 0.75rem; }
+.ws-fares { display: grid; grid-template-columns: repeat(auto-fit, minmax(12.5rem, 1fr)); gap: 0.875rem; }
+.ws-fare { min-width: 0; text-align: left; border: 0; border-radius: var(--r-md); background: #FAF7F2; color: var(--ink); padding: 1.125rem; display: flex; flex-direction: column; gap: 0.75rem; cursor: pointer; font: inherit; transition: transform .18s var(--ease-spring); }
+.ws-fare:hover { transform: translateY(-0.125rem); }
+.ws-fare[aria-checked="true"] { background: #FFF4EF; box-shadow: 0 0 0 0.1875rem var(--coral); }
+.ws-fare-head { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.5rem; }
+.ws-radio { width: 1.375rem; height: 1.375rem; box-sizing: border-box; border: 0.1875rem solid var(--ink); border-radius: var(--r-pill); display: grid; place-items: center; flex-shrink: 0; }
+.ws-radio-dot { width: 0.625rem; height: 0.625rem; border-radius: var(--r-pill); background: transparent; }
+.ws-fare[aria-checked="true"] .ws-radio-dot { background: var(--coral); }
+.ws-fare-name { font-weight: 800; font-size: 1.125rem; }
+.ws-fare-extra { min-height: 1.5rem; padding: 0.125rem 0.5rem; border-radius: var(--r-pill); background: var(--sun-tint); font-size: max(var(--text-min), 0.8125rem); font-weight: 800; display: inline-flex; align-items: center; }
+.ws-fare-price { font-family: var(--font-display); font-weight: 800; font-size: 1.75rem; font-variant-numeric: tabular-nums; }
+.ws-perks { display: flex; flex-direction: column; gap: 0.4375rem; }
+.ws-perk { display: flex; align-items: flex-start; gap: 0.5rem; font-size: max(var(--text-min), 0.875rem); font-weight: 700; line-height: 1.3; }
+.ws-perk.is-off { color: var(--ink-3); }
+.ws-perk-mark { width: 1.25rem; height: 1.25rem; border-radius: var(--r-pill); flex-shrink: 0; display: grid; place-items: center; font-size: max(var(--text-min), 0.75rem); font-weight: 800; background: var(--skeleton); color: var(--ink); }
+.ws-perk.is-on .ws-perk-mark { background: var(--mint); }
+.ws-bags { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1rem; padding: 1rem 1.25rem; border-radius: var(--r-md); background: #FAF7F2; }
+.ws-bag-text { display: flex; flex-direction: column; gap: 0.125rem; min-width: 0; flex: 1 1 12rem; }
+.ws-bag-title { font-weight: 800; font-size: 1.0625rem; }
+.ws-bag-note { font-size: max(var(--text-min), 0.875rem); font-weight: 700; color: var(--ink-2); }
 .ws-seam:empty { display: none; }
 
 .ws-choosebar { flex-shrink: 0; margin: 0 1.25rem 1rem; padding: 0.75rem 0.75rem 0.75rem 1.375rem; border-radius: 2rem; background: var(--ink); color: #fff; display: flex; align-items: center; gap: 1rem; }
@@ -417,6 +445,7 @@
   .ws-leg-time { font-size: 1.5rem; }
   .ws-leg { padding: 0.875rem; }
   .ws-legs { grid-template-columns: 1fr; }
+  .ws-fares { grid-template-columns: 1fr; }
   .ws-offer:hover { transform: none; }
   .ws-ledger { position: fixed; top: 0; left: 0; right: 0; margin: 0; z-index: 40; height: auto; min-height: 0; justify-content: space-between; gap: 0.75rem; border-radius: 0 0 1.5rem 1.5rem; padding: 0.5rem 1rem 0.5rem 1.25rem; box-shadow: 0 0.5rem 1.5rem -0.5rem rgba(30, 26, 46, .25), 0 0 0 1px var(--line); }
   .ws-lines { display: none; }
@@ -430,6 +459,8 @@
   .ws-pop { animation: none; }
   .ws-grid { transition: none; }
   .ws-grid[data-expanded] .ws-detail-panel:not([hidden]) { animation: none; }
+  .ws-fare { transition: none; }
+  .ws-fare:hover { transform: none; }
   .ws-choose { transition: none; }
   .ws-choose:hover, .ws-choose:active { transform: none; }
   .ws-offer { transition: none; }

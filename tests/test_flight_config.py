@@ -134,7 +134,7 @@ def test_the_flight_legs_use_the_trips_real_dates(client):
 
 
 def test_a_bigger_party_scales_fares_cap_and_included_bags_on_the_page(client):
-    html = client.get(f"/plan?f=f1&h=h1&c=c1&{T5Q}&x=flights").text
+    html = client.get(f"/plan?f=f1&h=h1&c=c1&fare=xl&{T5Q}&x=flights").text
     panel = html[html.index('data-detail="f1"'):html.index('data-detail="f2"')]
     assert "+$300" in panel and "+$700" in panel and 'data-max="10"' in panel and "5 included with Extra legroom" in panel
     j = quote_json(client, f"f=f1&h=h1&c=c1&fare=main&bags=2&{T5Q}")
@@ -184,7 +184,7 @@ def test_the_pay_sheet_itemizes_the_fare_and_bags(client):
     sign_in(client)
     html = client.get(f"/plan/pay?{DONE}").text
     items = re.findall(r'<li class="pay-item">\s*<span class="pay-item-name">([^<]*)</span>\s*<span class="pay-item-price">([^<]*)</span>', html)
-    assert items == [("Skylark Air 214", "$1,236"), ("Main fare", "$240"), ("Checked bag ×2", "$140")]
+    assert items[:3] == [("Skylark Air 214", "$1,236"), ("Main fare", "$240"), ("Checked bag ×2", "$140")]  # the flight lane first, then the stay's
     assert re.search(r'pay-name">Skylark Air 214</span>.*?class="pay-price">\$1,616<', html, re.S)
     assert "Pay $3,468" in html
     assert 'name="fare" value="main"' in html and 'name="bags" value="2"' in html
