@@ -38,10 +38,10 @@ def time_text(mins, paste=False):
     return f"Time check: about {mins} minute{'s' if mins != 1 else ''} left"
 
 
-def progress(stage, mins, paste=False):
+def progress(stage, mins, paste=False, text=""):
     return Div(Ol(*[Li(Span(str(i + 1), cls="cr-step-n"), label, aria_current="step" if i == stage else None) for i, label in enumerate(STEPS)],
                   cls="cr-steps", aria_label="Your progress"),
-               Span(time_text(mins, paste), id="cr-time", role="status", cls="cr-time"),
+               Span(text or time_text(mins, paste), id="cr-time", role="status", cls="cr-time"),
                id="cr-progress", cls="cr-progress")
 
 
@@ -89,7 +89,7 @@ def _questions(d):
     days = Fieldset(Legend("Which days are in your video?"), Div(*[_pill("checkbox", "days", str(i), f"Day {n} · {x.title}", i in d.kept)
                                                                    for n, (i, x) in enumerate(((i, d.fx.days[i]) for i in range(len(d.fx.days))), start=1)], cls="cr-picks"))
     who = Fieldset(Legend("Who does it suit?"), Div(*[_pill("checkbox", "who", k, label, k in d.who, fill, ico) for k, (label, fill, ico) in hub.TAGS.items()], cls="cr-picks"))
-    season = Fieldset(Legend("Best season to go?"), Div(*[_pill("radio", "season", k, label, k == d.season) for k, (_, label) in SEASONS.items()], cls="cr-picks"))
+    season = Fieldset(Legend("Best season to go?"), Div(*[_pill("radio", "season", k, label, k == d.season) for k, (_t, _s, label) in SEASONS.items()], cls="cr-picks"))
     return Div(H2("A few quick questions"),
                P("We guessed these from your video. Tap anything that is off; the draft updates.", cls="cr-q-lead"),
                days, who, season,
@@ -111,6 +111,8 @@ def _day(n, x, d):
     if slot < len(d.hl):
         fields = [Label("Day highlight", Span(icon("note", 14, 2.2), cls="cr-pen"), fr=f"cr-hl{n}", cls="cr-lab"),
                   Input(type="text", id=f"cr-hl{n}", name=f"hl{n}", value=d.hl[slot], maxlength=str(MAX[f"hl{n}"]), autocomplete="off", cls="cr-hl")]
+    if slot >= len(d.hl):
+        fields = [Span("Laid out for you from your video", cls="cr-laid")]
     stops = Ul(*[Li(Span(Span(t, cls="cr-stop-t"), Span(f"at {at} in video", cls="cr-stop-at"), cls="cr-stop-row"), Span(title, cls="cr-stop-title"), cls="cr-stop")
                  for t, at, title, _k, _b in x.stops], cls="cr-stops")
     return Div(Span(Span(f"{n:02d}", cls="cr-day-n"), Span(x.title, cls="cr-day-t"), cls="cr-day-head"), *fields, stops,
@@ -177,7 +179,7 @@ def done_page(session, slug):
     rec = creators.published(session, t.id).get(slug)
     d = creators.resolve(rec)
     body = Section(
-        progress(2, 0),
+        progress(2, 0, text="Done, well inside five minutes"),
         Div(Span(icon("check", 22, 2.6), "Live", cls="sticker fill-mint cr-live-sticker"),
             H1("It's live!"),
             P(f"Your trip is in the community hub. Every fork links back to {d.fx.creator} on {d.platform}."),

@@ -31,8 +31,8 @@ KEYS = {"title": "t", "hl1": "h1", "hl2": "h2", "tip": "p", "cover": "c"}
 MAX_LINK = 300
 MAX_TRIPS = 2                                          # creator trips per traveler in this browser
 FULL = "This demo is full. Delete something from your calendar to make room."
-SEASONS = {"spring": ("68°F, mild and bright", "Spring"), "summer": ("78°F, sunny and warm", "Summer"),
-           "fall": ("74°F, warm and clear", "Fall"), "winter": ("64°F, cool, a little rain", "Winter")}
+SEASONS = {"spring": ("68°F", "mild and bright", "Spring"), "summer": ("78°F", "sunny and warm", "Summer"),
+           "fall": ("74°F", "warm and clear", "Fall"), "winter": ("64°F", "cool, a little rain", "Winter")}
 COVERS = {"pier": (PIER, "Santa Monica Pier and beach"), "venice": (VENICE, "Venice Beach, Los Angeles"), "none": ("", "")}
 COVER_LABELS = {"pier": "The pier", "venice": "Venice", "none": "No photo"}
 HOSTS = {"youtube.com": "YouTube", "www.youtube.com": "YouTube", "m.youtube.com": "YouTube", "youtu.be": "YouTube",
@@ -331,13 +331,13 @@ def publish(session) -> hub.HubCard:
 def trip(rec, slug) -> Itinerary:
     """The scrapbook Itinerary for a creator record."""
     d = resolve(rec)
-    weather, season_label = SEASONS[d.season]
+    temp, sky, _label = SEASONS[d.season]
     days = []
     for n, fxd in enumerate(d.days, start=1):
         stops = [Stop(t, title, kind, bubble, meta=f"At {at} in the video") for t, at, title, kind, bubble in fxd.stops]
         if n <= len(d.hl) and stops:
             stops[0] = replace(stops[0], note=d.hl[n - 1])
-        days.append(Day(n, f"DAY {n}", fxd.title, weather, stops, collapsed=n > 3))
+        days.append(Day(n, f"DAY {n}", fxd.title, f"{temp}, {sky}", stops, collapsed=n > 3))
     stops_total = sum(len(x.stops) for x in days)
     tags = [Tag(hub.TAGS[k][0], hub.TAGS[k][1], hub.TAGS[k][2], (-3, 2, -1.5)[i % 3]) for i, k in enumerate(d.who)]
     tags.append(Tag(f"Best in {d.season}", "sky", "clock", (2, -1.5, -3)[len(tags) % 3]))
@@ -347,12 +347,12 @@ def trip(rec, slug) -> Itinerary:
         polaroids.reverse()
     thumb = d.fx.thumb
     return Itinerary(
-        slug=slug, title=d.title, headline=f"{d.title}:", accent=f"seen on {d.platform}", place="Los Angeles, California",
+        slug=slug, title=d.title, headline=f"{d.title}, seen on", accent=d.platform, place="Los Angeles, California",
         lede=f"{d.fx.lede} Creator's tip: {d.tip}", days=days, tags=tags,
         stats=[(f"{len(days)} days", f"best in {d.season}"), (f"{stops_total} stops", "from the video"), (f"{d.fx.mins} min", "of video"), ("0", "families forked it")],
         source=Source(f"{d.fx.creator} · {d.platform} · {d.fx.mins} min", d.fx.video, thumb, COVERS["venice" if thumb == VENICE else "pier"][1],
                       channel_url(d.fx, d.platform), "Visit the channel"),
-        polaroids=polaroids if photo else [], author=d.fx.creator, route="Los Angeles, California", theme="sunset")
+        polaroids=polaroids if photo else [], weather=(temp, sky), author=d.fx.creator, route="Los Angeles, California", theme="sunset")
 
 
 def find(session, slug):

@@ -106,6 +106,7 @@ fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
   width: 100%; border: 0.125rem dashed rgba(30, 26, 46, 0.3); border-radius: 0.875rem; background: rgba(255, 255, 255, 0.65); padding: 0.25rem 0.625rem;
   font: 700 1.375rem/1.25 var(--font-hand); color: var(--ink);
 }
+.cr-laid { font: 700 1.25rem/1.2 var(--font-hand); color: var(--ink-2); padding: 0 0.25rem; }
 .cr-stops { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
 .cr-stop { padding: 0.5rem 0.75rem; border-radius: 1rem; background: #FFFFFF; display: flex; flex-direction: column; gap: 0.125rem; }
 .cr-stop-row { display: flex; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
