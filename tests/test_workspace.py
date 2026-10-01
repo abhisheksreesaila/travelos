@@ -16,27 +16,27 @@ def test_default_ledger_shows_the_default_pick_total(client):
 
 
 def test_cheapest_combination_from_the_url(client):
-    r = client.get("/plan?f=f4&h=h3&c=c3")
-    assert "$2,040" in r.text and "The cheapest combination" in r.text
+    r = client.get("/plan?f=f4&h=h3&c=c1")
+    assert "$2,172" in r.text and "The cheapest flight, stay and car" in r.text
 
 
 def test_default_total_is_flagged_as_more_than_cheapest(client):
-    assert "$1,048 more than the cheapest combo" in client.get("/plan").text
+    assert "$916 more than the cheapest flight, stay and car" in client.get("/plan").text
 
 
 def test_bad_or_wrong_lane_ids_fall_back_to_the_default(client):
     assert "$3,088" in client.get("/plan?f=nope&h=zzz&c=").text
     assert "$3,088" in client.get("/plan?f=h1&h=c2&c=f3").text  # ids from the wrong lane
-    assert plan.resolve_pick("f4", "bogus", "c3") == ("f4", "h1", "c3")  # a good lane keeps its pick
+    assert plan.resolve_pick("f4", "bogus", "c2") == ("f4", "h1", "c2")  # a good lane keeps its pick
     assert plan.resolve_pick(None, None, None) == ("f1", "h1", "c1")
-    assert re.search(r'id="ws-total"[^>]*>\$2,688<', client.get("/plan?f=f4&h=bogus&c=c3").text)
+    assert re.search(r'id="ws-total"[^>]*>\$2,906<', client.get("/plan?f=f4&h=bogus&c=c2").text)
 
 
 def test_every_offer_renders_with_its_catalog_price(client):
     h = client.get("/plan").text
     assert len(re.findall(r'data-lane="flight"', h)) == 5
     assert len(re.findall(r'data-lane="stay"', h)) == 3
-    assert len(re.findall(r'data-lane="car"', h)) == 3
+    assert len(re.findall(r'data-lane="car"', h)) == 2
     assert h.count('aria-pressed="true" data-lane') == 3
     for o in [*catalog.offers("flight"), *catalog.offers("stay"), *catalog.offers("car")]:
         assert o.name.replace("&", "&amp;") in h
@@ -68,12 +68,12 @@ def test_book_link_carries_next_and_pay_intent(client):
 def test_quote_route_matches_catalog_for_every_combination(client):
     from itertools import product
     combos = list(product(*(catalog.offers(k) for k in ("flight", "stay", "car"))))
-    assert len(combos) == 45
+    assert len(combos) == 30
     for f, s, c in combos:
         entry = client.get(f"/plan/quote?f={f.id}&h={s.id}&c={c.id}").json()["ledger"]
         q = catalog.quote(f.id, s.id, c.id)
         assert entry["total"] == catalog.money(q.total_cents)
-        assert (entry["delta"] == "The cheapest combination") == (q.above_cheapest_cents == 0)
+        assert (entry["delta"] == "The cheapest flight, stay and car") == (q.above_cheapest_cents == 0)
         assert entry["book"].startswith("/signin?next=%2Fplan%2Fpay%3Ff%3D") and entry["book"].endswith("&intent=pay")
         assert entry["url"] == f"/plan?f={f.id}&h={s.id}&c={c.id}"
 
@@ -180,7 +180,7 @@ def test_every_pick_has_offer_data_and_the_current_pick(client):
     raw = re.search(r'<script[^>]*id="ws-data"[^>]*>(.*?)</script>', h, re.S).group(1)
     data = json.loads(raw)
     picks = re.findall(r'data-pick="([^"]+)"', h)
-    assert len(picks) == 11 and set(picks) <= set(data["offers"])
+    assert len(picks) == 10 and set(picks) <= set(data["offers"])
     assert data["pick"] == {"f": "f1", "h": "h1", "c": "c1", "rooms": "cq1", "add": "", "fare": "", "bags": ""} and data["base"] == "/plan?f=f1&h=h1&c=c1"
 
 

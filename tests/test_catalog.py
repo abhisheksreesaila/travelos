@@ -17,10 +17,10 @@ def test_the_sample_trip_is_a_friday_to_tuesday_family_trip_to_la():
     assert trip.travelers == 4 and trip.summary == "2 adults, 2 kids"
 
 
-def test_workspace_lanes_offer_five_flights_three_stays_and_three_ways_to_get_around():
+def test_workspace_lanes_offer_five_flights_three_stays_and_two_cars():
     assert len(catalog.offers("flight")) == 5
     assert len(catalog.offers("stay")) == 3
-    assert len(catalog.offers("car")) == 3
+    assert len(catalog.offers("car")) == 2  # "No car" is the skip, not an offer (F-033)
     assert all(isinstance(o.price_cents, int) for kind in ("flight", "stay", "car") for o in catalog.offers(kind))
 
 
@@ -33,9 +33,9 @@ def test_quote_adds_the_picked_flight_stay_and_car_into_one_all_in_total():
 
 def test_the_ledger_knows_the_cheapest_combination_and_how_far_a_pick_is_from_it():
     cheapest = catalog.cheapest()
-    assert (cheapest.flight_id, cheapest.stay_id, cheapest.car_id) == ("f4", "h3", "c3")
-    assert cheapest.total_cents == 204_000
-    assert catalog.quote("f1", "h1", "c1").above_cheapest_cents == 104_800
+    assert (cheapest.flight_id, cheapest.stay_id, cheapest.car_id) == ("f4", "h3", "c1")
+    assert cheapest.total_cents == 217_200
+    assert catalog.quote("f1", "h1", "c1").above_cheapest_cents == 91_600
     assert cheapest.above_cheapest_cents == 0
 
 
