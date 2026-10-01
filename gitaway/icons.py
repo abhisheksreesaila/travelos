@@ -37,6 +37,7 @@ PATHS = {
     "rotate": '<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>',
     "shield": '<path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/>',
     "minus": '<path d="M5 12h14"/>',
+    "bag": '<rect x="5" y="7" width="14" height="13" rx="3"/><path d="M9 7V4h6v3M9 20v1M15 20v1"/>',
     "note": '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
 }
 

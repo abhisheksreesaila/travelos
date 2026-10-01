@@ -8,8 +8,9 @@
   var PANES = { 1: 'flights', 2: 'stays', 3: 'cars', 4: 'weather', 5: 'map', 6: 'news', 7: 'community' };
   var still = window.matchMedia('(prefers-reduced-motion: reduce)');
   var phone = window.matchMedia('(max-width: 720px)');
-  // The lane picks, plus the stay's rooms and add-ons as compact codes ("cq1", "bf"). null means "the default".
-  var pick = { flight: data.pick.f, stay: data.pick.h, car: data.pick.c, rooms: data.pick.rooms, add: data.pick.add };
+  // The lane picks, plus the stay's rooms and add-ons as compact codes ("cq1", "bf") (null means "the default") and the flight's
+  // fare and checked bags ("main", "2"; "" means Basic and none).
+  var pick = { flight: data.pick.f, stay: data.pick.h, car: data.pick.c, rooms: data.pick.rooms, add: data.pick.add, fare: data.pick.fare || '', bags: data.pick.bags || '' };
   var base = data.base; // the address-bar URL for the pick, from the server
   var tripq = data.tripq || ''; // the trip's URL params ("d=..&r=..&a=..&k=.."), empty for the sample trip; just passed along
 
@@ -23,7 +24,8 @@
   }
   function pickQuery() {
     return 'f=' + enc(pick.flight) + '&h=' + enc(pick.stay) + '&c=' + enc(pick.car) +
-      (pick.rooms == null ? '' : '&rooms=' + enc(pick.rooms)) + (pick.add == null ? '' : '&add=' + enc(pick.add)) + (tripq ? '&' + tripq : '');
+      (pick.rooms == null ? '' : '&rooms=' + enc(pick.rooms)) + (pick.add == null ? '' : '&add=' + enc(pick.add)) +
+      (pick.fare ? '&fare=' + enc(pick.fare) : '') + (pick.bags ? '&bags=' + enc(pick.bags) : '') + (tripq ? '&' + tripq : '');
   }
 
   // Move the schematic map's stay pin and hotel-to-beach line to the picked stay (figures embedded by the server).
@@ -58,13 +60,16 @@
 
   function panelOf(id) { return document.querySelector('.ws-detail-panel[data-detail="' + id + '"]'); }
 
-  // "Choose" buttons say "Chosen" on the lane's pick; for a stay that means these very rooms and add-ons.
+  // "Choose" buttons say "Chosen" on the lane's pick; for a stay that means these very rooms and add-ons, for a flight this fare and these bags.
   function paintChoose() {
     document.querySelectorAll('.ws-choose').forEach(function (b) {
       var on = pick[b.dataset.chooseLane] === b.dataset.choose;
       if (on && b.dataset.chooseLane === 'stay') {
         var p = panelOf(b.dataset.choose);
         on = !!p && p.dataset.rooms === pick.rooms && p.dataset.add === pick.add;
+      } else if (on && b.dataset.chooseLane === 'flight') {
+        var fp = panelOf(b.dataset.choose);
+        on = !!fp && fp.dataset.fare === pick.fare && fp.dataset.bags === pick.bags;
       }
       b.setAttribute('aria-pressed', on ? 'true' : 'false');
       b.textContent = on ? 'Chosen' : b.dataset.label;
@@ -97,10 +102,33 @@
     panel.querySelector('[data-cb-err]').hidden = true;
   }
 
-  // The ledger, the stay cards and the map follow a quote from the server.
+  // Show one flight's editor state (fare, bags, choose bar) exactly as the server described it.
+  function applyFlight(panel, s) {
+    if (!panel || !s) return;
+    panel.dataset.fare = s.fare_code;
+    panel.dataset.bags = s.bags_code;
+    panel.querySelectorAll('.ws-fare').forEach(function (b) {
+      var on = b.dataset.farePick === s.fare;
+      b.setAttribute('aria-checked', on ? 'true' : 'false');
+      b.tabIndex = on ? 0 : -1;
+    });
+    var bagBox = panel.querySelector('.ws-bags');
+    bagBox.dataset.count = String(s.bags);
+    bagBox.querySelector('.ws-bag-count').textContent = String(s.bags);
+    bagBox.querySelector('[data-bag-step="-1"]').disabled = s.bags <= 0;
+    bagBox.querySelector('[data-bag-step="1"]').disabled = s.bags >= s.max;
+    bagBox.querySelector('[data-bag-note]').textContent = s.bag_note;
+    panel.querySelector('[data-cb-sum]').textContent = s.summary;
+    panel.querySelector('[data-cb-price]').textContent = s.price;
+    panel.querySelector('.ws-choose').disabled = false;
+    panel.querySelector('[data-cb-err]').hidden = true;
+  }
+
+  // The ledger, the stay cards, the flight cards and the map follow a quote from the server.
   function applyLedger(j) {
     var L = j.ledger;
     pick.flight = L.pick.f; pick.stay = L.pick.h; pick.car = L.pick.c; pick.rooms = L.pick.rooms; pick.add = L.pick.add;
+    pick.fare = L.pick.fare || ''; pick.bags = L.pick.bags || '';
     base = L.url;
     ['flight', 'stay', 'car'].forEach(function (lane) {
       var s = L.slots[lane];
@@ -122,7 +150,12 @@
     document.querySelectorAll('[data-stay-price]').forEach(function (el) {
       el.textContent = el.dataset.stayPrice === pick.stay ? L.slots.stay.price : data.offers[el.dataset.stayPrice].price;
     });
+    // Likewise the picked flight's card shows its fare and bags; the others show their list price.
+    document.querySelectorAll('[data-flight-price]').forEach(function (el) {
+      el.textContent = el.dataset.flightPrice === pick.flight ? L.slots.flight.price : data.offers[el.dataset.flightPrice].price;
+    });
     applyStay(panelOf(pick.stay), j.stay);
+    applyFlight(panelOf(pick.flight), j.flight);
     syncUrl();
     paintChoose();
     paintMap(data.map && data.map[pick.stay]);
@@ -137,6 +170,12 @@
   // Pick an offer in a lane. A stay's rooms and add-ons come along only when they are the ones being chosen
   // (cfg); picking another stay starts from its default room.
   function selectPick(lane, id, cfg) {
+    if (lane === 'flight') {
+      // Same for flights: the one being left goes back to Basic with no bags; the new pick's own panel is set by the server's answer.
+      if (id !== pick.flight) resetPanel(pick.flight);
+      if (cfg) { pick.fare = cfg.fare; pick.bags = cfg.bags; }
+      else if (id !== pick.flight) { pick.fare = ''; pick.bags = ''; }
+    }
     if (lane === 'stay') {
       // The stay being left goes back to its default room, like a reload; the new pick's own panel is set by the server's answer.
       if (id !== pick.stay) resetPanel(pick.stay);
@@ -210,6 +249,9 @@
       if (lane === 'stay') {
         var p = b.closest('.ws-detail-panel');
         selectPick(lane, b.dataset.choose, { rooms: p.dataset.rooms, add: p.dataset.add });
+      } else if (lane === 'flight') {
+        var fp = b.closest('.ws-detail-panel');
+        selectPick(lane, b.dataset.choose, { fare: fp.dataset.fare, bags: fp.dataset.bags });
       } else selectPick(lane, b.dataset.choose);
     });
   });
@@ -219,7 +261,8 @@
   document.querySelectorAll('.ws-detail-panel[data-rooms]').forEach(function (p) {
     p.dataset.fits = p.querySelector('.ws-choose').disabled ? '0' : '1';
   });
-  var dirty = {}; // stays whose rooms or add-ons were edited but not chosen
+  var dirty = {}; // offers (stays and flights) whose editor was changed but not chosen
+  function isFlight(panel) { return panel.hasAttribute('data-fare'); }
   function editStay(panel) {
     var id = panel.dataset.detail, rooms = '', add = '';
     dirty[id] = true;
@@ -228,16 +271,59 @@
     var n = panelSeq[id] = (panelSeq[id] || 0) + 1;
     // Choose waits for the server's answer, so it can never pick the setup from before this edit.
     panel.querySelector('.ws-choose').disabled = true;
-    getQuote('h=' + enc(id) + '&rooms=' + enc(rooms) + '&add=' + enc(add)).then(function (j) {
+    getQuote('h=' + enc(id) + '&rooms=' + enc(rooms) + '&add=' + enc(add) + (tripq ? '&' + tripq : '')).then(function (j) {
       if (n !== panelSeq[id]) return;
       applyStay(panel, j.stay);
       paintChoose();
     }).catch(function () { if (n === panelSeq[id]) quoteFailed(panel); });
   }
 
+  // A flight editor change (a fare card or a bag step) is a draft until "Choose this flight", like a room edit; the server prices it.
+  function editFlight(panel, fare, bags) {
+    var id = panel.dataset.detail;
+    dirty[id] = true;
+    var n = panelSeq[id] = (panelSeq[id] || 0) + 1;
+    // Show the change at once, and hold Choose until the server's answer, so it can never pick the setup from before this edit.
+    paintFlightEditor(panel, fare, bags);
+    panel.querySelector('.ws-choose').disabled = true;
+    getQuote('f=' + enc(id) + (fare && fare !== 'basic' ? '&fare=' + enc(fare) : '') + (bags ? '&bags=' + enc(String(bags)) : '') + (tripq ? '&' + tripq : '')).then(function (j) {
+      if (n !== panelSeq[id]) return;
+      applyFlight(panel, j.flight);
+      paintChoose();
+    }).catch(function () { if (n === panelSeq[id]) quoteFailed(panel); });
+  }
+
+  // The fare cards and the bag stepper as given (before the server has priced them).
+  function paintFlightEditor(panel, fare, bags) {
+    panel.querySelectorAll('.ws-fare').forEach(function (b) {
+      var on = b.dataset.farePick === fare;
+      b.setAttribute('aria-checked', on ? 'true' : 'false');
+      b.tabIndex = on ? 0 : -1;
+    });
+    var bagBox = panel.querySelector('.ws-bags');
+    bagBox.dataset.count = String(bags);
+    bagBox.querySelector('.ws-bag-count').textContent = String(bags);
+    bagBox.querySelector('[data-bag-step="-1"]').disabled = bags <= 0;
+    bagBox.querySelector('[data-bag-step="1"]').disabled = bags >= Number(bagBox.dataset.max);
+  }
+
+  // Read back the flight editor as it is shown.
+  function flightEditor(panel) {
+    var on = panel.querySelector('.ws-fare[aria-checked="true"]');
+    return { fare: on ? on.dataset.farePick : 'basic', bags: Number(panel.querySelector('.ws-bags').dataset.count) || 0 };
+  }
+
+  // The same for a flight: back to the fare and bags the server last answered for (panel.dataset.fare / .bags), so what is shown is what Choose picks.
+  function flightQuoteFailed(panel) {
+    paintFlightEditor(panel, panel.dataset.fare || 'basic', Number(panel.dataset.bags) || 0);
+    panel.querySelector('.ws-choose').disabled = false;
+    panel.querySelector('[data-cb-err]').hidden = false;
+  }
+
   // The price did not load: the editor and Choose go back to what the last answer allowed, and a polite line says so until the next success.
   function quoteFailed(panel) {
     if (!panel) return;
+    if (isFlight(panel)) { flightQuoteFailed(panel); return; }
     // Show the setup the server last answered for (panel.dataset.rooms / .add), so what is shown is what Choose picks.
     var have = {};
     for (var k = 0; k < panel.dataset.rooms.length; k += 3) have[panel.dataset.rooms.substr(k, 2)] = Number(panel.dataset.rooms.charAt(k + 2));
@@ -262,15 +348,20 @@
     var n = panelSeq[id] = (panelSeq[id] || 0) + 1; // ignore answers still on their way
     var panel = panelOf(id);
     if (panel) panel.querySelector('.ws-choose').disabled = true;
-    getQuote('h=' + enc(id)).then(function (j) {
-      if (n === panelSeq[id]) { applyStay(panel, j.stay); paintChoose(); }
+    var flight = !!panel && isFlight(panel);
+    getQuote((flight ? 'f=' : 'h=') + enc(id) + (tripq ? '&' + tripq : '')).then(function (j) {
+      if (n !== panelSeq[id]) return;
+      if (flight) applyFlight(panel, j.flight); else applyStay(panel, j.stay);
+      paintChoose();
     }).catch(function () { if (n === panelSeq[id]) quoteFailed(panel); });
   }
 
-  // Leaving the split view drops edits that were not chosen, so opening it again (like a reload) shows the picks.
-  function discardDrafts() {
+  // Leaving a split pane drops that lane's edits that were not chosen, so opening it again (like a reload) shows the picks.
+  function discardDrafts(lane) {
     Object.keys(dirty).forEach(function (id) {
-      if (id === pick.stay) {
+      var panel = panelOf(id);
+      if (!panel || (isFlight(panel) ? 'flight' : 'stay') !== lane) return;
+      if (id === pick[lane]) {
         delete dirty[id];
         panelSeq[id] = (panelSeq[id] || 0) + 1;
         refresh();
@@ -293,6 +384,33 @@
         addon.setAttribute('aria-pressed', addon.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
         editStay(panel);
       }
+    });
+  });
+
+  // The flight editor: fare cards form a radiogroup (arrow keys move and select), and the bag stepper counts bags for the whole party.
+  document.querySelectorAll('.ws-detail-panel[data-fare]').forEach(function (panel) {
+    panel.addEventListener('click', function (e) {
+      var card = e.target.closest('.ws-fare');
+      var step = e.target.closest('[data-bag-step]');
+      var cur = flightEditor(panel);
+      if (card) {
+        if (card.dataset.farePick !== cur.fare) editFlight(panel, card.dataset.farePick, cur.bags);
+      } else if (step && !step.disabled) {
+        var max = Number(panel.querySelector('.ws-bags').dataset.max);
+        var n = Math.max(0, Math.min(max, cur.bags + Number(step.dataset.bagStep)));
+        if (n !== cur.bags) editFlight(panel, cur.fare, n);
+      }
+    });
+    panel.querySelector('.ws-fares').addEventListener('keydown', function (e) {
+      var keys = { ArrowLeft: -1, ArrowUp: -1, ArrowRight: 1, ArrowDown: 1 };
+      if (!(e.key in keys)) return;
+      var list = [].slice.call(panel.querySelectorAll('.ws-fare'));
+      var at = list.indexOf(document.activeElement);
+      if (at < 0) return;
+      e.preventDefault();
+      var next = list[(at + keys[e.key] + list.length) % list.length];
+      next.focus();
+      next.click();
     });
   });
 
@@ -384,7 +502,8 @@
   }
 
   function applyExpanded(name) {
-    if (grid.dataset.expanded === 'stays' && name !== 'stays') discardDrafts();
+    var left = grid.dataset.expanded;
+    if (SPLIT[left] && name !== left) discardDrafts(SPLIT[left]);
     setPill(false);
     if (name) grid.dataset.expanded = name; else delete grid.dataset.expanded;
     document.querySelectorAll('.ws-expand').forEach(function (b) {

@@ -135,16 +135,23 @@ def stay_pick_of(b):
     return catalog.stay_pick(b["stay"], b.get("rooms") or None, b.get("add") or None, trip_of(b))
 
 
+def flight_pick_of(b):
+    """The FlightPick (fare and checked bags) a booking `b` holds. Older bookings have none and mean Basic with no bags."""
+    return catalog.flight_pick(b["flight"], b.get("fare") or None, b.get("bags") or None, trip_of(b))
+
+
 def booked_blocks(b, t):
     """The locked blocks a booking `b` puts on the calendar of trip `t`."""
     flight, stay = catalog.offer(b["flight"]), catalog.offer(b["stay"])
     rooms = stay_pick_of(b).rooms_summary
+    fp = flight_pick_of(b)
+    fare = "" if fp.is_default else f" · {fp.short}"
     last = (t.return_ - t.depart).days
     return [
-        Block("b-out", 0, flight.depart_min, flight.arrive_min, f"{flight.name} · {t.origin} → {flight.airport}", "booked", True, "plane"),
+        Block("b-out", 0, flight.depart_min, flight.arrive_min, f"{flight.name} · {t.origin} → {flight.airport}{fare}", "booked", True, "plane"),
         Block("b-in", 0, CHECK_IN, CHECK_IN + STAY_LEN, f"Check in · {stay.name} · {rooms}", "booked", True, "bed"),
         Block("b-out2", last, CHECK_OUT, CHECK_OUT + STAY_LEN, f"Check out · {stay.name}", "booked", True, "bed"),
-        Block("b-back", last, flight.back_depart_min, flight.back_arrive_min, f"{flight.name} · {flight.airport} → {t.origin}", "booked", True, "plane"),
+        Block("b-back", last, flight.back_depart_min, flight.back_arrive_min, f"{flight.name} · {flight.airport} → {t.origin}{fare}", "booked", True, "plane"),
     ]
 
 

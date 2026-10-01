@@ -1,7 +1,7 @@
 """The booking workspace at /plan (F-015), with the context panes (weather, map, news, community) from F-016.
 
 The picked flight, stay and car live in the URL (?f=&h=&c=), plus the stay's rooms and add-ons when they are not the
-defaults (&rooms=ok2&add=bf, see catalog.StayPick). Every price and total is rendered from gitaway.catalog; the JS never
+defaults (&rooms=ok2&add=bf, see catalog.StayPick) and the flight's fare and checked bags (&fare=main&bags=2, see catalog.FlightPick). Every price and total is rendered from gitaway.catalog; the JS never
 does arithmetic: it asks GET /plan/quote for the ledger figures of whatever is picked and swaps them in.
 """
 
@@ -14,11 +14,10 @@ from fasthtml.common import to_xml, A, Article, Button, Div, Figcaption, Figure,
 
 from gitaway import catalog, context, itineraries, session
 from gitaway import session as session_helpers
-from gitaway.tripcal import fmt_time
 from gitaway.icons import icon
 from gitaway.itinerary_view import fork_href
 from gitaway.layout import avatar, brand, styles
-from gitaway.pages import stay_detail as stay_ui
+from gitaway.pages import flight_detail as flight_ui, stay_detail as stay_ui
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/workspace.css"),)
 DEFAULTS = {"flight": "f1", "stay": "h1", "car": "c1"}
@@ -46,29 +45,35 @@ def resolve_stay(h, rooms=None, add=None, trip=catalog.SAMPLE_TRIP):
     return catalog.stay_pick(h, rooms, add, trip)
 
 
+def resolve_flight(f, fare=None, bags=None, trip=catalog.SAMPLE_TRIP):
+    """The FlightPick for flight `f` from URL text: a bad fare means Basic and bad bags mean none."""
+    return catalog.flight_pick(f, fare, bags, trip)
+
+
 def trip_tail(trip):
     """The trip's URL params as a "&d=...&r=..." tail ("" for the sample trip, whose URLs stay clean)."""
     q = catalog.trip_query(trip)
     return f"&{q}" if q else ""
 
 
-def _tail(stay, trip):
-    return (stay.query if stay else "") + trip_tail(trip or (stay.trip if stay else catalog.SAMPLE_TRIP))
+def _tail(stay, trip, flight=None):
+    """The URL params beyond f, h and c: the stay's rooms and add-ons, the flight's fare and bags, then the trip."""
+    return (stay.query if stay else "") + (flight.query if flight else "") + trip_tail(trip or (stay.trip if stay else flight.trip if flight else catalog.SAMPLE_TRIP))
 
 
-def plan_path(f, h, c, stay=None, trip=None):
-    return f"/plan?f={f}&h={h}&c={c}" + _tail(stay, trip)
+def plan_path(f, h, c, stay=None, trip=None, flight=None):
+    return f"/plan?f={f}&h={h}&c={c}" + _tail(stay, trip, flight)
 
 
-def pay_path(f, h, c, stay=None, trip=None):
-    return f"/plan/pay?f={f}&h={h}&c={c}" + _tail(stay, trip)
+def pay_path(f, h, c, stay=None, trip=None, flight=None):
+    return f"/plan/pay?f={f}&h={h}&c={c}" + _tail(stay, trip, flight)
 
 
-def book_href(f, h, c, stay=None, trip=None):
+def book_href(f, h, c, stay=None, trip=None, flight=None):
     """Signed in: straight to the pay sheet. Signed out: sign in first, which comes straight back to the sheet with the same picks."""
     if session.request_traveler():
-        return pay_path(f, h, c, stay, trip)
-    return f"/signin?next={urlquote(pay_path(f, h, c, stay, trip), safe='')}&intent=pay"
+        return pay_path(f, h, c, stay, trip, flight)
+    return f"/signin?next={urlquote(pay_path(f, h, c, stay, trip, flight), safe='')}&intent=pay"
 
 
 def delta_text(q):
@@ -86,14 +91,14 @@ def ledger_json(q):
     """The ledger figures for quote `q`, straight from the catalog. The page swaps these in and never computes them."""
     f, h, c = q.flight_id, q.stay_id, q.car_id
     names = {"flight": q.lines[0].name, "stay": q.lines[1].name, "car": q.lines[2].name}
-    subs = {"flight": "", "stay": q.stay.summary, "car": ""}
+    subs = {"flight": "" if q.flight.is_default else q.flight.summary, "stay": q.stay.summary, "car": ""}
     return {
         "total": catalog.money(q.total_cents),
         "delta": delta_text(q),
         "cheapest": q.above_cheapest_cents == 0,
-        "book": book_href(f, h, c, q.stay, q.trip),
-        "url": plan_path(f, h, c, q.stay, q.trip),
-        "pick": {"f": f, "h": h, "c": c, "rooms": explicit_rooms(q.stay), "add": q.stay.add_code},
+        "book": book_href(f, h, c, q.stay, q.trip, q.flight),
+        "url": plan_path(f, h, c, q.stay, q.trip, q.flight),
+        "pick": {"f": f, "h": h, "c": c, "rooms": explicit_rooms(q.stay), "add": q.stay.add_code, "fare": q.flight.fare_code, "bags": q.flight.bags_code},
         "slots": {k: {"name": names[k], "price": catalog.money(q.lane_cents(k)), "sub": subs[k]} for k in LANES},
     }
 
@@ -106,13 +111,22 @@ def stay_json(state):
     }
 
 
-def embedded_data(f, h, c, stay):
+def flight_json(state):
+    """One flight's editor state (fare, bags, summary and price) for the choose bar and the fare and bag controls."""
+    return {
+        "id": state.flight_id, "fare": state.fare, "fare_code": state.fare_code, "bags": state.bags, "bags_code": state.bags_code, "max": state.max_bags,
+        "bag_note": state.bag_note, "summary": state.summary, "price": catalog.money(state.cents),
+    }
+
+
+def embedded_data(f, h, c, stay, flight):
     """What the page needs at load: each offer's display strings, the map points, the current pick and the trip's URL params."""
     trip = stay.trip
     offers = {o.id: {"name": o.name, "price": catalog.money(o.price_cents)} for k in LANES for o in catalog.offers(k, trip)}
     maps = {o.id: context.map_for_stay(o) for o in catalog.offers("stay")}
-    return {"offers": offers, "map": maps, "pick": {"f": f, "h": h, "c": c, "rooms": explicit_rooms(stay), "add": stay.add_code},
-            "base": plan_path(f, h, c, stay), "tripq": catalog.trip_query(trip)}
+    return {"offers": offers, "map": maps,
+            "pick": {"f": f, "h": h, "c": c, "rooms": explicit_rooms(stay), "add": stay.add_code, "fare": flight.fare_code, "bags": flight.bags_code},
+            "base": plan_path(f, h, c, stay, trip, flight), "tripq": catalog.trip_query(trip)}
 
 
 def script_json(obj) -> str:
@@ -131,10 +145,11 @@ def pick_pill():
     return Span("Your pick", cls="ws-pickpill")
 
 
-def flight_card(o, picked, viewing=""):
+def flight_card(o, picked, viewing="", cents=None):
+    """`cents`: the price to show (the picked flight shows its fare and bags); default is the flight's list price."""
     return Button(
         Span(Span(o.name, cls="ws-name"), *[Span(b, cls="ws-badge fill-sun") for b in o.badges],
-             pick_pill(), Span(catalog.money(o.price_cents), cls="ws-price"), cls="ws-row"),
+             pick_pill(), Span(catalog.money(o.price_cents if cents is None else cents), cls="ws-price", data_flight_price=o.id), cls="ws-row"),
         Span(o.headline, cls="ws-times"),
         Span(o.detail, cls="ws-detail"),
         Span(f"Lands {o.airport}", cls="ws-badge fill-sky-tint ws-airport"),
@@ -194,15 +209,6 @@ def pane(key, num, title, meta, cards, tint, *extra, cls_extra="", detail=None, 
     )
 
 
-def duration_text(minutes):
-    h, m = divmod(minutes, 60)
-    return f"{h}h {m:02d}m" if h and m else (f"{h}h" if h else f"{m}m")
-
-
-def _date_text(d):
-    return d.strftime("%a %b ") + str(d.day)
-
-
 def choose_bar(o, picked, noun, summary, cents=None, chosen=None, disabled=False):
     """The pinned ink bar. `cents` is the price shown (a stay shows its rooms and add-ons); `chosen` overrides "is this the lane's pick"."""
     on = (o.id == picked) if chosen is None else chosen
@@ -239,20 +245,10 @@ def stay_detail(o, picked, viewing, state, back_label="Stays", chosen=False):
     return art
 
 
-def _leg(label, date_text, dep, arr, origin, dest, minutes):
-    return Div(
-        Span(f"{label} · {date_text}", cls="ws-leg-label"),
-        Div(
-            Span(Span(fmt_time(dep), cls="ws-leg-time"), Span(origin, cls="ws-leg-apt"), cls="ws-leg-end"),
-            Span(Span(duration_text(minutes), cls="ws-leg-dur"), Span(cls="ws-leg-line"), cls="ws-leg-mid", aria_hidden="true"),
-            Span(Span(fmt_time(arr), cls="ws-leg-time"), Span(dest, cls="ws-leg-apt"), cls="ws-leg-end"),
-            cls="ws-leg-row",
-        ),
-        cls="ws-leg",
-    )
-
-
-def flight_detail(o, picked, viewing, trip):
+def flight_detail(o, picked, viewing, state, chosen=False):
+    """One flight's detail panel. `state` is the FlightPick shown in its editor (the pick itself for the picked flight, else Basic with no bags);
+    `chosen` says the editor holds the lane's pick."""
+    trip = state.trip
     body = [
         Div(
             Button(icon("chev-left", 18, 2.4), "Flights", type="button", cls="ws-back ws-back-flat", data_back="list",
@@ -260,17 +256,14 @@ def flight_detail(o, picked, viewing, trip):
             cls="ws-fback",
         ),
         Div(H2(o.name, cls="ws-dtitle"), *[Span(b, cls="ws-sticker fill-sun") for b in o.badges], cls="ws-dhead ws-dhead-flight"),
-        Div(
-            _leg("Out", _date_text(trip.depart), o.depart_min, o.arrive_min, trip.origin, o.airport, o.arrive_min - o.depart_min),
-            _leg("Back", _date_text(trip.return_), o.back_depart_min, o.back_arrive_min, o.airport, trip.origin,
-                 o.back_arrive_min - o.back_depart_min),
-            cls="ws-legs",
-        ),
+        flight_ui.legs(o, trip),
         P(o.detail, cls="ws-dlead"),
-        Div(data_seam="fares", cls="ws-seam"),  # F-027: fare types
-        Div(data_seam="bags", cls="ws-seam"),  # F-027: checked bags
+        Div(flight_ui.fares_seam(state), data_seam="fares", cls="ws-seam"),
+        Div(flight_ui.bags_seam(state), data_seam="bags", cls="ws-seam"),
     ]
-    return _article(o, picked, viewing, body, choose_bar(o, picked, "flight", o.detail))
+    art = _article(o, picked, viewing, body, choose_bar(o, picked, "flight", state.summary, cents=state.cents, chosen=chosen))
+    art.attrs.update({"data-fare": state.fare_code, "data-bags": state.bags_code})
+    return art
 
 
 LEDGER_LANES = [("FLIGHT", "plane", "fill-sun-tint", "flight", "+"), ("STAY", "bed", "fill-mint-tint", "stay", "+"),
@@ -306,7 +299,7 @@ def ledger(q, trip):
         Button(catalog.money(q.total_cents), type="button", id="ws-total", cls="ws-total", aria_expanded="false", aria_controls="ws-pop",
                aria_haspopup="dialog", title="Cost breakdown"),
         Span(f"Total {catalog.money(q.total_cents)}", id="ws-total-live", cls="sr-only", aria_live="polite"),
-        A("Book", href=book_href(q.flight_id, q.stay_id, q.car_id, q.stay, q.trip), id="ws-book", cls="btn btn-ink ws-book", aria_label="Book this trip"),
+        A("Book", href=book_href(q.flight_id, q.stay_id, q.car_id, q.stay, q.trip, q.flight), id="ws-book", cls="btn btn-ink ws-book", aria_label="Book this trip"),
         pop,
         cls="ws-ledger", aria_label="Cost ledger",
     )
@@ -415,19 +408,20 @@ def resolve_view(x, v, f, h):
     return expanded, viewing, screen
 
 
-def workspace(f, h, c, overlay=(), head=(), x="", v="", stay=None, trip=None):
-    trip = trip or (stay.trip if stay is not None else catalog.SAMPLE_TRIP)
+def workspace(f, h, c, overlay=(), head=(), x="", v="", stay=None, trip=None, flight=None):
+    trip = trip or (stay.trip if stay is not None else flight.trip if flight is not None else catalog.SAMPLE_TRIP)
     expanded, viewing, screen = resolve_view(x, v, f, h)
     flights, stays = catalog.offers("flight", trip), catalog.offers("stay", trip)
     stay = stay if stay is not None and stay.stay_id == h and stay.trip == trip else catalog.stay_pick(h, trip=trip)
-    q = catalog.quote(f, h, c, stay, trip)
+    flight = flight if flight is not None and flight.flight_id == f and flight.trip == trip else catalog.flight_pick(f, trip=trip)
+    q = catalog.quote(f, h, c, stay, trip, flight)
     tip = Div("Tip from 312 families: most skipped the car in Santa Monica and rented one for the Griffith Park day only.", cls="ws-tip")
     body = Main(
         top_bar(trip, ledger(q, trip)),
         Div(
             pane("flights", 1, "Flights", f"round trip · {len(flights)}",
-                 [flight_card(o, f, viewing["flights"] if expanded == "flights" else "") for o in flights], "fill-sun-tint",
-                 detail=[flight_detail(o, f, viewing["flights"], trip) for o in flights], expanded=expanded == "flights",
+                 [flight_card(o, f, viewing["flights"] if expanded == "flights" else "", flight.cents if o.id == f else None) for o in flights], "fill-sun-tint",
+                 detail=[flight_detail(o, f, viewing["flights"], flight if o.id == f else catalog.flight_pick(o.id, trip=trip), chosen=o.id == f) for o in flights], expanded=expanded == "flights",
                  screen=screen if expanded == "flights" else "list"),
             pane("stays", 2, "Stays", trip.nights_text,
                  [stay_card(o, h, viewing["stays"] if expanded == "stays" else "", stay.cents if o.id == h else None) for o in stays], "fill-mint-tint",
@@ -439,7 +433,7 @@ def workspace(f, h, c, overlay=(), head=(), x="", v="", stay=None, trip=None):
         ),
         cls="ws", id="main", data_theme="sunset",
     )
-    data = Script(NotStr(script_json(embedded_data(f, h, c, stay))), id="ws-data", type="application/json")
+    data = Script(NotStr(script_json(embedded_data(f, h, c, stay, flight))), id="ws-data", type="application/json")
     return (
         Title("GitAway · Plan a trip"),
         *styles(*HEAD, *head),
@@ -454,16 +448,18 @@ def workspace(f, h, c, overlay=(), head=(), x="", v="", stay=None, trip=None):
 def register(app):
     @app.get("/plan")
     def plan(session, f: str = "", h: str = "", c: str = "", x: str = "", v: str = "", rooms: str = None, add: str = None,
-             d: str = "", r: str = "", a: str = "", k: str = ""):
+             fare: str = None, bags: str = None, d: str = "", r: str = "", a: str = "", k: str = ""):
         picks, trip = resolve_pick(f, h, c), resolve_trip(d, r, a, k)
-        stay = resolve_stay(picks[1], rooms, add, trip)
-        if any((f, h, c, rooms, add, d, r, a, k)):  # a bare /plan is not "picks"; /start offers to continue the rest
-            session_helpers.remember_plan(session, plan_path(*picks, stay)[len("/plan?"):])
-        return workspace(*picks, x=x, v=v, stay=stay)
+        stay, flight = resolve_stay(picks[1], rooms, add, trip), resolve_flight(picks[0], fare, bags, trip)
+        if any((f, h, c, rooms, add, fare, bags, d, r, a, k)):  # a bare /plan is not "picks"; /start offers to continue the rest
+            session_helpers.remember_plan(session, plan_path(*picks, stay, trip, flight)[len("/plan?"):])
+        return workspace(*picks, x=x, v=v, stay=stay, flight=flight)
 
     @app.get("/plan/quote")
-    def plan_quote(f: str = "", h: str = "", c: str = "", rooms: str = None, add: str = None, d: str = "", r: str = "", a: str = "", k: str = ""):
-        """The ledger figures for a pick, and the stay editor's state for the rooms as asked (even if they sleep too few).
+    def plan_quote(f: str = "", h: str = "", c: str = "", rooms: str = None, add: str = None, fare: str = None, bags: str = None,
+                   d: str = "", r: str = "", a: str = "", k: str = ""):
+        """The ledger figures for a pick, the flight editor's state for the fare and bags as asked, and the stay editor's state for the
+        rooms as asked (even if they sleep too few).
 
         "ledger" prices what can really be booked: for a short pick (rooms that sleep fewer than the party) that is the default
         room plus the asked add-ons. "stay" describes the rooms as asked, so the choose bar can say "Sleeps 2 of 4 · add a room".
@@ -471,7 +467,8 @@ def register(app):
         picks, trip = resolve_pick(f, h, c), resolve_trip(d, r, a, k)
         asked = catalog.parse_stay(picks[1], rooms, add, trip)
         real = asked if asked.fits else catalog.stay_pick(picks[1], None, asked.add_code, trip)
-        return {"ledger": ledger_json(catalog.quote(*picks, real, trip)), "stay": stay_json(asked)}
+        flight = resolve_flight(picks[0], fare, bags, trip)
+        return {"ledger": ledger_json(catalog.quote(*picks, real, trip, flight)), "stay": stay_json(asked), "flight": flight_json(flight)}
 
     @app.get("/plan/explore")
     def plan_explore(h: str = ""):
