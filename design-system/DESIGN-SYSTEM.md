@@ -12,7 +12,7 @@ The site renders at **75%** of the size it was first drawn. One number does it: 
 - Breakpoints are viewport widths and follow the scale: a layout that switched at 1100 now switches at **825**. Phone is ≤ 720 (unchanged). Use these: 720 phone, 825 tablet, 900 and 975 and 1020 for the landing and itinerary collage. Container queries use rem.
 - JS that needs pixels (pointer maths) reads the root size: `parseFloat(getComputedStyle(document.documentElement).fontSize)`. The calendar hour is 3rem (`HOUR_REM` in `calendar.js`, `HH` in `calendar.py`).
 - `icon(name, size)` takes the design size in px and emits it in rem. Hand-written inline SVG must set `style="width:Xrem;height:Xrem"`.
-- Floor: text never goes below 13px on a phone (existing smaller phone text is a known follow-up). On desktop and tablet nothing renders under 11px: any font size below 0.9167rem is written `max(var(--text-min), Xrem)` (`--text-min` is 11px, 0 on phones); `tests/test_scale.py` checks it.
+- Floor: text never goes below 13px on a phone and phone touch targets are at least 44px (F-034): `--text-min` is 13px on phones. On desktop and tablet nothing renders under 11px: any font size below 0.9167rem is written `max(var(--text-min), Xrem)` (`--text-min` is 11px on desktop and tablet, 13px on phones); `tests/test_scale.py` checks it.
 
 ## Type
 | Role | Family | Use |

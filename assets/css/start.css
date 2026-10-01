@@ -1,4 +1,6 @@
 /* "Where to?" trip start (F-035). Loaded only by /start, after tokens.css and base.css. Every size is rem (see DESIGN-SYSTEM Scale). */
+/* The pop-in overshoots to 1.06 and briefly widened the page (F-036): clip sideways overflow only. */
+#main { overflow-x: clip; }
 
 .st { display: flex; flex-direction: column; gap: 1.5rem; padding-block: 2.5rem 3.5rem; max-width: 70rem; }
 

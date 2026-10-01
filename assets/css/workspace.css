@@ -84,7 +84,7 @@
 .ws-photo figcaption { position: absolute; left: 0.375rem; right: 0.375rem; bottom: 0.375rem; padding: 0.125rem 0.375rem; border-radius: 0.5rem; background: rgba(30, 26, 46, .78); color: #fff; font-size: max(var(--text-min), 0.6875rem); font-weight: 800; line-height: 1.3; }
 .ws-photo-blank { display: grid; place-items: center; color: var(--sky-ink); }
 .ws-stay-body { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; flex: 1; padding: 0.25rem 0.25rem 0.25rem 0; }
-.ws-tags { display: flex; gap: 0.375rem; flex-wrap: nowrap; overflow: hidden; }
+.ws-tags { display: flex; gap: 0.375rem; flex-wrap: wrap; }
 .ws-foot { margin-top: auto; display: flex; align-items: baseline; gap: 0.375rem; flex-wrap: wrap; }
 .ws-rating { font-size: max(var(--text-min), 0.8125rem); font-weight: 700; color: var(--ink-3); }
 .ws-tip { margin-top: auto; padding: 0.875rem 1rem; border-radius: var(--r-md); background: var(--sun-tint); font-size: max(var(--text-min), 0.875rem); font-weight: 700; line-height: 1.4; }
@@ -418,7 +418,13 @@
   .ws-grid, .ws-grid[data-focus], .ws-grid[data-expanded] { display: flex; flex-direction: column; }
   .ws-grid[data-expanded] > :not([data-pane]) { display: none; }
   .ws-context, .ws-grid[data-expanded] .ws-context { display: flex; flex-direction: column; }
+  /* Expanded Cars or a context pane is the only thing shown; Cars hides the context column (same weight as the rule above, so it comes after) */
+  .ws-grid[data-expanded="cars"] .ws-context { display: none; }
   .ws-pane { padding: 0.875rem; }
+  .ws-focus { min-height: 2.75rem; min-width: 2.75rem; }
+  .ws-expand { width: 2.75rem; min-height: 2.75rem; flex-shrink: 0; }
+  .ws-fork { height: auto; min-height: 2.75rem; }
+  .ws-forklist { min-height: 2.75rem; }
   .ws-cards { overflow: visible; }
   .ws-grid[data-expanded] .ws-cards { display: flex; }
   /* Split view on a phone: two screens (list, then detail with a back pill) */

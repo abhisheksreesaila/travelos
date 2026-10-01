@@ -328,3 +328,12 @@ a.cal-w-head:hover, a.cal-w-head:focus-visible { box-shadow: 0 0 0 0.125rem var(
 /* the Share button is a one-tap form (F-022) */
 .cal-share { display: contents; }
 button.cal-btn { border: 0; font: 800 1rem var(--font-body); cursor: pointer; }
+
+/* Phone touch targets, at least 44px (F-034) */
+@media (max-width: 720px) {
+  .cal-bar .ga-brand { min-width: 2.75rem; justify-content: center; }
+  .cal-seg, .cal-w-head { min-height: 2.75rem; }
+  .cal-dayadd { width: 2.75rem; height: 2.75rem; }
+  .cal-w-empty a { display: inline-flex; align-items: center; min-height: 2.75rem; }
+  .cal-cancel { min-width: 2.75rem; justify-content: center; }
+}
