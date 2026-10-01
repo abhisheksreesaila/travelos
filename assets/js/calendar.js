@@ -127,7 +127,8 @@
     }
     const feed = $("#cal-feed", root);
     if (feed) feed.scrollTop = keep ? keep.feed : feed.scrollHeight;
-    if (keep && keep.drawer) $("#cal-notes", root).classList.add("open");
+    if (keep && keep.drawer && $("#cal-notes", root)) $("#cal-notes", root).classList.add("open");
+    if (window.calVoice) window.calVoice(root);  // Talk to plan (voice.js) re-wires its panel after every swap
     const modal = $(".cal-modal", root);
     if (modal) {
       $$(".cal-bar, .cal-layout", root).forEach((el) => el.setAttribute("inert", ""));
@@ -247,7 +248,7 @@
 
   // ---- the ghost on an empty hour ----------------------------------------------------------------------------------
   function bodyGeometry(body) {
-    const blocks = $$(".cal-block", body).filter((b) => !b.classList.contains("is-drag"));
+    const blocks = $$(".cal-block", body).filter((b) => !b.classList.contains("is-drag") && !b.classList.contains("cal-draft"));
     return blocks.map((b) => [+b.dataset.start, +b.dataset.end]);
   }
   function placeGhost(e) {

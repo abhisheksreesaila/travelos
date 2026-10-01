@@ -79,7 +79,7 @@ def note_text(chosen, dates):
 
 # ---- the session seams ---------------------------------------------------------------------------------------------
 
-def _setup(session, demo):
+def setup(session, demo):
     """(dates, stay name) of the booked trip. Raises CalendarError when signed out or nothing is booked."""
     if not ses.current_traveler(session):
         raise cal.CalendarError("Sign in to use the trip calendar.")
@@ -90,7 +90,7 @@ def _setup(session, demo):
 
 
 def plans_for(session, night=None, demo=""):
-    dates, stay = _setup(session, demo)
+    dates, stay = setup(session, demo)
     return plans(dates, stay, night)
 
 
@@ -101,7 +101,7 @@ def preview(session, night=None, demo=""):
 
 def apply(session, night, picks, demo=""):
     """Add the picked voice plans and the trip note. Returns (activities, note). A full cookie raises CalendarError."""
-    dates, _ = _setup(session, demo)
+    dates, _ = setup(session, demo)
     return cal.apply_plans(session, plans_for(session, night, demo), picks, note=lambda chosen: note_text(chosen, dates), demo=demo)
 
 
