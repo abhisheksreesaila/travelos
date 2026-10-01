@@ -1,0 +1,96 @@
+/* "Where to?" trip start (F-035). Loaded only by /start, after tokens.css and base.css. Every size is rem (see DESIGN-SYSTEM Scale). */
+
+.st { display: flex; flex-direction: column; gap: 1.5rem; padding-block: 2.5rem 3.5rem; max-width: 70rem; }
+
+/* Hero */
+.st-hero { display: flex; flex-direction: column; gap: 0.5rem; }
+.st-hero .eyebrow { font-size: max(var(--text-min), 0.875rem); font-weight: 800; letter-spacing: .08em; color: var(--accent-deep); }
+.st-hero h1 { margin: 0; font-size: clamp(3.5rem, 9vw, 7.5rem); line-height: .95; letter-spacing: -0.04em; }
+.st-hero p { margin: 0.25rem 0 0; max-width: 40rem; font-size: 1.1875rem; line-height: 1.5; color: var(--ink-2); }
+
+/* Continue card */
+.st-continue {
+  display: flex; align-items: center; gap: 0.875rem; padding: 0.875rem 1.125rem; border-radius: var(--r-lg);
+  background: var(--card); color: var(--ink); text-decoration: none; box-shadow: var(--shadow-md); animation: ga-pop .4s var(--ease-spring) backwards;
+}
+.st-continue:hover, .st-continue:focus-visible { color: var(--ink); box-shadow: 0 0 0 0.1875rem var(--ink); }
+.st-continue-ico { flex: none; width: 2.75rem; height: 2.75rem; border-radius: 0.875rem; display: grid; place-items: center; transform: rotate(-4deg); }
+.st-continue-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.st-continue-title { font-family: var(--font-display); font-weight: 800; font-size: 1.375rem; letter-spacing: -0.02em; line-height: 1.1; }
+.st-continue-sub { font-size: max(var(--text-min), 0.9375rem); font-weight: 600; color: var(--ink-2); }
+.st-continue-go { flex: none; display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: var(--r-pill); background: var(--ink); color: #FFFFFF; }
+
+/* The form card */
+.st-card {
+  padding: 1.75rem; border-radius: var(--r-xl); background: var(--block-sunset); display: flex; flex-direction: column; gap: 1.125rem;
+  box-shadow: 0 0.75rem 1.5rem -0.75rem rgba(30,26,46,.4); animation: ga-pop .4s var(--ease-spring) backwards;
+}
+.st-errors { padding: 0.875rem 1.125rem; border-radius: var(--r-md); background: var(--card); box-shadow: 0 0 0 0.1875rem var(--coral-deep); display: flex; flex-direction: column; gap: 0.25rem; }
+.st-error-link { font-weight: 800; font-size: 1.0625rem; color: var(--coral-deep); }
+
+/* Destination chips: stickers. The radio is real and focusable; the face shows the state. */
+.st-where { margin: 0; padding: 0; border: 0; min-width: 0; display: flex; flex-direction: column; gap: 0.75rem; }
+.st-legend { padding: 0; font-size: max(var(--text-min), 0.875rem); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.st-chips { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+.st-chip { position: relative; display: inline-flex; transform: rotate(var(--tilt, 0deg)); transition: transform .15s var(--ease-out); }
+.st-chip:hover:not(.is-soon) { transform: rotate(0deg) translateY(-0.125rem); }
+.st-chip input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.st-chip.is-soon input { cursor: not-allowed; }
+.st-face {
+  display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.5rem; min-height: 3.25rem; padding: 0 1.25rem 0 1rem; border-radius: var(--r-pill);
+  border: 0.1875rem solid #FFFFFF; box-shadow: var(--shadow-sticker); font-weight: 800; font-size: 1.1875rem; color: var(--ink); background: var(--card);
+}
+.st-chip input:checked + .st-face { background: var(--ink); color: #FFFFFF; }
+.st-chip input:focus-visible + .st-face { outline: 0.1875rem solid var(--ink); outline-offset: 0.1875rem; }
+.st-chip.is-soon .st-face { border-style: dashed; border-color: var(--ink-3); box-shadow: none; background: rgba(255, 255, 255, .55); color: var(--ink-2); }
+.st-soon { white-space: nowrap; padding: 0.125rem 0.5rem; border-radius: var(--r-pill); background: var(--ink); color: #FFFFFF; font-size: max(var(--text-min), 0.75rem); font-weight: 800; letter-spacing: .02em; }
+
+/* Fields: real labels, real date pickers and selects, no typing */
+.st-row { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.2fr) minmax(0, 1.2fr) minmax(0, .8fr) minmax(0, .8fr); gap: 0.625rem; }
+.st-ages { display: flex; flex-wrap: wrap; align-items: stretch; gap: 0.625rem; }
+.st-ages[hidden], .st-field[hidden] { display: none; }
+.st-ages-label { align-self: center; margin-right: 0.25rem; }
+.st-field { display: flex; flex-direction: column; gap: 0.125rem; min-width: 0; padding: 0.625rem 1rem; border-radius: 1.125rem; background: var(--card); box-shadow: var(--shadow-sm); }
+.st-ages .st-field { flex: 0 1 9rem; }
+.st-field:focus-within { outline: 0.1875rem solid var(--ink); outline-offset: 0.1875rem; }
+.st-label { font-size: max(var(--text-min), 0.8125rem); font-weight: 800; color: var(--ink-3); }
+.st-ages-label { color: var(--ink); }
+.st-field select, .st-field input {
+  width: 100%; min-width: 0; min-height: 2.25rem; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--ink);
+  font: 800 1.1875rem var(--font-body); cursor: pointer;
+}
+.st-field select:focus-visible, .st-field input:focus-visible { outline: none; }
+.st-field [aria-invalid="true"] { color: var(--coral-deep); }
+.st-field:has([aria-invalid="true"]) { box-shadow: 0 0 0 0.1875rem var(--coral-deep); }
+.st-error { font-size: max(var(--text-min), 0.875rem); font-weight: 800; color: var(--coral-deep); }
+.st-where .st-error { padding: 0.25rem 0.75rem; border-radius: var(--r-pill); background: var(--card); align-self: flex-start; }
+
+.st-go { min-height: 3.75rem; font-size: 1.1875rem; width: 100%; }
+.st-note { margin: 0; font-size: max(var(--text-min), 0.875rem); font-weight: 700; text-align: center; }
+
+@media (prefers-reduced-motion: reduce) { .st-card, .st-continue { animation: none; } .st-chip { transition: none; } }
+
+/* Tablet: the five fields wrap into two rows */
+@media (max-width: 975px) {
+  .st-row { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .st-row > :nth-child(1) { grid-column: span 6; }
+  .st-row > :nth-child(2), .st-row > :nth-child(3) { grid-column: span 3; }
+  .st-row > :nth-child(4), .st-row > :nth-child(5) { grid-column: span 3; }
+}
+
+/* Phone: one column, big touch targets */
+@media (max-width: 720px) {
+  .st { padding-block: 1.25rem 2rem; gap: 1rem; }
+  .st-card { padding: 1.125rem; border-radius: var(--r-lg); }
+  .st-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .st-row > :nth-child(1) { grid-column: 1 / -1; }
+  .st-row > :nth-child(2), .st-row > :nth-child(3), .st-row > :nth-child(4), .st-row > :nth-child(5) { grid-column: auto; }
+  .st-ages .st-field { flex: 1 1 calc(50% - 0.5rem); }
+  .st-ages-label { flex-basis: 100%; margin: 0; }
+  .st-field select, .st-field input { min-height: 2.75rem; }
+}
+
+/* Small phones: a date needs the whole row to show in full */
+@media (max-width: 480px) {
+  .st-row > :nth-child(2), .st-row > :nth-child(3) { grid-column: 1 / -1; }
+}
