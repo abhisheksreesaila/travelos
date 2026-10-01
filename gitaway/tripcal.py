@@ -550,6 +550,10 @@ def _clean(t, blocks, *, day, start, end, title, kind, old=None):
         raise CalendarError(f"Give it at least {MIN_LEN} minutes.")
     for b in blocks:
         if b.day == day and s < b.end and b.start < e:
+            if b.kind == "ride":  # a ride scheduled after the plan was made does not lock the plan in place: only a new or moved time is checked
+                if (day, s, e) != old:
+                    raise CalendarError(f"That overlaps your Uber at {fmt_time(b.start)}. Pick a gap.")
+                continue
             raise CalendarError(f"That overlaps {b.title} ({fmt_time(b.at)} – {fmt_time(b.end)}). Pick a gap.")
     if (day, s, e) != old and (problem := window_problem(blocks, day, s, e)):
         raise CalendarError(window_message(problem))
@@ -581,7 +585,8 @@ def add_activity(session, *, day, start, end, title, kind="fun", demo="", id=Non
     """Add an activity. An `id` that already exists returns the existing one, so a refreshed form adds nothing."""
     _valid_id(id)
     with ses.family(session) as fam:
-        _, t, blocks = _need(fam, demo)
+        b, t, blocks = _need(fam, demo)
+        blocks = blocks + ride_blocks(session, b, t)  # a scheduled Uber is busy time
         day, s, e, title = _clean(t, blocks, day=day, start=start, end=end, title=title, kind=kind)
         if id and id[0] != "a":
             raise CalendarError("That id is not valid.")
@@ -611,7 +616,8 @@ def update_activity(session, id_, *, day=None, start=None, end=None, title=None,
     if id_.startswith("b-"):
         raise CalendarError("Booked items are locked. Change your booking to move them.")
     with ses.family(session) as fam:
-        _, t, blocks = _need(fam, demo)
+        b, t, blocks = _need(fam, demo)
+        blocks = blocks + ride_blocks(session, b, t)
         db, scope = fam.db, _scope(demo)
         with familydb.transaction(db):
             _begin(db, fam.trip_id, scope, fam.traveler.id)

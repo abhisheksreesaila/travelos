@@ -36,3 +36,15 @@ def test_a_plan_beside_the_ride_is_still_free(client):
     beside = Plan("x2", ride.day, ride.end + 30, ride.end + 90, "Tacos", "food")
     [placed] = cal.preview_plans(s, [beside])
     assert placed.state in ("free", "clash") and ride.title not in placed.clash
+
+
+def test_a_hand_added_or_moved_plan_over_a_scheduled_ride_is_refused_kindly(client):
+    import pytest
+    s, ride = ride_setup(client)
+    when = cal.hhmm(ride.start)
+    with pytest.raises(cal.CalendarError, match=r"That overlaps your Uber at \d+:\d\d [AP]M"):
+        cal.add_activity(s, day=ride.day, start=when, end=cal.hhmm(ride.start + 60), title="Surf lesson")
+    ok = cal.add_activity(s, day=ride.day, start=cal.hhmm(ride.end + 60), end=cal.hhmm(ride.end + 120), title="Tacos")
+    with pytest.raises(cal.CalendarError, match="your Uber"):
+        cal.update_activity(s, ok.id, start=when, end=cal.hhmm(ride.start + 60))
+    assert cal.update_activity(s, ok.id, title="Tacos!")  # renaming without moving it still works
