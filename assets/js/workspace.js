@@ -487,14 +487,19 @@
       if (popOpen() && e.relatedTarget && !ledger.contains(e.relatedTarget)) setPop(false, false);
     });
     // Scrolling the open detail down shrinks the line; scrolling up (or back to the top) restores it.
-    var lastTop = new WeakMap();
+    // A run in one direction counts once it is a few pixels long, so a smooth scroll's tiny steps still add up.
+    var runs = new WeakMap();
     grid.addEventListener('scroll', function (e) {
       var el = e.target;
       if (!el.classList || !el.classList.contains('ws-dscroll') || phone.matches) return;
-      var prev = lastTop.get(el) || 0, now = el.scrollTop;
-      lastTop.set(el, now);
-      if (now <= 8 || now < prev - 2) setPill(false);
-      else if (now > prev + 2 && now > 48) setPill(true);
+      var r = runs.get(el) || { last: 0, dir: 0, from: 0 }, now = el.scrollTop;
+      runs.set(el, r);
+      if (now === r.last) return;
+      var dir = now > r.last ? 1 : -1;
+      if (dir !== r.dir) { r.dir = dir; r.from = r.last; }
+      r.last = now;
+      if (now <= 4 || (dir < 0 && r.from - now > 6)) setPill(false);
+      else if (dir > 0 && now > 16 && now - r.from > 6) setPill(true);
     }, true);
   }
 

@@ -27,3 +27,6 @@
 - **Empty lane** (a filter would hide everything, for later): "No flights match. Try another time of day."
 - **Reduced motion**: no column animation, no lift.
 - **Focus**: the ring on every control. Focusing a pane by key moves keyboard focus to its first offer.
+
+## Update (F-031): the ledger is a slim line in the top bar
+The ledger band is gone. Beside the trip pill sits one line: flight · stay · car = total (a button) and Book. Tapping the total opens a popover with the itemized lines (stay sub-line with rooms and add-ons) and the best-value chip; Esc or a tap outside closes it. In the split view, scrolling the detail down shrinks the line to a pill (total + Book); scrolling up or tapping it restores it (instant with reduced motion). Between 826 and 1100 the line keeps only total + Book; on a phone the same total + Book pill is pinned at the top. Figures come from `/plan/quote`; the JS does no arithmetic.
