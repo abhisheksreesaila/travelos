@@ -205,7 +205,7 @@ Needs: F-030
 - [ ] at 1000 wide the stay card's "Pool" and "Pet friendly" tags are clipped; wrap them (docs/lessons.md)
 - [ ] the landing door and feature pop-in (`scale(1.06)`) briefly causes sideways scroll at 1000, 800 and 390; contain it
 
-## F-037 Small follow-ups from the F-024 review [todo]
-- [ ] after a voice or fork Apply, focus lands on the toast's Undo button for keyboard users
-- [ ] voice: don't move focus to the first chip if the traveler has already moved focus elsewhere
-- [ ] the calendar's opening "Booked!" note reads naturally for every lane mix (today: "Your flights and The Tidewater (…) and Breeze Rentals rental are on the calendar")
+## F-037 Small follow-ups from the F-024 review [done]
+- [x] after a voice or fork Apply, focus lands on the toast's Undo button for keyboard users
+- [x] voice: don't move focus to the first chip if the traveler has already moved focus elsewhere
+- [x] the calendar's opening "Booked!" note reads naturally for every lane mix (today: "Your flights and The Tidewater (…) and Breeze Rentals rental are on the calendar")
