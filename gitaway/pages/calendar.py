@@ -236,14 +236,19 @@ def note_entry(n, acts_by_id, who, people, fresh=False):
 
 
 def booked_note(b):
-    """The first note on the feed: what was booked, in words that fit any mix of flight, stay and car."""
+    """The first note on the feed: what was booked, as a list that fits any mix of flight, stay and car. Flights and a stay are
+    blocks on the calendar; a car has none, so it is only ever said to be booked."""
     stay, pick, car = cal.stay_of(b), cal.stay_pick_of(b), cal.car_of(b)
     flights = cal.flight_of(b) is not None
-    parts = (["flights"] if flights else []) + ([f"{stay.name} ({pick.summary})" if flights else f"stay at {stay.name} ({pick.summary})"] if stay else []) + ([f"{car.name} rental"] if car else [])
-    what = " and ".join(parts) or "trip"
-    if not flights and not stay:
-        return f"Booked! Your {car.name} rental is booked. It has no block here, but you can still plan the days."
-    return f"Booked! Your {what} {'are' if len(parts) > 1 or what == 'flights' else 'is'} on the calendar. Add anything you want to do."
+    on_cal = (["flights"] if flights else []) + ([f"{stay.name} ({pick.summary})" if flights else f"stay at {stay.name} ({pick.summary})"] if stay else [])
+    rental = f"{car.name} rental" if car else ""
+    if not on_cal:
+        return f"Booked! Your {rental} is booked. It has no block here, but you can still plan the days."
+    are = "are" if len(on_cal) > 1 or on_cal == ["flights"] else "is"
+    if not car:
+        return f"Booked! Your {cal.oxford(on_cal)} {are} on the calendar. Add anything you want to do."
+    placed = cal.oxford((["flights"] if flights else []) + (["stay"] if stay else []))
+    return f"Booked! Your {cal.oxford(on_cal + [rental])} are booked. The {placed} {are} on the calendar; the car has no block there. Add anything you want to do."
 
 
 def notes_panel(ctx, who, b):
@@ -431,7 +436,7 @@ def calendar_page(session, demo="", view="", form=None, notice=None, new="", und
         got = [i for i in voiced["ids"] if i in here]
         if got:
             layers.append(toast("undo", f"Added {len(got)} plan{'s' if len(got) != 1 else ''} by voice.",
-                                Form(_hidden("ids", ",".join(got)), _hidden("nid", voiced.get("note", "")), _hidden("night", voiced.get("night", "")), _demo_field(demo), Button("Undo", type="submit", cls="cal-undo"),
+                                Form(_hidden("ids", ",".join(got)), _hidden("nid", voiced.get("note", "")), _hidden("night", voiced.get("night", "")), _demo_field(demo), Button("Undo", type="submit", cls="cal-undo", autofocus=True),
                                      action="/calendar/voice/undo", method="post", data_soft=""),
                                 A("Dismiss", href=cal_url(demo, view=view), data_soft="", cls="cal-dismiss")))
     gone = cal.last_deleted(session, demo)

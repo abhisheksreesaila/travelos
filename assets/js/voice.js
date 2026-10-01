@@ -36,7 +36,11 @@
     if (live) setTimeout(() => { live.textContent = `You said: ${full ? full.textContent : ""} Got it. One quick question. ${ask ? ask.textContent : ""}`; }, 150);
     // After a beat: calendar.js hands focus back to the control it swapped out (the mic) just after this runs on the reduced-motion path.
     const first = $(".vo-chip", panel);
-    if (first) setTimeout(() => first.isConnected && first.focus({ preventScroll: true }), 80);
+    // ...but only if the traveler has not already moved on: focus still on the mic (or nowhere) is the only case to take over.
+    if (first) setTimeout(() => {
+      const at = document.activeElement;
+      if (first.isConnected && (!at || at === document.body || at.id === "vo-mic")) first.focus({ preventScroll: true });
+    }, 80);
   }
 
   function play(root, panel) {

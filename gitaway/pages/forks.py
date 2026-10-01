@@ -172,7 +172,7 @@ def applied_panel(session, ids, source):
     n = len(got)
     return Div(
         Span(icon("check", 20, 2.6), Span(f"Added {n} plan{'s' if n != 1 else ''} from {who}."), cls="fk-done-text"),
-        Form(Input(type="hidden", name="ids", value=",".join(a.id for a in got)), Input(type="hidden", name="src", value=source.slug if source else ""), Button("Undo", type="submit", cls="fk-undo"), action="/forks/undo", method="post"),
+        Form(Input(type="hidden", name="ids", value=",".join(a.id for a in got)), Input(type="hidden", name="src", value=source.slug if source else ""), Button("Undo", type="submit", cls="fk-undo", autofocus=True), action="/forks/undo", method="post"),
         cls="fk-done fk-pop", role="status")
 
 

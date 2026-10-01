@@ -375,7 +375,7 @@ def test_the_calendar_welcome_note_fits_the_mix(client):
     _, html = blocks_of(client, STAY_ONLY)
     assert "Booked! Your stay at The Tidewater (" in html and "flights" not in html.split("Booked! Your")[1].split("on the calendar")[0]
     _, html = blocks_of(client, SAMPLE)
-    assert "Booked! Your flights and The Tidewater" in html
+    assert "Booked! Your flights, The Tidewater" in html
 
 
 def test_a_car_only_booking_still_opens_a_calendar_with_no_booked_blocks(client):
@@ -454,3 +454,25 @@ def test_shared_trip_lede_describes_only_the_lanes_booked():
 
 def test_one_airport_buffer():
     assert cal.AIRPORT_BUFFER is catalog.AIRPORT_BUFFER or cal.AIRPORT_BUFFER == catalog.AIRPORT_BUFFER == 120
+
+
+def booked_note_text(client, url):
+    _, html = blocks_of(client, url)
+    return re.search(r'class="cal-notetext"[^>]*>(.*?)</span>', html, re.S).group(1).replace("&amp;", "&")
+
+
+def test_the_booked_note_reads_naturally_for_every_mix(client):
+    flights = booked_note_text(client, FLIGHT_ONLY)
+    assert flights.startswith("Booked! Your flights are on the calendar.")
+    stay = booked_note_text(client, STAY_ONLY)
+    assert re.match(r"Booked! Your stay at The Tidewater \([^)]+\) is on the calendar\.", stay)
+    car = booked_note_text(client, "f=none&h=none&c=c1")
+    assert car.startswith("Booked! Your Breeze Rentals rental is booked.") and "on the calendar" not in car
+    both = booked_note_text(client, NO_CAR)
+    assert re.match(r"Booked! Your flights and The Tidewater \([^)]+\) are on the calendar\.", both)
+    fc = booked_note_text(client, "f=f1&h=none&c=c1")
+    assert fc.startswith("Booked! Your flights and Breeze Rentals rental are booked. The flights are on the calendar; the car has no block there.")
+    sc = booked_note_text(client, "f=none&h=h1&c=c1")
+    assert re.match(r"Booked! Your stay at The Tidewater \([^)]+\) and Breeze Rentals rental are booked\. The stay is on the calendar; the car has no block there\.", sc)
+    allthree = booked_note_text(client, SAMPLE)
+    assert re.match(r"Booked! Your flights, The Tidewater \([^)]+\), and Breeze Rentals rental are booked\. The flights and stay are on the calendar; the car has no block there\.", allthree)

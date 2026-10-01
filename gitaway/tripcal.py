@@ -176,6 +176,14 @@ def booked_sentence(b):
     return f"Your {words} on the trip calendar. Now the fun part: fill the gaps with your crew."
 
 
+def oxford(items):
+    """"a", "a and b", "a, b, and c": a plain list with an Oxford comma."""
+    items = list(items)
+    if len(items) < 3:
+        return " and ".join(items)
+    return ", ".join(items[:-1]) + ", and " + items[-1]
+
+
 def booked_words(b):
     """"flights and hotel are", "hotel is", "flights are" for the calendar's welcome lines; "car is" with only a car."""
     parts = (["flights"] if flight_of(b) else []) + (["hotel"] if stay_of(b) else [])

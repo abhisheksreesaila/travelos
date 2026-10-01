@@ -258,3 +258,10 @@ def test_preview_only_opens_trips_in_your_list(client):
     book(client)
     html = client.get(f"/forks?open={TRIP}").text
     assert "fk-check" not in html and "No forks yet" in html
+
+
+def test_the_fork_undo_button_takes_focus_after_apply(client):
+    book(client)
+    fork(client)
+    html = client.get(apply(client, "d1s2", "d1s3").headers["location"]).text
+    assert "autofocus" in re.search(r"<button[^>]*fk-undo[^>]*>", html).group(0).split()

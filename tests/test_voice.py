@@ -386,3 +386,19 @@ def test_a_car_only_booking_does_not_crash(client):
     assert r.status_code == 200 and set(drafts(r.text)) == {"v0", "v1", "v3"}
     assert apply(client, 0, "v0", "v1", "v3").status_code == 303 and len(activities(client)) == 3
     assert client.post("/calendar/voice/undo", data={"ids": "a1,a2,a3", "night": "0"}, follow_redirects=False).status_code == 303
+
+
+# ---- F-037: focus after Apply, and the booked note ---------------------------------------------------------------------
+
+def test_the_voice_undo_toast_takes_focus_when_the_calendar_loads(client):
+    book(client)
+    html = client.get(apply(client, 0, "v0", "v1").headers["location"]).text
+    undo = re.search(r"<button[^>]*cal-undo[^>]*>", html).group(0)
+    assert "autofocus" in undo.split()
+
+
+def test_voice_finish_leaves_focus_alone_unless_it_is_on_the_mic_or_nowhere():
+    js = (ROOT / "assets/js/voice.js").read_text()
+    body = js[js.index("const first = $(\".vo-chip\""):]
+    body = body[:body.index("\n  }\n")]
+    assert "document.activeElement" in body and 'document.body' in body and '"vo-mic"' in body
