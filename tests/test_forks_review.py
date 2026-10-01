@@ -197,3 +197,20 @@ def test_day_arrows_are_not_offered_when_the_trip_is_three_days_or_fewer(client)
     fork(client)
     html = client.get(f"/forks?open={TRIP}").text
     assert day_heads(html) == 3 and "fk-nav" not in html
+
+
+def test_a_creator_trip_can_be_forked_saved_and_applied(client):
+    book(client)
+    client.post("/creators", data={"link": "https://www.youtube.com/watch?v=our-la-family-week"})
+    client.post("/creators/draft", data={"form": "1", "do": "submit", "ok1": "1", "ok2": "1", "title": "Sun, tacos & tides"})
+    slug = session_data(client)["hub"]["ari"][0]["s"]
+    assert client.post("/fork", data={"next": f"/trips/{slug}"}, follow_redirects=False).status_code == 303
+    assert client.post("/save", data={"next": f"/trips/{slug}"}, follow_redirects=False).status_code == 303
+    assert "Sun, tacos &amp; tides" in client.get("/forks").text
+    html = client.get(f"/forks?open={slug}").text
+    keys = plan_keys(html)
+    assert keys and any(checked for checked, _ in keys.values())
+    free = [k for k, (checked, _) in keys.items() if checked]
+    r = apply(client, *free, slug=slug)
+    assert r.status_code == 303 and "applied=" in r.headers["location"]
+    assert len(titles(client)) == len(free)
