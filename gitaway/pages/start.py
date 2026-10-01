@@ -59,14 +59,14 @@ def _chips(vals, errors):
         Legend("Pick where you want to go", cls="st-legend"),
         Div(*chips, cls="st-chips"),
         Span(err, cls="st-error", id="st-err-to", role="alert") if err else "",
-        cls="st-where",
+        cls="st-where", **({"aria_invalid": "true", "aria_describedby": "st-err-to"} if err else {}),
     )
 
 
 def _form(vals, errors):
     n = vals["n"]
     summary = Div(
-        *[A(msg, href=f"#st-{'k1' if field == 'k' else field}", cls="st-error-link") for field, msg in errors.items()],
+        *[A(msg, href=f"#st-{field}", cls="st-error-link") for field, msg in errors.items()],
         role="alert", cls="st-errors", id="st-errors",
     ) if errors else ""
     ages = Div(
@@ -132,15 +132,15 @@ def _submitted(q):
             "ages": [whole(a, "") if a.isascii() and a.isdigit() else "" for a in raw_ages]}
     errors = {}
     for i, a in enumerate(raw_ages, 1):
-        if not (a.isascii() and a.isdigit()):
-            errors[f"k{i}"] = f"Pick an age for kid {i}."
+        if not (a.isascii() and a.isdigit() and int(a) <= catalog.MAX_KID_AGE):
+            errors[f"k{i}"] = f"Pick an age from 0 to {catalog.MAX_KID_AGE} for kid {i}."
     try:
         trip = catalog.parse_trip(q.get("from", catalog.ORIGIN[0]), vals["to"], vals["d"], vals["r"], vals["a"], ",".join(map(str, vals["ages"])))
     except catalog.TripError as e:
         trip = None
         for field, msg in e.errors:
-            if field == "k":
-                errors.setdefault("k1", msg)
+            if field == "k":  # already reported on the kid that is wrong
+                continue
             else:
                 errors.setdefault(field, msg)
     return vals, (None if errors else trip), errors

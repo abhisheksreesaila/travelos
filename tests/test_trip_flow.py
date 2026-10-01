@@ -151,3 +151,19 @@ def test_workspace_change_link_returns_to_start_with_the_trip(client):
     html = client.get(f"/plan?{PICK}&{THREE_NIGHTS}").text
     assert f"/start?{THREE_NIGHTS}" in [h.replace("&amp;", "&") for h in hrefs(html)]
     assert "/start" in hrefs(client.get("/plan").text)
+
+
+def test_a_three_adult_booking_shows_two_rooms_on_booked_and_the_calendar(client):
+    sign_in(client)
+    client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1", "d": "2026-10-16", "r": "2026-10-20", "a": "3", "k": "4,7"})
+    assert "City-view Double Queen ×2" in client.get("/booked").text
+    cal = client.get("/calendar").text
+    assert cal.count("City-view Double Queen ×2") >= 2  # check-in block and the "Booked!" note
+    assert "City-view Double Queen)" not in cal
+
+
+def test_long_demo_never_returns_before_departing():
+    from gitaway import tripcal
+    late = catalog.TripSearch("SFO", "San Francisco", "Los Angeles", ("LAX",), date(2026, 12, 1), date(2026, 12, 3), 2, ())
+    t = tripcal.trip("long", {"trip": catalog.trip_query(late)})
+    assert t.return_ > t.depart

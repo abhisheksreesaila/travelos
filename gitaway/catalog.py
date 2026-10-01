@@ -128,6 +128,10 @@ def _whole(text):
     return int(text) if text.isascii() and text.isdigit() else None
 
 
+def today() -> date:
+    return date.today()
+
+
 def parse_trip(origin, to, depart, ret, adults, kids) -> TripSearch:
     """A TripSearch from form or URL text, or TripError listing every friendly problem. `kids` is ages, comma separated ("4,7")."""
     errs = []
@@ -143,6 +147,8 @@ def parse_trip(origin, to, depart, ret, adults, kids) -> TripSearch:
         errs.append(("d", "Pick a valid depart date."))
     if r is None:
         errs.append(("r", "Pick a valid return date."))
+    if d and d < today() and not (d == SAMPLE_TRIP.depart and r == SAMPLE_TRIP.return_):  # the fixed sample trip is always allowed
+        errs.append(("d", "Pick a depart date that is today or later."))
     if d and r:
         if r <= d:
             errs.append(("r", "Your return must be after you leave."))

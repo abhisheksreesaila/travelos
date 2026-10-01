@@ -193,3 +193,29 @@ def test_remembered_picks_stay_small_in_the_cookie(client):
     sign_in(client)
     client.get("/plan?f=f2&h=h3&c=c1&rooms=cy1&add=bf&d=2026-10-16&r=2026-10-19&a=3&k=4,7")
     assert len(str(session_data(client)["plan"])) < 120
+
+
+def test_a_wrong_kid_age_marks_that_kid_not_the_first(client):
+    for bad in ("", "99"):
+        h = submit(client, k1="4", k2=bad).text
+        assert tags(h, "k2")[0].get("aria-invalid") == "true"
+        assert "aria-invalid" not in tags(h, "k1")[0]["_raw"]
+
+
+def test_the_destination_group_is_marked_invalid_with_its_message(client):
+    h = submit(client, to="sd").text
+    fs = re.search(r"<fieldset[^>]*st-where[^>]*>", h).group(0)
+    assert 'aria-invalid="true"' in fs and 'aria-describedby="st-err-to"' in fs
+    assert "aria-invalid" not in re.search(r"<fieldset[^>]*st-where[^>]*>", client.get("/start").text).group(0)
+
+
+def test_past_departures_are_refused_friendlily(client):
+    r = submit(client, d="2026-09-01", r="2026-09-05")
+    assert r.status_code == 422 and "today or later" in r.text
+
+
+def test_remembering_picks_never_overflows_the_cookie():
+    from gitaway import session as ses
+    s = {"traveler": "ari", "pad": "x" * (ses.BUDGET - 20)}
+    ses.remember_plan(s, "f=f2&h=h3&c=c1&d=2026-10-16&r=2026-10-19&a=3&k=4,7")
+    assert "plan" not in s

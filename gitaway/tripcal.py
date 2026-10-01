@@ -99,7 +99,9 @@ def trip_of(booking=None):
 def trip(demo="", booking=None):
     """The trip on the calendar: the booking's (default: the sample trip), or the 20-day fixture of ?demo=long."""
     t = trip_of(booking)
-    return replace(t, return_=LONG_RETURN) if demo == LONG else t
+    if demo != LONG:
+        return t
+    return replace(t, return_=LONG_RETURN if t.depart < LONG_RETURN else t.depart + timedelta(days=19))  # always after departure
 
 
 def days(t):
@@ -130,7 +132,7 @@ def weather_for(i):
 
 def stay_pick_of(b):
     """The StayPick (rooms and add-ons) a booking `b` holds. Older bookings have none and mean the default room."""
-    return catalog.stay_pick(b["stay"], b.get("rooms") or None, b.get("add") or None)
+    return catalog.stay_pick(b["stay"], b.get("rooms") or None, b.get("add") or None, trip_of(b))
 
 
 def booked_blocks(b, t):

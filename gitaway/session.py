@@ -114,8 +114,14 @@ def remember_plan(session, query):
     t = current_traveler(session)
     if not t or remembered_plan(session) == query:
         return
+    old = session.get("plan")
     # Reassign the whole dict so the cookie session notices the change.
-    session["plan"] = {**(session.get("plan") or {}), t.id: query}
+    session["plan"] = {**(old or {}), t.id: query}
+    if len(json.dumps(dict(session))) > BUDGET:  # same cookie budget as the calendar: skip remembering rather than overflow
+        if old is None:
+            session.pop("plan", None)
+        else:
+            session["plan"] = old
 
 
 def booking_id(traveler_id, flight, stay, car, rooms="", add="", trip=""):
