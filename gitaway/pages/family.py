@@ -20,12 +20,12 @@ from urllib.parse import quote
 from fasthtml.common import A, Button, Div, Form, H1, H2, Input, Label, Li, Link, Option, P, Script, Section, Select, Span, Ul, to_xml
 from starlette.responses import RedirectResponse, Response
 
-from gitaway import familydb, members, session as ses
+from gitaway import familydb, members, pickers, session as ses
 from gitaway.layout import avatar, page
 
 log = logging.getLogger("gitaway.family")
 
-HEAD = (Link(rel="stylesheet", href="/assets/css/family.css"), Script(src="/assets/js/family.js", defer=True))
+HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/family.css"), Script(src="/assets/js/family.js", defer=True))
 PRIVATE = ("/family",)  # paths main.py's auth beforeware protects; everything else is public
 
 

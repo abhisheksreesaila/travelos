@@ -21,13 +21,13 @@ from fasthtml.common import A, Aside, Button, Details, Div, Fieldset, Form, H1, 
 from fasthtml.core import FtResponse
 from starlette.responses import RedirectResponse
 
-from gitaway import access, catalog, forks as forks_model, members, session as ses, tripcal as cal
+from gitaway import access, catalog, forks as forks_model, members, pickers, session as ses, tripcal as cal
 from gitaway.icons import icon
 from gitaway.layout import avatar, brand, join_note, styles, trip_field
 from gitaway import voice as vo
 from gitaway.pages import pay, plan as plan_ui, rides as rides_ui, voice as voice_ui
 
-HEAD = (Link(rel="stylesheet", href="/assets/css/calendar.css"), Link(rel="stylesheet", href="/assets/css/voice.css"))
+HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/calendar.css"), Link(rel="stylesheet", href="/assets/css/voice.css"))
 HH = 48  # one hour is 48px at the 16px base, i.e. 3rem (calendar.js HOUR_REM must match)
 DAY_TINTS = ("sun", "mint", "grape", "sky", "bubble")  # day colours cycle in this order
 
