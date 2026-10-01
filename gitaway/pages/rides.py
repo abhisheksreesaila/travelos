@@ -114,7 +114,7 @@ def back_href():
 def estimate_card(e, href):
     price = Span(e.display, cls="rd-price")
     body = [Div(Span(e.name, cls="rd-pname"), Span(f"{e.blurb} · seats {e.seats}", cls="rd-pdesc"), cls="rd-ptext"),
-            Div(price, Span(f"{e.trip_minutes} min trip · driver about {e.pickup_eta_min} min away", cls="rd-peta"), cls="rd-pnums")]
+            Div(price, Span(f"{e.trip_minutes} min trip · driver {e.pickup_eta_min} min away", cls="rd-peta"), cls="rd-pnums")]
     if e.fits:
         return Li(*body, Span(e.note, cls="rd-pnote") if e.note else "",
                   A(f"Choose {e.name}", href=href, cls="btn btn-ink btn-sm rd-choose", data_choose=e.key, aria_label=f"Choose {e.name}, {e.display}"),

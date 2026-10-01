@@ -120,7 +120,7 @@ def ride_href(ctx, block):
     return plan_ui.ride_path(block.id[3:], cal.flight_of(ctx["booking"]).id, (cal.stay_of(ctx["booking"]) or None) and cal.stay_of(ctx["booking"]).id, cal.trip_of(ctx["booking"]))
 
 
-def ride_block(b, gs, ctx):
+def ride_block(b, gs, ctx, lane=0, nlanes=1):
     """A simulated Uber (F-038) on the grid: a scheduled one is a locked block that opens the ride; an offer is a dashed ghost that starts scheduling it.
     Like any block it keeps its true height (a 25 minute ride is short) and fades what does not fit; hover or focus opens it."""
     offer = b.kind == "rideoffer"
@@ -128,18 +128,18 @@ def ride_block(b, gs, ctx):
     return A(
         Span(icon(b.icon, 13, 2.2), " ", Span(cal.fmt_time(b.start), cls="cal-time"), " ", Span(b.title, cls="cal-title"), cls="cal-flow"),
         href=ride_href(ctx, b), **({"data_offer": b.id} if offer else {"data_block": b.id}), data_day=str(b.day), data_start=str(b.start), data_end=str(b.end), draggable="false",
-        cls=f"cal-block cal-ride{' cal-rideoffer' if offer else ' cal-booked cal-rideset'}{' cal-short' if b.end - b.start <= 45 else ''}",
-        style=f"--top:{_px(b.start - ctx['gs'])};--h:{_px(b.end - b.start)};--lane:0;--lanes:1", aria_label=label,
+        cls=f"cal-block cal-ride{' cal-rideoffer' if offer else ' cal-booked cal-rideset'}{' cal-short' if b.end - b.start <= 45 else ''}{' cal-lane' if nlanes > 1 else ''}",
+        style=f"--top:{_px(b.start - ctx['gs'])};--h:{_px(b.end - b.start)};--lane:{lane};--lanes:{nlanes}", aria_label=label,
     )
 
 
-def booked_block(b, gs):
+def booked_block(b, gs, lane=0, nlanes=1):
     return Div(
         Span(icon(b.icon, 13, 2.2), " ", Span(cal.fmt_time(b.start), cls="cal-time"), " ", Span(b.title, cls="cal-title"), cls="cal-flow"),
         Span(icon("lock", 12, 2.4), cls="cal-lock"),
         Span("Booked, locked", cls="sr-only"),
-        cls="cal-block cal-booked", data_block=b.id, data_day=str(b.day), data_start=str(b.start), data_end=str(b.end),
-        style=f"--top:{_px(b.start - gs)};--h:{_px(b.end - b.start)};--lane:0;--lanes:1",
+        cls=f"cal-block cal-booked{' cal-lane' if nlanes > 1 else ''}", data_block=b.id, data_day=str(b.day), data_start=str(b.start), data_end=str(b.end),
+        style=f"--top:{_px(b.start - gs)};--h:{_px(b.end - b.start)};--lane:{lane};--lanes:{nlanes}",
         role="group", tabindex="0",
         aria_label=f"Booked, locked: {b.title}, {cal.fmt_time(b.start)} to {cal.fmt_time(b.end)}",
     )
@@ -183,8 +183,9 @@ def day_column(i, date_, ctx):
     n_notes = ctx["note_counts"]
     booked = [b for b in blocks if b.day == i]
     offers = [o for o in ctx["offers"] if o.day == i]
-    body = [ride_block(b, gs, ctx) if b.kind == "ride" else booked_block(b, gs) for b in booked]
-    body += [ride_block(o, gs, ctx) for o in offers]
+    side = lanes([*booked, *offers])  # a ride that overlaps check out (or a flight) shares the column instead of covering it
+    body = [ride_block(b, gs, ctx, *side[b.id]) if b.kind == "ride" else booked_block(b, gs, *side[b.id]) for b in booked]
+    body += [ride_block(o, gs, ctx, *side[o.id]) for o in offers]
     body += [activity_block(a, gs, demo, *lane[a.id], n_notes.get(a.id, 0), ctx["new"], ctx["live"], ctx["fresh"]) for a in acts]
     here = [x for x in ctx["drafts"] if x.plan.day == i]
     body += [draft_block(x, gs) for x in here]
