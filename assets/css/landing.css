@@ -104,7 +104,6 @@
 /* Keep the "When" text whole as the doors narrow: smaller type first, then its own row. */
 @media (max-width: 975px) {
   .field { padding: 0.625rem 0.75rem; }
-  .field input { font-size: 1rem; }
 }
 @media (max-width: 780px) {
   .search .field:nth-child(3) { grid-column: 1 / -1; }
