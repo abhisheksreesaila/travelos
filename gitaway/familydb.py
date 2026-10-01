@@ -30,6 +30,7 @@ from fh_saas.utils_migrate import apply_migrations, discover_migrations
 from fh_saas.utils_sql import with_transaction
 from sqlalchemy import text
 
+from gitaway import hostdb
 from gitaway.familydb_social import SOCIAL_TABLES
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -80,7 +81,7 @@ class Booking:
 class Activity:
     """Something on the trip calendar. `scope` is "" or "long" (the ?demo=long fixture); `act_id` is the short id forms carry ("a3").
 
-    `gone` is 0 live, 1 the last thing deleted (Undo brings it back), 2 deleted for good. Times are minutes after midnight.
+    `gone` is 0 live, 1 the last thing deleted (Undo brings it back); older deletions are removed from the file. Times are minutes after midnight.
     """
     pk: str
     trip_id: str
@@ -120,6 +121,7 @@ class CalState:
     scope: str = ""
     q: int = 0
     live: int = 0
+    dead: str = ""    # the last few deleted activity ids, comma separated: a stale re-post of one must not bring it back
 
 
 class Friend:
@@ -173,7 +175,7 @@ FAMILY_INDEXES = [  # (table, columns, unique, name)
 # ---- opening a family database -------------------------------------------------------------------------------------
 
 _READY = set()               # tenant ids whose schema this process has already made sure of
-_LOCK = threading.RLock()    # fh-saas's host database is one shared connection: membership checks go one at a time
+_LOCK = threading.RLock()    # one process makes a family's tables once
 
 
 def now() -> str:
@@ -212,7 +214,7 @@ def family_db(source):
     session = getattr(source, "session", None) if hasattr(source, "scope") else source  # a Starlette Request is a Mapping too: ask it for its session
     if session is None or not session.get("user_id"):
         raise ValueError("Authentication required")
-    with _LOCK:
+    with hostdb.locked():  # the membership check uses fh-saas's one shared host connection
         db = require_tenant_access(session)
     try:
         ensure_schema(db, session["tenant_id"])

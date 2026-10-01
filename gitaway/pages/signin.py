@@ -11,7 +11,7 @@ from fasthtml.common import A, Button, Div, Form, H2, Input, Label, Link, P, Scr
 from fh_saas.utils_auth import handle_login_request, handle_logout, handle_oauth_callback
 from starlette.responses import RedirectResponse, Response
 
-from gitaway import auth, session as ses
+from gitaway import auth, hostdb, session as ses
 from gitaway.layout import clear_site_data, page
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/signin.css"), Script(src="/assets/js/signin.js", defer=True))
@@ -122,7 +122,8 @@ def register(app):
         try:
             if error or not code or not state:  # Google sends ?error=access_denied (no code) when the person cancels
                 raise ValueError("no code")
-            handle_oauth_callback(code, state, request, session)  # its own redirect (/dashboard) is not ours
+            with hostdb.locked():  # fh-saas's callback uses the one shared host connection
+                handle_oauth_callback(code, state, request, session)  # its own redirect (/dashboard) is not ours
         except Exception:
             for key in ("oauth_state", "login_next", "login_intent"):
                 session.pop(key, None)

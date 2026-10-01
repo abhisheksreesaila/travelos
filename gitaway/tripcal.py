@@ -293,6 +293,7 @@ def grid_start(blocks):
 
 MAX_ACTIVITIES = 400  # per trip: a sane ceiling so one family cannot grow its database without end
 MAX_NOTES = 800
+MAX_DEAD = 20  # deleted ids remembered per trip, so a stale re-post of one is refused
 _SEED_ROWS = [(1, 10, 13, "Griffith Observatory", "culture"), (2, 9, 11, "Venice Canals stroll", "outdoors"),
               (4, 13, 15, "Tacos at Mariscos La Ola", "food"), (7, 10, 12, "Getty Center", "culture"),
               (9, 14, 16, "Bike the Strand", "outdoors"), (12, 11, 13, "Hollywood sign hike", "outdoors"),
@@ -486,6 +487,8 @@ def add_activity(session, *, day, start, end, title, kind="fun", demo="", id=Non
             same = familydb.row(db, "SELECT * FROM activities WHERE trip_id = :t AND scope = :s AND act_id = :i", t=fam.trip_id, s=scope, i=id) if id else None
             if same and same["gone"]:
                 return None  # deleted a moment ago: a re-posted add must not revive it (Undo does)
+            if not same and id and id in (st.get("dead") or "").split(","):
+                return None  # deleted and removed from the file: a stale re-post must not bring it back
             if same and (same["day"], same["start_min"], same["end_min"], same["title"], same["kind"]) == (day, s, e, title, kind):
                 return _act(same)  # the same form posted again: a refresh
             if same:
@@ -533,13 +536,15 @@ def delete_activity(session, id_, demo=""):
             return None
         db, scope = fam.db, _scope(demo)
         with familydb.transaction(db):
-            _begin(db, fam.trip_id, scope, fam.traveler.id)
+            st = _begin(db, fam.trip_id, scope, fam.traveler.id)
             row = familydb.row(db, "SELECT * FROM activities WHERE trip_id = :t AND scope = :s AND act_id = :i AND gone = 0", t=fam.trip_id, s=scope, i=id_)
             if row is None:
                 return None
-            familydb.run(db, "UPDATE activities SET gone = 2 WHERE trip_id = :t AND scope = :s AND gone = 1", t=fam.trip_id, s=scope)  # the earlier one can no longer be undone
-            familydb.run(db, "UPDATE notes SET gone = 2 WHERE trip_id = :t AND scope = :s AND gone = 1", t=fam.trip_id, s=scope)
+            familydb.run(db, "DELETE FROM notes WHERE trip_id = :t AND scope = :s AND gone = 1", t=fam.trip_id, s=scope)  # the earlier one can no longer be undone: remove it for good
+            familydb.run(db, "DELETE FROM activities WHERE trip_id = :t AND scope = :s AND gone = 1", t=fam.trip_id, s=scope)
             familydb.run(db, "UPDATE activities SET gone = 1 WHERE pk = :pk", pk=row["pk"])
+            dead = [d for d in (st.get("dead") or "").split(",") if d] + [id_]
+            familydb.run(db, "UPDATE cal_state SET dead = :d WHERE pk = :pk", d=",".join(dead[-MAX_DEAD:]), pk=f"{fam.trip_id}~{scope}")
             familydb.run(db, "UPDATE notes SET gone = 1 WHERE trip_id = :t AND scope = :s AND act_id = :i AND gone = 0", t=fam.trip_id, s=scope, i=id_)
             return _act(row)
 

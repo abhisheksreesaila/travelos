@@ -427,3 +427,45 @@ def test_forks_apply_and_voice_forms_carry_the_trip(client):
     r = client.post("/forks/apply", data={"slug": "sun-tacos-and-tide-pools", "pick": ["d1s2"], "trip": b}, follow_redirects=False)
     assert r.status_code == 303
     assert titles_of(a) == ["Trip A plan"] and len(titles_of(b)) == 2  # the plan went to B, where the page was drawn
+
+
+# ---- review fixes: deleted rows are purged, one host lock, notes ceiling ------------------------------------------------
+
+def test_only_the_last_deleted_activity_is_kept_for_undo_older_ones_are_removed_from_the_file(client):
+    book(client)
+    for i in range(1, 5):
+        add(client, id=f"a{i}", title=f"Plan {i}", start=f"{7 + i}:00", end=f"{7 + i}:30")
+        client.post("/calendar/notes", data={"id": f"n{10 + i}", "text": f"note {i}", "act": f"a{i}"})
+    for i in range(1, 5):
+        client.post(f"/calendar/activities/a{i}/delete")
+    s = person()
+    assert count(s, "activities") == 1 and count(s, "notes") == 1  # just a4 and its note, for Undo
+    assert cal.undo_delete(s, "a4").title == "Plan 4"
+    assert cal.undo_delete(s, "a1") is None
+    assert cal.add_activity(s, day=1, start="12:00", end="12:30", title="Revived?", kind="fun", id="a2") is None  # a stale re-post does not bring it back
+
+
+def test_the_notes_ceiling_refuses_more_and_keeps_what_there_is(client, monkeypatch):
+    monkeypatch.setattr(cal, "MAX_NOTES", 3)
+    book(client)
+    codes = [client.post("/calendar/notes", data={"id": f"n{i + 1}", "text": f"note {i}"}).status_code for i in range(6)]
+    assert 409 in codes and len(stored_calendar()["n"]) == 3
+    assert "a lot planned" in client.post("/calendar/notes", data={"id": "n99", "text": "one more"}).text
+
+
+def test_every_use_of_the_host_database_goes_through_the_one_lock(monkeypatch):
+    from gitaway import hostdb
+    entered = []
+    real = hostdb.locked
+
+    def spy():
+        entered.append(1)
+        return real()
+
+    monkeypatch.setattr(hostdb, "locked", spy)
+    s = {}
+    auth.sign_in_dev(s, "lock.check@example.com")
+    assert entered, "the dev sign-in must use the host lock"
+    entered.clear()
+    familydb.family_db(s).conn.close()
+    assert entered, "the membership check must use the host lock"

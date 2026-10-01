@@ -386,7 +386,7 @@ def trip_switcher(session):
     if len(mine) < 2:
         return ""
     rows = [Li(Form(Input(type="hidden", name="trip", value=t.id),
-                    Button(Span(t.title, cls="cal-trip-name"), Span(t.dates, cls="cal-trip-dates"), type="submit", data_trip=t.id,
+                    Button(Span(t.title, cls="cal-trip-name"), Span(t.detail, cls="cal-trip-dates"), type="submit", data_trip=t.id,
                            aria_current="true" if t.current else None, cls="cal-trip"),
                     action="/trips/switch", method="post")) for t in mine]
     return Details(Summary(icon("plane", 16, 2.2), Span(f"{len(mine)} trips"), cls="cal-trips-sum"),

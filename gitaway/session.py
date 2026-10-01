@@ -198,7 +198,7 @@ def booking(session):
 class TripInfo:
     id: str
     title: str
-    dates: str      # "Oct 16 – 20"
+    detail: str     # who is going: "2 adults, 2 kids"
     source: str     # "demo" or "imported"
     current: bool
 
@@ -209,8 +209,8 @@ def trips(session) -> list:
     with family(session) as fam:
         if not fam:
             return []
-        return [TripInfo(r["id"], r["title"], tripcal.range_label(date.fromisoformat(r["depart"]), date.fromisoformat(r["return_on"])),
-                         r["source"], r["id"] == fam.trip_id) for r in familydb.trips(fam.db)]
+        return [TripInfo(r["id"], r["title"], tripcal.trip_of({"trip": r["params"]}).summary, r["source"], r["id"] == fam.trip_id)
+                for r in familydb.trips(fam.db)]
 
 
 def switch_trip(session, trip_id) -> bool:
@@ -286,7 +286,7 @@ def book(session, quote):
                 if familydb.row(db, "SELECT COUNT(*) AS n FROM trips")["n"] >= familydb.MAX_TRIPS:
                     raise BookingError(f"That is {familydb.MAX_TRIPS} trips already. This demo keeps it small.")
                 trip_id, at = uuid.uuid4().hex[:12], familydb.now()
-                insert_only(db, "trips", {"id": trip_id, "title": quote.trip.title, "source": "demo", "params": params,
+                insert_only(db, "trips", {"id": trip_id, "title": f"{quote.trip.title} · {quote.trip.date_label}", "source": "demo", "params": params,
                                           "depart": quote.trip.depart.isoformat(), "return_on": quote.trip.return_.isoformat(),
                                           "created_by": t.id, "created_at": at}, ["id"], auto_commit=False)
                 insert_only(db, "bookings", {"id": bid, "trip_id": trip_id, "flight": quote.flight_id, "stay": quote.stay_id, "car": quote.car_id,

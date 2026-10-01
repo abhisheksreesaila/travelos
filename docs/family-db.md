@@ -12,7 +12,7 @@ A family is an fh-saas tenant (ADR-0004). Everything a family plans together liv
 
 ## Tables
 
-`members` (display info, the trip each person has open, their remembered workspace picks) · `trips` (title, `source` demo or imported, `params` = `catalog.trip_query`, dates) · `bookings` (the pay flow's picks, one per trip, money in cents) · `activities` and `notes` (the calendar; `gone` is 0 live, 1 last deleted so Undo works, 2 deleted for good) · `cal_state` (per trip and scope: the last id number, whether Mom's scripted add has happened) · `friends` (per trip) · `rides` (per family and set of picks, so every member sees them) · `forks`, `saves` (F-041).
+`members` (display info, the trip each person has open, their remembered workspace picks) · `trips` (title, `source` demo or imported, `params` = `catalog.trip_query`, dates) · `bookings` (the pay flow's picks, one per trip, money in cents) · `activities` and `notes` (the calendar; `gone` is 0 live, 1 last deleted so Undo works; older deletions are removed from the file) · `cal_state` (per trip and scope: the last id number, whether Mom's scripted add has happened) · `friends` (per trip) · `rides` (per family and set of picks, so every member sees them) · `forks`, `saves` (F-041).
 
 A trip belongs to the family, not to a person. Each member has their own *open* trip (`members.trip_id`; the family's newest until they choose). Booking different picks makes another trip; paying the same picks again opens the trip they made. The calendar's trip switcher is `POST /trips/switch`.
 
@@ -30,9 +30,17 @@ A trip belongs to the family, not to a person. Each member has their own *open* 
 
 Every change is one short transaction on its own rows, never a read-modify-write of a whole document. A write that reads first (calendar validation, id counters, booking idempotency) starts with a write statement (`familydb.lock`), which takes SQLite's write lock, so the reads after it are current; the second writer waits (busy timeout 5 s). WAL mode keeps readers out of the way. Edits to different fields of one activity both survive (`update_activity` writes only the fields it was given). Ids come from `cal_state.q` inside that transaction, so two people adding at once get different ids.
 
+## One worker
+
+The write lock and the host-database lock (`gitaway/hostdb.py`) are per process. Run one worker (one process) per data folder, or add a cross-process file lock before a multi-worker deploy; SQLite's own file locking keeps the data safe, but the in-process serialisation of fh-saas's shared host connection does not reach other processes.
+
+## Which trip a request works on
+
+Every calendar, voice, forks-apply and ride form carries a hidden `trip` (the trip the page was drawn for), and `calendar.js` sends it with its moves, deletes and live adds. `session.family` resolves it against the family's own trips; only a plain GET with no `trip` uses the person's open trip (`members.trip_id`). A write naming a trip the family does not have changes nothing, so a stale tab cannot write into the trip someone else opened since.
+
 ## Limits (a demo family stays small)
 
-`MAX_TRIPS` 20 per family, `MAX_ACTIVITIES` 400 and `MAX_NOTES` 800 per trip, 6 friends per trip, `MAX_RIDES` 6 per family. Each refusal is a friendly message.
+`MAX_TRIPS` 20 per family, `MAX_ACTIVITIES` 400 and `MAX_NOTES` 800 per trip, 6 friends per trip, `MAX_RIDES` 40 per family (and at most one live ride per leg per trip). Each refusal is a friendly message.
 
 ## Tests
 
