@@ -39,7 +39,9 @@ def cancel_href(next_path):
     return next_path.replace("/plan/pay?", "/plan?", 1) if next_path.startswith("/plan/pay?") else next_path
 
 
-def dialog(next_path, intent):
+def dialog(next_path, intent, asked=None):
+    """`asked` is the intent the link carried ("" for a plain Sign in); it is what the form posts back."""
+    asked = intent if asked is None else asked
     return Div(
         Form(
             Span("One tiny step", cls="sticker si-sticker"),
@@ -47,7 +49,7 @@ def dialog(next_path, intent):
             P("We'll keep your picks exactly as they are. This is a demo, so pick a traveler and go.", id="si-desc"),
             Div(*[_pick(t) for t in ses.TRAVELERS.values()], cls="si-list"),
             Input(type="hidden", name="next", value=next_path),
-            Input(type="hidden", name="intent", value=intent),
+            Input(type="hidden", name="intent", value=asked),
             Div(A("Cancel", href=cancel_href(next_path), id="si-cancel", cls="btn btn-sm"), cls="si-actions"),
             P("Real sign-in with Google comes later. Nothing here leaves your browser.", cls="si-note"),
             action="/signin", method="post",
@@ -56,23 +58,29 @@ def dialog(next_path, intent):
     )
 
 
+def _continue(session, intent, next_path):
+    """What the signed-in traveler meant to do before the sign-in: fork or save the trip at `next`."""
+    if intent == "fork":
+        ses.add_fork(session, next_path)
+    elif intent == "save":  # only when asked for: a plain "Sign in" on a trip page must not save it
+        ses.add_save(session, next_path)
+
+
 def register(app):
     @app.get("/signin")
-    def signin_page(session, next: str = "/", intent: str = "save"):
-        next_path, intent = ses.safe_next(next), _intent(intent)
+    def signin_page(session, next: str = "/", intent: str = ""):
+        next_path, asked, intent = ses.safe_next(next), (intent if intent in ses.INTENTS else ""), _intent(intent)
         if ses.current_traveler(session):
-            if intent == "fork":
-                ses.add_fork(session, next_path)
+            _continue(session, asked, next_path)
             return RedirectResponse(next_path, status_code=303)
-        return page("Sign in", Div(dialog(next_path, intent), cls="si-backdrop"), head=HEAD)
+        return page("Sign in", Div(dialog(next_path, intent, asked), cls="si-backdrop"), head=HEAD)
 
     @app.post("/signin")
-    def signin_submit(session, traveler: str = "", next: str = "/", intent: str = "save"):
+    def signin_submit(session, traveler: str = "", next: str = "/", intent: str = ""):
         if not ses.sign_in(session, traveler):
             return Response("Unknown demo traveler", status_code=400)
         next_path = ses.safe_next(next)
-        if _intent(intent) == "fork":
-            ses.add_fork(session, next_path)
+        _continue(session, intent if intent in ses.INTENTS else "", next_path)
         return RedirectResponse(next_path, status_code=303)
 
     @app.post("/fork")

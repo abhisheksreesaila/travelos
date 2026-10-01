@@ -95,6 +95,33 @@ def add_fork(session, next_path):
     return True
 
 
+def saved(session):
+    """Trip slugs the signed-in traveler has saved with the heart, oldest first. Empty when signed out.
+
+    Session shape: "saves": {"<traveler id>": ["<trip slug>", ...]}, like forks.
+    """
+    t = current_traveler(session)
+    return list((session.get("saves") or {}).get(t.id, [])) if t else []
+
+
+def add_save(session, next_path):
+    """Save the trip in a /trips/<slug> path for the current traveler. False when signed out, not a trip, or already saved."""
+    t, slug = current_traveler(session), trip_slug(next_path)
+    if not t or not slug or slug in saved(session):
+        return False
+    session["saves"] = {**(session.get("saves") or {}), t.id: [*saved(session), slug]}
+    return True
+
+
+def remove_save(session, next_path):
+    """Un-save the trip in a /trips/<slug> path. False when it was not saved."""
+    t, slug = current_traveler(session), trip_slug(next_path)
+    if not t or not slug or slug not in saved(session):
+        return False
+    session["saves"] = {**session["saves"], t.id: [s for s in saved(session) if s != slug]}
+    return True
+
+
 def booking(session):
     """The signed-in traveler's booked trip (a dict), or None when signed out or nothing is booked."""
     t = current_traveler(session)
@@ -196,6 +223,7 @@ def invite_link(booking_id):
 
 _request_traveler = ContextVar("gitaway_traveler", default=None)
 _request_path = ContextVar("gitaway_path", default="/")
+_request_forks = ContextVar("gitaway_forks", default=0)
 
 
 async def bind(req, session):
@@ -204,11 +232,18 @@ async def bind(req, session):
     Async on purpose: a sync beforeware runs in a threadpool copy of the context, so the ContextVar set would be lost.
     """
     _request_traveler.set(current_traveler(session))
+    from gitaway import forks  # here, not at the top: forks imports this module
+    _request_forks.set(forks.count(session))
     _request_path.set(req.url.path + (f"?{req.url.query}" if req.url.query else ""))
 
 
 def request_traveler():
     return _request_traveler.get()
+
+
+def request_fork_count():
+    """How many forks the current request's traveler has (0 when signed out), for panes that have no session at hand."""
+    return _request_forks.get()
 
 
 def signin_href(path=None):

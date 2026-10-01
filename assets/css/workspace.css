@@ -329,6 +329,8 @@
 .ws-dark.is-focused { box-shadow: 0 0 0 0.1875rem var(--sun); }
 .ws-fork { height: 2.25rem; padding: 0 0.875rem; border-radius: var(--r-pill); background: var(--sun); color: var(--ink); font-weight: 800; font-size: max(var(--text-min), 0.875rem); display: flex; align-items: center; text-decoration: none; flex-shrink: 0; }
 .ws-fork:hover { color: var(--ink); }
+.ws-forklist { align-self: flex-start; min-height: 2.25rem; padding: 0 0.875rem; border-radius: var(--r-pill); background: var(--card); color: var(--ink); font-weight: 800; font-size: max(var(--text-min), 0.875rem); display: inline-flex; align-items: center; text-decoration: none; }
+.ws-forklist:hover { color: var(--ink); box-shadow: 0 0 0 0.1875rem var(--sun); }
 
 /* Expanded context pane: lanes hide, the column goes full width and shows only that pane */
 .ws-grid:is([data-expanded="weather"], [data-expanded="map"], [data-expanded="news"], [data-expanded="community"]) > .ws-pane { display: none; }

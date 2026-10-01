@@ -1,6 +1,6 @@
 """FastHTML components for the scrapbook itinerary page (F-014)."""
 
-from fasthtml.common import (A, Button, Details, Div, H1, H2, H3, Img, Link, NotStr, P, Script,
+from fasthtml.common import (A, Button, Details, Div, Form, H1, H2, H3, Img, Input, Link, NotStr, P, Script,
                              Section, Span, Summary)
 
 from gitaway.icons import icon
@@ -56,11 +56,20 @@ def _stats(trip):
                cls="stats")
 
 
-def _actions(trip):
+def save_form(trip, saved=False):
+    """The Save heart: a plain form post, so it works signed out (through the demo sign-in) and without JavaScript."""
+    return Form(
+        Input(type="hidden", name="next", value=f"/trips/{trip.slug}"),
+        Button(icon("heart", 22, 2.3), type="submit", cls="btn btn-round" + (" is-saved" if saved else ""), aria_pressed="true" if saved else "false",
+               aria_label="Saved. Tap to remove it from your saved trips" if saved else "Save this trip"),
+        action="/unsave" if saved else "/save", method="post", cls="save-form")
+
+
+def _actions(trip, saved=False, forked=False):
     return Div(
-        A(icon("fork", 22, 2.4), "Fork this trip", href=fork_href(trip), cls="btn btn-primary btn-hero"),
+        A(icon("fork", 22, 2.4), "In your forks" if forked else "Fork this trip", href="/forks" if forked else fork_href(trip), cls="btn btn-primary btn-hero"),
         Button(icon("share", 20), "Share", type="button", cls="btn btn-hero"),
-        Button(icon("heart", 22, 2.3), type="button", cls="btn btn-round", aria_label="Save to favourites"),
+        save_form(trip, saved),
         cls="hero-actions",
     )
 
@@ -103,7 +112,7 @@ def _collage(trip):
     return Div(*stickers, route, plane, weather, stamp, cls="collage collage-stickers")
 
 
-def _hero(trip):
+def _hero(trip, saved=False, forked=False):
     underline = NotStr('<svg class="underline" viewBox="0 0 300 20" preserveAspectRatio="none" aria-hidden="true">'
                        '<path d="M4 13 C 60 3, 118 19, 176 9 S 268 5, 296 11" stroke="var(--accent-2)" stroke-width="7" '
                        'fill="none" stroke-linecap="round"/></svg>')
@@ -114,7 +123,7 @@ def _hero(trip):
             P(trip.lede, cls="lede"),
             Div(*[_tag(t) for t in trip.tags], cls="tags") if trip.tags else "",
             _stats(trip),
-            _actions(trip),
+            _actions(trip, saved, forked),
             _source_card(trip.source) if trip.source else "",
             cls="hero-copy",
         ),
@@ -278,11 +287,11 @@ SCRIPT = Script("""
 """)
 
 
-def itinerary_body(trip: Itinerary, loading: bool = False):
+def itinerary_body(trip: Itinerary, loading: bool = False, saved: bool = False, forked: bool = False):
     if loading:
         return skeleton(trip)
-    return Div(_hero(trip), _board(trip), _days(trip), _yours(trip), SCRIPT, cls="itinerary")
+    return Div(_hero(trip, saved, forked), _board(trip), _days(trip), _yours(trip), SCRIPT, cls="itinerary")
 
 
-def itinerary_page(trip: Itinerary, theme=None, loading: bool = False):
-    return page(trip.title, itinerary_body(trip, loading), theme=resolve_theme(theme, trip), head=HEAD)
+def itinerary_page(trip: Itinerary, theme=None, loading: bool = False, saved: bool = False, forked: bool = False):
+    return page(trip.title, itinerary_body(trip, loading, saved, forked), theme=resolve_theme(theme, trip), head=HEAD)

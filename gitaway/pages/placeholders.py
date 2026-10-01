@@ -7,7 +7,6 @@ from gitaway.layout import page
 # path -> (nav path it lights up, title, promise, ticket that replaces it)
 PLACEHOLDERS = {
     "/creators": ("/creators", "Turn your vlog into a trip", "Paste a video or post link and watch it become an itinerary. Coming soon.", "F-023"),
-    "/forks": ("", "Your forks", "The trips you have forked will be listed here, ready to drop into your calendar. Coming soon.", "F-021"),
 }
 
 
