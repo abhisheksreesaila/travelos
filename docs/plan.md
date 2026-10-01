@@ -176,7 +176,7 @@ Needs: none
 - [x] /calendar opens on the whole-trip view; the switch to the day view is obvious and remembered while the traveler is on the page
 - [x] links that need the day view (e.g. after adding an activity) still land there
 
-## F-033 Book any mix of lanes, with rides when there's no car [todo]
+## F-033 Book any mix of lanes, with rides when there's no car [doing]
 Brief: docs/briefs/optional-lanes.md (approved 2026-09-30)
 Needs: F-027 (shares the pick URL and ledger)
 - [ ] each lane has a skip choice ("I'll drive", "Staying with friends", "No car") that collapses it and can be undone
