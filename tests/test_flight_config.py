@@ -209,7 +209,7 @@ def test_paying_with_junk_fares_books_the_default(client):
     sign_in(client)
     client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1", "fare": "zz", "bags": "99"})
     b = session_data(client)["bookings"]["ari"]
-    assert b["total_cents"] == 308_800 and b["fare"] == "" and b["bags"] == ""
+    assert b["total_cents"] == 308_800 and "fare" not in b and "bags" not in b
 
 
 def test_paying_a_different_fare_replaces_the_booking(client):
@@ -275,5 +275,36 @@ def test_an_old_booking_without_a_fare_still_reads(client):
 
 def test_the_script_treats_flight_edits_as_drafts_like_stays(client):
     js = client.get("/assets/js/workspace.js").text
-    for needle in ("editFlight", "applyFlight", "fare=", "bags=", "tripq"):
+    for needle in ("editFlight", "applyFlight", "fare=", "bags="):
         assert needle in js
+
+
+def test_every_quote_request_the_editors_build_carries_the_trip(client):
+    """Without the trip a stay or flight edit on a bigger or longer trip was priced as the sample trip."""
+    js = client.get("/assets/js/workspace.js").text
+    for fn in ("function editStay", "function editFlight", "function resetPanel"):
+        body = js[js.index(fn):]
+        call = body[body.index("getQuote("):]
+        call = call[:call.index(".then(")]
+        assert "tripq" in call, fn
+
+
+def test_a_full_cookie_refuses_the_booking_with_a_friendly_message_and_keeps_the_old_one(client, monkeypatch):
+    sign_in(client)
+    client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1"})
+    before = session_data(client)["bookings"]["ari"]
+    monkeypatch.setattr("gitaway.session.BUDGET", 10)
+    r = client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1", "fare": "main", "bags": "2"}, follow_redirects=False)
+    assert r.status_code == 200 and "can&#x27;t hold another booking" in r.text or "can't hold another booking" in r.text
+    assert "Back to my picks" in r.text
+    assert session_data(client)["bookings"]["ari"] == before
+
+
+def test_a_default_booking_leaves_out_empty_fare_and_bags(client):
+    sign_in(client)
+    client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1"})
+    b = session_data(client)["bookings"]["ari"]
+    assert "fare" not in b and "bags" not in b and "trip" not in b
+    client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1", "fare": "main"})
+    b = session_data(client)["bookings"]["ari"]
+    assert b["fare"] == "main" and "bags" not in b

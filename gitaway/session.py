@@ -130,11 +130,15 @@ def booking_id(traveler_id, flight, stay, car, rooms="", add="", trip="", fare="
     return "GA-" + digest[:8].upper()
 
 
+class BookingError(ValueError):
+    """A booking the demo refuses; the message is fit to show the traveler."""
+
+
 def book(session, quote):
     """Record `quote` (a catalog.Quote) as the current traveler's booked trip. Idempotent.
 
-    Returns the booking, or None when signed out. Paying the same picks again keeps the original booking untouched.
-    Session shape: "bookings": {"<traveler id>": {"id", "flight", "stay", "car", "rooms", "add", "fare", "bags", "total_cents", "booked_at"}}
+    Returns the booking, or None when signed out. Raises BookingError when the session cookie has no room for it. Paying the same picks again keeps the original booking untouched.
+    Session shape: "bookings": {"<traveler id>": {"id", "flight", "stay", "car", "rooms", "add", "total_cents", "booked_at"; "fare", "bags" and "trip" only when set}}
     (rooms and add are the stay's compact pick codes, "" for the default room and no add-ons; fare and bags are the flight's, "" for Basic and no bags).
     """
     t = current_traveler(session)
@@ -147,12 +151,20 @@ def book(session, quote):
     existing = booking(session)
     if existing and existing["id"] == bid:
         return existing
-    record = {"id": bid, "flight": quote.flight_id, "stay": quote.stay_id, "car": quote.car_id, "rooms": rooms, "add": add, "fare": fare, "bags": bags,
+    record = {"id": bid, "flight": quote.flight_id, "stay": quote.stay_id, "car": quote.car_id, "rooms": rooms, "add": add,
               "total_cents": quote.total_cents, "booked_at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
-    if trip:
-        record["trip"] = trip
+    for key, value in (("fare", fare), ("bags", bags), ("trip", trip)):
+        if value:
+            record[key] = value
+    old = session.get("bookings")
     # Reassign the whole dict so the cookie session notices the change.
-    session["bookings"] = {**session.get("bookings", {}), t.id: record}
+    session["bookings"] = {**(old or {}), t.id: record}
+    if len(json.dumps(dict(session))) > BUDGET:  # same cookie budget as the calendar: refuse rather than overflow the cookie
+        if old is None:
+            session.pop("bookings", None)
+        else:
+            session["bookings"] = old
+        raise BookingError("This demo can't hold another booking right now. Delete some calendar items to make room, then try again.")
     return record
 
 
