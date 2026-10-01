@@ -55,7 +55,7 @@
 .ga-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.625rem; }
 .ga-tile { height: 4rem; padding: 0 1rem; border: 0; border-radius: 1.125rem; background: var(--card); box-shadow: 0 0 0 1px var(--line); text-align: left; display: flex; flex-direction: column; justify-content: center; cursor: pointer; font-family: var(--font-body); color: var(--ink); }
 .ga-tile.is-on { box-shadow: 0 0 0 0.1875rem var(--coral); }
-.ga-tile-k { font-size: max(var(--text-min), 0.75rem); font-weight: 800; color: var(--ink-3); }
+.ga-tile-k { text-transform: uppercase; font-size: max(var(--text-min), 0.75rem); font-weight: 800; color: var(--ink-3); }
 .ga-tile-v { font: 800 1.25rem var(--font-display); }
 .ga-cal-head { display: flex; align-items: center; gap: 0.5rem; }
 .ga-month { flex: 1; text-align: center; font: 800 1.25rem var(--font-display); }
@@ -69,7 +69,7 @@
 .ga-day:hover:not(:disabled) { transform: scale(1.08); }
 .ga-day.is-in { background: var(--accent-tint); border-radius: 0.625rem; }
 .ga-day.is-end { background: var(--coral); border-radius: var(--r-pill); }
-.ga-day:disabled { color: #B5AFC2; cursor: not-allowed; }
+.ga-day:disabled { color: var(--ink-3); opacity: .45; cursor: not-allowed; }
 .ga-cal-foot { display: flex; align-items: center; gap: 0.625rem; flex-wrap: wrap; }
 .ga-nights { min-height: 1.875rem; padding: 0 0.75rem; border-radius: var(--r-pill); background: var(--sun-tint); font-size: max(var(--text-min), 0.8125rem); font-weight: 800; display: flex; align-items: center; }
 .ga-tip { font-size: max(var(--text-min), 0.8125rem); font-weight: 700; color: var(--ink-2); flex: 1 1 8rem; }
@@ -77,12 +77,23 @@
 
 /* Phones: a bottom sheet, 44px targets */
 @media (max-width: 720px) {
-  .ga-scrim { display: block; position: fixed; inset: 0; z-index: 999; background: rgba(30, 26, 46, .45); }
+  .ga-scrim { display: block; position: fixed; inset: 0; z-index: 999; background: color-mix(in srgb, var(--ink) 45%, transparent); }
   .ga-pop { left: 0; right: 0; bottom: 0; top: auto; max-width: none; width: auto; border-radius: var(--r-lg) var(--r-lg) 0 0; padding-bottom: env(safe-area-inset-bottom); max-height: 88vh; overflow: auto; animation: ga-sheet-in .2s var(--ease-out); }
   .ga-pop.ga-pop-cal { width: auto; }
   .ga-pop-list { max-height: 70vh; }
   .ga-pop-list.is-chips-box { min-width: 0; }
   .ga-step-btn, .ga-cal-nav { width: 2.75rem; height: 2.75rem; }
+}
+/* Sheet title: only on phones, where the sheet covers the field it belongs to */
+.ga-pop-title { display: none; }
+@media (max-width: 720px) {
+  .ga-pop-title { display: block; padding: 0.5rem 0.875rem 0.25rem; font-size: max(var(--text-min), 0.8125rem); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+}
+/* Narrow phones: seven day columns need the width, so the sheet gives up its side padding to the days */
+@media (max-width: 400px) {
+  .ga-pop-cal { padding: 0.75rem 0.25rem; }
+  .ga-tiles, .ga-cal-head, .ga-cal-foot { padding-inline: 0.75rem; }
+  .ga-row { gap: 0.125rem; }
 }
 @keyframes ga-sheet-in { from { transform: translateY(100%); } to { transform: none; } }
 @media (prefers-reduced-motion: reduce) {

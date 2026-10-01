@@ -47,6 +47,24 @@
   function watchDisabled(native, refresh) {
     new MutationObserver(refresh).observe(native, { attributes: true, attributeFilter: ["disabled"] });
   }
+  // Every dressed control registers here; a swapped-out form's controls are dropped (prune) so nothing keeps them in memory.
+  function register(native, refresh, voice) {
+    widgets.push({ native: native, refresh: refresh });
+    native.addEventListener("change", refresh);
+    native.addEventListener("input", refresh);
+    if (voice) mirrorErrors(native, voice.invalid, voice.described, voice.focus);
+  }
+  function refreshAll() { widgets.forEach(function (w) { w.refresh(); }); }
+  function prune() { widgets = widgets.filter(function (w) { return w.native.isConnected; }); }
+  // A server error is on the native field: say it on the control the visitor sees, and send the error-summary link there too.
+  function mirrorErrors(native, invalid, described, focus) {
+    if (native.getAttribute("aria-invalid") === "true" && invalid) invalid.setAttribute("aria-invalid", "true");
+    if (native.getAttribute("aria-describedby") && described) described.setAttribute("aria-describedby", native.getAttribute("aria-describedby"));
+    if (native.id && focus) {
+      focus.id = native.id + "-ga";
+      document.querySelectorAll('a[href="#' + native.id + '"]').forEach(function (a) { a.setAttribute("href", "#" + focus.id); });
+    }
+  }
 
   // ---- popover shell (desktop: under the field; phone: a bottom sheet) --------------------------------------------------
   function closeOpen(refocus) { if (open) open.close(refocus); }
@@ -130,7 +148,7 @@
       trigger.disabled = native.disabled;
     }
     watchDisabled(native, refresh);
-    widgets.push({ refresh: refresh });
+    register(native, refresh, { invalid: trigger, described: trigger, focus: trigger });
     refresh();
 
     function opener() {
@@ -145,7 +163,7 @@
       });
       var cur = Math.max(0, opts.findIndex(function (o) { return o.value === native.value; }));
       var typed = "", typedAt = 0;
-      var box = el("div", { class: "ga-pop-list" }, [list]);
+      var box = el("div", { class: "ga-pop-list" }, [el("div", { class: "ga-pop-title", "aria-hidden": "true", text: label }), list]);
       var pop;
       function setActive(i, scroll) {
         cur = Math.max(0, Math.min(nodes.length - 1, i));
@@ -157,7 +175,6 @@
         native.value = o.value;
         pop.close(true);
         fire(native);
-        widgets.forEach(function (w) { w.refresh(); });
       }
       function cols() {
         var top = nodes[0].offsetTop, c = 0;
@@ -232,11 +249,13 @@
       if (n < lo || n > hi) return;
       native.value = String(n);
       fire(native);
-      widgets.forEach(function (w) { w.refresh(); });
     }
     less.addEventListener("click", function (e) { e.preventDefault(); move(-1); });
     more.addEventListener("click", function (e) { e.preventDefault(); move(1); });
-    widgets.push({ refresh: refresh });
+    register(native, refresh, { described: box, focus: less });
+    // A click on the label text must not reach the hidden select: it goes to the stepper.
+    var lab = native.labels && native.labels[0];
+    if (lab) lab.addEventListener("click", function (e) { if (!box.contains(e.target)) { e.preventDefault(); less.focus(); } });
     refresh();
   }
 
@@ -294,11 +313,11 @@
         t.disabled = native.disabled;
       }
       watchDisabled(native, refresh);
-      widgets.push({ refresh: refresh });
+      register(native, refresh, { invalid: t, described: t, focus: t });
       refresh();
       return t;
     });
-    var labels = pair.map(function (n, i) { return n.dataset.gaLabel || (range ? (i ? "Come home" : "Leave") : labelOf(n)); });
+    var labels = pair.map(function (n, i) { return labelOf(n); });
 
     function opener(side) {
       var a = start.value, b = range ? end.value : "", phase = side === 1 && a ? "end" : "start";
@@ -310,7 +329,7 @@
 
       var live = el("div", { class: "sr-only", "aria-live": "polite", "aria-atomic": "true" });
       var tiles = range ? el("div", { class: "ga-tiles" }, pair.map(function (n, i) {
-        var tile = el("button", { type: "button", class: "ga-tile", "data-i": String(i) }, [el("span", { class: "ga-tile-k", text: labels[i].toUpperCase() }), el("span", { class: "ga-tile-v" })]);
+        var tile = el("button", { type: "button", class: "ga-tile", "data-i": String(i) }, [el("span", { class: "ga-tile-k", text: labels[i] }), el("span", { class: "ga-tile-v" })]);
         tile.addEventListener("click", function () { phase = i ? "end" : "start"; render(true); });
         return tile;
       })) : "";
@@ -328,23 +347,23 @@
       function commit() {
         var changed = [];
         if (start.value !== a) { start.value = a; changed.push(start); }
-        if (range && end.value !== b) { end.value = b; changed.push(end); }
+        if (range && b && end.value !== b) { end.value = b; changed.push(end); }
         changed.forEach(fire);
-        widgets.forEach(function (w) { w.refresh(); });
+        if (range) b = end.value && end.value > a ? end.value : ""; // the form may have moved the return day (start.js keeps it after the leave day)
+        refreshAll();
       }
       function announce(msg) { live.textContent = ""; setTimeout(function () { live.textContent = msg; }, 30); }
       function describe() {
         if (!range) return a ? short(a) : "No date picked";
-        if (a && b) return "Leave " + short(a) + ", come home " + short(b) + ", " + nightsText(nightsBetween(a, b));
-        if (a) return "Leave " + short(a) + ". Now choose the day you come home";
+        if (a && b) return "Leaving " + short(a) + ", back " + short(b) + ", " + nightsText(nightsBetween(a, b));
+        if (a) return "Leaving " + short(a) + ". Now choose the day you come back";
         return "Choose the day you leave";
       }
       function pick(d) {
         if (min && d < min) return;
         if (!range) { a = d; commit(); pop.close(true); return; }
-        if (phase === "start" || !a) { a = d; b = ""; phase = "end"; announce(describe()); }
-        else if (d > a) { b = d; commit(); phase = "start"; announce(describe()); }
-        else { a = d; b = ""; announce(describe()); }
+        if (phase === "start" || !a || d <= a) { a = d; if (b && b <= a) b = ""; phase = "end"; commit(); announce(describe()); } // a new leave day is kept at once, with the old return day if still later
+        else { b = d; commit(); phase = "start"; announce(describe()); }
         focus = d; render(true);
       }
       function render(keepFocus) {
@@ -365,7 +384,7 @@
         function dayCell(d) {
           var past = !!min && d < min, endpoint = d === a || (range && d === b), within = range && a && b && d > a && d < b;
           var label = fmt(d, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
-          if (d === a) label += range ? ", leave day" : ", selected"; else if (range && d === b) label += ", come home day"; else if (within) label += ", in your trip";
+          if (d === a) label += range ? ", leaving day" : ", selected"; else if (range && d === b) label += ", back day"; else if (within) label += ", in your trip";
           if (past) label += ", not available";
           var btn = el("button", { type: "button", class: "ga-day" + (endpoint ? " is-end" : "") + (within ? " is-in" : "") + (d === a && range && b ? " is-from" : "") + (range && d === b ? " is-to" : ""),
             "aria-label": label, tabindex: d === focus ? "0" : "-1", "data-d": d, disabled: past, text: String(+d.slice(8)) });
@@ -381,7 +400,7 @@
           });
         }
         chip.textContent = range ? (a && b ? nightsText(nightsBetween(a, b)) : "Choose dates") : (a ? short(a) : "Pick a day");
-        tip.textContent = range ? (phase === "start" ? "Tap a start, then an end" : "Now tap the day you come home") : "Tap a day";
+        tip.textContent = range ? (phase === "start" ? "Tap a start, then an end" : "Now tap the day you come back") : "Tap a day";
         if (keepFocus) { var f = grid.querySelector('[data-d="' + focus + '"]'); if (f) f.focus({ preventScroll: true }); }
       }
       function go(d, e) {
@@ -445,14 +464,19 @@
 
   var queued = false, pending = [];
   new MutationObserver(function (muts) {
-    muts.forEach(function (m) { Array.prototype.forEach.call(m.addedNodes, function (n) { if (n.nodeType === 1) pending.push(n); }); });
-    if (queued || !pending.length) return;
+    var removed = false;
+    muts.forEach(function (m) {
+      if (m.removedNodes.length) removed = true;
+      Array.prototype.forEach.call(m.addedNodes, function (n) { if (n.nodeType === 1 && !(n.classList.contains("ga-pop") || n.classList.contains("ga-scrim"))) pending.push(n); });
+    });
+    if (queued || !(pending.length || removed)) return;
     queued = true;
-    requestAnimationFrame(function () { queued = false; var list = pending; pending = []; list.forEach(function (n) { if (document.body.contains(n)) enhance(n); }); });
+    requestAnimationFrame(function () { queued = false; var list = pending; pending = []; prune(); list.forEach(function (n) { if (document.body.contains(n)) enhance(n); }); });
   }).observe(document.body, { childList: true, subtree: true });
 
-  document.addEventListener("reset", function () { setTimeout(function () { widgets.forEach(function (w) { w.refresh(); }); }, 0); });
-  window.addEventListener("pageshow", function () { widgets.forEach(function (w) { w.refresh(); }); });
+  document.addEventListener("reset", function () { setTimeout(refreshAll, 0); });
+  window.addEventListener("pageshow", refreshAll);
+  window.GAPickers = { count: function () { return widgets.length; } };
   enhance(document.body);
   document.documentElement.setAttribute("data-ga-ready", "");
 })();

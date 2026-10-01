@@ -66,5 +66,5 @@ def test_each_way_in_lands_on_a_working_page(new_family, base_url, viewport):
 def test_the_invite_form_fields_are_tall_enough_on_a_phone(new_family, base_url):
     page = new_family(PHONE)
     page.goto(f"{base_url}/family")
-    for sel in ("#fam-email", "#fam-role-pick"):
+    for sel in ("#fam-email", "#fam-role-pick-ga"):  # the role select is dressed: its visible control is the picker button
         assert page.locator(sel).bounding_box()["height"] >= 44, sel

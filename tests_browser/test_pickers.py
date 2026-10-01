@@ -42,7 +42,7 @@ def day(page, name):
 
 def test_pick_a_range_with_the_mouse_and_land_on_that_trip(make):
     page = make("/start")
-    page.get_by_role("button", name=re.compile("^Leave:")).click()
+    page.get_by_role("button", name=re.compile("^Leaving:")).click()
     expect(page.get_by_role("dialog", name="Choose your dates")).to_be_visible()
     day(page, "Thursday, October 22").click()
     day(page, "Sunday, October 25").click()
@@ -50,7 +50,7 @@ def test_pick_a_range_with_the_mouse_and_land_on_that_trip(make):
     page.get_by_role("button", name="Done").click()
     expect(page.get_by_role("dialog")).to_have_count(0)
     assert page.input_value("#st-d") == "2026-10-22" and page.input_value("#st-r") == "2026-10-25"
-    expect(page.get_by_role("button", name=re.compile("^Come home: Sun, Oct 25"))).to_be_visible()
+    expect(page.get_by_role("button", name=re.compile("^Back: Sun, Oct 25"))).to_be_visible()
     page.get_by_role("button", name="Find my trip").click()
     page.wait_for_url(re.compile(r"/plan\?"))
     assert "d=2026-10-22" in page.url and "r=2026-10-25" in page.url
@@ -59,7 +59,7 @@ def test_pick_a_range_with_the_mouse_and_land_on_that_trip(make):
 
 def test_pick_a_range_with_the_keyboard_and_focus_comes_back(make):
     page = make("/start")
-    leave = page.get_by_role("button", name=re.compile("^Leave:"))
+    leave = page.get_by_role("button", name=re.compile("^Leaving:"))
     leave.focus()
     page.keyboard.press("Enter")
     expect(page.get_by_role("dialog")).to_be_visible()
@@ -82,7 +82,7 @@ def test_pick_a_range_with_the_keyboard_and_focus_comes_back(make):
 
 def test_past_days_are_disabled_and_months_navigate(make):
     page = make("/start")
-    page.get_by_role("button", name=re.compile("^Leave:")).click()
+    page.get_by_role("button", name=re.compile("^Leaving:")).click()
     page.get_by_role("button", name="Previous month").click()
     expect(page.get_by_role("dialog").locator(".ga-month")).to_have_text("September 2026")
     expect(day(page, "Tuesday, September 29")).to_be_disabled()  # today is Sept 30 in the tests
@@ -94,13 +94,13 @@ def test_past_days_are_disabled_and_months_navigate(make):
 
 def test_the_grid_is_an_aria_grid_and_announces_the_range(make):
     page = make("/start")
-    page.get_by_role("button", name=re.compile("^Leave:")).click()
+    page.get_by_role("button", name=re.compile("^Leaving:")).click()
     expect(page.get_by_role("grid")).to_be_visible()
     expect(page.get_by_role("gridcell").first).to_be_attached()
     day(page, "Thursday, October 22").click()
     day(page, "Sunday, October 25").click()
     live = page.locator(".ga-pop [aria-live=polite][aria-atomic]")
-    expect(live).to_contain_text("Leave Thu, Oct 22, come home Sun, Oct 25, 3 nights")
+    expect(live).to_contain_text("Leaving Thu, Oct 22, back Sun, Oct 25, 3 nights")
     assert page.get_by_role("gridcell", selected=True).count() >= 2
 
 
@@ -158,7 +158,7 @@ def test_a_time_list_has_typeahead_and_keeps_the_native_value(make):
 
 def test_on_a_phone_the_calendar_is_a_bottom_sheet(make):
     page = make("/start", viewport=PHONE)
-    page.get_by_role("button", name=re.compile("^Leave:")).click()
+    page.get_by_role("button", name=re.compile("^Leaving:")).click()
     sheet = page.get_by_role("dialog")
     expect(sheet).to_be_visible()
     box = sheet.bounding_box()
@@ -193,5 +193,82 @@ def test_no_browser_default_control_is_visible_on_start(make, viewport):
 
 def test_reduced_motion_turns_the_picker_animation_off(make):
     page = make("/start")
-    page.get_by_role("button", name=re.compile("^Leave:")).click()
+    page.get_by_role("button", name=re.compile("^Leaving:")).click()
     assert page.evaluate("getComputedStyle(document.querySelector('.ga-pop')).animationName") == "none"
+
+
+def test_a_click_on_the_stepper_label_goes_to_the_stepper_and_it_follows_the_form(make):
+    page = make("/start")
+    page.locator('label[data-field="a"] .st-label').click()
+    assert page.evaluate("document.activeElement.getAttribute('aria-label')") == "Fewer adults"  # not the hidden select
+    assert page.input_value("#st-a") == "2"
+    # the form (or the browser restoring a value) changes the select: the stepper shows it
+    page.evaluate("() => { const s = document.getElementById('st-a'); s.value = '5'; s.dispatchEvent(new Event('change', {bubbles: true})); }")
+    expect(page.get_by_role("group", name=re.compile("^Adults")).locator(".ga-step-n")).to_have_text("5")
+
+
+def test_swapping_the_calendar_form_in_and_out_does_not_pile_up_controls(make):
+    page = make("/calendar?view=days", signed_in=True)
+    page.wait_for_timeout(200)
+
+    def cycle():
+        page.locator('a[href*="add="]').first.click()
+        page.wait_for_selector(".cal-modal select[name=day]", state="attached")
+        page.wait_for_timeout(100)
+        page.locator(".cal-cancel").click()
+        page.wait_for_selector(".cal-modal", state="detached")
+        page.wait_for_timeout(100)
+
+    cycle()
+    after_one = page.evaluate("GAPickers.count()")
+    for _ in range(5):
+        cycle()
+    assert page.evaluate("GAPickers.count()") == after_one  # closed forms are forgotten, not kept
+    assert not page.errors
+
+
+def test_a_server_error_shows_on_the_visible_control_and_the_summary_link_goes_there(make):
+    page = make("/start?go=1&to=la&from=SFO&d=2026-09-01&r=2026-09-03&a=2&n=0")
+    leaving = page.get_by_role("button", name=re.compile("^Leaving:"))
+    expect(leaving).to_have_attribute("aria-invalid", "true")
+    assert "st-err-d" in leaving.get_attribute("aria-describedby")
+    link = page.locator("#st-errors a").first
+    assert link.get_attribute("href") == "#st-d-ga"
+    link.click()
+    expect(leaving).to_be_focused()
+
+
+def test_a_new_leave_day_is_kept_with_the_old_return_day_however_the_picker_closes(make):
+    for closer in ("Escape", "Done", "outside"):
+        page = make("/start")                              # leave Oct 16, back Oct 20
+        page.get_by_role("button", name=re.compile("^Leaving:")).click()
+        day(page, "Saturday, October 17").click()
+        if closer == "Escape":
+            page.keyboard.press("Escape")
+        elif closer == "Done":
+            page.get_by_role("button", name="Done").click()
+        else:
+            page.mouse.click(5, 5)
+        expect(page.get_by_role("dialog")).to_have_count(0)
+        assert page.input_value("#st-d") == "2026-10-17" and page.input_value("#st-r") == "2026-10-20", closer
+    page.get_by_role("button", name=re.compile("^Leaving:")).click()  # after the old return day: the form moves the return day
+    day(page, "Friday, October 23").click()
+    page.keyboard.press("Escape")
+    assert page.input_value("#st-d") == "2026-10-23" and page.input_value("#st-r") > "2026-10-23"
+
+
+def test_day_buttons_stay_close_to_44px_on_the_narrowest_phone(make):
+    page = make("/start", viewport={"width": 320, "height": 640})
+    page.get_by_role("button", name=re.compile("^Leaving:")).click()
+    box = day(page, "Friday, October 16").bounding_box()
+    assert box["width"] >= 41 and box["height"] >= 44, box
+    assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth")
+
+
+def test_a_phone_list_sheet_names_what_it_is_for(make):
+    page = make("/start?d=2026-10-16&r=2026-10-20&a=2&k=7,9", viewport=PHONE)
+    page.get_by_role("button", name=re.compile("^Kid 1 age:")).click()
+    title = page.locator(".ga-pop-title")
+    expect(title).to_be_visible()
+    expect(title).to_have_text("Kid 1 age")
+    assert page.evaluate("getComputedStyle(document.querySelector('.ga-pop-title')).textTransform") == "uppercase"

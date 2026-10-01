@@ -83,10 +83,10 @@ def _form(vals, errors):
         _chips(vals, errors),
         Div(
             _field("From", "from", _control(Select, "from", errors, Option(f"{catalog.ORIGIN[1]} ({catalog.ORIGIN[0]})", value=catalog.ORIGIN[0], selected=True)), error=errors.get("from", "")),
-            _field("Leaving", "d", _control(Input, "d", errors, type="date", value=vals["d"], required=True, min=catalog.today().isoformat(), data_ga_range="trip", data_ga_label="Leave"), error=errors.get("d", "")),
-            _field("Back", "r", _control(Input, "r", errors, type="date", value=vals["r"], required=True, min=catalog.today().isoformat(), data_ga_range="trip", data_ga_end="", data_ga_label="Come home"), error=errors.get("r", "")),
+            _field("Leaving", "d", _control(Input, "d", errors, type="date", value=vals["d"], required=True, min=catalog.today().isoformat(), data_ga_range="trip", data_ga_label="Leaving"), error=errors.get("d", "")),
+            _field("Back", "r", _control(Input, "r", errors, type="date", value=vals["r"], required=True, min=catalog.today().isoformat(), data_ga_range="trip", data_ga_end="", data_ga_label="Back"), error=errors.get("r", "")),
             _field("Adults", "a", _control(Select, "a", errors, *_options([(i, str(i)) for i in range(1, catalog.MAX_TRAVELERS + 1)], vals["a"]), data_ga="stepper", data_ga_label="Adults", data_ga_hint="18 and over"), error=errors.get("a", "")),
-            _field("Kids", "n", _control(Select, "n", errors, *_options([(i, str(i)) for i in range(MAX_KIDS + 1)], vals["n"]), data_ga="stepper", data_ga_label="Kids", data_ga_hint="Under 18")),
+            _field("Kids", "n", _control(Select, "n", errors, *_options([(i, str(i)) for i in range(MAX_KIDS + 1)], vals["n"]), data_ga="stepper", data_ga_label="Kids", data_ga_hint="under 18")),
             cls="st-row",
         ),
         ages,
