@@ -4,10 +4,11 @@
   var scroller = document.getElementById('fk-scroll');
   var nav = document.querySelector('.fk-nav');
   if (scroller && nav) {
-    nav.hidden = false;
     var prev = nav.querySelector('[data-dir="-1"]');
     var next = nav.querySelector('[data-dir="1"]');
     var edges = function () {
+      // Only show the arrows when something actually scrolls (a short trip fits the whole window).
+      nav.hidden = scroller.scrollWidth <= scroller.clientWidth + 2;
       prev.disabled = scroller.scrollLeft < 2;
       next.disabled = scroller.scrollLeft + scroller.clientWidth >= scroller.scrollWidth - 2;
     };
@@ -16,6 +17,7 @@
       if (b) scroller.scrollBy({ left: Number(b.getAttribute('data-dir')) * scroller.clientWidth, behavior: 'smooth' });
     });
     scroller.addEventListener('scroll', edges);
+    window.addEventListener('resize', edges);
     edges();
   }
 

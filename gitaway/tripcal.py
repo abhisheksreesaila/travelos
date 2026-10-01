@@ -148,6 +148,46 @@ def booked_blocks(b, t):
     ]
 
 
+AIRPORT_BUFFER = 120  # minutes before the flight home that a plan must be finished by
+
+
+def day_window(blocks, day):
+    """(first start, last end) for plans on `day`: nothing before the arrival flight lands on the first day, and nothing
+    later than AIRPORT_BUFFER minutes before the flight home leaves on the last day. Pure."""
+    lo, hi = grid_start(blocks), GRID_END
+    for b in blocks:
+        if b.id == "b-out" and b.day == day:
+            lo = max(lo, b.end)
+        if b.id == "b-back" and b.day == day:
+            hi = min(hi, b.start - AIRPORT_BUFFER)
+    return lo, hi
+
+
+def window_problem(blocks, day, start, end):
+    """("land", landing minute) when a plan starts before you land, ("home", latest end) when it ends too close to the flight
+    home, else None. Pure."""
+    for b in blocks:
+        if b.id == "b-out" and b.day == day and start < b.end:
+            return "land", b.end
+        if b.id == "b-back" and b.day == day and end > b.start - AIRPORT_BUFFER:
+            return "home", b.start - AIRPORT_BUFFER
+    return None
+
+
+def window_message(problem):
+    """The sentence the calendar shows for a window_problem."""
+    kind, at = problem
+    if kind == "land":
+        return f"You land at {fmt_time(at)} on the first day. Plan after that."
+    return f"Your flight home needs you at the airport by {fmt_time(at + AIRPORT_BUFFER)}. Finish by {fmt_time(at)}."
+
+
+def window_note(problem):
+    """The short clash note for a fork plan (see Placement.clash)."""
+    kind, at = problem
+    return f"before you land at {fmt_time(at)}" if kind == "land" else f"too close to your flight home (finish by {fmt_time(at)})"
+
+
 def grid_start(blocks):
     """7 AM, or the hour of an earlier booked block (a 6:40 AM flight)."""
     earliest = min([DEFAULT_START, *(x.start for x in blocks)])
@@ -279,6 +319,8 @@ def _clean(session, demo, *, day, start, end, title, kind):
     for b in blocks:
         if b.day == day and s < b.end and b.start < e:
             raise CalendarError(f"That overlaps {b.title} ({fmt_time(b.start)} – {fmt_time(b.end)}). Pick a gap.")
+    if (problem := window_problem(blocks, day, s, e)):
+        raise CalendarError(window_message(problem))
     return day, s, e, title
 
 
@@ -531,6 +573,8 @@ def place_plans(plans, blocks, acts, n_days, gs):
             out.append(Placement(p, "clash", f"outside {fmt_time(gs)} to {fmt_time(GRID_END)}", True))
         elif (hit := next((b for b in blocks if _overlap(b, p.day, p.start, p.end)), None)):
             out.append(Placement(p, "clash", f"clashes with {hit.title}", True))
+        elif (problem := window_problem(blocks, p.day, p.start, p.end)):
+            out.append(Placement(p, "clash", window_note(problem), True))
         elif (soft := next((x for x in [*acts, *taken] if _overlap(x, p.day, p.start, p.end)), None)):
             owner = f"{soft.by}'s " if getattr(soft, "by", "") else ""
             out.append(Placement(p, "clash", f"clashes with {owner}{soft.title}"))

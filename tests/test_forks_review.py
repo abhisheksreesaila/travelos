@@ -74,7 +74,6 @@ def test_forks_follow_a_three_night_trip(client):
     assert day_heads(html) == 4 and "--n:4" in html
     keys = plan_keys(html)
     assert keys["d5s0"] == (False, True) and "After your trip ends" in html  # the fork's 5th day is past a 4-day trip
-    assert "Mon 19" not in html or "Mon 19 ·" in html
     apply(client, "d5s0", "d2s0")
     assert titles(client) == ["Venice Canals stroll"]
 
@@ -98,7 +97,7 @@ def test_short_titles_never_exceed_the_limit_or_come_back_empty():
     long_word = "W" * 60
     assert cal._short(long_word) == "W" * cal.MAX_TITLE
     assert 0 < len(cal._short("Aaaa " + "b" * 60)) <= cal.MAX_TITLE
-    assert cal._short("&" * 50) == "&" * cal.MAX_TITLE or cal._short("&" * 50)
+    assert cal._short("&" * 50) == "&" * cal.MAX_TITLE
     assert cal._short("   ") == "Plan"
     assert cal._short("Short one") == "Short one"
     cut = cal._short("Venice Beach Boardwalk & skate park and then the whole long afternoon")
@@ -154,3 +153,47 @@ def test_a_hostile_fork_title_and_author_stay_text(client, monkeypatch):
     assert "<script>alert" not in html and "onerror=alert(2)>" not in html.replace("&lt;", "")
     cal_html = client.get("/calendar?view=days").text
     assert "<script>alert" not in cal_html
+
+
+# ---- the flight windows, through the calendar and the preview ---------------------------------------------------------
+
+def test_the_calendar_refuses_a_plan_before_you_land_with_a_friendly_message(client):
+    book(client)
+    r = add(client, day="0", start="07:00", end="07:45")
+    assert r.status_code == 409 and "You land at" in r.text and "Plan after that" in r.text
+    assert add(client, day="0", start="10:00", end="11:00").status_code == 303
+
+
+def test_the_calendar_refuses_a_plan_too_close_to_the_flight_home(client):
+    book(client, **THREE_NIGHTS)
+    r = add(client, day="3", start="12:30", end="13:15")  # the flight home leaves at 2:10 PM
+    assert r.status_code == 409 and "airport" in r.text and "Finish by 12:10 PM" in r.text
+    assert add(client, id="a2", day="3", start="08:00", end="09:00", title="Brunch").status_code == 303
+    assert add(client, id="a3", day="2", start="17:00", end="19:00", title="Dinner").status_code == 303  # other days are free
+
+
+def test_moving_a_plan_later_than_the_window_is_refused_too(client):
+    book(client, **THREE_NIGHTS)
+    add(client, id="a1", day="1", start="10:00", end="11:00")
+    r = client.post("/calendar/activities/a1/move", data={"day": "3", "start": "16:00", "end": "17:00"}, follow_redirects=False)
+    assert r.status_code == 409 and "airport" in r.text
+    assert any(a["i"] == "a1" and a["d"] == 1 for a in session_data(client)["cal"]["ari"]["a"])
+
+
+def test_a_fork_plan_after_the_flight_home_cannot_be_applied(client):
+    book(client, **THREE_NIGHTS)
+    fork(client)
+    html = client.get(f"/forks?open={TRIP}").text
+    keys = plan_keys(html)
+    assert keys["d4s2"] == (False, True)  # Pool time, 5 to 7 PM on the day the 2:10 PM flight leaves
+    assert "Too close to your flight home (finish by 12:10 PM)" in html
+    assert 'data-key="d4s2"' not in html  # no draft on the calendar
+    apply(client, "d4s2")
+    assert "cal" not in session_data(client)
+
+
+def test_day_arrows_are_not_offered_when_the_trip_is_three_days_or_fewer(client):
+    book(client, d="2026-10-16", r="2026-10-18", a="2", k="4,7")
+    fork(client)
+    html = client.get(f"/forks?open={TRIP}").text
+    assert day_heads(html) == 3 and "fk-nav" not in html

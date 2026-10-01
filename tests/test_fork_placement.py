@@ -92,3 +92,29 @@ def test_fork_plans_skip_the_authors_bookings_and_use_typical_lengths():
     tacos = next(p for p in plans if p.title.startswith("Tacos"))
     assert tacos.end - tacos.start == cal.FORK_MEAL_LEN and tacos.kind == "food"
     assert all(len(p.title) <= cal.MAX_TITLE for p in plans) and len({p.key for p in plans}) == len(plans)
+
+
+# ---- nothing before you land, nothing too close to the flight home ---------------------------------------------------
+
+OUT = Block("b-out", 0, h(8, 5), h(9, 32), "Skylark Air 214", "booked", True)
+BACK = Block("b-back", 4, h(14, 10), h(15, 37), "Skylark Air 214", "booked", True)
+
+
+def test_the_window_opens_when_you_land_and_closes_two_hours_before_the_flight_home():
+    assert cal.day_window([OUT, BACK], 0) == (h(9, 32), cal.GRID_END)
+    assert cal.day_window([OUT, BACK], 4) == (GS, h(12, 10))
+    assert cal.day_window([OUT, BACK], 2) == (GS, cal.GRID_END)
+
+
+def test_a_fork_plan_before_you_land_or_after_the_flight_home_is_a_hard_clash():
+    early, fine, late, pool = place([plan("a", 0, h(7), h(7, 45)), plan("b", 0, h(9, 45), h(11)), plan("c", 4, h(12, 15), h(13)),
+                                     plan("d", 4, h(17), h(19), "Pool time")], blocks=[OUT, BACK])
+    assert early.hard and early.clash == "before you land at 9:32 AM" and not early.checked
+    assert fine.checked
+    assert late.hard and late.clash == "too close to your flight home (finish by 12:10 PM)"
+    assert pool.hard and not pool.checked
+
+
+def test_a_plan_that_ends_exactly_at_the_buffer_still_fits():
+    [ok] = place([plan("a", 4, h(10), h(12, 10))], blocks=[OUT, BACK])
+    assert ok.state == "free"

@@ -92,9 +92,10 @@ def _clashes(blocks, day, s, e):
 
 
 def free_start(blocks, day, gs):
-    """The first half hour from 9 AM (or the grid start) with an hour free of booked items."""
-    t = max(9 * 60, gs)
-    while t + 60 <= cal.GRID_END:
+    """The first half hour from 9 AM (or the grid start, or when you land) with an hour free of booked items, inside the day's window."""
+    lo, hi = cal.day_window(blocks, day)
+    t = -(-max(9 * 60, gs, lo) // 30) * 30
+    while t + 60 <= hi:
         if not _clashes(blocks, day, t, t + 60):
             return t
         t += 30
