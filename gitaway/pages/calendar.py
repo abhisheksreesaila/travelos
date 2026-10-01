@@ -269,13 +269,26 @@ def whole_view(dates, ctx):
     return Div(*rows, cls="cal-whole")
 
 
-def note_entry(n, acts_by_id, who, people, fresh=False):
+FORMER = ses.Friend("Former member", "?", "sky")
+
+
+def note_writer(n, who, people, family):
+    """(name shown, avatar person) for a note: a pretend friend by name, another member by their user id, and "You" only for the viewer's own."""
+    if n.by:
+        return n.by, people.get(n.by.casefold(), who)
+    if not n.by_id or n.by_id == who.id:
+        return "You", who
+    member = family.get(n.by_id, FORMER)
+    return member.name, member
+
+
+def note_entry(n, acts_by_id, who, people, fresh=False, family=None):
     on = acts_by_id.get(n.act)
-    author = people.get(n.by.casefold(), who) if n.by else who
+    name, author = note_writer(n, who, people, family or {})
     where = "just now" if fresh else f"on {on.title}" if on else "whole trip"
     return Div(
         avatar(author, "cal-noteav"),
-        Div(Span(f"{n.by or 'You'} · {where}", cls="cal-notemeta"), Span(n.text, cls="cal-notetext"), cls="cal-noteslip"),
+        Div(Span(f"{name} · {where}", cls="cal-notemeta"), Span(n.text, cls="cal-notetext"), cls="cal-noteslip"),
         cls=f"cal-note{' cal-note-live' if fresh else ''}", data_note=n.id,
     )
 
@@ -303,9 +316,10 @@ def notes_panel(ctx, who, b):
     acts_by_id = {a.id: a for a in ctx["acts"]}
     people = {f.name.casefold(): f for f in ctx["friends"]}
     fresh = ctx["new"] if ctx["live"] else ""
+    family = members.family_people(ctx["session"])
     feed = [Div(avatar(who, "cal-noteav"), Div(Span("You · whole trip", cls="cal-notemeta"),
                 Span(booked_note(b), cls="cal-notetext"), cls="cal-noteslip"), cls="cal-note cal-note-first")]
-    feed += [note_entry(n, acts_by_id, who, people, bool(fresh) and n.act == fresh and bool(n.by)) for n in ctx["notes"]]
+    feed += [note_entry(n, acts_by_id, who, people, bool(fresh) and n.act == fresh and bool(n.by), family) for n in ctx["notes"]]
     about = Select(Option("Whole trip", value=""), *[Option(a.title, value=a.id) for a in ctx["acts"]], name="act", aria_label="What is this note about?", cls="cal-about") if ctx["acts"] else ""
     return Aside(
         Button(icon("note", 18, 2.2), Span("Trip notes"), Span(str(len(ctx["notes"])), cls="cal-count"), type="button", id="cal-notes-toggle",
@@ -523,7 +537,7 @@ def calendar_page(session, demo="", view="", form=None, notice=None, new="", und
         placed = vo.preview(session, night, demo)
         drafts = [x for x in placed if not x.hard and x.state != "have"]
         vpanel = voice_ui.panel(session, demo, dates, question, placed, night, bool(voice.get("hear")), voice.get("error", ""))
-    ctx = dict(booking=b, offers=offers, drafts=drafts, fresh=set(voiced["ids"]) if voiced else set(), demo=demo, view=view, t=t, dates=dates, blocks=blocks, acts=acts, notes=notes, note_counts=counts, gs=gs, ge=gs_end, back=back, new=new, next=cal.next_id(session, demo),
+    ctx = dict(session=session, booking=b, offers=offers, drafts=drafts, fresh=set(voiced["ids"]) if voiced else set(), demo=demo, view=view, t=t, dates=dates, blocks=blocks, acts=acts, notes=notes, note_counts=counts, gs=gs, ge=gs_end, back=back, new=new, next=cal.next_id(session, demo),
                friends=friends, crew=members.crew(session), role=role, is_demo=is_demo, live=bool(live and any(a.id == new and a.by for a in acts)))
     if view == "whole":
         surface = whole_view(dates, ctx)

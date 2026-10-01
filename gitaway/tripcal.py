@@ -92,7 +92,8 @@ class Note:
     id: str
     text: str
     act: str | None = None
-    by: str = ""
+    by: str = ""      # the pretend friend who wrote it ("" for a real member)
+    by_id: str = ""   # the user id of the member who saved it (F-046)
 
 
 # ---- trip and formatting -------------------------------------------------------------------------------------------
@@ -420,7 +421,7 @@ def _act(r):
 
 
 def _note(r):
-    return Note(r["note_id"], r["body"], r["act_id"], r["author"] or "")
+    return Note(r["note_id"], r["body"], r["act_id"], r["author"] or "", r["added_by"] or "")
 
 
 def _begin(db, trip_id, scope, who=""):
@@ -697,7 +698,7 @@ def add_note(session, text, act=None, demo="", id=None):
             id = id or f"n{st['q'] + 1}"
             _insert_note(db, fam, scope, id, _number(id), text, act or None)
             _bump(db, fam.trip_id, scope, _number(id))
-            return Note(id, text, act or None)
+            return Note(id, text, act or None, "", fam.traveler.id)
 
 
 # ---- scripted liveness (F-020) -------------------------------------------------------------------------------------
