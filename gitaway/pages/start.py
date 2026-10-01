@@ -14,7 +14,7 @@ from fasthtml.common import A, Button, Div, Fieldset, Form, H1, Input, Label, Le
 from fasthtml.core import FtResponse
 from starlette.responses import RedirectResponse
 
-from gitaway import catalog, session as ses, tripcal
+from gitaway import catalog, session as ses, tripcal, tripday
 from gitaway.icons import icon
 from gitaway.layout import page
 from gitaway.pages import plan
@@ -97,13 +97,14 @@ def _form(vals, errors):
     )
 
 
-def continue_card(session):
+def continue_card(session, phone=False):
     """"Continue LA with the kids": the booked trip (opens its calendar) or the picks the traveler left in the workspace."""
     if not ses.current_traveler(session):
         return ""
     b = ses.booking(session)
     if b:
-        t, href, tail = tripcal.trip_of(b), "/calendar", ("booked elsewhere" if tripcal.is_imported(b) else f"booked, {catalog.money(b['total_cents'])}")
+        # F-054: on a phone the booked trip opens on the phone trip view
+        t, href, tail = tripcal.trip_of(b), "/trip" if phone else "/calendar", ("booked elsewhere" if tripcal.is_imported(b) else f"booked, {catalog.money(b['total_cents'])}")
     elif (saved := ses.remembered_plan(session)):
         p = {k: v[0] for k, v in parse_qs(saved).items()}
         t, href, tail = catalog.trip_from_url(p.get("d"), p.get("r"), p.get("a"), p.get("k")), f"/plan?{saved}", "your picks are saved"
@@ -146,14 +147,14 @@ def _submitted(q):
     return vals, (None if errors else trip), errors
 
 
-def start_page(session, vals, errors=None, status=200):
+def start_page(session, vals, errors=None, status=200, phone=False):
     body = page(
         "Where to?",
         Div(
             Div(Span("PLAN A TRIP", cls="eyebrow"), H1("Where to?"),
                 P("Pick a place, your dates and who is coming. We line up flights, a stay and a car, side by side, with one honest total."),
                 cls="st-hero"),
-            continue_card(session),
+            continue_card(session, phone),
             _form(vals, errors or {}),
             cls="st ga-wrap",
         ),
@@ -177,4 +178,4 @@ def register(app):
                 return RedirectResponse("/plan" + (f"?{query}" if query else ""), status_code=303)
             return start_page(session, vals, errors, status=422)
         trip = catalog.trip_from_url(q.get("d"), q.get("r"), q.get("a"), q.get("k"))
-        return start_page(session, values_of(trip))
+        return start_page(session, values_of(trip), phone=tripday.is_phone(request.headers.get("user-agent")))
