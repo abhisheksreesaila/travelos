@@ -606,9 +606,9 @@ def _live_friend(db, trip_id):
 
 
 def live_pending(session, demo=""):
-    """True while Mom is invited and her scripted add has not happened (or been skipped) for this trip."""
+    """True while Mom is invited and her scripted add has not happened (or been skipped) for this trip. Only ever true on a demo trip."""
     with ses.family(session) as fam:
-        if not fam or not fam.trip_id or not fam.booking() or not _live_friend(fam.db, fam.trip_id):
+        if not fam or not fam.trip_id or not fam.is_demo() or not fam.booking() or not _live_friend(fam.db, fam.trip_id):
             return False
         return not _peek(fam.db, fam.trip_id, _scope(demo))["live"]
 
@@ -632,7 +632,7 @@ def live_add(session, demo=""):
     marked done so it does not try again). Posting it again is a no-op, so a reload never duplicates it.
     """
     with ses.family(session) as fam:
-        if not fam or not fam.trip_id or not fam.booking():
+        if not fam or not fam.trip_id or not fam.is_demo() or not fam.booking():  # the scripted friend only plays on the demo trip (F-043)
             return None
         _, t, blocks = _need(fam, demo)
         db, scope = fam.db, _scope(demo)

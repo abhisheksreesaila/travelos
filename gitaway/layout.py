@@ -92,7 +92,7 @@ def account(traveler=None):
     if not traveler:
         return A("Sign in", href=session.signin_href(), cls="btn btn-sm")
     return Div(
-        avatar(traveler),
+        A(avatar(traveler), href="/family", cls="ga-me", aria_label="Your family and who is in it", title=traveler.name),  # F-043: the family page
         Form(Button("Sign out", type="submit", cls="ga-signout"), action="/signout", method="post"),
         cls="ga-account",
     )
