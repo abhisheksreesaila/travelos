@@ -15,7 +15,7 @@
   .ga-bob { animation: none !important; transform: rotate(var(--r, 0deg)); }
 }
 
-.eyebrow { font-size: 0.875rem; font-weight: 800; letter-spacing: .08em; }
+.eyebrow { font-size: max(var(--text-min), 0.875rem); font-weight: 800; letter-spacing: .08em; }
 
 /* Headline */
 .headline { padding-top: 2.5rem; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 1rem; }
@@ -37,7 +37,7 @@
 .field { padding: 0.625rem 1rem; border-radius: 1.125rem; background: #FAF7F2; display: flex; flex-direction: column; gap: 0.125rem; cursor: text; }
 .field:focus-within { outline: 0.1875rem solid var(--ink); outline-offset: 0.1875rem; }
 .field input:focus-visible { outline: none; }
-.field-label { font-size: 0.8125rem; font-weight: 800; color: var(--ink-3); }
+.field-label { font-size: max(var(--text-min), 0.8125rem); font-weight: 800; color: var(--ink-3); }
 .field input { border: 0; background: transparent; font: 800 1.125rem var(--font-body); color: var(--ink); padding: 0; width: 100%; min-width: 0; text-overflow: ellipsis; }
 .btn-go { grid-column: 1 / -1; min-height: 3.75rem; font-size: 1.1875rem; }
 .btn-white { align-self: flex-start; min-height: 3.75rem; font-size: 1.1875rem; --btn-ledge: rgba(30,26,46,.25); }
@@ -51,10 +51,10 @@
 .trip-card img { width: 100%; height: 8.125rem; object-fit: cover; border-radius: 0.875rem; }
 .tc-title { font-weight: 800; font-size: 1.0625rem; padding: 0 0.375rem; line-height: 1.25; }
 .tc-tags { display: flex; flex-wrap: wrap; gap: 0.375rem; padding: 0 0.375rem; }
-.tc-tag { height: 1.5rem; padding: 0 0.5625rem; border-radius: var(--r-pill); font-size: 0.75rem; font-weight: 800; display: flex; align-items: center; white-space: nowrap; }
+.tc-tag { height: 1.5rem; padding: 0 0.5625rem; border-radius: var(--r-pill); font-size: max(var(--text-min), 0.75rem); font-weight: 800; display: flex; align-items: center; white-space: nowrap; }
 .tc-plain { background: var(--skeleton); }
 /* Sits in the top-right corner beside the headline, clear of the cards. */
-.fork-sticker { position: absolute; right: 2.25rem; top: 2rem; width: 7.5rem; height: 7.5rem; border-radius: 50%; background: var(--sun); border: 0.25rem solid #FFFFFF; transform: rotate(var(--r)); display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8125rem; text-align: center; line-height: 1.15; box-shadow: 0 0.625rem 1.5rem -0.625rem rgba(30,26,46,.45); }
+.fork-sticker { position: absolute; right: 2.25rem; top: 2rem; width: 7.5rem; height: 7.5rem; border-radius: 50%; background: var(--sun); border: 0.25rem solid #FFFFFF; transform: rotate(var(--r)); display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 800; font-size: max(var(--text-min), 0.8125rem); text-align: center; line-height: 1.15; box-shadow: 0 0.625rem 1.5rem -0.625rem rgba(30,26,46,.45); }
 .sticker-n { font-family: var(--font-display); font-size: 1.875rem; line-height: 1; }
 
 /* Why */
@@ -77,12 +77,12 @@
 .teaser-cal p { color: var(--ink-2); }
 .cal { padding: 1.25rem; border-radius: var(--r-lg); background: var(--card); box-shadow: 0 0.75rem 1.5rem -0.75rem rgba(30,26,46,.35); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.625rem; }
 .cal-col { display: flex; flex-direction: column; gap: 0.5rem; }
-.cal-day { font-size: 0.8125rem; font-weight: 800; color: var(--ink-3); }
+.cal-day { font-size: max(var(--text-min), 0.8125rem); font-weight: 800; color: var(--ink-3); }
 .cal-item { padding: 0.625rem 0.75rem; border-radius: 0.875rem; background: var(--sun-tint); color: var(--ink); min-height: 3.5rem; display: flex; flex-direction: column; gap: 0.125rem; }
 .cal-item.tall { min-height: 4.5rem; }
 .cal-item.booked { background: var(--ink); color: #FFFFFF; }
-.cal-time { font-size: 0.75rem; font-weight: 800; }
-.cal-title { font-size: 0.875rem; font-weight: 800; line-height: 1.2; }
+.cal-time { font-size: max(var(--text-min), 0.75rem); font-weight: 800; }
+.cal-title { font-size: max(var(--text-min), 0.875rem); font-weight: 800; line-height: 1.2; }
 
 .teaser-creators { margin-top: 1.5rem; background: var(--ink); color: #FFFFFF; grid-template-columns: minmax(0, 1fr) minmax(0, 35rem); }
 .teaser-creators .eyebrow { color: var(--sun); }

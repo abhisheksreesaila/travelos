@@ -21,7 +21,7 @@ def test_no_fixed_pixel_sizes_left_except_hairlines():
     for path in CSS:
         css = re.sub(r"/\*.*?\*/", "", strip_queries(path.read_text()), flags=re.S)
         if path.name == "tokens.css":
-            css = css.replace("font-size: 12px", "").replace("font-size: 16px", "").replace("--r-pill: 999px", "")
+            css = css.replace("font-size: 12px", "").replace("font-size: 16px", "").replace("--r-pill: 999px", "").replace("--text-min: 11px", "").replace("--text-min: 0px", "")
         found = [m for m in re.findall(r"(?<![\w.])(-?[\d.]+)px", css) if m not in ("1", "-1", "0")]
         assert not found, f"{path.name}: unscaled px values {found[:5]}"
 
@@ -40,3 +40,14 @@ def test_calendar_hour_grid_is_in_rem(client):
     assert re.search(r"--top:[\d.]+rem;--h:[\d.]+rem", html)
     assert not re.search(r"--top:[\d.]+px", html)
     assert "HOUR_REM = 3" in client.get("/assets/js/calendar.js").text
+
+
+def test_no_text_below_11px_on_desktop_and_tablet():
+    """Any font size under 11px at the 12px root (0.9167rem) must go through the --text-min floor."""
+    for path in CSS:
+        css = re.sub(r"/\*.*?\*/", "", path.read_text(), flags=re.S)
+        for m in re.finditer(r"font(?:-size)?:\s*(?:\w+\s+)*?(max\(var\(--text-min\), )?(\d*\.?\d+)rem", css):
+            if float(m.group(2)) * 12 < 11:
+                assert m.group(1), f"{path.name}: {m.group(0)} renders under 11px"
+    tokens = (CSS_DIR / "tokens.css").read_text()
+    assert "--text-min: 11px" in tokens and "--text-min: 0px" in tokens

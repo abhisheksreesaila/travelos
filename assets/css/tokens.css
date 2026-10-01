@@ -3,6 +3,7 @@
   /* THE SCALE. Every size in the CSS is rem, so this one number sizes the whole site.
      12px = 75% of the browser default (F-030). Phones go back to 16px below, so type stays readable. */
   font-size: 12px;
+  --text-min: 11px;  /* no text renders smaller than this on desktop and tablet; phones are already above it */
 
   --font-display: 'Bricolage Grotesque', 'Figtree', 'Segoe UI', system-ui, sans-serif;
   --font-body: 'Figtree', 'Segoe UI', system-ui, sans-serif;
@@ -45,7 +46,7 @@
   --ease-out: cubic-bezier(.2, .8, .2, 1);
 }
 
-@media (max-width: 720px) { :root { font-size: 16px; } }
+@media (max-width: 720px) { :root { font-size: 16px; --text-min: 0px; } }
 
 /* Itinerary themes: one layout, the contributor picks a theme. */
 [data-theme="sunset"], :root {

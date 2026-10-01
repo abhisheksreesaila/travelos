@@ -64,7 +64,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   border-radius: var(--r-pill); border: 0.1875rem solid #FFFFFF; box-shadow: var(--shadow-sticker);
   font-weight: 800; font-size: 1rem; background: var(--sun);
 }
-.tag { display: inline-flex; align-items: center; height: 1.625rem; padding: 0 0.625rem; border-radius: var(--r-pill); font-size: 0.8125rem; font-weight: 800; background: var(--sun); }
+.tag { display: inline-flex; align-items: center; height: 1.625rem; padding: 0 0.625rem; border-radius: var(--r-pill); font-size: max(var(--text-min), 0.8125rem); font-weight: 800; background: var(--sun); }
 .tag-booked { background: var(--ink); color: #FFFFFF; letter-spacing: .03em; }
 .fill-sun { background: var(--sun); } .fill-mint { background: var(--mint); } .fill-sky { background: var(--sky); }
 .fill-grape { background: var(--grape); } .fill-bubble { background: var(--bubble); }

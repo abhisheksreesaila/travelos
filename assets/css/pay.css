@@ -15,23 +15,23 @@
 .pay-line { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.75rem 0; border-bottom: 1px solid var(--line); }
 .pay-line-head { display: flex; align-items: center; gap: 0.75rem; }
 .pay-items { list-style: none; margin: 0 0 0 3.25rem; padding: 0; display: flex; flex-direction: column; gap: 0.25rem; }
-.pay-item { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; font-size: 0.875rem; font-weight: 600; color: var(--ink-2); }
+.pay-item { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; font-size: max(var(--text-min), 0.875rem); font-weight: 600; color: var(--ink-2); }
 .pay-item-price { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .pay-tile { width: 2.5rem; height: 2.5rem; border-radius: var(--r-sm); display: grid; place-items: center; flex-shrink: 0; }
 .pay-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .pay-name { font-weight: 800; font-size: 1rem; }
-.pay-detail { font-size: 0.875rem; font-weight: 600; color: var(--ink-2); }
+.pay-detail { font-size: max(var(--text-min), 0.875rem); font-weight: 600; color: var(--ink-2); }
 .pay-price { font-weight: 800; font-size: 1.0625rem; font-variant-numeric: tabular-nums; }
 .pay-sum { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; padding: 0.875rem 0 0.5rem; font-weight: 800; }
 .pay-total { font-family: var(--font-display); font-weight: 800; font-size: 2.125rem; font-variant-numeric: tabular-nums; }
 .pay-method { display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.125rem; border-radius: 1.125rem; box-shadow: 0 0 0 1px rgba(30, 26, 46, .1); }
-.pay-chip { width: 3rem; height: 2rem; border-radius: 0.375rem; background: var(--ink); color: var(--sun); font-size: 0.6875rem; font-weight: 800; display: grid; place-items: center; flex-shrink: 0; }
+.pay-chip { width: 3rem; height: 2rem; border-radius: 0.375rem; background: var(--ink); color: var(--sun); font-size: max(var(--text-min), 0.6875rem); font-weight: 800; display: grid; place-items: center; flex-shrink: 0; }
 .pay-card { flex: 1; font-weight: 800; }
-.pay-payer { font-size: 0.875rem; font-weight: 700; color: var(--ink-2); }
+.pay-payer { font-size: max(var(--text-min), 0.875rem); font-weight: 700; color: var(--ink-2); }
 .pay-form { display: flex; flex-direction: column; align-items: stretch; gap: 0.5rem; }
 .pay-go { min-height: 4.25rem; font-size: 1.3125rem; }
 .pay-back { align-self: center; min-height: 2.75rem; display: inline-flex; align-items: center; font-weight: 700; color: var(--ink-2); text-decoration: underline; text-underline-offset: 0.25rem; }
-.pay-note { margin: 0; text-align: center; font-size: 0.875rem; font-weight: 700; color: var(--ink-3); }
+.pay-note { margin: 0; text-align: center; font-size: max(var(--text-min), 0.875rem); font-weight: 700; color: var(--ink-3); }
 @keyframes pay-rise { from { transform: translateY(2.5rem); opacity: 0 } to { transform: none; opacity: 1 } }
 
 /* Celebration */
@@ -45,9 +45,9 @@
 .pay-done h2 { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: clamp(2.375rem, 10vw, 4rem); line-height: .95; letter-spacing: -0.04em; }
 .pay-done p { margin: 0; max-width: 28.75rem; font-size: 1.1875rem; line-height: 1.5; font-weight: 600; }
 .pay-pills { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; }
-.pay-pill { min-height: 2.125rem; padding: 0.375rem 0.875rem; border-radius: var(--r-pill); background: #fff; display: flex; align-items: center; font-weight: 800; font-size: 0.875rem; }
+.pay-pill { min-height: 2.125rem; padding: 0.375rem 0.875rem; border-radius: var(--r-pill); background: #fff; display: flex; align-items: center; font-weight: 800; font-size: max(var(--text-min), 0.875rem); }
 .pay-cal { margin-top: 0.375rem; min-height: 3.875rem; font-size: 1.1875rem; padding: 0 1.875rem; }
-.pay-ref { font-size: 0.8125rem; font-weight: 700; color: var(--ink); opacity: .75; }
+.pay-ref { font-size: max(var(--text-min), 0.8125rem); font-weight: 700; color: var(--ink); opacity: .75; }
 .pay-confetti { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; }
 .pay-conf {
   position: absolute; left: var(--x); top: -1.875rem; width: var(--w); height: var(--h); border-radius: 0.1875rem; background: var(--c);

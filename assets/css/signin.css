@@ -2,7 +2,7 @@
 .si-backdrop { min-height: calc(100vh - 5.25rem); padding: 2.5rem 1rem; display: grid; place-items: center; background: rgba(30, 26, 46, .35); }
 .si-card { width: min(32.5rem, 100%); padding: 2.25rem; border-radius: var(--r-xl); background: var(--card); box-shadow: var(--shadow-lg); animation: ga-pop .45s var(--ease-spring) both; }
 .si-card form { display: flex; flex-direction: column; gap: 1.125rem; }
-.si-sticker { align-self: flex-start; height: 2.25rem; padding: 0 0.875rem; font-size: 0.875rem; transform: rotate(-3deg); }
+.si-sticker { align-self: flex-start; height: 2.25rem; padding: 0 0.875rem; font-size: max(var(--text-min), 0.875rem); transform: rotate(-3deg); }
 .si-card h2 { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: clamp(1.875rem, 8vw, 2.5rem); line-height: 1; letter-spacing: -0.03em; }
 .si-card p { margin: 0; font-size: 1.0625rem; line-height: 1.5; color: var(--ink-2); }
 .si-list { display: flex; flex-direction: column; gap: 0.625rem; }
@@ -14,11 +14,11 @@
 .si-pick:first-child { background: var(--accent-tint); box-shadow: 0 0 0 0.1875rem var(--accent); }
 .si-list:hover .si-pick:first-child:not(:hover), .si-list:focus-within .si-pick:first-child:not(:focus) { background: #FAF7F2; box-shadow: none; }
 .si-pick:hover, .si-pick:focus-visible { background: var(--accent-tint); box-shadow: 0 0 0 0.1875rem var(--accent); }
-.si-avatar { width: 2.5rem; height: 2.5rem; border-radius: var(--r-pill); display: grid; place-items: center; font-size: 0.875rem; font-weight: 800; flex-shrink: 0; }
+.si-avatar { width: 2.5rem; height: 2.5rem; border-radius: var(--r-pill); display: grid; place-items: center; font-size: max(var(--text-min), 0.875rem); font-weight: 800; flex-shrink: 0; }
 .si-who { display: flex; flex-direction: column; }
-.si-blurb { font-size: 0.875rem; font-weight: 600; color: var(--ink-2); }
+.si-blurb { font-size: max(var(--text-min), 0.875rem); font-weight: 600; color: var(--ink-2); }
 .si-actions { display: flex; }
-.si-note { font-size: 0.875rem !important; font-weight: 600; color: var(--ink-3) !important; }
+.si-note { font-size: max(var(--text-min), 0.875rem) !important; font-weight: 600; color: var(--ink-3) !important; }
 
 
 /* Phones: full-page, not a floating card */
