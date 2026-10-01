@@ -1,6 +1,6 @@
 """Install on iPhone (F-044): the web app manifest, the service worker and its offline page.
 
-GET /manifest.webmanifest   "Add to Home Screen" opens GitAway full screen at /start
+GET /manifest.webmanifest   "Add to Home Screen" opens GitAway full screen at /trip (the phone trip view; signed out it goes to sign-in, with no trip to /start)
 GET /sw.js                  the service worker, served from the root so its scope is the whole site
 GET /offline                what a page shows when there is no connection and it was never opened before
 
@@ -34,7 +34,7 @@ MANIFEST = {
     "name": "GitAway",
     "short_name": "GitAway",
     "description": "Plan a family trip together: flights, stays and days on one calendar.",
-    "start_url": "/start",
+    "start_url": "/trip",
     "scope": "/",
     "display": "standalone",
     "orientation": "portrait",

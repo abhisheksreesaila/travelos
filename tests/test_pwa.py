@@ -20,7 +20,7 @@ def test_manifest_is_served_with_its_own_content_type_and_opens_at_start(client)
     assert r.headers["content-type"].startswith("application/manifest+json")
     m = r.json()
     assert m["name"] == "GitAway" and m["short_name"] == "GitAway"
-    assert m["start_url"] == "/start" and m["scope"] == "/" and m["display"] == "standalone"
+    assert m["start_url"] == "/trip" and m["scope"] == "/" and m["display"] == "standalone"
     assert re.fullmatch(r"#[0-9A-Fa-f]{6}", m["theme_color"]) and re.fullmatch(r"#[0-9A-Fa-f]{6}", m["background_color"])
     kinds = {(i["sizes"], i.get("purpose", "any")) for i in m["icons"]}
     assert {("192x192", "any"), ("512x512", "any"), ("512x512", "maskable")} <= kinds

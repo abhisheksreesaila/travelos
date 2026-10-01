@@ -57,6 +57,7 @@ TAP_TARGETS = {  # file -> selectors that must be at least 2.75rem (44px at the 
     "hub.css": [".hub-search input"],
     "calendar.css": [".cal-seg", ".cal-w-head", ".cal-w-empty a", ".cal-dayadd"],
     "forks.css": [".fk-link"],
+    "trip.css": [".tp-chip", ".tp-tab", ".tp-back", ".tp-go", ".tp-full", ".tp-btn", ".tp-kind"],
 }
 
 
