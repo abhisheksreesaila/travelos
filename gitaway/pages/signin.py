@@ -103,6 +103,7 @@ def register(app):
         if not (clean := auth.clean_email(email)):
             return _page(request, next_path, _intent(asked), asked, "Type a full email address, like you@example.com.", status=400)
         auth.sign_in_dev(session, clean)
+        auth.make_room(session)
         if (full := _continue(session, asked, next_path)):
             return full
         return RedirectResponse(next_path, status_code=303)
@@ -113,18 +114,23 @@ def register(app):
         next_path = ses.safe_next(next, "/start")
         if not auth.google_enabled():
             return RedirectResponse(f"/signin?next={quote(next_path, safe='')}&intent={intent if intent in ses.INTENTS else ''}", status_code=303)
+        next_path = next_path if len(next_path) <= auth.MAX_NEXT else "/start"  # the cookie is tiny; a long address is not worth keeping
         session["login_next"], session["login_intent"] = next_path, (intent if intent in ses.INTENTS else "")
         return RedirectResponse(handle_login_request(request, session), status_code=303)
 
     @app.get("/auth/callback")
-    def auth_callback(code: str, state: str, request, session):
+    def auth_callback(request, session, code: str = "", state: str = "", error: str = ""):
         """Google sends people back here. fh-saas verifies, signs in and makes the family tenant; we then go where they were headed."""
         next_path, asked = ses.safe_next(session.get("login_next"), "/start"), session.get("login_intent") or ""
         try:
+            if error or not code or not state:  # Google sends ?error=access_denied (no code) when the person cancels
+                raise ValueError("no code")
             handle_oauth_callback(code, state, request, session)  # its own redirect (/dashboard) is not ours
         except Exception:
-            ses.sign_out(session)
+            for key in ("oauth_state", "login_next", "login_intent"):
+                session.pop(key, None)
             return Response("That sign-in did not work. Go back and try again.", status_code=400)
+        auth.make_room(session)
         session.pop("login_next", None), session.pop("login_intent", None)
         if (full := _continue(session, asked, next_path)):
             return full
@@ -150,5 +156,6 @@ def register(app):
         the cookie still holds some (calendar, forks), so everything that is not sign-in state is put back."""
         keep = {k: v for k, v in session.items() if k not in ses.AUTH_KEYS}
         handle_logout(session)
+        keep.pop("cr", None)  # the creator draft belongs to the person who made it, not the next one at this browser
         session.update(keep)
         return RedirectResponse("/", status_code=303)

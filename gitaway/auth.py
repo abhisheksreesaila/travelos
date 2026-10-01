@@ -4,6 +4,7 @@ Everything here is a thin layer over fh_saas.utils_auth. The dev sign-in runs th
 (create_or_get_global_user, provision_new_user, create_user_session), so later code cannot tell the two apart.
 """
 
+import json
 import os
 import re
 from pathlib import Path
@@ -15,7 +16,9 @@ from fh_saas.utils_auth import (
 
 ROOT = Path(__file__).resolve().parent.parent
 LOCAL_HOSTS = ("127.0.0.1", "::1")
-PROXY_HEADERS = ("x-forwarded-for", "x-forwarded-host", "x-forwarded-proto", "x-real-ip", "forwarded")
+PROXY_HEADERS = ("x-forwarded-for", "x-forwarded-host", "x-forwarded-proto", "x-forwarded-server", "x-real-ip", "forwarded",
+                 "cf-connecting-ip", "true-client-ip")
+MAX_NEXT = 200  # longest `next` kept in the cookie across the Google round trip
 _EMAIL = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
 
 
@@ -76,3 +79,20 @@ def sign_in_dev(session, email):
         membership = get_user_membership(host_db, user.id)
     create_user_session(session, user, membership)
     return user
+
+
+def make_room(session):
+    """After a sign-in, make sure the new auth keys did not push the cookie past session.BUDGET.
+
+    The cookie may still hold trip state from someone who signed out at this browser. If it is now too big, that
+    state (every entry not keyed by the signed-in person, and the creator draft) goes; the signed-in person's own stays.
+    """
+    from gitaway import session as ses
+    if len(json.dumps(dict(session))) <= ses.BUDGET:
+        return
+    me = session.get("user_id")
+    for key, value in list(session.items()):
+        if key not in ses.AUTH_KEYS and key != "cr" and isinstance(value, dict):
+            session[key] = {k: v for k, v in value.items() if k == me}
+    if len(json.dumps(dict(session))) > ses.BUDGET:
+        session.pop("cr", None)

@@ -23,7 +23,7 @@ auth.configure_storage()  # SQLite under GITAWAY_DATA_DIR; this also makes it th
 
 # fh-saas hydrates request.state.user only on the private paths; every other page is public and reads the session itself.
 _private = "|".join(p.rstrip("/") for p in PRIVATE)
-auth_before = create_auth_beforeware(redirect_path="/signin?next=%2Ffamily", setup_tenant_db=False, session_cache=True,
+auth_before = create_auth_beforeware(redirect_path="/signin?next=%2Ffamily", setup_tenant_db=False, session_cache=False,
                                      skip=[rf"(?!(?:{_private})(?:/.*)?$).*"])
 
 app = FastHTML(before=[auth_before, Beforeware(session.bind, skip=[r"/assets/.*"])], hdrs=HEAD, title="GitAway", htmlkw={"lang": "en"},

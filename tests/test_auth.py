@@ -225,3 +225,83 @@ def test_the_google_callback_signs_in_makes_the_family_and_returns_to_next(clien
 def test_google_next_cannot_be_an_open_redirect(client, google):
     client.get("/login?next=//evil.example", follow_redirects=False)
     assert session_data(client)["login_next"] == "/start"
+
+
+# ---- review fixes ----------------------------------------------------------------------------------------------------
+
+def fake_google(monkeypatch, email, sub="sub-1"):
+    class Fake:
+        id_key = "sub"
+
+        def login_link(self, redirect_uri, state):
+            return f"https://accounts.google.com/o/oauth2/v2/auth?state={state}"
+
+        def retr_info(self, code, redirect_uri):
+            return {"sub": sub, "email": email}
+
+    monkeypatch.setattr("fh_saas.utils_auth.get_google_oauth_client", lambda: Fake())
+
+
+def test_cancelling_at_google_shows_a_friendly_page_and_forgets_where_we_were_going(client, google):
+    client.get("/login?next=/plan&intent=pay", follow_redirects=False)
+    for url in ("/auth/callback?error=access_denied&state=x", "/auth/callback", "/auth/callback?error=access_denied"):
+        r = client.get(url, follow_redirects=False)
+        assert r.status_code == 400 and "That sign-in did not work" in r.text
+    data = session_data(client) if client.cookies.get("session_") else {}
+    assert not ({"login_next", "login_intent", "oauth_state", "user_id"} & set(data))
+
+
+def test_a_very_long_next_is_not_kept_in_the_cookie(client, google):
+    client.get("/login?next=/trips/" + "a" * 600, follow_redirects=False)
+    assert session_data(client)["login_next"] == "/start"
+
+
+@pytest.mark.parametrize("header", ["CF-Connecting-IP", "True-Client-IP", "X-Forwarded-Server"])
+def test_more_proxy_headers_refuse_the_dev_sign_in(client, header):
+    assert client.post("/signin", data={"email": "p@example.com"}, headers={header: "1.2.3.4"}, follow_redirects=False).status_code == 403
+
+
+def test_an_ipv4_mapped_or_missing_client_is_refused():
+    from main import app
+    mapped = TestClient(app, client=("::ffff:127.0.0.1", 5000))
+    assert sign_in(mapped, "mapped@example.com").status_code == 403
+
+    class NoClient:
+        client = None
+        headers = {}
+
+    assert auth.dev_login_allowed(NoClient()) is False
+
+
+def test_a_full_cookie_plus_a_long_email_plus_a_google_sign_in_stays_under_the_browser_limit(client, google, monkeypatch):
+    from tests.test_calendar import add, book
+    book(client)
+    for i in range(60):  # fill the previous person's cookie to its budget
+        if add(client, id=f"a{i + 1}", day=str(1 + i % 3), start="12:00", end="12:30", title=f"Plan number {i:02d} " + "x" * 20).status_code == 409:
+            break
+    previous = tid("ari")
+    client.post("/signout")
+    email = "l" * 230 + "@example.com"
+    fake_google(monkeypatch, email, "sub-long")
+    client.get("/login?next=/trips/" + "b" * 150, follow_redirects=False)
+    state = session_data(client)["oauth_state"]
+    r = client.get(f"/auth/callback?code=c&state={state}", follow_redirects=False)
+    assert r.status_code == 303
+    assert len(client.cookies.get("session_")) <= 3600
+    data = session_data(client)
+    assert data["email"] == email and previous not in data.get("cal", {})  # the earlier person's state made room
+
+
+def test_logout_does_not_hand_the_creator_draft_to_the_next_person(client):
+    from tests.test_creators import paste
+    sign_in(client, "ari")
+    paste(client)
+    assert "cr" in session_data(client)  # there is a draft to hand over
+    client.post("/signout")
+    assert "cr" not in (session_data(client) if client.cookies.get("session_") else {})
+
+
+def test_the_family_page_has_the_house_styles(client):
+    sign_in(client, "style.check@example.com")
+    html = client.get("/family").text
+    assert html.index("/assets/css/tokens.css") < html.index("/assets/css/base.css") < html.index("/assets/css/family.css")

@@ -3,11 +3,12 @@
 F-040 builds the trips on top of this. It uses require_tenant_access, so it also proves the family database opens.
 """
 
-from fasthtml.common import Div, H1, P
+from fasthtml.common import Div, H1, Link, P
 from fh_saas.utils_auth import require_tenant_access
 
 from gitaway.layout import page
 
+HEAD = (Link(rel="stylesheet", href="/assets/css/family.css"),)
 PRIVATE = ("/family",)  # paths main.py's auth beforeware protects; everything else is public
 
 
@@ -22,4 +23,4 @@ def register(app):
             P(f"Role: {user['role']}.", id="fam-role"),
             P(f"Family space: {user['tenant_id']}", id="fam-tenant"),
             cls="fam",
-        ))
+        ), head=HEAD)
