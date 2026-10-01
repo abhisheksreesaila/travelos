@@ -73,7 +73,7 @@ def test_signed_out_and_unbooked_cannot_use_voice(client):
         r = client.post(path, data=data, follow_redirects=False)
         assert r.status_code == 303 and r.headers["location"].startswith("/signin")
     sign_in(client)
-    assert "Book a trip first" in client.get("/calendar?voice=1").text
+    assert "Your calendar starts with a trip" in client.get("/calendar?voice=1").text
     r = client.post("/calendar/voice/apply", data={"night": "0", "pick": ["v1"]}, follow_redirects=False)
     assert r.status_code == 303 and "session_" in client.cookies and not activities(client)
 

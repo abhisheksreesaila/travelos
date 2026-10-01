@@ -27,7 +27,7 @@ def google_sign_in(client, monkeypatch, email, verified, nxt="/calendar"):
     return client.get(f"/auth/callback?code=c&state={state}", follow_redirects=False)
 
 
-def cache_key(client, path="/discover"):
+def cache_key(client, path="/community"):
     return re.search(r'<meta name="ga-user" content="([0-9a-f]{10})">', client.get(path).text).group(1)
 
 

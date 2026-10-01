@@ -275,11 +275,14 @@ Found while reviewing F-045: run in reverse order, tests/test_family_storage.py:
 
 # Go live (brief: docs/briefs/go-live.md, approved 2026-10-01)
 
-## F-048 Deploy to Railway [doing]
+## F-048 Deploy to Railway [blocked]
+Blocked: in Railway project "gitaway" set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET on the web service, and add https://web-production-2d117.up.railway.app/auth/callback as a redirect URI in the Google console; then say go.
+Live: https://web-production-2d117.up.railway.app (deployed 2026-10-01; volume at /data; secret set)
 Needs: none
 - [x] the app builds and runs on Railway (pixi-based image), with all databases on a persistent volume (working directory on the volume), assets resolved from the code folder
 - [x] production settings: session cookie https-only, `GITAWAY_DEV_LOGIN` never set, secret key from `GITAWAY_SECRET_KEY`, a health check route; docs/setup.md has a Railway section
-- [ ] a new Railway project "gitaway" with a volume and a public *.up.railway.app address; a redeploy keeps a test family's data
+- [x] a new Railway project "gitaway" with a volume and a public *.up.railway.app address
+- [ ] a redeploy keeps a test family's data (needs Google sign-in to create one)
 - [ ] Google sign-in works on the live address once the captain adds the keys
 
 ## F-049 Stay signed in about 30 days [done]
@@ -287,10 +290,10 @@ Needs: none
 - [x] sign-in lasts about 30 days on a device, sliding with use (fh-saas `SessionConfig` / `create_session_middleware`), secure cookie in production
 - [x] sign-out and removed members still end access immediately
 
-## F-050 "Discover" becomes "Community trips" [doing]
+## F-050 "Discover" becomes "Community trips" [done]
 Needs: none
-- [ ] the hub is named "Community trips" everywhere (header, landing, links, page title); /discover keeps working and /community is the new path
-- [ ] the page says plainly that these are trips shared by travelers and creators, with "Share yours" and "Turn a link into a trip" up front
+- [x] the hub is named "Community trips" everywhere (header, landing, links, page title); /discover keeps working and /community is the new path
+- [x] the page says plainly that these are trips shared by travelers and creators, with "Share yours" and "Turn a link into a trip" up front
 
 ## F-051 Themed date pickers and dropdowns [doing]
 Design: approved 2026-10-01 (docs/design/canvas/GoLive-Pickers.dc.html) · Needs: none
@@ -303,9 +306,9 @@ Design: canvas first · Needs: none
 - [ ] the boarding pass fills from context: after a search (from, to, dates), after a fork (the trip's route and days, no creator), or a generic pass when there is no context
 - [ ] emotional, animated, fun travel sign-in (Google button and dev sign-in) per the approved artboard; fast, accessible, reduced motion calm
 
-## F-053 Good when empty [doing]
+## F-053 Good when empty [done]
 Needs: none
-- [ ] a new family's first screens offer: start a trip, import a booked trip, browse community trips; no blank calendar, forks, family or trip pages anywhere
+- [x] a new family's first screens offer: start a trip, import a booked trip, browse community trips; no blank calendar, forks, family or trip pages anywhere
 
 ## F-054 Phone-first trip view [doing]
 Design: phone A approved 2026-10-01 (docs/design/canvas/GoLive-Phone-Today.dc.html); B rejected as bland · Needs: F-051
@@ -321,3 +324,7 @@ Needs: F-051
 ## F-056 Paste an Expedia confirmation email [blocked]
 Blocked: forward or paste one real Expedia confirmation email (it can stay on your machine; I only need its layout).
 - [ ] pasting an Expedia confirmation email pre-fills the trip for review (never saves directly)
+
+## F-057 A trip has its own time zone [todo]
+Found reviewing F-054: "today" and "now" use Los Angeles time; a non-LA trip (e.g. an imported Paris trip) would be off by up to a day.
+- [ ] a trip has a time zone (from its arrival airport via an IATA → zone map, or chosen on import); /trip's today, up next and countdowns use it; the server's past-date check keeps one "today"

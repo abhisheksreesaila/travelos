@@ -19,7 +19,7 @@ from fasthtml.common import A, Button, Div, Form, H1, H2, Img, Input, Label, Lin
 from fasthtml.core import FtResponse
 from starlette.responses import RedirectResponse
 
-from gitaway import forks as forks_model, hub, session as ses, tripcal as cal
+from gitaway import firstrun, forks as forks_model, hub, session as ses, tripcal as cal
 from gitaway.icons import icon
 from gitaway.layout import page, trip_field
 
@@ -89,9 +89,9 @@ def calendar_view(session, placements=(), author="", fresh=(), demo=""):
 
 def calendar_empty():
     return Section(
-        Span(icon("plane", 36, 2), cls="fk-bigicon"), H2("Your calendar fills in once you book"),
-        P("A fork's plans drop into the empty slots around your flights and stay. Book a trip, then come back to apply one."),
-        A("Plan a trip", href="/plan", cls="btn btn-primary"), cls="fk-cal fk-empty card")
+        Span(icon("plane", 36, 2), cls="fk-bigicon"), H2("Your calendar fills in once you have a trip"),
+        P("A fork's plans drop into the empty slots around your flights and stay. Plan a trip or import one you booked, then come back to apply a fork."),
+        firstrun.paths(), cls="fk-cal fk-empty card")
 
 
 # ---- the list ------------------------------------------------------------------------------------------------------
@@ -118,8 +118,8 @@ def list_panel(session, booked, current=""):
         blocks.append(P("Pick one to preview its plans in your empty slots. Nothing changes until you apply." if booked
                         else "Book a trip and you can drop a fork's plans into your calendar.", cls="fk-hint"))
     else:
-        blocks.append(Div(Span(icon("fork", 28, 2.2), cls="fk-bigicon"), P("No forks yet. Fork a community trip and its plans wait here, ready for your calendar."),
-                          A("Find a trip to fork", href="/discover", cls="btn btn-primary btn-sm"), cls="fk-none"))
+        blocks.append(Div(Span(icon("fork", 28, 2.2), cls="fk-bigicon"), P("Nothing forked or saved yet. Fork a community trip and its plans wait here, ready for your calendar."),
+                          A("Browse community trips", href="/community", cls="btn btn-primary btn-sm"), cls="fk-none"))
     if kept:
         blocks += [H2("Saved", Span(str(len(kept)), cls="cal-count fk-count"), cls="fk-sub"),
                    *[Div(_card(e, "saved", booked),
@@ -182,7 +182,7 @@ def signed_out():
     return page("Your forks", Section(
         Div(Span(icon("fork", 36, 2.2), cls="fk-bigicon"), H1("Your forks"),
             P("Fork a trip you love and its plans wait here, ready to drop into your calendar. Sign in to start your list."),
-            A("Sign in", href=ses.signin_href("/forks"), cls="btn btn-primary"), A("Find a trip to fork", href="/discover", cls="btn"), cls="fk-signedout"),
+            A("Sign in", href=ses.signin_href("/forks"), cls="btn btn-primary"), A("Find a trip to fork", href="/community", cls="btn"), cls="fk-signedout"),
         cls="ga-soon ga-wrap"), head=HEAD)
 
 
@@ -241,7 +241,7 @@ def register(app):
 
     def trip_path(next_path):
         path = ses.safe_next(next_path, "")
-        return path if ses.trip_slug(path) else "/discover"
+        return path if ses.trip_slug(path) else "/community"
 
     @app.post("/save")
     def save(session, next: str = ""):

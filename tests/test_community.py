@@ -46,7 +46,7 @@ def test_the_shared_page_works_signed_out_on_another_device_and_for_another_fami
     for other in (device(client), _signed_in(client, "sam")):
         r = other.get(f"/trips/{slug}")
         assert r.status_code == 200 and "Venice Canals stroll" in r.text and "Flight to LAX" in r.text
-    assert slug in device(client).get("/discover").text
+    assert slug in device(client).get("/community").text
 
 
 def _signed_in(client, who):
@@ -75,7 +75,7 @@ def test_the_owner_can_unpublish_and_nobody_else_can(client):
     assert not community.unpublish(session_data(sam), slug)
     assert device(client).get(f"/trips/{slug}").status_code == 200
     assert community.unpublish(session_data(client), slug)
-    assert device(client).get(f"/trips/{slug}").status_code == 404 and slug not in device(client).get("/discover").text
+    assert device(client).get(f"/trips/{slug}").status_code == 404 and slug not in device(client).get("/community").text
 
 
 def test_the_snapshot_has_no_notes_friends_reference_or_prices(client):
@@ -101,7 +101,7 @@ def test_forks_and_saves_are_per_family_and_survive_a_restart(client):
     assert social.slugs(session_data(client), "forks") == [TRIP] and social.slugs(session_data(client), "saves") == ["la-for-two-slow-mornings"]
     assert "forks" not in session_data(client) and "saves" not in session_data(client)
     sam = _signed_in(client, "sam")
-    assert "No forks yet" in sam.get("/forks").text and social.slugs(session_data(sam), "forks") == []  # another family sees none of them
+    assert "Nothing forked or saved yet" in sam.get("/forks").text and social.slugs(session_data(sam), "forks") == []  # another family sees none of them
     # a restart: a new browser, a new process-level state, the same data folder
     familydb.forget_schema_cache(), community._ready.clear()
     again = _signed_in(client, "ari")

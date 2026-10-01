@@ -96,3 +96,4 @@
 @media (max-width: 480px) {
   .st-row > :nth-child(2), .st-row > :nth-child(3) { grid-column: 1 / -1; }
 }
+.st .fr { max-width: none; }

@@ -21,7 +21,7 @@ from gitaway.creators import MAX, SEASONS
 from gitaway.icons import icon
 from gitaway.itinerary_view import _icon
 from gitaway.layout import page
-from gitaway.pages.discover import HEAD as HUB_HEAD, card as hub_card
+from gitaway.pages.communitytrips import HEAD as HUB_HEAD, card as hub_card
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/creators.css"), Script(src="/assets/js/creators.js", defer=True))
 SAMPLES = (("a YouTube sample", "https://www.youtube.com/watch?v=our-la-family-week"), ("an Instagram sample", "https://www.instagram.com/reel/Cxyz123/"))
@@ -184,7 +184,7 @@ def done_page(session, slug):
             H1("It's live!"),
             P(f"Your trip is in the community hub. Every fork links back to {d.fx.creator} on {d.platform}."),
             Div(A(icon("share", 20), "See your trip page", href=f"/trips/{slug}", cls="btn btn-primary"),
-                A("See it in the hub", href="/discover", cls="btn"), A("Import another", href="/creators", cls="btn"), cls="cr-actions"),
+                A("See it in Community trips", href="/community", cls="btn"), A("Import another", href="/creators", cls="btn"), cls="cr-actions"),
             cls="cr-done-copy"),
         Div(hub_card(c) if c else "", cls="cr-done-card"), cls="cr cr-done ga-wrap", role="status")
     return page("It's live", body, current="/creators", head=(*HUB_HEAD, *HEAD))
