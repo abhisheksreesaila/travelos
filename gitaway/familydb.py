@@ -178,6 +178,7 @@ FAMILY_INDEXES = [  # (table, columns, unique, name)
 
 _READY = set()               # tenant ids whose schema this process has already made sure of
 _LOCK = threading.RLock()    # one process makes a family's tables once
+_OPENED = set()              # every tenant id opened in this process since the last `take_opened`; NOT cleared by forget_schema_cache (F-045)
 
 
 def now() -> str:
@@ -186,6 +187,8 @@ def now() -> str:
 
 def ensure_schema(db, tenant_id):
     """Create any missing family tables and indexes, then apply pending migrations. Once per tenant per process."""
+    with _LOCK:
+        _OPENED.add(tenant_id)
     if tenant_id in _READY:
         return
     with _LOCK:
@@ -204,6 +207,15 @@ def forget_schema_cache():
     """Make the next open re-check the schema (tests that point MIGRATIONS_DIR somewhere else)."""
     with _LOCK:
         _READY.clear()
+
+
+def take_opened() -> set:
+    """The tenant ids opened since the last call, and forget them. Tests wipe only these families (tests/wipe.py): a family nobody
+    opened has no rows to clear. Unlike the schema cache, this survives `forget_schema_cache`."""
+    global _OPENED
+    with _LOCK:
+        opened, _OPENED = _OPENED, set()
+    return opened
 
 
 def family_db(source):
