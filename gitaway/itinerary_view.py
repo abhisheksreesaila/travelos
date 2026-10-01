@@ -4,7 +4,7 @@ from fasthtml.common import (A, Button, Details, Div, H1, H2, H3, Img, Link, Not
                              Section, Span, Summary)
 
 from gitaway.icons import icon
-from gitaway.itineraries import STOP_LIMIT, Day, Itinerary, Stop, board_cards, day_color
+from gitaway.itineraries import STOP_LIMIT, Day, Itinerary, Stop, board_cards, day_color, safe_href
 from gitaway.layout import page
 
 THEMES = ("sunset", "pacific")
@@ -66,13 +66,14 @@ def _actions(trip):
 
 
 def _source_card(src):
+    href = safe_href(src.url)  # a creator's link is only ever an http(s) address
     return Div(
         Span(cls="tape"),
-        Div(Img(src=src.thumb, alt=src.thumb_alt), Span(icon("play", 16), cls="play"), cls="src-thumb"),
+        Div(Img(src=src.thumb, alt=src.thumb_alt) if src.thumb else "", Span(icon("play", 16), cls="play"), cls="src-thumb"),
         Div(Span("From the vlog", cls="src-kicker"),
             Span(src.title, cls="src-title"),
             Span(src.byline, cls="src-by"),
-            A("Watch the original", href=src.url, cls="src-link"),
+            A("Watch the original", href=href, rel="noopener noreferrer", target="_blank", cls="src-link") if href else "",
             cls="src-body"),
         cls="source-card",
     )
