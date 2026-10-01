@@ -17,7 +17,7 @@ from fasthtml.common import A, Button, Div, Form, H1, H2, H3, Input, Label, Li, 
 from fasthtml.core import FtResponse
 from starlette.responses import RedirectResponse, Response
 
-from gitaway import importer, session as ses, tripcal as cal, tripimport as ti
+from gitaway import access, importer, session as ses, tripcal as cal, tripimport as ti
 from gitaway.icons import icon
 from gitaway.layout import page, trip_field
 
@@ -31,13 +31,14 @@ def _signin():
     return RedirectResponse(f"/signin?next={PATH}&intent=save", status_code=303)
 
 
-def can_import(session) -> bool:
-    return session.get("tenant_role") != "viewer"
+def can_import(session=None) -> bool:
+    """Editors and admins import; viewers read only. The role comes from gitaway.access (the host database, every request)."""
+    return access.can_edit(access.request_role())
 
 
-def can_delete(session) -> bool:
-    """Only the owner and admins of the family delete a trip."""
-    return session.get("tenant_role") in ("owner", "admin")
+def can_delete(session=None) -> bool:
+    """Only family admins (the owner included) delete a trip."""
+    return access.request_role() in ("admin", "owner")
 
 
 def _when(at):

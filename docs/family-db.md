@@ -12,6 +12,8 @@ A family is an fh-saas tenant (ADR-0004). Everything a family plans together liv
 | `gitaway/familydb_import.py` | The `trip_imports` table (F-042): one validated template per imported trip, confirmation numbers included; `familydb.booking_for_trip` reads it back as the booking dict (under `"imported"`). |
 | `gitaway/tripimport.py`, `gitaway/importer.py` | Parse `docs/trip-template.md` (safe YAML, line-specific errors), and save the plan as a trip with `source = "imported"`. The screens are `gitaway/pages/tripimport.py`. |
 
+Who is in the family and what each person may do: `docs/family-members.md` (F-043).
+
 ## Tables
 
 `members` (display info, the trip each person has open, their remembered workspace picks) · `trips` (title, `source` demo or imported, `params` = `catalog.trip_query`, dates) · `bookings` (the pay flow's picks, one per trip, money in cents) · `activities` and `notes` (the calendar; `gone` is 0 live, 1 last deleted so Undo works; older deletions are removed from the file) · `cal_state` (per trip and scope: the last id number, whether Mom's scripted add has happened) · `friends` (per trip) · `rides` (per family and set of picks, so every member sees them) · `forks`, `saves` (F-041) · `trip_imports` (F-042: the document of an imported trip; its flights, hotel and car are read from it, never copied into `bookings`; confirmation numbers exist only here and are drawn only on the calendar's booking detail and `/trip/details`).

@@ -1,7 +1,8 @@
 """Sign-in on fh-saas: storage location, Google keys, the local dev sign-in and the family tenant. See docs/setup.md.
 
 Everything here is a thin layer over fh_saas.utils_auth. The dev sign-in runs the same steps as fh-saas's OAuth callback
-(create_or_get_global_user, provision_new_user, create_user_session), so later code cannot tell the two apart.
+(create_or_get_global_user, provision_new_user, create_user_session), so later code cannot tell the two apart. Both then run
+`after_sign_in`, which joins the families the person's email was invited to (F-043).
 """
 
 import json
@@ -80,7 +81,43 @@ def sign_in_dev(session, email):
             provision_new_user(host_db, user)
             membership = get_user_membership(host_db, user.id)
         create_user_session(session, user, membership)
+        after_sign_in(session, verified=True)  # the dev sign-in is local only: its email counts as verified
     return user
+
+
+def after_sign_in(session, verified):
+    """The one step every sign-in ends with (the dev sign-in above and Google below): when the email is verified, families it was invited to
+    are joined; the active family is chosen (gitaway.members). Returns the memberships joined this time."""
+    from gitaway import members  # here, not at the top: members imports this package's other modules
+    with hostdb.locked():
+        return members.after_sign_in(session, verified)
+
+
+def sign_in_google(code, state, request, session) -> bool:
+    """The Google callback, composed from fh-saas's public steps so Google's `email_verified` is kept (handle_oauth_callback discards the
+    user info: docs/fh-saas-proposals.md #17). Same steps as fh_saas.utils_auth.handle_oauth_callback. Returns whether the email is verified.
+
+    Raises when the state, the code or the user info is bad. Only a verified email may join an invited family (gitaway.members).
+    """
+    from fh_saas import utils_auth as ua  # looked up on the module each time: tests swap get_google_oauth_client
+    ua.verify_oauth_state(session, state)
+    client = ua.get_google_oauth_client()
+    info = client.retr_info(code, ua.redir_url(request, "/auth/callback"))
+    email = info.get("email") or ""
+    verified = info.get("email_verified") in (True, "true", "True")
+    with hostdb.locked():
+        host_db = HostDatabase.from_env()
+        user = ua.create_or_get_global_user(host_db, info[client.id_key], email, info)
+        membership = ua.get_user_membership(host_db, user.id)
+        if not membership and not user.is_sys_admin:
+            ua.provision_new_user(host_db, user)
+            membership = ua.get_user_membership(host_db, user.id)
+        if membership:
+            ua.create_user_session(session, user, membership)
+        else:  # a system admin has no family: the minimal session fh-saas gives them (gitaway.access does not support these yet)
+            session["user_id"], session["email"], session["is_sys_admin"] = user.id, user.email, True
+        after_sign_in(session, verified)
+    return verified
 
 
 def make_room(session):

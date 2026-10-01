@@ -42,6 +42,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 /* Signed-in account: avatar plus Sign out */
 .ga-account { display: flex; align-items: center; gap: 0.75rem; }
 .ga-avatar { width: 2.75rem; height: 2.75rem; border-radius: var(--r-pill); border: 0.1875rem solid #fff; display: grid; place-items: center; font-weight: 800; }
+.ga-me { display: inline-flex; border-radius: var(--r-pill); }
 .ga-signout { min-height: 2.75rem; padding: 0 0.5rem; border: 0; background: none; color: var(--ink); font: 700 1rem var(--font-body); text-decoration: underline; text-underline-offset: 0.25rem; cursor: pointer; }
 
 /* Tactile buttons */
@@ -102,3 +103,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* Sign-in notice: "You joined X's family" (F-043) */
+.ga-note { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; width: min(46rem, 100% - 2rem); margin: 0.5rem auto; padding: 0.625rem 1rem; border-radius: var(--r-md); background: var(--sky-tint); color: var(--ink); font-weight: 700; }
+.ga-note-actions, .ga-note form { display: flex; gap: 0.5rem; margin: 0; }

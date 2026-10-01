@@ -23,8 +23,24 @@ def tenant_ids():
             return []
 
 
+def wipe_invites_and_extra_members():
+    """Invites, the "last family" choices, and every membership that is not a family's owner (F-043: people joined by an invite). Each test
+    uses its own addresses for the people it invites, but the owner "ari" is shared, so who is in his family must not leak between tests."""
+    with hostdb.locked():
+        conn = HostDatabase.from_env().db.conn
+        conn.rollback()
+        for sql in ("DELETE FROM ga_invites", "DELETE FROM ga_last_family", "DELETE FROM core_memberships WHERE role != 'owner'",
+                    "UPDATE core_memberships SET is_active = 1 WHERE role = 'owner'"):
+            try:
+                conn.execute(text(sql))
+                conn.commit()
+            except Exception:  # the invite tables are made the first time they are used
+                conn.rollback()
+
+
 def wipe_everything():
     community.clear()
+    wipe_invites_and_extra_members()
     for tenant_id in tenant_ids():
         db = get_or_create_tenant_db(tenant_id)
         try:

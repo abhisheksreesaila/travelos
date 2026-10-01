@@ -303,8 +303,8 @@ def current_trip_id(db, member) -> str | None:
 def booking_for_trip(db, trip_id) -> dict | None:
     """The booking of a trip in the shape the model modules read ("add" and the optional keys only when set), or None."""
     imported = row(db, "SELECT * FROM trips WHERE id = :t AND source = 'imported'", t=trip_id) if trip_id else None
-    if imported:  # a trip booked elsewhere (F-042): its booking is the stored template
-        return familydb_import.booking(db, imported)
+    if imported and (found := familydb_import.booking(db, imported)):  # a trip booked elsewhere (F-042): its booking is the stored template
+        return found
     b = row(db, "SELECT b.*, t.params AS trip_params FROM bookings b JOIN trips t ON t.id = b.trip_id WHERE b.trip_id = :t", t=trip_id) if trip_id else None
     if not b:
         return None

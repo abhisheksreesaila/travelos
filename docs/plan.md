@@ -244,11 +244,11 @@ Needs: F-040
 - [ ] imported flights, hotel and car show on the calendar like bookings, marked "Booked elsewhere", with confirmation numbers visible only to family members
 - [ ] stretch: pasting an Expedia confirmation email pre-fills the template
 
-## F-043 Invite family by Gmail [doing]
+## F-043 Invite family by Gmail [done]
 Needs: F-040
-- [ ] the family owner invites an email as editor or viewer; the invite shows a link to copy (email sending later)
-- [ ] when that email signs in, they join the family and see its trips; viewers can't edit; members and roles are listed with remove
-- [ ] the calendar's avatars and "planning with you" use real members; the scripted Mom demo only runs on the demo trip
+- [x] the family owner invites an email as editor or viewer; the invite shows a link to copy (email sending later)
+- [x] when that email signs in, they join the family and see its trips; viewers can't edit; members and roles are listed with remove
+- [x] the calendar's avatars and "planning with you" use real members; the scripted Mom demo only runs on the demo trip
 
 ## F-044 Install on iPhone [done]
 Needs: none

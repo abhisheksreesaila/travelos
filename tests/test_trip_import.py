@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from gitaway import familydb, rides, session as ses, share, tripcal as cal
+from gitaway import access, familydb, rides, session as ses, share, tripcal as cal
 from tests.test_calendar import tag
 from tests.test_signin import person, session_data, sign_in, tid
 
@@ -132,7 +132,12 @@ def test_only_admins_delete_a_trip_and_everything_on_it_goes(client, clock):
     assert 'id="ti-delete"' in client.get("/trip/details").text
     assert client.get(f"/trip/delete?trip={trip_id}").status_code == 200 and "Delete" in client.get(f"/trip/delete?trip={trip_id}").text
     from gitaway.pages import tripimport
-    assert tripimport.can_delete({"tenant_role": "admin"}) and not tripimport.can_delete({"tenant_role": "editor"}) and not tripimport.can_delete({"tenant_role": "viewer"})
+    for role, deletes in (("admin", True), ("editor", False), ("viewer", False)):
+        token = access._role.set(role)
+        try:
+            assert tripimport.can_delete() is deletes
+        finally:
+            access._role.reset(token)
     assert client.post("/trip/delete", data={"trip": "nosuchtrip1"}, follow_redirects=False).status_code == 404
     assert client.post("/trip/delete", data={"trip": trip_id}, follow_redirects=False).status_code == 303
     assert ses.trips(person()) == []
@@ -144,8 +149,12 @@ def test_only_admins_delete_a_trip_and_everything_on_it_goes(client, clock):
 
 def test_a_viewer_cannot_import():
     from gitaway.pages import tripimport
-    assert tripimport.can_import({"tenant_role": "viewer"}) is False
-    assert tripimport.can_import({"tenant_role": "editor"}) and tripimport.can_import({"tenant_role": "admin"}) and tripimport.can_import({})
+    for role, allowed in (("viewer", False), ("editor", True), ("admin", True)):
+        token = access._role.set(role)
+        try:
+            assert tripimport.can_import() is allowed
+        finally:
+            access._role.reset(token)
 
 
 def test_the_trip_limit_is_a_friendly_message(client, monkeypatch):

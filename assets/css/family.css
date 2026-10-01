@@ -1,5 +1,52 @@
-/* Your family (F-039). Loaded after tokens.css and base.css via layout.styles(). */
-.fam { width: min(40rem, 100% - 2rem); margin: 2.5rem auto 4rem; padding: 2rem; border-radius: var(--r-xl); background: var(--card); box-shadow: var(--shadow-md, var(--shadow-sm)); display: flex; flex-direction: column; gap: 0.75rem; }
-.fam h1 { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: clamp(1.875rem, 8vw, 2.5rem); line-height: 1; letter-spacing: -0.03em; }
-.fam p { margin: 0; font-size: 1.0625rem; line-height: 1.5; color: var(--ink-2); overflow-wrap: anywhere; }
-@media (max-width: 720px) { .fam { margin: 0; width: 100%; border-radius: 0; box-shadow: none; padding: 1.75rem 1.25rem 2.5rem; } }
+/* Your family (F-039, F-043): members, invites and the switcher. Loaded after tokens.css and base.css via layout.styles(). */
+.fam { width: min(46rem, 100% - 2rem); margin: 1.75rem auto 3rem; padding: 1.75rem 2rem 2rem; border-radius: var(--r-xl); background: var(--card); box-shadow: var(--shadow-md, var(--shadow-sm)); display: flex; flex-direction: column; gap: 0.5rem; }
+.fam h1 { margin: 0 0 0.25rem; font-family: var(--font-display); font-weight: 800; font-size: clamp(1.75rem, 7vw, 2.25rem); line-height: 1; letter-spacing: -0.03em; }
+.fam h2 { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; letter-spacing: -0.02em; }
+.fam p { margin: 0; font-size: 1rem; line-height: 1.45; color: var(--ink-2); overflow-wrap: anywhere; }
+.fam .fam-small { font-size: max(var(--text-min), 0.8125rem); color: var(--ink-3); }
+.fam-sec { display: flex; flex-direction: column; gap: 0.625rem; margin-top: 1rem; padding-top: 1rem; border-top: 0.125rem dashed var(--line); }
+.fam-sub { font-size: max(var(--text-min), 0.9375rem) !important; }
+.fam-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.fam-member, .fam-fam, .fam-invite { display: grid; align-items: center; gap: 0.5rem 0.75rem; padding: 0.625rem 0.875rem; border-radius: var(--r-md); background: var(--paper); box-shadow: 0 0 0 1px var(--line); }
+.fam-member { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "av who meta" "act act act"; }
+.fam-member .fam-av { grid-area: av; width: 2.5rem; height: 2.5rem; }
+.fam-member .fam-who { grid-area: who; }
+.fam-member .fam-meta { grid-area: meta; }
+.fam-member .fam-actions { grid-area: act; }
+.fam-who { display: flex; flex-direction: column; min-width: 0; }
+.fam-name { font-weight: 800; color: var(--ink); overflow-wrap: anywhere; }
+.fam-you { font-weight: 600; color: var(--ink-3); }
+.fam-email { font-size: max(var(--text-min), 0.875rem); color: var(--ink-3); overflow-wrap: anywhere; }
+.fam-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 0.25rem; }
+.fam-joined { font-size: max(var(--text-min), 0.8125rem); color: var(--ink-3); }
+.fam-role-tag[data-role="admin"] { background: var(--ink); color: #fff; }
+.fam-role-tag[data-role="editor"] { background: var(--mint-tint); color: var(--ink); }
+.fam-role-tag[data-role="viewer"] { background: var(--sky-tint); color: var(--ink); }
+.fam-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.fam-inline { display: inline-flex; align-items: center; gap: 0.5rem; margin: 0; }
+.fam-btn { min-height: 2.5rem; padding: 0 1rem; font-size: 0.9375rem; }
+.fam-remove { --btn-fg: var(--coral-deep); }
+.fam-select, .fam-field select, .fam-field input { min-height: 2.5rem; padding: 0 0.75rem; border: 0; border-radius: var(--r-sm); background: var(--card); box-shadow: var(--shadow-sm); color: var(--ink); font: 700 1rem var(--font-body); min-width: 0; }
+.fam-fam { grid-template-columns: minmax(0, 1fr) auto auto; }
+.fam-here { font-weight: 800; color: var(--mint-ink); font-size: max(var(--text-min), 0.875rem); }
+.fam-invite { grid-template-columns: 1fr; }
+.fam-invhead { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; }
+.fam-linkrow { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.fam-link { flex: 1 1 14rem; min-height: 2.5rem; padding: 0 0.75rem; border: 0; border-radius: var(--r-sm); background: var(--card); box-shadow: var(--shadow-sm); color: var(--ink-2); font: 600 0.9375rem var(--font-body); min-width: 0; }
+.fam-inviteform { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0.75rem; }
+.fam-field { display: flex; flex-direction: column; gap: 0.25rem; flex: 1 1 12rem; }
+.fam-field-role { flex: 0 1 11rem; }
+.fam-label { font-size: max(var(--text-min), 0.8125rem); font-weight: 800; color: var(--ink-3); }
+.fam-field:has([aria-invalid="true"]) input { box-shadow: 0 0 0 0.1875rem var(--coral-deep); }
+.fam-error { font-size: max(var(--text-min), 0.9375rem); font-weight: 800; color: var(--coral-deep); }
+.fam-go { min-height: 2.75rem; }
+.fam-join { align-items: flex-start; }
+.fam :focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.1875rem; }
+@media (max-width: 720px) {
+  .fam { margin: 0; width: 100%; border-radius: 0; box-shadow: none; padding: 1.5rem 1.25rem 2.5rem; }
+  .fam-member { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "av who" "meta meta" "act act"; }
+  .fam-meta { flex-direction: row; align-items: center; justify-content: space-between; gap: 0.75rem; }
+  .fam-fam { grid-template-columns: 1fr auto; }
+  .fam-fam .fam-here, .fam-fam .fam-inline { grid-column: 1 / -1; }
+  .fam-btn { min-height: 2.75rem; }
+}
