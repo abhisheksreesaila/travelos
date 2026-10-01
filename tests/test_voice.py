@@ -394,11 +394,6 @@ def test_the_voice_undo_toast_takes_focus_when_the_calendar_loads(client):
     book(client)
     html = client.get(apply(client, 0, "v0", "v1").headers["location"]).text
     undo = re.search(r"<button[^>]*cal-undo[^>]*>", html).group(0)
-    assert "autofocus" in undo.split()
+    assert "autofocus" in undo.split() and "aria-describedby=\"cal-toast-text\"" in undo
+    assert re.search(r"id=\"cal-toast-text\"[^>]*>Added 2 plans by voice", html)
 
-
-def test_voice_finish_leaves_focus_alone_unless_it_is_on_the_mic_or_nowhere():
-    js = (ROOT / "assets/js/voice.js").read_text()
-    body = js[js.index("const first = $(\".vo-chip\""):]
-    body = body[:body.index("\n  }\n")]
-    assert "document.activeElement" in body and 'document.body' in body and '"vo-mic"' in body

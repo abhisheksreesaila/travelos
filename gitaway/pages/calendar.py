@@ -248,7 +248,7 @@ def booked_note(b):
     if not car:
         return f"Booked! Your {cal.oxford(on_cal)} {are} on the calendar. Add anything you want to do."
     placed = cal.oxford((["flights"] if flights else []) + (["stay"] if stay else []))
-    return f"Booked! Your {cal.oxford(on_cal + [rental])} are booked. The {placed} {are} on the calendar; the car has no block there. Add anything you want to do."
+    return f"Booked! Your {cal.oxford(on_cal + [rental])} are all set. The {placed} {are} on the calendar; the car has no block there. Add anything you want to do."
 
 
 def notes_panel(ctx, who, b):
@@ -342,8 +342,8 @@ def invite_modal(ctx, b, name, error):
     )
 
 
-def toast(kind, text, *extra):
-    return Div(Span(text), *extra, role="alert" if kind == "error" else "status", cls=f"cal-toast cal-toast-{kind}")
+def toast(kind, text, *extra, tid=None):
+    return Div(Span(text, id=tid), *extra, role="alert" if kind == "error" else "status", cls=f"cal-toast cal-toast-{kind}")
 
 
 # ---- page ----------------------------------------------------------------------------------------------------------
@@ -436,9 +436,9 @@ def calendar_page(session, demo="", view="", form=None, notice=None, new="", und
         got = [i for i in voiced["ids"] if i in here]
         if got:
             layers.append(toast("undo", f"Added {len(got)} plan{'s' if len(got) != 1 else ''} by voice.",
-                                Form(_hidden("ids", ",".join(got)), _hidden("nid", voiced.get("note", "")), _hidden("night", voiced.get("night", "")), _demo_field(demo), Button("Undo", type="submit", cls="cal-undo", autofocus=True),
+                                Form(_hidden("ids", ",".join(got)), _hidden("nid", voiced.get("note", "")), _hidden("night", voiced.get("night", "")), _demo_field(demo), Button("Undo", type="submit", cls="cal-undo", autofocus=True, aria_describedby="cal-toast-text"),
                                      action="/calendar/voice/undo", method="post", data_soft=""),
-                                A("Dismiss", href=cal_url(demo, view=view), data_soft="", cls="cal-dismiss")))
+                                A("Dismiss", href=cal_url(demo, view=view), data_soft="", cls="cal-dismiss"), tid="cal-toast-text"))
     gone = cal.last_deleted(session, demo)
     if undo and gone and gone.id == undo:
         layers.append(toast("undo", f"Deleted \"{gone.title}\".", Form(_hidden("id", gone.id), _demo_field(demo), _hidden("view", view), Button("Undo", type="submit", cls="cal-undo"),

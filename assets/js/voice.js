@@ -11,6 +11,10 @@
   const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;  // prefers-reduced-motion: no typing, no pulse, no pop
   const WORD_MS = 170, COMMA_MS = 320;
   let timer = 0;
+  let tracking = false, moved = false;  // has the traveler put focus somewhere else while hearing?
+  document.addEventListener("focusin", (e) => {
+    if (tracking && e.target !== document.body && !(e.target.closest && e.target.closest(".vo-open, #vo-mic"))) moved = true;
+  });
 
   function dropHear() {
     // The listening belongs to the moment of the tap: a reload or a later swap must not replay it.
@@ -36,16 +40,18 @@
     if (live) setTimeout(() => { live.textContent = `You said: ${full ? full.textContent : ""} Got it. One quick question. ${ask ? ask.textContent : ""}`; }, 150);
     // After a beat: calendar.js hands focus back to the control it swapped out (the mic) just after this runs on the reduced-motion path.
     const first = $(".vo-chip", panel);
-    // ...but only if the traveler has not already moved on: focus still on the mic (or nowhere) is the only case to take over.
+    // ...unless the traveler has moved focus on their own since hearing began. Focus handed back to the control that started it
+    // (the top-bar "Talk to plan" link, or the mic) is not "moving": only a focusin elsewhere is.
     if (first) setTimeout(() => {
-      const at = document.activeElement;
-      if (first.isConnected && (!at || at === document.body || at.id === "vo-mic")) first.focus({ preventScroll: true });
+      tracking = false;
+      if (first.isConnected && !moved) first.focus({ preventScroll: true });
     }, 80);
   }
 
   function play(root, panel) {
     const words = $$(".vo-w", panel);
     clearTimeout(timer);
+    tracking = true; moved = false;
     dropHear();
     if (reduced() || !words.length) { finish(root, panel); return; }
     panel.classList.add("is-typing", "is-listening");
