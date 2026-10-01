@@ -97,3 +97,10 @@
   .st-row > :nth-child(2), .st-row > :nth-child(3) { grid-column: 1 / -1; }
 }
 .st .fr { max-width: none; }
+
+/* F-051: the GitAway pickers sit inside the field card, so they drop their own card */
+.st-field .ga-pick-btn { padding: 0; min-height: 2.25rem; background: transparent; box-shadow: none; font-size: 1.1875rem; }
+.st-field .ga-pick-btn:focus-visible { outline: none; }
+.st-field .ga-step { gap: 0.375rem; }
+.st-field .ga-step-btn { width: 2.25rem; height: 2.25rem; }
+@media (max-width: 720px) { .st-field .ga-pick-btn { min-height: 2.75rem; } .st-field .ga-step-btn { width: 2.75rem; height: 2.75rem; } }

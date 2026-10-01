@@ -16,12 +16,12 @@ from fasthtml.common import A, Button, Div, Form, H1, H2, Header, Input, Label, 
 from fasthtml.core import FtResponse
 from starlette.responses import RedirectResponse
 
-from gitaway import access, catalog, members, session as ses, tripcal as cal, tripday as td
+from gitaway import access, catalog, members, pickers, session as ses, tripcal as cal, tripday as td
 from gitaway.icons import icon
 from gitaway.layout import avatar, join_note, styles, trip_field
 from gitaway.pages import calendar as calui, rides as rides_ui
 
-HEAD = (Link(rel="stylesheet", href="/assets/css/trip.css"),)
+HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/trip.css"),)
 TABS = (("today", "Today"), ("days", "All days"), ("notes", "Notes"))
 
 

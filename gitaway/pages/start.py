@@ -14,12 +14,12 @@ from fasthtml.common import A, Button, Div, Fieldset, Form, H1, Input, Label, Le
 from fasthtml.core import FtResponse
 from starlette.responses import RedirectResponse
 
-from gitaway import catalog, firstrun, session as ses, tripcal, tripday
+from gitaway import catalog, firstrun, pickers, session as ses, tripcal, tripday
 from gitaway.icons import icon
 from gitaway.layout import page
 from gitaway.pages import plan
 
-HEAD = (Link(rel="stylesheet", href="/assets/css/start.css"), Script(src="/assets/js/start.js", defer=True))
+HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/start.css"), Script(src="/assets/js/start.js", defer=True))
 MAX_KIDS = catalog.MAX_TRAVELERS - 1
 CHIP_FILLS = {"la": "fill-sun", "sd": "fill-sky-tint", "hi": "fill-mint-tint"}
 
@@ -73,7 +73,7 @@ def _form(vals, errors):
         Span("Kids' ages", cls="st-label st-ages-label"),
         *[_field(f"Kid {i + 1} age", f"k{i + 1}",
                  _control(Select, f"k{i + 1}", errors, Option("Pick age", value=""), *_options([(a, _age_label(a)) for a in range(catalog.MAX_KID_AGE + 1)], vals["ages"][i] if i < len(vals["ages"]) else ""),
-                          ),
+                          data_ga="chips", data_ga_label=f"Kid {i + 1} age"),
                  error=errors.get(f"k{i + 1}", ""), hidden=i >= n, extra={"data_age": str(i + 1)})
           for i in range(MAX_KIDS)],
         cls="st-ages", id="st-ages", **({"hidden": True} if n == 0 else {}),
@@ -83,10 +83,10 @@ def _form(vals, errors):
         _chips(vals, errors),
         Div(
             _field("From", "from", _control(Select, "from", errors, Option(f"{catalog.ORIGIN[1]} ({catalog.ORIGIN[0]})", value=catalog.ORIGIN[0], selected=True)), error=errors.get("from", "")),
-            _field("Leaving", "d", _control(Input, "d", errors, type="date", value=vals["d"], required=True), error=errors.get("d", "")),
-            _field("Back", "r", _control(Input, "r", errors, type="date", value=vals["r"], required=True), error=errors.get("r", "")),
-            _field("Adults", "a", _control(Select, "a", errors, *_options([(i, str(i)) for i in range(1, catalog.MAX_TRAVELERS + 1)], vals["a"])), error=errors.get("a", "")),
-            _field("Kids", "n", _control(Select, "n", errors, *_options([(i, str(i)) for i in range(MAX_KIDS + 1)], vals["n"]))),
+            _field("Leaving", "d", _control(Input, "d", errors, type="date", value=vals["d"], required=True, min=catalog.today().isoformat(), data_ga_range="trip", data_ga_label="Leaving"), error=errors.get("d", "")),
+            _field("Back", "r", _control(Input, "r", errors, type="date", value=vals["r"], required=True, min=catalog.today().isoformat(), data_ga_range="trip", data_ga_end="", data_ga_label="Back"), error=errors.get("r", "")),
+            _field("Adults", "a", _control(Select, "a", errors, *_options([(i, str(i)) for i in range(1, catalog.MAX_TRAVELERS + 1)], vals["a"]), data_ga="stepper", data_ga_label="Adults", data_ga_hint="18 and over"), error=errors.get("a", "")),
+            _field("Kids", "n", _control(Select, "n", errors, *_options([(i, str(i)) for i in range(MAX_KIDS + 1)], vals["n"]), data_ga="stepper", data_ga_label="Kids", data_ga_hint="under 18")),
             cls="st-row",
         ),
         ages,
