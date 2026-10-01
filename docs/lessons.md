@@ -10,3 +10,4 @@ Claude reads this at the start of each session. -->
 - 2026-09-30 · Client-side state seeded at page load (e.g. which offer the split view opens) must follow later picks: test the "change it in the tiled view, then expand" path, not just a fresh page load. String-matching tests missed this in F-025.
 - 2026-09-30 · Assert a price or total on its own element (e.g. `id="ws-total"`), never as a substring of the whole page: embedded data made `"$2,308" in html` pass for the wrong pick in F-015.
 - 2026-09-30 · GitAway was built too large: the captain needed 75% browser zoom to see a full screen. Design and verify at 1440×900 and 1280×800 at 100% zoom: the main content of every screen must fit without scrolling.
+- 2026-09-30 · Parallel workers collided on port 5002 and one killed another's browser: each worker brief names its own server port and browser debug port, and workers stop only processes they started (by PID, never by pattern).
