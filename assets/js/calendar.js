@@ -86,6 +86,7 @@
     if (el.name) return `${el.tagName.toLowerCase()}[name="${CSS.escape(el.name)}"]`;
     return "";
   }
+  window.calSwap = (url) => swap(url);  // voice.js: swap the calendar in place for a GET
   const post = (url, data) => swap(url, { method: "POST", body: new URLSearchParams(data) });
 
   document.addEventListener("click", (e) => {

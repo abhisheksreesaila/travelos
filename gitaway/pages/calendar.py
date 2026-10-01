@@ -498,7 +498,7 @@ def register(app):
             form = {"vals": _vals(id=f"a{nid}", day=day, start=cal.hhmm(start), end=cal.hhmm(default_end(blocks, day, start)))}
         view = pick_view(view, bool(add or edit or new or undo or w or voice == "1" or voiced))
         talk = {"night": voice_ui.parse_night(night), "hear": hear == "1"} if voice == "1" and not form else None
-        done = {"ids": voice_ui._ids(voiced), "note": vnote if voice_ui._NOTE.match(vnote or "") else "", "night": str(voice_ui.parse_night(vn) if voice_ui.parse_night(vn) is not None else "")} if voiced else None
+        done = {"ids": voice_ui.parse_ids(voiced), "note": voice_ui.note_id(vnote), "night": str(voice_ui.parse_night(vn) if voice_ui.parse_night(vn) is not None else "")} if voiced else None
         return calendar_page(session, demo, view, form=form, new=new, undo=undo, w=w, invite={} if invite == "1" and not form else None, live=live == "1", back=back if add else "", voice=talk, voiced=done)
 
     def refuse(session, demo, view, message, form=None):

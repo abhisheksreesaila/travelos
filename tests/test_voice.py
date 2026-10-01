@@ -228,19 +228,25 @@ def book_two_nights(client):
     return client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1", **TWO_NIGHTS}, follow_redirects=False)
 
 
-def test_a_two_night_trip_maps_onto_its_own_days_and_shows_what_does_not_fit(client):
-    book_two_nights(client)
-    html = client.get("/calendar?voice=1&night=1").text
-    assert client.get("/calendar?voice=1&night=1").status_code == 200
+def test_a_two_night_trip_uses_its_middle_day_and_says_so(client):
+    book_two_nights(client)                                                  # Wed 21 .. Fri 23
+    html = client.get("/calendar?voice=1&night=0").text
     d = drafts(html)
-    assert all(int(x["data-day"]) <= 2 for x in d.values())
-    got = rows(html)
-    assert got["v0"] == (True, False)                                          # Thu evening is free
-    assert got["v1"][1] is True and "flight home" in html                      # the observatory would run into the flight home: a clash, not a crash
-    r = apply(client, 1, "v0", "v1", "v2", "v3")
-    assert r.status_code == 303
-    titles = [a["t"] for a in activities(client)]
-    assert "Tacos at Mariscos La Ola" in titles and "Griffith Observatory at sunset" not in titles
+    assert [d[k]["data-day"] for k in ("v0", "v1", "v2", "v3")] == ["0", "1", "1", "2"]
+    assert "No Sunday on this trip, so Thu 22" in html and "No Monday on this trip, so Thu 22" in html
+    assert list(chips(html)) == ["Wed 21, 6:30 PM"]                          # Thu evening is the observatory's
+    assert set(rows(html).values()) == {(True, False)}
+    assert apply(client, 0, "v0", "v1", "v2", "v3").status_code == 303 and len(activities(client)) == 4
+
+
+def test_a_two_day_trip_shows_what_cannot_fit_as_clashes_and_nothing_crashes(client):
+    sign_in(client, "ari")
+    client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1", "d": "2026-10-21", "r": "2026-10-22", "a": "2"})
+    html = client.get("/calendar?voice=1&night=0").text
+    assert client.get("/calendar?voice=1&night=0").status_code == 200
+    assert rows(html)["v1"][1] is True and "flight home" in html             # the observatory would run into the flight home
+    assert apply(client, 0, "v0", "v1", "v2", "v3").status_code == 303
+    assert "Griffith Observatory at sunset" not in [a["t"] for a in activities(client)]
 
 
 def test_a_trip_with_its_own_sunday_uses_it(client):
@@ -302,3 +308,37 @@ def test_reduced_motion_turns_off_every_voice_animation():
         assert name in block, name
     js = (ROOT / "assets/js/voice.js").read_text()
     assert "prefers-reduced-motion" in js
+
+
+# ---- review fixes: the mic, announcements, double clicks --------------------------------------------------------------
+
+def test_the_mic_in_the_panel_is_a_real_button_that_still_works_without_scripts(client):
+    book(client)
+    html = client.get("/calendar?voice=1&night=0").text
+    m = re.search(r'<form[^>]*vo-micform[^>]*>.*?</form>', html, re.S)
+    assert m and 'method="get"' in m.group(0) and 'action="/calendar"' in m.group(0)
+    assert re.search(r'<button[^>]*vo-mic[^>]*>', m.group(0)) and 'type="submit"' in m.group(0)
+    for name, value in (("voice", "1"), ("hear", "1"), ("view", "days")):
+        assert f'name="{name}" value="{value}"' in m.group(0)
+    assert not re.search(r'<a[^>]*vo-mic', html)
+
+
+def test_there_is_a_polite_live_region_for_the_transcript(client):
+    book(client)
+    html = client.get("/calendar?voice=1&hear=1").text
+    m = re.search(r'<div[^>]*vo-live[^>]*>', html)
+    assert m and 'role="status"' in m.group(0) and "sr-only" in m.group(0)
+    assert re.search(r'<div[^>]*vo-live[^>]*></div>', html)                  # empty until the sentence has been heard
+
+
+def test_the_script_finishes_hearing_the_same_way_with_and_without_motion():
+    js = (ROOT / "assets/js/voice.js").read_text()
+    assert "function finish" in js and js.count("finish(") >= 3               # defined, and called on the typed and the reduced-motion paths
+    assert "Play the demo sentence again" in js and "vo-live" in js
+    assert "disabled = true" in js                                           # a double click cannot post twice
+    assert "calSwap" in js and "calSwap" in (ROOT / "assets/js/calendar.js").read_text()
+
+
+def test_the_helpers_calendar_uses_are_public():
+    from gitaway.pages import voice as ui
+    assert ui.parse_ids("a1,b2,a22") == ["a1", "a22"] and ui.note_id("n5") == "n5" and ui.note_id("x") == ""

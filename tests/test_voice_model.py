@@ -51,10 +51,30 @@ def test_the_night_answer_moves_the_tacos():
     assert "v0" not in by_key(voice.plans(SAMPLE, "X", night=9))           # not one of the offered nights
 
 
-def test_a_trip_without_a_sunday_or_monday_falls_back_to_a_fixed_day_of_the_trip():
-    plans = by_key(voice.plans(TWO_NIGHTS, "X", night=0))
-    assert plans["v1"].day == 2 and plans["v2"].day == 1 and plans["v3"].day == 2   # day 3, day 2, last day
-    assert all(0 <= p.day < 3 for p in plans.values())
+def test_a_trip_without_a_sunday_or_monday_uses_a_full_middle_day_and_says_so():
+    plans = by_key(voice.plans(TWO_NIGHTS, "X", night=0))                 # Wed 21 .. Fri 23: the only middle day is Thu 22
+    assert plans["v1"].day == 1 and plans["v2"].day == 1 and plans["v3"].day == 2
+    assert voice.fallback_notes(TWO_NIGHTS) == {"v1": "No Sunday on this trip, so Thu 22", "v2": "No Monday on this trip, so Thu 22"}
+    assert voice.fallback_notes(SAMPLE) == {}
+    four = [date(2026, 10, 21 + i) for i in range(4)]                       # Wed .. Sat: Sunday takes the last middle day, Monday the first
+    p4 = by_key(voice.plans(four, "X", night=0))
+    assert (p4["v1"].day, p4["v2"].day) == (2, 1)
+
+
+def test_a_two_day_trip_has_no_middle_day_so_it_uses_the_days_it_has():
+    plans = by_key(voice.plans(TWO_NIGHTS[:2], "X", night=0))
+    assert all(0 <= p.day < 2 for p in plans.values())
+
+
+def test_the_tacos_night_never_offers_the_observatory_evening():
+    assert [o.day for o in voice.question(TWO_NIGHTS).options] == [0]       # Thu is the observatory's day
+    assert [o.day for o in voice.question(SAMPLE).options] == [0, 1]
+    assert [o.day for o in voice.question(ONE_DAY).options] == [0]          # nothing else to offer: the clash is shown instead
+
+
+def test_the_beach_walk_only_talks_about_a_flight_home_when_there_is_one():
+    assert by_key(voice.plans(SAMPLE, "X", night=0))["v3"].title == "Beach walk before the flight home"
+    assert by_key(voice.plans(SAMPLE, "X", night=0, home=False))["v3"].title == "Beach walk"
 
 
 def test_a_one_day_trip_never_points_past_its_last_day():
@@ -78,7 +98,7 @@ def test_on_a_two_night_trip_plans_that_cannot_fit_show_as_clashes_and_nothing_c
     from tests.test_calendar import book
     book(client)
     s = client_session(client)
-    s["bookings"]["ari"]["trip"] = "d=2026-10-21&r=2026-10-23&a=2"
+    s["bookings"]["ari"]["trip"] = "d=2026-10-21&r=2026-10-22&a=2"
     placed = voice.preview(s, night=0)
     assert len(placed) == 4
     clashes = [x for x in placed if x.state == "clash"]

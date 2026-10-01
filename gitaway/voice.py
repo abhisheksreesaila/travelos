@@ -38,26 +38,58 @@ class Question:
         return next((o for o in self.options if o.day == day), None)
 
 
-def question(dates):
-    """The one quick question: which of the first two evenings of the trip is for tacos."""
-    return Question("Tacos on which night?", tuple(Option(i, f"{d.strftime('%a')} {d.day}, {cal.fmt_time(TACOS_START)}") for i, d in enumerate(dates[:2])))
+def middle_days(dates):
+    """Indexes of the full days between arrival and departure (not the arrival day, nor the check-out and flight-home day)."""
+    return list(range(1, len(dates) - 1))
 
 
 def day_for(dates, weekday, fallback):
-    """Index of the first `weekday` in the trip, else day `fallback` (0 based) kept inside the trip."""
+    """Index of the first `weekday` in the trip, else the full middle day `fallback` ("first" or "last"); a trip of one or
+    two days has no middle, so it uses day 3 / day 2 kept inside the trip."""
     found = next((i for i, d in enumerate(dates) if d.weekday() == weekday), None)
-    return found if found is not None else min(fallback, len(dates) - 1)
+    if found is not None:
+        return found
+    mid = middle_days(dates)
+    if mid:
+        return mid[-1] if fallback == "last" else mid[0]
+    return min(2 if fallback == "last" else 1, len(dates) - 1)
 
 
-def plans(dates, stay_name, night=None):
-    """The draft plans the sentence asks for, on the days of `dates`. Without a valid `night` the tacos wait for the answer."""
+def sunday(dates):
+    return day_for(dates, SUNDAY, "last")
+
+
+def monday(dates):
+    return day_for(dates, MONDAY, "first")
+
+
+def question(dates):
+    """The one quick question: which of the first two evenings of the trip is for tacos. The observatory's evening is not
+    offered (tacos at 6:30 would sit inside sunset) unless it is the only evening there is."""
+    nights = [i for i in range(min(2, len(dates))) if i != sunday(dates)] or [0]
+    return Question("Tacos on which night?", tuple(Option(i, f"{dates[i].strftime('%a')} {dates[i].day}, {cal.fmt_time(TACOS_START)}") for i in nights))
+
+
+def fallback_notes(dates):
+    """{plan key: sentence} for each plan whose weekday the trip does not have, so a stand-in day is never a silent guess."""
+    out = {}
+    for key, weekday, name, pick in (("v1", SUNDAY, "Sunday", sunday), ("v2", MONDAY, "Monday", monday)):
+        if not any(d.weekday() == weekday for d in dates):
+            d = dates[pick(dates)]
+            out[key] = f"No {name} on this trip, so {d.strftime('%a')} {d.day}"
+    return out
+
+
+def plans(dates, stay_name, night=None, home=True):
+    """The draft plans the sentence asks for, on the days of `dates`. Without a valid `night` the tacos wait for the answer.
+    `home` is whether the booking has a flight home (the beach walk says so only then)."""
     out = []
     if question(dates).option(night):
         out.append(cal.Plan("v0", night, TACOS_START, TACOS_START + TACOS_LEN, "Tacos at Mariscos La Ola", "food"))
     out += [
-        cal.Plan("v1", day_for(dates, SUNDAY, 2), 17 * 60, 19 * 60 + 30, "Griffith Observatory at sunset", "culture"),
-        cal.Plan("v2", day_for(dates, MONDAY, 1), 9 * 60, 11 * 60 + 30, cal._short(f"Pool time at {stay_name}"), "fun"),
-        cal.Plan("v3", len(dates) - 1, 9 * 60, 10 * 60 + 30, "Beach walk before the flight home", "outdoors"),
+        cal.Plan("v1", sunday(dates), 17 * 60, 19 * 60 + 30, "Griffith Observatory at sunset", "culture"),
+        cal.Plan("v2", monday(dates), 9 * 60, 11 * 60 + 30, cal._short(f"Pool time at {stay_name}"), "fun"),
+        cal.Plan("v3", len(dates) - 1, 9 * 60, 10 * 60 + 30, "Beach walk before the flight home" if home else "Beach walk", "outdoors"),
     ]
     return out
 
@@ -91,7 +123,9 @@ def setup(session, demo):
 
 def plans_for(session, night=None, demo=""):
     dates, stay = setup(session, demo)
-    return plans(dates, stay, night)
+    b = ses.booking(session)
+    home = any(x.id == "b-back" for x in cal.booked_blocks(b, cal.trip(demo, b)))
+    return plans(dates, stay, night, home)
 
 
 def preview(session, night=None, demo=""):

@@ -36,7 +36,12 @@ def parse_night(text):
     return int(text) if _NIGHT.match(text or "") else None
 
 
-def _ids(text):
+def note_id(text):
+    """`text` when it is a note id like "n5", else ""."""
+    return text if _NOTE.match(text or "") else ""
+
+
+def parse_ids(text):
     return [x for x in (text or "").split(",") if _IDS.match(x)][:40]
 
 
@@ -46,7 +51,7 @@ def _hidden(name, value):
 
 # ---- the panel -----------------------------------------------------------------------------------------------------
 
-def _row(x, dates):
+def _row(x, dates, info):
     p = x.plan
     day = dates[p.day] if 0 <= p.day < len(dates) else None
     when = (f"{day.strftime('%a')} {day.day} · " if day else f"Day {p.day + 1} · ") + f"{cal.fmt_time(p.start)} – {cal.fmt_time(p.end)}"
@@ -56,6 +61,9 @@ def _row(x, dates):
         note = Span(x.clash[0].upper() + x.clash[1:], cls="vo-note")
     else:
         note = ""
+    if info.get(p.key) and x.state != "have":
+        extra = Span(info[p.key], cls="vo-note vo-note-info")
+        note = Div(note, extra, cls="vo-notes") if note else extra
     off = x.hard or x.state == "have"
     return Label(
         Input(type="checkbox", name="pick", value=p.key, checked=x.checked or None, disabled=off or None, data_plan=p.key, cls="vo-check"),
@@ -77,7 +85,8 @@ def panel(session, demo, dates, question, placements, night, hear, error=""):
     said = [Span(w + " ", cls="vo-w") for w in vo.SENTENCE.split()]
     chips = [A(o.label, href=voice_url(demo, night=o.day), data_soft="", cls="vo-chip", aria_current="true" if o.day == night else None,
                aria_label=f"{question.text} {o.label}" + (", picked" if o.day == night else "")) for o in question.options]
-    rows = [_row(x, dates) for x in placements]
+    info = vo.fallback_notes(dates)
+    rows = [_row(x, dates, info) for x in placements]
     if not answered:
         rows.insert(0, _waiting(question))
     label = f"Add {ticked} plan{'s' if ticked != 1 else ''}" if answered else "Answer the question first"
@@ -95,10 +104,13 @@ def panel(session, demo, dates, question, placements, night, hear, error=""):
     return Aside(
         Div(H2("Talk to plan", id="vo-title"), Span("Demo voice", cls="vo-pill"), A(icon("x", 16, 2.6), href=close, data_soft="", cls="vo-close", aria_label="Close Talk to plan"), cls="vo-head"),
         Div(Div(error, role="alert", cls="vo-error") if error else "",
-            Div(A(icon("mic", 36, 2.2), href=voice_url(demo, hear=1), data_soft="", cls="vo-mic", aria_label="Play the demo sentence again" if not hear else "Listening"),
+            Div(Form(_hidden("view", "days"), _hidden("voice", "1"), _hidden("hear", "1"), _hidden("demo", cal.LONG) if demo == cal.LONG else "",
+                  Button(icon("mic", 36, 2.2), type="submit", cls="vo-mic", id="vo-mic", aria_label="Listening" if hear else "Play the demo sentence again"),
+                  action="/calendar", method="get", cls="vo-micform"),
                 Div(*[Span(cls="vo-bar", style=f"animation-delay:{d}s") for d in (0, .1, .2, .3, .2, .1, 0)], cls="vo-bars", aria_hidden="true"),
                 Span(hint, cls="vo-hintline", id="vo-hintline"), cls="vo-micbox"),
-            Div(Span("You said: ", cls="sr-only"), Span(vo.SENTENCE, cls="sr-only"),
+            Div(cls="sr-only vo-live", id="vo-live", role="status", aria_live="polite"),
+            Div(Span("You said: ", cls="sr-only"), Span(vo.SENTENCE, cls="sr-only vo-full"),
                 P(*said, Span("|", cls="vo-cursor"), cls="vo-said", aria_hidden="true"), cls="vo-bubble"),
             after, cls="vo-scroll"),
         id="cal-voice", cls="cal-voice vo-panel", aria_labelledby="vo-title", data_hear="1" if hear else None)
@@ -138,12 +150,12 @@ def register(app):
         return RedirectResponse("/calendar?" + urlencode([(k, v) for k, v in q if v], safe=","), status_code=303)
 
     @app.post("/calendar/voice/undo")
-    def voice_undo(session, ids: str = "", night: str = "", nid: str = "", demo: str = "", view: str = ""):
+    def voice_undo(session, ids: str = "", night: str = "", nid: str = "", demo: str = ""):
         demo = cal.LONG if demo == cal.LONG else ""
         if (r := guard(session, demo)):
             return r
         n = parse_night(night)
         dates, _ = vo.setup(session, demo)
         if vo.question(dates).option(n) is not None:
-            vo.undo(session, n, _ids(ids), nid if _NOTE.match(nid or "") else None, demo)
+            vo.undo(session, n, parse_ids(ids), note_id(nid) or None, demo)
         return RedirectResponse("/calendar?" + urlencode(([("demo", cal.LONG)] if demo == cal.LONG else []) + [("view", "days")]), status_code=303)
