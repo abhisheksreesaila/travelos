@@ -7,7 +7,7 @@ def test_home_is_a_gitaway_page_with_the_main_navigation(client):
     html = r.text
     assert "<title>GitAway" in html
     assert "TravelOS" not in html
-    for label, href in [("Discover", "/discover"), ("Plan a trip", "/start"), ("For creators", "/creators")]:
+    for label, href in [("Community trips", "/community"), ("Plan a trip", "/start"), ("For creators", "/creators")]:
         assert f'href="{href}"' in html and label in html
     assert "/assets/css/tokens.css" in html and "/assets/css/base.css" in html
 
@@ -34,7 +34,7 @@ def test_design_tokens_are_served(client):
 
 
 def test_nav_destinations_are_never_dead_ends(client):
-    for path in ["/discover", "/plan", "/creators", "/signin"]:
+    for path in ["/community", "/plan", "/creators", "/signin"]:
         r = client.get(path)
         assert r.status_code == 200, path
         assert "<title>GitAway" in r.text and "TravelOS" not in r.text
@@ -45,7 +45,7 @@ def test_an_unknown_trip_gets_a_friendly_not_found_page(client):
     assert r.status_code == 404
     assert "This trip wandered off" in r.text and "TravelOS" not in r.text
     assert "/assets/css/tokens.css" in r.text
-    assert 'href="/discover"' in r.text
+    assert 'href="/community"' in r.text
 
 
 def test_every_page_offers_a_skip_link_to_the_main_content(client):

@@ -211,10 +211,10 @@ def test_publish_puts_the_trip_in_the_hub_with_its_own_page(client):
     assert [c.source for c in hub.cards({}) if c.slug == slug] == ["YouTube"]
     assert "cr" not in session_data(client)  # the draft is gone, the trip is published
     done = client.get("/creators/done").text
-    assert f'href="/trips/{slug}"' in done and 'href="/discover"' in done and "live" in done.lower()
-    hubhtml = client.get("/discover").text
+    assert f'href="/trips/{slug}"' in done and 'href="/community"' in done and "live" in done.lower()
+    hubhtml = client.get("/community").text
     assert "Sun, tacos &amp; tides" in hubhtml and f'href="/trips/{slug}"' in hubhtml and "Your trip" in hubhtml
-    assert "Sun, tacos &amp; tides" in client.get("/discover?src=creators").text
+    assert "Sun, tacos &amp; tides" in client.get("/community?src=creators").text
     page = client.get(f"/trips/{slug}")
     assert page.status_code == 200 and "Sun, tacos &amp; tides" in page.text and "From the vlog" in page.text
     assert 'id="day-1"' in page.text and "The whole trip on one board" in page.text
@@ -248,7 +248,7 @@ def test_instagram_links_link_to_the_instagram_channel(client):
     paste(client, IG)
     submit(client)
     html = client.get(f"/trips/{slug_of(client)}").text
-    assert 'href="https://www.instagram.com/' in html and "Instagram" in client.get("/discover").text
+    assert 'href="https://www.instagram.com/' in html and "Instagram" in client.get("/community").text
 
 
 def test_every_channel_link_is_http_s_only():
@@ -267,7 +267,7 @@ def test_creator_text_is_escaped_everywhere(client):
     assert "<script>alert" not in draft and "<img src=x" not in draft and "&lt;script&gt;" in draft
     submit(client, title=evil, hl1=evil, hl2=evil, tip=evil)
     slug = slug_of(client)
-    for url in (f"/trips/{slug}", "/discover", "/creators/done"):
+    for url in (f"/trips/{slug}", "/community", "/creators/done"):
         html = client.get(url).text
         assert "<script>alert" not in html and "<img src=x" not in html
     assert "&lt;script&gt;" in client.get(f"/trips/{slug}").text
@@ -309,7 +309,7 @@ def test_the_trip_is_served_to_every_browser(client):
     client.post("/logout")
     assert client.get(f"/trips/{slug}").status_code == 200
     other = TestClient(app)  # another device, never signed in
-    assert other.get(f"/trips/{slug}").status_code == 200 and slug in other.get("/discover").text
+    assert other.get(f"/trips/{slug}").status_code == 200 and slug in other.get("/community").text
 
 
 def test_progress_line_gets_shorter(client):

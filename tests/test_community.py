@@ -46,7 +46,7 @@ def test_the_shared_page_works_signed_out_on_another_device_and_for_another_fami
     for other in (device(client), _signed_in(client, "sam")):
         r = other.get(f"/trips/{slug}")
         assert r.status_code == 200 and "Venice Canals stroll" in r.text and "Flight to LAX" in r.text
-    assert slug in device(client).get("/discover").text
+    assert slug in device(client).get("/community").text
 
 
 def _signed_in(client, who):
@@ -75,7 +75,7 @@ def test_the_owner_can_unpublish_and_nobody_else_can(client):
     assert not community.unpublish(session_data(sam), slug)
     assert device(client).get(f"/trips/{slug}").status_code == 200
     assert community.unpublish(session_data(client), slug)
-    assert device(client).get(f"/trips/{slug}").status_code == 404 and slug not in device(client).get("/discover").text
+    assert device(client).get(f"/trips/{slug}").status_code == 404 and slug not in device(client).get("/community").text
 
 
 def test_the_snapshot_has_no_notes_friends_reference_or_prices(client):

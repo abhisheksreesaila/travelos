@@ -17,7 +17,7 @@ def test_two_doors_link_to_plan_and_the_sample_trip(client):
     assert "No plans yet?" in h
     assert 'href="/start"' in h
     assert 'href="/trips/sun-tacos-and-tide-pools"' in h
-    assert "Browse trips people loved" in h and 'href="/discover"' in h
+    assert "Browse community trips" in h and 'href="/community"' in h
 
 
 def test_door_one_previews_the_sample_trip_and_opens_the_start_page(client):
@@ -65,10 +65,10 @@ def test_stylesheets_load_tokens_then_base_then_page(client):
     _order(client.get("/trips/sun-tacos-and-tide-pools").text, "tokens.css", "base.css", "itinerary.css")
 
 
-def test_fictional_card_links_to_discover(client):
+def test_fictional_card_links_to_community(client):
     h = _get(client)
     m = re.search(r'<a[^>]*href="([^"]*)"[^>]*class="trip-card[^"]*"[^>]*>(?:(?!</a>).)*slow mornings', h, re.S)
-    assert m and m.group(1) == "/discover"
+    assert m and m.group(1) == "/community"
 
 
 def test_fork_count_comes_from_the_data(client):

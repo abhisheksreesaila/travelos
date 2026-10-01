@@ -78,7 +78,7 @@ def done_page(session, entry):
                 P("Anyone can fork it now. Your notes, who is coming, the booking reference and what you paid stay private."),
                 P("This is a snapshot. Share again to update it.", cls="sh-snapshot"),
                 Div(A(icon("share", 20), "View your trip page", href=f"/trips/{slug}", cls="btn btn-primary"),
-                    A("See it in the hub", href="/discover", cls="btn"), cls="sh-actions"),
+                    A("See it in Community trips", href="/community", cls="btn"), cls="sh-actions"),
                 A("Change tags or theme", href="/share", cls="sh-link"),
                 Form(trip_field(), Input(type="hidden", name="slug", value=slug), Button("Unpublish", type="submit", cls="btn btn-sm"), action="/share/unpublish", method="post"),
                 cls="sh-form"),

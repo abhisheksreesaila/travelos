@@ -124,11 +124,11 @@ def test_sign_out_asks_the_browser_to_forget_its_caches_and_storage(client):
 def test_pages_carry_a_non_secret_per_person_cache_key_only_when_signed_in(client):
     from tests.test_signin import sign_in
     key = r'<meta name="ga-user" content="([0-9a-f]{10})">'
-    assert not re.search(key, client.get("/discover").text)
+    assert not re.search(key, client.get("/community").text)
     sign_in(client, "ari")
-    a = re.search(key, client.get("/discover").text).group(1)
+    a = re.search(key, client.get("/community").text).group(1)
     sign_in(client, "sam")
-    b = re.search(key, client.get("/discover").text).group(1)
+    b = re.search(key, client.get("/community").text).group(1)
     assert a != b and "ari" not in a and "sam" not in b
 
 

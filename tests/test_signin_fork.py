@@ -39,6 +39,6 @@ def test_plan_bar_avatar_uses_traveler_colour(client):
 
 
 def test_sign_in_links_return_to_the_current_page(client):
-    assert 'href="/signin?next=%2Fdiscover"' in client.get("/discover").text
+    assert 'href="/signin?next=%2Fcommunity"' in client.get("/community").text
     assert 'href="/signin?next=%2Fplan%3Ff%3Df2"' in client.get("/plan?f=f2").text
     assert 'href="/signin"' in client.get("/").text

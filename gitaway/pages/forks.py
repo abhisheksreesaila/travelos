@@ -119,7 +119,7 @@ def list_panel(session, booked, current=""):
                         else "Book a trip and you can drop a fork's plans into your calendar.", cls="fk-hint"))
     else:
         blocks.append(Div(Span(icon("fork", 28, 2.2), cls="fk-bigicon"), P("No forks yet. Fork a community trip and its plans wait here, ready for your calendar."),
-                          A("Find a trip to fork", href="/discover", cls="btn btn-primary btn-sm"), cls="fk-none"))
+                          A("Find a trip to fork", href="/community", cls="btn btn-primary btn-sm"), cls="fk-none"))
     if kept:
         blocks += [H2("Saved", Span(str(len(kept)), cls="cal-count fk-count"), cls="fk-sub"),
                    *[Div(_card(e, "saved", booked),
@@ -182,7 +182,7 @@ def signed_out():
     return page("Your forks", Section(
         Div(Span(icon("fork", 36, 2.2), cls="fk-bigicon"), H1("Your forks"),
             P("Fork a trip you love and its plans wait here, ready to drop into your calendar. Sign in to start your list."),
-            A("Sign in", href=ses.signin_href("/forks"), cls="btn btn-primary"), A("Find a trip to fork", href="/discover", cls="btn"), cls="fk-signedout"),
+            A("Sign in", href=ses.signin_href("/forks"), cls="btn btn-primary"), A("Find a trip to fork", href="/community", cls="btn"), cls="fk-signedout"),
         cls="ga-soon ga-wrap"), head=HEAD)
 
 
@@ -241,7 +241,7 @@ def register(app):
 
     def trip_path(next_path):
         path = ses.safe_next(next_path, "")
-        return path if ses.trip_slug(path) else "/discover"
+        return path if ses.trip_slug(path) else "/community"
 
     @app.post("/save")
     def save(session, next: str = ""):

@@ -112,8 +112,8 @@ def test_signed_in_save_and_unsave_are_idempotent_and_local_only(client):
         r = client.post("/save", data={"next": f"/trips/{TRIP}"}, follow_redirects=False)
         assert r.headers["location"] == f"/trips/{TRIP}"
     assert ses.saved(session_data(client)) == [TRIP]
-    assert client.post("/save", data={"next": "//evil.example"}, follow_redirects=False).headers["location"] == "/discover"
-    assert client.post("/save", data={"next": "/plan"}, follow_redirects=False).headers["location"] == "/discover"
+    assert client.post("/save", data={"next": "//evil.example"}, follow_redirects=False).headers["location"] == "/community"
+    assert client.post("/save", data={"next": "/plan"}, follow_redirects=False).headers["location"] == "/community"
     for _ in range(2):
         assert client.post("/unsave", data={"next": f"/trips/{TRIP}"}, follow_redirects=False).status_code == 303
     assert ses.saved(session_data(client)) == []
