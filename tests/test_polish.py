@@ -56,6 +56,8 @@ TAP_TARGETS = {  # file -> selectors that must be at least 2.75rem (44px at the 
     "workspace.css": [".ws-focus", ".ws-expand", ".ws-fork", ".ws-forklist"],
     "creators.css": [".cr-link", ".cr-hint a"],
     "hub.css": [".hub-search input"],
+    "calendar.css": [".cal-seg", ".cal-w-head", ".cal-w-empty a", ".cal-dayadd"],
+    "forks.css": [".fk-link"],
 }
 
 
@@ -64,8 +66,8 @@ def test_phone_touch_targets_are_44px():
     for name, selectors in TAP_TARGETS.items():
         phone = phone_blocks(css(name))
         for sel in selectors:
-            rule = re.search(r"(?:^|[},\s])" + re.escape(sel) + r"\s*\{([^}]*)\}", phone)
-            assert rule and re.search(r"min-height:\s*2\.75rem", rule.group(1)), f"{name}: {sel} lacks a 44px phone target"
+            rules = re.findall(r"(?:^|[},\s])" + re.escape(sel) + r"(?:\s*,[^{}]*)?\s*\{([^}]*)\}", phone)
+            assert any(re.search(r"(?<![\w-])(?:min-)?height:\s*2\.75rem", r) for r in rules), f"{name}: {sel} lacks a 44px phone target"
 
 
 def test_stay_card_tags_wrap_instead_of_clipping():
