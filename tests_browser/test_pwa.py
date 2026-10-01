@@ -1,14 +1,12 @@
 """F-044: the service worker serves a visited trip offline, never caches a POST or an auth route, keeps one person's
 pages away from another, and serves a changed asset after a reload."""
 import re
-from pathlib import Path
 
 import pytest
 from playwright.sync_api import Error as PlaywrightError
 
 from tests_browser.helpers import PHONE
 
-ASSETS = Path(__file__).resolve().parent.parent / "assets"
 ALL_CACHED_URLS = """async () => {
   const out = [];
   for (const name of await caches.keys()) for (const r of await (await caches.open(name)).keys()) out.push(r.method + ' ' + new URL(r.url).pathname + new URL(r.url).search);
@@ -100,22 +98,24 @@ def test_posts_and_auth_routes_never_end_up_in_any_cache(ctxs, base_url):
     assert page.evaluate("fetch('/pay', {method: 'POST', body: new URLSearchParams({f: 'f1'})}).then(() => false, () => true)")
 
 
-def test_a_changed_asset_is_served_after_a_reload(ctxs, base_url):
-    path = ASSETS / "css" / "base.css"
-    original = path.read_bytes()
+def test_a_changed_asset_is_served_after_a_reload(ctxs, base_url, monkeypatch):
+    from gitaway import assetver
+    real = assetver.file_hash
+    changed = {"on": False}
+    monkeypatch.setattr(assetver, "file_hash", lambda url: "c0ffee00" if changed["on"] and url.endswith("base.css") else real(url))
     ctx = ctxs()
     page = ctx.new_page()
     controlled(page, base_url)
-    first = page.evaluate("document.querySelector('link[href*=\"base.css\"]').href")
-    try:
-        path.write_bytes(original + b"\n/* f044-marker */\n")
-        page.reload()
-        second = page.evaluate("document.querySelector('link[href*=\"base.css\"]').href")
-        assert second != first
-        assert "f044-marker" in page.evaluate("href => fetch(href).then(r => r.text())", second)
-        assert "f044-marker" not in page.evaluate("href => fetch(href).then(r => r.text())", first)
-    finally:
-        path.write_bytes(original)
+    link = "document.querySelector('link[href*=\"base.css\"]').href"
+    first = page.evaluate(link)
+    assert first.endswith("?v=" + real("/assets/css/base.css"))
+    changed["on"] = True  # the file "changed": same URL path, new content hash
+    page.reload()
+    second = page.evaluate(link)
+    assert second.endswith("?v=c0ffee00") and second != first
+    assert page.evaluate("href => fetch(href).then(r => r.status)", second) == 200
+    assets = page.evaluate("async () => { const out = []; for (const n of await caches.keys()) if (n.startsWith('ga-assets-') || n.startsWith('ga-shell-')) for (const r of await (await caches.open(n)).keys()) out.push(r.url); return out; }")
+    assert second in assets, "the new URL was fetched from the network and saved"
 
 
 def test_signing_out_leaves_no_private_page_offline(ctxs, base_url):

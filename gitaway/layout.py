@@ -1,6 +1,7 @@
 """The page shell every GitAway screen shares: fonts, tokens, header and footer."""
 
 import hashlib
+import hmac
 
 from fasthtml.common import A, Button, Div, Footer, Form, Header, Link, Main, Meta, Nav, Script, Span, Title
 
@@ -29,7 +30,7 @@ def clear_site_data(response):
 def cache_key(traveler=None):
     """A short, non-secret per-person key the service worker files saved pages under (None when signed out)."""
     traveler = traveler or session.request_traveler()
-    return hashlib.sha256(f"gitaway-pages:{traveler.id}".encode()).hexdigest()[:10] if traveler else None
+    return hmac.new(session.cache_secret(), traveler.id.encode(), hashlib.sha256).hexdigest()[:10] if traveler else None
 
 HEAD = (
     # Install on iPhone (F-044): manifest, theme colour, Apple tags, service worker registration

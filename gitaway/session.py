@@ -294,6 +294,20 @@ async def bind(req, session):
     _request_path.set(req.url.path + (f"?{req.url.query}" if req.url.query else ""))
 
 
+def cache_secret() -> bytes:
+    """The server's session secret (the .sesskey file main.py gives FastHTML), for keys that must not be guessable."""
+    from pathlib import Path
+    try:
+        return (Path(__file__).resolve().parent.parent / ".sesskey").read_bytes().strip() or b"gitaway"
+    except OSError:
+        return b"gitaway"
+
+
+def as_signed_out():
+    """Render the rest of this request as a signed-out visitor (for pages that are cached and shared, like /offline)."""
+    _request_traveler.set(None)
+
+
 def request_traveler():
     return _request_traveler.get()
 

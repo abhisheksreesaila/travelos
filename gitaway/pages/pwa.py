@@ -62,7 +62,7 @@ def register(app):
 
     @app.get("/offline")
     def offline():
-        ses._request_traveler.set(None)  # this page is cached for everyone: no name, no cache key
+        ses.as_signed_out()  # this page is cached for everyone: no name, no cache key
         return page(
             "Offline",
             Section(
