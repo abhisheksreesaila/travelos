@@ -22,6 +22,7 @@ TITLES = {
     "invite": "Sign in to invite your crew",
     "save": "Sign in to save this trip",
     "publish": "Sign in to publish your trip",
+    "ride": "Sign in to schedule an Uber",
 }
 
 

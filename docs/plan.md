@@ -212,12 +212,12 @@ Needs: F-030
 
 # Real app: rides simulation and backend (brief: docs/briefs/real-app.md, approved 2026-10-01 · ADR-0004)
 
-## F-038 Milestone 1: schedule an Uber, simulated faithfully [doing]
+## F-038 Milestone 1: schedule an Uber, simulated faithfully [done]
 Research: docs/research/uber-api.md · Needs: F-033
-- [ ] with no car, the rides card offers "Schedule an Uber" for arrival (pickup = landing + buffer) and departure (leave in time for the flight)
-- [ ] the flow mirrors Uber's API: product choice with price and time estimates, confirm pickup and dropoff, scheduled, then a simulated status timeline (scheduled → driver assigned → arriving → on trip → completed) and cancel
-- [ ] labelled "Simulated: no real ride is booked"; scheduled rides show on the trip calendar
-- [ ] a `RideProvider` seam with a simulator implementation, so a real Uber client can replace it later
+- [x] with no car, the rides card offers "Schedule an Uber" for arrival (pickup = landing + buffer) and departure (leave in time for the flight)
+- [x] the flow mirrors Uber's API: product choice with price and time estimates, confirm pickup and dropoff, scheduled, then a simulated status timeline (scheduled → driver assigned → arriving → on trip → completed) and cancel
+- [x] labelled "Simulated: no real ride is booked"; scheduled rides show on the trip calendar
+- [x] a `RideProvider` seam with a simulator implementation, so a real Uber client can replace it later
 
 ## F-039 Backend foundation: fh-saas host, families as tenants, sign-in [done]
 Needs: none (ADR-0004)

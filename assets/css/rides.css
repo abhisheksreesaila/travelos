@@ -1,0 +1,92 @@
+/* Schedule an Uber (F-038): choose a ride, confirm, the ride and its status timeline. Loaded after tokens.css and base.css via layout.styles(). rem only (F-030). */
+.rd-wrap { width: min(72rem, 100% - 2rem); margin: 0 auto; padding: 1rem 0 2rem; display: flex; flex-direction: column; gap: 1rem; box-sizing: border-box; min-width: 0; }
+.rd-narrow { width: min(34rem, 100% - 2rem); padding-top: 3rem; align-items: flex-start; }
+.rd-head { display: flex; flex-direction: column; align-items: flex-start; gap: 0.375rem; min-width: 0; }
+.rd-title { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 2.125rem; line-height: 1.05; letter-spacing: -0.03em; overflow-wrap: anywhere; }
+.rd-route { font-weight: 800; font-size: 1.0625rem; color: var(--ink-2); overflow-wrap: anywhere; }
+.rd-lede { margin: 0; font-size: 1.0625rem; line-height: 1.5; font-weight: 600; color: var(--ink-2); }
+.rd-back { display: inline-flex; align-items: center; gap: 0.25rem; min-height: 2.75rem; font-weight: 800; color: var(--ink-2); text-decoration: none; }
+.rd-back:hover { color: var(--ink); text-decoration: underline; }
+
+/* The "this is not a real booking" label: always beside the thing it is about */
+.rd-sim { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.25rem 0.75rem; border-radius: var(--r-pill); background: var(--sun-tint); border: 0.125rem dashed var(--sun-ink);
+  color: var(--sun-ink); font-weight: 800; font-size: max(var(--text-min), 0.8125rem); line-height: 1.25; }
+
+.rd-steps { list-style: none; margin: 0.25rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.375rem 1rem; }
+.rd-step { display: inline-flex; align-items: center; gap: 0.375rem; font-weight: 700; font-size: max(var(--text-min), 0.875rem); color: var(--ink-3); }
+.rd-step[aria-current="step"] { color: var(--ink); font-weight: 800; }
+.rd-num { width: 1.5rem; height: 1.5rem; border-radius: var(--r-pill); display: grid; place-items: center; background: rgba(30, 26, 46, .1); font-size: max(var(--text-min), 0.75rem); font-weight: 800; }
+.rd-step[aria-current="step"] .rd-num { background: var(--ink); color: #fff; }
+
+.rd-cols { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 1rem; align-items: start; }
+.rd-card { background: var(--card); border-radius: var(--r-lg); box-shadow: var(--shadow-md); padding: 1.25rem 1.375rem; display: flex; flex-direction: column; gap: 0.625rem; min-width: 0; box-sizing: border-box; }
+.rd-h2 { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 1.375rem; letter-spacing: -0.02em; }
+.rd-h3 { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 1.125rem; }
+.rd-note { margin: 0; font-size: max(var(--text-min), 0.875rem); line-height: 1.4; font-weight: 600; color: var(--ink-2); }
+.rd-when { font-weight: 800; font-size: 1.0625rem; }
+
+/* Step 1: the products */
+.rd-products { list-style: none; margin: 0.25rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.rd-product { display: grid; grid-template-columns: minmax(11rem, 1fr) auto auto; align-items: center; gap: 0.25rem 1rem; padding: 0.75rem 0.875rem; border-radius: var(--r-md); background: #FAF7F2; }
+.rd-ptext, .rd-pnums { display: flex; flex-direction: column; min-width: 0; }
+.rd-pnums { align-items: flex-end; text-align: right; max-width: 14rem; }
+.rd-pname { font-weight: 800; font-size: 1.0625rem; overflow-wrap: anywhere; }
+.rd-pdesc, .rd-peta { font-size: max(var(--text-min), 0.8125rem); font-weight: 600; color: var(--ink-2); }
+.rd-price { font-family: var(--font-display); font-weight: 800; font-size: 1.375rem; font-variant-numeric: tabular-nums; }
+.rd-pnote { grid-column: 1 / -1; font-size: max(var(--text-min), 0.8125rem); font-weight: 700; color: var(--ink-3); }
+.rd-product-off { opacity: .72; background: transparent; box-shadow: inset 0 0 0 0.125rem var(--line); }
+.rd-unfit { font-size: max(var(--text-min), 0.75rem); font-weight: 800; color: var(--ink-3); }
+.rd-choose { min-height: 2.75rem; }
+.rd-app { align-self: flex-start; }
+.rd-aside { background: var(--sky-tint); }
+
+/* Step 2 */
+.rd-place { display: flex; flex-direction: column; gap: 0.0625rem; padding: 0.625rem 0.75rem; border-radius: var(--r-sm); background: #FAF7F2; }
+.rd-plabel { display: inline-flex; align-items: center; gap: 0.375rem; font-size: max(var(--text-min), 0.75rem); font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-3); }
+.rd-kv { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
+.rd-k { font-size: max(var(--text-min), 0.875rem); font-weight: 700; color: var(--ink-3); }
+.rd-v { font-weight: 800; text-align: right; overflow-wrap: anywhere; min-width: 0; }
+.rd-mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: max(var(--text-min), 0.875rem); }
+.rd-two { display: grid; grid-template-columns: 1fr 1fr; gap: 0.625rem; }
+.rd-field { display: flex; flex-direction: column; gap: 0.25rem; font-weight: 800; font-size: max(var(--text-min), 0.875rem); min-width: 0; }
+.rd-field input { min-height: 2.75rem; padding: 0 0.75rem; border-radius: var(--r-sm); border: 0.125rem solid rgba(30, 26, 46, .2); background: #fff; font: 600 1rem var(--font-body); color: var(--ink); min-width: 0; box-sizing: border-box; width: 100%; }
+.rd-field input:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.125rem; }
+.rd-go { width: 100%; min-height: 3.5rem; }
+.rd-link { display: inline-flex; align-items: center; justify-content: center; min-height: 2.75rem; font-weight: 700; color: var(--ink-2); text-decoration: underline; text-underline-offset: 0.25rem; }
+.rd-error { padding: 0.625rem 0.875rem; border-radius: var(--r-sm); background: #FFE1DA; color: var(--coral-deep); font-weight: 800; font-size: max(var(--text-min), 0.9375rem); }
+.rd-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; }
+
+/* The ride: status, timeline, driver */
+.rd-status { align-self: flex-start; padding: 0.25rem 0.875rem; border-radius: var(--r-pill); background: var(--ink); color: #fff; font-weight: 800; font-size: max(var(--text-min), 0.9375rem); }
+.rd-status[data-status="rider_canceled"] { background: var(--coral-deep); }
+.rd-status[data-status="completed"] { background: var(--mint-ink); }
+.rd-headline { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 1.5rem; line-height: 1.15; letter-spacing: -0.02em; }
+.rd-timeline { list-style: none; margin: 0.25rem 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.25rem; position: relative; }
+.rd-tl { display: flex; flex-direction: column; align-items: center; gap: 0.375rem; text-align: center; font-weight: 700; font-size: max(var(--text-min), 0.8125rem); line-height: 1.2; color: var(--ink-3); position: relative; }
+.rd-tl::before { content: ""; position: absolute; top: 0.9375rem; left: -50%; width: 100%; height: 0.1875rem; background: rgba(30, 26, 46, .14); z-index: 0; }
+.rd-tl:first-child::before { display: none; }
+.rd-tl-done::before, .rd-tl-now::before { background: var(--mint); }
+.rd-dot { position: relative; z-index: 1; width: 2rem; height: 2rem; border-radius: var(--r-pill); display: grid; place-items: center; background: #EFE9E0; font-weight: 800; font-size: max(var(--text-min), 0.8125rem); color: var(--ink-3); }
+.rd-tl-done .rd-dot { background: var(--mint); color: var(--ink); }
+.rd-tl-now .rd-dot { background: var(--ink); color: #fff; box-shadow: 0 0 0 0.25rem var(--sun); }
+.rd-tl-now { color: var(--ink); font-weight: 800; }
+.rd-driver { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 0.875rem; border-radius: var(--r-md); background: var(--mint-tint); }
+.rd-driver > div { display: flex; flex-direction: column; min-width: 0; }
+.rd-car { width: 2.5rem; height: 2.5rem; border-radius: var(--r-pill); background: #fff; display: grid; place-items: center; flex-shrink: 0; }
+.rd-ctl { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.rd-hint { font-size: max(var(--text-min), 0.8125rem); font-weight: 700; color: var(--ink-3); flex: 1 1 8rem; min-width: 0; }
+.rd-step-btn { background: var(--sun); }
+.rd-cancel { color: var(--coral-deep); }
+
+@media (max-width: 825px) {
+  .rd-cols { grid-template-columns: minmax(0, 1fr); }
+  .rd-product { grid-template-columns: minmax(0, 1fr) auto; }
+  .rd-choose { grid-column: 1 / -1; }
+}
+@media (max-width: 720px) {
+  .rd-title { font-size: 1.75rem; }
+  .rd-card { padding: 1rem; }
+  .rd-two { grid-template-columns: minmax(0, 1fr); }
+  .rd-link, .rd-back { min-height: 2.75rem; }
+  .rd-tl { font-size: max(var(--text-min), 0.75rem); }
+}
