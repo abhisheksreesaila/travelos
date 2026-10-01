@@ -12,7 +12,8 @@ Everything published in this browser session, by any demo traveler, is listed fo
 community. Cards published by the signed-in traveler are marked `mine`.
 
 Session shape: {"hub": {"<traveler id>": [{"s": slug, "t": title, "p": place, "n": days, "a": author, "g": [tag keys],
-                                           "k": source label or absent, "c": theme, "m": 1 when it is the traveler's own shared trip}]}}
+                                           "k": source label or absent, "c": theme, "m": 1 when it is the traveler's own shared trip,
+                                           "f": cover photo key (COVERS) or absent}]}}
 Pure functions over a session dict, like gitaway.session.
 """
 
@@ -26,6 +27,7 @@ TAGS = {"kid": ("Kid friendly", "sun", "kid"), "pet": ("Pet friendly", "mint", "
 MAX_ENTRIES = 6
 MAX_TEXT = 60
 DEFAULT_PHOTO = ("/assets/photos/santa-monica-beach-pier.jpg", "Santa Monica Pier")
+COVERS = {"pier": DEFAULT_PHOTO, "venice": (itineraries.VENICE, "Venice Beach, Los Angeles")}  # cover photo keys a creator trip can use
 
 
 class HubError(ValueError):
@@ -77,7 +79,7 @@ def all_entries(session) -> list:
 
 
 def _card(e, mine=False) -> HubCard:
-    photo = DEFAULT_PHOTO if e.get("m") else ("", "")
+    photo = DEFAULT_PHOTO if e.get("m") else COVERS.get(e.get("f"), ("", ""))
     return HubCard(e["s"], e["t"], e["p"], e["n"], e["a"], tuple(e.get("g", ())), 0, e.get("k", ""), photo[0], photo[1],
                    e.get("c", "sunset"), mine)
 
@@ -115,7 +117,7 @@ def remove(session, slug) -> bool:
     return True
 
 
-def publish(session, *, slug, title, place, days, author, tags=(), source="", theme="sunset", mine=False) -> HubCard:
+def publish(session, *, slug, title, place, days, author, tags=(), source="", theme="sunset", mine=False, cover="") -> HubCard:
     """Add a trip to the signed-in traveler's hub, or replace the entry with the same slug.
 
     Raises HubError when signed out, when a field is missing, or when the session cookie has no room left.
@@ -131,6 +133,8 @@ def publish(session, *, slug, title, place, days, author, tags=(), source="", th
         row["k"] = str(source)[:MAX_TEXT]
     if mine:
         row["m"] = 1
+    if cover in COVERS:
+        row["f"] = cover
     have = entries(session)
     rows = [row if e["s"] == slug else e for e in have]
     if all(e["s"] != slug for e in have):

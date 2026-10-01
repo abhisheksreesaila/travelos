@@ -7,7 +7,7 @@ creator trips). A slug whose trip is gone (an old shared trip after a rebooking)
 
 from dataclasses import dataclass
 
-from gitaway import hub, itineraries, session as ses, share
+from gitaway import creators, hub, itineraries, session as ses, share
 from gitaway.itineraries import PIER
 
 
@@ -25,7 +25,7 @@ class Entry:
 
 def resolve(session, slug):
     """The Itinerary behind a trip slug (sample, shared or creator), or None when it does not exist (any more)."""
-    return itineraries.get(slug) or share.find(session, slug)
+    return itineraries.get(slug) or share.find(session, slug) or creators.find(session, slug)
 
 
 def entry(session, slug):

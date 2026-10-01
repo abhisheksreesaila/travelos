@@ -36,7 +36,7 @@ MAX_FRIENDS = 6
 MAX_FRIEND_NAME = 20
 DEMO_FRIENDS = ("Mom", "Sam")
 _FRIEND_COLORS = ("sun", "sky", "grape", "mint", "bubble")
-INTENTS = ("save", "pay", "invite", "fork")
+INTENTS = ("save", "pay", "invite", "fork", "publish")
 
 _BAD_CHARS = re.compile(r"[\x00-\x20\x7f\\]")
 
