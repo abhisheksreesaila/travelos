@@ -91,15 +91,15 @@ Needs: F-014, F-019
 - [ ] the itinerary page's Save heart saves a trip (signed out: through the demo sign-in with intent=save) and saved trips show beside forks
 - [ ] apply one: preview its activities in the empty calendar slots around bookings and friends' items, uncheck the unwanted ones, apply with animation; clashes are clearly shown
 
-## F-022 Share to the community hub [doing]
+## F-022 Share to the community hub [done]
 Captain said go 2026-09-30 (build the hub, then the creator flow).
 Design: docs/design/canvas/Hub.dc.html
 Needs: F-014, F-019
-- [ ] one tap on Share turns the trip into a scrapbook itinerary page (no private notes or payment info)
-- [ ] community hub lists shared and creator itineraries, filterable by kid, pet and couple friendly
-- [ ] user-written itinerary text stays escaped and source links only allow http(s)
+- [x] one tap on Share turns the trip into a scrapbook itinerary page (no private notes or payment info)
+- [x] community hub lists shared and creator itineraries, filterable by kid, pet and couple friendly
+- [x] user-written itinerary text stays escaped and source links only allow http(s)
 
-## F-023 Creator link import [todo]
+## F-023 Creator link import [doing]
 Captain said go 2026-09-30. The creator is the editor: under 5 minutes from paste to submit, or creators won't bother.
 Design: docs/design/canvas/Creator.dc.html
 Needs: F-014, F-022
@@ -197,3 +197,8 @@ Needs: F-030
 - [ ] sign-in without a specific `next` lands on /start; landing's "Plan a trip" door and the header link go there; a returning traveler sees "Continue <trip>" above the form
 - [ ] nights and travelers drive prices in the catalog (stays and cars by night, flights by traveler, room fit by party size); the trip lives in the URL through reload, pay and calendar
 - [ ] done means: LA, Oct 16–20, 2 adults + kids 4 and 7 gives $3,088; 3 nights or 3 adults change prices consistently through pay and calendar
+
+## F-036 Small polish found while building F-035 [todo]
+- [ ] weather, news and events panes follow the trip's dates (today they're fixed to Oct 16–20)
+- [ ] at 1000 wide the stay card's "Pool" and "Pet friendly" tags are clipped; wrap them (docs/lessons.md)
+- [ ] the landing door and feature pop-in (`scale(1.06)`) briefly causes sideways scroll at 1000, 800 and 390; contain it

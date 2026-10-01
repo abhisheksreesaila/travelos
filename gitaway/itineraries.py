@@ -1,6 +1,7 @@
 """Fake community itineraries for the scrapbook page. Sample data only: US units (°F, $)."""
 
 from dataclasses import dataclass, field
+from urllib.parse import urlsplit
 
 PIER = "/assets/photos/santa-monica-beach-pier.jpg"
 VENICE = "/assets/photos/venice-beach-los-angeles-hero.jpg"
@@ -41,7 +42,7 @@ class Source:
     title: str
     thumb: str
     thumb_alt: str
-    url: str = "#"
+    url: str = ""
 
 
 @dataclass(frozen=True)
@@ -77,6 +78,14 @@ class Itinerary:
     route: str = "SFO → LAX · 1h 27m"
     author: str = "the author"
     theme: str = "sunset"
+
+
+def safe_href(url) -> str:
+    """The url when it is an http(s) link with a host, else "". User-written source links never reach an href otherwise."""
+    if not isinstance(url, str) or any(c in url for c in "\x00\r\n\t "):
+        return ""
+    parts = urlsplit(url.strip())
+    return url.strip() if parts.scheme in ("http", "https") and parts.netloc else ""
 
 
 def day_color(n: int) -> str:
@@ -152,7 +161,7 @@ def _sun_tacos() -> Itinerary:
         stats=[("5 days", "Fri Oct 16 – Tue Oct 20"), ("4 people", "2 adults, kids 4 & 7"),
                ("$3,480", "all-in, as they booked it"), (str(forks), "families forked it")],
         source=Source("Maya & Theo Adventures · YouTube · 18 min", "Our LA family week: what we'd do again",
-                      VENICE, "Venice Beach boardwalk in Los Angeles"),
+                      VENICE, "Venice Beach boardwalk in Los Angeles", "https://www.youtube.com/"),
         polaroids=[Polaroid(PIER, "Santa Monica Pier and beach", "the pier at golden hour"),
                    Polaroid(VENICE, "Venice Beach, Los Angeles", "Venice, day two")],
         author="Maya & Theo",
@@ -160,7 +169,92 @@ def _sun_tacos() -> Itinerary:
     )
 
 
-ITINERARIES = {t.slug: t for t in [_sun_tacos()]}
+def _short(slug, title, headline, accent, place, lede, days, tags, author, forks, stats, route, source=None):
+    """A compact community trip: a few days, a few stops each, sticker collage instead of photos."""
+    return Itinerary(slug=slug, title=title, headline=headline, accent=accent, place=place, lede=lede, days=days,
+                     tags=tags, stats=[*stats, (str(forks), "families forked it")], forks=forks, source=source, author=author, route=route)
+
+
+def _la_for_two() -> Itinerary:
+    days = [
+        Day(1, "THU, NOV 5", "Arrive and unwind", "72°F, clear", [
+            Stop("11:00 AM", "Late brunch in Silver Lake", "food", "sun", meta="Slow start. Share the lemon ricotta pancakes."),
+            Stop("4:00 PM", "Golden hour at Griffith Park", "tree", "mint", tag="Couple friendly", tag_color="bubble",
+                 meta="Walk the Hollywood Reservoir loop, then the sunset from the Observatory lawn."),
+        ]),
+        Day(2, "FRI, NOV 6", "Beach, no alarm", "74°F, sunny", [
+            Stop("10:30 AM", "Coffee and the Venice Canals", "waves", "mint", meta="Quiet bridges before the crowds. Easy flat walking."),
+            Stop("2:00 PM", "Sunset sail from Marina del Rey", "waves", "sky", tag="Couple friendly", tag_color="bubble",
+                 meta="Two-hour sunset sail, around $85 each. Bring a jacket."),
+        ]),
+        Day(3, "SAT, NOV 7", "Museums and wine", "71°F, some clouds", [
+            Stop("11:00 AM", "The Getty Center", "sight", "grape", meta="Free entry, parking is the only charge. Gardens first."),
+            Stop("6:30 PM", "Dinner in Los Feliz", "food", "bubble", tag="Couple friendly", tag_color="bubble",
+                 meta="Book the corner table by the window."),
+        ]),
+        Day(4, "SUN, NOV 8", "One more morning", "73°F, sunny", [
+            Stop("9:30 AM", "Farmers market and a long breakfast", "food", "sun", meta="Fruit, pastries and nowhere to be."),
+        ]),
+    ]
+    return _short("la-for-two-slow-mornings", "LA for two, slow mornings", "Slow mornings, long dinners: LA for", "two",
+                  "Los Angeles, California", "Four unhurried days for a couple: late breakfasts, golden hours and one very good sunset sail.",
+                  days, [Tag("Couple friendly", "bubble", "couple", -3), Tag("Easy pace", "sky", "clock", 2)], "Jo & Dee", 128,
+                  [("4 days", "Thu Nov 5 – Sun Nov 8"), ("2 people", "a couple's long weekend")], "SFO → LAX · 1h 27m")
+
+
+def _big_sur() -> Itinerary:
+    days = [
+        Day(1, "SAT, MAR 6", "Monterey and the coast road", "62°F, fog then sun", [
+            Stop("10:00 AM", "Dog-friendly beach at Carmel", "waves", "mint", tag="Pet friendly", tag_color="mint",
+                 meta="Off-leash on the sand, on-leash in town. Bring water."),
+            Stop("2:00 PM", "Bixby Bridge pull-out", "sight", "sky", meta="Park on the north side. Dogs welcome on a short leash."),
+        ]),
+        Day(2, "SUN, MAR 7", "Trails and tails", "64°F, sunny", [
+            Stop("9:00 AM", "Pfeiffer Beach and Keyhole Rock", "waves", "mint", tag="Pet friendly", tag_color="mint",
+                 meta="Dogs allowed on the beach. Purple sand if you look."),
+            Stop("1:00 PM", "Picnic at Julia Pfeiffer Burns", "tree", "mint", tag="Pet friendly", tag_color="mint",
+                 meta="The overlook trail allows leashed dogs for the waterfall view."),
+        ]),
+        Day(3, "MON, MAR 8", "Drive home slowly", "63°F, clear", [
+            Stop("11:00 AM", "Nepenthe terrace lunch", "food", "sun", tag="Pet friendly patio", tag_color="mint",
+                 meta="Ask for the terrace. Water bowls are out."),
+        ]),
+    ]
+    src = Source("@trailsandtails · Instagram · reel", "Big Sur with a dog, the whole drive", "", "", "https://www.instagram.com/")
+    return _short("dog-friendly-big-sur-drive", "Dog-friendly Big Sur drive", "A coast road for you and the dog:", "Big Sur",
+                  "Monterey to Big Sur, California", "Three days down Highway 1 with a dog who has strong opinions about beaches.",
+                  days, [Tag("Pet friendly · 4 stops", "mint", "paw", -3)], "@trailsandtails", 87,
+                  [("3 days", "Sat Mar 6 – Mon Mar 8"), ("1 dog", "plus two people")], "SFO → MRY · 1h 5m", source=src)
+
+
+def _san_diego() -> Itinerary:
+    days = [
+        Day(1, "FRI, JUN 12", "Zoo day", "76°F, sunny", [
+            Stop("9:00 AM", "San Diego Zoo, the early shift", "star", "sun", tag="Kid friendly",
+                 meta="Pandas first, then the bus tour. Pack lunch, the snacks add up."),
+            Stop("4:00 PM", "Pool at the motel", "waves", "sky", meta="A cheap motel with a pool beats a fancy one without."),
+        ]),
+        Day(2, "SAT, JUN 13", "Tide pools", "72°F, breezy", [
+            Stop("10:00 AM", "Cabrillo tide pools at low tide", "waves", "mint", tag="Kid friendly",
+                 meta="Check the tide table. Look, don't touch. Free after the parking."),
+            Stop("1:00 PM", "Fish tacos at Ocean Beach", "food", "sun", meta="Under $10 a head."),
+        ]),
+        Day(3, "SUN, JUN 14", "Beach and bikes", "75°F, sunny", [
+            Stop("9:30 AM", "Coronado beach and sandcastles", "sun", "sun", tag="Kid friendly",
+                 meta="Wide and flat, gentle waves."),
+        ]),
+        Day(4, "MON, JUN 15", "Go home happy", "74°F, sunny", [
+            Stop("10:00 AM", "Balboa Park, one museum only", "sight", "grape", tag="Kid friendly",
+                 meta="Pick the science center and skip the rest."),
+        ]),
+    ]
+    return _short("san-diego-on-a-budget", "San Diego on a budget", "Cheap and cheerful:", "San Diego with kids",
+                  "San Diego, California", "Four sunny days for a family of four that came in well under the usual price.",
+                  days, [Tag("Kid friendly", "sun", "kid", -3), Tag("Budget", "sky", "clock", 2)], "the Okafors", 96,
+                  [("4 days", "Fri Jun 12 – Mon Jun 15"), ("4 people", "2 adults, kids 5 & 9")], "SFO → SAN · 1h 35m")
+
+
+ITINERARIES = {t.slug: t for t in [_sun_tacos(), _la_for_two(), _big_sur(), _san_diego()]}
 
 
 def get(slug: str) -> Itinerary | None:

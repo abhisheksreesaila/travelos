@@ -330,7 +330,7 @@ def top_bar(t, b, who, session, ctx):
         Div(Div(*people, cls="cal-faces"), presence, cls="cal-avatars"),
         Div(A("Your forks", Span(str(forks), cls="cal-count"), href="/forks", cls="cal-btn cal-btn-white"),
             A("Invite", href=cal_url(ctx["demo"], view=ctx["view"], invite="1"), id="cal-invite-btn", data_id="invite", data_soft="", cls="cal-btn cal-btn-coral"),
-            A("Share trip", href="/share", cls="cal-btn cal-btn-ink"), cls="cal-actions-top"),
+            Form(Button("Share trip", type="submit", cls="cal-btn cal-btn-ink"), action="/share", method="post", cls="cal-share"), cls="cal-actions-top"),
         cls="cal-bar",
     )
 

@@ -61,10 +61,10 @@ def test_a_real_screen_replaces_its_placeholder(client):
     class RealDiscover:
         @staticmethod
         def register(app):
-            @app.get("/discover")
-            def discover():
+            @app.get("/creators")
+            def creators():
                 return "the real workspace"
 
     app = FastHTML()
     register_all(app, extra=[RealDiscover])
-    assert "the real workspace" in TestClient(app).get("/discover").text
+    assert "the real workspace" in TestClient(app).get("/creators").text
