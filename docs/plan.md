@@ -310,10 +310,10 @@ Design: canvas first · Needs: none
 Needs: none
 - [x] a new family's first screens offer: start a trip, import a booked trip, browse community trips; no blank calendar, forks, family or trip pages anywhere
 
-## F-054 Phone-first trip view [doing]
+## F-054 Phone-first trip view [done]
 Design: phone A approved 2026-10-01 (docs/design/canvas/GoLive-Phone-Today.dc.html); B rejected as bland · Needs: F-051
-- [ ] on phones the trip opens on "Today": what's next, flight and hotel cards, a swipeable day list, add a plan in two taps, notes
-- [ ] works installed to the Home Screen; all data and roles as on desktop
+- [x] on phones the trip opens on "Today": what's next, flight and hotel cards, a swipeable day list, add a plan in two taps, notes
+- [x] works installed to the Home Screen; all data and roles as on desktop
 
 # Go live phase 1.5
 

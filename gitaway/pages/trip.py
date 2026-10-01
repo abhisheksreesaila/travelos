@@ -1,0 +1,318 @@
+"""The phone-first trip home at /trip (F-054): Today, All days and Notes, with a + that adds a plan in two taps.
+
+GET  /trip[?tab=today|days|notes][&day=<index>][&add=1][&new=<activity id>]   the page. Everything is drawn by the server; trip.js only
+                                                                                 switches tabs and opens the add sheet without a reload.
+POST /trip/plans                                                                 add a plan (title, start, kind) with the calendar's own validation
+POST /trip/notes                                                                 add a trip note
+
+Phones are sent here from a plain /calendar (gitaway.pages.calendar); anyone can open /trip, and "Open the full calendar" goes the
+other way. It is the installed app's start page (the manifest's start_url). The data and the rules are the calendar's: gitaway.tripcal
+validates, the roles come from gitaway.access (a viewer sees no + and no composer), and every form carries `trip`.
+"""
+
+from urllib.parse import urlencode
+
+from fasthtml.common import A, Button, Div, Form, H1, H2, Header, Input, Label, Link, Main, Nav, P, Script, Section, Span, Title
+from fasthtml.core import FtResponse
+from starlette.responses import RedirectResponse
+
+from gitaway import access, catalog, members, pickers, session as ses, tripcal as cal, tripday as td
+from gitaway.icons import icon
+from gitaway.layout import avatar, join_note, styles, trip_field
+from gitaway.pages import calendar as calui, rides as rides_ui
+
+HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/trip.css"),)
+TABS = (("today", "Today"), ("days", "All days"), ("notes", "Notes"))
+
+
+def trip_url(**q):
+    params = [(k, v) for k, v in q.items() if v not in ("", None)]
+    return "/trip" + (f"?{urlencode(params)}" if params else "")
+
+
+def _hidden(name, value):
+    return Input(type="hidden", name=name, value=value)
+
+
+def _day_name(d):
+    return f"{d.strftime('%A')}, {d.strftime('%b')} {d.day}"
+
+
+# ---- loading ------------------------------------------------------------------------------------------------------------
+
+def load(session, day_arg="", ua=""):
+    """Everything the page draws, read once. Call it before trip_field() (it opens the family, which resolves the trip)."""
+    who, b = ses.current_traveler(session), ses.booking(session)
+    t = cal.trip("", b)
+    dates = cal.days(t)
+    last = len(dates) - 1
+    role = access.request_role()
+    blocks = cal.booked_blocks(b, t) + cal.ride_blocks(session, b, t)
+    offers = cal.ride_offers(session, b, t) if role != "viewer" else []  # scheduling an Uber is a write
+    acts, notes = cal.activities(session), cal.notes(session)
+    ph, n = td.phase(t, catalog.today())
+    today_idx = n if ph == "during" else None
+    sel = int(day_arg) if day_arg.isdigit() and int(day_arg) <= last else (n if ph == "during" else 0 if ph == "before" else last)
+    now = td.now_minute() if sel == today_idx else None
+    past = ph == "after" or (today_idx is not None and sel < today_idx)
+    ctx = {"booking": b}
+    ride_href = lambda blk: calui.ride_href(ctx, blk)  # noqa: E731
+    detail_href = lambda blk: calui.cal_url("", view="days", detail=blk.id, trip=ses.open_trip_id())  # noqa: E731
+    dest = t.destination_name
+
+    def items_of(day, now_=None, past_=False):
+        return td.timeline(day, blocks, acts, offers, dest, hotel_place=td.hotel_place(b, dates, day), ride_href=ride_href, detail_href=detail_href, now=now_, past=past_)
+
+    items = items_of(sel, now, past)
+    tomorrow = items_of(sel + 1) if sel < last else []
+    up = td.up_next(items, now, tomorrow[0] if tomorrow else None) if now is not None else None
+    return dict(session=session, who=who, b=b, t=t, dates=dates, last=last, role=role, blocks=blocks, acts=acts, notes=notes, phase=ph, n=n, today_idx=today_idx, sel=sel, now=now,
+                items=items, up=up, stay=td.stay_card(b, dates, sel), days=td.day_summaries(dates, blocks, acts, today_idx), ua=ua, past=past, first=items_of(0)[:1],
+                crew=members.crew(session), next=cal.next_id(session))
+
+
+# ---- pieces -------------------------------------------------------------------------------------------------------------
+
+def _icon(item, size=22):
+    return icon(item.icon or "pin", size, 2.2)
+
+
+def up_card(v):
+    up, ph, t = v["up"], v["phase"], v["t"]
+    if ph == "before" and v["sel"] == 0:
+        first = v["first"][0] if v["first"] else None
+        return Div(Span(td.starts_in(v["n"]).upper(), cls="tp-kicker"), Span(_day_name(v["dates"][0]), cls="tp-up-title"),
+                   Span(f"First up: {first.title} at {cal.fmt_time(first.start)}" if first else "Day 1 is wide open. Add something fun!", cls="tp-up-sub"), cls="tp-up", id="tp-up")
+    if ph == "after":
+        plans = len(v["acts"])
+        return Div(Span("WELCOME HOME", cls="tp-kicker"), Span(f"{len(v['dates'])} days in {t.place}", cls="tp-up-title"),
+                   Span(f"{plans} plan{'s' if plans != 1 else ''} · {len(v['notes'])} note{'s' if len(v['notes']) != 1 else ''}", cls="tp-up-sub"),
+                   A("See all days", href=trip_url(tab="days"), data_tab_link="days", cls="tp-btn tp-btn-white"), cls="tp-up", id="tp-up")
+    if not up:
+        return ""
+    item = up.item
+    pulse = Span(cls="tp-pulse", aria_hidden="true") if item else ""  # only UP NEXT and HAPPENING NOW pulse, not "all done"
+    buttons = []
+    if item and item.place:
+        buttons.append(A("Directions", href=td.maps_url(item.place, v["ua"]), target="_blank", rel="noopener", cls="tp-btn tp-btn-coral", id="tp-directions"))
+    if up.uber:
+        buttons.append(A("Get an Uber" if up.uber.kind == "offer" else "Your Uber", href=up.uber.href, cls="tp-btn tp-btn-white", id="tp-uber"))
+    return Div(Span(pulse, up.kicker, cls="tp-kicker"), Span(item.title if item else "You are all caught up", cls="tp-up-title"), Span(up.detail, cls="tp-up-sub"),
+               Div(*buttons, cls="tp-up-actions") if buttons else "", cls="tp-up", id="tp-up")
+
+
+def row(item, today):
+    tint = f"tp-k-{item.tint}"
+    inner = (Span(item.label.upper(), cls="tp-label"), Span(item.title, cls="tp-what"), Span(item.sub, cls="tp-sub"))
+    state = {"done": "Done", "now": "Now", "next": "Next"}.get(item.state, "") if today else ""
+    badge = Span(state, cls=f"tp-state tp-state-{item.state}") if state else ""
+    card = (A if item.href else Div)(Div(Span(icon(item.icon, 18, 2.2), cls="tp-ico", aria_hidden="true") if item.icon else "", Div(*inner, cls="tp-card-text"), badge, cls="tp-card-in"),
+                                     cls=f"tp-card {tint} is-{item.state} tp-{item.kind}", **({"href": item.href} if item.href else {}), data_item=item.id)
+    return Div(Span(cal.fmt_time(item.start), cls="tp-time"), card, cls=f"tp-row is-{item.state}")
+
+
+def stay_card(v):
+    s = v["stay"]
+    if not s:
+        return ""
+    go = A(icon("chev-right", 20, 2.6), href=s.href, aria_label="Hotel details", cls="tp-go") if s.href else ""
+    return Div(Span(icon("bed", 24, 2.2), cls="tp-stay-ico", aria_hidden="true"), Div(Span(s.title, cls="tp-what"), Span(f"{s.name} · {s.where}" if s.where else s.name, cls="tp-sub"), cls="tp-stay-text"), go, cls="tp-stay", id="tp-stay")
+
+
+def day_strip(v):
+    chips = []
+    for d in v["days"]:
+        cur = d.index == v["sel"]
+        chips.append(A(Span(str(d.num), cls=f"tp-chip-num ink-{d.tint}"), Span(d.dow, cls="tp-chip-dow"),
+                       href=trip_url(day=d.index), cls=f"tp-chip tp-t-{d.tint}{' is-today' if d.state == 'today' else ''}", data_day=str(d.index),
+                       aria_current="date" if cur else None, aria_label=f"{v['dates'][d.index].strftime('%A %b')} {d.num}" + (", today" if d.state == "today" else "")))
+    return Nav(*chips, cls="tp-strip", aria_label="Days of the trip", id="tp-strip")
+
+
+def today_panel(v):
+    sel, d = v["sel"], v["dates"][v["sel"]]
+    editor = access.can_edit(v["role"])
+    parts = [day_strip(v)]
+    if v["phase"] == "during" and sel != v["today_idx"]:
+        parts.append(Div(Span(f"{_day_name(d)} · day {sel + 1} of {len(v['dates'])}", cls="tp-daynote"), A("Back to today", href=trip_url(), cls="tp-back"), cls="tp-dayhead"))
+    elif v["phase"] != "during":
+        parts.append(Div(Span(f"{_day_name(d)} · day {sel + 1} of {len(v['dates'])}", cls="tp-daynote"), cls="tp-dayhead"))
+    parts.append(up_card(v))
+    if v["items"]:
+        parts.append(Div(*[row(x, v["now"] is not None) for x in v["items"]], cls="tp-list", id="tp-list"))
+    else:
+        parts.append(Div(Span("wide open!", cls="tp-hand"), A("Add something fun", href=trip_url(add="1", day=sel), data_open_sheet="", cls="tp-btn tp-btn-ink") if editor else Span("Nothing planned yet.", cls="tp-sub"), cls="tp-empty"))
+    parts.append(stay_card(v))
+    parts.append(note_strip(v))
+    parts.append(A(icon("arrow-right", 18, 2.4), "Open the full calendar", href="/calendar?view=whole", cls="tp-full"))
+    return Section(*parts, id="tp-panel-today", cls="tp-panel", role="tabpanel", aria_label="Today", data_title=_title_today(v))
+
+
+def _title_today(v):
+    d = v["dates"][v["sel"]]
+    return d.strftime("%A") if v["sel"] == v["today_idx"] else f"{d.strftime('%a')}, {d.strftime('%b')} {d.day}"
+
+
+def note_strip(v):
+    """The newest one or two trip notes under the hotel card, as slips, with a link to the Notes tab."""
+    if not v["notes"]:
+        return ""
+    people = {f.name.casefold(): f for f in ses.friends(v["session"])}
+    family = members.family_people(v["session"])
+    acts_by_id = {a.id: a for a in v["acts"]}
+    slips = []
+    for i, n in enumerate(v["notes"][-2:]):
+        name, author = calui.note_writer(n, v["who"], people, family)
+        on = acts_by_id.get(n.act)
+        slips.append(_slip(author, f"{name} · {'on ' + on.title if on else 'whole trip'}", n.text, i + 1, n.id))
+    return Div(*slips, A("All notes", href=trip_url(tab="notes"), data_tab_link="notes", cls="tp-full"), cls="tp-notestrip", id="tp-notestrip")
+
+
+def days_panel(v):
+    tiles = []
+    for d in v["days"]:
+        tiles.append(A(Span(Span(str(d.num), cls=f"tp-tile-num ink-{d.tint}"), Span(d.dow, cls="tp-tile-dow"), cls=f"tp-tile-day tp-t-{d.tint}"),
+                       Span(Span(d.head, cls="tp-what"), Span(d.line, cls="tp-sub"), cls="tp-tile-text"),
+                       href=trip_url(day=d.index), cls=f"tp-tile{' is-today' if d.state == 'today' else ' is-done' if d.state == 'done' else ''}", data_day=str(d.index),
+                       aria_label=f"{v['dates'][d.index].strftime('%A %b')} {d.num}: {d.head}"))
+    return Section(Div(*tiles, cls="tp-tiles"), id="tp-panel-days", cls="tp-panel", role="tabpanel", aria_label="All days", data_title=f"Your {len(v['dates'])} days")
+
+
+def notes_panel(v, error=""):
+    editor = access.can_edit(v["role"])
+    acts_by_id = {a.id: a for a in v["acts"]}
+    people = {f.name.casefold(): f for f in ses.friends(v["session"])}
+    family = members.family_people(v["session"])
+    who = v["who"]
+    first_name, first_author = calui.note_writer(cal.Note("", "", None, "", v["b"].get("booked_by", "")), who, people, family)
+    feed = [_slip(first_author, f"{first_name} · whole trip", calui.booked_note(v["b"]), 0)]
+    for i, n in enumerate(v["notes"], 1):
+        name, author = calui.note_writer(n, who, people, family)
+        on = acts_by_id.get(n.act)
+        feed.append(_slip(author, f"{name} · {'on ' + on.title if on else 'whole trip'}", n.text, i, n.id))
+    composer = Form(_hidden("id", f"n{v['next']}"), trip_field(),
+                    Div(error, role="alert", cls="tp-error") if error else "",
+                    Label(Span("Add a note for everyone", cls="sr-only"), Input(type="text", name="text", placeholder="Add a note for everyone", maxlength=str(cal.MAX_NOTE), required=True, autocomplete="off", id="tp-note-text")),
+                    Button("Send", type="submit", cls="tp-btn tp-btn-coral"), action="/trip/notes", method="post", cls="tp-composer", id="tp-composer") if editor else ""
+    return Section(composer, Div(*reversed(feed), cls="tp-feed", id="tp-feed"), id="tp-panel-notes", cls="tp-panel", role="tabpanel", aria_label="Notes", data_title="Trip notes")
+
+
+def _slip(author, meta, text, i, note_id=""):
+    return Div(avatar(author, "tp-av"), Div(Span(meta, cls="tp-notemeta"), Span(text, cls="tp-notetext"), cls=f"tp-slip tp-slip-{'a' if i % 2 else 'b'}"), cls="tp-note", **({"data_note": note_id} if note_id else {}))
+
+
+def add_sheet(v, sheet):
+    """The bottom sheet: title, start time, kind. `sheet` is None (closed) or {"vals", "error"}."""
+    sel = v["sel"]
+    vals = (sheet or {}).get("vals") or {}
+    if "start" not in vals:
+        gs = cal.grid_start(v["blocks"])
+        floor = max(gs, -(-v["now"] // 30) * 30) if v["now"] is not None else gs
+        vals = {**vals, "start": cal.hhmm(calui.free_start(v["blocks"], sel, floor))}
+    kind = vals.get("kind") or "fun"
+    error = (sheet or {}).get("error", "")
+    kinds = Div(*[Label(Input(type="radio", name="kind", value=k, checked=(kind == k) or None), Span(label), cls=f"tp-kind tp-t-{tint}") for k, (label, tint) in cal.KINDS.items()], cls="tp-kinds", role="radiogroup", aria_label="Kind")
+    form = Form(
+        _hidden("id", vals.get("id") or f"a{v['next']}"), _hidden("day", str(sel)), trip_field(),
+        Label(Span("What are you up to?"), Input(type="text", name="title", value=vals.get("title", ""), maxlength=str(cal.MAX_TITLE), required=True, placeholder="Tacos, a beach day, the pier", autocomplete="off", id="tp-title", data_autofocus="")),
+        # F-051 hook: this is a plain native time input for now; the themed picker attaches to [data-time-picker].
+        Label(Span("Starts at"), Input(type="time", name="start", value=vals["start"], step="900", required=True, id="tp-start", data_time_picker="")),
+        kinds,
+        Div(Button("Add to the trip", type="submit", cls="tp-btn tp-btn-coral", id="tp-save"), A("Cancel", href=trip_url(day=sel), data_close_sheet="", cls="tp-btn tp-btn-plain"), cls="tp-sheet-actions"),
+        action="/trip/plans", method="post", cls="tp-form", id="tp-form")
+    return Div(A(href=trip_url(day=sel), cls="tp-backdrop", data_close_sheet="", aria_label="Close", tabindex="-1"),
+               Div(H2(f"Add to {_day_name(v['dates'][sel])}", id="tp-sheet-title"), Div(error, role="alert", cls="tp-error") if error else "", form, cls="tp-sheet-body", role="dialog", aria_modal="true", aria_labelledby="tp-sheet-title"),
+               id="tp-sheet", cls="tp-sheet", **({"data_open": ""} if sheet is not None else {}))
+
+
+def header(v, tab):
+    t = v["t"]
+    faces = [avatar(v["who"], "tp-av"), *[avatar(f, "tp-av") for f in v["crew"]]]
+    dates = f"{t.title.upper()} · {cal.range_label(t.depart, t.return_).upper()}"
+    day_of = f"{t.title.upper()} · DAY {v['sel'] + 1} OF {len(v['dates'])}" if v["phase"] == "during" and v["today_idx"] == v["sel"] else dates
+    kicker = day_of if tab == "today" else dates
+    return Header(Div(Span(kicker, cls="tp-head-k", id="tp-head-k", data_today=day_of, data_other=dates),
+                      H1({"today": _title_today(v), "days": f"Your {len(v['dates'])} days", "notes": "Trip notes"}[tab], id="tp-title-h"), cls="tp-head-text"),
+                  Div(*faces, cls="tp-faces"), cls="tp-head")
+
+
+def tab_bar(tab):
+    return Nav(*[A(name, href=trip_url(tab="" if key == "today" else key), data_tab_link=key, aria_current="page" if key == tab else None, cls="tp-tab", id=f"tp-tab-{key}") for key, name in TABS],
+               cls="tp-tabs", aria_label="Trip")
+
+
+# ---- the page -----------------------------------------------------------------------------------------------------------
+
+def trip_page(session, ua="", tab="today", day="", sheet=None, new="", notice="", note_error="", status=200):
+    v = load(session, day, ua)
+    tab = tab if tab in dict(TABS) else "today"
+    editor = access.can_edit(v["role"])
+    if sheet is not None and not editor:
+        sheet = None
+    added = next((a for a in v["acts"] if a.id == new), None) if new else None
+    panels = [today_panel(v), days_panel(v), notes_panel(v, note_error)]
+    for key, p in zip(("today", "days", "notes"), panels):
+        if key != tab:
+            p(hidden=True)
+    toast = Div(f"Added “{added.title}” at {cal.fmt_time(added.start)}", role="status", cls="tp-toast", id="tp-toast") if added else (Div(notice, role="alert", cls="tp-toast tp-toast-error") if notice else "")
+    viewing = P("You are a viewer in this family: you can look at everything but not change it.", id="tp-viewer", role="status", cls="tp-viewer") if v["role"] == "viewer" else ""
+    plus = A(icon("plus", 28, 2.8), href=trip_url(add="1", day=v["sel"]), id="tp-add", aria_label="Add a plan", cls="tp-plus", data_open_sheet="") if editor else ""
+    body = (
+        Title(f"GitAway · {v['t'].title}"),
+        *styles(*HEAD),
+        Div(A("Skip to content", href="#main", cls="ga-skip"), header(v, tab), join_note(), viewing, Main(*panels, id="main"), toast, plus, add_sheet(v, sheet) if editor else "", tab_bar(tab),
+            data_theme="sunset", cls="tp", id="tp-app", data_tab=tab, data_day=str(v["sel"]), data_today=str(v["today_idx"]) if v["today_idx"] is not None else "", data_trip=ses.open_trip_id() or None),
+        Script(src="/assets/js/trip.js", defer=True),
+    )
+    return FtResponse(body, status_code=status) if status != 200 else body
+
+
+# ---- routes -------------------------------------------------------------------------------------------------------------
+
+def _guard(session):
+    """A redirect when the traveler cannot use the trip view yet, else None."""
+    if not ses.current_traveler(session):
+        return RedirectResponse("/signin?next=%2Ftrip", status_code=303)
+    if not ses.booking(session):
+        return RedirectResponse("/start", status_code=303)
+    return None
+
+
+def register(app):
+    @app.get("/trip")
+    def trip(session, request, tab: str = "", day: str = "", add: str = "", new: str = ""):
+        if (r := _guard(session)):
+            return r
+        ua = request.headers.get("user-agent", "")
+        sheet = {} if add == "1" else None
+        return trip_page(session, ua, tab or "today", day[:3], sheet, new[:8])
+
+    @app.post("/trip/plans")
+    def add_plan(session, request, id: str = "", day: str = "", start: str = "", title: str = "", kind: str = ""):
+        if (r := _guard(session)):
+            return r
+        ua = request.headers.get("user-agent", "")
+        b = ses.booking(session)
+        t = cal.trip("", b)
+        blocks = cal.booked_blocks(b, t) + cal.ride_blocks(session, b, t)
+        vals = {"id": id, "title": title, "start": start, "kind": kind or "fun"}
+        try:
+            if not (day.isdigit() and 0 <= int(day) <= (t.return_ - t.depart).days):
+                raise cal.CalendarError("Pick a day inside your trip.")
+            s = cal.snap(cal.parse_time(start, "start"))
+            end = calui.default_end(blocks, int(day), s)  # an hour, or until the next booked block; the calendar's own validation judges the rest
+            end = end // cal.SNAP * cal.SNAP if end // cal.SNAP * cal.SNAP - s >= cal.MIN_LEN else end  # snapping must not round up into the block that cut it short
+            a = cal.add_activity(session, day=day, start=start, end=cal.hhmm(end), title=title, kind=kind, id=id or None)
+        except cal.CalendarError as e:
+            return trip_page(session, ua, "today", day[:3], {"vals": vals, "error": str(e)}, status=409)
+        return RedirectResponse(trip_url(day=day, new=a.id if a else ""), status_code=303)
+
+    @app.post("/trip/notes")
+    def add_note(session, request, id: str = "", text: str = ""):
+        if (r := _guard(session)):
+            return r
+        try:
+            cal.add_note(session, text, id=id or None)
+        except cal.CalendarError as e:
+            return trip_page(session, request.headers.get("user-agent", ""), "notes", note_error=str(e), status=409)
+        return RedirectResponse(trip_url(tab="notes"), status_code=303)

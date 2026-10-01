@@ -35,6 +35,8 @@ def cancel_href(next_path):
     """Cancel goes back to the picks: the pay sheet itself would only bounce a signed-out traveler back here."""
     if next_path.startswith("/creators/finish"):
         return "/creators/draft"   # the finish page bounces a signed-out traveler straight back here
+    if next_path == "/trip" or next_path.startswith("/trip?"):
+        return "/"             # /trip bounces a signed-out traveler straight back here
     return next_path.replace("/plan/pay?", "/plan?", 1) if next_path.startswith("/plan/pay?") else next_path
 
 

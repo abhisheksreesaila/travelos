@@ -130,8 +130,15 @@ def _whole(text):
     return int(text) if text.isascii() and text.isdigit() else None
 
 
+from zoneinfo import ZoneInfo
+
+TZ = ZoneInfo("America/Los_Angeles")  # the one zone the trips are in: catalog.today, tripday, rides
+
+
 def today() -> date:
-    return date.today()
+    """Today in Los Angeles, where the trips are: a server in another time zone (Railway runs on UTC) must not flip the day at 5 PM."""
+    from datetime import datetime
+    return datetime.now(TZ).date()
 
 
 PAST_MESSAGE = "Pick a depart date that is today or later."

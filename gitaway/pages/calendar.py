@@ -21,7 +21,7 @@ from fasthtml.common import A, Aside, Button, Details, Div, Fieldset, Form, H1, 
 from fasthtml.core import FtResponse
 from starlette.responses import RedirectResponse
 
-from gitaway import access, catalog, firstrun, forks as forks_model, members, pickers, session as ses, tripcal as cal
+from gitaway import access, catalog, firstrun, forks as forks_model, members, pickers, session as ses, tripcal as cal, tripday
 from gitaway.icons import icon
 from gitaway.layout import avatar, brand, join_note, styles, trip_field
 from gitaway import voice as vo
@@ -636,11 +636,13 @@ def register(app):
         return None
 
     @app.get("/calendar")
-    def calendar(session, demo: str = "", view: str = "", add: str = "", at: str = "", edit: str = "", new: str = "", undo: str = "", w: str = "", invite: str = "", live: str = "", back: str = "", voice: str = "", night: str = "", hear: str = "", voiced: str = "", vnote: str = "", vn: str = "", detail: str = ""):
+    def calendar(session, request, demo: str = "", view: str = "", add: str = "", at: str = "", edit: str = "", new: str = "", undo: str = "", w: str = "", invite: str = "", live: str = "", back: str = "", voice: str = "", night: str = "", hear: str = "", voiced: str = "", vnote: str = "", vn: str = "", detail: str = ""):
         if not ses.current_traveler(session):
             return _signin(demo, view)
         if not ses.booking(session):
             return no_booking()
+        if not request.url.query and tripday.is_phone(request.headers.get("user-agent")):  # F-054: a phone's plain /calendar is the trip view; "Open the full calendar" asks for ?view=
+            return RedirectResponse("/trip", status_code=303)
         demo = cal.LONG if demo == cal.LONG else ""
         form = None
         if access.request_role() == "viewer":  # a viewer cannot open the add, edit, invite or voice dialogs

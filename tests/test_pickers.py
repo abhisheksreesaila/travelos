@@ -37,7 +37,7 @@ def test_the_pages_with_pickers_load_the_picker_script_and_styles(client):
 def test_every_page_with_a_select_or_a_date_or_time_field_loads_the_pickers(client):
     """A new page with such a field must add *pickers.HEAD, or its browser-default widgets show."""
     book(client)
-    paths = ["/", "/start", "/discover", "/plan", "/calendar?view=days", "/calendar?add=2&at=11:00", "/family", "/trips", "/creators", "/trips/import", "/rides", "/pay"]
+    paths = ["/", "/start", "/discover", "/plan", "/calendar?view=days", "/calendar?add=2&at=11:00", "/family", "/trips", "/creators", "/trips/import", "/rides", "/pay", "/trip"]
     for route in client.app.routes:
         path = getattr(route, "path", "")
         if "GET" in (getattr(route, "methods", None) or set()) and "{" not in path and path not in paths and not path.startswith(("/assets", "/auth", "/logout", "/healthz")):
@@ -50,7 +50,7 @@ def test_every_page_with_a_select_or_a_date_or_time_field_loads_the_pickers(clie
         if re.search(r'<select\b|<input\b[^>]*type="(date|time)"', r.text):
             found.append(path)
             assert "/assets/js/pickers.js" in r.text and "/assets/css/pickers.css" in r.text, f"{path} has a select, date or time field but no pickers.HEAD"
-    assert "/start" in found and "/family" in found  # the walk really reached pages with fields
+    assert "/start" in found and "/family" in found and "/trip" in found  # the walk really reached pages with fields
 
 
 def test_the_calendar_form_keeps_native_day_and_time_fields(client):
