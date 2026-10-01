@@ -376,6 +376,7 @@ def calendar_page(session, demo="", view="", form=None, notice=None, new="", und
     n = len(dates)
     controls = Div(
         view_toggle(demo, view),
+        Span("Tap a day, or choose Day by day, to plan by the hour.", cls="cal-viewhint") if view == "whole" else "",
         Div(Button(icon("chev-left", 18, 2.6), type="button", data_dir="-1", aria_label="Earlier days", cls="cal-navbtn"),
             Span(f"Days 1–{min(5, n)} of {n}", cls="cal-range", id="cal-range", aria_live="polite"),
             Button(icon("chev-right", 18, 2.6), type="button", data_dir="1", aria_label="Later days", cls="cal-navbtn"), cls="cal-nav") if view == "days" else "",

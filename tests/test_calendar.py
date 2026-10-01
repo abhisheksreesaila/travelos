@@ -302,3 +302,9 @@ def test_the_long_demo_and_posts_from_the_whole_view_keep_the_view(client):
     r = client.post("/calendar/notes", data={"text": "hi", "view": "whole"}, follow_redirects=False)
     assert "view=whole" in r.headers["location"]
     assert 'name="view" value="days"' in client.get("/calendar?view=days").text.split("cal-composer")[1]
+
+
+def test_the_whole_view_shows_a_hint_and_the_day_view_does_not(client):
+    book(client)
+    assert "plan by the hour" in client.get("/calendar").text
+    assert "plan by the hour" not in client.get("/calendar?view=days").text
