@@ -2,10 +2,11 @@
 
 Sign-in is fh-saas's (see gitaway.auth): the session holds `user_id` and `email`, and `current_traveler` is the thin
 adapter that maps that person to the "traveler" every screen speaks of (id = the fh-saas user id, name from the email).
-F-040 and F-041 move the rest of this state into SQLite.
+The family's trips, bookings, friends and remembered picks live in the family's SQLite database (F-040, gitaway.familydb):
+the functions below take the session only to learn who is signed in and which family that is. Forks, saves, the hub and the
+creator draft are still cookie state until F-041.
 
-Session shape: {"user_id": "<fh-saas user id>", "email": "<email>", "forks": {"<id>": ["<trip slug>", ...]}, "friends": {"<id>": ["<name>", ...]}}.
-Pure functions over a session dict, so tests and later tickets (F-018 pay, F-021 forks list) can use them directly.
+Session shape: {"user_id": "<fh-saas user id>", "email": "<email>", "tenant_id": "<family>", ..., "forks": {"<id>": ["<trip slug>", ...]}}.
 
 For the header, `bind` is a beforeware (see main.py) that records the current traveler in a ContextVar for the
 request; layout.site_header reads it with `request_traveler()`. Outside a request it is None (signed out).
@@ -14,12 +15,16 @@ request; layout.site_header reads it with `request_traveler()`. Outside a reques
 import hashlib
 import json
 import re
+import uuid
+from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import date
 from urllib.parse import quote, unquote, urlsplit
 
-from gitaway import catalog
+from fh_saas.utils_sql import insert_only
+
+from gitaway import catalog, familydb
 
 
 @dataclass(frozen=True)
@@ -155,31 +160,83 @@ def remove_save(session, next_path):
     return True
 
 
-def booking(session):
-    """The signed-in traveler's booked trip (a dict), or None when signed out or nothing is booked."""
+# ---- the family's trips, bookings, friends and remembered picks (SQLite: see gitaway.familydb) ---------------------
+
+@dataclass
+class Family:
+    """One person's open view of their family database. Get it with `family(session)`; it closes when the block ends."""
+    db: object
+    traveler: Traveler
+    member: dict
+    trip_id: str | None  # the trip this person has open: the one they chose, else the family's newest
+
+    def booking(self):
+        return familydb.booking_for_trip(self.db, self.trip_id)
+
+
+@contextmanager
+def family(session):
+    """`with family(session) as fam:` the signed-in person's family, or None when signed out or not a member of one."""
     t = current_traveler(session)
-    return (session.get("bookings") or {}).get(t.id) if t else None
+    with familydb.using(session) as db:
+        if t is None or db is None:
+            yield None
+            return
+        member = familydb.ensure_member(db, t.id, session.get("email") or "", t.name)
+        yield Family(db, t, member, familydb.current_trip_id(db, member))
+
+
+def booking(session):
+    """The booking of the trip the signed-in person has open (a dict), or None when signed out or nothing is booked."""
+    with family(session) as fam:
+        return fam.booking() if fam else None
+
+
+@dataclass(frozen=True)
+class TripInfo:
+    id: str
+    title: str
+    dates: str      # "Oct 16 – 20"
+    source: str     # "demo" or "imported"
+    current: bool
+
+
+def trips(session) -> list:
+    """The family's trips, newest first, with the one this person has open marked `current`. Empty when signed out."""
+    from gitaway import tripcal  # here, not at the top: tripcal imports this module
+    with family(session) as fam:
+        if not fam:
+            return []
+        return [TripInfo(r["id"], r["title"], tripcal.range_label(date.fromisoformat(r["depart"]), date.fromisoformat(r["return_on"])),
+                         r["source"], r["id"] == fam.trip_id) for r in familydb.trips(fam.db)]
+
+
+def switch_trip(session, trip_id) -> bool:
+    """Open another of the family's trips for this person. False when signed out or the family has no such trip."""
+    with family(session) as fam:
+        if not fam or not familydb.trip(fam.db, trip_id):
+            return False
+        with familydb.transaction(fam.db):
+            familydb.run(fam.db, "UPDATE members SET trip_id = :t WHERE id = :u", t=trip_id, u=fam.traveler.id)
+        return True
+
+
+MAX_PLAN_QUERY = 400
 
 
 def remembered_plan(session):
     """The workspace picks (a /plan query string) the signed-in traveler last looked at, or None."""
-    t = current_traveler(session)
-    return (session.get("plan") or {}).get(t.id) if t else None
+    with family(session) as fam:
+        return (fam.member.get("plan") or None) if fam else None
 
 
 def remember_plan(session, query):
     """Remember the picks `query` (e.g. "f=f2&h=h3&c=c1&d=..") for the signed-in traveler. Only writes when it changed."""
-    t = current_traveler(session)
-    if not t or remembered_plan(session) == query:
-        return
-    old = session.get("plan")
-    # Reassign the whole dict so the cookie session notices the change.
-    session["plan"] = {**(old or {}), t.id: query}
-    if len(json.dumps(dict(session))) > BUDGET:  # same cookie budget as the calendar: skip remembering rather than overflow
-        if old is None:
-            session.pop("plan", None)
-        else:
-            session["plan"] = old
+    with family(session) as fam:
+        if not fam or len(query or "") > MAX_PLAN_QUERY or (fam.member.get("plan") or "") == query:
+            return
+        with familydb.transaction(fam.db):
+            familydb.run(fam.db, "UPDATE members SET plan = :q WHERE id = :u", q=query, u=fam.traveler.id)
 
 
 def booking_id(traveler_id, flight, stay, car, rooms="", add="", trip="", fare="", bags=""):
@@ -196,13 +253,14 @@ NOTHING_PICKED = "Pick at least one thing to book: a flight, a stay or a car."
 
 
 def book(session, quote):
-    """Record `quote` (a catalog.Quote) as the current traveler's booked trip. Idempotent.
+    """Record `quote` (a catalog.Quote) as a new trip of the signed-in traveler's family, and open it. Idempotent.
 
-    Returns the booking, or None when signed out. Raises BookingError when the session cookie has no room for it. Paying the same picks again keeps the original booking untouched.
-    Session shape: "bookings": {"<traveler id>": {"id", "flight", "stay", "car", "rooms", "add", "total_cents", "booked_at"; "fare", "bags" and "trip" only when set}}
-    (rooms and add are the stay's compact pick codes, "" for the default room and no add-ons; fare and bags are the flight's, "" for Basic and no bags).
-    A skipped lane is stored as null, and total_cents is what is charged: the rides estimate (no car, a flight) is never in it and is not stored.
-    Raises BookingError when no lane is picked.
+    Returns the booking, or None when signed out. Raises BookingError when no lane is picked or the family has too many trips.
+    Paying the same picks again opens the trip they made and changes nothing else. Different picks make another trip: a family
+    can have several. The booking is a dict {"id", "flight", "stay", "car", "rooms", "add", "total_cents", "booked_at"; "fare", "bags"
+    and "trip" only when set} (rooms and add are the stay's compact pick codes, "" for the default room and no add-ons; fare and
+    bags are the flight's, "" for Basic and no bags). A skipped lane is None, and total_cents is what is charged: the rides
+    estimate (no car, a flight) is never in it and is not stored.
     """
     t = current_traveler(session)
     if not t:
@@ -211,26 +269,29 @@ def book(session, quote):
         raise BookingError(NOTHING_PICKED)
     rooms, add = (quote.stay.rooms_code, quote.stay.add_code) if quote.stay else ("", "")
     fare, bags = (quote.flight.fare_code, quote.flight.bags_code) if quote.flight else ("", "")
-    trip = catalog.trip_query(quote.trip)  # "" for the sample trip
-    bid = booking_id(t.id, quote.flight_id, quote.stay_id, quote.car_id, rooms, add, trip, fare, bags)
-    existing = booking(session)
-    if existing and existing["id"] == bid:
-        return existing
-    record = {"id": bid, "flight": quote.flight_id, "stay": quote.stay_id, "car": quote.car_id, "rooms": rooms, "add": add,
-              "total_cents": quote.paid_cents, "booked_at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
-    for key, value in (("fare", fare), ("bags", bags), ("trip", trip)):
-        if value:
-            record[key] = value
-    old = session.get("bookings")
-    # Reassign the whole dict so the cookie session notices the change.
-    session["bookings"] = {**(old or {}), t.id: record}
-    if len(json.dumps(dict(session))) > BUDGET:  # same cookie budget as the calendar: refuse rather than overflow the cookie
-        if old is None:
-            session.pop("bookings", None)
-        else:
-            session["bookings"] = old
-        raise BookingError("This demo can't hold another booking right now. Delete some calendar items to make room, then try again.")
-    return record
+    params = catalog.trip_query(quote.trip)  # "" for the sample trip
+    bid = booking_id(t.id, quote.flight_id, quote.stay_id, quote.car_id, rooms, add, params, fare, bags)
+    with family(session) as fam:
+        if not fam:
+            return None
+        db = fam.db
+        with familydb.transaction(db):
+            familydb.lock(db)  # from here to the commit nobody else writes: the lookup and the insert cannot interleave
+            found = familydb.row(db, "SELECT trip_id FROM bookings WHERE id = :id", id=bid)
+            if found:
+                trip_id = found["trip_id"]
+            else:
+                if familydb.row(db, "SELECT COUNT(*) AS n FROM trips")["n"] >= familydb.MAX_TRIPS:
+                    raise BookingError(f"That is {familydb.MAX_TRIPS} trips already. This demo keeps it small.")
+                trip_id, at = uuid.uuid4().hex[:12], familydb.now()
+                insert_only(db, "trips", {"id": trip_id, "title": quote.trip.title, "source": "demo", "params": params,
+                                          "depart": quote.trip.depart.isoformat(), "return_on": quote.trip.return_.isoformat(),
+                                          "created_by": t.id, "created_at": at}, ["id"], auto_commit=False)
+                insert_only(db, "bookings", {"id": bid, "trip_id": trip_id, "flight": quote.flight_id, "stay": quote.stay_id, "car": quote.car_id,
+                                             "rooms": rooms, "add_ons": add, "fare": fare, "bags": bags, "total_cents": quote.paid_cents,
+                                             "booked_by": t.id, "booked_at": at}, ["id"], auto_commit=False)
+            familydb.run(db, "UPDATE members SET trip_id = :t WHERE id = :u", t=trip_id, u=t.id)
+        return familydb.booking_for_trip(db, trip_id)
 
 
 class FriendError(ValueError):
@@ -252,9 +313,11 @@ def _friend(name):
 
 
 def friends(session):
-    """The signed-in traveler's invited friends, oldest first. Empty when signed out."""
-    t = current_traveler(session)
-    return [_friend(n) for n in (session.get("friends") or {}).get(t.id, [])] if t else []
+    """The friends invited to the trip this person has open, oldest first. Empty when signed out or nothing is booked."""
+    with family(session) as fam:
+        if not fam or not fam.trip_id:
+            return []
+        return [_friend(r["name"]) for r in familydb.rows(fam.db, "SELECT name FROM friends WHERE trip_id = :t ORDER BY rowid", t=fam.trip_id)]
 
 
 def friend_named(session, name):
@@ -262,9 +325,9 @@ def friend_named(session, name):
 
 
 def add_friend(session, name):
-    """Invite a friend by name for the current traveler. The same friend (any capitals) is never added twice.
+    """Invite a friend by name to the open trip. The same friend (any capitals) is never added twice.
 
-    Returns the Friend. Raises FriendError for a bad name, too many friends or a full session cookie.
+    Returns the Friend. Raises FriendError for a bad name or too many friends.
     """
     t = current_traveler(session)
     if not t:
@@ -276,20 +339,19 @@ def add_friend(session, name):
         raise FriendError(f"Keep the name to {MAX_FRIEND_NAME} characters.")
     if name.casefold() == "you":
         raise FriendError("That one is you. Pick another name.")
-    if (found := friend_named(session, name)):
-        return found
-    mine = (session.get("friends") or {}).get(t.id, [])
-    if len(mine) >= MAX_FRIENDS:
-        raise FriendError(f"That is {MAX_FRIENDS} friends already. This demo keeps it small.")
-    old = session.get("friends")
-    # Reassign the whole dict so the cookie session notices the change.
-    session["friends"] = {**(old or {}), t.id: [*mine, name]}
-    if len(json.dumps(dict(session))) > BUDGET:
-        if old is None:
-            session.pop("friends", None)
-        else:
-            session["friends"] = old
-        raise FriendError("This demo trip is full. Delete something to make room.")
+    with family(session) as fam:
+        if not fam or not fam.trip_id:
+            raise FriendError("Book a trip first, then invite friends.")
+        db = fam.db
+        with familydb.transaction(db):
+            familydb.lock(db)
+            mine = [r["name"] for r in familydb.rows(db, "SELECT name FROM friends WHERE trip_id = :t ORDER BY rowid", t=fam.trip_id)]
+            if (found := next((n for n in mine if n.casefold() == name.casefold()), None)):
+                return _friend(found)
+            if len(mine) >= MAX_FRIENDS:
+                raise FriendError(f"That is {MAX_FRIENDS} friends already. This demo keeps it small.")
+            insert_only(db, "friends", {"pk": f"{fam.trip_id}~{name.casefold()}", "trip_id": fam.trip_id, "name": name, "created_at": familydb.now()},
+                        ["pk"], auto_commit=False)
     return _friend(name)
 
 

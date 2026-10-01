@@ -25,3 +25,24 @@ def _fixed_today(monkeypatch):
     from datetime import date
     from gitaway import catalog
     monkeypatch.setattr(catalog, "today", lambda: date(2026, 9, 30), raising=False)
+
+
+@pytest.fixture(autouse=True)
+def _empty_families():
+    """Every family database in this test run starts each test empty: one shared data folder, so rows must not leak between tests.
+
+    People and memberships stay (they are the host database's); the family tables are cleared, which also forgets which trip
+    each member had open.
+    """
+    yield
+    from sqlalchemy import text
+    from fh_saas.db_tenant import get_or_create_tenant_db
+    from gitaway import familydb
+    for tenant_id in list(familydb._READY):
+        db = get_or_create_tenant_db(tenant_id)
+        try:
+            for _model, table, _pk in familydb.FAMILY_TABLES:
+                db.conn.execute(text(f"DELETE FROM {table}"))
+            db.conn.commit()
+        finally:
+            db.conn.close()
