@@ -595,20 +595,26 @@ def place_plans(plans, blocks, acts, n_days, gs):
     return out
 
 
-def preview_fork(session, itinerary, demo=""):
-    """The Placements of `itinerary` on the signed-in traveler's calendar. Raises CalendarError when signed out or nothing is booked."""
+def preview_plans(session, plans, demo=""):
+    """The Placements of `plans` on the signed-in traveler's calendar. Raises CalendarError when signed out or nothing is booked."""
     _, t, blocks = _context(session, demo)
-    return place_plans(fork_plans(itinerary), blocks, activities(session, demo), len(days(t)), grid_start(blocks))
+    return place_plans(plans, blocks, activities(session, demo), len(days(t)), grid_start(blocks))
 
 
-def apply_fork(session, itinerary, picks, by="", demo=""):
-    """Add the picked plans of `itinerary` to the calendar as activities and return them (oldest first).
+def preview_fork(session, itinerary, demo=""):
+    """The Placements of `itinerary` on the signed-in traveler's calendar."""
+    return preview_plans(session, fork_plans(itinerary), demo)
 
-    Hard clashes and plans already on the calendar are skipped, so posting the same picks again adds nothing. All or
-    nothing: a full cookie raises CalendarError and leaves the calendar as it was.
+
+def apply_plans(session, plans, picks, by="", note=None, demo=""):
+    """Add the picked `plans` to the calendar as activities and return (activities, note), oldest first.
+
+    `note` is an optional function of the plans actually added that returns a trip note's text (or None). Hard clashes and
+    plans already on the calendar are skipped, so posting the same picks again adds nothing, and then no note is added either.
+    All or nothing: a full cookie raises CalendarError and leaves the calendar as it was.
     """
     wanted = set(picks)
-    chosen = [x.plan for x in preview_fork(session, itinerary, demo) if x.plan.key in wanted and not x.hard and x.state != "have"]
+    chosen = [x.plan for x in preview_plans(session, plans, demo) if x.plan.key in wanted and not x.hard and x.state != "have"]
     state = _load(session, demo)
     added, n = [], state["q"]
     for p in chosen:
@@ -618,26 +624,45 @@ def apply_fork(session, itinerary, picks, by="", demo=""):
             row["b"] = " ".join(by.split())[:MAX_BY]
         state["a"].append(row)
         added.append(_act(row))
+    text = " ".join((note(chosen) if note and chosen else "").split())[:MAX_NOTE]
+    made = None
+    if text:
+        n += 1
+        made = {"i": f"n{n}", "t": text}
+        state["n"].append(made)
     if added:
         state["q"] = n
         _save(session, demo, state)
-    return added
+    return added, _note(made) if made and added else None
+
+
+def apply_fork(session, itinerary, picks, by="", demo=""):
+    """Add the picked plans of `itinerary` to the calendar as activities and return them (oldest first). See apply_plans."""
+    return apply_plans(session, fork_plans(itinerary), picks, by, demo=demo)[0]
+
+
+def remove_plans(session, plans, ids, by="", note_id=None, note_prefix="", demo=""):
+    """Undo an apply: remove the activities in `ids` that came from `plans` (same author, day, start and title as one of them).
+
+    Anything else in `ids` (the traveler's own plans, a friend's) stays, so a made-up id list cannot delete it. `note_id` removes
+    the whole-trip note that apply added, but only when its text starts with `note_prefix`. Returns how many activities were removed.
+    """
+    author = " ".join(by.split())[:MAX_BY]
+    mine = {(p.day, p.start, p.title) for p in plans}
+    gone = set(ids)
+    state = _load(session, demo)
+    drop = {a["i"] for a in state["a"] if a["i"] in gone and a.get("b", "") == author and (a["d"], a["s"], a["t"]) in mine}
+    if drop:
+        state["a"] = [a for a in state["a"] if a["i"] not in drop]
+        state["n"] = [n for n in state["n"] if n.get("a") not in drop]
+    if note_id and note_prefix:
+        state["n"] = [n for n in state["n"] if not (n["i"] == note_id and not n.get("a") and n["t"].startswith(note_prefix))]
+    if not drop and state["n"] == _load(session, demo)["n"]:
+        return 0
+    _save(session, demo, state, enforce=False)
+    return len(drop)
 
 
 def remove_applied(session, itinerary, ids, by="", demo=""):
-    """Undo an apply: remove the activities in `ids` that came from `itinerary` (same author, day, start and title as one of its plans).
-
-    Anything else in `ids` (the traveler's own plans, a friend's) stays, so a made-up id list cannot delete it.
-    Returns how many were removed.
-    """
-    author = " ".join(by.split())[:MAX_BY]
-    mine = {(p.day, p.start, p.title) for p in fork_plans(itinerary)}
-    gone = {i for i in ids}
-    state = _load(session, demo)
-    drop = {a["i"] for a in state["a"] if a["i"] in gone and author and a.get("b") == author and (a["d"], a["s"], a["t"]) in mine}
-    if not drop:
-        return 0
-    state["a"] = [a for a in state["a"] if a["i"] not in drop]
-    state["n"] = [n for n in state["n"] if n.get("a") not in drop]
-    _save(session, demo, state, enforce=False)
-    return len(drop)
+    """Undo an apply of `itinerary`: see remove_plans. Returns how many were removed."""
+    return remove_plans(session, fork_plans(itinerary), ids, by, demo=demo) if " ".join(by.split()) else 0
