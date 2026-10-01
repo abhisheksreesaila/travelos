@@ -5,6 +5,8 @@
 .ga-bob { animation: ga-bob 4.5s ease-in-out infinite; }
 /* Cards keep their tilt through the pop; "backwards" lets hover transforms apply once it ends. */
 @keyframes la-pop-tilt { 0% { transform: scale(.6) rotate(var(--r, 0deg)); opacity: 0 } 70% { transform: scale(1.06) rotate(var(--r, 0deg)); opacity: 1 } 100% { transform: scale(1) rotate(var(--r, 0deg)); } }
+/* The pop-in scales cards to 1.06, which pushed the page wider for a moment (F-036): the landing clips sideways overflow, not vertical. */
+#main { overflow-x: clip; }
 .door, .feature { animation: ga-pop .4s var(--ease-spring) backwards; animation-delay: calc(var(--i, 0) * 80ms); }
 .trip-card { animation: la-pop-tilt .4s var(--ease-spring) backwards; animation-delay: calc(var(--i, 0) * 80ms); }
 .door-one { --i: 1; } .door-two { --i: 2; }

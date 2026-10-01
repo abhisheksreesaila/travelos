@@ -462,13 +462,16 @@ def _pct(v, total):
     return f"{v / total * 100:.2f}%"
 
 
-def weather_pane():
+def weather_pane(trip=catalog.SAMPLE_TRIP):
+    all_days = context.weather_for(trip)
+    shown = all_days[:context.WEATHER_DAYS_SHOWN]
+    meta = "°F" if len(shown) == len(all_days) else f"°F · first {len(shown)} of {len(all_days)} days"
     days = [
         Div(Span(w.day, cls="ws-wday"), icon(w.icon, 22, 2), Span(f"{w.temp_f}°", cls="ws-temp"), Span(w.sky, cls="ws-sky"),
             cls=f"ws-wcell fill-{w.fill}-tint")
-        for w in context.WEATHER
+        for w in shown
     ]
-    return pane("weather", 4, "Weather", "°F", [Div(*days, cls="ws-weather"), Span(context.SAMPLE_NOTE, cls="ws-sample")], "fill-sun-tint")
+    return pane("weather", 4, "Weather", meta, [Div(*days, cls="ws-weather"), Span(context.SAMPLE_NOTE, cls="ws-sample")], "fill-sun-tint")
 
 
 def _map_label(pt, cls, extra=None):
@@ -503,13 +506,13 @@ def map_pane(stay):
     ], "fill-mint-tint")
 
 
-def news_pane():
+def news_pane(trip=catalog.SAMPLE_TRIP):
     events = [
         Div(Span(e.when, cls=f"ws-when fill-{e.fill}-tint"), Span(Span(e.title, cls="ws-item-title"), Span(e.sub, cls="ws-item-sub"), cls="ws-item"),
             cls="ws-event")
-        for e in context.EVENTS
+        for e in context.events_for(trip)
     ]
-    news = [Div(Span(n.title, cls="ws-item-title"), Span(n.sub, cls="ws-item-sub"), cls="ws-news") for n in context.NEWS]
+    news = [Div(Span(n.title, cls="ws-item-title"), Span(n.sub, cls="ws-item-sub"), cls="ws-news") for n in context.news_for(trip)]
     return pane("news", 6, "Happening & news", "", [
         *events, Span("Local news", cls="ws-subhead"), *news, Span(context.SAMPLE_NOTE, cls="ws-sample"),
     ], "fill-bubble-tint")
@@ -570,7 +573,7 @@ def workspace(f, h, c, overlay=(), head=(), x="", v="", stay=None, trip=None, fl
             pane("cars", 3, "Getting around", "", [car_card(o, c) for o in catalog.offers("car", trip)], "fill-sky-tint",
                  Div(rides_card(q.rides) if q.rides else "", id="ws-rides", cls="ws-rides", aria_live="polite"), tip,
                  lane="car", skipped=c is None, with_flight=f is not None),
-            Div(weather_pane(), map_pane(catalog.offer(h) if h else None), news_pane(), community_pane(), cls="ws-context"),
+            Div(weather_pane(trip), map_pane(catalog.offer(h) if h else None), news_pane(trip), community_pane(), cls="ws-context"),
             cls="ws-grid", id="ws-grid", data_focus=expanded or "flights", **(dict(data_expanded=expanded) if expanded else {}),
         ),
         cls="ws", id="main", data_theme="sunset",
