@@ -10,7 +10,7 @@ A family is an fh-saas tenant (ADR-0004). People join it by invitation; what the
 | editor | change the family's plans: trips, calendar, notes, rides, forks, saves, sharing, booking |
 | viewer | read everything; no write |
 
-fh-saas stores a role per `Membership` (`core_memberships.role`). The person who signs up is `owner` (fh-saas's word); GitAway treats `owner` as `admin` (`members.effective_role`). Invites offer editor or viewer; an admin promotes later. A family always keeps at least one admin, and only the owner can change or remove the owner.
+fh-saas stores a role per `Membership` (`core_memberships.role`). The person who signs up is `owner` (fh-saas's word); GitAway treats `owner` as `admin` (`members.effective_role`). Invites offer editor or viewer; an admin promotes later. A family always keeps at least one admin. The owner stays an admin (not even they can demote themselves) and only they can remove themselves; nobody else can change or remove the owner.
 
 ## Where things are stored
 
@@ -26,7 +26,8 @@ The family's own database also gets a `TenantUser` row (fh-saas's `local_role`) 
 ## Joining
 
 1. An admin invites an email on `/family`. The invite shows a link (`/join/<token>`) to copy. Email sending comes later (`fh-saas utils_email`).
-2. **Sign-in hook.** The dev sign-in and the Google callback both end with `auth.after_sign_in` -> `members.after_sign_in`. It finds live invites for the person's email, creates the `Membership` with the invited role under the host lock, marks the invites accepted, makes the last family joined the active one (`tenant_id`, `tenant_role` in the session, `invalidate_auth_cache`) and remembers the choice.
+2. **Sign-in hook.** Only a **verified** email joins anything. The Google callback is composed from fh-saas's public steps (`auth.sign_in_google`: `verify_oauth_state`, `retr_info`, `create_or_get_global_user`, provisioning, `create_user_session`) so Google's `email_verified` is kept; the dev sign-in counts as verified (local only). An unverified email still signs in, to a family of its own, but gets a notice ("Your Google email isn't verified...") and the invite stays pending; the join link is refused the same way. Any domain may be invited: verification is the gate. The session holds `verified` (0/1).
+   The hook The dev sign-in and the Google callback both end with `auth.after_sign_in` -> `members.after_sign_in`. It finds live invites for the person's email, creates the `Membership` with the invited role under the host lock, marks the invites accepted, then asks before moving anyone: the last family joined becomes the active one (`tenant_id`, `tenant_role`, `invalidate_auth_cache`) **only when the family they would otherwise work in has no trips yet** (a first sign-in). Otherwise they stay where they are. Either way a dismissable notice follows them (`session["note"]`, shown by `layout.join_note` on pages and the calendar): "You joined X's family" with Switch / Stay (`POST /family/switch`, `POST /family/stay`), or just OK when they were moved.
 3. **The link.** `/join/<token>` signed out shows who invited you and a Sign in button that comes back to the link. Signed in with a matching email it offers one Join button. Signed in with another email it is refused (403) and the mismatch is logged with the invite id and masked addresses; the token alone gets nobody in.
 4. Emails are lowercased. For `gmail.com` / `googlemail.com` the dots and `+tag` are ignored when comparing (Google treats them as one mailbox).
 
@@ -48,6 +49,10 @@ A new write route is therefore safe by default. `tests/test_roles.py` walks ever
 
 Fh-saas's `require_role` is not used: with `setup_tenant_db=False` the beforeware gives every non-owner `role = None`, and `owner` short-circuits to admin whichever family is active (proposals row 15).
 
+## Offline cache
+
+`layout.cache_key` (the `ga-user` meta the service worker files saved pages under) hashes the person **and the active family**, so switching family or being removed changes the key and the other family's saved pages are dropped.
+
 ## The calendar
 
 - Avatars and "planning with you" are the family's real members (`members.crew`), on every trip.
@@ -56,6 +61,7 @@ Fh-saas's `require_role` is not used: with `setup_tenant_db=False` the beforewar
 
 ## Known limits
 
-- Google's `email_verified` is not checked (fh-saas discards the user info); Gmail addresses are always verified by Google, other domains might not be. The dev sign-in trusts any email and only runs on this machine.
+- `access.py` does not support system-admin sessions (no family): such a session is signed out. GitAway has no system admins.
+- The dev sign-in trusts any email and only runs on this machine.
 - No email is sent; the admin copies the link.
 - One worker per data folder (the host lock is per process; see `docs/family-db.md`).

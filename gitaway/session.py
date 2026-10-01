@@ -81,7 +81,7 @@ def current_traveler(session):
 
 # Everything fh-saas keeps in the session for the sign-in; sign_out removes exactly these and leaves the rest.
 AUTH_KEYS = ("user_id", "email", "tenant_id", "tenant_role", "is_sys_admin", "login_at", "session_started_at",
-             "_auth_cache", "oauth_state", "login_next", "login_intent")
+             "_auth_cache", "oauth_state", "login_next", "login_intent", "verified", "note")
 
 
 def sign_in(session, user_id, email=""):
@@ -379,6 +379,22 @@ def invite_link(booking_id):
 _request_traveler = ContextVar("gitaway_traveler", default=None)
 _request_path = ContextVar("gitaway_path", default="/")
 _request_forks = ContextVar("gitaway_forks", default=0)
+_request_tenant = ContextVar("gitaway_tenant", default=None)
+_request_note = ContextVar("gitaway_note", default=None)
+
+
+def request_tenant():
+    """The active family's id for this request (set by gitaway.access.guard), or None when signed out."""
+    return _request_tenant.get()
+
+
+def request_note():
+    """The sign-in notice to show on this request ({"kind", "text", "tenant", "switch"}) or None (set by gitaway.access.guard)."""
+    return _request_note.get()
+
+
+def request_path():
+    return _request_path.get()
 
 
 async def bind(req, session):

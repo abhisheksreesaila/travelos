@@ -15,7 +15,7 @@ from tests.test_signin import session_data, sign_in, stored_calendar
 # Every POST route a viewer may use, and why. Anything else must be refused (403) for a viewer.
 OPEN_FOR_VIEWERS = {
     "/signin", "/logout", "/signout",                         # signing in and out
-    "/trips/switch", "/family/switch",                        # which trip I look at, which family I work in (nothing of the family changes)
+    "/trips/switch", "/family/switch", "/family/stay",       # which trip I look at, which family I work in, dismissing the joined notice
     "/creators", "/creators/draft", "/creators/finish",       # a creator draft is the person's own, published to the community
     "/join/{token}",                                          # using an invite link: joining another family
 }

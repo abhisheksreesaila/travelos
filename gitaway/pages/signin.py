@@ -8,7 +8,7 @@ Google sign-in is /login and /auth/callback (fh-saas); the local dev sign-in is 
 from urllib.parse import quote
 
 from fasthtml.common import A, Button, Div, Form, H2, Input, Label, Link, P, Script, Span, to_xml
-from fh_saas.utils_auth import handle_login_request, handle_logout, handle_oauth_callback
+from fh_saas.utils_auth import handle_login_request, handle_logout
 from starlette.responses import RedirectResponse, Response
 
 from gitaway import auth, hostdb, session as ses
@@ -123,9 +123,7 @@ def register(app):
         try:
             if error or not code or not state:  # Google sends ?error=access_denied (no code) when the person cancels
                 raise ValueError("no code")
-            with hostdb.locked():  # fh-saas's callback uses the one shared host connection
-                handle_oauth_callback(code, state, request, session)  # its own redirect (/dashboard) is not ours
-                auth.after_sign_in(session)  # join the families this email was invited to (F-043)
+            auth.sign_in_google(code, state, request, session)  # fh-saas's steps, keeping email_verified; joins invited families when verified (F-043)
         except Exception:
             for key in ("oauth_state", "login_next", "login_intent"):
                 session.pop(key, None)

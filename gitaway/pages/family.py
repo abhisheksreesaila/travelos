@@ -126,7 +126,7 @@ def _join_page(title, *body, status=200):
 
 def _problem_page(problem, signed_in):
     again = A("Back to GitAway", href="/", cls="btn btn-primary") if not signed_in else A("Your family", href="/family", cls="btn btn-primary")
-    status = {"unknown": 404, "expired": 410, "revoked": 410, "accepted": 410, "mismatch": 403}.get(problem.kind, 400)
+    status = {"unknown": 404, "expired": 410, "revoked": 410, "accepted": 410, "mismatch": 403, "unverified": 403}.get(problem.kind, 400)
     return _join_page("This invite did not work", P(str(problem), id="join-problem"), again, status=status)
 
 
@@ -169,6 +169,13 @@ def register(app):
     def switch(request, session, tenant: str = "", next: str = ""):
         """Work in another family. The membership is checked here, never trusted from the form: a family that is not mine changes nothing."""
         members.set_active(session, tenant)
+        session.pop("note", None)
+        return RedirectResponse(ses.safe_next(next, "/family"), status_code=303)
+
+    @app.post("/family/stay")
+    def stay(session, next: str = ""):
+        """Dismiss the "you joined" notice and keep working where I am."""
+        session.pop("note", None)
         return RedirectResponse(ses.safe_next(next, "/family"), status_code=303)
 
     @app.get("/join/{token}")
@@ -187,6 +194,8 @@ def register(app):
                                                                        "accepted": "That invite was already used."}[inv["state"]]), bool(uid))
         what = P(f"You are invited to {family} as {members.ROLE_WORDS[inv['role']].lower()}. {members.ROLE_HELP[inv['role']]}", id="join-what")
         for_who = P(f"This invite is for {members.mask_email(inv['email'])}. Sign in with that address.", id="join-for", cls="fam-small")
+        if uid and not session.get("verified"):
+            return _problem_page(members.InviteProblem("unverified", members.UNVERIFIED), True)
         if not uid:
             return _join_page(f"Join {family}", what, for_who, A("Sign in to join", href=f"/signin?next={quote(here, safe='')}&intent=join", cls="btn btn-primary", id="join-signin"))
         if members.match_key(email) != inv["email_key"]:
@@ -202,7 +211,7 @@ def register(app):
         if not uid:
             return RedirectResponse(f"/signin?next={quote(f'/join/{token}', safe='')}&intent=join", status_code=303)
         try:
-            joined = members.accept_token(uid, email, token)
+            joined = members.accept_token(uid, email, token, verified=bool(session.get("verified")))
         except members.InviteProblem as e:
             return _problem_page(e, True)
         members.set_active(session, joined["tenant_id"])

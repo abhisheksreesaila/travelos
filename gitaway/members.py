@@ -372,11 +372,16 @@ def accept_pending(user_id, email) -> list:
     return joined
 
 
-def accept_token(user_id, email, token) -> dict:
-    """The signed-in person uses an invite link. The email must match the invite: a token alone gets nobody in.
+UNVERIFIED = "Your Google email isn't verified, so we can't add you to a family you were invited to. Verify your email with Google, then sign in again."
 
-    Returns the membership joined. Raises InviteProblem (unknown, expired, revoked, accepted, mismatch).
+
+def accept_token(user_id, email, token, verified=False) -> dict:
+    """The signed-in person uses an invite link. The email must match the invite and be verified: a token alone gets nobody in.
+
+    Returns the membership joined. Raises InviteProblem (unverified, unknown, expired, revoked, accepted, mismatch).
     """
+    if not verified:
+        raise InviteProblem("unverified", UNVERIFIED)
     with hostdb.locked():  # looked at and used under one lock: a revoke or another use cannot slip in between
         inv = find_invite(token)
         if not inv:
@@ -404,7 +409,8 @@ def _admins(conn, tenant_id):
 
 
 def change_role(tenant_id, actor_id, user_id, role):
-    """An admin changes a member's role (admin, editor or viewer). The last admin cannot be demoted; only the owner can change the owner."""
+    """An admin changes a member's role (admin, editor or viewer). The last admin cannot be demoted, and the owner (the person who made the
+    family) stays an admin: not even they can demote themselves."""
     if role not in ROLES:
         raise MemberError("Choose Admin, Editor or Viewer.")
     with hostdb.locked():
@@ -419,6 +425,8 @@ def change_role(tenant_id, actor_id, user_id, role):
             return
         if effective_role(target["role"]) == "admin" and role != "admin" and _admins(conn, tenant_id) == [user_id]:
             raise MemberError("A family needs at least one admin. Make someone else an admin first.")
+        if target["role"] == "owner" and role != "admin":
+            raise MemberError("The person who made the family stays an admin.")
         conn.execute(text("UPDATE core_memberships SET role = :r WHERE id = :id"), {"r": role, "id": target["id"]})
         conn.commit()
         email = _row(conn, "SELECT email FROM core_users WHERE id = :u", u=user_id)["email"]
@@ -448,17 +456,54 @@ def remove(tenant_id, actor_id, user_id):
 
 # ---- sign-in -------------------------------------------------------------------------------------------------------
 
-def after_sign_in(session) -> list:
+def has_pending_for(email) -> bool:
+    with hostdb.locked():
+        return bool(_row(_conn(), "SELECT 1 FROM ga_invites WHERE email_key = :k AND status = 'pending' AND expires_at > :n", k=match_key(email), n=_iso(now())))
+
+
+def has_trips(tenant_id) -> bool:
+    """Does the family already have a trip? (Opens its database; False when it cannot be read.)"""
+    from fh_saas.db_tenant import get_or_create_tenant_db
+    from gitaway import familydb
+    db = None
+    try:
+        db = get_or_create_tenant_db(tenant_id)
+        familydb.ensure_schema(db, tenant_id)
+        return bool(db.conn.execute(text("SELECT 1 FROM trips LIMIT 1")).first())
+    except Exception:
+        log.warning("could not look at the trips of family %s", tenant_id, exc_info=True)
+        return False
+    finally:
+        if db is not None:
+            try:
+                db.conn.close()
+            except Exception:
+                pass
+
+
+def after_sign_in(session, verified=True) -> list:
     """The one hook every sign-in runs (auth.after_sign_in): join the families the person's email was invited to, then choose the active one.
 
-    A person who just joined a family works in it. Otherwise they work in the family they used last, else the first. Returns the
-    memberships joined this time.
+    Only a verified email joins anything; an unverified one gets a notice instead (session["note"]). A person who just joined a family is
+    moved into it only when the family they would otherwise work in has no trips yet (a first sign-in); otherwise they stay and a notice
+    ("You joined X's family", Switch / Stay) lets them choose. Otherwise they work in the family they used last, else the first.
+    Returns the memberships joined this time.
     """
     uid, email = session.get("user_id"), session.get("email") or ""
     if not uid:
         return []
-    joined = accept_pending(uid, email)
-    target = ({"tenant_id": joined[-1]["tenant_id"], "role": joined[-1]["role"]} if joined else preferred_family(uid))
+    session["verified"] = 1 if verified else 0
+    session.pop("note", None)
+    base = preferred_family(uid)
+    joined = accept_pending(uid, email) if verified else []
+    if not verified and has_pending_for(email):
+        session["note"] = "unverified"
+    if joined:
+        last = joined[-1]
+        session["note"] = f"joined:{last['tenant_id']}"
+        target = {"tenant_id": last["tenant_id"], "role": last["role"]} if not base or not has_trips(base["tenant_id"]) else base
+    else:
+        target = base
     if target:
         with hostdb.locked():
             _remember(_conn(), uid, target["tenant_id"])

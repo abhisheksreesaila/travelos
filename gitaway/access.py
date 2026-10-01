@@ -25,7 +25,7 @@ SAFE_METHODS = ("GET", "HEAD", "OPTIONS")
 OPEN_POSTS = (
     "/signin", "/logout", "/signout",      # signing in and out
     "/trips/switch",                       # which trip I am looking at (my own `members.trip_id`)
-    "/family/switch",                      # which of my families I am working in
+    "/family/switch", "/family/stay",      # which of my families I am working in; dismissing the "you joined" notice
     "/creators", "/creators/draft", "/creators/finish",   # a creator draft is a person's own, published to the community, not a family's
 )
 OPEN_PREFIXES = ("/join/",)                # using an invite link: the person is joining another family
@@ -72,12 +72,29 @@ def refusal(request, session, role):
     return Response(to_xml(body), status_code=403, media_type="text/html")
 
 
+def _build_note(sess, uid, active):
+    """The notice a sign-in left in the session, as the layout shows it; None (and forgotten) when it no longer applies."""
+    kind = sess.get("note")
+    if kind == "unverified":
+        return {"kind": kind, "text": members.UNVERIFIED, "tenant": "", "switch": False}
+    if isinstance(kind, str) and kind.startswith("joined:"):
+        tid = kind.split(":", 1)[1]
+        if members.role_in(uid, tid):
+            return {"kind": "joined", "text": f"You joined {members.family_label(tid)}.", "tenant": tid, "switch": tid != active}
+    sess.pop("note", None)
+    return None
+
+
 async def guard(req, sess):
     """Beforeware: find the person's role in their active family, repair a lost membership, and refuse writes the role does not allow.
 
     Async on purpose, like session.bind: a ContextVar set in a sync beforeware is lost in its threadpool copy of the context.
     """
+    # Not supported yet: a system-admin session has no family (fh-saas gives it no tenant_id). Such a session is treated as having lost its
+    # family below and is signed out; GitAway has no system admins today.
     uid = sess.get("user_id")
+    ses._request_note.set(None)
+    ses._request_tenant.set(None)
     if not uid:
         _role.set(None)
         return None
@@ -96,6 +113,8 @@ async def guard(req, sess):
         members.apply_active(sess, found["tenant_id"], found["role"])
     role = members.effective_role(found["role"])
     _role.set(role)
+    ses._request_tenant.set(found["tenant_id"])
+    ses._request_note.set(_build_note(sess, uid, found["tenant_id"]))
     req.state.family_role = role
     need = needed(req.method, req.url.path)
     if not allows(role, need):

@@ -23,7 +23,7 @@ from starlette.responses import RedirectResponse
 
 from gitaway import access, catalog, forks as forks_model, members, session as ses, tripcal as cal
 from gitaway.icons import icon
-from gitaway.layout import avatar, brand, styles, trip_field
+from gitaway.layout import avatar, brand, join_note, styles, trip_field
 from gitaway import voice as vo
 from gitaway.pages import pay, plan as plan_ui, voice as voice_ui
 
@@ -534,7 +534,7 @@ def calendar_page(session, demo="", view="", form=None, notice=None, new="", und
                                                                      action="/calendar/undo", method="post", data_soft=""),
                            A("Dismiss", href=cal_url(demo, view=view), data_soft="", cls="cal-dismiss")))
     viewing = P("You are a viewer in this family: you can look at everything but not change it. Ask a family admin to make you an editor.", id="cal-viewer", role="status", cls="cal-viewer") if role == "viewer" else ""
-    app = Div(top_bar(t, b, who, session, ctx), viewing, Div(card, vpanel or notes_panel(ctx, who, b), cls="cal-layout"), *layers,
+    app = Div(top_bar(t, b, who, session, ctx), join_note(), viewing, Div(card, vpanel or notes_panel(ctx, who, b), cls="cal-layout"), *layers,
               id="cal-app", cls="cal cal-readonly" if role == "viewer" else "cal", data_trip=ses.open_trip_id() or None, data_demo=demo, data_view=view, data_grid_start=str(gs), data_grid_end=str(cal.GRID_END),
               data_base=cal_url(demo, view=view), data_live="1" if cal.live_pending(session, demo) else None, data_voice="1" if voice is not None else None)
     body = (
@@ -551,7 +551,7 @@ def no_booking():
         Title("GitAway · Trip calendar"),
         *styles(*HEAD),
         Div(A("Skip to content", href="#main", cls="ga-skip"),
-            Main(Header(brand("/"), cls="cal-bar"),
+            Main(Header(brand("/"), cls="cal-bar"), join_note(),
                  Section(Div(Span(icon("plane", 40, 2), cls="cal-bignote"), H1("Book a trip first"),
                              P("Your calendar fills in with your flights and hotel as soon as you book. Then the fun part starts: adding the gaps."),
                              A("Plan a trip", href="/start", cls="btn btn-primary"), cls="cal-firstbox"), cls="cal-first"),

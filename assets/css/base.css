@@ -103,3 +103,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* Sign-in notice: "You joined X's family" (F-043) */
+.ga-note { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; width: min(46rem, 100% - 2rem); margin: 0.5rem auto; padding: 0.625rem 1rem; border-radius: var(--r-md); background: var(--sky-tint); color: var(--ink); font-weight: 700; }
+.ga-note-actions, .ga-note form { display: flex; gap: 0.5rem; margin: 0; }

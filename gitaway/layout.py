@@ -38,10 +38,28 @@ def clear_site_data(response):
     return response
 
 
-def cache_key(traveler=None):
-    """A short, non-secret per-person key the service worker files saved pages under (None when signed out)."""
+def cache_key(traveler=None, tenant_id=None):
+    """A short, non-secret key the service worker files saved pages under (None when signed out): per person AND per active family,
+    so a family switch or a removal changes it and the other family's saved pages are dropped (F-043)."""
     traveler = traveler or session.request_traveler()
-    return hmac.new(session.cache_secret(), traveler.id.encode(), hashlib.sha256).hexdigest()[:10] if traveler else None
+    tenant_id = tenant_id if tenant_id is not None else session.request_tenant()
+    ident = f"{traveler.id}|{tenant_id}" if traveler and tenant_id else (traveler.id if traveler else "")
+    return hmac.new(session.cache_secret(), ident.encode(), hashlib.sha256).hexdigest()[:10] if traveler else None
+
+
+def join_note():
+    """The dismissable sign-in notice ("You joined Ari's family", with Switch / Stay), or "" when there is none. Posts go to /family/switch and /family/stay."""
+    note = session.request_note()
+    if not note:
+        return ""
+    from fasthtml.common import Input
+    here = Input(type="hidden", name="next", value=session.request_path() or "/family")
+    if note.get("switch"):
+        buttons = [Form(Input(type="hidden", name="tenant", value=note["tenant"]), here, Button("Switch", type="submit", cls="btn btn-sm"), action="/family/switch", method="post"),
+                   Form(here, Button("Stay", type="submit", cls="btn btn-sm"), action="/family/stay", method="post")]
+    else:
+        buttons = [Form(here, Button("OK", type="submit", cls="btn btn-sm"), action="/family/stay", method="post")]
+    return Div(Span(note["text"], cls="ga-note-text"), Div(*buttons, cls="ga-note-actions"), role="status", id="ga-note", cls="ga-note")
 
 HEAD = (
     # Install on iPhone (F-044): manifest, theme colour, Apple tags, service worker registration
@@ -122,5 +140,5 @@ def page(title: str, *content, current: str = "", theme: str = "sunset", head=()
     return (
         Title(f"GitAway · {title}" if title else "GitAway"),
         *styles(*head, theme=theme),
-        Div(site_header(current), Main(*content, id="main"), site_footer(), data_theme=theme, cls="ga-page"),
+        Div(site_header(current), join_note(), Main(*content, id="main"), site_footer(), data_theme=theme, cls="ga-page"),
     )
