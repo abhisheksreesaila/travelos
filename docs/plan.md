@@ -290,10 +290,10 @@ Needs: none
 - [x] sign-in lasts about 30 days on a device, sliding with use (fh-saas `SessionConfig` / `create_session_middleware`), secure cookie in production
 - [x] sign-out and removed members still end access immediately
 
-## F-050 "Discover" becomes "Community trips" [doing]
+## F-050 "Discover" becomes "Community trips" [done]
 Needs: none
-- [ ] the hub is named "Community trips" everywhere (header, landing, links, page title); /discover keeps working and /community is the new path
-- [ ] the page says plainly that these are trips shared by travelers and creators, with "Share yours" and "Turn a link into a trip" up front
+- [x] the hub is named "Community trips" everywhere (header, landing, links, page title); /discover keeps working and /community is the new path
+- [x] the page says plainly that these are trips shared by travelers and creators, with "Share yours" and "Turn a link into a trip" up front
 
 ## F-051 Themed date pickers and dropdowns [doing]
 Design: approved 2026-10-01 (docs/design/canvas/GoLive-Pickers.dc.html) · Needs: none
@@ -306,9 +306,9 @@ Design: canvas first · Needs: none
 - [ ] the boarding pass fills from context: after a search (from, to, dates), after a fork (the trip's route and days, no creator), or a generic pass when there is no context
 - [ ] emotional, animated, fun travel sign-in (Google button and dev sign-in) per the approved artboard; fast, accessible, reduced motion calm
 
-## F-053 Good when empty [doing]
+## F-053 Good when empty [done]
 Needs: none
-- [ ] a new family's first screens offer: start a trip, import a booked trip, browse community trips; no blank calendar, forks, family or trip pages anywhere
+- [x] a new family's first screens offer: start a trip, import a booked trip, browse community trips; no blank calendar, forks, family or trip pages anywhere
 
 ## F-054 Phone-first trip view [doing]
 Design: phone A approved 2026-10-01 (docs/design/canvas/GoLive-Phone-Today.dc.html); B rejected as bland · Needs: F-051
