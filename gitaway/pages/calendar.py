@@ -535,7 +535,7 @@ def calendar_page(session, demo="", view="", form=None, notice=None, new="", und
                            A("Dismiss", href=cal_url(demo, view=view), data_soft="", cls="cal-dismiss")))
     viewing = P("You are a viewer in this family: you can look at everything but not change it. Ask a family admin to make you an editor.", id="cal-viewer", role="status", cls="cal-viewer") if role == "viewer" else ""
     app = Div(top_bar(t, b, who, session, ctx), viewing, Div(card, vpanel or notes_panel(ctx, who, b), cls="cal-layout"), *layers,
-              id="cal-app", cls="cal", data_trip=ses.open_trip_id() or None, data_demo=demo, data_view=view, data_grid_start=str(gs), data_grid_end=str(cal.GRID_END),
+              id="cal-app", cls="cal cal-readonly" if role == "viewer" else "cal", data_trip=ses.open_trip_id() or None, data_demo=demo, data_view=view, data_grid_start=str(gs), data_grid_end=str(cal.GRID_END),
               data_base=cal_url(demo, view=view), data_live="1" if cal.live_pending(session, demo) else None, data_voice="1" if voice is not None else None)
     body = (
         Title(f"GitAway · {trip_name(t)} calendar"),

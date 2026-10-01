@@ -382,3 +382,5 @@ a.cal-ride { cursor: pointer; }
 /* Roles (F-043): a viewer looks; the banner says so. The real-invite pointer in the demo's invite dialog. */
 .cal-viewer { margin: 0 0 0.75rem; padding: 0.625rem 1rem; border-radius: var(--r-md); background: var(--sky-tint); color: var(--ink); font-size: max(var(--text-min), 0.9375rem); font-weight: 700; }
 .cal-realink { font-weight: 800; color: var(--coral-deep); text-underline-offset: 0.25rem; }
+.cal-readonly .cal-dayadd, .cal-readonly .cal-empty, .cal-readonly .cal-w-empty a, .cal-readonly .cal-ghost, .cal-readonly .cal-composer { display: none; }
+.cal-readonly .cal-act { cursor: default; }

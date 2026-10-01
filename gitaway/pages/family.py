@@ -55,7 +55,7 @@ def _role_select(current, choices, name="role", label="Role"):
 def _member_row(m, me, my_role, tenant_id):
     is_me, admin = m["user_id"] == me, my_role == "admin"
     owner = m["raw"] == "owner"
-    who = [Span(m["name"], cls="fam-name"), Span(" (you)", cls="fam-you") if is_me else "", Span(m["email"], cls="fam-email")]
+    who = [Span(Span(m["name"], cls="fam-name"), Span(" (you)", cls="fam-you") if is_me else "", cls="fam-nameline"), Span(m["email"], cls="fam-email")]
     actions = []
     if admin and (not owner or is_me):
         actions.append(Form(Input(type="hidden", name="user", value=m["user_id"]), _role_select(m["role"], members.ROLES, label=f"Role of {m['name']}"),

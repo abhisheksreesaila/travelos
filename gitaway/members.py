@@ -377,20 +377,20 @@ def accept_token(user_id, email, token) -> dict:
 
     Returns the membership joined. Raises InviteProblem (unknown, expired, revoked, accepted, mismatch).
     """
-    inv = find_invite(token)
-    if not inv:
-        raise InviteProblem("unknown", "That invite link is not one we know. Ask for a new one.")
-    if inv["state"] == "expired":
-        raise InviteProblem("expired", "That invite has expired. Ask the family admin for a new one.")
-    if inv["state"] == "revoked":
-        raise InviteProblem("revoked", "That invite was taken back. Ask the family admin for a new one.")
-    if inv["state"] == "accepted":
-        raise InviteProblem("accepted", "That invite was already used.")
-    if match_key(email) != inv["email_key"]:
-        log.warning("invite %s (for %s) was opened by user %s signed in as %s: the email does not match, nobody joined",
-                    inv["id"], mask_email(inv["email"]), user_id, mask_email(email))
-        raise InviteProblem("mismatch", "This invite is for a different email address.")
-    with hostdb.locked():
+    with hostdb.locked():  # looked at and used under one lock: a revoke or another use cannot slip in between
+        inv = find_invite(token)
+        if not inv:
+            raise InviteProblem("unknown", "That invite link is not one we know. Ask for a new one.")
+        if inv["state"] == "expired":
+            raise InviteProblem("expired", "That invite has expired. Ask the family admin for a new one.")
+        if inv["state"] == "revoked":
+            raise InviteProblem("revoked", "That invite was taken back. Ask the family admin for a new one.")
+        if inv["state"] == "accepted":
+            raise InviteProblem("accepted", "That invite was already used.")
+        if match_key(email) != inv["email_key"]:
+            log.warning("invite %s (for %s) was opened by user %s signed in as %s: the email does not match, nobody joined",
+                        inv["id"], mask_email(inv["email"]), user_id, mask_email(email))
+            raise InviteProblem("mismatch", "This invite is for a different email address.")
         m = _join(_conn(), inv, user_id, email)
     _sync_tenant_user(m["tenant_id"], user_id, email, effective_role(m["role"]))
     log.info("invite %s accepted by %s into family %s as %s (link)", inv["id"], user_id, inv["tenant_id"], m["role"])
@@ -419,8 +419,7 @@ def change_role(tenant_id, actor_id, user_id, role):
             return
         if effective_role(target["role"]) == "admin" and role != "admin" and _admins(conn, tenant_id) == [user_id]:
             raise MemberError("A family needs at least one admin. Make someone else an admin first.")
-        keep = "owner" if target["role"] == "owner" and role == "admin" else role
-        conn.execute(text("UPDATE core_memberships SET role = :r WHERE id = :id"), {"r": keep, "id": target["id"]})
+        conn.execute(text("UPDATE core_memberships SET role = :r WHERE id = :id"), {"r": role, "id": target["id"]})
         conn.commit()
         email = _row(conn, "SELECT email FROM core_users WHERE id = :u", u=user_id)["email"]
     _sync_tenant_user(tenant_id, user_id, email, role)

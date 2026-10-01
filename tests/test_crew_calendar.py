@@ -124,6 +124,10 @@ def test_the_demo_trip_keeps_its_invite_dialog_and_points_to_the_real_one(client
     assert "Quick picks" in html and 'href="/family#invite"' in html and "Invite by email on the Family page" in html
 
 
+def book_html(client):
+    return client.get("/calendar?view=days").text
+
+
 # ---- what a viewer sees ----------------------------------------------------------------------------------------------
 
 def test_a_viewer_sees_the_calendar_with_a_banner_and_no_editing_dialogs(client):
@@ -134,7 +138,8 @@ def test_a_viewer_sees_the_calendar_with_a_banner_and_no_editing_dialogs(client)
     sign_in(other, vi)
     html = other.get("/calendar?view=days").text
     assert 'id="cal-viewer"' in html and "viewer" in html
-    assert 'id="cal-invite-btn"' not in html and "Share trip" not in html
+    assert 'id="cal-invite-btn"' not in html and "Share trip" not in html and "cal-readonly" in html
+    assert "cal-readonly" not in book_html(client)
     for path in ("/calendar?view=days&add=1", "/calendar?view=days&edit=a1", "/calendar?view=days&invite=1", "/calendar?voice=1"):
         page = other.get(path).text
         assert "cal-form-title" not in page and "cal-modal" not in page and "vo-panel" not in page, path
