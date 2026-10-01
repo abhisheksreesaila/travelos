@@ -864,7 +864,8 @@ def place_plans(plans, blocks, acts, n_days, gs):
 def preview_plans(session, plans, demo=""):
     """The Placements of `plans` on the signed-in traveler's calendar. Raises CalendarError when signed out or nothing is booked."""
     with ses.family(session) as fam:
-        _, t, blocks = _need(fam, demo)
+        b, t, blocks = _need(fam, demo)
+        blocks = blocks + ride_blocks(session, b, t)  # a scheduled Uber is busy time too
         scope = _scope(demo)
         _peek(fam.db, fam.trip_id, scope)
         return place_plans(plans, blocks, [_act(r) for r in _live_acts(fam.db, fam.trip_id, scope)], len(days(t)), grid_start(blocks))
@@ -884,7 +885,8 @@ def apply_plans(session, plans, picks, by="", note=None, demo=""):
     """
     wanted = set(picks)
     with ses.family(session) as fam:
-        _, t, blocks = _need(fam, demo)
+        b, t, blocks = _need(fam, demo)
+        blocks = blocks + ride_blocks(session, b, t)  # a scheduled Uber is busy time too
         db, scope = fam.db, _scope(demo)
         with familydb.transaction(db):
             st = _begin(db, fam.trip_id, scope, fam.traveler.id)
