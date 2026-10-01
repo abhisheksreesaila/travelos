@@ -3,7 +3,9 @@
 The app runs in a background thread on a free port for the whole session and is stopped at the end.
 Each test gets a fresh browser context (fresh session cookie) with reduced motion, so animations never slow a wait.
 """
+import os
 import socket
+import tempfile
 import threading
 import time
 from datetime import date
@@ -13,6 +15,14 @@ import uvicorn
 from playwright.sync_api import sync_playwright
 
 from tests_browser.helpers import DESKTOP
+
+# Before main is imported: a throwaway data folder, and the local dev sign-in on (the server answers on 127.0.0.1).
+os.environ["GITAWAY_DATA_DIR"] = tempfile.mkdtemp(prefix="gitaway-browser-")
+os.environ["GITAWAY_DEV_LOGIN"] = "1"
+os.environ["DB_TYPE"] = "SQLITE"
+os.environ["DB_NAME"] = "app_host"
+for _key in ("GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"):
+    os.environ.pop(_key, None)
 
 @pytest.fixture(autouse=True)
 def _fixed_today(monkeypatch):

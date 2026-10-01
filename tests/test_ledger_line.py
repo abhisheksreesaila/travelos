@@ -1,5 +1,8 @@
 """F-031: the cost ledger is one slim line in the top bar, with a breakdown popover and a pill state."""
 import re
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
 
 from gitaway import catalog
 
@@ -55,7 +58,7 @@ def test_book_link_keeps_signin_and_pay_hrefs(client):
 
 
 def test_css_reclaims_the_band_and_pill_respects_reduced_motion():
-    css = open("assets/css/workspace.css").read()
+    css = open(ROOT / "assets/css/workspace.css").read()
     assert ".ws-ledger.is-pill" in css
     reduced = css[css.rindex("prefers-reduced-motion"):]
     assert ".ws-ledger" in reduced and "transition: none" in reduced
@@ -63,7 +66,7 @@ def test_css_reclaims_the_band_and_pill_respects_reduced_motion():
 
 
 def test_script_swaps_figures_and_never_adds_them():
-    js = open("assets/js/workspace.js").read()
+    js = open(ROOT / "assets/js/workspace.js").read()
     assert "line_html" in js and "slots_html" in js and "is-pill" in js and "ws-pop" in js  # the server renders the line; the script swaps it in
     assert not re.search(r"parseFloat|parseInt|Number\(\s*[^)]*(price|total)", js, re.I)
 
@@ -79,9 +82,9 @@ def test_total_changes_are_announced_by_a_live_region(client):
     bar = bar_html(client)
     assert re.search(r'<span[^>]*id="ws-total-live"[^>]*aria-live="polite"|<span[^>]*aria-live="polite"[^>]*id="ws-total-live"', bar)
     assert re.search(r'id="ws-total-live"[^>]*>[^<]*\$3,088', bar)
-    assert "ws-total-live" in open("assets/js/workspace.js").read()
+    assert "ws-total-live" in open(ROOT / "assets/js/workspace.js").read()
 
 
 def test_pill_state_relabels_the_total_button():
-    js = open("assets/js/workspace.js").read()
+    js = open(ROOT / "assets/js/workspace.js").read()
     assert "Show cost line" in js and "aria-haspopup" in js

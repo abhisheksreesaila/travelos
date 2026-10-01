@@ -43,7 +43,7 @@ def test_apple_touch_icon_is_180():
 def test_every_page_carries_the_install_tags(client):
     from main import app
     paths = {r.path for r in app.routes if "GET" in (getattr(r, "methods", None) or ()) and "{" not in r.path}
-    paths -= {"/plan/explore", "/plan/quote", "/manifest.webmanifest", "/sw.js"}
+    paths -= {"/plan/explore", "/plan/quote", "/manifest.webmanifest", "/sw.js", "/auth/callback"}
     paths |= {"/trips/sun-tacos-and-tide-pools", "/trips/no-such-trip"}
     assert {"/", "/start", "/offline"} <= paths
     for path in sorted(paths):
@@ -142,7 +142,7 @@ def test_offline_page_never_shows_who_was_signed_in(client):
 def test_cache_key_depends_on_the_server_secret_not_just_the_id(monkeypatch):
     import hashlib
     from gitaway import layout, session
-    ari = session.TRAVELERS["ari"]
+    ari = session.sign_in({}, "u-ari", "ari.rivera@example.com")
     one = layout.cache_key(ari)
     assert one != hashlib.sha256(f"gitaway-pages:{ari.id}".encode()).hexdigest()[:10]
     monkeypatch.setattr(session, "cache_secret", lambda: b"another secret")
@@ -151,6 +151,6 @@ def test_cache_key_depends_on_the_server_secret_not_just_the_id(monkeypatch):
 
 def test_as_signed_out_hides_the_traveler_for_the_rest_of_the_request():
     from gitaway import session
-    session._request_traveler.set(session.TRAVELERS["ari"])
+    session._request_traveler.set(session.sign_in({}, "u-ari", "ari.rivera@example.com"))
     session.as_signed_out()
     assert session.request_traveler() is None

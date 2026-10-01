@@ -23,7 +23,7 @@ def phone_page(browser, base_url):
     ctx = browser.new_context(viewport=PHONE, reduced_motion="reduce", has_touch=True, is_mobile=True)
     ctx.set_default_timeout(5000)
     page = ctx.new_page()
-    page.request.post(f"{base_url}/signin", form={"traveler": "ari", "next": "/", "intent": "save"}, max_redirects=0)
+    page.request.post(f"{base_url}/signin", form={"email": "ari.rivera@example.com", "next": "/", "intent": "save"}, max_redirects=0)
     page.request.post(f"{base_url}/pay", form={"f": "f1", "h": "h1", "c": "c1"}, max_redirects=0)
     yield page
     ctx.close()

@@ -2,13 +2,16 @@
 import html as htmllib
 import json
 import re
+from pathlib import Path
 from urllib.parse import quote as q
 
 import pytest
 
 from gitaway import catalog, session as ses, tripcal as cal
 from gitaway.pages import plan
-from tests.test_signin import session_data, sign_in
+from tests.test_signin import session_data, sign_in, tid
+
+ROOT = Path(__file__).resolve().parent.parent
 
 SAMPLE = "f=f1&h=h1&c=c1"
 NO_CAR = "f=f1&h=h1&c=none"
@@ -79,7 +82,7 @@ def test_the_old_no_car_link_means_no_car(client):
 def test_remembered_plan_keeps_the_skips(client):
     sign_in(client)
     client.get(f"/plan?{STAY_ONLY}")
-    assert session_data(client)["plan"]["ari"] == "f=none&h=h1&c=none"
+    assert session_data(client)["plan"][tid("ari")] == "f=none&h=h1&c=none"
     assert "f=none&amp;h=h1&amp;c=none" in client.get("/start").text
 
 
@@ -274,13 +277,13 @@ def test_booking_with_nothing_picked_is_refused_and_books_nothing(client):
     assert r.status_code == 200 and "Pick at least one thing to book" in r.text
     assert "bookings" not in session_data(client)
     with pytest.raises(ses.BookingError):
-        ses.book({"traveler": "ari"}, catalog.quote(None, None, None))
+        ses.book({"user_id": "ari"}, catalog.quote(None, None, None))
 
 
 def test_a_stay_only_booking_stores_nulls_and_what_is_charged(client):
     sign_in(client)
     assert post(client, STAY_ONLY).headers["location"] == "/booked"
-    b = session_data(client)["bookings"]["ari"]
+    b = session_data(client)["bookings"][tid("ari")]
     assert b["flight"] is None and b["car"] is None and b["stay"] == "h1" and b["total_cents"] == 154_000
     assert "rides" not in b and "fare" not in b and "bags" not in b
 
@@ -288,7 +291,7 @@ def test_a_stay_only_booking_stores_nulls_and_what_is_charged(client):
 def test_a_no_car_booking_charges_flight_and_stay_only(client):
     sign_in(client)
     post(client, NO_CAR)
-    b = session_data(client)["bookings"]["ari"]
+    b = session_data(client)["bookings"][tid("ari")]
     assert b["car"] is None and b["total_cents"] == 123_600 + 154_000
     assert cal.rides_of(b).cents == catalog.quote("f1", "h1", None).rides.cents
 
@@ -308,22 +311,22 @@ def test_every_mix_books_and_celebrates_in_matching_words(client):
 def test_booking_ids_differ_per_mix_and_paying_a_mix_twice_is_one_booking(client):
     sign_in(client)
     post(client, STAY_ONLY)
-    first = session_data(client)["bookings"]["ari"]
+    first = session_data(client)["bookings"][tid("ari")]
     post(client, STAY_ONLY)
-    assert session_data(client)["bookings"]["ari"] == first
+    assert session_data(client)["bookings"][tid("ari")] == first
     post(client, SAMPLE)
-    assert session_data(client)["bookings"]["ari"]["id"] != first["id"]
+    assert session_data(client)["bookings"][tid("ari")]["id"] != first["id"]
     assert ses.booking_id("ari", "f1", "h1", "c1") == "GA-" + __import__("hashlib").sha256(b"ari|f1|h1|c1").hexdigest()[:8].upper()  # the default id is unchanged
 
 
 def test_a_full_cookie_refuses_a_mix_booking_with_the_friendly_message(client, monkeypatch):
     sign_in(client)
     post(client, SAMPLE)
-    before = session_data(client)["bookings"]["ari"]
+    before = session_data(client)["bookings"][tid("ari")]
     monkeypatch.setattr("gitaway.session.BUDGET", 10)
     r = post(client, STAY_ONLY)
     assert r.status_code == 200 and "can&#x27;t hold another booking" in r.text.replace("can't", "can&#x27;t")
-    assert session_data(client)["bookings"]["ari"] == before
+    assert session_data(client)["bookings"][tid("ari")] == before
 
 
 def test_the_skip_booking_record_stays_inside_the_cookie_budget(client):
@@ -332,7 +335,7 @@ def test_the_skip_booking_record_stays_inside_the_cookie_budget(client):
     s = session_data(client)
     assert len(json.dumps(s)) < ses.BUDGET
     big = catalog.quote("f1", "h1", "c1", catalog.stay_pick("h1", "cq1ok1fs1", "bflcpk"), flight=catalog.flight_pick("f1", "xl", "8"))
-    ses.book(s2 := {"traveler": "ari"}, big)
+    ses.book(s2 := {"user_id": "ari"}, big)
     assert len(json.dumps(s2)) <= ses.BUDGET
 
 
@@ -424,7 +427,7 @@ def test_script_and_styles_carry_the_skip_and_undo_behaviour(client):
     js = client.get("/assets/js/workspace.js").text
     for word in ("skipLane", "undoSkip", "data-skipped", "line_html", "rides_html", "data.defaults"):
         assert word in js, word
-    css = open("assets/css/workspace.css").read()
+    css = open(ROOT / "assets/css/workspace.css").read()
     assert ".ws-pane[data-skipped]" in css and ".ws-rides-card" in css and ".ws-skip" in css
 
 

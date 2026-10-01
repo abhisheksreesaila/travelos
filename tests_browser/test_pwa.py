@@ -32,7 +32,7 @@ def ctxs(browser):
 
 
 def sign_in(ctx, base_url, who="ari"):
-    ctx.request.post(f"{base_url}/signin", form={"traveler": who, "next": "/", "intent": "save"}, max_redirects=0)
+    ctx.request.post(f"{base_url}/signin", form={"email": f"{who}@example.com", "next": "/", "intent": "save"}, max_redirects=0)
 
 
 def book_trip(ctx, base_url):
@@ -86,7 +86,7 @@ def test_posts_and_auth_routes_never_end_up_in_any_cache(ctxs, base_url):
     page = ctx.new_page()
     controlled(page, base_url)
     page.evaluate("fetch('/pay', {method: 'POST', body: new URLSearchParams({f: 'f1', h: 'h1', c: 'c1'})}).then(r => r.status)")
-    page.evaluate("fetch('/signin', {method: 'POST', body: new URLSearchParams({traveler: 'ari', next: '/', intent: 'save'})}).then(r => r.status)")
+    page.evaluate("fetch('/signin', {method: 'POST', body: new URLSearchParams({email: 'ari@example.com', next: '/', intent: 'save'})}).then(r => r.status)")
     for path in ("/signin", "/signin?next=%2Fplan", "/login", "/logout", "/auth/callback"):
         page.goto(f"{base_url}{path}")
     page.goto(f"{base_url}/discover")  # the worker is still busy being useful

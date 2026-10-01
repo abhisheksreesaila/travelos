@@ -4,7 +4,7 @@ import re
 from pathlib import Path
 
 from tests.test_calendar import FORM, add, book, tag
-from tests.test_signin import session_data, sign_in
+from tests.test_signin import session_data, sign_in, tid
 
 ROOT = Path(__file__).resolve().parent.parent
 TWO_NIGHTS = {"d": "2026-10-21", "r": "2026-10-23", "a": "2"}
@@ -16,11 +16,11 @@ def cookie_size(client):
 
 
 def activities(client):
-    return session_data(client)["cal"]["ari"]["a"]
+    return session_data(client)["cal"][tid("ari")]["a"]
 
 
 def notes(client):
-    return session_data(client)["cal"]["ari"]["n"]
+    return session_data(client)["cal"][tid("ari")]["n"]
 
 
 def drafts(html):

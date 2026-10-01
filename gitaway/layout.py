@@ -21,7 +21,7 @@ CLEAR_SITE_DATA = '"cache", "storage"'
 def clear_site_data(response):
     """Make the browser forget this site's caches and storage (saved pages, service worker). Call it on every sign-out.
 
-    F-039: when fh-saas /logout lands, pass its response through this too, so a shared phone keeps no private pages.
+    /logout and /signout (gitaway/pages/signin.py) both pass their response through this.
     """
     response.headers["Clear-Site-Data"] = CLEAR_SITE_DATA
     return response
