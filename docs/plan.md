@@ -237,11 +237,11 @@ Needs: F-039
 - [x] shared trips and creator trips are stored in a community DB everyone can browse; forks and saves are stored per family
 - [x] a shared trip's page works for anyone, signed in or out, on any device
 
-## F-042 Import a trip booked elsewhere [doing]
+## F-042 Import a trip booked elsewhere [done]
 Needs: F-040
-- [ ] docs/trip-template.md: a fill-in template (travelers, flight legs with airline, number, airports, local times and confirmation; hotel with address, dates, confirmation and room; optional car; notes)
-- [ ] /trips/import: paste the filled template (or fill a form) → preview → save; validation with friendly errors
-- [ ] imported flights, hotel and car show on the calendar like bookings, marked "Booked elsewhere", with confirmation numbers visible only to family members
+- [x] docs/trip-template.md: a fill-in template (travelers, flight legs with airline, number, airports, local times and confirmation; hotel with address, dates, confirmation and room; optional car; notes)
+- [x] /trips/import: paste the filled template (or fill a form) → preview → save; validation with friendly errors
+- [x] imported flights, hotel and car show on the calendar like bookings, marked "Booked elsewhere", with confirmation numbers visible only to family members
 - [ ] stretch: pasting an Expedia confirmation email pre-fills the template
 
 ## F-043 Invite family by Gmail [done]
