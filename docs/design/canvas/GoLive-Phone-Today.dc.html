@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Phone: today first</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Figtree:wght@400;500;600;700;800&amp;family=Caveat:wght@700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FFF8EE}
+button,a{font-family:'Figtree',sans-serif;color:#1E1A2E}
+button:focus-visible,a:focus-visible{outline:3px solid #1E1A2E;outline-offset:2px}
+@keyframes ga-pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,115,82,.5)}50%{box-shadow:0 0 0 8px rgba(255,115,82,0)}}
+.ga-now{animation:ga-pulse 2.4s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){.ga-now{animation:none}}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #FFF8EE; color: #1E1A2E; font-family: 'Figtree', 'Segoe UI', system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden; position: relative">
+
+<header style="padding: 18px 18px 10px; display: flex; align-items: center; gap: 10px">
+<span style="display: flex; flex-direction: column"><span style="font-size: 13px; font-weight: 800; color: #5A5470">LA WITH THE KIDS · DAY 2 OF 5</span><span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 28px; letter-spacing: -0.03em">{{title}}</span></span>
+<span style="margin-left: auto; display: flex"><span style="width: 36px; height: 36px; border-radius: 999px; background: #C3B2FF; border: 3px solid #FFF8EE; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center">AR</span><span style="width: 36px; height: 36px; margin-left: -10px; border-radius: 999px; background: #48D1A0; border: 3px solid #FFF8EE; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center">P</span></span>
+</header>
+
+<div style="flex: 1; min-height: 0; overflow: auto; padding: 4px 16px 16px; display: flex; flex-direction: column; gap: 12px">
+<sc-if value="{{onToday}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 12px">
+<!-- Up next -->
+<div style="border-radius: 26px; background: #1E1A2E; color: #FFFFFF; padding: 18px; display: flex; flex-direction: column; gap: 10px">
+<span style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 800; letter-spacing: .1em; color: #FFC93C"><span class="ga-now" style="width: 10px; height: 10px; border-radius: 999px; background: #FF7352"></span>UP NEXT · IN 40 MIN</span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px; line-height: 1.1">Griffith Observatory at sunset</span>
+<span style="font-size: 15px; font-weight: 600; color: #DDD8EA">5:00 – 7:30 PM · 25 min drive</span>
+<div style="display: flex; gap: 8px">
+<a href="#" style="flex: 1; height: 48px; border-radius: 999px; background: #FF7352; color: #1E1A2E; font-weight: 800; display: flex; align-items: center; justify-content: center; text-decoration: none; box-shadow: 0 4px 0 #C9431F">Directions</a>
+<a href="#" style="flex: 1; height: 48px; border-radius: 999px; background: #FFFFFF; color: #1E1A2E; font-weight: 800; display: flex; align-items: center; justify-content: center; text-decoration: none">Get an Uber</a>
+</div>
+</div>
+<!-- Today list -->
+<sc-for list="{{today}}" as="t" hint-placeholder-count="4">
+<div style="display: flex; gap: 12px; align-items: stretch">
+<span style="width: 56px; flex-shrink: 0; font-size: 13px; font-weight: 800; color: #5A5470; padding-top: 14px; text-align: right">{{t.time}}</span>
+<div style="flex: 1; border-radius: 20px; background: {{t.bg}}; color: {{t.fg}}; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; opacity: {{t.op}}">
+<span style="font-size: 11px; font-weight: 800; letter-spacing: .1em">{{t.kind}}</span>
+<span style="font-weight: 800; font-size: 16px">{{t.what}}</span>
+<span style="font-size: 13px; font-weight: 700; opacity: .8">{{t.sub}}</span>
+</div>
+</div>
+</sc-for>
+<!-- Stay card -->
+<div style="border-radius: 22px; background: #FFFFFF; box-shadow: 0 2px 3px -1px rgba(0,0,0,.1), 0 0 0 1px rgba(25,28,33,.08); padding: 14px; display: flex; gap: 12px; align-items: center">
+<span style="width: 48px; height: 48px; border-radius: 14px; background: #DDEEFF; display: flex; align-items: center; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1E1A2E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"></path></svg></span>
+<span style="flex: 1; display: flex; flex-direction: column"><span style="font-weight: 800; font-size: 16px">Your hotel tonight</span><span style="font-size: 13px; font-weight: 700; color: #4A4460">The Example Hotel · Santa Monica</span></span>
+<a href="#" aria-label="Hotel details" style="width: 44px; height: 44px; border-radius: 999px; background: #FAF7F2; display: flex; align-items: center; justify-content: center; text-decoration: none; font-weight: 800">›</a>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{onDays}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 10px">
+<sc-for list="{{days}}" as="d" hint-placeholder-count="5">
+<div style="border-radius: 22px; background: #FFFFFF; box-shadow: 0 2px 3px -1px rgba(0,0,0,.1), 0 0 0 1px rgba(25,28,33,.08); padding: 14px; display: flex; gap: 12px">
+<span style="width: 52px; height: 58px; border-radius: 16px; background: {{d.tint}}; display: flex; flex-direction: column; align-items: center; justify-content: center"><span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 22px; color: {{d.ink}}">{{d.n}}</span><span style="font-size: 11px; font-weight: 800">{{d.dow}}</span></span>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 4px"><span style="font-weight: 800; font-size: 16px">{{d.head}}</span><span style="font-size: 13px; font-weight: 700; color: #4A4460">{{d.items}}</span></span>
+</div>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{onNotes}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div style="padding: 14px 16px; border-radius: 20px; background: #FFF1C2; transform: rotate(-1deg); font-family: 'Caveat', cursive; font-size: 24px">Bring sunscreen for the pier! · Priya</div>
+<div style="padding: 14px 16px; border-radius: 20px; background: #D8F6EA; transform: rotate(1deg); font-family: 'Caveat', cursive; font-size: 24px">Kids want churros after the observatory · You</div>
+</div>
+</sc-if>
+</div>
+
+<!-- Add -->
+<button aria-label="Add a plan" style="position: absolute; right: 18px; bottom: 92px; width: 60px; height: 60px; border: 0; border-radius: 999px; background: #FF7352; box-shadow: 0 4px 0 #C9431F, 0 12px 24px -10px #C9431F; font-size: 30px; font-weight: 800; cursor: pointer">+</button>
+
+<!-- Tab bar -->
+<nav aria-label="Trip" style="flex-shrink: 0; height: 76px; padding: 8px 12px 16px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; background: #FFFFFF; box-shadow: 0 -1px 0 rgba(0,0,0,.06)">
+<sc-for list="{{tabs}}" as="t" hint-placeholder-count="3">
+<button onClick="{{t.go}}" aria-current="{{t.cur}}" style="border: 0; border-radius: 16px; background: {{t.bg}}; font-weight: 800; font-size: 14px; cursor: pointer">{{t.name}}</button>
+</sc-for>
+</nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { tab: 'today' }; }
+  renderVals() {
+    var self = this, s = this.state;
+    var names = [['today', 'Today'], ['days', 'All days'], ['notes', 'Notes']];
+    return {
+      title: s.tab === 'today' ? 'Saturday' : (s.tab === 'days' ? 'Your 5 days' : 'Trip notes'),
+      onToday: s.tab === 'today', onDays: s.tab === 'days', onNotes: s.tab === 'notes',
+      tabs: names.map(function (n) { var on = n[0] === s.tab; return { name: n[1], cur: on ? 'page' : 'false', bg: on ? '#FFE6DA' : 'transparent', go: function () { self.setState({ tab: n[0] }); } }; }),
+      today: [
+        { time: '9:00', kind: 'DONE', what: 'Breakfast at the hotel', sub: 'Included', bg: '#F2ECE3', fg: '#1E1A2E', op: .6 },
+        { time: '10:30', kind: 'DONE', what: 'Santa Monica Pier', sub: 'Added by Priya', bg: '#F2ECE3', fg: '#1E1A2E', op: .6 },
+        { time: '5:00', kind: 'NEXT', what: 'Griffith Observatory', sub: '5:00 – 7:30 PM', bg: '#FFE6DA', fg: '#1E1A2E', op: 1 },
+        { time: '8:00', kind: 'LATER', what: 'Tacos on Abbot Kinney', sub: 'Planned by voice', bg: '#D4F7EA', fg: '#1E1A2E', op: 1 }
+      ],
+      days: [
+        { n: 16, dow: 'FRI', tint: '#FFF1C2', ink: '#8A6200', head: 'Fly in · check in', items: 'AS 1234 lands 9:32 · Uber to hotel · Pool time' },
+        { n: 17, dow: 'SAT', tint: '#D4F7EA', ink: '#16865F', head: 'Pier and observatory', items: 'Pier · Observatory · Tacos' },
+        { n: 18, dow: 'SUN', tint: '#ECE4FF', ink: '#6A4FD6', head: 'Wide open', items: 'Nothing planned yet' },
+        { n: 19, dow: 'MON', tint: '#DDEEFF', ink: '#1B6FC9', head: 'Travel Town trains', items: 'Added by Mom' },
+        { n: 20, dow: 'TUE', tint: '#FFE3F1', ink: '#C23B82', head: 'Fly home', items: 'Check out 11:00 · AS 1235 at 2:10' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

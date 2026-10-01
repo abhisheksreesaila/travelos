@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Phone: swipe the days</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Figtree:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FFF8EE}
+button{font-family:'Figtree',sans-serif;color:#1E1A2E}
+button:focus-visible{outline:3px solid #1E1A2E;outline-offset:2px}
+.ga-strip{scroll-snap-type:x mandatory}
+.ga-strip > *{scroll-snap-align:center}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #FFF8EE; color: #1E1A2E; font-family: 'Figtree', 'Segoe UI', system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden">
+
+<header style="padding: 18px 18px 8px; display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 13px; font-weight: 800; color: #5A5470">LA WITH THE KIDS · OCT 16 – 20</span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 28px; letter-spacing: -0.03em">{{dayTitle}}</span>
+</header>
+
+<!-- Day strip -->
+<div class="ga-strip" role="tablist" aria-label="Days" style="display: flex; gap: 8px; overflow-x: auto; padding: 6px 16px 12px">
+<sc-for list="{{days}}" as="d" hint-placeholder-count="5">
+<button role="tab" aria-selected="{{d.sel}}" onClick="{{d.pick}}" style="flex: 0 0 64px; height: 76px; border: 0; border-radius: 20px; background: {{d.bg}}; box-shadow: {{d.ring}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; cursor: pointer">
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 24px; color: {{d.ink}}">{{d.n}}</span><span style="font-size: 12px; font-weight: 800">{{d.dow}}</span>
+<span style="display: flex; gap: 3px"><sc-for list="{{d.dots}}" as="x" hint-placeholder-count="2"><span style="width: 6px; height: 6px; border-radius: 999px; background: {{x}}"></span></sc-for></span>
+</button>
+</sc-for>
+</div>
+
+<!-- Timeline for the day -->
+<div style="flex: 1; min-height: 0; overflow: auto; padding: 4px 16px 16px; display: flex; flex-direction: column; gap: 10px">
+<sc-for list="{{items}}" as="i" hint-placeholder-count="4">
+<div style="border-radius: 22px; background: {{i.bg}}; color: {{i.fg}}; padding: 14px 16px; display: flex; gap: 12px; align-items: center">
+<span style="display: flex; flex-direction: column; flex: 1; gap: 2px"><span style="font-size: 12px; font-weight: 800; letter-spacing: .08em; opacity: .85">{{i.time}}</span><span style="font-weight: 800; font-size: 17px">{{i.what}}</span><span style="font-size: 13px; font-weight: 700; opacity: .8">{{i.sub}}</span></span>
+<sc-if value="{{i.booked}}" hint-placeholder-val="{{false}}"><span style="height: 26px; padding: 0 10px; border-radius: 999px; background: #FFFFFF; color: #1E1A2E; font-size: 11px; font-weight: 800; display: flex; align-items: center">BOOKED</span></sc-if>
+</div>
+</sc-for>
+<sc-if value="{{empty}}" hint-placeholder-val="{{false}}">
+<div style="border-radius: 22px; border: 3px dashed #FFB59F; padding: 22px; text-align: center; display: flex; flex-direction: column; gap: 10px; align-items: center">
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 22px">Wide open</span>
+<span style="font-size: 14px; font-weight: 700; color: #4A4460">Add something fun, or fork a day from a community trip.</span>
+<button style="height: 48px; padding: 0 22px; border: 0; border-radius: 999px; background: #FF7352; box-shadow: 0 4px 0 #C9431F; font-weight: 800; cursor: pointer">Add a plan</button>
+</div>
+</sc-if>
+</div>
+
+<!-- Quick add bar -->
+<div style="flex-shrink: 0; padding: 10px 12px 18px; background: #FFFFFF; box-shadow: 0 -1px 0 rgba(0,0,0,.06); display: flex; gap: 8px">
+<label for="quick" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Add a plan</label>
+<input id="quick" placeholder="Add a plan, e.g. Zoo at 10" style="flex: 1; height: 50px; border: 0; border-radius: 999px; background: #FAF7F2; padding: 0 18px; font-family: 'Figtree', sans-serif; font-size: 16px">
+<button aria-label="Talk to plan" style="width: 50px; height: 50px; border: 0; border-radius: 999px; background: #1E1A2E; color: #FFFFFF; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg></button>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { day: 1 }; }
+  renderVals() {
+    var self = this, s = this.state;
+    var D = [
+      { n: 16, dow: 'FRI', tint: '#FFF1C2', ink: '#8A6200', title: 'Friday · fly in', items: [
+        { time: '8:05 – 9:32 AM', what: 'AS 1234 · SFO → LAX', sub: 'Confirmation in trip details', bg: '#1E1A2E', fg: '#FFFFFF', booked: true },
+        { time: '10:02 AM', what: 'Uber · LAX → hotel', sub: 'UberXL · simulated', bg: '#DDEEFF', fg: '#1E1A2E', booked: false },
+        { time: '3:00 PM', what: 'Check in · The Example Hotel', sub: 'Santa Monica', bg: '#1E1A2E', fg: '#FFFFFF', booked: true },
+        { time: '4:00 – 6:00 PM', what: 'Pool time', sub: 'Planned by voice', bg: '#D4F7EA', fg: '#1E1A2E', booked: false } ] },
+      { n: 17, dow: 'SAT', tint: '#D4F7EA', ink: '#16865F', title: 'Saturday', items: [
+        { time: '10:30 AM', what: 'Santa Monica Pier', sub: 'Added by Priya', bg: '#FFE3F1', fg: '#1E1A2E', booked: false },
+        { time: '5:00 – 7:30 PM', what: 'Griffith Observatory', sub: 'At sunset', bg: '#ECE4FF', fg: '#1E1A2E', booked: false },
+        { time: '8:00 PM', what: 'Tacos on Abbot Kinney', sub: 'Planned by voice', bg: '#FFF1C2', fg: '#1E1A2E', booked: false } ] },
+      { n: 18, dow: 'SUN', tint: '#ECE4FF', ink: '#6A4FD6', title: 'Sunday', items: [] },
+      { n: 19, dow: 'MON', tint: '#DDEEFF', ink: '#1B6FC9', title: 'Monday', items: [
+        { time: '10:00 AM', what: 'Travel Town trains', sub: 'Added by Mom', bg: '#D4F7EA', fg: '#1E1A2E', booked: false } ] },
+      { n: 20, dow: 'TUE', tint: '#FFE3F1', ink: '#C23B82', title: 'Tuesday · fly home', items: [
+        { time: '11:00 AM', what: 'Check out', sub: 'The Example Hotel', bg: '#1E1A2E', fg: '#FFFFFF', booked: true },
+        { time: '2:10 PM', what: 'AS 1235 · LAX → SFO', sub: 'Leave by 11:45', bg: '#1E1A2E', fg: '#FFFFFF', booked: true } ] }
+    ];
+    var cur = D[s.day];
+    return {
+      dayTitle: cur.title, items: cur.items, empty: cur.items.length === 0,
+      days: D.map(function (d, i) { var on = i === s.day; return { n: d.n, dow: d.dow, ink: d.ink, sel: on ? 'true' : 'false', bg: on ? d.tint : '#FFFFFF', ring: on ? '0 0 0 3px #FF7352' : '0 2px 3px -1px rgba(0,0,0,.1), 0 0 0 1px rgba(25,28,33,.08)', dots: d.items.slice(0, 3).map(function (x) { return x.booked ? '#1E1A2E' : '#FF7352'; }), pick: function () { self.setState({ day: i }); } }; })
+    };
+  }
+}
+</script>
+</body>
+</html>
