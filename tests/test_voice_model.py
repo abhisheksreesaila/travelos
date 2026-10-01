@@ -116,3 +116,8 @@ def test_the_note_lists_what_was_planned_and_fits_a_note():
 def test_plan_keys_are_stable(night):
     keys = [p.key for p in voice.plans(SAMPLE, "X", night=night)]
     assert keys == sorted(set(keys))
+
+
+def test_with_no_stay_there_is_no_pool_plan():
+    keys = [p.key for p in voice.plans(SAMPLE, None, night=0)]
+    assert keys == ["v0", "v1", "v3"]

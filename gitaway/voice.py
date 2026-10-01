@@ -13,7 +13,7 @@ preview shows it as a clash with the reason, and Apply skips it, exactly like a 
 
 from dataclasses import dataclass
 
-from gitaway import catalog, session as ses, tripcal as cal
+from gitaway import session as ses, tripcal as cal
 
 SENTENCE = "Tacos for dinner, the observatory on Sunday at sunset, pool time Monday morning, and a beach walk on our last day."
 NOTE_PREFIX = "Planned by voice: "
@@ -86,9 +86,10 @@ def plans(dates, stay_name, night=None, home=True):
     out = []
     if question(dates).option(night):
         out.append(cal.Plan("v0", night, TACOS_START, TACOS_START + TACOS_LEN, "Tacos at Mariscos La Ola", "food"))
+    out.append(cal.Plan("v1", sunday(dates), 17 * 60, 19 * 60 + 30, "Griffith Observatory at sunset", "culture"))
+    if stay_name:  # pool time needs a hotel: staying with friends (no stay booked) leaves it out
+        out.append(cal.Plan("v2", monday(dates), 9 * 60, 11 * 60 + 30, cal._short(f"Pool time at {stay_name}"), "fun"))
     out += [
-        cal.Plan("v1", sunday(dates), 17 * 60, 19 * 60 + 30, "Griffith Observatory at sunset", "culture"),
-        cal.Plan("v2", monday(dates), 9 * 60, 11 * 60 + 30, cal._short(f"Pool time at {stay_name}"), "fun"),
         cal.Plan("v3", len(dates) - 1, 9 * 60, 10 * 60 + 30, "Beach walk before the flight home" if home else "Beach walk", "outdoors"),
     ]
     return out
@@ -112,13 +113,13 @@ def note_text(chosen, dates):
 # ---- the session seams ---------------------------------------------------------------------------------------------
 
 def setup(session, demo):
-    """(dates, stay name) of the booked trip. Raises CalendarError when signed out or nothing is booked."""
+    """(dates, stay name or None with no stay) of the booked trip. Raises CalendarError when signed out or nothing is booked."""
     if not ses.current_traveler(session):
         raise cal.CalendarError("Sign in to use the trip calendar.")
     b = ses.booking(session)
     if not b:
         raise cal.CalendarError("Book a trip first, then plan the gaps.")
-    return cal.days(cal.trip(demo, b)), catalog.offer(b["stay"]).name
+    return cal.days(cal.trip(demo, b)), (cal.stay_of(b).name if cal.stay_of(b) else None)
 
 
 def plans_for(session, night=None, demo=""):

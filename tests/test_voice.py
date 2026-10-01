@@ -342,3 +342,38 @@ def test_the_script_finishes_hearing_the_same_way_with_and_without_motion():
 def test_the_helpers_calendar_uses_are_public():
     from gitaway.pages import voice as ui
     assert ui.parse_ids("a1,b2,a22") == ["a1", "a22"] and ui.note_id("n5") == "n5" and ui.note_id("x") == ""
+
+
+# ---- book any mix (F-033): bookings with a lane skipped -----------------------------------------------------------------
+
+def book_mix(client, **pick):
+    sign_in(client, "ari")
+    return client.post("/pay", data=pick, follow_redirects=False)
+
+
+def test_a_flight_only_booking_has_no_pool_plan_and_still_applies(client):
+    book_mix(client, f="f1", h="none", c="none")
+    html = client.get("/calendar?voice=1&night=0").text
+    assert client.get("/calendar?voice=1&night=0").status_code == 200
+    assert set(drafts(html)) == {"v0", "v1", "v3"} and "Pool time" not in html
+    r = apply(client, 0, "v0", "v1", "v3")
+    assert r.status_code == 303 and len(activities(client)) == 3
+    assert "Beach walk before the flight home" in [a["t"] for a in activities(client)]
+
+
+def test_a_stay_only_booking_has_no_flight_window_and_a_plain_beach_walk(client):
+    book_mix(client, f="none", h="h1", c="none")
+    html = client.get("/calendar?voice=1&night=0").text
+    assert set(drafts(html)) == {"v0", "v1", "v2", "v3"} and all(c for c, d in rows(html).values())    # nothing clashes with a flight that is not there
+    apply(client, 0, "v0", "v1", "v2", "v3")
+    titles = [a["t"] for a in activities(client)]
+    assert "Beach walk" in titles and "Beach walk before the flight home" not in titles and "Pool time at The Tidewater" in titles
+    assert activities(client)
+
+
+def test_a_car_only_booking_does_not_crash(client):
+    book_mix(client, f="none", h="none", c="c1")
+    r = client.get("/calendar?voice=1&night=0")
+    assert r.status_code == 200 and set(drafts(r.text)) == {"v0", "v1", "v3"}
+    assert apply(client, 0, "v0", "v1", "v3").status_code == 303 and len(activities(client)) == 3
+    assert client.post("/calendar/voice/undo", data={"ids": "a1,a2,a3", "night": "0"}, follow_redirects=False).status_code == 303
