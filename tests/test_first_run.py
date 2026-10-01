@@ -100,3 +100,9 @@ def test_every_first_screen_of_a_new_family_has_a_way_forward(new):
         r = new.get(path)
         assert r.status_code in (200, 404), path
         assert links(r.text) & {"/start", "/trips/import", "/community", "#st-form"}, path
+
+
+def test_share_without_a_trip_shows_the_first_run_ways_in(new):
+    for r in (new.get("/share"), new.post("/share")):
+        w = welcome_of(r.text)
+        assert all(p in w for p in PATHS) and "Book a trip first" not in r.text

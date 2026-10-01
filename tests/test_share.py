@@ -23,9 +23,9 @@ def test_share_needs_a_traveler_and_a_booked_trip(client):
     assert r.status_code == 303 and r.headers["location"].startswith("/signin?next=")
     sign_in(client)
     r = share(client)
-    assert r.status_code == 409 and "Book a trip first" in r.text
+    assert r.status_code == 409 and "Plan a trip or import one you booked" in r.text
     assert community.rows() == []
-    assert client.get("/share").status_code == 200 and "Book a trip first" in client.get("/share").text
+    assert client.get("/share").status_code == 200 and "Import a trip you booked" in client.get("/share").text
 
 
 def test_the_calendar_share_button_is_one_tap(client):

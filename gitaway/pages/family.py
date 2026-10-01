@@ -109,8 +109,7 @@ def family_page(request, session, error="", status=200, email="", role="editor")
                       aria_labelledby="fam-wait-h", cls="fam-sec") if pending else ""
     alone = Section(H2("Just you so far", id="fam-alone-h"),
                     P("Trips are better with company. Invite the people you travel with and they can add plans, leave notes and see the same calendar."),
-                    A("Invite someone", href="#invite", cls="btn btn-primary btn-sm") if my_role == "admin" else
-                    P("Ask the family admin to invite more people.", cls="fam-sub"),
+                    A("Invite someone", href="#invite", cls="btn btn-primary btn-sm"),  # the only member is the admin
                     aria_labelledby="fam-alone-h", id="fam-alone", cls="fam-sec fam-alone") if len(crew) == 1 and not pending else ""
     note = P("Only a family admin can invite people or change who is in the family.", cls="fam-sub", id="fam-note") if my_role != "admin" else ""
     out = page("Your family", Div(

@@ -54,3 +54,4 @@
 /* F-053: the owner on their own is invited to ask someone along */
 .fam-alone { padding: 1.25rem; border-radius: var(--r-lg); background: var(--sun-tint); display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; }
 .fam-alone p { color: var(--ink-2); font-weight: 600; max-width: 36rem; }
+@media (max-width: 720px) { .fam-select, .fam-field select, .fam-field input { min-height: 2.75rem; } }

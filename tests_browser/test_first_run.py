@@ -61,3 +61,10 @@ def test_each_way_in_lands_on_a_working_page(new_family, base_url, viewport):
     expect(page.locator("#st-form")).to_be_visible()
     assert page.url.endswith("#st-form")
     no_sideways_scroll(page)
+
+
+def test_the_invite_form_fields_are_tall_enough_on_a_phone(new_family, base_url):
+    page = new_family(PHONE)
+    page.goto(f"{base_url}/family")
+    for sel in ("#fam-email", "#fam-role-pick"):
+        assert page.locator(sel).bounding_box()["height"] >= 44, sel

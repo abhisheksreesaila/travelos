@@ -12,7 +12,7 @@ from fasthtml.common import A, Button, Div, Form, H1, H2, Img, Input, Label, Lin
 from fasthtml.core import FtResponse
 from starlette.responses import RedirectResponse
 
-from gitaway import community, hub, session as ses, share
+from gitaway import community, firstrun, hub, session as ses, share
 from gitaway.icons import icon
 from gitaway.itinerary_view import _icon
 from gitaway.itineraries import PIER
@@ -28,8 +28,7 @@ def _signin(path="/share"):
 
 def sorry(message, status=200):
     return FtResponse(page("Share your trip", Section(
-        Div(H1("Share your trip"), P(message), A("Plan a trip", href="/plan", cls="btn btn-primary"), A("Back to the calendar", href="/calendar", cls="btn"),
-            cls="sh-sorry"), cls="ga-soon ga-wrap"), head=HEAD), status_code=status)
+        firstrun.welcome("Share your trip", message, heading=H1, eyebrow="NO TRIP YET"), cls="ga-soon ga-wrap"), head=HEAD), status_code=status)
 
 
 def preview(session, tags):
@@ -85,7 +84,7 @@ def done_page(session, entry):
             cls="sh-dialog card sh-done", role="status"), cls="sh ga-wrap"), head=HEAD)
 
 
-NO_BOOKING = "Book a trip first, then share it. Your calendar is what we turn into the scrapbook page."
+NO_BOOKING = "Plan a trip or import one you booked, then share it. Your calendar is what we turn into the scrapbook page."
 
 
 def register(app):

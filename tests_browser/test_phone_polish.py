@@ -11,7 +11,7 @@ SMALL_TEXT = """() => { const out = []; const w = document.createTreeWalker(docu
   return out; }"""
 
 SMALL_CONTROLS = """() => [...document.querySelectorAll('a[href],button,input:not([type=hidden]),select,textarea,summary,[role=button]')]
-  .filter(e => { const r = e.getBoundingClientRect(); return !e.closest('[hidden]') && !e.closest('details:not([open]) > :not(summary)') &&!e.classList.contains('sr-only') && getComputedStyle(e).display !== 'none'
+  .filter(e => { const r = e.getBoundingClientRect(); return !e.closest('[hidden]') &&!e.classList.contains('sr-only') && getComputedStyle(e).display !== 'none'
     && getComputedStyle(e).visibility !== 'hidden' && r.width && r.height && (r.width < 43.5 || r.height < 43.5); })
   .map(e => e.tagName + '.' + e.className + ' ' + Math.round(e.getBoundingClientRect().width) + 'x' + Math.round(e.getBoundingClientRect().height))"""
 
@@ -33,6 +33,7 @@ def phone_page(browser, base_url):
 def test_phone_has_no_small_text_small_controls_or_sideways_scroll(phone_page, base_url, path):
     phone_page.goto(base_url + path)
     phone_page.wait_for_load_state("networkidle")
+    phone_page.evaluate("document.querySelectorAll('details').forEach(d => d.open = true)")  # measure what is inside closed menus too
     assert phone_page.evaluate(SMALL_TEXT) == []
     assert phone_page.evaluate(SMALL_CONTROLS) == []
     assert phone_page.evaluate(OVERFLOW) == 0
