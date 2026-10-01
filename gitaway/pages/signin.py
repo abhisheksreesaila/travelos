@@ -68,14 +68,10 @@ def dialog(next_path, intent, asked=None, dev=False, google=False, error=""):
 
 def _continue(session, intent, next_path):
     """What the signed-in traveler meant to do before the sign-in: fork or save the trip at `next`."""
-    try:
-        if intent == "fork":
-            ses.add_fork(session, next_path)
-        elif intent == "save":  # only when asked for: a plain "Sign in" on a trip page must not save it
-            ses.add_save(session, next_path)
-    except ses.KeepError as e:
-        from gitaway.pages.forks import sorry
-        return sorry(str(e), next_path)
+    if intent == "fork":
+        ses.add_fork(session, next_path)
+    elif intent == "save":  # only when asked for: a plain "Sign in" on a trip page must not save it
+        ses.add_save(session, next_path)
 
 
 def _page(request, next_path, intent, asked, error="", status=200):
@@ -142,11 +138,7 @@ def register(app):
         next_path = ses.safe_next(next)
         if not ses.current_traveler(session):
             return RedirectResponse(f"/signin?next={quote(next_path, safe='/')}&intent=fork", status_code=303)
-        try:
-            ses.add_fork(session, next_path)
-        except ses.KeepError as e:
-            from gitaway.pages.forks import sorry
-            return sorry(str(e), next_path)
+        ses.add_fork(session, next_path)
         return RedirectResponse(next_path, status_code=303)
 
     @app.route("/logout", methods=["GET", "POST"])

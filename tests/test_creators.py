@@ -5,7 +5,7 @@ import re
 import pytest
 from starlette.testclient import TestClient
 
-from gitaway import creators, hub
+from gitaway import community, creators, hub
 from gitaway.itineraries import safe_href
 from tests.test_signin import session_data, sign_in, tid
 
@@ -27,7 +27,7 @@ def submit(client, **data):
 
 
 def slug_of(client):
-    return session_data(client)["hub"][tid("ari")][0]["s"]
+    return community.rows(kind="creator", owner=tid("ari"))[0]["slug"]
 
 
 def day_count(html):
@@ -177,7 +177,7 @@ def test_submit_needs_both_confirm_boxes(client):
     for data in ({"form": "1", "do": "submit"}, {"form": "1", "do": "submit", "ok1": "1"}, {"form": "1", "do": "submit", "ok2": "1"}):
         r = client.post("/creators/draft", data=data, follow_redirects=False)
         assert r.status_code == 422 and 'role="alert"' in r.text and "accurate" in r.text
-        assert "hub" not in session_data(client)
+        assert community.rows() == []
     assert client.get("/creators/draft").status_code == 200
 
 
@@ -185,7 +185,7 @@ def test_signed_out_submit_goes_through_the_demo_sign_in(client):
     paste(client)
     r = submit(client)
     assert r.status_code == 303 and r.headers["location"].startswith("/signin?next=%2Fcreators%2Ffinish")
-    assert "hub" not in session_data(client)
+    assert community.rows() == []
     assert sign_in(client, next="/creators/finish").headers["location"] == "/creators/finish"
     page = client.get("/creators/finish")
     assert page.status_code == 200 and 'method="post"' in page.text and "hub" not in session_data(client)   # a GET publishes nothing
@@ -206,8 +206,9 @@ def test_publish_puts_the_trip_in_the_hub_with_its_own_page(client):
     r = submit(client, title="Sun, tacos & tides")
     assert r.status_code == 303 and r.headers["location"] == "/creators/done"
     slug = slug_of(client)
-    row = session_data(client)["hub"][tid("ari")][0]
-    assert row["t"] == "Sun, tacos & tides" and row["k"] == "YouTube" and "m" not in row
+    row = community.rows(owner=tid("ari"))[0]
+    assert row["title"] == "Sun, tacos & tides" and row["kind"] == "creator" and row["owner_family"] == session_data(client)["tenant_id"]
+    assert [c.source for c in hub.cards({}) if c.slug == slug] == ["YouTube"]
     assert "cr" not in session_data(client)  # the draft is gone, the trip is published
     done = client.get("/creators/done").text
     assert f'href="/trips/{slug}"' in done and 'href="/discover"' in done and "live" in done.lower()
@@ -227,7 +228,8 @@ def test_the_trip_page_reflects_the_answers_and_edits(client):
     html = client.get(f"/trips/{slug_of(client)}").text
     assert 'id="day-2"' in html and 'id="day-3"' not in html
     assert "Pet friendly" in html and "Best in fall" in html and "Mine one" in html
-    assert session_data(client)["hub"][tid("ari")][0]["g"] == ["pet"] and session_data(client)["hub"][tid("ari")][0]["n"] == 2
+    row = community.rows(owner=tid("ari"))[0]
+    assert row["tags"] == ["pet"] and [c.days for c in hub.cards({}) if c.slug == row["slug"]] == [2]
 
 
 def test_the_trip_page_links_back_to_the_creators_channel(client):
@@ -282,32 +284,32 @@ def test_publishing_twice_replaces_and_extra_links_are_capped(client):
     submit(client)
     paste(client)
     submit(client, title="Again")
-    rows = session_data(client)["hub"][tid("ari")]
-    assert len(rows) == 1 and rows[0]["t"] == "Again"
+    rows = community.rows(owner=tid("ari"))
+    assert len(rows) == 1 and rows[0]["title"] == "Again"
     r = None
     for i in range(creators.MAX_TRIPS):
         paste(client, f"https://youtu.be/other{i}")
         r = submit(client)
-    assert r.status_code == 409 and len(session_data(client)["crp"][tid("ari")]) == creators.MAX_TRIPS
+    assert r.status_code == 409 and len(community.rows(owner=tid("ari"))) == creators.MAX_TRIPS
 
 
-def test_a_full_cookie_refuses_cleanly_and_changes_nothing():
+def test_publishing_does_not_depend_on_cookie_room(client):
+    """F-041: the published trip goes to the community database, so a full cookie does not stop it."""
     s = {"user_id": "ari", "cr": {"u": YT, "k": "12"}, "pad": "x" * 2500}
-    before = {k: (dict(v) if isinstance(v, dict) else v) for k, v in s.items()}
-    with pytest.raises(hub.HubError) as e:
-        creators.publish(s)
-    assert "full" in str(e.value) and s == before
+    card = creators.publish(s)
+    assert "cr" not in s and [r["slug"] for r in community.rows(kind="creator")] == [card.slug]
 
 
-def test_the_trip_is_served_to_this_browser_only(client):
+def test_the_trip_is_served_to_every_browser(client):
     from main import app
     sign_in(client)
     paste(client)
     submit(client)
     slug = slug_of(client)
     client.post("/logout")
-    assert client.get(f"/trips/{slug}").status_code == 200  # same browser: the demo community
-    assert TestClient(app).get(f"/trips/{slug}").status_code == 404
+    assert client.get(f"/trips/{slug}").status_code == 200
+    other = TestClient(app)  # another device, never signed in
+    assert other.get(f"/trips/{slug}").status_code == 200 and slug in other.get("/discover").text
 
 
 def test_progress_line_gets_shorter(client):
@@ -375,7 +377,7 @@ def test_finish_publishes_only_on_post(client):
     submit(client)
     sign_in(client)
     assert client.get("/creators/finish").status_code == 200
-    assert "hub" not in session_data(client)
+    assert community.rows() == []
     assert client.post("/creators/finish", follow_redirects=False).headers["location"] == "/creators/done"
 
 

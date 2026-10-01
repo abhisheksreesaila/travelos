@@ -3,7 +3,7 @@
 import dataclasses
 import re
 
-from gitaway import itineraries, session as ses, tripcal as cal
+from gitaway import community, itineraries, session as ses, tripcal as cal
 from tests.test_calendar import FORM, add, book
 from tests.test_forks import OTHER, SD, TRIP, apply, fork, plan_keys, titles
 from tests.test_signin import session_data, sign_in, tid
@@ -25,41 +25,20 @@ def test_made_up_slugs_are_not_forked_or_saved(client):
         client.post("/save", data={"next": path})
         client.get(f"/signin?next={path}&intent=fork")
         client.get(f"/signin?next={path}&intent=save")
-    data = session_data(client)
-    assert "forks" not in data and "saves" not in data
+    assert ses.forks(session_data(client)) == [] and ses.saved(session_data(client)) == []
 
 
-def test_forks_and_saves_are_refused_before_the_cookie_overflows(client):
+def test_a_full_calendar_cookie_does_not_limit_forks_and_saves(client):
+    """F-041: forks and saves live in the family's database, so a calendar that fills the cookie never refuses them."""
     book(client)
     for i in range(40):
-        r = add(client, id=f"a{i + 1}", day=str(1 + i % 3), start="12:00", end="12:30", title=f"Plan number {i:02d} " + "x" * 20)
-        if r.status_code == 409:
-            break
-    refused, refused_slug = [], None
-    for slug in (TRIP, OTHER, SD, "dog-friendly-big-sur-drive"):
-        r = client.post("/fork", data={"next": f"/trips/{slug}"}, follow_redirects=False)
-        refused.append(r.status_code)
-        refused_slug = refused_slug or (slug if r.status_code == 409 else None)
-        assert r.status_code in (303, 409)
-        r2 = client.post("/save", data={"next": f"/trips/{slug}"}, follow_redirects=False)
-        refused.append(r2.status_code)
-        assert len(str(session_data(client)).replace("'", '"')) <= ses.BUDGET + 200
-        assert cookie_size(client) <= 3600
-    assert 409 in refused, "a nearly full cookie must say no"
-    page = client.post("/fork", data={"next": f"/trips/{refused_slug}"})
-    assert page.status_code == 409 and "full" in page.text
-
-
-def test_signing_in_to_fork_with_no_room_says_so(client):
-    sign_in(client)
-    book(client)
-    for i in range(80):
         if add(client, id=f"a{i + 1}", day=str(1 + i % 3), start="12:00", end="12:30", title=f"Plan number {i:02d} " + "x" * 20).status_code == 409:
             break
-    for i in range(30):  # then small notes, until not even one more fits
-        client.post("/calendar/notes", data={"id": f"n{900 + i}", "text": "y" * max(1, 40 - 15 * (i // 10))})
-    r = client.get(f"/signin?next=/trips/{TRIP}&intent=fork", follow_redirects=False)
-    assert r.status_code == 409 and "full" in r.text
+    for slug in (TRIP, OTHER, SD, "dog-friendly-big-sur-drive"):
+        assert client.post("/fork", data={"next": f"/trips/{slug}"}, follow_redirects=False).status_code == 303
+        assert client.post("/save", data={"next": f"/trips/{slug}"}, follow_redirects=False).status_code == 303
+    assert len(ses.forks(session_data(client))) == 4 and len(ses.saved(session_data(client))) == 4
+    assert client.get(f"/signin?next=/trips/{TRIP}&intent=fork", follow_redirects=False).status_code == 303
 
 
 # ---- the booked trip's real length ---------------------------------------------------------------------------------
@@ -204,7 +183,7 @@ def test_a_creator_trip_can_be_forked_saved_and_applied(client):
     book(client)
     client.post("/creators", data={"link": "https://www.youtube.com/watch?v=our-la-family-week"})
     client.post("/creators/draft", data={"form": "1", "do": "submit", "ok1": "1", "ok2": "1", "title": "Sun, tacos & tides"})
-    slug = session_data(client)["hub"][tid("ari")][0]["s"]
+    slug = community.rows(kind="creator", owner=tid("ari"))[0]["slug"]
     assert client.post("/fork", data={"next": f"/trips/{slug}"}, follow_redirects=False).status_code == 303
     assert client.post("/save", data={"next": f"/trips/{slug}"}, follow_redirects=False).status_code == 303
     assert "Sun, tacos &amp; tides" in client.get("/forks").text

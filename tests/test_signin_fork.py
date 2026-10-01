@@ -1,3 +1,4 @@
+from gitaway import session as ses
 from tests.test_signin import session_data, sign_in, tid
 
 
@@ -6,7 +7,7 @@ def test_signed_in_fork_link_records_the_fork(client):
     for slug in ["sun-tacos-and-tide-pools", "la-for-two-slow-mornings", "sun-tacos-and-tide-pools"]:
         r = client.get(f"/signin?next=/trips/{slug}&intent=fork", follow_redirects=False)
         assert r.headers["location"] == f"/trips/{slug}"
-    assert session_data(client)["forks"] == {tid("ari"): ["sun-tacos-and-tide-pools", "la-for-two-slow-mornings"]}
+    assert ses.forks(session_data(client)) == ["sun-tacos-and-tide-pools", "la-for-two-slow-mornings"]
 
 
 def test_signed_in_non_fork_intent_does_not_fork(client):
@@ -26,7 +27,7 @@ def test_post_fork_adds_once_and_redirects_local_only(client):
     for slug in ["sun-tacos-and-tide-pools", "la-for-two-slow-mornings", "sun-tacos-and-tide-pools"]:
         r = client.post("/fork", data={"next": f"/trips/{slug}"}, follow_redirects=False)
         assert r.status_code == 303 and r.headers["location"] == f"/trips/{slug}"
-    assert session_data(client)["forks"] == {tid("ari"): ["sun-tacos-and-tide-pools", "la-for-two-slow-mornings"]}
+    assert ses.forks(session_data(client)) == ["sun-tacos-and-tide-pools", "la-for-two-slow-mornings"]
     assert client.post("/fork", data={"next": "//evil.example"}, follow_redirects=False).headers["location"] == "/"
 
 

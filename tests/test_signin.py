@@ -87,25 +87,27 @@ def test_fork_intent_adds_slug_once_over_http(client):
     sign_in(client, next="/trips/sun-tacos-and-tide-pools", intent="fork")
     sign_in(client, next="/trips/sun-tacos-and-tide-pools", intent="fork")
     sign_in(client, next="/trips/la-for-two-slow-mornings", intent="save")
-    assert session_data(client)["forks"] == {user_id(client): ["sun-tacos-and-tide-pools"]}
+    assert ses.forks(session_data(client)) == ["sun-tacos-and-tide-pools"]
 
 
 def test_fork_helpers():
+    """Forks belong to the signed-in person's family (their database), not to the cookie."""
+    from gitaway import auth
     s = {}
-    ses.sign_in(s, "ari", "ari.rivera@example.com")
+    auth.sign_in_dev(s, EMAILS["ari"])
     assert ses.add_fork(s, "/plan") is False
     assert ses.add_fork(s, "/trips/nope") is False  # a trip that does not exist is not forked
     assert ses.add_fork(s, "/trips/sun-tacos-and-tide-pools?y=1") is True
     assert ses.add_fork(s, "/trips/sun-tacos-and-tide-pools") is False
     assert ses.forks(s) == ["sun-tacos-and-tide-pools"]
-    ses.sign_in(s, "sam", "sam.kim@example.com")
+    ari = dict(s)
+    auth.sign_in_dev(s, EMAILS["sam"])
     assert ses.forks(s) == []
     ses.add_fork(s, "/trips/la-for-two-slow-mornings")
-    ses.sign_in(s, "ari", "ari.rivera@example.com")
-    assert ses.forks(s) == ["sun-tacos-and-tide-pools"]
-    assert ses.current_traveler(s).initials == "AR"
-    ses.sign_out(s)
-    assert ses.current_traveler(s) is None and ses.forks(s) == []
+    assert ses.forks(ari) == ["sun-tacos-and-tide-pools"]
+    assert ses.current_traveler(ari).initials == "AR"
+    ses.sign_out(ari)
+    assert ses.current_traveler(ari) is None and ses.forks(ari) == []
 
 
 def test_header_signed_out_and_in(client):

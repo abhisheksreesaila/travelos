@@ -1,37 +1,23 @@
-"""The community hub's model (F-022): which trips it lists, how they filter, and how a trip gets added.
+"""The community hub's model (F-022, F-041): which trips it lists, how they filter, and how a trip gets added.
 
-The hub lists the fake community itineraries in `gitaway.itineraries` plus whatever the signed-in traveler has published
-in this browser session (their shared trip, and later a creator import). Publishing is the one door in:
+The hub lists the fake community itineraries in `gitaway.itineraries` plus every trip published to the community database
+(`gitaway.community`): families' shared trips and creators' trips. Publishing is the one door in, through `gitaway.share`
+and `gitaway.creators`, which freeze the page as a snapshot. Everything published is listed for everyone, signed in or out;
+cards published by the signed-in traveler are marked `mine`.
 
-    hub.publish(session, slug=..., title=..., place=..., days=..., author=..., tags=("kid",), source="YouTube")
-
-F-023 calls this to put a creator itinerary in the hub. The entry is only the card (compact, because the signed cookie
-is small); the page behind `/trips/<slug>` is the caller's to serve. Publishing the same slug again replaces the entry.
-
-Everything published in this browser session, by any demo traveler, is listed for everyone using it: that is the demo's
-community. Cards published by the signed-in traveler are marked `mine`.
-
-Session shape: {"hub": {"<traveler id>": [{"s": slug, "t": title, "p": place, "n": days, "a": author, "g": [tag keys],
-                                           "k": source label or absent, "c": theme, "m": 1 when it is the traveler's own shared trip,
-                                           "f": cover photo key (COVERS) or absent}]}}
-Pure functions over a session dict, like gitaway.session.
+Pure functions over a session dict (for the signed-in person) and the community database.
 """
 
-import json
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
-from gitaway import itineraries, session as ses
+from gitaway import community, itineraries
+from gitaway.community import HubError  # noqa: F401  (the error publishers raise, re-exported for them)
 
 # tag key -> (label, tint token name, icon name)
 TAGS = {"kid": ("Kid friendly", "sun", "kid"), "pet": ("Pet friendly", "mint", "paw"), "couple": ("Couple friendly", "bubble", "couple")}
-MAX_ENTRIES = 6
 MAX_TEXT = 60
 DEFAULT_PHOTO = ("/assets/photos/santa-monica-beach-pier.jpg", "Santa Monica Pier")
 COVERS = {"pier": DEFAULT_PHOTO, "venice": (itineraries.VENICE, "Venice Beach, Los Angeles")}  # cover photo keys a creator trip can use
-
-
-class HubError(ValueError):
-    """A publish the demo refuses; the message is fit to show the traveler."""
 
 
 @dataclass(frozen=True)
@@ -63,34 +49,12 @@ def _from_itinerary(trip) -> HubCard:
                    source, photo.src if photo else "", photo.alt if photo else "", trip.theme)
 
 
-def entries(session) -> list:
-    """The signed-in traveler's published entries (raw rows), oldest first. Empty when signed out."""
-    t = ses.current_traveler(session)
-    return [dict(e) for e in (session.get("hub") or {}).get(t.id, [])] if t else []
-
-
-def entry(session, slug):
-    return next((e for e in entries(session) if e["s"] == slug), None)
-
-
-def all_entries(session) -> list:
-    """(traveler id, entry) for every traveler's published trip held in this browser session. The demo's community."""
-    return [(tid, dict(e)) for tid, rows in (session.get("hub") or {}).items() for e in rows]
-
-
-def _card(e, mine=False) -> HubCard:
-    photo = DEFAULT_PHOTO if e.get("m") else COVERS.get(e.get("f"), ("", ""))
-    return HubCard(e["s"], e["t"], e["p"], e["n"], e["a"], tuple(e.get("g", ())), 0, e.get("k", ""), photo[0], photo[1],
-                   e.get("c", "sunset"), mine)
-
-
 def all_cards(session) -> list:
-    """Every trip in the hub: the fake community's first, then everything published in this browser (yours marked `mine`)."""
-    from gitaway import share  # here, not at the top: share imports this module
-    me = ses.current_traveler(session)
-    live = [(tid, e) for tid, e in all_entries(session) if not e.get("m") or share.is_live(session, tid, e["s"])]
+    """Every trip in the hub: the fake community's first, then everything published (the signed-in person's marked `mine`)."""
+    me = (session or {}).get("user_id")
+    published = [(r, _from_itinerary(community.trip_of(r))) for r in community.rows()]
     return [*(_from_itinerary(t) for t in itineraries.ITINERARIES.values()),
-            *(_card(e, bool(me) and tid == me.id) for tid, e in live)]
+            *(replace(c, mine=bool(me) and r["owner_user"] == str(me)) for r, c in published)]
 
 
 def cards(session, *, tags=(), creators=False, q="") -> list:
@@ -105,49 +69,3 @@ def cards(session, *, tags=(), creators=False, q="") -> list:
             continue
         out.append(c)
     return out
-
-
-def remove(session, slug) -> bool:
-    """Take the signed-in traveler's entry out of the hub. False when there was none."""
-    t = ses.current_traveler(session)
-    have = entries(session)
-    if not t or all(e["s"] != slug for e in have):
-        return False
-    session["hub"] = {**session["hub"], t.id: [e for e in have if e["s"] != slug]}
-    return True
-
-
-def publish(session, *, slug, title, place, days, author, tags=(), source="", theme="sunset", mine=False, cover="") -> HubCard:
-    """Add a trip to the signed-in traveler's hub, or replace the entry with the same slug.
-
-    Raises HubError when signed out, when a field is missing, or when the session cookie has no room left.
-    """
-    t = ses.current_traveler(session)
-    if not t:
-        raise HubError("Sign in to share a trip.")
-    if not ses.trip_slug(f"/trips/{slug}") or not str(title).strip() or not str(place).strip():
-        raise HubError("A shared trip needs a title and a place.")
-    row = {"s": slug, "t": str(title)[:MAX_TEXT], "p": str(place)[:MAX_TEXT], "n": int(days), "a": str(author)[:MAX_TEXT],
-           "g": [k for k in TAGS if k in tags], "c": theme if theme in ("sunset", "pacific") else "sunset"}
-    if source:
-        row["k"] = str(source)[:MAX_TEXT]
-    if mine:
-        row["m"] = 1
-    if cover in COVERS:
-        row["f"] = cover
-    have = entries(session)
-    rows = [row if e["s"] == slug else e for e in have]
-    if all(e["s"] != slug for e in have):
-        if len(have) >= MAX_ENTRIES:
-            raise HubError(f"That is {MAX_ENTRIES} shared trips already. This demo keeps it small.")
-        rows.append(row)
-    old = session.get("hub")
-    # Reassign the whole dict so the cookie session notices the change.
-    session["hub"] = {**(old or {}), t.id: rows}
-    if len(json.dumps(dict(session))) > ses.BUDGET:
-        if old is None:
-            session.pop("hub", None)
-        else:
-            session["hub"] = old
-        raise HubError("This demo is full. Delete something from your calendar to make room.")
-    return _card(row)

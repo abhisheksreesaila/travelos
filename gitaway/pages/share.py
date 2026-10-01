@@ -53,8 +53,8 @@ def _theme_pick(key, label, on):
 
 def options_page(session):
     mine = share.shared(session)
-    tags = tuple(mine["g"]) if mine else share.default_tags(session)
-    theme = mine["c"] if mine else "sunset"
+    tags = tuple(mine["tags"]) if mine else share.default_tags(session)
+    theme = mine["theme"] if mine else "sunset"
     return page("Share your trip", Section(
         Form(
             preview(session, tags),
@@ -70,7 +70,7 @@ def options_page(session):
 
 
 def done_page(session, entry):
-    slug, tags = entry["s"], tuple(entry["g"])
+    slug, tags = entry["slug"], tuple(entry["tags"])
     return page("Your trip is live", Section(
         Div(preview(session, tags),
             Div(Span(icon("check", 22, 2.6), "Shared", cls="sticker fill-mint sh-sticker"),
