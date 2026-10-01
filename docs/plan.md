@@ -269,6 +269,6 @@ Found by the full real-app walkthrough on master (2026-10-01).
 - [x] public shared pages don't reveal when and where a family is away: no flight numbers, no calendar dates (Day 1…N instead), and the hotel as its area ("a hotel in Santa Monica"), not its name; the family still sees everything
 - [x] the invite expiry reads "expires in 14 days" when brand new
 
-## F-047 Tests pass in any order [todo]
+## F-047 Tests pass in any order [doing]
 Found while reviewing F-045: run in reverse order, tests/test_family_storage.py::test_a_real_second_process_sees_the_same_trip fails (on master too; master had 209 order-dependent failures before F-045).
 - [ ] the suite passes in reverse and random order (add pytest-randomly or an equivalent via pixi and run it once in CI-style)
