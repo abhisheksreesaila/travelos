@@ -13,6 +13,7 @@ Who may call what is gitaway.access's rule (admin-only and open routes are liste
 """
 
 import logging
+import math
 from datetime import datetime, timezone
 from urllib.parse import quote
 
@@ -36,12 +37,14 @@ def _date(iso):
         return ""
 
 
-def _days_left(iso):
+def _days_left(iso, now=None):
+    """"expires in 14 days" for a brand new invite: whole days are rounded up, so 13 days and 23 hours still reads 14. Under a day is "today"."""
     try:
-        left = (datetime.fromisoformat(iso) - datetime.now(timezone.utc)).days
+        secs = (datetime.fromisoformat(iso) - (now or datetime.now(timezone.utc))).total_seconds()
     except (TypeError, ValueError):
         return ""
-    return "expires today" if left <= 0 else "expires tomorrow" if left == 1 else f"expires in {left} days"
+    left = math.ceil(secs / 86400)
+    return "expires today" if left <= 1 else f"expires in {left} days"
 
 
 def link_for(request, token):
