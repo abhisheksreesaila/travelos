@@ -166,7 +166,7 @@ def test_quote_route_defaults_and_ignores_junk_fares(client):
 def test_quote_route_totals_match_the_catalog_for_every_fare_and_bag_count(client):
     for fare in ("basic", "main", "xl"):
         for n in range(0, 9):
-            j = quote_json(client, f"f=f3&h=h2&c=c3&fare={fare}&bags={n}")
+            j = quote_json(client, f"f=f3&h=h2&c=c2&fare={fare}&bags={n}")
             assert j["flight"]["price"] == catalog.money(catalog.flight_pick("f3", fare, str(n)).cents)
 
 

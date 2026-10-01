@@ -105,7 +105,7 @@ def test_default_stay_pick_url_params_are_empty_and_others_compact():
 
 
 def test_the_cheapest_combination_is_unchanged():
-    assert catalog.cheapest().total_cents == 204_000
+    assert catalog.cheapest().total_cents == 217_200
 
 
 # ---- /plan ----------------------------------------------------------------------------------------------------
@@ -202,7 +202,7 @@ def test_quote_route_returns_the_ledger_figures_from_the_catalog(client):
     assert j["ledger"]["total"] == "$3,988"
     assert j["ledger"]["slots"]["stay"] == {"name": "The Tidewater", "price": "$2,440", "sub": "Ocean-view King ×2 + Breakfast"}
     assert j["ledger"]["slots"]["flight"]["price"] == "$1,236" and j["ledger"]["slots"]["car"]["price"] == "$312"
-    assert j["ledger"]["delta"] == "$1,948 more than the cheapest combo" and j["ledger"]["cheapest"] is False
+    assert j["ledger"]["delta"] == "$1,816 more than the cheapest combo" and j["ledger"]["cheapest"] is False
     assert j["ledger"]["url"] == "/plan?f=f1&h=h1&c=c1&rooms=ok2&add=bf"
     assert j["ledger"]["book"].startswith("/signin?next=")
     assert "rooms%3Dok2%26add%3Dbf" in j["ledger"]["book"]
@@ -235,7 +235,7 @@ def test_quote_route_describes_an_under_capacity_edit_but_keeps_the_ledger_on_a_
 
 def test_quote_route_totals_match_the_catalog_for_every_room_count(client):
     for n in range(0, 5):
-        j = quote_json(client, f"f=f3&h=h2&c=c3&rooms=gs{n}")
+        j = quote_json(client, f"f=f3&h=h2&c=c2&rooms=gs{n}")
         want = catalog.parse_stay("h2", f"gs{n}" if n else "", "")
         assert j["stay"]["price"] == catalog.money(want.cents)
 

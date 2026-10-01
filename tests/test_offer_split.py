@@ -92,7 +92,7 @@ def test_expanding_after_a_pick_opens_that_pick_server_side(client):
 
 
 def test_tiled_by_default_keeps_old_urls_working(client):
-    h = client.get("/plan?f=f4&h=h3&c=c3").text
+    h = client.get("/plan?f=f4&h=h3&c=c2").text
     assert "data-expanded" not in h.split('id="ws-grid"')[1].split(">")[0]
     assert 'aria-expanded="false"' in h and 'aria-expanded="true"' not in h.split('class="ws-ledger"')[0]
 

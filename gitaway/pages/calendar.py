@@ -222,13 +222,19 @@ def note_entry(n, acts_by_id, who, people, fresh=False):
     )
 
 
+def booked_note(b):
+    """The first note on the feed: what was booked, in words that fit any mix of flight, stay and car."""
+    stay, pick, car = cal.stay_of(b), cal.stay_pick_of(b), cal.car_of(b)
+    what = " and ".join(([f"flights"] if cal.flight_of(b) else []) + ([f"{stay.name} ({pick.summary})"] if stay else []) + ([car.name] if car else [])) or "trip"
+    return f"Booked! Your {what} {'are' if ' and ' in what or what == 'flights' else 'is'} on the calendar. Add anything you want to do."
+
+
 def notes_panel(ctx, who, b):
-    stay = catalog.offer(b["stay"])
     acts_by_id = {a.id: a for a in ctx["acts"]}
     people = {f.name.casefold(): f for f in ctx["friends"]}
     fresh = ctx["new"] if ctx["live"] else ""
     feed = [Div(avatar(who, "cal-noteav"), Div(Span("You · whole trip", cls="cal-notemeta"),
-                Span(f"Booked! Your flights and {stay.name} ({cal.stay_pick_of(b).summary}) are on the calendar. Add anything you want to do.", cls="cal-notetext"), cls="cal-noteslip"), cls="cal-note cal-note-first")]
+                Span(booked_note(b), cls="cal-notetext"), cls="cal-noteslip"), cls="cal-note cal-note-first")]
     feed += [note_entry(n, acts_by_id, who, people, bool(fresh) and n.act == fresh and bool(n.by)) for n in ctx["notes"]]
     about = Select(Option("Whole trip", value=""), *[Option(a.title, value=a.id) for a in ctx["acts"]], name="act", aria_label="What is this note about?", cls="cal-about") if ctx["acts"] else ""
     return Aside(
