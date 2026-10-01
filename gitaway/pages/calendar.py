@@ -379,6 +379,18 @@ def toast(kind, text, *extra, tid=None):
 
 # ---- page ----------------------------------------------------------------------------------------------------------
 
+def share_controls(session):
+    """The Share button; once the trip is shared it says so, updates the snapshot on a tap, and offers Unpublish (owner only)."""
+    from gitaway import share
+    row = share.shared(session)
+    if not row:
+        return [Form(Button("Share trip", type="submit", cls="cal-btn cal-btn-ink"), action="/share", method="post", cls="cal-share")]
+    return [Form(Button(icon("check", 16, 2.6), "Shared", Span(" · Update shared page", cls="cal-share-more"), type="submit", cls="cal-btn cal-btn-ink",
+                        title="Share again to update the shared page with your latest plans"), action="/share", method="post", cls="cal-share"),
+            Form(Input(type="hidden", name="slug", value=row["slug"]), Button("Unpublish", type="submit", cls="cal-btn cal-btn-white"),
+                 action="/share/unpublish", method="post", cls="cal-share")]
+
+
 def top_bar(t, b, who, session, ctx):
     forks = forks_model.count(session)
     friends = ctx["friends"]
@@ -391,7 +403,7 @@ def top_bar(t, b, who, session, ctx):
         Div(A(icon("mic", 18, 2.4), "Talk to plan", href=voice_ui.voice_url(ctx["demo"], hear=1), data_soft="", cls="cal-btn cal-btn-mint vo-open"),
             A("Your forks", Span(str(forks), cls="cal-count"), href="/forks", cls="cal-btn cal-btn-white"),
             A("Invite", href=cal_url(ctx["demo"], view=ctx["view"], invite="1"), id="cal-invite-btn", data_id="invite", data_soft="", cls="cal-btn cal-btn-coral"),
-            Form(Button("Share trip", type="submit", cls="cal-btn cal-btn-ink"), action="/share", method="post", cls="cal-share"), cls="cal-actions-top"),
+            *share_controls(session), cls="cal-actions-top"),
         cls="cal-bar",
     )
 

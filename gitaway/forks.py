@@ -1,13 +1,13 @@
 """The traveler's forks and saved trips as things a page can show (F-021).
 
-The session only keeps slugs (see gitaway.session). This module turns a slug into the trip behind it, whichever kind it
-is: a sample community itinerary, or a trip shared to the hub in this browser (F-022 shared trips and, later, F-023
-creator trips). A slug whose trip is gone (an old shared trip after a rebooking) is simply not listed.
+The family's database keeps only slugs (see gitaway.familydb_social). This module turns a slug into the trip behind it,
+whichever kind it is: a sample community itinerary, or a trip published to the community database (shared or creator).
+A slug whose trip is gone (its owner unpublished it) is simply not listed.
 """
 
 from dataclasses import dataclass
 
-from gitaway import creators, hub, itineraries, session as ses, share
+from gitaway import community, hub, itineraries, session as ses
 from gitaway.itineraries import PIER
 
 
@@ -23,14 +23,14 @@ class Entry:
     trip: object    # the gitaway.itineraries.Itinerary
 
 
-def resolve(session, slug):
-    """The Itinerary behind a trip slug (sample, shared or creator), or None when it does not exist (any more)."""
-    return itineraries.get(slug) or share.find(session, slug) or creators.find(session, slug)
+def resolve(slug):
+    """The Itinerary behind a trip slug (a sample or a published trip), or None when it does not exist (any more)."""
+    return itineraries.get(slug) or community.find(slug)
 
 
 def entry(session, slug):
     """The Entry for a trip slug, or None when the trip does not exist (any more)."""
-    trip = resolve(session, slug)
+    trip = resolve(slug)
     return _entry(trip) if trip else None
 
 
@@ -41,7 +41,7 @@ def _entry(trip) -> Entry:
 
 
 def _entries(session, slugs) -> list:
-    trips = (resolve(session, s) for s in slugs)
+    trips = (resolve(s) for s in slugs)
     return [_entry(t) for t in trips if t]
 
 
@@ -58,4 +58,6 @@ def saved(session) -> list:
 
 def count(session) -> int:
     """How many forks the traveler has (the number on the calendar's Your forks button)."""
-    return len(forked(session))
+    slugs = ses.forks(session)  # one query on the family database
+    samples = sum(1 for s in slugs if s in itineraries.ITINERARIES)
+    return samples + community.existing([s for s in slugs if s not in itineraries.ITINERARIES])  # one query on the community database

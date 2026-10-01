@@ -5,14 +5,14 @@ the community hub. Only the days, the plans, their times and places, and the tra
 friends and their names, invites, prices and the booking reference never reach the page: it is rebuilt from the
 bookings and activities each time and has no field for them. Flight and stay names do show; they help the next traveler.
 
-The shared trip persists as a hub entry in the session (see gitaway.hub), per traveler, like forks. The page is rebuilt
-from that traveler's current calendar, so it follows edits; there is no stored copy to leave stale. For the demo, every
-traveler's shared trip held in this browser is listed and viewable by anyone using it.
+The shared trip is stored as a snapshot in the community database (see gitaway.community): the page is built from the
+traveler's calendar when they publish, frozen, and served to anyone from the stored copy. Sharing again updates it.
 """
 
 import hashlib
+import hmac
 
-from gitaway import hub, session as ses, tripcal as cal
+from gitaway import community, hub, session as ses, tripcal as cal
 from gitaway.hub import HubError
 from gitaway.itineraries import PIER, VENICE, Day, Itinerary, Polaroid, Stop, Tag
 
@@ -28,13 +28,8 @@ def _lede_lanes(b) -> str:
 
 
 def slug_for(traveler_id, booking) -> str:
-    """A stable public slug per traveler and booking that does not contain the booking reference (a salted hash)."""
-    return "shared-" + hashlib.sha256(f"gitaway-share|{traveler_id}|{booking['id']}".encode()).hexdigest()[:10]
-
-
-def _as(session, traveler_id):
-    """A read-only view of the session as another demo traveler, so their booking and calendar can be read."""
-    return {**{k: v for k, v in dict(session).items() if k not in ("user_id", "email")}, "user_id": traveler_id}
+    """A stable public slug per traveler and booking that does not contain the booking reference (an HMAC keyed with the server secret)."""
+    return "shared-" + hmac.new(ses.cache_secret(), f"gitaway-share|{traveler_id}|{booking['id']}".encode(), hashlib.sha256).hexdigest()[:10]
 
 
 def default_tags(session) -> tuple:
@@ -59,10 +54,8 @@ def _day_title(i, last, stops) -> str:
     return "Touch down" if i == 0 else "Fly home" if i == last else "Out and about" if stops else "Free day"
 
 
-def build(session, tags=(), theme="sunset", traveler=None):
-    """The scrapbook Itinerary for a traveler's booked trip (default: the signed-in one), or None when there is none."""
-    if traveler:
-        session = _as(session, traveler)
+def build(session, tags=(), theme="sunset"):
+    """The scrapbook Itinerary for the signed-in traveler's booked trip, or None when there is none."""
     b = ses.booking(session)
     if not b:
         return None
@@ -90,49 +83,34 @@ def build(session, tags=(), theme="sunset", traveler=None):
 
 
 def shared(session):
-    """The hub entry of the signed-in traveler's shared trip for the trip they have booked now, or None."""
+    """The community row of the signed-in traveler's shared trip for the trip they have booked now, or None."""
     t, b = ses.current_traveler(session), ses.booking(session)
-    return hub.entry(session, slug_for(t.id, b)) if b else None
+    row = community.get(slug_for(t.id, b)) if b else None
+    return row if row and row["owner_user"] == t.id else None
 
 
 def publish(session, tags=None, theme=None) -> hub.HubCard:
-    """Share (or re-share) the traveler's trip. Raises HubError with a message fit to show.
+    """Share (or re-share) the traveler's trip: freeze it as a snapshot in the community database. Raises HubError with a message fit to show.
 
     With no `tags` or `theme` an existing share keeps its choices; a first share gets the defaults.
-    A failure leaves the hub exactly as it was.
+    The traveler has one shared trip at a time: sharing a newly booked trip takes the older one down.
     """
-    if not ses.current_traveler(session):
+    t = ses.current_traveler(session)
+    if not t:
         raise HubError("Sign in to share your trip.")
     if not ses.booking(session):
         raise HubError("Book a trip first, then share it.")
     before = shared(session)
-    tags = (tuple(before["g"]) if before else default_tags(session)) if tags is None else tuple(tags)
-    theme = (before["c"] if before else "sunset") if theme is None else theme
+    tags = (tuple(before["tags"]) if before else default_tags(session)) if tags is None else tuple(tags)
+    theme = (before["theme"] if before else "sunset") if theme is None else theme
     trip = build(session, tags, theme)
-    old = session.get("hub")
-    try:
-        for e in hub.entries(session):
-            if e.get("m") and e["s"] != trip.slug:
-                hub.remove(session, e["s"])  # an older booking's page can no longer be rebuilt
-        return hub.publish(session, slug=trip.slug, title=trip.title, place="Los Angeles", days=len(trip.days), author=trip.author,
-                           tags=tags, theme=trip.theme, mine=True)
-    except HubError:
-        if old is None:
-            session.pop("hub", None)
-        else:
-            session["hub"] = old
-        raise
+    row = community.publish(session, trip, kind="shared", tags=[k for k in hub.TAGS if k in tags], theme=trip.theme)
+    for old in community.rows(kind="shared", owner=t.id):
+        if old["slug"] != trip.slug:
+            community.unpublish(session, old["slug"])
+    return hub._from_itinerary(community.trip_of(row))
 
 
-def is_live(session, traveler_id, slug) -> bool:
-    """True while `slug` is still the page of that traveler's current booking (a rebooking makes the old page unbuildable)."""
-    b = ses.booking(_as(session, traveler_id))
-    return bool(b) and slug_for(traveler_id, b) == slug
-
-
-def find(session, slug):
-    """The Itinerary behind /trips/<slug> when it is a trip shared in this browser, else None. Built from its owner's booking."""
-    for tid, e in hub.all_entries(session):
-        if e["s"] == slug and e.get("m"):
-            return build(session, e.get("g", ()), e.get("c", "sunset"), traveler=tid) if is_live(session, tid, slug) else None
-    return None
+def find(slug):
+    """The Itinerary behind /trips/<slug> when it is a published shared trip, else None. Anyone can ask."""
+    return community.find(slug, "shared")

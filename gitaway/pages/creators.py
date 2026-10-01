@@ -272,5 +272,5 @@ def register(app):
     def done(session):
         t = ses.current_traveler(session)
         mine = creators.published(session, t.id) if t else {}
-        slugs = [e["s"] for e in hub.entries(session) if e["s"] in mine]
+        slugs = list(mine)
         return done_page(session, slugs[-1]) if slugs else RedirectResponse("/creators", status_code=303)
