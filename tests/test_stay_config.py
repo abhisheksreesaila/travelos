@@ -297,7 +297,7 @@ def test_signed_out_pay_keeps_the_rooms_through_sign_in(client):
 def test_the_calendar_respects_the_picked_rooms(client):
     sign_in(client)
     client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1", "rooms": "ok2", "add": "bf"})
-    html = client.get("/calendar").text
+    html = client.get("/calendar?view=days").text
     assert "Check in · The Tidewater · Ocean-view King ×2" in html
     assert re.search(r'class="cal-tripline"[^>]*>[^<]*\$3,988<', html)
     assert "Ocean-view King ×2 + Breakfast" in html  # the welcome note

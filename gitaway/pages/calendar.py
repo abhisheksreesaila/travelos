@@ -1,6 +1,6 @@
 """The trip calendar at /calendar (F-019).
 
-GET /calendar                                    the calendar (?demo=long for the 20-day fixture, ?view=whole for the compact list)
+GET /calendar                                    the calendar (?demo=long for the 20-day fixture, ?view=days for the hour grid; the default is the compact whole-trip list)
                                                  ?add=<day>&at=HH:MM opens the add form, ?edit=<id> the edit form, ?undo=<id> the undo toast
 POST /calendar/activities                        add            POST /calendar/activities/{id}         edit
 POST /calendar/activities/{id}/move              move/resize    POST /calendar/activities/{id}/delete  delete (then Undo)
@@ -202,8 +202,9 @@ def whole_view(dates, ctx):
                     Span(x.title, cls=f"cal-w-title{' is-booked' if getattr(x, 'locked', False) else ''}"),
                     Span("Booked", cls="cal-w-booked") if getattr(x, "locked", False) else "") for x in items]
         rows.append(Div(
-            Div(Span(str(d.day), cls=f"cal-num ink-{tint}"), Span(*day_label(i, d), cls="cal-dow"), cls=f"cal-w-head fill-{tint}-tint"),
-            Ul(*lines, cls="cal-w-list") if lines else Div(Span("wide open", cls="cal-hand"), A("Add something fun", href=cal_url(ctx["demo"], add=i, at=cal.hhmm(free_start(ctx["blocks"], i, ctx["gs"]))), data_soft=""), cls="cal-w-empty"),
+            A(Span(str(d.day), cls=f"cal-num ink-{tint}"), Span(*day_label(i, d), cls="cal-dow"), href=cal_url(ctx["demo"], view="days", w=i),
+              aria_label=f"Open {d.strftime('%A %b')} {d.day} in the day-by-day view", cls=f"cal-w-head fill-{tint}-tint"),
+            Ul(*lines, cls="cal-w-list") if lines else Div(Span("wide open", cls="cal-hand"), A("Add something fun", href=cal_url(ctx["demo"], view="days", add=i, at=cal.hhmm(free_start(ctx["blocks"], i, ctx["gs"]))), data_soft=""), cls="cal-w-empty"),
             id=f"d{i}", cls="cal-w-row", data_whole_day=str(i),
         ))
     return Div(*rows, cls="cal-whole")
@@ -234,7 +235,7 @@ def notes_panel(ctx, who, b):
                cls="cal-notes-toggle", aria_controls="cal-notes-body", aria_expanded="false"),
         Div(Div(H2("Trip notes"), Span("everyone sees these", cls="cal-sub"), cls="cal-notes-head"),
             Div(*feed, cls="cal-feed", id="cal-feed", tabindex="0", aria_label="Trip notes feed"),
-            Form(_hidden("id", f"n{ctx['next']}"), _demo_field(ctx["demo"]), about,
+            Form(_hidden("id", f"n{ctx['next']}"), _demo_field(ctx["demo"]), _hidden("view", ctx["view"]), about,
                  Label(Span("Add a note for everyone", cls="sr-only"), Input(type="text", name="text", placeholder="Add a note for everyone", maxlength=str(cal.MAX_NOTE), required=True, autocomplete="off")),
                  Button("Send", type="submit", cls="cal-send"),
                  action="/calendar/notes", method="post", data_soft="", cls="cal-composer"),
@@ -334,10 +335,15 @@ def top_bar(t, b, who, session, ctx):
     )
 
 
+def pick_view(view, acting=False):
+    """whole (the default) or days. An explicit ?view= wins; otherwise any editing flow (add, edit, new, undo) needs the grid."""
+    return view if view in ("whole", "days") else "days" if acting else "whole"
+
+
 def view_toggle(demo, view):
     return Div(
-        A("Days", href=cal_url(demo), aria_current="true" if view != "whole" else None, cls="cal-seg"),
         A("Whole trip", href=cal_url(demo, view="whole"), aria_current="true" if view == "whole" else None, cls="cal-seg"),
+        A("Day by day", href=cal_url(demo, view="days"), aria_current="true" if view == "days" else None, cls="cal-seg"),
         cls="cal-toggle", role="group", aria_label="Calendar view",
     )
 
@@ -345,7 +351,7 @@ def view_toggle(demo, view):
 def calendar_page(session, demo="", view="", form=None, notice=None, new="", undo="", w="", status=200, invite=None, live=False):
     who, b = ses.current_traveler(session), ses.booking(session)
     demo = cal.LONG if demo == cal.LONG else ""
-    view = "whole" if view == "whole" else ""
+    view = pick_view(view, bool(form or new or undo or w))
     t = cal.trip(demo)
     dates = cal.days(t)
     blocks = cal.booked_blocks(b, t)
@@ -372,10 +378,10 @@ def calendar_page(session, demo="", view="", form=None, notice=None, new="", und
         view_toggle(demo, view),
         Div(Button(icon("chev-left", 18, 2.6), type="button", data_dir="-1", aria_label="Earlier days", cls="cal-navbtn"),
             Span(f"Days 1–{min(5, n)} of {n}", cls="cal-range", id="cal-range", aria_live="polite"),
-            Button(icon("chev-right", 18, 2.6), type="button", data_dir="1", aria_label="Later days", cls="cal-navbtn"), cls="cal-nav") if view != "whole" else "",
+            Button(icon("chev-right", 18, 2.6), type="button", data_dir="1", aria_label="Later days", cls="cal-navbtn"), cls="cal-nav") if view == "days" else "",
         cls="cal-controls",
     )
-    card = Section(strip(dates, ctx) if view != "whole" else "", controls, surface, cls="cal-card", aria_label="Trip calendar")
+    card = Section(strip(dates, ctx) if view == "days" else "", controls, surface, cls="cal-card", aria_label="Trip calendar")
     layers = []
     if form:
         layers.append(form_modal(ctx, form["vals"], form.get("error"), form.get("edit")))
@@ -459,6 +465,7 @@ def register(app):
                 start = free_start(blocks, day, gs)
             start = cal.snap(min(max(start, gs), cal.GRID_END - cal.MIN_LEN))
             form = {"vals": _vals(id=f"a{nid}", day=day, start=cal.hhmm(start), end=cal.hhmm(default_end(blocks, day, start)))}
+        view = pick_view(view, bool(add or edit or new or undo or w))
         return calendar_page(session, demo, view, form=form, new=new, undo=undo, w=w, invite={} if invite == "1" and not form else None, live=live == "1")
 
     def refuse(session, demo, view, message, form=None):

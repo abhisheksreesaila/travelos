@@ -6,7 +6,7 @@ from tests.test_signin import sign_in
 
 def test_stylesheets_load_tokens_then_base_then_the_calendar_css_signed_in(client):
     sign_in(client)
-    pages = {"no booking": client.get("/calendar").text}
+    pages = {"no booking": client.get("/calendar?view=days").text}
     book(client)
     for url in ["/calendar", "/calendar?demo=long", "/calendar?view=whole", "/calendar?add=1&at=10:00", "/calendar?edit=a1"]:
         pages[url] = client.get(url).text
@@ -19,12 +19,12 @@ def test_the_calendar_route_is_registered_and_no_longer_a_placeholder(client):
     from gitaway.pages import placeholders
     assert "/calendar" not in placeholders.PLACEHOLDERS
     book(client)
-    assert "Your trip calendar" not in client.get("/calendar").text
+    assert "Your trip calendar" not in client.get("/calendar?view=days").text
 
 
 def test_the_grid_start_renders_as_minutes_six_for_an_early_flight_otherwise_seven(client):
     import re
     book(client, f="f2")
-    assert re.search(r'data-grid-start="360"', client.get("/calendar").text)
+    assert re.search(r'data-grid-start="360"', client.get("/calendar?view=days").text)
     book(client)
-    assert re.search(r'data-grid-start="420"', client.get("/calendar").text)
+    assert re.search(r'data-grid-start="420"', client.get("/calendar?view=days").text)
