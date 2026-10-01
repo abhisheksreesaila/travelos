@@ -1,5 +1,5 @@
 /* Your forks: the list, the apply preview and the calendar beside them (F-021). Loaded after tokens.css and base.css via layout.styles(). rem only (F-030). */
-.fk { padding: 0.75rem 0 2rem; }
+.fk { padding: 0.5rem 0 0.5rem; }
 .fk-layout { display: grid; grid-template-columns: minmax(0, 1fr) 27rem; gap: 1rem; align-items: start; }
 
 /* Calendar card */
@@ -66,6 +66,7 @@
 .fk-back { align-self: flex-start; display: inline-flex; align-items: center; gap: 0.25rem; font-weight: 800; font-size: max(var(--text-min), 0.875rem); }
 .fk-preview { display: flex; flex-direction: column; gap: 0.625rem; }
 .fk-from { font-size: max(var(--text-min), 0.8125rem); font-weight: 800; letter-spacing: .06em; color: var(--ink-3); }
+.fk-rows { display: flex; flex-direction: column; gap: 0.5rem; max-height: max(14rem, calc(100dvh - 32rem)); overflow-y: auto; padding: 0.1875rem; margin: -0.1875rem; scrollbar-width: thin; }
 .fk-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.625rem 0.75rem; border-radius: 1rem; background: #FAF7F2; cursor: pointer; min-width: 0; }
 .fk-row.is-clash { background: var(--sun-tint); }
 .fk-row.is-have { background: var(--mint-tint); cursor: default; }
@@ -94,6 +95,7 @@
 @media (max-width: 825px) {
   .fk-layout { grid-template-columns: minmax(0, 1fr); }
   .fk-side { order: -1; }
+  .fk-rows { max-height: none; overflow: visible; }
 }
 /* Phone: the hour grid becomes one list per day, in time order */
 @media (max-width: 720px) {

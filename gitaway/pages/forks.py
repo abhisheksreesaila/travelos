@@ -151,7 +151,7 @@ def preview_panel(entry, placements):
     else:
         body = [Form(
             Span(f"FROM {entry.title.upper()}", cls="fk-from"),
-            *[_row(x) for x in placements],
+            Div(*[_row(x) for x in placements], cls="fk-rows", role="group", aria_label="Plans in this fork", tabindex="0"),
             Input(type="hidden", name="slug", value=entry.slug),
             Button(f"Apply {free} plan{'s' if free != 1 else ''}", type="submit", id="fk-apply", cls="btn btn-ink fk-applybtn", disabled=(free == 0) or None, data_count=str(free)),
             Span("Your bookings and your crew's plans stay exactly where they are.", cls="fk-hint"),
