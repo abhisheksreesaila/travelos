@@ -10,7 +10,7 @@ Everything else (days, stops, times, the source card) is laid out for them, and 
 The draft lives in the signed cookie session, kept tiny because the cookie is small (`session.BUDGET`). It stores only the
 link, the answers and the creator's edits; the rest is rebuilt from the fixture each time.
 
-    session["cr"]  = {"u": link, "a": {"d": "012", "w": "kp", "s": "summer"}, "e": {"t": ..., "h1": ..., "h2": ..., "p": ..., "c": ...}, "k": 1}
+    session["cr"]  = {"u": link, "a": {"d": "012", "w": "kp", "s": "summer"}, "e": {"t": ..., "h1": ..., "h2": ..., "p": ..., "c": ...}, "k": "12"}
                      (a = answers, e = edits that differ from the draft, k = both boxes ticked)
     session["crp"] = {"<traveler id>": {"<slug>": same record without "k"}}   the published trips, served at /trips/<slug>
 
@@ -61,8 +61,11 @@ def parse_link(raw) -> Link:
     try:
         parts = urlsplit(url)
         host = parts.hostname or ""
+        port = parts.port
     except ValueError:
         raise LinkError("That link doesn't look right. Copy it straight from the share button.") from None
+    if port is not None:
+        raise LinkError("Paste the plain link, without a port number.")
     if parts.scheme not in ("http", "https") or "@" in parts.netloc:
         raise LinkError("Paste a web link that starts with https://, from YouTube or Instagram.")
     platform = HOSTS.get(host.lower())
@@ -167,6 +170,7 @@ class Draft:
     cover: str
     answered: bool        # the creator has saved answers or edits
     confirmed: bool       # both boxes ticked
+    ticks: str = ""       # which boxes are ticked: "1", "2" or "12"
 
     @property
     def tags(self):
@@ -193,7 +197,7 @@ def resolve(rec) -> Draft:
     hl = tuple(e.get(f"h{i + 1}") or _default_hl(fx, kept, i) for i in range(min(2, len(kept))))
     cover = e.get("c") if e.get("c") in COVERS else fx.cover
     return Draft(link.url, link.platform, fx, kept, who, season, e.get("t") or fx.title, hl, e.get("p") or fx.tip, cover,
-                 bool(a or e), bool(rec.get("k")))
+                 bool(a or e), rec.get("k", "") == "12", rec.get("k", ""))
 
 
 def draft_for(url) -> Draft:
@@ -209,7 +213,7 @@ def minutes_left(rec) -> int:
     """The gentle progress line: 5 minutes before a link, then 3, 2 once they have answered or edited, 1 when both boxes are ticked."""
     if not rec:
         return 5
-    if rec.get("k"):
+    if rec.get("k") == "12":
         return 1
     return 2 if (rec.get("a") or rec.get("e")) else 3
 
@@ -217,8 +221,22 @@ def minutes_left(rec) -> int:
 # ---------- the session ----------
 
 def start(session, url):
-    """Begin a draft from an already validated link (replaces any earlier draft)."""
-    session["cr"] = {"u": url}
+    """Begin a draft from an already validated link (replaces any earlier draft). Raises HubError when the cookie has no room."""
+    _write(session, {"u": url})
+
+
+def _write(session, rec):
+    """Set the draft, or refuse and leave the session without an oversized state."""
+    before = session.get("cr")
+    session["cr"] = rec
+    if _too_big(session):
+        if before is None:
+            session.pop("cr", None)
+        else:
+            session["cr"] = before
+        if _too_big(session):
+            session.pop("cr", None)   # even the old draft no longer fits: drop it rather than keep an oversized cookie
+        raise HubError(FULL)
 
 
 def _clean(value, limit):
@@ -269,15 +287,12 @@ def save(session, data):
     rec["e"] = {k: v for k, v in e.items() if v}
     if not rec["e"]:
         rec.pop("e")
-    if data.get("ok1") and data.get("ok2"):
-        rec["k"] = 1
+    ticks = ("1" if data.get("ok1") else "") + ("2" if data.get("ok2") else "")
+    if ticks:
+        rec["k"] = ticks
     else:
         rec.pop("k", None)
-    before = session.get("cr")
-    session["cr"] = rec
-    if _too_big(session):
-        session["cr"] = before
-        raise HubError(FULL)
+    _write(session, rec)
 
 
 def _too_big(session):
@@ -301,7 +316,7 @@ def publish(session) -> hub.HubCard:
     rec = get_rec(session)
     if not rec:
         raise HubError("Paste a link first.")
-    if not rec.get("k"):
+    if rec.get("k") != "12":
         raise HubError("Tick both boxes first: that it is accurate, and that you give GitAway permission to publish it.")
     d = resolve(rec)
     slug = slug_for(t.id, d.url)

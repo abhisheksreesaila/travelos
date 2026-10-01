@@ -187,7 +187,9 @@ def test_signed_out_submit_goes_through_the_demo_sign_in(client):
     assert r.status_code == 303 and r.headers["location"].startswith("/signin?next=%2Fcreators%2Ffinish")
     assert "hub" not in session_data(client)
     assert sign_in(client, next="/creators/finish").headers["location"] == "/creators/finish"
-    r = client.get("/creators/finish", follow_redirects=False)
+    page = client.get("/creators/finish")
+    assert page.status_code == 200 and 'method="post"' in page.text and "hub" not in session_data(client)   # a GET publishes nothing
+    r = client.post("/creators/finish", follow_redirects=False)
     assert r.status_code == 303 and r.headers["location"] == "/creators/done"
     assert slug_of(client)
 
@@ -290,7 +292,7 @@ def test_publishing_twice_replaces_and_extra_links_are_capped(client):
 
 
 def test_a_full_cookie_refuses_cleanly_and_changes_nothing():
-    s = {"traveler": "ari", "cr": {"u": YT, "k": 1}, "pad": "x" * 2500}
+    s = {"traveler": "ari", "cr": {"u": YT, "k": "12"}, "pad": "x" * 2500}
     before = {k: (dict(v) if isinstance(v, dict) else v) for k, v in s.items()}
     with pytest.raises(hub.HubError) as e:
         creators.publish(s)
@@ -320,3 +322,64 @@ def test_the_stylesheet_is_motion_safe():
     from pathlib import Path
     css = (Path(__file__).resolve().parent.parent / "assets/css/creators.css").read_text()
     assert "prefers-reduced-motion" in css and "text-overflow" not in css
+
+
+def test_a_draft_write_over_the_cookie_budget_is_refused_and_rolled_back(client):
+    from gitaway import session as ses
+    pad = "x" * (ses.BUDGET - 120)
+    s = {"traveler": "ari", "pad": pad}
+    with pytest.raises(hub.HubError) as e:
+        creators.start(s, "https://youtu.be/" + "a" * 250)
+    assert "full" in str(e.value) and "cr" not in s
+    s = {"traveler": "ari", "pad": "x" * (ses.BUDGET - 140), "cr": {"u": YT}}
+    with pytest.raises(hub.HubError):
+        creators.save(s, {"form": "1", "title": "t" * 60, "tip": "y" * 140, "hl1": "z" * 70, "hl2": "z" * 70})
+    import json
+    assert len(json.dumps(s)) <= ses.BUDGET and s["cr"] == {"u": YT}
+    s = {"traveler": "ari", "pad": "x" * (ses.BUDGET + 50), "cr": {"u": YT}}      # already over: never keep an oversized state
+    with pytest.raises(hub.HubError):
+        creators.save(s, {"form": "1", "title": "new"})
+    assert len(json.dumps(s)) <= ses.BUDGET or "cr" not in s
+
+
+def test_cancel_on_the_publish_sign_in_returns_to_the_draft(client):
+    paste(client)
+    submit(client)
+    html = client.get("/signin?next=%2Fcreators%2Ffinish&intent=publish").text
+    assert "Sign in to publish your trip" in html
+    assert re.search(r'id="si-cancel"[^>]*href="/creators/draft"|href="/creators/draft"[^>]*id="si-cancel"', html)
+
+
+def test_each_confirm_box_is_stored_on_its_own(client):
+    paste(client)
+    save(client, ok1="1", who=["kid"])
+    assert session_data(client)["cr"]["k"] == "1"
+    save(client, ok1="1", who=["pet"])                      # tapping a chip keeps the ticked box
+    assert 'name="ok1" value="1" checked' in client.get("/creators/draft").text.replace("  ", " ") or re.search(r'name="ok1"[^>]*checked', client.get("/creators/draft").text)
+    assert not re.search(r'name="ok2"[^>]*checked', client.get("/creators/draft").text)
+    save(client, ok1="1", ok2="1")
+    assert session_data(client)["cr"]["k"] == "12"
+    save(client, ok2="1")
+    assert session_data(client)["cr"]["k"] == "2"
+
+
+@pytest.mark.parametrize("link", ["https://youtu.be:8080/abc", "https://www.youtube.com:444/watch?v=a", "https://instagram.com:80/p/abc/",
+                                  "https://youtu.be:443/abc", "https://youtu.be:x/abc"])
+def test_explicit_ports_are_refused(link):
+    with pytest.raises(creators.LinkError):
+        creators.parse_link(link)
+
+
+def test_finish_publishes_only_on_post(client):
+    paste(client)
+    submit(client)
+    sign_in(client)
+    assert client.get("/creators/finish").status_code == 200
+    assert "hub" not in session_data(client)
+    assert client.post("/creators/finish", follow_redirects=False).headers["location"] == "/creators/done"
+
+
+def test_the_stylesheet_uses_tokens_not_raw_white():
+    from pathlib import Path
+    css = (Path(__file__).resolve().parent.parent / "assets/css/creators.css").read_text()
+    assert "#FFFFFF" not in css.upper()

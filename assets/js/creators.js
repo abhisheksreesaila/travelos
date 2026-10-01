@@ -7,6 +7,8 @@
   var NEED = 'Tick both boxes first: that it is accurate, and that you give GitAway permission to publish it.';
   var stage = document.getElementById('cr-stage');
   var form = document.getElementById('cr-form');
+  var finish = document.getElementById('cr-finish');
+  if (finish && finish.hasAttribute('data-auto')) finish.requestSubmit();   // after sign-in: publish without another tap
 
   if (stage) {
     var wait = stage.hasAttribute('data-wait');

@@ -132,9 +132,9 @@ def _cover(d):
 def _book(d, message=""):
     stickers = [Span(_icon(hub.TAGS[k][2], 18, 2.2), hub.TAGS[k][0], cls=f"sticker fill-{hub.TAGS[k][1]}") for k in d.who]
     stickers.append(Span(_icon("clock", 18, 2.2), f"Best in {d.season}", cls="sticker fill-sky"))
-    ok1 = Label(Input(type="checkbox", name="ok1", value="1", checked=d.confirmed, cls="sr-only"),
+    ok1 = Label(Input(type="checkbox", name="ok1", value="1", checked="1" in d.ticks, cls="sr-only"),
                 Span(icon("check", 18, 3), cls="cr-box"), Span("This is accurate. I checked the days, stops and times against my video."), cls="cr-ok")
-    ok2 = Label(Input(type="checkbox", name="ok2", value="1", checked=d.confirmed, cls="sr-only"),
+    ok2 = Label(Input(type="checkbox", name="ok2", value="1", checked="2" in d.ticks, cls="sr-only"),
                 Span(icon("check", 18, 3), cls="cr-box"), Span("I give GitAway permission to publish it."), cls="cr-ok")
     return Div(
         Div(Label("Name your trip", Span(icon("note", 14, 2.2), cls="cr-pen"), fr="cr-title", cls="cr-lab"),
@@ -191,7 +191,7 @@ def done_page(session, slug):
 
 
 def _signin(next_path):
-    return RedirectResponse(f"/signin?next={quote(next_path, safe='')}&intent=save", status_code=303)
+    return RedirectResponse(f"/signin?next={quote(next_path, safe='')}&intent=publish", status_code=303)
 
 
 def register(app):
@@ -229,7 +229,7 @@ def register(app):
         rec = creators.get_rec(session)
         if not rec:
             return RedirectResponse("/creators", status_code=303)
-        if not rec.get("k"):
+        if rec.get("k") != "12":
             return draft_page(session, message="Tick both boxes first: that it is accurate, and that you give GitAway permission to publish it.", status=422)
         if not ses.current_traveler(session):
             return _signin("/creators/finish")
@@ -241,13 +241,27 @@ def register(app):
 
     @app.get("/creators/finish")
     def finish(session):
+        """Where the sign-in lands. Publishing is a POST, so this only shows the button (it presses itself when JavaScript runs)."""
         rec = creators.get_rec(session)
         if not rec:
             return RedirectResponse("/creators", status_code=303)
         if not ses.current_traveler(session):
             return _signin("/creators/finish")
-        if not rec.get("k"):
+        if rec.get("k") != "12":
             return RedirectResponse("/creators/draft", status_code=303)
+        return page("Publish your trip", Section(
+            Form(H1("Ready to publish"), P("You are signed in. One tap puts your trip in the community hub."),
+                 Div(Button(icon("check", 20, 2.6), "Publish my trip", type="submit", cls="btn btn-ink"), A("Back to the draft", href="/creators/draft", cls="btn"), cls="cr-actions"),
+                 action="/creators/finish", method="post", id="cr-finish", data_auto="1", cls="cr-done-copy"), cls="cr ga-wrap"),
+            current="/creators", head=HEAD)
+
+    @app.post("/creators/finish")
+    def finish_post(session):
+        rec = creators.get_rec(session)
+        if not rec:
+            return RedirectResponse("/creators", status_code=303)
+        if not ses.current_traveler(session):
+            return _signin("/creators/finish")
         try:
             creators.publish(session)
         except hub.HubError as e:
