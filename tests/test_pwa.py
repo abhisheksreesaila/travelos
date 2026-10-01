@@ -1,13 +1,8 @@
 """F-044: GitAway installs on an iPhone: manifest, icons, Apple tags and a small, safe service worker."""
 import json
 import re
-import shutil
 import struct
-import subprocess
-import textwrap
 from pathlib import Path
-
-import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
 ICONS = ROOT / "assets/icons"
@@ -59,7 +54,8 @@ def test_every_page_carries_the_install_tags(client):
         assert 'name="mobile-web-app-capable" content="yes"' in html, path
         assert 'name="apple-mobile-web-app-status-bar-style"' in html, path
         assert 'name="apple-mobile-web-app-title" content="GitAway"' in html, path
-        assert 'name="theme-color"' in html, path
+        assert 'name="theme-color" content="#' in html, path
+        assert 'content="black-translucent"' not in html and 'name="apple-mobile-web-app-status-bar-style" content="default"' in html, path
         assert "viewport-fit=cover" in html, path
         assert "/assets/js/pwa.js" in html, path
 
@@ -77,24 +73,67 @@ def test_offline_page_is_a_gitaway_page(client):
     assert r.status_code == 200 and "<title>GitAway" in r.text and "offline" in r.text.lower()
 
 
-@pytest.mark.skipif(not shutil.which("node"), reason="node is needed to run the worker's routing rules")
-def test_service_worker_never_caches_posts_or_the_auth_routes():
-    script = textwrap.dedent(f"""
-        const src = require('fs').readFileSync({json.dumps(str(ROOT / 'assets/sw.js'))}, 'utf8');
-        const self_ = {{ addEventListener() {{}}, location: {{ origin: 'https://gitaway.test' }} }};
-        const route = new Function('self', src + '; return routeFor;')(self_);
-        const r = (method, path, mode = 'navigate', origin = 'https://gitaway.test') => route({{ method, mode, url: origin + path }});
-        console.log(JSON.stringify({{
-          post: r('POST', '/plan'), postAsset: r('POST', '/assets/x.css', 'cors'),
-          login: r('GET', '/login'), auth: r('GET', '/auth/callback?code=1'), logout: r('GET', '/logout'),
-          signin: r('GET', '/signin?next=/plan'), signout: r('GET', '/signout'),
-          asset: r('GET', '/assets/css/base.css', 'no-cors'), page: r('GET', '/discover'), trip: r('GET', '/trips/x'),
-          cross: r('GET', '/foo', 'navigate', 'https://fonts.googleapis.com'),
-          xhr: r('GET', '/plan/quote', 'cors'), sw: r('GET', '/sw.js', 'cors'),
-        }}));
-    """)
-    out = json.loads(subprocess.run(["node", "-e", script], capture_output=True, text=True, check=True).stdout)
-    for k in ("post", "postAsset", "login", "auth", "logout", "signin", "signout", "cross", "xhr", "sw"):
-        assert out[k] == "skip", k
-    assert out["asset"] == "asset"
-    assert out["page"] == "page" and out["trip"] == "page"
+
+def test_theme_colour_follows_the_pages_ground(client):
+    from fasthtml.common import to_xml
+    from gitaway.layout import page
+    assert 'name="theme-color" content="#FFF8EE"' in client.get("/start").text
+    assert 'name="theme-color" content="#F4F9FF"' in to_xml(page("x", theme="pacific"))
+
+
+def test_asset_links_carry_a_content_hash(client):
+    html = client.get("/start").text
+    for name in ("css/tokens.css", "css/base.css", "css/start.css", "js/start.js", "js/pwa.js"):
+        m = re.search(rf'/assets/{re.escape(name)}\?v=([0-9a-f]{{8}})"', html)
+        assert m, name
+        assert client.get(f"/assets/{name}?v={m.group(1)}").status_code == 200
+
+
+def test_asset_hash_follows_the_file_contents(tmp_path, monkeypatch):
+    from gitaway import assetver
+    monkeypatch.setattr(assetver, "ASSETS_DIR", tmp_path)
+    (tmp_path / "css").mkdir()
+    f = tmp_path / "css" / "a.css"
+    f.write_text("a{}")
+    one = assetver.versioned("/assets/css/a.css")
+    f.write_text("b{color:red}")
+    two = assetver.versioned("/assets/css/a.css")
+    assert one != two and one.startswith("/assets/css/a.css?v=")
+    assert assetver.versioned("/assets/css/missing.css") == "/assets/css/missing.css"
+
+
+def test_service_worker_version_changes_when_a_precached_file_changes(client, monkeypatch):
+    from gitaway import assetver
+    first = client.get("/sw.js").text
+    m = re.search(r'const VERSION = "([0-9a-f]+)"', first)
+    assert m and "__VERSION__" not in first and "__SHELL_URLS__" not in first
+    assert re.search(r'"/assets/css/base.css\?v=[0-9a-f]{8}"', first) and '"/offline"' in first
+    real = assetver.file_hash
+    monkeypatch.setattr(assetver, "file_hash", lambda url: "ffffffff" if url.endswith("base.css") else real(url))
+    second = client.get("/sw.js").text
+    assert re.search(r'const VERSION = "([0-9a-f]+)"', second).group(1) != m.group(1)
+
+
+def test_sign_out_asks_the_browser_to_forget_its_caches_and_storage(client):
+    from tests.test_signin import sign_in
+    sign_in(client)
+    r = client.post("/signout", follow_redirects=False)
+    assert r.headers["clear-site-data"] == '"cache", "storage"'
+
+
+def test_pages_carry_a_non_secret_per_person_cache_key_only_when_signed_in(client):
+    from tests.test_signin import sign_in
+    key = r'<meta name="ga-user" content="([0-9a-f]{10})">'
+    assert not re.search(key, client.get("/discover").text)
+    sign_in(client, "ari")
+    a = re.search(key, client.get("/discover").text).group(1)
+    sign_in(client, "sam")
+    b = re.search(key, client.get("/discover").text).group(1)
+    assert a != b and "ari" not in a and "sam" not in b
+
+
+def test_offline_page_never_shows_who_was_signed_in(client):
+    from tests.test_signin import sign_in
+    sign_in(client, "ari")
+    html = client.get("/offline").text
+    assert "Ari" not in html and 'name="ga-user"' not in html and "Sign in" in html

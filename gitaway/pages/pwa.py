@@ -7,15 +7,28 @@ GET /offline                what a page shows when there is no connection and it
 The head tags that point at these live in gitaway.layout.HEAD, so every page carries them.
 """
 
+import hashlib
 import json
 from pathlib import Path
 
 from fasthtml.common import A, Div, H1, P, Section
 from starlette.responses import Response
 
+from gitaway import assetver, session as ses
 from gitaway.layout import PAPER, page
 
 SW_PATH = Path(__file__).resolve().parent.parent.parent / "assets" / "sw.js"
+PRECACHED_ASSETS = ("/assets/css/tokens.css", "/assets/css/base.css", "/assets/js/pwa.js")
+
+
+def service_worker_source():
+    """sw.js with its precache list (hashed URLs) and a VERSION derived from the worker and every precached file,
+    so the browser installs a new worker, and drops the old caches, exactly when any of them changes."""
+    template = SW_PATH.read_text()
+    hashes = [assetver.file_hash(u) or "" for u in PRECACHED_ASSETS]
+    version = hashlib.sha1((template + "|".join(hashes)).encode()).hexdigest()[:10]
+    urls = ["/offline", *(assetver.versioned(u) for u in PRECACHED_ASSETS)]
+    return template.replace("__VERSION__", version).replace("__SHELL_URLS__", json.dumps(urls))
 
 MANIFEST = {
     "name": "GitAway",
@@ -36,6 +49,8 @@ MANIFEST = {
 
 
 def register(app):
+    app.add_middleware(assetver.AssetVersionMiddleware)
+
     @app.get("/manifest.webmanifest")
     def manifest():
         return Response(json.dumps(MANIFEST), media_type="application/manifest+json")
@@ -43,10 +58,11 @@ def register(app):
     @app.get("/sw.js")
     def service_worker():
         # no-cache so a new version is picked up on the next visit; the scope header lets it control "/"
-        return Response(SW_PATH.read_text(), media_type="text/javascript", headers={"Service-Worker-Allowed": "/", "Cache-Control": "no-cache"})
+        return Response(service_worker_source(), media_type="text/javascript", headers={"Service-Worker-Allowed": "/", "Cache-Control": "no-cache"})
 
     @app.get("/offline")
     def offline():
+        ses._request_traveler.set(None)  # this page is cached for everyone: no name, no cache key
         return page(
             "Offline",
             Section(
