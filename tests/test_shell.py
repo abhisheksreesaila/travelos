@@ -53,18 +53,23 @@ def test_every_page_offers_a_skip_link_to_the_main_content(client):
     assert 'href="#main"' in html and 'id="main"' in html
 
 
-def test_a_real_screen_replaces_its_placeholder(client):
+def test_a_real_screen_replaces_its_placeholder(client, monkeypatch):
     from fasthtml.common import FastHTML
     from starlette.testclient import TestClient
-    from gitaway.pages import register_all
+    from gitaway.pages import placeholders, register_all
 
-    class RealDiscover:
+    monkeypatch.setitem(placeholders.PLACEHOLDERS, "/not-built-yet", ("", "Not built yet", "Soon.", "F-000"))
+
+    class Real:
         @staticmethod
         def register(app):
-            @app.get("/creators")
-            def creators():
-                return "the real workspace"
+            @app.get("/not-built-yet")
+            def real():
+                return "the real screen"
 
     app = FastHTML()
-    register_all(app, extra=[RealDiscover])
-    assert "the real workspace" in TestClient(app).get("/creators").text
+    register_all(app, extra=[Real])
+    assert "the real screen" in TestClient(app).get("/not-built-yet").text
+    plain = FastHTML()
+    register_all(plain)
+    assert "Not built yet" in TestClient(plain).get("/not-built-yet").text
