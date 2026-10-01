@@ -324,3 +324,7 @@ Needs: F-051
 ## F-056 Paste an Expedia confirmation email [blocked]
 Blocked: forward or paste one real Expedia confirmation email (it can stay on your machine; I only need its layout).
 - [ ] pasting an Expedia confirmation email pre-fills the trip for review (never saves directly)
+
+## F-057 A trip has its own time zone [todo]
+Found reviewing F-054: "today" and "now" use Los Angeles time; a non-LA trip (e.g. an imported Paris trip) would be off by up to a day.
+- [ ] a trip has a time zone (from its arrival airport via an IATA → zone map, or chosen on import); /trip's today, up next and countdowns use it; the server's past-date check keeps one "today"
