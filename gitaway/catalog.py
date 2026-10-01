@@ -131,7 +131,10 @@ def _whole(text):
 
 
 def today() -> date:
-    return date.today()
+    """Today in Los Angeles, where the trips are: a server in another time zone (Railway runs on UTC) must not flip the day at 5 PM."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    return datetime.now(ZoneInfo("America/Los_Angeles")).date()
 
 
 PAST_MESSAGE = "Pick a depart date that is today or later."
