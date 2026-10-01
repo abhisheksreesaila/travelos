@@ -600,5 +600,23 @@ def schedule_ride(session, req: ScheduleRequest) -> RideRecord:
     return save_ride(session, provider().schedule(req))
 
 
+def retime(record: RideRecord, flight, stay, trip) -> RideRecord | None:
+    """The scheduled ride `record` moved to the times and places of a corrected trip (F-042), or None when it should stay as it is: it is
+    cancelled or past the scheduled stage (a driver is on the way), the trip has no such leg any more, or nothing changes."""
+    p = provider()
+    if record.canceled or p.status(record).name != "scheduled":
+        return None
+    try:
+        plan = leg_plan(record.leg, flight, stay, trip)
+    except RideError:
+        return None
+    est = next((e for e in p.estimates(plan) if e.key == record.product and e.fits), None)
+    if est is None:
+        return None
+    new = replace(record, pickup_time=plan.pickup_time, minutes=plan.minutes, party=plan.party, airport=plan.airport, stay_id=plan.stay_id,
+                  hotel=_imported_hotel_of(plan), cents=est.cents, cars=est.cars, fare_id=est.fare_id)
+    return new if new != record else None
+
+
 def date_label(d: date) -> str:
     return f"{d:%a %b} {d.day}"

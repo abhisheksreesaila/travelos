@@ -29,13 +29,14 @@ from gitaway import catalog
 MAX_BYTES = 50_000
 MAX_TRAVELERS = 12
 MAX_LEGS = 12
+ONE_WAY_WAIT = timedelta(hours=12)   # a wait this long between legs is the stay; shorter ones are connections
 MAX_DAYS = 31      # a trip is at most this many calendar days long
 MAX_NOTES = 2000
 SOURCE = "imported"
 
 _AIRPORT = re.compile(r"^[A-Za-z]{3}$")
 _EMAIL = re.compile(r"^[^@\s,;<>]+@[^@\s,;<>]+\.[^@\s,;<>]+$")
-_STAMP = re.compile(r"^(\d{4}-\d{2}-\d{2})[ T](\d{1,2}):(\d{2})(?::\d{2})?$")
+_STAMP = re.compile(r"^(\d{4}-\d{2}-\d{2})[ T](\d{1,2}):(\d{2})(?::\d{2}(?:\.\d+)?)?\s*(?:Z|[+-]\d{2}(?::?\d{2})?)?$")  # a UTC offset is accepted and ignored: times are local
 _DAY = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 KNOWN = ("trip", "travelers", "flights", "hotel", "hotels", "car", "notes")
 
@@ -133,10 +134,10 @@ class Plan:
         legs = self.legs
         if not legs:
             return None, None
-        if len(legs) == 1 or legs[-1].dest != legs[0].origin:  # one way (connections included): the last leg is the arrival, there is no flight home
-            return len(legs) - 1, None
         gaps = [(legs[i + 1].depart - legs[i].arrive, -i) for i in range(len(legs) - 1)]
-        i = -max(gaps)[1]
+        if not gaps or max(gaps)[0] < ONE_WAY_WAIT:  # no long wait anywhere: one way (connections included), the last leg is the arrival
+            return len(legs) - 1, None
+        i = -max(gaps)[1]  # open-jaw trips (home from another airport) split here too
         return i, i + 1
 
     @property

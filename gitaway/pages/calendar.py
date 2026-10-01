@@ -146,14 +146,14 @@ def booked_block(b, gs, lane=0, nlanes=1, ctx=None):
     """A locked booked block. One booked elsewhere (an imported trip, F-042) says so and opens its booking detail (where the confirmation is)."""
     elsewhere = bool(b.tag and ctx)
     return (A if elsewhere else Div)(
-        Span(icon(b.icon, 13, 2.2), " ", Span(cal.fmt_time(b.start), cls="cal-time"), " ", Span(b.title, cls="cal-title"), cls="cal-flow"),
+        Span(icon(b.icon, 13, 2.2), " ", Span(cal.fmt_time(b.at), cls="cal-time"), " ", Span(b.title, cls="cal-title"), cls="cal-flow"),
         Span(b.tag, cls="cal-elsewhere") if b.tag else "",
         Span(icon("lock", 12, 2.4), cls="cal-lock"),
         Span("Booked, locked", cls="sr-only"),
         cls=f"cal-block cal-booked{' cal-lane' if nlanes > 1 else ''}{' cal-short' if elsewhere and b.end - b.start <= 45 else ''}", data_block=b.id, data_day=str(b.day), data_start=str(b.start), data_end=str(b.end),
         style=f"--top:{_px(b.start - gs)};--h:{_px(b.end - b.start)};--lane:{lane};--lanes:{nlanes}",
         **({"href": detail_href(ctx, b), "draggable": "false"} if elsewhere else {"role": "group", "tabindex": "0"}),
-        aria_label=f"Booked, locked{', ' + b.tag if b.tag else ''}: {b.title}, {cal.fmt_time(b.start)} to {cal.fmt_time(b.end)}" + (". Press Enter for the booking details." if elsewhere else ""),
+        aria_label=f"Booked, locked{', ' + b.tag if b.tag else ''}: {b.title}, {cal.fmt_time(b.at)} to {cal.fmt_time(b.end)}" + (". Press Enter for the booking details." if elsewhere else ""),
     )
 
 
@@ -248,7 +248,7 @@ def _whole_line(x, ctx):
                   A(x.title, href=ride_href(ctx, x), cls=f"cal-w-title cal-w-ride{' is-offer' if kind == 'rideoffer' else ''}", data_block=x.id),
                   Span("Simulated", cls="cal-w-booked cal-w-sim") if kind == "ride" else "")
     if getattr(x, "tag", ""):  # booked elsewhere (F-042): the title opens the booking detail
-        return Li(Span(cal.fmt_time(x.start), cls="cal-w-time"), A(x.title, href=detail_href(ctx, x), cls="cal-w-title is-booked", data_block=x.id), Span(x.tag, cls="cal-w-booked"))
+        return Li(Span(cal.fmt_time(x.at), cls="cal-w-time"), A(x.title, href=detail_href(ctx, x), cls="cal-w-title is-booked", data_block=x.id), Span(x.tag, cls="cal-w-booked"))
     return Li(Span(cal.fmt_time(x.start), cls="cal-w-time"),
               Span(x.title, cls=f"cal-w-title{' is-booked' if getattr(x, 'locked', False) else ''}"),
               Span("Booked", cls="cal-w-booked") if getattr(x, "locked", False) else "")

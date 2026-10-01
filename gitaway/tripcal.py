@@ -64,7 +64,16 @@ class Block:
     kind: str
     locked: bool = False
     icon: str = ""
+    label_start: int | None = None   # the true start when the block is drawn earlier so a late one has a readable height (an 11:50 PM flight)
     tag: str = ""   # "Booked elsewhere · Expedia" on an imported trip's blocks (F-042); such a block opens its booking detail
+
+
+def _at(self):
+    """The minute to show and to reason with: the true start, even when the block is drawn a little earlier."""
+    return self.start if self.label_start is None else self.label_start
+
+
+Block.at = property(_at)
 
 
 @dataclass(frozen=True)
@@ -292,8 +301,8 @@ def imported_blocks(plan, t):
 
     def put(block_id, at_day, start, end, title, icon):
         if 0 <= at_day <= last:
-            start = min(start, LAST_MIN - 1)  # keep the true time; only a 11:59 PM start is nudged so the block has a height
-            out.append(Block(block_id, at_day, start, min(max(end, start + 15), LAST_MIN) if start + 15 <= LAST_MIN else LAST_MIN, title, "booked", True, icon, tag))
+            drawn = min(start, LAST_MIN - 30)  # a late block is drawn from 11:29 PM at the latest, so it is 30 minutes tall (readable); its label keeps the true time
+            out.append(Block(block_id, at_day, drawn, min(max(end, drawn + 15), LAST_MIN), title, "booked", True, icon, label_start=start if start != drawn else None, tag=tag))
 
     for spec in tripimport.block_specs(plan):
         x = spec.item
@@ -342,7 +351,7 @@ def day_window(blocks, day):
         if b.id == "b-out" and b.day == day:
             lo = max(lo, b.end)
         if b.id == "b-back" and b.day == day:
-            hi = min(hi, b.start - AIRPORT_BUFFER)
+            hi = min(hi, b.at - AIRPORT_BUFFER)
     return lo, hi
 
 
@@ -352,8 +361,8 @@ def window_problem(blocks, day, start, end):
     for b in blocks:
         if b.id == "b-out" and b.day == day and start < b.end:
             return "land", b.end
-        if b.id == "b-back" and b.day == day and end > b.start - AIRPORT_BUFFER:
-            return "home", b.start - AIRPORT_BUFFER
+        if b.id == "b-back" and b.day == day and end > b.at - AIRPORT_BUFFER:
+            return "home", b.at - AIRPORT_BUFFER
     return None
 
 

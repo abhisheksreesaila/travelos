@@ -5,16 +5,17 @@ transaction. Its id is random; the preview hands out one (`new_token`) and the s
 
 Correcting an import. A template with the same itinerary number (or the same title and start date) as a trip the family already imported
 is a correction: `find_match` says which trip, and `save(..., replace=<id>)` swaps the trip's document and dates in place, keeping its
-calendar plans, notes, friends and rides. `delete` removes an imported trip and everything that belongs to it.
+calendar plans, notes, friends and rides. `delete` removes an imported trip and everything that belongs to it, its shared page too.
 """
 
 import json
 import re
+from dataclasses import replace
 import uuid
 
 from fh_saas.utils_sql import insert_only
 
-from gitaway import catalog, familydb, familydb_import, session as ses, tripimport
+from gitaway import catalog, community, familydb, familydb_import, session as ses, share, tripimport
 
 _TOKEN = re.compile(r"^[0-9a-f]{12}$")
 
@@ -82,6 +83,28 @@ def save(session, plan, token=None, replace=None) -> str:
     return trip_id
 
 
+def _retimes(db, trip_id, old_key, plan) -> list:
+    """[(ride row id, the ride moved to the corrected trip)] for the scheduled Uber rides whose time or place the correction changes."""
+    from gitaway import rides
+    if plan.rental or not plan.legs:
+        return []
+    oid = familydb_import.offer_id(trip_id)
+    flight, trip = tripimport.flight_offer(plan, oid), tripimport.trip_search(plan)
+    out = []
+    for r in familydb.rows(db, "SELECT id, data FROM rides WHERE key = :k", k=old_key):
+        moved = rides.retime(rides.from_dict(json.loads(r["data"])), flight, tripimport.stay_offer(plan, oid, rides.from_dict(json.loads(r["data"])).leg), trip)
+        if moved:
+            out.append((r["id"], moved))
+    return out
+
+
+def rides_to_retime(session, trip_id, plan) -> int:
+    """How many scheduled rides replacing trip `trip_id` with `plan` would move (for the preview)."""
+    with ses.family(session) as fam:
+        old = familydb.row(fam.db, "SELECT i.doc FROM trip_imports i WHERE i.trip_id = :t", t=trip_id) if fam else None
+        return len(_retimes(fam.db, trip_id, _ride_key(trip_id, tripimport.from_doc(json.loads(old["doc"]))), plan)) if old else 0
+
+
 def _replace(db, trip_id, plan, doc) -> str:
     """Swap the document and dates of the imported trip `trip_id`; its plans, notes, friends and rides stay (the rides follow the new picks' key)."""
     old = familydb.row(db, "SELECT t.params, i.doc FROM trips t JOIN trip_imports i ON i.trip_id = t.id WHERE t.id = :t AND t.source = 'imported'", t=trip_id)
@@ -89,12 +112,14 @@ def _replace(db, trip_id, plan, doc) -> str:
         raise SaveError("That trip is not there any more. Save it as a new trip instead.")
     before = tripimport.from_doc(json.loads(old["doc"]))
     old_key, new_key = _ride_key(trip_id, before), _ride_key(trip_id, plan)
+    moved = dict(_retimes(db, trip_id, old_key, plan))  # a scheduled ride follows the corrected flight times; one with a driver on the way stays
     familydb.run(db, "UPDATE trips SET title = :ti, params = :p, depart = :d, return_on = :r WHERE id = :t", ti=plan.title, p=_params(plan), d=plan.start.isoformat(),
                  r=plan.end.isoformat(), t=trip_id)
     familydb.run(db, "UPDATE trip_imports SET doc = :doc WHERE trip_id = :t", doc=json.dumps(doc, separators=(",", ":")), t=trip_id)
-    if old_key != new_key:
+    if old_key != new_key or moved:
         for r in familydb.rows(db, "SELECT id, data FROM rides WHERE key = :k", k=old_key):
-            data = json.loads(r["data"])
+            from gitaway import rides
+            data = rides.to_dict(replace(moved[r["id"]], key=new_key)) if r["id"] in moved else json.loads(r["data"])
             data["k"] = new_key
             familydb.run(db, "UPDATE rides SET key = :k, data = :d WHERE id = :i", k=new_key, d=json.dumps(data, separators=(",", ":")), i=r["id"])
     return trip_id
@@ -112,12 +137,16 @@ def delete(session, trip_id) -> bool:
             if not old:
                 return False
             key = _ride_key(trip_id, tripimport.from_doc(json.loads(old["doc"])))
+            booking = familydb.booking_for_trip(db, trip_id)
             for table in ("activities", "notes", "cal_state", "friends"):
                 familydb.run(db, f"DELETE FROM {table} WHERE trip_id = :t", t=trip_id)
             familydb.run(db, "DELETE FROM rides WHERE trip_id = :t OR key = :k", t=trip_id, k=key)
             familydb.run(db, "DELETE FROM trip_imports WHERE trip_id = :t", t=trip_id)
             familydb.run(db, "DELETE FROM trips WHERE id = :t", t=trip_id)
             familydb.run(db, "UPDATE members SET trip_id = NULL WHERE trip_id = :t", t=trip_id)
+        for row in community.rows(kind="shared"):  # a shared page of this trip (by whoever shared it) comes down with it
+            if booking and share.slug_for(row["owner_user"], booking) == row["slug"]:
+                community.unpublish({"user_id": row["owner_user"]}, row["slug"])
         return True
 
 

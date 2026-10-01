@@ -129,7 +129,7 @@ def _consequences(plan):
     return out
 
 
-def preview_page(text, parsed, match=None):
+def preview_page(text, parsed, match=None, moves=0):
     plan = parsed.plan
     token = importer.new_token()
     out = page("Preview your trip", Div(
@@ -140,7 +140,7 @@ def preview_page(text, parsed, match=None):
                 *([Div(P(f"You already imported “{match[1]}”. Is this a correction?", cls="ti-note"),
                        Form(Input(type="hidden", name="text", value=text), Input(type="hidden", name="replace", value=match[0]),
                             Button(icon("check", 16, 2.6), "Replace the existing trip", type="submit", cls="btn btn-ink ti-save", id="ti-replace"),
-                            P("Its calendar plans, notes and rides stay.", cls="ti-note"), action=f"{PATH}/save", method="post"), cls="ti-match")] if match else []),
+                            P("Its calendar plans, notes and rides stay." + (f" {moves} scheduled Uber ride{'s' if moves != 1 else ''} will move to the new flight times and hotel." if moves else ""), cls="ti-note", **({"id": "ti-moves"} if moves else {})), action=f"{PATH}/save", method="post"), cls="ti-match")] if match else []),
                 Form(Input(type="hidden", name="text", value=text), Input(type="hidden", name="token", value=token),
                      Button(icon("check", 16, 2.6), "Save as a new trip" if match else "Save this trip", type="submit", cls="btn btn-sm ti-save" if match else "btn btn-ink ti-save", id="ti-save"),
                      action=f"{PATH}/save", method="post"),
@@ -187,7 +187,8 @@ def register(app):
             parsed = ti.parse(text)
         except ti.ImportProblem as e:
             return paste_page(text, e.errors, e.warnings, status=422)
-        return preview_page(text, parsed, importer.find_match(session, parsed.plan))
+        match = importer.find_match(session, parsed.plan)
+        return preview_page(text, parsed, match, importer.rides_to_retime(session, match[0], parsed.plan) if match else 0)
 
     @app.post(f"{PATH}/save")
     def import_save(session, text: str = "", token: str = "", replace: str = ""):
@@ -228,7 +229,7 @@ def register(app):
         plan = importer.plan_of(session, trip or None)
         if plan is None:
             return _sorry("Nothing to delete", "That trip is not there, or it was not imported (only imported trips can be deleted here).", A("Back to the calendar", href="/calendar", cls="btn btn-ink"), status=404)
-        return _sorry(f"Delete “{plan.title}”?", "This removes the trip from your family: its booked items, calendar plans, notes and Uber rides. It cannot be undone.",
+        return _sorry(f"Delete “{plan.title}”?", "This removes the trip from your family: its booked items, calendar plans, notes and Uber rides. If you or anyone in your family shared it, the shared page comes down too. It cannot be undone.",
                       Form(Input(type="hidden", name="trip", value=trip), Button("Delete this trip", type="submit", cls="btn btn-ink", id="ti-confirm-delete"),
                            action="/trip/delete", method="post"), A("Keep it", href="/calendar", cls="ti-link"))
 

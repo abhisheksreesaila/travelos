@@ -79,4 +79,8 @@ def test_late_events_fit_inside_the_grid(signed_in, base_url):
         box = page.locator(f'[data-block="{block_id}"]').bounding_box()
         body = page.locator(f'.cal-body[data-day="{day}"]').bounding_box()
         assert box["y"] >= body["y"] - 1 and box["y"] + box["height"] <= body["y"] + body["height"] + 1, block_id
+    root = page.evaluate("parseFloat(getComputedStyle(document.documentElement).fontSize)")
+    flight = page.locator('[data-block="b-back"]')
+    assert flight.bounding_box()["height"] >= 1.2 * root  # about 30 minutes tall (1.25rem), not a line
+    expect(flight.locator(".cal-time")).to_have_text("11:50 PM")  # the label keeps the true time
     no_sideways_scroll(page)
