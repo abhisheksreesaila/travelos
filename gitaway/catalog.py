@@ -4,8 +4,8 @@ Everything here is invented sample data (airlines, hotels, rental companies, pri
 Prices are integer cents for the whole party and whole trip, taxes and fees included.
 """
 
-from dataclasses import dataclass, field
-from datetime import date
+from dataclasses import dataclass, field, replace
+from datetime import date, timedelta
 import re
 from itertools import product
 
@@ -60,6 +60,113 @@ class Offer:
 
 SAMPLE_TRIP = TripSearch("SFO", "San Francisco", "Los Angeles", ("LAX", "BUR"), date(2026, 10, 16), date(2026, 10, 20), 2, (4, 7))
 
+# ---- the trip: what the traveler asks for (F-035) -----------------------------------------------------------------
+# Every catalog price below is written for the sample trip (4 nights, 4 travelers) and scaled to the trip asked about.
+
+SAMPLE_NIGHTS = SAMPLE_TRIP.nights
+SAMPLE_PARTY = SAMPLE_TRIP.travelers
+MAX_NIGHTS = 30
+MAX_TRAVELERS = 8
+MAX_KID_AGE = 17
+ORIGIN = ("SFO", "San Francisco")
+
+
+@dataclass(frozen=True)
+class Destination:
+    key: str
+    name: str
+    short: str
+    live: bool  # False: shown as "coming soon" and never accepted
+
+
+DESTINATIONS = (Destination("la", "Los Angeles", "LA", True), Destination("sd", "San Diego", "SD", False), Destination("hi", "Hawaii", "HI", False))
+
+
+class TripError(ValueError):
+    """A trip request the catalog refuses. `errors` is a list of (field, friendly message); fields are from, to, d, r, a, k."""
+
+    def __init__(self, errors):
+        self.errors = list(errors)
+        super().__init__(self.errors[0][1] if self.errors else "Bad trip")
+
+
+_ISO = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+
+def _date(text):
+    if not isinstance(text, str) or not _ISO.fullmatch(text.strip()):
+        return None
+    try:
+        d = date.fromisoformat(text.strip())
+    except ValueError:
+        return None
+    return d if 2000 <= d.year <= 2100 else None
+
+
+def _whole(text):
+    text = (text or "").strip() if isinstance(text, str) else ""
+    return int(text) if text.isascii() and text.isdigit() else None
+
+
+def parse_trip(origin, to, depart, ret, adults, kids) -> TripSearch:
+    """A TripSearch from form or URL text, or TripError listing every friendly problem. `kids` is ages, comma separated ("4,7")."""
+    errs = []
+    if (origin or "").strip().upper() != ORIGIN[0]:
+        errs.append(("from", "We only fly from San Francisco (SFO) for now."))
+    dest = next((x for x in DESTINATIONS if x.key == (to or "").strip().lower()), None)
+    if dest is None:
+        errs.append(("to", "Pick where you want to go."))
+    elif not dest.live:
+        errs.append(("to", f"{dest.name} is coming soon. Los Angeles is open today."))
+    d, r = _date(depart), _date(ret)
+    if d is None:
+        errs.append(("d", "Pick a valid depart date."))
+    if r is None:
+        errs.append(("r", "Pick a valid return date."))
+    if d and r:
+        if r <= d:
+            errs.append(("r", "Your return must be after you leave."))
+        elif (r - d).days > MAX_NIGHTS:
+            errs.append(("r", f"Trips can be up to {MAX_NIGHTS} nights. Pick an earlier return."))
+    n_adults = _whole(adults)
+    if n_adults is None or n_adults < 1:
+        errs.append(("a", "Add at least 1 adult."))
+    ages = []
+    for part in [p for p in (kids or "").split(",") if p.strip() != ""] if isinstance(kids, str) else []:
+        age = _whole(part)
+        if age is None or age > MAX_KID_AGE:
+            errs.append(("k", f"Pick an age from 0 to {MAX_KID_AGE} for each kid."))
+            break
+        ages.append(age)
+    if n_adults and n_adults + len(ages) > MAX_TRAVELERS:
+        errs.append(("a", f"That is more than {MAX_TRAVELERS} travelers. Split it into two trips."))
+    if errs:
+        raise TripError(errs)
+    return TripSearch(ORIGIN[0], ORIGIN[1], dest.name, ("LAX", "BUR"), d, r, n_adults, tuple(ages))
+
+
+def trip_query(trip) -> str:
+    """The URL params that carry a trip: empty for the sample trip, else d=&r=&a=&k= (k left out when nobody is a kid)."""
+    if trip == SAMPLE_TRIP:
+        return ""
+    return f"d={trip.depart.isoformat()}&r={trip.return_.isoformat()}&a={trip.adults}" + (f"&k={','.join(map(str, trip.kid_ages))}" if trip.kid_ages else "")
+
+
+def trip_from_url(d, r, a, k) -> TripSearch:
+    """The trip a URL names. Nothing given, or anything bad, means the sample trip."""
+    try:
+        return parse_trip(ORIGIN[0], "la", d or "", r or "", a or "", k or "")
+    except TripError:
+        return SAMPLE_TRIP
+
+
+def _per_night(cents, trip):
+    return cents // SAMPLE_NIGHTS * trip.nights
+
+
+def _per_traveler(cents, trip):
+    return cents // SAMPLE_PARTY * trip.travelers
+
 _OFFERS = [
     Offer("f1", "flight", "Skylark Air 214", "8:05 → 9:32", "Nonstop to LAX · 1h 27m · back Tue 2:10 PM", 123_600, ("Best nonstop",), airport="LAX",
           depart_min=485, arrive_min=572, back_depart_min=850, back_arrive_min=937),
@@ -84,14 +191,25 @@ _OFFERS = [
 _BY_ID = {o.id: o for o in _OFFERS}
 
 
-def offers(kind: str) -> list[Offer]:
-    """Offers in one workspace lane, in display order."""
-    return [o for o in _OFFERS if o.kind == kind]
+def _priced(o: Offer, trip) -> Offer:
+    """`o` for `trip`. Flights scale by traveler, cars by night, and a stay costs its default rooms for the nights."""
+    if trip == SAMPLE_TRIP:
+        return o
+    if o.kind == "flight":
+        return replace(o, price_cents=_per_traveler(o.price_cents, trip), detail=re.sub(r"back \w{3} ", f"back {trip.return_:%a} ", o.detail))
+    if o.kind == "car":
+        return replace(o, price_cents=_per_night(o.price_cents, trip))
+    return replace(o, price_cents=default_stay_pick(o.id, trip).rooms_cents)
 
 
-def offer(offer_id: str) -> Offer:
-    """One offer by id. Raises KeyError for an unknown id."""
-    return _BY_ID[offer_id]
+def offers(kind: str, trip=SAMPLE_TRIP) -> list[Offer]:
+    """Offers in one workspace lane, in display order, priced for `trip` (default: the sample trip)."""
+    return [_priced(o, trip) for o in _OFFERS if o.kind == kind]
+
+
+def offer(offer_id: str, trip=SAMPLE_TRIP) -> Offer:
+    """One offer by id, priced for `trip`. Raises KeyError for an unknown id."""
+    return _priced(_BY_ID[offer_id], trip)
 
 
 def money(cents: int) -> str:
@@ -102,7 +220,7 @@ def money(cents: int) -> str:
 
 # ---- stay details: rooms, add-ons, highlights, policy, sample photos, points of interest (F-026) --------------------
 
-PARTY = SAMPLE_TRIP.travelers  # rooms must sleep at least this many
+PARTY = SAMPLE_PARTY  # the sample trip's party: its rooms must sleep at least this many
 MAX_PER_ROOM = 4  # the most of one room type
 
 
@@ -153,19 +271,35 @@ class StayDetail:
         return tuple(self.pois[1:4])
 
 
-ADDONS = (
-    Addon("bf", "Breakfast for 4", "Breakfast", 32_000),
-    Addon("lc", "Late checkout, 2 PM", "Late checkout", 4_000),
-    Addon("pk", "Parking, 4 nights", "Parking", 18_000),
+# id, name ({party} and {nights} fill in for the trip), short name, cents for the sample trip, what the price follows
+_ADDON_SPECS = (
+    ("bf", "Breakfast for {party}", "Breakfast", 32_000, "person-night"),
+    ("lc", "Late checkout, 2 PM", "Late checkout", 4_000, "flat"),
+    ("pk", "Parking, {nights}", "Parking", 18_000, "night"),
 )
-_ADDON_BY_ID = {a.id: a for a in ADDONS}
+
+
+def addons(trip=SAMPLE_TRIP) -> tuple:
+    """The stay add-ons priced for `trip`: breakfast per person per night, parking per night, late checkout flat."""
+    out = []
+    for aid, name, short, cents, per in _ADDON_SPECS:
+        if per == "person-night":
+            cents = cents // (SAMPLE_PARTY * SAMPLE_NIGHTS) * trip.travelers * trip.nights
+        elif per == "night":
+            cents = _per_night(cents, trip)
+        nights = f"{trip.nights} night{'s' if trip.nights != 1 else ''}"
+        out.append(Addon(aid, name.format(party=trip.travelers, nights=nights), short, cents))
+    return tuple(out)
+
+
+ADDONS = addons()  # for the sample trip
 
 _HOME = "You are here. Tap a pin to fly to it."
 _STAY_DETAILS = {
     "h1": StayDetail(
         chips=("Sea view", "Pool", "Crib available", "3 min to the beach"),
         highlights=("Kids eat free at the pool café", "Beach towels and sand toys to borrow", "Quiet floors above the 3rd"),
-        policy="Free cancellation until Oct 13. After that, the first night is charged.",
+        policy="Free cancellation until {c3}. After that, the first night is charged.",
         samples=(("Lobby", "lobby-front-desk.jpg"), ("Pool", "pool-courtyard.jpg"), ("Room", "room-purple-window.jpg"), ("Breakfast", "breakfast-buffet.jpg")),
         rooms=(
             Room("cq", "City-view Double Queen", "City view", "2 queen beds", 4, 154_000, "fill-grape-tint", "room-bed-lamp.jpg"),
@@ -185,7 +319,7 @@ _STAY_DETAILS = {
     "h2": StayDetail(
         chips=("Pet friendly", "Kitchen", "Crib available", "Bikes to borrow"),
         highlights=("Full kitchen in every suite", "Walk to the canals", "Dogs stay free"),
-        policy="Free cancellation until Oct 9. After that, 50% of the stay is charged.",
+        policy="Free cancellation until {c7}. After that, 50% of the stay is charged.",
         samples=(("Courtyard", "pool-courtyard.jpg"), ("Kitchen", ""), ("Suite", "room-balcony-view.jpg"), ("Canals", "")),
         rooms=(
             Room("fk", "Family suite with kitchen", "Garden view", "Queen + sofa bed", 4, 118_800, "fill-mint-tint", "room-dark-wood.jpg"),
@@ -224,16 +358,29 @@ _STAY_DETAILS = {
 }
 
 
-def stay_detail(stay_id: str) -> StayDetail:
-    """Rooms, highlights, policy, photos and map points for one stay. Raises KeyError for an unknown id."""
-    return _STAY_DETAILS[stay_id]
+def _day(d):
+    return f"{d:%b} {d.day}"
 
 
-def addon(addon_id: str) -> Addon:
-    return _ADDON_BY_ID[addon_id]
+def stay_detail(stay_id: str, trip=SAMPLE_TRIP) -> StayDetail:
+    """Rooms, highlights, policy, photos and map points for one stay, rooms priced and policy dated for `trip`.
+
+    Raises KeyError for an unknown id.
+    """
+    base = _STAY_DETAILS[stay_id]
+    policy = base.policy.format(c3=_day(trip.depart - timedelta(days=3)), c7=_day(trip.depart - timedelta(days=7)))
+    if trip == SAMPLE_TRIP:
+        return replace(base, policy=policy)
+    return replace(base, policy=policy, rooms=tuple(replace(r, price_cents=_per_night(r.price_cents, trip)) for r in base.rooms))
 
 
-FIT_TEXT = {"none": "Pick at least one room", "full": f"Room for all {PARTY}"}
+def addon(addon_id: str, trip=SAMPLE_TRIP) -> Addon:
+    """One add-on priced for `trip`. Raises KeyError for an unknown id."""
+    for a in addons(trip):
+        if a.id == addon_id:
+            return a
+    raise KeyError(addon_id)
+
 _ROOMS_RE = re.compile(r"(?:[a-z]{2}[0-9])*")
 _ADDS_RE = re.compile(r"(?:[a-z]{2})*")
 
@@ -254,10 +401,11 @@ class StayPick:
     stay_id: str
     rooms: tuple = ()  # (room id, count) in catalog order, counts 1..MAX_PER_ROOM
     addons: tuple = ()  # add-on ids in catalog order
+    trip: TripSearch = SAMPLE_TRIP  # sets the nights, the party the rooms must sleep, and so every price
 
     @property
     def detail(self) -> StayDetail:
-        return stay_detail(self.stay_id)
+        return stay_detail(self.stay_id, self.trip)
 
     @property
     def sleeps(self) -> int:
@@ -266,7 +414,7 @@ class StayPick:
 
     @property
     def fits(self) -> bool:
-        return self.sleeps >= PARTY
+        return self.sleeps >= self.trip.travelers
 
     @property
     def fit(self) -> str:
@@ -274,7 +422,9 @@ class StayPick:
 
     @property
     def fit_text(self) -> str:
-        return f"Sleeps {self.sleeps} of {PARTY} · add a room" if self.fit == "short" else FIT_TEXT[self.fit]
+        if self.fit == "short":
+            return f"Sleeps {self.sleeps} of {self.trip.travelers} · add a room"
+        return "Pick at least one room" if self.fit == "none" else f"Room for all {self.trip.travelers}"
 
     @property
     def counts(self) -> dict:
@@ -285,7 +435,7 @@ class StayPick:
     @property
     def rooms_code(self) -> str:
         """The compact URL form: "" for the default room, else e.g. "ok2" or "ok2fs1"."""
-        return "" if self.rooms == _default_rooms(self.stay_id) else "".join(f"{i}{n}" for i, n in self.rooms)
+        return "" if self.rooms == _default_rooms(self.stay_id, self.trip) else "".join(f"{i}{n}" for i, n in self.rooms)
 
     @property
     def add_code(self) -> str:
@@ -300,8 +450,14 @@ class StayPick:
     def items(self) -> tuple:
         by_id = {r.id: r for r in self.detail.rooms}
         rooms = tuple(Item("stay", by_id[i].name, n, by_id[i].price_cents * n, f"{by_id[i].beds} · sleeps {by_id[i].sleeps}") for i, n in self.rooms)
-        adds = tuple(Item("stay", a.name, 1, a.price_cents) for a in map(addon, self.addons))
+        adds = tuple(Item("stay", a.name, 1, a.price_cents) for a in (addon(i, self.trip) for i in self.addons))
         return rooms + adds
+
+    @property
+    def rooms_cents(self) -> int:
+        """The rooms alone, without add-ons."""
+        by_id = {r.id: r for r in self.detail.rooms}
+        return sum(by_id[i].price_cents * n for i, n in self.rooms)
 
     @property
     def cents(self) -> int:
@@ -315,12 +471,18 @@ class StayPick:
     @property
     def summary(self) -> str:
         """"Ocean-view King ×2 + Breakfast", as shown in the choose bar, the ledger and the calendar."""
-        parts = ([self.rooms_summary] if self.rooms else []) + [addon(a).short for a in self.addons]
+        parts = ([self.rooms_summary] if self.rooms else []) + [addon(a, self.trip).short for a in self.addons]
         return " + ".join(parts) if parts else "No room picked yet"
 
 
-def _default_rooms(stay_id):
-    return ((stay_detail(stay_id).rooms[0].id, 1),)
+def _default_rooms(stay_id, trip=SAMPLE_TRIP):
+    """The first room, as many as the party needs (one for the sample trip)."""
+    first = _STAY_DETAILS[stay_id].rooms[0]
+    return ((first.id, -(-trip.travelers // first.sleeps)),)
+
+
+def default_stay_pick(stay_id, trip=SAMPLE_TRIP) -> StayPick:
+    return StayPick(stay_id, _default_rooms(stay_id, trip), (), trip)
 
 
 def _parse_add(add):
@@ -330,31 +492,31 @@ def _parse_add(add):
     return tuple(a.id for a in ADDONS if a.id in ids)
 
 
-def parse_stay(stay_id: str, rooms=None, add=None) -> StayPick:
+def parse_stay(stay_id: str, rooms=None, add=None, trip=SAMPLE_TRIP) -> StayPick:
     """Read a stay pick from URL text without repairing capacity, so an edit in progress can be described.
 
     `rooms` None means the default room; "" means none picked. Malformed text, or a count above the limit, falls back to the
     default room; unknown ids drop out, a repeated room keeps its first count and a zero count means not picked.
     Malformed add-ons mean none.
     """
-    by_id = {r.id: r for r in stay_detail(stay_id).rooms}
+    by_id = {r.id: r for r in stay_detail(stay_id, trip).rooms}
     if rooms is None or not _ROOMS_RE.fullmatch(rooms):
-        return StayPick(stay_id, _default_rooms(stay_id), _parse_add(add))
+        return StayPick(stay_id, _default_rooms(stay_id, trip), _parse_add(add), trip)
     seen = {}
     for k in range(0, len(rooms), 3):
         rid, n = rooms[k:k + 2], int(rooms[k + 2])
         if n > MAX_PER_ROOM:
-            return StayPick(stay_id, _default_rooms(stay_id), _parse_add(add))
+            return StayPick(stay_id, _default_rooms(stay_id, trip), _parse_add(add), trip)
         if rid in by_id and rid not in seen:
             seen[rid] = n
-    chosen = tuple((r.id, seen[r.id]) for r in stay_detail(stay_id).rooms if seen.get(r.id))
-    return StayPick(stay_id, chosen, _parse_add(add))
+    chosen = tuple((r.id, seen[r.id]) for r in stay_detail(stay_id, trip).rooms if seen.get(r.id))
+    return StayPick(stay_id, chosen, _parse_add(add), trip)
 
 
-def stay_pick(stay_id: str, rooms=None, add=None) -> StayPick:
-    """A stay pick that can be booked: rooms that are missing, bad, or sleep fewer than the party become the default room."""
-    p = parse_stay(stay_id, rooms, add)
-    return p if p.fits else StayPick(stay_id, _default_rooms(stay_id), p.addons)
+def stay_pick(stay_id: str, rooms=None, add=None, trip=SAMPLE_TRIP) -> StayPick:
+    """A stay pick that can be booked: rooms that are missing, bad, or sleep fewer than the party become the default rooms."""
+    p = parse_stay(stay_id, rooms, add, trip)
+    return p if p.fits else StayPick(stay_id, _default_rooms(stay_id, trip), p.addons, trip)
 
 
 @dataclass(frozen=True)
@@ -367,40 +529,44 @@ class Quote:
     above_cheapest_cents: int = 0
     items: tuple = field(default=())
     stay: StayPick = None
+    trip: TripSearch = SAMPLE_TRIP
 
     def lane_cents(self, lane: str) -> int:
         return sum(i.cents for i in self.items if i.lane == lane)
 
 
-def _cheapest_ids():
+def _cheapest_ids(trip=SAMPLE_TRIP):
     return min(
-        product(*(offers(k) for k in ("flight", "stay", "car"))),
+        product(*(offers(k, trip) for k in ("flight", "stay", "car"))),
         key=lambda combo: sum(o.price_cents for o in combo),
     )
 
 
-def quote(flight_id: str, stay_id: str, car_id: str, stay: StayPick = None) -> Quote:
+def quote(flight_id: str, stay_id: str, car_id: str, stay: StayPick = None, trip=SAMPLE_TRIP) -> Quote:
     """The itemized cost ledger for one pick in each lane. Unknown ids raise KeyError.
 
-    `stay` (a StayPick for this stay; default: the default room) sets the rooms and add-ons. A pick for another stay
-    raises KeyError, and one that sleeps fewer than the party raises ValueError.
+    `trip` sets the nights and travelers every price follows. `stay` (a StayPick for this stay and trip; default: the default
+    rooms) sets the rooms and add-ons. A pick for another stay raises KeyError, and one that sleeps fewer than the party
+    raises ValueError.
     """
-    lines = tuple(offer(i) for i in (flight_id, stay_id, car_id))
+    lines = tuple(offer(i, trip) for i in (flight_id, stay_id, car_id))
     for line, kind in zip(lines, ("flight", "stay", "car")):
         if line.kind != kind:
             raise KeyError(f"{line.id} is a {line.kind}, not a {kind}")
-    stay = stay or stay_pick(stay_id)
+    stay = stay or stay_pick(stay_id, trip=trip)
     if stay.stay_id != stay_id:
         raise KeyError(f"{stay.stay_id} is not {stay_id}")
+    if stay.trip != trip:
+        raise ValueError("That stay pick is for a different trip")
     if not stay.fits:
         raise ValueError(f"{stay.summary}: {stay.fit_text}")
     flight, _, car = lines
     items = (Item("flight", flight.name, 1, flight.price_cents, flight.detail), *stay.items, Item("car", car.name, 1, car.price_cents, car.detail))
     total = sum(i.cents for i in items)
-    floor = sum(o.price_cents for o in _cheapest_ids())
-    return Quote(flight_id, stay_id, car_id, lines, total, max(0, total - floor), items, stay)
+    floor = sum(o.price_cents for o in _cheapest_ids(trip))
+    return Quote(flight_id, stay_id, car_id, lines, total, max(0, total - floor), items, stay, trip)
 
 
-def cheapest() -> Quote:
-    f, s, c = _cheapest_ids()
-    return quote(f.id, s.id, c.id)
+def cheapest(trip=SAMPLE_TRIP) -> Quote:
+    f, s, c = _cheapest_ids(trip)
+    return quote(f.id, s.id, c.id, trip=trip)
