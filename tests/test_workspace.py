@@ -261,10 +261,10 @@ def test_fork_link_uses_the_itinerary_view_helper():
     assert "fork_href" in src and "intent=fork" not in src
 
 
-def test_tablet_ledger_wraps_and_never_truncates():
+def test_tablet_ledger_takes_its_own_row_and_never_truncates():
     css = open("assets/css/workspace.css").read()
     tablet = css[css.index("/* Tablet"):css.index("/* Phone")]
-    assert re.search(r"\.ws-ledger \{[^}]*flex-wrap: wrap", tablet)
-    assert re.search(r"\.ws-slot-name \{[^}]*white-space: normal", tablet)
+    assert re.search(r"\.ws-ledger \{[^}]*flex: 1 1 100%", tablet)
+    assert not re.search(r"\.ws-slot-name \{[^}]*(nowrap|ellipsis)", css)
     assert re.search(r"\.ws-badge \{[^}]*white-space: nowrap", css)
     assert re.search(r"\.ws-row \.ws-price \{[^}]*order: 2", tablet)

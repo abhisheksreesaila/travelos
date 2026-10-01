@@ -107,8 +107,12 @@
       document.querySelector('[data-slot="' + lane + '"]').textContent = s.name;
       document.querySelector('[data-slot-sub="' + lane + '"]').textContent = s.sub;
       document.querySelector('[data-slot-price="' + lane + '"]').textContent = s.price;
+      var lineEl = document.querySelector('[data-line-price="' + lane + '"]');
+      lineEl.textContent = s.price;
+      lineEl.parentNode.title = s.name;
     });
     document.getElementById('ws-total').textContent = L.total;
+    document.getElementById('ws-total-live').textContent = 'Total ' + L.total;
     var chip = document.getElementById('ws-delta');
     chip.textContent = L.delta;
     chip.classList.toggle('fill-mint', L.cheapest);
@@ -167,6 +171,7 @@
       if (b.dataset.pick === id) b.setAttribute('aria-current', 'true'); else b.removeAttribute('aria-current');
     });
     pane.querySelectorAll('.ws-detail-panel').forEach(function (a) { a.hidden = a.dataset.detail !== id; });
+    setPill(false);
     var sc = pane.querySelector('.ws-detail-panel:not([hidden]) .ws-dscroll');
     if (sc) sc.scrollTop = 0;
     if (focusCard) {
@@ -380,6 +385,7 @@
 
   function applyExpanded(name) {
     if (grid.dataset.expanded === 'stays' && name !== 'stays') discardDrafts();
+    setPill(false);
     if (name) grid.dataset.expanded = name; else delete grid.dataset.expanded;
     document.querySelectorAll('.ws-expand').forEach(function (b) {
       var on = b.dataset.expand === name;
@@ -439,6 +445,7 @@
     var t = e.target;
     if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
     var open = grid.dataset.expanded;
+    if (e.key === 'Escape' && popOpen()) { e.preventDefault(); setPop(false, true); return; }
     if (e.key === 'Escape' && open) {
       // On a phone's detail screen, Esc goes back to the list first.
       if (SPLIT[open] && phone.matches && paneEl(open).dataset.screen === 'detail') backToList(open); else collapse();
@@ -456,23 +463,51 @@
     }
   });
 
-  var toggle = document.getElementById('ws-details');
-  if (toggle) toggle.addEventListener('click', function () {
-    var open = toggle.getAttribute('aria-expanded') !== 'true';
-    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-    toggle.textContent = open ? 'Hide' : 'Details';
-    toggle.closest('.ws-ledger').classList.toggle('is-open', open);
-  });
-
-  // Keep page padding in step with the pinned ledger's real height (phone layout).
+  // ---- the ledger line (F-031): total opens a breakdown popover; scrolling a detail down shrinks the line to a pill -------
   var ledger = document.querySelector('.ws-ledger');
-  function sizeLedger() {
-    document.documentElement.style.setProperty('--ws-ledger-h', ledger.offsetHeight + 'px');
+  var totalBtn = document.getElementById('ws-total');
+  var pop = document.getElementById('ws-pop');
+  function popOpen() { return !!pop && !pop.hidden; }
+  function setPop(open, moveFocus) {
+    if (!pop || popOpen() === open) return;
+    pop.hidden = !open;
+    totalBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open) { setPill(false); if (moveFocus) pop.focus(); }
+    else if (moveFocus) totalBtn.focus();
   }
-  if (ledger) {
-    sizeLedger();
-    if (window.ResizeObserver) new ResizeObserver(sizeLedger).observe(ledger);
-    else window.addEventListener('resize', sizeLedger);
+  function setPill(on) {
+    if (!ledger || ledger.classList.contains('is-pill') === on) return;
+    if (on && popOpen()) setPop(false, false);
+    ledger.classList.toggle('is-pill', on);
+    // As a pill the first tap only restores the line, so the button says that instead of promising a popover.
+    if (on) { totalBtn.setAttribute('aria-label', 'Show cost line'); totalBtn.removeAttribute('aria-haspopup'); }
+    else { totalBtn.removeAttribute('aria-label'); totalBtn.setAttribute('aria-haspopup', 'dialog'); }
+  }
+  if (ledger && pop) {
+    totalBtn.addEventListener('click', function () {
+      if (ledger.classList.contains('is-pill')) { setPill(false); return; } // tapping the pill restores the line
+      setPop(!popOpen(), true);
+    });
+    // Tapping outside closes it (focus stays where the tap put it); so does moving focus out with Tab.
+    document.addEventListener('pointerdown', function (e) { if (popOpen() && !ledger.contains(e.target)) setPop(false, false); });
+    ledger.addEventListener('focusout', function (e) {
+      if (popOpen() && e.relatedTarget && !ledger.contains(e.relatedTarget)) setPop(false, false);
+    });
+    // Scrolling the open detail down shrinks the line; scrolling up (or back to the top) restores it.
+    // A run in one direction counts once it is a few pixels long, so a smooth scroll's tiny steps still add up.
+    var runs = new WeakMap();
+    grid.addEventListener('scroll', function (e) {
+      var el = e.target;
+      if (!el.classList || !el.classList.contains('ws-dscroll') || phone.matches) return;
+      var r = runs.get(el) || { last: 0, dir: 0, from: 0 }, now = el.scrollTop;
+      runs.set(el, r);
+      if (now === r.last) return;
+      var dir = now > r.last ? 1 : -1;
+      if (dir !== r.dir) { r.dir = dir; r.from = r.last; }
+      r.last = now;
+      if (now <= 4 || (dir < 0 && r.from - now > 6)) setPill(false);
+      else if (dir > 0 && now > 16 && now - r.from > 6) setPill(true);
+    }, true);
   }
 
   var start = grid.dataset.expanded;
