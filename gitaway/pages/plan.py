@@ -257,35 +257,45 @@ def flight_detail(o, picked, viewing):
     return _article(o, picked, viewing, body, choose_bar(o, picked, "flight", o.detail))
 
 
+LEDGER_LANES = [("FLIGHT", "plane", "fill-sun-tint", "flight", "+"), ("STAY", "bed", "fill-mint-tint", "stay", "+"),
+                ("GETTING AROUND", "car", "fill-sky-tint", "car", "=")]
+
+
 def ledger(q, trip):
-    slots = [("FLIGHT", "plane", "fill-sun-tint", "flight", "+"), ("STAY", "bed", "fill-mint-tint", "stay", "+"),
-             ("GETTING AROUND", "car", "fill-sky-tint", "car", "=")]
+    """The slim ledger line for the top bar (F-031): flight · stay · car = total, plus Book. Tapping the total opens the popover
+    with the itemized lines and the best-value hint. Every figure is rendered from the catalog; the JS swaps in /plan/quote's."""
     figures = ledger_json(q)["slots"]  # the same strings GET /plan/quote sends
+    line = []
+    for label, ic, fill, lane, op in LEDGER_LANES:
+        line.append(Span(icon(ic, 16, 2.2), Span(label.title(), cls="sr-only"), Span(figures[lane]["price"], data_line_price=lane),
+                         cls="ws-line-item", title=figures[lane]["name"]))
+        line.append(Span(op, cls="ws-op", aria_hidden="true"))
     slot_els = [
         Div(
-            Span(icon(ic, 26, 2.1), cls=f"ws-tile {fill}"),
+            Span(icon(ic, 22, 2.1), cls=f"ws-tile {fill}"),
             Span(Span(label, cls="ws-slot-label"), Span(figures[lane]["name"], cls="ws-slot-name", data_slot=lane),
-                 Span(figures[lane]["sub"], cls="ws-slot-sub", data_slot_sub=lane),
-                 Span(figures[lane]["price"], cls="ws-slot-price", data_slot_price=lane), cls="ws-slot-text"),
-            Span(op, cls="ws-op", aria_hidden="true"), cls="ws-slot",
+                 Span(figures[lane]["sub"], cls="ws-slot-sub", data_slot_sub=lane), cls="ws-slot-text"),
+            Span(figures[lane]["price"], cls="ws-slot-price", data_slot_price=lane), cls="ws-slot",
         )
-        for label, ic, fill, lane, op in slots
+        for label, ic, fill, lane, op in LEDGER_LANES
     ]
-    return Section(
+    pop = Div(
         Div(*slot_els, cls="ws-slots", id="ws-slots"),
-        Div(
-            Span(catalog.money(q.total_cents), cls="ws-total", id="ws-total"),
-            Span(f"{trip.travelers} people · taxes & fees in", cls="ws-total-note"),
-            Span(delta_text(q), cls=f"ws-chip {'fill-mint' if q.above_cheapest_cents == 0 else 'fill-sun-tint'}", id="ws-delta"),
-            cls="ws-total-box", aria_live="polite",
-        ),
-        A("Book this trip", href=book_href(q.flight_id, q.stay_id, q.car_id, q.stay), id="ws-book", cls="btn btn-ink ws-book"),
-        Button("Details", type="button", cls="ws-details-toggle", id="ws-details", aria_expanded="false", aria_controls="ws-slots"),
+        Span(f"{trip.travelers} people · taxes & fees in", cls="ws-total-note"),
+        Span(delta_text(q), cls=f"ws-chip {'fill-mint' if q.above_cheapest_cents == 0 else 'fill-sun-tint'}", id="ws-delta", aria_live="polite"),
+        cls="ws-pop", id="ws-pop", role="dialog", aria_label="Cost breakdown", tabindex="-1", hidden=True,
+    )
+    return Section(
+        Span(*line, cls="ws-lines"),
+        Button(catalog.money(q.total_cents), type="button", id="ws-total", cls="ws-total", aria_expanded="false", aria_controls="ws-pop",
+               aria_haspopup="dialog", title="Cost breakdown"),
+        A("Book", href=book_href(q.flight_id, q.stay_id, q.car_id, q.stay), id="ws-book", cls="btn btn-ink ws-book", aria_label="Book this trip"),
+        pop,
         cls="ws-ledger", aria_label="Cost ledger",
     )
 
 
-def top_bar(trip):
+def top_bar(trip, ledger_el=None):
     def fmt(d):
         return d.strftime("%a %b ") + str(d.day)
     who = session.request_traveler()
@@ -293,6 +303,7 @@ def top_bar(trip):
         brand(),
         A(Span(f"{trip.origin} → {trip.destination_name}", cls="ws-bold"), Span(f"{fmt(trip.depart)} – {fmt(trip.return_)}"),
           Span(trip.summary), Span("Change", cls="ws-change"), href="/", cls="ws-pill"),
+        ledger_el or "",
         Span("Press 1–7 to focus a pane", cls="ws-hint"),
         avatar(who, "ws-avatar") if who else A("Sign in", href=session.signin_href(), cls="btn btn-sm"),
         cls="ws-bar",
@@ -390,8 +401,7 @@ def workspace(f, h, c, overlay=(), head=(), x="", v="", stay=None):
     q = catalog.quote(f, h, c, stay)
     tip = Div("Tip from 312 families: most skipped the car in Santa Monica and rented one for the Griffith Park day only.", cls="ws-tip")
     body = Main(
-        top_bar(trip),
-        ledger(q, trip),
+        top_bar(trip, ledger(q, trip)),
         Div(
             pane("flights", 1, "Flights", f"round trip · {len(flights)}",
                  [flight_card(o, f, viewing["flights"] if expanded == "flights" else "") for o in flights], "fill-sun-tint",
