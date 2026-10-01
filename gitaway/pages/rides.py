@@ -72,8 +72,8 @@ def message_page(title, body, *links, status=200):
 
 
 def sign_in_page(path):
-    return message_page("Sign in to schedule an Uber", "Your rides are saved with your trip. Sign in, and we'll bring you right back.",
-                        A("Sign in", href=f"/signin?next={urlquote(path, safe='')}", cls="btn btn-ink", id="rd-signin"), status=200)
+    """Signed out: sign in (with the ride intent, so the dialog says why) and come straight back."""
+    return RedirectResponse(f"/signin?next={urlquote(path, safe='')}&intent=ride", status_code=303)
 
 
 # ---- the two steps ---------------------------------------------------------------------------------------------------
@@ -89,9 +89,9 @@ def when_text(p):
 def timing_note(p, flight):
     if p.kind == "arrive":
         return (f"You land at {catalog._clock(flight.arrive_min)}. Pickup is {catalog.CURB_MINUTES} minutes later, once you're at the curb with your bags. "
-                "Airport pickups use Uber Reserve: your driver tracks the flight and waits up to 45 minutes. Free cancellation until 1 hour before pickup.")
+                "Airport pickups use Uber Reserve: your driver tracks the flight and waits up to 45 minutes. Free to cancel until your driver arrives.")
     return (f"Your flight leaves at {catalog._clock(flight.back_depart_min)}. Be at the airport {catalog.AIRPORT_BUFFER // 60} hours ahead; "
-            f"with about {p.minutes} minutes on the road, your driver arrives at {_clock(p)}.")
+            f"with about {p.minutes} minutes on the road, your driver arrives at {_clock(p)}. Free to cancel until your driver arrives.")
 
 
 def _head(p, flight, step):
@@ -132,8 +132,8 @@ def choose_view(p, flight, stay, trip, ests):
     )
     app = Div(
         H3("Prefer to book in Uber?", cls="rd-h3"),
-        P("This opens the Uber app with the pickup, dropoff and ride filled in. Uber does the booking: GitAway doesn't schedule or track it, and a deep link can't hold a pickup time.", cls="rd-note"),
-        A(icon("arrow-right", 16, 2.6), "Open in Uber app", href=rides.deeplink(p, next((e.key for e in ests if e.fits), None)), cls="btn btn-sm rd-app", id="rd-app", rel="noopener"),
+        P("This opens the Uber app with the pickup and dropoff filled in. Uber does the booking: GitAway doesn't schedule or track it, and a deep link can't hold a pickup time.", cls="rd-note"),
+        A(icon("arrow-right", 16, 2.6), "Open in Uber app", href=rides.deeplink(p), cls="btn btn-sm rd-app", id="rd-app", rel="noopener"),
         cls="rd-card rd-aside", aria_label="Open in the Uber app",
     )
     return Div(options, app, cls="rd-cols")
@@ -208,7 +208,7 @@ def headline(r, s):
         "arriving": f"{s.driver} is arriving at {p.pickup.name}.",
         "in_progress": f"You're on your way to {p.dropoff.name}.",
         "completed": f"You've arrived at {p.dropoff.name}. Thanks for riding.",
-        "rider_canceled": "This ride was cancelled. Nothing was charged.",
+        "rider_canceled": "This ride was cancelled.",
     }[s.name]
 
 
@@ -234,7 +234,7 @@ def ride_view(session, r, error="", status=200):
                              action=f"/rides/{r.id}/step", method="post", cls="rd-ctl"))
     if s.can_cancel:
         controls.append(Form(Button("Cancel this ride", type="submit", cls="btn btn-sm rd-cancel", id="rd-cancel"),
-                             Span("Free until 1 hour before pickup, or until a driver accepts." if r.leg == "arrive" else "Cancel before the driver arrives.", cls="rd-hint"),
+                             Span("Free to cancel until your driver arrives.", cls="rd-hint"),
                              action=f"/rides/{r.id}/cancel", method="post", cls="rd-ctl"))
     driver = Div(Span(icon("car", 20, 2.2), cls="rd-car"), Div(Span(s.driver, cls="rd-pname"), Span(f"{s.vehicle} · plate {s.plate}", cls="rd-pdesc")), cls="rd-driver", id="rd-driver") if s.driver and not r.canceled else ""
     status_block = Div(
@@ -290,6 +290,9 @@ def register(app):
             return message_page("No Uber to schedule", problem, A("Back to my picks", href="/plan", cls="btn btn-ink"))
         try:
             leg_plan = rides.leg_plan(leg, flight, stay, trip)
+        except rides.RideError as e:  # a bad leg: nothing to quote or schedule
+            return message_page("We couldn't schedule that", str(e), A("Back to my picks", href=plan.plan_path(flight.id, stay.id if stay else None, None, None, trip), cls="btn btn-ink"), status=422)
+        try:
             est = next((e for e in rides.provider().estimates(leg_plan) if e.key == p), None)
             if not est:
                 raise rides.RideError("Pick one of the rides.")

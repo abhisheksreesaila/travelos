@@ -15,7 +15,7 @@ NOW = datetime(2026, 9, 30, 12, 0, tzinfo=rides.TZ)
 
 @pytest.fixture(autouse=True)
 def _now(monkeypatch):
-    monkeypatch.setattr(rides, "now", lambda: NOW)
+    monkeypatch.setattr(rides, "now", lambda demo=False: NOW)
 
 
 def plan(kind="arrive", flight=FLIGHT, stay=STAY, trip=SAMPLE):
@@ -158,13 +158,13 @@ def test_a_product_that_does_not_seat_the_party_is_refused():
 
 
 def test_a_pickup_less_than_five_minutes_away_is_refused(monkeypatch):
-    monkeypatch.setattr(rides, "now", lambda: plan().pickup_time - timedelta(minutes=4))
+    monkeypatch.setattr(rides, "now", lambda demo=False: plan().pickup_time - timedelta(minutes=4))
     with pytest.raises(RideError, match="5 minutes"):
         booked()
 
 
 def test_a_normal_pickup_more_than_30_days_out_is_refused_but_reserve_goes_to_90(monkeypatch):
-    monkeypatch.setattr(rides, "now", lambda: plan().pickup_time - timedelta(days=40))
+    monkeypatch.setattr(rides, "now", lambda demo=False: plan().pickup_time - timedelta(days=40))
     assert booked("arrive").leg == "arrive"  # Reserve: up to 90 days
     with pytest.raises(RideError, match="30 days"):
         booked("depart")  # five days later, still more than 30 days out
@@ -254,12 +254,15 @@ def test_cancel_before_pickup():
     assert (s.name, s.label, s.terminal) == ("rider_canceled", "Cancelled", True)
 
 
-def test_cancel_works_after_a_driver_is_assigned_but_not_once_the_trip_begins():
+def test_cancel_is_free_until_the_driver_arrives_and_not_after():
     sim, r = SimulatedUber(), booked()
-    sim.cancel(sim.advance(r, NOW), NOW)
-    on_trip = sim.advance(sim.advance(sim.advance(r, NOW), NOW), NOW)
-    with pytest.raises(RideError, match="trip"):
-        sim.cancel(on_trip, NOW)
+    assert sim.status(r, NOW).can_cancel
+    accepted = sim.advance(r, NOW)
+    assert sim.status(accepted, NOW).can_cancel and sim.cancel(accepted, NOW).canceled
+    arriving = sim.advance(accepted, NOW)
+    assert not sim.status(arriving, NOW).can_cancel
+    with pytest.raises(RideError, match="can't be cancelled"):
+        sim.cancel(arriving, NOW)
 
 
 def test_cancelling_twice_is_refused_and_a_cancelled_ride_cannot_step():
@@ -277,15 +280,45 @@ def test_a_record_round_trips_through_its_compact_dict():
     r = booked()
     d = rides.to_dict(r)
     assert rides.from_dict(d) == r
-    assert len(str(d)) < 220  # the session cookie is tiny
+    assert len(str(d)) < 300  # the session cookie is tiny
 
 
 # ---- the Uber app deeplink ----------------------------------------------------------------------------------------
 
-def test_the_deeplink_prefills_pickup_dropoff_and_product_and_is_not_a_booking():
+def test_the_deeplink_prefills_pickup_and_dropoff_only_and_is_not_a_booking():
     p = plan("arrive")
-    url = rides.deeplink(p, "x")
+    url = rides.deeplink(p)
     assert url.startswith("https://m.uber.com/looking?")
-    assert "pickup=%7B" in url and "drop[0]=%7B" in url and "product_id=" in url and "LAX" in url
+    assert "pickup=%7B" in url and "drop[0]=%7B" in url and "LAX" in url
+    assert "product_id" not in url
     assert "pickup_time" not in url and "scheduling" not in url  # deeplinks cannot schedule
-    assert rides.deeplink(p).count("product_id") == 0
+
+
+# ---- the clock, and the stored ids ---------------------------------------------------------------------------------
+
+def test_the_real_clock_is_los_angeles_time(monkeypatch):
+    monkeypatch.undo()
+    n = rides.now()
+    assert n.tzinfo is not None and abs((n - datetime.now(rides.TZ)).total_seconds()) < 5
+
+
+def test_the_sample_trip_demo_clock_is_fixed_a_week_before_departure(monkeypatch):
+    monkeypatch.undo()
+    a, b = rides.now(demo=True), rides.now(demo=True)
+    assert a == b and a.date() == SAMPLE.depart - timedelta(days=7) and plan().demo
+    assert not plan(trip=party(5)).demo
+
+
+def test_a_demo_ride_stays_scheduled_and_can_always_be_booked(monkeypatch):
+    monkeypatch.undo()
+    r = booked("depart")
+    assert SimulatedUber().status(r).name == "scheduled"
+
+
+def test_the_record_keeps_the_ids_it_was_given_not_recomputed_ones():
+    r = booked()
+    d = rides.to_dict(r)
+    assert d["q"] == r.request_id and d["fi"] == r.fare_id
+    d["q"], d["fi"] = "uber_real_123", "fare_real_9"
+    back = rides.from_dict(d)
+    assert (back.request_id, back.fare_id) == ("uber_real_123", "fare_real_9")

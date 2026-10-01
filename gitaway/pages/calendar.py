@@ -183,9 +183,8 @@ def day_column(i, date_, ctx):
     n_notes = ctx["note_counts"]
     booked = [b for b in blocks if b.day == i]
     offers = [o for o in ctx["offers"] if o.day == i]
-    side = lanes([*booked, *offers])  # a ride that overlaps check out (or a flight) shares the column instead of covering it
-    body = [ride_block(b, gs, ctx, *side[b.id]) if b.kind == "ride" else booked_block(b, gs, *side[b.id]) for b in booked]
-    body += [ride_block(o, gs, ctx, *side[o.id]) for o in offers]
+    body = [ride_block(b, gs, ctx) if b.kind == "ride" else booked_block(b, gs) for b in booked]  # rides come after, so they sit over a check-out tail at full width
+    body += [ride_block(o, gs, ctx) for o in offers]
     body += [activity_block(a, gs, demo, *lane[a.id], n_notes.get(a.id, 0), ctx["new"], ctx["live"], ctx["fresh"]) for a in acts]
     here = [x for x in ctx["drafts"] if x.plan.day == i]
     body += [draft_block(x, gs) for x in here]

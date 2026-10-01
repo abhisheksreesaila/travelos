@@ -35,6 +35,7 @@ MODES = ("simulated",)
 SIMULATED_LABEL = "Simulated: no real ride is booked"
 MIN_LEAD = timedelta(minutes=5)
 MAX_LEAD = {"SCHEDULED": timedelta(days=30), "RESERVE": timedelta(days=90)}  # a normal scheduled ride, and Uber Reserve
+DEMO_LEAD = timedelta(days=7)
 MAX_RIDES = 6
 MAX_NAME = 30
 LEGS = ("arrive", "depart")
@@ -44,9 +45,12 @@ class RideError(ValueError):
     """A ride the demo refuses; the message is fit to show the traveler."""
 
 
-def now():
-    """The clock the simulation follows. The date comes from catalog.today() so tests (and the demo's fixed dates) stay put."""
-    return datetime.combine(catalog.today(), datetime.now(TZ).timetz())
+def now(demo=False):
+    """The clock the simulation follows: real Los Angeles time. The sample trip's rides (`demo`) follow a fixed clock instead, noon a week
+    before departure, so the demo never rots; there the Step control moves a ride on."""
+    if demo:
+        return datetime.combine(catalog.SAMPLE_TRIP.depart - DEMO_LEAD, time(12, 0), tzinfo=TZ)
+    return datetime.now(TZ)
 
 
 # ---- places and legs ----------------------------------------------------------------------------------------------
@@ -91,6 +95,7 @@ class LegPlan:
     party: int
     minutes: int  # on the road
     advance: str  # RESERVE (the airport pickup) | SCHEDULED
+    demo: bool = False  # the sample trip: it follows the fixed demo clock
 
     @property
     def pickup_ms(self) -> int:
@@ -122,7 +127,7 @@ def leg_plan(kind, flight, stay, trip) -> LegPlan:
         day, at = trip.return_, (flight.back_depart_min - catalog.AIRPORT_BUFFER - minutes) // 5 * 5
         pickup, dropoff = hotel, AIRPORTS[airport]
     when = datetime.combine(day, time(at // 60, at % 60), tzinfo=TZ)
-    return LegPlan(kind, airport, stay.id if stay else "", pickup, dropoff, when, trip.travelers, minutes, "RESERVE" if kind == "arrive" else "SCHEDULED")
+    return LegPlan(kind, airport, stay.id if stay else "", pickup, dropoff, when, trip.travelers, minutes, "RESERVE" if kind == "arrive" else "SCHEDULED", trip == catalog.SAMPLE_TRIP)
 
 
 # ---- estimates ----------------------------------------------------------------------------------------------------
@@ -243,13 +248,14 @@ class RideRecord:
     guest: Guest
     step: int = 0
     canceled: bool = False
+    demo: bool = False
 
     @property
     def plan(self) -> LegPlan:
         hotel = _hotel(self.airport, self.stay_id)
         out, back = (AIRPORTS[self.airport], hotel) if self.leg == "arrive" else (hotel, AIRPORTS[self.airport])
         return LegPlan(self.leg, self.airport, self.stay_id, out, back, self.pickup_time, self.party, self.minutes,
-                       "RESERVE" if self.leg == "arrive" else "SCHEDULED")
+                       "RESERVE" if self.leg == "arrive" else "SCHEDULED", self.demo)
 
     @property
     def product_name(self) -> str:
@@ -323,7 +329,7 @@ class SimulatedUber:
             raise RideError(f"{match.name} seats {match.seats}. Your group of {plan.party} needs an XL.")
         if match.fare_id != req.fare_id:  # Uber answers 409 when the quoted fare is gone: quote again
             raise RideError("That price has changed. Choose a ride again to get a fresh price.")
-        lead = plan.pickup_time - now()
+        lead = plan.pickup_time - now(plan.demo)
         if lead < MIN_LEAD:
             raise RideError("Pick a time at least 5 minutes from now. That pickup is too soon or has passed.")
         if lead > MAX_LEAD[plan.advance]:
@@ -332,10 +338,10 @@ class SimulatedUber:
         request_id = "sim_" + hashlib.sha256(f"{req.key}|{req.ride_id}|{plan.kind}|{plan.pickup_ms}".encode()).hexdigest()[:12]
         key = next(p.key for p in PRODUCTS if _product_id(p.key) == req.product_id)
         return RideRecord(req.ride_id, request_id, req.key, plan.kind, key, req.product_id, req.fare_id, match.cents, match.cars, plan.pickup_time,
-                          plan.minutes, plan.party, plan.airport, plan.stay_id, req.guest)
+                          plan.minutes, plan.party, plan.airport, plan.stay_id, req.guest, demo=plan.demo)
 
     def _stage(self, r: RideRecord, at) -> int:
-        at = at or now()
+        at = at or now(r.demo)
         by_clock = 0
         if at >= r.pickup_time + timedelta(minutes=r.minutes):
             by_clock = 5
@@ -359,14 +365,14 @@ class SimulatedUber:
             vehicle = f"{color} {car}"
             plate = f"{who % 9 + 1}{chr(65 + who // 9 % 26)}{chr(65 + who // 234 % 26)}{chr(65 + who // 6084 % 26)}{who // 158184 % 900 + 100}"
         nxt = STAGES[2 if stage < 2 else stage + 1] if stage < 5 else ""
-        return RideStatus(name, LABELS[name], _TIMELINE_AT[stage], stage == 5, driver, vehicle, plate, can_cancel=stage < 4, can_step=stage < 5,
+        return RideStatus(name, LABELS[name], _TIMELINE_AT[stage], stage == 5, driver, vehicle, plate, can_cancel=stage < 3, can_step=stage < 5,
                           next_action=STEP_ACTIONS.get(nxt, ""))
 
     def cancel(self, record: RideRecord, at: datetime | None = None) -> RideRecord:
         if record.canceled:
             raise RideError("This ride is already cancelled.")
-        if self._stage(record, at) >= 4:
-            raise RideError("This ride is already on its trip, so it can't be cancelled.")
+        if self._stage(record, at) >= 3:
+            raise RideError("Your driver is arriving or has arrived, so this ride can't be cancelled.")
         return replace(record, canceled=True)
 
     def advance(self, record: RideRecord, at: datetime | None = None) -> RideRecord:
@@ -426,16 +432,14 @@ def validate_guest(first, last, phone) -> Guest:
 
 # ---- the Uber app deeplink ----------------------------------------------------------------------------------------
 
-def deeplink(plan: LegPlan, product_key=None) -> str:
-    """Open the Uber app (or m.uber.com) with the pickup, dropoff and product filled in. Deeplinks cannot schedule, so this books nothing
+def deeplink(plan: LegPlan) -> str:
+    """Open the Uber app (or m.uber.com) with the pickup and dropoff filled in (no product: those ids are per city and need Uber's API). Deeplinks cannot schedule, so this books nothing
     here and sends nothing back: the traveler requests the ride in Uber."""
     def spot(p):
         return quote(json.dumps({"latitude": p.lat, "longitude": p.lng, "addressLine1": p.name, "addressLine2": p.address}, separators=(",", ":")), safe="")
 
     client = os.environ.get("UBER_CLIENT_ID", "")
     parts = ([f"client_id={quote(client, safe='')}"] if client else []) + [f"pickup={spot(plan.pickup)}", f"drop[0]={spot(plan.dropoff)}"]
-    if product_key:
-        parts.append(f"product_id={_product_id(product(product_key).key)}")
     return "https://m.uber.com/looking?" + "&".join(parts)
 
 
@@ -453,8 +457,8 @@ def booking_key(b) -> str:
 def to_dict(r: RideRecord) -> dict:
     """The compact form kept in the cookie: about 200 bytes."""
     d = {"i": r.id, "k": r.key, "l": r.leg[0], "p": r.product, "c": r.cents, "u": r.cars, "t": int(r.pickup_time.timestamp()), "m": r.minutes, "n": r.party,
-         "a": r.airport, "g": [r.guest.first, r.guest.last], "ph": r.guest.phone}
-    for key, value in (("h", r.stay_id), ("x", r.step), ("s", 1 if r.canceled else 0)):
+         "a": r.airport, "g": [r.guest.first, r.guest.last], "ph": r.guest.phone, "q": r.request_id, "fi": r.fare_id}
+    for key, value in (("h", r.stay_id), ("x", r.step), ("s", 1 if r.canceled else 0), ("d", 1 if r.demo else 0)):
         if value:
             d[key] = value
     return d
@@ -463,11 +467,8 @@ def to_dict(r: RideRecord) -> dict:
 def from_dict(d: dict) -> RideRecord:
     leg = "arrive" if d["l"] == "a" else "depart"
     pickup = datetime.fromtimestamp(d["t"], TZ)
-    ms = int(pickup.timestamp() * 1000)
-    fare = _fare_id(leg, ms, d["a"], _hotel(d["a"], d.get("h", "")).area, d["p"], d["c"])
-    request_id = "sim_" + hashlib.sha256(f"{d['k']}|{d['i']}|{leg}|{ms}".encode()).hexdigest()[:12]
-    return RideRecord(d["i"], request_id, d["k"], leg, d["p"], _product_id(d["p"]), fare, d["c"], d["u"], pickup, d["m"], d["n"], d["a"], d.get("h", ""),
-                      Guest(d["g"][0], d["g"][1], d["ph"]), d.get("x", 0), bool(d.get("s")))
+    return RideRecord(d["i"], d["q"], d["k"], leg, d["p"], _product_id(d["p"]), d["fi"], d["c"], d["u"], pickup, d["m"], d["n"], d["a"], d.get("h", ""),
+                      Guest(d["g"][0], d["g"][1], d["ph"]), d.get("x", 0), bool(d.get("s")), bool(d.get("d")))
 
 
 def _mine(session):

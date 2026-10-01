@@ -69,9 +69,18 @@ def test_driving_there_has_no_airport_to_ride_from(client):
 
 # ---- the flow ----------------------------------------------------------------------------------------------------
 
-def test_signed_out_asks_to_sign_in_and_comes_back(client):
-    html = new_page(client).text
-    assert 'id="rd-signin"' in html and "/signin?next=%2Frides%2Fnew%3Fleg%3Darrive" in html and "data-product" not in html
+def test_signed_out_goes_to_sign_in_with_the_ride_intent_and_comes_back(client):
+    r = client.get(f"/rides/new?{LEG}", follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"].startswith("/signin?next=%2Frides%2Fnew%3Fleg%3Darrive") and r.headers["location"].endswith("&intent=ride")
+    assert "schedule an Uber" in client.get(r.headers["location"]).text
+    assert client.get("/rides/r1", follow_redirects=False).status_code == 303
+
+
+def test_a_bad_leg_is_a_friendly_refusal_not_a_crash(client):
+    sign_in(client)
+    r = client.post("/rides", data={**GUEST, "leg": "sideways", "f": "f1", "h": "h1", "c": "none", "p": "x", "fare": "x"})
+    assert r.status_code == 422 and "arrival or the departure" in visible(r.text)
+    assert not rides.list_rides(_Session(client))
 
 
 def test_step_one_lists_the_products_with_price_and_time_and_is_labelled_simulated(client):
@@ -103,7 +112,7 @@ def test_the_uber_app_link_is_a_separate_option_that_prefills_the_trip(client):
     html = new_page(client).text
     href = unescape(re.search(r'id="rd-app"[^>]*href="([^"]+)"|href="([^"]+)"[^>]*id="rd-app"', html).group(1) or "")
     href = href or unescape(re.search(r'href="(https://m\.uber\.com[^"]+)"', html).group(1))
-    assert href.startswith("https://m.uber.com/looking?") and "product_id=" in href and "pickup=" in href
+    assert href.startswith("https://m.uber.com/looking?") and "product_id" not in href and "pickup=" in href
     assert PHONE_DIGITS not in href and "Open in Uber app" in html
 
 
@@ -158,14 +167,17 @@ def test_cancel_marks_the_ride_cancelled_and_nothing_can_follow(client):
     assert client.post("/rides/r1/cancel", follow_redirects=False).status_code == 303
     html = client.get("/rides/r1").text
     assert re.search(r'data-status="rider_canceled"', html) and "Cancelled" in html and 'id="rd-step"' not in html
+    assert "Nothing was charged" not in html
     assert client.post("/rides/r1/cancel").status_code == 409
 
 
-def test_a_ride_on_its_trip_cannot_be_cancelled(client):
+def test_a_ride_cannot_be_cancelled_once_the_driver_is_arriving(client):
     sign_in(client)
     schedule(client)
-    for _ in range(3):
+    for _ in range(2):  # accepted, then arriving
         client.post("/rides/r1/step")
+    html = client.get("/rides/r1").text
+    assert 'id="rd-cancel"' not in html
     r = client.post("/rides/r1/cancel")
     assert r.status_code == 409 and "can't be cancelled" in visible(r.text)
 
@@ -357,3 +369,10 @@ def test_only_real_ids_and_legs_are_accepted(client):
     sign_in(client)
     assert "Pick the arrival or the departure" in visible(client.get("/rides/new?leg=sideways&" + PICK).text)
     assert client.post("/rides", data={**GUEST, "leg": "arrive", "f": "f1", "h": "h1", "c": "none", "p": "bogus", "fare": "x"}).status_code in (409, 422)
+
+
+def test_one_cancel_rule_in_every_place_it_is_worded(client):
+    sign_in(client)
+    schedule(client)
+    pages = visible(new_page(client, "depart").text) + visible(client.get("/rides/r1").text)
+    assert "1 hour" not in pages and "until your driver arrives" in pages
