@@ -97,6 +97,21 @@ def test_the_community_in_this_browser_sees_each_others_shared_trips(client):
     assert "LA with the kids" in hub_html and "Your trip" not in hub_html
     client.post("/signout")   # signed out in the same browser
     assert client.get(f"/trips/{slug}").status_code == 200 and client.get("/trips/shared-nope").status_code == 404
+    client.cookies.clear()   # a different browser: nothing is shared beyond this one
+    assert client.get(f"/trips/{slug}").status_code == 404
+
+
+def test_rebooking_drops_the_old_shared_card_instead_of_leaving_a_dead_link(client):
+    book(client)
+    share(client)
+    old = slug_of(client)
+    book(client, f="f2")   # different picks, a new booking
+    html = client.get("/discover").text
+    assert f"/trips/{old}" not in html and "LA with the kids" not in html
+    assert client.get(f"/trips/{old}").status_code == 404
+    share(client)
+    new = slug_of(client)
+    assert new != old and f"/trips/{new}" in client.get("/discover").text
 
 
 def test_signed_in_travelers_own_trip_keeps_the_marker_among_the_community(client):

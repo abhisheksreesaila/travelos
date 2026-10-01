@@ -84,9 +84,11 @@ def _card(e, mine=False) -> HubCard:
 
 def all_cards(session) -> list:
     """Every trip in the hub: the fake community's first, then everything published in this browser (yours marked `mine`)."""
+    from gitaway import share  # here, not at the top: share imports this module
     me = ses.current_traveler(session)
+    live = [(tid, e) for tid, e in all_entries(session) if not e.get("m") or share.is_live(session, tid, e["s"])]
     return [*(_from_itinerary(t) for t in itineraries.ITINERARIES.values()),
-            *(_card(e, bool(me) and tid == me.id) for tid, e in all_entries(session))]
+            *(_card(e, bool(me) and tid == me.id) for tid, e in live)]
 
 
 def cards(session, *, tags=(), creators=False, q="") -> list:

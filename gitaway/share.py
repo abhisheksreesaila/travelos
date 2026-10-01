@@ -118,10 +118,15 @@ def publish(session, tags=None, theme=None) -> hub.HubCard:
         raise
 
 
+def is_live(session, traveler_id, slug) -> bool:
+    """True while `slug` is still the page of that traveler's current booking (a rebooking makes the old page unbuildable)."""
+    b = ses.booking(_as(session, traveler_id))
+    return bool(b) and slug_for(traveler_id, b) == slug
+
+
 def find(session, slug):
     """The Itinerary behind /trips/<slug> when it is a trip shared in this browser, else None. Built from its owner's booking."""
     for tid, e in hub.all_entries(session):
         if e["s"] == slug and e.get("m"):
-            b = ses.booking(_as(session, tid))
-            return build(session, e.get("g", ()), e.get("c", "sunset"), traveler=tid) if b and slug_for(tid, b) == slug else None
+            return build(session, e.get("g", ()), e.get("c", "sunset"), traveler=tid) if is_live(session, tid, slug) else None
     return None
