@@ -6,7 +6,7 @@ import pytest
 
 from gitaway import session as ses
 from tests.test_calendar import add, book, tag
-from tests.test_signin import session_data, sign_in
+from tests.test_signin import session_data, sign_in, tid
 
 
 def invite(client, name="Mom", **extra):
@@ -18,7 +18,7 @@ def live(client, **extra):
 
 
 def friend_names(client):
-    return session_data(client).get("friends", {}).get("ari", [])
+    return session_data(client).get("friends", {}).get(tid("ari"), [])
 
 
 # ---- session helpers -----------------------------------------------------------------------------------------------
@@ -80,12 +80,12 @@ def test_bad_invite_name_rerenders_the_dialog_with_the_reason(client):
 
 def test_signed_out_invite_goes_through_sign_in_and_lands_on_the_dialog(client):
     book(client)
-    client.post("/signout")  # the booking stays in the session; only the traveler goes
+    client.post("/logout")  # the booking stays in the session; only the traveler goes
     r = client.get("/invite", follow_redirects=False)
     want = f"/signin?next={quote('/calendar?invite=1', safe='')}&intent=invite"
     assert r.status_code == 303 and r.headers["location"] == want
     assert "invite your crew" in client.get(want).text
-    r = client.post("/signin", data={"traveler": "ari", "next": "/calendar?invite=1", "intent": "invite"}, follow_redirects=False)
+    r = client.post("/signin", data={"email": "ari.rivera@example.com", "next": "/calendar?invite=1", "intent": "invite"}, follow_redirects=False)
     assert r.headers["location"] == "/calendar?invite=1"
     page = client.get(r.headers["location"])
     assert 'role="dialog"' in page.text and "Invite your crew" in page.text
@@ -143,12 +143,12 @@ def test_live_add_needs_mom_is_idempotent_and_authored_by_mom(client):
     assert 'data-live="1"' in client.get("/calendar?view=days").text
     r = live(client)
     assert r.status_code == 303 and "new=a1" in r.headers["location"] and "live=1" in r.headers["location"]
-    st = session_data(client)["cal"]["ari"]
+    st = session_data(client)["cal"][tid("ari")]
     assert len(st["a"]) == 1 and st["a"][0]["t"] == "Travel Town steam trains" and st["a"][0]["b"] == "Mom"
     assert (st["a"][0]["d"], st["a"][0]["s"], st["a"][0]["e"]) == (2, 600, 750)
     assert len(st["n"]) == 1 and st["n"][0]["b"] == "Mom" and "The little one will love the trains" in st["n"][0]["t"]
     assert live(client).headers["location"] == "/calendar"
-    st = session_data(client)["cal"]["ari"]
+    st = session_data(client)["cal"][tid("ari")]
     assert len(st["a"]) == 1 and len(st["n"]) == 1
     assert "data-live" not in client.get("/calendar?view=days").text
 
@@ -178,7 +178,7 @@ def test_live_clash_falls_back_to_the_next_free_slot(client):
     add(client, id="a1", day="2", start="10:00", end="11:00", title="Mine")
     invite(client)
     live(client)
-    st = session_data(client)["cal"]["ari"]
+    st = session_data(client)["cal"][tid("ari")]
     mom = next(a for a in st["a"] if a.get("b") == "Mom")
     assert mom["d"] == 2 and mom["e"] - mom["s"] == 150
     assert mom["s"] == 660  # 11:00, the first free 2.5 hours after the clash
@@ -191,7 +191,7 @@ def test_live_skips_gracefully_when_the_whole_morning_is_taken(client):
     invite(client)
     r = live(client)
     assert r.status_code == 303 and r.headers["location"] == "/calendar"
-    st = session_data(client)["cal"]["ari"]
+    st = session_data(client)["cal"][tid("ari")]
     assert [a["i"] for a in st["a"]] == ["a1", "a2"] and st["n"] == []
     assert "data-live" not in client.get("/calendar?view=days").text  # it will not try again
 

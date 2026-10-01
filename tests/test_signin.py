@@ -6,8 +6,25 @@ import pytest
 from gitaway import session as ses
 
 
+EMAILS = {"ari": "ari.rivera@example.com", "sam": "sam.kim@example.com"}
+
+
 def sign_in(client, traveler="ari", next="/", intent="save"):
-    return client.post("/signin", data={"traveler": traveler, "next": next, "intent": intent}, follow_redirects=False)
+    """The local dev sign-in. `traveler` is "ari", "sam" or any email."""
+    return client.post("/signin", data={"email": EMAILS.get(traveler, traveler), "next": next, "intent": intent}, follow_redirects=False)
+
+
+def tid(traveler="ari"):
+    """The traveler id (the fh-saas user id) the dev sign-in gives `traveler` ("ari", "sam" or an email). Same id every time."""
+    from gitaway import auth
+    holder = {}
+    auth.sign_in_dev(holder, EMAILS.get(traveler, traveler))
+    return holder["user_id"]
+
+
+def user_id(client):
+    """The fh-saas user id the session holds."""
+    return session_data(client)["user_id"]
 
 
 def session_data(client):
@@ -21,8 +38,8 @@ def test_dialog_title_depends_on_intent(client):
                           ("invite", "invite your crew"), ("save", "save this trip")]:
         assert words in client.get(f"/signin?intent={intent}&next=/plan").text
     html = client.get("/signin?intent=pay").text
-    assert "Ari Rivera" in html and "Sam Kim" in html and 'role="dialog"' in html
-    assert "Cancel" in html and "Nothing here leaves your browser" in html
+    assert "Dev sign-in (local only)" in html and 'type="email"' in html and 'role="dialog"' in html
+    assert "Cancel" in html and "Sign in with Google" not in html  # no Google keys in the tests
 
 
 def test_unknown_intent_falls_back_to_save(client):
@@ -33,7 +50,7 @@ def test_unknown_intent_falls_back_to_save(client):
 def test_signin_stores_traveler_and_redirects_to_next(client):
     r = sign_in(client, "sam", next="/plan?f=1")
     assert r.status_code == 303 and r.headers["location"] == "/plan?f=1"
-    assert session_data(client)["traveler"] == "sam"
+    assert session_data(client)["email"] == "sam.kim@example.com" and session_data(client)["user_id"]
 
 
 @pytest.mark.parametrize("bad", ["https://evil.example/x", "//evil.example", "/\\evil.example", "\\\\evil",
@@ -54,8 +71,9 @@ def test_signed_in_get_with_bad_next_goes_home(client):
     assert client.get("/signin?next=//evil.example", follow_redirects=False).headers["location"] == "/"
 
 
-def test_unknown_traveler_is_refused(client):
-    assert sign_in(client, "nobody").status_code == 400
+def test_a_bad_email_is_refused_with_a_message(client):
+    r = sign_in(client, "nobody")
+    assert r.status_code == 400 and 'role="alert"' in r.text and "full email" in r.text
     assert "Sign out" not in client.get("/").text
 
 
@@ -69,21 +87,21 @@ def test_fork_intent_adds_slug_once_over_http(client):
     sign_in(client, next="/trips/sun-tacos-and-tide-pools", intent="fork")
     sign_in(client, next="/trips/sun-tacos-and-tide-pools", intent="fork")
     sign_in(client, next="/trips/la-for-two-slow-mornings", intent="save")
-    assert session_data(client)["forks"] == {"ari": ["sun-tacos-and-tide-pools"]}
+    assert session_data(client)["forks"] == {user_id(client): ["sun-tacos-and-tide-pools"]}
 
 
 def test_fork_helpers():
     s = {}
-    ses.sign_in(s, "ari")
+    ses.sign_in(s, "ari", "ari.rivera@example.com")
     assert ses.add_fork(s, "/plan") is False
     assert ses.add_fork(s, "/trips/nope") is False  # a trip that does not exist is not forked
     assert ses.add_fork(s, "/trips/sun-tacos-and-tide-pools?y=1") is True
     assert ses.add_fork(s, "/trips/sun-tacos-and-tide-pools") is False
     assert ses.forks(s) == ["sun-tacos-and-tide-pools"]
-    ses.sign_in(s, "sam")
+    ses.sign_in(s, "sam", "sam.kim@example.com")
     assert ses.forks(s) == []
     ses.add_fork(s, "/trips/la-for-two-slow-mornings")
-    ses.sign_in(s, "ari")
+    ses.sign_in(s, "ari", "ari.rivera@example.com")
     assert ses.forks(s) == ["sun-tacos-and-tide-pools"]
     assert ses.current_traveler(s).initials == "AR"
     ses.sign_out(s)

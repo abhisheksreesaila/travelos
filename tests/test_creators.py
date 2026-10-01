@@ -7,7 +7,7 @@ from starlette.testclient import TestClient
 
 from gitaway import creators, hub
 from gitaway.itineraries import safe_href
-from tests.test_signin import session_data, sign_in
+from tests.test_signin import session_data, sign_in, tid
 
 YT = "https://www.youtube.com/watch?v=our-la-family-week"
 IG = "https://www.instagram.com/reel/Cxyz123/"
@@ -27,7 +27,7 @@ def submit(client, **data):
 
 
 def slug_of(client):
-    return session_data(client)["hub"]["ari"][0]["s"]
+    return session_data(client)["hub"][tid("ari")][0]["s"]
 
 
 def day_count(html):
@@ -206,7 +206,7 @@ def test_publish_puts_the_trip_in_the_hub_with_its_own_page(client):
     r = submit(client, title="Sun, tacos & tides")
     assert r.status_code == 303 and r.headers["location"] == "/creators/done"
     slug = slug_of(client)
-    row = session_data(client)["hub"]["ari"][0]
+    row = session_data(client)["hub"][tid("ari")][0]
     assert row["t"] == "Sun, tacos & tides" and row["k"] == "YouTube" and "m" not in row
     assert "cr" not in session_data(client)  # the draft is gone, the trip is published
     done = client.get("/creators/done").text
@@ -227,7 +227,7 @@ def test_the_trip_page_reflects_the_answers_and_edits(client):
     html = client.get(f"/trips/{slug_of(client)}").text
     assert 'id="day-2"' in html and 'id="day-3"' not in html
     assert "Pet friendly" in html and "Best in fall" in html and "Mine one" in html
-    assert session_data(client)["hub"]["ari"][0]["g"] == ["pet"] and session_data(client)["hub"]["ari"][0]["n"] == 2
+    assert session_data(client)["hub"][tid("ari")][0]["g"] == ["pet"] and session_data(client)["hub"][tid("ari")][0]["n"] == 2
 
 
 def test_the_trip_page_links_back_to_the_creators_channel(client):
@@ -282,17 +282,17 @@ def test_publishing_twice_replaces_and_extra_links_are_capped(client):
     submit(client)
     paste(client)
     submit(client, title="Again")
-    rows = session_data(client)["hub"]["ari"]
+    rows = session_data(client)["hub"][tid("ari")]
     assert len(rows) == 1 and rows[0]["t"] == "Again"
     r = None
     for i in range(creators.MAX_TRIPS):
         paste(client, f"https://youtu.be/other{i}")
         r = submit(client)
-    assert r.status_code == 409 and len(session_data(client)["crp"]["ari"]) == creators.MAX_TRIPS
+    assert r.status_code == 409 and len(session_data(client)["crp"][tid("ari")]) == creators.MAX_TRIPS
 
 
 def test_a_full_cookie_refuses_cleanly_and_changes_nothing():
-    s = {"traveler": "ari", "cr": {"u": YT, "k": "12"}, "pad": "x" * 2500}
+    s = {"user_id": "ari", "cr": {"u": YT, "k": "12"}, "pad": "x" * 2500}
     before = {k: (dict(v) if isinstance(v, dict) else v) for k, v in s.items()}
     with pytest.raises(hub.HubError) as e:
         creators.publish(s)
@@ -305,7 +305,7 @@ def test_the_trip_is_served_to_this_browser_only(client):
     paste(client)
     submit(client)
     slug = slug_of(client)
-    client.post("/signout")
+    client.post("/logout")
     assert client.get(f"/trips/{slug}").status_code == 200  # same browser: the demo community
     assert TestClient(app).get(f"/trips/{slug}").status_code == 404
 
@@ -327,16 +327,16 @@ def test_the_stylesheet_is_motion_safe():
 def test_a_draft_write_over_the_cookie_budget_is_refused_and_rolled_back(client):
     from gitaway import session as ses
     pad = "x" * (ses.BUDGET - 120)
-    s = {"traveler": "ari", "pad": pad}
+    s = {"user_id": "ari", "pad": pad}
     with pytest.raises(hub.HubError) as e:
         creators.start(s, "https://youtu.be/" + "a" * 250)
     assert "full" in str(e.value) and "cr" not in s
-    s = {"traveler": "ari", "pad": "x" * (ses.BUDGET - 140), "cr": {"u": YT}}
+    s = {"user_id": "ari", "pad": "x" * (ses.BUDGET - 140), "cr": {"u": YT}}
     with pytest.raises(hub.HubError):
         creators.save(s, {"form": "1", "title": "t" * 60, "tip": "y" * 140, "hl1": "z" * 70, "hl2": "z" * 70})
     import json
     assert len(json.dumps(s)) <= ses.BUDGET and s["cr"] == {"u": YT}
-    s = {"traveler": "ari", "pad": "x" * (ses.BUDGET + 50), "cr": {"u": YT}}      # already over: never keep an oversized state
+    s = {"user_id": "ari", "pad": "x" * (ses.BUDGET + 50), "cr": {"u": YT}}      # already over: never keep an oversized state
     with pytest.raises(hub.HubError):
         creators.save(s, {"form": "1", "title": "new"})
     assert len(json.dumps(s)) <= ses.BUDGET or "cr" not in s

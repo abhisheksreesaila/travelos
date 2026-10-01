@@ -1,7 +1,7 @@
 from urllib.parse import quote as q
 
 from gitaway import catalog
-from tests.test_signin import session_data, sign_in
+from tests.test_signin import session_data, sign_in, tid
 
 PICK = "f=f2&h=h3&c=c1"
 DATA = {"f": "f2", "h": "h3", "c": "c1"}
@@ -62,7 +62,7 @@ def test_pay_twice_makes_one_booking(client):
     first = session_data(client)["bookings"]
     client.post("/pay", data=DATA, follow_redirects=False)
     assert session_data(client)["bookings"] == first
-    b = first["ari"]
+    b = first[tid("ari")]
     assert b["total_cents"] == catalog.quote("f2", "h3", "c1").total_cents and b["id"].startswith("GA-")
 
 
@@ -92,21 +92,21 @@ def test_bookings_are_per_traveler(client):
 def test_pay_ignores_junk_picks(client):
     sign_in(client)
     client.post("/pay", data={"f": "zzz", "h": "h3", "c": "c1"})
-    assert session_data(client)["bookings"]["ari"]["flight"] == "f1"
+    assert session_data(client)["bookings"][tid("ari")]["flight"] == "f1"
 
 
 def test_forged_total_is_ignored(client):
     sign_in(client)
     client.post("/pay", data={**DATA, "total_cents": "1", "total": "$1"})
-    assert session_data(client)["bookings"]["ari"]["total_cents"] == catalog.quote("f2", "h3", "c1").total_cents
+    assert session_data(client)["bookings"][tid("ari")]["total_cents"] == catalog.quote("f2", "h3", "c1").total_cents
 
 
 def test_paying_different_picks_replaces_the_booking(client):
     sign_in(client)
     client.post("/pay", data=DATA)
-    first = session_data(client)["bookings"]["ari"]
+    first = session_data(client)["bookings"][tid("ari")]
     client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1"})
-    second = session_data(client)["bookings"]["ari"]
+    second = session_data(client)["bookings"][tid("ari")]
     assert second["id"] != first["id"] and second["stay"] == "h1"
     assert "The Tidewater" in client.get("/booked").text
 

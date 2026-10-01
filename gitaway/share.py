@@ -34,7 +34,7 @@ def slug_for(traveler_id, booking) -> str:
 
 def _as(session, traveler_id):
     """A read-only view of the session as another demo traveler, so their booking and calendar can be read."""
-    return {**dict(session), "traveler": traveler_id}
+    return {**{k: v for k, v in dict(session).items() if k not in ("user_id", "email")}, "user_id": traveler_id}
 
 
 def default_tags(session) -> tuple:

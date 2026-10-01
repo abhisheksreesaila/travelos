@@ -6,7 +6,7 @@ from urllib.parse import parse_qs, quote as q, urlparse
 import pytest
 
 from gitaway import catalog
-from tests.test_signin import session_data, sign_in
+from tests.test_signin import session_data, sign_in, tid
 
 DONE = "f=f1&h=h1&c=c1&rooms=ok2&add=bf"  # the done-means pick: The Tidewater, Ocean-view King x2 + breakfast
 
@@ -262,7 +262,7 @@ def test_default_pay_sheet_has_no_extra_params(client):
 def test_paying_records_the_rooms_and_recomputes_the_total(client):
     sign_in(client)
     client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1", "rooms": "ok2", "add": "bf", "total_cents": "1"})
-    b = session_data(client)["bookings"]["ari"]
+    b = session_data(client)["bookings"][tid("ari")]
     assert b["total_cents"] == 398_800 and b["rooms"] == "ok2" and b["add"] == "bf"
     assert "Ocean-view King ×2 + Breakfast" in client.get("/booked").text
 
@@ -270,16 +270,16 @@ def test_paying_records_the_rooms_and_recomputes_the_total(client):
 def test_paying_refuses_under_capacity_by_repairing_to_the_default_room(client):
     sign_in(client)
     client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1", "rooms": "ok1", "add": "bf"})
-    b = session_data(client)["bookings"]["ari"]
+    b = session_data(client)["bookings"][tid("ari")]
     assert b["total_cents"] == 308_800 + 32_000 and b["rooms"] == ""  # the short rooms became the default; the add-on stays
 
 
 def test_paying_a_different_room_replaces_the_booking(client):
     sign_in(client)
     client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1"})
-    first = session_data(client)["bookings"]["ari"]
+    first = session_data(client)["bookings"][tid("ari")]
     client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1", "rooms": "ok2"})
-    second = session_data(client)["bookings"]["ari"]
+    second = session_data(client)["bookings"][tid("ari")]
     assert second["id"] != first["id"] and second["total_cents"] == 123_600 + 212_000 + 31_200
 
 

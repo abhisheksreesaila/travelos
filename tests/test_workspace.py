@@ -1,7 +1,10 @@
 """The booking workspace at /plan: server-rendered ledger, URL-held picks, catalog-derived totals."""
 import json
 import re
+from pathlib import Path
 from urllib.parse import parse_qs, urlparse
+
+ROOT = Path(__file__).resolve().parent.parent
 
 from gitaway import catalog
 from gitaway.pages import placeholders, plan
@@ -164,13 +167,13 @@ def test_map_data_for_every_stay_is_embedded(client):
 
 
 def test_context_colours_are_tokens():
-    css = open("assets/css/workspace.css").read()
+    css = open(ROOT / "assets/css/workspace.css").read()
     ctx = css[css.index("/* Context panes */"):css.index("/* Tablet")]
     assert not re.search(r"#[0-9A-Fa-f]{3,8}\b", ctx)
 
 
 def test_tablet_shows_context_below_lanes_instead_of_hiding_it():
-    css = open("assets/css/workspace.css").read()
+    css = open(ROOT / "assets/css/workspace.css").read()
     tablet = css[css.index("/* Tablet"):css.index("/* Phone")]
     assert ".ws-context { display: none" not in tablet
 
@@ -201,7 +204,7 @@ PANE_KEYS = ("flights", "stays", "cars", "weather", "map", "news", "community")
 
 
 def test_expanded_rule_makes_every_pane_full_width():
-    css = open("assets/css/workspace.css").read()
+    css = open(ROOT / "assets/css/workspace.css").read()
     for key in PANE_KEYS:
         rule = re.search(r'[^{}]*\[data-expanded="%s"\][^{}]*\{\s*grid-template-columns:\s*1fr;\s*\}' % key, css)
         assert rule, key
@@ -246,7 +249,7 @@ def test_map_data_has_pin_coordinates_for_every_stay(client):
 
 
 def test_context_column_is_one_fr_and_tip_gap_removed_on_tablet():
-    css = open("assets/css/workspace.css").read()
+    css = open(ROOT / "assets/css/workspace.css").read()
     for sel in ('.ws-grid {', '.ws-grid[data-focus="stays"] {', '.ws-grid[data-focus="cars"] {'):
         line = css[css.index(sel):].split("\n")[0]
         assert re.search(r"minmax\(0, 1fr\);", line.split("grid-template-columns:")[1]), sel
@@ -257,12 +260,12 @@ def test_context_column_is_one_fr_and_tip_gap_removed_on_tablet():
 
 
 def test_fork_link_uses_the_itinerary_view_helper():
-    src = open("gitaway/pages/plan.py").read()
+    src = open(ROOT / "gitaway/pages/plan.py").read()
     assert "fork_href" in src and "intent=fork" not in src
 
 
 def test_tablet_ledger_takes_its_own_row_and_never_truncates():
-    css = open("assets/css/workspace.css").read()
+    css = open(ROOT / "assets/css/workspace.css").read()
     tablet = css[css.index("/* Tablet"):css.index("/* Phone")]
     assert re.search(r"\.ws-ledger \{[^}]*flex: 1 1 100%", tablet)
     assert not re.search(r"\.ws-slot-name \{[^}]*(nowrap|ellipsis)", css)
