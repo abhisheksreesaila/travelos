@@ -361,6 +361,15 @@ def test_a_flight_only_booking_has_no_pool_plan_and_still_applies(client):
     assert "Beach walk before the flight home" in [a["t"] for a in activities(client)]
 
 
+def test_the_panel_says_the_sentence_that_matches_the_plans(client):
+    book(client)
+    assert "pool time Monday morning" in client.get("/calendar?voice=1").text
+    sign_in(client, "sam")
+    client.post("/pay", data={"f": "f1", "h": "none", "c": "none"})
+    html = client.get("/calendar?voice=1").text
+    assert "Tacos for dinner" in html and "pool" not in html.lower() and "a beach walk on our last day." in html
+
+
 def test_a_stay_only_booking_has_no_flight_window_and_a_plain_beach_walk(client):
     book_mix(client, f="none", h="h1", c="none")
     html = client.get("/calendar?voice=1&night=0").text

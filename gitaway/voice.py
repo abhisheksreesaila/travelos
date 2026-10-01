@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from gitaway import session as ses, tripcal as cal
 
 SENTENCE = "Tacos for dinner, the observatory on Sunday at sunset, pool time Monday morning, and a beach walk on our last day."
+SENTENCE_NO_STAY = "Tacos for dinner, the observatory on Sunday at sunset, and a beach walk on our last day."
 NOTE_PREFIX = "Planned by voice: "
 TACOS_START = 18 * 60 + 30
 TACOS_LEN = 90
@@ -36,6 +37,11 @@ class Question:
 
     def option(self, day):
         return next((o for o in self.options if o.day == day), None)
+
+
+def sentence(has_stay=True):
+    """The scripted sentence. With no stay booked there is no pool plan, so the pool clause is not said."""
+    return SENTENCE if has_stay else SENTENCE_NO_STAY
 
 
 def middle_days(dates):

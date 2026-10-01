@@ -82,7 +82,8 @@ def panel(session, demo, dates, question, placements, night, hear, error=""):
     ticked = sum(1 for x in placements if x.checked)
     close = f"/calendar?{urlencode(([('demo', cal.LONG)] if demo == cal.LONG else []) + [('view', 'days')])}"
     hint = "Listening… say what you want to do" if hear else "Uncheck anything you don’t want" if answered else "Got it. One quick question"
-    said = [Span(w + " ", cls="vo-w") for w in vo.SENTENCE.split()]
+    text = vo.sentence(bool(vo.setup(session, demo)[1]))
+    said = [Span(w + " ", cls="vo-w") for w in text.split()]
     chips = [A(o.label, href=voice_url(demo, night=o.day), data_soft="", cls="vo-chip", aria_current="true" if o.day == night else None,
                aria_label=f"{question.text} {o.label}" + (", picked" if o.day == night else "")) for o in question.options]
     info = vo.fallback_notes(dates)
@@ -110,7 +111,7 @@ def panel(session, demo, dates, question, placements, night, hear, error=""):
                 Div(*[Span(cls="vo-bar", style=f"animation-delay:{d}s") for d in (0, .1, .2, .3, .2, .1, 0)], cls="vo-bars", aria_hidden="true"),
                 Span(hint, cls="vo-hintline", id="vo-hintline"), cls="vo-micbox"),
             Div(cls="sr-only vo-live", id="vo-live", role="status", aria_live="polite"),
-            Div(Span("You said: ", cls="sr-only"), Span(vo.SENTENCE, cls="sr-only vo-full"),
+            Div(Span("You said: ", cls="sr-only"), Span(text, cls="sr-only vo-full"),
                 P(*said, Span("|", cls="vo-cursor"), cls="vo-said", aria_hidden="true"), cls="vo-bubble"),
             after, cls="vo-scroll"),
         id="cal-voice", cls="cal-voice vo-panel", aria_labelledby="vo-title", data_hear="1" if hear else None)

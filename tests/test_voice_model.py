@@ -118,6 +118,12 @@ def test_plan_keys_are_stable(night):
     assert keys == sorted(set(keys))
 
 
+def test_the_sentence_drops_the_pool_clause_when_there_is_no_stay():
+    assert "pool" in voice.sentence(True).lower() and voice.sentence(True) == voice.SENTENCE
+    no = voice.sentence(False)
+    assert "pool" not in no.lower() and no.startswith("Tacos for dinner") and no.endswith("a beach walk on our last day.") and ", and a beach walk" in no
+
+
 def test_with_no_stay_there_is_no_pool_plan():
     keys = [p.key for p in voice.plans(SAMPLE, None, night=0)]
     assert keys == ["v0", "v1", "v3"]
