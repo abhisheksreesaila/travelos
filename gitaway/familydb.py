@@ -138,6 +138,7 @@ class Ride:
     """
     id: str            # "r1", "r2": family-wide
     seq: int
+    trip_id: str = ""   # the trip booked with these picks ("" while nothing is booked with them yet)
     key: str
     leg: str
     request_id: str
@@ -165,6 +166,7 @@ FAMILY_INDEXES = [  # (table, columns, unique, name)
     ("notes", ["trip_id", "scope", "note_id"], True, "ux_notes_id"),
     ("friends", ["trip_id"], False, "ix_friends_trip"),
     ("rides", ["key"], False, "ix_rides_key"),
+    ("rides", ["trip_id"], False, "ix_rides_trip"),
 ]
 
 

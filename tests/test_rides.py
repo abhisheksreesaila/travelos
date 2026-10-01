@@ -399,3 +399,51 @@ def test_one_cancel_rule_in_every_place_it_is_worded(client):
     schedule(client)
     pages = visible(new_page(client, "depart").text) + visible(client.get("/rides/r1").text)
     assert "1 hour" not in pages and "until your driver arrives" in pages
+
+
+# ---- review fixes: cancel and step act on the ride as it is now; rides belong to a trip -------------------------------------
+
+def test_a_stale_save_or_step_cannot_bring_a_cancelled_ride_back(client):
+    sign_in(client)
+    book(client)
+    schedule(client)
+    s = _Session(client)
+    stale = rides.get_ride(s, "r1")  # a tab that still shows the ride as live
+    rides.cancel_ride(s, "r1")
+    with pytest.raises(rides.RideError):
+        rides.save_ride(s, stale)
+    with pytest.raises(rides.RideError):
+        rides.step_ride(s, "r1")
+    with pytest.raises(rides.RideError):
+        rides.cancel_ride(s, "r1")
+    assert rides.list_rides(s)[0].canceled and rides.get_ride(s, "r1").step == 0
+
+
+def test_a_ride_is_stored_with_the_trip_it_was_booked_on_and_other_trips_rides_are_never_pruned(client):
+    from gitaway import familydb
+    from tests.test_signin import person
+    sign_in(client)
+    book(client)
+    schedule(client)
+    rides.cancel_ride(_Session(client), "r1")  # trip A: a cancelled ride
+    book(client, pick="f=f1&h=h1&c=none&d=2026-10-23&r=2026-10-26&a=2&k=4,7")
+    r = schedule(client, pick="f=f1&h=h1&c=none&d=2026-10-23&r=2026-10-26&a=2&k=4,7")
+    assert r.status_code == 303
+    assert [x.id for x in rides.list_rides(_Session(client))] == ["r1", "r2"]  # trip A's cancelled ride is still there
+    with familydb.using(person()) as db:
+        got = {row["id"]: row["trip_id"] for row in familydb.rows(db, "SELECT id, trip_id FROM rides")}
+        trips = {t["id"] for t in familydb.trips(db)}
+    assert set(got) == {"r1", "r2"} and got["r1"] != got["r2"] and set(got.values()) <= trips
+
+
+def test_a_trip_has_at_most_one_live_ride_per_leg(client):
+    sign_in(client)
+    book(client)
+    assert schedule(client, "arrive").status_code == 303
+    assert schedule(client, "depart").status_code == 303
+    import dataclasses
+    s = _Session(client)
+    extra = dataclasses.replace(rides.get_ride(s, "r1"), id="r9", request_id="sim_other")  # a third ride on the arrival leg
+    with pytest.raises(rides.RideError):
+        rides.save_ride(s, extra)
+    assert len(rides.list_rides(s)) == 2

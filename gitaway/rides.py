@@ -39,7 +39,7 @@ SIMULATED_LABEL = "Simulated: no real ride is booked"
 MIN_LEAD = timedelta(minutes=5)
 MAX_LEAD = {"SCHEDULED": timedelta(days=30), "RESERVE": timedelta(days=90)}  # a normal scheduled ride, and Uber Reserve
 DEMO_LEAD = timedelta(days=7)
-MAX_RIDES = 6
+MAX_RIDES = 40  # a family-wide backstop; each trip has at most one live ride per leg
 MAX_NAME = 30
 LEGS = ("arrive", "depart")
 
@@ -496,9 +496,19 @@ def next_ride_id(session) -> str:
         return "r" + str((familydb.row(fam.db, "SELECT MAX(seq) AS n FROM rides")["n"] or 0) + 1) if fam else "r1"
 
 
-def save_ride(session, record: RideRecord) -> RideRecord:
-    """Add a ride, or replace the one with the same id. A leg has one live ride per set of picks: a cancelled one is replaced by a new one.
-    Raises RideError when it already has a live ride, when another member took the same ride id a moment ago, or when the family has too many."""
+def _trip_of_key(db, key, prefer):
+    """The family trip whose booking these picks (`key`) belong to: the open one if it matches, else any. "" when nothing is booked with them yet."""
+    found = []
+    for t in familydb.trips(db):
+        b = familydb.booking_for_trip(db, t["id"])
+        if b and booking_key(b) == key:
+            found.append(t["id"])
+    return prefer if prefer in found else (found[0] if found else "")
+
+
+def _apply(session, make, ride_id=None):
+    """Write one ride in one locked transaction. `make(stored)` gets the stored RideRecord for `ride_id` (re-read after the lock is taken, so a
+    cancel or step always acts on the ride as it is now) and returns the record to keep. Raises RideError."""
     with ses.family(session) as fam:
         if not fam:
             raise RideError("Sign in to schedule a ride.")
@@ -506,42 +516,54 @@ def save_ride(session, record: RideRecord) -> RideRecord:
         with familydb.transaction(db):
             familydb.lock(db)  # from here to the commit nobody else writes, so the checks below cannot go stale
             rows = [(r, json.loads(r["data"])) for r in _stored(db)]
+            old = next(((r, d) for r, d in rows if r["id"] == ride_id), None) if ride_id else None
+            if ride_id and not old:
+                raise RideError("We couldn't find that ride.")
+            record = make(from_dict(old[1]) if old else None)
             mine = next((r for r, _ in rows if r["id"] == record.id), None)
             if mine and mine["request_id"] != record.request_id:
                 raise RideError("Someone in your family just scheduled a ride. Look at the calendar, then try again.")
+            if mine and next(d for r, d in rows if r is mine).get("s") and not record.canceled:
+                raise RideError("This ride is cancelled, so it can't be changed. Schedule a new one.")
             same = [(r, d) for r, d in rows if d["i"] != record.id and d["k"] == record.key and d["l"] == record.leg[0]]
             if any(not d.get("s") for _, d in same) and not record.canceled:
                 raise RideError("You already have an Uber scheduled for that leg. Cancel it first to schedule another.")
-            gone = [r for r, d in rows if (r, d) in same or (d.get("s") and d["k"] != record.key)]  # the cancelled one it replaces, and stale cancelled rides
-            for r in gone:
+            for r, _ in same:  # the cancelled ride on this very leg is replaced; no other trip's or member's ride is touched
                 delete_record(db, "rides", r["id"], "id", auto_commit=False)
             data = json.dumps(to_dict(record), separators=(",", ":"))
             if mine:
-                update_record(db, "rides", record.id, "id", auto_commit=False, key=record.key, leg=record.leg, data=data)
-            elif len(rows) - len(gone) >= MAX_RIDES:
-                raise RideError(f"That is {MAX_RIDES} rides already. This demo keeps it small.")
+                update_record(db, "rides", record.id, "id", auto_commit=False, data=data)
             else:
-                insert_only(db, "rides", {"id": record.id, "seq": int(record.id[1:]), "key": record.key, "leg": record.leg, "request_id": record.request_id,
-                                          "data": data, "created_by": fam.traveler.id, "created_at": familydb.now()}, ["id"], auto_commit=False)
+                trip_id = _trip_of_key(db, record.key, fam.trip_id)
+                live = [1 for r, d in rows if trip_id and r["trip_id"] == trip_id and not d.get("s") and (r, d) not in same]
+                if len(live) >= len(LEGS) and not record.canceled:
+                    raise RideError("That trip already has a ride for the arrival and one for the departure.")
+                if len(rows) - len(same) >= MAX_RIDES:
+                    raise RideError(f"That is {MAX_RIDES} rides already. This demo keeps it small.")
+                insert_only(db, "rides", {"id": record.id, "seq": int(record.id[1:]), "trip_id": trip_id, "key": record.key, "leg": record.leg,
+                                          "request_id": record.request_id, "data": data, "created_by": fam.traveler.id, "created_at": familydb.now()},
+                            ["id"], auto_commit=False)
     return record
+
+
+def save_ride(session, record: RideRecord) -> RideRecord:
+    """Add a ride, or replace the one with the same id. A leg has one live ride per set of picks: a cancelled one is replaced by a new one.
+    A cancelled ride is never brought back. Raises RideError when the leg already has a live ride, when another member took the same ride id
+    a moment ago, or when the trip or the family has too many."""
+    return _apply(session, lambda _stored: record, ride_id=None)
 
 
 def cancel_ride(session, ride_id, at=None) -> RideRecord:
     """Cancel a ride through the provider and keep it as cancelled. Raises RideError."""
-    r = get_ride(session, ride_id)
-    if not r:
-        raise RideError("We couldn't find that ride.")
-    return save_ride(session, provider().cancel(r, at))
+    return _apply(session, lambda cur: provider().cancel(cur, at), ride_id)
 
 
 def step_ride(session, ride_id, at=None) -> RideRecord:
     """The Step control: the simulator's next driver action. Raises RideError when the provider cannot step."""
-    r, p = get_ride(session, ride_id), provider()
-    if not r:
-        raise RideError("We couldn't find that ride.")
+    p = provider()
     if not getattr(p, "can_step", False):
         raise RideError("Only the simulation can be stepped.")
-    return save_ride(session, p.advance(r, at))
+    return _apply(session, lambda cur: p.advance(cur, at), ride_id)
 
 
 def schedule_ride(session, req: ScheduleRequest) -> RideRecord:
