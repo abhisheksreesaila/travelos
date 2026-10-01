@@ -16,3 +16,5 @@ travelos.egg-info/
 .pixi/
 *.egg-info/
 .sesskey
+/app_host.db
+/*.db
