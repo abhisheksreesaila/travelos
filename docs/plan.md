@@ -219,20 +219,20 @@ Research: docs/research/uber-api.md · Needs: F-033
 - [ ] labelled "Simulated: no real ride is booked"; scheduled rides show on the trip calendar
 - [ ] a `RideProvider` seam with a simulator implementation, so a real Uber client can replace it later
 
-## F-039 Backend foundation: fh-saas host, families as tenants, sign-in [doing]
+## F-039 Backend foundation: fh-saas host, families as tenants, sign-in [done]
 Needs: none (ADR-0004)
-- [ ] fh-saas wired in main.py: SQLite host DB, `DB_TYPE=SQLITE`, data files under a configurable data folder, `configure_logging`
-- [ ] Google sign-in through fh-saas (`/login`, `/auth/callback`, `/logout`), enabled when the Google env keys are set; a dev sign-in only when `GITAWAY_DEV_LOGIN=1` and the request is from localhost, through the same session path
-- [ ] first sign-in creates the person's family tenant; public pages (landing, hub, trips, creators, /start, the demo workspace) stay browsable signed out
-- [ ] the demo sign-in (Ari, Sam) is replaced; tests use the dev sign-in; a setup doc lists the env vars and the Google console steps
+- [x] fh-saas wired in main.py: SQLite host DB, `DB_TYPE=SQLITE`, data files under a configurable data folder, `configure_logging`
+- [x] Google sign-in through fh-saas (`/login`, `/auth/callback`, `/logout`), enabled when the Google env keys are set; a dev sign-in only when `GITAWAY_DEV_LOGIN=1` and the request is from localhost, through the same session path
+- [x] first sign-in creates the person's family tenant; public pages (landing, hub, trips, creators, /start, the demo workspace) stay browsable signed out
+- [x] the demo sign-in (Ari, Sam) is replaced; tests use the dev sign-in; a setup doc lists the env vars and the Google console steps
 
-## F-040 Trips, bookings and the calendar live in the family database [todo]
+## F-040 Trips, bookings and the calendar live in the family database [doing]
 Needs: F-039
 - [ ] a family's trips, bookings, activities, notes and rides are stored in its tenant DB and survive a server restart; the cookie holds only the sign-in
 - [ ] the demo booking flow (workspace → pay) creates a trip in the family DB; the calendar, voice, forks-apply and rides read and write it
 - [ ] a family can have several trips, with a trip switcher; the cookie budget code for these parts is retired
 
-## F-041 Community space for shared and creator trips [todo]
+## F-041 Community space for shared and creator trips [doing]
 Needs: F-039
 - [ ] shared trips and creator trips are stored in a community DB everyone can browse; forks and saves are stored per family
 - [ ] a shared trip's page works for anyone, signed in or out, on any device
