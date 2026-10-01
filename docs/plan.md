@@ -232,10 +232,10 @@ Needs: F-039
 - [ ] the demo booking flow (workspace → pay) creates a trip in the family DB; the calendar, voice, forks-apply and rides read and write it
 - [ ] a family can have several trips, with a trip switcher; the cookie budget code for these parts is retired
 
-## F-041 Community space for shared and creator trips [doing]
+## F-041 Community space for shared and creator trips [done]
 Needs: F-039
-- [ ] shared trips and creator trips are stored in a community DB everyone can browse; forks and saves are stored per family
-- [ ] a shared trip's page works for anyone, signed in or out, on any device
+- [x] shared trips and creator trips are stored in a community DB everyone can browse; forks and saves are stored per family
+- [x] a shared trip's page works for anyone, signed in or out, on any device
 
 ## F-042 Import a trip booked elsewhere [todo]
 Needs: F-040
