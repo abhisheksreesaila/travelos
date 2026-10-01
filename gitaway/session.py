@@ -1,6 +1,10 @@
-"""Demo sign-in state, kept in the FastHTML (signed cookie) session. Public helpers for every screen.
+"""The signed-in person and the cookie-held trip state. Public helpers for every screen.
 
-Session shape: {"traveler": "<id>", "forks": {"<id>": ["<trip slug>", ...]}, "friends": {"<id>": ["<name>", ...]}}.
+Sign-in is fh-saas's (see gitaway.auth): the session holds `user_id` and `email`, and `current_traveler` is the thin
+adapter that maps that person to the "traveler" every screen speaks of (id = the fh-saas user id, name from the email).
+F-040 and F-041 move the rest of this state into SQLite.
+
+Session shape: {"user_id": "<fh-saas user id>", "email": "<email>", "forks": {"<id>": ["<trip slug>", ...]}, "friends": {"<id>": ["<name>", ...]}}.
 Pure functions over a session dict, so tests and later tickets (F-018 pay, F-021 forks list) can use them directly.
 
 For the header, `bind` is a beforeware (see main.py) that records the current traveler in a ContextVar for the
@@ -308,6 +312,24 @@ async def bind(req, session):
     from gitaway import forks  # here, not at the top: forks imports this module
     _request_forks.set(forks.count(session))
     _request_path.set(req.url.path + (f"?{req.url.query}" if req.url.query else ""))
+
+
+def cache_secret() -> bytes:
+    """The server's session secret, for keys that must not be guessable: GITAWAY_SECRET_KEY, else the .sesskey file
+    (the same two places main.py takes FastHTML's session secret from)."""
+    import os
+    from pathlib import Path
+    if (env := os.getenv("GITAWAY_SECRET_KEY")):
+        return env.encode()
+    try:
+        return (Path(__file__).resolve().parent.parent / ".sesskey").read_bytes().strip() or b"gitaway"
+    except OSError:
+        return b"gitaway"
+
+
+def as_signed_out():
+    """Render the rest of this request as a signed-out visitor (for pages that are cached and shared, like /offline)."""
+    _request_traveler.set(None)
 
 
 def request_traveler():

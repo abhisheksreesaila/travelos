@@ -250,7 +250,7 @@ Needs: F-040
 - [ ] when that email signs in, they join the family and see its trips; viewers can't edit; members and roles are listed with remove
 - [ ] the calendar's avatars and "planning with you" use real members; the scripted Mom demo only runs on the demo trip
 
-## F-044 Install on iPhone [doing]
+## F-044 Install on iPhone [done]
 Needs: none
-- [ ] web app manifest, icons (192, 512, Apple touch), theme colour and Apple meta tags; "Add to Home Screen" opens full screen at /start or the current trip
-- [ ] safe areas and the phone layouts work in standalone mode; a minimal service worker caches the app shell and the last-viewed trip for flaky connections
+- [x] web app manifest, icons (192, 512, Apple touch), theme colour and Apple meta tags; "Add to Home Screen" opens full screen at /start or the current trip
+- [x] safe areas and the phone layouts work in standalone mode; a minimal service worker caches the app shell and the last-viewed trip for flaky connections

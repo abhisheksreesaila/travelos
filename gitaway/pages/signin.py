@@ -12,7 +12,7 @@ from fh_saas.utils_auth import handle_login_request, handle_logout, handle_oauth
 from starlette.responses import RedirectResponse, Response
 
 from gitaway import auth, session as ses
-from gitaway.layout import page
+from gitaway.layout import clear_site_data, page
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/signin.css"), Script(src="/assets/js/signin.js", defer=True))
 
@@ -158,4 +158,4 @@ def register(app):
         handle_logout(session)
         keep.pop("cr", None)  # the creator draft belongs to the person who made it, not the next one at this browser
         session.update(keep)
-        return RedirectResponse("/", status_code=303)
+        return clear_site_data(RedirectResponse("/", status_code=303))

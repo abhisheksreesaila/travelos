@@ -305,3 +305,28 @@ def test_the_family_page_has_the_house_styles(client):
     sign_in(client, "style.check@example.com")
     html = client.get("/family").text
     assert html.index("/assets/css/tokens.css") < html.index("/assets/css/base.css") < html.index("/assets/css/family.css")
+
+
+# ---- with the iPhone install (F-044) ---------------------------------------------------------------------------------
+
+def test_both_sign_out_paths_clear_the_site_data(client):
+    for method, path in ((client.post, "/signout"), (client.post, "/logout"), (client.get, "/logout")):
+        sign_in(client, "ari")
+        r = method(path, follow_redirects=False)
+        assert r.status_code == 303 and r.headers["clear-site-data"] == '"cache", "storage"', path
+
+
+def test_the_install_files_are_public_signed_out(client):
+    for path in ("/manifest.webmanifest", "/sw.js", "/offline", "/assets/css/tokens.css"):
+        assert client.get(path, follow_redirects=False).status_code == 200, path
+
+
+def test_the_cache_key_follows_the_fh_saas_user_and_the_session_secret(client, monkeypatch):
+    import re
+    from gitaway import layout
+    key = r'<meta name="ga-user" content="([0-9a-f]{10})">'
+    sign_in(client, "ari")
+    a = re.search(key, client.get("/discover").text).group(1)
+    assert a == layout.cache_key(ses.current_traveler(session_data(client)))
+    monkeypatch.setenv("GITAWAY_SECRET_KEY", "a different secret")
+    assert ses.cache_secret() == b"a different secret" and layout.cache_key(ses.current_traveler(session_data(client))) != a
