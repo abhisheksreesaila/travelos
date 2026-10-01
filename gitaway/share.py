@@ -48,7 +48,7 @@ def _la(t) -> bool:
 
 
 def _stop(block) -> Stop:
-    return Stop(cal.fmt_time(block.start), block.title, block.icon or "star", "sun", booked=True)
+    return Stop(cal.fmt_time(block.at), block.title, block.icon or "star", "sun", booked=True)
 
 
 def _plan(act) -> Stop:

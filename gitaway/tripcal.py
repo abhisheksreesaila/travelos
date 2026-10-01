@@ -549,7 +549,7 @@ def _clean(t, blocks, *, day, start, end, title, kind, old=None):
         raise CalendarError(f"Give it at least {MIN_LEN} minutes.")
     for b in blocks:
         if b.day == day and s < b.end and b.start < e:
-            raise CalendarError(f"That overlaps {b.title} ({fmt_time(b.start)} – {fmt_time(b.end)}). Pick a gap.")
+            raise CalendarError(f"That overlaps {b.title} ({fmt_time(b.at)} – {fmt_time(b.end)}). Pick a gap.")
     if (day, s, e) != old and (problem := window_problem(blocks, day, s, e)):
         raise CalendarError(window_message(problem))
     return day, s, e, title
