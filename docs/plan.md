@@ -307,9 +307,8 @@ Design: canvas first · Needs: none
 Needs: none
 - [ ] a new family's first screens offer: start a trip, import a booked trip, browse community trips; no blank calendar, forks, family or trip pages anywhere
 
-## F-054 Phone-first trip view [blocked]
-Blocked: open https://claude.ai/artifact/4FeSUmETnJ26kLXdA4EYvN and pick (sign-in A or B; phone A or B; pickers as drawn) or say what to change.
-Design: canvas first · Needs: F-051
+## F-054 Phone-first trip view [doing]
+Design: phone A approved 2026-10-01 (docs/design/canvas/GoLive-Phone-Today.dc.html); B rejected as bland · Needs: F-051
 - [ ] on phones the trip opens on "Today": what's next, flight and hotel cards, a swipeable day list, add a plan in two taps, notes
 - [ ] works installed to the Home Screen; all data and roles as on desktop
 
