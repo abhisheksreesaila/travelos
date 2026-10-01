@@ -11,7 +11,7 @@ from fasthtml.common import A, Button, Div, Form, H2, Input, Link, P, Script, Sp
 from starlette.responses import RedirectResponse, Response
 
 from gitaway import session as ses
-from gitaway.layout import avatar, page
+from gitaway.layout import avatar, clear_site_data, page
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/signin.css"), Script(src="/assets/js/signin.js", defer=True))
 
@@ -109,4 +109,4 @@ def register(app):
     @app.post("/signout")
     def signout(session):
         ses.sign_out(session)
-        return RedirectResponse("/", status_code=303)
+        return clear_site_data(RedirectResponse("/", status_code=303))
