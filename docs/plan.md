@@ -197,3 +197,8 @@ Needs: F-030
 - [ ] sign-in without a specific `next` lands on /start; landing's "Plan a trip" door and the header link go there; a returning traveler sees "Continue <trip>" above the form
 - [ ] nights and travelers drive prices in the catalog (stays and cars by night, flights by traveler, room fit by party size); the trip lives in the URL through reload, pay and calendar
 - [ ] done means: LA, Oct 16–20, 2 adults + kids 4 and 7 gives $3,088; 3 nights or 3 adults change prices consistently through pay and calendar
+
+## F-036 Small polish found while building F-035 [todo]
+- [ ] weather, news and events panes follow the trip's dates (today they're fixed to Oct 16–20)
+- [ ] at 1000 wide the stay card's "Pool" and "Pet friendly" tags are clipped; wrap them (docs/lessons.md)
+- [ ] the landing door and feature pop-in (`scale(1.06)`) briefly causes sideways scroll at 1000, 800 and 390; contain it
