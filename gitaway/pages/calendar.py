@@ -41,7 +41,7 @@ def _px(minutes):
 
 
 def trip_name(t):
-    return f"{pay.PLACE} with the kids" if t.kid_ages else f"{pay.PLACE} trip"
+    return t.title
 
 
 def day_label(i, d):
@@ -352,7 +352,7 @@ def calendar_page(session, demo="", view="", form=None, notice=None, new="", und
     who, b = ses.current_traveler(session), ses.booking(session)
     demo = cal.LONG if demo == cal.LONG else ""
     view = pick_view(view, bool(form or new or undo or w))
-    t = cal.trip(demo)
+    t = cal.trip(demo, b)
     dates = cal.days(t)
     blocks = cal.booked_blocks(b, t)
     acts = cal.activities(session, demo)
@@ -419,7 +419,7 @@ def no_booking():
             Main(Header(brand("/"), cls="cal-bar"),
                  Section(Div(Span(icon("plane", 40, 2), cls="cal-bignote"), H1("Book a trip first"),
                              P("Your calendar fills in with your flights and hotel as soon as you book. Then the fun part starts: adding the gaps."),
-                             A("Plan a trip", href="/plan", cls="btn btn-primary"), cls="cal-firstbox"), cls="cal-first"),
+                             A("Plan a trip", href="/start", cls="btn btn-primary"), cls="cal-firstbox"), cls="cal-first"),
                  id="main"), data_theme="sunset", cls="cal-shell"),
     )
 
@@ -451,7 +451,7 @@ def register(app):
             return no_booking()
         demo = cal.LONG if demo == cal.LONG else ""
         form = None
-        blocks = cal.booked_blocks(ses.booking(session), cal.trip(demo))
+        blocks = cal.booked_blocks(ses.booking(session), cal.trip(demo, ses.booking(session)))
         gs = cal.grid_start(blocks)
         nid = cal.next_id(session, demo)
         if edit:

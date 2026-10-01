@@ -1,6 +1,6 @@
 """Landing page (F-013): "Two doors". One door books a trip, the other forks a real one."""
 
-from fasthtml.common import A, Button, Div, Form, H1, H2, H3, Img, Input, Label, Link, NotStr, P, Section, Span
+from fasthtml.common import A, Button, Div, Form, H1, H2, H3, Img, Link, NotStr, P, Section, Span
 
 from gitaway import itineraries
 from gitaway.catalog import SAMPLE_TRIP
@@ -39,15 +39,15 @@ def _search_values(trip=SAMPLE_TRIP):
 
 
 def _field(name, label, value):
-    return Label(Span(label, cls="field-label"),
-                 Input(type="text", name=name, value=value, autocomplete="off"), cls="field")
+    """A preview of the sample trip. Nothing to type here: the real form is /start."""
+    return Div(Span(label, cls="field-label"), Span(value, cls="field-value"), cls="field", data_field=name)
 
 
 def _search_card():
     return Form(
         *[_field(*f) for f in _search_values()],
-        Button("Open my trip workspace", icon("arrow-right", 22, 2.6), type="submit", cls="btn btn-ink btn-go"),
-        method="get", action="/plan", cls="search",
+        Button("Plan a trip", icon("arrow-right", 22, 2.6), type="submit", cls="btn btn-ink btn-go"),
+        method="get", action="/start", cls="search",
     )
 
 

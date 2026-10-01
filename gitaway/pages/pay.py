@@ -7,7 +7,7 @@ GET /booked             the celebration card; no booking sends you back to /plan
 Every figure comes from catalog.quote; the POST recomputes it from the picks and never trusts a posted total.
 """
 
-from urllib.parse import quote as urlquote
+from urllib.parse import parse_qsl, quote as urlquote
 
 from fasthtml.common import A, Button, Div, Form, H2, Input, Li, Link, P, Script, Section, Span, Ul
 from starlette.responses import RedirectResponse
@@ -29,7 +29,12 @@ def _day(d):
 
 def trip_title(trip=None):
     trip = trip or catalog.SAMPLE_TRIP
-    return f"{PLACE}, {_day(trip.depart)} – {trip.return_.day}"
+    return f"{trip.place}, {trip.date_label}"
+
+
+def trip_fields(trip):
+    """Hidden inputs that carry the trip through the pay form (none for the sample trip)."""
+    return [Input(type="hidden", name=k, value=v) for k, v in parse_qsl(catalog.trip_query(trip))]
 
 
 def signin_for_pay(path):
@@ -43,7 +48,7 @@ def _item(i):
 def _line(q, lane, offer, tile):
     """One lane of the sheet: its name and total, then each priced item in it (rooms and add-ons for the stay)."""
     icon_name, fill = tile
-    detail = f"{catalog.SAMPLE_TRIP.nights} nights · {offer.headline}" if lane == "stay" else offer.detail
+    detail = f"{q.trip.nights_text} · {offer.headline}" if lane == "stay" else offer.detail
     return Div(
         Div(
             Span(icon(icon_name, 22, 2.1), cls=f"pay-tile {fill}"),
@@ -57,7 +62,7 @@ def _line(q, lane, offer, tile):
 
 
 def sheet(q, who):
-    trip = catalog.SAMPLE_TRIP
+    trip = q.trip
     money = catalog.money(q.total_cents)
     return Div(
         Div(cls="pay-backdrop", aria_hidden="true"),
@@ -81,8 +86,9 @@ def sheet(q, who):
                 Input(type="hidden", name="c", value=q.car_id),
                 *([Input(type="hidden", name="rooms", value=q.stay.rooms_code)] if q.stay.rooms_code else []),
                 *([Input(type="hidden", name="add", value=q.stay.add_code)] if q.stay.addons else []),
+                *trip_fields(trip),
                 Button(f"Pay {money}", type="submit", cls="btn btn-ink pay-go", id="pay-go"),
-                A("Back to my picks", href=plan.plan_path(q.flight_id, q.stay_id, q.car_id, q.stay), id="pay-cancel", cls="pay-back"),
+                A("Back to my picks", href=plan.plan_path(q.flight_id, q.stay_id, q.car_id, q.stay, q.trip), id="pay-cancel", cls="pay-back"),
                 action="/pay", method="post", cls="pay-form",
             ),
             P("Simulated checkout. No money moves and nothing is really booked.", cls="pay-note"),
@@ -92,14 +98,13 @@ def sheet(q, who):
     )
 
 
-def flight_chip(o):
-    trip = catalog.SAMPLE_TRIP
+def flight_chip(o, trip):
     when = f"{trip.depart.strftime('%a')} {_day(trip.depart)}"
     return f"{o.name} · {when} · {o.headline.split(' → ')[0]} · {trip.origin} → {o.airport}"
 
 
 def celebration(b):
-    trip = catalog.SAMPLE_TRIP
+    trip = tripcal.trip_of(b)
     flight, stay = catalog.offer(b["flight"]), catalog.offer(b["stay"])
     pick = tripcal.stay_pick_of(b)
     confetti = Div(
@@ -110,9 +115,9 @@ def celebration(b):
     )
     card = Section(
         Span(icon("plane", 48, 2), cls="pay-badge", aria_hidden="true"),
-        H2(f"You're going to {PLACE}!", id="pay-done-title"),
+        H2(f"You're going to {trip.place}!", id="pay-done-title"),
         P("Your flights and hotel are on the trip calendar. Now the fun part: fill the gaps with your crew."),
-        Div(Span(flight_chip(flight), cls="pay-pill"), Span(f"{stay.name} · {trip.nights} nights", cls="pay-pill"),
+        Div(Span(flight_chip(flight, trip), cls="pay-pill"), Span(f"{stay.name} · {trip.nights_text}", cls="pay-pill"),
             Span(pick.summary, cls="pay-pill"), cls="pay-pills"),
         A("Open my trip calendar", href="/calendar", cls="btn btn-ink pay-cal", id="pay-cal"),
         Span(f"Booking {b['id']} · simulated, nothing was charged", cls="pay-ref"),
@@ -123,20 +128,22 @@ def celebration(b):
 
 def register(app):
     @app.get("/plan/pay")
-    def pay_sheet(session, f: str = "", h: str = "", c: str = "", rooms: str = None, add: str = None):
-        picks = plan.resolve_pick(f, h, c)
-        stay = plan.resolve_stay(picks[1], rooms, add)
+    def pay_sheet(session, f: str = "", h: str = "", c: str = "", rooms: str = None, add: str = None, d: str = "", r: str = "", a: str = "", k: str = ""):
+        picks, trip = plan.resolve_pick(f, h, c), plan.resolve_trip(d, r, a, k)
+        stay = plan.resolve_stay(picks[1], rooms, add, trip)
         who = ses.current_traveler(session)
         if not who:
             return signin_for_pay(plan.pay_path(*picks, stay))
-        return plan.workspace(*picks, stay=stay, overlay=(sheet(catalog.quote(*picks, stay), who), Script(src="/assets/js/pay.js", defer=True)), head=HEAD)
+        return plan.workspace(*picks, stay=stay, overlay=(sheet(catalog.quote(*picks, stay, trip), who), Script(src="/assets/js/pay.js", defer=True)), head=HEAD)
 
     @app.post("/pay")
-    def pay(session, f: str = "", h: str = "", c: str = "", rooms: str = None, add: str = None):
+    def pay(session, f: str = "", h: str = "", c: str = "", rooms: str = None, add: str = None, d: str = "", r: str = "", a: str = "", k: str = ""):
         """Books the picks. The total is always recomputed here; rooms that sleep too few become the default room."""
-        picks = plan.resolve_pick(f, h, c)
-        stay = plan.resolve_stay(picks[1], rooms, add)
-        if not ses.book(session, catalog.quote(*picks, stay)):
+        picks, trip = plan.resolve_pick(f, h, c), plan.resolve_trip(d, r, a, k)
+        stay = plan.resolve_stay(picks[1], rooms, add, trip)
+        if catalog.is_past(trip.depart, trip.return_):  # a stale link must not book the past: back to the form, which says why
+            return RedirectResponse(f"/start?go=1&to=la&{catalog.trip_query(trip)}&n={len(trip.kid_ages)}" + "".join(f"&k{i}={a}" for i, a in enumerate(trip.kid_ages, 1)), status_code=303)
+        if not ses.book(session, catalog.quote(*picks, stay, trip)):
             return signin_for_pay(plan.pay_path(*picks, stay))
         return RedirectResponse("/booked", status_code=303)
 

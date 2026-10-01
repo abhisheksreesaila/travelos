@@ -20,6 +20,7 @@ import json
 import re
 from dataclasses import dataclass, replace
 from datetime import date, timedelta
+from urllib.parse import parse_qs
 
 from gitaway import catalog, context, session as ses
 
@@ -87,9 +88,20 @@ class Note:
 
 # ---- trip and formatting -------------------------------------------------------------------------------------------
 
-def trip(demo=""):
-    t = catalog.SAMPLE_TRIP
-    return replace(t, return_=LONG_RETURN) if demo == LONG else t
+def trip_of(booking=None):
+    """The trip a booking was made for (the sample trip when it holds none, as older bookings do)."""
+    if not booking or not booking.get("trip"):
+        return catalog.SAMPLE_TRIP
+    p = {k: v[0] for k, v in parse_qs(booking["trip"]).items()}
+    return catalog.trip_from_url(p.get("d"), p.get("r"), p.get("a"), p.get("k"))
+
+
+def trip(demo="", booking=None):
+    """The trip on the calendar: the booking's (default: the sample trip), or the 20-day fixture of ?demo=long."""
+    t = trip_of(booking)
+    if demo != LONG:
+        return t
+    return replace(t, return_=LONG_RETURN if t.depart < LONG_RETURN else t.depart + timedelta(days=19))  # always after departure
 
 
 def days(t):
@@ -120,7 +132,7 @@ def weather_for(i):
 
 def stay_pick_of(b):
     """The StayPick (rooms and add-ons) a booking `b` holds. Older bookings have none and mean the default room."""
-    return catalog.stay_pick(b["stay"], b.get("rooms") or None, b.get("add") or None)
+    return catalog.stay_pick(b["stay"], b.get("rooms") or None, b.get("add") or None, trip_of(b))
 
 
 def booked_blocks(b, t):
@@ -183,7 +195,7 @@ def _context(session, demo):
     b = ses.booking(session)
     if not b:
         raise CalendarError("Book a trip first, then plan the gaps.")
-    t = trip(demo)
+    t = trip(demo, b)
     return b, t, booked_blocks(b, t)
 
 
@@ -400,10 +412,11 @@ def live_add(session, demo=""):
     """
     if not live_pending(session, demo):
         return None
-    _, _, blocks = _context(session, demo)
+    _, t, blocks = _context(session, demo)
     friend = ses.friend_named(session, LIVE_FRIEND)
     state = _load(session, demo)
-    start = _free_slot(blocks, state, LIVE_DAY, grid_start(blocks))
+    day = min(LIVE_DAY, (t.return_ - t.depart).days)  # a short trip has no third day: use its last
+    start = _free_slot(blocks, state, day, grid_start(blocks))
     state["l"] = 1
     if start is None:
         # Unenforced on purpose: the only growth is the one-byte-ish "l": 1 flag (about 6 bytes of JSON), and refusing it
@@ -411,9 +424,9 @@ def live_add(session, demo=""):
         _save(session, demo, state, enforce=False)
         return None
     n = state["q"]
-    act = {"i": f"a{n + 1}", "d": LIVE_DAY, "s": start, "e": start + LIVE_LEN, "t": LIVE_TITLE, "k": "fun", "b": friend.name}
+    act = {"i": f"a{n + 1}", "d": day, "s": start, "e": start + LIVE_LEN, "t": LIVE_TITLE, "k": "fun", "b": friend.name}
     state["a"].append(act)
-    state["n"].append({"i": f"n{n + 2}", "t": LIVE_NOTE, "a": act["i"], "b": friend.name})
+    state["n"].append({"i": f"n{n + 2}", "t": LIVE_NOTE.replace("on Sunday", f"on {(t.depart + timedelta(days=day)):%A}"), "a": act["i"], "b": friend.name})
     state["q"] = n + 2
     try:
         _save(session, demo, state)
