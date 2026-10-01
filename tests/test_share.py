@@ -7,7 +7,7 @@ import pytest
 
 from gitaway import catalog
 from tests.test_calendar import FORM, add, book
-from tests.test_signin import session_data, sign_in, tid
+from tests.test_signin import session_data, sign_in, stored_booking, tid
 
 
 def slug_of(client):
@@ -73,7 +73,7 @@ def test_the_page_never_has_notes_friends_invites_or_money(client):
     html = client.get(f"/trips/{slug_of(client)}").text.split("<main")[1].split("</main>")[0]  # the page, not the viewer's own header
     for private in ["hunter2", "family treasure", "Grandma Zelda", "Ari Rivera", "/join/", "GA-", "gitaway.example"]:
         assert private not in html, private
-    b = session_data(client)["bookings"][tid("ari")]
+    b = stored_booking()
     assert catalog.money(b["total_cents"]) not in html and "$" not in html
 
 
@@ -134,7 +134,7 @@ def test_the_shared_trip_shows_in_the_hub_and_filters(client):
 
 def test_the_booking_reference_never_appears_anywhere_it_could_leak(client):
     book(client)
-    ref = session_data(client)["bookings"][tid("ari")]["id"]
+    ref = stored_booking()["id"]
     r = share(client)
     pages = [r.headers["location"], client.get("/share/done").text, client.get("/share").text, client.get("/discover").text,
              client.get(f"/trips/{slug_of(client)}").text, client.get("/calendar").text]

@@ -4,7 +4,7 @@ import re
 from pathlib import Path
 
 from tests.test_calendar import FORM, add, book, tag
-from tests.test_signin import session_data, sign_in, tid
+from tests.test_signin import session_data, sign_in, stored_calendar, tid
 
 ROOT = Path(__file__).resolve().parent.parent
 TWO_NIGHTS = {"d": "2026-10-21", "r": "2026-10-23", "a": "2"}
@@ -16,11 +16,11 @@ def cookie_size(client):
 
 
 def activities(client):
-    return session_data(client)["cal"][tid("ari")]["a"]
+    return stored_calendar()["a"]
 
 
 def notes(client):
-    return session_data(client)["cal"][tid("ari")]["n"]
+    return stored_calendar()["n"]
 
 
 def drafts(html):
@@ -75,7 +75,7 @@ def test_signed_out_and_unbooked_cannot_use_voice(client):
     sign_in(client)
     assert "Book a trip first" in client.get("/calendar?voice=1").text
     r = client.post("/calendar/voice/apply", data={"night": "0", "pick": ["v1"]}, follow_redirects=False)
-    assert r.status_code == 303 and "session_" in client.cookies and "cal" not in session_data(client)
+    assert r.status_code == 303 and "session_" in client.cookies and not activities(client)
 
 
 # ---- listening, the question and the preview -------------------------------------------------------------------------
@@ -92,7 +92,7 @@ def test_the_panel_shows_the_sentence_and_waits_for_the_one_question(client):
     btn = tag(html, "id", "vo-apply")
     assert "disabled" in html[html.index('id="vo-apply"') - 200:html.index('id="vo-apply"') + 300]
     assert set(drafts(html)) == {"v1", "v2", "v3"}                                          # drafts in the grid, nothing saved
-    assert cookie_size(client) == before and "cal" not in session_data(client)
+    assert cookie_size(client) == before and not activities(client)
 
 
 def test_the_animation_only_plays_when_the_mic_was_tapped(client):
@@ -176,7 +176,7 @@ def test_posting_the_same_apply_again_adds_nothing(client):
 def test_apply_needs_the_answer_and_only_adds_real_plan_keys(client):
     book(client)
     r = client.post("/calendar/voice/apply", data={"pick": ["v1"]}, follow_redirects=False)
-    assert r.status_code == 409 and "Pick a night" in r.text and "cal" not in session_data(client)
+    assert r.status_code == 409 and "Pick a night" in r.text and not activities(client)
     r = apply(client, 0, "v1", "v9", "<script>", "a1")
     assert [a["t"] for a in activities(client)] == ["Griffith Observatory at sunset"]
     assert apply(client, 7, "v1").status_code == 409                                       # not one of the offered nights
@@ -185,7 +185,7 @@ def test_apply_needs_the_answer_and_only_adds_real_plan_keys(client):
 def test_nothing_ticked_adds_nothing_and_no_note(client):
     book(client)
     r = apply(client, 0)
-    assert r.status_code == 303 and "cal" not in session_data(client)
+    assert r.status_code == 303 and not activities(client)
 
 
 def test_undo_takes_back_only_what_that_apply_added(client):
@@ -272,31 +272,22 @@ def fill(client):
     raise AssertionError("never full")
 
 
-def test_a_full_cookie_refuses_the_apply_with_a_friendly_message_and_changes_nothing(client):
+def test_a_full_calendar_refuses_the_apply_with_a_friendly_message_and_changes_nothing(client, monkeypatch):
+    from gitaway import tripcal
+    monkeypatch.setattr(tripcal, "MAX_ACTIVITIES", 5)
     book(client)
     fill(client)
     before = [dict(a) for a in activities(client)]
     r = apply(client, 0, "v0", "v1", "v2", "v3")
-    assert r.status_code == 409 and "full" in r.text and "vo-panel" in r.text
-    assert activities(client) == before and cookie_size(client) <= LIMIT
+    assert r.status_code == 409 and "a lot planned" in r.text and "vo-panel" in r.text
+    assert activities(client) == before and notes(client) == []
 
 
-def test_a_nearly_full_cookie_never_goes_over_the_limit(client):
+def test_an_apply_writes_to_the_database_and_leaves_the_cookie_alone(client):
     book(client)
-    for i in range(300):
-        r = add(client, id=f"a{i + 1}", day=str(1 + i % 3), start=f"{8 + i % 12:02d}:00", end=f"{8 + i % 12:02d}:30", title="x" * 40)
-        if r.status_code == 409 or cookie_size(client) > LIMIT - 500:
-            break
+    before = cookie_size(client)
     apply(client, 0, "v0", "v1", "v2", "v3")
-    assert cookie_size(client) <= LIMIT
-    client.post("/calendar/voice/undo", data={"ids": "a1", "night": "0"})
-    assert cookie_size(client) <= LIMIT
-
-
-def test_a_plain_apply_stays_well_inside_the_cookie(client):
-    book(client)
-    apply(client, 0, "v0", "v1", "v2", "v3")
-    assert cookie_size(client) < 2400
+    assert len(activities(client)) == 4 and notes(client) and cookie_size(client) <= before + 40
 
 
 # ---- motion ---------------------------------------------------------------------------------------------------------

@@ -5,7 +5,6 @@ from datetime import date
 import pytest
 
 from gitaway import tripcal as cal, voice
-from tests.test_signin import tid
 
 SAMPLE = [date(2026, 10, 16 + i) for i in range(5)]          # Fri 16 .. Tue 20
 TWO_NIGHTS = [date(2026, 10, 21 + i) for i in range(3)]      # Wed 21 .. Fri 23: no Sunday, no Monday
@@ -18,7 +17,7 @@ def by_key(plans):
 
 def client_session(client):
     """A plain session dict equal to the client's cookie."""
-    from tests.test_signin import session_data, tid
+    from tests.test_signin import session_data
     return session_data(client)
 
 
@@ -97,9 +96,8 @@ def test_the_plans_sit_in_the_gaps_on_the_sample_trip(client):
 
 def test_on_a_two_night_trip_plans_that_cannot_fit_show_as_clashes_and_nothing_crashes(client):
     from tests.test_calendar import book
-    book(client)
+    book(client, d="2026-10-21", r="2026-10-22", a="2")
     s = client_session(client)
-    s["bookings"][tid("ari")]["trip"] = "d=2026-10-21&r=2026-10-22&a=2"
     placed = voice.preview(s, night=0)
     assert len(placed) == 4
     clashes = [x for x in placed if x.state == "clash"]

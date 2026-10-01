@@ -19,14 +19,14 @@ read before they write (the calendar's validation, id counters) start with a wri
 write lock, so the reads that follow cannot be stale. WAL mode keeps readers out of the writers' way.
 """
 
-import os
 import threading
 from collections.abc import Mapping
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fh_saas.utils_auth import require_tenant_access
+from fh_saas.db_host import HostDatabase
+from fh_saas.utils_auth import get_user_membership, require_tenant_access
 from fh_saas.utils_db import create_indexes, register_tables
 from fh_saas.utils_migrate import apply_migrations, discover_migrations
 from fh_saas.utils_sql import with_transaction
@@ -131,15 +131,16 @@ class Friend:
 
 
 class Ride:
-    """THE RIDES SEAM. F-038's simulated Uber keeps each scheduled ride here: `data` is its compact JSON dict.
+    """One simulated Uber ride (F-038) of this family. `key` says which picks (flight, stay, trip dates) it belongs to, so any
+    booking with the same picks, by any member, shows it. `data` is the compact ride dict gitaway.rides.to_dict makes (JSON).
 
-    gitaway/rides.py (F-038) is the only code that reads or writes it, through the helpers below (rides_list, ride_put,
-    ride_get, ride_delete). Until F-038 lands on master nothing writes this table.
+    gitaway/rides.py is the only code that reads or writes this table (list_rides, get_ride, save_ride, cancel_ride, step_ride).
     """
-    id: str
-    trip_id: str
-    leg: str = ""
-    status: str = ""
+    id: str            # "r1", "r2": family-wide
+    seq: int
+    key: str
+    leg: str
+    request_id: str
     data: str
     created_by: str = ""
     created_at: str
@@ -161,7 +162,7 @@ FAMILY_INDEXES = [  # (table, columns, unique, name)
     ("activities", ["trip_id", "scope", "act_id"], True, "ux_activities_id"),
     ("notes", ["trip_id", "scope", "note_id"], True, "ux_notes_id"),
     ("friends", ["trip_id"], False, "ix_friends_trip"),
-    ("rides", ["trip_id"], False, "ix_rides_trip"),
+    ("rides", ["key"], False, "ix_rides_key"),
 ]
 
 
@@ -215,6 +216,14 @@ def family_db(source):
         db.conn.close()
         raise
     return db
+
+
+def tenant_of(user_id) -> str | None:
+    """The family a person belongs to (their first active membership), or None. For code that must read another person's
+    publicly shared trip (gitaway.share) until the community database (F-041) replaces that."""
+    with _LOCK:
+        found = get_user_membership(HostDatabase.from_env(), user_id)
+    return found.tenant_id if found else None
 
 
 @contextmanager
@@ -302,33 +311,3 @@ def booking_for_trip(db, trip_id) -> dict | None:
         if value:
             out[key] = value
     return out
-
-
-# ---- rides (the seam; see Ride) ------------------------------------------------------------------------------------
-
-def rides_list(db, trip_id) -> list:
-    return rows(db, "SELECT * FROM rides WHERE trip_id = :t ORDER BY created_at, rowid", t=trip_id)
-
-
-def ride_get(db, ride_id):
-    return row(db, "SELECT * FROM rides WHERE id = :id", id=ride_id)
-
-
-def ride_put(db, ride_id, trip_id, data, *, leg="", status="", created_by=""):
-    """Add a ride, or replace the stored `data` (a JSON string) and status of the one with this id. One transaction."""
-    from fh_saas.utils_sql import insert_only, update_record
-    with transaction(db):
-        insert_only(db, "rides", {"id": ride_id, "trip_id": trip_id, "leg": leg, "status": status, "data": data,
-                                  "created_by": created_by, "created_at": now()}, ["id"], auto_commit=False)
-        update_record(db, "rides", ride_id, "id", auto_commit=False, data=data, status=status)
-
-
-def ride_delete(db, ride_id):
-    from fh_saas.utils_sql import delete_record
-    with transaction(db):
-        delete_record(db, "rides", ride_id, "id", auto_commit=False)
-
-
-def data_folder() -> Path:
-    """The folder every database file lives in (the process's working directory; see gitaway.auth.configure_storage)."""
-    return Path(os.getcwd())

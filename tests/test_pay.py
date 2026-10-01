@@ -1,7 +1,7 @@
 from urllib.parse import quote as q
 
-from gitaway import catalog
-from tests.test_signin import session_data, sign_in, tid
+from gitaway import catalog, session as ses
+from tests.test_signin import person, session_data, sign_in, stored_booking, tid
 
 PICK = "f=f2&h=h3&c=c1"
 DATA = {"f": "f2", "h": "h3", "c": "c1"}
@@ -59,10 +59,10 @@ def test_pay_twice_makes_one_booking(client):
     sign_in(client)
     r1 = client.post("/pay", data=DATA, follow_redirects=False)
     assert r1.status_code == 303 and r1.headers["location"] == "/booked"
-    first = session_data(client)["bookings"]
+    b = stored_booking()
     client.post("/pay", data=DATA, follow_redirects=False)
-    assert session_data(client)["bookings"] == first
-    b = first[tid("ari")]
+    assert stored_booking() == b and len(ses.trips(person())) == 1
+    assert set(session_data(client)) <= set(ses.AUTH_KEYS)  # the cookie holds only the sign-in
     assert b["total_cents"] == catalog.quote("f2", "h3", "c1").total_cents and b["id"].startswith("GA-")
 
 
@@ -92,21 +92,21 @@ def test_bookings_are_per_traveler(client):
 def test_pay_ignores_junk_picks(client):
     sign_in(client)
     client.post("/pay", data={"f": "zzz", "h": "h3", "c": "c1"})
-    assert session_data(client)["bookings"][tid("ari")]["flight"] == "f1"
+    assert stored_booking()["flight"] == "f1"
 
 
 def test_forged_total_is_ignored(client):
     sign_in(client)
     client.post("/pay", data={**DATA, "total_cents": "1", "total": "$1"})
-    assert session_data(client)["bookings"][tid("ari")]["total_cents"] == catalog.quote("f2", "h3", "c1").total_cents
+    assert stored_booking()["total_cents"] == catalog.quote("f2", "h3", "c1").total_cents
 
 
 def test_paying_different_picks_replaces_the_booking(client):
     sign_in(client)
     client.post("/pay", data=DATA)
-    first = session_data(client)["bookings"][tid("ari")]
+    first = stored_booking()
     client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1"})
-    second = session_data(client)["bookings"][tid("ari")]
+    second = stored_booking()
     assert second["id"] != first["id"] and second["stay"] == "h1"
     assert "The Tidewater" in client.get("/booked").text
 

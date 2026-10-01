@@ -4,9 +4,9 @@ from urllib.parse import quote
 
 import pytest
 
-from gitaway import session as ses
+from gitaway import catalog, session as ses
 from tests.test_calendar import add, book, tag
-from tests.test_signin import session_data, sign_in, tid
+from tests.test_signin import person, session_data, sign_in, stored_calendar, tid
 
 
 def invite(client, name="Mom", **extra):
@@ -18,37 +18,39 @@ def live(client, **extra):
 
 
 def friend_names(client):
-    return session_data(client).get("friends", {}).get(tid("ari"), [])
+    return [f.name for f in ses.friends(person())]
 
 
 # ---- session helpers -----------------------------------------------------------------------------------------------
 
+def booked_person(traveler="ari"):
+    s = person(traveler)
+    ses.book(s, catalog.quote("f1", "h1", "c1"))
+    return s
+
+
 def test_add_friend_dedupes_and_is_per_traveler():
-    s = {}
-    ses.sign_in(s, "ari")
+    s = booked_person()
     mom = ses.add_friend(s, "Mom")
     assert (mom.name, mom.initials) == ("Mom", "MO")
     assert ses.add_friend(s, "  mom ").name == "Mom"
     ses.add_friend(s, "Sam")
     assert [f.name for f in ses.friends(s)] == ["Mom", "Sam"]
-    ses.sign_in(s, "sam")
-    assert ses.friends(s) == []
+    assert ses.friends(booked_person("sam")) == []  # another family
     ses.sign_out(s)
     assert ses.friends(s) == []
 
 
 @pytest.mark.parametrize("bad", ["", "   ", "x" * 21, "You", "you"])
 def test_bad_friend_names_are_refused(bad):
-    s = {}
-    ses.sign_in(s, "ari")
+    s = booked_person()
     with pytest.raises(ses.FriendError):
         ses.add_friend(s, bad)
     assert ses.friends(s) == []
 
 
 def test_friends_are_capped():
-    s = {}
-    ses.sign_in(s, "ari")
+    s = booked_person()
     for i in range(ses.MAX_FRIENDS):
         ses.add_friend(s, f"Pal {i}")
     with pytest.raises(ses.FriendError):
@@ -69,7 +71,7 @@ def test_invite_needs_sign_in_and_a_booking(client):
     assert "/signin" in invite(client).headers["location"]
     sign_in(client)
     assert invite(client).headers["location"] == "/calendar"
-    assert not session_data(client).get("friends")
+    assert friend_names(client) == []
 
 
 def test_bad_invite_name_rerenders_the_dialog_with_the_reason(client):
@@ -143,12 +145,12 @@ def test_live_add_needs_mom_is_idempotent_and_authored_by_mom(client):
     assert 'data-live="1"' in client.get("/calendar?view=days").text
     r = live(client)
     assert r.status_code == 303 and "new=a1" in r.headers["location"] and "live=1" in r.headers["location"]
-    st = session_data(client)["cal"][tid("ari")]
+    st = stored_calendar()
     assert len(st["a"]) == 1 and st["a"][0]["t"] == "Travel Town steam trains" and st["a"][0]["b"] == "Mom"
     assert (st["a"][0]["d"], st["a"][0]["s"], st["a"][0]["e"]) == (2, 600, 750)
     assert len(st["n"]) == 1 and st["n"][0]["b"] == "Mom" and "The little one will love the trains" in st["n"][0]["t"]
     assert live(client).headers["location"] == "/calendar"
-    st = session_data(client)["cal"][tid("ari")]
+    st = stored_calendar()
     assert len(st["a"]) == 1 and len(st["n"]) == 1
     assert "data-live" not in client.get("/calendar?view=days").text
 
@@ -178,7 +180,7 @@ def test_live_clash_falls_back_to_the_next_free_slot(client):
     add(client, id="a1", day="2", start="10:00", end="11:00", title="Mine")
     invite(client)
     live(client)
-    st = session_data(client)["cal"][tid("ari")]
+    st = stored_calendar()
     mom = next(a for a in st["a"] if a.get("b") == "Mom")
     assert mom["d"] == 2 and mom["e"] - mom["s"] == 150
     assert mom["s"] == 660  # 11:00, the first free 2.5 hours after the clash
@@ -191,7 +193,7 @@ def test_live_skips_gracefully_when_the_whole_morning_is_taken(client):
     invite(client)
     r = live(client)
     assert r.status_code == 303 and r.headers["location"] == "/calendar"
-    st = session_data(client)["cal"][tid("ari")]
+    st = stored_calendar()
     assert [a["i"] for a in st["a"]] == ["a1", "a2"] and st["n"] == []
     assert "data-live" not in client.get("/calendar?view=days").text  # it will not try again
 

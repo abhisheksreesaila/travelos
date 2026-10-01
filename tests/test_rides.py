@@ -5,7 +5,7 @@ from urllib.parse import parse_qs, urlsplit
 
 import pytest
 
-from gitaway import catalog, rides
+from gitaway import catalog, rides, session as ses
 from tests.test_signin import session_data, sign_in
 
 PICK = "f=f1&h=h1&c=none"
@@ -338,31 +338,54 @@ def test_the_storage_functions_round_trip_and_replace(client):
         rides.cancel_ride(s, "r7")
 
 
-def test_ride_storage_refuses_politely_when_the_cookie_is_full(client):
-    from tests.test_calendar import FORM
+def test_a_family_with_too_many_rides_is_refused_politely(client, monkeypatch):
+    monkeypatch.setattr(rides, "MAX_RIDES", 1)
     sign_in(client)
     book(client)
-    for i in range(300):  # fill the calendar until it refuses
-        r = client.post("/calendar/activities", data={**FORM, "id": f"a{i + 1}", "day": str(1 + i % 3), "start": f"{8 + i % 12:02d}:00", "end": f"{8 + i % 12:02d}:30", "title": "x" * 40})
-        if r.status_code == 409:
-            break
+    assert schedule(client, "arrive").status_code == 303
+    r = schedule(client, "depart")
+    assert r.status_code == 422 and "1 rides already" in visible(r.text)
+    assert [x.leg for x in rides.list_rides(_Session(client))] == ["arrive"]
+
+
+def test_rides_are_stored_in_the_family_database_and_the_cookie_holds_only_the_sign_in(client):
+    from gitaway import session as ses
+    sign_in(client)
+    book(client)
     before = len(client.cookies.get("session_"))
-    r = schedule(client)
-    assert r.status_code == 422 and "full" in visible(r.text)
-    assert len(client.cookies.get("session_")) <= 3600 and len(client.cookies.get("session_")) <= before + 40
-    assert not rides.list_rides(_Session(client))
-
-
-def test_rides_with_a_full_set_of_other_data_stay_under_the_cookie_limit(client):
-    sign_in(client)
-    for slug in ["sun-tacos-and-tide-pools", "la-for-two-slow-mornings", "dog-friendly-big-sur-drive", "san-diego-on-a-budget"]:
-        sign_in(client, next=f"/trips/{slug}", intent="fork")
-    book(client)
-    for name in ["Mom", "Sam"]:
-        client.post("/calendar/friends", data={"name": name})
     assert schedule(client, "arrive").status_code == 303
     assert schedule(client, "depart").status_code == 303
-    assert len(client.cookies.get("session_")) <= 3600
+    assert len(rides.list_rides(_Session(client))) == 2
+    assert set(session_data(client)) <= set(ses.AUTH_KEYS) and len(client.cookies.get("session_")) <= before + 40
+
+
+def test_every_member_of_the_family_sees_the_rides_on_a_trip():
+    from gitaway import session as ses
+    from tests.test_signin import person
+    ari = person("ari")
+    ses.book(ari, catalog.quote("f1", "h1", None))
+    from tests.test_family_storage import add_member
+    with add_member("sam", to="ari") as sam:
+        ses.switch_trip(sam, ses.trips(sam)[0].id)
+        s = _stub_ride(ari)
+        assert [r.id for r in rides.list_rides(sam)] == [s.id] and rides.get_ride(sam, s.id) == s
+        rides.cancel_ride(sam, s.id)  # either member can act on it
+        assert rides.list_rides(ari)[0].canceled
+
+
+def _stub_ride(session):
+    """Schedule the arrival ride of the open trip's booking straight through the model."""
+    b = ses.booking(session)
+    t, flight, stay = cal_trip(b)
+    plan = rides.leg_plan("arrive", flight, stay, t)
+    est = rides.provider().estimates(plan)[0]
+    req = rides.ScheduleRequest(plan, rides.validate_guest("Ari", "Rivera", "(310) 555-0123"), est.product_id, est.fare_id, rides.next_ride_id(session), rides.booking_key(b))
+    return rides.schedule_ride(session, req)
+
+
+def cal_trip(b):
+    from gitaway import tripcal
+    return tripcal.trip_of(b), tripcal.flight_of(b), tripcal.stay_of(b)
 
 
 def test_only_real_ids_and_legs_are_accepted(client):

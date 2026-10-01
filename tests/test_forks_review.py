@@ -1,12 +1,15 @@
 """F-021 review fixes: cookie budget, the booked trip's real length, titles, undo and escaping."""
 
 import dataclasses
+import json
 import re
 
-from gitaway import itineraries, session as ses, tripcal as cal
+from fh_saas.utils_sql import insert_only
+
+from gitaway import familydb, itineraries, session as ses, tripcal as cal
 from tests.test_calendar import FORM, add, book
 from tests.test_forks import OTHER, SD, TRIP, apply, fork, plan_keys, titles
-from tests.test_signin import session_data, sign_in, tid
+from tests.test_signin import person, session_data, sign_in, stored_booking, stored_calendar, tid
 
 THREE_NIGHTS = dict(d="2026-10-16", r="2026-10-19", a="2", k="4,7")
 TWENTY_DAYS = dict(d="2026-10-16", r="2026-11-04", a="2", k="4,7")
@@ -29,12 +32,9 @@ def test_made_up_slugs_are_not_forked_or_saved(client):
     assert "forks" not in data and "saves" not in data
 
 
-def test_forks_and_saves_are_refused_before_the_cookie_overflows(client):
+def test_forks_and_saves_are_refused_before_the_cookie_overflows(client, monkeypatch):
     book(client)
-    for i in range(40):
-        r = add(client, id=f"a{i + 1}", day=str(1 + i % 3), start="12:00", end="12:30", title=f"Plan number {i:02d} " + "x" * 20)
-        if r.status_code == 409:
-            break
+    monkeypatch.setattr(ses, "BUDGET", len(json.dumps(session_data(client))) + 120)  # forks and saves still live in the cookie until F-041
     refused, refused_slug = [], None
     for slug in (TRIP, OTHER, SD, "dog-friendly-big-sur-drive"):
         r = client.post("/fork", data={"next": f"/trips/{slug}"}, follow_redirects=False)
@@ -50,14 +50,10 @@ def test_forks_and_saves_are_refused_before_the_cookie_overflows(client):
     assert page.status_code == 409 and "full" in page.text
 
 
-def test_signing_in_to_fork_with_no_room_says_so(client):
+def test_signing_in_to_fork_with_no_room_says_so(client, monkeypatch):
     sign_in(client)
     book(client)
-    for i in range(80):
-        if add(client, id=f"a{i + 1}", day=str(1 + i % 3), start="12:00", end="12:30", title=f"Plan number {i:02d} " + "x" * 20).status_code == 409:
-            break
-    for i in range(30):  # then small notes, until not even one more fits
-        client.post("/calendar/notes", data={"id": f"n{900 + i}", "text": "y" * max(1, 40 - 15 * (i // 10))})
+    monkeypatch.setattr(ses, "BUDGET", len(json.dumps(session_data(client))) + 5)  # no room for a fork in the cookie
     r = client.get(f"/signin?next=/trips/{TRIP}&intent=fork", follow_redirects=False)
     assert r.status_code == 409 and "full" in r.text
 
@@ -89,7 +85,7 @@ def test_forks_follow_a_twenty_day_trip_with_a_day_window(client):
     assert plan_keys(html)["d5s0"][0] is True  # a day that exists on a long trip is open
     r = apply(client, "d5s0")
     assert r.status_code == 303 and titles(client) == ["Farmers Market brunch"]
-    assert cal.trip_of(session_data(client)["bookings"][tid("ari")]).return_.day == 4
+    assert cal.trip_of(stored_booking()).return_.day == 4
 
 
 # ---- titles ---------------------------------------------------------------------------------------------------------
@@ -115,8 +111,8 @@ def test_undo_only_removes_what_that_apply_added(client):
     add(client, id="a9", title="Mine")
     first = apply(client, "d1s2")
     ids = re.search(r"applied=([a0-9,]+)", first.headers["location"]).group(1)
-    own = [a["i"] for a in session_data(client)["cal"][tid("ari")]["a"] if a["t"] == "Mine"]
-    mom = [a["i"] for a in session_data(client)["cal"][tid("ari")]["a"] if a.get("b") == "Mom"]
+    own = [a["i"] for a in stored_calendar()["a"] if a["t"] == "Mine"]
+    mom = [a["i"] for a in stored_calendar()["a"] if a.get("b") == "Mom"]
     client.post("/forks/undo", data={"ids": ",".join([*own, *mom]), "src": TRIP})  # a hand-made id list
     assert "Mine" in titles(client) and "Travel Town steam trains" in titles(client)
     client.post("/forks/undo", data={"ids": ids, "src": OTHER})  # the wrong fork
@@ -178,7 +174,7 @@ def test_moving_a_plan_later_than_the_window_is_refused_too(client):
     add(client, id="a1", day="1", start="10:00", end="11:00")
     r = client.post("/calendar/activities/a1/move", data={"day": "3", "start": "16:00", "end": "17:00"}, follow_redirects=False)
     assert r.status_code == 409 and "Your flight home leaves at 2:10 PM" in r.text
-    assert any(a["i"] == "a1" and a["d"] == 1 for a in session_data(client)["cal"][tid("ari")]["a"])
+    assert any(a["i"] == "a1" and a["d"] == 1 for a in stored_calendar()["a"])
 
 
 def test_a_fork_plan_after_the_flight_home_cannot_be_applied(client):
@@ -190,7 +186,7 @@ def test_a_fork_plan_after_the_flight_home_cannot_be_applied(client):
     assert "Too close to your flight home (finish by 12:10 PM)" in html
     assert 'data-key="d4s2"' not in html  # no draft on the calendar
     apply(client, "d4s2")
-    assert "cal" not in session_data(client)
+    assert not stored_calendar()["a"]
 
 
 def test_day_arrows_are_not_offered_when_the_trip_is_three_days_or_fewer(client):
@@ -226,9 +222,9 @@ def test_moms_scripted_add_stays_inside_the_flight_window_on_a_short_trip(client
     book(client, f="f2", **TWO_NIGHTS)  # f2's flight home leaves at 12:30 PM, so the last day closes at 10:30 AM
     client.post("/calendar/friends", data={"name": "Mom"})
     client.post("/calendar/live")
-    mom = [a for a in session_data(client)["cal"][tid("ari")]["a"] if a.get("b") == "Mom"]
+    mom = [a for a in stored_calendar()["a"] if a.get("b") == "Mom"]
     assert len(mom) == 1 and mom[0]["d"] == 2
-    b = session_data(client)["bookings"][tid("ari")]
+    b = stored_booking()
     blocks = cal.booked_blocks(b, cal.trip_of(b))
     assert cal.window_problem(blocks, mom[0]["d"], mom[0]["s"], mom[0]["e"]) is None
     assert mom[0]["e"] <= 10 * 60 + 30
@@ -239,13 +235,16 @@ def test_moms_add_is_skipped_when_no_slot_fits_the_window(client, monkeypatch):
     monkeypatch.setattr(cal, "LIVE_LEN", 600)  # ten hours cannot fit anywhere on that last day
     client.post("/calendar/friends", data={"name": "Mom"})
     client.post("/calendar/live")
-    assert not [a for a in session_data(client).get("cal", {}).get("ari", {}).get("a", []) if a.get("b") == "Mom"]
+    assert not [a for a in stored_calendar()["a"] if a.get("b") == "Mom"]
 
 
 def test_renaming_an_older_item_still_works_but_moving_it_later_does_not(client):
-    book(client)  # f1: the flight home leaves at 2:10 PM, so the last day closes at 12:10 PM
-    assert add(client, id="a1", day="4", start="09:00", end="10:45", title="Old plan").status_code == 303
-    book(client, f="f2", **{"d": "2026-10-16", "r": "2026-10-20", "a": "2", "k": "4,7"})  # a 12:30 PM flight: closes at 10:30 AM
+    book(client, f="f2", **{"d": "2026-10-16", "r": "2026-10-20", "a": "2", "k": "4,7"})  # a 12:30 PM flight: the last day closes at 10:30 AM
+    with ses.family(person()) as fam:  # an item from before that rule: put in the table directly, past the check
+        insert_only(fam.db, "activities", {"pk": f"{fam.trip_id}~~a1", "trip_id": fam.trip_id, "scope": "", "act_id": "a1", "seq": 1, "day": 4, "start_min": 540,
+                                           "end_min": 645, "title": "Old plan", "kind": "fun", "author": "", "added_by": "", "gone": 0, "created_at": familydb.now()}, ["pk"])
+        familydb.run(fam.db, "INSERT OR IGNORE INTO cal_state (pk, trip_id, scope, q, live) VALUES (:pk, :t, '', 1, 0)", pk=f"{fam.trip_id}~", t=fam.trip_id)
+        fam.db.conn.commit()
     r = client.post("/calendar/activities/a1", data={"title": "Renamed", "day": "4", "start": "09:00", "end": "10:45", "kind": "fun"}, follow_redirects=False)
     assert r.status_code == 303 and "Renamed" in titles(client)
     r = client.post("/calendar/activities/a1", data={"title": "Renamed", "day": "4", "start": "09:15", "end": "11:00", "kind": "fun"}, follow_redirects=False)

@@ -12,7 +12,7 @@ traveler's shared trip held in this browser is listed and viewable by anyone usi
 
 import hashlib
 
-from gitaway import hub, session as ses, tripcal as cal
+from gitaway import familydb, hub, session as ses, tripcal as cal
 from gitaway.hub import HubError
 from gitaway.itineraries import PIER, VENICE, Day, Itinerary, Polaroid, Stop, Tag
 
@@ -33,8 +33,12 @@ def slug_for(traveler_id, booking) -> str:
 
 
 def _as(session, traveler_id):
-    """A read-only view of the session as another demo traveler, so their booking and calendar can be read."""
-    return {**{k: v for k, v in dict(session).items() if k not in ("user_id", "email")}, "user_id": traveler_id}
+    """A read-only view as another demo traveler, in their own family, so the booking and calendar they chose to share can be read.
+    (A shared trip is public by design; F-041 moves the shared copy to the community database and retires this.)"""
+    mine = ses.current_traveler(session)
+    if mine and mine.id == traveler_id:
+        return session
+    return {"user_id": traveler_id, "email": "", "tenant_id": familydb.tenant_of(traveler_id)}
 
 
 def default_tags(session) -> tuple:

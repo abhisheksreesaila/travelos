@@ -5,7 +5,7 @@ from urllib.parse import parse_qs, urlparse
 import pytest
 
 from gitaway import catalog
-from tests.test_signin import session_data, sign_in, tid
+from tests.test_signin import session_data, sign_in, stored_booking, tid
 
 DONE = "f=f1&h=h1&c=c1&fare=main&bags=2"  # Skylark 214, Main fare, 2 bags
 T5 = catalog.trip_from_url("2026-10-16", "2026-10-20", "3", "4,7")  # 3 adults + 2 kids = 5 travelers
@@ -200,7 +200,7 @@ def test_default_pay_sheet_has_no_fare_params_or_flight_items(client):
 def test_paying_records_the_fare_and_recomputes_the_total(client):
     sign_in(client)
     client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1", "fare": "main", "bags": "2", "total_cents": "1"})
-    b = session_data(client)["bookings"][tid("ari")]
+    b = stored_booking()
     assert b["total_cents"] == 346_800 and b["fare"] == "main" and b["bags"] == "2"
     assert "Main fare + 2 checked bags" in client.get("/booked").text
 
@@ -208,25 +208,25 @@ def test_paying_records_the_fare_and_recomputes_the_total(client):
 def test_paying_with_junk_fares_books_the_default(client):
     sign_in(client)
     client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1", "fare": "zz", "bags": "99"})
-    b = session_data(client)["bookings"][tid("ari")]
+    b = stored_booking()
     assert b["total_cents"] == 308_800 and "fare" not in b and "bags" not in b
 
 
 def test_paying_a_different_fare_replaces_the_booking(client):
     sign_in(client)
     client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1"})
-    first = session_data(client)["bookings"][tid("ari")]
+    first = stored_booking()
     client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1", "fare": "xl"})
-    second = session_data(client)["bookings"][tid("ari")]
+    second = stored_booking()
     assert second["id"] != first["id"] and second["total_cents"] == 123_600 + 56_000 + 154_000 + 31_200
     client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1", "bags": "1"})
-    assert session_data(client)["bookings"][tid("ari")]["id"] not in (first["id"], second["id"])
+    assert stored_booking()["id"] not in (first["id"], second["id"])
 
 
 def test_pay_scales_the_fare_with_the_trip(client):
     sign_in(client)
     client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1", "fare": "main", "bags": "2", "d": "2026-10-16", "r": "2026-10-20", "a": "3", "k": "4,7"})
-    b = session_data(client)["bookings"][tid("ari")]
+    b = stored_booking()
     assert b["total_cents"] == catalog.quote("f1", "h1", "c1", trip=T5, flight=catalog.flight_pick("f1", "main", "2", T5)).total_cents
 
 
@@ -267,7 +267,7 @@ def test_booked_names_the_fare_and_bags(client):
 def test_an_old_booking_without_a_fare_still_reads(client):
     sign_in(client)
     client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1"})
-    assert session_data(client)["bookings"][tid("ari")]["total_cents"] == 308_800
+    assert stored_booking()["total_cents"] == 308_800
     assert client.get("/booked").status_code == 200 and client.get("/calendar").status_code == 200
 
 
@@ -289,22 +289,22 @@ def test_every_quote_request_the_editors_build_carries_the_trip(client):
         assert "tripq" in call, fn
 
 
-def test_a_full_cookie_refuses_the_booking_with_a_friendly_message_and_keeps_the_old_one(client, monkeypatch):
+def test_a_family_with_too_many_trips_is_refused_with_a_friendly_message_and_keeps_the_open_one(client, monkeypatch):
     sign_in(client)
     client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1"})
-    before = session_data(client)["bookings"][tid("ari")]
-    monkeypatch.setattr("gitaway.session.BUDGET", 10)
+    before = stored_booking()
+    monkeypatch.setattr("gitaway.familydb.MAX_TRIPS", 1)
     r = client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1", "fare": "main", "bags": "2"}, follow_redirects=False)
-    assert r.status_code == 200 and "can&#x27;t hold another booking" in r.text or "can't hold another booking" in r.text
+    assert r.status_code == 200 and "1 trips already" in r.text
     assert "Back to my picks" in r.text
-    assert session_data(client)["bookings"][tid("ari")] == before
+    assert stored_booking() == before
 
 
 def test_a_default_booking_leaves_out_empty_fare_and_bags(client):
     sign_in(client)
     client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1"})
-    b = session_data(client)["bookings"][tid("ari")]
+    b = stored_booking()
     assert "fare" not in b and "bags" not in b and "trip" not in b
     client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1", "fare": "main"})
-    b = session_data(client)["bookings"][tid("ari")]
+    b = stored_booking()
     assert b["fare"] == "main" and "bags" not in b

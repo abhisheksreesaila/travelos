@@ -16,10 +16,32 @@ def sign_in(client, traveler="ari", next="/", intent="save"):
 
 def tid(traveler="ari"):
     """The traveler id (the fh-saas user id) the dev sign-in gives `traveler` ("ari", "sam" or an email). Same id every time."""
+    return person(traveler)["user_id"]
+
+
+def person(traveler="ari"):
+    """A session dict for `traveler` signed in as the dev sign-in does it: a real person with a family database behind the session.
+    For tests of the model modules (gitaway.session, gitaway.tripcal), which take the session and read and write that family."""
+    import main  # noqa: F401 - makes the process work from the test data folder, so a model-only test never writes databases into the project
     from gitaway import auth
     holder = {}
     auth.sign_in_dev(holder, EMAILS.get(traveler, traveler))
-    return holder["user_id"]
+    return holder
+
+
+def stored_booking(traveler="ari"):
+    """The booking of the trip `traveler` has open, read from their family database (None when nothing is booked)."""
+    return ses.booking(person(traveler))
+
+
+def stored_calendar(traveler="ari", demo=""):
+    """What the family database holds for the open trip's calendar, in the compact shape the old cookie used:
+    {"a": [{"i", "d", "s", "e", "t", "k"; "b" when a friend added it}], "n": [{"i", "t"; "a", "b" when set}], "q": last id number}."""
+    from gitaway import tripcal
+    s = person(traveler)
+    a = [{"i": x.id, "d": x.day, "s": x.start, "e": x.end, "t": x.title, "k": x.kind, **({"b": x.by} if x.by else {})} for x in tripcal.activities(s, demo)]
+    n = [{"i": x.id, "t": x.text, **({"a": x.act} if x.act else {}), **({"b": x.by} if x.by else {})} for x in tripcal.notes(s, demo)]
+    return {"a": a, "n": n, "q": int(tripcal.next_id(s, demo)) - 1}
 
 
 def user_id(client):

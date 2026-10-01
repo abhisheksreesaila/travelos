@@ -163,7 +163,7 @@ def confirm_view(p, flight, stay, trip, est, vals=None, error=""):
         Div(error, role="alert", cls="rd-error", id="rd-error") if error else "",
         Div(field("first", "First name", autocomplete="given-name", maxlength=str(rides.MAX_NAME)), field("last", "Last name", autocomplete="family-name", maxlength=str(rides.MAX_NAME)), cls="rd-two"),
         field("phone", "Mobile phone", "tel", autocomplete="tel", placeholder="(310) 555-0123"),
-        P("Uber texts the ride link to this number. In this simulation nothing is sent anywhere: the number stays in your session.", cls="rd-note"),
+        P("Uber texts the ride link to this number. In this simulation nothing is sent anywhere: the number stays in your family's private space.", cls="rd-note"),
         *ctx_fields(flight, stay, trip, p.kind), hidden("p", est.key), hidden("fare", est.fare_id),
         Button("Schedule this Uber", type="submit", cls="btn btn-ink rd-go", id="rd-go"),
         A("Choose a different ride", href=new_url(flight, stay, trip, p.kind), cls="rd-link", id="rd-change"),

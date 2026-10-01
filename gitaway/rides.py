@@ -9,11 +9,12 @@ booking (airport pickups need Reserve); the hotel-to-airport leg is an ordinary 
 THE SEAM. `RideProvider` is the interface (`estimates`, `schedule`, `status`, `cancel`). The screens talk only to `provider()`,
 which picks the implementation from `UBER_MODE` ("simulated" is the only one for now). A real Uber client implements the same four
 methods and is returned from `provider()` once API access is granted. `SimulatedUber` is deterministic: nothing here calls out,
-nothing is booked, and a guest's phone number never leaves the session.
+nothing is booked, and a guest's phone number stays in the family's own database.
 
-STORAGE. `list_rides`, `save_ride`, `cancel_ride` (and `step_ride`) keep the rides in the session cookie for now, under the same
-byte budget as everything else there. They are the only code that touches `session["rides"]`, so F-040 can swap them for the
-family database. Session shape: "rides": {"<traveler id>": [compact ride dict, see to_dict]}.
+STORAGE. `list_rides`, `get_ride`, `save_ride`, `cancel_ride` and `step_ride` keep the rides in the family's database (the `rides`
+table, F-040): they are the only code that touches it. A ride belongs to the family and to a set of picks (`key`), so every member
+sees it on any trip booked with those picks. Each row holds the compact dict `to_dict` makes. The rider's phone number is
+stored there too, private to the family.
 """
 
 import hashlib
@@ -28,7 +29,9 @@ from typing import Protocol
 from urllib.parse import quote
 from zoneinfo import ZoneInfo
 
-from gitaway import catalog, session as ses
+from fh_saas.utils_sql import delete_record, insert_only, update_record
+
+from gitaway import catalog, familydb, session as ses
 
 TZ = ZoneInfo("America/Los_Angeles")
 MODES = ("simulated",)
@@ -443,7 +446,7 @@ def deeplink(plan: LegPlan) -> str:
     return "https://m.uber.com/looking?" + "&".join(parts)
 
 
-# ---- storage: the session cookie for now (F-040 swaps these for the family database) -------------------------------
+# ---- storage: the family database (gitaway.familydb, table rides) ---------------------------------------------------
 
 def context_key(flight_id, stay_id, trip_query) -> str:
     """Which picks a ride belongs to: the flight, the stay and the trip dates. A booking with the same picks shows the ride."""
@@ -455,7 +458,7 @@ def booking_key(b) -> str:
 
 
 def to_dict(r: RideRecord) -> dict:
-    """The compact form kept in the cookie: about 200 bytes."""
+    """The compact form stored in the family database's `rides` table (about 200 bytes of JSON)."""
     d = {"i": r.id, "k": r.key, "l": r.leg[0], "p": r.product, "c": r.cents, "u": r.cars, "t": int(r.pickup_time.timestamp()), "m": r.minutes, "n": r.party,
          "a": r.airport, "g": [r.guest.first, r.guest.last], "ph": r.guest.phone, "q": r.request_id, "fi": r.fare_id}
     for key, value in (("h", r.stay_id), ("x", r.step), ("s", 1 if r.canceled else 0), ("d", 1 if r.demo else 0)):
@@ -471,54 +474,55 @@ def from_dict(d: dict) -> RideRecord:
                       Guest(d["g"][0], d["g"][1], d["ph"]), d.get("x", 0), bool(d.get("s")), bool(d.get("d")))
 
 
-def _mine(session):
-    t = ses.current_traveler(session)
-    return (session.get("rides") or {}).get(t.id, []) if t else []
+def _stored(db):
+    """The family's ride rows, oldest first (the number in the id, then insertion order)."""
+    return familydb.rows(db, "SELECT * FROM rides ORDER BY seq, rowid")
 
 
 def list_rides(session) -> list[RideRecord]:
-    """The signed-in traveler's rides, oldest first. Empty when signed out."""
-    return [from_dict(d) for d in _mine(session)]
+    """The family's rides, oldest first: every member sees every ride, and a booking with the same picks shows them. Empty when signed out."""
+    with ses.family(session) as fam:
+        return [from_dict(json.loads(r["data"])) for r in _stored(fam.db)] if fam else []
 
 
 def get_ride(session, ride_id) -> RideRecord | None:
-    return next((r for r in list_rides(session) if r.id == ride_id), None)
+    with ses.family(session) as fam:
+        found = familydb.row(fam.db, "SELECT data FROM rides WHERE id = :id", id=ride_id) if fam else None
+        return from_dict(json.loads(found["data"])) if found else None
 
 
 def next_ride_id(session) -> str:
-    return "r" + str(max([int(d["i"][1:]) for d in _mine(session)] or [0]) + 1)
-
-
-def _write(session, rows):
-    t = ses.current_traveler(session)
-    old = session.get("rides")
-    session["rides"] = {**(old or {}), t.id: rows}  # reassign the whole dict so the cookie session notices
-    if len(json.dumps(dict(session))) > ses.BUDGET:
-        if old is None:
-            session.pop("rides", None)
-        else:
-            session["rides"] = old
-        raise RideError("This demo is full. Delete something from your calendar to make room, then schedule the ride.")
+    with ses.family(session) as fam:
+        return "r" + str((familydb.row(fam.db, "SELECT MAX(seq) AS n FROM rides")["n"] or 0) + 1) if fam else "r1"
 
 
 def save_ride(session, record: RideRecord) -> RideRecord:
     """Add a ride, or replace the one with the same id. A leg has one live ride per set of picks: a cancelled one is replaced by a new one.
-    Raises RideError when it already has a live ride, or when the session cookie has no room."""
-    if not ses.current_traveler(session):
-        raise RideError("Sign in to schedule a ride.")
-    rows = list(_mine(session))
-    same = [d for d in rows if d["i"] != record.id and d["k"] == record.key and d["l"] == record.leg[0]]
-    if any(not d.get("s") for d in same) and not record.canceled:
-        raise RideError("You already have an Uber scheduled for that leg. Cancel it first to schedule another.")
-    rows = [d for d in rows if d not in same and not (d.get("s") and d["k"] != record.key)]  # drop the cancelled one it replaces, and stale cancelled rides
-    new = to_dict(record)
-    if any(d["i"] == record.id for d in rows):
-        rows = [new if d["i"] == record.id else d for d in rows]
-    elif len(rows) >= MAX_RIDES:
-        raise RideError(f"That is {MAX_RIDES} rides already. This demo keeps it small.")
-    else:
-        rows.append(new)
-    _write(session, rows)
+    Raises RideError when it already has a live ride, when another member took the same ride id a moment ago, or when the family has too many."""
+    with ses.family(session) as fam:
+        if not fam:
+            raise RideError("Sign in to schedule a ride.")
+        db = fam.db
+        with familydb.transaction(db):
+            familydb.lock(db)  # from here to the commit nobody else writes, so the checks below cannot go stale
+            rows = [(r, json.loads(r["data"])) for r in _stored(db)]
+            mine = next((r for r, _ in rows if r["id"] == record.id), None)
+            if mine and mine["request_id"] != record.request_id:
+                raise RideError("Someone in your family just scheduled a ride. Look at the calendar, then try again.")
+            same = [(r, d) for r, d in rows if d["i"] != record.id and d["k"] == record.key and d["l"] == record.leg[0]]
+            if any(not d.get("s") for _, d in same) and not record.canceled:
+                raise RideError("You already have an Uber scheduled for that leg. Cancel it first to schedule another.")
+            gone = [r for r, d in rows if (r, d) in same or (d.get("s") and d["k"] != record.key)]  # the cancelled one it replaces, and stale cancelled rides
+            for r in gone:
+                delete_record(db, "rides", r["id"], "id", auto_commit=False)
+            data = json.dumps(to_dict(record), separators=(",", ":"))
+            if mine:
+                update_record(db, "rides", record.id, "id", auto_commit=False, key=record.key, leg=record.leg, data=data)
+            elif len(rows) - len(gone) >= MAX_RIDES:
+                raise RideError(f"That is {MAX_RIDES} rides already. This demo keeps it small.")
+            else:
+                insert_only(db, "rides", {"id": record.id, "seq": int(record.id[1:]), "key": record.key, "leg": record.leg, "request_id": record.request_id,
+                                          "data": data, "created_by": fam.traveler.id, "created_at": familydb.now()}, ["id"], auto_commit=False)
     return record
 
 

@@ -5,11 +5,11 @@ from datetime import date
 import pytest
 
 from gitaway import catalog, session as ses, tripcal as cal
+from tests.test_signin import person
 
 
 def booked_session(flight="f1", stay="h1", car="c1", traveler="ari"):
-    s = {}
-    ses.sign_in(s, traveler)
+    s = person(traveler)
     ses.book(s, catalog.quote(flight, stay, car))
     return s
 
@@ -73,9 +73,8 @@ def test_activities_are_kept_per_traveler_and_per_trip():
     cal.add_activity(s, day=1, start="10:00", end="11:00", title="A", kind="fun")
     assert cal.activities(s, demo="long") != cal.activities(s)
     assert [x.title for x in cal.activities(s)] == ["A"]
-    ses.sign_in(s, "sam")
-    ses.book(s, catalog.quote("f1", "h1", "c1"))
-    assert cal.activities(s) == []
+    sam = booked_session(traveler="sam")  # another family: its own database, its own calendar
+    assert cal.activities(sam) == []
 
 
 def test_times_snap_to_fifteen_minutes():
@@ -183,20 +182,21 @@ def test_the_long_demo_comes_with_a_few_planned_items():
     assert added.id not in {a.id for a in demo} and len(cal.activities(s, demo="long")) == len(demo) + 1
 
 
-def test_the_calendar_refuses_more_when_the_cookie_budget_is_spent():
+def test_the_calendar_refuses_more_past_the_ceiling_and_keeps_what_it_has(monkeypatch):
+    monkeypatch.setattr(cal, "MAX_ACTIVITIES", 5)
     s = booked_session()
     with pytest.raises(cal.CalendarError) as e:
-        for i in range(200):
-            cal.add_activity(s, day=1 + i % 3, start=f"{8 + i % 12:02d}:00", end=f"{8 + i % 12:02d}:30", title="x" * 40, kind="fun")
-    assert "full" in str(e.value)
-    assert len(str(s)) < 4000
+        for i in range(10):
+            cal.add_activity(s, day=1 + i % 3, start=f"{8 + i:02d}:00", end=f"{8 + i:02d}:30", title="x", kind="fun")
+    assert "a lot planned" in str(e.value)
+    assert len(cal.activities(s)) == 5
 
 
 def test_signed_out_or_unbooked_travelers_have_no_calendar():
     s = {}
     with pytest.raises(cal.CalendarError):
         cal.add_activity(s, day=1, start="10:00", end="11:00", title="x", kind="fun")
-    ses.sign_in(s, "ari")
+    s = person("ari")
     with pytest.raises(cal.CalendarError) as e:
         cal.add_activity(s, day=1, start="10:00", end="11:00", title="x", kind="fun")
     assert "Book a trip first" in str(e.value)
