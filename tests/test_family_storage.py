@@ -469,3 +469,62 @@ def test_every_use_of_the_host_database_goes_through_the_one_lock(monkeypatch):
     entered.clear()
     familydb.family_db(s).conn.close()
     assert entered, "the membership check must use the host lock"
+
+
+# ---- review round 2: share, the form guard, rides housekeeping ----------------------------------------------------------
+
+def test_sharing_from_a_stale_tab_publishes_the_trip_the_page_showed_not_the_open_one(client):
+    from gitaway import community, share
+    a, b = two_trips(client)  # B is open
+    client.post("/trips/switch", data={"trip": a})  # another tab opened trip A
+    r = client.post("/share", data={"trip": b}, follow_redirects=False)  # the stale tab shows trip B
+    assert r.status_code == 303 and f"trip={b}" in r.headers["location"]
+    s = person()
+    with ses.family(s) as fam:
+        booking_b = familydb.booking_for_trip(fam.db, b)
+    assert [row["slug"] for row in community.rows()] == [share.slug_for(s["user_id"], booking_b)]
+    assert client.get(r.headers["location"]).status_code == 200  # the confirmation is for trip B too
+    r = client.post("/share/unpublish", data={"trip": b, "slug": community.rows()[0]["slug"]}, follow_redirects=False)
+    assert r.status_code == 303 and community.rows() == []
+
+
+def test_every_post_form_on_the_calendar_forks_voice_rides_and_share_pages_names_its_trip(client):
+    from tests.test_rides import schedule
+    a, b = two_trips(client)
+    client.post("/fork", data={"next": "/trips/sun-tacos-and-tide-pools"})
+    book(client, **{"f": "f1", "h": "h1", "c": "none"})
+    schedule(client, "arrive", pick="f=f1&h=h1&c=none")
+    client.post("/share", data={})
+    pages = ["/calendar?view=days", "/calendar?view=days&add=1", "/calendar?view=days&edit=a1", "/calendar?invite=1", "/calendar?voice=1&night=0",
+             "/calendar?voice=1&hear=1", "/forks", "/forks?open=sun-tacos-and-tide-pools", "/share", "/share/done", "/rides/r1",
+             "/rides/new?leg=depart&f=f1&h=h1&c=none"]
+    seen = 0
+    for path in pages:
+        html = client.get(path).text
+        for form in re.findall(r"<form\b[^>]*>.*?</form>", html, re.S):
+            head = form[:form.index(">") + 1]
+            if 'method="post"' not in head or 'action="/trips/switch"' in head or 'action="/signout"' in head or 'action="/fork"' in head or 'action="/save"' in head or 'action="/unsave"' in head:
+                continue
+            seen += 1
+            assert 'name="trip"' in form, (path, head)
+    assert seen >= 12
+
+
+def test_cancelled_rides_do_not_count_toward_the_family_ceiling_and_unused_ones_are_removed(client, monkeypatch):
+    from gitaway import rides
+    from tests.test_rides import schedule
+    monkeypatch.setattr(rides, "MAX_RIDES", 1)
+    book(client, f="f1", h="h1", c="none")
+    s = person()
+    assert schedule(client, "arrive", pick="f=f1&h=h1&c=none").status_code == 303
+    rides.cancel_ride(s, "r1")
+    assert schedule(client, "depart", pick="f=f1&h=h1&c=none").status_code == 303  # the cancelled one did not fill the ceiling
+    # a cancelled ride that no trip uses (its picks were never booked) goes when the next ride is saved
+    with familydb.using(s) as db:
+        import json
+        data = json.loads(familydb.row(db, "SELECT data FROM rides WHERE id = 'r1'")["data"])
+        data["k"] = "orphan"
+        familydb.run(db, "UPDATE rides SET trip_id = '', key = 'orphan', data = :d WHERE id = 'r1'", d=json.dumps(data))
+        db.conn.commit()
+    rides.cancel_ride(s, "r2")
+    assert [x.id for x in rides.list_rides(s)] == ["r2"]

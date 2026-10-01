@@ -528,8 +528,13 @@ def _apply(session, make, ride_id=None):
             same = [(r, d) for r, d in rows if d["i"] != record.id and d["k"] == record.key and d["l"] == record.leg[0]]
             if any(not d.get("s") for _, d in same) and not record.canceled:
                 raise RideError("You already have an Uber scheduled for that leg. Cancel it first to schedule another.")
-            for r, _ in same:  # the cancelled ride on this very leg is replaced; no other trip's or member's ride is touched
+            for r, _ in same:  # the cancelled ride on this very leg is replaced; no live ride and no ride a trip uses is touched
                 delete_record(db, "rides", r["id"], "id", auto_commit=False)
+            used = {booking_key(b) for b in (familydb.booking_for_trip(db, t["id"]) for t in familydb.trips(db)) if b}
+            for r, d in rows:  # a cancelled ride that no trip's picks match any more is of no use to anyone
+                if d.get("s") and d["k"] not in used and r["id"] != record.id and (r, d) not in same:
+                    delete_record(db, "rides", r["id"], "id", auto_commit=False)
+                    rows = [x for x in rows if x[0] is not r]
             data = json.dumps(to_dict(record), separators=(",", ":"))
             if mine:
                 update_record(db, "rides", record.id, "id", auto_commit=False, data=data)
@@ -538,7 +543,7 @@ def _apply(session, make, ride_id=None):
                 live = [1 for r, d in rows if trip_id and r["trip_id"] == trip_id and not d.get("s") and (r, d) not in same]
                 if len(live) >= len(LEGS) and not record.canceled:
                     raise RideError("That trip already has a ride for the arrival and one for the departure.")
-                if len(rows) - len(same) >= MAX_RIDES:
+                if sum(1 for r, d in rows if not d.get("s") and (r, d) not in same) >= MAX_RIDES:  # cancelled rides do not count
                     raise RideError(f"That is {MAX_RIDES} rides already. This demo keeps it small.")
                 insert_only(db, "rides", {"id": record.id, "seq": int(record.id[1:]), "trip_id": trip_id, "key": record.key, "leg": record.leg,
                                           "request_id": record.request_id, "data": data, "created_by": fam.traveler.id, "created_at": familydb.now()},

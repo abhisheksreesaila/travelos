@@ -38,7 +38,7 @@ def test_the_calendar_share_button_is_one_tap(client):
 def test_one_tap_publishes_and_confirms_with_a_link_to_the_page(client):
     book(client)
     r = share(client)
-    assert r.status_code == 303 and r.headers["location"] == "/share/done"
+    assert r.status_code == 303 and r.headers["location"].startswith("/share/done")
     slug = slug_of(client)
     html = client.get("/share/done").text
     assert f'href="/trips/{slug}"' in html and 'href="/discover"' in html

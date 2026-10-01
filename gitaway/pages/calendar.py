@@ -400,10 +400,10 @@ def share_controls(session):
     from gitaway import share
     row = share.shared(session)
     if not row:
-        return [Form(Button("Share trip", type="submit", cls="cal-btn cal-btn-ink"), action="/share", method="post", cls="cal-share")]
-    return [Form(Button(icon("check", 16, 2.6), "Shared", Span(" · Update shared page", cls="cal-share-more"), type="submit", cls="cal-btn cal-btn-ink",
+        return [Form(trip_field(), Button("Share trip", type="submit", cls="cal-btn cal-btn-ink"), action="/share", method="post", cls="cal-share")]
+    return [Form(trip_field(), Button(icon("check", 16, 2.6), "Shared", Span(" · Update shared page", cls="cal-share-more"), type="submit", cls="cal-btn cal-btn-ink",
                         title="Share again to update the shared page with your latest plans"), action="/share", method="post", cls="cal-share"),
-            Form(Input(type="hidden", name="slug", value=row["slug"]), Button("Unpublish", type="submit", cls="cal-btn cal-btn-white"),
+            Form(trip_field(), Input(type="hidden", name="slug", value=row["slug"]), Button("Unpublish", type="submit", cls="cal-btn cal-btn-white"),
                  action="/share/unpublish", method="post", cls="cal-share")]
 
 
