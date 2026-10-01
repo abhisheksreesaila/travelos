@@ -76,6 +76,8 @@ class Offer:
     arrive_min: int = 0
     back_depart_min: int = 0
     back_arrive_min: int = 0
+    stops: str = ""  # flights only: "Nonstop" or "1 stop · SJC", both legs
+    aircraft: str = ""  # flights only
 
 
 SAMPLE_TRIP = TripSearch("SFO", "San Francisco", "Los Angeles", ("LAX", "BUR"), date(2026, 10, 16), date(2026, 10, 20), 2, (4, 7))
@@ -209,15 +211,15 @@ def _per_traveler(cents, trip):
 
 _OFFERS = [
     Offer("f1", "flight", "Skylark Air 214", "8:05 → 9:32", "Nonstop to LAX · 1h 27m · back Tue 2:10 PM", 123_600, ("Best nonstop",), airport="LAX",
-          depart_min=485, arrive_min=572, back_depart_min=850, back_arrive_min=937),
+          depart_min=485, arrive_min=572, back_depart_min=850, back_arrive_min=937, stops="Nonstop", aircraft="Airbus A320"),
     Offer("f2", "flight", "Pacific Hop 88", "6:40 → 8:02", "Nonstop to LAX · 1h 22m · very early start", 110_400, airport="LAX",
-          depart_min=400, arrive_min=482, back_depart_min=750, back_arrive_min=832),
+          depart_min=400, arrive_min=482, back_depart_min=750, back_arrive_min=832, stops="Nonstop", aircraft="Boeing 737-800"),
     Offer("f3", "flight", "Golden Gate Air 530", "11:15 → 12:44", "Nonstop to LAX · 1h 29m · extra legroom", 139_200, airport="LAX",
-          depart_min=675, arrive_min=764, back_depart_min=960, back_arrive_min=1049),
+          depart_min=675, arrive_min=764, back_depart_min=960, back_arrive_min=1049, stops="Nonstop", aircraft="Airbus A321neo"),
     Offer("f4", "flight", "Skylark Air 902", "9:20 → 12:05", "1 stop in SJC, lands LAX · 2h 45m", 96_800, ("Cheapest",), airport="LAX",
-          depart_min=560, arrive_min=725, back_depart_min=785, back_arrive_min=950),
+          depart_min=560, arrive_min=725, back_depart_min=785, back_arrive_min=950, stops="1 stop · SJC", aircraft="Embraer 175"),
     Offer("f5", "flight", "Pacific Hop 312", "10:10 → 11:30", "Nonstop to Burbank (BUR) · 1h 20m · tiny, easy airport", 118_000, airport="BUR",
-          depart_min=610, arrive_min=690, back_depart_min=920, back_arrive_min=1000),
+          depart_min=610, arrive_min=690, back_depart_min=920, back_arrive_min=1000, stops="Nonstop", aircraft="Boeing 737 MAX 8"),
     Offer("h1", "stay", "The Tidewater", "Santa Monica", "2 rooms · 3 min walk to the beach", 154_000,
           tags=("Kid friendly", "Pool"), rating="4.8 · 1.2k reviews", area_photo="santa-monica-beach-pier.jpg"),
     Offer("h2", "stay", "Casa Palmera", "Venice", "Family suite · 8 min walk to the beach", 118_800,
@@ -559,6 +561,137 @@ def stay_pick(stay_id: str, rooms=None, add=None, trip=SAMPLE_TRIP) -> StayPick:
     return p if p.fits else StayPick(stay_id, _default_rooms(stay_id, trip), p.addons, trip)
 
 
+# ---- flight details: fare types and checked bags (F-027) ---------------------------------------------------------------
+
+BAG_CENTS = 7_000  # per checked bag, round trip, not scaled by the trip
+MAX_BAGS_PER_TRAVELER = 2
+
+
+@dataclass(frozen=True)
+class Fare:
+    id: str  # basic | main | xl
+    name: str
+    extra_cents: int  # on top of the flight, for the whole party
+    included_bags: int  # checked bags the fare covers for the whole party
+    perks: tuple  # four (included, text) pairs
+
+    @property
+    def label(self) -> str:
+        """How the ledger, pay sheet and choose bar name it: "Main fare"."""
+        return f"{self.name} fare"
+
+
+# id, name, cents for the sample party, bags included per traveler, perks
+_FARE_SPECS = (
+    ("basic", "Basic", 0, 0, ((0, "Seats assigned at check-in"), (0, "Personal item only"), (0, "No changes"), (0, "Checked bags extra"))),
+    ("main", "Main", 24_000, 0, ((1, "Pick seats together"), (1, "Carry-on included"), (1, "Free changes"), (0, "Checked bags extra"))),
+    ("xl", "Extra legroom", 56_000, 1, ((1, "Roomy seats up front"), (1, "Carry-on included"), (1, "Free changes"), (1, "1 checked bag each"))),
+)
+
+
+def fares(trip=SAMPLE_TRIP) -> tuple:
+    """The three fare types priced for `trip`: the extra and the included bags scale per traveler, like flights."""
+    return tuple(Fare(fid, name, _per_traveler(cents, trip), each * trip.travelers, tuple((bool(p), t) for p, t in perks))
+                 for fid, name, cents, each, perks in _FARE_SPECS)
+
+
+def fare(fare_id: str, trip=SAMPLE_TRIP) -> Fare:
+    """One fare priced for `trip`. Raises KeyError for an unknown id."""
+    for f in fares(trip):
+        if f.id == fare_id:
+            return f
+    raise KeyError(fare_id)
+
+
+def max_bags(trip=SAMPLE_TRIP) -> int:
+    return MAX_BAGS_PER_TRAVELER * trip.travelers
+
+
+def _bags_text(n):
+    return f"{n} bag{'s' if n != 1 else ''}"
+
+
+@dataclass(frozen=True)
+class FlightPick:
+    """One flight with the fare and checked bags chosen for it. Build with flight_pick, not by hand."""
+    flight_id: str
+    fare: str = "basic"
+    bags: int = 0  # checked bags for the whole party, round trip
+    trip: TripSearch = SAMPLE_TRIP
+
+    @property
+    def fare_info(self) -> Fare:
+        return fare(self.fare, self.trip)
+
+    @property
+    def offer(self) -> Offer:
+        return offer(self.flight_id, self.trip)
+
+    @property
+    def max_bags(self) -> int:
+        return max_bags(self.trip)
+
+    @property
+    def paid_bags(self) -> int:
+        return max(0, self.bags - self.fare_info.included_bags)
+
+    @property
+    def bag_note(self) -> str:
+        inc = self.fare_info.included_bags
+        return f"{inc} included with Extra legroom, then {money(BAG_CENTS)} each, round trip" if inc else f"{money(BAG_CENTS)} per bag, round trip"
+
+    @property
+    def fare_code(self) -> str:
+        """The compact URL form: "" for Basic."""
+        return "" if self.fare == "basic" else self.fare
+
+    @property
+    def bags_code(self) -> str:
+        return str(self.bags) if self.bags else ""
+
+    @property
+    def query(self) -> str:
+        """The URL params that carry this pick beyond the defaults; "" for Basic and no bags."""
+        return (f"&fare={self.fare_code}" if self.fare_code else "") + (f"&bags={self.bags_code}" if self.bags else "")
+
+    @property
+    def items(self) -> tuple:
+        o, f = self.offer, self.fare_info
+        out = [Item("flight", o.name, 1, o.price_cents, o.detail)]
+        if f.extra_cents:
+            out.append(Item("flight", f.label, 1, f.extra_cents))
+        if self.paid_bags:
+            out.append(Item("flight", "Checked bag", self.paid_bags, self.paid_bags * BAG_CENTS, "round trip"))
+        return tuple(out)
+
+    @property
+    def cents(self) -> int:
+        return sum(i.cents for i in self.items)
+
+    @property
+    def summary(self) -> str:
+        """"Main fare + 2 checked bags", as shown in the choose bar and the ledger."""
+        return self.fare_info.label + (f" + {self.bags} checked bag{'s' if self.bags != 1 else ''}" if self.bags else "")
+
+    @property
+    def short(self) -> str:
+        """"Main fare · 2 bags", as shown on the calendar."""
+        return self.fare_info.label + (f" · {_bags_text(self.bags)}" if self.bags else "")
+
+    @property
+    def is_default(self) -> bool:
+        return self.fare == "basic" and not self.bags
+
+
+def flight_pick(flight_id: str, fare_id=None, bags=None, trip=SAMPLE_TRIP) -> FlightPick:
+    """A flight pick from URL text. A fare that is not Basic, Main or Extra legroom means Basic; bags that are not a whole
+    number from 0 to the cap (two per traveler) mean none. Raises KeyError for an unknown flight."""
+    _BY_ID[flight_id]
+    fare_id = fare_id if fare_id in {f[0] for f in _FARE_SPECS} else "basic"
+    n = _whole(bags)
+    return FlightPick(flight_id, fare_id, n if n is not None and n <= max_bags(trip) else 0, trip)
+
+
 @dataclass(frozen=True)
 class Quote:
     flight_id: str
@@ -570,6 +703,7 @@ class Quote:
     items: tuple = field(default=())
     stay: StayPick = None
     trip: TripSearch = SAMPLE_TRIP
+    flight: FlightPick = None
 
     def lane_cents(self, lane: str) -> int:
         return sum(i.cents for i in self.items if i.lane == lane)
@@ -582,12 +716,13 @@ def _cheapest_ids(trip=SAMPLE_TRIP):
     )
 
 
-def quote(flight_id: str, stay_id: str, car_id: str, stay: StayPick = None, trip=SAMPLE_TRIP) -> Quote:
+def quote(flight_id: str, stay_id: str, car_id: str, stay: StayPick = None, trip=SAMPLE_TRIP, flight: FlightPick = None) -> Quote:
     """The itemized cost ledger for one pick in each lane. Unknown ids raise KeyError.
 
     `trip` sets the nights and travelers every price follows. `stay` (a StayPick for this stay and trip; default: the default
     rooms) sets the rooms and add-ons. A pick for another stay raises KeyError, and one that sleeps fewer than the party
-    raises ValueError.
+    raises ValueError. `flight` (a FlightPick for this flight and trip; default: Basic, no bags) sets the fare and checked bags;
+    a pick for another flight raises KeyError and one for another trip ValueError.
     """
     lines = tuple(offer(i, trip) for i in (flight_id, stay_id, car_id))
     for line, kind in zip(lines, ("flight", "stay", "car")):
@@ -600,11 +735,16 @@ def quote(flight_id: str, stay_id: str, car_id: str, stay: StayPick = None, trip
         raise ValueError("That stay pick is for a different trip")
     if not stay.fits:
         raise ValueError(f"{stay.summary}: {stay.fit_text}")
-    flight, _, car = lines
-    items = (Item("flight", flight.name, 1, flight.price_cents, flight.detail), *stay.items, Item("car", car.name, 1, car.price_cents, car.detail))
+    flight = flight or flight_pick(flight_id, trip=trip)
+    if flight.flight_id != flight_id:
+        raise KeyError(f"{flight.flight_id} is not {flight_id}")
+    if flight.trip != trip:
+        raise ValueError("That flight pick is for a different trip")
+    car = lines[2]
+    items = (*flight.items, *stay.items, Item("car", car.name, 1, car.price_cents, car.detail))
     total = sum(i.cents for i in items)
     floor = sum(o.price_cents for o in _cheapest_ids(trip))
-    return Quote(flight_id, stay_id, car_id, lines, total, max(0, total - floor), items, stay, trip)
+    return Quote(flight_id, stay_id, car_id, lines, total, max(0, total - floor), items, stay, trip, flight)
 
 
 def cheapest(trip=SAMPLE_TRIP) -> Quote:
