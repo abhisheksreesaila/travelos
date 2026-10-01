@@ -7,7 +7,7 @@ so screens can be built independently. Sign-in, families and storage are fh-saas
 import os
 from pathlib import Path
 
-from fasthtml.common import Beforeware, FastHTML, serve
+from fasthtml.common import Beforeware, FastHTML, Response, serve
 from fh_saas.utils_auth import create_auth_beforeware
 from fh_saas.utils_log import configure_logging
 
@@ -37,10 +37,26 @@ def _locked_auth(req, sess):
 
 auth_before = Beforeware(_locked_auth, skip=auth_before.skip)
 
-app = FastHTML(before=[Beforeware(access.guard, skip=[r"/assets/.*"]), auth_before, Beforeware(session.bind, skip=[r"/assets/.*"])], hdrs=HEAD, title="GitAway", htmlkw={"lang": "en"},
-               secret_key=os.getenv("GITAWAY_SECRET_KEY") or None, key_fname=str(ROOT / ".sesskey"))
-app.static_route_exts(prefix="/assets/", static_path=str(ROOT / "assets"))
-register_all(app)
+_OPEN = [r"/assets/.*", r"/healthz"]
+
+
+def make_app():
+    auth.check_production_settings()
+    app = FastHTML(before=[Beforeware(access.guard, skip=_OPEN), auth_before, Beforeware(session.bind, skip=_OPEN)], hdrs=HEAD, title="GitAway",
+                   htmlkw={"lang": "en"}, secret_key=os.getenv("GITAWAY_SECRET_KEY") or None, key_fname=str(ROOT / ".sesskey"),
+                   **auth.session_options())
+    app.static_route_exts(prefix="/assets/", static_path=str(ROOT / "assets"))
+
+    @app.get("/healthz")
+    def healthz():
+        """Railway's health check: no session, no database."""
+        return Response("ok", media_type="text/plain")
+
+    register_all(app)
+    return app
+
+
+app = make_app()
 
 if __name__ == "__main__":
-    serve(port=int(os.getenv("PORT", "5002")), reload_dirs=[str(ROOT)])  # the working directory is the data folder, so say where the code is
+    serve(port=int(os.getenv("PORT", "5002")), reload_dirs=[str(ROOT)], **auth.server_options())  # the working directory is the data folder, so say where the code is
