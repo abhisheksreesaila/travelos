@@ -176,14 +176,14 @@ Needs: none
 - [x] /calendar opens on the whole-trip view; the switch to the day view is obvious and remembered while the traveler is on the page
 - [x] links that need the day view (e.g. after adding an activity) still land there
 
-## F-033 Book any mix of lanes, with rides when there's no car [doing]
+## F-033 Book any mix of lanes, with rides when there's no car [done]
 Brief: docs/briefs/optional-lanes.md (approved 2026-09-30)
 Needs: F-027 (shares the pick URL and ledger)
-- [ ] each lane has a skip choice ("I'll drive", "Staying with friends", "No car") that collapses it and can be undone
-- [ ] ledger, pay and calendar work for any mix (at least one lane), with no empty or $0 lines
-- [ ] no car → "Uber and Lyft from LAX/BUR" card with sample fares and times; estimate added to the total as a labelled estimate, not charged on pay
-- [ ] skips live in the URL; done means: skip car, then flight, books stay-only through pay and calendar; undoing both gives $3,088
-- [ ] note for later: research Uber/Lyft partner APIs for scheduling a ride in the app
+- [x] each lane has a skip choice ("I'll drive", "Staying with friends", "No car") that collapses it and can be undone
+- [x] ledger, pay and calendar work for any mix (at least one lane), with no empty or $0 lines
+- [x] no car → "Uber and Lyft from LAX/BUR" card with sample fares and times; estimate added to the total as a labelled estimate, not charged on pay
+- [x] skips live in the URL; done means: skip car, then flight, books stay-only through pay and calendar; undoing both gives $3,088
+- [ ] (later) note for later: research Uber/Lyft partner APIs for scheduling a ride in the app
 
 Later (not built): research Uber and Lyft partner API access for scheduling a ride from the app. The rides card is sample data only; nothing books or charges.
 
