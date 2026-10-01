@@ -61,3 +61,22 @@ def test_a_mistake_shows_a_friendly_line_specific_error_and_keeps_the_text(signe
     page.click("#ti-preview")
     expect(page.locator("#ti-errors")).to_contain_text("three-letter airport code")
     expect(page.locator("#ti-text")).to_have_value(TEMPLATE.replace("from: SFO", "from: nowhere"))
+
+
+def test_late_events_fit_inside_the_grid(signed_in, base_url):
+    late = (TEMPLATE.replace("check_in: 2026-10-16 15:00", "check_in: 2026-10-16 23:30").replace("depart: 2026-10-20 14:10", "depart: 2026-10-20 23:50")
+            .replace("arrive: 2026-10-20 15:37", "arrive: 2026-10-21 01:10"))
+    page = signed_in(DESKTOP)
+    page.goto(f"{base_url}/trips/import")
+    page.fill("#ti-text", late)
+    page.click("#ti-preview")
+    page.click("#ti-save")
+    page.wait_for_url("**/calendar")
+    page.goto(f"{base_url}/calendar?view=days")
+    expect(page.locator("#cal-app")).to_have_attribute("data-grid-end", "1440")
+    expect(page.locator(".cal-hour").last).to_have_text("11 PM")
+    for block_id, day in (("b-in", 0), ("b-back", 4)):
+        box = page.locator(f'[data-block="{block_id}"]').bounding_box()
+        body = page.locator(f'.cal-body[data-day="{day}"]').bounding_box()
+        assert box["y"] >= body["y"] - 1 and box["y"] + box["height"] <= body["y"] + body["height"] + 1, block_id
+    no_sideways_scroll(page)
