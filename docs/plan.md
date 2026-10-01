@@ -91,20 +91,23 @@ Needs: F-014, F-019
 - [ ] the itinerary page's Save heart saves a trip (signed out: through the demo sign-in with intent=save) and saved trips show beside forks
 - [ ] apply one: preview its activities in the empty calendar slots around bookings and friends' items, uncheck the unwanted ones, apply with animation; clashes are clearly shown
 
-## F-022 Share to the community hub [blocked]
-Blocked: look at "Community hub + share" on the canvas (use its step switch) and say go or what to change.
+## F-022 Share to the community hub [todo]
+Captain said go 2026-09-30 (build the hub, then the creator flow).
 Design: docs/design/canvas/Hub.dc.html
 Needs: F-014, F-019
 - [ ] one tap on Share turns the trip into a scrapbook itinerary page (no private notes or payment info)
 - [ ] community hub lists shared and creator itineraries, filterable by kid, pet and couple friendly
 - [ ] user-written itinerary text stays escaped and source links only allow http(s)
 
-## F-023 Creator link import [blocked]
-Blocked: look at "Creator link import" on the canvas (use its step switch) and say go or what to change.
+## F-023 Creator link import [todo]
+Captain said go 2026-09-30. The creator is the editor: under 5 minutes from paste to submit, or creators won't bother.
 Design: docs/design/canvas/Creator.dc.html
 Needs: F-014, F-022
-- [ ] paste a YouTube or Instagram link → skeleton with a fade → an AI-drafted (fake) scrapbook itinerary with the creator's source card
-- [ ] edit, then submit; it appears in the community hub and links back to the creator's channel
+- [ ] paste a YouTube or Instagram link → skeleton with a fade → a (simulated) transcript-drafted scrapbook itinerary with the creator's source card
+- [ ] a few quick clarifying questions as chips (which days, who it suits, best season) instead of trusting the transcript blindly
+- [ ] only 4–5 editable spots, artistically placed (title, day highlights, a tip, cover photo pick); everything else is laid out for them
+- [ ] the creator confirms it's accurate and gives permission to publish before Submit
+- [ ] submit; it appears in the community hub and links back to the creator's channel; the whole flow fits in under 5 minutes
 
 ## F-024 Talk to plan: scripted voice fills the calendar [blocked]
 Blocked: look at "Talk to plan: scripted voice" on the canvas (use its 1-2-3-4 switch) and say go or what to change.
@@ -125,14 +128,14 @@ Design: docs/design/offer-details.md (layout A approved 2026-09-30; canvas https
 - [x] detail shows what the catalog already knows (name, headline, detail, rating, tags, area photo labelled as the area); Choose makes it the lane's pick and the ledger updates
 - [x] phone: list and detail are two screens with a back button; no sideways scroll at 1440/1280/1000/800/390/320
 
-## F-026 Stay detail: sample photos, room types and add-ons [doing]
+## F-026 Stay detail: sample photos, room types and add-ons [done]
 Design: docs/design/offer-details.md · Needs: F-025
-- [ ] "Explore the area in 3D" tab loads only when opened: tilted illustrated map, pins with walking times, tapping a pin flies to it; a nearby-walks strip shows when closed
-- [ ] each hotel has a credited CC0 sample-photo gallery (always labelled "sample photo"), highlights and a cancellation policy
-- [ ] room types (e.g. City-view King, Ocean-view King, Family suite) with price, occupancy, beds and view; pick a room and a count (Ocean-view King ×2 for 4 people)
-- [ ] add-ons toggle on and off: breakfast, late checkout, parking
-- [ ] the pick URL carries room, count and add-ons; the ledger, pay sheet and calendar itemize them, computed by the catalog (the page never does arithmetic); a bad or missing room falls back to the default
-- [ ] sample trip: The Tidewater, Ocean-view King ×2 + breakfast gives the right total through pay and calendar
+- [x] "Explore the area in 3D" tab loads only when opened: tilted illustrated map, pins with walking times, tapping a pin flies to it; a nearby-walks strip shows when closed
+- [x] each hotel has a credited CC0 sample-photo gallery (always labelled "sample photo"), highlights and a cancellation policy
+- [x] room types (e.g. City-view King, Ocean-view King, Family suite) with price, occupancy, beds and view; pick a room and a count (Ocean-view King ×2 for 4 people)
+- [x] add-ons toggle on and off: breakfast, late checkout, parking
+- [x] the pick URL carries room, count and add-ons; the ledger, pay sheet and calendar itemize them, computed by the catalog (the page never does arithmetic); a bad or missing room falls back to the default
+- [x] sample trip: The Tidewater, Ocean-view King ×2 + breakfast gives the right total through pay and calendar
 
 ## F-027 Flight detail: legs, fare types and checked bags [todo]
 Design: docs/design/offer-details.md · Needs: F-026 (shares the pick URL and itemized ledger)
@@ -148,3 +151,35 @@ Needs: F-025 · Found during F-025 (predates it)
 Needs: F-025 · Suggested in F-025 review
 - [ ] a small headless-browser test covers tiled pick → expand, Choose updating the ledger, Esc, and phone back → reload
 - [ ] also covers F-026: picking another stay tiled resets the old panel; Choose is held while a room edit waits for its price and recovers if the price fails
+
+# Captain's feedback round, 2026-09-30
+
+## F-030 Compact size: the whole site at about 75% of today [todo]
+Captain: at 100% zoom everything is extra large and spacey; a full screen only fits at 75% zoom. Applies everywhere (landing, workspace, calendar, pay, itinerary).
+Needs: none
+- [ ] type, spacing, radii, buttons, cards and panes scale to about 75% of today on desktop and tablet, so a 1440×900 and a 1280×800 laptop show the whole workspace and the whole landing hero without scrolling
+- [ ] layouts that fit the viewport (workspace, calendar) still fit; no sideways scroll at 1440/1280/1000/800/390/320; no ellipses
+- [ ] phone stays readable: body text no smaller than 13px (DESIGN-SYSTEM minimum), touch targets at least 44px
+- [ ] DESIGN-SYSTEM.md and tokens updated to the new scale, so new screens are built at it
+
+## F-031 Workspace: the cost ledger tucks into a small pill while you explore details [todo]
+Captain: the ledger bar takes too much room once you're choosing details. Like Safari's bar or a Dynamic Island, it should shrink up next to the trip and date line and come back when needed.
+Needs: F-030
+- [ ] in the split view, scrolling down the detail shrinks the ledger into a compact pill beside the trip/date line (total plus a small book button); scrolling up, or tapping the pill, expands it again; it animates (reduced motion: instant)
+- [ ] the detail panel gains the freed height; phone uses the same pattern
+- [ ] the total in the pill stays live
+
+## F-032 Calendar opens on the whole-trip view [todo]
+Captain: the hour grid is intimidating first; the whole-trip snapshot should be the default, with an easy switch to the day view for editing.
+Needs: none
+- [ ] /calendar opens on the whole-trip view; the switch to the day view is obvious and remembered while the traveler is on the page
+- [ ] links that need the day view (e.g. after adding an activity) still land there
+
+## F-033 Book any mix of lanes, with rides when there's no car [todo]
+Brief: docs/briefs/optional-lanes.md (approved 2026-09-30)
+Needs: F-027 (shares the pick URL and ledger)
+- [ ] each lane has a skip choice ("I'll drive", "Staying with friends", "No car") that collapses it and can be undone
+- [ ] ledger, pay and calendar work for any mix (at least one lane), with no empty or $0 lines
+- [ ] no car → "Uber and Lyft from LAX/BUR" card with sample fares and times; estimate added to the total as a labelled estimate, not charged on pay
+- [ ] skips live in the URL; done means: skip car, then flight, books stay-only through pay and calendar; undoing both gives $3,088
+- [ ] note for later: research Uber/Lyft partner APIs for scheduling a ride in the app
