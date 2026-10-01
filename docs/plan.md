@@ -143,11 +143,11 @@ Design: docs/design/offer-details.md · Needs: F-026 (shares the pick URL and it
 - [x] fare types (Basic, Main, Extra legroom) with price and what each includes (seat choice, carry-on, checked bag, changes)
 - [x] checked-bag count as an add-on; fare and bags carry through the URL, ledger, pay and calendar like stays
 
-## F-028 Phone: expanding a non-offer pane hides the context panes [todo]
+## F-028 Phone: expanding a non-offer pane hides the context panes [doing]
 Needs: F-025 · Found during F-025 (predates it)
 - [ ] on a phone, expanding Cars or a context pane shows only that pane; the other context panes no longer show underneath (a same-specificity clash between the base and phone rules)
 
-## F-029 Browser smoke test for workspace JS [todo]
+## F-029 Browser smoke test for workspace JS [doing]
 Needs: F-025 · Suggested in F-025 review
 - [ ] a small headless-browser test covers tiled pick → expand, Choose updating the ledger, Esc, and phone back → reload
 - [ ] also covers F-026: picking another stay tiled resets the old panel; Choose is held while a room edit waits for its price and recovers if the price fails
@@ -187,7 +187,7 @@ Needs: F-027 (shares the pick URL and ledger)
 
 Later (not built): research Uber and Lyft partner API access for scheduling a ride from the app. The rides card is sample data only; nothing books or charges.
 
-## F-034 Phone text floor and leftover ellipses [todo]
+## F-034 Phone text floor and leftover ellipses [doing]
 Found during F-030 (both predate it).
 - [ ] on phones (390, 320) no text renders below 13px on /plan, /calendar (incl. ?demo=long) and the landing page; touch targets at least 44px
 - [ ] remove the four leftover `text-overflow: ellipsis` rules (landing `.field input` and `.paste`, workspace `.ws-slot-name`) in favour of wrapping or shortening (docs/lessons.md)
@@ -200,7 +200,7 @@ Needs: F-030
 - [x] nights and travelers drive prices in the catalog (stays and cars by night, flights by traveler, room fit by party size); the trip lives in the URL through reload, pay and calendar
 - [x] done means: LA, Oct 16–20, 2 adults + kids 4 and 7 gives $3,088; 3 nights or 3 adults change prices consistently through pay and calendar
 
-## F-036 Small polish found while building F-035 [todo]
+## F-036 Small polish found while building F-035 [doing]
 - [ ] weather, news and events panes follow the trip's dates (today they're fixed to Oct 16–20)
 - [ ] at 1000 wide the stay card's "Pool" and "Pet friendly" tags are clipped; wrap them (docs/lessons.md)
 - [ ] the landing door and feature pop-in (`scale(1.06)`) briefly causes sideways scroll at 1000, 800 and 390; contain it
