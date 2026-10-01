@@ -12,7 +12,7 @@ from urllib.parse import parse_qsl, quote as urlquote
 from fasthtml.common import A, Button, Div, Form, H2, Input, Li, Link, P, Script, Section, Span, Ul
 from starlette.responses import RedirectResponse
 
-from gitaway import catalog, rides as ride_model, session as ses, tripcal
+from gitaway import access, catalog, rides as ride_model, session as ses, tripcal
 from gitaway.icons import icon
 from gitaway.layout import page
 from gitaway.pages import plan
@@ -140,6 +140,8 @@ def rides_list(b, session):
         r = mine.get(leg)
         if r:
             rows.append(Li(A(f"Uber · {r.product_name} · {plan.short_route}", href=f"/rides/{r.id}", cls="pay-ride-link"), Span(f"{when} · {prov.status(r).label}", cls="pay-ride-when"), cls="pay-ride", data_ride=leg))
+        elif access.request_role() == "viewer":  # scheduling is a write: a viewer is told, not linked
+            rows.append(Li(Span("Not scheduled", cls="pay-ride-link"), Span(f"{plan.short_route} · {when}", cls="pay-ride-when"), cls="pay-ride", data_ride=leg))
         else:
             rows.append(Li(A("Schedule an Uber", href=plan_ride_path(leg, flight, stay, trip), cls="pay-ride-link"), Span(f"{plan.short_route} · {when}", cls="pay-ride-when"), cls="pay-ride pay-ride-open", data_ride=leg))
     return Div(Div(Span(icon("car", 16, 2.4), Span("Rides"), cls="pay-rides-title"), Span(ride_model.SIMULATED_LABEL, cls="pay-rides-sim"), cls="pay-rides-head"),

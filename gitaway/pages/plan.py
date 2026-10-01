@@ -12,7 +12,7 @@ from starlette.responses import HTMLResponse
 
 from fasthtml.common import to_xml, A, Article, Button, Div, Figcaption, Figure, H2, H3, Img, Kbd, Li, Link, Main, NotStr, P, Script, Section, Span, Svg, Title, Ul
 
-from gitaway import catalog, context, itineraries, session
+from gitaway import access, catalog, context, itineraries, session
 from gitaway import session as session_helpers
 from gitaway.icons import icon
 from gitaway.itinerary_view import fork_href
@@ -326,7 +326,7 @@ def rides_card(r, q=None):
                     Span(catalog.money(f.cents), cls="ws-ride-price"), cls="ws-ride-fare") for f in leg.fares], cls="ws-ride-fares",
                aria_label=f"{leg.title} fares"),
             A(icon("car", 15, 2.4), "Schedule an Uber", href=ride_path(leg.kind, q.flight_id, q.stay_id, q.trip), cls="ws-ride-go", data_schedule=leg.kind,
-              aria_label=f"Schedule an Uber for your {leg.title.lower()}, {leg.route}") if q is not None else "",
+              aria_label=f"Schedule an Uber for your {leg.title.lower()}, {leg.route}") if q is not None and access.request_role() != "viewer" else "",
             cls="ws-ride-leg", data_ride=leg.kind,
         ))
     return Div(

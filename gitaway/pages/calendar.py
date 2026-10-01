@@ -489,7 +489,7 @@ def top_bar(t, b, who, session, ctx):
         brand("/"),
         Div(H1(trip_name(t)), Div(Span(f"{cal.range_label(t.depart, t.return_)} · " + (f"booked elsewhere · {cal.plan_of(b).booked_on}" if cal.is_imported(b) else f"booked · {catalog.money(b['total_cents'])}"), cls="cal-tripline"), trip_switcher(session), cls="cal-tripbar"), cls="cal-title-box"),
         Div(Div(*people, cls="cal-faces"), presence, cls="cal-avatars"),
-        Div(A(icon("mic", 18, 2.4), "Talk to plan", href=voice_ui.voice_url(ctx["demo"], hear=1), data_soft="", cls="cal-btn cal-btn-mint vo-open"),
+        Div(A(icon("mic", 18, 2.4), "Talk to plan", href=voice_ui.voice_url(ctx["demo"], hear=1), data_soft="", cls="cal-btn cal-btn-mint vo-open") if ctx["role"] != "viewer" else "",
             A("Your forks", Span(str(forks), cls="cal-count"), href="/forks", cls="cal-btn cal-btn-white"),
             invite_button(ctx),
             *share_controls(session), cls="cal-actions-top"),
@@ -517,7 +517,8 @@ def calendar_page(session, demo="", view="", form=None, notice=None, new="", und
     t = cal.trip(demo, b)
     dates = cal.days(t)
     blocks = cal.booked_blocks(b, t) + cal.ride_blocks(session, b, t)
-    offers = cal.ride_offers(session, b, t)
+    role, is_demo = access.request_role(), ses.open_trip_is_demo(session)
+    offers = cal.ride_offers(session, b, t) if role != "viewer" else []  # "Schedule an Uber" is a write: a viewer sees the rides already set, not the offers
     acts = cal.activities(session, demo)
     notes = cal.notes(session, demo)
     counts = {}
@@ -527,7 +528,6 @@ def calendar_page(session, demo="", view="", form=None, notice=None, new="", und
     gs = cal.grid_start(blocks)
     gs_end = cal.grid_end(blocks)
     friends = ses.friends(session)
-    role, is_demo = access.request_role(), ses.open_trip_is_demo(session)
     if role == "viewer":  # a viewer looks: no add, edit, invite or voice dialogs
         form, invite, voice = None, None, None
     if not is_demo:       # the pretend-friends dialog belongs to the demo trip: its refusal is a plain message
