@@ -16,7 +16,7 @@ def test_signed_in_book_link_goes_straight_to_the_sheet(client):
     html = client.get(f"/plan?{PICK}").text
     assert 'href="/plan/pay?f=f2&amp;h=h3&amp;c=c1"' in html
     assert "intent=pay" not in html
-    assert '"book": "/plan/pay?f=f2&h=h3&c=c1"' in html
+    assert client.get(f"/plan/quote?{PICK}").json()["ledger"]["book"] == "/plan/pay?f=f2&h=h3&c=c1"
 
 
 def test_signed_out_book_link_goes_to_sign_in_with_pay_intent(client):

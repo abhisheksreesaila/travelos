@@ -12,7 +12,11 @@
 .pay-head h2 { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: clamp(26px, 7vw, 34px); letter-spacing: -0.02em; }
 .pay-who { font-size: 15px; font-weight: 700; color: var(--ink-2); white-space: nowrap; }
 .pay-lines { display: flex; flex-direction: column; border-radius: 22px; background: #FAF7F2; padding: 6px 18px; }
-.pay-line { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.pay-line { display: flex; flex-direction: column; gap: 8px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.pay-line-head { display: flex; align-items: center; gap: 12px; }
+.pay-items { list-style: none; margin: 0 0 0 52px; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.pay-item { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: 14px; font-weight: 600; color: var(--ink-2); }
+.pay-item-price { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .pay-tile { width: 40px; height: 40px; border-radius: var(--r-sm); display: grid; place-items: center; flex-shrink: 0; }
 .pay-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .pay-name { font-weight: 800; font-size: 16px; }

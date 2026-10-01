@@ -16,6 +16,7 @@ def test_every_page_links_tokens_then_base_exactly_once(client):
     from main import app
     paths = {r.path for r in app.routes
              if "GET" in (getattr(r, "methods", None) or ()) and "{" not in r.path}
+    paths -= {"/plan/explore", "/plan/quote"}  # a fragment and JSON, not pages
     paths.add("/trips/sun-tacos-and-tide-pools")
     assert {"/", "/plan"} <= paths
     for path in sorted(paths):

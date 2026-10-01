@@ -29,7 +29,7 @@ def test_bad_or_wrong_lane_ids_fall_back_to_the_default(client):
     assert "$3,088" in client.get("/plan?f=h1&h=c2&c=f3").text  # ids from the wrong lane
     assert plan.resolve_pick("f4", "bogus", "c3") == ("f4", "h1", "c3")  # a good lane keeps its pick
     assert plan.resolve_pick(None, None, None) == ("f1", "h1", "c1")
-    assert "$2,308" in client.get("/plan?f=f4&h=bogus&c=c3").text
+    assert re.search(r'id="ws-total"[^>]*>\$2,688<', client.get("/plan?f=f4&h=bogus&c=c3").text)
 
 
 def test_every_offer_renders_with_its_catalog_price(client):
@@ -65,16 +65,22 @@ def test_book_link_carries_next_and_pay_intent(client):
     assert "%2Fplan%2Fpay" in href  # url-encoded
 
 
-def test_embedded_quotes_match_catalog_for_every_combination(client):
-    h = client.get("/plan").text
-    raw = re.search(r'<script[^>]*id="ws-data"[^>]*>(.*?)</script>', h, re.S).group(1)
-    data = json.loads(raw)
-    assert len(data["quotes"]) == 45
-    for key, entry in data["quotes"].items():
-        q = catalog.quote(*key.split("|"))
+def test_quote_route_matches_catalog_for_every_combination(client):
+    from itertools import product
+    combos = list(product(*(catalog.offers(k) for k in ("flight", "stay", "car"))))
+    assert len(combos) == 45
+    for f, s, c in combos:
+        entry = client.get(f"/plan/quote?f={f.id}&h={s.id}&c={c.id}").json()["ledger"]
+        q = catalog.quote(f.id, s.id, c.id)
         assert entry["total"] == catalog.money(q.total_cents)
         assert (entry["delta"] == "The cheapest combination") == (q.above_cheapest_cents == 0)
         assert entry["book"].startswith("/signin?next=%2Fplan%2Fpay%3Ff%3D") and entry["book"].endswith("&intent=pay")
+        assert entry["url"] == f"/plan?f={f.id}&h={s.id}&c={c.id}"
+
+
+def test_the_page_embeds_no_combination_table(client):
+    raw = re.search(r'<script[^>]*id="ws-data"[^>]*>(.*?)</script>', client.get("/plan").text, re.S).group(1)
+    assert "quotes" not in json.loads(raw)
 
 
 def test_placeholder_is_gone_and_brand_is_gitaway(client):
@@ -169,15 +175,13 @@ def test_tablet_shows_context_below_lanes_instead_of_hiding_it():
     assert ".ws-context { display: none" not in tablet
 
 
-def test_every_pick_has_offer_data_and_quote_keys_are_flight_stay_car_order(client):
+def test_every_pick_has_offer_data_and_the_current_pick(client):
     h = client.get("/plan").text
     raw = re.search(r'<script[^>]*id="ws-data"[^>]*>(.*?)</script>', h, re.S).group(1)
     data = json.loads(raw)
     picks = re.findall(r'data-pick="([^"]+)"', h)
     assert len(picks) == 11 and set(picks) <= set(data["offers"])
-    for key in data["quotes"]:
-        f, s, c = key.split("|")
-        assert catalog.offer(f).kind == "flight" and catalog.offer(s).kind == "stay" and catalog.offer(c).kind == "car"
+    assert data["pick"] == {"f": "f1", "h": "h1", "c": "c1", "rooms": "cq1", "add": ""} and data["base"] == "/plan?f=f1&h=h1&c=c1"
 
 
 def test_workspace_is_a_main_landmark_the_skip_link_targets(client):
