@@ -83,15 +83,15 @@ Needs: F-019
 - [x] invite a family member or friend (signed out: through the demo sign-in with intent=invite); their avatar appears
 - [x] a scripted friend adds an activity and a note live, with animation
 
-## F-021 Forks list and apply preview [blocked]
-Blocked: look at "Your forks → apply preview" on the canvas (use its step switch) and say go or what to change.
+## F-021 Forks list and apply preview [todo]
+Captain said go 2026-09-30 ("do the missing sections, I want to see it fully").
 Design: docs/design/canvas/Forks.dc.html
 Needs: F-014, F-019
 - [ ] personal forks list in the workspace; fork any number
 - [ ] the itinerary page's Save heart saves a trip (signed out: through the demo sign-in with intent=save) and saved trips show beside forks
 - [ ] apply one: preview its activities in the empty calendar slots around bookings and friends' items, uncheck the unwanted ones, apply with animation; clashes are clearly shown
 
-## F-022 Share to the community hub [todo]
+## F-022 Share to the community hub [doing]
 Captain said go 2026-09-30 (build the hub, then the creator flow).
 Design: docs/design/canvas/Hub.dc.html
 Needs: F-014, F-019
@@ -109,8 +109,8 @@ Needs: F-014, F-022
 - [ ] the creator confirms it's accurate and gives permission to publish before Submit
 - [ ] submit; it appears in the community hub and links back to the creator's channel; the whole flow fits in under 5 minutes
 
-## F-024 Talk to plan: scripted voice fills the calendar [blocked]
-Blocked: look at "Talk to plan: scripted voice" on the canvas (use its 1-2-3-4 switch) and say go or what to change.
+## F-024 Talk to plan: scripted voice fills the calendar [todo]
+Captain said go 2026-09-30 ("do the missing sections, I want to see it fully").
 Brief: docs/briefs/voice.md (approved 2026-09-30) · Design: docs/design/canvas/Voice.dc.html · Needs: F-019, F-021 (reuses the apply-preview)
 - [ ] mic on the trip calendar plays a scripted sentence word by word with a listening animation; no audio captured
 - [ ] the sentence becomes 3–4 draft plans previewed in the right empty slots around bookings and friends' items
@@ -154,26 +154,27 @@ Needs: F-025 · Suggested in F-025 review
 
 # Captain's feedback round, 2026-09-30
 
-## F-030 Compact size: the whole site at about 75% of today [todo]
+## F-030 Compact size: the whole site at about 75% of today [done]
 Captain: at 100% zoom everything is extra large and spacey; a full screen only fits at 75% zoom. Applies everywhere (landing, workspace, calendar, pay, itinerary).
 Needs: none
-- [ ] type, spacing, radii, buttons, cards and panes scale to about 75% of today on desktop and tablet, so a 1440×900 and a 1280×800 laptop show the whole workspace and the whole landing hero without scrolling
-- [ ] layouts that fit the viewport (workspace, calendar) still fit; no sideways scroll at 1440/1280/1000/800/390/320; no ellipses
-- [ ] phone stays readable: body text no smaller than 13px (DESIGN-SYSTEM minimum), touch targets at least 44px
-- [ ] DESIGN-SYSTEM.md and tokens updated to the new scale, so new screens are built at it
+- [x] type, spacing, radii, buttons, cards and panes scale to about 75% of today on desktop and tablet, so a 1440×900 and a 1280×800 laptop show the whole workspace and the whole landing hero without scrolling
+- [x] layouts that fit the viewport (workspace, calendar) still fit; no sideways scroll at 1440/1280/1000/800/390/320; no ellipses
+- [x] phone stays readable: body text no smaller than 13px (DESIGN-SYSTEM minimum), touch targets at least 44px
+- [x] DESIGN-SYSTEM.md and tokens updated to the new scale, so new screens are built at it
 
-## F-031 Workspace: the cost ledger tucks into a small pill while you explore details [todo]
-Captain: the ledger bar takes too much room once you're choosing details. Like Safari's bar or a Dynamic Island, it should shrink up next to the trip and date line and come back when needed.
+## F-031 Workspace: the cost ledger becomes a slim line at the top [doing]
+Captain (said twice): the ledger bar takes too much room. Push it to the top as subtle information so the panes and the details get the space; like Safari's bar or a Dynamic Island.
 Needs: F-030
-- [ ] in the split view, scrolling down the detail shrinks the ledger into a compact pill beside the trip/date line (total plus a small book button); scrolling up, or tapping the pill, expands it again; it animates (reduced motion: instant)
-- [ ] the detail panel gains the freed height; phone uses the same pattern
-- [ ] the total in the pill stays live
+- [ ] the ledger moves into the top bar as one slim line beside the trip and dates (flight · stay · car = total, plus Book); the old ledger band is gone and the panes take its height
+- [ ] tapping the total opens a small breakdown popover (itemized lines, the best-value hint); Esc or tapping outside closes it
+- [ ] in the split view, scrolling down the detail shrinks the line further to a pill (total + Book); scrolling up or tapping it restores it; animated, reduced motion instant
+- [ ] the total stays live; phone uses the same pattern pinned at the top
 
-## F-032 Calendar opens on the whole-trip view [todo]
+## F-032 Calendar opens on the whole-trip view [done]
 Captain: the hour grid is intimidating first; the whole-trip snapshot should be the default, with an easy switch to the day view for editing.
 Needs: none
-- [ ] /calendar opens on the whole-trip view; the switch to the day view is obvious and remembered while the traveler is on the page
-- [ ] links that need the day view (e.g. after adding an activity) still land there
+- [x] /calendar opens on the whole-trip view; the switch to the day view is obvious and remembered while the traveler is on the page
+- [x] links that need the day view (e.g. after adding an activity) still land there
 
 ## F-033 Book any mix of lanes, with rides when there's no car [todo]
 Brief: docs/briefs/optional-lanes.md (approved 2026-09-30)
@@ -188,3 +189,11 @@ Needs: F-027 (shares the pick URL and ledger)
 Found during F-030 (both predate it).
 - [ ] on phones (390, 320) no text renders below 13px on /plan, /calendar (incl. ?demo=long) and the landing page; touch targets at least 44px
 - [ ] remove the four leftover `text-overflow: ellipsis` rules (landing `.field input` and `.paste`, workspace `.ws-slot-name`) in favour of wrapping or shortening (docs/lessons.md)
+
+## F-035 "Where to?" trip start after sign-in [doing]
+Brief: docs/briefs/trip-start.md (approved 2026-09-30) · Design: follows landing and workspace language, no artboard (captain wants the full journey now)
+Needs: F-030
+- [ ] /start asks from, to (LA live; others "coming soon"), dates, adults and kids with ages; "Find my trip" opens the workspace for that trip
+- [ ] sign-in without a specific `next` lands on /start; landing's "Plan a trip" door and the header link go there; a returning traveler sees "Continue <trip>" above the form
+- [ ] nights and travelers drive prices in the catalog (stays and cars by night, flights by traveler, room fit by party size); the trip lives in the URL through reload, pay and calendar
+- [ ] done means: LA, Oct 16–20, 2 adults + kids 4 and 7 gives $3,088; 3 nights or 3 adults change prices consistently through pay and calendar
