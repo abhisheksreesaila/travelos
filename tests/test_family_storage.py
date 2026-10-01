@@ -353,6 +353,11 @@ def test_the_family_helper_takes_a_request_or_a_session_and_says_no_to_strangers
     s = person()
     with familydb.using(s) as db:
         assert db is not None and db.conn.execute(text("SELECT COUNT(*) FROM trips")).scalar() == 0
+    from starlette.requests import Request
+    request = Request({"type": "http", "session": s, "headers": []})  # what a route holds
+    db = familydb.family_db(request)
+    assert db.conn.execute(text("SELECT COUNT(*) FROM trips")).scalar() == 0
+    db.conn.close()
     with familydb.using({}) as db:
         assert db is None
     with pytest.raises(ValueError):

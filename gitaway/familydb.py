@@ -20,7 +20,6 @@ write lock, so the reads that follow cannot be stale. WAL mode keeps readers out
 """
 
 import threading
-from collections.abc import Mapping
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
@@ -208,7 +207,7 @@ def family_db(source):
     makes sure the tables exist. The caller closes the handle (`db.conn.close()`); `using` does that for you.
     Raises ValueError when nobody is signed in and PermissionError when they are not a member.
     """
-    session = source if isinstance(source, Mapping) else getattr(source, "session", None)
+    session = getattr(source, "session", None) if hasattr(source, "scope") else source  # a Starlette Request is a Mapping too: ask it for its session
     if session is None or not session.get("user_id"):
         raise ValueError("Authentication required")
     with _LOCK:
