@@ -25,12 +25,13 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fh_saas.db_host import HostDatabase
-from fh_saas.utils_auth import get_user_membership, require_tenant_access
+from fh_saas.utils_auth import require_tenant_access
 from fh_saas.utils_db import create_indexes, register_tables
 from fh_saas.utils_migrate import apply_migrations, discover_migrations
 from fh_saas.utils_sql import with_transaction
 from sqlalchemy import text
+
+from gitaway.familydb_social import SOCIAL_TABLES
 
 ROOT = Path(__file__).resolve().parent.parent
 MIGRATIONS_DIR = ROOT / "migrations" / "family"  # absolute: the process runs from the data folder
@@ -157,6 +158,8 @@ FAMILY_TABLES = [
     (Ride, "rides", "id"),
 ]
 
+FAMILY_TABLES.extend(SOCIAL_TABLES)  # forks and saves (F-041): one list, one entry point (see familydb_social)
+
 FAMILY_INDEXES = [  # (table, columns, unique, name)
     ("bookings", ["trip_id"], True, "ux_bookings_trip"),
     ("activities", ["trip_id", "scope", "act_id"], True, "ux_activities_id"),
@@ -216,14 +219,6 @@ def family_db(source):
         db.conn.close()
         raise
     return db
-
-
-def tenant_of(user_id) -> str | None:
-    """The family a person belongs to (their first active membership), or None. For code that must read another person's
-    publicly shared trip (gitaway.share) until the community database (F-041) replaces that."""
-    with _LOCK:
-        found = get_user_membership(HostDatabase.from_env(), user_id)
-    return found.tenant_id if found else None
 
 
 @contextmanager

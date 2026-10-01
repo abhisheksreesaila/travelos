@@ -69,14 +69,10 @@ def dialog(next_path, intent, asked=None, dev=False, google=False, error=""):
 
 def _continue(session, intent, next_path):
     """What the signed-in traveler meant to do before the sign-in: fork or save the trip at `next`."""
-    try:
-        if intent == "fork":
-            ses.add_fork(session, next_path)
-        elif intent == "save":  # only when asked for: a plain "Sign in" on a trip page must not save it
-            ses.add_save(session, next_path)
-    except ses.KeepError as e:
-        from gitaway.pages.forks import sorry
-        return sorry(str(e), next_path)
+    if intent == "fork":
+        ses.add_fork(session, next_path)
+    elif intent == "save":  # only when asked for: a plain "Sign in" on a trip page must not save it
+        ses.add_save(session, next_path)
 
 
 def _page(request, next_path, intent, asked, error="", status=200):
@@ -143,20 +139,14 @@ def register(app):
         next_path = ses.safe_next(next)
         if not ses.current_traveler(session):
             return RedirectResponse(f"/signin?next={quote(next_path, safe='/')}&intent=fork", status_code=303)
-        try:
-            ses.add_fork(session, next_path)
-        except ses.KeepError as e:
-            from gitaway.pages.forks import sorry
-            return sorry(str(e), next_path)
+        ses.add_fork(session, next_path)
         return RedirectResponse(next_path, status_code=303)
 
     @app.route("/logout", methods=["GET", "POST"])
     @app.post("/signout")  # the header form posts here (F-044's pwa.js clears its page cache on that form); same handler
     def logout(session):
-        """Sign out through fh-saas's handle_logout, which clears the session. Until F-040 moves trip state into SQLite
-        the cookie still holds some (calendar, forks), so everything that is not sign-in state is put back."""
-        keep = {k: v for k, v in session.items() if k not in ses.AUTH_KEYS}
+        """Sign out through fh-saas's handle_logout, which clears the session. The cookie holds only the sign-in (and a creator draft,
+        which belongs to the person who made it, not the next one at this browser); trips, calendar, forks and saves stay in the
+        family's database for the next sign-in (F-040, F-041)."""
         handle_logout(session)
-        keep.pop("cr", None)  # the creator draft belongs to the person who made it, not the next one at this browser
-        session.update(keep)
         return clear_site_data(RedirectResponse("/", status_code=303))

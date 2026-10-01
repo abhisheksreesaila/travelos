@@ -2,18 +2,18 @@
 
 Sign-in is fh-saas's (see gitaway.auth): the session holds `user_id` and `email`, and `current_traveler` is the thin
 adapter that maps that person to the "traveler" every screen speaks of (id = the fh-saas user id, name from the email).
-The family's trips, bookings, friends and remembered picks live in the family's SQLite database (F-040, gitaway.familydb):
-the functions below take the session only to learn who is signed in and which family that is. Forks, saves, the hub and the
-creator draft are still cookie state until F-041.
+The family's trips, bookings, friends and remembered picks live in the family's SQLite database (F-040, gitaway.familydb),
+and so do its forks and saves (F-041, gitaway.familydb_social): the functions below take the session only to learn who is
+signed in and which family that is.
 
-Session shape: {"user_id": "<fh-saas user id>", "email": "<email>", "tenant_id": "<family>", ..., "forks": {"<id>": ["<trip slug>", ...]}}.
+Session shape: only the fh-saas sign-in: {"user_id": "<fh-saas user id>", "email": "<email>", "tenant_id": "<family id>", ...} (see AUTH_KEYS).
+The creator draft is the one other thing kept in the cookie, briefly (gitaway.creators).
 
 For the header, `bind` is a beforeware (see main.py) that records the current traveler in a ContextVar for the
 request; layout.site_header reads it with `request_traveler()`. Outside a request it is None (signed out).
 """
 
 import hashlib
-import json
 import re
 import uuid
 from contextlib import contextmanager
@@ -24,7 +24,7 @@ from urllib.parse import quote, unquote, urlsplit
 
 from fh_saas.utils_sql import insert_only
 
-from gitaway import catalog, familydb
+from gitaway import catalog, familydb, familydb_social as social
 
 
 @dataclass(frozen=True)
@@ -96,9 +96,8 @@ def sign_out(session):
 
 
 def forks(session):
-    """Trip slugs the signed-in traveler has forked, oldest first. Empty when signed out."""
-    t = current_traveler(session)
-    return list(session.get("forks", {}).get(t.id, [])) if t else []
+    """Trip slugs the signed-in traveler's family has forked, oldest first. Empty when signed out. Stored in the family's database."""
+    return social.slugs(session, "forks") if current_traveler(session) else []
 
 
 def trip_slug(path):
@@ -106,58 +105,37 @@ def trip_slug(path):
     return m.group(1) if m else None
 
 
-class KeepError(ValueError):
-    """A fork or save the demo refuses because the session cookie has no room; the message is fit to show."""
+def _keep(session, table, next_path):
+    """Keep the trip in a /trips/<slug> path in the family's `table` (forks or saves).
 
-
-def _keep(session, key, current, next_path):
-    """Add the trip in a /trips/<slug> path to the traveler's `key` list (forks or saves).
-
-    False when signed out, when the path is not a trip that exists, or when it is already there. Raises KeepError
-    (and changes nothing) when the signed cookie would grow past BUDGET.
+    False when signed out, when the path is not a trip that exists, or when it is already there.
     """
     from gitaway import forks as forks_model  # here, not at the top: forks imports this module
-    t, slug = current_traveler(session), trip_slug(next_path)
-    if not t or not slug or slug in current or not forks_model.resolve(session, slug):
+    slug = trip_slug(next_path)
+    if not current_traveler(session) or not slug or not forks_model.resolve(slug):
         return False
-    old = session.get(key)
-    # Reassign the whole dict so the cookie session notices the change.
-    session[key] = {**(old or {}), t.id: [*current, slug]}
-    if len(json.dumps(dict(session))) > BUDGET:
-        if old is None:
-            session.pop(key, None)
-        else:
-            session[key] = old
-        raise KeepError("This demo is full. Delete something from your calendar to make room.")
-    return True
+    return social.add(session, table, slug)
 
 
 def add_fork(session, next_path):
-    """Fork the trip in a /trips/<slug> path for the current traveler (see _keep for the False and KeepError cases)."""
-    return _keep(session, "forks", forks(session), next_path)
+    """Fork the trip in a /trips/<slug> path for the signed-in traveler's family (see _keep for the False cases)."""
+    return _keep(session, "forks", next_path)
 
 
 def saved(session):
-    """Trip slugs the signed-in traveler has saved with the heart, oldest first. Empty when signed out.
-
-    Session shape: "saves": {"<traveler id>": ["<trip slug>", ...]}, like forks.
-    """
-    t = current_traveler(session)
-    return list((session.get("saves") or {}).get(t.id, [])) if t else []
+    """Trip slugs the signed-in traveler's family has saved with the heart, oldest first. Empty when signed out."""
+    return social.slugs(session, "saves") if current_traveler(session) else []
 
 
 def add_save(session, next_path):
-    """Save the trip in a /trips/<slug> path for the current traveler (see _keep for the False and KeepError cases)."""
-    return _keep(session, "saves", saved(session), next_path)
+    """Save the trip in a /trips/<slug> path for the family (see _keep for the False cases)."""
+    return _keep(session, "saves", next_path)
 
 
 def remove_save(session, next_path):
     """Un-save the trip in a /trips/<slug> path. False when it was not saved."""
-    t, slug = current_traveler(session), trip_slug(next_path)
-    if not t or not slug or slug not in saved(session):
-        return False
-    session["saves"] = {**session["saves"], t.id: [s for s in saved(session) if s != slug]}
-    return True
+    slug = trip_slug(next_path)
+    return bool(current_traveler(session) and slug and social.remove(session, "saves", slug))
 
 
 # ---- the family's trips, bookings, friends and remembered picks (SQLite: see gitaway.familydb) ---------------------

@@ -8,7 +8,7 @@ from fh_saas.db_host import HostDatabase
 from starlette.testclient import TestClient
 
 from gitaway import auth, session as ses
-from tests.test_signin import EMAILS, session_data, sign_in, tid
+from tests.test_signin import EMAILS, session_data, sign_in, stored_booking, tid
 
 PUBLIC = ["/", "/discover", "/plan", "/start", "/creators", "/signin", "/trips/sun-tacos-and-tide-pools"]
 
@@ -150,14 +150,16 @@ def test_the_demo_workspace_works_signed_out(client):
 # ---- logout ----------------------------------------------------------------------------------------------------------
 
 def test_logout_removes_the_sign_in_and_keeps_the_trip_state(client):
+    from tests.test_calendar import book
     sign_in(client, "ari", next="/trips/sun-tacos-and-tide-pools", intent="fork")
-    assert session_data(client)["forks"]
+    assert "forks" not in session_data(client)  # forks live in the family database now (F-041), and stay when someone signs out
+    book(client)
     for method in (client.post, client.get):
         sign_in(client, "ari")
         r = method("/logout", follow_redirects=False)
         assert r.status_code == 303 and r.headers["location"] == "/"
-        data = session_data(client)
-        assert "user_id" not in data and "tenant_id" not in data and data["forks"]
+        assert not client.cookies.get("session_")  # nothing is left in the cookie: it is gone
+        assert stored_booking() is not None  # the trip stays in the family's database for the next sign-in
         assert "Sign out" not in client.get("/").text
 
 
@@ -217,7 +219,7 @@ def test_the_google_callback_signs_in_makes_the_family_and_returns_to_next(clien
     assert r.status_code == 303 and r.headers["location"] == "/trips/sun-tacos-and-tide-pools"
     data = session_data(client)
     assert data["email"] == "gina@gmail.com" and data["tenant_role"] == "owner" and "oauth_state" not in data and "login_next" not in data
-    assert data["forks"] == {data["user_id"]: ["sun-tacos-and-tide-pools"]}  # the intent from before the sign-in was applied
+    assert ses.forks(data) == ["sun-tacos-and-tide-pools"]  # the intent from before the sign-in was applied, kept in the family's database
     assert len(memberships(data["user_id"])) == 1
     assert "gina@gmail.com" in client.get("/family").text
 

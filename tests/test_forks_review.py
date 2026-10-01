@@ -1,12 +1,11 @@
 """F-021 review fixes: cookie budget, the booked trip's real length, titles, undo and escaping."""
 
 import dataclasses
-import json
 import re
 
 from fh_saas.utils_sql import insert_only
 
-from gitaway import familydb, itineraries, session as ses, tripcal as cal
+from gitaway import community, familydb, itineraries, session as ses, tripcal as cal
 from tests.test_calendar import FORM, add, book
 from tests.test_forks import OTHER, SD, TRIP, apply, fork, plan_keys, titles
 from tests.test_signin import person, session_data, sign_in, stored_booking, stored_calendar, tid
@@ -28,34 +27,20 @@ def test_made_up_slugs_are_not_forked_or_saved(client):
         client.post("/save", data={"next": path})
         client.get(f"/signin?next={path}&intent=fork")
         client.get(f"/signin?next={path}&intent=save")
-    data = session_data(client)
-    assert "forks" not in data and "saves" not in data
+    assert ses.forks(session_data(client)) == [] and ses.saved(session_data(client)) == []
 
 
-def test_forks_and_saves_are_refused_before_the_cookie_overflows(client, monkeypatch):
+def test_a_busy_calendar_does_not_limit_forks_and_saves(client):
+    """F-041: forks and saves live in the family's database, and so does the calendar (F-040): neither touches the cookie."""
     book(client)
-    monkeypatch.setattr(ses, "BUDGET", len(json.dumps(session_data(client))) + 120)  # forks and saves still live in the cookie until F-041
-    refused, refused_slug = [], None
+    for i in range(40):
+        if add(client, id=f"a{i + 1}", day=str(1 + i % 3), start="12:00", end="12:30", title=f"Plan number {i:02d} " + "x" * 20).status_code == 409:
+            break
     for slug in (TRIP, OTHER, SD, "dog-friendly-big-sur-drive"):
-        r = client.post("/fork", data={"next": f"/trips/{slug}"}, follow_redirects=False)
-        refused.append(r.status_code)
-        refused_slug = refused_slug or (slug if r.status_code == 409 else None)
-        assert r.status_code in (303, 409)
-        r2 = client.post("/save", data={"next": f"/trips/{slug}"}, follow_redirects=False)
-        refused.append(r2.status_code)
-        assert len(str(session_data(client)).replace("'", '"')) <= ses.BUDGET + 200
-        assert cookie_size(client) <= 3600
-    assert 409 in refused, "a nearly full cookie must say no"
-    page = client.post("/fork", data={"next": f"/trips/{refused_slug}"})
-    assert page.status_code == 409 and "full" in page.text
-
-
-def test_signing_in_to_fork_with_no_room_says_so(client, monkeypatch):
-    sign_in(client)
-    book(client)
-    monkeypatch.setattr(ses, "BUDGET", len(json.dumps(session_data(client))) + 5)  # no room for a fork in the cookie
-    r = client.get(f"/signin?next=/trips/{TRIP}&intent=fork", follow_redirects=False)
-    assert r.status_code == 409 and "full" in r.text
+        assert client.post("/fork", data={"next": f"/trips/{slug}"}, follow_redirects=False).status_code == 303
+        assert client.post("/save", data={"next": f"/trips/{slug}"}, follow_redirects=False).status_code == 303
+    assert len(ses.forks(session_data(client))) == 4 and len(ses.saved(session_data(client))) == 4
+    assert client.get(f"/signin?next=/trips/{TRIP}&intent=fork", follow_redirects=False).status_code == 303
 
 
 # ---- the booked trip's real length ---------------------------------------------------------------------------------
@@ -200,7 +185,7 @@ def test_a_creator_trip_can_be_forked_saved_and_applied(client):
     book(client)
     client.post("/creators", data={"link": "https://www.youtube.com/watch?v=our-la-family-week"})
     client.post("/creators/draft", data={"form": "1", "do": "submit", "ok1": "1", "ok2": "1", "title": "Sun, tacos & tides"})
-    slug = session_data(client)["hub"][tid("ari")][0]["s"]
+    slug = community.rows(kind="creator", owner=tid("ari"))[0]["slug"]
     assert client.post("/fork", data={"next": f"/trips/{slug}"}, follow_redirects=False).status_code == 303
     assert client.post("/save", data={"next": f"/trips/{slug}"}, follow_redirects=False).status_code == 303
     assert "Sun, tacos &amp; tides" in client.get("/forks").text

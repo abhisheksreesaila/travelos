@@ -12,16 +12,16 @@ link, the answers and the creator's edits; the rest is rebuilt from the fixture 
 
     session["cr"]  = {"u": link, "a": {"d": "012", "w": "kp", "s": "summer"}, "e": {"t": ..., "h1": ..., "h2": ..., "p": ..., "c": ...}, "k": "12"}
                      (a = answers, e = edits that differ from the draft, k = both boxes ticked)
-    session["crp"] = {"<traveler id>": {"<slug>": same record without "k"}}   the published trips, served at /trips/<slug>
 
-Publishing calls `hub.publish`, which puts the card in the community hub; the page behind it is `find`, built from the record.
+Drafts stay per device. Publishing (F-041) freezes the page as a snapshot in the community database (gitaway.community,
+kind "creator", the record kept beside it as `meta`), so the trip shows in the hub and at /trips/<slug> for everyone.
 """
 
 import hashlib
 from dataclasses import dataclass, replace
 from urllib.parse import urlsplit
 
-from gitaway import hub, session as ses
+from gitaway import community, hub, session as ses
 from gitaway.hub import HubError
 from gitaway.itineraries import PIER, VENICE, Day, Itinerary, Polaroid, Source, Stop, Tag, safe_href
 
@@ -305,11 +305,12 @@ def slug_for(traveler_id, url) -> str:
 
 
 def published(session, traveler_id) -> dict:
-    return dict((session.get("crp") or {}).get(traveler_id) or {})
+    """{slug: record} of the creator trips this person has published (the records live with the snapshot in the community database)."""
+    return {r["slug"]: r["meta"] for r in community.rows(kind="creator", owner=traveler_id)}
 
 
 def publish(session) -> hub.HubCard:
-    """Publish the confirmed draft to the hub. Raises HubError with a message fit to show; a failure leaves the session as it was."""
+    """Publish the confirmed draft to the community database. Raises HubError with a message fit to show."""
     t = ses.current_traveler(session)
     if not t:
         raise HubError("Sign in to publish your trip.")
@@ -320,25 +321,12 @@ def publish(session) -> hub.HubCard:
         raise HubError("Tick both boxes first: that it is accurate, and that you give GitAway permission to publish it.")
     d = resolve(rec)
     slug = slug_for(t.id, d.url)
-    old_hub, old_crp = session.get("hub"), session.get("crp")
-    live = {e["s"] for e in hub.entries(session)}
-    mine = {s: r for s, r in published(session, t.id).items() if s in live and s != slug}   # records whose card is gone are dropped
-    if len(mine) >= MAX_TRIPS:
+    if len([s for s in published(session, t.id) if s != slug]) >= MAX_TRIPS:
         raise HubError(f"You have {MAX_TRIPS} creator trips here already. This demo keeps it small.")
     stored = {k: v for k, v in rec.items() if k != "k"}
-    try:
-        session["crp"] = {**(old_crp or {}), t.id: {**mine, slug: stored}}   # whole dict reassigned so the cookie session notices
-        card = hub.publish(session, slug=slug, title=d.title, place="Los Angeles", days=len(d.kept), author=d.fx.creator,
-                           tags=d.who, source=d.platform, cover=d.cover if d.cover in ("pier", "venice") else "")
-    except HubError:
-        for key, value in (("hub", old_hub), ("crp", old_crp)):
-            if value is None:
-                session.pop(key, None)
-            else:
-                session[key] = value
-        raise
+    row = community.publish(session, trip(stored, slug), kind="creator", tags=list(d.who), meta=stored)
     session.pop("cr", None)
-    return card
+    return hub._from_itinerary(community.trip_of(row))
 
 
 # ---------- the page behind /trips/<slug> ----------
@@ -370,11 +358,6 @@ def trip(rec, slug) -> Itinerary:
         polaroids=polaroids if photo else [], weather=(temp, sky), author=d.fx.creator, route="Los Angeles, California", theme="sunset")
 
 
-def find(session, slug):
-    """The Itinerary behind /trips/<slug> when it is a creator trip published in this browser, else None."""
-    for tid, e in hub.all_entries(session):
-        if e["s"] == slug and not e.get("m"):
-            rec = published(session, tid).get(slug)
-            if rec:
-                return trip(rec, slug)
-    return None
+def find(slug):
+    """The Itinerary behind /trips/<slug> when it is a published creator trip, else None. Anyone can ask."""
+    return community.find(slug, "creator")

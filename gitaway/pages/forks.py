@@ -186,15 +186,6 @@ def signed_out():
         cls="ga-soon ga-wrap"), head=HEAD)
 
 
-def sorry(message, back="/forks"):
-    """A fork or save the demo cannot hold (the cookie is full): say so, and offer a way back. 409."""
-    out = page("Your forks", Section(
-        Div(Span(icon("fork", 36, 2.2), cls="fk-bigicon"), H1("No room for that"), P(message),
-            A("Back to the trip", href=back, cls="btn btn-primary"), A("Your forks", href="/forks", cls="btn"), cls="fk-signedout"),
-        cls="ga-soon ga-wrap"), head=HEAD)
-    return FtResponse(out, status_code=409)
-
-
 def forks_page(session, open_slug="", applied="", source="", error="", status=200):
     booked = bool(ses.booking(session))
     entry = forks_model.entry(session, open_slug) if open_slug else None
@@ -228,7 +219,7 @@ def register(app):
     def apply(session, slug: str = "", pick: list[str] = None):
         if not ses.current_traveler(session):
             return RedirectResponse("/signin?next=/forks", status_code=303)
-        trip = forks_model.resolve(session, slug)
+        trip = forks_model.resolve(slug)
         if not trip or slug not in ses.forks(session) + ses.saved(session):
             return forks_page(session, error="That trip is not in your list any more.", status=409)
         try:
@@ -243,7 +234,7 @@ def register(app):
     def undo(session, ids: str = "", src: str = ""):
         if not ses.current_traveler(session):
             return RedirectResponse("/signin?next=/forks", status_code=303)
-        trip = forks_model.resolve(session, src) if src else None
+        trip = forks_model.resolve(src) if src else None
         if trip and ses.booking(session):
             cal.remove_applied(session, trip, _ids(ids), by=trip.author)
         return RedirectResponse("/forks", status_code=303)
@@ -257,10 +248,7 @@ def register(app):
         path = trip_path(next)
         if not ses.current_traveler(session):
             return RedirectResponse(f"/signin?next={quote(path, safe='/')}&intent=save", status_code=303)
-        try:
-            ses.add_save(session, path)
-        except ses.KeepError as e:
-            return sorry(str(e), path)
+        ses.add_save(session, path)
         return RedirectResponse(path, status_code=303)
 
     @app.post("/unsave")

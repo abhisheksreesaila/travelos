@@ -54,28 +54,38 @@ def test_junk_filters_are_ignored_and_escaped(client):
     assert r.status_code == 200 and "<script>" not in r.text and "&lt;script&gt;" in r.text   # the search text is echoed escaped
 
 
-def test_publish_adds_to_the_hub_and_every_traveler_in_this_browser_sees_it():
-    s = {"user_id": "ari"}
-    card = hub.publish(s, slug="my-reel", title="Reel trip", place="Tokyo", days=3, author="@me", tags=("kid", "nope"), source="Instagram")
-    assert card.tags == ("kid",) and card.source == "Instagram"
-    assert hub.cards(s)[-1].slug == "my-reel"
-    assert [c.mine for c in hub.cards(s) if c.slug == "my-reel"] == [True]
-    others = {"user_id": "sam", "hub": s["hub"]}
-    assert [c.mine for c in hub.cards(others) if c.slug == "my-reel"] == [False]               # community in this browser
-    assert "my-reel" in [c.slug for c in hub.cards({"hub": s["hub"]})]                         # even signed out
-    hub.publish(s, slug="my-reel", title="Renamed", place="Tokyo", days=3, author="@me")
-    assert [e["t"] for e in hub.entries(s)] == ["Renamed"]                                    # same slug replaces
+def _publish(session, slug, title="Reel trip", **kw):
+    from gitaway import community
+    trip = itineraries.Itinerary(slug=slug, title=title, headline=f"{title}:", accent="x", place="Tokyo, Japan", lede="l",
+                                 days=[itineraries.Day(1, "DAY 1", "One", "70°F", [itineraries.Stop("9:00 AM", "Walk")])],
+                                 tags=[itineraries.Tag("Kid friendly", "sun", "kid")], author="@me",
+                                 source=itineraries.Source("@me · Instagram · 3 min", "T", "", ""))
+    return community.publish(session, trip, kind="creator", tags=("kid",), **kw)
 
 
-def test_publish_refuses_signed_out_bad_slugs_and_a_full_cookie():
+def test_publish_adds_to_the_hub_and_everyone_sees_it_even_signed_out(client):
+    from gitaway import auth
+    ari, sam = {}, {}
+    auth.sign_in_dev(ari, "ari.rivera@example.com"), auth.sign_in_dev(sam, "sam.kim@example.com")
+    _publish(ari, "my-reel")
+    card = hub.cards(ari)[-1]
+    assert card.slug == "my-reel" and card.tags == ("kid",) and card.source == "Instagram" and card.place == "Tokyo" and card.mine
+    assert [c.mine for c in hub.cards(sam) if c.slug == "my-reel"] == [False]
+    assert "my-reel" in [c.slug for c in hub.cards({})]                                         # even signed out
+    _publish(ari, "my-reel", title="Renamed")
+    assert [c.title for c in hub.cards(ari) if c.slug == "my-reel"] == ["Renamed"]              # same slug replaces
     with pytest.raises(hub.HubError):
-        hub.publish({}, slug="a", title="T", place="P", days=1, author="x")
+        _publish(sam, "my-reel")                                                                # not yours to replace
+
+
+def test_publish_refuses_signed_out_and_empty_titles():
+    from gitaway import auth
     with pytest.raises(hub.HubError):
-        hub.publish({"user_id": "ari"}, slug="../x", title="T", place="P", days=1, author="x")
-    s = {"user_id": "ari", "pad": "x" * 2600}
+        _publish({}, "a")
+    ari = {}
+    auth.sign_in_dev(ari, "ari.rivera@example.com")
     with pytest.raises(hub.HubError):
-        hub.publish(s, slug="a", title="T", place="P", days=1, author="x")
-    assert "hub" not in s
+        _publish(ari, "a", title="  ")
 
 
 def test_user_written_hub_text_is_escaped():
