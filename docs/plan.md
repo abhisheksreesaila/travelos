@@ -259,3 +259,12 @@ Needs: none
 `pixi run test` grew from ~40s to ~170s as every test now wipes every family database (tests/wipe.py).
 - [ ] wipe only the families a test touched (record tenant ids opened in a set that survives `forget_schema_cache`), skip per-tenant `ensure_schema` in the wipe
 - [ ] `pixi run test` back under ~60s with the same isolation guarantees (a test proving a family opened before a reset is still wiped)
+
+## F-046 Fixes from the end-to-end check [doing]
+Found by the full real-app walkthrough on master (2026-10-01).
+- [ ] notes show who wrote them (the member's name and avatar; "You" only for the viewer's own), on every member's screen
+- [ ] the first "Booked!" note matches the trip's actual lanes after a Replace (no car → no car wording)
+- [ ] viewers don't see "Talk to plan" or live "Schedule an Uber" links (like the add links)
+- [ ] the forks page's "Your calendar" preview shows scheduled rides, and fork placement treats them as busy
+- [ ] public shared pages don't reveal when and where a family is away: no flight numbers, no calendar dates (Day 1…N instead), and the hotel as its area ("a hotel in Santa Monica"), not its name; the family still sees everything
+- [ ] the invite expiry reads "expires in 14 days" when brand new
