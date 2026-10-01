@@ -212,7 +212,7 @@ Needs: F-030
 
 # Real app: rides simulation and backend (brief: docs/briefs/real-app.md, approved 2026-10-01 · ADR-0004)
 
-## F-038 Milestone 1: schedule an Uber, simulated faithfully [todo]
+## F-038 Milestone 1: schedule an Uber, simulated faithfully [doing]
 Research: docs/research/uber-api.md · Needs: F-033
 - [ ] with no car, the rides card offers "Schedule an Uber" for arrival (pickup = landing + buffer) and departure (leave in time for the flight)
 - [ ] the flow mirrors Uber's API: product choice with price and time estimates, confirm pickup and dropoff, scheduled, then a simulated status timeline (scheduled → driver assigned → arriving → on trip → completed) and cancel
