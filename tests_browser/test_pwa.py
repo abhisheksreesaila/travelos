@@ -39,7 +39,7 @@ def book_trip(ctx, base_url):
     ctx.request.post(f"{base_url}/pay", form={"f": "f1", "h": "h1", "c": "c1"}, max_redirects=0)
 
 
-def controlled(page, base_url, path="/discover"):
+def controlled(page, base_url, path="/community"):
     page.goto(f"{base_url}{path}")
     page.evaluate("navigator.serviceWorker.ready.then(() => true)")
     page.reload()
@@ -89,7 +89,7 @@ def test_posts_and_auth_routes_never_end_up_in_any_cache(ctxs, base_url):
     page.evaluate("fetch('/signin', {method: 'POST', body: new URLSearchParams({email: 'ari@example.com', next: '/', intent: 'save'})}).then(r => r.status)")
     for path in ("/signin", "/signin?next=%2Fplan", "/login", "/logout", "/auth/callback"):
         page.goto(f"{base_url}{path}")
-    page.goto(f"{base_url}/discover")  # the worker is still busy being useful
+    page.goto(f"{base_url}/community")  # the worker is still busy being useful
     cached = page.evaluate(ALL_CACHED_URLS)
     assert cached, "the worker should have saved something"
     assert not [u for u in cached if not u.startswith("GET ")], cached
@@ -143,7 +143,7 @@ def test_a_different_person_never_sees_the_previous_persons_saved_pages(ctxs, ba
     ari_caches = page.evaluate(PAGE_CACHES)
     assert len(ari_caches) == 1
     sign_in(ctx, base_url, "sam")
-    page.goto(f"{base_url}/discover")  # the worker sees Sam's key and drops Ari's pages
+    page.goto(f"{base_url}/community")  # the worker sees Sam's key and drops Ari's pages
     page.evaluate("new Promise(r => setTimeout(r, 300))")
     sam_caches = page.evaluate(PAGE_CACHES)
     assert len(sam_caches) == 1 and sam_caches != ari_caches

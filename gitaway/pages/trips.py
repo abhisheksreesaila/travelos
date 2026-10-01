@@ -19,7 +19,7 @@ def not_found():
             Div(
                 H1("This trip wandered off"),
                 P("We couldn't find that itinerary. It may have been renamed, or the link is missing a piece."),
-                A("Find another trip", href="/discover", cls="btn btn-primary"),
+                A("Find another trip", href="/community", cls="btn btn-primary"),
             ),
             cls="ga-soon ga-wrap",
         ),

@@ -124,3 +124,8 @@
   .fk-hours, .fk-hour { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .fk-pop, .fk-draft.is-applying { animation: none; } .fk-draft.is-applying { background: var(--sun-tint); border-color: transparent; } }
+
+/* F-053: the three ways in, stacked inside the narrow empty-calendar card */
+.fk-empty .fr-paths { grid-template-columns: minmax(0, 1fr); width: 100%; }
+.fk-empty .fr-path { flex-direction: row; align-items: center; flex-wrap: wrap; }
+.fk-empty .fr-body { flex: 1 1 12rem; }

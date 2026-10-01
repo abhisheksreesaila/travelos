@@ -96,6 +96,7 @@
 @media (max-width: 480px) {
   .st-row > :nth-child(2), .st-row > :nth-child(3) { grid-column: 1 / -1; }
 }
+.st .fr { max-width: none; }
 
 /* F-051: the GitAway pickers sit inside the field card, so they drop their own card */
 .st-field .ga-pick-btn { padding: 0; min-height: 2.25rem; background: transparent; box-shadow: none; font-size: 1.1875rem; }

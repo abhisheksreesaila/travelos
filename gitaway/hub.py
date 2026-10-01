@@ -36,6 +36,11 @@ class HubCard:
     mine: bool = False        # published by the signed-in traveler
 
 
+def has_shared() -> bool:
+    """True once anyone has published a trip; until then the hub holds only the samples."""
+    return bool(community.rows())
+
+
 def tag_keys(trip) -> tuple:
     """Which of kid, pet and couple an itinerary is friendly to, read from its sticker labels."""
     return tuple(k for k, (label, *_rest) in TAGS.items() if any(t.label.startswith(label) for t in trip.tags))

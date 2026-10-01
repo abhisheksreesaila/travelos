@@ -1,0 +1,15 @@
+# Only the app goes to Railway (the Dockerfile copies what it needs).
+.claude/
+.pixi/
+.git/
+.work/
+.reviews/
+.lavish/
+data/
+**/*.db
+.env
+.sesskey
+tests/
+tests_browser/
+docs/design/
+__pycache__/
