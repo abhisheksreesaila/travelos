@@ -301,6 +301,7 @@ Design: with F-052/F-054 canvas · Needs: none
 ## F-052 A sign-in page that makes you want to travel [blocked]
 Blocked: open https://claude.ai/artifact/4FeSUmETnJ26kLXdA4EYvN and pick (sign-in A or B; phone A or B; pickers as drawn) or say what to change.
 Design: canvas first · Needs: none
+- [ ] the boarding pass fills from context: after a search (from, to, dates), after a fork (the trip's route and days, no creator), or a generic pass when there is no context
 - [ ] emotional, animated, fun travel sign-in (Google button and dev sign-in) per the approved artboard; fast, accessible, reduced motion calm
 
 ## F-053 Good when empty [doing]
