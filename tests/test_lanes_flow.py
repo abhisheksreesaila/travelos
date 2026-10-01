@@ -418,3 +418,11 @@ def test_the_window_still_refuses_with_a_flight(client):
     post(client, FLIGHT_ONLY)
     r = client.post("/calendar/activities", data={"id": "a1", "day": "0", "start": "07:00", "end": "07:45", "title": "Early breakfast", "kind": "food"}, follow_redirects=False)
     assert r.status_code == 409 and "You land at 9:32 AM" in r.text
+
+
+def test_script_and_styles_carry_the_skip_and_undo_behaviour(client):
+    js = client.get("/assets/js/workspace.js").text
+    for word in ("skipLane", "undoSkip", "data-skipped", "line_html", "rides_html", "data.defaults"):
+        assert word in js, word
+    css = open("assets/css/workspace.css").read()
+    assert ".ws-pane[data-skipped]" in css and ".ws-rides-card" in css and ".ws-skip" in css
