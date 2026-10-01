@@ -99,15 +99,15 @@ Needs: F-014, F-019
 - [x] community hub lists shared and creator itineraries, filterable by kid, pet and couple friendly
 - [x] user-written itinerary text stays escaped and source links only allow http(s)
 
-## F-023 Creator link import [doing]
+## F-023 Creator link import [done]
 Captain said go 2026-09-30. The creator is the editor: under 5 minutes from paste to submit, or creators won't bother.
 Design: docs/design/canvas/Creator.dc.html
 Needs: F-014, F-022
-- [ ] paste a YouTube or Instagram link → skeleton with a fade → a (simulated) transcript-drafted scrapbook itinerary with the creator's source card
-- [ ] a few quick clarifying questions as chips (which days, who it suits, best season) instead of trusting the transcript blindly
-- [ ] only 4–5 editable spots, artistically placed (title, day highlights, a tip, cover photo pick); everything else is laid out for them
-- [ ] the creator confirms it's accurate and gives permission to publish before Submit
-- [ ] submit; it appears in the community hub and links back to the creator's channel; the whole flow fits in under 5 minutes
+- [x] paste a YouTube or Instagram link → skeleton with a fade → a (simulated) transcript-drafted scrapbook itinerary with the creator's source card
+- [x] a few quick clarifying questions as chips (which days, who it suits, best season) instead of trusting the transcript blindly
+- [x] only 4–5 editable spots, artistically placed (title, day highlights, a tip, cover photo pick); everything else is laid out for them
+- [x] the creator confirms it's accurate and gives permission to publish before Submit
+- [x] submit; it appears in the community hub and links back to the creator's channel; the whole flow fits in under 5 minutes
 
 ## F-024 Talk to plan: scripted voice fills the calendar [todo]
 Captain said go 2026-09-30 ("do the missing sections, I want to see it fully").
