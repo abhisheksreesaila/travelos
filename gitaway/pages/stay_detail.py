@@ -108,7 +108,7 @@ def room_card(r, n):
 def rooms_seam(o, d, state):
     counts = state.counts
     return Div(
-        Div(H3("Pick your rooms", cls="ws-h3"), Span("Prices are per room for all 4 nights, taxes in", cls="ws-h3-sub"), fit_badge(state), cls="ws-h3-row"),
+        Div(H3("Pick your rooms", cls="ws-h3"), Span(f"Prices are per room for all {state.trip.nights_text}, taxes in", cls="ws-h3-sub"), fit_badge(state), cls="ws-h3-row"),
         Div(*[room_card(r, counts[r.id]) for r in d.rooms], cls="ws-room-grid"),
         cls="ws-rooms",
     )
@@ -123,7 +123,7 @@ def addon_pill(a, on):
 
 
 def addons_seam(state):
-    return Div(H3("Add-ons", cls="ws-h3"), Div(*[addon_pill(a, a.id in state.addons) for a in catalog.ADDONS], cls="ws-addon-row"), cls="ws-addons")
+    return Div(H3("Add-ons", cls="ws-h3"), Div(*[addon_pill(a, a.id in state.addons) for a in catalog.addons(state.trip)], cls="ws-addon-row"), cls="ws-addons")
 
 
 def policy_seam(d):
@@ -132,7 +132,7 @@ def policy_seam(d):
 
 def body(o, state):
     """The detail panel's scrolling content after the hero, in reading order. `state` is the StayPick shown in the editor."""
-    d = catalog.stay_detail(o.id)
+    d = catalog.stay_detail(o.id, state.trip)
     return [
         Div(look_around(o, d), data_seam="look-around", cls="ws-seam"),
         title_row(o, d),

@@ -1,6 +1,7 @@
 """Demo sign-in (F-017): /signin?next=<local path>&intent=<save|pay|invite|fork>.
 
-Everything is browsable signed out; save, pay, invite and fork land here, then continue to `next`.
+Everything is browsable signed out; save, pay, invite and fork land here, then continue to `next`. Without a `next`
+the traveler lands on /start, "Where to?" (F-035).
 Choosing a traveler is a POST that stores them in the session (see gitaway.session).
 """
 
@@ -58,7 +59,7 @@ def dialog(next_path, intent):
 
 def register(app):
     @app.get("/signin")
-    def signin_page(session, next: str = "/", intent: str = "save"):
+    def signin_page(session, next: str = "/start", intent: str = "save"):
         next_path, intent = ses.safe_next(next), _intent(intent)
         if ses.current_traveler(session):
             if intent == "fork":
@@ -67,7 +68,7 @@ def register(app):
         return page("Sign in", Div(dialog(next_path, intent), cls="si-backdrop"), head=HEAD)
 
     @app.post("/signin")
-    def signin_submit(session, traveler: str = "", next: str = "/", intent: str = "save"):
+    def signin_submit(session, traveler: str = "", next: str = "/start", intent: str = "save"):
         if not ses.sign_in(session, traveler):
             return Response("Unknown demo traveler", status_code=400)
         next_path = ses.safe_next(next)

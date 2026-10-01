@@ -27,7 +27,7 @@ def styles(*extra):
         *extra,
     )
 
-NAV = [("Discover", "/discover"), ("Plan a trip", "/plan"), ("For creators", "/creators")]
+NAV = [("Discover", "/discover"), ("Plan a trip", "/start"), ("For creators", "/creators")]
 
 
 def brand(href: str = "/"):

@@ -15,6 +15,8 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from urllib.parse import quote, unquote, urlsplit
 
+from gitaway import catalog
+
 
 @dataclass(frozen=True)
 class Traveler:
@@ -101,9 +103,30 @@ def booking(session):
     return (session.get("bookings") or {}).get(t.id) if t else None
 
 
-def booking_id(traveler_id, flight, stay, car, rooms="", add=""):
-    """A stable id for one traveler's picks, so paying the same trip twice is the same booking. Default rooms and no add-ons hash as before."""
-    digest = hashlib.sha256(f"{traveler_id}|{flight}|{stay}|{car}{'|' + rooms + '|' + add if rooms or add else ''}".encode()).hexdigest()
+def remembered_plan(session):
+    """The workspace picks (a /plan query string) the signed-in traveler last looked at, or None."""
+    t = current_traveler(session)
+    return (session.get("plan") or {}).get(t.id) if t else None
+
+
+def remember_plan(session, query):
+    """Remember the picks `query` (e.g. "f=f2&h=h3&c=c1&d=..") for the signed-in traveler. Only writes when it changed."""
+    t = current_traveler(session)
+    if not t or remembered_plan(session) == query:
+        return
+    old = session.get("plan")
+    # Reassign the whole dict so the cookie session notices the change.
+    session["plan"] = {**(old or {}), t.id: query}
+    if len(json.dumps(dict(session))) > BUDGET:  # same cookie budget as the calendar: skip remembering rather than overflow
+        if old is None:
+            session.pop("plan", None)
+        else:
+            session["plan"] = old
+
+
+def booking_id(traveler_id, flight, stay, car, rooms="", add="", trip=""):
+    """A stable id for one traveler's picks, so paying the same trip twice is the same booking. Default rooms, no add-ons and the sample trip hash as before."""
+    digest = hashlib.sha256(f"{traveler_id}|{flight}|{stay}|{car}{'|' + rooms + '|' + add if rooms or add else ''}{'|' + trip if trip else ''}".encode()).hexdigest()
     return "GA-" + digest[:8].upper()
 
 
@@ -118,12 +141,15 @@ def book(session, quote):
     if not t:
         return None
     rooms, add = (quote.stay.rooms_code, quote.stay.add_code) if quote.stay else ("", "")
-    bid = booking_id(t.id, quote.flight_id, quote.stay_id, quote.car_id, rooms, add)
+    trip = catalog.trip_query(quote.trip)  # "" for the sample trip
+    bid = booking_id(t.id, quote.flight_id, quote.stay_id, quote.car_id, rooms, add, trip)
     existing = booking(session)
     if existing and existing["id"] == bid:
         return existing
     record = {"id": bid, "flight": quote.flight_id, "stay": quote.stay_id, "car": quote.car_id, "rooms": rooms, "add": add,
               "total_cents": quote.total_cents, "booked_at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+    if trip:
+        record["trip"] = trip
     # Reassign the whole dict so the cookie session notices the change.
     session["bookings"] = {**session.get("bookings", {}), t.id: record}
     return record

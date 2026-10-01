@@ -7,7 +7,7 @@
 1. **Shared header** (layout.page()).
 2. **Headline**: centred "Fork a getaway." (display 92px, with an accent-2 hand-drawn underline under "getaway.") and a one-line lede.
 3. **Two doors**: two 40px-radius panels side by side.
-   - **Door one** (coral block #FF8A63, as on the artboard, ink text): "We're going. Let's book it." It holds a white search card with From / To / When / Who fields (labels plus inputs, prefilled with the catalog's SAMPLE_TRIP) and an ink button, "Open my trip workspace", that goes to `/plan`, plus a one-line promise.
+   - **Door one** (coral block #FF8A63, as on the artboard, ink text): "We're going. Let's book it." It holds a white preview card showing From / To / When / Who for the catalog's SAMPLE_TRIP (read-only text, nothing to type) and an ink button, "Plan a trip", that goes to `/start` ("Where to?", F-035, the real form), plus a one-line promise.
    - **Door two** (sky block #6DB8FF): "No plans yet? Fork a real one." It has two tilted trip cards (the sample trip links to `/trips/sun-tacos-and-tide-pools`, and a second fictional card), a bobbing "312 families forked" sticker, and a white button "Browse trips people loved" that goes to `/discover`.
 4. **Not just a booking site**: four white feature cards with tilted icon tiles (Everything side by side · One honest total · Plan it together · Fork, don't start over).
 5. **After you book**: a mint-tint panel with the calendar teaser (three day columns; booked blocks in ink).
@@ -15,7 +15,7 @@
 7. **Shared footer.**
 
 ## States and rules
-- The search form is a real `<form method="get" action="/plan">` with labelled inputs; the fields pass through as query params, and the workspace can ignore them for now.
+- The door-one card is a `<form method="get" action="/start">` whose fields are a read-only preview; the real inputs live on `/start`.
 - **Only the sample trip is real.** The second card in door two has no page yet, so link it to `/discover`.
 - **Mobile ≤720px**: the headline shrinks to about 56px, the doors stack, the search fields go one per row, the feature cards go 2×2 then 1 column, and the teaser panels stack.
 - **Motion**: the doors and cards pop in (spring, staggered 80ms), and the sticker bobs. Reduced motion turns all of that off.
