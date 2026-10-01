@@ -147,10 +147,10 @@ Design: docs/design/offer-details.md · Needs: F-026 (shares the pick URL and it
 Needs: F-025 · Found during F-025 (predates it)
 - [ ] on a phone, expanding Cars or a context pane shows only that pane; the other context panes no longer show underneath (a same-specificity clash between the base and phone rules)
 
-## F-029 Browser smoke test for workspace JS [doing]
+## F-029 Browser smoke test for workspace JS [done]
 Needs: F-025 · Suggested in F-025 review
-- [ ] a small headless-browser test covers tiled pick → expand, Choose updating the ledger, Esc, and phone back → reload
-- [ ] also covers F-026: picking another stay tiled resets the old panel; Choose is held while a room edit waits for its price and recovers if the price fails
+- [x] a small headless-browser test covers tiled pick → expand, Choose updating the ledger, Esc, and phone back → reload
+- [x] also covers F-026: picking another stay tiled resets the old panel; Choose is held while a room edit waits for its price and recovers if the price fails
 
 # Captain's feedback round, 2026-09-30
 
