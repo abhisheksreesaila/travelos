@@ -11,6 +11,9 @@
   // The lane picks, plus the stay's rooms and add-ons as compact codes ("cq1", "bf") (null means "the default") and the flight's
   // fare and checked bags ("main", "2"; "" means Basic and none).
   var pick = { flight: data.pick.f, stay: data.pick.h, car: data.pick.c, rooms: data.pick.rooms, add: data.pick.add, fare: data.pick.fare || '', bags: data.pick.bags || '' };
+  var SKIP = 'none'; // a lane the traveler skips ("I'll drive", "Staying with friends", "No car"), spelled as in the URL
+  var LANE_PANE = { flight: 'flights', stay: 'stays', car: 'cars' };
+  var saved = {}; // what each skipped lane held, so Undo brings back exactly that
   var base = data.base; // the address-bar URL for the pick, from the server
   var tripq = data.tripq || ''; // the trip's URL params ("d=..&r=..&a=..&k=.."), empty for the sample trip; just passed along
 
@@ -31,6 +34,11 @@
   // Move the schematic map's stay pin and hotel-to-beach line to the picked stay (figures embedded by the server).
   var MAP_W = 320, MAP_H = 150;
   function paintMap(m) {
+    var map = document.querySelector('.ws-map');
+    if (!map) return;
+    var none = pick.stay === SKIP; // staying with friends: no hotel to pin
+    map.classList.toggle('ws-nostay', none);
+    if (none) { document.getElementById('ws-map-caption').textContent = data.no_stay_map; return; }
     if (!m) return;
     var pin = document.getElementById('ws-map-pin');
     if (!pin) return;
@@ -130,29 +138,27 @@
     pick.flight = L.pick.f; pick.stay = L.pick.h; pick.car = L.pick.c; pick.rooms = L.pick.rooms; pick.add = L.pick.add;
     pick.fare = L.pick.fare || ''; pick.bags = L.pick.bags || '';
     base = L.url;
-    ['flight', 'stay', 'car'].forEach(function (lane) {
-      var s = L.slots[lane];
-      document.querySelector('[data-slot="' + lane + '"]').textContent = s.name;
-      document.querySelector('[data-slot-sub="' + lane + '"]').textContent = s.sub;
-      document.querySelector('[data-slot-price="' + lane + '"]').textContent = s.price;
-      var lineEl = document.querySelector('[data-line-price="' + lane + '"]');
-      lineEl.textContent = s.price;
-      lineEl.parentNode.title = s.name;
-    });
+    // The slim line and the popover's lines are rendered by the server (one per picked lane, plus the rides estimate); swap them in.
+    document.querySelector('.ws-lines').innerHTML = L.line_html;
+    document.getElementById('ws-slots').innerHTML = L.slots_html;
+    document.getElementById('ws-total-note').textContent = L.note;
+    paintSkips(L);
     document.getElementById('ws-total').textContent = L.total;
     document.getElementById('ws-total-live').textContent = 'Total ' + L.total;
     var chip = document.getElementById('ws-delta');
     chip.textContent = L.delta;
     chip.classList.toggle('fill-mint', L.cheapest);
     chip.classList.toggle('fill-sun-tint', !L.cheapest);
-    document.getElementById('ws-book').setAttribute('href', L.book);
+    var bookEl = document.getElementById('ws-book');
+    if (L.book) { bookEl.setAttribute('href', L.book); bookEl.removeAttribute('aria-disabled'); bookEl.setAttribute('aria-label', 'Book this trip'); }
+    else { bookEl.removeAttribute('href'); bookEl.setAttribute('aria-disabled', 'true'); bookEl.setAttribute('aria-label', 'Pick something to book first'); }
     // The picked stay's card shows the price of its rooms and add-ons; the others show their list price.
     document.querySelectorAll('[data-stay-price]').forEach(function (el) {
-      el.textContent = el.dataset.stayPrice === pick.stay ? L.slots.stay.price : data.offers[el.dataset.stayPrice].price;
+      el.textContent = el.dataset.stayPrice === pick.stay && L.slots.stay ? L.slots.stay.price : data.offers[el.dataset.stayPrice].price;
     });
     // Likewise the picked flight's card shows its fare and bags; the others show their list price.
     document.querySelectorAll('[data-flight-price]').forEach(function (el) {
-      el.textContent = el.dataset.flightPrice === pick.flight ? L.slots.flight.price : data.offers[el.dataset.flightPrice].price;
+      el.textContent = el.dataset.flightPrice === pick.flight && L.slots.flight ? L.slots.flight.price : data.offers[el.dataset.flightPrice].price;
     });
     applyStay(panelOf(pick.stay), j.stay);
     applyFlight(panelOf(pick.flight), j.flight);
@@ -170,6 +176,7 @@
   // Pick an offer in a lane. A stay's rooms and add-ons come along only when they are the ones being chosen
   // (cfg); picking another stay starts from its default room.
   function selectPick(lane, id, cfg) {
+    if (id === SKIP) return;
     if (lane === 'flight') {
       // Same for flights: the one being left goes back to Basic with no bags; the new pick's own panel is set by the server's answer.
       if (id !== pick.flight) resetPanel(pick.flight);
@@ -191,6 +198,53 @@
     paintChoose();
     refresh();
   }
+
+  // ---- skipping a lane (F-033) --------------------------------------------------------------------------------------
+  // A skipped lane collapses to a slim row. The server says which lanes are skipped and renders the rides card; the pane just follows.
+  function paintSkips(L) {
+    Object.keys(LANE_PANE).forEach(function (lane) {
+      var p = paneEl(LANE_PANE[lane]);
+      if (p) { if (L.skipped[lane]) p.setAttribute('data-skipped', '1'); else p.removeAttribute('data-skipped'); }
+    });
+    var note = document.querySelector('[data-skipped-note="car"]');
+    if (note && L.car_note) note.textContent = L.car_note;
+    var rides = document.getElementById('ws-rides');
+    if (rides) rides.innerHTML = L.rides_html;
+  }
+
+  function skipLane(lane) {
+    if (pick[lane] === SKIP) return;
+    var name = LANE_PANE[lane];
+    if (grid.dataset.expanded === name) collapse(); // a skipped lane has nothing to open
+    saved[lane] = { id: pick[lane], rooms: pick.rooms, add: pick.add, fare: pick.fare, bags: pick.bags };
+    if (lane === 'flight') { pick.fare = ''; pick.bags = ''; }
+    if (lane === 'stay') { pick.rooms = null; pick.add = null; }
+    pick[lane] = SKIP;
+    paneEl(name).setAttribute('data-skipped', '1');
+    paintChoose();
+    refresh();
+    var undo = paneEl(name).querySelector('.ws-undo');
+    if (undo) undo.focus();
+  }
+
+  // One tap back: the pick the lane held (with its rooms, fare and bags), or the lane's default when it was skipped from the start.
+  function undoSkip(lane) {
+    if (pick[lane] !== SKIP) return;
+    var s = saved[lane];
+    delete saved[lane];
+    paneEl(LANE_PANE[lane]).removeAttribute('data-skipped');
+    if (!s) selectPick(lane, data.defaults[lane]);
+    else selectPick(lane, s.id, lane === 'stay' ? { rooms: s.rooms, add: s.add } : lane === 'flight' ? { fare: s.fare, bags: s.bags } : undefined);
+    var card = paneEl(LANE_PANE[lane]).querySelector('.ws-offer[aria-pressed="true"]');
+    if (card) card.focus();
+  }
+
+  document.querySelectorAll('[data-skip]').forEach(function (b) {
+    b.addEventListener('click', function () { skipLane(b.dataset.skip); });
+  });
+  document.querySelectorAll('[data-undo]').forEach(function (b) {
+    b.addEventListener('click', function () { undoSkip(b.dataset.undo); });
+  });
 
   // ---- split view (F-025) -----------------------------------------------------------------------------------------
   // Flights and Stays expand into a list sidebar and a detail panel; the detail is server-rendered, so this only shows
@@ -344,6 +398,7 @@
 
   // Put a stay's editor back to its default room (what a reload shows for a stay that is not picked).
   function resetPanel(id) {
+    if (!id || id === SKIP) return;
     delete dirty[id];
     var n = panelSeq[id] = (panelSeq[id] || 0) + 1; // ignore answers still on their way
     var panel = panelOf(id);
@@ -496,7 +551,8 @@
     });
     if (moveFocus) {
       var pane = document.querySelector('.ws-pane[data-pane="' + name + '"]');
-      var first = pane && (pane.querySelector('.ws-offer[aria-pressed="true"]') || pane.querySelector('.ws-offer') || pane.querySelector('.ws-focus'));
+      var first = pane && (pane.hasAttribute('data-skipped') ? pane.querySelector('.ws-undo') :
+        (pane.querySelector('.ws-offer[aria-pressed="true"]') || pane.querySelector('.ws-offer') || pane.querySelector('.ws-focus')));
       if (first) first.focus({ preventScroll: false });
     }
   }
@@ -531,6 +587,7 @@
 
   // Open a split pane: the current pick (or the offer in the URL) is shown, and focus lands on its card.
   function openSplit(name) {
+    if (pick[SPLIT[name]] === SKIP) { focusPane(name, true); return; } // a skipped lane is one slim row: nothing to open
     setExpanded(name);
     if (phone.matches) screen(name, 'list'); else screen(name, 'detail');
     view(name, viewing[name] || pick[SPLIT[name]], false);

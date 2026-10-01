@@ -130,32 +130,78 @@ def weather_for(i):
 
 # ---- booked blocks -------------------------------------------------------------------------------------------------
 
+def _lane(b, key, kind):
+    """The offer a booking `b` holds for one lane, or None when that lane was skipped (older bookings always have all three)."""
+    given = b.get(key)
+    return catalog.offer(given) if given and given in {o.id for o in catalog.offers(kind)} else None  # the retired "c3" no car reads as skipped
+
+
+def flight_of(b):
+    """The flight offer of booking `b`, or None when the traveler is driving. THE SEAM for the flight window (F-021): the arrival and
+    departure limits come from the "b-out" and "b-back" blocks, which only exist with a flight, so with none there is no limit."""
+    return _lane(b, "flight", "flight")
+
+
+def stay_of(b):
+    """The stay offer of booking `b`, or None when the traveler is staying with friends."""
+    return _lane(b, "stay", "stay")
+
+
+def car_of(b):
+    """The rental car offer of booking `b`, or None when there is no car."""
+    return _lane(b, "car", "car")
+
+
 def stay_pick_of(b):
-    """The StayPick (rooms and add-ons) a booking `b` holds. Older bookings have none and mean the default room."""
-    return catalog.stay_pick(b["stay"], b.get("rooms") or None, b.get("add") or None, trip_of(b))
+    """The StayPick (rooms and add-ons) a booking `b` holds, or None with no stay. Older bookings have none and mean the default room."""
+    return catalog.stay_pick(b["stay"], b.get("rooms") or None, b.get("add") or None, trip_of(b)) if stay_of(b) else None
 
 
 def flight_pick_of(b):
-    """The FlightPick (fare and checked bags) a booking `b` holds. Older bookings have none and mean Basic with no bags."""
-    return catalog.flight_pick(b["flight"], b.get("fare") or None, b.get("bags") or None, trip_of(b))
+    """The FlightPick (fare and checked bags) a booking `b` holds, or None with no flight. Older bookings have none and mean Basic with no bags."""
+    return catalog.flight_pick(b["flight"], b.get("fare") or None, b.get("bags") or None, trip_of(b)) if flight_of(b) else None
+
+
+def rides_of(b):
+    """The catalog.Rides estimate of booking `b` (a flight and no car), or None. It is not charged and not stored: it follows the picks."""
+    f = flight_of(b)
+    return catalog.rides(f, stay_of(b), trip_of(b)) if f and not car_of(b) else None
+
+
+def booked_sentence(b):
+    """What /booked says is on the calendar. A car has no block there, so a car-only booking says only that the car is booked."""
+    words = booked_words(b)
+    if not words:
+        return "Your car is booked. It has no block on the calendar, but you can still fill the gaps with your crew."
+    return f"Your {words} on the trip calendar. Now the fun part: fill the gaps with your crew."
+
+
+def booked_words(b):
+    """"flights and hotel are", "hotel is", "flights are" for the calendar's welcome lines; "car is" with only a car."""
+    parts = (["flights"] if flight_of(b) else []) + (["hotel"] if stay_of(b) else [])
+    if not parts:
+        return ""
+    return " and ".join(parts) + (" are" if len(parts) > 1 or parts[0] == "flights" else " is")
 
 
 def booked_blocks(b, t):
-    """The locked blocks a booking `b` puts on the calendar of trip `t`."""
-    flight, stay = catalog.offer(b["flight"]), catalog.offer(b["stay"])
-    rooms = stay_pick_of(b).rooms_summary
-    fp = flight_pick_of(b)
-    fare = "" if fp.is_default else f" · {fp.short}"
+    """The locked blocks a booking `b` puts on the calendar of trip `t`: the two flights with a flight, check in and check out with a stay."""
+    flight, stay = flight_of(b), stay_of(b)
     last = (t.return_ - t.depart).days
-    return [
-        Block("b-out", 0, flight.depart_min, flight.arrive_min, f"{flight.name} · {t.origin} → {flight.airport}{fare}", "booked", True, "plane"),
-        Block("b-in", 0, CHECK_IN, CHECK_IN + STAY_LEN, f"Check in · {stay.name} · {rooms}", "booked", True, "bed"),
-        Block("b-out2", last, CHECK_OUT, CHECK_OUT + STAY_LEN, f"Check out · {stay.name}", "booked", True, "bed"),
-        Block("b-back", last, flight.back_depart_min, flight.back_arrive_min, f"{flight.name} · {flight.airport} → {t.origin}{fare}", "booked", True, "plane"),
-    ]
+    blocks = []
+    if flight:
+        fp = flight_pick_of(b)
+        fare = "" if fp.is_default else f" · {fp.short}"
+        blocks.append(Block("b-out", 0, flight.depart_min, flight.arrive_min, f"{flight.name} · {t.origin} → {flight.airport}{fare}", "booked", True, "plane"))
+    if stay:
+        blocks.append(Block("b-in", 0, CHECK_IN, CHECK_IN + STAY_LEN, f"Check in · {stay.name} · {stay_pick_of(b).rooms_summary}", "booked", True, "bed"))
+        blocks.append(Block("b-out2", last, CHECK_OUT, CHECK_OUT + STAY_LEN, f"Check out · {stay.name}", "booked", True, "bed"))
+    if flight:
+        blocks.append(Block("b-back", last, flight.back_depart_min, flight.back_arrive_min, f"{flight.name} · {flight.airport} → {t.origin}{fare}", "booked", True, "plane"))
+    return blocks
 
 
-AIRPORT_BUFFER = 120  # minutes before the flight home that a plan must be finished by
+AIRPORT_BUFFER = catalog.AIRPORT_BUFFER  # one source: minutes before the flight home that a plan must be finished by
 
 
 def day_window(blocks, day):

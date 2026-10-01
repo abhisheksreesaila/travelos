@@ -172,16 +172,23 @@ class BookingError(ValueError):
     """A booking the demo refuses; the message is fit to show the traveler."""
 
 
+NOTHING_PICKED = "Pick at least one thing to book: a flight, a stay or a car."
+
+
 def book(session, quote):
     """Record `quote` (a catalog.Quote) as the current traveler's booked trip. Idempotent.
 
     Returns the booking, or None when signed out. Raises BookingError when the session cookie has no room for it. Paying the same picks again keeps the original booking untouched.
     Session shape: "bookings": {"<traveler id>": {"id", "flight", "stay", "car", "rooms", "add", "total_cents", "booked_at"; "fare", "bags" and "trip" only when set}}
     (rooms and add are the stay's compact pick codes, "" for the default room and no add-ons; fare and bags are the flight's, "" for Basic and no bags).
+    A skipped lane is stored as null, and total_cents is what is charged: the rides estimate (no car, a flight) is never in it and is not stored.
+    Raises BookingError when no lane is picked.
     """
     t = current_traveler(session)
     if not t:
         return None
+    if quote.empty:
+        raise BookingError(NOTHING_PICKED)
     rooms, add = (quote.stay.rooms_code, quote.stay.add_code) if quote.stay else ("", "")
     fare, bags = (quote.flight.fare_code, quote.flight.bags_code) if quote.flight else ("", "")
     trip = catalog.trip_query(quote.trip)  # "" for the sample trip
@@ -190,7 +197,7 @@ def book(session, quote):
     if existing and existing["id"] == bid:
         return existing
     record = {"id": bid, "flight": quote.flight_id, "stay": quote.stay_id, "car": quote.car_id, "rooms": rooms, "add": add,
-              "total_cents": quote.total_cents, "booked_at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+              "total_cents": quote.paid_cents, "booked_at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
     for key, value in (("fare", fare), ("bags", bags), ("trip", trip)):
         if value:
             record[key] = value

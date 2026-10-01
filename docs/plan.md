@@ -185,6 +185,8 @@ Needs: F-027 (shares the pick URL and ledger)
 - [ ] skips live in the URL; done means: skip car, then flight, books stay-only through pay and calendar; undoing both gives $3,088
 - [ ] note for later: research Uber/Lyft partner APIs for scheduling a ride in the app
 
+Later (not built): research Uber and Lyft partner API access for scheduling a ride from the app. The rides card is sample data only; nothing books or charges.
+
 ## F-034 Phone text floor and leftover ellipses [todo]
 Found during F-030 (both predate it).
 - [ ] on phones (390, 320) no text renders below 13px on /plan, /calendar (incl. ?demo=long) and the landing page; touch targets at least 44px

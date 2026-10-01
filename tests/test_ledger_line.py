@@ -38,9 +38,9 @@ def test_popover_has_the_itemized_lines_the_stay_sub_line_and_the_hint(client):
     pop = bar[bar.index('id="ws-pop"'):]
     assert 'data-slot="flight"' in pop and 'data-slot-price="car"' in pop
     assert re.search(r'data-slot-sub="stay"[^>]*>[^<]+<', pop)  # rooms and add-ons, from the server
-    assert re.search(r'id="ws-delta"[^>]*>\$1,048 more than the cheapest combo<', pop)
-    cheap = bar_html(client, "/plan?f=f4&h=h3&c=c3")
-    assert re.search(r'id="ws-delta"[^>]*>The cheapest combination<', cheap)
+    assert re.search(r'id="ws-delta"[^>]*>\$916 more than the cheapest flight, stay and car<', pop)
+    cheap = bar_html(client, "/plan?f=f4&h=h3&c=c1")
+    assert re.search(r'id="ws-delta"[^>]*>The cheapest flight, stay and car<', cheap)
 
 
 def test_stay_sub_line_follows_rooms_and_addons_in_the_url(client):
@@ -64,14 +64,15 @@ def test_css_reclaims_the_band_and_pill_respects_reduced_motion():
 
 def test_script_swaps_figures_and_never_adds_them():
     js = open("assets/js/workspace.js").read()
-    assert "data-line-price" in js and "is-pill" in js and "ws-pop" in js
+    assert "line_html" in js and "slots_html" in js and "is-pill" in js and "ws-pop" in js  # the server renders the line; the script swaps it in
     assert not re.search(r"parseFloat|parseInt|Number\(\s*[^)]*(price|total)", js, re.I)
 
 
 def test_line_tooltips_name_the_picked_offers_and_the_script_keeps_them_current(client):
     assert 'title="Skylark Air 214"' in bar_html(client)
     assert 'title="Skylark Air 902"' in bar_html(client, "/plan?f=f4")
-    assert ".title = s.name" in open("assets/js/workspace.js").read()  # a pick updates the tooltip too
+    j = client.get("/plan/quote?f=f4").json()["ledger"]
+    assert 'title="Skylark Air 902"' in j["line_html"]  # a pick updates the tooltip too: the line comes back from the server
 
 
 def test_total_changes_are_announced_by_a_live_region(client):

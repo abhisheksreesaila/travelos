@@ -18,7 +18,7 @@ def test_sample_trip_prices_are_exactly_todays():
     assert catalog.quote("f1", "h1", "c1").total_cents == 308_800
     assert [o.price_cents for o in catalog.offers("flight")] == [123_600, 110_400, 139_200, 96_800, 118_000]
     assert [o.price_cents for o in catalog.offers("stay")] == [154_000, 118_800, 89_200]
-    assert [o.price_cents for o in catalog.offers("car")] == [31_200, 39_800, 18_000]
+    assert [o.price_cents for o in catalog.offers("car")] == [31_200, 39_800]
     assert [a.price_cents for a in catalog.ADDONS] == [32_000, 4_000, 18_000]
     assert [a.name for a in catalog.ADDONS] == ["Breakfast for 4", "Late checkout, 2 PM", "Parking, 4 nights"]
 
