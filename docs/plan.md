@@ -137,11 +137,11 @@ Design: docs/design/offer-details.md · Needs: F-025
 - [x] the pick URL carries room, count and add-ons; the ledger, pay sheet and calendar itemize them, computed by the catalog (the page never does arithmetic); a bad or missing room falls back to the default
 - [x] sample trip: The Tidewater, Ocean-view King ×2 + breakfast gives the right total through pay and calendar
 
-## F-027 Flight detail: legs, fare types and checked bags [doing]
+## F-027 Flight detail: legs, fare types and checked bags [done]
 Design: docs/design/offer-details.md · Needs: F-026 (shares the pick URL and itemized ledger)
-- [ ] out and back legs with times, duration, stops and aircraft
-- [ ] fare types (Basic, Main, Extra legroom) with price and what each includes (seat choice, carry-on, checked bag, changes)
-- [ ] checked-bag count as an add-on; fare and bags carry through the URL, ledger, pay and calendar like stays
+- [x] out and back legs with times, duration, stops and aircraft
+- [x] fare types (Basic, Main, Extra legroom) with price and what each includes (seat choice, carry-on, checked bag, changes)
+- [x] checked-bag count as an add-on; fare and bags carry through the URL, ledger, pay and calendar like stays
 
 ## F-028 Phone: expanding a non-offer pane hides the context panes [todo]
 Needs: F-025 · Found during F-025 (predates it)
