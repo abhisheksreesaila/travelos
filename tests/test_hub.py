@@ -54,13 +54,15 @@ def test_junk_filters_are_ignored_and_escaped(client):
     assert r.status_code == 200 and "<script>" not in r.text and "&lt;script&gt;" in r.text   # the search text is echoed escaped
 
 
-def test_publish_adds_to_the_signed_in_travelers_hub_only():
+def test_publish_adds_to_the_hub_and_every_traveler_in_this_browser_sees_it():
     s = {"traveler": "ari"}
     card = hub.publish(s, slug="my-reel", title="Reel trip", place="Tokyo", days=3, author="@me", tags=("kid", "nope"), source="Instagram")
     assert card.tags == ("kid",) and card.source == "Instagram"
     assert hub.cards(s)[-1].slug == "my-reel"
-    assert "my-reel" not in [c.slug for c in hub.cards({"traveler": "sam", "hub": s["hub"]})]   # per traveler
-    assert "my-reel" not in [c.slug for c in hub.cards({})]
+    assert [c.mine for c in hub.cards(s) if c.slug == "my-reel"] == [True]
+    others = {"traveler": "sam", "hub": s["hub"]}
+    assert [c.mine for c in hub.cards(others) if c.slug == "my-reel"] == [False]               # community in this browser
+    assert "my-reel" in [c.slug for c in hub.cards({"hub": s["hub"]})]                         # even signed out
     hub.publish(s, slug="my-reel", title="Renamed", place="Tokyo", days=3, author="@me")
     assert [e["t"] for e in hub.entries(s)] == ["Renamed"]                                    # same slug replaces
 

@@ -44,7 +44,7 @@ def preview(session, tags):
 
 def _tag_pick(k, on):
     label, fill, ico = hub.TAGS[k]
-    return Label(Input(type="checkbox", name="tag", value=k, checked=on, cls="sr-only"), Span(_icon(ico, 18, 2.2), label, cls=f"sh-pill fill-{fill}"))
+    return Label(Input(type="checkbox", name="tag", value=k, checked=on, cls="sr-only"), Span(_icon(ico, 18, 2.2), label, cls=f"sh-pill sh-t-{fill}"))
 
 
 def _theme_pick(key, label, on):
@@ -59,8 +59,8 @@ def options_page(session):
         Form(
             preview(session, tags),
             Div(H1("Share your trip with everyone"),
-                Div(Div(Span("Shared", cls="sh-k"), Span("Days, plans, times, places and your tags", cls="sh-v"), cls="sh-box sh-box-yes"),
-                    Div(Span("Stays private", cls="sh-k"), Span("Names, notes, invites, bookings and what you paid", cls="sh-v"), cls="sh-box"), cls="sh-boxes"),
+                Div(Div(Span("Shared", cls="sh-k"), Span("Days, plans, times and places, flight and stay names, and your tags", cls="sh-v"), cls="sh-box sh-box-yes"),
+                    Div(Span("Stays private", cls="sh-k"), Span("Notes, who's coming, the booking reference and what you paid", cls="sh-v"), cls="sh-box"), cls="sh-boxes"),
                 Div(Span("Tags", cls="sh-label"), Div(*[_tag_pick(k, k in tags) for k in hub.TAGS], cls="sh-picks"), cls="sh-group", role="group", aria_label="Tags"),
                 Div(Span("Colour theme", cls="sh-label"), Div(*[_theme_pick(k, label, k == theme) for k, label in THEMES], cls="sh-picks"), cls="sh-group", role="group", aria_label="Colour theme"),
                 Div(Button("Publish to GitAway", type="submit", cls="btn btn-primary"), A("Not now", href="/calendar", cls="btn"), cls="sh-actions"),
@@ -75,7 +75,7 @@ def done_page(session, entry):
         Div(preview(session, tags),
             Div(Span(icon("check", 22, 2.6), "Shared", cls="sticker fill-mint sh-sticker"),
                 H1("Your trip is live"),
-                P("Anyone can fork it now. Your notes, friends, invites and payment details stay private."),
+                P("Anyone can fork it now. Your notes, who is coming, the booking reference and what you paid stay private."),
                 Div(A(icon("share", 20), "View your trip page", href=f"/trips/{slug}", cls="btn btn-primary"),
                     A("See it in the hub", href="/discover", cls="btn"), cls="sh-actions"),
                 A("Change tags or theme", href="/share", cls="sh-link"), cls="sh-form"),
@@ -93,13 +93,13 @@ def register(app):
         return options_page(session) if ses.booking(session) else sorry(NO_BOOKING)
 
     @app.post("/share")
-    def publish(session, custom: str = "", theme: str = "sunset", tag: list[str] = None):
+    def publish(session, custom: str = "", theme: str = "", tag: list[str] = None):
         if not ses.current_traveler(session):
             return _signin("/calendar")
         if not ses.booking(session):
             return sorry(NO_BOOKING, 409)
         try:
-            share.publish(session, tags=(tag or []) if custom else None, theme=theme)
+            share.publish(session, tags=(tag or []) if custom else None, theme=theme if custom else None)
         except hub.HubError as e:
             return sorry(str(e), 409)
         return RedirectResponse("/share/done", status_code=303)

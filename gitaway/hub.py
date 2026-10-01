@@ -8,6 +8,9 @@ in this browser session (their shared trip, and later a creator import). Publish
 F-023 calls this to put a creator itinerary in the hub. The entry is only the card (compact, because the signed cookie
 is small); the page behind `/trips/<slug>` is the caller's to serve. Publishing the same slug again replaces the entry.
 
+Everything published in this browser session, by any demo traveler, is listed for everyone using it: that is the demo's
+community. Cards published by the signed-in traveler are marked `mine`.
+
 Session shape: {"hub": {"<traveler id>": [{"s": slug, "t": title, "p": place, "n": days, "a": author, "g": [tag keys],
                                            "k": source label or absent, "c": theme, "m": 1 when it is the traveler's own shared trip}]}}
 Pure functions over a session dict, like gitaway.session.
@@ -42,7 +45,7 @@ class HubCard:
     photo: str = ""
     alt: str = ""
     theme: str = "sunset"
-    mine: bool = False        # the signed-in traveler's own shared trip
+    mine: bool = False        # published by the signed-in traveler
 
 
 def tag_keys(trip) -> tuple:
@@ -68,15 +71,22 @@ def entry(session, slug):
     return next((e for e in entries(session) if e["s"] == slug), None)
 
 
-def _card(e) -> HubCard:
+def all_entries(session) -> list:
+    """(traveler id, entry) for every traveler's published trip held in this browser session. The demo's community."""
+    return [(tid, dict(e)) for tid, rows in (session.get("hub") or {}).items() if tid in ses.TRAVELERS for e in rows]
+
+
+def _card(e, mine=False) -> HubCard:
     photo = DEFAULT_PHOTO if e.get("m") else ("", "")
     return HubCard(e["s"], e["t"], e["p"], e["n"], e["a"], tuple(e.get("g", ())), 0, e.get("k", ""), photo[0], photo[1],
-                   e.get("c", "sunset"), bool(e.get("m")))
+                   e.get("c", "sunset"), mine)
 
 
 def all_cards(session) -> list:
-    """Every trip the traveler can see: the community's first, then their own published ones."""
-    return [*(_from_itinerary(t) for t in itineraries.ITINERARIES.values()), *(_card(e) for e in entries(session))]
+    """Every trip in the hub: the fake community's first, then everything published in this browser (yours marked `mine`)."""
+    me = ses.current_traveler(session)
+    return [*(_from_itinerary(t) for t in itineraries.ITINERARIES.values()),
+            *(_card(e, bool(me) and tid == me.id) for tid, e in all_entries(session))]
 
 
 def cards(session, *, tags=(), creators=False, q="") -> list:

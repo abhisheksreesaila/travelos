@@ -1,6 +1,9 @@
 """Share the trip from the calendar as a scrapbook page and a hub card (F-022)."""
 
+import json
 import re
+
+import pytest
 
 from gitaway import catalog
 from tests.test_calendar import FORM, add, book
@@ -82,14 +85,27 @@ def test_user_written_plan_titles_are_escaped_on_the_shared_page(client):
     assert "<script>alert(1)</script>" not in html and "&lt;script&gt;alert(1)&lt;/script&gt;" in html
 
 
-def test_the_shared_page_is_only_for_its_traveler(client):
+def test_the_community_in_this_browser_sees_each_others_shared_trips(client):
     book(client)
+    add(client, title="Ari only plan")
     share(client)
     slug = slug_of(client)
     sign_in(client, "sam")
-    assert client.get(f"/trips/{slug}").status_code == 404
-    client.cookies.clear()
-    assert client.get(f"/trips/{slug}").status_code == 404
+    page = client.get(f"/trips/{slug}")
+    assert page.status_code == 200 and "Ari only plan" in page.text            # rebuilt from Ari's booking and calendar
+    hub_html = client.get("/discover").text
+    assert "LA with the kids" in hub_html and "Your trip" not in hub_html
+    client.post("/signout")   # signed out in the same browser
+    assert client.get(f"/trips/{slug}").status_code == 200 and client.get("/trips/shared-nope").status_code == 404
+
+
+def test_signed_in_travelers_own_trip_keeps_the_marker_among_the_community(client):
+    book(client)
+    share(client)
+    book(client, "sam")
+    share(client)
+    html = client.get("/discover").text
+    assert html.count("LA with the kids") == 2 and html.count("Your trip") == 1
 
 
 def test_the_shared_trip_shows_in_the_hub_and_filters(client):
@@ -99,8 +115,44 @@ def test_the_shared_trip_shows_in_the_hub_and_filters(client):
     assert "LA with the kids" in html and "Your trip" in html
     assert "LA with the kids" in client.get("/discover?kid=1").text
     assert "LA with the kids" not in client.get("/discover?pet=1").text
-    sign_in(client, "sam")
-    assert "LA with the kids" not in client.get("/discover").text   # per traveler
+
+
+def test_the_booking_reference_never_appears_anywhere_it_could_leak(client):
+    book(client)
+    ref = session_data(client)["bookings"]["ari"]["id"]
+    r = share(client)
+    pages = [r.headers["location"], client.get("/share/done").text, client.get("/share").text, client.get("/discover").text,
+             client.get(f"/trips/{slug_of(client)}").text, client.get("/calendar").text]
+    tail = ref.split("-")[1]
+    for text in [*pages, str(session_data(client)["hub"])]:
+        assert ref.lower() not in text.lower() and tail.lower() not in text.lower()
+    assert ref.lower() not in slug_of(client)
+
+
+def test_the_slug_is_stable_per_traveler_and_booking(client):
+    book(client)
+    share(client)
+    first = slug_of(client)
+    share(client)
+    assert slug_of(client) == first and first.startswith("shared-")
+    book(client, "sam")
+    share(client)
+    assert next(e["s"] for e in session_data(client)["hub"]["sam"] if e.get("m")) != first
+
+
+def test_a_one_tap_reshare_keeps_the_chosen_tags_and_theme(client):
+    book(client)
+    share(client, custom="1", tag=["pet"], theme="pacific")
+    share(client)   # the calendar's one tap
+    entry = next(e for e in session_data(client)["hub"]["ari"] if e.get("m"))
+    assert entry["g"] == ["pet"] and entry["c"] == "pacific"
+
+
+def test_the_privacy_copy_says_what_really_stays_private_and_pills_are_tinted(client):
+    book(client)
+    html = client.get("/share").text
+    assert "Notes, who" in html and "booking reference" in html and "what you paid" in html
+    assert "sh-pill sh-t-mint" in html and "sh-pill sh-t-bubble" in html
 
 
 def test_the_customise_form_sets_tags_and_theme(client):
@@ -130,11 +182,22 @@ def test_the_shared_trip_follows_calendar_edits(client):
     assert "Late addition" in client.get(f"/trips/{slug_of(client)}").text
 
 
-def test_a_full_cookie_is_refused_kindly(client):
+def test_a_full_cookie_is_refused_kindly(client, monkeypatch):
+    from gitaway import session as ses
     book(client)
-    for n in range(1, 12):
-        add(client, id=f"a{n}", title=f"Plan number {n} with a long title", start=f"{7 + n}:00", end=f"{7 + n}:30", day="1")
+    monkeypatch.setattr(ses, "BUDGET", len(json.dumps(session_data(client))) + 5)   # no room for a hub entry
     r = share(client)
-    assert r.status_code in (303, 409)
-    if r.status_code == 409:
-        assert "full" in r.text.lower() or "room" in r.text.lower()
+    assert r.status_code == 409 and "full" in r.text.lower()
+    assert "hub" not in session_data(client)
+
+
+def test_a_failed_publish_leaves_the_older_shared_entry_in_place(monkeypatch):
+    from gitaway import hub, session as ses, share as sh
+    s = {"traveler": "ari"}
+    ses.book(s, catalog.quote("f1", "h1", "c1"))
+    hub.publish(s, slug="shared-old", title="LA with the kids", place="Los Angeles", days=5, author="a traveler", tags=("kid",), mine=True)
+    before = json.dumps(s["hub"], sort_keys=True)
+    monkeypatch.setattr(ses, "BUDGET", len(json.dumps(s)) - 1)
+    with pytest.raises(hub.HubError):
+        sh.publish(s)
+    assert json.dumps(s["hub"], sort_keys=True) == before
