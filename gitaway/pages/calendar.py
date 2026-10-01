@@ -27,7 +27,7 @@ from gitaway.layout import avatar, brand, styles
 from gitaway.pages import pay
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/calendar.css"),)
-HH = 48  # px per hour
+HH = 48  # one hour is 48px at the 16px base, i.e. 3rem (calendar.js HOUR_REM must match)
 DAY_TINTS = ("sun", "mint", "grape", "sky", "bubble")  # day colours cycle in this order
 
 
@@ -37,7 +37,7 @@ def cal_url(demo="", **q):
 
 
 def _px(minutes):
-    return f"{minutes * HH / 60:g}px"
+    return f"{minutes * HH / 60 / 16:g}rem"
 
 
 def trip_name(t):

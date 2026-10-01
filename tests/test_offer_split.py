@@ -134,7 +134,7 @@ def test_js_and_css_contract(client):
     assert "prefers-reduced-motion" in js and "Escape" in js and "data-choose" in js.replace("dataset.choose", "data-choose")
     reduced = css[css.rindex("prefers-reduced-motion"):]
     assert "ws-detail-panel" in reduced and "animation: none" in reduced  # reduced motion swaps instantly
-    assert "340px" in css
+    assert "21.25rem" in css  # 340px at the 16px base
 
 
 def test_phone_screen_is_list_until_an_offer_is_named(client):

@@ -45,6 +45,6 @@ def icon(name: str, size: int = 22, stroke: float = 2.2, cls: str = "") -> NotSt
     """An aria-hidden inline SVG in the current text colour."""
     klass = f' class="{cls}"' if cls else ""
     return NotStr(
-        f'<svg{klass} width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+        f'<svg{klass} width="{size}" height="{size}" style="width:{size / 16:g}rem;height:{size / 16:g}rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
         f'stroke-width="{stroke}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{PATHS[name]}</svg>'
     )

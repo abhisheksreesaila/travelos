@@ -1,0 +1,42 @@
+"""F-030: the site is sized in rem off one root size, so a single number scales every screen."""
+
+import re
+from pathlib import Path
+
+CSS_DIR = Path(__file__).resolve().parent.parent / "assets/css"
+CSS = sorted(CSS_DIR.glob("*.css"))
+
+
+def strip_queries(css):
+    return re.sub(r"@(media|container)[^{]*\{", "{", css)
+
+
+def test_root_size_is_75_percent_and_phones_return_to_full_size():
+    tokens = (CSS_DIR / "tokens.css").read_text()
+    assert re.search(r":root\s*\{\s*(/\*.*?\*/\s*)?font-size:\s*12px", tokens, re.S)
+    assert re.search(r"@media \(max-width: 720px\)\s*\{\s*:root\s*\{\s*font-size:\s*16px", tokens)
+
+
+def test_no_fixed_pixel_sizes_left_except_hairlines():
+    for path in CSS:
+        css = re.sub(r"/\*.*?\*/", "", strip_queries(path.read_text()), flags=re.S)
+        if path.name == "tokens.css":
+            css = css.replace("font-size: 12px", "").replace("font-size: 16px", "").replace("--r-pill: 999px", "")
+        found = [m for m in re.findall(r"(?<![\w.])(-?[\d.]+)px", css) if m not in ("1", "-1", "0")]
+        assert not found, f"{path.name}: unscaled px values {found[:5]}"
+
+
+def test_icons_scale_with_the_root():
+    from gitaway.icons import icon
+
+    assert "width:1.5rem;height:1.5rem" in str(icon("plane", 24))
+
+
+def test_calendar_hour_grid_is_in_rem(client):
+    from tests.test_calendar import book
+
+    book(client)
+    html = client.get("/calendar").text
+    assert re.search(r"--top:[\d.]+rem;--h:[\d.]+rem", html)
+    assert not re.search(r"--top:[\d.]+px", html)
+    assert "HOUR_REM = 3" in client.get("/assets/js/calendar.js").text
