@@ -258,7 +258,7 @@
 .ws-slot-sub { font-size: 0.8125rem; font-weight: 700; color: var(--ink-2); line-height: 1.25; }
 .ws-slot-sub:empty { display: none; }
 
-@media (max-width: 1600px) {
+@media (max-width: 900px) {
   .ws-explore { grid-template-columns: minmax(0, 1fr); }
   .ws-poi-side { max-height: none; overflow: visible; }
 }
@@ -333,7 +333,7 @@
 .ws-grid[data-expanded="map"] .ws-map { height: min(60vh, 28.75rem); }
 
 /* Tablet and phone: the context panes move below the lanes and the page scrolls */
-@media (max-width: 1470px) {
+@media (max-width: 825px) {
   .ws { height: auto; min-height: 0; overflow: visible; }
   .ws-grid, .ws-grid[data-focus] { grid-template-columns: 1fr 1fr 1fr; grid-template-rows: none; }
   .ws-grid[data-expanded] { grid-template-columns: 1fr; }
@@ -356,12 +356,12 @@
 }
 
 /* Phone: stacked panes, ledger pinned at the bottom */
-@media (min-width: 721px) and (max-width: 1470px) {
+@media (min-width: 721px) and (max-width: 825px) {
   /* The page scrolls here, so the split view gets a bounded height and scrolls inside: the choose bar stays pinned. */
   .ws-grid:is([data-expanded="flights"], [data-expanded="stays"]) > .ws-split { height: max(35rem, calc(100vh - 18.75rem)); }
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 720px) {
   .ws-grid:is([data-expanded="flights"], [data-expanded="stays"]) > .ws-split { grid-template-columns: 17.5rem minmax(0, 1fr); }
   .ws-dscroll { padding: 1.25rem; }
   .ws-dtitle { font-size: 1.875rem; }

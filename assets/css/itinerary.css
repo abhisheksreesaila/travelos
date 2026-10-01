@@ -202,7 +202,7 @@
 .sk-col { min-height: 22.5rem; border-radius: var(--r-lg); }
 
 /* ---------- Mobile ---------- */
-@media (max-width: 1470px) {
+@media (max-width: 825px) {
   .hero { grid-template-columns: minmax(0, 1fr); }
   .collage { width: 32.6875rem; max-width: 100%; margin-inline: auto; }
   .hero-title { font-size: 3.75rem; }
@@ -264,4 +264,4 @@
 }
 
 /* Mid-size desktops: keep the collage (fixed-size artwork) inside its column. */
-@media (min-width: 1471px) and (max-width: 1810px) { .collage { zoom: .9; } }
+@media (min-width: 826px) and (max-width: 1020px) { .collage { zoom: .9; } }

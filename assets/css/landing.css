@@ -95,7 +95,7 @@
 .paste-go { height: 3.25rem; padding: 0 1.25rem; border-radius: var(--r-pill); background: var(--coral); box-shadow: 0 0.25rem 0 var(--coral-deep); display: flex; align-items: center; font-weight: 800; white-space: nowrap; }
 
 /* Narrow desktop and tablet: the doors are too tight for the sticker beside the headline */
-@media (max-width: 1600px) {
+@media (max-width: 900px) {
   .features { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .teaser-cal, .teaser-creators { grid-template-columns: minmax(0, 1fr); }
   .door { padding: 2rem; }
@@ -104,11 +104,11 @@
 }
 
 /* Keep the "When" text whole as the doors narrow: smaller type first, then its own row. */
-@media (max-width: 1730px) {
+@media (max-width: 975px) {
   .field { padding: 0.625rem 0.75rem; }
   .field input { font-size: 1rem; }
 }
-@media (max-width: 1390px) {
+@media (max-width: 780px) {
   .search .field:nth-child(3) { grid-column: 1 / -1; }
 }
 

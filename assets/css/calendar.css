@@ -197,11 +197,11 @@
 }
 
 /* Tablet: three days, notes under the calendar */
-@media (max-width: 1470px) {
+@media (max-width: 825px) {
   .cal { --n: 3; }
   .cal-layout { grid-template-columns: minmax(0, 1fr) 18.75rem; }
 }
-@media (max-width: 1200px) {
+@media (max-width: 720px) {
   .cal-layout { grid-template-columns: minmax(0, 1fr); }
   .cal-notes { position: static; max-height: none; }
 }
@@ -316,17 +316,6 @@
   .cal:not([data-view="whole"]) .cal-notes { position: static; max-height: none; min-height: 0; overflow: hidden; }
   .cal:not([data-view="whole"]) .cal-notes-body { overflow-y: auto; }
   .cal:not([data-view="whole"]) .cal-feed { max-height: none; }
-}
-/* Stacked tablet: a fixed-height notes box. Only the feed shrinks and scrolls; the heading and composer always stay visible. */
-@media (min-width: 721px) and (max-width: 1200px) {
-  .cal:not([data-view="whole"]) .cal-layout { grid-template-rows: minmax(min-content, 1fr) auto; gap: 0.75rem; }
-  .cal:not([data-view="whole"]) .cal-card { min-height: auto; }
-  .cal:not([data-view="whole"]) .cal-grid { min-height: 13.375rem; }
-  .cal:not([data-view="whole"]) .cal-notes { height: clamp(9.375rem, 24dvh, 17.5rem); padding: 0.75rem 1rem; }
-  .cal:not([data-view="whole"]) .cal-notes-body { overflow: hidden; gap: 0.5rem; }
-  .cal:not([data-view="whole"]) .cal-notes-head h2 { font-size: 1.25rem; }
-  .cal:not([data-view="whole"]) .cal-feed { min-height: 0; flex: 1 1 0; }
-  .cal:not([data-view="whole"]) .cal-composer { flex: 0 0 auto; }
 }
 /* Phone: the page scrolls, the grid grows to its full height, so there is one natural scroll */
 @media (max-width: 720px) {
