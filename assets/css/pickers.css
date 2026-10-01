@@ -87,7 +87,7 @@
 /* Sheet title: only on phones, where the sheet covers the field it belongs to */
 .ga-pop-title { display: none; }
 @media (max-width: 720px) {
-  .ga-pop-title { display: block; padding: 0.5rem 0.875rem 0.25rem; font-size: max(var(--text-min), 0.8125rem); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+  .ga-pop-title { display: block; position: sticky; top: -0.5rem; z-index: 1; background: var(--card); padding: 0.75rem 0.875rem 0.5rem; font-size: max(var(--text-min), 0.8125rem); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
 }
 /* Narrow phones: seven day columns need the width, so the sheet gives up its side padding to the days */
 @media (max-width: 400px) {
