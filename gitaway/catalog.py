@@ -753,6 +753,17 @@ class Rides:
         return f"{self.airport} to {self.area}, both ways" if self.area != "Los Angeles" else f"{self.airport} to the city, both ways"
 
 
+def ride_area(airport: str, stay: Offer | None) -> str:
+    """The rides table's area for an airport and the stay it goes to: the stay's headline, or "city" (no stay, or no fare for it)."""
+    return stay.headline if stay is not None and (airport, stay.headline) in _RIDE_TABLE else "city"
+
+
+def ride_base(airport: str, area: str, kind: str) -> tuple[int, int]:
+    """(Uber dollars for one standard car, minutes on the road) for a leg: kind "arrive" or "depart". The simulated Uber (F-038) prices from this."""
+    ua, _la, ud, _ld, minutes = _RIDE_TABLE[(airport, area)]
+    return (ua if kind == "arrive" else ud), minutes
+
+
 def rides(flight: Offer, stay: Offer | None, trip=SAMPLE_TRIP) -> Rides:
     """The rides card for a flight (its airport and times) and the stay it goes to (its area; None means the city)."""
     area = stay.headline if stay is not None and (flight.airport, stay.headline) in _RIDE_TABLE else "city"

@@ -197,7 +197,7 @@ def ledger_json(q):
         "line_html": _html(line_items(q)),
         "slots_html": _html(slot_items(q)),
         "note": total_note(q),
-        "rides_html": to_xml(rides_card(q.rides)) if q.rides else "",
+        "rides_html": to_xml(rides_card(q.rides, q)) if q.rides else "",
     }
 
 
@@ -308,9 +308,15 @@ def skipped_row(lane, with_flight=True):
                cls="ws-skipped")
 
 
-def rides_card(r):
+def ride_path(leg, f, h, trip=None):
+    """The "Schedule an Uber" link for one leg (F-038): the picks it is for, with no car."""
+    return f"/rides/new?leg={leg}&f={lane_id(f)}&h={lane_id(h)}&c={SKIP}" + trip_tail(trip or catalog.SAMPLE_TRIP)
+
+
+def rides_card(r, q=None):
     """The "Uber and Lyft from LAX" card (sky tint): sample fares and times for the way in and the way out, and the estimate that
-    goes in the total. "Uber" and "Lyft" are plain text. Nothing here is charged."""
+    goes in the total. "Uber" and "Lyft" are plain text. Nothing here is charged. With the quote `q`, each leg offers "Schedule an
+    Uber": a simulated booking (F-038), apart from these sample fares."""
     legs = []
     for leg in r.legs:
         legs.append(Div(
@@ -319,6 +325,8 @@ def rides_card(r):
             Ul(*[Li(Span(f.provider, cls="ws-ride-who"), Span(f"{f.product}{'' if r.cars == 1 else f' x{r.cars}'} · about {f.minutes} min", cls="ws-ride-what"),
                     Span(catalog.money(f.cents), cls="ws-ride-price"), cls="ws-ride-fare") for f in leg.fares], cls="ws-ride-fares",
                aria_label=f"{leg.title} fares"),
+            A(icon("car", 15, 2.4), "Schedule an Uber", href=ride_path(leg.kind, q.flight_id, q.stay_id, q.trip), cls="ws-ride-go", data_schedule=leg.kind,
+              aria_label=f"Schedule an Uber for your {leg.title.lower()}, {leg.route}") if q is not None else "",
             cls="ws-ride-leg", data_ride=leg.kind,
         ))
     return Div(
@@ -571,7 +579,7 @@ def workspace(f, h, c, overlay=(), head=(), x="", v="", stay=None, trip=None, fl
                  detail=[stay_detail(o, h, viewing["stays"], stay if o.id == h else catalog.stay_pick(o.id, trip=trip), chosen=o.id == h) for o in stays], expanded=expanded == "stays",
                  screen=screen if expanded == "stays" else "list", lane="stay", skipped=h is None),
             pane("cars", 3, "Getting around", "", [car_card(o, c) for o in catalog.offers("car", trip)], "fill-sky-tint",
-                 Div(rides_card(q.rides) if q.rides else "", id="ws-rides", cls="ws-rides", aria_live="polite"), tip,
+                 Div(rides_card(q.rides, q) if q.rides else "", id="ws-rides", cls="ws-rides", aria_live="polite"), tip,
                  lane="car", skipped=c is None, with_flight=f is not None),
             Div(weather_pane(trip), map_pane(catalog.offer(h) if h else None), news_pane(trip), community_pane(), cls="ws-context"),
             cls="ws-grid", id="ws-grid", data_focus=expanded or "flights", **(dict(data_expanded=expanded) if expanded else {}),
