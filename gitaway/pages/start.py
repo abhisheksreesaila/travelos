@@ -135,7 +135,7 @@ def _submitted(q):
         if not (a.isascii() and a.isdigit() and int(a) <= catalog.MAX_KID_AGE):
             errors[f"k{i}"] = f"Pick an age from 0 to {catalog.MAX_KID_AGE} for kid {i}."
     try:
-        trip = catalog.parse_trip(q.get("from", catalog.ORIGIN[0]), vals["to"], vals["d"], vals["r"], vals["a"], ",".join(map(str, vals["ages"])))
+        trip = catalog.parse_trip(q.get("from", catalog.ORIGIN[0]), vals["to"], vals["d"], vals["r"], vals["a"], ",".join(map(str, vals["ages"])), check_past=True)
     except catalog.TripError as e:
         trip = None
         for field, msg in e.errors:

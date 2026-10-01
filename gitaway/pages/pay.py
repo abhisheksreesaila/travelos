@@ -141,6 +141,8 @@ def register(app):
         """Books the picks. The total is always recomputed here; rooms that sleep too few become the default room."""
         picks, trip = plan.resolve_pick(f, h, c), plan.resolve_trip(d, r, a, k)
         stay = plan.resolve_stay(picks[1], rooms, add, trip)
+        if catalog.is_past(trip.depart, trip.return_):  # a stale link must not book the past: back to the form, which says why
+            return RedirectResponse(f"/start?go=1&to=la&{catalog.trip_query(trip)}&n={len(trip.kid_ages)}" + "".join(f"&k{i}={a}" for i, a in enumerate(trip.kid_ages, 1)), status_code=303)
         if not ses.book(session, catalog.quote(*picks, stay, trip)):
             return signin_for_pay(plan.pay_path(*picks, stay))
         return RedirectResponse("/booked", status_code=303)

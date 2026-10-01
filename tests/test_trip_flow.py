@@ -167,3 +167,13 @@ def test_long_demo_never_returns_before_departing():
     late = catalog.TripSearch("SFO", "San Francisco", "Los Angeles", ("LAX",), date(2026, 12, 1), date(2026, 12, 3), 2, ())
     t = tripcal.trip("long", {"trip": catalog.trip_query(late)})
     assert t.return_ > t.depart
+
+
+def test_a_booked_trip_stays_itself_after_its_departure_passes(client, monkeypatch):
+    sign_in(client)
+    client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1", "d": "2026-10-17", "r": "2026-10-20", "a": "3", "k": "4,7"})
+    monkeypatch.setattr(catalog, "today", lambda: date(2026, 12, 1))
+    booked = client.get("/booked").text
+    assert "City-view Double Queen ×2" in booked and "3 nights" in booked
+    cal = client.get("/calendar").text
+    assert "Oct 17 – 20" in cal and "City-view Double Queen ×2" in cal

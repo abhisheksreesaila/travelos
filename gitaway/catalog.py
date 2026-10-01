@@ -132,8 +132,20 @@ def today() -> date:
     return date.today()
 
 
-def parse_trip(origin, to, depart, ret, adults, kids) -> TripSearch:
-    """A TripSearch from form or URL text, or TripError listing every friendly problem. `kids` is ages, comma separated ("4,7")."""
+PAST_MESSAGE = "Pick a depart date that is today or later."
+
+
+def is_past(depart, ret) -> bool:
+    """True when a new trip would leave before today. The fixed sample trip is never past."""
+    return depart < today() and not (depart == SAMPLE_TRIP.depart and ret == SAMPLE_TRIP.return_)
+
+
+def parse_trip(origin, to, depart, ret, adults, kids, check_past=False) -> TripSearch:
+    """A TripSearch from form or URL text, or TripError listing every friendly problem. `kids` is ages, comma separated ("4,7").
+
+    Date-agnostic unless `check_past`: stored bookings and URLs are read without it, so an old trip stays what it was.
+    Pass check_past=True only where a new trip is entered.
+    """
     errs = []
     if (origin or "").strip().upper() != ORIGIN[0]:
         errs.append(("from", "We only fly from San Francisco (SFO) for now."))
@@ -147,8 +159,10 @@ def parse_trip(origin, to, depart, ret, adults, kids) -> TripSearch:
         errs.append(("d", "Pick a valid depart date."))
     if r is None:
         errs.append(("r", "Pick a valid return date."))
-    if d and d < today() and not (d == SAMPLE_TRIP.depart and r == SAMPLE_TRIP.return_):  # the fixed sample trip is always allowed
-        errs.append(("d", "Pick a depart date that is today or later."))
+    if check_past and d and r and is_past(d, r):
+        errs.append(("d", PAST_MESSAGE))
+    elif check_past and d and not r and d < today():
+        errs.append(("d", PAST_MESSAGE))
     if d and r:
         if r <= d:
             errs.append(("r", "Your return must be after you leave."))

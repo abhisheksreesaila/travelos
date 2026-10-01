@@ -219,3 +219,20 @@ def test_remembering_picks_never_overflows_the_cookie():
     s = {"traveler": "ari", "pad": "x" * (ses.BUDGET - 20)}
     ses.remember_plan(s, "f=f2&h=h3&c=c1&d=2026-10-16&r=2026-10-19&a=3&k=4,7")
     assert "plan" not in s
+
+
+def test_the_sample_dates_are_accepted_even_after_they_pass(client, monkeypatch):
+    from datetime import date
+    monkeypatch.setattr(catalog, "today", lambda: date(2026, 11, 1))
+    assert submit(client).status_code == 303
+    assert submit(client, d="2026-10-17", r="2026-10-20").status_code == 422
+
+
+def test_a_stale_pay_link_cannot_book_the_past(client, monkeypatch):
+    from datetime import date
+    sign_in(client)
+    monkeypatch.setattr(catalog, "today", lambda: date(2026, 11, 1))
+    r = client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1", "d": "2026-10-17", "r": "2026-10-20", "a": "2"}, follow_redirects=False)
+    assert r.headers["location"].startswith("/start?go=1")
+    assert "bookings" not in session_data(client)
+    assert "today or later" in client.get(r.headers["location"]).text
