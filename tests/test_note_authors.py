@@ -36,3 +36,10 @@ def test_a_note_names_its_writer_on_every_members_screen(pair):
     from_ari, from_sam = metas(ari.get("/calendar?view=days").text)[1:], metas(sam.get("/calendar?view=days").text)[1:]
     assert from_ari == [("You · whole trip", "Ari Rivera"), ("Sam Kim · whole trip", "Sam Kim")]
     assert from_sam == [("Ari Rivera · whole trip", "Ari Rivera"), ("You · whole trip", "Sam Kim")]
+
+
+def test_the_first_note_is_from_whoever_booked_the_trip(pair):
+    ari, sam = pair
+    first_ari, first_sam = metas(ari.get("/calendar?view=days").text)[0], metas(sam.get("/calendar?view=days").text)[0]
+    assert first_ari == ("You · whole trip", "Ari Rivera")
+    assert first_sam == ("Ari Rivera · whole trip", "Ari Rivera")

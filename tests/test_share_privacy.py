@@ -35,8 +35,9 @@ def test_a_demo_trip_page_has_no_flight_numbers_dates_or_hotel_name(client):
     post_share(client)
     slug = slug_of(client)
     seen = public_text(client, slug)
-    for hidden in ("Skylark Air 214", "214", "Tidewater", "City-view"):
+    for hidden in ("Skylark Air 214", "Tidewater", "City-view"):
         assert hidden not in seen, hidden
+    assert not re.search(r"\b214\b", seen)  # a whole number, not a piece of some random id
     assert_no_dates(seen)
     assert "Flight to LAX" in seen and "Flight home" in seen
     assert "Check in · a hotel in Santa Monica" in seen and "Check out · a hotel in Santa Monica" in seen

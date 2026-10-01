@@ -309,7 +309,7 @@ def booking_for_trip(db, trip_id) -> dict | None:
     if not b:
         return None
     out = {"id": b["id"], "flight": b["flight"], "stay": b["stay"], "car": b["car"], "rooms": b["rooms"] or "", "add": b["add_ons"] or "",
-           "total_cents": b["total_cents"], "booked_at": b["booked_at"]}
+           "total_cents": b["total_cents"], "booked_at": b["booked_at"], "booked_by": b["booked_by"] or ""}
     for key, value in (("fare", b["fare"]), ("bags", b["bags"]), ("trip", b["trip_params"])):
         if value:
             out[key] = value

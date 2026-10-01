@@ -320,7 +320,8 @@ def notes_panel(ctx, who, b):
     people = {f.name.casefold(): f for f in ctx["friends"]}
     fresh = ctx["new"] if ctx["live"] else ""
     family = members.family_people(ctx["session"])
-    feed = [Div(avatar(who, "cal-noteav"), Div(Span("You · whole trip", cls="cal-notemeta"),
+    name, author = note_writer(cal.Note("", "", None, "", b.get("booked_by", "")), who, people, family)  # the first note is from whoever booked or imported the trip
+    feed = [Div(avatar(author, "cal-noteav"), Div(Span(f"{name} · whole trip", cls="cal-notemeta"),
                 Span(booked_note(b), cls="cal-notetext"), cls="cal-noteslip"), cls="cal-note cal-note-first")]
     feed += [note_entry(n, acts_by_id, who, people, bool(fresh) and n.act == fresh and bool(n.by), family) for n in ctx["notes"]]
     about = Select(Option("Whole trip", value=""), *[Option(a.title, value=a.id) for a in ctx["acts"]], name="act", aria_label="What is this note about?", cls="cal-about") if ctx["acts"] else ""

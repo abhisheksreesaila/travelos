@@ -43,4 +43,4 @@ def booking(db, trip) -> dict | None:
     plan = tripimport.from_doc(doc)
     oid = offer_id(trip["id"])
     return {"id": "IM-" + trip["id"].upper(), "flight": oid if plan.legs else None, "stay": oid if plan.hotels else None, "car": oid if plan.rental else None,
-            "rooms": "", "add": "", "total_cents": 0, "booked_at": trip["created_at"], "trip": trip["params"] or "", "imported": doc}
+            "rooms": "", "add": "", "total_cents": 0, "booked_at": trip["created_at"], "trip": trip["params"] or "", "booked_by": trip["created_by"] or "", "imported": doc}
