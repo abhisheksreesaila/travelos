@@ -1,0 +1,103 @@
+/* Talk to plan (F-024): the mic button, the voice panel and the draft plans in the calendar grid. Loaded after tokens.css, base.css and calendar.css. rem only (F-030). */
+.cal-btn-mint { background: var(--mint); box-shadow: 0 0.25rem 0 var(--mint-ink); }
+
+/* Draft plans: dashed ghost blocks in the grid that turn solid when applied */
+.cal-draft { background: #FFF4EF; border: 0.125rem dashed var(--coral); cursor: default; }
+.cal-draft[hidden] { display: none; }
+.cal-draft-half { z-index: 1; }
+.cal-draft-tag { margin-top: auto; align-self: flex-start; height: 1.125rem; padding: 0 0.4375rem; border-radius: var(--r-pill); background: var(--card); font-size: max(var(--text-min), 0.6875rem); font-weight: 800; display: inline-flex; align-items: center; }
+.cal-draft:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.125rem; z-index: 5; }
+.cal-draft.is-applying { animation: vo-settle .55s var(--ease-spring) both; animation-delay: calc(var(--i, 0) * 70ms); }
+@keyframes vo-settle { 0% { transform: scale(1); } 45% { transform: scale(1.06); background: var(--sun-tint); border-color: transparent; } 100% { transform: scale(1); background: var(--sun-tint); border-color: transparent; } }
+/* While the sentence is still being heard the drafts have not been understood yet */
+.cal[data-hearing] .cal-draft { display: none; }
+
+/* The panel */
+.cal-voice { min-width: 0; border-radius: var(--r-lg); background: var(--card); box-shadow: var(--shadow-md); padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem; box-sizing: border-box; }
+.vo-head { display: flex; align-items: center; gap: 0.625rem; flex-wrap: wrap; }
+.vo-head h2 { font-size: 1.625rem; margin-right: auto; }
+.vo-pill { height: 1.625rem; padding: 0 0.625rem; border-radius: var(--r-pill); background: var(--sun-tint); font-size: max(var(--text-min), 0.75rem); font-weight: 800; display: inline-flex; align-items: center; }
+.vo-close { width: 2.5rem; height: 2.5rem; border-radius: var(--r-pill); display: inline-grid; place-items: center; color: var(--ink); background: #FAF7F2; }
+.vo-close:hover { color: var(--ink); background: var(--accent-tint); }
+.vo-scroll { display: flex; flex-direction: column; gap: 0.625rem; min-height: 0; }
+.vo-error { padding: 0.625rem 0.875rem; border-radius: 0.875rem; background: var(--accent-tint); font-weight: 800; font-size: 0.9375rem; }
+
+.vo-micbox { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 1rem; row-gap: 0.25rem; justify-items: start; }
+.vo-micform { grid-row: 1 / span 2; margin: 0; }
+.vo-notes { display: flex; flex-direction: column; align-items: flex-start; }
+.vo-note.vo-note-info { background: var(--sky-tint); color: var(--ink); }
+.vo-mic { border: 0; padding: 0; cursor: pointer; font: inherit; width: 4.5rem; height: 4.5rem; border-radius: 50%; background: var(--coral); box-shadow: 0 0.3125rem 0 var(--coral-deep); color: var(--ink); display: grid; place-items: center; }
+.vo-mic:hover { color: var(--ink); transform: translateY(-1px); }
+.vo-mic:active { transform: translateY(0.1875rem); box-shadow: 0 0.125rem 0 var(--coral-deep); }
+.vo-mic:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.25rem; }
+.vo-mic svg { width: 2rem; height: 2rem; }
+.vo-bars { display: flex; gap: 0.3125rem; height: 1.25rem; align-items: center; visibility: hidden; align-self: end; }
+.vo-bar { width: 0.3125rem; height: 1.25rem; border-radius: var(--r-pill); background: var(--coral); transform-origin: center; }
+.vo-hintline { font-size: max(var(--text-min), 0.9375rem); font-weight: 700; color: var(--ink-2); text-align: left; align-self: start; }
+
+/* Listening: voice.js adds .is-listening to the panel while the sentence is typed */
+.vo-panel.is-listening .vo-mic { animation: vo-ring 1.3s ease-out infinite; }
+.vo-panel.is-listening .vo-bars { visibility: visible; }
+.vo-panel.is-listening .vo-bar { animation: vo-bar .9s ease-in-out infinite; }
+@keyframes vo-ring { 0% { box-shadow: 0 0.3125rem 0 var(--coral-deep), 0 0 0 0 rgba(255, 115, 82, .55); } 100% { box-shadow: 0 0.3125rem 0 var(--coral-deep), 0 0 0 1.5rem rgba(255, 115, 82, 0); } }
+@keyframes vo-bar { 0%, 100% { transform: scaleY(.35); } 50% { transform: scaleY(1); } }
+
+/* The speech bubble: every word is in the page; while typing the ones not heard yet are invisible (so the bubble never grows) */
+.vo-bubble { padding: 0.625rem 1rem; border-radius: 0.375rem 1.25rem 1.25rem 1.25rem; background: #FAF7F2; }
+.vo-said { font-size: 1.0625rem; line-height: 1.4; font-weight: 600; margin: 0; }
+.vo-panel.is-typing .vo-w:not(.is-on) { visibility: hidden; }
+.vo-cursor { display: none; color: var(--coral); font-weight: 800; }
+.vo-panel.is-listening .vo-cursor { display: inline; }
+
+/* The question and the preview wait until the sentence is heard */
+.vo-after { display: flex; flex-direction: column; gap: 0.625rem; }
+.vo-panel.is-typing .vo-after { visibility: hidden; }
+.vo-after.vo-pop { animation: vo-pop .4s var(--ease-spring) both; }
+@keyframes vo-pop { 0% { transform: scale(.94); opacity: 0; } 70% { transform: scale(1.02); opacity: 1; } 100% { transform: scale(1); } }
+.vo-ask { padding: 0.75rem 1rem; border-radius: 1.25rem; background: var(--sun-tint); display: flex; flex-direction: column; gap: 0.625rem; }
+.vo-ask.is-done { background: var(--mint-tint); }
+.vo-ask h3 { font-size: 1rem; font-weight: 800; font-family: var(--font-body); }
+.vo-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.vo-chip { text-decoration: none; min-height: 2.75rem; padding: 0 1rem; border-radius: var(--r-pill); display: inline-flex; align-items: center; background: var(--card); color: var(--ink); font-weight: 800; font-size: 0.9375rem; box-shadow: 0 0 0 1px var(--line); }
+.vo-chip:hover { color: var(--ink); transform: translateY(-1px); }
+.vo-chip[aria-current="true"] { background: var(--ink); color: #fff; box-shadow: none; }
+.vo-chip:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.1875rem; }
+
+.vo-preview { display: flex; flex-direction: column; gap: 0.5rem; }
+.vo-from { font-size: max(var(--text-min), 0.8125rem); font-weight: 800; letter-spacing: .06em; color: var(--ink-3); }
+.vo-rows { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.1875rem; margin: -0.1875rem; }
+.vo-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.375rem 0.75rem; border-radius: 1rem; background: #FAF7F2; cursor: pointer; min-width: 0; }
+.vo-row.is-clash { background: var(--sun-tint); }
+.vo-row.is-have { background: var(--mint-tint); cursor: default; }
+.vo-row.is-wait { background: var(--sun-tint); border: 0.125rem dashed rgba(30, 26, 46, .25); cursor: default; }
+.vo-wait-icon { width: 1.375rem; display: grid; place-items: center; flex: none; }
+.vo-check { width: 1.375rem; height: 1.375rem; accent-color: var(--coral); flex: none; }
+.vo-check:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.1875rem; }
+.vo-ptext { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.vo-ptitle { font-weight: 800; font-size: 0.9375rem; }
+.vo-when { font-size: max(var(--text-min), 0.8125rem); font-weight: 700; color: var(--ink-2); }
+.vo-note { margin-top: 0.25rem; align-self: flex-start; padding: 0.125rem 0.625rem; border-radius: var(--r-pill); background: var(--ink); color: #fff; font-size: max(var(--text-min), 0.75rem); font-weight: 800; }
+.vo-note-have { background: var(--mint); color: var(--ink); }
+.vo-applybtn { margin-top: 0.25rem; width: 100%; }
+.vo-applybtn:disabled { opacity: .5; cursor: default; }
+.vo-hint { font-size: max(var(--text-min), 0.8125rem); font-weight: 700; color: var(--ink-2); }
+
+/* Fit: next to the day-by-day grid the panel is as tall as the grid and scrolls inside (like the notes feed) */
+@media (min-width: 721px) {
+  .cal:not([data-view="whole"]) .cal-voice { position: static; min-height: 0; overflow: hidden; }
+  .cal:not([data-view="whole"]) .vo-scroll { overflow-y: auto; flex: 1 1 auto; scrollbar-width: thin; padding: 0.1875rem; margin: -0.1875rem; }
+}
+@media (max-width: 825px) { .cal-voice { padding: 1rem; } }
+@media (max-width: 720px) {
+  .cal-voice { order: -1; }
+  .vo-mic { width: 5rem; height: 5rem; }
+  .vo-micbox { grid-template-columns: 1fr; justify-items: center; }
+  .vo-micform { grid-row: auto; }
+  .vo-hintline { text-align: center; align-self: center; }
+  .vo-bars { align-self: center; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vo-panel.is-listening .vo-mic, .vo-panel.is-listening .vo-bar, .vo-after.vo-pop, .cal-draft.is-applying { animation: none; }
+  .cal-draft.is-applying { background: var(--sun-tint); border-color: transparent; }
+  .vo-mic:hover, .vo-chip:hover { transform: none; }
+}
