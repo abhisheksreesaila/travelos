@@ -173,3 +173,19 @@ def test_skip_the_stay_and_undo_brings_back_its_rooms_and_add_ons(open_plan):
     assert page.evaluate("() => location.search") == picks  # the rooms and add-ons, not the default room
     expect(page.locator('.ws-detail-panel[data-detail="h1"]')).to_have_attribute("data-rooms", "ok2")
     expect(page.locator('.ws-detail-panel[data-detail="h1"]')).to_have_attribute("data-add", "bf")
+
+
+def visible_panes(page):
+    return page.evaluate("""() => [...document.querySelectorAll('[data-pane]')]
+        .filter(e => { const r = e.getBoundingClientRect(); return getComputedStyle(e).display !== 'none' && r.width > 0 && r.height > 0; })
+        .map(e => e.dataset.pane)""")
+
+
+def test_phone_expanding_cars_or_a_context_pane_shows_only_that_pane(open_plan):
+    """F-028: on a phone an expanded pane is the only pane on screen."""
+    page = open_plan(viewport=PHONE)
+    for pane in ("cars", "weather", "map", "news", "community"):
+        expand(page, pane)
+        assert visible_panes(page) == [pane], pane
+        page.click(f'.ws-expand[data-expand="{pane}"]')
+        collapsed(page)

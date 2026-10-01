@@ -24,16 +24,15 @@ def phone_blocks(text):
     return "\n".join(out)
 
 
-def test_phone_expanded_context_pane_keeps_the_other_panes_underneath():
-    """F-028: base rules hide the other context panes at 0,4,0; the phone rule must win by coming later at the same weight."""
+def test_phone_expanded_cars_hides_the_context_column():
+    """F-028: expanding Cars on a phone shows only Cars. `.ws-grid[data-expanded] .ws-context { display: flex }` has the same weight
+    as the Cars rule, so the Cars rule must come after it inside the phone block."""
     text = css("workspace.css")
-    base_hide = text.index('.ws-grid[data-expanded="weather"] .ws-context > :not([data-pane="weather"])')
     phone = phone_blocks(text)
-    rule = ".ws-grid[data-expanded] .ws-context > [data-pane] { display: flex; }"
-    assert rule in phone
-    assert text.index(rule) > base_hide
-    # the expanded pane leads, the others follow
-    assert re.search(r'\.ws-grid\[data-expanded="weather"\] \.ws-context > \[data-pane="weather"\][^{]*\{\s*order: -1', phone)
+    show = phone.index(".ws-grid[data-expanded] .ws-context { display: flex")
+    hide = phone.index('.ws-grid[data-expanded="cars"] .ws-context { display: none; }')
+    assert hide > show
+    assert "[data-pane] { display: flex; }" not in phone  # an expanded context pane hides its siblings, as on desktop
 
 
 def test_phone_text_floor_is_13px():

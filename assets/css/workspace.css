@@ -418,12 +418,8 @@
   .ws-grid, .ws-grid[data-focus], .ws-grid[data-expanded] { display: flex; flex-direction: column; }
   .ws-grid[data-expanded] > :not([data-pane]) { display: none; }
   .ws-context, .ws-grid[data-expanded] .ws-context { display: flex; flex-direction: column; }
-  /* Expanding a context pane keeps the other context panes underneath it (the base rules hide them at the same weight) */
-  .ws-grid[data-expanded] .ws-context > [data-pane] { display: flex; }
-  .ws-grid[data-expanded="weather"] .ws-context > [data-pane="weather"],
-  .ws-grid[data-expanded="map"] .ws-context > [data-pane="map"],
-  .ws-grid[data-expanded="news"] .ws-context > [data-pane="news"],
-  .ws-grid[data-expanded="community"] .ws-context > [data-pane="community"] { order: -1; }
+  /* Expanded Cars or a context pane is the only thing shown; Cars hides the context column (same weight as the rule above, so it comes after) */
+  .ws-grid[data-expanded="cars"] .ws-context { display: none; }
   .ws-pane { padding: 0.875rem; }
   .ws-focus { min-height: 2.75rem; min-width: 2.75rem; }
   .ws-expand { width: 2.75rem; min-height: 2.75rem; flex-shrink: 0; }
