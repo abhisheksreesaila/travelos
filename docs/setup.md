@@ -34,6 +34,7 @@ fh-saas makes each family's database file relative to the process's **working di
 - Code must not use relative paths. Assets and templates are found from the project folder (`Path(__file__)`).
 - The family database location is stored in the host database as a relative path, so the folder must stay the same for the life of the data. When deploying, point `GITAWAY_DATA_DIR` at the persistent volume and test a redeploy before real users arrive.
 - To start fresh locally, stop the server and delete the folder.
+- What is inside a family's file (trips, bookings, calendar, friends, rides, forks and saves), how its schema changes and how two people editing at once is handled: `docs/family-db.md`.
 
 ## The dev sign-in (local only)
 
