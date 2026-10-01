@@ -1,47 +1,124 @@
 """Save an imported trip into the signed-in person's family (F-042). The parsing is gitaway.tripimport; the storage is gitaway.familydb_import.
 
 An imported trip is an ordinary family trip (a `trips` row, source "imported") plus its document (a `trip_imports` row), written in one short
-transaction. Saving the same template again opens the trip it made and changes nothing else (the id comes from the document), like paying the
-same picks twice in the demo flow.
+transaction. Its id is random; the preview hands out one (`new_token`) and the save uses it, so pressing Save twice makes one trip.
+
+Correcting an import. A template with the same itinerary number (or the same title and start date) as a trip the family already imported
+is a correction: `find_match` says which trip, and `save(..., replace=<id>)` swaps the trip's document and dates in place, keeping its
+calendar plans, notes, friends and rides. `delete` removes an imported trip and everything that belongs to it.
 """
 
-import hashlib
 import json
+import re
+import uuid
 
 from fh_saas.utils_sql import insert_only
 
-from gitaway import catalog, familydb, session as ses, tripimport
+from gitaway import catalog, familydb, familydb_import, session as ses, tripimport
+
+_TOKEN = re.compile(r"^[0-9a-f]{12}$")
 
 
 class SaveError(ValueError):
     """A save the app refuses; the message is fit to show."""
 
 
-def trip_id_of(doc) -> str:
-    return hashlib.sha256(json.dumps(doc, sort_keys=True, separators=(",", ":")).encode()).hexdigest()[:12]
+def new_token() -> str:
+    """A random trip id (12 hex characters), made when a preview is drawn."""
+    return uuid.uuid4().hex[:12]
 
 
-def save(session, plan) -> str:
-    """Keep `plan` as a new trip of the family and open it for this person. Returns the trip id. Raises SaveError."""
+def _params(plan) -> str:
+    return catalog.trip_query(tripimport.trip_search(plan))
+
+
+def find_match(session, plan):
+    """(trip id, title) of the family's imported trip this plan corrects, or None: the same itinerary number, else the same title and start date."""
+    with ses.family(session) as fam:
+        if not fam:
+            return None
+        for r in familydb.rows(fam.db, "SELECT t.id, t.title, i.doc FROM trips t JOIN trip_imports i ON i.trip_id = t.id WHERE t.source = 'imported' ORDER BY t.created_at DESC"):
+            old = tripimport.from_doc(json.loads(r["doc"]))
+            if (plan.itinerary and old.itinerary == plan.itinerary) or (old.title.casefold() == plan.title.casefold() and old.start == plan.start):
+                return r["id"], r["title"]
+    return None
+
+
+def _ride_key(trip_id, plan):
+    from gitaway import rides
+    oid = familydb_import.offer_id(trip_id)
+    return rides.context_key(oid if plan.legs else None, oid if plan.hotels else None, _params(plan))
+
+
+def save(session, plan, token=None, replace=None) -> str:
+    """Keep `plan` as a trip of the family and open it for this person. Returns the trip id. Raises SaveError.
+
+    `token` is the trip id the preview made (a random one is made when there is none); saving the same token again opens that trip and changes
+    nothing. With `replace` (an imported trip's id) that trip is corrected in place instead of a new one being made.
+    """
     doc = tripimport.to_doc(plan)
-    trip_id = trip_id_of(doc)
+    if token is not None and not _TOKEN.match(token):
+        raise SaveError("That form is out of date. Preview your trip again.")
     with ses.family(session) as fam:
         if not fam:
             raise SaveError("Sign in to import a trip.")
         db = fam.db
         with familydb.transaction(db):
             familydb.lock(db)
-            if not familydb.trip(db, trip_id):
-                if familydb.row(db, "SELECT COUNT(*) AS n FROM trips")["n"] >= familydb.MAX_TRIPS:
-                    raise SaveError(f"That is {familydb.MAX_TRIPS} trips already. This demo keeps it small.")
-                at = familydb.now()
-                insert_only(db, "trips", {"id": trip_id, "title": plan.title, "source": tripimport.SOURCE, "params": catalog.trip_query(tripimport.trip_search(plan)),
-                                          "depart": plan.start.isoformat(), "return_on": plan.end.isoformat(), "created_by": fam.traveler.id, "created_at": at},
-                            ["id"], auto_commit=False)
-                insert_only(db, "trip_imports", {"trip_id": trip_id, "doc": json.dumps(doc, separators=(",", ":")), "created_by": fam.traveler.id, "created_at": at},
-                            ["trip_id"], auto_commit=False)
+            if replace:
+                trip_id = _replace(db, replace, plan, doc)
+            else:
+                trip_id = token or new_token()
+                if not familydb.trip(db, trip_id):
+                    if familydb.row(db, "SELECT COUNT(*) AS n FROM trips")["n"] >= familydb.MAX_TRIPS:
+                        raise SaveError(f"That is {familydb.MAX_TRIPS} trips already. This demo keeps it small.")
+                    at = familydb.now()
+                    insert_only(db, "trips", {"id": trip_id, "title": plan.title, "source": tripimport.SOURCE, "params": _params(plan),
+                                              "depart": plan.start.isoformat(), "return_on": plan.end.isoformat(), "created_by": fam.traveler.id, "created_at": at},
+                                ["id"], auto_commit=False)
+                    insert_only(db, "trip_imports", {"trip_id": trip_id, "doc": json.dumps(doc, separators=(",", ":")), "created_by": fam.traveler.id, "created_at": at},
+                                ["trip_id"], auto_commit=False)
             familydb.run(db, "UPDATE members SET trip_id = :t WHERE id = :u", t=trip_id, u=fam.traveler.id)
     return trip_id
+
+
+def _replace(db, trip_id, plan, doc) -> str:
+    """Swap the document and dates of the imported trip `trip_id`; its plans, notes, friends and rides stay (the rides follow the new picks' key)."""
+    old = familydb.row(db, "SELECT t.params, i.doc FROM trips t JOIN trip_imports i ON i.trip_id = t.id WHERE t.id = :t AND t.source = 'imported'", t=trip_id)
+    if not old:
+        raise SaveError("That trip is not there any more. Save it as a new trip instead.")
+    before = tripimport.from_doc(json.loads(old["doc"]))
+    old_key, new_key = _ride_key(trip_id, before), _ride_key(trip_id, plan)
+    familydb.run(db, "UPDATE trips SET title = :ti, params = :p, depart = :d, return_on = :r WHERE id = :t", ti=plan.title, p=_params(plan), d=plan.start.isoformat(),
+                 r=plan.end.isoformat(), t=trip_id)
+    familydb.run(db, "UPDATE trip_imports SET doc = :doc WHERE trip_id = :t", doc=json.dumps(doc, separators=(",", ":")), t=trip_id)
+    if old_key != new_key:
+        for r in familydb.rows(db, "SELECT id, data FROM rides WHERE key = :k", k=old_key):
+            data = json.loads(r["data"])
+            data["k"] = new_key
+            familydb.run(db, "UPDATE rides SET key = :k, data = :d WHERE id = :i", k=new_key, d=json.dumps(data, separators=(",", ":")), i=r["id"])
+    return trip_id
+
+
+def delete(session, trip_id) -> bool:
+    """Remove an imported trip and everything that belongs to it (its document, calendar plans, notes, friends and rides). False when it is not one."""
+    with ses.family(session) as fam:
+        if not fam:
+            return False
+        db = fam.db
+        with familydb.transaction(db):
+            familydb.lock(db)
+            old = familydb.row(db, "SELECT i.doc FROM trips t JOIN trip_imports i ON i.trip_id = t.id WHERE t.id = :t AND t.source = 'imported'", t=trip_id)
+            if not old:
+                return False
+            key = _ride_key(trip_id, tripimport.from_doc(json.loads(old["doc"])))
+            for table in ("activities", "notes", "cal_state", "friends"):
+                familydb.run(db, f"DELETE FROM {table} WHERE trip_id = :t", t=trip_id)
+            familydb.run(db, "DELETE FROM rides WHERE trip_id = :t OR key = :k", t=trip_id, k=key)
+            familydb.run(db, "DELETE FROM trip_imports WHERE trip_id = :t", t=trip_id)
+            familydb.run(db, "DELETE FROM trips WHERE id = :t", t=trip_id)
+            familydb.run(db, "UPDATE members SET trip_id = NULL WHERE trip_id = :t", t=trip_id)
+        return True
 
 
 def plan_of(session, trip_id=None):

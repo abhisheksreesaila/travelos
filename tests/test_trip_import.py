@@ -82,10 +82,64 @@ def test_save_opens_the_calendar_on_the_imported_trip(client):
     assert "LA with the kids" in html and "Oct 16 – 20" in html and "booked elsewhere · Expedia" in html
 
 
-def test_saving_the_same_template_twice_opens_the_same_trip(client):
+def test_pressing_save_twice_makes_one_trip_with_a_random_id(client):
+    sign_in(client)
+    html = client.post("/trips/import", data={"text": TEMPLATE}).text
+    token = re.search(r'name="token" value="([0-9a-f]{12})"', html).group(1)
+    assert token != re.search(r'name="token" value="([0-9a-f]{12})"', client.post("/trips/import", data={"text": TEMPLATE}).text).group(1)
+    for _ in range(2):
+        assert client.post("/trips/import/save", data={"text": TEMPLATE, "token": token}, follow_redirects=False).status_code == 303
+    assert [t.id for t in ses.trips(person())] == [token]
+    assert client.post("/trips/import/save", data={"text": TEMPLATE, "token": "not-a-token"}, follow_redirects=False).status_code == 409
+
+
+def test_a_template_with_the_same_itinerary_number_offers_to_replace_and_keeps_the_plans(client, clock):
+    imported(client, no_car())
+    p = person()
+    old_id = ses.trips(p)[0].id
+    cal.add_activity(p, day=1, start="10:00", end="11:00", title="Griffith Observatory")
+    cal.add_note(p, "Bring jackets")
+    b = ses.booking(p)
+    plan = rides.leg_plan("arrive", cal.flight_of(b), cal.stay_for(b, "arrive"), cal.trip_of(b))
+    rides.schedule_ride(p, rides.ScheduleRequest(plan, rides.validate_guest("Ari", "Rivera", "(310) 555-0123"), rides.provider().estimates(plan)[0].product_id,
+                                                  rides.provider().estimates(plan)[0].fare_id, rides.next_ride_id(p), rides.booking_key(b)))
+    corrected = no_car().replace("end: 2026-10-20", "end: 2026-10-21").replace("title: LA with the kids", "title: LA with the kids (fixed)")
+    corrected = corrected.replace("check_out: 2026-10-20 11:00", "check_out: 2026-10-21 11:00").replace("depart: 2026-10-20 14:10", "depart: 2026-10-21 14:10").replace("arrive: 2026-10-20 15:37", "arrive: 2026-10-21 15:37")
+    html = client.post("/trips/import", data={"text": corrected}).text
+    assert 'id="ti-replace"' in html and "Replace the existing trip" in html and "LA with the kids" in visible(html)
+    assert 'id="ti-replace"' not in client.post("/trips/import", data={"text": no_car().replace("7123456789012", "999").replace("title: LA with the kids", "title: Other").replace("start: 2026-10-16", "start: 2026-10-16")}).text
+    r = client.post("/trips/import/save", data={"text": corrected, "replace": old_id}, follow_redirects=False)
+    assert r.status_code == 303
+    trips = ses.trips(person())
+    assert [t.id for t in trips] == [old_id] and trips[0].title == "LA with the kids (fixed)" and "Oct 16 – 21" in trips[0].detail
+    assert [a.title for a in cal.activities(person())] == ["Griffith Observatory"] and [n.text for n in cal.notes(person())] == ["Bring jackets"]
+    live = [x for x in rides.list_rides(person()) if not x.canceled]
+    assert len(live) == 1 and live[0].key == rides.booking_key(ses.booking(person()))  # the ride still belongs to the (corrected) trip
+    assert client.post("/trips/import/save", data={"text": corrected, "replace": "nosuchtrip1"}, follow_redirects=False).status_code == 409
+
+
+def test_the_same_title_and_start_date_also_count_as_the_same_trip(client):
     imported(client)
-    imported(client)
-    assert len(ses.trips(person())) == 1
+    html = client.post("/trips/import", data={"text": TEMPLATE.replace('itinerary_number: "7123456789012"', 'itinerary_number: "1"')}).text
+    assert 'id="ti-replace"' in html
+
+
+def test_only_admins_delete_a_trip_and_everything_on_it_goes(client, clock):
+    imported(client, no_car())
+    p = person()
+    trip_id = ses.trips(p)[0].id
+    cal.add_activity(p, day=1, start="10:00", end="11:00", title="Griffith Observatory")
+    assert 'id="ti-delete"' in client.get("/trip/details").text
+    assert client.get(f"/trip/delete?trip={trip_id}").status_code == 200 and "Delete" in client.get(f"/trip/delete?trip={trip_id}").text
+    from gitaway.pages import tripimport
+    assert tripimport.can_delete({"tenant_role": "admin"}) and not tripimport.can_delete({"tenant_role": "editor"}) and not tripimport.can_delete({"tenant_role": "viewer"})
+    assert client.post("/trip/delete", data={"trip": "nosuchtrip1"}, follow_redirects=False).status_code == 404
+    assert client.post("/trip/delete", data={"trip": trip_id}, follow_redirects=False).status_code == 303
+    assert ses.trips(person()) == []
+    with familydb.using(person()) as db:
+        for table, col in (("trip_imports", "trip_id"), ("activities", "trip_id"), ("cal_state", "trip_id"), ("trips", "id")):
+            assert familydb.row(db, f"SELECT COUNT(*) AS n FROM {table}")["n"] == 0, table
+    assert client.get("/trip/details").status_code == 404
 
 
 def test_a_viewer_cannot_import():

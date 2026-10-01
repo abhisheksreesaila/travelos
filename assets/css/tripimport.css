@@ -50,3 +50,6 @@
   .ti-title { font-size: 1.75rem; }
   .ti-actions .btn { width: 100%; }
 }
+.ti-link { display: inline-flex; align-items: center; min-height: 2.75rem; font-weight: 800; color: var(--ink-2); text-decoration: underline; text-underline-offset: 0.25rem; }
+.ti-danger { color: var(--coral-deep); }
+.ti-match { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.75rem; border-radius: var(--r-md); background: var(--sun-tint); }
