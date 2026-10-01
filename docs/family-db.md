@@ -9,10 +9,12 @@ A family is an fh-saas tenant (ADR-0004). Everything a family plans together liv
 | `gitaway/tripcal.py` | The calendar: `activities`, `add_activity`, `notes`, `add_note`, `delete_activity`, `undo_delete`, `live_add`, `apply_plans`, `remove_plans`. |
 | `gitaway/rides.py` | `list_rides`, `get_ride`, `save_ride`, `cancel_ride`, `step_ride`: the only code that touches the `rides` table. |
 | `gitaway/familydb_social.py` | The forks and saves tables (F-041); `familydb` appends `SOCIAL_TABLES` to `FAMILY_TABLES`. |
+| `gitaway/familydb_import.py` | The `trip_imports` table (F-042): one validated template per imported trip, confirmation numbers included; `familydb.booking_for_trip` reads it back as the booking dict (under `"imported"`). |
+| `gitaway/tripimport.py`, `gitaway/importer.py` | Parse `docs/trip-template.md` (safe YAML, line-specific errors), and save the plan as a trip with `source = "imported"`. The screens are `gitaway/pages/tripimport.py`. |
 
 ## Tables
 
-`members` (display info, the trip each person has open, their remembered workspace picks) · `trips` (title, `source` demo or imported, `params` = `catalog.trip_query`, dates) · `bookings` (the pay flow's picks, one per trip, money in cents) · `activities` and `notes` (the calendar; `gone` is 0 live, 1 last deleted so Undo works; older deletions are removed from the file) · `cal_state` (per trip and scope: the last id number, whether Mom's scripted add has happened) · `friends` (per trip) · `rides` (per family and set of picks, so every member sees them) · `forks`, `saves` (F-041).
+`members` (display info, the trip each person has open, their remembered workspace picks) · `trips` (title, `source` demo or imported, `params` = `catalog.trip_query`, dates) · `bookings` (the pay flow's picks, one per trip, money in cents) · `activities` and `notes` (the calendar; `gone` is 0 live, 1 last deleted so Undo works; older deletions are removed from the file) · `cal_state` (per trip and scope: the last id number, whether Mom's scripted add has happened) · `friends` (per trip) · `rides` (per family and set of picks, so every member sees them) · `forks`, `saves` (F-041) · `trip_imports` (F-042: the document of an imported trip; its flights, hotel and car are read from it, never copied into `bookings`; confirmation numbers exist only here and are drawn only on the calendar's booking detail and `/trip/details`).
 
 A trip belongs to the family, not to a person. Each member has their own *open* trip (`members.trip_id`; the family's newest until they choose). Booking different picks makes another trip; paying the same picks again opens the trip they made. The calendar's trip switcher is `POST /trips/switch`.
 

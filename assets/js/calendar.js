@@ -27,10 +27,15 @@
   // Blocks keep their true height. Mark the ones whose text does not fit (is-cut: CSS fades the edge) and the narrow
   // side-by-side lanes that cannot fit even one word (is-timeonly: the time shows, hover or focus opens the title).
   function markCut(root) {
-    $$(".cal-act", root).forEach((b) => {
+    $$(".cal-act, a.cal-booked:not(.cal-ride)", root).forEach((b) => {  // the second kind: a block booked elsewhere (F-042)
       b.classList.add("is-measuring");
       b.classList.remove("is-cut", "is-timeonly");
       const title = $(".cal-title", b);
+      if (b.classList.contains("cal-booked")) {  // a booked block only fades and opens on hover: no lanes, no time-only
+        if (b.scrollHeight > b.clientHeight + 1 || b.scrollWidth > b.clientWidth + 1) b.classList.add("is-cut");
+        b.classList.remove("is-measuring");
+        return;
+      }
       if (b.classList.contains("cal-lane") && !b.classList.contains("cal-short") && title.scrollWidth > title.clientWidth + 1) b.classList.add("is-timeonly");
       if (b.scrollHeight > b.clientHeight + 1 || b.scrollWidth > b.clientWidth + 1) b.classList.add("is-cut");
       b.classList.remove("is-measuring");
