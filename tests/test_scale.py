@@ -36,7 +36,7 @@ def test_calendar_hour_grid_is_in_rem(client):
     from tests.test_calendar import book
 
     book(client)
-    html = client.get("/calendar").text
+    html = client.get("/calendar?view=days").text
     assert re.search(r"--top:[\d.]+rem;--h:[\d.]+rem", html)
     assert not re.search(r"--top:[\d.]+px", html)
     assert "HOUR_REM = 3" in client.get("/assets/js/calendar.js").text
