@@ -272,3 +272,50 @@ Found by the full real-app walkthrough on master (2026-10-01).
 ## F-047 Tests pass in any order [done]
 Found while reviewing F-045: run in reverse order, tests/test_family_storage.py::test_a_real_second_process_sees_the_same_trip fails (on master too; master had 209 order-dependent failures before F-045).
 - [x] the suite passes in reverse and random order (add pytest-randomly or an equivalent via pixi and run it once in CI-style)
+
+# Go live (brief: docs/briefs/go-live.md, approved 2026-10-01)
+
+## F-048 Deploy to Railway [todo]
+Needs: none
+- [ ] the app builds and runs on Railway (pixi-based image), with all databases on a persistent volume (working directory on the volume), assets resolved from the code folder
+- [ ] production settings: session cookie https-only, `GITAWAY_DEV_LOGIN` never set, secret key from `GITAWAY_SECRET_KEY`, a health check route; docs/setup.md has a Railway section
+- [ ] a new Railway project "gitaway" with a volume and a public *.up.railway.app address; a redeploy keeps a test family's data
+- [ ] Google sign-in works on the live address once the captain adds the keys
+
+## F-049 Stay signed in about 30 days [todo]
+Needs: none
+- [ ] sign-in lasts about 30 days on a device, sliding with use (fh-saas `SessionConfig` / `create_session_middleware`), secure cookie in production
+- [ ] sign-out and removed members still end access immediately
+
+## F-050 "Discover" becomes "Community trips" [todo]
+Needs: none
+- [ ] the hub is named "Community trips" everywhere (header, landing, links, page title); /discover keeps working and /community is the new path
+- [ ] the page says plainly that these are trips shared by travelers and creators, with "Share yours" and "Turn a link into a trip" up front
+
+## F-051 Themed date pickers and dropdowns [todo]
+Design: with F-052/F-054 canvas · Needs: none
+- [ ] a GitAway date-range picker (rounded, tokens, keyboard and screen-reader accessible, phone-friendly) replaces browser date inputs on "Where to?" and every other date field
+- [ ] dropdowns and number pickers (adults, kids' ages, roles, times) use a GitAway style; no browser-default widgets left
+
+## F-052 A sign-in page that makes you want to travel [todo]
+Design: canvas first · Needs: none
+- [ ] emotional, animated, fun travel sign-in (Google button and dev sign-in) per the approved artboard; fast, accessible, reduced motion calm
+
+## F-053 Good when empty [todo]
+Needs: none
+- [ ] a new family's first screens offer: start a trip, import a booked trip, browse community trips; no blank calendar, forks, family or trip pages anywhere
+
+## F-054 Phone-first trip view [todo]
+Design: canvas first · Needs: F-051
+- [ ] on phones the trip opens on "Today": what's next, flight and hotel cards, a swipeable day list, add a plan in two taps, notes
+- [ ] works installed to the Home Screen; all data and roles as on desktop
+
+# Go live phase 1.5
+
+## F-055 Guided trip builder [todo]
+Needs: F-051
+- [ ] a few friendly questions (where, when, who, flights, hotel, car) build the same trip as the template, with preview and save; no YAML
+
+## F-056 Paste an Expedia confirmation email [todo]
+Blocked until a real sample exists.
+- [ ] pasting an Expedia confirmation email pre-fills the trip for review (never saves directly)
