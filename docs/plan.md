@@ -255,10 +255,10 @@ Needs: none
 - [x] web app manifest, icons (192, 512, Apple touch), theme colour and Apple meta tags; "Add to Home Screen" opens full screen at /start or the current trip
 - [x] safe areas and the phone layouts work in standalone mode; a minimal service worker caches the app shell and the last-viewed trip for flaky connections
 
-## F-045 Keep the test suite fast [doing]
+## F-045 Keep the test suite fast [done]
 `pixi run test` grew from ~40s to ~170s as every test now wipes every family database (tests/wipe.py).
-- [ ] wipe only the families a test touched (record tenant ids opened in a set that survives `forget_schema_cache`), skip per-tenant `ensure_schema` in the wipe
-- [ ] `pixi run test` back under ~60s with the same isolation guarantees (a test proving a family opened before a reset is still wiped)
+- [x] wipe only the families a test touched (record tenant ids opened in a set that survives `forget_schema_cache`), skip per-tenant `ensure_schema` in the wipe
+- [x] `pixi run test` back under ~60s with the same isolation guarantees (a test proving a family opened before a reset is still wiped)
 
 ## F-046 Fixes from the end-to-end check [doing]
 Found by the full real-app walkthrough on master (2026-10-01).
@@ -268,3 +268,7 @@ Found by the full real-app walkthrough on master (2026-10-01).
 - [ ] the forks page's "Your calendar" preview shows scheduled rides, and fork placement treats them as busy
 - [ ] public shared pages don't reveal when and where a family is away: no flight numbers, no calendar dates (Day 1…N instead), and the hotel as its area ("a hotel in Santa Monica"), not its name; the family still sees everything
 - [ ] the invite expiry reads "expires in 14 days" when brand new
+
+## F-047 Tests pass in any order [todo]
+Found while reviewing F-045: run in reverse order, tests/test_family_storage.py::test_a_real_second_process_sees_the_same_trip fails (on master too; master had 209 order-dependent failures before F-045).
+- [ ] the suite passes in reverse and random order (add pytest-randomly or an equivalent via pixi and run it once in CI-style)

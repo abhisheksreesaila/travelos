@@ -48,4 +48,4 @@ Every calendar, voice, forks-apply and ride form carries a hidden `trip` (the tr
 
 ## Tests
 
-`tests/test_signin.py`: `person(traveler)` is a session dict signed in as the dev sign-in does it (a real person with a family database behind it), `stored_booking()` and `stored_calendar()` read what the database holds. `tests/conftest.py` and `tests_browser/conftest.py` empty every family table (and the community database) after each test. `tests/test_family_storage.py` covers restart, two members, several trips, concurrency and migrations.
+`tests/test_signin.py`: `person(traveler)` is a session dict signed in as the dev sign-in does it (a real person with a family database behind it), `stored_booking()` and `stored_calendar()` read what the database holds. `tests/conftest.py` and `tests_browser/conftest.py` empty the family tables of the families the test opened (`familydb.take_opened`, which survives `forget_schema_cache`) and the community database after each test; `tests/test_wipe.py` covers it. `tests/test_family_storage.py` covers restart, two members, several trips, concurrency and migrations.
