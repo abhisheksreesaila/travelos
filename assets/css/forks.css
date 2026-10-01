@@ -4,17 +4,17 @@
 
 /* Calendar card */
 .fk-cal { min-width: 0; padding: 0.875rem 1rem 1rem; display: flex; flex-direction: column; gap: 0.625rem; }
-.fk-card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
+.fk-card-head { display: flex; align-items: center; min-height: 2.25rem; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
 .fk-card-title { font-family: var(--font-display); font-weight: 800; font-size: 1.375rem; }
 .fk-link { font-weight: 800; font-size: max(var(--text-min), 0.875rem); }
 .fk-grid { --hh: 3rem; --w: 5; display: flex; min-width: 0; }
 .fk-gutter { flex: 0 0 3rem; }
 /* The days sit in a scroller that shows a window of --w days (5 desktop, 3 tablet); a 3-night trip fills it, a 20-day trip scrolls */
-.fk-scroll { flex: 1; min-width: 0; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: thin; scroll-behavior: smooth; overscroll-behavior-x: contain; }
+.fk-scroll { flex: 1; min-width: 0; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; scroll-behavior: smooth; overscroll-behavior-x: contain; }
 .fk-day { flex: 0 0 calc(100% / min(var(--n), var(--w))); box-sizing: border-box; padding-right: 0.5rem; scroll-snap-align: start; }
-.fk-nav { display: flex; justify-content: flex-end; gap: 0.5rem; }
+.fk-nav { display: flex; gap: 0.5rem; margin-left: auto; }
 .fk-nav[hidden] { display: none; }
-.fk-navbtn { width: 2.5rem; height: 2.5rem; border: 0; border-radius: var(--r-pill); background: var(--card); color: var(--ink); cursor: pointer; display: grid; place-items: center; box-shadow: 0 0 0 1px var(--line), 0 0.1875rem 0 rgba(30, 26, 46, .12); }
+.fk-navbtn { width: 2.25rem; height: 2.25rem; border: 0; border-radius: var(--r-pill); background: var(--card); color: var(--ink); cursor: pointer; display: grid; place-items: center; box-shadow: 0 0 0 1px var(--line), 0 0.1875rem 0 rgba(30, 26, 46, .12); }
 .fk-navbtn:disabled { opacity: .4; cursor: default; }
 .fk-dayhead { height: 3.25rem; box-sizing: border-box; padding: 0.375rem 0.625rem; border-radius: 1rem; display: flex; align-items: center; gap: 0.5rem; min-width: 0; }
 .fk-corner { background: none; padding: 0; }

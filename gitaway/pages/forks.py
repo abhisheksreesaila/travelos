@@ -79,10 +79,11 @@ def calendar_view(session, placements=(), author="", fresh=(), demo=""):
     hours = [Span(f"{h % 12 or 12} {'AM' if h < 12 else 'PM'}", cls="fk-hour") for h in range(gs // 60, cal.GRID_END // 60)]
     gutter = Div(Div(cls="fk-dayhead fk-corner"), Div(*hours, cls="fk-hours", style=f"height:{_rem(cal.GRID_END - gs)}"), cls="fk-gutter", aria_hidden="true")
     return Section(
-        Div(Span("Your calendar", cls="fk-card-title"), A("Open the calendar", href="/calendar?view=days", cls="fk-link"), cls="fk-card-head"),
+        Div(Span("Your calendar", cls="fk-card-title"),
+            Div(Button(icon("chev-left", 16, 2.6), type="button", data_dir="-1", aria_label="Earlier days", cls="fk-navbtn"),
+                Button(icon("chev-right", 16, 2.6), type="button", data_dir="1", aria_label="Later days", cls="fk-navbtn"), cls="fk-nav", hidden=True) if len(cols) > 3 else "",
+            A("Open the calendar", href="/calendar?view=days", cls="fk-link"), cls="fk-card-head"),
         Div(gutter, Div(*cols, cls="fk-scroll", id="fk-scroll", role="region", aria_label="Days", tabindex="0"), cls="fk-grid", style=f"--n:{len(cols)}"),
-        Div(Button(icon("chev-left", 18, 2.6), type="button", data_dir="-1", aria_label="Earlier days", cls="fk-navbtn"),
-            Button(icon("chev-right", 18, 2.6), type="button", data_dir="1", aria_label="Later days", cls="fk-navbtn"), cls="fk-nav", hidden=True) if len(cols) > 3 else "",
         cls="fk-cal card", aria_label="Trip calendar")
 
 
