@@ -12,7 +12,7 @@ def cookie_size(client):
 
 def test_a_full_calendar_with_a_booking_and_forks_stays_under_the_cookie_limit(client):
     sign_in(client)
-    for slug in ["sun-tacos-and-tide-pools", "weekend-in-the-redwoods-loop", "kid-friendly-tokyo-in-five-days", "pup-friendly-coast-road-trip", "couples-wine-country-long-weekend"]:
+    for slug in ["sun-tacos-and-tide-pools", "la-for-two-slow-mornings", "dog-friendly-big-sur-drive", "san-diego-on-a-budget"]:
         sign_in(client, next=f"/trips/{slug}", intent="fork")
     book(client)
     for name in ["Mom", "Sam", "Grandma Rosalind", "Uncle Bartholomew"]:
@@ -35,7 +35,7 @@ def test_a_full_calendar_with_a_booking_and_forks_stays_under_the_cookie_limit(c
 
 def test_friends_alone_cannot_push_the_cookie_over_the_limit(client):
     sign_in(client)
-    for slug in ["sun-tacos-and-tide-pools", "weekend-in-the-redwoods-loop", "kid-friendly-tokyo-in-five-days", "pup-friendly-coast-road-trip", "couples-wine-country-long-weekend"]:
+    for slug in ["sun-tacos-and-tide-pools", "la-for-two-slow-mornings", "dog-friendly-big-sur-drive", "san-diego-on-a-budget"]:
         sign_in(client, next=f"/trips/{slug}", intent="fork")
     book(client)
     for i in range(10):

@@ -155,6 +155,46 @@ def booked_blocks(b, t):
     ]
 
 
+AIRPORT_BUFFER = 120  # minutes before the flight home that a plan must be finished by
+
+
+def day_window(blocks, day):
+    """(first start, last end) for plans on `day`: nothing before the arrival flight lands on the first day, and nothing
+    later than AIRPORT_BUFFER minutes before the flight home leaves on the last day. Pure."""
+    lo, hi = grid_start(blocks), GRID_END
+    for b in blocks:
+        if b.id == "b-out" and b.day == day:
+            lo = max(lo, b.end)
+        if b.id == "b-back" and b.day == day:
+            hi = min(hi, b.start - AIRPORT_BUFFER)
+    return lo, hi
+
+
+def window_problem(blocks, day, start, end):
+    """("land", landing minute) when a plan starts before you land, ("home", latest end) when it ends too close to the flight
+    home, else None. Pure."""
+    for b in blocks:
+        if b.id == "b-out" and b.day == day and start < b.end:
+            return "land", b.end
+        if b.id == "b-back" and b.day == day and end > b.start - AIRPORT_BUFFER:
+            return "home", b.start - AIRPORT_BUFFER
+    return None
+
+
+def window_message(problem):
+    """The sentence the calendar shows for a window_problem."""
+    kind, at = problem
+    if kind == "land":
+        return f"You land at {fmt_time(at)} on the first day. Plan after that."
+    return f"Your flight home leaves at {fmt_time(at + AIRPORT_BUFFER)}. Finish by {fmt_time(at)}."
+
+
+def window_note(problem):
+    """The short clash note for a fork plan (see Placement.clash)."""
+    kind, at = problem
+    return f"before you land at {fmt_time(at)}" if kind == "land" else f"too close to your flight home (finish by {fmt_time(at)})"
+
+
 def grid_start(blocks):
     """7 AM, or the hour of an earlier booked block (a 6:40 AM flight)."""
     earliest = min([DEFAULT_START, *(x.start for x in blocks)])
@@ -259,7 +299,9 @@ def parse_time(value, what):
     return int(m.group(1)) * 60 + int(m.group(2))
 
 
-def _clean(session, demo, *, day, start, end, title, kind):
+def _clean(session, demo, *, day, start, end, title, kind, old=None):
+    """Validate an activity. `old` is the (day, start, end) it already has: when unchanged, the flight window is not re-checked,
+    so renaming an older item (or a friend's) still works."""
     _, t, blocks = _context(session, demo)
     title = " ".join((title or "").split())
     if not title:
@@ -286,6 +328,8 @@ def _clean(session, demo, *, day, start, end, title, kind):
     for b in blocks:
         if b.day == day and s < b.end and b.start < e:
             raise CalendarError(f"That overlaps {b.title} ({fmt_time(b.start)} – {fmt_time(b.end)}). Pick a gap.")
+    if (day, s, e) != old and (problem := window_problem(blocks, day, s, e)):
+        raise CalendarError(window_message(problem))
     return day, s, e, title
 
 
@@ -328,7 +372,8 @@ def update_activity(session, id_, *, day=None, start=None, end=None, title=None,
         raise CalendarError("That activity is gone.")
     day, s, e, title = _clean(
         session, demo, day=row["d"] if day is None else day, start=row["s"] if start is None else start,
-        end=row["e"] if end is None else end, title=row["t"] if title is None else title, kind=row["k"] if kind is None else kind)
+        end=row["e"] if end is None else end, title=row["t"] if title is None else title, kind=row["k"] if kind is None else kind,
+        old=(row["d"], row["s"], row["e"]))
     row.update(d=day, s=s, e=e, t=title, k=kind or row["k"])
     _save(session, demo, state)
     return _act(row)
@@ -403,10 +448,11 @@ def live_pending(session, demo=""):
 def _free_slot(blocks, state, day, gs):
     """The first start for LIVE_LEN minutes with nothing on it: 10:00, then later mornings, then earlier ones."""
     taken = [(b.start, b.end) for b in blocks if b.day == day] + [(a["s"], a["e"]) for a in state["a"] if a["d"] == day]
+    lo, hi = day_window(blocks, day)  # not before you land, not too close to the flight home
     later = range(LIVE_START, 12 * 60 + 1, 30)
     earlier = range(LIVE_START - 30, gs - 1, -30)
     for s in [*later, *earlier]:
-        if s >= gs and s + LIVE_LEN <= GRID_END and not any(s < e and b < s + LIVE_LEN for b, e in taken):
+        if s >= max(gs, lo) and s + LIVE_LEN <= hi and not any(s < e and b < s + LIVE_LEN for b, e in taken):
             return s
     return None
 
@@ -444,3 +490,154 @@ def live_add(session, demo=""):
         _save(session, demo, state, enforce=False)
         return None
     return _act(act)
+
+
+# ---- applying a fork (F-021) ---------------------------------------------------------------------------------------
+
+FORK_LEN = 120   # minutes a forked stop gets when the itinerary only gives a start time
+FORK_MEAL_LEN = 90
+MAX_BY = 20
+_STOP_TIME = re.compile(r"^(\d{1,2}):(\d{2})\s*([AP]M)$", re.I)
+_FORK_KIND = {"food": "food", "tree": "outdoors", "waves": "outdoors", "bike": "outdoors", "sun": "outdoors",
+              "sight": "culture", "train": "travel", "car": "travel", "plane": "travel"}
+
+
+@dataclass(frozen=True)
+class Plan:
+    """One thing from a fork, as a calendar activity waiting for a slot. `key` is stable per fork ("d2s1": day 2, stop 1)."""
+    key: str
+    day: int       # index into the traveler's trip days (0 is the first)
+    start: int
+    end: int
+    title: str
+    kind: str
+
+
+@dataclass(frozen=True)
+class Placement:
+    """Where a Plan lands on the traveler's calendar.
+
+    state "free": the slot is open. "clash": something is in the way (`clash` says what; `hard` means it can never be
+    applied: a booked block, a day past the trip or hours outside the grid). "have": the same plan is already there.
+    """
+    plan: Plan
+    state: str
+    clash: str = ""
+    hard: bool = False
+
+    @property
+    def checked(self):
+        return self.state == "free"
+
+
+def _short(title):
+    """The title cut at a word to fit MAX_TITLE (or hard at MAX_TITLE when there is no word break); never an ellipsis, never empty."""
+    title = " ".join(title.split())
+    if len(title) <= MAX_TITLE:
+        return title or "Plan"
+    head = title[:MAX_TITLE + 1]
+    cut = head.rsplit(" ", 1)[0] if " " in head else head[:MAX_TITLE]
+    return cut.rstrip(" ,&-:·") or title[:MAX_TITLE]
+
+
+def stop_start(text):
+    """Minutes after midnight for a stop time like '1:00 PM', or None when it is not a clock time."""
+    m = _STOP_TIME.match((text or "").strip())
+    if not m or not 1 <= int(m.group(1)) <= 12 or int(m.group(2)) > 59:
+        return None
+    return int(m.group(1)) % 12 * 60 + int(m.group(2)) + (720 if m.group(3).upper() == "PM" else 0)
+
+
+def fork_plans(itinerary):
+    """The Plans in a fork's itinerary: every stop with a clock time that is not one of the author's own bookings.
+
+    Day n of the fork lands on day n of the traveler's trip. A stop has only a start, so it gets a typical length.
+    """
+    out = []
+    for d in itinerary.days:
+        for i, s in enumerate(d.stops):
+            start = stop_start(s.time)
+            if s.booked or start is None:
+                continue
+            length = FORK_MEAL_LEN if s.kind == "food" else FORK_LEN
+            out.append(Plan(f"d{d.n}s{i}", d.n - 1, start, start + length, _short(s.title), _FORK_KIND.get(s.kind, "fun")))
+    return out
+
+
+def _overlap(a, day, start, end):
+    return a.day == day and start < a.end and a.start < end
+
+
+def place_plans(plans, blocks, acts, n_days, gs):
+    """Place `plans` in the empty slots around the booked `blocks` and the existing `acts` (the traveler's and friends'). Pure.
+
+    Returns one Placement per plan, in order. A plan that only overlaps another plan (a friend's, the traveler's or an
+    earlier plan of the fork) is a soft clash: unchecked by default but still allowed. Nothing here changes its inputs.
+    """
+    out, taken = [], []
+    for p in plans:
+        if any(a.day == p.day and a.start == p.start and a.title.casefold() == p.title.casefold() for a in acts):
+            out.append(Placement(p, "have"))
+        elif p.day >= n_days:
+            out.append(Placement(p, "clash", "after your trip ends", True))
+        elif p.start < gs or p.end > GRID_END:
+            out.append(Placement(p, "clash", f"outside {fmt_time(gs)} to {fmt_time(GRID_END)}", True))
+        elif (hit := next((b for b in blocks if _overlap(b, p.day, p.start, p.end)), None)):
+            out.append(Placement(p, "clash", f"clashes with {hit.title}", True))
+        elif (problem := window_problem(blocks, p.day, p.start, p.end)):
+            out.append(Placement(p, "clash", window_note(problem), True))
+        elif (soft := next((x for x in [*acts, *taken] if _overlap(x, p.day, p.start, p.end)), None)):
+            owner = f"{soft.by}'s " if getattr(soft, "by", "") else ""
+            out.append(Placement(p, "clash", f"clashes with {owner}{soft.title}"))
+        else:
+            out.append(Placement(p, "free"))
+            taken.append(p)
+    return out
+
+
+def preview_fork(session, itinerary, demo=""):
+    """The Placements of `itinerary` on the signed-in traveler's calendar. Raises CalendarError when signed out or nothing is booked."""
+    _, t, blocks = _context(session, demo)
+    return place_plans(fork_plans(itinerary), blocks, activities(session, demo), len(days(t)), grid_start(blocks))
+
+
+def apply_fork(session, itinerary, picks, by="", demo=""):
+    """Add the picked plans of `itinerary` to the calendar as activities and return them (oldest first).
+
+    Hard clashes and plans already on the calendar are skipped, so posting the same picks again adds nothing. All or
+    nothing: a full cookie raises CalendarError and leaves the calendar as it was.
+    """
+    wanted = set(picks)
+    chosen = [x.plan for x in preview_fork(session, itinerary, demo) if x.plan.key in wanted and not x.hard and x.state != "have"]
+    state = _load(session, demo)
+    added, n = [], state["q"]
+    for p in chosen:
+        n += 1
+        row = {"i": f"a{n}", "d": p.day, "s": p.start, "e": p.end, "t": p.title, "k": p.kind}
+        if by.strip():
+            row["b"] = " ".join(by.split())[:MAX_BY]
+        state["a"].append(row)
+        added.append(_act(row))
+    if added:
+        state["q"] = n
+        _save(session, demo, state)
+    return added
+
+
+def remove_applied(session, itinerary, ids, by="", demo=""):
+    """Undo an apply: remove the activities in `ids` that came from `itinerary` (same author, day, start and title as one of its plans).
+
+    Anything else in `ids` (the traveler's own plans, a friend's) stays, so a made-up id list cannot delete it.
+    Returns how many were removed.
+    """
+    author = " ".join(by.split())[:MAX_BY]
+    mine = {(p.day, p.start, p.title) for p in fork_plans(itinerary)}
+    gone = {i for i in ids}
+    state = _load(session, demo)
+    drop = {a["i"] for a in state["a"] if a["i"] in gone and author and a.get("b") == author and (a["d"], a["s"], a["t"]) in mine}
+    if not drop:
+        return 0
+    state["a"] = [a for a in state["a"] if a["i"] not in drop]
+    state["n"] = [n for n in state["n"] if n.get("a") not in drop]
+    _save(session, demo, state, enforce=False)
+    return len(drop)

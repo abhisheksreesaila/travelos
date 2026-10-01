@@ -66,24 +66,25 @@ def test_already_signed_in_goes_straight_to_next(client):
 
 
 def test_fork_intent_adds_slug_once_over_http(client):
-    sign_in(client, next="/trips/la-family-week", intent="fork")
-    sign_in(client, next="/trips/la-family-week", intent="fork")
-    sign_in(client, next="/trips/other", intent="save")
-    assert session_data(client)["forks"] == {"ari": ["la-family-week"]}
+    sign_in(client, next="/trips/sun-tacos-and-tide-pools", intent="fork")
+    sign_in(client, next="/trips/sun-tacos-and-tide-pools", intent="fork")
+    sign_in(client, next="/trips/la-for-two-slow-mornings", intent="save")
+    assert session_data(client)["forks"] == {"ari": ["sun-tacos-and-tide-pools"]}
 
 
 def test_fork_helpers():
     s = {}
     ses.sign_in(s, "ari")
     assert ses.add_fork(s, "/plan") is False
-    assert ses.add_fork(s, "/trips/x?y=1") is True
-    assert ses.add_fork(s, "/trips/x") is False
-    assert ses.forks(s) == ["x"]
+    assert ses.add_fork(s, "/trips/nope") is False  # a trip that does not exist is not forked
+    assert ses.add_fork(s, "/trips/sun-tacos-and-tide-pools?y=1") is True
+    assert ses.add_fork(s, "/trips/sun-tacos-and-tide-pools") is False
+    assert ses.forks(s) == ["sun-tacos-and-tide-pools"]
     ses.sign_in(s, "sam")
     assert ses.forks(s) == []
-    ses.add_fork(s, "/trips/b")
+    ses.add_fork(s, "/trips/la-for-two-slow-mornings")
     ses.sign_in(s, "ari")
-    assert ses.forks(s) == ["x"]
+    assert ses.forks(s) == ["sun-tacos-and-tide-pools"]
     assert ses.current_traveler(s).initials == "AR"
     ses.sign_out(s)
     assert ses.current_traveler(s) is None and ses.forks(s) == []
