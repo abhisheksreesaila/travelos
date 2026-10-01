@@ -17,7 +17,7 @@ from starlette.responses import RedirectResponse
 
 from gitaway import catalog, rides, session as ses, tripcal
 from gitaway.icons import icon
-from gitaway.layout import page
+from gitaway.layout import page, trip_field
 from gitaway.pages import pay, plan
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/rides.css"),)
@@ -159,7 +159,7 @@ def confirm_view(p, flight, stay, trip, est, vals=None, error=""):
         cls="rd-card rd-main",
     )
     guest = Form(
-        H2("Who's riding?", cls="rd-h2"),
+        trip_field(), H2("Who's riding?", cls="rd-h2"),
         Div(error, role="alert", cls="rd-error", id="rd-error") if error else "",
         Div(field("first", "First name", autocomplete="given-name", maxlength=str(rides.MAX_NAME)), field("last", "Last name", autocomplete="family-name", maxlength=str(rides.MAX_NAME)), cls="rd-two"),
         field("phone", "Mobile phone", "tel", autocomplete="tel", placeholder="(310) 555-0123"),
@@ -229,11 +229,11 @@ def ride_view(session, r, error="", status=200):
     on_cal = bool(b and rides.booking_key(b) == r.key and tripcal.rides_of(b))
     controls = []
     if getattr(prov, "can_step", False) and s.can_step:
-        controls.append(Form(Button(icon("rotate", 16, 2.4), "Step the simulation", type="submit", cls="btn btn-sm rd-step-btn", id="rd-step"),
+        controls.append(Form(trip_field(), Button(icon("rotate", 16, 2.4), "Step the simulation", type="submit", cls="btn btn-sm rd-step-btn", id="rd-step"),
                              Span(f"Next: {s.next_action.replace('_', ' ').title()}" if s.next_action else "", cls="rd-hint"),
                              action=f"/rides/{r.id}/step", method="post", cls="rd-ctl"))
     if s.can_cancel:
-        controls.append(Form(Button("Cancel this ride", type="submit", cls="btn btn-sm rd-cancel", id="rd-cancel"),
+        controls.append(Form(trip_field(), Button("Cancel this ride", type="submit", cls="btn btn-sm rd-cancel", id="rd-cancel"),
                              Span("Free to cancel until your driver arrives.", cls="rd-hint"),
                              action=f"/rides/{r.id}/cancel", method="post", cls="rd-ctl"))
     driver = Div(Span(icon("car", 20, 2.2), cls="rd-car"), Div(Span(s.driver, cls="rd-pname"), Span(f"{s.vehicle} · plate {s.plate}", cls="rd-pdesc")), cls="rd-driver", id="rd-driver") if s.driver and not r.canceled else ""

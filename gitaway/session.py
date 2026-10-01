@@ -152,16 +152,40 @@ class Family:
         return familydb.booking_for_trip(self.db, self.trip_id)
 
 
+# The trip a request names (a `trip` query or form field, bound by `bind`), and the trip it resolved to (for the forms it renders).
+# A page's forms carry the trip they were drawn for, so a stale tab can never write into whichever trip someone else opened since.
+_asked_trip = ContextVar("gitaway_trip_asked", default=None)
+_asked_read_only = ContextVar("gitaway_trip_asked_get", default=True)
+_open_trip = ContextVar("gitaway_trip_open", default="")
+
+
+def open_trip_id() -> str:
+    """The id of the trip this request is working on ("" when none): hidden `trip` fields in forms carry it back."""
+    return _open_trip.get()
+
+
 @contextmanager
 def family(session):
-    """`with family(session) as fam:` the signed-in person's family, or None when signed out or not a member of one."""
+    """`with family(session) as fam:` the signed-in person's family, or None when signed out or not a member of one.
+
+    `fam.trip_id` is the trip the request names, if it is one of the family's (checked here); a plain GET with no or an unknown trip
+    gets the person's open trip. A write that names a trip the family does not have gets no trip at all, so it changes nothing.
+    """
     t = current_traveler(session)
     with familydb.using(session) as db:
         if t is None or db is None:
             yield None
             return
         member = familydb.ensure_member(db, t.id, session.get("email") or "", t.name)
-        yield Family(db, t, member, familydb.current_trip_id(db, member))
+        trip_id = familydb.current_trip_id(db, member)
+        asked = _asked_trip.get()
+        if asked:
+            if familydb.trip(db, asked):
+                trip_id = asked
+            elif not _asked_read_only.get():
+                trip_id = None
+        _open_trip.set(trip_id or "")
+        yield Family(db, t, member, trip_id)
 
 
 def booking(session):
@@ -349,6 +373,15 @@ async def bind(req, session):
     Async on purpose: a sync beforeware runs in a threadpool copy of the context, so the ContextVar set would be lost.
     """
     _request_traveler.set(current_traveler(session))
+    asked, safe = req.query_params.get("trip"), req.method in ("GET", "HEAD")
+    if not safe and req.url.path != "/trips/switch":  # the switcher's own `trip` field names the trip to open, not the one being edited
+        try:
+            asked = (await req.form()).get("trip") or asked
+        except Exception:  # not a form post
+            pass
+    _asked_trip.set(asked if isinstance(asked, str) and asked and len(asked) <= 40 and req.url.path != "/trips/switch" else None)
+    _asked_read_only.set(safe)
+    _open_trip.set("")
     from gitaway import forks  # here, not at the top: forks imports this module
     _request_forks.set(forks.count(session))
     _request_path.set(req.url.path + (f"?{req.url.query}" if req.url.query else ""))

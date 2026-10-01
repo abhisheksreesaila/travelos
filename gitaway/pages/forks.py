@@ -21,7 +21,7 @@ from starlette.responses import RedirectResponse
 
 from gitaway import forks as forks_model, hub, session as ses, tripcal as cal
 from gitaway.icons import icon
-from gitaway.layout import page
+from gitaway.layout import page, trip_field
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/forks.css"),)
 HH = 2.75  # rem per calendar hour (forks.css --hh): a little tighter than the calendar so a 6 AM start still fits 1280x800
@@ -156,7 +156,7 @@ def preview_panel(entry, placements, dates):
         body = [Form(
             Span(f"FROM {entry.title.upper()}", cls="fk-from"),
             Div(*[_row(x, dates) for x in placements], cls="fk-rows", role="group", aria_label="Plans in this fork", tabindex="0"),
-            Input(type="hidden", name="slug", value=entry.slug),
+            Input(type="hidden", name="slug", value=entry.slug), trip_field(),
             Button(f"Apply {free} plan{'s' if free != 1 else ''}", type="submit", id="fk-apply", cls="btn btn-ink fk-applybtn", disabled=(free == 0) or None, data_count=str(free)),
             Span("Your bookings and your crew's plans stay exactly where they are.", cls="fk-hint"),
             action="/forks/apply", method="post", id="fk-form", cls="fk-preview")]
@@ -172,7 +172,7 @@ def applied_panel(session, ids, source):
     n = len(got)
     return Div(
         Span(icon("check", 20, 2.6), Span(f"Added {n} plan{'s' if n != 1 else ''} from {who}.", id="fk-done-text"), cls="fk-done-text"),
-        Form(Input(type="hidden", name="ids", value=",".join(a.id for a in got)), Input(type="hidden", name="src", value=source.slug if source else ""), Button("Undo", type="submit", cls="fk-undo", autofocus=True, aria_describedby="fk-done-text"), action="/forks/undo", method="post"),
+        Form(trip_field(), Input(type="hidden", name="ids", value=",".join(a.id for a in got)), Input(type="hidden", name="src", value=source.slug if source else ""), Button("Undo", type="submit", cls="fk-undo", autofocus=True, aria_describedby="fk-done-text"), action="/forks/undo", method="post"),
         cls="fk-done fk-pop", role="status")
 
 

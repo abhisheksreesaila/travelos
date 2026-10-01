@@ -18,6 +18,7 @@ from starlette.responses import RedirectResponse
 
 from gitaway import session as ses, tripcal as cal, voice as vo
 from gitaway.icons import icon
+from gitaway.layout import trip_field
 
 _KEY = re.compile(r"^v\d$")
 _IDS = re.compile(r"^a\d{1,4}$")
@@ -96,7 +97,7 @@ def panel(session, demo, dates, question, placements, night, hear, error=""):
         Form(
             Span("I’LL ADD THESE", cls="vo-from"),
             Div(*rows, cls="vo-rows", role="group", aria_label="Plans to add", tabindex="0"),
-            _hidden("night", str(night)) if answered else "", _hidden("demo", cal.LONG) if demo == cal.LONG else "",
+            _hidden("night", str(night)) if answered else "", _hidden("demo", cal.LONG) if demo == cal.LONG else "", trip_field(),
             Button(label, type="submit", id="vo-apply", cls="btn btn-ink vo-applybtn", disabled=(ticked == 0 or not answered) or None,
                    data_locked="1" if not answered else None),
             Span("Your bookings and your crew’s plans stay exactly where they are.", cls="vo-hint"),

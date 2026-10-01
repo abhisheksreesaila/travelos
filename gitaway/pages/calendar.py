@@ -23,7 +23,7 @@ from starlette.responses import RedirectResponse
 
 from gitaway import catalog, forks as forks_model, session as ses, tripcal as cal
 from gitaway.icons import icon
-from gitaway.layout import avatar, brand, styles
+from gitaway.layout import avatar, brand, styles, trip_field
 from gitaway import voice as vo
 from gitaway.pages import pay, plan as plan_ui, voice as voice_ui
 
@@ -60,7 +60,8 @@ def _hidden(name, value):
 
 
 def _demo_field(demo):
-    return _hidden("demo", cal.LONG) if demo == cal.LONG else ""
+    """The hidden fields every calendar form carries: the trip it was drawn for, and the ?demo=long fixture when that is open."""
+    return (trip_field(), _hidden("demo", cal.LONG) if demo == cal.LONG else "")
 
 
 # ---- lanes and free gaps -------------------------------------------------------------------------------------------
@@ -504,7 +505,7 @@ def calendar_page(session, demo="", view="", form=None, notice=None, new="", und
                                                                      action="/calendar/undo", method="post", data_soft=""),
                            A("Dismiss", href=cal_url(demo, view=view), data_soft="", cls="cal-dismiss")))
     app = Div(top_bar(t, b, who, session, ctx), Div(card, vpanel or notes_panel(ctx, who, b), cls="cal-layout"), *layers,
-              id="cal-app", cls="cal", data_demo=demo, data_view=view, data_grid_start=str(gs), data_grid_end=str(cal.GRID_END),
+              id="cal-app", cls="cal", data_trip=ses.open_trip_id() or None, data_demo=demo, data_view=view, data_grid_start=str(gs), data_grid_end=str(cal.GRID_END),
               data_base=cal_url(demo, view=view), data_live="1" if cal.live_pending(session, demo) else None, data_voice="1" if voice is not None else None)
     body = (
         Title(f"GitAway · {trip_name(t)} calendar"),

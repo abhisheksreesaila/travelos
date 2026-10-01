@@ -364,3 +364,66 @@ def test_the_family_helper_takes_a_request_or_a_session_and_says_no_to_strangers
         familydb.family_db({})
     with pytest.raises(PermissionError):
         familydb.family_db({"user_id": s["user_id"], "tenant_id": "someone-elses"})
+
+
+# ---- a stale tab never writes into another trip ------------------------------------------------------------------------
+
+def two_trips(client):
+    """Trip A (sample) with a1 "Trip A plan", then trip B (3 nights) open with its own a1; returns (A id, B id)."""
+    book(client)
+    add(client, id="a1", title="Trip A plan")
+    book(client, **THREE_NIGHTS)
+    add(client, id="a1", title="Trip B plan", day="1")
+    ids = [t.id for t in ses.trips(person())]  # newest first
+    return ids[1], ids[0]
+
+
+def titles_of(trip_id):
+    s = person()
+    ses.switch_trip(s, trip_id)
+    return [a.title for a in cal.activities(s)]
+
+
+def test_a_form_drawn_for_a_trip_carries_that_trip(client):
+    a, b = two_trips(client)
+    html = client.get("/calendar?view=days&add=1").text
+    assert f'name="trip" value="{b}"' in html
+    assert f'name="trip" value="{a}"' not in html.split('class="cal-trips"')[0]
+
+
+def test_a_stale_tab_posting_with_its_trip_id_changes_that_trip_not_the_open_one(client):
+    a, b = two_trips(client)
+    client.post("/trips/switch", data={"trip": a})  # another tab opened trip A
+    r = client.post("/calendar/activities/a1/delete", data={"trip": b}, follow_redirects=False)  # the old tab still shows trip B
+    assert r.status_code == 303
+    assert titles_of(a) == ["Trip A plan"]  # trip A's a1 was never touched
+    assert titles_of(b) == []  # the delete landed in B, the trip the form was drawn for
+    client.post("/calendar/activities", data={**FORM, "id": "a7", "title": "Late add", "trip": b})
+    assert "Late add" not in titles_of(a) and "Late add" in titles_of(b)
+
+
+def test_a_write_naming_a_trip_the_family_does_not_have_changes_nothing(client):
+    a, b = two_trips(client)
+    r = client.post("/calendar/activities/a1/delete", data={"trip": "not-a-trip"}, follow_redirects=False)
+    assert r.status_code in (303, 409)
+    assert titles_of(b) == ["Trip B plan"] and titles_of(a) == ["Trip A plan"]
+    client.post("/calendar/activities", data={**FORM, "id": "a8", "title": "Nope", "trip": "not-a-trip"})
+    assert "Nope" not in titles_of(b) + titles_of(a)
+
+
+def test_a_plain_get_uses_the_open_trip_and_an_unknown_trip_falls_back_to_it(client):
+    a, b = two_trips(client)
+    assert "Trip B plan" in client.get("/calendar?view=days").text
+    assert "Trip B plan" in client.get("/calendar?view=days&trip=nope").text
+    assert "Trip A plan" in client.get(f"/calendar?view=days&trip={a}").text
+
+
+def test_forks_apply_and_voice_forms_carry_the_trip(client):
+    a, b = two_trips(client)
+    client.post("/fork", data={"next": "/trips/sun-tacos-and-tide-pools"})
+    assert f'name="trip" value="{b}"' in client.get("/forks?open=sun-tacos-and-tide-pools").text
+    assert f'name="trip" value="{b}"' in client.get("/calendar?voice=1&night=0").text
+    client.post("/trips/switch", data={"trip": a})
+    r = client.post("/forks/apply", data={"slug": "sun-tacos-and-tide-pools", "pick": ["d1s2"], "trip": b}, follow_redirects=False)
+    assert r.status_code == 303
+    assert titles_of(a) == ["Trip A plan"] and len(titles_of(b)) == 2  # the plan went to B, where the page was drawn
