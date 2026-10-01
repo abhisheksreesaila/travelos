@@ -54,7 +54,7 @@
 /* Source card */
 .source-card { position: relative; margin-top: 0.625rem; width: min(35rem, 100%); transform: rotate(-1deg); padding: 1rem; border-radius: 1.25rem; background: var(--card); box-shadow: 0 0 0 1px var(--line), 0 0.75rem 0.75rem -0.375rem rgba(0,0,0,.06), 0 1.5rem 1.5rem -0.75rem rgba(0,0,0,.06); display: flex; gap: 1rem; align-items: center; }
 .source-card .tape { top: -0.75rem; left: 40%; width: 6rem; height: 1.5rem; transform: rotate(-4deg); }
-.src-thumb { position: relative; flex: 0 0 9.375rem; height: 6rem; border-radius: 0.875rem; overflow: hidden; }
+.src-thumb { position: relative; background: var(--mint-tint); flex: 0 0 9.375rem; height: 6rem; border-radius: 0.875rem; overflow: hidden; }
 .src-thumb img { width: 100%; height: 100%; object-fit: cover; }
 .play { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 2.5rem; height: 2.5rem; border-radius: 50%; background: var(--card); display: grid; place-items: center; color: var(--ink); }
 .src-body { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }

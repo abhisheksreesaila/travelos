@@ -49,7 +49,7 @@ def hub_page(session, tags=(), creators=False, q=""):
     chips.append(chip("From creators", hub_href(on, not creators, q), creators, "", "play"))
     search = Form(
         Label(icon("target", 20, 2.2), Span("Where to", cls="sr-only"),
-              Input(type="search", name="q", value=q, placeholder="Where to? Los Angeles, Tokyo…", autocomplete="off", maxlength="40"), cls="hub-search"),
+              Input(type="search", name="q", value=q, placeholder="Where to?", autocomplete="off", maxlength="40"), cls="hub-search"),
         *[Input(type="hidden", name=k, value="1") for k in tags],
         *([Input(type="hidden", name="src", value="creators")] if creators else []),
         Button("Search", type="submit", cls="btn btn-sm"),

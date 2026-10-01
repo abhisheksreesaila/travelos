@@ -324,3 +324,7 @@ a.cal-w-head:hover, a.cal-w-head:focus-visible { box-shadow: 0 0 0 0.125rem var(
 @media (max-width: 720px) {
   .cal-scroll { height: auto; overflow-y: hidden; }
 }
+
+/* the Share button is a one-tap form (F-022) */
+.cal-share { display: contents; }
+button.cal-btn { border: 0; font: 800 1rem var(--font-body); cursor: pointer; }
