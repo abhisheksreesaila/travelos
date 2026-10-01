@@ -289,6 +289,7 @@ def ledger(q, trip):
         Span(*line, cls="ws-lines"),
         Button(catalog.money(q.total_cents), type="button", id="ws-total", cls="ws-total", aria_expanded="false", aria_controls="ws-pop",
                aria_haspopup="dialog", title="Cost breakdown"),
+        Span(f"Total {catalog.money(q.total_cents)}", id="ws-total-live", cls="sr-only", aria_live="polite"),
         A("Book", href=book_href(q.flight_id, q.stay_id, q.car_id, q.stay), id="ws-book", cls="btn btn-ink ws-book", aria_label="Book this trip"),
         pop,
         cls="ws-ledger", aria_label="Cost ledger",

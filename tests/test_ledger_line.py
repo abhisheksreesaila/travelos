@@ -66,3 +66,21 @@ def test_script_swaps_figures_and_never_adds_them():
     js = open("assets/js/workspace.js").read()
     assert "data-line-price" in js and "is-pill" in js and "ws-pop" in js
     assert not re.search(r"parseFloat|parseInt|Number\(\s*[^)]*(price|total)", js, re.I)
+
+
+def test_line_tooltips_name_the_picked_offers_and_the_script_keeps_them_current(client):
+    assert 'title="Skylark Air 214"' in bar_html(client)
+    assert 'title="Skylark Air 902"' in bar_html(client, "/plan?f=f4")
+    assert ".title = s.name" in open("assets/js/workspace.js").read()  # a pick updates the tooltip too
+
+
+def test_total_changes_are_announced_by_a_live_region(client):
+    bar = bar_html(client)
+    assert re.search(r'<span[^>]*id="ws-total-live"[^>]*aria-live="polite"|<span[^>]*aria-live="polite"[^>]*id="ws-total-live"', bar)
+    assert re.search(r'id="ws-total-live"[^>]*>[^<]*\$3,088', bar)
+    assert "ws-total-live" in open("assets/js/workspace.js").read()
+
+
+def test_pill_state_relabels_the_total_button():
+    js = open("assets/js/workspace.js").read()
+    assert "Show cost line" in js and "aria-haspopup" in js

@@ -106,9 +106,12 @@
       document.querySelector('[data-slot="' + lane + '"]').textContent = s.name;
       document.querySelector('[data-slot-sub="' + lane + '"]').textContent = s.sub;
       document.querySelector('[data-slot-price="' + lane + '"]').textContent = s.price;
-      document.querySelector('[data-line-price="' + lane + '"]').textContent = s.price;
+      var lineEl = document.querySelector('[data-line-price="' + lane + '"]');
+      lineEl.textContent = s.price;
+      lineEl.parentNode.title = s.name;
     });
     document.getElementById('ws-total').textContent = L.total;
+    document.getElementById('ws-total-live').textContent = 'Total ' + L.total;
     var chip = document.getElementById('ws-delta');
     chip.textContent = L.delta;
     chip.classList.toggle('fill-mint', L.cheapest);
@@ -475,6 +478,9 @@
     if (!ledger || ledger.classList.contains('is-pill') === on) return;
     if (on && popOpen()) setPop(false, false);
     ledger.classList.toggle('is-pill', on);
+    // As a pill the first tap only restores the line, so the button says that instead of promising a popover.
+    if (on) { totalBtn.setAttribute('aria-label', 'Show cost line'); totalBtn.removeAttribute('aria-haspopup'); }
+    else { totalBtn.removeAttribute('aria-label'); totalBtn.setAttribute('aria-haspopup', 'dialog'); }
   }
   if (ledger && pop) {
     totalBtn.addEventListener('click', function () {
