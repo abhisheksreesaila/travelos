@@ -91,15 +91,15 @@ Needs: F-014, F-019
 - [ ] the itinerary page's Save heart saves a trip (signed out: through the demo sign-in with intent=save) and saved trips show beside forks
 - [ ] apply one: preview its activities in the empty calendar slots around bookings and friends' items, uncheck the unwanted ones, apply with animation; clashes are clearly shown
 
-## F-022 Share to the community hub [doing]
+## F-022 Share to the community hub [done]
 Captain said go 2026-09-30 (build the hub, then the creator flow).
 Design: docs/design/canvas/Hub.dc.html
 Needs: F-014, F-019
-- [ ] one tap on Share turns the trip into a scrapbook itinerary page (no private notes or payment info)
-- [ ] community hub lists shared and creator itineraries, filterable by kid, pet and couple friendly
-- [ ] user-written itinerary text stays escaped and source links only allow http(s)
+- [x] one tap on Share turns the trip into a scrapbook itinerary page (no private notes or payment info)
+- [x] community hub lists shared and creator itineraries, filterable by kid, pet and couple friendly
+- [x] user-written itinerary text stays escaped and source links only allow http(s)
 
-## F-023 Creator link import [todo]
+## F-023 Creator link import [doing]
 Captain said go 2026-09-30. The creator is the editor: under 5 minutes from paste to submit, or creators won't bother.
 Design: docs/design/canvas/Creator.dc.html
 Needs: F-014, F-022
