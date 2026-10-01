@@ -6,15 +6,21 @@ platforms = ["linux-64", "osx-arm64"]
 [dependencies]
 python = "3.12.*"
 nbdev = "*"  # fh-saas imports nbdev.showdoc at load time but does not declare it
-pytest = "*"
-playwright-python = ">=1.62.0,<2"
 pyyaml = ">=6.0.3,<7"
-pytest-randomly = ">=5.0.0,<6"
-pytest-reverse = ">=1.7.0,<2"
 
 [pypi-dependencies]
 python-fasthtml = ">=0.14.13"
 fh-saas = ">=0.9.14"
+
+[feature.test.dependencies]  # tools for the tests only: the production image (environment "prod") leaves them out
+pytest = "*"
+playwright-python = ">=1.62.0,<2"
+pytest-randomly = ">=5.0.0,<6"
+pytest-reverse = ">=1.7.0,<2"
+
+[environments]
+default = { features = ["test"], solve-group = "default" }
+prod = { features = [], solve-group = "default" }
 
 [tasks]
 dev = "python main.py"

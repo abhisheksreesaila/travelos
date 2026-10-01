@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sign in: boarding pass</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Figtree:wght@400;500;600;700;800&amp;family=Caveat:wght@700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FFF8EE}
+button,input{font-family:'Figtree',sans-serif;color:#1E1A2E}
+a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid #1E1A2E;outline-offset:3px}
+@keyframes ga-fly{0%{offset-distance:0%}100%{offset-distance:100%}}
+@keyframes ga-drift{0%{transform:translateX(0)}100%{transform:translateX(60px)}}
+@keyframes ga-bob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-6px) rotate(-3deg)}}
+@keyframes ga-sun{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+@keyframes ga-dash{to{stroke-dashoffset:-40}}
+.ga-plane{offset-path:path('M 90 520 C 300 200, 560 160, 640 330');offset-rotate:auto;animation:ga-fly 6s cubic-bezier(.45,.05,.35,1) infinite}
+.ga-cloud{animation:ga-drift 9s ease-in-out infinite alternate}
+.ga-sticker{animation:ga-bob 4.5s ease-in-out infinite}
+.ga-sunball{animation:ga-sun 5s ease-in-out infinite}
+.ga-route{animation:ga-dash 1.6s linear infinite}
+.ga-go{transition:transform .15s cubic-bezier(.2,.9,.3,1.3),box-shadow .15s}
+.ga-go:hover{transform:translateY(-2px);box-shadow:0 6px 0 #C9431F}
+.ga-go:active{transform:translateY(4px);box-shadow:0 0 0 #C9431F}
+.ga-go:hover .ga-goplane{transform:translateX(6px) rotate(-8deg)}
+.ga-goplane{transition:transform .25s cubic-bezier(.2,.9,.3,1.3)}
+@media (prefers-reduced-motion: reduce){.ga-plane,.ga-cloud,.ga-sticker,.ga-sunball,.ga-route{animation:none}.ga-plane{offset-distance:100%}.ga-go,.ga-goplane{transition:none}}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; display: grid; grid-template-columns: minmax(0, 1fr) 560px; background: #FFF8EE; color: #1E1A2E; font-family: 'Figtree', 'Segoe UI', system-ui, sans-serif; overflow: hidden">
+
+<!-- Left: the sky -->
+<div aria-hidden="true" style="position: relative; overflow: hidden; background: #FFE6DA">
+<div style="position: absolute; inset: auto 0 0 0; height: 40%; background: #FFC9B2"></div>
+<div style="position: absolute; inset: auto 0 0 0; height: 18%; background: #6DB8FF"></div>
+<div style="position: absolute; inset: auto 0 0 0; height: 6%; background: #FFE3A3"></div>
+<div class="ga-sunball" style="position: absolute; left: 560px; top: 300px; width: 220px; height: 220px; border-radius: 999px; background: #FFC93C"></div>
+<div class="ga-cloud" style="position: absolute; left: 120px; top: 120px; width: 180px; height: 54px; border-radius: 999px; background: #FFFFFF; opacity: .9"></div>
+<div class="ga-cloud" style="position: absolute; left: 420px; top: 210px; width: 120px; height: 40px; border-radius: 999px; background: #FFFFFF; opacity: .8"></div>
+<svg width="880" height="900" viewBox="0 0 880 900" style="position: absolute; left: 0; top: 0">
+<path class="ga-route" d="M 90 520 C 300 200, 560 160, 640 330" fill="none" stroke="#1E1A2E" stroke-width="3" stroke-dasharray="10 10" stroke-linecap="round" opacity=".35"></path>
+<circle cx="90" cy="520" r="9" fill="#1E1A2E"></circle>
+<circle cx="640" cy="330" r="9" fill="#FF7352" stroke="#FFFFFF" stroke-width="4"></circle>
+</svg>
+<div class="ga-plane" style="position: absolute; left: 0; top: 0; width: 44px; height: 44px; margin: -22px 0 0 -22px">
+<svg width="44" height="44" viewBox="0 0 24 24" fill="#1E1A2E"><path d="M2.5 13.5l7.2-1.6L15 4.6c.5-.7 1.6-.8 2.2-.2.5.5.5 1.3.1 1.9l-4.1 7.1 7.4 2.3-.9 1.6-7.6-.8-3.3 3.8.2 2.3-1.3.7-1.6-3.6-3.9-1.1.4-1.4 2.2-.1z"></path></svg>
+</div>
+<span style="position: absolute; left: 60px; top: 548px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 20px">{{v.from}}</span>
+<span style="position: absolute; left: 610px; top: 280px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 20px">{{v.to}}</span>
+<span class="ga-sticker" style="position: absolute; left: 96px; top: 640px; height: 52px; padding: 0 22px; border-radius: 999px; background: #48D1A0; border: 3px solid #FFFFFF; box-shadow: 0 6px 14px -6px rgba(30,26,46,.35); font-weight: 800; font-size: 18px; display: flex; align-items: center">{{v.s1}}</span>
+<span class="ga-sticker" style="position: absolute; left: 330px; top: 700px; height: 52px; padding: 0 22px; border-radius: 999px; background: #FF8CC6; border: 3px solid #FFFFFF; box-shadow: 0 6px 14px -6px rgba(30,26,46,.35); font-weight: 800; font-size: 18px; display: flex; align-items: center; animation-delay: 1.2s">{{v.s2}}</span>
+<p style="position: absolute; left: 64px; top: 64px; margin: 0; font-family: 'Caveat', cursive; font-size: 40px; transform: rotate(-3deg)">{{v.note}}</p>
+</div>
+
+<!-- Right: the boarding pass -->
+<main style="display: flex; align-items: center; justify-content: center; padding: 40px; position: relative">
+<div role="group" aria-label="Preview where the person came from" style="position: absolute; top: 24px; right: 24px; display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: #F2ECE3">
+<sc-for list="{{tabs}}" as="t" hint-placeholder-count="3"><button onClick="{{t.go}}" aria-pressed="{{t.on}}" style="height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: {{t.bg}}; font-size: 13px; font-weight: 800; cursor: pointer">{{t.name}}</button></sc-for>
+</div>
+<div style="width: 440px; border-radius: 28px; background: #FFFFFF; box-shadow: 0 6.7px 5.3px rgba(0,0,0,.048), 0 22.3px 17.9px rgba(0,0,0,.072), 0 41.8px 33.4px rgba(0,0,0,.086); overflow: hidden">
+<div style="padding: 28px 32px 24px; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; align-items: center; gap: 10px">
+<span style="width: 36px; height: 36px; border-radius: 11px; background: #FF7352; box-shadow: 0 3px 0 #C9431F; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1E1A2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="2.5"></circle><circle cx="18" cy="6" r="2.5"></circle><circle cx="12" cy="18" r="2.5"></circle><path d="M6 8.5v1.5a4 4 0 0 0 4 4h4a4 4 0 0 0 4-4V8.5M12 14v1.5"></path></svg></span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 22px; letter-spacing: -0.03em">GitAway</span>
+<span style="margin-left: auto; font-size: 12px; font-weight: 800; letter-spacing: .12em; color: #5A5470">BOARDING PASS</span>
+</div>
+<h1 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 40px; line-height: 1.05; letter-spacing: -0.03em; white-space: pre-line">{{v.head}}</h1>
+<p style="margin: 0; font-size: 16px; font-weight: 600; color: #4A4460; line-height: 1.5">{{v.sub}}</p>
+<button class="ga-go" style="height: 60px; border: 0; border-radius: 999px; background: #FF7352; box-shadow: 0 4px 0 #C9431F; font-size: 18px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 12px">
+<span style="width: 30px; height: 30px; border-radius: 999px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 17px">G</span>
+Continue with Google
+<svg class="ga-goplane" width="22" height="22" viewBox="0 0 24 24" fill="#1E1A2E" aria-hidden="true"><path d="M2.5 13.5l7.2-1.6L15 4.6c.5-.7 1.6-.8 2.2-.2.5.5.5 1.3.1 1.9l-4.1 7.1 7.4 2.3-.9 1.6-7.6-.8-3.3 3.8.2 2.3-1.3.7-1.6-3.6-3.9-1.1.4-1.4 2.2-.1z"></path></svg>
+</button>
+</div>
+<!-- perforation -->
+<div style="position: relative; height: 0; border-top: 3px dashed #F2ECE3; margin: 0 24px"></div>
+<div style="padding: 20px 32px 26px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; background: #FAF7F2">
+<span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 11px; font-weight: 800; letter-spacing: .1em; color: #5A5470">ROUTE</span><span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 20px">{{v.route}}</span></span>
+<span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 11px; font-weight: 800; letter-spacing: .1em; color: #5A5470">{{v.k2}}</span><span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 20px">{{v.v2}}</span></span>
+<span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 11px; font-weight: 800; letter-spacing: .1em; color: #5A5470">STAY SIGNED IN</span><span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 20px">30 days</span></span>
+</div>
+<div style="padding: 0 32px 24px; background: #FAF7F2">
+<details style="font-size: 14px; font-weight: 700; color: #4A4460">
+<summary style="cursor: pointer; min-height: 44px; display: flex; align-items: center">Local dev sign-in</summary>
+<form style="display: flex; gap: 8px; padding-top: 4px">
+<label style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)" for="dev-email">Email</label>
+<input id="dev-email" type="email" placeholder="you@gmail.com" style="flex: 1; height: 44px; border: 0; border-radius: 14px; padding: 0 14px; background: #FFFFFF; box-shadow: 0 0 0 1px rgba(0,0,0,.08); font-size: 15px">
+<button type="button" style="height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: #1E1A2E; color: #FFFFFF; font-weight: 800; cursor: pointer">Board</button>
+</form>
+</details>
+</div>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { v: 'cold' }; }
+  renderVals() {
+    var self = this, s = this.state;
+    var V = {
+      cold: { from: 'SFO', to: 'LAX', s1: 'Tacos Friday', s2: 'Beach at sunset', note: "Fri 8:05 → we're off!", head: 'Your next trip\nstarts here.', sub: 'Plan it with your family, see every booking in one calendar, and keep it in your pocket.', route: 'Anywhere', k2: 'WHEN', v2: 'You pick' },
+      search: { from: 'SFO', to: 'LAX', s1: '4 nights', s2: '2 adults, 2 kids', note: 'Oct 16 → Oct 20', head: 'San Francisco\nto Los Angeles.', sub: 'Sign in to save these dates and picks, and plan the days with your family.', route: 'SFO → LAX', k2: 'DATES', v2: 'Oct 16–20' },
+      fork: { from: 'SFO', to: 'SAN', s1: 'Zoo morning', s2: 'Tide pools', note: '5 days of San Diego, saved', head: 'San Diego\nin 5 days.', sub: 'Sign in to keep this trip in your forks and drop its days into your calendar.', route: 'SFO → SAN', k2: 'DAYS', v2: '5 days' }
+    };
+    var names = [['cold', 'No context'], ['search', 'After a search'], ['fork', 'After a fork']];
+    return {
+      v: V[s.v],
+      tabs: names.map(function (n) { var on = n[0] === s.v; return { name: n[1], on: on ? 'true' : 'false', bg: on ? '#FFFFFF' : 'transparent', go: function () { self.setState({ v: n[0] }); } }; })
+    };
+  }
+}
+</script>
+</body>
+</html>

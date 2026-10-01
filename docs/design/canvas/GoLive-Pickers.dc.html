@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Themed pickers</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Figtree:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FFF8EE}
+button{font-family:'Figtree',sans-serif;color:#1E1A2E}
+button:focus-visible{outline:3px solid #1E1A2E;outline-offset:2px}
+.ga-day{transition:transform .12s cubic-bezier(.2,.9,.3,1.3)}
+.ga-day:hover{transform:scale(1.08)}
+@media (prefers-reduced-motion: reduce){.ga-day{transition:none}.ga-day:hover{transform:none}}
+</style>
+</helmet>
+<div style="width: 1000px; height: 680px; box-sizing: border-box; padding: 36px; background: #FFF8EE; color: #1E1A2E; font-family: 'Figtree', 'Segoe UI', system-ui, sans-serif; display: grid; grid-template-columns: 560px minmax(0, 1fr); gap: 28px">
+
+<!-- Date range -->
+<section style="display: flex; flex-direction: column; gap: 12px">
+<span style="font-size: 13px; font-weight: 800; letter-spacing: .08em; color: #5A5470">WHEN ARE YOU GOING?</span>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+<button style="height: 64px; border: 0; border-radius: 18px; background: #FFFFFF; box-shadow: {{fromRing}}; text-align: left; padding: 0 16px; display: flex; flex-direction: column; justify-content: center; cursor: pointer"><span style="font-size: 12px; font-weight: 800; color: #5A5470">LEAVE</span><span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 20px">{{fromText}}</span></button>
+<button style="height: 64px; border: 0; border-radius: 18px; background: #FFFFFF; box-shadow: {{toRing}}; text-align: left; padding: 0 16px; display: flex; flex-direction: column; justify-content: center; cursor: pointer"><span style="font-size: 12px; font-weight: 800; color: #5A5470">COME HOME</span><span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 20px">{{toText}}</span></button>
+</div>
+<div style="border-radius: 26px; background: #FFFFFF; box-shadow: 0 0 0 1px rgba(0,0,0,.06), 0 3px 3px -1.5px rgba(0,0,0,.06), 0 12px 12px -6px rgba(0,0,0,.06); padding: 18px">
+<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px">
+<button aria-label="Previous month" style="width: 44px; height: 44px; border: 0; border-radius: 999px; background: #FAF7F2; cursor: pointer; font-size: 18px; font-weight: 800">‹</button>
+<span style="flex: 1; text-align: center; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 20px">October 2026</span>
+<button aria-label="Next month" style="width: 44px; height: 44px; border: 0; border-radius: 999px; background: #FAF7F2; cursor: pointer; font-size: 18px; font-weight: 800">›</button>
+</div>
+<div role="grid" aria-label="October 2026" style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px">
+<sc-for list="{{dow}}" as="d" hint-placeholder-count="7"><span style="height: 28px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: #5A5470">{{d}}</span></sc-for>
+<sc-for list="{{cells}}" as="c" hint-placeholder-count="35">
+<button class="ga-day" onClick="{{c.pick}}" aria-label="{{c.label}}" aria-pressed="{{c.pressed}}" style="height: 48px; border: 0; border-radius: {{c.radius}}; background: {{c.bg}}; color: {{c.fg}}; font-weight: 800; font-size: 15px; cursor: {{c.cursor}}; opacity: {{c.op}}">{{c.n}}</button>
+</sc-for>
+</div>
+<div style="display: flex; align-items: center; gap: 10px; margin-top: 12px">
+<span style="height: 30px; padding: 0 12px; border-radius: 999px; background: #FFF1C2; font-size: 13px; font-weight: 800; display: flex; align-items: center">{{nights}}</span>
+<span style="font-size: 13px; font-weight: 700; color: #4A4460">Tap a start, then an end</span>
+<button style="margin-left: auto; height: 44px; padding: 0 20px; border: 0; border-radius: 999px; background: #FF7352; box-shadow: 0 4px 0 #C9431F; font-weight: 800; cursor: pointer">Done</button>
+</div>
+</div>
+</section>
+
+<!-- Dropdown and steppers -->
+<section style="display: flex; flex-direction: column; gap: 14px">
+<span style="font-size: 13px; font-weight: 800; letter-spacing: .08em; color: #5A5470">WHO'S GOING?</span>
+<sc-for list="{{steppers}}" as="s" hint-placeholder-count="2">
+<div style="display: flex; align-items: center; gap: 12px; padding: 12px 12px 12px 18px; border-radius: 20px; background: #FFFFFF; box-shadow: 0 2px 3px -1px rgba(0,0,0,.1), 0 0 0 1px rgba(25,28,33,.08)">
+<span style="flex: 1; display: flex; flex-direction: column"><span style="font-weight: 800; font-size: 16px">{{s.name}}</span><span style="font-size: 13px; font-weight: 700; color: #5A5470">{{s.hint}}</span></span>
+<button onClick="{{s.less}}" aria-label="Fewer {{s.name}}" style="width: 44px; height: 44px; border: 0; border-radius: 999px; background: #FAF7F2; font-size: 20px; font-weight: 800; cursor: pointer">−</button>
+<span aria-live="polite" style="min-width: 24px; text-align: center; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 20px">{{s.n}}</span>
+<button onClick="{{s.more}}" aria-label="More {{s.name}}" style="width: 44px; height: 44px; border: 0; border-radius: 999px; background: #FF7352; font-size: 20px; font-weight: 800; cursor: pointer">+</button>
+</div>
+</sc-for>
+<span style="font-size: 13px; font-weight: 800; letter-spacing: .08em; color: #5A5470">KID'S AGE</span>
+<div style="position: relative">
+<button onClick="{{toggleMenu}}" aria-haspopup="listbox" aria-expanded="{{menuOpen}}" style="width: 100%; height: 56px; border: 0; border-radius: 18px; background: #FFFFFF; box-shadow: 0 2px 3px -1px rgba(0,0,0,.1), 0 0 0 1px rgba(25,28,33,.08); display: flex; align-items: center; padding: 0 18px; gap: 10px; cursor: pointer; font-size: 16px; font-weight: 800; text-align: left"><span style="flex: 1">{{ageText}}</span><span aria-hidden="true" style="width: 30px; height: 30px; border-radius: 999px; background: #FAF7F2; display: flex; align-items: center; justify-content: center">▾</span></button>
+<sc-if value="{{showMenu}}" hint-placeholder-val="{{true}}">
+<div role="listbox" aria-label="Age" style="position: absolute; left: 0; right: 0; top: 64px; padding: 8px; border-radius: 20px; background: #FFFFFF; box-shadow: 0 6.7px 5.3px rgba(0,0,0,.048), 0 22.3px 17.9px rgba(0,0,0,.072), 0 41.8px 33.4px rgba(0,0,0,.086); display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; z-index: 2">
+<sc-for list="{{ages}}" as="a" hint-placeholder-count="8"><button role="option" aria-selected="{{a.sel}}" onClick="{{a.pick}}" style="height: 44px; border: 0; border-radius: 14px; background: {{a.bg}}; font-weight: 800; font-size: 15px; cursor: pointer">{{a.n}}</button></sc-for>
+</div>
+</sc-if>
+</div>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1000,"height":680}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { a: 16, b: 20, adults: 2, kids: 2, age: 7, menu: false }; }
+  renderVals() {
+    var self = this, s = this.state;
+    var cells = [];
+    for (var i = 0; i < 4; i++) cells.push({ n: '', bg: 'transparent', fg: '#1E1A2E', radius: '14px', op: 0, cursor: 'default', pressed: 'false', label: '', pick: function () {} });
+    for (var d = 1; d <= 31; d++) (function (d) {
+      var inR = s.b && d > s.a && d < s.b, end = d === s.a || d === s.b, past = d < 2;
+      cells.push({ n: d, label: 'October ' + d + (end ? ', selected' : ''), pressed: end ? 'true' : 'false',
+        bg: end ? '#FF7352' : (inR ? '#FFE6DA' : '#FFFFFF'), fg: past ? '#B5AFC2' : '#1E1A2E',
+        radius: end ? '999px' : (inR ? '10px' : '14px'), op: 1, cursor: past ? 'not-allowed' : 'pointer',
+        pick: function () { if (past) return; if (!s.a || s.b) self.setState({ a: d, b: 0 }); else if (d > s.a) self.setState({ b: d }); else self.setState({ a: d }); } });
+    })(d);
+    function fmt(d) { return d ? 'Oct ' + d : 'Pick a day'; }
+    var n = s.a && s.b ? s.b - s.a : 0;
+    var ages = []; for (var k = 0; k < 18; k++) (function (k) { ages.push({ n: k === 0 ? '<1' : k, sel: k === s.age ? 'true' : 'false', bg: k === s.age ? '#FFE6DA' : '#FAF7F2', pick: function () { self.setState({ age: k, menu: false }); } }); })(k);
+    return {
+      dow: ['S','M','T','W','T','F','S'], cells: cells,
+      fromText: fmt(s.a), toText: fmt(s.b),
+      fromRing: !s.b ? '0 0 0 3px #FF7352' : '0 0 0 1px rgba(0,0,0,.08)', toRing: s.a && !s.b ? '0 0 0 3px #FF7352' : '0 0 0 1px rgba(0,0,0,.08)',
+      nights: n ? n + ' nights' : 'Choose dates',
+      steppers: [
+        { name: 'Adults', hint: '18 and over', n: s.adults, less: function () { self.setState({ adults: Math.max(1, s.adults - 1) }); }, more: function () { self.setState({ adults: Math.min(8, s.adults + 1) }); } },
+        { name: 'Kids', hint: 'Under 18', n: s.kids, less: function () { self.setState({ kids: Math.max(0, s.kids - 1) }); }, more: function () { self.setState({ kids: Math.min(6, s.kids + 1) }); } }
+      ],
+      ageText: 'Kid 1 · ' + (s.age === 0 ? 'under 1' : s.age + ' years old'),
+      menuOpen: s.menu ? 'true' : 'false', showMenu: s.menu, ages: ages,
+      toggleMenu: function () { self.setState({ menu: !s.menu }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -275,38 +275,43 @@ Found while reviewing F-045: run in reverse order, tests/test_family_storage.py:
 
 # Go live (brief: docs/briefs/go-live.md, approved 2026-10-01)
 
-## F-048 Deploy to Railway [doing]
+## F-048 Deploy to Railway [blocked]
+Blocked: in Railway project "gitaway" set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET on the web service, and add https://web-production-2d117.up.railway.app/auth/callback as a redirect URI in the Google console; then say go.
+Live: https://web-production-2d117.up.railway.app (deployed 2026-10-01; volume at /data; secret set)
 Needs: none
-- [ ] the app builds and runs on Railway (pixi-based image), with all databases on a persistent volume (working directory on the volume), assets resolved from the code folder
-- [ ] production settings: session cookie https-only, `GITAWAY_DEV_LOGIN` never set, secret key from `GITAWAY_SECRET_KEY`, a health check route; docs/setup.md has a Railway section
-- [ ] a new Railway project "gitaway" with a volume and a public *.up.railway.app address; a redeploy keeps a test family's data
+- [x] the app builds and runs on Railway (pixi-based image), with all databases on a persistent volume (working directory on the volume), assets resolved from the code folder
+- [x] production settings: session cookie https-only, `GITAWAY_DEV_LOGIN` never set, secret key from `GITAWAY_SECRET_KEY`, a health check route; docs/setup.md has a Railway section
+- [x] a new Railway project "gitaway" with a volume and a public *.up.railway.app address
+- [ ] a redeploy keeps a test family's data (needs Google sign-in to create one)
 - [ ] Google sign-in works on the live address once the captain adds the keys
 
-## F-049 Stay signed in about 30 days [doing]
+## F-049 Stay signed in about 30 days [done]
 Needs: none
-- [ ] sign-in lasts about 30 days on a device, sliding with use (fh-saas `SessionConfig` / `create_session_middleware`), secure cookie in production
-- [ ] sign-out and removed members still end access immediately
+- [x] sign-in lasts about 30 days on a device, sliding with use (fh-saas `SessionConfig` / `create_session_middleware`), secure cookie in production
+- [x] sign-out and removed members still end access immediately
 
 ## F-050 "Discover" becomes "Community trips" [doing]
 Needs: none
 - [ ] the hub is named "Community trips" everywhere (header, landing, links, page title); /discover keeps working and /community is the new path
 - [ ] the page says plainly that these are trips shared by travelers and creators, with "Share yours" and "Turn a link into a trip" up front
 
-## F-051 Themed date pickers and dropdowns [todo]
-Design: with F-052/F-054 canvas · Needs: none
+## F-051 Themed date pickers and dropdowns [doing]
+Design: approved 2026-10-01 (docs/design/canvas/GoLive-Pickers.dc.html) · Needs: none
 - [ ] a GitAway date-range picker (rounded, tokens, keyboard and screen-reader accessible, phone-friendly) replaces browser date inputs on "Where to?" and every other date field
 - [ ] dropdowns and number pickers (adults, kids' ages, roles, times) use a GitAway style; no browser-default widgets left
 
-## F-052 A sign-in page that makes you want to travel [todo]
+## F-052 A sign-in page that makes you want to travel [blocked]
+Blocked: open https://claude.ai/artifact/4FeSUmETnJ26kLXdA4EYvN and pick (sign-in A or B; phone A or B; pickers as drawn) or say what to change.
 Design: canvas first · Needs: none
+- [ ] the boarding pass fills from context: after a search (from, to, dates), after a fork (the trip's route and days, no creator), or a generic pass when there is no context
 - [ ] emotional, animated, fun travel sign-in (Google button and dev sign-in) per the approved artboard; fast, accessible, reduced motion calm
 
 ## F-053 Good when empty [doing]
 Needs: none
 - [ ] a new family's first screens offer: start a trip, import a booked trip, browse community trips; no blank calendar, forks, family or trip pages anywhere
 
-## F-054 Phone-first trip view [todo]
-Design: canvas first · Needs: F-051
+## F-054 Phone-first trip view [doing]
+Design: phone A approved 2026-10-01 (docs/design/canvas/GoLive-Phone-Today.dc.html); B rejected as bland · Needs: F-051
 - [ ] on phones the trip opens on "Today": what's next, flight and hotel cards, a swipeable day list, add a plan in two taps, notes
 - [ ] works installed to the Home Screen; all data and roles as on desktop
 
