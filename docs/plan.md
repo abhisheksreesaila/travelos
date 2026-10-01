@@ -255,10 +255,10 @@ Needs: none
 - [x] web app manifest, icons (192, 512, Apple touch), theme colour and Apple meta tags; "Add to Home Screen" opens full screen at /start or the current trip
 - [x] safe areas and the phone layouts work in standalone mode; a minimal service worker caches the app shell and the last-viewed trip for flaky connections
 
-## F-045 Keep the test suite fast [doing]
+## F-045 Keep the test suite fast [done]
 `pixi run test` grew from ~40s to ~170s as every test now wipes every family database (tests/wipe.py).
-- [ ] wipe only the families a test touched (record tenant ids opened in a set that survives `forget_schema_cache`), skip per-tenant `ensure_schema` in the wipe
-- [ ] `pixi run test` back under ~60s with the same isolation guarantees (a test proving a family opened before a reset is still wiped)
+- [x] wipe only the families a test touched (record tenant ids opened in a set that survives `forget_schema_cache`), skip per-tenant `ensure_schema` in the wipe
+- [x] `pixi run test` back under ~60s with the same isolation guarantees (a test proving a family opened before a reset is still wiped)
 
 ## F-046 Fixes from the end-to-end check [doing]
 Found by the full real-app walkthrough on master (2026-10-01).
