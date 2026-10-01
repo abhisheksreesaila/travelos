@@ -15,6 +15,8 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from urllib.parse import quote, unquote, urlsplit
 
+from gitaway import catalog
+
 
 @dataclass(frozen=True)
 class Traveler:
@@ -101,9 +103,9 @@ def booking(session):
     return (session.get("bookings") or {}).get(t.id) if t else None
 
 
-def booking_id(traveler_id, flight, stay, car, rooms="", add=""):
-    """A stable id for one traveler's picks, so paying the same trip twice is the same booking. Default rooms and no add-ons hash as before."""
-    digest = hashlib.sha256(f"{traveler_id}|{flight}|{stay}|{car}{'|' + rooms + '|' + add if rooms or add else ''}".encode()).hexdigest()
+def booking_id(traveler_id, flight, stay, car, rooms="", add="", trip=""):
+    """A stable id for one traveler's picks, so paying the same trip twice is the same booking. Default rooms, no add-ons and the sample trip hash as before."""
+    digest = hashlib.sha256(f"{traveler_id}|{flight}|{stay}|{car}{'|' + rooms + '|' + add if rooms or add else ''}{'|' + trip if trip else ''}".encode()).hexdigest()
     return "GA-" + digest[:8].upper()
 
 
@@ -118,12 +120,15 @@ def book(session, quote):
     if not t:
         return None
     rooms, add = (quote.stay.rooms_code, quote.stay.add_code) if quote.stay else ("", "")
-    bid = booking_id(t.id, quote.flight_id, quote.stay_id, quote.car_id, rooms, add)
+    trip = catalog.trip_query(quote.trip)  # "" for the sample trip
+    bid = booking_id(t.id, quote.flight_id, quote.stay_id, quote.car_id, rooms, add, trip)
     existing = booking(session)
     if existing and existing["id"] == bid:
         return existing
     record = {"id": bid, "flight": quote.flight_id, "stay": quote.stay_id, "car": quote.car_id, "rooms": rooms, "add": add,
               "total_cents": quote.total_cents, "booked_at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+    if trip:
+        record["trip"] = trip
     # Reassign the whole dict so the cookie session notices the change.
     session["bookings"] = {**session.get("bookings", {}), t.id: record}
     return record

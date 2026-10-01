@@ -11,6 +11,7 @@
   // The lane picks, plus the stay's rooms and add-ons as compact codes ("cq1", "bf"). null means "the default".
   var pick = { flight: data.pick.f, stay: data.pick.h, car: data.pick.c, rooms: data.pick.rooms, add: data.pick.add };
   var base = data.base; // the address-bar URL for the pick, from the server
+  var tripq = data.tripq || ''; // the trip's URL params ("d=..&r=..&a=..&k=.."), empty for the sample trip; just passed along
 
   // ---- asking the server for figures ------------------------------------------------------------------------------
   function enc(s) { return encodeURIComponent(s); }
@@ -22,7 +23,7 @@
   }
   function pickQuery() {
     return 'f=' + enc(pick.flight) + '&h=' + enc(pick.stay) + '&c=' + enc(pick.car) +
-      (pick.rooms == null ? '' : '&rooms=' + enc(pick.rooms)) + (pick.add == null ? '' : '&add=' + enc(pick.add));
+      (pick.rooms == null ? '' : '&rooms=' + enc(pick.rooms)) + (pick.add == null ? '' : '&add=' + enc(pick.add)) + (tripq ? '&' + tripq : '');
   }
 
   // Move the schematic map's stay pin and hotel-to-beach line to the picked stay (figures embedded by the server).

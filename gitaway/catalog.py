@@ -30,6 +30,26 @@ class TripSearch:
         return self.adults + len(self.kid_ages)
 
     @property
+    def nights_text(self) -> str:
+        return f"{self.nights} night{'s' if self.nights != 1 else ''}"
+
+    @property
+    def place(self) -> str:
+        """The short name of the destination: "LA"."""
+        return next((d.short for d in DESTINATIONS if d.name == self.destination_name), self.destination_name)
+
+    @property
+    def title(self) -> str:
+        return f"{self.place} with the kids" if self.kid_ages else f"{self.place} trip"
+
+    @property
+    def date_label(self) -> str:
+        """'Oct 16 – 20' inside a month, 'Oct 16 – Nov 4' across one."""
+        a, b = self.depart, self.return_
+        end = f"{b.day}" if (a.year, a.month) == (b.year, b.month) else f"{b:%b} {b.day}"
+        return f"{a:%b} {a.day} – {end}"
+
+    @property
     def summary(self) -> str:
         kids = len(self.kid_ages)
         parts = [f"{self.adults} adult{'s' if self.adults != 1 else ''}"]

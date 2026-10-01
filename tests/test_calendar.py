@@ -47,7 +47,7 @@ def test_signed_in_without_a_booking_gets_a_friendly_book_a_trip_first_page(clie
     sign_in(client)
     r = client.get("/calendar?view=days")
     assert r.status_code == 200 and "Book a trip first" in r.text
-    assert 'href="/plan"' in r.text and "cal-block" not in r.text
+    assert 'href="/start"' in r.text and "cal-block" not in r.text
     assert client.post("/calendar/activities", data={"id": "a1", **FORM}, follow_redirects=False).status_code == 303
 
 
