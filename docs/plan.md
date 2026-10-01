@@ -219,7 +219,7 @@ Research: docs/research/uber-api.md · Needs: F-033
 - [ ] labelled "Simulated: no real ride is booked"; scheduled rides show on the trip calendar
 - [ ] a `RideProvider` seam with a simulator implementation, so a real Uber client can replace it later
 
-## F-039 Backend foundation: fh-saas host, families as tenants, sign-in [todo]
+## F-039 Backend foundation: fh-saas host, families as tenants, sign-in [doing]
 Needs: none (ADR-0004)
 - [ ] fh-saas wired in main.py: SQLite host DB, `DB_TYPE=SQLITE`, data files under a configurable data folder, `configure_logging`
 - [ ] Google sign-in through fh-saas (`/login`, `/auth/callback`, `/logout`), enabled when the Google env keys are set; a dev sign-in only when `GITAWAY_DEV_LOGIN=1` and the request is from localhost, through the same session path
@@ -250,7 +250,7 @@ Needs: F-040
 - [ ] when that email signs in, they join the family and see its trips; viewers can't edit; members and roles are listed with remove
 - [ ] the calendar's avatars and "planning with you" use real members; the scripted Mom demo only runs on the demo trip
 
-## F-044 Install on iPhone [todo]
+## F-044 Install on iPhone [doing]
 Needs: none
 - [ ] web app manifest, icons (192, 512, Apple touch), theme colour and Apple meta tags; "Add to Home Screen" opens full screen at /start or the current trip
 - [ ] safe areas and the phone layouts work in standalone mode; a minimal service worker caches the app shell and the last-viewed trip for flaky connections
