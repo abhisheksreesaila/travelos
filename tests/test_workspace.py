@@ -17,11 +17,11 @@ def test_default_ledger_shows_the_default_pick_total(client):
 
 def test_cheapest_combination_from_the_url(client):
     r = client.get("/plan?f=f4&h=h3&c=c1")
-    assert "$2,172" in r.text and "The cheapest combination" in r.text
+    assert "$2,172" in r.text and "The cheapest flight, stay and car" in r.text
 
 
 def test_default_total_is_flagged_as_more_than_cheapest(client):
-    assert "$916 more than the cheapest combo" in client.get("/plan").text
+    assert "$916 more than the cheapest flight, stay and car" in client.get("/plan").text
 
 
 def test_bad_or_wrong_lane_ids_fall_back_to_the_default(client):
@@ -73,7 +73,7 @@ def test_quote_route_matches_catalog_for_every_combination(client):
         entry = client.get(f"/plan/quote?f={f.id}&h={s.id}&c={c.id}").json()["ledger"]
         q = catalog.quote(f.id, s.id, c.id)
         assert entry["total"] == catalog.money(q.total_cents)
-        assert (entry["delta"] == "The cheapest combination") == (q.above_cheapest_cents == 0)
+        assert (entry["delta"] == "The cheapest flight, stay and car") == (q.above_cheapest_cents == 0)
         assert entry["book"].startswith("/signin?next=%2Fplan%2Fpay%3Ff%3D") and entry["book"].endswith("&intent=pay")
         assert entry["url"] == f"/plan?f={f.id}&h={s.id}&c={c.id}"
 

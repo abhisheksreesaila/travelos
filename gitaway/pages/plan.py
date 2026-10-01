@@ -98,12 +98,19 @@ def book_href(f, h, c, stay=None, trip=None, flight=None):
     return f"/signin?next={urlquote(pay_path(f, h, c, stay, trip, flight), safe='')}&intent=pay"
 
 
+def lanes_text(q):
+    """The picked lanes in words, for the cheapest hint: "flight, stay and car", "flight and stay", "stay"."""
+    names = [n for n, line in zip(("flight", "stay", "car"), q.lines) if line is not None]
+    return names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1]
+
+
 def delta_text(q):
     if q.empty:
         return "Pick a flight, a stay or a car"
+    what = lanes_text(q)
     if q.above_cheapest_cents == 0:
-        return "The cheapest combination"
-    return f"{catalog.money(q.above_cheapest_cents)} more than the cheapest combo"
+        return f"The cheapest {what}"
+    return f"{catalog.money(q.above_cheapest_cents)} more than the cheapest {what}"
 
 
 def explicit_rooms(state):

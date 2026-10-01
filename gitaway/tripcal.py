@@ -168,11 +168,19 @@ def rides_of(b):
     return catalog.rides(f, stay_of(b), trip_of(b)) if f and not car_of(b) else None
 
 
+def booked_sentence(b):
+    """What /booked says is on the calendar. A car has no block there, so a car-only booking says only that the car is booked."""
+    words = booked_words(b)
+    if not words:
+        return "Your car is booked. It has no block on the calendar, but you can still fill the gaps with your crew."
+    return f"Your {words} on the trip calendar. Now the fun part: fill the gaps with your crew."
+
+
 def booked_words(b):
     """"flights and hotel are", "hotel is", "flights are" for the calendar's welcome lines; "car is" with only a car."""
     parts = (["flights"] if flight_of(b) else []) + (["hotel"] if stay_of(b) else [])
     if not parts:
-        return "car booking is" if car_of(b) else "booking is"
+        return ""
     return " and ".join(parts) + (" are" if len(parts) > 1 or parts[0] == "flights" else " is")
 
 
@@ -193,7 +201,7 @@ def booked_blocks(b, t):
     return blocks
 
 
-AIRPORT_BUFFER = 120  # minutes before the flight home that a plan must be finished by
+AIRPORT_BUFFER = catalog.AIRPORT_BUFFER  # one source: minutes before the flight home that a plan must be finished by
 
 
 def day_window(blocks, day):

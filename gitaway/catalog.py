@@ -708,7 +708,7 @@ _RIDE_TABLE = {
     ("BUR", "Downtown"): (34, 32, 31, 30, 22), ("BUR", "city"): (45, 43, 42, 40, 28),
 }
 CURB_MINUTES = 30  # from landing to the curb with bags
-AIRPORT_BUFFER = 120  # arrive this long before the flight home
+AIRPORT_BUFFER = 120  # minutes before the flight home that you reach the airport; also the latest a plan may end (tripcal)
 
 
 def _clock(m: int) -> str:

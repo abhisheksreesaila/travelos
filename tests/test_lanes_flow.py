@@ -295,7 +295,7 @@ def test_a_no_car_booking_charges_flight_and_stay_only(client):
 
 def test_every_mix_books_and_celebrates_in_matching_words(client):
     words = {STAY_ONLY: ("The Tidewater", "hotel is on the trip calendar"), FLIGHT_ONLY: ("Skylark Air 214", "flights are on the trip calendar"),
-             "f=none&h=none&c=c2": ("Coastline Cars", "car booking is on the trip calendar"), NO_CAR: ("about $", "flights and hotel are on the trip calendar"),
+             "f=none&h=none&c=c2": ("Coastline Cars", "Your car is booked. It has no block on the calendar"), NO_CAR: ("about $", "flights and hotel are on the trip calendar"),
              SAMPLE: ("The Tidewater", "flights and hotel are on the trip calendar")}
     for url, (pill, sentence) in words.items():
         sign_in(client)
@@ -426,3 +426,31 @@ def test_script_and_styles_carry_the_skip_and_undo_behaviour(client):
         assert word in js, word
     css = open("assets/css/workspace.css").read()
     assert ".ws-pane[data-skipped]" in css and ".ws-rides-card" in css and ".ws-skip" in css
+
+
+def test_cheapest_wording_names_the_lanes_picked(client):
+    d = lambda url: client.get("/plan/quote?" + url).json()["ledger"]["delta"]
+    assert d("f=f1&h=h1&c=c1") == "$916 more than the cheapest flight, stay and car"
+    assert d("f=f4&h=h3&c=c1") == "The cheapest flight, stay and car"
+    assert d("f=f1&h=h1&c=none").endswith("more than the cheapest flight and stay")  # rides ride along with the flight
+    assert d("f=none&h=h3&c=none") == "The cheapest stay"
+    assert d("f=f4&h=none&c=c1") == "The cheapest flight and car"
+
+
+def test_car_only_wording_is_true(client):
+    sign_in(client)
+    post(client, "f=none&h=none&c=c1")
+    assert "Your car is booked. It has no block on the calendar" in client.get("/booked").text
+    assert "rental is booked. It has no block here" in client.get("/calendar?view=days").text
+
+
+def test_shared_trip_lede_describes_only_the_lanes_booked():
+    from gitaway import share
+    assert share._lede_lanes({"flight": "f1", "stay": "h1"}) == "flights, the stay and "
+    assert share._lede_lanes({"flight": "f1", "stay": None}) == "flights and "
+    assert share._lede_lanes({"flight": None, "stay": "h1"}) == "the stay and "
+    assert share._lede_lanes({"flight": None, "stay": None, "car": "c1"}) == ""
+
+
+def test_one_airport_buffer():
+    assert cal.AIRPORT_BUFFER is catalog.AIRPORT_BUFFER or cal.AIRPORT_BUFFER == catalog.AIRPORT_BUFFER == 120

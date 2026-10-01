@@ -104,7 +104,7 @@ def test_default_stay_pick_url_params_are_empty_and_others_compact():
     assert catalog.stay_pick("h1", "cq2").query == "&rooms=cq2"
 
 
-def test_the_cheapest_combination_is_unchanged():
+def test_the_cheapest_full_trip_is_flight_f4_stay_h3_and_car_c1():
     assert catalog.cheapest().total_cents == 217_200
 
 
@@ -202,7 +202,7 @@ def test_quote_route_returns_the_ledger_figures_from_the_catalog(client):
     assert j["ledger"]["total"] == "$3,988"
     assert j["ledger"]["slots"]["stay"] == {"name": "The Tidewater", "price": "$2,440", "sub": "Ocean-view King ×2 + Breakfast"}
     assert j["ledger"]["slots"]["flight"]["price"] == "$1,236" and j["ledger"]["slots"]["car"]["price"] == "$312"
-    assert j["ledger"]["delta"] == "$1,816 more than the cheapest combo" and j["ledger"]["cheapest"] is False
+    assert j["ledger"]["delta"] == "$1,816 more than the cheapest flight, stay and car" and j["ledger"]["cheapest"] is False
     assert j["ledger"]["url"] == "/plan?f=f1&h=h1&c=c1&rooms=ok2&add=bf"
     assert j["ledger"]["book"].startswith("/signin?next=")
     assert "rooms%3Dok2%26add%3Dbf" in j["ledger"]["book"]

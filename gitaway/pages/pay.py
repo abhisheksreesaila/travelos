@@ -146,7 +146,7 @@ def celebration(b):
     card = Section(
         Span(icon("plane", 48, 2), cls="pay-badge", aria_hidden="true"),
         H2(f"You're going to {trip.place}!", id="pay-done-title"),
-        P(f"Your {tripcal.booked_words(b)} on the trip calendar. Now the fun part: fill the gaps with your crew."),
+        P(tripcal.booked_sentence(b)),
         Div(*pills, cls="pay-pills"),
         A("Open my trip calendar", href="/calendar", cls="btn btn-ink pay-cal", id="pay-cal"),
         Span(f"Booking {b['id']} · simulated, nothing was charged", cls="pay-ref"),

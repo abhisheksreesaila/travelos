@@ -228,6 +228,8 @@ def booked_note(b):
     flights = cal.flight_of(b) is not None
     parts = (["flights"] if flights else []) + ([f"{stay.name} ({pick.summary})" if flights else f"stay at {stay.name} ({pick.summary})"] if stay else []) + ([f"{car.name} rental"] if car else [])
     what = " and ".join(parts) or "trip"
+    if not flights and not stay:
+        return f"Booked! Your {car.name} rental is booked. It has no block here, but you can still plan the days."
     return f"Booked! Your {what} {'are' if len(parts) > 1 or what == 'flights' else 'is'} on the calendar. Add anything you want to do."
 
 

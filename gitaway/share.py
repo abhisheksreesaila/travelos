@@ -21,6 +21,12 @@ KIND_ICON = {"fun": "star", "food": "food", "outdoors": "tree", "culture": "sigh
 _FILL = {"sun": "sun", "mint": "mint", "grape": "grape", "sky": "sky", "bubble": "bubble"}
 
 
+def _lede_lanes(b) -> str:
+    """"flights, the stay and " for the lanes the booking really has ("" when it has neither)."""
+    parts = (["flights"] if cal.flight_of(b) else []) + (["the stay"] if cal.stay_of(b) else [])
+    return (", ".join(parts) + " and ") if len(parts) == 2 else (parts[0] + " and " if parts else "")
+
+
 def slug_for(traveler_id, booking) -> str:
     """A stable public slug per traveler and booking that does not contain the booking reference (a salted hash)."""
     return "shared-" + hashlib.sha256(f"gitaway-share|{traveler_id}|{booking['id']}".encode()).hexdigest()[:10]
@@ -75,7 +81,7 @@ def build(session, tags=(), theme="sunset", traveler=None):
     keys = [k for k in hub.TAGS if k in tags]
     return Itinerary(
         slug=slug_for(ses.current_traveler(session).id, b), title=name, headline=f"{name}:", accent="our scrapbook", place=PLACE,
-        lede=f"{len(days)} days in Los Angeles, planned on GitAway: flights, the stay and everything we want to do, day by day.",
+        lede=f"{len(days)} days in Los Angeles, planned on GitAway: {_lede_lanes(b)}everything we want to do, day by day.",
         days=days, tags=[Tag(hub.TAGS[k][0], hub.TAGS[k][1], hub.TAGS[k][2], (-3, 2, -1.5)[n % 3]) for n, k in enumerate(keys)],
         stats=[(f"{len(days)} days", cal.range_label(t.depart, t.return_)), (f"{plans} plans", "bookings and things to do"), ("0", "families forked it")],
         polaroids=[Polaroid(PIER, "Santa Monica Pier and beach", "the pier"), Polaroid(VENICE, "Venice Beach, Los Angeles", "Venice")],

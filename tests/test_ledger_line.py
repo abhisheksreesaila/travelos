@@ -38,9 +38,9 @@ def test_popover_has_the_itemized_lines_the_stay_sub_line_and_the_hint(client):
     pop = bar[bar.index('id="ws-pop"'):]
     assert 'data-slot="flight"' in pop and 'data-slot-price="car"' in pop
     assert re.search(r'data-slot-sub="stay"[^>]*>[^<]+<', pop)  # rooms and add-ons, from the server
-    assert re.search(r'id="ws-delta"[^>]*>\$916 more than the cheapest combo<', pop)
+    assert re.search(r'id="ws-delta"[^>]*>\$916 more than the cheapest flight, stay and car<', pop)
     cheap = bar_html(client, "/plan?f=f4&h=h3&c=c1")
-    assert re.search(r'id="ws-delta"[^>]*>The cheapest combination<', cheap)
+    assert re.search(r'id="ws-delta"[^>]*>The cheapest flight, stay and car<', cheap)
 
 
 def test_stay_sub_line_follows_rooms_and_addons_in_the_url(client):

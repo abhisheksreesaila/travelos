@@ -480,7 +480,7 @@
 .ws-skipped-note { flex: 1; min-width: 0; font-weight: 700; font-size: max(var(--text-min), 0.9375rem); line-height: 1.3; }
 .ws-undo { flex-shrink: 0; min-height: 2.75rem; padding: 0 1rem; border: 0; border-radius: var(--r-pill); background: var(--card); box-shadow: 0 0 0 1px var(--line), 0 0.125rem 0 var(--line); color: var(--ink); font: 800 max(var(--text-min), 0.9375rem) var(--font-body); cursor: pointer; }
 .ws-undo:hover { box-shadow: 0 0 0 0.125rem var(--ink); }
-.ws-pane[data-skipped] { align-self: start; }
+.ws-pane[data-skipped] { align-self: start; max-height: 100%; }
 .ws-pane[data-skipped] > .ws-cards, .ws-pane[data-skipped] > .ws-dcol { display: none; }
 .ws-pane[data-skipped] > .ws-skipped { display: flex; }
 .ws-pane[data-skipped][data-pane="flights"] .ws-expand, .ws-pane[data-skipped][data-pane="stays"] .ws-expand { display: none; }
@@ -488,7 +488,8 @@
 .ws-est { font-size: max(var(--text-min), 0.75rem); font-weight: 700; color: var(--ink-3); }
 .ws-book[aria-disabled="true"] { opacity: .45; cursor: not-allowed; pointer-events: none; }
 
-.ws-rides { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.ws-rides { display: flex; flex-direction: column; min-height: 0; min-width: 0; overflow-y: auto; flex: 0 1 auto; }
+.ws-pane[data-skipped] > .ws-tip { flex-shrink: 0; }
 .ws-rides:empty { display: none; }
 .ws-rides-card { display: flex; flex-direction: column; gap: 0.625rem; padding: 0.875rem 1rem; border-radius: var(--r-md); background: var(--sky-tint); color: var(--ink); min-width: 0; }
 .ws-ride-top { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
