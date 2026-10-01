@@ -15,6 +15,7 @@ request; layout.site_header reads it with `request_traveler()`. Outside a reques
 
 import hashlib
 import re
+import time
 import uuid
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -81,7 +82,7 @@ def current_traveler(session):
 
 # Everything fh-saas keeps in the session for the sign-in; sign_out removes exactly these and leaves the rest.
 AUTH_KEYS = ("user_id", "email", "tenant_id", "tenant_role", "is_sys_admin", "login_at", "session_started_at",
-             "_auth_cache", "oauth_state", "login_next", "login_intent", "verified", "note")
+             "_auth_cache", "seen_at", "oauth_state", "login_next", "login_intent", "verified", "note")
 
 
 def sign_in(session, user_id, email=""):
@@ -404,11 +405,30 @@ def request_path():
     return _request_path.get()
 
 
+SLIDE_EVERY = 24 * 3600  # seconds: a signed-in request older than this since the last cookie write rewrites it
+
+
+def now() -> float:
+    return time.time()
+
+
+def slide(session):
+    """Keep a signed-in person signed in for 30 days after their last visit (F-049).
+
+    Starlette sends the session cookie, with a fresh signature time and Max-Age, only when the session changed. fh-saas's
+    SlidingSessionMiddleware does not add a refresh of its own, so a plain read never pushes the expiry out. Writing `seen_at`
+    (at most once a day, so not on every request) makes the cookie go out again. Signed out: nothing is written.
+    """
+    if session.get("user_id") and now() - session.get("seen_at", 0) >= SLIDE_EVERY:
+        session["seen_at"] = int(now())
+
+
 async def bind(req, session):
     """Beforeware: make the signed-in traveler visible to page rendering for this request.
 
     Async on purpose: a sync beforeware runs in a threadpool copy of the context, so the ContextVar set would be lost.
     """
+    slide(session)
     _request_traveler.set(current_traveler(session))
     asked, safe = req.query_params.get("trip"), req.method in ("GET", "HEAD")
     if not safe and req.url.path != "/trips/switch":  # the switcher's own `trip` field names the trip to open, not the one being edited

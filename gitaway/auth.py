@@ -48,8 +48,37 @@ def google_enabled() -> bool:
     return bool(os.getenv("GOOGLE_CLIENT_ID") and os.getenv("GOOGLE_CLIENT_SECRET"))
 
 
+SESSION_DAYS = 30
+
+
+def production() -> bool:
+    """True on Railway (RAILWAY_ENVIRONMENT is set there) or when GITAWAY_ENV=production."""
+    return os.getenv("GITAWAY_ENV", "").lower() == "production" or bool(os.getenv("RAILWAY_ENVIRONMENT"))
+
+
+def check_production_settings():
+    """Production needs its own cookie-signing key: a key made on the fly would sign everyone out on every redeploy."""
+    if production() and not (os.getenv("GITAWAY_SECRET_KEY") or "").strip():
+        raise RuntimeError("GITAWAY_SECRET_KEY must be set in production (it signs the session cookie); refusing to start.")
+
+
+def session_options() -> dict:
+    """FastHTML's session cookie settings: about 30 days. Starlette re-issues the cookie only when the session changes,
+    so the sliding comes from session.slide, not from here; https-only in production (browsers still accept it on localhost over http in development)."""
+    return {"max_age": SESSION_DAYS * 24 * 3600, "sess_https_only": production()}
+
+
+def server_options() -> dict:
+    """uvicorn settings for `serve`. Production: no reload, and the proxy's X-Forwarded-* headers are trusted (the app only listens
+    behind Railway's proxy), so request.url.scheme is https. Locally proxy headers are ignored, so dev_login_allowed's rule holds."""
+    if production():
+        return {"host": "0.0.0.0", "reload": False, "proxy_headers": True, "forwarded_allow_ips": "*"}
+    return {"host": "0.0.0.0", "reload": True, "proxy_headers": False}
+
+
 def dev_login_enabled() -> bool:
-    return os.getenv("GITAWAY_DEV_LOGIN") == "1"
+    """The flag, but never in production, even when set."""
+    return os.getenv("GITAWAY_DEV_LOGIN") == "1" and not production()
 
 
 def dev_login_allowed(request) -> bool:
