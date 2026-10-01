@@ -5,11 +5,20 @@ Feel: **joyful, trustworthy, alive**. Airbnb-playful (tactile, soft depth, warm 
 Source canvas: https://claude.ai/artifact/NvLT3Tjf4XUwPbyZ4m6d2Q (brand sheet artboard). The artboard sources are committed in `docs/design/canvas/` (open any `.dc.html` as a reference; values there match this file).
 Sample data uses US units (°F, $) for US trips.
 
+## Scale (F-030)
+The site renders at **75%** of the size it was first drawn. One number does it: `:root { font-size: 12px }` in `tokens.css`, and every length in the CSS is `rem`. On phones (viewport ≤ 720px) the root returns to 16px, so phone type and touch targets are unchanged.
+- **Every size in this file is the design number at a 16px root.** Write it in CSS as `px / 16` rem (button 56px = `3.5rem`, radius 28px = `1.75rem`). On desktop and tablet it shows at 75% (button 42px, body 12.75px); on a phone at 100%.
+- Never write `px` for a size, gap, radius, shadow offset or icon. The only `px` allowed are 1px hairlines (borders, rings) and the viewport breakpoints. `tests/test_scale.py` fails on any other.
+- Breakpoints are viewport widths and follow the scale: a layout that switched at 1100 now switches at **825**. Phone is ≤ 720 (unchanged). Use these: 720 phone, 825 tablet, 900 and 975 and 1020 for the landing and itinerary collage. Container queries use rem.
+- JS that needs pixels (pointer maths) reads the root size: `parseFloat(getComputedStyle(document.documentElement).fontSize)`. The calendar hour is 3rem (`HOUR_REM` in `calendar.js`, `HH` in `calendar.py`).
+- `icon(name, size)` takes the design size in px and emits it in rem. Hand-written inline SVG must set `style="width:Xrem;height:Xrem"`.
+- Floor: text never goes below 13px on a phone. On desktop the 13px caption size shows at 9.75px, which is the intended 75%.
+
 ## Type
 | Role | Family | Use |
 |---|---|---|
 | Display | Bricolage Grotesque 700–800, tracking −0.02 to −0.04em | Page and day titles, big numbers, totals |
-| Body | Figtree 400–800 | Everything else. Body 17px, labels 15px, minimum 13px |
+| Body | Figtree 400–800 | Everything else. Body 17px, labels 15px, minimum 13px (design numbers at the 16px root; see Scale) |
 | Hand | Caveat 700 | Traveler notes and photo captions only, never UI |
 
 Load from Google Fonts. Fallbacks: `'Segoe UI', system-ui, sans-serif` and `cursive`.
