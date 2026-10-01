@@ -29,7 +29,7 @@ OPEN_POSTS = (
     "/creators", "/creators/draft", "/creators/finish",   # a creator draft is a person's own, published to the community, not a family's
 )
 OPEN_PREFIXES = ("/join/",)                # using an invite link: the person is joining another family
-ADMIN_POSTS = ("/family/invite", "/family/invite/revoke", "/family/role", "/family/remove")
+ADMIN_POSTS = ("/family/invite", "/family/invite/revoke", "/family/role", "/family/remove", "/trip/delete")  # deleting an imported trip (F-042) is an admin's
 
 _role = ContextVar("gitaway_family_role", default=None)
 

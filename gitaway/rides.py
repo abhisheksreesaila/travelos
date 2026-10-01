@@ -86,6 +86,20 @@ def _hotel(airport, stay_id):
     return Place(stay.name if stay else CITY_CENTRE, address, lat, lng, area)
 
 
+def imported_hotel(name, address) -> Place:
+    """The hotel of an imported trip (F-042): its own name and address; the map point is the city centre (nothing here looks addresses up)."""
+    lat, lng, _ = AREAS["city"]
+    return Place(name, address, lat, lng, "city")
+
+
+def _imported_hotel_of(plan) -> tuple:
+    """(name, address) of the hotel end of `plan` when it is an imported trip's hotel, else ()."""
+    if not plan.stay_id.startswith("imp-"):
+        return ()
+    place = plan.dropoff if plan.kind == "arrive" else plan.pickup
+    return (place.name, place.address)
+
+
 @dataclass(frozen=True)
 class LegPlan:
     """One leg of the trip as a ride: where, when and for how many. Everything an estimates call needs."""
@@ -120,15 +134,24 @@ def leg_plan(kind, flight, stay, trip) -> LegPlan:
     if kind not in LEGS:
         raise RideError("Pick the arrival or the departure ride.")
     airport = flight.airport
+    if airport not in AIRPORTS:
+        raise RideError("GitAway can only schedule rides to and from Los Angeles airports for now.")
     area = catalog.ride_area(airport, stay)
     _dollars, minutes = catalog.ride_base(airport, area, kind)
-    hotel = _hotel(airport, stay.id if stay else "")
+    imported = stay is not None and hasattr(stay, "address")  # an imported trip's hotel (F-042)
+    hotel = imported_hotel(stay.name, stay.address) if imported else _hotel(airport, stay.id if stay else "")
     if kind == "arrive":
-        day, at = trip.depart, flight.arrive_min + catalog.CURB_MINUTES
+        day, at = getattr(flight, "arrive_date", None) or trip.depart, flight.arrive_min + catalog.CURB_MINUTES
         pickup, dropoff = AIRPORTS[airport], hotel
     else:
-        day, at = trip.return_, (flight.back_depart_min - catalog.AIRPORT_BUFFER - minutes) // 5 * 5
+        if flight.back_depart_min is None:
+            raise RideError("There is no flight home on this trip, so there is no departure ride to schedule.")
+        day, at = getattr(flight, "back_date", None) or trip.return_, (flight.back_depart_min - catalog.AIRPORT_BUFFER - minutes) // 5 * 5
         pickup, dropoff = hotel, AIRPORTS[airport]
+    if at >= 24 * 60:  # a landing at 11:40 PM plus the curb time is after midnight
+        day, at = day + timedelta(days=1), at - 24 * 60
+    elif at < 0:  # a flight at 1 AM: the ride is the evening before
+        day, at = day - timedelta(days=1), at + 24 * 60
     when = datetime.combine(day, time(at // 60, at % 60), tzinfo=TZ)
     return LegPlan(kind, airport, stay.id if stay else "", pickup, dropoff, when, trip.travelers, minutes, "RESERVE" if kind == "arrive" else "SCHEDULED", trip == catalog.SAMPLE_TRIP)
 
@@ -191,7 +214,7 @@ def _fare_id(kind, pickup_ms, airport, area, key, cents):
 
 
 def _fare_for(plan: LegPlan, key, cents):
-    return _fare_id(plan.kind, plan.pickup_ms, plan.airport, _hotel(plan.airport, plan.stay_id).area, key, cents)
+    return _fare_id(plan.kind, plan.pickup_ms, plan.airport, (plan.dropoff if plan.kind == "arrive" else plan.pickup).area, key, cents)
 
 
 def _price(plan: LegPlan, p: Product):
@@ -252,10 +275,11 @@ class RideRecord:
     step: int = 0
     canceled: bool = False
     demo: bool = False
+    hotel: tuple = ()  # (name, address) of an imported trip's hotel (F-042); empty for a catalog stay, which `stay_id` names
 
     @property
     def plan(self) -> LegPlan:
-        hotel = _hotel(self.airport, self.stay_id)
+        hotel = imported_hotel(*self.hotel) if self.hotel else _hotel(self.airport, self.stay_id)
         out, back = (AIRPORTS[self.airport], hotel) if self.leg == "arrive" else (hotel, AIRPORTS[self.airport])
         return LegPlan(self.leg, self.airport, self.stay_id, out, back, self.pickup_time, self.party, self.minutes,
                        "RESERVE" if self.leg == "arrive" else "SCHEDULED", self.demo)
@@ -341,7 +365,7 @@ class SimulatedUber:
         request_id = "sim_" + hashlib.sha256(f"{req.key}|{req.ride_id}|{plan.kind}|{plan.pickup_ms}".encode()).hexdigest()[:12]
         key = next(p.key for p in PRODUCTS if _product_id(p.key) == req.product_id)
         return RideRecord(req.ride_id, request_id, req.key, plan.kind, key, req.product_id, req.fare_id, match.cents, match.cars, plan.pickup_time,
-                          plan.minutes, plan.party, plan.airport, plan.stay_id, req.guest, demo=plan.demo)
+                          plan.minutes, plan.party, plan.airport, plan.stay_id, req.guest, demo=plan.demo, hotel=_imported_hotel_of(plan))
 
     def _stage(self, r: RideRecord, at) -> int:
         at = at or now(r.demo)
@@ -461,7 +485,7 @@ def to_dict(r: RideRecord) -> dict:
     """The compact form stored in the family database's `rides` table (about 200 bytes of JSON)."""
     d = {"i": r.id, "k": r.key, "l": r.leg[0], "p": r.product, "c": r.cents, "u": r.cars, "t": int(r.pickup_time.timestamp()), "m": r.minutes, "n": r.party,
          "a": r.airport, "g": [r.guest.first, r.guest.last], "ph": r.guest.phone, "q": r.request_id, "fi": r.fare_id}
-    for key, value in (("h", r.stay_id), ("x", r.step), ("s", 1 if r.canceled else 0), ("d", 1 if r.demo else 0)):
+    for key, value in (("h", r.stay_id), ("x", r.step), ("s", 1 if r.canceled else 0), ("d", 1 if r.demo else 0), ("ho", list(r.hotel))):
         if value:
             d[key] = value
     return d
@@ -471,7 +495,7 @@ def from_dict(d: dict) -> RideRecord:
     leg = "arrive" if d["l"] == "a" else "depart"
     pickup = datetime.fromtimestamp(d["t"], TZ)
     return RideRecord(d["i"], d["q"], d["k"], leg, d["p"], _product_id(d["p"]), d["fi"], d["c"], d["u"], pickup, d["m"], d["n"], d["a"], d.get("h", ""),
-                      Guest(d["g"][0], d["g"][1], d["ph"]), d.get("x", 0), bool(d.get("s")), bool(d.get("d")))
+                      Guest(d["g"][0], d["g"][1], d["ph"]), d.get("x", 0), bool(d.get("s")), bool(d.get("d")), tuple(d.get("ho", ())))
 
 
 def _stored(db):
@@ -574,6 +598,24 @@ def step_ride(session, ride_id, at=None) -> RideRecord:
 def schedule_ride(session, req: ScheduleRequest) -> RideRecord:
     """Ask the provider to schedule the ride, then keep it. Raises RideError."""
     return save_ride(session, provider().schedule(req))
+
+
+def retime(record: RideRecord, flight, stay, trip) -> RideRecord | None:
+    """The scheduled ride `record` moved to the times and places of a corrected trip (F-042), or None when it should stay as it is: it is
+    cancelled or past the scheduled stage (a driver is on the way), the trip has no such leg any more, or nothing changes."""
+    p = provider()
+    if record.canceled or p.status(record).name != "scheduled":
+        return None
+    try:
+        plan = leg_plan(record.leg, flight, stay, trip)
+    except RideError:
+        return None
+    est = next((e for e in p.estimates(plan) if e.key == record.product and e.fits), None)
+    if est is None:
+        return None
+    new = replace(record, pickup_time=plan.pickup_time, minutes=plan.minutes, party=plan.party, airport=plan.airport, stay_id=plan.stay_id,
+                  hotel=_imported_hotel_of(plan), cents=est.cents, cars=est.cars, fare_id=est.fare_id)
+    return new if new != record else None
 
 
 def date_label(d: date) -> str:

@@ -19,7 +19,7 @@ OPEN_FOR_VIEWERS = {
     "/creators", "/creators/draft", "/creators/finish",       # a creator draft is the person's own, published to the community
     "/join/{token}",                                          # using an invite link: joining another family
 }
-ADMIN_ONLY = {"/family/invite", "/family/invite/revoke", "/family/role", "/family/remove"}
+ADMIN_ONLY = {"/family/invite", "/family/invite/revoke", "/family/role", "/family/remove", "/trip/delete"}
 
 
 def post_routes():

@@ -53,6 +53,20 @@ hotel:
   rooms: 1                            # optional
   phone: "+1 310 555 0100"           # optional
 
+# Staying in two places? Use "hotels:" (a list) in place of "hotel:" above, one entry per stay. Use one or the other, not both.
+# Each hotel gets its own check-in and check-out on the calendar, and rides go to the hotel for that night.
+# hotels:
+#   - name: The Example Hotel Santa Monica
+#     address: 123 Ocean Ave, Santa Monica, CA 90401
+#     check_in: 2026-10-16 15:00
+#     check_out: 2026-10-18 11:00
+#     confirmation: "987654321"
+#   - name: The Second Example Inn Pasadena
+#     address: 45 Colorado Blvd, Pasadena, CA 91101
+#     check_in: 2026-10-18 15:00
+#     check_out: 2026-10-20 11:00
+#     confirmation: "123123123"
+
 car:                                 # optional; delete if not renting
   company: Hertz
   pickup: LAX, 2026-10-16 10:00

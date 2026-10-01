@@ -30,7 +30,8 @@ from fh_saas.utils_migrate import apply_migrations, discover_migrations
 from fh_saas.utils_sql import with_transaction
 from sqlalchemy import text
 
-from gitaway import hostdb
+from gitaway import familydb_import, hostdb
+from gitaway.familydb_import import IMPORT_TABLES
 from gitaway.familydb_social import SOCIAL_TABLES
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -161,6 +162,7 @@ FAMILY_TABLES = [
 ]
 
 FAMILY_TABLES.extend(SOCIAL_TABLES)  # forks and saves (F-041): one list, one entry point (see familydb_social)
+FAMILY_TABLES.extend(IMPORT_TABLES)  # trips imported from elsewhere (F-042, see familydb_import)
 
 FAMILY_INDEXES = [  # (table, columns, unique, name)
     ("bookings", ["trip_id"], True, "ux_bookings_trip"),
@@ -300,6 +302,9 @@ def current_trip_id(db, member) -> str | None:
 
 def booking_for_trip(db, trip_id) -> dict | None:
     """The booking of a trip in the shape the model modules read ("add" and the optional keys only when set), or None."""
+    imported = row(db, "SELECT * FROM trips WHERE id = :t AND source = 'imported'", t=trip_id) if trip_id else None
+    if imported and (found := familydb_import.booking(db, imported)):  # a trip booked elsewhere (F-042): its booking is the stored template
+        return found
     b = row(db, "SELECT b.*, t.params AS trip_params FROM bookings b JOIN trips t ON t.id = b.trip_id WHERE b.trip_id = :t", t=trip_id) if trip_id else None
     if not b:
         return None

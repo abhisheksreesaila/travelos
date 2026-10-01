@@ -220,8 +220,15 @@ def trips(session) -> list:
     with family(session) as fam:
         if not fam:
             return []
-        return [TripInfo(r["id"], r["title"], tripcal.trip_of({"trip": r["params"]}).summary, r["source"], r["id"] == fam.trip_id)
-                for r in familydb.trips(fam.db)]
+        out = []
+        for r in familydb.trips(fam.db):
+            if r["source"] == "imported":  # booked elsewhere (F-042): its real dates and party
+                t = tripcal.trip_of(familydb.booking_for_trip(fam.db, r["id"]))
+                detail = f"{t.date_label} · {t.summary}"
+            else:
+                detail = tripcal.trip_of({"trip": r["params"]}).summary
+            out.append(TripInfo(r["id"], r["title"], detail, r["source"], r["id"] == fam.trip_id))
+        return out
 
 
 def switch_trip(session, trip_id) -> bool:

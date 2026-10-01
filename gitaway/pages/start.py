@@ -103,7 +103,7 @@ def continue_card(session):
         return ""
     b = ses.booking(session)
     if b:
-        t, href, tail = tripcal.trip_of(b), "/calendar", f"booked, {catalog.money(b['total_cents'])}"
+        t, href, tail = tripcal.trip_of(b), "/calendar", ("booked elsewhere" if tripcal.is_imported(b) else f"booked, {catalog.money(b['total_cents'])}")
     elif (saved := ses.remembered_plan(session)):
         p = {k: v[0] for k, v in parse_qs(saved).items()}
         t, href, tail = catalog.trip_from_url(p.get("d"), p.get("r"), p.get("a"), p.get("k")), f"/plan?{saved}", "your picks are saved"

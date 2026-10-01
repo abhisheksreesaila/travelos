@@ -34,15 +34,21 @@ def slug_for(traveler_id, booking) -> str:
 
 def default_tags(session) -> tuple:
     """Kid friendly when the trip has kids on it, else nothing (the traveler picks)."""
-    return ("kid",) if cal.trip().kid_ages else ()
+    return ("kid",) if cal.trip("", ses.booking(session)).kid_ages else ()
 
 
 def title_for(t) -> str:
-    return "LA with the kids" if t.kid_ages else "LA trip"
+    """The shared trip's title: the family's own for an imported trip, else the sample's."""
+    return getattr(t, "name", "") or ("LA with the kids" if t.kid_ages else "LA trip")
+
+
+def _la(t) -> bool:
+    """The sample trip and any trip to Los Angeles: the only places the scrapbook has photos of."""
+    return t.destination_name.casefold() in ("los angeles", "la")
 
 
 def _stop(block) -> Stop:
-    return Stop(cal.fmt_time(block.start), block.title, block.icon or "star", "sun", booked=True)
+    return Stop(cal.fmt_time(block.at), block.title, block.icon or "star", "sun", booked=True)
 
 
 def _plan(act) -> Stop:
@@ -59,7 +65,7 @@ def build(session, tags=(), theme="sunset"):
     b = ses.booking(session)
     if not b:
         return None
-    t = cal.trip()
+    t = cal.trip("", b)  # the booked trip's own dates and length (an imported trip's real ones too), not the sample's
     blocks, acts = cal.booked_blocks(b, t), cal.activities(session)
     last = (t.return_ - t.depart).days
     days = []
@@ -72,13 +78,16 @@ def build(session, tags=(), theme="sunset"):
     plans = sum(len(d.stops) for d in days)
     name = title_for(t)
     keys = [k for k in hub.TAGS if k in tags]
+    la = _la(t)
+    place = PLACE if la else t.destination_name
     return Itinerary(
-        slug=slug_for(ses.current_traveler(session).id, b), title=name, headline=f"{name}:", accent="our scrapbook", place=PLACE,
-        lede=f"{len(days)} days in Los Angeles, planned on GitAway: {_lede_lanes(b)}everything we want to do, day by day.",
+        slug=slug_for(ses.current_traveler(session).id, b), title=name, headline=f"{name}:", accent="our scrapbook", place=place,
+        lede=f"{len(days)} days in {'Los Angeles' if la else t.destination_name}, planned on GitAway: {_lede_lanes(b)}everything we want to do, day by day.",
         days=days, tags=[Tag(hub.TAGS[k][0], hub.TAGS[k][1], hub.TAGS[k][2], (-3, 2, -1.5)[n % 3]) for n, k in enumerate(keys)],
         stats=[(f"{len(days)} days", cal.range_label(t.depart, t.return_)), (f"{plans} plans", "bookings and things to do"), ("0", "families forked it")],
-        polaroids=[Polaroid(PIER, "Santa Monica Pier and beach", "the pier"), Polaroid(VENICE, "Venice Beach, Los Angeles", "Venice")],
+        polaroids=[Polaroid(PIER, "Santa Monica Pier and beach", "the pier"), Polaroid(VENICE, "Venice Beach, Los Angeles", "Venice")] if la else [],
         author="a traveler", theme=theme if theme in ("sunset", "pacific") else "sunset",
+        **({} if la else {"route": place}),
     )
 
 

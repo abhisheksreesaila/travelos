@@ -25,7 +25,7 @@ from gitaway import access, catalog, forks as forks_model, members, session as s
 from gitaway.icons import icon
 from gitaway.layout import avatar, brand, join_note, styles, trip_field
 from gitaway import voice as vo
-from gitaway.pages import pay, plan as plan_ui, voice as voice_ui
+from gitaway.pages import pay, plan as plan_ui, rides as rides_ui, voice as voice_ui
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/calendar.css"), Link(rel="stylesheet", href="/assets/css/voice.css"))
 HH = 48  # one hour is 48px at the 16px base, i.e. 3rem (calendar.js HOUR_REM must match)
@@ -118,6 +118,9 @@ def ride_href(ctx, block):
     """Where a ride block goes: the ride itself, or (an offer, id "ro-<leg>") the flow that schedules it for the booked picks."""
     if block.kind == "ride":
         return f"/rides/{block.id}"
+    if cal.is_imported(ctx["booking"]):  # an imported trip has no picks: the ride flow names the trip instead (F-042)
+        b = ctx["booking"]
+        return rides_ui.new_url(cal.flight_of(b), cal.stay_of(b), cal.trip_of(b), block.id[3:])
     return plan_ui.ride_path(block.id[3:], cal.flight_of(ctx["booking"]).id, (cal.stay_of(ctx["booking"]) or None) and cal.stay_of(ctx["booking"]).id, cal.trip_of(ctx["booking"]))
 
 
@@ -134,15 +137,23 @@ def ride_block(b, gs, ctx, lane=0, nlanes=1):
     )
 
 
-def booked_block(b, gs, lane=0, nlanes=1):
-    return Div(
-        Span(icon(b.icon, 13, 2.2), " ", Span(cal.fmt_time(b.start), cls="cal-time"), " ", Span(b.title, cls="cal-title"), cls="cal-flow"),
+def detail_href(ctx, block):
+    """Where a block booked elsewhere opens its booking detail (F-042): this calendar with ?detail=<block id>, for the trip drawn."""
+    return cal_url(ctx["demo"], view=ctx["view"], detail=block.id, trip=ses.open_trip_id())
+
+
+def booked_block(b, gs, lane=0, nlanes=1, ctx=None):
+    """A locked booked block. One booked elsewhere (an imported trip, F-042) says so and opens its booking detail (where the confirmation is)."""
+    elsewhere = bool(b.tag and ctx)
+    return (A if elsewhere else Div)(
+        Span(icon(b.icon, 13, 2.2), " ", Span(cal.fmt_time(b.at), cls="cal-time"), " ", Span(b.title, cls="cal-title"), cls="cal-flow"),
+        Span(b.tag, cls="cal-elsewhere") if b.tag else "",
         Span(icon("lock", 12, 2.4), cls="cal-lock"),
         Span("Booked, locked", cls="sr-only"),
-        cls=f"cal-block cal-booked{' cal-lane' if nlanes > 1 else ''}", data_block=b.id, data_day=str(b.day), data_start=str(b.start), data_end=str(b.end),
+        cls=f"cal-block cal-booked{' cal-lane' if nlanes > 1 else ''}{' cal-short' if elsewhere and b.end - b.start <= 45 else ''}", data_block=b.id, data_day=str(b.day), data_start=str(b.start), data_end=str(b.end),
         style=f"--top:{_px(b.start - gs)};--h:{_px(b.end - b.start)};--lane:{lane};--lanes:{nlanes}",
-        role="group", tabindex="0",
-        aria_label=f"Booked, locked: {b.title}, {cal.fmt_time(b.start)} to {cal.fmt_time(b.end)}",
+        **({"href": detail_href(ctx, b), "draggable": "false"} if elsewhere else {"role": "group", "tabindex": "0"}),
+        aria_label=f"Booked, locked{', ' + b.tag if b.tag else ''}: {b.title}, {cal.fmt_time(b.at)} to {cal.fmt_time(b.end)}" + (". Press Enter for the booking details." if elsewhere else ""),
     )
 
 
@@ -184,7 +195,7 @@ def day_column(i, date_, ctx):
     n_notes = ctx["note_counts"]
     booked = [b for b in blocks if b.day == i]
     offers = [o for o in ctx["offers"] if o.day == i]
-    body = [ride_block(b, gs, ctx) if b.kind == "ride" else booked_block(b, gs) for b in booked]  # rides come after, so they sit over a check-out tail at full width
+    body = [ride_block(b, gs, ctx) if b.kind == "ride" else booked_block(b, gs, ctx=ctx) for b in booked]  # rides come after, so they sit over a check-out tail at full width
     body += [ride_block(o, gs, ctx) for o in offers]
     body += [activity_block(a, gs, demo, *lane[a.id], n_notes.get(a.id, 0), ctx["new"], ctx["live"], ctx["fresh"]) for a in acts]
     here = [x for x in ctx["drafts"] if x.plan.day == i]
@@ -203,14 +214,14 @@ def day_column(i, date_, ctx):
     )
     return Div(
         head,
-        Div(*body, cls="cal-body", data_day=str(i), style=f"height:{_px(cal.GRID_END - gs)}"),
+        Div(*body, cls="cal-body", data_day=str(i), style=f"height:{_px(ctx['ge'] - gs)}"),
         id=f"d{i}", cls="cal-day", aria_label=date_.strftime("%A %B ") + str(date_.day), role="group",
     )
 
 
-def hour_gutter(gs):
-    hours = [Span(_hours_label(h), cls="cal-hour") for h in range(gs // 60, cal.GRID_END // 60)]
-    return Div(Div(cls="cal-dayhead cal-corner"), Div(*hours, cls="cal-hours", style=f"height:{_px(cal.GRID_END - gs)}"), cls="cal-gutter", aria_hidden="true")
+def hour_gutter(gs, ge):
+    hours = [Span(_hours_label(h), cls="cal-hour") for h in range(gs // 60, ge // 60)]
+    return Div(Div(cls="cal-dayhead cal-corner"), Div(*hours, cls="cal-hours", style=f"height:{_px(ge - gs)}"), cls="cal-gutter", aria_hidden="true")
 
 
 # ---- strip, whole-trip view, notes ---------------------------------------------------------------------------------
@@ -236,6 +247,8 @@ def _whole_line(x, ctx):
         return Li(Span(cal.fmt_time(x.start), cls="cal-w-time"),
                   A(x.title, href=ride_href(ctx, x), cls=f"cal-w-title cal-w-ride{' is-offer' if kind == 'rideoffer' else ''}", data_block=x.id),
                   Span("Simulated", cls="cal-w-booked cal-w-sim") if kind == "ride" else "")
+    if getattr(x, "tag", ""):  # booked elsewhere (F-042): the title opens the booking detail
+        return Li(Span(cal.fmt_time(x.at), cls="cal-w-time"), A(x.title, href=detail_href(ctx, x), cls="cal-w-title is-booked", data_block=x.id), Span(x.tag, cls="cal-w-booked"))
     return Li(Span(cal.fmt_time(x.start), cls="cal-w-time"),
               Span(x.title, cls=f"cal-w-title{' is-booked' if getattr(x, 'locked', False) else ''}"),
               Span("Booked", cls="cal-w-booked") if getattr(x, "locked", False) else "")
@@ -270,6 +283,9 @@ def note_entry(n, acts_by_id, who, people, fresh=False):
 def booked_note(b):
     """The first note on the feed: what was booked, as a list that fits any mix of flight, stay and car. Flights and a stay are
     blocks on the calendar; a car has none, so it is only ever said to be booked."""
+    if cal.is_imported(b):
+        where = cal.plan_of(b).booked_on
+        return f"Imported from {where}. Your flights, hotel and car are on the calendar, marked “Booked elsewhere”. Tap one for its details. Add anything you want to do."
     stay, pick, car = cal.stay_of(b), cal.stay_pick_of(b), cal.car_of(b)
     flights = cal.flight_of(b) is not None
     on_cal = (["flights"] if flights else []) + ([f"{stay.name} ({pick.summary})" if flights else f"stay at {stay.name} ({pick.summary})"] if stay else [])
@@ -375,6 +391,23 @@ def invite_modal(ctx, b, name, error):
     )
 
 
+def detail_modal(ctx, detail):
+    """The booking detail of a block booked elsewhere (F-042), with its confirmation number. Only drawn on this signed-in, family-only page."""
+    title, rows = detail
+    close = cal_url(ctx["demo"], view=ctx["view"])
+    plan = cal.plan_of(ctx["booking"])
+    return Div(
+        A(href=close, cls="cal-backdrop", data_soft="", data_close="", aria_label="Close", tabindex="-1"),
+        Div(H2(title, id="cal-form-title"),
+            Span(f"Booked elsewhere · {plan.booked_on}" + (f" · itinerary {plan.itinerary}" if plan.itinerary else ""), cls="cal-sub"),
+            Div(*[Div(Span(k, cls="cal-dk"), Span(v, cls="cal-dv", **({"id": "cal-confirmation"} if k == "Confirmation" else {})), cls="cal-drow") for k, v in rows], cls="cal-details"),
+            Span("Confirmation numbers are shown only to your family.", cls="cal-sub"),
+            Div(A("All trip details", href="/trip/details", cls="btn btn-sm"), A("Close", href=close, data_soft="", data_close="", cls="cal-cancel"), cls="cal-actions"),
+            role="dialog", aria_modal="true", aria_labelledby="cal-form-title", cls="cal-dialog"),
+        cls="cal-modal", id="cal-detail",
+    )
+
+
 def toast(kind, text, *extra, tid=None):
     return Div(Span(text, id=tid), *extra, role="alert" if kind == "error" else "status", cls=f"cal-toast cal-toast-{kind}")
 
@@ -437,7 +470,7 @@ def top_bar(t, b, who, session, ctx):
     presence = Span(presence_text(crew, friends), cls="cal-presence", role="status") if crew or friends else ""
     return Header(
         brand("/"),
-        Div(H1(trip_name(t)), Div(Span(f"{cal.range_label(t.depart, t.return_)} · booked · {catalog.money(b['total_cents'])}", cls="cal-tripline"), trip_switcher(session), cls="cal-tripbar"), cls="cal-title-box"),
+        Div(H1(trip_name(t)), Div(Span(f"{cal.range_label(t.depart, t.return_)} · " + (f"booked elsewhere · {cal.plan_of(b).booked_on}" if cal.is_imported(b) else f"booked · {catalog.money(b['total_cents'])}"), cls="cal-tripline"), trip_switcher(session), cls="cal-tripbar"), cls="cal-title-box"),
         Div(Div(*people, cls="cal-faces"), presence, cls="cal-avatars"),
         Div(A(icon("mic", 18, 2.4), "Talk to plan", href=voice_ui.voice_url(ctx["demo"], hear=1), data_soft="", cls="cal-btn cal-btn-mint vo-open"),
             A("Your forks", Span(str(forks), cls="cal-count"), href="/forks", cls="cal-btn cal-btn-white"),
@@ -460,7 +493,7 @@ def view_toggle(demo, view):
     )
 
 
-def calendar_page(session, demo="", view="", form=None, notice=None, new="", undo="", w="", status=200, invite=None, live=False, back="", voice=None, voiced=None):
+def calendar_page(session, demo="", view="", form=None, notice=None, new="", undo="", w="", status=200, invite=None, live=False, back="", voice=None, voiced=None, detail=""):
     who, b = ses.current_traveler(session), ses.booking(session)
     demo = cal.LONG if demo == cal.LONG else ""
     view = pick_view(view, bool(form or new or undo or w or voice is not None or voiced))
@@ -475,6 +508,7 @@ def calendar_page(session, demo="", view="", form=None, notice=None, new="", und
         if n.act:
             counts[n.act] = counts.get(n.act, 0) + 1
     gs = cal.grid_start(blocks)
+    gs_end = cal.grid_end(blocks)
     friends = ses.friends(session)
     role, is_demo = access.request_role(), ses.open_trip_is_demo(session)
     if role == "viewer":  # a viewer looks: no add, edit, invite or voice dialogs
@@ -489,13 +523,13 @@ def calendar_page(session, demo="", view="", form=None, notice=None, new="", und
         placed = vo.preview(session, night, demo)
         drafts = [x for x in placed if not x.hard and x.state != "have"]
         vpanel = voice_ui.panel(session, demo, dates, question, placed, night, bool(voice.get("hear")), voice.get("error", ""))
-    ctx = dict(booking=b, offers=offers, drafts=drafts, fresh=set(voiced["ids"]) if voiced else set(), demo=demo, view=view, t=t, dates=dates, blocks=blocks, acts=acts, notes=notes, note_counts=counts, gs=gs, back=back, new=new, next=cal.next_id(session, demo),
+    ctx = dict(booking=b, offers=offers, drafts=drafts, fresh=set(voiced["ids"]) if voiced else set(), demo=demo, view=view, t=t, dates=dates, blocks=blocks, acts=acts, notes=notes, note_counts=counts, gs=gs, ge=gs_end, back=back, new=new, next=cal.next_id(session, demo),
                friends=friends, crew=members.crew(session), role=role, is_demo=is_demo, live=bool(live and any(a.id == new and a.by for a in acts)))
     if view == "whole":
         surface = whole_view(dates, ctx)
     else:
         surface = Div(
-            Div(hour_gutter(gs), *[day_column(i, d, ctx) for i, d in enumerate(dates)], cls="cal-scroll", id="cal-scroll", tabindex="-1", data_w=w or "0", role="region", aria_label="Days"),
+            Div(hour_gutter(gs, gs_end), *[day_column(i, d, ctx) for i, d in enumerate(dates)], cls="cal-scroll", id="cal-scroll", tabindex="-1", data_w=w or "0", role="region", aria_label="Days"),
             A("+ Add something fun", href="#", id="cal-ghost", cls="cal-ghost", data_soft="", hidden=True, tabindex="-1"),
             cls="cal-grid",
         )
@@ -514,6 +548,8 @@ def calendar_page(session, demo="", view="", form=None, notice=None, new="", und
         layers.append(form_modal(ctx, form["vals"], form.get("error"), form.get("edit")))
     if invite is not None:
         layers.append(invite_modal(ctx, b, invite.get("name", ""), invite.get("error")))
+    if detail and (found := cal.booking_detail(b, detail)):
+        layers.append(detail_modal(ctx, found))
     if notice:
         layers.append(toast("error", notice))
     if ctx["live"]:
@@ -535,7 +571,7 @@ def calendar_page(session, demo="", view="", form=None, notice=None, new="", und
                            A("Dismiss", href=cal_url(demo, view=view), data_soft="", cls="cal-dismiss")))
     viewing = P("You are a viewer in this family: you can look at everything but not change it. Ask a family admin to make you an editor.", id="cal-viewer", role="status", cls="cal-viewer") if role == "viewer" else ""
     app = Div(top_bar(t, b, who, session, ctx), join_note(), viewing, Div(card, vpanel or notes_panel(ctx, who, b), cls="cal-layout"), *layers,
-              id="cal-app", cls="cal cal-readonly" if role == "viewer" else "cal", data_trip=ses.open_trip_id() or None, data_demo=demo, data_view=view, data_grid_start=str(gs), data_grid_end=str(cal.GRID_END),
+              id="cal-app", cls="cal cal-readonly" if role == "viewer" else "cal", data_trip=ses.open_trip_id() or None, data_demo=demo, data_view=view, data_grid_start=str(gs), data_grid_end=str(gs_end),
               data_base=cal_url(demo, view=view), data_live="1" if cal.live_pending(session, demo) else None, data_voice="1" if voice is not None else None)
     body = (
         Title(f"GitAway · {trip_name(t)} calendar"),
@@ -579,7 +615,7 @@ def register(app):
         return None
 
     @app.get("/calendar")
-    def calendar(session, demo: str = "", view: str = "", add: str = "", at: str = "", edit: str = "", new: str = "", undo: str = "", w: str = "", invite: str = "", live: str = "", back: str = "", voice: str = "", night: str = "", hear: str = "", voiced: str = "", vnote: str = "", vn: str = ""):
+    def calendar(session, demo: str = "", view: str = "", add: str = "", at: str = "", edit: str = "", new: str = "", undo: str = "", w: str = "", invite: str = "", live: str = "", back: str = "", voice: str = "", night: str = "", hear: str = "", voiced: str = "", vnote: str = "", vn: str = "", detail: str = ""):
         if not ses.current_traveler(session):
             return _signin(demo, view)
         if not ses.booking(session):
@@ -606,7 +642,7 @@ def register(app):
         view = pick_view(view, bool(add or edit or new or undo or w or voice == "1" or voiced))
         talk = {"night": voice_ui.parse_night(night), "hear": hear == "1"} if voice == "1" and not form else None
         done = {"ids": voice_ui.parse_ids(voiced), "note": voice_ui.note_id(vnote), "night": str(voice_ui.parse_night(vn) if voice_ui.parse_night(vn) is not None else "")} if voiced else None
-        return calendar_page(session, demo, view, form=form, new=new, undo=undo, w=w, invite={} if invite == "1" and not form else None, live=live == "1", back=back if add else "", voice=talk, voiced=done)
+        return calendar_page(session, demo, view, form=form, new=new, undo=undo, w=w, invite={} if invite == "1" and not form else None, live=live == "1", back=back if add else "", voice=talk, voiced=done, detail=detail[:20])
 
     def refuse(session, demo, view, message, form=None):
         return calendar_page(session, demo, view, form=form, notice=None if form else message, status=409)

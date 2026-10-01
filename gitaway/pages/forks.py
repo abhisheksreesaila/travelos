@@ -61,7 +61,7 @@ def calendar_view(session, placements=(), author="", fresh=(), demo=""):
     t = cal.trip(demo, b)
     dates = cal.days(t)
     blocks = cal.booked_blocks(b, t)
-    gs = cal.grid_start(blocks)
+    gs, ge = cal.grid_start(blocks), cal.grid_end(blocks)
     acts = cal.activities(session, demo)
     drafts = [x for x in placements if not x.hard and x.state != "have"]
     cols = []
@@ -74,10 +74,10 @@ def calendar_view(session, placements=(), author="", fresh=(), demo=""):
         w = cal.weather_for(i)
         cols.append(Div(
             Div(Span(str(d.day), cls="fk-num"), Span(d.strftime("%a").upper(), cls="fk-dow"), Span(f"{w.temp_f}°F", cls="fk-wx"), cls=f"fk-dayhead fill-{tint}-tint"),
-            Div(*body, cls="fk-body", style=f"height:{_rem(cal.GRID_END - gs)}"),
+            Div(*body, cls="fk-body", style=f"height:{_rem(ge - gs)}"),
             cls="fk-day", aria_label=d.strftime("%A %B ") + str(d.day), role="group"))
-    hours = [Span(f"{h % 12 or 12} {'AM' if h < 12 else 'PM'}", cls="fk-hour") for h in range(gs // 60, cal.GRID_END // 60)]
-    gutter = Div(Div(cls="fk-dayhead fk-corner"), Div(*hours, cls="fk-hours", style=f"height:{_rem(cal.GRID_END - gs)}"), cls="fk-gutter", aria_hidden="true")
+    hours = [Span(f"{h % 12 or 12} {'AM' if h < 12 else 'PM'}", cls="fk-hour") for h in range(gs // 60, ge // 60)]
+    gutter = Div(Div(cls="fk-dayhead fk-corner"), Div(*hours, cls="fk-hours", style=f"height:{_rem(ge - gs)}"), cls="fk-gutter", aria_hidden="true")
     return Section(
         Div(Span("Your calendar", cls="fk-card-title"),
             Div(Button(icon("chev-left", 16, 2.6), type="button", data_dir="-1", aria_label="Earlier days", cls="fk-navbtn"),
