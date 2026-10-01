@@ -425,6 +425,10 @@
   .ws-grid[data-expanded="news"] .ws-context > [data-pane="news"],
   .ws-grid[data-expanded="community"] .ws-context > [data-pane="community"] { order: -1; }
   .ws-pane { padding: 0.875rem; }
+  .ws-focus { min-height: 2.75rem; min-width: 2.75rem; }
+  .ws-expand { width: 2.75rem; min-height: 2.75rem; flex-shrink: 0; }
+  .ws-fork { height: auto; min-height: 2.75rem; }
+  .ws-forklist { min-height: 2.75rem; }
   .ws-cards { overflow: visible; }
   .ws-grid[data-expanded] .ws-cards { display: flex; }
   /* Split view on a phone: two screens (list, then detail with a back pill) */

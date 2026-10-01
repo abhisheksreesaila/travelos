@@ -56,5 +56,6 @@
   .hub-grid { grid-template-columns: minmax(0, 1fr); }
   .hub-photo { height: 12rem; }
   .hub-head > p { font-size: 1.0625rem; }
+  .hub-search input { min-height: 2.75rem; }
 }
 @media (prefers-reduced-motion: reduce) { .hub-card, .hub-chip { transition: none; } .hub-card:hover { transform: none; } }

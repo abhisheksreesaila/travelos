@@ -34,3 +34,35 @@ def test_phone_expanded_context_pane_keeps_the_other_panes_underneath():
     assert text.index(rule) > base_hide
     # the expanded pane leads, the others follow
     assert re.search(r'\.ws-grid\[data-expanded="weather"\] \.ws-context > \[data-pane="weather"\][^{]*\{\s*order: -1', phone)
+
+
+def test_phone_text_floor_is_13px():
+    """F-034: every small size goes through --text-min, which is 13px on phones and 11px elsewhere."""
+    tokens = css("tokens.css")
+    assert re.search(r"@media \(max-width: 720px\)\s*\{\s*:root\s*\{[^}]*--text-min: 13px", tokens)
+    for path in CSS_DIR.glob("*.css"):
+        for m in re.finditer(r"font(?:-size)?:\s*(?:\w+\s+)*?(max\(var\(--text-min\), )?(\d*\.?\d+)rem", css(path.name)):
+            assert m.group(1) or float(m.group(2)) * 16 >= 13, f"{path.name}: {m.group(0)} is under 13px on a phone"
+
+
+def test_no_ellipsis_in_any_css():
+    """F-034: labels wrap or shorten, never `text-overflow: ellipsis` (docs/lessons.md)."""
+    for path in CSS_DIR.glob("*.css"):
+        assert not re.search(r"text-overflow\s*:\s*ellipsis", css(path.name)), path.name
+
+
+TAP_TARGETS = {  # file -> selectors that must be at least 2.75rem (44px at the 16px phone root) in a phone block
+    "base.css": [".ga-brand", ".ga-nav a"],
+    "workspace.css": [".ws-focus", ".ws-expand", ".ws-fork", ".ws-forklist"],
+    "creators.css": [".cr-link", ".cr-hint a"],
+    "hub.css": [".hub-search input"],
+}
+
+
+def test_phone_touch_targets_are_44px():
+    """F-034: links, buttons and inputs get 2.75rem (44px) of height on a phone."""
+    for name, selectors in TAP_TARGETS.items():
+        phone = phone_blocks(css(name))
+        for sel in selectors:
+            rule = re.search(r"(?:^|[},\s])" + re.escape(sel) + r"\s*\{([^}]*)\}", phone)
+            assert rule and re.search(r"min-height:\s*2\.75rem", rule.group(1)), f"{name}: {sel} lacks a 44px phone target"

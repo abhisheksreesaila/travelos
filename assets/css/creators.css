@@ -175,7 +175,8 @@ fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
   .cr-source { flex-direction: column; align-items: stretch; }
   .cr-thumb { width: auto; height: 9rem; }
   .cr-paste-form { flex-direction: column; border-radius: var(--r-lg); padding: 0.75rem; }
-  .cr-link { padding: 0.5rem 0.25rem; font-size: 1.125rem; }
+  .cr-link { padding: 0.5rem 0.25rem; font-size: 1.125rem; min-height: 2.75rem; }
+  .cr-hint a { display: inline-flex; align-items: center; min-height: 2.75rem; }
   .cr-go, .cr-submit { width: 100%; margin-left: 0; }
   .cr-covers { flex-wrap: wrap; }
   .cr-note-2 { margin-left: 0; }
