@@ -269,13 +269,26 @@ def whole_view(dates, ctx):
     return Div(*rows, cls="cal-whole")
 
 
-def note_entry(n, acts_by_id, who, people, fresh=False):
+FORMER = ses.Friend("Former member", "?", "sky")
+
+
+def note_writer(n, who, people, family):
+    """(name shown, avatar person) for a note: a pretend friend by name, another member by their user id, and "You" only for the viewer's own."""
+    if n.by:
+        return n.by, people.get(n.by.casefold(), who)
+    if not n.by_id or n.by_id == who.id:
+        return "You", who
+    member = family.get(n.by_id, FORMER)
+    return member.name, member
+
+
+def note_entry(n, acts_by_id, who, people, fresh=False, family=None):
     on = acts_by_id.get(n.act)
-    author = people.get(n.by.casefold(), who) if n.by else who
+    name, author = note_writer(n, who, people, family or {})
     where = "just now" if fresh else f"on {on.title}" if on else "whole trip"
     return Div(
         avatar(author, "cal-noteav"),
-        Div(Span(f"{n.by or 'You'} · {where}", cls="cal-notemeta"), Span(n.text, cls="cal-notetext"), cls="cal-noteslip"),
+        Div(Span(f"{name} · {where}", cls="cal-notemeta"), Span(n.text, cls="cal-notetext"), cls="cal-noteslip"),
         cls=f"cal-note{' cal-note-live' if fresh else ''}", data_note=n.id,
     )
 
@@ -285,7 +298,10 @@ def booked_note(b):
     blocks on the calendar; a car has none, so it is only ever said to be booked."""
     if cal.is_imported(b):
         where = cal.plan_of(b).booked_on
-        return f"Imported from {where}. Your flights, hotel and car are on the calendar, marked “Booked elsewhere”. Tap one for its details. Add anything you want to do."
+        lanes = [w for w, got in (("flights", cal.flight_of(b)), ("hotel", cal.stay_of(b)), ("car", cal.car_of(b))) if got]  # only what this trip really has
+        if not lanes:
+            return f"Imported from {where}. Add anything you want to do."
+        return f"Imported from {where}. Your {cal.oxford(lanes)} {'is' if len(lanes) == 1 and lanes != ['flights'] else 'are'} on the calendar, marked “Booked elsewhere”. Tap one for its details. Add anything you want to do."
     stay, pick, car = cal.stay_of(b), cal.stay_pick_of(b), cal.car_of(b)
     flights = cal.flight_of(b) is not None
     on_cal = (["flights"] if flights else []) + ([f"{stay.name} ({pick.summary})" if flights else f"stay at {stay.name} ({pick.summary})"] if stay else [])
@@ -303,9 +319,11 @@ def notes_panel(ctx, who, b):
     acts_by_id = {a.id: a for a in ctx["acts"]}
     people = {f.name.casefold(): f for f in ctx["friends"]}
     fresh = ctx["new"] if ctx["live"] else ""
-    feed = [Div(avatar(who, "cal-noteav"), Div(Span("You · whole trip", cls="cal-notemeta"),
+    family = members.family_people(ctx["session"])
+    name, author = note_writer(cal.Note("", "", None, "", b.get("booked_by", "")), who, people, family)  # the first note is from whoever booked or imported the trip
+    feed = [Div(avatar(author, "cal-noteav"), Div(Span(f"{name} · whole trip", cls="cal-notemeta"),
                 Span(booked_note(b), cls="cal-notetext"), cls="cal-noteslip"), cls="cal-note cal-note-first")]
-    feed += [note_entry(n, acts_by_id, who, people, bool(fresh) and n.act == fresh and bool(n.by)) for n in ctx["notes"]]
+    feed += [note_entry(n, acts_by_id, who, people, bool(fresh) and n.act == fresh and bool(n.by), family) for n in ctx["notes"]]
     about = Select(Option("Whole trip", value=""), *[Option(a.title, value=a.id) for a in ctx["acts"]], name="act", aria_label="What is this note about?", cls="cal-about") if ctx["acts"] else ""
     return Aside(
         Button(icon("note", 18, 2.2), Span("Trip notes"), Span(str(len(ctx["notes"])), cls="cal-count"), type="button", id="cal-notes-toggle",
@@ -472,7 +490,7 @@ def top_bar(t, b, who, session, ctx):
         brand("/"),
         Div(H1(trip_name(t)), Div(Span(f"{cal.range_label(t.depart, t.return_)} · " + (f"booked elsewhere · {cal.plan_of(b).booked_on}" if cal.is_imported(b) else f"booked · {catalog.money(b['total_cents'])}"), cls="cal-tripline"), trip_switcher(session), cls="cal-tripbar"), cls="cal-title-box"),
         Div(Div(*people, cls="cal-faces"), presence, cls="cal-avatars"),
-        Div(A(icon("mic", 18, 2.4), "Talk to plan", href=voice_ui.voice_url(ctx["demo"], hear=1), data_soft="", cls="cal-btn cal-btn-mint vo-open"),
+        Div(A(icon("mic", 18, 2.4), "Talk to plan", href=voice_ui.voice_url(ctx["demo"], hear=1), data_soft="", cls="cal-btn cal-btn-mint vo-open") if ctx["role"] != "viewer" else "",
             A("Your forks", Span(str(forks), cls="cal-count"), href="/forks", cls="cal-btn cal-btn-white"),
             invite_button(ctx),
             *share_controls(session), cls="cal-actions-top"),
@@ -500,7 +518,8 @@ def calendar_page(session, demo="", view="", form=None, notice=None, new="", und
     t = cal.trip(demo, b)
     dates = cal.days(t)
     blocks = cal.booked_blocks(b, t) + cal.ride_blocks(session, b, t)
-    offers = cal.ride_offers(session, b, t)
+    role, is_demo = access.request_role(), ses.open_trip_is_demo(session)
+    offers = cal.ride_offers(session, b, t) if role != "viewer" else []  # "Schedule an Uber" is a write: a viewer sees the rides already set, not the offers
     acts = cal.activities(session, demo)
     notes = cal.notes(session, demo)
     counts = {}
@@ -510,7 +529,6 @@ def calendar_page(session, demo="", view="", form=None, notice=None, new="", und
     gs = cal.grid_start(blocks)
     gs_end = cal.grid_end(blocks)
     friends = ses.friends(session)
-    role, is_demo = access.request_role(), ses.open_trip_is_demo(session)
     if role == "viewer":  # a viewer looks: no add, edit, invite or voice dialogs
         form, invite, voice = None, None, None
     if not is_demo:       # the pretend-friends dialog belongs to the demo trip: its refusal is a plain message
@@ -523,7 +541,7 @@ def calendar_page(session, demo="", view="", form=None, notice=None, new="", und
         placed = vo.preview(session, night, demo)
         drafts = [x for x in placed if not x.hard and x.state != "have"]
         vpanel = voice_ui.panel(session, demo, dates, question, placed, night, bool(voice.get("hear")), voice.get("error", ""))
-    ctx = dict(booking=b, offers=offers, drafts=drafts, fresh=set(voiced["ids"]) if voiced else set(), demo=demo, view=view, t=t, dates=dates, blocks=blocks, acts=acts, notes=notes, note_counts=counts, gs=gs, ge=gs_end, back=back, new=new, next=cal.next_id(session, demo),
+    ctx = dict(session=session, booking=b, offers=offers, drafts=drafts, fresh=set(voiced["ids"]) if voiced else set(), demo=demo, view=view, t=t, dates=dates, blocks=blocks, acts=acts, notes=notes, note_counts=counts, gs=gs, ge=gs_end, back=back, new=new, next=cal.next_id(session, demo),
                friends=friends, crew=members.crew(session), role=role, is_demo=is_demo, live=bool(live and any(a.id == new and a.by for a in acts)))
     if view == "whole":
         surface = whole_view(dates, ctx)

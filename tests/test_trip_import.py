@@ -286,7 +286,7 @@ def test_the_share_snapshot_the_offline_meta_and_the_cookie_never_hold_them(clie
     public = client.get(f"/trips/{rows[0]['slug']}").text
     for secret in SECRETS:
         assert secret not in snapshot and secret not in page and secret not in public, secret
-    assert "Booked elsewhere" not in public and "Alaska Airlines AS 1234" in public  # the plans show, the family's marker and numbers do not
+    assert "Booked elsewhere" not in public and "Flight to LAX" in public and "AS 1234" not in public  # the plans show, the family's marker and numbers do not
     sign_in(client)
     for path in ("/calendar", "/start", "/trips/import", "/offline"):
         html = client.get(path).text
@@ -297,23 +297,23 @@ def test_the_share_snapshot_the_offline_meta_and_the_cookie_never_hold_them(clie
 
 # ---- sharing uses the trip's real dates ---------------------------------------------------------------------------------
 
-def test_a_shared_trip_uses_the_trips_real_dates_and_length(client):
+def test_a_shared_trip_uses_the_trips_real_length(client):
     imported(client, TEMPLATE.replace("end: 2026-10-20", "end: 2026-10-22").replace("check_out: 2026-10-20 11:00", "check_out: 2026-10-22 11:00")
              .replace("depart: 2026-10-20 14:10", "depart: 2026-10-22 14:10").replace("arrive: 2026-10-20 15:37", "arrive: 2026-10-22 15:37").replace("dropoff: LAX, 2026-10-20 12:00", "dropoff: LAX, 2026-10-22 12:00"))
     built = share.build(person())
-    assert len(built.days) == 7 and built.stats[0] == ("7 days", "Oct 16 – 22")
-    assert built.title == "LA with the kids" and built.days[0].stops[0].title.startswith("Alaska Airlines AS 1234")
-    assert built.days[-1].date == "THU, OCT 22" and built.days[0].date == "FRI, OCT 16"
+    assert len(built.days) == 7 and built.stats[0] == ("7 days", "from landing to flight home")
+    assert built.title == "LA with the kids" and built.days[0].stops[0].title == "Flight to LAX"
+    assert built.days[-1].date == "DAY 7" and built.days[0].date == "DAY 1"  # day numbers, never calendar dates (F-046)
 
 
-def test_a_shared_demo_trip_uses_its_own_dates_too(client):
+def test_a_shared_demo_trip_uses_its_own_length_too(client):
     sign_in(client)
     client.post("/pay", data={"f": "f1", "h": "h1", "c": "none", "d": "2026-11-02", "r": "2026-11-05", "a": "2", "k": "5"}, follow_redirects=False)
     b = ses.booking(person())
     assert b and "2026-11-02" in b["trip"]
     built = share.build(person())
-    assert len(built.days) == 4 and built.stats[0] == ("4 days", "Nov 2 – 5")
-    assert built.days[0].date == "MON, NOV 2" and built.days[-1].date == "THU, NOV 5"
+    assert len(built.days) == 4 and built.stats[0][0] == "4 days"
+    assert [d.date for d in built.days] == ["DAY 1", "DAY 2", "DAY 3", "DAY 4"]  # its own length, numbered, never dated (F-046)
 
 
 # ---- rides on an imported trip -----------------------------------------------------------------------------------------

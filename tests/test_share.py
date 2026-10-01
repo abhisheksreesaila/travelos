@@ -58,7 +58,7 @@ def test_the_page_has_bookings_and_activities_by_day(client):
     add(client, title="Venice Canals stroll")
     share(client)
     html = client.get(f"/trips/{slug_of(client)}").text
-    assert "Skylark Air 214" in html and "Venice Canals stroll" in html and "FRI, OCT 16" in html
+    assert "Flight to LAX" in html and "Venice Canals stroll" in html and "DAY 1" in html
     assert 'data-theme="sunset"' in html and "Kid friendly" in html
     assert 'id="day-1"' in html and 'id="day-5"' in html
 

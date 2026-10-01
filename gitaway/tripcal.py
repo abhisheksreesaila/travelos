@@ -92,7 +92,8 @@ class Note:
     id: str
     text: str
     act: str | None = None
-    by: str = ""
+    by: str = ""      # the pretend friend who wrote it ("" for a real member)
+    by_id: str = ""   # the user id of the member who saved it (F-046)
 
 
 # ---- trip and formatting -------------------------------------------------------------------------------------------
@@ -420,7 +421,7 @@ def _act(r):
 
 
 def _note(r):
-    return Note(r["note_id"], r["body"], r["act_id"], r["author"] or "")
+    return Note(r["note_id"], r["body"], r["act_id"], r["author"] or "", r["added_by"] or "")
 
 
 def _begin(db, trip_id, scope, who=""):
@@ -549,6 +550,10 @@ def _clean(t, blocks, *, day, start, end, title, kind, old=None):
         raise CalendarError(f"Give it at least {MIN_LEN} minutes.")
     for b in blocks:
         if b.day == day and s < b.end and b.start < e:
+            if b.kind == "ride":  # a ride scheduled after the plan was made does not lock the plan in place: only a new or moved time is checked
+                if (day, s, e) != old:
+                    raise CalendarError(f"That overlaps your Uber at {fmt_time(b.start)}. Pick a gap.")
+                continue
             raise CalendarError(f"That overlaps {b.title} ({fmt_time(b.at)} – {fmt_time(b.end)}). Pick a gap.")
     if (day, s, e) != old and (problem := window_problem(blocks, day, s, e)):
         raise CalendarError(window_message(problem))
@@ -580,7 +585,8 @@ def add_activity(session, *, day, start, end, title, kind="fun", demo="", id=Non
     """Add an activity. An `id` that already exists returns the existing one, so a refreshed form adds nothing."""
     _valid_id(id)
     with ses.family(session) as fam:
-        _, t, blocks = _need(fam, demo)
+        b, t, blocks = _need(fam, demo)
+        blocks = blocks + ride_blocks(session, b, t)  # a scheduled Uber is busy time
         day, s, e, title = _clean(t, blocks, day=day, start=start, end=end, title=title, kind=kind)
         if id and id[0] != "a":
             raise CalendarError("That id is not valid.")
@@ -610,7 +616,8 @@ def update_activity(session, id_, *, day=None, start=None, end=None, title=None,
     if id_.startswith("b-"):
         raise CalendarError("Booked items are locked. Change your booking to move them.")
     with ses.family(session) as fam:
-        _, t, blocks = _need(fam, demo)
+        b, t, blocks = _need(fam, demo)
+        blocks = blocks + ride_blocks(session, b, t)
         db, scope = fam.db, _scope(demo)
         with familydb.transaction(db):
             _begin(db, fam.trip_id, scope, fam.traveler.id)
@@ -697,7 +704,7 @@ def add_note(session, text, act=None, demo="", id=None):
             id = id or f"n{st['q'] + 1}"
             _insert_note(db, fam, scope, id, _number(id), text, act or None)
             _bump(db, fam.trip_id, scope, _number(id))
-            return Note(id, text, act or None)
+            return Note(id, text, act or None, "", fam.traveler.id)
 
 
 # ---- scripted liveness (F-020) -------------------------------------------------------------------------------------
@@ -863,7 +870,8 @@ def place_plans(plans, blocks, acts, n_days, gs):
 def preview_plans(session, plans, demo=""):
     """The Placements of `plans` on the signed-in traveler's calendar. Raises CalendarError when signed out or nothing is booked."""
     with ses.family(session) as fam:
-        _, t, blocks = _need(fam, demo)
+        b, t, blocks = _need(fam, demo)
+        blocks = blocks + ride_blocks(session, b, t)  # a scheduled Uber is busy time too
         scope = _scope(demo)
         _peek(fam.db, fam.trip_id, scope)
         return place_plans(plans, blocks, [_act(r) for r in _live_acts(fam.db, fam.trip_id, scope)], len(days(t)), grid_start(blocks))
@@ -883,7 +891,8 @@ def apply_plans(session, plans, picks, by="", note=None, demo=""):
     """
     wanted = set(picks)
     with ses.family(session) as fam:
-        _, t, blocks = _need(fam, demo)
+        b, t, blocks = _need(fam, demo)
+        blocks = blocks + ride_blocks(session, b, t)  # a scheduled Uber is busy time too
         db, scope = fam.db, _scope(demo)
         with familydb.transaction(db):
             st = _begin(db, fam.trip_id, scope, fam.traveler.id)

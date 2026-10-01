@@ -1,9 +1,11 @@
 """Share the traveler's trip as a scrapbook itinerary (F-022).
 
 One tap turns the booked trip and its calendar activities into a public itinerary page at `/trips/<slug>` and a card in
-the community hub. Only the days, the plans, their times and places, and the traveler's tags are shared. Private notes,
+the community hub. Only the day numbers, the plans, their times and places, and the traveler's tags are shared. Private notes,
 friends and their names, invites, prices and the booking reference never reach the page: it is rebuilt from the
-bookings and activities each time and has no field for them. Flight and stay names do show; they help the next traveler.
+bookings and activities each time and has no field for them. Nor does anything that says when and where the family is
+away (F-046): no flight numbers, no calendar dates (Day 1...N), the hotel only as its area ("a hotel in Santa Monica"),
+and a car's pickup or drop-off only as an airport code or an area, never a street or hotel address.
 
 The shared trip is stored as a snapshot in the community database (see gitaway.community): the page is built from the
 traveler's calendar when they publish, frozen, and served to anyone from the stored copy. Sharing again updates it.
@@ -11,6 +13,7 @@ traveler's calendar when they publish, frozen, and served to anyone from the sto
 
 import hashlib
 import hmac
+import re
 
 from gitaway import community, hub, session as ses, tripcal as cal
 from gitaway.hub import HubError
@@ -47,8 +50,61 @@ def _la(t) -> bool:
     return t.destination_name.casefold() in ("los angeles", "la")
 
 
-def _stop(block) -> Stop:
-    return Stop(cal.fmt_time(block.at), block.title, block.icon or "star", "sun", booked=True)
+_REGIONS = {x.strip() for x in (
+    "alabama,alaska,arizona,arkansas,california,colorado,connecticut,delaware,florida,georgia,hawaii,idaho,illinois,indiana,iowa,kansas,kentucky,"
+    "louisiana,maine,maryland,massachusetts,michigan,minnesota,mississippi,missouri,montana,nebraska,nevada,new hampshire,new jersey,new mexico,"
+    "new york,north carolina,north dakota,ohio,oklahoma,oregon,pennsylvania,rhode island,south carolina,south dakota,tennessee,texas,utah,vermont,"
+    "virginia,washington,west virginia,wisconsin,wyoming,district of columbia,usa,us,u.s.,u.s.a.,united states").split(",")}
+_ZIP = re.compile(r"^(.*\s)?\d{4,5}(-\d{4})?$")
+
+
+def _is_not_area(part) -> bool:
+    """A trailing piece of an address that is not the city: a state (name or two letters), a zip, or the country."""
+    low = part.casefold()
+    return low in _REGIONS or bool(_ZIP.match(part)) or bool(re.fullmatch(r"[A-Za-z]{2}", part))
+
+
+def area_of(address, fallback) -> str:
+    """The city or area in a street address ("123 Ocean Ave, Santa Monica, CA 90401" -> "Santa Monica"), else `fallback`. Never the street."""
+    parts = [p.strip() for p in (address or "").split(",") if p.strip()]
+    while parts and _is_not_area(parts[-1]):  # drop a trailing zip, state or country
+        parts.pop()
+    return parts[-1] if len(parts) > 1 or (parts and not re.match(r"\d", parts[0])) else fallback
+
+
+def _public_place(where, fallback) -> str:
+    """A car pickup or drop-off place for a public page: an airport code ("LAX"), else the area of an address, never a street or hotel."""
+    code = re.match(r"^([A-Z]{3})\b", where.strip())
+    if code:
+        return code.group(1)
+    return area_of(where, fallback) if "," in where else fallback  # a bare name could be a hotel's
+
+
+def _hotel_phrase(block, b, t) -> str:
+    """"a hotel in Santa Monica": a shared page names the area, never the hotel. An imported trip's area is the city in the hotel's address
+    (each of several hotels has its own); a demo trip's is the catalog stay's area."""
+    if cal.is_imported(b):
+        hotels = cal.plan_of(b).hotels
+        n = int(m.group(1)) if (m := re.match(r"b-h(?:in|out)(\d+)$", block.id)) else 1
+        area = area_of(hotels[min(n, len(hotels)) - 1].address if hotels else "", t.destination_name)
+    else:
+        stay = cal.stay_of(b)
+        area = stay.headline if stay and stay.headline else t.destination_name
+    return "a hotel downtown" if area.casefold() == "downtown" else f"a hotel in {area}"
+
+
+def _stop(block, b, t) -> Stop:
+    """A booked block as the public page shows it: no flight numbers and no hotel names (the times and the days stay)."""
+    title = block.title
+    if block.icon == "plane":
+        dest = m.group(1) if (m := re.search(r"→\s*([A-Z]{3})", title)) else ""
+        title = "Flight home" if block.id.startswith("b-back") else f"Flight to {dest}" if dest and block.id.startswith("b-out") else "Connecting flight"
+    elif block.icon == "bed":
+        title = f"{'Check in' if title.startswith('Check in') else 'Check out'} · {_hotel_phrase(block, b, t)}"
+    elif block.icon == "car" and " · " in title:
+        head, where = title.split(" · ", 1)
+        title = f"{head} · {_public_place(where, t.destination_name)}"
+    return Stop(cal.fmt_time(block.at), title, block.icon or "star", "sun", booked=True)
 
 
 def _plan(act) -> Stop:
@@ -70,11 +126,11 @@ def build(session, tags=(), theme="sunset"):
     last = (t.return_ - t.depart).days
     days = []
     for i, d in enumerate(cal.days(t)):
-        items = sorted([*(( x.start, 0, _stop(x)) for x in blocks if x.day == i), *((a.start, 1, _plan(a)) for a in acts if a.day == i)],
+        items = sorted([*((x.start, 0, _stop(x, b, t)) for x in blocks if x.day == i), *((a.start, 1, _plan(a)) for a in acts if a.day == i)],
                        key=lambda r: r[:2])
         stops = [r[2] for r in items]
         w = cal.weather_for(i)
-        days.append(Day(i + 1, f"{d.strftime('%a, %b').upper()} {d.day}", _day_title(i, last, stops), f"{w.temp_f}°F, {w.sky}", stops, collapsed=i >= 3))
+        days.append(Day(i + 1, f"DAY {i + 1}", _day_title(i, last, stops), f"{w.temp_f}°F, {w.sky}", stops, collapsed=i >= 3))
     plans = sum(len(d.stops) for d in days)
     name = title_for(t)
     keys = [k for k in hub.TAGS if k in tags]
@@ -84,7 +140,7 @@ def build(session, tags=(), theme="sunset"):
         slug=slug_for(ses.current_traveler(session).id, b), title=name, headline=f"{name}:", accent="our scrapbook", place=place,
         lede=f"{len(days)} days in {'Los Angeles' if la else t.destination_name}, planned on GitAway: {_lede_lanes(b)}everything we want to do, day by day.",
         days=days, tags=[Tag(hub.TAGS[k][0], hub.TAGS[k][1], hub.TAGS[k][2], (-3, 2, -1.5)[n % 3]) for n, k in enumerate(keys)],
-        stats=[(f"{len(days)} days", cal.range_label(t.depart, t.return_)), (f"{plans} plans", "bookings and things to do"), ("0", "families forked it")],
+        stats=[(f"{len(days)} days", "from landing to flight home"), (f"{plans} plans", "bookings and things to do"), ("0", "families forked it")],
         polaroids=[Polaroid(PIER, "Santa Monica Pier and beach", "the pier"), Polaroid(VENICE, "Venice Beach, Los Angeles", "Venice")] if la else [],
         author="a traveler", theme=theme if theme in ("sunset", "pacific") else "sunset",
         **({} if la else {"route": place}),

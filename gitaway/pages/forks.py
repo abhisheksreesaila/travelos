@@ -60,7 +60,7 @@ def calendar_view(session, placements=(), author="", fresh=(), demo=""):
     b = ses.booking(session)
     t = cal.trip(demo, b)
     dates = cal.days(t)
-    blocks = cal.booked_blocks(b, t)
+    blocks = cal.booked_blocks(b, t) + cal.ride_blocks(session, b, t)  # scheduled Ubers are on this calendar too
     gs, ge = cal.grid_start(blocks), cal.grid_end(blocks)
     acts = cal.activities(session, demo)
     drafts = [x for x in placements if not x.hard and x.state != "have"]

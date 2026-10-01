@@ -197,6 +197,15 @@ def crew(session) -> list:
     return [ses.Friend(m["name"], m["initials"], m["color"]) for m in members(tid) if m["user_id"] != uid]
 
 
+def family_people(session) -> dict:
+    """{user id: Friend-like (name, initials, color)} for everyone in the signed-in person's family, themselves included. For note authors."""
+    from gitaway import session as ses
+    uid, tid = (session or {}).get("user_id"), (session or {}).get("tenant_id")
+    if not uid or not tid or not role_in(uid, tid):
+        return {}
+    return {m["user_id"]: ses.Friend(m["name"], m["initials"], m["color"]) for m in members(tid)}
+
+
 # ---- the person's active family ------------------------------------------------------------------------------------
 
 def apply_active(session, tenant_id, raw_role):
