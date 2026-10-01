@@ -185,6 +185,7 @@ def ledger_json(q):
         "pick": {"f": lane_id(f), "h": lane_id(h), "c": lane_id(c), "rooms": explicit_rooms(q.stay) if q.stay else None, "add": q.stay.add_code if q.stay else None,
                  "fare": q.flight.fare_code if q.flight else "", "bags": q.flight.bags_code if q.flight else ""},
         "skipped": {"flight": f is None, "stay": h is None, "car": c is None},
+        "car_note": skip_note("car", f is not None),
         "slots": {lane: {"name": name, "price": price, "sub": sub} for lane, name, price, sub in slot_figures(q)},
         "line_html": _html(line_items(q)),
         "slots_html": _html(slot_items(q)),
@@ -285,10 +286,15 @@ def skip_button(lane):
                   type="button", cls="ws-skip", data_skip=lane)
 
 
+def skip_note(lane, with_flight=True):
+    """The slim row's sentence. With no car and no flight there is no airport to ride from, so it only says no car is needed."""
+    return SKIPS[lane]["note"] if lane != "car" or with_flight else "No car needed."
+
+
 def skipped_row(lane, with_flight=True):
     """What a skipped lane collapses to: a slim friendly row with a one-tap undo (shown by CSS when the pane is `data-skipped`)."""
     k = SKIPS[lane]
-    note = k["note"] if lane != "car" or with_flight else "No car needed."
+    note = skip_note(lane, with_flight)
     return Div(Span(icon(k["icon"], 20, 2.2), cls="ws-skipped-ico", aria_hidden="true"),
                Span(note, cls="ws-skipped-note", data_skipped_note=lane),
                Button("Undo", type="button", cls="ws-undo", data_undo=lane, aria_label=f"Undo: {k['undo'].lower()}"),
