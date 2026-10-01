@@ -42,7 +42,7 @@ MAX_FRIENDS = 6
 MAX_FRIEND_NAME = 20
 DEMO_FRIENDS = ("Mom", "Sam")
 _FRIEND_COLORS = ("sun", "sky", "grape", "mint", "bubble")
-INTENTS = ("save", "pay", "invite", "fork", "publish", "ride")
+INTENTS = ("save", "pay", "invite", "fork", "publish", "ride", "join")
 
 _BAD_CHARS = re.compile(r"[\x00-\x20\x7f\\]")
 
@@ -81,7 +81,7 @@ def current_traveler(session):
 
 # Everything fh-saas keeps in the session for the sign-in; sign_out removes exactly these and leaves the rest.
 AUTH_KEYS = ("user_id", "email", "tenant_id", "tenant_role", "is_sys_admin", "login_at", "session_started_at",
-             "_auth_cache", "oauth_state", "login_next", "login_intent")
+             "_auth_cache", "oauth_state", "login_next", "login_intent", "verified", "note")
 
 
 def sign_in(session, user_id, email=""):
@@ -151,6 +151,11 @@ class Family:
     def booking(self):
         return familydb.booking_for_trip(self.db, self.trip_id)
 
+    def is_demo(self) -> bool:
+        """True when the open trip is a demo trip (source "demo", booked in the demo flow): the only kind the pretend friends and Mom's scripted add (F-020) belong to."""
+        found = familydb.trip(self.db, self.trip_id) if self.trip_id else None
+        return bool(found) and found["source"] == "demo"
+
 
 # The trip a request names (a `trip` query or form field, bound by `bind`), and the trip it resolved to (for the forms it renders).
 # A page's forms carry the trip they were drawn for, so a stale tab can never write into whichever trip someone else opened since.
@@ -186,6 +191,12 @@ def family(session):
                 trip_id = None
         _open_trip.set(trip_id or "")
         yield Family(db, t, member, trip_id)
+
+
+def open_trip_is_demo(session) -> bool:
+    """Is the trip this request works on a demo trip? False when signed out or there is no trip (see Family.is_demo)."""
+    with family(session) as fam:
+        return bool(fam and fam.trip_id and fam.is_demo())
 
 
 def booking(session):
@@ -315,9 +326,10 @@ def _friend(name):
 
 
 def friends(session):
-    """The friends invited to the trip this person has open, oldest first. Empty when signed out or nothing is booked."""
+    """The pretend friends invited to the trip this person has open, oldest first. Empty when signed out, nothing is booked, or the trip is
+    a real one (F-043: real trips show the family's real members instead, gitaway.members.crew)."""
     with family(session) as fam:
-        if not fam or not fam.trip_id:
+        if not fam or not fam.trip_id or not fam.is_demo():
             return []
         return [_friend(r["name"]) for r in familydb.rows(fam.db, "SELECT name FROM friends WHERE trip_id = :t ORDER BY rowid", t=fam.trip_id)]
 
@@ -344,6 +356,8 @@ def add_friend(session, name):
     with family(session) as fam:
         if not fam or not fam.trip_id:
             raise FriendError("Book a trip first, then invite friends.")
+        if not fam.is_demo():
+            raise FriendError("Real trips are planned with real people: invite family by email on the Family page.")
         db = fam.db
         with familydb.transaction(db):
             familydb.lock(db)
@@ -365,6 +379,22 @@ def invite_link(booking_id):
 _request_traveler = ContextVar("gitaway_traveler", default=None)
 _request_path = ContextVar("gitaway_path", default="/")
 _request_forks = ContextVar("gitaway_forks", default=0)
+_request_tenant = ContextVar("gitaway_tenant", default=None)
+_request_note = ContextVar("gitaway_note", default=None)
+
+
+def request_tenant():
+    """The active family's id for this request (set by gitaway.access.guard), or None when signed out."""
+    return _request_tenant.get()
+
+
+def request_note():
+    """The sign-in notice to show on this request ({"kind", "text", "tenant", "switch"}) or None (set by gitaway.access.guard)."""
+    return _request_note.get()
+
+
+def request_path():
+    return _request_path.get()
 
 
 async def bind(req, session):

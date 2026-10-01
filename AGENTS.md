@@ -9,6 +9,7 @@ GitAway (repo name `travelos`, the product's former name). Design-first frontend
 - Visual rules: `design-system/DESIGN-SYSTEM.md` (tokens in `assets/css/tokens.css`, shared components in `assets/css/base.css`). The artboard sources for each screen are in `docs/design/canvas/`.
 - Photos in `assets/photos/` are CC0 area photos (see `CREDITS.md`), never presented as a hotel or room.
 - Sign-in, families and storage are fh-saas (`gitaway/auth.py`, `docs/setup.md`). The process runs with the data folder (`GITAWAY_DATA_DIR`) as its working directory, so never use relative file paths; resolve from `Path(__file__)`. A family's trips, bookings, calendar, friends, rides, forks and saves live in its tenant database (`gitaway/familydb.py`, `docs/family-db.md`); the cookie holds only the sign-in. Tests sign in with the dev sign-in (`tests/test_signin.py` `sign_in`, `tid`; `person()` for model-level tests).
+- People join a family by invitation and have a role (admin, editor, viewer): `gitaway/members.py` (invites, memberships, active family), `gitaway/access.py` (the beforeware that gates every write by role), `docs/family-members.md`.
 - Test seams: HTTP routes through Starlette's TestClient (`tests/conftest.py` `client`) and the catalog's public functions.
 
 ## Maintaining this file

@@ -301,7 +301,7 @@
     return !!body && $$(".cal-booked", body).some((b) => start < +b.dataset.end && +b.dataset.start < end);
   }
   document.addEventListener("pointerdown", (e) => {
-    if (e.pointerType === "touch" || e.button !== 0 || $(".cal-modal")) return;
+    if (e.pointerType === "touch" || e.button !== 0 || $(".cal-modal") || app().classList.contains("cal-readonly")) return;  // a viewer cannot move or resize
     const b = e.target.closest(".cal-act");
     if (!b) return;
     drag = { b, mode: e.target.closest(".cal-resize") ? "resize" : "move", x: e.clientX, y: e.clientY,

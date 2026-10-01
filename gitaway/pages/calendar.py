@@ -21,9 +21,9 @@ from fasthtml.common import A, Aside, Button, Details, Div, Fieldset, Form, H1, 
 from fasthtml.core import FtResponse
 from starlette.responses import RedirectResponse
 
-from gitaway import catalog, forks as forks_model, session as ses, tripcal as cal
+from gitaway import access, catalog, forks as forks_model, members, session as ses, tripcal as cal
 from gitaway.icons import icon
-from gitaway.layout import avatar, brand, styles, trip_field
+from gitaway.layout import avatar, brand, join_note, styles, trip_field
 from gitaway import voice as vo
 from gitaway.pages import pay, plan as plan_ui, voice as voice_ui
 
@@ -368,6 +368,7 @@ def invite_modal(ctx, b, name, error):
                 Div(Input(type="text", value=link, readonly=True, aria_label="Invite link", cls="cal-linkfield"),
                     Button(icon("link", 16, 2.4), Span("Copy invite link"), type="button", data_copy=link, cls="cal-copy"), cls="cal-linkrow"),
                 cls="cal-invite"),
+            Div(Span("Inviting your real family?", cls="cal-sub"), A("Invite by email on the Family page", href="/family#invite", id="cal-real-invite", cls="cal-realink"), cls="cal-invite"),
             Div(A("Done", href=close, data_soft="", data_close="", cls="cal-cancel"), cls="cal-actions"),
             role="dialog", aria_modal="true", aria_labelledby="cal-form-title", cls="cal-dialog"),
         cls="cal-modal",
@@ -398,6 +399,8 @@ def trip_switcher(session):
 def share_controls(session):
     """The Share button; once the trip is shared it says so, updates the snapshot on a tap, and offers Unpublish (owner only)."""
     from gitaway import share
+    if not access.can_edit(access.request_role()):  # sharing is an edit: viewers just look
+        return []
     row = share.shared(session)
     if not row:
         return [Form(trip_field(), Button("Share trip", type="submit", cls="cal-btn cal-btn-ink"), action="/share", method="post", cls="cal-share")]
@@ -407,18 +410,38 @@ def share_controls(session):
                  action="/share/unpublish", method="post", cls="cal-share")]
 
 
+def presence_text(crew, friends):
+    """"Sam is planning with you": the real family members first (newest last), else the demo's pretend friends."""
+    names = [p.name for p in crew] or [friends[-1].name]
+    if len(names) == 1:
+        return f"{names[0]} is planning with you"
+    if len(names) == 2:
+        return f"{names[0]} and {names[1]} are planning with you"
+    return f"{names[-3]}, {names[-2]} and {names[-1]} are planning with you" if len(names) == 3 else f"{names[-2]}, {names[-1]} and {len(names) - 2} more are planning with you"
+
+
+def invite_button(ctx):
+    """Invite: a demo trip opens the pretend-friends dialog (editors and admins); a real trip goes to the Family page, where admins invite by email. Viewers see none."""
+    role = ctx["role"]
+    if not access.can_edit(role):
+        return ""
+    if ctx["is_demo"]:
+        return A("Invite", href=cal_url(ctx["demo"], view=ctx["view"], invite="1"), id="cal-invite-btn", data_id="invite", data_soft="", cls="cal-btn cal-btn-coral")
+    return A("Invite" if role == "admin" else "Family", href="/family#invite" if role == "admin" else "/family", id="cal-invite-btn", cls="cal-btn cal-btn-coral")
+
+
 def top_bar(t, b, who, session, ctx):
     forks = forks_model.count(session)
-    friends = ctx["friends"]
-    people = [avatar(who, "cal-avatar"), *[Span(avatar(f, "cal-avatar"), Span(cls="cal-presence-dot"), cls="cal-friend") for f in friends]]
-    presence = Span(f"{friends[-1].name} is planning with you", cls="cal-presence", role="status") if friends else ""
+    friends, crew = ctx["friends"], ctx["crew"]
+    people = [avatar(who, "cal-avatar"), *[Span(avatar(f, "cal-avatar"), Span(cls="cal-presence-dot"), cls="cal-friend") for f in [*crew, *friends]]]
+    presence = Span(presence_text(crew, friends), cls="cal-presence", role="status") if crew or friends else ""
     return Header(
         brand("/"),
         Div(H1(trip_name(t)), Div(Span(f"{cal.range_label(t.depart, t.return_)} · booked · {catalog.money(b['total_cents'])}", cls="cal-tripline"), trip_switcher(session), cls="cal-tripbar"), cls="cal-title-box"),
         Div(Div(*people, cls="cal-faces"), presence, cls="cal-avatars"),
         Div(A(icon("mic", 18, 2.4), "Talk to plan", href=voice_ui.voice_url(ctx["demo"], hear=1), data_soft="", cls="cal-btn cal-btn-mint vo-open"),
             A("Your forks", Span(str(forks), cls="cal-count"), href="/forks", cls="cal-btn cal-btn-white"),
-            A("Invite", href=cal_url(ctx["demo"], view=ctx["view"], invite="1"), id="cal-invite-btn", data_id="invite", data_soft="", cls="cal-btn cal-btn-coral"),
+            invite_button(ctx),
             *share_controls(session), cls="cal-actions-top"),
         cls="cal-bar",
     )
@@ -453,6 +476,12 @@ def calendar_page(session, demo="", view="", form=None, notice=None, new="", und
             counts[n.act] = counts.get(n.act, 0) + 1
     gs = cal.grid_start(blocks)
     friends = ses.friends(session)
+    role, is_demo = access.request_role(), ses.open_trip_is_demo(session)
+    if role == "viewer":  # a viewer looks: no add, edit, invite or voice dialogs
+        form, invite, voice = None, None, None
+    if not is_demo:       # the pretend-friends dialog belongs to the demo trip: its refusal is a plain message
+        notice = notice or (invite or {}).get("error")
+        invite = None
     question = vo.question(dates)
     night, drafts, vpanel = None, [], None
     if voice is not None:
@@ -461,7 +490,7 @@ def calendar_page(session, demo="", view="", form=None, notice=None, new="", und
         drafts = [x for x in placed if not x.hard and x.state != "have"]
         vpanel = voice_ui.panel(session, demo, dates, question, placed, night, bool(voice.get("hear")), voice.get("error", ""))
     ctx = dict(booking=b, offers=offers, drafts=drafts, fresh=set(voiced["ids"]) if voiced else set(), demo=demo, view=view, t=t, dates=dates, blocks=blocks, acts=acts, notes=notes, note_counts=counts, gs=gs, back=back, new=new, next=cal.next_id(session, demo),
-               friends=friends, live=bool(live and any(a.id == new and a.by for a in acts)))
+               friends=friends, crew=members.crew(session), role=role, is_demo=is_demo, live=bool(live and any(a.id == new and a.by for a in acts)))
     if view == "whole":
         surface = whole_view(dates, ctx)
     else:
@@ -504,8 +533,9 @@ def calendar_page(session, demo="", view="", form=None, notice=None, new="", und
         layers.append(toast("undo", f"Deleted \"{gone.title}\".", Form(_hidden("id", gone.id), _demo_field(demo), _hidden("view", view), Button("Undo", type="submit", cls="cal-undo"),
                                                                      action="/calendar/undo", method="post", data_soft=""),
                            A("Dismiss", href=cal_url(demo, view=view), data_soft="", cls="cal-dismiss")))
-    app = Div(top_bar(t, b, who, session, ctx), Div(card, vpanel or notes_panel(ctx, who, b), cls="cal-layout"), *layers,
-              id="cal-app", cls="cal", data_trip=ses.open_trip_id() or None, data_demo=demo, data_view=view, data_grid_start=str(gs), data_grid_end=str(cal.GRID_END),
+    viewing = P("You are a viewer in this family: you can look at everything but not change it. Ask a family admin to make you an editor.", id="cal-viewer", role="status", cls="cal-viewer") if role == "viewer" else ""
+    app = Div(top_bar(t, b, who, session, ctx), join_note(), viewing, Div(card, vpanel or notes_panel(ctx, who, b), cls="cal-layout"), *layers,
+              id="cal-app", cls="cal cal-readonly" if role == "viewer" else "cal", data_trip=ses.open_trip_id() or None, data_demo=demo, data_view=view, data_grid_start=str(gs), data_grid_end=str(cal.GRID_END),
               data_base=cal_url(demo, view=view), data_live="1" if cal.live_pending(session, demo) else None, data_voice="1" if voice is not None else None)
     body = (
         Title(f"GitAway · {trip_name(t)} calendar"),
@@ -521,7 +551,7 @@ def no_booking():
         Title("GitAway · Trip calendar"),
         *styles(*HEAD),
         Div(A("Skip to content", href="#main", cls="ga-skip"),
-            Main(Header(brand("/"), cls="cal-bar"),
+            Main(Header(brand("/"), cls="cal-bar"), join_note(),
                  Section(Div(Span(icon("plane", 40, 2), cls="cal-bignote"), H1("Book a trip first"),
                              P("Your calendar fills in with your flights and hotel as soon as you book. Then the fun part starts: adding the gaps."),
                              A("Plan a trip", href="/start", cls="btn btn-primary"), cls="cal-firstbox"), cls="cal-first"),
@@ -556,6 +586,8 @@ def register(app):
             return no_booking()
         demo = cal.LONG if demo == cal.LONG else ""
         form = None
+        if access.request_role() == "viewer":  # a viewer cannot open the add, edit, invite or voice dialogs
+            add = edit = invite = voice = ""
         blocks = cal.booked_blocks(ses.booking(session), cal.trip(demo, ses.booking(session)))
         gs = cal.grid_start(blocks)
         nid = cal.next_id(session, demo)
@@ -642,7 +674,9 @@ def register(app):
         """The Invite entry point: signed out goes through sign-in (intent=invite) and comes back to the calendar."""
         if not ses.current_traveler(session):
             return RedirectResponse(f"/signin?next={urlquote(cal_url('', invite='1'), safe='')}&intent=invite", status_code=303)
-        return RedirectResponse(cal_url("", invite="1") if ses.booking(session) else "/calendar", status_code=303)
+        if not ses.booking(session):
+            return RedirectResponse("/calendar", status_code=303)
+        return RedirectResponse(cal_url("", invite="1") if ses.open_trip_is_demo(session) else "/family#invite", status_code=303)
 
     @app.post("/calendar/friends")
     def add_friend(session, name: str = "", demo: str = "", view: str = ""):

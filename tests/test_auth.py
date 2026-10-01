@@ -231,7 +231,7 @@ def test_google_next_cannot_be_an_open_redirect(client, google):
 
 # ---- review fixes ----------------------------------------------------------------------------------------------------
 
-def fake_google(monkeypatch, email, sub="sub-1"):
+def fake_google(monkeypatch, email, sub="sub-1", verified=True):
     class Fake:
         id_key = "sub"
 
@@ -239,7 +239,7 @@ def fake_google(monkeypatch, email, sub="sub-1"):
             return f"https://accounts.google.com/o/oauth2/v2/auth?state={state}"
 
         def retr_info(self, code, redirect_uri):
-            return {"sub": sub, "email": email}
+            return {"sub": sub, "email": email, "email_verified": verified}
 
     monkeypatch.setattr("fh_saas.utils_auth.get_google_oauth_client", lambda: Fake())
 
@@ -329,6 +329,6 @@ def test_the_cache_key_follows_the_fh_saas_user_and_the_session_secret(client, m
     key = r'<meta name="ga-user" content="([0-9a-f]{10})">'
     sign_in(client, "ari")
     a = re.search(key, client.get("/discover").text).group(1)
-    assert a == layout.cache_key(ses.current_traveler(session_data(client)))
+    assert a == layout.cache_key(ses.current_traveler(session_data(client)), session_data(client)["tenant_id"])
     monkeypatch.setenv("GITAWAY_SECRET_KEY", "a different secret")
-    assert ses.cache_secret() == b"a different secret" and layout.cache_key(ses.current_traveler(session_data(client))) != a
+    assert ses.cache_secret() == b"a different secret" and layout.cache_key(ses.current_traveler(session_data(client)), session_data(client)["tenant_id"]) != a
