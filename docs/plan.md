@@ -209,3 +209,48 @@ Needs: F-030
 - [x] after a voice or fork Apply, focus lands on the toast's Undo button for keyboard users
 - [x] voice: don't move focus to the first chip if the traveler has already moved focus elsewhere
 - [x] the calendar's opening "Booked!" note reads naturally for every lane mix (today: "Your flights and The Tidewater (…) and Breeze Rentals rental are on the calendar")
+
+# Real app: rides simulation and backend (brief: docs/briefs/real-app.md, approved 2026-10-01 · ADR-0004)
+
+## F-038 Milestone 1: schedule an Uber, simulated faithfully [todo]
+Research: docs/research/uber-api.md · Needs: F-033
+- [ ] with no car, the rides card offers "Schedule an Uber" for arrival (pickup = landing + buffer) and departure (leave in time for the flight)
+- [ ] the flow mirrors Uber's API: product choice with price and time estimates, confirm pickup and dropoff, scheduled, then a simulated status timeline (scheduled → driver assigned → arriving → on trip → completed) and cancel
+- [ ] labelled "Simulated: no real ride is booked"; scheduled rides show on the trip calendar
+- [ ] a `RideProvider` seam with a simulator implementation, so a real Uber client can replace it later
+
+## F-039 Backend foundation: fh-saas host, families as tenants, sign-in [todo]
+Needs: none (ADR-0004)
+- [ ] fh-saas wired in main.py: SQLite host DB, `DB_TYPE=SQLITE`, data files under a configurable data folder, `configure_logging`
+- [ ] Google sign-in through fh-saas (`/login`, `/auth/callback`, `/logout`), enabled when the Google env keys are set; a dev sign-in only when `GITAWAY_DEV_LOGIN=1` and the request is from localhost, through the same session path
+- [ ] first sign-in creates the person's family tenant; public pages (landing, hub, trips, creators, /start, the demo workspace) stay browsable signed out
+- [ ] the demo sign-in (Ari, Sam) is replaced; tests use the dev sign-in; a setup doc lists the env vars and the Google console steps
+
+## F-040 Trips, bookings and the calendar live in the family database [todo]
+Needs: F-039
+- [ ] a family's trips, bookings, activities, notes and rides are stored in its tenant DB and survive a server restart; the cookie holds only the sign-in
+- [ ] the demo booking flow (workspace → pay) creates a trip in the family DB; the calendar, voice, forks-apply and rides read and write it
+- [ ] a family can have several trips, with a trip switcher; the cookie budget code for these parts is retired
+
+## F-041 Community space for shared and creator trips [todo]
+Needs: F-039
+- [ ] shared trips and creator trips are stored in a community DB everyone can browse; forks and saves are stored per family
+- [ ] a shared trip's page works for anyone, signed in or out, on any device
+
+## F-042 Import a trip booked elsewhere [todo]
+Needs: F-040
+- [ ] docs/trip-template.md: a fill-in template (travelers, flight legs with airline, number, airports, local times and confirmation; hotel with address, dates, confirmation and room; optional car; notes)
+- [ ] /trips/import: paste the filled template (or fill a form) → preview → save; validation with friendly errors
+- [ ] imported flights, hotel and car show on the calendar like bookings, marked "Booked elsewhere", with confirmation numbers visible only to family members
+- [ ] stretch: pasting an Expedia confirmation email pre-fills the template
+
+## F-043 Invite family by Gmail [todo]
+Needs: F-040
+- [ ] the family owner invites an email as editor or viewer; the invite shows a link to copy (email sending later)
+- [ ] when that email signs in, they join the family and see its trips; viewers can't edit; members and roles are listed with remove
+- [ ] the calendar's avatars and "planning with you" use real members; the scripted Mom demo only runs on the demo trip
+
+## F-044 Install on iPhone [todo]
+Needs: none
+- [ ] web app manifest, icons (192, 512, Apple touch), theme colour and Apple meta tags; "Add to Home Screen" opens full screen at /start or the current trip
+- [ ] safe areas and the phone layouts work in standalone mode; a minimal service worker caches the app shell and the last-viewed trip for flaky connections
