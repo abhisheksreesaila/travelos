@@ -22,7 +22,7 @@ from urllib.parse import parse_qs
 
 from fh_saas.utils_sql import delete_record, insert_only, update_record
 
-from gitaway import catalog, context, familydb, rides as ride_model, session as ses
+from gitaway import catalog, context, familydb, rides as ride_model, session as ses, tripimport
 
 LONG = "long"  # the hidden ?demo=long fixture: a 20-day trip that crosses into November
 LONG_RETURN = date(2026, 11, 4)
@@ -64,6 +64,7 @@ class Block:
     kind: str
     locked: bool = False
     icon: str = ""
+    tag: str = ""   # "Booked elsewhere · Expedia" on an imported trip's blocks (F-042); such a block opens its booking detail
 
 
 @dataclass(frozen=True)
@@ -88,7 +89,9 @@ class Note:
 # ---- trip and formatting -------------------------------------------------------------------------------------------
 
 def trip_of(booking=None):
-    """The trip a booking was made for (the sample trip when it holds none, as older bookings do)."""
+    """The trip a booking was made for (the sample trip when it holds none, as older bookings do). An imported trip has its real dates and party."""
+    if booking and booking.get("imported"):
+        return tripimport.trip_search(_plan(booking))
     if not booking or not booking.get("trip"):
         return catalog.SAMPLE_TRIP
     p = {k: v[0] for k, v in parse_qs(booking["trip"]).items()}
@@ -129,9 +132,24 @@ def weather_for(i):
 
 # ---- booked blocks -------------------------------------------------------------------------------------------------
 
+def _plan(b):
+    """The tripimport.Plan of an imported booking `b` (its stored template), or None for a demo booking."""
+    return tripimport.from_doc(b["imported"]) if b and b.get("imported") else None
+
+
+plan_of = _plan  # public name for the screens
+
+
+def is_imported(b) -> bool:
+    return bool(b and b.get("imported"))
+
+
 def _lane(b, key, kind):
     """The offer a booking `b` holds for one lane, or None when that lane was skipped (older bookings always have all three)."""
     given = b.get(key)
+    if b.get("imported"):  # booked elsewhere (F-042): stand-ins for the offers, built from the stored template
+        build = {"flight": tripimport.flight_offer, "stay": tripimport.stay_offer, "car": tripimport.car_offer}[kind]
+        return build(_plan(b), given) if given else None
     return catalog.offer(given) if given and given in {o.id for o in catalog.offers(kind)} else None  # the retired "c3" no car reads as skipped
 
 
@@ -153,18 +171,24 @@ def car_of(b):
 
 def stay_pick_of(b):
     """The StayPick (rooms and add-ons) a booking `b` holds, or None with no stay. Older bookings have none and mean the default room."""
-    return catalog.stay_pick(b["stay"], b.get("rooms") or None, b.get("add") or None, trip_of(b)) if stay_of(b) else None
+    return catalog.stay_pick(b["stay"], b.get("rooms") or None, b.get("add") or None, trip_of(b)) if stay_of(b) and not is_imported(b) else None
 
 
 def flight_pick_of(b):
     """The FlightPick (fare and checked bags) a booking `b` holds, or None with no flight. Older bookings have none and mean Basic with no bags."""
-    return catalog.flight_pick(b["flight"], b.get("fare") or None, b.get("bags") or None, trip_of(b)) if flight_of(b) else None
+    return catalog.flight_pick(b["flight"], b.get("fare") or None, b.get("bags") or None, trip_of(b)) if flight_of(b) and not is_imported(b) else None
 
 
 def rides_of(b):
-    """The catalog.Rides estimate of booking `b` (a flight and no car), or None. It is not charged and not stored: it follows the picks."""
+    """The catalog.Rides estimate of booking `b` (a flight and no car), or None. It is not charged and not stored: it follows the picks.
+
+    An imported trip (F-042) has rides when it lands at an airport the rides table knows (LAX, BUR) and has a flight home."""
     f = flight_of(b)
-    return catalog.rides(f, stay_of(b), trip_of(b)) if f and not car_of(b) else None
+    if not f or car_of(b):
+        return None
+    if is_imported(b):
+        return catalog.rides(f, None, trip_of(b)) if f.airport in ride_model.AIRPORTS and f.back_depart_min is not None else None
+    return catalog.rides(f, stay_of(b), trip_of(b))
 
 
 def _ride_day_start(plan, t):
@@ -228,6 +252,8 @@ def booked_words(b):
 
 def booked_blocks(b, t):
     """The locked blocks a booking `b` puts on the calendar of trip `t`: the two flights with a flight, check in and check out with a stay."""
+    if is_imported(b):
+        return imported_blocks(_plan(b), t)
     flight, stay = flight_of(b), stay_of(b)
     last = (t.return_ - t.depart).days
     blocks = []
@@ -241,6 +267,54 @@ def booked_blocks(b, t):
     if flight:
         blocks.append(Block("b-back", last, flight.back_depart_min, flight.back_arrive_min, f"{flight.name} · {flight.airport} → {t.origin}{fare}", "booked", True, "plane"))
     return blocks
+
+
+CAR_LEN = 30  # an imported car's pickup and dropoff are small blocks this long
+
+
+def imported_blocks(plan, t):
+    """The locked blocks an imported trip (F-042) puts on the calendar of trip `t`, each tagged "Booked elsewhere · <where>".
+
+    Every flight leg, the hotel's check in and check out, and the car's pickup and dropoff. "b-out" is the arrival at the destination and
+    "b-back" the flight home, so the flight window (day_window, window_problem) follows the real first arrival and last departure.
+    A leg that lands after midnight ends at midnight; nothing carries over to the next day's column.
+    """
+    tag = f"Booked elsewhere · {plan.booked_on}"
+    last = (t.return_ - t.depart).days
+    out = []
+    for spec in tripimport.block_specs(plan):
+        x = spec.item
+        if spec.kind == "leg":
+            at, end, title, icon = x.depart, x.arrive, f"{x.name} · {x.origin} → {x.dest}", "plane"
+            stop = _min(end) if end.date() == at.date() else 24 * 60 - 1
+        elif spec.kind in ("checkin", "checkout"):
+            at = x.check_in if spec.kind == "checkin" else x.check_out
+            title, icon, stop = (f"Check in · {x.name}", "bed", None) if spec.kind == "checkin" else (f"Check out · {x.name}", "bed", None)
+        else:
+            at = x.pickup if spec.kind == "pickup" else x.dropoff
+            where = x.pickup_place if spec.kind == "pickup" else x.dropoff_place
+            title, icon, stop = f"{'Pick up' if spec.kind == 'pickup' else 'Drop off'} {x.company} car · {where}", "car", None
+        day = (at.date() - t.depart).days
+        if not 0 <= day <= last:
+            continue
+        start = _min(at)
+        end_min = stop if stop is not None else min(start + (STAY_LEN if spec.kind in ("checkin", "checkout") else CAR_LEN), 24 * 60 - 1)
+        out.append(Block(spec.id, day, start, max(end_min, start + 15), title, "booked", True, icon, tag))
+    return out
+
+
+def _min(at):
+    return at.hour * 60 + at.minute
+
+
+def booking_detail(b, block_id):
+    """(title, [(label, value)]) of one booked block of an imported booking, confirmation number included; None for anything else.
+    The only place a confirmation number is drawn (with the trip details page): both are for signed-in family members only."""
+    if not is_imported(b):
+        return None
+    plan = _plan(b)
+    spec = next((s for s in tripimport.block_specs(plan) if s.id == block_id), None)
+    return tripimport.detail_rows(spec, plan) if spec else None
 
 
 AIRPORT_BUFFER = catalog.AIRPORT_BUFFER  # one source: minutes before the flight home that a plan must be finished by
