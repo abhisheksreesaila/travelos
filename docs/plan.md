@@ -183,3 +183,8 @@ Needs: F-027 (shares the pick URL and ledger)
 - [ ] no car → "Uber and Lyft from LAX/BUR" card with sample fares and times; estimate added to the total as a labelled estimate, not charged on pay
 - [ ] skips live in the URL; done means: skip car, then flight, books stay-only through pay and calendar; undoing both gives $3,088
 - [ ] note for later: research Uber/Lyft partner APIs for scheduling a ride in the app
+
+## F-034 Phone text floor and leftover ellipses [todo]
+Found during F-030 (both predate it).
+- [ ] on phones (390, 320) no text renders below 13px on /plan, /calendar (incl. ?demo=long) and the landing page; touch targets at least 44px
+- [ ] remove the four leftover `text-overflow: ellipsis` rules (landing `.field input` and `.paste`, workspace `.ws-slot-name`) in favour of wrapping or shortening (docs/lessons.md)
