@@ -109,13 +109,13 @@ Needs: F-014, F-022
 - [x] the creator confirms it's accurate and gives permission to publish before Submit
 - [x] submit; it appears in the community hub and links back to the creator's channel; the whole flow fits in under 5 minutes
 
-## F-024 Talk to plan: scripted voice fills the calendar [doing]
+## F-024 Talk to plan: scripted voice fills the calendar [done]
 Captain said go 2026-09-30 ("do the missing sections, I want to see it fully").
 Brief: docs/briefs/voice.md (approved 2026-09-30) · Design: docs/design/canvas/Voice.dc.html · Needs: F-019, F-021 (reuses the apply-preview)
-- [ ] mic on the trip calendar plays a scripted sentence word by word with a listening animation; no audio captured
-- [ ] the sentence becomes 3–4 draft plans previewed in the right empty slots around bookings and friends' items
-- [ ] one quick question chip resolves an unclear bit (which Friday, what time) and updates the preview
-- [ ] Apply drops them in with the pop-in, and trip notes log it; reduced motion shows everything instantly
+- [x] mic on the trip calendar plays a scripted sentence word by word with a listening animation; no audio captured
+- [x] the sentence becomes 3–4 draft plans previewed in the right empty slots around bookings and friends' items
+- [x] one quick question chip resolves an unclear bit (which Friday, what time) and updates the preview
+- [x] Apply drops them in with the pop-in, and trip notes log it; reduced motion shows everything instantly
 
 # Flight and stay details
 
@@ -143,14 +143,14 @@ Design: docs/design/offer-details.md · Needs: F-026 (shares the pick URL and it
 - [x] fare types (Basic, Main, Extra legroom) with price and what each includes (seat choice, carry-on, checked bag, changes)
 - [x] checked-bag count as an add-on; fare and bags carry through the URL, ledger, pay and calendar like stays
 
-## F-028 Phone: expanding a non-offer pane hides the context panes [todo]
+## F-028 Phone: expanding a non-offer pane hides the context panes [doing]
 Needs: F-025 · Found during F-025 (predates it)
 - [ ] on a phone, expanding Cars or a context pane shows only that pane; the other context panes no longer show underneath (a same-specificity clash between the base and phone rules)
 
-## F-029 Browser smoke test for workspace JS [todo]
+## F-029 Browser smoke test for workspace JS [done]
 Needs: F-025 · Suggested in F-025 review
-- [ ] a small headless-browser test covers tiled pick → expand, Choose updating the ledger, Esc, and phone back → reload
-- [ ] also covers F-026: picking another stay tiled resets the old panel; Choose is held while a room edit waits for its price and recovers if the price fails
+- [x] a small headless-browser test covers tiled pick → expand, Choose updating the ledger, Esc, and phone back → reload
+- [x] also covers F-026: picking another stay tiled resets the old panel; Choose is held while a room edit waits for its price and recovers if the price fails
 
 # Captain's feedback round, 2026-09-30
 
@@ -187,7 +187,7 @@ Needs: F-027 (shares the pick URL and ledger)
 
 Later (not built): research Uber and Lyft partner API access for scheduling a ride from the app. The rides card is sample data only; nothing books or charges.
 
-## F-034 Phone text floor and leftover ellipses [todo]
+## F-034 Phone text floor and leftover ellipses [doing]
 Found during F-030 (both predate it).
 - [ ] on phones (390, 320) no text renders below 13px on /plan, /calendar (incl. ?demo=long) and the landing page; touch targets at least 44px
 - [ ] remove the four leftover `text-overflow: ellipsis` rules (landing `.field input` and `.paste`, workspace `.ws-slot-name`) in favour of wrapping or shortening (docs/lessons.md)
@@ -200,7 +200,12 @@ Needs: F-030
 - [x] nights and travelers drive prices in the catalog (stays and cars by night, flights by traveler, room fit by party size); the trip lives in the URL through reload, pay and calendar
 - [x] done means: LA, Oct 16–20, 2 adults + kids 4 and 7 gives $3,088; 3 nights or 3 adults change prices consistently through pay and calendar
 
-## F-036 Small polish found while building F-035 [todo]
+## F-036 Small polish found while building F-035 [doing]
 - [ ] weather, news and events panes follow the trip's dates (today they're fixed to Oct 16–20)
 - [ ] at 1000 wide the stay card's "Pool" and "Pet friendly" tags are clipped; wrap them (docs/lessons.md)
 - [ ] the landing door and feature pop-in (`scale(1.06)`) briefly causes sideways scroll at 1000, 800 and 390; contain it
+
+## F-037 Small follow-ups from the F-024 review [done]
+- [x] after a voice or fork Apply, focus lands on the toast's Undo button for keyboard users
+- [x] voice: don't move focus to the first chip if the traveler has already moved focus elsewhere
+- [x] the calendar's opening "Booked!" note reads naturally for every lane mix (today: "Your flights and The Tidewater (…) and Breeze Rentals rental are on the calendar")

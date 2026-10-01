@@ -24,9 +24,10 @@ from starlette.responses import RedirectResponse
 from gitaway import catalog, forks as forks_model, session as ses, tripcal as cal
 from gitaway.icons import icon
 from gitaway.layout import avatar, brand, styles
-from gitaway.pages import pay
+from gitaway import voice as vo
+from gitaway.pages import pay, voice as voice_ui
 
-HEAD = (Link(rel="stylesheet", href="/assets/css/calendar.css"),)
+HEAD = (Link(rel="stylesheet", href="/assets/css/calendar.css"), Link(rel="stylesheet", href="/assets/css/voice.css"))
 HH = 48  # one hour is 48px at the 16px base, i.e. 3rem (calendar.js HOUR_REM must match)
 DAY_TINTS = ("sun", "mint", "grape", "sky", "bubble")  # day colours cycle in this order
 
@@ -124,10 +125,10 @@ def booked_block(b, gs):
     )
 
 
-def activity_block(a, gs, demo, lane, nlanes, n_notes, new, is_live=False):
+def activity_block(a, gs, demo, lane, nlanes, n_notes, new, is_live=False, fresh=()):
     label, tint = cal.KINDS[a.kind]
     short, tight = a.end - a.start <= 45, a.end - a.start <= 60
-    pop = " cal-pop" if new == a.id else ""
+    pop = " cal-pop" if new == a.id or a.id in fresh else ""
     ring = " cal-livering" if is_live and new == a.id and a.by else ""
     just = Span("just now", cls="cal-justnow") if ring else ""
     return A(
@@ -143,6 +144,16 @@ def activity_block(a, gs, demo, lane, nlanes, n_notes, new, is_live=False):
     )
 
 
+def draft_block(x, gs):
+    """A voice plan waiting for Apply: a dashed ghost block that turns solid when added (voice.js hides it when unticked)."""
+    p = x.plan
+    return Div(
+        Span(cal.fmt_time(p.start), cls="cal-time"), Span(p.title, cls="cal-title"), Span("from your voice", cls="cal-draft-tag"),
+        cls=f"cal-block cal-draft{' cal-draft-half' if x.state == 'clash' else ''}", data_key=p.key, data_day=str(p.day), data_start=str(p.start), data_end=str(p.end), hidden=None if x.checked else True, tabindex="0",
+        style=f"--top:{_px(p.start - gs)};--h:{_px(p.end - p.start)};--lane:{1 if x.state == 'clash' else 0};--lanes:{2 if x.state == 'clash' else 1}",
+        aria_label=f"Draft plan: {p.title}, {cal.fmt_time(p.start)} to {cal.fmt_time(p.end)}. Not added yet.")
+
+
 def day_column(i, date_, ctx):
     gs, demo, blocks = ctx["gs"], ctx["demo"], ctx["blocks"]
     w = cal.weather_for(i)
@@ -152,8 +163,10 @@ def day_column(i, date_, ctx):
     n_notes = ctx["note_counts"]
     booked = [b for b in blocks if b.day == i]
     body = [booked_block(b, gs) for b in booked]
-    body += [activity_block(a, gs, demo, *lane[a.id], n_notes.get(a.id, 0), ctx["new"], ctx["live"]) for a in acts]
-    if not booked and not acts:
+    body += [activity_block(a, gs, demo, *lane[a.id], n_notes.get(a.id, 0), ctx["new"], ctx["live"], ctx["fresh"]) for a in acts]
+    here = [x for x in ctx["drafts"] if x.plan.day == i]
+    body += [draft_block(x, gs) for x in here]
+    if not booked and not acts and not here:
         body.append(A(Span("wide open!", cls="cal-hand"), Span("Add something fun"), href=cal_url(demo, add=i, at=cal.hhmm(free_start(blocks, i, gs))),
                       data_soft="", cls="cal-empty"))
     at = cal.hhmm(free_start(blocks, i, gs))
@@ -223,14 +236,19 @@ def note_entry(n, acts_by_id, who, people, fresh=False):
 
 
 def booked_note(b):
-    """The first note on the feed: what was booked, in words that fit any mix of flight, stay and car."""
+    """The first note on the feed: what was booked, as a list that fits any mix of flight, stay and car. Flights and a stay are
+    blocks on the calendar; a car has none, so it is only ever said to be booked."""
     stay, pick, car = cal.stay_of(b), cal.stay_pick_of(b), cal.car_of(b)
     flights = cal.flight_of(b) is not None
-    parts = (["flights"] if flights else []) + ([f"{stay.name} ({pick.summary})" if flights else f"stay at {stay.name} ({pick.summary})"] if stay else []) + ([f"{car.name} rental"] if car else [])
-    what = " and ".join(parts) or "trip"
-    if not flights and not stay:
-        return f"Booked! Your {car.name} rental is booked. It has no block here, but you can still plan the days."
-    return f"Booked! Your {what} {'are' if len(parts) > 1 or what == 'flights' else 'is'} on the calendar. Add anything you want to do."
+    on_cal = (["flights"] if flights else []) + ([f"{stay.name} ({pick.summary})" if flights else f"stay at {stay.name} ({pick.summary})"] if stay else [])
+    rental = f"{car.name} rental" if car else ""
+    if not on_cal:
+        return f"Booked! Your {rental} is booked. It has no block here, but you can still plan the days."
+    are = "are" if len(on_cal) > 1 or on_cal == ["flights"] else "is"
+    if not car:
+        return f"Booked! Your {cal.oxford(on_cal)} {are} on the calendar. Add anything you want to do."
+    placed = cal.oxford((["flights"] if flights else []) + (["stay"] if stay else []))
+    return f"Booked! Your {cal.oxford(on_cal + [rental])} are all set. The {placed} {are} on the calendar; the car has no block there. Add anything you want to do."
 
 
 def notes_panel(ctx, who, b):
@@ -324,8 +342,8 @@ def invite_modal(ctx, b, name, error):
     )
 
 
-def toast(kind, text, *extra):
-    return Div(Span(text), *extra, role="alert" if kind == "error" else "status", cls=f"cal-toast cal-toast-{kind}")
+def toast(kind, text, *extra, tid=None):
+    return Div(Span(text, id=tid), *extra, role="alert" if kind == "error" else "status", cls=f"cal-toast cal-toast-{kind}")
 
 
 # ---- page ----------------------------------------------------------------------------------------------------------
@@ -339,7 +357,8 @@ def top_bar(t, b, who, session, ctx):
         brand("/"),
         Div(H1(trip_name(t)), Span(f"{cal.range_label(t.depart, t.return_)} · booked · {catalog.money(b['total_cents'])}", cls="cal-tripline"), cls="cal-title-box"),
         Div(Div(*people, cls="cal-faces"), presence, cls="cal-avatars"),
-        Div(A("Your forks", Span(str(forks), cls="cal-count"), href="/forks", cls="cal-btn cal-btn-white"),
+        Div(A(icon("mic", 18, 2.4), "Talk to plan", href=voice_ui.voice_url(ctx["demo"], hear=1), data_soft="", cls="cal-btn cal-btn-mint vo-open"),
+            A("Your forks", Span(str(forks), cls="cal-count"), href="/forks", cls="cal-btn cal-btn-white"),
             A("Invite", href=cal_url(ctx["demo"], view=ctx["view"], invite="1"), id="cal-invite-btn", data_id="invite", data_soft="", cls="cal-btn cal-btn-coral"),
             Form(Button("Share trip", type="submit", cls="cal-btn cal-btn-ink"), action="/share", method="post", cls="cal-share"), cls="cal-actions-top"),
         cls="cal-bar",
@@ -359,10 +378,10 @@ def view_toggle(demo, view):
     )
 
 
-def calendar_page(session, demo="", view="", form=None, notice=None, new="", undo="", w="", status=200, invite=None, live=False, back=""):
+def calendar_page(session, demo="", view="", form=None, notice=None, new="", undo="", w="", status=200, invite=None, live=False, back="", voice=None, voiced=None):
     who, b = ses.current_traveler(session), ses.booking(session)
     demo = cal.LONG if demo == cal.LONG else ""
-    view = pick_view(view, bool(form or new or undo or w))
+    view = pick_view(view, bool(form or new or undo or w or voice is not None or voiced))
     t = cal.trip(demo, b)
     dates = cal.days(t)
     blocks = cal.booked_blocks(b, t)
@@ -374,7 +393,14 @@ def calendar_page(session, demo="", view="", form=None, notice=None, new="", und
             counts[n.act] = counts.get(n.act, 0) + 1
     gs = cal.grid_start(blocks)
     friends = ses.friends(session)
-    ctx = dict(demo=demo, view=view, t=t, dates=dates, blocks=blocks, acts=acts, notes=notes, note_counts=counts, gs=gs, back=back, new=new, next=cal.next_id(session, demo),
+    question = vo.question(dates)
+    night, drafts, vpanel = None, [], None
+    if voice is not None:
+        night = voice.get("night") if question.option(voice.get("night")) else None
+        placed = vo.preview(session, night, demo)
+        drafts = [x for x in placed if not x.hard and x.state != "have"]
+        vpanel = voice_ui.panel(session, demo, dates, question, placed, night, bool(voice.get("hear")), voice.get("error", ""))
+    ctx = dict(drafts=drafts, fresh=set(voiced["ids"]) if voiced else set(), demo=demo, view=view, t=t, dates=dates, blocks=blocks, acts=acts, notes=notes, note_counts=counts, gs=gs, back=back, new=new, next=cal.next_id(session, demo),
                friends=friends, live=bool(live and any(a.id == new and a.by for a in acts)))
     if view == "whole":
         surface = whole_view(dates, ctx)
@@ -405,19 +431,27 @@ def calendar_page(session, demo="", view="", form=None, notice=None, new="", und
         mom = next(a for a in acts if a.id == new)
         layers.append(toast("live", f"{mom.by} added {mom.title}", A("Show me", href=f"#d{mom.day}", data_jump=str(mom.day), cls="cal-dismiss"),
                             A("Dismiss", href=cal_url(demo, view=view), data_soft="", cls="cal-dismiss")))
+    if voiced:
+        here = {a.id for a in acts}
+        got = [i for i in voiced["ids"] if i in here]
+        if got:
+            layers.append(toast("undo", f"Added {len(got)} plan{'s' if len(got) != 1 else ''} by voice.",
+                                Form(_hidden("ids", ",".join(got)), _hidden("nid", voiced.get("note", "")), _hidden("night", voiced.get("night", "")), _demo_field(demo), Button("Undo", type="submit", cls="cal-undo", autofocus=True, aria_describedby="cal-toast-text"),
+                                     action="/calendar/voice/undo", method="post", data_soft=""),
+                                A("Dismiss", href=cal_url(demo, view=view), data_soft="", cls="cal-dismiss"), tid="cal-toast-text"))
     gone = cal.last_deleted(session, demo)
     if undo and gone and gone.id == undo:
         layers.append(toast("undo", f"Deleted \"{gone.title}\".", Form(_hidden("id", gone.id), _demo_field(demo), _hidden("view", view), Button("Undo", type="submit", cls="cal-undo"),
                                                                      action="/calendar/undo", method="post", data_soft=""),
                            A("Dismiss", href=cal_url(demo, view=view), data_soft="", cls="cal-dismiss")))
-    app = Div(top_bar(t, b, who, session, ctx), Div(card, notes_panel(ctx, who, b), cls="cal-layout"), *layers,
+    app = Div(top_bar(t, b, who, session, ctx), Div(card, vpanel or notes_panel(ctx, who, b), cls="cal-layout"), *layers,
               id="cal-app", cls="cal", data_demo=demo, data_view=view, data_grid_start=str(gs), data_grid_end=str(cal.GRID_END),
-              data_base=cal_url(demo, view=view), data_live="1" if cal.live_pending(session, demo) else None)
+              data_base=cal_url(demo, view=view), data_live="1" if cal.live_pending(session, demo) else None, data_voice="1" if voice is not None else None)
     body = (
         Title(f"GitAway · {trip_name(t)} calendar"),
         *styles(*HEAD),
         Div(A("Skip to content", href="#main", cls="ga-skip"), Main(app, id="main"), data_theme="sunset", cls="cal-shell"),
-        Script(src="/assets/js/calendar.js", defer=True),
+        Script(src="/assets/js/calendar.js", defer=True), Script(src="/assets/js/voice.js", defer=True),
     )
     return FtResponse(body, status_code=status) if status != 200 else body
 
@@ -455,7 +489,7 @@ def register(app):
         return None
 
     @app.get("/calendar")
-    def calendar(session, demo: str = "", view: str = "", add: str = "", at: str = "", edit: str = "", new: str = "", undo: str = "", w: str = "", invite: str = "", live: str = "", back: str = ""):
+    def calendar(session, demo: str = "", view: str = "", add: str = "", at: str = "", edit: str = "", new: str = "", undo: str = "", w: str = "", invite: str = "", live: str = "", back: str = "", voice: str = "", night: str = "", hear: str = "", voiced: str = "", vnote: str = "", vn: str = ""):
         if not ses.current_traveler(session):
             return _signin(demo, view)
         if not ses.booking(session):
@@ -477,8 +511,10 @@ def register(app):
                 start = free_start(blocks, day, gs)
             start = cal.snap(min(max(start, gs), cal.GRID_END - cal.MIN_LEN))
             form = {"vals": _vals(id=f"a{nid}", day=day, start=cal.hhmm(start), end=cal.hhmm(default_end(blocks, day, start)))}
-        view = pick_view(view, bool(add or edit or new or undo or w))
-        return calendar_page(session, demo, view, form=form, new=new, undo=undo, w=w, invite={} if invite == "1" and not form else None, live=live == "1", back=back if add else "")
+        view = pick_view(view, bool(add or edit or new or undo or w or voice == "1" or voiced))
+        talk = {"night": voice_ui.parse_night(night), "hear": hear == "1"} if voice == "1" and not form else None
+        done = {"ids": voice_ui.parse_ids(voiced), "note": voice_ui.note_id(vnote), "night": str(voice_ui.parse_night(vn) if voice_ui.parse_night(vn) is not None else "")} if voiced else None
+        return calendar_page(session, demo, view, form=form, new=new, undo=undo, w=w, invite={} if invite == "1" and not form else None, live=live == "1", back=back if add else "", voice=talk, voiced=done)
 
     def refuse(session, demo, view, message, form=None):
         return calendar_page(session, demo, view, form=form, notice=None if form else message, status=409)
