@@ -8,6 +8,7 @@ python = "3.12.*"
 nbdev = "*"  # fh-saas imports nbdev.showdoc at load time but does not declare it
 pytest = "*"
 playwright-python = ">=1.62.0,<2"
+pyyaml = ">=6.0.3,<7"
 
 [pypi-dependencies]
 python-fasthtml = ">=0.14.13"
