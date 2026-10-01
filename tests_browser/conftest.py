@@ -31,6 +31,25 @@ def _fixed_today(monkeypatch):
     monkeypatch.setattr(catalog, "today", lambda: date(2026, 9, 30), raising=False)
 
 
+@pytest.fixture(autouse=True)
+def _empty_community_and_families():
+    """Every test starts empty (same as tests/conftest.py): the data folder and the server are shared by the whole run, and a family's
+    trips, rides and calendar live in its database, not in a per-test cookie."""
+    yield
+    from sqlalchemy import text
+    from fh_saas.db_tenant import get_or_create_tenant_db
+    from gitaway import community, familydb
+    community.clear()
+    for tenant_id in list(familydb._READY):
+        db = get_or_create_tenant_db(tenant_id)
+        try:
+            for _model, table, _pk in familydb.FAMILY_TABLES:
+                db.conn.execute(text(f"DELETE FROM {table}"))
+            db.conn.commit()
+        finally:
+            db.conn.close()
+
+
 @pytest.fixture(scope="session")
 def base_url():
     from main import app
