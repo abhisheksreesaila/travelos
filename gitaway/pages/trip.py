@@ -212,8 +212,10 @@ def add_sheet(v, sheet):
 def header(v, tab):
     t = v["t"]
     faces = [avatar(v["who"], "tp-av"), *[avatar(f, "tp-av") for f in v["crew"]]]
-    kicker = f"{t.title.upper()} · DAY {v['sel'] + 1} OF {len(v['dates'])}" if v["phase"] == "during" and v["today_idx"] == v["sel"] else f"{t.title.upper()} · {cal.range_label(t.depart, t.return_).upper()}"
-    return Header(Div(Span(kicker, cls="tp-head-k", id="tp-head-k", data_today=kicker, data_other=f"{t.title.upper()} · {cal.range_label(t.depart, t.return_).upper()}"),
+    dates = f"{t.title.upper()} · {cal.range_label(t.depart, t.return_).upper()}"
+    day_of = f"{t.title.upper()} · DAY {v['sel'] + 1} OF {len(v['dates'])}" if v["phase"] == "during" and v["today_idx"] == v["sel"] else dates
+    kicker = day_of if tab == "today" else dates
+    return Header(Div(Span(kicker, cls="tp-head-k", id="tp-head-k", data_today=day_of, data_other=dates),
                       H1({"today": _title_today(v), "days": f"Your {len(v['dates'])} days", "notes": "Trip notes"}[tab], id="tp-title-h"), cls="tp-head-text"),
                   Div(*faces, cls="tp-faces"), cls="tp-head")
 

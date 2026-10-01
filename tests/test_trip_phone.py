@@ -187,6 +187,7 @@ def test_all_days_has_a_tinted_tile_per_day_and_a_swipeable_strip_picks_the_day(
     assert len(tiles) == 5 and "is-today" in tiles[1]
     assert "Fly in · check in" in text(html) and "Pier" in text(html) and "Wide open" in text(html) and "Fly home" in text(html)
     assert len(re.findall(r'class="tp-chip ', html)) == 5
+    assert "DAY 2 OF 5" not in text(html) and "OCT 16 – 20" in text(html)  # the heading line is about the trip on this tab, not about today
     other = client.get("/trip?day=2").text
     assert "Sunday, Oct 18 · day 3 of 5" in text(other) and "Back to today" in text(other) and "UP NEXT" not in text(other)
     assert re.findall(r'class="tp-row is-(\w+)"', client.get("/trip?day=0").text) == ["done"] * len(re.findall(r'class="tp-row ', client.get("/trip?day=0").text))
