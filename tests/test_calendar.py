@@ -46,7 +46,7 @@ def test_signed_out_goes_through_sign_in_and_comes_back_to_the_calendar(client):
 def test_signed_in_without_a_booking_gets_a_friendly_book_a_trip_first_page(client):
     sign_in(client)
     r = client.get("/calendar?view=days")
-    assert r.status_code == 200 and "Book a trip first" in r.text
+    assert r.status_code == 200 and "Your calendar starts with a trip" in r.text
     assert 'href="/start"' in r.text and "cal-block" not in r.text
     assert client.post("/calendar/activities", data={"id": "a1", **FORM}, follow_redirects=False).status_code == 303
 

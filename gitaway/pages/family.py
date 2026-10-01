@@ -107,6 +107,11 @@ def family_page(request, session, error="", status=200, email="", role="editor")
         aria_labelledby="fam-invite-h", id="invite", cls="fam-sec") if my_role == "admin" else ""
     waiting = Section(H2("Waiting to join", id="fam-wait-h"), Ul(*[_invite_row(i, request) for i in pending], cls="fam-list", id="fam-pending"),
                       aria_labelledby="fam-wait-h", cls="fam-sec") if pending else ""
+    alone = Section(H2("Just you so far", id="fam-alone-h"),
+                    P("Trips are better with company. Invite the people you travel with and they can add plans, leave notes and see the same calendar."),
+                    A("Invite someone", href="#invite", cls="btn btn-primary btn-sm") if my_role == "admin" else
+                    P("Ask the family admin to invite more people.", cls="fam-sub"),
+                    aria_labelledby="fam-alone-h", id="fam-alone", cls="fam-sec fam-alone") if len(crew) == 1 and not pending else ""
     note = P("Only a family admin can invite people or change who is in the family.", cls="fam-sub", id="fam-note") if my_role != "admin" else ""
     out = page("Your family", Div(
         H1("Your family"),
@@ -116,7 +121,7 @@ def family_page(request, session, error="", status=200, email="", role="editor")
         switcher,
         Section(H2("Who is in", id="fam-members-h"), Ul(*[_member_row(m, me, my_role, tid) for m in crew], cls="fam-list", id="fam-members"),
                 note, aria_labelledby="fam-members-h", cls="fam-sec"),
-        waiting, invite_form,
+        alone, waiting, invite_form,
         cls="fam",
     ), head=HEAD)
     return out if status == 200 else Response(to_xml(out), status_code=status, media_type="text/html")

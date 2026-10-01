@@ -101,7 +101,7 @@ def test_forks_and_saves_are_per_family_and_survive_a_restart(client):
     assert social.slugs(session_data(client), "forks") == [TRIP] and social.slugs(session_data(client), "saves") == ["la-for-two-slow-mornings"]
     assert "forks" not in session_data(client) and "saves" not in session_data(client)
     sam = _signed_in(client, "sam")
-    assert "No forks yet" in sam.get("/forks").text and social.slugs(session_data(sam), "forks") == []  # another family sees none of them
+    assert "Nothing forked or saved yet" in sam.get("/forks").text and social.slugs(session_data(sam), "forks") == []  # another family sees none of them
     # a restart: a new browser, a new process-level state, the same data folder
     familydb.forget_schema_cache(), community._ready.clear()
     again = _signed_in(client, "ari")
