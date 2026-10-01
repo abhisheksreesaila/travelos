@@ -37,7 +37,7 @@ _AIRPORT = re.compile(r"^[A-Za-z]{3}$")
 _EMAIL = re.compile(r"^[^@\s,;<>]+@[^@\s,;<>]+\.[^@\s,;<>]+$")
 _STAMP = re.compile(r"^(\d{4}-\d{2}-\d{2})[ T](\d{1,2}):(\d{2})(?::\d{2})?$")
 _DAY = re.compile(r"^\d{4}-\d{2}-\d{2}$")
-KNOWN = ("trip", "travelers", "flights", "hotel", "car", "notes")
+KNOWN = ("trip", "travelers", "flights", "hotel", "hotels", "car", "notes")
 
 
 class ImportProblem(ValueError):
@@ -111,7 +111,7 @@ class Plan:
     itinerary: str
     travelers: tuple
     legs: tuple = ()
-    hotel: Lodging | None = None
+    hotels: tuple = ()
     rental: Rental | None = None
     notes: str = ""
 
@@ -133,8 +133,8 @@ class Plan:
         legs = self.legs
         if not legs:
             return None, None
-        if len(legs) == 1:
-            return 0, None
+        if len(legs) == 1 or legs[-1].dest != legs[0].origin:  # one way (connections included): the last leg is the arrival, there is no flight home
+            return len(legs) - 1, None
         gaps = [(legs[i + 1].depart - legs[i].arrive, -i) for i in range(len(legs) - 1)]
         i = -max(gaps)[1]
         return i, i + 1
@@ -183,17 +183,48 @@ def _block(text):
     return text, 0
 
 
-def _walk(node, path, out):
+MAX_DEPTH = 10   # a template is a few levels deep (section, list item, field); anything deeper is refused
+
+
+class _TooDeep(Exception):
+    pass
+
+
+TOO_DEEP = "That is nested too deeply to be a trip template. Check the indentation and brackets."
+
+
+def _walk(node, path, out, depth=0):
     """Fill `out` with {path tuple: line number (1-based, in the yaml)} for every key and list item."""
+    if depth > MAX_DEPTH:
+        raise _TooDeep
     if isinstance(node, yaml.MappingNode):
         for k, v in node.value:
             key = k.value if isinstance(k, yaml.ScalarNode) else str(k)
             out[path + (key,)] = k.start_mark.line + 1
-            _walk(v, path + (key,), out)
+            _walk(v, path + (key,), out, depth + 1)
     elif isinstance(node, yaml.SequenceNode):
         for i, v in enumerate(node.value):
             out[path + (i,)] = v.start_mark.line + 1
-            _walk(v, path + (i,), out)
+            _walk(v, path + (i,), out, depth + 1)
+
+
+def _plain(r, node, path=()):
+    """The node as plain data in which every scalar is its raw text (so 012345, yes, 12:30:45 and 0x1F stay exactly as typed) and an
+    empty value is None. Nothing is constructed from tags, so no YAML type can run code. A repeated key is an error."""
+    if isinstance(node, yaml.ScalarNode):
+        return None if node.tag == "tag:yaml.org,2002:null" else node.value
+    if isinstance(node, yaml.SequenceNode):
+        return [_plain(r, v, path + (i,)) for i, v in enumerate(node.value)]
+    out = {}
+    for k, v in node.value:
+        if not isinstance(k, yaml.ScalarNode):
+            r.bad(path, "A name before a colon should be plain text.")
+            continue
+        if k.value in out:
+            r.bad(path + (k.value,), f"“{k.value}” appears twice. Keep one, and put all of its details under it.")
+            continue
+        out[k.value] = _plain(r, v, path + (k.value,))
+    return out
 
 
 class _Reader:
@@ -226,7 +257,7 @@ def _text(r, data, key, path, label, *, required=False, limit=80, default=""):
     if isinstance(value, (dict, list)):
         r.bad(path + (key,), f"{label} should be plain text, not a list.")
         return default
-    value = " ".join(str(value).split())
+    value = " ".join(str(value).split())  # `value` is always the raw text of the scalar (see _plain): 012345 stays 012345, yes stays yes
     if len(value) > limit:
         r.bad(path + (key,), f"{label} is too long (at most {limit} characters).")
         return value[:limit]
@@ -319,7 +350,9 @@ def _read_travelers(r, doc):
             email = ""
         age = item.get("age")
         if age is not None:
-            if isinstance(age, bool) or not isinstance(age, int) or not 0 <= age <= 120:
+            if isinstance(age, str) and age.strip().isascii() and age.strip().isdigit() and int(age) <= 120:
+                age = int(age)
+            else:
                 r.bad(path + ("age",), f"{name or 'Traveler ' + str(i + 1)}’s age should be a whole number from 0 to 120.")
                 age = None
         if name:
@@ -366,33 +399,60 @@ def _read_flights(r, doc):
     return tuple(out)
 
 
-def _read_hotel(r, doc):
-    raw = doc.get("hotel")
-    if raw is None:
-        return None
-    path = ("hotel",)
-    item = _mapping(r, raw, path, "The hotel")
+def _one_hotel(r, item, path, label):
+    item = _mapping(r, item, path, label)
     if item is None:
         return None
-    name = _text(r, item, "name", path, "The hotel’s name", required=True, limit=80)
-    address = _text(r, item, "address", path, "The hotel’s address", required=True, limit=120)
-    check_in = _stamp(r, item.get("check_in"), path + ("check_in",), "The hotel’s “check_in”", datetime.min.time().replace(hour=15)) if item.get("check_in") is not None else None
-    check_out = _stamp(r, item.get("check_out"), path + ("check_out",), "The hotel’s “check_out”", datetime.min.time().replace(hour=11)) if item.get("check_out") is not None else None
-    for key, got in (("check_in", check_in), ("check_out", check_out)):
+    name = _text(r, item, "name", path, f"{label}’s name", required=True, limit=80)
+    address = _text(r, item, "address", path, f"{label}’s address", required=True, limit=120)
+    check_in = _stamp(r, item.get("check_in"), path + ("check_in",), f"{label}’s “check_in”", datetime.min.time().replace(hour=15)) if item.get("check_in") is not None else None
+    check_out = _stamp(r, item.get("check_out"), path + ("check_out",), f"{label}’s “check_out”", datetime.min.time().replace(hour=11)) if item.get("check_out") is not None else None
+    for key in ("check_in", "check_out"):
         if item.get(key) is None:
-            r.bad(path, f"The hotel has no “{key}”. Add a line like “{key}: 2026-10-16 15:00”.")
+            r.bad(path, f"{label} has no “{key}”. Add a line like “{key}: 2026-10-16 15:00”.")
     if check_in and check_out and check_out <= check_in:
         r.bad(path + ("check_out",), "Check-out has to be after check-in.")
-    rooms = item.get("rooms", 1)
-    if isinstance(rooms, bool) or not isinstance(rooms, int) or not 1 <= rooms <= 8:
+    rooms = item.get("rooms", "1")
+    if rooms is None:
+        rooms = "1"
+    if isinstance(rooms, str) and rooms.strip().isascii() and rooms.strip().isdigit() and 1 <= int(rooms) <= 8:
+        rooms = int(rooms)
+    else:
         r.bad(path + ("rooms",), "“rooms” should be a whole number from 1 to 8.")
         rooms = 1
-    confirmation = _text(r, item, "confirmation", path, "The hotel’s confirmation", limit=30)
-    room = _text(r, item, "room", path, "The hotel’s room", limit=80)
-    phone = _text(r, item, "phone", path, "The hotel’s phone", limit=30)
+    confirmation = _text(r, item, "confirmation", path, f"{label}’s confirmation", limit=30)
+    room = _text(r, item, "room", path, f"{label}’s room", limit=80)
+    phone = _text(r, item, "phone", path, f"{label}’s phone", limit=30)
     if not (name and address and check_in and check_out and check_out > check_in):
         return None
     return Lodging(name, address, check_in, check_out, confirmation, room, rooms, phone)
+
+
+MAX_HOTELS = 6
+
+
+def _read_hotels(r, doc):
+    """The hotels: one under `hotel:`, or several under `hotels:` (a list). Returned oldest check-in first."""
+    if doc.get("hotel") is not None and doc.get("hotels") is not None:
+        r.bad(("hotels",), "Use either “hotel:” (one hotel) or “hotels:” (a list), not both.")
+        return ()
+    if doc.get("hotels") is not None:
+        raw = doc["hotels"]
+        if not isinstance(raw, list):
+            r.bad(("hotels",), "“hotels:” should be a list with one entry per hotel.")
+            return ()
+        if len(raw) > MAX_HOTELS:
+            r.bad(("hotels",), f"That is more than {MAX_HOTELS} hotels.")
+        found = [_one_hotel(r, item, ("hotels", i), f"Hotel {i + 1}") for i, item in enumerate(raw[:MAX_HOTELS])]
+    elif doc.get("hotel") is not None:
+        found = [_one_hotel(r, doc["hotel"], ("hotel",), "The hotel")]
+    else:
+        return ()
+    out = sorted((h for h in found if h), key=lambda h: h.check_in)
+    for a, b in zip(out, out[1:]):
+        if b.check_in < a.check_out:
+            r.bad(("hotels", found.index(b)) if "hotels" in doc else ("hotel",), f"{b.name} starts before {a.name} ends. Two stays cannot overlap.")
+    return tuple(out)
 
 
 def _read_car(r, doc):
@@ -422,19 +482,20 @@ def _read_car(r, doc):
     return Rental(company, where_p, pick, where_d, drop, confirmation, car)
 
 
-def _check_inside(r, plan_start, plan_end, legs, hotel, rental):
-    """Everything has to fall on a day of the trip, so it has somewhere to show on the calendar."""
+def _check_inside(r, plan_start, plan_end, legs, hotels, rental):
+    """Everything has to fall on a day of the trip, so it has somewhere to show on the calendar. A red-eye may leave the evening before
+    the trip starts or land the morning after it ends."""
     def inside(day):
         return plan_start <= day <= plan_end
 
     for i, leg in enumerate(legs):
-        for key, at in (("depart", leg.depart), ("arrive", leg.arrive)):
-            if not inside(at.date()):
+        for key, at, lo, hi in (("depart", leg.depart, plan_start - timedelta(days=1), plan_end), ("arrive", leg.arrive, plan_start, plan_end + timedelta(days=1))):
+            if not lo <= at.date() <= hi:
                 r.bad(("flights", i, key), f"Flight leg {i + 1} {'leaves' if key == 'depart' else 'lands'} on {at:%b} {at.day}, which is outside your trip dates ({plan_start:%b} {plan_start.day} – {plan_end:%b} {plan_end.day}). Change “start” or “end”, or the flight.")
-    if hotel:
+    for i, hotel in enumerate(hotels):
         for key, at in (("check_in", hotel.check_in), ("check_out", hotel.check_out)):
             if not inside(at.date()):
-                r.bad(("hotel", key), f"The hotel’s {key.replace('_', '-')} is on {at:%b} {at.day}, which is outside your trip dates. Change “start” or “end”, or the hotel.")
+                r.bad(("hotel", key), f"{hotel.name}’s {key.replace('_', '-')} is on {at:%b} {at.day}, which is outside your trip dates. Change “start” or “end”, or the hotel.")
     if rental:
         for key, at in (("pickup", rental.pickup), ("dropoff", rental.dropoff)):
             if not inside(at.date()):
@@ -453,18 +514,23 @@ def parse(text) -> Parsed:
             if isinstance(event, yaml.AliasEvent) or (isinstance(event, yaml.NodeEvent) and getattr(event, "anchor", None)):
                 raise ImportProblem([f"Line {event.start_mark.line + 1 + offset}: anchors and aliases (& and *) are not supported. Write each value out."])
         node = yaml.compose(body, Loader=yaml.SafeLoader)
-        doc = yaml.safe_load(body)
+    except RecursionError:
+        raise ImportProblem([TOO_DEEP])
     except yaml.YAMLError as e:
         mark = getattr(e, "problem_mark", None)
         where = f"Line {mark.line + 1 + offset}: " if mark else ""
         what = (getattr(e, "problem", "") or "it could not be read").capitalize()
         hint = " Check the spacing: lines under a heading are indented by two spaces, and a value with a colon in it needs quotes." if mark else ""
         raise ImportProblem([f"{where}{what}.{hint}".replace("..", ".")])
-    if not isinstance(doc, dict):
+    if not isinstance(node, yaml.MappingNode):
         raise ImportProblem(["That does not look like the template. Paste the block that starts with “trip:”."])
     lines = {}
-    _walk(node, (), lines)
+    try:
+        _walk(node, (), lines)
+    except _TooDeep:
+        raise ImportProblem([TOO_DEEP])
     r = _Reader(lines, offset)
+    doc = _plain(r, node)
 
     trip = doc.get("trip")
     tp = ("trip",)
@@ -489,7 +555,7 @@ def parse(text) -> Parsed:
                 r.bad(tp + ("end",), f"A trip can be at most {MAX_DAYS} days long.")
     travelers = _read_travelers(r, doc)
     legs = _read_flights(r, doc)
-    hotel = _read_hotel(r, doc)
+    hotels = _read_hotels(r, doc)
     rental = _read_car(r, doc)
     notes = doc.get("notes")
     if notes is not None and not isinstance(notes, str):
@@ -502,13 +568,13 @@ def parse(text) -> Parsed:
     for key in doc:
         if key not in KNOWN:
             r.warn((str(key),), f"“{key}” is not a section GitAway uses, so it was skipped. The sections are: {', '.join(KNOWN)}.")
-    if not (legs or hotel or rental):
+    if not (legs or hotels or rental) and not r.errors:
         r.bad((), "Add at least one of flights, a hotel or a car, or there is nothing to put on the calendar.")
     if start and end and not r.errors:
-        _check_inside(r, start, end, legs, hotel, rental)
+        _check_inside(r, start, end, legs, hotels, rental)
     if r.errors:
         raise ImportProblem(r.errors, r.warnings)
-    return Parsed(Plan(title, destination, start, end, booked_on, itinerary, travelers, legs, hotel, rental, notes), tuple(r.warnings))
+    return Parsed(Plan(title, destination, start, end, booked_on, itinerary, travelers, legs, hotels, rental, notes), tuple(r.warnings))
 
 
 # ---- the family database's copy -------------------------------------------------------------------------------------
@@ -525,10 +591,9 @@ def to_doc(plan: Plan) -> dict:
            "flights": [{"airline": f.airline, "number": f.number, "from": f.origin, "to": f.dest, "depart": _iso(f.depart), "arrive": _iso(f.arrive),
                         "confirmation": f.confirmation, "seats": f.seats} for f in plan.legs],
            "notes": plan.notes}
-    if plan.hotel:
-        h = plan.hotel
-        doc["hotel"] = {"name": h.name, "address": h.address, "check_in": _iso(h.check_in), "check_out": _iso(h.check_out),
-                        "confirmation": h.confirmation, "room": h.room, "rooms": h.rooms, "phone": h.phone}
+    if plan.hotels:
+        doc["hotels"] = [{"name": h.name, "address": h.address, "check_in": _iso(h.check_in), "check_out": _iso(h.check_out),
+                          "confirmation": h.confirmation, "room": h.room, "rooms": h.rooms, "phone": h.phone} for h in plan.hotels]
     if plan.rental:
         c = plan.rental
         doc["car"] = {"company": c.company, "pickup_place": c.pickup_place, "pickup": _iso(c.pickup), "dropoff_place": c.dropoff_place,
@@ -540,12 +605,12 @@ def from_doc(doc: dict) -> Plan:
     """The Plan a stored doc holds (trusted: it was validated when it was saved)."""
     at = datetime.fromisoformat
     t = doc["trip"]
-    h, c = doc.get("hotel"), doc.get("car")
+    hs, c = doc.get("hotels", [doc["hotel"]] if doc.get("hotel") else []), doc.get("car")
     return Plan(
         t["title"], t["destination"], date.fromisoformat(t["start"]), date.fromisoformat(t["end"]), t["booked_on"], t.get("itinerary", ""),
         tuple(Traveler(x["name"], x.get("email", ""), x.get("age")) for x in doc["travelers"]),
         tuple(Leg(f["airline"], f["number"], f["from"], f["to"], at(f["depart"]), at(f["arrive"]), f.get("confirmation", ""), f.get("seats", "")) for f in doc.get("flights", [])),
-        Lodging(h["name"], h["address"], at(h["check_in"]), at(h["check_out"]), h.get("confirmation", ""), h.get("room", ""), h.get("rooms", 1), h.get("phone", "")) if h else None,
+        tuple(Lodging(h["name"], h["address"], at(h["check_in"]), at(h["check_out"]), h.get("confirmation", ""), h.get("room", ""), h.get("rooms", 1), h.get("phone", "")) for h in hs),
         Rental(c["company"], c["pickup_place"], at(c["pickup"]), c["dropoff_place"], at(c["dropoff"]), c.get("confirmation", ""), c.get("car", "")) if c else None,
         doc.get("notes", ""))
 
@@ -615,8 +680,23 @@ def flight_offer(plan: Plan, offer_id: str) -> ImportedFlight | None:
                           d.origin if d else "", depart_min=_minutes(a.depart), back_arrive_min=_minutes(d.arrive) if d else 0)
 
 
-def stay_offer(plan: Plan, offer_id: str) -> ImportedStay | None:
-    return ImportedStay(offer_id, plan.hotel.name, plan.hotel.address) if plan.hotel else None
+def hotel_for(plan: Plan, leg=None):
+    """The hotel for a ride: the arrival goes to the hotel that starts on the landing day (else the first), the departure leaves the one that
+    ends on the flight-home day (else the last). With no leg, the first."""
+    if not plan.hotels:
+        return None
+    if leg == "arrive":
+        a = plan.arrive_leg
+        return next((h for h in plan.hotels if a and h.check_in.date() == a.arrive.date()), plan.hotels[0])
+    if leg == "depart":
+        d = plan.depart_leg
+        return next((h for h in reversed(plan.hotels) if d and h.check_out.date() == d.depart.date()), plan.hotels[-1])
+    return plan.hotels[0]
+
+
+def stay_offer(plan: Plan, offer_id: str, leg=None) -> ImportedStay | None:
+    h = hotel_for(plan, leg)
+    return ImportedStay(offer_id, h.name, h.address) if h else None
 
 
 def car_offer(plan: Plan, offer_id: str) -> ImportedCar | None:
@@ -636,8 +716,8 @@ def block_specs(plan: Plan) -> list:
     arrive, depart = plan.arrive_leg, plan.depart_leg
     for i, leg in enumerate(plan.legs):
         out.append(Spec("b-out" if leg is arrive else "b-back" if leg is depart else f"b-leg{i + 1}", "leg", leg))
-    if plan.hotel:
-        out += [Spec("b-in", "checkin", plan.hotel), Spec("b-out2", "checkout", plan.hotel)]
+    for i, h in enumerate(plan.hotels):  # the first hotel keeps the ids the demo's stay has
+        out += [Spec("b-in" if i == 0 else f"b-hin{i + 1}", "checkin", h), Spec("b-out2" if i == 0 else f"b-hout{i + 1}", "checkout", h)]
     if plan.rental:
         out += [Spec("b-car-pick", "pickup", plan.rental), Spec("b-car-drop", "dropoff", plan.rental)]
     return out

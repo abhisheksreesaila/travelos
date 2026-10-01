@@ -90,13 +90,12 @@ def plan_sections(plan):
                             Span(f"Confirmation {leg.confirmation}" + (f" · seats {leg.seats}" if leg.seats else ""), cls="ti-sub ti-conf") if leg.confirmation or leg.seats else "",
                             cls="ti-item"))
         cards.append(Div(H3("Flights", cls="ti-h3"), *rows, cls="ti-sec", id="ti-flights"))
-    if plan.hotel:
-        h = plan.hotel
-        cards.append(Div(H3("Hotel", cls="ti-h3"),
-                         Div(Span(icon("bed", 16, 2.2), Span(h.name, cls="ti-strong"), cls="ti-line"), Span(h.address, cls="ti-sub"),
-                             Span(f"Check in {_when(h.check_in)} · check out {_when(h.check_out)}", cls="ti-sub"),
-                             Span(" · ".join(x for x in (h.room, f"{h.rooms} rooms" if h.rooms != 1 else "", h.phone) if x), cls="ti-sub") if (h.room or h.rooms != 1 or h.phone) else "",
-                             Span(f"Confirmation {h.confirmation}", cls="ti-sub ti-conf") if h.confirmation else "", cls="ti-item"), cls="ti-sec", id="ti-hotel"))
+    if plan.hotels:
+        items = [Div(Span(icon("bed", 16, 2.2), Span(h.name, cls="ti-strong"), cls="ti-line"), Span(h.address, cls="ti-sub"),
+                     Span(f"Check in {_when(h.check_in)} · check out {_when(h.check_out)}", cls="ti-sub"),
+                     Span(" · ".join(x for x in (h.room, f"{h.rooms} rooms" if h.rooms != 1 else "", h.phone) if x), cls="ti-sub") if (h.room or h.rooms != 1 or h.phone) else "",
+                     Span(f"Confirmation {h.confirmation}", cls="ti-sub ti-conf") if h.confirmation else "", cls="ti-item") for h in plan.hotels]
+        cards.append(Div(H3("Hotels" if len(items) > 1 else "Hotel", cls="ti-h3"), *items, cls="ti-sec", id="ti-hotel"))
     if plan.rental:
         c = plan.rental
         cards.append(Div(H3("Car", cls="ti-h3"),

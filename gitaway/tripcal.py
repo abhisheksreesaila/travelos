@@ -164,6 +164,11 @@ def stay_of(b):
     return _lane(b, "stay", "stay")
 
 
+def stay_for(b, leg):
+    """The stay a ride leg ("arrive" or "depart") goes to or leaves from: an imported trip with several hotels has one for each night."""
+    return tripimport.stay_offer(_plan(b), b["stay"], leg) if is_imported(b) and b.get("stay") else stay_of(b)
+
+
 def car_of(b):
     """The rental car offer of booking `b`, or None when there is no car."""
     return _lane(b, "car", "car")
@@ -216,10 +221,10 @@ def ride_offers(session, b, t):
         return []
     have = {r.leg for r in ride_model.list_rides(session) if r.key == ride_model.booking_key(b) and not r.canceled}
     trip = trip_of(b)
-    flight, stay = flight_of(b), stay_of(b)
+    flight = flight_of(b)
     out = []
     for leg in ride_model.LEGS:
-        plan = ride_model.leg_plan(leg, flight, stay, trip)
+        plan = ride_model.leg_plan(leg, flight, stay_for(b, leg), trip)
         where = _ride_day_start(plan, t)
         if leg not in have and where:
             out.append(Block(f"ro-{leg}", where[0], where[1], where[1] + plan.minutes, f"Schedule an Uber · {plan.short_route}", "rideoffer", False, "car"))
@@ -269,37 +274,45 @@ def booked_blocks(b, t):
     return blocks
 
 
+LAST_MIN = 24 * 60 - 1  # nothing booked runs past 11:59 PM
 CAR_LEN = 30  # an imported car's pickup and dropoff are small blocks this long
 
 
 def imported_blocks(plan, t):
     """The locked blocks an imported trip (F-042) puts on the calendar of trip `t`, each tagged "Booked elsewhere · <where>".
 
-    Every flight leg, the hotel's check in and check out, and the car's pickup and dropoff. "b-out" is the arrival at the destination and
+    Every flight leg, each hotel's check in and check out, and the car's pickup and dropoff. "b-out" is the arrival at the destination and
     "b-back" the flight home, so the flight window (day_window, window_problem) follows the real first arrival and last departure.
-    A leg that lands after midnight ends at midnight; nothing carries over to the next day's column.
+    A block never runs past 11:59 PM. A red-eye is two blocks, the leaving evening and the landing morning: the one the window reads keeps
+    the id ("b-out" is the landing morning, "b-back" the leaving evening); the other gets "-d" (leaves) or "-a" (arrives).
     """
     tag = f"Booked elsewhere · {plan.booked_on}"
     last = (t.return_ - t.depart).days
     out = []
+
+    def put(block_id, at_day, start, end, title, icon):
+        if 0 <= at_day <= last:
+            start = min(start, LAST_MIN - 1)  # keep the true time; only a 11:59 PM start is nudged so the block has a height
+            out.append(Block(block_id, at_day, start, min(max(end, start + 15), LAST_MIN) if start + 15 <= LAST_MIN else LAST_MIN, title, "booked", True, icon, tag))
+
     for spec in tripimport.block_specs(plan):
         x = spec.item
         if spec.kind == "leg":
-            at, end, title, icon = x.depart, x.arrive, f"{x.name} · {x.origin} → {x.dest}", "plane"
-            stop = _min(end) if end.date() == at.date() else 24 * 60 - 1
+            title = f"{x.name} · {x.origin} → {x.dest}"
+            d0, d1 = (x.depart.date() - t.depart).days, (x.arrive.date() - t.depart).days
+            if d1 == d0:
+                put(spec.id, d0, _min(x.depart), _min(x.arrive), title, "plane")
+            else:  # lands after midnight
+                landing_id, leaving_id = (spec.id, spec.id + "-d") if spec.id == "b-out" else (spec.id + "-a", spec.id)
+                put(leaving_id, d0, _min(x.depart), LAST_MIN, title, "plane")
+                put(landing_id, d1, 0, _min(x.arrive), title, "plane")
         elif spec.kind in ("checkin", "checkout"):
             at = x.check_in if spec.kind == "checkin" else x.check_out
-            title, icon, stop = (f"Check in · {x.name}", "bed", None) if spec.kind == "checkin" else (f"Check out · {x.name}", "bed", None)
+            put(spec.id, (at.date() - t.depart).days, _min(at), _min(at) + STAY_LEN, f"{'Check in' if spec.kind == 'checkin' else 'Check out'} · {x.name}", "bed")
         else:
             at = x.pickup if spec.kind == "pickup" else x.dropoff
             where = x.pickup_place if spec.kind == "pickup" else x.dropoff_place
-            title, icon, stop = f"{'Pick up' if spec.kind == 'pickup' else 'Drop off'} {x.company} car · {where}", "car", None
-        day = (at.date() - t.depart).days
-        if not 0 <= day <= last:
-            continue
-        start = _min(at)
-        end_min = stop if stop is not None else min(start + (STAY_LEN if spec.kind in ("checkin", "checkout") else CAR_LEN), 24 * 60 - 1)
-        out.append(Block(spec.id, day, start, max(end_min, start + 15), title, "booked", True, icon, tag))
+            put(spec.id, (at.date() - t.depart).days, _min(at), _min(at) + CAR_LEN, f"{'Pick up' if spec.kind == 'pickup' else 'Drop off'} {x.company} car · {where}", "car")
     return out
 
 
@@ -313,6 +326,7 @@ def booking_detail(b, block_id):
     if not is_imported(b):
         return None
     plan = _plan(b)
+    block_id = block_id.removesuffix("-d").removesuffix("-a")  # the other half of a red-eye opens the same booking
     spec = next((s for s in tripimport.block_specs(plan) if s.id == block_id), None)
     return tripimport.detail_rows(spec, plan) if spec else None
 
@@ -355,6 +369,12 @@ def window_note(problem):
     """The short clash note for a fork plan (see Placement.clash)."""
     kind, at = problem
     return f"before you land at {fmt_time(at)}" if kind == "land" else f"too close to your flight home (finish by {fmt_time(at)})"
+
+
+def grid_end(blocks):
+    """The hour grid's last minute: 10 PM, or the hour after the latest booked block (an 11:30 PM check in), at most midnight."""
+    latest = max([GRID_END, *(x.end for x in blocks)])
+    return min(-(-latest // 60) * 60, 24 * 60)
 
 
 def grid_start(blocks):

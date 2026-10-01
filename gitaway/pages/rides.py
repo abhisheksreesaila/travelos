@@ -26,12 +26,12 @@ LEG_TITLE = {"arrive": "Arrival", "depart": "Departure"}
 
 # ---- context: which picks the ride belongs to ------------------------------------------------------------------------
 
-def _resolve_imported(session, f):
+def _resolve_imported(session, f, leg=""):
     """(flight, stay or None, trip, message) for an imported trip's flight id (F-042): the trip this request works on, which must own that flight."""
     b = ses.booking(session)
     if not (b and b.get("imported") and b.get("flight") == f):
         return None, None, catalog.SAMPLE_TRIP, "That trip is not the one open now. Open it from your calendar and try again."
-    flight, stay, trip = tripcal.flight_of(b), tripcal.stay_of(b), tripcal.trip_of(b)
+    flight, stay, trip = tripcal.flight_of(b), tripcal.stay_for(b, leg), tripcal.trip_of(b)
     if tripcal.car_of(b):
         return None, None, trip, "This trip has a rental car, so there's no ride to schedule."
     return flight, stay, trip, ""
@@ -44,10 +44,10 @@ def _picks_link(flight, stay, trip):
     return plan.plan_path(flight.id, stay.id if stay else None, None, None, trip)
 
 
-def _resolve(f, h, c, d, r, a, k, session=None):
+def _resolve(f, h, c, d, r, a, k, session=None, leg=""):
     """(flight offer, stay offer or None, trip) for the picks in a URL, or a message when there is nothing to ride to or from."""
     if familydb_import.is_offer(f):
-        return _resolve_imported(session, f)
+        return _resolve_imported(session, f, leg)
     fid, hid, cid = plan.resolve_pick(f, h, c)
     trip = plan.resolve_trip(d, r, a, k)
     if fid is None:
@@ -199,7 +199,7 @@ def confirm_view(p, flight, stay, trip, est, vals=None, error=""):
 def flow(session, path, leg, f, h, c, d, r, a, k, p="", vals=None, error="", status=200):
     if not ses.current_traveler(session):
         return sign_in_page(path)
-    flight, stay, trip, problem = _resolve(f, h, c, d, r, a, k, session)
+    flight, stay, trip, problem = _resolve(f, h, c, d, r, a, k, session, leg)
     if problem:
         back = "/calendar" if familydb_import.is_offer(f) else plan.plan_path(*plan.resolve_pick(f, h, c), None, trip)
         return message_page("No Uber to schedule", problem, A("Back to my calendar" if back == "/calendar" else "Back to my picks", href=back, cls="btn btn-ink"))
@@ -309,7 +309,7 @@ def register(app):
         if not ses.current_traveler(session):
             return sign_in_page("/rides/new")
         vals = {"first": first, "last": last, "phone": phone}
-        flight, stay, trip, problem = _resolve(f, h, c, d, r, a, k, session)
+        flight, stay, trip, problem = _resolve(f, h, c, d, r, a, k, session, leg)
         if problem:
             return message_page("No Uber to schedule", problem, A("Back to my picks", href="/calendar" if familydb_import.is_offer(f) else "/plan", cls="btn btn-ink"))
         try:

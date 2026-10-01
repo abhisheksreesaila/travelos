@@ -214,14 +214,14 @@ def day_column(i, date_, ctx):
     )
     return Div(
         head,
-        Div(*body, cls="cal-body", data_day=str(i), style=f"height:{_px(cal.GRID_END - gs)}"),
+        Div(*body, cls="cal-body", data_day=str(i), style=f"height:{_px(ctx['ge'] - gs)}"),
         id=f"d{i}", cls="cal-day", aria_label=date_.strftime("%A %B ") + str(date_.day), role="group",
     )
 
 
-def hour_gutter(gs):
-    hours = [Span(_hours_label(h), cls="cal-hour") for h in range(gs // 60, cal.GRID_END // 60)]
-    return Div(Div(cls="cal-dayhead cal-corner"), Div(*hours, cls="cal-hours", style=f"height:{_px(cal.GRID_END - gs)}"), cls="cal-gutter", aria_hidden="true")
+def hour_gutter(gs, ge):
+    hours = [Span(_hours_label(h), cls="cal-hour") for h in range(gs // 60, ge // 60)]
+    return Div(Div(cls="cal-dayhead cal-corner"), Div(*hours, cls="cal-hours", style=f"height:{_px(ge - gs)}"), cls="cal-gutter", aria_hidden="true")
 
 
 # ---- strip, whole-trip view, notes ---------------------------------------------------------------------------------
@@ -485,6 +485,7 @@ def calendar_page(session, demo="", view="", form=None, notice=None, new="", und
         if n.act:
             counts[n.act] = counts.get(n.act, 0) + 1
     gs = cal.grid_start(blocks)
+    gs_end = cal.grid_end(blocks)
     friends = ses.friends(session)
     question = vo.question(dates)
     night, drafts, vpanel = None, [], None
@@ -493,13 +494,13 @@ def calendar_page(session, demo="", view="", form=None, notice=None, new="", und
         placed = vo.preview(session, night, demo)
         drafts = [x for x in placed if not x.hard and x.state != "have"]
         vpanel = voice_ui.panel(session, demo, dates, question, placed, night, bool(voice.get("hear")), voice.get("error", ""))
-    ctx = dict(booking=b, offers=offers, drafts=drafts, fresh=set(voiced["ids"]) if voiced else set(), demo=demo, view=view, t=t, dates=dates, blocks=blocks, acts=acts, notes=notes, note_counts=counts, gs=gs, back=back, new=new, next=cal.next_id(session, demo),
+    ctx = dict(booking=b, offers=offers, drafts=drafts, fresh=set(voiced["ids"]) if voiced else set(), demo=demo, view=view, t=t, dates=dates, blocks=blocks, acts=acts, notes=notes, note_counts=counts, gs=gs, ge=gs_end, back=back, new=new, next=cal.next_id(session, demo),
                friends=friends, live=bool(live and any(a.id == new and a.by for a in acts)))
     if view == "whole":
         surface = whole_view(dates, ctx)
     else:
         surface = Div(
-            Div(hour_gutter(gs), *[day_column(i, d, ctx) for i, d in enumerate(dates)], cls="cal-scroll", id="cal-scroll", tabindex="-1", data_w=w or "0", role="region", aria_label="Days"),
+            Div(hour_gutter(gs, gs_end), *[day_column(i, d, ctx) for i, d in enumerate(dates)], cls="cal-scroll", id="cal-scroll", tabindex="-1", data_w=w or "0", role="region", aria_label="Days"),
             A("+ Add something fun", href="#", id="cal-ghost", cls="cal-ghost", data_soft="", hidden=True, tabindex="-1"),
             cls="cal-grid",
         )
@@ -540,7 +541,7 @@ def calendar_page(session, demo="", view="", form=None, notice=None, new="", und
                                                                      action="/calendar/undo", method="post", data_soft=""),
                            A("Dismiss", href=cal_url(demo, view=view), data_soft="", cls="cal-dismiss")))
     app = Div(top_bar(t, b, who, session, ctx), Div(card, vpanel or notes_panel(ctx, who, b), cls="cal-layout"), *layers,
-              id="cal-app", cls="cal", data_trip=ses.open_trip_id() or None, data_demo=demo, data_view=view, data_grid_start=str(gs), data_grid_end=str(cal.GRID_END),
+              id="cal-app", cls="cal", data_trip=ses.open_trip_id() or None, data_demo=demo, data_view=view, data_grid_start=str(gs), data_grid_end=str(gs_end),
               data_base=cal_url(demo, view=view), data_live="1" if cal.live_pending(session, demo) else None, data_voice="1" if voice is not None else None)
     body = (
         Title(f"GitAway · {trip_name(t)} calendar"),
