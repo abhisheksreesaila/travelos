@@ -50,6 +50,9 @@
 .btn-round { width: 3.625rem; padding: 0; color: var(--accent-deep); flex: none; }
 .btn-round svg { width: 1.5rem; height: 1.5rem; flex: none; }
 .btn-round:hover { color: var(--accent-deep); }
+.save-form { display: contents; }
+.btn-round.is-saved { background: var(--bubble); color: var(--ink); }
+.btn-round.is-saved svg { fill: currentColor; }
 
 /* Source card */
 .source-card { position: relative; margin-top: 0.625rem; width: min(35rem, 100%); transform: rotate(-1deg); padding: 1rem; border-radius: 1.25rem; background: var(--card); box-shadow: 0 0 0 1px var(--line), 0 0.75rem 0.75rem -0.375rem rgba(0,0,0,.06), 0 1.5rem 1.5rem -0.75rem rgba(0,0,0,.06); display: flex; gap: 1rem; align-items: center; }

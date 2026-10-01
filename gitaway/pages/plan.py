@@ -495,6 +495,11 @@ def news_pane():
     ], "fill-bubble-tint")
 
 
+def _your_forks():
+    n = session.request_fork_count()
+    return A(f"Your forks · {n}" if n else "Your forks", href="/forks", cls="ws-forklist")
+
+
 def community_pane():
     rows = []
     for t in itineraries.ITINERARIES.values():
@@ -506,7 +511,7 @@ def community_pane():
             cls="ws-trip",
         ))
     return pane("community", 7, "Trips others loved", "", [
-        *rows, Span("Your forked trips will be listed here soon.", cls="ws-sample"),
+        *rows, _your_forks(),
     ], "fill-sun", cls_extra="ws-dark")
 
 

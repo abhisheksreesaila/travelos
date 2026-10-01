@@ -83,13 +83,13 @@ Needs: F-019
 - [x] invite a family member or friend (signed out: through the demo sign-in with intent=invite); their avatar appears
 - [x] a scripted friend adds an activity and a note live, with animation
 
-## F-021 Forks list and apply preview [todo]
+## F-021 Forks list and apply preview [done]
 Captain said go 2026-09-30 ("do the missing sections, I want to see it fully").
 Design: docs/design/canvas/Forks.dc.html
 Needs: F-014, F-019
-- [ ] personal forks list in the workspace; fork any number
-- [ ] the itinerary page's Save heart saves a trip (signed out: through the demo sign-in with intent=save) and saved trips show beside forks
-- [ ] apply one: preview its activities in the empty calendar slots around bookings and friends' items, uncheck the unwanted ones, apply with animation; clashes are clearly shown
+- [x] personal forks list in the workspace; fork any number
+- [x] the itinerary page's Save heart saves a trip (signed out: through the demo sign-in with intent=save) and saved trips show beside forks
+- [x] apply one: preview its activities in the empty calendar slots around bookings and friends' items, uncheck the unwanted ones, apply with animation; clashes are clearly shown
 
 ## F-022 Share to the community hub [done]
 Captain said go 2026-09-30 (build the hub, then the creator flow).
@@ -109,7 +109,7 @@ Needs: F-014, F-022
 - [x] the creator confirms it's accurate and gives permission to publish before Submit
 - [x] submit; it appears in the community hub and links back to the creator's channel; the whole flow fits in under 5 minutes
 
-## F-024 Talk to plan: scripted voice fills the calendar [todo]
+## F-024 Talk to plan: scripted voice fills the calendar [doing]
 Captain said go 2026-09-30 ("do the missing sections, I want to see it fully").
 Brief: docs/briefs/voice.md (approved 2026-09-30) · Design: docs/design/canvas/Voice.dc.html · Needs: F-019, F-021 (reuses the apply-preview)
 - [ ] mic on the trip calendar plays a scripted sentence word by word with a listening animation; no audio captured
@@ -176,7 +176,7 @@ Needs: none
 - [x] /calendar opens on the whole-trip view; the switch to the day view is obvious and remembered while the traveler is on the page
 - [x] links that need the day view (e.g. after adding an activity) still land there
 
-## F-033 Book any mix of lanes, with rides when there's no car [todo]
+## F-033 Book any mix of lanes, with rides when there's no car [doing]
 Brief: docs/briefs/optional-lanes.md (approved 2026-09-30)
 Needs: F-027 (shares the pick URL and ledger)
 - [ ] each lane has a skip choice ("I'll drive", "Staying with friends", "No car") that collapses it and can be undone

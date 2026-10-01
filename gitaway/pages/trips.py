@@ -3,7 +3,7 @@
 from fasthtml.common import A, Div, H1, P, Section
 from fasthtml.core import FtResponse
 
-from gitaway import creators, itineraries, share
+from gitaway import creators, itineraries, session as ses, share
 from gitaway.itinerary_view import itinerary_page
 from gitaway.layout import page
 
@@ -29,4 +29,4 @@ def register(app):
         found = itineraries.get(slug) or share.find(session, slug) or creators.find(session, slug)
         if found is None:
             return not_found()
-        return itinerary_page(found, theme=theme, loading=(state == "loading"))
+        return itinerary_page(found, theme=theme, loading=(state == "loading"), saved=slug in ses.saved(session), forked=slug in ses.forks(session))

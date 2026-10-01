@@ -81,19 +81,57 @@ def trip_slug(path):
     return m.group(1) if m else None
 
 
-def add_fork(session, next_path):
-    """Add the trip in a /trips/<slug> path to the current traveler's forks.
+class KeepError(ValueError):
+    """A fork or save the demo refuses because the session cookie has no room; the message is fit to show."""
 
-    False when signed out, when the path is not a trip, or when it is already there.
+
+def _keep(session, key, current, next_path):
+    """Add the trip in a /trips/<slug> path to the traveler's `key` list (forks or saves).
+
+    False when signed out, when the path is not a trip that exists, or when it is already there. Raises KeepError
+    (and changes nothing) when the signed cookie would grow past BUDGET.
     """
+    from gitaway import forks as forks_model  # here, not at the top: forks imports this module
     t, slug = current_traveler(session), trip_slug(next_path)
-    if not t or not slug:
+    if not t or not slug or slug in current or not forks_model.resolve(session, slug):
         return False
-    mine = forks(session)
-    if slug in mine:
-        return False
+    old = session.get(key)
     # Reassign the whole dict so the cookie session notices the change.
-    session["forks"] = {**session.get("forks", {}), t.id: [*mine, slug]}
+    session[key] = {**(old or {}), t.id: [*current, slug]}
+    if len(json.dumps(dict(session))) > BUDGET:
+        if old is None:
+            session.pop(key, None)
+        else:
+            session[key] = old
+        raise KeepError("This demo is full. Delete something from your calendar to make room.")
+    return True
+
+
+def add_fork(session, next_path):
+    """Fork the trip in a /trips/<slug> path for the current traveler (see _keep for the False and KeepError cases)."""
+    return _keep(session, "forks", forks(session), next_path)
+
+
+def saved(session):
+    """Trip slugs the signed-in traveler has saved with the heart, oldest first. Empty when signed out.
+
+    Session shape: "saves": {"<traveler id>": ["<trip slug>", ...]}, like forks.
+    """
+    t = current_traveler(session)
+    return list((session.get("saves") or {}).get(t.id, [])) if t else []
+
+
+def add_save(session, next_path):
+    """Save the trip in a /trips/<slug> path for the current traveler (see _keep for the False and KeepError cases)."""
+    return _keep(session, "saves", saved(session), next_path)
+
+
+def remove_save(session, next_path):
+    """Un-save the trip in a /trips/<slug> path. False when it was not saved."""
+    t, slug = current_traveler(session), trip_slug(next_path)
+    if not t or not slug or slug not in saved(session):
+        return False
+    session["saves"] = {**session["saves"], t.id: [s for s in saved(session) if s != slug]}
     return True
 
 
@@ -235,6 +273,7 @@ def invite_link(booking_id):
 
 _request_traveler = ContextVar("gitaway_traveler", default=None)
 _request_path = ContextVar("gitaway_path", default="/")
+_request_forks = ContextVar("gitaway_forks", default=0)
 
 
 async def bind(req, session):
@@ -243,11 +282,18 @@ async def bind(req, session):
     Async on purpose: a sync beforeware runs in a threadpool copy of the context, so the ContextVar set would be lost.
     """
     _request_traveler.set(current_traveler(session))
+    from gitaway import forks  # here, not at the top: forks imports this module
+    _request_forks.set(forks.count(session))
     _request_path.set(req.url.path + (f"?{req.url.query}" if req.url.query else ""))
 
 
 def request_traveler():
     return _request_traveler.get()
+
+
+def request_fork_count():
+    """How many forks the current request's traveler has (0 when signed out), for panes that have no session at hand."""
+    return _request_forks.get()
 
 
 def signin_href(path=None):

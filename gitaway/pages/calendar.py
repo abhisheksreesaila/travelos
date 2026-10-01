@@ -21,7 +21,7 @@ from fasthtml.common import A, Aside, Button, Div, Fieldset, Form, H1, H2, H3, H
 from fasthtml.core import FtResponse
 from starlette.responses import RedirectResponse
 
-from gitaway import catalog, session as ses, tripcal as cal
+from gitaway import catalog, forks as forks_model, session as ses, tripcal as cal
 from gitaway.icons import icon
 from gitaway.layout import avatar, brand, styles
 from gitaway.pages import pay
@@ -92,9 +92,10 @@ def _clashes(blocks, day, s, e):
 
 
 def free_start(blocks, day, gs):
-    """The first half hour from 9 AM (or the grid start) with an hour free of booked items."""
-    t = max(9 * 60, gs)
-    while t + 60 <= cal.GRID_END:
+    """The first half hour from 9 AM (or the grid start, or when you land) with an hour free of booked items, inside the day's window."""
+    lo, hi = cal.day_window(blocks, day)
+    t = -(-max(9 * 60, gs, lo) // 30) * 30
+    while t + 60 <= hi:
         if not _clashes(blocks, day, t, t + 60):
             return t
         t += 30
@@ -320,7 +321,7 @@ def toast(kind, text, *extra):
 # ---- page ----------------------------------------------------------------------------------------------------------
 
 def top_bar(t, b, who, session, ctx):
-    forks = len(ses.forks(session))
+    forks = forks_model.count(session)
     friends = ctx["friends"]
     people = [avatar(who, "cal-avatar"), *[Span(avatar(f, "cal-avatar"), Span(cls="cal-presence-dot"), cls="cal-friend") for f in friends]]
     presence = Span(f"{friends[-1].name} is planning with you", cls="cal-presence", role="status") if friends else ""
