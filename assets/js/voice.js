@@ -28,12 +28,14 @@
     panel.classList.add("is-typing", "is-listening");
     app.setAttribute("data-hearing", "");
     const hint = $("#vo-hintline", panel);
+    const cursor = $(".vo-cursor", panel);
     let i = 0;
     const step = () => {
       if (!panel.isConnected) return;
       if (i < words.length) {
         const w = words[i++];
         w.classList.add("is-on");
+        if (cursor) w.after(cursor);  // the "|" follows the last word heard
         timer = setTimeout(step, /[,.]\s*$/.test(w.textContent) ? WORD_MS + COMMA_MS : WORD_MS);
         return;
       }

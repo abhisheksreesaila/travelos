@@ -164,8 +164,9 @@ def day_column(i, date_, ctx):
     booked = [b for b in blocks if b.day == i]
     body = [booked_block(b, gs) for b in booked]
     body += [activity_block(a, gs, demo, *lane[a.id], n_notes.get(a.id, 0), ctx["new"], ctx["live"], ctx["fresh"]) for a in acts]
-    body += [draft_block(x, gs) for x in ctx["drafts"] if x.plan.day == i]
-    if not booked and not acts:
+    here = [x for x in ctx["drafts"] if x.plan.day == i]
+    body += [draft_block(x, gs) for x in here]
+    if not booked and not acts and not here:
         body.append(A(Span("wide open!", cls="cal-hand"), Span("Add something fun"), href=cal_url(demo, add=i, at=cal.hhmm(free_start(blocks, i, gs))),
                       data_soft="", cls="cal-empty"))
     at = cal.hhmm(free_start(blocks, i, gs))
