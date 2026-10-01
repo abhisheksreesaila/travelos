@@ -22,7 +22,7 @@ from urllib.parse import parse_qs
 
 from fh_saas.utils_sql import delete_record, insert_only, update_record
 
-from gitaway import catalog, context, familydb, session as ses
+from gitaway import catalog, context, familydb, rides as ride_model, session as ses
 
 LONG = "long"  # the hidden ?demo=long fixture: a 20-day trip that crosses into November
 LONG_RETURN = date(2026, 11, 4)
@@ -165,6 +165,41 @@ def rides_of(b):
     """The catalog.Rides estimate of booking `b` (a flight and no car), or None. It is not charged and not stored: it follows the picks."""
     f = flight_of(b)
     return catalog.rides(f, stay_of(b), trip_of(b)) if f and not car_of(b) else None
+
+
+def _ride_day_start(plan, t):
+    """(day index, start minute) of a ride leg on trip `t`, or None when the pickup falls outside the trip."""
+    day = (plan.pickup_time.date() - t.depart).days
+    return (day, plan.pickup_time.hour * 60 + plan.pickup_time.minute) if 0 <= day <= (t.return_ - t.depart).days else None
+
+
+def ride_blocks(session, b, t):
+    """The simulated Uber rides (F-038) that belong to booking `b`, as locked blocks (kind "ride", id = the ride id). Cancelled rides have none.
+    A ride belongs to a booking with the same flight, stay and trip, and only when there is no car."""
+    if not rides_of(b):
+        return []
+    blocks = []
+    for r in ride_model.list_rides(session):
+        where = _ride_day_start(r.plan, t) if r.key == ride_model.booking_key(b) and not r.canceled else None
+        if where:
+            blocks.append(Block(r.id, where[0], where[1], where[1] + r.minutes, f"Uber · {r.product_name} · {r.plan.short_route}", "ride", True, "car"))
+    return blocks
+
+
+def ride_offers(session, b, t):
+    """One block per leg of booking `b` that has no live ride yet ("ro-arrive", "ro-depart"): the calendar offers to schedule an Uber there."""
+    if not rides_of(b):
+        return []
+    have = {r.leg for r in ride_model.list_rides(session) if r.key == ride_model.booking_key(b) and not r.canceled}
+    trip = trip_of(b)
+    flight, stay = flight_of(b), stay_of(b)
+    out = []
+    for leg in ride_model.LEGS:
+        plan = ride_model.leg_plan(leg, flight, stay, trip)
+        where = _ride_day_start(plan, t)
+        if leg not in have and where:
+            out.append(Block(f"ro-{leg}", where[0], where[1], where[1] + plan.minutes, f"Schedule an Uber · {plan.short_route}", "rideoffer", False, "car"))
+    return out
 
 
 def booked_sentence(b):

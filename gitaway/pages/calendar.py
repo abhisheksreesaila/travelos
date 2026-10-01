@@ -25,7 +25,7 @@ from gitaway import catalog, forks as forks_model, session as ses, tripcal as ca
 from gitaway.icons import icon
 from gitaway.layout import avatar, brand, styles
 from gitaway import voice as vo
-from gitaway.pages import pay, voice as voice_ui
+from gitaway.pages import pay, plan as plan_ui, voice as voice_ui
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/calendar.css"), Link(rel="stylesheet", href="/assets/css/voice.css"))
 HH = 48  # one hour is 48px at the 16px base, i.e. 3rem (calendar.js HOUR_REM must match)
@@ -113,13 +113,33 @@ def default_end(blocks, day, start):
 
 # ---- blocks --------------------------------------------------------------------------------------------------------
 
-def booked_block(b, gs):
+def ride_href(ctx, block):
+    """Where a ride block goes: the ride itself, or (an offer, id "ro-<leg>") the flow that schedules it for the booked picks."""
+    if block.kind == "ride":
+        return f"/rides/{block.id}"
+    return plan_ui.ride_path(block.id[3:], cal.flight_of(ctx["booking"]).id, (cal.stay_of(ctx["booking"]) or None) and cal.stay_of(ctx["booking"]).id, cal.trip_of(ctx["booking"]))
+
+
+def ride_block(b, gs, ctx, lane=0, nlanes=1):
+    """A simulated Uber (F-038) on the grid: a scheduled one is a locked block that opens the ride; an offer is a dashed ghost that starts scheduling it.
+    Like any block it keeps its true height (a 25 minute ride is short) and fades what does not fit; hover or focus opens it."""
+    offer = b.kind == "rideoffer"
+    label = f"{'Simulated, not booked: ' if offer else 'Simulated ride: '}{b.title}, {cal.fmt_time(b.start)} to {cal.fmt_time(b.end)}"
+    return A(
+        Span(icon(b.icon, 13, 2.2), " ", Span(cal.fmt_time(b.start), cls="cal-time"), " ", Span(b.title, cls="cal-title"), cls="cal-flow"),
+        href=ride_href(ctx, b), **({"data_offer": b.id} if offer else {"data_block": b.id}), data_day=str(b.day), data_start=str(b.start), data_end=str(b.end), draggable="false",
+        cls=f"cal-block cal-ride{' cal-rideoffer' if offer else ' cal-booked cal-rideset'}{' cal-short' if b.end - b.start <= 45 else ''}{' cal-lane' if nlanes > 1 else ''}",
+        style=f"--top:{_px(b.start - ctx['gs'])};--h:{_px(b.end - b.start)};--lane:{lane};--lanes:{nlanes}", aria_label=label,
+    )
+
+
+def booked_block(b, gs, lane=0, nlanes=1):
     return Div(
         Span(icon(b.icon, 13, 2.2), " ", Span(cal.fmt_time(b.start), cls="cal-time"), " ", Span(b.title, cls="cal-title"), cls="cal-flow"),
         Span(icon("lock", 12, 2.4), cls="cal-lock"),
         Span("Booked, locked", cls="sr-only"),
-        cls="cal-block cal-booked", data_block=b.id, data_day=str(b.day), data_start=str(b.start), data_end=str(b.end),
-        style=f"--top:{_px(b.start - gs)};--h:{_px(b.end - b.start)};--lane:0;--lanes:1",
+        cls=f"cal-block cal-booked{' cal-lane' if nlanes > 1 else ''}", data_block=b.id, data_day=str(b.day), data_start=str(b.start), data_end=str(b.end),
+        style=f"--top:{_px(b.start - gs)};--h:{_px(b.end - b.start)};--lane:{lane};--lanes:{nlanes}",
         role="group", tabindex="0",
         aria_label=f"Booked, locked: {b.title}, {cal.fmt_time(b.start)} to {cal.fmt_time(b.end)}",
     )
@@ -162,11 +182,13 @@ def day_column(i, date_, ctx):
     lane = lanes(acts)
     n_notes = ctx["note_counts"]
     booked = [b for b in blocks if b.day == i]
-    body = [booked_block(b, gs) for b in booked]
+    offers = [o for o in ctx["offers"] if o.day == i]
+    body = [ride_block(b, gs, ctx) if b.kind == "ride" else booked_block(b, gs) for b in booked]  # rides come after, so they sit over a check-out tail at full width
+    body += [ride_block(o, gs, ctx) for o in offers]
     body += [activity_block(a, gs, demo, *lane[a.id], n_notes.get(a.id, 0), ctx["new"], ctx["live"], ctx["fresh"]) for a in acts]
     here = [x for x in ctx["drafts"] if x.plan.day == i]
     body += [draft_block(x, gs) for x in here]
-    if not booked and not acts and not here:
+    if not booked and not acts and not here and not offers:
         body.append(A(Span("wide open!", cls="cal-hand"), Span("Add something fun"), href=cal_url(demo, add=i, at=cal.hhmm(free_start(blocks, i, gs))),
                       data_soft="", cls="cal-empty"))
     at = cal.hhmm(free_start(blocks, i, gs))
@@ -207,14 +229,23 @@ def strip(dates, ctx):
     return Div(*chips, cls="cal-strip", role="navigation", aria_label="Whole trip, one chip per day")
 
 
+def _whole_line(x, ctx):
+    kind = getattr(x, "kind", "")
+    if kind in ("ride", "rideoffer"):  # a simulated Uber (F-038): a link to the ride, or to scheduling it
+        return Li(Span(cal.fmt_time(x.start), cls="cal-w-time"),
+                  A(x.title, href=ride_href(ctx, x), cls=f"cal-w-title cal-w-ride{' is-offer' if kind == 'rideoffer' else ''}", data_block=x.id),
+                  Span("Simulated", cls="cal-w-booked cal-w-sim") if kind == "ride" else "")
+    return Li(Span(cal.fmt_time(x.start), cls="cal-w-time"),
+              Span(x.title, cls=f"cal-w-title{' is-booked' if getattr(x, 'locked', False) else ''}"),
+              Span("Booked", cls="cal-w-booked") if getattr(x, "locked", False) else "")
+
+
 def whole_view(dates, ctx):
     rows = []
     for i, d in enumerate(dates):
-        items = sorted([*(b for b in ctx["blocks"] if b.day == i), *(a for a in ctx["acts"] if a.day == i)], key=lambda x: x.start)
+        items = sorted([*(b for b in ctx["blocks"] if b.day == i), *(a for a in ctx["acts"] if a.day == i), *(o for o in ctx["offers"] if o.day == i)], key=lambda x: x.start)
         tint = DAY_TINTS[i % 5]
-        lines = [Li(Span(cal.fmt_time(x.start), cls="cal-w-time"),
-                    Span(x.title, cls=f"cal-w-title{' is-booked' if getattr(x, 'locked', False) else ''}"),
-                    Span("Booked", cls="cal-w-booked") if getattr(x, "locked", False) else "") for x in items]
+        lines = [_whole_line(x, ctx) for x in items]
         rows.append(Div(
             A(Span(str(d.day), cls=f"cal-num ink-{tint}"), Span(*day_label(i, d), cls="cal-dow"), Span(" · open in day by day", cls="sr-only"), href=cal_url(ctx["demo"], view="days", w=i),
               cls=f"cal-w-head fill-{tint}-tint"),
@@ -384,7 +415,8 @@ def calendar_page(session, demo="", view="", form=None, notice=None, new="", und
     view = pick_view(view, bool(form or new or undo or w or voice is not None or voiced))
     t = cal.trip(demo, b)
     dates = cal.days(t)
-    blocks = cal.booked_blocks(b, t)
+    blocks = cal.booked_blocks(b, t) + cal.ride_blocks(session, b, t)
+    offers = cal.ride_offers(session, b, t)
     acts = cal.activities(session, demo)
     notes = cal.notes(session, demo)
     counts = {}
@@ -400,7 +432,7 @@ def calendar_page(session, demo="", view="", form=None, notice=None, new="", und
         placed = vo.preview(session, night, demo)
         drafts = [x for x in placed if not x.hard and x.state != "have"]
         vpanel = voice_ui.panel(session, demo, dates, question, placed, night, bool(voice.get("hear")), voice.get("error", ""))
-    ctx = dict(drafts=drafts, fresh=set(voiced["ids"]) if voiced else set(), demo=demo, view=view, t=t, dates=dates, blocks=blocks, acts=acts, notes=notes, note_counts=counts, gs=gs, back=back, new=new, next=cal.next_id(session, demo),
+    ctx = dict(booking=b, offers=offers, drafts=drafts, fresh=set(voiced["ids"]) if voiced else set(), demo=demo, view=view, t=t, dates=dates, blocks=blocks, acts=acts, notes=notes, note_counts=counts, gs=gs, back=back, new=new, next=cal.next_id(session, demo),
                friends=friends, live=bool(live and any(a.id == new and a.by for a in acts)))
     if view == "whole":
         surface = whole_view(dates, ctx)
