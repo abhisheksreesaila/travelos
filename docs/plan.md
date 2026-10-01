@@ -109,13 +109,13 @@ Needs: F-014, F-022
 - [x] the creator confirms it's accurate and gives permission to publish before Submit
 - [x] submit; it appears in the community hub and links back to the creator's channel; the whole flow fits in under 5 minutes
 
-## F-024 Talk to plan: scripted voice fills the calendar [doing]
+## F-024 Talk to plan: scripted voice fills the calendar [done]
 Captain said go 2026-09-30 ("do the missing sections, I want to see it fully").
 Brief: docs/briefs/voice.md (approved 2026-09-30) · Design: docs/design/canvas/Voice.dc.html · Needs: F-019, F-021 (reuses the apply-preview)
-- [ ] mic on the trip calendar plays a scripted sentence word by word with a listening animation; no audio captured
-- [ ] the sentence becomes 3–4 draft plans previewed in the right empty slots around bookings and friends' items
-- [ ] one quick question chip resolves an unclear bit (which Friday, what time) and updates the preview
-- [ ] Apply drops them in with the pop-in, and trip notes log it; reduced motion shows everything instantly
+- [x] mic on the trip calendar plays a scripted sentence word by word with a listening animation; no audio captured
+- [x] the sentence becomes 3–4 draft plans previewed in the right empty slots around bookings and friends' items
+- [x] one quick question chip resolves an unclear bit (which Friday, what time) and updates the preview
+- [x] Apply drops them in with the pop-in, and trip notes log it; reduced motion shows everything instantly
 
 # Flight and stay details
 
@@ -204,3 +204,8 @@ Needs: F-030
 - [ ] weather, news and events panes follow the trip's dates (today they're fixed to Oct 16–20)
 - [ ] at 1000 wide the stay card's "Pool" and "Pet friendly" tags are clipped; wrap them (docs/lessons.md)
 - [ ] the landing door and feature pop-in (`scale(1.06)`) briefly causes sideways scroll at 1000, 800 and 390; contain it
+
+## F-037 Small follow-ups from the F-024 review [todo]
+- [ ] after a voice or fork Apply, focus lands on the toast's Undo button for keyboard users
+- [ ] voice: don't move focus to the first chip if the traveler has already moved focus elsewhere
+- [ ] the calendar's opening "Booked!" note reads naturally for every lane mix (today: "Your flights and The Tidewater (…) and Breeze Rentals rental are on the calendar")
