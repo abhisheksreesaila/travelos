@@ -100,3 +100,19 @@ def test_resharing_updates_an_old_snapshot_and_an_old_one_stays_until_then(clien
     post_share(client)                                                    # sharing again rebuilds it with the private wording
     fresh = community.get(slug)["snapshot"]
     assert "Skylark Air 214" not in fresh and "FRI, OCT 16" not in fresh and "Flight to LAX" in fresh
+
+
+def test_a_car_pickup_at_a_street_or_hotel_address_shows_only_the_area_or_code(client):
+    street = TEMPLATE.replace("pickup: LAX, 2026-10-16 10:00", "pickup: The Example Hotel, 2026-10-16 10:00")
+    imported(client, street)
+    post_share(client)
+    seen = public_text(client, slug_of(client))
+    assert "Example Hotel" not in seen
+    assert "Pick up Hertz car · Los Angeles" in seen and "Drop off Hertz car · LAX" in seen
+
+
+def test_public_place_is_a_code_or_an_area_never_a_street():
+    assert share._public_place("LAX", "Los Angeles") == "LAX"
+    assert share._public_place("123 Ocean Ave, Santa Monica, CA 90401", "Los Angeles") == "Santa Monica"
+    assert share._public_place("123 Ocean Ave", "Los Angeles") == "Los Angeles"
+    assert share._public_place("The Example Hotel", "Los Angeles") == "Los Angeles"

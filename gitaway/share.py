@@ -1,9 +1,11 @@
 """Share the traveler's trip as a scrapbook itinerary (F-022).
 
 One tap turns the booked trip and its calendar activities into a public itinerary page at `/trips/<slug>` and a card in
-the community hub. Only the days, the plans, their times and places, and the traveler's tags are shared. Private notes,
+the community hub. Only the day numbers, the plans, their times and places, and the traveler's tags are shared. Private notes,
 friends and their names, invites, prices and the booking reference never reach the page: it is rebuilt from the
-bookings and activities each time and has no field for them. Flight and stay names do show; they help the next traveler.
+bookings and activities each time and has no field for them. Nor does anything that says when and where the family is
+away (F-046): no flight numbers, no calendar dates (Day 1...N), the hotel only as its area ("a hotel in Santa Monica"),
+and a car's pickup or drop-off only as an airport code or an area, never a street or hotel address.
 
 The shared trip is stored as a snapshot in the community database (see gitaway.community): the page is built from the
 traveler's calendar when they publish, frozen, and served to anyone from the stored copy. Sharing again updates it.
@@ -70,6 +72,14 @@ def area_of(address, fallback) -> str:
     return parts[-1] if len(parts) > 1 or (parts and not re.match(r"\d", parts[0])) else fallback
 
 
+def _public_place(where, fallback) -> str:
+    """A car pickup or drop-off place for a public page: an airport code ("LAX"), else the area of an address, never a street or hotel."""
+    code = re.match(r"^([A-Z]{3})\b", where.strip())
+    if code:
+        return code.group(1)
+    return area_of(where, fallback) if "," in where else fallback  # a bare name could be a hotel's
+
+
 def _hotel_phrase(block, b, t) -> str:
     """"a hotel in Santa Monica": a shared page names the area, never the hotel. An imported trip's area is the city in the hotel's address
     (each of several hotels has its own); a demo trip's is the catalog stay's area."""
@@ -91,6 +101,9 @@ def _stop(block, b, t) -> Stop:
         title = "Flight home" if block.id.startswith("b-back") else f"Flight to {dest}" if dest and block.id.startswith("b-out") else "Connecting flight"
     elif block.icon == "bed":
         title = f"{'Check in' if title.startswith('Check in') else 'Check out'} · {_hotel_phrase(block, b, t)}"
+    elif block.icon == "car" and " · " in title:
+        head, where = title.split(" · ", 1)
+        title = f"{head} · {_public_place(where, t.destination_name)}"
     return Stop(cal.fmt_time(block.at), title, block.icon or "star", "sun", booked=True)
 
 

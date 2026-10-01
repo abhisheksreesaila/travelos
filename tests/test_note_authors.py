@@ -43,3 +43,24 @@ def test_the_first_note_is_from_whoever_booked_the_trip(pair):
     first_ari, first_sam = metas(ari.get("/calendar?view=days").text)[0], metas(sam.get("/calendar?view=days").text)[0]
     assert first_ari == ("You · whole trip", "Ari Rivera")
     assert first_sam == ("Ari Rivera · whole trip", "Ari Rivera")
+
+
+def test_a_removed_members_note_reads_former_member(pair):
+    from gitaway import members
+    from tests.test_signin import tid
+    ari, sam = pair
+    sam.post("/calendar/notes", data={"id": "n1", "text": "Sam was here"})
+    from tests.test_members import tenant
+    assert members.remove(tenant(ari), tid("ari"), tid(next(m["email"] for m in members.members(tenant(ari)) if m["email"] != "ari.rivera@example.com"))) is None
+    assert ("Former member · whole trip", "Former member") in metas(ari.get("/calendar?view=days").text)
+
+
+def test_an_author_name_is_escaped_in_the_feed():
+    from gitaway import session as ses
+    from gitaway.pages import calendar as page
+    from gitaway.tripcal import Note
+    from fasthtml.common import to_xml
+    evil = ses.Friend("<script>alert(1)</script>", "XS", "sun")
+    me = ses.Traveler("me", "Me", "ME", "", "sky")
+    html = to_xml(page.note_entry(Note("n1", "hi", None, "", "u2"), {}, me, {}, family={"u2": evil}))
+    assert "<script>" not in html and "&lt;script&gt;alert(1)&lt;/script&gt; · whole trip" in html
