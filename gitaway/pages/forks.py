@@ -24,7 +24,7 @@ from gitaway.icons import icon
 from gitaway.layout import page
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/forks.css"),)
-HH = 3  # rem per calendar hour (calendar.css --hh)
+HH = 2.75  # rem per calendar hour (forks.css --hh): a little tighter than the calendar so a 6 AM start still fits 1280x800
 DAY_TINTS = ("sun", "mint", "grape", "sky", "bubble")
 _IDS = re.compile(r"^a\d{1,4}$")
 _KEY = re.compile(r"^d\d{1,3}s\d{1,3}$")

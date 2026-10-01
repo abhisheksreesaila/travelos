@@ -7,7 +7,7 @@
 .fk-card-head { display: flex; align-items: center; min-height: 2.25rem; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
 .fk-card-title { font-family: var(--font-display); font-weight: 800; font-size: 1.375rem; }
 .fk-link { font-weight: 800; font-size: max(var(--text-min), 0.875rem); }
-.fk-grid { --hh: 3rem; --w: 5; display: flex; min-width: 0; }
+.fk-grid { --hh: 2.75rem; --w: 5; display: flex; min-width: 0; }
 .fk-gutter { flex: 0 0 3rem; }
 /* The days sit in a scroller that shows a window of --w days (5 desktop, 3 tablet); a 3-night trip fills it, a 20-day trip scrolls */
 .fk-scroll { flex: 1; min-width: 0; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; scroll-behavior: smooth; overscroll-behavior-x: contain; }
