@@ -1,5 +1,5 @@
 # GitAway on Railway (docs/setup.md "Deploy to Railway"). Railway builds this file automatically.
-FROM ghcr.io/prefix-dev/pixi:latest AS build
+FROM ghcr.io/prefix-dev/pixi:0.80.0 AS build
 WORKDIR /app
 # Dependencies first, so a code-only change reuses this layer. The "prod" environment leaves out pytest and playwright.
 COPY pixi.toml pixi.lock ./

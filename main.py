@@ -59,4 +59,7 @@ def make_app():
 app = make_app()
 
 if __name__ == "__main__":
-    serve(port=int(os.getenv("PORT", "5002")), reload_dirs=[str(ROOT)], **auth.server_options())  # the working directory is the data folder, so say where the code is
+    opts = auth.server_options()
+    if opts["reload"]:
+        opts["reload_dirs"] = [str(ROOT)]  # the working directory is the data folder, so say where the code is
+    serve(port=int(os.getenv("PORT", "5002")), **opts)

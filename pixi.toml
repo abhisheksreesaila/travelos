@@ -24,7 +24,6 @@ prod = { features = [], solve-group = "default" }
 
 [tasks]
 dev = "python main.py"
-start = "python /app/main.py"  # production: the Dockerfile runs this from the data volume
 test = "pytest -q -p no:randomly"
 test-random = "pytest -q -p randomly"
 test-browser-install = "playwright install chromium"  # once per machine: downloads the browser the browser suite drives

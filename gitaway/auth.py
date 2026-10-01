@@ -63,8 +63,8 @@ def check_production_settings():
 
 
 def session_options() -> dict:
-    """FastHTML's session cookie settings: about 30 days, re-issued (so sliding) on every response that has a session,
-    https-only in production (browsers still accept it on localhost over http in development)."""
+    """FastHTML's session cookie settings: about 30 days. Starlette re-issues the cookie only when the session changes,
+    so the sliding comes from session.slide, not from here; https-only in production (browsers still accept it on localhost over http in development)."""
     return {"max_age": SESSION_DAYS * 24 * 3600, "sess_https_only": production()}
 
 
