@@ -400,6 +400,13 @@ def flight_detail(o, picked, viewing, state, chosen=False):
     return art
 
 
+def _waiting_book():
+    """Book with nothing to book: no link at all (A would add href="#"), marked disabled."""
+    a = A("Book", id="ws-book", cls="btn btn-ink ws-book", aria_label="Pick something to book first", aria_disabled="true")
+    a.attrs.pop("href", None)
+    return a
+
+
 def ledger(q, trip):
     """The slim ledger line for the top bar (F-031): one icon and price per picked lane (and the rides estimate) = total, plus Book.
     Tapping the total opens the popover with the itemized lines and the best-value hint. Every figure is rendered from the catalog;
@@ -410,7 +417,7 @@ def ledger(q, trip):
         Span(delta_text(q), cls=f"ws-chip {'fill-mint' if q.above_cheapest_cents == 0 and not q.empty else 'fill-sun-tint'}", id="ws-delta", aria_live="polite"),
         cls="ws-pop", id="ws-pop", role="dialog", aria_label="Cost breakdown", tabindex="-1", hidden=True,
     )
-    book = (A("Book", id="ws-book", cls="btn btn-ink ws-book", aria_label="Pick something to book first", aria_disabled="true") if q.empty else
+    book = (_waiting_book() if q.empty else
             A("Book", href=book_href(q.flight_id, q.stay_id, q.car_id, q.stay, q.trip, q.flight), id="ws-book", cls="btn btn-ink ws-book", aria_label="Book this trip"))
     return Section(
         Span(*line_items(q), cls="ws-lines"),

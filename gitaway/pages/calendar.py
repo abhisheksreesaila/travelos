@@ -225,8 +225,10 @@ def note_entry(n, acts_by_id, who, people, fresh=False):
 def booked_note(b):
     """The first note on the feed: what was booked, in words that fit any mix of flight, stay and car."""
     stay, pick, car = cal.stay_of(b), cal.stay_pick_of(b), cal.car_of(b)
-    what = " and ".join(([f"flights"] if cal.flight_of(b) else []) + ([f"{stay.name} ({pick.summary})"] if stay else []) + ([car.name] if car else [])) or "trip"
-    return f"Booked! Your {what} {'are' if ' and ' in what or what == 'flights' else 'is'} on the calendar. Add anything you want to do."
+    flights = cal.flight_of(b) is not None
+    parts = (["flights"] if flights else []) + ([f"{stay.name} ({pick.summary})" if flights else f"stay at {stay.name} ({pick.summary})"] if stay else []) + ([f"{car.name} rental"] if car else [])
+    what = " and ".join(parts) or "trip"
+    return f"Booked! Your {what} {'are' if len(parts) > 1 or what == 'flights' else 'is'} on the calendar. Add anything you want to do."
 
 
 def notes_panel(ctx, who, b):
