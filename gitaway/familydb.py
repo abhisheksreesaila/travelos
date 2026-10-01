@@ -187,7 +187,8 @@ def now() -> str:
 
 def ensure_schema(db, tenant_id):
     """Create any missing family tables and indexes, then apply pending migrations. Once per tenant per process."""
-    _OPENED.add(tenant_id)
+    with _LOCK:
+        _OPENED.add(tenant_id)
     if tenant_id in _READY:
         return
     with _LOCK:
@@ -211,9 +212,9 @@ def forget_schema_cache():
 def take_opened() -> set:
     """The tenant ids opened since the last call, and forget them. Tests wipe only these families (tests/wipe.py): a family nobody
     opened has no rows to clear. Unlike the schema cache, this survives `forget_schema_cache`."""
+    global _OPENED
     with _LOCK:
-        opened = set(_OPENED)
-        _OPENED.clear()
+        opened, _OPENED = _OPENED, set()
     return opened
 
 
