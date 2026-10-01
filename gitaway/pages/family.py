@@ -1,11 +1,11 @@
 """Your family space (F-039): who is signed in and which family tenant they belong to. The one page that needs sign-in.
 
-F-040 builds the trips on top of this. It uses require_tenant_access, so it also proves the family database opens.
+The trips are on top of this (F-040). It opens the family database through gitaway.familydb, so it also proves it opens.
 """
 
 from fasthtml.common import Div, H1, Link, P
-from fh_saas.utils_auth import require_tenant_access
 
+from gitaway import familydb
 from gitaway.layout import page
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/family.css"),)
@@ -16,7 +16,7 @@ def register(app):
     @app.get("/family")
     def family(request):
         user = request.state.user
-        require_tenant_access(request).conn.close()  # opens the family database (and checks membership)
+        familydb.family_db(request).conn.close()  # opens the family database (checks membership, makes sure the tables exist)
         return page("Your family", Div(
             H1("Your family"),
             P(f"Signed in as {user['email']}.", id="fam-who"),

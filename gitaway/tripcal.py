@@ -1,28 +1,28 @@
-"""The trip calendar model (F-019): booked blocks, the traveler's activities, clashes and notes.
+"""The trip calendar model (F-019): booked blocks, activities, clashes, notes.
 
-Pure functions over a session dict (like gitaway.session), so the HTTP layer and tests share one seam.
+Public functions take the signed-in person's session, like gitaway.session, and read and write the family database
+(gitaway.familydb). Callers never see which store is underneath: activities, notes and friends belong to the trip the person
+has open, so every member of the family sees and edits the same calendar.
 
 Booked blocks (outbound flight, check in, check out, return flight) are derived from the booking and the catalog each
-time and are never stored. Activities and notes live in the signed cookie session:
+time and are never stored. Activities and notes are rows (tables activities, notes, cal_state):
 
-    session["cal"] = {"<traveler id>[~long]": {"q": last id number, "a": [activity], "n": [note], "x": last deleted}}
-    activity = {"i": "a3", "d": day index, "s": start minute, "e": end minute, "t": title, "k": kind, "b": author or absent}
-    note     = {"i": "n4", "t": text, "a": activity id or absent, "b": author or absent}
+    activity = Activity(id "a3", day index, start minute, end minute, title, kind, by: the friend who added it, "" for family)
+    note     = Note(id "n4", text, act: activity id or None, by)
 
-"b" is the friend who wrote it ("Mom"); absent means the traveler. "l" in the state is set once the scripted live add
-(F-020) has happened or been skipped, so it never repeats.
-
-A cookie holds about 4 KB, so BUDGET caps the session and the calendar refuses more with a friendly message.
-Times are minutes after midnight. Ids are stable; adding with an id that already exists is a no-op (a refresh).
+`cal_state` holds, per trip, the last id number handed out and whether the scripted live add (F-020) has happened. The scope
+"long" (?demo=long) is a second, separate calendar on the same trip. Times are minutes after midnight. Ids are stable;
+adding with an id that already exists is a no-op (a refresh). Every change is one transaction on its own rows (see familydb).
 """
 
-import json
 import re
 from dataclasses import dataclass, replace
 from datetime import date, timedelta
 from urllib.parse import parse_qs
 
-from gitaway import catalog, context, rides as ride_model, session as ses
+from fh_saas.utils_sql import delete_record, insert_only, update_record
+
+from gitaway import catalog, context, familydb, rides as ride_model, session as ses
 
 LONG = "long"  # the hidden ?demo=long fixture: a 20-day trip that crosses into November
 LONG_RETURN = date(2026, 11, 4)
@@ -35,7 +35,6 @@ CHECK_OUT = 11 * 60
 STAY_LEN = 90
 MAX_TITLE = 40
 MAX_NOTE = 140
-BUDGET = ses.BUDGET
 LIVE_FRIEND = "Mom"
 LIVE_TITLE = "Travel Town steam trains"
 LIVE_DAY = 2  # Sunday on the sample trip
@@ -290,72 +289,98 @@ def grid_start(blocks):
     return earliest // 60 * 60
 
 
-# ---- state ---------------------------------------------------------------------------------------------------------
+# ---- state (the family database) -----------------------------------------------------------------------------------
 
-def _seed():
-    rows = [(1, 10, 13, "Griffith Observatory", "culture"), (2, 9, 11, "Venice Canals stroll", "outdoors"),
-            (4, 13, 15, "Tacos at Mariscos La Ola", "food"), (7, 10, 12, "Getty Center", "culture"),
-            (9, 14, 16, "Bike the Strand", "outdoors"), (12, 11, 13, "Hollywood sign hike", "outdoors"),
-            (15, 18, 20, "Dinner on the pier", "food"), (18, 9, 11, "Farmers Market brunch", "fun")]
-    return {"q": len(rows), "a": [{"i": f"a{n}", "d": d, "s": s * 60, "e": e * 60, "t": t, "k": k}
-                                  for n, (d, s, e, t, k) in enumerate(rows, 1)], "n": [], "x": None}
-
-
-def _key(session, demo):
-    t = ses.current_traveler(session)
-    return f"{t.id}~{LONG}" if t and demo == LONG else (t.id if t else None)
+MAX_ACTIVITIES = 400  # per trip: a sane ceiling so one family cannot grow its database without end
+MAX_NOTES = 800
+MAX_DEAD = 20  # deleted ids remembered per trip, so a stale re-post of one is refused
+_SEED_ROWS = [(1, 10, 13, "Griffith Observatory", "culture"), (2, 9, 11, "Venice Canals stroll", "outdoors"),
+              (4, 13, 15, "Tacos at Mariscos La Ola", "food"), (7, 10, 12, "Getty Center", "culture"),
+              (9, 14, 16, "Bike the Strand", "outdoors"), (12, 11, 13, "Hollywood sign hike", "outdoors"),
+              (15, 18, 20, "Dinner on the pier", "food"), (18, 9, 11, "Farmers Market brunch", "fun")]
 
 
-def _load(session, demo):
-    key = _key(session, demo)
-    found = (session.get("cal") or {}).get(key)
-    if found is not None:
-        return json.loads(json.dumps(found))
-    return _seed() if demo == LONG else {"q": 0, "a": [], "n": [], "x": None}
+def _scope(demo):
+    return LONG if demo == LONG else ""
 
 
-def _save(session, demo, state, enforce=True):
-    old = session.get("cal")
-    session["cal"] = {**(old or {}), _key(session, demo): state}
-    if enforce and len(json.dumps(dict(session))) > BUDGET:
-        if old is None:
-            session.pop("cal", None)
-        else:
-            session["cal"] = old
-        raise CalendarError("This demo calendar is full. Delete something to make room.")
-
-
-def _context(session, demo):
-    if not ses.current_traveler(session):
-        raise CalendarError("Sign in to use the trip calendar.")
-    b = ses.booking(session)
-    if not b:
-        raise CalendarError("Book a trip first, then plan the gaps.")
-    t = trip(demo, b)
-    return b, t, booked_blocks(b, t)
-
-
-def _act(d):
-    return Activity(d["i"], d["d"], d["s"], d["e"], d["t"], d["k"], d.get("b", ""))
-
-
-def _note(d):
-    return Note(d["i"], d["t"], d.get("a"), d.get("b", ""))
+def _pk(trip_id, scope, id_):
+    return f"{trip_id}~{scope}~{id_}"
 
 
 def _number(id_):
     return int(id_[1:])
 
 
+def _act(r):
+    return Activity(r["act_id"], r["day"], r["start_min"], r["end_min"], r["title"], r["kind"], r["author"] or "")
+
+
+def _note(r):
+    return Note(r["note_id"], r["body"], r["act_id"], r["author"] or "")
+
+
+def _begin(db, trip_id, scope, who=""):
+    """Start a write on one trip's calendar: take the write lock, make sure its counters exist, and return them.
+
+    The first time the hidden ?demo=long fixture is opened for a trip, its eight sample activities are made here. Call it
+    first inside `familydb.transaction`; everything read afterwards is current until the commit, so no write is lost.
+    """
+    pk = f"{trip_id}~{scope}"
+    seed = _SEED_ROWS if scope == LONG else []
+    made = familydb.run(db, "INSERT OR IGNORE INTO cal_state (pk, trip_id, scope, q, live) VALUES (:pk, :t, :s, :q, 0)", pk=pk, t=trip_id, s=scope, q=len(seed))
+    if made and seed:
+        at = familydb.now()
+        for n, (d, s, e, title, kind) in enumerate(seed, 1):
+            insert_only(db, "activities", {"pk": _pk(trip_id, scope, f"a{n}"), "trip_id": trip_id, "scope": scope, "act_id": f"a{n}", "seq": n, "day": d,
+                                           "start_min": s * 60, "end_min": e * 60, "title": title, "kind": kind, "author": "", "added_by": who,
+                                           "gone": 0, "created_at": at}, ["pk"], auto_commit=False)
+    return familydb.row(db, "SELECT * FROM cal_state WHERE pk = :pk", pk=pk)
+
+
+def _peek(db, trip_id, scope):
+    """The counters of a trip's calendar for reading (the ?demo=long fixture is made the first time it is seen)."""
+    st = familydb.row(db, "SELECT * FROM cal_state WHERE pk = :pk", pk=f"{trip_id}~{scope}")
+    if st is None and scope == LONG:
+        with familydb.transaction(db):
+            st = _begin(db, trip_id, scope)
+    return st or {"q": 0, "live": 0}
+
+
+def _live_acts(db, trip_id, scope):
+    return familydb.rows(db, "SELECT * FROM activities WHERE trip_id = :t AND scope = :s AND gone = 0", t=trip_id, s=scope)
+
+
+def _need(fam, demo):
+    """(booking, trip, booked blocks) for the open trip, or CalendarError when signed out or nothing is booked."""
+    if fam is None:
+        raise CalendarError("Sign in to use the trip calendar.")
+    b = fam.booking()
+    if not b:
+        raise CalendarError("Book a trip first, then plan the gaps.")
+    t = trip(demo, b)
+    return b, t, booked_blocks(b, t)
+
+
+def _bump(db, trip_id, scope, q):
+    familydb.run(db, "UPDATE cal_state SET q = MAX(q, :q) WHERE pk = :pk", q=q, pk=f"{trip_id}~{scope}")
+
+
 def next_id(session, demo=""):
     """The number the next new activity or note will use (as text). Forms carry it so a refresh cannot duplicate."""
-    return str(_load(session, demo)["q"] + 1)
+    with ses.family(session) as fam:
+        if not fam or not fam.trip_id:
+            return "1"
+        return str(_peek(fam.db, fam.trip_id, _scope(demo))["q"] + 1)
 
 
 def activities(session, demo=""):
-    if not ses.current_traveler(session):
-        return []
-    return sorted((_act(a) for a in _load(session, demo)["a"]), key=lambda a: (a.day, a.start, a.id))
+    with ses.family(session) as fam:
+        if not fam or not fam.trip_id:
+            return []
+        scope = _scope(demo)
+        _peek(fam.db, fam.trip_id, scope)
+        return sorted((_act(r) for r in _live_acts(fam.db, fam.trip_id, scope)), key=lambda a: (a.day, a.start, a.id))
 
 
 def get_activity(session, id_, demo=""):
@@ -363,14 +388,20 @@ def get_activity(session, id_, demo=""):
 
 
 def notes(session, demo=""):
-    if not ses.current_traveler(session):
-        return []
-    return [_note(n) for n in _load(session, demo)["n"]]
+    with ses.family(session) as fam:
+        if not fam or not fam.trip_id:
+            return []
+        scope = _scope(demo)
+        _peek(fam.db, fam.trip_id, scope)
+        return [_note(r) for r in familydb.rows(fam.db, "SELECT * FROM notes WHERE trip_id = :t AND scope = :s AND gone = 0 ORDER BY seq, rowid", t=fam.trip_id, s=scope)]
 
 
 def last_deleted(session, demo=""):
-    x = _load(session, demo)["x"] if ses.current_traveler(session) else None
-    return _act(x["a"]) if x else None
+    with ses.family(session) as fam:
+        if not fam or not fam.trip_id:
+            return None
+        gone = familydb.row(fam.db, "SELECT * FROM activities WHERE trip_id = :t AND scope = :s AND gone = 1", t=fam.trip_id, s=_scope(demo))
+        return _act(gone) if gone else None
 
 
 # ---- validation ----------------------------------------------------------------------------------------------------
@@ -388,10 +419,9 @@ def parse_time(value, what):
     return int(m.group(1)) * 60 + int(m.group(2))
 
 
-def _clean(session, demo, *, day, start, end, title, kind, old=None):
-    """Validate an activity. `old` is the (day, start, end) it already has: when unchanged, the flight window is not re-checked,
-    so renaming an older item (or a friend's) still works."""
-    _, t, blocks = _context(session, demo)
+def _clean(t, blocks, *, day, start, end, title, kind, old=None):
+    """Validate an activity on trip `t` with booked `blocks`. `old` is the (day, start, end) it already has: when unchanged, the
+    flight window is not re-checked, so renaming an older item (or a friend's) still works."""
     title = " ".join((title or "").split())
     if not title:
         raise CalendarError("Give it a title.")
@@ -427,73 +457,112 @@ def _valid_id(id_):
         raise CalendarError("That id is not valid.")
 
 
+FULL = "This trip already has a lot planned. Delete something to make room."
+
+
+def _insert_activity(db, fam, scope, id_, seq, d, s, e, title, kind, author=""):
+    insert_only(db, "activities", {"pk": _pk(fam.trip_id, scope, id_), "trip_id": fam.trip_id, "scope": scope, "act_id": id_, "seq": seq, "day": d,
+                                   "start_min": s, "end_min": e, "title": title, "kind": kind, "author": author, "added_by": fam.traveler.id,
+                                   "gone": 0, "created_at": familydb.now()}, ["pk"], auto_commit=False)
+
+
+def _insert_note(db, fam, scope, id_, seq, text, act=None, author=""):
+    insert_only(db, "notes", {"pk": _pk(fam.trip_id, scope, id_), "trip_id": fam.trip_id, "scope": scope, "note_id": id_, "seq": seq, "body": text,
+                              "act_id": act, "author": author, "added_by": fam.traveler.id, "gone": 0, "created_at": familydb.now()}, ["pk"], auto_commit=False)
+
+
 # ---- activities ----------------------------------------------------------------------------------------------------
 
 def add_activity(session, *, day, start, end, title, kind="fun", demo="", id=None):
     """Add an activity. An `id` that already exists returns the existing one, so a refreshed form adds nothing."""
     _valid_id(id)
-    day, s, e, title = _clean(session, demo, day=day, start=start, end=end, title=title, kind=kind)
-    state = _load(session, demo)
-    if id and id[0] != "a":
-        raise CalendarError("That id is not valid.")
-    if id and id in state.get("g", []):
-        return None  # deleted a moment ago: a re-posted add must not revive it (Undo does)
-    same = next((a for a in state["a"] if a["i"] == id), None) if id else None
-    if same and (same["d"], same["s"], same["e"], same["t"], same["k"]) == (day, s, e, title, kind):
-        return _act(same)  # the same form posted again: a refresh
-    if same:
-        id = None  # another tab took this id: give this one a fresh id rather than dropping it
-    id = id or f"a{state['q'] + 1}"
-    state["q"] = max(state["q"], _number(id))
-    row = {"i": id, "d": day, "s": s, "e": e, "t": title, "k": kind}
-    state["a"].append(row)
-    _save(session, demo, state)
-    return _act(row)
+    with ses.family(session) as fam:
+        _, t, blocks = _need(fam, demo)
+        day, s, e, title = _clean(t, blocks, day=day, start=start, end=end, title=title, kind=kind)
+        if id and id[0] != "a":
+            raise CalendarError("That id is not valid.")
+        db, scope = fam.db, _scope(demo)
+        with familydb.transaction(db):
+            st = _begin(db, fam.trip_id, scope, fam.traveler.id)
+            same = familydb.row(db, "SELECT * FROM activities WHERE trip_id = :t AND scope = :s AND act_id = :i", t=fam.trip_id, s=scope, i=id) if id else None
+            if same and same["gone"]:
+                return None  # deleted a moment ago: a re-posted add must not revive it (Undo does)
+            if not same and id and id in (st.get("dead") or "").split(","):
+                return None  # deleted and removed from the file: a stale re-post must not bring it back
+            if same and (same["day"], same["start_min"], same["end_min"], same["title"], same["kind"]) == (day, s, e, title, kind):
+                return _act(same)  # the same form posted again: a refresh
+            if same:
+                id = None  # another tab took this id: give this one a fresh id rather than dropping it
+            if len(_live_acts(db, fam.trip_id, scope)) >= MAX_ACTIVITIES:
+                raise CalendarError(FULL)
+            id = id or f"a{st['q'] + 1}"
+            _insert_activity(db, fam, scope, id, _number(id), day, s, e, title, kind)
+            _bump(db, fam.trip_id, scope, _number(id))
+            return Activity(id, day, s, e, title, kind)
 
 
 def update_activity(session, id_, *, day=None, start=None, end=None, title=None, kind=None, demo=""):
-    """Edit or move an activity; fields left as None keep their value. Booked blocks are locked."""
+    """Edit or move an activity; fields left as None keep their value (and are not written, so two people changing different
+    fields of the same item both keep their change). Booked blocks are locked."""
     if id_.startswith("b-"):
         raise CalendarError("Booked items are locked. Change your booking to move them.")
-    state = _load(session, demo)
-    row = next((a for a in state["a"] if a["i"] == id_), None)
-    if row is None:
-        raise CalendarError("That activity is gone.")
-    day, s, e, title = _clean(
-        session, demo, day=row["d"] if day is None else day, start=row["s"] if start is None else start,
-        end=row["e"] if end is None else end, title=row["t"] if title is None else title, kind=row["k"] if kind is None else kind,
-        old=(row["d"], row["s"], row["e"]))
-    row.update(d=day, s=s, e=e, t=title, k=kind or row["k"])
-    _save(session, demo, state)
-    return _act(row)
+    with ses.family(session) as fam:
+        _, t, blocks = _need(fam, demo)
+        db, scope = fam.db, _scope(demo)
+        with familydb.transaction(db):
+            _begin(db, fam.trip_id, scope, fam.traveler.id)
+            row = familydb.row(db, "SELECT * FROM activities WHERE trip_id = :t AND scope = :s AND act_id = :i AND gone = 0", t=fam.trip_id, s=scope, i=id_)
+            if row is None:
+                raise CalendarError("That activity is gone.")
+            d, s, e, name = _clean(
+                t, blocks, day=row["day"] if day is None else day, start=row["start_min"] if start is None else start,
+                end=row["end_min"] if end is None else end, title=row["title"] if title is None else title, kind=row["kind"] if kind is None else kind,
+                old=(row["day"], row["start_min"], row["end_min"]))
+            changes = {}
+            if (day, start, end) != (None, None, None):
+                changes.update(day=d, start_min=s, end_min=e)
+            if title is not None:
+                changes["title"] = name
+            if kind:
+                changes["kind"] = kind
+            update_record(db, "activities", row["pk"], "pk", auto_commit=False, **changes)
+            return _act({**row, "day": d, "start_min": s, "end_min": e, "title": name if title is not None else row["title"], "kind": kind or row["kind"]})
 
 
 def delete_activity(session, id_, demo=""):
     """Delete an activity and its notes, keeping them for one undo. None when there is nothing to delete."""
-    state = _load(session, demo)
-    row = next((a for a in state["a"] if a["i"] == id_), None)
-    if row is None:
-        return None
-    state["a"] = [a for a in state["a"] if a["i"] != id_]
-    state["x"] = {"a": row, "n": [n for n in state["n"] if n.get("a") == id_]}
-    state["g"] = [*state.get("g", []), id_][-6:]
-    state["n"] = [n for n in state["n"] if n.get("a") != id_]
-    _save(session, demo, state, enforce=False)
-    return _act(row)
+    with ses.family(session) as fam:
+        if not fam or not fam.trip_id:
+            return None
+        db, scope = fam.db, _scope(demo)
+        with familydb.transaction(db):
+            st = _begin(db, fam.trip_id, scope, fam.traveler.id)
+            row = familydb.row(db, "SELECT * FROM activities WHERE trip_id = :t AND scope = :s AND act_id = :i AND gone = 0", t=fam.trip_id, s=scope, i=id_)
+            if row is None:
+                return None
+            familydb.run(db, "DELETE FROM notes WHERE trip_id = :t AND scope = :s AND gone = 1", t=fam.trip_id, s=scope)  # the earlier one can no longer be undone: remove it for good
+            familydb.run(db, "DELETE FROM activities WHERE trip_id = :t AND scope = :s AND gone = 1", t=fam.trip_id, s=scope)
+            familydb.run(db, "UPDATE activities SET gone = 1 WHERE pk = :pk", pk=row["pk"])
+            dead = [d for d in (st.get("dead") or "").split(",") if d] + [id_]
+            familydb.run(db, "UPDATE cal_state SET dead = :d WHERE pk = :pk", d=",".join(dead[-MAX_DEAD:]), pk=f"{fam.trip_id}~{scope}")
+            familydb.run(db, "UPDATE notes SET gone = 1 WHERE trip_id = :t AND scope = :s AND act_id = :i AND gone = 0", t=fam.trip_id, s=scope, i=id_)
+            return _act(row)
 
 
 def undo_delete(session, id_, demo=""):
     """Put back the activity `id_` if it is the one last deleted."""
-    state = _load(session, demo)
-    x = state["x"]
-    if not x or x["a"]["i"] != id_ or any(a["i"] == id_ for a in state["a"]):
-        return None
-    state["a"].append(x["a"])
-    state["n"] = sorted([*state["n"], *x["n"]], key=lambda n: _number(n["i"]))
-    state["x"] = None
-    state["g"] = [g for g in state.get("g", []) if g != id_]
-    _save(session, demo, state)
-    return _act(x["a"])
+    with ses.family(session) as fam:
+        if not fam or not fam.trip_id:
+            return None
+        db, scope = fam.db, _scope(demo)
+        with familydb.transaction(db):
+            _begin(db, fam.trip_id, scope, fam.traveler.id)
+            row = familydb.row(db, "SELECT * FROM activities WHERE trip_id = :t AND scope = :s AND act_id = :i AND gone = 1", t=fam.trip_id, s=scope, i=id_)
+            if row is None:
+                return None
+            familydb.run(db, "UPDATE activities SET gone = 0 WHERE pk = :pk", pk=row["pk"])
+            familydb.run(db, "UPDATE notes SET gone = 0 WHERE trip_id = :t AND scope = :s AND act_id = :i AND gone = 1", t=fam.trip_id, s=scope, i=id_)
+            return _act(row)
 
 
 # ---- notes ---------------------------------------------------------------------------------------------------------
@@ -501,42 +570,52 @@ def undo_delete(session, id_, demo=""):
 def add_note(session, text, act=None, demo="", id=None):
     """Add a note to the trip, or to one activity. An existing `id` is a refresh and adds nothing."""
     _valid_id(id)
-    _context(session, demo)
-    text = " ".join((text or "").split())
-    if not text:
-        raise CalendarError("Write something first.")
-    if len(text) > MAX_NOTE:
-        raise CalendarError(f"Keep notes to {MAX_NOTE} characters.")
-    state = _load(session, demo)
-    if id and id[0] != "n":
-        raise CalendarError("That id is not valid.")
-    same = next((n for n in state["n"] if n["i"] == id), None) if id else None
-    if same and (same["t"], same.get("a")) == (text, act):
-        return _note(same)
-    if act and not any(a["i"] == act for a in state["a"]):
-        raise CalendarError("That activity is gone.")
-    if same:
-        id = None
-    id = id or f"n{state['q'] + 1}"
-    state["q"] = max(state["q"], _number(id))
-    row = {"i": id, "t": text, **({"a": act} if act else {})}
-    state["n"].append(row)
-    _save(session, demo, state)
-    return _note(row)
+    with ses.family(session) as fam:
+        _need(fam, demo)
+        text = " ".join((text or "").split())
+        if not text:
+            raise CalendarError("Write something first.")
+        if len(text) > MAX_NOTE:
+            raise CalendarError(f"Keep notes to {MAX_NOTE} characters.")
+        if id and id[0] != "n":
+            raise CalendarError("That id is not valid.")
+        db, scope = fam.db, _scope(demo)
+        with familydb.transaction(db):
+            st = _begin(db, fam.trip_id, scope, fam.traveler.id)
+            same = familydb.row(db, "SELECT * FROM notes WHERE trip_id = :t AND scope = :s AND note_id = :i", t=fam.trip_id, s=scope, i=id) if id else None
+            if same and (same["body"], same["act_id"]) == (text, act):
+                return _note(same)
+            if act and not familydb.row(db, "SELECT 1 AS x FROM activities WHERE trip_id = :t AND scope = :s AND act_id = :i AND gone = 0", t=fam.trip_id, s=scope, i=act):
+                raise CalendarError("That activity is gone.")
+            if same:
+                id = None
+            if familydb.row(db, "SELECT COUNT(*) AS n FROM notes WHERE trip_id = :t AND scope = :s AND gone = 0", t=fam.trip_id, s=scope)["n"] >= MAX_NOTES:
+                raise CalendarError(FULL)
+            id = id or f"n{st['q'] + 1}"
+            _insert_note(db, fam, scope, id, _number(id), text, act or None)
+            _bump(db, fam.trip_id, scope, _number(id))
+            return Note(id, text, act or None)
 
 
 # ---- scripted liveness (F-020) -------------------------------------------------------------------------------------
 
+def _live_friend(db, trip_id):
+    """The name the scripted friend is invited under on this trip, or None."""
+    found = familydb.row(db, "SELECT name FROM friends WHERE trip_id = :t AND lower(name) = :n", t=trip_id, n=LIVE_FRIEND.casefold())
+    return found["name"] if found else None
+
+
 def live_pending(session, demo=""):
     """True while Mom is invited and her scripted add has not happened (or been skipped) for this trip."""
-    if not (ses.current_traveler(session) and ses.booking(session) and ses.friend_named(session, LIVE_FRIEND)):
-        return False
-    return not _load(session, demo).get("l")
+    with ses.family(session) as fam:
+        if not fam or not fam.trip_id or not fam.booking() or not _live_friend(fam.db, fam.trip_id):
+            return False
+        return not _peek(fam.db, fam.trip_id, _scope(demo))["live"]
 
 
-def _free_slot(blocks, state, day, gs):
+def _free_slot(blocks, acts, day, gs):
     """The first start for LIVE_LEN minutes with nothing on it: 10:00, then later mornings, then earlier ones."""
-    taken = [(b.start, b.end) for b in blocks if b.day == day] + [(a["s"], a["e"]) for a in state["a"] if a["d"] == day]
+    taken = [(b.start, b.end) for b in blocks if b.day == day] + [(a.start, a.end) for a in acts if a.day == day]
     lo, hi = day_window(blocks, day)  # not before you land, not too close to the flight home
     later = range(LIVE_START, 12 * 60 + 1, 30)
     earlier = range(LIVE_START - 30, gs - 1, -30)
@@ -547,38 +626,32 @@ def _free_slot(blocks, state, day, gs):
 
 
 def live_add(session, demo=""):
-    """Mom adds her activity and a note, once per traveler per trip. Returns the new Activity, or None.
+    """Mom adds her activity and a note, once per trip. Returns the new Activity, or None.
 
     None means nothing was added: she is not invited, it already happened, or no free slot was left (then the script is
     marked done so it does not try again). Posting it again is a no-op, so a reload never duplicates it.
     """
-    if not live_pending(session, demo):
-        return None
-    _, t, blocks = _context(session, demo)
-    friend = ses.friend_named(session, LIVE_FRIEND)
-    state = _load(session, demo)
-    day = min(LIVE_DAY, (t.return_ - t.depart).days)  # a short trip has no third day: use its last
-    start = _free_slot(blocks, state, day, grid_start(blocks))
-    state["l"] = 1
-    if start is None:
-        # Unenforced on purpose: the only growth is the one-byte-ish "l": 1 flag (about 6 bytes of JSON), and refusing it
-        # would make the script retry on every load. The same bound applies to the fallback below.
-        _save(session, demo, state, enforce=False)
-        return None
-    n = state["q"]
-    act = {"i": f"a{n + 1}", "d": day, "s": start, "e": start + LIVE_LEN, "t": LIVE_TITLE, "k": "fun", "b": friend.name}
-    state["a"].append(act)
-    state["n"].append({"i": f"n{n + 2}", "t": LIVE_NOTE.replace("on Sunday", f"on {(t.depart + timedelta(days=day)):%A}"), "a": act["i"], "b": friend.name})
-    state["q"] = n + 2
-    try:
-        _save(session, demo, state)
-    except CalendarError:
-        state["a"].pop()
-        state["n"].pop()
-        state["q"] = n
-        _save(session, demo, state, enforce=False)
-        return None
-    return _act(act)
+    with ses.family(session) as fam:
+        if not fam or not fam.trip_id or not fam.booking():
+            return None
+        _, t, blocks = _need(fam, demo)
+        db, scope = fam.db, _scope(demo)
+        with familydb.transaction(db):
+            st = _begin(db, fam.trip_id, scope, fam.traveler.id)
+            name = _live_friend(db, fam.trip_id)
+            if st["live"] or not name:
+                return None
+            day = min(LIVE_DAY, (t.return_ - t.depart).days)  # a short trip has no third day: use its last
+            start = _free_slot(blocks, [_act(r) for r in _live_acts(db, fam.trip_id, scope)], day, grid_start(blocks))
+            familydb.run(db, "UPDATE cal_state SET live = 1 WHERE pk = :pk", pk=f"{fam.trip_id}~{scope}")
+            if start is None:
+                return None
+            n = st["q"]
+            note = LIVE_NOTE.replace("on Sunday", f"on {(t.depart + timedelta(days=day)):%A}")
+            _insert_activity(db, fam, scope, f"a{n + 1}", n + 1, day, start, start + LIVE_LEN, LIVE_TITLE, "fun", name)
+            _insert_note(db, fam, scope, f"n{n + 2}", n + 2, note, f"a{n + 1}", name)
+            _bump(db, fam.trip_id, scope, n + 2)
+            return Activity(f"a{n + 1}", day, start, start + LIVE_LEN, LIVE_TITLE, "fun", name)
 
 
 # ---- applying a fork (F-021) ---------------------------------------------------------------------------------------
@@ -686,8 +759,11 @@ def place_plans(plans, blocks, acts, n_days, gs):
 
 def preview_plans(session, plans, demo=""):
     """The Placements of `plans` on the signed-in traveler's calendar. Raises CalendarError when signed out or nothing is booked."""
-    _, t, blocks = _context(session, demo)
-    return place_plans(plans, blocks, activities(session, demo), len(days(t)), grid_start(blocks))
+    with ses.family(session) as fam:
+        _, t, blocks = _need(fam, demo)
+        scope = _scope(demo)
+        _peek(fam.db, fam.trip_id, scope)
+        return place_plans(plans, blocks, [_act(r) for r in _live_acts(fam.db, fam.trip_id, scope)], len(days(t)), grid_start(blocks))
 
 
 def preview_fork(session, itinerary, demo=""):
@@ -700,29 +776,34 @@ def apply_plans(session, plans, picks, by="", note=None, demo=""):
 
     `note` is an optional function of the plans actually added that returns a trip note's text (or None). Hard clashes and
     plans already on the calendar are skipped, so posting the same picks again adds nothing, and then no note is added either.
-    All or nothing: a full cookie raises CalendarError and leaves the calendar as it was.
+    All or nothing: one transaction, so a refusal leaves the calendar as it was.
     """
     wanted = set(picks)
-    chosen = [x.plan for x in preview_plans(session, plans, demo) if x.plan.key in wanted and not x.hard and x.state != "have"]
-    state = _load(session, demo)
-    added, n = [], state["q"]
-    for p in chosen:
-        n += 1
-        row = {"i": f"a{n}", "d": p.day, "s": p.start, "e": p.end, "t": p.title, "k": p.kind}
-        if by.strip():
-            row["b"] = " ".join(by.split())[:MAX_BY]
-        state["a"].append(row)
-        added.append(_act(row))
-    text = " ".join((note(chosen) if note and chosen else "").split())[:MAX_NOTE]
-    made = None
-    if text:
-        n += 1
-        made = {"i": f"n{n}", "t": text}
-        state["n"].append(made)
-    if added:
-        state["q"] = n
-        _save(session, demo, state)
-    return added, _note(made) if made and added else None
+    with ses.family(session) as fam:
+        _, t, blocks = _need(fam, demo)
+        db, scope = fam.db, _scope(demo)
+        with familydb.transaction(db):
+            st = _begin(db, fam.trip_id, scope, fam.traveler.id)
+            acts = _live_acts(db, fam.trip_id, scope)
+            placed = place_plans(plans, blocks, [_act(r) for r in acts], len(days(t)), grid_start(blocks))
+            chosen = [x.plan for x in placed if x.plan.key in wanted and not x.hard and x.state != "have"]
+            if len(acts) + len(chosen) > MAX_ACTIVITIES:
+                raise CalendarError(FULL)
+            added, n = [], st["q"]
+            author = " ".join(by.split())[:MAX_BY] if by.strip() else ""
+            for p in chosen:
+                n += 1
+                _insert_activity(db, fam, scope, f"a{n}", n, p.day, p.start, p.end, p.title, p.kind, author)
+                added.append(Activity(f"a{n}", p.day, p.start, p.end, p.title, p.kind, author))
+            text = " ".join((note(chosen) if note and chosen else "").split())[:MAX_NOTE]
+            made = None
+            if text and added:
+                n += 1
+                _insert_note(db, fam, scope, f"n{n}", n, text)
+                made = Note(f"n{n}", text)
+            if added:
+                _bump(db, fam.trip_id, scope, n)
+            return added, made
 
 
 def apply_fork(session, itinerary, picks, by="", demo=""):
@@ -739,17 +820,20 @@ def remove_plans(session, plans, ids, by="", note_id=None, note_prefix="", demo=
     author = " ".join(by.split())[:MAX_BY]
     mine = {(p.day, p.start, p.title) for p in plans}
     gone = set(ids)
-    state = _load(session, demo)
-    drop = {a["i"] for a in state["a"] if a["i"] in gone and a.get("b", "") == author and (a["d"], a["s"], a["t"]) in mine}
-    if drop:
-        state["a"] = [a for a in state["a"] if a["i"] not in drop]
-        state["n"] = [n for n in state["n"] if n.get("a") not in drop]
-    if note_id and note_prefix:
-        state["n"] = [n for n in state["n"] if not (n["i"] == note_id and not n.get("a") and n["t"].startswith(note_prefix))]
-    if not drop and state["n"] == _load(session, demo)["n"]:
-        return 0
-    _save(session, demo, state, enforce=False)
-    return len(drop)
+    with ses.family(session) as fam:
+        if not fam or not fam.trip_id:
+            return 0
+        db, scope = fam.db, _scope(demo)
+        with familydb.transaction(db):
+            _begin(db, fam.trip_id, scope, fam.traveler.id)
+            drop = [r for r in _live_acts(db, fam.trip_id, scope) if r["act_id"] in gone and (r["author"] or "") == author and (r["day"], r["start_min"], r["title"]) in mine]
+            for r in drop:
+                familydb.run(db, "DELETE FROM notes WHERE trip_id = :t AND scope = :s AND act_id = :i", t=fam.trip_id, s=scope, i=r["act_id"])
+                delete_record(db, "activities", r["pk"], "pk", auto_commit=False)
+            if note_id and note_prefix:
+                familydb.run(db, "DELETE FROM notes WHERE trip_id = :t AND scope = :s AND note_id = :i AND act_id IS NULL AND body LIKE :p ESCAPE '\\'",
+                             t=fam.trip_id, s=scope, i=note_id, p=note_prefix.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%")
+            return len(drop)
 
 
 def remove_applied(session, itinerary, ids, by="", demo=""):

@@ -11,7 +11,7 @@ from fasthtml.common import Beforeware, FastHTML, serve
 from fh_saas.utils_auth import create_auth_beforeware
 from fh_saas.utils_log import configure_logging
 
-from gitaway import auth, session
+from gitaway import auth, hostdb, session
 from gitaway.layout import HEAD
 from gitaway.pages import register_all
 from gitaway.pages.family import PRIVATE
@@ -25,6 +25,17 @@ auth.configure_storage()  # SQLite under GITAWAY_DATA_DIR; this also makes it th
 _private = "|".join(p.rstrip("/") for p in PRIVATE)
 auth_before = create_auth_beforeware(redirect_path="/signin?next=%2Ffamily", setup_tenant_db=False, session_cache=False,
                                      skip=[rf"(?!(?:{_private})(?:/.*)?$).*"])
+
+_check_auth = auth_before.f
+
+
+def _locked_auth(req, sess):
+    """fh-saas's membership check uses its one shared host connection: take the host lock around it (gitaway.hostdb)."""
+    with hostdb.locked():
+        return _check_auth(req, sess)
+
+
+auth_before = Beforeware(_locked_auth, skip=auth_before.skip)
 
 app = FastHTML(before=[auth_before, Beforeware(session.bind, skip=[r"/assets/.*"])], hdrs=HEAD, title="GitAway", htmlkw={"lang": "en"},
                secret_key=os.getenv("GITAWAY_SECRET_KEY") or None, key_fname=str(ROOT / ".sesskey"))

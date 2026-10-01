@@ -12,5 +12,11 @@ Found while building GitAway on fh-saas 0.9.14 and checked against the installed
 | 6 | Low | `handle_logout` clears the whole session and always goes to `/login`. | Add `keep=` and `redirect_to=`. |
 | 7 | Low | `db_host.timestamp()` uses the deprecated `datetime.utcnow()`. | Use `datetime.now(timezone.utc)`. |
 | 8 | Low (from the skill notes) | Exported cells import `nbdev.showdoc`, so a clean install needs nbdev; `DB_TYPE` defaults also differ between modules. | Move `show_doc` imports out of exported cells, and make the `DB_TYPE` default the same everywhere. |
+| 9 | **High: unsafe under load** | `HostDatabase` is one shared SQLAlchemy connection used by `verify_membership`, `get_user_membership` and the beforeware from every threadpool request. | Open a short connection per call (or lock inside `HostDatabase`). |
+| 10 | Medium | `get_user_membership` returns the first active membership: a person in two families cannot choose. | Add `tenant_id=` and an ordering, and a session helper to switch tenant. |
+| 11 | Medium | `utils_sql.upsert` on SQLite is `INSERT OR REPLACE`: it ignores `conflict_cols` and `update_cols` and replaces the whole row. | Use `INSERT ... ON CONFLICT DO UPDATE` on SQLite 3.24+. |
+| 12 | Medium | `with_transaction` does not take a write lock, so read-then-write is stale-prone on SQLite. | `with_transaction(db, immediate=True)` issuing `BEGIN IMMEDIATE`. |
+| 13 | Low | No way to set WAL or a busy timeout on tenant engines. | SQLite engine options in settings. |
+| 14 | Low | `utils_migrate` has no "all tenants" runner; `apply_migrations` uses `utcnow()` and `db.execute`. | `migrate_all_tenants(host_db, dir, dry_run=True)`. |
 
 Doing #1 first would let GitAway drop its invite workaround in F-043.

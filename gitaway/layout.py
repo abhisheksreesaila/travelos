@@ -8,6 +8,17 @@ from fasthtml.common import A, Button, Div, Footer, Form, Header, Link, Main, Me
 from gitaway import session
 from gitaway.icons import icon
 
+
+def trip_field():
+    """A hidden `trip` input naming the trip this page was drawn for, so a form posted later from a stale tab changes that trip only.
+
+    It reads the trip the request resolved, which happens when the family is first opened (any `ses.booking`, `cal.activities` ...): call
+    it only while rendering a page that has already done so. Before that it returns "", and tests/test_family_storage.py fails a page whose
+    post forms lack it."""
+    from fasthtml.common import Input
+    t = session.open_trip_id()
+    return Input(type="hidden", name="trip", value=t) if t else ""
+
 FONTS = (
     "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800"
     "&family=Figtree:wght@400;500;600;700;800&family=Caveat:wght@600;700&display=swap"

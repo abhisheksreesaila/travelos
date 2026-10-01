@@ -11,7 +11,7 @@ from fasthtml.common import A, Button, Div, Form, H2, Input, Label, Link, P, Scr
 from fh_saas.utils_auth import handle_login_request, handle_logout, handle_oauth_callback
 from starlette.responses import RedirectResponse, Response
 
-from gitaway import auth, session as ses
+from gitaway import auth, hostdb, session as ses
 from gitaway.layout import clear_site_data, page
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/signin.css"), Script(src="/assets/js/signin.js", defer=True))
@@ -122,7 +122,8 @@ def register(app):
         try:
             if error or not code or not state:  # Google sends ?error=access_denied (no code) when the person cancels
                 raise ValueError("no code")
-            handle_oauth_callback(code, state, request, session)  # its own redirect (/dashboard) is not ours
+            with hostdb.locked():  # fh-saas's callback uses the one shared host connection
+                handle_oauth_callback(code, state, request, session)  # its own redirect (/dashboard) is not ours
         except Exception:
             for key in ("oauth_state", "login_next", "login_intent"):
                 session.pop(key, None)
@@ -145,10 +146,8 @@ def register(app):
     @app.route("/logout", methods=["GET", "POST"])
     @app.post("/signout")  # the header form posts here (F-044's pwa.js clears its page cache on that form); same handler
     def logout(session):
-        """Sign out through fh-saas's handle_logout, which clears the session. Until F-040 moves trip state into SQLite
-        the cookie still holds some (calendar, forks), so everything that is not sign-in state is put back."""
-        keep = {k: v for k, v in session.items() if k not in ses.AUTH_KEYS}
+        """Sign out through fh-saas's handle_logout, which clears the session. The cookie holds only the sign-in (and a creator draft,
+        which belongs to the person who made it, not the next one at this browser); trips, calendar, forks and saves stay in the
+        family's database for the next sign-in (F-040, F-041)."""
         handle_logout(session)
-        keep.pop("cr", None)  # the creator draft belongs to the person who made it, not the next one at this browser
-        session.update(keep)
         return clear_site_data(RedirectResponse("/", status_code=303))

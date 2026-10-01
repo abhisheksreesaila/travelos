@@ -7,7 +7,7 @@ import pytest
 
 from gitaway import catalog, community
 from tests.test_calendar import FORM, add, book
-from tests.test_signin import session_data, sign_in, tid
+from tests.test_signin import session_data, sign_in, stored_booking, tid
 
 
 def slug_of(client, who="ari"):
@@ -38,7 +38,7 @@ def test_the_calendar_share_button_is_one_tap(client):
 def test_one_tap_publishes_and_confirms_with_a_link_to_the_page(client):
     book(client)
     r = share(client)
-    assert r.status_code == 303 and r.headers["location"] == "/share/done"
+    assert r.status_code == 303 and r.headers["location"].startswith("/share/done")
     slug = slug_of(client)
     html = client.get("/share/done").text
     assert f'href="/trips/{slug}"' in html and 'href="/discover"' in html
@@ -73,7 +73,7 @@ def test_the_page_never_has_notes_friends_invites_or_money(client):
     html = client.get(f"/trips/{slug_of(client)}").text.split("<main")[1].split("</main>")[0]  # the page, not the viewer's own header
     for private in ["hunter2", "family treasure", "Grandma Zelda", "Ari Rivera", "/join/", "GA-", "gitaway.example"]:
         assert private not in html, private
-    b = session_data(client)["bookings"][tid("ari")]
+    b = stored_booking()
     assert catalog.money(b["total_cents"]) not in html and "$" not in html
 
 
@@ -133,7 +133,7 @@ def test_the_shared_trip_shows_in_the_hub_and_filters(client):
 
 def test_the_booking_reference_never_appears_anywhere_it_could_leak(client):
     book(client)
-    ref = session_data(client)["bookings"][tid("ari")]["id"]
+    ref = stored_booking()["id"]
     r = share(client)
     pages = [r.headers["location"], client.get("/share/done").text, client.get("/share").text, client.get("/discover").text,
              client.get(f"/trips/{slug_of(client)}").text, client.get("/calendar").text]

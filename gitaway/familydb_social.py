@@ -3,15 +3,13 @@
 Each family's tenant database holds the trips it forked and the ones it saved with the heart, as slugs of published trips
 (see gitaway.community) or of the sample trips. They belong to the family: everyone planning together sees the same list.
 
-F-040 owns the family database layout. Until its `FAMILY_TABLES` list is merged this module makes its own two tables the
-first time a family's database is touched; to hook it up, add `SOCIAL_TABLES` to that list and drop `family_db`'s register call.
+The tables are part of the family database (gitaway.familydb appends SOCIAL_TABLES to its FAMILY_TABLES), so there is one entry
+point: `familydb.using` checks the person is a member of the family named in the session and makes sure every family table exists.
 """
 
 from contextlib import contextmanager
 from datetime import datetime, timezone
 
-from fh_saas.db_tenant import get_or_create_tenant_db
-from fh_saas.utils_db import register_tables
 from sqlalchemy import text
 
 
@@ -28,24 +26,14 @@ class Save:
 
 
 SOCIAL_TABLES = [(Fork, "forks", "slug"), (Save, "saves", "slug")]
-_ready: set = set()
 
 
 @contextmanager
 def family_db(session):
-    """The signed-in person's family database, with the social tables made, closed when the block ends. None without a family."""
-    tenant = (session or {}).get("tenant_id")
-    if not tenant:
-        yield None
-        return
-    db = get_or_create_tenant_db(tenant)
-    try:
-        if tenant not in _ready:
-            register_tables(db, SOCIAL_TABLES)
-            _ready.add(tenant)
+    """The signed-in person's family database, closed when the block ends. None without a family (or when not a member of it)."""
+    from gitaway import familydb  # here, not at the top: familydb adds SOCIAL_TABLES to its list when it loads
+    with familydb.using(session) as db:
         yield db
-    finally:
-        db.conn.close()
 
 
 def slugs(session, table) -> list:
@@ -74,17 +62,3 @@ def remove(session, table, slug) -> bool:
         r = db.conn.execute(text(f"DELETE FROM {table} WHERE slug = :s"), {"s": slug})
         db.conn.commit()
         return r.rowcount > 0
-
-
-def known_tenants() -> list:
-    """The families whose social tables this process has made. For tests."""
-    return sorted(_ready)
-
-
-def clear_all(tenant_ids) -> None:
-    """Empty both tables for these families. For tests."""
-    for t in tenant_ids:
-        with family_db({"tenant_id": t}) as db:
-            for table in ("forks", "saves"):
-                db.conn.execute(text(f"DELETE FROM {table}"))
-            db.conn.commit()

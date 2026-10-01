@@ -28,9 +28,12 @@ def _fixed_today(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
-def _clean_community_and_family_social():
-    """Every test starts with an empty community and no forks or saves (the data folder is shared by the whole run)."""
+def _empty_community_and_families():
+    """Every test starts empty: one data folder is shared by the whole run, so rows must not leak between tests.
+
+    The community database is emptied. In every family database the family tables are cleared (trips, bookings, calendar, friends,
+    rides, forks and saves: everything in familydb.FAMILY_TABLES); people and memberships stay, they are the host database's.
+    """
     yield
-    from gitaway import community, familydb_social
-    community.clear()
-    familydb_social.clear_all(familydb_social.known_tenants())
+    from tests.wipe import wipe_everything
+    wipe_everything()

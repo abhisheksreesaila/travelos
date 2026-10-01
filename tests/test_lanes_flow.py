@@ -9,7 +9,7 @@ import pytest
 
 from gitaway import catalog, session as ses, tripcal as cal
 from gitaway.pages import plan
-from tests.test_signin import session_data, sign_in, tid
+from tests.test_signin import person, session_data, sign_in, stored_booking, tid
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -82,7 +82,7 @@ def test_the_old_no_car_link_means_no_car(client):
 def test_remembered_plan_keeps_the_skips(client):
     sign_in(client)
     client.get(f"/plan?{STAY_ONLY}")
-    assert session_data(client)["plan"][tid("ari")] == "f=none&h=h1&c=none"
+    assert ses.remembered_plan(person()) == "f=none&h=h1&c=none"
     assert "f=none&amp;h=h1&amp;c=none" in client.get("/start").text
 
 
@@ -275,15 +275,15 @@ def test_booking_with_nothing_picked_is_refused_and_books_nothing(client):
     sign_in(client)
     r = post(client, NOTHING)
     assert r.status_code == 200 and "Pick at least one thing to book" in r.text
-    assert "bookings" not in session_data(client)
+    assert stored_booking() is None
     with pytest.raises(ses.BookingError):
-        ses.book({"user_id": "ari"}, catalog.quote(None, None, None))
+        ses.book(person(), catalog.quote(None, None, None))
 
 
 def test_a_stay_only_booking_stores_nulls_and_what_is_charged(client):
     sign_in(client)
     assert post(client, STAY_ONLY).headers["location"] == "/booked"
-    b = session_data(client)["bookings"][tid("ari")]
+    b = stored_booking()
     assert b["flight"] is None and b["car"] is None and b["stay"] == "h1" and b["total_cents"] == 154_000
     assert "rides" not in b and "fare" not in b and "bags" not in b
 
@@ -291,7 +291,7 @@ def test_a_stay_only_booking_stores_nulls_and_what_is_charged(client):
 def test_a_no_car_booking_charges_flight_and_stay_only(client):
     sign_in(client)
     post(client, NO_CAR)
-    b = session_data(client)["bookings"][tid("ari")]
+    b = stored_booking()
     assert b["car"] is None and b["total_cents"] == 123_600 + 154_000
     assert cal.rides_of(b).cents == catalog.quote("f1", "h1", None).rides.cents
 
@@ -311,32 +311,30 @@ def test_every_mix_books_and_celebrates_in_matching_words(client):
 def test_booking_ids_differ_per_mix_and_paying_a_mix_twice_is_one_booking(client):
     sign_in(client)
     post(client, STAY_ONLY)
-    first = session_data(client)["bookings"][tid("ari")]
+    first = stored_booking()
     post(client, STAY_ONLY)
-    assert session_data(client)["bookings"][tid("ari")] == first
+    assert stored_booking() == first
     post(client, SAMPLE)
-    assert session_data(client)["bookings"][tid("ari")]["id"] != first["id"]
+    assert stored_booking()["id"] != first["id"]
     assert ses.booking_id("ari", "f1", "h1", "c1") == "GA-" + __import__("hashlib").sha256(b"ari|f1|h1|c1").hexdigest()[:8].upper()  # the default id is unchanged
 
 
-def test_a_full_cookie_refuses_a_mix_booking_with_the_friendly_message(client, monkeypatch):
+def test_a_family_with_too_many_trips_is_refused_for_a_mix_booking_too(client, monkeypatch):
     sign_in(client)
     post(client, SAMPLE)
-    before = session_data(client)["bookings"][tid("ari")]
-    monkeypatch.setattr("gitaway.session.BUDGET", 10)
+    before = stored_booking()
+    monkeypatch.setattr("gitaway.familydb.MAX_TRIPS", 1)
     r = post(client, STAY_ONLY)
-    assert r.status_code == 200 and "can&#x27;t hold another booking" in r.text.replace("can't", "can&#x27;t")
-    assert session_data(client)["bookings"][tid("ari")] == before
+    assert r.status_code == 200 and "1 trips already" in r.text
+    assert stored_booking() == before
 
 
-def test_the_skip_booking_record_stays_inside_the_cookie_budget(client):
-    sign_in(client)
-    post(client, STAY_ONLY)
-    s = session_data(client)
-    assert len(json.dumps(s)) < ses.BUDGET
+def test_the_fullest_booking_round_trips_through_the_family_database(client):
+    s = person()
     big = catalog.quote("f1", "h1", "c1", catalog.stay_pick("h1", "cq1ok1fs1", "bflcpk"), flight=catalog.flight_pick("f1", "xl", "8"))
-    ses.book(s2 := {"user_id": "ari"}, big)
-    assert len(json.dumps(s2)) <= ses.BUDGET
+    made = ses.book(s, big)
+    assert ses.booking(s) == made and made["rooms"] == big.stay.rooms_code and made["add"] == big.stay.add_code
+    assert made["fare"] == big.flight.fare_code and made["bags"] == big.flight.bags_code and made["total_cents"] == big.paid_cents
 
 
 def test_an_old_booking_with_the_retired_no_car_id_still_reads(client):
@@ -390,8 +388,7 @@ def test_a_car_only_booking_still_opens_a_calendar_with_no_booked_blocks(client)
 # ---- the flight window (F-021) does not apply without a flight ------------------------------------------------------
 
 def day_blocks(url_picks):
-    s = {}
-    ses.sign_in(s, "ari")
+    s = person()
     ses.book(s, catalog.quote(*url_picks))
     b = ses.booking(s)
     return b, cal.booked_blocks(b, cal.trip_of(b))

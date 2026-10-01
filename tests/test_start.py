@@ -3,8 +3,8 @@ import html as htmllib
 import re
 from urllib.parse import quote
 
-from gitaway import catalog
-from tests.test_signin import session_data, sign_in
+from gitaway import catalog, session as ses
+from tests.test_signin import person, session_data, sign_in, stored_booking
 
 GOOD = {"go": "1", "from": "SFO", "to": "la", "d": "2026-10-16", "r": "2026-10-20", "a": "2", "n": "2", "k1": "4", "k2": "7"}
 
@@ -189,10 +189,10 @@ def test_the_continue_card_is_per_traveler_and_not_for_the_signed_out(client):
     assert "Continue" not in client.get("/start").text
 
 
-def test_remembered_picks_stay_small_in_the_cookie(client):
+def test_remembered_picks_live_in_the_family_database_not_the_cookie(client):
     sign_in(client)
     client.get("/plan?f=f2&h=h3&c=c1&rooms=cy1&add=bf&d=2026-10-16&r=2026-10-19&a=3&k=4,7")
-    assert len(str(session_data(client)["plan"])) < 120
+    assert "plan" not in session_data(client) and "f=f2&h=h3&c=c1" in ses.remembered_plan(person())
 
 
 def test_a_wrong_kid_age_marks_that_kid_not_the_first(client):
@@ -214,11 +214,11 @@ def test_past_departures_are_refused_friendlily(client):
     assert r.status_code == 422 and "today or later" in r.text
 
 
-def test_remembering_picks_never_overflows_the_cookie():
-    from gitaway import session as ses
-    s = {"user_id": "ari", "pad": "x" * (ses.BUDGET - 20)}
+def test_remembering_picks_ignores_an_absurdly_long_query():
+    s = person()
     ses.remember_plan(s, "f=f2&h=h3&c=c1&d=2026-10-16&r=2026-10-19&a=3&k=4,7")
-    assert "plan" not in s
+    ses.remember_plan(s, "x=" + "y" * ses.MAX_PLAN_QUERY)
+    assert ses.remembered_plan(s) == "f=f2&h=h3&c=c1&d=2026-10-16&r=2026-10-19&a=3&k=4,7"
 
 
 def test_the_sample_dates_are_accepted_even_after_they_pass(client, monkeypatch):
@@ -234,5 +234,5 @@ def test_a_stale_pay_link_cannot_book_the_past(client, monkeypatch):
     monkeypatch.setattr(catalog, "today", lambda: date(2026, 11, 1))
     r = client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1", "d": "2026-10-17", "r": "2026-10-20", "a": "2"}, follow_redirects=False)
     assert r.headers["location"].startswith("/start?go=1")
-    assert "bookings" not in session_data(client)
+    assert stored_booking() is None
     assert "today or later" in client.get(r.headers["location"]).text

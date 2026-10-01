@@ -16,7 +16,7 @@ from gitaway import community, hub, session as ses, share
 from gitaway.icons import icon
 from gitaway.itinerary_view import _icon
 from gitaway.itineraries import PIER
-from gitaway.layout import page
+from gitaway.layout import page, trip_field
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/share.css"),)
 THEMES = (("sunset", "Sunset"), ("pacific", "Pacific"))
@@ -57,7 +57,7 @@ def options_page(session):
     theme = mine["theme"] if mine else "sunset"
     return page("Share your trip", Section(
         Form(
-            preview(session, tags),
+            trip_field(), preview(session, tags),
             Div(H1("Share your trip with everyone"),
                 Div(Div(Span("Shared", cls="sh-k"), Span("Days, plans, times and places, flight and stay names, and your tags", cls="sh-v"), cls="sh-box sh-box-yes"),
                     Div(Span("Stays private", cls="sh-k"), Span("Notes, who's coming, the booking reference and what you paid", cls="sh-v"), cls="sh-box"), cls="sh-boxes"),
@@ -80,7 +80,7 @@ def done_page(session, entry):
                 Div(A(icon("share", 20), "View your trip page", href=f"/trips/{slug}", cls="btn btn-primary"),
                     A("See it in the hub", href="/discover", cls="btn"), cls="sh-actions"),
                 A("Change tags or theme", href="/share", cls="sh-link"),
-                Form(Input(type="hidden", name="slug", value=slug), Button("Unpublish", type="submit", cls="btn btn-sm"), action="/share/unpublish", method="post"),
+                Form(trip_field(), Input(type="hidden", name="slug", value=slug), Button("Unpublish", type="submit", cls="btn btn-sm"), action="/share/unpublish", method="post"),
                 cls="sh-form"),
             cls="sh-dialog card sh-done", role="status"), cls="sh ga-wrap"), head=HEAD)
 
@@ -105,7 +105,7 @@ def register(app):
             share.publish(session, tags=(tag or []) if custom else None, theme=theme if custom else None)
         except hub.HubError as e:
             return sorry(str(e), 409)
-        return RedirectResponse("/share/done", status_code=303)
+        return RedirectResponse(f"/share/done?trip={ses.open_trip_id()}" if ses.open_trip_id() else "/share/done", status_code=303)
 
     @app.post("/share/unpublish")
     def unpublish(session, slug: str = ""):

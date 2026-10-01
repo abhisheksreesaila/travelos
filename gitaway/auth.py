@@ -9,6 +9,7 @@ import os
 import re
 from pathlib import Path
 
+from gitaway import hostdb
 from fh_saas.db_host import HostDatabase  # importing fh_saas also loads .env into the environment
 from fh_saas.utils_auth import (
     create_or_get_global_user, create_user_session, get_user_membership, provision_new_user,
@@ -71,28 +72,23 @@ def clean_email(value) -> str | None:
 
 def sign_in_dev(session, email):
     """Sign `email` in exactly as the Google callback would, creating the person and their family tenant on first use."""
-    host_db = HostDatabase.from_env()
-    user = create_or_get_global_user(host_db, f"dev:{email}", email, {"email": email})
-    membership = get_user_membership(host_db, user.id)
-    if not membership:
-        provision_new_user(host_db, user)
+    with hostdb.locked():
+        host_db = HostDatabase.from_env()
+        user = create_or_get_global_user(host_db, f"dev:{email}", email, {"email": email})
         membership = get_user_membership(host_db, user.id)
-    create_user_session(session, user, membership)
+        if not membership:
+            provision_new_user(host_db, user)
+            membership = get_user_membership(host_db, user.id)
+        create_user_session(session, user, membership)
     return user
 
 
 def make_room(session):
-    """After a sign-in, make sure the new auth keys did not push the cookie past session.BUDGET.
+    """After a sign-in, make sure the new auth keys left the cookie room for a creator draft, the only other thing it holds (session.BUDGET).
 
-    The cookie may still hold trip state from someone who signed out at this browser. If it is now too big, that
-    state (every entry not keyed by the signed-in person, and the creator draft) goes; the signed-in person's own stays.
+    Trips, the calendar, forks and the rest live in the family database; the draft is the one thing that may still be in the cookie from
+    someone who signed out at this browser. If the cookie is now too big, the draft goes.
     """
     from gitaway import session as ses
-    if len(json.dumps(dict(session))) <= ses.BUDGET:
-        return
-    me = session.get("user_id")
-    for key, value in list(session.items()):
-        if key not in ses.AUTH_KEYS and key != "cr" and isinstance(value, dict):
-            session[key] = {k: v for k, v in value.items() if k == me}
     if len(json.dumps(dict(session))) > ses.BUDGET:
         session.pop("cr", None)

@@ -169,6 +169,7 @@
         if ($(".cal-modal", r) || drag || (a && r.contains(a) && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName))) { liveTimer = setTimeout(fire, 2000); return; }
         const data = { view: r.dataset.view };
         if (r.dataset.demo) data.demo = r.dataset.demo;
+        if (r.dataset.trip) data.trip = r.dataset.trip;
         await doSwap("/calendar/live", { method: "POST", body: new URLSearchParams(data) });
       }).catch(() => {});
     }, 4000);
@@ -355,6 +356,7 @@
     const root = app();
     const data = { day: b.dataset.day, start: hhmm(+b.dataset.start), end: hhmm(+b.dataset.end), view: root.dataset.view };
     if (root.dataset.demo) data.demo = root.dataset.demo;
+    if (root.dataset.trip) data.trip = root.dataset.trip;
     return post(`/calendar/activities/${encodeURIComponent(b.dataset.id)}/move`, data);
   }
 
@@ -382,6 +384,7 @@
       e.preventDefault();
       const root = app(), data = { view: root.dataset.view };
       if (root.dataset.demo) data.demo = root.dataset.demo;
+      if (root.dataset.trip) data.trip = root.dataset.trip;
       post(`/calendar/activities/${encodeURIComponent(b.dataset.id)}/delete`, data);
       return;
     }

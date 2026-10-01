@@ -5,7 +5,7 @@ import re
 from gitaway import community, session as ses
 
 from tests.test_calendar import add, book
-from tests.test_signin import session_data, sign_in, tid
+from tests.test_signin import session_data, sign_in, stored_calendar, tid
 
 TRIP = "sun-tacos-and-tide-pools"
 OTHER = "la-for-two-slow-mornings"
@@ -29,7 +29,7 @@ def apply(client, *keys, slug=TRIP):
 
 
 def activities(client):
-    return [a for a in session_data(client)["cal"][tid("ari")]["a"]]
+    return [a for a in stored_calendar()["a"]]
 
 
 def titles(client):
@@ -233,7 +233,7 @@ def test_apply_is_refused_for_a_trip_not_in_the_list_and_without_a_booking(clien
     fork(client)
     r = apply(client, "d1s2")
     assert r.status_code == 409 and "Book a trip first" in r.text
-    assert "cal" not in session_data(client)
+    assert not stored_calendar()["a"]
 
 
 def test_forks_list_without_a_booking_explains_and_does_not_preview(client):
@@ -243,16 +243,18 @@ def test_forks_list_without_a_booking_explains_and_does_not_preview(client):
     assert "Your calendar fills in once you book" in html and "fk-check" not in html and 'href="/plan"' in html
 
 
-def test_a_full_calendar_refuses_the_apply_and_changes_nothing(client):
+def test_a_full_calendar_refuses_the_apply_and_changes_nothing(client, monkeypatch):
+    from gitaway import tripcal
+    monkeypatch.setattr(tripcal, "MAX_ACTIVITIES", 5)
     book(client)
     fork(client)
     n = 0
-    while add(client, id=f"a{n + 1}", day=str(n % 3 + 1), start="12:00", end="12:30", title="Long title number " + str(n) + "x" * 14).status_code == 303:
+    while add(client, id=f"a{n + 1}", day=str(n % 3 + 1), start=f"{8 + n:02d}:00", end=f"{8 + n:02d}:30", title=f"Plan {n}").status_code == 303:
         n += 1
         assert n < 80
     before = titles(client)
     r = apply(client, "d1s2")
-    assert r.status_code == 409 and "full" in r.text
+    assert r.status_code == 409 and "a lot planned" in r.text
     assert titles(client) == before
 
 

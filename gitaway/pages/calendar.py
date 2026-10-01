@@ -17,13 +17,13 @@ adds pointer move/resize and the keyboard shortcuts, and drives the day window.
 
 from urllib.parse import quote as urlquote, urlencode
 
-from fasthtml.common import A, Aside, Button, Div, Fieldset, Form, H1, H2, H3, Header, Input, Label, Legend, Li, Link, Main, Option, P, Script, Section, Select, Span, Title, Ul
+from fasthtml.common import A, Aside, Button, Details, Div, Fieldset, Form, H1, H2, H3, Header, Input, Label, Legend, Li, Link, Main, Option, P, Script, Section, Select, Span, Summary, Title, Ul
 from fasthtml.core import FtResponse
 from starlette.responses import RedirectResponse
 
 from gitaway import catalog, forks as forks_model, session as ses, tripcal as cal
 from gitaway.icons import icon
-from gitaway.layout import avatar, brand, styles
+from gitaway.layout import avatar, brand, styles, trip_field
 from gitaway import voice as vo
 from gitaway.pages import pay, plan as plan_ui, voice as voice_ui
 
@@ -60,7 +60,8 @@ def _hidden(name, value):
 
 
 def _demo_field(demo):
-    return _hidden("demo", cal.LONG) if demo == cal.LONG else ""
+    """The hidden fields every calendar form carries: the trip it was drawn for, and the ?demo=long fixture when that is open."""
+    return (trip_field(), _hidden("demo", cal.LONG) if demo == cal.LONG else "")
 
 
 # ---- lanes and free gaps -------------------------------------------------------------------------------------------
@@ -379,15 +380,30 @@ def toast(kind, text, *extra, tid=None):
 
 # ---- page ----------------------------------------------------------------------------------------------------------
 
+def trip_switcher(session):
+    """"2 trips" with a menu to open another of the family's trips (F-040). Nothing with one trip."""
+    mine = ses.trips(session)
+    if len(mine) < 2:
+        return ""
+    rows = [Li(Form(Input(type="hidden", name="trip", value=t.id),
+                    Button(Span(t.title, cls="cal-trip-name"), Span(t.detail, cls="cal-trip-dates"), type="submit", data_trip=t.id,
+                           aria_current="true" if t.current else None, cls="cal-trip"),
+                    action="/trips/switch", method="post")) for t in mine]
+    return Details(Summary(icon("plane", 16, 2.2), Span(f"{len(mine)} trips"), cls="cal-trips-sum"),
+                   Div(Span("Open a trip", cls="cal-trips-k"), Ul(*rows, cls="cal-trips-list"), A(icon("plus", 16, 2.4), "Plan another trip", href="/start", cls="cal-trip-new"),
+                       cls="cal-trips-pop"),
+                   cls="cal-trips")
+
+
 def share_controls(session):
     """The Share button; once the trip is shared it says so, updates the snapshot on a tap, and offers Unpublish (owner only)."""
     from gitaway import share
     row = share.shared(session)
     if not row:
-        return [Form(Button("Share trip", type="submit", cls="cal-btn cal-btn-ink"), action="/share", method="post", cls="cal-share")]
-    return [Form(Button(icon("check", 16, 2.6), "Shared", Span(" · Update shared page", cls="cal-share-more"), type="submit", cls="cal-btn cal-btn-ink",
+        return [Form(trip_field(), Button("Share trip", type="submit", cls="cal-btn cal-btn-ink"), action="/share", method="post", cls="cal-share")]
+    return [Form(trip_field(), Button(icon("check", 16, 2.6), "Shared", Span(" · Update shared page", cls="cal-share-more"), type="submit", cls="cal-btn cal-btn-ink",
                         title="Share again to update the shared page with your latest plans"), action="/share", method="post", cls="cal-share"),
-            Form(Input(type="hidden", name="slug", value=row["slug"]), Button("Unpublish", type="submit", cls="cal-btn cal-btn-white"),
+            Form(trip_field(), Input(type="hidden", name="slug", value=row["slug"]), Button("Unpublish", type="submit", cls="cal-btn cal-btn-white"),
                  action="/share/unpublish", method="post", cls="cal-share")]
 
 
@@ -398,7 +414,7 @@ def top_bar(t, b, who, session, ctx):
     presence = Span(f"{friends[-1].name} is planning with you", cls="cal-presence", role="status") if friends else ""
     return Header(
         brand("/"),
-        Div(H1(trip_name(t)), Span(f"{cal.range_label(t.depart, t.return_)} · booked · {catalog.money(b['total_cents'])}", cls="cal-tripline"), cls="cal-title-box"),
+        Div(H1(trip_name(t)), Div(Span(f"{cal.range_label(t.depart, t.return_)} · booked · {catalog.money(b['total_cents'])}", cls="cal-tripline"), trip_switcher(session), cls="cal-tripbar"), cls="cal-title-box"),
         Div(Div(*people, cls="cal-faces"), presence, cls="cal-avatars"),
         Div(A(icon("mic", 18, 2.4), "Talk to plan", href=voice_ui.voice_url(ctx["demo"], hear=1), data_soft="", cls="cal-btn cal-btn-mint vo-open"),
             A("Your forks", Span(str(forks), cls="cal-count"), href="/forks", cls="cal-btn cal-btn-white"),
@@ -489,7 +505,7 @@ def calendar_page(session, demo="", view="", form=None, notice=None, new="", und
                                                                      action="/calendar/undo", method="post", data_soft=""),
                            A("Dismiss", href=cal_url(demo, view=view), data_soft="", cls="cal-dismiss")))
     app = Div(top_bar(t, b, who, session, ctx), Div(card, vpanel or notes_panel(ctx, who, b), cls="cal-layout"), *layers,
-              id="cal-app", cls="cal", data_demo=demo, data_view=view, data_grid_start=str(gs), data_grid_end=str(cal.GRID_END),
+              id="cal-app", cls="cal", data_trip=ses.open_trip_id() or None, data_demo=demo, data_view=view, data_grid_start=str(gs), data_grid_end=str(cal.GRID_END),
               data_base=cal_url(demo, view=view), data_live="1" if cal.live_pending(session, demo) else None, data_voice="1" if voice is not None else None)
     body = (
         Title(f"GitAway · {trip_name(t)} calendar"),

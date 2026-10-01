@@ -4,9 +4,9 @@ import re
 
 from starlette.testclient import TestClient
 
-from gitaway import community, familydb_social as social
+from gitaway import community, familydb, familydb_social as social
 from tests.test_calendar import add, book
-from tests.test_signin import session_data, sign_in, tid
+from tests.test_signin import session_data, sign_in, stored_booking, tid
 
 TRIP = "sun-tacos-and-tide-pools"
 
@@ -88,7 +88,7 @@ def test_the_snapshot_has_no_notes_friends_reference_or_prices(client):
     slug = row["slug"]
     blob = row["snapshot"] + row["title"] + str(row["meta"])
     html = main_html(device(client).get(f"/trips/{slug}").text)
-    booking = session_data(client)["bookings"][tid("ari")] if "bookings" in session_data(client) else {}
+    booking = stored_booking() or {}
     for private in ["hunter2", "Grandma Zelda", "/join/", "GA-", "gitaway.example", "$", "total_cents"] + ([booking["id"]] if booking else []):
         assert private not in blob and private not in html, private
     assert re.fullmatch(r"shared-[0-9a-f]{10}", slug)
@@ -98,13 +98,12 @@ def test_forks_and_saves_are_per_family_and_survive_a_restart(client):
     sign_in(client, "ari")
     client.post("/fork", data={"next": f"/trips/{TRIP}"})
     client.post("/save", data={"next": "/trips/la-for-two-slow-mornings"})
-    tenant = session_data(client)["tenant_id"]
-    assert social.slugs({"tenant_id": tenant}, "forks") == [TRIP] and social.slugs({"tenant_id": tenant}, "saves") == ["la-for-two-slow-mornings"]
+    assert social.slugs(session_data(client), "forks") == [TRIP] and social.slugs(session_data(client), "saves") == ["la-for-two-slow-mornings"]
     assert "forks" not in session_data(client) and "saves" not in session_data(client)
     sam = _signed_in(client, "sam")
     assert "No forks yet" in sam.get("/forks").text and social.slugs(session_data(sam), "forks") == []  # another family sees none of them
     # a restart: a new browser, a new process-level state, the same data folder
-    social._ready.clear(), community._ready.clear()
+    familydb.forget_schema_cache(), community._ready.clear()
     again = _signed_in(client, "ari")
     html = again.get("/forks").text
     assert "Sun, tacos" in html and "LA for two" in html

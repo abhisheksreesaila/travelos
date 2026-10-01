@@ -8,7 +8,7 @@ from fh_saas.db_host import HostDatabase
 from starlette.testclient import TestClient
 
 from gitaway import auth, session as ses
-from tests.test_signin import EMAILS, session_data, sign_in, tid
+from tests.test_signin import EMAILS, session_data, sign_in, stored_booking, tid
 
 PUBLIC = ["/", "/discover", "/plan", "/start", "/creators", "/signin", "/trips/sun-tacos-and-tide-pools"]
 
@@ -158,8 +158,8 @@ def test_logout_removes_the_sign_in_and_keeps_the_trip_state(client):
         sign_in(client, "ari")
         r = method("/logout", follow_redirects=False)
         assert r.status_code == 303 and r.headers["location"] == "/"
-        data = session_data(client)
-        assert "user_id" not in data and "tenant_id" not in data and data["bookings"]
+        assert not client.cookies.get("session_")  # nothing is left in the cookie: it is gone
+        assert stored_booking() is not None  # the trip stays in the family's database for the next sign-in
         assert "Sign out" not in client.get("/").text
 
 
