@@ -137,7 +137,7 @@ Design: docs/design/offer-details.md · Needs: F-025
 - [x] the pick URL carries room, count and add-ons; the ledger, pay sheet and calendar itemize them, computed by the catalog (the page never does arithmetic); a bad or missing room falls back to the default
 - [x] sample trip: The Tidewater, Ocean-view King ×2 + breakfast gives the right total through pay and calendar
 
-## F-027 Flight detail: legs, fare types and checked bags [todo]
+## F-027 Flight detail: legs, fare types and checked bags [doing]
 Design: docs/design/offer-details.md · Needs: F-026 (shares the pick URL and itemized ledger)
 - [ ] out and back legs with times, duration, stops and aircraft
 - [ ] fare types (Basic, Main, Extra legroom) with price and what each includes (seat choice, carry-on, checked bag, changes)
@@ -190,13 +190,13 @@ Found during F-030 (both predate it).
 - [ ] on phones (390, 320) no text renders below 13px on /plan, /calendar (incl. ?demo=long) and the landing page; touch targets at least 44px
 - [ ] remove the four leftover `text-overflow: ellipsis` rules (landing `.field input` and `.paste`, workspace `.ws-slot-name`) in favour of wrapping or shortening (docs/lessons.md)
 
-## F-035 "Where to?" trip start after sign-in [doing]
+## F-035 "Where to?" trip start after sign-in [done]
 Brief: docs/briefs/trip-start.md (approved 2026-09-30) · Design: follows landing and workspace language, no artboard (captain wants the full journey now)
 Needs: F-030
-- [ ] /start asks from, to (LA live; others "coming soon"), dates, adults and kids with ages; "Find my trip" opens the workspace for that trip
-- [ ] sign-in without a specific `next` lands on /start; landing's "Plan a trip" door and the header link go there; a returning traveler sees "Continue <trip>" above the form
-- [ ] nights and travelers drive prices in the catalog (stays and cars by night, flights by traveler, room fit by party size); the trip lives in the URL through reload, pay and calendar
-- [ ] done means: LA, Oct 16–20, 2 adults + kids 4 and 7 gives $3,088; 3 nights or 3 adults change prices consistently through pay and calendar
+- [x] /start asks from, to (LA live; others "coming soon"), dates, adults and kids with ages; "Find my trip" opens the workspace for that trip
+- [x] sign-in without a specific `next` lands on /start; landing's "Plan a trip" door and the header link go there; a returning traveler sees "Continue <trip>" above the form
+- [x] nights and travelers drive prices in the catalog (stays and cars by night, flights by traveler, room fit by party size); the trip lives in the URL through reload, pay and calendar
+- [x] done means: LA, Oct 16–20, 2 adults + kids 4 and 7 gives $3,088; 3 nights or 3 adults change prices consistently through pay and calendar
 
 ## F-036 Small polish found while building F-035 [todo]
 - [ ] weather, news and events panes follow the trip's dates (today they're fixed to Oct 16–20)

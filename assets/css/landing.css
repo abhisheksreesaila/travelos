@@ -34,11 +34,9 @@
 
 /* Search card */
 .search { margin-top: 0.5rem; padding: 0.625rem; border-radius: var(--r-lg); background: var(--card); box-shadow: 0 0.75rem 1.5rem -0.75rem rgba(30,26,46,.4); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.5rem; }
-.field { padding: 0.625rem 1rem; border-radius: 1.125rem; background: #FAF7F2; display: flex; flex-direction: column; gap: 0.125rem; cursor: text; }
-.field:focus-within { outline: 0.1875rem solid var(--ink); outline-offset: 0.1875rem; }
-.field input:focus-visible { outline: none; }
+.field { padding: 0.625rem 1rem; border-radius: 1.125rem; background: #FAF7F2; display: flex; flex-direction: column; gap: 0.125rem; }
+.field-value { font: 800 1.125rem var(--font-body); color: var(--ink); }
 .field-label { font-size: max(var(--text-min), 0.8125rem); font-weight: 800; color: var(--ink-3); }
-.field input { border: 0; background: transparent; font: 800 1.125rem var(--font-body); color: var(--ink); padding: 0; width: 100%; min-width: 0; text-overflow: ellipsis; }
 .btn-go { grid-column: 1 / -1; min-height: 3.75rem; font-size: 1.1875rem; }
 .btn-white { align-self: flex-start; min-height: 3.75rem; font-size: 1.1875rem; --btn-ledge: rgba(30,26,46,.25); }
 
@@ -106,7 +104,6 @@
 /* Keep the "When" text whole as the doors narrow: smaller type first, then its own row. */
 @media (max-width: 975px) {
   .field { padding: 0.625rem 0.75rem; }
-  .field input { font-size: 1rem; }
 }
 @media (max-width: 780px) {
   .search .field:nth-child(3) { grid-column: 1 / -1; }
