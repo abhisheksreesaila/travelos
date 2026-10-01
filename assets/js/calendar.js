@@ -270,9 +270,9 @@
     if (ghost.parentElement !== body) body.appendChild(ghost);
     ghost.hidden = false;
     ghost.style.top = `${(start - gs) * remPerMin}rem`;
-    ghost.style.height = `calc(${(end - start) * remPerMin}rem - 4px)`;
+    ghost.style.height = `calc(${(end - start) * remPerMin}rem - 0.25rem)`;
     ghost.style.left = "0";
-    ghost.style.right = "4px";
+    ghost.style.right = "0.25rem";
     const url = new URL(app().dataset.base, location.href);
     url.searchParams.set("add", body.dataset.day);
     url.searchParams.set("at", hhmm(start));

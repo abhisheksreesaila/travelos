@@ -29,7 +29,12 @@ def test_no_fixed_pixel_sizes_left_except_hairlines():
 def test_icons_scale_with_the_root():
     from gitaway.icons import icon
 
-    assert "width:1.5rem;height:1.5rem" in str(icon("plane", 24))
+    svg = str(icon("plane", 24))
+    assert "--ico:1.5rem" in svg and "width:1.5rem" not in svg  # no inline width/height: page CSS can override
+    base = (CSS_DIR / "base.css").read_text()
+    assert 'svg[style*="--ico"]' in base
+    # the itinerary rules that resize icons must stay able to win (same specificity, loaded later)
+    assert ".btn-round svg { width:" in (CSS_DIR / "itinerary.css").read_text()
 
 
 def test_calendar_hour_grid_is_in_rem(client):
