@@ -260,14 +260,14 @@ Needs: none
 - [x] wipe only the families a test touched (record tenant ids opened in a set that survives `forget_schema_cache`), skip per-tenant `ensure_schema` in the wipe
 - [x] `pixi run test` back under ~60s with the same isolation guarantees (a test proving a family opened before a reset is still wiped)
 
-## F-046 Fixes from the end-to-end check [doing]
+## F-046 Fixes from the end-to-end check [done]
 Found by the full real-app walkthrough on master (2026-10-01).
-- [ ] notes show who wrote them (the member's name and avatar; "You" only for the viewer's own), on every member's screen
-- [ ] the first "Booked!" note matches the trip's actual lanes after a Replace (no car → no car wording)
-- [ ] viewers don't see "Talk to plan" or live "Schedule an Uber" links (like the add links)
-- [ ] the forks page's "Your calendar" preview shows scheduled rides, and fork placement treats them as busy
-- [ ] public shared pages don't reveal when and where a family is away: no flight numbers, no calendar dates (Day 1…N instead), and the hotel as its area ("a hotel in Santa Monica"), not its name; the family still sees everything
-- [ ] the invite expiry reads "expires in 14 days" when brand new
+- [x] notes show who wrote them (the member's name and avatar; "You" only for the viewer's own), on every member's screen
+- [x] the first "Booked!" note matches the trip's actual lanes after a Replace (no car → no car wording)
+- [x] viewers don't see "Talk to plan" or live "Schedule an Uber" links (like the add links)
+- [x] the forks page's "Your calendar" preview shows scheduled rides, and fork placement treats them as busy
+- [x] public shared pages don't reveal when and where a family is away: no flight numbers, no calendar dates (Day 1…N instead), and the hotel as its area ("a hotel in Santa Monica"), not its name; the family still sees everything
+- [x] the invite expiry reads "expires in 14 days" when brand new
 
 ## F-047 Tests pass in any order [todo]
 Found while reviewing F-045: run in reverse order, tests/test_family_storage.py::test_a_real_second_process_sees_the_same_trip fails (on master too; master had 209 order-dependent failures before F-045).
