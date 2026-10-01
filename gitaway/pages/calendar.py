@@ -298,7 +298,10 @@ def booked_note(b):
     blocks on the calendar; a car has none, so it is only ever said to be booked."""
     if cal.is_imported(b):
         where = cal.plan_of(b).booked_on
-        return f"Imported from {where}. Your flights, hotel and car are on the calendar, marked “Booked elsewhere”. Tap one for its details. Add anything you want to do."
+        lanes = [w for w, got in (("flights", cal.flight_of(b)), ("hotel", cal.stay_of(b)), ("car", cal.car_of(b))) if got]  # only what this trip really has
+        if not lanes:
+            return f"Imported from {where}. Add anything you want to do."
+        return f"Imported from {where}. Your {cal.oxford(lanes)} {'is' if len(lanes) == 1 and lanes != ['flights'] else 'are'} on the calendar, marked “Booked elsewhere”. Tap one for its details. Add anything you want to do."
     stay, pick, car = cal.stay_of(b), cal.stay_pick_of(b), cal.car_of(b)
     flights = cal.flight_of(b) is not None
     on_cal = (["flights"] if flights else []) + ([f"{stay.name} ({pick.summary})" if flights else f"stay at {stay.name} ({pick.summary})"] if stay else [])
