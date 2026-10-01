@@ -103,6 +103,21 @@ def booking(session):
     return (session.get("bookings") or {}).get(t.id) if t else None
 
 
+def remembered_plan(session):
+    """The workspace picks (a /plan query string) the signed-in traveler last looked at, or None."""
+    t = current_traveler(session)
+    return (session.get("plan") or {}).get(t.id) if t else None
+
+
+def remember_plan(session, query):
+    """Remember the picks `query` (e.g. "f=f2&h=h3&c=c1&d=..") for the signed-in traveler. Only writes when it changed."""
+    t = current_traveler(session)
+    if not t or remembered_plan(session) == query:
+        return
+    # Reassign the whole dict so the cookie session notices the change.
+    session["plan"] = {**(session.get("plan") or {}), t.id: query}
+
+
 def booking_id(traveler_id, flight, stay, car, rooms="", add="", trip=""):
     """A stable id for one traveler's picks, so paying the same trip twice is the same booking. Default rooms, no add-ons and the sample trip hash as before."""
     digest = hashlib.sha256(f"{traveler_id}|{flight}|{stay}|{car}{'|' + rooms + '|' + add if rooms or add else ''}{'|' + trip if trip else ''}".encode()).hexdigest()

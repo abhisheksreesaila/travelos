@@ -13,6 +13,7 @@ from starlette.responses import HTMLResponse
 from fasthtml.common import to_xml, A, Article, Button, Div, Figcaption, Figure, H2, Img, Kbd, Link, Main, NotStr, P, Script, Section, Span, Svg, Title
 
 from gitaway import catalog, context, itineraries, session
+from gitaway import session as session_helpers
 from gitaway.tripcal import fmt_time
 from gitaway.icons import icon
 from gitaway.itinerary_view import fork_href
@@ -436,10 +437,13 @@ def workspace(f, h, c, overlay=(), head=(), x="", v="", stay=None, trip=None):
 
 def register(app):
     @app.get("/plan")
-    def plan(f: str = "", h: str = "", c: str = "", x: str = "", v: str = "", rooms: str = None, add: str = None,
+    def plan(session, f: str = "", h: str = "", c: str = "", x: str = "", v: str = "", rooms: str = None, add: str = None,
              d: str = "", r: str = "", a: str = "", k: str = ""):
         picks, trip = resolve_pick(f, h, c), resolve_trip(d, r, a, k)
-        return workspace(*picks, x=x, v=v, stay=resolve_stay(picks[1], rooms, add, trip))
+        stay = resolve_stay(picks[1], rooms, add, trip)
+        if any((f, h, c, rooms, add, d, r, a, k)):  # a bare /plan is not "picks"; /start offers to continue the rest
+            session_helpers.remember_plan(session, plan_path(*picks, stay)[len("/plan?"):])
+        return workspace(*picks, x=x, v=v, stay=stay)
 
     @app.get("/plan/quote")
     def plan_quote(f: str = "", h: str = "", c: str = "", rooms: str = None, add: str = None, d: str = "", r: str = "", a: str = "", k: str = ""):

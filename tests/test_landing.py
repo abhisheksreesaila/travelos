@@ -1,5 +1,4 @@
 """The landing page at /: two doors, prefilled search, feature cards, creators link."""
-import html as htmllib
 import re
 
 from gitaway.catalog import SAMPLE_TRIP
@@ -11,39 +10,25 @@ def _get(client):
     return r.text
 
 
-def _inputs(h):
-    return {m.group(1): htmllib.unescape(m.group(2))
-            for m in re.finditer(r'<input[^>]*name="(\w+)"[^>]*value="([^"]*)"', h)}
-
-
 def test_two_doors_link_to_plan_and_the_sample_trip(client):
     h = _get(client)
     assert "Fork a" in h and "getaway." in h
     assert "Let\u2019s book it." in h
     assert "No plans yet?" in h
-    assert 'href="/plan"' in h
+    assert 'href="/start"' in h
     assert 'href="/trips/sun-tacos-and-tide-pools"' in h
     assert "Browse trips people loved" in h and 'href="/discover"' in h
 
 
-def test_search_is_a_get_form_to_plan_with_labelled_prefilled_inputs(client):
+def test_door_one_previews_the_sample_trip_and_opens_the_start_page(client):
     h = _get(client)
     form = re.search(r'<form[^>]*>', h).group(0)
-    assert 'method="get"' in form and 'action="/plan"' in form
-    vals = _inputs(h)
-    assert set(vals) == {"from", "to", "when", "who"}
-    assert vals["from"] == f"{SAMPLE_TRIP.origin_name} ({SAMPLE_TRIP.origin})"
-    assert vals["to"] == "Los Angeles (LAX)"
-    assert "Oct 16" in vals["when"] and "Oct 20" in vals["when"]
-    assert vals["who"] == SAMPLE_TRIP.summary
-    for label in ["From", "To", "When", "Who"]:
-        assert re.search(rf"<label[^>]*>.*?{label}.*?<input", h, re.S)
-    assert "Open my trip workspace" in h
-
-
-def test_search_button_submits_the_form(client):
-    h = _get(client)
-    assert re.search(r'<button[^>]*type="submit"[^>]*>.*?Open my trip workspace', h, re.S)
+    assert 'method="get"' in form and 'action="/start"' in form
+    assert not re.search(r'<input[^>]*name="(from|to|when|who)"', h)  # nothing to type: /start is the real form
+    text = re.sub(r"<[^>]+>", " ", re.search(r'<form.*?</form>', h, re.S).group(0))
+    assert f"{SAMPLE_TRIP.origin_name} ({SAMPLE_TRIP.origin})" in text and "Los Angeles (LAX)" in text
+    assert "Oct 16" in text and "Oct 20" in text and SAMPLE_TRIP.summary in text
+    assert re.search(r'<button[^>]*type="submit"[^>]*>.*?Plan a trip', h, re.S)
 
 
 def test_four_feature_cards(client):

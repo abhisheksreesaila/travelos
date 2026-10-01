@@ -7,7 +7,7 @@ def test_home_is_a_gitaway_page_with_the_main_navigation(client):
     html = r.text
     assert "<title>GitAway" in html
     assert "TravelOS" not in html
-    for label, href in [("Discover", "/discover"), ("Plan a trip", "/plan"), ("For creators", "/creators")]:
+    for label, href in [("Discover", "/discover"), ("Plan a trip", "/start"), ("For creators", "/creators")]:
         assert f'href="{href}"' in html and label in html
     assert "/assets/css/tokens.css" in html and "/assets/css/base.css" in html
 
