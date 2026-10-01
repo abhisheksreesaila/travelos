@@ -10,7 +10,7 @@ from starlette.testclient import TestClient
 from gitaway import auth, session as ses
 from tests.test_signin import EMAILS, session_data, sign_in, stored_booking, tid
 
-PUBLIC = ["/", "/discover", "/plan", "/start", "/creators", "/signin", "/trips/sun-tacos-and-tide-pools"]
+PUBLIC = ["/", "/community", "/plan", "/start", "/creators", "/signin", "/trips/sun-tacos-and-tide-pools"]
 
 
 def memberships(user_id):
@@ -165,7 +165,7 @@ def test_logout_removes_the_sign_in_and_keeps_the_trip_state(client):
 
 def test_the_header_sign_out_form_posts_to_signout_which_is_the_same_as_logout(client):
     sign_in(client, "ari")
-    assert 'action="/signout"' in client.get("/discover").text  # assets/js/pwa.js (F-044) hooks this form to clear its page cache
+    assert 'action="/signout"' in client.get("/community").text  # assets/js/pwa.js (F-044) hooks this form to clear its page cache
     r = client.post("/signout", follow_redirects=False)
     assert r.status_code == 303 and r.headers["location"] == "/" and "Sign out" not in client.get("/").text
 
@@ -328,7 +328,7 @@ def test_the_cache_key_follows_the_fh_saas_user_and_the_session_secret(client, m
     from gitaway import layout
     key = r'<meta name="ga-user" content="([0-9a-f]{10})">'
     sign_in(client, "ari")
-    a = re.search(key, client.get("/discover").text).group(1)
+    a = re.search(key, client.get("/community").text).group(1)
     assert a == layout.cache_key(ses.current_traveler(session_data(client)), session_data(client)["tenant_id"])
     monkeypatch.setenv("GITAWAY_SECRET_KEY", "a different secret")
     assert ses.cache_secret() == b"a different secret" and layout.cache_key(ses.current_traveler(session_data(client)), session_data(client)["tenant_id"]) != a

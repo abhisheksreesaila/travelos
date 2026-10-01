@@ -79,13 +79,13 @@ def _door_two():
         Div(
             _trip_card(f"/trips/{sample.slug}", itineraries.VENICE, "Venice Beach, Los Angeles", sample.title,
                        "Kid friendly", "fill-sun", len(sample.days), "tc-a"),
-            # Fictional: there is no page for this trip yet, so it opens the discover list.
-            _trip_card("/discover", itineraries.PIER, "Santa Monica Pier", "LA for two, slow mornings",
+            # Fictional: there is no page for this trip yet, so it opens Community trips.
+            _trip_card("/community", itineraries.PIER, "Santa Monica Pier", "LA for two, slow mornings",
                        "Couple friendly", "fill-bubble", 4, "tc-b"),
             cls="cards",
         ),
         Span(Span(forks, cls="sticker-n"), "families forked", cls="fork-sticker ga-bob", style="--r:8deg"),
-        A("Browse trips people loved", href="/discover", cls="btn btn-white"),
+        A("Browse community trips", href="/community", cls="btn btn-white"),
         cls="door door-two",
     )
 

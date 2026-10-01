@@ -21,7 +21,7 @@ from fasthtml.common import A, Aside, Button, Details, Div, Fieldset, Form, H1, 
 from fasthtml.core import FtResponse
 from starlette.responses import RedirectResponse
 
-from gitaway import access, catalog, forks as forks_model, members, session as ses, tripcal as cal
+from gitaway import access, catalog, firstrun, forks as forks_model, members, session as ses, tripcal as cal
 from gitaway.icons import icon
 from gitaway.layout import avatar, brand, join_note, styles, trip_field
 from gitaway import voice as vo
@@ -433,16 +433,19 @@ def toast(kind, text, *extra, tid=None):
 # ---- page ----------------------------------------------------------------------------------------------------------
 
 def trip_switcher(session):
-    """"2 trips" with a menu to open another of the family's trips (F-040). Nothing with one trip."""
+    """"2 trips" with a menu to open another of the family's trips (F-040). With one trip (F-053) the menu names it and offers to plan or import the next."""
     mine = ses.trips(session)
-    if len(mine) < 2:
+    if not mine:
         return ""
     rows = [Li(Form(Input(type="hidden", name="trip", value=t.id),
                     Button(Span(t.title, cls="cal-trip-name"), Span(t.detail, cls="cal-trip-dates"), type="submit", data_trip=t.id,
                            aria_current="true" if t.current else None, cls="cal-trip"),
                     action="/trips/switch", method="post")) for t in mine]
-    return Details(Summary(icon("plane", 16, 2.2), Span(f"{len(mine)} trips"), cls="cal-trips-sum"),
-                   Div(Span("Open a trip", cls="cal-trips-k"), Ul(*rows, cls="cal-trips-list"), A(icon("plus", 16, 2.4), "Plan another trip", href="/start", cls="cal-trip-new"),
+    return Details(Summary(icon("plane", 16, 2.2), Span(f"{len(mine)} trip{'s' if len(mine) != 1 else ''}"), cls="cal-trips-sum"),
+                   Div(Span("Open a trip", cls="cal-trips-k") if len(mine) > 1 else P("This is your only trip so far. Add another and switch between them here.", cls="cal-trips-solo"),
+                       Ul(*rows, cls="cal-trips-list") if len(mine) > 1 else "",
+                       A(icon("plus", 16, 2.4), "Plan another trip", href="/start", cls="cal-trip-new"),
+                       A(icon("ledger", 16, 2.4), "Import a trip you booked", href="/trips/import", cls="cal-trip-new"),
                        cls="cal-trips-pop"),
                    cls="cal-trips")
 
@@ -606,9 +609,9 @@ def no_booking():
         *styles(*HEAD),
         Div(A("Skip to content", href="#main", cls="ga-skip"),
             Main(Header(brand("/"), cls="cal-bar"), join_note(),
-                 Section(Div(Span(icon("plane", 40, 2), cls="cal-bignote"), H1("Book a trip first"),
-                             P("Your calendar fills in with your flights and hotel as soon as you book. Then the fun part starts: adding the gaps."),
-                             A("Plan a trip", href="/start", cls="btn btn-primary"), cls="cal-firstbox"), cls="cal-first"),
+                 Section(Div(firstrun.welcome("Your calendar starts with a trip",
+                                              "It fills in with your flights and hotel as soon as you plan or import one. Then the fun part starts: adding the gaps.",
+                                              heading=H1, eyebrow="NO TRIPS YET"), cls="cal-firstbox"), cls="cal-first"),
                  id="main"), data_theme="sunset", cls="cal-shell"),
     )
 

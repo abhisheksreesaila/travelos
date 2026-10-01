@@ -23,9 +23,9 @@ def test_share_needs_a_traveler_and_a_booked_trip(client):
     assert r.status_code == 303 and r.headers["location"].startswith("/signin?next=")
     sign_in(client)
     r = share(client)
-    assert r.status_code == 409 and "Book a trip first" in r.text
+    assert r.status_code == 409 and "Plan a trip or import one you booked" in r.text
     assert community.rows() == []
-    assert client.get("/share").status_code == 200 and "Book a trip first" in client.get("/share").text
+    assert client.get("/share").status_code == 200 and "Import a trip you booked" in client.get("/share").text
 
 
 def test_the_calendar_share_button_is_one_tap(client):
@@ -41,7 +41,7 @@ def test_one_tap_publishes_and_confirms_with_a_link_to_the_page(client):
     assert r.status_code == 303 and r.headers["location"].startswith("/share/done")
     slug = slug_of(client)
     html = client.get("/share/done").text
-    assert f'href="/trips/{slug}"' in html and 'href="/discover"' in html
+    assert f'href="/trips/{slug}"' in html and 'href="/community"' in html
     assert "live" in html.lower() and "Kid friendly" in html
     assert 'href="/share"' in html  # change tags and theme
 
@@ -93,7 +93,7 @@ def test_the_community_sees_each_others_shared_trips_on_any_device(client):
     sign_in(client, "sam")
     page = client.get(f"/trips/{slug}")
     assert page.status_code == 200 and "Ari only plan" in page.text            # Ari's frozen copy, not Sam's calendar
-    hub_html = client.get("/discover").text
+    hub_html = client.get("/community").text
     assert "LA with the kids" in hub_html and "Your trip" not in hub_html
     client.post("/logout")   # signed out in the same browser
     assert client.get(f"/trips/{slug}").status_code == 200 and client.get("/trips/shared-nope").status_code == 404
@@ -109,8 +109,8 @@ def test_rebooking_keeps_the_old_page_until_the_new_trip_is_shared(client):
     assert client.get(f"/trips/{old}").status_code == 200  # a snapshot does not need the old booking
     share(client)
     new = slug_of(client)
-    assert new != old and f"/trips/{new}" in client.get("/discover").text
-    assert client.get(f"/trips/{old}").status_code == 404 and f"/trips/{old}" not in client.get("/discover").text  # one shared trip at a time
+    assert new != old and f"/trips/{new}" in client.get("/community").text
+    assert client.get(f"/trips/{old}").status_code == 404 and f"/trips/{old}" not in client.get("/community").text  # one shared trip at a time
 
 
 def test_signed_in_travelers_own_trip_keeps_the_marker_among_the_community(client):
@@ -118,24 +118,24 @@ def test_signed_in_travelers_own_trip_keeps_the_marker_among_the_community(clien
     share(client)
     book(client, "sam")
     share(client)
-    html = client.get("/discover").text
+    html = client.get("/community").text
     assert html.count("LA with the kids") == 2 and html.count("Your trip") == 1
 
 
 def test_the_shared_trip_shows_in_the_hub_and_filters(client):
     book(client)
     share(client)
-    html = client.get("/discover").text
+    html = client.get("/community").text
     assert "LA with the kids" in html and "Your trip" in html
-    assert "LA with the kids" in client.get("/discover?kid=1").text
-    assert "LA with the kids" not in client.get("/discover?pet=1").text
+    assert "LA with the kids" in client.get("/community?kid=1").text
+    assert "LA with the kids" not in client.get("/community?pet=1").text
 
 
 def test_the_booking_reference_never_appears_anywhere_it_could_leak(client):
     book(client)
     ref = stored_booking()["id"]
     r = share(client)
-    pages = [r.headers["location"], client.get("/share/done").text, client.get("/share").text, client.get("/discover").text,
+    pages = [r.headers["location"], client.get("/share/done").text, client.get("/share").text, client.get("/community").text,
              client.get(f"/trips/{slug_of(client)}").text, client.get("/calendar").text]
     tail = ref.split("-")[1]
     for text in [*pages, str(community.rows())]:

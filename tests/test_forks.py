@@ -48,7 +48,7 @@ def test_signed_out_forks_page_invites_sign_in_and_changes_nothing(client):
 
 def test_the_list_shows_any_number_of_forks_and_the_calendar_button_counts_them(client):
     book(client)
-    assert "No forks yet" in client.get("/forks").text
+    assert "Nothing forked or saved yet" in client.get("/forks").text
     fork(client), fork(client, OTHER)
     html = client.get("/forks").text
     assert html.index("Sun, tacos") < html.index("LA for two") and html.count('class="fk-pick') == 2
@@ -112,8 +112,8 @@ def test_signed_in_save_and_unsave_are_idempotent_and_local_only(client):
         r = client.post("/save", data={"next": f"/trips/{TRIP}"}, follow_redirects=False)
         assert r.headers["location"] == f"/trips/{TRIP}"
     assert ses.saved(session_data(client)) == [TRIP]
-    assert client.post("/save", data={"next": "//evil.example"}, follow_redirects=False).headers["location"] == "/discover"
-    assert client.post("/save", data={"next": "/plan"}, follow_redirects=False).headers["location"] == "/discover"
+    assert client.post("/save", data={"next": "//evil.example"}, follow_redirects=False).headers["location"] == "/community"
+    assert client.post("/save", data={"next": "/plan"}, follow_redirects=False).headers["location"] == "/community"
     for _ in range(2):
         assert client.post("/unsave", data={"next": f"/trips/{TRIP}"}, follow_redirects=False).status_code == 303
     assert ses.saved(session_data(client)) == []
@@ -240,7 +240,7 @@ def test_forks_list_without_a_booking_explains_and_does_not_preview(client):
     sign_in(client)
     fork(client)
     html = client.get(f"/forks?open={TRIP}").text
-    assert "Your calendar fills in once you book" in html and "fk-check" not in html and 'href="/plan"' in html
+    assert "Your calendar fills in once you have a trip" in html and "fk-check" not in html and 'href="/plan"' in html
 
 
 def test_a_full_calendar_refuses_the_apply_and_changes_nothing(client, monkeypatch):
@@ -261,7 +261,7 @@ def test_a_full_calendar_refuses_the_apply_and_changes_nothing(client, monkeypat
 def test_preview_only_opens_trips_in_your_list(client):
     book(client)
     html = client.get(f"/forks?open={TRIP}").text
-    assert "fk-check" not in html and "No forks yet" in html
+    assert "fk-check" not in html and "Nothing forked or saved yet" in html
 
 
 def test_the_fork_undo_button_takes_focus_after_apply(client):

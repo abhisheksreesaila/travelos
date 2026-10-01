@@ -14,7 +14,7 @@ from fasthtml.common import A, Button, Div, Fieldset, Form, H1, Input, Label, Le
 from fasthtml.core import FtResponse
 from starlette.responses import RedirectResponse
 
-from gitaway import catalog, session as ses, tripcal
+from gitaway import catalog, firstrun, session as ses, tripcal
 from gitaway.icons import icon
 from gitaway.layout import page
 from gitaway.pages import plan
@@ -154,6 +154,7 @@ def start_page(session, vals, errors=None, status=200):
                 P("Pick a place, your dates and who is coming. We line up flights, a stay and a car, side by side, with one honest total."),
                 cls="st-hero"),
             continue_card(session),
+            firstrun.welcome("Welcome aboard", "Your family has no trips yet, so this is the fun part. Start one below, bring in a trip you already booked, or see what other travelers shared.", "#st-form") if firstrun.is_new(session) else "",
             _form(vals, errors or {}),
             cls="st ga-wrap",
         ),

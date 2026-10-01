@@ -19,7 +19,7 @@ def public_text(client, slug):
     """What a stranger sees and what is stored: the page's main part, the stored snapshot and the hub card."""
     client.cookies.clear()
     page = client.get(f"/trips/{slug}").text.split("<main")[1].split("</main>")[0]
-    hub = client.get("/discover").text.split("<main")[1].split("</main>")[0]
+    hub = client.get("/community").text.split("<main")[1].split("</main>")[0]
     row = community.get(slug)
     return unescape(page + hub + repr(row))
 

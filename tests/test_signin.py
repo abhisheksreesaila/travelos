@@ -135,7 +135,7 @@ def test_fork_helpers():
 def test_header_signed_out_and_in(client):
     assert 'href="/signin"' in client.get("/").text
     sign_in(client)
-    html = client.get("/discover").text
+    html = client.get("/community").text
     assert "AR" in html and "Sign out" in html and 'action="/signout"' in html
     assert 'href="/signin"' not in html
 
