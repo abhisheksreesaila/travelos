@@ -308,3 +308,30 @@ def test_the_whole_view_shows_a_hint_and_the_day_view_does_not(client):
     book(client)
     assert "plan by the hour" in client.get("/calendar").text
     assert "plan by the hour" not in client.get("/calendar?view=days").text
+
+
+def test_a_hostile_view_param_renders_the_whole_view_safely(client):
+    book(client)
+    html = client.get("/calendar?view=<script>alert(1)</script>").text
+    assert "<script>alert" not in html and 'data-view="whole"' in html
+    r = client.post("/calendar/notes", data={"text": "hi", "view": "bogus"}, follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"].startswith("/calendar")
+    page = client.get(r.headers["location"]).text
+    assert 'data-view="whole"' in page and "bogus" not in page
+
+
+def test_adding_from_the_whole_view_opens_on_that_day_and_cancel_goes_back_to_the_whole_view(client):
+    book(client)
+    html = client.get("/calendar").text
+    link = re.search(r'href="(/calendar\?[^"]*add=1[^"]*)"', html).group(1).replace("&amp;", "&")
+    assert "w=1" in link and "view=days" in link
+    form = client.get(link).text
+    assert 'data-w="1"' in form and 'data-view="days"' in form
+    closes = re.findall(r'<a\s[^>]*data-close[^>]*>', form)
+    assert closes and all("view=whole" in c for c in closes)
+
+
+def test_day_headers_keep_their_visible_text_in_the_accessible_name(client):
+    book(client)
+    heads = re.findall(r'<a\s[^>]*cal-w-head.*?</a>', client.get("/calendar").text, re.S)
+    assert len(heads) == 5 and all("aria-label" not in h.split(">")[0] and "open in day by day" in h for h in heads)

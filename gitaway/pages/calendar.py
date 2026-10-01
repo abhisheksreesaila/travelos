@@ -202,9 +202,9 @@ def whole_view(dates, ctx):
                     Span(x.title, cls=f"cal-w-title{' is-booked' if getattr(x, 'locked', False) else ''}"),
                     Span("Booked", cls="cal-w-booked") if getattr(x, "locked", False) else "") for x in items]
         rows.append(Div(
-            A(Span(str(d.day), cls=f"cal-num ink-{tint}"), Span(*day_label(i, d), cls="cal-dow"), href=cal_url(ctx["demo"], view="days", w=i),
-              aria_label=f"Open {d.strftime('%A %b')} {d.day} in the day-by-day view", cls=f"cal-w-head fill-{tint}-tint"),
-            Ul(*lines, cls="cal-w-list") if lines else Div(Span("wide open", cls="cal-hand"), A("Add something fun", href=cal_url(ctx["demo"], view="days", add=i, at=cal.hhmm(free_start(ctx["blocks"], i, ctx["gs"]))), data_soft=""), cls="cal-w-empty"),
+            A(Span(str(d.day), cls=f"cal-num ink-{tint}"), Span(*day_label(i, d), cls="cal-dow"), Span(" · open in day by day", cls="sr-only"), href=cal_url(ctx["demo"], view="days", w=i),
+              cls=f"cal-w-head fill-{tint}-tint"),
+            Ul(*lines, cls="cal-w-list") if lines else Div(Span("wide open", cls="cal-hand"), A("Add something fun", href=cal_url(ctx["demo"], view="days", add=i, at=cal.hhmm(free_start(ctx["blocks"], i, ctx["gs"])), w=i, back="whole"), data_soft=""), cls="cal-w-empty"),
             id=f"d{i}", cls="cal-w-row", data_whole_day=str(i),
         ))
     return Div(*rows, cls="cal-whole")
@@ -249,7 +249,7 @@ def notes_panel(ctx, who, b):
 def form_modal(ctx, vals, error, edit_id=None):
     demo, dates = ctx["demo"], ctx["dates"]
     editing = edit_id is not None
-    close = cal_url(demo, view=ctx["view"])
+    close = cal_url(demo, view="whole" if ctx.get("back") == "whole" else ctx["view"])
     kinds = Fieldset(Legend("Kind"), *[
         Label(Input(type="radio", name="kind", value=k, checked=(vals["kind"] == k) or None), Span(label), cls=f"cal-kind k-{tint}")
         for k, (label, tint) in cal.KINDS.items()], cls="cal-kinds")
@@ -348,7 +348,7 @@ def view_toggle(demo, view):
     )
 
 
-def calendar_page(session, demo="", view="", form=None, notice=None, new="", undo="", w="", status=200, invite=None, live=False):
+def calendar_page(session, demo="", view="", form=None, notice=None, new="", undo="", w="", status=200, invite=None, live=False, back=""):
     who, b = ses.current_traveler(session), ses.booking(session)
     demo = cal.LONG if demo == cal.LONG else ""
     view = pick_view(view, bool(form or new or undo or w))
@@ -363,7 +363,7 @@ def calendar_page(session, demo="", view="", form=None, notice=None, new="", und
             counts[n.act] = counts.get(n.act, 0) + 1
     gs = cal.grid_start(blocks)
     friends = ses.friends(session)
-    ctx = dict(demo=demo, view=view, t=t, dates=dates, blocks=blocks, acts=acts, notes=notes, note_counts=counts, gs=gs, new=new, next=cal.next_id(session, demo),
+    ctx = dict(demo=demo, view=view, t=t, dates=dates, blocks=blocks, acts=acts, notes=notes, note_counts=counts, gs=gs, back=back, new=new, next=cal.next_id(session, demo),
                friends=friends, live=bool(live and any(a.id == new and a.by for a in acts)))
     if view == "whole":
         surface = whole_view(dates, ctx)
@@ -444,7 +444,7 @@ def register(app):
         return None
 
     @app.get("/calendar")
-    def calendar(session, demo: str = "", view: str = "", add: str = "", at: str = "", edit: str = "", new: str = "", undo: str = "", w: str = "", invite: str = "", live: str = ""):
+    def calendar(session, demo: str = "", view: str = "", add: str = "", at: str = "", edit: str = "", new: str = "", undo: str = "", w: str = "", invite: str = "", live: str = "", back: str = ""):
         if not ses.current_traveler(session):
             return _signin(demo, view)
         if not ses.booking(session):
@@ -467,12 +467,13 @@ def register(app):
             start = cal.snap(min(max(start, gs), cal.GRID_END - cal.MIN_LEN))
             form = {"vals": _vals(id=f"a{nid}", day=day, start=cal.hhmm(start), end=cal.hhmm(default_end(blocks, day, start)))}
         view = pick_view(view, bool(add or edit or new or undo or w))
-        return calendar_page(session, demo, view, form=form, new=new, undo=undo, w=w, invite={} if invite == "1" and not form else None, live=live == "1")
+        return calendar_page(session, demo, view, form=form, new=new, undo=undo, w=w, invite={} if invite == "1" and not form else None, live=live == "1", back=back if add else "")
 
     def refuse(session, demo, view, message, form=None):
         return calendar_page(session, demo, view, form=form, notice=None if form else message, status=409)
 
     def done(demo, view, **q):
+        view = view if view in ("whole", "days") else ""
         return RedirectResponse(cal_url(demo, view=view, **q), status_code=303)
 
     @app.post("/calendar/activities")
