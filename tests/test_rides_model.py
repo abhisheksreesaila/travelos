@@ -101,7 +101,7 @@ def test_estimates_list_each_product_with_price_time_and_ids():
     assert [e.name for e in ests] == ["UberX", "Comfort", "UberXL"]
     assert all(e.fits and e.product_id and e.fare_id and e.cents > 0 and e.trip_minutes == 25 and e.pickup_eta_min > 0 for e in ests)
     x, c, xl = ests
-    assert x.cents == 38 * 100 and x.display == "$38.00"
+    assert x.cents == 38 * 100 and x.display == "$38"
     assert x.cents < c.cents < xl.cents
     assert len({e.product_id for e in ests}) == 3 and len({e.fare_id for e in ests}) == 3
 

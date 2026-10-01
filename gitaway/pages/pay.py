@@ -12,7 +12,7 @@ from urllib.parse import parse_qsl, quote as urlquote
 from fasthtml.common import A, Button, Div, Form, H2, Input, Li, Link, P, Script, Section, Span, Ul
 from starlette.responses import RedirectResponse
 
-from gitaway import catalog, session as ses, tripcal
+from gitaway import catalog, rides as ride_model, session as ses, tripcal
 from gitaway.icons import icon
 from gitaway.layout import page
 from gitaway.pages import plan
@@ -127,7 +127,30 @@ def flight_chip(o, trip):
     return f"{o.name} · {when} · {o.headline.split(' → ')[0]} · {trip.origin} → {o.airport}"
 
 
-def celebration(b):
+def rides_list(b, session):
+    """The simulated Uber rides for a booking with no car (F-038): each leg shows its scheduled ride, or offers to schedule one."""
+    if not tripcal.rides_of(b):
+        return ""
+    key, flight, stay, trip = ride_model.booking_key(b), tripcal.flight_of(b), tripcal.stay_of(b), tripcal.trip_of(b)
+    mine = {r.leg: r for r in ride_model.list_rides(session) if r.key == key and not r.canceled}
+    prov, rows = ride_model.provider(), []
+    for leg in ride_model.LEGS:
+        plan = ride_model.leg_plan(leg, flight, stay, trip)
+        when = f"{ride_model.date_label(plan.pickup_time.date())}, {tripcal.fmt_time(plan.pickup_time.hour * 60 + plan.pickup_time.minute)}"
+        r = mine.get(leg)
+        if r:
+            rows.append(Li(A(f"Uber · {r.product_name} · {plan.short_route}", href=f"/rides/{r.id}", cls="pay-ride-link"), Span(f"{when} · {prov.status(r).label}", cls="pay-ride-when"), cls="pay-ride", data_ride=leg))
+        else:
+            rows.append(Li(A("Schedule an Uber", href=plan_ride_path(leg, flight, stay, trip), cls="pay-ride-link"), Span(f"{plan.short_route} · {when}", cls="pay-ride-when"), cls="pay-ride pay-ride-open", data_ride=leg))
+    return Div(Div(Span(icon("car", 16, 2.4), Span("Rides"), cls="pay-rides-title"), Span(ride_model.SIMULATED_LABEL, cls="pay-rides-sim"), cls="pay-rides-head"),
+               Ul(*rows, cls="pay-ride-list"), cls="pay-ride-box", id="pay-ride-box")
+
+
+def plan_ride_path(leg, flight, stay, trip):
+    return plan.ride_path(leg, flight.id, stay.id if stay else None, trip)
+
+
+def celebration(b, session=None):
     trip = tripcal.trip_of(b)
     flight, stay = tripcal.flight_of(b), tripcal.stay_of(b)
     pick, fare = tripcal.stay_pick_of(b), tripcal.flight_pick_of(b)
@@ -148,6 +171,7 @@ def celebration(b):
         H2(f"You're going to {trip.place}!", id="pay-done-title"),
         P(tripcal.booked_sentence(b)),
         Div(*pills, cls="pay-pills"),
+        rides_list(b, session) if session is not None else "",
         A("Open my trip calendar", href="/calendar", cls="btn btn-ink pay-cal", id="pay-cal"),
         Span(f"Booking {b['id']} · simulated, nothing was charged", cls="pay-ref"),
         aria_labelledby="pay-done-title", cls="pay-done",
@@ -192,4 +216,4 @@ def register(app):
         b = ses.booking(session)
         if not b:
             return RedirectResponse("/plan", status_code=303)
-        return celebration(b)
+        return celebration(b, session)

@@ -170,7 +170,7 @@ class Estimate:
 
     @property
     def display(self) -> str:
-        return f"${self.cents / 100:,.2f}"
+        return catalog.money(self.cents)
 
 
 def _product_id(key):
