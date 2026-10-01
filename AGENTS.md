@@ -2,7 +2,7 @@
 
 GitAway (repo name `travelos`, the product's former name). Design-first frontend on fake data; read `docs/brief.md` and `docs/plan.md` first.
 
-- Python via pixi only: `pixi run dev` (port 5002), `pixi run test`. Never pip.
+- Python via pixi only: `pixi run dev` (port 5002), `pixi run test`. Never pip. Page-JS browser tests (`tests_browser/`, headless Chromium, ~5s): `pixi run test-browser`, after a one-time `pixi run test-browser-install`.
 - `main.py` builds the FastHTML app and serves `/assets/…`; every screen is a module in `gitaway/pages/` exposing `register(app)`, appended to `SCREENS` in `gitaway/pages/__init__.py`. Placeholders register last as fallbacks, so a real screen on the same path wins; delete its entry from `placeholders.PLACEHOLDERS` when you ship it. Keep screens in their own modules so tickets can be built in parallel.
 - `gitaway/layout.py` `page()` is the shared shell (fonts, tokens, header, footer, `data-theme` sunset|pacific). `gitaway/icons.py` `icon()` gives inline SVG icons; never use emoji.
 - `gitaway/catalog.py` is the single fake catalog. Money is integer cents; display with `catalog.money()`.
