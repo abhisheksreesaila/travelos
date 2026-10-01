@@ -11,7 +11,7 @@ from fasthtml.common import Beforeware, FastHTML, serve
 from fh_saas.utils_auth import create_auth_beforeware
 from fh_saas.utils_log import configure_logging
 
-from gitaway import auth, hostdb, session
+from gitaway import access, auth, hostdb, session
 from gitaway.layout import HEAD
 from gitaway.pages import register_all
 from gitaway.pages.family import PRIVATE
@@ -37,7 +37,7 @@ def _locked_auth(req, sess):
 
 auth_before = Beforeware(_locked_auth, skip=auth_before.skip)
 
-app = FastHTML(before=[auth_before, Beforeware(session.bind, skip=[r"/assets/.*"])], hdrs=HEAD, title="GitAway", htmlkw={"lang": "en"},
+app = FastHTML(before=[Beforeware(access.guard, skip=[r"/assets/.*"]), auth_before, Beforeware(session.bind, skip=[r"/assets/.*"])], hdrs=HEAD, title="GitAway", htmlkw={"lang": "en"},
                secret_key=os.getenv("GITAWAY_SECRET_KEY") or None, key_fname=str(ROOT / ".sesskey"))
 app.static_route_exts(prefix="/assets/", static_path=str(ROOT / "assets"))
 register_all(app)

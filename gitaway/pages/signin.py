@@ -23,6 +23,7 @@ TITLES = {
     "save": "Sign in to save this trip",
     "publish": "Sign in to publish your trip",
     "ride": "Sign in to schedule an Uber",
+    "join": "Sign in to join your family",
 }
 
 
@@ -124,6 +125,7 @@ def register(app):
                 raise ValueError("no code")
             with hostdb.locked():  # fh-saas's callback uses the one shared host connection
                 handle_oauth_callback(code, state, request, session)  # its own redirect (/dashboard) is not ours
+                auth.after_sign_in(session)  # join the families this email was invited to (F-043)
         except Exception:
             for key in ("oauth_state", "login_next", "login_intent"):
                 session.pop(key, None)

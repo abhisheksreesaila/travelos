@@ -1,7 +1,8 @@
 """Sign-in on fh-saas: storage location, Google keys, the local dev sign-in and the family tenant. See docs/setup.md.
 
 Everything here is a thin layer over fh_saas.utils_auth. The dev sign-in runs the same steps as fh-saas's OAuth callback
-(create_or_get_global_user, provision_new_user, create_user_session), so later code cannot tell the two apart.
+(create_or_get_global_user, provision_new_user, create_user_session), so later code cannot tell the two apart. Both then run
+`after_sign_in`, which joins the families the person's email was invited to (F-043).
 """
 
 import json
@@ -80,7 +81,16 @@ def sign_in_dev(session, email):
             provision_new_user(host_db, user)
             membership = get_user_membership(host_db, user.id)
         create_user_session(session, user, membership)
+        after_sign_in(session)
     return user
+
+
+def after_sign_in(session):
+    """The one step every sign-in ends with (the dev sign-in above and the Google callback in pages/signin.py): families the person's
+    email was invited to are joined and the active family is chosen (gitaway.members). Returns the memberships joined this time."""
+    from gitaway import members  # here, not at the top: members imports this package's other modules
+    with hostdb.locked():
+        return members.after_sign_in(session)
 
 
 def make_room(session):
