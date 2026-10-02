@@ -394,7 +394,7 @@ def convert(text) -> Converted:
 
     if not (stays or cars):
         return Converted("", tuple(warnings))
-    start =min([s["check_in"].date() for s in stays] + [c["pick_at"].date() for c in cars])
+    start = min([s["check_in"].date() for s in stays] + [c["pick_at"].date() for c in cars])
     end = max([s["check_out"].date() for s in stays] + [c["drop_at"].date() for c in cars])
     first = sorted(stays, key=lambda s: s["check_in"])[0] if stays else sorted(cars, key=lambda c: c["pick_at"])[0]
     city = first["city"]

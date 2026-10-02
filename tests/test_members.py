@@ -319,7 +319,7 @@ def test_a_role_must_be_a_real_role(owner):
     sam = addr()
     invite(owner, sam, "editor")
     sign_in(browser(owner), sam)
-    uid = members.members(tenant(owner))[1]["user_id"]
+    uid = next(m["user_id"] for m in members.members(tenant(owner)) if m["email"] == sam)
     assert owner.post("/family/role", data={"user": uid, "role": "god"}, follow_redirects=False).status_code == 409
     assert members.role_in(uid, tenant(owner)) == "editor"
 
