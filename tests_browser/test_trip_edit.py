@@ -74,6 +74,7 @@ def test_edit_a_flight_time_and_a_hotel_name_and_see_both_on_the_calendar(signed
         page.click("#tb-next")
     expect(page.locator("#ti-preview-body")).to_contain_text("The Corrected Inn")
     expect(page.locator("#ti-save-changes")).to_be_visible()
+    assert page.evaluate("getComputedStyle(document.querySelector('.tb-steps')).listStyleType") == "none"  # the step list is styled like the builder's
     expect(page.locator("#ti-save")).to_have_count(0)
     expect(page.locator(".ti-match")).to_contain_text("plans, notes and rides stay")
     no_sideways_scroll(page)

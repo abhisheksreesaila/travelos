@@ -169,7 +169,7 @@ def preview_page(text, parsed, match=None, moves=0, *, fields=None, save_action=
                 Form(*edit_fields, Button(icon("arrow-right", 16, 2.6), edit_label, type="submit", cls="btn btn-sm", id="ti-edit"), action=edit_to, method="post", cls="ti-edit"),
                 Form(*text_field, Button("Edit as template text", type="submit", cls="ti-link ti-linkbtn", id="ti-edit-text"), action=f"{PATH}/edit", method="post", cls="ti-edit") if edit is None else "",
                 cls="ti-card ti-aside"), cls="ti-cols"),
-        cls="ti-wrap"), head=HEAD)
+        cls="ti-wrap"), head=(*HEAD, Link(rel="stylesheet", href="/assets/css/tripbuild.css")) if lead else HEAD)
     return out
 
 
