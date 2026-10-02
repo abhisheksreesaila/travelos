@@ -1,5 +1,6 @@
 """F-052: the sign-in boarding pass fills from where the traveler came from."""
 import re
+from html import unescape as html_unescape
 from urllib.parse import quote
 
 import pytest
@@ -91,3 +92,34 @@ def test_cancel_and_round_trip_stay(client):
 def test_the_sky_is_decorative_and_has_the_route_codes(client):
     html = get(client, FORK, "fork")
     assert 'class="si-sky"' in html and 'aria-hidden="true"' in html and html.count('class="si-code"') == 4  # two stages, two codes each
+
+
+def test_the_google_letter_is_hidden_from_the_accessible_name(client, monkeypatch):
+    monkeypatch.setenv("GOOGLE_CLIENT_ID", "id")
+    monkeypatch.setenv("GOOGLE_CLIENT_SECRET", "secret")
+    assert re.search(r'<span(?=[^>]*aria-hidden="true")(?=[^>]*class="si-g")[^>]*>G</span>', get(client, "/start"))
+
+
+def test_fork_stickers_are_the_first_two_day_titles(client):
+    from gitaway import itineraries
+    days = itineraries.get("sun-tacos-and-tide-pools").days
+    html = get(client, FORK, "fork")
+    stickers = re.findall(r'class="si-stick si-stick\d"[^>]*>(.*?)</span>', html)
+    assert [html_unescape(s) for s in stickers[:2]] == [days[0].title, days[1].title]
+
+
+@pytest.mark.parametrize("intent,words", [("fork", "your forks"), ("save", "saved trips"), ("publish", "publish")])
+def test_the_fork_pass_wording_follows_the_intent(client, intent, words):
+    html = get(client, FORK, intent)
+    desc = re.search(r'id="si-desc">(.*?)</p>', html, re.S).group(1)
+    assert words in desc
+    if intent != "fork":
+        assert "your forks" not in desc
+
+
+def test_the_stub_says_stay_signed_in(client):
+    assert ">STAY SIGNED IN<" in get(client, "/start")
+
+
+def test_the_dev_summary_has_a_chevron(client):
+    assert re.search(r'<summary class="si-sum">.*?<svg', get(client, "/start"), re.S)

@@ -89,3 +89,62 @@ def test_desktop_fits_without_sideways_scroll_and_shows_the_pass(open_signin, na
     card = page.evaluate("(() => { const r = document.querySelector('.si-card').getBoundingClientRect(); return [r.top, r.bottom]; })()")
     assert card[0] >= 0 and card[1] <= DESKTOP["height"]   # the whole pass is on screen at 1440x900
     assert page.locator("#si-email").evaluate("e => document.activeElement === e")   # focus starts in the dialog
+
+
+@pytest.fixture
+def with_google(monkeypatch):
+    monkeypatch.setenv("GOOGLE_CLIENT_ID", "id")
+    monkeypatch.setenv("GOOGLE_CLIENT_SECRET", "secret")
+
+
+def test_the_google_button_is_named_continue_with_google(open_signin, with_google):
+    page = open_signin(CONTEXTS["search"], PHONE)
+    assert page.get_by_role("link", name="Continue with Google", exact=True).count() == 1
+
+
+GEOMETRY = """() => {
+    const vis = e => e.closest('.si-stage').offsetParent !== null;
+    const rect = e => { const r = e.getBoundingClientRect(); return {l: r.left, t: r.top, r: r.right, b: r.bottom, w: r.width, text: e.textContent.trim()}; };
+    const q = s => [...document.querySelectorAll(s)].filter(vis);
+    const sky = document.querySelector('.si-sky').getBoundingClientRect(), card = document.querySelector('.si-card').getBoundingClientRect();
+    return {sticks: q('.si-stick').map(rect), codes: q('.si-code').map(rect), sun: q('.si-sun').map(rect)[0], plane: q('.si-plane').map(rect)[0],
+            sky: {l: sky.left, t: sky.top, r: sky.right, b: sky.bottom}, cardTop: card.top, scroll: [document.documentElement.scrollWidth, document.documentElement.clientWidth]};
+}"""
+
+
+def hit(a, b):
+    return a["l"] < b["r"] and b["l"] < a["r"] and a["t"] < b["b"] and b["t"] < a["b"]
+
+
+WIDTHS = [(1440, 900), (1000, 800), (900, 800), (800, 800), (721, 800), (390, 844), (320, 640)]
+
+
+@pytest.mark.parametrize("w,h", WIDTHS)
+@pytest.mark.parametrize("name", CONTEXTS)
+def test_stickers_and_labels_never_overlap_at_any_width(open_signin, name, w, h):
+    g = open_signin(CONTEXTS[name], {"width": w, "height": h}).evaluate(GEOMETRY)
+    things = g["sticks"] + g["codes"]
+    for i, a in enumerate(things):
+        for b in things[i + 1:]:
+            assert not hit(a, b), (a["text"], b["text"])
+        assert a["l"] >= g["sky"]["l"] and a["r"] <= g["sky"]["r"], a["text"]
+        if w <= 1000:  # stacked: the pass tucks over the sky's lower edge, so nothing may hide under it
+            assert a["b"] <= g["cardTop"] and a["t"] >= g["sky"]["t"], a["text"]
+    if w <= 1000:
+        assert not any(hit(s, g["sun"]) for s in g["sticks"])
+    assert g["scroll"][0] == g["scroll"][1]
+
+
+@pytest.mark.parametrize("w,h", WIDTHS)
+def test_the_parked_plane_stays_off_the_destination_label(open_signin, w, h):
+    g = open_signin(CONTEXTS["search"], {"width": w, "height": h}).evaluate(GEOMETRY)
+    assert not hit(g["plane"], g["codes"][1]) and not hit(g["plane"], g["codes"][0])
+
+
+def test_the_dev_summary_shows_a_chevron_that_turns_when_open(open_signin):
+    page = open_signin(CONTEXTS["cold"], PHONE)
+    chev = page.locator(".si-sum svg")
+    assert chev.is_visible()
+    open_t = chev.evaluate("e => getComputedStyle(e).transform")
+    page.click(".si-sum")
+    assert chev.evaluate("e => getComputedStyle(e).transform") != open_t

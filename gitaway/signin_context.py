@@ -34,21 +34,38 @@ GENERIC = Pass("cold", *FALLBACK, "Your next trip starts here.", "Plan it with y
                "Anywhere", "WHEN", "You pick", "Tacos Friday", "Beach at sunset", "Fri 8:05 → we're off!")
 
 
-def _search(trip):
+SEARCH_SUB = {"pay": "Sign in to book these dates and picks. Nothing changes until you do.", "invite": "Sign in to invite your crew to these dates and picks."}
+FORK_SUB = {"fork": "Sign in to keep this trip in your forks and drop its days into your calendar.",
+            "save": "Sign in to keep this trip in your saved trips and come back to it any time.",
+            "publish": "Sign in to publish this trip so other families can fork it."}
+
+
+def _short(text, limit=26):
+    """A day title on a sticker: whole words only, never cut with an ellipsis."""
+    words, out = (text or "").split(), ""
+    for w in words:
+        if len((out + " " + w).strip()) > limit:
+            break
+        out = (out + " " + w).strip()
+    return out or (text or "")[:limit]
+
+
+def _search(trip, intent):
     code = trip.airports[0] if trip.airports else FALLBACK[1]
     return Pass("search", trip.origin, code, f"{trip.origin_name} to {trip.destination_name}.",
-                "Sign in to save these dates and picks, and plan the days with your family.", f"{trip.origin} → {code}",
+                SEARCH_SUB.get(intent, "Sign in to save these dates and picks, and plan the days with your family."), f"{trip.origin} → {code}",
                 "DATES", trip.date_label, trip.nights_text, trip.summary, trip.date_label)
 
 
-def _fork(trip):
+def _fork(trip, intent):
     codes = _CODE.findall(trip.route or "")
     origin, dest = (codes[0], codes[1]) if len(codes) >= 2 else FALLBACK
     place, days = (trip.place or "").split(",")[0].strip() or "this trip", len(trip.days)
     day_text = f"{days} day{'s' if days != 1 else ''}"
-    tag = trip.tags[0].label if trip.tags else place
-    return Pass("fork", origin, dest, f"{place} in {day_text}.", "Sign in to keep this trip in your forks and drop its days into your calendar.",
-                f"{origin} → {dest}", "DAYS", day_text, day_text, tag, f"{day_text} of {place}")
+    titles = [_short(d.title) for d in trip.days[:2] if d.title]
+    s1, s2 = (titles + [day_text, place])[:2] if len(titles) < 2 else titles
+    return Pass("fork", origin, dest, f"{place} in {day_text}.", FORK_SUB.get(intent, FORK_SUB["fork"]),
+                f"{origin} → {dest}", "DAYS", day_text, s1, s2, f"{day_text} of {place}")
 
 
 def context(next_path, intent) -> Pass:
@@ -57,11 +74,11 @@ def context(next_path, intent) -> Pass:
     q = {k: v[0] for k, v in parse_qs(parts.query).items() if v}
     if path == "/plan/pay" or (path == "/plan" and any(q.get(k) for k in ("f", "h", "c", "d", "r", "a", "k"))):
         try:
-            return _search(catalog.parse_trip(catalog.ORIGIN[0], "la", q.get("d", catalog.SAMPLE_TRIP.depart.isoformat()), q.get("r", catalog.SAMPLE_TRIP.return_.isoformat()),
+            return _search(intent=intent, trip=catalog.parse_trip(catalog.ORIGIN[0], "la", q.get("d", catalog.SAMPLE_TRIP.depart.isoformat()), q.get("r", catalog.SAMPLE_TRIP.return_.isoformat()),
                                               q.get("a", str(catalog.SAMPLE_TRIP.adults)), q.get("k", ",".join(map(str, catalog.SAMPLE_TRIP.kid_ages)))))
         except catalog.TripError:
             return GENERIC
     if intent in ("fork", "save", "publish") and path.startswith("/trips/") and path.count("/") == 2:
         trip = forks.resolve(path.split("/")[2])
-        return _fork(trip) if trip else GENERIC
+        return _fork(trip, intent) if trip else GENERIC
     return GENERIC

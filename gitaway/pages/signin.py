@@ -37,10 +37,10 @@ PLANE = "M2.5 13.5l7.2-1.6L15 4.6c.5-.7 1.6-.8 2.2-.2.5.5.5 1.3.1 1.9l-4.1 7.1 7
 STAGES = {
     "d": dict(box="0 0 880 900", route="M 90 520 C 300 200, 560 160, 640 330", a=(90, 520), b=(640, 330),
               pos=dict(sun="left:63.6%;top:33.3%;width:25%", c1="left:13.6%;top:13.3%;width:20.5%;height:6%", c2="left:47.7%;top:23.3%;width:13.6%;height:4.4%",
-                       fr="left:6.8%;top:60.5%", to="left:69.3%;top:30.8%", s1="left:10.9%;top:71%", s2="left:37.5%;top:77.8%", note="left:7.3%;top:7.1%")),
-    "m": dict(box="0 0 400 200", route="M 44 150 C 110 30, 230 20, 330 96", a=(44, 150), b=(330, 96),
-              pos=dict(sun="left:62%;top:14%;width:26%", c1="left:38%;top:8%;width:20%;height:9%", c2="left:30%;top:84%;width:16%;height:8%",
-                       fr="left:4.5%;top:79%", to="left:74%;top:60%", s1="left:36%;top:60%", s2="left:60%;top:8%", note="left:5%;top:6%")),
+                       fr="left:6.8%;top:60.5%", to="left:66.5%;top:41%", s1="left:10.9%;top:71%", s2="left:37.5%;top:77.8%", note="left:7.3%;top:7.1%")),
+    "m": dict(box="0 0 400 240", route="M 44 180 C 110 36, 230 24, 330 110", a=(44, 180), b=(330, 110),   # one sticker: a banner has no room for two
+              pos=dict(sun="left:62%;top:12%;width:26%", c1="left:55%;top:4%;width:22%;height:8%", c2="left:2%;top:46%;width:18%;height:8%",
+                       fr="left:4.5%;top:79%", to="left:78%;top:60%", s1="left:20%;top:68%", note="left:5%;top:5%")),
 }
 
 
@@ -50,15 +50,15 @@ def sky(ctx):
     for key, st in STAGES.items():
         pos, (ax, ay), (bx, by) = st["pos"], st["a"], st["b"]
         route = Svg(
-            Path(d=st["route"], cls="si-route", fill="none", stroke="#1E1A2E", stroke_width="3", stroke_dasharray="10 10", stroke_linecap="round", opacity=".35"),
-            Circle(cx=ax, cy=ay, r=9, fill="#1E1A2E"), Circle(cx=bx, cy=by, r=9, fill="#FF7352", stroke="#FFFFFF", stroke_width="4"),
-            G(Path(d=PLANE, transform="translate(-22 -22) rotate(45 22 22) scale(1.833)", fill="#1E1A2E"), cls="si-plane", style=f"offset-path:path('{st['route']}')"),
+            Path(d=st["route"], cls="si-route", fill="none", stroke_width="3", stroke_dasharray="10 10", stroke_linecap="round"),
+            Circle(cx=ax, cy=ay, r=9, cls="si-from"), Circle(cx=bx, cy=by, r=9, cls="si-to", stroke_width="4"),
+            G(Path(d=PLANE, transform="translate(-22 -22) rotate(45 22 22) scale(1.833)"), cls="si-plane", style=f"offset-path:path('{st['route']}')"),
             viewBox=st["box"], cls="si-svg", focusable="false",
         )
         stages.append(Div(
             Div(cls="si-sun", style=pos["sun"]), Div(cls="si-cloud", style=pos["c1"]), Div(cls="si-cloud si-cloud2", style=pos["c2"]), route,
             Span(ctx.origin, cls="si-code", style=pos["fr"]), Span(ctx.dest, cls="si-code", style=pos["to"]),
-            Span(ctx.s1, cls="si-stick si-stick1", style=pos["s1"]), Span(ctx.s2, cls="si-stick si-stick2", style=pos["s2"]),
+            Span(ctx.s1, cls="si-stick si-stick1", style=pos["s1"]), Span(ctx.s2, cls="si-stick si-stick2", style=pos["s2"]) if "s2" in pos else "",
             P(ctx.note, cls="si-hand", style=pos["note"]),
             cls=f"si-stage si-stage-{key}"))
     return Div(Div(cls="si-band si-band1"), Div(cls="si-band si-band2"), Div(cls="si-band si-band3"), *stages, aria_hidden="true", cls="si-sky")
@@ -87,7 +87,7 @@ def dialog(next_path, intent, asked=None, dev=False, google=False, error=""):
     asked = intent if asked is None else asked
     ctx = context(next_path, intent)
     hidden = (Input(type="hidden", name="next", value=next_path), Input(type="hidden", name="intent", value=asked))
-    google_btn = A(Span("G", cls="si-g"), "Continue with Google", icon("plane", 22, 2.2), href=f"/login?next={quote(next_path, safe='')}&intent={asked}",
+    google_btn = A(Span("G", cls="si-g", aria_hidden="true"), "Continue with Google", icon("plane", 22, 2.2), href=f"/login?next={quote(next_path, safe='')}&intent={asked}",
                    cls="btn btn-primary si-google", id="si-google") if google else ""
     dev_form = Form(
         Label(Span("Email", cls="si-label"), Input(type="email", name="email", id="si-email", placeholder="you@example.com", required=True, autocomplete="email",
@@ -97,9 +97,9 @@ def dialog(next_path, intent, asked=None, dev=False, google=False, error=""):
         P("Local development only. It never appears on a real site.", cls="si-note"),
         *hidden, action="/signin", method="post", id="si-dev-form", cls="si-dev-form",
     ) if dev else ""
-    dev_box = Details(Summary("Local dev sign-in", cls="si-sum"), dev_form, cls="si-dev-box", **({"open": True} if error or not google else {})) if dev else ""
+    dev_box = Details(Summary(icon("chev-right", 16, 2.6), "Local dev sign-in", cls="si-sum"), dev_form, cls="si-dev-box", **({"open": True} if error or not google else {})) if dev else ""
     nothing = P("Sign-in isn't set up on this server yet. See docs/setup.md.", cls="si-note", id="si-off") if not (google or dev) else ""
-    stub = Div(*[Span(Span(k, cls="si-k"), Span(v, cls="si-v"), cls="si-cell") for k, v in (("ROUTE", ctx.route), (ctx.k2, ctx.v2), ("SIGNED IN", "30 days"))], cls="si-stub")
+    stub = Div(*[Span(Span(k, cls="si-k"), Span(v, cls="si-v"), cls="si-cell") for k, v in (("ROUTE", ctx.route), (ctx.k2, ctx.v2), ("STAY SIGNED IN", "30 days"))], cls="si-stub")
     card = Div(
         Div(
             Div(Span(icon("fork", 20, 2.4), cls="si-logo"), Span("GitAway", cls="si-brand"), Span("BOARDING PASS", cls="si-tag"), cls="si-top"),
