@@ -16,8 +16,8 @@ IPHONE_UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/
 @pytest.fixture
 def pin(monkeypatch):
     def pin(day, minute=12 * 60):
-        monkeypatch.setattr(catalog, "today", lambda: day)
-        monkeypatch.setattr(tripday, "now_minute", lambda: minute)
+        monkeypatch.setattr(catalog, "today", lambda *_: day)
+        monkeypatch.setattr(tripday, "now_minute", lambda *_: minute)
     return pin
 
 

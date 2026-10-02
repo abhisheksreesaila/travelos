@@ -135,10 +135,24 @@ from zoneinfo import ZoneInfo
 TZ = ZoneInfo("America/Los_Angeles")  # the one zone the trips are in: catalog.today, tripday, rides
 
 
+def now_utc():
+    """The current instant (UTC). Tests pin this to drive any zone."""
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc)
+
+
 def today() -> date:
-    """Today in Los Angeles, where the trips are: a server in another time zone (Railway runs on UTC) must not flip the day at 5 PM."""
-    from datetime import datetime
-    return datetime.now(TZ).date()
+    """The server's one "today", in Los Angeles: a server in another time zone (Railway runs on UTC) must not flip the day at 5 PM.
+    The past-date check on a new trip and the date pickers use this, so they always agree. A trip's own day is `today_in(zone)`."""
+    return now_utc().astimezone(TZ).date()
+
+
+def today_in(zone=None) -> date:
+    """Today in a trip's time zone (an IANA name or ZoneInfo; default Los Angeles, where it is exactly `today()`)."""
+    key = getattr(zone, "key", zone)
+    if not key or key == TZ.key:
+        return today()
+    return now_utc().astimezone(ZoneInfo(key)).date()
 
 
 PAST_MESSAGE = "Pick a depart date that is today or later."

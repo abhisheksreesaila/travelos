@@ -323,20 +323,22 @@ def test_register_on_open_is_idempotent_and_keeps_the_rows(client):
 
 
 def test_a_migration_is_applied_to_each_family_the_first_time_it_is_opened(tmp_path, monkeypatch):
-    (tmp_path / "001_add_pinned_to_trips.sql").write_text("-- UP --\nALTER TABLE trips ADD COLUMN pinned INTEGER DEFAULT 0;\n-- DOWN --\nALTER TABLE trips DROP COLUMN pinned;\n")
+    for real in familydb.MIGRATIONS_DIR.glob("*.sql"):  # the real migrations stay in force next to the throwaway one
+        (tmp_path / real.name).write_text(real.read_text())
+    (tmp_path / "900_add_pinned_to_trips.sql").write_text("-- UP --\nALTER TABLE trips ADD COLUMN pinned INTEGER DEFAULT 0;\n-- DOWN --\nALTER TABLE trips DROP COLUMN pinned;\n")
     monkeypatch.setattr(familydb, "MIGRATIONS_DIR", tmp_path)
     familydb.forget_schema_cache()
     s = person("ari")
     ses.book(s, catalog.quote("f1", "h1", "c1"))
     with familydb.using(s) as db:
         assert db.conn.execute(text("SELECT pinned FROM trips")).scalar() == 0
-        assert db.conn.execute(text("SELECT version FROM _migrations")).scalars().all() == [1]
+        assert db.conn.execute(text("SELECT version FROM _migrations ORDER BY version")).scalars().all() == [1, 900]
     familydb.forget_schema_cache()
     with familydb.using(s) as db:  # opened again: not applied twice
-        assert db.conn.execute(text("SELECT COUNT(*) FROM _migrations")).scalar() == 1
+        assert db.conn.execute(text("SELECT COUNT(*) FROM _migrations")).scalar() == 2
     with familydb.using(s) as db:  # leave this family's file as the rest of the suite expects it
         db.conn.execute(text("ALTER TABLE trips DROP COLUMN pinned"))
-        db.conn.execute(text("DROP TABLE _migrations"))
+        db.conn.execute(text("DELETE FROM _migrations WHERE version = 900"))
         db.conn.commit()
 
 
