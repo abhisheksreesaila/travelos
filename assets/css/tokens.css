@@ -30,6 +30,9 @@
 
   --skeleton: #F2ECE3;
   --skeleton-band: #FBF7F1;
+  --peach: #FFC9B2;     /* sign-in sky: the warm band */
+  --sand: #FFE3A3;      /* sign-in sky: the beach */
+  --paper-2: #FAF7F2;   /* a step darker than paper: the boarding-pass stub */
 
   --r-sm: 0.75rem;
   --r-md: 1.25rem;

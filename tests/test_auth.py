@@ -122,7 +122,7 @@ def test_dev_sign_in_does_not_follow_an_open_redirect(client):
 
 def test_the_sign_in_page_offers_the_dev_form_in_the_house_style(client):
     html = client.get("/signin?intent=pay&next=/plan").text
-    assert 'type="email"' in html and "Dev sign-in (local only)" in html and "Sign in with Google" not in html
+    assert 'type="email"' in html and "Dev sign-in (local only)" in html and "Continue with Google" not in html
     assert 'name="next" value="/plan"' in html and 'name="intent" value="pay"' in html
     assert "Local development only" in html
 
@@ -185,7 +185,7 @@ def test_without_google_keys_login_is_the_sign_in_page(client):
 
 def test_with_google_keys_the_page_offers_google_and_login_goes_to_google(client, google):
     html = client.get("/signin?next=/plan&intent=pay").text
-    assert "Sign in with Google" in html and 'href="/login?next=%2Fplan&amp;intent=pay"' in html
+    assert "Continue with Google" in html and 'href="/login?next=%2Fplan&amp;intent=pay"' in html
     r = client.get("/login?next=/plan&intent=pay", follow_redirects=False)
     target = urlsplit(r.headers["location"])
     q = parse_qs(target.query)

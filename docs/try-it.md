@@ -29,7 +29,7 @@ To use real Google sign-in instead of the dev sign-in, follow `docs/setup.md` â†
 2. **Copy link** and send it to them yourself; GitAway doesn't send email yet.
 3. They open the link and sign in with that same Gmail address, and they're in your family with your trips.
    - **Locally:** each person signs in with the dev sign-in in another browser or a private window.
-   - **With Google keys:** they use **Sign in with Google**.
+   - **With Google keys:** they use **Continue with Google**.
 
 ## 4. Plan together
 

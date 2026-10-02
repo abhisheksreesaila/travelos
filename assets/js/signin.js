@@ -3,8 +3,8 @@
   const dialog = document.getElementById("si-dialog");
   const cancel = document.getElementById("si-cancel");
   if (!dialog) return;
-  const focusable = () => [...dialog.querySelectorAll("a[href], button:not([disabled]), input:not([type=hidden])")];
-  const first = focusable()[0];
+  const focusable = () => [...dialog.querySelectorAll("a[href], button:not([disabled]), summary, input:not([type=hidden])")];
+  const first = document.getElementById("si-google") || document.getElementById("si-email") || focusable()[0];
   if (first) first.focus();
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && cancel) {
