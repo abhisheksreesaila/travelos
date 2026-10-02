@@ -66,7 +66,13 @@
 .tp-state { flex-shrink: 0; font-size: max(var(--text-min), 0.8125rem); font-weight: 800; padding: 0.125rem 0.5rem; border-radius: var(--r-pill); background: rgba(30, 26, 46, .08); }
 .tp-state-next, .tp-state-now { background: var(--ink); color: #FFFFFF; }
 .tp-k-sun { background: var(--sun-tint); } .tp-k-mint { background: var(--mint-tint); } .tp-k-sky { background: var(--sky-tint); } .tp-k-grape { background: var(--grape-tint); } .tp-k-bubble { background: var(--bubble-tint); }
-.tp-card.is-next { background: #FFE6DA; }
+.tp-card.is-next:not(.tp-bk) { background: #FFE6DA; }
+/* Booked (F-059): the kind's tint (flight sky, hotel lilac, car sunshine), a solid edge in its ink, the icon and a quiet lock in that ink */
+.tp-bk { border-left: 0.3125rem solid var(--bk-ink); }
+.tp-bk.tp-k-sky { --bk-ink: var(--sky-ink); } .tp-bk.tp-k-grape { --bk-ink: var(--grape-ink); } .tp-bk.tp-k-sun { --bk-ink: var(--sun-ink); }
+.tp-bk .tp-ico, .tp-bk .tp-lock { color: var(--bk-ink); }
+.tp-lock { flex-shrink: 0; display: inline-flex; margin-top: 0.125rem; }
+.tp-elsewhere { display: flex; align-items: center; gap: 0.375rem; font-size: max(var(--text-min), 0.8125rem); font-weight: 700; color: var(--ink-3); padding: 0 0.25rem; }
 .tp-row.is-done { opacity: 0.6; }
 .tp-card.tp-offer { border: 0.125rem dashed var(--ink-3); background: transparent; box-shadow: none; }
 
