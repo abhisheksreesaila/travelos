@@ -300,10 +300,10 @@ Design: approved 2026-10-01 (docs/design/canvas/GoLive-Pickers.dc.html) · Needs
 - [x] a GitAway date-range picker (rounded, tokens, keyboard and screen-reader accessible, phone-friendly) replaces browser date inputs on "Where to?" and every other date field
 - [x] dropdowns and number pickers (adults, kids' ages, roles, times) use a GitAway style; no browser-default widgets left
 
-## F-052 A sign-in page that makes you want to travel [doing]
+## F-052 A sign-in page that makes you want to travel [done]
 Design: sign-in A (boarding pass) chosen 2026-10-01 as recommended; captain said "go ahead and do what you have to do" and will review locally (docs/design/canvas/GoLive-SignIn-A.dc.html) · Needs: none
-- [ ] the boarding pass fills from context: after a search (from, to, dates), after a fork (the trip's route and days, no creator), or a generic pass when there is no context
-- [ ] emotional, animated, fun travel sign-in (Google button and dev sign-in) per the approved artboard; fast, accessible, reduced motion calm
+- [x] the boarding pass fills from context: after a search (from, to, dates), after a fork (the trip's route and days, no creator), or a generic pass when there is no context
+- [x] emotional, animated, fun travel sign-in (Google button and dev sign-in) per the approved artboard; fast, accessible, reduced motion calm
 
 ## F-053 Good when empty [done]
 Needs: none
