@@ -354,3 +354,10 @@ Design: docs/design/landing-v2.md (approved 2026-10-02) · Needs: none
 - [x] the four feature tiles animate on hover and keyboard focus (once on scroll on touch screens), calm under reduced motion
 - [x] the shared calendar plays four people filling three days in real time, loops, rests complete before it starts and under reduced motion
 - [x] Community trips and creators sections as designed, creators copy about inspiring others, not followers; desktop and phone, no sideways scroll
+
+## F-061 Edit a saved trip [doing]
+Captain, 2026-10-02: "it's good to have edit trip button… if the OCR makes mistakes, then you at least have the opportunity to fix it." · Needs: F-058
+- [ ] an "Edit trip" button on the trip's details page, the calendar's trip bar and the phone trip view opens the guided builder filled with the saved trip (travelers, flights, every hotel, car, notes, booked on, confirmations)
+- [ ] saving replaces the trip's bookings in place (same trip, no duplicate) and keeps everyone's plans, notes and rides, with scheduled rides moving to the new flight times and hotel as the import's replace already does; the preview says so before saving
+- [ ] only editors and admins see the button and can save; viewers never see it; a stale tab can't edit a different trip than the one it opened
+- [ ] a browser test presses Edit trip, changes a flight time and a hotel name, saves, and sees both on the calendar with an existing plan still there
