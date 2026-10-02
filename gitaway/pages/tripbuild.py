@@ -181,11 +181,16 @@ def indicator(step):
     return Div(P(f"Step {step} of {len(LABELS)}" if step <= len(LABELS) else "Last check", cls="tb-count", id="tb-count"), Ol(*items, cls="tb-steps", aria_label="Progress"), cls="tb-progress")
 
 
-def _hidden(draft, step, nav=None):
-    return [Input(type="hidden", name="draft", value=tb.dump(draft)), Input(type="hidden", name="step", value=str(step)), *([Input(type="hidden", name="nav", value=nav)] if nav else [])]
+def edit_fields(edit):
+    """Edit mode (F-061): the trip being edited rides through every step, as `edit` and as `trip`, so a stale tab posts to that trip or to none."""
+    return [Input(type="hidden", name="edit", value=edit), Input(type="hidden", name="trip", value=edit)] if edit else []
 
 
-def step_page(step, draft, errors=None, status=200, notice=""):
+def _hidden(draft, step, nav=None, edit=""):
+    return [Input(type="hidden", name="draft", value=tb.dump(draft)), Input(type="hidden", name="step", value=str(step)), *([Input(type="hidden", name="nav", value=nav)] if nav else []), *edit_fields(edit)]
+
+
+def step_page(step, draft, errors=None, status=200, notice="", edit=""):
     tb.seed(step, draft)
     c = Ctx(draft, errors)
     banner = Div(notice, role="alert", cls="tb-errors", id="tb-notice") if notice else ""
@@ -193,31 +198,51 @@ def step_page(step, draft, errors=None, status=200, notice=""):
     last = step == len(LABELS)
     form = Form(
         Button("Next", type="submit", name="nav", value="next", cls="tb-default", tabindex="-1", aria_hidden="true"),  # Enter submits "Next", never "Back"
-        *_hidden(draft, step), banner, summary, *BODIES[step - 1](c),
-        Div(Button(icon("chev-left", 16, 2.6), "Back", type="submit", name="nav", value="back", cls="btn btn-sm tb-back", id="tb-back", formnovalidate=True) if step > 1 else A("Cancel", href="/trips/import", cls="ti-link", id="tb-cancel"),
+        *_hidden(draft, step, edit=edit), banner, summary, *BODIES[step - 1](c),
+        Div(Button(icon("chev-left", 16, 2.6), "Back", type="submit", name="nav", value="back", cls="btn btn-sm tb-back", id="tb-back", formnovalidate=True) if step > 1 else A("Cancel", href=f"/trip/details?trip={edit}" if edit else "/trips/import", cls="ti-link", id="tb-cancel"),
             Button("Check my trip" if last else f"Next: {LABELS[step]}", icon("arrow-right", 18, 2.6), type="submit", name="nav", value="next", cls="btn btn-ink tb-next", id="tb-next"), cls="tb-nav"),
         action=PATH, method="post", cls="tb-form", id="tb-form", novalidate=True, data_step=str(step), aria_label=TITLES[step - 1])
-    out = page(f"{LABELS[step - 1]}: build a trip", Div(
-        Div(Span("BUILD A TRIP", cls="eyebrow"), H1(TITLES[step - 1], cls="ti-title", id="tb-heading"), P(LEDES[step - 1], cls="ti-lede"), cls="ti-head"),
+    out = page(f"{LABELS[step - 1]}: {'edit a trip' if edit else 'build a trip'}", Div(
+        Div(Span("EDIT TRIP" if edit else "BUILD A TRIP", cls="eyebrow"), H1(TITLES[step - 1], cls="ti-title", id="tb-heading"), P(LEDES[step - 1], cls="ti-lede"), cls="ti-head"),
         indicator(step), Div(form, cls="ti-card tb-main"), cls="ti-wrap tb-wrap"), head=HEAD)
     return FtResponse(out, status_code=status) if status != 200 else out
 
 
-def preview(session, draft):
+def preview(session, draft, edit=""):
     """The importer's own preview of the plan the draft builds, or the step to fix."""
     try:
         plan = tb.build(draft)
     except tb.BuildProblem as e:
-        return step_page(e.step, draft, e.errors, 422)
+        return step_page(e.step, draft, e.errors, 422, edit=edit)
     parsed = ti.Parsed(plan, ())
-    match = importer.find_match(session, plan)
+    match = (edit, plan_title(session, edit)) if edit else importer.find_match(session, plan)
     return tip.preview_page("", parsed, match, importer.rides_to_retime(session, match[0], plan) if match else 0,
-                            fields=[Input(type="hidden", name="draft", value=tb.dump(draft))], save_action=f"{PATH}/save",
-                            edit=(PATH, [*_hidden(draft, len(LABELS) + 1), Input(type="hidden", name="nav", value="back")], "Change something"), lead=indicator(len(LABELS) + 1))
+                            fields=[Input(type="hidden", name="draft", value=tb.dump(draft)), *edit_fields(edit)], save_action=f"{PATH}/save",
+                            edit=(PATH, [*_hidden(draft, len(LABELS) + 1, edit=edit), Input(type="hidden", name="nav", value="back")], "Change something"), lead=indicator(len(LABELS) + 1), editing=bool(edit))
+
+
+def edit_plan(session, trip_id):
+    """The Plan of the family's saved trip `trip_id` when this request is really working on it (the stale-tab check), else None."""
+    with ses.family(session) as fam:
+        if not fam or not trip_id or fam.trip_id != trip_id:
+            return None
+    return importer.plan_of(session, trip_id)
+
+
+def plan_title(session, trip_id):
+    plan = edit_plan(session, trip_id)
+    return plan.title if plan else ""
+
+
+def gone():
+    return tip._sorry("Edit a trip", "That trip is not there any more, or it was not saved in GitAway. Open your calendar and pick the trip again.", A("Back to the calendar", href="/calendar", cls="btn btn-ink"), status=404)
 
 
 def advance(session, form):
     """One POST of the builder: read the step, then go where the button says."""
+    edit = str(form.get("edit", "") or "")
+    if edit and edit_plan(session, edit) is None:
+        return gone()
     draft = tb.load(str(form.get("draft", "") or ""))
     try:
         step = max(1, min(int(str(form.get("step", "1"))), len(LABELS) + 1))
@@ -227,17 +252,17 @@ def advance(session, form):
     if step <= len(LABELS):
         tb.read(step, form, draft)
     if step <= len(LABELS) and nav == "add":
-        return step_page(step, tb.add_row(step, draft))
+        return step_page(step, tb.add_row(step, draft), edit=edit)
     if step <= len(LABELS) and nav.startswith("remove-") and nav[7:].isdigit():
-        return step_page(step, tb.remove_row(step, draft, int(nav[7:])))
+        return step_page(step, tb.remove_row(step, draft, int(nav[7:])), edit=edit)
     if nav == "back":
-        return step_page(max(1, step - 1), draft)
+        return step_page(max(1, step - 1), draft, edit=edit)
     if step > len(LABELS):
-        return preview(session, draft)
+        return preview(session, draft, edit)
     errors = tb.check(step, draft)
     if errors:
-        return step_page(step, draft, errors, 422)
-    return preview(session, draft) if step == len(LABELS) else step_page(step + 1, draft)
+        return step_page(step, draft, errors, 422, edit=edit)
+    return preview(session, draft, edit) if step == len(LABELS) else step_page(step + 1, draft, edit=edit)
 
 
 # ---- routes ---------------------------------------------------------------------------------------------------------
@@ -259,6 +284,16 @@ def register(app):
             return tip._sorry("Build a trip", tip.CANNOT, A("Back to your trips", href="/start", cls="btn btn-ink"), status=403)
         return advance(session, await request.form())
 
+    @app.get(f"{PATH}/edit")
+    def build_edit(session, trip: str = ""):
+        """"Edit trip" (F-061): the builder's first step filled with the saved trip's plan, carrying the trip id."""
+        if not ses.current_traveler(session):
+            return RedirectResponse(f"/signin?next=%2Ftrip%2Fdetails&intent=save", status_code=303)
+        if not tip.can_import(session):
+            return tip._sorry("Edit a trip", "Only editors and admins of your family can edit a trip. Ask the family owner for editor access.", A("Back to the calendar", href="/calendar", cls="btn btn-ink"), status=403)
+        plan = edit_plan(session, trip)
+        return step_page(1, tb.from_plan(plan), edit=trip) if plan else gone()
+
     @app.post(f"{PATH}/from-import")
     def build_from_import(session, text: str = ""):
         """"Change something" on the import preview (F-058): the builder's first step, filled with everything the previewed text holds."""
@@ -273,18 +308,20 @@ def register(app):
         return step_page(1, tb.from_plan(parsed.plan))
 
     @app.post(f"{PATH}/save")
-    def build_save(session, draft: str = "", token: str = "", replace: str = ""):
+    def build_save(session, draft: str = "", token: str = "", replace: str = "", edit: str = ""):
         if not ses.current_traveler(session):
             return RedirectResponse(f"/signin?next={PATH}&intent=save", status_code=303)
         if not tip.can_import(session):
             return tip._sorry("Build a trip", tip.CANNOT, A("Back to your trips", href="/start", cls="btn btn-ink"), status=403)
+        if edit and (edit_plan(session, edit) is None or replace not in ("", edit)):  # a stale tab, a deleted trip or a forged id changes nothing
+            return gone()
         d = tb.load(draft)  # read again: a posted form is never trusted
         try:
             plan = tb.build(d)
         except tb.BuildProblem as e:
-            return step_page(e.step, d, e.errors, 422)
+            return step_page(e.step, d, e.errors, 422, edit=edit)
         try:
-            importer.save(session, plan, token or None, replace or None)
+            importer.save(session, plan, None if edit else (token or None), edit or replace or None)
         except importer.SaveError as e:
-            return step_page(len(LABELS), d, status=409, notice=str(e))
+            return step_page(len(LABELS), d, status=409, notice=str(e), edit=edit)
         return RedirectResponse("/calendar", status_code=303)

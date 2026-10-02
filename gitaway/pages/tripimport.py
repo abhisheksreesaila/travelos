@@ -135,9 +135,20 @@ def _consequences(plan):
     return out
 
 
-def preview_page(text, parsed, match=None, moves=0, *, fields=None, save_action=None, edit=None, lead="", expedia_read=False):
+def _replace_card(match, moves, hidden, save_to, editing):
+    """The correction card: "Replace the existing trip" for a text that matches a saved trip, "Save changes" when the trip is being edited."""
+    moved = P("Its calendar plans, notes and rides stay." + (f" {moves} scheduled Uber ride{'s' if moves != 1 else ''} will move to the new flight times and hotel." if moves else ""), cls="ti-note", **({"id": "ti-moves"} if moves else {}))
+    if editing:
+        return Div(P(f"Saving replaces the bookings of “{match[1]}” in place. It stays one trip, not a copy.", cls="ti-note", id="ti-inplace"),
+                   Form(*hidden, Input(type="hidden", name="replace", value=match[0]), Button(icon("check", 16, 2.6), "Save changes", type="submit", cls="btn btn-ink ti-save", id="ti-save-changes"), moved, action=save_to, method="post"), cls="ti-match")
+    return Div(P(f"You already imported “{match[1]}”. Is this a correction?", cls="ti-note"),
+               Form(*hidden, Input(type="hidden", name="replace", value=match[0]), Button(icon("check", 16, 2.6), "Replace the existing trip", type="submit", cls="btn btn-ink ti-save", id="ti-replace"), moved, action=save_to, method="post"), cls="ti-match")
+
+
+def preview_page(text, parsed, match=None, moves=0, *, fields=None, save_action=None, edit=None, lead="", expedia_read=False, editing=False):
     """The preview. The trip builder (F-055) draws this same page with its own hidden `fields` (its draft instead of the pasted `text`),
-    its own `save_action`, and `edit` = (action, hidden fields, button label) for the way back; `lead` goes above the heading."""
+    its own `save_action`, and `edit` = (action, hidden fields, button label) for the way back; `lead` goes above the heading.
+    With `editing` (F-061: "Edit trip") `match` is the trip being edited and the page offers only "Save changes" (replace in place) and the way back."""
     plan = parsed.plan
     hidden = fields if fields is not None else [Input(type="hidden", name="text", value=text)]
     save_to = save_action or f"{PATH}/save"
@@ -151,13 +162,10 @@ def preview_page(text, parsed, match=None, moves=0, *, fields=None, save_action=
         Div(*[Div(w, cls="ti-warn", role="status") for w in parsed.warnings], cls="ti-warns") if parsed.warnings else "",
         Div(Div(*plan_sections(plan), cls="ti-main ti-stack", id="ti-preview-body"),
             Div(H2("What happens next", cls="ti-h2"), Ul(*[Li(s) for s in _consequences(plan)], cls="ti-next"),
-                *([Div(P(f"You already imported “{match[1]}”. Is this a correction?", cls="ti-note"),
-                       Form(*hidden, Input(type="hidden", name="replace", value=match[0]),
-                            Button(icon("check", 16, 2.6), "Replace the existing trip", type="submit", cls="btn btn-ink ti-save", id="ti-replace"),
-                            P("Its calendar plans, notes and rides stay." + (f" {moves} scheduled Uber ride{'s' if moves != 1 else ''} will move to the new flight times and hotel." if moves else ""), cls="ti-note", **({"id": "ti-moves"} if moves else {})), action=save_to, method="post"), cls="ti-match")] if match else []),
-                Form(*hidden, Input(type="hidden", name="token", value=token),
+                *([_replace_card(match, moves, hidden, save_to, editing)] if match else []),
+                *([] if editing else [Form(*hidden, Input(type="hidden", name="token", value=token),
                      Button(icon("check", 16, 2.6), "Save as a new trip" if match else "Save this trip", type="submit", cls="btn btn-sm ti-save" if match else "btn btn-ink ti-save", id="ti-save"),
-                     action=save_to, method="post"),
+                     action=save_to, method="post")]),
                 Form(*edit_fields, Button(icon("arrow-right", 16, 2.6), edit_label, type="submit", cls="btn btn-sm", id="ti-edit"), action=edit_to, method="post", cls="ti-edit"),
                 Form(*text_field, Button("Edit as template text", type="submit", cls="ti-link ti-linkbtn", id="ti-edit-text"), action=f"{PATH}/edit", method="post", cls="ti-edit") if edit is None else "",
                 cls="ti-card ti-aside"), cls="ti-cols"),
@@ -167,10 +175,11 @@ def preview_page(text, parsed, match=None, moves=0, *, fields=None, save_action=
 
 # ---- the trip details page -----------------------------------------------------------------------------------------
 
-def details_page(plan, trip_id="", admin=False):
+def details_page(plan, trip_id="", admin=False, editor=False):
     return page(f"{plan.title}: details", Div(
         Div(H1(plan.title, cls="ti-title"), P(f"Booked elsewhere · {plan.booked_on}. Confirmation numbers are shown only to your family.", cls="ti-lede"),
             Div(A(icon("arrow-right", 16, 2.6), "Open the calendar", href="/calendar", cls="btn btn-sm", id="ti-cal"),
+                A(icon("pencil", 16, 2.4), "Edit trip", href=f"/trips/build/edit?trip={trip_id}", cls="btn btn-sm", id="ti-edit-trip") if editor and trip_id else "",
                 A("Correct it", href=PATH, cls="ti-link", id="ti-correct"),
                 A("Delete this trip", href=f"/trip/delete?trip={trip_id}", cls="ti-link ti-danger", id="ti-delete") if admin and trip_id else "", cls="ti-actions"), cls="ti-head"),
         Div(*plan_sections(plan), cls="ti-stack ti-wide", id="ti-details"), cls="ti-wrap"), head=HEAD)
@@ -272,7 +281,7 @@ def register(app):
         if plan is None:
             return _sorry("No imported trip is open", "Details with confirmation numbers are kept for trips you import. Open one from your calendar, or import a trip.",
                           A("Import a trip", href=PATH, cls="btn btn-ink"), A("Plan a trip", href="/start", cls="btn btn-sm"), A("Browse community trips", href="/community", cls="btn btn-sm"), A("Back to the calendar", href="/calendar", cls="btn btn-sm"), status=404)
-        return details_page(plan, ses.open_trip_id(), can_delete(session))
+        return details_page(plan, ses.open_trip_id(), can_delete(session), can_import(session))
 
     @app.get("/trip/delete")
     def delete_ask(session, trip: str = ""):
