@@ -68,7 +68,7 @@ def choice(c, name, current, options, legend):
     """A yes/no question as two big radio buttons; `data-toggle` lets the script hide the rows that do not apply."""
     return Fieldset(Legend(legend, cls="tb-legend"),
                     Div(*[Label(Input(type="radio", name=name, value=v, id=f"tb-{name}-{v}", checked=(current == v), data_toggle=name), Span(text_), cls="tb-choice") for v, text_ in options], cls="tb-choices"),
-                    Span(c.err(name), cls="tb-error", id=f"tb-err-{name}", role="alert") if c.err(name) else "", cls="tb-fieldset",
+                    Span(c.err(name), cls="tb-error", id=f"tb-err-{name}", role="alert") if c.err(name) else "", cls="tb-fieldset", id=f"tb-{name}",
                     **({"aria_invalid": "true", "aria_describedby": f"tb-err-{name}"} if name in c.errors else {}))
 
 
@@ -99,7 +99,7 @@ def step_who(c):
     adults, kids = tb.adults_of(d), d.get("kids", [])
     ages = [Div(field(c, f"k{i}", f"Kid {i} age", Select(Option("Pick age", value=""), *[Option(_ages(a), value=str(a), selected=(kids[i - 1] == str(a) if i <= len(kids) else False)) for a in range(catalog.MAX_KID_AGE + 1)],
                                                      name=f"k{i}", id=f"tb-k{i}", data_ga="chips", data_ga_label=f"Kid {i} age", **c.attrs(f"k{i}"))),
-                cls="tb-row", data_row=f"k{i}", **({"hidden": True} if i > len(kids) else {})) for i in range(1, tb.MAX_KIDS + 1)]
+                cls="tb-row", data_row=f"k{i}") for i in range(1, tb.MAX_KIDS + 1)]
     names, emails = d.get("names", []), d.get("emails", [])
     people = [Div(text(c, f"an{i}", f"Adult {i} name", names[i - 1] if i <= len(names) else "", maxlength="40", autocomplete="given-name" if i == 1 else "off"),
                   field(c, f"ae{i}", f"Adult {i} email (optional)", Input(type="email", name=f"ae{i}", id=f"tb-ae{i}", value=emails[i - 1] if i <= len(emails) else "", maxlength="80", autocomplete="off", **c.attrs(f"ae{i}")),
@@ -107,7 +107,7 @@ def step_who(c):
                   cls="tb-person", data_row=f"a{i}", **({"hidden": True} if i > adults else {})) for i in range(1, tb.MAX_ADULTS + 1)]
     return [Div(field(c, "adults", "Adults", Select(*[Option(str(n), value=str(n), selected=(n == adults)) for n in range(1, tb.MAX_ADULTS + 1)], name="adults", id="tb-adults", data_ga="stepper", data_ga_label="Adults", data_ga_hint="18 and over", **c.attrs("adults"))),
                 field(c, "nkids", "Kids", Select(*[Option(str(n), value=str(n), selected=(n == len(kids))) for n in range(tb.MAX_KIDS + 1)], name="nkids", id="tb-nkids", data_ga="stepper", data_ga_label="Kids", data_ga_hint="under 18", **c.attrs("nkids"))), cls="tb-pair"),
-            Div(Span("Kids’ ages", cls="tb-label"), *ages, cls="tb-ages", id="tb-ages", **({"hidden": True} if not kids else {})),
+            Div(Span("Kids’ ages", cls="tb-label"), *ages, cls="tb-ages", id="tb-ages"),
             Div(H2("Who are the adults?", cls="tb-h2"), P("Names are optional. An email lets you invite them to edit or view the trip later.", cls="tb-hint"), *people, cls="tb-people")]
 
 
@@ -184,14 +184,15 @@ def _hidden(draft, step, nav=None):
     return [Input(type="hidden", name="draft", value=tb.dump(draft)), Input(type="hidden", name="step", value=str(step)), *([Input(type="hidden", name="nav", value=nav)] if nav else [])]
 
 
-def step_page(step, draft, errors=None, status=200):
+def step_page(step, draft, errors=None, status=200, notice=""):
     tb.seed(step, draft)
     c = Ctx(draft, errors)
+    banner = Div(notice, role="alert", cls="tb-errors", id="tb-notice") if notice else ""
     summary = Div(P("Let’s fix this first:", cls="tb-summary-h"), Ul(*[Li(A(msg, href=f"#tb-{name}")) for name, msg in c.errors.items()]), role="alert", cls="tb-errors", id="tb-errors") if c.errors else ""
     last = step == len(LABELS)
     form = Form(
         Button("Next", type="submit", name="nav", value="next", cls="tb-default", tabindex="-1", aria_hidden="true"),  # Enter submits "Next", never "Back"
-        *_hidden(draft, step), summary, *BODIES[step - 1](c),
+        *_hidden(draft, step), banner, summary, *BODIES[step - 1](c),
         Div(Button(icon("chev-left", 16, 2.6), "Back", type="submit", name="nav", value="back", cls="btn btn-sm tb-back", id="tb-back", formnovalidate=True) if step > 1 else A("Cancel", href="/trips/import", cls="ti-link", id="tb-cancel"),
             Button("Check my trip" if last else f"Next: {LABELS[step]}", icon("arrow-right", 18, 2.6), type="submit", name="nav", value="next", cls="btn btn-ink tb-next", id="tb-next"), cls="tb-nav"),
         action=PATH, method="post", cls="tb-form", id="tb-form", novalidate=True, data_step=str(step), aria_label=TITLES[step - 1])
@@ -224,9 +225,9 @@ def advance(session, form):
     nav = str(form.get("nav", "next") or "next")
     if step <= len(LABELS):
         tb.read(step, form, draft)
-    if nav == "add":
+    if step <= len(LABELS) and nav == "add":
         return step_page(step, tb.add_row(step, draft))
-    if nav.startswith("remove-") and nav[7:].isdigit():
+    if step <= len(LABELS) and nav.startswith("remove-") and nav[7:].isdigit():
         return step_page(step, tb.remove_row(step, draft, int(nav[7:])))
     if nav == "back":
         return step_page(max(1, step - 1), draft)
@@ -271,5 +272,5 @@ def register(app):
         try:
             importer.save(session, plan, token or None, replace or None)
         except importer.SaveError as e:
-            return step_page(len(LABELS), d, {"notes": str(e)}, 409)
+            return step_page(len(LABELS), d, status=409, notice=str(e))
         return RedirectResponse("/calendar", status_code=303)

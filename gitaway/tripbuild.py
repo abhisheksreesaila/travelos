@@ -356,7 +356,7 @@ def check(step, draft) -> dict:
     """{field name: friendly message} for step `step` (1-based); empty when it is fine."""
     errors = CHECKS[step - 1](draft)
     if step == 6 and not errors and not _anything(draft):
-        errors["nothing"] = "You said no to flights, a hotel and a car, so there is nothing to put on the calendar. Go back and add at least one."
+        errors["rent"] = "You said no to flights, a hotel and a car, so there is nothing to put on the calendar. Go back and add at least one."
     return errors
 
 
@@ -390,8 +390,8 @@ def build(draft) -> ti.Plan:
     if draft.get("rent") == "yes":
         c = draft["car"]
         rental = ti.Rental(c["company"], c["pickup_place"], _at(c["pickup_date"], c["pickup_time"]), c["dropoff_place"], _at(c["dropoff_date"], c["dropoff_time"]), c["confirmation"], c["car"])
-    return ti.Plan(draft["title"], draft["destination"], _day(draft["start"]), _day(draft["end"]), draft.get("booked_on") or "elsewhere", draft.get("itinerary", ""),
-                   tuple(people), legs, hotels, rental, draft.get("notes", "").strip())
+    return ti.Plan(title=draft["title"], destination=draft["destination"], start=_day(draft["start"]), end=_day(draft["end"]), booked_on=draft.get("booked_on") or "elsewhere",
+                   itinerary=draft.get("itinerary", ""), travelers=tuple(people), legs=legs, hotels=hotels, rental=rental, notes=draft.get("notes", "").strip())
 
 
 class BuildProblem(ValueError):
