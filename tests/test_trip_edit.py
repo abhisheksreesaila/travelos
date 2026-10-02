@@ -140,7 +140,7 @@ def test_a_forged_or_stale_trip_id_is_refused_and_changes_nothing(client):
 def test_a_stale_tab_edits_only_the_trip_it_opened(client):
     imported(client)
     [first] = trip_ids()
-    w = walk_to_preview(client, first)
+    w = walk_to_preview(client, first, lambda step, v: v.update(hotel0_name="Stale Tab Inn") if step == 5 else None)
     good = hidden_of(w.html, "ti-save-changes")
     other = TEMPLATE.replace("title: LA with the kids", "title: Second trip").replace("2026-10-16", "2026-11-16").replace("2026-10-20", "2026-11-20").replace("itinerary: 7123456789012", "itinerary: 999")
     client.post("/trips/import/save", data={"text": other}, follow_redirects=False)  # now the second trip is the open one
@@ -148,6 +148,18 @@ def test_a_stale_tab_edits_only_the_trip_it_opened(client):
     assert client.post("/trips/build/save", data=good, follow_redirects=False).status_code == 303
     titles = {t.id: t.title for t in ses.trips(person())}
     assert titles[first] == "LA with the kids" and titles[second] == "Second trip" and len(titles) == 2
+    assert "Stale Tab Inn" in visible(client.get(f"/trip/details?trip={first}").text)
+    assert "Stale Tab Inn" not in visible(client.get(f"/trip/details?trip={second}").text)
+
+
+def test_cancel_in_edit_mode_goes_back_to_that_trips_details(client):
+    imported(client)
+    [trip_id] = trip_ids()
+    html = client.get(edit_url(trip_id)).text
+    href = re.search(r'<a[^>]*id="tb-cancel"[^>]*>', html).group(0)
+    assert f'href="/trip/details?trip={trip_id}"' in href
+    r = client.get(f"/trip/details?trip={trip_id}")
+    assert r.status_code == 200 and 'id="ti-edit-trip"' in r.text
 
 
 def test_tampered_fields_are_still_rechecked_on_save(client):

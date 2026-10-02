@@ -218,7 +218,7 @@ def preview(session, draft, edit=""):
     match = (edit, plan_title(session, edit)) if edit else importer.find_match(session, plan)
     return tip.preview_page("", parsed, match, importer.rides_to_retime(session, match[0], plan) if match else 0,
                             fields=[Input(type="hidden", name="draft", value=tb.dump(draft)), *edit_fields(edit)], save_action=f"{PATH}/save",
-                            edit=(PATH, [*_hidden(draft, len(LABELS) + 1, edit=edit), Input(type="hidden", name="nav", value="back")], "Change something"), lead=indicator(len(LABELS) + 1), editing=bool(edit))
+                            edit=(PATH, [*_hidden(draft, len(LABELS) + 1, edit=edit), Input(type="hidden", name="nav", value="back")], "Change something"), lead=indicator(len(LABELS) + 1), editing=bool(edit), builder_css=True)
 
 
 def edit_plan(session, trip_id):
@@ -288,7 +288,7 @@ def register(app):
     def build_edit(session, trip: str = ""):
         """"Edit trip" (F-061): the builder's first step filled with the saved trip's plan, carrying the trip id."""
         if not ses.current_traveler(session):
-            return RedirectResponse(f"/signin?next=%2Ftrip%2Fdetails&intent=save", status_code=303)
+            return RedirectResponse("/signin?next=%2Ftrip%2Fdetails&intent=save", status_code=303)
         if not tip.can_import(session):
             return tip._sorry("Edit a trip", "Only editors and admins of your family can edit a trip. Ask the family owner for editor access.", A("Back to the calendar", href="/calendar", cls="btn btn-ink"), status=403)
         plan = edit_plan(session, trip)

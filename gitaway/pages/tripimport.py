@@ -145,7 +145,7 @@ def _replace_card(match, moves, hidden, save_to, editing):
                Form(*hidden, Input(type="hidden", name="replace", value=match[0]), Button(icon("check", 16, 2.6), "Replace the existing trip", type="submit", cls="btn btn-ink ti-save", id="ti-replace"), moved, action=save_to, method="post"), cls="ti-match")
 
 
-def preview_page(text, parsed, match=None, moves=0, *, fields=None, save_action=None, edit=None, lead="", expedia_read=False, editing=False):
+def preview_page(text, parsed, match=None, moves=0, *, fields=None, save_action=None, edit=None, lead="", expedia_read=False, editing=False, builder_css=False):
     """The preview. The trip builder (F-055) draws this same page with its own hidden `fields` (its draft instead of the pasted `text`),
     its own `save_action`, and `edit` = (action, hidden fields, button label) for the way back; `lead` goes above the heading.
     With `editing` (F-061: "Edit trip") `match` is the trip being edited and the page offers only "Save changes" (replace in place) and the way back."""
@@ -169,7 +169,7 @@ def preview_page(text, parsed, match=None, moves=0, *, fields=None, save_action=
                 Form(*edit_fields, Button(icon("arrow-right", 16, 2.6), edit_label, type="submit", cls="btn btn-sm", id="ti-edit"), action=edit_to, method="post", cls="ti-edit"),
                 Form(*text_field, Button("Edit as template text", type="submit", cls="ti-link ti-linkbtn", id="ti-edit-text"), action=f"{PATH}/edit", method="post", cls="ti-edit") if edit is None else "",
                 cls="ti-card ti-aside"), cls="ti-cols"),
-        cls="ti-wrap"), head=(*HEAD, Link(rel="stylesheet", href="/assets/css/tripbuild.css")) if lead else HEAD)
+        cls="ti-wrap"), head=(*HEAD, Link(rel="stylesheet", href="/assets/css/tripbuild.css")) if builder_css else HEAD)
     return out
 
 

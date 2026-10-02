@@ -39,7 +39,7 @@ def no_sideways_scroll(page):
     assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth")
 
 
-@pytest.mark.parametrize("viewport,button", [(DESKTOP, "#ti-edit-trip"), (PHONE, "#ti-edit-trip")], ids=["desktop", "phone"])
+@pytest.mark.parametrize("viewport,button", [(DESKTOP, "#cal-edit-trip"), (PHONE, "#tp-edit-trip")], ids=["desktop", "phone"])
 def test_edit_a_flight_time_and_a_hotel_name_and_see_both_on_the_calendar(signed_in, base_url, viewport, button):
     page = signed_in(viewport)
     page.goto(f"{base_url}/trips/import")
@@ -57,6 +57,12 @@ def test_edit_a_flight_time_and_a_hotel_name_and_see_both_on_the_calendar(signed
     page.goto(f"{base_url}/trip")
     expect(page.locator("#tp-edit-trip")).to_be_visible()
     page.goto(f"{base_url}/trip/details")
+    page.click("#ti-edit-trip")
+    expect(page.locator("#tb-form")).to_be_visible()
+    assert page.input_value("#tb-title") == "LA with the kids"
+    page.click("#tb-cancel")  # Cancel in edit mode goes back to the trip's details
+    page.wait_for_url("**/trip/details?trip=*")
+    page.goto(f"{base_url}/trip" if button == "#tp-edit-trip" else f"{base_url}/calendar")
     page.click(button)
     expect(page.locator("#tb-form")).to_be_visible()
     expect(page.locator("#tb-heading")).to_have_text("Where are you going?")
