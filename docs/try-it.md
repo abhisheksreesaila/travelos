@@ -15,13 +15,14 @@ To use real Google sign-in instead of the dev sign-in, follow `docs/setup.md` â†
 
 ## 2. Sign in and import your trip
 
-1. Open <http://localhost:5002/signin> and use **Dev sign-in (local only)** with your Gmail address.
-2. Fill in `docs/trip-template.md` from your Expedia confirmation:
+1. Open <http://localhost:5002/signin>, open **Local dev sign-in** under the boarding pass, and sign in with your Gmail address. A brand-new family lands on a welcome with three ways in.
+2. **Easiest:** choose **Answer a few questions** (`/trips/build`). Seven short steps (where, when, who, flights, hotel, car, notes) build the trip, with a preview before saving. No template needed.
+3. **Or** fill in `docs/trip-template.md` from your Expedia confirmation:
    - Quote confirmation numbers if you like, though they're kept exactly as typed either way.
    - Use `hotels:` for two hotels.
    - Delete `car:` if you'll use rides.
-3. Open **Import a trip** (`/trips/import`), paste the block, press **Preview**, check it, then press **Save**. The calendar opens on your trip. Your bookings are marked "Booked elsewhere Â· Expedia".
-4. Made a mistake? Fix the template and import it again. The preview offers **Replace the existing trip**, and your plans, notes and rides are kept.
+4. Open **Import a trip** (`/trips/import`), paste the block, press **Preview**, check it, then press **Save**. The calendar opens on your trip. Your bookings are marked "Booked elsewhere Â· Expedia".
+5. Made a mistake? Fix the template and import it again. The preview offers **Replace the existing trip**, and your plans, notes and rides are kept.
 
 ## 3. Invite your family
 
@@ -33,9 +34,11 @@ To use real Google sign-in instead of the dev sign-in, follow `docs/setup.md` â†
 
 ## 4. Plan together
 
+- **On your phone:** the trip opens on **Today**: what's up next with a countdown, Directions, Get an Uber, tonight's hotel, your latest notes, and a **+** to add a plan in two taps.
+
 - **Calendar:** opens on the whole-trip view. **Day by day** shows the hour grid, where you can add, move and resize plans. Everyone sees everyone's changes.
 - **Talk to plan:** a scripted voice demo fills free slots, using the same preview and apply steps as forks.
-- **Your forks:** fork or save any trip from **Browse trips people loved**, then apply it into your empty slots.
+- **Your forks:** fork or save any trip from **Community trips**, then apply it into your empty slots.
 - **Rides:** with no car, the calendar and rides card offer **Schedule an Uber** for landing and the flight home. It's simulated, follows Uber's real steps, and appears on the calendar.
 - **Share:** publishes a snapshot of the trip to the hub (no notes, confirmations or prices). **Update shared page** refreshes it, and **Unpublish** takes it down.
 
