@@ -140,7 +140,7 @@ def test_sign_in_with_a_specific_next_still_goes_there(client):
 
 
 def test_header_and_landing_doors_lead_to_start(client):
-    for path in ["/", "/community", "/start"]:
+    for path in ["/community", "/start"]:  # the landing's header is only the brand and Sign in (F-060): its door is the form below
         h = client.get(path).text
         assert re.search(r'<nav[^>]*>.*?href="/start"[^>]*>Plan a trip', h, re.S), path
     land = client.get("/").text

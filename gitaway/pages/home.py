@@ -1,39 +1,53 @@
-"""Landing page (F-013): "Two doors". One door books a trip, the other forks a real one."""
+"""Landing page (F-060, Landing v2): one clear door.
 
-from fasthtml.common import A, Button, Div, Form, H1, H2, H3, Img, Link, NotStr, P, Section, Span
+Plan a trip leads; forking is one quiet line that scrolls to Community trips. Then the four features (each tile animates on hover and
+focus), the shared calendar that plays itself, three community trips, and the creators panel. Design: docs/design/landing-v2.md.
+"""
 
-from gitaway import itineraries
+from fasthtml.common import A, Article, B, Button, Div, Form, H1, H2, H3, I, Img, Link, NotStr, P, Script, Section, Small, Span
+
+from gitaway import hub, itineraries, session
 from gitaway.catalog import SAMPLE_TRIP
 from gitaway.icons import icon
 from gitaway.layout import page
+from gitaway.pages import home_art
 
-HEAD = (Link(rel="stylesheet", href="/assets/css/landing.css"),)
-
+HEAD = (Link(rel="stylesheet", href="/assets/css/landing.css"), Script(src="/assets/js/landing.js", defer=True))
 
 FEATURES = [
-    ("Everything side by side", "Flights, stays and cars next to weather, news, events and a map. No more twelve tabs.",
-     icon("panes", 30, 2), "sun", -4),
-    ("One honest total", "A running cost ledger shows what the whole trip costs, and how far you are from the cheapest combo.",
-     icon("ledger", 30, 2), "coral", 3),
-    ("Plan it together", "Invite family and friends to a shared calendar with notes, so everyone knows the plan.",
-     icon("users", 30, 2), "mint", -2),
-    ("Fork, don’t start over", "Share your trip as a scrapbook page. Others fork it and drop the best days into their own trip.",
-     icon("fork", 30, 2), "grape", 4),
+    ("a-panes", home_art.PANES, "Everything side by side",
+     "Flights, stays and cars next to weather, news, events and a map. No more twelve tabs."),
+    ("a-total", home_art.TOTAL, "One honest total",
+     "A running cost ledger shows what the whole trip costs, and how far you are from the cheapest combo."),
+    ("a-together", home_art.TOGETHER, "Plan it together",
+     "Invite family and friends to a shared calendar with notes, so everyone knows the plan."),
+    ("a-fork", home_art.FORK, "Fork, don’t start over",
+     "Copy the best days from a trip someone loved into your own, then change anything."),
 ]
 
-# (day, [(time, title, booked, tall)])
+# The four planners: (name, initial, background token)
+PEOPLE = [("Mom", "M", "grape"), ("Dad", "D", "block-sunset"), ("Priya", "P", "sun"), ("Kid", "K", "bubble")]
+
+# Booked items use the per-kind tint and ink pair (F-059): a flight is sky, a stay is grape. Each has a left edge and a lock.
+# (day, [(slot id, tall, time, title, added by, tint, ink)]); an ink means a booked item
 CALENDAR = [
-    ("FRI 16", [("8:05", "Flight to LAX", True, False), ("11:00", "Check in", True, False), ("1:00", "Pier & rides", False, True)]),
-    ("SAT 17", [("9:00", "Venice canals", False, False), ("11:00", "Boardwalk", False, True), ("2:30", "Bike the Strand", False, False)]),
-    ("SUN 18", [("10:00", "Travel Town", False, True), ("4:00", "Observatory", False, False)]),
+    ("FRI 16", [(None, False, "8:05 AM", "Flight to LAX", "", "sky", "sky"),
+                (None, False, "3:00 PM", "Check in", "", "grape", "grape"),
+                ("s1", True, "5:00 PM", "Santa Monica Pier", "Priya", "sun", "")]),
+    ("SAT 17", [("s2", False, "9:00 AM", "Venice canals", "Mom", "mint", ""),
+                ("s3", True, "12:00 PM", "Tacos on Abbot Kinney", "Dad", "bubble", ""),
+                ("s4", False, "5:00 PM", "Griffith Observatory", "Kid", "coral", "")]),
+    ("SUN 18", [("s5", True, "10:00 AM", "Travel Town trains", "Kid", "sky", ""),
+                ("s6", False, "2:00 PM", "Beach & tide pools", "Mom", "sun", ""),
+                ("s7", False, "6:30 PM", "Sunset picnic", "Priya", "mint", "")]),
 ]
 
 
 def _search_values(trip=SAMPLE_TRIP):
     return [
-        ("from", "From", f"{trip.origin_name} ({trip.origin})"),
-        ("to", "To", f"{trip.destination_name} ({trip.airports[0]})"),
-        ("when", "When", f"{trip.depart:%a %b} {trip.depart.day} – {trip.return_:%a %b} {trip.return_.day}"),
+        ("from", "From", trip.origin_name),
+        ("to", "To", trip.destination_name),
+        ("when", "When", f"{trip.depart:%b} {trip.depart.day} – {trip.return_.day}"),
         ("who", "Who", trip.summary),
     ]
 
@@ -43,50 +57,27 @@ def _field(name, label, value):
     return Div(Span(label, cls="field-label"), Span(value, cls="field-value"), cls="field", data_field=name)
 
 
-def _search_card():
-    return Form(
-        *[_field(*f) for f in _search_values()],
-        Button("Plan a trip", icon("arrow-right", 22, 2.6), type="submit", cls="btn btn-ink btn-go"),
-        method="get", action="/start", cls="search",
-    )
-
-
-def _trip_card(href, photo, alt, title, tag, tag_cls, days, pos):
-    return A(
-        Img(src=photo, alt=alt, width="500", height="260", loading="lazy"),
-        Span(title, cls="tc-title"),
-        Span(Span(tag, cls=f"tc-tag {tag_cls}"), Span(f"{days} days", cls="tc-tag tc-plain"), cls="tc-tags"),
-        href=href, cls=f"trip-card {pos}",
-    )
-
-
-def _door_one():
-    return Div(
-        Span("DOOR ONE", cls="eyebrow"),
-        H2("We’re going.", NotStr("<br>"), "Let’s book it."),
-        _search_card(),
-        P("Flights, stays, weather, news and one running total, side by side.", cls="promise"),
-        cls="door door-one",
-    )
-
-
-def _door_two():
-    sample = itineraries.get("sun-tacos-and-tide-pools")
-    forks = sample.forks
-    return Div(
-        Span("DOOR TWO", cls="eyebrow"),
-        H2("No plans yet?", NotStr("<br>"), "Fork a real one."),
+def _plan_panel():
+    return Section(
+        Span(cls="blob", aria_hidden="true"),
         Div(
-            _trip_card(f"/trips/{sample.slug}", itineraries.VENICE, "Venice Beach, Los Angeles", sample.title,
-                       "Kid friendly", "fill-sun", len(sample.days), "tc-a"),
-            # Fictional: there is no page for this trip yet, so it opens Community trips.
-            _trip_card("/community", itineraries.PIER, "Santa Monica Pier", "LA for two, slow mornings",
-                       "Couple friendly", "fill-bubble", 4, "tc-b"),
-            cls="cards",
+            H2(NotStr("We’re going.<br>Let’s book it."), id="plan-h"),
+            P("Flights, stays, cars and the weather side by side, with one running total.", cls="promise"),
         ),
-        Span(Span(forks, cls="sticker-n"), "families forked", cls="fork-sticker ga-bob", style="--r:8deg"),
-        A("Browse community trips", href="/community", cls="btn btn-white"),
-        cls="door door-two",
+        Form(
+            *[_field(*f) for f in _search_values()],
+            Button("Plan a trip", icon("arrow-right", 22, 2.6), type="submit", cls="btn btn-ink btn-go"),
+            method="get", action="/start", cls="search",
+        ),
+        cls="plan", aria_labelledby="plan-h",
+    )
+
+
+def _fork_line():
+    stack = Span(*[I(style=f"background:var(--{c})") for c in ("block-pacific", "sun", "bubble")], cls="stack", aria_hidden="true")
+    return Div(
+        A(stack, Span("No plans yet? ", NotStr("<u>Fork a trip a real family took</u>"), " →"), href="#community-trips"),
+        cls="forkline",
     )
 
 
@@ -97,52 +88,133 @@ def _underlined(word):
         'fill="none" stroke-linecap="round"/></svg>'), cls="accent-words")
 
 
+def _hero():
+    return Section(
+        H1("Fork a ", _underlined("getaway.")),
+        P(Span("fork", cls="word"), Span("verb", cls="pos"), Span("copy a trip someone really took, then make it yours", cls="def"), cls="gloss"),
+        P("Book everything on one screen, plan it with the people you love, then share a trip anyone can fork.", cls="lede"),
+        cls="hero ga-wrap",
+    )
+
+
 def _features():
     return Section(
-        H2("Not just a booking site"),
+        Div(H2("Not just a booking site", id="why-h"), cls="sec-head center"),
         Div(*[
-            Div(Span(ic, cls=f"tile tile-{color}", style=f"--tilt:{tilt}deg"), H3(title), P(body), cls="feature")
-            for title, body, ic, color, tilt in FEATURES
+            Article(Div(NotStr(art), cls=f"anim {cls}", aria_hidden="true"), H3(title), P(body), cls="feature", tabindex="0")
+            for cls, art, title, body in FEATURES
         ], cls="features"),
-        cls="why ga-wrap",
+        cls="sec ga-wrap", aria_labelledby="why-h",
     )
+
+
+def _booked_item(time, title, tint, ink):
+    return Div(Small(time), B(title), icon("lock", 12, 2.6, "lock"), cls="item booked", style=f"--t:var(--{tint}-tint);--k:var(--{ink}-ink)")
+
+
+def _plan_item(time, title, by, tint):
+    return Div(Small(time), B(title), Span(f"added by {by}", cls="by"), cls="item", style=f"--t:var(--{tint}-tint)")
 
 
 def _calendar():
     cols = []
     for day, items in CALENDAR:
-        cols.append(Div(
-            Span(day, cls="cal-day"),
-            *[Span(Span(t, cls="cal-time"), Span(title, cls="cal-title"),
-                   cls="cal-item" + (" booked" if booked else "") + (" tall" if tall else ""))
-              for t, title, booked, tall in items],
-            cls="cal-col",
-        ))
+        slots = []
+        for sid, tall, time, title, by, tint, ink in items:
+            if ink:
+                slots.append(Div(_booked_item(time, title, tint, ink), cls="slot"))
+            else:
+                slots.append(Div(_plan_item(time, title, by, tint), cls="slot tall on" if tall else "slot on", data_s=sid))
+        cols.append(Div(Span(day, cls="day"), *slots, cls="col"))
+    faces = Span(*[Span(initial, cls="face", style=f"background:var(--{color})") for _name, initial, color in PEOPLE], cls="faces", aria_hidden="true")
     return Section(
         Div(
-            Span("AFTER YOU BOOK", cls="eyebrow"),
-            H2("Plan the fun part together"),
-            P("Your flights and check-ins are already on the calendar. Invite family, drop in the fun stuff, "
-              "leave notes like a meeting everyone actually enjoys."),
+            Div(
+                Span("After you book", cls="eyebrow"),
+                H2("Plan the fun part together", id="tog-h"),
+                P("Your flights and check-ins are already on the calendar. Everyone adds what they’re excited about, and the days fill up."),
+                Div(Span(cls="live", aria_hidden="true"), faces, Span("4 planning now"), cls="presence"),
+                Button("Watch it again", type="button", cls="replay", id="replay"),
+                cls="sec-head",
+            ),
+            Div(*cols, cls="cal", id="cal", role="img", data_people=",".join(f"{n}:{c}" for n, _i, c in PEOPLE),
+                aria_label="A shared calendar for three days in Los Angeles. Four family members add plans: the pier, the observatory, "
+                           "Venice canals, tacos, Travel Town and the beach."),
+            cls="together",
         ),
-        Div(*cols, cls="cal", role="img", aria_label="A sample shared calendar for three days in Los Angeles"),
-        cls="teaser teaser-cal ga-wrap",
+        cls="sec ga-wrap", aria_labelledby="tog-h",
     )
+
+
+_COVERS = {"sun-tacos-and-tide-pools": (itineraries.VENICE, "Venice Beach, Los Angeles"),
+           "la-for-two-slow-mornings": (itineraries.PIER, "Santa Monica Pier")}
+_GRADIENTS = ["linear-gradient(160deg,var(--block-pacific),var(--mint))", "linear-gradient(160deg,var(--bubble),var(--block-sunset))",
+              "linear-gradient(160deg,var(--sun),var(--block-sunset))"]
+
+
+def _community_card(trip, i):
+    """A real itinerary. Photos are the CC0 area photos; a trip without one gets a colour wash instead."""
+    keys = hub.tag_keys(trip)
+    label, tint, _ic = hub.TAGS[keys[0]] if keys else ("Easy pace", "sky", "")
+    cover = _COVERS.get(trip.slug)
+    pic = Img(src=cover[0], alt=cover[1], width="400", height="260", loading="lazy", cls="ph") if cover else \
+        Span(cls="ph", style=f"background:{_GRADIENTS[i % len(_GRADIENTS)]}", aria_hidden="true")
+    return A(
+        pic, B(trip.title),
+        Span(Span(label, cls="tag", style=f"background:var(--{tint}-tint)"), Span(f"{len(trip.days)} days", cls="tag"),
+             Span(f"{trip.forks} forks", cls="tag"), cls="meta"),
+        href=f"/trips/{trip.slug}", cls="trip", style=f"--r:{-1 if i % 2 == 0 else 1}deg",
+    )
+
+
+def _community():
+    trips = list(itineraries.ITINERARIES.values())[:3]
+    return Section(
+        Div(
+            Span("Community trips", cls="eyebrow"),
+            H2("Not sure where yet? Borrow a trip that worked.", id="community-h"),
+            P("Real trips shared by travelers and creators. Fork one, keep the days you like, and change the rest."),
+            cls="sec-head",
+        ),
+        Div(*[_community_card(t, i) for i, t in enumerate(trips)], cls="trip-row"),
+        A("Browse all community trips →", href="/community", cls="more"),
+        cls="sec ga-wrap", id="community-trips", aria_labelledby="community-h",
+    )
+
+
+def _trail_card(gradient, title, sub):
+    return Div(Span(cls="ph", style=f"background:{gradient}"), Div(B(title), Span(sub)), cls="trail-card")
 
 
 def _creators():
     return Section(
         Div(
-            Span("FOR CREATORS", cls="eyebrow"),
-            H2("Your vlog, as a trip people can fork"),
-            P("Paste a YouTube or Instagram link. We draft the itinerary, you tidy it up, "
-              "and every fork sends people back to your channel."),
-            A("Turn a link into a trip", href="/creators", cls="btn btn-sun"),
+            Div(
+                Span("For travelers with stories", cls="eyebrow"),
+                H2("Been somewhere wonderful? Leave a trail.", id="cr-h"),
+                P("Your vlog, your notes, the little taco place nobody knows about. Turn them into a trip another family can follow, "
+                  "and make someone’s first time there a little easier."),
+                P("“The world is a book, and those who do not travel read only one page.”",
+                  NotStr("<cite>Attributed to Saint Augustine</cite>"), cls="quote"),
+                A("Share a trip you loved →", href="/creators", cls="btn-sun"),
+                cls="left",
+            ),
+            Div(
+                _trail_card("linear-gradient(160deg,var(--block-pacific),var(--mint))", "Our LA family week", "From a YouTube vlog · 5 days"),
+                _trail_card("linear-gradient(160deg,var(--sun),var(--coral))", "Forked by the Rao family", "Kept 3 days, added Disneyland"),
+                _trail_card("linear-gradient(160deg,var(--grape),var(--bubble))", "Forked by Sam & Jo", "“The tide pools were the best morning”"),
+                cls="trail", aria_hidden="true",
+            ),
+            cls="creators on-ink",
         ),
-        Div(Span("youtube.com/watch?v=our-la-family-week", cls="paste"),
-            Span("Make it a trip", cls="paste-go"), cls="paste-row", aria_hidden="true"),
-        cls="teaser teaser-creators on-ink ga-wrap",
+        cls="sec ga-wrap", aria_labelledby="cr-h",
     )
+
+
+def footer_links():
+    """The links that left the landing's header. Sign in only while signed out."""
+    links = [("Community trips", "/community"), ("For creators", "/creators")]
+    return links if session.request_traveler() else [*links, ("Sign in", session.signin_href())]
 
 
 def register(app):
@@ -150,15 +222,11 @@ def register(app):
     def home():
         return page(
             "",
-            Section(
-                H1("Fork a ", _underlined("getaway.")),
-                P("Book with everything on one screen, plan it with the people you love, "
-                  "then share a trip anyone can fork."),
-                cls="headline ga-wrap",
-            ),
-            Section(_door_one(), _door_two(), cls="doors ga-wrap"),
+            _hero(),
+            Div(_plan_panel(), _fork_line(), cls="ga-wrap"),
             _features(),
             _calendar(),
+            _community(),
             _creators(),
-            head=HEAD,
+            head=HEAD, nav=False, footer_links=footer_links(),
         )

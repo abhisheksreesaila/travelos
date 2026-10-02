@@ -10,24 +10,24 @@ def _get(client):
     return r.text
 
 
-def test_two_doors_link_to_plan_and_the_sample_trip(client):
+def test_the_door_and_the_sample_trip_link_to_plan_and_the_trip(client):
+    # F-060: the "two doors" became one door (Plan a trip) and a quiet fork line; tests/test_landing_v2.py covers the new shape.
     h = _get(client)
     assert "Fork a" in h and "getaway." in h
     assert "Let\u2019s book it." in h
-    assert "No plans yet?" in h
-    assert 'href="/start"' in h
+    assert 'action="/start"' in h
     assert 'href="/trips/sun-tacos-and-tide-pools"' in h
-    assert "Browse community trips" in h and 'href="/community"' in h
+    assert "Browse all community trips" in h and 'href="/community"' in h
 
 
-def test_door_one_previews_the_sample_trip_and_opens_the_start_page(client):
+def test_door_previews_the_sample_trip_and_opens_the_start_page(client):
     h = _get(client)
     form = re.search(r'<form[^>]*>', h).group(0)
     assert 'method="get"' in form and 'action="/start"' in form
     assert not re.search(r'<input[^>]*name="(from|to|when|who)"', h)  # nothing to type: /start is the real form
     text = re.sub(r"<[^>]+>", " ", re.search(r'<form.*?</form>', h, re.S).group(0))
-    assert f"{SAMPLE_TRIP.origin_name} ({SAMPLE_TRIP.origin})" in text and "Los Angeles (LAX)" in text
-    assert "Oct 16" in text and "Oct 20" in text and SAMPLE_TRIP.summary in text
+    assert SAMPLE_TRIP.origin_name in text and SAMPLE_TRIP.destination_name in text  # v2 shows names, not airport codes
+    assert "Oct 16" in text and "20" in text and SAMPLE_TRIP.summary in text
     assert re.search(r'<button[^>]*type="submit"[^>]*>.*?Plan a trip', h, re.S)
 
 
@@ -42,7 +42,7 @@ def test_four_feature_cards(client):
 def test_after_you_book_and_creators_sections(client):
     h = _get(client)
     assert "AFTER YOU BOOK" in h.upper()
-    assert 'href="/creators"' in h and "Turn a link into a trip" in h
+    assert 'href="/creators"' in h and "Share a trip you loved" in h  # v2 copy: inspiring others, not "turn a link into a trip"
 
 
 def test_no_old_brand_name(client):
@@ -65,12 +65,6 @@ def test_stylesheets_load_tokens_then_base_then_page(client):
     _order(client.get("/trips/sun-tacos-and-tide-pools").text, "tokens.css", "base.css", "itinerary.css")
 
 
-def test_fictional_card_links_to_community(client):
-    h = _get(client)
-    m = re.search(r'<a[^>]*href="([^"]*)"[^>]*class="trip-card[^"]*"[^>]*>(?:(?!</a>).)*slow mornings', h, re.S)
-    assert m and m.group(1) == "/community"
-
-
 def test_fork_count_comes_from_the_data(client):
     from dataclasses import replace
     from gitaway import itineraries
@@ -78,7 +72,7 @@ def test_fork_count_comes_from_the_data(client):
     original = itineraries.ITINERARIES[slug]
     try:
         itineraries.ITINERARIES[slug] = replace(original, forks=777)
-        assert re.search(r'sticker-n">777<', _get(client))
+        assert "777 forks" in _get(client)
     finally:
         itineraries.ITINERARIES[slug] = original
-    assert re.search(rf'sticker-n">{original.forks}<', _get(client))
+    assert f"{original.forks} forks" in _get(client)

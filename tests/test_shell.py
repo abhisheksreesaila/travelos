@@ -1,12 +1,12 @@
 """The GitAway shell: every page shares the brand, navigation and design tokens."""
 
 
-def test_home_is_a_gitaway_page_with_the_main_navigation(client):
+def test_pages_are_gitaway_pages_with_the_main_navigation(client):
+    """The landing is the one page whose header is only the brand and Sign in (F-060, tests/test_landing_v2.py); the rest keep the nav."""
     r = client.get("/")
     assert r.status_code == 200
-    html = r.text
-    assert "<title>GitAway" in html
-    assert "TravelOS" not in html
+    assert "<title>GitAway" in r.text and "TravelOS" not in r.text
+    html = client.get("/community").text
     for label, href in [("Community trips", "/community"), ("Plan a trip", "/start"), ("For creators", "/creators")]:
         assert f'href="{href}"' in html and label in html
     assert "/assets/css/tokens.css" in html and "/assets/css/base.css" in html
