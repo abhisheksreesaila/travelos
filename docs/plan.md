@@ -316,9 +316,9 @@ Design: phone A approved 2026-10-01 (docs/design/canvas/GoLive-Phone-Today.dc.ht
 
 # Go live phase 1.5
 
-## F-055 Guided trip builder [doing]
+## F-055 Guided trip builder [done]
 Needs: F-051
-- [ ] a few friendly questions (where, when, who, flights, hotel, car) build the same trip as the template, with preview and save; no YAML
+- [x] a few friendly questions (where, when, who, flights, hotel, car) build the same trip as the template, with preview and save; no YAML
 
 ## F-056 Paste an Expedia confirmation email [blocked]
 Blocked: forward or paste one real Expedia confirmation email (it can stay on your machine; I only need its layout).
