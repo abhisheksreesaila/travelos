@@ -62,6 +62,7 @@ def paste_page(text="", errors=(), warnings=(), status=200):
         Ol(Li("Download the template and fill it in from your Expedia confirmation."), Li("Paste the whole thing here and press Preview."),
            Li("Check what will be saved, then save. Your calendar opens on the trip."), cls="ti-steps"),
         A(icon("arrow-right", 16, 2.6), "Download the template", href=f"{PATH}/template", cls="btn btn-sm", id="ti-template", download="trip-template.md"),
+        A(icon("arrow-right", 16, 2.6), "Rather answer a few questions?", href="/trips/build", cls="btn btn-sm", id="ti-build"),
         P("Flights, the hotel and a car go on your calendar marked “Booked elsewhere”. Confirmation numbers are shown only to your family.", cls="ti-note"),
         cls="ti-card ti-aside",
     )
@@ -129,22 +130,28 @@ def _consequences(plan):
     return out
 
 
-def preview_page(text, parsed, match=None, moves=0):
+def preview_page(text, parsed, match=None, moves=0, *, fields=None, save_action=None, edit=None, lead=""):
+    """The preview. The trip builder (F-055) draws this same page with its own hidden `fields` (its draft instead of the pasted `text`),
+    its own `save_action`, and `edit` = (action, hidden fields, button label) for the way back; `lead` goes above the heading."""
     plan = parsed.plan
+    hidden = fields if fields is not None else [Input(type="hidden", name="text", value=text)]
+    save_to = save_action or f"{PATH}/save"
+    edit_to, edit_fields, edit_label = edit or (PATH, [Input(type="hidden", name="text", value=text)], "Change something")
     token = importer.new_token()
     out = page("Preview your trip", Div(
+        lead,
         Div(H1("Check your trip", cls="ti-title"), P("This is exactly what will be saved. Nothing is saved until you press Save.", cls="ti-lede"), cls="ti-head"),
         Div(*[Div(w, cls="ti-warn", role="status") for w in parsed.warnings], cls="ti-warns") if parsed.warnings else "",
         Div(Div(*plan_sections(plan), cls="ti-main ti-stack", id="ti-preview-body"),
             Div(H2("What happens next", cls="ti-h2"), Ul(*[Li(s) for s in _consequences(plan)], cls="ti-next"),
                 *([Div(P(f"You already imported “{match[1]}”. Is this a correction?", cls="ti-note"),
-                       Form(Input(type="hidden", name="text", value=text), Input(type="hidden", name="replace", value=match[0]),
+                       Form(*hidden, Input(type="hidden", name="replace", value=match[0]),
                             Button(icon("check", 16, 2.6), "Replace the existing trip", type="submit", cls="btn btn-ink ti-save", id="ti-replace"),
-                            P("Its calendar plans, notes and rides stay." + (f" {moves} scheduled Uber ride{'s' if moves != 1 else ''} will move to the new flight times and hotel." if moves else ""), cls="ti-note", **({"id": "ti-moves"} if moves else {})), action=f"{PATH}/save", method="post"), cls="ti-match")] if match else []),
-                Form(Input(type="hidden", name="text", value=text), Input(type="hidden", name="token", value=token),
+                            P("Its calendar plans, notes and rides stay." + (f" {moves} scheduled Uber ride{'s' if moves != 1 else ''} will move to the new flight times and hotel." if moves else ""), cls="ti-note", **({"id": "ti-moves"} if moves else {})), action=save_to, method="post"), cls="ti-match")] if match else []),
+                Form(*hidden, Input(type="hidden", name="token", value=token),
                      Button(icon("check", 16, 2.6), "Save as a new trip" if match else "Save this trip", type="submit", cls="btn btn-sm ti-save" if match else "btn btn-ink ti-save", id="ti-save"),
-                     action=f"{PATH}/save", method="post"),
-                Form(Input(type="hidden", name="text", value=text), Button("Change something", type="submit", cls="btn btn-sm", id="ti-edit"), action=PATH, method="post", cls="ti-edit"),
+                     action=save_to, method="post"),
+                Form(*edit_fields, Button(edit_label, type="submit", cls="btn btn-sm", id="ti-edit"), action=edit_to, method="post", cls="ti-edit"),
                 cls="ti-card ti-aside"), cls="ti-cols"),
         cls="ti-wrap"), head=HEAD)
     return out
