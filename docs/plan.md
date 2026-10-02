@@ -334,12 +334,12 @@ Found reviewing F-054: "today" and "now" use Los Angeles time; a non-LA trip (e.
 
 # Ready for the captain's trip (week of 2026-10-04)
 
-## F-058 Import is easy to find, and "Change something" edits [doing]
+## F-058 Import is easy to find, and "Change something" edits [done]
 Captain, 2026-10-01: couldn't find Import a trip without the link; the Choose file button wasn't themed; "Change something" did nothing ("I should be able to edit"). · Needs: none
-- [ ] "Import a booked trip" is a visible button where people start trips (the Plan a trip page, the trips list/switcher and the calendar), on desktop and phone
-- [ ] the PDF picker is a GitAway-styled button (tokens, focus ring, shows the chosen file's name), no browser-default "Choose file" left
-- [ ] "Change something" on the import preview opens the trip in the guided builder, filled with everything previewed (travelers, flights, every hotel, car, notes, booked on, confirmations), so it can be edited and previewed again; editing as template text stays available as a secondary link
-- [ ] a browser test presses "Change something" and lands on an editable form with the previewed values
+- [x] "Import a booked trip" is a visible button where people start trips (the Plan a trip page, the trips list/switcher and the calendar), on desktop and phone
+- [x] the PDF picker is a GitAway-styled button (tokens, focus ring, shows the chosen file's name), no browser-default "Choose file" left
+- [x] "Change something" on the import preview opens the trip in the guided builder, filled with everything previewed (travelers, flights, every hotel, car, notes, booked on, confirmations), so it can be edited and previewed again; editing as template text stays available as a secondary link
+- [x] a browser test presses "Change something" and lands on an editable form with the previewed values
 
 ## F-059 Booked items are calm, colourful and clearly booked [done]
 Captain, 2026-10-01: booked items are "all black", bold, and "Booked elsewhere · Expedia" is shouted on every line; wants subtle colours per kind, a plane icon for flights, a hotel icon with check-in/check-out times, keep the lock. · Needs: none
