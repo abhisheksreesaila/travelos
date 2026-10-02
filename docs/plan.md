@@ -341,11 +341,11 @@ Captain, 2026-10-01: couldn't find Import a trip without the link; the Choose fi
 - [ ] "Change something" on the import preview opens the trip in the guided builder, filled with everything previewed (travelers, flights, every hotel, car, notes, booked on, confirmations), so it can be edited and previewed again; editing as template text stays available as a secondary link
 - [ ] a browser test presses "Change something" and lands on an editable form with the previewed values
 
-## F-059 Booked items are calm, colourful and clearly booked [doing]
+## F-059 Booked items are calm, colourful and clearly booked [done]
 Captain, 2026-10-01: booked items are "all black", bold, and "Booked elsewhere · Expedia" is shouted on every line; wants subtle colours per kind, a plane icon for flights, a hotel icon with check-in/check-out times, keep the lock. · Needs: none
-- [ ] booked flights, hotel check-ins/check-outs and car pick-up/drop-off show as soft tinted blocks per kind (design-system tint/ink pairs), not solid black, on the calendar (whole trip and day views) and the phone Today view
-- [ ] each keeps its icon (plane, bed, car) and the lock, with readable contrast (WCAG AA)
-- [ ] "Booked elsewhere · Expedia" appears once, quietly (the trip header or the booking's detail), not as a bold label on every block
+- [x] booked flights, hotel check-ins/check-outs and car pick-up/drop-off show as soft tinted blocks per kind (design-system tint/ink pairs), not solid black, on the calendar (whole trip and day views) and the phone Today view
+- [x] each keeps its icon (plane, bed, car) and the lock, with readable contrast (WCAG AA)
+- [x] "Booked elsewhere · Expedia" appears once, quietly (the trip header or the booking's detail), not as a bold label on every block
 
 ## F-060 Landing v2: one clear door, a page that tells the story [doing]
 Design: docs/design/landing-v2.md (approved 2026-10-02) · Needs: none
