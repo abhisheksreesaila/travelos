@@ -509,7 +509,8 @@ def top_bar(t, b, who, session, ctx):
     presence = Span(presence_text(crew, friends), cls="cal-presence", role="status") if crew or friends else ""
     return Header(
         brand("/"),
-        Div(H1(trip_name(t)), Div(Span(f"{cal.range_label(t.depart, t.return_)} · " + (f"booked elsewhere · {cal.plan_of(b).booked_on}" if cal.is_imported(b) else f"booked · {catalog.money(b['total_cents'])}"), cls="cal-tripline"), trip_switcher(session), cls="cal-tripbar"), cls="cal-title-box"),
+        Div(H1(trip_name(t)), Div(Span(f"{cal.range_label(t.depart, t.return_)} · " + (f"booked elsewhere · {cal.plan_of(b).booked_on}" if cal.is_imported(b) else f"booked · {catalog.money(b['total_cents'])}"), cls="cal-tripline"), trip_switcher(session),
+                                                                                       A(icon("ledger", 16, 2.4), "Import a booked trip", href="/trips/import", cls="btn btn-sm", id="cal-import") if ctx["role"] != "viewer" else "", cls="cal-tripbar"), cls="cal-title-box"),
         Div(Div(*people, cls="cal-faces"), presence, cls="cal-avatars"),
         Div(A(icon("mic", 18, 2.4), "Talk to plan", href=voice_ui.voice_url(ctx["demo"], hear=1), data_soft="", cls="cal-btn cal-btn-mint vo-open") if ctx["role"] != "viewer" else "",
             A("Your forks", Span(str(forks), cls="cal-count"), href="/forks", cls="cal-btn cal-btn-white"),

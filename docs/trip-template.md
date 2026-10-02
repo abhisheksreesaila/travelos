@@ -80,7 +80,7 @@ notes: |
 ```
 
 What GitAway does with it:
-- **Calendar:** flights, check-in and check-out go on the trip calendar as booked blocks, marked "Booked elsewhere: Expedia".
+- **Calendar:** flights, check-in and check-out go on the trip calendar as booked blocks, locked (with a lock). The trip header says where you booked, e.g. "Booked elsewhere: Expedia".
 - **Car:** if you included one, the car pickup and dropoff appear as small calendar notes.
 - **Rides:** with no car, the rides card can schedule (simulated) Ubers timed to your landing and your flight home.
 - **Family:** travelers with an email address can be invited to the trip as editors or viewers.

@@ -21,7 +21,7 @@ To use real Google sign-in instead of the dev sign-in, follow `docs/setup.md` �
    - Quote confirmation numbers if you like, though they're kept exactly as typed either way.
    - Use `hotels:` for two hotels.
    - Delete `car:` if you'll use rides.
-4. Open **Import a trip** (`/trips/import`), paste the block, press **Preview**, check it, then press **Save**. The calendar opens on your trip. Your bookings are marked "Booked elsewhere · Expedia".
+4. Open **Import a trip** (`/trips/import`), paste the block, press **Preview**, check it, then press **Save**. The calendar opens on your trip. Your bookings sit on the calendar locked (with a lock), and the trip header says "Booked elsewhere · Expedia".
 5. Made a mistake? Fix the template and import it again. The preview offers **Replace the existing trip**, and your plans, notes and rides are kept.
 
 ## 3. Invite your family

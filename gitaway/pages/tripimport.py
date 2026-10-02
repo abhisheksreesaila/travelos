@@ -13,7 +13,7 @@ family sign-in; the preview shows what the person pasted back to them.
 
 from pathlib import Path
 
-from fasthtml.common import A, Button, Div, Form, H1, H2, H3, Input, Label, Li, Link, Ol, P, Section, Span, Textarea, Ul
+from fasthtml.common import A, Button, Div, Form, H1, H2, H3, Input, Label, Li, Link, Ol, P, Script, Section, Span, Textarea, Ul
 from fasthtml.core import FtResponse
 from starlette.datastructures import UploadFile
 from starlette.responses import RedirectResponse, Response
@@ -22,7 +22,7 @@ from gitaway import access, expedia, importer, session as ses, tripcal as cal, t
 from gitaway.icons import icon
 from gitaway.layout import page, trip_field
 
-HEAD = (Link(rel="stylesheet", href="/assets/css/tripimport.css"),)
+HEAD = (Link(rel="stylesheet", href="/assets/css/tripimport.css"), Script(src="/assets/js/tripimport.js", defer=True))
 TEMPLATE = Path(__file__).resolve().parent.parent.parent / "docs" / "trip-template.md"
 PATH = "/trips/import"
 CANNOT = "Only editors and admins of your family can import a trip. Ask the family owner for editor access."
@@ -54,7 +54,10 @@ def paste_page(text="", errors=(), warnings=(), status=200):
               Textarea(text, name="text", id="ti-text", rows="18", spellcheck="false", autocomplete="off", maxlength=str(ti.MAX_BYTES),
                        placeholder="trip:\n  title: LA with the kids\n  destination: Los Angeles\n  start: 2026-10-16\n  end: 2026-10-20\n…",
                        aria_describedby="ti-errors" if errors else None, aria_invalid="true" if errors else None, cls="ti-box")),
-        Label(Span("Or upload the Expedia itinerary PDF", cls="ti-label"), Input(type="file", name="file", id="ti-file", accept=".pdf,application/pdf", cls="ti-file")),
+        Div(Span("Or upload the Expedia itinerary PDF", cls="ti-label"),
+            Div(Input(type="file", name="file", id="ti-file", accept=".pdf,application/pdf", cls="ti-file"),
+                Label(icon("ledger", 16, 2.4), "Choose the PDF", fr="ti-file", cls="btn btn-sm ti-pick"),
+                Span("No file chosen", id="ti-file-name", cls="ti-file-name", aria_live="polite"), cls="ti-picker")),
         Ul(*[Li(e) for e in errors], role="alert", id="ti-errors", cls="ti-errors") if errors else "",
         Div(Button(icon("check", 16, 2.6), "Preview", type="submit", cls="btn btn-ink", id="ti-preview"), cls="ti-actions"),
         action=PATH, method="post", enctype="multipart/form-data", cls="ti-form",
@@ -65,7 +68,7 @@ def paste_page(text="", errors=(), warnings=(), status=200):
            Li("Check what will be saved, then save. Your calendar opens on the trip."), cls="ti-steps"),
         A(icon("arrow-right", 16, 2.6), "Download the template", href=f"{PATH}/template", cls="btn btn-sm", id="ti-template", download="trip-template.md"),
         A(icon("arrow-right", 16, 2.6), "Rather answer a few questions?", href="/trips/build", cls="btn btn-sm", id="ti-build"),
-        P("Flights, the hotel and a car go on your calendar marked “Booked elsewhere”. Confirmation numbers are shown only to your family.", cls="ti-note"),
+        P("Flights, the hotel and a car go on your calendar, locked, so they cannot be moved by accident. Confirmation numbers are shown only to your family.", cls="ti-note"),
         cls="ti-card ti-aside",
     )
     out = page("Import a trip", Div(
@@ -119,7 +122,7 @@ def plan_sections(plan):
 def _consequences(plan):
     """The sentences that say what the calendar and the rides will do with this trip."""
     n = len(ti.block_specs(plan))
-    out = [f"{n} booked item{'s' if n != 1 else ''} will go on your calendar, marked “Booked elsewhere · {plan.booked_on}”."]
+    out = [f"{n} booked item{'s' if n != 1 else ''} will go on your calendar, locked (with a lock). The trip header will say “Booked elsewhere · {plan.booked_on}”."]
     arrive = plan.arrive_leg
     if arrive:
         out.append(f"You land at {_when(arrive.arrive)}: plans before then are not allowed" + (f", and none within {cal.AIRPORT_BUFFER // 60} hours of your flight home." if plan.depart_leg else "."))
@@ -138,7 +141,8 @@ def preview_page(text, parsed, match=None, moves=0, *, fields=None, save_action=
     plan = parsed.plan
     hidden = fields if fields is not None else [Input(type="hidden", name="text", value=text)]
     save_to = save_action or f"{PATH}/save"
-    edit_to, edit_fields, edit_label = edit or (PATH, [Input(type="hidden", name="text", value=text)], "Change something")
+    text_field = [Input(type="hidden", name="text", value=text)]
+    edit_to, edit_fields, edit_label = edit or ("/trips/build/from-import", text_field, "Change something")  # F-058: into the guided builder, filled
     token = importer.new_token()
     out = page("Preview your trip", Div(
         lead,
@@ -154,7 +158,8 @@ def preview_page(text, parsed, match=None, moves=0, *, fields=None, save_action=
                 Form(*hidden, Input(type="hidden", name="token", value=token),
                      Button(icon("check", 16, 2.6), "Save as a new trip" if match else "Save this trip", type="submit", cls="btn btn-sm ti-save" if match else "btn btn-ink ti-save", id="ti-save"),
                      action=save_to, method="post"),
-                Form(*edit_fields, Button(edit_label, type="submit", cls="btn btn-sm", id="ti-edit"), action=edit_to, method="post", cls="ti-edit"),
+                Form(*edit_fields, Button(icon("arrow-right", 16, 2.6), edit_label, type="submit", cls="btn btn-sm", id="ti-edit"), action=edit_to, method="post", cls="ti-edit"),
+                Form(*text_field, Button("Edit as template text", type="submit", cls="ti-link ti-linkbtn", id="ti-edit-text"), action=f"{PATH}/edit", method="post", cls="ti-edit") if edit is None else "",
                 cls="ti-card ti-aside"), cls="ti-cols"),
         cls="ti-wrap"), head=HEAD)
     return out
@@ -229,6 +234,15 @@ def register(app):
         parsed = ti.Parsed(parsed.plan, (*extra, *parsed.warnings))
         match = importer.find_match(session, parsed.plan)
         return preview_page(text, parsed, match, importer.rides_to_retime(session, match[0], parsed.plan) if match else 0, expedia_read=read)
+
+    @app.post(f"{PATH}/edit")
+    def import_edit_text(session, text: str = ""):
+        """"Edit as template text": the paste page with the previewed text in the box."""
+        if not ses.current_traveler(session):
+            return _signin()
+        if not can_import(session):
+            return _sorry("Import a trip", CANNOT, A("Back to your trips", href="/start", cls="btn btn-ink"), status=403)
+        return paste_page(text)
 
     @app.post(f"{PATH}/save")
     def import_save(session, text: str = "", token: str = "", replace: str = ""):
