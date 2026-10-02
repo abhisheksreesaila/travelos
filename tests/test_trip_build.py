@@ -310,3 +310,20 @@ def test_the_first_run_welcome_and_the_import_page_link_to_the_builder(client):
     html = client.get("/start").text
     assert 'href="/trips/build"' in html and "Answer a few questions" in html and "Paste the template" in html and 'href="/trips/import"' in html
     assert 'href="/trips/build"' in client.get("/trips/import").text
+
+
+def test_every_step_has_unique_ids_and_every_input_has_a_label(client):
+    sign_in(client)
+    w = Walk(client)
+    pages = [w.html]
+    for step, fields in enumerate((WHERE, DATES, WHO, FLIGHTS, HOTEL, CAR, NOTES), 1):
+        w.post(step, **fields)
+        pages.append(w.html)
+    for html in pages[:-1]:
+        ids = re.findall(r'\bid="([^"]+)"', html)
+        assert len(ids) == len(set(ids)), sorted({i for i in ids if ids.count(i) > 1})
+        for tag in re.findall(r"<(?:input|select|textarea)\b[^>]*>", html):
+            if 'type="hidden"' in tag or "tb-default" in tag:
+                continue
+            ident = re.search(r'\bid="([^"]+)"', tag)
+            assert ident and (re.search(rf'for="{ident.group(1)}"', html) or re.search(rf"<label[^>]*>(?:(?!</label>).)*{re.escape(tag)}", html, re.S)), tag

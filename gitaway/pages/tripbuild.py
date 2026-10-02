@@ -196,7 +196,7 @@ def step_page(step, draft, errors=None, status=200):
             Button("Check my trip" if last else f"Next: {LABELS[step]}", icon("arrow-right", 18, 2.6), type="submit", name="nav", value="next", cls="btn btn-ink tb-next", id="tb-next"), cls="tb-nav"),
         action=PATH, method="post", cls="tb-form", id="tb-form", novalidate=True, data_step=str(step), aria_label=TITLES[step - 1])
     out = page(f"{LABELS[step - 1]}: build a trip", Div(
-        Div(Span("BUILD A TRIP", cls="eyebrow"), H1(TITLES[step - 1], cls="ti-title", id="tb-title"), P(LEDES[step - 1], cls="ti-lede"), cls="ti-head"),
+        Div(Span("BUILD A TRIP", cls="eyebrow"), H1(TITLES[step - 1], cls="ti-title", id="tb-heading"), P(LEDES[step - 1], cls="ti-lede"), cls="ti-head"),
         indicator(step), Div(form, cls="ti-card tb-main"), cls="ti-wrap tb-wrap"), head=HEAD)
     return FtResponse(out, status_code=status) if status != 200 else out
 
