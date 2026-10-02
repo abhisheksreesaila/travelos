@@ -25,12 +25,13 @@ import re
 import uuid
 from dataclasses import dataclass, replace
 from datetime import date, datetime, time, timedelta
+from zoneinfo import ZoneInfo
 from typing import Protocol
 from urllib.parse import quote
 
 from fh_saas.utils_sql import delete_record, insert_only, update_record
 
-from gitaway import catalog, familydb, session as ses
+from gitaway import catalog, familydb, session as ses, zones
 
 TZ = catalog.TZ
 MODES = ("simulated",)
@@ -151,7 +152,7 @@ def leg_plan(kind, flight, stay, trip) -> LegPlan:
         day, at = day + timedelta(days=1), at - 24 * 60
     elif at < 0:  # a flight at 1 AM: the ride is the evening before
         day, at = day - timedelta(days=1), at + 24 * 60
-    when = datetime.combine(day, time(at // 60, at % 60), tzinfo=TZ)
+    when = datetime.combine(day, time(at // 60, at % 60), tzinfo=ZoneInfo(zones.AIRPORTS.get(airport) or getattr(trip, "tz", None) or TZ.key))  # local to the airport (F-057)
     return LegPlan(kind, airport, stay.id if stay else "", pickup, dropoff, when, trip.travelers, minutes, "RESERVE" if kind == "arrive" else "SCHEDULED", trip == catalog.SAMPLE_TRIP)
 
 
@@ -484,7 +485,8 @@ def to_dict(r: RideRecord) -> dict:
     """The compact form stored in the family database's `rides` table (about 200 bytes of JSON)."""
     d = {"i": r.id, "k": r.key, "l": r.leg[0], "p": r.product, "c": r.cents, "u": r.cars, "t": int(r.pickup_time.timestamp()), "m": r.minutes, "n": r.party,
          "a": r.airport, "g": [r.guest.first, r.guest.last], "ph": r.guest.phone, "q": r.request_id, "fi": r.fare_id}
-    for key, value in (("h", r.stay_id), ("x", r.step), ("s", 1 if r.canceled else 0), ("d", 1 if r.demo else 0), ("ho", list(r.hotel))):
+    zone = getattr(r.pickup_time.tzinfo, "key", TZ.key)  # a ride in another trip's zone remembers it (F-057)
+    for key, value in (("h", r.stay_id), ("x", r.step), ("s", 1 if r.canceled else 0), ("d", 1 if r.demo else 0), ("ho", list(r.hotel)), ("z", zone if zone != TZ.key else "")):
         if value:
             d[key] = value
     return d
@@ -492,7 +494,7 @@ def to_dict(r: RideRecord) -> dict:
 
 def from_dict(d: dict) -> RideRecord:
     leg = "arrive" if d["l"] == "a" else "depart"
-    pickup = datetime.fromtimestamp(d["t"], TZ)
+    pickup = datetime.fromtimestamp(d["t"], ZoneInfo(d.get("z") or TZ.key))
     return RideRecord(d["i"], d["q"], d["k"], leg, d["p"], _product_id(d["p"]), d["fi"], d["c"], d["u"], pickup, d["m"], d["n"], d["a"], d.get("h", ""),
                       Guest(d["g"][0], d["g"][1], d["ph"]), d.get("x", 0), bool(d.get("s")), bool(d.get("d")), tuple(d.get("ho", ())))
 

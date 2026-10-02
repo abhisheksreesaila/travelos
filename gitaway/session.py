@@ -194,6 +194,12 @@ def family(session):
         yield Family(db, t, member, trip_id)
 
 
+def trip_zone(session) -> str:
+    """The IANA time zone of the trip this request works on (Los Angeles when signed out or there is no trip)."""
+    with family(session) as fam:
+        return familydb.trip_zone(fam.db, fam.trip_id) if fam else "America/Los_Angeles"
+
+
 def open_trip_is_demo(session) -> bool:
     """Is the trip this request works on a demo trip? False when signed out or there is no trip (see Family.is_demo)."""
     with family(session) as fam:

@@ -304,6 +304,12 @@ def trip(db, trip_id):
     return row(db, "SELECT * FROM trips WHERE id = :id", id=trip_id) if trip_id else None
 
 
+def trip_zone(db, trip_id) -> str:
+    """The IANA time zone the trip lives in (F-057; the `timezone` column, Los Angeles for demo trips and older rows)."""
+    found = row(db, "SELECT timezone FROM trips WHERE id = :id", id=trip_id) if trip_id else None
+    return (found or {}).get("timezone") or "America/Los_Angeles"
+
+
 def current_trip_id(db, member) -> str | None:
     """The trip this person has open: the one they chose, else the family's newest."""
     if member.get("trip_id") and trip(db, member["trip_id"]):
