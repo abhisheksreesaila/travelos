@@ -116,29 +116,34 @@ def account(traveler=None):
     )
 
 
-def site_header(current: str = "", traveler=None):
+def site_header(current: str = "", traveler=None, nav: bool = True):
+    """The header. `nav=False` is the landing's: the brand and the account only."""
     links = [A(label, href=href, aria_current="page" if href == current else None) for label, href in NAV]
     return Header(
         A("Skip to content", href="#main", cls="ga-skip"),
         brand(),
-        Nav(*links, cls="ga-nav", aria_label="Main"),
+        *((Nav(*links, cls="ga-nav", aria_label="Main"),) if nav else ()),
         account(traveler),
         cls="ga-header ga-wrap",
     )
 
 
-def site_footer():
+def site_footer(links=()):
+    """The footer. `links` is a list of (label, href) shown as a small nav; the landing puts the header's old links here."""
     return Footer(
         Span("GitAway", cls="ga-brand-name"),
         Span("Trips shared by travelers and creators. Sample data only: no real bookings or payments."),
+        *((Nav(*[A(label, href=href) for label, href in links], cls="ga-footer-nav", aria_label="More"),) if links else ()),
         cls="ga-footer ga-wrap",
     )
 
 
-def page(title: str, *content, current: str = "", theme: str = "sunset", head=()):
-    """A full GitAway page. `current` marks the active nav link; `theme` is sunset or pacific."""
+def page(title: str, *content, current: str = "", theme: str = "sunset", head=(), nav: bool = True, footer_links=()):
+    """A full GitAway page. `current` marks the active nav link; `theme` is sunset or pacific.
+
+    `nav=False` drops the header's links (brand and account stay) and `footer_links` adds a footer nav: the landing's pair of options."""
     return (
         Title(f"GitAway · {title}" if title else "GitAway"),
         *styles(*head, theme=theme),
-        Div(site_header(current), join_note(), Main(*content, id="main"), site_footer(), data_theme=theme, cls="ga-page"),
+        Div(site_header(current, nav=nav), join_note(), Main(*content, id="main"), site_footer(footer_links), data_theme=theme, cls="ga-page"),
     )
