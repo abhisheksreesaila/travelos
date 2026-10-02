@@ -23,9 +23,10 @@ AIRPORTS = ("SFO", "OAK", "SJC", "LAX", "BUR", "SNA", "LGB")
 DESTINATION_AIRPORT = {"los angeles": "LAX", "la": "LAX", "burbank": "BUR", "long beach": "LGB", "orange county": "SNA"}
 
 LEG = ("airline", "number", "from", "to", "depart_date", "depart_time", "arrive_date", "arrive_time", "confirmation", "seats")
-HOTEL = ("name", "address", "check_in_date", "check_in_time", "check_out_date", "check_out_time", "confirmation", "room", "phone")
+HOTEL = ("name", "address", "check_in_date", "check_in_time", "check_out_date", "check_out_time", "confirmation", "room", "phone", "rooms")  # `rooms` has no question: it rides along from an import
 CAR = ("company", "pickup_place", "pickup_date", "pickup_time", "dropoff_place", "dropoff_date", "dropoff_time", "confirmation", "car")
-SCALARS = ("title", "destination", "start", "end", "adults", "flying", "stay", "rent", "notes", "booked_on", "itinerary")
+SCALARS = ("title", "destination", "start", "end", "adults", "flying", "stay", "rent", "notes", "booked_on", "itinerary", "timezone")
+CARRIED = ("knames", "aages")  # kids' names and adults' ages: no question for them, they ride along from an import
 
 
 def blank(fields):
@@ -60,7 +61,7 @@ def load(text) -> dict:
     for key in SCALARS:
         if key in raw:
             d[key] = _s(raw[key], 2100 if key == "notes" else 200)
-    for key in ("kids", "names", "emails"):
+    for key in ("kids", "names", "emails", *CARRIED):
         d[key] = [_s(x, 100) for x in (raw.get(key) if isinstance(raw.get(key), list) else [])[:MAX_KIDS]]
     if isinstance(raw.get("legs"), list):
         d["legs"] = _rows(raw["legs"], LEG, ti.MAX_LEGS)
@@ -97,6 +98,7 @@ def read(step, form, draft):
         draft["adults"] = get("adults") or draft.get("adults", "2")
         draft["kids"] = [get(f"k{i}") for i in range(1, min(_whole(get("nkids")), MAX_KIDS) + 1)]
         n = adults_of(draft)
+        draft["knames"], draft["aages"] = draft.get("knames", [])[:len(draft["kids"])], draft.get("aages", [])[:n]
         draft["names"] = [get(f"an{i}") for i in range(1, n + 1)]
         draft["emails"] = [get(f"ae{i}") for i in range(1, n + 1)]
     elif step == 4:
@@ -104,7 +106,8 @@ def read(step, form, draft):
         draft["legs"] = [{f: get(f"leg{i}_{f}") for f in LEG} for i in range(ti.MAX_LEGS) if f"leg{i}_airline" in form]
     elif step == 5:
         draft["stay"] = "no" if get("stay") == "no" else "yes"
-        draft["hotels"] = [{f: get(f"hotel{i}_{f}") for f in HOTEL} for i in range(ti.MAX_HOTELS) if f"hotel{i}_name" in form]
+        old = draft.get("hotels", [])
+        draft["hotels"] = [{**{f: get(f"hotel{i}_{f}") for f in HOTEL if f != "rooms"}, "rooms": old[i]["rooms"] if i < len(old) else ""} for i in range(ti.MAX_HOTELS) if f"hotel{i}_name" in form]
     elif step == 6:
         draft["rent"] = "yes" if get("rent") == "yes" else "no"
         draft["car"] = {f: get(f"car_{f}") for f in CAR}
@@ -371,27 +374,56 @@ def first_problem(draft):
 
 # ---- the plan -------------------------------------------------------------------------------------------------------
 
+def _stamp(at):
+    return at.date().isoformat(), f"{at:%H:%M}"
+
+
+def from_plan(plan) -> dict:
+    """The draft that builds `plan` back (the way from an import preview into the builder: "Change something"). Nothing the preview shows is lost."""
+    adults = [t for t in plan.travelers if not t.is_kid][:MAX_ADULTS]
+    kids = [t for t in plan.travelers if t.is_kid][:MAX_KIDS]
+    d = {"title": plan.title, "destination": plan.destination, "start": plan.start.isoformat(), "end": plan.end.isoformat(),
+         "adults": str(len(adults)), "names": [t.name for t in adults], "emails": [t.email for t in adults], "aages": [str(t.age) if t.age is not None else "" for t in adults],
+         "kids": [str(t.age) for t in kids], "knames": [t.name for t in kids],
+         "flying": "yes" if plan.legs else "no", "stay": "yes" if plan.hotels else "no", "rent": "yes" if plan.rental else "no",
+         "notes": plan.notes, "booked_on": plan.booked_on, "itinerary": plan.itinerary, "timezone": plan.timezone}
+    if plan.legs:
+        d["legs"] = [{"airline": l.airline, "number": l.number, "from": l.origin, "to": l.dest, "depart_date": _stamp(l.depart)[0], "depart_time": _stamp(l.depart)[1],
+                      "arrive_date": _stamp(l.arrive)[0], "arrive_time": _stamp(l.arrive)[1], "confirmation": l.confirmation, "seats": l.seats} for l in plan.legs]
+    if plan.hotels:
+        d["hotels"] = [{"name": h.name, "address": h.address, "check_in_date": _stamp(h.check_in)[0], "check_in_time": _stamp(h.check_in)[1],
+                        "check_out_date": _stamp(h.check_out)[0], "check_out_time": _stamp(h.check_out)[1], "confirmation": h.confirmation, "room": h.room, "phone": h.phone,
+                        "rooms": str(h.rooms)} for h in plan.hotels]
+    if plan.rental:
+        c = plan.rental
+        d["car"] = {"company": c.company, "pickup_place": c.pickup_place, "pickup_date": _stamp(c.pickup)[0], "pickup_time": _stamp(c.pickup)[1],
+                    "dropoff_place": c.dropoff_place, "dropoff_date": _stamp(c.dropoff)[0], "dropoff_time": _stamp(c.dropoff)[1], "confirmation": c.confirmation, "car": c.car}
+    return d
+
+
 def build(draft) -> ti.Plan:
     """The `Plan` this draft describes. Raises BuildProblem with the step to go back to when a step does not pass."""
     problem = first_problem(draft)
     if problem:
         raise BuildProblem(*problem)
     n, names, emails = adults_of(draft), draft.get("names", []), draft.get("emails", [])
-    people = [ti.Traveler(((names[i] if i < len(names) else "") or f"Adult {i + 1}"), (emails[i] if i < len(emails) else "").lower()) for i in range(n)]
-    people += [ti.Traveler(f"Kid {i + 1}", "", int(age)) for i, age in enumerate(draft.get("kids", []))]
+    aages, knames = draft.get("aages", []), draft.get("knames", [])
+    people = [ti.Traveler(((names[i] if i < len(names) else "") or f"Adult {i + 1}"), (emails[i] if i < len(emails) else "").lower(),
+                          int(aages[i]) if i < len(aages) and aages[i].isascii() and aages[i].isdigit() else None) for i in range(n)]
+    people += [ti.Traveler((knames[i] if i < len(knames) else "") or f"Kid {i + 1}", "", int(age)) for i, age in enumerate(draft.get("kids", []))]
     legs = hotels = ()
     if draft.get("flying") != "no":
         legs = tuple(sorted((ti.Leg(l["airline"], l["number"], l["from"].upper(), l["to"].upper(), _at(l["depart_date"], l["depart_time"]), _at(l["arrive_date"], l["arrive_time"]), l["confirmation"], l["seats"])
                              for l in draft["legs"]), key=lambda leg: leg.depart))
     if draft.get("stay") != "no":
-        hotels = tuple(sorted((ti.Lodging(h["name"], h["address"], _at(h["check_in_date"], h["check_in_time"]), _at(h["check_out_date"], h["check_out_time"]), h["confirmation"], h["room"], 1, h["phone"])
+        hotels = tuple(sorted((ti.Lodging(h["name"], h["address"], _at(h["check_in_date"], h["check_in_time"]), _at(h["check_out_date"], h["check_out_time"]), h["confirmation"], h["room"], _whole(h["rooms"], 1) or 1, h["phone"])
                                for h in draft["hotels"]), key=lambda h: h.check_in))
     rental = None
     if draft.get("rent") == "yes":
         c = draft["car"]
         rental = ti.Rental(c["company"], c["pickup_place"], _at(c["pickup_date"], c["pickup_time"]), c["dropoff_place"], _at(c["dropoff_date"], c["dropoff_time"]), c["confirmation"], c["car"])
     return ti.Plan(title=draft["title"], destination=draft["destination"], start=_day(draft["start"]), end=_day(draft["end"]), booked_on=draft.get("booked_on") or "elsewhere",
-                   itinerary=draft.get("itinerary", ""), travelers=tuple(people), legs=legs, hotels=hotels, rental=rental, notes=draft.get("notes", "").strip())
+                   itinerary=draft.get("itinerary", ""), travelers=tuple(people), legs=legs, hotels=hotels, rental=rental, notes=draft.get("notes", "").strip(), timezone=draft.get("timezone", ""))
 
 
 class BuildProblem(ValueError):

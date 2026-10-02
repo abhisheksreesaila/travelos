@@ -258,6 +258,19 @@ def register(app):
             return tip._sorry("Build a trip", tip.CANNOT, A("Back to your trips", href="/start", cls="btn btn-ink"), status=403)
         return advance(session, await request.form())
 
+    @app.post(f"{PATH}/from-import")
+    def build_from_import(session, text: str = ""):
+        """"Change something" on the import preview (F-058): the builder's first step, filled with everything the previewed text holds."""
+        if not ses.current_traveler(session):
+            return RedirectResponse(f"/signin?next={PATH}&intent=save", status_code=303)
+        if not tip.can_import(session):
+            return tip._sorry("Build a trip", tip.CANNOT, A("Back to your trips", href="/start", cls="btn btn-ink"), status=403)
+        try:
+            parsed = ti.parse(text)
+        except ti.ImportProblem as e:
+            return tip.paste_page(text, e.errors, e.warnings, status=422)
+        return step_page(1, tb.from_plan(parsed.plan))
+
     @app.post(f"{PATH}/save")
     def build_save(session, draft: str = "", token: str = "", replace: str = ""):
         if not ses.current_traveler(session):

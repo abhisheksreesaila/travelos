@@ -153,6 +153,7 @@ def start_page(session, vals, errors=None, status=200, phone=False):
         Div(
             Div(Span("PLAN A TRIP", cls="eyebrow"), H1("Where to?"),
                 P("Pick a place, your dates and who is coming. We line up flights, a stay and a car, side by side, with one honest total."),
+                A(icon("ledger", 16, 2.4), "Import a booked trip", href=firstrun.IMPORT, cls="btn btn-sm st-import", id="st-import"),
                 cls="st-hero"),
             continue_card(session, phone),
             firstrun.welcome("Welcome aboard", "Your family has no trips yet, so this is the fun part. Start one below, bring in a trip you already booked, or see what other travelers shared.", "#st-form") if firstrun.is_new(session) else "",
