@@ -240,7 +240,9 @@ def header(v, tab):
     day_of = f"{t.title.upper()} · DAY {v['sel'] + 1} OF {len(v['dates'])}" if v["phase"] == "during" and v["today_idx"] == v["sel"] else dates
     kicker = day_of if tab == "today" else dates
     return Header(Div(Span(kicker, cls="tp-head-k", id="tp-head-k", data_today=day_of, data_other=dates),
-                      H1({"today": _title_today(v), "days": f"Your {len(v['dates'])} days", "notes": "Trip notes"}[tab], id="tp-title-h"), cls="tp-head-text"),
+                      H1({"today": _title_today(v), "days": f"Your {len(v['dates'])} days", "notes": "Trip notes"}[tab], id="tp-title-h"),
+                      A(icon("pencil", 14, 2.4), "Edit trip", href=f"/trips/build/edit?trip={ses.open_trip_id()}", cls="btn btn-sm tp-edit", id="tp-edit-trip") if access.can_edit(v["role"]) and cal.is_imported(v["b"]) and ses.open_trip_id() else "",
+                      cls="tp-head-text"),
                   Div(*faces, cls="tp-faces"), cls="tp-head")
 
 

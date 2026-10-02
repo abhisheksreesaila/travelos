@@ -39,6 +39,7 @@ PATHS = {
     "minus": '<path d="M5 12h14"/>',
     "bag": '<rect x="5" y="7" width="14" height="13" rx="3"/><path d="M9 7V4h6v3M9 20v1M15 20v1"/>',
     "mic": '<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v4M8 21h8"/>',
+    "pencil": '<path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
     "x": '<path d="M18 6 6 18M6 6l12 12"/>',
     "note": '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
 }
