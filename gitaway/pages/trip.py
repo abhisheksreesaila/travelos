@@ -50,10 +50,11 @@ def load(session, day_arg="", ua=""):
     blocks = cal.booked_blocks(b, t) + cal.ride_blocks(session, b, t)
     offers = cal.ride_offers(session, b, t) if role != "viewer" else []  # scheduling an Uber is a write
     acts, notes = cal.activities(session), cal.notes(session)
-    ph, n = td.phase(t, catalog.today())
+    zone = ses.trip_zone(session)
+    ph, n = td.phase(t, catalog.today_in(zone))
     today_idx = n if ph == "during" else None
     sel = int(day_arg) if day_arg.isdigit() and int(day_arg) <= last else (n if ph == "during" else 0 if ph == "before" else last)
-    now = td.now_minute() if sel == today_idx else None
+    now = td.now_minute(zone) if sel == today_idx else None
     past = ph == "after" or (today_idx is not None and sel < today_idx)
     ctx = {"booking": b}
     ride_href = lambda blk: calui.ride_href(ctx, blk)  # noqa: E731
@@ -66,7 +67,7 @@ def load(session, day_arg="", ua=""):
     items = items_of(sel, now, past)
     tomorrow = items_of(sel + 1) if sel < last else []
     up = td.up_next(items, now, tomorrow[0] if tomorrow else None) if now is not None else None
-    return dict(session=session, who=who, b=b, t=t, dates=dates, last=last, role=role, blocks=blocks, acts=acts, notes=notes, phase=ph, n=n, today_idx=today_idx, sel=sel, now=now,
+    return dict(zone=zone, session=session, who=who, b=b, t=t, dates=dates, last=last, role=role, blocks=blocks, acts=acts, notes=notes, phase=ph, n=n, today_idx=today_idx, sel=sel, now=now,
                 items=items, up=up, stay=td.stay_card(b, dates, sel), days=td.day_summaries(dates, blocks, acts, today_idx), ua=ua, past=past, first=items_of(0)[:1],
                 crew=members.crew(session), next=cal.next_id(session))
 

@@ -1,14 +1,14 @@
 """The phone trip view's model (F-054): what is on today, what is next, and one line per day.
 
 Everything here is pure. The page is gitaway/pages/trip.py, which reads the family's trip the way the calendar does (gitaway.tripcal)
-and passes it in. "Today" is `catalog.today()` and the minute of the day is `now_minute()`, both Los Angeles time and both pinned in
-tests. Nothing here reads a confirmation number: the cards carry titles, times and places only.
+and passes it in. "Today" is `catalog.today_in(zone)` and the minute of the day is `now_minute(zone)`, in the trip's own time zone (F-057), both pinned in
+tests (via `catalog.now_utc`). Nothing here reads a confirmation number: the cards carry titles, times and places only.
 """
 
 import re
 from dataclasses import dataclass, replace
-from datetime import datetime
 from urllib.parse import quote_plus
+from zoneinfo import ZoneInfo
 
 from gitaway import catalog, tripcal as cal
 
@@ -24,9 +24,9 @@ def is_phone(ua) -> bool:
     return bool(_PHONE.search(ua or "")) and "iPad" not in (ua or "")
 
 
-def now_minute() -> int:
-    """Minutes since midnight in Los Angeles. Tests pin this, like catalog.today."""
-    n = datetime.now(TZ)
+def now_minute(zone=None) -> int:
+    """Minutes since midnight in a trip's time zone (default Los Angeles). Tests pin catalog.now_utc, or this."""
+    n = catalog.now_utc().astimezone(ZoneInfo(getattr(zone, "key", zone) or TZ.key))
     return n.hour * 60 + n.minute
 
 

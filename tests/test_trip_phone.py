@@ -22,8 +22,8 @@ def at(monkeypatch):
     """at(day, "16:20") pins today's date and the minute of the day in Los Angeles."""
     def pin(day, hhmm="12:00"):
         h, m = map(int, hhmm.split(":"))
-        monkeypatch.setattr(catalog, "today", lambda: day)
-        monkeypatch.setattr(td, "now_minute", lambda: h * 60 + m)
+        monkeypatch.setattr(catalog, "today", lambda *_: day)
+        monkeypatch.setattr(td, "now_minute", lambda *_: h * 60 + m)
     return pin
 
 
