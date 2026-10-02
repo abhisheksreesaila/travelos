@@ -136,8 +136,13 @@ def test_the_pdf_picker_is_a_styled_button_with_a_focus_ring_and_the_chosen_name
     pdf.write_bytes(b"%PDF-1.4 made up")
     page.set_input_files("#ti-file", str(pdf))
     expect(page.locator("#ti-file-name")).to_have_text("my-itinerary.pdf")
-    page.focus("#ti-file")
-    assert "rgb(30, 26, 46)" in page.evaluate("getComputedStyle(document.querySelector('.ti-pick')).outlineColor") or page.evaluate("getComputedStyle(document.querySelector('.ti-pick')).outlineStyle") == "solid"
+    ring = "(() => { const s = getComputedStyle(document.querySelector('.ti-pick')); return [s.outlineStyle, s.outlineWidth]; })()"
+    page.focus("#ti-text")
+    before = page.evaluate(ring)
+    page.keyboard.press("Tab")  # keyboard focus moves to the hidden input: its button shows the ring
+    assert page.evaluate("document.activeElement.id") == "ti-file"
+    after = page.evaluate(ring)
+    assert before[0] == "none" and after[0] == "solid" and after != before
     no_sideways_scroll(page)
 
 
@@ -155,6 +160,9 @@ def test_import_a_booked_trip_is_a_visible_button_where_trips_start(signed_in, b
     page.wait_for_url("**/calendar")
     expect(page.locator("#cal-import")).to_be_visible()
     no_sideways_scroll(page)
+    page.click("#cal-import")
+    page.wait_for_url("**/trips/import")
+    expect(page.locator("#ti-text")).to_be_visible()
 
 
 def test_rename_a_placeholder_kid_in_the_builder_and_see_it_in_the_preview(signed_in, base_url):

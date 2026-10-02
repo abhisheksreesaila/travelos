@@ -13,11 +13,11 @@ import json
 import re
 from datetime import date, datetime, time, timedelta
 
-from gitaway import catalog, tripimport as ti
+from gitaway import catalog, tripimport as ti, zones
 
 STEPS = ("where", "dates", "who", "flights", "hotel", "car", "notes")
-MAX_ADULTS = 8
-MAX_KIDS = 8
+MAX_ADULTS = ti.MAX_TRAVELERS  # anything the importer accepts opens intact (the total is checked in check_who)
+MAX_KIDS = ti.MAX_TRAVELERS
 MAX_DRAFT = 40_000
 AIRPORTS = ("SFO", "OAK", "SJC", "LAX", "BUR", "SNA", "LGB")
 DESTINATION_AIRPORT = {"los angeles": "LAX", "la": "LAX", "burbank": "BUR", "long beach": "LGB", "orange county": "SNA"}
@@ -376,6 +376,18 @@ def first_problem(draft):
 
 # ---- the plan -------------------------------------------------------------------------------------------------------
 
+def _adult_age(text):
+    """An adult's age that rode along from an import: 18 to 120, else none (a hidden field can be edited)."""
+    n = _whole(text, -1)
+    return n if 18 <= n <= 120 else None
+
+
+def _rooms(text):
+    """Rooms that rode along: 1 to 8 like the importer, else 1."""
+    n = _whole(text, 1)
+    return n if 1 <= n <= 8 else 1
+
+
 def _stamp(at):
     return at.date().isoformat(), f"{at:%H:%M}"
 
@@ -388,7 +400,9 @@ def from_plan(plan) -> dict:
          "adults": str(len(adults)), "names": [t.name for t in adults], "emails": [t.email for t in adults], "aages": [str(t.age) if t.age is not None else "" for t in adults],
          "kids": [str(t.age) for t in kids], "knames": [t.name for t in kids],
          "flying": "yes" if plan.legs else "no", "stay": "yes" if plan.hotels else "no", "rent": "yes" if plan.rental else "no",
-         "notes": plan.notes, "booked_on": plan.booked_on, "itinerary": plan.itinerary, "timezone": plan.timezone}
+         "notes": plan.notes, "booked_on": plan.booked_on, "itinerary": plan.itinerary,
+         # the zone rides along only when the text set it; otherwise the builder derives it again from the flights and destination after edits
+         "timezone": plan.timezone if plan.timezone != ti.zone_for(plan.legs, plan.destination)[0] else ""}
     if plan.legs:
         d["legs"] = [{"airline": l.airline, "number": l.number, "from": l.origin, "to": l.dest, "depart_date": _stamp(l.depart)[0], "depart_time": _stamp(l.depart)[1],
                       "arrive_date": _stamp(l.arrive)[0], "arrive_time": _stamp(l.arrive)[1], "confirmation": l.confirmation, "seats": l.seats} for l in plan.legs]
@@ -411,21 +425,21 @@ def build(draft) -> ti.Plan:
     n, names, emails = adults_of(draft), draft.get("names", []), draft.get("emails", [])
     aages, knames = draft.get("aages", []), draft.get("knames", [])
     people = [ti.Traveler(((names[i] if i < len(names) else "") or f"Adult {i + 1}"), (emails[i] if i < len(emails) else "").lower(),
-                          int(aages[i]) if i < len(aages) and aages[i].isascii() and aages[i].isdigit() else None) for i in range(n)]
+                          _adult_age(aages[i] if i < len(aages) else "")) for i in range(n)]
     people += [ti.Traveler((knames[i] if i < len(knames) else "") or f"Kid {i + 1}", "", int(age)) for i, age in enumerate(draft.get("kids", []))]
     legs = hotels = ()
     if draft.get("flying") != "no":
         legs = tuple(sorted((ti.Leg(l["airline"], l["number"], l["from"].upper(), l["to"].upper(), _at(l["depart_date"], l["depart_time"]), _at(l["arrive_date"], l["arrive_time"]), l["confirmation"], l["seats"])
                              for l in draft["legs"]), key=lambda leg: leg.depart))
     if draft.get("stay") != "no":
-        hotels = tuple(sorted((ti.Lodging(h["name"], h["address"], _at(h["check_in_date"], h["check_in_time"]), _at(h["check_out_date"], h["check_out_time"]), h["confirmation"], h["room"], _whole(h["rooms"], 1) or 1, h["phone"])
+        hotels = tuple(sorted((ti.Lodging(h["name"], h["address"], _at(h["check_in_date"], h["check_in_time"]), _at(h["check_out_date"], h["check_out_time"]), h["confirmation"], h["room"], _rooms(h["rooms"]), h["phone"])
                                for h in draft["hotels"]), key=lambda h: h.check_in))
     rental = None
     if draft.get("rent") == "yes":
         c = draft["car"]
         rental = ti.Rental(c["company"], c["pickup_place"], _at(c["pickup_date"], c["pickup_time"]), c["dropoff_place"], _at(c["dropoff_date"], c["dropoff_time"]), c["confirmation"], c["car"])
     return ti.Plan(title=draft["title"], destination=draft["destination"], start=_day(draft["start"]), end=_day(draft["end"]), booked_on=draft.get("booked_on") or "elsewhere",
-                   itinerary=draft.get("itinerary", ""), travelers=tuple(people), legs=legs, hotels=hotels, rental=rental, notes=draft.get("notes", "").strip(), timezone=draft.get("timezone", ""))
+                   itinerary=draft.get("itinerary", ""), travelers=tuple(people), legs=legs, hotels=hotels, rental=rental, notes=draft.get("notes", "").strip(), timezone=zones.valid(draft.get("timezone", "")) or "")
 
 
 class BuildProblem(ValueError):

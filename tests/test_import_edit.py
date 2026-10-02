@@ -8,7 +8,8 @@ from pathlib import Path
 
 from gitaway import tripbuild as tb, tripimport as ti
 from tests.test_signin import sign_in
-from tests.test_trip_build import Walk
+from tests.test_roles import crew  # noqa: F401 - a fixture: an admin, an editor and a viewer
+from tests.test_trip_build import Walk, draft_of
 
 TEMPLATE = (Path(__file__).resolve().parent.parent / "docs" / "trip-template.md").read_text()
 RICH = (TEMPLATE.replace("name: Kid 1", "name: Mia").replace("name: Kid 2", "name: Leo")
@@ -161,3 +162,68 @@ def test_kids_names_are_editable_in_the_who_step_and_blank_falls_back(client):
     for step in range(4, 8):
         next_step(w, step)
     assert "Maya" in w.text and "Kid 2" in w.text and "Child 1" not in w.text
+
+
+# ---- review fixes: tampered ride-along fields, the time zone, big parties, viewers ------------------------------------------
+
+def tampered_save(client, **changes):
+    d = tb.from_plan(plan_of(TEMPLATE))
+    for key, value in changes.items():
+        if key == "hotel_rooms":
+            d["hotels"][0]["rooms"] = value
+        else:
+            d[key] = value
+    return client.post("/trips/build/save", data={"draft": tb.dump(d)}, follow_redirects=False)
+
+
+def test_tampered_ride_along_fields_never_save_a_broken_trip(client):
+    sign_in(client)
+    for changes in ({"timezone": "Mars/Olympus"}, {"timezone": "x" * 150}, {"aages": ["999", "-5"]}, {"aages": ["5", "x"]}, {"hotel_rooms": "99"}, {"hotel_rooms": "0"}, {"hotel_rooms": "many"},
+                    {"knames": ["x" * 90, ""]}):
+        r = tampered_save(client, **changes)
+        assert r.status_code in (303, 422), changes
+        assert client.get("/trip").status_code == 200, changes
+        assert client.get("/calendar").status_code == 200, changes
+
+
+def test_the_builder_rechecks_the_ride_along_fields():
+    d = tb.from_plan(plan_of(TEMPLATE))
+    d.update(timezone="Mars/Olympus", aages=["999", "17"])
+    d["hotels"][0]["rooms"] = "99"
+    plan = tb.build(d)
+    assert plan.timezone == "America/Los_Angeles" and plan.hotels[0].rooms == 1
+    assert [t.age for t in plan.travelers[:2]] == [None, None]
+    d.update(aages=["41", "18"])
+    d["hotels"][0]["rooms"] = "8"
+    plan = tb.build(d)
+    assert [t.age for t in plan.travelers[:2]] == [41, 18] and plan.hotels[0].rooms == 8
+
+
+def test_a_time_zone_is_carried_only_when_the_text_set_it():
+    assert tb.from_plan(plan_of(TEMPLATE))["timezone"] == ""
+    assert tb.from_plan(plan_of(RICH))["timezone"] == ""  # the same zone the flights give anyway
+    assert tb.from_plan(plan_of(RICH.replace("America/Los_Angeles", "America/Denver")))["timezone"] == "America/Denver"
+
+
+def test_changing_the_flights_to_new_york_changes_the_zone(client):
+    sign_in(client)
+    w = walk_from(client, client.post("/trips/build/from-import", data={"text": TEMPLATE}).text)
+    for step in range(1, 8):
+        f = _Fields()
+        f.feed(w.html)
+        if step == 4:
+            f.values.update({"leg0_to": "JFK", "leg1_from": "JFK"})
+        w.post(step, **f.values)
+    assert tb.build(tb.load(draft_of(w.html))).timezone == "America/New_York"
+
+
+def test_ten_adults_open_intact():
+    names = "\n".join(f"  - name: Person {i}\n    email: p{i}@example.com" for i in range(1, 11))
+    text = re.sub(r"travelers:.*?(?=\nflights:)", "travelers:\n" + names + "\n", TEMPLATE, flags=re.S)
+    plan = plan_of(text)
+    assert plan.adults == 10 and tb.build(tb.load(tb.dump(tb.from_plan(plan)))) == plan
+
+
+def test_viewers_do_not_see_the_calendar_import_button(crew):
+    _, _, viewer = crew
+    assert 'id="cal-import"' not in viewer.get("/calendar").text
