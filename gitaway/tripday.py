@@ -10,7 +10,7 @@ from dataclasses import dataclass, replace
 from urllib.parse import quote_plus
 from zoneinfo import ZoneInfo
 
-from gitaway import catalog, tripcal as cal
+from gitaway import catalog, tripcal as cal, zones
 
 TZ = catalog.TZ
 DAY_TINTS = ("sun", "mint", "grape", "sky", "bubble")  # the calendar's day colours, in order
@@ -28,6 +28,32 @@ def now_minute(zone=None) -> int:
     """Minutes since midnight in a trip's time zone (default Los Angeles). Tests pin catalog.now_utc, or this."""
     n = catalog.now_utc().astimezone(ZoneInfo(getattr(zone, "key", zone) or TZ.key))
     return n.hour * 60 + n.minute
+
+
+def block_zone(block, dest_zone) -> str:
+    """The zone a booked block's stored time is local to: a flight, the airport it leaves from (or lands at, for the morning half of a red-eye); anything else, the destination."""
+    if block.icon == "plane":
+        m = _LEG.search(block.title)
+        code = m.group(2 if block.at == 0 else 1) if m else ""  # the landing morning of a red-eye (drawn from midnight) is the arrival airport's
+        if code in zones.AIRPORTS:
+            return zones.AIRPORTS[code]
+    return dest_zone
+
+
+def clock_zone(plan, dest_zone) -> str:
+    """The zone the traveler is in now (F-057): the departure airport's until the arrival flight lands, then the destination's."""
+    if plan is None or not plan.legs or plan.arrive_leg is None:
+        return dest_zone
+    home = zones.AIRPORTS.get(plan.legs[0].origin)
+    if home is None or home == dest_zone:
+        return dest_zone
+    lands = plan.arrive_leg.arrive.replace(tzinfo=ZoneInfo(dest_zone))
+    return home if catalog.now_utc() < lands else dest_zone
+
+
+def clocks_for(zone_names, start) -> dict:
+    """{zone: (index of today in the trip, minute of the day)} for each zone, at the trip's first day `start`."""
+    return {z: ((catalog.today_in(z) - start).days, now_minute(z)) for z in set(zone_names)}
 
 
 def maps_url(place, ua="") -> str:
@@ -65,6 +91,7 @@ class Item:
     href: str = ""         # where tapping it goes
     place: str = ""        # what Directions looks up ("" for none)
     by: str = ""
+    zone: str = ""         # the time zone its time is local to (F-057), when the timeline knows clocks
 
 
 @dataclass(frozen=True)
@@ -118,11 +145,13 @@ def _place_of(block, hotel_place):
     return ""
 
 
-def timeline(day, blocks, acts, offers, destination, *, hotel_place="", ride_href=None, detail_href=None, now=None, past=False):
+def timeline(day, blocks, acts, offers, destination, *, hotel_place="", ride_href=None, detail_href=None, now=None, past=False, clocks=None, zone=""):
     """The items of day `day`, in time order, each marked done, now, next or later.
 
     `now` is the minute of the day when `day` is today, else None. `past` marks a whole day done (an earlier day, or after the trip).
-    A ride offer is an invitation, not an event: it is never 'next'."""
+    A ride offer is an invitation, not an event: it is never 'next'.
+    With `clocks` ({zone: (today's index, minute)}, F-057) each item is measured against the clock of its own zone: a flight leaves in the
+    time zone of its airport, the rest of the trip is in `zone`."""
     items = []
     for b in blocks:
         if b.day != day:
@@ -133,7 +162,7 @@ def timeline(day, blocks, acts, offers, destination, *, hotel_place="", ride_hre
         kind, label, tint = _ICON_KIND.get(b.icon, ("hotel", "Booked", "sun"))
         where = b.tag.split(" · ")[-1] if b.tag else ""
         items.append(Item(b.id, b.at, b.end, b.title, kind, label, tint, b.icon or "calendar", f"{cal.fmt_time(b.at)} · booked" + (f" on {where}" if where else ""),
-                          href=detail_href(b) if (b.tag and detail_href) else "", place=_place_of(b, hotel_place)))
+                          href=detail_href(b) if (b.tag and detail_href) else "", place=_place_of(b, hotel_place), zone=block_zone(b, zone)))
     for o in offers:
         if o.day == day:
             items.append(Item(o.id, o.start, o.end, o.title, "offer", "Uber", "mint", "car", f"{cal.fmt_time(o.start)} · tap to schedule, simulated", href=ride_href(o) if ride_href else ""))
@@ -143,7 +172,28 @@ def timeline(day, blocks, acts, offers, destination, *, hotel_place="", ride_hre
             items.append(Item(a.id, a.start, a.end, a.title, "plan", label, tint, "", span_label(a.start, a.end) + (f" · added by {a.by}" if a.by else ""),
                               place=f"{a.title}, {destination}", by=a.by))
     items.sort(key=lambda x: (x.start, x.end, x.id))
+    if clocks:
+        items = [replace(x, zone=x.zone or zone) for x in items]
+        return _mark_zoned(items, day, clocks, past)
     return _mark(items, now, past)
+
+
+def _mark_zoned(items, day, clocks, past):
+    out, claimed = [], False
+    for x in items:
+        today, minute = clocks[x.zone]
+        if past or day < today or (day == today and x.end <= minute):
+            state = "done"
+        elif day > today:
+            state = "later"
+        elif x.start <= minute:
+            state = "now"
+        elif not claimed and x.kind != "offer":
+            state, claimed = "next", True
+        else:
+            state = "later"
+        out.append(replace(x, state=state))
+    return out
 
 
 def _mark(items, now, past):
@@ -173,16 +223,17 @@ class Up:
     uber: Item | None = None   # a ride still to schedule, else the one already set
 
 
-def up_next(items, now, tomorrow_first=None) -> Up:
+def up_next(items, now, tomorrow_first=None, clocks=None) -> Up:
     """The dark card for today: what is happening now, else what is next, else 'all done' (with tomorrow's first item if there is one)."""
     here = next((x for x in items if x.state == "now" and x.kind not in ("ride", "offer")), None)
     nxt = next((x for x in items if x.state == "next"), None)
     pending = [x for x in items if x.state != "done"]
     uber = next((x for x in pending if x.kind == "offer"), None) or next((x for x in pending if x.kind == "ride"), None)
+    at = (lambda x: clocks[x.zone][1]) if clocks else (lambda x: now)  # the minute in the item's own zone
     if here:
-        return Up(f"HAPPENING NOW · ENDS {until(here.end - now).upper()}", here, span_label(here.start, here.end), uber)
+        return Up(f"HAPPENING NOW · ENDS {until(here.end - at(here)).upper()}", here, span_label(here.start, here.end), uber)
     if nxt:
-        return Up(f"UP NEXT · {until(nxt.start - now).upper()}", nxt, span_label(nxt.start, nxt.end), uber)
+        return Up(f"UP NEXT · {until(nxt.start - at(nxt)).upper()}", nxt, span_label(nxt.start, nxt.end), uber)
     if tomorrow_first:
         return Up("ALL DONE TODAY", None, f"Tomorrow starts with {tomorrow_first.title} at {cal.fmt_time(tomorrow_first.start)}.")
     return Up("ALL DONE TODAY", None, "Nothing else is planned. Add something fun?")

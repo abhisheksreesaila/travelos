@@ -113,6 +113,11 @@ def _split(legs):
     return i, i + 1
 
 
+def zone_for(legs, destination) -> tuple:
+    """(IANA zone, note) for a trip with these flight legs: the arrival airport's, else the destination's state, else Los Angeles (see gitaway.zones)."""
+    return zones.resolve(legs[_split(legs)[0]].dest if legs else "", destination)
+
+
 @dataclass(frozen=True)
 class Plan:
     title: str
@@ -126,7 +131,11 @@ class Plan:
     hotels: tuple = ()
     rental: Rental | None = None
     notes: str = ""
-    timezone: str = zones.DEFAULT   # IANA name: where "today" and "up next" are measured (F-057)
+    timezone: str = ""   # IANA name of the destination (F-057); left out, `zone_for` picks it from the arrival airport
+
+    def __post_init__(self):
+        if not self.timezone:  # a Plan built without a zone (the guided builder, F-055) gets the arrival airport's
+            object.__setattr__(self, "timezone", zone_for(self.legs, self.destination)[0])
 
     @property
     def adults(self) -> int:
@@ -581,8 +590,7 @@ def parse(text) -> Parsed:
             r.bad(tp + ("timezone",), f"The trip’s time zone “{chosen}” is not one GitAway knows. Use a name like America/New_York or Europe/Paris (or delete the line).")
             zone = zones.DEFAULT
     elif isinstance(trip, dict):
-        arrive = legs[_split(legs)[0]].dest if legs else ""
-        zone, note = zones.resolve(arrive, destination)
+        zone, note = zone_for(legs, destination)
         if note:
             r.warn(tp, note)
     if not (legs or hotels or rental) and not r.errors:
@@ -629,7 +637,7 @@ def from_doc(doc: dict) -> Plan:
         tuple(Leg(f["airline"], f["number"], f["from"], f["to"], at(f["depart"]), at(f["arrive"]), f.get("confirmation", ""), f.get("seats", "")) for f in doc.get("flights", [])),
         tuple(Lodging(h["name"], h["address"], at(h["check_in"]), at(h["check_out"]), h.get("confirmation", ""), h.get("room", ""), h.get("rooms", 1), h.get("phone", "")) for h in hs),
         Rental(c["company"], c["pickup_place"], at(c["pickup"]), c["dropoff_place"], at(c["dropoff"]), c.get("confirmation", ""), c.get("car", "")) if c else None,
-        doc.get("notes", ""), t.get("timezone") or zones.DEFAULT)
+        doc.get("notes", ""), t.get("timezone", ""))
 
 
 # ---- what the calendar and the rides read ---------------------------------------------------------------------------

@@ -323,6 +323,8 @@ def test_register_on_open_is_idempotent_and_keeps_the_rows(client):
 
 
 def test_a_migration_is_applied_to_each_family_the_first_time_it_is_opened(tmp_path, monkeypatch):
+    for real in familydb.MIGRATIONS_DIR.glob("*.sql"):  # the real migrations stay in force next to the throwaway one
+        (tmp_path / real.name).write_text(real.read_text())
     (tmp_path / "900_add_pinned_to_trips.sql").write_text("-- UP --\nALTER TABLE trips ADD COLUMN pinned INTEGER DEFAULT 0;\n-- DOWN --\nALTER TABLE trips DROP COLUMN pinned;\n")
     monkeypatch.setattr(familydb, "MIGRATIONS_DIR", tmp_path)
     familydb.forget_schema_cache()

@@ -31,7 +31,7 @@ from urllib.parse import quote
 
 from fh_saas.utils_sql import delete_record, insert_only, update_record
 
-from gitaway import catalog, familydb, session as ses
+from gitaway import catalog, familydb, session as ses, zones
 
 TZ = catalog.TZ
 MODES = ("simulated",)
@@ -152,7 +152,7 @@ def leg_plan(kind, flight, stay, trip) -> LegPlan:
         day, at = day + timedelta(days=1), at - 24 * 60
     elif at < 0:  # a flight at 1 AM: the ride is the evening before
         day, at = day - timedelta(days=1), at + 24 * 60
-    when = datetime.combine(day, time(at // 60, at % 60), tzinfo=ZoneInfo(getattr(trip, "tz", None) or TZ.key))  # the trip's own zone (F-057)
+    when = datetime.combine(day, time(at // 60, at % 60), tzinfo=ZoneInfo(zones.AIRPORTS.get(airport) or getattr(trip, "tz", None) or TZ.key))  # local to the airport (F-057)
     return LegPlan(kind, airport, stay.id if stay else "", pickup, dropoff, when, trip.travelers, minutes, "RESERVE" if kind == "arrive" else "SCHEDULED", trip == catalog.SAMPLE_TRIP)
 
 

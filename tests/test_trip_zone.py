@@ -5,6 +5,7 @@ import json
 import re
 from datetime import date, datetime, timezone
 from html import unescape
+from zoneinfo import ZoneInfo
 
 import pytest
 from sqlalchemy import text as sql
@@ -135,14 +136,60 @@ def test_the_past_date_check_keeps_one_server_today(at_utc):
     assert catalog.is_past(date(2026, 10, 18), date(2026, 10, 21)) is True
 
 
-def test_a_ride_is_picked_up_at_the_trips_zone(client):  # rides only serve Los Angeles airports for now, so a zone chosen on import stands in
-    imported(client, no_car().replace(ZONE_LINE, "  timezone: America/New_York\n" + ZONE_LINE, 1))
+def test_a_ride_is_picked_up_at_the_airports_local_time(client):
+    imported(client, no_car())
     b = ses.booking(person())
-    t = cal.trip("", b)
-    assert t.tz == "America/New_York"
     flight = tripimport.flight_offer(tripimport.from_doc(b["imported"]), b["flight"])
-    plan = rides.leg_plan("arrive", flight, None, t)
-    assert plan.pickup_time.tzinfo.key == "America/New_York"
-    rec = rides.RideRecord("r1", "q", "k", "arrive", "x", "x", "f", 100, 1, plan.pickup_time, 30, 2, "LAX", "", rides.Guest("A", "B", "1"))
-    back = rides.from_dict(json.loads(json.dumps(rides.to_dict(rec))))
-    assert back.pickup_time == plan.pickup_time and back.pickup_time.tzinfo.key == "America/New_York"
+    plan = rides.leg_plan("arrive", flight, None, cal.trip("", b))
+    assert plan.pickup_time.tzinfo.key == "America/Los_Angeles"
+    other = plan.pickup_time.astimezone(ZoneInfo("America/New_York"))
+    rec = rides.RideRecord("r1", "q", "k", "arrive", "x", "x", "f", 100, 1, other, 30, 2, "LAX", "", rides.Guest("A", "B", "1"))
+    back = rides.from_dict(json.loads(json.dumps(rides.to_dict(rec))))  # a ride in another zone remembers it
+    assert back.pickup_time == other and back.pickup_time.tzinfo.key == "America/New_York"
+
+
+def test_a_plan_built_without_a_zone_gets_the_arrival_airports():
+    parsed = tripimport.parse(PARIS).plan
+    bare = tripimport.Plan(parsed.title, parsed.destination, parsed.start, parsed.end, parsed.booked_on, parsed.itinerary, parsed.travelers, parsed.legs, parsed.hotels)
+    assert bare.timezone == "Europe/Paris" and tripimport.zone_for(parsed.legs, "x") == ("Europe/Paris", "")
+    assert tripimport.Plan("T", "Austin, TX", parsed.start, parsed.end, "", "", parsed.travelers).timezone == "America/Chicago"
+
+
+# ---- the day you fly (the clock is the departure airport's until you land) ---------------------------------------------------------
+
+def leaving(frm, to, depart, arrive, tail=""):
+    t = no_car()
+    t = t.replace("from: SFO\n    to: LAX\n    depart: 2026-10-16 08:05\n    arrive: 2026-10-16 09:32", f"from: {frm}\n    to: {to}\n    depart: {depart}\n    arrive: {arrive}")
+    t = t.replace("from: LAX\n    to: SFO\n    depart: 2026-10-20 14:10\n    arrive: 2026-10-20 15:37", f"from: {to}\n    to: {frm}\n    depart: 2026-10-20 14:10\n    arrive: 2026-10-20 16:40")
+    return t.replace("check_in: 2026-10-16 15:00", "check_in: 2026-10-17 15:00").replace("destination: Los Angeles", "destination: Paris")
+
+
+def trip_text(client, moment, at_utc):
+    at_utc(moment)
+    return words(client.get("/trip").text)
+
+
+def test_on_the_morning_you_fly_to_paris_the_flight_is_hours_away_in_la_time(client, at_utc):
+    imported(client, leaving("LAX", "CDG", "2026-10-16 15:00", "2026-10-17 11:00"))
+    t = trip_text(client, datetime(2026, 10, 16, 16, 0, tzinfo=timezone.utc), at_utc)  # 9:00 AM in Los Angeles, 6 PM in Paris
+    assert "UP NEXT · IN 6 H" in t and "HAPPENING NOW" not in t and "DAY 1 OF" in t
+
+
+def test_the_evening_before_you_fly_it_is_still_before_the_trip(client, at_utc):
+    imported(client, leaving("LAX", "CDG", "2026-10-16 15:00", "2026-10-17 11:00"))
+    t = trip_text(client, datetime(2026, 10, 16, 1, 0, tzinfo=timezone.utc), at_utc)  # 6 PM on Oct 15 in Los Angeles, 3 AM on Oct 16 in Paris
+    assert "TRIP STARTS TOMORROW" in t and "DAY 1 OF" not in t
+
+
+def test_after_you_land_the_clock_is_the_destinations(client, at_utc):
+    imported(client, leaving("LAX", "CDG", "2026-10-16 15:00", "2026-10-17 11:00"))
+    t = trip_text(client, datetime(2026, 10, 17, 10, 0, tzinfo=timezone.utc), at_utc)  # 12:00 in Paris, an hour after landing
+    assert "DAY 2 OF" in t and "UP NEXT · IN 3 H" in t  # hotel check in at 3 PM Paris time
+
+
+def test_a_flight_across_the_date_line_stays_on_the_departure_day_until_it_lands(client, at_utc):
+    imported(client, leaving("SFO", "NRT", "2026-10-16 11:00", "2026-10-17 15:00"))
+    t = trip_text(client, datetime(2026, 10, 16, 17, 0, tzinfo=timezone.utc), at_utc)  # 10:00 AM Oct 16 in San Francisco, already Oct 17 in Tokyo
+    assert "DAY 1 OF" in t and "UP NEXT · IN 1 H" in t
+    t = trip_text(client, datetime(2026, 10, 17, 7, 0, tzinfo=timezone.utc), at_utc)  # 4 PM on Oct 17 in Tokyo, landed
+    assert "DAY 2 OF" in t
