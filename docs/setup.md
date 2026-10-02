@@ -52,7 +52,7 @@ Do not set the flag in production. If you run through a local reverse proxy, the
 
 ## Google sign-in
 
-It switches on when both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set; the sign-in page then shows **Sign in with Google**. Routes: `/login` (starts), `/auth/callback` (Google returns here), `/logout` (or the header's Sign out).
+It switches on when both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set; the sign-in page then shows **Continue with Google**. Routes: `/login` (starts), `/auth/callback` (Google returns here), `/logout` (or the header's Sign out).
 
 Google Cloud console steps:
 

@@ -61,7 +61,7 @@ def test_dialog_title_depends_on_intent(client):
         assert words in client.get(f"/signin?intent={intent}&next=/plan").text
     html = client.get("/signin?intent=pay").text
     assert "Dev sign-in (local only)" in html and 'type="email"' in html and 'role="dialog"' in html
-    assert "Cancel" in html and "Sign in with Google" not in html  # no Google keys in the tests
+    assert "Cancel" in html and "Continue with Google" not in html  # no Google keys in the tests
 
 
 def test_unknown_intent_falls_back_to_save(client):
