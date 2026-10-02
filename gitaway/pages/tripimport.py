@@ -143,7 +143,7 @@ def preview_page(text, parsed, match=None, moves=0, *, fields=None, save_action=
     out = page("Preview your trip", Div(
         lead,
         Div(H1("Check your trip", cls="ti-title"), P("This is exactly what will be saved. Nothing is saved until you press Save.", cls="ti-lede"), cls="ti-head"),
-        Div(P("Read from an Expedia itinerary. Rename the travelers (Expedia gives no names beyond the booker's), then check each line.", cls="ti-note", id="ti-expedia"), cls="ti-warns") if expedia_read else "",
+        Div(P("Read from an Expedia itinerary. Expedia names only who booked, so check the travelers and rename the placeholders (like “Adult 3”), then check each line.", cls="ti-note", id="ti-expedia"), cls="ti-warns") if expedia_read else "",
         Div(*[Div(w, cls="ti-warn", role="status") for w in parsed.warnings], cls="ti-warns") if parsed.warnings else "",
         Div(Div(*plan_sections(plan), cls="ti-main ti-stack", id="ti-preview-body"),
             Div(H2("What happens next", cls="ti-h2"), Ul(*[Li(s) for s in _consequences(plan)], cls="ti-next"),
