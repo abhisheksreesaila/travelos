@@ -84,3 +84,5 @@ What GitAway does with it:
 - **Car:** if you included one, the car pickup and dropoff appear as small calendar notes.
 - **Rides:** with no car, the rides card can schedule (simulated) Ubers timed to your landing and your flight home.
 - **Family:** travelers with an email address can be invited to the trip as editors or viewers.
+
+Booked on Expedia? Skip the template: on **Import a trip**, paste the text of your Expedia itinerary or upload its PDF. GitAway fills this template for you to review, lists anything it couldn't read, and makes placeholder travelers (Adult 2, Child 1) for you to rename. Prices, card digits and Expedia's support text are never kept.
