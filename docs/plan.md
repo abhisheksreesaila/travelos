@@ -300,9 +300,8 @@ Design: approved 2026-10-01 (docs/design/canvas/GoLive-Pickers.dc.html) · Needs
 - [x] a GitAway date-range picker (rounded, tokens, keyboard and screen-reader accessible, phone-friendly) replaces browser date inputs on "Where to?" and every other date field
 - [x] dropdowns and number pickers (adults, kids' ages, roles, times) use a GitAway style; no browser-default widgets left
 
-## F-052 A sign-in page that makes you want to travel [blocked]
-Blocked: open https://claude.ai/artifact/4FeSUmETnJ26kLXdA4EYvN and pick (sign-in A or B; phone A or B; pickers as drawn) or say what to change.
-Design: canvas first · Needs: none
+## F-052 A sign-in page that makes you want to travel [doing]
+Design: sign-in A (boarding pass) chosen 2026-10-01 as recommended; captain said "go ahead and do what you have to do" and will review locally (docs/design/canvas/GoLive-SignIn-A.dc.html) · Needs: none
 - [ ] the boarding pass fills from context: after a search (from, to, dates), after a fork (the trip's route and days, no creator), or a generic pass when there is no context
 - [ ] emotional, animated, fun travel sign-in (Google button and dev sign-in) per the approved artboard; fast, accessible, reduced motion calm
 
@@ -317,7 +316,7 @@ Design: phone A approved 2026-10-01 (docs/design/canvas/GoLive-Phone-Today.dc.ht
 
 # Go live phase 1.5
 
-## F-055 Guided trip builder [todo]
+## F-055 Guided trip builder [doing]
 Needs: F-051
 - [ ] a few friendly questions (where, when, who, flights, hotel, car) build the same trip as the template, with preview and save; no YAML
 
@@ -325,6 +324,6 @@ Needs: F-051
 Blocked: forward or paste one real Expedia confirmation email (it can stay on your machine; I only need its layout).
 - [ ] pasting an Expedia confirmation email pre-fills the trip for review (never saves directly)
 
-## F-057 A trip has its own time zone [todo]
+## F-057 A trip has its own time zone [doing]
 Found reviewing F-054: "today" and "now" use Los Angeles time; a non-LA trip (e.g. an imported Paris trip) would be off by up to a day.
 - [ ] a trip has a time zone (from its arrival airport via an IATA → zone map, or chosen on import); /trip's today, up next and countdowns use it; the server's past-date check keeps one "today"
