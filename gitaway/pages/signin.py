@@ -37,7 +37,7 @@ PLANE = "M2.5 13.5l7.2-1.6L15 4.6c.5-.7 1.6-.8 2.2-.2.5.5.5 1.3.1 1.9l-4.1 7.1 7
 STAGES = {
     "d": dict(box="0 0 880 900", route="M 90 520 C 300 200, 560 160, 640 330", a=(90, 520), b=(640, 330),
               pos=dict(sun="left:63.6%;top:33.3%;width:25%", c1="left:13.6%;top:13.3%;width:20.5%;height:6%", c2="left:47.7%;top:23.3%;width:13.6%;height:4.4%",
-                       fr="left:6.8%;top:60.5%", to="left:66.5%;top:41%", s1="left:10.9%;top:71%", s2="left:37.5%;top:77.8%", note="left:7.3%;top:7.1%")),
+                       fr="left:6.8%;top:60.5%", to="left:66.5%;top:41%", s1="left:10.9%;top:71%", s2="left:52%;top:80%", note="left:7.3%;top:7.1%")),
     "m": dict(box="0 0 400 240", route="M 44 180 C 110 36, 230 24, 330 110", a=(44, 180), b=(330, 110),   # one sticker: a banner has no room for two
               pos=dict(sun="left:62%;top:12%;width:26%", c1="left:55%;top:4%;width:22%;height:8%", c2="left:2%;top:46%;width:18%;height:8%",
                        fr="left:4.5%;top:79%", to="left:78%;top:60%", s1="left:20%;top:68%", note="left:5%;top:5%")),

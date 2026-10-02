@@ -116,7 +116,7 @@ def hit(a, b):
     return a["l"] < b["r"] and b["l"] < a["r"] and a["t"] < b["b"] and b["t"] < a["b"]
 
 
-WIDTHS = [(1440, 900), (1000, 800), (900, 800), (800, 800), (721, 800), (390, 844), (320, 640)]
+WIDTHS = [(1440, 900), (1001, 800), (1000, 800), (900, 800), (800, 800), (721, 800), (390, 844), (320, 640)]
 
 
 @pytest.mark.parametrize("w,h", WIDTHS)
@@ -139,6 +139,14 @@ def test_stickers_and_labels_never_overlap_at_any_width(open_signin, name, w, h)
 def test_the_parked_plane_stays_off_the_destination_label(open_signin, w, h):
     g = open_signin(CONTEXTS["search"], {"width": w, "height": h}).evaluate(GEOMETRY)
     assert not hit(g["plane"], g["codes"][1]) and not hit(g["plane"], g["codes"][0])
+
+
+@pytest.mark.parametrize("w,h", WIDTHS)
+def test_the_stub_labels_stay_on_one_line(open_signin, w, h):
+    page = open_signin(CONTEXTS["search"], {"width": w, "height": h})
+    tops = page.evaluate("[...document.querySelectorAll('.si-k')].map(e => [Math.round(e.getBoundingClientRect().height), Math.round(e.getBoundingClientRect().top)])")
+    assert len({t for _, t in tops}) == 1 and len({hh for hh, _ in tops}) == 1, tops   # same height, same row: the values line up
+    assert page.evaluate("document.documentElement.scrollWidth === document.documentElement.clientWidth")
 
 
 def test_the_dev_summary_shows_a_chevron_that_turns_when_open(open_signin):
