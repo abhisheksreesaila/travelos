@@ -155,3 +155,21 @@ def test_import_a_booked_trip_is_a_visible_button_where_trips_start(signed_in, b
     page.wait_for_url("**/calendar")
     expect(page.locator("#cal-import")).to_be_visible()
     no_sideways_scroll(page)
+
+
+def test_rename_a_placeholder_kid_in_the_builder_and_see_it_in_the_preview(signed_in, base_url):
+    page = signed_in(DESKTOP)
+    page.goto(f"{base_url}/trips/import")
+    page.fill("#ti-text", TEMPLATE.replace("name: Kid 1", "name: Child 1"))
+    page.click("#ti-preview")
+    page.click("#ti-edit")
+    page.click("#tb-next")
+    page.wait_for_load_state()
+    page.click("#tb-next")
+    expect(page.locator("#tb-kn1")).to_have_value("Child 1")
+    page.fill("#tb-kn1", "Maya")
+    for _ in range(5):
+        page.click("#tb-next")
+        page.wait_for_load_state()
+    expect(page.locator("#ti-travelers")).to_contain_text("Maya")
+    expect(page.locator("#ti-travelers")).not_to_contain_text("Child 1")

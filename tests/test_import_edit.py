@@ -146,3 +146,18 @@ def test_the_pdf_picker_is_a_styled_button_that_shows_the_file_name(client):
     html = client.get("/trips/import").text
     assert re.search(r'<label[^>]*class="[^"]*\bbtn\b[^"]*"[^>]*>(?:(?!</label>).)*Choose the PDF', html, re.S)
     assert 'id="ti-file"' in html and 'id="ti-file-name"' in html and "No file chosen" in html
+
+
+def test_kids_names_are_editable_in_the_who_step_and_blank_falls_back(client):
+    sign_in(client)
+    text = RICH.replace("name: Mia", "name: Child 1")
+    w = walk_from(client, client.post("/trips/build/from-import", data={"text": text}).text)
+    next_step(w, 1), next_step(w, 2)
+    assert 'name="kn1"' in w.html and 'name="an1"' in w.html  # adults' names are editable too
+    f = _Fields()
+    f.feed(w.html)
+    assert f.values["kn1"] == "Child 1" and f.values["kn2"] == "Leo"
+    w.post(3, **{**f.values, "kn1": "Maya", "kn2": ""})
+    for step in range(4, 8):
+        next_step(w, step)
+    assert "Maya" in w.text and "Kid 2" in w.text and "Child 1" not in w.text

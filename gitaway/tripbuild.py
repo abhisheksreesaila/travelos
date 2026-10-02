@@ -98,7 +98,7 @@ def read(step, form, draft):
         draft["adults"] = get("adults") or draft.get("adults", "2")
         draft["kids"] = [get(f"k{i}") for i in range(1, min(_whole(get("nkids")), MAX_KIDS) + 1)]
         n = adults_of(draft)
-        draft["knames"], draft["aages"] = draft.get("knames", [])[:len(draft["kids"])], draft.get("aages", [])[:n]
+        draft["knames"], draft["aages"] = [get(f"kn{i}") for i in range(1, len(draft["kids"]) + 1)], draft.get("aages", [])[:n]
         draft["names"] = [get(f"an{i}") for i in range(1, n + 1)]
         draft["emails"] = [get(f"ae{i}") for i in range(1, n + 1)]
     elif step == 4:
@@ -244,6 +244,8 @@ def check_who(draft):
             errors[f"k{i}"] = f"Pick an age from 0 to {catalog.MAX_KID_AGE} for kid {i}."
     if adults and adults + len(draft.get("kids", [])) > ti.MAX_TRAVELERS:
         errors["nkids"] = f"That is more than {ti.MAX_TRAVELERS} travelers. Keep it to the people on the booking."
+    for i, name in enumerate(draft.get("knames", []), 1):
+        _limit(errors, f"kn{i}", name, f"Kid {i}’s name", 40)
     for i, name in enumerate(draft.get("names", [])[:adults], 1):
         _limit(errors, f"an{i}", name, f"Adult {i}’s name", 40)
     for i, mail in enumerate(draft.get("emails", [])[:adults], 1):

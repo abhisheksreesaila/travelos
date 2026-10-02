@@ -96,9 +96,10 @@ def _ages(n):
 
 def step_who(c):
     d = c.draft
-    adults, kids = tb.adults_of(d), d.get("kids", [])
+    adults, kids, knames = tb.adults_of(d), d.get("kids", []), d.get("knames", [])
     ages = [Div(field(c, f"k{i}", f"Kid {i} age", Select(Option("Pick age", value=""), *[Option(_ages(a), value=str(a), selected=(kids[i - 1] == str(a) if i <= len(kids) else False)) for a in range(catalog.MAX_KID_AGE + 1)],
                                                      name=f"k{i}", id=f"tb-k{i}", data_ga="chips", data_ga_label=f"Kid {i} age", **c.attrs(f"k{i}"))),
+                text(c, f"kn{i}", f"Kid {i} name (optional)", knames[i - 1] if i <= len(knames) else "", maxlength="40", autocomplete="off"),
                 cls="tb-row", data_row=f"k{i}") for i in range(1, tb.MAX_KIDS + 1)]
     names, emails = d.get("names", []), d.get("emails", [])
     people = [Div(text(c, f"an{i}", f"Adult {i} name", names[i - 1] if i <= len(names) else "", maxlength="40", autocomplete="given-name" if i == 1 else "off"),
