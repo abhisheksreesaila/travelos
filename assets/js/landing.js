@@ -6,8 +6,9 @@
 
   /* Touch screens have no hover: play each tile once as it scrolls into view, and again on tap. */
   var feats = document.querySelectorAll('.feature');
-  feats.forEach(function (f) { f.addEventListener('click', function () { f.classList.toggle('play'); }); });
-  if (!reduce && hasIO && window.matchMedia('(hover: none)').matches) {
+  var touch = window.matchMedia('(hover: none)').matches;
+  if (touch) feats.forEach(function (f) { f.addEventListener('click', function () { f.classList.toggle('play'); }); });
+  if (!reduce && hasIO && touch) {
     var seen = new IntersectionObserver(function (entries) {
       entries.forEach(function (e) {
         if (e.isIntersecting) { e.target.classList.add('play'); seen.unobserve(e.target); }

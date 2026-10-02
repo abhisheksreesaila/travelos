@@ -163,4 +163,5 @@
   .anim *, .item, .cursor, .feature, .trip, .forkline a { transition: none !important; }
   .feature:hover, .feature:focus-visible, .feature.play, .trip:hover, .trip:focus-visible { transform: none; }
   .presence .live { animation: none; }
+  .replay { display: none; }
 }

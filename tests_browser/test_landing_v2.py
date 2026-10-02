@@ -58,6 +58,7 @@ def test_the_calendar_rests_complete_under_reduced_motion(landing):
     page.wait_for_timeout(1500)
     assert page.evaluate(FILLED) == [True] * 7
     assert page.locator(".cursor").count() == 0  # no cursors fly about
+    assert not page.locator("#replay").is_visible()  # nothing to replay, so no button that does nothing
 
 
 def test_a_calendar_block_starts_unfilled_then_fills_when_motion_is_allowed(landing):
