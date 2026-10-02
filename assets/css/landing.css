@@ -2,7 +2,7 @@
    Sizes are the artboard's px divided by 16, so a phone (16px root) matches the artboard and desktop (12px root) is the site's usual 75%. */
 
 /* The animated parts are clipped sideways, never vertically. */
-#main { overflow-x: clip; }
+#main { overflow-x: clip; --coral-tint: var(--accent-tint); } /* tokens.css has no coral tint: the landing is always sunset, where the accent tint is it */
 .eyebrow { font-size: max(var(--text-min), 0.8125rem); font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
 
 /* Hero */
@@ -79,7 +79,7 @@
 .feature:is(:hover, :focus-visible, .play) .a-together .b2 { transition-delay: .55s; }
 .feature:is(:hover, :focus-visible, .play) .a-together .heart { opacity: 1; transform: none; transition-delay: .8s; }
 /* 4: a trip branches into a second one */
-.a-fork .branch { stroke-dasharray: 120; stroke-dashoffset: 120; transition: stroke-dashoffset .8s var(--ease-out); }
+.a-fork .branch { stroke-dasharray: 400; stroke-dashoffset: 400; transition: stroke-dashoffset .8s var(--ease-out); }
 .a-fork .dot2 { opacity: 0; transform: scale(.3); }
 .feature:is(:hover, :focus-visible, .play) .a-fork .branch { stroke-dashoffset: 0; }
 .feature:is(:hover, :focus-visible, .play) .a-fork .dot2 { opacity: 1; transform: none; transition-delay: .6s; }

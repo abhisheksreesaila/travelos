@@ -81,6 +81,17 @@ def test_watch_it_again_replays(landing):
     assert page.evaluate(FILLED)[0] is False
 
 
+def test_each_tile_illustration_has_a_tint_and_hidden_parts_are_invisible_at_rest(landing):
+    page = landing()
+    for cls in ["a-panes", "a-total", "a-together", "a-fork"]:
+        bg = page.eval_on_selector(f".anim.{cls}", "e => getComputedStyle(e).backgroundColor")
+        assert bg not in ("rgb(255, 255, 255)", "rgba(0, 0, 0, 0)"), (cls, bg)
+    assert page.eval_on_selector(".a-fork .dot2", "e => getComputedStyle(e).opacity") == "0"
+    # the branch line is fully undrawn: the dash is longer than the path and offset past it
+    assert page.eval_on_selector(".a-fork .branch", "e => parseFloat(getComputedStyle(e).strokeDashoffset) >= e.getTotalLength() && parseFloat(getComputedStyle(e).strokeDasharray) >= e.getTotalLength()")
+    assert page.eval_on_selector_all(".a-together .blk, .a-together .heart", "els => els.every(e => getComputedStyle(e).opacity === '0')")
+
+
 def test_the_fork_line_scrolls_to_community_trips(landing):
     page = landing()
     page.click(".forkline a")
