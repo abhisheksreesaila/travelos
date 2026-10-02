@@ -68,7 +68,7 @@ def paste_page(text="", errors=(), warnings=(), status=200):
            Li("Check what will be saved, then save. Your calendar opens on the trip."), cls="ti-steps"),
         A(icon("arrow-right", 16, 2.6), "Download the template", href=f"{PATH}/template", cls="btn btn-sm", id="ti-template", download="trip-template.md"),
         A(icon("arrow-right", 16, 2.6), "Rather answer a few questions?", href="/trips/build", cls="btn btn-sm", id="ti-build"),
-        P("Flights, the hotel and a car go on your calendar marked “Booked elsewhere”. Confirmation numbers are shown only to your family.", cls="ti-note"),
+        P("Flights, the hotel and a car go on your calendar, locked, so they cannot be moved by accident. Confirmation numbers are shown only to your family.", cls="ti-note"),
         cls="ti-card ti-aside",
     )
     out = page("Import a trip", Div(
@@ -122,7 +122,7 @@ def plan_sections(plan):
 def _consequences(plan):
     """The sentences that say what the calendar and the rides will do with this trip."""
     n = len(ti.block_specs(plan))
-    out = [f"{n} booked item{'s' if n != 1 else ''} will go on your calendar, marked “Booked elsewhere · {plan.booked_on}”."]
+    out = [f"{n} booked item{'s' if n != 1 else ''} will go on your calendar, locked (with a lock). The trip header will say “Booked elsewhere · {plan.booked_on}”."]
     arrive = plan.arrive_leg
     if arrive:
         out.append(f"You land at {_when(arrive.arrive)}: plans before then are not allowed" + (f", and none within {cal.AIRPORT_BUFFER // 60} hours of your flight home." if plan.depart_leg else "."))
