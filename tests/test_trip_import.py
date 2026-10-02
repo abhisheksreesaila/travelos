@@ -185,9 +185,9 @@ def test_imported_flights_hotel_and_car_are_booked_blocks_marked_booked_elsewher
     for bid in blocks:
         node = tag(html, "data-block", bid)
         assert node is not None and "cal-booked" in node["class"], bid
-    assert html.count("Booked elsewhere · Expedia") >= 6
+    assert html.count("Booked, locked, Booked elsewhere · Expedia") >= 6  # screen readers hear it on every block; sighted people see it once (F-059)
     whole = visible(client.get("/calendar").text)
-    assert "Booked elsewhere · Expedia" in whole and "Alaska Airlines AS 1234" in whole
+    assert "Alaska Airlines AS 1234" in whole
 
 
 def test_the_flight_window_follows_the_real_first_arrival_and_last_departure(client):

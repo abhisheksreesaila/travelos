@@ -130,7 +130,7 @@ def starts_in(n) -> str:
 
 # ---- one day's timeline ------------------------------------------------------------------------------------------------
 
-_ICON_KIND = {"plane": ("flight", "Flight", "sky"), "bed": ("hotel", "Hotel", "sun"), "car": ("car", "Car", "mint")}
+_ICON_KIND = {"plane": ("flight", "Flight", "sky"), "bed": ("hotel", "Hotel", "grape"), "car": ("car", "Car", "sun")}  # F-059: the booked palette; a simulated Uber stays mint
 
 
 def _place_of(block, hotel_place):
@@ -159,9 +159,8 @@ def timeline(day, blocks, acts, offers, destination, *, hotel_place="", ride_hre
         if b.kind == "ride":
             items.append(Item(b.id, b.start, b.end, b.title, "ride", "Uber", "mint", "car", f"{span_label(b.start, b.end)} · simulated", href=ride_href(b) if ride_href else ""))
             continue
-        kind, label, tint = _ICON_KIND.get(b.icon, ("hotel", "Booked", "sun"))
-        where = b.tag.split(" · ")[-1] if b.tag else ""
-        items.append(Item(b.id, b.at, b.end, b.title, kind, label, tint, b.icon or "calendar", f"{cal.fmt_time(b.at)} · booked" + (f" on {where}" if where else ""),
+        kind, label, tint = _ICON_KIND.get(b.icon, ("hotel", "Booked", "grape"))
+        items.append(Item(b.id, b.at, b.end, b.title, kind, label, tint, b.icon or "calendar", f"{cal.fmt_time(b.at)} · booked",
                           href=detail_href(b) if (b.tag and detail_href) else "", place=_place_of(b, hotel_place), zone=block_zone(b, zone)))
     for o in offers:
         if o.day == day:

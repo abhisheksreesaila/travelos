@@ -110,8 +110,10 @@ def row(item, today):
     inner = (Span(item.label.upper(), cls="tp-label"), Span(item.title, cls="tp-what"), Span(item.sub, cls="tp-sub"))
     state = {"done": "Done", "now": "Now", "next": "Next"}.get(item.state, "") if today else ""
     badge = Span(state, cls=f"tp-state tp-state-{item.state}") if state else ""
-    card = (A if item.href else Div)(Div(Span(icon(item.icon, 18, 2.2), cls="tp-ico", aria_hidden="true") if item.icon else "", Div(*inner, cls="tp-card-text"), badge, cls="tp-card-in"),
-                                     cls=f"tp-card {tint} is-{item.state} tp-{item.kind}", **({"href": item.href} if item.href else {}), data_item=item.id)
+    booked = item.kind in ("flight", "hotel", "car")  # a booked item (F-059): tinted by kind, a solid edge in the kind's ink, and a quiet lock
+    lock = Span(icon("lock", 14, 2.4), Span("Booked, locked", cls="sr-only"), cls="tp-lock") if booked else ""
+    card = (A if item.href else Div)(Div(Span(icon(item.icon, 18, 2.2), cls="tp-ico", aria_hidden="true") if item.icon else "", Div(*inner, cls="tp-card-text"), lock, badge, cls="tp-card-in"),
+                                     cls=f"tp-card {tint} is-{item.state} tp-{item.kind}{' tp-bk' if booked else ''}", **({"href": item.href} if item.href else {}), data_item=item.id)
     return Div(Span(cal.fmt_time(item.start), cls="tp-time"), card, cls=f"tp-row is-{item.state}")
 
 
@@ -146,6 +148,8 @@ def today_panel(v):
         parts.append(Div(*[row(x, v["now"] is not None) for x in v["items"]], cls="tp-list", id="tp-list"))
     else:
         parts.append(Div(Span("wide open!", cls="tp-hand"), A("Add something fun", href=trip_url(add="1", day=sel), data_open_sheet="", cls="tp-btn tp-btn-ink") if editor else Span("Nothing planned yet.", cls="tp-sub"), cls="tp-empty"))
+    if cal.is_imported(v["b"]) and any(x.kind in ("flight", "hotel", "car") for x in v["items"]):  # where it was booked is said once, quietly
+        parts.append(Div(icon("lock", 13, 2.4), Span(f"Booked elsewhere · {cal.plan_of(v['b']).booked_on}"), cls="tp-elsewhere"))
     parts.append(stay_card(v))
     parts.append(note_strip(v))
     parts.append(A(icon("arrow-right", 18, 2.4), "Open the full calendar", href="/calendar?view=whole", cls="tp-full"))
