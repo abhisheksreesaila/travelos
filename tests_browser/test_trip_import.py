@@ -1,5 +1,6 @@
 """F-042: import a trip in a real (headless) browser: paste the template, preview, save, and see the booked-elsewhere blocks on the calendar.
 Waits are on selectors and state, never on sleeps."""
+import re
 from pathlib import Path
 
 import pytest
@@ -83,4 +84,74 @@ def test_late_events_fit_inside_the_grid(signed_in, base_url):
     flight = page.locator('[data-block="b-back"]')
     assert flight.bounding_box()["height"] >= 1.2 * root  # about 30 minutes tall (1.25rem), not a line
     expect(flight.locator(".cal-time")).to_have_text("11:50 PM")  # the label keeps the true time
+    no_sideways_scroll(page)
+
+
+@pytest.mark.parametrize("viewport", [DESKTOP, PHONE], ids=["desktop", "phone"])
+def test_change_something_lands_on_the_builder_with_the_previewed_values(signed_in, base_url, viewport):
+    """F-058: the main button on the preview opens the guided builder, filled, and the whole trip can be edited and previewed again."""
+    page = signed_in(viewport)
+    page.goto(f"{base_url}/trips/import")
+    page.fill("#ti-text", TEMPLATE)
+    page.click("#ti-preview")
+    expect(page.locator("#ti-preview-body")).to_contain_text("Alaska Airlines AS 1234")
+    expect(page.locator("#ti-edit-text")).to_be_visible()
+    page.click("#ti-edit")
+    page.wait_for_url("**/trips/build/from-import")
+    expect(page.locator("#tb-form")).to_be_visible()
+    expect(page.locator("#tb-title")).to_have_value("LA with the kids")
+    expect(page.locator("#tb-destination")).to_have_value("Los Angeles")
+    page.fill("#tb-title", "LA with the kids, edited")
+    for _ in range(6):  # Where .. Car: every step is filled and passes as it is
+        page.click("#tb-next")
+        page.wait_for_load_state()
+    expect(page.locator("#tb-notes")).to_have_value(re.compile("allergies, parking codes"))
+    expect(page.locator("#tb-booked_on")).to_have_value("Expedia")
+    page.click("#tb-next")
+    expect(page.locator("#ti-trip")).to_contain_text("LA with the kids, edited")
+    for text in ("Alaska Airlines AS 1234", "The Example Hotel Santa Monica", "Hertz", "ABCDEF", "987654321", "H1234567", "Kid 1", "age 7"):
+        expect(page.locator("#ti-preview-body")).to_contain_text(text)
+    no_sideways_scroll(page)
+
+
+def test_edit_as_text_puts_the_template_back_in_the_box(signed_in, base_url):
+    page = signed_in(DESKTOP)
+    page.goto(f"{base_url}/trips/import")
+    page.fill("#ti-text", TEMPLATE)
+    page.click("#ti-preview")
+    page.click("#ti-edit-text")
+    expect(page.locator("#ti-text")).to_have_value(re.compile("LA with the kids"))
+
+
+@pytest.mark.parametrize("viewport", [DESKTOP, PHONE], ids=["desktop", "phone"])
+def test_the_pdf_picker_is_a_styled_button_with_a_focus_ring_and_the_chosen_name(signed_in, base_url, tmp_path, viewport):
+    page = signed_in(viewport)
+    page.goto(f"{base_url}/trips/import")
+    pick = page.locator(".ti-pick")
+    expect(pick).to_be_visible()
+    expect(page.locator("#ti-file-name")).to_have_text("No file chosen")
+    assert page.evaluate("getComputedStyle(document.querySelector('.ti-pick')).borderRadius") != "0px"
+    assert page.evaluate("document.getElementById('ti-file').getBoundingClientRect().width") <= 2  # the native control is not drawn
+    pdf = tmp_path / "my-itinerary.pdf"
+    pdf.write_bytes(b"%PDF-1.4 made up")
+    page.set_input_files("#ti-file", str(pdf))
+    expect(page.locator("#ti-file-name")).to_have_text("my-itinerary.pdf")
+    page.focus("#ti-file")
+    assert "rgb(30, 26, 46)" in page.evaluate("getComputedStyle(document.querySelector('.ti-pick')).outlineColor") or page.evaluate("getComputedStyle(document.querySelector('.ti-pick')).outlineStyle") == "solid"
+    no_sideways_scroll(page)
+
+
+@pytest.mark.parametrize("viewport", [DESKTOP, PHONE], ids=["desktop", "phone"])
+def test_import_a_booked_trip_is_a_visible_button_where_trips_start(signed_in, base_url, viewport):
+    page = signed_in(viewport)
+    page.goto(f"{base_url}/start")
+    expect(page.locator("#st-import")).to_be_visible()
+    expect(page.locator("#st-import")).to_have_text("Import a booked trip")
+    page.click("#st-import")
+    page.wait_for_url("**/trips/import")
+    page.fill("#ti-text", TEMPLATE)
+    page.click("#ti-preview")
+    page.click("#ti-save")
+    page.wait_for_url("**/calendar")
+    expect(page.locator("#cal-import")).to_be_visible()
     no_sideways_scroll(page)
