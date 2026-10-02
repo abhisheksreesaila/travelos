@@ -320,9 +320,13 @@ Design: phone A approved 2026-10-01 (docs/design/canvas/GoLive-Phone-Today.dc.ht
 Needs: F-051
 - [x] a few friendly questions (where, when, who, flights, hotel, car) build the same trip as the template, with preview and save; no YAML
 
-## F-056 Paste an Expedia confirmation email [blocked]
-Blocked: forward or paste one real Expedia confirmation email (it can stay on your machine; I only need its layout).
-- [ ] pasting an Expedia confirmation email pre-fills the trip for review (never saves directly)
+## F-056 Paste or upload an Expedia itinerary [doing]
+Layout: the captain's real Expedia itinerary PDF (car + three stays, 2026-10-01), kept off the repo; tests use a made-up copy of the same layout. More real samples coming from the captain. · Needs: none
+- [ ] on /trips/import, pasting the text of an Expedia itinerary (or uploading its PDF) fills the trip for review, never saving directly; it becomes the same template text, so preview, "Change something" and save work as they do now
+- [ ] reads every "Stay in …" (hotel name, confirmation, check-in and check-out dates and times, address, room) and "Car rental in …" (company, confirmation, pick-up and drop-off place, date and time, car type); trip dates span all bookings; booked on Expedia
+- [ ] "Reserved for … N adults, M child" becomes placeholder travelers to rename (the named person first); confirmation numbers are kept exactly (a leading “#” dropped)
+- [ ] parts it can't read are named plainly in the preview (e.g. "We couldn't read the check-out time for Stay in Burbank"), and pasting something that isn't an Expedia itinerary still goes through the normal template reader
+- [ ] card digits, prices and Expedia's support text are never stored
 
 ## F-057 A trip has its own time zone [done]
 Found reviewing F-054: "today" and "now" use Los Angeles time; a non-LA trip (e.g. an imported Paris trip) would be off by up to a day.
