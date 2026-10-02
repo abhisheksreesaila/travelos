@@ -47,8 +47,12 @@ def test_the_three_ways_in_are_visible_and_fit(new_family, base_url, viewport, p
 def test_each_way_in_lands_on_a_working_page(new_family, base_url, viewport):
     page = new_family(viewport)
     page.goto(f"{base_url}/start")
-    page.locator(".fr-path", has_text="Import a trip you booked").click()
+    page.locator(".fr-path", has_text="Import a trip you booked").get_by_role("link", name="Paste the template").click()
     expect(page.locator("textarea")).to_be_visible()
+    no_sideways_scroll(page)
+    page.goto(f"{base_url}/start")
+    page.locator(".fr-path", has_text="Import a trip you booked").get_by_role("link", name="Answer a few questions").click()  # F-055
+    expect(page.locator("#tb-heading")).to_have_text("Where are you going?")
     no_sideways_scroll(page)
     page.goto(f"{base_url}/start")
     page.locator(".fr-path", has_text="Browse community trips").click()
