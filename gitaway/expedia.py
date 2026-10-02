@@ -103,24 +103,28 @@ def looks_like_expedia(text) -> bool:
     return "expedia itinerary" in low or "expedia support" in low or "reservation details" in low
 
 
+class PdfProblem(ValueError):
+    """An uploaded file that cannot be used; the message is fit to show."""
+
+
 def pdf_text(data: bytes) -> str:
-    """The text of an uploaded PDF. Raises ValueError (a friendly sentence) when it is not a readable PDF."""
+    """The text of an uploaded PDF. Raises PdfProblem (a friendly sentence) when it is not a readable PDF."""
     if not data or not data.lstrip()[:5].startswith(b"%PDF"):
-        raise ValueError("That file is not a PDF. Upload the itinerary PDF from Expedia, or paste its text.")
+        raise PdfProblem("That file is not a PDF. Upload the itinerary PDF from Expedia, or paste its text.")
     if len(data) > MAX_PDF_BYTES:
-        raise ValueError(f"That PDF is too large (at most {MAX_PDF_BYTES // 1_000_000} MB). Paste the itinerary text instead.")
+        raise PdfProblem(f"That PDF is too large (at most {MAX_PDF_BYTES // 1_000_000} MB). Paste the itinerary text instead.")
+    locked = False
     try:
         from pypdf import PdfReader
         reader = PdfReader(io.BytesIO(data))
-        if reader.is_encrypted:
-            raise ValueError("That PDF is locked with a password. Paste the itinerary text instead.")
-        text = "\n".join((page.extract_text() or "") for page in reader.pages[:MAX_PDF_PAGES])
-    except ValueError:
-        raise
-    except Exception:
-        raise ValueError("We couldn't read that PDF. Paste the itinerary text instead.") from None
+        locked = bool(reader.is_encrypted)
+        text = "" if locked else "\n".join((page.extract_text() or "") for page in reader.pages[:MAX_PDF_PAGES])
+    except Exception:  # whatever pypdf raises on a damaged file is the same friendly sentence
+        raise PdfProblem("We couldn't read that PDF. Paste the itinerary text instead.") from None
+    if locked:
+        raise PdfProblem("That PDF is locked with a password. Paste the itinerary text instead.")
     if not text.strip():
-        raise ValueError("We couldn't find any text in that PDF (it may be a scan). Paste the itinerary text instead.")
+        raise PdfProblem("We couldn't find any text in that PDF (it may be a scan). Paste the itinerary text instead.")
     return text[:MAX_TEXT]
 
 
@@ -141,9 +145,16 @@ def _month(token):
 
 
 def _range(line):
+    """(first day, last day) of a range line, or None when it looks like one but is not a real date ("Feb 30, 2026")."""
     m = _RANGE.match(line)
+    if not m:
+        return None
     g = m.groups()
-    return date(int(g[2]), _month(g[0]), int(g[1])), date(int(g[5]), _month(g[3]), int(g[4]))
+    try:
+        lo, hi = date(int(g[2]), _month(g[0]), int(g[1])), date(int(g[5]), _month(g[3]), int(g[4]))
+    except ValueError:
+        return None
+    return (lo, hi) if lo <= hi else None
 
 
 def _day_in(token, lo, hi):
@@ -307,7 +318,7 @@ def _stay(lines, city, warnings):
     if not conf:
         warnings.append(f"We couldn't read the confirmation number for {label}.")
     name_, adults, kids = _reserved(lines)
-    return dict(kind="stay", city=city, name=name[:80], conf=conf[:30], address=address, room=room, check_in=datetime.combine(d_in, t_in), check_out=datetime.combine(d_out, t_out),
+    return dict(kind="stay", city=city, name=name[:80], conf=conf, address=address, room=room, check_in=datetime.combine(d_in, t_in), check_out=datetime.combine(d_out, t_out),
                 person=name_, adults=adults, kids=kids, state=(_STATE_ZIP.search(address).group(1) if _STATE_ZIP.search(address) else ""), start=lo, end=hi)
 
 
@@ -342,7 +353,7 @@ def _car(lines, city, warnings):
     if not conf:
         warnings.append(f"We couldn't read the confirmation number for {label}.")
     person, _, _ = _reserved(lines)
-    return dict(kind="car", city=city, company=company[:40], conf=conf[:30], pickup=pickup, dropoff=drop, pick_at=datetime.combine(d_p, t_p), drop_at=datetime.combine(d_d, t_d),
+    return dict(kind="car", city=city, company=company[:40], conf=conf, pickup=pickup, dropoff=drop, pick_at=datetime.combine(d_p, t_p), drop_at=datetime.combine(d_d, t_d),
                 car=kind, person=person, start=lo, end=hi)
 
 
@@ -350,7 +361,7 @@ def _car(lines, city, warnings):
 
 def _q(value):
     """A YAML string scalar, always quoted (so a confirmation number like 0012 or 1e5 stays exactly as written)."""
-    return json.dumps(str(value), ensure_ascii=False)
+    return json.dumps(str(value), ensure_ascii=True)  # escapes U+2028, U+2029 and U+0085 too, which would otherwise split a line
 
 
 def _stamp(at):
@@ -375,11 +386,15 @@ def convert(text) -> Converted:
     stays, cars = [], []
     for j, (i, kind, city) in enumerate(heads):
         block = lines[i:bounds[j + 1]]
+        if _range(block[1]) is None:
+            warnings.append(f"We couldn't read the dates for {'Stay in' if kind == 'stay' else 'Car rental in'} {city}, so it was left out; add it by hand.")
+            continue
         block = block[:block.index("Payment details")] if "Payment details" in block else block
         (stays if kind == "stay" else cars).append((_stay if kind == "stay" else _car)(block, city, warnings))
 
-    everything = stays + cars
-    start = min([s["check_in"].date() for s in stays] + [c["pick_at"].date() for c in cars])
+    if not (stays or cars):
+        return Converted("", tuple(warnings))
+    start =min([s["check_in"].date() for s in stays] + [c["pick_at"].date() for c in cars])
     end = max([s["check_out"].date() for s in stays] + [c["drop_at"].date() for c in cars])
     first = sorted(stays, key=lambda s: s["check_in"])[0] if stays else sorted(cars, key=lambda c: c["pick_at"])[0]
     city = first["city"]

@@ -197,7 +197,7 @@ def test_a_pasted_text_beats_no_file_and_a_non_pdf_file_is_a_friendly_error(clie
     sign_in(client)
     r = client.post("/trips/import", files={"file": ("notes.txt", b"just words", "text/plain")})
     assert r.status_code == 422 and "not a PDF" in visible(r.text) and "<textarea" in r.text
-    big = client.post("/trips/import", files={"file": ("big.pdf", b"%PDF-1.4" + b"0" * 5_100_000, "application/pdf")})
+    big = client.post("/trips/import", files={"file": ("big.pdf", b"%PDF-1.4" + b"0" * 5_050_000, "application/pdf")})  # just over the limit, under the early refusal
     assert big.status_code == 422 and "too large" in visible(big.text)
 
 
@@ -218,3 +218,55 @@ def test_a_viewer_cannot_upload_an_itinerary_but_an_editor_can(crew):
     files = {"file": ("itinerary.pdf", pdf_of(PLAIN), "application/pdf")}
     assert viewer.post("/trips/import", files=files, follow_redirects=False).status_code == 403
     assert editor.post("/trips/import", files=files, follow_redirects=False).status_code == 200
+
+
+# ---- review fixes ------------------------------------------------------------------------------------------------------
+
+BAD_RANGES = ("Feb 30, 2026 - Feb 31, 2026", "Oct 0, 2026 - Oct 6, 2026", "Oct 4, 0000 - Oct 6, 0000", "Oct 6, 2026 - Oct 4, 2026")
+
+
+@pytest.mark.parametrize("bad", BAD_RANGES)
+def test_a_range_that_is_not_a_real_date_is_a_warning_not_an_error(client, bad):
+    text = PLAIN.replace("Oct 4, 2026 - Oct 6, 2026", bad)
+    c = expedia.convert(text)
+    assert any("couldn't read the dates for Stay in Valencia" in w for w in c.warnings) and c.stays == 1
+    sign_in(client)
+    r = client.post("/trips/import", data={"text": text})
+    assert r.status_code == 200 and "Sample Suites Burbank Airport" in visible(r.text) and "couldn't read the dates for Stay in Valencia" in visible(r.text)
+
+
+def test_when_no_booking_has_a_real_date_the_page_says_so(client):
+    bad = "Feb 30, 2026 - Feb 31, 2026"
+    text = PLAIN.replace("Oct 4, 2026 - Oct 10, 2026", bad).replace("Oct 4, 2026 - Oct 6, 2026", bad).replace("Oct 6, 2026 - Oct 7, 2026", bad)
+    assert expedia.convert(text).yaml == ""
+    sign_in(client)
+    r = client.post("/trips/import", data={"text": text})
+    assert r.status_code == 422 and "couldn't read any booking" in visible(r.text)
+
+
+def test_line_separators_in_a_name_cannot_split_the_yaml(client):
+    text = PLAIN.replace("Maple Grove Inn & Suites", "Maple Grove Inn\u0085Suites")
+    out = expedia.convert(text).yaml
+    assert not any(ch in out for ch in "  \u0085")
+    assert yaml.safe_load(out)["hotels"][0]["name"] == "Maple Grove Inn\u0085Suites"
+    sign_in(client)
+    assert client.post("/trips/import", data={"text": text}).status_code == 200
+
+
+def test_an_oversized_upload_is_refused_before_it_is_parsed(client):
+    sign_in(client)
+    r = client.post("/trips/import", files={"file": ("big.pdf", b"%PDF-1.4" + b"0" * 5_300_000, "application/pdf")})
+    assert r.status_code == 413 and "too large" in visible(r.text) and "<textarea" in r.text
+
+
+def test_a_damaged_pdf_gets_the_friendly_sentence_and_the_error_class_is_its_own(monkeypatch):
+    import pypdf
+    monkeypatch.setattr(pypdf, "PdfReader", lambda *a, **k: (_ for _ in ()).throw(ValueError("internal detail")))
+    with pytest.raises(expedia.PdfProblem) as e:
+        expedia.pdf_text(b"%PDF-1.4 x")
+    assert "internal detail" not in str(e.value) and "couldn't read that PDF" in str(e.value)
+
+
+def test_a_long_confirmation_number_is_not_cut():
+    long = "L" * 40
+    assert f'confirmation: "{long}"' in expedia.convert(PLAIN.replace("Q123X456789", long)).yaml

@@ -179,6 +179,23 @@ def _sorry(title, message, *links, status=200):
 # ---- routes --------------------------------------------------------------------------------------------------------
 
 def register(app):
+    from fasthtml.common import to_xml
+    from starlette.middleware.base import BaseHTTPMiddleware
+
+    async def too_big(request, call_next):
+        """Refuse an oversized upload before its body is read or parsed (the form is parsed before any route runs)."""
+        if request.method == "POST" and request.url.path == PATH:
+            try:
+                size = int(request.headers.get("content-length", "0"))
+            except ValueError:
+                size = 0
+            if size > expedia.MAX_PDF_BYTES + 100_000:
+                msg = f"That upload is too large (at most {expedia.MAX_PDF_BYTES // 1_000_000} MB). Paste the itinerary text instead."
+                return Response(to_xml(paste_page("", [msg])), status_code=413, media_type="text/html")
+        return await call_next(request)
+
+    app.add_middleware(BaseHTTPMiddleware, dispatch=too_big)
+
     @app.get(PATH)
     def import_form(session):
         if not ses.current_traveler(session):
@@ -197,11 +214,13 @@ def register(app):
             data = await file.read(expedia.MAX_PDF_BYTES + 1)
             try:
                 text = expedia.pdf_text(data)
-            except ValueError as e:
+            except expedia.PdfProblem as e:
                 return paste_page(text, [str(e)], status=422)
         read, extra = False, ()
         if expedia.looks_like_expedia(text):
             converted = expedia.convert(text)
+            if not converted.yaml:
+                return paste_page(text, [*converted.warnings, "We couldn't read any booking in that itinerary."], status=422)
             text, extra, read = converted.yaml, converted.warnings, True
         try:
             parsed = ti.parse(text)
