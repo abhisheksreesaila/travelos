@@ -346,3 +346,11 @@ Captain, 2026-10-01: booked items are "all black", bold, and "Booked elsewhere �
 - [ ] booked flights, hotel check-ins/check-outs and car pick-up/drop-off show as soft tinted blocks per kind (design-system tint/ink pairs), not solid black, on the calendar (whole trip and day views) and the phone Today view
 - [ ] each keeps its icon (plane, bed, car) and the lock, with readable contrast (WCAG AA)
 - [ ] "Booked elsewhere · Expedia" appears once, quietly (the trip header or the booking's detail), not as a bold label on every block
+
+## F-060 Landing v2: one clear door, a page that tells the story [doing]
+Design: docs/design/landing-v2.md (approved 2026-10-02) · Needs: none
+- [ ] the landing header shows only the brand and Sign in; Community trips, For creators and Sign in move to the footer; other pages keep their header
+- [ ] "Fork a getaway." with the fork gloss; one wide primary "We're going. Let's book it." panel with Plan a trip; forking is one quiet line (option A) that leads to the Community trips section
+- [ ] the four feature tiles animate on hover and keyboard focus (once on scroll on touch screens), calm under reduced motion
+- [ ] the shared calendar plays four people filling three days in real time, loops, rests complete before it starts and under reduced motion
+- [ ] Community trips and creators sections as designed, creators copy about inspiring others, not followers; desktop and phone, no sideways scroll
