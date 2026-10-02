@@ -15,9 +15,10 @@ from pathlib import Path
 
 from fasthtml.common import A, Button, Div, Form, H1, H2, H3, Input, Label, Li, Link, Ol, P, Section, Span, Textarea, Ul
 from fasthtml.core import FtResponse
+from starlette.datastructures import UploadFile
 from starlette.responses import RedirectResponse, Response
 
-from gitaway import access, importer, session as ses, tripcal as cal, tripimport as ti
+from gitaway import access, expedia, importer, session as ses, tripcal as cal, tripimport as ti
 from gitaway.icons import icon
 from gitaway.layout import page, trip_field
 
@@ -53,9 +54,10 @@ def paste_page(text="", errors=(), warnings=(), status=200):
               Textarea(text, name="text", id="ti-text", rows="18", spellcheck="false", autocomplete="off", maxlength=str(ti.MAX_BYTES),
                        placeholder="trip:\n  title: LA with the kids\n  destination: Los Angeles\n  start: 2026-10-16\n  end: 2026-10-20\n…",
                        aria_describedby="ti-errors" if errors else None, aria_invalid="true" if errors else None, cls="ti-box")),
+        Label(Span("Or upload the Expedia itinerary PDF", cls="ti-label"), Input(type="file", name="file", id="ti-file", accept=".pdf,application/pdf", cls="ti-file")),
         Ul(*[Li(e) for e in errors], role="alert", id="ti-errors", cls="ti-errors") if errors else "",
         Div(Button(icon("check", 16, 2.6), "Preview", type="submit", cls="btn btn-ink", id="ti-preview"), cls="ti-actions"),
-        action=PATH, method="post", cls="ti-form",
+        action=PATH, method="post", enctype="multipart/form-data", cls="ti-form",
     )
     how = Div(
         H2("How it works", cls="ti-h2"),
@@ -130,7 +132,7 @@ def _consequences(plan):
     return out
 
 
-def preview_page(text, parsed, match=None, moves=0, *, fields=None, save_action=None, edit=None, lead=""):
+def preview_page(text, parsed, match=None, moves=0, *, fields=None, save_action=None, edit=None, lead="", expedia_read=False):
     """The preview. The trip builder (F-055) draws this same page with its own hidden `fields` (its draft instead of the pasted `text`),
     its own `save_action`, and `edit` = (action, hidden fields, button label) for the way back; `lead` goes above the heading."""
     plan = parsed.plan
@@ -141,6 +143,7 @@ def preview_page(text, parsed, match=None, moves=0, *, fields=None, save_action=
     out = page("Preview your trip", Div(
         lead,
         Div(H1("Check your trip", cls="ti-title"), P("This is exactly what will be saved. Nothing is saved until you press Save.", cls="ti-lede"), cls="ti-head"),
+        Div(P("Read from an Expedia itinerary. Rename the travelers (Expedia gives no names beyond the booker's), then check each line.", cls="ti-note", id="ti-expedia"), cls="ti-warns") if expedia_read else "",
         Div(*[Div(w, cls="ti-warn", role="status") for w in parsed.warnings], cls="ti-warns") if parsed.warnings else "",
         Div(Div(*plan_sections(plan), cls="ti-main ti-stack", id="ti-preview-body"),
             Div(H2("What happens next", cls="ti-h2"), Ul(*[Li(s) for s in _consequences(plan)], cls="ti-next"),
@@ -185,17 +188,28 @@ def register(app):
         return paste_page()
 
     @app.post(PATH)
-    def import_preview(session, text: str = ""):
+    async def import_preview(session, text: str = "", file: UploadFile = None):
         if not ses.current_traveler(session):
             return _signin()
         if not can_import(session):
             return _sorry("Import a trip", CANNOT, A("Back to your trips", href="/start", cls="btn btn-ink"), status=403)
+        if file is not None and getattr(file, "filename", ""):  # an uploaded PDF wins over the paste box
+            data = await file.read(expedia.MAX_PDF_BYTES + 1)
+            try:
+                text = expedia.pdf_text(data)
+            except ValueError as e:
+                return paste_page(text, [str(e)], status=422)
+        read, extra = False, ()
+        if expedia.looks_like_expedia(text):
+            converted = expedia.convert(text)
+            text, extra, read = converted.yaml, converted.warnings, True
         try:
             parsed = ti.parse(text)
         except ti.ImportProblem as e:
-            return paste_page(text, e.errors, e.warnings, status=422)
+            return paste_page(text, e.errors, (*extra, *e.warnings), status=422)
+        parsed = ti.Parsed(parsed.plan, (*extra, *parsed.warnings))
         match = importer.find_match(session, parsed.plan)
-        return preview_page(text, parsed, match, importer.rides_to_retime(session, match[0], parsed.plan) if match else 0)
+        return preview_page(text, parsed, match, importer.rides_to_retime(session, match[0], parsed.plan) if match else 0, expedia_read=read)
 
     @app.post(f"{PATH}/save")
     def import_save(session, text: str = "", token: str = "", replace: str = ""):
