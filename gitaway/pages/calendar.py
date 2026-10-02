@@ -142,15 +142,30 @@ def detail_href(ctx, block):
     return cal_url(ctx["demo"], view=ctx["view"], detail=block.id, trip=ses.open_trip_id())
 
 
+BOOKED_KIND = {"plane": "flight", "bed": "hotel", "car": "car"}  # the palette of a booked item (F-059): flight sky, hotel lilac, car sunshine
+
+
+def booked_kind(b):
+    return BOOKED_KIND.get(b.icon, "hotel")
+
+
+def booked_words(b):
+    """The words on a booked block: a hotel says what happens and when ("Check in 3:00 PM") with the hotel's name quietly beneath; the rest is time then title."""
+    head, _, rest = b.title.partition(" · ")
+    if b.icon == "bed" and head in ("Check in", "Check out"):
+        return [Span(f"{head} {cal.fmt_time(b.at)}", cls="cal-title"), Span(rest, cls="cal-where")] if rest else [Span(f"{head} {cal.fmt_time(b.at)}", cls="cal-title")]
+    return [Span(cal.fmt_time(b.at), cls="cal-time"), " ", Span(b.title, cls="cal-title")]
+
+
 def booked_block(b, gs, lane=0, nlanes=1, ctx=None):
-    """A locked booked block. One booked elsewhere (an imported trip, F-042) says so and opens its booking detail (where the confirmation is)."""
+    """A locked booked block, tinted by its kind with a solid edge in the kind's ink. One booked elsewhere (an imported trip, F-042) opens its booking detail
+    (where the confirmation is); where it was booked is said once, in the trip header and the detail, and still in the label a screen reader hears."""
     elsewhere = bool(b.tag and ctx)
     return (A if elsewhere else Div)(
-        Span(icon(b.icon, 13, 2.2), " ", Span(cal.fmt_time(b.at), cls="cal-time"), " ", Span(b.title, cls="cal-title"), cls="cal-flow"),
-        Span(b.tag, cls="cal-elsewhere") if b.tag else "",
+        Span(icon(b.icon, 13, 2.2), " ", *booked_words(b), cls="cal-flow"),
         Span(icon("lock", 12, 2.4), cls="cal-lock"),
         Span("Booked, locked", cls="sr-only"),
-        cls=f"cal-block cal-booked{' cal-lane' if nlanes > 1 else ''}{' cal-short' if elsewhere and b.end - b.start <= 45 else ''}", data_block=b.id, data_day=str(b.day), data_start=str(b.start), data_end=str(b.end),
+        cls=f"cal-block cal-booked cal-bk-{booked_kind(b)}{' cal-lane' if nlanes > 1 else ''}{' cal-short' if elsewhere and b.end - b.start <= 45 else ''}", data_block=b.id, data_day=str(b.day), data_start=str(b.start), data_end=str(b.end),
         style=f"--top:{_px(b.start - gs)};--h:{_px(b.end - b.start)};--lane:{lane};--lanes:{nlanes}",
         **({"href": detail_href(ctx, b), "draggable": "false"} if elsewhere else {"role": "group", "tabindex": "0"}),
         aria_label=f"Booked, locked{', ' + b.tag if b.tag else ''}: {b.title}, {cal.fmt_time(b.at)} to {cal.fmt_time(b.end)}" + (". Press Enter for the booking details." if elsewhere else ""),
@@ -229,14 +244,14 @@ def hour_gutter(gs, ge):
 def strip(dates, ctx):
     chips = []
     for i, d in enumerate(dates):
-        booked = sum(1 for b in ctx["blocks"] if b.day == i)
+        booked = [b for b in ctx["blocks"] if b.day == i]
         planned = sum(1 for a in ctx["acts"] if a.day == i)
-        dots = [Span(cls="cal-dot cal-dot-booked") for _ in range(min(booked, 3))] + [Span(cls="cal-dot cal-dot-plan") for _ in range(min(planned, 3))]
+        dots = [Span(cls=f"cal-dot cal-dot-booked cal-bk-{'ride' if b.kind == 'ride' else booked_kind(b)}") for b in booked[:3]] + [Span(cls="cal-dot cal-dot-plan") for _ in range(min(planned, 3))]
         month = Span(d.strftime("%b"), cls="cal-chip-mon") if i == 0 or d.day == 1 else Span("", cls="cal-chip-mon")
         chips.append(A(
             month, Span(str(d.day), cls="cal-chip-num"), Span(d.strftime("%a"), cls="cal-chip-dow"), Span(*dots, cls="cal-dots"),
             href=f"#d{i}", cls=f"cal-chip fill-{DAY_TINTS[i % 5]}-tint", data_chip=str(i),
-            aria_label=f"{d.strftime('%A %b')} {d.day}: {booked} booked, {planned} planned",
+            aria_label=f"{d.strftime('%A %b')} {d.day}: {len(booked)} booked, {planned} planned",
         ))
     return Div(*chips, cls="cal-strip", role="navigation", aria_label="Whole trip, one chip per day")
 
@@ -247,11 +262,14 @@ def _whole_line(x, ctx):
         return Li(Span(cal.fmt_time(x.start), cls="cal-w-time"),
                   A(x.title, href=ride_href(ctx, x), cls=f"cal-w-title cal-w-ride{' is-offer' if kind == 'rideoffer' else ''}", data_block=x.id),
                   Span("Simulated", cls="cal-w-booked cal-w-sim") if kind == "ride" else "")
-    if getattr(x, "tag", ""):  # booked elsewhere (F-042): the title opens the booking detail
-        return Li(Span(cal.fmt_time(x.at), cls="cal-w-time"), A(x.title, href=detail_href(ctx, x), cls="cal-w-title is-booked", data_block=x.id), Span(x.tag, cls="cal-w-booked"))
-    return Li(Span(cal.fmt_time(x.start), cls="cal-w-time"),
-              Span(x.title, cls=f"cal-w-title{' is-booked' if getattr(x, 'locked', False) else ''}"),
-              Span("Booked", cls="cal-w-booked") if getattr(x, "locked", False) else "")
+    if getattr(x, "locked", False):  # a booked item (F-059): its kind's icon in its tint, the title (opens the booking detail when booked elsewhere), a quiet lock
+        kind = booked_kind(x)
+        title = Span(x.title, cls="cal-w-title is-booked")
+        if getattr(x, "tag", ""):
+            title = A(x.title, href=detail_href(ctx, x), cls="cal-w-title is-booked", data_block=x.id)
+        return Li(Span(cal.fmt_time(x.at), cls="cal-w-time"), Span(icon(x.icon or "calendar", 13, 2.2), cls=f"cal-w-ico cal-bk-{kind}", aria_hidden="true"), title,
+                  Span(icon("lock", 11, 2.4), Span("Booked, locked", cls="sr-only"), cls=f"cal-w-booked cal-bk-{kind}"), cls=f"cal-w-bk cal-bk-{kind}")
+    return Li(Span(cal.fmt_time(x.start), cls="cal-w-time"), Span(x.title, cls="cal-w-title"))
 
 
 def whole_view(dates, ctx):
@@ -301,7 +319,7 @@ def booked_note(b):
         lanes = [w for w, got in (("flights", cal.flight_of(b)), ("hotel", cal.stay_of(b)), ("car", cal.car_of(b))) if got]  # only what this trip really has
         if not lanes:
             return f"Imported from {where}. Add anything you want to do."
-        return f"Imported from {where}. Your {cal.oxford(lanes)} {'is' if len(lanes) == 1 and lanes != ['flights'] else 'are'} on the calendar, marked “Booked elsewhere”. Tap one for its details. Add anything you want to do."
+        return f"Imported from {where}. Your {cal.oxford(lanes)} {'is' if len(lanes) == 1 and lanes != ['flights'] else 'are'} on the calendar, locked. Tap one for its details. Add anything you want to do."
     stay, pick, car = cal.stay_of(b), cal.stay_pick_of(b), cal.car_of(b)
     flights = cal.flight_of(b) is not None
     on_cal = (["flights"] if flights else []) + ([f"{stay.name} ({pick.summary})" if flights else f"stay at {stay.name} ({pick.summary})"] if stay else [])

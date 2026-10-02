@@ -36,7 +36,7 @@
 .cal-chip-dow { font-size: max(var(--text-min), 0.75rem); font-weight: 700; color: var(--ink-2); }
 .cal-dots { display: flex; gap: 0.1875rem; height: 0.5rem; margin-top: 0.25rem; }
 .cal-dot { width: 0.4375rem; height: 0.4375rem; border-radius: var(--r-pill); }
-.cal-dot-booked { background: var(--ink); }
+.cal-dot-booked { background: var(--bk-ink, var(--ink-3)); }
 .cal-dot-plan { background: var(--coral); }
 
 /* Controls */
@@ -85,9 +85,17 @@
 .cal-act .cal-title { overflow-wrap: normal; hyphens: auto; }
 .cal-line { display: flex; align-items: center; gap: 0.375rem; }
 .cal-lock { margin-left: auto; display: inline-flex; opacity: .85; }
-.cal-booked { background: var(--ink); color: #fff; }
-.cal-booked:hover { color: #fff; }
-.cal-booked .cal-time, .cal-booked .cal-title { color: #fff; }
+/* Booked (F-059): a soft tint per kind with a solid edge in the kind's ink, so it still reads as fixed next to your own plans. Flight sky, hotel lilac, car sunshine. */
+.cal-booked { --bk-tint: var(--grape-tint); --bk-ink: var(--grape-ink); background: var(--bk-tint); color: var(--ink); border-left: 0.3125rem solid var(--bk-ink); }
+.cal-bk-flight { --bk-tint: var(--sky-tint); --bk-ink: var(--sky-ink); }
+.cal-bk-hotel { --bk-tint: var(--grape-tint); --bk-ink: var(--grape-ink); }
+.cal-bk-car { --bk-tint: var(--sun-tint); --bk-ink: var(--sun-ink); }
+.cal-bk-ride { --bk-tint: var(--mint-tint); --bk-ink: var(--mint-ink); }
+.cal-booked:hover { color: var(--ink); }
+.cal-booked .cal-time, .cal-booked .cal-title { color: var(--ink); }
+.cal-booked .cal-flow svg { color: var(--bk-ink); }
+.cal-booked .cal-lock { color: var(--bk-ink); opacity: 1; }
+.cal-where { display: block; font-size: max(var(--text-min), 0.75rem); font-weight: 700; color: var(--ink-2); line-height: 1.2; }
 .cal-act { cursor: grab; user-select: none; -webkit-user-drag: none; }
 .cal-act:hover { color: var(--ink); box-shadow: var(--shadow-sm); }
 .cal-act.is-drag { cursor: grabbing; box-shadow: var(--shadow-lg); z-index: 5; opacity: .92; }
@@ -126,7 +134,8 @@ a.cal-w-head:hover, a.cal-w-head:focus-visible { box-shadow: 0 0 0 0.125rem var(
 .cal-w-list li { display: flex; align-items: baseline; gap: 0.625rem; font-weight: 700; font-size: 0.9375rem; }
 .cal-w-time { min-width: 4.5rem; font-size: max(var(--text-min), 0.8125rem); color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .cal-w-title.is-booked { font-weight: 800; }
-.cal-w-booked { height: 1.25rem; padding: 0 0.5rem; border-radius: var(--r-pill); background: var(--ink); color: #fff; font-size: max(var(--text-min), 0.6875rem); font-weight: 800; letter-spacing: .04em; text-transform: uppercase; display: inline-flex; align-items: center; }
+.cal-w-booked { height: 1.25rem; padding: 0 0.5rem; border-radius: var(--r-pill); background: var(--bk-tint, var(--ink)); color: var(--bk-ink, #fff); font-size: max(var(--text-min), 0.6875rem); font-weight: 800; letter-spacing: .04em; text-transform: uppercase; display: inline-flex; align-items: center; }
+.cal-w-ico { display: inline-flex; align-items: center; justify-content: center; width: 1.5rem; height: 1.5rem; border-radius: var(--r-pill); background: var(--bk-tint); color: var(--bk-ink); flex-shrink: 0; align-self: center; }
 .cal-w-empty { display: flex; align-items: center; gap: 0.875rem; padding: 0.375rem 0.875rem; border: 0.125rem dashed rgba(30, 26, 46, .2); border-radius: 1rem; background: #FAF7F2; font-weight: 700; color: var(--ink-2); }
 .cal-w-empty a { color: var(--ink); }
 
@@ -340,7 +349,7 @@ button.cal-btn { border: 0; font: 800 1rem var(--font-body); cursor: pointer; }
 
 /* Simulated Uber rides (F-038): a scheduled ride is a sky block that opens the ride; an offer is a dashed ghost that starts scheduling one. */
 a.cal-ride { cursor: pointer; }
-.cal-ride.cal-booked { background: var(--sky-tint); color: var(--ink); border: 0.125rem solid var(--sky-ink); }
+.cal-ride.cal-booked { --bk-tint: var(--mint-tint); --bk-ink: var(--mint-ink); background: var(--mint-tint); color: var(--ink); border: 0.125rem solid var(--mint-ink); }
 .cal-ride.cal-booked:hover, .cal-ride.cal-booked:focus-visible { color: var(--ink); }
 .cal-ride.cal-booked .cal-time, .cal-ride.cal-booked .cal-title { color: var(--ink); }
 .cal-rideoffer { background: rgba(255, 255, 255, .6); border: 0.125rem dashed var(--sky-ink); color: var(--sky-ink); display: block; padding: 0 0.375rem; }
@@ -387,13 +396,10 @@ a.cal-ride { cursor: pointer; }
 /* Booked elsewhere (F-042): an imported trip's flights, hotel and car. They keep their true height; a short block fades its overflow and opens on hover or focus, like a short ride. */
 a.cal-booked { cursor: pointer; }
 a.cal-booked:focus-visible { outline: 0.1875rem solid var(--sun); outline-offset: 0.0625rem; z-index: 6; }
-.cal-elsewhere { display: block; font-size: max(var(--text-min), 0.6875rem); font-weight: 700; line-height: 1.2; opacity: .85; }
 a.cal-booked.cal-short { white-space: nowrap; }
-a.cal-booked.cal-short .cal-elsewhere { display: none; }
 a.cal-booked.is-cut:not(.cal-short) { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 1rem), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 1rem), transparent); }
 a.cal-booked.is-cut.cal-short { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 1.75rem), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 1.75rem), transparent); }
 a.cal-booked.is-cut:hover, a.cal-booked.is-cut:focus-visible { z-index: 6; height: auto; min-height: calc(var(--h) - 0.25rem); overflow: visible; white-space: normal; -webkit-mask-image: none; mask-image: none; box-shadow: var(--shadow-lg); }
-a.cal-booked.cal-short:hover .cal-elsewhere, a.cal-booked.cal-short:focus-visible .cal-elsewhere { display: block; }
 .cal-details { display: flex; flex-direction: column; gap: 0.375rem; }
 .cal-drow { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; padding: 0.375rem 0; border-bottom: 0.0625rem solid rgba(30, 26, 46, .12); }
 .cal-dk { font-size: max(var(--text-min), 0.8125rem); font-weight: 700; color: var(--ink-3); }
