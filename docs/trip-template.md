@@ -15,6 +15,7 @@ trip:
   end: 2026-10-20                    # last day of the trip
   booked_on: Expedia                 # where you booked (shown as "Booked elsewhere: Expedia")
   itinerary_number: "7123456789012"  # Expedia itinerary number (optional)
+  # timezone: Europe/Paris           # optional: the trip's time zone (an IANA name). Left out, it comes from your arrival airport.
 
 travelers:
   - name: Abhi

@@ -75,7 +75,8 @@ def save(session, plan, token=None, replace=None) -> str:
                         raise SaveError(f"That is {familydb.MAX_TRIPS} trips already. This demo keeps it small.")
                     at = familydb.now()
                     insert_only(db, "trips", {"id": trip_id, "title": plan.title, "source": tripimport.SOURCE, "params": _params(plan),
-                                              "depart": plan.start.isoformat(), "return_on": plan.end.isoformat(), "created_by": fam.traveler.id, "created_at": at},
+                                              "depart": plan.start.isoformat(), "return_on": plan.end.isoformat(), "created_by": fam.traveler.id, "created_at": at,
+                                              "timezone": plan.timezone},
                                 ["id"], auto_commit=False)
                     insert_only(db, "trip_imports", {"trip_id": trip_id, "doc": json.dumps(doc, separators=(",", ":")), "created_by": fam.traveler.id, "created_at": at},
                                 ["trip_id"], auto_commit=False)
@@ -113,8 +114,8 @@ def _replace(db, trip_id, plan, doc) -> str:
     before = tripimport.from_doc(json.loads(old["doc"]))
     old_key, new_key = _ride_key(trip_id, before), _ride_key(trip_id, plan)
     moved = dict(_retimes(db, trip_id, old_key, plan))  # a scheduled ride follows the corrected flight times; one with a driver on the way stays
-    familydb.run(db, "UPDATE trips SET title = :ti, params = :p, depart = :d, return_on = :r WHERE id = :t", ti=plan.title, p=_params(plan), d=plan.start.isoformat(),
-                 r=plan.end.isoformat(), t=trip_id)
+    familydb.run(db, "UPDATE trips SET title = :ti, params = :p, depart = :d, return_on = :r, timezone = :z WHERE id = :t", ti=plan.title, p=_params(plan), d=plan.start.isoformat(),
+                 r=plan.end.isoformat(), z=plan.timezone, t=trip_id)
     familydb.run(db, "UPDATE trip_imports SET doc = :doc WHERE trip_id = :t", doc=json.dumps(doc, separators=(",", ":")), t=trip_id)
     if old_key != new_key or moved:
         for r in familydb.rows(db, "SELECT id, data FROM rides WHERE key = :k", k=old_key):

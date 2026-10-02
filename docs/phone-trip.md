@@ -16,7 +16,7 @@
 
 ## Today
 
-"Today" is `catalog.today()` (Los Angeles date) and the minute is `tripday.now_minute()`; both are pinned in tests. Before the trip: "Trip starts in N days" and day 1's plan. During: the dark Up next card (with "in N min", or "happening now"), Directions (Apple Maps on Apple devices, else Google Maps; only a place name or address goes in the link, never a confirmation number), and "Get an Uber" when a ride for the day is still to schedule (the simulated rides flow). After: a "Welcome home" recap. Tap a day in the strip (or a tile) to see another day.
+"Today" is `catalog.today_in(zone)` and the minute is `tripday.now_minute(zone)`, in the trip's own time zone (F-057: `trips.timezone`, set on import from `timezone:` or the arrival airport via `gitaway/zones.py`, Los Angeles for demo trips); pin `catalog.now_utc` in tests. The server's past-date check and the date pickers keep one `catalog.today()` (Los Angeles). Before the trip: "Trip starts in N days" and day 1's plan. During: the dark Up next card (with "in N min", or "happening now"), Directions (Apple Maps on Apple devices, else Google Maps; only a place name or address goes in the link, never a confirmation number), and "Get an Uber" when a ride for the day is still to schedule (the simulated rides flow). After: a "Welcome home" recap. Tap a day in the strip (or a tile) to see another day.
 
 ## Roles and trips
 

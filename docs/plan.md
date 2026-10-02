@@ -316,14 +316,14 @@ Design: phone A approved 2026-10-01 (docs/design/canvas/GoLive-Phone-Today.dc.ht
 
 # Go live phase 1.5
 
-## F-055 Guided trip builder [doing]
+## F-055 Guided trip builder [done]
 Needs: F-051
-- [ ] a few friendly questions (where, when, who, flights, hotel, car) build the same trip as the template, with preview and save; no YAML
+- [x] a few friendly questions (where, when, who, flights, hotel, car) build the same trip as the template, with preview and save; no YAML
 
 ## F-056 Paste an Expedia confirmation email [blocked]
 Blocked: forward or paste one real Expedia confirmation email (it can stay on your machine; I only need its layout).
 - [ ] pasting an Expedia confirmation email pre-fills the trip for review (never saves directly)
 
-## F-057 A trip has its own time zone [doing]
+## F-057 A trip has its own time zone [done]
 Found reviewing F-054: "today" and "now" use Los Angeles time; a non-LA trip (e.g. an imported Paris trip) would be off by up to a day.
-- [ ] a trip has a time zone (from its arrival airport via an IATA → zone map, or chosen on import); /trip's today, up next and countdowns use it; the server's past-date check keeps one "today"
+- [x] a trip has a time zone (from its arrival airport via an IATA → zone map, or chosen on import); /trip's today, up next and countdowns use it; the server's past-date check keeps one "today"

@@ -12,6 +12,7 @@ from gitaway.icons import icon
 
 PLAN = "/start"
 IMPORT = "/trips/import"
+BUILD = "/trips/build"
 COMMUNITY = "/community"
 
 
@@ -26,11 +27,19 @@ def _path(href, ico, fill, title, text, label):
              Span(label, icon("arrow-right", 18, 2.6), cls="fr-go"), href=href, cls="fr-path")
 
 
+def _import_path():
+    """"Import a trip you booked" has two ways in (F-055), so it is a card with two links rather than one link."""
+    return Div(Span(icon("ledger", 26, 2.2), cls="fr-ico fill-mint", aria_hidden="true"),
+               Span(Span("Import a trip you booked", cls="fr-title"), Span("Already booked elsewhere? Bring it in and it becomes your shared calendar.", cls="fr-text"), cls="fr-body"),
+               Div(A("Answer a few questions", icon("arrow-right", 18, 2.6), href=BUILD, cls="fr-go"), A("Paste the template", icon("arrow-right", 18, 2.6), href=IMPORT, cls="fr-go"), cls="fr-choices"),
+               cls="fr-path fr-path-multi")
+
+
 def paths(plan_href=PLAN):
     """The three ways to begin: a plain list of links, so it works without JavaScript."""
     return Div(
         _path(plan_href, "plane", "sun", "Plan a trip", "Pick a place and dates. We line up flights, a stay and a car with one honest total.", "Start planning"),
-        _path(IMPORT, "ledger", "mint", "Import a trip you booked", "Already booked elsewhere? Paste it in and it becomes your shared calendar.", "Import it"),
+        _import_path(),
         _path(COMMUNITY, "fork", "bubble", "Browse community trips", "Real trips from travelers and creators. Fork one and make it yours.", "Take a look"),
         cls="fr-paths")
 

@@ -24,7 +24,7 @@ from datetime import date, datetime, timedelta
 
 import yaml
 
-from gitaway import catalog
+from gitaway import catalog, zones
 
 MAX_BYTES = 50_000
 MAX_TRAVELERS = 12
@@ -102,6 +102,22 @@ class Rental:
     car: str = ""
 
 
+def _split(legs):
+    """(index of the arrival leg, index of the departure leg or None): the legs either side of the longest wait."""
+    if not legs:
+        return None, None
+    gaps = [(legs[i + 1].depart - legs[i].arrive, -i) for i in range(len(legs) - 1)]
+    if not gaps or max(gaps)[0] < ONE_WAY_WAIT:  # no long wait anywhere: one way (connections included), the last leg is the arrival
+        return len(legs) - 1, None
+    i = -max(gaps)[1]  # open-jaw trips (home from another airport) split here too
+    return i, i + 1
+
+
+def zone_for(legs, destination) -> tuple:
+    """(IANA zone, note) for a trip with these flight legs: the arrival airport's, else the destination's state, else Los Angeles (see gitaway.zones)."""
+    return zones.resolve(legs[_split(legs)[0]].dest if legs else "", destination)
+
+
 @dataclass(frozen=True)
 class Plan:
     title: str
@@ -115,6 +131,11 @@ class Plan:
     hotels: tuple = ()
     rental: Rental | None = None
     notes: str = ""
+    timezone: str = ""   # IANA name of the destination (F-057); left out, `zone_for` picks it from the arrival airport
+
+    def __post_init__(self):
+        if not self.timezone:  # a Plan built without a zone (the guided builder, F-055) gets the arrival airport's
+            object.__setattr__(self, "timezone", zone_for(self.legs, self.destination)[0])
 
     @property
     def adults(self) -> int:
@@ -130,15 +151,7 @@ class Plan:
         return self.legs[0].origin if self.legs else catalog.ORIGIN[0]
 
     def _split(self):
-        """(index of the arrival leg, index of the departure leg or None): the legs either side of the longest wait."""
-        legs = self.legs
-        if not legs:
-            return None, None
-        gaps = [(legs[i + 1].depart - legs[i].arrive, -i) for i in range(len(legs) - 1)]
-        if not gaps or max(gaps)[0] < ONE_WAY_WAIT:  # no long wait anywhere: one way (connections included), the last leg is the arrival
-            return len(legs) - 1, None
-        i = -max(gaps)[1]  # open-jaw trips (home from another airport) split here too
-        return i, i + 1
+        return _split(self.legs)
 
     @property
     def arrive_leg(self):
@@ -569,13 +582,24 @@ def parse(text) -> Parsed:
     for key in doc:
         if key not in KNOWN:
             r.warn((str(key),), f"“{key}” is not a section GitAway uses, so it was skipped. The sections are: {', '.join(KNOWN)}.")
+    zone = zones.DEFAULT
+    chosen = trip.get("timezone") if isinstance(trip, dict) else None
+    if chosen is not None:
+        zone = zones.valid(chosen if isinstance(chosen, str) else "")
+        if zone is None:
+            r.bad(tp + ("timezone",), f"The trip’s time zone “{chosen}” is not one GitAway knows. Use a name like America/New_York or Europe/Paris (or delete the line).")
+            zone = zones.DEFAULT
+    elif isinstance(trip, dict):
+        zone, note = zone_for(legs, destination)
+        if note:
+            r.warn(tp, note)
     if not (legs or hotels or rental) and not r.errors:
         r.bad((), "Add at least one of flights, a hotel or a car, or there is nothing to put on the calendar.")
     if start and end and not r.errors:
         _check_inside(r, start, end, legs, hotels, rental)
     if r.errors:
         raise ImportProblem(r.errors, r.warnings)
-    return Parsed(Plan(title, destination, start, end, booked_on, itinerary, travelers, legs, hotels, rental, notes), tuple(r.warnings))
+    return Parsed(Plan(title, destination, start, end, booked_on, itinerary, travelers, legs, hotels, rental, notes, zone), tuple(r.warnings))
 
 
 # ---- the family database's copy -------------------------------------------------------------------------------------
@@ -587,7 +611,7 @@ def _iso(at):
 def to_doc(plan: Plan) -> dict:
     """The plan as plain JSON-able data (what the family database keeps)."""
     doc = {"v": 1, "trip": {"title": plan.title, "destination": plan.destination, "start": plan.start.isoformat(), "end": plan.end.isoformat(),
-                            "booked_on": plan.booked_on, "itinerary": plan.itinerary},
+                            "booked_on": plan.booked_on, "itinerary": plan.itinerary, "timezone": plan.timezone},
            "travelers": [{"name": t.name, "email": t.email, "age": t.age} for t in plan.travelers],
            "flights": [{"airline": f.airline, "number": f.number, "from": f.origin, "to": f.dest, "depart": _iso(f.depart), "arrive": _iso(f.arrive),
                         "confirmation": f.confirmation, "seats": f.seats} for f in plan.legs],
@@ -613,15 +637,16 @@ def from_doc(doc: dict) -> Plan:
         tuple(Leg(f["airline"], f["number"], f["from"], f["to"], at(f["depart"]), at(f["arrive"]), f.get("confirmation", ""), f.get("seats", "")) for f in doc.get("flights", [])),
         tuple(Lodging(h["name"], h["address"], at(h["check_in"]), at(h["check_out"]), h.get("confirmation", ""), h.get("room", ""), h.get("rooms", 1), h.get("phone", "")) for h in hs),
         Rental(c["company"], c["pickup_place"], at(c["pickup"]), c["dropoff_place"], at(c["dropoff"]), c.get("confirmation", ""), c.get("car", "")) if c else None,
-        doc.get("notes", ""))
+        doc.get("notes", ""), t.get("timezone", ""))
 
 
 # ---- what the calendar and the rides read ---------------------------------------------------------------------------
 
 @dataclass(frozen=True)
 class ImportedTrip(catalog.TripSearch):
-    """The catalog's TripSearch for an imported trip: real dates and party. `name` is the title the family gave it."""
+    """The catalog's TripSearch for an imported trip: real dates and party. `name` is the title the family gave it; `tz` its time zone (F-057)."""
     name: str = ""
+    tz: str = zones.DEFAULT
 
     @property
     def title(self) -> str:
@@ -631,7 +656,7 @@ class ImportedTrip(catalog.TripSearch):
 def trip_search(plan: Plan) -> ImportedTrip:
     arrive = plan.arrive_leg
     airports = (arrive.dest,) if arrive else ()
-    return ImportedTrip(plan.home, plan.home, plan.destination, airports, plan.start, plan.end, max(plan.adults, 1), plan.kid_ages, plan.title)
+    return ImportedTrip(plan.home, plan.home, plan.destination, airports, plan.start, plan.end, max(plan.adults, 1), plan.kid_ages, plan.title, plan.timezone)
 
 
 @dataclass(frozen=True)
