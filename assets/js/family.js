@@ -16,7 +16,9 @@
     if (share) {
       const data = { title: share.dataset.shareTitle, text: share.dataset.shareText, url: share.dataset.share };
       if (typeof navigator.share === "function") {
-        try { await navigator.share(data); } catch (err) { /* closed the share sheet: nothing to do */ }
+        try { await navigator.share(data); } catch (err) {
+          if (!err || err.name !== "AbortError") await copy(share, data.url); // closing the share sheet is fine; any other failure falls back to copying
+        }
       } else {
         await copy(share, data.url);
       }

@@ -429,6 +429,9 @@ def slide(session):
         session["seen_at"] = int(now())
 
 
+PRIVATE_SCOPE_KEY = "gitaway.signed_in"
+
+
 async def bind(req, session):
     """Beforeware: make the signed-in traveler visible to page rendering for this request.
 
@@ -436,6 +439,7 @@ async def bind(req, session):
     """
     slide(session)
     _request_traveler.set(current_traveler(session))
+    req.scope[PRIVATE_SCOPE_KEY] = _request_traveler.get() is not None  # main.py's no_store_when_signed_in reads this
     asked, safe = req.query_params.get("trip"), req.method in ("GET", "HEAD")
     if not safe and req.url.path != "/trips/switch":  # the switcher's own `trip` field names the trip to open, not the one being edited
         try:

@@ -154,3 +154,15 @@ def test_as_signed_out_hides_the_traveler_for_the_rest_of_the_request():
     session._request_traveler.set(session.sign_in({}, "u-ari", "ari.rivera@example.com"))
     session.as_signed_out()
     assert session.request_traveler() is None
+
+
+def test_signed_in_html_is_private_no_store_but_signed_out_pages_and_assets_stay_cacheable(client):
+    """F-062: Back after sign-out must not show the last person's pages from the browser's own caches."""
+    from tests.test_signin import sign_in
+    assert "no-store" not in client.get("/community").headers.get("cache-control", "")
+    sign_in(client)
+    for path in ("/community", "/calendar", "/family"):
+        assert client.get(path).headers["cache-control"] == "private, no-store", path
+    assert "no-store" not in client.get("/assets/css/base.css").headers.get("cache-control", "")
+    client.post("/signout")
+    assert "no-store" not in client.get("/community").headers.get("cache-control", "")

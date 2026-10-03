@@ -1,7 +1,7 @@
 """Your family (F-039, F-043): who is signed in, who is in the family, invites, and the invite link people join through.
 
 GET  /family                  members with role and joined date, pending invites with copy-link and revoke, the invite form, the family switcher
-POST /family/invite           (admin) invite an email as editor or viewer; the invite is a link to copy (email sending comes later)
+POST /family/invite           (admin) invite an email as editor or viewer; the invite is a link to share or copy (GitAway sends no email)
 POST /family/invite/revoke    (admin) take a pending invite back
 POST /family/role             (admin) change a member's role
 POST /family/remove           (admin) remove a member (or leave, for the owner while another admin remains); the last admin cannot go

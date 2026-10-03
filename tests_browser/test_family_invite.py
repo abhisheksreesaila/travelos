@@ -133,3 +133,22 @@ def test_share_invite_copies_the_link_and_says_copied_where_sharing_is_not_avail
 def test_the_invite_form_explains_that_no_email_is_sent(contexts, base_url):
     page = owner_page(contexts, base_url, DESKTOP)
     expect(page.locator("#fam-noemail")).to_contain_text("GitAway doesn't send email")
+
+
+def test_share_invite_copies_the_link_when_the_share_sheet_fails_but_not_when_it_is_closed(contexts, base_url):
+    ctx = contexts(DESKTOP)
+    ctx.grant_permissions(["clipboard-read", "clipboard-write"], origin=base_url)
+    ctx.request.post(f"{base_url}/signin", form={"email": "ari.rivera@example.com", "next": "/", "intent": "pay"}, max_redirects=0)
+    ctx.request.post(f"{base_url}/pay", form=SAMPLE, max_redirects=0)
+    page = ctx.new_page()
+    page.goto(f"{base_url}/family")
+    link = invite_from_page(page, f"sam.kim@{uuid.uuid4().hex[:8]}.example.com", "viewer")
+    button = page.locator("[data-share]")
+    page.evaluate("navigator.clipboard.writeText('untouched'); navigator.share = () => Promise.reject(new DOMException('closed', 'AbortError')); 0")
+    button.click()
+    page.wait_for_timeout(300)
+    assert page.evaluate("navigator.clipboard.readText()") == "untouched" and button.text_content() == "Share invite"
+    page.evaluate("navigator.share = () => Promise.reject(new DOMException('no', 'NotAllowedError')); 0")
+    button.click()
+    expect(button).to_have_text("Copied")
+    assert page.evaluate("navigator.clipboard.readText()") == link
