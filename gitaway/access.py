@@ -118,5 +118,6 @@ async def guard(req, sess):
     req.state.family_role = role
     need = needed(req.method, req.url.path)
     if not allows(role, need):
+        req.scope[ses.PRIVATE_SCOPE_KEY] = True  # F-062: session.bind never runs for a refusal, and it can show the family's calendar
         return refusal(req, sess, role)
     return None
