@@ -361,3 +361,15 @@ Captain, 2026-10-02: "it's good to have edit trip button… if the OCR makes mis
 - [x] saving replaces the trip's bookings in place (same trip, no duplicate) and keeps everyone's plans, notes and rides, with scheduled rides moving to the new flight times and hotel as the import's replace already does; the preview says so before saving
 - [x] only editors and admins see the button and can save; viewers never see it; a stale tab can't edit a different trip than the one it opened
 - [x] a browser test presses Edit trip, changes a flight time and a hotel name, saves, and sees both on the calendar with an existing plan still there
+
+# The captain's trip week (from 2026-10-03)
+
+## F-062 Sign-out is instant [doing]
+Captain, 2026-10-02: "the sign out was very slow." Likely cause: the sign-out response sends `Clear-Site-Data: "cache", "storage"`, and browsers can take seconds to clear the HTTP cache. · Needs: none
+- [ ] signing out returns to the landing within about a second on desktop Chrome and iPhone Safari (measure before and after)
+- [ ] the next person on the device still can't see the previous family's pages or cached data (the service worker's caches are cleared, as F-049/F-041 required)
+
+## F-063 Invite by sharing a link, not "email" [doing]
+Captain, 2026-10-02: "there's no email sender… Why is it saying send an email?" · Needs: none
+- [ ] the invite form says plainly that GitAway doesn't send email: you enter the Gmail address they'll sign in with, then share the link yourself
+- [ ] after inviting, a "Share invite" button opens the phone's share sheet (Messages, WhatsApp…) with a short message and the link; where sharing isn't available it copies the link and says "Copied"
