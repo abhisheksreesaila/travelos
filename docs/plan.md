@@ -429,5 +429,5 @@ Blocked: create a Gemini API key at https://aistudio.google.com/apikey (free tie
 Blocked: same Gemini key as F-072.
 - [ ] quick chips (vegetarian food, coffee, groceries, Costco/Walmart, pharmacy, gas, restrooms) find places near you with distance, open now, Directions, Call and Add to plan; the family's food preference applies
 
-## F-074 Face ID sign-in [todo]
-- [ ] after Google sign-in once, a phone can add a passkey and later sign in with Face ID
+## F-074 Face ID sign-in [done]
+- [x] after Google sign-in once, a phone can add a passkey and later sign in with Face ID
