@@ -255,11 +255,38 @@ def using(source):
             db.conn.close()
 
 
+_hooks = threading.local()
+
+
+def after_commit(fn):
+    """Run `fn()` once the open transaction on this thread has committed (never if it rolls back); at once when none is open (F-070: pushes)."""
+    pending = getattr(_hooks, "pending", None)
+    if pending is None:
+        fn()
+    else:
+        pending.append(fn)
+
+
 @contextmanager
 def transaction(db):
-    """One transaction: commit at the end, roll back if anything raises (fh-saas with_transaction)."""
-    with with_transaction(db):
-        yield db
+    """One transaction: commit at the end, roll back if anything raises (fh-saas with_transaction). Functions given to `after_commit` run after the commit."""
+    outer = getattr(_hooks, "pending", None)
+    _hooks.pending = mine = [] if outer is None else outer
+    try:
+        with with_transaction(db):
+            yield db
+    except BaseException:
+        if outer is None:
+            mine.clear()
+        raise
+    finally:
+        _hooks.pending = outer
+    if outer is None:
+        for fn in mine:
+            try:
+                fn()
+            except Exception:  # a push that cannot be queued never undoes the change
+                pass
 
 
 def lock(db):

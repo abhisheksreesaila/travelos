@@ -156,3 +156,12 @@ def test_the_service_worker_shows_a_family_push_and_a_tap_opens_the_family_tab(b
     assert first["options"]["body"] == "Abhi moved Griffith Observatory to Tue 10:00 AM"
     assert second["options"]["tag"] == "morning-plan" and second["options"]["data"]["url"] == "/trip"   # a tag that is not a plain word is ignored, and so is another site's address
     assert out["opened"] == [base_url + "/trip/family"] and out["closed"] == 1
+
+
+def test_a_tab_for_a_trip_that_is_gone_shows_a_short_friendly_error(pair):
+    ari, _ = pair()
+    ari.evaluate("document.querySelector('#ft-compose input[name=trip]').value = 'gone-trip'; document.getElementById('ft-thread').setAttribute('data-trip', 'gone-trip')")
+    ari.locator("#ft-text").fill("Hello?")
+    ari.locator("#ft-send").click()
+    expect(ari.locator("#ft-error")).to_have_text("This trip changed. Reload the page.")
+    assert ari.locator("#ft-thread .ft-msg").count() == 0
