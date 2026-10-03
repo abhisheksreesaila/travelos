@@ -5,7 +5,7 @@
 .mp-chip-num { width: 1.75rem; height: 1.75rem; border-radius: var(--r-pill); background: var(--sun); color: var(--ink); display: grid; place-items: center; font-family: var(--font-display); font-weight: 800; font-size: 1rem; }
 
 .mp-stage { position: relative; isolation: isolate; border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--shadow-md); background: var(--paper-2); }
-.mp-map { height: min(60vh, 32rem); min-height: 26rem; background: var(--paper-2); font-family: var(--font-body); }
+.mp-map { height: min(70vh, 40rem); min-height: 24rem; background: var(--paper-2); font-family: var(--font-body); }
 .mp-map.leaflet-container { font-size: 1rem; }
 .mp-map .leaflet-bar { border: 0; box-shadow: var(--shadow-md); border-radius: var(--r-md); overflow: hidden; }
 .mp-map .leaflet-bar a { width: 2.75rem; height: 2.75rem; line-height: 2.75rem; font-size: 1.5rem; color: var(--ink); }
@@ -20,7 +20,7 @@
 .mp-pin-wrap.is-sel .mp-pin { background: var(--coral); color: var(--ink); transform: scale(1.2); }
 
 .mp-sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1000; background: var(--card); border-radius: 1.75rem 1.75rem 0 0; box-shadow: 0 -0.625rem 1.875rem -0.75rem rgba(30, 26, 46, 0.3);
-  padding: 0.625rem 1.125rem 1rem; display: flex; flex-direction: column; gap: 0.625rem; }
+  padding: 0.625rem 1.125rem 1rem; max-height: 40vh; overflow-y: auto; display: flex; flex-direction: column; gap: 0.625rem; }
 .mp-sheet[hidden] { display: none; }
 .mp-grab { width: 2.5rem; height: 0.3125rem; border-radius: var(--r-pill); background: var(--skeleton); align-self: center; }
 .mp-close { position: absolute; top: 0.5rem; right: 0.5rem; width: 2.75rem; height: 2.75rem; border: 0; border-radius: var(--r-pill); background: var(--paper-2); color: var(--ink); display: grid; place-items: center; cursor: pointer; }

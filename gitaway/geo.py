@@ -216,10 +216,13 @@ _BUSY_LOCK = threading.Lock()
 
 
 def warm_async(session, places):
-    """Finish `warm` in a background thread with its own database handle (the page has already been sent). One thread per family and list of places."""
-    places = tuple(p for p in places if _norm(p))
-    key = (session.get("tenant_id"), places)
-    if not ASYNC or not places:
+    """Finish `warm` in a background thread with its own database handle (the page has already been sent). `places` is a list of places, or a list of
+    such lists (one per day: drives are only looked up within a list). One thread per family and set of places."""
+    groups = [list(g) for g in places] if places and not isinstance(places[0], str) else [list(places)]
+    groups = tuple(tuple(p for p in g if _norm(p)) for g in groups)
+    groups = tuple(g for g in groups if g)
+    key = (session.get("tenant_id"), groups)
+    if not ASYNC or not groups:
         return
     with _BUSY_LOCK:
         if key in _BUSY:
@@ -230,7 +233,8 @@ def warm_async(session, places):
         try:
             with familydb.using(dict(session)) as db:
                 if db is not None:
-                    warm(db, list(places), budget=90)
+                    for g in groups:
+                        warm(db, list(g), budget=90)
         except Exception:  # a background fill never matters enough to raise
             pass
         finally:

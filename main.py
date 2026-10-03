@@ -12,7 +12,7 @@ from fasthtml.common import Beforeware, FastHTML, Response, serve
 from fh_saas.utils_auth import create_auth_beforeware
 from fh_saas.utils_log import configure_logging
 
-from gitaway import access, auth, hostdb, session
+from gitaway import access, auth, hostdb, morning, session
 from gitaway.layout import HEAD
 from gitaway.pages import register_all
 from gitaway.pages.family import PRIVATE
@@ -63,7 +63,7 @@ class NoStoreWhenSignedIn:
 def make_app():
     auth.check_production_settings()
     app = FastHTML(before=[Beforeware(access.guard, skip=_OPEN), auth_before, Beforeware(session.bind, skip=_OPEN)], hdrs=HEAD, title="GitAway", middleware=[Middleware(NoStoreWhenSignedIn)],
-                   htmlkw={"lang": "en"}, secret_key=os.getenv("GITAWAY_SECRET_KEY") or None, key_fname=str(ROOT / ".sesskey"),
+                   htmlkw={"lang": "en"}, on_startup=[morning.start], secret_key=os.getenv("GITAWAY_SECRET_KEY") or None, key_fname=str(ROOT / ".sesskey"),
                    **auth.session_options())
     app.static_route_exts(prefix="/assets/", static_path=str(ROOT / "assets"))
 

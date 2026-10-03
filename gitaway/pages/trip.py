@@ -17,12 +17,12 @@ from fasthtml.common import A, Button, Details, Div, Form, H1, H2, Header, Input
 from fasthtml.core import FtResponse
 from starlette.responses import RedirectResponse
 
-from gitaway import access, catalog, familydb, geo, members, pickers, session as ses, tripcal as cal, tripday as td
+from gitaway import access, catalog, familydb, geo, tripgeo, members, pickers, session as ses, tripcal as cal, tripday as td
 from gitaway.icons import icon
 from gitaway.layout import avatar, join_note, styles, trip_field
-from gitaway.pages import calendar as calui, rides as rides_ui
+from gitaway.pages import calendar as calui, morning as morning_ui, rides as rides_ui
 
-HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/trip.css"),)
+HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/trip.css"), *morning_ui.HEAD)
 TABS = (("today", "Today"), ("days", "All days"), ("notes", "Notes"))
 
 
@@ -74,23 +74,24 @@ def load(session, day_arg="", ua=""):
     items = items_of(sel, now, past)
     tomorrow = items_of(sel + 1) if sel < last else []
     up = td.up_next(items, now, tomorrow[0] if tomorrow else None, clocks) if now is not None else None
-    leave = leave_by(session, items, up, clocks)
+    leave = leave_by(session, items, up, clocks, td.hotel_place(b, dates, sel - 1) if sel else "")
     return dict(zone=zone, session=session, who=who, b=b, t=t, dates=dates, last=last, role=role, blocks=blocks, acts=acts, notes=notes, phase=ph, n=n, today_idx=today_idx, sel=sel, now=now,
                 items=items, up=up, leave=leave, stay=td.stay_card(b, dates, sel), days=td.day_summaries(dates, blocks, acts, today_idx), ua=ua, past=past, first=items_of(0)[:1],
                 crew=members.crew(session), next=cal.next_id(session))
 
 
-def leave_by(session, items, up, clocks):
+def leave_by(session, items, up, clocks, origin=""):
     """(minute to leave by, drive minutes) for the stop that is up next, from the drive time between it and the stop before it that the Map already
     cached (gitaway.geo; Today never waits for the network), else None. A flight is not driven to, and a drive from a flight is not a drive."""
     item = up.item if up and up.kicker.startswith("UP NEXT") else None
     if not item or not item.place or item.kind == "flight":
         return None
     before = [x for x in items if x.start < item.start and x.place and x.kind != "flight"]
-    if not before:
+    start = before[-1].place if before else origin  # the first stop of the day leaves from where you slept
+    if not start:
         return None
     with familydb.using(session) as db:
-        minutes = geo.cached_minutes(*(geo.as_place(p) for p in (before[-1].place, item.place)), db) if db else None
+        minutes = geo.cached_minutes(*(geo.as_place(p) for p in (start, item.place)), db) if db else None
     return (item.start - minutes, minutes) if minutes else None
 
 
@@ -196,6 +197,7 @@ def today_panel(v):
     if cal.is_imported(v["b"]) and any(x.kind in ("flight", "hotel", "car") for x in v["items"]):  # where it was booked is said once, quietly
         parts.append(Div(icon("lock", 13, 2.4), Span(f"Booked elsewhere · {cal.plan_of(v['b']).booked_on}"), cls="tp-elsewhere"))
     parts.append(stay_card(v))
+    parts.append(morning_ui.card(v["zone"]))  # F-066: the morning plan push, drawn by its own module
     parts.append(note_strip(v))
     parts.append(A(icon("arrow-right", 18, 2.4), "Open the full calendar", href="/calendar?view=whole", cls="tp-full"))
     return Section(*parts, id="tp-panel-today", cls="tp-panel", role="tabpanel", aria_label="Today", data_title=_title_today(v))
@@ -351,6 +353,7 @@ def register(app):
             return r
         ua = request.headers.get("user-agent", "")
         sheet = {} if add == "1" else None
+        tripgeo.warm(session)  # fill the map cache in the background, at most once an hour (F-068)
         return trip_page(session, ua, tab or "today", day[:3], sheet, new[:8])
 
     @app.post("/trip/plans")

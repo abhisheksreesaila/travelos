@@ -62,7 +62,7 @@ def stops_of(v, db):
         if pos and prev and x.kind != "flight":
             drive = geo.drive_minutes(prev[1], pos, db, lookup=False)
         out.append(dict(n=len(out) + 1, id=x.id, title=x.title, label=x.label, kind=x.kind, place=_place(x), pos=pos, state="found" if pos else ("missing" if got == geo.MISSING else "pending"),
-                        addr=(", ".join(name.split(", ")[:3]) if x.kind == "plan" and name else _place(x)), when=_when(x), drive=drive, tel=_phone_of(v, x),
+                        addr=_place(x), when=_when(x), drive=drive, tel=_phone_of(v, x),
                         dir=td.maps_url(_place(x), v["ua"]), uber=uber_url(_place(x), pos)))
         if pos and x.kind != "flight":
             prev = (x, pos)
