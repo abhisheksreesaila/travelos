@@ -13,7 +13,7 @@ HOUR = 3600
 
 
 def day_places(session) -> list:
-    """[[place, ...] for each day]: where you slept the night before (when the trip says), then every stop with a place, in time order."""
+    """[[place, ...] for each day] (a flight's airport is `(place, True)`: located, never driven to or from): where you slept the night before (when the trip says), then every stop with a place, in time order."""
     b = ses.booking(session)
     if not b:
         return []
@@ -27,11 +27,11 @@ def day_places(session) -> list:
         stops = []
         for blk in blocks:
             if blk.day == i and (p := td._place_of(blk, td.hotel_place(b, dates, i))):
-                stops.append((blk.at, p))
-        stops += [(a.start, f"{a.title}, {dest}") for a in acts if a.day == i]
+                stops.append((blk.at, p, blk.icon == "plane"))
+        stops += [(a.start, f"{a.title}, {dest}", False) for a in acts if a.day == i]
         flies = any(blk.day == i and blk.icon == "plane" for blk in blocks)  # a travel day starts at the airport, not at the stay
         before = td.hotel_place(b, dates, i - 1) if i and not flies else ""
-        day = ([before] if before else []) + [geo.as_place(p) for _, p in sorted(stops)]
+        day = ([before] if before else []) + [(geo.as_place(p), True) if fl else geo.as_place(p) for _, p, fl in sorted(stops)]
         if len(day) > 1 or (day and not before):
             out.append(day)
     return out

@@ -145,7 +145,7 @@ def leave_line(v, up):
     item = up.item
     before = [x for x in v["items"] if x.start < item.start and x.place and x.kind not in ("ride", "offer")]
     flew = any(x.kind == "flight" and x.start < item.start for x in v["items"])  # on a travel day nobody leaves from the stay
-    origin = before[-1].place if before else ("" if flew else v["stay_place"])
+    origin = "" if before and before[-1].kind == "flight" else before[-1].place if before else ("" if flew else v["stay_place"])  # straight after a flight there is no drive to time
     got = td.leave_by(item, origin, v["clocks"][item.zone][1])
     if not got:
         return ""

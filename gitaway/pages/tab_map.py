@@ -125,7 +125,7 @@ def content(request, session):
     ua = request.headers.get("user-agent", "")
     v = trip_ui.load(session, request.query_params.get("day", "")[:3], ua)
     items = [x for x in v["items"] if x.place and x.kind not in ("ride", "offer")]
-    places = [_place(x) for x in items]
+    places = [(_place(x), True) if x.kind == "flight" else _place(x) for x in items]
     with familydb.using(session) as db:
         left = geo.warm(db, places, budget=2.0) if db and places else 0
         stops = _drive_from(stops_of(v, db))

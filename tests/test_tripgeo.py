@@ -99,3 +99,14 @@ def test_today_still_draws_when_the_map_fill_breaks(client, maps, monkeypatch):
     imported(client)
     monkeypatch.setattr(tripgeo, "day_places", lambda s: 1 / 0)
     assert client.get("/trip").status_code == 200
+
+
+def test_right_after_a_flight_there_is_no_leave_by_and_no_cross_country_drive_is_asked(client, maps, monkeypatch):
+    imported(client)  # the arrival day: a flight SFO to LAX at 8:05, then the car pickup at 10:00
+    settle()
+    assert not any("router.project-osrm" in u and "-122.37" in u for u in maps.calls)  # SFO's longitude: nobody asks how long SFO to LAX takes by car
+    client.get("/trip")
+    settle()
+    at(monkeypatch, date(2026, 10, 16), 9 * 60)
+    html = text(client.get("/trip").text)
+    assert "Pick up Hertz car" in html and "Leave by" not in html

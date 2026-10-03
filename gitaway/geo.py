@@ -255,15 +255,24 @@ def cached_minutes(place_a, place_b, db=None):
 
 # ---- filling the cache ------------------------------------------------------------------------------------------------
 
+def _name(p) -> str:
+    return p if isinstance(p, str) else p[0]
+
+
+def _flight(p) -> bool:
+    return not isinstance(p, str) and bool(p[1])
+
+
 def warm(db, places, budget=2.0) -> int:
-    """Look up the places and the drives between consecutive found ones, for at most about `budget` seconds. Returns how many lookups are left."""
+    """Look up the places and the drives between consecutive found ones, for at most about `budget` seconds. Returns how many lookups are left.
+    A place is a string, or `(string, True)` for a flight's airport: it is located but never driven to or from (nobody drives to the other airport)."""
     deadline = _clock() + budget
     for p in places:
-        find(p, db, deadline=deadline)
-    left = sum(1 for p in places if state(p, db)[0] is None and _norm(p))
-    pts = [c for p in places if isinstance(c := state(p, db)[0], tuple)]
-    for a, b in zip(pts, pts[1:]):
-        if _get(db, "drive", _pair_key(a, b)) is not None or a == b:
+        find(_name(p), db, deadline=deadline)
+    left = sum(1 for p in places if state(_name(p), db)[0] is None and _norm(_name(p)))
+    pts = [(c, _flight(p)) for p in places if isinstance(c := state(_name(p), db)[0], tuple)]
+    for (a, fa), (b, fb) in zip(pts, pts[1:]):
+        if fa or fb or a == b or _get(db, "drive", _pair_key(a, b)) is not None:
             continue
         if _leg(a, b, db, deadline=deadline) is None:
             left += 1
@@ -278,8 +287,8 @@ _BUSY_LOCK = threading.Lock()
 def warm_async(session, places):
     """Finish `warm` in a background thread with its own database handle (the page has already been sent). `places` is a list of places, or a list of
     such lists (one per day: drives are only looked up within a list). One thread per family and set of places."""
-    groups = [list(g) for g in places] if places and not isinstance(places[0], str) else [list(places)]
-    groups = tuple(tuple(p for p in g if _norm(p)) for g in groups)
+    groups = [list(g) for g in places] if places and isinstance(places[0], list) else [list(places)]
+    groups = tuple(tuple(p for p in g if _norm(_name(p))) for g in groups)
     groups = tuple(g for g in groups if g)
     key = (session.get("tenant_id"), groups)
     if not ASYNC or not groups:
