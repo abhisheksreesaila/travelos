@@ -5,7 +5,7 @@
 .mp-chip-num { width: 1.75rem; height: 1.75rem; border-radius: var(--r-pill); background: var(--sun); color: var(--ink); display: grid; place-items: center; font-family: var(--font-display); font-weight: 800; font-size: 1rem; }
 
 .mp-stage { position: relative; isolation: isolate; border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--shadow-md); background: var(--paper-2); }
-.mp-map { height: min(60vh, 32rem); min-height: 18rem; background: var(--paper-2); font-family: var(--font-body); }
+.mp-map { height: min(60vh, 32rem); min-height: 26rem; background: var(--paper-2); font-family: var(--font-body); }
 .mp-map.leaflet-container { font-size: 1rem; }
 .mp-map .leaflet-bar { border: 0; box-shadow: var(--shadow-md); border-radius: var(--r-md); overflow: hidden; }
 .mp-map .leaflet-bar a { width: 2.75rem; height: 2.75rem; line-height: 2.75rem; font-size: 1.5rem; color: var(--ink); }
@@ -36,6 +36,7 @@
 .mp-drive { background: var(--sky); }
 .mp-acts { display: flex; gap: 0.5rem; }
 .mp-acts .tp-btn { flex: 1; gap: 0.5rem; }
+.mp-acts .tp-btn-white { box-shadow: inset 0 0 0 0.125rem var(--line); }
 .mp-acts .mp-call { flex: 0 0 3rem; padding: 0; }
 .mp-acts [hidden] { display: none; }
 

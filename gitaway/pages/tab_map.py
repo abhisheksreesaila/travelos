@@ -62,7 +62,7 @@ def stops_of(v, db):
         if pos and prev and x.kind != "flight":
             drive = geo.drive_minutes(prev[1], pos, db, lookup=False)
         out.append(dict(n=len(out) + 1, id=x.id, title=x.title, label=x.label, kind=x.kind, place=_place(x), pos=pos, state="found" if pos else ("missing" if got == geo.MISSING else "pending"),
-                        addr=(name if x.kind == "plan" and name else _place(x)), when=_when(x), drive=drive, tel=_phone_of(v, x),
+                        addr=(", ".join(name.split(", ")[:3]) if x.kind == "plan" and name else _place(x)), when=_when(x), drive=drive, tel=_phone_of(v, x),
                         dir=td.maps_url(_place(x), v["ua"]), uber=uber_url(_place(x), pos)))
         if pos and x.kind != "flight":
             prev = (x, pos)
@@ -138,7 +138,7 @@ def content(request, session):
     d = v["dates"][v["sel"]]
     n = len(stops)
     chip = Div(Span(str(d.day), cls="mp-chip-num"), f"{d.strftime('%A')} · {n} stop{'s' if n != 1 else ''}, in order" if n else f"{d.strftime('%A')} · nothing with a place today", cls="mp-daychip", id="mp-daychip")
-    data = dict(stops=[dict(n=s["n"], title=s["title"], addr=s["addr"], when=s["when"], lat=s["pos"][0], lon=s["pos"][1], drive=s["drive"], frm=s.get("from", ""), dir=s["dir"], uber=s["uber"], tel=s["tel"])
+    data = dict(stops=[dict(n=s["n"], kind=s["kind"], title=s["title"], addr=s["addr"], when=s["when"], lat=s["pos"][0], lon=s["pos"][1], drive=s["drive"], frm=s.get("from", ""), dir=s["dir"], uber=s["uber"], tel=s["tel"])
                        for s in stops if s["pos"]], route=line, pending=left)
     body = []
     if not n:

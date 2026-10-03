@@ -78,15 +78,15 @@
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }).addTo(map);
 
   var bounds = [];
+  var near = stops.filter(function (s) { return s.kind !== 'flight'; }); // a flight leaves from an airport far away: the view fits the stops you drive to
   stops.forEach(function (s) {
     var ll = [s.lat, s.lon];
-    bounds.push(ll);
+    if (near.length ? s.kind !== 'flight' : true) bounds.push(ll);
     var m = L.marker(ll, {
       icon: L.divIcon({ className: 'mp-pin-wrap', html: '<span class="mp-pin">' + s.n + '</span>', iconSize: [size, size], iconAnchor: [size / 2, size / 2] }),
       keyboard: true, title: 'Stop ' + s.n + ', ' + s.title, alt: 'Stop ' + s.n + ', ' + s.title, riseOnHover: true
     }).addTo(map);
     m.on('click', function () { show(s.n); });
-    m.getElement().setAttribute('data-stop', String(s.n));
     markers[s.n] = m;
   });
 
@@ -102,5 +102,6 @@
   if (bounds.length > 1) map.fitBounds(bounds, { padding: [size, size], maxZoom: 16 });
   else map.setView(bounds[0], 15);
 
+  Object.keys(markers).forEach(function (k) { markers[k].getElement().setAttribute('data-stop', k); }); // the pins exist once the map has a view
   mapEl.dataset.ready = '1';
 })();
