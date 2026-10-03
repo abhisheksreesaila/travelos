@@ -511,3 +511,14 @@ def test_place_matching_uses_the_geo_modules_cache_inside_its_scope(trip, ari, m
     add(trip, id="a2", title="Lunch", start="13:00", end="14:00", day="1")
     p = photos.add(ari, image("jpeg", taken="2026:10:17 16:00:00", gps=(34.1020, -118.3270)))
     assert p["plan_title"] == "Lunch" and state["scopes"] and state["inside"] == 0
+
+
+def test_place_matching_works_with_the_real_geo_module(trip, ari):
+    """The real gitaway.geo (F-068): a place already in the family's geo cache is read inside cache_scope, with no network call."""
+    from gitaway import familydb, geo
+    add(trip, id="a2", title="Lunch", start="13:00", end="14:00", day="1")
+    with familydb.using(ari) as db:
+        geo._put(db, "place", geo._norm("Lunch, Los Angeles"), lat=34.1016, lon=-118.3267, found=1, data="Lunch")
+    near = photos.add(ari, image("jpeg", taken="2026:10:17 16:00:00", gps=(34.1020, -118.3270)))
+    far = photos.add(ari, image("jpeg", taken="2026:10:17 16:00:00", gps=(36.0, -115.0)))
+    assert near["plan_title"] == "Lunch" and far["plan_title"] == ""
