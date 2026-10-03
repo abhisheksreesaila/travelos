@@ -516,7 +516,7 @@ def top_bar(t, b, who, session, ctx):
         Div(A(icon("mic", 18, 2.4), "Talk to plan", href=voice_ui.voice_url(ctx["demo"], hear=1), data_soft="", cls="cal-btn cal-btn-mint vo-open") if ctx["role"] != "viewer" else "",
             A("Your forks", Span(str(forks), cls="cal-count"), href="/forks", cls="cal-btn cal-btn-white"),
             invite_button(ctx),
-            A(icon("share", 16, 2.4), "Today, to share", href="/trip", cls="cal-btn cal-btn-white", id="cal-today-view"),
+            A(icon("share", 16, 2.4), "Today, to share", href=f"/trip?trip={ses.open_trip_id()}" if ses.open_trip_id() else "/trip", cls="cal-btn cal-btn-white", id="cal-today-view"),
             *share_controls(session), cls="cal-actions-top"),
         cls="cal-bar",
     )

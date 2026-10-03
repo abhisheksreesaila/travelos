@@ -85,3 +85,10 @@ def test_the_day_picker_opens_another_day_and_the_share_text_follows(today, base
     page.locator('#tp-strip [data-day="1"]').click()
     page.wait_for_url("**/trip?day=1")
     expect(page.locator("#tp-share")).to_have_attribute("data-share-text", __import__("re").compile(r"^Sat Oct 17 · "))
+
+
+def test_the_plus_sits_at_the_columns_right_edge_on_a_laptop(today, base_url):
+    page = today(LAPTOP)
+    page.goto(base_url + "/trip")
+    plus, col = page.locator("#tp-add").bounding_box(), page.locator("#tp-app").bounding_box()
+    assert abs((plus["x"] + plus["width"]) - (col["x"] + col["width"])) <= 20, (plus, col)

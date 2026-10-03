@@ -333,7 +333,7 @@ def _min(at):
 
 def booking_detail(b, block_id):
     """(title, [(label, value)]) of one booked block of an imported booking, confirmation number included; None for anything else.
-    The only place a confirmation number is drawn (with the trip details page): both are for signed-in family members only."""
+    A confirmation number is drawn only here, on the trip details page and behind the "Confirmation" tap on Today: all for signed-in family members, never in shared text."""
     if not is_imported(b):
         return None
     plan = _plan(b)

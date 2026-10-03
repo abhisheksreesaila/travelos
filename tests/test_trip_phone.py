@@ -382,7 +382,7 @@ def test_any_day_opens_with_day_and_today_is_the_default_before_during_and_after
 def test_a_viewer_can_share_the_day_and_the_calendar_links_to_it(client, at):
     book(client)
     plan(client)
-    assert 'href="/trip"' in client.get("/calendar?view=whole").text and "Today, to share" in text(client.get("/calendar?view=whole").text)
+    assert 'id="cal-today-view"' in client.get("/calendar?view=whole").text and "Today, to share" in text(client.get("/calendar?view=whole").text)
     mail = addr("vi2")
     invite(client, mail, "viewer")
     viewer = browser(client)
@@ -390,4 +390,23 @@ def test_a_viewer_can_share_the_day_and_the_calendar_links_to_it(client, at):
     at(date(2026, 10, 17), "12:00")
     html = viewer.get("/trip").text
     assert 'id="tp-share"' in html and "Griffith Observatory" in share_attr(html) and 'id="tp-add"' not in html
-    assert 'href="/trip"' in viewer.get("/calendar?view=whole").text
+    assert 'id="cal-today-view"' in viewer.get("/calendar?view=whole").text
+
+
+def test_the_calendars_today_link_carries_the_open_trip_and_lands_on_the_trip_view(client, at):
+    book(client)
+    plan(client)
+    at(date(2026, 10, 17), "12:00")
+    link = tag(client.get("/calendar?view=whole").text, "id", "cal-today-view")
+    href = unescape(link["href"])
+    assert re.fullmatch(r"/trip\?trip=\w+", href)
+    r = client.get(href)
+    assert r.status_code == 200 and 'id="tp-app"' in r.text and f'data-trip="{href.split("=")[1]}"' in r.text
+
+
+def test_the_demo_bookings_share_text_has_no_prices(client, at):
+    book(client)
+    for day in (date(2026, 10, 16), date(2026, 10, 17), date(2026, 10, 20)):
+        at(day, "08:00")
+        out = share_attr(client.get("/trip").text)
+        assert "$" not in out and out.startswith(day.strftime("%a %b") + f" {day.day} · ")
