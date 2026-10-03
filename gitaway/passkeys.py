@@ -12,7 +12,9 @@ Nothing here logs credential material.
 """
 
 import json
+import hashlib
 import os
+import re
 import time
 from datetime import datetime, timezone
 
@@ -44,16 +46,26 @@ def now() -> float:
     return time.time()
 
 
+_HOST = re.compile(r"[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+(:\d{1,5})?")
+
+
+def _production_rp():
+    """(rp_id, origin) from GITAWAY_PUBLIC_URL (else RAILWAY_PUBLIC_DOMAIN), or None when it is missing or not a plain https address."""
+    base = (os.getenv("GITAWAY_PUBLIC_URL") or "").strip().rstrip("/")
+    if not base and (domain := (os.getenv("RAILWAY_PUBLIC_DOMAIN") or "").strip()):
+        base = f"https://{domain}"
+    if not base.startswith("https://"):
+        return None
+    host = base[len("https://"):].lower()
+    if not _HOST.fullmatch(host):   # no path, query, user info or IP address
+        return None
+    return host.split(":")[0], f"https://{host}"
+
+
 def relying_party(request):
     """(rp_id, origin) the browser must be on, or None when passkeys cannot work here."""
     if auth.production():
-        base = (os.getenv("GITAWAY_PUBLIC_URL") or "").strip().rstrip("/")
-        if not base and (domain := (os.getenv("RAILWAY_PUBLIC_DOMAIN") or "").strip()):
-            base = f"https://{domain}"
-        if not base.startswith("https://") or len(base) <= 8:
-            return None
-        host = base[len("https://"):].split("/")[0]
-        return host.split(":")[0], f"https://{host}"
+        return _production_rp()
     host = request.url.hostname or ""
     if not host or host.replace(".", "").isdigit() or ":" in host:   # an IP address is not a valid site for a passkey
         return None
@@ -62,7 +74,7 @@ def relying_party(request):
 
 def configured() -> bool:
     """Whether this server can do passkeys at all, without a request: production needs its public address set; locally the request decides."""
-    return not auth.production() or any((os.getenv(k) or "").strip() for k in ("GITAWAY_PUBLIC_URL", "RAILWAY_PUBLIC_DOMAIN"))
+    return not auth.production() or _production_rp() is not None
 
 
 def available(request) -> bool:
@@ -80,6 +92,7 @@ def _conn():
             sign_count INTEGER NOT NULL DEFAULT 0, transports TEXT NOT NULL DEFAULT '[]', name TEXT NOT NULL,
             verified INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL, last_used TEXT)"""))
         conn.execute(text("CREATE INDEX IF NOT EXISTS ix_ga_passkeys_user ON ga_passkeys (user_id)"))
+        conn.execute(text("CREATE TABLE IF NOT EXISTS ga_passkey_challenges (hash TEXT PRIMARY KEY, expires_at REAL NOT NULL)"))
         conn.commit()
         _READY = True
     return conn
@@ -128,8 +141,28 @@ def remove(user_id, passkey_id) -> bool:
 
 # ---- challenges -----------------------------------------------------------------------------------------------------------------------
 
+def _digest(challenge: bytes) -> str:
+    return hashlib.sha256(challenge).hexdigest()
+
+
+def pending_challenges() -> int:
+    """How many issued challenges are still waiting for an answer (after sweeping the expired ones)."""
+    with hostdb.locked():
+        conn = _conn()
+        conn.execute(text("DELETE FROM ga_passkey_challenges WHERE expires_at < :n"), {"n": now()})
+        conn.commit()
+        return conn.execute(text("SELECT COUNT(*) FROM ga_passkey_challenges")).scalar()
+
+
 def _keep_challenge(session, kind, challenge, user_id=""):
+    """Remember the challenge in the cookie (who it was for) and, as a hash, in the host database: the database is what makes it single-use,
+    so a copy of an old cookie cannot answer it twice."""
     session["pk"] = {"k": kind, "c": bytes_to_base64url(challenge), "t": int(now()), "u": user_id}
+    with hostdb.locked():
+        conn = _conn()
+        conn.execute(text("DELETE FROM ga_passkey_challenges WHERE expires_at < :n"), {"n": now()})
+        conn.execute(text("INSERT OR REPLACE INTO ga_passkey_challenges (hash, expires_at) VALUES (:h, :e)"), {"h": _digest(challenge), "e": now() + CHALLENGE_SECONDS})
+        conn.commit()
 
 
 def _take_challenge(session, kind, user_id=""):
@@ -139,7 +172,14 @@ def _take_challenge(session, kind, user_id=""):
         raise PasskeyError("That took too long or was already used. Please try again.")
     if now() - int(held.get("t") or 0) > CHALLENGE_SECONDS:
         raise PasskeyError("That took too long. Please try again.")
-    return base64url_to_bytes(held["c"])
+    challenge = base64url_to_bytes(held["c"])
+    with hostdb.locked():   # the first answer to take the row wins; a replay finds nothing
+        conn = _conn()
+        taken = conn.execute(text("DELETE FROM ga_passkey_challenges WHERE hash = :h AND expires_at >= :n"), {"h": _digest(challenge), "n": now()}).rowcount
+        conn.commit()
+    if not taken:
+        raise PasskeyError("That took too long or was already used. Please try again.")
+    return challenge
 
 
 # ---- adding a passkey ------------------------------------------------------------------------------------------------------------------
@@ -166,7 +206,7 @@ def register(session, request, user_id, credential, user_agent="") -> dict:
     """Check the browser's answer and keep the new passkey. Raises PasskeyError (nothing stored) when anything is off."""
     rp = relying_party(request)
     challenge = _take_challenge(session, "reg", user_id)
-    if rp is None or len(json.dumps(credential)) > MAX_CREDENTIAL:
+    if rp is None or not isinstance(credential, dict) or len(json.dumps(credential)) > MAX_CREDENTIAL:
         raise PasskeyError("Face ID could not be added.")
     try:
         ok = verify_registration_response(credential=credential, expected_challenge=challenge, expected_rp_id=rp[0], expected_origin=rp[1], require_user_verification=True)
@@ -174,7 +214,7 @@ def register(session, request, user_id, credential, user_agent="") -> dict:
         raise PasskeyError("Face ID could not be added. Please try again.") from None
     transports = [t for t in (credential.get("response", {}).get("transports") or []) if isinstance(t, str)][:6]
     row = {"id": gen_id(), "user_id": user_id, "credential_id": bytes_to_base64url(ok.credential_id), "public_key": bytes_to_base64url(ok.credential_public_key),
-           "sign_count": ok.sign_count, "transports": json.dumps(transports), "name": device_name(user_agent), "verified": 1 if session.get("verified", 1) else 0, "created_at": _stamp()}
+           "sign_count": ok.sign_count, "transports": json.dumps(transports), "name": device_name(user_agent), "verified": 1 if session.get("verified", 0) else 0, "created_at": _stamp()}
     with hostdb.locked():
         conn = _conn()
         if _rows(conn, "SELECT 1 FROM ga_passkeys WHERE credential_id = :c", c=row["credential_id"]):

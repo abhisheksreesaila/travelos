@@ -64,6 +64,17 @@ def sky(ctx):
     return Div(Div(cls="si-band si-band1"), Div(cls="si-band si-band2"), Div(cls="si-band si-band3"), *stages, aria_hidden="true", cls="si-sky")
 
 
+def welcome():
+    """Storyboard frame 2 (F-074): the full-screen moment after a Face ID sign-in. Hidden; passkeys.js fills the name and shows it for a beat before opening Today."""
+    return Div(
+        Div(Span(icon("fork", 20, 2.4), cls="si-logo"), Span("GitAway", cls="si-brand"), cls="sw-brand"),
+        Span(icon("face-id", 64, 1.8), cls="sw-glyph", aria_hidden="true"),
+        H2("Welcome back, ", Span("", id="si-welcome-name"), cls="sw-title"),
+        P("Signed in with Face ID. No password, no code by text.", cls="sw-line"),
+        P("Your passkey stays on this ", Span("device", id="si-welcome-device"), ".", cls="sw-note"),
+        id="si-welcome", cls="si-welcome", role="status", aria_live="polite", hidden=True)
+
+
 def _intent(value):
     return value if value in ses.INTENTS else "save"
 
@@ -128,7 +139,7 @@ def _continue(session, intent, next_path):
 
 def _page(request, next_path, intent, asked, error="", status=200):
     card, sky_ = dialog(next_path, intent, asked, dev=auth.dev_login_allowed(request), google=auth.google_enabled(), error=error, faceid=passkeys.available(request))
-    out = page("Sign in", Div(sky_, Div(card, cls="si-pass"), cls="si-wrap"), head=HEAD)
+    out = page("Sign in", Div(sky_, Div(card, cls="si-pass"), cls="si-wrap"), welcome() if passkeys.available(request) else "", head=HEAD)
     return out if status == 200 else Response(to_xml(out), status_code=status, media_type="text/html")
 
 

@@ -35,7 +35,7 @@ async def _body(request):
     origin = request.headers.get("origin")
     if origin is not None and origin != rp[1]:
         return None, _fail("That did not come from this site.", 403)
-    if "application/json" not in (request.headers.get("content-type") or ""):
+    if (request.headers.get("content-type") or "").split(";")[0].strip().lower() != "application/json":
         return None, _fail("That was not a Face ID request.")
     try:
         data = await request.json()
@@ -131,9 +131,10 @@ def register(app):
             return _fail(str(e))
         auth.make_room(session)
         next_path = ses.safe_next(data.get("next"), "/start")
+        landing = "/trip" if next_path == "/start" else next_path   # no destination: open Today (it sends someone with no trip on to /start)
         intent = data.get("intent") if data.get("intent") in ses.INTENTS else ""
         _continue(session, intent, next_path)
-        return JSONResponse({"ok": True, "next": next_path, "name": ses.current_traveler(session).name.split()[0]})
+        return JSONResponse({"ok": True, "next": landing, "name": ses.current_traveler(session).name.split()[0]})
 
     @app.post("/passkeys/remove")
     def remove(request, session, id: str = ""):

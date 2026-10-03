@@ -20,3 +20,18 @@
 .pk-item { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.75rem; padding: 0.625rem 0.75rem; border-radius: var(--r-md); background: var(--sky-tint); }
 .pk-name { font-weight: 800; }
 .pk-when { flex: 1; min-width: 8rem; font-size: max(var(--text-min), 0.8125rem); font-weight: 600; color: var(--ink-3); }
+
+.pk-what { font-weight: 800; font-size: 1rem; overflow-wrap: anywhere; }
+.pk-sub { font-size: max(var(--text-min), 0.875rem); font-weight: 600; color: var(--ink-3); }
+
+/* The welcome moment after a Face ID sign-in: the whole screen, above the sign-in page */
+.si-welcome { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 1.5rem; text-align: center;
+  background: linear-gradient(170deg, var(--sky-tint), var(--card) 60%, var(--sun-tint)); color: var(--ink); animation: sw-in 0.25s var(--ease-out); }
+.si-welcome[hidden] { display: none !important; }
+.sw-brand { display: flex; align-items: center; gap: 0.5rem; font-weight: 800; }
+.sw-glyph { width: 7rem; height: 7rem; border-radius: 2rem; background: var(--card); box-shadow: var(--shadow-sm); display: flex; align-items: center; justify-content: center; }
+.sw-title { margin: 0; font-size: 2rem; line-height: 1.1; }
+.sw-line { margin: 0; font-weight: 700; max-width: 22rem; }
+.sw-note { margin: 0; font-size: max(var(--text-min), 0.875rem); font-weight: 600; color: var(--ink-3); }
+@keyframes sw-in { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .si-welcome { animation: none; } }

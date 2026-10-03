@@ -78,6 +78,12 @@ def test_add_a_passkey_then_sign_in_with_face_id_at_390(phone, site):
     no_sideways_scroll(page)
     button.click()
     expect(page.locator("#si-faceid-status")).to_have_text("Welcome back, Faceid")
+    welcome = page.locator("#si-welcome")
+    expect(welcome).to_be_visible()   # storyboard frame 2, full screen for a beat
+    expect(welcome).to_contain_text("Welcome back, Faceid")
+    expect(welcome).to_contain_text("Signed in with Face ID. No password, no code by text.")
+    expect(welcome).to_contain_text("Your passkey stays on this")
+    assert welcome.bounding_box()["width"] == PHONE["width"] and welcome.bounding_box()["height"] == PHONE["height"]
     page.wait_for_url(f"{site}/family")
     expect(page.locator("#fam-who")).to_have_text(f"Signed in as {EMAIL}.")
 

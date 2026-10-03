@@ -99,7 +99,7 @@ def test_the_session_is_the_dev_sign_ins_session_shape(client, phone):
 def test_next_is_kept_local(phone):
     key, other = phone
     r, _ = face_id(other, key, next="https://evil.example/x")
-    assert r.json()["next"] == "/start"
+    assert r.json()["next"] == "/trip"
 
 
 def test_a_challenge_works_once(phone):

@@ -62,7 +62,13 @@
         next: button.getAttribute("data-next") || "/start", intent: button.getAttribute("data-intent") || ""
       }).then(function (j) {
         say("Welcome back, " + j.name, "ok");
-        setTimeout(function () { window.location.assign(j.next); }, 700);
+        var moment = document.getElementById("si-welcome");
+        if (moment) {   // storyboard frame 2: a full-screen welcome for a beat, then Today
+          document.getElementById("si-welcome-name").textContent = j.name;
+          document.getElementById("si-welcome-device").textContent = /iPhone/.test(navigator.userAgent) ? "iPhone" : "device";
+          moment.hidden = false;
+        }
+        setTimeout(function () { window.location.assign(j.next); }, 1200);
       });
     };
     var ask = function (mediation) {
