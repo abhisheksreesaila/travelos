@@ -118,7 +118,7 @@ def test_sign_out_asks_the_browser_to_forget_its_caches_and_storage(client):
     from tests.test_signin import sign_in
     sign_in(client)
     r = client.post("/signout", follow_redirects=False)
-    assert r.headers["clear-site-data"] == '"cache", "storage"'
+    assert r.headers["clear-site-data"] == '"storage"'
 
 
 def test_pages_carry_a_non_secret_per_person_cache_key_only_when_signed_in(client):

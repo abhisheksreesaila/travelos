@@ -315,7 +315,7 @@ def test_both_sign_out_paths_clear_the_site_data(client):
     for method, path in ((client.post, "/signout"), (client.post, "/logout"), (client.get, "/logout")):
         sign_in(client, "ari")
         r = method(path, follow_redirects=False)
-        assert r.status_code == 303 and r.headers["clear-site-data"] == '"cache", "storage"', path
+        assert r.status_code == 303 and r.headers["clear-site-data"] == '"storage"', path
 
 
 def test_the_install_files_are_public_signed_out(client):

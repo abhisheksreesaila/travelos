@@ -26,7 +26,7 @@ FONTS = (
 
 PAPER = "#FFF8EE"  # --paper / --ground: the manifest's colours
 THEME_COLORS = {"sunset": PAPER, "pacific": "#F4F9FF"}  # each theme's --ground, for the browser chrome
-CLEAR_SITE_DATA = '"cache", "storage"'
+CLEAR_SITE_DATA = '"storage"'  # not "cache": clearing the HTTP cache is the slow part of signing out (F-062); "storage" still drops the service worker and its caches
 
 
 def clear_site_data(response):
