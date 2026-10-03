@@ -130,10 +130,10 @@ def test_the_landing_search_fields_are_neutral_in_production_and_the_sample_trip
 
 def test_footer_links_are_only_real_destinations(real, client):
     footer = re.search(r"<footer.*?</footer>", client.get("/").text, re.S).group(0)
-    assert re.findall(r'href="([^"]*)"', footer) == ["/signin"]
+    assert re.findall(r'href="([^"]*)"', footer) == ["/signin", "/privacy", "/terms"]
     sign_in(client)
     footer = re.search(r"<footer.*?</footer>", client.get("/").text, re.S).group(0)
-    assert "href=" not in footer
+    assert re.findall(r'href="([^"]*)"', footer) == ["/privacy", "/terms"]  # only the legal pages (F-076)
 
 
 def test_the_workspace_is_labelled_a_preview_with_sample_prices(real, client):

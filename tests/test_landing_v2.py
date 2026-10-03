@@ -36,7 +36,7 @@ def test_other_pages_keep_their_header_nav(client):
 
 def test_footer_carries_the_links_that_left_the_header(client):
     footer = _tag(_get(client), "footer", "ga-footer")
-    assert _hrefs(footer) == ["/community", "/creators", "/signin"]
+    assert _hrefs(footer) == ["/community", "/creators", "/signin", "/privacy", "/terms"]
     other = _tag(_get(client, "/community"), "footer", "ga-footer")
     assert "/creators" not in other  # only the landing gets the extra links
 
@@ -48,7 +48,7 @@ def test_signed_in_visitor_sees_their_account_and_no_sign_in_link(client):
     assert "ga-account" in header and 'href="/family"' in header and "Sign out" in header
     assert "ga-nav" not in header
     footer = _tag(h, "footer", "ga-footer")
-    assert _hrefs(footer) == ["/community", "/creators"]
+    assert _hrefs(footer) == ["/community", "/creators", "/privacy", "/terms"]
 
 
 def test_headline_is_fork_a_getaway_with_the_gloss(client):

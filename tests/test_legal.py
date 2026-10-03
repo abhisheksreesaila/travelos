@@ -1,0 +1,45 @@
+"""F-076: /privacy and /terms are open, truthful, linked from the footer and the sign-in page."""
+
+import re
+
+import pytest
+
+PRIVACY_PHRASES = ["name, your email address and your profile picture", "trips, plans", "notes", "messages", "photos", "time and place", "phone numbers",
+                   "push subscriptions", "passkeys", "Only the family", "Nothing you add is public", "Google sign-in", "Railway", "OpenStreetMap",
+                   "place text only", "Apple and Google push services", "Gemini", "do not sell", "do not show ads", "deleted"]
+TERMS_PHRASES = ["as-is", "does not book anything", "does not take payments", "responsible for what you add", "remove content", "change GitAway or stop it",
+                 "without any warranty", "United States", "not legal advice"]
+
+
+@pytest.mark.parametrize("path,phrases", [("/privacy", PRIVACY_PHRASES), ("/terms", TERMS_PHRASES)])
+def test_page_open_signed_out_and_says_it(client, path, phrases):
+    r = client.get(path)
+    assert r.status_code == 200
+    for p in phrases:
+        assert p in r.text, p
+    assert "Effective October 3, 2026" in r.text
+    assert "not legal advice" in r.text
+
+
+@pytest.mark.parametrize("path", ["/privacy", "/terms"])
+def test_open_in_the_live_site_mode(client, monkeypatch, path):
+    monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
+    assert client.get(path).status_code == 200
+
+
+def test_contact_only_when_set(client, monkeypatch):
+    monkeypatch.delenv("GITAWAY_CONTACT_EMAIL", raising=False)
+    for path in ("/privacy", "/terms"):
+        t = client.get(path).text
+        assert "Ask the person who invited you" in t and "mailto:" not in t
+    monkeypatch.setenv("GITAWAY_CONTACT_EMAIL", "help@example.org")
+    for path in ("/privacy", "/terms"):
+        t = client.get(path).text
+        assert 'href="mailto:help@example.org"' in t and "Ask the person who invited you" not in t
+
+
+def test_footer_and_signin_link_to_both(client):
+    for path in ("/", "/signin", "/privacy"):
+        t = client.get(path).text
+        assert 'href="/privacy"' in t and 'href="/terms"' in t, path
+    assert re.search(r'id="si-legal".*?href="/terms".*?href="/privacy"', client.get("/signin").text, re.S)
