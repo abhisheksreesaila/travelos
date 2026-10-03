@@ -19,9 +19,9 @@ from starlette.responses import RedirectResponse
 from gitaway import access, catalog, members, pickers, session as ses, tripcal as cal, tripday as td
 from gitaway.icons import icon
 from gitaway.layout import avatar, join_note, styles, trip_field
-from gitaway.pages import calendar as calui, rides as rides_ui
+from gitaway.pages import calendar as calui, morning as morning_ui, rides as rides_ui
 
-HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/trip.css"),)
+HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/trip.css"), *morning_ui.HEAD)
 TABS = (("today", "Today"), ("days", "All days"), ("notes", "Notes"))
 
 
@@ -151,6 +151,7 @@ def today_panel(v):
     if cal.is_imported(v["b"]) and any(x.kind in ("flight", "hotel", "car") for x in v["items"]):  # where it was booked is said once, quietly
         parts.append(Div(icon("lock", 13, 2.4), Span(f"Booked elsewhere · {cal.plan_of(v['b']).booked_on}"), cls="tp-elsewhere"))
     parts.append(stay_card(v))
+    parts.append(morning_ui.card(v["zone"]))  # F-066: the morning plan push, drawn by its own module
     parts.append(note_strip(v))
     parts.append(A(icon("arrow-right", 18, 2.4), "Open the full calendar", href="/calendar?view=whole", cls="tp-full"))
     return Section(*parts, id="tp-panel-today", cls="tp-panel", role="tabpanel", aria_label="Today", data_title=_title_today(v))

@@ -23,6 +23,8 @@ os.environ["DB_TYPE"] = "SQLITE"
 os.environ["DB_NAME"] = "app_host"
 for _key in ("GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"):
     os.environ.pop(_key, None)
+for _key in ("GITAWAY_VAPID_PUBLIC", "GITAWAY_VAPID_PRIVATE", "GITAWAY_VAPID_SUBJECT"):
+    os.environ[_key] = ""  # empty, not removed: a .env found above the folder must not switch the real push sender on in a test run (F-066)
 
 @pytest.fixture(autouse=True)
 def _fixed_today(monkeypatch):

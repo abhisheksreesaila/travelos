@@ -18,6 +18,7 @@ OPEN_FOR_VIEWERS = {
     "/trips/switch", "/family/switch", "/family/stay",       # which trip I look at, which family I work in, dismissing the joined notice
     "/creators", "/creators/draft", "/creators/finish",       # a creator draft is the person's own, published to the community
     "/join/{token}",                                          # using an invite link: joining another family
+    "/trip/morning", "/trip/morning/time", "/trip/morning/off", "/trip/morning/status",   # a person's own phone reminder (F-066)
 }
 ADMIN_ONLY = {"/family/invite", "/family/invite/revoke", "/family/role", "/family/remove", "/trip/delete"}
 

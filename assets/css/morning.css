@@ -1,0 +1,23 @@
+/* The Morning plan card on the phone Today view (F-066). Sizes are rem off the one root; phone touch targets are 2.75rem. */
+.mp { border-radius: 1.375rem; background: var(--card); box-shadow: var(--shadow-sm); padding: 0.875rem; display: flex; flex-direction: column; gap: 0.75rem; }
+.mp-row { display: flex; gap: 0.75rem; align-items: center; }
+.mp-ico { width: 3rem; height: 3rem; border-radius: 0.875rem; background: var(--sun-tint); color: var(--sun-ink); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.mp-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.mp-install { margin: 0; padding: 0.75rem 0.875rem; border-radius: var(--r-md); background: var(--sky-tint); font-weight: 800; font-size: max(var(--text-min), 0.9375rem); display: flex; flex-direction: column; gap: 0.25rem; }
+.mp-how { font-weight: 600; color: var(--ink-2); font-size: max(var(--text-min), 0.8125rem); }
+.mp-blocked { margin: 0; padding: 0.75rem 0.875rem; border-radius: var(--r-md); background: var(--bubble-tint); font-weight: 700; font-size: max(var(--text-min), 0.875rem); }
+.mp-error { margin: 0; color: var(--coral-deep); font-weight: 800; font-size: max(var(--text-min), 0.875rem); }
+
+/* the switch */
+.mp-switch { position: relative; flex-shrink: 0; width: 3.5rem; min-height: 2.75rem; padding: 0; border: 0; background: transparent; cursor: pointer; }
+.mp-switch::before { content: ""; position: absolute; left: 0; top: 50%; width: 3.5rem; height: 2rem; margin-top: -1rem; border-radius: var(--r-pill); background: #D9D4E4; transition: background 0.15s var(--ease-out); }
+.mp-knob { position: absolute; left: 0.25rem; top: 50%; width: 1.5rem; height: 1.5rem; margin-top: -0.75rem; border-radius: var(--r-pill); background: #FFFFFF; box-shadow: var(--shadow-sticker); transition: transform 0.15s var(--ease-out); }
+.mp-switch.is-on::before { background: var(--mint); }
+.mp-switch.is-on .mp-knob { transform: translateX(1.5rem); }
+@media (prefers-reduced-motion: reduce) { .mp-switch::before, .mp-knob { transition: none; } }
+
+/* the time */
+.mp-time { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; padding-top: 0.75rem; border-top: 0.0625rem solid var(--line); }
+.mp-time label { display: flex; align-items: center; gap: 0.75rem; font-weight: 800; flex-wrap: wrap; }
+.mp-zone { font-size: max(var(--text-min), 0.8125rem); font-weight: 700; color: var(--ink-3); }
+.mp [hidden] { display: none !important; }
