@@ -5,9 +5,10 @@ and passes it in. "Today" is `catalog.today_in(zone)` and the minute of the day 
 tests (via `catalog.now_utc`). Nothing here reads a confirmation number: the cards carry titles, times and places only.
 """
 
+import importlib
 import re
 from dataclasses import dataclass, replace
-from urllib.parse import quote_plus
+from urllib.parse import quote, quote_plus
 from zoneinfo import ZoneInfo
 
 from gitaway import catalog, tripcal as cal, zones
@@ -60,6 +61,37 @@ def maps_url(place, ua="") -> str:
     """Apple Maps on Apple devices, Google Maps elsewhere. `place` is a name or address; nothing else goes in the link."""
     q = quote_plus(place)
     return f"https://maps.apple.com/?q={q}" if _APPLE.search(ua or "") else f"https://www.google.com/maps/search/?api=1&query={q}"
+
+
+def uber_url(address) -> str:
+    """Uber's keyless deep link: pickup is the phone's own location, the dropoff address is filled in. '' when there is no address."""
+    return f"https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[formatted_address]={quote(address, safe='')}" if address else ""
+
+
+def drive_minutes(origin, destination):
+    """Minutes by car from one place to another, or None when not known. Asks gitaway.geo.drive_minutes (F-068) when that module exists."""
+    try:
+        geo = importlib.import_module("gitaway.geo")
+        fn = geo.drive_minutes
+    except (ImportError, AttributeError):
+        return None
+    try:
+        m = fn(origin, destination)
+    except Exception:  # a routing service that is down must not break Today
+        return None
+    return int(m) if isinstance(m, (int, float)) and not isinstance(m, bool) and m > 0 else None
+
+
+def leave_by(item, origin, minute):
+    """(leave-by minute of the day, drive minutes, minutes left to leave) for an item reached from `origin`, or None when the drive time is unknown.
+    `minute` is the minute of the day now, in the item's own zone."""
+    if not (item and item.place and origin):
+        return None
+    m = drive_minutes(origin, item.place)
+    if m is None:
+        return None
+    at = item.start - m
+    return at, m, at - minute
 
 
 def until(minutes) -> str:

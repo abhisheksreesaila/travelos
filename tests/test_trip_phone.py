@@ -140,17 +140,18 @@ def test_directions_go_to_apple_or_google_maps_with_the_place_and_never_a_confir
         assert secret not in apple and secret not in google
 
 
-def test_a_ride_still_to_schedule_offers_get_an_uber_and_a_scheduled_one_offers_your_uber(client, at):
+def test_a_ride_still_to_schedule_is_an_offer_card_and_a_scheduled_one_links_to_its_ride(client, at):
+    """F-067: the up-next card's Uber is the keyless deep link; scheduling the simulated Uber moved to its card in the day's list."""
     from tests.test_rides import schedule
     book(client, f="f1", h="h1", c="none")
     at(date(2026, 10, 16), "06:00")
     html = client.get("/trip").text
-    uber = re.search(r'<a[^>]*id="tp-uber"[^>]*>(.*?)</a>', html, re.S)
-    assert uber and "Get an Uber" in uber.group(1) and 'href="/rides/new?' in uber.group(0).replace("&amp;", "&")
+    offer = re.search(r'<a[^>]*class="tp-card [^"]*tp-offer[^"]*"[^>]*>', html)
+    assert offer and 'href="/rides/new?' in offer.group(0).replace("&amp;", "&")
     assert schedule(client, "arrive", pick="f=f1&h=h1&c=none").status_code == 303
     html = client.get("/trip").text
-    uber = re.search(r'<a[^>]*id="tp-uber"[^>]*>(.*?)</a>', html, re.S)
-    assert uber and "Your Uber" in uber.group(1) and 'href="/rides/r1"' in uber.group(0)
+    ride = re.search(r'<a[^>]*class="tp-card [^"]*tp-ride[^"]*"[^>]*>', html)
+    assert ride and 'href="/rides/r1"' in ride.group(0)
 
 
 def test_the_arrival_day_has_a_flight_card_and_a_hotel_card_and_the_last_day_a_checkout_card(client, at):

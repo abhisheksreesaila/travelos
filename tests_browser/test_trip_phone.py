@@ -135,13 +135,13 @@ def test_the_tab_bar_and_the_plus_stay_inside_the_screen_and_the_plus_clears_the
     page = phone()
     page.goto(base_url + "/trip")
     vh = PHONE["height"]
-    bar = page.locator(".tp-tabs").bounding_box()
+    bar = page.locator(".ph-tabs").bounding_box()
     plus = page.locator("#tp-add").bounding_box()
     assert bar["y"] + bar["height"] <= vh + 0.5 and bar["x"] >= 0 and bar["x"] + bar["width"] <= PHONE["width"] + 0.5
     assert plus["y"] + plus["height"] <= bar["y"] and plus["x"] + plus["width"] <= PHONE["width"]
     page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
     last = page.locator(".tp-full").bounding_box()
-    assert last["y"] + last["height"] <= page.locator(".tp-tabs").bounding_box()["y"] + 0.5  # the end of the page is not hidden behind the bar
+    assert last["y"] + last["height"] <= page.locator(".ph-tabs").bounding_box()["y"] + 0.5  # the end of the page is not hidden behind the bar
 
 
 def test_reduced_motion_stops_the_pulse_and_normal_motion_pulses(phone, base_url, pin):
