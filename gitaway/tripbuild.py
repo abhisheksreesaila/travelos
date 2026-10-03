@@ -24,7 +24,7 @@ DESTINATION_AIRPORT = {"los angeles": "LAX", "la": "LAX", "burbank": "BUR", "lon
 
 LEG = ("airline", "number", "from", "to", "depart_date", "depart_time", "arrive_date", "arrive_time", "confirmation", "seats")
 HOTEL = ("name", "address", "check_in_date", "check_in_time", "check_out_date", "check_out_time", "confirmation", "room", "phone", "rooms")  # `rooms` has no question: it rides along from an import
-CAR = ("company", "pickup_place", "pickup_date", "pickup_time", "dropoff_place", "dropoff_date", "dropoff_time", "confirmation", "car")
+CAR = ("company", "pickup_place", "pickup_date", "pickup_time", "dropoff_place", "dropoff_date", "dropoff_time", "confirmation", "car", "phone")
 SCALARS = ("title", "destination", "start", "end", "adults", "flying", "stay", "rent", "notes", "booked_on", "itinerary", "timezone")
 CARRIED = ("knames", "aages")  # kids' names and adults' ages: no question for them, they ride along from an import
 
@@ -331,6 +331,7 @@ def check_car(draft):
     _limit(errors, "car_dropoff_place", c["dropoff_place"], "Where you drop it off", 80, True)
     _limit(errors, "car_confirmation", c["confirmation"], "The car’s confirmation", 30)
     _limit(errors, "car_car", c["car"], "The car type", 40)
+    _limit(errors, "car_phone", c["phone"], "The car’s phone", 30)
     pick, drop = _when(errors, "car_", c, "pickup", "pick-up"), _when(errors, "car_", c, "dropoff", "drop-off")
     if pick and drop and drop <= pick:
         errors["car_dropoff_date"] = "The car has to be dropped off after it is picked up."
@@ -413,7 +414,7 @@ def from_plan(plan) -> dict:
     if plan.rental:
         c = plan.rental
         d["car"] = {"company": c.company, "pickup_place": c.pickup_place, "pickup_date": _stamp(c.pickup)[0], "pickup_time": _stamp(c.pickup)[1],
-                    "dropoff_place": c.dropoff_place, "dropoff_date": _stamp(c.dropoff)[0], "dropoff_time": _stamp(c.dropoff)[1], "confirmation": c.confirmation, "car": c.car}
+                    "dropoff_place": c.dropoff_place, "dropoff_date": _stamp(c.dropoff)[0], "dropoff_time": _stamp(c.dropoff)[1], "confirmation": c.confirmation, "car": c.car, "phone": c.phone}
     return d
 
 
@@ -437,7 +438,7 @@ def build(draft) -> ti.Plan:
     rental = None
     if draft.get("rent") == "yes":
         c = draft["car"]
-        rental = ti.Rental(c["company"], c["pickup_place"], _at(c["pickup_date"], c["pickup_time"]), c["dropoff_place"], _at(c["dropoff_date"], c["dropoff_time"]), c["confirmation"], c["car"])
+        rental = ti.Rental(c["company"], c["pickup_place"], _at(c["pickup_date"], c["pickup_time"]), c["dropoff_place"], _at(c["dropoff_date"], c["dropoff_time"]), c["confirmation"], c["car"], c["phone"])
     return ti.Plan(title=draft["title"], destination=draft["destination"], start=_day(draft["start"]), end=_day(draft["end"]), booked_on=draft.get("booked_on") or "elsewhere",
                    itinerary=draft.get("itinerary", ""), travelers=tuple(people), legs=legs, hotels=hotels, rental=rental, notes=draft.get("notes", "").strip(), timezone=zones.valid(draft.get("timezone", "")) or "")
 

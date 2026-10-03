@@ -276,6 +276,11 @@ def _loop(stop, interval, send, clock):
             run_once(clock(), send)
         except Exception as e:  # the loop outlives any one bad minute
             log.warning("morning plan loop: %s", type(e).__name__)
+        try:
+            from gitaway import familythread  # here: familythread imports this module
+            familythread.flush_due(send=send)  # F-070: the family thread's waiting updates, told in one push per person
+        except Exception as e:
+            log.warning("family thread loop: %s", type(e).__name__)
 
 
 def start(interval=60, send=None, clock=None):

@@ -67,7 +67,11 @@ def save(session, plan, token=None, replace=None) -> str:
         with familydb.transaction(db):
             familydb.lock(db)
             if replace:
+                was = _stored(db, replace)
                 trip_id = _replace(db, replace, plan, doc)
+                if _stored(db, trip_id) != was:   # a save that changed nothing says nothing to the family
+                    from gitaway import familythread  # here: familythread -> morning -> tripcal
+                    familythread.change(session, fam, f"{familythread.first_name(fam.traveler)} updated the trip details: {plan.title}", trip_id=trip_id, action="change")
             else:
                 trip_id = token or new_token()
                 if not familydb.trip(db, trip_id):
@@ -111,6 +115,11 @@ def rides_to_retime(session, trip_id, plan) -> int:
         return len(_retimes(fam.db, trip_id, _ride_key(trip_id, tripimport.from_doc(json.loads(old["doc"]))), plan)) if old else 0
 
 
+def _stored(db, trip_id):
+    """What is saved for an imported trip (its row and document), to tell whether a correction changed anything."""
+    return familydb.row(db, "SELECT t.title, t.params, t.depart, t.return_on, t.timezone, i.doc FROM trips t JOIN trip_imports i ON i.trip_id = t.id WHERE t.id = :t", t=trip_id)
+
+
 def _replace(db, trip_id, plan, doc) -> str:
     """Swap the document and dates of the imported trip `trip_id`; its plans, notes, friends and rides stay (the rides follow the new picks' key)."""
     old = familydb.row(db, "SELECT t.params, i.doc FROM trips t JOIN trip_imports i ON i.trip_id = t.id WHERE t.id = :t AND t.source = 'imported'", t=trip_id)
@@ -144,7 +153,7 @@ def delete(session, trip_id) -> bool:
                 return False
             key = _ride_key(trip_id, tripimport.from_doc(json.loads(old["doc"])))
             booking = familydb.booking_for_trip(db, trip_id)
-            for table in ("activities", "notes", "cal_state", "friends"):
+            for table in ("activities", "notes", "cal_state", "friends", "thread"):   # the family thread of the trip goes too (F-070)
                 familydb.run(db, f"DELETE FROM {table} WHERE trip_id = :t", t=trip_id)
             familydb.run(db, "DELETE FROM rides WHERE trip_id = :t OR key = :k", t=trip_id, k=key)
             familydb.run(db, "DELETE FROM trip_imports WHERE trip_id = :t", t=trip_id)

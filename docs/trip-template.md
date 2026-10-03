@@ -74,6 +74,7 @@ car:                                 # optional; delete if not renting
   dropoff: LAX, 2026-10-20 12:00
   confirmation: "H1234567"
   car: Midsize SUV                    # optional
+  phone: "+1 310 555 0199"            # optional: the rental counter, shown on Help
 
 notes: |
   Anything else: allergies, parking codes, who's picking up whom.
