@@ -276,7 +276,7 @@ Found while reviewing F-045: run in reverse order, tests/test_family_storage.py:
 # Go live (brief: docs/briefs/go-live.md, approved 2026-10-01)
 
 ## F-048 Deploy to Railway [blocked]
-Blocked: in Railway project "gitaway" set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET on the web service, and add https://web-production-2d117.up.railway.app/auth/callback as a redirect URI in the Google console; then say go.
+Blocked: do the one-time Google console steps in ~/Projects/dev-tools/README.md (ends with the client file saved at ~/.config/oauth/google-local.json), then say go.
 Live: https://web-production-2d117.up.railway.app (deployed 2026-10-01; volume at /data; secret set)
 Needs: none
 - [x] the app builds and runs on Railway (pixi-based image), with all databases on a persistent volume (working directory on the volume), assets resolved from the code folder
