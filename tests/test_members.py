@@ -54,6 +54,15 @@ def test_the_owner_invites_an_email_and_gets_a_link_to_copy(owner):
     assert inv["role"] == "viewer" and inv["state"] == "pending"
 
 
+def test_the_invite_form_says_plainly_that_gitaway_sends_no_email_and_each_invite_has_a_share_button(owner):
+    sam = addr()
+    inv = invite(owner, sam, "editor")
+    page = owner.get("/family").text
+    assert "GitAway doesn't send email" in page and "share the link yourself" in page
+    assert re.search(r'<button[^>]*data-share="%s"[^>]*>Share invite</button>' % re.escape(f"http://testserver/join/{inv['token']}"), page)
+    assert f"Sign in with {sam} to see the plan." in page
+
+
 def test_the_email_is_lowercased_and_gmail_dots_and_plus_tags_are_one_mailbox(owner):
     inv = invite(owner, "Sam.Kim+trips@Gmail.com", "editor")
     assert inv["email"] == "sam.kim+trips@gmail.com"

@@ -99,3 +99,37 @@ def test_the_family_page_has_no_sideways_scroll_at_the_narrow_widths(contexts, b
         page = owner_page(contexts, base_url, {"width": width, "height": 800})
         invite_from_page(page, f"narrow{width}@{uuid.uuid4().hex[:8]}.example.com", "viewer")
         assert no_sideways_scroll(page), width
+
+
+SHARE_STUB = "window.__shared = []; navigator.share = (d) => { window.__shared.push(d); return Promise.resolve(); }; 0"
+
+
+def test_share_invite_opens_the_share_sheet_with_a_short_message_and_the_link(contexts, base_url):
+    page = owner_page(contexts, base_url, PHONE)
+    sam = f"sam.kim@{uuid.uuid4().hex[:8]}.example.com"
+    link = invite_from_page(page, sam, "editor")
+    page.evaluate(SHARE_STUB)
+    page.get_by_role("button", name="Share invite").click()
+    shared = page.evaluate("window.__shared")
+    assert shared == [{"title": "Join our trip on GitAway", "text": f"Join our trip on GitAway. Sign in with {sam} to see the plan.", "url": link}]
+    assert no_sideways_scroll(page)
+
+
+def test_share_invite_copies_the_link_and_says_copied_where_sharing_is_not_available(contexts, base_url):
+    ctx = contexts(DESKTOP)
+    ctx.grant_permissions(["clipboard-read", "clipboard-write"], origin=base_url)
+    ctx.request.post(f"{base_url}/signin", form={"email": "ari.rivera@example.com", "next": "/", "intent": "pay"}, max_redirects=0)
+    ctx.request.post(f"{base_url}/pay", form=SAMPLE, max_redirects=0)
+    page = ctx.new_page()
+    page.goto(f"{base_url}/family")
+    link = invite_from_page(page, f"sam.kim@{uuid.uuid4().hex[:8]}.example.com", "viewer")
+    page.evaluate("Object.defineProperty(navigator, 'share', {value: undefined, configurable: true}); 0")
+    button = page.locator("[data-share]")  # by attribute: its name changes to Copied
+    button.click()
+    expect(button).to_have_text("Copied")
+    assert page.evaluate("navigator.clipboard.readText()") == link
+
+
+def test_the_invite_form_explains_that_no_email_is_sent(contexts, base_url):
+    page = owner_page(contexts, base_url, DESKTOP)
+    expect(page.locator("#fam-noemail")).to_contain_text("GitAway doesn't send email")

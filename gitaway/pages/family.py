@@ -78,6 +78,8 @@ def _invite_row(inv, request):
     return Li(Div(Span(inv["email"], cls="fam-name"), Span(members.ROLE_WORDS[inv["role"]], cls="tag fam-role-tag", data_role=inv["role"]),
                   Span(_days_left(inv["expires_at"]), cls="fam-joined"), cls="fam-invhead"),
               Div(Input(type="text", value=link, readonly=True, aria_label=f"Invite link for {inv['email']}", cls="fam-link", data_link=""),
+                  Button("Share invite", type="button", data_share=link, data_share_title="Join our trip on GitAway",
+                         data_share_text=f"Join our trip on GitAway. Sign in with {inv['email']} to see the plan.", cls="btn btn-sm btn-primary fam-btn"),
                   Button("Copy link", type="button", data_copy=link, cls="btn btn-sm fam-btn"),
                   Form(Input(type="hidden", name="id", value=inv["id"]), Button("Revoke", type="submit", cls="btn btn-sm fam-btn fam-remove"),
                        action="/family/invite/revoke", method="post", cls="fam-inline"), cls="fam-linkrow"),
@@ -97,7 +99,7 @@ def family_page(request, session, error="", status=200, email="", role="editor")
                        aria_labelledby="fam-switch-h", id="fam-switcher", cls="fam-sec") if len(mine) > 1 else ""
     invite_form = Section(
         H2("Invite family", id="fam-invite-h"),
-        P("Type the Gmail address they sign in with. You get a link to send them; when they sign in with that address they join.", cls="fam-sub"),
+        P("GitAway doesn't send email. Enter the Gmail address they'll sign in with, then share the link yourself, in Messages, WhatsApp or however you like. When they sign in with that address they join.", cls="fam-sub", id="fam-noemail"),
         Div(error, role="alert", id="fam-error", cls="fam-error") if error else "",
         Form(Label(Span("Email", cls="fam-label"), Input(type="email", name="email", id="fam-email", value=email, required=True, placeholder="sam@gmail.com", autocomplete="off",
                                                          **({"aria_invalid": "true", "aria_describedby": "fam-error"} if error else {})), cls="fam-field"),
