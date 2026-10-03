@@ -5,6 +5,7 @@ from datetime import date
 
 import pytest
 
+from gitaway.pages import trip as trip_page
 from gitaway import catalog, geo, tripday as td, tripgeo
 from tests.test_map import Maps, trip_with_plans
 from tests.test_trip_import import TEMPLATE, no_car, imported, visible
@@ -141,6 +142,7 @@ def test_a_departure_flight_gets_leave_by_with_a_two_hour_margin_and_no_airport_
 def test_an_international_departure_asks_for_three_hours(client, maps):
     from gitaway import zones
     assert zones.international("LAX", "LHR") and zones.international("SFO", "YVR")
+    assert not zones.international("MEX", "CUN") and not zones.international("YYZ", "YVR")  # one country, several zones
     assert not zones.international("LAX", "SFO") and not zones.international("LAX", "ZZZ")  # an airport not in the table is treated as domestic
     assert td.flight_margin("LAX", "SFO") == 120 and td.flight_margin("LAX", "LHR") == 180
 
@@ -160,3 +162,24 @@ def test_after_landing_the_car_pickup_is_up_next_with_no_drive_line(client, maps
     at(monkeypatch, date(2026, 10, 16), 9 * 60 + 40)  # 9:40, after landing
     html = text(client.get("/trip").text)
     assert "Pick up Hertz car" in html and "min drive" not in html
+
+
+def test_a_landing_never_gets_leave_by_even_when_reached_from_a_stay(monkeypatch):
+    from types import SimpleNamespace
+    for flight_id in ("b-out", "b-leg1-a", "b-back"):
+        item = td.Item(id=flight_id, start=600, end=700, title="Alaska Airlines AS 1 · SFO → LAX", kind="flight", label="Flight", tint="sky", icon="plane", sub="", place="SFO airport", zone="z")
+        v = dict(items=[item], stay_place="Hotel, LA", stay_before="Hotel, LA", clocks={"z": (0, 0)})
+        monkeypatch.setattr(td, "drive_minutes", lambda a, b: 25)
+        got = trip_page.leave_line(v, SimpleNamespace(item=item))
+        assert bool(got) == (flight_id == "b-back"), flight_id  # only a flight you leave on is driven to
+
+
+def test_an_international_departure_says_be_there_three_hours_early_and_leaves_earlier(client, maps, monkeypatch):
+    abroad = (no_car().replace("depart: 2026-10-20 14:10", "depart: 2026-10-20 18:10").replace("arrive: 2026-10-20 15:37", "arrive: 2026-10-21 12:37")
+              .replace("to: SFO\n    depart: 2026-10-20 18:10", "to: LHR\n    depart: 2026-10-20 18:10"))
+    imported(client, abroad)
+    client.get("/trip")
+    settle()
+    at(monkeypatch, date(2026, 10, 20), 12 * 60 + 31)
+    html = text(client.get("/trip?day=4").text)
+    assert "Leave by 2:45 PM 25 min drive" in html and "be there 3 h early" in html  # 6:10 PM minus 3 h minus the drive

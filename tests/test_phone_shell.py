@@ -142,7 +142,7 @@ def test_the_uber_link_carries_the_destination_and_nothing_else():
 
 
 def test_drive_minutes_is_unknown_without_the_geo_module_and_asks_it_when_present(geo, monkeypatch):
-    monkeypatch.delitem(sys.modules, "gitaway.geo", raising=False)
+    monkeypatch.setitem(sys.modules, "gitaway.geo", None)  # an import of it fails, as if the module did not exist
     assert td.drive_minutes("a", "b") is None
     geo(18)
     assert td.drive_minutes("a", "b") == 18
@@ -181,7 +181,7 @@ def test_up_next_has_directions_and_an_uber_deep_link_with_the_destination(clien
 
 
 def test_no_leave_by_line_while_the_drive_time_is_unknown(client, at, monkeypatch):
-    monkeypatch.delitem(sys.modules, "gitaway.geo", raising=False)
+    monkeypatch.setitem(sys.modules, "gitaway.geo", None)  # an import of it fails, as if the module did not exist
     html = _today(client, at)
     assert 'id="tp-leave"' not in html and "Leave by" not in html
 
@@ -219,7 +219,7 @@ def test_what_f065_added_is_still_there(client, at):
 
 def test_uber_link_adds_coordinates_only_when_geo_has_them_cached(client, at, monkeypatch):
     base = "https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[formatted_address]=Griffith%20Observatory%2C%20Los%20Angeles"
-    monkeypatch.delitem(sys.modules, "gitaway.geo", raising=False)
+    monkeypatch.setitem(sys.modules, "gitaway.geo", None)  # an import of it fails, as if the module did not exist
     assert td.cached_coords("x") is None
     html = _today(client, at)
     assert unescape(tag(html, "id", "tp-uber")["href"]) == base

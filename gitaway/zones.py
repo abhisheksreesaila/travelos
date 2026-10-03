@@ -65,12 +65,13 @@ AIRPORTS = {code: zone for zone, codes in _BY_ZONE.items() for code in codes.spl
 
 _US_ZONES = {_PT, _MT, _CT, _ET, "America/Phoenix", "America/Anchorage", "Pacific/Honolulu"}
 _CANADA_ZONES = {"America/Toronto", "America/Vancouver", "America/Edmonton"}
+_MEXICO_ZONES = {"America/Mexico_City", "America/Cancun"}
 
 
 def country(code) -> str:
-    """A country key for an airport code (F-075): "US" and "CA" by their zones, otherwise the zone itself (one zone per country in the table). "" for an airport not in the table."""
+    """A country key for an airport code (F-075): "US", "CA" and "MX" by their zones (a country has several), otherwise the zone itself (one zone per country in the table). "" for an airport not in the table."""
     zone = AIRPORTS.get((code or "").strip().upper())
-    return "" if not zone else "US" if zone in _US_ZONES else "CA" if zone in _CANADA_ZONES else zone
+    return "" if not zone else "US" if zone in _US_ZONES else "CA" if zone in _CANADA_ZONES else "MX" if zone in _MEXICO_ZONES else zone
 
 
 def international(a, b) -> bool:
