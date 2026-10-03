@@ -8,6 +8,8 @@ python = "3.12.*"
 nbdev = "*"  # fh-saas imports nbdev.showdoc at load time but does not declare it
 pyyaml = ">=6.0.3,<7"
 pypdf = ">=6.19.0,<7"
+pillow = ">=12.3.0,<13"
+pillow-heif = ">=1.8.0,<2"
 
 [pypi-dependencies]
 python-fasthtml = ">=0.14.13"

@@ -7,22 +7,24 @@ POST /trip/family/message          write a message (any member, viewers too: see
 POST /trip/family/quiet            turn this person's pushes for the thread off (quiet=1) or on (quiet=0)
 
 The two POSTs are on gitaway.access.OPEN_POSTS (and tests/test_roles.py) on purpose: they change nothing in the family's plans.
-A photo item is a placeholder kind F-071 fills; a photo card is drawn when the item carries an image address.
+A photo card is drawn when the item carries an image address (F-071 posts them). The tab has a Chat / Photos switch (`?view=photos` opens the
+Photos view, gitaway/pages/photos.py, which also registers the photo routes) and a camera button in the compose row.
 """
 
 import hashlib
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from fasthtml.common import Button, Div, Form, Img, Input, Link, P, Span, to_xml
+from fasthtml.common import A, Button, Div, Form, Img, Input, P, Span, to_xml
 from starlette.responses import JSONResponse, PlainTextResponse, RedirectResponse, Response
 
 from gitaway import familythread, session as ses
 from gitaway.icons import icon
+from gitaway.pages import photos as photos_ui
 
 TITLE = "Family"
-HEAD = (Link(rel="stylesheet", href="/assets/css/morning.css"), Link(rel="stylesheet", href="/assets/css/thread.css"))
-SCRIPTS = ("/assets/js/thread.js",)
+HEAD = photos_ui.HEAD
+SCRIPTS = ("/assets/js/thread.js", "/assets/js/photos.js")
 POLL_MS = 5000
 QUIET_ON = "Quiet: no notifications from the family thread."
 QUIET_OFF = "Everyone gets a notification when the plan changes."
@@ -67,12 +69,20 @@ def fragment(its, me, zone):
     return [v for v in (item_view(it, me, zone) for it in its) if v != ""]
 
 
+def _switch(view):
+    on = lambda v: "true" if view == v else "false"  # noqa: E731
+    return Div(A("Chat", href="/trip/family", id="fam-chat", cls="fam-seg", data_v="chat", aria_current=on("chat")),
+               A("Photos", href="/trip/family?view=photos", id="fam-photos", cls="fam-seg", data_v="photos", aria_current=on("photos")),
+               cls="fam-switch", role="group", aria_label="Family view", id="famseg")
+
+
 def content(request, session):
+    view = "photos" if request.query_params.get("view") == "photos" else "chat"
     its = familythread.items(session)
     me, zone = ses.current_traveler(session).id, ses.trip_zone(session)
     last = its[-1]["n"] if its else 0
     quiet = familythread.quiet(session)
-    return Div(
+    chat = Div(
         Div(Span(icon("bell", 18, 2.2), cls="ft-bell", aria_hidden="true"),
             Span(QUIET_ON if quiet else QUIET_OFF, id="ft-quiet-text", cls="ft-quiet-text", data_on=QUIET_ON, data_off=QUIET_OFF),
             Form(Input(type="hidden", name="quiet", value="0" if quiet else "1", id="ft-quiet-value"),
@@ -82,10 +92,14 @@ def content(request, session):
         Div(*fragment(its, me, zone), id="ft-thread", cls="ft-thread", data_last=str(last), data_poll=str(POLL_MS), role="log", aria_live="polite", aria_label="Family thread"),
         P("No messages yet. Say hello, or change a plan and it shows up here.", id="ft-empty", cls="ft-empty", hidden=bool(its)),
         Form(Input(type="text", name="text", id="ft-text", maxlength=str(familythread.MAX_MESSAGE), placeholder="Message the family", autocomplete="off", aria_label="Message the family", cls="ft-input", required=True),
+             Button(icon("camera", 20, 2.2), Span("Take a photo", cls="sr-only"), type="button", id="ft-camera", cls="ft-round", data_pick="camera"),
              Button(icon("arrow-right", 20, 2.4), Span("Send", cls="sr-only"), type="submit", id="ft-send", cls="ft-send"),
              method="post", action="/trip/family/message", id="ft-compose", cls="ft-compose"),
         P("", id="ft-error", cls="ft-error", role="alert", hidden=True),
-        id="ft", cls="ft")
+        id="ft-chat", cls="ft-panel", data_view="chat", hidden=view != "chat")
+    return Div(_switch(view), P("", id="ph-status", cls="fp-status", role="status", hidden=True), chat,
+               photos_ui.view(session, hidden=view != "photos", error=request.query_params.get("error", "")[:200] if view == "photos" else ""), photos_ui.pickers(),
+               id="ft", cls="ft", data_view=view)
 
 
 def _signed_in(session):
@@ -101,6 +115,8 @@ def _new_items(session, since):
 
 
 def register(app):
+    photos_ui.register(app)
+
     @app.get("/trip/family/thread")
     def poll(session, since: int = 0):
         return _new_items(session, since) if _signed_in(session) else Response(status_code=401)
