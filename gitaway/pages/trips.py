@@ -7,7 +7,7 @@ from fasthtml.common import A, Div, H1, P, Section
 from fasthtml.core import FtResponse
 from starlette.responses import RedirectResponse
 
-from gitaway import forks as forks_model, session as ses
+from gitaway import forks as forks_model, session as ses, showcase
 from gitaway.itinerary_view import itinerary_page
 from gitaway.layout import page
 
@@ -19,7 +19,7 @@ def not_found():
             Div(
                 H1("This trip wandered off"),
                 P("We couldn't find that itinerary. It may have been renamed, or the link is missing a piece."),
-                A("Find another trip", href="/community", cls="btn btn-primary"),
+                A("Find another trip", href="/community", cls="btn btn-primary") if showcase.on() else A("Back home", href="/", cls="btn btn-primary"),
             ),
             cls="ga-soon ga-wrap",
         ),

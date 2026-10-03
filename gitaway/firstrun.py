@@ -7,7 +7,7 @@ nothing to show a brand-new family (the start page, the calendar, the forks page
 
 from fasthtml.common import A, Div, H2, P, Section, Span
 
-from gitaway import session as ses
+from gitaway import session as ses, showcase
 from gitaway.icons import icon
 
 PLAN = "/start"
@@ -37,11 +37,12 @@ def _import_path():
 
 def paths(plan_href=PLAN):
     """The three ways to begin: a plain list of links, so it works without JavaScript."""
+    community = [_path(COMMUNITY, "fork", "bubble", "Browse community trips", "Real trips from travelers and creators. Fork one and make it yours.", "Take a look")] if showcase.on() else []
     return Div(
         _path(plan_href, "plane", "sun", "Plan a trip", "Pick a place and dates. We line up flights, a stay and a car with one honest total.", "Start planning"),
         _import_path(),
-        _path(COMMUNITY, "fork", "bubble", "Browse community trips", "Real trips from travelers and creators. Fork one and make it yours.", "Take a look"),
-        cls="fr-paths")
+        *community,
+        cls="fr-paths" + ("" if community else " fr-two"))
 
 
 def welcome(title="Welcome to GitAway", lede="Your family has no trips yet, so this is the fun part. Pick a way to begin.", plan_href=PLAN, heading=H2, eyebrow="FIRST TRIP"):

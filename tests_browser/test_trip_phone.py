@@ -75,7 +75,7 @@ def test_the_plus_adds_a_plan_in_two_taps_and_the_calendar_has_it(phone, base_ur
     page.click("#tp-save")  # tap two
     page.wait_for_url("**/trip?day=1&new=*")
     expect(page.locator("#tp-toast")).to_contain_text("Added “Tacos on Abbot Kinney”")
-    expect(page.locator("#tp-list")).to_contain_text("Tacos on Abbot Kinney")
+    expect(page.locator("#tp-panel-today")).to_contain_text("Tacos on Abbot Kinney")
     page.goto(base_url + "/calendar?view=whole")
     expect(page.locator(".cal-whole")).to_contain_text("Tacos on Abbot Kinney")
 

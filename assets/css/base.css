@@ -116,6 +116,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .fr-h { font-size: clamp(2rem, 6vw, 3rem); letter-spacing: -0.03em; }
 .fr-lede { color: var(--ink-2); font-size: 1.125rem; max-width: 40rem; }
 .fr-paths { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-top: 0.5rem; }
+.fr-paths.fr-two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .fr-path {
   display: flex; flex-direction: column; align-items: flex-start; gap: 0.75rem; padding: 1.25rem; min-height: 2.75rem; border-radius: var(--r-lg);
   background: var(--card); box-shadow: var(--shadow-md); color: var(--ink); text-decoration: none; text-align: left;
@@ -129,6 +130,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .fr-choices { display: flex; flex-direction: column; align-items: flex-start; gap: 0.125rem; }
 .fr-path-multi:hover { transform: none; box-shadow: var(--shadow-md); }
 .fr-go { display: inline-flex; align-items: center; gap: 0.375rem; min-height: 2.75rem; font-weight: 800; color: var(--coral-deep); }
-@media (max-width: 825px) { .fr-paths { grid-template-columns: minmax(0, 1fr); } .fr-path { flex-direction: row; align-items: center; flex-wrap: wrap; } .fr-body { flex: 1 1 12rem; } .fr-choices { flex: 1 1 100%; } }
+@media (max-width: 825px) { .fr-paths, .fr-paths.fr-two { grid-template-columns: minmax(0, 1fr); } .fr-path { flex-direction: row; align-items: center; flex-wrap: wrap; } .fr-body { flex: 1 1 12rem; } .fr-choices { flex: 1 1 100%; } }
 @media (max-width: 720px) { .fr-lede { font-size: 1.0625rem; } .fr-path { min-height: 2.75rem; } }
 .fr .eyebrow { font-size: max(var(--text-min), 0.875rem); font-weight: 800; letter-spacing: .08em; color: var(--accent-deep); }

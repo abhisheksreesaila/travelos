@@ -162,3 +162,28 @@ def test_the_laptop_keeps_its_layout(shell, base_url):
     page.locator(".ph-back").click()
     page.wait_for_url("**/trip")
     assert page.evaluate(OVERFLOW) == 0
+
+
+OVERLAPS = """() => { const f = document.getElementById('tp-add').getBoundingClientRect(); const hit = e => { const r = e.getBoundingClientRect();
+  return r.width && r.height && r.left < f.right && r.right > f.left && r.top < f.bottom && r.bottom > f.top; };
+  return [...document.querySelectorAll('%s')].filter(hit).map(e => e.className || e.id); }"""
+
+
+def test_the_floating_plus_never_covers_a_pill_or_the_end_of_the_page(shell, base_url):
+    page = shell()
+    page.goto(base_url + "/trip")
+    height = page.evaluate("document.documentElement.scrollHeight")
+    for y in range(0, height, 120):
+        page.evaluate(f"window.scrollTo(0, {y})")
+        assert page.evaluate(OVERLAPS % ".tp-mini, .tp-state, .tp-go, .tp-btn:not(.tp-plus)") == [], y
+    page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+    assert page.evaluate(OVERLAPS % ".tp-full, .tp-sharebar, #tp-stay, .tp-card") == []
+
+
+def test_up_next_details_reach_who_added_it(shell, base_url):
+    page = shell()
+    page.goto(base_url + "/trip")
+    expect(page.locator('[data-item="a1"]')).to_have_count(0)
+    summary = page.locator("#tp-up [data-up-details] summary")
+    summary.click()
+    expect(page.locator("#tp-up [data-up-details]")).to_contain_text("added by")

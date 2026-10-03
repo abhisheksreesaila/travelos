@@ -5,7 +5,7 @@ import hmac
 
 from fasthtml.common import A, Button, Div, Footer, Form, Header, Link, Main, Meta, Nav, Script, Span, Title
 
-from gitaway import session
+from gitaway import session, showcase
 from gitaway.icons import icon
 
 
@@ -90,6 +90,7 @@ def styles(*extra, theme="sunset"):
     )
 
 NAV = [("Community trips", "/community"), ("Plan a trip", "/start"), ("For creators", "/creators")]
+REAL_NAV = [("Plan a trip", "/start")]   # F-064: the header when there is no sample or community content (showcase.on() is false)
 
 
 def brand(href: str = "/"):
@@ -118,7 +119,7 @@ def account(traveler=None):
 
 def site_header(current: str = "", traveler=None, nav: bool = True):
     """The header. `nav=False` is the landing's: the brand and the account only."""
-    links = [A(label, href=href, aria_current="page" if href == current else None) for label, href in NAV]
+    links = [A(label, href=href, aria_current="page" if href == current else None) for label, href in (NAV if showcase.on() else REAL_NAV)]
     return Header(
         A("Skip to content", href="#main", cls="ga-skip"),
         brand(),
@@ -132,7 +133,7 @@ def site_footer(links=()):
     """The footer. `links` is a list of (label, href) shown as a small nav; the landing puts the header's old links here."""
     return Footer(
         Span("GitAway", cls="ga-brand-name"),
-        Span("Trips shared by travelers and creators. Sample data only: no real bookings or payments."),
+        Span("Trips shared by travelers and creators. Sample data only: no real bookings or payments." if showcase.on() else "Plan a trip together: flights, stays and days on one calendar. Booking prices are samples; nothing is booked."),
         *((Nav(*[A(label, href=href) for label, href in links], cls="ga-footer-nav", aria_label="More"),) if links else ()),
         cls="ga-footer ga-wrap",
     )
