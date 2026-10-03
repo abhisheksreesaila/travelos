@@ -399,10 +399,10 @@ Brief: docs/briefs/trip-week.md · Needs: F-065 for the page it opens
 - [x] Today matches frame 3: dark "Up next" card with countdown and "Leave by" (when a drive time is known; otherwise no leave-by line), Directions and Uber (deep link with the destination filled in), the rest of the day as tinted cards (done items struck through), hotel tonight, a route strip of the day's stops
 - [x] it keeps everything F-065/F-066 added (share, confirmation tap, who added it, morning plan card) and passes phone checks (no sideways scroll, 44px targets, 13px text floor)
 
-## F-068 Map of the day [doing]
-- [ ] places (hotels, plans with a place, airports, the car counter) get coordinates from OpenStreetMap geocoding, cached per family so each place is looked up once, at most one lookup per second, with a clear "couldn't find this place" state
-- [ ] the Map tab shows the day's stops numbered in order on an OpenStreetMap map with the route between them; tapping a stop opens a bottom sheet (address, time, Directions, Uber, call when a phone number is known)
-- [ ] drive times between consecutive stops come from a public routing service, cached; Today's "Leave by" uses them
+## F-068 Map of the day [done]
+- [x] places (hotels, plans with a place, airports, the car counter) get coordinates from OpenStreetMap geocoding, cached per family so each place is looked up once, at most one lookup per second, with a clear "couldn't find this place" state
+- [x] the Map tab shows the day's stops numbered in order on an OpenStreetMap map with the route between them; tapping a stop opens a bottom sheet (address, time, Directions, Uber, call when a phone number is known)
+- [x] drive times between consecutive stops come from a public routing service, cached; Today's "Leave by" uses them
 
 ## F-069 Help [done]
 - [x] Help shows tonight's hotel (address, phone with a call button, check-in/out, confirmation behind a tap, Directions), the car rental (counter address, phone), 911, and the family's own phone numbers (each member can add theirs on the family page)
@@ -415,6 +415,11 @@ Brief: docs/briefs/trip-week.md · Needs: F-065 for the page it opens
 ## F-071 Photos on the plan [todo]
 - [ ] take or pick photos in the app; each lands on the plan it was taken during (by time, then place if the photo carries a location), with a strip per day; only the family can see them, stored on the server's volume
 - [ ] a photo can be removed by whoever added it or an admin
+
+## F-075 Leave by for a departure flight [todo]
+Found reviewing F-068: drives to and from airports are skipped, so a departure flight that is up next gets no "Leave by". · Needs: none
+- [ ] the drive from the stop before (or the hotel) to a departure airport is cached and Today shows "Leave by" for an up-next departure flight, with a margin before the flight (e.g. 2 hours domestic); no drive is ever asked between two airports
+- [ ] the arrival-day test checks 9:40 (after landing): Up next is the car pickup and no "min drive" line shows
 
 ## F-072 Ask by voice [blocked]
 Blocked: create a Gemini API key at https://aistudio.google.com/apikey (free tier, no card), then run in the travelos folder: `railway variable set GEMINI_API_KEY --stdin --service web` and paste the key (nothing is shown), and say go.

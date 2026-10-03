@@ -40,6 +40,7 @@
 .tp-pulse { width: 0.625rem; height: 0.625rem; border-radius: var(--r-pill); background: var(--coral); flex-shrink: 0; }
 .tp-up-title { font-family: var(--font-display); font-weight: 800; font-size: 1.625rem; line-height: 1.1; overflow-wrap: anywhere; }
 .tp-up-sub { font-size: 0.9375rem; font-weight: 600; color: #DDD8EA; }
+.tp-leave { color: #FFFFFF; font-weight: 800; }
 .tp-up-actions { display: flex; gap: 0.5rem; }
 .tp-up-actions .tp-btn { flex: 1; }
 @keyframes tp-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 115, 82, .5); } 50% { box-shadow: 0 0 0 0.5rem rgba(255, 115, 82, 0); } }

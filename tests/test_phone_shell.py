@@ -64,7 +64,7 @@ def test_every_trip_screen_sits_in_the_shell(client, key):
     assert "/assets/css/phone.css" in html and html.index("/assets/css/base.css") < html.index("/assets/css/phone.css")
 
 
-@pytest.mark.parametrize("key", ["map", "ask"])   # Help (F-069) and Family (F-070) are built
+@pytest.mark.parametrize("key", ["ask"])   # Map (F-068), Help (F-069) and Family (F-070) are built
 def test_a_tab_not_built_yet_shows_a_short_coming_card(client, key):
     book(client)
     html = client.get(PATHS[key]).text
@@ -102,6 +102,14 @@ def test_each_tab_has_its_own_module_with_the_contract():
     from gitaway.pages import tab_ask, tab_family, tab_help, tab_map
     for mod in (tab_map, tab_ask, tab_family, tab_help):
         assert callable(mod.content) and mod.TITLE
+
+
+def test_the_map_tab_is_the_real_map_in_the_shell(client):
+    book(client)
+    html = client.get("/trip/map").text
+    assert "is coming" not in html and 'id="mp-daychip"' in html and ">Map</h1>" in html
+    assert "/assets/vendor/leaflet/leaflet.js" in html and "/assets/js/map.js" in html and "/assets/css/map.css" in html
+    assert 'id="ph-tab-map"' in html
 
 
 def test_a_tab_module_can_be_swapped_without_touching_the_shell(client, monkeypatch):

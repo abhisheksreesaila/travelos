@@ -11,17 +11,19 @@ validates, the roles come from gitaway.access (a viewer sees no + and no compose
 """
 
 from dataclasses import replace
+import logging
 from urllib.parse import urlencode
 
 from fasthtml.common import NotStr, A, Button, Details, Div, Form, H1, H2, Header, Input, Label, Link, Main, Nav, P, Script, Section, Span, Summary, Title
 from fasthtml.core import FtResponse
 from starlette.responses import RedirectResponse
 
-from gitaway import access, catalog, members, phone, pickers, session as ses, tripcal as cal, tripday as td
+from gitaway import access, catalog, geo, members, phone, tripgeo, pickers, session as ses, tripcal as cal, tripday as td
 from gitaway.icons import icon
 from gitaway.layout import avatar, join_note, trip_field
 from gitaway.pages import calendar as calui, morning as morning_ui, rides as rides_ui
 
+log = logging.getLogger(__name__)
 HEAD = (*pickers.HEAD, *morning_ui.HEAD)  # trip.css and phone.css come with the shell (gitaway.phone.HEAD)
 TABS = (("today", "Today"), ("days", "All days"), ("notes", "Notes"))
 
@@ -142,7 +144,8 @@ def leave_line(v, up):
     """The countdown ring and "Leave by 9:35" under the up-next card, only when a drive time is known (gitaway.tripday.leave_by); else nothing."""
     item = up.item
     before = [x for x in v["items"] if x.start < item.start and x.place and x.kind not in ("ride", "offer")]
-    origin = before[-1].place if before else v["stay_place"]
+    flew = any(x.kind == "flight" and x.start < item.start for x in v["items"])  # on a travel day nobody leaves from the stay
+    origin = "" if before and before[-1].kind == "flight" else before[-1].place if before else ("" if flew else v["stay_place"])  # straight after a flight there is no drive to time
     got = td.leave_by(item, origin, v["clocks"][item.zone][1])
     if not got:
         return ""
@@ -341,7 +344,13 @@ def tab_bar(tab):
 
 # ---- the page -----------------------------------------------------------------------------------------------------------
 
-def trip_page(session, ua="", tab="today", day="", sheet=None, new="", notice="", note_error="", status=200):
+def trip_page(session, *args, **kw):
+    """The page, with the family's map cache open while it is drawn (Today's Leave by and Uber coordinates read it; gitaway.geo.cache_scope)."""
+    with geo.cache_scope(session):
+        return _trip_page(session, *args, **kw)
+
+
+def _trip_page(session, ua="", tab="today", day="", sheet=None, new="", notice="", note_error="", status=200):
     v = load(session, day, ua)
     tab = tab if tab in dict(TABS) else "today"
     editor = access.can_edit(v["role"])
@@ -379,6 +388,10 @@ def register(app):
             return r
         ua = request.headers.get("user-agent", "")
         sheet = {} if add == "1" else None
+        try:
+            tripgeo.warm(session)  # fill the map cache in the background, at most once an hour (F-068)
+        except Exception:  # Today never fails because the map cache could not be filled
+            log.exception("could not start the map fill")
         return trip_page(session, ua, tab or "today", day[:3], sheet, new[:8])
 
     @app.post("/trip/plans")
