@@ -49,7 +49,7 @@ def test_leave_by_shows_on_today_without_opening_the_map(client, maps, monkeypat
     client.get("/trip")  # the first draw of Today starts a fill (the plan was added after the save)
     settle()
     at(monkeypatch, date(2026, 10, 16), 16 * 60 + 31)
-    assert "Leave by 4:35 PM · 25 min drive" in text(client.get("/trip").text)
+    assert "Leave by 4:35 PM 25 min drive" in text(client.get("/trip").text)
 
 
 def test_the_first_stop_of_a_day_leaves_from_where_you_slept(client, maps, monkeypatch):
@@ -58,7 +58,7 @@ def test_the_first_stop_of_a_day_leaves_from_where_you_slept(client, maps, monke
     client.get("/trip")
     settle()
     at(monkeypatch, date(2026, 10, 17), 8 * 60)
-    assert "Leave by 8:35 AM · 25 min drive" in text(client.get("/trip?day=1").text)
+    assert "Leave by 8:35 AM 25 min drive" in text(client.get("/trip?day=1").text)
 
 
 def test_today_starts_a_fill_at_most_once_an_hour_per_trip(client, maps, monkeypatch):

@@ -10,10 +10,12 @@
 - `cached_minutes` reads only the cache, for pages (Today's "Leave by") that must not wait.
 """
 
+import contextvars
 import json
 import re
 import threading
 import time
+from contextlib import contextmanager
 from urllib.parse import quote_plus
 from urllib.request import Request, urlopen
 
@@ -201,8 +203,31 @@ def _leg(a, b, db=None, *, fetch_it=True, deadline=None):
     return leg
 
 
+_SCOPE = contextvars.ContextVar("geo_cache_db", default=None)
+
+
+@contextmanager
+def cache_scope(session):
+    """While drawing a page: the family's database is open for the cache-only readers below (`cached_coords`, `drive_minutes` with place names)."""
+    with familydb.using(session) as db:
+        token = _SCOPE.set(db)
+        try:
+            yield db
+        finally:
+            _SCOPE.reset(token)
+
+
+def cached_coords(place):
+    """(lat, lon) of a place from the cache only (inside `cache_scope`; never a network call), else None."""
+    db = _SCOPE.get()
+    return coords(as_place(place), db, lookup=False) if db is not None else None
+
+
 def drive_minutes(a, b, db=None, *, lookup=True):
-    """Minutes by car from `a` to `b` ((lat, lon) pairs), or None on any failure."""
+    """Minutes by car from `a` to `b`, or None on any failure. `a` and `b` are (lat, lon) pairs; or place names, which are read from the cache only
+    (inside `cache_scope`), the way Today asks."""
+    if isinstance(a, str) or isinstance(b, str):
+        return cached_minutes(a, b, db or _SCOPE.get())
     leg = _leg(a, b, db, fetch_it=lookup)
     return leg["m"] if leg else None
 
@@ -222,7 +247,9 @@ def route(points, db=None, *, lookup=True):
 
 def cached_minutes(place_a, place_b, db=None):
     """Drive minutes between two places from what is already cached (no network, ever), else None."""
-    a, b = coords(place_a, db, lookup=False), coords(place_b, db, lookup=False)
+    if db is None:
+        return None
+    a, b = coords(as_place(place_a), db, lookup=False), coords(as_place(place_b), db, lookup=False)
     return drive_minutes(a, b, db, lookup=False) if a and b else None
 
 

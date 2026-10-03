@@ -157,7 +157,7 @@ def test_today_leave_by_uses_the_cached_drive_and_never_calls_out(client, maps, 
     calls = len(maps.calls)
     after = client.get("/trip").text
     assert len(maps.calls) == calls
-    assert "Leave by 4:35 PM · 25 min drive" in " ".join(visible(after).split())
+    assert "Leave by 4:35 PM 25 min drive" in " ".join(visible(after).split())
 
 
 def test_a_slow_geocoder_cannot_hold_the_map_page_for_more_than_a_couple_of_seconds(client, monkeypatch):

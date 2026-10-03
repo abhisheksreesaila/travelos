@@ -201,3 +201,16 @@ def test_a_place_another_thread_stored_while_we_waited_is_not_asked_again(fake, 
     monkeypatch.setattr(geo.NOMINATIM_GATE, "wait", wait_then_someone_else_stores_it)
     assert geo.coords("Shared place", db) == (1.0, 2.0)
     assert fake.calls == []
+
+
+def test_cached_coords_and_place_name_drives_read_only_the_cache_inside_a_scope(fake):
+    session = person()
+    assert geo.cached_coords("Griffith Observatory") is None  # outside a scope there is no database to read
+    with geo.cache_scope(session) as db:
+        assert geo.cached_coords("Griffith Observatory") is None and fake.calls == []
+        geo.warm(db, ["Griffith Observatory", "Santa Monica Pier"], budget=30)
+        n = len(fake.calls)
+        assert geo.cached_coords("Griffith Observatory") == (34.01, -118.3004)
+        assert geo.drive_minutes("Griffith Observatory", "Santa Monica Pier") == 25
+        assert geo.drive_minutes("Griffith Observatory", "Nowhere Else") is None
+        assert geo.cached_coords("LAX") is not None and len(fake.calls) == n  # a bare code is that airport; none of this called out

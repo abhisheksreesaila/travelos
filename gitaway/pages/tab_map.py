@@ -1,6 +1,6 @@
 """The Map tab (F-068): the day's stops, numbered in order, on an OpenStreetMap map with the route between them.
 
-GET /trip/map[?day=<index>]   the day's stops. `content(request, session)` is the tab's body (the phone shell draws the header and the tab bar around it).
+GET /trip/map[?day=<index>]   the day's stops. `content(request, session)` is the tab's body; gitaway/pages/phone_tabs.py draws the route, header and tab bar around it.
 
 Every stop that has a place (a flight's airport, the hotel, a plan, the car desk) gets a number. Where a place is comes from gitaway.geo (OpenStreetMap's
 geocoder, cached per family, one lookup a second): what is not known yet is looked up for a couple of seconds while the page is made, the rest in
@@ -10,28 +10,21 @@ The list of stops below the map does the same without the map, and is all there 
 """
 
 import json
-from urllib.parse import quote
 
-from fasthtml.common import A, Button, Div, H1, H2, Header, Li, Link, Main, Nav, NotStr, Ol, P, Script, Span, Title
+from fasthtml.common import A, Button, Div, H2, Li, Link, Nav, NotStr, Ol, P, Script, Span
 
 from gitaway import access, familydb, geo, session as ses, tripcal as cal, tripday as td
 from gitaway.icons import icon
-from gitaway.layout import styles
 from gitaway.pages import calendar as calui, trip as trip_ui
 
-HEAD = (Link(rel="stylesheet", href="/assets/vendor/leaflet/leaflet.css"), Link(rel="stylesheet", href="/assets/css/trip.css"), Link(rel="stylesheet", href="/assets/css/map.css"))
-UBER = "https://m.uber.com/ul/?action=setPickup&pickup=my_location"
+TITLE = "Map"
+HEAD = (Link(rel="stylesheet", href="/assets/vendor/leaflet/leaflet.css"), Link(rel="stylesheet", href="/assets/css/map.css"))  # trip.css and phone.css come with the shell
+SCRIPTS = ("/assets/vendor/leaflet/leaflet.js", "/assets/js/map.js")
 NOT_FOUND = "Couldn’t find this place on the map."
 
 
 def map_url(**q):
     return "/trip/map" + (f"?day={q['day']}" if q.get("day") not in ("", None) else "")
-
-
-def uber_url(place, at=None) -> str:
-    """Uber's deep link to be picked up where you are and dropped at the place."""
-    url = f"{UBER}&dropoff[formatted_address]={quote(place, safe='')}&dropoff[nickname]={quote(place.split(',')[0], safe='')}"
-    return url + (f"&dropoff[latitude]={at[0]}&dropoff[longitude]={at[1]}" if at else "")
 
 
 def _phone_of(v, item) -> str:
@@ -63,7 +56,7 @@ def stops_of(v, db):
             drive = geo.drive_minutes(prev[1], pos, db, lookup=False)
         out.append(dict(n=len(out) + 1, id=x.id, title=x.title, label=x.label, kind=x.kind, place=_place(x), pos=pos, state="found" if pos else ("missing" if got == geo.MISSING else "pending"),
                         addr=_place(x), when=_when(x), drive=drive, tel=_phone_of(v, x),
-                        dir=td.maps_url(_place(x), v["ua"]), uber=uber_url(_place(x), pos)))
+                        dir=td.maps_url(_place(x), v["ua"]), uber=td.uber_url(_place(x), pos)))
         if pos and x.kind != "flight":
             prev = (x, pos)
     return out
@@ -155,18 +148,4 @@ def content(request, session):
             body.append(P("Finding places on the map…", role="status", cls="mp-finding", id="mp-finding"))
         body.append(stop_list(stops, v))
     return (day_picker(v), chip, *body,
-            Script(_json(data), type="application/json", id="mp-data"),
-            Script(src="/assets/vendor/leaflet/leaflet.js", defer=True), Script(src="/assets/js/map.js", defer=True))
-
-
-# ---- the page --------------------------------------------------------------------------------------------------------------
-
-def register(app):
-    @app.get("/trip/map")
-    def map_tab(session, request):
-        if (r := trip_ui._guard(session)):
-            return r
-        body = content(request, session)
-        return (Title("GitAway · Map"), *styles(*HEAD),
-                Div(A("Skip to content", href="#main", cls="ga-skip"), Header(H1("Map", cls="mp-h1"), A("Back to Today", href="/trip", cls="tp-back"), cls="tp-head"), Main(*body, id="main", cls="mp"),
-                    data_theme="sunset", cls="tp", id="mp-app"))
+            Script(_json(data), type="application/json", id="mp-data"))
