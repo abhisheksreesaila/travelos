@@ -38,6 +38,7 @@ PATHS = {
     "shield": '<path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/>',
     "minus": '<path d="M5 12h14"/>',
     "bag": '<rect x="5" y="7" width="14" height="13" rx="3"/><path d="M9 7V4h6v3M9 20v1M15 20v1"/>',
+    "bell": '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
     "mic": '<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v4M8 21h8"/>',
     "pencil": '<path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
     "x": '<path d="M18 6 6 18M6 6l12 12"/>',
