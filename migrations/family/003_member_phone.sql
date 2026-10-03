@@ -1,0 +1,4 @@
+-- UP --
+ALTER TABLE members ADD COLUMN phone TEXT NOT NULL DEFAULT '';
+-- DOWN --
+ALTER TABLE members DROP COLUMN phone;

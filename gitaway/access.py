@@ -25,6 +25,7 @@ SAFE_METHODS = ("GET", "HEAD", "OPTIONS")
 OPEN_POSTS = (
     "/signin", "/logout", "/signout",      # signing in and out
     "/trips/switch",                       # which trip I am looking at (my own `members.trip_id`)
+    "/family/phone",                       # my own phone number on the Help tab (F-069): every member, viewers too
     "/family/switch", "/family/stay",      # which of my families I am working in; dismissing the "you joined" notice
     "/creators", "/creators/draft", "/creators/finish",   # a creator draft is a person's own, published to the community, not a family's
     "/trip/morning", "/trip/morning/time", "/trip/morning/off", "/trip/morning/status",   # my own phone's morning plan reminder (F-066): every member, viewers too
