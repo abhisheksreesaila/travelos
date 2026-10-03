@@ -20,7 +20,7 @@ Put settings in a `.env` file in the project folder (it is gitignored) or export
 | `GITAWAY_DATA_DIR` | optional | Folder for every database file. Default `./data/db` (gitignored). A relative value is read from the project folder. Created if missing. |
 | `GITAWAY_ENV` | on the server | `production` switches on production mode (so does Railway's own `RAILWAY_ENVIRONMENT`): the app refuses to start without `GITAWAY_SECRET_KEY`, the session cookie is https-only, the dev sign-in is off whatever `GITAWAY_DEV_LOGIN` says, uvicorn does not reload and trusts the proxy's `X-Forwarded-*` headers. |
 | `GITAWAY_SHOWCASE` | never on the server | `1` or `0` overrides `gitaway/showcase.py`'s default (samples on locally, off in production). **Leave it unset on Railway: `1` there turns the sample trips, Community trips, creators, forks, sharing, simulated Uber and voice demo back on for real families.** |
-| `GITAWAY_CONTACT_EMAIL` | for /privacy and /terms | The address people write to for questions and to have their data deleted (F-076). Unset, the pages say to ask the person who invited you and show no address. Give Google's Branding page the site address plus `/privacy` and `/terms`. |
+| `GITAWAY_CONTACT_EMAIL` | for /privacy and /terms | The address people write to for questions and to have their data deleted (F-076). Set it on the live site; unset, the pages say "Contact the person who runs this GitAway site." and show no address. Give Google's Branding page the site address plus `/privacy` and `/terms`. |
 | `GITAWAY_DEV_LOGIN` | local only | `1` turns on the dev sign-in (see below). Leave it unset anywhere else; production ignores it. |
 | `GOOGLE_CLIENT_ID` | for Google sign-in | The OAuth client id (fh-saas reads this name). |
 | `GOOGLE_CLIENT_SECRET` | for Google sign-in | The OAuth client secret (fh-saas reads this name). |
@@ -99,6 +99,17 @@ On the phone Today view, a family member can turn on a "Morning plan": at the ti
    The first two are set with `--skip-deploys` so Railway does not redeploy between them; the third triggers one redeploy that starts the service with all three keys. Never commit the keys or paste them into chat.
 
 How it runs: one background thread in the app (one per process; Railway runs one) wakes every minute and sends what is due. Each phone's subscription, chosen time and the day it was last sent live in the family database (`push_subscriptions`, migration `002`), so a redeploy loses nothing and a restart never double-sends. A push service answering "gone" (404 or 410) deletes that subscription quietly; any other failure is logged without the phone's address and retried for the next hour. Nothing is sent on days outside the trip, or when the family has no trip. The text holds plan titles and times only.
+
+## Deleting a person's or a family's data (by hand, F-076)
+
+Stop the app or accept a short write race, and take a copy of the data folder first. Work in `GITAWAY_DATA_DIR`.
+
+1. Find the person in the host database `app_host.db` (`sqlite3 app_host.db`): `SELECT * FROM core_users WHERE email = '<address>';` note the user id and, from `core_memberships`, their tenant (family) ids.
+2. Delete the person: `DELETE FROM ga_passkeys WHERE user_id = '<id>'; DELETE FROM ga_last_family WHERE user_id = '<id>'; DELETE FROM core_memberships WHERE user_id = '<id>'; DELETE FROM core_users WHERE id = '<id>';`. Also `DELETE FROM ga_invites WHERE email = '<address>'` (invites sent to them) and any invites they sent for a family being deleted.
+3. If the whole family goes (and the person asked for it): delete that family's remaining `core_memberships` and `ga_invites` rows and its `core_tenants` row in `app_host.db`, delete the family database file named in `core_tenants.db_url` (`<id>_db.db`), and delete the folder `photos/<family>/`.
+4. If the family keeps going, their messages and photos stay with the family unless the person asks for them to be removed: delete those rows from the family database (`sqlite3 <id>_db.db`) and the matching files under `photos/<family>/`.
+5. Server logs on Railway age out on their own; say so when you confirm.
+6. Check: sign in is no longer possible for that address, and `SELECT count(*)` on the tables above for the user id is 0. Tell the person it is done.
 
 ## What needs sign-in
 

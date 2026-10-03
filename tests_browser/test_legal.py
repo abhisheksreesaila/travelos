@@ -24,7 +24,8 @@ def open_page(browser, base_url):
 @pytest.mark.parametrize("label,path", [("Privacy", "/privacy"), ("Terms", "/terms")])
 def test_links_land_on_the_page(open_page, start, label, path):
     page = open_page(start)
-    page.locator("a", has_text=label).last.click()
+    scope = page.locator("#si-legal") if start == "/signin" else page.locator("footer")
+    scope.locator("a", has_text=label).click()
     page.wait_for_url("**" + path)
     assert page.locator("h1").inner_text() in ("Privacy policy", "Terms of use")
 

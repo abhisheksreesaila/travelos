@@ -4,9 +4,9 @@ import re
 
 import pytest
 
-PRIVACY_PHRASES = ["your name and your email address", "trips, plans", "notes", "messages", "photos", "time and place", "phone numbers",
-                   "push subscriptions", "passkeys", "Only the family", "Nothing you add is public", "Google sign-in", "Railway", "OpenStreetMap",
-                   "place text only", "Apple and Google push services", "do not sell", "do not show ads", "deleted"]
+PRIVACY_PHRASES = ["your email address and your Google account number", "we do not keep them", "trips, plans", "notes", "messages", "photos", "time and place", "phone numbers",
+                   "push subscriptions", "passkeys", "Your family sees", "masked email", "not shown to the family", "can read the stored data", "Google sign-in", "Railway", "OpenStreetMap",
+                   "place text only", "Nominatim", "router.project-osrm.org", "pairs of coordinates", "tile.openstreetmap.org", "Google Fonts", "encrypted", "confirmation numbers", "people you invite", "server logs", "Apple and Google push services", "do not sell", "do not show ads", "deleted"]
 TERMS_PHRASES = ["as-is", "does not book anything", "does not take payments", "responsible for what you add", "remove content", "change GitAway or stop it",
                  "without any warranty", "United States", "not legal advice"]
 
@@ -31,11 +31,11 @@ def test_contact_only_when_set(client, monkeypatch):
     monkeypatch.delenv("GITAWAY_CONTACT_EMAIL", raising=False)
     for path in ("/privacy", "/terms"):
         t = client.get(path).text
-        assert "Ask the person who invited you" in t and "mailto:" not in t
+        assert "Contact the person who runs this GitAway site" in t and "mailto:" not in t
     monkeypatch.setenv("GITAWAY_CONTACT_EMAIL", "help@example.org")
     for path in ("/privacy", "/terms"):
         t = client.get(path).text
-        assert 'href="mailto:help@example.org"' in t and "Ask the person who invited you" not in t
+        assert 'href="mailto:help@example.org"' in t and "Contact the person who runs this GitAway site" not in t
 
 
 def test_footer_and_signin_link_to_both(client):
