@@ -380,11 +380,11 @@ Brief: docs/briefs/trip-week.md · Needs: none
 - [ ] a brand-new family's first screens and an empty trip look intentional (warm empty states), checked in screenshots at phone and desktop
 - [ ] the local copy (not production) still shows all sample data; tests cover both modes
 
-## F-065 Today, laid out to read and share [doing]
+## F-065 Today, laid out to read and share [done]
 Brief: docs/briefs/trip-week.md · Needs: none
-- [ ] a "Today" view of the day's plan (time, what, where with a Directions link, notes, who added it, bookings with their lock and confirmation one tap away) reads cleanly on a phone; any day can be opened, today by default in the trip's time zone
-- [ ] a Share button sends a short plain-text summary of that day (times, plans, places, hotel tonight) through the phone's share sheet, or copies it; no prices, confirmation numbers or private notes in the shared text
-- [ ] every family member (viewer, editor, admin) sees it live; viewers can't edit from it
+- [x] a "Today" view of the day's plan (time, what, where with a Directions link, notes, who added it, bookings with their lock and confirmation one tap away) reads cleanly on a phone; any day can be opened, today by default in the trip's time zone
+- [x] a Share button sends a short plain-text summary of that day (times, plans, places, hotel tonight) through the phone's share sheet, or copies it; no prices, confirmation numbers or private notes in the shared text
+- [x] every family member (viewer, editor, admin) sees it live; viewers can't edit from it
 
 ## F-066 Morning plan push [doing]
 Brief: docs/briefs/trip-week.md · Needs: F-065 for the page it opens

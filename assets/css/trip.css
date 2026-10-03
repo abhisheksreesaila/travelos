@@ -149,3 +149,25 @@
 }
 
 .tp-edit { align-self: flex-start; margin-top: 0.375rem; }
+
+/* F-065: Today to read and share */
+.tp-col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.25rem; }
+.tp-acts { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: flex-start; padding-left: 0.25rem; }
+.tp-mini { display: inline-flex; align-items: center; gap: 0.375rem; min-height: 2.75rem; padding: 0 0.875rem; border-radius: var(--r-pill); background: var(--card); box-shadow: var(--shadow-sm); font-weight: 800; font-size: max(var(--text-min), 0.875rem); text-decoration: none; cursor: pointer; list-style: none; }
+.tp-mini::-webkit-details-marker { display: none; }
+.tp-confirm { display: flex; flex-direction: column; gap: 0.125rem; }
+.tp-confirm[open] { padding: 0 0 0.25rem; }
+.tp-confirm summary { align-self: flex-start; }
+.tp-confirm[open] .tp-sub, .tp-confirm[open] .tp-conf-num { padding-left: 0.875rem; }
+.tp-conf-num { font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; letter-spacing: 0.08em; user-select: all; }
+.tp-pnote { display: flex; gap: 0.375rem; align-items: flex-start; padding: 0 0.25rem; font-size: max(var(--text-min), 0.875rem); font-weight: 700; color: var(--ink-2); overflow-wrap: anywhere; }
+.tp-pnote svg { flex-shrink: 0; margin-top: 0.125rem; }
+.tp-sharebar { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.tp-share { gap: 0.5rem; min-height: 2.75rem; padding: 0 1rem; box-shadow: var(--shadow-sm); }
+.tp-share-status { font-weight: 800; font-size: max(var(--text-min), 0.9375rem); color: var(--ink-2); }
+/* on a laptop the phone layout is a readable centred column on the paper */
+@media (min-width: 721px) {
+  .tp { max-width: 36rem; }
+  .tp-tabs { max-width: 36rem; }
+  .tp-plus { right: calc(50% - 18rem + 1rem); }
+}

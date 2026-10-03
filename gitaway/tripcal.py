@@ -85,6 +85,7 @@ class Activity:
     title: str
     kind: str
     by: str = ""  # the friend who added it; "" is the traveler
+    by_id: str = ""  # the user id of the member who saved it (F-065)
 
 
 @dataclass(frozen=True)
@@ -332,7 +333,7 @@ def _min(at):
 
 def booking_detail(b, block_id):
     """(title, [(label, value)]) of one booked block of an imported booking, confirmation number included; None for anything else.
-    The only place a confirmation number is drawn (with the trip details page): both are for signed-in family members only."""
+    A confirmation number is drawn only here, on the trip details page and behind the "Confirmation" tap on Today: all for signed-in family members, never in shared text."""
     if not is_imported(b):
         return None
     plan = _plan(b)
@@ -417,7 +418,7 @@ def _number(id_):
 
 
 def _act(r):
-    return Activity(r["act_id"], r["day"], r["start_min"], r["end_min"], r["title"], r["kind"], r["author"] or "")
+    return Activity(r["act_id"], r["day"], r["start_min"], r["end_min"], r["title"], r["kind"], r["author"] or "", r["added_by"] or "")
 
 
 def _note(r):

@@ -10,9 +10,10 @@ other way. It is the installed app's start page (the manifest's start_url). The 
 validates, the roles come from gitaway.access (a viewer sees no + and no composer), and every form carries `trip`.
 """
 
+from dataclasses import replace
 from urllib.parse import urlencode
 
-from fasthtml.common import A, Button, Div, Form, H1, H2, Header, Input, Label, Link, Main, Nav, P, Script, Section, Span, Title
+from fasthtml.common import A, Button, Details, Div, Form, H1, H2, Header, Input, Label, Link, Main, Nav, P, Script, Section, Span, Summary, Title
 from fasthtml.core import FtResponse
 from starlette.responses import RedirectResponse
 
@@ -64,8 +65,11 @@ def load(session, day_arg="", ua=""):
     detail_href = lambda blk: calui.cal_url("", view="days", detail=blk.id, trip=ses.open_trip_id())  # noqa: E731
     dest = t.destination_name
 
+    family = members.family_people(session)
+    added_name = lambda a: a.by or ("you" if not a.by_id or a.by_id == who.id else family.get(a.by_id, calui.FORMER).name)  # noqa: E731
+
     def items_of(day, now_=None, past_=False):
-        return td.timeline(day, blocks, acts, offers, dest, hotel_place=td.hotel_place(b, dates, day), ride_href=ride_href, detail_href=detail_href, now=now_, past=past_, clocks=clocks, zone=zone)
+        return _with_extras(td.timeline(day, blocks, acts, offers, dest, added_name=added_name, hotel_place=td.hotel_place(b, dates, day), ride_href=ride_href, detail_href=detail_href, now=now_, past=past_, clocks=clocks, zone=zone), b, notes, session, who, family)
 
     items = items_of(sel, now, past)
     tomorrow = items_of(sel + 1) if sel < last else []
@@ -73,6 +77,21 @@ def load(session, day_arg="", ua=""):
     return dict(zone=zone, session=session, who=who, b=b, t=t, dates=dates, last=last, role=role, blocks=blocks, acts=acts, notes=notes, phase=ph, n=n, today_idx=today_idx, sel=sel, now=now,
                 items=items, up=up, stay=td.stay_card(b, dates, sel), days=td.day_summaries(dates, blocks, acts, today_idx), ua=ua, past=past, first=items_of(0)[:1],
                 crew=members.crew(session), next=cal.next_id(session))
+
+
+def _with_extras(items, b, notes, session, who, family):
+    """Each booked item with its confirmation number (shown behind a tap), each plan with the notes written on it."""
+    people = {f.name.casefold(): f for f in ses.friends(session)}
+    out = []
+    for x in items:
+        if x.kind in ("flight", "hotel", "car"):
+            detail = cal.booking_detail(b, x.id)
+            conf = next((v for k, v in detail[1] if k == "Confirmation"), "") if detail else ""
+            x = replace(x, confirm=conf)
+        elif x.kind == "plan":
+            x = replace(x, notes=tuple(f"{calui.note_writer(n, who, people, family)[0]}: {n.text}" for n in notes if n.act == x.id))
+        out.append(x)
+    return out
 
 
 # ---- pieces -------------------------------------------------------------------------------------------------------------
@@ -105,7 +124,7 @@ def up_card(v):
                Div(*buttons, cls="tp-up-actions") if buttons else "", cls="tp-up", id="tp-up")
 
 
-def row(item, today):
+def row(item, today, ua=""):
     tint = f"tp-k-{item.tint}"
     inner = (Span(item.label.upper(), cls="tp-label"), Span(item.title, cls="tp-what"), Span(item.sub, cls="tp-sub"))
     state = {"done": "Done", "now": "Now", "next": "Next"}.get(item.state, "") if today else ""
@@ -114,7 +133,15 @@ def row(item, today):
     lock = Span(icon("lock", 14, 2.4), Span("Booked, locked", cls="sr-only"), cls="tp-lock") if booked else ""
     card = (A if item.href else Div)(Div(Span(icon(item.icon, 18, 2.2), cls="tp-ico", aria_hidden="true") if item.icon else "", Div(*inner, cls="tp-card-text"), lock, badge, cls="tp-card-in"),
                                      cls=f"tp-card {tint} is-{item.state} tp-{item.kind}{' tp-bk' if booked else ''}", **({"href": item.href} if item.href else {}), data_item=item.id)
-    return Div(Span(cal.fmt_time(item.start), cls="tp-time"), card, cls=f"tp-row is-{item.state}")
+    extras = [Span(icon("pencil", 13, 2.4), n, cls="tp-pnote") for n in item.notes]
+    acts = []
+    if item.place:
+        acts.append(A(icon("pin", 15, 2.4), "Directions", Span(f" to {item.title}", cls="sr-only"), href=td.maps_url(item.place, ua), target="_blank", rel="noopener", cls="tp-mini tp-dir", data_dir=item.id))
+    if item.confirm:
+        acts.append(Details(Summary(icon("lock", 15, 2.4), "Confirmation", Span(f" for {item.title}", cls="sr-only"), cls="tp-mini"), Span("Confirmation number", cls="tp-sub"), Span(item.confirm, cls="tp-conf-num"), cls="tp-confirm", data_confirm=item.id))
+    if acts:
+        extras.append(Div(*acts, cls="tp-acts"))
+    return Div(Span(cal.fmt_time(item.start), cls="tp-time"), Div(card, *extras, cls="tp-col"), cls=f"tp-row is-{item.state}")
 
 
 def stay_card(v):
@@ -143,9 +170,10 @@ def today_panel(v):
         parts.append(Div(Span(f"{_day_name(d)} · day {sel + 1} of {len(v['dates'])}", cls="tp-daynote"), A("Back to today", href=trip_url(), cls="tp-back"), cls="tp-dayhead"))
     elif v["phase"] != "during":
         parts.append(Div(Span(f"{_day_name(d)} · day {sel + 1} of {len(v['dates'])}", cls="tp-daynote"), cls="tp-dayhead"))
+    parts.append(share_bar(v))
     parts.append(up_card(v))
     if v["items"]:
-        parts.append(Div(*[row(x, v["now"] is not None) for x in v["items"]], cls="tp-list", id="tp-list"))
+        parts.append(Div(*[row(x, v["now"] is not None, v["ua"]) for x in v["items"]], cls="tp-list", id="tp-list"))
     else:
         parts.append(Div(Span("wide open!", cls="tp-hand"), A("Add something fun", href=trip_url(add="1", day=sel), data_open_sheet="", cls="tp-btn tp-btn-ink") if editor else Span("Nothing planned yet.", cls="tp-sub"), cls="tp-empty"))
     if cal.is_imported(v["b"]) and any(x.kind in ("flight", "hotel", "car") for x in v["items"]):  # where it was booked is said once, quietly
@@ -155,6 +183,17 @@ def today_panel(v):
     parts.append(note_strip(v))
     parts.append(A(icon("arrow-right", 18, 2.4), "Open the full calendar", href="/calendar?view=whole", cls="tp-full"))
     return Section(*parts, id="tp-panel-today", cls="tp-panel", role="tabpanel", aria_label="Today", data_title=_title_today(v))
+
+
+def share_text(v):
+    return td.share_text(v["t"].title, v["dates"][v["sel"]], v["items"], v["stay"])
+
+
+def share_bar(v):
+    """The Share button (F-065): the day as a short plain text through the phone's share sheet, else copied. Everyone, viewers too, can share."""
+    d = v["dates"][v["sel"]]
+    return Div(Button(icon("share", 18, 2.4), "Share this day", type="button", cls="tp-btn tp-btn-white tp-share", id="tp-share", data_share_title=f"{v['t'].title} · {d.strftime('%a %b')} {d.day}", data_share_text=share_text(v)),
+               Span("", role="status", id="tp-share-status", cls="tp-share-status"), cls="tp-sharebar")
 
 
 def _title_today(v):

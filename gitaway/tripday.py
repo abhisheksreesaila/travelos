@@ -92,6 +92,8 @@ class Item:
     place: str = ""        # what Directions looks up ("" for none)
     by: str = ""
     zone: str = ""         # the time zone its time is local to (F-057), when the timeline knows clocks
+    confirm: str = ""      # a booked item's confirmation number: shown only behind a tap on Today, never shared (F-065)
+    notes: tuple = ()      # the trip notes written on this plan
 
 
 @dataclass(frozen=True)
@@ -145,7 +147,7 @@ def _place_of(block, hotel_place):
     return ""
 
 
-def timeline(day, blocks, acts, offers, destination, *, hotel_place="", ride_href=None, detail_href=None, now=None, past=False, clocks=None, zone=""):
+def timeline(day, blocks, acts, offers, destination, *, added_name=None, hotel_place="", ride_href=None, detail_href=None, now=None, past=False, clocks=None, zone=""):
     """The items of day `day`, in time order, each marked done, now, next or later.
 
     `now` is the minute of the day when `day` is today, else None. `past` marks a whole day done (an earlier day, or after the trip).
@@ -168,8 +170,8 @@ def timeline(day, blocks, acts, offers, destination, *, hotel_place="", ride_hre
     for a in acts:
         if a.day == day:
             label, tint = cal.KINDS[a.kind]
-            items.append(Item(a.id, a.start, a.end, a.title, "plan", label, tint, "", span_label(a.start, a.end) + (f" · added by {a.by}" if a.by else ""),
-                              place=f"{a.title}, {destination}", by=a.by))
+            items.append(Item(a.id, a.start, a.end, a.title, "plan", label, tint, "", span_label(a.start, a.end) + (f" · added by {who}" if (who := (added_name(a) if added_name else a.by)) else ""),
+                              place=f"{a.title}, {destination}", by=who))
     items.sort(key=lambda x: (x.start, x.end, x.id))
     if clocks:
         items = [replace(x, zone=x.zone or zone) for x in items]
@@ -280,3 +282,16 @@ def hotel_place(b, dates, day) -> str:
         return (f"{h.name}, {h.address}" if h.address else h.name) if h else ""
     stay = cal.stay_of(b)
     return f"{stay.name}, {cal.trip_of(b).destination_name}" if stay else ""
+
+
+# ---- the day as text to share (F-065) ------------------------------------------------------------------------------------
+
+def share_text(title, day, items, stay) -> str:
+    """A short plain-text summary of one day for Messages or WhatsApp: the date and trip, a line per booked item and plan (time and what),
+    and the hotel for the night. Never a price, a confirmation number, a note or a simulated Uber: only titles, times and the hotel's name and address."""
+    lines = [f"{day.strftime('%a %b')} {day.day} · {title}"]
+    shown = [x for x in items if x.kind not in ("ride", "offer")]
+    lines += [f"{cal.fmt_time(x.start)} {x.title}" for x in shown] or ["Nothing planned yet."]
+    if stay:
+        lines.append(f"{'Hotel tonight' if stay.title == 'Your hotel tonight' else stay.title}: {stay.name}" + (f", {stay.where}" if stay.where else ""))
+    return "\n".join(lines)

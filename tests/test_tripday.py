@@ -74,3 +74,23 @@ def test_day_summaries_say_fly_in_and_fly_home_and_wide_open():
     assert days[1].line == "Pier · Tacos" and days[2].line == "Nothing planned yet"
     assert [d.state for d in days] == ["done", "today", "later", "later", "later"]
     assert days[0].num == 16 and days[0].dow == "FRI" and days[1].tint == "mint"
+
+
+# ---- F-065: the day, as text to share ------------------------------------------------------------------------------------
+
+def test_the_shared_day_lists_times_plans_and_the_hotel_and_nothing_private():
+    items = [td.Item("b-out", 9 * 60 + 32, 10 * 60, "Alaska · SFO → LAX · Main", "flight", "Flight", "sky", "plane", "9:32 AM · booked", confirm="ABCDEF"),
+             td.Item("a1", 17 * 60, 19 * 60 + 30, "Griffith Observatory", "plan", "Culture", "grape", "", "5:00 – 7:30 PM", place="Griffith Observatory, Los Angeles"),
+             td.Item("r1", 20 * 60, 21 * 60, "Uber to dinner", "ride", "Uber", "mint", "car", "simulated"),
+             td.Item("o1", 21 * 60, 22 * 60, "Ride offer", "offer", "Uber", "mint", "car", "tap")]
+    stay = td.Stay("Your hotel tonight", "The Example Hotel", "123 Ocean Ave, Santa Monica")
+    out = td.share_text("LA with the kids", date(2026, 10, 17), items, stay)
+    assert out == ("Sat Oct 17 · LA with the kids\n9:32 AM Alaska · SFO → LAX · Main\n5:00 PM Griffith Observatory\n"
+                   "Hotel tonight: The Example Hotel, 123 Ocean Ave, Santa Monica")
+    assert "$" not in out and "ABCDEF" not in out and "Uber" not in out
+
+
+def test_a_shared_empty_day_says_so_and_the_last_morning_says_checking_out():
+    assert td.share_text("LA", date(2026, 10, 18), [], None) == "Sun Oct 18 · LA\nNothing planned yet."
+    out = td.share_text("LA", date(2026, 10, 20), [], td.Stay("Checking out today", "The Example Hotel", ""))
+    assert out.endswith("Checking out today: The Example Hotel")
