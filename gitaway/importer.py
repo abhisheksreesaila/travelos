@@ -68,6 +68,8 @@ def save(session, plan, token=None, replace=None) -> str:
             familydb.lock(db)
             if replace:
                 trip_id = _replace(db, replace, plan, doc)
+                from gitaway import familythread  # here: familythread -> morning -> tripcal
+                familythread.change(session, fam, f"{familythread.first_name(fam.traveler)} updated the trip details: {plan.title}", trip_id=trip_id, action="change")
             else:
                 trip_id = token or new_token()
                 if not familydb.trip(db, trip_id):

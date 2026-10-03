@@ -33,6 +33,7 @@ from sqlalchemy import text
 from gitaway import familydb_import, hostdb
 from gitaway.familydb_import import IMPORT_TABLES
 from gitaway.familydb_social import SOCIAL_TABLES
+from gitaway.familydb_thread import THREAD_INDEXES, THREAD_TABLES
 
 ROOT = Path(__file__).resolve().parent.parent
 MIGRATIONS_DIR = ROOT / "migrations" / "family"  # absolute: the process runs from the data folder
@@ -163,6 +164,7 @@ FAMILY_TABLES = [
 
 FAMILY_TABLES.extend(SOCIAL_TABLES)  # forks and saves (F-041): one list, one entry point (see familydb_social)
 FAMILY_TABLES.extend(IMPORT_TABLES)  # trips imported from elsewhere (F-042, see familydb_import)
+FAMILY_TABLES.extend(THREAD_TABLES)  # the family thread and who wants its pushes (F-070, see familydb_thread)
 
 FAMILY_INDEXES = [  # (table, columns, unique, name)
     ("bookings", ["trip_id"], True, "ux_bookings_trip"),
@@ -171,6 +173,7 @@ FAMILY_INDEXES = [  # (table, columns, unique, name)
     ("friends", ["trip_id"], False, "ix_friends_trip"),
     ("rides", ["key"], False, "ix_rides_key"),
     ("rides", ["trip_id"], False, "ix_rides_trip"),
+    *THREAD_INDEXES,
 ]
 
 

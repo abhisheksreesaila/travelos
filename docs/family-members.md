@@ -49,6 +49,10 @@ A new write route is therefore safe by default. `tests/test_roles.py` walks ever
 
 Fh-saas's `require_role` is not used: with `setup_tenant_db=False` the beforeware gives every non-owner `role = None`, and `owner` short-circuits to admin whichever family is active (proposals row 15).
 
+## The family thread (F-070)
+
+`POST /trip/family/message` (a message in the trip's thread on the Family tab) and `POST /trip/family/quiet` (my own Quiet switch for the thread's pushes) are on `OPEN_POSTS`: **every member may use them, viewers too**. This is deliberate. A viewer cannot change a plan, but a grandparent who may only look should still be able to say "see you at 6". A viewer's message is the only thing a viewer can add; plan-change cards come from plan writes, which stay editor-only, so a viewer never causes one.
+
 ## Offline cache
 
 `layout.cache_key` (the `ga-user` meta the service worker files saved pages under) hashes the person **and the active family**, so switching family or being removed changes the key and the other family's saved pages are dropped.

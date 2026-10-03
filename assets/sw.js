@@ -99,14 +99,15 @@ self.addEventListener("fetch", (event) => {
   else if (kind === "page") event.respondWith(pageNetworkFirst(event.request));
 });
 
-/* The morning plan push (F-066). A push is always shown (iOS requires it); a tap opens the Today view, focusing a GitAway window if one is open. */
+/* The morning plan push (F-066) and the family thread push (F-070, tag "family-thread", url /trip/family). A push is always shown (iOS requires it);
+   a tap opens the page the push names on this site (Today by default), focusing a GitAway window if one is open. */
 const NOTICE_ICON = "/assets/icons/icon-192.png";
 
 /* The notification for a push payload {title, body, url}. Pure, so it can be checked without a browser push. */
 function noticeFor(data) {
   const d = data || {};
   const url = new URL(typeof d.url === "string" ? d.url : "/trip", self.location.origin);
-  return { title: d.title || "GitAway", options: { body: d.body || "", icon: NOTICE_ICON, badge: NOTICE_ICON, tag: "morning-plan", data: { url: url.origin === self.location.origin ? url.pathname + url.search : "/trip" } } };
+  return { title: d.title || "GitAway", options: { body: d.body || "", icon: NOTICE_ICON, badge: NOTICE_ICON, tag: typeof d.tag === "string" && /^[a-z-]{1,32}$/.test(d.tag) ? d.tag : "morning-plan", data: { url: url.origin === self.location.origin ? url.pathname + url.search : "/trip" } } };
 }
 
 self.addEventListener("push", (event) => {

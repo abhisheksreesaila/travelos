@@ -580,6 +580,43 @@ def _insert_note(db, fam, scope, id_, seq, text, act=None, author=""):
                               "act_id": act, "author": author, "added_by": fam.traveler.id, "gone": 0, "created_at": familydb.now()}, ["pk"], auto_commit=False)
 
 
+def _say(session, fam, scope, text, action):
+    """Write the family thread's card for a plan change (F-070), inside the open transaction. The pretend "long" demo calendar writes none."""
+    if scope:
+        return
+    from gitaway import familythread  # here: familythread -> morning -> tripcal
+    familythread.change(session, fam, text, action=action)
+
+
+def _list(titles):
+    """"A", "A and B", "A, B and C" (a long list says how many instead)."""
+    if len(titles) > 3:
+        return f"{len(titles)} plans: {', '.join(titles[:2])} and {len(titles) - 2} more"
+    return oxford(titles)
+
+
+def _when(t, day, start):
+    """"Tue 10:00 AM": the weekday of plan day `day` (0 is the first trip day) and the time."""
+    return f"{(t.depart + timedelta(days=day)).strftime('%a')} {fmt_time(start)}"
+
+
+def _who(fam):
+    from gitaway import familythread
+    return familythread.first_name(fam.traveler)
+
+
+def _say_update(session, fam, scope, t, row, d, s, e, title):
+    """The card for an edit: moved (day or start), resized (end only) or renamed; nothing when nothing the family would notice changed."""
+    was = (row["day"], row["start_min"], row["end_min"], row["title"])
+    who = _who(fam)
+    if (d, s) != (was[0], was[1]):
+        _say(session, fam, scope, f"{who} moved {title} to {_when(t, d, s)}", "move")
+    elif e != was[2]:
+        _say(session, fam, scope, f"{who} changed {title} to end at {fmt_time(e)}", "move")
+    elif title != was[3]:
+        _say(session, fam, scope, f"{who} renamed {was[3]} to {title}", "change")
+
+
 # ---- activities ----------------------------------------------------------------------------------------------------
 
 def add_activity(session, *, day, start, end, title, kind="fun", demo="", id=None):
@@ -608,6 +645,7 @@ def add_activity(session, *, day, start, end, title, kind="fun", demo="", id=Non
             id = id or f"a{st['q'] + 1}"
             _insert_activity(db, fam, scope, id, _number(id), day, s, e, title, kind)
             _bump(db, fam.trip_id, scope, _number(id))
+            _say(session, fam, scope, f"{_who(fam)} added {title} on {_when(t, day, s)}", "add")
             return Activity(id, day, s, e, title, kind)
 
 
@@ -637,6 +675,7 @@ def update_activity(session, id_, *, day=None, start=None, end=None, title=None,
             if kind:
                 changes["kind"] = kind
             update_record(db, "activities", row["pk"], "pk", auto_commit=False, **changes)
+            _say_update(session, fam, scope, t, row, d, s, e, name if title is not None else row["title"])
             return _act({**row, "day": d, "start_min": s, "end_min": e, "title": name if title is not None else row["title"], "kind": kind or row["kind"]})
 
 
@@ -657,6 +696,7 @@ def delete_activity(session, id_, demo=""):
             dead = [d for d in (st.get("dead") or "").split(",") if d] + [id_]
             familydb.run(db, "UPDATE cal_state SET dead = :d WHERE pk = :pk", d=",".join(dead[-MAX_DEAD:]), pk=f"{fam.trip_id}~{scope}")
             familydb.run(db, "UPDATE notes SET gone = 1 WHERE trip_id = :t AND scope = :s AND act_id = :i AND gone = 0", t=fam.trip_id, s=scope, i=id_)
+            _say(session, fam, scope, f"{_who(fam)} removed {row['title']}", "remove")
             return _act(row)
 
 
@@ -673,6 +713,7 @@ def undo_delete(session, id_, demo=""):
                 return None
             familydb.run(db, "UPDATE activities SET gone = 0 WHERE pk = :pk", pk=row["pk"])
             familydb.run(db, "UPDATE notes SET gone = 0 WHERE trip_id = :t AND scope = :s AND act_id = :i AND gone = 1", t=fam.trip_id, s=scope, i=id_)
+            _say(session, fam, scope, f"{_who(fam)} put back {row['title']}", "add")
             return _act(row)
 
 
@@ -916,6 +957,7 @@ def apply_plans(session, plans, picks, by="", note=None, demo=""):
                 made = Note(f"n{n}", text)
             if added:
                 _bump(db, fam.trip_id, scope, n)
+                _say(session, fam, scope, f"{_who(fam)} added {_list([x.title for x in added])}", "add")
             return added, made
 
 
@@ -943,6 +985,8 @@ def remove_plans(session, plans, ids, by="", note_id=None, note_prefix="", demo=
             for r in drop:
                 familydb.run(db, "DELETE FROM notes WHERE trip_id = :t AND scope = :s AND act_id = :i", t=fam.trip_id, s=scope, i=r["act_id"])
                 delete_record(db, "activities", r["pk"], "pk", auto_commit=False)
+            if drop:
+                _say(session, fam, scope, f"{_who(fam)} removed {_list([r['title'] for r in drop])}", "remove")
             if note_id and note_prefix:
                 familydb.run(db, "DELETE FROM notes WHERE trip_id = :t AND scope = :s AND note_id = :i AND act_id IS NULL AND body LIKE :p ESCAPE '\\'",
                              t=fam.trip_id, s=scope, i=note_id, p=note_prefix.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%")
