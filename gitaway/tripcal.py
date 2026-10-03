@@ -85,6 +85,7 @@ class Activity:
     title: str
     kind: str
     by: str = ""  # the friend who added it; "" is the traveler
+    by_id: str = ""  # the user id of the member who saved it (F-065)
 
 
 @dataclass(frozen=True)
@@ -417,7 +418,7 @@ def _number(id_):
 
 
 def _act(r):
-    return Activity(r["act_id"], r["day"], r["start_min"], r["end_min"], r["title"], r["kind"], r["author"] or "")
+    return Activity(r["act_id"], r["day"], r["start_min"], r["end_min"], r["title"], r["kind"], r["author"] or "", r["added_by"] or "")
 
 
 def _note(r):

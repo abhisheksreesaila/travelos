@@ -72,6 +72,23 @@
     else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
   });
 
+  // F-065: Share this day. The phone's share sheet when there is one, else the clipboard and a quiet "Copied".
+  var shareBtn = document.getElementById("tp-share");
+  function said(msg) { var s = document.getElementById("tp-share-status"); if (s) { s.textContent = msg; setTimeout(function () { s.textContent = ""; }, 4000); } }
+  function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text);
+    return new Promise(function (ok, no) {
+      var ta = document.createElement("textarea"); ta.value = text; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy") ? ok() : no(); } catch (e) { no(e); } document.body.removeChild(ta);
+    });
+  }
+  if (shareBtn) shareBtn.addEventListener("click", function () {
+    var data = { title: shareBtn.getAttribute("data-share-title"), text: shareBtn.getAttribute("data-share-text") };
+    var fallback = function () { copyText(data.text).then(function () { said("Copied"); }, function () { said("Could not copy"); }); };
+    if (navigator.share) navigator.share(data).catch(function (e) { if (!e || e.name !== "AbortError") fallback(); });
+    else fallback();
+  });
+
   centreDay();
   if (sheet && sheet.hasAttribute("data-open")) { var t = document.getElementById("tp-title"); if (t) t.focus(); }
 })();
