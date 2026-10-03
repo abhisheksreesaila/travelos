@@ -26,6 +26,7 @@ Put settings in a `.env` file in the project folder (it is gitignored) or export
 | `GITAWAY_SECRET_KEY` | required in production | Secret that signs the session cookie. In production the app will not start without it. Locally, if unset, a random key is made once and kept in `.sesskey` (gitignored), which is fine for local development. |
 | `PORT` | optional | Port for `pixi run dev`. Default 5002. |
 | `FH_SAAS_LOG_LEVEL` | optional | `DEBUG`, `INFO`, `WARNING` (default). The app calls fh-saas's `configure_logging()` at startup. |
+| `GITAWAY_PUBLIC_URL` | for Face ID in production | The site's public address, e.g. `https://web-production-2d117.up.railway.app` (F-074). A passkey belongs to this site name, and the browser's origin is checked against it strictly. Falls back to Railway's own `RAILWAY_PUBLIC_DOMAIN`; with neither set, Face ID is switched off in production. Never taken from the request's Host or `X-Forwarded-*` headers. |
 | `GITAWAY_VAPID_PUBLIC`, `GITAWAY_VAPID_PRIVATE`, `GITAWAY_VAPID_SUBJECT` | for the morning plan push | The Web Push (VAPID) key pair and a `mailto:` contact (F-066). Without them the Morning plan card is not shown and nothing is sent. Make them with `pixi run vapid-keys mailto:you@example.com` (below). |
 
 There is no redirect-URI variable: fh-saas builds it from the address of the request, as `<scheme>://<host>/auth/callback` (`http` for `localhost` and `127.0.0.1`, `https` for anything else).
@@ -63,6 +64,18 @@ Google Cloud console steps:
 3. **APIs & Services > Credentials > Create credentials > OAuth client ID**, application type **Web application**.
 4. Under **Authorized redirect URIs** add `http://localhost:5002/auth/callback`. Use the same host you browse with: if you open `http://127.0.0.1:5002`, add `http://127.0.0.1:5002/auth/callback` too. For a deployed site add `https://<your domain>/auth/callback`.
 5. Copy the client id and secret into `.env` as `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`, restart `pixi run dev`, and open <http://localhost:5002/signin>.
+
+## Face ID sign-in (F-074)
+
+After signing in once (Google), a person can turn on **Face ID** (a WebAuthn passkey, so also a fingerprint or a device PIN) on a phone and later sign in with one tap. It uses the `webauthn` package (py_webauthn, added with `pixi add --pypi webauthn`).
+
+- **Where it shows**: the sign-in page has **Sign in with Face ID** (and, where the browser supports it, the email box also offers the saved passkey). A signed-in person sees **Use Face ID next time** on Today the first time they open GitAway as a Home Screen app on a phone (**Not now** hides it on that phone), and on `/family` under **This phone**, where they can also **Add another phone** and **Remove** each passkey.
+- **What is stored**: in the host database table `ga_passkeys` (a passkey identifies a person, not a family): the person's id, credential id, public key, sign count, transports, a device name, and created and last-used times. No private key ever leaves the phone, and nothing about a passkey is logged.
+- **Sign-in** ends in the same step as Google sign-in (`auth.start_session`): same session, same active family, and a person with no family left gets a new one. The passkey asks for a resident key and user verification; a sign count that goes backwards is refused.
+- **Site and origin**: in production they come from `GITAWAY_PUBLIC_URL` (or `RAILWAY_PUBLIC_DOMAIN`), never from request headers. Locally they are the address you browse with, and it must be `localhost` (browsers refuse an IP address such as `127.0.0.1` for a passkey). A passkey made on `localhost` does not work on the deployed site, and the other way round.
+- **On Railway** (once): set `GITAWAY_PUBLIC_URL` to the site address, redeploy, then add a passkey from `/family` on the phone. Changing the domain later makes every existing passkey stop working (people sign in with Google and add it again).
+- **CSRF**: the five `/passkeys/...` POSTs take JSON only, check the `Origin` header against the site, and use the SameSite session cookie. The challenge lives in the signed session for 5 minutes and is used up by the first answer. The routes are open to every member and to signed-out visitors in `gitaway/access.py` (and mirrored in `tests/test_roles.py`) because they only change the person's own sign-in.
+- **Tests**: `tests/test_passkeys.py` runs the real verification against a software authenticator (`tests/softkey.py`); `tests_browser/test_passkeys.py` uses Chromium's virtual authenticator.
 
 ## Family thread pushes (F-070)
 

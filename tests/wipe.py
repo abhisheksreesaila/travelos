@@ -19,7 +19,7 @@ def wipe_invites_and_extra_members():
     with hostdb.locked():
         conn = HostDatabase.from_env().db.conn
         conn.rollback()
-        for sql in ("DELETE FROM ga_invites", "DELETE FROM ga_last_family", "DELETE FROM core_memberships WHERE role != 'owner'",
+        for sql in ("DELETE FROM ga_invites", "DELETE FROM ga_last_family", "DELETE FROM ga_passkeys", "DELETE FROM core_memberships WHERE role != 'owner'",
                     "UPDATE core_memberships SET is_active = 1 WHERE role = 'owner'"):
             try:
                 conn.execute(text(sql))
