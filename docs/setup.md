@@ -64,6 +64,10 @@ Google Cloud console steps:
 4. Under **Authorized redirect URIs** add `http://localhost:5002/auth/callback`. Use the same host you browse with: if you open `http://127.0.0.1:5002`, add `http://127.0.0.1:5002/auth/callback` too. For a deployed site add `https://<your domain>/auth/callback`.
 5. Copy the client id and secret into `.env` as `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`, restart `pixi run dev`, and open <http://localhost:5002/signin>.
 
+## Family thread pushes (F-070)
+
+The Family tab's thread uses the same keys and the same switch: anyone with the Morning plan on for a phone also gets a push when someone posts a message or changes a plan (never for their own doing). Tapping it opens `/trip/family`. A person can go **Quiet** on the Family tab to stop these (the morning plan is unaffected). A person is pushed at most once every two minutes; what happens in between is counted and told in one push ("3 more updates on the trip"), sent by the same once-a-minute loop as the morning plan. Pushes carry names and plan titles only, never prices or confirmation numbers. Without the keys the thread still works (it polls every few seconds while open) and no push is sent.
+
 ## Morning plan push (F-066)
 
 On the phone Today view, a family member can turn on a "Morning plan": at the time they pick (default 7:30 AM, the trip's time zone) each trip morning, their phone gets "Today in <place>" with the first plans, and tapping it opens Today. It uses Web Push, which needs a key pair that only your server knows. On an iPhone it works once GitAway is on the Home Screen (iOS 16.4 or later); in a browser tab the card explains how to add it.

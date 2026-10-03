@@ -32,5 +32,7 @@ def register(app):
             return tab_page(key, request, session)
         return route
 
-    for key in TAB_MODULES:
+    for key, mod in TAB_MODULES.items():
         app.get(f"/trip/{key}", name=f"trip_{key}")(make(key))
+        if hasattr(mod, "register"):  # a tab with routes of its own (Family's thread, F-070) adds them here
+            mod.register(app)

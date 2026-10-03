@@ -71,6 +71,9 @@ def test_every_tab_is_pressed_and_lands_in_the_shell(shell, base_url):
             expect(page.locator("#tp-up")).to_be_visible()
         elif key == "help":
             expect(page.locator("#hp-911")).to_be_visible()  # built in F-069
+        elif key == "family":   # built in F-070: its own browser tests are in test_thread.py
+            expect(page.locator("#ft")).to_be_visible()
+            expect(page.locator("#tp-title-h")).to_have_text(name)
         else:
             expect(page.locator("#ph-coming")).to_contain_text(f"{name} is coming")
             expect(page.locator("#tp-title-h")).to_have_text(name)
