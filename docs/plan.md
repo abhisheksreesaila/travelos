@@ -394,10 +394,10 @@ Brief: docs/briefs/trip-week.md · Needs: F-065 for the page it opens
 
 # Mobile companion (brief docs/briefs/mobile-companion.md, design docs/design/canvas/Mobile-Storyboards-v1.html)
 
-## F-067 Phone shell and Today v2 [doing]
-- [ ] on phones every trip screen sits in one shell with a bottom tab bar (Today, Map, Ask in the raised centre, Family, Help) as in the storyboards; tabs not built yet show a short "coming" card; desktop keeps its layout
-- [ ] Today matches frame 3: dark "Up next" card with countdown and "Leave by" (when a drive time is known; otherwise no leave-by line), Directions and Uber (deep link with the destination filled in), the rest of the day as tinted cards (done items struck through), hotel tonight, a route strip of the day's stops
-- [ ] it keeps everything F-065/F-066 added (share, confirmation tap, who added it, morning plan card) and passes phone checks (no sideways scroll, 44px targets, 13px text floor)
+## F-067 Phone shell and Today v2 [done]
+- [x] on phones every trip screen sits in one shell with a bottom tab bar (Today, Map, Ask in the raised centre, Family, Help) as in the storyboards; tabs not built yet show a short "coming" card; desktop keeps its layout
+- [x] Today matches frame 3: dark "Up next" card with countdown and "Leave by" (when a drive time is known; otherwise no leave-by line), Directions and Uber (deep link with the destination filled in), the rest of the day as tinted cards (done items struck through), hotel tonight, a route strip of the day's stops
+- [x] it keeps everything F-065/F-066 added (share, confirmation tap, who added it, morning plan card) and passes phone checks (no sideways scroll, 44px targets, 13px text floor)
 
 ## F-068 Map of the day [doing]
 - [ ] places (hotels, plans with a place, airports, the car counter) get coordinates from OpenStreetMap geocoding, cached per family so each place is looked up once, at most one lookup per second, with a clear "couldn't find this place" state
