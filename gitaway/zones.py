@@ -63,6 +63,22 @@ _BY_ZONE = {
 }
 AIRPORTS = {code: zone for zone, codes in _BY_ZONE.items() for code in codes.split()}
 
+_US_ZONES = {_PT, _MT, _CT, _ET, "America/Phoenix", "America/Anchorage", "Pacific/Honolulu"}
+_CANADA_ZONES = {"America/Toronto", "America/Vancouver", "America/Edmonton"}
+
+
+def country(code) -> str:
+    """A country key for an airport code (F-075): "US" and "CA" by their zones, otherwise the zone itself (one zone per country in the table). "" for an airport not in the table."""
+    zone = AIRPORTS.get((code or "").strip().upper())
+    return "" if not zone else "US" if zone in _US_ZONES else "CA" if zone in _CANADA_ZONES else zone
+
+
+def international(a, b) -> bool:
+    """True when both airports are in the table and in different countries. An airport the table does not know counts as domestic."""
+    ca, cb = country(a), country(b)
+    return bool(ca and cb and ca != cb)
+
+
 _STATES = {
     "CA": _PT, "WA": _PT, "OR": _PT, "NV": _PT, "AZ": "America/Phoenix", "UT": _MT, "CO": _MT, "NM": _MT, "ID": _MT, "MT": _MT, "WY": _MT,
     "TX": _CT, "IL": _CT, "MN": _CT, "MO": _CT, "LA": _CT, "TN": _CT, "WI": _CT, "OK": _CT, "AL": _CT, "IA": _CT, "KS": _CT, "NE": _CT, "AR": _CT, "MS": _CT,

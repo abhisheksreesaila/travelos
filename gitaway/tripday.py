@@ -95,16 +95,35 @@ def drive_minutes(origin, destination):
     return int(m) if isinstance(m, (int, float)) and not isinstance(m, bool) and m > 0 else None
 
 
-def leave_by(item, origin, minute):
+def leave_by(item, origin, minute, margin=0):
     """(leave-by minute of the day, drive minutes, minutes left to leave) for an item reached from `origin`, or None when the drive time is unknown.
-    `minute` is the minute of the day now, in the item's own zone."""
+    `minute` is the minute of the day now, in the item's own zone. `margin` is how early to be there (a departure flight, F-075)."""
     if not (item and item.place and origin):
         return None
     m = drive_minutes(origin, item.place)
     if m is None:
         return None
-    at = item.start - m
+    at = item.start - margin - m
     return at, m, at - minute
+
+
+DOMESTIC_EARLY, INTERNATIONAL_EARLY = 120, 180  # minutes to be at the airport before a departure (F-075)
+
+
+def flight_margin(origin, dest) -> int:
+    """Minutes to be at the airport before a flight from `origin` to `dest` (airport codes): 3 h international, else 2 h."""
+    return INTERNATIONAL_EARLY if zones.international(origin, dest) else DOMESTIC_EARLY
+
+
+def early_label(minutes) -> str:
+    """'2 h', '3 h', '1 h 30 min'."""
+    h, m = divmod(minutes, 60)
+    return f"{h} h" if not m else f"{h} h {m} min" if h else f"{m} min"
+
+
+def is_departure(block_id) -> bool:
+    """A flight you drive to: not the landing at the destination ("b-out", or a leg's "-a" half)."""
+    return not (block_id == "b-out" or block_id.endswith("-a"))
 
 
 def until(minutes) -> str:

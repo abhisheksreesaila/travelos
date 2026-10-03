@@ -265,14 +265,14 @@ def _flight(p) -> bool:
 
 def warm(db, places, budget=2.0) -> int:
     """Look up the places and the drives between consecutive found ones, for at most about `budget` seconds. Returns how many lookups are left.
-    A place is a string, or `(string, True)` for a flight's airport: it is located but never driven to or from (nobody drives to the other airport)."""
+    A place is a string, or `(string, True)` for a flight's airport: you may drive TO it from the stop before (a departure), but never FROM it, so no drive is ever asked between two airports."""
     deadline = _clock() + budget
     for p in places:
         find(_name(p), db, deadline=deadline)
     left = sum(1 for p in places if state(_name(p), db)[0] is None and _norm(_name(p)))
     pts = [(c, _flight(p)) for p in places if isinstance(c := state(_name(p), db)[0], tuple)]
     for (a, fa), (b, fb) in zip(pts, pts[1:]):
-        if fa or fb or a == b or _get(db, "drive", _pair_key(a, b)) is not None:
+        if fa or a == b or _get(db, "drive", _pair_key(a, b)) is not None:
             continue
         if _leg(a, b, db, deadline=deadline) is None:
             left += 1
