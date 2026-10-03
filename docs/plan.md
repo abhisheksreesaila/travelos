@@ -275,13 +275,13 @@ Found while reviewing F-045: run in reverse order, tests/test_family_storage.py:
 
 # Go live (brief: docs/briefs/go-live.md, approved 2026-10-01)
 
-## F-048 Deploy to Railway [review]
+## F-048 Deploy to Railway [done]
 Live: https://web-production-2d117.up.railway.app (deployed 2026-10-01; volume at /data; secret set)
 Needs: none
 - [x] the app builds and runs on Railway (pixi-based image), with all databases on a persistent volume (working directory on the volume), assets resolved from the code folder
 - [x] production settings: session cookie https-only, `GITAWAY_DEV_LOGIN` never set, secret key from `GITAWAY_SECRET_KEY`, a health check route; docs/setup.md has a Railway section
 - [x] a new Railway project "gitaway" with a volume and a public *.up.railway.app address
-- [ ] a redeploy keeps a test family's data (check on the next deploy with the captain's family)
+- [x] a redeploy keeps a family's data (captain confirmed their trip survived the 2026-10-03 deploys)
 - [x] Google sign-in works on the live address (captain signed in 2026-10-02; keys set with oauth-setup)
 
 ## F-049 Stay signed in about 30 days [done]
