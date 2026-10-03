@@ -1,0 +1,42 @@
+/* The Help tab (F-069), frame 9 of docs/design/canvas/Mobile-Storyboards-v1.html. Loaded after trip.css and phone.css. Sizes are rem; text never under --text-min. */
+.hp { display: flex; flex-direction: column; gap: 0.75rem; }
+.hp-card { border-radius: 1.5rem; background: var(--card); box-shadow: var(--shadow-sm); padding: 0.875rem; display: flex; flex-direction: column; gap: 0.625rem; }
+.hp-row { display: flex; gap: 0.75rem; align-items: flex-start; }
+.hp-ico { width: 2.875rem; height: 2.875rem; border-radius: 0.875rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.hp-sky { background: var(--sky-tint); }
+.hp-sun { background: var(--sun-tint); }
+.hp-who { display: flex; flex-direction: column; gap: 0.125rem; min-width: 0; }
+.hp-h { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; line-height: 1.1; letter-spacing: -0.02em; overflow-wrap: anywhere; }
+.hp-addr { font-weight: 600; font-size: max(var(--text-min), 0.875rem); color: var(--ink-2); overflow-wrap: anywhere; }
+.hp-times { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+.hp-times > div { border-radius: 0.875rem; background: var(--paper-2); padding: 0.4375rem 0.75rem; display: flex; flex-direction: column; min-width: 0; }
+.hp-k { font-size: max(var(--text-min), 0.75rem); font-weight: 800; letter-spacing: 0.06em; color: var(--ink-3); }
+.hp-v { font-family: var(--font-display); font-weight: 800; font-size: 1rem; }
+.hp-conf { border-radius: 0.875rem; background: var(--sun-tint); display: flex; flex-direction: column; gap: 0.125rem; padding-bottom: 0.25rem; }
+.hp-conf-sum { display: flex; align-items: center; gap: 0.625rem; min-height: 2.75rem; padding: 0 0.75rem; cursor: pointer; font-weight: 700; font-size: max(var(--text-min), 0.875rem); list-style: none; }
+.hp-conf-sum::-webkit-details-marker { display: none; }
+.hp-dots { margin-left: auto; letter-spacing: 0.2em; font-family: var(--font-display); font-weight: 800; }
+.hp-conf[open] .hp-dots { display: none; }
+.hp-conf .tp-sub, .hp-conf .tp-conf-num { padding-left: 0.75rem; }
+.hp-acts { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: 0.5rem; }
+.hp-acts .tp-btn { gap: 0.5rem; }
+.hp-none, .hp-empty { font-weight: 700; font-size: max(var(--text-min), 0.875rem); color: var(--ink-2); display: flex; align-items: center; }
+.hp-fix summary { align-self: flex-start; }
+.hp-fix-form { display: flex; flex-direction: column; gap: 0.5rem; padding-top: 0.5rem; }
+.hp-lab { display: block; font-weight: 800; font-size: max(var(--text-min), 0.875rem); margin-bottom: 0.25rem; }
+.hp-fix-form input[type="tel"] { width: 100%; min-height: 2.75rem; padding: 0 0.875rem; border-radius: 0.875rem; border: 0.125rem solid rgba(30, 26, 46, .2); font: inherit; background: #FFFFFF; }
+.hp-fix-acts { display: flex; gap: 0.5rem; justify-content: flex-end; }
+.hp-problem { border-radius: 1rem; background: var(--bubble-tint); color: var(--bubble-ink); font-weight: 700; padding: 0.625rem 0.875rem; }
+
+.hp-sos { border-radius: 1.5rem; background: var(--card); box-shadow: var(--shadow-sm); overflow: hidden; }
+.hp-sos-h { background: var(--bubble-tint); color: var(--bubble-ink); padding: 0.625rem 0.875rem; display: flex; align-items: center; gap: 0.5rem; }
+.hp-sos-t { font-family: var(--font-display); font-weight: 800; font-size: 1.125rem; color: var(--ink); }
+.hp-sos-s { margin-left: auto; font-weight: 700; font-size: max(var(--text-min), 0.8125rem); color: var(--ink-2); }
+.hp-sos-b { padding: 0.75rem 0.875rem 0.875rem; display: flex; flex-direction: column; gap: 0.625rem; }
+.hp-911 { min-height: 3.5rem; font-size: 1.125rem; gap: 0.5rem; width: 100%; }
+.hp-contacts { display: grid; grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr)); gap: 0.5rem; }
+.hp-contact { display: flex; flex-direction: column; align-items: center; gap: 0.125rem; padding: 0.5rem 0.25rem; min-height: 2.75rem; border-radius: 0.875rem; background: var(--paper-2); text-decoration: none; color: var(--ink); text-align: center; min-width: 0; }
+.hp-av { width: 2rem; height: 2rem; border-radius: var(--r-pill); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: max(var(--text-min), 0.8125rem); color: var(--ink); }
+.hp-cn { font-weight: 800; font-size: max(var(--text-min), 0.8125rem); overflow-wrap: anywhere; }
+.hp-cs { font-weight: 700; font-size: max(var(--text-min), 0.75rem); color: var(--ink-2); overflow-wrap: anywhere; }
+.hp-add { align-self: flex-start; display: inline-flex; align-items: center; min-height: 2.75rem; font-weight: 800; text-decoration: underline; color: var(--ink); }

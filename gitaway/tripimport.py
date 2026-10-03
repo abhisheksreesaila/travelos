@@ -100,6 +100,7 @@ class Rental:
     dropoff: datetime
     confirmation: str = ""
     car: str = ""
+    phone: str = ""
 
 
 def _split(legs):
@@ -491,9 +492,10 @@ def _read_car(r, doc):
         r.bad(path + ("dropoff",), "The car has to be dropped off after it is picked up.")
     confirmation = _text(r, item, "confirmation", path, "The car’s confirmation", limit=30)
     car = _text(r, item, "car", path, "The car’s type", limit=40)
+    phone = _text(r, item, "phone", path, "The car’s phone", limit=30)
     if not (company and pick and drop and drop > pick):
         return None
-    return Rental(company, where_p, pick, where_d, drop, confirmation, car)
+    return Rental(company, where_p, pick, where_d, drop, confirmation, car, phone)
 
 
 def _check_inside(r, plan_start, plan_end, legs, hotels, rental):
@@ -622,7 +624,7 @@ def to_doc(plan: Plan) -> dict:
     if plan.rental:
         c = plan.rental
         doc["car"] = {"company": c.company, "pickup_place": c.pickup_place, "pickup": _iso(c.pickup), "dropoff_place": c.dropoff_place,
-                      "dropoff": _iso(c.dropoff), "confirmation": c.confirmation, "car": c.car}
+                      "dropoff": _iso(c.dropoff), "confirmation": c.confirmation, "car": c.car, "phone": c.phone}
     return doc
 
 
@@ -636,7 +638,7 @@ def from_doc(doc: dict) -> Plan:
         tuple(Traveler(x["name"], x.get("email", ""), x.get("age")) for x in doc["travelers"]),
         tuple(Leg(f["airline"], f["number"], f["from"], f["to"], at(f["depart"]), at(f["arrive"]), f.get("confirmation", ""), f.get("seats", "")) for f in doc.get("flights", [])),
         tuple(Lodging(h["name"], h["address"], at(h["check_in"]), at(h["check_out"]), h.get("confirmation", ""), h.get("room", ""), h.get("rooms", 1), h.get("phone", "")) for h in hs),
-        Rental(c["company"], c["pickup_place"], at(c["pickup"]), c["dropoff_place"], at(c["dropoff"]), c.get("confirmation", ""), c.get("car", "")) if c else None,
+        Rental(c["company"], c["pickup_place"], at(c["pickup"]), c["dropoff_place"], at(c["dropoff"]), c.get("confirmation", ""), c.get("car", ""), c.get("phone", "")) if c else None,
         doc.get("notes", ""), t.get("timezone", ""))
 
 
@@ -770,4 +772,5 @@ def detail_rows(spec: Spec, plan: Plan) -> tuple:
     which = "pickup" if spec.kind == "pickup" else "dropoff"
     rows = [("Company", x.company), ("Pick up", f"{x.pickup_place} · {when_text(x.pickup)}"), ("Drop off", f"{x.dropoff_place} · {when_text(x.dropoff)}")]
     rows += [("Car", x.car)] if x.car else []
+    rows += [("Phone", x.phone)] if x.phone else []
     return f"{x.company} car {which}", rows + [("Confirmation", x.confirmation or "none given")]
