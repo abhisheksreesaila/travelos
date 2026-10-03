@@ -77,7 +77,7 @@ def load(session, day_arg="", ua=""):
     tomorrow = items_of(sel + 1) if sel < last else []
     up = td.up_next(items, now, tomorrow[0] if tomorrow else None, clocks) if now is not None else None
     return dict(zone=zone, session=session, who=who, b=b, t=t, dates=dates, last=last, role=role, blocks=blocks, acts=acts, notes=notes, phase=ph, n=n, today_idx=today_idx, sel=sel, now=now,
-                items=items, up=up, clocks=clocks, stay_place=td.hotel_place(b, dates, sel), stay=td.stay_card(b, dates, sel), days=td.day_summaries(dates, blocks, acts, today_idx), ua=ua, past=past, first=items_of(0)[:1],
+                items=items, up=up, clocks=clocks, stay_place=td.hotel_place(b, dates, sel), stay_before=td.hotel_place(b, dates, sel - 1) if sel else "", stay=td.stay_card(b, dates, sel), days=td.day_summaries(dates, blocks, acts, today_idx), ua=ua, past=past, first=items_of(0)[:1],
                 crew=members.crew(session), next=cal.next_id(session))
 
 
@@ -145,15 +145,23 @@ def leave_line(v, up):
     item = up.item
     before = [x for x in v["items"] if x.start < item.start and x.place and x.kind not in ("ride", "offer")]
     flew = any(x.kind == "flight" and x.start < item.start for x in v["items"])  # on a travel day nobody leaves from the stay
-    origin = "" if before and before[-1].kind == "flight" else before[-1].place if before else ("" if flew else v["stay_place"])  # straight after a flight there is no drive to time
-    got = td.leave_by(item, origin, v["clocks"][item.zone][1])
+    margin = 0
+    if item.kind == "flight":  # F-075: a departure flight is driven to from the stop before (or the night's stay), with time to spare; a landing never is
+        if not td.is_departure(item.id):
+            return ""
+        leg = td._LEG.search(item.title)
+        margin = td.flight_margin(*leg.groups()) if leg else td.DOMESTIC_EARLY
+        origin = "" if before and before[-1].kind == "flight" else before[-1].place if before else v["stay_before"]
+    else:
+        origin = "" if before and before[-1].kind == "flight" else before[-1].place if before else ("" if flew else v["stay_place"])  # straight after a flight there is no drive to time
+    got = td.leave_by(item, origin, v["clocks"][item.zone][1], margin)
     if not got:
         return ""
     at, drive, left = got
     left = max(left, 0)
     ring = NotStr('<svg viewBox="0 0 52 52" aria-hidden="true"><circle cx="26" cy="26" r="22" class="ph-ring-bg"/><circle cx="26" cy="26" r="22" class="ph-ring-fg" stroke-dasharray="138.2" stroke-dashoffset="%.1f"/></svg>' % (138.2 * (1 - min(left, 60) / 60)))
     return Div(Span(ring, Span(str(left), cls="ph-ring-n"), Span("MIN", cls="ph-ring-u"), cls="ph-ring"),
-               Span(Span(f"Leave by {cal.fmt_time(at)}" if left else "Time to leave", cls="ph-leave-by"), Span(f"{drive} min drive", cls="tp-up-sub"), cls="ph-leave-text"), cls="ph-leave", id="tp-leave")
+               Span(Span(f"Leave by {cal.fmt_time(at)}" if left else "Time to leave", cls="ph-leave-by"), Span(f"{drive} min drive" + (f" · be there {td.early_label(margin)} early" if margin else ""), cls="tp-up-sub"), cls="ph-leave-text"), cls="ph-leave", id="tp-leave")
 
 
 def row(item, today, ua=""):
