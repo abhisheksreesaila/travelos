@@ -122,6 +122,21 @@ def after_sign_in(session, verified):
         return members.after_sign_in(session, verified)
 
 
+def start_session(host_db, user, session, verified):
+    """The steps after a person is known, shared by Google sign-in and passkey sign-in (F-074): their family (made on first use, also for a person
+    who has lost every membership), the session, then `after_sign_in`. Call inside `hostdb.locked()`."""
+    from fh_saas import utils_auth as ua
+    membership = ua.get_user_membership(host_db, user.id)
+    if not membership and not user.is_sys_admin:
+        ua.provision_new_user(host_db, user)
+        membership = ua.get_user_membership(host_db, user.id)
+    if membership:
+        ua.create_user_session(session, user, membership)
+    else:  # a system admin has no family: the minimal session fh-saas gives them (gitaway.access does not support these yet)
+        session["user_id"], session["email"], session["is_sys_admin"] = user.id, user.email, True
+    after_sign_in(session, verified)
+
+
 def sign_in_google(code, state, request, session) -> bool:
     """The Google callback, composed from fh-saas's public steps so Google's `email_verified` is kept (handle_oauth_callback discards the
     user info: docs/fh-saas-proposals.md #17). Same steps as fh_saas.utils_auth.handle_oauth_callback. Returns whether the email is verified.
@@ -137,15 +152,7 @@ def sign_in_google(code, state, request, session) -> bool:
     with hostdb.locked():
         host_db = HostDatabase.from_env()
         user = ua.create_or_get_global_user(host_db, info[client.id_key], email, info)
-        membership = ua.get_user_membership(host_db, user.id)
-        if not membership and not user.is_sys_admin:
-            ua.provision_new_user(host_db, user)
-            membership = ua.get_user_membership(host_db, user.id)
-        if membership:
-            ua.create_user_session(session, user, membership)
-        else:  # a system admin has no family: the minimal session fh-saas gives them (gitaway.access does not support these yet)
-            session["user_id"], session["email"], session["is_sys_admin"] = user.id, user.email, True
-        after_sign_in(session, verified)
+        start_session(host_db, user, session, verified)
     return verified
 
 

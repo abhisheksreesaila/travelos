@@ -21,6 +21,7 @@ OPEN_FOR_VIEWERS = {
     "/join/{token}",                                          # using an invite link: joining another family
     "/trip/morning", "/trip/morning/time", "/trip/morning/off", "/trip/morning/status",   # a person's own phone reminder (F-066)
     "/trip/photos", "/trip/photos/remove",                     # a viewer may add photos; removing is author-or-admin, checked by the route (F-071)
+    "/passkeys/register/options", "/passkeys/register", "/passkeys/auth/options", "/passkeys/auth", "/passkeys/remove",   # a person's own Face ID sign-in (F-074)
     "/trip/family/message", "/trip/family/quiet",             # a viewer may talk in the family thread and silence their own pushes (F-070)
 }
 ADMIN_ONLY = {"/family/invite", "/family/invite/revoke", "/family/role", "/family/remove", "/trip/delete"}
