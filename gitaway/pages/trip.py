@@ -118,12 +118,24 @@ def up_card(v):
     leave = leave_line(v, up) if item and up.kicker.startswith("UP NEXT") else ""
     buttons = []
     if item and item.place:
-        buttons.append(A(icon("nav", 18, 2.4), "Directions", href=td.maps_url(item.place, v["ua"]), target="_blank", rel="noopener", cls="tp-btn tp-btn-coral", id="tp-directions"))
-        buttons.append(A(icon("car", 18, 2.4), "Uber", href=td.uber_url(item.place), target="_blank", rel="noopener", cls="tp-btn tp-btn-white", id="tp-uber"))
+        buttons.append(A(icon("nav", 18, 2.4), "Directions", href=td.maps_url(item.place, v["ua"]), target="_blank", rel="noopener", cls="tp-btn tp-btn-coral", id="tp-directions", data_dir=item.id))
+        buttons.append(A(icon("car", 18, 2.4), "Uber", href=td.uber_url(item.place, td.cached_coords(item.place)), target="_blank", rel="noopener", cls="tp-btn tp-btn-white", id="tp-uber"))
     elif up.uber:
         buttons.append(A("Get an Uber" if up.uber.kind == "offer" else "Your Uber", href=up.uber.href, cls="tp-btn tp-btn-white", id="tp-uber"))
     return Div(Span(pulse, up.kicker, cls="tp-kicker"), Span(item.title if item else "You are all caught up", cls="tp-up-title"), Span(up.detail, cls="tp-up-sub"), leave,
-               Div(*buttons, cls="tp-up-actions") if buttons else "", cls="tp-up", id="tp-up")
+               Div(*buttons, cls="tp-up-actions") if buttons else "", up_details(item) if item else "", cls="tp-up", id="tp-up")
+
+
+def up_details(item):
+    """What the list row would have shown for the up-next item (it is left out of the list): who added it, the notes on it, the confirmation behind a tap."""
+    who = item.sub.split(" · ")[-1] if item.by else ""
+    if not (item.confirm or item.notes or who.startswith("added by")):
+        return ""
+    body = [Span(who, cls="tp-sub")] if who.startswith("added by") else []
+    body += [Span(icon("pencil", 13, 2.4), n, cls="tp-pnote") for n in item.notes]
+    if item.confirm:
+        body += [Span("Confirmation number", cls="tp-sub"), Span(item.confirm, cls="tp-conf-num")]
+    return Details(Summary("Details", Span(f" for {item.title}", cls="sr-only"), cls="tp-mini"), *body, cls="ph-details tp-confirm", **({"data_confirm": item.id} if item.confirm else {}), data_up_details=item.id)
 
 
 def leave_line(v, up):
@@ -192,7 +204,8 @@ def today_panel(v):
     if v["items"]:
         parts.append(route_strip(v))
         parts.append(Div(Span("THE REST OF TODAY" if v["now"] is not None else "THE DAY"), cls="ph-sec"))
-        parts.append(Div(*[row(x, v["now"] is not None, v["ua"]) for x in v["items"]], cls="tp-list", id="tp-list"))
+        rest = v["now"] is not None and v["up"] and v["up"].item  # the up-next item is in the card above, with its details
+        parts.append(Div(*[row(x, v["now"] is not None, v["ua"]) for x in v["items"] if not (rest and x.id == v["up"].item.id)], cls="tp-list", id="tp-list"))
     else:
         parts.append(Div(Span("wide open!", cls="tp-hand"), A("Add something fun", href=trip_url(add="1", day=sel), data_open_sheet="", cls="tp-btn tp-btn-ink") if editor else Span("Nothing planned yet.", cls="tp-sub"), cls="tp-empty"))
     if cal.is_imported(v["b"]) and any(x.kind in ("flight", "hotel", "car") for x in v["items"]):  # where it was booked is said once, quietly

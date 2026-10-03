@@ -205,3 +205,29 @@ def test_what_f065_added_is_still_there(client, at):
     for hook in ('id="tp-share"', 'data-dir="a1"'):
         assert hook in html
     assert "data-confirm=" in client.get("/trip?day=0").text
+
+
+# ---- review follow-ups -----------------------------------------------------------------------------------------------------
+
+def test_uber_link_adds_coordinates_only_when_geo_has_them_cached(client, at, monkeypatch):
+    base = "https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[formatted_address]=Griffith%20Observatory%2C%20Los%20Angeles"
+    monkeypatch.delitem(sys.modules, "gitaway.geo", raising=False)
+    assert td.cached_coords("x") is None
+    html = _today(client, at)
+    assert unescape(tag(html, "id", "tp-uber")["href"]) == base
+    mod = types.ModuleType("gitaway.geo")
+    mod.cached_coords = lambda place: (34.1184, -118.3004)
+    monkeypatch.setitem(sys.modules, "gitaway.geo", mod)
+    assert unescape(tag(client.get("/trip").text, "id", "tp-uber")["href"]) == base + "&dropoff[latitude]=34.118400&dropoff[longitude]=-118.300400"
+    mod.cached_coords = lambda place: None
+    assert unescape(tag(client.get("/trip").text, "id", "tp-uber")["href"]) == base
+    mod.cached_coords = lambda place: (999, 0)
+    assert td.cached_coords("x") is None
+
+
+def test_the_up_next_item_leaves_the_list_on_today_but_stays_on_other_days_and_keeps_its_details(client, at):
+    html = _today(client, at)
+    assert 'data-item="a1"' not in html and 'id="tp-up"' in html
+    assert 'data-up-details="a1"' in html  # added by you: reachable from the card
+    at(date(2026, 10, 16), "08:00")  # viewing Saturday on Friday: nothing is "up next", the plan stays in the list
+    assert 'data-item="a1"' in client.get("/trip?day=1").text

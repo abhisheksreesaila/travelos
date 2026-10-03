@@ -63,9 +63,22 @@ def maps_url(place, ua="") -> str:
     return f"https://maps.apple.com/?q={q}" if _APPLE.search(ua or "") else f"https://www.google.com/maps/search/?api=1&query={q}"
 
 
-def uber_url(address) -> str:
-    """Uber's keyless deep link: pickup is the phone's own location, the dropoff address is filled in. '' when there is no address."""
-    return f"https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[formatted_address]={quote(address, safe='')}" if address else ""
+def cached_coords(place):
+    """(latitude, longitude) of a place when gitaway.geo (F-068) already has it cached, else None. Cache only: this never makes a network call."""
+    try:
+        got = importlib.import_module("gitaway.geo").cached_coords(place)
+        lat, lon = float(got[0]), float(got[1])
+    except Exception:  # no geo module, no cached place, or a malformed answer
+        return None
+    return (lat, lon) if -90 <= lat <= 90 and -180 <= lon <= 180 else None
+
+
+def uber_url(address, coords=None) -> str:
+    """Uber's keyless deep link: pickup is the phone's own location, the dropoff address is filled in (and its latitude and longitude when known). '' when there is no address."""
+    if not address:
+        return ""
+    url = f"https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[formatted_address]={quote(address, safe='')}"
+    return url + f"&dropoff[latitude]={coords[0]:.6f}&dropoff[longitude]={coords[1]:.6f}" if coords else url
 
 
 def drive_minutes(origin, destination):
