@@ -51,12 +51,23 @@ def _item(r) -> dict:
             "payload": payload if isinstance(payload, dict) else {}, "at": r["created_at"]}
 
 
-def items(session, since=0, limit=SHOWN) -> list:
-    """The thread of the trip this person has open: items after rowid `since` (oldest first), at most the newest `limit`. [] when signed out."""
+class StaleTrip(ThreadError):
+    """The page was drawn for another trip than the one the request resolves to (it was deleted, or the form is old)."""
+
+
+def _check(fam, trip):
+    if trip and fam.trip_id != trip:
+        raise StaleTrip("This trip changed. Reload the page.")
+
+
+def items(session, since=0, limit=SHOWN, trip=None) -> list:
+    """The thread of the trip this person has open (or `trip`, which must be that trip: StaleTrip otherwise): items after rowid `since` (oldest first),
+    at most the newest `limit`. [] when signed out."""
     from gitaway import session as ses
     with ses.family(session) as fam:
         if not fam or not fam.trip_id:
             return []
+        _check(fam, trip)
         found = familydb.rows(fam.db, "SELECT * FROM (SELECT rowid AS n, * FROM thread WHERE trip_id = :t AND rowid > :s ORDER BY rowid DESC LIMIT :l) ORDER BY n",
                               t=fam.trip_id, s=int(since or 0), l=limit)
     return [_item(r) for r in found]
@@ -69,7 +80,7 @@ def _insert(db, trip_id, kind, author, name, text, payload=None):
                  i=uuid.uuid4().hex, t=trip_id, k=kind, a=author, n=name, x=text, p=json.dumps(payload, separators=(",", ":")) if payload else "", c=familydb.now())
 
 
-def post_message(session, text):
+def post_message(session, text, trip=None):
     """Write a message to the thread of the open trip (any member, viewers too) and tell the family. Raises ThreadError."""
     from gitaway import session as ses
     text = " ".join((text or "").split())
@@ -79,7 +90,8 @@ def post_message(session, text):
         raise ThreadError(f"Keep messages to {MAX_MESSAGE} characters.")
     with ses.family(session) as fam:
         if not fam or not fam.trip_id:
-            raise ThreadError("Open a trip first.")
+            raise StaleTrip("This trip changed. Reload the page.")
+        _check(fam, trip)
         name, trip_id, me = first_name(fam.traveler), fam.trip_id, fam.traveler.id
         with familydb.transaction(fam.db):
             _insert(fam.db, trip_id, "message", me, name, text)
@@ -111,7 +123,8 @@ def change(session, fam, text, *, trip_id=None, action="change"):
     if not trip_id or not text:
         return
     _insert(fam.db, trip_id, "change", fam.traveler.id, first_name(fam.traveler), text, {"action": action})
-    announce(session, trip_id, "Plan changed", _safe(text), exclude=fam.traveler.id)
+    me = fam.traveler.id
+    familydb.after_commit(lambda: announce(session, trip_id, "Plan changed", _safe(text), exclude=me))   # only once the change is really saved
 
 
 # ---- quiet -----------------------------------------------------------------------------------------------------------------

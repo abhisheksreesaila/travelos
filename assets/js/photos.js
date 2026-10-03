@@ -48,6 +48,8 @@
   function uploadOne(file) {
     var body = new FormData();
     body.append("photo", file, file.name);
+    var thread = document.getElementById("ft-thread");
+    if (thread && thread.getAttribute("data-trip")) body.append("trip", thread.getAttribute("data-trip"));   // the trip this page was drawn for
     return fetch("/trip/photos", { method: "POST", credentials: "same-origin", headers: { "X-Fragment": "1" }, body: body })
       .then(function (r) {
         if (r.ok) return r.json();

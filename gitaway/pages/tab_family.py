@@ -79,6 +79,7 @@ def _switch(view):
 def content(request, session):
     view = "photos" if request.query_params.get("view") == "photos" else "chat"
     its = familythread.items(session)
+    trip = ses.open_trip_id()
     me, zone = ses.current_traveler(session).id, ses.trip_zone(session)
     last = its[-1]["n"] if its else 0
     quiet = familythread.quiet(session)
@@ -89,9 +90,10 @@ def content(request, session):
                  Button(Span(cls="mp-knob"), Span("Quiet", cls="ft-quiet-label"), type="submit", role="switch", aria_checked="true" if quiet else "false", id="ft-quiet", cls=f"mp-switch ft-switch{' is-on' if quiet else ''}"),
                  method="post", action="/trip/family/quiet", cls="ft-quiet-form"),
             cls="ft-notify"),
-        Div(*fragment(its, me, zone), id="ft-thread", cls="ft-thread", data_last=str(last), data_poll=str(POLL_MS), role="log", aria_live="polite", aria_label="Family thread"),
+        Div(*fragment(its, me, zone), id="ft-thread", cls="ft-thread", data_last=str(last), data_poll=str(POLL_MS), data_trip=trip, role="log", aria_live="polite", aria_label="Family thread"),
         P("No messages yet. Say hello, or change a plan and it shows up here.", id="ft-empty", cls="ft-empty", hidden=bool(its)),
-        Form(Input(type="text", name="text", id="ft-text", maxlength=str(familythread.MAX_MESSAGE), placeholder="Message the family", autocomplete="off", aria_label="Message the family", cls="ft-input", required=True),
+        Form(Input(type="hidden", name="trip", value=trip),
+             Input(type="text", name="text", id="ft-text", maxlength=str(familythread.MAX_MESSAGE), placeholder="Message the family", autocomplete="off", aria_label="Message the family", cls="ft-input", required=True),
              Button(icon("camera", 20, 2.2), Span("Take a photo", cls="sr-only"), type="button", id="ft-camera", cls="ft-round", data_pick="camera"),
              Button(icon("arrow-right", 20, 2.4), Span("Send", cls="sr-only"), type="submit", id="ft-send", cls="ft-send"),
              method="post", action="/trip/family/message", id="ft-compose", cls="ft-compose"),
@@ -106,9 +108,16 @@ def _signed_in(session):
     return ses.current_traveler(session) is not None
 
 
-def _new_items(session, since):
-    """The items after `since` as an HTML fragment; the highest item number goes in X-Thread-Last."""
-    its = familythread.items(session, since=max(0, since))
+STALE = "This trip changed. Reload the page."
+SORRY = "That did not send. Try again."
+
+
+def _new_items(session, since, trip=""):
+    """The items after `since` as an HTML fragment; the highest item number goes in X-Thread-Last. 409 when the page was drawn for another trip."""
+    try:
+        its = familythread.items(session, since=max(0, since), trip=trip or None)
+    except familythread.StaleTrip:
+        return PlainTextResponse(STALE, status_code=409)
     me, zone = ses.current_traveler(session).id, ses.trip_zone(session)
     body = "".join(to_xml(v) for v in fragment(its, me, zone))
     return Response(body, media_type="text/html; charset=utf-8", headers={"X-Thread-Last": str(its[-1]["n"] if its else max(0, since)), "Cache-Control": "no-store"})
@@ -118,21 +127,23 @@ def register(app):
     photos_ui.register(app)
 
     @app.get("/trip/family/thread")
-    def poll(session, since: int = 0):
-        return _new_items(session, since) if _signed_in(session) else Response(status_code=401)
+    def poll(session, since: int = 0, trip: str = ""):
+        return _new_items(session, since, trip) if _signed_in(session) else Response(status_code=401)
 
     @app.post("/trip/family/message")
-    def message(request, session, text: str = "", since: int = 0):
+    def message(request, session, text: str = "", since: int = 0, trip: str = ""):
         if not _signed_in(session):
             return Response("Sign in first.", status_code=401)
         wants_fragment = request.headers.get("x-fragment") == "1"
         try:
-            familythread.post_message(session, text)
+            familythread.post_message(session, text, trip=trip or None)
+        except familythread.StaleTrip:
+            return PlainTextResponse(STALE, status_code=409) if wants_fragment else RedirectResponse("/trip/family", status_code=303)
         except familythread.ThreadError as e:
             return PlainTextResponse(str(e), status_code=400) if wants_fragment else RedirectResponse("/trip/family", status_code=303)
         if not wants_fragment:
             return RedirectResponse("/trip/family", status_code=303)
-        return _new_items(session, since)
+        return _new_items(session, since, trip)
 
     @app.post("/trip/family/quiet")
     def quiet(request, session, quiet: str = "1"):

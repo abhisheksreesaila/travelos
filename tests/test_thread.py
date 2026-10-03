@@ -177,36 +177,10 @@ def test_applying_and_removing_a_forks_plans_write_one_card_each(client):
     assert cards(client)[-1] == "Ari removed Pier walk and Tacos"
 
 
-def test_replacing_a_trips_details_writes_a_card_on_that_trip(client):
-    from gitaway import importer
-    from tests.test_trip_import import imported
-    sign_in(client)
-    from gitaway import session as ses
-    assert imported(client).status_code == 303
-    ari = person("ari")
-    trip_id = ses.trips(ari)[0].id
-    assert [i for i in ft.items(ari) if i["kind"] == "change"] == []        # saving a new trip is not a change to an existing plan
-    importer.save(ari, importer.plan_of(ari, trip_id), None, trip_id)
-    [card] = [i for i in ft.items(ari) if i["kind"] == "change"]
-    assert card["text"].startswith("Ari updated the trip details")
-
-
 def test_the_pretend_long_calendar_writes_no_cards(client):
     book(client)
     client.post("/calendar/activities", data={**FORM, "id": "a1", "demo": "long"}, follow_redirects=False)
     assert cards(client) == []
-
-
-def test_a_card_is_part_of_the_same_transaction_as_the_change(client, monkeypatch):
-    book(client)
-
-    def boom(*a, **k):
-        raise RuntimeError("push queue down")
-    monkeypatch.setattr(ft, "announce", boom)
-    with pytest.raises(Exception):
-        from gitaway import tripcal as cal
-        cal.add_activity(person("ari"), day=1, start="10:00", end="11:00", title="Lost", id="a9")
-    assert cards(client) == [] and all(a.title != "Lost" for a in __import__("gitaway.tripcal", fromlist=["x"]).activities(person("ari")))
 
 
 # ---- the page and the poll fragment ----------------------------------------------------------------------------------------
@@ -431,13 +405,26 @@ def test_a_removed_member_is_not_pushed(crew, push):
     assert push.sent == []
 
 
-def test_pushes_never_carry_prices_or_confirmation_numbers(crew, push):
+def test_a_message_is_the_persons_own_words_and_a_price_in_it_is_not_filtered_from_the_thread(crew, push):
     client, ed, _ = crew
     subscribe(ed, EP_ED)
-    say(client, "Luau $85.00 per person, booking GA-12345678")
+    say(client, "Luau $85.00 per person")
+    assert "$85.00" in thread(client).text          # what someone types stays as typed in the thread...
     ft.drain()
-    body = push.sent[0][1]["body"]
-    assert "$" not in body and "85" not in body
+    assert "$" not in push.sent[0][1]["body"]       # ...but the lock screen never shows an amount
+
+
+def test_change_cards_and_their_pushes_carry_no_confirmation_numbers_and_the_push_no_prices(crew, push):
+    client, ed, _ = crew
+    subscribe(ed, EP_ED)
+    add(client, id="a1", title="Luau $85.00 per person", day="1", start="10:00", end="11:00")
+    ft.drain()
+    card = cards(client)[0]
+    assert "Luau" in card and "GA-" not in card                      # the card is the app's own sentence about the plan
+    assert "$" not in push.sent[0][1]["body"]
+    from gitaway import session as ses
+    b = ses.booking(person("ari"))
+    assert b["id"] not in card and b["id"] not in push.sent[0][1]["body"]    # never the booking's confirmation number
 
 
 def test_without_push_keys_and_no_test_sender_nothing_is_sent_or_queued(crew, monkeypatch):
@@ -466,3 +453,85 @@ def test_the_minute_loop_also_flushes_the_threads_waiting_updates(push, monkeypa
 
     morning._loop(OneRound(), 0, push, lambda: datetime(2026, 10, 1, tzinfo=timezone.utc))
     assert seen == [push]
+
+
+# ---- review fixes ------------------------------------------------------------------------------------------------------
+
+def test_deleting_an_imported_trip_deletes_its_thread(client):
+    from gitaway import familydb, importer, session as ses
+    from tests.test_trip_import import imported
+    sign_in(client)
+    assert imported(client).status_code == 303
+    ari = person("ari")
+    trip_id = ses.trips(ari)[0].id
+    ft.post_message(ari, "before the delete")
+    assert importer.delete(ari, trip_id)
+    with familydb.using(ari) as db:
+        assert familydb.row(db, "SELECT COUNT(*) AS n FROM thread WHERE trip_id = :t", t=trip_id)["n"] == 0
+
+
+def test_saving_a_trip_again_unchanged_says_nothing_but_a_real_change_does(client):
+    from dataclasses import replace
+    from gitaway import importer, session as ses
+    from tests.test_trip_import import imported
+    sign_in(client)
+    imported(client)
+    ari = person("ari")
+    trip_id = ses.trips(ari)[0].id
+    plan = importer.plan_of(ari, trip_id)
+    importer.save(ari, plan, None, trip_id)
+    assert [i for i in ft.items(ari) if i["kind"] == "change"] == []
+    importer.save(ari, replace(plan, title="A new name"), None, trip_id)
+    [card] = [i for i in ft.items(ari) if i["kind"] == "change"]
+    assert "A new name" in card["text"]
+
+
+def test_a_push_is_queued_only_after_the_change_commits(client, monkeypatch):
+    from gitaway import tripcal as cal
+    book(client)
+    queued = []
+    monkeypatch.setattr(ft, "announce", lambda *a, **k: queued.append(a))
+    monkeypatch.setattr(ft, "_sender", lambda send: object())
+    ari = person("ari")
+    real = cal._bump
+
+    def fail_late(*a, **k):
+        real(*a, **k)
+        raise RuntimeError("write failed after the card was written")
+    monkeypatch.setattr(cal, "_bump", fail_late)
+    with pytest.raises(RuntimeError):
+        cal.add_activity(ari, day=1, start="10:00", end="11:00", title="Never saved", id="a5")
+    assert queued == [] and cards(client) == []        # rolled back: no card, and nobody was told
+    monkeypatch.setattr(cal, "_bump", real)
+    cal.add_activity(ari, day=1, start="10:00", end="11:00", title="Saved", id="a6")
+    assert len(queued) == 1 and len(cards(client)) == 1
+
+
+def test_the_page_names_its_trip_and_a_stale_tab_is_refused(client):
+    from gitaway import session as ses
+    book(client)
+    ari = person("ari")
+    first = ses.trips(ari)[0].id
+    html = client.get("/trip/family").text
+    assert f'value="{first}"' in html and f'data-trip="{first}"' in html
+    book(client, f="f2")                                   # a second trip is opened; the old tab still shows the first
+    second = [t.id for t in ses.trips(person("ari")) if t.id != first][0]
+    assert say(client, "into the old trip", trip=first).status_code == 200
+    assert "into the old trip" in client.get(f"/trip/family/thread?since=0&trip={first}").text   # it went to the trip the tab was drawn for
+    assert ft.items(person("ari")) == []                                                       # not into the one open now
+    gone = say(client, "nowhere", trip="no-such-trip")
+    assert gone.status_code == 409 and "Reload" in gone.text and "Traceback" not in gone.text
+    assert client.get("/trip/family/thread?since=0&trip=no-such-trip").status_code == 409
+    assert client.get(f"/trip/family/thread?since=0&trip={second}").status_code == 200
+
+
+def test_one_family_cannot_read_anothers_thread(client):
+    book(client)
+    ft.post_message(person("ari"), "the Rivera family secret")
+    other = browser(client)
+    sign_in(other, addr("stranger"))
+    assert "Rivera family secret" not in other.get("/trip/family", follow_redirects=True).text
+    assert "Rivera family secret" not in other.get("/trip/family/thread?since=0").text
+    assert "Rivera family secret" not in other.get("/trip/family/thread?since=0&trip=anything").text
+    assert other.post("/trip/family/message", data={"text": "x"}, headers={"X-Fragment": "1"}).status_code in (400, 409)
+    assert [i["text"] for i in ft.items(person("ari"))] == ["the Rivera family secret"]

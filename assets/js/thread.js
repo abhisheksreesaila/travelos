@@ -10,6 +10,7 @@
   if (!thread) return;
   var $ = function (id) { return document.getElementById(id); };
   var empty = $("ft-empty"), form = $("ft-compose"), text = $("ft-text"), error = $("ft-error"), send = $("ft-send");
+  function tripId() { return thread.getAttribute("data-trip") || ""; }
   var interval = parseInt(thread.getAttribute("data-poll"), 10) || 5000;
   var last = parseInt(thread.getAttribute("data-last"), 10) || 0;
   var timer = null, inflight = false;
@@ -41,8 +42,8 @@
   function poll() {
     if (inflight || document.visibilityState === "hidden") return Promise.resolve();
     inflight = true;
-    return fetch("/trip/family/thread?since=" + last, { credentials: "same-origin", headers: { Accept: "text/html" } })
-      .then(function (r) { if (r.ok) return append(r, false); })
+    return fetch("/trip/family/thread?since=" + last + "&trip=" + encodeURIComponent(tripId()), { credentials: "same-origin", headers: { Accept: "text/html" } })
+      .then(function (r) { if (r.status === 409) { stop(); fail("This trip changed. Reload the page."); return; } if (r.ok) return append(r, false); })
       .catch(function () {})
       .then(function () { inflight = false; });
   }
@@ -62,13 +63,13 @@
     if (!value) { fail("Write something first."); return; }
     fail("");
     send.disabled = true;
-    fetch("/trip/family/message", { method: "POST", credentials: "same-origin", headers: { "X-Fragment": "1" }, body: new URLSearchParams({ text: value, since: String(last) }) })
+    fetch("/trip/family/message", { method: "POST", credentials: "same-origin", headers: { "X-Fragment": "1" }, body: new URLSearchParams({ text: value, since: String(last), trip: tripId() }) })
       .then(function (r) {
-        if (!r.ok) return r.text().then(function (t) { throw new Error(t || "That did not send. Try again."); });
+        if (!r.ok) return r.text().then(function (t) { throw new Error(r.status === 400 || r.status === 409 ? t : "That did not send. Try again."); });
         text.value = "";
         return append(r, true);
       })
-      .catch(function (err) { fail(err.message || "That did not send. Try again."); })
+      .catch(function (err) { fail(err instanceof TypeError || !err.message || err.message.length > 120 ? "That did not send. Try again." : err.message); })
       .then(function () { send.disabled = false; text.focus(); });
   });
 
