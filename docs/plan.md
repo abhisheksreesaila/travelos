@@ -416,10 +416,10 @@ Brief: docs/briefs/trip-week.md · Needs: F-065 for the page it opens
 - [x] take or pick photos in the app; each lands on the plan it was taken during (by time, then place if the photo carries a location), with a strip per day; only the family can see them, stored on the server's volume
 - [x] a photo can be removed by whoever added it or an admin
 
-## F-075 Leave by for a departure flight [todo]
+## F-075 Leave by for a departure flight [done]
 Found reviewing F-068: drives to and from airports are skipped, so a departure flight that is up next gets no "Leave by". · Needs: none
-- [ ] the drive from the stop before (or the hotel) to a departure airport is cached and Today shows "Leave by" for an up-next departure flight, with a margin before the flight (e.g. 2 hours domestic); no drive is ever asked between two airports
-- [ ] the arrival-day test checks 9:40 (after landing): Up next is the car pickup and no "min drive" line shows
+- [x] the drive from the stop before (or the hotel) to a departure airport is cached and Today shows "Leave by" for an up-next departure flight, with a margin before the flight (e.g. 2 hours domestic); no drive is ever asked between two airports
+- [x] the arrival-day test checks 9:40 (after landing): Up next is the car pickup and no "min drive" line shows
 
 ## F-072 Ask by voice [blocked]
 Blocked: create a Gemini API key at https://aistudio.google.com/apikey (free tier, no card), then run in the travelos folder: `railway variable set GEMINI_API_KEY --stdin --service web` and paste the key (nothing is shown), and say go.
