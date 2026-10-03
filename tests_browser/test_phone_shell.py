@@ -69,6 +69,8 @@ def test_every_tab_is_pressed_and_lands_in_the_shell(shell, base_url):
         assert box["y"] + box["height"] <= PHONE["height"] + 0.5 and box["x"] >= 0 and box["x"] + box["width"] <= PHONE["width"] + 0.5
         if key == "today":
             expect(page.locator("#tp-up")).to_be_visible()
+        elif key == "help":
+            expect(page.locator("#hp-911")).to_be_visible()  # built in F-069
         else:
             expect(page.locator("#ph-coming")).to_contain_text(f"{name} is coming")
             expect(page.locator("#tp-title-h")).to_have_text(name)
