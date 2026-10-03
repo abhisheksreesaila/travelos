@@ -120,6 +120,7 @@ def dialog(next_path, intent, asked=None, dev=False, google=False, error="", fac
             H2(TITLES[intent], id="si-title"),
             P(ctx.sub + (" Your family space is made the first time you sign in." if google or dev else ""), id="si-desc"),
             google_btn, faceid_btn, nothing,
+            P("By continuing you agree to the ", A("Terms", href="/terms"), " and ", A("Privacy policy", href="/privacy"), ".", cls="si-note si-legal", id="si-legal"),
             cls="si-body",
         ),
         Div(cls="si-perf", aria_hidden="true"),

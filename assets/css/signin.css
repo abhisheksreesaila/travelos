@@ -105,3 +105,7 @@
   .si-google, .si-dev { min-height: 3.5rem; }
   .si-v { font-size: 1.125rem; }
 }
+
+/* Terms and Privacy under the buttons (F-076): each link is a tap target. */
+.si-legal { display: flex; flex-wrap: wrap; align-items: center; column-gap: 0.375rem; }
+.si-legal a { display: inline-flex; align-items: center; min-height: 2.75rem; color: var(--ink-2); font-weight: 700; }

@@ -20,6 +20,7 @@ Put settings in a `.env` file in the project folder (it is gitignored) or export
 | `GITAWAY_DATA_DIR` | optional | Folder for every database file. Default `./data/db` (gitignored). A relative value is read from the project folder. Created if missing. |
 | `GITAWAY_ENV` | on the server | `production` switches on production mode (so does Railway's own `RAILWAY_ENVIRONMENT`): the app refuses to start without `GITAWAY_SECRET_KEY`, the session cookie is https-only, the dev sign-in is off whatever `GITAWAY_DEV_LOGIN` says, uvicorn does not reload and trusts the proxy's `X-Forwarded-*` headers. |
 | `GITAWAY_SHOWCASE` | never on the server | `1` or `0` overrides `gitaway/showcase.py`'s default (samples on locally, off in production). **Leave it unset on Railway: `1` there turns the sample trips, Community trips, creators, forks, sharing, simulated Uber and voice demo back on for real families.** |
+| `GITAWAY_CONTACT_EMAIL` | for /privacy and /terms | The address people write to for questions and to have their data deleted (F-076). Set it on the live site; unset, the pages say "Contact the person who runs this GitAway site." and show no address. Give Google's Branding page the site address plus `/privacy` and `/terms`. |
 | `GITAWAY_DEV_LOGIN` | local only | `1` turns on the dev sign-in (see below). Leave it unset anywhere else; production ignores it. |
 | `GOOGLE_CLIENT_ID` | for Google sign-in | The OAuth client id (fh-saas reads this name). |
 | `GOOGLE_CLIENT_SECRET` | for Google sign-in | The OAuth client secret (fh-saas reads this name). |
@@ -98,6 +99,18 @@ On the phone Today view, a family member can turn on a "Morning plan": at the ti
    The first two are set with `--skip-deploys` so Railway does not redeploy between them; the third triggers one redeploy that starts the service with all three keys. Never commit the keys or paste them into chat.
 
 How it runs: one background thread in the app (one per process; Railway runs one) wakes every minute and sends what is due. Each phone's subscription, chosen time and the day it was last sent live in the family database (`push_subscriptions`, migration `002`), so a redeploy loses nothing and a restart never double-sends. A push service answering "gone" (404 or 410) deletes that subscription quietly; any other failure is logged without the phone's address and retried for the next hour. Nothing is sent on days outside the trip, or when the family has no trip. The text holds plan titles and times only.
+
+## Deleting a person's or a family's data (F-076)
+
+**Not ready for real data yet (F-077):** review found that `--family` can delete a family the person only belongs to and leaves their sign-in, and two accounts with one email are not refused. Use only the dry run until F-077 is done.
+
+`pixi run forget-person EMAIL [--content] [--family] [--yes] [--data-dir DIR]` (`scripts/forget_person.py`). Stop the app first and copy the data folder (on Railway: the `/data` volume; run it in a shell on the service, where `GITAWAY_DATA_DIR` is set). Without `--yes` it is a dry run that lists what it would delete. Tables that do not exist yet are skipped. It uses plain SQLite, so it works on a throwaway copy too (`tests/test_forget_person.py` does).
+
+- **Plain run**: the person's sign-in (`core_users`), memberships, passkeys, last-family choice, invites sent to or by them, audit-log rows with their id or email (`sys_audit_logs`), and in each of their families their member row, push subscriptions and thread settings. Their messages and photos stay with the family.
+- **`--content`**: also the messages they wrote and the photos they added (rows and files under `photos/<family>/`). Use it when they ask for their messages and photos to go.
+- **`--family`**: the whole family of each family they belong to: its database file with `-wal` and `-shm`, `photos/<family>/`, memberships, invites, last-family choices, subscriptions and the family row. Other members' own sign-ins stay (run the script for them too if they ask). Implies `--content`.
+
+Server logs on Railway age out on their own; say so when you confirm. After a real run, tell the person it is done.
 
 ## What needs sign-in
 
