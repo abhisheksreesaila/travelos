@@ -408,9 +408,9 @@ Brief: docs/briefs/trip-week.md · Needs: F-065 for the page it opens
 - [x] Help shows tonight's hotel (address, phone with a call button, check-in/out, confirmation behind a tap, Directions), the car rental (counter address, phone), 911, and the family's own phone numbers (each member can add theirs on the family page)
 - [x] a hotel's or car's phone number can be added or fixed (Edit trip or right there); Help still opens offline on a phone that opened it before (only for the signed-in person)
 
-## F-070 Family thread with notifications [todo]
-- [ ] one thread per trip with messages, photos (taking and adding photos is F-071; the thread shows them) and automatic cards for plan changes (who added, moved or removed what); new items appear within seconds while open
-- [ ] everyone in the family with Morning plan notifications on also gets a push for plan changes and messages (not their own); a "Quiet" switch turns that off per person
+## F-070 Family thread with notifications [done]
+- [x] one thread per trip with messages, photos (taking and adding photos is F-071; the thread shows them) and automatic cards for plan changes (who added, moved or removed what); new items appear within seconds while open
+- [x] everyone in the family with Morning plan notifications on also gets a push for plan changes and messages (not their own); a "Quiet" switch turns that off per person
 
 ## F-071 Photos on the plan [todo]
 - [ ] take or pick photos in the app; each lands on the plan it was taken during (by time, then place if the photo carries a location), with a strip per day; only the family can see them, stored on the server's volume
