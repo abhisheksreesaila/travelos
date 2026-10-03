@@ -82,6 +82,12 @@ def _put(db, kind, key, *, lat=None, lon=None, found=1, data=""):
 
 # ---- places -----------------------------------------------------------------------------------------------------------
 
+def as_place(place) -> str:
+    """The text to look up: a bare airport code (a car desk "LAX") means that airport."""
+    p = str(place or "").strip()
+    return f"{p} airport" if len(p) == 3 and p.isalpha() and p.isupper() else p
+
+
 def state(place, db=None):
     """(what is known, display name): (None, None) when never looked up (or the lookup failed), (MISSING, None) when the service has no such place,
     else ((lat, lon), display name). Reads only the table of airports and the cache."""

@@ -17,7 +17,7 @@ from fasthtml.common import A, Button, Details, Div, Form, H1, H2, Header, Input
 from fasthtml.core import FtResponse
 from starlette.responses import RedirectResponse
 
-from gitaway import access, catalog, members, pickers, session as ses, tripcal as cal, tripday as td
+from gitaway import access, catalog, familydb, geo, members, pickers, session as ses, tripcal as cal, tripday as td
 from gitaway.icons import icon
 from gitaway.layout import avatar, join_note, styles, trip_field
 from gitaway.pages import calendar as calui, rides as rides_ui
@@ -74,9 +74,24 @@ def load(session, day_arg="", ua=""):
     items = items_of(sel, now, past)
     tomorrow = items_of(sel + 1) if sel < last else []
     up = td.up_next(items, now, tomorrow[0] if tomorrow else None, clocks) if now is not None else None
+    leave = leave_by(session, items, up, clocks)
     return dict(zone=zone, session=session, who=who, b=b, t=t, dates=dates, last=last, role=role, blocks=blocks, acts=acts, notes=notes, phase=ph, n=n, today_idx=today_idx, sel=sel, now=now,
-                items=items, up=up, stay=td.stay_card(b, dates, sel), days=td.day_summaries(dates, blocks, acts, today_idx), ua=ua, past=past, first=items_of(0)[:1],
+                items=items, up=up, leave=leave, stay=td.stay_card(b, dates, sel), days=td.day_summaries(dates, blocks, acts, today_idx), ua=ua, past=past, first=items_of(0)[:1],
                 crew=members.crew(session), next=cal.next_id(session))
+
+
+def leave_by(session, items, up, clocks):
+    """(minute to leave by, drive minutes) for the stop that is up next, from the drive time between it and the stop before it that the Map already
+    cached (gitaway.geo; Today never waits for the network), else None. A flight is not driven to, and a drive from a flight is not a drive."""
+    item = up.item if up and up.kicker.startswith("UP NEXT") else None
+    if not item or not item.place or item.kind == "flight":
+        return None
+    before = [x for x in items if x.start < item.start and x.place and x.kind != "flight"]
+    if not before:
+        return None
+    with familydb.using(session) as db:
+        minutes = geo.cached_minutes(*(geo.as_place(p) for p in (before[-1].place, item.place)), db) if db else None
+    return (item.start - minutes, minutes) if minutes else None
 
 
 def _with_extras(items, b, notes, session, who, family):
@@ -120,7 +135,9 @@ def up_card(v):
         buttons.append(A("Directions", href=td.maps_url(item.place, v["ua"]), target="_blank", rel="noopener", cls="tp-btn tp-btn-coral", id="tp-directions"))
     if up.uber:
         buttons.append(A("Get an Uber" if up.uber.kind == "offer" else "Your Uber", href=up.uber.href, cls="tp-btn tp-btn-white", id="tp-uber"))
-    return Div(Span(pulse, up.kicker, cls="tp-kicker"), Span(item.title if item else "You are all caught up", cls="tp-up-title"), Span(up.detail, cls="tp-up-sub"),
+    leave = v.get("leave")
+    leave_line = Span(f"Leave by {cal.fmt_time(leave[0])} · {leave[1]} min drive", cls="tp-up-sub tp-leave", id="tp-leave") if leave else ""
+    return Div(Span(pulse, up.kicker, cls="tp-kicker"), Span(item.title if item else "You are all caught up", cls="tp-up-title"), Span(up.detail, cls="tp-up-sub"), leave_line,
                Div(*buttons, cls="tp-up-actions") if buttons else "", cls="tp-up", id="tp-up")
 
 
