@@ -431,3 +431,8 @@ Blocked: same Gemini key as F-072.
 
 ## F-074 Face ID sign-in [done]
 - [x] after Google sign-in once, a phone can add a passkey and later sign in with Face ID
+
+## F-076 Privacy policy and terms pages [doing]
+Captain, 2026-10-03: Google won't publish the sign-in app until the Branding page has a home page, privacy policy and terms on an authorized domain. · Needs: none
+- [ ] /privacy and /terms are plain, readable pages in the house style saying truthfully what GitAway stores (Google name, email and picture; trips, plans, notes, messages, photos with their time and place, phone numbers, push subscriptions, passkeys), who sees it (only the family; nothing public), which outside services get what (Google sign-in, Railway hosting, OpenStreetMap place lookup and routing get place text only, Apple/Google push services, Gemini when the assistant is on), that nothing is sold or used for ads, and how to get data deleted (a contact address from a setting)
+- [ ] both are reachable signed out, linked from the footer and the sign-in page, and work on the live address
