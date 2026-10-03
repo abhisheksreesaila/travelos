@@ -33,6 +33,7 @@ from gitaway import auth, hostdb
 
 CHALLENGE_SECONDS = 300
 MAX_PER_PERSON = 10
+MAX_CHALLENGES = 5000            # live sign-in challenges kept at most: anyone signed out can ask for one, so a flood drops the oldest
 MAX_CREDENTIAL = 12000          # bytes of JSON a browser's answer may be
 SITE_NAME = "GitAway"
 _READY = False
@@ -90,7 +91,7 @@ def _conn():
         conn.execute(text("""CREATE TABLE IF NOT EXISTS ga_passkeys (
             id TEXT PRIMARY KEY, user_id TEXT NOT NULL, credential_id TEXT NOT NULL UNIQUE, public_key TEXT NOT NULL,
             sign_count INTEGER NOT NULL DEFAULT 0, transports TEXT NOT NULL DEFAULT '[]', name TEXT NOT NULL,
-            verified INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL, last_used TEXT)"""))
+            verified INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL, last_used TEXT)"""))
         conn.execute(text("CREATE INDEX IF NOT EXISTS ix_ga_passkeys_user ON ga_passkeys (user_id)"))
         conn.execute(text("CREATE TABLE IF NOT EXISTS ga_passkey_challenges (hash TEXT PRIMARY KEY, expires_at REAL NOT NULL)"))
         conn.commit()
@@ -161,6 +162,8 @@ def _keep_challenge(session, kind, challenge, user_id=""):
     with hostdb.locked():
         conn = _conn()
         conn.execute(text("DELETE FROM ga_passkey_challenges WHERE expires_at < :n"), {"n": now()})
+        conn.execute(text("""DELETE FROM ga_passkey_challenges WHERE hash IN (SELECT hash FROM ga_passkey_challenges ORDER BY expires_at
+                             LIMIT max(0, (SELECT COUNT(*) FROM ga_passkey_challenges) - :keep))"""), {"keep": MAX_CHALLENGES - 1})
         conn.execute(text("INSERT OR REPLACE INTO ga_passkey_challenges (hash, expires_at) VALUES (:h, :e)"), {"h": _digest(challenge), "e": now() + CHALLENGE_SECONDS})
         conn.commit()
 

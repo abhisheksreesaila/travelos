@@ -100,3 +100,11 @@ def test_a_face_id_sign_in_with_no_destination_opens_today(phone):
     key, other = phone
     r, _ = face_id(other, key, next="/start")
     assert r.json()["next"] == "/trip"
+
+
+def test_a_flood_of_sign_in_requests_cannot_grow_the_challenge_table_past_its_cap(client, monkeypatch):
+    """Anyone signed out can ask for a challenge, so the table keeps at most MAX_CHALLENGES live rows (oldest dropped first)."""
+    monkeypatch.setattr(passkeys, "MAX_CHALLENGES", 5)
+    for _ in range(12):
+        post(client, "/passkeys/auth/options")
+    assert passkeys.pending_challenges() <= 5
