@@ -25,6 +25,7 @@ Put settings in a `.env` file in the project folder (it is gitignored) or export
 | `GITAWAY_SECRET_KEY` | required in production | Secret that signs the session cookie. In production the app will not start without it. Locally, if unset, a random key is made once and kept in `.sesskey` (gitignored), which is fine for local development. |
 | `PORT` | optional | Port for `pixi run dev`. Default 5002. |
 | `FH_SAAS_LOG_LEVEL` | optional | `DEBUG`, `INFO`, `WARNING` (default). The app calls fh-saas's `configure_logging()` at startup. |
+| `GITAWAY_VAPID_PUBLIC`, `GITAWAY_VAPID_PRIVATE`, `GITAWAY_VAPID_SUBJECT` | for the morning plan push | The Web Push (VAPID) key pair and a `mailto:` contact (F-066). Without them the Morning plan card is not shown and nothing is sent. Make them with `pixi run vapid-keys mailto:you@example.com` (below). |
 
 There is no redirect-URI variable: fh-saas builds it from the address of the request, as `<scheme>://<host>/auth/callback` (`http` for `localhost` and `127.0.0.1`, `https` for anything else).
 
@@ -61,6 +62,22 @@ Google Cloud console steps:
 3. **APIs & Services > Credentials > Create credentials > OAuth client ID**, application type **Web application**.
 4. Under **Authorized redirect URIs** add `http://localhost:5002/auth/callback`. Use the same host you browse with: if you open `http://127.0.0.1:5002`, add `http://127.0.0.1:5002/auth/callback` too. For a deployed site add `https://<your domain>/auth/callback`.
 5. Copy the client id and secret into `.env` as `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`, restart `pixi run dev`, and open <http://localhost:5002/signin>.
+
+## Morning plan push (F-066)
+
+On the phone Today view, a family member can turn on a "Morning plan": at the time they pick (default 7:30 AM, the trip's time zone) each trip morning, their phone gets "Today in <place>" with the first plans, and tapping it opens Today. It uses Web Push, which needs a key pair that only your server knows. On an iPhone it works once GitAway is on the Home Screen (iOS 16.4 or later); in a browser tab the card explains how to add it.
+
+1. **Make the keys**: `pixi run vapid-keys mailto:you@example.com`. It writes `GITAWAY_VAPID_PUBLIC`, `GITAWAY_VAPID_PRIVATE` and `GITAWAY_VAPID_SUBJECT` into `./.env` (gitignored) and never prints the private key. It refuses to replace keys that are already there unless you add `--force`: new keys end every phone's morning plan until each person turns it on again.
+2. **Locally**: restart `pixi run dev`. Push needs https, so a phone only gets it from the deployed site; on your computer the card works in Chrome on `localhost`.
+3. **On Railway** (once, from the project folder, with the Railway CLI linked to the project). This reads each value from `.env` and sends it straight to Railway without printing it:
+
+   ```
+   for k in GITAWAY_VAPID_PUBLIC GITAWAY_VAPID_PRIVATE; do grep "^$k=" .env | cut -d= -f2- | tr -d '\n' | railway variable set "$k" --stdin --service web --skip-deploys; done; grep "^GITAWAY_VAPID_SUBJECT=" .env | cut -d= -f2- | tr -d '\n' | railway variable set GITAWAY_VAPID_SUBJECT --stdin --service web
+   ```
+
+   The first two are set with `--skip-deploys` so Railway does not redeploy between them; the third triggers one redeploy that starts the service with all three keys. Never commit the keys or paste them into chat.
+
+How it runs: one background thread in the app (one per process; Railway runs one) wakes every minute and sends what is due. Each phone's subscription, chosen time and the day it was last sent live in the family database (`push_subscriptions`, migration `002`), so a redeploy loses nothing and a restart never double-sends. A push service answering "gone" (404 or 410) deletes that subscription quietly; any other failure is logged without the phone's address and retried for the next hour. Nothing is sent on days outside the trip, or when the family has no trip. The text holds plan titles and times only.
 
 ## What needs sign-in
 

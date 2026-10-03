@@ -27,6 +27,7 @@ OPEN_POSTS = (
     "/trips/switch",                       # which trip I am looking at (my own `members.trip_id`)
     "/family/switch", "/family/stay",      # which of my families I am working in; dismissing the "you joined" notice
     "/creators", "/creators/draft", "/creators/finish",   # a creator draft is a person's own, published to the community, not a family's
+    "/trip/morning", "/trip/morning/time", "/trip/morning/off", "/trip/morning/status",   # my own phone's morning plan reminder (F-066): every member, viewers too
 )
 OPEN_PREFIXES = ("/join/",)                # using an invite link: the person is joining another family
 ADMIN_POSTS = ("/family/invite", "/family/invite/revoke", "/family/role", "/family/remove", "/trip/delete")  # deleting an imported trip (F-042) is an admin's
@@ -118,5 +119,6 @@ async def guard(req, sess):
     req.state.family_role = role
     need = needed(req.method, req.url.path)
     if not allows(role, need):
+        req.scope[ses.PRIVATE_SCOPE_KEY] = True  # F-062: session.bind never runs for a refusal, and it can show the family's calendar
         return refusal(req, sess, role)
     return None

@@ -98,3 +98,34 @@ self.addEventListener("fetch", (event) => {
   if (kind === "asset") event.respondWith(assetFirst(event.request));
   else if (kind === "page") event.respondWith(pageNetworkFirst(event.request));
 });
+
+/* The morning plan push (F-066). A push is always shown (iOS requires it); a tap opens the Today view, focusing a GitAway window if one is open. */
+const NOTICE_ICON = "/assets/icons/icon-192.png";
+
+/* The notification for a push payload {title, body, url}. Pure, so it can be checked without a browser push. */
+function noticeFor(data) {
+  const d = data || {};
+  const url = new URL(typeof d.url === "string" ? d.url : "/trip", self.location.origin);
+  return { title: d.title || "GitAway", options: { body: d.body || "", icon: NOTICE_ICON, badge: NOTICE_ICON, tag: "morning-plan", data: { url: url.origin === self.location.origin ? url.pathname + url.search : "/trip" } } };
+}
+
+self.addEventListener("push", (event) => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; } catch (e) {}
+  const n = noticeFor(data);
+  event.waitUntil(self.registration.showNotification(n.title, n.options));
+});
+
+async function openToday(path) {
+  let target = new URL(path, self.location.origin);
+  if (target.origin !== self.location.origin) target = new URL("/trip", self.location.origin);
+  const url = target.href;
+  const open = (await self.clients.matchAll({ type: "window", includeUncontrolled: true })).find((c) => new URL(c.url).origin === self.location.origin);
+  if (!open) return self.clients.openWindow(url);
+  try { await open.focus(); if ("navigate" in open) await open.navigate(url); } catch (e) {}
+}
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  event.waitUntil(openToday((event.notification.data && event.notification.data.url) || "/trip"));
+});

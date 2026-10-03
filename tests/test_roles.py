@@ -18,6 +18,7 @@ OPEN_FOR_VIEWERS = {
     "/trips/switch", "/family/switch", "/family/stay",       # which trip I look at, which family I work in, dismissing the joined notice
     "/creators", "/creators/draft", "/creators/finish",       # a creator draft is the person's own, published to the community
     "/join/{token}",                                          # using an invite link: joining another family
+    "/trip/morning", "/trip/morning/time", "/trip/morning/off", "/trip/morning/status",   # a person's own phone reminder (F-066)
 }
 ADMIN_ONLY = {"/family/invite", "/family/invite/revoke", "/family/role", "/family/remove", "/trip/delete"}
 
@@ -122,3 +123,11 @@ def test_a_request_with_a_forged_role_in_the_cookie_still_follows_the_membership
     _, _, viewer = crew
     assert session_data(viewer)["tenant_role"] == "viewer"
     assert members.role_in(session_data(viewer)["user_id"], tenant(viewer)) == "viewer"
+
+
+def test_a_refusal_page_is_private_no_store(crew):
+    """F-062: the refusal can show the family's calendar, so the browser must not keep it either."""
+    _, _, viewer = crew
+    r = viewer.post("/calendar/activities", data=FORM, follow_redirects=False)
+    assert r.status_code == 403
+    assert r.headers["cache-control"] == "private, no-store"

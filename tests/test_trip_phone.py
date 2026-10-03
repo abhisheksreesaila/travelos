@@ -320,3 +320,93 @@ def test_the_page_has_the_tab_bar_the_phone_stylesheet_and_no_emoji(client):
     assert html.index("/assets/css/base.css") < html.index("/assets/css/trip.css")
     assert "/assets/js/trip.js" in html and 'aria-current="page"' in html
     assert not re.search("[\U0001F300-\U0001FAFF☀-➿]", html)
+
+
+# ---- F-065: Today, laid out to read and share ----------------------------------------------------------------------------------
+
+def share_attr(html):
+    return unescape(tag(html, "id", "tp-share")["data-share-text"])
+
+
+def test_each_place_has_a_directions_link_and_a_booking_shows_its_confirmation_only_after_a_tap(client, at):
+    imported(client)
+    plan(client, "a1", "1", "17:00", "19:30", "Griffith Observatory", "culture")
+    at(date(2026, 10, 16), "08:00")
+    html = client.get("/trip", headers=IPHONE).text
+    assert html.count('data-dir="') >= 2  # the flight's airport and the hotel
+    assert "https://maps.apple.com/?q=" in html
+    inside = re.findall(r"<details.*?</details>", html, re.S)
+    assert inside and any(s in "".join(inside) for s in SECRETS)  # the confirmation is in the tap
+    assert not any(s in re.sub(r"<details.*?</details>", "", html, flags=re.S) for s in SECRETS)  # and nowhere else
+    assert not any(s in share_attr(html) for s in SECRETS)
+    at(date(2026, 10, 17), "12:00")
+    plan_day = client.get("/trip", headers=ANDROID).text
+    assert "https://www.google.com/maps/search/?api=1&amp;query=Griffith+Observatory" in plan_day
+
+
+def test_a_plan_says_who_added_it_and_shows_the_notes_written_on_it(client, at):
+    book(client)
+    plan(client)
+    client.post("/calendar/notes", data={"id": "n1", "text": "Bring jackets", "act": "a1"})
+    at(date(2026, 10, 17), "12:00")
+    html = text(client.get("/trip").text)
+    assert "added by you" in html and "Bring jackets" in html
+
+
+def test_the_shared_text_is_the_days_times_and_plans_with_no_prices_confirmations_or_notes(client, at):
+    imported(client)
+    plan(client, "a1", "0", "17:00", "19:30", "Griffith Observatory", "culture")
+    client.post("/calendar/notes", data={"id": "n1", "text": "private-ish note", "act": "a1"})
+    at(date(2026, 10, 16), "08:00")
+    out = share_attr(client.get("/trip").text)
+    lines = out.split("\n")
+    assert lines[0].startswith("Fri Oct 16 · ") and "5:00 PM Griffith Observatory" in lines
+    assert "$" not in out and "private-ish" not in out and not any(s in out for s in SECRETS)
+    assert lines[-1].startswith("Hotel tonight: ")
+
+
+def test_any_day_opens_with_day_and_today_is_the_default_before_during_and_after_the_trip(client, at):
+    book(client)
+    plan(client, "a1", "2", "10:00", "11:00", "Sunday brunch", "food")
+    at(date(2026, 10, 10), "12:00")
+    assert 'data-day="0"' in raw(client.get("/trip").text, "tp-app") and "Sun Oct 18" not in share_attr(client.get("/trip").text)
+    at(date(2026, 10, 17), "12:00")
+    assert 'data-day="1"' in raw(client.get("/trip").text, "tp-app")
+    page = client.get("/trip?day=2").text
+    assert 'data-day="2"' in raw(page, "tp-app") and "Sunday brunch" in page and "Sun Oct 18" in share_attr(page)
+    at(date(2026, 10, 30), "12:00")
+    assert 'data-day="4"' in raw(client.get("/trip").text, "tp-app")
+    assert 'data-day="0"' in raw(client.get("/trip?day=0").text, "tp-app")
+
+
+def test_a_viewer_can_share_the_day_and_the_calendar_links_to_it(client, at):
+    book(client)
+    plan(client)
+    assert 'id="cal-today-view"' in client.get("/calendar?view=whole").text and "Today, to share" in text(client.get("/calendar?view=whole").text)
+    mail = addr("vi2")
+    invite(client, mail, "viewer")
+    viewer = browser(client)
+    sign_in(viewer, mail)
+    at(date(2026, 10, 17), "12:00")
+    html = viewer.get("/trip").text
+    assert 'id="tp-share"' in html and "Griffith Observatory" in share_attr(html) and 'id="tp-add"' not in html
+    assert 'id="cal-today-view"' in viewer.get("/calendar?view=whole").text
+
+
+def test_the_calendars_today_link_carries_the_open_trip_and_lands_on_the_trip_view(client, at):
+    book(client)
+    plan(client)
+    at(date(2026, 10, 17), "12:00")
+    link = tag(client.get("/calendar?view=whole").text, "id", "cal-today-view")
+    href = unescape(link["href"])
+    assert re.fullmatch(r"/trip\?trip=\w+", href)
+    r = client.get(href)
+    assert r.status_code == 200 and 'id="tp-app"' in r.text and f'data-trip="{href.split("=")[1]}"' in r.text
+
+
+def test_the_demo_bookings_share_text_has_no_prices(client, at):
+    book(client)
+    for day in (date(2026, 10, 16), date(2026, 10, 17), date(2026, 10, 20)):
+        at(day, "08:00")
+        out = share_attr(client.get("/trip").text)
+        assert "$" not in out and out.startswith(day.strftime("%a %b") + f" {day.day} · ")

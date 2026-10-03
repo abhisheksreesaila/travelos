@@ -7,11 +7,12 @@ so screens can be built independently. Sign-in, families and storage are fh-saas
 import os
 from pathlib import Path
 
+from starlette.middleware import Middleware
 from fasthtml.common import Beforeware, FastHTML, Response, serve
 from fh_saas.utils_auth import create_auth_beforeware
 from fh_saas.utils_log import configure_logging
 
-from gitaway import access, auth, hostdb, session, showcase
+from gitaway import access, auth, hostdb, morning, session, showcase
 from gitaway.layout import HEAD
 from gitaway.pages import register_all
 from gitaway.pages.family import PRIVATE
@@ -40,10 +41,29 @@ auth_before = Beforeware(_locked_auth, skip=auth_before.skip)
 _OPEN = [r"/assets/.*", r"/healthz"]
 
 
+class NoStoreWhenSignedIn:
+    """F-062: every signed-in HTML response is `Cache-Control: private, no-store`, so Back after sign-out cannot show the last person's
+    pages from the browser's back/forward or HTTP cache. (The service worker's own Cache API copy for offline use ignores no-store and
+    is cleared on sign-out.) Signed-out pages and static assets are untouched."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        async def send_with(message):
+            if message["type"] == "http.response.start" and scope.get(session.PRIVATE_SCOPE_KEY):
+                headers = list(message.get("headers", []))
+                if any(k.lower() == b"content-type" and v.startswith(b"text/html") for k, v in headers):
+                    headers = [(k, v) for k, v in headers if k.lower() != b"cache-control"] + [(b"cache-control", b"private, no-store")]
+                    message = {**message, "headers": headers}
+            await send(message)
+        await self.app(scope, receive, send_with)
+
+
 def make_app():
     auth.check_production_settings()
-    app = FastHTML(before=[Beforeware(access.guard, skip=_OPEN), auth_before, Beforeware(session.bind, skip=_OPEN), Beforeware(showcase.guard, skip=_OPEN)], hdrs=HEAD, title="GitAway",
-                   htmlkw={"lang": "en"}, secret_key=os.getenv("GITAWAY_SECRET_KEY") or None, key_fname=str(ROOT / ".sesskey"),
+    app = FastHTML(before=[Beforeware(access.guard, skip=_OPEN), auth_before, Beforeware(session.bind, skip=_OPEN), Beforeware(showcase.guard, skip=_OPEN)], hdrs=HEAD, title="GitAway", middleware=[Middleware(NoStoreWhenSignedIn)],
+                   htmlkw={"lang": "en"}, on_startup=[morning.start], secret_key=os.getenv("GITAWAY_SECRET_KEY") or None, key_fname=str(ROOT / ".sesskey"),
                    **auth.session_options())
     app.static_route_exts(prefix="/assets/", static_path=str(ROOT / "assets"))
 
