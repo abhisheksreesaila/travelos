@@ -432,7 +432,13 @@ Blocked: same Gemini key as F-072.
 ## F-074 Face ID sign-in [done]
 - [x] after Google sign-in once, a phone can add a passkey and later sign in with Face ID
 
-## F-076 Privacy policy and terms pages [doing]
+## F-076 Privacy policy and terms pages [done]
 Captain, 2026-10-03: Google won't publish the sign-in app until the Branding page has a home page, privacy policy and terms on an authorized domain. · Needs: none
-- [ ] /privacy and /terms are plain, readable pages in the house style saying truthfully what GitAway stores (Google name, email and picture; trips, plans, notes, messages, photos with their time and place, phone numbers, push subscriptions, passkeys), who sees it (only the family; nothing public), which outside services get what (Google sign-in, Railway hosting, OpenStreetMap place lookup and routing get place text only, Apple/Google push services, Gemini when the assistant is on), that nothing is sold or used for ads, and how to get data deleted (a contact address from a setting)
-- [ ] both are reachable signed out, linked from the footer and the sign-in page, and work on the live address
+- [x] /privacy and /terms are plain, readable pages in the house style saying truthfully what GitAway stores (Google name, email and picture; trips, plans, notes, messages, photos with their time and place, phone numbers, push subscriptions, passkeys), who sees it (only the family; nothing public), which outside services get what (Google sign-in, Railway hosting, OpenStreetMap place lookup and routing get place text only, Apple/Google push services, Gemini when the assistant is on), that nothing is sold or used for ads, and how to get data deleted (a contact address from a setting)
+- [x] both are reachable signed out, linked from the footer and the sign-in page, and work on the live address
+
+## F-077 Forget a person safely [todo]
+Found reviewing F-076: `pixi run forget-person` (dry run by default) is not safe to run for real yet. · Needs: none
+- [ ] `--family` also removes the person's own sign-in, and only deletes a family the person owns or is the only admin of (otherwise refuses, or the operator names the family id)
+- [ ] refuses when more than one account has the email, listing them; photo and database paths are kept inside the data folder; audit rows matched exactly, not with LIKE; warns or refuses when the plain run would leave a family with no admin
+- [ ] its tests build the family database through the app's own schema and write rows through the app's own code
