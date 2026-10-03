@@ -30,6 +30,21 @@ for _key in ("GITAWAY_VAPID_PUBLIC", "GITAWAY_VAPID_PRIVATE", "GITAWAY_VAPID_SUB
     os.environ[_key] = ""  # empty, not removed: a .env found above the folder must not switch the real push sender on in a test run (F-066)
 
 @pytest.fixture(autouse=True)
+def _offline_maps(monkeypatch):
+    """No test reaches the map services (F-068): every lookup fails unless the test installs its own fake `geo.fetch`. Background fills stay off."""
+    from gitaway import geo
+
+    def refuse(url, timeout=0):
+        raise OSError("the network is off in tests")
+    monkeypatch.setattr(geo, "fetch", refuse)
+    monkeypatch.setattr(geo, "ASYNC", False)
+    monkeypatch.setattr(geo.NOMINATIM_GATE, "gap", 0.0)
+    monkeypatch.setattr(geo.OSRM_GATE, "gap", 0.0)
+    monkeypatch.setattr(geo.NOMINATIM_GATE, "shut_until", None)  # a test that triggers the back off must not leave the gate shut
+    monkeypatch.setattr(geo.OSRM_GATE, "shut_until", None)
+
+
+@pytest.fixture(autouse=True)
 def _fixed_today(monkeypatch):
     """The demo's sample trip is in October 2026; keep "today" before it (same as tests/conftest.py)."""
     from gitaway import catalog

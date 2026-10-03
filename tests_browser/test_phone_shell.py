@@ -69,6 +69,9 @@ def test_every_tab_is_pressed_and_lands_in_the_shell(shell, base_url):
         assert box["y"] + box["height"] <= PHONE["height"] + 0.5 and box["x"] >= 0 and box["x"] + box["width"] <= PHONE["width"] + 0.5
         if key == "today":
             expect(page.locator("#tp-up")).to_be_visible()
+        elif key == "map":
+            expect(page.locator("#tp-title-h")).to_have_text("Map")
+            expect(page.locator("#mp-daychip")).to_be_visible()  # the real map (F-068), not a "coming" card
         elif key == "help":
             expect(page.locator("#hp-911")).to_be_visible()  # built in F-069
         elif key == "family":   # built in F-070: its own browser tests are in test_thread.py
@@ -161,7 +164,7 @@ def test_the_laptop_keeps_its_layout(shell, base_url):
     assert page.evaluate(OVERFLOW) == 0
     page.goto(base_url + "/trip/map")
     expect(page.locator(".ph-tabs")).to_be_hidden()
-    expect(page.locator("#ph-coming")).to_be_visible()
+    expect(page.locator("#mp-daychip")).to_be_visible()
     page.locator(".ph-back").click()
     page.wait_for_url("**/trip")
     assert page.evaluate(OVERFLOW) == 0

@@ -85,6 +85,11 @@ def save(session, plan, token=None, replace=None) -> str:
                     insert_only(db, "trip_imports", {"trip_id": trip_id, "doc": json.dumps(doc, separators=(",", ":")), "created_by": fam.traveler.id, "created_at": at},
                                 ["trip_id"], auto_commit=False)
             familydb.run(db, "UPDATE members SET trip_id = :t WHERE id = :u", t=trip_id, u=fam.traveler.id)
+    from gitaway import tripgeo  # here: tripgeo reads the trip back through gitaway.session
+    try:
+        tripgeo.warm(session, force=True)  # find the trip's places in the background (F-068); a failure here never undoes the save
+    except Exception:
+        pass
     return trip_id
 
 
