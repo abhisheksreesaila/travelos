@@ -83,7 +83,9 @@ def set_member_phone(session, number):
 # ---- a hotel's or the car's number ---------------------------------------------------------------------------------
 
 def set_stay_phone(session, kind, index, number):
-    """Set the number of hotel `index` or of the rental car on the imported trip this person has open. Only that one number changes."""
+    """Set the number of hotel `index` or of the rental car on the imported trip this person has open. Only that one number changes.
+    The stored trip document is read, changed and written back, which is safe only because the write lock is taken before the read
+    (the same pattern as importer._replace; see the 2026-10-01 lesson)."""
     keep, message = clean(number)
     if message:
         raise PhoneError(message)

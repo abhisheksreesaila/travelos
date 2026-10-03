@@ -202,7 +202,7 @@ def test_a_member_adds_their_number_on_the_family_page_and_it_shows_on_help_for_
     assert 'href="tel:+14155550142"' in both and 'href="tel:4155550143"' in both
 
 
-def test_a_member_cannot_set_somebody_elses_number_and_a_bad_number_is_explained(client):
+def test_a_bad_member_number_is_explained_and_a_number_can_be_cleared(client):
     imported(client)
     r = client.post("/family/phone", data={"phone": "nope"})
     assert r.status_code == 422 and "Enter a phone number" in r.text and 'value="nope"' in r.text
