@@ -17,7 +17,8 @@ from gitaway import auth
 
 # Paths (and everything under them) that exist only for sample or community content.
 HIDDEN = ("/community", "/discover", "/creators", "/forks", "/share", "/save", "/unsave", "/fork",
-          "/calendar/friends", "/calendar/live", "/calendar/voice")  # the last two: the demo trip's pretend friends
+          "/calendar/friends", "/calendar/live", "/calendar/voice",
+          "/rides")  # pretend friends (friends, live), the scripted voice demo, the simulated Uber (rides)
 _NOT_ITINERARY = ("build", "import", "switch")  # /trips/<word> routes that are the family's own
 _ITINERARY = re.compile(r"/trips/([^/]+)/?")
 
@@ -38,12 +39,17 @@ def hidden(path: str, query=None) -> bool:
     m = _ITINERARY.fullmatch(path)
     if m and m.group(1) not in _NOT_ITINERARY:  # /trips/<slug>: a sample or community itinerary page
         return True
-    return bool(query is not None and query.get("demo") == "long")  # the 20-day calendar fixture
+    return bool(query is not None and query.get("demo") == "long")  # the 20-day calendar fixture (the body is checked in `guard`)
 
 
 async def guard(req, sess):
     """Beforeware: 404 for everything `hidden` while the showcase is off."""
-    if on() or not hidden(req.url.path, req.query_params):
+    if on():
+        return None
+    gone = hidden(req.url.path, req.query_params)
+    if not gone and req.method in ("POST", "PUT", "PATCH", "DELETE") and "form" in req.headers.get("content-type", ""):
+        gone = (await req.form()).get("demo") == "long"   # the fixture's name can come in the body too
+    if not gone:
         return None
     from gitaway.layout import page
     from fasthtml.common import A, Div, H1, P, Section

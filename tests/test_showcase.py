@@ -225,3 +225,28 @@ def test_the_booking_preview_writes_nothing_in_production(real, client):
     assert client.get("/booked", follow_redirects=False).status_code == 303
     assert "Your calendar starts with a trip" in client.get("/calendar").text
     assert client.get("/start").text.count("Continue ") == 0
+
+
+# ---- production: the simulated Uber is gone ----
+
+def test_no_uber_offers_or_rides_in_production_and_they_stay_locally(client, monkeypatch):
+    monkeypatch.setenv("GITAWAY_SHOWCASE", "1")
+    book(client, c="none")                       # flight and stay, no car: the calendar offers rides
+    assert "Schedule an Uber" in client.get("/calendar?view=days").text
+    monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
+    for path in ["/calendar?view=days", "/calendar", "/trip"]:
+        r = client.get(path, follow_redirects=True)
+        assert r.status_code == 200 and "Uber" not in r.text and "/rides" not in r.text, path
+    assert client.get("/rides/new", follow_redirects=False).status_code == 404
+    assert client.get("/rides/r1", follow_redirects=False).status_code == 404
+    for path in ["/rides", "/rides/r1/step", "/rides/r1/cancel"]:
+        assert client.post(path, data={}, follow_redirects=False).status_code == 404, path
+
+
+@pytest.mark.parametrize("path", ["/calendar/activities", "/calendar/notes", "/calendar/undo", "/calendar/activities/a1/delete", "/calendar/activities/a1/move"])
+def test_demo_long_in_a_form_body_writes_nothing_in_production(client, monkeypatch, path):
+    booked_then_real(client, monkeypatch)
+    r = client.post(path, data={"demo": "long", "id": "a1", "day": "1", "start": "10:00", "end": "11:00", "title": "Sneaky", "text": "Sneaky"}, follow_redirects=False)
+    assert r.status_code == 404
+    monkeypatch.setenv("GITAWAY_SHOWCASE", "1")
+    assert "Sneaky" not in client.get("/calendar?demo=long&view=days").text
