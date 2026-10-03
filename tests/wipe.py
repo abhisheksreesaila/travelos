@@ -40,5 +40,10 @@ def wipe_everything():
             for _model, table, _pk in familydb.FAMILY_TABLES:
                 db.conn.execute(text(f"DELETE FROM {table}"))
             db.conn.commit()
+            try:
+                db.conn.execute(text("DELETE FROM push_subscriptions"))  # F-066: made by a migration, so it is not in FAMILY_TABLES (a test that swapped the migrations folder may not have it)
+                db.conn.commit()
+            except Exception:
+                db.conn.rollback()
         finally:
             db.conn.close()

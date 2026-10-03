@@ -181,6 +181,12 @@ def family_label(tenant_id) -> str:
     return f"{name}'s family"
 
 
+def tenant_ids() -> list:
+    """Every family that has an active member: the morning plan sender (gitaway.morning) visits each one."""
+    with hostdb.locked():
+        return [r["tenant_id"] for r in _rows(_conn(), "SELECT DISTINCT tenant_id FROM core_memberships WHERE is_active = 1 ORDER BY tenant_id")]
+
+
 def families_of(user_id) -> list:
     """The person's active families, in the order they joined them: dicts with tenant_id, role (effective), label, joined."""
     with hostdb.locked():
