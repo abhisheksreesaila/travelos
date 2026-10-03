@@ -373,12 +373,12 @@ Captain, 2026-10-02: "there's no email sender… Why is it saying send an email?
 - [x] the invite form says plainly that GitAway doesn't send email: you enter the Gmail address they'll sign in with, then share the link yourself
 - [x] after inviting, a "Share invite" button opens the phone's share sheet (Messages, WhatsApp…) with a short message and the link; where sharing isn't available it copies the link and says "Copied"
 
-## F-064 The live site shows only what's real [doing]
+## F-064 The live site shows only what's real [done]
 Brief: docs/briefs/trip-week.md · Needs: none
-- [ ] in production (`auth.production()`), no sample trips or sample data appear anywhere: Community trips (page, landing section, fork line), creators pages, sample itineraries and their fork counts and names, the demo calendar and any "LA with the kids" sample; those routes 404 or redirect home, and no link points at them
-- [ ] the landing keeps its approved story without the community and creators parts; the booking workspace stays, labelled clearly as a preview with sample prices
-- [ ] a brand-new family's first screens and an empty trip look intentional (warm empty states), checked in screenshots at phone and desktop
-- [ ] the local copy (not production) still shows all sample data; tests cover both modes
+- [x] in production (`auth.production()`), no sample trips or sample data appear anywhere: Community trips (page, landing section, fork line), creators pages, sample itineraries and their fork counts and names, the demo calendar and any "LA with the kids" sample; those routes 404 or redirect home, and no link points at them
+- [x] the landing keeps its approved story without the community and creators parts; the booking workspace stays, labelled clearly as a preview with sample prices
+- [x] a brand-new family's first screens and an empty trip look intentional (warm empty states), checked in screenshots at phone and desktop
+- [x] the local copy (not production) still shows all sample data; tests cover both modes
 
 ## F-065 Today, laid out to read and share [done]
 Brief: docs/briefs/trip-week.md · Needs: none
@@ -394,10 +394,10 @@ Brief: docs/briefs/trip-week.md · Needs: F-065 for the page it opens
 
 # Mobile companion (brief docs/briefs/mobile-companion.md, design docs/design/canvas/Mobile-Storyboards-v1.html)
 
-## F-067 Phone shell and Today v2 [doing]
-- [ ] on phones every trip screen sits in one shell with a bottom tab bar (Today, Map, Ask in the raised centre, Family, Help) as in the storyboards; tabs not built yet show a short "coming" card; desktop keeps its layout
-- [ ] Today matches frame 3: dark "Up next" card with countdown and "Leave by" (when a drive time is known; otherwise no leave-by line), Directions and Uber (deep link with the destination filled in), the rest of the day as tinted cards (done items struck through), hotel tonight, a route strip of the day's stops
-- [ ] it keeps everything F-065/F-066 added (share, confirmation tap, who added it, morning plan card) and passes phone checks (no sideways scroll, 44px targets, 13px text floor)
+## F-067 Phone shell and Today v2 [done]
+- [x] on phones every trip screen sits in one shell with a bottom tab bar (Today, Map, Ask in the raised centre, Family, Help) as in the storyboards; tabs not built yet show a short "coming" card; desktop keeps its layout
+- [x] Today matches frame 3: dark "Up next" card with countdown and "Leave by" (when a drive time is known; otherwise no leave-by line), Directions and Uber (deep link with the destination filled in), the rest of the day as tinted cards (done items struck through), hotel tonight, a route strip of the day's stops
+- [x] it keeps everything F-065/F-066 added (share, confirmation tap, who added it, morning plan card) and passes phone checks (no sideways scroll, 44px targets, 13px text floor)
 
 ## F-068 Map of the day [doing]
 - [ ] places (hotels, plans with a place, airports, the car counter) get coordinates from OpenStreetMap geocoding, cached per family so each place is looked up once, at most one lookup per second, with a clear "couldn't find this place" state
@@ -409,7 +409,7 @@ Brief: docs/briefs/trip-week.md · Needs: F-065 for the page it opens
 - [ ] a hotel's or car's phone number can be added or fixed (Edit trip or right there); Help still opens offline on a phone that opened it before (only for the signed-in person)
 
 ## F-070 Family thread with notifications [todo]
-- [ ] one thread per trip with messages, photos and automatic cards for plan changes (who added, moved or removed what); new items appear within seconds while open
+- [ ] one thread per trip with messages, photos (taking and adding photos is F-071; the thread shows them) and automatic cards for plan changes (who added, moved or removed what); new items appear within seconds while open
 - [ ] everyone in the family with Morning plan notifications on also gets a push for plan changes and messages (not their own); a "Quiet" switch turns that off per person
 
 ## F-071 Photos on the plan [todo]

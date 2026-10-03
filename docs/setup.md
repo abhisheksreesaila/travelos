@@ -19,6 +19,7 @@ Put settings in a `.env` file in the project folder (it is gitignored) or export
 | `DB_NAME` | optional | Host database file name (without `.db`), inside the data folder. Default `app_host`. |
 | `GITAWAY_DATA_DIR` | optional | Folder for every database file. Default `./data/db` (gitignored). A relative value is read from the project folder. Created if missing. |
 | `GITAWAY_ENV` | on the server | `production` switches on production mode (so does Railway's own `RAILWAY_ENVIRONMENT`): the app refuses to start without `GITAWAY_SECRET_KEY`, the session cookie is https-only, the dev sign-in is off whatever `GITAWAY_DEV_LOGIN` says, uvicorn does not reload and trusts the proxy's `X-Forwarded-*` headers. |
+| `GITAWAY_SHOWCASE` | never on the server | `1` or `0` overrides `gitaway/showcase.py`'s default (samples on locally, off in production). **Leave it unset on Railway: `1` there turns the sample trips, Community trips, creators, forks, sharing, simulated Uber and voice demo back on for real families.** |
 | `GITAWAY_DEV_LOGIN` | local only | `1` turns on the dev sign-in (see below). Leave it unset anywhere else; production ignores it. |
 | `GOOGLE_CLIENT_ID` | for Google sign-in | The OAuth client id (fh-saas reads this name). |
 | `GOOGLE_CLIENT_SECRET` | for Google sign-in | The OAuth client secret (fh-saas reads this name). |

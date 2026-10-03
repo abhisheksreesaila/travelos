@@ -14,7 +14,7 @@ from pathlib import Path
 from fasthtml.common import A, Div, H1, P, Section
 from starlette.responses import Response
 
-from gitaway import assetver, session as ses
+from gitaway import assetver, session as ses, showcase
 from gitaway.layout import PAPER, page
 
 SW_PATH = Path(__file__).resolve().parent.parent.parent / "assets" / "sw.js"
@@ -26,7 +26,7 @@ def service_worker_source():
     so the browser installs a new worker, and drops the old caches, exactly when any of them changes."""
     template = SW_PATH.read_text()
     hashes = [assetver.file_hash(u) or "" for u in PRECACHED_ASSETS]
-    version = hashlib.sha1((template + "|".join(hashes)).encode()).hexdigest()[:10]
+    version = hashlib.sha1((template + "|".join(hashes) + ("|showcase" if showcase.on() else "")).encode()).hexdigest()[:10]
     urls = ["/offline", *(assetver.versioned(u) for u in PRECACHED_ASSETS)]
     return template.replace("__VERSION__", version).replace("__SHELL_URLS__", json.dumps(urls))
 

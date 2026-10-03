@@ -104,9 +104,9 @@ def test_during_the_trip_the_next_thing_is_a_dark_card_with_a_countdown_and_the_
     html = client.get("/trip", headers=ANDROID).text
     up = html.split('id="tp-up"')[1].split('id="tp-list"')[0]
     assert "UP NEXT · IN 40 MIN" in text(up) and "Griffith Observatory" in up and "5:00 – 7:30 PM" in text(up)
-    assert text(html).count("Griffith Observatory") >= 2  # the card, and its place in the list
+    assert text(html).count("Griffith Observatory") >= 1  # in the card; the list below is "the rest of today" (F-067)
     states = re.findall(r'class="tp-row is-(\w+)"', html)
-    assert states == ["done", "next", "later"]
+    assert states == ["done", "later"]
     assert "Saturday" in html.split("<h1")[1].split("</h1>")[0]
     assert "DAY 2 OF 5" in text(html)
 
@@ -156,8 +156,8 @@ def test_a_ride_still_to_schedule_is_an_offer_card_and_a_scheduled_one_links_to_
 
 def test_the_arrival_day_has_a_flight_card_and_a_hotel_card_and_the_last_day_a_checkout_card(client, at):
     book(client)
-    at(date(2026, 10, 16), "07:00")
-    html = client.get("/trip").text
+    at(date(2026, 10, 17), "07:00")  # the arrival day, looked at from the next morning: its whole list shows
+    html = client.get("/trip?day=0").text
     row = re.search(r'<a[^>]*class="tp-card [^"]*tp-flight[^"]*"|<div[^>]*class="tp-card [^"]*tp-flight[^"]*"', html)
     assert row and "FLIGHT" in text(html) and "Skylark Air 214 · SFO → LAX" in text(html)
     stay = html.split('id="tp-stay"')[1].split("</div></div>")[0]

@@ -12,7 +12,7 @@ from urllib.parse import parse_qsl, quote as urlquote
 from fasthtml.common import A, Button, Div, Form, H2, Input, Li, Link, P, Script, Section, Span, Ul
 from starlette.responses import RedirectResponse
 
-from gitaway import access, catalog, rides as ride_model, session as ses, tripcal
+from gitaway import access, catalog, rides as ride_model, session as ses, showcase, tripcal
 from gitaway.icons import icon
 from gitaway.layout import page
 from gitaway.pages import plan
@@ -80,6 +80,16 @@ def pay_label(q):
 
 def refused(message, back):
     return page("Not booked", Div(H2("We couldn't book that"), P(message), A("Back to my picks", href=back, cls="btn btn-ink"), cls="pay-stage"), head=HEAD)
+
+
+def preview_only():
+    """Production (F-064): the workspace prices are samples, so its last step books nothing and writes nothing."""
+    return page("Booking opens after your trip", Div(
+        H2("Booking opens after your trip"),
+        P("Booking opens after your trip. Add the trip you booked instead."),
+        Div(A("Import a booked trip", href="/trips/import", cls="btn btn-ink", id="po-import"),
+            A("Answer a few questions", href="/trips/build", cls="btn btn-sm", id="po-build"), cls="pay-actions"),
+        cls="pay-stage"), head=HEAD)
 
 
 def sheet(q, who):
@@ -185,6 +195,8 @@ def register(app):
     @app.get("/plan/pay")
     def pay_sheet(session, f: str = "", h: str = "", c: str = "", rooms: str = None, add: str = None, fare: str = None, bags: str = None,
                   d: str = "", r: str = "", a: str = "", k: str = ""):
+        if not showcase.on():
+            return preview_only()
         picks, trip = plan.resolve_pick(f, h, c), plan.resolve_trip(d, r, a, k)
         stay, flight = plan.resolve_stay(picks[1], rooms, add, trip), plan.resolve_flight(picks[0], fare, bags, trip)
         who = ses.current_traveler(session)
@@ -200,6 +212,8 @@ def register(app):
     def pay(session, f: str = "", h: str = "", c: str = "", rooms: str = None, add: str = None, fare: str = None, bags: str = None,
             d: str = "", r: str = "", a: str = "", k: str = ""):
         """Books the picks. The total is always recomputed here; rooms that sleep too few become the default room, a bad fare Basic and bad bags none."""
+        if not showcase.on():
+            return preview_only()
         picks, trip = plan.resolve_pick(f, h, c), plan.resolve_trip(d, r, a, k)
         stay, flight = plan.resolve_stay(picks[1], rooms, add, trip), plan.resolve_flight(picks[0], fare, bags, trip)
         if catalog.is_past(trip.depart, trip.return_):  # a stale link must not book the past: back to the form, which says why
