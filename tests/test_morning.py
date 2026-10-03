@@ -462,3 +462,13 @@ def test_the_off_switch_colour_is_a_token():
     from pathlib import Path
     css = (Path(__file__).resolve().parent.parent / "assets" / "css" / "morning.css").read_text()
     assert "#D9D4E4" not in css
+
+
+def test_vapid_keys_accept_the_site_address_as_the_contact(tmp_path, monkeypatch):
+    """Web push allows an https address as the contact, so no one's personal email has to go to the push services."""
+    from scripts import vapid_keys
+    env = tmp_path / ".env"
+    monkeypatch.setattr(vapid_keys, "ENV", env)
+    assert vapid_keys.main(["https://gitaway.example"]) == 0
+    assert "GITAWAY_VAPID_SUBJECT=https://gitaway.example" in env.read_text()
+    assert vapid_keys.main(["http://insecure.example", "--force"]) == 2

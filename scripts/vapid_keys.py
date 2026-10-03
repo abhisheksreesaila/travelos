@@ -1,6 +1,6 @@
 """Make the VAPID key pair for the morning plan push (F-066) and put it in ./.env.
 
-    pixi run vapid-keys mailto:you@example.com [--force]
+    pixi run vapid-keys mailto:you@example.com [--force]   (or the site's https:// address)
 
 Writes GITAWAY_VAPID_PUBLIC, GITAWAY_VAPID_PRIVATE and GITAWAY_VAPID_SUBJECT into the project's .env (gitignored; created if missing).
 The private key is never printed. It refuses to replace keys that are already there unless you pass --force, because new keys
@@ -46,8 +46,8 @@ def write_env(path: Path, values: dict, force=False) -> None:
 def main(argv) -> int:
     args = [a for a in argv if not a.startswith("--")]
     subject = args[0] if args else ""
-    if not subject.startswith("mailto:") or "@" not in subject:
-        print("Usage: pixi run vapid-keys mailto:you@example.com [--force]\nThe address is the contact push services may use if your server misbehaves.", file=sys.stderr)
+    if not ((subject.startswith("mailto:") and "@" in subject) or subject.startswith("https://")):
+        print("Usage: pixi run vapid-keys mailto:you@example.com|https://your.site [--force]\nThe address is the contact push services may use if your server misbehaves.", file=sys.stderr)
         return 2
     pair = make_pair()
     write_env(ENV, {"GITAWAY_VAPID_PUBLIC": pair["public"], "GITAWAY_VAPID_PRIVATE": pair["private"], "GITAWAY_VAPID_SUBJECT": subject}, force="--force" in argv)
