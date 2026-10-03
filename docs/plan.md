@@ -275,15 +275,14 @@ Found while reviewing F-045: run in reverse order, tests/test_family_storage.py:
 
 # Go live (brief: docs/briefs/go-live.md, approved 2026-10-01)
 
-## F-048 Deploy to Railway [blocked]
-Blocked: do the one-time Google console steps in ~/Projects/dev-tools/README.md (ends with the client file saved at ~/.config/oauth/google-local.json), then say go.
+## F-048 Deploy to Railway [review]
 Live: https://web-production-2d117.up.railway.app (deployed 2026-10-01; volume at /data; secret set)
 Needs: none
 - [x] the app builds and runs on Railway (pixi-based image), with all databases on a persistent volume (working directory on the volume), assets resolved from the code folder
 - [x] production settings: session cookie https-only, `GITAWAY_DEV_LOGIN` never set, secret key from `GITAWAY_SECRET_KEY`, a health check route; docs/setup.md has a Railway section
 - [x] a new Railway project "gitaway" with a volume and a public *.up.railway.app address
-- [ ] a redeploy keeps a test family's data (needs Google sign-in to create one)
-- [ ] Google sign-in works on the live address once the captain adds the keys
+- [ ] a redeploy keeps a test family's data (check on the next deploy with the captain's family)
+- [x] Google sign-in works on the live address (captain signed in 2026-10-02; keys set with oauth-setup)
 
 ## F-049 Stay signed in about 30 days [done]
 Needs: none
