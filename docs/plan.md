@@ -373,12 +373,12 @@ Captain, 2026-10-02: "there's no email sender… Why is it saying send an email?
 - [x] the invite form says plainly that GitAway doesn't send email: you enter the Gmail address they'll sign in with, then share the link yourself
 - [x] after inviting, a "Share invite" button opens the phone's share sheet (Messages, WhatsApp…) with a short message and the link; where sharing isn't available it copies the link and says "Copied"
 
-## F-064 The live site shows only what's real [doing]
+## F-064 The live site shows only what's real [done]
 Brief: docs/briefs/trip-week.md · Needs: none
-- [ ] in production (`auth.production()`), no sample trips or sample data appear anywhere: Community trips (page, landing section, fork line), creators pages, sample itineraries and their fork counts and names, the demo calendar and any "LA with the kids" sample; those routes 404 or redirect home, and no link points at them
-- [ ] the landing keeps its approved story without the community and creators parts; the booking workspace stays, labelled clearly as a preview with sample prices
-- [ ] a brand-new family's first screens and an empty trip look intentional (warm empty states), checked in screenshots at phone and desktop
-- [ ] the local copy (not production) still shows all sample data; tests cover both modes
+- [x] in production (`auth.production()`), no sample trips or sample data appear anywhere: Community trips (page, landing section, fork line), creators pages, sample itineraries and their fork counts and names, the demo calendar and any "LA with the kids" sample; those routes 404 or redirect home, and no link points at them
+- [x] the landing keeps its approved story without the community and creators parts; the booking workspace stays, labelled clearly as a preview with sample prices
+- [x] a brand-new family's first screens and an empty trip look intentional (warm empty states), checked in screenshots at phone and desktop
+- [x] the local copy (not production) still shows all sample data; tests cover both modes
 
 ## F-065 Today, laid out to read and share [done]
 Brief: docs/briefs/trip-week.md · Needs: none
