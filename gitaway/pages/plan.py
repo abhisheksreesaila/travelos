@@ -326,7 +326,7 @@ def rides_card(r, q=None):
                     Span(catalog.money(f.cents), cls="ws-ride-price"), cls="ws-ride-fare") for f in leg.fares], cls="ws-ride-fares",
                aria_label=f"{leg.title} fares"),
             A(icon("car", 15, 2.4), "Schedule an Uber", href=ride_path(leg.kind, q.flight_id, q.stay_id, q.trip), cls="ws-ride-go", data_schedule=leg.kind,
-              aria_label=f"Schedule an Uber for your {leg.title.lower()}, {leg.route}") if q is not None and access.request_role() != "viewer" else "",
+              aria_label=f"Schedule an Uber for your {leg.title.lower()}, {leg.route}") if q is not None and access.request_role() != "viewer" and showcase.on() else "",  # the simulated Uber is local-only (F-064)
             cls="ws-ride-leg", data_ride=leg.kind,
         ))
     return Div(

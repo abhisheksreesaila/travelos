@@ -14,7 +14,7 @@ from tests.test_signin import sign_in
 SLUGS = list(itineraries.ITINERARIES)
 SAMPLE_WORDS = ["Community trips", "For creators", "Your forks", "Trips others loved", "Fork a trip a real family took", "Leave a trail",
                 "Our LA family week", "Forked by", "312 families", "No plans yet?"] + [t.title for t in itineraries.ITINERARIES.values()]
-GONE_HREF = re.compile(r'href="(/community|/discover|/creators|/forks|/share|/trips/(?!build|import|switch)[^"/?#]+)')
+GONE_HREF = re.compile(r'href="(/community|/discover|/creators|/forks|/share|/rides|/trips/(?!build|import|switch)[^"/?#]+)')
 
 
 @pytest.fixture
@@ -100,7 +100,7 @@ def test_the_real_production_environment_hides_them_too(prod, client):
 
 # ---- production: nothing links to them, nothing sample shows ----
 
-PAGES_SIGNED_OUT = ["/", "/start", "/signin", "/offline", "/plan", "/plan?f=f1&h=h1&c=c1", "/trips/import", "/trips/build", "/community"]
+PAGES_SIGNED_OUT = ["/", "/start", "/signin", "/offline", "/plan", "/plan?f=f1&h=h1&c=c1", "/plan?f=f1&h=h1&c=none", "/trips/import", "/trips/build", "/community"]
 
 
 @pytest.mark.parametrize("path", PAGES_SIGNED_OUT)
