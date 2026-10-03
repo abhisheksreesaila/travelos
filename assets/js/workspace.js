@@ -631,7 +631,7 @@
       var name = host && host.dataset.pane;
       var onPicked = t.classList.contains('ws-offer') && t.getAttribute('aria-pressed') === 'true';
       if (SPLIT[name] && (onPicked || t.classList.contains('ws-focus'))) { e.preventDefault(); openSplit(name); }
-    } else if (PANES[e.key]) {
+    } else if (PANES[e.key] && paneEl(PANES[e.key])) {
       e.preventDefault();
       var next = PANES[e.key];
       if (open) { if (SPLIT[next]) openSplit(next); else setExpanded(next); }

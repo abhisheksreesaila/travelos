@@ -15,6 +15,7 @@
 .ws-pill:hover { color: var(--ink); box-shadow: 0 0 0 1px var(--line), 0 0.3125rem 0 var(--line); }
 .ws-bold { font-weight: 800; }
 .ws-pill > .ws-change { color: var(--coral-deep); font-weight: 800; }
+.ws-preview { flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.375rem 0.75rem; border-radius: var(--r-pill); background: var(--sun-tint); font-size: max(var(--text-min), 0.875rem); font-weight: 800; text-align: center; }
 .ws-hint { margin-left: auto; font-size: 0.9375rem; font-weight: 700; color: var(--ink-3); }
 .ws-avatar { width: 2.75rem; height: 2.75rem; border-radius: var(--r-pill); border: 0.1875rem solid #fff; display: grid; place-items: center; font-weight: 800; }
 
