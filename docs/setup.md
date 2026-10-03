@@ -72,10 +72,10 @@ On the phone Today view, a family member can turn on a "Morning plan": at the ti
 3. **On Railway** (once, from the project folder, with the Railway CLI linked to the project). This reads each value from `.env` and sends it straight to Railway without printing it:
 
    ```
-   for k in GITAWAY_VAPID_PUBLIC GITAWAY_VAPID_PRIVATE GITAWAY_VAPID_SUBJECT; do grep "^$k=" .env | cut -d= -f2- | tr -d '\n' | railway variable set "$k" --stdin --service web; done
+   for k in GITAWAY_VAPID_PUBLIC GITAWAY_VAPID_PRIVATE; do grep "^$k=" .env | cut -d= -f2- | tr -d '\n' | railway variable set "$k" --stdin --service web --skip-deploys; done; grep "^GITAWAY_VAPID_SUBJECT=" .env | cut -d= -f2- | tr -d '\n' | railway variable set GITAWAY_VAPID_SUBJECT --stdin --service web
    ```
 
-   The service redeploys with the keys. Never commit the keys or paste them into chat.
+   The first two are set with `--skip-deploys` so Railway does not redeploy between them; the third triggers one redeploy that starts the service with all three keys. Never commit the keys or paste them into chat.
 
 How it runs: one background thread in the app (one per process; Railway runs one) wakes every minute and sends what is due. Each phone's subscription, chosen time and the day it was last sent live in the family database (`push_subscriptions`, migration `002`), so a redeploy loses nothing and a restart never double-sends. A push service answering "gone" (404 or 410) deletes that subscription quietly; any other failure is logged without the phone's address and retried for the next hour. Nothing is sent on days outside the trip, or when the family has no trip. The text holds plan titles and times only.
 

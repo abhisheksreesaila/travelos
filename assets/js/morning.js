@@ -44,6 +44,15 @@
     return out;
   }
 
+  function keyChanged(s) {
+    var have = s.options && s.options.applicationServerKey;
+    if (!have) return false;
+    var a = new Uint8Array(have), b = keyBytes(card.getAttribute("data-key"));
+    if (a.length !== b.length) return true;
+    for (var i = 0; i < a.length; i++) if (a[i] !== b[i]) return true;
+    return false;
+  }
+
   // An iPhone only pushes from a web app on the Home Screen; elsewhere the browser either has no PushManager or cannot be relied on.
   var apple = /iPhone|iPad|iPod/.test(navigator.userAgent);
   var possible = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window && !(apple && navigator.standalone !== true);
@@ -56,6 +65,7 @@
   }).then(function (s) {
     subscription = s;
     if (!s) return set(window.Notification.permission === "denied" ? "blocked" : "off");
+    if (keyChanged(s)) return turnOff();  // subscribed under other server keys (they were replaced): it can never be pushed to, so drop it; the next tap makes a fresh one
     return post("/trip/morning/status", { endpoint: s.endpoint }).then(function (j) { set(j.on ? "on" : "off", j.time); });
   }).catch(function () { if (!reg) set("install"); else set("off"); });
 

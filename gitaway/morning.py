@@ -115,6 +115,10 @@ def subscribe(session, endpoint, p256dh, authkey, at_min=DEFAULT_MIN, now=None):
                                     VALUES (:e, :u, :p, :a, :m, 1, :s, :c)
                                     ON CONFLICT(endpoint) DO UPDATE SET user_id = :u, p256dh = :p, auth = :a, at_min = :m, enabled = 1, last_sent = :s""",
                          e=endpoint, u=fam.traveler.id, p=p256dh, a=authkey, m=at_min, s=_passed(zone, at_min, now), c=familydb.now())
+        here, uid = session.get("tenant_id"), fam.traveler.id
+    for other in members.families_of(uid):  # one phone is told once a day, even if its owner is in two families: the latest family to turn it on keeps it
+        if other["tenant_id"] != here:
+            _write(other["tenant_id"], "DELETE FROM push_subscriptions WHERE endpoint = :e", e=endpoint)
     return {"on": True, "time": hhmm(at_min)}
 
 
@@ -200,30 +204,44 @@ def push_send(sub, payload) -> int:
         return e.response.status_code if getattr(e, "response", None) is not None else 0
 
 
+def due(now, zone, at_min, last_sent):
+    """The date (ISO, in the trip zone) this push is for when it is due at the instant `now`, else None: the chosen time has been reached, within
+    WINDOW minutes, and it was not already sent that date. Pure, so daylight-saving days and late-evening times are checked directly."""
+    local = now.astimezone(ZoneInfo(zone))
+    today = local.date().isoformat()
+    if last_sent == today or not 0 <= local.hour * 60 + local.minute - at_min < WINDOW:
+        return None
+    return today
+
+
 def _deliver(tenant_id, sub, now, send):
     if members.role_in(sub["user_id"], tenant_id) is None:  # no longer in this family: nobody to tell
         _write(tenant_id, "DELETE FROM push_subscriptions WHERE endpoint = :e", e=sub["endpoint"])
         return None
     session = {"user_id": sub["user_id"], "tenant_id": tenant_id, "email": ""}
-    local = now.astimezone(ZoneInfo(ses.trip_zone(session)))
-    today = local.date().isoformat()
-    late = local.hour * 60 + local.minute - sub["at_min"]
-    if sub["last_sent"] == today or not 0 <= late < WINDOW:
+    today = due(now, ses.trip_zone(session), sub["at_min"], sub["last_sent"])
+    if today is None:
         return None
     payload = todays_message(session, now)
     if payload is None:
         return None
+    # At most once: the day is recorded before sending, and if that write fails nothing is sent (a failed write after sending would repeat the push every minute).
+    _write(tenant_id, "UPDATE push_subscriptions SET last_sent = :d WHERE endpoint = :e", d=today, e=sub["endpoint"])
     try:
         code = send(sub, payload)
     except Exception as e:  # a push service that cannot be reached is not the family's problem
         log.warning("morning plan push %s failed: %s", _tag(sub["endpoint"]), type(e).__name__)
-        return 0
+        code = 0
     if 200 <= code < 300:
-        _write(tenant_id, "UPDATE push_subscriptions SET last_sent = :d WHERE endpoint = :e", d=today, e=sub["endpoint"])
-    elif code in (404, 410):  # expired or unsubscribed on the phone: drop it quietly
+        return code
+    if 400 <= code < 500 and code != 429:  # the phone or the push service says this address will never work (gone, rejected keys, bad signature): drop it quietly
         _write(tenant_id, "DELETE FROM push_subscriptions WHERE endpoint = :e", e=sub["endpoint"])
-    else:
-        log.warning("morning plan push %s failed with status %s", _tag(sub["endpoint"]), code)
+        return code
+    log.warning("morning plan push %s failed with status %s", _tag(sub["endpoint"]), code)  # try again next minute, within the hour
+    try:
+        _write(tenant_id, "UPDATE push_subscriptions SET last_sent = '' WHERE endpoint = :e AND last_sent = :d", d=today, e=sub["endpoint"])
+    except Exception:
+        pass  # no retry then, which is the safe side
     return code
 
 

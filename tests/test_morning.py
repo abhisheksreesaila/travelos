@@ -380,3 +380,85 @@ def test_vapid_keys_will_not_replace_keys_without_force_and_needs_a_contact(tmp_
     assert env.read_text() == before
     vapid_keys.main(["mailto:a@b.co", "--force"])
     assert env.read_text() != before and env.read_text().count("GITAWAY_VAPID_PRIVATE=") == 1
+
+
+# ---- review follow-ups -----------------------------------------------------------------------------------------------------
+
+@pytest.mark.parametrize("status,kept", [(400, False), (401, False), (403, False), (404, False), (410, False), (429, True), (500, True), (503, True)])
+def test_any_permanent_4xx_drops_the_subscription_but_a_busy_or_broken_service_does_not(ari, status, kept):
+    subscribe(ari)
+    morning.run_once(la(17, 7, 30), FakePush(status))
+    assert (morning.count_all() == 1) is kept
+
+
+def test_a_phone_in_two_families_is_told_once(ari):
+    from gitaway import members
+    mail = addr("two")
+    invite(ari, mail, "editor")
+    sam = browser(ari)
+    sign_in(sam, mail)                                        # joins Ari's family; Sam also has a family of their own
+    uid = person(mail)["user_id"]
+    mine = [f["tenant_id"] for f in members.families_of(uid)]
+    assert len(mine) == 2
+    sessions = [{"user_id": uid, "tenant_id": t, "email": mail} for t in mine]
+    morning.subscribe(sessions[0], EP, KEYS["p256dh"], KEYS["authkey"])
+    morning.subscribe(sessions[1], EP, KEYS["p256dh"], KEYS["authkey"])
+    assert morning.count_all() == 1
+    assert [t for t in mine if morning._subscriptions(t)] == [mine[1]]   # the family it was last turned on in keeps it
+
+
+def test_the_day_is_recorded_before_sending_so_a_failed_write_cannot_repeat_the_push(ari, monkeypatch):
+    subscribe(ari)
+    push = FakePush()
+
+    def broken(*a, **k):
+        raise RuntimeError("disk full")
+    monkeypatch.setattr(morning, "_write", broken)
+    assert morning.run_once(la(17, 7, 30), push) == [] and push.sent == []    # no record, no push
+
+
+def test_a_failed_send_gives_the_day_back_for_one_retry(ari):
+    subscribe(ari)
+    push = FakePush(503)
+    morning.run_once(la(17, 7, 30), push)
+    push.status = 201
+    morning.run_once(la(17, 7, 31), push), morning.run_once(la(17, 7, 32), push)
+    assert len(push.sent) == 2
+
+
+def test_the_loop_survives_a_failing_minute():
+    import threading
+    stop, calls = threading.Event(), []
+
+    def clock():
+        calls.append(1)
+        if len(calls) >= 3:
+            stop.set()
+        raise RuntimeError("boom")
+    t = threading.Thread(target=morning._loop, args=(stop, 0.01, None, clock), daemon=True)
+    t.start(), t.join(3)
+    assert not t.is_alive() and len(calls) >= 3
+
+
+def test_due_on_a_fall_back_day_and_a_spring_forward_day():
+    z = "America/Los_Angeles"
+    fall = datetime(2026, 11, 1, 15, 30, tzinfo=timezone.utc)         # 7:30 PST, the morning after the clocks went back
+    assert morning.due(fall, z, 450, "") == "2026-11-01" and morning.due(fall.replace(hour=14), z, 450, "") is None
+    assert morning.due(datetime(2026, 11, 1, 14, 30, tzinfo=timezone.utc), z, 390, "") == "2026-11-01"   # 6:30 PST
+    spring = datetime(2026, 3, 8, 14, 30, tzinfo=timezone.utc)        # 7:30 PDT, the morning the clocks went forward
+    assert morning.due(spring, z, 450, "") == "2026-03-08" and morning.due(spring, z, 450, "2026-03-08") is None
+
+
+def test_a_late_evening_time_is_sent_that_evening_and_never_twice(ari):
+    subscribe(ari, time="23:30")
+    push = FakePush()
+    morning.run_once(la(17, 23, 29), push)
+    assert push.sent == []
+    morning.run_once(la(17, 23, 30), push), morning.run_once(la(17, 23, 59), push), morning.run_once(la(18, 0, 5), push)
+    assert len(push.sent) == 1
+
+
+def test_the_off_switch_colour_is_a_token():
+    from pathlib import Path
+    css = (Path(__file__).resolve().parent.parent / "assets" / "css" / "morning.css").read_text()
+    assert "#D9D4E4" not in css

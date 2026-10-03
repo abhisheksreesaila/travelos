@@ -19,13 +19,13 @@ PAIR = vapid_keys.make_pair()
 STUB = """(perm) => {
   window.__push = { asked: 0, subscribed: 0, unsubscribed: 0, key: null, sub: null };
   let state = perm;
-  const make = () => ({ endpoint: "https://push.example.com/send/stub1", toJSON() { return { endpoint: this.endpoint, keys: { p256dh: "BStubP256dhKey", auth: "StubAuthSecret" } }; },
+  const make = () => ({ options: { applicationServerKey: new Uint8Array(JSON.parse(sessionStorage.getItem("stubkey") || "[]")).buffer }, endpoint: "https://push.example.com/send/stub1", toJSON() { return { endpoint: this.endpoint, keys: { p256dh: "BStubP256dhKey", auth: "StubAuthSecret" } }; },
                         unsubscribe: async () => { window.__push.unsubscribed++; window.__push.sub = null; sessionStorage.removeItem("stub"); return true; } });
   window.Notification = { get permission() { return state; }, requestPermission: async () => { window.__push.asked++; state = %(answer)s; return state; } };
   window.PushManager = function PushManager() {};
   const mgr = {
     getSubscription: async () => { if (!window.__push.sub && sessionStorage.getItem("stub")) window.__push.sub = make(); return window.__push.sub; },  // survives a reload, like the phone's
-    subscribe: async (opts) => { window.__push.subscribed++; window.__push.key = Array.from(opts.applicationServerKey); window.__push.sub = make(); sessionStorage.setItem("stub", "1"); return window.__push.sub; },
+    subscribe: async (opts) => { window.__push.subscribed++; window.__push.key = Array.from(opts.applicationServerKey); sessionStorage.setItem("stubkey", JSON.stringify(window.__push.key)); window.__push.sub = make(); sessionStorage.setItem("stub", "1"); return window.__push.sub; },
   };
   Object.defineProperty(ServiceWorkerRegistration.prototype, "pushManager", { get() { return mgr; } });
 }"""
@@ -130,6 +130,17 @@ def test_a_returning_visit_shows_it_on_at_the_saved_time(phone):
     expect(page.locator("#tp-morning-sub")).to_contain_text("8:00 AM")
 
 
+def test_a_subscription_made_under_old_server_keys_is_dropped_and_never_shown_as_on(phone):
+    page = phone("default")
+    page.locator("#tp-morning-switch").click()
+    expect(page.locator("#tp-morning-timerow")).to_be_visible()
+    page.evaluate("sessionStorage.setItem('stubkey', JSON.stringify([4, 1, 2, 3]))")   # the server's keys were replaced since this phone subscribed
+    page.reload()
+    expect(page.locator("#tp-morning-switch")).to_be_visible()
+    page.wait_for_function("window.__push.unsubscribed === 1")
+    assert state(page) == "off" and morning.count_all() == 0 and stored(page)["on"] is False
+
+
 def test_saying_no_to_notifications_says_where_to_turn_them_on(phone):
     page = phone("default", answer="denied")
     page.locator("#tp-morning-switch").click()
@@ -171,6 +182,8 @@ RUN_SW = """async (source) => {
   self_.clients.matchAll = async () => window.__clients;
   await handlers.notificationclick(event({ notification: note }));
   await Promise.all(wait.splice(0));
+  await handlers.notificationclick(event({ notification: { close() {}, data: { url: "https://evil.example.com/x" } } }));
+  await Promise.all(wait.splice(0));
   return { shown, opened, closed: closed.length, focused };
 }"""
 
@@ -189,4 +202,5 @@ def test_the_service_worker_shows_the_push_and_a_tap_opens_the_today_view(browse
     assert second["title"] == "GitAway"                       # a payload that is not JSON still shows something (iOS needs every push shown)
     assert third["options"]["data"]["url"] == "/trip"          # a link to another site is never followed
     assert out["opened"] == [base_url + "/trip"]               # no window open: open one on the Today view
-    assert out["closed"] == 2 and out["focused"] == ["focus", base_url + "/trip"]   # a window is open: focus it and take it to Today
+    assert out["closed"] == 2 and out["focused"] == ["focus", base_url + "/trip", "focus", base_url + "/trip"]   # even a foreign address in the data lands on Today
+    assert True   # a window is open: focus it and take it to Today

@@ -117,7 +117,9 @@ self.addEventListener("push", (event) => {
 });
 
 async function openToday(path) {
-  const url = new URL(path, self.location.origin).href;
+  let target = new URL(path, self.location.origin);
+  if (target.origin !== self.location.origin) target = new URL("/trip", self.location.origin);
+  const url = target.href;
   const open = (await self.clients.matchAll({ type: "window", includeUncontrolled: true })).find((c) => new URL(c.url).origin === self.location.origin);
   if (!open) return self.clients.openWindow(url);
   try { await open.focus(); if ("navigate" in open) await open.navigate(url); } catch (e) {}
