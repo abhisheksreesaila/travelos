@@ -98,7 +98,9 @@ def test_open_a_photo_and_remove_it(family):
     page.locator("#fp-back").click()                                                             # the back link works
     expect(page.locator("#fp")).to_be_visible()
     page.locator(".fp-s").last.click()
-    page.locator("#fp-remove").click()                                                           # the Remove button works
+    page.locator("#fp-remove").click()                                                           # Remove asks first
+    expect(page.locator("#fp-remove-yes")).to_be_visible()
+    page.locator("#fp-remove-yes").click()                                                       # and the confirm button works
     expect(page.locator("#fp")).to_be_visible()
     assert page.url.endswith("/trip/family?view=photos")
     expect(page.locator(".fp-s")).to_have_count(1)
@@ -108,6 +110,10 @@ def test_open_a_photo_and_remove_it(family):
     page.locator("#fam-photos").click()
     page.locator(".fp-s").first.click()
     page.locator("#fp-remove").click()
+    page.locator("#fp-remove").click()                                                           # pressing it again keeps the photo
+    expect(page.locator("#fp-remove-yes")).to_be_hidden()
+    page.locator("#fp-remove").click()
+    page.locator("#fp-remove-yes").click()
     expect(page.locator("#fp-empty")).to_be_visible()
     expect(page.locator(".fp-day")).to_have_count(0)
 

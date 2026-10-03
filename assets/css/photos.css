@@ -6,7 +6,7 @@
 
 .fam-switch { display: flex; gap: 0.25rem; padding: 0.25rem; border-radius: var(--r-pill); background: var(--card); box-shadow: var(--shadow-sm); }
 .fam-seg { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 2.75rem; border-radius: var(--r-pill); font-weight: 800; font-size: max(var(--text-min), 0.9375rem); color: var(--ink-2); text-decoration: none; }
-.fam-seg[aria-current="true"] { background: var(--ink); color: #FFFFFF; }
+.fam-seg[aria-current="true"] { background: var(--ink); color: var(--card); }
 
 .ft-round { width: 2.75rem; height: 2.75rem; flex-shrink: 0; border: 0; border-radius: var(--r-pill); background: var(--card); box-shadow: var(--shadow-sm); color: var(--ink); display: flex; align-items: center; justify-content: center; cursor: pointer; }
 
@@ -28,7 +28,7 @@
 .fp-polar-img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 0.25rem; background: var(--sky-tint); }
 .fp-polar-cap { display: block; padding: 0.5rem 0.25rem 0.125rem; font: 700 1.75rem/1 var(--font-hand); min-height: 1.75rem; overflow-wrap: anywhere; }
 .fp-tape { position: absolute; z-index: 1; top: -0.75rem; left: 50%; width: 5.75rem; height: 1.625rem; margin-left: -2.875rem; background: var(--tape, rgba(255, 201, 60, .75)); transform: rotate(4deg); }
-.fp-pinned { position: absolute; right: -0.5rem; bottom: 2.5rem; max-width: 100%; transform: rotate(5deg); display: inline-flex; align-items: center; gap: 0.375rem; min-height: 2.5rem; padding: 0.25rem 0.875rem; border: 0.1875rem solid #FFFFFF; border-radius: var(--r-pill); background: var(--sun); box-shadow: var(--shadow-sticker); font-weight: 800; font-size: max(var(--text-min), 0.875rem); }
+.fp-pinned { position: absolute; right: -0.5rem; bottom: 2.5rem; max-width: 100%; transform: rotate(5deg); display: inline-flex; align-items: center; gap: 0.375rem; min-height: 2.5rem; padding: 0.25rem 0.875rem; border: 0.1875rem solid var(--card); border-radius: var(--r-pill); background: var(--sun); box-shadow: var(--shadow-sticker); font-weight: 800; font-size: max(var(--text-min), 0.875rem); }
 .fp-pinto { display: flex; align-items: center; gap: 0.625rem; padding: 0.625rem 0.75rem; border-radius: 1.125rem; background: var(--accent-tint, var(--bubble-tint)); }
 .fp-pin-ico { flex-shrink: 0; display: flex; }
 .fp-pinto-x { display: flex; flex-direction: column; min-width: 0; line-height: 1.3; }
@@ -51,3 +51,8 @@
 .fp-caption { margin: 0; font: 700 1.75rem/1.1 var(--font-hand); overflow-wrap: anywhere; }
 .fp-remove-form { margin: 0; }
 .fp-remove { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%; min-height: 3rem; border: 0; border-radius: var(--r-pill); background: var(--bubble-tint); color: var(--bubble-ink); font: inherit; font-weight: 800; font-size: max(var(--text-min), 0.9375rem); cursor: pointer; }
+.fp-confirm > summary { list-style: none; }
+.fp-confirm > summary::-webkit-details-marker { display: none; }
+.fp-confirm[open] > summary { margin-bottom: 0.5rem; }
+.fp-confirm .fp-remove-form { display: flex; flex-direction: column; gap: 0.5rem; }
+.fp-remove-yes { background: var(--coral); color: var(--ink); }

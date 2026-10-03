@@ -403,3 +403,111 @@ def test_several_photos_in_one_upload_are_all_kept_and_a_bad_one_does_not_stop_t
     r = upload(trip, jpg(taken=STROLL), ("bad.jpg", b"%PDF", "image/jpeg"), jpg(taken="2026:10:17 11:00:00"))
     assert r.status_code == 200 and len(r.json()["ids"]) == 2 and len(r.json()["errors"]) == 1
     assert len(photos.listing(person("ari"))) == 2
+
+
+# ---- review fixes ----------------------------------------------------------------------------------------------------------
+
+def test_deleting_an_imported_trip_removes_its_photos_rows_and_folder(client):
+    from gitaway import familydb, importer, session as ses
+    from tests.test_trip_import import imported
+    sign_in(client)
+    assert imported(client).status_code == 303
+    ari = person("ari")
+    trip_id = ses.trips(ari)[0].id
+    p = photos.add(ari, image("jpeg"))
+    folder = (photos.root() / p["orig"]).parent
+    assert folder.is_dir()
+    assert importer.delete(ari, trip_id)
+    assert not folder.exists() and photos.get(ari, p["id"]) is None
+    with familydb.using(ari) as db:
+        assert familydb.row(db, "SELECT COUNT(*) AS n FROM photos WHERE trip_id = :t", t=trip_id)["n"] == 0
+
+
+def test_a_photo_of_a_trip_that_no_longer_exists_is_not_served(trip, ari):
+    from gitaway import familydb
+    p = photos.add(ari, image("jpeg"))
+    with familydb.using(ari) as db:
+        with familydb.transaction(db):
+            familydb.run(db, "DELETE FROM trips WHERE id = :t", t=p["trip_id"])
+    assert photos.get(ari, p["id"]) is None
+
+
+def test_uploads_are_refused_when_the_volume_is_nearly_full(trip, ari, monkeypatch):
+    from collections import namedtuple
+    Usage = namedtuple("Usage", "total used free")
+    monkeypatch.setattr(photos.shutil, "disk_usage", lambda p: Usage(50 * 2**30, 49 * 2**30 + 2**29, 2**29))   # 0.5 GB free
+    r = upload(trip, jpg())
+    assert r.status_code == 507 and "no room" in r.text and photos.listing(ari) == []
+    monkeypatch.setattr(photos.shutil, "disk_usage", lambda p: Usage(50 * 2**30, 10 * 2**30, 40 * 2**30))
+    assert upload(trip, jpg()).status_code == 200
+
+
+def test_a_post_without_a_content_length_is_refused_with_411(trip):
+    r = trip.post("/trip/photos", content=iter([b"--x--"]), headers={"content-type": "multipart/form-data; boundary=x"})
+    assert r.status_code == 411
+
+
+def test_an_upload_names_its_trip_and_a_mismatch_is_refused_like_a_message(trip, ari):
+    from gitaway import session as ses
+    open_trip = ses.trips(ari)[0].id
+    ok = trip.post("/trip/photos", files=[("photo", ("a.jpg", image("jpeg"), "image/jpeg"))], data={"trip": open_trip}, headers={"X-Fragment": "1"})
+    assert ok.status_code == 200
+    bad = trip.post("/trip/photos", files=[("photo", ("a.jpg", image("jpeg"), "image/jpeg"))], data={"trip": "gonetrip1"}, headers={"X-Fragment": "1"})
+    assert bad.status_code == 409 and "This trip changed" in bad.text
+    assert len(photos.listing(ari)) == 1
+    with pytest.raises(photos.PhotoError, match="This trip changed"):
+        photos.add(ari, image("jpeg"), trip_id="gonetrip1")
+
+
+def test_photos_are_served_with_an_etag_and_revalidated(trip):
+    pid = upload(trip, jpg()).json()["id"]
+    r = trip.get(f"/trip/photos/{pid}/thumb")
+    assert r.headers["cache-control"] == "private, no-cache" and r.headers["etag"]
+    again = trip.get(f"/trip/photos/{pid}/thumb", headers={"If-None-Match": r.headers["etag"]})
+    assert again.status_code == 304
+
+
+def test_the_colour_profile_is_kept_in_the_served_copies_but_no_location(trip, ari):
+    from PIL import ImageCms
+    from tests.photo_files import exif
+    icc = ImageCms.ImageCmsProfile(ImageCms.createProfile("sRGB")).tobytes()
+    buf = io.BytesIO()
+    Image.new("RGB", (200, 150), (9, 9, 9)).save(buf, "JPEG", icc_profile=icc, exif=exif(taken=STROLL, gps=(34.0, -118.0)))
+    p = photos.add(ari, buf.getvalue())
+    for size in photos.SIZES:
+        copy = Image.open(photos.file_path(p, size))
+        assert copy.info.get("icc_profile") == icc and copy.getexif().get_ifd(0x8825) == {}
+
+
+def test_a_big_jpeg_is_shrunk_while_it_is_decoded_and_the_thumb_comes_from_the_display_copy(trip, ari):
+    p = photos.add(ari, image("jpeg", size=(4000, 3000)))
+    assert max(Image.open(photos.file_path(p, "display")).size) == photos.DISPLAY_EDGE
+    assert max(Image.open(photos.file_path(p, "thumb")).size) == photos.THUMB_EDGE
+
+
+def test_place_matching_uses_the_geo_modules_cache_inside_its_scope(trip, ari, monkeypatch):
+    """gitaway.geo (F-068): cached_coords(place) -> (lat, lon) | None, valid inside cache_scope(session). A stand-in with that contract."""
+    import sys
+    import types
+    from contextlib import contextmanager
+    state = {"inside": 0, "scopes": []}
+
+    @contextmanager
+    def cache_scope(session):
+        state["inside"] += 1
+        state["scopes"].append(session)
+        try:
+            yield
+        finally:
+            state["inside"] -= 1
+
+    def cached_coords(place):
+        assert state["inside"], "cached_coords called outside cache_scope"
+        return {"Lunch, Los Angeles": (34.1016, -118.3267)}.get(place)
+
+    geo = types.ModuleType("gitaway.geo")
+    geo.cache_scope, geo.cached_coords = cache_scope, cached_coords
+    monkeypatch.setitem(sys.modules, "gitaway.geo", geo)
+    add(trip, id="a2", title="Lunch", start="13:00", end="14:00", day="1")
+    p = photos.add(ari, image("jpeg", taken="2026:10:17 16:00:00", gps=(34.1020, -118.3270)))
+    assert p["plan_title"] == "Lunch" and state["scopes"] and state["inside"] == 0

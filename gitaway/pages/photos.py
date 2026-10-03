@@ -12,10 +12,12 @@ The two POSTs are on gitaway.access.OPEN_POSTS (and tests/test_roles.py) on purp
 one; removal checks author-or-admin itself. The rules and the storage are in gitaway/photos.py.
 """
 
+import asyncio
 from datetime import date
 from urllib.parse import quote
 
-from fasthtml.common import A, Button, Div, Form, Img, Input, Link, Main, P, Span
+from fasthtml.common import A, Button, Details, Div, Form, Img, Input, Link, Main, P, Span, Summary
+from starlette.concurrency import run_in_threadpool
 from starlette.responses import FileResponse, JSONResponse, PlainTextResponse, RedirectResponse, Response
 
 from gitaway import access, phone, photos, session as ses, tripcal as cal
@@ -121,9 +123,11 @@ def photo_page(request, session, p):
             Span(Span(f"Pinned to {where(p)}" if p["plan_id"] else f"On {day_label(p['taken_date'])}", cls="fp-pinto-t"),
                  Span(f"{day_label(p['taken_date'])}, {clock(p['taken_min'])} · added by {p['author_name'] or 'someone'}", cls="fp-pinto-s"), cls="fp-pinto-x"), cls="fp-pinto", id="fp-meta"),
         P(p["caption"], cls="fp-caption") if p["caption"] else "",
-        Form(Input(type="hidden", name="id", value=p["id"]),
-             Button(icon("x", 18, 2.4), Span("Remove photo"), type="submit", id="fp-remove", cls="fp-remove"),
-             method="post", action=f"{PATH}/remove", cls="fp-remove-form") if removable else
+        Details(Summary(icon("x", 18, 2.4), Span("Remove photo"), id="fp-remove", cls="fp-remove"),
+                Form(P("Remove this photo for the whole family? This cannot be undone. To keep it, press Remove photo again.", cls="fp-privacy"),
+                     Input(type="hidden", name="id", value=p["id"]),
+                     Button(Span("Yes, remove it"), type="submit", id="fp-remove-yes", cls="fp-remove fp-remove-yes"),
+                     method="post", action=f"{PATH}/remove", cls="fp-remove-form"), cls="fp-confirm", id="fp-confirm") if removable else
         P("Only the person who added this photo, or a family admin, can remove it.", cls="fp-privacy", id="fp-keep"),
         cls="fp fp-page")
     b = ses.booking(session)
@@ -142,8 +146,12 @@ class BodyLimit:
 
     async def __call__(self, scope, receive, send):
         if scope["type"] == "http" and scope["method"] == "POST" and scope["path"] == PATH:
+            headers = dict(scope["headers"])
+            if b"content-length" not in headers:   # a body of unknown length cannot be checked before it is read
+                await PlainTextResponse("Send the photo with its length.", status_code=411)(scope, receive, send)
+                return
             try:
-                size = int(dict(scope["headers"]).get(b"content-length", b"0") or 0)
+                size = int(headers[b"content-length"] or 0)
             except ValueError:
                 size = 0
             if size > photos.MAX_BYTES * photos.MAX_FILES + 100_000:
@@ -151,6 +159,16 @@ class BodyLimit:
                 await PlainTextResponse(msg, status_code=413)(scope, receive, send)
                 return
         await self.app(scope, receive, send)
+
+
+_SLOT = None
+
+
+def _slot():
+    global _SLOT
+    if _SLOT is None:
+        _SLOT = asyncio.Semaphore(1)
+    return _SLOT
 
 
 def _signed_in(session):
@@ -168,6 +186,7 @@ def register(app):
         form = await request.form()
         files = [f for f in form.getlist("photo") if getattr(f, "filename", None) is not None and hasattr(f, "read")]
         caption = form.get("caption") or ""
+        trip = form.get("trip") or None
         ids, errors, status = [], [], 400
         if not files:
             errors.append("Choose a photo first.")
@@ -176,7 +195,9 @@ def register(app):
             files = []
         for f in files:
             try:
-                ids.append(photos.add(session, await f.read(photos.MAX_BYTES + 1), caption)["id"])
+                data = await f.read(photos.MAX_BYTES + 1)
+                async with _slot():   # decoding and resizing are heavy: one at a time, and off the event loop
+                    ids.append((await run_in_threadpool(photos.add, session, data, caption, None, trip))["id"])
             except photos.PhotoError as e:
                 errors.append(str(e))
                 status = e.status
@@ -199,14 +220,17 @@ def register(app):
         return RedirectResponse(VIEW_URL, status_code=303)
 
     @app.get(PATH + "/{pid}/{size}")
-    def picture(session, pid: str, size: str):
+    def picture(request, session, pid: str, size: str):
         if not _signed_in(session):
             return Response("Sign in first.", status_code=401)
         p = photos.get(session, pid)
         path = photos.file_path(p, size) if p else None
         if path is None:
             return Response("Not found.", status_code=404)
-        return FileResponse(path, media_type=MIME[size], headers={"Cache-Control": "private, max-age=86400", "X-Content-Type-Options": "nosniff"})
+        headers = {"Cache-Control": "private, no-cache", "X-Content-Type-Options": "nosniff", "ETag": f'"{pid}-{size}-{path.stat().st_mtime_ns}"'}   # the file never changes, but a removal must show at once: revalidate
+        if request.headers.get("if-none-match") == headers["ETag"]:
+            return Response(status_code=304, headers=headers)
+        return FileResponse(path, media_type=MIME[size], headers=headers)
 
     @app.get(PATH + "/{pid}")
     def one(request, session, pid: str):

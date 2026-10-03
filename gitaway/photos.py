@@ -24,6 +24,8 @@ import logging
 import math
 import re
 import secrets
+import shutil
+from contextlib import nullcontext
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -34,7 +36,8 @@ log = logging.getLogger("gitaway.photos")
 
 MAX_BYTES = 15 * 1024 * 1024
 MAX_FILES = 6
-MAX_PIXELS = 80_000_000
+MAX_PIXELS = 50_000_000
+MIN_FREE = 2 * 1024 ** 3     # refuse uploads when the volume has less than this free
 DISPLAY_EDGE = 1600
 THUMB_EDGE = 640
 NEAR_KM = 3.0
@@ -96,6 +99,8 @@ def _open(data: bytes):
         img = Image.open(io.BytesIO(data))
         if img.width * img.height > MAX_PIXELS:
             raise PhotoError("That photo is too large to open.")
+        if img.format == "JPEG":
+            img.draft("RGB", (DISPLAY_EDGE, DISPLAY_EDGE))   # the decoder shrinks while reading: a 48 MP photo never fills memory at full size
         img.load()
         return img
     except PhotoError:
@@ -142,16 +147,38 @@ def exif_of(img):
     return taken, coords
 
 
-def _copy(img, edge, quality):
-    """A JPEG of the pixels (turned upright), the longest side at most `edge`, with no metadata at all."""
+def _upright(img):
+    """The pixels turned upright, RGB, the longest side at most DISPLAY_EDGE (one downscale; the thumbnail is made from this, not from the original)."""
     from PIL import Image, ImageOps
+    icc = img.info.get("icc_profile")
     out = ImageOps.exif_transpose(img)
     out = out.convert("RGB") if out.mode != "RGB" else out
-    out = out.copy()
-    out.thumbnail((edge, edge), Image.LANCZOS)
+    if max(out.size) > DISPLAY_EDGE:
+        out = out.resize(tuple(max(1, round(v * DISPLAY_EDGE / max(out.size))) for v in out.size), Image.LANCZOS)
+    return out, icc
+
+
+def _jpeg(img, quality, icc=None):
     buf = io.BytesIO()
-    out.save(buf, "JPEG", quality=quality, optimize=True)  # no exif= argument: nothing of the camera's metadata is carried over
+    # no exif= argument: nothing of the camera's metadata (time, position) is carried over; the colour profile has no location, so it stays
+    img.save(buf, "JPEG", quality=quality, optimize=True, **({"icc_profile": icc} if icc else {}))
     return buf.getvalue()
+
+
+def _copies(img):
+    """(display JPEG bytes, thumbnail JPEG bytes) with no EXIF or GPS."""
+    from PIL import Image
+    full, icc = _upright(img)
+    small = full.copy()
+    small.thumbnail((THUMB_EDGE, THUMB_EDGE), Image.LANCZOS)
+    return _jpeg(full, 82, icc), _jpeg(small, 78, icc)
+
+
+def room() -> bool:
+    """Is there space for more photos? False when the volume under the photos folder has less than MIN_FREE free."""
+    base = root()
+    base.mkdir(parents=True, exist_ok=True)
+    return shutil.disk_usage(base).free >= MIN_FREE
 
 
 # ---- matching to the plan --------------------------------------------------------------------------------------------------
@@ -200,14 +227,31 @@ def _local(taken, zone, now):
     return (taken.replace(tzinfo=z) if taken.tzinfo is None else taken.astimezone(z)), True
 
 
-def add(session, data: bytes, caption: str = "", now=None):
+def _scope(session):
+    """gitaway.geo's cache scope (F-068) when that module exists, else nothing: matching by place reads only places it has cached."""
+    try:
+        import importlib
+        return importlib.import_module("gitaway.geo").cache_scope(session)
+    except Exception:
+        return nullcontext()
+
+
+STALE = "This trip changed. Reload the page."
+
+
+def add(session, data: bytes, caption: str = "", now=None, trip_id=None):
     """Keep one uploaded photo for the open trip: validate it, store the files, record it, put a card in the thread. Returns the photo (a dict).
 
     Raises PhotoError for anything that cannot be kept (the message is fit to show)."""
+    if not room():
+        raise PhotoError("There is no room to keep more photos right now. Tell the family admin.", 507)
+    with ses.family(session) as fam:   # the page names the trip it was drawn for (like a message in the thread): another one is refused
+        if not fam or not fam.trip_id or (trip_id and fam.trip_id != trip_id):
+            raise PhotoError(STALE, 409)
     kind = check(data)
     img = _open(data)
     taken, coords = exif_of(img)
-    display, thumb = _copy(img, DISPLAY_EDGE, 82), _copy(img, THUMB_EDGE, 78)
+    display, thumb = _copies(img)
     ext = TYPES[kind][0]
     caption = " ".join((caption or "").split())[:MAX_CAPTION]
     acts = cal.activities(session)
@@ -215,13 +259,14 @@ def add(session, data: bytes, caption: str = "", now=None):
     trip = cal.trip("", b)
     pid, written = secrets.token_hex(16), []
     with ses.family(session) as fam:
-        if not fam or not fam.trip_id:
-            raise PhotoError("Open a trip first.")
+        if not fam or not fam.trip_id or (trip_id and fam.trip_id != trip_id):
+            raise PhotoError(STALE, 409)
         zone = familydb.trip_zone(fam.db, fam.trip_id)
         when, known = _local(taken, zone, now or datetime.now(timezone.utc))
         day = (when.date() - trip.depart).days
         minute = when.hour * 60 + when.minute
-        plan_id, plan_title = match_plan(acts, day, minute, coords, trip.destination_name) if 0 <= day <= (trip.return_ - trip.depart).days else ("", "")
+        with _scope(session):
+            plan_id, plan_title = match_plan(acts, day, minute, coords, trip.destination_name) if 0 <= day <= (trip.return_ - trip.depart).days else ("", "")
         folder = _folder(session.get("tenant_id"), fam.trip_id)
         base = root() / folder
         try:
@@ -237,7 +282,7 @@ def add(session, data: bytes, caption: str = "", now=None):
                              i=pid, t=fam.trip_id, a=fam.traveler.id, n=familythread.first_name(fam.traveler), ta=when.isoformat(timespec="seconds"), td=when.date().isoformat(),
                              tm=minute, la=coords[0] if coords else None, lo=coords[1] if coords else None, pi=plan_id, pt=plan_title, c=caption,
                              o=names["orig"], d=names["display"], th=names["thumb"], cr=familydb.now())
-            row = familydb.row(fam.db, "SELECT * FROM photos WHERE id = :i", i=pid)
+                row = familydb.row(fam.db, "SELECT * FROM photos WHERE id = :i", i=pid)
         except Exception:
             for path in written:
                 path.unlink(missing_ok=True)
@@ -269,7 +314,7 @@ def get(session, pid):
     if not isinstance(pid, str) or not _ID.match(pid):
         return None
     with ses.family(session) as fam:
-        found = familydb.row(fam.db, "SELECT * FROM photos WHERE id = :i", i=pid) if fam else None
+        found = familydb.row(fam.db, "SELECT * FROM photos WHERE id = :i AND trip_id IN (SELECT id FROM trips)", i=pid) if fam else None
     return dict(found) if found else None
 
 
@@ -311,3 +356,8 @@ def remove(session, pid, role) -> bool:
         pass
     return True
 
+
+
+def purge_trip(tenant_id, trip_id) -> None:
+    """Delete the photo folder of a trip that is gone (its rows go in the same transaction as the trip: gitaway.importer.delete)."""
+    shutil.rmtree(root() / _folder(tenant_id, trip_id), ignore_errors=True)
