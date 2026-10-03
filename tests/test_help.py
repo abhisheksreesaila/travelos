@@ -94,7 +94,7 @@ def test_help_has_the_hotel_address_phone_times_directions_and_the_confirmation_
     card = html.split('id="hp-hotel"')[1].split('id="hp-sos"')[0]
     shown = text(card)
     assert "123 Ocean Ave, Santa Monica, CA 90401" in shown
-    assert 'href="tel:+13105550100"' in card and "Call the front desk" in shown
+    assert 'href="tel:+13105550100"' in card and "Front desk" in shown
     assert "Fri Oct 16, 3:00 PM" in text(card.split('id="hp-in"')[1]) and "Tue Oct 20, 11:00 AM" in text(card.split('id="hp-out"')[1])
     assert re.search(r"<details[^>]*data-confirm[^>]*>.*987654321.*</details>", card, re.S)  # the number sits inside a tap-to-open details
     assert not re.search(r"<details[^>]*data-confirm[^>]*\bopen\b", card)  # shut until tapped

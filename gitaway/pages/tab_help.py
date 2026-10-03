@@ -46,7 +46,7 @@ def _hotel_card(h, index, plan, ua, can_edit):
         Div(Span(icon("hotel", 24, 2.2), cls="hp-ico hp-sky"), Div(H2(h.name, cls="hp-h"), Span(h.address, cls="hp-addr") if h.address else "", cls="hp-who"), cls="hp-row"),
         Div(Div(Span("CHECK IN", cls="hp-k"), Span(ti.when_text(h.check_in), cls="hp-v"), id="hp-in"), Div(Span("CHECK OUT", cls="hp-k"), Span(ti.when_text(h.check_out), cls="hp-v"), id="hp-out"), cls="hp-times"),
         _confirm(h.confirmation),
-        Div(_call(h.phone, "Call the front desk") or Span("No phone number yet", cls="hp-none", id="hp-hotel-none"),
+        Div(_call(h.phone, "Front desk") or Span("No phone number yet", cls="hp-none", id="hp-hotel-none"),
             A(icon("nav", 18, 2.4), "Directions", href=td.maps_url(place, ua), cls="tp-btn tp-btn-white", id="hp-directions"), cls="hp-acts"),
         _fix("hotel", index, h.phone, "hotel") if can_edit else "",
         cls="hp-card", id="hp-hotel")
@@ -61,7 +61,7 @@ def _demo_hotel_card(stay, destination, ua):
 def _car_card(c, can_edit):
     return Div(
         Div(Span(icon("car", 24, 2.2), cls="hp-ico hp-sun"), Div(H2(f"{c.company} rental car", cls="hp-h"), Span(f"Counter: {c.pickup_place}", cls="hp-addr", id="hp-counter"), cls="hp-who"), cls="hp-row"),
-        Div(_call(c.phone, "Call the counter") or Span("No phone number yet", cls="hp-none", id="hp-car-none"), cls="hp-acts"),
+        Div(_call(c.phone, "Rental counter") or Span("No phone number yet", cls="hp-none", id="hp-car-none"), cls="hp-acts"),
         _fix("car", 0, c.phone, "rental counter") if can_edit else "",
         cls="hp-card", id="hp-car")
 

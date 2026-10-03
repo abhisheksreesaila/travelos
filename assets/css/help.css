@@ -40,3 +40,4 @@
 .hp-cn { font-weight: 800; font-size: max(var(--text-min), 0.8125rem); overflow-wrap: anywhere; }
 .hp-cs { font-weight: 700; font-size: max(var(--text-min), 0.75rem); color: var(--ink-2); overflow-wrap: anywhere; }
 .hp-add { align-self: flex-start; display: inline-flex; align-items: center; min-height: 2.75rem; font-weight: 800; text-decoration: underline; color: var(--ink); }
+.hp-acts .tp-btn-white { border: 0.125rem solid rgba(30, 26, 46, .2); }
