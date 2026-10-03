@@ -4,9 +4,9 @@ import re
 
 import pytest
 
-PRIVACY_PHRASES = ["name, your email address and your profile picture", "trips, plans", "notes", "messages", "photos", "time and place", "phone numbers",
+PRIVACY_PHRASES = ["your name and your email address", "trips, plans", "notes", "messages", "photos", "time and place", "phone numbers",
                    "push subscriptions", "passkeys", "Only the family", "Nothing you add is public", "Google sign-in", "Railway", "OpenStreetMap",
-                   "place text only", "Apple and Google push services", "Gemini", "do not sell", "do not show ads", "deleted"]
+                   "place text only", "Apple and Google push services", "do not sell", "do not show ads", "deleted"]
 TERMS_PHRASES = ["as-is", "does not book anything", "does not take payments", "responsible for what you add", "remove content", "change GitAway or stop it",
                  "without any warranty", "United States", "not legal advice"]
 

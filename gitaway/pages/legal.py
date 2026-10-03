@@ -37,7 +37,7 @@ def _doc(title, lead, sections):
 def privacy():
     return _doc("Privacy policy", "GitAway is a small app for a family to plan trips together. This page says what it keeps, who can see it, and how to get it deleted.", [
         ("What we store",
-         P("When you sign in with Google we keep your name, your email address and your profile picture. When you use GitAway we keep what you put in:"),
+         P("When you sign in with Google we keep your name and your email address. When you use GitAway we keep what you put in:"),
          Ul(Li("trips, plans, calendar entries and the notes on them;"), Li("messages in the family thread;"),
             Li("photos you add, with the time and place they were taken (we keep the picture and the time and place, and take the location out of the copies we show);"),
             Li("phone numbers you or your family type in, for example your own or a hotel's;"),
@@ -46,11 +46,10 @@ def privacy():
         ("Who sees it",
          P("Only the family. Everything above is shared with the people in your family and nobody else, and what each person may change depends on their role. Nothing you add is public, and nothing is shown on a page that can be opened without signing in.")),
         ("Which outside services get what",
-         Ul(Li(Strong("Google sign-in"), " tells us who you are (name, email, picture). We send Google nothing about your trips."),
+         Ul(Li(Strong("Google sign-in"), " tells us who you are (name and email). We send Google nothing about your trips."),
             Li(Strong("Railway"), " hosts the app and the database, so everything above is stored on their servers."),
             Li(Strong("OpenStreetMap"), " looks up places and drives between them. It gets place text only, such as a hotel name or a city. It does not get your name, email or photos."),
-            Li(Strong("Apple and Google push services"), " carry the morning plan to your phone. They get the push subscription and the short message, such as the plans for today."),
-            Li(Strong("Gemini"), " (Google's AI) is used only if the family assistant is turned on. It is off unless it says otherwise in the app, and then it gets what you ask it and the plan it needs to answer."))),
+            Li(Strong("Apple and Google push services"), " carry the morning plan to your phone. They get the push subscription and the short message, such as the plans for today."))),  # F-072: when the assistant ships, add a Gemini bullet here (Google's AI; gets what you ask and the plan it needs) and a test phrase.
         ("Selling and ads", P("We do not sell your information. We do not show ads and we do not use anything you add for ads or to build a profile of you.")),
         ("Cookies", P("One cookie keeps you signed in, for up to 30 days. We use no tracking or advertising cookies.")),
         ("Getting your data deleted",
