@@ -46,7 +46,7 @@ def test_the_whole_trip_list_and_day_dots_follow_the_palette(client):
 
 def test_the_phone_today_view_tints_by_kind_and_says_booked_elsewhere_once(client, at):
     imported(client)
-    at(date(2026, 10, 16), "07:00")
+    at(date(2026, 10, 17), "07:00")  # the arrival day from the next morning: its whole list shows (today's up-next item moves into the card)
     html = client.get("/trip?day=0").text
     assert "tp-k-sky" in html and "tp-k-grape" in html and "tp-k-sun" in html  # flight, hotel, car
     assert shown(html).lower().count("booked elsewhere") == 1

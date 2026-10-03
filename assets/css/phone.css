@@ -1,0 +1,75 @@
+/* The phone shell (F-067): the bottom tab bar every trip screen shares, and Today v2 (frame 3 of docs/design/canvas/Mobile-Storyboards-v1.html).
+   Loaded after trip.css. Sizes are rem off the one root; text never goes under --text-min. The bar shows at phone width and in the
+   installed Home Screen app; on a laptop the existing layout stays and the bar is hidden. */
+.ph-tabs, .ph-back { display: none; }
+.ph-sec { display: flex; justify-content: space-between; font-size: max(var(--text-min), 0.8125rem); font-weight: 800; letter-spacing: 0.1em; color: var(--ink-3); padding: 0.25rem 0.25rem 0; }
+.ph-back { align-items: center; justify-content: center; min-height: 2.75rem; font-weight: 800; text-decoration: underline; }
+@media (min-width: 721px) { .ph-back { display: flex; margin-top: 1rem; } }
+
+/* the "coming" card */
+.ph-coming { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; padding: 2rem 1.25rem; border-radius: 1.625rem; background: var(--card); box-shadow: var(--shadow-sm); text-align: center; }
+.ph-coming h2 { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 1.5rem; }
+.ph-coming p { margin: 0; font-weight: 600; color: var(--ink-2); max-width: 22rem; }
+.ph-coming-ico { width: 4rem; height: 4rem; border-radius: var(--r-pill); background: var(--grape-tint); display: flex; align-items: center; justify-content: center; }
+.ph-main { display: flex; flex-direction: column; gap: 0.75rem; }
+
+/* countdown and Leave by, inside the dark Up next card */
+.ph-leave { display: flex; align-items: center; gap: 0.875rem; padding: 0.625rem 0.75rem; border-radius: 1.125rem; background: rgba(255, 255, 255, .08); }
+.ph-ring { position: relative; flex-shrink: 0; width: 3.5rem; height: 3.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
+.ph-ring svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+.ph-ring-bg, .ph-ring-fg { fill: none; stroke-width: 5; }
+.ph-ring-bg { stroke: rgba(255, 255, 255, .16); }
+.ph-ring-fg { stroke: var(--sun); stroke-linecap: round; }
+.ph-ring-n { position: relative; font-family: var(--font-display); font-weight: 800; font-size: 1.125rem; }
+.ph-ring-u { position: relative; font-size: max(var(--text-min), 0.8125rem); font-weight: 800; color: #DDD8EA; }
+.ph-leave-text { display: flex; flex-direction: column; gap: 0.125rem; min-width: 0; }
+.ph-leave-by { font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; }
+.tp-up-actions .tp-btn { gap: 0.5rem; }
+.tp-up-actions .tp-btn svg { flex-shrink: 0; }
+
+/* the day's stops, as a route strip */
+.ph-route { position: relative; height: 4.625rem; border-radius: 1.25rem; background: var(--card); box-shadow: var(--shadow-sm); overflow: hidden; }
+.ph-route svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ph-route-casing, .ph-route-line { fill: none; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.ph-route-casing { stroke: #FFFFFF; stroke-width: 8; }
+.ph-route-line { stroke: var(--coral); stroke-width: 4; }
+.ph-stop { position: absolute; width: 1.75rem; height: 1.75rem; margin: -0.875rem 0 0 -0.875rem; border-radius: var(--r-pill); background: var(--ink); color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: max(var(--text-min), 0.8125rem); }
+.ph-stop.is-next { background: var(--coral); color: var(--ink); box-shadow: 0 0 0 0.125rem #FFFFFF; }
+.ph-route-lab { position: absolute; right: 0.5rem; bottom: 0.25rem; padding: 0 0.5rem; border-radius: var(--r-pill); background: #FFFFFF; font-size: max(var(--text-min), 0.8125rem); font-weight: 800; color: var(--ink-2); }
+
+/* done items are struck through */
+.tp-row.is-done .tp-what { text-decoration: line-through; }
+.tp-state svg { vertical-align: -0.1875rem; margin-right: 0.25rem; }
+
+@media (max-width: 720px), (display-mode: standalone) {
+  .tp { --tabs-h: 5.5rem; }
+  .ph-back { display: none; }
+  .ph-tabs { position: fixed; z-index: 30; left: 0; right: 0; bottom: 0; max-width: 36rem; margin: 0 auto; height: calc(var(--tabs-h) + env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
+    padding: 0.375rem max(0.5rem, env(safe-area-inset-right)) calc(0.375rem + env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left)); background: var(--card); box-shadow: 0 -1px 0 rgba(30, 26, 46, .1); }
+  .tp .ph-tab { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.125rem; min-height: 2.75rem; border-radius: 1rem; font-weight: 700; font-size: max(var(--text-min), 0.8125rem); color: var(--ink-3); text-decoration: none; }
+  .tp .ph-tab[aria-current="page"] { color: var(--ink); font-weight: 800; }
+  .ph-ti { display: flex; align-items: center; justify-content: center; width: 2.75rem; height: 1.75rem; border-radius: var(--r-pill); }
+  .ph-tab[aria-current="page"] .ph-ti { background: var(--accent-tint); }
+  .ph-ask .ph-ti { width: 3.25rem; height: 3.25rem; margin-top: -1.625rem; background: var(--coral); color: var(--ink); box-shadow: 0 0.25rem 0 var(--coral-deep), 0 0.75rem 1.5rem -0.625rem var(--coral-deep); }
+  .tp .ph-ask { color: var(--ink); }
+  .ph-ask .ph-ti svg { width: 1.5rem; height: 1.5rem; }
+  .ph-ask[aria-current="page"] .ph-ti { background: var(--coral); box-shadow: 0 0 0 0.1875rem var(--ink), 0 0.25rem 0 var(--coral-deep); }
+
+  /* Today's own Today / All days / Notes switch moves from the bottom (laptop) to a segmented control under the heading */
+  .tp-tabs { position: static; height: auto; max-width: none; margin: 0 0 0.75rem; padding: 0.25rem; gap: 0.25rem; border-radius: var(--r-pill); background: var(--card); box-shadow: var(--shadow-sm); }
+  .tp-tab { min-height: 2.75rem; border-radius: var(--r-pill); color: var(--ink-2); }
+  .tp-tab[aria-current="page"] { background: var(--ink); color: #FFFFFF; }
+  .tp-list { padding-right: 4.75rem; }  /* the floating + never sits over a card or its pills */
+  .tp-panel > .tp-sharebar { order: 8; }
+  .tp-panel > .tp-full { order: 9; }
+  .tp-plus { right: max(1.125rem, calc(env(safe-area-inset-right) + 0.75rem)); }
+  .tp-toast { bottom: calc(var(--tabs-h) + env(safe-area-inset-bottom) + 5.5rem); }
+  .ph-route { height: 4.625rem; }
+}
+@media (min-width: 721px) and (display-mode: standalone) { .ph-tabs { max-width: 36rem; } }
+
+/* Details inside the Up next card: who added it, the notes on it, the confirmation behind a tap */
+.tp-up .ph-details { display: flex; flex-direction: column; gap: 0.375rem; }
+.tp-up .ph-details summary { align-self: flex-start; background: rgba(255, 255, 255, .12); color: #FFFFFF; box-shadow: none; }
+.tp-up .ph-details .tp-sub, .tp-up .ph-details .tp-pnote, .tp-up .ph-details .tp-conf-num { color: #FFFFFF; }
+.tp-up .ph-details summary { min-height: 2.75rem; }

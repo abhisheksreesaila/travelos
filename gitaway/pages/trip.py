@@ -13,16 +13,16 @@ validates, the roles come from gitaway.access (a viewer sees no + and no compose
 from dataclasses import replace
 from urllib.parse import urlencode
 
-from fasthtml.common import A, Button, Details, Div, Form, H1, H2, Header, Input, Label, Link, Main, Nav, P, Script, Section, Span, Summary, Title
+from fasthtml.common import NotStr, A, Button, Details, Div, Form, H1, H2, Header, Input, Label, Link, Main, Nav, P, Script, Section, Span, Summary, Title
 from fasthtml.core import FtResponse
 from starlette.responses import RedirectResponse
 
-from gitaway import access, catalog, members, pickers, session as ses, tripcal as cal, tripday as td
+from gitaway import access, catalog, members, phone, pickers, session as ses, tripcal as cal, tripday as td
 from gitaway.icons import icon
-from gitaway.layout import avatar, join_note, styles, trip_field
+from gitaway.layout import avatar, join_note, trip_field
 from gitaway.pages import calendar as calui, morning as morning_ui, rides as rides_ui
 
-HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/trip.css"), *morning_ui.HEAD)
+HEAD = (*pickers.HEAD, *morning_ui.HEAD)  # trip.css and phone.css come with the shell (gitaway.phone.HEAD)
 TABS = (("today", "Today"), ("days", "All days"), ("notes", "Notes"))
 
 
@@ -75,7 +75,7 @@ def load(session, day_arg="", ua=""):
     tomorrow = items_of(sel + 1) if sel < last else []
     up = td.up_next(items, now, tomorrow[0] if tomorrow else None, clocks) if now is not None else None
     return dict(zone=zone, session=session, who=who, b=b, t=t, dates=dates, last=last, role=role, blocks=blocks, acts=acts, notes=notes, phase=ph, n=n, today_idx=today_idx, sel=sel, now=now,
-                items=items, up=up, stay=td.stay_card(b, dates, sel), days=td.day_summaries(dates, blocks, acts, today_idx), ua=ua, past=past, first=items_of(0)[:1],
+                items=items, up=up, clocks=clocks, stay_place=td.hotel_place(b, dates, sel), stay=td.stay_card(b, dates, sel), days=td.day_summaries(dates, blocks, acts, today_idx), ua=ua, past=past, first=items_of(0)[:1],
                 crew=members.crew(session), next=cal.next_id(session))
 
 
@@ -115,20 +115,49 @@ def up_card(v):
         return ""
     item = up.item
     pulse = Span(cls="tp-pulse", aria_hidden="true") if item else ""  # only UP NEXT and HAPPENING NOW pulse, not "all done"
+    leave = leave_line(v, up) if item and up.kicker.startswith("UP NEXT") else ""
     buttons = []
     if item and item.place:
-        buttons.append(A("Directions", href=td.maps_url(item.place, v["ua"]), target="_blank", rel="noopener", cls="tp-btn tp-btn-coral", id="tp-directions"))
-    if up.uber:
+        buttons.append(A(icon("nav", 18, 2.4), "Directions", href=td.maps_url(item.place, v["ua"]), target="_blank", rel="noopener", cls="tp-btn tp-btn-coral", id="tp-directions", data_dir=item.id))
+        buttons.append(A(icon("car", 18, 2.4), "Uber", href=td.uber_url(item.place, td.cached_coords(item.place)), target="_blank", rel="noopener", cls="tp-btn tp-btn-white", id="tp-uber"))
+    elif up.uber:
         buttons.append(A("Get an Uber" if up.uber.kind == "offer" else "Your Uber", href=up.uber.href, cls="tp-btn tp-btn-white", id="tp-uber"))
-    return Div(Span(pulse, up.kicker, cls="tp-kicker"), Span(item.title if item else "You are all caught up", cls="tp-up-title"), Span(up.detail, cls="tp-up-sub"),
-               Div(*buttons, cls="tp-up-actions") if buttons else "", cls="tp-up", id="tp-up")
+    return Div(Span(pulse, up.kicker, cls="tp-kicker"), Span(item.title if item else "You are all caught up", cls="tp-up-title"), Span(up.detail, cls="tp-up-sub"), leave,
+               Div(*buttons, cls="tp-up-actions") if buttons else "", up_details(item) if item else "", cls="tp-up", id="tp-up")
+
+
+def up_details(item):
+    """What the list row would have shown for the up-next item (it is left out of the list): who added it, the notes on it, the confirmation behind a tap."""
+    who = item.sub.split(" · ")[-1] if item.by else ""
+    if not (item.confirm or item.notes or who.startswith("added by")):
+        return ""
+    body = [Span(who, cls="tp-sub")] if who.startswith("added by") else []
+    body += [Span(icon("pencil", 13, 2.4), n, cls="tp-pnote") for n in item.notes]
+    if item.confirm:
+        body += [Span("Confirmation number", cls="tp-sub"), Span(item.confirm, cls="tp-conf-num")]
+    return Details(Summary("Details", Span(f" for {item.title}", cls="sr-only"), cls="tp-mini"), *body, cls="ph-details tp-confirm", **({"data_confirm": item.id} if item.confirm else {}), data_up_details=item.id)
+
+
+def leave_line(v, up):
+    """The countdown ring and "Leave by 9:35" under the up-next card, only when a drive time is known (gitaway.tripday.leave_by); else nothing."""
+    item = up.item
+    before = [x for x in v["items"] if x.start < item.start and x.place and x.kind not in ("ride", "offer")]
+    origin = before[-1].place if before else v["stay_place"]
+    got = td.leave_by(item, origin, v["clocks"][item.zone][1])
+    if not got:
+        return ""
+    at, drive, left = got
+    left = max(left, 0)
+    ring = NotStr('<svg viewBox="0 0 52 52" aria-hidden="true"><circle cx="26" cy="26" r="22" class="ph-ring-bg"/><circle cx="26" cy="26" r="22" class="ph-ring-fg" stroke-dasharray="138.2" stroke-dashoffset="%.1f"/></svg>' % (138.2 * (1 - min(left, 60) / 60)))
+    return Div(Span(ring, Span(str(left), cls="ph-ring-n"), Span("MIN", cls="ph-ring-u"), cls="ph-ring"),
+               Span(Span(f"Leave by {cal.fmt_time(at)}" if left else "Time to leave", cls="ph-leave-by"), Span(f"{drive} min drive", cls="tp-up-sub"), cls="ph-leave-text"), cls="ph-leave", id="tp-leave")
 
 
 def row(item, today, ua=""):
     tint = f"tp-k-{item.tint}"
     inner = (Span(item.label.upper(), cls="tp-label"), Span(item.title, cls="tp-what"), Span(item.sub, cls="tp-sub"))
     state = {"done": "Done", "now": "Now", "next": "Next"}.get(item.state, "") if today else ""
-    badge = Span(state, cls=f"tp-state tp-state-{item.state}") if state else ""
+    badge = Span(icon("check", 14, 3) if item.state == "done" else "", state, cls=f"tp-state tp-state-{item.state}") if state else ""
     booked = item.kind in ("flight", "hotel", "car")  # a booked item (F-059): tinted by kind, a solid edge in the kind's ink, and a quiet lock
     lock = Span(icon("lock", 14, 2.4), Span("Booked, locked", cls="sr-only"), cls="tp-lock") if booked else ""
     card = (A if item.href else Div)(Div(Span(icon(item.icon, 18, 2.2), cls="tp-ico", aria_hidden="true") if item.icon else "", Div(*inner, cls="tp-card-text"), lock, badge, cls="tp-card-in"),
@@ -173,7 +202,10 @@ def today_panel(v):
     parts.append(share_bar(v))
     parts.append(up_card(v))
     if v["items"]:
-        parts.append(Div(*[row(x, v["now"] is not None, v["ua"]) for x in v["items"]], cls="tp-list", id="tp-list"))
+        parts.append(route_strip(v))
+        parts.append(Div(Span("THE REST OF TODAY" if v["now"] is not None else "THE DAY"), cls="ph-sec"))
+        rest = v["now"] is not None and v["up"] and v["up"].item  # the up-next item is in the card above, with its details
+        parts.append(Div(*[row(x, v["now"] is not None, v["ua"]) for x in v["items"] if not (rest and x.id == v["up"].item.id)], cls="tp-list", id="tp-list"))
     else:
         parts.append(Div(Span("wide open!", cls="tp-hand"), A("Add something fun", href=trip_url(add="1", day=sel), data_open_sheet="", cls="tp-btn tp-btn-ink") if editor else Span("Nothing planned yet.", cls="tp-sub"), cls="tp-empty"))
     if cal.is_imported(v["b"]) and any(x.kind in ("flight", "hotel", "car") for x in v["items"]):  # where it was booked is said once, quietly
@@ -183,6 +215,22 @@ def today_panel(v):
     parts.append(note_strip(v))
     parts.append(A(icon("arrow-right", 18, 2.4), "Open the full calendar", href="/calendar?view=whole", cls="tp-full"))
     return Section(*parts, id="tp-panel-today", cls="tp-panel", role="tabpanel", aria_label="Today", data_title=_title_today(v))
+
+
+def route_strip(v):
+    """A schematic strip of the day's stops in order (numbered, the up-next one in coral), then the hotel. No map tiles. Needs two stops or more."""
+    stops = [(x.id, x.title) for x in v["items"] if x.place and x.kind not in ("ride", "offer")]
+    if v["stay"]:
+        stops.append(("stay", v["stay"].name))
+    if len(stops) < 2:
+        return ""
+    nxt = v["up"].item.id if v["up"] and v["up"].item else None
+    w, h, ys = 358, 74, (46, 28, 50, 32, 48)
+    pts = [(40 + i * (w - 80) / (len(stops) - 1), ys[i % len(ys)]) for i in range(len(stops))]
+    d = f"M{pts[0][0]:.1f} {pts[0][1]}" + "".join(f" C{(a[0] + b[0]) / 2:.1f} {a[1]} {(a[0] + b[0]) / 2:.1f} {b[1]} {b[0]:.1f} {b[1]}" for a, b in zip(pts, pts[1:]))
+    svg = NotStr(f'<svg viewBox="0 0 {w} {h}" preserveAspectRatio="none" aria-hidden="true"><path d="{d}" class="ph-route-casing"/><path d="{d}" class="ph-route-line"/></svg>')
+    dots = [Span(str(i + 1), cls=f"ph-stop{' is-next' if sid == nxt else ''}", style=f"left:{x / w * 100:.2f}%;top:{y / h * 100:.2f}%") for i, ((sid, _), (x, y)) in enumerate(zip(stops, pts))]
+    return Div(svg, *dots, Span(f"{len(stops)} stops", cls="ph-route-lab"), role="img", aria_label="Today's route: " + ", ".join(t for _, t in stops), cls="ph-route", id="tp-route")
 
 
 def share_text(v):
@@ -307,13 +355,9 @@ def trip_page(session, ua="", tab="today", day="", sheet=None, new="", notice=""
     toast = Div(f"Added “{added.title}” at {cal.fmt_time(added.start)}", role="status", cls="tp-toast", id="tp-toast") if added else (Div(notice, role="alert", cls="tp-toast tp-toast-error") if notice else "")
     viewing = P("You are a viewer in this family: you can look at everything but not change it.", id="tp-viewer", role="status", cls="tp-viewer") if v["role"] == "viewer" else ""
     plus = A(icon("plus", 28, 2.8), href=trip_url(add="1", day=v["sel"]), id="tp-add", aria_label="Add a plan", cls="tp-plus", data_open_sheet="") if editor else ""
-    body = (
-        Title(f"GitAway · {v['t'].title}"),
-        *styles(*HEAD),
-        Div(A("Skip to content", href="#main", cls="ga-skip"), header(v, tab), join_note(), viewing, Main(*panels, id="main"), toast, plus, add_sheet(v, sheet) if editor else "", tab_bar(tab),
-            data_theme="sunset", cls="tp", id="tp-app", data_tab=tab, data_day=str(v["sel"]), data_today=str(v["today_idx"]) if v["today_idx"] is not None else "", data_trip=ses.open_trip_id() or None),
-        Script(src="/assets/js/trip.js", defer=True),
-    )
+    body = phone.shell("today", header(v, tab), join_note(), viewing, tab_bar(tab), Main(*panels, id="main"), toast, plus, add_sheet(v, sheet) if editor else "",
+                       title=v["t"].title, head=HEAD, scripts=("/assets/js/trip.js",), id="tp-app", data_tab=tab, data_day=str(v["sel"]),
+                       data_today=str(v["today_idx"]) if v["today_idx"] is not None else "", data_trip=ses.open_trip_id() or None)
     return FtResponse(body, status_code=status) if status != 200 else body
 
 
