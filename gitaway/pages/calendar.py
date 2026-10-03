@@ -515,7 +515,7 @@ def top_bar(t, b, who, session, ctx):
                                                                                        A(icon("ledger", 16, 2.4), "Import a booked trip", href="/trips/import", cls="btn btn-sm", id="cal-import") if ctx["role"] != "viewer" else "",
                                                                                        A(icon("pencil", 16, 2.4), "Edit trip", href=f"/trips/build/edit?trip={ses.open_trip_id()}", cls="btn btn-sm", id="cal-edit-trip") if access.can_edit(ctx["role"]) and cal.is_imported(b) and ses.open_trip_id() else "", cls="cal-tripbar"), cls="cal-title-box"),
         Div(Div(*people, cls="cal-faces"), presence, cls="cal-avatars"),
-        Div(A(icon("mic", 18, 2.4), "Talk to plan", href=voice_ui.voice_url(ctx["demo"], hear=1), data_soft="", cls="cal-btn cal-btn-mint vo-open") if ctx["role"] != "viewer" else "",
+        Div(A(icon("mic", 18, 2.4), "Talk to plan", href=voice_ui.voice_url(ctx["demo"], hear=1), data_soft="", cls="cal-btn cal-btn-mint vo-open") if ctx["role"] != "viewer" and showcase.on() else "",
             A("Your forks", Span(str(forks), cls="cal-count"), href="/forks", cls="cal-btn cal-btn-white") if showcase.on() else "",
             invite_button(ctx),
             *share_controls(session), cls="cal-actions-top"),
@@ -669,6 +669,8 @@ def register(app):
         form = None
         if access.request_role() == "viewer":  # a viewer cannot open the add, edit, invite or voice dialogs
             add = edit = invite = voice = ""
+        if not showcase.on():  # "Talk to plan" is a scripted demo
+            voice = hear = voiced = ""
         blocks = cal.booked_blocks(ses.booking(session), cal.trip(demo, ses.booking(session)))
         gs = cal.grid_start(blocks)
         nid = cal.next_id(session, demo)

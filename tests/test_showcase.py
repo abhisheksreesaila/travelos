@@ -152,8 +152,15 @@ def test_a_new_family_sees_two_ways_in_not_community(real, client):
     assert "fr-two" in start and "Plan a trip" in start and "Import a trip you booked" in start
 
 
-def test_a_booked_trip_has_no_forks_share_or_pretend_friends(real, client):
+def booked_then_real(client, monkeypatch):
+    """A family that booked on a local copy (showcase on), then looked at in production mode."""
+    monkeypatch.setenv("GITAWAY_SHOWCASE", "1")
     book(client)
+    monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
+
+
+def test_a_booked_trip_has_no_forks_share_or_pretend_friends(client, monkeypatch):
+    booked_then_real(client, monkeypatch)
     h = client.get("/calendar").text
     assert_real(h, "/calendar")
     assert 'action="/share"' not in h and "/calendar/friends" not in h
@@ -189,3 +196,32 @@ def test_the_local_copy_still_shows_all_sample_data(client):
     c = client.get("/calendar").text
     assert "Your forks" in c and 'action="/share"' in c
     assert client.get("/calendar?demo=long").status_code == 200
+
+
+# ---- production: no scripted demo, and the preview books nothing ----
+
+def test_talk_to_plan_is_gone_in_production_and_its_routes_404(client, monkeypatch):
+    booked_then_real(client, monkeypatch)
+    h = client.get("/calendar").text
+    assert "Talk to plan" not in h and "vo-open" not in h
+    assert "vo-panel" not in client.get("/calendar?view=days&voice=1&hear=1").text
+    for path in ["/calendar/voice/apply", "/calendar/voice/undo"]:
+        assert client.post(path, data={}, follow_redirects=False).status_code == 404
+
+
+def test_the_local_copy_keeps_talk_to_plan(client):
+    book(client)
+    assert "Talk to plan" in client.get("/calendar").text
+
+
+def test_the_booking_preview_writes_nothing_in_production(real, client):
+    from tests.test_calendar import PICK
+    sign_in(client)
+    msg = "Booking opens after your trip. Add the trip you booked instead."
+    r = client.post("/pay", data=PICK, follow_redirects=False)
+    assert r.status_code == 200 and msg in r.text and 'href="/trips/import"' in r.text and 'href="/trips/build"' in r.text
+    r = client.get("/plan/pay?f=f1&h=h1&c=c1", follow_redirects=False)
+    assert r.status_code == 200 and msg in r.text
+    assert client.get("/booked", follow_redirects=False).status_code == 303
+    assert "Your calendar starts with a trip" in client.get("/calendar").text
+    assert client.get("/start").text.count("Continue ") == 0
