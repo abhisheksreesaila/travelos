@@ -100,16 +100,15 @@ On the phone Today view, a family member can turn on a "Morning plan": at the ti
 
 How it runs: one background thread in the app (one per process; Railway runs one) wakes every minute and sends what is due. Each phone's subscription, chosen time and the day it was last sent live in the family database (`push_subscriptions`, migration `002`), so a redeploy loses nothing and a restart never double-sends. A push service answering "gone" (404 or 410) deletes that subscription quietly; any other failure is logged without the phone's address and retried for the next hour. Nothing is sent on days outside the trip, or when the family has no trip. The text holds plan titles and times only.
 
-## Deleting a person's or a family's data (by hand, F-076)
+## Deleting a person's or a family's data (F-076)
 
-Stop the app or accept a short write race, and take a copy of the data folder first. Work in `GITAWAY_DATA_DIR`.
+`pixi run forget-person EMAIL [--content] [--family] [--yes] [--data-dir DIR]` (`scripts/forget_person.py`). Stop the app first and copy the data folder (on Railway: the `/data` volume; run it in a shell on the service, where `GITAWAY_DATA_DIR` is set). Without `--yes` it is a dry run that lists what it would delete. Tables that do not exist yet are skipped. It uses plain SQLite, so it works on a throwaway copy too (`tests/test_forget_person.py` does).
 
-1. Find the person in the host database `app_host.db` (`sqlite3 app_host.db`): `SELECT * FROM core_users WHERE email = '<address>';` note the user id and, from `core_memberships`, their tenant (family) ids.
-2. Delete the person: `DELETE FROM ga_passkeys WHERE user_id = '<id>'; DELETE FROM ga_last_family WHERE user_id = '<id>'; DELETE FROM core_memberships WHERE user_id = '<id>'; DELETE FROM core_users WHERE id = '<id>';`. Also `DELETE FROM ga_invites WHERE email = '<address>'` (invites sent to them) and any invites they sent for a family being deleted.
-3. If the whole family goes (and the person asked for it): delete that family's remaining `core_memberships` and `ga_invites` rows and its `core_tenants` row in `app_host.db`, delete the family database file named in `core_tenants.db_url` (`<id>_db.db`), and delete the folder `photos/<family>/`.
-4. If the family keeps going, their messages and photos stay with the family unless the person asks for them to be removed: delete those rows from the family database (`sqlite3 <id>_db.db`) and the matching files under `photos/<family>/`.
-5. Server logs on Railway age out on their own; say so when you confirm.
-6. Check: sign in is no longer possible for that address, and `SELECT count(*)` on the tables above for the user id is 0. Tell the person it is done.
+- **Plain run**: the person's sign-in (`core_users`), memberships, passkeys, last-family choice, invites sent to or by them, audit-log rows with their id or email (`sys_audit_logs`), and in each of their families their member row, push subscriptions and thread settings. Their messages and photos stay with the family.
+- **`--content`**: also the messages they wrote and the photos they added (rows and files under `photos/<family>/`). Use it when they ask for their messages and photos to go.
+- **`--family`**: the whole family of each family they belong to: its database file with `-wal` and `-shm`, `photos/<family>/`, memberships, invites, last-family choices, subscriptions and the family row. Other members' own sign-ins stay (run the script for them too if they ask). Implies `--content`.
+
+Server logs on Railway age out on their own; say so when you confirm. After a real run, tell the person it is done.
 
 ## What needs sign-in
 

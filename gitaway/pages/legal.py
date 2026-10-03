@@ -2,7 +2,7 @@
 
 What they say is checked against the code: docs/family-db.md (what a family stores), docs/photos.md, gitaway/geo.py (place lookup and
 routing), gitaway/morning.py (push), gitaway/passkeys.py. Change one of those and read these pages again.
-The contact address comes from GITAWAY_CONTACT_EMAIL; without it the pages say to ask the person who invited you and show no address.
+The contact address comes from GITAWAY_CONTACT_EMAIL; without it the pages say "Contact the person who runs this GitAway site." and show no address.
 """
 
 import os
@@ -45,7 +45,7 @@ def privacy():
             Li("email addresses of people you invite;"),
             Li("push subscriptions, a code your phone gives us so it can get notifications;"),
             Li("passkeys (Face ID sign-in). We keep only the public half; your fingerprint or face never leaves your phone; and"),
-            Li("server logs, which include your email address when you sign in."))),
+            Li("server logs, which can include your email address, for example when a sign-in fails."))),
         ("Who sees it",
          P("Your family sees the trips, plans, notes, messages, photos and phone numbers. Push subscriptions and passkeys are not shown to the family. What each person may change depends on their role."),
          P("The person who runs this site can read the stored data to run and fix it, and to delete it when you ask. Railway hosts it. An invite link shows the family's name and a masked email address to anyone who has the link, so share invite links only with the person they are for.")),
@@ -67,7 +67,7 @@ def privacy():
 def terms():
     return _doc("Terms of use", "GitAway is a small family-planning app. By using it you agree to the plain rules below.", [
         ("What GitAway is",
-         P("A place for a family to plan a trip together: flights, stays and days on one calendar. It is offered as-is, by a small team, for families who were invited.")),
+         P("A place for a family to plan a trip together: flights, stays and days on one calendar. It is offered as-is, by a small team.")),
         ("No bookings or payments",
          P("GitAway does not book anything and does not take payments. The booking screens are a preview with sample prices. Check every flight, stay and time with the airline, hotel or company before you rely on it.")),
         ("What you post",
