@@ -29,6 +29,7 @@ OPEN_POSTS = (
     "/family/switch", "/family/stay",      # which of my families I am working in; dismissing the "you joined" notice
     "/creators", "/creators/draft", "/creators/finish",   # a creator draft is a person's own, published to the community, not a family's
     "/trip/morning", "/trip/morning/time", "/trip/morning/off", "/trip/morning/status",   # my own phone's morning plan reminder (F-066): every member, viewers too
+    "/trip/photos", "/trip/photos/remove",   # adding a photo (a viewer too: it changes no plan) and removing one (the route checks author-or-admin) (F-071)
     "/trip/family/message", "/trip/family/quiet",   # a message in the family thread and my own Quiet switch (F-070): every member, viewers too (a viewer cannot change a plan, so never causes a change card)
 )
 OPEN_PREFIXES = ("/join/",)                # using an invite link: the person is joining another family

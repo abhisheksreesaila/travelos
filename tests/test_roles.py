@@ -20,6 +20,7 @@ OPEN_FOR_VIEWERS = {
     "/creators", "/creators/draft", "/creators/finish",       # a creator draft is the person's own, published to the community
     "/join/{token}",                                          # using an invite link: joining another family
     "/trip/morning", "/trip/morning/time", "/trip/morning/off", "/trip/morning/status",   # a person's own phone reminder (F-066)
+    "/trip/photos", "/trip/photos/remove",                     # a viewer may add photos; removing is author-or-admin, checked by the route (F-071)
     "/trip/family/message", "/trip/family/quiet",             # a viewer may talk in the family thread and silence their own pushes (F-070)
 }
 ADMIN_ONLY = {"/family/invite", "/family/invite/revoke", "/family/role", "/family/remove", "/trip/delete"}

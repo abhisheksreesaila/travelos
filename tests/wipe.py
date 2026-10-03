@@ -4,11 +4,13 @@ Goes through the families a test opened (familydb.take_opened), then clears them
 memberships stay, they are the host database's.
 """
 
+import shutil
+
 from fh_saas.db_host import HostDatabase
 from fh_saas.db_tenant import get_or_create_tenant_db
 from sqlalchemy import text
 
-from gitaway import community, familydb, hostdb
+from gitaway import community, familydb, hostdb, photos
 
 
 def wipe_invites_and_extra_members():
@@ -33,6 +35,7 @@ def wipe_everything():
     forget_schema_cache), so the wipe skips the rest and does not re-check any schema: it was made when the family was opened.
     """
     community.clear()
+    shutil.rmtree(photos.root(), ignore_errors=True)  # F-071: the files of every photo a test added
     wipe_invites_and_extra_members()
     for tenant_id in familydb.take_opened():
         db = get_or_create_tenant_db(tenant_id)
