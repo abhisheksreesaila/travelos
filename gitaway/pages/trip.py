@@ -21,10 +21,10 @@ from starlette.responses import RedirectResponse
 from gitaway import access, catalog, geo, members, phone, tripgeo, pickers, session as ses, tripcal as cal, tripday as td
 from gitaway.icons import icon
 from gitaway.layout import avatar, join_note, trip_field
-from gitaway.pages import calendar as calui, morning as morning_ui, rides as rides_ui
+from gitaway.pages import calendar as calui, morning as morning_ui, passkeys as passkeys_ui, rides as rides_ui
 
 log = logging.getLogger(__name__)
-HEAD = (*pickers.HEAD, *morning_ui.HEAD)  # trip.css and phone.css come with the shell (gitaway.phone.HEAD)
+HEAD = (*pickers.HEAD, *morning_ui.HEAD, *passkeys_ui.HEAD[:1])  # trip.css and phone.css come with the shell (gitaway.phone.HEAD)
 TABS = (("today", "Today"), ("days", "All days"), ("notes", "Notes"))
 
 
@@ -215,6 +215,7 @@ def today_panel(v):
         parts.append(Div(icon("lock", 13, 2.4), Span(f"Booked elsewhere · {cal.plan_of(v['b']).booked_on}"), cls="tp-elsewhere"))
     parts.append(stay_card(v))
     parts.append(morning_ui.card(v["zone"]))  # F-066: the morning plan push, drawn by its own module
+    parts.append(v.get("faceid", ""))  # F-074: "Use Face ID next time", hidden until passkeys.js says this is the Home Screen app
     parts.append(note_strip(v))
     parts.append(A(icon("arrow-right", 18, 2.4), "Open the full calendar", href="/calendar?view=whole", cls="tp-full"))
     return Section(*parts, id="tp-panel-today", cls="tp-panel", role="tabpanel", aria_label="Today", data_title=_title_today(v))
@@ -357,6 +358,7 @@ def _trip_page(session, ua="", tab="today", day="", sheet=None, new="", notice="
     if sheet is not None and not editor:
         sheet = None
     added = next((a for a in v["acts"] if a.id == new), None) if new else None
+    v["faceid"] = passkeys_ui.today_card(session)
     panels = [today_panel(v), days_panel(v), notes_panel(v, note_error)]
     for key, p in zip(("today", "days", "notes"), panels):
         if key != tab:

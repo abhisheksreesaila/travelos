@@ -13,12 +13,12 @@ from fasthtml.svg import Circle, G, Path, Svg
 from fh_saas.utils_auth import handle_login_request, handle_logout
 from starlette.responses import RedirectResponse, Response
 
-from gitaway import auth, hostdb, session as ses
+from gitaway import auth, hostdb, passkeys, session as ses
 from gitaway.icons import icon
 from gitaway.layout import clear_site_data, page
 from gitaway.signin_context import context
 
-HEAD = (Link(rel="stylesheet", href="/assets/css/signin.css"), Script(src="/assets/js/signin.js", defer=True))
+HEAD = (Link(rel="stylesheet", href="/assets/css/signin.css"), Link(rel="stylesheet", href="/assets/css/passkeys.css"), Script(src="/assets/js/signin.js", defer=True), Script(src="/assets/js/passkeys.js", defer=True))
 
 TITLES = {
     "pay": "Sign in to book this trip",
@@ -64,6 +64,17 @@ def sky(ctx):
     return Div(Div(cls="si-band si-band1"), Div(cls="si-band si-band2"), Div(cls="si-band si-band3"), *stages, aria_hidden="true", cls="si-sky")
 
 
+def welcome():
+    """Storyboard frame 2 (F-074): the full-screen moment after a Face ID sign-in. Hidden; passkeys.js fills the name and shows it for a beat before opening Today."""
+    return Div(
+        Div(Span(icon("fork", 20, 2.4), cls="si-logo"), Span("GitAway", cls="si-brand"), cls="sw-brand"),
+        Span(icon("face-id", 64, 1.8), cls="sw-glyph", aria_hidden="true"),
+        H2("Welcome back, ", Span("", id="si-welcome-name"), cls="sw-title"),
+        P("Signed in with Face ID. No password, no code by text.", cls="sw-line"),
+        P("Your passkey stays on this ", Span("device", id="si-welcome-device"), ".", cls="sw-note"),
+        id="si-welcome", cls="si-welcome", role="status", aria_live="polite", hidden=True)
+
+
 def _intent(value):
     return value if value in ses.INTENTS else "save"
 
@@ -77,7 +88,7 @@ def cancel_href(next_path):
     return next_path.replace("/plan/pay?", "/plan?", 1) if next_path.startswith("/plan/pay?") else next_path
 
 
-def dialog(next_path, intent, asked=None, dev=False, google=False, error=""):
+def dialog(next_path, intent, asked=None, dev=False, google=False, error="", faceid=False):
     """The boarding pass, and the sky beside it: (card, sky). `asked` is the intent the link carried ("" for a plain Sign in); it is what the
     forms post back.
 
@@ -89,6 +100,8 @@ def dialog(next_path, intent, asked=None, dev=False, google=False, error=""):
     hidden = (Input(type="hidden", name="next", value=next_path), Input(type="hidden", name="intent", value=asked))
     google_btn = A(Span("G", cls="si-g", aria_hidden="true"), "Continue with Google", icon("plane", 22, 2.2), href=f"/login?next={quote(next_path, safe='')}&intent={asked}",
                    cls="btn btn-primary si-google", id="si-google") if google else ""
+    faceid_btn = Div(Button(icon("face-id", 22, 2.2), "Sign in with Face ID", type="button", id="si-faceid", cls="btn btn-ink si-faceid", hidden=True, data_next=next_path, data_intent=asked),
+                     P("", id="si-faceid-status", role="status", cls="si-note si-faceid-status", hidden=True), cls="si-faceid-box") if faceid else ""
     dev_form = Form(
         Label(Span("Email", cls="si-label"), Input(type="email", name="email", id="si-email", placeholder="you@example.com", required=True, autocomplete="email",
                                                    **({"aria_invalid": "true", "aria_describedby": "si-error"} if error else {})), cls="si-field"),
@@ -106,7 +119,7 @@ def dialog(next_path, intent, asked=None, dev=False, google=False, error=""):
             P(ctx.head, cls="si-dest", id="si-dest"),
             H2(TITLES[intent], id="si-title"),
             P(ctx.sub + (" Your family space is made the first time you sign in." if google or dev else ""), id="si-desc"),
-            google_btn, nothing,
+            google_btn, faceid_btn, nothing,
             cls="si-body",
         ),
         Div(cls="si-perf", aria_hidden="true"),
@@ -125,8 +138,8 @@ def _continue(session, intent, next_path):
 
 
 def _page(request, next_path, intent, asked, error="", status=200):
-    card, sky_ = dialog(next_path, intent, asked, dev=auth.dev_login_allowed(request), google=auth.google_enabled(), error=error)
-    out = page("Sign in", Div(sky_, Div(card, cls="si-pass"), cls="si-wrap"), head=HEAD)
+    card, sky_ = dialog(next_path, intent, asked, dev=auth.dev_login_allowed(request), google=auth.google_enabled(), error=error, faceid=passkeys.available(request))
+    out = page("Sign in", Div(sky_, Div(card, cls="si-pass"), cls="si-wrap"), welcome() if passkeys.available(request) else "", head=HEAD)
     return out if status == 200 else Response(to_xml(out), status_code=status, media_type="text/html")
 
 

@@ -15,6 +15,7 @@ pillow-heif = ">=1.8.0,<2"
 python-fasthtml = ">=0.14.13"
 fh-saas = ">=0.9.14"
 pywebpush = ">=2.5.0, <3"
+webauthn = ">=3.0.1, <4"
 
 [feature.test.dependencies]  # tools for the tests only: the production image (environment "prod") leaves them out
 pytest = "*"

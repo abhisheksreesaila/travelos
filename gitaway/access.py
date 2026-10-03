@@ -30,6 +30,7 @@ OPEN_POSTS = (
     "/creators", "/creators/draft", "/creators/finish",   # a creator draft is a person's own, published to the community, not a family's
     "/trip/morning", "/trip/morning/time", "/trip/morning/off", "/trip/morning/status",   # my own phone's morning plan reminder (F-066): every member, viewers too
     "/trip/photos", "/trip/photos/remove",   # adding a photo (a viewer too: it changes no plan) and removing one (the route checks author-or-admin) (F-071)
+    "/passkeys/register/options", "/passkeys/register", "/passkeys/auth/options", "/passkeys/auth", "/passkeys/remove",   # my own Face ID sign-in (F-074): every member, viewers too; the two auth routes are for someone signed out
     "/trip/family/message", "/trip/family/quiet",   # a message in the family thread and my own Quiet switch (F-070): every member, viewers too (a viewer cannot change a plan, so never causes a change card)
 )
 OPEN_PREFIXES = ("/join/",)                # using an invite link: the person is joining another family
