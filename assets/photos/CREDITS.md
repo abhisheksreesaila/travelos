@@ -21,3 +21,12 @@ Generic hotel pictures from Wikimedia Commons, each confirmed CC0 1.0 or public 
 | lobby-front-desk.jpg | Hotel lobby front desk (vintage, 1915) | Unknown author | Public domain (US, published before 1931) | https://commons.wikimedia.org/wiki/File:Pantlind_Hotel_Lobby_(1915).jpg |
 | pool-courtyard.jpg | Resort pool and chalet | DimiTalen | CC0 1.0 | https://commons.wikimedia.org/wiki/File:Swimming_pool,_Resort_Das_Achental,_Grassau,_2023.jpg |
 | rooftop-bar.jpg | Hotel rooftop bar | ジョジョの珍妙な冒険 | CC0 1.0 | https://commons.wikimedia.org/wiki/File:Hotel_Metropolitan_%C5%8Ciachi_Tracks_rooftop_bar_%22THE_TRAVELERS_HOUSE%22_01.jpg |
+
+# Maps (F-068)
+
+| What | Version and licence | Source |
+|---|---|---|
+| Leaflet, self-hosted in assets/vendor/leaflet/ | 1.9.4, BSD 2-Clause (assets/vendor/leaflet/LICENSE) | https://leafletjs.com |
+| Map tiles | OpenStreetMap standard tiles, © OpenStreetMap contributors (ODbL), attribution shown on the map | https://tile.openstreetmap.org |
+| Place lookup | Nominatim, one request a second, with GitAway's User-Agent | https://nominatim.openstreetmap.org |
+| Drive times and routes | OSRM public demo server, cached | https://router.project-osrm.org |

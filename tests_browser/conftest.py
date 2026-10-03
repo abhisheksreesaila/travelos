@@ -27,6 +27,19 @@ for _key in ("GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"):
     os.environ[_key] = ""
 
 @pytest.fixture(autouse=True)
+def _offline_maps(monkeypatch):
+    """No test reaches the map services (F-068): every lookup fails unless the test installs its own fake `geo.fetch`. Background fills stay off."""
+    from gitaway import geo
+
+    def refuse(url, timeout=0):
+        raise OSError("the network is off in tests")
+    monkeypatch.setattr(geo, "fetch", refuse)
+    monkeypatch.setattr(geo, "ASYNC", False)
+    monkeypatch.setattr(geo.NOMINATIM_GATE, "gap", 0.0)
+    monkeypatch.setattr(geo.OSRM_GATE, "gap", 0.0)
+
+
+@pytest.fixture(autouse=True)
 def _fixed_today(monkeypatch):
     """The demo's sample trip is in October 2026; keep "today" before it (same as tests/conftest.py)."""
     from gitaway import catalog

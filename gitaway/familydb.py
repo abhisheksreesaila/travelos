@@ -150,6 +150,20 @@ class Ride:
     created_at: str
 
 
+class GeoCache:
+    """What the map services answered for this family (F-068, gitaway/geo.py): where a place is (`kind` "place", `key` the lower-cased text, `found` 0 when
+    the service had no such place, `data` its display name) and how long a drive takes (`kind` "drive", `key` "lat,lon;lat,lon", `data` JSON of minutes
+    and the route line). Trip places are the family's own data, so the cache is per family. A failed call is never stored."""
+    pk: str            # kind + "|" + key
+    kind: str
+    key: str
+    lat: float = None
+    lon: float = None
+    found: int = 1
+    data: str = ""
+    created_at: str
+
+
 FAMILY_TABLES = [
     (Member, "members", "id"),
     (Trip, "trips", "id"),
@@ -159,6 +173,7 @@ FAMILY_TABLES = [
     (CalState, "cal_state", "pk"),
     (Friend, "friends", "pk"),
     (Ride, "rides", "id"),
+    (GeoCache, "geo_cache", "pk"),
 ]
 
 FAMILY_TABLES.extend(SOCIAL_TABLES)  # forks and saves (F-041): one list, one entry point (see familydb_social)
