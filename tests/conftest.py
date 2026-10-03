@@ -46,6 +46,8 @@ def _offline_maps(monkeypatch):
     monkeypatch.setattr(geo, "ASYNC", False)
     monkeypatch.setattr(geo.NOMINATIM_GATE, "gap", 0.0)
     monkeypatch.setattr(geo.OSRM_GATE, "gap", 0.0)
+    monkeypatch.setattr(geo.NOMINATIM_GATE, "shut_until", None)  # a test that triggers the back off must not leave the gate shut
+    monkeypatch.setattr(geo.OSRM_GATE, "shut_until", None)
 
 
 @pytest.fixture(autouse=True)

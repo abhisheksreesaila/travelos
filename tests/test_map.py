@@ -2,6 +2,7 @@
 not be found listed under the map, the sheet's facts (address, time, drive, Directions, Uber, call), and Today's "Leave by" from the cached drive."""
 import json
 import re
+import sys
 from datetime import date
 from urllib.parse import unquote
 
@@ -77,8 +78,24 @@ def test_a_place_the_geocoder_cannot_find_is_listed_under_the_map_with_a_way_to_
     assert "Mystery Cafe" not in [s["title"] for s in data_of(html)["stops"]]  # no pin without coordinates
     text = " ".join(visible(html).split())
     assert "Couldn’t find this place on the map." in text
-    assert "Mystery Cafe" in text and "Edit trip" in text
-    assert 'href="/trips/build/edit?trip=' in html
+    assert "Mystery Cafe" in text and "Fix it in the calendar" in text
+    assert 'href="/calendar?view=whole#d0"' in html  # a plan is fixed in the calendar, not in Edit trip
+
+
+def test_a_booking_that_cannot_be_found_links_to_edit_trip(client, maps, monkeypatch):
+    trip_with_plans(client)
+    monkeypatch.setattr(sys.modules[__name__], "PLACES", {"griffith": PLACES["griffith"]})  # the hotel is unknown to the geocoder
+    html = client.get("/trip/map?day=0").text
+    assert 'href="/trips/build/edit?trip=' in html and "Edit trip" in visible(html)
+
+
+def test_the_uber_link_is_the_real_one_in_production(client, maps, monkeypatch):
+    trip_with_plans(client)
+    monkeypatch.setenv("GITAWAY_SHOWCASE", "0")  # the live site: no simulated Uber, no /rides
+    r = client.get("/trip/map?day=0")
+    assert r.status_code == 200
+    griffith = next(s for s in data_of(r.text)["stops"] if s["title"] == "Griffith Observatory")
+    assert griffith["uber"].startswith("https://m.uber.com/ul/?action=setPickup") and "/rides" not in griffith["uber"]
 
 
 def test_the_sheet_facts_for_each_stop(client, maps):
@@ -141,3 +158,18 @@ def test_today_leave_by_uses_the_cached_drive_and_never_calls_out(client, maps, 
     after = client.get("/trip").text
     assert len(maps.calls) == calls
     assert "Leave by 4:35 PM · 25 min drive" in " ".join(visible(after).split())
+
+
+def test_a_slow_geocoder_cannot_hold_the_map_page_for_more_than_a_couple_of_seconds(client, monkeypatch):
+    import time
+
+    def slow(url, timeout=0):
+        time.sleep(timeout)  # never answers: the call ends only when its timeout does
+        raise TimeoutError("slow")
+    trip_with_plans(client)
+    monkeypatch.setattr(geo, "fetch", slow)
+    monkeypatch.setattr(geo.NOMINATIM_GATE, "gap", 1.0)
+    monkeypatch.setattr(geo.OSRM_GATE, "gap", 0.25)
+    start = time.monotonic()
+    r = client.get("/trip/map?day=0")
+    assert r.status_code == 200 and time.monotonic() - start < 3.5

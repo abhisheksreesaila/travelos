@@ -13,7 +13,7 @@
 .mp-map .leaflet-control-attribution a { color: var(--ink); }
 
 .mp-pin-wrap { background: none; border: 0; }
-.mp-pin { width: 100%; height: 100%; display: grid; place-items: center; border-radius: var(--r-pill); background: var(--ink); color: #FFFFFF; border: 0.1875rem solid #FFFFFF;
+.mp-pin { width: 100%; height: 100%; display: grid; place-items: center; border-radius: var(--r-pill); background: var(--ink); color: var(--card); border: 0.1875rem solid var(--card);
   box-shadow: var(--shadow-sm); font-family: var(--font-body); font-weight: 800; font-size: 1rem; transition: transform 0.2s var(--ease-spring), background 0.2s; }
 .mp-pin-wrap:focus-visible .mp-pin { outline: 0.1875rem solid var(--ink); outline-offset: 0.125rem; }
 .mp-pin-wrap.is-sel { z-index: 1000 !important; }

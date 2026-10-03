@@ -44,6 +44,8 @@ def fake(monkeypatch):
     monkeypatch.setattr(geo.OSRM_GATE, "gap", 0.25)
     monkeypatch.setattr(geo.NOMINATIM_GATE, "last", None)
     monkeypatch.setattr(geo.OSRM_GATE, "last", None)
+    monkeypatch.setattr(geo.NOMINATIM_GATE, "shut_until", None)
+    monkeypatch.setattr(geo.OSRM_GATE, "shut_until", None)
     return f
 
 
@@ -139,3 +141,63 @@ def test_warm_stops_when_the_budget_runs_out_and_reports_what_is_left(fake, db):
     left = geo.warm(db, ["A place", "B place", "C place", "D place"], budget=1.5)
     assert 0 < left
     assert len(fake.calls) < 7
+
+
+# ---- bounded time, back off, no double lookups (review of F-068) --------------------------------------------------------
+
+def test_a_slow_service_cannot_hold_the_page_past_its_budget(db, monkeypatch):
+    import time
+
+    def slow(url, timeout=0):
+        time.sleep(min(timeout, 10))  # a service that never answers: the call ends when its timeout does
+        raise TimeoutError("slow")
+    monkeypatch.setattr(geo, "fetch", slow)
+    monkeypatch.setattr(geo, "_clock", time.monotonic)
+    monkeypatch.setattr(geo, "_sleep", time.sleep)
+    monkeypatch.setattr(geo.NOMINATIM_GATE, "gap", 1.0)
+    monkeypatch.setattr(geo.NOMINATIM_GATE, "last", None)
+    start = time.monotonic()
+    geo.warm(db, ["Place one", "Place two", "Place three"], budget=1.0)
+    assert time.monotonic() - start < 2.0
+
+
+def test_a_call_gives_up_instead_of_queueing_behind_another_thread(monkeypatch):
+    import threading
+    import time
+    monkeypatch.setattr(geo, "_clock", time.monotonic)
+    gate = geo.Gate(1.0)
+    gate.lock.acquire()  # a background thread is holding the slot
+    done = []
+    t0 = time.monotonic()
+    threading.Thread(target=lambda: done.append(gate.wait(time.monotonic() + 0.3))).start()
+    time.sleep(0.6)
+    gate.lock.release()
+    assert done == [False] and time.monotonic() - t0 < 1.5
+
+
+def test_a_429_or_403_shuts_the_service_for_ten_minutes(fake, db):
+    import urllib.error
+    fake.nominatim = urllib.error.HTTPError("u", 429, "Too Many Requests", {}, None)
+    assert geo.coords("First place", db) is None
+    n = len(fake.calls)
+    fake.nominatim = NOM
+    assert geo.coords("Second place", db) is None and len(fake.calls) == n  # shut: not even asked
+    fake.now += 601
+    assert geo.coords("Second place", db) is not None
+    fake.osrm = urllib.error.HTTPError("u", 403, "Forbidden", {}, None)
+    assert geo.drive_minutes((34.0, -118.0), (34.1, -118.3), db) is None
+    fake.osrm = Fake().osrm
+    calls = len(fake.calls)
+    assert geo.drive_minutes((34.0, -118.0), (34.2, -118.4), db) is None and len(fake.calls) == calls
+
+
+def test_a_place_another_thread_stored_while_we_waited_is_not_asked_again(fake, db, monkeypatch):
+    real_wait = geo.NOMINATIM_GATE.wait
+
+    def wait_then_someone_else_stores_it(deadline=None):
+        ok = real_wait(deadline)
+        geo._put(db, "place", geo._norm("Shared place"), lat=1.0, lon=2.0, data="Shared place")
+        return ok
+    monkeypatch.setattr(geo.NOMINATIM_GATE, "wait", wait_then_someone_else_stores_it)
+    assert geo.coords("Shared place", db) == (1.0, 2.0)
+    assert fake.calls == []

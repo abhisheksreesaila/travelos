@@ -17,7 +17,7 @@ from fasthtml.common import A, Button, Div, H1, H2, Header, Li, Link, Main, Nav,
 from gitaway import access, familydb, geo, session as ses, tripcal as cal, tripday as td
 from gitaway.icons import icon
 from gitaway.layout import styles
-from gitaway.pages import trip as trip_ui
+from gitaway.pages import calendar as calui, trip as trip_ui
 
 HEAD = (Link(rel="stylesheet", href="/assets/vendor/leaflet/leaflet.css"), Link(rel="stylesheet", href="/assets/css/trip.css"), Link(rel="stylesheet", href="/assets/css/map.css"))
 UBER = "https://m.uber.com/ul/?action=setPickup&pickup=my_location"
@@ -93,8 +93,13 @@ def day_picker(v):
     return Nav(*chips, cls="tp-strip", aria_label="Days of the trip", id="mp-strip")
 
 
-def edit_link(v):
-    if access.can_edit(v["role"]) and cal.is_imported(v["b"]) and ses.open_trip_id():
+def edit_link(v, stop):
+    """How to fix a place the map could not find: a booking (flight, hotel, car) is fixed in Edit trip, a plan in the calendar on its day."""
+    if not access.can_edit(v["role"]):
+        return ""
+    if stop["kind"] == "plan":
+        return A(icon("pencil", 14, 2.4), "Fix it in the calendar", href=f"{calui.cal_url('', view='whole')}#d{v['sel']}", cls="btn btn-sm mp-edit")
+    if cal.is_imported(v["b"]) and ses.open_trip_id():
         return A(icon("pencil", 14, 2.4), "Edit trip", href=f"/trips/build/edit?trip={ses.open_trip_id()}", cls="btn btn-sm mp-edit")
     return ""
 
@@ -118,7 +123,7 @@ def stop_list(stops, v):
             rows.append(Li(Button(*head, type="button", cls="mp-li", data_stop=str(s["n"]), aria_label=f"Stop {s['n']}, {s['title']}, show on the map"), cls="mp-item"))
         else:
             why = NOT_FOUND if s["state"] == "missing" else "Still finding this place…"
-            rows.append(Li(Div(*head, cls="mp-li mp-li-off"), P(why, cls="mp-unknown", data_unknown=str(s["n"])), edit_link(v) if s["state"] == "missing" else "", cls="mp-item"))
+            rows.append(Li(Div(*head, cls="mp-li mp-li-off"), P(why, cls="mp-unknown", data_unknown=str(s["n"])), edit_link(v, s) if s["state"] == "missing" else "", cls="mp-item"))
     return Ol(*rows, cls="mp-list", id="mp-list")
 
 

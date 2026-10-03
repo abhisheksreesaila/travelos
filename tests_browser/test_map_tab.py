@@ -82,8 +82,8 @@ def test_a_list_row_selects_its_stop_and_the_list_names_the_place_it_could_not_f
     expect(page.locator("#mp-s-name")).to_have_text("Griffith Observatory")
     expect(page.locator('.mp-pin-wrap[data-stop="4"]')).to_have_class(re.compile("is-sel"))
     expect(page.locator('[data-unknown="5"]')).to_have_text("Couldn’t find this place on the map.")
-    page.get_by_role("link", name="Edit trip").click()
-    page.wait_for_url(re.compile(r"/trips/build/edit"))
+    page.get_by_role("link", name="Fix it in the calendar").click()  # a plan is fixed in the calendar, on its day
+    page.wait_for_url(re.compile(r"/calendar\?view=whole"))
 
 
 def test_the_route_is_drawn_and_the_page_never_scrolls_sideways(map_page):

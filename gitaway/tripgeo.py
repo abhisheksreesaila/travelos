@@ -29,7 +29,8 @@ def day_places(session) -> list:
             if blk.day == i and (p := td._place_of(blk, td.hotel_place(b, dates, i))):
                 stops.append((blk.at, p))
         stops += [(a.start, f"{a.title}, {dest}") for a in acts if a.day == i]
-        before = td.hotel_place(b, dates, i - 1) if i else ""
+        flies = any(blk.day == i and blk.icon == "plane" for blk in blocks)  # a travel day starts at the airport, not at the stay
+        before = td.hotel_place(b, dates, i - 1) if i and not flies else ""
         day = ([before] if before else []) + [geo.as_place(p) for _, p in sorted(stops)]
         if len(day) > 1 or (day and not before):
             out.append(day)
@@ -46,5 +47,7 @@ def warm(session, force=False):
     now = time.monotonic()
     if not force and now - _KICKED.get(key, -HOUR * 2) < HOUR:
         return
+    for k in [k for k, t in _KICKED.items() if now - t >= HOUR]:
+        del _KICKED[k]
     _KICKED[key] = now
     geo.warm_async(session, groups)

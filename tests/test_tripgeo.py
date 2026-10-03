@@ -75,3 +75,27 @@ def test_today_starts_a_fill_at_most_once_an_hour_per_trip(client, maps, monkeyp
     monkeypatch.setattr(tripgeo.time, "monotonic", lambda: now + 3601)
     client.get("/trip")
     assert len(started) == 2
+
+
+def test_old_throttle_entries_are_pruned(client, maps, monkeypatch):
+    imported(client)
+    settle()
+    tripgeo._KICKED[("old", "trip", "x")] = tripgeo.time.monotonic() - 2 * tripgeo.HOUR
+    plan(client, id="a1", day="0", start="17:00", end="19:30", title="Griffith Observatory")
+    client.get("/trip")
+    assert ("old", "trip", "x") not in tripgeo._KICKED
+
+
+def test_a_travel_day_does_not_leave_from_the_stay(client, maps, monkeypatch):
+    imported(client)
+    plan(client, id="a1", day="4", start="09:00", end="10:00", title="Griffith Observatory")  # the day of the flight home
+    client.get("/trip")
+    settle()
+    at(monkeypatch, date(2026, 10, 20), 8 * 60)
+    assert "Leave by" not in text(client.get("/trip?day=4").text)
+
+
+def test_today_still_draws_when_the_map_fill_breaks(client, maps, monkeypatch):
+    imported(client)
+    monkeypatch.setattr(tripgeo, "day_places", lambda s: 1 / 0)
+    assert client.get("/trip").status_code == 200

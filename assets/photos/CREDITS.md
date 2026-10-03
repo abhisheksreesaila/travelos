@@ -30,3 +30,5 @@ Generic hotel pictures from Wikimedia Commons, each confirmed CC0 1.0 or public 
 | Map tiles | OpenStreetMap standard tiles, © OpenStreetMap contributors (ODbL), attribution shown on the map | https://tile.openstreetmap.org |
 | Place lookup | Nominatim, one request a second, with GitAway's User-Agent | https://nominatim.openstreetmap.org |
 | Drive times and routes | OSRM public demo server, cached | https://router.project-osrm.org |
+
+Only a stop's place text (a hotel's name and address, or a plan's title with the trip's destination) is sent to Nominatim, and coordinates to OSRM: never names of members, confirmation numbers or notes. See docs/family-db.md (`geo_cache`).

@@ -10,6 +10,7 @@ other way. It is the installed app's start page (the manifest's start_url). The 
 validates, the roles come from gitaway.access (a viewer sees no + and no composer), and every form carries `trip`.
 """
 
+import logging
 from dataclasses import replace
 from urllib.parse import urlencode
 
@@ -22,6 +23,7 @@ from gitaway.icons import icon
 from gitaway.layout import avatar, join_note, styles, trip_field
 from gitaway.pages import calendar as calui, morning as morning_ui, rides as rides_ui
 
+log = logging.getLogger(__name__)
 HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/trip.css"), *morning_ui.HEAD)
 TABS = (("today", "Today"), ("days", "All days"), ("notes", "Notes"))
 
@@ -87,7 +89,8 @@ def leave_by(session, items, up, clocks, origin=""):
     if not item or not item.place or item.kind == "flight":
         return None
     before = [x for x in items if x.start < item.start and x.place and x.kind != "flight"]
-    start = before[-1].place if before else origin  # the first stop of the day leaves from where you slept
+    flew = any(x.kind == "flight" and x.start < item.start for x in items)  # on a travel day nobody leaves from the stay
+    start = before[-1].place if before else ("" if flew else origin)  # the first stop of the day leaves from where you slept
     if not start:
         return None
     with familydb.using(session) as db:
@@ -353,7 +356,10 @@ def register(app):
             return r
         ua = request.headers.get("user-agent", "")
         sheet = {} if add == "1" else None
-        tripgeo.warm(session)  # fill the map cache in the background, at most once an hour (F-068)
+        try:
+            tripgeo.warm(session)  # fill the map cache in the background, at most once an hour (F-068)
+        except Exception:  # Today never fails because the map cache could not be filled
+            log.exception("could not start the map fill")
         return trip_page(session, ua, tab or "today", day[:3], sheet, new[:8])
 
     @app.post("/trip/plans")

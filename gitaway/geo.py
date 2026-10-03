@@ -26,6 +26,7 @@ USER_AGENT = "GitAway/1.0 (+https://web-production-2d117.up.railway.app)"
 NOMINATIM = "https://nominatim.openstreetmap.org/search?format=json&q={q}&limit=1"
 OSRM = "https://router.project-osrm.org/route/v1/driving/{lon1},{lat1};{lon2},{lat2}?overview=full&geometries=geojson"
 TIMEOUT = 4  # seconds a single call may take
+BACKOFF = 600  # seconds to leave a service alone after it answers 429 or 403
 MISSING = "missing"  # state(): the service has no such place
 _AIRPORT = re.compile(r"^([A-Z]{3}) airport$")
 
@@ -34,20 +35,39 @@ _sleep = time.sleep
 
 
 class Gate:
-    """At most one call per `gap` seconds, shared by every thread of the process."""
+    """At most one call per `gap` seconds, shared by every thread of the process, and shut for `BACKOFF` seconds after the service refuses us."""
 
     def __init__(self, gap):
-        self.gap, self.last, self.lock = gap, None, threading.Lock()
+        self.gap, self.last, self.lock, self.shut_until = gap, None, threading.Lock(), None
 
     def delay(self) -> float:
         """Seconds a call made now would have to wait."""
         return 0.0 if self.last is None else max(0.0, self.last + self.gap - _clock())
 
-    def wait(self):
-        with self.lock:
+    def is_shut(self) -> bool:
+        return self.shut_until is not None and _clock() < self.shut_until
+
+    def back_off(self, seconds=None):
+        self.shut_until = _clock() + (BACKOFF if seconds is None else seconds)
+
+    def wait(self, deadline=None) -> bool:
+        """Take the next slot. With a `deadline` (a _clock() time) give up, returning False, rather than queue past it; False too while shut."""
+        if self.is_shut():
+            return False
+        left = None if deadline is None else deadline - _clock()
+        if left is not None and left <= 0:
+            return False
+        if not self.lock.acquire(timeout=-1 if left is None else left):
+            return False
+        try:
             if (d := self.delay()) > 0:
+                if deadline is not None and _clock() + d > deadline:
+                    return False
                 _sleep(d)
             self.last = _clock()
+            return True
+        finally:
+            self.lock.release()
 
 
 NOMINATIM_GATE = Gate(1.0)  # Nominatim's policy: an absolute maximum of one request per second
@@ -58,6 +78,17 @@ def fetch(url, timeout=TIMEOUT):
     """GET a URL and parse the JSON. Raises on any failure. Tests replace this."""
     with urlopen(Request(url, headers={"User-Agent": USER_AGENT, "Accept": "application/json"}), timeout=timeout) as r:  # noqa: S310 - fixed https hosts above
         return json.loads(r.read().decode("utf-8"))
+
+
+def _call(url, gate, deadline=None):
+    """fetch(url), never past `deadline`; a 429 or 403 shuts the gate for BACKOFF seconds. Raises on any failure."""
+    timeout = TIMEOUT if deadline is None else max(0.2, min(TIMEOUT, deadline - _clock()))
+    try:
+        return fetch(url, timeout=timeout)
+    except Exception as e:
+        if getattr(e, "code", None) in (429, 403):
+            gate.back_off()
+        raise
 
 
 def _norm(place) -> str:
@@ -108,11 +139,15 @@ def find(place, db=None, *, deadline=None):
     known = state(place, db)
     if known[0] is not None or not _norm(place):
         return known
-    if deadline is not None and _clock() + NOMINATIM_GATE.delay() > deadline:
+    if not NOMINATIM_GATE.wait(deadline):
         return known
-    NOMINATIM_GATE.wait()
+    if db is not None:
+        db.conn.commit()  # end our read snapshot, so we see what another thread stored while we waited
+    known = state(place, db)  # another thread may have asked while we waited our turn
+    if known[0] is not None:
+        return known
     try:
-        found = fetch(NOMINATIM.format(q=quote_plus(str(place).strip())))
+        found = _call(NOMINATIM.format(q=quote_plus(str(place).strip())), NOMINATIM_GATE, deadline)
         if not isinstance(found, list):
             raise ValueError("unexpected answer")
         top = found[0] if found else None
@@ -139,7 +174,7 @@ def _pair_key(a, b):
     return f"{a[0]:.4f},{a[1]:.4f};{b[0]:.4f},{b[1]:.4f}"
 
 
-def _leg(a, b, db=None, *, fetch_it=True):
+def _leg(a, b, db=None, *, fetch_it=True, deadline=None):
     """{"m": minutes, "g": GeoJSON line} for a drive from `a` to `b` (lat, lon pairs), cached; None when unknown or the router fails."""
     key = _pair_key(a, b)
     hit = _get(db, "drive", key)
@@ -150,9 +185,10 @@ def _leg(a, b, db=None, *, fetch_it=True):
             pass
     if not fetch_it:
         return None
-    OSRM_GATE.wait()
+    if not OSRM_GATE.wait(deadline):
+        return None
     try:
-        r = fetch(OSRM.format(lat1=a[0], lon1=a[1], lat2=b[0], lon2=b[1]))
+        r = _call(OSRM.format(lat1=a[0], lon1=a[1], lat2=b[0], lon2=b[1]), OSRM_GATE, deadline)
         top = r["routes"][0]
         if r.get("code") != "Ok":
             raise ValueError("no route")
@@ -202,10 +238,7 @@ def warm(db, places, budget=2.0) -> int:
     for a, b in zip(pts, pts[1:]):
         if _get(db, "drive", _pair_key(a, b)) is not None or a == b:
             continue
-        if _clock() + OSRM_GATE.delay() > deadline:
-            left += 1
-            continue
-        if _leg(a, b, db) is None:
+        if _leg(a, b, db, deadline=deadline) is None:
             left += 1
     return left
 
