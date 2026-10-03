@@ -12,7 +12,7 @@ from starlette.responses import HTMLResponse
 
 from fasthtml.common import to_xml, A, Article, Button, Div, Figcaption, Figure, H2, H3, Img, Kbd, Li, Link, Main, NotStr, P, Script, Section, Span, Svg, Title, Ul
 
-from gitaway import access, catalog, context, itineraries, session
+from gitaway import access, catalog, context, itineraries, session, showcase
 from gitaway import session as session_helpers
 from gitaway.icons import icon
 from gitaway.itinerary_view import fork_href
@@ -326,7 +326,7 @@ def rides_card(r, q=None):
                     Span(catalog.money(f.cents), cls="ws-ride-price"), cls="ws-ride-fare") for f in leg.fares], cls="ws-ride-fares",
                aria_label=f"{leg.title} fares"),
             A(icon("car", 15, 2.4), "Schedule an Uber", href=ride_path(leg.kind, q.flight_id, q.stay_id, q.trip), cls="ws-ride-go", data_schedule=leg.kind,
-              aria_label=f"Schedule an Uber for your {leg.title.lower()}, {leg.route}") if q is not None and access.request_role() != "viewer" else "",
+              aria_label=f"Schedule an Uber for your {leg.title.lower()}, {leg.route}") if q is not None and access.request_role() != "viewer" and showcase.on() else "",  # the simulated Uber is local-only (F-064)
             cls="ws-ride-leg", data_ride=leg.kind,
         ))
     return Div(
@@ -451,6 +451,11 @@ def ledger(q, trip):
     )
 
 
+def preview_note():
+    """Production: the workspace's prices are made up, so say so at the top (F-064). Absent on a local copy, where everything is sample data."""
+    return Span(icon("note", 16, 2.4), showcase.PREVIEW, cls="ws-preview", role="note") if not showcase.on() else ""
+
+
 def top_bar(trip, ledger_el=None):
     def fmt(d):
         return d.strftime("%a %b ") + str(d.day)
@@ -460,7 +465,7 @@ def top_bar(trip, ledger_el=None):
         A(Span(f"{trip.origin} → {trip.destination_name}", cls="ws-bold"), Span(f"{fmt(trip.depart)} – {fmt(trip.return_)}"),
           Span(trip.summary), Span("Change", cls="ws-change"), href="/start" + (f"?{catalog.trip_query(trip)}" if trip != catalog.SAMPLE_TRIP else ""), cls="ws-pill"),
         ledger_el or "",
-        Span("Press 1–7 to focus a pane", cls="ws-hint"),
+        Span(f"Press 1–{7 if showcase.on() else 6} to focus a pane", cls="ws-hint"),
         avatar(who, "ws-avatar") if who else A("Sign in", href=session.signin_href(), cls="btn btn-sm"),
         cls="ws-bar",
     )
@@ -568,6 +573,7 @@ def workspace(f, h, c, overlay=(), head=(), x="", v="", stay=None, trip=None, fl
     q = catalog.quote(f, h, c, stay, trip, flight)
     tip = Div("Tip from 312 families: most skipped the car in Santa Monica and rented one for the Griffith Park day only.", cls="ws-tip")
     body = Main(
+        preview_note(),
         top_bar(trip, ledger(q, trip)),
         Div(
             pane("flights", 1, "Flights", f"round trip · {len(flights)}",
@@ -579,9 +585,9 @@ def workspace(f, h, c, overlay=(), head=(), x="", v="", stay=None, trip=None, fl
                  detail=[stay_detail(o, h, viewing["stays"], stay if o.id == h else catalog.stay_pick(o.id, trip=trip), chosen=o.id == h) for o in stays], expanded=expanded == "stays",
                  screen=screen if expanded == "stays" else "list", lane="stay", skipped=h is None),
             pane("cars", 3, "Getting around", "", [car_card(o, c) for o in catalog.offers("car", trip)], "fill-sky-tint",
-                 Div(rides_card(q.rides, q) if q.rides else "", id="ws-rides", cls="ws-rides", aria_live="polite"), tip,
+                 Div(rides_card(q.rides, q) if q.rides else "", id="ws-rides", cls="ws-rides", aria_live="polite"), *([tip] if showcase.on() else []),
                  lane="car", skipped=c is None, with_flight=f is not None),
-            Div(weather_pane(trip), map_pane(catalog.offer(h) if h else None), news_pane(trip), community_pane(), cls="ws-context"),
+            Div(weather_pane(trip), map_pane(catalog.offer(h) if h else None), news_pane(trip), *([community_pane()] if showcase.on() else []), cls="ws-context"),
             cls="ws-grid", id="ws-grid", data_focus=expanded or "flights", **(dict(data_expanded=expanded) if expanded else {}),
         ),
         cls="ws", id="main", data_theme="sunset",

@@ -6,7 +6,7 @@ focus), the shared calendar that plays itself, three community trips, and the cr
 
 from fasthtml.common import A, Article, B, Button, Div, Form, H1, H2, H3, I, Img, Link, NotStr, P, Script, Section, Small, Span
 
-from gitaway import hub, itineraries, session
+from gitaway import hub, itineraries, session, showcase
 from gitaway.catalog import SAMPLE_TRIP
 from gitaway.icons import icon
 from gitaway.layout import page
@@ -52,9 +52,13 @@ def _search_values(trip=SAMPLE_TRIP):
     ]
 
 
-def _field(name, label, value):
-    """A preview of the sample trip. Nothing to type here: the real form is /start."""
-    return Div(Span(label, cls="field-label"), Span(value, cls="field-value"), cls="field", data_field=name)
+# F-064: where there is no sample trip to preview, the fields say what /start will ask instead
+NEUTRAL = [("from", "From", "Your city"), ("to", "To", "Where to?"), ("when", "When", "Pick your dates"), ("who", "Who", "Who’s coming")]
+
+
+def _field(name, label, value, neutral=False):
+    """A preview of the sample trip (or, in production, a neutral prompt). Nothing to type here: the real form is /start."""
+    return Div(Span(label, cls="field-label"), Span(value, cls="field-value" + (" is-hint" if neutral else "")), cls="field", data_field=name)
 
 
 def _plan_panel():
@@ -65,7 +69,7 @@ def _plan_panel():
             P("Flights, stays, cars and the weather side by side, with one running total.", cls="promise"),
         ),
         Form(
-            *[_field(*f) for f in _search_values()],
+            *([_field(*f) for f in _search_values()] if showcase.on() else [_field(*f, neutral=True) for f in NEUTRAL]),
             Button("Plan a trip", icon("arrow-right", 22, 2.6), type="submit", cls="btn btn-ink btn-go"),
             method="get", action="/start", cls="search",
         ),
@@ -213,7 +217,7 @@ def _creators():
 
 def footer_links():
     """The links that left the landing's header. Sign in only while signed out."""
-    links = [("Community trips", "/community"), ("For creators", "/creators")]
+    links = [("Community trips", "/community"), ("For creators", "/creators")] if showcase.on() else []
     return links if session.request_traveler() else [*links, ("Sign in", session.signin_href())]
 
 
@@ -223,10 +227,9 @@ def register(app):
         return page(
             "",
             _hero(),
-            Div(_plan_panel(), _fork_line(), cls="ga-wrap"),
+            Div(_plan_panel(), _fork_line() if showcase.on() else "", cls="ga-wrap"),
             _features(),
             _calendar(),
-            _community(),
-            _creators(),
+            *([_community(), _creators()] if showcase.on() else []),
             head=HEAD, nav=False, footer_links=footer_links(),
         )

@@ -22,7 +22,7 @@ from urllib.parse import parse_qs
 
 from fh_saas.utils_sql import delete_record, insert_only, update_record
 
-from gitaway import catalog, context, familydb, rides as ride_model, session as ses, tripimport
+from gitaway import catalog, context, familydb, rides as ride_model, session as ses, showcase, tripimport
 
 LONG = "long"  # the hidden ?demo=long fixture: a 20-day trip that crosses into November
 LONG_RETURN = date(2026, 11, 4)
@@ -216,7 +216,7 @@ def _ride_day_start(plan, t):
 def ride_blocks(session, b, t):
     """The simulated Uber rides (F-038) that belong to booking `b`, as locked blocks (kind "ride", id = the ride id). Cancelled rides have none.
     A ride belongs to a booking with the same flight, stay and trip, and only when there is no car."""
-    if not rides_of(b):
+    if not showcase.on() or not rides_of(b):  # F-064: the Uber is simulated, so the live site has none
         return []
     blocks = []
     for r in ride_model.list_rides(session):
@@ -228,7 +228,7 @@ def ride_blocks(session, b, t):
 
 def ride_offers(session, b, t):
     """One block per leg of booking `b` that has no live ride yet ("ro-arrive", "ro-depart"): the calendar offers to schedule an Uber there."""
-    if not rides_of(b):
+    if not showcase.on() or not rides_of(b):
         return []
     have = {r.leg for r in ride_model.list_rides(session) if r.key == ride_model.booking_key(b) and not r.canceled}
     trip = trip_of(b)
