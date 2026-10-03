@@ -15,4 +15,4 @@ The captain leaves on a 7-day family trip (Oct 4–10, 2026). For that week GitA
 Leave-by and booking reminders, location while open, email invites (needs an email provider or the captain's domain), Face ID, real booking, community, creators.
 
 ## How we'll know
-The captain uses it all week: edits the plan daily, gets the morning push on his iPhone, and the family follows the plan in the app.
+The captain uses it all week: edits the plan daily, gets the morning push on their iPhone, and the family follows the plan in the app.
