@@ -412,9 +412,9 @@ Brief: docs/briefs/trip-week.md · Needs: F-065 for the page it opens
 - [x] one thread per trip with messages, photos (taking and adding photos is F-071; the thread shows them) and automatic cards for plan changes (who added, moved or removed what); new items appear within seconds while open
 - [x] everyone in the family with Morning plan notifications on also gets a push for plan changes and messages (not their own); a "Quiet" switch turns that off per person
 
-## F-071 Photos on the plan [todo]
-- [ ] take or pick photos in the app; each lands on the plan it was taken during (by time, then place if the photo carries a location), with a strip per day; only the family can see them, stored on the server's volume
-- [ ] a photo can be removed by whoever added it or an admin
+## F-071 Photos on the plan [done]
+- [x] take or pick photos in the app; each lands on the plan it was taken during (by time, then place if the photo carries a location), with a strip per day; only the family can see them, stored on the server's volume
+- [x] a photo can be removed by whoever added it or an admin
 
 ## F-075 Leave by for a departure flight [todo]
 Found reviewing F-068: drives to and from airports are skipped, so a departure flight that is up next gets no "Leave by". · Needs: none
