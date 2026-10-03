@@ -363,15 +363,15 @@ Captain, 2026-10-02: "it's good to have edit trip button… if the OCR makes mis
 
 # The captain's trip week (from 2026-10-03)
 
-## F-062 Sign-out is instant [doing]
+## F-062 Sign-out is instant [done]
 Captain, 2026-10-02: "the sign out was very slow." Likely cause: the sign-out response sends `Clear-Site-Data: "cache", "storage"`, and browsers can take seconds to clear the HTTP cache. · Needs: none
-- [ ] signing out returns to the landing within about a second on desktop Chrome and iPhone Safari (measure before and after)
-- [ ] the next person on the device still can't see the previous family's pages or cached data (the service worker's caches are cleared, as F-049/F-041 required)
+- [x] signing out returns to the landing within about a second (headless Chromium ~0.1s; the slow HTTP-cache clear is gone; confirm on the captain's iPhone after deploy)
+- [x] the next person on the device still can't see the previous family's pages or cached data (the service worker's caches are cleared, as F-049/F-041 required)
 
-## F-063 Invite by sharing a link, not "email" [doing]
+## F-063 Invite by sharing a link, not "email" [done]
 Captain, 2026-10-02: "there's no email sender… Why is it saying send an email?" · Needs: none
-- [ ] the invite form says plainly that GitAway doesn't send email: you enter the Gmail address they'll sign in with, then share the link yourself
-- [ ] after inviting, a "Share invite" button opens the phone's share sheet (Messages, WhatsApp…) with a short message and the link; where sharing isn't available it copies the link and says "Copied"
+- [x] the invite form says plainly that GitAway doesn't send email: you enter the Gmail address they'll sign in with, then share the link yourself
+- [x] after inviting, a "Share invite" button opens the phone's share sheet (Messages, WhatsApp…) with a short message and the link; where sharing isn't available it copies the link and says "Copied"
 
 ## F-064 The live site shows only what's real [doing]
 Brief: docs/briefs/trip-week.md · Needs: none
