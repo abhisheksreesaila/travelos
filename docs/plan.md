@@ -391,3 +391,38 @@ Brief: docs/briefs/trip-week.md · Needs: F-065 for the page it opens
 - [ ] on the phone app (added to the Home Screen), "Morning plan" can be turned on with a time (default 7:30 AM, trip time zone); iPhone asks for permission once; it can be turned off
 - [ ] each trip morning at that time the person gets a push "Today: <first plans…>" that opens the Today view; nothing is sent on days outside the trip or when there's no trip
 - [ ] push keys come from environment variables (never in the repo); sending survives a redeploy (subscriptions in the family database); a failed or expired subscription is dropped quietly
+
+# Mobile companion (brief docs/briefs/mobile-companion.md, design docs/design/canvas/Mobile-Storyboards-v1.html)
+
+## F-067 Phone shell and Today v2 [doing]
+- [ ] on phones every trip screen sits in one shell with a bottom tab bar (Today, Map, Ask in the raised centre, Family, Help) as in the storyboards; tabs not built yet show a short "coming" card; desktop keeps its layout
+- [ ] Today matches frame 3: dark "Up next" card with countdown and "Leave by" (when a drive time is known; otherwise no leave-by line), Directions and Uber (deep link with the destination filled in), the rest of the day as tinted cards (done items struck through), hotel tonight, a route strip of the day's stops
+- [ ] it keeps everything F-065/F-066 added (share, confirmation tap, who added it, morning plan card) and passes phone checks (no sideways scroll, 44px targets, 13px text floor)
+
+## F-068 Map of the day [doing]
+- [ ] places (hotels, plans with a place, airports, the car counter) get coordinates from OpenStreetMap geocoding, cached per family so each place is looked up once, at most one lookup per second, with a clear "couldn't find this place" state
+- [ ] the Map tab shows the day's stops numbered in order on an OpenStreetMap map with the route between them; tapping a stop opens a bottom sheet (address, time, Directions, Uber, call when a phone number is known)
+- [ ] drive times between consecutive stops come from a public routing service, cached; Today's "Leave by" uses them
+
+## F-069 Help [todo]
+- [ ] Help shows tonight's hotel (address, phone with a call button, check-in/out, confirmation behind a tap, Directions), the car rental (counter address, phone), 911, and the family's own phone numbers (each member can add theirs on the family page)
+- [ ] a hotel's or car's phone number can be added or fixed (Edit trip or right there); Help still opens offline on a phone that opened it before (only for the signed-in person)
+
+## F-070 Family thread with notifications [todo]
+- [ ] one thread per trip with messages, photos and automatic cards for plan changes (who added, moved or removed what); new items appear within seconds while open
+- [ ] everyone in the family with Morning plan notifications on also gets a push for plan changes and messages (not their own); a "Quiet" switch turns that off per person
+
+## F-071 Photos on the plan [todo]
+- [ ] take or pick photos in the app; each lands on the plan it was taken during (by time, then place if the photo carries a location), with a strip per day; only the family can see them, stored on the server's volume
+- [ ] a photo can be removed by whoever added it or an admin
+
+## F-072 Ask by voice [blocked]
+Blocked: create a Gemini API key at https://aistudio.google.com/apikey (free tier, no card), then run in the travelos folder: `railway variable set GEMINI_API_KEY --stdin --service web` and paste the key (nothing is shown), and say go.
+- [ ] talk (or type) to ask for a change; GitAway proposes a new day (added, moved, removed plans) and changes nothing until Apply; Apply tells the family
+
+## F-073 Around you [blocked]
+Blocked: same Gemini key as F-072.
+- [ ] quick chips (vegetarian food, coffee, groceries, Costco/Walmart, pharmacy, gas, restrooms) find places near you with distance, open now, Directions, Call and Add to plan; the family's food preference applies
+
+## F-074 Face ID sign-in [todo]
+- [ ] after Google sign-in once, a phone can add a passkey and later sign in with Face ID
