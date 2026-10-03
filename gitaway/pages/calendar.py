@@ -21,7 +21,7 @@ from fasthtml.common import A, Aside, Button, Details, Div, Fieldset, Form, H1, 
 from fasthtml.core import FtResponse
 from starlette.responses import RedirectResponse
 
-from gitaway import access, catalog, firstrun, forks as forks_model, members, pickers, session as ses, tripcal as cal, tripday
+from gitaway import access, catalog, firstrun, forks as forks_model, members, pickers, session as ses, showcase, tripcal as cal, tripday
 from gitaway.icons import icon
 from gitaway.layout import avatar, brand, join_note, styles, trip_field
 from gitaway import voice as vo
@@ -471,6 +471,8 @@ def trip_switcher(session):
 def share_controls(session):
     """The Share button; once the trip is shared it says so, updates the snapshot on a tap, and offers Unpublish (owner only)."""
     from gitaway import share
+    if not showcase.on():  # sharing a trip publicly is community-facing
+        return []
     if not access.can_edit(access.request_role()):  # sharing is an edit: viewers just look
         return []
     row = share.shared(session)
@@ -497,7 +499,7 @@ def invite_button(ctx):
     role = ctx["role"]
     if not access.can_edit(role):
         return ""
-    if ctx["is_demo"]:
+    if ctx["is_demo"] and showcase.on():  # the pretend-friends dialog is sample data
         return A("Invite", href=cal_url(ctx["demo"], view=ctx["view"], invite="1"), id="cal-invite-btn", data_id="invite", data_soft="", cls="cal-btn cal-btn-coral")
     return A("Invite" if role == "admin" else "Family", href="/family#invite" if role == "admin" else "/family", id="cal-invite-btn", cls="cal-btn cal-btn-coral")
 
@@ -514,7 +516,7 @@ def top_bar(t, b, who, session, ctx):
                                                                                        A(icon("pencil", 16, 2.4), "Edit trip", href=f"/trips/build/edit?trip={ses.open_trip_id()}", cls="btn btn-sm", id="cal-edit-trip") if access.can_edit(ctx["role"]) and cal.is_imported(b) and ses.open_trip_id() else "", cls="cal-tripbar"), cls="cal-title-box"),
         Div(Div(*people, cls="cal-faces"), presence, cls="cal-avatars"),
         Div(A(icon("mic", 18, 2.4), "Talk to plan", href=voice_ui.voice_url(ctx["demo"], hear=1), data_soft="", cls="cal-btn cal-btn-mint vo-open") if ctx["role"] != "viewer" else "",
-            A("Your forks", Span(str(forks), cls="cal-count"), href="/forks", cls="cal-btn cal-btn-white"),
+            A("Your forks", Span(str(forks), cls="cal-count"), href="/forks", cls="cal-btn cal-btn-white") if showcase.on() else "",
             invite_button(ctx),
             *share_controls(session), cls="cal-actions-top"),
         cls="cal-bar",
@@ -685,7 +687,7 @@ def register(app):
         view = pick_view(view, bool(add or edit or new or undo or w or voice == "1" or voiced))
         talk = {"night": voice_ui.parse_night(night), "hear": hear == "1"} if voice == "1" and not form else None
         done = {"ids": voice_ui.parse_ids(voiced), "note": voice_ui.note_id(vnote), "night": str(voice_ui.parse_night(vn) if voice_ui.parse_night(vn) is not None else "")} if voiced else None
-        return calendar_page(session, demo, view, form=form, new=new, undo=undo, w=w, invite={} if invite == "1" and not form else None, live=live == "1", back=back if add else "", voice=talk, voiced=done, detail=detail[:20])
+        return calendar_page(session, demo, view, form=form, new=new, undo=undo, w=w, invite={} if invite == "1" and not form and showcase.on() else None, live=live == "1", back=back if add else "", voice=talk, voiced=done, detail=detail[:20])
 
     def refuse(session, demo, view, message, form=None):
         return calendar_page(session, demo, view, form=form, notice=None if form else message, status=409)
