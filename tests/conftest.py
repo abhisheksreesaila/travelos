@@ -9,8 +9,10 @@ os.environ["GITAWAY_DATA_DIR"] = tempfile.mkdtemp(prefix="gitaway-test-")
 os.environ["GITAWAY_DEV_LOGIN"] = "1"
 os.environ["DB_TYPE"] = "SQLITE"
 os.environ["DB_NAME"] = "app_host"
+# Set empty, not removed: fh-saas loads the project's .env on import and fills in any key that is missing,
+# so real Google keys in a developer's .env would hide the dev sign-in from the tests.
 for _key in ("GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"):
-    os.environ.pop(_key, None)
+    os.environ[_key] = ""
 for _key in ("GITAWAY_VAPID_PUBLIC", "GITAWAY_VAPID_PRIVATE", "GITAWAY_VAPID_SUBJECT"):
     os.environ[_key] = ""  # empty, not removed: a .env found above the folder must not switch the real push sender on in a test run (F-066)
 
