@@ -51,7 +51,7 @@ FLIGHTS = {"flying": "yes",
 HOTEL = {"stay": "yes", "hotel0_name": "The Example Hotel Santa Monica", "hotel0_address": "123 Ocean Ave, Santa Monica, CA 90401", "hotel0_check_in_date": "2026-10-16", "hotel0_check_in_time": "15:00",
          "hotel0_check_out_date": "2026-10-20", "hotel0_check_out_time": "11:00", "hotel0_confirmation": "987654321", "hotel0_room": "2 Queen Beds, Ocean View", "hotel0_phone": "+1 310 555 0100"}
 CAR = {"rent": "yes", "car_company": "Hertz", "car_pickup_place": "LAX", "car_pickup_date": "2026-10-16", "car_pickup_time": "10:00", "car_dropoff_place": "LAX",
-       "car_dropoff_date": "2026-10-20", "car_dropoff_time": "12:00", "car_confirmation": "H1234567", "car_car": "Midsize SUV"}
+       "car_dropoff_date": "2026-10-20", "car_dropoff_time": "12:00", "car_confirmation": "H1234567", "car_car": "Midsize SUV", "car_phone": "+1 310 555 0199"}
 NOTES = {"notes": ti.parse(TEMPLATE).plan.notes, "booked_on": "Expedia", "itinerary": "7123456789012"}
 
 

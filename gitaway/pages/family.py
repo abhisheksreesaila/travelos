@@ -5,6 +5,7 @@ POST /family/invite           (admin) invite an email as editor or viewer; the i
 POST /family/invite/revoke    (admin) take a pending invite back
 POST /family/role             (admin) change a member's role
 POST /family/remove           (admin) remove a member (or leave, for the owner while another admin remains); the last admin cannot go
+POST /family/phone            (any member) keep my own phone number, shown on the Help tab (F-069)
 POST /family/switch           work in another of my families (any member)
 GET  /join/<token>            an invite link: sign in first if needed, then join (the signed-in email must match the invite)
 POST /join/<token>            join the family
@@ -20,7 +21,7 @@ from urllib.parse import quote
 from fasthtml.common import A, Button, Div, Form, H1, H2, Input, Label, Li, Link, Option, P, Script, Section, Select, Span, Ul, to_xml
 from starlette.responses import RedirectResponse, Response
 
-from gitaway import familydb, members, pickers, session as ses
+from gitaway import familydb, members, phones, pickers, session as ses
 from gitaway.layout import avatar, page
 
 log = logging.getLogger("gitaway.family")
@@ -86,7 +87,18 @@ def _invite_row(inv, request):
               cls="fam-invite", id=f"inv-{inv['id']}", data_invite=inv["id"])
 
 
-def family_page(request, session, error="", status=200, email="", role="editor"):
+def _phone_section(session, error="", typed=None):
+    """My own phone number (any member): it shows on everyone's Help tab so the family can call each other."""
+    mine = phones.member_phones(session).get(session["user_id"], "")
+    return Section(H2("Your phone number", id="fam-phone-h"),
+                   P("The family sees it on the Help tab, one tap to call. Leave it empty to remove it.", cls="fam-sub"),
+                   Div(error, role="alert", id="fam-phone-error", cls="fam-error") if error else "",
+                   Form(Label(Span("Phone", cls="fam-label"), Input(type="tel", name="phone", id="fam-phone", value=mine if typed is None else typed, maxlength=str(phones.MAX_PHONE), autocomplete="tel", placeholder="+1 310 555 0100"), cls="fam-field"),
+                        Button("Save my number", type="submit", cls="btn btn-primary fam-go"), action="/family/phone", method="post", id="fam-phone-form", cls="fam-inviteform"),
+                   aria_labelledby="fam-phone-h", id="my-phone", cls="fam-sec")
+
+
+def family_page(request, session, error="", status=200, email="", role="editor", phone_error="", phone_typed=None):
     user, tid = request.state.user, session["tenant_id"]
     me, my_role = user["user_id"], request.state.family_role
     crew, pending = members.members(tid), (members.pending_invites(tid) if my_role == "admin" else [])
@@ -122,7 +134,7 @@ def family_page(request, session, error="", status=200, email="", role="editor")
         switcher,
         Section(H2("Who is in", id="fam-members-h"), Ul(*[_member_row(m, me, my_role, tid) for m in crew], cls="fam-list", id="fam-members"),
                 note, aria_labelledby="fam-members-h", cls="fam-sec"),
-        alone, waiting, invite_form,
+        _phone_section(session, phone_error, phone_typed), alone, waiting, invite_form,
         cls="fam",
     ), head=HEAD)
     return out if status == 200 else Response(to_xml(out), status_code=status, media_type="text/html")
@@ -173,6 +185,14 @@ def register(app):
     @app.post("/family/remove")
     def remove(request, session, user: str = ""):
         return _admin_action(request, session, lambda: members.remove(session["tenant_id"], request.state.user["user_id"], user))
+
+    @app.post("/family/phone")
+    def phone(request, session, phone: str = ""):
+        try:
+            phones.set_member_phone(session, phone)
+        except phones.PhoneError as e:
+            return family_page(request, session, phone_error=str(e), phone_typed=phone, status=422)
+        return RedirectResponse("/family#my-phone", status_code=303)
 
     @app.post("/family/switch")
     def switch(request, session, tenant: str = "", next: str = ""):

@@ -64,7 +64,7 @@ def test_every_trip_screen_sits_in_the_shell(client, key):
     assert "/assets/css/phone.css" in html and html.index("/assets/css/base.css") < html.index("/assets/css/phone.css")
 
 
-@pytest.mark.parametrize("key", ["map", "ask", "help"])   # Family is built (F-070)
+@pytest.mark.parametrize("key", ["map", "ask"])   # Help (F-069) and Family (F-070) are built
 def test_a_tab_not_built_yet_shows_a_short_coming_card(client, key):
     book(client)
     html = client.get(PATHS[key]).text

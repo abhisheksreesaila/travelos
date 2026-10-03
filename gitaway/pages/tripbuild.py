@@ -159,6 +159,7 @@ def step_car(c):
                 Div(when(c, "car_pickup_date", "Pick up (date)", car["pickup_date"], "date"), when(c, "car_pickup_time", "Pick up (time)", car["pickup_time"], "time"), cls="tb-pair"),
                 Div(when(c, "car_dropoff_date", "Drop off (date)", car["dropoff_date"], "date"), when(c, "car_dropoff_time", "Drop off (time)", car["dropoff_time"], "time"), cls="tb-pair"),
                 Div(text(c, "car_confirmation", "Confirmation (optional)", car["confirmation"], "Shown only to your family", maxlength="30"), text(c, "car_car", "Car (optional)", car["car"], "Like Midsize SUV", maxlength="40"), cls="tb-pair"),
+                text(c, "car_phone", "Rental counter phone (optional)", car["phone"], maxlength="30", type="tel"),
                 cls="tb-card tb-item", data_when="rent")]
 
 
