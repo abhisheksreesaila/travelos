@@ -51,6 +51,18 @@ def _offline_maps(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _one_geo_module():
+    """A test that removes `gitaway.geo` from sys.modules (to play "no geo module") makes the next import build a second copy, and the package attribute
+    `gitaway.geo` then points at the copy while sys.modules holds the original: later tests patch one and the app reads the other. Put both back."""
+    import sys
+    import gitaway
+    from gitaway import geo
+    yield
+    sys.modules["gitaway.geo"] = geo
+    gitaway.geo = geo
+
+
+@pytest.fixture(autouse=True)
 def _fixed_today(monkeypatch):
     """The demo's sample trip is in October 2026; keep "today" before it so date checks do not rot."""
     from datetime import date
