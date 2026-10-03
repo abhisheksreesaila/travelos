@@ -102,6 +102,8 @@ How it runs: one background thread in the app (one per process; Railway runs one
 
 ## Deleting a person's or a family's data (F-076)
 
+**Not ready for real data yet (F-077):** review found that `--family` can delete a family the person only belongs to and leaves their sign-in, and two accounts with one email are not refused. Use only the dry run until F-077 is done.
+
 `pixi run forget-person EMAIL [--content] [--family] [--yes] [--data-dir DIR]` (`scripts/forget_person.py`). Stop the app first and copy the data folder (on Railway: the `/data` volume; run it in a shell on the service, where `GITAWAY_DATA_DIR` is set). Without `--yes` it is a dry run that lists what it would delete. Tables that do not exist yet are skipped. It uses plain SQLite, so it works on a throwaway copy too (`tests/test_forget_person.py` does).
 
 - **Plain run**: the person's sign-in (`core_users`), memberships, passkeys, last-family choice, invites sent to or by them, audit-log rows with their id or email (`sys_audit_logs`), and in each of their families their member row, push subscriptions and thread settings. Their messages and photos stay with the family.
