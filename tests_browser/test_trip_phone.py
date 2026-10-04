@@ -161,3 +161,30 @@ def test_a_phone_opening_the_calendar_lands_on_the_trip_view(phone, base_url):
     expect(page.locator("#tp-app")).to_be_visible()
     page.click(".tp-full")
     assert "/calendar?view=whole" in page.url
+
+
+@pytest.mark.parametrize("viewport", [PHONE, NARROW], ids=["390", "320"])
+def test_f085_notes_start_folded_and_a_tap_opens_them_in_place(phone, base_url, pin, viewport):
+    pin(date(2026, 10, 17), 16 * 60 + 20)
+    page = phone(viewport)
+    page.request.post(f"{base_url}/calendar/activities", form={"id": "a2", "day": "1", "start": "20:00", "end": "21:00", "title": "Tacos", "kind": "food"}, max_redirects=0)
+    for n, act in (("n1", "a1"), ("n2", "a2"), ("n3", "a2")):
+        page.request.post(f"{base_url}/calendar/notes", form={"id": n, "text": f"Note {n}", "act": act}, max_redirects=0)
+    page.goto(base_url + "/trip")
+    page.wait_for_load_state("networkidle")
+    summary = page.locator("[data-notes=a2] summary")
+    expect(summary).to_contain_text("2 notes")
+    expect(page.locator(".tp-pnote", has_text="Note n2")).to_be_hidden()
+    assert summary.bounding_box()["height"] >= 43.5
+    summary.click()
+    expect(page.locator(".tp-pnote", has_text="Note n2")).to_be_visible()
+    expect(page.locator(".tp-pnote", has_text="Note n3")).to_be_visible()
+    assert page.evaluate(OVERFLOW) == 0 and page.evaluate(SMALL_TEXT) == [] and page.evaluate(SMALL_CONTROLS) == []
+    summary.click()
+    expect(page.locator(".tp-pnote", has_text="Note n2")).to_be_hidden()
+    up = page.locator("#tp-up [data-notes=a1] summary")
+    expect(up).to_contain_text("1 note")
+    expect(page.locator(".tp-pnote", has_text="Note n1")).to_be_hidden()
+    up.click()
+    expect(page.locator(".tp-pnote", has_text="Note n1")).to_be_visible()
+    assert page.evaluate(OVERFLOW) == 0

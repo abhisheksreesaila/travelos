@@ -127,16 +127,24 @@ def up_card(v):
     elif up.uber:
         buttons.append(A("Get an Uber" if up.uber.kind == "offer" else "Your Uber", href=up.uber.href, cls="tp-btn tp-btn-white", id="tp-uber"))
     return Div(Span(pulse, up.kicker, cls="tp-kicker"), Span(item.title if item else "You are all caught up", cls="tp-up-title"), Span(up.detail, cls="tp-up-sub"), leave,
-               Div(*buttons, cls="tp-up-actions") if buttons else "", up_details(item) if item else "", cls="tp-up", id="tp-up")
+               Div(*buttons, cls="tp-up-actions") if buttons else "", notes_fold(item, "ph-details") if item else "", up_details(item) if item else "", cls="tp-up", id="tp-up")
+
+
+def notes_fold(item, cls=""):
+    """F-085: the notes written on a plan, folded behind a "1 note" / "N notes" tap that opens them in place (details/summary: keyboard, screen readers, no motion)."""
+    if not item.notes:
+        return ""
+    n = len(item.notes)
+    return Details(Summary(icon("pencil", 15, 2.4), f"{n} note{'s' if n != 1 else ''}", Span(f" on {item.title}", cls="sr-only"), cls="tp-mini"),
+                   *[Span(t, cls="tp-pnote") for t in item.notes], cls=f"tp-notes {cls}".strip(), data_notes=item.id)
 
 
 def up_details(item):
     """What the list row would have shown for the up-next item (it is left out of the list): who added it, the notes on it, the confirmation behind a tap."""
     who = item.sub.split(" · ")[-1] if item.by else ""
-    if not (item.confirm or item.notes or who.startswith("added by")):
+    if not (item.confirm or who.startswith("added by")):
         return ""
     body = [Span(who, cls="tp-sub")] if who.startswith("added by") else []
-    body += [Span(icon("pencil", 13, 2.4), n, cls="tp-pnote") for n in item.notes]
     if item.confirm:
         body += [Span("Confirmation number", cls="tp-sub"), Span(item.confirm, cls="tp-conf-num")]
     return Details(Summary("Details", Span(f" for {item.title}", cls="sr-only"), cls="tp-mini"), *body, cls="ph-details tp-confirm", **({"data_confirm": item.id} if item.confirm else {}), data_up_details=item.id)
@@ -175,7 +183,7 @@ def row(item, today, ua=""):
     lock = Span(icon("lock", 14, 2.4), Span("Booked, locked", cls="sr-only"), cls="tp-lock") if booked else ""
     card = (A if item.href else Div)(Div(Span(icon(item.icon, 18, 2.2), cls="tp-ico", aria_hidden="true") if item.icon else "", Div(*inner, cls="tp-card-text"), lock, badge, cls="tp-card-in"),
                                      cls=f"tp-card {tint} is-{item.state} tp-{item.kind}{' tp-bk' if booked else ''}", **({"href": item.href} if item.href else {}), data_item=item.id)
-    extras = [Span(icon("pencil", 13, 2.4), n, cls="tp-pnote") for n in item.notes]
+    extras = [notes_fold(item)] if item.notes else []
     acts = []
     if item.place:
         acts.append(A(icon("pin", 15, 2.4), "Directions", Span(f" to {item.title}", cls="sr-only"), href=td.maps_url(item.place, ua), target="_blank", rel="noopener", cls="tp-mini tp-dir", data_dir=item.id))
