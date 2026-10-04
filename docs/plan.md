@@ -442,3 +442,8 @@ Found reviewing F-076: `pixi run forget-person` (dry run by default) is not safe
 - [ ] `--family` also removes the person's own sign-in, and only deletes a family the person owns or is the only admin of (otherwise refuses, or the operator names the family id)
 - [ ] refuses when more than one account has the email, listing them; photo and database paths are kept inside the data folder; audit rows matched exactly, not with LIKE; warns or refuses when the plain run would leave a family with no admin
 - [ ] its tests build the family database through the app's own schema and write rows through the app's own code
+
+## F-078 One address: gitaway.me [doing]
+Captain, 2026-10-04: bought gitaway.me; the site, Google sign-in and Face ID move there. · Needs: none
+- [ ] in production, a request to any other host (the old *.up.railway.app address) gets a permanent redirect to the same path and query on GITAWAY_PUBLIC_URL, except /healthz (Railway's check) and /auth/callback (a sign-in already under way finishes where it started)
+- [ ] locally and in tests nothing redirects; docs/setup.md says how to change the address
