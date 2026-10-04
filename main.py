@@ -5,6 +5,7 @@ so screens can be built independently. Sign-in, families and storage are fh-saas
 """
 
 import os
+from urllib.parse import quote
 from pathlib import Path
 
 from starlette.middleware import Middleware
@@ -76,7 +77,9 @@ class OneAddress:
             if target:
                 host = next((v.decode("latin-1") for k, v in scope.get("headers", []) if k == b"host"), "").lower()
                 if host.split(":")[0] != target.split(":")[0]:
-                    url = f"https://{target}{scope['path']}"
+                    # raw_path keeps the percent-encoding as sent (scope["path"] is decoded: %3F would become a query, non-ASCII a 500)
+                    raw = scope.get("raw_path") or quote(scope["path"]).encode()
+                    url = f"https://{target}{raw.decode('latin-1')}"
                     if scope.get("query_string"):
                         url += "?" + scope["query_string"].decode("latin-1")
                     await Response(status_code=308, headers={"location": url})(scope, receive, send)

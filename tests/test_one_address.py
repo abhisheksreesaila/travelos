@@ -63,3 +63,10 @@ def test_unset_or_invalid_url_no_redirect(monkeypatch, url):
     monkeypatch.setenv("GITAWAY_ENV", "production")
     monkeypatch.setenv("GITAWAY_PUBLIC_URL", url)
     assert hit("GET", "/", OLD).status_code != 308
+
+
+@pytest.mark.parametrize("path, expected", [("/a%3Fb", "/a%3Fb"), ("/a%23b", "/a%23b"), ("/caf%C3%A9", "/caf%C3%A9"), ("/%E2%82%AC", "/%E2%82%AC")])
+def test_the_redirect_keeps_the_path_exactly_as_sent(prod, path, expected):
+    """The path is never decoded on the way: %3F stays part of the path, and non-ASCII stays percent-encoded (no 500)."""
+    r = hit("GET", path, OLD)
+    assert r.status_code == 308 and r.headers["location"] == f"https://{NEW}{expected}"
