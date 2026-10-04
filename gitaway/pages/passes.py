@@ -180,29 +180,32 @@ def section(request, session, can_edit):
 # ---- Today: the flight on its day ---------------------------------------------------------------------------------------------
 
 def flight_cards(v):
-    """(the card or cards, the titles of the timeline items they replace) for the flights that leave on the day Today is showing, else ("", ()).
+    """(focal card, calm cards, titles of the timeline items the focal card replaces) for the flights that leave on the day Today is showing.
 
-    Only while the trip is on and the flight has not left yet: the dark focal card with boarding time, gate and seats and "Show everyone's passes"."""
+    The focal card (dark, pulsing, "Show everyone's passes") is only for the flight's own day, today, before it leaves. On any other day, or once
+    it has left, the flight is a calm card: no pulse, and a way to the gate only on a day still to come."""
     if v["phase"] != "during":
-        return "", ()
+        return "", "", ()
     session, day = v["session"], v["dates"][v["sel"]]
-    today = [f for f in passes.flights(session) if f["date"] == day]
-    if not today:
-        return "", ()
-    allp, can_edit, cards, hide = passes.listing(session), access.can_edit(v["role"]), [], []
-    for n, f in enumerate(today):
+    todays = [f for f in passes.flights(session) if f["date"] == day]
+    if not todays:
+        return "", "", ()
+    allp, can_edit, focal, calm, hide = passes.listing(session), access.can_edit(v["role"]), [], [], []
+    for n, f in enumerate(todays):
         zone = passes.flight_zone(f, v["zone"])
         ps = allp.get(f["key"], [])
         if f["source"] == "import" and not ps:
-            continue   # an imported flight is already an ordinary item of the day; it becomes the focal card once it has passes
+            continue   # an imported flight is already an ordinary item of the day; it gets a card of its own once it has passes
         boards = boards_of(ps)
-        if v["sel"] == v["today_idx"]:
-            minute = td.now_minute(zone) if catalog.today_in(zone) == day else (0 if catalog.today_in(zone) < day else 24 * 60)
+        if v["sel"] == v["today_idx"] and catalog.today_in(zone) == day:
+            minute = td.now_minute(zone)
             if minute >= f["depart_min"]:
-                continue   # it has left: the ordinary Up next card takes over
+                calm.append(_calm_card(f, n, "DEPARTED", ps, link=False))
+                continue
             kicker = f"BOARDING {td.until(boards - minute).upper()}" if boards is not None and minute < boards else f"DEPARTS {td.until(f['depart_min'] - minute).upper()}"
         else:
-            kicker = "FLIGHT DAY"
+            calm.append(_calm_card(f, n, f"FLIGHT · {day.strftime('%a %b').upper()} {day.day}", ps, link=day >= catalog.today_in(zone)))
+            continue
         hide.append(f"{f['name']} · {f['origin']} → {f['dest']}")
         stats = [(label, val) for label, val in (("BOARDING", clock(boards) if boards is not None else ""), ("GATE", gate_of(ps)), ("SEATS", seats_of(ps))) if val]
         groups = {p["grp"] for p in ps if p["grp"]}
@@ -212,15 +215,25 @@ def flight_cards(v):
             action = A(icon("plus", 18, 2.4), "Add the boarding passes", href="/trip/help#hp-passes", cls="tp-btn tp-btn-coral", id=f"pz-show-{n}")
         else:
             action = Span("No passes added yet.", cls="tp-up-sub", id=f"pz-show-{n}")
-        cards.append(Div(
+        focal.append(Div(
             Span(Span(cls="tp-pulse", aria_hidden="true"), kicker, cls="tp-kicker"),
             Span(Span(f["origin"]), icon("plane", 26, 2.2), Span(f["dest"]), cls="tp-up-title pz-route"),
             Span(flight_line(f), cls="tp-up-sub"),
             Div(*[Div(Span(k, cls="pz-sk"), Span(val, cls="pz-sv")) for k, val in stats], cls="pz-stats") if stats else "",
             action,
             Span(f"Group {next(iter(groups))}, all {len(ps)} together" if len(groups) == 1 and len(ps) > 1 else "", cls="tp-up-sub pz-grp") if groups else "",
-            cls="tp-up pz-up", id="tp-up" if not cards else f"tp-up-{n}", data_flight=f["key"]))
-    return (Div(*cards, cls="pz-ups"), tuple(hide)) if cards else ("", ())
+            cls="tp-up pz-up", id="tp-up" if not focal else f"tp-up-{n}", data_flight=f["key"]))
+    return (Div(*focal, cls="pz-stack") if focal else ""), (Div(*calm, cls="pz-stack") if calm else ""), tuple(hide)
+
+
+def _calm_card(f, n, kicker, ps, link):
+    """A quiet card for a flight that is not about to board: when and where, the passes' seats, and (for a day still to come) the way to the gate."""
+    seats = seats_of(ps)
+    return Div(Span(icon("plane", 16, 2.4), kicker, cls="pz-calm-k"),
+               Span(f"{f['origin']} → {f['dest']}", cls="pz-calm-t"),
+               Span(flight_line(f) + (f" · Seats {seats}" if seats else ""), cls="tp-sub"),
+               A(icon("ticket", 16, 2.4), "Show everyone's passes", href=gate_url(f["key"]), cls="tp-mini pz-calm-a", id=f"pz-calm-show-{n}") if link and ps else "",
+               cls="pz-calm", id=f"tp-flight-{n}", data_flight=f["key"])
 
 
 # ---- the gate view ----------------------------------------------------------------------------------------------------------

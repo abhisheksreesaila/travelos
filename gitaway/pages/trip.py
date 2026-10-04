@@ -211,8 +211,9 @@ def today_panel(v):
     elif v["phase"] != "during":
         parts.append(Div(Span(f"{_day_name(d)} · day {sel + 1} of {len(v['dates'])}", cls="tp-daynote"), cls="tp-dayhead"))
     parts.append(share_bar(v))
-    flights, flight_titles = passes_ui.flight_cards(v)   # F-083: on the flight's day, before it leaves, the flight is the focal card
+    flights, calm_flights, flight_titles = passes_ui.flight_cards(v)   # F-083: on the flight's day, before it leaves, the flight is the focal card; on other days a calm one
     parts.append(flights or up_card(v))
+    parts.append(calm_flights)
     if v["items"]:
         parts.append(route_strip(v))
         parts.append(Div(Span("THE REST OF TODAY" if v["now"] is not None else "THE DAY"), cls="ph-sec"))

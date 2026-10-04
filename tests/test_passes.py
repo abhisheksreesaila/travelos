@@ -321,6 +321,19 @@ def test_the_card_counts_down_to_departure_after_boarding_starts_and_steps_aside
     clock(10, 17, 14, 30)
     html = trip.get("/trip").text
     assert 'id="pz-show-0"' not in html and "pz-up" not in html
+    assert "pz-calm" in html and "DEPARTED" in text(html) and "Show everyone" not in html   # a calm card, no pulse, no way to the gate
+
+
+def test_on_other_days_the_flight_is_a_calm_card_and_a_past_day_has_no_gate_link(trip, ari, key, clock):
+    add_pass(trip, key, "Abhi")
+    clock(10, 16, 9, 0)                                  # the day before: look ahead at the flight's day
+    html = trip.get("/trip?day=1").text
+    calm = html.split('class="pz-calm"')[1][:1500]
+    assert "pz-up" not in html and "tp-pulse" not in calm and "FLIGHT" in text(calm) and "Show everyone's passes" in text(calm) and "2:25 PM" in text(calm)
+    clock(10, 18, 9, 0)                                  # the day after: the flight is past
+    html = trip.get("/trip?day=1").text
+    assert "pz-calm" in html and "pz-up" not in html and "Show everyone" not in html and "tp-pulse" not in html.split('class="pz-calm"')[1][:1500]
+    assert "FLIGHT" in text(html) and "United 1234" in text(html)
 
 
 def test_the_card_is_only_on_the_flights_own_day_and_only_while_the_trip_is_on(trip, ari, key, clock):

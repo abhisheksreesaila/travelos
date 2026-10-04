@@ -27,7 +27,7 @@
 .pz-edit, .pz-tools { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .pz-form { gap: 0.625rem; }
 .pz-field { display: block; min-width: 0; flex: 1; }
-.pz-field input { width: 100%; min-height: 2.75rem; padding: 0 0.875rem; border-radius: 0.875rem; border: 0.125rem solid rgba(30, 26, 46, .2); font: inherit; background: #FFFFFF; box-sizing: border-box; }
+.pz-field input { width: 100%; min-height: 2.75rem; padding: 0 0.875rem; border-radius: 0.875rem; border: 0.125rem solid rgba(30, 26, 46, .2); font: inherit; background: var(--card); box-sizing: border-box; }
 .pz-field input[type="file"] { padding: 0.5rem 0.75rem; height: auto; }
 .pz-code input { text-transform: uppercase; }
 .pz-two, .pz-three { display: flex; flex-wrap: wrap; gap: 0.5rem; }
@@ -39,7 +39,7 @@
 .pz-remove[open] .tp-sub { padding: 0.25rem 0; }
 
 /* ---- Today: the flight is the focal card ---- */
-.pz-ups { display: flex; flex-direction: column; gap: 0.75rem; }
+.pz-stack { display: flex; flex-direction: column; gap: 0.75rem; }
 .pz-route { display: flex; align-items: center; gap: 0.625rem; letter-spacing: 0.02em; }
 .pz-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(5rem, 1fr)); gap: 0.5rem; }
 .pz-stats > div { border-radius: 0.875rem; background: rgba(255, 255, 255, .1); padding: 0.375rem 0.625rem; display: flex; flex-direction: column; min-width: 0; }
@@ -49,8 +49,8 @@
 .pz-grp { text-align: center; font-weight: 700; }
 
 /* ---- the gate view: white, bright, one traveller per screen ---- */
-html:has(.gp), html:has(.gp) body { background: #FFFFFF; }
-.gp { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; background: #FFFFFF; color: var(--ink); font-family: var(--font-body); overflow-x: hidden; }
+html:has(.gp), html:has(.gp) body { background: var(--card); }
+.gp { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; background: var(--card); color: var(--ink); font-family: var(--font-body); overflow-x: hidden; }
 .gp a, .gp button { font-family: var(--font-body); color: var(--ink); }
 .gp :focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.125rem; }
 .gp-top { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: max(0.75rem, env(safe-area-inset-top)) 1rem 0.5rem; }
@@ -63,7 +63,7 @@ html:has(.gp), html:has(.gp) body { background: #FFFFFF; }
 .gp-av { width: 2.5rem; height: 2.5rem; border-radius: var(--r-pill); display: flex; align-items: center; justify-content: center; font-weight: 800; }
 .gp-name { font-family: var(--font-display); font-weight: 800; font-size: 1.75rem; }
 .gp-line { font-weight: 700; color: var(--ink-2); text-align: center; overflow-wrap: anywhere; }
-.gp-pass { width: 100%; flex: 1; min-height: 12rem; display: flex; align-items: center; justify-content: center; border-radius: 1.25rem; background: #FFFFFF; border: 0.125rem solid rgba(30, 26, 46, .12); padding: 0.5rem; box-sizing: border-box; }
+.gp-pass { width: 100%; flex: 1; min-height: 12rem; display: flex; align-items: center; justify-content: center; border-radius: 1.25rem; background: var(--card); border: 0.125rem solid rgba(30, 26, 46, .12); padding: 0.5rem; box-sizing: border-box; }
 .gp-img { max-width: 100%; max-height: 52vh; max-height: 52dvh; object-fit: contain; display: block; }
 .gp-none { margin: 0; font-weight: 700; color: var(--ink-2); text-align: center; }
 .gp-pdf { gap: 0.5rem; }
@@ -73,10 +73,15 @@ html:has(.gp), html:has(.gp) body { background: #FFFFFF; }
 .gp-v { font-family: var(--font-display); font-weight: 800; font-size: 2.25rem; line-height: 1.1; overflow-wrap: anywhere; }
 .gp-pager { display: flex; align-items: center; justify-content: center; gap: 0.75rem; padding: 0.5rem 1rem; }
 .gp-pager[hidden] { display: none; }
-.gp-round { width: 2.75rem; height: 2.75rem; border-radius: var(--r-pill); border: 0.125rem solid rgba(30, 26, 46, .2); background: #FFFFFF; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.gp-round { width: 2.75rem; height: 2.75rem; border-radius: var(--r-pill); border: 0.125rem solid rgba(30, 26, 46, .2); background: var(--card); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
 .gp-dots { display: flex; gap: 0.375rem; align-items: center; }
 .gp-dot { width: 1.5rem; height: 2.75rem; border: 0; padding: 0; background: transparent; cursor: pointer; position: relative; }
 .gp-dot::after { content: ""; position: absolute; left: 50%; top: 50%; width: 0.75rem; height: 0.75rem; margin: -0.375rem 0 0 -0.375rem; border-radius: var(--r-pill); background: rgba(30, 26, 46, .25); }
 .gp-dot[aria-current="true"]::after { background: var(--ink); }
 .gp-count { text-align: center; font-weight: 700; font-size: max(var(--text-min), 0.875rem); color: var(--ink-2); padding: 0 1rem max(0.75rem, env(safe-area-inset-bottom)); min-height: 1.25rem; }
 @media (prefers-reduced-motion: reduce) { .gp-track { scroll-behavior: auto; } }
+
+/* ---- Today: a flight that is not about to board is a calm card ---- */
+.pz-calm { border-radius: 1.25rem; background: var(--sky-tint); padding: 0.75rem 0.875rem; display: flex; flex-direction: column; gap: 0.25rem; align-items: flex-start; }
+.pz-calm-k { display: inline-flex; align-items: center; gap: 0.375rem; font-size: max(var(--text-min), 0.8125rem); font-weight: 800; letter-spacing: 0.08em; color: var(--sky-ink); }
+.pz-calm-t { font-family: var(--font-display); font-weight: 800; font-size: 1.375rem; }
