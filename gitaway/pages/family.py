@@ -5,6 +5,7 @@ POST /family/invite           (admin) invite an email as editor or viewer; the i
 POST /family/invite/revoke    (admin) take a pending invite back
 POST /family/role             (admin) change a member's role
 POST /family/remove           (admin) remove a member (or leave, for the owner while another admin remains); the last admin cannot go
+POST /family/food             (editor) the family's food preference, Vegetarian on or off, which Around you uses (F-073)
 POST /family/phone            (any member) keep my own phone number, shown on the Help tab (F-069)
 POST /family/switch           work in another of my families (any member)
 GET  /join/<token>            an invite link: sign in first if needed, then join (the signed-in email must match the invite)
@@ -21,7 +22,8 @@ from urllib.parse import quote
 from fasthtml.common import A, Button, Div, Form, H1, H2, Input, Label, Li, Link, Option, P, Script, Section, Select, Span, Ul, to_xml
 from starlette.responses import RedirectResponse, Response
 
-from gitaway import familydb, members, phones, pickers, session as ses
+from gitaway import around, familydb, members, phones, pickers, session as ses
+from gitaway.icons import icon
 from gitaway.layout import avatar, page
 from gitaway.pages import passkeys as passkeys_ui
 
@@ -99,6 +101,20 @@ def _phone_section(session, error="", typed=None):
                    aria_labelledby="fam-phone-h", id="my-phone", cls="fam-sec")
 
 
+def _food_section(session, can_edit):
+    """The family's food preference (F-073): Vegetarian starts Around you on vegetarian food and keeps it to places that serve it. An editor changes it."""
+    on = around.vegetarian(session)
+    state = Span("on" if on else "off", cls="fam-food-state", id="fam-food-state")
+    if not can_edit:
+        return Section(H2("Food", id="fam-food-h"), P("Vegetarian is ", state, ". An editor can change this.", cls="fam-sub"), aria_labelledby="fam-food-h", id="fam-food", cls="fam-sec")
+    return Section(H2("Food", id="fam-food-h"),
+                   P("When Vegetarian is on, Around you starts on vegetarian food and only lists places that serve vegetarian dishes.", cls="fam-sub"),
+                   Form(Input(type="hidden", name="vegetarian", value="0" if on else "1"),
+                        Button(icon("check", 14, 3) if on else "", f"Vegetarian: {'on' if on else 'off'}", type="submit", cls="btn btn-sm fam-btn fam-food-btn", id="fam-food-toggle", aria_pressed="true" if on else "false"),
+                        action="/family/food", method="post", cls="fam-inline"),
+                   aria_labelledby="fam-food-h", id="fam-food", cls="fam-sec")
+
+
 def family_page(request, session, error="", status=200, email="", role="editor", phone_error="", phone_typed=None):
     user, tid = request.state.user, session["tenant_id"]
     me, my_role = user["user_id"], request.state.family_role
@@ -135,7 +151,7 @@ def family_page(request, session, error="", status=200, email="", role="editor",
         switcher,
         Section(H2("Who is in", id="fam-members-h"), Ul(*[_member_row(m, me, my_role, tid) for m in crew], cls="fam-list", id="fam-members"),
                 note, aria_labelledby="fam-members-h", cls="fam-sec"),
-        _phone_section(session, phone_error, phone_typed), passkeys_ui.family_section(request, session), alone, waiting, invite_form,
+        _phone_section(session, phone_error, phone_typed), _food_section(session, my_role in ("admin", "editor")), passkeys_ui.family_section(request, session), alone, waiting, invite_form,
         cls="fam",
     ), head=HEAD)
     return out if status == 200 else Response(to_xml(out), status_code=status, media_type="text/html")
@@ -186,6 +202,11 @@ def register(app):
     @app.post("/family/remove")
     def remove(request, session, user: str = ""):
         return _admin_action(request, session, lambda: members.remove(session["tenant_id"], request.state.user["user_id"], user))
+
+    @app.post("/family/food")
+    def food(request, session, vegetarian: str = "0"):
+        around.set_vegetarian(session, vegetarian == "1")
+        return RedirectResponse("/family#fam-food", status_code=303)
 
     @app.post("/family/phone")
     def phone(request, session, phone: str = ""):
