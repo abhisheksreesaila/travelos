@@ -212,7 +212,7 @@ html[data-cz-dir="side"]::view-transition-new(root) { animation: cz-come-side va
   .cz .cz-row { display: flex; flex-direction: column; }
   .cz .cz-badge { flex-direction: row; gap: 0.5rem; min-height: 2.75rem; }
   .cz .cz-simple { flex-wrap: wrap; }
-  .cz .cz-card-t { flex-basis: 8rem; }
+  .cz .cz-wcard .cz-card-t { flex-basis: 8rem; }
   .cz .cz-row-link, .cz .cz-row:not(.is-free) .cz-row-link { grid-column: auto; }
   .cz .cz-plus { align-self: flex-end; margin-top: -3.25rem; margin-right: 0.25rem; }
   .cz .cz-strip { display: grid; grid-template-columns: repeat(var(--days, 7), minmax(0, 1fr)); gap: 0.5rem; }

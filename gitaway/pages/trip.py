@@ -93,7 +93,7 @@ def _with_extras(items, b, notes, session, who, family, with_steps=()):
             x = replace(x, confirm=conf)
         elif x.kind == "plan":
             x = replace(x, notes=tuple(f"{calui.note_writer(n, who, people, family)[0]}: {n.text}" for n in notes if n.act == x.id),
-                        href=f"/trip/canvas?block={x.id}" if x.id in with_steps else x.href)
+                        href=f"/trip/canvas?block={x.id}&trip={ses.open_trip_id()}" if x.id in with_steps else x.href)
         out.append(x)
     return out
 

@@ -12,7 +12,7 @@ from gitaway import canvas, catalog, session as ses, tripcal as cal
 from tests.test_canvas import announced, azure, rows  # noqa: F401 - fixtures
 from tests.test_canvas_pages import added, crew  # noqa: F401 - fixtures
 from tests.test_signin import person
-from tests.test_trip_canvas import step_id, tag, trip, uni_id  # noqa: F401 - fixtures
+from tests.test_trip_canvas import bare, step_id, tag, trip, uni_id  # noqa: F401 - fixtures
 
 JS = {"x-canvas": "1"}
 
@@ -75,7 +75,7 @@ def test_a_step_dropped_on_another_day_from_the_block_follows_it_to_that_block(t
     uni, other = uni_id(), dca()
     sid = step_id(trip, "Minion Mayhem")
     r = trip.post("/trip/canvas/move", data={"step": sid, "act": other, "next": f"/trip/canvas?block={uni}"}, headers=JS).json()
-    assert r["url"] == f"/trip/canvas?block={other}" and r["toast"].startswith("Minion Mayhem moved to ")
+    assert bare(r["url"]) == f"/trip/canvas?block={other}" and r["toast"].startswith("Minion Mayhem moved to ")
     day = trip.post("/trip/canvas/move", data={"step": step_id(trip, "King Kong"), "act": other, "next": "/trip/canvas?day=1"}, headers=JS).json()
     assert day["url"] == "/trip/canvas?day=1"          # the day stays the day
 
@@ -113,7 +113,7 @@ def test_the_way_back_after_a_move_can_only_be_a_canvas_address(trip):
     sid = step_id(trip, "Minion Mayhem")
     for evil in ("https://evil.example/", "//evil.example", "/calendar", ""):
         r = trip.post("/trip/canvas/move", data={"step": sid, "part": part_of(uni_id(), "Lunch")["id"], "next": evil}, headers=JS).json()
-        assert r["url"] == "/trip/canvas"
+        assert bare(r["url"]) == "/trip/canvas"
 
 
 # ---- a write belongs to the trip the page was drawn for ----------------------------------------------------------------------
@@ -171,7 +171,7 @@ def test_a_step_is_added_from_the_sheet_and_lands_in_the_chosen_part(trip, annou
     me = person("ari")["user_id"]
     data = {**form_data(f), "title": "Churro break", "part": lunch, "time": "12:15", "note": "Cinnamon", "who": [f"m:{me}", "g:Kids"]}
     r = trip.post("/trip/canvas/add", data=data, headers=JS)
-    assert r.status_code == 200 and r.json() == {"url": f"/trip/canvas?block={uni}", "toast": "Churro break added"}
+    assert r.status_code == 200 and bare(r.json()["url"]) == f"/trip/canvas?block={uni}" and r.json()["toast"] == "Churro break added"
     got = [s for s in part_of(uni, "Lunch")["steps"] if s["title"] == "Churro break"][0]
     assert got["time"] == "12:15" and got["note"] == "Cinnamon" and got["who_key"] == tuple(sorted([f"m:{me}", "g:Kids"]))
     page = trip.get(f"/trip/canvas?block={uni}").text
@@ -211,9 +211,9 @@ def test_the_sheet_is_prefilled_from_a_list_chip_and_a_part_link(trip):
 def test_add_a_step_is_a_button_on_the_block_for_editors_and_the_sheet_closes_back_to_the_block(trip):
     uni = uni_id()
     page = trip.get(f"/trip/canvas?block={uni}").text
-    assert f'href="/trip/canvas?block={uni}&amp;add=1"' in tag(page, "cz-add") and "Add a step" in page and 'data-zk="stp-new"' in tag(page, "cz-add")
+    assert f'href="/trip/canvas?block={uni}&amp;add=1"' in bare(tag(page, "cz-add")) and "Add a step" in page and 'data-zk="stp-new"' in tag(page, "cz-add")
     sheet = trip.get(f"/trip/canvas?block={uni}&add=1").text
-    assert sheet.count('data-zk="stp-new"') == 1 and f'href="/trip/canvas?block={uni}"' in sheet.split("cz-sheet-wrap")[1]
+    assert sheet.count('data-zk="stp-new"') == 1 and f'href="/trip/canvas?block={uni}"' in bare(sheet.split("cz-sheet-wrap")[1])
     assert trip.get(f"/trip/canvas?block={uni}&add=1&frag=1").text.startswith("<section")
 
 
@@ -226,7 +226,7 @@ def test_a_note_is_added_edited_and_cleared_from_the_step_sheet(trip):
     f = forms_in(sheet, "/trip/canvas/note")[0]
     assert "name=\"trip\"" in f
     r = trip.post("/trip/canvas/note", data={**form_data(f), "note": "Go first!"}, follow_redirects=False)
-    assert r.status_code == 303 and r.headers["location"] == f"/trip/canvas?step={sid}"
+    assert r.status_code == 303 and bare(r.headers["location"]) == f"/trip/canvas?step={sid}"
     again = trip.get(r.headers["location"]).text
     assert "Go first!" in again and "Edit the note" in again
     assert trip.post("/trip/canvas/note", data={**form_data(f), "note": ""}, headers=JS).status_code == 204
@@ -293,7 +293,7 @@ def test_an_editor_sees_the_drag_data_the_swipe_actions_and_the_drop_targets(tri
     assert opening_tags(day, "cz-part") and all(t.get("data-act") == uni and t.get("data-part") for t in opening_tags(day, "cz-part"))
     swipe = forms_in(block, "/trip/canvas/step")
     assert any(re.search(r'name="do" value="done"', f) for f in swipe) and any('name="do" value="aside"' in f for f in swipe)
-    assert all(f'value="/trip/canvas?block={uni}"' in f for f in swipe if "cz-sw-form" in f)
+    assert all(f'value="/trip/canvas?block={uni}"' in bare(f) for f in swipe if "cz-sw-form" in f)
     for f in swipe[:6]:
         r = trip.post("/trip/canvas/step", data=form_data(f), follow_redirects=False)
         assert r.status_code == 303 and r.headers["location"].startswith("/trip/canvas?block=")

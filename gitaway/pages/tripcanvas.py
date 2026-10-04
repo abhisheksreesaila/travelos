@@ -40,6 +40,8 @@ def curl(day=None, block="", step="", add=False, part="", title="", note="", err
     q = {"step": step} if step else {"block": block} if block else {"day": day} if day is not None else {}
     if add and block:
         q = {"block": block, "add": "1", **{k: v for k, v in (("part", part), ("title", title), ("note", note), ("err", err)) if v}}
+    if (trip := ses.open_trip_id()):
+        q["trip"] = trip      # a tab left open on one trip stays on it after the family opens another
     return "/trip/canvas" + (f"?{urlencode(q)}" if q else "")
 
 
@@ -85,8 +87,16 @@ def entries(v, day):
     return [(kind, x) for _, kind, x in sorted(out, key=lambda e: (e[0], e[1] != "booked"))]
 
 
+def has_block(v, act_id):
+    """A block exists when it has parts, its activity is live and its day is inside the trip."""
+    a = v["by_id"].get(act_id)
+    return bool(a) and act_id in v["plan"] and 0 <= a.day < len(v["dates"])
+
+
 def find_step(v, step_id):
     for act_id, blk in v["plan"].items():
+        if not has_block(v, act_id):
+            continue
         for p in blk["parts"]:
             for s in p["steps"]:
                 if s["id"] == step_id:
@@ -297,10 +307,10 @@ def _chip(s, edit, hero=True):
                 sticker(s["note"], cls="cz-sticker-chip") if s["note"] else "", cls="cz-chipwrap", data_step=s["id"], **step_data(s, edit))
 
 
-def _tray(steps, edit, ident="cz-tray"):
+def _tray(steps, edit, ident="cz-tray", open_id=""):
     if not steps:
         return ""
-    chips = [A(icon("undo", 14, 2.4), Span(s["title"], cls="cz-chip-t"), href=curl(step=s["id"]), cls="cz-chip cz-chip-aside", data_zoom="in", data_zk=f"stp-{s['id']}", **step_data(s, edit)) for s in steps]
+    chips = [A(icon("undo", 14, 2.4), Span(s["title"], cls="cz-chip-t"), href=curl(step=s["id"]), cls="cz-chip cz-chip-aside", data_zoom="in", **({"data_zk": f"stp-{s['id']}"} if s["id"] != open_id else {}), **step_data(s, edit)) for s in steps]
     return Section(Div(H3(icon("tray", 16, 2.4), f"Set aside · {len(steps)}", cls="cz-tray-t"), Span("still in the trip", cls="cz-sub"), cls="cz-tray-h"), Div(*chips, cls="cz-tray-chips"), cls="cz-tray", id=ident, aria_label="Set aside")
 
 
@@ -416,7 +426,7 @@ def block_view(v, act_id, open_step=None, adding=None):
     body = [head(v, kicker, a.title, key=f"blk-{a.id}", back=curl(day=a.day), back_label="Zoom out to the day", faces=faces_of(allsteps, 4)),
             Div(*notes, cls="cz-notes") if notes else "", Div(Span(f"{done} of {n} done", cls="cz-prog"), legend, add_btn, cls="cz-block-meta"),
             filter_bar(v), *([dropbars(v)] if editor else []),
-            Div(*sections, cls="cz-bparts"), *listmore(v, a), Div(_tray(blk["aside"], editor), cls="cz-block-side"), *lists]
+            Div(*sections, cls="cz-bparts"), *listmore(v, a), Div(_tray(blk["aside"], editor, open_id=open_id), cls="cz-block-side"), *lists]
     if open_step:
         body.append(sheet(v, open_step, a))
     elif adding is not None:
@@ -529,7 +539,7 @@ def resolve(v, day="", block="", step="", add=None):
         found = find_step(v, step[:40])
         return ("step", block_view(v, found[1], found)) if found else None
     if block:
-        if block[:8] not in v["plan"] or block[:8] not in v["by_id"]:
+        if not has_block(v, block[:8]):
             return None
         opening = add if add is not None and access.can_edit(v["role"]) and v["plan"][block[:8]]["parts"] else None
         return ("step" if opening is not None else "block", block_view(v, block[:8], adding=opening))
@@ -574,6 +584,8 @@ def register(app):
         adding = {"part": part[:40], "title": title[:80], "note": note[:canvas.MAX_NOTE], "err": err[:8]} if add == "1" else None
         got = resolve(v, day[:3], block, step[:40], adding)
         if got is None:
+            if frag == "1":
+                return Response("not found", status_code=404, media_type="text/plain")   # the script then loads the address as a page, which goes to the week
             return RedirectResponse(curl(), status_code=303)
         level, vw = got
         if frag == "1":

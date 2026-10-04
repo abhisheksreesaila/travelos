@@ -331,7 +331,7 @@ def open_add(page, act="a1"):
 def test_add_a_step_with_who_part_time_and_a_note(canvas_page):
     page = canvas_page(viewport=TALL)
     open_add(page)
-    assert page.url.endswith("block=a1&add=1")
+    assert "block=a1&add=1" in page.url
     assert page.locator("#cz-sheet-title").inner_text() == "Universal Studios Hollywood"
     expect(page.locator(".ga-pick-btn, .ga-time, [data-ga-label='When']").first).to_be_attached()
     checks(page)
