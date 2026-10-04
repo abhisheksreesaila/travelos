@@ -20,6 +20,8 @@
   var cache = {};          // url -> { at, promise }: a level fetched as the finger went down, used by the tap that follows
   var busy = false;
   var waiting = null;      // the browser's Back or Forward pressed while a zoom was running: run it when that zoom is done
+  var idleQ = [];          // work that needs the zoom to be finished (a refresh after a drop)
+  function whenIdle(fn) { if (busy) idleQ.push(fn); else fn(); }
   var swallow = 0;         // a pinch ends with finger lifts that must not count as taps
 
   function path(u) { var a = document.createElement('a'); a.href = u; return a.pathname + a.search; }
@@ -111,6 +113,7 @@
     }).catch(function () { location.href = u; }).then(function () {
       busy = false;
       if (waiting) { waiting = null; goto(path(location.href), { mode: 'pop' }); }     // the address bar is the truth: show what it says
+      while (idleQ.length && !busy) idleQ.shift()();
     });
   }
 
@@ -166,7 +169,9 @@
     });
   }
   function here() { return path(location.href); }
-  function refresh() { cache = {}; return goto(here(), { dir: 'side', mode: 'stay', key: null }); }
+  function refresh() {      // a drop or an Undo that lands during a zoom waits for it, then shows the level as it is now
+    return new Promise(function (done) { whenIdle(function () { cache = {}; goto(here(), { dir: "side", mode: "stay", key: null }).then(done, done); }); });
+  }
 
   document.addEventListener('submit', function (e) {
     var f = e.target;

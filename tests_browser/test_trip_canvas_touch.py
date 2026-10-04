@@ -732,3 +732,79 @@ def test_screenshots(canvas_page):
     page.screenshot(path=f"{out}/09-step-sheet-note-and-move-390.png")
     page.locator(".cz-move-sum").click()
     page.screenshot(path=f"{out}/10-move-menu-390.png")
+
+
+# ---- review fixes: real touch events (CDP), a cancelled drag ---------------------------------------------------------------------
+
+def touch(cdp, kind, x, y):
+    cdp.send("Input.dispatchTouchEvent", {"type": kind, "touchPoints": [] if kind == "touchEnd" else [{"x": x, "y": y, "id": 1}]})
+
+
+def test_a_real_finger_held_still_then_moved_lifts_the_step_and_the_page_does_not_scroll(canvas_page):
+    page = canvas_page(viewport={"width": 390, "height": 844})
+    block(page)
+    cdp = page.context.new_cdp_session(page)
+    page.locator('.cz-swipe:has-text("Minion Mayhem")').evaluate("e => e.scrollIntoView({block: 'center'})")
+    x, y, _ = centre(page, '.cz-swipe:has-text("Minion Mayhem") .cz-step')
+    y0 = page.evaluate("scrollY")
+    touch(cdp, "touchStart", x, y)
+    page.wait_for_timeout(550)
+    expect(page.locator(".cz-lift")).to_have_count(1)
+    y0 = page.evaluate("scrollY")
+    for i in range(1, 8):
+        touch(cdp, "touchMove", x, y + i * 12)
+        page.wait_for_timeout(20)
+    assert abs(page.evaluate("scrollY") - y0) < 2                 # the held step moves, the page does not
+    touch(cdp, "touchEnd", x, y + 84)
+    expect(page.locator(".cz-lift")).to_have_count(0)
+
+
+def test_a_real_finger_that_moves_at_once_is_a_scroll_and_lifts_nothing(canvas_page):
+    page = canvas_page(viewport={"width": 390, "height": 844})
+    block(page)
+    cdp = page.context.new_cdp_session(page)
+    x, y, _ = centre(page, '.cz-swipe:has-text("King Kong") .cz-step')
+    y0 = page.evaluate("scrollY")
+    touch(cdp, "touchStart", x, y)
+    for i in range(1, 12):
+        touch(cdp, "touchMove", x, y - i * 20)
+        page.wait_for_timeout(16)
+    page.wait_for_timeout(450)
+    touch(cdp, "touchEnd", x, y - 220)
+    assert page.locator(".cz-lift").count() == 0 and page.locator(".cz-toast").count() == 0
+    assert page.evaluate("scrollY") > y0 + 20 or page.evaluate("scrollY") != y0
+    assert page.locator(".is-lifted").count() == 0
+
+
+def test_a_pointercancel_during_a_drag_leaves_no_lifted_chip_and_changes_nothing(canvas_page):
+    page = canvas_page(viewport=TALL)
+    block(page)
+    before = part_titles("a1", "Upper Lot")
+    start = hold(page, '.cz-swipe:has-text("Minion Mayhem") .cz-step')
+    expect(page.locator(".cz-lift")).to_have_count(1)
+    x, y, b = centre(page, '.cz-bpart:has(h2:text-is("Lunch"))')
+    end = move_to(page, start, (x, b["y"] + 20))
+    fire(page, "pointercancel", *end)
+    expect(page.locator(".cz-lift")).to_have_count(0)
+    assert page.locator(".is-lifted, .is-target, .is-before, .is-end").count() == 0
+    assert "cz-dragging" not in page.locator("#cz").get_attribute("class")
+    page.wait_for_timeout(300)
+    assert page.locator(".cz-toast").count() == 0 and part_titles("a1", "Upper Lot") == before
+
+
+def test_a_drop_that_lands_during_a_zoom_waits_for_it_and_then_refreshes(canvas_page):
+    page = canvas_page(viewport=TALL, motion="no-preference")
+    block(page)
+    settle(page)
+    page.evaluate("""() => { const real = document.startViewTransition.bind(document);
+      document.startViewTransition = (cb) => real(async () => { await cb(); await new Promise(r => setTimeout(r, 1200)); }); }""")
+    start = hold(page, '.cz-swipe:has-text("Minion Mayhem") .cz-step')
+    expect(page.locator(".cz-lift")).to_have_count(1)
+    x, y, b = centre(page, '.cz-bpart:has(h2:text-is("Lunch"))')
+    end = move_to(page, start, (x, b["y"] + b["height"] - 6))
+    page.evaluate("document.querySelector('.cz-back').click()")           # a zoom out starts, and stays busy for over a second
+    fire(page, "pointerup", *end)                                          # the drop lands while it runs
+    expect(toast(page)).to_contain_text("Minion Mayhem moved to Lunch", timeout=9000)
+    assert part_titles("a1", "Lunch")[-1] == "Minion Mayhem"
+    expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
+    expect(page.locator('.cz-part:has(.cz-part-t:text-is("Lunch")) .cz-chipwrap:has-text("Minion Mayhem")')).to_have_count(1)     # the level shown is the fresh one

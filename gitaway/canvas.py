@@ -542,6 +542,11 @@ def list_hits(step_title, lists) -> list:
     return [lst["id"] for lst in lists if any(same_step(step_title, i["title"]) for i in lst["items"])]
 
 
+def _live(db, trip_id, act_id) -> bool:
+    """Is that block a live calendar activity of this trip (not deleted)?"""
+    return bool(familydb.row(db, "SELECT 1 AS x FROM activities WHERE trip_id = :t AND scope = '' AND act_id = :a AND gone = 0", t=trip_id, a=act_id))
+
+
 def _ordered(db, trip_id, part_id, skip=""):
     return [r for r in familydb.rows(db, "SELECT * FROM block_steps WHERE trip_id = :t AND part_id = :p AND aside = 0 ORDER BY position, rowid", t=trip_id, p=part_id) if r["id"] != skip]
 
@@ -588,7 +593,7 @@ def move_step(session, step_id, *, part="", before="", act="", aside=False) -> d
                 target = next((p for p in options if mine and p["name"] == mine["name"]), options[0] if options else None)
             else:
                 raise CanvasError("Pick where to put it.")
-            if not target:
+            if not target or not _live(db, trip, target["act_id"]):
                 raise CanvasError("That place is not in this trip.")
             tgt = _ordered(db, trip, target["id"], skip=s["id"])
             src = _ordered(db, trip, s["part_id"], skip=s["id"]) if s["part_id"] and s["part_id"] != target["id"] else []
@@ -643,7 +648,7 @@ def restore(session, snapshot) -> str:
                     owner = familydb.row(db, "SELECT act_id FROM block_parts WHERE id = :p AND trip_id = :t", p=part, t=trip)
                     valid = bool(owner) and owner["act_id"] == act
                 else:
-                    valid = bool(familydb.row(db, "SELECT 1 AS x FROM block_parts WHERE act_id = :a AND trip_id = :t", a=act, t=trip))
+                    valid = aside == 1 and bool(familydb.row(db, "SELECT 1 AS x FROM block_parts WHERE act_id = :a AND trip_id = :t", a=act, t=trip))
                 if not valid:
                     raise CanvasError("There is nothing to undo.")
                 ok.append((row, act, part, pos, tm, aside))
@@ -690,7 +695,7 @@ def add_step(session, act_id, part_id, title, time="", who=(), note="") -> str:
         if len(tokens) > MAX_WHO:
             raise CanvasError("Pick up to six people, or leave it for everyone.")
         with familydb.transaction(db):
-            if not familydb.row(db, "SELECT 1 AS x FROM block_parts WHERE id = :p AND trip_id = :t AND act_id = :a", p=part_id, t=trip, a=act_id):
+            if not _live(db, trip, act_id) or not familydb.row(db, "SELECT 1 AS x FROM block_parts WHERE id = :p AND trip_id = :t AND act_id = :a", p=part_id, t=trip, a=act_id):
                 raise CanvasError("Pick a part of this day.")
             if familydb.row(db, "SELECT COUNT(*) AS n FROM block_steps WHERE trip_id = :t", t=trip)["n"] >= MAX_STEP_PER_TRIP:
                 raise CanvasError(cal.FULL)

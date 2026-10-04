@@ -494,7 +494,7 @@ def sheet(v, found, a):
                Div(Div(cls="cz-grab", aria_hidden="true"),
                    Div(Div(*[Span(x, cls="cz-pill") for x in (part, where) if x], cls="cz-pills"), A(icon("x", 20, 2.6), href=close, cls="cz-close", aria_label="Close", data_zoom="out"), cls="cz-sheet-top"),
                    H2(s["title"], id="cz-sheet-title", tabindex="-1"), Span(state, cls="cz-state", id="cz-state") if state else "",
-                   sticker(s["note"], "From your messages", cls="cz-sticker-sheet") if s["note"] else "",
+                   sticker(s["note"], "Note", cls="cz-sticker-sheet") if s["note"] else "",
                    Div(Span("Who's going", cls="cz-label"), who), buttons, more,
                    cls="cz-sheet", role="dialog", aria_modal="true", aria_labelledby="cz-sheet-title", data_zk=f"stp-{s['id']}", data_step=s["id"]), cls="cz-sheet-wrap")
 

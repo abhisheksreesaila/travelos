@@ -282,3 +282,37 @@ def test_the_pregnancy_safe_list_has_four_rides_in_the_california_day_and_four_n
     assert sorted(hits) == sorted(["Web Slingers", "Toy Story Midway Mania", "Soarin'", "The Little Mermaid"])
     missing = [i["title"] for i in lists[0]["items"] if not any(canvas.same_step(x["title"], i["title"]) for x in steps)]
     assert len(missing) == 4 and "Golden Zephyr" in missing
+
+
+# ---- review fixes ----------------------------------------------------------------------------------------------------------
+
+def test_restore_needs_a_part_for_a_step_that_is_not_in_the_tray(trip):
+    me = person("ari")
+    s, act, p = find("King Kong")
+    good = canvas.move_step(me, s["id"], part=part_id(act, "Lunch"))["undo"]
+    before = state()
+    bad = {**good, "steps": [{**good["steps"][0], "part": "", "aside": 0}]}
+    with pytest.raises(canvas.CanvasError):
+        canvas.restore(me, bad)
+    assert state() == before
+
+
+def set_gone(act):
+    with ses.family(person("ari")) as fam:
+        with familydb.transaction(fam.db):
+            familydb.run(fam.db, "UPDATE activities SET gone = 1 WHERE act_id = :a", a=act)
+
+
+def test_moving_or_adding_into_a_deleted_block_is_refused(trip):
+    me = person("ari")
+    s, act, p = find("King Kong")
+    other = other_block(act)
+    target_part = plan()["blocks"][other]["parts"][0]["id"]
+    set_gone(other)
+    before = state()
+    for kw in (dict(act=other), dict(part=target_part)):
+        with pytest.raises(canvas.CanvasError):
+            canvas.move_step(me, s["id"], **kw)
+    with pytest.raises(canvas.CanvasError):
+        canvas.add_step(me, other, target_part, "Ghost")
+    assert state() == before

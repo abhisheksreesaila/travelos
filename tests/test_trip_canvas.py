@@ -175,7 +175,7 @@ def test_the_step_sheet_has_the_note_who_and_the_buttons(trip):
     sid = step_id(trip, "Hippogriff")
     page = trip.get(f"/trip/canvas?step={sid}").text
     assert 'data-level="step"' in page and 'role="dialog"' in page and 'aria-modal="true"' in page and "Hippogriff" in page
-    assert "H and B walk" in page and "From your messages" in page and page.count("cz-av-initials") >= 2
+    assert "H and B walk" in page and "From your messages" not in page and ">Note<" in page and page.count("cz-av-initials") >= 2
     assert "Mark done" in page and "Set aside" in page and 'action="/trip/canvas/step"' in page and 'name="trip"' in page
     assert f'data-zk="stp-{sid}"' in page and page.count(f'data-zk="stp-{sid}"') == 1       # the open step is the sheet, never also its row
     assert f'href="/trip/canvas?block={uni_id()}"' in bare(page)
