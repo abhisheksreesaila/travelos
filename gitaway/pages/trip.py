@@ -18,7 +18,7 @@ from fasthtml.common import NotStr, A, Button, Details, Div, Form, H1, H2, Heade
 from fasthtml.core import FtResponse
 from starlette.responses import RedirectResponse
 
-from gitaway import access, catalog, geo, members, phone, tripgeo, pickers, session as ses, tripcal as cal, tripday as td
+from gitaway import access, canvas, catalog, geo, members, phone, tripgeo, pickers, session as ses, tripcal as cal, tripday as td
 from gitaway.icons import icon
 from gitaway.layout import avatar, join_note, trip_field
 from gitaway.pages import calendar as calui, morning as morning_ui, passes as passes_ui, passkeys as passkeys_ui, rides as rides_ui
@@ -52,6 +52,7 @@ def load(session, day_arg="", ua=""):
     role = access.request_role()
     offers = cal.ride_offers(session, b, t) if role != "viewer" else []  # scheduling an Uber is a write
     acts, notes = cal.activities(session), cal.notes(session)
+    with_steps = canvas.block_ids(session)   # F-080: a plan with parts and steps opens its block
     zone = ses.trip_zone(session)
     plan = cal.plan_of(b) if cal.is_imported(b) else None
     here = td.clock_zone(plan, zone)  # where the traveler is now: before the arrival flight lands, the departure airport's zone
@@ -71,7 +72,7 @@ def load(session, day_arg="", ua=""):
     added_name = lambda a: a.by or ("you" if not a.by_id or a.by_id == who.id else family.get(a.by_id, calui.FORMER).name)  # noqa: E731
 
     def items_of(day, now_=None, past_=False):
-        return _with_extras(td.timeline(day, blocks, acts, offers, dest, added_name=added_name, hotel_place=td.hotel_place(b, dates, day), ride_href=ride_href, detail_href=detail_href, now=now_, past=past_, clocks=clocks, zone=zone), b, notes, session, who, family)
+        return _with_extras(td.timeline(day, blocks, acts, offers, dest, added_name=added_name, hotel_place=td.hotel_place(b, dates, day), ride_href=ride_href, detail_href=detail_href, now=now_, past=past_, clocks=clocks, zone=zone), b, notes, session, who, family, with_steps)
 
     items = items_of(sel, now, past)
     tomorrow = items_of(sel + 1) if sel < last else []
@@ -81,8 +82,8 @@ def load(session, day_arg="", ua=""):
                 crew=members.crew(session), next=cal.next_id(session))
 
 
-def _with_extras(items, b, notes, session, who, family):
-    """Each booked item with its confirmation number (shown behind a tap), each plan with the notes written on it."""
+def _with_extras(items, b, notes, session, who, family, with_steps=()):
+    """Each booked item with its confirmation number (shown behind a tap), each plan with the notes written on it, and the way into its parts and steps (F-080)."""
     people = {f.name.casefold(): f for f in ses.friends(session)}
     out = []
     for x in items:
@@ -91,7 +92,8 @@ def _with_extras(items, b, notes, session, who, family):
             conf = next((v for k, v in detail[1] if k == "Confirmation"), "") if detail else ""
             x = replace(x, confirm=conf)
         elif x.kind == "plan":
-            x = replace(x, notes=tuple(f"{calui.note_writer(n, who, people, family)[0]}: {n.text}" for n in notes if n.act == x.id))
+            x = replace(x, notes=tuple(f"{calui.note_writer(n, who, people, family)[0]}: {n.text}" for n in notes if n.act == x.id),
+                        href=f"/trip/block?id={x.id}&trip={ses.open_trip_id()}" if x.id in with_steps else x.href)
         out.append(x)
     return out
 
@@ -343,6 +345,7 @@ def header(v, tab):
     kicker = day_of if tab == "today" else dates
     return Header(Div(Span(kicker, cls="tp-head-k", id="tp-head-k", data_today=day_of, data_other=dates),
                       H1({"today": _title_today(v), "days": f"Your {len(v['dates'])} days", "notes": "Trip notes"}[tab], id="tp-title-h"),
+                      A(icon("pencil", 14, 2.4), "Add to the trip", href="/trip/add", cls="btn btn-sm tp-edit tp-addtrip", id="tp-add-trip") if access.can_edit(v["role"]) and tab == "today" else "",
                       A(icon("pencil", 14, 2.4), "Edit trip", href=f"/trips/build/edit?trip={ses.open_trip_id()}", cls="btn btn-sm tp-edit", id="tp-edit-trip") if access.can_edit(v["role"]) and cal.is_imported(v["b"]) and ses.open_trip_id() else "",
                       cls="tp-head-text"),
                   Div(*faces, cls="tp-faces"), cls="tp-head")

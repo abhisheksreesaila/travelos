@@ -691,6 +691,9 @@ def delete_activity(session, id_, demo=""):
             if row is None:
                 return None
             familydb.run(db, "DELETE FROM notes WHERE trip_id = :t AND scope = :s AND gone = 1", t=fam.trip_id, s=scope)  # the earlier one can no longer be undone: remove it for good
+            if not scope:   # the parts and steps of a block go with the block (F-080)
+                familydb.run(db, "DELETE FROM block_steps WHERE trip_id = :t AND act_id IN (SELECT act_id FROM activities WHERE trip_id = :t AND scope = '' AND gone = 1)", t=fam.trip_id)
+                familydb.run(db, "DELETE FROM block_parts WHERE trip_id = :t AND act_id IN (SELECT act_id FROM activities WHERE trip_id = :t AND scope = '' AND gone = 1)", t=fam.trip_id)
             familydb.run(db, "DELETE FROM activities WHERE trip_id = :t AND scope = :s AND gone = 1", t=fam.trip_id, s=scope)
             familydb.run(db, "UPDATE activities SET gone = 1 WHERE pk = :pk", pk=row["pk"])
             dead = [d for d in (st.get("dead") or "").split(",") if d] + [id_]
@@ -984,6 +987,9 @@ def remove_plans(session, plans, ids, by="", note_id=None, note_prefix="", demo=
             drop = [r for r in _live_acts(db, fam.trip_id, scope) if r["act_id"] in gone and (r["author"] or "") == author and (r["day"], r["start_min"], r["title"]) in mine]
             for r in drop:
                 familydb.run(db, "DELETE FROM notes WHERE trip_id = :t AND scope = :s AND act_id = :i", t=fam.trip_id, s=scope, i=r["act_id"])
+                if not scope:
+                    familydb.run(db, "DELETE FROM block_steps WHERE trip_id = :t AND act_id = :i", t=fam.trip_id, i=r["act_id"])
+                    familydb.run(db, "DELETE FROM block_parts WHERE trip_id = :t AND act_id = :i", t=fam.trip_id, i=r["act_id"])
                 delete_record(db, "activities", r["pk"], "pk", auto_commit=False)
             if drop:
                 _say(session, fam, scope, f"{_who(fam)} removed {_list([r['title'] for r in drop])}", "remove")

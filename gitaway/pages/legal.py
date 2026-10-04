@@ -56,7 +56,8 @@ def privacy():
             Li(Strong("Nominatim (OpenStreetMap)"), " finds places. It gets place text only, such as a hotel name or a city."),
             Li(Strong("OSRM (router.project-osrm.org)"), " works out drives. It gets pairs of coordinates, not names."),
             Li(Strong("OpenStreetMap map tiles"), " (tile.openstreetmap.org) draw the map tab. They see your IP address and the area of the map you look at."),
-            Li(Strong("Apple and Google push services"), " carry the morning plan and notices of family messages and plan changes to your phone. The messages are encrypted, so they cannot read them."))),  # F-072: when the assistant ships, add a Gemini bullet here (Google's AI; gets what you ask and the plan it needs) and a test phrase.
+            Li(Strong("Apple and Google push services"), " carry the morning plan and notices of family messages and plan changes to your phone. The messages are encrypted, so they cannot read them."),
+            Li(Strong("Azure OpenAI (Microsoft)"), " reads the messages you paste into Add to the trip when you tap Convert, and turns them into a plan. It gets the text you pasted (so anything you wrote in it, such as a first name) and nothing we add: no list of your family, no emails, no photos. We log that a call happened, which feature it was for, how many tokens it used and how long it took, never what was in it. Later assistant features (speaking a change, asking a question) send what you say or ask in the same way."))),  # a new outside AI service gets a bullet here and a test phrase (F-079 logs every call: docs/ai-usage.md)
         ("Selling and ads", P("We do not sell your information. We do not show ads and we do not use anything you add for ads or to build a profile of you.")),
         ("Cookies", P("One cookie keeps you signed in, for up to 30 days. We use no tracking or advertising cookies.")),
         ("Getting your data deleted",

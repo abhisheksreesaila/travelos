@@ -12,6 +12,7 @@ would delete (a dry run). Tables that do not exist yet are skipped.
 """
 
 import argparse
+import json
 import os
 import shutil
 import sqlite3
@@ -87,10 +88,53 @@ def plan(folder: Path, email: str, family=False, content=False):
     return rows, paths
 
 
+def scrub(folder: Path, email: str, yes=False) -> dict:
+    """F-080: take the person's "m:<id>" out of the `who` of block steps and the `for_who` of trip lists in their families (the steps and lists stay). {label: count}."""
+    host = folder / "app_host.db"
+    out = {}
+    h = sqlite3.connect(host)
+    user = h.execute("SELECT id FROM core_users WHERE lower(email) = lower(?)", (email,)).fetchone()
+    if not user or not (_has(h, "core_memberships") and _has(h, "core_tenants")):
+        h.close()
+        return out
+    uid, token = user[0], f"m:{user[0]}"
+    for _tid, db_url in h.execute("SELECT t.id, t.db_url FROM core_memberships m JOIN core_tenants t ON t.id = m.tenant_id WHERE m.user_id = ?", (uid,)).fetchall():
+        fdb = _family_file(folder, db_url)
+        if not fdb.exists():
+            continue
+        f = sqlite3.connect(fdb)
+        if _has(f, "block_steps"):
+            n = 0
+            for sid, who in f.execute("SELECT id, who FROM block_steps WHERE who LIKE ?", (f"%{token}%",)).fetchall():
+                try:
+                    people = json.loads(who)
+                except ValueError:
+                    continue
+                kept = [x for x in people if x != token]
+                if kept != people:
+                    n += 1
+                    if yes:
+                        f.execute("UPDATE block_steps SET who = ? WHERE id = ?", (json.dumps(kept, separators=(",", ":")), sid))
+            if n:
+                out["steps no longer name them (block_steps)"] = out.get("steps no longer name them (block_steps)", 0) + n
+        if _has(f, "trip_lists"):
+            n = f.execute("SELECT count(*) FROM trip_lists WHERE for_who = ?", (token,)).fetchone()[0]
+            if n:
+                out["lists no longer name them (trip_lists)"] = out.get("lists no longer name them (trip_lists)", 0) + n
+                if yes:
+                    f.execute("UPDATE trip_lists SET for_who = '' WHERE for_who = ?", (token,))
+        f.commit()
+        f.close()
+    h.close()
+    return out
+
+
 def run(folder: Path, email: str, family=False, content=False, yes=False, out=print):
     """Print what is (or, with yes, was) deleted. Returns {label: count}."""
     rows, paths = plan(folder, email, family, content)
     done, conns = {}, {}
+    if not family:
+        done.update(scrub(folder, email, yes))
     for label, file, table, where, params in rows:
         conn = conns.setdefault(file, sqlite3.connect(file))
         if not _has(conn, table):

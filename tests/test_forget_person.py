@@ -147,3 +147,25 @@ def test_a_dry_run_keeps_the_pass_rows_and_files(folder):
     dst, uid, fid = folder
     fp.run(dst, EMAIL, content=True, out=lambda s: None)
     assert pass_ids(dst, fid) == ["made", "other", "own"] and len(list((dst / "passes" / fid / "t").glob("*"))) == 9
+
+
+def test_forgetting_a_person_takes_them_out_of_steps_and_lists_but_keeps_both(folder):
+    """F-080: a step's `who` and a list's `for_who` name members as "m:<id>"; forgetting the person removes only their token."""
+    dst, uid, fid = folder
+    db = sqlite3.connect(dst / f"{fid}_db.db")
+    db.executescript("""CREATE TABLE IF NOT EXISTS block_steps (id TEXT PRIMARY KEY, trip_id TEXT, act_id TEXT, part_id TEXT, position INTEGER, title TEXT, time TEXT, who TEXT, note TEXT, kind TEXT, done INTEGER, aside INTEGER, created_at TEXT);
+                        CREATE TABLE IF NOT EXISTS trip_lists (id TEXT PRIMARY KEY, trip_id TEXT, name TEXT, for_who TEXT, position INTEGER);""")
+    db.execute("INSERT INTO block_steps (id, trip_id, act_id, part_id, position, title, time, who, note, kind, done, aside, created_at) VALUES ('s1', 't', 'a1', '', 0, 'King Kong', '', ?, '', 'ride', 0, 0, 'now')", (f'["m:{uid}","m:other","n:Sam"]',))
+    db.execute("INSERT INTO block_steps (id, trip_id, act_id, part_id, position, title, time, who, note, kind, done, aside, created_at) VALUES ('s2', 't', 'a1', '', 1, 'Minion', '', '[\"m:other\"]', '', 'ride', 0, 0, 'now')")
+    db.execute("INSERT INTO trip_lists (id, trip_id, name, for_who, position) VALUES ('l1', 't', 'Safe rides', ?, 0)", (f"m:{uid}",))
+    db.commit()
+    db.close()
+    out = []
+    fp.run(dst, EMAIL, out=out.append)       # a dry run changes nothing but says so
+    assert any("block_steps" in line for line in out) and any("trip_lists" in line for line in out)
+    assert count(dst, f"{fid}_db.db", "SELECT who FROM block_steps WHERE id = 's1'") == f'["m:{uid}","m:other","n:Sam"]'
+    fp.run(dst, EMAIL, yes=True, out=lambda s: None)
+    assert count(dst, f"{fid}_db.db", "SELECT who FROM block_steps WHERE id = 's1'") == '["m:other","n:Sam"]'
+    assert count(dst, f"{fid}_db.db", "SELECT who FROM block_steps WHERE id = 's2'") == '["m:other"]'
+    assert count(dst, f"{fid}_db.db", "SELECT for_who FROM trip_lists WHERE id = 'l1'") == ""
+    assert count(dst, f"{fid}_db.db", "SELECT count(*) FROM block_steps") == 2 and count(dst, f"{fid}_db.db", "SELECT count(*) FROM trip_lists") == 1

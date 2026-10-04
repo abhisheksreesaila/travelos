@@ -60,6 +60,7 @@
   .tp-tab { min-height: 2.75rem; border-radius: var(--r-pill); color: var(--ink-2); }
   .tp-tab[aria-current="page"] { background: var(--ink); color: #FFFFFF; }
   .tp-list { padding-right: 4.75rem; }  /* the floating + never sits over a card or its pills */
+  .tp-stay { padding-right: 4.75rem; }  /* nor over the hotel card's chevron */
   .tp-panel > .tp-sharebar { order: 8; }
   .tp-panel > .tp-full { order: 9; }
   .tp-plus { right: max(1.125rem, calc(env(safe-area-inset-right) + 0.75rem)); }
@@ -73,3 +74,6 @@
 .tp-up .ph-details summary { align-self: flex-start; background: rgba(255, 255, 255, .12); color: #FFFFFF; box-shadow: none; }
 .tp-up .ph-details .tp-sub, .tp-up .ph-details .tp-pnote, .tp-up .ph-details .tp-conf-num { color: #FFFFFF; }
 .tp-up .ph-details summary { min-height: 2.75rem; }
+
+/* Add to the trip: the paste entry under Today's heading (F-080) */
+.tp-addtrip { align-self: flex-start; background: var(--coral); color: var(--ink); font-weight: 800; box-shadow: 0 0.1875rem 0 var(--coral-deep); }

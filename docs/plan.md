@@ -463,6 +463,8 @@ Needs: F-079 (built together)
 - [ ] it works on the captain's real Universal Studios and California Adventure messages (a test fixture with that text), and a model failure or timeout leaves a clear message and the pasted text intact
 - [ ] adding writes one family-thread change card and notifies the family
 
+Note: the block page (`/trip/block?id=aN`, with Mark done, Set aside and Put back) was built here as a simple stepping stone so the captain can see parts and steps today; F-081's canvas replaces it.
+
 ## F-081 The trip canvas with semantic zoom [todo]
 Needs: F-080
 - [ ] on phones the trip tab is one canvas: week → day → block → step; tapping or pinching zooms with a fluid animation where the summary grows into its detail and back (View Transitions where supported, calm under reduced motion)
