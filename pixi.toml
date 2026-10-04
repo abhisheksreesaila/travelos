@@ -31,6 +31,7 @@ prod = { features = [], solve-group = "default" }
 dev = "python main.py"
 vapid-keys = "python scripts/vapid_keys.py"  # makes the push keys for the morning plan and writes them to .env (F-066)
 forget-person = "python scripts/forget_person.py"  # delete a person's (or family's) data by hand; a dry run unless --yes (F-076)
+ai-report = "python scripts/ai_report.py"  # what the AI did: calls, time and tokens per job and per day, no content (F-079)
 test = "pytest -q -p no:randomly"
 test-random = "pytest -q -p randomly"
 test-browser-install = "playwright install chromium"  # once per machine: downloads the browser the browser suite drives
