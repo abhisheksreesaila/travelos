@@ -162,7 +162,10 @@
 .tp-confirm[open] .tp-sub, .tp-confirm[open] .tp-conf-num { padding-left: 0.875rem; }
 .tp-conf-num { font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; letter-spacing: 0.08em; user-select: all; }
 .tp-pnote { display: flex; gap: 0.375rem; align-items: flex-start; padding: 0 0.25rem; font-size: max(var(--text-min), 0.875rem); font-weight: 700; color: var(--ink-2); overflow-wrap: anywhere; }
-.tp-pnote svg { flex-shrink: 0; margin-top: 0.125rem; }
+.tp-notes { display: flex; flex-direction: column; gap: 0.25rem; }  /* F-085: notes folded behind "N notes" */
+.tp-notes summary { align-self: flex-start; }
+.tp-notes[open] { padding-bottom: 0.25rem; }
+.tp-notes[open] .tp-pnote { padding-left: 0.875rem; }
 .tp-sharebar { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
 .tp-share { gap: 0.5rem; min-height: 2.75rem; padding: 0 1rem; box-shadow: var(--shadow-sm); }
 .tp-share-status { font-weight: 800; font-size: max(var(--text-min), 0.9375rem); color: var(--ink-2); }
