@@ -13,9 +13,10 @@ from starlette.responses import RedirectResponse
 
 from gitaway import access, catalog, members, phones, session as ses, tripcal as cal, tripday as td, tripimport as ti
 from gitaway.icons import icon
+from gitaway.pages import passes as passes_ui
 
 TITLE = "Help"
-HEAD = (Link(rel="stylesheet", href="/assets/css/help.css"),)
+HEAD = (Link(rel="stylesheet", href="/assets/css/help.css"), *passes_ui.HEAD)
 
 
 def _call(number, label, cls="tp-btn tp-btn-coral"):
@@ -108,7 +109,7 @@ def content(request, session):
             cls="hp-sos-b"),
         cls="hp-sos", id="hp-sos")
     problem = Div("That number did not look right. Try something like +1 310 555 0100.", role="alert", cls="hp-problem", id="hp-problem") if request.query_params.get("problem") == "phone" else ""
-    return Div(problem, *cards, sos, cls="hp")
+    return Div(problem, *cards, sos, passes_ui.section(request, session, can_edit), cls="hp")
 
 
 def register(app):

@@ -10,6 +10,7 @@ pyyaml = ">=6.0.3,<7"
 pypdf = ">=6.19.0,<7"
 pillow = ">=12.3.0,<13"
 pillow-heif = ">=1.8.0,<2"
+pypdfium2 = ">=5.13.0,<6"
 
 [pypi-dependencies]
 python-fasthtml = ">=0.14.13"
