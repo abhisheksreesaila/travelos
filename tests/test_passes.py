@@ -16,7 +16,7 @@ from tests.test_members import addr, browser, invite
 from tests.test_signin import person, sign_in
 from tests.test_trip_import import TEMPLATE, imported
 
-FLIGHT = {"airline": "United", "number": "1234", "origin": "lax", "dest": "SFO", "fly_on": "2026-10-17", "time": "14:25", "terminal": "7"}
+FLIGHT = {"airline": "United", "number": "1234", "from_code": "lax", "to_code": "SFO", "fly_on": "2026-10-17", "time": "14:25", "terminal": "7"}
 
 
 def pdf(pages=1):
@@ -83,7 +83,7 @@ def test_an_editor_adds_a_flight_and_it_is_listed_by_when_it_leaves(trip, ari):
     assert [x["name"] for x in passes.flights(ari)] == ["United 88", "United 1234"]
 
 
-@pytest.mark.parametrize("bad, err", [({"airline": ""}, "flight_name"), ({"number": "12 34 5678"}, "flight_name"), ({"origin": "LA"}, "flight_route"), ({"dest": "lax"}, "flight_route"),
+@pytest.mark.parametrize("bad, err", [({"airline": ""}, "flight_name"), ({"number": "12 34 5678"}, "flight_name"), ({"from_code": "LA"}, "flight_route"), ({"to_code": "lax"}, "flight_route"),
                                       ({"fly_on": "tomorrow"}, "flight_date"), ({"time": ""}, "flight_time")])
 def test_a_flight_that_is_not_filled_in_is_refused_with_a_sentence(trip, ari, bad, err):
     r = add_flight(trip, **bad)

@@ -87,14 +87,14 @@ def _flight_form(f=None):
     return Form(
         Div(_field("Airline", "airline", f.get("airline", ""), maxlength="24", autocomplete="off", placeholder="United", required=True),
             _field("Flight number", "number", f.get("number", ""), maxlength="6", autocomplete="off", placeholder="1234", required=True), cls="pz-two"),
-        Div(_field("From (airport code)", "origin", f.get("origin", ""), maxlength="3", autocomplete="off", placeholder="LAX", required=True, cls="pz-code"),
-            _field("To (airport code)", "dest", f.get("dest", ""), maxlength="3", autocomplete="off", placeholder="SFO", required=True, cls="pz-code"), cls="pz-two"),
+        Div(_field("From (airport code)", "from_code", f.get("origin", ""), maxlength="3", autocomplete="off", placeholder="LAX", required=True, cls="pz-code"),
+            _field("To (airport code)", "to_code", f.get("dest", ""), maxlength="3", autocomplete="off", placeholder="SFO", required=True, cls="pz-code"), cls="pz-two"),
         Div(_field("Date it leaves", "fly_on", f["date"].isoformat() if f else "", type="date", required=True),
             _field("Time it leaves", "time", f"{f['depart_min'] // 60:02d}:{f['depart_min'] % 60:02d}" if f else "", type="time", required=True), cls="pz-two"),
         _field("Terminal (optional)", "terminal", f.get("terminal", ""), maxlength="12", autocomplete="off", placeholder="7"),
         Input(type="hidden", name="trip", value=trip), Input(type="hidden", name="flight_id", value=f.get("id", "")),
         Div(Button("Save the flight", type="submit", cls="tp-btn tp-btn-ink pz-save"), cls="hp-fix-acts"),
-        action="/trip/help/flight", method="post", cls="hp-fix-form pz-form", data_form="flight")
+        action="/trip/help/flight", method="post", enctype="application/x-www-form-urlencoded", cls="hp-fix-form pz-form", data_form="flight")
 
 
 def _pass_form(flight, p=None, names=()):
@@ -302,11 +302,11 @@ def register(app):
     app.add_middleware(BodyLimit)
 
     @app.post("/trip/help/flight")
-    def save_flight(session, trip: str = "", flight_id: str = "", airline: str = "", number: str = "", origin: str = "", dest: str = "", fly_on: str = "", time: str = "", terminal: str = ""):
+    def save_flight(session, trip: str = "", flight_id: str = "", airline: str = "", number: str = "", from_code: str = "", to_code: str = "", fly_on: str = "", time: str = "", terminal: str = ""):
         if not _signed_in(session):
             return Response("Sign in first.", status_code=401)
         try:
-            passes.save_flight(session, trip_id=trip, flight_id=flight_id, airline=airline, number=number, origin=origin, dest=dest, fly_on=fly_on, time=time, terminal=terminal)
+            passes.save_flight(session, trip_id=trip, flight_id=flight_id, airline=airline, number=number, origin=from_code, dest=to_code, fly_on=fly_on, time=time, terminal=terminal)
         except passes.PassError as e:
             return _back(e.key)
         return _back()

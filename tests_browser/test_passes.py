@@ -2,6 +2,7 @@
 on the travel day Today's focal card opens the gate view, a real touch swipe moves to the next traveller (dots and count follow), the arrows and dots work, and
 nothing scrolls sideways. The files are generated here."""
 import io
+import re
 from datetime import datetime, timezone
 
 import pytest
@@ -58,8 +59,8 @@ def add_flight(page):
     form = page.locator("#pz-add-flight form")
     form.locator("[name=airline]").fill("United")
     form.locator("[name=number]").fill("1234")
-    form.locator("[name=origin]").fill("lax")
-    form.locator("[name=dest]").fill("sfo")
+    form.locator("[name=from_code]").fill("lax")
+    form.locator("[name=to_code]").fill("sfo")
     form.locator("[name=fly_on]").fill("2026-10-17")
     form.locator("[name=time]").fill("14:25")
     form.locator("[name=terminal]").fill("7")
@@ -83,10 +84,15 @@ def add_pass(page, name, seat, file=None, app_url=""):
 
 
 def swipe(page, dx):
-    """A real touch swipe on the strip of passes (Chrome's own scroll gesture, so the snap points apply)."""
+    """A real touch swipe on the strip of passes: finger down, moves, up, sent as touch events to the browser, so its own scrolling and snap points apply."""
     box = page.locator("#gp-track").bounding_box()
+    x0, y = box["x"] + box["width"] / 2 - dx / 2, box["y"] + box["height"] / 2
     cdp = page.context.new_cdp_session(page)
-    cdp.send("Input.synthesizeScrollGesture", {"x": box["x"] + box["width"] / 2, "y": box["y"] + box["height"] / 2, "xDistance": dx, "yDistance": 0, "gestureSourceType": "touch", "speed": 800})
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": x0, "y": y}]})
+    for i in range(1, 11):
+        cdp.send("Input.dispatchTouchEvent", {"type": "touchMove", "touchPoints": [{"x": x0 + dx * i / 10, "y": y}]})
+        page.wait_for_timeout(16)
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
     cdp.detach()
 
 
@@ -124,7 +130,7 @@ def test_an_editor_adds_a_flight_and_passes_fixes_one_opens_it_full_screen_and_r
     expect(page.locator(".gp-slide").nth(1)).to_be_in_viewport(ratio=0.9)
     expect(page.locator("#gp-count")).to_contain_text("2 of 2")
     page.locator("#gp-close").click()
-    expect(page).to_have_url(lambda u: u.endswith("/trip"))
+    expect(page).to_have_url(re.compile(r"/trip$"))
     # remove a pass: two taps
     page.goto(page.url.replace("/trip", "/trip/help"))
     last = page.locator(".pz-pass").nth(1)
@@ -143,8 +149,8 @@ def test_a_refused_file_and_a_bad_flight_say_why_and_keep_nothing(trip):
     form = page.locator("#pz-add-flight form")
     form.locator("[name=airline]").fill("United")
     form.locator("[name=number]").fill("1234")
-    form.locator("[name=origin]").fill("LAX")
-    form.locator("[name=dest]").fill("LAX")
+    form.locator("[name=from_code]").fill("LAX")
+    form.locator("[name=to_code]").fill("LAX")
     form.locator("[name=fly_on]").fill("2026-10-17")
     form.locator("[name=time]").fill("14:25")
     form.get_by_role("button", name="Save the flight").click()
