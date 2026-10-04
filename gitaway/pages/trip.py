@@ -140,7 +140,7 @@ def notes_fold(item, cls=""):
 
 
 def up_details(item):
-    """What the list row would have shown for the up-next item (it is left out of the list): who added it, the notes on it, the confirmation behind a tap."""
+    """What the list row would have shown for the up-next item (it is left out of the list): who added it and the confirmation behind a tap (its notes have their own fold, F-085)."""
     who = item.sub.split(" · ")[-1] if item.by else ""
     if not (item.confirm or who.startswith("added by")):
         return ""
