@@ -212,8 +212,6 @@ def today_panel(v):
         parts.append(Div(Span(f"{_day_name(d)} · day {sel + 1} of {len(v['dates'])}", cls="tp-daynote"), A("Back to today", href=trip_url(), cls="tp-back"), cls="tp-dayhead"))
     elif v["phase"] != "during":
         parts.append(Div(Span(f"{_day_name(d)} · day {sel + 1} of {len(v['dates'])}", cls="tp-daynote"), cls="tp-dayhead"))
-    if editor:
-        parts.append(A(icon("pencil", 18, 2.4), "Add to the trip", Span("Paste your messages", cls="tp-sub"), href="/trip/add", cls="tp-addtrip", id="tp-add-trip"))
     parts.append(share_bar(v))
     parts.append(up_card(v))
     if v["items"]:
@@ -345,6 +343,7 @@ def header(v, tab):
     kicker = day_of if tab == "today" else dates
     return Header(Div(Span(kicker, cls="tp-head-k", id="tp-head-k", data_today=day_of, data_other=dates),
                       H1({"today": _title_today(v), "days": f"Your {len(v['dates'])} days", "notes": "Trip notes"}[tab], id="tp-title-h"),
+                      A(icon("pencil", 14, 2.4), "Add to the trip", href="/trip/add", cls="btn btn-sm tp-edit tp-addtrip", id="tp-add-trip") if access.can_edit(v["role"]) and tab == "today" else "",
                       A(icon("pencil", 14, 2.4), "Edit trip", href=f"/trips/build/edit?trip={ses.open_trip_id()}", cls="btn btn-sm tp-edit", id="tp-edit-trip") if access.can_edit(v["role"]) and cal.is_imported(v["b"]) and ses.open_trip_id() else "",
                       cls="tp-head-text"),
                   Div(*faces, cls="tp-faces"), cls="tp-head")
