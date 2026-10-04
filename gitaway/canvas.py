@@ -6,6 +6,7 @@
     questions(draft, people, text)         who each initial or name is (suggestions from the family) and which tokens need no question
     save(session, draft, answers)          write the park days, parts, steps, set-aside steps and lists, one thread card, one notify
     block(session, act_id), block_ids(session), set_done(...), set_aside(...)   reading and ticking what was saved
+    move_step(...), restore(...), add_step(...), set_note(...), same_step(...), list_hits(...)   moving, adding and annotating steps by touch (F-082)
 
 A draft is: days[{label, place, parts[{name, time_of_day, steps[{title, time, who_raw[], note, kind}]}]}], set_aside[{title, reason, day}],
 lists[{name, items[{title, note}]}], initials[], notes_kept[], merged_repeats. The model answers to SCHEMA (a strict JSON schema); `clean` then
@@ -480,7 +481,7 @@ def _tell(session, fam, step, column, value):
     act = familydb.row(fam.db, "SELECT title FROM activities WHERE trip_id = :t AND scope = '' AND act_id = :a", t=fam.trip_id, a=step["act_id"])
     where = act["title"] if act else "the trip"
     key = f"{column}:{step['act_id']}"
-    verb = "finished" if column == "done" else "set aside"
+    verb = {"done": "finished", "aside": "set aside", "moved": "moved", "added": "added"}[column]
     who = familythread.first_name(fam.traveler)
     last = familydb.row(fam.db, "SELECT rowid AS n, * FROM thread WHERE trip_id = :t ORDER BY rowid DESC LIMIT 1", t=fam.trip_id)
     card, payload = None, {}
@@ -516,3 +517,200 @@ def set_done(session, step_id, done=True) -> str:
 def set_aside(session, step_id, aside=True) -> str:
     """Move a step to the block's Set aside tray (or back). The id of its block."""
     return _tick(session, step_id, "aside", aside)
+
+
+# ---- moving, adding and annotating by touch (F-082) -----------------------------------------------------------------------
+
+MAX_NOTE = 200
+MAX_UNDO = 120
+
+
+def _norm(title) -> str:
+    """A ride's name for comparing: lower case, no punctuation, no leading "the"."""
+    words = re.sub(r"[^a-z0-9 ]+", " ", str(title or "").casefold().replace("'", "").replace("’", "")).split()
+    return " ".join(words[1:] if words[:1] == ["the"] and len(words) > 1 else words)
+
+
+def same_step(step_title, item_title) -> bool:
+    """Is a step the list item? Equal names, or one name starts (whole words) with the other: "Soarin'" is "Soarin' Around the World"."""
+    a, b = _norm(step_title), _norm(item_title)
+    return bool(a and b) and (a == b or a.startswith(b + " ") or b.startswith(a + " "))
+
+
+def list_hits(step_title, lists) -> list:
+    """The ids of the trip's lists that name this step."""
+    return [lst["id"] for lst in lists if any(same_step(step_title, i["title"]) for i in lst["items"])]
+
+
+def _ordered(db, trip_id, part_id, skip=""):
+    return [r for r in familydb.rows(db, "SELECT * FROM block_steps WHERE trip_id = :t AND part_id = :p AND aside = 0 ORDER BY position, rowid", t=trip_id, p=part_id) if r["id"] != skip]
+
+
+def _state(r) -> dict:
+    return {"id": r["id"], "act": r["act_id"], "part": r["part_id"], "position": r["position"], "time": r["time"], "aside": r["aside"]}
+
+
+def _clock12(value) -> str:
+    h, m = (int(x) for x in value.split(":"))
+    return f"{(h % 12) or 12}:{m:02d} {'AM' if h < 12 else 'PM'}"
+
+
+def move_step(session, step_id, *, part="", before="", act="", aside=False) -> dict:
+    """Move one step, in one transaction. Where it goes: `aside` (the block's Set aside tray), `part` (a part of any block, placed before the step `before`, else at
+    the end), or `act` (another block, in its same-named part or its first). A step dropped before a timed step takes that step's time; at the end of a part it
+    keeps its own. The family's thread card is changed in place (moves coalesce like ticks). -> {"title", "where", "act" (the block it is in now), "changed",
+    "undo" (a snapshot `restore` puts back exactly)}. CanvasError when the step or the place is not in this trip."""
+    with ses.family(session) as fam:
+        if not fam or not fam.trip_id:
+            raise CanvasError("Open a trip first.")
+        db, trip = fam.db, fam.trip_id
+        try:
+            days = cal.days(cal._need(fam, "")[1])
+        except cal.CalendarError:
+            days = []
+        with familydb.transaction(db):
+            s = familydb.row(db, "SELECT * FROM block_steps WHERE id = :i AND trip_id = :t", i=step_id, t=trip)
+            if not s:
+                raise CanvasError("That step is gone.")
+            src_act = s["act_id"]
+            if aside:
+                undo = {"kind": "aside", "act": src_act, "steps": [_state(s)]}
+                if s["aside"]:
+                    return {"title": s["title"], "where": "the Set aside tray", "act": src_act, "changed": False, "undo": undo}
+                familydb.run(db, "UPDATE block_steps SET aside = 1 WHERE id = :i", i=s["id"])
+                _tell(session, fam, s, "aside", True)
+                return {"title": s["title"], "where": "the Set aside tray", "act": src_act, "changed": True, "undo": undo}
+            if part:
+                target = familydb.row(db, "SELECT * FROM block_parts WHERE id = :p AND trip_id = :t", p=part, t=trip)
+            elif act:
+                options = familydb.rows(db, "SELECT * FROM block_parts WHERE trip_id = :t AND act_id = :a ORDER BY position, rowid", t=trip, a=act)
+                mine = familydb.row(db, "SELECT name FROM block_parts WHERE id = :p AND trip_id = :t", p=s["part_id"], t=trip)
+                target = next((p for p in options if mine and p["name"] == mine["name"]), options[0] if options else None)
+            else:
+                raise CanvasError("Pick where to put it.")
+            if not target:
+                raise CanvasError("That place is not in this trip.")
+            tgt = _ordered(db, trip, target["id"], skip=s["id"])
+            src = _ordered(db, trip, s["part_id"], skip=s["id"]) if s["part_id"] and s["part_id"] != target["id"] else []
+            idx = next((i for i, r in enumerate(tgt) if r["id"] == before), len(tgt))
+            anchor = tgt[idx] if idx < len(tgt) else None
+            time_ = anchor["time"] if anchor and anchor["time"] else s["time"]
+            undo = {"kind": "moved", "act": src_act, "steps": [_state(s)] + [_state(r) for r in tgt + src][: MAX_UNDO - 1]}
+            order = tgt[:idx] + [s] + tgt[idx:]
+            if (not s["aside"] and s["part_id"] == target["id"] and time_ == s["time"]
+                    and [r["id"] for r in order] == [r["id"] for r in _ordered(db, trip, target["id"])]):
+                return {"title": s["title"], "where": target["name"], "act": src_act, "changed": False, "undo": undo}
+            for n, r in enumerate(order):
+                if r["id"] == s["id"]:
+                    familydb.run(db, "UPDATE block_steps SET act_id = :a, part_id = :p, position = :n, time = :tm, aside = 0 WHERE id = :i", a=target["act_id"], p=target["id"], n=n, tm=time_, i=s["id"])
+                else:
+                    familydb.run(db, "UPDATE block_steps SET position = :n WHERE id = :i", n=n, i=r["id"])
+            for n, r in enumerate(src):
+                familydb.run(db, "UPDATE block_steps SET position = :n WHERE id = :i", n=n, i=r["id"])
+            if target["act_id"] != src_act:
+                day = familydb.row(db, "SELECT day, title FROM activities WHERE trip_id = :t AND scope = '' AND act_id = :a AND gone = 0", t=trip, a=target["act_id"])
+                where = days[day["day"]].strftime("%A") if day and 0 <= day["day"] < len(days) else (day["title"] if day else target["name"])
+            elif s["part_id"] != target["id"] or s["aside"]:
+                where = target["name"]
+            elif time_ != s["time"]:
+                where = _clock12(time_)
+            else:
+                where = "a new spot in " + target["name"]
+            _tell(session, fam, s, "moved", True)
+            return {"title": s["title"], "where": where, "act": target["act_id"], "changed": True, "undo": undo}
+
+
+def restore(session, snapshot) -> str:
+    """Put steps back exactly as a snapshot from `move_step` recorded them (their block, part, place in the part, time and tray), and take the move off the
+    family's card. The snapshot comes from the page, so every id, part, time and number in it is checked against this trip. -> the block the moved step is back in."""
+    if (not isinstance(snapshot, dict) or snapshot.get("kind") not in ("moved", "aside") or not isinstance(snapshot.get("steps"), list)
+            or not 0 < len(snapshot["steps"]) <= MAX_UNDO):
+        raise CanvasError("There is nothing to undo.")
+    with ses.family(session) as fam:
+        if not fam or not fam.trip_id:
+            raise CanvasError("Open a trip first.")
+        db, trip = fam.db, fam.trip_id
+        with familydb.transaction(db):
+            ok = []
+            for x in snapshot["steps"]:
+                x = x if isinstance(x, dict) else {}
+                row = familydb.row(db, "SELECT * FROM block_steps WHERE id = :i AND trip_id = :t", i=str(x.get("id") or "")[:40], t=trip)
+                part, act, pos, tm, aside = str(x.get("part") or "")[:40], str(x.get("act") or "")[:20], x.get("position"), str(x.get("time") or ""), x.get("aside")
+                if (not row or not isinstance(pos, int) or isinstance(pos, bool) or not 0 <= pos < 10000 or aside not in (0, 1) or isinstance(aside, bool)
+                        or (tm and _clock(tm) != tm)):
+                    raise CanvasError("There is nothing to undo.")
+                if part:
+                    owner = familydb.row(db, "SELECT act_id FROM block_parts WHERE id = :p AND trip_id = :t", p=part, t=trip)
+                    valid = bool(owner) and owner["act_id"] == act
+                else:
+                    valid = bool(familydb.row(db, "SELECT 1 AS x FROM block_parts WHERE act_id = :a AND trip_id = :t", a=act, t=trip))
+                if not valid:
+                    raise CanvasError("There is nothing to undo.")
+                ok.append((row, act, part, pos, tm, aside))
+            for row, act, part, pos, tm, aside in ok:
+                familydb.run(db, "UPDATE block_steps SET act_id = :a, part_id = :p, position = :n, time = :tm, aside = :s WHERE id = :i", a=act, p=part, n=pos, tm=tm, s=aside, i=row["id"])
+            first = ok[0][0]
+            source = str(snapshot.get("act") or "")[:20]
+            if not familydb.row(db, "SELECT 1 AS x FROM block_parts WHERE act_id = :a AND trip_id = :t", a=source, t=trip):
+                raise CanvasError("There is nothing to undo.")
+            _tell(session, fam, {"act_id": source, "kind": first["kind"], "title": first["title"]}, "aside" if snapshot["kind"] == "aside" else "moved", False)
+            return ok[0][1]
+
+
+def _who_options(db, trip_id, people) -> set:
+    """The who tokens a new step may name: the family's members, Adults and Kids, and names or initials already used on this trip."""
+    seen = set()
+    for r in familydb.rows(db, "SELECT who FROM block_steps WHERE trip_id = :t", t=trip_id):
+        try:
+            seen |= {x for x in json.loads(r["who"] or "[]") if isinstance(x, str) and x[:2] in ("n:", "i:")}
+        except ValueError:
+            pass
+    return {f"m:{p['user_id']}" for p in people} | seen | {"g:Adults", "g:Kids"}
+
+
+def add_step(session, act_id, part_id, title, time="", who=(), note="") -> str:
+    """A new step at the end of a part. `who`: tokens ("m:<id>", "g:Adults", "g:Kids", or a name or initials already on this trip); none means everyone. The new
+    step's id. The family's card says it was added (coalesced). CanvasError for an empty title, a part that is not in that block, a bad time or too many steps."""
+    title, note, time = _s(title, 80), _s(note, MAX_NOTE), str(time or "").strip()
+    if not title:
+        raise CanvasError("Give the step a name.")
+    if time and not _clock(time):
+        raise CanvasError("That time is not one we can read.")
+    people = family_people(session)
+    with ses.family(session) as fam:
+        if not fam or not fam.trip_id:
+            raise CanvasError("Open a trip first.")
+        db, trip = fam.db, fam.trip_id
+        allowed, tokens = _who_options(db, trip, people), []
+        for w in list(who)[: MAX_WHO + 1]:
+            if w not in allowed:
+                raise CanvasError("Pick people from the family.")
+            if w not in tokens:
+                tokens.append(w)
+        if len(tokens) > MAX_WHO:
+            raise CanvasError("Pick up to six people, or leave it for everyone.")
+        with familydb.transaction(db):
+            if not familydb.row(db, "SELECT 1 AS x FROM block_parts WHERE id = :p AND trip_id = :t AND act_id = :a", p=part_id, t=trip, a=act_id):
+                raise CanvasError("Pick a part of this day.")
+            if familydb.row(db, "SELECT COUNT(*) AS n FROM block_steps WHERE trip_id = :t", t=trip)["n"] >= MAX_STEP_PER_TRIP:
+                raise CanvasError(cal.FULL)
+            last = familydb.row(db, "SELECT COALESCE(MAX(position), -1) + 1 AS n FROM block_steps WHERE trip_id = :t AND part_id = :p AND aside = 0", t=trip, p=part_id)["n"]
+            sid = uuid.uuid4().hex
+            _put(db, "block_steps", {"id": sid, "trip_id": trip, "act_id": act_id, "part_id": part_id, "position": last, "title": title, "time": _clock(time),
+                                     "who": json.dumps(tokens, separators=(",", ":")), "note": note, "kind": "other", "done": 0, "aside": 0, "created_at": familydb.now()})
+            _tell(session, fam, {"act_id": act_id, "kind": "other", "title": title}, "added", True)
+            return sid
+
+
+def set_note(session, step_id, note) -> str:
+    """Write (or clear) a step's note. The id of its block. No card: a note is not a change to the plan."""
+    note = _s(note, MAX_NOTE)
+    with ses.family(session) as fam:
+        if not fam or not fam.trip_id:
+            raise CanvasError("Open a trip first.")
+        with familydb.transaction(fam.db):
+            found = familydb.row(fam.db, "SELECT act_id FROM block_steps WHERE id = :i AND trip_id = :t", i=step_id, t=fam.trip_id)
+            if not found:
+                raise CanvasError("That step is gone.")
+            familydb.run(fam.db, "UPDATE block_steps SET note = :n WHERE id = :i", n=note, i=step_id)
+            return found["act_id"]
