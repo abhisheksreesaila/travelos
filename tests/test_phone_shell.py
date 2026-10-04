@@ -64,16 +64,6 @@ def test_every_trip_screen_sits_in_the_shell(client, key):
     assert "/assets/css/phone.css" in html and html.index("/assets/css/base.css") < html.index("/assets/css/phone.css")
 
 
-@pytest.mark.parametrize("key", ["ask"])   # Map (F-068), Help (F-069) and Family (F-070) are built
-def test_a_tab_not_built_yet_shows_a_short_coming_card(client, key):
-    book(client)
-    html = client.get(PATHS[key]).text
-    card = re.search(r'<div[^>]*id="ph-coming".*?</div>', html, re.S).group(0)
-    assert f"{key.title()} is coming" in card and 'href="/trip"' in card
-    assert '<h1' in html and f">{key.title()}</h1>" in html
-    assert not re.search("[\U0001F300-\U0001FAFF☀-➿]", html)
-
-
 @pytest.mark.parametrize("key", ["map", "ask", "family", "help"])
 def test_a_tab_needs_sign_in_and_a_trip(client, key):
     r = client.get(PATHS[key], follow_redirects=False)
@@ -93,7 +83,7 @@ def test_every_role_gets_the_same_tabs_with_no_edit_controls_on_the_placeholders
     for key, path in PATHS.items():
         r = other.get(path)
         assert r.status_code == 200 and bar(r.text)[0] == list(PATHS.values()), path
-        if key not in ("today", "family") and not (key == "help" and role == "editor"):   # the Family thread has its compose bar and Quiet switch for every role (F-070); an editor adds flights and passes on Help (F-083)
+        if key not in ("today", "family") and not (key == "help" and role == "editor") and not (key == "ask" and role == "editor"):   # the Family thread has its compose bar and Quiet switch for every role (F-070); an editor adds flights and passes on Help (F-083) and asks for a change on Ask (F-072); a viewer sees the read-only note
             main = re.search(r"<main.*?</main>", r.text, re.S).group(0)
             assert "<form" not in main and "<input" not in main, path
 

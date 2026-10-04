@@ -7,12 +7,12 @@ Azure OpenAI is a stopgap for the October 2026 trip. Every call goes through `gi
 | Job | What it does | What it replaces, and why the model | Ticket |
 |---|---|---|---|
 | `convert` | Turns pasted (or dictated) family messages into park days, parts and steps, with notes, set-aside items and lists. | Typing the plan in by hand, step by step. The messages are free text with initials, repeats and notes buried mid-line; a rule-based parser would fail on the next message that is worded differently. Candidate to keep: it is the one job nothing simpler can do. | F-080 |
-| `speak` | Turns a spoken change ("move Fast & Furious to after lunch") into a proposal the person applies. | Dragging and tapping through the edit screens. Candidate to swap for a small intent classifier plus the existing editors if the phrases stay few. | later |
+| `speak` | Ask GitAway (Ask tab, F-072): turns a typed or spoken change to one day ("we're tired, block the next two hours and move lunch to 12:30") into a proposal of added, moved and removed plans and steps, shown as before and after; nothing changes until Apply, which tells the family. The model sees one day as compact JSON (plan and step ids, times, titles, the family's first names, the trip's zone) plus the request, and answers to a strict schema of operations; the app validates every id and time itself and caps the counts (12 operations; at most 4 added plans, 2 removed plans). | Dragging and tapping through the edit screens, one at a time. Candidate to swap for a small intent classifier plus the existing editors if the phrases stay few (move X to T, skip X, rest for N hours); keep the model for the open-ended ones. | F-072 |
 | `ask` | Answers a question about the trip, with search, as a proposal. | Searching the web and the plan by hand. Candidate to drop if nobody uses it. | later |
 | `around-you` | Recommendations near where the family is (lunch, a quiet break). | A map search. Candidate to replace with Nominatim plus a fixed list of categories. | later |
 | `ocr` | Reads a boarding pass or a booking from a photo. | Typing the numbers in. Candidate to replace with a dedicated OCR/vision service or on-device reading. | later |
 
-Only `convert` exists today; the others are named so the log and the report already have a place for them.
+`convert` and `speak` exist today; the others are named so the log and the report already have a place for them.
 
 ## What is logged
 
@@ -42,4 +42,4 @@ Settings only (environment variables), no code change:
 
 ## Tests
 
-The suite never calls the network: `ai.TRANSPORT` is replaced by a fake, and the conftests pin the `AZURE_*` keys to empty. `python -m gitaway.ai_smoke` is the one real call, run by hand (it prints counts and the time taken only).
+The suite never calls the network: `ai.TRANSPORT` is replaced by a fake, and the conftests pin the `AZURE_*` keys to empty. `python -m gitaway.ai_smoke` (Convert) and `python -m gitaway.speak_smoke` (Ask GitAway, on a canned day) are the real calls, run by hand: they print counts and the time taken only.

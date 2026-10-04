@@ -21,7 +21,7 @@ from starlette.responses import RedirectResponse
 from gitaway import access, canvas, catalog, geo, members, phone, tripgeo, pickers, session as ses, tripcal as cal, tripday as td
 from gitaway.icons import icon
 from gitaway.layout import avatar, join_note, trip_field
-from gitaway.pages import calendar as calui, morning as morning_ui, passes as passes_ui, passkeys as passkeys_ui, rides as rides_ui
+from gitaway.pages import calendar as calui, morning as morning_ui, passes as passes_ui, passkeys as passkeys_ui, rides as rides_ui, tab_ask
 
 log = logging.getLogger(__name__)
 HEAD = (*pickers.HEAD, *morning_ui.HEAD, *passkeys_ui.HEAD[:1], *passes_ui.HEAD)  # trip.css and phone.css come with the shell (gitaway.phone.HEAD)
@@ -345,8 +345,9 @@ def header(v, tab):
     kicker = day_of if tab == "today" else dates
     return Header(Div(Span(kicker, cls="tp-head-k", id="tp-head-k", data_today=day_of, data_other=dates),
                       H1({"today": _title_today(v), "days": f"Your {len(v['dates'])} days", "notes": "Trip notes"}[tab], id="tp-title-h"),
-                      A(icon("pencil", 14, 2.4), "Add to the trip", href="/trip/add", cls="btn btn-sm tp-edit tp-addtrip", id="tp-add-trip") if access.can_edit(v["role"]) and tab == "today" else "",
-                      A(icon("expand", 14, 2.4), "Week view", href="/trip/canvas", cls="btn btn-sm tp-edit tp-opencanvas", id="tp-open-canvas") if tab == "today" else "",   # F-081: the zoomable canvas, for every role
+                      Div(A(icon("pencil", 14, 2.4), "Add to the trip", href="/trip/add", cls="btn btn-sm tp-edit tp-addtrip", id="tp-add-trip") if access.can_edit(v["role"]) else "",
+                          A(icon("expand", 14, 2.4), "Week view", href="/trip/canvas", cls="btn btn-sm tp-edit tp-opencanvas", id="tp-open-canvas"),   # F-081: the zoomable canvas, for every role
+                          tab_ask.ask_button(v["sel"], compact=True) if access.can_edit(v["role"]) else "", cls="tp-head-btns") if tab == "today" else "",
                       A(icon("pencil", 14, 2.4), "Edit trip", href=f"/trips/build/edit?trip={ses.open_trip_id()}", cls="btn btn-sm tp-edit", id="tp-edit-trip") if access.can_edit(v["role"]) and cal.is_imported(v["b"]) and ses.open_trip_id() else "",
                       cls="tp-head-text"),
                   Div(*faces, cls="tp-faces"), cls="tp-head")

@@ -422,7 +422,7 @@ Found reviewing F-068: drives to and from airports are skipped, so a departure f
 - [x] the arrival-day test checks 9:40 (after landing): Up next is the car pickup and no "min drive" line shows
 
 ## F-072 Ask by voice [todo]
-Azure OpenAI is set up (deployment gpt-5.6-sol, tested 2026-10-04; env AZURE_OPENAI_*).
+Azure OpenAI is set up (deployment gpt-5.6-sol, tested 2026-10-04; env AZURE_OPENAI_*). Known limit: a plan removed through Ask GitAway cannot be undone (the change list says so); the calendar's own Undo covers only its own delete button.
 - [ ] talk (or type) to ask for a change; GitAway proposes a new day (added, moved, removed plans) and changes nothing until Apply; Apply tells the family
 
 ## F-073 Around you [todo]

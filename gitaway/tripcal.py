@@ -659,24 +659,31 @@ def update_activity(session, id_, *, day=None, start=None, end=None, title=None,
         blocks = blocks + ride_blocks(session, b, t)
         db, scope = fam.db, _scope(demo)
         with familydb.transaction(db):
-            _begin(db, fam.trip_id, scope, fam.traveler.id)
-            row = familydb.row(db, "SELECT * FROM activities WHERE trip_id = :t AND scope = :s AND act_id = :i AND gone = 0", t=fam.trip_id, s=scope, i=id_)
-            if row is None:
-                raise CalendarError("That activity is gone.")
-            d, s, e, name = _clean(
-                t, blocks, day=row["day"] if day is None else day, start=row["start_min"] if start is None else start,
-                end=row["end_min"] if end is None else end, title=row["title"] if title is None else title, kind=row["kind"] if kind is None else kind,
-                old=(row["day"], row["start_min"], row["end_min"]))
-            changes = {}
-            if (day, start, end) != (None, None, None):
-                changes.update(day=d, start_min=s, end_min=e)
-            if title is not None:
-                changes["title"] = name
-            if kind:
-                changes["kind"] = kind
-            update_record(db, "activities", row["pk"], "pk", auto_commit=False, **changes)
-            _say_update(session, fam, scope, t, row, d, s, e, name if title is not None else row["title"])
-            return _act({**row, "day": d, "start_min": s, "end_min": e, "title": name if title is not None else row["title"], "kind": kind or row["kind"]})
+            return update_in(session, fam, t, blocks, id_, day=day, start=start, end=end, title=title, kind=kind, scope=scope)
+
+
+def update_in(session, fam, t, blocks, id_, *, day=None, start=None, end=None, title=None, kind=None, scope="", say=True):
+    """`update_activity`'s work inside the caller's open transaction on `fam` (F-072 applies several changes as one). `say=False` writes no thread card."""
+    db = fam.db
+    _begin(db, fam.trip_id, scope, fam.traveler.id)
+    row = familydb.row(db, "SELECT * FROM activities WHERE trip_id = :t AND scope = :s AND act_id = :i AND gone = 0", t=fam.trip_id, s=scope, i=id_)
+    if row is None:
+        raise CalendarError("That activity is gone.")
+    d, s, e, name = _clean(
+        t, blocks, day=row["day"] if day is None else day, start=row["start_min"] if start is None else start,
+        end=row["end_min"] if end is None else end, title=row["title"] if title is None else title, kind=row["kind"] if kind is None else kind,
+        old=(row["day"], row["start_min"], row["end_min"]))
+    changes = {}
+    if (day, start, end) != (None, None, None):
+        changes.update(day=d, start_min=s, end_min=e)
+    if title is not None:
+        changes["title"] = name
+    if kind:
+        changes["kind"] = kind
+    update_record(db, "activities", row["pk"], "pk", auto_commit=False, **changes)
+    if say:
+        _say_update(session, fam, scope, t, row, d, s, e, name if title is not None else row["title"])
+    return _act({**row, "day": d, "start_min": s, "end_min": e, "title": name if title is not None else row["title"], "kind": kind or row["kind"]})
 
 
 def delete_activity(session, id_, demo=""):
@@ -686,21 +693,28 @@ def delete_activity(session, id_, demo=""):
             return None
         db, scope = fam.db, _scope(demo)
         with familydb.transaction(db):
-            st = _begin(db, fam.trip_id, scope, fam.traveler.id)
-            row = familydb.row(db, "SELECT * FROM activities WHERE trip_id = :t AND scope = :s AND act_id = :i AND gone = 0", t=fam.trip_id, s=scope, i=id_)
-            if row is None:
-                return None
-            familydb.run(db, "DELETE FROM notes WHERE trip_id = :t AND scope = :s AND gone = 1", t=fam.trip_id, s=scope)  # the earlier one can no longer be undone: remove it for good
-            if not scope:   # the parts and steps of a block go with the block (F-080)
-                familydb.run(db, "DELETE FROM block_steps WHERE trip_id = :t AND act_id IN (SELECT act_id FROM activities WHERE trip_id = :t AND scope = '' AND gone = 1)", t=fam.trip_id)
-                familydb.run(db, "DELETE FROM block_parts WHERE trip_id = :t AND act_id IN (SELECT act_id FROM activities WHERE trip_id = :t AND scope = '' AND gone = 1)", t=fam.trip_id)
-            familydb.run(db, "DELETE FROM activities WHERE trip_id = :t AND scope = :s AND gone = 1", t=fam.trip_id, s=scope)
-            familydb.run(db, "UPDATE activities SET gone = 1 WHERE pk = :pk", pk=row["pk"])
-            dead = [d for d in (st.get("dead") or "").split(",") if d] + [id_]
-            familydb.run(db, "UPDATE cal_state SET dead = :d WHERE pk = :pk", d=",".join(dead[-MAX_DEAD:]), pk=f"{fam.trip_id}~{scope}")
-            familydb.run(db, "UPDATE notes SET gone = 1 WHERE trip_id = :t AND scope = :s AND act_id = :i AND gone = 0", t=fam.trip_id, s=scope, i=id_)
-            _say(session, fam, scope, f"{_who(fam)} removed {row['title']}", "remove")
-            return _act(row)
+            return delete_in(session, fam, id_, scope=scope)
+
+
+def delete_in(session, fam, id_, *, scope="", say=True):
+    """`delete_activity`'s work inside the caller's open transaction on `fam`. `say=False` writes no thread card."""
+    db = fam.db
+    st = _begin(db, fam.trip_id, scope, fam.traveler.id)
+    row = familydb.row(db, "SELECT * FROM activities WHERE trip_id = :t AND scope = :s AND act_id = :i AND gone = 0", t=fam.trip_id, s=scope, i=id_)
+    if row is None:
+        return None
+    familydb.run(db, "DELETE FROM notes WHERE trip_id = :t AND scope = :s AND gone = 1", t=fam.trip_id, s=scope)  # the earlier one can no longer be undone: remove it for good
+    if not scope:   # the parts and steps of a block go with the block (F-080)
+        familydb.run(db, "DELETE FROM block_steps WHERE trip_id = :t AND act_id IN (SELECT act_id FROM activities WHERE trip_id = :t AND scope = '' AND gone = 1)", t=fam.trip_id)
+        familydb.run(db, "DELETE FROM block_parts WHERE trip_id = :t AND act_id IN (SELECT act_id FROM activities WHERE trip_id = :t AND scope = '' AND gone = 1)", t=fam.trip_id)
+    familydb.run(db, "DELETE FROM activities WHERE trip_id = :t AND scope = :s AND gone = 1", t=fam.trip_id, s=scope)
+    familydb.run(db, "UPDATE activities SET gone = 1 WHERE pk = :pk", pk=row["pk"])
+    dead = [d for d in (st.get("dead") or "").split(",") if d] + [id_]
+    familydb.run(db, "UPDATE cal_state SET dead = :d WHERE pk = :pk", d=",".join(dead[-MAX_DEAD:]), pk=f"{fam.trip_id}~{scope}")
+    familydb.run(db, "UPDATE notes SET gone = 1 WHERE trip_id = :t AND scope = :s AND act_id = :i AND gone = 0", t=fam.trip_id, s=scope, i=id_)
+    if say:
+        _say(session, fam, scope, f"{_who(fam)} removed {row['title']}", "remove")
+    return _act(row)
 
 
 def undo_delete(session, id_, demo=""):

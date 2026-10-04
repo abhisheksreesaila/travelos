@@ -25,6 +25,7 @@ from gitaway import access, canvas, catalog, members, phone, session as ses, tri
 from gitaway.icons import icon
 from gitaway.layout import avatar, join_note, trip_field
 from gitaway.pages import calendar as calui
+from gitaway.pages.tab_ask import ask_button
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/trip_canvas.css"),)
 SCRIPTS = ("/assets/js/trip_canvas.js",)
@@ -283,7 +284,7 @@ def day_view(v, day):
     if not cards:
         cards = [Div(Span("a free day", cls="cz-hand"), A("Add something fun", href=f"/trip?add=1&day={day}", cls="tp-btn tp-btn-ink") if editor else Span("Nothing planned yet.", cls="cz-sub"), cls="cz-empty", id="cz-empty")]
     kicker = f"{d.strftime('%a %b').upper()} {d.day} · DAY {day + 1} OF {len(v['dates'])}"
-    body = [head(v, kicker, d.strftime("%A"), key=f"day-{day}", back=curl(), back_label="Zoom out to the week"), zoom_control(v, "day"), strip(v, day),
+    body = [head(v, kicker, d.strftime("%A"), key=f"day-{day}", back=curl(), back_label="Zoom out to the week"), zoom_control(v, "day"), ask_button(day, ident=f"ak-open-day-{day}") if editor else "", strip(v, day),
             Div(Div(*cards, cls="cz-day-main"), Div(_tray(aside), cls="cz-day-side"), cls="cz-day-body")]
     return view("day", body, zout=f"day-{day}", title=day_title(v, day), data_day=str(day))
 
@@ -339,7 +340,7 @@ def block_view(v, act_id, open_step=None):
     legend = Div(Span(icon("users", 14, 2.4), "Lanes: people who split up at the same time", cls="cz-sub"), cls="cz-legend") if lanes_used else ""
     kicker = f"{d.strftime('%a %b').upper()} {d.day} · {cal.fmt_time(a.start)} – {cal.fmt_time(a.end)}"
     body = [head(v, kicker, a.title, key=f"blk-{a.id}", back=curl(day=a.day), back_label="Zoom out to the day", faces=faces_of(allsteps, 4)),
-            Div(*notes, cls="cz-notes") if notes else "", Div(Span(f"{done} of {n} done", cls="cz-prog"), legend, cls="cz-block-meta"),
+            ask_button(a.day, ident=f"ak-open-blk-{a.id}") if access.can_edit(v["role"]) else "", Div(*notes, cls="cz-notes") if notes else "", Div(Span(f"{done} of {n} done", cls="cz-prog"), legend, cls="cz-block-meta"),
             Div(*sections, cls="cz-bparts"), Div(_tray(blk["aside"], open_id=open_id), cls="cz-block-side"), *lists]
     if open_step:
         body.append(sheet(v, open_step, a))
