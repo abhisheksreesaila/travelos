@@ -392,6 +392,7 @@
     g.lift = lift;
     g.item.classList.add('is-lifted');
     stage.classList.add('cz-dragging');
+    stage.querySelectorAll('.cz-dd').forEach(function (n) { n.classList.toggle('is-here', !g.adding && n.dataset.dropAct === g.item.dataset.act); });     // the day it is already on
     try { if (navigator.vibrate) navigator.vibrate(12); } catch (err) { /* no buzz */ }
     place();
     scroller();

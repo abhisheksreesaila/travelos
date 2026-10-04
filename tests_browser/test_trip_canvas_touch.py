@@ -45,7 +45,7 @@ def fire(page, kind, x, y, pid=7):
 
 def centre(page, selector, nth=0):
     loc = page.locator(selector).nth(nth)
-    loc.scroll_into_view_if_needed()
+    loc.evaluate("e => e.scrollIntoView({block: 'center'})")           # not under the tab bar or the toast
     b = loc.bounding_box()
     assert b, selector
     return b["x"] + b["width"] / 2, b["y"] + b["height"] / 2, b
@@ -695,18 +695,23 @@ def test_screenshots(canvas_page):
     swipe(page, '.cz-swipe:has-text("King Kong") .cz-step', -150)
     page.screenshot(path=f"{out}/03-swipe-390.png")
     page.locator(".cz-prog").click()
+    page.evaluate("document.getElementById('cz-toast') && document.getElementById('cz-toast').remove()")
     drag(page, '.cz-swipe:has-text("Revenge of the Mummy") .cz-step', '.cz-swipe:has-text("King Kong")', at="top")
     page.wait_for_selector(".cz-toast")
     page.screenshot(path=f"{out}/04-moved-undo-toast-390.png")
+    page.evaluate("document.getElementById('cz-toast').remove()")
     page.goto(page.url.split("?")[0] + "?day=1")
     page.wait_for_selector(".cz-view[data-level=day]")
     start = hold(page, '.cz-chipwrap:has-text("King Kong") .cz-chip')
-    cell = page.locator(f'.cz-dd[data-drop-act="{dca}"]').bounding_box()
+    expect(page.locator(".cz-lift")).to_have_count(1)
+    cell =page.locator(f'.cz-dd[data-drop-act="{dca}"]').bounding_box()
     move_to(page, start, (cell["x"] + cell["width"] / 2, cell["y"] + cell["height"] / 2))
     page.screenshot(path=f"{out}/05-drag-to-another-day-390.png")
     fire(page, "pointerup", cell["x"] + cell["width"] / 2, cell["y"] + cell["height"] / 2)
-    page.wait_for_timeout(300)
-    start = hold(page, '.cz-chipwrap:has-text("Harry Potter") .cz-chip, .cz-chipwrap .cz-chip >> nth=2')
+    page.wait_for_selector(".cz-toast")
+    page.screenshot(path=f"{out}/05b-after-day-drop-390.png")
+    page.evaluate("document.getElementById('cz-toast').remove()")
+    start = hold(page, '.cz-chipwrap .cz-chip', nth=2)
     tray = page.locator(".cz-dropaside").bounding_box()
     move_to(page, start, (tray["x"] + tray["width"] / 2, tray["y"] + tray["height"] / 2))
     page.screenshot(path=f"{out}/06-drag-to-tray-390.png")

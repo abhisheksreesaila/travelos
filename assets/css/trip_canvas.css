@@ -267,6 +267,7 @@ html[data-cz-dir="side"]::view-transition-new(root) { animation: cz-come-side va
 .cz .cz-dd-dow { font-size: var(--cz-small); font-weight: 800; letter-spacing: 0.06em; }
 .cz .cz-dd-num { font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; line-height: 1; }
 .cz .cz-dd.is-target { background: var(--coral); outline: none; }
+.cz .cz-dd.is-here { opacity: 0.45; }
 .cz .cz-dropaside { position: fixed; z-index: 60; left: 0.5rem; right: 0.5rem; margin: 0 auto; max-width: 36rem; bottom: calc(var(--tabs-h, 0rem) + env(safe-area-inset-bottom) + 0.5rem); min-height: 3.5rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;
   border-radius: 1.5rem; border: 0.1875rem dashed var(--ink); background: var(--sun-tint); font-weight: 800; font-size: var(--cz-body); box-shadow: var(--shadow-md); }
 .cz .cz-dropaside.is-target { background: var(--sun); outline: none; }
@@ -330,6 +331,7 @@ html[data-cz-dir="side"]::view-transition-new(root) { animation: cz-come-side va
 .cz .cz-error { margin: 0; padding: 0.375rem 0.75rem; border-radius: 1rem; background: var(--bubble-tint); font-weight: 800; font-size: var(--cz-body); }
 .cz .cz-error:empty { display: none; }
 .cz .cz-sheet-add h2 { font-size: 1.5rem; }
+.cz .cz-add-form #cz-add-go { position: sticky; bottom: 0; z-index: 2; box-shadow: 0 -0.5rem 0.75rem -0.25rem rgba(255, 255, 255, .95); }     /* the button stays in reach while the form scrolls */
 
 /* the toast: "Waterworld moved to the Set aside tray" and Undo */
 .cz .cz-toast { position: fixed; z-index: 80; left: 50%; translate: -50% 0; bottom: calc(var(--tabs-h, 0rem) + env(safe-area-inset-bottom) + 1rem); width: max-content; max-width: calc(100% - 2rem); display: flex; align-items: center; gap: 0.75rem;
