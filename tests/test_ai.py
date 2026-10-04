@@ -120,7 +120,7 @@ def test_the_convert_timeout_is_longer_than_the_others(monkeypatch):
     fake = use(monkeypatch, reply(), reply())
     call("convert")
     call("ask")
-    assert fake.sent[0]["timeout"] == 45 and fake.sent[1]["timeout"] < 45
+    assert fake.sent[0]["timeout"] == 60 and fake.sent[1]["timeout"] < 45
 
 
 def test_one_setting_switches_the_model_for_one_job(monkeypatch):

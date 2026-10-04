@@ -34,7 +34,7 @@ from gitaway import hostdb
 
 # job -> (seconds before giving up, what it is for). docs/ai-usage.md lists each one with what it replaces.
 JOBS = {
-    "convert": (45, "turn pasted messages into park days, parts and steps"),
+    "convert": (60, "turn pasted messages into park days, parts and steps"),
     "speak": (20, "turn a spoken change into a proposal"),
     "ask": (20, "answer a question about the trip, with search"),
     "around-you": (20, "recommendations near where the family is"),
