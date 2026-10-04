@@ -23,8 +23,8 @@ HEAD = (Link(rel="stylesheet", href="/assets/css/passkeys.css"), Script(src="/as
 SCRIPT = Script(src="/assets/js/passkeys.js", defer=True)
 
 
-def _fail(message, code=400):
-    return JSONResponse({"ok": False, "error": message}, status_code=code)
+def _fail(message, code=400, **extra):
+    return JSONResponse({"ok": False, "error": message, **extra}, status_code=code)
 
 
 async def _body(request):
@@ -128,13 +128,13 @@ def register(app):
             row = passkeys.authenticate(session, request, data.get("credential"))
             passkeys.sign_in(session, row)
         except passkeys.PasskeyError as e:
-            return _fail(str(e))
+            return _fail(str(e), unknown=True) if e.unknown else _fail(str(e))
         auth.make_room(session)
         next_path = ses.safe_next(data.get("next"), "/start")
         landing = "/trip" if next_path == "/start" else next_path   # no destination: open Today (it sends someone with no trip on to /start)
         intent = data.get("intent") if data.get("intent") in ses.INTENTS else ""
         _continue(session, intent, next_path)
-        return JSONResponse({"ok": True, "next": landing, "name": ses.current_traveler(session).name.split()[0]})
+        return JSONResponse({"ok": True, "next": landing, "name": ses.current_traveler(session).name.split()[0], "passkey": row["id"]})
 
     @app.post("/passkeys/remove")
     def remove(request, session, id: str = ""):
