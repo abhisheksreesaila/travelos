@@ -422,11 +422,12 @@ Found reviewing F-068: drives to and from airports are skipped, so a departure f
 - [x] the arrival-day test checks 9:40 (after landing): Up next is the car pickup and no "min drive" line shows
 
 ## F-072 Ask by voice [blocked]
-Blocked: create a Gemini API key at https://aistudio.google.com/apikey (free tier, no card), then run in the travelos folder: `railway variable set GEMINI_API_KEY --stdin --service web` and paste the key (nothing is shown), and say go.
+Blocked: set the Azure OpenAI key on Railway (`railway variable set AZURE_OPENAI_API_KEY --stdin --service web` in the travelos folder, paste, Enter) and tell me the endpoint URL, the deployment name(s) and whether a speech-to-text deployment exists; then say go.
+
 - [ ] talk (or type) to ask for a change; GitAway proposes a new day (added, moved, removed plans) and changes nothing until Apply; Apply tells the family
 
 ## F-073 Around you [blocked]
-Blocked: same Gemini key as F-072.
+Blocked: same Azure OpenAI setup as F-072 (nearby places come from OpenStreetMap; the model ranks and explains them).
 - [ ] quick chips (vegetarian food, coffee, groceries, Costco/Walmart, pharmacy, gas, restrooms) find places near you with distance, open now, Directions, Call and Add to plan; the family's food preference applies
 
 ## F-074 Face ID sign-in [done]
