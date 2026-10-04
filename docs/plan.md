@@ -506,7 +506,7 @@ Captain, 2026-10-04: Ask stops at 600 characters and one day; paste lives on sep
 - [ ] one preview, day by day, of what is added, moved or removed; one Apply saves it all in one go and tells the family once; overlaps are allowed (F-086); a model failure keeps the text
 - [ ] the captain's real Universal Studios and California Adventure messages (existing fixture) still convert into park days, parts and steps
 
-## F-088 Face ID only where it is set up [todo]
+## F-088 Face ID only where it is set up [done]
 Captain, 2026-10-04: tapping Face ID on a phone without a GitAway passkey shows a QR code (iPhone offering another device), which a phone can't scan itself. Passkeys made before the move to gitaway.me don't work there. · Needs: none
-- [ ] the sign-in page shows the Face ID button only on a device that turned on Face ID for this address (remembered on the device after a successful setup or sign-in); everywhere else Google is the one button
-- [ ] if a Face ID attempt is cancelled or fails, the page says so plainly and points to Google; a test covers both cases
+- [x] the sign-in page shows the Face ID button only on a device that turned on Face ID for this address (remembered on the device after a successful setup or sign-in); everywhere else Google is the one button
+- [x] if a Face ID attempt is cancelled or fails, the page says so plainly and points to Google; a test covers both cases
