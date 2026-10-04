@@ -365,10 +365,12 @@ def search(cat, lat, lon, mode, now, *, pref=False, family="", use_ai=True) -> d
 
 
 def now_in(zone) -> datetime:
+    """Now in the trip's time zone (gitaway.catalog's clock, which tests pin)."""
     from zoneinfo import ZoneInfo
+    from gitaway import catalog
     try:
-        return datetime.now(ZoneInfo(zone))
-    except Exception:  # noqa: BLE001
+        return catalog.now_utc().astimezone(ZoneInfo(zone))
+    except Exception:  # noqa: BLE001 - an unknown zone name: the machine's own clock
         return datetime.now()
 
 

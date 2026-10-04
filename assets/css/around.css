@@ -1,0 +1,49 @@
+/* Around you (F-073), the Map tab's second segment (frame 5 of docs/design/canvas/Mobile-Storyboards-v1.html). Loads after trip.css and phone.css.
+   Sizes are rem off the one root; text never goes under --text-min; touch targets are 2.75rem; colours are tokens. */
+.mp-segs { display: flex; gap: 0.25rem; padding: 0.25rem; border-radius: var(--r-pill); background: var(--paper-2); align-self: stretch; }
+.mp-seg { flex: 1; min-height: 2.75rem; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--r-pill); font-weight: 800; font-size: 1rem; color: var(--ink-2); text-decoration: none; text-align: center; }
+.mp-seg[aria-current="true"] { background: var(--card); color: var(--ink); box-shadow: var(--shadow-sm); }
+.mp-seg:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.125rem; }
+
+.ar { display: flex; flex-direction: column; gap: 0.75rem; padding: 0 1rem 1.5rem; }
+.ar * { box-sizing: border-box; }
+.ar-head { display: flex; flex-direction: column; gap: 0.25rem; }
+.ar-ttl { font-family: var(--font-display); font-weight: 800; font-size: 1.75rem; letter-spacing: -0.03em; }
+.ar-loc { display: flex; align-items: center; gap: 0.375rem; font-weight: 700; font-size: max(var(--text-min), 0.9375rem); color: var(--ink-2); }
+.ar-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.ar-chip { min-height: 2.75rem; padding: 0 0.875rem; border: 0; border-radius: var(--r-pill); background: var(--card); box-shadow: var(--shadow-sm); display: inline-flex; align-items: center; gap: 0.375rem; font: inherit; font-weight: 800; font-size: 1rem; color: var(--ink); cursor: pointer; }
+.ar-chip[aria-pressed="true"] { background: var(--ink); color: #FFFFFF; }
+.ar-chip:focus-visible, .ar-mode:focus-visible, .ar-locate:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.125rem; }
+.ar-row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.ar-locate { gap: 0.5rem; box-shadow: inset 0 0 0 0.125rem var(--line); }
+.ar-modes { display: inline-flex; gap: 0.25rem; padding: 0.25rem; border-radius: var(--r-pill); background: var(--paper-2); }
+.ar-mode { min-height: 2.75rem; padding: 0 0.875rem; border: 0; border-radius: var(--r-pill); background: transparent; font: inherit; font-weight: 800; font-size: 1rem; color: var(--ink-2); cursor: pointer; }
+.ar-mode[aria-pressed="true"] { background: var(--card); color: var(--ink); box-shadow: var(--shadow-sm); }
+.ar-fine { display: flex; gap: 0.375rem; align-items: flex-start; margin: 0; font-weight: 600; font-size: max(var(--text-min), 0.875rem); color: var(--ink-2); }
+.ar-fine svg { flex: 0 0 auto; margin-top: 0.125rem; }
+.ar-prefs { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.ar-pt { font-weight: 700; font-size: max(var(--text-min), 0.875rem); color: var(--ink-2); }
+.ar-pref { display: inline-flex; align-items: center; gap: 0.375rem; min-height: 2.25rem; padding: 0 0.75rem 0 0.375rem; border-radius: var(--r-pill); background: var(--mint); font-weight: 800; font-size: max(var(--text-min), 0.9375rem); }
+.ar-bx { width: 1.375rem; height: 1.375rem; border-radius: 0.4rem; background: var(--ink); color: #FFFFFF; display: inline-grid; place-items: center; }
+.ar-results { display: flex; flex-direction: column; gap: 0.625rem; }
+.ar-busy { margin: 0; padding: 0.75rem; border-radius: var(--r-md); background: var(--paper-2); font-weight: 800; text-align: center; }
+#ar-fragment { display: flex; flex-direction: column; gap: 0.625rem; }
+.ar-fh { display: flex; flex-direction: column; gap: 0.125rem; }
+.ar-h2 { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; letter-spacing: -0.02em; }
+.ar-near, .ar-note { margin: 0; font-weight: 700; font-size: max(var(--text-min), 0.9375rem); color: var(--ink-2); }
+.ar-note { padding: 0.625rem 0.875rem; border-radius: var(--r-md); background: var(--sky-tint, var(--paper-2)); color: var(--ink); }
+.ar-empty { margin: 0; padding: 0.875rem; border-radius: var(--r-md); background: var(--paper-2); font-weight: 700; }
+.ar-card { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.875rem 1rem; border-radius: 1.375rem; background: var(--card); box-shadow: var(--shadow-sm); min-width: 0; }
+.ar-name { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; line-height: 1.15; letter-spacing: -0.02em; overflow-wrap: anywhere; }
+.ar-meta { display: flex; flex-wrap: wrap; gap: 0.375rem; }
+.ar-pill { border-radius: var(--r-pill); padding: 0.25rem 0.75rem; font-size: max(var(--text-min), 0.9375rem); font-weight: 800; background: var(--paper-2); }
+.ar-open.is-open { background: var(--mint); }
+.ar-open.is-closed { background: var(--bubble); }
+.ar-open.is-unknown { background: var(--sun); }
+.ar-why { display: flex; gap: 0.375rem; align-items: flex-start; margin: 0; font-weight: 700; color: var(--ink-2); }
+.ar-why svg { flex: 0 0 auto; margin-top: 0.125rem; }
+.ar-site { display: inline-flex; align-items: center; gap: 0.375rem; min-height: 2.75rem; font-weight: 800; color: var(--ink); align-self: flex-start; }
+.ar-acts { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.ar-acts .tp-btn { flex: 1 1 auto; gap: 0.5rem; }
+.ar-acts .tp-btn-white { box-shadow: inset 0 0 0 0.125rem var(--line); }
+.ar-ideas { gap: 0.375rem; }

@@ -1,7 +1,7 @@
 """The trip calendar at /calendar (F-019).
 
 GET /calendar                                    the calendar (?demo=long for the 20-day fixture, ?view=days for the hour grid; the default is the compact whole-trip list)
-                                                 ?add=<day>&at=HH:MM opens the add form, ?edit=<id> the edit form, ?undo=<id> the undo toast
+                                                 ?add=<day>&at=HH:MM[&title=..&kind=..] opens the add form (title and kind prefilled), ?edit=<id> the edit form, ?undo=<id> the undo toast
 POST /calendar/activities                        add            POST /calendar/activities/{id}         edit
 POST /calendar/activities/{id}/move              move/resize    POST /calendar/activities/{id}/delete  delete (then Undo)
 POST /calendar/undo                              undo the last delete
@@ -659,7 +659,7 @@ def register(app):
         return None
 
     @app.get("/calendar")
-    def calendar(session, request, demo: str = "", view: str = "", add: str = "", at: str = "", edit: str = "", new: str = "", undo: str = "", w: str = "", invite: str = "", live: str = "", back: str = "", voice: str = "", night: str = "", hear: str = "", voiced: str = "", vnote: str = "", vn: str = "", detail: str = ""):
+    def calendar(session, request, demo: str = "", view: str = "", add: str = "", at: str = "", edit: str = "", new: str = "", undo: str = "", w: str = "", invite: str = "", live: str = "", back: str = "", voice: str = "", night: str = "", hear: str = "", voiced: str = "", vnote: str = "", vn: str = "", detail: str = "", title: str = "", kind: str = ""):
         if not ses.current_traveler(session):
             return _signin(demo, view)
         if not ses.booking(session):
@@ -686,7 +686,7 @@ def register(app):
             except cal.CalendarError:
                 start = free_start(blocks, day, gs)
             start = cal.snap(min(max(start, gs), cal.GRID_END - cal.MIN_LEN))
-            form = {"vals": _vals(id=f"a{nid}", day=day, start=cal.hhmm(start), end=cal.hhmm(default_end(blocks, day, start)))}
+            form = {"vals": _vals(id=f"a{nid}", day=day, start=cal.hhmm(start), end=cal.hhmm(default_end(blocks, day, start)), title=" ".join(title.split())[: cal.MAX_TITLE], kind=kind if kind in cal.KINDS else "fun")}   # ?title= and ?kind= prefill it (Around you, F-073)
         view = pick_view(view, bool(add or edit or new or undo or w or voice == "1" or voiced))
         talk = {"night": voice_ui.parse_night(night), "hear": hear == "1"} if voice == "1" and not form else None
         done = {"ids": voice_ui.parse_ids(voiced), "note": voice_ui.note_id(vnote), "night": str(voice_ui.parse_night(vn) if voice_ui.parse_night(vn) is not None else "")} if voiced else None

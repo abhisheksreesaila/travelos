@@ -26,6 +26,7 @@ from gitaway import access, canvas, catalog, members, phone, pickers, session as
 from gitaway.icons import icon
 from gitaway.layout import avatar, join_note, trip_field
 from gitaway.pages import calendar as calui
+from gitaway.pages.around_ui import around_url
 from gitaway.pages.tab_ask import ask_button
 
 HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/trip_canvas.css"))   # pickers: the add-a-step sheet has a time field (F-082)
@@ -396,6 +397,14 @@ def _row(s, hero, edit):
     return Div(swipe_buttons(s) if edit else "", link, cls="cz-swipe", **step_data(s, edit))
 
 
+MEALS = ("breakfast", "lunch", "dinner", "snack")
+
+
+def ideas_button(day, ident):
+    """"Ideas" on a meal (F-073): opens Around you on that day with the vegetarian food chip picked."""
+    return A(icon("spark", 14, 2.4), "Ideas", href=around_url(day=day, cat="veg"), cls="btn btn-sm tp-edit ar-ideas", id=ident, title="Ideas for this meal near you")
+
+
 def block_view(v, act_id, open_step=None, adding=None):
     a = v["by_id"][act_id]
     blk = v["plan"][act_id]
@@ -415,7 +424,8 @@ def block_view(v, act_id, open_step=None, adding=None):
             else:
                 items += [_row(s, s["id"] != open_id, editor) for s in run]
         pn, pd = len(p["steps"]), sum(1 for s in p["steps"] if s["done"])
-        sections.append(Section(Div(H2(p["name"]), Span(p["time_of_day"], cls="cz-when") if p["time_of_day"] else "", Span(f"{pd} of {pn} done" if pn else "", cls="cz-part-n"), cls="cz-part-h"),
+        ideas = ideas_button(a.day, f"ar-ideas-{p['id']}") if p["name"].casefold() in MEALS else ""
+        sections.append(Section(Div(H2(p["name"]), Span(p["time_of_day"], cls="cz-when") if p["time_of_day"] else "", Span(f"{pd} of {pn} done" if pn else "", cls="cz-part-n"), ideas, cls="cz-part-h"),
                                 *(items or [P("Nothing here yet.", cls="cz-sub")]), cls=f"cz-bpart cz-pt-{PART_TINTS[k % 5]}", data_part=p["id"], data_act=a.id))
     lists = [Section(Div(H3(lst["name"]), Span(f"for {lst['for']}", cls="cz-when") if lst["for"] else "", cls="cz-part-h"),
                      Div(*[Span(i["title"], cls="cz-list-i") for i in lst["items"]], cls="cz-list"), cls="cz-bpart cz-triplist", data_list=lst["id"]) for lst in v["lists"]]

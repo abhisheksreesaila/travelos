@@ -1,6 +1,6 @@
 """The Map tab (F-068): the day's stops, numbered in order, on an OpenStreetMap map with the route between them.
 
-GET /trip/map[?day=<index>]   the day's stops. `content(request, session)` is the tab's body; gitaway/pages/phone_tabs.py draws the route, header and tab bar around it.
+GET /trip/map[?day=<index>]   the day's stops; ?view=around is the second segment, "Around you" (gitaway/pages/around_ui.py, F-073). `content(request, session)` is the tab's body; gitaway/pages/phone_tabs.py draws the route, header and tab bar around it.
 
 Every stop that has a place (a flight's airport, the hotel, a plan, the car desk) gets a number. Where a place is comes from gitaway.geo (OpenStreetMap's
 geocoder, cached per family, one lookup a second): what is not known yet is looked up for a couple of seconds while the page is made, the rest in
@@ -15,11 +15,11 @@ from fasthtml.common import A, Button, Div, H2, Li, Link, Nav, NotStr, Ol, P, Sc
 
 from gitaway import access, familydb, geo, session as ses, tripcal as cal, tripday as td
 from gitaway.icons import icon
-from gitaway.pages import calendar as calui, trip as trip_ui
+from gitaway.pages import around_ui, calendar as calui, trip as trip_ui
 
 TITLE = "Map"
-HEAD = (Link(rel="stylesheet", href="/assets/vendor/leaflet/leaflet.css"), Link(rel="stylesheet", href="/assets/css/map.css"))  # trip.css and phone.css come with the shell
-SCRIPTS = ("/assets/vendor/leaflet/leaflet.js", "/assets/js/map.js")
+HEAD = (Link(rel="stylesheet", href="/assets/vendor/leaflet/leaflet.css"), Link(rel="stylesheet", href="/assets/css/map.css"), *around_ui.HEAD)  # trip.css and phone.css come with the shell
+SCRIPTS = ("/assets/vendor/leaflet/leaflet.js", "/assets/js/map.js", *around_ui.SCRIPTS)
 NOT_FOUND = "Couldn’t find this place on the map."
 
 
@@ -60,6 +60,17 @@ def stops_of(v, db):
         if pos and x.kind != "flight":
             prev = (x, pos)
     return out
+
+
+def located_stops(v, session, budget=2.0):
+    """The open day's stops that have a place on the map, in order, looking up what is not known yet for up to `budget` seconds (the fallback for Around you
+    when the phone will not say where it is: the hotel, else the first stop)."""
+    items = [x for x in v["items"] if x.place and x.kind not in ("ride", "offer")]
+    places = [(_place(x), True) if x.kind == "flight" else _place(x) for x in items]
+    with familydb.using(session) as db:
+        if db and places:
+            geo.warm(db, places, budget=budget)
+        return [s for s in stops_of(v, db) if s["pos"]]
 
 
 def _drive_from(stops):
@@ -124,6 +135,8 @@ def content(request, session):
     """The map tab's body for the day in ?day= (else today, else the first day)."""
     ua = request.headers.get("user-agent", "")
     v = trip_ui.load(session, request.query_params.get("day", "")[:3], ua)
+    if request.query_params.get("view") == "around":   # the second segment (F-073)
+        return around_ui.view(request, session, v)
     items = [x for x in v["items"] if x.place and x.kind not in ("ride", "offer")]
     places = [(_place(x), True) if x.kind == "flight" else _place(x) for x in items]
     with familydb.using(session) as db:
@@ -147,5 +160,9 @@ def content(request, session):
         if left:
             body.append(P("Finding places on the map…", role="status", cls="mp-finding", id="mp-finding"))
         body.append(stop_list(stops, v))
-    return (day_picker(v), chip, *body,
+    return (around_ui.segment("stops", v["sel"]), day_picker(v), chip, *body,
             Script(_json(data), type="application/json", id="mp-data"))
+
+
+def register(app):
+    around_ui.register(app)   # POST /trip/map/around: the cards for Around you (F-073)
