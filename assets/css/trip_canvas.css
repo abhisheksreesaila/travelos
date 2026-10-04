@@ -236,3 +236,113 @@ html[data-cz-dir="side"]::view-transition-new(root) { animation: cz-come-side va
   .cz .cz-sheet { border-radius: 2rem; max-height: 86vh; }
   .cz .cz-acts { flex-direction: row; } .cz .cz-acts .cz-act-main { flex: 2; } .cz .cz-acts .cz-act:not(.cz-act-main) { flex: 1; }
 }
+
+/* ---- F-082: touch moves and filters. Frame 8 of Trip-Canvas-v2.html (hold and drag, let go with Undo, filter chips) and frame 4 of Plan-Steps-v1.html (swipe, add a step). ---- */
+
+/* what can be picked up never selects text or opens the phone's own link menu while a finger holds it */
+.cz [data-drag], .cz [data-drag] a, .cz .cz-addchip { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+.cz .is-lifted { opacity: 0.35; }
+
+/* the lifted chip that follows the finger */
+.cz .cz-lift { position: fixed; z-index: 70; left: 0; top: 0; display: flex; flex-direction: column; align-items: flex-start; max-width: min(18rem, calc(100vw - 1rem)); padding: 0.5rem 1rem; border-radius: 1.375rem; background: var(--ink); color: #FFFFFF;
+  font-weight: 800; font-size: var(--cz-body); line-height: 1.15; overflow-wrap: anywhere; box-shadow: var(--shadow-lg); pointer-events: none; will-change: transform; }
+.cz .cz-lift.is-on-target { background: var(--coral); }
+.cz .cz-lift-when { font-size: var(--cz-small); font-weight: 800; color: var(--sun); }
+.cz .cz-lift.is-on-target .cz-lift-when { color: #FFFFFF; }
+.cz .cz-lift-when:empty { display: none; }
+
+/* drop targets: the part under the finger, a line where the step will go, the days across the top, the tray along the bottom */
+.cz .is-target { outline: 0.1875rem dashed var(--coral); outline-offset: 0.125rem; }
+.cz .cz-part.is-end, .cz .cz-bpart.is-end { box-shadow: inset 0 -0.3125rem 0 0 var(--coral); }
+.cz [data-drag].is-before { position: relative; }
+.cz [data-drag].is-before::before { content: ""; position: absolute; z-index: 2; border-radius: var(--r-pill); background: var(--coral); }
+.cz .cz-swipe.is-before::before { left: 0; right: 0; top: -0.375rem; height: 0.25rem; }
+.cz .cz-chipwrap.is-before::before { top: 0; bottom: 0; left: -0.375rem; width: 0.25rem; }
+.cz .cz-dropbars { display: none; }
+.cz .cz-dragging .cz-dropbars { display: block; }
+.cz .cz-dropdays { position: fixed; z-index: 60; top: calc(env(safe-area-inset-top) + 0.5rem); left: 0.5rem; right: 0.5rem; margin: 0 auto; max-width: 36rem; padding: 0.5rem 0.625rem 0.625rem; border-radius: 1.5rem; background: var(--ink); color: #FFFFFF; box-shadow: var(--shadow-lg); }
+.cz .cz-dd-t { display: block; margin: 0 0 0.375rem 0.25rem; font-size: var(--cz-small); font-weight: 800; letter-spacing: 0.04em; color: var(--sun); }
+.cz .cz-dd-cells { display: flex; flex-wrap: wrap; gap: 0.375rem; }
+.cz .cz-dd { flex: 1 1 3rem; min-width: 2.75rem; min-height: 2.75rem; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 1rem; background: rgba(255, 255, 255, .14); }
+.cz .cz-dd-dow { font-size: var(--cz-small); font-weight: 800; letter-spacing: 0.06em; }
+.cz .cz-dd-num { font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; line-height: 1; }
+.cz .cz-dd.is-target { background: var(--coral); outline: none; }
+.cz .cz-dropaside { position: fixed; z-index: 60; left: 0.5rem; right: 0.5rem; margin: 0 auto; max-width: 36rem; bottom: calc(var(--tabs-h, 0rem) + env(safe-area-inset-bottom) + 0.5rem); min-height: 3.5rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+  border-radius: 1.5rem; border: 0.1875rem dashed var(--ink); background: var(--sun-tint); font-weight: 800; font-size: var(--cz-body); box-shadow: var(--shadow-md); }
+.cz .cz-dropaside.is-target { background: var(--sun); outline: none; }
+
+/* swipe a step left for Done and Set aside */
+.cz .cz-swipe { position: relative; min-width: 0; border-radius: 1.125rem; }
+.cz .cz-swipe .cz-step { position: relative; z-index: 1; transition: margin-right 0.18s ease; touch-action: pan-y; }   /* the row gives up room to the buttons instead of sliding off the screen */
+.cz .cz-swipe.is-swiping .cz-step { transition: none; }
+.cz .cz-swipe-acts { position: absolute; z-index: 0; top: 0; bottom: 0; right: 0; display: flex; visibility: hidden; border-radius: 1.125rem; overflow: hidden; }
+.cz .cz-swipe.is-open .cz-swipe-acts, .cz .cz-swipe.is-swiping .cz-swipe-acts { visibility: visible; }
+.cz .cz-sw-form { display: flex; margin: 0; }
+.cz .cz-sw-btn { width: 4.5rem; min-height: 2.75rem; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.125rem; padding: 0.25rem; border: 0; color: var(--ink);
+  font-family: var(--font-body); font-weight: 800; font-size: var(--cz-small); line-height: 1.1; text-align: center; cursor: pointer; }
+.cz .cz-sw-done { background: var(--mint); }
+.cz .cz-sw-aside { background: var(--sun); }
+
+/* filters: chips that light up what matches and dim the rest */
+.cz .cz-filters { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.cz .cz-fchip { display: inline-flex; align-items: center; gap: 0.375rem; min-height: 2.75rem; padding: 0 0.875rem; border: 0; border-radius: var(--r-pill); background: var(--card); box-shadow: var(--shadow-sm); color: var(--ink);
+  font-family: var(--font-body); font-weight: 800; font-size: var(--cz-body); cursor: pointer; }
+.cz .cz-fchip[aria-pressed="true"] { background: var(--ink); color: #FFFFFF; }
+.cz .cz-fchip-list[aria-pressed="true"] { background: var(--mint); color: var(--ink); }
+.cz .cz-fchip-face { display: inline-flex; }
+.cz .cz-fchip-face .cz-av { margin-left: 0; width: 1.5rem; height: 1.5rem; }
+.cz .cz-view.cz-flt-on .is-dim { opacity: 0.36; filter: saturate(0.5); }
+.cz .cz-view.cz-flt-on .is-hit > .cz-chip, .cz .cz-view.cz-flt-on .cz-swipe.is-hit > .cz-step, .cz .cz-view.cz-flt-on .cz-chip-aside.is-hit { background: var(--card); box-shadow: 0 0 0 0.1875rem var(--mint), var(--shadow-sm); }
+.cz .cz-view.cz-flt-on .is-dim, .cz .cz-view.cz-flt-on .is-hit { transition: opacity 0.2s ease; }
+
+/* "4 more from your list aren't in this day yet" */
+.cz .cz-listmore { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.75rem; border-radius: 1.5rem; background: var(--mint-tint); box-shadow: var(--shadow-sm); }
+.cz .cz-listmore[hidden] { display: none; }
+.cz .cz-lm-t { margin: 0; font-size: var(--cz-body); font-weight: 700; }
+.cz .cz-lm-n { font-weight: 800; }
+.cz .cz-lm-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.cz .cz-addchip { display: inline-flex; align-items: center; gap: 0.375rem; min-height: 2.75rem; padding: 0.375rem 0.875rem; border-radius: 1.375rem; background: var(--card); border: 0.125rem dashed var(--mint-ink); color: var(--ink); font-weight: 800; font-size: var(--cz-body); line-height: 1.15; overflow-wrap: anywhere; }
+.cz .cz-addchip.is-plain { border-style: solid; border-color: transparent; }
+
+/* add a step, add a note, move: the sheet's extras */
+.cz .cz-add { margin-left: auto; min-height: 2.75rem; }
+.cz .cz-more { display: flex; flex-direction: column; gap: 0.5rem; }
+.cz .cz-notebox, .cz .cz-move { border-radius: 1.25rem; background: rgba(255, 255, 255, .6); padding: 0 0.75rem; }
+.cz .cz-note-sum, .cz .cz-move-sum { display: flex; align-items: center; gap: 0.5rem; min-height: 2.75rem; font-weight: 800; font-size: var(--cz-body); cursor: pointer; list-style: none; }
+.cz .cz-note-sum::-webkit-details-marker, .cz .cz-move-sum::-webkit-details-marker { display: none; }
+.cz .cz-note-form { display: flex; gap: 0.5rem; padding-bottom: 0.75rem; }
+.cz .cz-note-in, .cz .cz-field { flex: 1; min-width: 0; min-height: 2.75rem; padding: 0 0.875rem; border: 0.125rem solid rgba(30, 26, 46, .2); border-radius: 1rem; background: var(--card); color: var(--ink); font-family: var(--font-body); font-weight: 700; font-size: max(var(--text-min), 1rem); }
+.cz .cz-save { min-height: 2.75rem; }
+.cz .cz-move-items { display: flex; flex-direction: column; gap: 0.375rem; padding-bottom: 0.75rem; }
+.cz .cz-move-form { display: block; margin: 0; }
+.cz .cz-move-btn { width: 100%; min-height: 2.75rem; justify-content: flex-start; gap: 0.5rem; text-align: left; }
+.cz .cz-add-form { display: flex; flex-direction: column; gap: 0.75rem; }
+.cz .cz-fieldwrap { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
+.cz .cz-picks { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.cz .cz-pick { position: relative; display: inline-flex; align-items: center; gap: 0.375rem; min-height: 2.75rem; padding: 0 0.875rem 0 0.5rem; border-radius: var(--r-pill); background: var(--card); box-shadow: inset 0 0 0 0.125rem rgba(30, 26, 46, .16); font-weight: 800; font-size: var(--cz-body); cursor: pointer; }
+.cz .cz-pick-part { padding-left: 0.875rem; }
+.cz .cz-pick-in { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.cz .cz-pick:has(.cz-pick-in:checked) { background: var(--ink); color: #FFFFFF; box-shadow: none; }
+.cz .cz-pick:has(.cz-pick-in:focus-visible) { outline: 0.1875rem solid var(--coral); outline-offset: 0.125rem; }
+.cz .cz-pick-face { display: inline-flex; }
+.cz .cz-pick-face .cz-av { margin-left: 0; width: 1.75rem; height: 1.75rem; }
+.cz .cz-pick-t { display: inline-flex; align-items: center; gap: 0.375rem; }
+.cz .cz-error { margin: 0; padding: 0.375rem 0.75rem; border-radius: 1rem; background: var(--bubble-tint); font-weight: 800; font-size: var(--cz-body); }
+.cz .cz-error:empty { display: none; }
+.cz .cz-sheet-add h2 { font-size: 1.5rem; }
+
+/* the toast: "Waterworld moved to the Set aside tray" and Undo */
+.cz .cz-toast { position: fixed; z-index: 80; left: 50%; translate: -50% 0; bottom: calc(var(--tabs-h, 0rem) + env(safe-area-inset-bottom) + 1rem); width: max-content; max-width: calc(100% - 2rem); display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.3125rem 0.3125rem 0.3125rem 1.125rem; border-radius: 1.75rem; background: var(--ink); color: #FFFFFF; font-weight: 800; font-size: max(var(--text-min), 0.9375rem); line-height: 1.2; box-shadow: var(--shadow-lg); animation: cz-rise 0.28s var(--cz-ease) both; }
+.cz .cz-toast-t { min-width: 0; overflow-wrap: anywhere; padding: 0.25rem 0; }
+.cz .cz-toast-undo { flex-shrink: 0; min-width: 2.75rem; min-height: 2.75rem; padding: 0 1.125rem; border: 0; border-radius: var(--r-pill); background: var(--sun); color: var(--ink); font-family: var(--font-body); font-weight: 800; font-size: max(var(--text-min), 0.9375rem); cursor: pointer; }
+@keyframes cz-rise { from { opacity: 0; translate: -50% 0.75rem; } }
+@media (prefers-reduced-motion: reduce) {
+  .cz .cz-toast { animation: none; }
+  .cz .cz-swipe .cz-step { transition: none; }
+  .cz .cz-view.cz-flt-on .is-dim, .cz .cz-view.cz-flt-on .is-hit { transition: none; }
+}
+@media (min-width: 721px) {
+  .cz .cz-dropdays { max-width: 40rem; }
+  .cz .cz-listmore { grid-column: 1 / -1; }
+}

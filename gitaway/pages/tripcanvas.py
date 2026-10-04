@@ -180,7 +180,7 @@ def step_data(s, edit):
     """The data a step's element carries: who and which lists (for the filters, every role), and, for editors, what the script needs to pick it up."""
     out = {"data_who": json.dumps(list(s["who_key"]), separators=(",", ":")), "data_lists": " ".join(s.get("lists") or [])}
     if edit:
-        out.update(data_drag=s["id"], data_act=s["act"], data_aside="1" if s["aside"] else "0")
+        out.update(data_drag=s["id"], data_act=s["act"], data_aside="1" if s["aside"] else "0", data_time=s["time"])
     return out
 
 
@@ -231,7 +231,7 @@ def listmore(v, a):
             chips.append(A(icon("plus", 14, 2.8), i["title"], href=curl(block=a.id, add=True, title=i["title"], note=i["note"] or ""), cls="cz-addchip", data_zoom="in", **data) if editor else Span(i["title"], cls="cz-addchip is-plain"))
         head = (Span(Span(_count(len(missing), "more", "more"), cls="cz-lm-n"), f" from your {lst['name']} list", Span(" aren't in this day yet.", cls="cz-lm-s")) if missing
                 else Span(f"Everything on your {lst['name']} list is already in this day."))
-        out.append(Section(P(head, cls="cz-lm-t"), Div(*chips, cls="cz-lm-chips") if chips else "", cls="cz-listmore", data_list=lst["id"], aria_label=f"More from {lst['name']}"))
+        out.append(Section(P(head, cls="cz-lm-t"), Div(*chips, cls="cz-lm-chips") if chips else "", cls="cz-listmore", data_list=lst["id"], aria_label=f"More from {lst['name']}", hidden=True))      # shown by the script when this list is the filter
     return out
 
 
