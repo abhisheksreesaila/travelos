@@ -276,7 +276,7 @@ Found while reviewing F-045: run in reverse order, tests/test_family_storage.py:
 # Go live (brief: docs/briefs/go-live.md, approved 2026-10-01)
 
 ## F-048 Deploy to Railway [done]
-Live: https://web-production-2d117.up.railway.app (deployed 2026-10-01; volume at /data; secret set)
+Live: https://gitaway.me (was https://web-production-2d117.up.railway.app, which now forwards) (deployed 2026-10-01; volume at /data; secret set)
 Needs: none
 - [x] the app builds and runs on Railway (pixi-based image), with all databases on a persistent volume (working directory on the volume), assets resolved from the code folder
 - [x] production settings: session cookie https-only, `GITAWAY_DEV_LOGIN` never set, secret key from `GITAWAY_SECRET_KEY`, a health check route; docs/setup.md has a Railway section
@@ -443,7 +443,7 @@ Found reviewing F-076: `pixi run forget-person` (dry run by default) is not safe
 - [ ] refuses when more than one account has the email, listing them; photo and database paths are kept inside the data folder; audit rows matched exactly, not with LIKE; warns or refuses when the plain run would leave a family with no admin
 - [ ] its tests build the family database through the app's own schema and write rows through the app's own code
 
-## F-078 One address: gitaway.me [doing]
+## F-078 One address: gitaway.me [done]
 Captain, 2026-10-04: bought gitaway.me; the site, Google sign-in and Face ID move there. · Needs: none
-- [ ] in production, a request to any other host (the old *.up.railway.app address) gets a permanent redirect to the same path and query on GITAWAY_PUBLIC_URL, except /healthz (Railway's check) and /auth/callback (a sign-in already under way finishes where it started)
-- [ ] locally and in tests nothing redirects; docs/setup.md says how to change the address
+- [x] in production, a request to any other host (the old *.up.railway.app address) gets a permanent redirect to the same path and query on GITAWAY_PUBLIC_URL, except /healthz (Railway's check) and /auth/callback (a sign-in already under way finishes where it started)
+- [x] locally and in tests nothing redirects; docs/setup.md says how to change the address
