@@ -129,6 +129,13 @@ def test_only_admins_delete_a_trip_and_everything_on_it_goes(client, clock):
     p = person()
     trip_id = ses.trips(p)[0].id
     cal.add_activity(p, day=1, start="10:00", end="11:00", title="Griffith Observatory")
+    with familydb.using(p) as db:     # F-080: a block's parts and steps and the trip's lists
+        for sql in ("INSERT INTO block_parts (id, trip_id, act_id, position, name, time_of_day) VALUES ('p1', :t, 'a1', 0, 'Lower Lot', '')",
+                    "INSERT INTO block_steps (id, trip_id, act_id, part_id, position, title, time, who, note, kind, done, aside, created_at) VALUES ('s1', :t, 'a1', 'p1', 0, 'Ride', '', '[]', '', 'ride', 0, 0, 'now')",
+                    "INSERT INTO trip_lists (id, trip_id, name, for_who, position) VALUES ('l1', :t, 'Safe', '', 0)",
+                    "INSERT INTO trip_list_items (id, list_id, trip_id, title, note, position) VALUES ('i1', 'l1', :t, 'Ride', '', 0)"):
+            with familydb.transaction(db):
+                familydb.run(db, sql, t=trip_id)
     assert 'id="ti-delete"' in client.get("/trip/details").text
     assert client.get(f"/trip/delete?trip={trip_id}").status_code == 200 and "Delete" in client.get(f"/trip/delete?trip={trip_id}").text
     from gitaway.pages import tripimport
@@ -142,7 +149,7 @@ def test_only_admins_delete_a_trip_and_everything_on_it_goes(client, clock):
     assert client.post("/trip/delete", data={"trip": trip_id}, follow_redirects=False).status_code == 303
     assert ses.trips(person()) == []
     with familydb.using(person()) as db:
-        for table, col in (("trip_imports", "trip_id"), ("activities", "trip_id"), ("cal_state", "trip_id"), ("trips", "id")):
+        for table, col in (("trip_imports", "trip_id"), ("activities", "trip_id"), ("cal_state", "trip_id"), ("trips", "id"), ("block_parts", "trip_id"), ("block_steps", "trip_id"), ("trip_lists", "trip_id"), ("trip_list_items", "trip_id")):
             assert familydb.row(db, f"SELECT COUNT(*) AS n FROM {table}")["n"] == 0, table
     assert client.get("/trip/details").status_code == 404
 

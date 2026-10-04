@@ -13,8 +13,10 @@ NARROW = {"width": 320, "height": 640}
 
 
 class SlowAzure(samples.FakeAzure):
+    delay = 0.8
+
     def __call__(self, url, headers, body, timeout):
-        time.sleep(0.8)      # long enough to see the waiting state
+        time.sleep(self.delay)      # long enough to see the waiting state
         return super().__call__(url, headers, body, timeout)
 
 
@@ -112,3 +114,29 @@ def test_a_failed_conversion_keeps_the_text_and_says_so(phone, base_url, monkeyp
     expect(page.locator("#cv-text")).to_have_value(samples.text())
     expect(page.locator("#cv-convert")).to_be_enabled()
     assert overflow(page) <= 0
+
+
+def test_the_site_keeps_answering_while_the_model_is_slow(phone, base_url, model):
+    """The model call runs off the event loop: /healthz answers at once while a Convert is waiting for it."""
+    import threading
+    import urllib.request
+    model.delay = 2.0
+    page = phone()
+    waits, stop = [], threading.Event()
+
+    def poll():
+        time.sleep(0.4)                   # the convert is now inside the fake model
+        while not stop.is_set():
+            start = time.monotonic()
+            with urllib.request.urlopen(f"{base_url}/healthz", timeout=5) as r:
+                assert r.status == 200
+            waits.append(time.monotonic() - start)
+            time.sleep(0.2)
+
+    worker = threading.Thread(target=poll)
+    worker.start()
+    status = page.request.post(f"{base_url}/trip/add/convert", form={"text": samples.text()}).status
+    stop.set()
+    worker.join(10)
+    assert status == 200 and model.sent       # the model really was asked
+    assert len(waits) >= 3 and max(waits) < 0.5, waits

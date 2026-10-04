@@ -240,7 +240,7 @@ def test_mark_done_and_set_aside_are_one_tap_each(client, azure):
     added(client)
     sid = step_id(client, "Revenge of the Mummy")
     r = client.post("/trip/block/step", data={"step": sid, "act": "a1", "do": "done"}, follow_redirects=False)
-    assert r.status_code == 303 and r.headers["location"] == "/trip/block?id=a1"
+    assert r.status_code == 303 and r.headers["location"].startswith("/trip/block?id=a1&trip=")
     assert re.search(rf'id="step-{sid}"[^>]*class="[^"]*is-done|class="[^"]*is-done[^"]*"[^>]*id="step-{sid}"', client.get("/trip/block?id=a1").text)
     assert "Not done" in client.get("/trip/block?id=a1").text
     client.post("/trip/block/step", data={"step": sid, "act": "a1", "do": "undone"})
@@ -276,3 +276,38 @@ def test_viewers_cannot_convert_save_or_tick_but_can_read_the_block(crew, azure)
     assert len(azure.sent) == asked      # the refused viewer never reached the model
     block = viewer.get("/trip/block?id=a1").text
     assert "Revenge of the Mummy" in block and "Mark done" not in block and "Set aside</button>" not in block
+
+
+def test_each_park_card_says_its_areas_in_order(client, azure):
+    book(client)
+    page = convert(client).text
+    assert "Lower Lot, lunch, Harry Potter world, then Upper Lot" in page
+    assert "Hollywood Land and Avengers Campus, Cars Land, Pixar Pier, lunch, Grizzly Peak, then Buena Vista" in page
+
+
+def test_the_header_back_buttons_keep_the_text_and_the_draft(client, azure):
+    book(client)
+    found = convert(client).text
+    assert 'id="cv-top-back"' in found and 'form="cv-found-form"' in found
+    r = client.post("/trip/add/edit", data=fields(found, "cv-found-form"), follow_redirects=False)
+    assert fields(r.text, "cv-form")["text"] == samples.text()
+    q = questions(client).text
+    assert 'id="cv-top-back"' in q and 'form="cv-questions-form"' in q
+    r = client.post("/trip/add/found", data=fields(q, "cv-questions-form"), follow_redirects=False)
+    assert 'id="cv-stats"' in r.text
+
+
+def test_a_confident_suggestion_is_one_confirmed_chip_with_change(client, azure):
+    book(client)
+    page = questions(client).text
+    a = page[page.index('data-token="A"'):][:2500]
+    assert 'data-chip' in a and "the only A in the family" in a and ">change<" in a
+    assert 'data-token="R"' in page and "data-chip" not in page[page.index('data-token="R"'):][:600]      # nobody to suggest: all the options show
+    assert fields(page, "cv-questions-form")["who_4"].startswith("m:")      # and the suggestion is what gets posted
+
+
+def test_a_second_convert_while_one_is_running_gets_the_busy_message(client, azure, monkeypatch):
+    book(client)
+    monkeypatch.setattr(ai, "_in_flight", {("convert", person("ari")["tenant_id"])})
+    r = convert(client)
+    assert r.status_code == 503 and ai.BUSY in r.text and fields(r.text, "cv-form")["text"] == samples.text() and azure.sent == []

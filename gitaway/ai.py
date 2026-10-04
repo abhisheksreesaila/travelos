@@ -22,6 +22,7 @@ Tests never reach the network: `TRANSPORT` (a function (url, headers, body bytes
 import json
 import os
 import socket
+import threading
 import time
 import urllib.error
 import urllib.request
@@ -46,6 +47,11 @@ TRANSPORT = None   # tests: a function (url, headers, body, timeout) -> (status,
 NOT_ON = "The assistant is not switched on for this site yet."
 SLOW = "The assistant took too long. Nothing was lost; try again in a moment."
 FAILED = "The assistant could not do that just now. Nothing was lost; try again in a moment."
+BUSY = "The assistant is busy with another request. Try again in a moment."
+MAX_AT_ONCE = 3     # calls to the service in flight at once, across every family
+_global = threading.BoundedSemaphore(MAX_AT_ONCE)
+_in_flight = set()   # (job, family) pairs with a call under way: one at a time per family and job
+_guard = threading.Lock()
 
 
 class AIError(Exception):
@@ -103,9 +109,12 @@ def _http(url, headers, body, timeout):
         return e.code, e.read().decode("utf-8", "replace")
 
 
-def _post(job, payload, timeout):
+def _post(job, payload, deadline):
+    left = deadline - time.monotonic()
+    if left <= 0.5:
+        raise TimeoutError("the call's time is used up")
     send = TRANSPORT or _http
-    return send(_url(job), {"api-key": _key(job), "Content-Type": "application/json"}, json.dumps(payload).encode(), timeout)
+    return send(_url(job), {"api-key": _key(job), "Content-Type": "application/json"}, json.dumps(payload).encode(), left)
 
 
 def _refused_schema(status, body) -> bool:
@@ -119,12 +128,30 @@ def call_json(job, family, system, user, schema, *, name="result", timeout=None)
         _log(job, family, deployment(job), 0, 0, 0, False, "off")
         raise AIError(NOT_ON, "off")
     timeout = timeout or JOBS.get(job, (DEFAULT_TIMEOUT,))[0]
+    me = (job, family or "")
+    with _guard:
+        taken = me not in _in_flight and _global.acquire(blocking=False)
+        if taken:
+            _in_flight.add(me)
+    if not taken:
+        _log(job, family, deployment(job), 0, 0, 0, False, "busy")
+        raise AIError(BUSY, "busy")
+    try:
+        return _call(job, family, system, user, schema, name, timeout)
+    finally:
+        with _guard:
+            _in_flight.discard(me)
+            _global.release()
+
+
+def _call(job, family, system, user, schema, name, timeout) -> dict:
     messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
     start, tin, tout, code = time.monotonic(), 0, 0, "error"
+    deadline = start + timeout     # one deadline for the call and the plain-JSON retry together
     try:
         for fmt in ({"type": "json_schema", "json_schema": {"name": name, "strict": True, "schema": schema}}, {"type": "json_object"}):
             payload = {"model": deployment(job), "messages": messages, "response_format": fmt}
-            status, body = _post(job, payload, timeout)
+            status, body = _post(job, payload, deadline)
             if fmt["type"] == "json_schema" and _refused_schema(status, body):
                 continue
             break
@@ -157,6 +184,9 @@ def call_json(job, family, system, user, schema, *, name="result", timeout=None)
         why = "timeout" if isinstance(getattr(e, "reason", None), (TimeoutError, socket.timeout)) else "network"
         _log(job, family, deployment(job), 0, 0, _ms(start), False, why)
         raise AIError(SLOW if why == "timeout" else FAILED, why)
+    except Exception:  # noqa: BLE001 - whatever else goes wrong is logged by kind only; the person gets the fixed sentence
+        _log(job, family, deployment(job), tin, tout, _ms(start), False, "error")
+        raise AIError(FAILED, "error")
     _log(job, family, deployment(job), tin, tout, _ms(start), True, "")
     return answer
 

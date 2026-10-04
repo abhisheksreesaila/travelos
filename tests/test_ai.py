@@ -120,7 +120,7 @@ def test_the_convert_timeout_is_longer_than_the_others(monkeypatch):
     fake = use(monkeypatch, reply(), reply())
     call("convert")
     call("ask")
-    assert fake.sent[0]["timeout"] == 60 and fake.sent[1]["timeout"] < 45
+    assert 59 < fake.sent[0]["timeout"] <= 60 and fake.sent[1]["timeout"] <= 20
 
 
 def test_one_setting_switches_the_model_for_one_job(monkeypatch):
@@ -167,3 +167,79 @@ def test_the_report_script_reads_the_log_from_the_data_folder(monkeypatch, capsy
     assert ai_report.main(["--data-dir", os.getcwd()]) == 0
     out = capsys.readouterr().out
     assert "Per job" in out and "convert" in out and "Per day" in out and SECRET_PROMPT not in out
+
+
+def test_anything_unexpected_is_the_fixed_sentence_and_logged_as_error(monkeypatch):
+    use(monkeypatch, RuntimeError("secret detail from inside"))
+    with pytest.raises(ai.AIError) as e:
+        call()
+    assert str(e.value) == ai.FAILED and ai.usage_rows()[0]["error"] == "error"
+
+
+def test_the_schema_fallback_shares_the_one_deadline(monkeypatch):
+    clock = [1000.0]
+    monkeypatch.setattr(ai.time, "monotonic", lambda: clock[0])
+    seen = []
+
+    def slow(url, headers, body, timeout):
+        seen.append(timeout)
+        clock[0] += 50
+        return (400, "json_schema is not supported") if len(seen) == 1 else reply()
+
+    monkeypatch.setattr(ai, "TRANSPORT", slow)
+    call("convert")      # 60 s in all: the retry gets what is left, not another 60
+    assert seen[0] == 60 and 9 < seen[1] <= 10
+    seen.clear()
+    clock[0] = 2000.0
+
+    def slower(url, headers, body, timeout):
+        seen.append(timeout)
+        clock[0] += 70
+        return 400, "json_schema is not supported"
+
+    monkeypatch.setattr(ai, "TRANSPORT", slower)
+    with pytest.raises(ai.AIError) as e:
+        call("convert")
+    assert len(seen) == 1 and "took too long" in str(e.value)   # no second request once the time is used up
+
+
+def test_one_call_at_a_time_per_family_and_a_small_limit_overall(monkeypatch):
+    import threading
+    gate, entered = threading.Event(), threading.Semaphore(0)
+
+    def hold(url, headers, body, timeout):
+        entered.release()
+        gate.wait(5)
+        return reply()
+
+    monkeypatch.setattr(ai, "TRANSPORT", hold)
+    results = []
+
+    def run(family):
+        try:
+            results.append((family, call("convert", family)))
+        except ai.AIError as e:
+            results.append((family, e.code))
+
+    threads = [threading.Thread(target=run, args=(f,)) for f in ("a", "b", "c")]
+    for t in threads:
+        t.start()
+        assert entered.acquire(timeout=5)
+    with pytest.raises(ai.AIError) as same:       # family a is already being served
+        call("convert", "a")
+    assert same.value.code == "busy" and str(same.value) == ai.BUSY
+    with pytest.raises(ai.AIError) as over:       # three calls are under way: a fourth family waits its turn
+        call("convert", "d")
+    assert over.value.code == "busy"
+    gate.set()
+    for t in threads:
+        t.join(5)
+    assert sorted(f for f, r in results if isinstance(r, dict)) == ["a", "b", "c"]
+    assert call("convert", "a") == {"answer": SECRET_ANSWER}     # the slot is free again
+    assert [r["error"] for r in ai.usage_rows() if not r["ok"]] == ["busy", "busy"]
+
+
+def test_a_test_that_installs_no_fake_cannot_reach_the_network():
+    # the autouse fixture in tests/conftest.py replaces TRANSPORT with a function that refuses
+    with pytest.raises(OSError):
+        ai.TRANSPORT("u", {}, b"", 1)

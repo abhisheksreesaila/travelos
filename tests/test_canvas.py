@@ -273,3 +273,15 @@ def test_a_block_without_parts_or_a_deleted_one_has_no_detail(ari):
     uni = cal.activities(ari)[0].id
     cal.delete_activity(ari, uni)
     assert canvas.block(ari, uni) is None
+
+
+def test_purging_a_deleted_block_takes_its_parts_steps_with_it_in_the_same_transaction(ari):
+    draft, answers = draft_and_answers(ari)
+    canvas.save(ari, draft, answers)
+    first, second = [a.id for a in cal.activities(ari)]
+    cal.delete_activity(ari, first)                    # undo is still possible: the steps are kept
+    assert rows(ari, "SELECT COUNT(*) AS n FROM block_steps WHERE act_id = :a", a=first)[0]["n"] > 0
+    cal.delete_activity(ari, second)                   # the earlier deletion is now permanent
+    assert rows(ari, "SELECT COUNT(*) AS n FROM block_steps WHERE act_id = :a", a=first)[0]["n"] == 0
+    assert rows(ari, "SELECT COUNT(*) AS n FROM block_parts WHERE act_id = :a", a=first)[0]["n"] == 0
+    assert rows(ari, "SELECT COUNT(*) AS n FROM block_steps WHERE act_id = :a", a=second)[0]["n"] > 0

@@ -16,8 +16,9 @@ import json
 from datetime import timedelta
 from urllib.parse import urlencode
 
-from fasthtml.common import A, Button, Div, Fieldset, Form, H2, H3, Input, Label, Legend, Li, Link, Main, P, Span, Textarea, Ul
+from fasthtml.common import A, Button, Details, Div, Fieldset, Form, H2, H3, Input, Label, Legend, Li, Link, Main, P, Span, Summary, Textarea, Ul
 from fasthtml.core import FtResponse
+from starlette.concurrency import run_in_threadpool
 from starlette.responses import RedirectResponse
 
 from gitaway import access, ai, canvas, members, phone, session as ses, tripcal as cal
@@ -72,6 +73,12 @@ def _stat(n, label):
     return Div(Span(str(n), cls="cv-stat-n"), Span(label, cls="cv-stat-l"), cls="cv-stat")
 
 
+def _areas(day) -> str:
+    """"Lower Lot, lunch, then Upper Lot": the day's areas in order (meals in lower case)."""
+    names = [p["name"].lower() if p["name"].casefold() in ("breakfast", "lunch", "dinner", "snack") else p["name"] for p in day["parts"]]
+    return names[0] if len(names) == 1 else ", ".join(names[:-1]) + ", then " + names[-1]
+
+
 def _plural(n, one, many):
     return one if n == 1 else many
 
@@ -82,7 +89,7 @@ def found_page(request, session, draft, text, status=200):
     days = []
     for d in draft["days"]:
         chips = [Span(Span(p["name"], cls="cv-part-name"), Span(str(len(p["steps"])), cls="cv-count") if p["steps"] else Span(p["time_of_day"] or "no rides yet", cls="cv-when"), cls="cv-part") for p in d["parts"]]
-        days.append(Div(H3(d["place"]), Span(f"Your \"{d['label']}\"" if d["label"] else "", cls="cv-sub"), Div(*chips, cls="cv-parts"), cls="cv-card cv-day"))
+        days.append(Div(H3(d["place"]), Span(_areas(d), cls="cv-sub"), Div(*chips, cls="cv-parts"), cls="cv-card cv-day"))
     tidy = []
     if draft["merged_repeats"]:
         tidy.append(Li(Span("Merged ", cls="cv-b"), f"{draft['merged_repeats']} repeated {_plural(draft['merged_repeats'], 'item', 'items')}. It was sent twice."))
@@ -98,7 +105,8 @@ def found_page(request, session, draft, text, status=200):
         Button("Edit text", type="submit", cls="tp-btn tp-btn-plain", id="cv-edit", formaction="/trip/add/edit", formnovalidate=True),
         action="/trip/add/questions", method="post", cls="cv-actions", id="cv-found-form")
     stats = Div(_stat(s["days"], _plural(s["days"], "park day", "park days")), _stat(s["areas"], _plural(s["areas"], "area", "areas")), _stat(s["steps"], _plural(s["steps"], "ride or show", "rides and shows")), cls="cv-stats", id="cv-stats")
-    return _shell(request, session, "Here's what we found", [Span("WE READ YOUR MESSAGES", cls="cv-kicker"), stats, *days,
+    back = Button(icon("chev-left", 16, 2.6), "Back", type="submit", form="cv-found-form", formaction="/trip/add/edit", formnovalidate=True, cls="cv-topback", id="cv-top-back")
+    return _shell(request, session, "Here's what we found", [back, Span("WE READ YOUR MESSAGES", cls="cv-kicker"), stats, *days,
                                                              Div(Span("WHAT WE TIDIED", cls="cv-kicker"), Ul(*tidy, cls="cv-tidy") if tidy else P("Nothing needed tidying.", cls="cv-sub"), cls="cv-card", id="cv-tidied"), form], status=status)
 
 
@@ -116,6 +124,11 @@ def _who_question(i, entry, people, vals):
     choices.append(Div(Label(Input(type="radio", name=f"who_{i}", value="new", checked=(picked == "new") or None), Span("+ Someone new"), cls="cv-choice"),
                        Input(type="text", name=f"new_{i}", value=vals.get(f"new_{i}", ""), placeholder="Name", maxlength="30", autocomplete="off", aria_label=f"Name for {token}", cls="cv-new")))
     choices.append(Label(Input(type="radio", name=f"who_{i}", value="keep", checked=(picked == "keep") or None), Span(f"Keep as {token}"), cls="cv-choice"))
+    suggested = next((p for p in people if p["user_id"] == entry["member"]), None) if entry["member"] else None
+    if suggested and picked == f"m:{suggested['user_id']}":     # a confident suggestion is one confirmed chip; "change" opens every option
+        face = ses.Friend(suggested["name"], suggested["initials"], suggested["color"])
+        chip = Div(avatar(face, "tp-av"), Span(suggested["name"].split()[0], cls="cv-chip-name"), Span(entry["why"], cls="cv-why") if entry["why"] else "", Span(icon("check", 14, 3), cls="cv-sure", aria_hidden="true"), cls="cv-confirmed", data_chip="")
+        return Fieldset(Legend(Span(token, cls="cv-token"), f"Who is {token}?"), chip, Details(Summary("change", cls="cv-change"), *choices, cls="cv-more"), cls="cv-card cv-whoq", data_token=token)
     return Fieldset(Legend(Span(token, cls="cv-token"), f"Who is {token}?"), *choices, cls="cv-card cv-whoq", data_token=token)
 
 
@@ -157,7 +170,8 @@ def questions_page(request, session, draft, text, vals=None, error="", status=20
         Button("Add to trip", type="submit", cls="tp-btn tp-btn-coral", id="cv-add"),
         Button("Back", type="submit", cls="tp-btn tp-btn-plain", id="cv-back", formaction="/trip/add/found", formnovalidate=True),
         action="/trip/add/save", method="post", id="cv-questions-form", cls="cv-form")
-    return _shell(request, session, "Two quick questions", [Span("CONVERT, STEP 2", cls="cv-kicker"), form], status=status)
+    back = Button(icon("chev-left", 16, 2.6), "Back", type="submit", form="cv-questions-form", formaction="/trip/add/found", formnovalidate=True, cls="cv-topback", id="cv-top-back")
+    return _shell(request, session, "Two quick questions", [back, Span("CONVERT, STEP 2", cls="cv-kicker"), form], status=status)
 
 
 def _oxford(items):
@@ -234,7 +248,7 @@ def register(app):
         form = await request.form()
         text = (form.get("text") or "")[: canvas.MAX_TEXT + 1]
         try:
-            draft = canvas.convert(session, text)
+            draft = await run_in_threadpool(canvas.convert, session, text)    # the model takes seconds: never on the event loop (context variables travel along)
         except canvas.CanvasError as e:
             return paste_page(request, session, text=text, error=str(e), status=422)
         except ai.AIError as e:
@@ -296,7 +310,7 @@ def register(app):
                 canvas.set_aside(session, sid, do == "aside")
         except canvas.CanvasError:
             pass       # a step someone else just removed: show the block as it is now
-        return RedirectResponse(f"/trip/block?{urlencode({'id': act})}", status_code=303)
+        return RedirectResponse(f"/trip/block?{urlencode({'id': act, 'trip': ses.open_trip_id()})}", status_code=303)
 
 
 # ---- a block ---------------------------------------------------------------------------------------------------------------

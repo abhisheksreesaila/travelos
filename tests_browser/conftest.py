@@ -25,9 +25,22 @@ os.environ["DB_NAME"] = "app_host"
 # so real Google keys in a developer's .env would hide the dev sign-in from the tests.
 for _key in ("GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "AZURE_OPENAI_API_KEY", "AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_DEPLOYMENT", "AZURE_OPENAI_API_VERSION"):
     os.environ[_key] = ""
+for _key in [k for k in os.environ if k.startswith("GITAWAY_AI_")]:
+    os.environ[_key] = ""  # per-job AI settings from a shell or .env must not reach a test (F-079)
 os.environ["GITAWAY_SHOWCASE"] = ""  # empty: tests start in the default (local) mode whatever the shell says; a test sets 0 or 1 itself (F-064)
 for _key in ("GITAWAY_VAPID_PUBLIC", "GITAWAY_VAPID_PRIVATE", "GITAWAY_VAPID_SUBJECT"):
     os.environ[_key] = ""  # empty, not removed: a .env found above the folder must not switch the real push sender on in a test run (F-066)
+
+
+@pytest.fixture(autouse=True)
+def _no_ai_network(monkeypatch):
+    """No test reaches the AI service (F-079): every call fails unless the test installs its own fake `ai.TRANSPORT`."""
+    from gitaway import ai
+
+    def refuse(url, headers, body, timeout):
+        raise OSError("the network is off in tests")
+    monkeypatch.setattr(ai, "TRANSPORT", refuse)
+
 
 @pytest.fixture(autouse=True)
 def _offline_maps(monkeypatch):
