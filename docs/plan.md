@@ -480,3 +480,26 @@ Needs: F-081
 Needs: none
 - [x] in Help, per traveller: flight, seat, boarding group, gate, boarding time and an attached boarding pass (PDF or image), family only; editors add or fix them
 - [x] on travel day the flight is Today's focal card with "Show everyone's passes": full-screen, bright, swipe between travellers
+
+# Trip feedback, 2026-10-04 (captain, on the trip)
+
+## F-084 Invite from the phone's Family tab [todo]
+Captain, 2026-10-04: couldn't find how to invite from the phone; the invite page (/family#invite) isn't linked from the Family tab. · Needs: none
+- [ ] for an admin, the phone Family tab (chat and photos) shows a clear "Invite" button that opens the invite form; non-admins see who is in the family (link to /family) instead
+- [ ] passes phone checks (44px target, 13px text floor, no sideways scroll); a test covers admin and editor views
+
+## F-085 Today: notes start folded [todo]
+Captain, 2026-10-04: notes take too much room on Today; hide them, tap to read. · Needs: none
+- [ ] on Today (and the selected day's list), a plan's notes are folded by default behind a small "1 note" / "2 notes" tap that opens them in place; the up-next card does the same; nothing else on the card changes
+- [ ] works with keyboard and screen readers (a real button with aria-expanded, or details/summary), calm under reduced motion; a browser test opens a note
+
+## F-086 Plans may overlap bookings and each other [todo]
+Captain, 2026-10-04: Add to trip refused a plan because it overlapped hotel check-out ("Pick a gap"). Overlapping is fine: families split up, and plans sit on top of check-out, flights and car pickups. · Needs: none
+- [ ] adding, editing or moving a plan (calendar form, Add to the trip, canvas moves, forks, voice) is never refused for overlapping a booking, a ride or another plan; the plan is saved and shows a small "overlaps <title>" tag where it is listed
+- [ ] the other checks stay (inside the trip, end after start, minimum length); tests that expected an overlap refusal now expect the save and the tag
+
+## F-087 Paste for one day [todo]
+Captain, 2026-10-04: wants to paste the messages for a particular day and have that day filled in, asking about times only when they are unclear. · Needs: F-086
+- [ ] on a day (Today and a selected day, and the canvas day view), editors get "Paste for this day", which opens Add to the trip already set to that day: Convert puts everything on that day and never asks "Which day is each park?"
+- [ ] times written in the text are used as given; an item whose time is unclear ("after lunch", "sometime") gets one quick time question (a suggested time from its neighbours, changeable) in the questions step instead of a silent guess
+- [ ] overlaps with bookings or plans are saved (F-086); the whole-trip paste from the top button keeps working as today
