@@ -22,36 +22,32 @@ def test_the_forks_calendar_shows_the_scheduled_ride(client):
     assert 'class="fk-ev fk-booked' in html and ride.title in html
 
 
-def test_a_fork_plan_over_a_scheduled_ride_is_a_hard_clash(client):
+def test_a_fork_plan_over_a_scheduled_ride_is_kept_and_tagged(client):
     s, ride = ride_setup(client)
     over = Plan("x1", ride.day, ride.start, ride.start + 60, "Surf lesson", "fun")
     [placed] = cal.preview_plans(s, [over])
-    assert placed.state == "clash" and placed.hard and ride.title in placed.clash
+    assert placed.state == "free" and not placed.hard and ride.title in placed.overlap
     added, _ = cal.apply_plans(s, [over], ["x1"])
-    assert added == []  # applying skips it too
+    assert [a.title for a in added] == ["Surf lesson"]  # applying keeps it too
 
 
 def test_a_plan_beside_the_ride_is_still_free(client):
     s, ride = ride_setup(client)
     beside = Plan("x2", ride.day, ride.end + 30, ride.end + 90, "Tacos", "food")
     [placed] = cal.preview_plans(s, [beside])
-    assert placed.state in ("free", "clash") and ride.title not in placed.clash
+    assert placed.state == "free" and ride.title not in placed.overlap
 
 
-def test_a_hand_added_or_moved_plan_over_a_scheduled_ride_is_refused_kindly(client):
-    import pytest
+def test_a_hand_added_or_moved_plan_over_a_scheduled_ride_is_saved(client):
     s, ride = ride_setup(client)
     when = cal.hhmm(ride.start)
-    with pytest.raises(cal.CalendarError, match=r"That overlaps your Uber at \d+:\d\d [AP]M"):
-        cal.add_activity(s, day=ride.day, start=when, end=cal.hhmm(ride.start + 60), title="Surf lesson")
+    assert cal.add_activity(s, day=ride.day, start=when, end=cal.hhmm(ride.start + 60), title="Surf lesson")
     ok = cal.add_activity(s, day=ride.day, start=cal.hhmm(ride.end + 60), end=cal.hhmm(ride.end + 120), title="Tacos")
-    with pytest.raises(cal.CalendarError, match="your Uber"):
-        cal.update_activity(s, ok.id, start=when, end=cal.hhmm(ride.start + 60))
-    assert cal.update_activity(s, ok.id, title="Tacos!")  # renaming without moving it still works
+    assert cal.update_activity(s, ok.id, start=when, end=cal.hhmm(ride.start + 60)).day == ride.day  # F-086: moving onto the Uber is fine
+    assert cal.update_activity(s, ok.id, title="Tacos!")
 
 
-def test_renaming_a_plan_under_a_later_scheduled_ride_passes_but_moving_it_is_refused(client):
-    import pytest
+def test_a_plan_under_a_later_scheduled_ride_can_be_renamed_and_moved(client):
     book(client, c="none")
     s = person()
     b = cal.ses.booking(s)
@@ -63,5 +59,4 @@ def test_renaming_a_plan_under_a_later_scheduled_ride_passes_but_moving_it_is_re
     plan = cal.add_activity(s, day=ride.day, start=cal.hhmm(ride.start), end=cal.hhmm(ride.start + 60), title="Surf lesson")
     assert schedule(client).status_code == 303
     assert cal.update_activity(s, plan.id, title="Surf lesson, early")  # not moved: allowed
-    with pytest.raises(cal.CalendarError, match="your Uber"):
-        cal.update_activity(s, plan.id, start=cal.hhmm(ride.start + 15), end=cal.hhmm(ride.start + 75))
+    assert cal.update_activity(s, plan.id, start=cal.hhmm(ride.start + 15), end=cal.hhmm(ride.start + 75))

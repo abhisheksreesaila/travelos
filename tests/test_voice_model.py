@@ -94,14 +94,15 @@ def test_the_plans_sit_in_the_gaps_on_the_sample_trip(client):
     assert [x.plan.day for x in placed] == [0, 2, 3, 4]
 
 
-def test_on_a_two_night_trip_plans_that_cannot_fit_show_as_clashes_and_nothing_crashes(client):
+def test_on_a_two_night_trip_plans_over_the_flights_are_kept_and_nothing_crashes(client):
     from tests.test_calendar import book
     book(client, d="2026-10-21", r="2026-10-22", a="2")
     s = client_session(client)
     placed = voice.preview(s, night=0)
     assert len(placed) == 4
-    clashes = [x for x in placed if x.state == "clash"]
-    assert clashes and all(x.clash for x in clashes)                      # each says why
+    assert all(x.state in ("free", "clash") for x in placed)
+    assert all(x.clash for x in placed if x.state == "clash")             # a hard one (past the trip) says why
+    assert all(x.checked for x in placed if not x.hard)                   # overlapping a flight is never a reason to skip
 
 
 def test_the_note_lists_what_was_planned_and_fits_a_note():

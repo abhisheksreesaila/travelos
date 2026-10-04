@@ -103,18 +103,29 @@ def test_bad_activities_are_refused_with_a_reason(kw, words):
     assert cal.activities(s) == []
 
 
-def test_an_activity_may_not_overlap_a_booked_item_and_the_error_names_it():
+def test_an_activity_may_overlap_a_booked_item_or_another_plan():
     s = booked_session()  # day 0: flight 8:05-9:32, check in 3-4:30 PM
-    with pytest.raises(cal.CalendarError) as e:
-        cal.add_activity(s, day=0, start="09:00", end="10:00", title="Clash", kind="fun")
-    assert "overlaps Skylark Air 214 · SFO → LAX" in str(e.value) and "8:05 AM" in str(e.value)
-    with pytest.raises(cal.CalendarError):
-        cal.add_activity(s, day=0, start="14:30", end="15:30", title="Clash", kind="fun")
-    with pytest.raises(cal.CalendarError):
-        cal.add_activity(s, day=4, start="13:00", end="14:30", title="Clash", kind="fun")  # return flight 2:10 PM
+    cal.add_activity(s, day=0, start="09:00", end="10:00", title="Clash", kind="fun")
+    cal.add_activity(s, day=0, start="14:30", end="15:30", title="Clash 2", kind="fun")
+    cal.add_activity(s, day=4, start="13:00", end="14:30", title="Over the flight home", kind="fun")  # return flight 2:10 PM
+    cal.add_activity(s, day=0, start="09:30", end="10:30", title="Over a plan", kind="fun")
+    assert len(cal.activities(s)) == 4
     touching = cal.add_activity(s, day=0, start="09:45", end="10:45", title="Just after", kind="fun")
     assert touching.start == 9 * 60 + 45
     cal.add_activity(s, day=0, start="16:30", end="17:30", title="After check in", kind="fun")
+    # the other checks stay
+    with pytest.raises(cal.CalendarError):
+        cal.add_activity(s, day=0, start="10:00", end="09:00", title="Backwards", kind="fun")
+    with pytest.raises(cal.CalendarError):
+        cal.add_activity(s, day=9, start="10:00", end="11:00", title="Outside", kind="fun")
+
+
+def test_overlaps_names_what_a_plan_sits_on():
+    blocks = [cal.Block("b1", 0, 660, 750, "Check out · Hotel", "hotel")]
+    acts = [cal.Activity("a1", 0, 700, 800, "Lunch", "food"), cal.Activity("a2", 1, 700, 800, "Other day", "food")]
+    assert cal.overlaps(0, 690, 760, [*blocks, *acts]) == ["Check out · Hotel", "Lunch"]
+    assert cal.overlaps(0, 690, 760, [*blocks, *acts], skip="a1") == ["Check out · Hotel"]
+    assert cal.overlaps(0, 750, 800, blocks) == [] and cal.overlap_text(["A", "B"]) == "A and B" and cal.overlap_text([]) == ""
 
 
 def test_activities_may_overlap_each_other():
@@ -131,9 +142,10 @@ def test_update_and_move_an_activity():
     moved = cal.update_activity(s, a.id, day=2, start="13:00", end="14:15")
     assert (moved.title, moved.kind, moved.day, moved.start, moved.end) == ("New", "food", 2, 780, 855)
     assert cal.get_activity(s, a.id) == moved
+    onto = cal.update_activity(s, a.id, day=0, start="09:00", end="10:00")  # onto the flight: allowed (F-086)
+    assert cal.get_activity(s, a.id) == onto and onto.day == 0
     with pytest.raises(cal.CalendarError):
-        cal.update_activity(s, a.id, day=0, start="09:00", end="10:00")  # onto the flight
-    assert cal.get_activity(s, a.id) == moved
+        cal.update_activity(s, a.id, day=0, start="10:00", end="10:05")  # too short
 
 
 def test_booked_items_and_unknown_ids_cannot_be_edited():

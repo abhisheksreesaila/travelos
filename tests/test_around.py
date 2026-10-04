@@ -324,8 +324,9 @@ def test_saving_that_form_adds_the_plan_writes_the_card_and_tells_the_family(cli
 def test_it_goes_through_the_calendars_own_checks(client, world):
     imported(client)
     r = client.post("/calendar/activities", data={"id": "a9", "day": "0", "start": "07:00", "end": "08:00", "title": "Green Bowl", "kind": "food"})
-    assert r.status_code == 409 and "You land at" in visible(r.text)      # before the flight lands: refused with the calendar's own sentence
-    assert not stored_calendar()["a"]
+    assert r.status_code == 200 and stored_calendar()["a"]      # before the flight lands is fine (F-086): plans may overlap bookings
+    r = client.post("/calendar/activities", data={"id": "a10", "day": "9", "start": "07:00", "end": "08:00", "title": "Nowhere", "kind": "food"})
+    assert r.status_code == 409                                   # a day outside the trip is still refused
 
 
 def test_a_long_name_is_cut_to_the_calendars_limit_and_a_bad_kind_is_fun(client, world):

@@ -276,5 +276,4 @@ def test_a_late_flight_keeps_its_true_time_in_the_share_and_in_the_overlap_messa
     # a block drawn earlier than its true time quotes the true time when something overlaps it
     block = cal.Block("b-back", 0, 23 * 60 + 29, 24 * 60 - 1, "Flight", "booked", True, "plane", label_start=23 * 60 + 50)
     t = tripimport.trip_search(tripimport.parse(TEMPLATE).plan)
-    with pytest.raises(cal.CalendarError, match=r"10:30 AM – 11:40 AM"):
-        cal._clean(t, [cal.Block("b-x", 0, 600, 700, "Flight", "booked", True, "plane", label_start=630)], day=0, start="10:15", end="11:00", title="x", kind="fun")
+    assert cal._clean(t, [cal.Block("b-x", 0, 600, 700, "Flight", "booked", True, "plane", label_start=630)], day=0, start="10:15", end="11:00", title="x", kind="fun")[1:3] == (615, 660)  # saved (F-086)

@@ -214,12 +214,12 @@ def test_two_parks_on_one_day_or_no_day_is_refused_and_keeps_the_choices(client,
     assert r.status_code == 409 and "Pick a day for each park" in r.text
 
 
-def test_the_flight_window_message_comes_from_the_calendar(client, azure):
+def test_a_park_day_over_the_arriving_flight_is_saved(client, azure):
     book(client)
     page = questions(client).text
     r = client.post("/trip/add/save", data=answers(page, day_0="0"), follow_redirects=False)
-    assert r.status_code == 409 and ("land" in r.text or "overlaps" in r.text)
-    assert canvas.cal.activities(person("ari")) == []
+    assert r.status_code == 303
+    assert canvas.cal.activities(person("ari"))
 
 
 # ---- the block: done and set aside ---------------------------------------------------------------------------------------

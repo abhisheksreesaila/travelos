@@ -141,14 +141,14 @@ def test_the_plans_sit_in_the_right_slots_around_the_bookings(client):
         ("0", "1110", "1200"), ("2", "1020", "1170"), ("3", "540", "690"), ("4", "540", "630")]
 
 
-def test_a_friends_plan_makes_a_soft_clash_that_is_unticked(client):
+def test_a_plan_over_the_familys_plan_is_ticked_and_tagged_and_applies(client):
     book(client)
     add(client, id="a1", day="2", start="17:00", end="18:00", title="Sunset picnic")
     html = client.get("/calendar?voice=1&night=0").text
-    assert rows(html)["v1"] == (False, False) and "Clashes with Sunset picnic" in html
-    r = apply(client, 0, "v0", "v2", "v3")
+    assert rows(html)["v1"] == (True, False) and "Overlaps Sunset picnic" in html
+    r = apply(client, 0, "v0", "v1", "v2", "v3")
     assert r.status_code == 303
-    assert sorted(a["t"] for a in activities(client)) == sorted(["Sunset picnic", "Tacos at Mariscos La Ola", "Pool time at The Tidewater", "Beach walk before the flight home"])
+    assert "Griffith Observatory at sunset" in [a["t"] for a in activities(client)] and "Sunset picnic" in [a["t"] for a in activities(client)]
 
 
 # ---- apply, notes, refresh, undo ---------------------------------------------------------------------------------------
@@ -243,14 +243,14 @@ def test_a_two_night_trip_uses_its_middle_day_and_says_so(client):
     assert apply(client, 0, "v0", "v1", "v2", "v3").status_code == 303 and len(activities(client)) == 4
 
 
-def test_a_two_day_trip_shows_what_cannot_fit_as_clashes_and_nothing_crashes(client):
+def test_a_two_day_trip_shows_overlaps_with_the_flight_home_and_nothing_crashes(client):
     sign_in(client, "ari")
     client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1", "d": "2026-10-21", "r": "2026-10-22", "a": "2"})
     html = client.get("/calendar?voice=1&night=0").text
     assert client.get("/calendar?voice=1&night=0").status_code == 200
-    assert rows(html)["v1"][1] is True and "flight home" in html             # the observatory would run into the flight home
+    assert rows(html)["v1"] == (True, False)                                 # the observatory runs into the flight home: kept (F-086)
     assert apply(client, 0, "v0", "v1", "v2", "v3").status_code == 303
-    assert "Griffith Observatory at sunset" not in [a["t"] for a in activities(client)]
+    assert "Griffith Observatory at sunset" in [a["t"] for a in activities(client)]
 
 
 def test_a_trip_with_its_own_sunday_uses_it(client):

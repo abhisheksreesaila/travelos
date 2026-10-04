@@ -180,17 +180,16 @@ def test_a_move_to_the_same_time_and_a_repeat_of_one_id_are_dropped(day, azure):
     assert [o["op"] for o in prop["ops"]] == ["remove_plan"]
 
 
-def test_a_plan_that_overlaps_a_booking_is_dropped_with_the_calendars_own_reason(day, azure):
+def test_a_plan_that_overlaps_a_booking_is_kept(day, azure):
     s = day["s"]
     first = min(cal.booked_blocks(ses.booking(s), cal.trip("", ses.booking(s))), key=lambda b: (b.day, b.start))
     azure.answer = answer(op("add_plan", title="Over the flight", start=cal.hhmm(first.start), end=cal.hhmm(first.start + 60)), op("add_plan", title="Fine", start="10:00", end="11:00"))
     prop = speak.propose(s, DAY, "x") if first.day == DAY else None
     if prop is None:      # the first booking is on another day: ask about that day, where the only plan is the booking
-        with pytest.raises(speak.SpeakError, match="could not turn that"):
-            azure.answer = answer(op("add_plan", title="Over the flight", start=cal.hhmm(first.start), end=cal.hhmm(first.start + 60)))
-            speak.propose(s, first.day, "x")
+        azure.answer = answer(op("add_plan", title="Over the flight", start=cal.hhmm(first.start), end=cal.hhmm(first.start + 60)))
+        assert [o["title"] for o in speak.propose(s, first.day, "x")["ops"]] == ["Over the flight"]
     else:
-        assert [o["title"] for o in prop["ops"]] == ["Fine"]
+        assert [o["title"] for o in prop["ops"]] == ["Over the flight", "Fine"]
 
 
 def test_injection_in_the_request_cannot_add_a_hundred_plans_or_delete_everything(day, azure):

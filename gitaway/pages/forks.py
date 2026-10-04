@@ -139,6 +139,8 @@ def _row(x, dates):
         note = Span("Already on your calendar", cls="fk-note fk-note-have")
     elif x.clash:
         note = Span(x.clash[0].upper() + x.clash[1:], cls="fk-note")
+    elif x.overlap:
+        note = Span(f"Overlaps {x.overlap}", cls="fk-note fk-note-overlap")
     else:
         note = ""
     off = x.hard or x.state == "have"

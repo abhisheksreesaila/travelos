@@ -238,21 +238,20 @@ def test_saving_the_sheet_adds_the_plan_with_the_calendars_validation(client, at
     assert "Travel Town trains" in client.get("/calendar?view=whole").text
 
 
-def test_the_sheet_refuses_what_the_calendar_refuses_and_keeps_what_was_typed(client):
+def test_the_sheet_saves_plans_over_bookings_and_refuses_the_rest_keeping_what_was_typed(client):
     book(client)
-    r = client.post("/trip/plans", data={"id": "a1", "day": "0", "start": "08:00", "title": "Early swim", "kind": "fun"})
-    assert r.status_code == 409 and "overlaps Skylark Air 214" in text(r.text)  # the arriving flight is a booked block
-    assert "data-open" in tag(r.text, "id", "tp-sheet") and 'value="Early swim"' in r.text and 'value="08:00"' in r.text
-    r = client.post("/trip/plans", data={"id": "a2", "day": "0", "start": "15:00", "title": "Pool", "kind": "fun"})
-    assert r.status_code == 409 and "overlaps Check in" in text(r.text)  # a booked block
-    r = client.post("/trip/plans", data={"id": "a3", "day": "4", "start": "13:30", "title": "Last lunch", "kind": "food"})
-    assert r.status_code == 409 and "Your flight home leaves at" in text(r.text)  # too close to the flight home
+    for i, (day, start, title) in enumerate((("0", "08:00", "Early swim"), ("0", "15:00", "Pool"), ("4", "13:30", "Last lunch"))):
+        r = client.post("/trip/plans", data={"id": f"a{i + 1}", "day": day, "start": start, "title": title, "kind": "fun"}, follow_redirects=False)
+        assert r.status_code == 303, title  # the arriving flight, the check in and the flight home are booked blocks: overlapping is fine (F-086)
+    assert len(stored_calendar()["a"]) == 3
+    r = client.post("/trip/plans", data={"id": "a7", "day": "9", "start": "10:00", "title": "Nowhere", "kind": "fun"})
+    assert r.status_code == 409 and "data-open" in tag(r.text, "id", "tp-sheet") and 'value="Nowhere"' in r.text and 'value="10:00"' in r.text
     for bad in ({"day": "9", "start": "10:00", "title": "x"}, {"day": "1", "start": "", "title": "x"}, {"day": "1", "start": "10:00", "title": ""}, {"day": "1", "start": "10:00", "title": "x", "kind": "nope"}):
         assert client.post("/trip/plans", data={"id": "a9", **bad}).status_code == 409, bad
-    assert stored_calendar()["a"] == []
+    assert len(stored_calendar()["a"]) == 3
 
 
-def test_the_sheet_refuses_a_time_that_clashes_with_a_scheduled_ride(client):
+def test_the_sheet_saves_a_time_that_overlaps_a_scheduled_ride(client):
     from tests.test_rides import schedule
     book(client, f="f1", h="h1", c="none")
     schedule(client, "arrive", pick="f=f1&h=h1&c=none")
@@ -262,7 +261,7 @@ def test_the_sheet_refuses_a_time_that_clashes_with_a_scheduled_ride(client):
     t = cal.trip("", __import__("gitaway.session", fromlist=["x"]).booking(s))
     ride = next(b for b in cal.ride_blocks(s, __import__("gitaway.session", fromlist=["x"]).booking(s), t))
     r = client.post("/trip/plans", data={"id": "a1", "day": str(ride.day), "start": cal.hhmm(ride.start), "title": "Snack", "kind": "food"})
-    assert r.status_code == 409 and "That overlaps your Uber" in text(r.text)
+    assert r.status_code == 200 and stored_calendar()["a"]  # F-086
 
 
 def test_every_post_form_on_the_trip_view_names_its_trip(client):
@@ -411,3 +410,16 @@ def test_the_demo_bookings_share_text_has_no_prices(client, at):
         at(day, "08:00")
         out = share_attr(client.get("/trip").text)
         assert "$" not in out and out.startswith(day.strftime("%a %b") + f" {day.day} · ")
+
+
+def test_a_plan_over_a_booking_or_another_plan_shows_an_overlaps_tag_on_the_day_list(client):
+    book(client)
+    assert plan(client, id="a1", day="0", start="09:00", end="10:00", title="Early swim", kind="fun").status_code == 303   # over the arriving flight
+    assert plan(client, id="a2", day="0", start="09:30", end="10:30", title="Bagels", kind="food").status_code == 303      # and over the swim
+    assert plan(client, id="a3", day="1", start="10:00", end="11:00", title="Alone", kind="fun").status_code == 303
+    html = client.get("/trip?day=0").text
+    tags = re.findall(r'<span[^>]*data-overlap="(\w+)"[^>]*>(.*?)</span>', html, re.S)
+    said = {i: " ".join(visible(t).split()) for i, t in tags}
+    assert said["a1"].startswith("Overlaps Skylark Air 214") and "Bagels" in said["a1"]
+    assert said["a2"].startswith("Overlaps") and "Early swim" in said["a2"]
+    assert 'data-overlap="a3"' not in client.get("/trip?day=1").text
