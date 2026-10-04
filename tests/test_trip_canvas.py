@@ -175,7 +175,7 @@ def test_the_step_sheet_has_the_note_who_and_the_buttons(trip):
     sid = step_id(trip, "Hippogriff")
     page = trip.get(f"/trip/canvas?step={sid}").text
     assert 'data-level="step"' in page and 'role="dialog"' in page and 'aria-modal="true"' in page and "Hippogriff" in page
-    assert "H and B walk" in page and "From your messages" in page and page.count("cz-av-initials") >= 2
+    assert "H and B walk" in page and "From your messages" not in page and ">Note<" in page and page.count("cz-av-initials") >= 2
     assert "Mark done" in page and "Set aside" in page and 'action="/trip/canvas/step"' in page and 'name="trip"' in page
     assert f'data-zk="stp-{sid}"' in page and page.count(f'data-zk="stp-{sid}"') == 1       # the open step is the sheet, never also its row
     assert f'href="/trip/canvas?block={uni_id()}"' in bare(page)
@@ -257,7 +257,7 @@ def test_every_link_on_every_level_lands(trip):
 def test_every_button_on_the_sheet_lands_where_it_says(trip):
     sid = step_id(trip, "Minion Mayhem")
     page = trip.get(f"/trip/canvas?step={sid}").text
-    forms = re.findall(r"<form[^>]*>.*?</form>", page, re.S)
+    forms = [f for f in re.findall(r"<form[^>]*>.*?</form>", page.split("cz-sheet-wrap")[1], re.S) if "/trip/canvas/step" in f]      # the sheet's own two (the rows behind it have swipe forms)
     assert len(forms) == 2
     for f in forms:
         data = {n: unescape(v) for n, v in re.findall(r'<input[^>]*name="([^"]+)"[^>]*value="([^"]*)"', f)}

@@ -35,6 +35,24 @@ Steps of a part that share a time and belong to different people (`who`, with Ev
 
 At 721px and up the same markup is the laptop view: the week as a strip of day cards across the top (a bar segment per part), the day's parts as lanes (name on the left, rides beside it), the Set aside tray at the side. A strip card swaps the day with a plain cross-fade.
 
+## Touch moves and filters (F-082)
+
+Frame 8 of `Trip-Canvas-v2.html` and frame 4 of `Plan-Steps-v1.html`. Editors only (a viewer has no `data-edit` on `#cz`: no drag, no swipe, no add, no Move; the filters still work).
+
+**Hold and drag** (`trip_canvas.js`, pointer events). Hold a step (a day chip, a block row, a Set aside chip) for 350 ms: it dims, a chip follows the finger, and the drop targets light up. Moving more than 10px first is a scroll. Targets: a part (a line shows where it goes; before the step the finger is above, else at the end), a day in the bar that appears at the top (blocks on other days), the Set aside tray along the bottom. Letting go posts `POST /trip/canvas/move` and swaps the level in place (`dir: side`, scroll kept), then the toast ("<title> moved to <where>") with Undo. A step dropped before a timed step takes that step's time (so it can join or leave a lane); at the end of a part it keeps its own. Dropped on another day it lands at the end of that block's same-named part, else its first. Dragging a Set aside chip onto a part puts it back there.
+
+**Undo** posts the snapshot the move returned (`canvas.move_step` -> `undo`) to `POST /trip/canvas/undo`; `canvas.restore` checks every id, part, time and number in it against the open trip and puts those steps back exactly (block, part, place, time, tray). The family card ("Abhi moved 3 rides at Universal", `canvas._tell` column `moved`) is changed in place for 15 minutes and loses the move when it is undone; adds share the same mechanism ("added").
+
+**Swipe.** On a block row, left reveals Done (Not done) and Set aside (the row gives up room instead of sliding off), right or a tap elsewhere puts them away; they are the same forms as the sheet's. **Add a step** is a sheet over the block, `?block=aN&add=1[&part=&title=&note=]` (works without script): a name, who (Everyone is one choice, then each member, names and initials the trip already uses, Adults, Kids), which part, an optional time (the GitAway time picker), a note; `POST /trip/canvas/add`. **Add a note** and **Move** are on the step sheet: the note form (`POST /trip/canvas/note`, the sheet stays) and a Move menu with the same targets as dragging as buttons (earlier or later in the part, each other part, each other day), for a keyboard or a screen reader.
+
+**Filters.** On a day and a block: Everyone, each family member, names and initials the trip uses, Adults and Kids (only when a step is for them: the family's ages are not known), and each named list of the trip. Single choice; the matching steps get a ring, the rest dim. A step for everyone matches every person. A list matches steps by name (`canvas.same_step`: equal, or one starts with the other by whole words, so "Soarin'" is "Soarin' Around the World"). With a list chosen, a card says "4 more from your <list> list aren't in this day yet" with a chip for each: tap to open the add sheet filled in, or drag it onto a part to add it there. The choice is kept per person and trip in `localStorage` (`cz-filter:<trip>:<user>`; it still works for the page if storage is blocked).
+
+**Writes** (`/trip/canvas/step|move|undo|add|note`) are editor-gated by `gitaway.access`, take the trip the page was drawn for (`trip` field), and the script gets JSON `{url, toast, undo}` or 422 `{error}`.
+
 ## Tests
+
+`tests/test_canvas_touch.py` (move, undo, add, note, list matching at the model), `tests/test_canvas_touch_pages.py` (routes, sheets, filters' markup, viewers, another trip), `tests_browser/test_trip_canvas_touch.py` (390 and 320: synthetic-pointer drags to a part, before a step, the tray, another day; Undo; swipe; add a step; notes; Move menu; filters and the list card; a viewer; reduced motion; the View Transition on a drop). Screenshots: `F082_SHOTS=<folder> pixi run pytest -p no:randomly tests_browser/test_trip_canvas_touch.py -k screenshots`.
+
+F-081 tests, kept:
 
 `tests/test_trip_canvas.py` (every level, link and button, roles, fragments), `tests/test_canvas_ticks.py` (the coalesced card, `canvas.plan`), `tests_browser/test_trip_canvas.py` (390 and 320: tap, pinch, Back and Forward, the named element, reduced motion, no-transition fallback, Mark done and Set aside, lanes, no sideways scroll, 44px targets, 13px text; 1280: the wide day view). Screenshots: `F081_SHOTS=<folder> pixi run pytest -p no:randomly tests_browser/test_trip_canvas.py -k screenshots`.
