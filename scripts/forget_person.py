@@ -4,9 +4,10 @@ Plain sqlite3 on the data folder (GITAWAY_DATA_DIR, or --data-dir); stop the app
 would delete (a dry run). Tables that do not exist yet are skipped.
 
 * default       the person: sign-in, memberships, passkeys, invites to or from them, audit-log rows with their id or email, and in each of
-                their families: their member row, push subscriptions and thread settings. Messages and photos they added stay with the family.
-* --content     also the messages and photos they added in their families (and the photo files).
-* --family      the whole family of each family they belong to: its database (and -wal/-shm), photos folder, memberships, invites and its
+                their families: their member row, push subscriptions, thread settings and their own boarding pass (F-083, a pass whose traveller is them: rows and files).
+                Messages and photos they added stay with the family.
+* --content     also the messages and photos they added in their families (and the photo files), and the boarding passes they added for anyone.
+* --family      the whole family of each family they belong to: its database (and -wal/-shm), photos and passes folders, memberships, invites and its
                 rows in the host. Other members' sign-ins stay. Implies --content.
 """
 
@@ -51,6 +52,7 @@ def plan(folder: Path, email: str, family=False, content=False):
         if family:
             paths += [(f"family database {fdb.name}", p) for p in (fdb, Path(str(fdb) + "-wal"), Path(str(fdb) + "-shm"))]
             paths.append((f"photos of family {tid}", folder / "photos" / tid))
+            paths.append((f"boarding passes of family {tid}", folder / "passes" / tid))
             rows += [("memberships of the family", host, "core_memberships", "tenant_id = ?", (tid,)),
                      ("invites of the family", host, "ga_invites", "tenant_id = ?", (tid,)),
                      ("last-family choices", host, "ga_last_family", "tenant_id = ?", (tid,)),
@@ -63,6 +65,11 @@ def plan(folder: Path, email: str, family=False, content=False):
         rows += [("member row", fdb, "members", "id = ?", (uid,)), ("tenant user row", fdb, "core_tenant_users", "id = ?", (uid,)),
                  ("permissions", fdb, "core_permissions", "user_id = ?", (uid,)), ("push subscriptions", fdb, "push_subscriptions", "user_id = ?", (uid,)),
                  ("thread settings", fdb, "thread_prefs", "user_id = ?", (uid,))]
+        if _has(f, "passes"):   # F-083: their own pass always (personal boarding data); with --content also every pass they added
+            where, params = ("member_id = ? OR created_by = ?", (uid, uid)) if content else ("member_id = ?", (uid,))
+            for r in f.execute(f"SELECT orig, display, thumb FROM passes WHERE {where}", params):
+                paths += [("boarding pass file", folder / "passes" / name) for name in r if name]
+            rows.append(("boarding passes", fdb, "passes", where, params))
         if content:
             if _has(f, "photos"):
                 for r in f.execute("SELECT orig, display, thumb FROM photos WHERE author = ?", (uid,)):

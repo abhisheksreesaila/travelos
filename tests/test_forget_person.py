@@ -39,7 +39,10 @@ def folder(client):
         CREATE TABLE IF NOT EXISTS thread (id TEXT PRIMARY KEY, author TEXT, text TEXT);
         CREATE TABLE IF NOT EXISTS photos (id TEXT PRIMARY KEY, author TEXT, orig TEXT, display TEXT, thumb TEXT);
         CREATE TABLE IF NOT EXISTS members (id TEXT PRIMARY KEY, email TEXT);
+        CREATE TABLE IF NOT EXISTS passes (id TEXT PRIMARY KEY, member_id TEXT, created_by TEXT, orig TEXT, display TEXT, thumb TEXT);
     """)
+    for pid, member, made in (("own", uid, "someone"), ("made", "kid", uid), ("other", "kid", "someone")):   # F-083: whose pass it is, who added it, a stranger's
+        fam.execute("INSERT INTO passes VALUES (?, ?, ?, ?, ?, ?)", (pid, member, made, f"{fid}/t/{pid}.pdf", f"{fid}/t/{pid}-display.jpg", f"{fid}/t/{pid}-thumb.jpg"))
     fam.execute("INSERT OR IGNORE INTO members (id, email) VALUES (?, ?)", (uid, EMAIL))
     fam.execute("INSERT INTO push_subscriptions VALUES ('https://x/1', ?, 'k', 'a', 'now')", (uid,))
     fam.execute("INSERT INTO thread VALUES ('m1', ?, 'hi')", (uid,))
@@ -49,6 +52,10 @@ def folder(client):
     (dst / "photos" / fid / "t").mkdir(parents=True)
     for n in ("p1.jpg", "p1-display.jpg", "p1-thumb.jpg"):
         (dst / "photos" / fid / "t" / n).write_bytes(b"x")
+    (dst / "passes" / fid / "t").mkdir(parents=True)
+    for pid in ("own", "made", "other"):
+        for n in (f"{pid}.pdf", f"{pid}-display.jpg", f"{pid}-thumb.jpg"):
+            (dst / "passes" / fid / "t" / n).write_bytes(b"x")
     yield dst, uid, fid
     shutil.rmtree(dst, ignore_errors=True)
 
@@ -103,3 +110,40 @@ def test_whole_family(folder):
 def test_unknown_email_stops(folder):
     with pytest.raises(SystemExit):
         fp.run(folder[0], "nobody@example.com")
+
+
+def pass_ids(dst, fid):
+    c = sqlite3.connect(dst / f"{fid}_db.db")
+    try:
+        return sorted(r[0] for r in c.execute("SELECT id FROM passes"))
+    finally:
+        c.close()
+
+
+def pass_files(dst, fid):
+    return sorted(p.name.split(".")[0].split("-")[0] for p in (dst / "passes" / fid / "t").glob("*"))
+
+
+def test_the_default_run_removes_the_persons_own_boarding_pass_and_files_only(folder):
+    dst, uid, fid = folder
+    fp.run(dst, EMAIL, yes=True, out=lambda s: None)
+    assert pass_ids(dst, fid) == ["made", "other"]
+    assert sorted(set(pass_files(dst, fid))) == ["made", "other"] and not (dst / "passes" / fid / "t" / "own.pdf").exists()
+
+
+def test_content_also_removes_the_passes_they_added_for_others(folder):
+    dst, uid, fid = folder
+    fp.run(dst, EMAIL, content=True, yes=True, out=lambda s: None)
+    assert pass_ids(dst, fid) == ["other"] and sorted(set(pass_files(dst, fid))) == ["other"]
+
+
+def test_the_whole_family_removes_its_pass_folder(folder):
+    dst, uid, fid = folder
+    fp.run(dst, EMAIL, family=True, yes=True, out=lambda s: None)
+    assert not (dst / "passes" / fid).exists()
+
+
+def test_a_dry_run_keeps_the_pass_rows_and_files(folder):
+    dst, uid, fid = folder
+    fp.run(dst, EMAIL, content=True, out=lambda s: None)
+    assert pass_ids(dst, fid) == ["made", "other", "own"] and len(list((dst / "passes" / fid / "t").glob("*"))) == 9
