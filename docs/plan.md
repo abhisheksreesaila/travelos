@@ -465,11 +465,11 @@ Needs: F-079 (built together)
 
 Note: the block page (`/trip/block?id=aN`, with Mark done, Set aside and Put back) was built here as a simple stepping stone so the captain can see parts and steps today; F-081's canvas replaces it.
 
-## F-081 The trip canvas with semantic zoom [todo]
+## F-081 The trip canvas with semantic zoom [done]
 Needs: F-080
-- [ ] on phones the trip tab is one canvas: week → day → block → step; tapping or pinching zooms with a fluid animation where the summary grows into its detail and back (View Transitions where supported, calm under reduced motion)
-- [ ] notes show on their block or step; a Set aside tray per day; Mark done; parts show as lanes when people split up (Everyone / per person)
-- [ ] works on desktop too (wide day view)
+- [x] on phones the trip tab is one canvas: week → day → block → step; tapping or pinching zooms with a fluid animation where the summary grows into its detail and back (View Transitions where supported, calm under reduced motion)
+- [x] notes show on their block or step; a Set aside tray per day; Mark done; parts show as lanes when people split up (Everyone / per person)
+- [x] works on desktop too (wide day view)
 
 ## F-082 Touch moves and filters [todo]
 Needs: F-081

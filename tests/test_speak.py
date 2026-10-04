@@ -485,17 +485,21 @@ def test_roles_a_viewer_sees_a_read_only_note_and_cannot_apply_while_an_editor_c
         assert ("Lunch", "12:00", "13:00") not in plans(day["s"])
 
 
-OPEN_ASK = r'<a[^>]*(?:href="/trip/ask\?day=1"[^>]*id="ak-open"|id="ak-open"[^>]*href="/trip/ask\?day=1")'
+def opener(html, ident):
+    m = re.search(r'<a[^>]*id="%s"[^>]*>' % ident, html)
+    return re.search(r'href="([^"]*)"', m.group(0)).group(1) if m else None
 
 
-def test_the_canvas_offers_ask_on_the_day_and_on_a_block_for_editors_only(client, day):
-    assert re.search(OPEN_ASK, client.get(f"/trip?day={DAY}").text)
-    assert re.search(OPEN_ASK, client.get(f"/trip/block?id={day['block']}").text)
+def test_the_canvas_offers_ask_on_the_today_day_the_canvas_day_and_a_block_for_editors_only(client, day):
+    assert opener(client.get(f"/trip?day={DAY}").text, "ak-open") == "/trip/ask?day=1"
+    assert opener(client.get(f"/trip/canvas?day={DAY}").text, f"ak-open-day-{DAY}") == "/trip/ask?day=1"
+    assert opener(client.get(f"/trip/canvas?block={day['block']}").text, f"ak-open-blk-{day['block']}") == "/trip/ask?day=1"
     mail = addr("viewask")
     invite(client, mail, "viewer")
     viewer = browser(client)
     sign_in(viewer, mail)
-    assert 'id="ak-open"' not in viewer.get(f"/trip?day={DAY}").text and 'id="ak-open"' not in viewer.get(f"/trip/block?id={day['block']}").text
+    for url in (f"/trip?day={DAY}", f"/trip/canvas?day={DAY}", f"/trip/canvas?block={day['block']}"):
+        assert "ak-open" not in viewer.get(url).text, url
 
 
 def test_the_ask_routes_need_sign_in(client):

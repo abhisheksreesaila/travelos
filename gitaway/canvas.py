@@ -19,6 +19,7 @@ A converted park day becomes ONE calendar activity (9:00 AM to 9:00 PM) on the d
 import json
 import re
 import uuid
+from datetime import datetime, timezone
 
 from fh_saas.utils_sql import insert_only
 
@@ -370,7 +371,55 @@ def _step_view(r, people) -> dict:
         tokens = [x for x in json.loads(r["who"] or "[]") if isinstance(x, str)]
     except ValueError:
         tokens = []
-    return {"id": r["id"], "title": r["title"], "time": r["time"], "who": _who_names(tokens, people), "note": r["note"], "kind": r["kind"], "done": bool(r["done"]), "aside": bool(r["aside"])}
+    return {"id": r["id"], "title": r["title"], "time": r["time"], "who": _who_names(tokens, people), "note": r["note"], "kind": r["kind"], "done": bool(r["done"]), "aside": bool(r["aside"]),
+            "act": r["act_id"], "part": r["part_id"], "people": [_person(t, people) for t in tokens], "who_key": tuple(sorted(tokens))}
+
+
+def _initials(name) -> str:
+    words = [w for w in re.split(r"[\s.]+", name or "") if w]
+    return "".join(w[0] for w in words[:2]).upper() or "?"
+
+
+def _person(tok, people) -> dict:
+    """One who-token as a person to draw. kind: member (a family member), named (a name nobody matched to a member), initials (letters nobody matched) or group (Adults, Kids)."""
+    if tok.startswith("m:"):
+        p = next((p for p in people if p["user_id"] == tok[2:]), None)
+        return {"kind": "member", "name": _first(p["name"]) if p else "Someone", "initials": p["initials"] if p else "?", "color": p["color"] if p else ""}
+    if tok.startswith("g:"):
+        return {"kind": "group", "name": tok[2:], "initials": tok[2:], "color": ""}
+    if tok.startswith("i:"):
+        return {"kind": "initials", "name": tok[2:], "initials": tok[2:] if len(tok[2:]) <= 2 else _initials(tok[2:]), "color": ""}
+    return {"kind": "named", "name": tok[2:], "initials": _initials(tok[2:]), "color": ""}
+
+
+def plan(session) -> dict:
+    """Everything the trip canvas draws, in one read: {"blocks": {act id: {"parts": [{id, name, time_of_day, steps[]}], "aside": [steps]}}, "lists": [...]}.
+    A step is the dict `_step_view` makes; a block's aside steps carry the name of the part they came from as `part_name`."""
+    people = family_people(session)
+    out = {"blocks": {}, "lists": []}
+    with ses.family(session) as fam:
+        if not fam or not fam.trip_id:
+            return out
+        parts = familydb.rows(fam.db, "SELECT * FROM block_parts WHERE trip_id = :t ORDER BY position, rowid", t=fam.trip_id)
+        steps = familydb.rows(fam.db, "SELECT * FROM block_steps WHERE trip_id = :t ORDER BY position, rowid", t=fam.trip_id)
+        names = {p["id"]: p["name"] for p in parts}
+        for p in parts:
+            out["blocks"].setdefault(p["act_id"], {"parts": [], "aside": []})["parts"].append({"id": p["id"], "name": p["name"], "time_of_day": p["time_of_day"], "steps": []})
+        for r in steps:
+            block = out["blocks"].get(r["act_id"])
+            if block is None:
+                continue
+            v = _step_view(r, people)
+            if r["aside"]:
+                block["aside"].append({**v, "part_name": names.get(r["part_id"], "")})
+            elif (part := next((p for p in block["parts"] if p["id"] == r["part_id"]), None)):
+                part["steps"].append(v)
+        lists = familydb.rows(fam.db, "SELECT * FROM trip_lists WHERE trip_id = :t ORDER BY position, rowid", t=fam.trip_id)
+        items = familydb.rows(fam.db, "SELECT * FROM trip_list_items WHERE trip_id = :t ORDER BY position, rowid", t=fam.trip_id)
+        for lst in lists:
+            owner = lst["for_who"]
+            out["lists"].append({"id": lst["id"], "name": lst["name"], "for": (_who_names([owner], people)[0] if owner else ""), "items": [{"title": i["title"], "note": i["note"]} for i in items if i["list_id"] == lst["id"]]})
+    return out
 
 
 def block_ids(session) -> set:
@@ -407,16 +456,56 @@ def block(session, act_id):
                 "aside": [v for r, v in zip(steps, views) if r["aside"]], "lists": out_lists}
 
 
+CARD_WINDOW = 15 * 60   # seconds: ticks by one person on one block inside this window share a single thread card
+
+
 def _tick(session, step_id, column, value):
     with ses.family(session) as fam:
         if not fam or not fam.trip_id:
             raise CanvasError("Open a trip first.")
         with familydb.transaction(fam.db):
-            found = familydb.row(fam.db, "SELECT act_id FROM block_steps WHERE id = :i AND trip_id = :t", i=step_id, t=fam.trip_id)
+            found = familydb.row(fam.db, "SELECT act_id, kind, title, done, aside FROM block_steps WHERE id = :i AND trip_id = :t", i=step_id, t=fam.trip_id)
             if not found:
                 raise CanvasError("That step is gone.")
             familydb.run(fam.db, f"UPDATE block_steps SET {column} = :v WHERE id = :i", v=1 if value else 0, i=step_id)   # column is one of two fixed names
+            if bool(found[column]) != bool(value):
+                _tell(session, fam, found, column, bool(value))
         return found["act_id"]
+
+
+def _tell(session, fam, step, column, value):
+    """The family's thread card for a tick, coalesced: three rides marked done in a row are one card, "Abhi finished 3 rides at Universal Studios Hollywood",
+    changed in place (no second push) while the same person keeps ticking that block. Undoing a tick takes one off the card that counts it; with no such card
+    there is nothing to say."""
+    act = familydb.row(fam.db, "SELECT title FROM activities WHERE trip_id = :t AND scope = '' AND act_id = :a", t=fam.trip_id, a=step["act_id"])
+    where = act["title"] if act else "the trip"
+    key = f"{column}:{step['act_id']}"
+    verb = "finished" if column == "done" else "set aside"
+    who = familythread.first_name(fam.traveler)
+    last = familydb.row(fam.db, "SELECT rowid AS n, * FROM thread WHERE trip_id = :t ORDER BY rowid DESC LIMIT 1", t=fam.trip_id)
+    card, payload = None, {}
+    if last and last["kind"] == "change" and last["author"] == fam.traveler.id:
+        try:
+            payload = json.loads(last["payload"] or "{}")
+        except ValueError:
+            payload = {}
+        age = (datetime.now(timezone.utc) - datetime.fromisoformat(last["created_at"])).total_seconds()
+        if payload.get("key") == key and age <= CARD_WINDOW:
+            card = last
+    if card is None:
+        if value:
+            familythread.change(session, fam, f"{who} {verb} {step['title']} at {where}", action="change")
+            made = familydb.row(fam.db, "SELECT rowid AS n FROM thread WHERE trip_id = :t ORDER BY rowid DESC LIMIT 1", t=fam.trip_id)
+            familydb.run(fam.db, "UPDATE thread SET payload = :p WHERE rowid = :n", p=json.dumps({"action": "change", "key": key, "n": 1, "kinds": [step["kind"]]}, separators=(",", ":")), n=made["n"])
+        return
+    n = payload.get("n", 1) + (1 if value else -1)
+    kinds = (payload.get("kinds") or []) + ([step["kind"]] if value else [])
+    if n <= 0:
+        familydb.run(fam.db, "DELETE FROM thread WHERE rowid = :n", n=card["n"])
+        return
+    noun = ("ride" if n == 1 else "rides") if set(kinds) == {"ride"} else ("step" if n == 1 else "steps")
+    familydb.run(fam.db, "UPDATE thread SET text = :x, payload = :p WHERE rowid = :n", x=f"{who} {verb} {n} {noun} at {where}",
+                 p=json.dumps({"action": "change", "key": key, "n": n, "kinds": kinds[-n:]}, separators=(",", ":")), n=card["n"])
 
 
 def set_done(session, step_id, done=True) -> str:

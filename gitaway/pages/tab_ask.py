@@ -134,12 +134,12 @@ def content(request, session):
     return Div(_box(request, session, day, st.get("text", ""), st.get("error", "")), cls="ak")
 
 
-def ask_button(day, compact=False) -> A:
+def ask_button(day, compact=False, ident="ak-open") -> A:
     """The small "Ask GitAway" button the canvas puts on a day or a block: opens this tab with that day selected. `compact` is the round microphone alone (its name is
     still read out), for Today's heading where there is no room for the words."""
     if compact:
-        return A(icon("mic", 18, 2.4), Span("Ask GitAway", cls="sr-only"), href=day_url(day), cls="btn btn-sm tp-edit ak-open ak-open-icon", id="ak-open", title="Ask GitAway")
-    return A(icon("mic", 14, 2.4), "Ask GitAway", href=day_url(day), cls="btn btn-sm tp-edit ak-open", id="ak-open")
+        return A(icon("mic", 18, 2.4), Span("Ask GitAway", cls="sr-only"), href=day_url(day), cls="btn btn-sm tp-edit ak-open ak-open-icon", id=ident, title="Ask GitAway")
+    return A(icon("mic", 14, 2.4), "Ask GitAway", href=day_url(day), cls="btn btn-sm tp-edit ak-open", id=ident)
 
 
 def register(app):
