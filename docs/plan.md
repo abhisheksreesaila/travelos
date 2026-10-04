@@ -453,3 +453,28 @@ Captain, 2026-10-04: Azure OpenAI is a stopgap for the trip; after a week we rev
 - [ ] every AI call goes through one place (`gitaway/ai.py`) and is logged with: when, which job (e.g. convert, speak, ask, around-you, ocr), which family, model/deployment, tokens in and out, time taken, success or error; never the prompt text, answers or personal details
 - [ ] a short report (`pixi run ai-report`, and docs/ai-usage.md listing each job, what it replaces and why) shows counts, time and tokens per job and per day, so the captain can review after the trip
 - [ ] switching the model or provider for one job is one setting, not a code change
+
+# Trip canvas (brief docs/briefs/trip-canvas.md, approved 2026-10-04)
+
+## F-080 Paste & Convert [doing]
+Needs: F-079 (built together)
+- [ ] a block (calendar plan) can hold parts and steps (title, optional time, who, note, done, set aside) and a trip can hold named lists (e.g. Pregnancy-safe rides) and a Set aside tray; stored in family tables
+- [ ] "Add to the trip" takes pasted text (or dictation) and Convert, using the Azure model, returns park days → parts → steps with notes on their items, repeats merged, "skip" items set aside, lists made; then asks who each initial/name is (family members, someone new, or keep the initials) and which trip day each day is; nothing is saved until "Add to trip"
+- [ ] it works on the captain's real Universal Studios and California Adventure messages (a test fixture with that text), and a model failure or timeout leaves a clear message and the pasted text intact
+- [ ] adding writes one family-thread change card and notifies the family
+
+## F-081 The trip canvas with semantic zoom [todo]
+Needs: F-080
+- [ ] on phones the trip tab is one canvas: week → day → block → step; tapping or pinching zooms with a fluid animation where the summary grows into its detail and back (View Transitions where supported, calm under reduced motion)
+- [ ] notes show on their block or step; a Set aside tray per day; Mark done; parts show as lanes when people split up (Everyone / per person)
+- [ ] works on desktop too (wide day view)
+
+## F-082 Touch moves and filters [todo]
+Needs: F-081
+- [ ] hold and drag a step to another time, part, day or the Set aside tray, with Undo; swipe for Done or Set aside
+- [ ] filter chips by who and by named lists (e.g. Pregnancy-safe) highlight matching steps and dim the rest
+
+## F-083 Passes & documents [doing]
+Needs: none
+- [ ] in Help, per traveller: flight, seat, boarding group, gate, boarding time and an attached boarding pass (PDF or image), family only; editors add or fix them
+- [ ] on travel day the flight is Today's focal card with "Show everyone's passes": full-screen, bright, swipe between travellers
