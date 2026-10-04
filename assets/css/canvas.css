@@ -66,26 +66,6 @@
 .cv-dow { font-size: max(var(--text-min), 0.8125rem); font-weight: 800; letter-spacing: 0.06em; }
 .cv-dom { font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; line-height: 1.1; }
 
-/* a block */
-.cv-part-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
-.cv-step-row { display: flex; flex-direction: column; gap: 0.25rem; padding: 0.625rem 0; border-top: 0.0625rem solid var(--line); }
-.cv-part-head + .cv-step-row { border-top: 0; }
-.cv-step-head { display: flex; align-items: center; gap: 0.5rem; }
-.cv-title { flex: 1; min-width: 0; }
-.cv-check { width: 1.5rem; height: 1.5rem; border-radius: var(--r-pill); background: var(--mint); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.cv-step-row.is-done .cv-title { text-decoration: line-through; color: var(--ink-3); }
-.cv-step-row.is-aside .cv-title { color: var(--ink-2); }
-.cv-meta { display: flex; flex-wrap: wrap; gap: 0.375rem; align-items: center; }
-.cv-time { font-weight: 800; font-size: max(var(--text-min), 0.875rem); color: var(--ink-2); }
-.cv-chip { padding: 0.125rem 0.625rem; border-radius: var(--r-pill); background: var(--grape-tint); color: var(--grape-ink); font-weight: 800; font-size: max(var(--text-min), 0.8125rem); }
-.cv-note { font-family: var(--font-hand); font-size: 1.25rem; padding: 0; }
-.cv-step-form { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.cv-act { border: 0; cursor: pointer; }
-.cv-tray { background: var(--sun-tint); }
-.cv-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 0.375rem; }
-.cv-list li { display: flex; flex-direction: column; }
-#cv-back-day { align-self: center; }
-
 /* header Back and a confirmed suggestion */
 .cv-topback { align-self: flex-start; display: inline-flex; align-items: center; gap: 0.25rem; min-height: 2.75rem; padding: 0 0.75rem 0 0.25rem; border: 0; background: transparent; font-family: var(--font-body); font-weight: 800; font-size: 1rem; color: var(--ink); cursor: pointer; }
 .cv-confirmed { display: flex; align-items: center; gap: 0.625rem; min-height: 2.75rem; padding: 0.25rem 0.75rem 0.25rem 0.5rem; border-radius: var(--r-pill); background: var(--mint-tint); font-weight: 800; }

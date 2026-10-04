@@ -35,6 +35,11 @@ def uni_id():
     return cal.activities(person("ari"))[0].id
 
 
+def bare(s):
+    """The page with the trip id taken off every address (the addresses carry it; most tests do not care which trip)."""
+    return re.sub(r"(?:\?|&amp;|&)trip=[0-9a-f]+", "", s)
+
+
 def text(html):
     return " ".join(unescape(re.sub(r"<[^>]+>", " ", html)).split())
 
@@ -79,7 +84,7 @@ def test_the_week_has_a_row_per_day_park_days_with_parts_and_free_days_with_a_pl
         assert part in page
     assert "4 rides" in page and "8 rides" in page      # Lower Lot, Upper Lot
     assert 'class="cz-sticker cz-sticker-week' in page and "roughest ride" in page       # a note rides along on the park day
-    assert 'href="/trip/canvas?day=1"' in page and 'href="/trip/canvas?day=3"' in page
+    assert 'href="/trip/canvas?day=1"' in bare(page) and 'href="/trip/canvas?day=3"' in bare(page)
     assert 'class="cz-plus"' in page and 'href="/trip?add=1&amp;day=2"' in page
     assert "Pinch or tap to zoom" in page
 
@@ -89,7 +94,7 @@ def test_the_zoom_control_goes_to_today_week_and_day(trip):
     assert 'href="/trip"' in tag(page, "cz-z-today") and 'aria-current="page"' in tag(page, "cz-z-week")
     assert "/trip/canvas?day=1" in tag(page, "cz-z-day")     # the first park day, since the demo trip is before its dates
     day = trip.get("/trip/canvas?day=1").text
-    assert 'aria-current="page"' in tag(day, "cz-z-day") and 'href="/trip/canvas"' in tag(day, "cz-z-week")
+    assert 'aria-current="page"' in tag(day, "cz-z-day") and 'href="/trip/canvas"' in bare(tag(day, "cz-z-week"))
 
 
 # ---- the day ---------------------------------------------------------------------------------------------------------------
@@ -108,7 +113,7 @@ def test_a_day_shows_its_block_with_parts_chips_stickers_who_and_the_set_aside_t
     assert 'aria-label="Bhoomija"' in hippo and "cz-av-named" in hippo and "cz-av-member" in hippo               # who, as avatars: a member, and a name nobody matched
     init = next(c for c in page.split('class="cz-chipwrap"') if "Hippogriff" in c.split("</a>")[0])
     assert "cz-av-initials" in init and "not matched to a person" in init               # H and B, as the messages wrote them, dashed
-    assert f'href="/trip/canvas?block={uni_id()}"' in page and f'href="/trip/canvas?step={step_id(trip, "King Kong")}"' in page
+    assert f'href="/trip/canvas?block={uni_id()}"' in bare(page) and f'href="/trip/canvas?step={step_id(trip, "King Kong")}"' in bare(page)
 
 
 def test_the_unmatched_initials_are_drawn_dashed(trip):
@@ -124,7 +129,7 @@ def test_a_free_day_has_an_add_link_for_editors(trip):
 def test_a_day_that_does_not_exist_goes_back_to_the_week(trip):
     for bad in ("?day=99", "?day=x", "?block=a99", "?step=nope"):
         r = trip.get("/trip/canvas" + bad, follow_redirects=False)
-        assert r.status_code == 303 and r.headers["location"] == "/trip/canvas", bad
+        assert r.status_code == 303 and bare(r.headers["location"]) == "/trip/canvas", bad
 
 
 # ---- the block -------------------------------------------------------------------------------------------------------------
@@ -133,7 +138,7 @@ def test_a_block_shows_parts_as_sections_with_steps_and_the_tray(trip):
     page = trip.get(f"/trip/canvas?block={uni_id()}").text
     assert 'data-level="block"' in page and page.count("cz-bpart cz-pt-") >= 4 and "Pregnancy-safe rides" in page
     assert "Set aside · 2" in page and "0 of 14 done" in page and "cz-lanes" not in page    # nobody splits up in the messages
-    assert f'href="/trip/canvas?day=1"' in page and 'aria-label="Zoom out to the day"' in page
+    assert f'href="/trip/canvas?day=1"' in bare(page) and 'aria-label="Zoom out to the day"' in page
 
 
 def test_steps_at_the_same_time_for_different_people_become_lanes_and_nothing_else_does(trip):
@@ -173,7 +178,7 @@ def test_the_step_sheet_has_the_note_who_and_the_buttons(trip):
     assert "H and B walk" in page and "From your messages" in page and page.count("cz-av-initials") >= 2
     assert "Mark done" in page and "Set aside" in page and 'action="/trip/canvas/step"' in page and 'name="trip"' in page
     assert f'data-zk="stp-{sid}"' in page and page.count(f'data-zk="stp-{sid}"') == 1       # the open step is the sheet, never also its row
-    assert f'href="/trip/canvas?block={uni_id()}"' in page
+    assert f'href="/trip/canvas?block={uni_id()}"' in bare(page)
     aside = trip.get(f"/trip/canvas?step={step_id(trip, 'Studio Tour')}").text
     assert "Put back" in aside and "Mark done" in aside and "Set aside · still in the trip" in aside
 
@@ -181,7 +186,7 @@ def test_the_step_sheet_has_the_note_who_and_the_buttons(trip):
 def test_mark_done_from_the_sheet_zooms_back_to_the_block_with_the_step_done(trip, announced):
     sid = step_id(trip, "Revenge of the Mummy")
     r = trip.post("/trip/canvas/step", data={"step": sid, "do": "done", "next": f"/trip/canvas?block={uni_id()}"}, follow_redirects=False)
-    assert r.status_code == 303 and r.headers["location"] == f"/trip/canvas?block={uni_id()}"
+    assert r.status_code == 303 and bare(r.headers["location"]) == f"/trip/canvas?block={uni_id()}"
     page = trip.get(r.headers["location"]).text
     assert "1 of 14 done" in page and re.search(r'data-step="%s"[^>]*class="cz-step is-done"' % sid, page)
     assert "Not done" in trip.get(f"/trip/canvas?step={sid}").text
@@ -262,10 +267,10 @@ def test_every_button_on_the_sheet_lands_where_it_says(trip):
 
 def test_the_back_buttons_zoom_out_one_level(trip):
     uni = uni_id()
-    assert 'href="/trip/canvas?day=1"' in tag(trip.get(f"/trip/canvas?block={uni}").text, "cz-title") or 'href="/trip/canvas?day=1"' in trip.get(f"/trip/canvas?block={uni}").text
+    assert 'href="/trip/canvas?day=1"' in bare(trip.get(f"/trip/canvas?block={uni}").text)
     assert 'aria-label="Zoom out to the week"' in trip.get("/trip/canvas?day=1").text
     sheet = trip.get(f"/trip/canvas?step={step_id(trip, 'King Kong')}").text
-    assert sheet.count(f'href="/trip/canvas?block={uni}"') >= 2       # the scrim and the close button
+    assert bare(sheet).count(f'href="/trip/canvas?block={uni}"') >= 2       # the scrim and the close button
 
 
 # ---- viewers ---------------------------------------------------------------------------------------------------------------
@@ -292,6 +297,61 @@ def test_today_has_a_week_view_link_for_every_role_and_the_canvas_links_to_today
     added(owner)
     for who in (owner, viewer):
         today = who.get("/trip").text
-        assert 'href="/trip/canvas"' in tag(today, "tp-open-canvas") and "Week view" in today
+        assert 'href="/trip/canvas"' in bare(tag(today, "tp-open-canvas")) and "Week view" in today
         assert 'href="/trip"' in tag(who.get("/trip/canvas").text, "cz-z-today")
     assert 'id="tp-open-canvas"' not in owner.get("/trip?tab=notes").text
+
+
+# ---- review fixes ----------------------------------------------------------------------------------------------------------
+
+def test_a_step_whose_block_was_deleted_goes_back_to_the_week(trip):
+    sid = step_id(trip, "King Kong")
+    assert trip.get(f"/trip/canvas?step={sid}").status_code == 200
+    cal.delete_activity(person("ari"), uni_id())
+    r = trip.get(f"/trip/canvas?step={sid}", follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"].startswith("/trip/canvas")
+
+
+def test_a_step_on_a_day_outside_the_trip_is_not_opened(trip):
+    run("UPDATE activities SET day = 99 WHERE act_id = :a", a=uni_id())
+    sid = step_id(trip, "King Kong")
+    assert trip.get(f"/trip/canvas?step={sid}", follow_redirects=False).status_code == 303
+
+
+def test_an_unknown_address_never_answers_a_fragment_with_a_whole_page(trip):
+    for q in ("?day=99", "?block=a99", "?step=nope"):
+        r = trip.get("/trip/canvas" + q + "&frag=1", follow_redirects=False)
+        assert r.status_code == 404 and "<html" not in r.text, q
+
+
+def test_the_open_aside_step_is_the_sheet_and_not_also_its_tray_chip(trip):
+    sid = step_id(trip, "Studio Tour")
+    page = trip.get(f"/trip/canvas?step={sid}").text
+    assert page.count(f'data-zk="stp-{sid}"') == 1
+    other = trip.get(f"/trip/canvas?step={step_id(trip, 'Simpsons')}").text
+    assert f'data-zk="stp-{sid}"' in other      # the other steps keep theirs
+
+
+def trip_of(html):
+    return re.search(r"[?&]trip=([0-9a-f]+)", html).group(1)
+
+
+def test_canvas_addresses_carry_the_trip_so_a_stale_tab_stays_on_its_trip(trip):
+    from tests.test_calendar import book
+    from tests.test_family_storage import THREE_NIGHTS
+    week = trip.get("/trip/canvas").text
+    old = trip_of(week)
+    sid = step_id(trip, "King Kong")
+    assert all(f"trip={old}" in h for h in links(week) if "?" in h and h != "/trip/canvas")
+    book(trip, **THREE_NIGHTS)                                  # a second trip, now the open one
+    assert "Universal" not in trip.get("/trip/canvas").text
+    stale = trip.get(f"/trip/canvas?day=1&trip={old}").text
+    assert "Universal Studios Hollywood" in stale and f"trip={old}" in stale
+    sheet = trip.get(f"/trip/canvas?step={sid}&trip={old}").text
+    assert f"trip={old}" in sheet and 'name="trip"' in sheet and f'value="{old}"' in sheet
+    assert trip.get(f"/trip/block?id=a1&trip={old}", follow_redirects=False).headers["location"] == f"/trip/canvas?block=a1&trip={old}"
+
+
+def test_week_view_links_in_today_keep_their_trip(trip):
+    today = trip.get("/trip?day=1").text
+    assert re.search(r'href="/trip/canvas\?block=a1&amp;trip=[0-9a-f]+"', today)

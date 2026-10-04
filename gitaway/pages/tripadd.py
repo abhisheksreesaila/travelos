@@ -13,15 +13,13 @@ cookie or the database. Every write is gated by gitaway.access (editors); a view
 """
 
 import json
-from datetime import timedelta
-from urllib.parse import urlencode
 
 from fasthtml.common import A, Button, Details, Div, Fieldset, Form, H2, H3, Input, Label, Legend, Li, Link, Main, P, Span, Summary, Textarea, Ul
 from fasthtml.core import FtResponse
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import RedirectResponse
 
-from gitaway import access, ai, canvas, members, phone, session as ses, tripcal as cal
+from gitaway import access, ai, canvas, phone, session as ses, tripcal as cal
 from gitaway.icons import icon
 from gitaway.layout import avatar, join_note, trip_field
 from gitaway.pages.trip import trip_url
@@ -293,7 +291,7 @@ def register(app):
         view = canvas.block(session, id[:8])
         if view is None:
             return RedirectResponse(trip_url(), status_code=303)
-        return RedirectResponse(f"/trip/canvas?block={view['act'].id}", status_code=303)   # F-081: the block lives in the canvas now
+        return RedirectResponse(f"/trip/canvas?block={view['act'].id}" + (f"&trip={ses.open_trip_id()}" if ses.open_trip_id() else ""), status_code=303)   # F-081: the block lives in the canvas now
 
     @app.post("/trip/block/step")
     async def step(request, session):
@@ -310,4 +308,4 @@ def register(app):
                 canvas.set_aside(session, sid, do == "aside")
         except canvas.CanvasError:
             pass       # a step someone else just removed: show the block as it is now
-        return RedirectResponse(f"/trip/canvas?block={act}", status_code=303)
+        return RedirectResponse(f"/trip/canvas?block={act}" + (f"&trip={ses.open_trip_id()}" if ses.open_trip_id() else ""), status_code=303)

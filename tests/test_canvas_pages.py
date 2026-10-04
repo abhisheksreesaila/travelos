@@ -183,7 +183,7 @@ def test_add_to_trip_saves_the_days_and_the_block_shows_its_steps(client, azure,
     assert [(a.title, a.day) for a in acts] == [("Universal Studios Hollywood", 1), ("Disney California Adventure", 3)]
     assert len(announced) == 1
     today = client.get("/trip?day=1").text
-    assert 'href="/trip/canvas?block=a1"' in today and "Universal Studios Hollywood" in today
+    assert re.search(r'href="/trip/canvas\?block=a1(&amp;trip=[0-9a-f]+)?"', today) and "Universal Studios Hollywood" in today
     block = client.get("/trip/canvas?block=a1").text
     for needle in ("Lower Lot", "Harry Potter world", "Revenge of the Mummy", "roughest ride", "H and B walk", "Set aside · 2", "Studio Tour", "Pregnancy-safe rides", "Golden Zephyr"):
         assert needle in block, needle
@@ -240,7 +240,7 @@ def test_mark_done_and_set_aside_are_one_tap_each(client, azure):
     added(client)
     sid = step_id(client, "Revenge of the Mummy")
     r = client.post("/trip/block/step", data={"step": sid, "act": "a1", "do": "done"}, follow_redirects=False)
-    assert r.status_code == 303 and r.headers["location"] == "/trip/canvas?block=a1"      # old forms still write, then land on the block
+    assert r.status_code == 303 and r.headers["location"].startswith("/trip/canvas?block=a1")      # old forms still write, then land on the block
     block = client.get("/trip/canvas?block=a1").text
     assert re.search(rf'data-step="{sid}"[^>]*class="cz-step is-done"', block) and "1 of 14 done" in block
     assert "Not done" in client.get(f"/trip/canvas?step={sid}").text
@@ -256,7 +256,7 @@ def test_the_old_block_address_goes_to_the_canvas(client, azure):
     book(client)
     added(client)
     r = client.get("/trip/block?id=a1", follow_redirects=False)
-    assert r.status_code == 303 and r.headers["location"] == "/trip/canvas?block=a1"
+    assert r.status_code == 303 and r.headers["location"].startswith("/trip/canvas?block=a1")
 
 
 def test_a_step_that_is_gone_just_shows_the_block(client, azure):

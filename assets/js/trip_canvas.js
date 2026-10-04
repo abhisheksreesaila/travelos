@@ -14,6 +14,7 @@
   var KEY = /^[a-z]{3}-[A-Za-z0-9-]+$/;
   var cache = {};          // url -> { at, promise }: a level fetched as the finger went down, used by the tap that follows
   var busy = false;
+  var waiting = null;      // the browser's Back or Forward pressed while a zoom was running: run it when that zoom is done
   var swallow = 0;         // a pinch ends with finger lifts that must not count as taps
 
   function path(u) { var a = document.createElement('a'); a.href = u; return a.pathname + a.search; }
@@ -80,7 +81,7 @@
 
   function goto(u, o) {
     o = o || {};
-    if (busy) return;
+    if (busy) { if (o.mode === 'pop') waiting = u; return; }
     busy = true;
     var dir = o.dir || directionTo(u);
     var v = view();
@@ -99,7 +100,10 @@
         }
       };
       return run(html, dir, key, remember);
-    }).catch(function () { location.href = u; }).then(function () { busy = false; });
+    }).catch(function () { location.href = u; }).then(function () {
+      busy = false;
+      if (waiting) { waiting = null; goto(path(location.href), { mode: 'pop' }); }     // the address bar is the truth: show what it says
+    });
   }
 
   // ---- taps and keys ----------------------------------------------------------------------------------------------------

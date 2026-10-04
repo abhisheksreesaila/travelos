@@ -4,6 +4,7 @@ Set aside from the step sheet, lanes, no sideways scroll, 44px targets, 13px tex
 Adventure messages through a canned model answer; nothing here reaches the network."""
 import json
 import os
+import re
 
 import pytest
 from playwright.sync_api import expect
@@ -95,7 +96,7 @@ def test_tap_zooms_week_to_day_to_block_to_step_and_every_way_back(canvas_page, 
     checks(page)
     page.locator(".cz-row", has_text="Universal Studios Hollywood").locator(".cz-row-link").click()
     expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
-    assert page.url.endswith("/trip/canvas?day=1") and "Lower Lot" in page.locator("#cz").inner_text()
+    assert "/trip/canvas?day=1" in page.url and "Lower Lot" in page.locator("#cz").inner_text()
     checks(page)
     page.locator(".cz-block-head").click()
     expect(page.locator(".cz-view[data-level=block]")).to_be_visible()
@@ -112,7 +113,7 @@ def test_tap_zooms_week_to_day_to_block_to_step_and_every_way_back(canvas_page, 
     expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
     page.locator(".cz-back").click()                           # day > week
     expect(page.locator(".cz-view[data-level=week]")).to_be_visible()
-    assert page.url == f"{base_url}/trip/canvas"
+    assert page.url.startswith(f"{base_url}/trip/canvas") and "day=" not in page.url and "block=" not in page.url
     for _ in range(3):                                         # the back buttons were the browser's Back: nothing piled up
         assert page.evaluate("history.length") < 12
 
@@ -153,7 +154,7 @@ def test_a_free_day_plus_opens_the_add_sheet_and_every_week_row_opens_its_day(ca
     for i in range(rows.count()):
         page.locator(".cz-row").nth(i).locator(".cz-row-link").click()
         expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
-        assert page.url.endswith(f"day={i}")
+        assert f"day={i}" in page.url
         page.locator(".cz-back").click()
         expect(page.locator(".cz-view[data-level=week]")).to_be_visible()
 
@@ -246,7 +247,7 @@ def test_pinching_apart_zooms_in_and_together_zooms_out(canvas_page):
     box = page.locator(".cz-row", has_text="Universal").locator(".cz-wcard").first.bounding_box()
     pinch(page, box["x"] + box["width"] / 2, box["y"] + box["height"] / 2, 40, 140)         # fingers over the Universal row
     expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
-    assert page.url.endswith("day=1")
+    assert "day=1" in page.url
     page.locator(".cz-chip", has_text="King Kong").evaluate("e => e.scrollIntoView({ block: 'center' })")      # clear of the tab bar
     chip = page.locator(".cz-chip", has_text="King Kong").bounding_box()
     pinch(page, chip["x"] + chip["width"] / 2, chip["y"] + chip["height"] / 2, 40, 140)     # fingers over a ride
@@ -269,6 +270,17 @@ def test_a_pinch_does_not_also_count_as_a_tap(canvas_page):
     expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
     page.wait_for_timeout(100)
     assert level(page) == "day"
+
+
+def test_a_back_press_during_a_running_zoom_is_not_lost(canvas_page):
+    page = canvas_page(motion="no-preference")
+    page.evaluate("document.documentElement.style.setProperty('--cz-dur', '2500ms')")
+    page.locator(".cz-row", has_text="Universal").locator(".cz-row-link").click()
+    page.wait_for_url("**day=1**")                                              # the zoom is running (the address changes as it starts)
+    page.wait_for_function("document.documentElement.dataset.czDir")
+    page.go_back()                                                              # pressed before it finished
+    expect(page.locator(".cz-view[data-level=week]")).to_be_visible(timeout=9000)
+    assert page.url.split("?")[0].endswith("/trip/canvas") and "day=" not in page.url
 
 
 # ---- Mark done, Set aside, Put back from the sheet ---------------------------------------------------------------------------
@@ -370,8 +382,11 @@ def test_desktop_shows_the_week_strip_the_parts_as_lanes_and_the_tray_at_the_sid
     assert page.evaluate(OVERFLOW) <= 0
     other = strip.locator(".cz-strip-day").nth(3)
     other.click()                                                                                   # a day in the strip swaps the day, no page load
-    expect(page.locator(".cz-strip-day.is-open")).to_have_attribute("href", "/trip/canvas?day=3")
+    expect(page.locator(".cz-strip-day.is-open")).to_have_attribute("href", re.compile(r"/trip/canvas\?day=3(&|$)"))
     assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth")
+    head = page.locator(".cz-block-head").first            # the block's heading keeps its size next to the week strip (a flex-basis once squeezed its title)
+    title, box = head.locator(".cz-card-t").bounding_box(), head.bounding_box()
+    assert title["width"] > 150 and title["height"] < 40 and 30 < box["height"] < 90 and box["width"] > 400
     page.locator(".cz-strip-day").nth(1).click()
     page.locator(".cz-chip", has_text="Revenge of the Mummy").click()
     expect(page.get_by_role("dialog")).to_be_visible()
