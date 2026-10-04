@@ -9,4 +9,4 @@ Where things stand for the next session.
 - The captain is on the trip (Oct 4–10, 2026) and will send live feedback; fix and deploy each item through the reviewer.
 - After the trip: review what the AI did (`pixi run ai-report`, docs/ai-usage.md) and decide per job.
 - Known trade-offs told to the captain: pinch on the canvas replaces page zoom there; Ask removals can't be undone; plans may overlap (Ask warns).
-- Old agent worktrees from earlier sessions remain under .claude/worktrees/ (some locked); they were not cleaned up because they may hold unlanded work — check before removing.
+- All old agent worktrees were removed on 2026-10-04 (every one was merged and clean). The unused Sept 29 "Field Notes" redesign spec is kept on branch worktree-opus-redesign-spec.
