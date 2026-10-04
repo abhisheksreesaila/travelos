@@ -79,8 +79,8 @@ def _switch(view):
 def _people(role):
     """A row above the switch: admins get the Invite button (the form at /family#invite), everyone else a link to see who is in the family."""
     if role == "admin":
-        return Div(A(icon("user-plus", 20, 2.2), Span("Invite"), href="/family#invite", id="fam-invite", cls="btn btn-primary btn-sm fam-invite"), cls="fam-people")
-    return Div(A(icon("users", 20, 2.2), Span("Who's in the family"), href="/family", id="fam-invite", cls="btn btn-sm fam-invite"), cls="fam-people")
+        return Div(A(icon("user-plus", 20, 2.2), Span("Invite"), href="/family#invite", id="ft-invite", cls="btn btn-primary btn-sm ft-people-btn"), cls="fam-people")
+    return Div(A(icon("users", 20, 2.2), Span("Who's in the family"), href="/family", id="ft-people", cls="btn btn-sm ft-people-btn"), cls="fam-people")
 
 
 def content(request, session):

@@ -121,7 +121,7 @@ def test_the_tab_fits_the_phone_without_sideways_scroll_and_with_big_enough_targ
         ari.locator("#ft-send").click()
         expect(ari.locator("#ft-thread .ft-msg").last).to_be_visible()
     assert overflow(ari) <= 0
-    for sel in ("#ft-send", "#ft-quiet", "#ft-text"):
+    for sel in ("#ft-send", "#ft-quiet", "#ft-text", "#ft-invite"):
         box = ari.locator(sel).bounding_box()
         assert box["height"] >= 43.9 and box["width"] >= 43.9, sel
     small = ari.evaluate("""() => [...document.querySelectorAll('#ft *')].filter(e => e.childNodes.length && [...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim()) && parseFloat(getComputedStyle(e).fontSize) < 13).length""")
