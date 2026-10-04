@@ -8,11 +8,13 @@ page says so.
 
 Every card: the name, distance and walk time, open now or hours unknown (no rating, OpenStreetMap has none), Directions, Call when there is a phone, and
 Add to plan, which opens the calendar's add form for the day with the name and the next free half hour filled in (an editor only; the calendar validates it, writes
-the change card and tells the family like any other add). The model is gitaway/around.py. POST /trip/map/around changes nothing, so every member may call it
+the change card and tells the family like any other add). The model is gitaway/around.py. POST /trip/map/around writes only the place-lookup cache (in memory), so every member may call it (limited per person)
 (gitaway.access OPEN_POSTS).
 """
 
 import re
+import threading
+import time
 from urllib.parse import quote
 
 from fasthtml.common import A, Button, Div, Form, H2, H3, Input, Link, P, Span
@@ -27,7 +29,27 @@ HEAD = (Link(rel="stylesheet", href="/assets/css/around.css"),)
 SCRIPTS = ("/assets/js/around.js",)
 MODE_WORDS = {"walk": "Walking", "drive": "Driving"}
 RANGE_WORDS = {"walk": "about a mile on foot", "drive": "about 5 miles by car"}
+GAP, PER_MINUTE = 2.0, 10      # one search per person every 2 seconds and ten a minute, counted in this process's memory
+SLOW_DOWN = "One moment, you are searching a little fast. Try again in a few seconds."
+LIMITS: dict = {}
+_limit_lock = threading.Lock()
+_now = time.monotonic
 LOCATING = "Asking your phone where you are…"
+
+
+def too_fast(user) -> bool:
+    """True when `user` (an id) has searched too fast: under GAP seconds since the last, or PER_MINUTE in the last minute. Counts a search that is allowed."""
+    t = _now()
+    with _limit_lock:
+        stamps = [x for x in LIMITS.get(user, []) if t - x < 60]
+        if (stamps and t - stamps[-1] < GAP) or len(stamps) >= PER_MINUTE:
+            LIMITS[user] = stamps
+            return True
+        LIMITS[user] = [*stamps, t]
+        if len(LIMITS) > 5000:
+            for k in [k for k, v in LIMITS.items() if not v or t - v[-1] >= 60]:
+                LIMITS.pop(k, None)
+        return False
 
 
 def around_url(day=None, cat=None) -> str:
@@ -74,7 +96,7 @@ def view(request, session, v):
         Div(Button(icon("target", 18, 2.4), "Use my location", type="button", cls="tp-btn tp-btn-white ar-locate", id="ar-locate"),
             Div(*[Button(w, type="button", cls="ar-mode", data_mode=m, aria_pressed="true" if m == "walk" else "false", id=f"ar-mode-{m}") for m, w in MODE_WORDS.items()], cls="ar-modes", role="group", aria_label="How far"), cls="ar-row"),
         P(icon("lock", 14, 2.4), "GitAway asks your phone where you are only when you tap, only while this page is open, and does not keep it. "
-          "Places come from OpenStreetMap, which gets your position rounded to about a block.", cls="ar-fine", id="ar-privacy"),
+          "Places come from OpenStreetMap, which gets your position rounded to within about 100 metres. Results for that rounded point are kept in the server's memory for up to 30 minutes, not linked to you.", cls="ar-fine", id="ar-privacy"),
         _prefs(pref, editor),
         Div(id="ar-results", cls="ar-results", role="region", aria_live="polite", aria_label="Places near you", aria_busy="false"),
         Form(trip_field(), Input(type="hidden", name="day", value=str(day)), id="ar-ctx", cls="ar-ctx", data_url="/trip/map/around", hidden=True),
@@ -191,6 +213,8 @@ def register(app):
         from gitaway.pages import trip as trip_ui
         if not ses.current_traveler(session) or not ses.booking(session):
             return HTMLResponse("Sign in first.", status_code=401)
+        if too_fast((session or {}).get("user_id", "")):
+            return HTMLResponse(_xml(P(SLOW_DOWN, cls="ar-empty", id="ar-error", role="alert")), status_code=429)
         form = await request.form()
         cat = (form.get("cat") or "")[:12]
         mode = form.get("mode") if form.get("mode") in around.RADIUS else "walk"

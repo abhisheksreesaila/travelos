@@ -28,6 +28,10 @@ def world(monkeypatch):
               place("Plant Cafe", 0.004, diet_vegetarian="yes"),
               place("Night Owl", 0.001, opening_hours="Mo-Su 22:00-23:00", diet_vegetarian="yes"))
     monkeypatch.setattr(geo, "fetch", w)
+    from gitaway.pages import around_ui
+    t = [0.0]
+    around_ui.LIMITS.clear()
+    monkeypatch.setattr(around_ui, "_now", lambda: t.__setitem__(0, t[0] + 3.0) or t[0])   # the per-person limit has its own test
     monkeypatch.setattr(catalog, "now_utc", lambda: datetime(2026, 10, 17, 19, 40, tzinfo=timezone.utc))   # Saturday 12:40 PM in Los Angeles
     monkeypatch.setattr(catalog, "today", lambda *_: datetime(2026, 10, 17).date())
     return w
@@ -165,3 +169,32 @@ def test_the_position_is_never_in_a_link_or_in_the_browsers_storage(around_page,
     stored = page.evaluate("JSON.stringify([Object.entries(localStorage), Object.entries(sessionStorage), document.cookie])")
     assert "34.01234" not in stored and "118.49876" not in stored
     assert "(around:1500,34.012,-118.499)" in world.overpass[0] and "34.01234" not in " ".join(world.overpass)      # Overpass hears it rounded
+
+
+def test_the_family_pages_vegetarian_toggle_lands_back_on_the_page_and_shows_the_pill_on_around_you(around_page, world):
+    page = around_page(vegetarian=False)
+    expect(page.locator("#ar-pref")).to_contain_text("none")
+    page.goto(page.url.split("/trip/")[0] + "/family")
+    page.locator("#fam-food-toggle").click()
+    page.wait_for_url(re.compile(r"/family#fam-food"))
+    expect(page.locator("#fam-food-toggle")).to_contain_text("Vegetarian: on")
+    page.goto(page.url.split("/family")[0] + "/trip/map?view=around&day=1")
+    expect(page.locator("#ar-pref")).to_contain_text("Vegetarian")
+    expect(page.locator("#ar-chip-veg")).to_have_attribute("aria-pressed", "true")
+
+
+def test_a_chip_tap_asks_the_phone_again_when_the_position_is_over_three_minutes_old(around_page, world):
+    page = around_page()
+    page.add_init_script("window.__asks = 0; const g = navigator.geolocation.getCurrentPosition.bind(navigator.geolocation); navigator.geolocation.getCurrentPosition = function (a, b, c) { window.__asks++; return g(a, b, c); };")
+    page.reload()
+    page.wait_for_selector("#ar")
+    page.evaluate("window.__now = Date.now; Date.now = () => window.__now() + window.__skew; window.__skew = 0")
+    page.locator("#ar-chip-veg").click()
+    expect(page.locator(".ar-card").first).to_be_visible()
+    page.locator("#ar-chip-coffee").click()
+    expect(page.locator("#ar-fragment .ar-h2")).to_have_text("Coffee")
+    assert page.evaluate("window.__asks") == 1
+    page.evaluate("window.__skew = 4 * 60 * 1000")
+    page.locator("#ar-chip-gas").click()
+    expect(page.locator("#ar-fragment .ar-h2")).to_have_text("Gas")
+    assert page.evaluate("window.__asks") == 2

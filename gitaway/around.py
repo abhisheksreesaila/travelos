@@ -246,7 +246,7 @@ def _parse_rules(spec):
         if not r:
             continue
         low = r.lower()
-        if low.startswith("ph") or " ph" in low and low.endswith("off"):
+        if low.startswith("ph") or (" ph" in low and low.endswith("off")):
             continue                        # public holidays: not known here, so the ordinary hours stand
         if low in ("24/7",):
             rules.append((None, [(0, 1440)]))

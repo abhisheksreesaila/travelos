@@ -6,7 +6,7 @@
   if (!root) return;
   var $ = function (id) { return document.getElementById(id); };
   var ctx = $('ar-ctx'), results = $('ar-results'), loc = $('ar-loc');
-  var cat = root.dataset.picked || '', mode = 'walk', pos = null, denied = false, asked = false, seq = 0;
+  var cat = root.dataset.picked || '', mode = 'walk', pos = null, denied = false, asked = false, seq = 0, fixAt = 0, STALE = 3 * 60 * 1000;
   var PLACEHOLDER = loc.lastChild ? loc.lastChild.textContent : 'Tap a button to look nearby';
 
   function say(text) {
@@ -22,7 +22,7 @@
     if (!navigator.geolocation) { pos = null; denied = true; done(); return; }
     say('Asking your phone where you are…');
     navigator.geolocation.getCurrentPosition(function (p) {
-      pos = { lat: p.coords.latitude, lon: p.coords.longitude }; denied = false; done();
+      pos = { lat: p.coords.latitude, lon: p.coords.longitude }; denied = false; fixAt = Date.now(); done();
     }, function () {
       pos = null; denied = true; done();
     }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 });
@@ -54,7 +54,7 @@
 
   function go() {
     if (!cat) { say('Pick what you are looking for'); return; }
-    if (asked) { search(); return; }
+    if (asked && (denied || Date.now() - fixAt < STALE)) { search(); return; }   // a position over three minutes old is asked for again
     asked = true;
     locate(search);
   }

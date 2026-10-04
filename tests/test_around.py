@@ -40,6 +40,19 @@ class World(Maps):
         return super().__call__(url, timeout)
 
 
+@pytest.fixture(autouse=True)
+def slow_clock(monkeypatch):
+    """Each search is 3 seconds after the last, so the per-person limit stays out of the way unless a test sets its own clock."""
+    from gitaway.pages import around_ui
+    t = [0.0]
+
+    def tick():
+        t[0] += 3.0
+        return t[0]
+    around_ui.LIMITS.clear()
+    monkeypatch.setattr(around_ui, "_now", tick)
+
+
 @pytest.fixture
 def world(monkeypatch):
     w = World(place("Green Bowl", 0.002, phone="+1 310 555 0142", opening_hours="Mo-Su 09:00-21:00", website="https://greenbowl.example", diet_vegetarian="only", cuisine="vegetarian"),
@@ -339,7 +352,30 @@ def test_viewers_see_the_cards_but_no_add_to_plan_and_cannot_turn_the_preference
 
 def test_the_privacy_page_says_what_overpass_and_the_model_get_for_around_you(client):
     t = " ".join(visible(client.get("/privacy").text).split())
-    for p in ("OpenStreetMap Overpass", "overpass-api.de", "approximate location, rounded to about a block", "the kind of place you tapped", "only when you tap",
+    for p in ("OpenStreetMap Overpass", "overpass-api.de", "rounded to within about 100 metres", "kept in the server's memory for up to 30 minutes", "not linked to you", "the kind of place you tapped", "only when you tap",
               "does not store your location", "does three jobs", "When you use Around you", "your family's food preference", "the names of nearby places",
               "It never gets your location or the names of your family"):
         assert p in t, p
+
+
+# ---- the limit per person ------------------------------------------------------------------------------------------------
+
+def test_one_person_cannot_hammer_the_search(client, world, monkeypatch):
+    from gitaway.pages import around_ui
+    imported(client)
+    t = [100.0]
+    monkeypatch.setattr(around_ui, "_now", lambda: t[0])
+    around_ui.LIMITS.clear()
+    assert search(client).status_code == 200
+    r = search(client, cat="coffee")                  # again at once: one every 2 seconds
+    assert r.status_code == 429 and "one moment" in r.text.lower()
+    t[0] += 2.1
+    assert search(client, cat="coffee").status_code == 200
+    for i in range(12):                                # ten a minute
+        t[0] += 2.1
+        r = search(client, cat="gas")
+        if r.status_code == 429:
+            break
+    assert r.status_code == 429
+    t[0] += 61
+    assert search(client, cat="gas").status_code == 200
