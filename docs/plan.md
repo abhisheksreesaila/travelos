@@ -448,20 +448,20 @@ Captain, 2026-10-04: bought gitaway.me; the site, Google sign-in and Face ID mov
 - [x] in production, a request to any other host (the old *.up.railway.app address) gets a permanent redirect to the same path and query on GITAWAY_PUBLIC_URL, except /healthz (Railway's check) and /auth/callback (a sign-in already under way finishes where it started)
 - [x] locally and in tests nothing redirects; docs/setup.md says how to change the address
 
-## F-079 Keep track of what the AI does [todo]
+## F-079 Keep track of what the AI does [done]
 Captain, 2026-10-04: Azure OpenAI is a stopgap for the trip; after a week we review which jobs it actually did (transcription, OCR, Convert, search, recommendations) and decide what to keep, swap for a cheaper model or classifier, or drop. · Needs: none
-- [ ] every AI call goes through one place (`gitaway/ai.py`) and is logged with: when, which job (e.g. convert, speak, ask, around-you, ocr), which family, model/deployment, tokens in and out, time taken, success or error; never the prompt text, answers or personal details
-- [ ] a short report (`pixi run ai-report`, and docs/ai-usage.md listing each job, what it replaces and why) shows counts, time and tokens per job and per day, so the captain can review after the trip
-- [ ] switching the model or provider for one job is one setting, not a code change
+- [x] every AI call goes through one place (`gitaway/ai.py`) and is logged with: when, which job (e.g. convert, speak, ask, around-you, ocr), which family, model/deployment, tokens in and out, time taken, success or error; never the prompt text, answers or personal details
+- [x] a short report (`pixi run ai-report`, and docs/ai-usage.md listing each job, what it replaces and why) shows counts, time and tokens per job and per day, so the captain can review after the trip
+- [x] switching the model or provider for one job is one setting, not a code change
 
 # Trip canvas (brief docs/briefs/trip-canvas.md, approved 2026-10-04)
 
-## F-080 Paste & Convert [doing]
+## F-080 Paste & Convert [done]
 Needs: F-079 (built together)
-- [ ] a block (calendar plan) can hold parts and steps (title, optional time, who, note, done, set aside) and a trip can hold named lists (e.g. Pregnancy-safe rides) and a Set aside tray; stored in family tables
-- [ ] "Add to the trip" takes pasted text (or dictation) and Convert, using the Azure model, returns park days → parts → steps with notes on their items, repeats merged, "skip" items set aside, lists made; then asks who each initial/name is (family members, someone new, or keep the initials) and which trip day each day is; nothing is saved until "Add to trip"
-- [ ] it works on the captain's real Universal Studios and California Adventure messages (a test fixture with that text), and a model failure or timeout leaves a clear message and the pasted text intact
-- [ ] adding writes one family-thread change card and notifies the family
+- [x] a block (calendar plan) can hold parts and steps (title, optional time, who, note, done, set aside) and a trip can hold named lists (e.g. Pregnancy-safe rides) and a Set aside tray; stored in family tables
+- [x] "Add to the trip" takes pasted text (or dictation) and Convert, using the Azure model, returns park days → parts → steps with notes on their items, repeats merged, "skip" items set aside, lists made; then asks who each initial/name is (family members, someone new, or keep the initials) and which trip day each day is; nothing is saved until "Add to trip"
+- [x] it works on the captain's real Universal Studios and California Adventure messages (a test fixture with that text), and a model failure or timeout leaves a clear message and the pasted text intact
+- [x] adding writes one family-thread change card and notifies the family
 
 Note: the block page (`/trip/block?id=aN`, with Mark done, Set aside and Put back) was built here as a simple stepping stone so the captain can see parts and steps today; F-081's canvas replaces it.
 
@@ -476,7 +476,7 @@ Needs: F-081
 - [ ] hold and drag a step to another time, part, day or the Set aside tray, with Undo; swipe for Done or Set aside
 - [ ] filter chips by who and by named lists (e.g. Pregnancy-safe) highlight matching steps and dim the rest
 
-## F-083 Passes & documents [doing]
+## F-083 Passes & documents [done]
 Needs: none
-- [ ] in Help, per traveller: flight, seat, boarding group, gate, boarding time and an attached boarding pass (PDF or image), family only; editors add or fix them
-- [ ] on travel day the flight is Today's focal card with "Show everyone's passes": full-screen, bright, swipe between travellers
+- [x] in Help, per traveller: flight, seat, boarding group, gate, boarding time and an attached boarding pass (PDF or image), family only; editors add or fix them
+- [x] on travel day the flight is Today's focal card with "Show everyone's passes": full-screen, bright, swipe between travellers
