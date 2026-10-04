@@ -498,8 +498,15 @@ Captain, 2026-10-04: Add to trip refused a plan because it overlapped hotel chec
 - [ ] adding, editing or moving a plan (calendar form, Add to the trip, canvas moves, forks, voice) is never refused for overlapping a booking, a ride or another plan; the plan is saved and shows a small "overlaps <title>" tag where it is listed
 - [ ] the other checks stay (inside the trip, end after start, minimum length); tests that expected an overlap refusal now expect the save and the tag
 
-## F-087 Paste for one day [todo]
-Captain, 2026-10-04: wants to paste the messages for a particular day and have that day filled in, asking about times only when they are unclear. · Needs: F-086
-- [ ] on a day (Today and a selected day, and the canvas day view), editors get "Paste for this day", which opens Add to the trip already set to that day: Convert puts everything on that day and never asks "Which day is each park?"
-- [ ] times written in the text are used as given; an item whose time is unclear ("after lunch", "sometime") gets one quick time question (a suggested time from its neighbours, changeable) in the questions step instead of a silent guess
-- [ ] overlaps with bookings or plans are saved (F-086); the whole-trip paste from the top button keeps working as today
+## F-087 One box: talk, type or paste a change or a whole itinerary [todo]
+Captain, 2026-10-04: Ask stops at 600 characters and one day; paste lives on separate screens; "simplify, it could be overwhelming". Keep paste: "sometimes we copy paste from the internet". Replaces the earlier "Paste for one day". · Needs: F-086
+- [ ] one Ask box (the raised centre tab, and Ask on a day) takes talking, typing or pasting of any length up to the paste limit (about 20,000 characters), with a visible Paste button; the separate Add to the trip screens fold into it (old links land in the box)
+- [ ] opened from a day, everything goes on that day; opened without a day, it reads the text and spreads it across the trip's days
+- [ ] it asks quick follow-ups only when needed (which day, what time, who an initial is), one tap each with a suggested answer; times written in the text are used as given
+- [ ] one preview, day by day, of what is added, moved or removed; one Apply saves it all in one go and tells the family once; overlaps are allowed (F-086); a model failure keeps the text
+- [ ] the captain's real Universal Studios and California Adventure messages (existing fixture) still convert into park days, parts and steps
+
+## F-088 Face ID only where it is set up [todo]
+Captain, 2026-10-04: tapping Face ID on a phone without a GitAway passkey shows a QR code (iPhone offering another device), which a phone can't scan itself. Passkeys made before the move to gitaway.me don't work there. · Needs: none
+- [ ] the sign-in page shows the Face ID button only on a device that turned on Face ID for this address (remembered on the device after a successful setup or sign-in); everywhere else Google is the one button
+- [ ] if a Face ID attempt is cancelled or fails, the page says so plainly and points to Google; a test covers both cases
