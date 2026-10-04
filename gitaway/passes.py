@@ -49,6 +49,7 @@ ERRORS = {
     "big": f"That file is too large (at most {MAX_BYTES // (1024 * 1024)} MB).",
     "type": "Only PDF, JPEG, PNG, WebP and HEIC files can be added.",
     "open": "That file could not be opened.",
+    "pages": "That PDF has too many pages (at most 50). Add just the boarding pass.",
     "room": "There is no room to keep more files right now. Tell the family admin.",
     "pass_missing": "That pass is not on this trip.",
 }
@@ -99,6 +100,8 @@ def _check_pdf(data: bytes):
         r = PdfReader(io.BytesIO(data), strict=False)
         if r.is_encrypted or len(r.pages) < 1:
             raise PassError("open")
+        if len(r.pages) > MAX_PAGES:
+            raise PassError("pages")
     except PassError:
         raise
     except Exception as e:
@@ -106,29 +109,49 @@ def _check_pdf(data: bytes):
         raise PassError("open") from e
 
 
+MAX_PAGES = 50
+RENDER_TIMEOUT = 10   # seconds: drawing runs in its own process, so a PDF that hangs or eats memory cannot block uploads
+_DRAW = """
+import io, sys
+import pypdfium2 as pdfium
+edge = float(sys.argv[1])
+pdf = pdfium.PdfDocument(sys.stdin.buffer.read())
+page = pdf[0]
+w, h = page.get_size()
+img = page.render(scale=min(6.0, edge / max(w, h))).to_pil().convert("RGB")
+img.save(sys.stdout.buffer, "PNG")
+"""
+
+
+def _limits():
+    try:
+        import resource
+        resource.setrlimit(resource.RLIMIT_AS, (2 * 1024 ** 3, 2 * 1024 ** 3))   # at most 2 GB of memory for the drawing process
+    except Exception:
+        pass
+
+
 def render_pdf(data: bytes):
-    """The first page of a PDF as a picture (long side photos.DISPLAY_EDGE), or None when pypdfium2 is not there or cannot draw it."""
+    """The first page of a PDF as a picture (long side photos.DISPLAY_EDGE), or None when pypdfium2 is not there, takes longer than RENDER_TIMEOUT or cannot draw it.
+
+    Only the first page is drawn, in a separate process with a time and memory limit."""
+    import subprocess
+    import sys
+    from PIL import Image
     try:
-        import pypdfium2 as pdfium
-    except ImportError:
-        return None
-    pdf = page = None
-    try:
-        pdf = pdfium.PdfDocument(data)
-        page = pdf[0]
-        w, h = page.get_size()
-        if not (w > 0 and h > 0):
+        done = subprocess.run([sys.executable, "-c", _DRAW, str(photos.DISPLAY_EDGE)], input=data, capture_output=True, timeout=RENDER_TIMEOUT, preexec_fn=_limits)
+        if done.returncode != 0:
+            log.info("pass pdf not drawn: exit %s", done.returncode)
             return None
-        scale = min(6.0, photos.DISPLAY_EDGE / max(w, h))
-        return page.render(scale=scale).to_pil().convert("RGB")
+        img = Image.open(io.BytesIO(done.stdout))
+        img.load()
+        return img.convert("RGB")
+    except subprocess.TimeoutExpired:
+        log.info("pass pdf not drawn: timed out")
+        return None
     except Exception as e:
         log.info("pass pdf not drawn: %s", type(e).__name__)
         return None
-    finally:
-        if page is not None:
-            page.close()
-        if pdf is not None:
-            pdf.close()
 
 
 def _pictures(kind, data):
@@ -313,6 +336,8 @@ def save_pass(session, *, trip_id="", pass_id="", flight="", traveller="", seat=
     """Add a pass for a traveller on a flight (or fix the one `pass_id`; a new file replaces the old) and tell the family. Returns the pass (a dict).
 
     `data` is the uploaded file's bytes (None keeps what is there). Raises PassError."""
+    if pass_id and not _ID.match(pass_id):   # before any file is written: the id is part of a file name
+        raise PassError("pass_missing", 404)
     traveller = _clean(traveller, 40)
     seat, grp, gate = _clean(seat, 6).upper(), _clean(grp, 4).upper(), _clean(gate, 6).upper()
     app_url = (app_url or "").strip()

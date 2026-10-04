@@ -387,3 +387,31 @@ def test_deleting_an_imported_trip_removes_its_pass_files(client):
     [trip_id] = trip_ids()
     client.post("/trip/delete", data={"trip": trip_id}, follow_redirects=False)
     assert not any(passes.root().rglob("*.*"))
+
+
+@pytest.mark.parametrize("bad", ["../../evil", "/etc/evil", "..", "a" * 31, "x/../y"])
+def test_a_forged_pass_id_writes_nothing_and_is_not_found(trip, ari, key, bad):
+    before = sorted(p for p in passes.root().parent.rglob("*"))
+    r = add_pass(trip, key, pass_id=bad, file=("a.pdf", pdf(), "application/pdf"))
+    assert r.status_code == 303 and "err=pass_missing" in r.headers["location"]
+    assert sorted(p for p in passes.root().parent.rglob("*")) == before and passes.listing(ari) == {}
+
+
+def test_a_pdf_with_too_many_pages_is_refused(trip, ari, key):
+    r = add_pass(trip, key, file=("a.pdf", pdf(passes.MAX_PAGES + 1), "application/pdf"))
+    assert "err=pages" in r.headers["location"] and passes.listing(ari) == {}
+    assert "err=" not in add_pass(trip, key, file=("a.pdf", pdf(passes.MAX_PAGES), "application/pdf")).headers["location"]
+
+
+def test_a_pdf_that_takes_too_long_to_draw_is_kept_and_opens_as_a_pdf(trip, ari, key, monkeypatch):
+    monkeypatch.setattr(passes, "RENDER_TIMEOUT", 0.001)   # the drawing runs in its own process with a time limit; this one cannot finish in time
+    r = add_pass(trip, key, file=("a.pdf", pdf(), "application/pdf"))
+    assert "err=" not in r.headers["location"]
+    [p] = passes.listing(ari)[key]
+    assert p["kind"] == "pdf" and p["display"] == "" and trip.get(f"/trip/passes/{p['id']}/file").status_code == 200
+    assert "Open the PDF" in trip.get(f"/trip/passes/gate?flight={key}").text
+
+
+def test_drawing_a_pdf_works_in_its_own_process(trip):
+    img = passes.render_pdf(pdf())
+    assert img is not None and max(img.size) == 1600
