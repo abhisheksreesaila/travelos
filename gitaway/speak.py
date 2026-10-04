@@ -140,9 +140,6 @@ def read_day(session, fam, day, people, frame=None):
     if not isinstance(day, int) or isinstance(day, bool) or not 0 <= day < n:
         raise SpeakError("Pick a day inside your trip.")
     zone = familydb.trip_zone(fam.db, fam.trip_id)
-    ph, today = td.phase(t, catalog.today_in(zone))
-    past = ph == "after" or (ph == "during" and day < today)
-    now = td.now_minute(zone) if ph == "during" and day == today else None
     plans = {r["act_id"]: r for r in familydb.rows(fam.db, "SELECT * FROM activities WHERE trip_id = :t AND scope = '' AND gone = 0 AND day = :d ORDER BY start_min, seq", t=fam.trip_id, d=day)}
     parts, steps = {}, {}
     if plans:
@@ -156,8 +153,18 @@ def read_day(session, fam, day, people, frame=None):
     for r in familydb.rows(fam.db, "SELECT * FROM notes WHERE trip_id = :t AND scope = '' AND gone = 0 ORDER BY seq", t=fam.trip_id):
         if r["act_id"] in plans:
             notes[r["act_id"]] = r["body"]
+    return make_day(t, day, zone, blocks, booked, plans, parts, steps, notes, people)
+
+
+def make_day(t, day, zone, blocks, booked, plans, parts, steps, notes, people, when=None):
+    """The one place a day's context is built (read_day and the by-hand smoke run both use it, so they cannot drift apart). `when` is (phase, today's index,
+    minute of the day) to pretend a moment; by default it is now, in the trip's zone."""
+    n = (t.return_ - t.depart).days + 1
+    ph, today, minute = when or (*td.phase(t, catalog.today_in(zone)), td.now_minute(zone))
+    during = ph == "during"
     return {"t": t, "day": day, "date": t.depart + timedelta(days=day), "zone": zone, "blocks": blocks, "booked": [x for x in booked if x.day == day],
-            "past": past, "now": now, "ph": ph, "today": today if ph == "during" else None, "clock": td.now_minute(zone) if ph == "during" else None, "plans": plans, "parts": parts, "steps": steps, "notes": notes, "people": people, "n_days": n}
+            "past": ph == "after" or (during and day < today), "now": minute if during and day == today else None, "ph": ph, "today": today if during else None,
+            "clock": minute if during else None, "plans": plans, "parts": parts, "steps": steps, "notes": notes, "people": people, "n_days": n}
 
 
 def fingerprint(ctx) -> str:
