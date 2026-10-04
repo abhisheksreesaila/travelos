@@ -423,3 +423,22 @@ def test_a_plan_over_a_booking_or_another_plan_shows_an_overlaps_tag_on_the_day_
     assert said["a1"].startswith("Overlaps Skylark Air 214") and "Bagels" in said["a1"]
     assert said["a2"].startswith("Overlaps") and "Early swim" in said["a2"]
     assert 'data-overlap="a3"' not in client.get("/trip?day=1").text
+
+
+def test_the_up_next_card_carries_the_overlaps_tag_too(client, at):
+    book(client)
+    plan(client, "a1", "1", "17:00", "19:30", "Griffith Observatory", "culture")
+    plan(client, "a2", "1", "18:00", "19:00", "Dinner nearby", "food")
+    at(date(2026, 10, 17), "16:20")
+    html = client.get("/trip", headers=ANDROID).text
+    up = html.split('id="tp-up"')[1].split('id="tp-list"')[0]
+    assert "Griffith Observatory" in text(up) and 'data-overlap="a1"' in up and "Overlaps Dinner nearby" in text(up)
+
+
+def test_the_import_preview_says_suggestions_not_refusals_follow_the_flights():
+    from gitaway.pages import tripimport as page
+    from gitaway import tripimport as ti
+    plan = ti.parse(TEMPLATE).plan
+    said = " ".join(page._consequences(plan))
+    assert "suggested plans start after you land" in said and "You can still add a plan at any time" in said
+    assert "not allowed" not in said

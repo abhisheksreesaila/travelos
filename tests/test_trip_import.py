@@ -201,8 +201,7 @@ def test_the_flight_window_follows_the_real_first_arrival_and_last_departure(cli
     imported(client)
     p = person()
     blocks = cal.booked_blocks(ses.booking(p), cal.trip("", ses.booking(p)))
-    assert cal.window_problem(blocks, 0, 7 * 60, 8 * 60) == ("land", 9 * 60 + 32)     # the window still guides suggestions...
-    assert cal.window_problem(blocks, 4, 12 * 60 + 30, 13 * 60 + 30)[0] == "home"
+    assert cal.day_window(blocks, 0)[0] == 9 * 60 + 32 and cal.day_window(blocks, 4)[1] == 12 * 60 + 10     # the window still guides suggestions...
     for day, start, end, title in ((0, "07:00", "08:00", "Too early"), (4, "12:30", "13:30", "Too late"), (0, "16:30", "18:00", "Dinner"),
                                    (4, "08:00", "09:30", "Breakfast"), (0, "15:00", "16:00", "In the check-in")):
         assert cal.add_activity(p, day=day, start=start, end=end, title=title).id     # ...but never refuses a plan (F-086)
@@ -222,7 +221,7 @@ def test_a_connection_uses_the_real_arrival_at_the_destination(client):
     b = ses.booking(person())
     assert [x.id for x in cal.booked_blocks(b, cal.trip("", b)) if x.id.startswith("b-leg") or x.id in ("b-out", "b-back")] == ["b-out", "b-back", "b-leg3"]
     p = person()
-    assert cal.window_problem(cal.booked_blocks(b, cal.trip("", b)), 0, 7 * 60, 8 * 60) == ("land", 9 * 60 + 32)
+    assert cal.day_window(cal.booked_blocks(b, cal.trip("", b)), 0)[0] == 9 * 60 + 32
     assert cal.add_activity(p, day=0, start="07:00", end="08:00", title="Early").id
 
 

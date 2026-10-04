@@ -397,10 +397,8 @@ def day_blocks(url_picks):
 def test_no_flight_means_no_window_and_a_flight_still_has_one():
     _, none = day_blocks((None, "h1", None))
     assert cal.day_window(none, 0) == (cal.DEFAULT_START, cal.GRID_END) and cal.day_window(none, 4) == (cal.DEFAULT_START, cal.GRID_END)
-    assert cal.window_problem(none, 0, 7 * 60, 8 * 60) is None and cal.window_problem(none, 4, 13 * 60, 21 * 60) is None
     _, full = day_blocks(("f1", "h1", None))
-    assert cal.window_problem(full, 0, 7 * 60, 8 * 60) == ("land", 572)
-    assert cal.window_problem(full, 4, 12 * 60, 13 * 60)[0] == "home"
+    assert cal.day_window(full, 0)[0] == 572 and cal.day_window(full, 4)[1] < cal.GRID_END
 
 
 def test_activities_before_landing_and_near_the_flight_home_are_allowed_with_no_flight(client):

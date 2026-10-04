@@ -56,7 +56,7 @@ def test_late_events_stay_inside_the_day_and_the_grid_grows_to_hold_them(client)
     assert blocks["b-in"].at == 23 * 60 + 30 and blocks["b-in"].end == 24 * 60 - 1
     back = blocks["b-back"]
     assert (back.day, back.at, back.end) == (4, 23 * 60 + 50, 24 * 60 - 1) and back.end - back.start >= 30 and back.start <= 23 * 60 + 29  # true time kept, readable height
-    assert cal.window_problem(list(blocks.values()), 4, 20 * 60, 22 * 60)[0] == "home" and cal.window_problem(list(blocks.values()), 4, 20 * 60, 21 * 60 + 50) is None
+    assert cal.day_window(list(blocks.values()), 4)[1] == 23 * 60 + 50 - cal.AIRPORT_BUFFER
     assert "b-back-a" not in blocks  # the landing is the day after the trip ends: no column for it
     assert all(0 <= x.start and x.end <= 24 * 60 - 1 for x in blocks.values())
     assert cal.grid_end(list(blocks.values())) == 24 * 60 and cal.grid_end([]) == 22 * 60
@@ -68,16 +68,16 @@ def test_a_red_eye_blocks_the_landing_morning_and_the_leaving_evening():
     blocks = {x.id: x for x in cal.imported_blocks(out, tripimport.trip_search(out))}
     assert (blocks["b-out"].day, blocks["b-out"].start, blocks["b-out"].end) == (0, 0, 6 * 60 + 32)  # the landing morning
     assert "b-out-d" not in blocks  # it left the evening before the trip starts
-    assert cal.window_problem(list(blocks.values()), 0, 5 * 60, 6 * 60)[0] == "land"
+    assert cal.day_window(list(blocks.values()), 0)[0] == 6 * 60 + 32
     mid = tripimport.parse(TEMPLATE.replace("depart: 2026-10-16 08:05", "depart: 2026-10-16 22:05").replace("arrive: 2026-10-16 09:32", "arrive: 2026-10-17 06:32")).plan
     got = {x.id: x for x in cal.imported_blocks(mid, tripimport.trip_search(mid))}
     assert (got["b-out-d"].day, got["b-out-d"].start) == (0, 22 * 60 + 5) and got["b-out"].day == 1 and got["b-out"].end == 6 * 60 + 32
-    assert cal.window_problem(list(got.values()), 0, 20 * 60, 21 * 60) is None  # the leaving evening is free until the flight
-    assert cal.window_problem(list(got.values()), 1, 5 * 60, 6 * 60)[0] == "land"
+    assert cal.day_window(list(got.values()), 0)[1] == cal.GRID_END  # the leaving evening is free until the flight
+    assert cal.day_window(list(got.values()), 1)[0] == 6 * 60 + 32
     back = tripimport.parse(TEMPLATE.replace("depart: 2026-10-20 14:10", "depart: 2026-10-20 23:10").replace("arrive: 2026-10-20 15:37", "arrive: 2026-10-21 00:37")).plan
     blocks = {x.id: x for x in cal.imported_blocks(back, tripimport.trip_search(back))}
     assert blocks["b-back"].day == 4 and blocks["b-back"].start == 23 * 60 + 10 and "b-back-a" not in blocks
-    assert cal.window_problem(list(blocks.values()), 4, 20 * 60, 21 * 60 + 30)[0] == "home"
+    assert cal.day_window(list(blocks.values()), 4)[1] == 23 * 60 + 10 - cal.AIRPORT_BUFFER
 
 
 def test_a_one_way_connection_does_not_make_the_stopover_the_stay():

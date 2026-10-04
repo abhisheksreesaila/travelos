@@ -167,7 +167,7 @@ def test_a_fork_plan_after_the_flight_home_is_kept_and_can_be_applied(client):
     keys = plan_keys(html)
     assert keys["d4s2"] == (True, False)  # Pool time, 5 to 7 PM on the day the 2:10 PM flight leaves: kept (F-086)
     apply(client, "d4s2")
-    assert [a["t"] for a in stored_calendar()["a"]] == ["Pool time"] or len(stored_calendar()["a"]) == 1
+    assert [a["t"] for a in stored_calendar()["a"]] == ["Pool time"]
 
 
 def test_day_arrows_are_not_offered_when_the_trip_is_three_days_or_fewer(client):
@@ -207,7 +207,8 @@ def test_moms_scripted_add_stays_inside_the_flight_window_on_a_short_trip(client
     assert len(mom) == 1 and mom[0]["d"] == 2
     b = stored_booking()
     blocks = cal.booked_blocks(b, cal.trip_of(b))
-    assert cal.window_problem(blocks, mom[0]["d"], mom[0]["s"], mom[0]["e"]) is None
+    lo, hi = cal.day_window(blocks, mom[0]["d"])
+    assert lo <= mom[0]["s"] and mom[0]["e"] <= hi
     assert mom[0]["e"] <= 10 * 60 + 30
 
 

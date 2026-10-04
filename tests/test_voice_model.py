@@ -100,9 +100,9 @@ def test_on_a_two_night_trip_plans_over_the_flights_are_kept_and_nothing_crashes
     s = client_session(client)
     placed = voice.preview(s, night=0)
     assert len(placed) == 4
-    assert all(x.state in ("free", "clash") for x in placed)
-    assert all(x.clash for x in placed if x.state == "clash")             # a hard one (past the trip) says why
-    assert all(x.checked for x in placed if not x.hard)                   # overlapping a flight is never a reason to skip
+    assert all(x.checked and not x.hard for x in placed)                  # overlapping something is never a reason to skip a plan (F-086)
+    assert {x.plan.title: x.overlap for x in placed if x.overlap} == {
+        "Pool time at The Tidewater": "Check out · The Tidewater", "Beach walk before the flight home": "Pool time at The Tidewater"}
 
 
 def test_the_note_lists_what_was_planned_and_fits_a_note():

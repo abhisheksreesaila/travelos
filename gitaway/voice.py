@@ -7,8 +7,9 @@ The mapping onto a trip's real days (trips have any dates and length, F-035):
     (Sunday: day 3, Monday: day 2), and never a day past the trip's last.
   - "on our last day" is the trip's last day. "Tacos for dinner" is the one unclear bit: the question offers the first two
     evenings of the trip and the answer picks the night.
-A plan the trip cannot hold (it would start before you land, or end too close to your flight home) is not dropped: the
-preview shows it as a clash with the reason, and Apply skips it, exactly like a fork's plans.
+A plan the trip cannot hold (a day past the trip's end, or hours off the grid) is not dropped: the preview shows it as a clash
+with the reason, and Apply skips it, exactly like a fork's plans. A plan that only overlaps a booking, a ride or another plan is
+kept and ticked, with an "Overlaps" note (F-086).
 """
 
 from dataclasses import dataclass

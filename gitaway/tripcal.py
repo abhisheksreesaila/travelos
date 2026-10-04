@@ -293,7 +293,7 @@ def imported_blocks(plan, t):
     """The locked blocks an imported trip (F-042) puts on the calendar of trip `t`, each tagged "Booked elsewhere · <where>".
 
     Every flight leg, each hotel's check in and check out, and the car's pickup and dropoff. "b-out" is the arrival at the destination and
-    "b-back" the flight home, so the flight window (day_window, window_problem) follows the real first arrival and last departure.
+    "b-back" the flight home, so the flight window (day_window) follows the real first arrival and last departure.
     A block never runs past 11:59 PM. A red-eye is two blocks, the leaving evening and the landing morning: the one the window reads keeps
     the id ("b-out" is the landing morning, "b-back" the leaving evening); the other gets "-d" (leaves) or "-a" (arrives).
     """
@@ -342,7 +342,7 @@ def booking_detail(b, block_id):
     return tripimport.detail_rows(spec, plan) if spec else None
 
 
-AIRPORT_BUFFER = catalog.AIRPORT_BUFFER  # one source: minutes before the flight home that a plan must be finished by
+AIRPORT_BUFFER = catalog.AIRPORT_BUFFER  # one source: minutes before the flight home that suggested plans finish by (a plan you add yourself may run later)
 
 
 def day_window(blocks, day):
@@ -355,17 +355,6 @@ def day_window(blocks, day):
         if b.id == "b-back" and b.day == day:
             hi = min(hi, b.at - AIRPORT_BUFFER)
     return lo, hi
-
-
-def window_problem(blocks, day, start, end):
-    """("land", landing minute) when a plan starts before you land, ("home", latest end) when it ends too close to the flight
-    home, else None. Pure."""
-    for b in blocks:
-        if b.id == "b-out" and b.day == day and start < b.end:
-            return "land", b.end
-        if b.id == "b-back" and b.day == day and end > b.at - AIRPORT_BUFFER:
-            return "home", b.at - AIRPORT_BUFFER
-    return None
 
 
 def grid_end(blocks):
@@ -510,9 +499,9 @@ def parse_time(value, what):
     return int(m.group(1)) * 60 + int(m.group(2))
 
 
-def _clean(t, blocks, *, day, start, end, title, kind, old=None):
+def _clean(t, blocks, *, day, start, end, title, kind):
     """Validate an activity on trip `t` with booked `blocks`. Overlapping a booking, a ride or another plan is never refused (F-086:
-    families split up); `overlaps` tags it where it is listed. `old` is kept so callers need not change."""
+    families split up); `overlaps` tags it where it is listed."""
     title = " ".join((title or "").split())
     if not title:
         raise CalendarError("Give it a title.")
@@ -648,8 +637,7 @@ def update_in(session, fam, t, blocks, id_, *, day=None, start=None, end=None, t
         raise CalendarError("That activity is gone.")
     d, s, e, name = _clean(
         t, blocks, day=row["day"] if day is None else day, start=row["start_min"] if start is None else start,
-        end=row["end_min"] if end is None else end, title=row["title"] if title is None else title, kind=row["kind"] if kind is None else kind,
-        old=(row["day"], row["start_min"], row["end_min"]))
+        end=row["end_min"] if end is None else end, title=row["title"] if title is None else title, kind=row["kind"] if kind is None else kind)
     changes = {}
     if (day, start, end) != (None, None, None):
         changes.update(day=d, start_min=s, end_min=e)
