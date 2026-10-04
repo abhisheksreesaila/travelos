@@ -30,8 +30,8 @@
 .pz-field input { width: 100%; min-height: 2.75rem; padding: 0 0.875rem; border-radius: 0.875rem; border: 0.125rem solid rgba(30, 26, 46, .2); font: inherit; background: #FFFFFF; box-sizing: border-box; }
 .pz-field input[type="file"] { padding: 0.5rem 0.75rem; height: auto; }
 .pz-code input { text-transform: uppercase; }
-.pz-two, .pz-three { display: flex; gap: 0.5rem; }
-.pz-three .pz-field { flex: 1 1 0; }
+.pz-two, .pz-three { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.pz-two .pz-field, .pz-three .pz-field { flex: 1 1 5.5rem; min-width: 5.5rem; }
 .pz-priv { display: flex; gap: 0.5rem; align-items: flex-start; padding: 0.625rem 0.875rem; border-radius: 1rem; background: var(--sky-tint); font-weight: 600; font-size: max(var(--text-min), 0.875rem); }
 .pz-priv svg { flex-shrink: 0; margin-top: 0.125rem; }
 .pz-bold { font-weight: 800; }
