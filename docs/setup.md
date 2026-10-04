@@ -27,7 +27,7 @@ Put settings in a `.env` file in the project folder (it is gitignored) or export
 | `GITAWAY_SECRET_KEY` | required in production | Secret that signs the session cookie. In production the app will not start without it. Locally, if unset, a random key is made once and kept in `.sesskey` (gitignored), which is fine for local development. |
 | `PORT` | optional | Port for `pixi run dev`. Default 5002. |
 | `FH_SAAS_LOG_LEVEL` | optional | `DEBUG`, `INFO`, `WARNING` (default). The app calls fh-saas's `configure_logging()` at startup. |
-| `GITAWAY_PUBLIC_URL` | for Face ID in production | The site's public address, e.g. `https://web-production-2d117.up.railway.app` (F-074). A passkey belongs to this site name, and the browser's origin is checked against it strictly. Falls back to Railway's own `RAILWAY_PUBLIC_DOMAIN`; with neither set, Face ID is switched off in production. Never taken from the request's Host or `X-Forwarded-*` headers. |
+| `GITAWAY_PUBLIC_URL` | for Face ID in production | The site's public address, e.g. `https://web-production-2d117.up.railway.app` (F-074). A passkey belongs to this site name, and the browser's origin is checked against it strictly. Falls back to Railway's own `RAILWAY_PUBLIC_DOMAIN`; with neither set, Face ID is switched off in production. Never taken from the request's Host or `X-Forwarded-*` headers. In production it is also the one address (F-078): see "One address" below. |
 | `GITAWAY_VAPID_PUBLIC`, `GITAWAY_VAPID_PRIVATE`, `GITAWAY_VAPID_SUBJECT` | for the morning plan push | The Web Push (VAPID) key pair and a `mailto:` contact (F-066). Without them the Morning plan card is not shown and nothing is sent. Make them with `pixi run vapid-keys mailto:you@example.com` (below). |
 
 There is no redirect-URI variable: fh-saas builds it from the address of the request, as `<scheme>://<host>/auth/callback` (`http` for `localhost` and `127.0.0.1`, `https` for anything else).
@@ -131,6 +131,19 @@ The repo has a `Dockerfile` (Railway builds it by itself) that installs the lock
 4. **Networking**: generate a domain (`<app>.up.railway.app`). Set the service's health check path to `/healthz`.
 5. **Google console**: under Authorized redirect URIs add `https://<app>.up.railway.app/auth/callback`. fh-saas builds the redirect from the request's host (`X-Forwarded-Host` if present) and uses `https` for any host that is not localhost, so it matches. Either **publish** the OAuth app (consent screen > Publish app) or leave it in Testing and add every family member's Gmail under **Test users**; in Testing, anyone else is refused by Google.
 6. **Check a redeploy keeps the data**: sign in on the live site, create a trip, trigger a redeploy (Deployments > Redeploy), and confirm you are still signed in and the trip is there. Do this before the family arrives.
+
+## One address (F-078)
+
+In production, a request on any host other than the one in `GITAWAY_PUBLIC_URL` (for example the old `*.up.railway.app` address) gets a permanent redirect (308, so POSTs keep their body) to the same path and query on `GITAWAY_PUBLIC_URL`. `/healthz` (Railway's check) and `/auth/callback` (a sign-in already under way finishes where it started) are never redirected. The target comes only from the configured value, never from request headers. Locally, in tests, and when `GITAWAY_PUBLIC_URL` is unset or not a plain `https://host` address, nothing redirects. The code is `OneAddress` in `main.py`.
+
+To move to another domain:
+
+1. **Railway**: Settings > Networking > add the custom domain; Railway shows the DNS record to create.
+2. **DNS**: create that record at the registrar and wait until Railway shows the domain as active.
+3. **Google console**: add `https://<new domain>/auth/callback` under Authorized redirect URIs, and update the consent screen branding (app domain, authorized domains). Keep the old redirect URI until everyone has moved.
+4. **Variable**: set `GITAWAY_PUBLIC_URL=https://<new domain>` and redeploy. From then on the old address redirects to the new one.
+
+Things tied to the address, which do not carry over to a new one: passkeys (people sign in with Google and add the passkey again), Home Screen installs (re-add the app from the new address), and push subscriptions (switch the morning plan on again).
 
 Proxy headers: in production uvicorn runs with `proxy_headers=True` and `forwarded_allow_ips="*"` (the container is reachable only through Railway's proxy), so the request scheme is `https`. uvicorn applies that to the client address as well, which is why production also switches the dev sign-in off outright; locally proxy headers are ignored, so the dev sign-in's "no proxy header, local peer only" rule still holds. Cookie: `Secure` and `HttpOnly`, `SameSite=Lax`, 30 days.
 
