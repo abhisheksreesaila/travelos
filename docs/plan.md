@@ -386,11 +386,11 @@ Brief: docs/briefs/trip-week.md · Needs: none
 - [x] a Share button sends a short plain-text summary of that day (times, plans, places, hotel tonight) through the phone's share sheet, or copies it; no prices, confirmation numbers or private notes in the shared text
 - [x] every family member (viewer, editor, admin) sees it live; viewers can't edit from it
 
-## F-066 Morning plan push [doing]
+## F-066 Morning plan push [done]
 Brief: docs/briefs/trip-week.md · Needs: F-065 for the page it opens
-- [ ] on the phone app (added to the Home Screen), "Morning plan" can be turned on with a time (default 7:30 AM, trip time zone); iPhone asks for permission once; it can be turned off
-- [ ] each trip morning at that time the person gets a push "Today: <first plans…>" that opens the Today view; nothing is sent on days outside the trip or when there's no trip
-- [ ] push keys come from environment variables (never in the repo); sending survives a redeploy (subscriptions in the family database); a failed or expired subscription is dropped quietly
+- [x] on the phone app (added to the Home Screen), "Morning plan" can be turned on with a time (default 7:30 AM, trip time zone); iPhone asks for permission once; it can be turned off
+- [x] each trip morning at that time the person gets a push "Today: <first plans…>" that opens the Today view; nothing is sent on days outside the trip or when there's no trip
+- [x] push keys come from environment variables (never in the repo); sending survives a redeploy (subscriptions in the family database); a failed or expired subscription is dropped quietly
 
 # Mobile companion (brief docs/briefs/mobile-companion.md, design docs/design/canvas/Mobile-Storyboards-v1.html)
 
