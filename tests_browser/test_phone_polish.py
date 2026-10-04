@@ -11,7 +11,7 @@ SMALL_TEXT = """() => { const out = []; const w = document.createTreeWalker(docu
   return out; }"""
 
 SMALL_CONTROLS = """() => [...document.querySelectorAll('a[href],button,input:not([type=hidden]),select,textarea,summary,[role=button]')]
-  .filter(e => { const r = e.getBoundingClientRect(); return !e.closest('[hidden]') &&!e.classList.contains('sr-only') && getComputedStyle(e).display !== 'none'
+  .filter(e => { const r = e.getBoundingClientRect(); return !e.closest('[hidden]') &&!e.classList.contains('sr-only') && !e.classList.contains('ga-native') && getComputedStyle(e).display !== 'none'
     && getComputedStyle(e).visibility !== 'hidden' && r.width && r.height && (r.width < 43.5 || r.height < 43.5); })
   .map(e => e.tagName + '.' + e.className + ' ' + Math.round(e.getBoundingClientRect().width) + 'x' + Math.round(e.getBoundingClientRect().height))"""
 

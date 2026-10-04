@@ -13,8 +13,10 @@ NARROW = {"width": 320, "height": 640}
 
 
 class SlowAzure(samples.FakeAzure):
+    delay = 0.8
+
     def __call__(self, url, headers, body, timeout):
-        time.sleep(0.8)      # long enough to see the waiting state
+        time.sleep(self.delay)      # long enough to see the waiting state
         return super().__call__(url, headers, body, timeout)
 
 
@@ -84,21 +86,20 @@ def test_paste_convert_answer_add_and_use_the_block(phone, base_url, model):
     page.locator("#cv-add").click()
 
     expect(page.locator("#tp-toast")).to_contain_text("Universal Studios Hollywood")
-    page.locator('.tp-card[href*="/trip/block"]').first.click()
+    page.locator('.tp-card[href*="/trip/canvas?block"]').first.click()
     expect(page.locator("h1")).to_have_text("Universal Studios Hollywood")
-    expect(page.locator(".cv-block-part")).to_have_count(4)
-    expect(page.locator("#cv-tray")).to_contain_text("Studio Tour")
+    expect(page.locator(".cz-bparts .cz-bpart")).to_have_count(4)
+    expect(page.locator("#cz-tray")).to_contain_text("Studio Tour")
     assert overflow(page) <= 0
-    mummy = page.locator(".cv-step-row", has_text="Revenge of the Mummy")
-    mummy.get_by_role("button", name="Mark done").click()
-    expect(page.locator(".cv-step-row.is-done", has_text="Revenge of the Mummy")).to_be_visible()
-    kong = page.locator(".cv-step-row", has_text="King Kong")
-    kong.get_by_role("button", name="Set aside").click()
-    expect(page.locator("#cv-tray")).to_contain_text("King Kong")
-    expect(page.locator(".cv-step-row", has_text="Hippogriff")).to_contain_text("Bhoomija")
-    expect(page.locator(".cv-step-row", has_text="Hippogriff")).to_contain_text("H and B walk")
-    page.locator("#cv-back-day").click()
-    expect(page.locator("#tp-list")).to_contain_text("Universal Studios Hollywood")
+    page.locator(".cz-step", has_text="Revenge of the Mummy").click()
+    page.get_by_role("button", name="Mark done").click()
+    expect(page.locator(".cz-step.is-done", has_text="Revenge of the Mummy")).to_be_visible()
+    page.locator(".cz-step", has_text="King Kong").click()
+    page.get_by_role("button", name="Set aside").click()
+    expect(page.locator("#cz-tray")).to_contain_text("King Kong")
+    expect(page.locator(".cz-step", has_text="Hippogriff")).to_contain_text("H and B walk")
+    page.locator(".cz-back").click()
+    expect(page.locator(".cz-view[data-level=day]")).to_contain_text("Universal Studios Hollywood")
 
 
 def test_a_failed_conversion_keeps_the_text_and_says_so(phone, base_url, monkeypatch):
@@ -112,3 +113,29 @@ def test_a_failed_conversion_keeps_the_text_and_says_so(phone, base_url, monkeyp
     expect(page.locator("#cv-text")).to_have_value(samples.text())
     expect(page.locator("#cv-convert")).to_be_enabled()
     assert overflow(page) <= 0
+
+
+def test_the_site_keeps_answering_while_the_model_is_slow(phone, base_url, model):
+    """The model call runs off the event loop: /healthz answers at once while a Convert is waiting for it."""
+    import threading
+    import urllib.request
+    model.delay = 2.0
+    page = phone()
+    waits, stop = [], threading.Event()
+
+    def poll():
+        time.sleep(0.4)                   # the convert is now inside the fake model
+        while not stop.is_set():
+            start = time.monotonic()
+            with urllib.request.urlopen(f"{base_url}/healthz", timeout=5) as r:
+                assert r.status == 200
+            waits.append(time.monotonic() - start)
+            time.sleep(0.2)
+
+    worker = threading.Thread(target=poll)
+    worker.start()
+    status = page.request.post(f"{base_url}/trip/add/convert", form={"text": samples.text()}).status
+    stop.set()
+    worker.join(10)
+    assert status == 200 and model.sent       # the model really was asked
+    assert len(waits) >= 3 and max(waits) < 0.5, waits

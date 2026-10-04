@@ -1,0 +1,87 @@
+/* Passes & documents (F-083), frames 7 and 8 of docs/design/canvas/Plan-Steps-v1.html: the Help section, Today's flight card and the gate view.
+   Loaded after help.css / trip.css. Sizes are rem off the one root; text never goes under --text-min. */
+
+/* ---- Help: Passes & documents ---- */
+.pz { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.5rem; }
+.pz-head { display: flex; flex-direction: column; gap: 0.125rem; padding: 0 0.25rem; }
+.pz-title { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 1.5rem; letter-spacing: -0.02em; }
+.pz-flight { gap: 0.75rem; }
+.pz-pass { border-radius: 1.25rem; background: var(--paper-2, var(--paper)); padding: 0.75rem; display: flex; flex-direction: column; gap: 0.625rem; }
+.pz-top { display: flex; align-items: center; gap: 0.625rem; }
+.pz-who { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.pz-name { font-family: var(--font-display); font-weight: 800; font-size: 1.125rem; overflow-wrap: anywhere; }
+.pz-seatbox { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.1; }
+.pz-k { font-size: max(var(--text-min), 0.75rem); font-weight: 800; letter-spacing: 0.06em; color: var(--ink-3); }
+.pz-seat { font-family: var(--font-display); font-weight: 800; font-size: 1.75rem; }
+.pz-g3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+.pz-g3 > div { border-radius: 0.875rem; background: var(--card); padding: 0.375rem 0.625rem; display: flex; flex-direction: column; min-width: 0; }
+.pz-v { font-family: var(--font-display); font-weight: 800; font-size: 1.125rem; overflow-wrap: anywhere; }
+.pz-stub { display: flex; align-items: center; gap: 0.75rem; min-height: 4rem; padding: 0.5rem; border-radius: 1rem; background: var(--card); text-decoration: none; color: var(--ink); border: 0.125rem dashed rgba(30, 26, 46, .2); }
+.pz-stub.is-empty { border-style: dotted; }
+.pz-st-x { display: flex; flex-direction: column; min-width: 0; }
+.pz-st-t { font-weight: 800; }
+.pz-thumb { width: 3.5rem; height: 4rem; object-fit: cover; object-position: top; border-radius: 0.5rem; background: var(--paper-2, var(--paper)); flex-shrink: 0; }
+.pz-pdf { width: 3.5rem; height: 4rem; border-radius: 0.5rem; background: var(--sky-tint); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.125rem; flex-shrink: 0; }
+.pz-pdf-t { font-weight: 800; font-size: max(var(--text-min), 0.75rem); }
+.pz-app { gap: 0.5rem; border: 0.125rem solid rgba(30, 26, 46, .2); }
+.pz-edit, .pz-tools { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.pz-form { gap: 0.625rem; }
+.pz-field { display: block; min-width: 0; flex: 1; }
+.pz-field input { width: 100%; min-height: 2.75rem; padding: 0 0.875rem; border-radius: 0.875rem; border: 0.125rem solid rgba(30, 26, 46, .2); font: inherit; background: var(--card); box-sizing: border-box; }
+.pz-field input[type="file"] { padding: 0.5rem 0.75rem; height: auto; }
+.pz-code input { text-transform: uppercase; }
+.pz-two, .pz-three { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.pz-two .pz-field, .pz-three .pz-field { flex: 1 1 5.5rem; min-width: 5.5rem; }
+.pz-priv { display: flex; gap: 0.5rem; align-items: flex-start; padding: 0.625rem 0.875rem; border-radius: 1rem; background: var(--sky-tint); font-weight: 600; font-size: max(var(--text-min), 0.875rem); }
+.pz-priv svg { flex-shrink: 0; margin-top: 0.125rem; }
+.pz-bold { font-weight: 800; }
+.pz-remove-sum { color: var(--bubble-ink); }
+.pz-remove[open] .tp-sub { padding: 0.25rem 0; }
+
+/* ---- Today: the flight is the focal card ---- */
+.pz-stack { display: flex; flex-direction: column; gap: 0.75rem; }
+.pz-route { display: flex; align-items: center; gap: 0.625rem; letter-spacing: 0.02em; }
+.pz-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(5rem, 1fr)); gap: 0.5rem; }
+.pz-stats > div { border-radius: 0.875rem; background: rgba(255, 255, 255, .1); padding: 0.375rem 0.625rem; display: flex; flex-direction: column; min-width: 0; }
+.pz-sk { font-size: max(var(--text-min), 0.75rem); font-weight: 800; letter-spacing: 0.08em; color: #DDD8EA; }
+.pz-sv { font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; overflow-wrap: anywhere; }
+.pz-up .tp-btn { gap: 0.5rem; min-height: 3.25rem; }
+.pz-grp { text-align: center; font-weight: 700; }
+
+/* ---- the gate view: white, bright, one traveller per screen ---- */
+html:has(.gp), html:has(.gp) body { background: var(--card); }
+.gp { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; background: var(--card); color: var(--ink); font-family: var(--font-body); overflow-x: hidden; }
+.gp a, .gp button { font-family: var(--font-body); color: var(--ink); }
+.gp :focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.125rem; }
+.gp-top { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: max(0.75rem, env(safe-area-inset-top)) 1rem 0.5rem; }
+.gp-bright { display: inline-flex; align-items: center; gap: 0.5rem; min-height: 2.75rem; padding: 0 1rem; border-radius: var(--r-pill); background: var(--sun-tint); font-weight: 800; font-size: max(var(--text-min), 0.875rem); }
+.gp-close { display: inline-flex; align-items: center; justify-content: center; width: 2.75rem; height: 2.75rem; border-radius: var(--r-pill); background: var(--paper); text-decoration: none; }
+.gp-track { flex: 1; display: flex; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; }
+.gp-track::-webkit-scrollbar { display: none; }
+.gp-slide { flex: 0 0 100%; min-width: 0; scroll-snap-align: start; scroll-snap-stop: always; box-sizing: border-box; padding: 0.5rem 1rem 0.75rem; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; overflow-y: auto; }
+.gp-nm { display: flex; align-items: center; gap: 0.625rem; }
+.gp-av { width: 2.5rem; height: 2.5rem; border-radius: var(--r-pill); display: flex; align-items: center; justify-content: center; font-weight: 800; }
+.gp-name { font-family: var(--font-display); font-weight: 800; font-size: 1.75rem; }
+.gp-line { font-weight: 700; color: var(--ink-2); text-align: center; overflow-wrap: anywhere; }
+.gp-pass { width: 100%; flex: 1; min-height: 12rem; display: flex; align-items: center; justify-content: center; border-radius: 1.25rem; background: var(--card); border: 0.125rem solid rgba(30, 26, 46, .12); padding: 0.5rem; box-sizing: border-box; }
+.gp-img { max-width: 100%; max-height: 52vh; max-height: 52dvh; object-fit: contain; display: block; }
+.gp-none { margin: 0; font-weight: 700; color: var(--ink-2); text-align: center; }
+.gp-pdf { gap: 0.5rem; }
+.gp-big { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; text-align: center; }
+.gp-big > div { border-radius: 1rem; background: var(--paper); padding: 0.375rem; display: flex; flex-direction: column; min-width: 0; }
+.gp-k { font-size: max(var(--text-min), 0.75rem); font-weight: 800; letter-spacing: 0.08em; color: var(--ink-3); }
+.gp-v { font-family: var(--font-display); font-weight: 800; font-size: 2.25rem; line-height: 1.1; overflow-wrap: anywhere; }
+.gp-pager { display: flex; align-items: center; justify-content: center; gap: 0.75rem; padding: 0.5rem 1rem; }
+.gp-pager[hidden] { display: none; }
+.gp-round { width: 2.75rem; height: 2.75rem; border-radius: var(--r-pill); border: 0.125rem solid rgba(30, 26, 46, .2); background: var(--card); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.gp-dots { display: flex; gap: 0.375rem; align-items: center; }
+.gp-dot { width: 1.5rem; height: 2.75rem; border: 0; padding: 0; background: transparent; cursor: pointer; position: relative; }
+.gp-dot::after { content: ""; position: absolute; left: 50%; top: 50%; width: 0.75rem; height: 0.75rem; margin: -0.375rem 0 0 -0.375rem; border-radius: var(--r-pill); background: rgba(30, 26, 46, .25); }
+.gp-dot[aria-current="true"]::after { background: var(--ink); }
+.gp-count { text-align: center; font-weight: 700; font-size: max(var(--text-min), 0.875rem); color: var(--ink-2); padding: 0 1rem max(0.75rem, env(safe-area-inset-bottom)); min-height: 1.25rem; }
+@media (prefers-reduced-motion: reduce) { .gp-track { scroll-behavior: auto; } }
+
+/* ---- Today: a flight that is not about to board is a calm card ---- */
+.pz-calm { border-radius: 1.25rem; background: var(--sky-tint); padding: 0.75rem 0.875rem; display: flex; flex-direction: column; gap: 0.25rem; align-items: flex-start; }
+.pz-calm-k { display: inline-flex; align-items: center; gap: 0.375rem; font-size: max(var(--text-min), 0.8125rem); font-weight: 800; letter-spacing: 0.08em; color: var(--sky-ink); }
+.pz-calm-t { font-family: var(--font-display); font-weight: 800; font-size: 1.375rem; }

@@ -39,7 +39,10 @@ def folder(client):
         CREATE TABLE IF NOT EXISTS thread (id TEXT PRIMARY KEY, author TEXT, text TEXT);
         CREATE TABLE IF NOT EXISTS photos (id TEXT PRIMARY KEY, author TEXT, orig TEXT, display TEXT, thumb TEXT);
         CREATE TABLE IF NOT EXISTS members (id TEXT PRIMARY KEY, email TEXT);
+        CREATE TABLE IF NOT EXISTS passes (id TEXT PRIMARY KEY, member_id TEXT, created_by TEXT, orig TEXT, display TEXT, thumb TEXT);
     """)
+    for pid, member, made in (("own", uid, "someone"), ("made", "kid", uid), ("other", "kid", "someone")):   # F-083: whose pass it is, who added it, a stranger's
+        fam.execute("INSERT INTO passes VALUES (?, ?, ?, ?, ?, ?)", (pid, member, made, f"{fid}/t/{pid}.pdf", f"{fid}/t/{pid}-display.jpg", f"{fid}/t/{pid}-thumb.jpg"))
     fam.execute("INSERT OR IGNORE INTO members (id, email) VALUES (?, ?)", (uid, EMAIL))
     fam.execute("INSERT INTO push_subscriptions VALUES ('https://x/1', ?, 'k', 'a', 'now')", (uid,))
     fam.execute("INSERT INTO thread VALUES ('m1', ?, 'hi')", (uid,))
@@ -49,6 +52,10 @@ def folder(client):
     (dst / "photos" / fid / "t").mkdir(parents=True)
     for n in ("p1.jpg", "p1-display.jpg", "p1-thumb.jpg"):
         (dst / "photos" / fid / "t" / n).write_bytes(b"x")
+    (dst / "passes" / fid / "t").mkdir(parents=True)
+    for pid in ("own", "made", "other"):
+        for n in (f"{pid}.pdf", f"{pid}-display.jpg", f"{pid}-thumb.jpg"):
+            (dst / "passes" / fid / "t" / n).write_bytes(b"x")
     yield dst, uid, fid
     shutil.rmtree(dst, ignore_errors=True)
 
@@ -103,3 +110,62 @@ def test_whole_family(folder):
 def test_unknown_email_stops(folder):
     with pytest.raises(SystemExit):
         fp.run(folder[0], "nobody@example.com")
+
+
+def pass_ids(dst, fid):
+    c = sqlite3.connect(dst / f"{fid}_db.db")
+    try:
+        return sorted(r[0] for r in c.execute("SELECT id FROM passes"))
+    finally:
+        c.close()
+
+
+def pass_files(dst, fid):
+    return sorted(p.name.split(".")[0].split("-")[0] for p in (dst / "passes" / fid / "t").glob("*"))
+
+
+def test_the_default_run_removes_the_persons_own_boarding_pass_and_files_only(folder):
+    dst, uid, fid = folder
+    fp.run(dst, EMAIL, yes=True, out=lambda s: None)
+    assert pass_ids(dst, fid) == ["made", "other"]
+    assert sorted(set(pass_files(dst, fid))) == ["made", "other"] and not (dst / "passes" / fid / "t" / "own.pdf").exists()
+
+
+def test_content_also_removes_the_passes_they_added_for_others(folder):
+    dst, uid, fid = folder
+    fp.run(dst, EMAIL, content=True, yes=True, out=lambda s: None)
+    assert pass_ids(dst, fid) == ["other"] and sorted(set(pass_files(dst, fid))) == ["other"]
+
+
+def test_the_whole_family_removes_its_pass_folder(folder):
+    dst, uid, fid = folder
+    fp.run(dst, EMAIL, family=True, yes=True, out=lambda s: None)
+    assert not (dst / "passes" / fid).exists()
+
+
+def test_a_dry_run_keeps_the_pass_rows_and_files(folder):
+    dst, uid, fid = folder
+    fp.run(dst, EMAIL, content=True, out=lambda s: None)
+    assert pass_ids(dst, fid) == ["made", "other", "own"] and len(list((dst / "passes" / fid / "t").glob("*"))) == 9
+
+
+def test_forgetting_a_person_takes_them_out_of_steps_and_lists_but_keeps_both(folder):
+    """F-080: a step's `who` and a list's `for_who` name members as "m:<id>"; forgetting the person removes only their token."""
+    dst, uid, fid = folder
+    db = sqlite3.connect(dst / f"{fid}_db.db")
+    db.executescript("""CREATE TABLE IF NOT EXISTS block_steps (id TEXT PRIMARY KEY, trip_id TEXT, act_id TEXT, part_id TEXT, position INTEGER, title TEXT, time TEXT, who TEXT, note TEXT, kind TEXT, done INTEGER, aside INTEGER, created_at TEXT);
+                        CREATE TABLE IF NOT EXISTS trip_lists (id TEXT PRIMARY KEY, trip_id TEXT, name TEXT, for_who TEXT, position INTEGER);""")
+    db.execute("INSERT INTO block_steps (id, trip_id, act_id, part_id, position, title, time, who, note, kind, done, aside, created_at) VALUES ('s1', 't', 'a1', '', 0, 'King Kong', '', ?, '', 'ride', 0, 0, 'now')", (f'["m:{uid}","m:other","n:Sam"]',))
+    db.execute("INSERT INTO block_steps (id, trip_id, act_id, part_id, position, title, time, who, note, kind, done, aside, created_at) VALUES ('s2', 't', 'a1', '', 1, 'Minion', '', '[\"m:other\"]', '', 'ride', 0, 0, 'now')")
+    db.execute("INSERT INTO trip_lists (id, trip_id, name, for_who, position) VALUES ('l1', 't', 'Safe rides', ?, 0)", (f"m:{uid}",))
+    db.commit()
+    db.close()
+    out = []
+    fp.run(dst, EMAIL, out=out.append)       # a dry run changes nothing but says so
+    assert any("block_steps" in line for line in out) and any("trip_lists" in line for line in out)
+    assert count(dst, f"{fid}_db.db", "SELECT who FROM block_steps WHERE id = 's1'") == f'["m:{uid}","m:other","n:Sam"]'
+    fp.run(dst, EMAIL, yes=True, out=lambda s: None)
+    assert count(dst, f"{fid}_db.db", "SELECT who FROM block_steps WHERE id = 's1'") == '["m:other","n:Sam"]'
+    assert count(dst, f"{fid}_db.db", "SELECT who FROM block_steps WHERE id = 's2'") == '["m:other"]'
+    assert count(dst, f"{fid}_db.db", "SELECT for_who FROM trip_lists WHERE id = 'l1'") == ""
+    assert count(dst, f"{fid}_db.db", "SELECT count(*) FROM block_steps") == 2 and count(dst, f"{fid}_db.db", "SELECT count(*) FROM trip_lists") == 1

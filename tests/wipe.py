@@ -10,7 +10,7 @@ from fh_saas.db_host import HostDatabase
 from fh_saas.db_tenant import get_or_create_tenant_db
 from sqlalchemy import text
 
-from gitaway import community, familydb, hostdb, photos
+from gitaway import community, familydb, hostdb, passes, photos
 
 
 def wipe_invites_and_extra_members():
@@ -36,6 +36,7 @@ def wipe_everything():
     """
     community.clear()
     shutil.rmtree(photos.root(), ignore_errors=True)  # F-071: the files of every photo a test added
+    shutil.rmtree(passes.root(), ignore_errors=True)  # F-083: and of every boarding pass
     wipe_invites_and_extra_members()
     for tenant_id in familydb.take_opened():
         db = get_or_create_tenant_db(tenant_id)

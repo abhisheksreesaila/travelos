@@ -19,6 +19,19 @@
   if (paste) busy(paste, document.getElementById('cv-convert'), 'Reading…', document.getElementById('cv-progress'));
   var ask = document.getElementById('cv-questions-form');
   if (ask) busy(ask, document.getElementById('cv-add'), 'Adding…', null);
+  // picking someone else in "change" updates the confirmed chip above it
+  document.querySelectorAll('.cv-whoq').forEach(function (q) {
+    var chip = q.querySelector('[data-chip]');
+    if (!chip) return;
+    q.addEventListener('change', function (e) {
+      var label = e.target.closest('label');
+      var name = chip.querySelector('.cv-chip-name');
+      var why = chip.querySelector('.cv-why');
+      if (!label || !name) return;
+      name.textContent = label.querySelector('span:not(.tp-av)') ? label.querySelector('span:not(.tp-av)').textContent.replace('+ ', '') : name.textContent;
+      if (why) why.textContent = '';
+    });
+  });
   // coming back with the browser's Back button must not leave the page stuck in its waiting state
   window.addEventListener('pageshow', function (e) {
     if (!e.persisted) return;

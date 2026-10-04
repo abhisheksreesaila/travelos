@@ -183,9 +183,9 @@ def test_add_to_trip_saves_the_days_and_the_block_shows_its_steps(client, azure,
     assert [(a.title, a.day) for a in acts] == [("Universal Studios Hollywood", 1), ("Disney California Adventure", 3)]
     assert len(announced) == 1
     today = client.get("/trip?day=1").text
-    assert 'href="/trip/block?id=a1' in today and "Universal Studios Hollywood" in today
-    block = client.get("/trip/block?id=a1").text
-    for needle in ("Lower Lot", "Harry Potter world", "Revenge of the Mummy", "roughest ride", "H and B walk", "Set aside · 2", "Studio Tour", "Pregnancy-safe rides", "Mark done", "Golden Zephyr"):
+    assert 'href="/trip/canvas?block=a1"' in today and "Universal Studios Hollywood" in today
+    block = client.get("/trip/canvas?block=a1").text
+    for needle in ("Lower Lot", "Harry Potter world", "Revenge of the Mummy", "roughest ride", "H and B walk", "Set aside · 2", "Studio Tour", "Pregnancy-safe rides", "Golden Zephyr"):
         assert needle in block, needle
     assert "Universal Studios Hollywood on Sat" in html.unescape(client.get("/trip/family/thread").text)
 
@@ -195,10 +195,10 @@ def test_who_answers_reach_the_steps_someone_new_and_kept_initials(client, azure
     page = questions(client).text
     r = client.post("/trip/add/save", data=answers(page, who_1="new", new_1="Bhoomija", who_2="keep"), follow_redirects=False)
     assert r.status_code == 303
-    block = client.get("/trip/block?id=a1").text
+    block = client.get("/trip/canvas?block=a1").text
     assert "Bhoomija" in block
-    other = client.get("/trip/block?id=a2").text
-    assert 'cv-chip">R<' in other
+    other = client.get("/trip/canvas?block=a2").text
+    assert 'title="R"' in other
 
 
 def test_two_parks_on_one_day_or_no_day_is_refused_and_keeps_the_choices(client, azure, announced):
@@ -230,7 +230,7 @@ def added(client):
 
 
 def step_id(client, title, act="a1"):
-    block = client.get(f"/trip/block?id={act}").text
+    block = client.get(f"/trip/canvas?block={act}").text
     row = re.search(r'<div[^>]*data-step="([0-9a-f]+)"[^>]*>(?:(?!data-step=).)*?' + re.escape(title), block, re.S) or re.search(r'data-step="([0-9a-f]+)"[^>]*>(?:(?!data-step=).)*?' + re.escape(title), block, re.S)
     return row.group(1)
 
@@ -240,16 +240,23 @@ def test_mark_done_and_set_aside_are_one_tap_each(client, azure):
     added(client)
     sid = step_id(client, "Revenge of the Mummy")
     r = client.post("/trip/block/step", data={"step": sid, "act": "a1", "do": "done"}, follow_redirects=False)
-    assert r.status_code == 303 and r.headers["location"] == "/trip/block?id=a1"
-    assert re.search(rf'id="step-{sid}"[^>]*class="[^"]*is-done|class="[^"]*is-done[^"]*"[^>]*id="step-{sid}"', client.get("/trip/block?id=a1").text)
-    assert "Not done" in client.get("/trip/block?id=a1").text
+    assert r.status_code == 303 and r.headers["location"] == "/trip/canvas?block=a1"      # old forms still write, then land on the block
+    block = client.get("/trip/canvas?block=a1").text
+    assert re.search(rf'data-step="{sid}"[^>]*class="cz-step is-done"', block) and "1 of 14 done" in block
+    assert "Not done" in client.get(f"/trip/canvas?step={sid}").text
     client.post("/trip/block/step", data={"step": sid, "act": "a1", "do": "undone"})
-    assert "is-done" not in client.get("/trip/block?id=a1").text
+    assert "is-done" not in client.get("/trip/canvas?block=a1").text
     client.post("/trip/block/step", data={"step": sid, "act": "a1", "do": "aside"})
-    tray = client.get("/trip/block?id=a1").text
-    assert "Set aside · 3" in tray and "Put back" in tray
+    assert "Set aside · 3" in client.get("/trip/canvas?block=a1").text and "Put back" in client.get(f"/trip/canvas?step={sid}").text
     client.post("/trip/block/step", data={"step": sid, "act": "a1", "do": "back"})
-    assert "Set aside · 2" in client.get("/trip/block?id=a1").text
+    assert "Set aside · 2" in client.get("/trip/canvas?block=a1").text
+
+
+def test_the_old_block_address_goes_to_the_canvas(client, azure):
+    book(client)
+    added(client)
+    r = client.get("/trip/block?id=a1", follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"] == "/trip/canvas?block=a1"
 
 
 def test_a_step_that_is_gone_just_shows_the_block(client, azure):
@@ -274,5 +281,40 @@ def test_viewers_cannot_convert_save_or_tick_but_can_read_the_block(crew, azure)
     for path, data in [("/trip/add/convert", {"text": samples.text()}), ("/trip/add/save", {"draft": "{}"}), ("/trip/block/step", {"step": "x", "act": "a1", "do": "done"})]:
         assert viewer.post(path, data=data, follow_redirects=False).status_code == 403, path
     assert len(azure.sent) == asked      # the refused viewer never reached the model
-    block = viewer.get("/trip/block?id=a1").text
+    block = viewer.get("/trip/canvas?block=a1").text
     assert "Revenge of the Mummy" in block and "Mark done" not in block and "Set aside</button>" not in block
+
+
+def test_each_park_card_says_its_areas_in_order(client, azure):
+    book(client)
+    page = convert(client).text
+    assert "Lower Lot, lunch, Harry Potter world, then Upper Lot" in page
+    assert "Hollywood Land and Avengers Campus, Cars Land, Pixar Pier, lunch, Grizzly Peak, then Buena Vista" in page
+
+
+def test_the_header_back_buttons_keep_the_text_and_the_draft(client, azure):
+    book(client)
+    found = convert(client).text
+    assert 'id="cv-top-back"' in found and 'form="cv-found-form"' in found
+    r = client.post("/trip/add/edit", data=fields(found, "cv-found-form"), follow_redirects=False)
+    assert fields(r.text, "cv-form")["text"] == samples.text()
+    q = questions(client).text
+    assert 'id="cv-top-back"' in q and 'form="cv-questions-form"' in q
+    r = client.post("/trip/add/found", data=fields(q, "cv-questions-form"), follow_redirects=False)
+    assert 'id="cv-stats"' in r.text
+
+
+def test_a_confident_suggestion_is_one_confirmed_chip_with_change(client, azure):
+    book(client)
+    page = questions(client).text
+    a = page[page.index('data-token="A"'):][:2500]
+    assert 'data-chip' in a and "the only A in the family" in a and ">change<" in a
+    assert 'data-token="R"' in page and "data-chip" not in page[page.index('data-token="R"'):][:600]      # nobody to suggest: all the options show
+    assert fields(page, "cv-questions-form")["who_4"].startswith("m:")      # and the suggestion is what gets posted
+
+
+def test_a_second_convert_while_one_is_running_gets_the_busy_message(client, azure, monkeypatch):
+    book(client)
+    monkeypatch.setattr(ai, "_in_flight", {("convert", person("ari")["tenant_id"])})
+    r = convert(client)
+    assert r.status_code == 503 and ai.BUSY in r.text and fields(r.text, "cv-form")["text"] == samples.text() and azure.sent == []

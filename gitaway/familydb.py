@@ -33,6 +33,7 @@ from sqlalchemy import text
 from gitaway import familydb_import, hostdb
 from gitaway.familydb_canvas import CANVAS_INDEXES, CANVAS_TABLES
 from gitaway.familydb_import import IMPORT_TABLES
+from gitaway.familydb_passes import PASS_INDEXES, PASS_TABLES
 from gitaway.familydb_photos import PHOTO_INDEXES, PHOTO_TABLES
 from gitaway.familydb_social import SOCIAL_TABLES
 from gitaway.familydb_thread import THREAD_INDEXES, THREAD_TABLES
@@ -183,6 +184,7 @@ FAMILY_TABLES.extend(SOCIAL_TABLES)  # forks and saves (F-041): one list, one en
 FAMILY_TABLES.extend(IMPORT_TABLES)  # trips imported from elsewhere (F-042, see familydb_import)
 FAMILY_TABLES.extend(THREAD_TABLES)  # the family thread and who wants its pushes (F-070, see familydb_thread)
 FAMILY_TABLES.extend(PHOTO_TABLES)  # the trip's photos (F-071, see familydb_photos)
+FAMILY_TABLES.extend(PASS_TABLES)  # the trip's flights and boarding passes (F-083, see familydb_passes)
 FAMILY_TABLES.extend(CANVAS_TABLES)  # parts, steps and lists of the trip canvas (F-080, see familydb_canvas)
 
 FAMILY_INDEXES = [  # (table, columns, unique, name)
@@ -194,6 +196,7 @@ FAMILY_INDEXES = [  # (table, columns, unique, name)
     ("rides", ["trip_id"], False, "ix_rides_trip"),
     *THREAD_INDEXES,
     *PHOTO_INDEXES,
+    *PASS_INDEXES,
     *CANVAS_INDEXES,
 ]
 

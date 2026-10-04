@@ -21,10 +21,10 @@ from starlette.responses import RedirectResponse
 from gitaway import access, canvas, catalog, geo, members, phone, tripgeo, pickers, session as ses, tripcal as cal, tripday as td
 from gitaway.icons import icon
 from gitaway.layout import avatar, join_note, trip_field
-from gitaway.pages import calendar as calui, morning as morning_ui, passkeys as passkeys_ui, rides as rides_ui
+from gitaway.pages import calendar as calui, morning as morning_ui, passes as passes_ui, passkeys as passkeys_ui, rides as rides_ui
 
 log = logging.getLogger(__name__)
-HEAD = (*pickers.HEAD, *morning_ui.HEAD, *passkeys_ui.HEAD[:1])  # trip.css and phone.css come with the shell (gitaway.phone.HEAD)
+HEAD = (*pickers.HEAD, *morning_ui.HEAD, *passkeys_ui.HEAD[:1], *passes_ui.HEAD)  # trip.css and phone.css come with the shell (gitaway.phone.HEAD)
 TABS = (("today", "Today"), ("days", "All days"), ("notes", "Notes"))
 
 
@@ -93,7 +93,7 @@ def _with_extras(items, b, notes, session, who, family, with_steps=()):
             x = replace(x, confirm=conf)
         elif x.kind == "plan":
             x = replace(x, notes=tuple(f"{calui.note_writer(n, who, people, family)[0]}: {n.text}" for n in notes if n.act == x.id),
-                        href=f"/trip/block?id={x.id}&trip={ses.open_trip_id()}" if x.id in with_steps else x.href)
+                        href=f"/trip/canvas?block={x.id}" if x.id in with_steps else x.href)
         out.append(x)
     return out
 
@@ -213,12 +213,14 @@ def today_panel(v):
     elif v["phase"] != "during":
         parts.append(Div(Span(f"{_day_name(d)} · day {sel + 1} of {len(v['dates'])}", cls="tp-daynote"), cls="tp-dayhead"))
     parts.append(share_bar(v))
-    parts.append(up_card(v))
+    flights, calm_flights, flight_titles = passes_ui.flight_cards(v)   # F-083: on the flight's day, before it leaves, the flight is the focal card; on other days a calm one
+    parts.append(flights or up_card(v))
+    parts.append(calm_flights)
     if v["items"]:
         parts.append(route_strip(v))
         parts.append(Div(Span("THE REST OF TODAY" if v["now"] is not None else "THE DAY"), cls="ph-sec"))
-        rest = v["now"] is not None and v["up"] and v["up"].item  # the up-next item is in the card above, with its details
-        parts.append(Div(*[row(x, v["now"] is not None, v["ua"]) for x in v["items"] if not (rest and x.id == v["up"].item.id)], cls="tp-list", id="tp-list"))
+        rest = not flights and v["now"] is not None and v["up"] and v["up"].item  # the up-next item is in the card above, with its details
+        parts.append(Div(*[row(x, v["now"] is not None, v["ua"]) for x in v["items"] if not (rest and x.id == v["up"].item.id) and not (x.kind == "flight" and x.title in flight_titles)], cls="tp-list", id="tp-list"))
     else:
         parts.append(Div(Span("wide open!", cls="tp-hand"), A("Add something fun", href=trip_url(add="1", day=sel), data_open_sheet="", cls="tp-btn tp-btn-ink") if editor else Span("Nothing planned yet.", cls="tp-sub"), cls="tp-empty"))
     if cal.is_imported(v["b"]) and any(x.kind in ("flight", "hotel", "car") for x in v["items"]):  # where it was booked is said once, quietly
