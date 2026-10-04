@@ -425,9 +425,9 @@ Found reviewing F-068: drives to and from airports are skipped, so a departure f
 Azure OpenAI is set up (deployment gpt-5.6-sol, tested 2026-10-04; env AZURE_OPENAI_*). Known limit: a plan removed through Ask GitAway cannot be undone (the change list says so); the calendar's own Undo covers only its own delete button.
 - [x] talk (or type) to ask for a change; GitAway proposes a new day (added, moved, removed plans) and changes nothing until Apply; Apply tells the family
 
-## F-073 Around you [todo]
+## F-073 Around you [done]
 Uses the same Azure OpenAI setup as F-072; nearby places come from OpenStreetMap and the model ranks and explains them.
-- [ ] quick chips (vegetarian food, coffee, groceries, Costco/Walmart, pharmacy, gas, restrooms) find places near you with distance, open now, Directions, Call and Add to plan; the family's food preference applies
+- [x] quick chips (vegetarian food, coffee, groceries, Costco/Walmart, pharmacy, gas, restrooms) find places near you with distance, open now, Directions, Call and Add to plan; the family's food preference applies
 
 ## F-074 Face ID sign-in [done]
 - [x] after Google sign-in once, a phone can add a passkey and later sign in with Face ID
