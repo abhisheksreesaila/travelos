@@ -61,10 +61,14 @@ def test_the_calendar_has_a_mic_in_both_views_and_it_opens_talk_to_plan(client):
 
 
 def test_no_audio_is_ever_captured():
+    """The scripted Talk to plan (F-024) captures nothing. The one place that listens is Ask GitAway's hold-to-talk (F-072, assets/js/ask.js): the browser's own
+    speech recognition fills the text box, the page never records or keeps audio, and no other file may touch speech recognition."""
     for path in [*(ROOT / "assets/js").glob("*.js"), *(ROOT / "gitaway").rglob("*.py")]:
         text = path.read_text()
         assert "getUserMedia" not in text.replace("never call getUserMedia", ""), path.name
-        assert "SpeechRecognition" not in text and "MediaRecorder" not in text, path.name
+        assert "MediaRecorder" not in text, path.name
+        if path.name != "ask.js":
+            assert "SpeechRecognition" not in text, path.name
 
 
 def test_signed_out_and_unbooked_cannot_use_voice(client):

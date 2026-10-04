@@ -24,6 +24,7 @@ from starlette.responses import RedirectResponse
 from gitaway import access, ai, canvas, members, phone, session as ses, tripcal as cal
 from gitaway.icons import icon
 from gitaway.layout import avatar, join_note, trip_field
+from gitaway.pages.tab_ask import ask_button
 from gitaway.pages.trip import trip_url
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/canvas.css"),)
@@ -349,4 +350,5 @@ def block_view(request, session, view):
         items = [Li(Span(i["title"], cls="tp-what"), Span(i["note"], cls="cv-sub") if i["note"] else "") for i in lst["items"]]
         sections.append(Div(Div(H3(lst["name"]), Span(f"for {lst['for']}", cls="cv-when") if lst["for"] else "", cls="cv-part-head"), Ul(*items, cls="cv-list"), cls="cv-card cv-triplist", data_list=lst["id"]))
     kicker = f"{day.strftime('%a %b').upper()} {day.day} · {cal.fmt_time(a.start)} – {cal.fmt_time(a.end)}".upper()
-    return _shell(request, session, a.title, [*sections, A("Back to the day", href=trip_url(day=a.day), cls="tp-btn tp-btn-plain", id="cv-back-day")], kicker=kicker)
+    ask = [ask_button(a.day)] if editor else []
+    return _shell(request, session, a.title, [*ask, *sections, A("Back to the day", href=trip_url(day=a.day), cls="tp-btn tp-btn-plain", id="cv-back-day")], kicker=kicker)

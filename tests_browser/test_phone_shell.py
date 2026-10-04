@@ -77,12 +77,9 @@ def test_every_tab_is_pressed_and_lands_in_the_shell(shell, base_url):
         elif key == "family":   # built in F-070: its own browser tests are in test_thread.py
             expect(page.locator("#ft")).to_be_visible()
             expect(page.locator("#tp-title-h")).to_have_text(name)
-        else:
-            expect(page.locator("#ph-coming")).to_contain_text(f"{name} is coming")
-            expect(page.locator("#tp-title-h")).to_have_text(name)
-            page.locator("#ph-coming a").click()  # the card's own button goes back to Today
-            page.wait_for_url("**/trip")
-            page.goto(base_url + path)
+        else:   # Ask, built in F-072: its own browser tests are in test_ask.py
+            expect(page.locator("#ak-text")).to_be_visible()
+            expect(page.locator("#tp-title-h")).to_have_text("Ask GitAway")
         checks(page)
 
 
