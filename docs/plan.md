@@ -493,10 +493,10 @@ Captain, 2026-10-04: notes take too much room on Today; hide them, tap to read. 
 - [x] on Today (and the selected day's list), a plan's notes are folded by default behind a small "1 note" / "2 notes" tap that opens them in place; the up-next card does the same; nothing else on the card changes
 - [x] works with keyboard and screen readers (a real button with aria-expanded, or details/summary), calm under reduced motion; a browser test opens a note
 
-## F-086 Plans may overlap bookings and each other [todo]
+## F-086 Plans may overlap bookings and each other [done]
 Captain, 2026-10-04: Add to trip refused a plan because it overlapped hotel check-out ("Pick a gap"). Overlapping is fine: families split up, and plans sit on top of check-out, flights and car pickups. · Needs: none
-- [ ] adding, editing or moving a plan (calendar form, Add to the trip, canvas moves, forks, voice) is never refused for overlapping a booking, a ride or another plan; the plan is saved and shows a small "overlaps <title>" tag where it is listed
-- [ ] the other checks stay (inside the trip, end after start, minimum length); tests that expected an overlap refusal now expect the save and the tag
+- [x] adding, editing or moving a plan (calendar form, Add to the trip, canvas moves, forks, voice) is never refused for overlapping a booking, a ride or another plan; the plan is saved and shows a small "overlaps <title>" tag on Today and the up-next card, and in the fork, voice and Ask previews (the desktop calendar grid shows overlapping plans side by side instead)
+- [x] the other checks stay (inside the trip, end after start, minimum length); tests that expected an overlap refusal now expect the save and the tag
 
 ## F-087 One box: talk, type or paste a change or a whole itinerary [todo]
 Captain, 2026-10-04: Ask stops at 600 characters and one day; paste lives on separate screens; "simplify, it could be overwhelming". Keep paste: "sometimes we copy paste from the internet". Replaces the earlier "Paste for one day". · Needs: F-086
