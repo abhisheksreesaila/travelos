@@ -42,4 +42,4 @@ Settings only (environment variables), no code change:
 
 ## Tests
 
-The suite never calls the network: `ai.TRANSPORT` is replaced by a fake, and the conftests pin the `AZURE_*` keys to empty. `python -m gitaway.ai_smoke` (Convert) and `python -m gitaway.speak_smoke` (Ask GitAway, on a canned day) are the real calls, run by hand: they print counts and the time taken only.
+The suite never calls the network: `ai.TRANSPORT` is replaced by a fake, and the conftests pin the `AZURE_*` keys to empty. `python -m gitaway.ai_smoke` (Convert) and `python -m gitaway.speak_smoke` (Ask GitAway, on a canned day) are the real calls, run by hand: they print counts and the time taken only. `python -m gitaway.around_smoke [lat lon]` asks the real Overpass API for vegetarian food and restrooms near a point (default Disneyland) and has the model rank the candidates; it prints counts and seconds, no place names.
