@@ -240,11 +240,13 @@ def save_flight(session, *, trip_id="", flight_id="", airline="", number="", ori
     return f"f:{flight_id}"
 
 
-def remove_flight(session, flight_id) -> bool:
+def remove_flight(session, flight_id, trip_id="") -> bool:
     """Remove a hand-added flight with its passes and their files. False when it is not this trip's."""
     if not isinstance(flight_id, str) or not _ID.match(flight_id):
         return False
     with ses.family(session) as fam:
+        if fam and trip_id and fam.trip_id != trip_id:
+            raise PassError("stale", 409)
         if not fam or not fam.trip_id:
             return False
         key = f"f:{flight_id}"
@@ -405,12 +407,14 @@ def save_pass(session, *, trip_id="", pass_id="", flight="", traveller="", seat=
     return row
 
 
-def remove_pass(session, pid) -> bool:
-    """Remove a pass and its files. False when it is not this family's."""
+def remove_pass(session, pid, trip_id="") -> bool:
+    """Remove a pass and its files. False when it is not this family's; PassError("stale") when the page was drawn for another trip than the one open."""
     row = get(session, pid)
     if row is None:
         return False
     with ses.family(session) as fam:
+        if trip_id and fam.trip_id != trip_id:
+            raise PassError("stale", 409)
         with familydb.transaction(fam.db):
             familydb.run(fam.db, "DELETE FROM passes WHERE id = :i", i=pid)
     _unlink(row)

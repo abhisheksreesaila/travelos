@@ -9,7 +9,7 @@ import pytest
 from playwright.sync_api import expect
 from pypdf import PdfWriter
 
-from gitaway import catalog
+from gitaway import catalog, passes
 from tests.photo_files import image
 from tests_browser.helpers import PHONE
 
@@ -103,6 +103,13 @@ def test_an_editor_adds_a_flight_and_passes_fixes_one_opens_it_full_screen_and_r
     expect(page.locator("#pz-flight-0")).to_contain_text("United 1234 · LAX → SFO")
     expect(page.locator("#pz-flight-0")).to_contain_text("Sat Oct 17")
     expect(page.locator("#pz-flight-0")).to_contain_text("Terminal 7")
+    # fix the flight: press "Fix this flight", change the time, save
+    page.locator("#pz-flight-0").get_by_text("Fix this flight").click()
+    fix = page.locator("#pz-flight-0 form[data-form=flight]")
+    fix.locator("[name=time]").fill("15:10")
+    fix.get_by_role("button", name="Save the flight").click()
+    expect(page.locator("#pz-flight-0")).to_contain_text("3:10 PM")
+    expect(page.locator(".pz-flight")).to_have_count(1)
     add_pass(page, "Abhi", "21a", f["a.pdf"], app_url="https://www.united.com/app")
     expect(page.locator(".pz-pass")).to_have_count(1)
     card = page.locator(".pz-pass").first
@@ -231,3 +238,27 @@ def test_the_card_and_the_gate_fit_a_320_wide_phone(travel_day):
     assert overflow(page) <= 0
     page.goto(page.url.split("/trip/passes")[0] + "/trip/help")
     assert overflow(page) <= 0
+
+
+def test_todays_add_the_boarding_passes_link_lands_on_the_form_and_the_pdf_link_opens_the_pdf(trip, monkeypatch):
+    page, f = trip()
+    add_flight(page)
+    utc = datetime(2026, 10, 17, 19, 58, tzinfo=timezone.utc)
+    monkeypatch.setattr(catalog, "now_utc", lambda: utc)
+    monkeypatch.setattr(catalog, "today", lambda: utc.astimezone(catalog.TZ).date())
+    page.goto(page.url.replace("/trip/help", "/trip"))
+    page.get_by_role("link", name="Add the boarding passes").click()
+    expect(page).to_have_url(re.compile(r"/trip/help#hp-passes$"))
+    expect(page.locator("#hp-passes")).to_be_in_viewport()
+    expect(page.locator("#pz-flight-0")).to_be_visible()
+    # a PDF that could not be drawn: the gate view says "Open the PDF" and the link serves the PDF
+    monkeypatch.setattr(passes, "render_pdf", lambda data: None)
+    add_pass(page, "Abhi", "21A", f["a.pdf"])
+    expect(page.locator(".pz-pass")).to_have_count(1)
+    page.goto(page.url.replace("/trip/help", "/trip"))
+    page.get_by_role("link", name="Show everyone's passes").click()
+    link = page.get_by_role("link", name="Open the PDF")
+    expect(link).to_be_visible()
+    with page.expect_response(lambda r: r.url.endswith("/file")) as served:
+        link.click()
+    assert served.value.status == 200 and served.value.headers["content-type"] == "application/pdf"

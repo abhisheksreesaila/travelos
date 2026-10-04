@@ -428,3 +428,16 @@ def test_a_pdf_that_takes_too_long_to_draw_is_kept_and_opens_as_a_pdf(trip, ari,
 def test_drawing_a_pdf_works_in_its_own_process(trip):
     img = passes.render_pdf(pdf())
     assert img is not None and max(img.size) == 1600
+
+
+def test_removing_names_the_trip_it_was_drawn_for_like_saving(trip, ari, key):
+    add_pass(trip, key, file=("a.pdf", pdf(), "application/pdf"))
+    [p] = passes.listing(ari)[key]
+    fid = passes.flights(ari)[0]["id"]
+    assert "err=stale" in trip.post("/trip/help/pass/remove", data={"pass_id": p["id"], "trip": "0" * 12}, follow_redirects=False).headers["location"]
+    assert "err=stale" in trip.post("/trip/help/flight/remove", data={"flight_id": fid, "trip": "0" * 12}, follow_redirects=False).headers["location"]
+    assert len(passes.listing(ari)[key]) == 1 and len(passes.flights(ari)) == 1
+    tid_ = re.search(r'name="trip" value="([0-9a-f]+)"', trip.get("/trip/help").text).group(1)
+    assert "err=" not in trip.post("/trip/help/pass/remove", data={"pass_id": p["id"], "trip": tid_}, follow_redirects=False).headers["location"]
+    assert "err=" not in trip.post("/trip/help/flight/remove", data={"flight_id": fid, "trip": tid_}, follow_redirects=False).headers["location"]
+    assert passes.listing(ari) == {} and passes.flights(ari) == []

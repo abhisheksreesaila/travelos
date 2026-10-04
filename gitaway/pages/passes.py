@@ -325,10 +325,14 @@ def register(app):
         return _back()
 
     @app.post("/trip/help/flight/remove")
-    def remove_flight(session, flight_id: str = ""):
+    def remove_flight(session, flight_id: str = "", trip: str = ""):
         if not _signed_in(session):
             return Response("Sign in first.", status_code=401)
-        if not passes.remove_flight(session, flight_id):
+        try:
+            found = passes.remove_flight(session, flight_id, trip)
+        except passes.PassError as e:
+            return _back(e.key)
+        if not found:
             return _back("flight_missing")
         return _back()
 
@@ -351,10 +355,14 @@ def register(app):
         return _back()
 
     @app.post("/trip/help/pass/remove")
-    def remove_pass(session, pass_id: str = ""):
+    def remove_pass(session, pass_id: str = "", trip: str = ""):
         if not _signed_in(session):
             return Response("Sign in first.", status_code=401)
-        if not passes.remove_pass(session, pass_id):
+        try:
+            found = passes.remove_pass(session, pass_id, trip)
+        except passes.PassError as e:
+            return _back(e.key)
+        if not found:
             return _back("pass_missing")
         return _back()
 
