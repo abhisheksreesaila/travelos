@@ -47,3 +47,7 @@
   .ft-thread > .is-new { animation: ft-in 0.25s var(--ease-out); }
   @keyframes ft-in { from { opacity: 0; transform: translateY(0.5rem); } to { opacity: 1; transform: none; } }
 }
+
+/* F-084: the invite button (admin) or "Who's in the family" link (everyone else) above the Chat / Photos switch. Full width, 2.75rem target. */
+.fam-people { display: flex; }
+.fam-invite { flex: 1; min-height: 2.75rem; font-size: max(var(--text-min), 1rem); min-width: 0; text-align: center; }

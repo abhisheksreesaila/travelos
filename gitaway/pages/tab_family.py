@@ -76,6 +76,13 @@ def _switch(view):
                cls="fam-switch", role="group", aria_label="Family view", id="famseg")
 
 
+def _people(role):
+    """A row above the switch: admins get the Invite button (the form at /family#invite), everyone else a link to see who is in the family."""
+    if role == "admin":
+        return Div(A(icon("user-plus", 20, 2.2), Span("Invite"), href="/family#invite", id="fam-invite", cls="btn btn-primary btn-sm fam-invite"), cls="fam-people")
+    return Div(A(icon("users", 20, 2.2), Span("Who's in the family"), href="/family", id="fam-invite", cls="btn btn-sm fam-invite"), cls="fam-people")
+
+
 def content(request, session):
     view = "photos" if request.query_params.get("view") == "photos" else "chat"
     its = familythread.items(session)
@@ -99,7 +106,7 @@ def content(request, session):
              method="post", action="/trip/family/message", id="ft-compose", cls="ft-compose"),
         P("", id="ft-error", cls="ft-error", role="alert", hidden=True),
         id="ft-chat", cls="ft-panel", data_view="chat", hidden=view != "chat")
-    return Div(_switch(view), P("", id="ph-status", cls="fp-status", role="status", hidden=True), chat,
+    return Div(_people(getattr(request.state, "family_role", None)), _switch(view), P("", id="ph-status", cls="fp-status", role="status", hidden=True), chat,
                photos_ui.view(session, hidden=view != "photos", error=request.query_params.get("error", "")[:200] if view == "photos" else ""), photos_ui.pickers(),
                id="ft", cls="ft", data_view=view)
 
