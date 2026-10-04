@@ -106,9 +106,9 @@ def test_remove_deletes_the_passkey_and_it_can_no_longer_sign_in(phone, site):
     expect(page.get_by_role("button", name="Turn on Face ID")).to_be_visible()   # offered again
     ctx.clear_cookies()
     page.goto(f"{site}/signin")
-    page.get_by_role("button", name="Sign in with Face ID").click()
-    expect(page.locator("#si-faceid-status")).to_contain_text("did not work")
-    expect(page.locator("#si-faceid-status")).to_have_class("si-note si-faceid-status is-bad")
+    expect(page.locator("#si-dialog")).to_be_visible()
+    expect(page.locator("#si-faceid")).to_be_hidden()   # F-088: removing Face ID on this phone forgets it, so the button is gone here
+    assert page.evaluate("localStorage.getItem('ga-faceid-on')") is None
 
 
 def test_the_today_card_in_the_home_screen_app_not_now_then_turn_on(phone, site):
@@ -157,3 +157,72 @@ def test_the_browsers_own_suggestion_signs_in_from_the_email_box(phone, site):
     page.goto(f"{site}/signin?next=/family")   # the virtual authenticator answers the conditional request, as a tap on the suggestion would
     page.wait_for_url(f"{site}/family")
     expect(page.locator("#fam-who")).to_have_text(f"Signed in as {EMAIL}.")
+
+
+REMEMBER = "localStorage.setItem('ga-faceid-on', 'old-passkey')"
+
+
+def test_face_id_button_is_not_offered_on_a_phone_that_never_set_it_up(phone, site):
+    page, _ = phone(init=NO_AUTOFILL, sign_in=False)
+    page.goto(f"{site}/signin")
+    expect(page.locator("#si-dialog")).to_be_visible()
+    expect(page.locator("#si-faceid")).to_be_hidden()
+    expect(page.get_by_role("button", name="Sign in with Face ID")).to_have_count(0)
+    no_sideways_scroll(page)
+
+
+def test_face_id_button_shows_on_a_phone_that_remembers_it(phone, site):
+    page, _ = phone(init=NO_AUTOFILL + ";" + REMEMBER, sign_in=False)
+    page.goto(f"{site}/signin")
+    expect(page.get_by_role("button", name="Sign in with Face ID")).to_be_visible()
+    no_sideways_scroll(page)
+
+
+def test_a_passkey_this_address_does_not_know_says_so_points_to_google_and_hides_the_button(phone, site):
+    page, ctx = phone(init=NO_AUTOFILL)   # the phone still holds a passkey this server no longer has (as one made before the move)
+    add_from_family(page, site)
+    pid = page.locator(".pk-item").get_attribute("data-passkey-id")
+    ctx.request.post(f"{site}/passkeys/remove", form={"id": pid}, max_redirects=0)   # removed elsewhere: this phone's flag stays
+    ctx.clear_cookies()
+    page.goto(f"{site}/signin")
+    page.get_by_role("button", name="Sign in with Face ID").click()
+    status = page.locator("#si-faceid-status")
+    expect(status).to_contain_text("Face ID is not set up for this address on this phone.")
+    expect(status).to_contain_text("Use Continue with Google instead.")
+    expect(status).to_have_class("si-note si-faceid-status is-bad")
+    expect(page.locator("#si-faceid")).to_be_hidden()
+    assert page.evaluate("localStorage.getItem('ga-faceid-on')") is None
+    page.reload()
+    expect(page.locator("#si-faceid")).to_be_hidden()   # and it stays gone
+
+
+def test_a_cancelled_face_id_says_so_and_points_to_google_but_keeps_the_button(phone, site):
+    cancel = "navigator.credentials.get = () => Promise.reject(new DOMException('no', 'NotAllowedError'))"
+    page, _ = phone(init=NO_AUTOFILL + ";" + REMEMBER + ";" + cancel, sign_in=False)
+    page.goto(f"{site}/signin")
+    page.get_by_role("button", name="Sign in with Face ID").click()
+    status = page.locator("#si-faceid-status")
+    expect(status).to_contain_text("Face ID was cancelled. Use Continue with Google instead.")
+    expect(status).to_have_class("si-note si-faceid-status is-bad")
+    expect(page.locator("#si-faceid")).to_be_visible()   # the phone still has its passkey: try again
+    no_sideways_scroll(page)
+
+
+def test_a_successful_face_id_sign_in_remembers_the_phone(phone, site):
+    page, ctx = phone(init=NO_AUTOFILL)
+    add_from_family(page, site)
+    page.evaluate("localStorage.removeItem('ga-faceid-on')")   # as if this phone only knew the passkey from the keychain
+    ctx.clear_cookies()
+    page.goto(f"{site}/signin?next=/family")
+    expect(page.locator("#si-faceid")).to_be_hidden()
+    page.evaluate("localStorage.setItem('ga-faceid-on', '1')")
+    page.reload()
+    page.get_by_role("button", name="Sign in with Face ID").click()
+    page.wait_for_url(f"{site}/family")
+    assert page.evaluate("localStorage.getItem('ga-faceid-on')") not in (None, "1")   # now holds the passkey's id
+
+
+def test_setting_up_face_id_remembers_the_phone(phone, site):
+    page, _ = phone(init=NO_AUTOFILL)
+    add_from_family(page, site)
+    assert page.evaluate("localStorage.getItem('ga-faceid-on')")

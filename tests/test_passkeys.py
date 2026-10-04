@@ -83,7 +83,7 @@ def test_a_passkey_that_did_not_verify_the_person_is_refused(client):
 def test_signing_in_with_face_id_gives_the_same_session_as_google_and_says_welcome_back(phone):
     key, other = phone
     r, _ = face_id(other, key, next="/family")
-    assert r.status_code == 200 and r.json() == {"ok": True, "next": "/family", "name": "Ari"}
+    assert r.status_code == 200 and r.json() == {"ok": True, "next": "/family", "name": "Ari", "passkey": passkeys.listing(tid())[0]["id"]}
     s = session_data(other)
     assert s["user_id"] == tid() and s["tenant_id"] and s["tenant_role"] == "owner" and s["email"] == "ari.rivera@example.com"
     assert other.get("/family", follow_redirects=False).status_code == 200

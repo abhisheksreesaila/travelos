@@ -40,7 +40,11 @@ _READY = False
 
 
 class PasskeyError(Exception):
-    """A message that is safe to show the person."""
+    """A message that is safe to show the person. `unknown` is true when this server has no such passkey (the phone should forget it)."""
+
+    def __init__(self, message="", unknown=False):
+        super().__init__(message)
+        self.unknown = unknown
 
 
 def now() -> float:
@@ -266,7 +270,7 @@ def authenticate(session, request, credential):
     with hostdb.locked():
         found = _rows(_conn(), "SELECT * FROM ga_passkeys WHERE credential_id = :c", c=cid)
     if not found:
-        raise refused
+        raise PasskeyError("Face ID is not set up for this address on this phone.", unknown=True)
     row = found[0]
     try:
         ok = verify_authentication_response(
