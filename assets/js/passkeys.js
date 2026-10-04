@@ -24,11 +24,11 @@
       });
     });
   }
-  function nice(e, google) {
-    var more = google ? " Use Continue with Google instead." : "";   // sign-in page only
+  function nice(e, pointToGoogle) {   // pointToGoogle: the sign-in page adds where to go instead; /family keeps the plain wording
+    var more = pointToGoogle ? " Use Continue with Google instead." : "";
     if (e && (e.name === "NotAllowedError" || e.name === "AbortError")) return "Face ID was cancelled." + more;
     if (e && e.name === "InvalidStateError") return "Face ID is already on for this phone.";
-    return ((e && e.message) || "Face ID did not work.") + more;
+    return ((e && e.message) || "Face ID did not work." + (pointToGoogle ? "" : " Please try again.")) + more;
   }
   function store(key, value) {
     try { if (value === undefined) return localStorage.getItem(key); localStorage.setItem(key, value); } catch (e) { return null; }
@@ -58,10 +58,9 @@
   if (button && supported && store(KNOWN)) {
     var status = document.getElementById("si-faceid-status"), busy = false, conditional = null;
     button.hidden = false;
-    var google = true;   // Google is the way in everywhere else
     var failed = function (e) {
       if (e && e.unknown) { forget(KNOWN); button.hidden = true; }   // this address has no such passkey (made before the move?): stop offering Face ID here
-      say(nice(e, google), "bad"); busy = false;
+      say(nice(e, true), "bad"); busy = false;
     };
     var say = function (text, kind) { status.hidden = !text; status.textContent = text; status.className = "si-note si-faceid-status" + (kind ? " is-" + kind : ""); };
     var finish = function (cred) {
@@ -148,7 +147,16 @@
           Array.prototype.forEach.call(card.querySelectorAll(".pk-row, .pk-actions"), function (n) { n.hidden = true; });
           done.hidden = false;
         })
-        .catch(function (e) { fail(nice(e)); working = false; });
+        .catch(function (e) {
+          working = false;
+          if (e && e.name === "InvalidStateError") {   // this phone already holds a passkey for this address: remember it and say so (F-088)
+            if (!store(KNOWN)) store(KNOWN, "1");
+            Array.prototype.forEach.call(card.querySelectorAll(".pk-row, .pk-actions"), function (n) { n.hidden = true; });
+            add.hidden = true; done.hidden = false;
+            return;
+          }
+          fail(nice(e));
+        });
     });
     if (later) later.addEventListener("click", function () { store(LATER, "1"); card.hidden = true; });
   }

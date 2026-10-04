@@ -43,3 +43,21 @@ def test_the_remove_form_names_its_passkey_so_the_phone_can_forget_it(client):
     add_passkey(client)
     pid = passkeys.listing(tid())[0]["id"]
     assert f'data-passkey-id="{pid}"' in client.get("/family").text
+
+
+def test_a_known_passkey_with_a_bad_signature_gets_the_general_error_not_unknown(phone):
+    key, other = phone
+    opts = post(other, "/passkeys/auth/options").text
+    cred = key.get(opts, "http://testserver")
+    cred["response"]["signature"] = cred["response"]["signature"][::-1]
+    r = other.post("/passkeys/auth", json={"credential": cred}, headers=HEAD)
+    assert r.status_code == 400 and not r.json().get("unknown") and "Try again" in r.json()["error"]
+
+
+def test_an_unknown_id_is_only_reported_to_an_answer_to_this_sign_ins_challenge(phone):
+    _, other = phone
+    stranger = SoftKey()
+    opts = post(other, "/passkeys/auth/options").text
+    cred = stranger.get(opts, "http://testserver", challenge="AAAA")   # signs some other challenge
+    r = other.post("/passkeys/auth", json={"credential": cred}, headers=HEAD)
+    assert r.status_code == 400 and not r.json().get("unknown")

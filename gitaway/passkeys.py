@@ -257,6 +257,14 @@ def authentication_options(session, request) -> str:
     return options_to_json(opts)
 
 
+def _answers_challenge(credential, challenge) -> bool:
+    try:
+        client = json.loads(base64url_to_bytes(credential["response"]["clientDataJSON"]))
+        return client.get("challenge") == bytes_to_base64url(challenge)
+    except Exception:
+        return False
+
+
 def authenticate(session, request, credential):
     """Check the browser's answer. Returns the stored passkey row (with `user_id`) and updates its counter; raises PasskeyError otherwise."""
     rp = relying_party(request)
@@ -270,6 +278,8 @@ def authenticate(session, request, credential):
     with hostdb.locked():
         found = _rows(_conn(), "SELECT * FROM ga_passkeys WHERE credential_id = :c", c=cid)
     if not found:
+        if not _answers_challenge(credential, challenge):   # only someone holding this sign-in's challenge learns whether an id is known
+            raise refused
         raise PasskeyError("Face ID is not set up for this address on this phone.", unknown=True)
     row = found[0]
     try:

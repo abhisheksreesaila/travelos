@@ -226,3 +226,17 @@ def test_setting_up_face_id_remembers_the_phone(phone, site):
     page, _ = phone(init=NO_AUTOFILL)
     add_from_family(page, site)
     assert page.evaluate("localStorage.getItem('ga-faceid-on')")
+
+
+def test_a_phone_with_a_passkey_but_no_flag_gets_face_id_back_with_one_tap(phone, site):
+    page, ctx = phone(init=NO_AUTOFILL)
+    add_from_family(page, site)
+    page.evaluate("localStorage.clear()")   # a phone from before the flag existed: signed in with Google, the server lists its passkey, the phone has no flag
+    page.goto(f"{site}/family")   # the server excludes the passkey it knows, so the phone answers InvalidStateError ("already registered")
+    page.get_by_role("button", name="Add another phone").click()
+    expect(page.locator("#pk-done")).to_be_visible()
+    expect(page.locator("#pk-done")).to_have_text("Face ID is on for this phone.")
+    assert page.evaluate("localStorage.getItem('ga-faceid-on')") == "1"
+    ctx.clear_cookies()
+    page.goto(f"{site}/signin")
+    expect(page.get_by_role("button", name="Sign in with Face ID")).to_be_visible()
