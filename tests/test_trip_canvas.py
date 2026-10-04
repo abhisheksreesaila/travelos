@@ -252,7 +252,7 @@ def test_every_link_on_every_level_lands(trip):
 def test_every_button_on_the_sheet_lands_where_it_says(trip):
     sid = step_id(trip, "Minion Mayhem")
     page = trip.get(f"/trip/canvas?step={sid}").text
-    forms = re.findall(r"<form[^>]*>.*?</form>", page, re.S)
+    forms = [f for f in re.findall(r"<form[^>]*>.*?</form>", page.split("cz-sheet-wrap")[1], re.S) if "/trip/canvas/step" in f]      # the sheet's own two (the rows behind it have swipe forms)
     assert len(forms) == 2
     for f in forms:
         data = {n: unescape(v) for n, v in re.findall(r'<input[^>]*name="([^"]+)"[^>]*value="([^"]*)"', f)}
