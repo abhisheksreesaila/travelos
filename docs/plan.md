@@ -471,10 +471,10 @@ Needs: F-080
 - [x] notes show on their block or step; a Set aside tray per day; Mark done; parts show as lanes when people split up (Everyone / per person)
 - [x] works on desktop too (wide day view)
 
-## F-082 Touch moves and filters [todo]
+## F-082 Touch moves and filters [done]
 Needs: F-081
-- [ ] hold and drag a step to another time, part, day or the Set aside tray, with Undo; swipe for Done or Set aside
-- [ ] filter chips by who and by named lists (e.g. Pregnancy-safe) highlight matching steps and dim the rest
+- [x] hold and drag a step to another time, part, day or the Set aside tray, with Undo; swipe for Done or Set aside
+- [x] filter chips by who and by named lists (e.g. Pregnancy-safe) highlight matching steps and dim the rest
 
 ## F-083 Passes & documents [done]
 Needs: none
