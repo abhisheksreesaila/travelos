@@ -5,7 +5,7 @@ POST /trip/add/convert           text -> step 1, "Here's what we found" (frame 3
 POST /trip/add/questions         the draft -> step 2, "two quick questions" (frame 4): who the initials are, which day each park is, who a list is for
 POST /trip/add/edit              back to the paste page with the text intact
 POST /trip/add/save              "Add to trip": the only thing that saves (gitaway.canvas.save)
-GET  /trip/block?id=a3           a block's parts and steps, with notes, done and Set aside
+GET  /trip/block?id=a3           redirects to the canvas block (F-081); the block page itself is gitaway/pages/tripcanvas.py
 POST /trip/block/step            one tap on a step: done, not done, set aside, put back
 
 The draft travels between the steps in a hidden field of the page's own form (and is checked again by gitaway.canvas.clean on every post), never in the
@@ -13,15 +13,13 @@ cookie or the database. Every write is gated by gitaway.access (editors); a view
 """
 
 import json
-from datetime import timedelta
-from urllib.parse import urlencode
 
 from fasthtml.common import A, Button, Details, Div, Fieldset, Form, H2, H3, Input, Label, Legend, Li, Link, Main, P, Span, Summary, Textarea, Ul
 from fasthtml.core import FtResponse
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import RedirectResponse
 
-from gitaway import access, ai, canvas, members, phone, session as ses, tripcal as cal
+from gitaway import access, ai, canvas, phone, session as ses, tripcal as cal
 from gitaway.icons import icon
 from gitaway.layout import avatar, join_note, trip_field
 from gitaway.pages.trip import trip_url
@@ -293,7 +291,7 @@ def register(app):
         view = canvas.block(session, id[:8])
         if view is None:
             return RedirectResponse(trip_url(), status_code=303)
-        return block_view(request, session, view)
+        return RedirectResponse(f"/trip/canvas?block={view['act'].id}" + (f"&trip={ses.open_trip_id()}" if ses.open_trip_id() else ""), status_code=303)   # F-081: the block lives in the canvas now
 
     @app.post("/trip/block/step")
     async def step(request, session):
@@ -310,43 +308,4 @@ def register(app):
                 canvas.set_aside(session, sid, do == "aside")
         except canvas.CanvasError:
             pass       # a step someone else just removed: show the block as it is now
-        return RedirectResponse(f"/trip/block?{urlencode({'id': act, 'trip': ses.open_trip_id()})}", status_code=303)
-
-
-# ---- a block ---------------------------------------------------------------------------------------------------------------
-
-def _step_row(s, act, editor, aside=False):
-    chips = [Span(w, cls="cv-chip") for w in s["who"]]
-    meta = Div(Span(s["time"], cls="cv-time") if s["time"] else "", *chips, cls="cv-meta") if (s["time"] or chips) else ""
-    note = Span(icon("pencil", 13, 2.4), s["note"], cls="tp-pnote cv-note") if s["note"] else ""
-    buttons = ""
-    if editor:
-        btns = []
-        if aside:
-            btns.append(Button("Put back", type="submit", name="do", value="back", cls="tp-mini cv-act"))
-        else:
-            btns.append(Button("Not done" if s["done"] else "Mark done", type="submit", name="do", value="undone" if s["done"] else "done", cls="tp-mini cv-act cv-done-btn"))
-            btns.append(Button("Set aside", type="submit", name="do", value="aside", cls="tp-mini cv-act"))
-        buttons = Form(_hidden("step", s["id"]), _hidden("act", act), trip_field(), *btns, action="/trip/block/step", method="post", cls="cv-step-form")
-    return Div(Div(Span(icon("check", 16, 3), cls="cv-check", aria_hidden="true") if s["done"] else "", Span(s["title"], cls="tp-what cv-title"), Span("Done", cls="sr-only") if s["done"] else "", cls="cv-step-head"),
-               meta, note, buttons, cls=f"cv-step-row{' is-done' if s['done'] else ''}{' is-aside' if aside else ''}", id=f"step-{s['id']}", data_step=s["id"])
-
-
-def block_view(request, session, view):
-    a = view["act"]
-    b = ses.booking(session)
-    t = cal.trip("", b)
-    day = t.depart + timedelta(days=a.day)
-    editor = access.can_edit(access.request_role())
-    sections = []
-    for p in view["parts"]:
-        head = Div(H3(p["name"]), Span(p["time_of_day"], cls="cv-when") if p["time_of_day"] else "", cls="cv-part-head")
-        rows = [_step_row(s, a.id, editor) for s in p["steps"]]
-        sections.append(Div(head, *(rows or [P("Nothing here yet.", cls="cv-sub")]), cls="cv-card cv-block-part", data_part=p["id"]))
-    if view["aside"]:
-        sections.append(Div(Div(H3(f"Set aside · {len(view['aside'])}"), Span("still in the trip", cls="cv-when"), cls="cv-part-head"), *[_step_row(s, a.id, editor, aside=True) for s in view["aside"]], cls="cv-card cv-tray", id="cv-tray"))
-    for lst in view["lists"]:
-        items = [Li(Span(i["title"], cls="tp-what"), Span(i["note"], cls="cv-sub") if i["note"] else "") for i in lst["items"]]
-        sections.append(Div(Div(H3(lst["name"]), Span(f"for {lst['for']}", cls="cv-when") if lst["for"] else "", cls="cv-part-head"), Ul(*items, cls="cv-list"), cls="cv-card cv-triplist", data_list=lst["id"]))
-    kicker = f"{day.strftime('%a %b').upper()} {day.day} · {cal.fmt_time(a.start)} – {cal.fmt_time(a.end)}".upper()
-    return _shell(request, session, a.title, [*sections, A("Back to the day", href=trip_url(day=a.day), cls="tp-btn tp-btn-plain", id="cv-back-day")], kicker=kicker)
+        return RedirectResponse(f"/trip/canvas?block={act}" + (f"&trip={ses.open_trip_id()}" if ses.open_trip_id() else ""), status_code=303)

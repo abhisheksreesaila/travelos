@@ -86,21 +86,20 @@ def test_paste_convert_answer_add_and_use_the_block(phone, base_url, model):
     page.locator("#cv-add").click()
 
     expect(page.locator("#tp-toast")).to_contain_text("Universal Studios Hollywood")
-    page.locator('.tp-card[href*="/trip/block"]').first.click()
+    page.locator('.tp-card[href*="/trip/canvas?block"]').first.click()
     expect(page.locator("h1")).to_have_text("Universal Studios Hollywood")
-    expect(page.locator(".cv-block-part")).to_have_count(4)
-    expect(page.locator("#cv-tray")).to_contain_text("Studio Tour")
+    expect(page.locator(".cz-bparts .cz-bpart")).to_have_count(4)
+    expect(page.locator("#cz-tray")).to_contain_text("Studio Tour")
     assert overflow(page) <= 0
-    mummy = page.locator(".cv-step-row", has_text="Revenge of the Mummy")
-    mummy.get_by_role("button", name="Mark done").click()
-    expect(page.locator(".cv-step-row.is-done", has_text="Revenge of the Mummy")).to_be_visible()
-    kong = page.locator(".cv-step-row", has_text="King Kong")
-    kong.get_by_role("button", name="Set aside").click()
-    expect(page.locator("#cv-tray")).to_contain_text("King Kong")
-    expect(page.locator(".cv-step-row", has_text="Hippogriff")).to_contain_text("Bhoomija")
-    expect(page.locator(".cv-step-row", has_text="Hippogriff")).to_contain_text("H and B walk")
-    page.locator("#cv-back-day").click()
-    expect(page.locator("#tp-list")).to_contain_text("Universal Studios Hollywood")
+    page.locator(".cz-step", has_text="Revenge of the Mummy").click()
+    page.get_by_role("button", name="Mark done").click()
+    expect(page.locator(".cz-step.is-done", has_text="Revenge of the Mummy")).to_be_visible()
+    page.locator(".cz-step", has_text="King Kong").click()
+    page.get_by_role("button", name="Set aside").click()
+    expect(page.locator("#cz-tray")).to_contain_text("King Kong")
+    expect(page.locator(".cz-step", has_text="Hippogriff")).to_contain_text("H and B walk")
+    page.locator(".cz-back").click()
+    expect(page.locator(".cz-view[data-level=day]")).to_contain_text("Universal Studios Hollywood")
 
 
 def test_a_failed_conversion_keeps_the_text_and_says_so(phone, base_url, monkeypatch):
