@@ -483,15 +483,15 @@ Needs: none
 
 # Trip feedback, 2026-10-04 (captain, on the trip)
 
-## F-084 Invite from the phone's Family tab [todo]
+## F-084 Invite from the phone's Family tab [done]
 Captain, 2026-10-04: couldn't find how to invite from the phone; the invite page (/family#invite) isn't linked from the Family tab. · Needs: none
-- [ ] for an admin, the phone Family tab (chat and photos) shows a clear "Invite" button that opens the invite form; non-admins see who is in the family (link to /family) instead
-- [ ] passes phone checks (44px target, 13px text floor, no sideways scroll); a test covers admin and editor views
+- [x] for an admin, the phone Family tab (chat and photos) shows a clear "Invite" button that opens the invite form; non-admins see who is in the family (link to /family) instead
+- [x] passes phone checks (44px target, 13px text floor, no sideways scroll); a test covers admin and editor views
 
-## F-085 Today: notes start folded [todo]
+## F-085 Today: notes start folded [done]
 Captain, 2026-10-04: notes take too much room on Today; hide them, tap to read. · Needs: none
-- [ ] on Today (and the selected day's list), a plan's notes are folded by default behind a small "1 note" / "2 notes" tap that opens them in place; the up-next card does the same; nothing else on the card changes
-- [ ] works with keyboard and screen readers (a real button with aria-expanded, or details/summary), calm under reduced motion; a browser test opens a note
+- [x] on Today (and the selected day's list), a plan's notes are folded by default behind a small "1 note" / "2 notes" tap that opens them in place; the up-next card does the same; nothing else on the card changes
+- [x] works with keyboard and screen readers (a real button with aria-expanded, or details/summary), calm under reduced motion; a browser test opens a note
 
 ## F-086 Plans may overlap bookings and each other [todo]
 Captain, 2026-10-04: Add to trip refused a plan because it overlapped hotel check-out ("Pick a gap"). Overlapping is fine: families split up, and plans sit on top of check-out, flights and car pickups. · Needs: none
