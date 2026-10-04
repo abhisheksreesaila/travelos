@@ -421,9 +421,9 @@ Found reviewing F-068: drives to and from airports are skipped, so a departure f
 - [x] the drive from the stop before (or the hotel) to a departure airport is cached and Today shows "Leave by" for an up-next departure flight, with a margin before the flight (e.g. 2 hours domestic); no drive is ever asked between two airports
 - [x] the arrival-day test checks 9:40 (after landing): Up next is the car pickup and no "min drive" line shows
 
-## F-072 Ask by voice [todo]
+## F-072 Ask by voice [done]
 Azure OpenAI is set up (deployment gpt-5.6-sol, tested 2026-10-04; env AZURE_OPENAI_*). Known limit: a plan removed through Ask GitAway cannot be undone (the change list says so); the calendar's own Undo covers only its own delete button.
-- [ ] talk (or type) to ask for a change; GitAway proposes a new day (added, moved, removed plans) and changes nothing until Apply; Apply tells the family
+- [x] talk (or type) to ask for a change; GitAway proposes a new day (added, moved, removed plans) and changes nothing until Apply; Apply tells the family
 
 ## F-073 Around you [todo]
 Uses the same Azure OpenAI setup as F-072; nearby places come from OpenStreetMap and the model ranks and explains them.
