@@ -93,7 +93,7 @@ def test_every_role_gets_the_same_tabs_with_no_edit_controls_on_the_placeholders
     for key, path in PATHS.items():
         r = other.get(path)
         assert r.status_code == 200 and bar(r.text)[0] == list(PATHS.values()), path
-        if key not in ("today", "family"):   # the Family thread has its compose bar and Quiet switch for every role (F-070)
+        if key not in ("today", "family") and not (key == "help" and role == "editor"):   # the Family thread has its compose bar and Quiet switch for every role (F-070); an editor adds flights and passes on Help (F-083)
             main = re.search(r"<main.*?</main>", r.text, re.S).group(0)
             assert "<form" not in main and "<input" not in main, path
 

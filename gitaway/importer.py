@@ -153,7 +153,7 @@ def delete(session, trip_id) -> bool:
                 return False
             key = _ride_key(trip_id, tripimport.from_doc(json.loads(old["doc"])))
             booking = familydb.booking_for_trip(db, trip_id)
-            for table in ("activities", "notes", "cal_state", "friends", "thread", "photos"):   # the family thread of the trip goes too (F-070)
+            for table in ("activities", "notes", "cal_state", "friends", "thread", "photos", "passes", "pass_flights"):   # the family thread of the trip goes too (F-070)
                 familydb.run(db, f"DELETE FROM {table} WHERE trip_id = :t", t=trip_id)
             familydb.run(db, "DELETE FROM rides WHERE trip_id = :t OR key = :k", t=trip_id, k=key)
             familydb.run(db, "DELETE FROM trip_imports WHERE trip_id = :t", t=trip_id)
@@ -161,6 +161,8 @@ def delete(session, trip_id) -> bool:
             familydb.run(db, "UPDATE members SET trip_id = NULL WHERE trip_id = :t", t=trip_id)
         from gitaway import photos
         photos.purge_trip(session.get("tenant_id"), trip_id)   # the picture files, once the rows are gone (F-071)
+        from gitaway import passes
+        passes.purge_trip(session.get("tenant_id"), trip_id)   # and the boarding pass files (F-083)
         for row in community.rows(kind="shared"):  # a shared page of this trip (by whoever shared it) comes down with it
             if booking and share.slug_for(row["owner_user"], booking) == row["slug"]:
                 community.unpublish({"user_id": row["owner_user"]}, row["slug"])
