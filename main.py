@@ -12,7 +12,7 @@ from fasthtml.common import Beforeware, FastHTML, Response, serve
 from fh_saas.utils_auth import create_auth_beforeware
 from fh_saas.utils_log import configure_logging
 
-from gitaway import access, auth, hostdb, morning, session, showcase
+from gitaway import access, auth, hostdb, morning, passkeys, session, showcase
 from gitaway.layout import HEAD
 from gitaway.pages import register_all
 from gitaway.pages.family import PRIVATE
@@ -60,9 +60,33 @@ class NoStoreWhenSignedIn:
         await self.app(scope, receive, send_with)
 
 
+class OneAddress:
+    """F-078: in production, a request on any other host (the old *.up.railway.app address) gets a permanent redirect to the same path and
+    query on GITAWAY_PUBLIC_URL. /healthz (Railway's check) and /auth/callback (a sign-in already under way) are left alone. The target
+    comes only from the configured value, never from request headers. Locally, in tests, and with no valid GITAWAY_PUBLIC_URL, nothing redirects."""
+
+    EXEMPT = ("/healthz", "/auth/callback")
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http" and auth.production() and scope.get("path") not in self.EXEMPT:
+            target = passkeys.public_host()
+            if target:
+                host = next((v.decode("latin-1") for k, v in scope.get("headers", []) if k == b"host"), "").lower()
+                if host.split(":")[0] != target.split(":")[0]:
+                    url = f"https://{target}{scope['path']}"
+                    if scope.get("query_string"):
+                        url += "?" + scope["query_string"].decode("latin-1")
+                    await Response(status_code=308, headers={"location": url})(scope, receive, send)
+                    return
+        await self.app(scope, receive, send)
+
+
 def make_app():
     auth.check_production_settings()
-    app = FastHTML(before=[Beforeware(access.guard, skip=_OPEN), auth_before, Beforeware(session.bind, skip=_OPEN), Beforeware(showcase.guard, skip=_OPEN)], hdrs=HEAD, title="GitAway", middleware=[Middleware(NoStoreWhenSignedIn)],
+    app = FastHTML(before=[Beforeware(access.guard, skip=_OPEN), auth_before, Beforeware(session.bind, skip=_OPEN), Beforeware(showcase.guard, skip=_OPEN)], hdrs=HEAD, title="GitAway", middleware=[Middleware(OneAddress), Middleware(NoStoreWhenSignedIn)],
                    htmlkw={"lang": "en"}, on_startup=[morning.start], secret_key=os.getenv("GITAWAY_SECRET_KEY") or None, key_fname=str(ROOT / ".sesskey"),
                    **auth.session_options())
     app.static_route_exts(prefix="/assets/", static_path=str(ROOT / "assets"))

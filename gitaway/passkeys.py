@@ -50,15 +50,28 @@ def now() -> float:
 _HOST = re.compile(r"[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+(:\d{1,5})?")
 
 
+def _https_host(base: str):
+    """The lowercased host[:port] of a plain https address (no path, query, user info or IP address), else None."""
+    base = (base or "").strip().rstrip("/")
+    if not base.startswith("https://"):
+        return None
+    host = base[len("https://"):].lower()
+    return host if _HOST.fullmatch(host) else None
+
+
+def public_host():
+    """The host of GITAWAY_PUBLIC_URL, or None when it is unset or not a plain https address (F-078 redirects to it)."""
+    host = _https_host(os.getenv("GITAWAY_PUBLIC_URL"))
+    return None if not host or host.split(":")[0].replace(".", "").isdigit() else host
+
+
 def _production_rp():
     """(rp_id, origin) from GITAWAY_PUBLIC_URL (else RAILWAY_PUBLIC_DOMAIN), or None when it is missing or not a plain https address."""
     base = (os.getenv("GITAWAY_PUBLIC_URL") or "").strip().rstrip("/")
     if not base and (domain := (os.getenv("RAILWAY_PUBLIC_DOMAIN") or "").strip()):
         base = f"https://{domain}"
-    if not base.startswith("https://"):
-        return None
-    host = base[len("https://"):].lower()
-    if not _HOST.fullmatch(host):   # no path, query, user info or IP address
+    host = _https_host(base)
+    if not host:
         return None
     return host.split(":")[0], f"https://{host}"
 
