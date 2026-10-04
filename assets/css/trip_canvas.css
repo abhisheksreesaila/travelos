@@ -19,6 +19,9 @@
 .cz .cz-head-k { font-size: var(--cz-small); font-weight: 800; letter-spacing: 0.04em; color: var(--ink-3); }
 .cz .cz-head h1 { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 1.75rem; line-height: 1.08; letter-spacing: -0.03em; overflow-wrap: anywhere; }
 .cz .cz-head.is-deep { padding: 0.75rem; border-radius: 1.75rem; color: #FFFFFF; background: color-mix(in srgb, var(--ink) 94%, transparent); -webkit-backdrop-filter: blur(0.75rem) saturate(1.4); backdrop-filter: blur(0.75rem) saturate(1.4); box-shadow: var(--shadow-md); }
+.cz .cz-head.is-deep { flex-wrap: wrap; }
+.cz .cz-head.is-deep .cz-faces { flex-basis: 100%; padding: 0 0 0 3.5rem; }
+.cz .cz-head.is-deep .cz-av-initials { border-color: rgba(255, 255, 255, .75); color: #FFFFFF; }
 .cz .cz-head.is-deep .cz-head-k { color: var(--sun); }
 .cz .cz-head.is-deep h1 { font-size: 1.5rem; color: #FFFFFF; }
 .cz .cz-back, .cz .cz-close { flex-shrink: 0; width: 2.75rem; height: 2.75rem; border-radius: var(--r-pill); display: inline-flex; align-items: center; justify-content: center; }
@@ -44,7 +47,7 @@
 /* stickers: notes stuck on the thing they are about, in handwriting */
 .cz .cz-sticker { display: inline-flex; flex-direction: column; align-self: flex-start; max-width: 100%; padding: 0.125rem 0.625rem 0.1875rem; border-radius: 0.375rem; background: var(--note); color: var(--ink);
   font-family: var(--font-hand); font-weight: 700; font-size: 1.3125rem; line-height: 1.05; transform: rotate(-1.5deg); box-shadow: var(--shadow-sticker); overflow-wrap: anywhere; }
-.cz .cz-sticker-by { font-family: var(--font-body); font-size: var(--cz-small); font-weight: 800; color: var(--ink-2); }
+.cz .cz-sticker-by { margin-top: 0.125rem; font-family: var(--font-body); font-size: var(--cz-small); font-weight: 800; color: var(--ink-2); }
 .cz .cz-sticker-chip { margin: -0.1875rem 0 0 0.5rem; transform: rotate(1.5deg); }
 .cz .cz-sticker-step { margin-top: 0.125rem; }
 .cz .cz-sticker-week { margin: 0 0 0 0.25rem; }
@@ -202,15 +205,17 @@ html[data-cz-dir="side"]::view-transition-new(root) { animation: cz-come-side va
 
 /* a laptop: the wide day view (frame 11). The week is a strip across the top, a day's parts are lanes, the Set aside tray sits at the side. */
 @media (min-width: 721px) {
-  .tp[data-canvas] { max-width: 80rem; padding-bottom: 3rem; }
+  .tp[data-canvas] { max-width: 100rem; padding-bottom: 3rem; }
   .cz .cz-head h1 { font-size: 2rem; }
   .cz .cz-head.is-deep h1 { font-size: 1.75rem; }
-  .cz .cz-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0.75rem; align-items: start; }
+  .cz .cz-week { display: grid; grid-template-columns: repeat(var(--days, 7), minmax(0, 1fr)); gap: 0.75rem; align-items: start; }
   .cz .cz-row { display: flex; flex-direction: column; }
   .cz .cz-badge { flex-direction: row; gap: 0.5rem; min-height: 2.75rem; }
+  .cz .cz-simple { flex-wrap: wrap; }
+  .cz .cz-card-t { flex-basis: 8rem; }
   .cz .cz-row-link, .cz .cz-row:not(.is-free) .cz-row-link { grid-column: auto; }
   .cz .cz-plus { align-self: flex-end; margin-top: -3.25rem; margin-right: 0.25rem; }
-  .cz .cz-strip { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0.5rem; }
+  .cz .cz-strip { display: grid; grid-template-columns: repeat(var(--days, 7), minmax(0, 1fr)); gap: 0.5rem; }
   .cz .cz-strip-day { display: flex; flex-direction: column; gap: 0.25rem; padding: 0.625rem 0.75rem; border-radius: 1.25rem; background: var(--card); box-shadow: var(--shadow-sm); color: var(--ink); min-width: 0; }
   .cz .cz-strip-day.is-open { background: var(--ink); color: #FFFFFF; box-shadow: 0 0 0 0.1875rem var(--coral); }
   .cz .cz-strip-day div:first-child { display: flex; align-items: baseline; gap: 0.5rem; }

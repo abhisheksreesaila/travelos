@@ -207,7 +207,7 @@ def week_view(v):
     faces = Div(avatar(v["who"], "cz-av"), *[avatar(f, "cz-av") for f in v["crew"]], cls="cz-faces")
     kicker = f"{t.title.upper()} · {cal.range_label(t.depart, t.return_).upper()}"
     rows = [week_body(v, i, editor) for i in range(len(v["dates"]))]
-    return view("week", [head(v, kicker, "The trip", faces=faces), zoom_control(v, "week"), Div(*rows, cls="cz-week", id="cz-week")], title="The trip")
+    return view("week", [head(v, kicker, "The trip", faces=faces), zoom_control(v, "week"), Div(*rows, cls="cz-week", id="cz-week", style=f"--days:{min(len(rows), 7)}")], title="The trip")
 
 
 # ---- day --------------------------------------------------------------------------------------------------------------------
@@ -261,7 +261,7 @@ def strip(v, day):
                 segs.append(Span(cls="cz-seg-bar is-plain"))
         cards.append(A(Div(Span(s.dow, cls="cz-strip-dow"), Span(str(s.num), cls=f"cz-strip-num ink-{s.tint}")), Span(s.head, cls="cz-strip-head"), Div(*segs[:8], cls="cz-bars", aria_hidden="true"),
                        href=curl(day=i), cls=f"cz-strip-day{' is-open' if i == day else ''}", aria_current="date" if i == day else None, data_zoom="side", aria_label=f"{v['dates'][i].strftime('%A %b')} {s.num}: {s.head}"))
-    return Nav(*cards, cls="cz-strip", aria_label="Days of the trip")
+    return Nav(*cards, cls="cz-strip", aria_label="Days of the trip", style=f"--days:{min(len(cards), 7)}")
 
 
 def day_view(v, day):

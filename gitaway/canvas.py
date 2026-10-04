@@ -388,7 +388,7 @@ def _person(tok, people) -> dict:
     if tok.startswith("g:"):
         return {"kind": "group", "name": tok[2:], "initials": tok[2:], "color": ""}
     if tok.startswith("i:"):
-        return {"kind": "initials", "name": tok[2:], "initials": tok[2:], "color": ""}
+        return {"kind": "initials", "name": tok[2:], "initials": tok[2:] if len(tok[2:]) <= 2 else _initials(tok[2:]), "color": ""}
     return {"kind": "named", "name": tok[2:], "initials": _initials(tok[2:]), "color": ""}
 
 

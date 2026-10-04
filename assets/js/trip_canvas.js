@@ -113,7 +113,7 @@
     if (e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     var a = e.target.closest ? e.target.closest('a[data-zoom]') : null;
     if (!a || !stage.contains(a)) return;
-    if (swallow > Date.now()) { e.preventDefault(); return; }
+    if (e.isTrusted && swallow > Date.now()) { e.preventDefault(); return; }     // the lifting fingers of a pinch are not a tap (the pinch's own clicks are script-made)
     e.preventDefault();
     var dir = a.dataset.zoom, u = path(a.href);
     if (dir === 'out') { zoomOutTo(u); return; }
