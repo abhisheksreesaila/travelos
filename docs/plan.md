@@ -447,3 +447,9 @@ Found reviewing F-076: `pixi run forget-person` (dry run by default) is not safe
 Captain, 2026-10-04: bought gitaway.me; the site, Google sign-in and Face ID move there. · Needs: none
 - [x] in production, a request to any other host (the old *.up.railway.app address) gets a permanent redirect to the same path and query on GITAWAY_PUBLIC_URL, except /healthz (Railway's check) and /auth/callback (a sign-in already under way finishes where it started)
 - [x] locally and in tests nothing redirects; docs/setup.md says how to change the address
+
+## F-079 Keep track of what the AI does [todo]
+Captain, 2026-10-04: Azure OpenAI is a stopgap for the trip; after a week we review which jobs it actually did (transcription, OCR, Convert, search, recommendations) and decide what to keep, swap for a cheaper model or classifier, or drop. · Needs: none
+- [ ] every AI call goes through one place (`gitaway/ai.py`) and is logged with: when, which job (e.g. convert, speak, ask, around-you, ocr), which family, model/deployment, tokens in and out, time taken, success or error; never the prompt text, answers or personal details
+- [ ] a short report (`pixi run ai-report`, and docs/ai-usage.md listing each job, what it replaces and why) shows counts, time and tokens per job and per day, so the captain can review after the trip
+- [ ] switching the model or provider for one job is one setting, not a code change

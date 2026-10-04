@@ -1,0 +1,1647 @@
+<title>GitAway Trip Canvas</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Figtree:wght@400;500;600;700;800&family=Caveat:wght@700&display=swap');
+
+:root {
+  color-scheme: light;
+  --font-display: 'Bricolage Grotesque', 'Figtree', 'Segoe UI', system-ui, sans-serif;
+  --font-body: 'Figtree', 'Segoe UI', system-ui, sans-serif;
+  --font-hand: 'Caveat', cursive;
+  --ink: #1E1A2E; --ink-2: #4A4460; --ink-3: #5A5470; --ink-ledge: #000000;
+  --paper: #FFF8EE; --paper-2: #FAF7F2; --card: #FFFFFF; --white: #FFFFFF;
+  --line: rgba(30, 26, 46, 0.08);
+  --coral: #FF7352; --coral-deep: #C9431F; --coral-tint: #FFE6DA;
+  --sun: #FFC93C; --sun-tint: #FFF1C2; --sun-ink: #8A6200;
+  --mint: #48D1A0; --mint-tint: #D4F7EA; --mint-ink: #16865F;
+  --sky: #5AB0FF; --sky-tint: #DDEEFF; --sky-ink: #1B6FC9;
+  --grape: #C3B2FF; --grape-tint: #ECE4FF; --grape-ink: #6A4FD6;
+  --bubble: #FF8CC6; --bubble-tint: #FFE3F1; --bubble-ink: #C23B82;
+  --block-sunset: #FF8A63; --block-pacific: #6DB8FF;
+  --skeleton: #F2ECE3; --peach: #FFC9B2; --sand: #FFE3A3;
+  --note: #FFF1C2; --note-2: #D8F6EA;
+  --on-ink-2: rgba(255, 255, 255, .78);
+  --r-sm: 12px; --r-md: 20px; --r-lg: 28px; --r-xl: 40px; --r-pill: 999px;
+  --shadow-sm: 0 2px 3px -1px rgba(0,0,0,.1), 0 0 0 1px rgba(25,28,33,.08);
+  --shadow-md: 0 0 0 1px rgba(0,0,0,.06), 0 3px 3px -1.5px rgba(0,0,0,.06), 0 12px 12px -6px rgba(0,0,0,.06);
+  --shadow-lg: 0 6.7px 5.3px rgba(0,0,0,.048), 0 22.3px 17.9px rgba(0,0,0,.072), 0 41.8px 33.4px rgba(0,0,0,.086);
+  --shadow-sticker: 0 6px 14px -6px rgba(30,26,46,.35);
+  --ease-spring: cubic-bezier(.2,.9,.3,1.3);
+  --ease-out: cubic-bezier(.2,.8,.2,1);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); }
+body { font: 500 16px/1.5 var(--font-body); overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 800; letter-spacing: -0.03em; margin: 0; text-wrap: balance; }
+p { margin: 0; }
+button { font-family: var(--font-body); color: var(--ink); }
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.on-ink :focus-visible, .upnext :focus-visible { outline-color: var(--sun); }
+svg.i { width: 20px; height: 20px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+[hidden] { display: none !important; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- Page ---------- */
+.wrap { max-width: 1360px; margin: 0 auto; padding: 0 24px; }
+@media (max-width: 600px) { .wrap { padding: 0 16px; } }
+.top { display: flex; align-items: center; gap: 10px; padding: 22px 0 0; font: 800 20px var(--font-display); letter-spacing: -0.03em; }
+.mark { width: 36px; height: 36px; border-radius: 11px; background: var(--coral); display: grid; place-items: center; box-shadow: 0 3px 0 var(--coral-deep); color: var(--ink); }
+.mark svg.i { width: 21px; height: 21px; stroke-width: 2.4; }
+.top .tag { margin-left: auto; font: 700 13px var(--font-body); letter-spacing: 0; color: var(--ink-3); padding: 6px 12px; border-radius: var(--r-pill); background: var(--card); box-shadow: var(--shadow-sm); }
+.intro { padding: 44px 0 36px; max-width: 760px; }
+.intro .eyebrow { font-weight: 800; font-size: 13px; letter-spacing: .1em; color: var(--coral-deep); }
+.intro h1 { font-size: clamp(38px, 6vw, 64px); line-height: .98; letter-spacing: -0.045em; margin: 8px 0 16px; }
+.intro p { font-size: clamp(16px, 1.6vw, 19px); color: var(--ink-2); }
+.intro .hint { margin-top: 14px; display: inline-flex; gap: 8px; align-items: center; font-size: 14px; font-weight: 700; color: var(--ink-3); }
+.trip-line { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.trip-line span { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: var(--r-pill); font-size: 14px; font-weight: 800; }
+
+/* ---------- Storyboard grid ---------- */
+.board { display: flex; flex-wrap: wrap; justify-content: center; gap: 56px 40px; padding-bottom: 24px; }
+.frame { width: min(410px, 100%); display: flex; flex-direction: column; gap: 18px; }
+.slot { position: relative; width: 100%; aspect-ratio: 410 / 864; }
+.device { position: absolute; top: 0; left: 0; width: 410px; height: 864px; transform: scale(var(--s, 1)); transform-origin: 0 0; border-radius: 58px; background: var(--ink); padding: 10px; box-shadow: var(--shadow-lg), 0 0 0 1px rgba(0,0,0,.2); }
+@media (max-width: 441px) { .device { --s: .88; } }
+.cap { display: flex; gap: 12px; align-items: flex-start; padding: 0 4px; }
+.cap .n { flex-shrink: 0; width: 34px; height: 34px; border-radius: var(--r-pill); background: var(--coral); box-shadow: 0 3px 0 var(--coral-deep); display: grid; place-items: center; font: 800 17px var(--font-display); }
+.cap h3 { font-size: 20px; line-height: 1.15; }
+.cap p { margin-top: 4px; color: var(--ink-2); font-size: 15px; }
+
+/* ---------- Phone chrome ---------- */
+.scr { position: relative; width: 390px; height: 844px; border-radius: 48px; overflow: hidden; background: var(--paper); display: flex; flex-direction: column; font-size: 15px; }
+.island { position: absolute; top: 11px; left: 50%; width: 124px; height: 36px; margin-left: -62px; border-radius: var(--r-pill); background: var(--ink-ledge); z-index: 30; }
+.sb { flex-shrink: 0; height: 54px; padding: 16px 30px 0 40px; display: flex; justify-content: space-between; align-items: center; font: 700 17px var(--font-body); position: relative; z-index: 20; }
+.sb .ic { display: flex; gap: 6px; align-items: center; }
+.sb svg { width: 18px; height: 13px; fill: currentColor; }
+.sb .bat { width: 27px; height: 13px; border-radius: 4px; border: 1.5px solid currentColor; padding: 1.5px; opacity: .95; }
+.sb .bat i { display: block; height: 100%; width: 72%; border-radius: 2px; background: currentColor; }
+.homebar { position: absolute; bottom: 8px; left: 50%; width: 134px; height: 5px; margin-left: -67px; border-radius: var(--r-pill); background: var(--ink); z-index: 40; }
+.on-ink .homebar, .homebar.light { background: var(--white); }
+.main { flex: 1; min-height: 0; overflow: auto; scrollbar-width: none; padding: 2px 16px 16px; display: flex; flex-direction: column; gap: 12px; }
+.main::-webkit-scrollbar { display: none; }
+.tabs { flex-shrink: 0; height: 86px; padding: 6px 8px 26px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); background: var(--card); box-shadow: 0 -1px 0 var(--line); position: relative; z-index: 10; }
+.tabs button { border: 0; background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 13px; font-weight: 700; color: var(--ink-3); cursor: pointer; border-radius: 14px; }
+.tabs button[aria-current="page"] { color: var(--ink); font-weight: 800; }
+.tabs button[aria-current="page"] .ti { background: var(--coral-tint); }
+.tabs .ti { width: 44px; height: 28px; border-radius: var(--r-pill); display: grid; place-items: center; }
+.tabs .ask .ti { width: 52px; height: 52px; margin-top: -26px; background: var(--coral); box-shadow: 0 4px 0 var(--coral-deep), 0 12px 24px -10px var(--coral-deep); color: var(--ink); }
+.tabs .ask .ti svg.i { width: 24px; height: 24px; }
+
+.hd { display: flex; align-items: center; gap: 10px; padding: 4px 2px 2px; }
+.hd .t { display: flex; flex-direction: column; min-width: 0; }
+.eb { font-size: 13px; font-weight: 800; letter-spacing: .06em; color: var(--ink-3); }
+.ttl { font: 800 30px/1.05 var(--font-display); letter-spacing: -0.035em; }
+.avs { margin-left: auto; display: flex; }
+.av { width: 34px; height: 34px; border-radius: var(--r-pill); border: 3px solid var(--paper); margin-left: -10px; display: grid; place-items: center; font-size: 13px; font-weight: 800; color: var(--ink); flex-shrink: 0; }
+.avs .av:first-child { margin-left: 0; }
+.av.a { background: var(--grape); } .av.b { background: var(--mint); } .av.c { background: var(--sun); } .av.k { background: var(--bubble); }
+
+.btn { border: 0; height: 48px; padding: 0 16px; border-radius: var(--r-pill); display: inline-flex; align-items: center; justify-content: center; gap: 8px; font: 800 16px var(--font-body); text-decoration: none; cursor: pointer; transition: transform .15s var(--ease-out), box-shadow .15s var(--ease-out); white-space: nowrap; }
+.btn:active { transform: translateY(3px); }
+.btn.coral { background: var(--coral); color: var(--ink); box-shadow: 0 4px 0 var(--coral-deep); }
+.btn.coral:active { box-shadow: 0 1px 0 var(--coral-deep); }
+.btn.white { background: var(--card); color: var(--ink); box-shadow: 0 4px 0 rgba(30,26,46,.12), 0 0 0 1px var(--line); }
+.btn.ink { background: var(--ink); color: var(--white); box-shadow: 0 4px 0 var(--ink-ledge); }
+.btn.sm { height: 40px; padding: 0 12px; font-size: 14px; gap: 6px; }
+.btn.sm svg.i { width: 17px; height: 17px; }
+.btn.icon { width: 48px; padding: 0; }
+.card { background: var(--card); border-radius: var(--r-md); box-shadow: var(--shadow-sm); }
+.pill { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 10px; border-radius: var(--r-pill); font-size: 13px; font-weight: 800; white-space: nowrap; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; padding: 4px; border-radius: var(--r-pill); background: var(--card); box-shadow: var(--shadow-sm); }
+.seg button { border: 0; height: 36px; border-radius: var(--r-pill); background: transparent; font-weight: 800; font-size: 14px; cursor: pointer; color: var(--ink-2); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--white); }
+/* ---------- 1 Lock screen ---------- */
+.lock { background: linear-gradient(180deg, var(--ink) 0%, var(--ink) 18%, var(--grape-ink) 52%, var(--block-sunset) 80%, var(--sand) 100%); color: var(--white); }
+.lock .hills { position: absolute; left: 0; right: 0; bottom: 0; height: 300px; }
+.lock .date { text-align: center; margin-top: 18px; font-size: 20px; font-weight: 700; color: var(--on-ink-2); }
+.lock .clock { text-align: center; font: 800 96px/1 var(--font-display); letter-spacing: -0.04em; margin-top: 2px; }
+.lock .wx { display: flex; justify-content: center; gap: 8px; align-items: center; margin-top: 8px; font-weight: 700; font-size: 15px; color: var(--on-ink-2); }
+.notifs { position: relative; z-index: 2; margin: 210px 10px 0; display: flex; flex-direction: column; gap: 8px; }
+.notif { background: rgba(255,248,238,.9); color: var(--ink); border-radius: 24px; padding: 13px 14px 14px; display: grid; grid-template-columns: 40px 1fr; gap: 4px 11px; box-shadow: 0 10px 30px -12px rgba(30,26,46,.6); }
+.notif .appic { grid-row: span 3; width: 40px; height: 40px; border-radius: 10px; background: var(--coral); display: grid; place-items: center; }
+.notif .appic svg.i { width: 23px; height: 23px; stroke-width: 2.4; }
+.notif .row1 { display: flex; justify-content: space-between; font-size: 15px; font-weight: 800; }
+.notif .row1 span:last-child { font-weight: 600; color: var(--ink-3); font-size: 14px; }
+.notif .body { font-size: 15px; line-height: 1.35; color: var(--ink); }
+.notif .body b { font-weight: 800; }
+.notif.ghost { margin: -2px 14px 0; height: 14px; padding: 0; border-radius: 0 0 18px 18px; background: rgba(255,248,238,.55); box-shadow: none; display: block; }
+.lock .lockbtns { position: absolute; bottom: 44px; left: 46px; right: 46px; display: flex; justify-content: space-between; z-index: 3; }
+.lock .lockbtns span { width: 52px; height: 52px; border-radius: var(--r-pill); background: rgba(30,26,46,.42); display: grid; place-items: center; color: var(--white); }
+.lock .swipe { position: absolute; bottom: 64px; left: 0; right: 0; text-align: center; font-weight: 700; font-size: 14px; color: var(--ink); z-index: 3; }
+/* ---------- 3 Today ---------- */
+.upnext { border-radius: 26px; background: var(--ink); color: var(--white); padding: 16px 16px 18px; display: flex; flex-direction: column; gap: 8px; }
+.upnext .lbl { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 800; letter-spacing: .1em; color: var(--sun); }
+.dot-now { width: 10px; height: 10px; border-radius: var(--r-pill); background: var(--coral); animation: pulse 2.4s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,115,82,.55); } 50% { box-shadow: 0 0 0 8px rgba(255,115,82,0); } }
+.upnext .what { font: 800 26px/1.08 var(--font-display); letter-spacing: -0.03em; }
+.upnext .when { font-size: 15px; font-weight: 600; color: var(--on-ink-2); }
+.leave { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 16px; background: rgba(255,255,255,.08); }
+.ring { width: 52px; height: 52px; flex-shrink: 0; position: relative; display: grid; place-items: center; }
+.ring svg { position: absolute; inset: 0; width: 52px; height: 52px; transform: rotate(-90deg); }
+.ring b { font: 800 18px/1 var(--font-display); }
+.ring small { position: absolute; bottom: 7px; font-size: 9.5px; font-weight: 800; color: var(--on-ink-2); }
+.leave .lt { display: flex; flex-direction: column; }
+.leave .lt b { font-size: 17px; font-weight: 800; }
+.leave .lt span { font-size: 14px; color: var(--on-ink-2); font-weight: 600; }
+.upnext .acts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+.mapstrip { height: 74px; border-radius: 18px; overflow: hidden; position: relative; box-shadow: var(--shadow-sm); background: var(--paper-2); }
+.mapstrip svg { width: 100%; height: 100%; display: block; }
+.mapstrip .lab { position: absolute; right: 8px; top: 8px; background: var(--card); border-radius: var(--r-pill); padding: 2px 10px; font-size: 13px; font-weight: 800; box-shadow: var(--shadow-sm); }
+.sec { font-size: 13px; font-weight: 800; letter-spacing: .06em; color: var(--ink-3); margin: 2px 2px -4px; display: flex; justify-content: space-between; }
+.dayrow { display: flex; gap: 10px; align-items: stretch; }
+.dayrow .tm { width: 46px; flex-shrink: 0; font-size: 13px; font-weight: 800; color: var(--ink-3); padding-top: 11px; text-align: right; }
+.dayrow .dc { flex: 1; border-radius: 18px; padding: 9px 12px; display: flex; align-items: center; gap: 10px; }
+.dayrow .dc .x { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.dayrow .dc .k { font-size: 11px; font-weight: 800; letter-spacing: .1em; }
+.dayrow .dc .w { font-weight: 800; font-size: 16px; line-height: 1.2; }
+.dayrow .dc .s { font-size: 13px; font-weight: 700; color: var(--ink-2); }
+.dayrow .dc .gl { width: 34px; height: 34px; border-radius: 11px; background: rgba(255,255,255,.7); display: grid; place-items: center; flex-shrink: 0; }
+.dayrow.done .dc { background: var(--skeleton); }
+.dayrow.done .dc .w { text-decoration: line-through; text-decoration-thickness: 2px; color: var(--ink-2); }
+.stay { padding: 12px; display: flex; gap: 12px; align-items: center; border-radius: 20px; }
+.stay .ic { width: 46px; height: 46px; border-radius: 14px; background: var(--sky-tint); display: grid; place-items: center; flex-shrink: 0; }
+.stay .x { flex: 1; display: flex; flex-direction: column; }
+.stay .x b { font-size: 16px; }
+.stay .x span { font-size: 13px; font-weight: 700; color: var(--ink-2); }
+.round { width: 40px; height: 40px; border-radius: var(--r-pill); background: var(--paper-2); display: grid; place-items: center; flex-shrink: 0; border: 0; cursor: pointer; }
+.sheet { position: absolute; left: 0; right: 0; bottom: 86px; z-index: 6; background: var(--card); border-radius: 30px 30px 0 0; box-shadow: 0 -10px 30px -12px rgba(30,26,46,.3); padding: 10px 18px 16px; display: flex; flex-direction: column; gap: 10px; }
+.sheet .grab { width: 40px; height: 5px; border-radius: var(--r-pill); background: var(--skeleton); align-self: center; }
+.sheet .row { display: flex; gap: 12px; align-items: flex-start; }
+.sheet .num { width: 40px; height: 40px; border-radius: var(--r-pill); background: var(--coral); display: grid; place-items: center; font: 800 19px var(--font-display); flex-shrink: 0; }
+.sheet h4 { margin: 0; font: 800 22px/1.1 var(--font-display); letter-spacing: -0.03em; }
+.sheet .addr { font-size: 14px; font-weight: 600; color: var(--ink-2); margin-top: 2px; }
+.sheet .meta { display: flex; gap: 6px; flex-wrap: wrap; }
+.sheet .acts { display: grid; grid-template-columns: 1fr 1fr 48px; gap: 8px; margin-top: 2px; }
+.sheet .nav { display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; color: var(--ink-3); }
+.chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.chip { border: 0; height: 38px; padding: 0 12px; border-radius: var(--r-pill); background: var(--card); box-shadow: var(--shadow-sm); display: inline-flex; align-items: center; gap: 6px; font-weight: 800; font-size: 14px; cursor: pointer; transition: background .2s, transform .2s var(--ease-spring); }
+.chip svg.i { width: 17px; height: 17px; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--white); box-shadow: none; }
+.tag { height: 24px; padding: 0 9px; border-radius: var(--r-pill); font-size: 12px; font-weight: 800; letter-spacing: .04em; display: inline-flex; align-items: center; flex-shrink: 0; }
+/* ---------- 7 Family ---------- */
+.fam-hd .ttl { font-size: 26px; }
+.notify { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--ink-2); padding: 8px 12px; border-radius: 14px; background: var(--card); box-shadow: var(--shadow-sm); }
+.notify .bell { width: 28px; height: 28px; border-radius: var(--r-pill); background: var(--sun); display: grid; place-items: center; flex-shrink: 0; }
+.notify .bell svg.i { width: 16px; height: 16px; }
+.thread { display: flex; flex-direction: column; gap: 9px; }
+.sys { align-self: stretch; border-radius: 16px; background: var(--grape-tint); padding: 9px 12px; display: flex; gap: 10px; align-items: center; }
+.sys .si { width: 32px; height: 32px; border-radius: 10px; background: var(--card); display: grid; place-items: center; flex-shrink: 0; color: var(--grape-ink); }
+.sys .si svg.i { width: 17px; height: 17px; }
+.sys .x { display: flex; flex-direction: column; font-size: 14px; line-height: 1.3; }
+.sys .x b { font-weight: 800; }
+.sys .x span { font-size: 13px; color: var(--ink-2); font-weight: 700; }
+.msg { display: flex; gap: 8px; align-items: flex-end; max-width: 86%; }
+.msg .av { width: 30px; height: 30px; border-width: 0; font-size: 12px; margin: 0; }
+.bub { border-radius: 18px 18px 18px 6px; background: var(--card); box-shadow: var(--shadow-sm); padding: 8px 12px; font-size: 15px; line-height: 1.35; }
+.bub .nm { display: block; font-size: 12px; font-weight: 800; color: var(--ink-3); }
+.msg.me { align-self: flex-end; }
+.msg.me .bub { background: var(--ink); color: var(--white); border-radius: 18px 18px 6px 18px; box-shadow: none; }
+.photo-bub { padding: 6px; border-radius: 18px 18px 18px 6px; background: var(--card); box-shadow: var(--shadow-sm); }
+.photo-bub .ph { width: 190px; height: 120px; border-radius: 13px; }
+.photo-bub .cap2 { font: 700 20px/1.1 var(--font-hand); padding: 4px 6px 2px; }
+.compose { flex-shrink: 0; display: flex; gap: 8px; align-items: center; padding: 8px 12px; background: var(--paper); }
+.compose .in { flex: 1; height: 44px; border-radius: var(--r-pill); background: var(--card); box-shadow: var(--shadow-sm); display: flex; align-items: center; padding: 0 16px; color: var(--ink-3); font-weight: 600; font-size: 15px; }
+.compose .round { width: 44px; height: 44px; background: var(--card); box-shadow: var(--shadow-sm); }
+@keyframes bob { 0%, 100% { translate: 0 0; } 50% { translate: 0 -6px; } }
+/* ---------- After the frames ---------- */
+.after { padding: 56px 0 24px; display: grid; gap: 40px; }
+.after h2 { font-size: clamp(30px, 4vw, 44px); line-height: 1; }
+.after .lede { color: var(--ink-2); margin-top: 8px; font-size: 17px; max-width: 46rem; }
+.rec { margin-top: 18px; border-radius: 22px; padding: 18px 20px; background: var(--note); transform: rotate(-.6deg); display: flex; gap: 14px; align-items: flex-start; max-width: 54rem; }
+@media (max-width: 720px) { .rec { transform: none; } }
+.rec .rk { font: 800 13px var(--font-body); letter-spacing: .1em; color: var(--sun-ink); }
+.rec p { font-size: 17px; font-weight: 600; }
+.needs { list-style: none; padding: 0; margin: 20px 0 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 12px; }
+.needs li { background: var(--card); border-radius: 20px; box-shadow: var(--shadow-sm); padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start; }
+.needs .ni { width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center; flex-shrink: 0; }
+.needs b { display: block; font-size: 16px; }
+.needs span { font-size: 15px; color: var(--ink-2); }
+.needs .pill { margin-top: 6px; }
+.privacy { margin-top: 14px; display: flex; gap: 12px; align-items: flex-start; padding: 16px 18px; border-radius: 20px; background: var(--ink); color: var(--white); max-width: 54rem; }
+.privacy svg.i { color: var(--mint); width: 24px; height: 24px; }
+.privacy p { font-size: 16px; }
+footer { padding: 30px 0 50px; color: var(--ink-3); font-size: 14px; font-weight: 600; }
+.conf { border: 0; width: 100%; border-radius: 14px; background: var(--sun-tint); padding: 9px 12px; display: flex; align-items: center; gap: 10px; cursor: pointer; text-align: left; font-size: 14px; font-weight: 700; }
+.conf .v { margin-left: auto; font: 800 16px var(--font-display); letter-spacing: .04em; }
+.conf .dots { letter-spacing: .2em; }
+
+/* ================= Plan steps: new for this board ================= */
+.legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 800; padding: 6px 12px 6px 8px; border-radius: var(--r-pill); background: var(--card); box-shadow: var(--shadow-sm); }
+.legend i { width: 16px; height: 16px; border-radius: var(--r-pill); background: var(--wf); }
+
+/* Who colours: Everyone sun, Adults grape, Kids bubble */
+.w-all { --wt: var(--sun-tint); --wf: var(--sun); }
+.w-ad { --wt: var(--grape-tint); --wf: var(--grape); }
+.w-kd { --wt: var(--bubble-tint); --wf: var(--bubble); }
+.wt { display: inline-flex; align-items: center; height: 24px; padding: 0 9px; border-radius: var(--r-pill); background: var(--wf); color: var(--ink); font-size: 12px; font-weight: 800; letter-spacing: .04em; flex-shrink: 0; white-space: nowrap; }
+.sample { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: var(--r-pill); background: var(--paper-2); color: var(--ink-2); font-size: 12px; font-weight: 800; letter-spacing: .04em; }
+.on-ink .sample, .upnext .sample { background: rgba(255,255,255,.14); color: var(--white); }
+
+/* Pair of phones inside one numbered frame */
+.frame.pair { width: min(860px, 100%); }
+.duo { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 28px 40px; }
+.duo .one { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.sub { align-self: flex-start; font-size: 13px; font-weight: 800; letter-spacing: .06em; color: var(--ink-3); background: var(--card); box-shadow: var(--shadow-sm); padding: 4px 12px; border-radius: var(--r-pill); }
+
+/* ---------- 1 Today: the park block as focal card ---------- */
+.blk { border-radius: 26px; background: var(--ink); color: var(--white); padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 8px; }
+.blk .lbl { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 800; letter-spacing: .1em; color: var(--sun); }
+.blk .park { display: flex; align-items: center; gap: 10px; }
+.blk .park .pi { width: 42px; height: 42px; border-radius: 13px; background: var(--sun); color: var(--ink); display: grid; place-items: center; flex-shrink: 0; }
+.blk .park b { font: 800 24px/1.05 var(--font-display); letter-spacing: -0.03em; }
+.nx { border-radius: 18px; background: rgba(255,255,255,.08); padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.nx .e { font-size: 12px; font-weight: 800; letter-spacing: .1em; color: var(--on-ink-2); }
+.nx .r { display: flex; gap: 12px; align-items: center; }
+.nx .big { font: 800 34px/1 var(--font-display); letter-spacing: -0.04em; color: var(--sun); flex-shrink: 0; }
+.nx .x { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.nx .x b { font: 800 22px/1.05 var(--font-display); letter-spacing: -0.02em; }
+.nx .x span.wt { color: var(--ink); font-size: 12px; }
+.nx .x > span:not(.wt) { font-size: 14px; font-weight: 700; color: var(--on-ink-2); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.nx .also { display: flex; gap: 8px; align-items: center; font-size: 14px; font-weight: 700; color: var(--on-ink-2); padding-top: 8px; border-top: 1px solid rgba(255,255,255,.12); flex-wrap: wrap; }
+.prog { display: flex; flex-direction: column; gap: 6px; }
+.prog .bars { display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; }
+.prog .bars i { height: 8px; border-radius: 4px; background: rgba(255,255,255,.16); }
+.prog .bars i.d { background: var(--mint); }
+.prog .bars i.n { background: var(--coral); }
+.prog .pt { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; font-weight: 800; flex-wrap: wrap; }
+.prog .pt span:last-child { color: var(--on-ink-2); font-weight: 700; display: inline-flex; align-items: center; gap: 5px; }
+.blk .acts { display: grid; grid-template-columns: 1.2fr 1fr; gap: 8px; }
+
+/* ---------- 2 Inside the block: lanes ---------- */
+.bhd { position: sticky; top: 0; z-index: 3; background: var(--ink); color: var(--white); border-radius: 22px; padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 9px; box-shadow: 0 10px 20px -14px rgba(30,26,46,.6); }
+.bhd .r1 { display: flex; align-items: center; gap: 10px; }
+.bhd .back { width: 38px; height: 38px; border-radius: var(--r-pill); background: rgba(255,255,255,.12); border: 0; color: var(--white); display: grid; place-items: center; flex-shrink: 0; cursor: pointer; }
+.bhd .t { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.bhd .t span { font-size: 13px; font-weight: 800; letter-spacing: .06em; color: var(--sun); }
+.bhd .t b { font: 800 22px/1.1 var(--font-display); letter-spacing: -0.03em; }
+.bhd .cnt { font: 800 15px var(--font-display); background: var(--mint); color: var(--ink); border-radius: var(--r-pill); padding: 4px 10px; flex-shrink: 0; }
+.meet { display: flex; align-items: center; gap: 8px; border-radius: 14px; background: rgba(255,255,255,.1); padding: 7px 10px; font-size: 14px; font-weight: 700; }
+.meet svg.i { color: var(--sun); width: 18px; height: 18px; }
+.meet b { font-weight: 800; }
+.lanehd { display: grid; grid-template-columns: 40px 1fr 1fr; gap: 6px; font-size: 13px; font-weight: 800; color: var(--ink-2); padding: 0 2px; }
+.lanehd span { display: flex; align-items: center; gap: 6px; }
+.lanehd i { width: 12px; height: 12px; border-radius: var(--r-pill); background: var(--wf); flex-shrink: 0; }
+.part { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; font-weight: 800; letter-spacing: .06em; color: var(--ink-3); padding: 2px 2px 0; }
+.part b { color: var(--ink); }
+.lanes { display: flex; flex-direction: column; gap: 6px; }
+.srow { display: grid; grid-template-columns: 40px 1fr 1fr; gap: 6px; align-items: stretch; }
+.srow .tm { font-size: 13px; font-weight: 800; color: var(--ink-3); padding-top: 9px; text-align: right; }
+.step { min-width: 0; border-radius: 14px; padding: 7px 10px; background: var(--wt); display: flex; gap: 8px; align-items: center; box-shadow: inset 4px 0 0 var(--wf); }
+.step.all { grid-column: 2 / span 2; }
+.step .x { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.step .x b { font-size: 15px; line-height: 1.2; font-weight: 800; }
+.step .x span { font-size: 13px; font-weight: 700; color: var(--ink-2); line-height: 1.25; }
+.step .ck { width: 24px; height: 24px; border-radius: var(--r-pill); background: var(--card); display: grid; place-items: center; flex-shrink: 0; }
+.step .ck svg.i { width: 15px; height: 15px; stroke-width: 3; }
+.step.done { background: var(--skeleton); box-shadow: inset 4px 0 0 var(--wf); }
+.step.done .x b { text-decoration: line-through; text-decoration-thickness: 2px; color: var(--ink-2); }
+.step.done .ck { background: var(--mint); }
+.step.next { background: var(--card); box-shadow: inset 4px 0 0 var(--wf), 0 0 0 2px var(--coral), var(--shadow-md); }
+.ll { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; font-weight: 800; color: var(--ink); background: var(--sky-tint); border-radius: var(--r-pill); padding: 1px 7px 1px 4px; align-self: flex-start; margin-top: 2px; }
+.ll svg.i { width: 13px; height: 13px; color: var(--sky-ink); }
+.nowl { display: grid; grid-template-columns: 40px 1fr; gap: 6px; align-items: center; }
+.nowl b { font-size: 12px; font-weight: 800; color: var(--white); background: var(--coral-deep); border-radius: var(--r-pill); padding: 1px 0; text-align: center; }
+.nowl i { height: 3px; border-radius: 3px; background: var(--coral); position: relative; }
+.nowl i::before { content: ""; position: absolute; left: -5px; top: -4px; width: 11px; height: 11px; border-radius: var(--r-pill); background: var(--coral); }
+.closed { border-radius: 18px; background: var(--card); box-shadow: var(--shadow-sm); padding: 10px 12px; display: flex; align-items: center; gap: 10px; }
+.closed .x { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.closed .x b { font-size: 15px; font-weight: 800; }
+.closed .x span { font-size: 13px; font-weight: 700; color: var(--ink-2); }
+.closed .dots { display: flex; gap: 3px; }
+.closed .dots i { width: 9px; height: 9px; border-radius: var(--r-pill); background: var(--wf); }
+
+/* ---------- 3 One step: bottom sheet over frame 2 ---------- */
+.dim { position: absolute; inset: 0; background: rgba(30,26,46,.42); z-index: 5; }
+.ssheet { position: absolute; left: 0; right: 0; bottom: 86px; z-index: 6; background: var(--card); border-radius: 30px 30px 0 0; box-shadow: 0 -10px 30px -12px rgba(30,26,46,.4); padding: 10px 18px 16px; display: flex; flex-direction: column; gap: 12px; }
+.ssheet .grab { width: 40px; height: 5px; border-radius: var(--r-pill); background: var(--skeleton); align-self: center; }
+.ssheet .h { display: flex; gap: 12px; align-items: flex-start; }
+.ssheet .h .ri { width: 48px; height: 48px; border-radius: 15px; background: var(--grape); display: grid; place-items: center; flex-shrink: 0; }
+.ssheet .h .ri svg.i { width: 26px; height: 26px; }
+.ssheet .h .x { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.ssheet .h .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.ssheet h4 { margin: 0; font: 800 28px/1.02 var(--font-display); letter-spacing: -0.035em; }
+.facts3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.facts3 div { border-radius: 14px; background: var(--paper-2); padding: 7px 10px; display: flex; flex-direction: column; }
+.facts3 span { font-size: 12px; font-weight: 800; letter-spacing: .06em; color: var(--ink-3); }
+.facts3 b { font: 800 18px/1.15 var(--font-display); }
+.going { display: flex; align-items: center; gap: 10px; }
+.going .avs { margin-left: 0; }
+.going .av { border-color: var(--card); }
+.going .x { display: flex; flex-direction: column; font-size: 14px; font-weight: 700; color: var(--ink-2); line-height: 1.3; }
+.going .x b { color: var(--ink); font-size: 15px; font-weight: 800; }
+.llcard { border-radius: 18px; background: var(--sky-tint); padding: 10px 12px; display: flex; gap: 10px; align-items: center; }
+.llcard .bi { width: 38px; height: 38px; border-radius: 12px; background: var(--sky); display: grid; place-items: center; flex-shrink: 0; }
+.llcard .x { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.llcard .x span { font-size: 13px; font-weight: 800; letter-spacing: .04em; color: var(--ink-2); }
+.llcard .x b { font: 800 20px/1.1 var(--font-display); letter-spacing: -0.02em; }
+.slip { background: var(--note); border-radius: 6px; padding: 8px 14px 10px; transform: rotate(-1.5deg); align-self: flex-start; box-shadow: var(--shadow-sm); }
+.slip p { font: 700 26px/1 var(--font-hand); }
+.slip small { display: block; font-size: 12px; font-weight: 800; color: var(--ink-3); margin-top: 2px; }
+.ssheet .acts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.btn.isdone { background: var(--mint); box-shadow: 0 4px 0 var(--mint-ink); }
+
+/* ---------- 4 Touch editing ---------- */
+.edhd { display: flex; align-items: center; gap: 10px; padding: 2px 2px 0; }
+.edhd .t { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.edhd .t b { font: 800 26px/1.05 var(--font-display); letter-spacing: -0.035em; }
+.hint2 { font-size: 13px; font-weight: 700; color: var(--ink-2); display: flex; gap: 6px; align-items: center; }
+.hint2 svg.i { width: 16px; height: 16px; flex-shrink: 0; }
+.elist { display: flex; flex-direction: column; gap: 7px; position: relative; }
+.erow { position: relative; border-radius: 16px; background: var(--card); box-shadow: var(--shadow-sm), inset 4px 0 0 var(--wf); padding: 8px 10px 8px 6px; display: flex; gap: 8px; align-items: center; min-height: 52px; }
+.erow .grip { width: 28px; height: 36px; display: grid; place-items: center; color: var(--ink-3); flex-shrink: 0; }
+.erow .tm { width: 44px; flex-shrink: 0; font-size: 13px; font-weight: 800; color: var(--ink-3); }
+.erow .x { flex: 1; min-width: 0; font-size: 15px; font-weight: 800; line-height: 1.2; }
+.erow.done { background: var(--skeleton); }
+.erow.done .x { text-decoration: line-through; text-decoration-thickness: 2px; color: var(--ink-2); }
+.drop { height: 52px; border-radius: 16px; border: 2px dashed var(--coral); background: var(--coral-tint); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: var(--ink-2); }
+.erow.lift { margin-top: -46px; margin-left: 10px; margin-right: -6px; transform: rotate(-2deg) scale(1.03); box-shadow: var(--shadow-lg), 0 0 0 2px var(--coral), inset 4px 0 0 var(--wf); z-index: 2; }
+.erow.lift .grip { color: var(--ink); }
+.finger { position: absolute; left: 4px; top: 50%; width: 40px; height: 40px; margin-top: -20px; border-radius: var(--r-pill); background: rgba(30,26,46,.16); box-shadow: 0 0 0 6px rgba(30,26,46,.07); pointer-events: none; }
+.swp { position: relative; border-radius: 16px; overflow: hidden; display: flex; justify-content: flex-end; min-height: 52px; }
+.swp .sa { display: flex; }
+.swp .sa button { border: 0; width: 74px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 13px; font-weight: 800; cursor: pointer; }
+.swp .sa .ok { background: var(--mint); }
+.swp .sa .rm { background: var(--bubble); }
+.swp .erow { position: absolute; left: 0; top: 0; bottom: 0; width: calc(100% - 148px); border-radius: 16px 0 0 16px; box-shadow: inset 4px 0 0 var(--wf), 6px 0 12px -6px rgba(30,26,46,.25); }
+.asheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 6; background: var(--card); border-radius: 30px 30px 0 0; box-shadow: 0 -12px 30px -10px rgba(30,26,46,.35); padding: 10px 18px 34px; display: flex; flex-direction: column; gap: 11px; }
+.asheet .grab { width: 40px; height: 5px; border-radius: var(--r-pill); background: var(--skeleton); align-self: center; }
+.asheet .h { display: flex; align-items: center; gap: 8px; }
+.asheet .h b { font: 800 22px var(--font-display); letter-spacing: -0.03em; flex: 1; }
+.field { border-radius: 16px; background: var(--paper-2); box-shadow: inset 0 0 0 2px var(--ink); padding: 11px 14px; font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 2px; }
+.caret { display: inline-block; width: 2px; height: 22px; background: var(--coral-deep); animation: blink 1.1s steps(2, start) infinite; vertical-align: middle; }
+@keyframes blink { to { visibility: hidden; } }
+.flbl { font-size: 13px; font-weight: 800; letter-spacing: .06em; color: var(--ink-3); }
+.whos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.whos button { border: 0; height: 44px; border-radius: var(--r-pill); background: var(--paper-2); font-weight: 800; font-size: 15px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; }
+.whos button i { width: 12px; height: 12px; border-radius: var(--r-pill); background: var(--wf); }
+.whos button[aria-pressed="true"] { background: var(--wf); box-shadow: inset 0 0 0 2px var(--ink); }
+.wheel { position: relative; display: grid; grid-template-columns: 1fr 1fr 1fr; border-radius: 16px; background: var(--paper-2); padding: 4px 8px; }
+.wheel::before { content: ""; position: absolute; left: 6px; right: 6px; top: 50%; height: 38px; margin-top: -19px; border-radius: 12px; background: var(--card); box-shadow: var(--shadow-sm); }
+.wheel div { position: relative; display: flex; flex-direction: column; align-items: center; }
+.wheel span { height: 30px; line-height: 30px; font: 700 17px var(--font-display); color: var(--ink-3); opacity: .7; }
+.wheel span.on { height: 38px; line-height: 38px; font-size: 22px; font-weight: 800; color: var(--ink); opacity: 1; }
+.pastebtn { border: 0; background: var(--sun-tint); border-radius: var(--r-pill); height: 36px; padding: 0 12px; font-weight: 800; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.pastebtn svg.i { width: 17px; height: 17px; }
+
+/* 4b Paste a list */
+.pbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 2px 0; }
+.pbar .lk { font-size: 16px; font-weight: 700; color: var(--ink-2); }
+.pbar b { font: 800 20px var(--font-display); letter-spacing: -0.02em; }
+.lined { border-radius: 18px; background: var(--card); box-shadow: var(--shadow-md); padding: 6px 14px 8px 44px; position: relative; background-image: repeating-linear-gradient(180deg, transparent 0 33px, var(--line) 33px 34px); background-origin: content-box; }
+.lined::before { content: ""; position: absolute; left: 34px; top: 0; bottom: 0; width: 2px; background: var(--peach); }
+.lined p { font-size: 16px; font-weight: 600; line-height: 34px; position: relative; }
+.lined p em { font-style: normal; position: absolute; left: -36px; width: 22px; text-align: right; font-size: 12px; font-weight: 800; color: var(--ink-3); }
+.becomes { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 800; color: var(--ink-2); }
+.becomes::before, .becomes::after { content: ""; flex: 1; height: 2px; border-radius: 2px; background: var(--skeleton); }
+.prev { display: flex; flex-direction: column; gap: 6px; }
+.prow { border-radius: 14px; background: var(--wt); box-shadow: inset 4px 0 0 var(--wf); padding: 8px 10px; display: flex; align-items: center; gap: 10px; }
+.prow .tm { width: 50px; flex-shrink: 0; font-size: 13px; font-weight: 800; color: var(--ink-2); }
+.prow .x { flex: 1; min-width: 0; font-size: 15px; font-weight: 800; line-height: 1.2; }
+.prow .ln { font-size: 12px; font-weight: 800; color: var(--ink-3); flex-shrink: 0; }
+.how { border-radius: 14px; background: var(--paper-2); padding: 9px 12px; font-size: 13px; font-weight: 700; color: var(--ink-2); display: flex; gap: 8px; align-items: flex-start; }
+.how svg.i { width: 17px; height: 17px; flex-shrink: 0; margin-top: 1px; }
+.acts2 { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+
+/* ---------- 5 Dictation ---------- */
+.dfield { border-radius: 18px; background: var(--card); box-shadow: inset 0 0 0 2px var(--ink), var(--shadow-sm); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.dfield p { font-size: 17px; font-weight: 700; line-height: 1.35; }
+.dict { display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; background: var(--coral-tint); border-radius: var(--r-pill); padding: 3px 10px 3px 4px; font-size: 13px; font-weight: 800; }
+.dict .md { width: 24px; height: 24px; border-radius: var(--r-pill); background: var(--coral); display: grid; place-items: center; }
+.dict .md svg.i { width: 14px; height: 14px; stroke-width: 2.6; }
+.dict .wave { height: 18px; gap: 3px; }
+.dict .wave i { width: 3px; }
+.gem { border-radius: 16px; background: var(--grape-tint); padding: 9px 12px; display: flex; gap: 10px; align-items: flex-start; font-size: 13px; font-weight: 700; color: var(--ink-2); line-height: 1.35; }
+.gem .gi { width: 28px; height: 28px; border-radius: 9px; background: var(--grape); display: grid; place-items: center; flex-shrink: 0; color: var(--ink); }
+.gem .gi svg.i { width: 16px; height: 16px; }
+.gem b { color: var(--ink); }
+.kb { flex-shrink: 0; background: var(--skeleton); padding: 8px 4px 30px; display: flex; flex-direction: column; gap: 10px; position: relative; }
+.kb .sug { display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; font-size: 16px; font-weight: 600; color: var(--ink-2); padding: 2px 0 2px; }
+.kb .sug span + span { border-left: 1px solid var(--line); }
+.kr { display: flex; justify-content: center; gap: 5px; padding: 0 2px; }
+.kr span { flex: 0 0 calc((100% - 45px) / 10); height: 42px; border-radius: 6px; background: var(--card); box-shadow: 0 1px 0 rgba(30,26,46,.25); display: grid; place-items: center; font-size: 21px; font-weight: 500; }
+.kr span.f { flex: 0 0 44px; background: var(--paper-2); }
+.kr span.f svg.i { width: 20px; height: 20px; }
+.kr span.w { flex: 1 1 auto; font-size: 16px; }
+.kr span.m { background: var(--paper-2); font-size: 15px; flex: 0 0 52px; }
+.kr span.ret { flex: 0 0 88px; background: var(--paper-2); font-size: 16px; }
+.kb .bot { display: flex; justify-content: space-between; padding: 0 22px; }
+.kb .bot span { width: 34px; height: 34px; display: grid; place-items: center; color: var(--ink-2); border-radius: var(--r-pill); }
+.kb .bot span.on { background: var(--coral); color: var(--ink); box-shadow: 0 0 0 5px var(--coral-tint); }
+
+/* ---------- 6 Family: change card ---------- */
+.chg { border-radius: 20px; background: var(--card); box-shadow: var(--shadow-md); overflow: hidden; }
+.chg .ch { background: var(--grape-tint); padding: 10px 12px; display: flex; gap: 10px; align-items: center; }
+.chg .ch .si { width: 34px; height: 34px; border-radius: 11px; background: var(--card); display: grid; place-items: center; color: var(--grape-ink); flex-shrink: 0; }
+.chg .ch .x { display: flex; flex-direction: column; font-size: 14px; line-height: 1.3; min-width: 0; }
+.chg .ch .x b { font-weight: 800; font-size: 15px; }
+.chg .ch .x span { font-size: 13px; color: var(--ink-2); font-weight: 700; }
+.chg .cb { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 6px; }
+.chg .cb .prow { padding: 6px 10px; }
+.chg .cf { display: flex; gap: 8px; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 700; color: var(--ink-3); flex-wrap: wrap; }
+
+/* ---------- 7 Passes ---------- */
+.flt { border-radius: 20px; background: var(--sky-tint); padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.flt .r { display: flex; gap: 10px; align-items: center; }
+.flt .fi { width: 42px; height: 42px; border-radius: 13px; background: var(--sky); display: grid; place-items: center; flex-shrink: 0; }
+.flt .x { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.flt .x b { font: 800 20px/1.1 var(--font-display); letter-spacing: -0.02em; }
+.flt .x span { font-size: 13px; font-weight: 700; color: var(--ink-2); }
+.flt .conf { background: var(--card); }
+.bp { border-radius: 20px; background: var(--card); box-shadow: var(--shadow-md); overflow: hidden; }
+.bp .bt { padding: 12px 12px 10px; display: flex; flex-direction: column; gap: 10px; }
+.bp .who1 { display: flex; align-items: center; gap: 10px; }
+.bp .who1 .av { margin: 0; border: 0; width: 38px; height: 38px; }
+.bp .who1 .x { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.bp .who1 .x b { font-size: 17px; font-weight: 800; }
+.bp .who1 .x span { font-size: 13px; font-weight: 700; color: var(--ink-2); }
+.bp .seat { text-align: right; }
+.bp .seat span { display: block; font-size: 12px; font-weight: 800; letter-spacing: .06em; color: var(--ink-3); }
+.bp .seat b { font: 800 30px/1 var(--font-display); letter-spacing: -0.03em; }
+.bp .g3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.bp .g3 div { border-radius: 12px; background: var(--paper-2); padding: 6px 9px; display: flex; flex-direction: column; }
+.bp .g3 span { font-size: 12px; font-weight: 800; letter-spacing: .06em; color: var(--ink-3); }
+.bp .g3 b { font: 800 17px/1.15 var(--font-display); }
+.perf { height: 0; border-top: 2px dashed var(--skeleton); margin: 0 14px; position: relative; }
+.perf::before, .perf::after { content: ""; position: absolute; top: -10px; width: 18px; height: 18px; border-radius: var(--r-pill); background: var(--paper); }
+.perf::before { left: -24px; } .perf::after { right: -24px; }
+.bp .stub { background: var(--paper-2); padding: 10px 12px; display: flex; align-items: center; gap: 10px; }
+.pdf { width: 40px; height: 50px; border-radius: 6px; background: var(--card); box-shadow: var(--shadow-sm); position: relative; flex-shrink: 0; padding: 8px 6px; display: flex; flex-direction: column; gap: 3px; }
+.pdf i { height: 3px; border-radius: 2px; background: var(--skeleton); display: block; }
+.pdf i.q { height: 14px; width: 14px; background: var(--ink); border-radius: 2px; margin-top: 2px; }
+.pdf b { position: absolute; right: -6px; bottom: 4px; background: var(--coral); font-size: 9.5px; font-weight: 800; padding: 1px 4px; border-radius: 4px; }
+.bp .stub .x { flex: 1; min-width: 0; display: flex; flex-direction: column; font-size: 13px; font-weight: 700; color: var(--ink-2); }
+.bp .stub .x b { color: var(--ink); font-size: 14px; }
+.prow2 { border-radius: 16px; background: var(--card); box-shadow: var(--shadow-sm); padding: 8px 10px; display: flex; align-items: center; gap: 10px; }
+.prow2 .av { margin: 0; border: 0; width: 32px; height: 32px; }
+.prow2 .x { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.prow2 .x b { font-size: 15px; font-weight: 800; }
+.prow2 .x span { font-size: 13px; font-weight: 700; color: var(--ink-2); }
+.prow2 .st { font: 800 18px var(--font-display); }
+.prow2 .mini { width: 22px; height: 28px; border-radius: 4px; background: var(--paper-2); box-shadow: var(--shadow-sm); display: grid; place-items: center; flex-shrink: 0; }
+.prow2 .mini svg.i { width: 14px; height: 14px; }
+.privnote { border-radius: 16px; background: var(--ink); color: var(--white); padding: 10px 12px; display: flex; gap: 10px; align-items: flex-start; font-size: 13px; font-weight: 600; line-height: 1.35; }
+.privnote svg.i { color: var(--mint); flex-shrink: 0; }
+.privnote b { font-weight: 800; }
+
+/* ---------- 8 Travel day + gate pass ---------- */
+.fly .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.fly .stats div { border-radius: 14px; background: rgba(255,255,255,.1); padding: 8px 10px; display: flex; flex-direction: column; }
+.fly .stats span { font-size: 12px; font-weight: 800; letter-spacing: .08em; color: var(--on-ink-2); }
+.fly .stats b { font: 800 20px/1.1 var(--font-display); letter-spacing: -0.02em; }
+.fly .route { display: flex; align-items: center; gap: 10px; font: 800 30px/1 var(--font-display); letter-spacing: -0.03em; }
+.fly .route svg.i { width: 24px; height: 24px; color: var(--sun); }
+.fly .showp { height: 56px; font-size: 17px; width: 100%; }
+.gate { background: var(--white); }
+.gate .gtop { display: flex; align-items: center; justify-content: space-between; padding: 0 16px; }
+.gate .gtop .close { width: 40px; height: 40px; border-radius: var(--r-pill); background: var(--paper-2); border: 0; display: grid; place-items: center; cursor: pointer; }
+.bright { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 800; background: var(--sun-tint); padding: 5px 10px; border-radius: var(--r-pill); }
+.bright svg.i { width: 16px; height: 16px; }
+.gbody { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 14px 20px 0; text-align: center; }
+.gbody .nm { display: flex; align-items: center; gap: 10px; }
+.gbody .nm .av { margin: 0; border: 0; width: 44px; height: 44px; font-size: 15px; }
+.gbody .nm b { font: 800 34px/1 var(--font-display); letter-spacing: -0.035em; }
+.gbody .ln1 { font-size: 15px; font-weight: 700; color: var(--ink-2); }
+.qrbox { width: 286px; height: 286px; padding: 14px; border-radius: 22px; background: var(--white); box-shadow: 0 0 0 3px var(--ink); position: relative; }
+.qrbox svg { width: 100%; height: 100%; display: block; }
+.qrbox .wm { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-8deg); background: var(--sun); border: 3px solid var(--white); box-shadow: var(--shadow-sticker); border-radius: var(--r-pill); font-size: 13px; font-weight: 800; letter-spacing: .08em; padding: 4px 12px; }
+.g3big { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; width: 100%; }
+.g3big div { border-radius: 14px; background: var(--paper-2); padding: 7px 4px; display: flex; flex-direction: column; }
+.g3big span { font-size: 12px; font-weight: 800; letter-spacing: .06em; color: var(--ink-3); }
+.g3big b { font: 800 24px/1.1 var(--font-display); letter-spacing: -0.02em; }
+.pager { display: flex; align-items: center; gap: 14px; }
+.pager .round { background: var(--paper-2); }
+.pdots { display: flex; gap: 6px; }
+.pdots button { width: 10px; height: 10px; padding: 0; border: 0; border-radius: var(--r-pill); background: var(--skeleton); cursor: pointer; }
+.pdots button[aria-current="true"] { width: 26px; background: var(--ink); }
+.swipehint { font-size: 13px; font-weight: 700; color: var(--ink-3); }
+
+/* ---------- 9 Laptop ---------- */
+.frame.wide { width: 100%; max-width: 1320px; }
+.slot.lapslot { aspect-ratio: 1320 / 810; }
+.device.lap { width: 1320px; height: 810px; border-radius: 0; background: none; padding: 0; box-shadow: none; }
+.lid { margin: 0 46px; background: var(--ink); border-radius: 26px 26px 0 0; padding: 14px 14px 18px; box-shadow: var(--shadow-lg); }
+.lscr { height: 756px; border-radius: 8px; overflow: hidden; background: var(--paper); display: flex; flex-direction: column; font-size: 14px; }
+.lbase { height: 22px; background: var(--ink-2); border-radius: 0 0 22px 22px; position: relative; box-shadow: var(--shadow-md); }
+.lbase::before { content: ""; position: absolute; left: 50%; top: 0; width: 140px; margin-left: -70px; height: 8px; border-radius: 0 0 10px 10px; background: var(--ink); }
+.dtop { flex-shrink: 0; height: 58px; display: flex; align-items: center; gap: 12px; padding: 0 20px; background: var(--card); box-shadow: 0 1px 0 var(--line); }
+.dtop .mark { width: 32px; height: 32px; border-radius: 10px; }
+.dtop .nm { font: 800 18px var(--font-display); letter-spacing: -0.02em; }
+.dtop .trip { font-size: 14px; font-weight: 700; color: var(--ink-3); }
+.dnav { display: flex; gap: 4px; margin-left: 18px; }
+.dnav span { height: 36px; padding: 0 14px; border-radius: var(--r-pill); display: inline-flex; align-items: center; gap: 6px; font-weight: 800; font-size: 14px; color: var(--ink-2); }
+.dnav span svg.i { width: 17px; height: 17px; }
+.dnav span.on { background: var(--coral-tint); color: var(--ink); }
+.dtop .avs .av { border-color: var(--card); width: 32px; height: 32px; font-size: 12px; }
+.dbody { flex: 1; min-height: 0; display: grid; grid-template-columns: 228px minmax(0, 1fr) 300px; gap: 16px; padding: 16px; }
+.dpane { background: var(--card); border-radius: 22px; box-shadow: var(--shadow-md); padding: 14px; display: flex; flex-direction: column; gap: 10px; min-height: 0; overflow: hidden; }
+.dpane .ph2 { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.dpane .ph2 b { font: 800 19px var(--font-display); letter-spacing: -0.02em; }
+.dpane .ph2 span { font-size: 13px; font-weight: 700; color: var(--ink-3); }
+.daycol { position: relative; flex: 1; display: grid; grid-template-columns: 38px 1fr; }
+.daycol .hrs { display: flex; flex-direction: column; justify-content: space-between; font-size: 12px; font-weight: 800; color: var(--ink-3); padding: 0 0 0; }
+.daycol .grid { position: relative; border-radius: 12px; background: repeating-linear-gradient(180deg, var(--paper-2) 0 1px, transparent 1px 42px); }
+.cblk { position: absolute; left: 6px; right: 6px; border-radius: 12px; padding: 6px 9px; font-size: 13px; font-weight: 700; line-height: 1.25; overflow: hidden; }
+.cblk b { display: block; font-size: 14px; font-weight: 800; }
+.cblk.sel { background: var(--coral); box-shadow: 0 0 0 3px var(--ink); }
+.cblk.sel .seg2 { margin-top: 6px; display: flex; flex-direction: column; gap: 4px; }
+.cblk.sel .seg2 i { display: block; font-style: normal; font-size: 12px; font-weight: 800; background: rgba(255,255,255,.55); border-radius: 8px; padding: 3px 7px; }
+.wkd { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
+.wkd span { text-align: center; border-radius: 10px; padding: 4px 0; font-size: 12px; font-weight: 800; color: var(--ink-3); background: var(--paper-2); }
+.wkd span b { display: block; font: 800 16px var(--font-display); color: var(--ink); }
+.wkd span.on { background: var(--ink); color: var(--white); }
+.wkd span.on b { color: var(--white); }
+.dmid .mh { display: flex; align-items: center; gap: 14px; }
+.dmid .mh .x { flex: 1; display: flex; flex-direction: column; }
+.dmid .mh .x span { font-size: 13px; font-weight: 800; letter-spacing: .06em; color: var(--coral-deep); }
+.dmid .mh .x b { font: 800 26px/1.05 var(--font-display); letter-spacing: -0.03em; }
+.dmid .mh .meet { background: var(--sun-tint); }
+.dmid .mh .meet svg.i { color: var(--ink); }
+.dmid .lanehd, .dmid .srow, .dmid .nowl { grid-template-columns: 64px 1fr 1fr; gap: 8px; }
+.dmid .nowl { grid-template-columns: 64px 1fr; }
+.dmid .srow .tm { padding-top: 8px; }
+.dmid .step { padding: 4px 12px; }
+.dmid .mh .x span { white-space: normal; }
+.dmid .step .x { flex-direction: row; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.dmid .part { padding-top: 4px; border-top: 1px solid var(--line); }
+.dmid .lanes { gap: 5px; }
+.dright h4 { margin: 0; font: 800 26px/1.05 var(--font-display); letter-spacing: -0.03em; }
+.dright .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.dright .facts3 b { font-size: 16px; }
+.dright .acts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: auto; }
+.dright .slip p { font-size: 24px; }
+.lapnote { font-size: 14px; font-weight: 700; color: var(--ink-3); display: none; }
+@media (max-width: 900px) { .lapnote { display: block; } }
+
+/* ---------- After the frames ---------- */
+.build { list-style: none; padding: 0; margin: 20px 0 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 12px; counter-reset: b; }
+.build li { background: var(--card); border-radius: 20px; box-shadow: var(--shadow-sm); padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start; }
+.build .ni { width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center; flex-shrink: 0; font: 800 18px var(--font-display); }
+.build b { display: block; font-size: 16px; }
+.build span { font-size: 15px; color: var(--ink-2); }
+
+
+/* ================= Trip canvas v2: new for this board ================= */
+/* People: Abhi grape, Bhoomija mint, Hrishi bubble; R and A stay initials until someone maps them */
+.av.u { background: var(--card); border: 2px dashed var(--ink-3); color: var(--ink-2); }
+.avs .av.u { border: 2px dashed var(--ink-3); }
+.fa { width: 24px; height: 24px; border-radius: var(--r-pill); display: inline-grid; place-items: center; font-size: 11px; font-weight: 800; color: var(--ink); flex-shrink: 0; box-shadow: 0 0 0 2px var(--card); }
+.fa + .fa { margin-left: -7px; }
+.fa.a { background: var(--grape); } .fa.b { background: var(--mint); } .fa.k { background: var(--bubble); }
+.fa.u { background: var(--card); box-shadow: inset 0 0 0 1.5px var(--ink-3), 0 0 0 2px var(--card); color: var(--ink-2); }
+.wave { display: inline-flex; align-items: center; gap: 3px; height: 22px; }
+.wave i { display: block; width: 4px; height: 40%; border-radius: 3px; background: var(--coral-deep); animation: wv 1s ease-in-out infinite; }
+.wave i:nth-child(2) { animation-delay: .12s; } .wave i:nth-child(3) { animation-delay: .24s; } .wave i:nth-child(4) { animation-delay: .36s; }
+.wave i:nth-child(5) { animation-delay: .48s; } .wave i:nth-child(6) { animation-delay: .6s; } .wave i:nth-child(7) { animation-delay: .72s; }
+@keyframes wv { 0%, 100% { height: 30%; } 50% { height: 100%; } }
+.frame.trio { width: min(1320px, 100%); }
+.trio .duo { grid-template-columns: repeat(auto-fit, minmax(min(330px, 100%), 1fr)); }
+
+/* ---------- 1 The message as it arrives ---------- */
+.im { background: var(--card); }
+.imhd { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 2px 16px 8px; box-shadow: 0 1px 0 var(--line); position: relative; z-index: 2; background: var(--card); }
+.imhd .back2 { position: absolute; left: 14px; top: 10px; color: var(--sky-ink); }
+.imhd .avs .av { border-color: var(--card); width: 30px; height: 30px; font-size: 12px; }
+.imhd b { font-size: 13px; font-weight: 800; }
+.imbody { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; gap: 6px; padding: 0 12px 8px; position: relative; }
+.imbody::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 60px; background: linear-gradient(var(--card), rgba(255,255,255,0)); z-index: 1; }
+.imb { max-width: 82%; border-radius: 18px; padding: 7px 12px; font-size: 13px; line-height: 1.32; font-weight: 500; }
+.imb.me { align-self: flex-end; background: var(--sky); color: var(--ink); border-bottom-right-radius: 6px; }
+.imb.them { align-self: flex-start; background: var(--paper-2); box-shadow: inset 0 0 0 1px var(--line); border-bottom-left-radius: 6px; }
+.imb .ln { display: block; }
+.imb.cut { max-height: 74px; overflow: hidden; -webkit-mask-image: linear-gradient(#000 55%, transparent); mask-image: linear-gradient(#000 55%, transparent); }
+.imname { font-size: 12px; font-weight: 800; color: var(--ink-3); margin: 2px 0 -3px 12px; }
+.imtime { align-self: center; font-size: 12px; font-weight: 700; color: var(--ink-3); }
+.imcomp { flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 6px 12px 30px; }
+.imcomp .in { flex: 1; height: 38px; border-radius: var(--r-pill); box-shadow: inset 0 0 0 1px var(--skeleton); display: flex; align-items: center; padding: 0 14px; color: var(--ink-3); font-weight: 600; font-size: 15px; }
+.imcomp .plus { width: 36px; height: 36px; border-radius: var(--r-pill); background: var(--paper-2); display: grid; place-items: center; }
+.problem { position: absolute; left: 14px; right: 14px; top: 132px; z-index: 4; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; pointer-events: none; }
+.qs { font: 700 25px/1 var(--font-hand); background: var(--note); padding: 5px 12px 7px; border-radius: 6px; box-shadow: var(--shadow-sticker); color: var(--ink); }
+.qs:nth-child(1) { transform: rotate(-3deg); }
+.qs:nth-child(2) { transform: rotate(2deg); margin-left: 70px; background: var(--bubble-tint); }
+.qs:nth-child(3) { transform: rotate(-1.5deg); margin-left: 24px; background: var(--mint-tint); }
+
+/* ---------- 2 Add to the trip ---------- */
+.addhd { display: flex; align-items: center; gap: 10px; padding: 2px 2px 0; }
+.addhd .t { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.addhd .t b { font: 800 28px/1.05 var(--font-display); letter-spacing: -0.035em; }
+.pastebox { border-radius: 22px; background: var(--card); box-shadow: inset 0 0 0 2px var(--ink), var(--shadow-md); padding: 12px 14px 10px; display: flex; flex-direction: column; gap: 8px; }
+.pastebox .raw { height: 330px; overflow: hidden; font-size: 14px; line-height: 1.38; font-weight: 600; color: var(--ink-2); -webkit-mask-image: linear-gradient(#000 78%, transparent); mask-image: linear-gradient(#000 78%, transparent); }
+.pastebox .raw span { display: block; }
+.pastebox .raw .h { color: var(--ink); font-weight: 800; }
+.pastebox .foot { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 800; color: var(--ink-3); }
+.pastebox .foot .pill { background: var(--mint-tint); color: var(--ink); }
+.convertrow { display: grid; grid-template-columns: 1fr 64px; gap: 10px; }
+.btn.big { height: 64px; font-size: 20px; border-radius: var(--r-pill); }
+.btn.big svg.i { width: 24px; height: 24px; }
+.micbtn { width: 64px; height: 64px; border-radius: var(--r-pill); border: 0; background: var(--ink); color: var(--white); box-shadow: 0 4px 0 var(--ink-ledge); display: grid; place-items: center; cursor: pointer; }
+.micbtn svg.i { width: 26px; height: 26px; }
+.orsay { text-align: center; font-size: 13px; font-weight: 700; color: var(--ink-3); margin-top: -4px; }
+.iphone { border-radius: 16px; background: var(--sky-tint); padding: 10px 12px; display: flex; gap: 10px; align-items: flex-start; font-size: 13px; font-weight: 700; color: var(--ink-2); line-height: 1.35; }
+.iphone .bi { width: 30px; height: 30px; border-radius: 10px; background: var(--sky); display: grid; place-items: center; flex-shrink: 0; color: var(--ink); }
+.iphone .bi svg.i { width: 17px; height: 17px; }
+.iphone b { color: var(--ink); }
+.steps3 { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; margin-top: 4px; }
+.steps3 span { background: var(--card); border-radius: var(--r-pill); padding: 1px 8px; font-size: 12px; font-weight: 800; color: var(--ink); }
+
+/* ---------- 3 Convert result ---------- */
+.stepbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 2px 0; }
+.stepbar .lk { font-size: 16px; font-weight: 700; color: var(--ink-2); }
+.stepbar b { font: 800 19px var(--font-display); letter-spacing: -0.02em; }
+.stepdots { display: flex; gap: 5px; }
+.stepdots i { width: 22px; height: 6px; border-radius: 6px; background: var(--skeleton); }
+.stepdots i.on { background: var(--coral); }
+.found { border-radius: 26px; background: var(--ink); color: var(--white); padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 10px; }
+.found .lbl { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 800; letter-spacing: .1em; color: var(--sun); }
+.found .lbl svg.i { width: 18px; height: 18px; }
+.found h4 { margin: 0; font: 800 24px/1.08 var(--font-display); letter-spacing: -0.03em; }
+.nums { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.nums div { border-radius: 16px; padding: 8px 10px; display: flex; flex-direction: column; color: var(--ink); }
+.nums b { font: 800 34px/1 var(--font-display); letter-spacing: -0.04em; }
+.nums span { font-size: 13px; font-weight: 800; }
+.pday { border-radius: 22px; background: var(--dt); padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 7px; box-shadow: inset 0 0 0 2px var(--df); }
+.pday .r { display: flex; align-items: center; gap: 10px; }
+.pday .pi2 { width: 36px; height: 36px; border-radius: 12px; background: var(--df); display: grid; place-items: center; flex-shrink: 0; }
+.pday .r .x { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.pday .r .x b { font: 800 18px/1.1 var(--font-display); letter-spacing: -0.02em; }
+.pday .r .x span { font-size: 13px; font-weight: 700; color: var(--ink-2); }
+.pday .q { font-size: 12px; font-weight: 800; background: var(--card); border-radius: var(--r-pill); padding: 3px 9px; flex-shrink: 0; }
+.arow { display: flex; flex-wrap: wrap; gap: 5px; }
+.arow span { background: var(--card); border-radius: 10px; padding: 3px 9px; font-size: 13px; font-weight: 800; display: inline-flex; gap: 5px; align-items: center; }
+.arow span em { font-style: normal; color: var(--ink-3); }
+.d-sun { --dt: var(--sun-tint); --df: var(--sun); --dk: var(--sun-ink); }
+.d-mint { --dt: var(--mint-tint); --df: var(--mint); --dk: var(--mint-ink); }
+.d-grape { --dt: var(--grape-tint); --df: var(--grape); --dk: var(--grape-ink); }
+.d-sky { --dt: var(--sky-tint); --df: var(--sky); --dk: var(--sky-ink); }
+.d-bubble { --dt: var(--bubble-tint); --df: var(--bubble); --dk: var(--bubble-ink); }
+.tidy { border-radius: 20px; background: var(--card); box-shadow: var(--shadow-sm); padding: 10px 12px; display: flex; flex-direction: column; gap: 7px; }
+.tidy .th { font-size: 13px; font-weight: 800; letter-spacing: .06em; color: var(--ink-3); }
+.tidy .ti2 { display: flex; gap: 9px; align-items: flex-start; font-size: 14px; font-weight: 700; line-height: 1.3; }
+.tidy .ti2 .ic2 { width: 26px; height: 26px; border-radius: 9px; display: grid; place-items: center; flex-shrink: 0; }
+.tidy .ti2 .ic2 svg.i { width: 15px; height: 15px; }
+.tidy .ti2 b { font-weight: 800; }
+.hand { font: 700 19px/1 var(--font-hand); background: var(--note); padding: 0 6px; border-radius: 4px; white-space: nowrap; }
+
+/* ---------- 4 Two quick questions ---------- */
+.qcard { border-radius: 22px; background: var(--card); box-shadow: var(--shadow-md); padding: 11px 12px 12px; display: flex; flex-direction: column; gap: 8px; }
+.qcard .qh { display: flex; gap: 9px; align-items: center; }
+.qcard .qn { width: 28px; height: 28px; border-radius: var(--r-pill); background: var(--coral); display: grid; place-items: center; font: 800 15px var(--font-display); flex-shrink: 0; }
+.qcard .qh b { font: 800 19px/1.1 var(--font-display); letter-spacing: -0.02em; }
+.maprow { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 8px; align-items: center; }
+.maprow .ini { width: 34px; height: 34px; border-radius: var(--r-pill); border: 2px dashed var(--ink-3); display: grid; place-items: center; font: 800 16px var(--font-display); color: var(--ink-2); }
+.maprow .ini.ok { border-style: solid; border-color: var(--mint-ink); background: var(--mint-tint); color: var(--ink); }
+.pick { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+.pick button { border: 0; height: 34px; padding: 0 10px 0 4px; border-radius: var(--r-pill); background: var(--paper-2); display: inline-flex; align-items: center; gap: 5px; font: 800 13px var(--font-body); color: var(--ink); cursor: pointer; }
+.pick button.txt { padding: 0 10px; }
+.pick button .fa { box-shadow: none; }
+.pick button[aria-pressed="true"] { background: var(--ink); color: var(--white); }
+.pick .why { font-size: 12px; font-weight: 700; color: var(--ink-3); }
+.dayq { display: flex; flex-direction: column; gap: 5px; }
+.dayq .dl { font-size: 13px; font-weight: 800; display: flex; align-items: center; gap: 6px; }
+.dayq .dl i { width: 10px; height: 10px; border-radius: var(--r-pill); background: var(--df); }
+.days7 { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.days7 button { border: 0; height: 42px; border-radius: 12px; background: var(--paper-2); display: flex; flex-direction: column; align-items: center; justify-content: center; font: 800 11px var(--font-body); color: var(--ink-3); cursor: pointer; line-height: 1.05; }
+.days7 button b { font: 800 16px var(--font-display); color: var(--ink); }
+.days7 button[aria-pressed="true"] { background: var(--ink); color: var(--on-ink-2); }
+.days7 button[aria-pressed="true"] b { color: var(--white); }
+.saveline { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--ink-2); justify-content: center; }
+.saveline svg.i { width: 16px; height: 16px; color: var(--mint-ink); }
+
+/* ---------- 5 The week canvas ---------- */
+.cvhd { display: flex; align-items: flex-end; gap: 10px; padding: 2px 2px 0; }
+.cvhd .t { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.one-view { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 800; background: var(--card); border-radius: var(--r-pill); padding: 4px 10px 4px 6px; box-shadow: var(--shadow-sm); }
+.one-view i { width: 20px; height: 20px; border-radius: var(--r-pill); background: var(--coral); display: grid; place-items: center; }
+.one-view i svg.i { width: 13px; height: 13px; stroke-width: 3; }
+.zoombar { display: flex; align-items: center; gap: 8px; }
+.zseg { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); padding: 4px; border-radius: var(--r-pill); background: var(--card); box-shadow: var(--shadow-sm); }
+.zseg button { border: 0; height: 34px; border-radius: var(--r-pill); background: transparent; font: 800 14px var(--font-body); color: var(--ink-2); cursor: pointer; }
+.zseg button[aria-pressed="true"] { background: var(--ink); color: var(--white); }
+.pinch { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 800; color: var(--ink-2); flex-shrink: 0; }
+.pinch .pf { position: relative; width: 30px; height: 30px; }
+.pinch .pf i { position: absolute; width: 14px; height: 14px; border-radius: var(--r-pill); background: rgba(30,26,46,.22); box-shadow: 0 0 0 3px rgba(30,26,46,.08); }
+.pinch .pf i:first-child { left: 0; bottom: 0; } .pinch .pf i:last-child { right: 0; top: 0; }
+.week { display: flex; flex-direction: column; gap: 6px; }
+.wk { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 8px; align-items: stretch; }
+.wk .dn { display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 14px; background: var(--dt); padding: 4px 0; }
+.wk .dn span { font-size: 12px; font-weight: 800; color: var(--ink-2); letter-spacing: .04em; }
+.wk .dn b { font: 800 24px/1 var(--font-display); color: var(--dk); letter-spacing: -0.03em; }
+.wb { min-width: 0; border-radius: 18px; padding: 8px 10px; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 800; }
+.wb.lite { background: var(--card); box-shadow: var(--shadow-sm); }
+.wb.lite .x { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.2; }
+.wb.lite .x span { font-size: 12px; font-weight: 700; color: var(--ink-3); }
+.wb.free { border: 2px dashed var(--skeleton); color: var(--ink-3); font-weight: 700; justify-content: space-between; }
+.wb.free svg.i { width: 18px; height: 18px; }
+.wb.park { background: var(--dt); box-shadow: inset 0 0 0 2px var(--df), var(--shadow-md); flex-direction: column; align-items: stretch; gap: 7px; padding: 10px; position: relative; }
+.wb.park .pt2 { display: flex; align-items: center; gap: 8px; }
+.wb.park .pt2 .pi2 { width: 32px; height: 32px; border-radius: 10px; background: var(--df); display: grid; place-items: center; flex-shrink: 0; }
+.wb.park .pt2 .pi2 svg.i { width: 18px; height: 18px; }
+.wb.park .pt2 b { flex: 1; font: 800 17px/1.1 var(--font-display); letter-spacing: -0.02em; min-width: 0; }
+.mblocks { display: flex; gap: 4px; }
+.mblocks span { border-radius: 10px; background: var(--card); padding: 5px 7px; font-size: 12px; font-weight: 800; line-height: 1.15; display: flex; flex-direction: column; min-width: 0; box-shadow: inset 0 3px 0 var(--bf, var(--df)); }
+.mblocks span em { font-style: normal; font-weight: 700; color: var(--ink-3); }
+.mblocks .lunch { background: var(--sun-tint); --bf: var(--sun); }
+.tinynote { position: absolute; right: 10px; top: -10px; font: 700 19px/1 var(--font-hand); background: var(--note); padding: 3px 8px 5px; border-radius: 4px; transform: rotate(4deg); box-shadow: var(--shadow-sticker); }
+
+/* ---------- 6 One day, zoomed in ---------- */
+.dayhd { position: sticky; top: 0; z-index: 3; border-radius: 22px; background: var(--ink); color: var(--white); padding: 10px 12px 11px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 10px 20px -14px rgba(30,26,46,.6); }
+.dayhd .r1 { display: flex; align-items: center; gap: 10px; }
+.dayhd .t { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.dayhd .t span { font-size: 13px; font-weight: 800; letter-spacing: .06em; color: var(--sun); }
+.dayhd .t b { font: 800 21px/1.1 var(--font-display); letter-spacing: -0.03em; }
+.dayhd .back { width: 38px; height: 38px; border-radius: var(--r-pill); background: rgba(255,255,255,.12); border: 0; color: var(--white); display: grid; place-items: center; flex-shrink: 0; cursor: pointer; }
+.dayhd .whobar { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--on-ink-2); }
+.dayhd .whobar .fa { box-shadow: 0 0 0 2px var(--ink); }
+.dayhd .whobar .fa.u { box-shadow: inset 0 0 0 1.5px var(--ink-3), 0 0 0 2px var(--ink); }
+.ab { position: relative; border-radius: 22px; background: var(--dt); padding: 9px 10px 11px; display: flex; flex-direction: column; gap: 8px; box-shadow: inset 0 0 0 2px var(--df); }
+.ab .ah { display: flex; align-items: center; gap: 8px; }
+.ab .ah .ai { width: 30px; height: 30px; border-radius: 10px; background: var(--df); display: grid; place-items: center; flex-shrink: 0; }
+.ab .ah .ai svg.i { width: 17px; height: 17px; }
+.ab .ah b { font: 800 17px/1.1 var(--font-display); letter-spacing: -0.02em; flex: 1; min-width: 0; }
+.ab .ah .when { font-size: 12px; font-weight: 800; color: var(--ink-2); background: var(--card); border-radius: var(--r-pill); padding: 2px 8px; flex-shrink: 0; }
+.ab.lunchb { background: var(--sun-tint); box-shadow: inset 0 0 0 2px var(--sun); padding: 8px 10px; flex-direction: row; align-items: center; }
+.ab.lunchb .x { flex: 1; display: flex; flex-direction: column; min-width: 0; font-size: 13px; font-weight: 700; color: var(--ink-2); }
+.ab.lunchb .x b { font: 800 16px/1.1 var(--font-display); color: var(--ink); }
+.rides { display: flex; flex-wrap: wrap; gap: 6px; }
+.rides.roomy { row-gap: 16px; padding-top: 6px; }
+.rd { position: relative; display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 4px 10px; border-radius: 12px; background: var(--card); box-shadow: var(--shadow-sm); font-size: 14px; font-weight: 800; line-height: 1.15; max-width: 100%; transition: opacity .2s, box-shadow .2s; }
+.rd .fa { width: 22px; height: 22px; font-size: 11px; }
+.rd small { font-size: 12px; font-weight: 700; color: var(--ink-3); }
+.rd.show { background: var(--paper-2); }
+.rd.show::before { content: "SHOW"; font-size: 11px; font-weight: 800; letter-spacing: .06em; color: var(--ink-2); background: var(--grape-tint); border-radius: 6px; padding: 0 4px; }
+.rd.sub { background: rgba(255,255,255,.6); box-shadow: inset 0 0 0 1.5px var(--df); }
+.stk { position: absolute; z-index: 2; right: -6px; top: -15px; font: 700 18px/1 var(--font-hand); background: var(--note); color: var(--ink); padding: 2px 7px 4px; border-radius: 4px; transform: rotate(4deg); box-shadow: var(--shadow-sticker); white-space: nowrap; }
+.stk.l { right: auto; left: -4px; transform: rotate(-4deg); }
+.stk.pink { background: var(--bubble-tint); }
+.stk.big { font-size: 22px; top: -18px; }
+.hpw { border-radius: 16px; background: rgba(255,255,255,.55); padding: 7px 8px 8px; display: flex; flex-direction: column; gap: 6px; position: relative; width: 100%; box-shadow: inset 0 0 0 1.5px var(--df); }
+.hpw .hl { font-size: 12px; font-weight: 800; letter-spacing: .06em; color: var(--ink-2); display: flex; align-items: center; gap: 6px; }
+.tray { position: absolute; left: 8px; right: 8px; bottom: 92px; z-index: 6; border-radius: 22px; background: var(--paper-2); box-shadow: inset 0 0 0 2px var(--skeleton), 0 -8px 24px -12px rgba(30,26,46,.3); padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 6px; }
+.tray .tt { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 800; color: var(--ink-2); }
+.tray .tt svg.i { width: 16px; height: 16px; }
+.tray .tt span { margin-left: auto; font-weight: 700; color: var(--ink-3); font-size: 12px; }
+.rd.off { background: var(--card); color: var(--ink-2); box-shadow: inset 0 0 0 1.5px var(--skeleton); }
+.rd.off svg.i { width: 15px; height: 15px; color: var(--ink-3); }
+.tray.hot { background: var(--coral-tint); box-shadow: inset 0 0 0 2px var(--coral), 0 -8px 24px -12px rgba(30,26,46,.3); }
+.tray .dropz { border: 2px dashed var(--coral); border-radius: 12px; min-height: 34px; display: grid; place-items: center; font-size: 13px; font-weight: 800; color: var(--ink); background: rgba(255,255,255,.6); }
+
+/* ---------- 7 One ride opened ---------- */
+.rsheet { position: absolute; left: 0; right: 0; bottom: 86px; z-index: 6; background: var(--card); border-radius: 30px 30px 0 0; box-shadow: 0 -10px 30px -12px rgba(30,26,46,.4); padding: 10px 16px 14px; display: flex; flex-direction: column; gap: 10px; }
+.rsheet .grab { width: 40px; height: 5px; border-radius: var(--r-pill); background: var(--skeleton); align-self: center; }
+.rsheet .h { display: flex; gap: 12px; align-items: flex-start; }
+.rsheet .h .ri { width: 48px; height: 48px; border-radius: 15px; background: var(--grape); display: grid; place-items: center; flex-shrink: 0; }
+.rsheet .h .ri svg.i { width: 26px; height: 26px; }
+.rsheet .h .x { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.rsheet h4 { margin: 0; font: 800 26px/1.02 var(--font-display); letter-spacing: -0.035em; }
+.bigslip { position: relative; align-self: flex-start; background: var(--note); border-radius: 6px; padding: 6px 16px 10px; transform: rotate(-2.5deg); box-shadow: var(--shadow-sticker); margin: 2px 0 2px 6px; }
+.bigslip p { font: 700 40px/1 var(--font-hand); }
+.bigslip small { display: block; font-size: 12px; font-weight: 800; color: var(--ink-3); }
+.bigslip::before { content: ""; position: absolute; left: 50%; top: -9px; width: 64px; height: 18px; margin-left: -32px; background: var(--tape-2, rgba(255,115,82,.55)); transform: rotate(3deg); }
+.whorow { display: flex; flex-wrap: wrap; gap: 5px; }
+.whorow button { border: 0; height: 36px; padding: 0 10px 0 5px; border-radius: var(--r-pill); background: var(--paper-2); display: inline-flex; align-items: center; gap: 6px; font: 800 13px var(--font-body); cursor: pointer; color: var(--ink); }
+.whorow button[aria-pressed="true"] { background: var(--mint-tint); box-shadow: inset 0 0 0 2px var(--mint-ink); }
+.whorow button .fa { box-shadow: none; }
+.addnote { border-radius: 14px; border: 2px dashed var(--skeleton); padding: 9px 12px; font-size: 15px; font-weight: 700; color: var(--ink-3); display: flex; align-items: center; gap: 8px; }
+.addnote svg.i { width: 18px; height: 18px; }
+.heads { border-radius: 14px; background: var(--sky-tint); padding: 8px 10px; display: flex; gap: 9px; align-items: flex-start; font-size: 13px; font-weight: 700; color: var(--ink-2); line-height: 1.35; }
+.heads svg.i { width: 18px; height: 18px; color: var(--sky-ink); flex-shrink: 0; margin-top: 1px; }
+.heads b { color: var(--ink); }
+.acts3 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.acts3 .btn:first-child { grid-column: 1 / -1; }
+
+/* ---------- 8 Touch: drag, set aside, filter ---------- */
+.rd.lift { transform: rotate(-4deg) scale(1.08); box-shadow: var(--shadow-lg), 0 0 0 2px var(--coral); z-index: 8; }
+.dragged { position: absolute; z-index: 8; left: 132px; bottom: 150px; }
+.dragged .finger { left: auto; right: -14px; top: auto; bottom: -18px; margin: 0; }
+.trail { position: absolute; z-index: 7; left: 196px; bottom: 182px; width: 3px; height: 130px; border-left: 3px dotted var(--coral); transform: rotate(-24deg); transform-origin: bottom; }
+.gap { display: inline-flex; min-height: 34px; width: 92px; border-radius: 12px; border: 2px dashed var(--df); }
+.toast { position: absolute; left: 16px; right: 16px; bottom: 196px; z-index: 9; border-radius: 18px; background: var(--ink); color: var(--white); padding: 10px 12px 10px 14px; display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 700; box-shadow: var(--shadow-lg); }
+.toast svg.i { color: var(--mint); }
+.toast button { margin-left: auto; border: 0; background: rgba(255,255,255,.12); color: var(--sun); font: 800 15px var(--font-body); height: 36px; padding: 0 14px; border-radius: var(--r-pill); cursor: pointer; }
+.rd.pop { animation: pop .45s var(--ease-spring) both; }
+@keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: none; opacity: 1; } }
+.fchips { display: flex; gap: 5px; overflow: hidden; flex-wrap: wrap; }
+.fchips .chip { height: 36px; padding: 0 11px; font-size: 13px; }
+.fchips .chip.ps[aria-pressed="true"] { background: var(--mint); color: var(--ink); box-shadow: inset 0 0 0 2px var(--mint-ink); }
+.flt-on .rd:not(.hit) { opacity: .32; }
+.rd.hit { box-shadow: 0 0 0 2px var(--mint-ink), var(--shadow-sm); }
+.rd .sh { display: none; width: 16px; height: 16px; color: var(--mint-ink); }
+.flt-ps .rd.safe .sh { display: block; }
+.listcard { border-radius: 18px; background: var(--mint-tint); padding: 9px 12px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 700; color: var(--ink-2); }
+.listcard b { color: var(--ink); font-size: 14px; }
+.listcard .rides .rd { min-height: 30px; font-size: 13px; box-shadow: inset 0 0 0 1.5px var(--mint); }
+
+/* ---------- 9 Speak to it ---------- */
+.vsheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 6; background: var(--card); border-radius: 30px 30px 0 0; box-shadow: 0 -10px 30px -12px rgba(30,26,46,.45); padding: 10px 16px 34px; display: flex; flex-direction: column; gap: 11px; }
+.vsheet .grab { width: 40px; height: 5px; border-radius: var(--r-pill); background: var(--skeleton); align-self: center; }
+.listen { display: flex; align-items: center; gap: 10px; }
+.listen .mc { width: 52px; height: 52px; border-radius: var(--r-pill); background: var(--coral); display: grid; place-items: center; box-shadow: 0 0 0 8px var(--coral-tint); flex-shrink: 0; animation: ring 1.8s ease-in-out infinite; }
+.listen .mc svg.i { width: 26px; height: 26px; }
+@keyframes ring { 50% { box-shadow: 0 0 0 14px var(--coral-tint); } }
+.listen .x { flex: 1; display: flex; flex-direction: column; }
+.listen .x b { font-size: 15px; font-weight: 800; }
+.listen .x span { font-size: 13px; font-weight: 700; color: var(--ink-3); }
+.said { font: 800 24px/1.18 var(--font-display); letter-spacing: -0.02em; }
+.said .soft { color: var(--ink-3); }
+.propose { border-radius: 20px; background: var(--paper-2); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.propose .ph { font-size: 13px; font-weight: 800; letter-spacing: .06em; color: var(--ink-3); }
+.ba { display: grid; grid-template-columns: minmax(0, 1fr) 22px minmax(0, 1fr); gap: 6px; align-items: center; }
+.ba .lab { grid-column: 1 / -1; font-size: 14px; font-weight: 800; display: flex; align-items: center; gap: 6px; }
+.ba .lab svg.i { width: 16px; height: 16px; }
+.ba .old, .ba .new { border-radius: 12px; min-height: 40px; padding: 4px 10px; display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 800; }
+.ba .old { background: var(--card); color: var(--ink-3); box-shadow: inset 0 0 0 1.5px var(--skeleton); }
+.ba .old s { text-decoration-thickness: 2px; }
+.ba .new { background: var(--card); box-shadow: 0 0 0 2px var(--coral), var(--shadow-sm); }
+.ba > svg.i { width: 20px; height: 20px; color: var(--coral-deep); }
+
+/* ---------- 10 Ask for ideas ---------- */
+.askq { border-radius: 18px; background: var(--card); box-shadow: inset 0 0 0 2px var(--ink); padding: 10px 12px; display: flex; gap: 10px; align-items: center; font-size: 16px; font-weight: 800; }
+.askq svg.i { color: var(--coral-deep); }
+.searched { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--ink-2); flex-wrap: wrap; }
+.searched .ok { width: 22px; height: 22px; border-radius: var(--r-pill); background: var(--mint); display: grid; place-items: center; }
+.searched .ok svg.i { width: 13px; height: 13px; stroke-width: 3; }
+.idea { border-radius: 20px; background: var(--card); box-shadow: var(--shadow-md); padding: 10px 12px; display: flex; flex-direction: column; gap: 7px; }
+.idea.first { box-shadow: 0 0 0 3px var(--coral), var(--shadow-md); background: #FFF4EF; }
+.idea .r { display: flex; gap: 10px; align-items: flex-start; }
+.idea .r .ii { width: 40px; height: 40px; border-radius: 13px; display: grid; place-items: center; flex-shrink: 0; }
+.idea .r .x { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.idea .r .x b { font: 800 18px/1.1 var(--font-display); letter-spacing: -0.02em; }
+.idea .r .x span { font-size: 13px; font-weight: 700; color: var(--ink-2); }
+.idea .meta { display: flex; gap: 5px; flex-wrap: wrap; }
+.idea .meta .pill { height: 24px; font-size: 12px; background: var(--paper-2); }
+.idea .btn { height: 40px; font-size: 14px; }
+
+/* ---------- 11 Laptop canvas ---------- */
+.lbody { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; padding: 14px 16px 16px; }
+.wstrip { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
+.wtile { border-radius: 16px; background: var(--card); box-shadow: var(--shadow-sm); padding: 7px 9px 8px; display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.wtile .wd { display: flex; align-items: baseline; gap: 6px; font-size: 12px; font-weight: 800; color: var(--ink-3); }
+.wtile .wd b { font: 800 20px/1 var(--font-display); color: var(--dk); }
+.wtile .wn { font-size: 13px; font-weight: 800; line-height: 1.15; }
+.wtile .bars2 { display: flex; gap: 2px; height: 8px; }
+.wtile .bars2 i { flex: 1; border-radius: 3px; background: var(--df); }
+.wtile .bars2 i.e { background: var(--skeleton); }
+.wtile.sel { background: var(--ink); color: var(--white); box-shadow: 0 0 0 3px var(--coral); }
+.wtile.sel .wd { color: var(--on-ink-2); } .wtile.sel .wd b { color: var(--sun); }
+.lmain { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 286px; gap: 14px; }
+.lcanvas { background: var(--card); border-radius: 22px; box-shadow: var(--shadow-md); padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; min-height: 0; overflow: hidden; }
+.lch { display: flex; align-items: center; gap: 12px; }
+.lch .x { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.lch .x span { font-size: 13px; font-weight: 800; letter-spacing: .06em; color: var(--coral-deep); }
+.lch .x b { font: 800 26px/1.05 var(--font-display); letter-spacing: -0.03em; }
+.lfil { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.lfil .chip { height: 32px; font-size: 13px; padding: 0 11px; }
+.lfil .chip.ps[aria-pressed="true"] { background: var(--mint); color: var(--ink); box-shadow: inset 0 0 0 2px var(--mint-ink); }
+.lfil .lbl2 { font-size: 13px; font-weight: 800; color: var(--ink-3); margin-right: 2px; }
+.llanes { display: flex; flex-direction: column; gap: 7px; }
+.llane { display: grid; grid-template-columns: 70px 210px minmax(0, 1fr); gap: 10px; align-items: center; }
+.llane .tod { font-size: 12px; font-weight: 800; letter-spacing: .06em; color: var(--ink-3); text-align: right; }
+.llane .an { border-radius: 14px; background: var(--dt); box-shadow: inset 4px 0 0 var(--df); padding: 7px 10px; display: flex; flex-direction: column; min-height: 46px; justify-content: center; }
+.llane .an b { font: 800 15px/1.15 var(--font-display); letter-spacing: -0.01em; }
+.llane .an span { font-size: 12px; font-weight: 700; color: var(--ink-2); }
+.llane .rides { padding-top: 0; align-items: center; min-height: 46px; border-radius: 14px; background: var(--paper-2); padding: 6px 8px; }
+.llane .rides.notes { padding-top: 14px; }
+.lside { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+.lside .dpane { gap: 8px; padding: 12px 14px; }
+.lside .tray { position: static; box-shadow: inset 0 0 0 2px var(--skeleton); background: var(--paper-2); }
+.lside .tray .rides { gap: 5px; }
+.plist { display: flex; flex-direction: column; gap: 4px; }
+.plist div { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; padding: 3px 0; }
+.plist div i { width: 18px; height: 18px; border-radius: var(--r-pill); display: grid; place-items: center; flex-shrink: 0; background: var(--paper-2); }
+.plist div i.y { background: var(--mint); }
+.plist div i svg.i { width: 11px; height: 11px; stroke-width: 3.2; }
+.plist div em { font-style: normal; margin-left: auto; font-size: 12px; font-weight: 800; color: var(--ink-3); }
+.askfor { border-radius: 12px; background: var(--grape-tint); padding: 7px 10px; font-size: 12px; font-weight: 700; color: var(--ink-2); line-height: 1.35; }
+.askfor b { color: var(--ink); }
+.dtop .btn.sm { height: 36px; font-size: 13px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .wave i { animation: none; height: 60%; }
+  .listen .mc, .rd.pop { animation: none; }
+}
+
+/* ---------- Fit fixes ---------- */
+.main > * { flex-shrink: 0; }
+.avs .av { margin-left: -5px; }
+.imnote { align-self: flex-end; font-size: 12px; font-weight: 800; color: var(--ink-3); margin-top: -2px; }
+.found .nums b { font-size: 30px; }
+.found .nums div { padding: 6px 10px; }
+.wb.park .tinynote { top: auto; bottom: -11px; right: 10px; }
+.tight .rd { font-size: 13px; padding: 3px 8px; min-height: 30px; }
+.tight .rides.roomy { row-gap: 14px; padding-top: 4px; }
+.tight .ab { gap: 6px; padding: 8px 10px 10px; }
+.tray.row { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 10px; }
+.tray.row .tt span { display: none; }
+.tray.row .rd { min-height: 30px; font-size: 13px; padding: 3px 8px; }
+.whorow button.ini2 { padding: 0 5px; }
+.llanes { flex: 1; justify-content: space-around; }
+.llane { grid-template-columns: 92px 210px minmax(0, 1fr); }
+.llane .an, .llane .rides { min-height: 60px; }
+.build { grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr)); }
+.qcard { gap: 7px; padding: 10px 12px 11px; }
+.pick button { height: 32px; }
+.week { gap: 5px; }
+.hd .eb { white-space: nowrap; }
+.hd .avs .av { width: 30px; height: 30px; font-size: 12px; }
+.imbody > * { flex-shrink: 0; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .wave i { height: 50%; }
+  .caret { visibility: visible; }
+}
+</style>
+
+<!-- Icon sprite -->
+<!-- Icon sprite -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-mark" viewBox="0 0 24 24"><circle cx="6" cy="5" r="2"/><circle cx="18" cy="5" r="2"/><circle cx="12" cy="19" r="2"/><path d="M6 7v2a3 3 0 0 0 3 3h6a3 3 0 0 0 3-3V7M12 12v5"/></symbol>
+    <symbol id="i-nav" viewBox="0 0 24 24"><path d="M3 11l18-8-8 18-2-8-8-2z"/></symbol>
+    <symbol id="i-car" viewBox="0 0 24 24"><path d="M5 17h14v-5l-2-5H7l-2 5v5z"/><path d="M5 12h14"/><circle cx="8" cy="17" r="1.6"/><circle cx="16" cy="17" r="1.6"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/></symbol>
+    <symbol id="i-map" viewBox="0 0 24 24"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M16.5 14.2A5 5 0 0 1 21.5 19"/></symbol>
+    <symbol id="i-life" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M5.6 5.6l3.6 3.6M14.8 14.8l3.6 3.6M18.4 5.6l-3.6 3.6M9.2 14.8l-3.6 3.6"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></symbol>
+    <symbol id="i-coffee" viewBox="0 0 24 24"><path d="M4 9h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V9z"/><path d="M17 11h1.5a2.5 2.5 0 0 1 0 5H17M8 3v3M12 3v3"/></symbol>
+    <symbol id="i-cart" viewBox="0 0 24 24"><path d="M3 4h2l2.5 11h11L21 7H6.2"/><circle cx="9" cy="19.5" r="1.4"/><circle cx="17" cy="19.5" r="1.4"/></symbol>
+    <symbol id="i-store" viewBox="0 0 24 24"><path d="M4 10v10h16V10M3 10l2-6h14l2 6H3z"/><path d="M10 20v-5h4v5"/></symbol>
+    <symbol id="i-pill" viewBox="0 0 24 24"><rect x="3" y="8.5" width="18" height="7" rx="3.5" transform="rotate(-40 12 12)"/><path d="M9.5 9l5 6"/></symbol>
+    <symbol id="i-fuel" viewBox="0 0 24 24"><path d="M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M3 21h12M4 10h10"/><path d="M14 8h2a2 2 0 0 1 2 2v6a1.5 1.5 0 0 0 3 0V8l-3-3"/></symbol>
+    <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M5 19c0-9 6-14 15-14 0 9-5 15-14 15"/><path d="M5 19c3-4 6-7 10-9"/></symbol>
+    <symbol id="i-door" viewBox="0 0 24 24"><path d="M6 21V4h12v17M3 21h18"/><circle cx="14.5" cy="12.5" r="1"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 16.8 6.6 19.7l1.1-6.1L3.2 9.4l6.1-.8z"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4l2-2z"/><path d="M10 21h4"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/></symbol>
+    <symbol id="i-move" viewBox="0 0 24 24"><path d="M4 12h14M14 7l5 5-5 5"/></symbol>
+    <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></symbol>
+    <symbol id="i-cross" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M12 8v8M8 12h8"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/><path d="M8.5 12l2.5 2.5L15.5 10"/></symbol>
+    <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3M14 9l2 2"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/></symbol>
+    <symbol id="i-msg" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4V5z"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3V4z"/><path d="M5 17a3 3 0 0 1 3-3h11"/></symbol>
+    <symbol id="i-route" viewBox="0 0 24 24"><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.5"/></symbol>
+    <symbol id="i-brain" viewBox="0 0 24 24"><path d="M12 4a3.5 3.5 0 0 0-6.6 1.6A3.5 3.5 0 0 0 4 12a3.5 3.5 0 0 0 3 5.5A3 3 0 0 0 12 20V4zM12 4a3.5 3.5 0 0 1 6.6 1.6A3.5 3.5 0 0 1 20 12a3.5 3.5 0 0 1-3 5.5A3 3 0 0 1 12 20"/></symbol>
+    <symbol id="i-castle" viewBox="0 0 24 24"><path d="M4 21V10h3v2h2V7l3-4 3 4v5h2v-2h3v11z"/><path d="M10 21v-4a2 2 0 0 1 4 0v4"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/></symbol>
+    <symbol id="i-plane" viewBox="0 0 24 24"><path d="M10.5 4.5a1.5 1.5 0 0 1 3 0V9l7 4v2l-7-2v4l2 1.5V20l-3.5-1-3.5 1v-1.5l2-1.5v-4l-7 2v-2l7-4z"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></symbol>
+    <symbol id="i-ride" viewBox="0 0 24 24"><path d="M2 17c3-11 6-11 9-1s6 5 11-9"/><path d="M2 21h20M6 21v-6M11 21v-4M17 21v-9"/></symbol>
+    <symbol id="i-grip" viewBox="0 0 24 24"><circle cx="9" cy="6" r=".9"/><circle cx="15" cy="6" r=".9"/><circle cx="9" cy="12" r=".9"/><circle cx="15" cy="12" r=".9"/><circle cx="9" cy="18" r=".9"/><circle cx="15" cy="18" r=".9"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></symbol>
+    <symbol id="i-clip" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 10h6M9 14h6M9 18h3"/></symbol>
+    <symbol id="i-shift" viewBox="0 0 24 24"><path d="M12 4l8 8h-4v7H8v-7H4z"/></symbol>
+    <symbol id="i-del" viewBox="0 0 24 24"><path d="M9 5h11v14H9l-6-7z"/><path d="M12 9l5 6M17 9l-5 6"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></symbol>
+    <symbol id="i-ticket" viewBox="0 0 24 24"><path d="M3 6h18v4a2 2 0 0 0 0 4v4H3v-4a2 2 0 0 0 0-4z"/><path d="M15 7v2M15 11v2M15 15v2"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></symbol>
+    <symbol id="i-ext" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6"/></symbol>
+    <symbol id="i-aside" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="5" rx="1.5"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M10 13h4"/></symbol>
+    <symbol id="i-note" viewBox="0 0 24 24"><path d="M5 4h14v10l-6 6H5z"/><path d="M13 20v-6h6M9 9h6M9 12h3"/></symbol>
+    <symbol id="i-food" viewBox="0 0 24 24"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 21V3c-2 1-3 4-3 8h3"/></symbol>
+    <symbol id="i-water" viewBox="0 0 24 24"><path d="M3 9c2-2 4-2 6 0s4 2 6 0 4-2 6 0M3 15c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/></symbol>
+    <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 7L4 12l5 5"/><path d="M4 12h11a5 5 0 0 1 0 10h-2"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-9A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8"/></symbol>
+    <symbol id="i-merge" viewBox="0 0 24 24"><circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="12" r="2"/><path d="M6 7v10M6 9c0 3 4 3 10 3"/></symbol>
+    <symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20l1-4L16 5l3 3L8 19z"/><path d="M14 7l3 3"/></symbol>
+    <symbol id="i-swap" viewBox="0 0 24 24"><path d="M7 4L3 8l4 4M3 8h14M17 12l4 4-4 4M21 16H7"/></symbol>
+    <symbol id="i-wand" viewBox="0 0 24 24"><path d="M4 20L15 9M13 7l4 4"/><path d="M18 3v3M16.5 4.5h3M20 9v2M19 10h2M9 3v2M8 4h2"/></symbol>
+    <symbol id="i-q" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 17h.01"/></symbol>
+  </defs>
+</svg>
+
+<header class="wrap top">
+  <span class="mark" aria-hidden="true"><svg class="i"><use href="#i-mark"/></svg></span>
+  GitAway
+  <span class="tag">Storyboards v2 · for review</span>
+</header>
+
+<section class="wrap intro">
+  <span class="eyebrow">PLAN STEPS V2 · THE TRIP CANVAS</span>
+  <h1>From a long text to a trip you can move with your thumb</h1>
+  <p>Today the plan lives in Messages: one long text, no days, the same list twice, and notes you have to match up in your head. Here you paste it or say it, tap Convert, answer two quick questions, and it becomes colourful blocks on one trip canvas you can zoom from the week to a day to a single ride. Each note sits on the block it's about. Anything you don't want goes to a Set aside tray, still in the trip. The rides and notes are the family's own words; the arrival and home flights and the lunch places in Ask are samples.</p>
+  <div class="trip-line" aria-label="The trip">
+    <span style="background:var(--sun-tint)">Oct 4–10, 2026 · LA and Anaheim</span>
+    <span style="background:var(--grape-tint)">Tue Oct 6 · Universal Studios Hollywood</span>
+    <span style="background:var(--mint-tint)">Fri Oct 9 · Disney California Adventure</span>
+  </div>
+  <div class="legend" aria-label="Who is on the trip">
+    <span style="--wf:var(--grape)"><i></i>Abhi</span>
+    <span style="--wf:var(--mint)"><i></i>Bhoomija</span>
+    <span style="--wf:var(--bubble)"><i></i>Hrishi</span>
+    <span style="--wf:var(--card)"><i style="box-shadow:inset 0 0 0 1.5px var(--ink-3)"></i>R and A · not matched to anyone yet</span>
+  </div>
+  <p class="hint"><svg class="i" aria-hidden="true"><use href="#i-spark"/></svg>Tap around: the who and day answers, the zoom, the filters, Undo, Mark done.</p>
+</section>
+
+<main class="wrap board" aria-label="Storyboard">
+
+<!-- 1 · The message as it arrives -->
+<article class="frame">
+  <div class="slot"><div class="device"><div class="scr im">
+    <div class="island"></div>
+    <div class="sb"><span>9:41</span><span class="ic"><svg viewBox="0 0 18 13"><rect x="0" y="9" width="3" height="4" rx="1"/><rect x="5" y="6" width="3" height="7" rx="1"/><rect x="10" y="3" width="3" height="10" rx="1"/><rect x="15" y="0" width="3" height="13" rx="1"/></svg><span class="bat"><i></i></span></span></div>
+    <div class="imhd">
+      <svg class="i back2" aria-hidden="true"><use href="#i-back"/></svg>
+      <div class="avs" aria-hidden="true"><span class="av a">Ab</span><span class="av b">Bh</span><span class="av k">Hr</span></div>
+      <b>LA trip · 5 people</b>
+    </div>
+    <div class="imbody" aria-label="A long itinerary sent as text messages">
+      <div class="imb me">
+        <span class="ln">Universal studios itinerary</span>
+        <span class="ln">lower lot: Super Nintendo Mario kart; Revenge of the Mummy; Transformers 3D (roughest ride); Jurassic park (Hrishi) water ride</span>
+        <span class="ln">Lunch</span>
+        <span class="ln">Upper lot: Harry Potter world (forbidden, hippogriff) H and B walk; King Kong; Fast and furious (main!!!); Kung fu; Minion; Secret life of pets; Silly swirly; Super silly land</span>
+        <span class="ln">Upper lot: Waterworld (upper lot)</span>
+        <span class="ln">Skip studio tour Simpson</span>
+      </div>
+      <div class="imb me">
+        <span class="ln">DCA itinerary</span>
+        <span class="ln">Hollywood land and avengers campus: Guardians of the galaxy; Web slinger</span>
+        <span class="ln">Carsland: Radiator springs racer</span>
+        <span class="ln">Pixar pier: Incredicoaster R&amp;A; Toy Story R&amp;A</span>
+        <span class="ln">Lunch lamp side</span>
+        <span class="ln">Grizzly peak: Grizzly river run R&amp;A; Soaring high H</span>
+        <span class="ln">Beauna vista: Mermaid; World of color show Fountain show</span>
+      </div>
+      <div class="imb me cut" aria-label="The same California Adventure list, sent a second time">
+        <span class="ln">DCA itinerary</span>
+        <span class="ln">Hollywood land and avengers campus: Guardians of the galaxy; Web slinger</span>
+        <span class="ln">Carsland: Radiator springs racer</span>
+      </div>
+      <span class="imnote">The same list again</span>
+      <div class="imb me">
+        <span class="ln">Pregnancy safe rides: Toy Story Midway Mania! (some find the spinning jerky, use personal judgment); The Little Mermaid ~ Ariel's Undersea Adventure; Monsters, Inc. Mike &amp; Sulley to the Rescue!; WEB SLINGERS: A Spider-Man Adventure; Jessie's Critter Carousel; Golden Zephyr; Inside Out Emotional Whirlwind; Soarin' Around the World</span>
+      </div>
+      <span class="imname">Bhoomija</span>
+      <div class="imb them">Wait, which day is Universal?</div>
+    </div>
+    <div class="imcomp"><span class="plus"><svg class="i" aria-hidden="true"><use href="#i-plus"/></svg></span><span class="in">Message</span></div>
+    <div class="homebar"></div>
+  </div></div></div>
+  <div class="cap"><span class="n">1</span><div><h3>Saturday night: the plan is a wall of text</h3><p>The whole park plan arrives in Messages: two parks in one stream, no dates, one list sent twice, and notes like "roughest ride" buried mid-line. Nobody can see the day at a glance.</p></div></div>
+</article>
+
+<!-- 2 · Paste into Add to the trip -->
+<article class="frame">
+  <div class="slot"><div class="device"><div class="scr">
+    <div class="island"></div>
+    <div class="sb"><span>9:43</span><span class="ic"><svg viewBox="0 0 18 13"><rect x="0" y="9" width="3" height="4" rx="1"/><rect x="5" y="6" width="3" height="7" rx="1"/><rect x="10" y="3" width="3" height="10" rx="1"/><rect x="15" y="0" width="3" height="13" rx="1"/></svg><span class="bat"><i></i></span></span></div>
+    <div class="main" style="gap:11px">
+      <div class="addhd"><div class="t"><span class="eb">LA AND ANAHEIM · OCT 4–10</span><b>Add to the trip</b></div><button class="round" aria-label="Close"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button></div>
+      <div class="pastebox">
+        <div class="raw" aria-label="The pasted text">
+          <span class="h">Universal studios itinerary</span>
+          <span>lower lot: Super Nintendo Mario kart; Revenge of the Mummy; Transformers 3D (roughest ride); Jurassic park (Hrishi) water ride</span>
+          <span>Lunch</span>
+          <span>Upper lot: Harry Potter world (forbidden, hippogriff) H and B walk; King Kong; Fast and furious (main!!!); Kung fu; Minion; Secret life of pets; Silly swirly; Super silly land</span>
+          <span>Upper lot: Waterworld (upper lot)</span>
+          <span>Skip studio tour Simpson</span>
+          <span class="h">DCA itinerary</span>
+          <span>Hollywood land and avengers campus: Guardians of the galaxy; Web slinger</span>
+          <span>Carsland: Radiator springs racer</span>
+        </div>
+        <div class="foot"><span class="pill"><svg class="i" style="width:15px;height:15px" aria-hidden="true"><use href="#i-check"/></svg>Pasted from Messages</span><span>4 messages · keep going, it's all there</span></div>
+      </div>
+      <div class="convertrow">
+        <button class="btn coral big"><svg class="i" aria-hidden="true"><use href="#i-wand"/></svg>Convert</button>
+        <button class="micbtn" aria-label="Say it instead"><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg></button>
+      </div>
+      <p class="orsay">or tap the mic and just say the plan</p>
+      <div class="iphone"><span class="bi"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg></span><span><b>On iPhone, copy then paste.</b> Web apps can't be in the share sheet, so in Messages touch and hold the text, tap Copy, then paste here.<span class="steps3"><span>Hold</span><span>Copy</span><span>Paste</span></span></span></div>
+    </div>
+    <nav class="tabs" aria-label="Trip">
+  <button aria-current="page"><span class="ti"><svg class="i" aria-hidden="true"><use href="#i-cal"/></svg></span>Trip</button>
+  <button><span class="ti"><svg class="i" aria-hidden="true"><use href="#i-map"/></svg></span>Map</button>
+  <button class="ask"><span class="ti"><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg></span>Ask</button>
+  <button><span class="ti"><svg class="i" aria-hidden="true"><use href="#i-users"/></svg></span>Family</button>
+  <button><span class="ti"><svg class="i" aria-hidden="true"><use href="#i-life"/></svg></span>Help</button>
+</nav>
+    <div class="homebar"></div>
+  </div></div></div>
+  <div class="cap"><span class="n">2</span><div><h3>Paste it in, as it is</h3><p>Copy the messages, paste them into Add to the trip, no tidying first. One big Convert button, or the mic to say it out loud instead.</p></div></div>
+</article>
+
+<!-- 3 · Convert result, step 1 -->
+<article class="frame">
+  <div class="slot"><div class="device"><div class="scr">
+    <div class="island"></div>
+    <div class="sb"><span>9:43</span><span class="ic"><svg viewBox="0 0 18 13"><rect x="0" y="9" width="3" height="4" rx="1"/><rect x="5" y="6" width="3" height="7" rx="1"/><rect x="10" y="3" width="3" height="10" rx="1"/><rect x="15" y="0" width="3" height="13" rx="1"/></svg><span class="bat"><i></i></span></span></div>
+    <div class="main" style="gap:6px;padding-bottom:24px">
+      <div class="stepbar"><span class="lk">Back</span><b>Convert</b><span class="stepdots" aria-label="Step 1 of 2"><i class="on"></i><i></i></span></div>
+      <div class="found on-ink">
+        <span class="lbl"><svg class="i" aria-hidden="true"><use href="#i-wand"/></svg>WE READ YOUR MESSAGES</span>
+        <h4>Here's what we found</h4>
+        <div class="nums"><div style="background:var(--sun)"><b>2</b><span>park days</span></div><div style="background:var(--mint)"><b>8</b><span>areas</span></div><div style="background:var(--bubble)"><b>23</b><span>rides and shows</span></div></div>
+      </div>
+      <div class="pday d-grape">
+        <div class="r"><span class="pi2"><svg class="i" aria-hidden="true"><use href="#i-ride"/></svg></span><span class="x"><b>Universal Studios Hollywood</b><span>Lower Lot, lunch, then Upper Lot</span></span></div>
+        <div class="arow"><span>Lower Lot <em>4</em></span><span>Lunch</span><span>Harry Potter world <em>2</em></span><span>Upper Lot <em>8</em></span></div>
+      </div>
+      <div class="pday d-sun">
+        <div class="r"><span class="pi2"><svg class="i" aria-hidden="true"><use href="#i-castle"/></svg></span><span class="x"><b>Disney California Adventure</b><span>Your "DCA itinerary"</span></span></div>
+        <div class="arow"><span>Hollywood Land and Avengers Campus <em>2</em></span><span>Cars Land <em>1</em></span><span>Pixar Pier <em>2</em></span><span>Lunch</span><span>Grizzly Peak <em>2</em></span><span>Buena Vista <em>2</em></span></div>
+      </div>
+      <div class="tidy">
+        <span class="th">WHAT WE TIDIED</span>
+        <div class="ti2"><span class="ic2" style="background:var(--grape-tint)"><svg class="i" aria-hidden="true"><use href="#i-merge"/></svg></span><span><b>Merged a repeated California Adventure list.</b> It was sent twice.</span></div>
+        <div class="ti2"><span class="ic2" style="background:var(--paper-2)"><svg class="i" aria-hidden="true"><use href="#i-aside"/></svg></span><span><b>Set aside: Studio Tour, Simpsons.</b> Still in the trip, just not in a day.</span></div>
+        <div class="ti2"><span class="ic2" style="background:var(--sun-tint)"><svg class="i" aria-hidden="true"><use href="#i-note"/></svg></span><span><b>Kept your notes:</b> <span class="hand">roughest ride</span> <span class="hand">main!!!</span> <span class="hand">H and B walk</span> <span class="hand">lamp side</span></span></div>
+        <div class="ti2"><span class="ic2" style="background:var(--mint-tint)"><svg class="i" aria-hidden="true"><use href="#i-list"/></svg></span><span><b>Made a list: Pregnancy-safe rides (8).</b></span></div>
+      </div>
+      <div class="acts2"><button class="btn coral">Next: 2 quick questions<svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></button><button class="btn white">Edit text</button></div>
+    </div>
+    <div class="homebar"></div>
+  </div></div></div>
+  <div class="cap"><span class="n">3</span><div><h3>Convert, step 1: here's what we found</h3><p>Two park days with their areas and rides, plus a short note of every clean-up: the repeat merged, the skips set aside, your notes kept on their rides. Nothing is lost.</p></div></div>
+</article>
+
+<!-- 4 · Convert asks, step 2 -->
+<article class="frame">
+  <div class="slot"><div class="device"><div class="scr">
+    <div class="island"></div>
+    <div class="sb"><span>9:44</span><span class="ic"><svg viewBox="0 0 18 13"><rect x="0" y="9" width="3" height="4" rx="1"/><rect x="5" y="6" width="3" height="7" rx="1"/><rect x="10" y="3" width="3" height="10" rx="1"/><rect x="15" y="0" width="3" height="13" rx="1"/></svg><span class="bat"><i></i></span></span></div>
+    <div class="main" style="gap:7px;padding-bottom:26px">
+      <div class="stepbar"><span class="lk">Back</span><b>Convert</b><span class="stepdots" aria-label="Step 2 of 2"><i class="on"></i><i class="on"></i></span></div>
+      <div class="qcard">
+        <div class="qh"><span class="qn">1</span><b>Who are R, A, H and B?</b></div>
+        <div class="maprow"><span class="ini ok">H</span><div class="pick" role="group" aria-label="Who is H"><button aria-pressed="true"><span class="fa k">Hr</span>Hrishi</button><span class="why">you wrote "(Hrishi)"</span></div></div>
+        <div class="maprow"><span class="ini ok">B</span><div class="pick" role="group" aria-label="Who is B"><button aria-pressed="true"><span class="fa b">Bh</span>Bhoomija</button><span class="why">the only B in the family</span></div></div>
+        <div class="maprow"><span class="ini">R</span><div class="pick" role="group" aria-label="Who is R"><button aria-pressed="false"><span class="fa a">Ab</span>Abhi</button><button aria-pressed="false"><span class="fa b">Bh</span>Bhoomija</button><button aria-pressed="false"><span class="fa k">Hr</span>Hrishi</button><button class="txt" aria-pressed="false">+ Someone new</button><button class="txt" aria-pressed="false">Keep as R</button></div></div>
+        <div class="maprow"><span class="ini">A</span><div class="pick" role="group" aria-label="Who is A"><button aria-pressed="false"><span class="fa a">Ab</span>Abhi</button><button aria-pressed="false"><span class="fa b">Bh</span>Bhoomija</button><button aria-pressed="false"><span class="fa k">Hr</span>Hrishi</button><button class="txt" aria-pressed="false">+ Someone new</button><button class="txt" aria-pressed="false">Keep as A</button></div></div>
+      </div>
+      <div class="qcard">
+        <div class="qh"><span class="qn">2</span><b>Which day is each park?</b></div>
+        <div class="dayq d-grape"><span class="dl"><i></i>Universal Studios Hollywood</span>
+          <div class="days7" role="group" aria-label="Day for Universal"><button aria-pressed="false">SUN<b>4</b></button><button aria-pressed="false">MON<b>5</b></button><button aria-pressed="true">TUE<b>6</b></button><button aria-pressed="false">WED<b>7</b></button><button aria-pressed="false">THU<b>8</b></button><button aria-pressed="false">FRI<b>9</b></button><button aria-pressed="false">SAT<b>10</b></button></div></div>
+        <div class="dayq d-sun"><span class="dl"><i></i>Disney California Adventure</span>
+          <div class="days7" role="group" aria-label="Day for California Adventure"><button aria-pressed="false">SUN<b>4</b></button><button aria-pressed="false">MON<b>5</b></button><button aria-pressed="false">TUE<b>6</b></button><button aria-pressed="false">WED<b>7</b></button><button aria-pressed="false">THU<b>8</b></button><button aria-pressed="true">FRI<b>9</b></button><button aria-pressed="false">SAT<b>10</b></button></div></div>
+      </div>
+      <div class="qcard">
+        <div class="qh"><span class="qn" style="background:var(--mint)"><svg class="i" style="width:15px;height:15px" aria-hidden="true"><use href="#i-shield"/></svg></span><b>Pregnancy-safe rides: who's it for?</b></div>
+        <div class="pick" role="group" aria-label="Who the pregnancy-safe list is for"><button aria-pressed="false"><span class="fa a">Ab</span>Abhi</button><button aria-pressed="false"><span class="fa b">Bh</span>Bhoomija</button><button aria-pressed="false"><span class="fa k">Hr</span>Hrishi</button><button class="txt" aria-pressed="false">Someone else</button><button class="txt" aria-pressed="true">Just keep it as a list</button></div>
+      </div>
+      <span class="saveline"><svg class="i" aria-hidden="true"><use href="#i-shield"/></svg>Nothing is saved until you tap Add to trip.</span>
+      <button class="btn coral" style="height:54px;font-size:17px"><svg class="i" aria-hidden="true"><use href="#i-plus"/></svg>Add to trip</button>
+    </div>
+    <div class="homebar"></div>
+  </div></div></div>
+  <div class="cap"><span class="n">4</span><div><h3>Convert, step 2: two quick questions</h3><p>Convert never guesses a person or a date. It suggests H is Hrishi because the message says so, leaves R and A for you, and asks which day each park is. Abhi picks Tuesday and Friday and taps Add to trip.</p></div></div>
+</article>
+
+<!-- 5 · The week canvas -->
+<article class="frame">
+  <div class="slot"><div class="device"><div class="scr">
+    <div class="island"></div>
+    <div class="sb"><span>9:45</span><span class="ic"><svg viewBox="0 0 18 13"><rect x="0" y="9" width="3" height="4" rx="1"/><rect x="5" y="6" width="3" height="7" rx="1"/><rect x="10" y="3" width="3" height="10" rx="1"/><rect x="15" y="0" width="3" height="13" rx="1"/></svg><span class="bat"><i></i></span></span></div>
+    <div class="main" style="gap:7px">
+      <div class="hd">
+        <div class="t"><span class="eb">LA AND ANAHEIM · OCT 4–10</span><span class="ttl">The trip</span></div>
+        <div class="avs" aria-label="Abhi, Bhoomija, Hrishi, R and A"><span class="av a">Ab</span><span class="av b">Bh</span><span class="av k">Hr</span><span class="av u">R</span><span class="av u">A</span></div>
+      </div>
+      <span class="one-view"><i><svg class="i" aria-hidden="true"><use href="#i-check"/></svg></i>Trip and calendar, now one view</span>
+      <div class="zoombar"><div class="zseg" role="group" aria-label="Zoom"><button aria-pressed="true">Week</button><button aria-pressed="false">Day</button><button aria-pressed="false">Ride</button></div><span class="pinch"><span class="pf" aria-hidden="true"><i></i><i></i></span>Pinch</span></div>
+      <div class="week">
+        <div class="wk d-sun"><div class="dn"><span>SUN</span><b>4</b></div><div class="wb lite"><svg class="i" aria-hidden="true"><use href="#i-plane"/></svg><span class="x">Fly into LAX<span>Sample flight · add yours</span></span><span class="sample">SAMPLE</span></div></div>
+        <div class="wk d-mint"><div class="dn"><span>MON</span><b>5</b></div><div class="wb free">Free day<svg class="i" aria-hidden="true"><use href="#i-plus"/></svg></div></div>
+        <div class="wk d-grape"><div class="dn"><span>TUE</span><b>6</b></div>
+          <div class="wb park"><span class="tinynote">MAIN!!!</span>
+            <div class="pt2"><span class="pi2"><svg class="i" aria-hidden="true"><use href="#i-ride"/></svg></span><b>Universal Studios Hollywood</b></div>
+            <div class="mblocks"><span style="--bf:var(--sky);flex:1">Lower Lot<em>4 rides</em></span><span class="lunch">Lunch<em>12:00</em></span><span style="flex:1.4">Upper Lot<em>10 rides</em></span></div>
+          </div></div>
+        <div class="wk d-sky"><div class="dn"><span>WED</span><b>7</b></div><div class="wb free">Free day<svg class="i" aria-hidden="true"><use href="#i-plus"/></svg></div></div>
+        <div class="wk d-bubble"><div class="dn"><span>THU</span><b>8</b></div><div class="wb free">Free day<svg class="i" aria-hidden="true"><use href="#i-plus"/></svg></div></div>
+        <div class="wk d-sun"><div class="dn"><span>FRI</span><b>9</b></div>
+          <div class="wb park"><span class="tinynote" style="background:var(--mint-tint)">lamp side</span>
+            <div class="pt2"><span class="pi2"><svg class="i" aria-hidden="true"><use href="#i-castle"/></svg></span><b>Disney California Adventure</b></div>
+            <div class="mblocks" style="flex-wrap:wrap"><span style="--bf:var(--grape)">Avengers<em>2</em></span><span style="--bf:var(--sky)">Cars Land<em>1</em></span><span style="--bf:var(--bubble)">Pixar Pier<em>2</em></span><span class="lunch">Lunch<em>12:00</em></span><span style="--bf:var(--mint)">Grizzly<em>2</em></span><span style="--bf:var(--grape)">Buena Vista<em>2</em></span></div>
+          </div></div>
+        <div class="wk d-mint"><div class="dn"><span>SAT</span><b>10</b></div><div class="wb lite"><svg class="i" aria-hidden="true"><use href="#i-plane"/></svg><span class="x">Fly home<span>Sample flight · add yours</span></span><span class="sample">SAMPLE</span></div></div>
+      </div>
+    </div>
+    <nav class="tabs" aria-label="Trip">
+  <button aria-current="page"><span class="ti"><svg class="i" aria-hidden="true"><use href="#i-cal"/></svg></span>Trip</button>
+  <button><span class="ti"><svg class="i" aria-hidden="true"><use href="#i-map"/></svg></span>Map</button>
+  <button class="ask"><span class="ti"><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg></span>Ask</button>
+  <button><span class="ti"><svg class="i" aria-hidden="true"><use href="#i-users"/></svg></span>Family</button>
+  <button><span class="ti"><svg class="i" aria-hidden="true"><use href="#i-life"/></svg></span>Help</button>
+</nav>
+    <div class="homebar"></div>
+  </div></div></div>
+  <div class="cap"><span class="n">5</span><div><h3>The trip canvas, zoomed out to the week</h3><p>One view for the whole trip instead of a trip page and a separate calendar. Each day is a row of colourful blocks; the two park days are now full. Pinch or tap Day to zoom in.</p></div></div>
+</article>
+
+<!-- 6 · Zoomed into Universal -->
+<article class="frame">
+  <div class="slot"><div class="device"><div class="scr">
+    <div class="island"></div>
+    <div class="sb"><span>9:46</span><span class="ic"><svg viewBox="0 0 18 13"><rect x="0" y="9" width="3" height="4" rx="1"/><rect x="5" y="6" width="3" height="7" rx="1"/><rect x="10" y="3" width="3" height="10" rx="1"/><rect x="15" y="0" width="3" height="13" rx="1"/></svg><span class="bat"><i></i></span></span></div>
+    <div class="main tight" style="gap:8px">
+      <div class="dayhd on-ink">
+        <div class="r1"><button class="back" aria-label="Back to the week"><svg class="i" aria-hidden="true"><use href="#i-back"/></svg></button><span class="t"><span>TUE OCT 6 · DAY 3 OF 7</span><b>Universal Studios Hollywood</b></span></div>
+        <div class="whobar"><span class="fa a">Ab</span><span class="fa b">Bh</span><span class="fa k">Hr</span><span class="fa u">R</span><span class="fa u">A</span><span>Everyone · R and A to match</span></div>
+      </div>
+      <div class="ab d-sky">
+        <div class="ah"><span class="ai"><svg class="i" aria-hidden="true"><use href="#i-ride"/></svg></span><b>Lower Lot</b><span class="when">Morning</span></div>
+        <div class="rides roomy">
+          <span class="rd">Mario Kart</span>
+          <span class="rd">Revenge of the Mummy</span>
+          <span class="rd">Transformers 3D<span class="stk">roughest ride!</span></span>
+          <span class="rd">Jurassic World <small>water ride</small><span class="fa k">Hr</span></span>
+        </div>
+      </div>
+      <div class="ab lunchb"><span class="ai" style="width:30px;height:30px;border-radius:10px;background:var(--sun);display:grid;place-items:center"><svg class="i" style="width:17px;height:17px" aria-hidden="true"><use href="#i-food"/></svg></span><span class="x"><b>Lunch</b>Around 12:00 · no place yet</span><button class="btn white sm" style="height:34px"><svg class="i" aria-hidden="true"><use href="#i-spark"/></svg>Ideas</button></div>
+      <div class="ab d-grape">
+        <div class="ah"><span class="ai"><svg class="i" aria-hidden="true"><use href="#i-ride"/></svg></span><b>Upper Lot</b><span class="when">Afternoon</span></div>
+        <div class="hpw" style="margin-top:8px"><span class="stk pink">H and B walk</span><span class="hl"><span class="fa k">Hr</span><span class="fa b">Bh</span>HARRY POTTER WORLD</span><div class="rides"><span class="rd">Forbidden Journey</span><span class="rd">Hippogriff</span></div></div>
+        <div class="rides roomy">
+          <span class="rd">King Kong</span>
+          <span class="rd" style="box-shadow:0 0 0 2px var(--coral),var(--shadow-sm)">Fast &amp; Furious<span class="stk big">MAIN!!!</span></span>
+          <span class="rd">Kung Fu Panda</span>
+          <span class="rd">Minion Mayhem</span>
+          <span class="rd">Secret Life of Pets</span>
+          <span class="rd">Silly Swirly</span>
+          <span class="rd">Super Silly Fun Land</span>
+          <span class="rd show">Waterworld</span>
+        </div>
+      </div>
+    </div>
+    <div class="tray row"><span class="tt"><svg class="i" aria-hidden="true"><use href="#i-aside"/></svg>Set aside · 2<span>still in the trip</span></span><div class="rides"><span class="rd off"><svg class="i" aria-hidden="true"><use href="#i-undo"/></svg>Studio Tour</span><span class="rd off"><svg class="i" aria-hidden="true"><use href="#i-undo"/></svg>Simpsons</span></div></div>
+    <nav class="tabs" aria-label="Trip">
+  <button aria-current="page"><span class="ti"><svg class="i" aria-hidden="true"><use href="#i-cal"/></svg></span>Trip</button>
+  <button><span class="ti"><svg class="i" aria-hidden="true"><use href="#i-map"/></svg></span>Map</button>
+  <button class="ask"><span class="ti"><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg></span>Ask</button>
+  <button><span class="ti"><svg class="i" aria-hidden="true"><use href="#i-users"/></svg></span>Family</button>
+  <button><span class="ti"><svg class="i" aria-hidden="true"><use href="#i-life"/></svg></span>Help</button>
+</nav>
+    <div class="homebar"></div>
+  </div></div></div>
+  <div class="cap"><span class="n">6</span><div><h3>Zoomed into Tuesday at Universal</h3><p>Lower Lot, lunch, Upper Lot as blocks, rides inside as chips. The notes are stuck on the ride they're about, in handwriting, and the Studio Tour and Simpsons wait in the Set aside tray.</p></div></div>
+</article>
+
+<!-- 7 · One ride opened -->
+<article class="frame">
+  <div class="slot"><div class="device"><div class="scr">
+    <div class="island"></div>
+    <div class="sb"><span>9:47</span><span class="ic"><svg viewBox="0 0 18 13"><rect x="0" y="9" width="3" height="4" rx="1"/><rect x="5" y="6" width="3" height="7" rx="1"/><rect x="10" y="3" width="3" height="10" rx="1"/><rect x="15" y="0" width="3" height="13" rx="1"/></svg><span class="bat"><i></i></span></span></div>
+    <div class="main" style="gap:9px">
+      <div class="dayhd on-ink"><div class="r1"><button class="back" aria-label="Back to the week"><svg class="i" aria-hidden="true"><use href="#i-back"/></svg></button><span class="t"><span>TUE OCT 6 · DAY 3 OF 7</span><b>Universal Studios Hollywood</b></span></div></div>
+      <div class="ab d-grape"><div class="ah"><span class="ai"><svg class="i" aria-hidden="true"><use href="#i-ride"/></svg></span><b>Upper Lot</b><span class="when">Afternoon</span></div><div class="rides roomy"><span class="rd">King Kong</span><span class="rd">Fast &amp; Furious<span class="stk big">MAIN!!!</span></span><span class="rd">Kung Fu Panda</span></div></div>
+    </div>
+    <div class="dim" aria-hidden="true"></div>
+    <div class="rsheet" role="dialog" aria-label="Fast and Furious, Supercharged">
+      <span class="grab"></span>
+      <div class="h">
+        <span class="ri"><svg class="i" aria-hidden="true"><use href="#i-ride"/></svg></span>
+        <div class="x"><div class="ssheet-tags" style="display:flex;gap:6px;flex-wrap:wrap"><span class="pill" style="background:var(--grape-tint);height:24px">Upper Lot</span><span class="pill" style="background:var(--paper-2);height:24px">Tue Oct 6 · afternoon</span></div><h4>Fast &amp; Furious — Supercharged</h4></div>
+        <button class="round" aria-label="Close"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button>
+      </div>
+      <div class="bigslip"><p>main!!!</p><small>From your message</small></div>
+      <span class="flbl">WHO'S GOING</span>
+      <div class="whorow" role="group" aria-label="Who is going">
+        <button aria-pressed="true"><span class="fa a">Ab</span>Abhi</button><button aria-pressed="true"><span class="fa b">Bh</span>Bhoomija</button><button aria-pressed="true"><span class="fa k">Hr</span>Hrishi</button><button class="ini2" aria-pressed="true" aria-label="R, not matched yet"><span class="fa u">R</span></button><button class="ini2" aria-pressed="true" aria-label="A, not matched yet"><span class="fa u">A</span></button>
+      </div>
+      <div class="addnote"><svg class="i" aria-hidden="true"><use href="#i-pen"/></svg>Add a note, a fun one</div>
+      <div class="heads"><svg class="i" aria-hidden="true"><use href="#i-q"/></svg><span><b>Worth checking:</b> Fast &amp; Furious and King Kong are stops on the Studio Tour tram, which is set aside.</span></div>
+      <div class="acts3">
+        <button class="btn coral" id="rdone" aria-pressed="false"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg><span>Mark done</span></button>
+        <button class="btn white sm"><svg class="i" aria-hidden="true"><use href="#i-aside"/></svg>Set aside</button>
+        <button class="btn white sm"><svg class="i" aria-hidden="true"><use href="#i-clock"/></svg>Move to another time</button>
+      </div>
+    </div>
+    <nav class="tabs" aria-label="Trip">
+  <button aria-current="page"><span class="ti"><svg class="i" aria-hidden="true"><use href="#i-cal"/></svg></span>Trip</button>
+  <button><span class="ti"><svg class="i" aria-hidden="true"><use href="#i-map"/></svg></span>Map</button>
+  <button class="ask"><span class="ti"><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg></span>Ask</button>
+  <button><span class="ti"><svg class="i" aria-hidden="true"><use href="#i-users"/></svg></span>Family</button>
+  <button><span class="ti"><svg class="i" aria-hidden="true"><use href="#i-life"/></svg></span>Help</button>
+</nav>
+    <div class="homebar"></div>
+  </div></div></div>
+  <div class="cap"><span class="n">7</span><div><h3>Tap a ride: the note is right there</h3><p>Fast &amp; Furious opens with the family's "main!!!" stuck on it, who's going, and room for another note. Mark done, Set aside or Move to another time are one tap each.</p></div></div>
+</article>
+
+<!-- 8 · Touch: drag, set aside, filter -->
+<article class="frame trio">
+  <div class="duo">
+    <div class="one">
+      <span class="sub">HOLD AND DRAG</span>
+      <div class="slot"><div class="device"><div class="scr">
+        <div class="island"></div>
+        <div class="sb"><span>9:48</span><span class="ic"><svg viewBox="0 0 18 13"><rect x="0" y="9" width="3" height="4" rx="1"/><rect x="5" y="6" width="3" height="7" rx="1"/><rect x="10" y="3" width="3" height="10" rx="1"/><rect x="15" y="0" width="3" height="13" rx="1"/></svg><span class="bat"><i></i></span></span></div>
+        <div class="main" style="gap:9px">
+          <div class="dayhd on-ink"><div class="r1"><button class="back" aria-label="Back to the week"><svg class="i" aria-hidden="true"><use href="#i-back"/></svg></button><span class="t"><span>TUE OCT 6 · DAY 3 OF 7</span><b>Universal Studios Hollywood</b></span></div></div>
+          <div class="ab d-grape">
+            <div class="ah"><span class="ai"><svg class="i" aria-hidden="true"><use href="#i-ride"/></svg></span><b>Upper Lot</b><span class="when">Afternoon</span></div>
+            <div class="hpw" style="margin-top:8px"><span class="stk pink">H and B walk</span><span class="hl"><span class="fa k">Hr</span><span class="fa b">Bh</span>HARRY POTTER WORLD</span><div class="rides"><span class="rd">Forbidden Journey</span><span class="rd">Hippogriff</span></div></div>
+            <div class="rides roomy">
+              <span class="rd">King Kong</span><span class="rd">Fast &amp; Furious<span class="stk big">MAIN!!!</span></span><span class="rd">Kung Fu Panda</span><span class="rd">Minion Mayhem</span><span class="rd">Secret Life of Pets</span><span class="rd">Silly Swirly</span><span class="rd">Super Silly Fun Land</span><span class="gap" aria-hidden="true"></span>
+            </div>
+          </div>
+          <span class="hint2"><svg class="i" aria-hidden="true"><use href="#i-grip"/></svg>Hold any block to pick it up. Drop it on another day, a new time, or the tray.</span>
+        </div>
+        <span class="trail" aria-hidden="true"></span>
+        <div class="dragged"><span class="rd show lift" aria-label="Waterworld, being dragged">Waterworld</span><span class="finger"></span></div>
+        <div class="tray hot"><span class="tt"><svg class="i" aria-hidden="true"><use href="#i-aside"/></svg>Set aside · 2<span>still in the trip</span></span><div class="dropz">Drop to set aside</div></div>
+        <nav class="tabs" aria-label="Trip">
+  <button aria-current="page"><span class="ti"><svg class="i" aria-hidden="true"><use href="#i-cal"/></svg></span>Trip</button>
+  <button><span class="ti"><svg class="i" aria-hidden="true"><use href="#i-map"/></svg></span>Map</button>
+  <button class="ask"><span class="ti"><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg></span>Ask</button>
+  <button><span class="ti"><svg class="i" aria-hidden="true"><use href="#i-users"/></svg></span>Family</button>
+  <button><span class="ti"><svg class="i" aria-hidden="true"><use href="#i-life"/></svg></span>Help</button>
+</nav>
+        <div class="homebar"></div>
+      </div></div></div>
+    </div>
+    <div class="one">
+      <span class="sub">LET GO</span>
+      <div class="slot"><div class="device"><div class="scr">
+        <div class="island"></div>
+        <div class="sb"><span>9:48</span><span class="ic"><svg viewBox="0 0 18 13"><rect x="0" y="9" width="3" height="4" rx="1"/><rect x="5" y="6" width="3" height="7" rx="1"/><rect x="10" y="3" width="3" height="10" rx="1"/><rect x="15" y="0" width="3" height="13" rx="1"/></svg><span class="bat"><i></i></span></span></div>
+        <div class="main" style="gap:9px">
+          <div class="dayhd on-ink"><div class="r1"><button class="back" aria-label="Back to the week"><svg class="i" aria-hidden="true"><use href="#i-back"/></svg></button><span class="t"><span>TUE OCT 6 · DAY 3 OF 7</span><b>Universal Studios Hollywood</b></span></div></div>
+          <div class="ab d-grape">
+            <div class="ah"><span class="ai"><svg class="i" aria-hidden="true"><use href="#i-ride"/></svg></span><b>Upper Lot</b><span class="when">Afternoon</span></div>
+            <div class="hpw" style="margin-top:8px"><span class="stk pink">H and B walk</span><span class="hl"><span class="fa k">Hr</span><span class="fa b">Bh</span>HARRY POTTER WORLD</span><div class="rides"><span class="rd">Forbidden Journey</span><span class="rd">Hippogriff</span></div></div>
+            <div class="rides roomy" id="upper">
+              <span class="rd">King Kong</span><span class="rd">Fast &amp; Furious<span class="stk big">MAIN!!!</span></span><span class="rd">Kung Fu Panda</span><span class="rd">Minion Mayhem</span><span class="rd">Secret Life of Pets</span><span class="rd">Silly Swirly</span><span class="rd">Super Silly Fun Land</span><span class="rd show" id="ww-back" hidden>Waterworld</span>
+            </div>
+          </div>
+          <span class="hint2"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg>The day closes the gap by itself.</span>
+        </div>
+        <div class="toast" role="status"><svg class="i" aria-hidden="true"><use href="#i-aside"/></svg><span id="toastmsg">Waterworld set aside</span><button id="undo">Undo</button></div>
+        <div class="tray"><span class="tt"><svg class="i" aria-hidden="true"><use href="#i-aside"/></svg><span style="margin:0;color:var(--ink-2);font-size:13px;font-weight:800" id="traycount">Set aside · 3</span><span>still in the trip</span></span><div class="rides"><span class="rd off"><svg class="i" aria-hidden="true"><use href="#i-undo"/></svg>Studio Tour</span><span class="rd off"><svg class="i" aria-hidden="true"><use href="#i-undo"/></svg>Simpsons</span><span class="rd off pop" id="ww-tray"><svg class="i" aria-hidden="true"><use href="#i-undo"/></svg>Waterworld</span></div></div>
+        <nav class="tabs" aria-label="Trip">
+  <button aria-current="page"><span class="ti"><svg class="i" aria-hidden="true"><use href="#i-cal"/></svg></span>Trip</button>
+  <button><span class="ti"><svg class="i" aria-hidden="true"><use href="#i-map"/></svg></span>Map</button>
+  <button class="ask"><span class="ti"><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg></span>Ask</button>
+  <button><span class="ti"><svg class="i" aria-hidden="true"><use href="#i-users"/></svg></span>Family</button>
+  <button><span class="ti"><svg class="i" aria-hidden="true"><use href="#i-life"/></svg></span>Help</button>
+</nav>
+        <div class="homebar"></div>
+      </div></div></div>
+    </div>
+    <div class="one">
+      <span class="sub">FILTER: PREGNANCY-SAFE</span>
+      <div class="slot"><div class="device"><div class="scr">
+        <div class="island"></div>
+        <div class="sb"><span>9:50</span><span class="ic"><svg viewBox="0 0 18 13"><rect x="0" y="9" width="3" height="4" rx="1"/><rect x="5" y="6" width="3" height="7" rx="1"/><rect x="10" y="3" width="3" height="10" rx="1"/><rect x="15" y="0" width="3" height="13" rx="1"/></svg><span class="bat"><i></i></span></span></div>
+        <div class="main flt-on flt-ps" id="dcaf" style="gap:6px">
+          <div class="dayhd on-ink"><div class="r1"><button class="back" aria-label="Back to the week"><svg class="i" aria-hidden="true"><use href="#i-back"/></svg></button><span class="t"><span>FRI OCT 9 · DAY 6 OF 7</span><b>Disney California Adventure</b></span></div></div>
+          <div class="fchips" role="group" aria-label="Show">
+            <button class="chip" data-f="all" aria-pressed="false">Everyone</button><button class="chip" data-f="adult" aria-pressed="false">Adults</button><button class="chip" data-f="kid" aria-pressed="false">Kids</button><button class="chip ps" data-f="safe" aria-pressed="true"><svg class="i" aria-hidden="true"><use href="#i-shield"/></svg>Pregnancy-safe</button>
+          </div>
+          <div class="ab d-grape" style="padding:8px 10px 9px"><div class="ah"><b style="font-size:15px">Hollywood Land and Avengers Campus</b></div><div class="rides"><span class="rd" data-adult>Guardians of the Galaxy</span><span class="rd safe hit" data-safe data-adult><svg class="i sh" aria-hidden="true"><use href="#i-shield"/></svg>Web Slingers</span></div></div>
+          <div class="ab d-sky" style="padding:8px 10px 9px"><div class="ah"><b style="font-size:15px">Cars Land</b></div><div class="rides"><span class="rd" data-adult>Radiator Springs Racers</span></div></div>
+          <div class="ab d-bubble" style="padding:8px 10px 9px"><div class="ah"><b style="font-size:15px">Pixar Pier</b></div><div class="rides"><span class="rd" data-adult>Incredicoaster<span class="fa u">R</span><span class="fa u">A</span></span><span class="rd safe hit" data-safe data-adult><svg class="i sh" aria-hidden="true"><use href="#i-shield"/></svg>Toy Story Midway Mania<span class="fa u">R</span><span class="fa u">A</span></span></div></div>
+          <div class="ab d-mint" style="padding:8px 10px 9px"><div class="ah"><b style="font-size:15px">Grizzly Peak</b></div><div class="rides"><span class="rd" data-adult>Grizzly River Run<span class="fa u">R</span><span class="fa u">A</span></span><span class="rd safe hit" data-safe data-kid><svg class="i sh" aria-hidden="true"><use href="#i-shield"/></svg>Soarin'<span class="fa k">Hr</span></span></div></div>
+          <div class="ab d-grape" style="padding:8px 10px 9px"><div class="ah"><b style="font-size:15px">Buena Vista</b></div><div class="rides"><span class="rd safe hit" data-safe data-adult><svg class="i sh" aria-hidden="true"><use href="#i-shield"/></svg>Little Mermaid</span><span class="rd show" data-adult>World of Color</span></div></div>
+          <div class="listcard" id="morelist"><span><b>4 more from your Pregnancy-safe list</b> aren't in this day yet.</span><div class="rides"><span class="rd hit">Monsters, Inc.</span><span class="rd hit">Jessie's Critter Carousel</span><span class="rd hit">Golden Zephyr</span><span class="rd hit">Inside Out</span></div></div>
+        </div>
+        <nav class="tabs" aria-label="Trip">
+  <button aria-current="page"><span class="ti"><svg class="i" aria-hidden="true"><use href="#i-cal"/></svg></span>Trip</button>
+  <button><span class="ti"><svg class="i" aria-hidden="true"><use href="#i-map"/></svg></span>Map</button>
+  <button class="ask"><span class="ti"><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg></span>Ask</button>
+  <button><span class="ti"><svg class="i" aria-hidden="true"><use href="#i-users"/></svg></span>Family</button>
+  <button><span class="ti"><svg class="i" aria-hidden="true"><use href="#i-life"/></svg></span>Help</button>
+</nav>
+        <div class="homebar"></div>
+      </div></div></div>
+    </div>
+  </div>
+  <div class="cap"><span class="n">8</span><div><h3>Move things by touch, and see only what fits</h3><p>Abhi drags Waterworld into the Set aside tray, the afternoon closes the gap, and Undo is right there. On Friday the Pregnancy-safe filter lights up the four safe rides already in the day, dims the rest, and offers the other four from the list.</p></div></div>
+</article>
+
+<!-- 9 · Speak to it -->
+<article class="frame">
+  <div class="slot"><div class="device"><div class="scr">
+    <div class="island"></div>
+    <div class="sb"><span>9:52</span><span class="ic"><svg viewBox="0 0 18 13"><rect x="0" y="9" width="3" height="4" rx="1"/><rect x="5" y="6" width="3" height="7" rx="1"/><rect x="10" y="3" width="3" height="10" rx="1"/><rect x="15" y="0" width="3" height="13" rx="1"/></svg><span class="bat"><i></i></span></span></div>
+    <div class="main" style="gap:9px">
+      <div class="dayhd on-ink"><div class="r1"><button class="back" aria-label="Back to the week"><svg class="i" aria-hidden="true"><use href="#i-back"/></svg></button><span class="t"><span>FRI OCT 9 · DAY 6 OF 7</span><b>Disney California Adventure</b></span></div></div>
+      <div class="ab d-bubble"><div class="ah"><b style="font-size:15px">Pixar Pier</b><span class="when">Late morning</span></div><div class="rides"><span class="rd">Incredicoaster</span><span class="rd">Toy Story Midway Mania</span></div></div>
+      <div class="ab lunchb"><span class="x"><b>Lunch</b>12:00 · lamp side</span></div>
+    </div>
+    <div class="dim" aria-hidden="true"></div>
+    <div class="vsheet" role="dialog" aria-label="Speak a change">
+      <span class="grab"></span>
+      <div class="listen"><span class="mc"><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg></span><span class="x"><b>Listening</b><span>Talk naturally. Let go when you're done.</span></span><span class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
+      <p class="said">"Add Bhoomija and Hrishi to Soarin and move lunch to <span class="soft">12:30</span>"</p>
+      <div class="propose">
+        <span class="ph">HERE'S THE CHANGE · FRIDAY</span>
+        <div class="ba">
+          <span class="lab"><svg class="i" aria-hidden="true"><use href="#i-ride"/></svg>Soarin' · Grizzly Peak</span>
+          <span class="old"><span class="fa k">Hr</span>Hrishi</span>
+          <svg class="i" aria-hidden="true"><use href="#i-move"/></svg>
+          <span class="new"><span class="fa k">Hr</span><span class="fa b">Bh</span>Hrishi, Bhoomija</span>
+        </div>
+        <div class="ba">
+          <span class="lab"><svg class="i" aria-hidden="true"><use href="#i-food"/></svg>Lunch · lamp side</span>
+          <span class="old"><s>12:00</s></span>
+          <svg class="i" aria-hidden="true"><use href="#i-move"/></svg>
+          <span class="new">12:30</span>
+        </div>
+      </div>
+      <button class="btn coral" style="height:54px;font-size:17px"><svg class="i" aria-hidden="true"><use href="#i-bell"/></svg>Apply and tell the family</button>
+      <div class="acts" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="btn white sm">Change it</button><button class="btn white sm">Cancel</button></div>
+    </div>
+    <div class="homebar"></div>
+  </div></div></div>
+  <div class="cap"><span class="n">9</span><div><h3>Say the change out loud</h3><p>Hold the mic and talk; the words appear as they're heard. GitAway shows the change as before and after, and nothing moves until Apply, which also tells the family what changed.</p></div></div>
+</article>
+
+<!-- 10 · Ask for ideas -->
+<article class="frame">
+  <div class="slot"><div class="device"><div class="scr">
+    <div class="island"></div>
+    <div class="sb"><span>9:55</span><span class="ic"><svg viewBox="0 0 18 13"><rect x="0" y="9" width="3" height="4" rx="1"/><rect x="5" y="6" width="3" height="7" rx="1"/><rect x="10" y="3" width="3" height="10" rx="1"/><rect x="15" y="0" width="3" height="13" rx="1"/></svg><span class="bat"><i></i></span></span></div>
+    <div class="main" style="gap:9px">
+      <div class="dayhd on-ink"><div class="r1"><button class="back" aria-label="Back to the week"><svg class="i" aria-hidden="true"><use href="#i-back"/></svg></button><span class="t"><span>FRI OCT 9 · DAY 6 OF 7</span><b>Disney California Adventure</b></span></div></div>
+    </div>
+    <div class="dim" aria-hidden="true"></div>
+    <div class="vsheet" role="dialog" aria-label="Ask for ideas" style="gap:10px">
+      <span class="grab"></span>
+      <div class="asheet-h" style="display:flex;align-items:center;gap:8px"><b style="font:800 24px var(--font-display);letter-spacing:-0.03em;flex:1">Ask</b><button class="round" aria-label="Close"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button></div>
+      <div class="askq"><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg>Vegetarian lunch near Pixar Pier, quick</div>
+      <span class="searched"><span class="ok"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg></span>Searched for places near Pixar Pier · 3 ideas</span>
+      <div class="idea first">
+        <div class="r"><span class="ii" style="background:var(--mint)"><svg class="i" aria-hidden="true"><use href="#i-leaf"/></svg></span><span class="x"><b>Pier Street Bowls</b><span>Grain bowls and falafel, order at the counter</span></span><span class="sample">SAMPLE</span></div>
+        <div class="meta"><span class="pill">4 min walk</span><span class="pill">about 15 min</span><span class="pill">Vegetarian menu</span></div>
+        <button class="btn coral"><svg class="i" aria-hidden="true"><use href="#i-plus"/></svg>Add as lunch block</button>
+      </div>
+      <div class="idea">
+        <div class="r"><span class="ii" style="background:var(--sun)"><svg class="i" aria-hidden="true"><use href="#i-food"/></svg></span><span class="x"><b>Boardwalk Pizza Window</b><span>Veggie slices and salads</span></span><span class="sample">SAMPLE</span></div>
+        <div class="meta"><span class="pill">2 min walk</span><span class="pill">about 10 min</span></div>
+        <button class="btn white"><svg class="i" aria-hidden="true"><use href="#i-plus"/></svg>Add as lunch block</button>
+      </div>
+      <div class="idea">
+        <div class="r"><span class="ii" style="background:var(--bubble)"><svg class="i" aria-hidden="true"><use href="#i-food"/></svg></span><span class="x"><b>Garden Taco Cart</b><span>Bean and veggie tacos</span></span><span class="sample">SAMPLE</span></div>
+        <div class="meta"><span class="pill">6 min walk</span><span class="pill">a cart, no seats</span></div>
+        <button class="btn white"><svg class="i" aria-hidden="true"><use href="#i-plus"/></svg>Add as lunch block</button>
+      </div>
+      <div class="gem"><span class="gi"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg></span><span><b>The assistant searches only when you ask.</b> Nothing is added to the trip until you tap.</span></div>
+    </div>
+    <div class="homebar"></div>
+  </div></div></div>
+  <div class="cap"><span class="n">10</span><div><h3>Ask for ideas, and it goes and looks</h3><p>"Vegetarian lunch near Pixar Pier, quick" sends the assistant to search. Three ideas come back as cards with walk time and wait; one tap makes it Friday's lunch block. The places here are samples.</p></div></div>
+</article>
+
+<!-- 11 · Laptop -->
+<article class="frame wide">
+  <div class="slot lapslot"><div class="device lap" data-w="1320">
+    <div class="lid"><div class="lscr">
+      <div class="dtop">
+        <span class="mark" aria-hidden="true"><svg class="i"><use href="#i-mark"/></svg></span><span class="nm">GitAway</span><span class="trip">LA and Anaheim · Oct 4–10</span>
+        <div class="dnav"><span class="on"><svg class="i" aria-hidden="true"><use href="#i-cal"/></svg>Trip</span><span><svg class="i" aria-hidden="true"><use href="#i-map"/></svg>Map</span><span><svg class="i" aria-hidden="true"><use href="#i-users"/></svg>Family</span><span><svg class="i" aria-hidden="true"><use href="#i-life"/></svg>Help</span></div>
+        <span style="margin-left:auto;display:flex;gap:8px"><a class="btn white sm" href="#" onclick="return false"><svg class="i" aria-hidden="true"><use href="#i-clip"/></svg>Paste and Convert</a><a class="btn coral sm" href="#" onclick="return false"><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg>Ask</a></span>
+        <div class="avs" style="margin-left:6px"><span class="av a">Ab</span><span class="av b">Bh</span><span class="av k">Hr</span><span class="av u">R</span><span class="av u">A</span></div>
+      </div>
+      <div class="lbody">
+        <div class="wstrip" aria-label="The week">
+          <div class="wtile d-sun"><span class="wd">SUN<b>4</b></span><span class="wn">Fly in · sample</span><span class="bars2"><i></i><i class="e"></i><i class="e"></i></span></div>
+          <div class="wtile d-mint"><span class="wd">MON<b>5</b></span><span class="wn" style="color:var(--ink-3)">Free</span><span class="bars2"><i class="e"></i></span></div>
+          <div class="wtile d-grape"><span class="wd">TUE<b>6</b></span><span class="wn">Universal</span><span class="bars2"><i style="background:var(--sky)"></i><i style="background:var(--sun)"></i><i></i><i></i></span></div>
+          <div class="wtile d-sky"><span class="wd">WED<b>7</b></span><span class="wn" style="color:var(--ink-3)">Free</span><span class="bars2"><i class="e"></i></span></div>
+          <div class="wtile d-bubble"><span class="wd">THU<b>8</b></span><span class="wn" style="color:var(--ink-3)">Free</span><span class="bars2"><i class="e"></i></span></div>
+          <div class="wtile sel d-sun"><span class="wd">FRI<b>9</b></span><span class="wn">California Adventure</span><span class="bars2"><i style="background:var(--grape)"></i><i style="background:var(--sky)"></i><i style="background:var(--bubble)"></i><i></i><i style="background:var(--mint)"></i><i style="background:var(--grape)"></i></span></div>
+          <div class="wtile d-mint"><span class="wd">SAT<b>10</b></span><span class="wn">Fly home · sample</span><span class="bars2"><i></i><i class="e"></i><i class="e"></i></span></div>
+        </div>
+        <div class="lmain">
+          <div class="lcanvas">
+            <div class="lch">
+              <div class="x"><span>FRI OCT 9 · DAY 6 OF 7 · ZOOMED TO THE DAY</span><b>Disney California Adventure</b></div>
+              <div class="lfil" role="group" aria-label="Show"><span class="lbl2">Show</span><button class="chip" aria-pressed="true">Everyone</button><button class="chip" aria-pressed="false">Adults</button><button class="chip" aria-pressed="false">Kids</button><button class="chip ps" aria-pressed="false"><svg class="i" aria-hidden="true"><use href="#i-shield"/></svg>Pregnancy-safe</button></div>
+            </div>
+            <div class="llanes">
+              <div class="llane d-grape"><span class="tod">MORNING</span><div class="an"><b>Hollywood Land and Avengers Campus</b><span>2 rides</span></div><div class="rides"><span class="rd">Guardians of the Galaxy</span><span class="rd">Web Slingers</span></div></div>
+              <div class="llane d-sky"><span class="tod">MORNING</span><div class="an"><b>Cars Land</b><span>1 ride</span></div><div class="rides"><span class="rd">Radiator Springs Racers</span></div></div>
+              <div class="llane d-bubble"><span class="tod">LATE MORNING</span><div class="an"><b>Pixar Pier</b><span>2 rides</span></div><div class="rides"><span class="rd">Incredicoaster<span class="fa u">R</span><span class="fa u">A</span></span><span class="rd">Toy Story Midway Mania<span class="fa u">R</span><span class="fa u">A</span></span></div></div>
+              <div class="llane d-sun"><span class="tod">12:30</span><div class="an"><b>Lunch</b><span>moved by voice</span></div><div class="rides notes"><span class="rd"><svg class="i" style="width:16px;height:16px" aria-hidden="true"><use href="#i-food"/></svg>Lunch<span class="stk">lamp side</span></span><span class="rd" style="background:var(--grape-tint)"><svg class="i" style="width:16px;height:16px" aria-hidden="true"><use href="#i-spark"/></svg>Ask for a place</span></div></div>
+              <div class="llane d-mint"><span class="tod">AFTERNOON</span><div class="an"><b>Grizzly Peak</b><span>2 rides</span></div><div class="rides"><span class="rd">Grizzly River Run<span class="fa u">R</span><span class="fa u">A</span></span><span class="rd">Soarin'<span class="fa k">Hr</span><span class="fa b">Bh</span></span></div></div>
+              <div class="llane d-grape"><span class="tod">EVENING</span><div class="an"><b>Buena Vista</b><span>a ride and a show</span></div><div class="rides notes"><span class="rd">Little Mermaid</span><span class="rd show">World of Color<span class="stk">Fountain show</span></span></div></div>
+            </div>
+            <span class="hint2" style="margin-top:auto"><svg class="i" aria-hidden="true"><use href="#i-grip"/></svg>Drag any block to another lane, another day in the strip above, or the tray.</span>
+          </div>
+          <div class="lside">
+            <div class="tray"><span class="tt"><svg class="i" aria-hidden="true"><use href="#i-aside"/></svg>Set aside · 3<span>still in the trip</span></span><div class="rides"><span class="rd off"><svg class="i" aria-hidden="true"><use href="#i-undo"/></svg>Studio Tour</span><span class="rd off"><svg class="i" aria-hidden="true"><use href="#i-undo"/></svg>Simpsons</span><span class="rd off"><svg class="i" aria-hidden="true"><use href="#i-undo"/></svg>Waterworld</span></div></div>
+            <div class="dpane">
+              <div class="ph2"><b>Pregnancy-safe rides</b><span>a list · 8</span></div>
+              <div class="plist">
+                <div><i class="y"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg></i>Toy Story Midway Mania<em>in Friday</em></div>
+                <div><i class="y"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg></i>Little Mermaid<em>in Friday</em></div>
+                <div><i></i>Monsters, Inc.</div>
+                <div><i class="y"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg></i>Web Slingers<em>in Friday</em></div>
+                <div><i></i>Jessie's Critter Carousel</div>
+                <div><i></i>Golden Zephyr</div>
+                <div><i></i>Inside Out Emotional Whirlwind</div>
+                <div><i class="y"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg></i>Soarin'<em>in Friday</em></div>
+              </div>
+              <div class="askfor"><b>Who is this list for?</b> Not set, it's just a list. Your note stays with it: <span class="hand" style="font-size:17px">some find the spinning jerky</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <div class="lbase"></div>
+  </div></div>
+  <p class="lapnote">On a narrow screen this laptop view is shrunk; open the page wider to read it.</p>
+  <div class="cap"><span class="n">11</span><div><h3>At the desk, the same canvas, bigger</h3><p>The week runs across the top; Friday is open with each area as a lane and rides as blocks, notes still stuck on. The Set aside tray and the Pregnancy-safe list sit at the side, ready to drag in.</p></div></div>
+</article>
+
+</main>
+
+<section class="wrap after">
+  <div>
+    <h2>What we'd build first</h2>
+    <p class="lede">In order. Each one is useful on its own.</p>
+    <ul class="build">
+      <li><span class="ni" style="background:var(--sun-tint)">1</span><div><b>Paste and Convert</b><span>Paste the family's messages exactly as they are, or say them, and get park days, areas and rides with the notes kept on them. It asks who the initials are and which day each park is, and saves nothing until Add to trip.</span></div></li>
+      <li><span class="ni" style="background:var(--grape-tint)">2</span><div><b>The trip canvas</b><span>One zoomable view, from the week to a day to a ride, replacing the separate trip and calendar pages. Notes live on their blocks, and a Set aside tray keeps the maybes.</span></div></li>
+      <li><span class="ni" style="background:var(--bubble-tint)">3</span><div><b>Touch moves and filters</b><span>Hold and drag a block to a new time, another day or the tray, with Undo. Filter by who (everyone, adults, kids) and by lists like Pregnancy-safe.</span></div></li>
+      <li><span class="ni" style="background:var(--sky-tint)">4</span><div><b>Speak to it</b><span>Say a change and see it as before and after; Apply makes it and tells the family what changed.</span></div></li>
+      <li><span class="ni" style="background:var(--mint-tint)">5</span><div><b>Ask, with search</b><span>Ask for ideas and the assistant searches, then offers cards you can add with a tap. This uses the Azure model, which is now set up.</span></div></li>
+    </ul>
+    <div class="rec"><svg class="i" style="width:28px;height:28px;color:var(--sun-ink)" aria-hidden="true"><use href="#i-q"/></svg><div><span class="rk">ONE THING CONVERT WOULD CATCH</span><p>Fast &amp; Furious and King Kong are stops on Universal's Studio Tour tram, and the message says to skip the tour. Convert keeps both rides (Fast &amp; Furious is "main!!!") and flags it on the ride, so the family can decide.</p></div></div>
+  </div>
+</section>
+
+<footer class="wrap">GitAway · trip canvas storyboards v2 · Oct 3, 2026 · the family's own plan, with sample flights and places</footer>
+
+<script>
+(function () {
+  // Fit each device (phone 410 wide, laptop 1320 wide) to its column.
+  var slots = document.querySelectorAll('.slot');
+  function fit() { slots.forEach(function (s) { var d = s.querySelector('.device'); d.style.setProperty('--s', (s.clientWidth / (+d.dataset.w || 410)).toFixed(4)); }); }
+  if ('ResizeObserver' in window) { var ro = new ResizeObserver(fit); slots.forEach(function (s) { ro.observe(s); }); }
+  window.addEventListener('resize', fit); fit();
+
+  // Tab bars: highlight on tap.
+  document.querySelectorAll('.tabs').forEach(function (bar) {
+    bar.addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b || b.classList.contains('ask')) return;
+      bar.querySelectorAll('button').forEach(function (x) { x.removeAttribute('aria-current'); });
+      b.setAttribute('aria-current', 'page');
+    });
+  });
+
+  // Single-choice groups: who each initial is, which day, the list owner, zoom, laptop filters.
+  document.querySelectorAll('.pick, .days7, .zseg, .lfil').forEach(function (g) {
+    g.addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      g.querySelectorAll('button').forEach(function (x) { x.setAttribute('aria-pressed', x === b); });
+      var ini = g.parentElement.querySelector('.ini'); if (ini) ini.classList.add('ok');
+    });
+  });
+
+  // Who's going: each person toggles.
+  document.querySelectorAll('.whorow').forEach(function (g) {
+    g.addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') !== 'true');
+    });
+  });
+
+  // 7 · Mark done.
+  var rd = document.getElementById('rdone');
+  rd.addEventListener('click', function () {
+    var on = rd.getAttribute('aria-pressed') !== 'true';
+    rd.setAttribute('aria-pressed', on); rd.classList.toggle('isdone', on);
+    rd.querySelector('span').textContent = on ? 'Done · nice ride' : 'Mark done';
+  });
+
+  // 8 · Undo puts Waterworld back in the Upper Lot; tap again to set it aside.
+  var undo = document.getElementById('undo'), back = document.getElementById('ww-back'), tray = document.getElementById('ww-tray');
+  var msg = document.getElementById('toastmsg'), cnt = document.getElementById('traycount'), aside = true;
+  undo.addEventListener('click', function () {
+    aside = !aside;
+    back.hidden = aside; tray.hidden = !aside;
+    msg.textContent = aside ? 'Waterworld set aside' : 'Waterworld is back in the Upper Lot';
+    undo.textContent = aside ? 'Undo' : 'Set aside';
+    cnt.textContent = 'Set aside · ' + (aside ? 3 : 2);
+  });
+
+  // 8 · Filters on Friday.
+  var day = document.getElementById('dcaf'), more = document.getElementById('morelist');
+  var rules = { all: null, adult: '[data-adult]', kid: '[data-kid]', safe: '[data-safe]' };
+  day.querySelector('.fchips').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    day.querySelectorAll('.fchips button').forEach(function (x) { x.setAttribute('aria-pressed', x === b); });
+    var sel = rules[b.dataset.f];
+    day.classList.toggle('flt-on', !!sel); day.classList.toggle('flt-ps', b.dataset.f === 'safe');
+    day.querySelectorAll('.ab .rd').forEach(function (r) { r.classList.toggle('hit', !!sel && r.matches(sel)); });
+    more.hidden = b.dataset.f !== 'safe';
+  });
+})();
+</script>
