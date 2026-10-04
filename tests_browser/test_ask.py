@@ -72,11 +72,12 @@ def test_type_a_request_see_the_proposal_apply_and_see_the_day_changed(phone, ba
     page.locator("#ak-go").click()
 
     expect(page.locator("#ak-prop")).to_be_visible()
-    expect(page.locator("#ak-say")).to_contain_text("move lunch to 12:30")
+    expect(page.locator("#ak-say")).to_have_count(0)      # a removal is in the list: the model's own sentence is not shown
     expect(page.locator(".ak-chip")).to_have_count(3)
     expect(page.locator('.ak-chip[data-kind="new"]')).to_contain_text("Rest at the hotel")
     expect(page.locator('.ak-chip[data-kind="moved"]')).to_contain_text("12:30")
     expect(page.locator('.ak-chip[data-kind="removed"]')).to_contain_text("Griffith Observatory")
+    expect(page.locator('.ak-chip[data-kind="removed"]')).to_contain_text("Can't be undone")
     assert overflow(page) <= 0 and page.evaluate(SMALL_TEXT) == [] and page.evaluate(SMALL_CONTROLS) == []
     page.set_viewport_size({"width": 320, "height": 640})
     assert overflow(page) <= 0

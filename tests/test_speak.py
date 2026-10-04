@@ -120,7 +120,7 @@ def test_a_proposal_changes_nothing(day, azure, announced):
     prop = speak.propose(day["s"], DAY, "We're tired")
     assert [o["op"] for o in prop["ops"]] == ["add_plan", "move_plan", "remove_plan", "done_step"]
     assert [c["kind"] for c in prop["changes"]] == ["new", "moved", "removed", "changed"]
-    assert prop["changes"][1] == {"kind": "moved", "label": "Lunch", "before": "12:00–1:00 PM", "after": "12:30–1:30 PM"}
+    assert prop["changes"][1] == {"kind": "moved", "label": "Lunch", "before": "12:00–1:00 PM", "after": "12:30–1:30 PM", "warn": ""}
     assert plans(day["s"]) == before and cal.notes(day["s"]) == notes and familythread.items(day["s"]) == thread
     assert not announced
     assert not any(s["done"] for s in rows(day["s"], "SELECT done FROM block_steps"))
@@ -206,7 +206,7 @@ def test_injection_in_the_request_cannot_add_a_hundred_plans_or_delete_everythin
     assert len(prop["ops"]) <= speak.MAX_OPS
     assert json.loads(azure.sent[0]["messages"][1]["content"])["request"] == rude, "the request goes to the model as data"
     # nothing was saved, and applying it leaves the rest of the day alone
-    speak.apply(day["s"], DAY, prop["ops"])
+    speak.apply(day["s"], DAY, prop["ops"], prop["token"])
     left = [a.title for a in cal.activities(day["s"]) if a.day == DAY]
     assert "Disneyland" in left or "Griffith Observatory" in left or "Lunch" in left
     assert len([t for t in left if t.startswith("Plan ")]) == 4
@@ -255,7 +255,7 @@ def test_apply_does_all_of_it_in_one_go_with_one_card_and_one_notification(day, 
     prop = speak.propose(s, DAY, "We're tired")
     assert len(prop["ops"]) == 9 and not prop["dropped"]
     before_cards = len(cards(s))
-    done = speak.apply(s, DAY, prop["ops"])
+    done = speak.apply(s, DAY, prop["ops"], prop["token"])
     assert done["count"] == 9
     assert ("Rest at the hotel", "15:00", "17:00") in plans(s) and ("Lunch", "12:30", "13:30") in plans(s) and not any(t == "Griffith Observatory" for t, _, _ in plans(s))
     steps = {r["title"]: r for r in rows(s, "SELECT * FROM block_steps")}
@@ -282,7 +282,7 @@ def test_apply_rolls_everything_back_when_one_part_fails(day, azure, announced, 
         raise speak.SpeakError("This could not be saved.")
     monkeypatch.setattr(speak, "_move_step", boom)
     with pytest.raises(speak.SpeakError):
-        speak.apply(s, DAY, prop["ops"])
+        speak.apply(s, DAY, prop["ops"], prop["token"])
     assert plans(s) == before and len(familythread.items(s)) == thread and rows(s, "SELECT id, part_id, time FROM block_steps ORDER BY id") == steps_before
     assert not announced, "nobody is told about a change that was not saved"
     # the removed plan is really still there, with its steps
@@ -296,7 +296,7 @@ def test_apply_checks_again_and_applies_nothing_when_the_day_changed_since(day, 
     cal.delete_activity(s, day["griffith"])      # someone else removed it meanwhile
     before = plans(s)
     with pytest.raises(speak.SpeakError, match="changed while you were deciding"):
-        speak.apply(s, DAY, prop["ops"])
+        speak.apply(s, DAY, prop["ops"], prop["token"])
     assert plans(s) == before
 
 
@@ -306,12 +306,12 @@ def test_apply_will_not_run_operations_the_page_made_up(day):
     forged = [{"op": "remove_plan", "id": day["lunch"]}] * 1 + [{"op": "remove_plan", "id": f"a{n}"} for n in range(50, 90)]
     before = plans(s)
     with pytest.raises(speak.SpeakError):
-        speak.apply(s, DAY, forged)
+        speak.apply(s, DAY, forged, "x")
     assert plans(s) == before
     with pytest.raises(speak.SpeakError):
-        speak.apply(s, DAY, [])
+        speak.apply(s, DAY, [], "x")
     with pytest.raises(speak.SpeakError):
-        speak.apply(s, DAY, "remove everything")
+        speak.apply(s, DAY, "remove everything", "x")
 
 
 def test_apply_is_bound_to_the_trip_it_was_proposed_for(day, azure):
@@ -320,11 +320,11 @@ def test_apply_is_bound_to_the_trip_it_was_proposed_for(day, azure):
     prop = speak.propose(s, DAY, "x")
     before = plans(s)
     with pytest.raises(speak.SpeakError, match="This trip changed"):
-        speak.apply(s, DAY, prop["ops"], trip="not-this-trip")
+        speak.apply(s, DAY, prop["ops"], prop["token"], trip="not-this-trip")
     assert plans(s) == before
     with ses.family(s) as fam:
         trip_id = fam.trip_id
-    speak.apply(s, DAY, prop["ops"], trip=trip_id)
+    speak.apply(s, DAY, prop["ops"], prop["token"], trip=trip_id)
     assert ("Lunch", "12:00", "13:00") not in plans(s)
 
 
@@ -340,7 +340,7 @@ def test_apply_is_one_transaction_with_the_calendars_own_validation(day, azure, 
         raise cal.CalendarError("That overlaps something. Pick a gap.")
     monkeypatch.setattr(cal, "update_in", refuse)
     with pytest.raises(speak.SpeakError, match="overlaps"):
-        speak.apply(s, DAY, prop["ops"])
+        speak.apply(s, DAY, prop["ops"], prop["token"])
     assert plans(s) == before and not announced      # the Rest plan inserted before the failing move is gone too
     monkeypatch.setattr(cal, "update_in", orig)
 
@@ -386,12 +386,13 @@ def test_the_box_opens_on_the_default_day_and_ignores_a_bad_day(client, day):
 def test_typing_a_request_shows_the_proposal_as_chips_and_changes_nothing(client, day, azure, announced):
     azure.answer = answer(op("add_plan", title="Rest at the hotel", start="15:00", end="17:00"), op("move_plan", id=day["lunch"], start="12:30", end="13:30"), op("remove_plan", id=day["griffith"]),
                           summary="I'd block 3 to 5 for a rest and move lunch to 12:30.")
+    azure.answer["ops"].pop()
     before = plans(day["s"])
     r = client.post("/trip/ask/propose", data={"day": str(DAY), "text": "We're tired, block two hours and move lunch to 12:30"})
     assert r.status_code == 200 and "Here&#x27;s the change" in r.text.replace("'", "&#x27;") or "Here's the change" in r.text
     assert "Not applied yet" in r.text and "I&#x27;d block 3 to 5" in r.text.replace("'", "&#x27;") or "I'd block 3 to 5" in r.text
     chips = re.findall(r'data-kind="(\w+)"', r.text)
-    assert chips == ["new", "moved", "removed"]
+    assert chips == ["new", "moved"]
     assert "Rest at the hotel" in r.text and "12:30–1:30 PM" in r.text and 'id="ak-apply"' in r.text and 'id="ak-cancel"' in r.text and 'id="ak-change"' in r.text
     assert plans(day["s"]) == before and not announced
 
@@ -400,7 +401,7 @@ def test_apply_and_tell_the_family_changes_the_day_and_lands_back_with_a_done_ca
     azure.answer = answer(op("add_plan", title="Rest at the hotel", start="15:00", end="17:00"), op("remove_plan", id=day["griffith"]))
     page = client.post("/trip/ask/propose", data={"day": str(DAY), "text": "Rest instead of Griffith"}).text
     apply_form = form(page, "ak-apply-form")
-    r = client.post("/trip/ask/apply", data={"day": field(apply_form, "day"), "ops": field(apply_form, "ops"), "text": field(apply_form, "text"), "trip": field(apply_form, "trip")}, follow_redirects=False)
+    r = client.post("/trip/ask/apply", data={"day": field(apply_form, "day"), "ops": field(apply_form, "ops"), "text": field(apply_form, "text"), "token": field(apply_form, "token"), "trip": field(apply_form, "trip")}, follow_redirects=False)
     assert r.status_code == 303 and r.headers["location"] == f"/trip/ask?day={DAY}&done=2"
     done = client.get(r.headers["location"]).text
     assert 'id="ak-done"' in done and "2 changes on Saturday, Oct 17" in done and "The family has been told" in done and f'href="/trip?day={DAY}"' in done
@@ -473,7 +474,8 @@ def test_roles_a_viewer_sees_a_read_only_note_and_cannot_apply_while_an_editor_c
     azure.answer = answer(op("remove_plan", id=day["lunch"]))
     ops = json.dumps([{"op": "remove_plan", "id": day["lunch"]}])
     ask = other.post("/trip/ask/propose", data={"day": str(DAY), "text": "x"})
-    apply = other.post("/trip/ask/apply", data={"day": str(DAY), "ops": ops, "text": "x"}, follow_redirects=False)
+    token = field(ask.text, "token") if role == "editor" else "nothing"
+    apply = other.post("/trip/ask/apply", data={"day": str(DAY), "ops": ops, "text": "x", "token": token}, follow_redirects=False)
     edit = other.post("/trip/ask/edit", data={"day": str(DAY), "text": "x"})
     if role == "viewer":
         assert 'id="ak-viewer"' in html and "Only editors can change the plan" in html and "<textarea" not in html

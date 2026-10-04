@@ -64,7 +64,7 @@ def _day_picker(t, day, today):
     return Label(Span("Which day", cls="ak-label"), Select(*options, name="day", id="ak-day", data_ga_label="Which day"), cls="ak-field")
 
 
-def _box(request, session, day, text="", error="", status_note=""):
+def _box(request, session, day, text="", error=""):
     b = ses.booking(session)
     t = cal.trip("", b)
     today = speak.today_index(session)
@@ -88,7 +88,8 @@ def _chip(c):
     before = Span(c["before"], cls="ak-old") if c["before"] else ""
     arrow = Span(icon("arrow-right", 16, 2.4), cls="ak-arrow", aria_hidden="true") if c["before"] and c["after"] else ""
     after = Span(c["after"], cls="ak-new") if c["after"] else ""
-    return Div(Span(TAGS[c["kind"]], cls=f"ak-tag ak-tag-{c['kind']}"), Div(Span(c["label"], cls="ak-what"), Div(before, arrow, after, cls="ak-ba"), cls="ak-x"), cls=f"ak-chip ak-{c['kind']}", data_kind=c["kind"])
+    warn = Div(icon("lock", 14, 2.4), c["warn"], cls="ak-warn") if c.get("warn") else ""
+    return Div(Span(TAGS[c["kind"]], cls=f"ak-tag ak-tag-{c['kind']}"), Div(Span(c["label"], cls="ak-what"), Div(before, arrow, after, cls="ak-ba"), warn, cls="ak-x"), cls=f"ak-chip ak-{c['kind']}", data_kind=c["kind"])
 
 
 def _proposal(session, prop, text, t):
@@ -99,7 +100,7 @@ def _proposal(session, prop, text, t):
         Div(*[_chip(c) for c in prop["changes"]], cls="ak-chips", id="ak-chips"),
         Div(P("Left out:", cls="ak-label"), *[P(d, cls="ak-dropped") for d in prop["dropped"]], cls="ak-card ak-leftout", id="ak-leftout") if prop["dropped"] else "",
         Form(trip_field(), Input(type="hidden", name="day", value=str(day)), Input(type="hidden", name="ops", value=json.dumps(prop["ops"], separators=(",", ":"))),
-             Input(type="hidden", name="text", value=text),
+             Input(type="hidden", name="text", value=text), Input(type="hidden", name="token", value=prop["token"]),
              Button(icon("check", 20, 3), "Apply and tell the family", type="submit", cls="tp-btn tp-btn-coral ak-go", id="ak-apply"),
              action="/trip/ask/apply", method="post", id="ak-apply-form"),
         Div(Form(Input(type="hidden", name="day", value=str(day)), Input(type="hidden", name="text", value=text),
@@ -187,7 +188,7 @@ def register(app):
         except ValueError:
             return show(request, session, day=day, text=text, error="That proposal was lost. Ask again.", status=409)
         try:
-            done = await run_in_threadpool(speak.apply, session, day, ops, form.get("trip") or None)
+            done = await run_in_threadpool(speak.apply, session, day, ops, form.get("token") or "", form.get("trip") or None)
         except (speak.SpeakError, familythread.ThreadError) as e:
             return show(request, session, day=day, text=text, error=str(e), status=409)
         return RedirectResponse(f"{day_url(day)}&done={done['count']}", status_code=303)

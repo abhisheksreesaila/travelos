@@ -56,3 +56,4 @@
 .ak-open { white-space: normal; }
 @media (prefers-reduced-motion: no-preference) { .ak-mic[aria-pressed="true"] { animation: ak-pulse 1.2s ease-in-out infinite; } }
 @keyframes ak-pulse { 50% { box-shadow: 0 0 0 0.375rem var(--accent-tint); } }
+.ak-warn { display: flex; align-items: center; gap: 0.375rem; font-weight: 800; font-size: max(var(--text-min), 0.875rem); color: var(--coral-deep); }
