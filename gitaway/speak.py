@@ -247,13 +247,13 @@ def resolve_who(names, people, step=None):
 
 
 def _check_time(ctx, title, start, end, day=None, old=None):
-    """The (start, end) minutes the calendar accepts for a plan on trip day `day` (default: this day), or SpeakError saying why not. `old` is (day, start, end) of a plan being moved."""
+    """The (start, end) minutes the calendar accepts for a plan on trip day `day` (default: this day), or SpeakError saying why not. `old` is (day, start, end) of a plan being moved (a move to the same time is not "already passed")."""
     day = ctx["day"] if day is None else day
     s, e = _clock(start), _clock(end)
     if not s or not e:
         raise SpeakError(f"{title}: the time was not clear")
     try:
-        _, sm, em, _ = cal._clean(ctx["t"], ctx["blocks"], day=day, start=_minutes(s), end=_minutes(e), title=title, kind="fun", old=old)
+        _, sm, em, _ = cal._clean(ctx["t"], ctx["blocks"], day=day, start=_minutes(s), end=_minutes(e), title=title, kind="fun")
     except cal.CalendarError as err:
         raise SpeakError(f"{title}: {err}")
     unchanged = old is not None and (old[0], old[1]) == (day, sm)
@@ -405,11 +405,12 @@ def _day_label(ctx, iso) -> str:
 
 
 def _overlap_warnings(ctx, ops) -> dict:
-    """{index of op: "Overlaps X and Y"} for added and moved plans that overlap the family's own plans (or each other) on their day. A warning, not a refusal.
+    """{index of op: "Overlaps X and Y"} for added and moved plans that overlap the family's own plans, the day's bookings and rides, or each other. A warning, not a refusal.
     Plans that hold parts and steps (a whole park day) are the day's frame, not a clash."""
     framed = {p["act_id"] for p in ctx["parts"].values()}
     gone = {o["id"] for o in ops if o["op"] in ("remove_plan", "move_plan")}
     fixed = [(a["title"], a["start_min"], a["end_min"]) for i, a in ctx["plans"].items() if i not in gone and i not in framed]
+    fixed += [(b.title, b.start, b.end) for b in ctx["blocks"] if b.day == ctx["day"]]
     placed = []
     for n, o in enumerate(ops):
         if o["op"] == "add_plan":

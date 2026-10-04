@@ -105,3 +105,9 @@ def test_a_note_added_to_a_plan_is_labelled_as_added(day, azure):
     azure.answer = answer(op("edit_note", id=day["lunch"], note="Table for four"), op("edit_note", id=day["steps"]["Space Mountain"], note="Single rider"))
     prop = speak.propose(day["s"], DAY, "x")
     assert [c["label"] for c in prop["changes"]] == ["Note added to Lunch", "Note on Space Mountain"]
+
+
+def test_a_plan_over_a_booking_is_warned_about_with_the_same_words_as_the_tag(day, azure):
+    azure.answer = answer(op("add_plan", title="Early swim", start="09:00", end="10:00"))
+    prop = speak.propose(day["s"], 0, "x")        # the first day: the arriving flight is 8:05 to 9:32
+    assert prop["changes"][0]["warn"] == "Overlaps Skylark Air 214 · SFO → LAX" and [o["op"] for o in prop["ops"]] == ["add_plan"]

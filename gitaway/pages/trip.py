@@ -86,13 +86,15 @@ def _with_extras(items, b, notes, session, who, family, with_steps=()):
     """Each booked item with its confirmation number (shown behind a tap), each plan with the notes written on it, and the way into its parts and steps (F-080)."""
     people = {f.name.casefold(): f for f in ses.friends(session)}
     out = []
+    others = [x for x in items if x.kind != "offer" and x.id not in with_steps]  # a plan with parts and steps is the day's frame, not something to overlap
     for x in items:
         if x.kind in ("flight", "hotel", "car"):
             detail = cal.booking_detail(b, x.id)
             conf = next((v for k, v in detail[1] if k == "Confirmation"), "") if detail else ""
             x = replace(x, confirm=conf)
         elif x.kind == "plan":
-            x = replace(x, notes=tuple(f"{calui.note_writer(n, who, people, family)[0]}: {n.text}" for n in notes if n.act == x.id),
+            x = replace(x, overlaps=cal.overlap_text(cal.overlaps(None, x.start, x.end, others, skip=x.id)),
+                        notes=tuple(f"{calui.note_writer(n, who, people, family)[0]}: {n.text}" for n in notes if n.act == x.id),
                         href=f"/trip/canvas?block={x.id}&trip={ses.open_trip_id()}" if x.id in with_steps else x.href)
         out.append(x)
     return out
@@ -142,9 +144,10 @@ def notes_fold(item, cls=""):
 def up_details(item):
     """What the list row would have shown for the up-next item (it is left out of the list): who added it and the confirmation behind a tap (its notes have their own fold, F-085)."""
     who = item.sub.split(" · ")[-1] if item.by else ""
-    if not (item.confirm or who.startswith("added by")):
+    if not (item.confirm or item.overlaps or who.startswith("added by")):
         return ""
     body = [Span(who, cls="tp-sub")] if who.startswith("added by") else []
+    body += [overlap_tag(item)] if item.overlaps else []
     if item.confirm:
         body += [Span("Confirmation number", cls="tp-sub"), Span(item.confirm, cls="tp-conf-num")]
     return Details(Summary("Details", Span(f" for {item.title}", cls="sr-only"), cls="tp-mini"), *body, cls="ph-details tp-confirm", **({"data_confirm": item.id} if item.confirm else {}), data_up_details=item.id)
@@ -174,6 +177,11 @@ def leave_line(v, up):
                Span(Span(f"Leave by {cal.fmt_time(at)}" if left else "Time to leave", cls="ph-leave-by"), Span(f"{drive} min drive" + (f" · be there {td.early_label(margin)} early" if margin else ""), cls="tp-up-sub"), cls="ph-leave-text"), cls="ph-leave", id="tp-leave")
 
 
+def overlap_tag(item):
+    """The small "Overlaps Check out · Hotel" tag on a plan that sits on top of a booking, a ride or another plan (F-086)."""
+    return Span(icon("users", 13, 2.4), f"Overlaps {item.overlaps}", cls="tp-overlap", data_overlap=item.id)
+
+
 def row(item, today, ua=""):
     tint = f"tp-k-{item.tint}"
     inner = (Span(item.label.upper(), cls="tp-label"), Span(item.title, cls="tp-what"), Span(item.sub, cls="tp-sub"))
@@ -183,7 +191,7 @@ def row(item, today, ua=""):
     lock = Span(icon("lock", 14, 2.4), Span("Booked, locked", cls="sr-only"), cls="tp-lock") if booked else ""
     card = (A if item.href else Div)(Div(Span(icon(item.icon, 18, 2.2), cls="tp-ico", aria_hidden="true") if item.icon else "", Div(*inner, cls="tp-card-text"), lock, badge, cls="tp-card-in"),
                                      cls=f"tp-card {tint} is-{item.state} tp-{item.kind}{' tp-bk' if booked else ''}", **({"href": item.href} if item.href else {}), data_item=item.id)
-    extras = [notes_fold(item)] if item.notes else []
+    extras = ([overlap_tag(item)] if item.overlaps else []) + ([notes_fold(item)] if item.notes else [])
     acts = []
     if item.place:
         acts.append(A(icon("pin", 15, 2.4), "Directions", Span(f" to {item.title}", cls="sr-only"), href=td.maps_url(item.place, ua), target="_blank", rel="noopener", cls="tp-mini tp-dir", data_dir=item.id))

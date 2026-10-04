@@ -97,12 +97,18 @@ def test_a_refreshed_add_does_not_duplicate_and_ids_stay_stable(client):
     assert 'name="id" value="a3"' in client.get("/calendar?add=1&at=13:00").text
 
 
-def test_a_clash_with_a_booked_item_is_refused_and_the_form_shows_it(client):
+def test_a_plan_over_a_booked_item_is_saved(client):
     book(client)
     r = add(client, day="0", start="09:00", end="10:00", title="Clash")
-    assert r.status_code == 409
-    assert "overlaps Skylark Air 214 · SFO → LAX" in r.text and 'role="alert"' in r.text
-    assert 'value="Clash"' in r.text and 'role="dialog"' in r.text  # the form stays open with what was typed
+    assert r.status_code == 303
+    assert len(ids(client.get("/calendar?view=days").text)) == 1
+
+
+def test_a_bad_time_is_still_refused_and_the_form_shows_it(client):
+    book(client)
+    r = add(client, day="0", start="10:00", end="09:00", title="Backwards")
+    assert r.status_code == 409 and 'role="alert"' in r.text
+    assert 'value="Backwards"' in r.text and 'role="dialog"' in r.text  # the form stays open with what was typed
     assert ids(client.get("/calendar?view=days").text) == []
 
 
@@ -132,15 +138,15 @@ def test_editing_through_the_form_updates_the_block(client):
     assert where(html, "a1")[:2] == (2, 540)
 
 
-def test_moving_snaps_to_fifteen_minutes_and_a_clash_snaps_it_back(client):
+def test_moving_snaps_to_fifteen_minutes_and_may_land_on_a_booking(client):
     book(client)
     add(client)
     r = client.post("/calendar/activities/a1/move", data={"day": "3", "start": "14:08", "end": "15:38"}, follow_redirects=False)
     assert r.status_code == 303
     assert where(client.get("/calendar?view=days").text, "a1") == (3, 855, 945)
     r = client.post("/calendar/activities/a1/move", data={"day": "0", "start": "09:00", "end": "10:00"}, follow_redirects=False)
-    assert r.status_code == 409 and "overlaps" in r.text
-    assert where(client.get("/calendar?view=days").text, "a1")[0] == 3
+    assert r.status_code == 303  # onto the flight: allowed (F-086)
+    assert where(client.get("/calendar?view=days").text, "a1")[0] == 0
 
 
 def test_a_booked_block_cannot_be_moved(client):

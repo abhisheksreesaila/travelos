@@ -80,7 +80,7 @@ def test_the_plus_adds_a_plan_in_two_taps_and_the_calendar_has_it(phone, base_ur
     expect(page.locator(".cal-whole")).to_contain_text("Tacos on Abbot Kinney")
 
 
-def test_the_sheet_shows_the_calendars_message_when_the_time_clashes(phone, base_url, pin):
+def test_a_plan_added_over_a_booking_is_saved_and_tagged(phone, base_url, pin):
     pin(date(2026, 10, 17), 9 * 60)
     page = phone()
     page.goto(base_url + "/trip?day=0")
@@ -88,8 +88,9 @@ def test_the_sheet_shows_the_calendars_message_when_the_time_clashes(phone, base
     page.fill("#tp-title", "Second thing")
     page.fill("#tp-start", "09:00")
     page.click("#tp-save")
-    expect(page.locator("#tp-sheet .tp-error")).to_contain_text("overlaps Skylark Air 214")
-    expect(page.locator("#tp-title")).to_have_value("Second thing")
+    page.wait_for_url("**/trip?day=0&new=*")
+    expect(page.locator("#tp-toast")).to_contain_text("Added “Second thing”")
+    expect(page.locator(".tp-overlap").first).to_contain_text("Overlaps Skylark Air 214")
     assert page.evaluate(OVERFLOW) == 0
 
 

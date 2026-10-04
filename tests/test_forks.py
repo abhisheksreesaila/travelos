@@ -150,26 +150,26 @@ def titles_on_calendar(client):
     return [a["t"] for a in cal.get("a", [])]
 
 
-def test_a_plan_over_a_booked_block_clashes_and_cannot_be_checked(client):
+def test_a_plan_over_a_booked_block_is_ticked_and_tagged(client):
     book(client)
     fork(client, SD)
     html = client.get(f"/forks?open={SD}").text
     keys = plan_keys(html)
-    assert keys["d1s0"] == (False, True) and keys["d1s1"] == (False, True)  # over the flight and over the check in
-    assert "Clashes with Skylark Air 214" in html and "Clashes with Check in" in html
-    assert 'data-key="d1s0"' not in html  # a plan that can never fit has no draft on the calendar
+    assert keys["d1s0"] == (True, False) and keys["d1s1"] == (True, False)  # over the flight and over the check in: kept (F-086)
+    assert "Overlaps Skylark Air 214" in html and "Overlaps Check in" in html
+    assert 'data-key="d1s0"' in html
 
 
-def test_a_friends_plan_makes_a_fork_plan_clash_and_it_starts_unchecked(client):
+def test_a_friends_plan_under_a_fork_plan_tags_it_and_it_stays_ticked(client):
     book(client)
     client.post("/calendar/friends", data={"name": "Mom"})
     client.post("/calendar/live")
     fork(client)
     html = client.get(f"/forks?open={TRIP}").text
     keys = plan_keys(html)
-    assert keys["d3s0"] == (False, False)  # Travel Town on Sunday 10:00, where Mom's steam trains already are
-    assert "Clashes with Mom&#x27;s Travel Town steam trains" in html or "Clashes with Mom's Travel Town steam trains" in html
-    assert 'data-key="d3s0"' in html and re.search(r'data-key="d3s0"[^>]*hidden', html)  # its draft stays off the calendar until ticked
+    assert keys["d3s0"] == (True, False)  # Travel Town on Sunday 10:00, where Mom's steam trains already are
+    assert "Overlaps Travel Town steam trains" in html
+    assert 'data-key="d3s0"' in html and not re.search(r'data-key="d3s0"[^>]*hidden', html)
 
 
 def test_apply_adds_only_the_picked_plans_then_shows_what_was_added(client):

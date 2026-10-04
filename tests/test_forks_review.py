@@ -139,39 +139,35 @@ def test_a_hostile_fork_title_and_author_stay_text(client, monkeypatch):
 
 # ---- the flight windows, through the calendar and the preview ---------------------------------------------------------
 
-def test_the_calendar_refuses_a_plan_before_you_land_with_a_friendly_message(client):
+def test_the_calendar_accepts_a_plan_before_you_land(client):
     book(client)
-    r = add(client, day="0", start="07:00", end="07:45")
-    assert r.status_code == 409 and "You land at" in r.text and "Plan after that" in r.text
-    assert add(client, day="0", start="10:00", end="11:00").status_code == 303
+    assert add(client, day="0", start="07:00", end="07:45").status_code == 303   # F-086: overlapping the flight is fine
+    assert add(client, id="a2", day="0", start="10:00", end="11:00").status_code == 303
 
 
-def test_the_calendar_refuses_a_plan_too_close_to_the_flight_home(client):
+def test_the_calendar_accepts_a_plan_close_to_the_flight_home(client):
     book(client, **THREE_NIGHTS)
-    r = add(client, day="3", start="12:30", end="13:15")  # the flight home leaves at 2:10 PM
-    assert r.status_code == 409 and "Your flight home leaves at 2:10 PM. Finish by 12:10 PM." in r.text
+    assert add(client, day="3", start="12:30", end="13:15").status_code == 303  # the flight home leaves at 2:10 PM
     assert add(client, id="a2", day="3", start="08:00", end="09:00", title="Brunch").status_code == 303
     assert add(client, id="a3", day="2", start="17:00", end="19:00", title="Dinner").status_code == 303  # other days are free
 
 
-def test_moving_a_plan_later_than_the_window_is_refused_too(client):
+def test_moving_a_plan_later_than_the_flight_home_is_allowed_too(client):
     book(client, **THREE_NIGHTS)
     add(client, id="a1", day="1", start="10:00", end="11:00")
     r = client.post("/calendar/activities/a1/move", data={"day": "3", "start": "16:00", "end": "17:00"}, follow_redirects=False)
-    assert r.status_code == 409 and "Your flight home leaves at 2:10 PM" in r.text
-    assert any(a["i"] == "a1" and a["d"] == 1 for a in stored_calendar()["a"])
+    assert r.status_code == 303
+    assert any(a["i"] == "a1" and a["d"] == 3 for a in stored_calendar()["a"])
 
 
-def test_a_fork_plan_after_the_flight_home_cannot_be_applied(client):
+def test_a_fork_plan_after_the_flight_home_is_kept_and_can_be_applied(client):
     book(client, **THREE_NIGHTS)
     fork(client)
     html = client.get(f"/forks?open={TRIP}").text
     keys = plan_keys(html)
-    assert keys["d4s2"] == (False, True)  # Pool time, 5 to 7 PM on the day the 2:10 PM flight leaves
-    assert "Too close to your flight home (finish by 12:10 PM)" in html
-    assert 'data-key="d4s2"' not in html  # no draft on the calendar
+    assert keys["d4s2"] == (True, False)  # Pool time, 5 to 7 PM on the day the 2:10 PM flight leaves: kept (F-086)
     apply(client, "d4s2")
-    assert not stored_calendar()["a"]
+    assert [a["t"] for a in stored_calendar()["a"]] == ["Pool time"]
 
 
 def test_day_arrows_are_not_offered_when_the_trip_is_three_days_or_fewer(client):
@@ -211,7 +207,8 @@ def test_moms_scripted_add_stays_inside_the_flight_window_on_a_short_trip(client
     assert len(mom) == 1 and mom[0]["d"] == 2
     b = stored_booking()
     blocks = cal.booked_blocks(b, cal.trip_of(b))
-    assert cal.window_problem(blocks, mom[0]["d"], mom[0]["s"], mom[0]["e"]) is None
+    lo, hi = cal.day_window(blocks, mom[0]["d"])
+    assert lo <= mom[0]["s"] and mom[0]["e"] <= hi
     assert mom[0]["e"] <= 10 * 60 + 30
 
 
@@ -223,7 +220,7 @@ def test_moms_add_is_skipped_when_no_slot_fits_the_window(client, monkeypatch):
     assert not [a for a in stored_calendar()["a"] if a.get("b") == "Mom"]
 
 
-def test_renaming_an_older_item_still_works_but_moving_it_later_does_not(client):
+def test_renaming_and_moving_an_older_item_late_both_work(client):
     book(client, f="f2", **{"d": "2026-10-16", "r": "2026-10-20", "a": "2", "k": "4,7"})  # a 12:30 PM flight: the last day closes at 10:30 AM
     with ses.family(person()) as fam:  # an item from before that rule: put in the table directly, past the check
         insert_only(fam.db, "activities", {"pk": f"{fam.trip_id}~~a1", "trip_id": fam.trip_id, "scope": "", "act_id": "a1", "seq": 1, "day": 4, "start_min": 540,
@@ -233,4 +230,4 @@ def test_renaming_an_older_item_still_works_but_moving_it_later_does_not(client)
     r = client.post("/calendar/activities/a1", data={"title": "Renamed", "day": "4", "start": "09:00", "end": "10:45", "kind": "fun"}, follow_redirects=False)
     assert r.status_code == 303 and "Renamed" in titles(client)
     r = client.post("/calendar/activities/a1", data={"title": "Renamed", "day": "4", "start": "09:15", "end": "11:00", "kind": "fun"}, follow_redirects=False)
-    assert r.status_code == 409 and "Finish by 10:30 AM" in r.text
+    assert r.status_code == 303  # F-086: moving it later than the flight window is allowed too

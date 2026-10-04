@@ -293,7 +293,7 @@ def imported_blocks(plan, t):
     """The locked blocks an imported trip (F-042) puts on the calendar of trip `t`, each tagged "Booked elsewhere · <where>".
 
     Every flight leg, each hotel's check in and check out, and the car's pickup and dropoff. "b-out" is the arrival at the destination and
-    "b-back" the flight home, so the flight window (day_window, window_problem) follows the real first arrival and last departure.
+    "b-back" the flight home, so the flight window (day_window) follows the real first arrival and last departure.
     A block never runs past 11:59 PM. A red-eye is two blocks, the leaving evening and the landing morning: the one the window reads keeps
     the id ("b-out" is the landing morning, "b-back" the leaving evening); the other gets "-d" (leaves) or "-a" (arrives).
     """
@@ -342,7 +342,7 @@ def booking_detail(b, block_id):
     return tripimport.detail_rows(spec, plan) if spec else None
 
 
-AIRPORT_BUFFER = catalog.AIRPORT_BUFFER  # one source: minutes before the flight home that a plan must be finished by
+AIRPORT_BUFFER = catalog.AIRPORT_BUFFER  # one source: minutes before the flight home that suggested plans finish by (a plan you add yourself may run later)
 
 
 def day_window(blocks, day):
@@ -355,31 +355,6 @@ def day_window(blocks, day):
         if b.id == "b-back" and b.day == day:
             hi = min(hi, b.at - AIRPORT_BUFFER)
     return lo, hi
-
-
-def window_problem(blocks, day, start, end):
-    """("land", landing minute) when a plan starts before you land, ("home", latest end) when it ends too close to the flight
-    home, else None. Pure."""
-    for b in blocks:
-        if b.id == "b-out" and b.day == day and start < b.end:
-            return "land", b.end
-        if b.id == "b-back" and b.day == day and end > b.at - AIRPORT_BUFFER:
-            return "home", b.at - AIRPORT_BUFFER
-    return None
-
-
-def window_message(problem):
-    """The sentence the calendar shows for a window_problem."""
-    kind, at = problem
-    if kind == "land":
-        return f"You land at {fmt_time(at)} on the first day. Plan after that."
-    return f"Your flight home leaves at {fmt_time(at + AIRPORT_BUFFER)}. Finish by {fmt_time(at)}."
-
-
-def window_note(problem):
-    """The short clash note for a fork plan (see Placement.clash)."""
-    kind, at = problem
-    return f"before you land at {fmt_time(at)}" if kind == "land" else f"too close to your flight home (finish by {fmt_time(at)})"
 
 
 def grid_end(blocks):
@@ -524,9 +499,9 @@ def parse_time(value, what):
     return int(m.group(1)) * 60 + int(m.group(2))
 
 
-def _clean(t, blocks, *, day, start, end, title, kind, old=None):
-    """Validate an activity on trip `t` with booked `blocks`. `old` is the (day, start, end) it already has: when unchanged, the
-    flight window is not re-checked, so renaming an older item (or a friend's) still works."""
+def _clean(t, blocks, *, day, start, end, title, kind):
+    """Validate an activity on trip `t` with booked `blocks`. Overlapping a booking, a ride or another plan is never refused (F-086:
+    families split up); `overlaps` tags it where it is listed."""
     title = " ".join((title or "").split())
     if not title:
         raise CalendarError("Give it a title.")
@@ -549,15 +524,6 @@ def _clean(t, blocks, *, day, start, end, title, kind, old=None):
         raise CalendarError("The end has to be after the start.")
     if e - s < MIN_LEN:
         raise CalendarError(f"Give it at least {MIN_LEN} minutes.")
-    for b in blocks:
-        if b.day == day and s < b.end and b.start < e:
-            if b.kind == "ride":  # a ride scheduled after the plan was made does not lock the plan in place: only a new or moved time is checked
-                if (day, s, e) != old:
-                    raise CalendarError(f"That overlaps your Uber at {fmt_time(b.start)}. Pick a gap.")
-                continue
-            raise CalendarError(f"That overlaps {b.title} ({fmt_time(b.at)} – {fmt_time(b.end)}). Pick a gap.")
-    if (day, s, e) != old and (problem := window_problem(blocks, day, s, e)):
-        raise CalendarError(window_message(problem))
     return day, s, e, title
 
 
@@ -671,8 +637,7 @@ def update_in(session, fam, t, blocks, id_, *, day=None, start=None, end=None, t
         raise CalendarError("That activity is gone.")
     d, s, e, name = _clean(
         t, blocks, day=row["day"] if day is None else day, start=row["start_min"] if start is None else start,
-        end=row["end_min"] if end is None else end, title=row["title"] if title is None else title, kind=row["kind"] if kind is None else kind,
-        old=(row["day"], row["start_min"], row["end_min"]))
+        end=row["end_min"] if end is None else end, title=row["title"] if title is None else title, kind=row["kind"] if kind is None else kind)
     changes = {}
     if (day, start, end) != (None, None, None):
         changes.update(day=d, start_min=s, end_min=e)
@@ -855,6 +820,7 @@ class Placement:
     state: str
     clash: str = ""
     hard: bool = False
+    overlap: str = ""  # "Skylark Air 214 and Brunch": what a free plan sits on top of (F-086), shown as a tag, never a refusal
 
     @property
     def checked(self):
@@ -895,15 +861,33 @@ def fork_plans(itinerary):
     return out
 
 
+def overlaps(day, start, end, others, skip=None):
+    """The titles of `others` (blocks, activities, plans) that share minutes with a plan on `day` (None: they are all on its day already), in order, once each; `skip` is the plan's own id. Pure."""
+    out = []
+    for x in others:
+        if getattr(x, "id", None) is not None and x.id == skip:
+            continue
+        title = getattr(x, "title", "")
+        if _overlap(x, day, start, end) and title not in out:
+            out.append(title)
+    return out
+
+
+def overlap_text(titles):
+    """"Skylark Air 214", "A and B", "A, B and C": what a tag says after "overlaps"."""
+    return oxford(titles) if titles else ""
+
+
 def _overlap(a, day, start, end):
-    return a.day == day and start < a.end and a.start < end
+    return (day is None or a.day == day) and start < a.end and a.start < end
 
 
 def place_plans(plans, blocks, acts, n_days, gs):
     """Place `plans` in the empty slots around the booked `blocks` and the existing `acts` (the traveler's and friends'). Pure.
 
-    Returns one Placement per plan, in order. A plan that only overlaps another plan (a friend's, the traveler's or an
-    earlier plan of the fork) is a soft clash: unchecked by default but still allowed. Nothing here changes its inputs.
+    Returns one Placement per plan, in order. Overlapping a booking, a ride or another plan (a friend's, the traveler's or an
+    earlier plan of the fork) is allowed (F-086): the plan is free and checked, and `overlap` names what it sits on. Only a day
+    past the trip or hours outside the grid are hard clashes. Nothing here changes its inputs.
     """
     out, taken = [], []
     for p in plans:
@@ -913,15 +897,8 @@ def place_plans(plans, blocks, acts, n_days, gs):
             out.append(Placement(p, "clash", "after your trip ends", True))
         elif p.start < gs or p.end > GRID_END:
             out.append(Placement(p, "clash", f"outside {fmt_time(gs)} to {fmt_time(GRID_END)}", True))
-        elif (hit := next((b for b in blocks if _overlap(b, p.day, p.start, p.end)), None)):
-            out.append(Placement(p, "clash", f"clashes with {hit.title}", True))
-        elif (problem := window_problem(blocks, p.day, p.start, p.end)):
-            out.append(Placement(p, "clash", window_note(problem), True))
-        elif (soft := next((x for x in [*acts, *taken] if _overlap(x, p.day, p.start, p.end)), None)):
-            owner = f"{soft.by}'s " if getattr(soft, "by", "") else ""
-            out.append(Placement(p, "clash", f"clashes with {owner}{soft.title}"))
         else:
-            out.append(Placement(p, "free"))
+            out.append(Placement(p, "free", overlap=overlap_text(overlaps(p.day, p.start, p.end, [*blocks, *acts, *taken]))))
             taken.append(p)
     return out
 

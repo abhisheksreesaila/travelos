@@ -200,14 +200,11 @@ def test_imported_flights_hotel_and_car_are_booked_blocks_marked_booked_elsewher
 def test_the_flight_window_follows_the_real_first_arrival_and_last_departure(client):
     imported(client)
     p = person()
-    with pytest.raises(cal.CalendarError, match="You land at 9:32 AM"):
-        cal.add_activity(p, day=0, start="07:00", end="08:00", title="Too early")
-    with pytest.raises(cal.CalendarError, match="Your flight home leaves at 2:10 PM. Finish by 12:10 PM"):
-        cal.add_activity(p, day=4, start="12:30", end="13:30", title="Too late")
-    assert cal.add_activity(p, day=0, start="16:30", end="18:00", title="Dinner").id
-    assert cal.add_activity(p, day=4, start="08:00", end="09:30", title="Breakfast").id
-    with pytest.raises(cal.CalendarError, match="overlaps"):
-        cal.add_activity(p, day=0, start="15:00", end="16:00", title="In the check-in")  # the hotel's check-in is a block too
+    blocks = cal.booked_blocks(ses.booking(p), cal.trip("", ses.booking(p)))
+    assert cal.day_window(blocks, 0)[0] == 9 * 60 + 32 and cal.day_window(blocks, 4)[1] == 12 * 60 + 10     # the window still guides suggestions...
+    for day, start, end, title in ((0, "07:00", "08:00", "Too early"), (4, "12:30", "13:30", "Too late"), (0, "16:30", "18:00", "Dinner"),
+                                   (4, "08:00", "09:30", "Breakfast"), (0, "15:00", "16:00", "In the check-in")):
+        assert cal.add_activity(p, day=day, start=start, end=end, title=title).id     # ...but never refuses a plan (F-086)
 
 
 def test_a_connection_uses_the_real_arrival_at_the_destination(client):
@@ -224,8 +221,8 @@ def test_a_connection_uses_the_real_arrival_at_the_destination(client):
     b = ses.booking(person())
     assert [x.id for x in cal.booked_blocks(b, cal.trip("", b)) if x.id.startswith("b-leg") or x.id in ("b-out", "b-back")] == ["b-out", "b-back", "b-leg3"]
     p = person()
-    with pytest.raises(cal.CalendarError, match="You land at 9:32 AM"):
-        cal.add_activity(p, day=0, start="07:00", end="08:00", title="Early")
+    assert cal.day_window(cal.booked_blocks(b, cal.trip("", b)), 0)[0] == 9 * 60 + 32
+    assert cal.add_activity(p, day=0, start="07:00", end="08:00", title="Early").id
 
 
 def test_the_trip_switcher_lists_the_imported_trip(client):

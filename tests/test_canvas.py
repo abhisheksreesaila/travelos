@@ -234,11 +234,10 @@ def test_the_same_park_cannot_be_added_twice_on_the_same_day(ari):
     assert "already planned" in str(e.value) and len(cal.activities(ari)) == 2
 
 
-def test_the_flight_window_is_respected_with_the_calendars_own_message(ari):
-    draft, answers = draft_and_answers(ari, days=[0, 3])     # the first day starts with the flight in
-    with pytest.raises(canvas.CanvasError) as e:
-        canvas.save(ari, draft, answers)
-    assert "land" in str(e.value) or "overlaps" in str(e.value)
+def test_a_park_day_over_the_arriving_flight_is_saved(ari):
+    draft, answers = draft_and_answers(ari, days=[0, 3])     # the first day starts with the flight in (F-086: overlaps are fine)
+    canvas.save(ari, draft, answers)
+    assert len(cal.activities(ari)) == 2
 
 
 # ---- reading a block and ticking steps ------------------------------------------------------------------------------------

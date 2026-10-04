@@ -158,6 +158,7 @@ class Item:
     zone: str = ""         # the time zone its time is local to (F-057), when the timeline knows clocks
     confirm: str = ""      # a booked item's confirmation number: shown only behind a tap on Today, never shared (F-065)
     notes: tuple = ()      # the trip notes written on this plan
+    overlaps: str = ""     # "Check out · Hotel and Lunch": what this plan sits on top of (F-086), shown as a small tag
 
 
 @dataclass(frozen=True)

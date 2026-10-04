@@ -23,22 +23,22 @@ def test_an_open_slot_is_free_and_checked():
     assert x.state == "free" and x.checked and not x.hard and x.clash == ""
 
 
-def test_a_booked_block_is_a_hard_clash_that_names_it():
+def test_a_plan_over_a_booked_block_is_free_and_tagged_with_it():
     flight = Block("b-out", 0, h(8, 5), h(9, 32), "Skylark Air 214", "booked", True)
     [x] = place([plan("d1s0", 0, h(9), h(11))], blocks=[flight])
-    assert x.state == "clash" and x.hard and not x.checked and x.clash == "clashes with Skylark Air 214"
+    assert x.state == "free" and x.checked and not x.hard and x.clash == "" and x.overlap == "Skylark Air 214"
 
 
-def test_a_friends_activity_is_a_soft_clash_named_after_them():
+def test_a_plan_over_a_friends_activity_is_free_and_tagged_with_it():
     mom = Activity("a1", 1, h(9), h(11), "Venice Canals stroll", "outdoors", "Mom")
     [x] = place([plan("d2s0", 1, h(9, 30), h(11))], acts=[mom])
-    assert x.state == "clash" and not x.hard and not x.checked and x.clash == "clashes with Mom's Venice Canals stroll"
+    assert x.state == "free" and x.checked and not x.hard and x.overlap == "Venice Canals stroll"
 
 
-def test_the_travelers_own_activity_clash_has_no_owner():
+def test_a_plan_over_the_travelers_own_activity_is_tagged_too():
     mine = Activity("a1", 1, h(9), h(11), "Brunch", "food")
     [x] = place([plan("d2s0", 1, h(10), h(12))], acts=[mine])
-    assert x.clash == "clashes with Brunch"
+    assert x.overlap == "Brunch" and x.checked
 
 
 def test_touching_edges_do_not_clash():
@@ -51,9 +51,9 @@ def test_other_days_do_not_clash():
     assert place([plan("a", 2, h(9), h(11))], acts=[mine])[0].state == "free"
 
 
-def test_two_plans_of_the_fork_that_overlap_the_later_one_clashes_softly():
+def test_two_plans_of_the_fork_that_overlap_are_both_kept_and_the_later_is_tagged():
     first, second = place([plan("a", 0, h(13), h(15), "Pier"), plan("b", 0, h(14), h(16), "Tacos")])
-    assert first.checked and second.state == "clash" and not second.hard and second.clash == "clashes with Pier"
+    assert first.checked and first.overlap == "" and second.checked and not second.hard and second.overlap == "Pier"
 
 
 def test_a_plan_the_calendar_already_has_is_marked_have_and_not_checked():
@@ -106,13 +106,11 @@ def test_the_window_opens_when_you_land_and_closes_two_hours_before_the_flight_h
     assert cal.day_window([OUT, BACK], 2) == (GS, cal.GRID_END)
 
 
-def test_a_fork_plan_before_you_land_or_after_the_flight_home_is_a_hard_clash():
+def test_a_fork_plan_around_the_flights_is_kept_not_refused():
     early, fine, late, pool = place([plan("a", 0, h(7), h(7, 45)), plan("b", 0, h(9, 45), h(11)), plan("c", 4, h(12, 15), h(13)),
                                      plan("d", 4, h(17), h(19), "Pool time")], blocks=[OUT, BACK])
-    assert early.hard and early.clash == "before you land at 9:32 AM" and not early.checked
-    assert fine.checked
-    assert late.hard and late.clash == "too close to your flight home (finish by 12:10 PM)"
-    assert pool.hard and not pool.checked
+    assert early.checked and not early.hard and fine.checked and late.checked and not late.hard
+    assert pool.checked and pool.overlap == ""
 
 
 def test_a_plan_that_ends_exactly_at_the_buffer_still_fits():

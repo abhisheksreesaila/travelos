@@ -125,7 +125,7 @@ def _consequences(plan):
     out = [f"{n} booked item{'s' if n != 1 else ''} will go on your calendar, locked (with a lock). The trip header will say “Booked elsewhere · {plan.booked_on}”."]
     arrive = plan.arrive_leg
     if arrive:
-        out.append(f"You land at {_when(arrive.arrive)}: plans before then are not allowed" + (f", and none within {cal.AIRPORT_BUFFER // 60} hours of your flight home." if plan.depart_leg else "."))
+        out.append(f"You land at {_when(arrive.arrive)}: suggested plans start after you land" + (f" and finish {cal.AIRPORT_BUFFER // 60} hours before your flight home. You can still add a plan at any time." if plan.depart_leg else ". You can still add a plan at any time."))
     if plan.rental:
         out.append("You have a car, so there are no Uber rides to schedule.")
     elif arrive and arrive.dest in ("LAX", "BUR") and plan.depart_leg:
