@@ -113,6 +113,11 @@ MAX_PAGES = 50
 RENDER_TIMEOUT = 10   # seconds: drawing runs in its own process, so a PDF that hangs or eats memory cannot block uploads
 _DRAW = """
 import io, sys
+try:
+    import resource
+    resource.setrlimit(resource.RLIMIT_AS, (768 * 1024 ** 2, 768 * 1024 ** 2))   # the drawing process gets at most 768 MB
+except Exception:
+    pass
 import pypdfium2 as pdfium
 edge = float(sys.argv[1])
 pdf = pdfium.PdfDocument(sys.stdin.buffer.read())
@@ -123,23 +128,15 @@ img.save(sys.stdout.buffer, "PNG")
 """
 
 
-def _limits():
-    try:
-        import resource
-        resource.setrlimit(resource.RLIMIT_AS, (2 * 1024 ** 3, 2 * 1024 ** 3))   # at most 2 GB of memory for the drawing process
-    except Exception:
-        pass
-
-
 def render_pdf(data: bytes):
     """The first page of a PDF as a picture (long side photos.DISPLAY_EDGE), or None when pypdfium2 is not there, takes longer than RENDER_TIMEOUT or cannot draw it.
 
-    Only the first page is drawn, in a separate process with a time and memory limit."""
+    Only the first page is drawn, in a separate process with a time limit and a memory limit set inside that process (no preexec_fn: the app runs threads)."""
     import subprocess
     import sys
     from PIL import Image
     try:
-        done = subprocess.run([sys.executable, "-c", _DRAW, str(photos.DISPLAY_EDGE)], input=data, capture_output=True, timeout=RENDER_TIMEOUT, preexec_fn=_limits)
+        done = subprocess.run([sys.executable, "-c", _DRAW, str(photos.DISPLAY_EDGE)], input=data, capture_output=True, timeout=RENDER_TIMEOUT)
         if done.returncode != 0:
             log.info("pass pdf not drawn: exit %s", done.returncode)
             return None
