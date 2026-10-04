@@ -73,3 +73,7 @@
 .tp-up .ph-details summary { align-self: flex-start; background: rgba(255, 255, 255, .12); color: #FFFFFF; box-shadow: none; }
 .tp-up .ph-details .tp-sub, .tp-up .ph-details .tp-pnote, .tp-up .ph-details .tp-conf-num { color: #FFFFFF; }
 .tp-up .ph-details summary { min-height: 2.75rem; }
+
+/* Add to the trip: the paste entry on Today (F-080) */
+.tp-addtrip { display: flex; align-items: center; gap: 0.625rem; min-height: 3.5rem; padding: 0.5rem 1rem; border-radius: 1.25rem; background: var(--coral); color: var(--ink); text-decoration: none; font-weight: 800; font-size: 1.0625rem; box-shadow: 0 0.25rem 0 var(--coral-deep); }
+.tp-addtrip .tp-sub { margin-left: auto; color: var(--ink); font-weight: 700; }
