@@ -25,11 +25,11 @@ from starlette.responses import RedirectResponse, Response
 from gitaway import around, familydb, members, phones, pickers, session as ses
 from gitaway.icons import icon
 from gitaway.layout import avatar, page
-from gitaway.pages import passkeys as passkeys_ui
+from gitaway.pages import morning as morning_ui, passkeys as passkeys_ui
 
 log = logging.getLogger("gitaway.family")
 
-HEAD = (*pickers.HEAD, *passkeys_ui.HEAD[:1], Link(rel="stylesheet", href="/assets/css/family.css"), Script(src="/assets/js/family.js", defer=True))
+HEAD = (*pickers.HEAD, *passkeys_ui.HEAD[:1], *morning_ui.HEAD, Link(rel="stylesheet", href="/assets/css/family.css"), Script(src="/assets/js/family.js", defer=True))
 PRIVATE = ("/family",)  # paths main.py's auth beforeware protects; everything else is public
 
 
@@ -151,10 +151,16 @@ def family_page(request, session, error="", status=200, email="", role="editor",
         switcher,
         Section(H2("Who is in", id="fam-members-h"), Ul(*[_member_row(m, me, my_role, tid) for m in crew], cls="fam-list", id="fam-members"),
                 note, aria_labelledby="fam-members-h", cls="fam-sec"),
-        _phone_section(session, phone_error, phone_typed), _food_section(session, my_role in ("admin", "editor")), passkeys_ui.family_section(request, session), alone, waiting, invite_form,
+        _phone_section(session, phone_error, phone_typed), _food_section(session, my_role in ("admin", "editor")), _morning_section(session), passkeys_ui.family_section(request, session), alone, waiting, invite_form,
         cls="fam",
     ), head=HEAD)
     return out if status == 200 else Response(to_xml(out), status_code=status, media_type="text/html")
+
+
+def _morning_section(session):
+    """The morning plan switch (F-093: moved here from Help, which got it from Today in F-092): "" when push is not set up on this server. Face ID is the section below it."""
+    card = morning_ui.card(ses.trip_zone(session))
+    return Section(H2("Morning plan", id="fam-morning-h"), card, aria_labelledby="fam-morning-h", id="morning-plan", cls="fam-sec") if card else ""
 
 
 def _join_page(title, *body, status=200):

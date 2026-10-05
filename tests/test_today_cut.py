@@ -1,5 +1,5 @@
 """F-092: Today is the day view. The Today tab (/trip) opens today's day in the canvas; on today the day starts with what is happening now or up next; the centre Ask
-is the one way to change the day (no extra buttons on the day or the block); the week has no zoom control; the morning plan switch and the Face ID card live in Help.
+is the one way to change the day (no extra buttons on the day or the block); the week has no zoom control; the morning plan switch and the Face ID card live on the family page (F-093).
 The demo trip is Fri Oct 16 to Tue Oct 20 in Los Angeles."""
 
 import re
@@ -94,15 +94,17 @@ def test_the_week_marks_today(trip, monkeypatch):
     assert "is-today" in row and page.count('class="cz-today"') == 1
 
 
-# ---- Help carries the morning plan and Face ID ----------------------------------------------------------------------------------
+# ---- the family page carries the morning plan and Face ID (F-093: they left Help) ---------------------------------------------------
 
-def test_help_has_the_morning_plan_switch_when_push_is_set_up(trip, monkeypatch):
-    assert 'id="tp-morning"' not in trip.get("/trip/help").text
+def test_the_family_page_has_the_morning_plan_switch_when_push_is_set_up(trip, monkeypatch):
+    assert 'id="tp-morning"' not in trip.get("/family").text
     monkeypatch.setenv("GITAWAY_VAPID_PUBLIC", "BPublicKey"), monkeypatch.setenv("GITAWAY_VAPID_PRIVATE", "p"), monkeypatch.setenv("GITAWAY_VAPID_SUBJECT", "mailto:a@b.co")
-    html = trip.get("/trip/help").text
+    html = trip.get("/family").text
     assert 'id="tp-morning"' in html and "/assets/js/morning.js" in html and "morning.css" in html
+    assert 'id="tp-morning"' not in trip.get("/trip/help").text
 
 
-def test_help_offers_face_id_to_someone_without_a_passkey(trip):
-    html = trip.get("/trip/help").text
-    assert 'id="pk-card"' in html and 'data-where="today"' in html and "/assets/js/passkeys.js" in html
+def test_the_family_page_offers_face_id_to_someone_without_a_passkey(trip):
+    html = trip.get("/family").text
+    assert 'id="pk-card"' in html and 'id="this-phone"' in html and "/assets/js/passkeys.js" in html
+    assert 'id="pk-card"' not in trip.get("/trip/help").text
