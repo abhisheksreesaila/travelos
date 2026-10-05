@@ -15,7 +15,7 @@ from tests_browser.test_phone_polish import OVERFLOW, SMALL_CONTROLS, SMALL_TEXT
 
 LAPTOP = {"width": 1280, "height": 800}
 NARROW = {"width": 320, "height": 640}
-TABS = [("today", "Today", "/trip"), ("map", "Map", "/trip/map"), ("ask", "Ask", "/trip/ask"), ("family", "Family", "/trip/family"), ("help", "Help", "/trip/help")]
+TABS = [("today", "Today", "/trip"), ("map", "Map", "/trip/map"), ("ask", "Ask", "/trip/ask"), ("family", "Family", "/trip/family")]   # F-093: Help left the bar
 
 
 @pytest.fixture
@@ -65,7 +65,7 @@ def test_every_tab_is_pressed_and_lands_in_the_shell(shell, base_url):
         page.wait_for_url(re.compile(r"/trip/canvas\?day=") if key == "today" else f"**{path}")      # F-092: Today is the day view
         expect(page.locator(f"#ph-tab-{key}")).to_have_attribute("aria-current", "page")
         expect(bar).to_be_visible()
-        assert bar.locator("a").count() == 5
+        assert bar.locator("a").count() == 4
         box = bar.bounding_box()
         assert box["y"] + box["height"] <= PHONE["height"] + 0.5 and box["x"] >= 0 and box["x"] + box["width"] <= PHONE["width"] + 0.5
         if key == "today":
