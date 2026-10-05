@@ -129,3 +129,28 @@ def test_a_blocked_microphone_says_so(canvas_page, base_url):
     page.locator("#pt-mic").click()
     expect(page.locator("#ft-error")).to_contain_text("microphone is blocked")
     expect(page.locator("#ft-compose")).to_be_visible()
+
+
+def test_a_plan_chat_message_shows_at_once_and_a_failed_one_offers_retry(canvas_page, base_url):
+    """F-094: the plan's chat shares thread.js, so it sends optimistically too."""
+    page = canvas_page()
+    lunch_chat(page, base_url)
+    page.route("**/trip/talk/message", lambda route: (page.wait_for_timeout(1200), route.continue_())[1])
+    page.locator("#ft-text").fill("Table for six")
+    page.locator("#ft-send").click()
+    bubble = page.locator("#ft-thread .ft-me")
+    expect(bubble).to_contain_text("Table for six", timeout=400)
+    expect(bubble).to_have_class(re.compile("is-sending"))
+    expect(bubble).not_to_have_class(re.compile("is-sending"), timeout=6000)
+    page.unroute("**/trip/talk/message")
+    page.route("**/trip/talk/message", lambda route: route.abort())
+    page.locator("#ft-text").fill("Make it seven")
+    page.locator("#ft-send").click()
+    failed = page.locator("#ft-thread .ft-me.is-failed")
+    expect(failed).to_contain_text("Make it seven")
+    expect(failed).to_contain_text("Not sent")
+    page.unroute("**/trip/talk/message")
+    failed.get_by_role("button", name="Retry").click()
+    expect(page.locator("#ft-thread .ft-me .ft-bub")).to_have_count(2)
+    expect(page.locator("#ft-thread .is-failed")).to_have_count(0)
+    checks(page)
