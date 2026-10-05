@@ -93,8 +93,8 @@ def test_the_zoom_control_goes_to_today_week_and_day(trip):
     page = trip.get("/trip/canvas").text
     assert 'href="/trip"' in tag(page, "cz-z-today") and 'aria-current="page"' in tag(page, "cz-z-week")
     assert "/trip/canvas?day=1" in tag(page, "cz-z-day")     # the first park day, since the demo trip is before its dates
-    day = trip.get("/trip/canvas?day=1").text
-    assert 'aria-current="page"' in tag(day, "cz-z-day") and 'href="/trip/canvas"' in bare(tag(day, "cz-z-week"))
+    day = trip.get("/trip/canvas?day=1").text      # F-090: on a day the dates across the top replace the control; the week is their first item
+    assert 'id="cz-z-day"' not in day and 'href="/trip/canvas"' in bare(tag(day, "cz-z-week")) and 'data-zoom="out"' in tag(day, "cz-z-week")
 
 
 # ---- the day ---------------------------------------------------------------------------------------------------------------
@@ -121,9 +121,9 @@ def test_the_unmatched_initials_are_drawn_dashed(trip):
     assert "cz-av-initials" in page
 
 
-def test_a_free_day_has_an_add_link_for_editors(trip):
-    page = trip.get("/trip/canvas?day=2").text
-    assert 'id="cz-empty"' in page and "Add something fun" in page and 'href="/trip?add=1&amp;day=2"' in page
+def test_a_free_day_asks_editors_to_say_the_plan(trip):
+    page = trip.get("/trip/canvas?day=2").text      # F-090: talk or paste the plan (Ask on that day) instead of one plan at a time
+    assert 'id="cz-empty"' in page and "Say the plan for this day" in page and "/trip/ask?day=2&amp;mode=talk" in page
 
 
 def test_a_day_that_does_not_exist_goes_back_to_the_week(trip):

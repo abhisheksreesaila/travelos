@@ -56,3 +56,15 @@ Frame 8 of `Trip-Canvas-v2.html` and frame 4 of `Plan-Steps-v1.html`. Editors on
 F-081 tests, kept:
 
 `tests/test_trip_canvas.py` (every level, link and button, roles, fragments), `tests/test_canvas_ticks.py` (the coalesced card, `canvas.plan`), `tests_browser/test_trip_canvas.py` (390 and 320: tap, pinch, Back and Forward, the named element, reduced motion, no-transition fallback, Mark done and Set aside, lanes, no sideways scroll, 44px targets, 13px text; 1280: the wide day view). Screenshots: `F081_SHOTS=<folder> pixi run pytest -p no:randomly tests_browser/test_trip_canvas.py -k screenshots`.
+
+## The plan of the day (F-090)
+
+Brief `docs/briefs/day-plan.md`. On a phone the day level is the plan of the day:
+
+- **Dates across the top** (`day_pills`, `#cz-dpills`): Week (`#cz-z-week`, zooms out) then every trip day (open one `is-open` + `aria-current="date"`, today ringed, a dot when the family planned something). They scroll sideways and the script keeps the open one centred. On a laptop the week strip (`strip`) does this job and the pills are hidden. The Today | Week | Day control stays on the week only.
+- **Flick**: the day's `<section>` carries `data-prev` / `data-next`. A touch (not mouse) move of 60px+ that is 1.5× more sideways than up or down, in under 0.9 s, not started on the dates, filters, a sheet or a field and not a held step, goes to that day with `mode: 'replace'` (Back is not a day-by-day walk). The view follows the finger a little. Taps on the dates and flicks slide the way the days go (`html[data-cz-dir="next"|"prev"]`, `.cz-in-next|prev` without View Transitions; nothing under reduced motion).
+- **Plans first**: plans and park blocks are the cards; bookings are `booked_line` (`.cz-bk`): time, icon, title, "Booked", a link to Help (`#hp-hotel`, `#hp-car`, else `/trip/help`). A day with no plan shows `#cz-empty` above its booking lines.
+- **Say the plan**: editors get `#cz-say` ("Change this day", `/trip/ask?day=N`); an empty day gets `#cz-say-talk` (`&mode=talk`) and `#cz-say-paste` (`&mode=paste`). Viewers get neither.
+- **Morning push** title "Today's plan · <place>", opening `/trip/canvas?day=<today>` (`morning.message(..., day=n)`); Today's heading has `#tp-open-day` ("Day plan") to the day it shows.
+
+Tests: `tests/test_day_plan.py`, `tests_browser/test_day_plan.py` (flicks both ways, edges, not on a vertical move or a held step, the slide's direction, dates, Help, Ask links, 390 and 320). Screenshots: `F090_SHOTS=<folder> pixi run pytest -p no:randomly tests_browser/test_day_plan.py -k screenshots`.

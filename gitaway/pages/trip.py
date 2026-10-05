@@ -361,7 +361,8 @@ def header(v, tab):
     kicker = day_of if tab == "today" else dates
     return Header(Div(Span(kicker, cls="tp-head-k", id="tp-head-k", data_today=day_of, data_other=dates),
                       H1({"today": _title_today(v), "days": f"Your {len(v['dates'])} days", "notes": "Trip notes"}[tab], id="tp-title-h"),
-                      Div(A(icon("pencil", 14, 2.4), "Add to the trip", href="/trip/add", cls="btn btn-sm tp-edit tp-addtrip", id="tp-add-trip") if access.can_edit(v["role"]) else "",
+                      Div(A(icon("pencil", 14, 2.4), "Add to the trip", href="/trip/ask?mode=paste", cls="btn btn-sm tp-edit tp-addtrip", id="tp-add-trip") if access.can_edit(v["role"]) else "",
+                          A(icon("calendar", 14, 2.4), "Day plan", href=f"/trip/canvas?day={v['sel']}", cls="btn btn-sm tp-edit tp-opencanvas", id="tp-open-day"),   # F-090: the plan of the day shown here, for every role
                           A(icon("expand", 14, 2.4), "Week view", href="/trip/canvas", cls="btn btn-sm tp-edit tp-opencanvas", id="tp-open-canvas"),   # F-081: the zoomable canvas, for every role
                           tab_ask.ask_button(v["sel"], compact=True) if access.can_edit(v["role"]) else "", cls="tp-head-btns") if tab == "today" else "",
                       A(icon("pencil", 14, 2.4), "Edit trip", href=f"/trips/build/edit?trip={ses.open_trip_id()}", cls="btn btn-sm tp-edit", id="tp-edit-trip") if access.can_edit(v["role"]) and cal.is_imported(v["b"]) and ses.open_trip_id() else "",

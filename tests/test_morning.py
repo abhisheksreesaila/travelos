@@ -2,6 +2,7 @@
 drives the sender, with a fake push service. Nothing here talks to a real push service."""
 
 import json
+import os
 import re
 from datetime import datetime, timezone
 
@@ -58,7 +59,7 @@ def ari(client):
 
 def test_the_message_names_the_first_plans_with_times():
     m = morning.message("Los Angeles", "during", [(9 * 60, "Griffith Observatory"), (12 * 60 + 30, "Tacos"), (15 * 60, "Beach")])
-    assert m == {"title": "Today in Los Angeles", "body": "9:00 AM Griffith Observatory · 12:30 PM Tacos · 3:00 PM Beach", "url": "/trip"}
+    assert m == {"title": "Today's plan · Los Angeles", "body": "9:00 AM Griffith Observatory · 12:30 PM Tacos · 3:00 PM Beach", "url": "/trip"}
 
 
 def test_a_long_day_shows_three_plans_and_counts_the_rest():
@@ -197,7 +198,7 @@ def test_it_sends_once_each_trip_morning_at_the_chosen_time(ari):
     assert morning.run_once(la(17, 7, 29), push) == [] and push.sent == []              # a minute early
     assert len(morning.run_once(la(17, 7, 30), push)) == 1
     endpoint, payload = push.sent[0]
-    assert endpoint == EP and payload["title"] == "Today in Los Angeles" and payload["url"] == "/trip"
+    assert endpoint == EP and payload["title"] == "Today's plan · Los Angeles" and payload["url"] == "/trip/canvas?day=1"      # Oct 17 is day 2 of the trip: the push opens its day plan (F-090)
     assert "9:00 AM Griffith Observatory" in payload["body"]
     morning.run_once(la(17, 7, 31), push), morning.run_once(la(17, 8, 0), push)
     assert len(push.sent) == 1                                                          # not again the same day
@@ -349,7 +350,7 @@ def test_the_sender_thread_starts_once_and_only_with_keys(monkeypatch):
 def test_the_text_the_sender_builds_is_the_same_the_today_view_shows(ari):
     s = person()
     msg = morning.todays_message(s, la(17, 7, 30))
-    assert msg["title"] == "Today in Los Angeles" and td is not None
+    assert msg["title"] == "Today's plan · Los Angeles" and td is not None
     assert re.search(r"9:00 AM Griffith Observatory", msg["body"])
 
 
@@ -365,7 +366,7 @@ def test_vapid_keys_writes_the_env_file_without_printing_the_private_key(tmp_pat
     assert values["GOOGLE_CLIENT_ID"] == "keepme" and values["GITAWAY_VAPID_SUBJECT"] == "mailto:a@b.co"
     assert len(values["GITAWAY_VAPID_PUBLIC"]) == 87 and len(values["GITAWAY_VAPID_PRIVATE"]) == 43
     shown = capsys.readouterr()
-    assert values["GITAWAY_VAPID_PRIVATE"] not in shown.out + shown.err and oct(env.stat().st_mode)[-3:] == "600"
+    assert values["GITAWAY_VAPID_PRIVATE"] not in shown.out + shown.err and (os.name == "nt" or oct(env.stat().st_mode)[-3:] == "600")   # Windows has no Unix file modes
 
 
 def test_vapid_keys_will_not_replace_keys_without_force_and_needs_a_contact(tmp_path, monkeypatch):

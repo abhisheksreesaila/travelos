@@ -370,16 +370,16 @@ def field(html, name):
 def test_the_ask_tab_is_the_box_with_the_day_in_context_and_the_mic_hint(client, day):
     html = client.get(f"/trip/ask?day={DAY}").text
     assert "is coming" not in html and ">Ask GitAway</h1>" in html
-    assert 'id="ak-text"' in html and re.search(r'<option value="1" selected', html) and html.count("<option") == 5
+    assert 'id="ak-text"' in html and re.search(r'<option value="1" selected', html) and html.count("<option") == 6
     assert "tap the microphone on the keyboard" in html and 'id="ak-mic"' in html and re.search(r'<button[^>]*\bhidden\b[^>]*id="ak-mic"', html)
     assert "/assets/js/ask.js" in html and "/assets/css/ask.css" in html
     assert 'name="trip"' in form(html, "ak-form")
     assert not re.search("[\U0001F300-\U0001FAFF☀-➿]", html)
 
 
-def test_the_box_opens_on_the_default_day_and_ignores_a_bad_day(client, day):
-    assert re.search(r'<option value="0" selected', client.get("/trip/ask").text)
-    assert re.search(r'<option value="0" selected', client.get("/trip/ask?day=99").text)
+def test_the_box_opens_with_no_day_chosen_and_ignores_a_bad_day(client, day):
+    assert re.search(r'<option value="" selected', client.get("/trip/ask").text)      # F-087: no day means "let GitAway place it"
+    assert re.search(r'<option value="" selected', client.get("/trip/ask?day=99").text)
 
 
 def test_typing_a_request_shows_the_proposal_as_chips_and_changes_nothing(client, day, azure, announced):
@@ -403,7 +403,7 @@ def test_apply_and_tell_the_family_changes_the_day_and_lands_back_with_a_done_ca
     r = client.post("/trip/ask/apply", data={"day": field(apply_form, "day"), "ops": field(apply_form, "ops"), "text": field(apply_form, "text"), "token": field(apply_form, "token"), "trip": field(apply_form, "trip")}, follow_redirects=False)
     assert r.status_code == 303 and r.headers["location"] == f"/trip/ask?day={DAY}&done=2"
     done = client.get(r.headers["location"]).text
-    assert 'id="ak-done"' in done and "2 changes on Saturday, Oct 17" in done and "The family has been told" in done and f'href="/trip?day={DAY}"' in done
+    assert 'id="ak-done"' in done and "2 changes on Saturday, Oct 17" in done and "The family has been told" in done and f'href="/trip/canvas?day={DAY}"' in done
     assert ("Rest at the hotel", "15:00", "17:00") in plans(day["s"]) and len(announced) == 1
     assert "Rest at the hotel" in client.get(f"/trip?day={DAY}").text
 
@@ -493,14 +493,14 @@ def opener(html, ident):
 
 def test_the_canvas_offers_ask_on_the_today_day_the_canvas_day_and_a_block_for_editors_only(client, day):
     assert opener(client.get(f"/trip?day={DAY}").text, "ak-open") == "/trip/ask?day=1"
-    assert opener(client.get(f"/trip/canvas?day={DAY}").text, f"ak-open-day-{DAY}") == "/trip/ask?day=1"
+    assert opener(client.get(f"/trip/canvas?day={DAY}").text, "cz-say") == "/trip/ask?day=1"      # F-090: the day's "Change this day"
     assert opener(client.get(f"/trip/canvas?block={day['block']}").text, f"ak-open-blk-{day['block']}") == "/trip/ask?day=1"
     mail = addr("viewask")
     invite(client, mail, "viewer")
     viewer = browser(client)
     sign_in(viewer, mail)
     for url in (f"/trip?day={DAY}", f"/trip/canvas?day={DAY}", f"/trip/canvas?block={day['block']}"):
-        assert "ak-open" not in viewer.get(url).text, url
+        assert "ak-open" not in viewer.get(url).text and "cz-say" not in viewer.get(url).text, url
 
 
 def test_the_ask_routes_need_sign_in(client):
