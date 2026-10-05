@@ -11,7 +11,7 @@ def test_today_shows_the_newest_two_note_slips_under_the_hotel_card_with_a_link_
     for i, t in enumerate(("Oldest note", "Bring sunscreen", "Churros after the observatory"), 1):
         client.post("/calendar/notes", data={"id": f"n{i}", "text": t})
     at(date(2026, 10, 17), "09:00")
-    html = client.get("/trip").text
+    html = client.get("/trip?tab=today").text
     today = html.split('id="tp-panel-today"')[1].split('id="tp-panel-days"')[0]
     tail = today.split('id="tp-stay"')[1]
     assert "Churros after the observatory" in tail and "Bring sunscreen" in tail and "Oldest note" not in tail
@@ -23,18 +23,18 @@ def test_today_shows_the_newest_two_note_slips_under_the_hotel_card_with_a_link_
 def test_today_has_no_note_strip_without_notes(client, at):
     book(client)
     at(date(2026, 10, 17), "09:00")
-    assert "All notes" not in client.get("/trip").text
+    assert "All notes" not in client.get("/trip?tab=today").text
 
 
 def test_only_up_next_and_happening_now_pulse(client, at):
     book(client)
     plan(client, "a1", "1", "17:00", "19:30", "Griffith Observatory", "culture")
     at(date(2026, 10, 17), "16:20")
-    assert "tp-pulse" in client.get("/trip").text
+    assert "tp-pulse" in client.get("/trip?tab=today").text
     at(date(2026, 10, 17), "18:00")
-    assert "tp-pulse" in client.get("/trip").text
+    assert "tp-pulse" in client.get("/trip?tab=today").text
     at(date(2026, 10, 17), "22:00")
-    html = client.get("/trip").text
+    html = client.get("/trip?tab=today").text
     assert "ALL DONE TODAY" in html and "tp-pulse" not in html
 
 

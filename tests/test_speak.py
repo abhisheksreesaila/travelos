@@ -491,10 +491,9 @@ def opener(html, ident):
     return re.search(r'href="([^"]*)"', m.group(0)).group(1) if m else None
 
 
-def test_the_canvas_offers_ask_on_the_today_day_the_canvas_day_and_a_block_for_editors_only(client, day):
+def test_the_today_page_offers_ask_to_editors_and_the_canvas_leaves_it_to_the_centre_tab(client, day):
     assert opener(client.get(f"/trip?day={DAY}").text, "ak-open") == "/trip/ask?day=1"
-    assert opener(client.get(f"/trip/canvas?day={DAY}").text, "cz-say") == "/trip/ask?day=1"      # F-090: the day's "Change this day"
-    assert opener(client.get(f"/trip/canvas?block={day['block']}").text, f"ak-open-blk-{day['block']}") == "/trip/ask?day=1"
+    assert "ak-open" not in client.get(f"/trip/canvas?day={DAY}").text and "ak-open" not in client.get(f"/trip/canvas?block={day['block']}").text      # F-092
     mail = addr("viewask")
     invite(client, mail, "viewer")
     viewer = browser(client)

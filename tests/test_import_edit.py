@@ -182,7 +182,7 @@ def test_tampered_ride_along_fields_never_save_a_broken_trip(client):
                     {"knames": ["x" * 90, ""]}):
         r = tampered_save(client, **changes)
         assert r.status_code in (303, 422), changes
-        assert client.get("/trip").status_code == 200, changes
+        assert client.get("/trip?tab=today").status_code == 200, changes
         assert client.get("/calendar").status_code == 200, changes
 
 

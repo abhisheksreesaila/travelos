@@ -109,7 +109,7 @@ def test_the_migration_runs_on_an_existing_family_file():
 def test_a_paris_trip_shows_parisian_today_and_up_next(client, at_utc):
     imported(client, PARIS)
     at_utc(INSTANT)
-    html = client.get("/trip").text
+    html = client.get("/trip?tab=today").text
     t = words(html)
     assert "DAY 5 OF 5" in t and "Tuesday" in html.split("<h1")[1].split("</h1>")[0]
     assert "UP NEXT · IN 3 H" in t and "The Example Hotel Santa Monica" in t
@@ -118,9 +118,9 @@ def test_a_paris_trip_shows_parisian_today_and_up_next(client, at_utc):
 def test_the_same_instant_is_a_day_earlier_for_an_la_trip_and_the_la_countdown_is_unchanged(client, at_utc):
     imported(client)
     at_utc(INSTANT)
-    assert "DAY 4 OF 5" in words(client.get("/trip").text)  # 11 PM on Oct 19 in Los Angeles
+    assert "DAY 4 OF 5" in words(client.get("/trip?tab=today").text)  # 11 PM on Oct 19 in Los Angeles
     at_utc(datetime(2026, 10, 20, 21, 0, tzinfo=timezone.utc))  # 2:00 PM in Los Angeles, 10 minutes before the flight home
-    t = words(client.get("/trip").text)
+    t = words(client.get("/trip?tab=today").text)
     assert "DAY 5 OF 5" in t and "UP NEXT · IN 10 MIN" in t
 
 
@@ -166,7 +166,7 @@ def leaving(frm, to, depart, arrive, tail=""):
 
 def trip_text(client, moment, at_utc):
     at_utc(moment)
-    return words(client.get("/trip").text)
+    return words(client.get("/trip?tab=today").text)
 
 
 def test_on_the_morning_you_fly_to_paris_the_flight_is_hours_away_in_la_time(client, at_utc):

@@ -1,5 +1,6 @@
 """F-067: the phone shell in a real browser: the bottom tab bar on every trip screen (every tab pressed), the raised Ask, placeholder cards, Today v2
 (Directions and Uber hrefs, Leave by, struck-through done items, the route strip), phone checks, and the laptop layout unchanged."""
+import re
 import sys
 import types
 from datetime import date
@@ -56,19 +57,19 @@ def checks(page):
 
 def test_every_tab_is_pressed_and_lands_in_the_shell(shell, base_url):
     page = shell()
-    page.goto(base_url + "/trip")
+    page.goto(base_url + "/trip?tab=today")
     bar = page.locator(".ph-tabs")
     expect(bar).to_be_visible()
     for key, name, path in TABS:
         page.locator(f"#ph-tab-{key}").click()
-        page.wait_for_url(f"**{path}")
+        page.wait_for_url(re.compile(r"/trip/canvas\?day=") if key == "today" else f"**{path}")      # F-092: Today is the day view
         expect(page.locator(f"#ph-tab-{key}")).to_have_attribute("aria-current", "page")
         expect(bar).to_be_visible()
         assert bar.locator("a").count() == 5
         box = bar.bounding_box()
         assert box["y"] + box["height"] <= PHONE["height"] + 0.5 and box["x"] >= 0 and box["x"] + box["width"] <= PHONE["width"] + 0.5
         if key == "today":
-            expect(page.locator("#tp-up")).to_be_visible()
+            expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
         elif key == "map":
             expect(page.locator("#tp-title-h")).to_have_text("Map")
             expect(page.locator("#mp-daychip")).to_be_visible()  # the real map (F-068), not a "coming" card
@@ -85,7 +86,7 @@ def test_every_tab_is_pressed_and_lands_in_the_shell(shell, base_url):
 
 def test_ask_is_raised_above_the_other_tabs(shell, base_url):
     page = shell()
-    page.goto(base_url + "/trip")
+    page.goto(base_url + "/trip?tab=today")
     ask = page.locator("#ph-tab-ask .ph-ti").bounding_box()
     today = page.locator("#ph-tab-today .ph-ti").bounding_box()
     bar = page.locator(".ph-tabs").bounding_box()
@@ -94,7 +95,7 @@ def test_ask_is_raised_above_the_other_tabs(shell, base_url):
 
 def test_the_bar_stays_put_when_the_page_scrolls_and_does_not_cover_the_end(shell, base_url):
     page = shell()
-    page.goto(base_url + "/trip")
+    page.goto(base_url + "/trip?tab=today")
     page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
     bar = page.locator(".ph-tabs").bounding_box()
     assert bar["y"] + bar["height"] <= PHONE["height"] + 0.5 and bar["y"] > PHONE["height"] - 120
@@ -103,7 +104,7 @@ def test_the_bar_stays_put_when_the_page_scrolls_and_does_not_cover_the_end(shel
 
 def test_today_has_directions_uber_and_the_route_strip(shell, base_url):
     page = shell()
-    page.goto(base_url + "/trip")
+    page.goto(base_url + "/trip?tab=today")
     directions, uber = page.locator("#tp-directions"), page.locator("#tp-uber")
     expect(directions).to_be_visible()
     expect(uber).to_be_visible()
@@ -119,7 +120,7 @@ def test_today_has_directions_uber_and_the_route_strip(shell, base_url):
 
 def test_done_items_are_struck_through(shell, base_url, clock):
     page = shell()
-    page.goto(base_url + "/trip")
+    page.goto(base_url + "/trip?tab=today")
     done = page.locator('.tp-row.is-done .tp-what', has_text="Pancakes")
     expect(done).to_be_visible()
     assert "line-through" in done.evaluate("e => getComputedStyle(e).textDecorationLine")
@@ -130,13 +131,13 @@ def test_done_items_are_struck_through(shell, base_url, clock):
 def test_leave_by_shows_only_when_a_drive_time_is_known(shell, base_url, clock, monkeypatch):
     page = shell()
     monkeypatch.delitem(sys.modules, "gitaway.geo", raising=False)
-    page.goto(base_url + "/trip")
+    page.goto(base_url + "/trip?tab=today")
     expect(page.locator("#tp-up")).to_be_visible()
     expect(page.locator("#tp-leave")).to_have_count(0)
     mod = types.ModuleType("gitaway.geo")
     mod.drive_minutes = lambda a, b: 20
     monkeypatch.setitem(sys.modules, "gitaway.geo", mod)
-    page.goto(base_url + "/trip")
+    page.goto(base_url + "/trip?tab=today")
     expect(page.locator("#tp-leave")).to_contain_text("Leave by 4:40 PM")
     expect(page.locator(".ph-ring-n")).to_have_text("40")
     checks(page)
@@ -152,7 +153,7 @@ def test_no_sideways_scroll_on_any_screen(shell, base_url, viewport):
 
 def test_the_laptop_keeps_its_layout(shell, base_url):
     page = shell(LAPTOP)
-    page.goto(base_url + "/trip")
+    page.goto(base_url + "/trip?tab=today")
     expect(page.locator(".ph-tabs")).to_be_hidden()
     bar = page.locator(".tp-tabs").bounding_box()  # the old Today / All days / Notes bar, fixed at the bottom
     assert bar["y"] + bar["height"] >= LAPTOP["height"] - 1 and bar["height"] < 100
@@ -163,7 +164,7 @@ def test_the_laptop_keeps_its_layout(shell, base_url):
     expect(page.locator(".ph-tabs")).to_be_hidden()
     expect(page.locator("#mp-daychip")).to_be_visible()
     page.locator(".ph-back").click()
-    page.wait_for_url("**/trip")
+    page.wait_for_url(re.compile(r"/trip/canvas\?day="))      # F-092: Back to Today is the day view
     assert page.evaluate(OVERFLOW) == 0
 
 
@@ -174,7 +175,7 @@ OVERLAPS = """() => { const f = document.getElementById('tp-add').getBoundingCli
 
 def test_the_floating_plus_never_covers_a_pill_or_the_end_of_the_page(shell, base_url):
     page = shell()
-    page.goto(base_url + "/trip")
+    page.goto(base_url + "/trip?tab=today")
     height = page.evaluate("document.documentElement.scrollHeight")
     for y in range(0, height, 120):
         page.evaluate(f"window.scrollTo(0, {y})")
@@ -185,7 +186,7 @@ def test_the_floating_plus_never_covers_a_pill_or_the_end_of_the_page(shell, bas
 
 def test_up_next_details_reach_who_added_it(shell, base_url):
     page = shell()
-    page.goto(base_url + "/trip")
+    page.goto(base_url + "/trip?tab=today")
     expect(page.locator('[data-item="a1"]')).to_have_count(0)
     summary = page.locator("#tp-up [data-up-details] summary")
     summary.click()

@@ -54,7 +54,7 @@ def test_edit_a_flight_time_and_a_hotel_name_and_see_both_on_the_calendar(signed
     expect(page.locator("body")).to_contain_text("Tacos")
     # the button is on the calendar's trip bar, the details page and the phone trip view
     expect(page.locator("#cal-edit-trip")).to_be_visible()
-    page.goto(f"{base_url}/trip")
+    page.goto(f"{base_url}/trip?tab=today")
     expect(page.locator("#tp-edit-trip")).to_be_visible()
     page.goto(f"{base_url}/trip/details")
     page.click("#ti-edit-trip")
@@ -62,7 +62,7 @@ def test_edit_a_flight_time_and_a_hotel_name_and_see_both_on_the_calendar(signed
     assert page.input_value("#tb-title") == "LA with the kids"
     page.click("#tb-cancel")  # Cancel in edit mode goes back to the trip's details
     page.wait_for_url("**/trip/details?trip=*")
-    page.goto(f"{base_url}/trip" if button == "#tp-edit-trip" else f"{base_url}/calendar")
+    page.goto(f"{base_url}/trip?tab=today" if button == "#tp-edit-trip" else f"{base_url}/calendar")
     page.click(button)
     expect(page.locator("#tb-form")).to_be_visible()
     expect(page.locator("#tb-heading")).to_have_text("Where are you going?")

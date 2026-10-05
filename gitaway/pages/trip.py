@@ -420,6 +420,9 @@ def register(app):
     def trip(session, request, tab: str = "", day: str = "", add: str = "", new: str = ""):
         if (r := _guard(session)):
             return r
+        if not request.url.query:      # F-092: Today is the day view; this page stays (with a query) for its tabs, its days and the add sheet
+            from gitaway.pages import tripcanvas
+            return RedirectResponse(tripcanvas.today_url(session), status_code=303)
         ua = request.headers.get("user-agent", "")
         sheet = {} if add == "1" else None
         try:

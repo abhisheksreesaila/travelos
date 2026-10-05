@@ -115,7 +115,7 @@ def test_remove_deletes_the_passkey_and_it_can_no_longer_sign_in(phone, site):
 def test_the_today_card_in_the_home_screen_app_not_now_then_turn_on(phone, site):
     page, ctx = phone(init=STANDALONE)
     ctx.request.post(f"{site}/pay", form={"f": "f1", "h": "h1", "c": "c1"}, max_redirects=0)
-    page.goto(f"{site}/trip")
+    page.goto(f"{site}/trip/help")      # F-092: the card moved from Today to Help
     card = page.locator("#pk-card")
     expect(card).to_be_visible()
     expect(card).to_contain_text("Use Face ID next time")
@@ -123,7 +123,7 @@ def test_the_today_card_in_the_home_screen_app_not_now_then_turn_on(phone, site)
     page.get_by_role("button", name="Not now").click()
     expect(card).to_be_hidden()
     page.reload()
-    expect(page.locator("#tp-panel-today")).to_be_visible()
+    expect(page.locator("#hp-sos")).to_be_visible()      # Help is drawn
     expect(card).to_be_hidden()   # it stays away on this phone
     page.evaluate("localStorage.clear()")
     page.reload()
@@ -138,8 +138,8 @@ def test_the_today_card_in_the_home_screen_app_not_now_then_turn_on(phone, site)
 def test_the_today_card_is_not_shown_in_a_browser_tab(phone, site):
     page, ctx = phone()
     ctx.request.post(f"{site}/pay", form={"f": "f1", "h": "h1", "c": "c1"}, max_redirects=0)
-    page.goto(f"{site}/trip")
-    expect(page.locator("#tp-panel-today")).to_be_visible()
+    page.goto(f"{site}/trip/help")      # F-092: the card moved from Today to Help
+    expect(page.locator("#hp-sos")).to_be_visible()      # Help is drawn
     expect(page.locator("#pk-card")).to_be_hidden()
 
 

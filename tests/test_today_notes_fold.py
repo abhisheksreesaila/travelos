@@ -6,7 +6,7 @@ from tests.test_trip_phone import at, plan  # noqa: F401 - `at` is a fixture
 
 
 def _today(client):
-    html = client.get("/trip").text
+    html = client.get("/trip?tab=today").text
     return html.split('id="tp-panel-today"')[1].split('id="tp-panel-days"')[0]
 
 

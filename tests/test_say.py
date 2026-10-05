@@ -266,7 +266,7 @@ def test_the_old_add_to_the_trip_link_lands_in_the_box(client):
     book(client)
     r = client.get("/trip/add", follow_redirects=False)
     assert r.status_code == 303 and r.headers["location"] == "/trip/ask?mode=paste"
-    assert 'href="/trip/ask?mode=paste"' in client.get("/trip").text
+    assert 'href="/trip/ask?mode=paste"' in client.get("/trip?tab=today").text
 
 
 def test_a_pasted_itinerary_goes_through_questions_a_preview_and_one_apply(client, azure, announced):

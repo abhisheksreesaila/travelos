@@ -43,12 +43,12 @@ def text(html):
 # ---- who can open it -----------------------------------------------------------------------------------------------------
 
 def test_signed_out_goes_through_sign_in_and_a_signed_in_family_with_no_trip_goes_to_start(client):
-    r = client.get("/trip", follow_redirects=False)
+    r = client.get("/trip?tab=today", follow_redirects=False)
     assert r.status_code == 303 and r.headers["location"] == "/signin?next=%2Ftrip"
     for path in ("/trip/plans", "/trip/notes"):
         assert client.post(path, data={}, follow_redirects=False).status_code == 303
     sign_in(client)
-    r = client.get("/trip", follow_redirects=False)
+    r = client.get("/trip?tab=today", follow_redirects=False)
     assert r.status_code == 303 and r.headers["location"] == "/start"
 
 
@@ -75,14 +75,14 @@ def test_the_installed_app_opens_on_the_trip_view_and_the_continue_card_lands_th
 def test_before_the_trip_it_counts_the_days_and_shows_day_one(client, at):
     book(client)
     at(date(2026, 10, 12))
-    html = client.get("/trip").text
+    html = client.get("/trip?tab=today").text
     t = text(html)
     assert "TRIP STARTS IN 4 DAYS" in t and "Friday, Oct 16" in t
     assert "First up: Skylark Air 214 · SFO → LAX at 8:05 AM" in t
     assert 'id="tp-list"' in html and "Skylark Air 214" in html  # day one's plan is listed
     assert "UP NEXT" not in t
     at(date(2026, 10, 15))
-    assert "TRIP STARTS TOMORROW" in text(client.get("/trip").text)
+    assert "TRIP STARTS TOMORROW" in text(client.get("/trip?tab=today").text)
 
 
 def test_after_the_trip_it_is_a_recap(client, at):
@@ -90,7 +90,7 @@ def test_after_the_trip_it_is_a_recap(client, at):
     plan(client)
     client.post("/calendar/notes", data={"id": "n1", "text": "Great trip"})
     at(date(2026, 10, 25))
-    t = text(client.get("/trip").text)
+    t = text(client.get("/trip?tab=today").text)
     assert "WELCOME HOME" in t and "5 days in LA" in t and "1 plan · 1 note" in t
     assert "UP NEXT" not in t
 
@@ -101,7 +101,7 @@ def test_during_the_trip_the_next_thing_is_a_dark_card_with_a_countdown_and_the_
     plan(client, "a2", "1", "17:00", "19:30", "Griffith Observatory", "culture")
     plan(client, "a3", "1", "20:00", "21:00", "Tacos on Abbot Kinney", "food")
     at(date(2026, 10, 17), "16:20")
-    html = client.get("/trip", headers=ANDROID).text
+    html = client.get("/trip?tab=today", headers=ANDROID).text
     up = html.split('id="tp-up"')[1].split('id="tp-list"')[0]
     assert "UP NEXT · IN 40 MIN" in text(up) and "Griffith Observatory" in up and "5:00 – 7:30 PM" in text(up)
     assert text(html).count("Griffith Observatory") >= 1  # in the card; the list below is "the rest of today" (F-067)
@@ -115,14 +115,14 @@ def test_something_in_progress_says_happening_now(client, at):
     book(client)
     plan(client, "a1", "1", "17:00", "19:30", "Griffith Observatory", "culture")
     at(date(2026, 10, 17), "18:00")
-    assert "HAPPENING NOW · ENDS IN 1 H 30 MIN" in text(client.get("/trip").text)
+    assert "HAPPENING NOW · ENDS IN 1 H 30 MIN" in text(client.get("/trip?tab=today").text)
 
 
 def test_nothing_left_today_says_so_and_names_tomorrows_first_plan(client, at):
     book(client)
     plan(client, "a1", "2", "09:30", "11:00", "Venice Canals stroll", "outdoors")
     at(date(2026, 10, 17), "22:00")
-    t = text(client.get("/trip").text)
+    t = text(client.get("/trip?tab=today").text)
     assert "ALL DONE TODAY" in t and "Tomorrow starts with Venice Canals stroll at 9:30 AM." in t
 
 
@@ -132,9 +132,9 @@ def test_directions_go_to_apple_or_google_maps_with_the_place_and_never_a_confir
     imported(client)
     plan(client, "a1", "1", "17:00", "19:30", "Griffith Observatory", "culture")
     at(date(2026, 10, 17), "16:20")
-    apple = client.get("/trip", headers=IPHONE).text
+    apple = client.get("/trip?tab=today", headers=IPHONE).text
     assert unescape(tag(apple, "id", "tp-directions")["href"]) == "https://maps.apple.com/?q=Griffith+Observatory%2C+Los+Angeles"
-    google = client.get("/trip", headers=ANDROID).text
+    google = client.get("/trip?tab=today", headers=ANDROID).text
     assert "https://www.google.com/maps/search/?api=1&amp;query=Griffith+Observatory%2C+Los+Angeles" in google
     for secret in SECRETS:
         assert secret not in apple and secret not in google
@@ -145,11 +145,11 @@ def test_a_ride_still_to_schedule_is_an_offer_card_and_a_scheduled_one_links_to_
     from tests.test_rides import schedule
     book(client, f="f1", h="h1", c="none")
     at(date(2026, 10, 16), "06:00")
-    html = client.get("/trip").text
+    html = client.get("/trip?tab=today").text
     offer = re.search(r'<a[^>]*class="tp-card [^"]*tp-offer[^"]*"[^>]*>', html)
     assert offer and 'href="/rides/new?' in offer.group(0).replace("&amp;", "&")
     assert schedule(client, "arrive", pick="f=f1&h=h1&c=none").status_code == 303
-    html = client.get("/trip").text
+    html = client.get("/trip?tab=today").text
     ride = re.search(r'<a[^>]*class="tp-card [^"]*tp-ride[^"]*"[^>]*>', html)
     assert ride and 'href="/rides/r1"' in ride.group(0)
 
@@ -163,13 +163,13 @@ def test_the_arrival_day_has_a_flight_card_and_a_hotel_card_and_the_last_day_a_c
     stay = html.split('id="tp-stay"')[1].split("</div></div>")[0]
     assert "Your hotel tonight" in text(stay) and "The Tidewater" in text(stay)
     at(date(2026, 10, 20), "10:00")
-    assert "Checking out today" in text(client.get("/trip").text)
+    assert "Checking out today" in text(client.get("/trip?tab=today").text)
 
 
 def test_an_imported_trip_shows_its_hotel_with_a_link_to_the_details_but_no_confirmation(client, at):
     imported(client)
     at(date(2026, 10, 17), "09:00")
-    html = client.get("/trip").text
+    html = client.get("/trip?tab=today").text
     assert "The Example Hotel Santa Monica" in text(html) and 'href="/trip/details"' in html
     for secret in SECRETS:
         assert secret not in html
@@ -214,7 +214,7 @@ def test_the_notes_tab_lists_the_feed_and_posting_a_note_goes_back_to_it(client)
 def test_the_add_sheet_has_a_title_a_start_time_and_a_kind_and_the_plus_opens_it(client, at):
     book(client)
     at(date(2026, 10, 17), "09:10")
-    html = client.get("/trip").text
+    html = client.get("/trip?tab=today").text
     assert 'id="tp-add"' in html and 'aria-label="Add a plan"' in html
     sheet = html.split('id="tp-sheet"')[1]
     assert 'name="title"' in sheet and 'type="time"' in sheet and 'name="start"' in sheet and 'data-time-picker' in sheet
@@ -266,7 +266,7 @@ def test_the_sheet_saves_a_time_that_overlaps_a_scheduled_ride(client):
 
 def test_every_post_form_on_the_trip_view_names_its_trip(client):
     book(client)
-    for path in ("/trip", "/trip?tab=notes", "/trip?add=1"):
+    for path in ("/trip?tab=today", "/trip?tab=notes", "/trip?add=1"):
         html = client.get(path).text
         forms = [f for f in re.findall(r"<form\b[^>]*>.*?</form>", html, re.S) if 'method="post"' in f[:f.index(">")]]
         assert len(forms) >= 1
@@ -289,7 +289,7 @@ def test_a_viewer_sees_no_plus_no_sheet_no_composer_and_cannot_post(client):
     invite(client, mail, "viewer")
     viewer = browser(client)
     sign_in(viewer, mail)
-    for path in ("/trip", "/trip?tab=notes", "/trip?add=1"):
+    for path in ("/trip?tab=today", "/trip?tab=notes", "/trip?add=1"):
         html = viewer.get(path).text
         assert 'id="tp-add"' not in html and 'id="tp-sheet"' not in html and 'id="tp-composer"' not in html, path
         assert "You are a viewer in this family" in text(html)
@@ -305,7 +305,7 @@ def test_an_editor_can_add(client):
     invite(client, mail, "editor")
     editor = browser(client)
     sign_in(editor, mail)
-    assert 'id="tp-add"' in editor.get("/trip").text
+    assert 'id="tp-add"' in editor.get("/trip?tab=today").text
     assert editor.post("/trip/plans", data={"id": "a1", "day": "1", "start": "10:00", "title": "Pier", "kind": "outdoors"}, follow_redirects=False).status_code == 303
 
 
@@ -313,7 +313,7 @@ def test_an_editor_can_add(client):
 
 def test_the_page_has_the_tab_bar_the_phone_stylesheet_and_no_emoji(client):
     book(client)
-    html = client.get("/trip").text
+    html = client.get("/trip?tab=today").text
     assert re.findall(r'class="tp-tab"|class="tp-tab" ', html) or html.count("tp-tab")
     for name in ("Today", "All days", "Notes"):
         assert f">{name}</a>" in html
@@ -332,7 +332,7 @@ def test_each_place_has_a_directions_link_and_a_booking_shows_its_confirmation_o
     imported(client)
     plan(client, "a1", "1", "17:00", "19:30", "Griffith Observatory", "culture")
     at(date(2026, 10, 16), "08:00")
-    html = client.get("/trip", headers=IPHONE).text
+    html = client.get("/trip?tab=today", headers=IPHONE).text
     assert html.count('data-dir="') >= 2  # the flight's airport and the hotel
     assert "https://maps.apple.com/?q=" in html
     inside = re.findall(r"<details.*?</details>", html, re.S)
@@ -340,7 +340,7 @@ def test_each_place_has_a_directions_link_and_a_booking_shows_its_confirmation_o
     assert not any(s in re.sub(r"<details.*?</details>", "", html, flags=re.S) for s in SECRETS)  # and nowhere else
     assert not any(s in share_attr(html) for s in SECRETS)
     at(date(2026, 10, 17), "12:00")
-    plan_day = client.get("/trip", headers=ANDROID).text
+    plan_day = client.get("/trip?tab=today", headers=ANDROID).text
     assert "https://www.google.com/maps/search/?api=1&amp;query=Griffith+Observatory" in plan_day
 
 
@@ -349,7 +349,7 @@ def test_a_plan_says_who_added_it_and_shows_the_notes_written_on_it(client, at):
     plan(client)
     client.post("/calendar/notes", data={"id": "n1", "text": "Bring jackets", "act": "a1"})
     at(date(2026, 10, 17), "12:00")
-    html = text(client.get("/trip").text)
+    html = text(client.get("/trip?tab=today").text)
     assert "added by you" in html and "Bring jackets" in html
 
 
@@ -358,7 +358,7 @@ def test_the_shared_text_is_the_days_times_and_plans_with_no_prices_confirmation
     plan(client, "a1", "0", "17:00", "19:30", "Griffith Observatory", "culture")
     client.post("/calendar/notes", data={"id": "n1", "text": "private-ish note", "act": "a1"})
     at(date(2026, 10, 16), "08:00")
-    out = share_attr(client.get("/trip").text)
+    out = share_attr(client.get("/trip?tab=today").text)
     lines = out.split("\n")
     assert lines[0].startswith("Fri Oct 16 · ") and "5:00 PM Griffith Observatory" in lines
     assert "$" not in out and "private-ish" not in out and not any(s in out for s in SECRETS)
@@ -369,13 +369,13 @@ def test_any_day_opens_with_day_and_today_is_the_default_before_during_and_after
     book(client)
     plan(client, "a1", "2", "10:00", "11:00", "Sunday brunch", "food")
     at(date(2026, 10, 10), "12:00")
-    assert 'data-day="0"' in raw(client.get("/trip").text, "tp-app") and "Sun Oct 18" not in share_attr(client.get("/trip").text)
+    assert 'data-day="0"' in raw(client.get("/trip?tab=today").text, "tp-app") and "Sun Oct 18" not in share_attr(client.get("/trip?tab=today").text)
     at(date(2026, 10, 17), "12:00")
-    assert 'data-day="1"' in raw(client.get("/trip").text, "tp-app")
+    assert 'data-day="1"' in raw(client.get("/trip?tab=today").text, "tp-app")
     page = client.get("/trip?day=2").text
     assert 'data-day="2"' in raw(page, "tp-app") and "Sunday brunch" in page and "Sun Oct 18" in share_attr(page)
     at(date(2026, 10, 30), "12:00")
-    assert 'data-day="4"' in raw(client.get("/trip").text, "tp-app")
+    assert 'data-day="4"' in raw(client.get("/trip?tab=today").text, "tp-app")
     assert 'data-day="0"' in raw(client.get("/trip?day=0").text, "tp-app")
 
 
@@ -388,7 +388,7 @@ def test_a_viewer_can_share_the_day_and_the_calendar_links_to_it(client, at):
     viewer = browser(client)
     sign_in(viewer, mail)
     at(date(2026, 10, 17), "12:00")
-    html = viewer.get("/trip").text
+    html = viewer.get("/trip?tab=today").text
     assert 'id="tp-share"' in html and "Griffith Observatory" in share_attr(html) and 'id="tp-add"' not in html
     assert 'id="cal-today-view"' in viewer.get("/calendar?view=whole").text
 
@@ -408,7 +408,7 @@ def test_the_demo_bookings_share_text_has_no_prices(client, at):
     book(client)
     for day in (date(2026, 10, 16), date(2026, 10, 17), date(2026, 10, 20)):
         at(day, "08:00")
-        out = share_attr(client.get("/trip").text)
+        out = share_attr(client.get("/trip?tab=today").text)
         assert "$" not in out and out.startswith(day.strftime("%a %b") + f" {day.day} · ")
 
 
@@ -430,7 +430,7 @@ def test_the_up_next_card_carries_the_overlaps_tag_too(client, at):
     plan(client, "a1", "1", "17:00", "19:30", "Griffith Observatory", "culture")
     plan(client, "a2", "1", "18:00", "19:00", "Dinner nearby", "food")
     at(date(2026, 10, 17), "16:20")
-    html = client.get("/trip", headers=ANDROID).text
+    html = client.get("/trip?tab=today", headers=ANDROID).text
     up = html.split('id="tp-up"')[1].split('id="tp-list"')[0]
     assert "Griffith Observatory" in text(up) and 'data-overlap="a1"' in up and "Overlaps Dinner nearby" in text(up)
 

@@ -115,10 +115,10 @@ def test_bookings_are_quiet_and_their_line_opens_help(canvas_page):
     page.wait_for_url(re.compile(r"/trip/help"))
 
 
-def test_change_this_day_and_an_empty_days_talk_and_paste_open_ask_on_that_day(canvas_page):
+def test_the_centre_ask_and_an_empty_days_talk_and_paste_open_ask_on_that_day(canvas_page):
     page = canvas_page()
     open_day(page, 1)
-    page.locator("#cz-say").click()
+    page.locator("#ph-tab-ask").click()      # F-092: the centre Ask opens on the day shown
     page.wait_for_url(re.compile(r"/trip/ask\?day=1"))
     open_day(page, 2)
     page.locator("#cz-say-talk").click()

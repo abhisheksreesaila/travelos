@@ -2,6 +2,7 @@
 text and touch targets meet the phone rules, and the + and tab bar sit inside the screen."""
 from datetime import date
 
+import re
 import pytest
 from playwright.sync_api import expect
 
@@ -44,7 +45,7 @@ def phone(browser, base_url):
 def test_today_renders_during_the_trip_without_sideways_scroll_small_text_or_small_targets(phone, base_url, pin, viewport):
     pin(date(2026, 10, 17), 16 * 60 + 20)
     page = phone(viewport)
-    page.goto(base_url + "/trip")
+    page.goto(base_url + "/trip?tab=today")
     page.wait_for_load_state("networkidle")
     expect(page.locator("#tp-up")).to_contain_text("UP NEXT · IN 40 MIN")
     expect(page.locator("#tp-up")).to_contain_text("Griffith Observatory")
@@ -57,7 +58,7 @@ def test_today_renders_during_the_trip_without_sideways_scroll_small_text_or_sma
 
 def test_before_the_trip_it_shows_the_countdown_and_day_one(phone, base_url):
     page = phone()
-    page.goto(base_url + "/trip")
+    page.goto(base_url + "/trip?tab=today")
     expect(page.locator("#tp-up")).to_contain_text("TRIP STARTS IN 16 DAYS")
     expect(page.locator("#tp-list")).to_contain_text("Skylark Air 214")
     assert page.evaluate(OVERFLOW) == 0
@@ -66,7 +67,7 @@ def test_before_the_trip_it_shows_the_countdown_and_day_one(phone, base_url):
 def test_the_plus_adds_a_plan_in_two_taps_and_the_calendar_has_it(phone, base_url, pin):
     pin(date(2026, 10, 17), 9 * 60)
     page = phone()
-    page.goto(base_url + "/trip")
+    page.goto(base_url + "/trip?tab=today")
     expect(page.locator("#tp-sheet")).to_be_hidden()
     page.click("#tp-add")  # tap one
     expect(page.locator("#tp-sheet")).to_be_visible()
@@ -97,7 +98,7 @@ def test_a_plan_added_over_a_booking_is_saved_and_tagged(phone, base_url, pin):
 def test_the_sheet_closes_without_adding(phone, base_url, pin):
     pin(date(2026, 10, 17), 9 * 60)
     page = phone()
-    page.goto(base_url + "/trip")
+    page.goto(base_url + "/trip?tab=today")
     page.click("#tp-add")
     page.keyboard.press("Escape")
     expect(page.locator("#tp-sheet")).to_be_hidden()
@@ -109,7 +110,7 @@ def test_the_sheet_closes_without_adding(phone, base_url, pin):
 def test_the_tabs_switch_without_a_reload(phone, base_url, pin):
     pin(date(2026, 10, 17), 9 * 60)
     page = phone()
-    page.goto(base_url + "/trip")
+    page.goto(base_url + "/trip?tab=today")
     expect(page.locator("#tp-panel-today")).to_be_visible()
     page.click("#tp-tab-days")
     expect(page.locator("#tp-panel-days")).to_be_visible()
@@ -134,7 +135,7 @@ def test_the_tabs_switch_without_a_reload(phone, base_url, pin):
 
 def test_the_tab_bar_and_the_plus_stay_inside_the_screen_and_the_plus_clears_the_bar(phone, base_url):
     page = phone()
-    page.goto(base_url + "/trip")
+    page.goto(base_url + "/trip?tab=today")
     vh = PHONE["height"]
     bar = page.locator(".ph-tabs").bounding_box()
     plus = page.locator("#tp-add").bounding_box()
@@ -148,19 +149,19 @@ def test_the_tab_bar_and_the_plus_stay_inside_the_screen_and_the_plus_clears_the
 def test_reduced_motion_stops_the_pulse_and_normal_motion_pulses(phone, base_url, pin):
     pin(date(2026, 10, 17), 16 * 60 + 20)
     calm = phone(motion="reduce")
-    calm.goto(base_url + "/trip")
+    calm.goto(base_url + "/trip?tab=today")
     assert calm.evaluate("getComputedStyle(document.querySelector('.tp-pulse')).animationName") == "none"
     lively = phone(motion="no-preference")
-    lively.goto(base_url + "/trip")
+    lively.goto(base_url + "/trip?tab=today")
     assert lively.evaluate("getComputedStyle(document.querySelector('.tp-pulse')).animationName") != "none"
 
 
-def test_a_phone_opening_the_calendar_lands_on_the_trip_view(phone, base_url):
+def test_a_phone_opening_the_calendar_lands_on_the_day_view(phone, base_url):
     page = phone(user_agent=IPHONE_UA)
     page.goto(base_url + "/calendar")
-    assert page.url.endswith("/trip")
-    expect(page.locator("#tp-app")).to_be_visible()
-    page.click(".tp-full")
+    page.wait_for_url(re.compile(r"/trip/canvas\?day=\d"))      # F-092: /trip is the day view
+    expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
+    page.goto(base_url + "/calendar?view=whole")      # the full calendar is still one address away
     assert "/calendar?view=whole" in page.url
 
 
@@ -171,7 +172,7 @@ def test_f085_notes_start_folded_and_a_tap_opens_them_in_place(phone, base_url, 
     page.request.post(f"{base_url}/calendar/activities", form={"id": "a2", "day": "1", "start": "20:00", "end": "21:00", "title": "Tacos", "kind": "food"}, max_redirects=0)
     for n, act in (("n1", "a1"), ("n2", "a2"), ("n3", "a2")):
         page.request.post(f"{base_url}/calendar/notes", form={"id": n, "text": f"Note {n}", "act": act}, max_redirects=0)
-    page.goto(base_url + "/trip")
+    page.goto(base_url + "/trip?tab=today")
     page.wait_for_load_state("networkidle")
     summary = page.locator("[data-notes=a2] summary")
     expect(summary).to_contain_text("2 notes")

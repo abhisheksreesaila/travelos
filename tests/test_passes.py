@@ -304,7 +304,7 @@ def test_on_the_travel_day_the_flight_is_the_focal_card(trip, ari, key, clock):
     add_pass(trip, key, "Abhi", seat="21A", file=("a.pdf", pdf(), "application/pdf"))
     add_pass(trip, key, "Kay", seat="21B")
     clock(10, 17, 12, 58)
-    html = trip.get("/trip").text
+    html = trip.get("/trip?tab=today").text
     shown = text(html.split('id="tp-up"')[1][:2500])
     assert "BOARDING IN 42 MIN" in shown and "LAX" in shown and "SFO" in shown and "United 1234" in shown and "2:25 PM" in shown and "Terminal 7" in shown
     assert "1:40 PM" in shown and "71B" in shown and "21A, 21B" in shown
@@ -317,9 +317,9 @@ def test_on_the_travel_day_the_flight_is_the_focal_card(trip, ari, key, clock):
 def test_the_card_counts_down_to_departure_after_boarding_starts_and_steps_aside_when_it_leaves(trip, ari, key, clock):
     add_pass(trip, key, "Abhi")
     clock(10, 17, 13, 50)
-    assert "DEPARTS IN 35 MIN" in trip.get("/trip").text
+    assert "DEPARTS IN 35 MIN" in trip.get("/trip?tab=today").text
     clock(10, 17, 14, 30)
-    html = trip.get("/trip").text
+    html = trip.get("/trip?tab=today").text
     assert 'id="pz-show-0"' not in html and "pz-up" not in html
     assert "pz-calm" in html and "DEPARTED" in text(html) and "Show everyone" not in html   # a calm card, no pulse, no way to the gate
 
@@ -339,16 +339,16 @@ def test_on_other_days_the_flight_is_a_calm_card_and_a_past_day_has_no_gate_link
 def test_the_card_is_only_on_the_flights_own_day_and_only_while_the_trip_is_on(trip, ari, key, clock):
     add_pass(trip, key, "Abhi")
     clock(10, 18, 9, 0)
-    assert "pz-up" not in trip.get("/trip").text
+    assert "pz-up" not in trip.get("/trip?tab=today").text
     clock(9, 30, 9, 0)   # before the trip starts: the countdown card stays
-    assert "pz-up" not in trip.get("/trip").text
+    assert "pz-up" not in trip.get("/trip?tab=today").text
 
 
 def test_the_card_offers_editors_to_add_passes_and_tells_viewers_there_are_none(crew, ari, key, clock):
     owner, editor, viewer = crew
     clock(10, 17, 12, 58)
-    assert "Add the boarding passes" in text(editor.get("/trip").text)
-    html = viewer.get("/trip").text
+    assert "Add the boarding passes" in text(editor.get("/trip?tab=today").text)
+    html = viewer.get("/trip?tab=today").text
     assert "No passes added yet." in text(html) and "Add the boarding passes" not in html
 
 

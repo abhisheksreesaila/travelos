@@ -1,7 +1,7 @@
 // The trip canvas (F-081): week > day > block > step as one surface that zooms.
 //
 // Every level is a page of its own (gitaway/pages/tripcanvas.py), so with no script it is plain links and forms. With script, a tap on a link marked data-zoom
-// ("in", "out" or "side"), a two-finger pinch, or the browser's Back fetches that level as a fragment (?frag=1) and swaps it inside a View Transition. The element
+// ("in", "out" or "side"), the Day | Week toggle, or the browser's Back fetches that level as a fragment (?frag=1) and swaps it inside a View Transition (pinch is gone, F-092). The element
 // that was tapped (data-zk="day-2" | "blk-a3" | "stp-<id>") is named `cz-hero` before and after the swap, so it grows into the next level's heading or sheet and
 // shrinks back on zoom out. No View Transitions: the new level scales and fades in (CSS .cz-in-*). Reduced motion: an instant swap.
 // A write from the sheet (Mark done, Set aside, Put back, Not done) posts with X-Canvas and the server answers 204 + X-Canvas-Url; we then zoom out to that level.
@@ -22,7 +22,6 @@
   var waiting = null;      // the browser's Back or Forward pressed while a zoom was running: run it when that zoom is done
   var idleQ = [];          // work that needs the zoom to be finished (a refresh after a drop)
   function whenIdle(fn) { if (busy) idleQ.push(fn); else fn(); }
-  var swallow = 0;         // a pinch ends with finger lifts that must not count as taps
 
   function path(u) { var a = document.createElement('a'); a.href = u; return a.pathname + a.search; }
   function fragUrl(u) { return u + (u.indexOf('?') < 0 ? '?' : '&') + 'frag=1'; }
@@ -57,6 +56,7 @@
     }
     applyFilter();
     centreDay();
+    askHere();
   }
 
   // Name the element that zooms, run the swap inside a View Transition, and clear the name afterwards.
@@ -129,7 +129,6 @@
     if (e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     var a = e.target.closest ? e.target.closest('a[data-zoom]') : null;
     if (!a || !stage.contains(a)) return;
-    if (e.isTrusted && swallow > Date.now()) { e.preventDefault(); return; }     // the lifting fingers of a pinch are not a tap (the pinch's own clicks are script-made)
     e.preventDefault();
     var dir = a.dataset.zoom, u = path(a.href);
     if (dir === 'out') { zoomOutTo(u); return; }
@@ -295,52 +294,20 @@
     else if (!others.some(function (x) { return x.checked; })) all.checked = true;
   });
 
-  // ---- pinch ------------------------------------------------------------------------------------------------------------
-  // Two fingers moving apart zoom in (to the day, block or step under them), together zoom out. Pointer events, so a mouse-less laptop test can drive it.
-  var pts = {}, base = 0, fired = false;
+  // ---- fingers on the canvas ------------------------------------------------------------------------------------------------
+  // F-092: pinch to zoom is gone (it did not work reliably on the captain's iPhone); Day | Week is the way between the views. The fingers are still counted, so
+  // two fingers never start a flick or a drag, and the page's own pinch zoom is left alone.
+  var pts = {};
   function count() { return Object.keys(pts).length; }
-  function spread() {
-    var k = Object.keys(pts);
-    var a = pts[k[0]], b = pts[k[1]];
-    return { d: Math.hypot(a.x - b.x, a.y - b.y), x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
-  }
-  function zoomInAt(x, y) {
-    var el = document.elementFromPoint(x, y);
-    var hero = el && el.closest ? el.closest('[data-zk]') : null;
-    var link = hero ? (hero.matches('a[data-zoom="in"]') ? hero : hero.querySelector('a[data-zoom="in"]')) : null;
-    if (!link) {
-      // not over anything zoomable: the first link to a deeper level that is on screen
-      link = Array.prototype.find.call(stage.querySelectorAll('a[data-zoom="in"]'), function (n) { var r = n.getBoundingClientRect(); return r.bottom > 0 && r.top < window.innerHeight; });
-    }
-    if (link) link.click();
-  }
-  stage.addEventListener('pointerdown', function (e) {
-    pts[e.pointerId] = { x: e.clientX, y: e.clientY };
-    if (count() === 2) { base = spread().d || 1; fired = false; }
-  });
-  stage.addEventListener('pointermove', function (e) {
-    if (!pts[e.pointerId]) return;
-    pts[e.pointerId] = { x: e.clientX, y: e.clientY };
-    if (count() !== 2 || fired) return;
-    var s = spread(), ratio = s.d / base;
-    if (ratio > 1.3) {
-      fired = true;
-      if (view() && view().dataset.level !== 'step') zoomInAt(s.x, s.y);
-      swallow = Date.now() + 500;
-    } else if (ratio < 0.75) {
-      fired = true;
-      var u = up();
-      if (u) u.click();
-      swallow = Date.now() + 500;
-    }
-  });
-  function lift(e) {
-    if (count() >= 2) swallow = Date.now() + 500;
-    delete pts[e.pointerId];
-  }
+  stage.addEventListener('pointerdown', function (e) { pts[e.pointerId] = { x: e.clientX, y: e.clientY }; });
+  function lift(e) { delete pts[e.pointerId]; }
   stage.addEventListener('pointerup', lift);
   stage.addEventListener('pointercancel', lift);
-
+  // F-092: the centre Ask is the one way to change the plan, so it opens on the day being looked at (a day, a block or a step on it).
+  function askHere() {
+    var tab = document.getElementById('ph-tab-ask'), v = view();
+    if (tab && v && v.dataset.day) tab.setAttribute('href', '/trip/ask?day=' + v.dataset.day);
+  }
   // The open day sits in the middle of the dates across the top (they scroll sideways on a phone).
   function centreDay() {
     var bar = stage.querySelector('.cz-dpills'), open = bar && bar.querySelector('.is-open');
@@ -585,4 +552,5 @@
 
   applyFilter();
   centreDay();
+  askHere();
 })();

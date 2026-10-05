@@ -110,9 +110,9 @@ def test_the_generated_keys_sign_a_real_push_request():
 
 def test_the_card_shows_only_when_push_is_set_up(ari, monkeypatch):
     monkeypatch.delenv("GITAWAY_VAPID_PUBLIC", raising=False)
-    assert 'id="tp-morning"' not in ari.get("/trip").text
+    assert 'id="tp-morning"' not in ari.get("/trip?tab=today").text
     monkeypatch.setenv("GITAWAY_VAPID_PUBLIC", "BPublicKey"), monkeypatch.setenv("GITAWAY_VAPID_PRIVATE", "p"), monkeypatch.setenv("GITAWAY_VAPID_SUBJECT", "mailto:a@b.co")
-    html = ari.get("/trip").text
+    html = ari.get("/trip?tab=today").text
     assert 'id="tp-morning"' in html and 'data-key="BPublicKey"' in html
     assert "Add GitAway to your Home Screen to get a morning plan" in html and "/assets/js/morning.js" in html and 'id="tp-morning-time"' in html
     assert "data-private" not in html and "GITAWAY_VAPID_PRIVATE" not in html
@@ -187,7 +187,7 @@ def test_the_card_works_for_a_viewer_too(ari, monkeypatch):
     invite(ari, viewer_mail, "viewer")
     viewer = browser(ari)
     sign_in(viewer, viewer_mail)
-    assert 'id="tp-morning"' in viewer.get("/trip").text
+    assert 'id="tp-morning"' in viewer.get("/trip?tab=today").text
 
 
 # ---- the sender ------------------------------------------------------------------------------------------------------------

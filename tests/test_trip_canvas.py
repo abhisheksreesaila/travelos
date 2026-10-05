@@ -86,16 +86,12 @@ def test_the_week_has_a_row_per_day_park_days_with_parts_and_free_days_with_a_pl
     assert 'class="cz-sticker cz-sticker-week' in page and "roughest ride" in page       # a note rides along on the park day
     assert 'href="/trip/canvas?day=1"' in bare(page) and 'href="/trip/canvas?day=3"' in bare(page)
     assert 'class="cz-plus"' in page and 'href="/trip?add=1&amp;day=2"' in page
-    assert "Pinch or tap to zoom" in page
+    assert "Pinch or tap to zoom" not in page and 'id="cz-z-today"' not in page     # F-092: no zoom control; a tap or a pinch still zooms
 
 
-def test_the_zoom_control_goes_to_today_week_and_day(trip):
-    page = trip.get("/trip/canvas").text
-    assert 'href="/trip"' in tag(page, "cz-z-today") and 'aria-current="page"' in tag(page, "cz-z-week")
-    assert "/trip/canvas?day=1" in tag(page, "cz-z-day")     # the first park day, since the demo trip is before its dates
-    day = trip.get("/trip/canvas?day=1").text      # F-090: on a day the dates across the top replace the control; the week is their first item
-    assert 'id="cz-z-day"' not in day and 'href="/trip/canvas"' in bare(tag(day, "cz-z-week")) and 'data-zoom="out"' in tag(day, "cz-z-week")
-
+def test_a_day_has_the_week_one_tap_out(trip):
+    day = trip.get("/trip/canvas?day=1").text      # F-092: the Day | Week toggle
+    assert 'href="/trip/canvas"' in bare(tag(day, "cz-z-week")) and 'data-zoom="out"' in tag(day, "cz-z-week")
 
 # ---- the day ---------------------------------------------------------------------------------------------------------------
 
@@ -296,9 +292,9 @@ def test_today_has_a_week_view_link_for_every_role_and_the_canvas_links_to_today
     owner, viewer = crew
     added(owner)
     for who in (owner, viewer):
-        today = who.get("/trip").text
+        today = who.get("/trip?tab=today").text
         assert 'href="/trip/canvas"' in bare(tag(today, "tp-open-canvas")) and "Week view" in today
-        assert 'href="/trip"' in tag(who.get("/trip/canvas").text, "cz-z-today")
+        assert 'id="cz-z-today"' not in who.get("/trip/canvas").text      # F-092: the Today tab is the way to today
     assert 'id="tp-open-canvas"' not in owner.get("/trip?tab=notes").text
 
 
@@ -333,7 +329,7 @@ def test_the_open_aside_step_is_the_sheet_and_not_also_its_tray_chip(trip):
 
 
 def trip_of(html):
-    return re.search(r"[?&]trip=([0-9a-f]+)", html).group(1)
+    return re.search(r"(?:[?&]|&amp;)trip=([0-9a-f]+)", html).group(1)
 
 
 def test_canvas_addresses_carry_the_trip_so_a_stale_tab_stays_on_its_trip(trip):

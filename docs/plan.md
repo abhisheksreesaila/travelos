@@ -534,3 +534,10 @@ Needs: none
 - [x] each message also shows in the Family tab's thread, labelled with its plan, and the family gets a push (the existing thread push rules); viewers can post messages too, as in the thread
 - [x] a voice note or photo that is too big, the wrong type or empty is refused with a plain message; tests cover the model, the routes (roles, another family's file is not served) and a browser test records (fake media), sends and plays
 
+
+## F-092 Today is the day view [doing]
+Captain, 2026-10-05 (on the trip): Today is "very complicated… all I need to know is what I do today"; the day and week views already show today, so cut Today rather than add to it; one floating button to change the day. · Needs: F-090
+- [ ] the Today tab, the installed app's start page and "Back to Today" (plain `/trip`) open the day view on today during the trip (the first day before it, the last after); the old page stays only behind its query addresses
+- [ ] on today the day view starts with what is happening now or up next (Directions, Uber, leave-by), or on a flight day the flight with everyone's passes; other days have no such card
+- [ ] the centre Ask is the one way to change the day and opens on the day being looked at; the day and block lose their own Ask and "Change this day" buttons (an empty day keeps Say / Paste)
+- [ ] the week has no Today | Week | Day control or pinch hint and marks today; the morning plan switch and the Face ID card move to Help

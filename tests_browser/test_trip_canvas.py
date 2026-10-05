@@ -1,4 +1,4 @@
-"""F-081: the trip canvas in a real browser. At 390 wide: tap week > day > block > step and back, the browser's Back and Forward, a two-finger pinch (synthetic
+"""F-081: the trip canvas in a real browser. At 390 wide: tap week > day > block > step and back, the browser's Back and Forward, the Day | Week toggle (pinch is gone, F-092; synthetic
 pointer events), the View Transition (the tapped element is the one named cz-hero before and after the swap), reduced motion (no transition at all), Mark done and
 Set aside from the step sheet, lanes, no sideways scroll, 44px targets, 13px text. At 1280: the wide day view. The trip is the captain's Universal + California
 Adventure messages through a canned model answer; nothing here reaches the network."""
@@ -79,15 +79,6 @@ def checks(page):
     assert page.evaluate(SMALL_CONTROLS) == []
 
 
-def pinch(page, x, y, start, end, steps=6):
-    """Two fingers (two pointers) at (x, y), `start` pixels apart, moving to `end` apart, then lifting."""
-    page.evaluate("""([x, y, a, b, n]) => { const el = document.elementFromPoint(x, y) || document.getElementById('cz');
-      const fire = (type, id, px) => el.dispatchEvent(new PointerEvent(type, { pointerId: id, pointerType: 'touch', clientX: px, clientY: y, bubbles: true, cancelable: true, isPrimary: id === 1 }));
-      fire('pointerdown', 1, x - a / 2); fire('pointerdown', 2, x + a / 2);
-      for (let i = 1; i <= n; i++) { const d = a + (b - a) * i / n; fire('pointermove', 1, x - d / 2); fire('pointermove', 2, x + d / 2); }
-      fire('pointerup', 1, x - b / 2); fire('pointerup', 2, x + b / 2); }""", [x, y, start, end, steps])
-
-
 # ---- tap through every level and back ---------------------------------------------------------------------------------------
 
 def test_tap_zooms_week_to_day_to_block_to_step_and_every_way_back(canvas_page, base_url):
@@ -128,19 +119,19 @@ def test_a_day_chip_zooms_straight_into_its_sheet_and_closing_it_lands_on_the_bl
     expect(page.locator(".cz-view[data-level=block]")).to_be_visible()
 
 
-def test_the_zoom_control_and_the_hint(canvas_page):
-    page = canvas_page()
-    expect(page.locator(".cz-pinch-hint")).to_contain_text("Pinch or tap")
+def test_the_today_tab_opens_the_day_and_a_week_row_zooms_in(canvas_page):
+    page = canvas_page()                     # F-092: no zoom control; the Today tab is the day view, the week's rows zoom in
+    assert page.locator("#cz-z-today, .cz-pinch-hint").count() == 0
+    page.locator(".cz-row[data-day='3'] .cz-row-link").click()
+    expect(page.locator(".cz-view[data-level=day]")).to_have_attribute("data-day", "3")
+    expect(page.locator("#ph-tab-ask")).to_have_attribute("href", "/trip/ask?day=3")     # the centre Ask follows the day shown
+    page.locator("#ph-tab-today").click()
+    page.wait_for_url(re.compile(r"/trip/canvas\?day=0"))   # before the trip, Today is its first day
+    expect(page.locator(".cz-view[data-level=day]")).to_have_attribute("data-day", "0")
+    page.locator("#cz-z-week").click()                       # the Day | Week toggle, both ways
+    expect(page.locator(".cz-view[data-level=week]")).to_be_visible()
     page.locator("#cz-z-day").click()
     expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
-    page.locator("#cz-z-week").click()
-    expect(page.locator(".cz-view[data-level=week]")).to_be_visible()
-    page.locator("#cz-z-today").click()
-    page.wait_for_url("**/trip")
-    expect(page.locator("#tp-open-canvas")).to_be_visible()
-    page.locator("#tp-open-canvas").click()
-    page.wait_for_url("**/trip/canvas")
-    expect(page.locator(".cz-view[data-level=week]")).to_be_visible()
 
 
 def test_a_free_day_plus_opens_the_add_sheet_and_every_week_row_opens_its_day(canvas_page):
@@ -239,37 +230,6 @@ def test_without_view_transitions_the_new_level_still_arrives_with_a_short_fade(
     expect(page.locator(".cz-view[data-level=week]")).to_be_visible()
     ctx.close()
 
-
-# ---- pinch --------------------------------------------------------------------------------------------------------------------
-
-def test_pinching_apart_zooms_in_and_together_zooms_out(canvas_page):
-    page = canvas_page()
-    box = page.locator(".cz-row", has_text="Universal").locator(".cz-wcard").first.bounding_box()
-    pinch(page, box["x"] + box["width"] / 2, box["y"] + box["height"] / 2, 40, 140)         # fingers over the Universal row
-    expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
-    assert "day=1" in page.url
-    page.locator(".cz-chip", has_text="King Kong").evaluate("e => e.scrollIntoView({ block: 'center' })")      # clear of the tab bar
-    chip = page.locator(".cz-chip", has_text="King Kong").bounding_box()
-    pinch(page, chip["x"] + chip["width"] / 2, chip["y"] + chip["height"] / 2, 40, 140)     # fingers over a ride
-    expect(page.locator(".cz-view[data-level=step]")).to_be_visible()
-    expect(page.locator("#cz-sheet-title")).to_have_text("King Kong")
-    pinch(page, 195, 300, 160, 40)                                                          # together: the sheet closes
-    expect(page.locator(".cz-view[data-level=block]")).to_be_visible()
-    pinch(page, 195, 300, 160, 40)
-    expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
-    pinch(page, 195, 300, 160, 40)
-    expect(page.locator(".cz-view[data-level=week]")).to_be_visible()
-    pinch(page, 195, 300, 160, 40)                                                          # nothing above the week
-    expect(page.locator(".cz-view[data-level=week]")).to_be_visible()
-
-
-def test_a_pinch_does_not_also_count_as_a_tap(canvas_page):
-    page = canvas_page()
-    box = page.locator(".cz-row", has_text="Universal").locator(".cz-wcard").first.bounding_box()
-    pinch(page, box["x"] + box["width"] / 2, box["y"] + box["height"] / 2, 40, 140)
-    expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
-    page.wait_for_timeout(100)
-    assert level(page) == "day"
 
 
 def test_a_back_press_during_a_running_zoom_is_not_lost(canvas_page):

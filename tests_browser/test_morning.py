@@ -50,7 +50,7 @@ def phone(browser, base_url):
         page = ctx.new_page()
         if perm:
             page.add_init_script(script=f"({STUB % {'answer': json.dumps(answer)}})({json.dumps(perm)})")
-        page.goto(f"{base_url}/trip")
+        page.goto(f"{base_url}/trip?tab=today")
         return page
 
     yield make

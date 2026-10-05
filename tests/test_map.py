@@ -151,11 +151,11 @@ def test_today_leave_by_uses_the_cached_drive_and_never_calls_out(client, maps, 
     trip_with_plans(client)
     monkeypatch.setattr(catalog, "today", lambda *_: date(2026, 10, 16))
     monkeypatch.setattr(td, "now_minute", lambda *_: 16 * 60 + 31)
-    before = client.get("/trip").text
+    before = client.get("/trip?tab=today").text
     assert "tp-leave" not in before  # nothing cached yet: no guess
     client.get("/trip/map?day=0")  # opening the Map fills the cache
     calls = len(maps.calls)
-    after = client.get("/trip").text
+    after = client.get("/trip?tab=today").text
     assert len(maps.calls) == calls
     assert "Leave by 4:35 PM 25 min drive" in " ".join(visible(after).split())
 

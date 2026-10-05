@@ -13,10 +13,10 @@ from starlette.responses import RedirectResponse
 
 from gitaway import access, catalog, members, phones, pickers, session as ses, tripcal as cal, tripday as td, tripimport as ti
 from gitaway.icons import icon
-from gitaway.pages import passes as passes_ui
+from gitaway.pages import morning as morning_ui, passes as passes_ui, passkeys as passkeys_ui
 
 TITLE = "Help"
-HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/help.css"), *passes_ui.HEAD)   # pickers: the flight form has date and time fields (F-083)
+HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/help.css"), *passes_ui.HEAD, *morning_ui.HEAD, *passkeys_ui.HEAD[:1])   # pickers: the flight form has date and time fields (F-083); the morning plan switch and Face ID moved here from Today (F-092)
 
 
 def _call(number, label, cls="tp-btn tp-btn-coral"):
@@ -109,7 +109,8 @@ def content(request, session):
             cls="hp-sos-b"),
         cls="hp-sos", id="hp-sos")
     problem = Div("That number did not look right. Try something like +1 310 555 0100.", role="alert", cls="hp-problem", id="hp-problem") if request.query_params.get("problem") == "phone" else ""
-    return Div(problem, *cards, sos, passes_ui.section(request, session, can_edit), cls="hp")
+    settings = Div(morning_ui.card(zone), passkeys_ui.today_card(session), cls="hp-settings", id="hp-settings")   # F-092: from the old Today page
+    return Div(problem, *cards, sos, passes_ui.section(request, session, can_edit), settings, cls="hp")
 
 
 def register(app):

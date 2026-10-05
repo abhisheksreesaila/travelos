@@ -47,16 +47,16 @@ def test_saving_a_trip_fills_the_cache_in_the_background(client, maps):
 def test_leave_by_shows_on_today_without_opening_the_map(client, maps, monkeypatch):
     imported(client)
     plan(client, id="a1", day="0", start="17:00", end="19:30", title="Griffith Observatory")
-    client.get("/trip")  # the first draw of Today starts a fill (the plan was added after the save)
+    client.get("/trip?tab=today")  # the first draw of Today starts a fill (the plan was added after the save)
     settle()
     at(monkeypatch, date(2026, 10, 16), 16 * 60 + 31)
-    assert "Leave by 4:35 PM 25 min drive" in text(client.get("/trip").text)
+    assert "Leave by 4:35 PM 25 min drive" in text(client.get("/trip?tab=today").text)
 
 
 def test_the_first_stop_of_a_day_leaves_from_where_you_slept(client, maps, monkeypatch):
     imported(client)
     plan(client, id="a1", day="1", start="09:00", end="10:00", title="Griffith Observatory")
-    client.get("/trip")
+    client.get("/trip?tab=today")
     settle()
     at(monkeypatch, date(2026, 10, 17), 8 * 60)
     assert "Leave by 8:35 AM 25 min drive" in text(client.get("/trip?day=1").text)
@@ -69,12 +69,12 @@ def test_today_starts_a_fill_at_most_once_an_hour_per_trip(client, maps, monkeyp
     started = []
     monkeypatch.setattr(geo, "warm_async", lambda s, p: started.append(p))
     monkeypatch.setattr(tripgeo, "_KICKED", {})
-    client.get("/trip")
-    client.get("/trip")
+    client.get("/trip?tab=today")
+    client.get("/trip?tab=today")
     assert len(started) == 1
     now = tripgeo.time.monotonic()
     monkeypatch.setattr(tripgeo.time, "monotonic", lambda: now + 3601)
-    client.get("/trip")
+    client.get("/trip?tab=today")
     assert len(started) == 2
 
 
@@ -83,14 +83,14 @@ def test_old_throttle_entries_are_pruned(client, maps, monkeypatch):
     settle()
     tripgeo._KICKED[("old", "trip", "x")] = tripgeo.time.monotonic() - 2 * tripgeo.HOUR
     plan(client, id="a1", day="0", start="17:00", end="19:30", title="Griffith Observatory")
-    client.get("/trip")
+    client.get("/trip?tab=today")
     assert ("old", "trip", "x") not in tripgeo._KICKED
 
 
 def test_a_travel_day_does_not_leave_from_the_stay(client, maps, monkeypatch):
     imported(client)
     plan(client, id="a1", day="4", start="09:00", end="10:00", title="Griffith Observatory")  # the day of the flight home
-    client.get("/trip")
+    client.get("/trip?tab=today")
     settle()
     at(monkeypatch, date(2026, 10, 20), 8 * 60)
     assert "Leave by" not in text(client.get("/trip?day=4").text)
@@ -99,17 +99,17 @@ def test_a_travel_day_does_not_leave_from_the_stay(client, maps, monkeypatch):
 def test_today_still_draws_when_the_map_fill_breaks(client, maps, monkeypatch):
     imported(client)
     monkeypatch.setattr(tripgeo, "day_places", lambda s: 1 / 0)
-    assert client.get("/trip").status_code == 200
+    assert client.get("/trip?tab=today").status_code == 200
 
 
 def test_right_after_a_flight_there_is_no_leave_by_and_no_cross_country_drive_is_asked(client, maps, monkeypatch):
     imported(client)  # the arrival day: a flight SFO to LAX at 8:05, then the car pickup at 10:00
     settle()
     assert not any("router.project-osrm" in u and "-122.37" in u for u in maps.calls)  # SFO's longitude: nobody asks how long SFO to LAX takes by car
-    client.get("/trip")
+    client.get("/trip?tab=today")
     settle()
     at(monkeypatch, date(2026, 10, 16), 9 * 60)
-    html = text(client.get("/trip").text)
+    html = text(client.get("/trip?tab=today").text)
     assert "Pick up Hertz car" in html and "Leave by" not in html
 
 
@@ -128,7 +128,7 @@ def _osrm_pairs(maps):
 def test_a_departure_flight_gets_leave_by_with_a_two_hour_margin_and_no_airport_to_airport_drive(client, maps, monkeypatch):
     later = no_car().replace("depart: 2026-10-20 14:10", "depart: 2026-10-20 18:10").replace("arrive: 2026-10-20 15:37", "arrive: 2026-10-20 19:37")
     imported(client, later)  # the flight home leaves LAX at 6:10 PM on the last day; the stop before it is the hotel
-    client.get("/trip")
+    client.get("/trip?tab=today")
     settle()
     sfo, lax = "-122.37", "-118.40"
     pairs = _osrm_pairs(maps)
@@ -149,18 +149,18 @@ def test_an_international_departure_asks_for_three_hours(client, maps):
 
 def test_an_arrival_flight_never_gets_leave_by_or_a_drive_to_it(client, maps, monkeypatch):
     imported(client)
-    client.get("/trip")
+    client.get("/trip?tab=today")
     settle()
     at(monkeypatch, date(2026, 10, 16), 6 * 60)
-    assert "Leave by" not in text(client.get("/trip").text)
+    assert "Leave by" not in text(client.get("/trip?tab=today").text)
 
 
 def test_after_landing_the_car_pickup_is_up_next_with_no_drive_line(client, maps, monkeypatch):
     imported(client)
-    client.get("/trip")
+    client.get("/trip?tab=today")
     settle()
     at(monkeypatch, date(2026, 10, 16), 9 * 60 + 40)  # 9:40, after landing
-    html = text(client.get("/trip").text)
+    html = text(client.get("/trip?tab=today").text)
     assert "Pick up Hertz car" in html and "min drive" not in html
 
 
@@ -178,7 +178,7 @@ def test_an_international_departure_says_be_there_three_hours_early_and_leaves_e
     abroad = (no_car().replace("depart: 2026-10-20 14:10", "depart: 2026-10-20 18:10").replace("arrive: 2026-10-20 15:37", "arrive: 2026-10-21 12:37")
               .replace("to: SFO\n    depart: 2026-10-20 18:10", "to: LHR\n    depart: 2026-10-20 18:10"))
     imported(client, abroad)
-    client.get("/trip")
+    client.get("/trip?tab=today")
     settle()
     at(monkeypatch, date(2026, 10, 20), 12 * 60 + 31)
     html = text(client.get("/trip?day=4").text)

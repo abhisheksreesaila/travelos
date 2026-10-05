@@ -137,9 +137,9 @@ def test_an_editor_adds_a_flight_and_passes_fixes_one_opens_it_full_screen_and_r
     expect(page.locator(".gp-slide").nth(1)).to_be_in_viewport(ratio=0.9)
     expect(page.locator("#gp-count")).to_contain_text("2 of 2")
     page.locator("#gp-close").click()
-    expect(page).to_have_url(re.compile(r"/trip$"))
+    expect(page).to_have_url(re.compile(r"/trip/canvas\?day=\d"))      # F-092: Close lands on Today, which is the day view
     # remove a pass: two taps
-    page.goto(page.url.replace("/trip", "/trip/help"))
+    page.goto(re.sub(r"^(https?://[^/]+).*", r"\1/trip/help", page.url))
     last = page.locator(".pz-pass").nth(1)
     last.get_by_text("Remove", exact=True).click()
     last.get_by_role("button", name="Yes, remove it").click()

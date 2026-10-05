@@ -115,7 +115,7 @@ def test_a_tab_module_can_be_swapped_without_touching_the_shell(client, monkeypa
 
 def test_today_sits_in_the_same_shell_and_keeps_its_own_switch(client):
     book(client)
-    html = client.get("/trip").text
+    html = client.get("/trip?tab=today").text
     hrefs, nav = bar(html)
     assert hrefs == list(PATHS.values()) and 'id="ph-tab-today"' in nav
     for name in ("Today", "All days", "Notes"):
@@ -160,7 +160,7 @@ def _today(client, at, hhmm="16:00"):
     imported(client)
     plan(client, "a1", "1", "17:00", "19:30", "Griffith Observatory", "culture")
     at(date(2026, 10, 17), hhmm)
-    return client.get("/trip").text
+    return client.get("/trip?tab=today").text
 
 
 def test_up_next_has_directions_and_an_uber_deep_link_with_the_destination(client, at):
@@ -216,9 +216,9 @@ def test_uber_link_adds_coordinates_only_when_geo_has_them_cached(client, at, mo
     mod = types.ModuleType("gitaway.geo")
     mod.cached_coords = lambda place: (34.1184, -118.3004)
     monkeypatch.setitem(sys.modules, "gitaway.geo", mod)
-    assert unescape(tag(client.get("/trip").text, "id", "tp-uber")["href"]) == base + "&dropoff[latitude]=34.118400&dropoff[longitude]=-118.300400"
+    assert unescape(tag(client.get("/trip?tab=today").text, "id", "tp-uber")["href"]) == base + "&dropoff[latitude]=34.118400&dropoff[longitude]=-118.300400"
     mod.cached_coords = lambda place: None
-    assert unescape(tag(client.get("/trip").text, "id", "tp-uber")["href"]) == base
+    assert unescape(tag(client.get("/trip?tab=today").text, "id", "tp-uber")["href"]) == base
     mod.cached_coords = lambda place: (999, 0)
     assert td.cached_coords("x") is None
 

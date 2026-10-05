@@ -84,9 +84,9 @@ def test_a_park_day_shows_its_plan_as_the_card_and_no_booking_line(trip):
 
 # ---- change this day -----------------------------------------------------------------------------------------------------------
 
-def test_an_editor_has_change_this_day_and_an_empty_day_offers_talk_and_paste(trip):
+def test_an_empty_day_offers_talk_and_paste_to_an_editor(trip):
     park = day(trip, 1)
-    assert 'href="/trip/ask?day=1"' in tag(park, "cz-say") and "Change this day" in text(park)
+    assert 'id="cz-say"' not in park     # F-092: the centre Ask changes the day (the script points it at the day shown)
     assert 'id="cz-say-talk"' not in park
     free = day(trip, 2)
     assert 'href="/trip/ask?day=2&amp;mode=talk"' in tag(free, "cz-say-talk") and 'href="/trip/ask?day=2&amp;mode=paste"' in tag(free, "cz-say-paste")
@@ -110,7 +110,7 @@ def test_the_morning_push_is_todays_plan_and_opens_the_day():
 
 
 def test_today_has_a_day_plan_button(trip):
-    page = bare(trip.get("/trip").text)
+    page = bare(trip.get("/trip?tab=today").text)
     assert 'href="/trip/canvas?day=0"' in tag(page, "tp-open-day") and re.search(r'id="tp-open-day"[^>]*>.*?Day plan</a>', page, re.S)
 
 
@@ -122,7 +122,7 @@ def test_during_the_trip_today_is_ringed_and_named(trip, monkeypatch):
     monkeypatch.setattr(catalog, "today", lambda: now.astimezone(catalog.TZ).date())
     days = pills(day(trip, 1))
     assert ["is-today" in a for a in days] == [False, False, False, True, False] and ", today" in days[3]
-    assert 'href="/trip/canvas?day=3"' in tag(bare(trip.get("/trip").text), "tp-open-day")
+    assert 'href="/trip/canvas?day=3"' in tag(bare(trip.get("/trip?tab=today").text), "tp-open-day")
 
 
 def test_signed_out_day_goes_to_sign_in(client):
