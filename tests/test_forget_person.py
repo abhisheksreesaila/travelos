@@ -2,6 +2,7 @@
 
 import shutil
 import sqlite3
+import uuid
 import sys
 from pathlib import Path
 
@@ -26,7 +27,7 @@ def folder(client):
     host = sqlite3.connect(src / "app_host.db")
     fid = host.execute("SELECT tenant_id FROM core_memberships WHERE user_id = ?", (uid,)).fetchone()[0]
     host.close()
-    dst = Path(str(src) + "-copy")
+    dst = Path(f"{src}-copy-{uuid.uuid4().hex[:8]}")    # its own folder per test: Windows cannot delete a database file a closed test still had open
     shutil.rmtree(dst, ignore_errors=True)
     shutil.copytree(src, dst)
     host = sqlite3.connect(dst / "app_host.db")   # the copy, never the live databases
