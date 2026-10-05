@@ -13,7 +13,7 @@ import re
 
 from fasthtml.common import A, Div, H2, P, Span
 
-from gitaway import catalog, passes, phones, session as ses, tripcal as cal, tripday as td, tripimport as ti
+from gitaway import catalog, morning, passes, passkeys, phones, session as ses, tripcal as cal, tripday as td, tripimport as ti
 from gitaway.icons import icon
 from gitaway.pages import passes as passes_ui, tab_help
 
@@ -113,5 +113,6 @@ def sos(v, ua):
     contacts, has_mine = tab_help._family(session)
     rows.append(Div(Span("The family", cls="hp-k"), Div(*contacts, cls="hp-contacts", id="sos-contacts") if contacts else P("Nobody has added a phone number yet.", cls="hp-empty", id="sos-nocontacts"),
                     A("Add your number", href="/family#my-phone", cls="hp-add", id="sos-add-mine") if not has_mine else "", cls="bk-sos-row bk-sos-family"))
-    rows.append(Div(Span("This phone", cls="hp-k"), A(icon("bell", 18, 2.4), "Morning plan and Face ID", href="/family#this-phone", cls="tp-btn tp-btn-white", id="sos-phone"), cls="bk-sos-row"))
+    if morning.configured() or passkeys.configured():       # the family page has these two cards only where the server can do them
+        rows.append(Div(Span("This phone", cls="hp-k"), A(icon("bell", 18, 2.4), "Morning plan and Face ID", href="/family#morning-plan" if morning.configured() else "/family#this-phone", cls="tp-btn tp-btn-white", id="sos-phone"), cls="bk-sos-row"))
     return rows

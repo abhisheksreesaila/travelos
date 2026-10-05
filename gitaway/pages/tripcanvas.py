@@ -225,7 +225,7 @@ def who_options(v, groups_always=False):
     return out
 
 
-def filter_bar(v):
+def filter_bar(v, compact=False):
     """Chips that highlight the steps that match and dim the rest: Everyone (no filter), each person, Adults and Kids when used, each named list of the trip."""
     chips = [Button("Everyone", type="button", cls="cz-fchip", data_f="all", aria_pressed="true")]
     for tok, label, p in who_options(v):
@@ -233,7 +233,7 @@ def filter_bar(v):
         chips.append(Button(face, label, type="button", cls="cz-fchip", data_f=f"who:{tok}", aria_pressed="false", **({"aria_label": f"{label} (not matched to a person)"} if p["kind"] == "initials" else {})))
     for lst in v["lists"]:
         chips.append(Button(icon("shield", 16, 2.4), lst["name"], type="button", cls="cz-fchip cz-fchip-list", data_f=f"list:{lst['id']}", aria_pressed="false"))
-    return Div(*chips, cls="cz-filters", role="group", aria_label="Show")
+    return Div(*chips, cls="cz-filters cz-filters-day" if compact else "cz-filters", role="group", aria_label="Show")
 
 
 KINDS = (("all", "All"), ("plan", "Plans"), ("hotel", "Hotels"), ("flight", "Flights"), ("car", "Car"), ("chat", "Chats"))
@@ -452,7 +452,7 @@ def day_view(v, day, booked=None, sos=False):
     first = next((x for kind, x in ents if kind == "block"), None)
     body = [head(v, kicker, d.strftime("%A"), key=f"day-{day}", back=curl(), back_label="Zoom out to the week", sos=curl(day=day, sos=True)), Div(toggle(v, "day", day), kinds_bar(), cls="cz-bar"), day_pills(v, day), strip(v, day),
             now_card(v, day),      # F-092: the centre Ask changes the day; on today the day starts with what is happening now
-            *([filter_bar(v)] if first else []), *([dropbars(v)] if first and editor else []),
+            *([filter_bar(v, True)] if first else []), *([dropbars(v)] if first and editor else []),
             Div(Div(*cards, *(listmore(v, first) if first else []), P("Nothing here for this filter.", cls="cz-sub cz-kind-none", hidden=True), cls="cz-day-main"), Div(_tray(aside, editor), cls="cz-day-side"), cls="cz-day-body")]
     if booked:
         body.append(booking_sheet(v, day, booked))

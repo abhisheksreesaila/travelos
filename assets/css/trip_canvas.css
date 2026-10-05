@@ -61,8 +61,9 @@
 .cz .cz-badge { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 3.5rem; border-radius: 1rem; }
 .cz .cz-dow { font-size: var(--cz-small); font-weight: 800; letter-spacing: 0.06em; color: var(--ink-2); }
 .cz .cz-num { font-family: var(--font-display); font-weight: 800; font-size: 1.625rem; line-height: 1; }
-.cz .cz-row-link { grid-column: 2; display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; min-height: 2.75rem; color: var(--ink); }
-.cz .cz-row:not(.is-free) .cz-row-link { grid-column: 2 / -1; }
+.cz .cz-row-link { display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; min-height: 2.75rem; color: var(--ink); }
+.cz .cz-row.is-free .cz-row-link { grid-column: 2; }
+.cz .cz-row-main { grid-column: 2 / -1; display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; }   /* F-093: the day's plans are one link, each booking is a link of its own */
 .cz .cz-wcard { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.625rem 0.75rem; border-radius: 1.25rem; background: var(--card); box-shadow: var(--shadow-sm); min-width: 0; }
 .cz .cz-simple { flex-direction: row; align-items: center; gap: 0.625rem; }
 .cz .cz-simple.is-booked { background: var(--sky-tint); }
@@ -213,7 +214,7 @@ html[data-cz-dir="side"]::view-transition-new(root) { animation: cz-come-side va
   .cz .cz-badge { flex-direction: row; gap: 0.5rem; min-height: 2.75rem; }
   .cz .cz-simple { flex-wrap: wrap; }
   .cz .cz-wcard .cz-card-t { flex-basis: 8rem; }
-  .cz .cz-row-link, .cz .cz-row:not(.is-free) .cz-row-link { grid-column: auto; }
+  .cz .cz-row-link, .cz .cz-row.is-free .cz-row-link, .cz .cz-row-main { grid-column: auto; }
   .cz .cz-plus { align-self: flex-end; margin-top: -3.25rem; margin-right: 0.25rem; }
   .cz .cz-strip { display: grid; grid-template-columns: repeat(var(--days, 7), minmax(0, 1fr)); gap: 0.5rem; }
   .cz .cz-strip-day { display: flex; flex-direction: column; gap: 0.25rem; padding: 0.625rem 0.75rem; border-radius: 1.25rem; background: var(--card); box-shadow: var(--shadow-sm); color: var(--ink); min-width: 0; }
@@ -406,3 +407,57 @@ html[data-cz-dir="prev"]::view-transition-new(root) { animation: cz-in-left 320m
 .cz .cz-now { display: flex; flex-direction: column; gap: 0.5rem; }
 .cz .cz-now:empty { display: none; }
 .cz .cz-toggle { align-self: flex-start; }
+
+/* ---- F-093: bookings open in place, the Plans | Hotels | Flights | Car | Chats row, SOS ---- */
+.cz .is-off { display: none !important; }
+.cz .cz-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.25rem 0.75rem; }
+
+/* the quiet kind row: plain words, the chosen one on a dark pill (a 2.75rem touch target, a 2rem pill) */
+.cz .cz-kinds { display: flex; align-items: center; gap: 0; min-width: 0; }
+.cz .cz-kinds[hidden] { display: none; }
+.cz .cz-kinds { flex-wrap: wrap; }
+.cz .cz-kchip { position: relative; z-index: 0; min-width: 2.75rem; min-height: 2.75rem; padding: 0 0.4375rem; border: 0; background: transparent; font: inherit; font-family: var(--font-body); font-weight: 800; font-size: var(--cz-body); color: var(--ink-2); cursor: pointer; }
+.cz .cz-kchip::before { content: ""; position: absolute; z-index: -1; inset: 0.375rem 0; border-radius: var(--r-pill); background: transparent; }
+.cz .cz-kchip[aria-pressed="true"] { color: #FFFFFF; }
+.cz .cz-kchip[aria-pressed="true"]::before { background: var(--ink); }
+
+/* on the day the who and list chips are one quiet line that scrolls along, under the kind row */
+.cz .cz-filters-day { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -1rem; padding: 0 1rem; scroll-snap-type: x proximity; }
+.cz .cz-filters-day::-webkit-scrollbar { display: none; }
+.cz .cz-filters-day .cz-fchip { flex: none; scroll-snap-align: start; }
+
+/* the filter at work: a week row with nothing to show shrinks to a thin line, a bare plan link is gone */
+.cz .cz-openday, .cz .cz-thin-t { display: none; }
+.cz .cz-openday { align-items: center; justify-content: flex-end; gap: 0.25rem; min-height: 2.75rem; }
+.cz .cz-view[data-k="all"] .cz-row-link.is-bare .cz-openday { display: inline-flex; }
+.cz .cz-view:not([data-k="all"]) .cz-row-link.is-bare:not(.is-thin) { display: none; }
+.cz .cz-row.is-thin { align-items: center; opacity: 0.7; }
+.cz .cz-row.is-thin .cz-badge { flex-direction: row; gap: 0.375rem; min-height: 2.75rem; }
+.cz .cz-row.is-thin .cz-num { font-size: 1.125rem; }
+.cz .cz-row.is-thin .cz-today, .cz .cz-row.is-thin .cz-plus, .cz .cz-row.is-thin .cz-free-t, .cz .cz-row.is-thin .cz-free .cz-sub { display: none; }
+.cz .cz-row.is-thin .cz-row-link { min-height: 2.75rem; justify-content: center; padding: 0; border: 0; background: transparent; }
+.cz .cz-row.is-thin .cz-thin-t { display: block; font-size: var(--cz-small); font-weight: 700; color: var(--ink-3); }
+.cz .cz-kind-none { margin: 0; padding: 0.75rem 0; }
+
+/* SOS in the heading */
+.cz .cz-sos { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; gap: 0.25rem; min-width: 2.75rem; min-height: 2.75rem; padding: 0 0.75rem; border-radius: var(--r-pill); background: var(--bubble-tint); color: var(--bubble-ink);
+  font-weight: 800; font-size: var(--cz-small); letter-spacing: 0.04em; }
+.cz .cz-head.is-deep .cz-sos { background: rgba(255, 255, 255, .16); color: #FFFFFF; }
+.cz .cz-head.is-deep .cz-faces { order: 9; }
+
+/* the booking sheet and the emergency sheet (the step sheet's look; Help's own pieces inside) */
+.cz .cz-sheet-bk, .cz .cz-sheet-sos { gap: 0.625rem; }
+.cz .cz-sheet-bk .hp-addr { display: block; }
+.cz .cz-sheet .hp-acts { grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); }
+.cz .cz-sheet .tp-btn { min-height: 2.75rem; }
+.cz .bk-stack { grid-template-columns: 1fr; }
+.cz .bk-passes { display: flex; flex-direction: column; gap: 0.625rem; }
+.cz .bk-passes > .hp-k { margin: 0.25rem 0 0; }
+.cz .cz-sheet .hp-add { text-decoration: underline; }
+.cz .cz-sheet .hp-fix-form input[type="tel"], .cz .cz-sheet .pz-form input { min-height: 2.75rem; }
+.cz .bk-sos-911 .hp-911 { display: flex; width: 100%; min-height: 3.5rem; font-size: 1.125rem; gap: 0.5rem; }
+.cz .bk-sos-row { display: flex; flex-direction: column; gap: 0.25rem; padding: 0.625rem 0.75rem; border-radius: 1rem; background: var(--paper-2); }
+.cz .bk-sos-row .hp-v { font-size: 1.0625rem; overflow-wrap: anywhere; }
+.cz .bk-sos-row .tp-btn { margin-top: 0.25rem; gap: 0.5rem; }
+.cz .bk-sos-row .hp-contacts { grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); }
+.cz .bk-sos-row .hp-contact { background: var(--card); }

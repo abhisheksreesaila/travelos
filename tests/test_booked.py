@@ -268,6 +268,12 @@ def test_the_sos_sheet_has_911_tonights_front_desk_the_counter_and_the_family(tr
     assert 'class="cz-sheet cz-sheet-sos' in bare(trip.get("/trip/canvas?day=1&sos=1&frag=1").text)
 
 
+def test_the_sos_sheet_points_to_the_morning_plan_when_push_is_set_up(trip, monkeypatch):
+    monkeypatch.setenv("GITAWAY_VAPID_PUBLIC", "BPublicKey"), monkeypatch.setenv("GITAWAY_VAPID_PRIVATE", "p"), monkeypatch.setenv("GITAWAY_VAPID_SUBJECT", "mailto:a@b.co")
+    assert 'href="/family#morning-plan"' in tag(bare(trip.get("/trip/canvas?sos=1").text), "sos-phone")
+    assert 'id="tp-morning"' in trip.get("/family").text
+
+
 def test_the_sos_sheet_is_for_every_role_and_asks_for_a_number_when_nobody_has_one(crew):
     owner, ed, vi = crew
     page = bare(vi.get("/trip/canvas?sos=1").text)

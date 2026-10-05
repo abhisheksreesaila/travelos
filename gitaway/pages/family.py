@@ -94,7 +94,7 @@ def _phone_section(session, error="", typed=None):
     """My own phone number (any member): it shows on everyone's Help tab so the family can call each other."""
     mine = phones.member_phones(session).get(session["user_id"], "")
     return Section(H2("Your phone number", id="fam-phone-h"),
-                   P("The family sees it on the Help tab, one tap to call. Leave it empty to remove it.", cls="fam-sub"),
+                   P("The family sees it in the SOS sheet on the trip, one tap to call. Leave it empty to remove it.", cls="fam-sub"),
                    Div(error, role="alert", id="fam-phone-error", cls="fam-error") if error else "",
                    Form(Label(Span("Phone", cls="fam-label"), Input(type="tel", name="phone", id="fam-phone", value=mine if typed is None else typed, maxlength=str(phones.MAX_PHONE), autocomplete="tel", placeholder="+1 310 555 0100"), cls="fam-field"),
                         Button("Save my number", type="submit", cls="btn btn-primary fam-go"), action="/family/phone", method="post", id="fam-phone-form", cls="fam-inviteform"),
