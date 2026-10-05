@@ -32,6 +32,7 @@ OPEN_POSTS = (
     "/trip/photos", "/trip/photos/remove",   # adding a photo (a viewer too: it changes no plan) and removing one (the route checks author-or-admin) (F-071)
     "/passkeys/register/options", "/passkeys/register", "/passkeys/auth/options", "/passkeys/auth", "/passkeys/remove",   # my own Face ID sign-in (F-074): every member, viewers too; the two auth routes are for someone signed out
     "/trip/map/around",   # Around you (F-073): looks up places near a point and writes only the place-lookup cache, so every member may ask (a viewer too); the position is in the request only
+    "/trip/talk/message", "/trip/talk/photo", "/trip/talk/voice",   # talk on a plan (F-091): text, a photo or a voice note on a plan or part, from any member (viewers too: it changes no plan)
     "/trip/family/message", "/trip/family/quiet",   # a message in the family thread and my own Quiet switch (F-070): every member, viewers too (a viewer cannot change a plan, so never causes a change card)
 )
 OPEN_PREFIXES = ("/join/",)                # using an invite link: the person is joining another family

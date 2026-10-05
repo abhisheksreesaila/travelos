@@ -22,14 +22,15 @@ from urllib.parse import urlencode
 from fasthtml.common import A, Button, Details, Div, Form, H1, H2, H3, Header, Input, Label, Link, Main, Nav, P, Section, Span, Summary, to_xml
 from starlette.responses import RedirectResponse, Response
 
-from gitaway import access, canvas, catalog, members, phone, pickers, session as ses, tripcal as cal, tripday as td
+from gitaway import access, canvas, catalog, members, phone, pickers, plantalk, session as ses, tripcal as cal, tripday as td
 from gitaway.icons import icon
 from gitaway.layout import avatar, join_note, trip_field
 from gitaway.pages import calendar as calui
 from gitaway.pages.around_ui import around_url
+from gitaway.pages.plantalk import talk_badge   # F-091: the chat badge on a plan and on a part
 from gitaway.pages.tab_ask import ask_button
 
-HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/trip_canvas.css"))   # pickers: the add-a-step sheet has a time field (F-082)
+HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/trip_canvas.css"), Link(rel="stylesheet", href="/assets/css/plantalk.css"))   # pickers: the add-a-step sheet has a time field (F-082)
 SCRIPTS = ("/assets/js/trip_canvas.js",)
 RANK = {"week": 0, "day": 1, "block": 2, "step": 3}
 PART_TINTS = ("sky", "sun", "grape", "bubble", "mint")
@@ -76,6 +77,7 @@ def load(session):
              role=access.request_role(), crew=members.crew(session), summaries=td.day_summaries(dates, blocks, acts, today_idx))
     v["by_id"] = {a.id: a for a in acts}
     v["people"] = canvas.family_people(session)
+    v["talk"] = plantalk.counts(session)                 # F-091: messages per plan and part, for the chat badges
     for blk in v["plan"].values():                       # which of the trip's lists name each step, for the filters
         for s in [*_all_steps(blk), *blk["aside"]]:
             s["lists"] = canvas.list_hits(s["title"], v["lists"])
@@ -324,18 +326,18 @@ def _block_card(v, a):
     parts = []
     for k, p in enumerate(blk["parts"]):
         steps = [Div(_chip(s, edit), cls="cz-chipcell") for s in p["steps"]]
-        parts.append(Div(Div(Span(p["name"], cls="cz-part-t"), Span(p["time_of_day"], cls="cz-when") if p["time_of_day"] else "", Span(_count(len(p["steps"]), "ride", "rides"), cls="cz-part-n"), cls="cz-part-h"),
+        parts.append(Div(Div(Span(p["name"], cls="cz-part-t"), Span(p["time_of_day"], cls="cz-when") if p["time_of_day"] else "", Span(_count(len(p["steps"]), "ride", "rides"), cls="cz-part-n"), talk_badge(v["talk"], a.id, p["id"]), cls="cz-part-h"),
                           Div(*steps, cls="cz-chips") if steps else P("Nothing here yet.", cls="cz-sub"), cls=f"cz-part cz-pt-{PART_TINTS[k % 5]}", data_part=p["id"], data_act=a.id))
     return Div(A(Span(icon("sight", 22, 2.4), cls="cz-ico"), Div(Span(a.title, cls="cz-card-t"), Span(f"{cal.fmt_time(a.start)} – {cal.fmt_time(a.end)} · {done} of {n} done", cls="cz-sub"), cls="cz-card-text"),
                  Span(icon("chev-right", 20, 2.6), cls="cz-go"), href=curl(block=a.id), cls="cz-block-head", data_zoom="in", data_zk=f"blk-{a.id}"),
-               Div(*notes, cls="cz-notes") if notes else "", Div(*parts, cls="cz-parts"), cls="cz-block", data_act=a.id)
+               Div(*notes, cls="cz-notes") if notes else "", Div(talk_badge(v["talk"], a.id), cls="pt-row"), Div(*parts, cls="cz-parts"), cls="cz-block", data_act=a.id)
 
 
 def _simple(kind, x, v):
     ico = getattr(x, "icon", "") or ("pin" if kind == "plan" else "pin")
     notes = [sticker(text, by) for by, text in v["act_notes"].get(x.id, [])] if kind == "plan" else []
     return Div(Div(Span(icon(ico, 20, 2.4), cls="cz-ico"), Div(Span(x.title, cls="cz-card-t"), Span(f"{cal.fmt_time(x.start)}" + (f" – {cal.fmt_time(x.end)}" if x.end else ""), cls="cz-sub"), cls="cz-card-text"), cls="cz-simple-h"),
-               Div(*notes, cls="cz-notes") if notes else "", cls=f"cz-block cz-plain{' is-booked' if kind == 'booked' else ''}")
+               Div(*notes, cls="cz-notes") if notes else "", Div(talk_badge(v["talk"], x.id), cls="pt-row") if kind == "plan" else "", cls=f"cz-block cz-plain{' is-booked' if kind == 'booked' else ''}")
 
 
 def strip(v, day):
@@ -465,7 +467,7 @@ def block_view(v, act_id, open_step=None, adding=None):
                 items += [_row(s, s["id"] != open_id, editor) for s in run]
         pn, pd = len(p["steps"]), sum(1 for s in p["steps"] if s["done"])
         ideas = ideas_button(a.day, f"ar-ideas-{p['id']}") if p["name"].casefold() in MEALS else ""
-        sections.append(Section(Div(H2(p["name"]), Span(p["time_of_day"], cls="cz-when") if p["time_of_day"] else "", Span(f"{pd} of {pn} done" if pn else "", cls="cz-part-n"), ideas, cls="cz-part-h"),
+        sections.append(Section(Div(H2(p["name"]), Span(p["time_of_day"], cls="cz-when") if p["time_of_day"] else "", Span(f"{pd} of {pn} done" if pn else "", cls="cz-part-n"), ideas, talk_badge(v["talk"], a.id, p["id"]), cls="cz-part-h"),
                                 *(items or [P("Nothing here yet.", cls="cz-sub")]), cls=f"cz-bpart cz-pt-{PART_TINTS[k % 5]}", data_part=p["id"], data_act=a.id))
     lists = [Section(Div(H3(lst["name"]), Span(f"for {lst['for']}", cls="cz-when") if lst["for"] else "", cls="cz-part-h"),
                      Div(*[Span(i["title"], cls="cz-list-i") for i in lst["items"]], cls="cz-list"), cls="cz-bpart cz-triplist", data_list=lst["id"]) for lst in v["lists"]]
@@ -475,7 +477,7 @@ def block_view(v, act_id, open_step=None, adding=None):
         add_btn = A(icon("plus", 18, 2.6), "Add a step", href=curl(block=a.id, add=True), id="cz-add", cls="tp-btn tp-btn-ink cz-add", data_zoom="in", **({} if adding else {"data_zk": "stp-new"}))
     kicker = f"{d.strftime('%a %b').upper()} {d.day} · {cal.fmt_time(a.start)} – {cal.fmt_time(a.end)}"
     body = [head(v, kicker, a.title, key=f"blk-{a.id}", back=curl(day=a.day), back_label="Zoom out to the day", faces=faces_of(allsteps, 4)),
-            ask_button(a.day, ident=f"ak-open-blk-{a.id}") if editor else "", Div(*notes, cls="cz-notes") if notes else "", Div(Span(f"{done} of {n} done", cls="cz-prog"), legend, add_btn, cls="cz-block-meta"),
+            ask_button(a.day, ident=f"ak-open-blk-{a.id}") if editor else "", Div(*notes, cls="cz-notes") if notes else "", Div(Span(f"{done} of {n} done", cls="cz-prog"), legend, add_btn, talk_badge(v["talk"], a.id), cls="cz-block-meta"),
             filter_bar(v), *([dropbars(v)] if editor else []),
             Div(*sections, cls="cz-bparts"), *listmore(v, a), Div(_tray(blk["aside"], editor, open_id=open_id), cls="cz-block-side"), *lists]
     if open_step:

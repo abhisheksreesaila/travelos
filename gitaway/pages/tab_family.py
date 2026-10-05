@@ -15,16 +15,16 @@ import hashlib
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from fasthtml.common import A, Button, Div, Form, Img, Input, P, Span, to_xml
+from fasthtml.common import A, Audio, Button, Div, Form, Img, Input, Link, Noscript, P, Span, to_xml
 from starlette.responses import JSONResponse, PlainTextResponse, RedirectResponse, Response
 
-from gitaway import familythread, session as ses
+from gitaway import familythread, plantalk, session as ses
 from gitaway.icons import icon
 from gitaway.pages import photos as photos_ui
 
 TITLE = "Family"
-HEAD = photos_ui.HEAD
-SCRIPTS = ("/assets/js/thread.js", "/assets/js/photos.js")
+HEAD = (*photos_ui.HEAD, Link(rel="stylesheet", href="/assets/css/plantalk.css"))
+SCRIPTS = ("/assets/js/thread.js", "/assets/js/photos.js", "/assets/js/voicenote.js")
 POLL_MS = 5000
 QUIET_ON = "Quiet: no notifications from the family thread."
 QUIET_OFF = "Everyone gets a notification when the plan changes."
@@ -45,8 +45,32 @@ def _avatar(name, user):
     return Span((name or "?")[:1].upper(), cls=f"ft-av fill-{color}", aria_hidden="true")
 
 
-def item_view(it, me, zone):
-    """One thread entry. Changes are cards, messages are bubbles (mine on the right), photos show their image."""
+def length(secs) -> str:
+    return f"{int(secs) // 60}:{int(secs) % 60:02d}"
+
+
+def voice_player(it):
+    """A voice note that plays in place (assets/js/voicenote.js): a play button, a progress bar and its length. The audio is fetched only when played."""
+    secs = int(it["payload"].get("secs") or 0)
+    src = f"/trip/talk/voice/{it['id']}"
+    return Div(Button(icon("play", 20, 2.2), Span("Play voice note", cls="sr-only"), type="button", cls="vn-btn", data_vn="btn"),
+               Span(Span(cls="vn-fill", data_vn="fill"), cls="vn-bar", aria_hidden="true"),
+               Span(length(secs), cls="vn-len", data_vn="len", data_total=length(secs)),
+               Audio(src=src, preload="none", cls="vn-audio", data_vn="audio"), Noscript(Audio(src=src, controls=True, preload="none")),
+               cls="vn", data_secs=str(secs))
+
+
+def _on(it, labels):
+    """The small "on Lunch · Universal Studios" tag of a message that belongs to a plan (or part), linking to that plan's chat."""
+    act, part = it["payload"].get("act"), it["payload"].get("part") or ""
+    if not act or labels is None or (act, part) not in labels:
+        return ""
+    return A(icon("chat", 14, 2.4), Span(f"on {labels[(act, part)]}"), href=plantalk.url(act, part), cls="ft-on")
+
+
+def item_view(it, me, zone, labels=None):
+    """One thread entry. Changes are cards, messages are bubbles (mine on the right), photos show their image, voice notes play in place. A message on a plan
+    carries a tag naming it when `labels` ({(plan, part): label}) is given (the Family tab; the plan's own chat does not repeat it)."""
     at = _clock(it["at"], zone)
     base = {"data_n": str(it["n"]), "data_kind": it["kind"]}
     if it["kind"] == "change":
@@ -55,18 +79,24 @@ def item_view(it, me, zone):
                    Span(Span(it["text"], cls="ft-what"), Span(f"Plan change · {at}", cls="ft-meta"), cls="ft-x"),
                    cls=f"ft-sys ft-{_TINTS.get(action, 'plain')}", **base)
     mine = it["author"] == me
+    tag = _on(it, labels)
     if it["kind"] == "photo":
         url = it["payload"].get("url", "")
         if familythread._image_url(url):
-            body = Div(Img(src=url, alt=it["text"] or f"Photo from {it['name']}", loading="lazy", cls="ft-photo"), Span(it["text"], cls="ft-cap") if it["text"] else "", cls="ft-photo-bub")
+            pid = it["payload"].get("photo")
+            img = Img(src=url, alt=it["text"] or f"Photo from {it['name']}", loading="lazy", cls="ft-photo")
+            body = Div(tag, Span(it["name"], cls="ft-nm") if pid and not mine else "", A(img, href=f"/trip/photos/{pid}", cls="ft-photo-link") if pid else img, Span(it["text"], cls="ft-cap") if it["text"] else "", Span(at, cls="ft-time") if pid else "", cls="ft-photo-bub")
             return Div(_avatar(it["name"], it["author"]) if not mine else "", body, cls=f"ft-msg{' ft-me' if mine else ''}", **base)
         return ""
-    bubble = Div(Span(it["name"], cls="ft-nm") if not mine else "", it["text"], Span(at, cls="ft-time"), cls="ft-bub")
+    if it["kind"] == "voice":
+        bubble = Div(tag, Span(it["name"], cls="ft-nm") if not mine else "", voice_player(it), Span(at, cls="ft-time"), cls="ft-bub ft-voice")
+    else:
+        bubble = Div(tag, Span(it["name"], cls="ft-nm") if not mine else "", it["text"], Span(at, cls="ft-time"), cls="ft-bub")
     return Div(_avatar(it["name"], it["author"]) if not mine else "", bubble, cls=f"ft-msg{' ft-me' if mine else ''}", **base)
 
 
-def fragment(its, me, zone):
-    return [v for v in (item_view(it, me, zone) for it in its) if v != ""]
+def fragment(its, me, zone, labels=None):
+    return [v for v in (item_view(it, me, zone, labels) for it in its) if v != ""]
 
 
 def _switch(view):
@@ -97,7 +127,7 @@ def content(request, session):
                  Button(Span(cls="mp-knob"), Span("Quiet", cls="ft-quiet-label"), type="submit", role="switch", aria_checked="true" if quiet else "false", id="ft-quiet", cls=f"mp-switch ft-switch{' is-on' if quiet else ''}"),
                  method="post", action="/trip/family/quiet", cls="ft-quiet-form"),
             cls="ft-notify"),
-        Div(*fragment(its, me, zone), id="ft-thread", cls="ft-thread", data_last=str(last), data_poll=str(POLL_MS), data_trip=trip, role="log", aria_live="polite", aria_label="Family thread"),
+        Div(*fragment(its, me, zone, plantalk.labels(session)), id="ft-thread", cls="ft-thread", data_last=str(last), data_poll=str(POLL_MS), data_trip=trip, role="log", aria_live="polite", aria_label="Family thread"),
         P("No messages yet. Say hello, or change a plan and it shows up here.", id="ft-empty", cls="ft-empty", hidden=bool(its)),
         Form(Input(type="hidden", name="trip", value=trip),
              Input(type="text", name="text", id="ft-text", maxlength=str(familythread.MAX_MESSAGE), placeholder="Message the family", autocomplete="off", aria_label="Message the family", cls="ft-input", required=True),
@@ -126,7 +156,7 @@ def _new_items(session, since, trip=""):
     except familythread.StaleTrip:
         return PlainTextResponse(STALE, status_code=409)
     me, zone = ses.current_traveler(session).id, ses.trip_zone(session)
-    body = "".join(to_xml(v) for v in fragment(its, me, zone))
+    body = "".join(to_xml(v) for v in fragment(its, me, zone, plantalk.labels(session)))
     return Response(body, media_type="text/html; charset=utf-8", headers={"X-Thread-Last": str(its[-1]["n"] if its else max(0, since)), "Cache-Control": "no-store"})
 
 

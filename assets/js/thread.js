@@ -14,6 +14,8 @@
   var interval = parseInt(thread.getAttribute("data-poll"), 10) || 5000;
   var last = parseInt(thread.getAttribute("data-last"), 10) || 0;
   var timer = null, inflight = false;
+  var pollUrl = thread.getAttribute("data-poll-url") || "/trip/family/thread";   // a plan's chat (F-091) polls its own address
+  function join(url) { return url + (url.indexOf("?") < 0 ? "?" : "&"); }
 
   function nearBottom() { return window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 160; }
   function toBottom() { window.scrollTo(0, document.documentElement.scrollHeight); }
@@ -39,11 +41,11 @@
     });
   }
 
-  function poll() {
+  function poll(mine) {
     if (inflight || document.visibilityState === "hidden") return Promise.resolve();
     inflight = true;
-    return fetch("/trip/family/thread?since=" + last + "&trip=" + encodeURIComponent(tripId()), { credentials: "same-origin", headers: { Accept: "text/html" } })
-      .then(function (r) { if (r.status === 409) { stop(); fail("This trip changed. Reload the page."); return; } if (r.ok) return append(r, false); })
+    return fetch(join(pollUrl) + "since=" + last + "&trip=" + encodeURIComponent(tripId()), { credentials: "same-origin", headers: { Accept: "text/html" } })
+      .then(function (r) { if (r.status === 409) { stop(); fail("This trip changed. Reload the page."); return; } if (r.ok) return append(r, mine === true); })
       .catch(function () {})
       .then(function () { inflight = false; });
   }
@@ -56,6 +58,8 @@
   });
   if (document.visibilityState !== "hidden") start();
   toBottom();
+  // The chat's own script (plantalk.js) fires this after it sent a photo or a voice note: show what is new now, and scroll to it.
+  thread.addEventListener("ft-refresh", function () { inflight = false; poll(true); });
 
   if (form) form.addEventListener("submit", function (e) {
     e.preventDefault();
@@ -63,7 +67,9 @@
     if (!value) { fail("Write something first."); return; }
     fail("");
     send.disabled = true;
-    fetch("/trip/family/message", { method: "POST", credentials: "same-origin", headers: { "X-Fragment": "1" }, body: new URLSearchParams({ text: value, since: String(last), trip: tripId() }) })
+    var fields = new URLSearchParams(new FormData(form));   // text, trip and (a plan's chat) act and part
+    fields.set("since", String(last));
+    fetch(form.getAttribute("action") || "/trip/family/message", { method: "POST", credentials: "same-origin", headers: { "X-Fragment": "1" }, body: fields })
       .then(function (r) {
         if (!r.ok) return r.text().then(function (t) { throw new Error(r.status === 400 || r.status === 409 ? t : "That did not send. Try again."); });
         text.value = "";

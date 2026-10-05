@@ -98,8 +98,9 @@ def post_message(session, text, trip=None):
     announce(session, trip_id, name, _safe(text), exclude=me)
 
 
-def post_photo(session, url, caption=""):
-    """A photo card (F-071 uploads and calls this). Only an address on this site or https is kept. Raises ThreadError."""
+def post_photo(session, url, caption="", extra=None, push="Shared a photo"):
+    """A photo card (F-071 uploads and calls this). Only an address on this site or https is kept. `extra` is more payload (a photo on a plan names
+    its plan: F-091) and `push` the push's text. Raises ThreadError."""
     from gitaway import session as ses
     if not _image_url(url):
         raise ThreadError("That photo address is not valid.")
@@ -108,8 +109,8 @@ def post_photo(session, url, caption=""):
             raise ThreadError("Open a trip first.")
         name, trip_id, me = first_name(fam.traveler), fam.trip_id, fam.traveler.id
         with familydb.transaction(fam.db):
-            _insert(fam.db, trip_id, "photo", me, name, " ".join((caption or "").split())[:140], {"url": url})
-    announce(session, trip_id, name, "Shared a photo", exclude=me)
+            _insert(fam.db, trip_id, "photo", me, name, " ".join((caption or "").split())[:140], {**(extra or {}), "url": url})
+    announce(session, trip_id, name, push, exclude=me)
 
 
 def _image_url(url) -> bool:

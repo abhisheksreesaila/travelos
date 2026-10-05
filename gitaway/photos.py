@@ -239,8 +239,11 @@ def _scope(session):
 STALE = "This trip changed. Reload the page."
 
 
-def add(session, data: bytes, caption: str = "", now=None, trip_id=None):
+def add(session, data: bytes, caption: str = "", now=None, trip_id=None, talk=None):
     """Keep one uploaded photo for the open trip: validate it, store the files, record it, put a card in the thread. Returns the photo (a dict).
+
+    `talk` is a photo sent in a plan's chat (F-091): {"act", "title", "extra" (the card's payload: which plan and part), "push" (the push's text)}. The photo
+    is then pinned to that plan, whatever time it was taken.
 
     Raises PhotoError for anything that cannot be kept (the message is fit to show)."""
     if not room():
@@ -267,6 +270,8 @@ def add(session, data: bytes, caption: str = "", now=None, trip_id=None):
         minute = when.hour * 60 + when.minute
         with _scope(session):
             plan_id, plan_title = match_plan(acts, day, minute, coords, trip.destination_name) if 0 <= day <= (trip.return_ - trip.depart).days else ("", "")
+        if talk:
+            plan_id, plan_title = talk["act"], talk["title"]
         folder = _folder(session.get("tenant_id"), fam.trip_id)
         base = root() / folder
         try:
@@ -288,7 +293,10 @@ def add(session, data: bytes, caption: str = "", now=None, trip_id=None):
                 path.unlink(missing_ok=True)
             raise
     try:
-        familythread.post_photo(session, card_url(pid), caption or (f"At {plan_title}" if plan_title else ""))
+        if talk:
+            familythread.post_photo(session, card_url(pid), caption, {**talk["extra"], "photo": pid}, talk["push"])
+        else:
+            familythread.post_photo(session, card_url(pid), caption or (f"At {plan_title}" if plan_title else ""))
     except familythread.ThreadError as e:
         log.info("photo card not posted: %s", e)
     return dict(row)

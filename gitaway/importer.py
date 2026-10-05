@@ -161,8 +161,9 @@ def delete(session, trip_id) -> bool:
             familydb.run(db, "UPDATE members SET trip_id = NULL WHERE trip_id = :t", t=trip_id)
         from gitaway import photos
         photos.purge_trip(session.get("tenant_id"), trip_id)   # the picture files, once the rows are gone (F-071)
-        from gitaway import passes
+        from gitaway import passes, voicenotes
         passes.purge_trip(session.get("tenant_id"), trip_id)   # and the boarding pass files (F-083)
+        voicenotes.purge_trip(session.get("tenant_id"), trip_id)   # and the voice notes (F-091)
         for row in community.rows(kind="shared"):  # a shared page of this trip (by whoever shared it) comes down with it
             if booking and share.slug_for(row["owner_user"], booking) == row["slug"]:
                 community.unpublish({"user_id": row["owner_user"]}, row["slug"])
