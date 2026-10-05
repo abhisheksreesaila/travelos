@@ -68,6 +68,7 @@ Rules:
 - Times are 24-hour HH:MM on this day, in the trip's own time zone. The family's own plans are in "plans"; "booked" are fixed bookings you cannot move: keep new plans out of them. Also keep new and moved plans clear of the family's existing plans on that day where you can. "now" is the current time when this day is today: never put anything before it.
 - "who" holds first names from "family" (or names already on that step) only.
 - Titles are short (under 40 characters). Keep the family's own wording.
+- Times the request gives are used exactly as given ("lunch at 12:30" is 12:30; "1" for lunch is 13:00). If a new or moved plan has no time in the request and you cannot tell, leave its start and end null: the app asks the family. Never invent a time the request does not give or imply.
 - summary is one short, friendly sentence saying what you propose, in the second person ("I'd block 3:00 to 5:00 for a rest and move lunch to 12:30.")."""
 
 
@@ -497,14 +498,8 @@ def card_text(ctx, who, ops) -> str:
 
 # ---- proposing -----------------------------------------------------------------------------------------------------------
 
-def propose(session, day, text) -> dict:
-    """Ask the model what to change and return the checked proposal. Raises SpeakError (nothing asked, too long, a past day, nothing usable) or ai.AIError
-    (the model is off, busy, slow or failed; its text is fit to show). Saves nothing."""
-    text = " ".join((text or "").split())
-    if not text:
-        raise SpeakError("Say or type what you want to change first.")
-    if len(text) > MAX_REQUEST:
-        raise SpeakError(f"Keep the request to {MAX_REQUEST} characters.")
+def load_day(session, day):
+    """The day as it is now (read_day) for a request about it; SpeakError when there is no open trip or the day has passed."""
     people = canvas.family_people(session)
     with ses.family(session) as fam:
         if fam is None or not fam.trip_id:
@@ -512,14 +507,37 @@ def propose(session, day, text) -> dict:
         ctx = read_day(session, fam, day, people)
     if ctx["past"]:
         raise SpeakError("That day has already passed. Pick today or a day to come.")
+    return ctx
+
+
+def ask_model(session, day, text):
+    """(ctx, the model's raw answer) for a request about one day. Raises SpeakError (nothing asked, too long, a past day) or ai.AIError. Saves nothing."""
+    text = " ".join((text or "").split())
+    if not text:
+        raise SpeakError("Say or type what you want to change first.")
+    if len(text) > MAX_REQUEST:
+        raise SpeakError(f"Keep the request to {MAX_REQUEST} characters.")
+    ctx = load_day(session, day)
     user = json.dumps({"day": context_for(ctx), "request": text}, ensure_ascii=False)
     answer = ai.call_json("speak", (session or {}).get("tenant_id", ""), SYSTEM, user, SCHEMA, name="day_change")
-    ops, dropped = validate(ctx, answer.get("ops"))
+    return ctx, answer
+
+
+def proposal_from(ctx, summary, raw_ops) -> dict:
+    """The checked proposal for operations (the model's, with any follow-up answers patched in). SpeakError when none of them is usable."""
+    ops, dropped = validate(ctx, raw_ops)
     if not ops:
         why = " ".join(dropped[:2])
         raise SpeakError("I could not turn that into a change to this day. Try saying it another way." + (f" ({why})" if why else ""))
-    summary = "" if any(o["op"] == "remove_plan" for o in ops) else _s(answer.get("summary"), MAX_SUMMARY)    # the list is authoritative: a sentence from the model could soften a removal
-    return {"day": day, "summary": summary, "ops": ops, "dropped": dropped, "changes": changes(ctx, ops), "token": fingerprint(ctx)}
+    summary = "" if any(o["op"] == "remove_plan" for o in ops) else _s(summary, MAX_SUMMARY)    # the list is authoritative: a sentence from the model could soften a removal
+    return {"day": ctx["day"], "summary": summary, "ops": ops, "dropped": dropped, "changes": changes(ctx, ops), "token": fingerprint(ctx)}
+
+
+def propose(session, day, text) -> dict:
+    """Ask the model what to change and return the checked proposal. Raises SpeakError (nothing asked, too long, a past day, nothing usable) or ai.AIError
+    (the model is off, busy, slow or failed; its text is fit to show). Saves nothing."""
+    ctx, answer = ask_model(session, day, text)
+    return proposal_from(ctx, answer.get("summary"), answer.get("ops"))
 
 
 # ---- applying ------------------------------------------------------------------------------------------------------------

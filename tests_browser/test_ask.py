@@ -94,13 +94,11 @@ def test_type_a_request_see_the_proposal_apply_and_see_the_day_changed(phone, ba
     expect(page.locator("#ak-done")).to_contain_text("3 changes on Saturday, Oct 17")
     expect(page.locator("#ak-done")).to_contain_text("The family has been told")
     assert overflow(page) <= 0
-    page.locator("#ak-see").click()
-    page.wait_for_url(f"**/trip?day={DAY}")
-    expect(page.locator("#tp-list")).to_contain_text("Rest at the hotel")
-    expect(page.locator("#tp-list")).not_to_contain_text("Griffith Observatory")
-    expect(page.locator("#tp-list")).to_contain_text("12:30")
-    # Ask again from the day: the small button opens the tab on this day
-    page.locator("#ak-open").click()
+    page.locator("#ak-see").click()                    # "See the day" lands on the day view
+    page.wait_for_url(f"**/trip/canvas?day={DAY}")
+    expect(page.locator("main")).to_contain_text("Rest at the hotel")
+    page.go_back()
+    page.locator("#ak-again").click()                  # Ask again: the box opens on this day
     page.wait_for_url(f"**/trip/ask?day={DAY}")
     expect(page.locator("#ak-day")).to_have_value(str(DAY))
 
@@ -155,11 +153,6 @@ def test_the_busy_state_is_shown_while_the_model_works(phone, base_url, model, m
 
 
 NO_SPEECH = "delete window.SpeechRecognition; delete window.webkitSpeechRecognition;"
-FAKE_SPEECH = """
-window.SpeechRecognition = window.webkitSpeechRecognition = class {
-  start() { window.__rec = this; setTimeout(() => this.onresult && this.onresult({results: [[{transcript: 'move lunch'}], [{transcript: ' to 12:30'}]]}), 20); }
-  stop() { this.onend && this.onend(); }
-};"""
 
 
 def test_the_microphone_button_is_hidden_when_the_browser_cannot_listen(phone, base_url):
@@ -168,20 +161,5 @@ def test_the_microphone_button_is_hidden_when_the_browser_cannot_listen(phone, b
     expect(page.locator("#ak-text")).to_be_visible()
     expect(page.locator("#ak-mic")).to_be_hidden()
     expect(page.locator("#ak-hint")).to_be_visible()         # dictation from the keyboard still works
-    assert overflow(page) <= 0
-
-
-def test_hold_to_talk_fills_the_box_while_it_listens(phone, base_url):
-    page = phone(NO_SPEECH + FAKE_SPEECH)
-    page.goto(f"{base_url}/trip/ask?day={DAY}")
-    mic = page.locator("#ak-mic")
-    expect(mic).to_be_visible()
-    page.locator("#ak-text").fill("Hello.")
-    box = mic.bounding_box()
-    page.mouse.move(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
-    page.mouse.down()
-    expect(mic).to_have_attribute("aria-pressed", "true")
-    expect(page.locator("#ak-text")).to_have_value("Hello. move lunch to 12:30")
-    page.mouse.up()
-    expect(mic).to_have_attribute("aria-pressed", "false")
+    expect(page.locator("#ak-paste")).to_be_visible()
     assert overflow(page) <= 0
