@@ -1,0 +1,53 @@
+/* Talk on the block (F-091): the small badge on a plan or part, a plan's chat, voice notes that play in place, and the recording bar.
+   Sizes are rem off the one root; text never goes under --text-min; touch targets are 2.75rem. Loaded after thread.css. */
+
+/* the badge: a bubble with a count (and a mic), or a quiet "+ chat" on a plan with nothing said yet */
+.pt-badge { display: inline-flex; align-items: center; justify-content: center; gap: 0.25rem; min-width: 2.75rem; min-height: 2.75rem; padding: 0 0.625rem; box-sizing: border-box; border-radius: var(--r-pill); background: var(--card); color: var(--ink); box-shadow: var(--shadow-sm); font-weight: 800; font-size: max(var(--text-min), 0.8125rem); text-decoration: none; flex-shrink: 0; }
+.pt-badge:hover { background: var(--bubble-tint); }
+.pt-badge:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.125rem; }
+.pt-badge-new { background: transparent; box-shadow: none; color: var(--ink-3); font-weight: 700; }
+.pt-n { font-variant-numeric: tabular-nums; }
+
+/* a plan's chat */
+.pt { padding-bottom: 0.5rem; }
+.pt .fp-back { align-self: flex-start; }
+.ft-on { display: inline-flex; align-items: center; gap: 0.25rem; margin-bottom: 0.125rem; font-size: max(var(--text-min), 0.8125rem); font-weight: 800; color: var(--grape-ink); text-decoration: none; overflow-wrap: anywhere; }
+.ft-me .ft-on { color: var(--grape-tint); }
+.ft-photo-link { display: block; }
+.pt-photo-btn { cursor: pointer; }
+.pt-photo-btn:focus-within { outline: 0.1875rem solid var(--ink); outline-offset: 0.125rem; }
+.pt-photo-btn.is-busy { opacity: 0.5; }
+.ft-round { width: 2.75rem; height: 2.75rem; flex-shrink: 0; border: 0; border-radius: var(--r-pill); background: var(--card); color: var(--ink); box-shadow: var(--shadow-sm); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.ft [hidden], .pt [hidden] { display: none !important; }
+
+/* a voice note that plays in place */
+.vn { display: flex; align-items: center; gap: 0.5rem; min-width: 11rem; max-width: 100%; }
+.vn-btn { width: 2.75rem; height: 2.75rem; flex-shrink: 0; border: 0; border-radius: var(--r-pill); background: var(--coral); color: var(--ink); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.vn.is-playing .vn-btn { background: var(--sun); }
+.vn-bar { flex: 1; min-width: 3rem; height: 0.375rem; border-radius: var(--r-pill); background: rgba(127, 127, 127, 0.3); overflow: hidden; }
+.vn-fill { display: block; height: 100%; width: 0; background: var(--coral); }
+.vn-len { font-weight: 800; font-size: max(var(--text-min), 0.8125rem); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.vn-audio { display: none; }
+
+/* the recording bar replaces the composer while recording */
+.pt-rec { position: sticky; z-index: 5; bottom: 0; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; padding: 0.5rem 0.75rem; border-radius: 1.375rem; background: var(--card); box-shadow: var(--shadow-sm); }
+.pt-dot { width: 0.875rem; height: 0.875rem; border-radius: var(--r-pill); background: #D92D20; flex-shrink: 0; }
+.pt-timer { font-weight: 800; font-size: max(var(--text-min), 1.125rem); font-variant-numeric: tabular-nums; }
+.pt-state { flex: 1; min-width: 5rem; font-weight: 700; font-size: max(var(--text-min), 0.8125rem); color: var(--ink-2); }
+.pt-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.375rem; min-height: 2.75rem; min-width: 2.75rem; padding: 0 1rem; border: 0; border-radius: var(--r-pill); font: inherit; font-weight: 800; font-size: max(var(--text-min), 0.9375rem); cursor: pointer; }
+.pt-cancel { background: var(--paper); color: var(--ink); }
+.pt-send { background: var(--coral); color: var(--ink); }
+.pt-btn:disabled { opacity: 0.5; cursor: default; }
+.pt-rec.is-full .pt-dot { background: var(--ink-3); }
+@media (max-width: 720px), (display-mode: standalone) {
+  .pt-rec { bottom: calc(var(--tabs-h) + env(safe-area-inset-bottom)); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .pt-rec:not(.is-full) .pt-dot { animation: pt-pulse 1.2s ease-in-out infinite; }
+  @keyframes pt-pulse { 50% { opacity: 0.35; } }
+}
+
+/* the canvas: where a plan's badge sits on its card */
+.pt-row { display: flex; justify-content: flex-end; }
+.pt-row:empty { display: none; }
+.cz-part-h .pt-badge { margin-left: auto; }
