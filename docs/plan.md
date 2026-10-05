@@ -546,3 +546,14 @@ Captain, 2026-10-05 (on the trip): Today is "very complicated… all I need to k
 Captain, 2026-10-05: searched for coffee on the Map and nothing came up. Live logs: POST /trip/map/around answered 503 (Overpass refused or timed out from Railway; a refusal also shut the door for 10 minutes). · Needs: none
 - [ ] when the main Overpass server refuses or is slow, the public mirrors are asked in turn within one 20-second budget, each with its own pacing and back-off; the privacy page names them
 - [ ] a coffee search on the live site returns places (checked after deploy)
+
+## F-093 Bookings open in place; filters; Help leaves the tab bar [doing]
+Captain, 2026-10-05: Help is not useful as its own tab; tap a hotel or flight on the itinerary for everything about it (passes too); a subtle filter (hotels, flights, chats…) instead of hunting for dates; fewer tabs, fewer clicks. · Needs: F-092
+- [ ] a booking line opens a sheet in place with all Help showed for it (hotel, flight with passes, car); the week's bookings too
+- [ ] a subtle filter row (All · Plans · Hotels · Flights · Car · Chats) on the week and the day
+- [ ] Help leaves the tab bar; an SOS sheet (911, hotel, rental counter, family phones) is always one tap away; the morning plan and Face ID cards keep a quiet home
+- [ ] phone checks and a browser test pressing every new button
+
+## F-094 The family chat, lighter and instant [doing]
+Captain, 2026-10-05: keep the family chat, but the chat/photos switch must be small, and a sent bubble should appear at once and fade in so the delay is not felt. · Needs: none
+- [ ] a small, quiet chat/photos switch; a sent message shows at once (fading in), confirmed quietly, a failed one offers Retry without losing the text; poll items fade in; plan chats behave the same
