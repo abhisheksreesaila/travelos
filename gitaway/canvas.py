@@ -8,7 +8,7 @@
     block(session, act_id), block_ids(session), set_done(...), set_aside(...)   reading and ticking what was saved
     move_step(...), restore(...), add_step(...), set_note(...), same_step(...), list_hits(...)   moving, adding and annotating steps by touch (F-082)
 
-A draft is: days[{label, place, parts[{name, time_of_day, steps[{title, time, who_raw[], note, kind}]}]}], set_aside[{title, reason, day}],
+A draft is: days[{label, place, date, parts[{name, time_of_day, steps[{title, time, who_raw[], note, kind}]}]}], set_aside[{title, reason, day}],
 lists[{name, items[{title, note}]}], initials[], notes_kept[], merged_repeats. The model answers to SCHEMA (a strict JSON schema); `clean` then
 checks every field and caps every size, so neither a confused model nor a doctored form can store more than the limits below.
 
@@ -53,7 +53,7 @@ def _text(null=False):
 
 SCHEMA = _obj({
     "days": {"type": "array", "items": _obj({
-        "label": _text(), "park_or_place": _text(),
+        "label": _text(), "park_or_place": _text(), "date": _text(True),
         "parts": {"type": "array", "items": _obj({
             "name": _text(), "time_of_day": _text(True),
             "steps": {"type": "array", "items": _obj({
@@ -69,7 +69,9 @@ SYSTEM = """You turn a family's pasted text messages about their trip into a str
 
 Rules:
 - One entry in days for each park or place (the text may mix two parks in one stream with no dates; start a new day when the park changes). label is the heading the family used; park_or_place is the park's proper name.
+- date is the day's date as YYYY-MM-DD when the text says which day it is (a date or a weekday, using the trip days given at the top), else null. Never guess a date.
 - Inside a day, parts are the areas or stretches in the order written (for example Lower Lot, Lunch, Upper Lot). A part for a meal may have no steps. time_of_day is Morning, Afternoon, Evening or a time the text gives, else null.
+- Times the text gives (for example "Mario Kart at 10:30" or "lunch 12") go in the step's time as 24-hour HH:MM, exactly as written; a part's time_of_day may be a time too. Never invent a time.
 - Each ride, show, meal or meet-up is a step. Keep the family's own words. Normalise ride names lightly (for example "Fast and furious" becomes "Fast & Furious - Supercharged") only when you are confident which ride it is; when you change a name, say what the family wrote in the note. Never invent a ride or a time that is not in the text.
 - Words in brackets and comments after a ride ("roughest ride", "main!!!", "lamp side", "H and B walk") are the step's note; keep the wording.
 - People appear as initials or names (H, B, R&A, Sam). Put them in who_raw of the steps they belong to, exactly as written, one entry per person (split "R&A" into "R" and "A"). Never guess who they are. List every one in initials_found.
@@ -106,6 +108,14 @@ def _who_tokens(raw) -> list:
     return out[:MAX_WHO]
 
 
+def _iso(value) -> str:
+    """A YYYY-MM-DD date or ""."""
+    try:
+        return datetime.strptime(_s(value, 10), "%Y-%m-%d").date().isoformat()
+    except ValueError:
+        return ""
+
+
 def _list(value):
     return value if isinstance(value, list) else []
 
@@ -136,7 +146,7 @@ def clean(raw) -> dict:
                 parts.append({"name": name or "Plan", "time_of_day": _s(p.get("time_of_day"), 30), "steps": steps})
         place = _s(d.get("park_or_place") or d.get("place"), cal.MAX_TITLE) or _s(d.get("label"), cal.MAX_TITLE)
         if place and parts:
-            days.append({"label": _s(d.get("label"), 60), "place": place, "parts": parts})
+            days.append({"label": _s(d.get("label"), 60), "place": place, "date": _iso(d.get("date")), "parts": parts})
     aside = []
     for a in _list(raw.get("set_aside"))[:MAX_ASIDE]:
         a = a if isinstance(a, dict) else {}
@@ -180,15 +190,17 @@ def empty(draft) -> bool:
 
 # ---- converting ----------------------------------------------------------------------------------------------------------
 
-def convert(session, text) -> dict:
+def convert(session, text, trip_days=None) -> dict:
     """Read pasted messages with the model and return the cleaned draft. Raises CanvasError (nothing pasted, too long, nothing found) or ai.AIError
-    (the model is off, slow or failed; its text is fit to show). Nothing is saved."""
+    (the model is off, slow or failed; its text is fit to show). Nothing is saved. `trip_days` (["2026-10-16 Friday", ...]) is shown to the model above the
+    text so it can say which date a day is."""
     text = (text or "").replace("\r\n", "\n").strip()
     if not text:
         raise CanvasError("Paste the messages first.")
     if len(text) > MAX_TEXT:
         raise CanvasError(f"That is a lot of text. Paste up to {MAX_TEXT:,} characters at a time.")
-    draft = clean(ai.call_json("convert", (session or {}).get("tenant_id", ""), SYSTEM, text, SCHEMA, name="trip_plan"))
+    shown = f"Trip days: {', '.join(trip_days)}\n\nMessages:\n{text}" if trip_days else text
+    draft = clean(ai.call_json("convert", (session or {}).get("tenant_id", ""), SYSTEM, shown, SCHEMA, name="trip_plan"))
     if empty(draft):
         raise CanvasError("We could not find a park day or a list in that text. Check it, or add more of the messages.")
     return draft
