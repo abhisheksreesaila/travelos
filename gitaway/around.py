@@ -4,7 +4,7 @@
     open_now(spec, now) -> True | False | None                            OpenStreetMap's opening_hours, for the common forms
     vegetarian(session), set_vegetarian(session, on)                       the family's food preference (family_prefs)
 
-Where the places come from: the Overpass API (https://overpass-api.de/api/interpreter, then the public mirrors in MIRRORS when it refuses or is slow, F-095), one GET per (category, rounded point, radius), at most one
+Where the places come from: the Overpass API (https://overpass-api.de/api/interpreter), one GET per (category, rounded point, radius), at most one
 request every two seconds for the whole process, GitAway's User-Agent, a short timeout, and ten minutes of silence after a 429 or 403 (the same etiquette
 and the same `geo.Gate` as the geocoder). Answers are kept in this process for 30 minutes under (category, point rounded to ~110 m, radius), so a second
 person standing at the same spot costs nothing. Tests never reach Overpass: they replace `geo.fetch` (the one function that does a GET).
@@ -25,14 +25,10 @@ from urllib.parse import quote
 
 from gitaway import ai, familydb, geo, session as ses
 
-MIRRORS = ("https://overpass-api.de/api/interpreter?data={q}",            # F-095: the main server often refuses or is slow from a cloud host,
-           "https://overpass.kumi.systems/api/interpreter?data={q}",       # so the public mirrors are asked in turn
-           "https://overpass.private.coffee/api/interpreter?data={q}")
-OVERPASS = MIRRORS[0]
+OVERPASS = "https://overpass-api.de/api/interpreter?data={q}"
 WALK_M, DRIVE_M = 1500, 8000
 RADIUS = {"walk": WALK_M, "drive": DRIVE_M}
-TIMEOUT = 9          # seconds one mirror may take (the query itself asks the server for 8)
-BUDGET = 20          # seconds all the mirrors together may take for one search
+TIMEOUT = 9          # seconds a call to Overpass may take (the query itself asks the server for 8)
 GAP = 2.0            # seconds between two calls to Overpass, whole process
 TTL = 30 * 60        # seconds a result is kept
 CACHE_MAX = 200
@@ -42,8 +38,7 @@ WALK_M_PER_MIN, DRIVE_M_PER_MIN = 80, 600   # about 3 mph on foot, 22 mph in tow
 ROUND = 3            # decimals of a degree kept for the query and the cache (about 110 m)
 
 _clock = time.monotonic
-GATES = tuple(geo.Gate(GAP) for _ in MIRRORS)   # each mirror is paced, and left alone after it refuses us, on its own
-GATE = GATES[0]
+GATE = geo.Gate(GAP)
 _cache: dict = {}
 _lock = threading.Lock()
 
@@ -170,23 +165,15 @@ def places_near(cat, lat, lon, radius, pref=True) -> list:
     got = _get(key)
     if got is not None:
         return got
-    query = quote(build_query(cat, lat, lon, radius, pref), safe="")
-    budget = geo._clock() + BUDGET   # the gates count in the geocoder's clock
-    answer, last = None, None
-    for mirror, gate in zip(MIRRORS, GATES):     # F-095: the first mirror that answers wins; one that refuses or is slow hands over to the next
-        deadline = min(budget, geo._clock() + TIMEOUT)
-        if not gate.wait(deadline):
-            continue
-        try:
-            got = geo._call(mirror.format(q=query), gate, deadline)
-        except Exception as e:  # noqa: BLE001 - whatever the service did, the next mirror is asked
-            last = e
-            continue
-        if isinstance(got, dict) and "elements" in got:
-            answer = got
-            break
-    if answer is None:
-        raise AroundError(NO_PLACES) from last
+    deadline = geo._clock() + TIMEOUT   # the gate counts in the geocoder's clock
+    if not GATE.wait(deadline):
+        raise AroundError(NO_PLACES)
+    try:
+        answer = geo._call(url_for(build_query(cat, lat, lon, radius, pref)), GATE, deadline)
+    except Exception as e:  # noqa: BLE001 - whatever the service did, the person gets one sentence
+        raise AroundError(NO_PLACES) from e
+    if not isinstance(answer, dict) or "elements" not in answer:
+        raise AroundError(NO_PLACES)
     places = parse(answer, cat)
     _put(key, places)
     return places
