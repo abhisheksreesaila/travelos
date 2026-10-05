@@ -117,6 +117,13 @@ def default_day(session) -> int:
     return n if ph == "during" else (0 if ph == "before" else (t.return_ - t.depart).days)
 
 
+def is_past(session, day) -> bool:
+    """Has trip day `day` already passed (today counts as not passed)?"""
+    t = cal.trip("", ses.booking(session))
+    ph, n = td.phase(t, catalog.today_in(ses.trip_zone(session)))
+    return ph == "after" or (ph == "during" and day < n)
+
+
 def day_index(session, value) -> int:
     """`value` as a day of the open trip: ValueError when it is not one."""
     n = (cal.trip("", ses.booking(session)).return_ - cal.trip("", ses.booking(session)).depart).days + 1

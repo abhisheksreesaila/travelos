@@ -19,7 +19,7 @@ gitaway.ai (jobs "speak" and "convert", docs/ai-usage.md). A long text is a plan
 import json
 from datetime import datetime, timedelta
 
-from gitaway import canvas, session as ses, speak, tripcal as cal
+from gitaway import canvas, familythread, session as ses, speak, tripcal as cal
 
 LIMIT = canvas.MAX_TEXT
 SLOTS = ("09:00", "12:00", "15:00", "18:00")
@@ -74,6 +74,8 @@ def start(session, text, day) -> dict:
     text = _clean_text(text)
     if route(text) == "plan":
         return _start_plan(session, text, day)
+    if day is None and speak.today_index(session) is not None:
+        day = speak.default_day(session)       # on the trip: a short change is about today; the preview names the day and "Change it" can fix a wrong guess
     if day is None:
         return {"state": {"kind": "need_day"}, "questions": [_day_question(session)]}
     return _start_change(session, text, day)
@@ -163,27 +165,44 @@ def _settle_change(session, state, ctx=None) -> dict:
 
 # ---- a plan ----------------------------------------------------------------------------------------------------------------------
 
-def _pin(draft, day) -> dict:
-    """Everything on one day: the draft's days become one (the first park's name, all the parts in order, capped; the set-aside items go with it)."""
+def _pin(draft, day):
+    """Everything on one day: the draft's days become one (the first park's name, all the parts in order, capped; the set-aside items go with it).
+    Returns (draft, the names of the parts that did not fit)."""
     days = draft["days"]
     if len(days) <= 1:
-        return draft
-    merged = {"label": days[0]["label"], "place": days[0]["place"], "date": "", "parts": [p for d in days for p in d["parts"]][: canvas.MAX_PARTS]}
-    return canvas.clean({**draft, "days": [merged], "set_aside": [dict(a, day=0) for a in draft["set_aside"]]})
+        return draft, []
+    every = [p for d in days for p in d["parts"]]
+    merged = {"label": days[0]["label"], "place": days[0]["place"], "date": "", "parts": every[: canvas.MAX_PARTS]}
+    cut = [p["name"] for p in every[canvas.MAX_PARTS:]]
+    return canvas.clean({**draft, "days": [merged], "set_aside": [dict(a, day=0) for a in draft["set_aside"]]}), cut
+
+
+def _passed(session, days):
+    """SayError when any of these trip days has already passed (today is fine)."""
+    if any(isinstance(d, int) and speak.is_past(session, d) for d in days):
+        raise SayError("That day has already passed. Pick today or a day to come.")
 
 
 def _start_plan(session, text, day) -> dict:
+    if day is not None:
+        _passed(session, [day])
     t = _trip(session)
     shown = [f"{(t.depart + timedelta(days=i)).isoformat()} {(t.depart + timedelta(days=i)).strftime('%A')}" for i in range((t.return_ - t.depart).days + 1)]
     draft = canvas.convert(session, text, trip_days=shown)
+    cut = []
     if day is not None:
-        draft = _pin(draft, day)
-    state = {"kind": "plan", "draft": draft, "days": [day] * len(draft["days"]) if day is not None else [None] * len(draft["days"]), "pinned": day is not None, "who": {}}
+        draft, cut = _pin(draft, day)
+    days = [day] * len(draft["days"]) if day is not None else [None] * len(draft["days"])
+    if day is None:
+        dated = _dated(session, draft)
+        if None not in dated and len(set(dated)) == len(dated) and not any(speak.is_past(session, i) for i in dated):
+            days = dated        # every park's date was read from the text and is inside the trip: no question, the preview shows the days
+    state = {"kind": "plan", "draft": draft, "days": days, "pinned": day is not None, "who": {}, "cut": cut}
     return _settle_plan(session, state, text)
 
 
-def _suggested_days(session, draft) -> list:
-    """A day for each park: the date the model read, else the next free day in order from today (or the trip's first day)."""
+def _dated(session, draft) -> list:
+    """The trip day of each park's date as the model read it, None where there is no date or it is outside the trip."""
     t = _trip(session)
     n = (t.return_ - t.depart).days + 1
     out = []
@@ -193,6 +212,13 @@ def _suggested_days(session, draft) -> list:
         except ValueError:
             idx = -1
         out.append(idx if 0 <= idx < n else None)
+    return out
+
+
+def _suggested_days(session, draft) -> list:
+    """A day for each park: the date the model read (unless it has passed), else the next free day in order from today (or the trip's first day)."""
+    n = len(_days(session))
+    out = [None if i is not None and speak.is_past(session, i) else i for i in _dated(session, draft)]
     free = [i for i in list(range(speak.default_day(session), n)) + list(range(0, speak.default_day(session))) if i not in out]
     return [v if v is not None else (free.pop(0) if free else 0) for v in out]
 
@@ -235,8 +261,20 @@ def _plan_preview(session, state) -> dict:
         areas = sum(1 for p in d["parts"] if p["steps"])
         after = f"{cal.fmt_time(canvas.DAY_START)}–{cal.fmt_time(canvas.DAY_END)} · {_plural(areas, 'area', 'areas')}, {_plural(steps, 'ride or show', 'rides and shows')}"
         chip = {"kind": "new", "label": d["place"], "before": "", "after": after, "warn": "", "detail": _areas(d)}
+        old = canvas.existing_park(session, days[i], d["place"]) if isinstance(days[i], int) else []
+        if old:         # the park is already on that day: what is new is added to it
+            added = canvas.merge_plan(old, d["parts"])
+            new_steps = sum(len(m["steps"]) for m in added)
+            if not added:
+                chip.update(kind="changed", after="Nothing new", warn="Everything in this is already on that day. Apply will not add it again.")
+            else:
+                new_parts = [m["part"]["name"] for m in added if m["into"] is None]
+                chip.update(kind="changed", after=f"Adds {_plural(len(new_parts), 'area', 'areas')} and {_plural(new_steps, 'ride or show', 'rides and shows')} to what is already there",
+                            detail=", ".join(new_parts + [f"more in {m['part']['name']}" for m in added if m["into"] is not None]), before="")
         groups.setdefault(days[i], []).append(chip)
     tidy = []
+    if state.get("cut"):
+        tidy.append(f"{_plural(len(state['cut']), 'part', 'parts')} did not fit on one day and {'was' if len(state['cut']) == 1 else 'were'} left out: " + ", ".join(state["cut"]) + ".")
     if draft["merged_repeats"]:
         tidy.append(f"Merged {_plural(draft['merged_repeats'], 'repeated item', 'repeated items')}. It was sent twice.")
     if draft["set_aside"]:
@@ -261,8 +299,9 @@ def _check_plan(state):
     if not draft or canvas.empty(draft) or not isinstance(days, list) or len(days) != len(draft["days"]):
         raise SayError("That plan was lost. Ask again.")
     who = state.get("who") if isinstance(state.get("who"), dict) else {}
+    cut = state.get("cut") if isinstance(state.get("cut"), list) else []
     return {"kind": "plan", "draft": draft, "days": [d if isinstance(d, int) and not isinstance(d, bool) else None for d in days], "pinned": bool(state.get("pinned")),
-            "who": {str(k)[:40]: str(v)[:60] for k, v in who.items()}}
+            "who": {str(k)[:40]: str(v)[:60] for k, v in who.items()}, "cut": [str(x)[:60] for x in cut][:60]}
 
 
 # ---- answering -------------------------------------------------------------------------------------------------------------------
@@ -295,6 +334,10 @@ def answer(session, state, answers, text="") -> dict:
                 state["who"][key[4:]] = value
         if not state["pinned"] and (any(d is None for d in state["days"]) or len(set(state["days"])) != len(state["days"])):
             raise SayError("Pick a different day for each park.", {"state": state, "questions": _plan_questions(session, state, text, again=True)})
+        try:
+            _passed(session, state["days"])
+        except SayError as e:
+            raise SayError(str(e), {"state": state, "questions": _plan_questions(session, state, text, again=True)})
         return _settle_plan(session, state, text)
     raise SayError("That was lost. Ask again.")
 
@@ -310,6 +353,13 @@ def apply(session, state, token, trip) -> dict:
         state = _check_plan(state)
         if any(d is None for d in state["days"]):
             raise SayError("Pick a day for each park.")
+        _passed(session, state["days"])
+        with ses.family(session) as fam:
+            try:
+                if fam is not None:
+                    familythread._check(fam, trip)
+            except familythread.ThreadError as e:
+                raise SayError(str(e))
         try:
             done = canvas.save(session, state["draft"], {"who": state["who"], "days": state["days"], "list_for": []})
         except canvas.CanvasError as e:
