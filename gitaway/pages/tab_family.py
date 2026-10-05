@@ -73,6 +73,8 @@ def item_view(it, me, zone, labels=None):
     carries a tag naming it when `labels` ({(plan, part): label}) is given (the Family tab; the plan's own chat does not repeat it)."""
     at = _clock(it["at"], zone)
     base = {"data_n": str(it["n"]), "data_kind": it["kind"]}
+    if it["payload"].get("cid"):
+        base["data_cid"] = it["payload"]["cid"]
     if it["kind"] == "change":
         action = it["payload"].get("action", "change")
         return Div(Span(icon(_ICONS.get(action, "note"), 18, 2.2), cls="ft-si", aria_hidden="true"),
@@ -173,12 +175,12 @@ def register(app):
         return _new_items(session, since, trip) if _signed_in(session) else Response(status_code=401)
 
     @app.post("/trip/family/message")
-    def message(request, session, text: str = "", since: int = 0, trip: str = ""):
+    def message(request, session, text: str = "", since: int = 0, trip: str = "", cid: str = ""):
         if not _signed_in(session):
             return Response("Sign in first.", status_code=401)
         wants_fragment = request.headers.get("x-fragment") == "1"
         try:
-            familythread.post_message(session, text, trip=trip or None)
+            familythread.post_message(session, text, trip=trip or None, cid=cid)
         except familythread.StaleTrip:
             return PlainTextResponse(STALE, status_code=409) if wants_fragment else RedirectResponse("/trip/family", status_code=303)
         except familythread.ThreadError as e:

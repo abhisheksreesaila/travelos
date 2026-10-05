@@ -159,11 +159,11 @@ def register(app):
         return _new(session, act, part, since, trip) if _signed_in(session) else Response(status_code=401)
 
     @app.post("/trip/talk/message")
-    def message(request, session, act: str = "", part: str = "", text: str = "", since: int = 0, trip: str = ""):
+    def message(request, session, act: str = "", part: str = "", text: str = "", since: int = 0, trip: str = "", cid: str = ""):
         if not _signed_in(session):
             return Response("Sign in first.", status_code=401)
         try:
-            plantalk.post_message(session, act, part, text, trip=trip or None)
+            plantalk.post_message(session, act, part, text, trip=trip or None, cid=cid)
         except familythread.ThreadError as e:
             return _done(request, session, act, part, since, trip, str(e), _known(e))
         return _done(request, session, act, part, since, trip)

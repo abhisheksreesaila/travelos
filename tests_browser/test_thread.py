@@ -209,12 +209,72 @@ def test_a_failed_send_says_so_keeps_the_text_and_retry_sends_it(pair):
     expect(bubble).to_contain_text("Not sent")
     retry = bubble.get_by_role("button", name="Retry")
     expect(retry).to_be_visible()
+    expect(ari.locator("#ft-compose ~ .sr-only[role=status], #ft-thread ~ .sr-only[role=status]")).to_contain_text("Message not sent")   # spoken too
     assert retry.bounding_box()["height"] >= 43.9
     ari.unroute("**/trip/family/message")
     retry.click()
-    expect(bubble).not_to_contain_text("Not sent")
-    expect(ari.locator("#ft-thread .ft-me .ft-bub")).to_have_count(1)
+    expect(ari.locator("#ft-thread .is-failed, #ft-thread .is-sending")).to_have_count(0)
+    expect(ari.locator("#ft-thread .ft-msg")).to_have_count(1)
+    expect(ari.locator("#ft-thread .ft-me")).to_contain_text("Meet at the gate")
+    assert ari.evaluate("document.activeElement.id") == "ft-text"
+
+
+def test_retry_after_a_lost_reply_is_one_message(pair):
+    ari, mate = pair()
+    ari.route("**/trip/family/message", lambda route: (route.fetch(), route.abort())[1])   # the server saves it, the reply never comes back
+    ari.locator("#ft-text").fill("Saved but unheard")
+    ari.locator("#ft-send").click()
+    expect(ari.locator("#ft-thread .is-failed")).to_have_count(1)
+    ari.unroute("**/trip/family/message")
+    ari.locator("#ft-thread .ft-retry").click()
+    expect(ari.locator("#ft-thread .is-failed, #ft-thread .is-sending")).to_have_count(0)
+    expect(ari.locator("#ft-thread .ft-msg")).to_have_count(1)
+    ari.wait_for_timeout(5600)                                                              # a poll later: still one, here and for the other
     assert ari.locator("#ft-thread .ft-msg").count() == 1
+    expect(mate.locator("#ft-thread .ft-msg")).to_have_count(1, timeout=9000)
+
+
+def test_a_poll_that_brings_my_own_message_replaces_the_failed_bubble(pair):
+    ari, _ = pair()
+    ari.route("**/trip/family/message", lambda route: (route.fetch(), route.abort())[1])
+    ari.locator("#ft-text").fill("Heard by the poll")
+    ari.locator("#ft-send").click()
+    expect(ari.locator("#ft-thread .is-failed")).to_have_count(1)
+    expect(ari.locator("#ft-thread .is-failed")).to_have_count(0, timeout=9000)             # the next poll swaps in the real one
+    expect(ari.locator("#ft-thread .ft-msg")).to_have_count(1)
+
+
+def test_a_request_that_never_answers_ends_as_a_failed_send_and_the_chat_goes_on(pair):
+    ari, mate = pair()
+    ari.evaluate("document.getElementById('ft-thread').setAttribute('data-send-timeout', '800')")
+    ari.route("**/trip/family/message", lambda route: None)                                  # never answered
+    ari.locator("#ft-text").fill("Into the void")
+    ari.locator("#ft-send").click()
+    expect(ari.locator("#ft-thread .is-failed")).to_have_count(1, timeout=4000)
+    mate.locator("#ft-text").fill("Still here")
+    mate.locator("#ft-send").click()
+    expect(ari.locator("#ft-thread .ft-msg").filter(has_text="Still here")).to_have_count(1, timeout=9000)   # polls were not frozen
+
+
+def test_two_quick_sends_keep_their_order_when_confirmed(pair):
+    ari, _ = pair()
+    ari.route("**/trip/family/message", lambda route: (ari.wait_for_timeout(500), route.continue_())[1])
+    for word in ("Alpha", "Bravo"):
+        ari.locator("#ft-text").fill(word)
+        ari.locator("#ft-send").click()
+    expect(ari.locator("#ft-thread .is-sending")).to_have_count(0, timeout=6000)
+    assert ari.locator("#ft-thread .ft-msg").all_inner_texts()[0].count("Alpha") == 1
+    assert ari.locator("#ft-thread .ft-msg").all_inner_texts()[1].count("Bravo") == 1
+
+
+def test_a_refused_message_goes_back_to_the_box_with_the_reason(pair):
+    ari, _ = pair()
+    ari.evaluate("document.getElementById('ft-text').removeAttribute('maxlength')")
+    ari.locator("#ft-text").fill("x" * 700)
+    ari.locator("#ft-send").click()
+    expect(ari.locator("#ft-error")).to_contain_text("Keep messages to")
+    expect(ari.locator("#ft-thread .ft-msg")).to_have_count(0)
+    assert ari.locator("#ft-text").input_value() == "x" * 700 and ari.evaluate("document.activeElement.id") == "ft-text"
 
 
 def test_new_bubbles_fade_in_unless_motion_is_reduced(pair):

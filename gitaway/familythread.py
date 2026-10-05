@@ -75,12 +75,25 @@ def items(session, since=0, limit=SHOWN, trip=None) -> list:
 
 # ---- writing what people do ------------------------------------------------------------------------------------------------
 
-def _insert(db, trip_id, kind, author, name, text, payload=None):
+def clean_cid(cid) -> str:
+    """A client's id for one send (F-094), kept only when it is a short plain token."""
+    cid = str(cid or "")
+    return cid if 6 <= len(cid) <= 40 and cid.isalnum() else ""
+
+
+def _insert(db, trip_id, kind, author, name, text, payload=None, cid=""):
+    """Add an item; True when it was added. With a client id (F-094), a send this person already made on this trip is not added again."""
+    cid = clean_cid(cid)
+    if cid:
+        payload = {**(payload or {}), "cid": cid}
+        if familydb.rows(db, "SELECT 1 FROM thread WHERE trip_id = :t AND author = :a AND payload LIKE :p LIMIT 1", t=trip_id, a=author, p=f'%"cid":"{cid}"%'):
+            return False
     familydb.run(db, "INSERT INTO thread (id, trip_id, kind, author, author_name, text, payload, created_at) VALUES (:i, :t, :k, :a, :n, :x, :p, :c)",
                  i=uuid.uuid4().hex, t=trip_id, k=kind, a=author, n=name, x=text, p=json.dumps(payload, separators=(",", ":")) if payload else "", c=familydb.now())
+    return True
 
 
-def post_message(session, text, trip=None):
+def post_message(session, text, trip=None, cid=""):
     """Write a message to the thread of the open trip (any member, viewers too) and tell the family. Raises ThreadError."""
     from gitaway import session as ses
     text = " ".join((text or "").split())
@@ -94,8 +107,9 @@ def post_message(session, text, trip=None):
         _check(fam, trip)
         name, trip_id, me = first_name(fam.traveler), fam.trip_id, fam.traveler.id
         with familydb.transaction(fam.db):
-            _insert(fam.db, trip_id, "message", me, name, text)
-    announce(session, trip_id, name, _safe(text), exclude=me)
+            added = _insert(fam.db, trip_id, "message", me, name, text, cid=cid)
+    if added:
+        announce(session, trip_id, name, _safe(text), exclude=me)
 
 
 def post_photo(session, url, caption="", extra=None, push="Shared a photo"):
