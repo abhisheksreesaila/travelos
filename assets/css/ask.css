@@ -6,16 +6,24 @@
 .ak-field { display: flex; flex-direction: column; gap: 0.375rem; }
 .ak-label { font-size: max(var(--text-min), 0.8125rem); font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); margin: 0; }
 #ak-day { min-height: 3rem; padding: 0 0.875rem; border: 0.125rem solid var(--line); border-radius: 1rem; background: var(--card); color: var(--ink); font-family: var(--font-body); font-size: 1rem; font-weight: 700; }
-#ak-text { width: 100%; min-height: 9rem; padding: 0.875rem 1rem; border: 0.125rem solid var(--line); border-radius: 1.25rem; background: var(--card); color: var(--ink); font-family: var(--font-body); font-size: 1.125rem; line-height: 1.45; resize: vertical; }
+#ak-text { width: 100%; min-height: 9rem; padding: 0.875rem 1rem; border: 0.125rem solid var(--line); border-radius: 1.25rem; background: var(--card); color: var(--ink); font-family: var(--font-body); font-size: 1.125rem; line-height: 1.45; resize: none; overflow-y: auto; }
 #ak-day:focus-visible, #ak-text:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.125rem; }
-.ak-microw { display: flex; align-items: center; gap: 0.75rem; }
-.ak-microw:not(:has(.ak-mic:not([hidden]))) { display: none; }
-.ak-mic { gap: 0.5rem; min-height: 3.5rem; flex: 0 0 auto; touch-action: none; user-select: none; -webkit-user-select: none; }
+/* talk and paste: two big buttons side by side (paste alone where the browser cannot listen); ?mode=paste puts Paste first and makes it the bright one */
+.ak-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 0.625rem; }
+.ak-inputs:has(.ak-mic[hidden]) { grid-template-columns: 1fr; }
+.ak-mic, .ak-paste { gap: 0.5rem; min-height: 4rem; font-size: 1.125rem; width: 100%; justify-content: center; user-select: none; -webkit-user-select: none; }
 .ak-mic[hidden] { display: none; }
+.ak-form[data-mode="paste"] .ak-paste { order: -1; background: var(--coral); color: var(--ink); box-shadow: 0 0 0 0.125rem var(--ink); }
+.ak-form[data-mode="talk"] .ak-mic { background: var(--coral); color: var(--ink); box-shadow: 0 0 0 0.125rem var(--ink); }
+.ak-count { margin: 0; text-align: right; font-weight: 700; font-size: max(var(--text-min), 0.875rem); color: var(--ink-2); }
+.ak-count[hidden] { display: none; }
+.ak-count.is-over { color: var(--coral-deep); font-weight: 800; text-align: left; }
 .ak-mic[aria-pressed="true"] { background: var(--coral); color: var(--ink); box-shadow: 0 0 0 0.1875rem var(--ink); }
 .ak-mic-status { font-weight: 700; font-size: max(var(--text-min), 0.875rem); color: var(--ink-2); }
 .ak-hint, .ak-fine { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin: 0; font-weight: 700; font-size: max(var(--text-min), 0.875rem); color: var(--ink-2); text-align: center; }
-.ak-progress { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin: 0; padding: 0.75rem; border-radius: 1rem; background: var(--sun-tint); font-weight: 800; }
+.ak-progress { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.25rem 0.5rem; margin: 0; padding: 0.75rem; border-radius: 1rem; background: var(--sun-tint); font-weight: 800; }
+.ak-progress-note { flex-basis: 100%; text-align: center; font-weight: 700; font-size: max(var(--text-min), 0.875rem); color: var(--ink-2); }
+.ak-elapsed { font-variant-numeric: tabular-nums; color: var(--ink-2); }
 .ak-progress[hidden] { display: none; }
 .ak-go { width: 100%; min-height: 3.5rem; font-size: 1.125rem; gap: 0.5rem; }
 .ak-go[disabled] { opacity: 0.6; cursor: progress; }
@@ -57,3 +65,23 @@
 @media (prefers-reduced-motion: no-preference) { .ak-mic[aria-pressed="true"] { animation: ak-pulse 1.2s ease-in-out infinite; } }
 @keyframes ak-pulse { 50% { box-shadow: 0 0 0 0.375rem var(--accent-tint); } }
 .ak-warn { display: flex; align-items: center; gap: 0.375rem; font-weight: 800; font-size: max(var(--text-min), 0.875rem); color: var(--coral-deep); }
+
+/* the follow-up questions: chips with the suggested answer already chosen (one tap to change) */
+.ak-qhead { display: flex; flex-direction: column; gap: 0.25rem; }
+.ak-left { justify-content: flex-start; text-align: left; }
+.ak-q { border: 0; margin: 0; min-width: 0; }
+.ak-q legend { padding: 0; font-family: var(--font-display); font-weight: 800; font-size: 1.0625rem; margin-bottom: 0.5rem; }
+.ak-why { font-size: max(var(--text-min), 0.875rem); }
+.ak-opts { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.ak-opt { position: relative; display: inline-flex; align-items: center; gap: 0.375rem; min-height: 3rem; padding: 0 1rem; border-radius: var(--r-pill); background: var(--paper); box-shadow: inset 0 0 0 0.125rem var(--ink-3); font-weight: 800; cursor: pointer; }
+.ak-opt input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.ak-opt:has(input:checked) { background: var(--ink); color: #FFFFFF; box-shadow: none; }
+.ak-opt:has(input:focus-visible) { outline: 0.1875rem solid var(--coral); outline-offset: 0.125rem; }
+.ak-sug { font-weight: 700; font-size: max(var(--text-min), 0.8125rem); opacity: 0.85; }
+#ak-continue, #ak-change-text { margin-top: 0.25rem; }
+
+/* the preview, day by day */
+.ak-days { display: flex; flex-direction: column; gap: 0.875rem; }
+.ak-day { display: flex; flex-direction: column; gap: 0.5rem; }
+.ak-dayh { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 1rem; letter-spacing: -0.01em; }
+.ak-detail { margin: 0; font-weight: 600; font-size: max(var(--text-min), 0.875rem); color: var(--ink-2); overflow-wrap: anywhere; }
