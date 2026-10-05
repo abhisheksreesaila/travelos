@@ -136,7 +136,8 @@ def test_the_canvas_shows_a_small_badge_and_a_quiet_start_on_plain_plans_only(tr
     html = unescape(trip.get(f"/trip/canvas?day={day}").text)
     assert html.count("pt-badge-new") >= 1 and f"/trip/talk?act={stroll}" in html           # "+ chat" on the plain plan's card
     park = unescape(trip.get(f"/trip/canvas?day={uni_day}").text)
-    assert f"/trip/talk?act={act}" in park and f"part={lunch}" not in park                    # no chat badge on a part until something was said
+    m = re.search(r'<a [^>]*href="/trip/talk\?act=%s&part=%s[^"]*"[^>]*>' % (act, lunch), park)
+    assert m and "pt-badge-part" in m.group(0) and "Start a chat about this part" in m.group(0)     # a quiet bubble on a part, so a chat can start there
     plantalk.post_message(ari, act, lunch, "yes")
     plantalk.post_voice(ari, act, lunch, voice(), 3)
     plantalk.post_message(ari, stroll, "", "hi")

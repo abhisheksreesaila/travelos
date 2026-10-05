@@ -47,6 +47,8 @@ def test_the_kind_comes_from_the_first_bytes_not_the_name_or_claimed_type():
     assert [voicenotes.kind_of(voice(k)) for k in ("webm", "mp4", "ogg")] == ["webm", "mp4", "ogg"]
     for bad in (b"RIFF....WAVEfmt ", b"ID3\x03\x00", b"%PDF-1.7", b"<svg/>", b"MZ\x90\x00", image("jpeg"), image("heic"), b"\x00\x00"):
         assert voicenotes.kind_of(bad) is None
+    for brand in (b"avif", b"avis", b"qt  "):           # pictures and video in the same box are not voice notes
+        assert voicenotes.kind_of(b"\x00\x00\x00\x1cftyp" + brand + b"\x00" * 20) is None
 
 
 def test_empty_big_wrong_type_and_missing_length_are_refused_with_plain_messages():

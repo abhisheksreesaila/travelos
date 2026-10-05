@@ -27,7 +27,8 @@ def lunch_chat(page, base_url):
     page.wait_for_selector(".cz-view[data-level=day]")
     part = page.locator(".cz-part", has_text="Lunch").first.get_attribute("data-part")
     act = page.locator(".cz-block").first.get_attribute("data-act")
-    page.goto(f"{base_url}/trip/talk?act={act}&part={part}")
+    page.locator(f'.cz-part[data-part="{part}"] .pt-badge').click()      # the part's own bubble, as a person would
+    page.wait_for_url(re.compile(r"/trip/talk\?act="))
     page.wait_for_selector("#ft-compose")
     return act, part
 

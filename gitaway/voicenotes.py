@@ -34,9 +34,12 @@ def root() -> Path:
     return auth.data_dir() / "voicenotes"
 
 
+NOT_AUDIO = (b"avif", b"avis", b"qt  ", b"crx ", b"jxl ")     # ftyp brands that are pictures or video, never a voice note
+
+
 def kind_of(data: bytes):
     """'mp4', 'webm' or 'ogg' from the first bytes, else None (a HEIC photo has the same box but its own brand, and is not audio)."""
-    if data[4:8] == b"ftyp" and data[8:12] not in photos._HEIC_BRANDS:
+    if data[4:8] == b"ftyp" and data[8:12] not in (*photos._HEIC_BRANDS, *NOT_AUDIO):
         return "mp4"
     if data[:4] == b"\x1a\x45\xdf\xa3":
         return "webm"

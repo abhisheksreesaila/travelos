@@ -36,11 +36,13 @@ POLL_MS = tab_family.POLL_MS
 
 def talk_badge(counts, act, part="", cls=""):
     """The small pill the canvas shows on a plan or part: a bubble with how many messages (and a mic when one is a voice note), linking to the chat. With
-    nothing said yet a plan (not a part) shows a quiet "+ chat" so a conversation can start; a part shows nothing. `counts` is `plantalk.counts(session)`."""
+    nothing said yet a plan shows a quiet "+ chat" and a part a quiet bubble, so a conversation can start on either. `counts` is `plantalk.counts(session)`."""
     c = counts.get((act, part or ""))
     link = plantalk.url(act, part, ses.open_trip_id())
     if not c:
-        return A(icon("plus", 14, 2.6), Span("chat"), href=link, cls=f"pt-badge pt-badge-new {cls}".strip(), aria_label="Start a chat about this plan") if not part else ""
+        if part:
+            return A(icon("chat", 16, 2.4), href=link, cls=f"pt-badge pt-badge-new pt-badge-part {cls}".strip(), aria_label="Start a chat about this part", title="Talk about this part")
+        return A(icon("plus", 14, 2.6), Span("chat"), href=link, cls=f"pt-badge pt-badge-new {cls}".strip(), aria_label="Start a chat about this plan")
     what = f"{c['n']} message{'' if c['n'] == 1 else 's'}" + (", with a voice note" if c["voice"] else "") + (", with a photo" if c["photo"] else "")
     return A(icon("chat", 16, 2.4), Span(str(c["n"]), cls="pt-n"), icon("mic", 14, 2.4) if c["voice"] else "", href=link, cls=f"pt-badge {cls}".strip(), aria_label=f"Open the chat: {what}")
 
@@ -78,7 +80,7 @@ def content(session, a, p):
              Button(icon("mic", 20, 2.2), Span("Record a voice note", cls="sr-only"), type="button", id="pt-mic", cls="ft-round", hidden=True),
              Button(icon("arrow-right", 20, 2.4), Span("Send", cls="sr-only"), type="submit", id="ft-send", cls="ft-send"),
              method="post", action="/trip/talk/message", id="ft-compose", cls="ft-compose"),
-        Input(type="file", id="pt-photo", accept="image/*", cls="sr-only", tabindex="-1", aria_hidden="true", data_max=str(photos.MAX_BYTES)),
+        Input(type="file", id="pt-photo", accept="image/*", cls="sr-only", aria_label="Add a photo", data_max=str(photos.MAX_BYTES)),      # focusable (visually hidden): a keyboard or screen reader reaches it; the label is what a finger taps
         P("", id="ft-error", cls="ft-error", role="alert", hidden=True),
         id="ft", cls="ft pt", data_act=a.id, data_part=part, data_max_secs=str(voicenotes.MAX_SECONDS), data_url="/trip/talk")
 
@@ -145,7 +147,7 @@ def register(app):
 
     @app.get("/trip/talk")
     def chat(request, session, act: str = "", part: str = ""):
-        if (r := phone.guard(session, f"/trip/talk?act={quote(act)}")):
+        if (r := phone.guard(session, plantalk.url(act[:20], part[:40]))):      # signing in comes back to the same chat, part included
             return r
         try:
             return chat_page(session, act, part)
