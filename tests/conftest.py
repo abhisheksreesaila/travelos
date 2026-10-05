@@ -30,8 +30,11 @@ def _fast_throwaway_sqlite():
     def fast(dbapi_conn, _record):
         if type(dbapi_conn).__module__.startswith("sqlite3"):
             cur = dbapi_conn.cursor()
-            cur.execute("PRAGMA journal_mode=MEMORY")
             cur.execute("PRAGMA synchronous=OFF")
+            try:
+                cur.execute("PRAGMA journal_mode=MEMORY")
+            except Exception:  # another connection holds the file right now (concurrency tests): this one keeps the default journal
+                pass
             cur.close()
     event.listen(Engine, "connect", fast)
     yield
