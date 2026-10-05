@@ -163,5 +163,103 @@ def test_a_tab_for_a_trip_that_is_gone_shows_a_short_friendly_error(pair):
     ari.evaluate("document.querySelector('#ft-compose input[name=trip]').value = 'gone-trip'; document.getElementById('ft-thread').setAttribute('data-trip', 'gone-trip')")
     ari.locator("#ft-text").fill("Hello?")
     ari.locator("#ft-send").click()
-    expect(ari.locator("#ft-error")).to_have_text("This trip changed. Reload the page.")
-    assert ari.locator("#ft-thread .ft-msg").count() == 0
+    expect(ari.locator("#ft-thread .ft-me")).to_contain_text("This trip changed. Reload the page.")   # the bubble says so and keeps the text
+    expect(ari.locator("#ft-thread .ft-me")).to_contain_text("Hello?")
+
+
+# ---- F-094: lighter and instant ------------------------------------------------------------------------------------------
+
+def test_the_chat_photos_switch_is_two_small_words_and_the_invite_stays_small(pair):
+    ari, _ = pair()
+    chat, photos = ari.locator("#fam-chat"), ari.locator("#fam-photos")
+    assert ari.locator("#famseg").bounding_box()["height"] <= 48                      # one slim line, not a big pill of buttons
+    assert abs(ari.locator("#ft-invite").bounding_box()["y"] - ari.locator("#famseg").bounding_box()["y"]) < 8 and ari.locator("#ft-invite").bounding_box()["height"] >= 43.9
+    expect(chat).to_have_attribute("aria-current", "true")
+    photos.click()
+    expect(photos).to_have_attribute("aria-current", "true")
+    expect(ari.locator("#ft-chat")).to_be_hidden()
+    chat.click()
+    expect(ari.locator("#ft-chat")).to_be_visible()
+    assert ari.locator("#ft-invite").evaluate("e => getComputedStyle(e).backgroundColor") in ("rgba(0, 0, 0, 0)", "transparent")   # not a big button
+    assert ari.locator("#ft-text").bounding_box()["y"] < 844 and ari.locator("#ft-thread").bounding_box()["y"] < 260   # the thread starts high
+
+
+def test_send_shows_the_bubble_at_once_then_confirms(pair):
+    ari, _ = pair()
+    ari.route("**/trip/family/message", lambda route: (ari.wait_for_timeout(1500), route.continue_())[1])
+    ari.locator("#ft-text").fill("On my way")
+    ari.locator("#ft-send").click()
+    bubble = ari.locator("#ft-thread .ft-me")
+    expect(bubble).to_contain_text("On my way", timeout=400)                           # before the server answered
+    expect(bubble).to_have_class(re.compile("is-sending"))
+    assert ari.locator("#ft-text").input_value() == "" and ari.evaluate("document.activeElement.id") == "ft-text"
+    expect(bubble).not_to_have_class(re.compile("is-sending"), timeout=6000)             # the server confirmed
+    assert ari.locator("#ft-thread .ft-msg").count() == 1
+    ari.wait_for_timeout(5600)                                                            # a poll later: still one
+    assert ari.locator("#ft-thread .ft-msg").count() == 1
+
+
+def test_a_failed_send_says_so_keeps_the_text_and_retry_sends_it(pair):
+    ari, _ = pair()
+    ari.route("**/trip/family/message", lambda route: route.abort())
+    ari.locator("#ft-text").fill("Meet at the gate")
+    ari.locator("#ft-send").click()
+    bubble = ari.locator("#ft-thread .ft-me")
+    expect(bubble).to_contain_text("Meet at the gate")
+    expect(bubble).to_contain_text("Not sent")
+    retry = bubble.get_by_role("button", name="Retry")
+    expect(retry).to_be_visible()
+    assert retry.bounding_box()["height"] >= 43.9
+    ari.unroute("**/trip/family/message")
+    retry.click()
+    expect(bubble).not_to_contain_text("Not sent")
+    expect(ari.locator("#ft-thread .ft-me .ft-bub")).to_have_count(1)
+    assert ari.locator("#ft-thread .ft-msg").count() == 1
+
+
+def test_new_bubbles_fade_in_unless_motion_is_reduced(pair):
+    ari, mate = pair()
+    for p in (ari, mate):
+        p.emulate_media(reduced_motion="no-preference")
+    mate.evaluate("""() => { window.__fade = []; new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => { if (n.nodeType === 1) window.__fade.push(n.getAnimations().map(a => a.effect.getTiming().duration)); }))).observe(document.getElementById('ft-thread'), { childList: true }); }""")
+    ari.locator("#ft-text").fill("Fade me")
+    ari.locator("#ft-send").click()
+    expect(mate.locator("#ft-thread .ft-msg")).to_contain_text("Fade me", timeout=9000)
+    durations = mate.evaluate("window.__fade")
+    assert durations and 150 <= durations[0][0] <= 200
+    ari.evaluate("""() => { window.__fade = []; new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => { if (n.nodeType === 1) window.__fade.push(n.getAnimations().length); }))).observe(document.getElementById('ft-thread'), { childList: true }); }""")
+    ari.locator("#ft-text").fill("Mine fades too")
+    ari.locator("#ft-send").click()
+    expect(ari.locator("#ft-thread .ft-me").last).to_contain_text("Mine fades too")
+    assert ari.evaluate("window.__fade")[0] >= 1
+    mate.emulate_media(reduced_motion="reduce")
+    mate.evaluate("window.__fade = []")
+    ari.locator("#ft-text").fill("Still")
+    ari.locator("#ft-send").click()
+    expect(mate.locator("#ft-thread .ft-msg").last).to_contain_text("Still", timeout=9000)
+    assert all(not d for d in mate.evaluate("window.__fade"))
+
+
+@pytest.mark.parametrize("viewport", [PHONE, NARROW], ids=["390", "320"])
+def test_the_pending_and_failed_bubbles_fit_the_phone(pair, viewport):
+    ari, _ = pair()
+    ari.set_viewport_size(viewport)
+    ari.route("**/trip/family/message", lambda route: route.abort())
+    ari.locator("#ft-text").fill("A long message with a_very_long_unbroken_word_that_could_push_the_bubble_wider_than_the_phone_if_nothing_wrapped_it")
+    ari.locator("#ft-send").click()
+    expect(ari.locator("#ft-thread .ft-me")).to_contain_text("Not sent")
+    assert overflow(ari) <= 0
+    assert ari.locator("#ft-thread .ft-me button").bounding_box()["height"] >= 43.9
+    small = ari.evaluate("""() => [...document.querySelectorAll('#ft *')].filter(e => [...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim()) && parseFloat(getComputedStyle(e).fontSize) < 13).length""")
+    assert small == 0
+    assert ari.evaluate("""() => [...document.querySelectorAll('#ft *')].filter(e => e.type !== 'file' && getComputedStyle(e).textOverflow === 'ellipsis').map(e => e.tagName + '.' + e.className + '#' + e.id)""") == []
+
+
+def test_two_messages_arriving_in_one_poll_both_show(pair):
+    ari, mate = pair()
+    for word in ("One", "Two", "Three"):
+        ari.locator("#ft-text").fill(word)
+        ari.locator("#ft-send").click()
+        expect(ari.locator("#ft-thread .ft-msg .ft-bub").filter(has_text=word)).to_have_count(1)
+    expect(mate.locator("#ft-thread .ft-msg")).to_have_count(3, timeout=9000)
+    assert mate.locator("#ft-thread .ft-msg").all_inner_texts()[2].count("Three") == 1
