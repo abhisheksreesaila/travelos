@@ -541,3 +541,8 @@ Captain, 2026-10-05 (on the trip): Today is "very complicated… all I need to k
 - [ ] on today the day view starts with what is happening now or up next (Directions, Uber, leave-by), or on a flight day the flight with everyone's passes; other days have no such card
 - [ ] the centre Ask is the one way to change the day and opens on the day being looked at; the day and block lose their own Ask and "Change this day" buttons (an empty day keeps Say / Paste)
 - [ ] the week has no Today | Week | Day control or pinch hint and marks today; the morning plan switch and the Face ID card move to Help
+
+## F-095 Around you finds places from the live server [doing]
+Captain, 2026-10-05: searched for coffee on the Map and nothing came up. Live logs: POST /trip/map/around answered 503 (Overpass refused or timed out from Railway; a refusal also shut the door for 10 minutes). · Needs: none
+- [ ] when the main Overpass server refuses or is slow, the public mirrors are asked in turn within one 20-second budget, each with its own pacing and back-off; the privacy page names them
+- [ ] a coffee search on the live site returns places (checked after deploy)
