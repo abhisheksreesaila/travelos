@@ -1,7 +1,7 @@
 /* The Family tab's thread (F-070). The server draws the page with what exists; this keeps it live and sends from the compose bar:
      - every data-poll milliseconds (5 s) while the page is visible it asks /trip/family/thread?since=<last> for new items and appends them;
        a hidden page does not ask, and asks once as soon as it is shown again;
-     - Send posts the message with fetch (X-Fragment: 1) and appends what is new, so a message shows at once; without script the form posts and reloads;
+     - Send shows the bubble at once and posts the message with fetch (X-Fragment: 1); without script the form posts and reloads;
      - the Quiet switch posts its own state and changes in place.
    Items are only ever added (the server never edits or removes one), so a response is appended after the last item already here. */
 (function () {
@@ -9,42 +9,54 @@
   var thread = document.getElementById("ft-thread");
   if (!thread) return;
   var $ = function (id) { return document.getElementById(id); };
-  var empty = $("ft-empty"), form = $("ft-compose"), text = $("ft-text"), error = $("ft-error"), send = $("ft-send");
+  var empty = $("ft-empty"), form = $("ft-compose"), text = $("ft-text"), error = $("ft-error");
   function tripId() { return thread.getAttribute("data-trip") || ""; }
   var interval = parseInt(thread.getAttribute("data-poll"), 10) || 5000;
   var last = parseInt(thread.getAttribute("data-last"), 10) || 0;
   var timer = null, inflight = false;
   var pollUrl = thread.getAttribute("data-poll-url") || "/trip/family/thread";   // a plan's chat (F-091) polls its own address
+  function sendTimeout() { return parseInt(thread.getAttribute("data-send-timeout"), 10) || 15000; }   // a request that never answers ends as a failed send
   function join(url) { return url + (url.indexOf("?") < 0 ? "?" : "&"); }
 
   function nearBottom() { return window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 160; }
   function toBottom() { window.scrollTo(0, document.documentElement.scrollHeight); }
   function fail(message) { error.textContent = message || ""; error.hidden = !message; }
 
+  function timed(url, options, ms) {
+    var ctl = new AbortController(), t = setTimeout(function () { ctl.abort(); }, ms);
+    options.signal = ctl.signal;
+    return fetch(url, options).then(function (r) { clearTimeout(t); return r; }, function (e) { clearTimeout(t); throw e; });
+  }
+
+  // Put what the server sent into the thread. An item of mine that carries the client id (cid) of a pending or failed bubble replaces that bubble in
+  // place (no second fade, order kept); anything else new is appended and fades in.
+  function merge(html, n, mine) {
+    if (!html.trim() || n <= last) return;
+    var stick = mine || nearBottom();
+    var holder = document.createElement("div");
+    holder.innerHTML = html;
+    Array.prototype.slice.call(holder.children).forEach(function (el) {   // a copy: appending moves each child out of the live list
+      var id = parseInt(el.getAttribute("data-n"), 10) || 0;
+      if (id <= last) return;
+      var cid = el.getAttribute("data-cid"), waiting = cid ? thread.querySelector('.is-pending[data-cid="' + cid + '"]') : null;
+      if (waiting) { waiting.replaceWith(el); return; }
+      el.classList.add("is-new");
+      thread.appendChild(el);
+    });
+    last = n;
+    thread.setAttribute("data-last", String(last));
+    if (empty) empty.hidden = true;
+    if (stick) toBottom();
+  }
   function append(response, mine) {
     var n = parseInt(response.headers.get("X-Thread-Last"), 10) || 0;
-    return response.text().then(function (html) {
-      if (!html.trim() || n <= last) return;
-      var stick = mine || nearBottom();
-      var holder = document.createElement("div");
-      holder.innerHTML = html;
-      Array.prototype.slice.call(holder.children).forEach(function (el) {   // a copy: appending moves each child out of the live list
-        var id = parseInt(el.getAttribute("data-n"), 10) || 0;
-        if (id <= last) return;
-        if (!(mine && el.classList.contains("ft-me"))) el.classList.add("is-new");
-        thread.appendChild(el);
-      });
-      last = n;
-      thread.setAttribute("data-last", String(last));
-      if (empty) empty.hidden = true;
-      if (stick) toBottom();
-    });
+    return response.text().then(function (html) { merge(html, n, mine); });
   }
 
   function poll(mine) {
-    if (inflight || sending > 0 || document.visibilityState === "hidden") return Promise.resolve();
+    if (inflight || document.visibilityState === "hidden") return Promise.resolve();
     inflight = true;
-    return fetch(join(pollUrl) + "since=" + last + "&trip=" + encodeURIComponent(tripId()), { credentials: "same-origin", headers: { Accept: "text/html" } })
+    return timed(join(pollUrl) + "since=" + last + "&trip=" + encodeURIComponent(tripId()), { credentials: "same-origin", headers: { Accept: "text/html" } }, sendTimeout())
       .then(function (r) { if (r.status === 409) { stop(); fail("This trip changed. Reload the page."); return; } if (r.ok) return append(r, mine === true); })
       .catch(function () {})
       .then(function () { inflight = false; });
@@ -61,9 +73,18 @@
   // The chat's own script (plantalk.js) fires this after it sent a photo or a voice note: show what is new now, and scroll to it.
   thread.addEventListener("ft-refresh", function () { inflight = false; poll(true); });
 
-  // F-094: Send shows the bubble at once, from the text typed (quiet "Sending" state), and the server's answer replaces it in place. A failed
-  // send keeps the bubble, says so and offers Retry with the same text. Sends go one after another so they keep their order; polls wait while one is out.
-  var sending = 0, chain = Promise.resolve();
+  // F-094: Send shows the bubble at once, from the text typed (quiet "Sending" state). Each send carries a client id (cid): the server keeps a repeat of
+  // it once, and the server's item (from the answer or from a poll) takes the pending bubble's place by that id. A failed send keeps the bubble, says so
+  // (spoken too) and offers Retry with the same text and id. Sends go one after another so they keep their order; polls are not held up by them.
+  var chain = Promise.resolve();
+  var live = document.createElement("p");
+  live.className = "sr-only"; live.setAttribute("role", "status"); live.setAttribute("aria-live", "assertive");
+  thread.parentNode.insertBefore(live, thread.nextSibling);
+  function newId() {
+    var a = new Uint8Array(10);
+    window.crypto.getRandomValues(a);
+    return Array.prototype.map.call(a, function (b) { return (b % 36).toString(36); }).join("") + Date.now().toString(36);
+  }
   function pendingBubble(value) {
     var el = document.createElement("div");
     el.className = "ft-msg ft-me is-pending is-sending";
@@ -72,6 +93,7 @@
     var state = document.createElement("span"); state.className = "ft-time ft-state"; state.textContent = "Sending";
     bub.appendChild(body); bub.appendChild(state); el.appendChild(bub);
     el.setAttribute("data-text", value);
+    el.setAttribute("data-cid", newId());
     return el;
   }
   function settle(el, ok, message) {
@@ -81,26 +103,35 @@
     el.classList.toggle("is-failed", ok === false);
     if (ok === null) { state.textContent = "Sending"; return; }
     state.textContent = message || "Not sent";
+    live.textContent = "Message not sent" + (message ? ": " + message : ". Check your connection") + ". Retry is next to it.";
     var retry = document.createElement("button");
     retry.type = "button"; retry.className = "ft-retry"; retry.textContent = "Retry";
-    retry.addEventListener("click", function () { deliver(el); });
+    retry.addEventListener("click", function () { deliver(el); text.focus(); });
     state.after(retry);
   }
   function deliver(el) {
     settle(el, null);
-    sending += 1;
     chain = chain.then(function () {
+      if (!el.parentNode) return;                      // a poll already brought the real one
       var fields = new URLSearchParams(new FormData(form));   // trip and (a plan's chat) act and part
       fields.set("text", el.getAttribute("data-text"));
+      fields.set("cid", el.getAttribute("data-cid"));
       fields.set("since", String(last));
-      return fetch(form.getAttribute("action") || "/trip/family/message", { method: "POST", credentials: "same-origin", headers: { "X-Fragment": "1" }, body: fields })
+      return timed(form.getAttribute("action") || "/trip/family/message", { method: "POST", credentials: "same-origin", headers: { "X-Fragment": "1" }, body: fields }, sendTimeout())
         .then(function (r) {
-          if (!r.ok) return r.text().then(function (t) { throw new Error(r.status === 400 || r.status === 409 ? t : ""); });
-          el.remove();                                   // the server's own bubble takes its place (no second fade)
-          return append(r, true);
+          return r.text().then(function (html) {
+            if (r.status === 400) {                    // refused for what it says (too long ...): the words go back to the box, nothing to retry
+              el.remove();
+              if (!text.value) text.value = el.getAttribute("data-text");
+              fail(html); text.focus();
+              return;
+            }
+            if (!r.ok) throw new Error(r.status === 409 ? html : "");
+            merge(html, parseInt(r.headers.get("X-Thread-Last"), 10) || 0, true);   // replaces this bubble in place, by its id
+            if (el.parentNode) el.remove();           // the answer did not carry it (a poll got there first)
+          });
         })
-        .catch(function (err) { settle(el, false, err instanceof TypeError || !err.message || err.message.length > 120 ? "" : err.message); if (!el.parentNode) thread.appendChild(el); })
-        .then(function () { sending -= 1; });
+        .catch(function (err) { settle(el, false, err instanceof TypeError || err.name === "AbortError" || !err.message || err.message.length > 120 ? "" : err.message); text.focus(); });
     });
   }
   if (form) form.addEventListener("submit", function (e) {

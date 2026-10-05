@@ -119,18 +119,19 @@ def voice_file(session, item_id):
 
 # ---- writing ---------------------------------------------------------------------------------------------------------------
 
-def _post(session, act, part, kind, text, extra, push_what, trip=None, label_=""):
+def _post(session, act, part, kind, text, extra, push_what, trip=None, label_="", cid=""):
     with ses.family(session) as fam:
         if not fam or not fam.trip_id:
             raise StaleTrip(STALE)
         ft._check(fam, trip)
         name, trip_id, me = ft.first_name(fam.traveler), fam.trip_id, fam.traveler.id
         with familydb.transaction(fam.db):
-            ft._insert(fam.db, trip_id, kind, me, name, text, _payload(act, part, **extra))
-    ft.announce(session, trip_id, name, ft._safe(f"on {label_}: {push_what}"), exclude=me)
+            added = ft._insert(fam.db, trip_id, kind, me, name, text, _payload(act, part, **extra), cid=cid)
+    if added:
+        ft.announce(session, trip_id, name, ft._safe(f"on {label_}: {push_what}"), exclude=me)
 
 
-def post_message(session, act, part, text, trip=None):
+def post_message(session, act, part, text, trip=None, cid=""):
     """A text message on a plan (or a part). Raises ThreadError."""
     text = " ".join((text or "").split())
     if not text:
@@ -138,7 +139,7 @@ def post_message(session, act, part, text, trip=None):
     if len(text) > ft.MAX_MESSAGE:
         raise ThreadError(f"Keep messages to {ft.MAX_MESSAGE} characters.")
     a, p = target(session, act, part)
-    _post(session, act, part, "message", text, {}, text, trip, label(a, p))
+    _post(session, act, part, "message", text, {}, text, trip, label(a, p), cid=cid)
 
 
 def post_voice(session, act, part, data, secs, trip=None):
