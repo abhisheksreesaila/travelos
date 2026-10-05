@@ -1,4 +1,4 @@
-"""The phone shell (F-067): every trip screen sits in one frame with a bottom tab bar (Today, Map, Ask, Family, Help).
+"""The phone shell (F-067): every trip screen sits in one frame with a bottom tab bar (Today, Map, Ask, Family; Help left the bar in F-093 and is opened from a booking or the SOS button).
 
     shell(active, *content, title="", head=(), scripts=(), **attrs)   the whole document: styles, the screen's content, the tab bar
     tabbar(active)                                                     the bar alone (`active` is one of TAB_KEYS)
@@ -23,7 +23,7 @@ from gitaway.icons import icon
 from gitaway.layout import styles
 
 TABS = (("today", "Today", "calendar", "/trip"), ("map", "Map", "map", "/trip/map"), ("ask", "Ask", "mic", "/trip/ask"),
-        ("family", "Family", "users", "/trip/family"), ("help", "Help", "life", "/trip/help"))
+        ("family", "Family", "users", "/trip/family"))   # F-093: Help left the bar; /trip/help still works for old links, passes and phone numbers
 TAB_KEYS = tuple(t[0] for t in TABS)
 HEAD = (Link(rel="stylesheet", href="/assets/css/trip.css"), Link(rel="stylesheet", href="/assets/css/phone.css"))  # the shared phone look, then the shell
 

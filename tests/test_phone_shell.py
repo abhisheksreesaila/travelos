@@ -15,6 +15,7 @@ from tests.test_signin import sign_in
 from tests.test_trip_import import imported
 from tests.test_trip_phone import plan, tag
 
+BAR = ("/trip", "/trip/map", "/trip/ask", "/trip/family")   # F-093: Help left the bar; its route still works
 PATHS = {"today": "/trip", "map": "/trip/map", "ask": "/trip/ask", "family": "/trip/family", "help": "/trip/help"}
 
 
@@ -44,11 +45,11 @@ def bar(html):
 
 # ---- the bar ------------------------------------------------------------------------------------------------------------
 
-def test_the_tab_bar_has_five_tabs_in_order_and_ask_is_raised():
+def test_the_tab_bar_has_four_tabs_in_order_and_ask_is_raised():
     nav = str(phone.tabbar("map"))
     labels = re.findall(r"</svg></span>([A-Za-z]+)</a>", nav)
-    assert labels == ["Today", "Map", "Ask", "Family", "Help"]
-    assert re.findall(r'href="([^"]+)"', nav) == list(PATHS.values())
+    assert labels == ["Today", "Map", "Ask", "Family"]
+    assert re.findall(r'href="([^"]+)"', nav) == list(BAR)
     assert nav.count('aria-current="page"') == 1 and re.search(r'id="ph-tab-map"[^>]*aria-current="page"|aria-current="page"[^>]*id="ph-tab-map"', nav)
     assert "ph-ask" in re.search(r'<a[^>]*id="ph-tab-ask"[^>]*>', nav).group(0)
 
@@ -58,9 +59,12 @@ def test_every_trip_screen_sits_in_the_shell(client, key):
     book(client)
     html = client.get(PATHS[key]).text
     hrefs, nav = bar(html)
-    assert hrefs == list(PATHS.values())
-    assert re.search(r'id="ph-tab-%s"[^>]*aria-current="page"' % key, nav) or re.search(r'aria-current="page"[^>]*id="ph-tab-%s"' % key, nav)
-    assert nav.count('aria-current="page"') == 1
+    assert hrefs == list(BAR)
+    if key == "help":       # F-093: Help is not on the bar, so no tab is current there
+        assert nav.count('aria-current="page"') == 0 and 'id="ph-tab-help"' not in nav
+    else:
+        assert re.search(r'id="ph-tab-%s"[^>]*aria-current="page"' % key, nav) or re.search(r'aria-current="page"[^>]*id="ph-tab-%s"' % key, nav)
+        assert nav.count('aria-current="page"') == 1
     assert "/assets/css/phone.css" in html and html.index("/assets/css/base.css") < html.index("/assets/css/phone.css")
 
 
@@ -82,7 +86,7 @@ def test_every_role_gets_the_same_tabs_with_no_edit_controls_on_the_placeholders
     sign_in(other, mail)
     for key, path in PATHS.items():
         r = other.get(path)
-        assert r.status_code == 200 and bar(r.text)[0] == list(PATHS.values()), path
+        assert r.status_code == 200 and bar(r.text)[0] == list(BAR), path
         if key not in ("today", "family") and not (key == "help" and role == "editor") and not (key == "ask" and role == "editor"):   # the Family thread has its compose bar and Quiet switch for every role (F-070); an editor adds flights and passes on Help (F-083) and asks for a change on Ask (F-072); a viewer sees the read-only note
             main = re.search(r"<main.*?</main>", r.text, re.S).group(0)
             assert "<form" not in main and "<input" not in main, path
@@ -110,14 +114,14 @@ def test_a_tab_module_can_be_swapped_without_touching_the_shell(client, monkeypa
     book(client)
     html = client.get("/trip/map").text
     assert 'id="real"' in html and "is coming" not in html and "/assets/js/map.js" in html
-    assert bar(html)[0] == list(PATHS.values())
+    assert bar(html)[0] == list(BAR)
 
 
 def test_today_sits_in_the_same_shell_and_keeps_its_own_switch(client):
     book(client)
     html = client.get("/trip?tab=today").text
     hrefs, nav = bar(html)
-    assert hrefs == list(PATHS.values()) and 'id="ph-tab-today"' in nav
+    assert hrefs == list(BAR) and 'id="ph-tab-today"' in nav
     for name in ("Today", "All days", "Notes"):
         assert f">{name}</a>" in html
 

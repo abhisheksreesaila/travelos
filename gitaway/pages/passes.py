@@ -97,8 +97,13 @@ def _flight_form(f=None):
         action="/trip/help/flight", method="post", enctype="application/x-www-form-urlencoded", cls="hp-fix-form pz-form", data_form="flight")
 
 
-def _pass_form(flight, p=None, names=()):
-    """Add a pass for a traveller on `flight`, or fix `p`. The form posts the file too (multipart)."""
+def _back_field(back):
+    """Where a form returns to after saving: the canvas sheet it was opened in (F-093). Nothing means the Help page."""
+    return Input(type="hidden", name="next", value=back) if back else ""
+
+
+def _pass_form(flight, p=None, names=(), back=""):
+    """Add a pass for a traveller on `flight`, or fix `p`. The form posts the file too (multipart). `back`: a canvas address to return to (F-093)."""
     p = p or {}
     trip, uid = ses.open_trip_id(), f"{flight['key']}-{p.get('id', 'new')}".replace(":", "-")
     boards = f"{p['boards_min'] // 60:02d}:{p['boards_min'] % 60:02d}" if p.get("boards_min") is not None else ""
@@ -110,15 +115,15 @@ def _pass_form(flight, p=None, names=()):
         _field("Boarding time", "boards", boards, type="time"),
         Label(Span("The boarding pass (PDF or picture, at most 10 MB)", cls="hp-lab"), Input(type="file", name="file", accept=ACCEPT), cls="pz-field pz-file"),
         _field("Airline app link (optional)", "app_url", p.get("app_url", ""), type="url", maxlength="480", autocomplete="off", placeholder="https://"),
-        Input(type="hidden", name="trip", value=trip), Input(type="hidden", name="flight", value=flight["key"]), Input(type="hidden", name="pass_id", value=p.get("id", "")),
+        Input(type="hidden", name="trip", value=trip), Input(type="hidden", name="flight", value=flight["key"]), Input(type="hidden", name="pass_id", value=p.get("id", "")), _back_field(back),
         Div(Button("Save the pass", type="submit", cls="tp-btn tp-btn-ink pz-save"), cls="hp-fix-acts"),
         action=FORM, method="post", enctype="multipart/form-data", cls="hp-fix-form pz-form", data_form="pass")
 
 
-def _confirm_remove(action, field, value, what, label):
+def _confirm_remove(action, field, value, what, label, back=""):
     """Two taps to remove: open this, then 'Yes, remove it'."""
     return Details(Summary(icon("x", 15, 2.4), label, cls="tp-mini pz-remove-sum"),
-                   Form(P(f"Remove {what} for the whole family? This cannot be undone.", cls="tp-sub"), Input(type="hidden", name=field, value=value), Input(type="hidden", name="trip", value=ses.open_trip_id()),
+                   Form(P(f"Remove {what} for the whole family? This cannot be undone.", cls="tp-sub"), Input(type="hidden", name=field, value=value), Input(type="hidden", name="trip", value=ses.open_trip_id()), _back_field(back),
                         Button("Yes, remove it", type="submit", cls="tp-btn tp-btn-white pz-remove-yes"), action=action, method="post", cls="hp-fix-form"), cls="hp-fix pz-remove")
 
 
@@ -132,12 +137,12 @@ def _stub(p, f):
              aria_label=f"Show {p['traveller']}'s boarding pass full screen")
 
 
-def _pass_card(p, f, i, can_edit, names):
+def _pass_card(p, f, i, can_edit, names, back=""):
     name = p["traveller"]
     app = A(icon("ext", 16, 2.4), "Open in airline app", href=p["app_url"], target="_blank", rel="noopener noreferrer", cls="tp-btn tp-btn-white pz-app", data_app=p["id"]) if p["app_url"] else ""
     boards = clock(p["boards_min"]) if p["boards_min"] is not None else "–"
-    edit = Div(Details(Summary(icon("pencil", 15, 2.4), "Fix this pass", Span(f" for {name}", cls="sr-only"), cls="tp-mini hp-fix-sum"), _pass_form(f, p, names), cls="hp-fix", data_fix=f"pass-{p['id']}"),
-               _confirm_remove("/trip/help/pass/remove", "pass_id", p["id"], f"{name}'s pass", "Remove"), cls="pz-edit") if can_edit else ""
+    edit = Div(Details(Summary(icon("pencil", 15, 2.4), "Fix this pass", Span(f" for {name}", cls="sr-only"), cls="tp-mini hp-fix-sum"), _pass_form(f, p, names, back), cls="hp-fix", data_fix=f"pass-{p['id']}"),
+               _confirm_remove("/trip/help/pass/remove", "pass_id", p["id"], f"{name}'s pass", "Remove", back), cls="pz-edit") if can_edit else ""
     return Div(
         Div(Span(initials(name), cls=f"hp-av fill-{tint(i)}"), Span(Span(name, cls="pz-name"), Span("Boarding pass" if p["kind"] else "Seat details", cls="tp-sub"), cls="pz-who"),
             Span(Span("SEAT", cls="pz-k"), Span(p["seat"] or "–", cls="pz-seat"), cls="pz-seatbox"), cls="pz-top"),
@@ -145,15 +150,21 @@ def _pass_card(p, f, i, can_edit, names):
         _stub(p, f), app, edit, cls="pz-pass", data_pass=p["id"])
 
 
+def pass_cards(f, ps, can_edit, names, back="", n=0):
+    """(a card per traveller, or the empty line; the "Add a pass" form for editors or "") for flight `f`. Help and the canvas's flight sheet (F-093) both draw these."""
+    cards = [_pass_card(p, f, i, can_edit, names, back) for i, p in enumerate(ps)]
+    if not cards:
+        cards = [P("No passes added yet." + (" Add one for each traveller." if can_edit else ""), cls="hp-empty", data_none="passes")]
+    add = Details(Summary(icon("plus", 15, 2.4), "Add a pass", cls="tp-mini hp-fix-sum"), _pass_form(f, None, names, back), cls="hp-fix", data_fix=f"add-pass-{n}") if can_edit else ""
+    return cards, add
+
+
 def _flight_block(f, ps, can_edit, names, n):
     head = Div(Span(icon("plane", 22, 2.2), cls="hp-ico hp-sky", aria_hidden="true"),
                Div(H2(f"{f['name']} · {f['origin']} → {f['dest']}", cls="hp-h"), Span(f"{day_label(f['date'])} · departs {clock(f['depart_min'])}" + (f" · Terminal {f['terminal']}" if f["terminal"] else ""), cls="hp-addr"), cls="hp-who"), cls="hp-row")
-    cards = [_pass_card(p, f, i, can_edit, names) for i, p in enumerate(ps)]
-    if not cards:
-        cards = [P("No passes added yet." + (" Add one for each traveller." if can_edit else ""), cls="hp-empty", data_none="passes")]
-    tools = []
+    cards, add = pass_cards(f, ps, can_edit, names, n=n)
+    tools = [add] if add else []
     if can_edit:
-        tools.append(Details(Summary(icon("plus", 15, 2.4), "Add a pass", cls="tp-mini hp-fix-sum"), _pass_form(f, None, names), cls="hp-fix", data_fix=f"add-pass-{n}"))
         if f["source"] == "added":
             tools.append(Details(Summary(icon("pencil", 15, 2.4), "Fix this flight", cls="tp-mini hp-fix-sum"), _flight_form(f), cls="hp-fix", data_fix=f"flight-{n}"))
             tools.append(_confirm_remove("/trip/help/flight/remove", "flight_id", f["id"], f"{f['name']} and its passes", "Remove this flight"))
@@ -307,7 +318,15 @@ def _signed_in(session):
     return ses.current_traveler(session) is not None
 
 
-def _back(err="", anchor="hp-passes"):
+def safe_back(url):
+    """A canvas address a form may return to after saving (F-093), else ""."""
+    return url if isinstance(url, str) and url.startswith("/trip/canvas") and not url.startswith("//") and len(url) < 300 and "\n" not in url else ""
+
+
+def _back(err="", anchor="hp-passes", to=""):
+    """Back to where the form was: the canvas sheet it was opened in when it succeeded, else Help (which shows the reason when it did not)."""
+    if to and not err:
+        return RedirectResponse(to, status_code=303)
     return RedirectResponse(("/trip/help" + (f"?err={err}" if err else "")) + f"#{anchor}", status_code=303)
 
 
@@ -352,10 +371,10 @@ def register(app):
                     grp=form.get("grp") or "", gate=form.get("gate") or "", boards=form.get("boards") or "", app_url=form.get("app_url") or "", data=data or None))
         except passes.PassError as e:
             return _back(e.key)
-        return _back()
+        return _back(to=safe_back(form.get("next")))
 
     @app.post("/trip/help/pass/remove")
-    def remove_pass(session, pass_id: str = "", trip: str = ""):
+    def remove_pass(session, pass_id: str = "", trip: str = "", next: str = ""):
         if not _signed_in(session):
             return Response("Sign in first.", status_code=401)
         try:
@@ -364,7 +383,7 @@ def register(app):
             return _back(e.key)
         if not found:
             return _back("pass_missing")
-        return _back()
+        return _back(to=safe_back(next))
 
     @app.get(GATE)
     def gate(request, session, flight: str = ""):

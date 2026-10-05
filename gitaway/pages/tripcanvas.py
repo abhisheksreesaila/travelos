@@ -19,27 +19,31 @@ wide day view: the week as a strip across the top, the day's parts as lanes, the
 import json
 from urllib.parse import urlencode
 
-from fasthtml.common import A, Button, Details, Div, Form, H1, H2, H3, Header, Input, Label, Link, Main, Nav, P, Section, Span, Summary, to_xml
+from fasthtml.common import A, Button, Details, Div, Form, H1, H2, H3, Header, Input, Label, Link, Main, Nav, P, Section, Span, Summary, Template, to_xml
 from starlette.responses import RedirectResponse, Response
 
 from gitaway import access, canvas, catalog, geo, members, phone, pickers, plantalk, session as ses, tripcal as cal, tripday as td
 from gitaway.icons import icon
 from gitaway.layout import avatar, join_note, trip_field
-from gitaway.pages import calendar as calui, passes as passes_ui   # passes: on a flight day the now card is the flight with everyone's passes (F-092)
+from gitaway.pages import booked, calendar as calui, passes as passes_ui   # passes: on a flight day the now card is the flight with everyone's passes (F-092)
 from gitaway.pages.around_ui import around_url
 from gitaway.pages.plantalk import talk_badge   # F-091: the chat badge on a plan and on a part
 
-HEAD = (*pickers.HEAD, *passes_ui.HEAD, Link(rel="stylesheet", href="/assets/css/trip_canvas.css"), Link(rel="stylesheet", href="/assets/css/plantalk.css"))   # pickers: the add-a-step sheet has a time field (F-082)
+HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/help.css"), *passes_ui.HEAD, Link(rel="stylesheet", href="/assets/css/trip_canvas.css"), Link(rel="stylesheet", href="/assets/css/plantalk.css"))   # pickers: the add-a-step sheet has a time field (F-082)
 SCRIPTS = ("/assets/js/trip_canvas.js",)
 RANK = {"week": 0, "day": 1, "block": 2, "step": 3}
 PART_TINTS = ("sky", "sun", "grape", "bubble", "mint")
 MAX_FACES = 5
 
 
-def curl(day=None, block="", step="", add=False, part="", title="", note="", err=""):
+def curl(day=None, block="", step="", add=False, part="", title="", note="", err="", booked="", sos=False):
     """The address of a level: the week with nothing, else a day, a block or a step. `add` opens the add-a-step sheet over a block (with the part, title and note
-    it starts with, and the reason the last try was refused)."""
+    it starts with, and the reason the last try was refused). `booked` opens a booking's sheet over its day (F-093), `sos` the emergency sheet over the day or the week."""
     q = {"step": step} if step else {"block": block} if block else {"day": day} if day is not None else {}
+    if booked:
+        q = {"day": day if day is not None else 0, "booked": booked}
+    elif sos:
+        q = {**q, "sos": "1"}
     if add and block:
         q = {"block": block, "add": "1", **{k: v for k, v in (("part", part), ("title", title), ("note", note), ("err", err)) if v}}
     if (trip := ses.open_trip_id()):
@@ -131,7 +135,7 @@ def now_card(v, day):
     with geo.cache_scope(v["session"]):        # Leave by and the Uber link read the family's map cache (gitaway.geo), as on Today
         tv = trippage.load(v["session"], str(day), v.get("ua", ""))
         flights, calm, _titles = passes_ui.flight_cards(tv)
-        return Div(flights or trippage.up_card(tv), calm, cls="cz-now", id="cz-now")
+        return Div(flights or trippage.up_card(tv), calm, cls="cz-now", id="cz-now", data_kind="now")
 
 
 def _count(n, one, many):
@@ -176,11 +180,18 @@ def day_title(v, day):
     return f"{d.strftime('%A')}, {d.strftime('%b')} {d.day}"
 
 
-def head(v, kicker, title, key="", back=None, back_label="", faces=None):
+def sos_link(url):
+    """The small always-there emergency button in the heading (F-093): opens the emergency sheet over whatever is showing."""
+    return A(icon("life", 18, 2.4), Span("SOS"), href=url, cls="cz-sos", id="cz-sos", aria_label="Emergency: call 911 and your people", data_zoom="in", data_zk="sos-open")
+
+
+def head(v, kicker, title, key="", back=None, back_label="", faces=None, sos=""):
     """The heading every level starts with. Week: plain. Deeper: a dark card with the way back, which is what the tapped element grows into."""
     inner = [Div(Span(kicker, cls="cz-head-k"), H1(title, id="cz-title", tabindex="-1"), cls="cz-head-text")]
     if back:
         inner.insert(0, A(icon("chev-left", 22, 2.6), href=back, cls="cz-back", aria_label=back_label, data_zoom="out"))
+    if sos:
+        inner.append(sos_link(sos))
     if faces:
         inner.append(faces)
     return Header(*inner, cls=f"cz-head{' is-deep' if back else ''}", **({"data_zk": key} if key else {}))
@@ -216,7 +227,7 @@ def who_options(v, groups_always=False):
     return out
 
 
-def filter_bar(v):
+def filter_bar(v, compact=False):
     """Chips that highlight the steps that match and dim the rest: Everyone (no filter), each person, Adults and Kids when used, each named list of the trip."""
     chips = [Button("Everyone", type="button", cls="cz-fchip", data_f="all", aria_pressed="true")]
     for tok, label, p in who_options(v):
@@ -224,7 +235,24 @@ def filter_bar(v):
         chips.append(Button(face, label, type="button", cls="cz-fchip", data_f=f"who:{tok}", aria_pressed="false", **({"aria_label": f"{label} (not matched to a person)"} if p["kind"] == "initials" else {})))
     for lst in v["lists"]:
         chips.append(Button(icon("shield", 16, 2.4), lst["name"], type="button", cls="cz-fchip cz-fchip-list", data_f=f"list:{lst['id']}", aria_pressed="false"))
-    return Div(*chips, cls="cz-filters", role="group", aria_label="Show")
+    return Div(*chips, cls="cz-filters", role="group", aria_label="Show", **({"data_compact": "1"} if compact else {}))
+
+
+KINDS = (("all", "All"), ("plan", "Plans"), ("hotel", "Hotels"), ("flight", "Flights"), ("car", "Car"), ("chat", "Chats"))
+KIND_OF_ICON = {"bed": "hotel", "hotel": "hotel", "plane": "flight", "car": "car"}
+
+
+def kind_attrs(v, kind, x):
+    """What the Plans | Hotels | Flights | Car | Chats filter reads off an entry of a day (F-093): its kind, and whether it has messages (a block: on it or on any part)."""
+    if kind == "booked":
+        return {"data_kind": KIND_OF_ICON.get(getattr(x, "icon", ""), "booking")}
+    chat = any(k[0] == x.id for k in v["talk"])
+    return {"data_kind": "plan", **({"data_chat": "1"} if chat else {})}
+
+
+def kinds_bar():
+    """The quiet filter row on the week and the day (F-093): one choice at a time. Hidden until the script is there to use it."""
+    return Div(*[Button(label, type="button", cls="cz-kchip", data_k=k, aria_pressed="true" if k == "all" else "false") for k, label in KINDS], cls="cz-kinds", role="group", aria_label="Show only", hidden=True)
 
 
 def dropbars(v):
@@ -269,31 +297,40 @@ def _mini_part(p, k):
 
 
 def week_body(v, i, editor):
-    """One day's row in the week."""
+    """One day's row in the week. Plans are one link to the day; each booking is a link of its own that opens its sheet on that day (F-093)."""
     s = v["summaries"][i]
     ents = entries(v, i)
     today = Span("Today", cls="cz-today") if i == v["today_idx"] else ""
     badge = Span(Span(s.dow, cls="cz-dow"), Span(str(s.num), cls=f"cz-num ink-{s.tint}"), today, cls=f"cz-badge tp-t-{s.tint}")
     key = f"day-{i}"
     label = f"{v['dates'][i].strftime('%A %b')} {s.num}"
+    thin = Span("", cls="cz-thin-t")
     if not ents:
         add = A(icon("plus", 20, 2.6), href=f"/trip?add=1&day={i}", cls="cz-plus", aria_label=f"Add something to {label}") if editor else ""
-        return Div(badge, A(Span("Free day", cls="cz-free-t"), Span("Nothing planned yet", cls="cz-sub"), href=curl(day=i), cls="cz-row-link cz-free", data_zoom="in", aria_label=f"{label}: free day"), add,
+        return Div(badge, A(Span("Free day", cls="cz-free-t"), Span("Nothing planned yet", cls="cz-sub"), thin, href=curl(day=i), cls="cz-row-link cz-free", data_zoom="in", aria_label=f"{label}: free day"), add,
                    cls="cz-row is-free", data_zk=key, data_day=str(i))
-    cards = []
-    for kind, x in ents[:3]:
+    plans, bookings = [], []
+    for n, (kind, x) in enumerate(ents):
+        attrs = {**kind_attrs(v, kind, x), "data_n": str(n)}
         if kind == "block":
             blk = v["plan"][x.id]
-            n, done = _counts(blk)
+            cnt, done = _counts(blk)
             notes = v["act_notes"].get(x.id) or [(None, st["note"]) for st in _all_steps(blk) if st["note"]][:1]
             note = sticker(notes[0][1], cls="cz-sticker-week") if notes else ""
-            cards.append(Div(Div(Span(icon("sight", 18, 2.4), cls="cz-ico"), Span(x.title, cls="cz-card-t"), Span(f"{done}/{n}" if done else _count(n, "step", "steps"), cls="cz-pill"), cls="cz-card-h"),
-                             Div(*[_mini_part(p, k) for k, p in enumerate(blk["parts"])], cls="cz-minis"), note, cls="cz-wcard cz-park"))
+            plans.append(Div(Div(Span(icon("sight", 18, 2.4), cls="cz-ico"), Span(x.title, cls="cz-card-t"), Span(f"{done}/{cnt}" if done else _count(cnt, "step", "steps"), cls="cz-pill"), cls="cz-card-h"),
+                             Div(*[_mini_part(p, k) for k, p in enumerate(blk["parts"])], cls="cz-minis"), note, cls="cz-wcard cz-park", **attrs))
+        elif kind == "booked":
+            ico = getattr(x, "icon", "") or "pin"
+            when = cal.fmt_time(x.label_start if getattr(x, "label_start", None) is not None else x.start)
+            bookings.append(A(Span(icon(ico, 18, 2.4), cls="cz-ico"), Span(x.title, cls="cz-card-t"), Span(when, cls="cz-sub"), href=curl(day=i, booked=x.id), cls="cz-wcard cz-simple is-booked", data_zoom="in", data_zk=f"bkg-{x.id}",
+                              aria_label=f"{x.title}, {when}: details", **attrs))
         else:
             ico = getattr(x, "icon", "") or "pin"
-            cards.append(Div(Span(icon(ico, 18, 2.4), cls="cz-ico"), Span(x.title, cls="cz-card-t"), Span(cal.fmt_time(x.start), cls="cz-sub"), cls=f"cz-wcard cz-simple{' is-booked' if kind == 'booked' else ''}"))
-    more = Span(f"and {len(ents) - 3} more", cls="cz-sub") if len(ents) > 3 else ""
-    return Div(badge, A(*cards, more, href=curl(day=i), cls="cz-row-link", data_zoom="in", aria_label=f"{label}: {s.head}"), cls=f"cz-row{' is-today' if i == v['today_idx'] else ''}", data_zk=key, data_day=str(i))
+            plans.append(Div(Span(icon(ico, 18, 2.4), cls="cz-ico"), Span(x.title, cls="cz-card-t"), Span(cal.fmt_time(x.start), cls="cz-sub"), cls="cz-wcard cz-simple", **attrs))
+    more = Span(f"and {len(ents) - 3} more", cls="cz-sub cz-more", hidden=True) if len(ents) > 3 else ""      # the script shows three entries and this line; with a filter on, every match
+    openday = Span("Open the day", icon("chev-right", 16, 2.6), cls="cz-sub cz-openday") if not plans else ""
+    link = A(*plans, more, openday, thin, href=curl(day=i), cls="cz-row-link", data_zoom="in", aria_label=f"{label}: {s.head}")
+    return Div(badge, Div(link, *bookings, cls="cz-row-main"), cls=f"cz-row{' is-today' if i == v['today_idx'] else ''}", data_zk=key, data_day=str(i))
 
 
 def toggle(v, current, day=None):
@@ -305,13 +342,15 @@ def toggle(v, current, day=None):
     return Nav(*links, cls="cz-segs cz-toggle", aria_label="Day or week")
 
 
-def week_view(v):
+def week_view(v, sos=False):
     t = v["t"]
     editor = access.can_edit(v["role"])
     faces = Div(avatar(v["who"], "cz-av"), *[avatar(f, "cz-av") for f in v["crew"]], cls="cz-faces")
     kicker = f"{t.title.upper()} · {cal.range_label(t.depart, t.return_).upper()}"
     rows = [week_body(v, i, editor) for i in range(len(v["dates"]))]
-    return view("week", [head(v, kicker, "The trip", faces=faces), toggle(v, "week"), Div(*rows, cls="cz-week", id="cz-week", style=f"--days:{min(len(rows), 7)}")], title="The trip")
+    body = [head(v, kicker, "The trip", faces=faces, sos=curl(sos=True)), Div(toggle(v, "week"), kinds_bar(), cls="cz-bar"), Div(*rows, cls="cz-week", id="cz-week", style=f"--days:{min(len(rows), 7)}")]
+    body.append(sos_sheet(v, curl()) if sos else sos_template(v, curl()))
+    return view("step" if sos else "week", body, zout="sos-open" if sos else "", title="The trip")
 
 
 # ---- day --------------------------------------------------------------------------------------------------------------------
@@ -340,17 +379,17 @@ def _block_card(v, a):
     for k, p in enumerate(blk["parts"]):
         steps = [Div(_chip(s, edit), cls="cz-chipcell") for s in p["steps"]]
         parts.append(Div(Div(Span(p["name"], cls="cz-part-t"), Span(p["time_of_day"], cls="cz-when") if p["time_of_day"] else "", Span(_count(len(p["steps"]), "ride", "rides"), cls="cz-part-n"), talk_badge(v["talk"], a.id, p["id"]), cls="cz-part-h"),
-                          Div(*steps, cls="cz-chips") if steps else P("Nothing here yet.", cls="cz-sub"), cls=f"cz-part cz-pt-{PART_TINTS[k % 5]}", data_part=p["id"], data_act=a.id))
+                          Div(*steps, cls="cz-chips") if steps else P("Nothing here yet.", cls="cz-sub"), cls=f"cz-part cz-pt-{PART_TINTS[k % 5]}", data_part=p["id"], data_act=a.id, **({"data_chat": "1"} if (a.id, p["id"]) in v["talk"] else {})))
     return Div(A(Span(icon("sight", 22, 2.4), cls="cz-ico"), Div(Span(a.title, cls="cz-card-t"), Span(f"{cal.fmt_time(a.start)} – {cal.fmt_time(a.end)} · {done} of {n} done", cls="cz-sub"), cls="cz-card-text"),
                  Span(icon("chev-right", 20, 2.6), cls="cz-go"), href=curl(block=a.id), cls="cz-block-head", data_zoom="in", data_zk=f"blk-{a.id}"),
-               Div(*notes, cls="cz-notes") if notes else "", Div(talk_badge(v["talk"], a.id), cls="pt-row"), Div(*parts, cls="cz-parts"), cls="cz-block", data_act=a.id)
+               Div(*notes, cls="cz-notes") if notes else "", Div(talk_badge(v["talk"], a.id), cls="pt-row"), Div(*parts, cls="cz-parts"), cls="cz-block", data_act=a.id, **kind_attrs(v, "block", a))
 
 
 def _simple(kind, x, v):
     ico = getattr(x, "icon", "") or ("pin" if kind == "plan" else "pin")
     notes = [sticker(text, by) for by, text in v["act_notes"].get(x.id, [])] if kind == "plan" else []
     return Div(Div(Span(icon(ico, 20, 2.4), cls="cz-ico"), Div(Span(x.title, cls="cz-card-t"), Span(f"{cal.fmt_time(x.start)}" + (f" – {cal.fmt_time(x.end)}" if x.end else ""), cls="cz-sub"), cls="cz-card-text"), cls="cz-simple-h"),
-               Div(*notes, cls="cz-notes") if notes else "", Div(talk_badge(v["talk"], x.id), cls="pt-row") if kind == "plan" else "", cls=f"cz-block cz-plain{' is-booked' if kind == 'booked' else ''}")
+               Div(*notes, cls="cz-notes") if notes else "", Div(talk_badge(v["talk"], x.id), cls="pt-row") if kind == "plan" else "", cls=f"cz-block cz-plain{' is-booked' if kind == 'booked' else ''}", **kind_attrs(v, kind, x))
 
 
 def strip(v, day):
@@ -369,14 +408,11 @@ def strip(v, day):
     return Nav(*cards, cls="cz-strip", aria_label="Days of the trip", style=f"--days:{min(len(cards), 7)}")
 
 
-BOOKED_HELP = {"bed": "/trip/help#hp-hotel", "hotel": "/trip/help#hp-hotel", "car": "/trip/help#hp-car", "plane": "/trip/help#hp-passes"}
-
-
-def booked_line(x):
-    """A booking on the day (F-090): a quiet grey line behind the family's plans, with its time and a tap to its details in Help (address, phone, confirmation)."""
+def booked_line(v, x):
+    """A booking on the day (F-090): a quiet grey line behind the family's plans, with its time. A tap opens its sheet over the day (F-093): address, Directions, Call, times, confirmation, passes."""
     when = cal.fmt_time(x.label_start if getattr(x, "label_start", None) is not None else x.start)
     return A(Span(when, cls="cz-bk-time"), Span(icon(getattr(x, "icon", "") or "lock", 16, 2.4), cls="cz-bk-ico", aria_hidden="true"), Span(x.title, cls="cz-bk-t"),
-             Span("Booked", cls="cz-bk-tag"), href=BOOKED_HELP.get(getattr(x, "icon", ""), "/trip/help"), cls="cz-bk")
+             Span("Booked", cls="cz-bk-tag"), href=curl(day=x.day, booked=x.id), cls="cz-bk", data_zoom="in", data_zk=f"bkg-{x.id}", **kind_attrs(v, "booked", x))
 
 
 def day_pills(v, day):
@@ -400,25 +436,33 @@ def say_bar(day):
                cls="cz-empty cz-say-empty", id="cz-empty")
 
 
-def day_view(v, day):
+def day_view(v, day, booked=None, sos=False):
     editor = access.can_edit(v["role"])
     d = v["dates"][day]
     ents = entries(v, day)
     planned = [(kind, x) for kind, x in ents if kind != "booked"]
-    cards = [(_block_card(v, x) if kind == "block" else booked_line(x) if kind == "booked" else _simple(kind, x, v)) for kind, x in ents]
+    cards = [(_block_card(v, x) if kind == "block" else booked_line(v, x) if kind == "booked" else _simple(kind, x, v)) for kind, x in ents]
     aside = [s for kind, x in ents if kind == "block" for s in v["plan"][x.id]["aside"]]
     if not planned:
-        empty = say_bar(day) if editor else Div(P("Nothing planned yet", cls="cz-say-h"), P("Nobody has planned this day yet.", cls="cz-sub"), cls="cz-empty cz-say-empty", id="cz-empty")
+        empty = say_bar(day) if editor else Div(P("Nothing planned yet", cls="cz-say-h"), P("Nobody has planned this day yet.", cls="cz-sub"), cls="cz-empty cz-say-empty", id="cz-empty", data_kind="empty")
         cards = [empty, *cards]
     kicker = f"{d.strftime('%a %b').upper()} {d.day} · DAY {day + 1} OF {len(v['dates'])}"
     first = next((x for kind, x in ents if kind == "block"), None)
-    body = [head(v, kicker, d.strftime("%A"), key=f"day-{day}", back=curl(), back_label="Zoom out to the week"), toggle(v, "day", day), day_pills(v, day), strip(v, day),
+    body = [head(v, kicker, d.strftime("%A"), key=f"day-{day}", back=curl(), back_label="Zoom out to the week", sos=curl(day=day, sos=True)), Div(toggle(v, "day", day), kinds_bar(), cls="cz-bar"), day_pills(v, day), strip(v, day),
             now_card(v, day),      # F-092: the centre Ask changes the day; on today the day starts with what is happening now
-            *([filter_bar(v)] if first else []), *([dropbars(v)] if first and editor else []),
-            Div(Div(*cards, *(listmore(v, first) if first else []), cls="cz-day-main"), Div(_tray(aside, editor), cls="cz-day-side"), cls="cz-day-body")]
+            *([filter_bar(v, True)] if first else []), *([dropbars(v)] if first and editor else []),
+            Div(Div(*cards, *(listmore(v, first) if first else []), P("Nothing here for this filter.", cls="cz-sub cz-kind-none", hidden=True), cls="cz-day-main"), Div(_tray(aside, editor), cls="cz-day-side"), cls="cz-day-body")]
+    if booked:
+        body.append(booking_sheet(v, day, booked))
+    elif sos:
+        body.append(sos_sheet(v, curl(day=day)))
+    else:
+        body.append(sos_template(v, curl(day=day)))
     near = {"data_prev": curl(day=day - 1)} if day > 0 else {}
     if day < len(v["dates"]) - 1:
         near["data_next"] = curl(day=day + 1)
+    if booked or sos:
+        return view("step", body, zout=f"bkg-{booked[0].id}" if booked else "sos-open", title=day_title(v, day), data_day=str(day))
     return view("day", body, zout=f"day-{day}", title=day_title(v, day), data_day=str(day), **near)
 
 
@@ -562,6 +606,32 @@ def sheet(v, found, a):
                    cls="cz-sheet", role="dialog", aria_modal="true", aria_labelledby="cz-sheet-title", data_zk=f"stp-{s['id']}", data_step=s["id"]), cls="cz-sheet-wrap")
 
 
+def sheet_wrap(close, pills, title, *body, zk, cls="", **attrs):
+    """A bottom sheet over the level (the step sheet's look): scrim and close both go to `close`."""
+    return Div(A(href=close, cls="cz-scrim", aria_label="Close", tabindex="-1", data_zoom="out"),
+               Div(Div(cls="cz-grab", aria_hidden="true"),
+                   Div(Div(*[Span(x, cls="cz-pill") for x in pills], cls="cz-pills"), A(icon("x", 20, 2.6), href=close, cls="cz-close", aria_label="Close", data_zoom="out"), cls="cz-sheet-top"),
+                   H2(title, id="cz-sheet-title", tabindex="-1"), *body,
+                   cls=f"cz-sheet {cls}".strip(), role="dialog", aria_modal="true", aria_labelledby="cz-sheet-title", data_zk=zk, **attrs), cls="cz-sheet-wrap")
+
+
+def booking_sheet(v, day, booked_block):
+    """A booking's sheet over its day (F-093): `booked_block` is (the block, what it is). Everything Help showed for it, drawn by gitaway.pages.booked."""
+    x, found = booked_block
+    pills, title, body = booked.sheet(v, found, v.get("ua", ""), curl(day=x.day, booked=x.id))
+    return sheet_wrap(curl(day=day), pills, title, *body, zk=f"bkg-{x.id}", cls="cz-sheet-bk", data_booked=x.id)
+
+
+def sos_sheet(v, close):
+    """The emergency sheet (F-093): 911, tonight's front desk, the rental counter, the family's numbers, and a way to "This phone"."""
+    return sheet_wrap(close, ["Emergency"], "Who to call", *booked.sos(v, v.get("ua", "")), zk="sos-open", cls="cz-sheet-sos")
+
+
+def sos_template(v, close):
+    """The emergency sheet again, inert, in every week and day page: the script opens it from here without the network, so SOS works with no signal once the page is open (Help promised that)."""
+    return Template(sos_sheet(v, close), id="cz-sos-tpl")
+
+
 ADD_ERRORS = {"title": "Give the step a name.", "time": "That time is not one we can read.", "other": "That step could not be added. Check it and try again."}
 
 
@@ -595,9 +665,18 @@ def add_sheet(v, a, adding):
 
 # ---- the page and the routes ---------------------------------------------------------------------------------------------
 
-def resolve(v, day="", block="", step="", add=None):
+def resolve(v, day="", block="", step="", add=None, booked_id="", sos=False):
     """(level, the view) for the address, or None when it names something that is not there (the caller goes back to the week). `add`: the add-a-step sheet's
     starting values, shown over the block when asked for (editors only)."""
+    if booked_id:
+        x = next((b for b in v["blocks"] if b.id == booked_id[:20] and b.kind == "booked"), None)
+        found = booked.find(v, x.id) if x else None
+        return ("step", day_view(v, x.day, booked=(x, found))) if found else None
+    if sos and not (block or step):
+        if day.isdigit() and int(day) < len(v["dates"]):
+            return "step", day_view(v, int(day), sos=True)
+        if not day:
+            return "step", week_view(v, sos=True)
     if step:
         found = find_step(v, step[:40])
         return ("step", block_view(v, found[1], found)) if found else None
@@ -640,13 +719,13 @@ def _field(form, name, cap=80):
 
 def register(app):
     @app.get("/trip/canvas")
-    def canvas_page(request, session, day: str = "", block: str = "", step: str = "", frag: str = "", add: str = "", part: str = "", title: str = "", note: str = "", err: str = ""):
+    def canvas_page(request, session, day: str = "", block: str = "", step: str = "", frag: str = "", add: str = "", part: str = "", title: str = "", note: str = "", err: str = "", booked: str = "", sos: str = ""):
         if (r := _guard(session)):
             return r
         v = load(session)
         v["ua"] = request.headers.get("user-agent", "")       # the now card's Directions open Apple Maps on Apple devices
         adding = {"part": part[:40], "title": title[:80], "note": note[:canvas.MAX_NOTE], "err": err[:8]} if add == "1" else None
-        got = resolve(v, day[:3], block, step[:40], adding)
+        got = resolve(v, day[:3], block, step[:40], adding, booked[:20], sos == "1")
         if got is None:
             if frag == "1":
                 return Response("not found", status_code=404, media_type="text/plain")   # the script then loads the address as a page, which goes to the week

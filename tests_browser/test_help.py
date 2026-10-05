@@ -61,8 +61,7 @@ def test_help_at_390_confirmation_tap_call_links_and_no_sideways_scroll(phone_pa
     assert page.evaluate(SMALL_CONTROLS) == []
     page.set_viewport_size({"width": 320, "height": 640})
     assert page.evaluate(OVERFLOW) == 0
-    # the Help tab of the bar is the current one
-    expect(page.locator("#ph-tab-help")).to_have_attribute("aria-current", "page")
+    assert page.locator("#ph-tab-help").count() == 0         # F-093: Help is not on the bar
 
 
 def test_fixing_a_number_right_there_and_the_family_number_from_the_family_page(phone_page, base_url):

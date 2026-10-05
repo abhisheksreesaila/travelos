@@ -50,7 +50,7 @@ def phone(browser, base_url):
         page = ctx.new_page()
         if perm:
             page.add_init_script(script=f"({STUB % {'answer': json.dumps(answer)}})({json.dumps(perm)})")
-        page.goto(f"{base_url}/trip?tab=today")
+        page.goto(f"{base_url}/family")      # F-093: the morning plan switch lives on the family page ("Morning plan")
         return page
 
     yield make

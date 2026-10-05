@@ -67,8 +67,8 @@ def test_bookings_are_quiet_lines_in_time_order_with_a_tap_to_their_details(trip
     lines = re.findall(r'<a\b[^>]*class="cz-bk[ "][^>]*>.*?</a>', page, re.S)
     assert len(lines) == 2
     flight, hotel = lines
-    assert "8:05 AM" in text(flight) and "SFO" in text(flight) and 'href="/trip/help#hp-passes"' in flight
-    assert "3:00 PM" in text(hotel) and "Check in" in text(hotel) and 'href="/trip/help#hp-hotel"' in hotel
+    assert "8:05 AM" in text(flight) and "SFO" in text(flight) and 'href="/trip/canvas?day=0&amp;booked=b-out"' in flight     # F-093: the sheet opens in place, not Help
+    assert "3:00 PM" in text(hotel) and "Check in" in text(hotel) and 'href="/trip/canvas?day=0&amp;booked=b-in"' in hotel
     assert "cz-plain is-booked" not in page        # no booking is a bright card any more
 
 

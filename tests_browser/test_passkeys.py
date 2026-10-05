@@ -112,35 +112,16 @@ def test_remove_deletes_the_passkey_and_it_can_no_longer_sign_in(phone, site):
     assert page.evaluate("localStorage.getItem('ga-faceid-on')") is None
 
 
-def test_the_today_card_in_the_home_screen_app_not_now_then_turn_on(phone, site):
+def test_no_face_id_card_on_help_or_the_day_the_family_page_is_where_it_lives(phone, site):
+    """F-093: the Home Screen card (with "Not now") that F-092 put on Help is gone; Face ID is on the family page ("This phone", add_from_family above)."""
     page, ctx = phone(init=STANDALONE)
     ctx.request.post(f"{site}/pay", form={"f": "f1", "h": "h1", "c": "c1"}, max_redirects=0)
-    page.goto(f"{site}/trip/help")      # F-092: the card moved from Today to Help
-    card = page.locator("#pk-card")
-    expect(card).to_be_visible()
-    expect(card).to_contain_text("Use Face ID next time")
-    no_sideways_scroll(page)
-    page.get_by_role("button", name="Not now").click()
-    expect(card).to_be_hidden()
-    page.reload()
+    page.goto(f"{site}/trip/help")
     expect(page.locator("#hp-sos")).to_be_visible()      # Help is drawn
-    expect(card).to_be_hidden()   # it stays away on this phone
-    page.evaluate("localStorage.clear()")
-    page.reload()
-    expect(card).to_be_visible()
-    page.get_by_role("button", name="Turn on Face ID").click()
-    expect(page.locator("#pk-done")).to_be_visible()
-    expect(page.locator("#pk-done")).to_have_text("Face ID is on for this phone.")
-    page.reload()
-    expect(page.locator("#pk-card")).to_have_count(0)   # a person with a passkey is not asked again
-
-
-def test_the_today_card_is_not_shown_in_a_browser_tab(phone, site):
-    page, ctx = phone()
-    ctx.request.post(f"{site}/pay", form={"f": "f1", "h": "h1", "c": "c1"}, max_redirects=0)
-    page.goto(f"{site}/trip/help")      # F-092: the card moved from Today to Help
-    expect(page.locator("#hp-sos")).to_be_visible()      # Help is drawn
-    expect(page.locator("#pk-card")).to_be_hidden()
+    expect(page.locator("#pk-card")).to_have_count(0)
+    page.goto(f"{site}/trip/canvas?day=0")
+    expect(page.locator(".cz-view")).to_be_visible()
+    expect(page.locator("#pk-card")).to_have_count(0)
 
 
 def test_a_browser_without_passkeys_never_shows_the_button(phone, site):

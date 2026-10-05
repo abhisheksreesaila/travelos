@@ -105,14 +105,15 @@ def test_holding_a_step_still_drags_it_and_does_not_flick(canvas_page):
     assert day_of(page) == "1"
 
 
-def test_bookings_are_quiet_and_their_line_opens_help(canvas_page):
+def test_bookings_are_quiet_and_their_line_opens_its_sheet_in_place(canvas_page):
     page = canvas_page()
     open_day(page, 0)
     lines = page.locator(".cz-bk")
     assert lines.count() == 2
     assert page.locator("#cz-empty").is_visible()
-    lines.nth(1).click()
-    page.wait_for_url(re.compile(r"/trip/help"))
+    lines.nth(1).click()          # F-093: the sheet opens over the day, not Help
+    page.wait_for_selector(".cz-sheet-bk")
+    assert "booked=b-in" in page.url and "/trip/help" not in page.url
 
 
 def test_the_centre_ask_and_an_empty_days_talk_and_paste_open_ask_on_that_day(canvas_page):
