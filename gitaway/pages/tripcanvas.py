@@ -354,20 +354,60 @@ def strip(v, day):
     return Nav(*cards, cls="cz-strip", aria_label="Days of the trip", style=f"--days:{min(len(cards), 7)}")
 
 
+BOOKED_HELP = {"bed": "/trip/help#hp-hotel", "hotel": "/trip/help#hp-hotel", "car": "/trip/help#hp-car"}
+
+
+def booked_line(x):
+    """A booking on the day (F-090): a quiet grey line behind the family's plans, with its time and a tap to its details in Help (address, phone, confirmation)."""
+    when = cal.fmt_time(x.label_start if getattr(x, "label_start", None) is not None else x.start)
+    return A(Span(when, cls="cz-bk-time"), Span(icon(getattr(x, "icon", "") or "lock", 16, 2.4), cls="cz-bk-ico", aria_hidden="true"), Span(x.title, cls="cz-bk-t"),
+             Span("Booked", cls="cz-bk-tag"), href=BOOKED_HELP.get(getattr(x, "icon", ""), "/trip/help"), cls="cz-bk")
+
+
+def day_pills(v, day):
+    """A phone's dates across the top (F-090): the whole trip one tap out, then every day (the open one marked, today ringed, a dot when the family planned something)."""
+    items = [A(icon("expand", 16, 2.6), Span("Week", cls="cz-dp-dow"), href=curl(), id="cz-z-week", cls="cz-dp cz-dp-week", data_zoom="out", aria_label="Zoom out to the whole trip")]
+    for i, s in enumerate(v["summaries"]):
+        planned = any(kind != "booked" for kind, _ in entries(v, i))
+        cls = "cz-dp" + (" is-open" if i == day else "") + (" is-today" if i == v["today_idx"] else "") + (" has-plans" if planned else "")
+        label = f"{v['dates'][i].strftime('%A %b')} {s.num}" + (", today" if i == v["today_idx"] else "") + ("" if planned else ", nothing planned")
+        items.append(A(Span(s.dow, cls="cz-dp-dow"), Span(str(s.num), cls="cz-dp-num"), Span(cls="cz-dp-dot", aria_hidden="true"),
+                       href=curl(day=i), cls=cls, aria_current="date" if i == day else None, aria_label=label, data_zoom="side"))
+    return Nav(*items, cls="cz-dpills", id="cz-dpills", aria_label="Days of the trip")
+
+
+def say_bar(day, empty):
+    """Change the day by voice (F-090): one clear button, or for a day with nothing planned the two ways in (talk, paste). Opens Ask on this day (F-087)."""
+    if empty:
+        return Div(Span(icon("mic", 30, 2.2), cls="cz-say-ico", aria_hidden="true"), P("Nothing planned yet", cls="cz-say-h"),
+                   P("Say the plan for this day, or paste it from a message. GitAway lays it out and asks if something is unclear.", cls="cz-sub"),
+                   Div(A(icon("mic", 20, 2.4), "Say the plan for this day", href=f"/trip/ask?day={day}&mode=talk", id="cz-say-talk", cls="tp-btn tp-btn-coral cz-say-go"),
+                       A(icon("note", 18, 2.4), "Paste a plan", href=f"/trip/ask?day={day}&mode=paste", id="cz-say-paste", cls="tp-btn tp-btn-white cz-say-go"), cls="cz-say-acts"),
+                   cls="cz-empty cz-say-empty", id="cz-empty")
+    return A(Span(icon("mic", 20, 2.4), cls="cz-say-mic", aria_hidden="true"), Span(Span("Change this day", cls="cz-say-t"), Span("Talk, type or paste", cls="cz-say-s"), cls="cz-say-text"),
+             href=f"/trip/ask?day={day}", id="cz-say", cls="cz-say")
+
+
 def day_view(v, day):
     editor = access.can_edit(v["role"])
     d = v["dates"][day]
     ents = entries(v, day)
-    cards = [(_block_card(v, x) if kind == "block" else _simple(kind, x, v)) for kind, x in ents]
+    planned = [(kind, x) for kind, x in ents if kind != "booked"]
+    cards = [(_block_card(v, x) if kind == "block" else booked_line(x) if kind == "booked" else _simple(kind, x, v)) for kind, x in ents]
     aside = [s for kind, x in ents if kind == "block" for s in v["plan"][x.id]["aside"]]
-    if not cards:
-        cards = [Div(Span("a free day", cls="cz-hand"), A("Add something fun", href=f"/trip?add=1&day={day}", cls="tp-btn tp-btn-ink") if editor else Span("Nothing planned yet.", cls="cz-sub"), cls="cz-empty", id="cz-empty")]
+    if not planned:
+        empty = say_bar(day, True) if editor else Div(P("Nothing planned yet", cls="cz-say-h"), P("Nobody has planned this day yet.", cls="cz-sub"), cls="cz-empty cz-say-empty", id="cz-empty")
+        cards = [empty, *cards]
     kicker = f"{d.strftime('%a %b').upper()} {d.day} · DAY {day + 1} OF {len(v['dates'])}"
     first = next((x for kind, x in ents if kind == "block"), None)
-    body = [head(v, kicker, d.strftime("%A"), key=f"day-{day}", back=curl(), back_label="Zoom out to the week"), zoom_control(v, "day"), ask_button(day, ident=f"ak-open-day-{day}") if editor else "", strip(v, day),
+    body = [head(v, kicker, d.strftime("%A"), key=f"day-{day}", back=curl(), back_label="Zoom out to the week"), day_pills(v, day), strip(v, day),
+            say_bar(day, False) if editor and planned else "",
             *([filter_bar(v)] if first else []), *([dropbars(v)] if first and editor else []),
             Div(Div(*cards, *(listmore(v, first) if first else []), cls="cz-day-main"), Div(_tray(aside, editor), cls="cz-day-side"), cls="cz-day-body")]
-    return view("day", body, zout=f"day-{day}", title=day_title(v, day), data_day=str(day))
+    near = {"data_prev": curl(day=day - 1)} if day > 0 else {}
+    if day < len(v["dates"]) - 1:
+        near["data_next"] = curl(day=day + 1)
+    return view("day", body, zout=f"day-{day}", title=day_title(v, day), data_day=str(day), **near)
 
 
 # ---- block ------------------------------------------------------------------------------------------------------------------

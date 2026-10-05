@@ -56,6 +56,7 @@
       v.addEventListener('animationend', function () { v.classList.remove('cz-in-' + dir); }, { once: true });
     }
     applyFilter();
+    centreDay();
   }
 
   // Name the element that zooms, run the swap inside a View Transition, and clear the name afterwards.
@@ -132,6 +133,7 @@
     e.preventDefault();
     var dir = a.dataset.zoom, u = path(a.href);
     if (dir === 'out') { zoomOutTo(u); return; }
+    if (dir === 'side') dir = sideways(u);
     var hero = a.closest('[data-zk]');
     goto(u, { dir: dir, key: dir === 'in' && hero ? hero.dataset.zk : null, mode: 'push' });
   });
@@ -339,6 +341,53 @@
   stage.addEventListener('pointerup', lift);
   stage.addEventListener('pointercancel', lift);
 
+  // The open day sits in the middle of the dates across the top (they scroll sideways on a phone).
+  function centreDay() {
+    var bar = stage.querySelector('.cz-dpills'), open = bar && bar.querySelector('.is-open');
+    if (open && bar.scrollWidth > bar.clientWidth) bar.scrollLeft = open.offsetLeft - (bar.clientWidth - open.offsetWidth) / 2;
+  }
+
+  // ---- F-090: one day at a time. A day to the right slides in from the right; a flick left is the next day, right the previous one ----------------------------
+  function dayOf(u) { var m = /[?&]day=(\d+)/.exec(u || ''); return m ? parseInt(m[1], 10) : null; }
+  function sideways(u) {
+    var v = view(), from = v && v.dataset.level === 'day' ? parseInt(v.dataset.day, 10) : null, to = dayOf(u);
+    return from === null || to === null || from === to ? 'side' : to > from ? 'next' : 'prev';
+  }
+  var flick = null;
+  var FLICK = 60;
+  stage.addEventListener('pointerdown', function (e) {
+    flick = null;
+    var v = view();
+    if (!v || v.dataset.level !== 'day' || e.pointerType === 'mouse' || count() > 1) return;
+    if (e.target.closest && e.target.closest('.cz-dpills, .cz-strip, .cz-filters, .cz-sheet, input, textarea, select')) return;
+    flick = { id: e.pointerId, x: e.clientX, y: e.clientY, at: Date.now(), v: v };
+  });
+  stage.addEventListener('pointermove', function (e) {
+    if (!flick || e.pointerId !== flick.id) return;
+    if (count() > 1 || (g && g.mode === 'drag')) { flick.v.style.transform = ''; flick = null; return; }
+    var dx = e.clientX - flick.x, dy = e.clientY - flick.y;
+    if (!reduced.matches && Math.abs(dx) > Math.abs(dy) * 1.5 && Math.abs(dx) > 12) {
+      var edge = (dx < 0 && !flick.v.dataset.next) || (dx > 0 && !flick.v.dataset.prev);
+      flick.v.style.transform = 'translateX(' + (dx * (edge ? 0.08 : 0.25)) + 'px)';   // follows the finger a little; barely at the first or last day
+    }
+  });
+  function endFlick(e) {
+    if (!flick || e.pointerId !== flick.id) return;
+    var f = flick;
+    flick = null;
+    f.v.style.transform = '';
+    if (e.type !== 'pointerup' || busy || (g && g.mode === 'drag')) return;
+    var dx = e.clientX - f.x, dy = e.clientY - f.y;
+    if (Math.abs(dx) < FLICK || Math.abs(dx) < Math.abs(dy) * 1.5 || Date.now() - f.at > 900) return;
+    var u = dx < 0 ? f.v.dataset.next : f.v.dataset.prev;
+    if (!u) return;
+    clickGuard = Date.now() + 250;
+    guardItem = f.v;      // the click the lifting finger makes is not a tap on what it lifted from
+    goto(path(u), { dir: dx < 0 ? 'next' : 'prev', key: null, mode: 'replace' });
+  }
+  stage.addEventListener('pointerup', endFlick);
+  stage.addEventListener('pointercancel', endFlick);
+
   // ---- hold to move, swipe for Done and Set aside (editors only) ------------------------------------------------------------
   // One gesture at a time, from pointerdown on a step (data-drag) or on a list chip (data-add-title):
   //   wait   the finger is down and still. After HOLD ms the step is lifted (drag). Moving more than SLOP first is a scroll (or, sideways on a row, a swipe).
@@ -535,4 +584,5 @@
   }, true);
 
   applyFilter();
+  centreDay();
 })();

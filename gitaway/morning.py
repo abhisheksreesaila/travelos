@@ -68,14 +68,15 @@ def _clean(title) -> str:
     return t
 
 
-def message(destination, phase, plans):
-    """The push for a trip morning, or None outside the trip. `plans` is [(minute of the day, title)] in time order. Titles and times only."""
+def message(destination, phase, plans, day=None):
+    """The push for a trip morning, or None outside the trip. `plans` is [(minute of the day, title)] in time order. Titles and times only. `day` (the trip day's
+    index) makes it open the plan of that day (F-090); without it, Today."""
     if phase != "during":
         return None
     lines = [f"{cal.fmt_time(start)} {_clean(title)}" for start, title in plans[:SHOWN]]
     if len(plans) > SHOWN:
         lines.append(f"+{len(plans) - SHOWN} more")
-    return {"title": f"Today in {destination}", "body": " · ".join(lines) or "Nothing planned yet. Tap to add something fun.", "url": URL}
+    return {"title": f"Today's plan · {destination}", "body": " · ".join(lines) or "Nothing planned yet. Tap to say the plan for today.", "url": URL if day is None else f"/trip/canvas?day={int(day)}"}
 
 
 def todays_message(session, now):
@@ -92,7 +93,7 @@ def todays_message(session, now):
     if ph != "during":
         return None
     items = td.timeline(n, cal.booked_blocks(b, t), cal.activities(session), [], t.destination_name, zone=zone)
-    return message(t.destination_name, ph, [(x.start, x.title) for x in items if x.kind != "offer"])  # a ride offer is an invitation, not a plan
+    return message(t.destination_name, ph, [(x.start, x.title) for x in items if x.kind != "offer"], day=n)  # a ride offer is an invitation, not a plan
 
 
 # ---- a person's subscriptions ---------------------------------------------------------------------------------------------

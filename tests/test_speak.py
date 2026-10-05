@@ -493,14 +493,14 @@ def opener(html, ident):
 
 def test_the_canvas_offers_ask_on_the_today_day_the_canvas_day_and_a_block_for_editors_only(client, day):
     assert opener(client.get(f"/trip?day={DAY}").text, "ak-open") == "/trip/ask?day=1"
-    assert opener(client.get(f"/trip/canvas?day={DAY}").text, f"ak-open-day-{DAY}") == "/trip/ask?day=1"
+    assert opener(client.get(f"/trip/canvas?day={DAY}").text, "cz-say") == "/trip/ask?day=1"      # F-090: the day's "Change this day"
     assert opener(client.get(f"/trip/canvas?block={day['block']}").text, f"ak-open-blk-{day['block']}") == "/trip/ask?day=1"
     mail = addr("viewask")
     invite(client, mail, "viewer")
     viewer = browser(client)
     sign_in(viewer, mail)
     for url in (f"/trip?day={DAY}", f"/trip/canvas?day={DAY}", f"/trip/canvas?block={day['block']}"):
-        assert "ak-open" not in viewer.get(url).text, url
+        assert "ak-open" not in viewer.get(url).text and "cz-say" not in viewer.get(url).text, url
 
 
 def test_the_ask_routes_need_sign_in(client):

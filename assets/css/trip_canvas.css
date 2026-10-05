@@ -348,3 +348,55 @@ html[data-cz-dir="side"]::view-transition-new(root) { animation: cz-come-side va
   .cz .cz-dropdays { max-width: 40rem; }
   .cz .cz-listmore { grid-column: 1 / -1; }
 }
+
+/* F-090, the plan of the day: the dates across the top (a phone), "Change this day", bookings as quiet lines behind the family's plans, and the sideways slide of a flick. */
+.cz .cz-dpills { display: flex; gap: 0.375rem; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; touch-action: pan-x; margin: 0 -1rem; padding: 0.25rem 1rem 0.375rem; }
+.cz .cz-dpills::-webkit-scrollbar { display: none; }
+.cz .cz-dp { flex: 0 0 auto; scroll-snap-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.0625rem; min-width: 3.25rem; min-height: 3.75rem;
+  padding: 0.25rem 0.5rem; border-radius: 1.125rem; background: var(--card); box-shadow: var(--shadow-sm); color: var(--ink); }
+.cz .cz-dp-dow { font-size: var(--cz-small); font-weight: 800; letter-spacing: 0.06em; color: var(--ink-2); }
+.cz .cz-dp-num { font-family: var(--font-display); font-weight: 800; font-size: 1.375rem; line-height: 1; }
+.cz .cz-dp-dot { width: 0.375rem; height: 0.375rem; border-radius: var(--r-pill); background: transparent; }
+.cz .cz-dp.has-plans .cz-dp-dot { background: var(--coral); }
+.cz .cz-dp.is-today { box-shadow: 0 0 0 0.1875rem var(--coral); }
+.cz .cz-dp.is-open { background: var(--ink); color: #FFFFFF; }
+.cz .cz-dp.is-open .cz-dp-dow { color: rgba(255, 255, 255, .8); }
+.cz .cz-dp.is-open .cz-dp-num { color: var(--sun); }
+.cz .cz-dp.is-open.has-plans .cz-dp-dot { background: var(--sun); }
+.cz .cz-dp-week { background: transparent; box-shadow: inset 0 0 0 0.125rem rgba(30, 26, 46, .14); gap: 0.25rem; }
+
+.cz .cz-say { display: flex; align-items: center; gap: 0.75rem; min-height: 3.5rem; padding: 0.5rem 1rem 0.5rem 0.5rem; border-radius: var(--r-pill); background: var(--card); box-shadow: var(--shadow-sm); color: var(--ink); }
+.cz .cz-say-mic { flex-shrink: 0; width: 2.75rem; height: 2.75rem; border-radius: var(--r-pill); display: inline-flex; align-items: center; justify-content: center; background: var(--coral); color: #FFFFFF; }
+.cz .cz-say-text { display: flex; flex-direction: column; min-width: 0; }
+.cz .cz-say-t { font-weight: 800; font-size: 1rem; line-height: 1.15; }
+.cz .cz-say-s { font-size: var(--cz-small); font-weight: 700; color: var(--ink-3); }
+.cz .cz-say-empty { border: 0.125rem dashed rgba(30, 26, 46, .18); box-shadow: none; background: rgba(255, 255, 255, .7); }
+.cz .cz-say-ico { width: 4rem; height: 4rem; border-radius: var(--r-pill); display: inline-flex; align-items: center; justify-content: center; background: var(--coral); color: #FFFFFF; box-shadow: var(--shadow-md); }
+.cz .cz-say-h { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 1.375rem; line-height: 1.1; }
+.cz .cz-say-empty .cz-sub { margin: 0; max-width: 22rem; }
+.cz .cz-say-acts { display: flex; flex-direction: column; gap: 0.5rem; width: 100%; max-width: 22rem; }
+.cz .cz-say-go { justify-content: center; min-height: 3rem; }
+
+.cz .cz-bk { display: grid; grid-template-columns: 4.5rem 1.25rem minmax(0, 1fr) auto; align-items: center; gap: 0.5rem; min-height: 2.75rem; padding: 0.25rem 0.75rem;
+  border-radius: 1rem; background: transparent; border: 0.0625rem dashed rgba(30, 26, 46, .16); color: var(--ink-3); font-size: var(--cz-body); }
+.cz .cz-bk-time { font-weight: 800; font-variant-numeric: tabular-nums; color: var(--ink-2); }
+.cz .cz-bk-ico { display: inline-flex; color: var(--ink-3); }
+.cz .cz-bk-t { font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; }
+.cz .cz-bk-tag { padding: 0 0.5rem; border-radius: var(--r-pill); background: rgba(30, 26, 46, .06); font-size: var(--cz-small); font-weight: 800; color: var(--ink-3); }
+
+html[data-cz-dir="next"]::view-transition-old(root) { animation: cz-out-left 320ms ease both; }
+html[data-cz-dir="next"]::view-transition-new(root) { animation: cz-in-right 320ms ease both; }
+html[data-cz-dir="prev"]::view-transition-old(root) { animation: cz-out-right 320ms ease both; }
+html[data-cz-dir="prev"]::view-transition-new(root) { animation: cz-in-left 320ms ease both; }
+@keyframes cz-out-left { to { opacity: 0; transform: translateX(-18%); } }
+@keyframes cz-in-right { from { opacity: 0; transform: translateX(18%); } }
+@keyframes cz-out-right { to { opacity: 0; transform: translateX(18%); } }
+@keyframes cz-in-left { from { opacity: 0; transform: translateX(-18%); } }
+.cz .cz-view.cz-in-next { animation: cz-in-right 320ms ease both; }
+.cz .cz-view.cz-in-prev { animation: cz-in-left 320ms ease both; }
+.cz .cz-view.is-flicking { transition: none; }
+@media (prefers-reduced-motion: reduce) { .cz .cz-view.cz-in-next, .cz .cz-view.cz-in-prev { animation: none; } }
+@media (min-width: 721px) {
+  .cz .cz-dpills { display: none; }     /* a laptop has the week strip across the top */
+  .cz .cz-say { align-self: flex-start; }
+}
