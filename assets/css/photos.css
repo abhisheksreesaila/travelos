@@ -4,9 +4,11 @@
 .ft-panel { display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; }
 .ft-panel[hidden], .fp[hidden] { display: none !important; }
 
-.fam-switch { display: flex; gap: 0.25rem; padding: 0.25rem; border-radius: var(--r-pill); background: var(--card); box-shadow: var(--shadow-sm); }
-.fam-seg { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 2.75rem; border-radius: var(--r-pill); font-weight: 800; font-size: max(var(--text-min), 0.9375rem); color: var(--ink-2); text-decoration: none; }
-.fam-seg[aria-current="true"] { background: var(--ink); color: var(--card); }
+/* F-094: one slim header line. Chat / Photos are two quiet words (the current one inked and underlined), the people link sits at the end. */
+.fam-bar { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; min-width: 0; }
+.fam-switch { display: flex; gap: 0.25rem; }
+.fam-seg { display: flex; align-items: center; justify-content: center; min-height: 2.75rem; min-width: 2.75rem; padding: 0 0.625rem; font-weight: 700; font-size: max(var(--text-min), 0.9375rem); color: var(--ink-3); text-decoration: none; border-bottom: 0.125rem solid transparent; box-sizing: border-box; }
+.fam-seg[aria-current="true"] { color: var(--ink); font-weight: 800; border-bottom-color: var(--ink); }
 
 .ft-round { width: 2.75rem; height: 2.75rem; flex-shrink: 0; border: 0; border-radius: var(--r-pill); background: var(--card); box-shadow: var(--shadow-sm); color: var(--ink); display: flex; align-items: center; justify-content: center; cursor: pointer; }
 

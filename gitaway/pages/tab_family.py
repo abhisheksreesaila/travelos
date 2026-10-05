@@ -107,10 +107,15 @@ def _switch(view):
 
 
 def _people(role):
-    """A row above the switch: admins get the Invite button (the form at /family#invite), everyone else a link to see who is in the family."""
+    """The small link at the end of the header line: admins get Invite (the form at /family#invite), everyone else a link to see who is in the family."""
     if role == "admin":
-        return Div(A(icon("user-plus", 20, 2.2), Span("Invite"), href="/family#invite", id="ft-invite", cls="btn btn-primary btn-sm ft-people-btn"), cls="fam-people")
-    return Div(A(icon("users", 20, 2.2), Span("Who's in the family"), href="/family", id="ft-people", cls="btn btn-sm ft-people-btn"), cls="fam-people")
+        return A(icon("user-plus", 16, 2.2), Span("Invite"), href="/family#invite", id="ft-invite", cls="ft-people-btn")
+    return A(icon("users", 16, 2.2), Span("Family"), href="/family", id="ft-people", cls="ft-people-btn", aria_label="Who's in the family")
+
+
+def _bar(role, view):
+    """One slim header line (F-094): the Chat / Photos text switch on the left, the people link on the right."""
+    return Div(_switch(view), _people(role), cls="fam-bar")
 
 
 def content(request, session):
@@ -136,7 +141,7 @@ def content(request, session):
              method="post", action="/trip/family/message", id="ft-compose", cls="ft-compose"),
         P("", id="ft-error", cls="ft-error", role="alert", hidden=True),
         id="ft-chat", cls="ft-panel", data_view="chat", hidden=view != "chat")
-    return Div(_people(getattr(request.state, "family_role", None)), _switch(view), P("", id="ph-status", cls="fp-status", role="status", hidden=True), chat,
+    return Div(_bar(getattr(request.state, "family_role", None), view), P("", id="ph-status", cls="fp-status", role="status", hidden=True), chat,
                photos_ui.view(session, hidden=view != "photos", error=request.query_params.get("error", "")[:200] if view == "photos" else ""), photos_ui.pickers(),
                id="ft", cls="ft", data_view=view)
 

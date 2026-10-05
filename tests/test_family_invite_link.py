@@ -29,7 +29,7 @@ def test_admin_sees_an_invite_button_to_the_invite_form(crew, path):
 def test_editor_and_viewer_get_a_link_to_see_who_is_in_the_family(crew, path, who):
     html = crew[who].get(path).text
     tag, text = _link(html, "ft-people")
-    assert tag and 'href="/family"' in tag and text == "Who's in the family"
+    assert tag and 'href="/family"' in tag and text == "Family"
     assert _link(html, "ft-invite") == (None, None)
 
 
