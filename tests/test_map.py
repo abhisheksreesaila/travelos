@@ -159,7 +159,15 @@ def test_today_leave_by_uses_the_cached_drive_and_never_calls_out(client, maps, 
     assert len(maps.calls) == calls
     assert "Leave by 4:35 PM 25 min drive" in " ".join(visible(after).split())
 
-def test_the_day_views_now_card_has_leave_by_from_the_cache_too(client, maps, monkeypatch):    trip_with_plans(client)                                                      # F-092: Today is the day view, and it keeps Leave by    monkeypatch.setattr(catalog, "today", lambda *_: date(2026, 10, 16))    monkeypatch.setattr(td, "now_minute", lambda *_: 16 * 60 + 31)    client.get("/trip/map?day=0")    for url in ("/trip/canvas?day=0", "/trip/canvas?day=0&frag=1"):        assert "Leave by 4:35 PM 25 min drive" in " ".join(visible(client.get(url).text).split()), url
+
+def test_the_day_views_now_card_has_leave_by_from_the_cache_too(client, maps, monkeypatch):
+    trip_with_plans(client)                                                      # F-092: Today is the day view, and it keeps Leave by
+    monkeypatch.setattr(catalog, "today", lambda *_: date(2026, 10, 16))
+    monkeypatch.setattr(td, "now_minute", lambda *_: 16 * 60 + 31)
+    client.get("/trip/map?day=0")
+    for url in ("/trip/canvas?day=0", "/trip/canvas?day=0&frag=1"):
+        assert "Leave by 4:35 PM 25 min drive" in " ".join(visible(client.get(url).text).split()), url
+
 
 def test_a_slow_geocoder_cannot_hold_the_map_page_for_more_than_a_couple_of_seconds(client, monkeypatch):
     import time
