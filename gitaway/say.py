@@ -255,7 +255,7 @@ def _plural(n, one, many) -> str:
 def _plan_preview(session, state) -> dict:
     draft, days = state["draft"], state["days"]
     dates = _days(session)
-    groups = {}
+    groups, idle = {}, []
     for i, d in enumerate(draft["days"]):
         steps = sum(len(p["steps"]) for p in d["parts"])
         areas = sum(1 for p in d["parts"] if p["steps"])
@@ -265,13 +265,20 @@ def _plan_preview(session, state) -> dict:
         if old:         # the park is already on that day: what is new is added to it
             added = canvas.merge_plan(old, d["parts"])
             new_steps = sum(len(m["steps"]) for m in added)
-            if not added:
-                chip.update(kind="changed", after="Nothing new", warn="Everything in this is already on that day. Apply will not add it again.")
+            more = canvas.new_aside(old[0]["titles"], [a for a in draft["set_aside"] if a["day"] == i])
+            if not added and not more:
+                chip.update(kind="changed", after="Nothing new", detail="", warn="Everything in this is already on that day. It is left as it is.")
+                idle.append(chip)
+            elif not added:
+                chip.update(kind="changed", before="", after=f"Adds {_plural(len(more), 'set-aside item', 'set-aside items')} to what is already there", detail=", ".join(a["title"] for a in more))
             else:
                 new_parts = [m["part"]["name"] for m in added if m["into"] is None]
                 chip.update(kind="changed", after=f"Adds {_plural(len(new_parts), 'area', 'areas')} and {_plural(new_steps, 'ride or show', 'rides and shows')} to what is already there",
                             detail=", ".join(new_parts + [f"more in {m['part']['name']}" for m in added if m["into"] is not None]), before="")
         groups.setdefault(days[i], []).append(chip)
+    if idle and len(idle) == len(draft["days"]) and all(x["name"].casefold() in {y["name"].casefold() for y in canvas.plan(session)["lists"]} for x in draft["lists"]):
+        for c in idle:
+            c["warn"] = "Everything in this is already on that day. Apply will add nothing."
     tidy = []
     if state.get("cut"):
         tidy.append(f"{_plural(len(state['cut']), 'part', 'parts')} did not fit on one day and {'was' if len(state['cut']) == 1 else 'were'} left out: " + ", ".join(state["cut"]) + ".")
@@ -279,7 +286,11 @@ def _plan_preview(session, state) -> dict:
         tidy.append(f"Merged {_plural(draft['merged_repeats'], 'repeated item', 'repeated items')}. It was sent twice.")
     if draft["set_aside"]:
         tidy.append("Set aside: " + ", ".join(a["title"] for a in draft["set_aside"]) + ". Still in the trip, just not in a day.")
+    known = {x["name"].casefold() for x in canvas.plan(session)["lists"]}
     for lst in draft["lists"]:
+        if lst["name"].casefold() in known:
+            tidy.append(f"The list {lst['name']} is already in the trip, so it is not made again.")
+            continue
         tidy.append(f"Made a list: {lst['name']} ({len(lst['items'])}).")
     if draft["notes_kept"]:
         tidy.append("Kept your notes: " + " · ".join(draft["notes_kept"]))
@@ -364,7 +375,7 @@ def apply(session, state, token, trip) -> dict:
             done = canvas.save(session, state["draft"], {"who": state["who"], "days": state["days"], "list_for": []})
         except canvas.CanvasError as e:
             raise SayError(str(e))
-        return {"days": state["days"], "steps": done["steps"], "count": len(done["acts"]), "lists": done["lists"]}
+        return {"days": [a[2] for a in done["acts"]] or state["days"], "steps": done["steps"], "count": len(done["acts"]), "lists": done["lists"], "merged": done["merged"]}
     if state.get("kind") == "change" and isinstance(state.get("day"), int):
         ctx = speak.load_day(session, state["day"])
         ops, _ = speak.validate(ctx, state.get("ops"))

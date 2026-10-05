@@ -431,6 +431,7 @@ def test_a_park_pasted_onto_a_day_that_has_it_merges_and_the_preview_says_what_i
     assert r.status_code == 303 and len(announced) == 2
     block = canvas.block(s, "a1")
     assert [a.title for a in cal.activities(s)] == ["Universal Studios Hollywood"]
+    assert [x["title"] for x in block["aside"]] == ["Studio Tour", "Simpsons"]        # the set-aside items are not added again
     assert [p["name"] for p in block["parts"]][-1] == "Evening" and len(block["parts"]) == len(before["parts"]) + 1
     lower = [p for p in block["parts"] if p["name"] == "Lower Lot"][0]["steps"]
     assert [x["title"] for x in lower].count("Revenge of the Mummy") == 1 and "Despicable Me Minion Mayhem" in [x["title"] for x in lower]
@@ -500,3 +501,61 @@ def test_when_every_park_has_a_date_inside_the_trip_there_is_no_day_question(cli
     reply["days"][1]["date"] = "2027-01-01"       # outside the trip: ask
     azure.answer = reply
     assert "park:1" in asked(say.start(s, samples.text(), None))
+
+
+def test_a_merge_does_not_repeat_set_aside_steps_or_bring_back_one_the_family_set_aside(client, azure, announced):
+    book(client)
+    s = person("ari")
+    client.post("/trip/ask/apply", data=fields(_plan_onto_sat(client).text, "ak-apply-form"), follow_redirects=False)
+    before = canvas.block(s, "a1")
+    assert [x["title"] for x in before["aside"]] == ["Studio Tour", "Simpsons"]
+    mummy = [x for p in before["parts"] for x in p["steps"] if x["title"] == "Revenge of the Mummy"][0]
+    canvas.set_aside(s, mummy["id"])                   # the family set a ride aside by hand
+    azure.answer = _more(samples.model_answer())
+    r = client.post("/trip/ask/apply", data=fields(_plan_onto_sat(client).text, "ak-apply-form"), follow_redirects=False)
+    assert r.status_code == 303
+    after = canvas.block(s, "a1")
+    assert sorted(x["title"] for x in after["aside"]) == ["Revenge of the Mummy", "Simpsons", "Studio Tour"]
+    assert "Revenge of the Mummy" not in [x["title"] for p in after["parts"] for x in p["steps"]]
+
+
+def test_new_steps_in_an_existing_part_go_after_all_its_steps_even_when_one_is_set_aside(client, azure):
+    book(client)
+    s = person("ari")
+    client.post("/trip/ask/apply", data=fields(_plan_onto_sat(client).text, "ak-apply-form"), follow_redirects=False)
+    mummy = [x for p in canvas.block(s, "a1")["parts"] for x in p["steps"] if x["title"] == "Revenge of the Mummy"][0]
+    canvas.set_aside(s, mummy["id"])
+    reply = samples.model_answer()
+    reply["days"][0]["parts"][0]["steps"].append(samples.S("Despicable Me Minion Mayhem"))
+    azure.answer = reply
+    client.post("/trip/ask/apply", data=fields(_plan_onto_sat(client).text, "ak-apply-form"), follow_redirects=False)
+    lower = [p for p in canvas.block(s, "a1")["parts"] if p["name"] == "Lower Lot"][0]["steps"]
+    assert [x["title"] for x in lower][-1] == "Despicable Me Minion Mayhem"
+
+
+def test_a_park_with_nothing_new_is_skipped_and_the_other_parks_are_saved(client, azure, announced):
+    book(client)
+    s = person("ari")
+    r = client.post("/trip/ask/propose", data={"day": "", "text": samples.text()})
+    posted = fields(r.text, "ak-questions-form")
+    posted.update({"a_park:0": "1", "a_park:1": "3"})
+    client.post("/trip/ask/apply", data=fields(client.post("/trip/ask/answer", data=posted).text, "ak-apply-form"), follow_redirects=False)
+    assert len(announced) == 1
+    r = client.post("/trip/ask/propose", data={"day": "", "text": samples.text()})
+    posted = fields(r.text, "ak-questions-form")
+    posted.update({"a_park:0": "1", "a_park:1": "4"})            # Universal is already on Sat, Disney goes to a new day
+    r = client.post("/trip/ask/answer", data=posted)
+    assert "Nothing new" in r.text and "left as it is" in r.text
+    r = client.post("/trip/ask/apply", data=fields(r.text, "ak-apply-form"), follow_redirects=False)
+    assert r.status_code == 303 and len(announced) == 2
+    assert sorted((a.title, a.day) for a in cal.activities(s)) == [("Disney California Adventure", 3), ("Disney California Adventure", 4), ("Universal Studios Hollywood", 1)]
+
+
+def test_the_card_and_the_done_page_say_added_to_after_a_merge(client, azure, announced):
+    book(client)
+    client.post("/trip/ask/apply", data=fields(_plan_onto_sat(client).text, "ak-apply-form"), follow_redirects=False)
+    azure.answer = _more(samples.model_answer())
+    r = client.post("/trip/ask/apply", data=fields(_plan_onto_sat(client).text, "ak-apply-form"), follow_redirects=False)
+    assert "added to Universal Studios Hollywood on Sat" in announced[-1][1] or "added to Universal Studios Hollywood on Sat" in announced[-1][0]
+    assert "merged=1" in r.headers["location"]
+    assert "to what was already planned on Saturday, Oct 17" in client.get(r.headers["location"]).text

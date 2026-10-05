@@ -309,7 +309,7 @@ def save(session, draft, answers) -> dict:
                 raise CanvasError("Pick one of the people in your family.")
             for_who.append(choice if choice.startswith("m:") else f"n:{_s(choice[2:], 30)}" if choice.startswith("n:") and _s(choice[2:], 30) else "")
         resolved = {tok: _resolve(tok, who, ids, named) for tok in draft["initials"]}
-        made, steps_made = [], 0
+        made, steps_made, merged_acts, skipped, aside_pos = [], 0, set(), [], {}
         try:
             with familydb.transaction(db):
                 st = cal._begin(db, fam.trip_id, "", fam.traveler.id)
@@ -317,29 +317,39 @@ def save(session, draft, answers) -> dict:
                 if have + sum(len(p["steps"]) for d in draft["days"] for p in d["parts"]) + len(draft["set_aside"]) > MAX_STEP_PER_TRIP:
                     raise CanvasError(cal.FULL)
                 q = st["q"]
+                known = {r["name"].casefold() for r in familydb.rows(db, "SELECT name FROM trip_lists WHERE trip_id = :t", t=fam.trip_id)}
+                fresh_lists = [(k, x) for k, x in enumerate(draft["lists"]) if x["name"].casefold() not in known]       # a list already in the trip is not made again
                 for i, d in enumerate(draft["days"]):
                     day, start, end, title = cal._clean(t, blocks, day=picked[i], start=DAY_START, end=DAY_END, title=d["place"], kind="fun")
                     twin = familydb.row(db, "SELECT act_id FROM activities WHERE trip_id = :t AND scope = '' AND gone = 0 AND day = :d AND title = :n", t=fam.trip_id, d=day, n=title)
                     old_parts = _stored_parts(db, fam.trip_id, twin["act_id"]) if twin else []
                     if old_parts:       # the park is already planned that day: its parts and steps are added to, nothing is duplicated
+                        act = twin["act_id"]
                         when = cal._when(t, day, start).split(" ")[0]
                         plan_in = merge_plan(old_parts, d["parts"])
-                        if not plan_in:
-                            raise CanvasError(f"{title} is already planned on {when} with all of this. Pick another day, or open it and change it there.")
+                        more = new_aside(old_parts[0]["titles"], [a for a in draft["set_aside"] if a["day"] == i])
+                        if not plan_in and not more:
+                            skipped.append(f"{title} on {when}")      # nothing new for it: left as it is, the rest of the paste is still saved
+                            continue
                         if len(old_parts) + sum(1 for m in plan_in if m["into"] is None) > MAX_PARTS:
                             raise CanvasError(f"{title} on {when} would have more than {MAX_PARTS} parts. Open it and change it there.")
-                        made.append((twin["act_id"], title, day))
+                        made.append((act, title, day))
+                        merged_acts.add(act)
                         pos = len(old_parts)
                         for m in plan_in:
                             if m["into"] is None:
                                 part, first = uuid.uuid4().hex, 0
-                                _put(db, "block_parts", {"id": part, "trip_id": fam.trip_id, "act_id": twin["act_id"], "position": pos, "name": m["part"]["name"], "time_of_day": m["part"]["time_of_day"]})
+                                _put(db, "block_parts", {"id": part, "trip_id": fam.trip_id, "act_id": act, "position": pos, "name": m["part"]["name"], "time_of_day": m["part"]["time_of_day"]})
                                 pos += 1
                             else:
-                                part, first = old_parts[m["into"]]["id"], old_parts[m["into"]]["n"]
+                                part, first = old_parts[m["into"]]["id"], old_parts[m["into"]]["next"]
                             for n, s in enumerate(m["steps"]):
-                                _step(db, fam.trip_id, twin["act_id"], part, first + n, s["title"], s["time"], [resolved[x] if not x.startswith("g:") else x for x in s["who_raw"]], s["note"], s["kind"], 0)
+                                _step(db, fam.trip_id, act, part, first + n, s["title"], s["time"], [resolved[x] if not x.startswith("g:") else x for x in s["who_raw"]], s["note"], s["kind"], 0)
                                 steps_made += 1
+                        aside_pos[act] = old_parts[0]["next_aside"]
+                        for a in more:
+                            _step(db, fam.trip_id, act, "", aside_pos[act], a["title"], "", [], a["reason"], "other", 1)
+                            aside_pos[act] += 1
                         continue
                     if len(cal._live_acts(db, fam.trip_id, "")) + len(made) >= cal.MAX_ACTIVITIES:
                         raise CanvasError(cal.FULL)
@@ -353,32 +363,38 @@ def save(session, draft, answers) -> dict:
                         for n, s in enumerate(p["steps"]):
                             _step(db, fam.trip_id, act, part, n, s["title"], s["time"], [resolved[x] if not x.startswith("g:") else x for x in s["who_raw"]], s["note"], s["kind"], 0)
                             steps_made += 1
-                for n, a in enumerate(draft["set_aside"]):
-                    _step(db, fam.trip_id, made[a["day"]][0], "", n, a["title"], "", [], a["reason"], "other", 1)
+                    for n, a in enumerate(a for a in draft["set_aside"] if a["day"] == i):
+                        _step(db, fam.trip_id, act, "", n, a["title"], "", [], a["reason"], "other", 1)
+                if not made and not fresh_lists:
+                    raise CanvasError(f"{cal.oxford(skipped)}: all of this is already planned. Pick another day, or open it and change it there.")
                 cal._bump(db, fam.trip_id, "", q)
                 base = familydb.row(db, "SELECT COALESCE(MAX(position), -1) + 1 AS n FROM trip_lists WHERE trip_id = :t", t=fam.trip_id)["n"]
-                for k, lst in enumerate(draft["lists"]):
+                for k, lst in fresh_lists:
                     lid = uuid.uuid4().hex
                     _put(db, "trip_lists", {"id": lid, "trip_id": fam.trip_id, "name": lst["name"], "for_who": for_who[k], "position": base + k})
                     for n, it in enumerate(lst["items"]):
                         _put(db, "trip_list_items", {"id": uuid.uuid4().hex, "list_id": lid, "trip_id": fam.trip_id, "title": it["title"], "note": it["note"], "position": n})
-                familythread.change(session, fam, _card(familythread.first_name(fam.traveler), t, made, steps_made, draft["lists"]), action="add")
+                familythread.change(session, fam, _card(familythread.first_name(fam.traveler), t, made, steps_made, [x for _, x in fresh_lists], merged_acts), action="add")
         except cal.CalendarError as e:
             raise CanvasError(str(e))
-    return {"acts": made, "steps": steps_made, "lists": len(draft["lists"])}
+    return {"acts": made, "steps": steps_made, "lists": len(fresh_lists), "merged": len(merged_acts), "skipped": skipped}
 
 
 def _stored_parts(db, trip_id, act) -> list:
-    """The parts a block already has, in order: [{"id", "name", "n": steps in the part, "titles": every step title in the block}]."""
+    """The parts a block already has, in order: [{"id", "name", "next": the next step position in the part, "next_aside": the next set-aside position,
+    "titles": every step title in the block, set aside ones too}]."""
     parts = familydb.rows(db, "SELECT id, name FROM block_parts WHERE trip_id = :t AND act_id = :a ORDER BY position, rowid", t=trip_id, a=act)
-    steps = familydb.rows(db, "SELECT part_id, title FROM block_steps WHERE trip_id = :t AND act_id = :a AND aside = 0", t=trip_id, a=act)
+    steps = familydb.rows(db, "SELECT part_id, title, position, aside FROM block_steps WHERE trip_id = :t AND act_id = :a", t=trip_id, a=act)
     titles = [x["title"] for x in steps]
-    return [{"id": p["id"], "name": p["name"], "n": sum(1 for x in steps if x["part_id"] == p["id"]), "titles": titles} for p in parts]
+    nxt_aside = max([x["position"] for x in steps if x["aside"]] + [-1]) + 1
+    return [{"id": p["id"], "name": p["name"], "next": max([x["position"] for x in steps if x["part_id"] == p["id"] and not x["aside"]] + [-1]) + 1,
+             "next_aside": nxt_aside, "titles": titles} for p in parts]
 
 
 def merge_plan(old_parts, new_parts) -> list:
-    """What pasting `new_parts` (a draft day's parts) onto a block that already has `old_parts` (dicts with "name" and "titles", every step title in the block)
-    adds: [{"part": the draft part, "into": index of the same-named old part or None, "steps": the steps not already in the block}]. A part adding nothing is left out."""
+    """What pasting `new_parts` (a draft day's parts) onto a block that already has `old_parts` (dicts with "name" and "titles", every step title in the block,
+    set aside ones too) adds: [{"part": the draft part, "into": index of the same-named old part or None, "steps": the steps not already in the block}].
+    A part adding nothing is left out."""
     have = list(old_parts[0]["titles"]) if old_parts else []
     out = []
     for p in new_parts:
@@ -393,13 +409,23 @@ def merge_plan(old_parts, new_parts) -> list:
     return out
 
 
+def new_aside(titles, items) -> list:
+    """The set-aside items not already a step (live or set aside) in a block whose step titles are `titles`."""
+    have, out = list(titles), []
+    for a in items:
+        if not any(same_step(a["title"], h) for h in have):
+            out.append(a)
+            have.append(a["title"])
+    return out
+
+
 def existing_park(session, day, title):
     """The parts the trip already has for park `title` on trip day `day` (for merge_plan: [{"name", "titles"}]), or [] when there is none."""
     for a in cal.activities(session):
         if a.day == day and a.title == title:
             view = block(session, a.id)
             parts = view["parts"] if view else []
-            titles = [s["title"] for p in parts for s in p["steps"]]
+            titles = [s["title"] for p in parts for s in p["steps"]] + [s["title"] for s in (view["aside"] if view else [])]
             return [{"name": p["name"], "titles": titles} for p in parts]
     return []
 
@@ -413,13 +439,15 @@ def _step(db, trip_id, act, part, pos, title, time_, who, note, kind, aside):
                              "who": json.dumps(who, separators=(",", ":")), "note": note, "kind": kind, "done": 0, "aside": aside, "created_at": familydb.now()})
 
 
-def _card(who, t, made, steps, lists) -> str:
-    """The thread card: "Abhi added Universal Studios Hollywood on Tue and Disney California Adventure on Fri (23 steps)"."""
-    places = [f"{title} on {cal._when(t, day, DAY_START).split(' ')[0]}" for _, title, day in made]
-    parts = [cal.oxford(places)] if places else []
-    if lists:
-        parts.append(f"{len(lists)} list{'s' if len(lists) != 1 else ''}: {cal.oxford([x['name'] for x in lists])}")
-    return f"{who} added {' and '.join(parts)}" + (f" ({steps} steps)" if steps else "")
+def _card(who, t, made, steps, lists, merged=()) -> str:
+    """The thread card: "Abhi added Universal Studios Hollywood on Tue and Disney California Adventure on Fri (23 steps)"; a park already on its day is "added to"."""
+    def at(m):
+        return f"{m[1]} on {cal._when(t, m[2], DAY_START).split(' ')[0]}"
+    new, old = [at(m) for m in made if m[0] not in merged], [at(m) for m in made if m[0] in merged]
+    lst = f"{len(lists)} list{'s' if len(lists) != 1 else ''}: {cal.oxford([x['name'] for x in lists])}" if lists else ""
+    bits = ([f"added {cal.oxford(new)}"] if new else []) + ([f"added to {cal.oxford(old)}"] if old else [])
+    text = f"{who} " + (" and ".join(bits) + (f" and {lst}" if lst else "") if bits else f"added {lst}")
+    return text + (f" ({steps} steps)" if steps else "")
 
 
 # ---- reading and ticking -------------------------------------------------------------------------------------------------

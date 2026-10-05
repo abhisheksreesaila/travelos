@@ -162,11 +162,13 @@ def _questions(session, step, text, day, error=""):
         id="ak-questions")
 
 
-def _done(session, day, count, kind="", steps=0):
+def _done(session, day, count, kind="", steps=0, merged=0):
     t = cal.trip("", ses.booking(session))
     if kind == "plan":
         said = f"{count} {'day' if count == 1 else 'days'} added" + (f", with {steps} {'ride or show' if steps == 1 else 'rides and shows'}" if steps else "")
         said = f"{said}, from {_day_name(t, day)}." if count > 1 else f"{said} on {_day_name(t, day)}."
+        if merged:
+            said = (f"Added {str(steps) + ' ' + ('ride or show' if steps == 1 else 'rides and shows') + ' ' if steps else ''}to what was already planned on {_day_name(t, day)}." if merged == count and count == 1 else f"{said} {merged} of them were added to a day that was already planned.")
     else:
         said = f"{count} change{'s' if count != 1 else ''} on {_day_name(t, day)}."
     return Div(Span(icon("check", 26, 3), cls="ak-ico"), H2("Done"), P(f"{said} The family has been told."),
@@ -191,7 +193,8 @@ def content(request, session):
     plan = request.query_params.get("kind") == "plan"
     if day is not None and done.isdigit() and 0 < int(done) <= (canvas.MAX_DAYS if plan else speak.MAX_OPS):
         steps = request.query_params.get("steps", "")
-        return Div(_done(session, day, int(done), "plan" if plan else "", int(steps) if steps.isdigit() else 0), cls="ak")
+        merged = request.query_params.get("merged", "")
+        return Div(_done(session, day, int(done), "plan" if plan else "", int(steps) if steps.isdigit() else 0, int(merged) if merged.isdigit() else 0), cls="ak")
     mode = request.query_params.get("mode", "")
     return Div(_box(request, session, day, st.get("text", ""), st.get("error", ""), st.get("mode", mode)), cls="ak")
 
@@ -290,7 +293,7 @@ def register(app):
                 done = await run_in_threadpool(say.apply, session, state, "", form.get("trip") or None)
             except ValueError as e:     # json, then SayError: both are fit to show
                 return show(request, session, day=day, text=text, error=str(e) if isinstance(e, say.SayError) else "That plan was lost. Ask again.", status=409)
-            return RedirectResponse(f"{day_url(min(done['days']))}&done={done['count']}&kind=plan&steps={done['steps']}", status_code=303)
+            return RedirectResponse(f"{day_url(min(done['days']))}&done={done['count']}&kind=plan&steps={done['steps']}&merged={done['merged']}", status_code=303)
         try:
             ops = json.loads((form.get("ops") or "")[:MAX_FIELD])
         except ValueError:
