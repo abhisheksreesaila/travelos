@@ -5,7 +5,7 @@ import pytest
 from starlette.testclient import TestClient
 
 # Before main is imported: a throwaway data folder for the SQLite files, and the local dev sign-in on.
-os.environ["GITAWAY_DATA_DIR"] = tempfile.mkdtemp(prefix="gitaway-test-")
+os.environ["GITAWAY_DATA_DIR"] = os.path.realpath(tempfile.mkdtemp(prefix="gitaway-test-"))  # realpath: Windows gives the 8.3 short name (ABHISH~1)
 os.environ["GITAWAY_DEV_LOGIN"] = "1"
 os.environ["DB_TYPE"] = "SQLITE"
 os.environ["DB_NAME"] = "app_host"
@@ -18,6 +18,24 @@ for _key in [k for k in os.environ if k.startswith("GITAWAY_AI_")]:
 os.environ["GITAWAY_SHOWCASE"] = ""  # empty: tests start in the default (local) mode whatever the shell says; a test sets 0 or 1 itself (F-064)
 for _key in ("GITAWAY_VAPID_PUBLIC", "GITAWAY_VAPID_PRIVATE", "GITAWAY_VAPID_SUBJECT"):
     os.environ[_key] = ""  # empty, not removed: a .env found above the folder must not switch the real push sender on in a test run (F-066)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _fast_throwaway_sqlite():
+    """The test databases are thrown away, so they need no rollback journal on disk and no fsync. On Windows each journal file
+    made and deleted per write cost ~17 ms (every test took about a second); on Linux it changes little."""
+    from sqlalchemy import event
+    from sqlalchemy.engine import Engine
+
+    def fast(dbapi_conn, _record):
+        if type(dbapi_conn).__module__.startswith("sqlite3"):
+            cur = dbapi_conn.cursor()
+            cur.execute("PRAGMA journal_mode=MEMORY")
+            cur.execute("PRAGMA synchronous=OFF")
+            cur.close()
+    event.listen(Engine, "connect", fast)
+    yield
+    event.remove(Engine, "connect", fast)
 
 
 @pytest.fixture(scope="session", autouse=True)

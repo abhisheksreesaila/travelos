@@ -510,3 +510,27 @@ Captain, 2026-10-04: Ask stops at 600 characters and one day; paste lives on sep
 Captain, 2026-10-04: tapping Face ID on a phone without a GitAway passkey shows a QR code (iPhone offering another device), which a phone can't scan itself. Passkeys made before the move to gitaway.me don't work there. · Needs: none
 - [x] the sign-in page shows the Face ID button only on a device that turned on Face ID for this address (remembered on the device after a successful setup or sign-in); everywhere else Google is the one button
 - [x] if a Face ID attempt is cancelled or fails, the page says so plainly and points to Google; a test covers both cases
+
+## F-089 Builds and tests on Windows [doing]
+Captain, 2026-10-04: the project moved from Linux to a Windows VM; the build and pixi environment must work there. · Needs: none
+- [x] `pixi install` solves for win-64 and `pixi run test` passes on Windows
+- [x] the test suite runs at a normal speed on Windows (throwaway test databases skip the on-disk journal and fsync, which cost ~17 ms a write there)
+- [ ] `pixi run test-browser` passes on Windows
+
+# Plan of the day (brief docs/briefs/day-plan.md, approved 2026-10-04)
+
+## F-090 One day at a time, plans first [todo]
+Needs: none
+- [ ] the day view (`/trip/canvas?day=N`) has a strip of the trip's dates at the top (the open day marked, today marked, each a tap); a mostly-horizontal flick of 60px or more goes to the next day (left) or the previous day (right) with a sideways slide (instant under reduced motion); a held step still drags; pinch out still goes to the whole trip
+- [ ] on the day, the family's plans are the bright cards; bookings (flights, check-in/out, car) are quiet grey lines in time order with their time and a tap to their details; a day with only bookings still reads as "nothing planned yet" with the bookings below
+- [ ] every day has a clear "Change this day" button (mic) for editors that opens Ask on that day, and an empty day a big "Say the plan for this day" with Talk and Paste; after Apply, "See the day" lands back on the day view
+- [ ] the morning push reads "Today's plan · <place>" and opens the day view for today; Today's heading has a "Day plan" button to it
+- [ ] phone checks at 390 and 320 (no sideways scroll, 44px targets, 13px text) and the laptop view still works; browser tests flick both ways, tap the strip, and press every new button
+
+## F-091 Talk on the block: text, photos and voice notes on a plan [todo]
+Needs: none
+- [ ] any plan, and any part of a park day (e.g. Lunch), can hold messages: text, a photo, or a voice note recorded in the app (up to 3 minutes; mp4 on iPhone, webm elsewhere); stored in the family thread with the plan (and part) they belong to, files on the server's volume, family only
+- [ ] the plan (and the part) shows a small indicator only (a bubble with the count; a mic when there is a voice note); tapping it opens that plan's chat: bubbles (mine on the right), voice notes that play in place with their length, photos, who and when; a composer with text, photo and a tap-to-record mic (cancel and send)
+- [ ] each message also shows in the Family tab's thread, labelled with its plan, and the family gets a push (the existing thread push rules); viewers can post messages too, as in the thread
+- [ ] a voice note or photo that is too big, the wrong type or empty is refused with a plain message; tests cover the model, the routes (roles, another family's file is not served) and a browser test records (fake media), sends and plays
+
