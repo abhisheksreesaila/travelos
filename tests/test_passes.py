@@ -155,7 +155,7 @@ def test_a_picture_is_kept_and_shown_as_a_jpeg(trip, ari, key, kind):
     ("a.pdf", b"<svg xmlns='http://www.w3.org/2000/svg'><script>alert(1)</script></svg>", "type"),
     ("a.jpg", b"\xff\xd8\xff\xe0" + b"\x00" * 200, "open"),
     ("a.pdf", b"%PDF-" + b"0" * (passes.MAX_BYTES + 1), "big"),
-])
+], ids=["fake-pdf", "gif-as-jpg", "svg-as-pdf", "broken-jpeg", "too-big"])   # short ids: Windows caps an environment variable (PYTEST_CURRENT_TEST) at 32767 characters
 def test_a_file_that_is_not_a_pass_is_refused_and_nothing_is_kept(trip, ari, key, name, data, err):
     r = add_pass(trip, key, file=(name, data, "application/pdf"))
     assert r.status_code in (303, 413) and (err in r.headers.get("location", "") or r.status_code == 413)

@@ -37,3 +37,6 @@ test = "pytest -q -p no:randomly"
 test-random = "pytest -q -p randomly"
 test-browser-install = "playwright install chromium"  # once per machine: downloads the browser the browser suite drives
 test-browser = "pytest -q -p no:randomly tests_browser"
+
+[activation.env]
+PYTHONUTF8 = "1"  # read and write text as UTF-8 everywhere: Windows otherwise defaults to cp1252 and files without encoding= break (F-089)
