@@ -515,7 +515,7 @@ Captain, 2026-10-04: tapping Face ID on a phone without a GitAway passkey shows 
 Captain, 2026-10-04: the project moved from Linux to a Windows VM; the build and pixi environment must work there. · Needs: none
 - [x] `pixi install` solves for win-64 and `pixi run test` passes on Windows
 - [x] the test suite runs at a normal speed on Windows (throwaway test databases skip the on-disk journal and fsync, which cost ~17 ms a write there)
-- [ ] `pixi run test-browser` passes on Windows
+- [ ] `pixi run test-browser` passes on Windows (354 of 356 on 2026-10-05; the passkey device name now follows the OS; left: `test_passes.py` travel-day swipe stops at 0.73 of the next slide in Windows headless Chromium, unchanged code, not seen on Linux)
 
 # Plan of the day (brief docs/briefs/day-plan.md, approved 2026-10-04)
 

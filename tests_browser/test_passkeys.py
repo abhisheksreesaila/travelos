@@ -3,6 +3,7 @@
 At 390: add a passkey from /family, sign out, sign in with the Face ID button and land signed in; the Today card in the Home Screen app
 (Not now, then Turn on); Remove; a browser with no passkey support never shows the button. Every button is pressed.
 The page is opened on `localhost`: a passkey's site cannot be an IP address."""
+import sys
 import pytest
 from playwright.sync_api import expect
 
@@ -66,7 +67,7 @@ def add_from_family(page, site):
 def test_add_a_passkey_then_sign_in_with_face_id_at_390(phone, site):
     page, ctx = phone(init=NO_AUTOFILL)
     add_from_family(page, site)
-    expect(page.locator(".pk-item .pk-name")).to_have_text("Linux computer")
+    expect(page.locator(".pk-item .pk-name")).to_have_text("Windows PC" if sys.platform == "win32" else "Mac" if sys.platform == "darwin" else "Linux computer")   # named after the headless browser's own system
     expect(page.get_by_role("button", name="Add another phone")).to_be_visible()
     expect(page.locator("#pk-card")).not_to_contain_text("Use Face ID next time")
     no_sideways_scroll(page)
