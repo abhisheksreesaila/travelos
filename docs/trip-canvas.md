@@ -23,7 +23,7 @@ A tap on a link marked `data-zoom` ("in", "out", "side"), a two-finger pinch, or
 
 - No View Transitions: the new level scales and fades in (`.cz-in-in`, `.cz-in-out`, `.cz-in-side`).
 - `prefers-reduced-motion`: an instant swap, no transition at all.
-- Pinch: spread zooms into the level under the fingers, pinch together zooms out one level; the lifting fingers are not a tap. The canvas sets `touch-action: pan-y`, so the browser's own page pinch-zoom is off over it; the buttons (back, close, Today | Week | Day, every row) do the same without a gesture, and Escape zooms out.
+- Pinch: removed (F-092, it did not work reliably on the captain's iPhone). The Day | Week toggle (`#cz-z-day`, `#cz-z-week`), every row and the back button zoom; Escape zooms out. The canvas sets `touch-action: pan-y pinch-zoom` (sideways moves are the flick; the page's own pinch zoom works).
 - Zooming out to where you came from is the browser's Back (history stays tidy); a write from the sheet zooms out to its block.
 - Mark done and Set aside write one coalesced family card ("Abhi finished 3 rides at Universal Studios Hollywood", changed in place for 15 minutes, one push) in `gitaway.canvas._tell`.
 
@@ -64,7 +64,11 @@ Brief `docs/briefs/day-plan.md`. On a phone the day level is the plan of the day
 - **Dates across the top** (`day_pills`, `#cz-dpills`): Week (`#cz-z-week`, zooms out) then every trip day (open one `is-open` + `aria-current="date"`, today ringed, a dot when the family planned something). They scroll sideways and the script keeps the open one centred. On a laptop the week strip (`strip`) does this job and the pills are hidden. The Today | Week | Day control stays on the week only.
 - **Flick**: the day's `<section>` carries `data-prev` / `data-next`. A touch (not mouse) move of 60px+ that is 1.5× more sideways than up or down, in under 0.9 s, not started on the dates, filters, a sheet or a field and not a held step, goes to that day with `mode: 'replace'` (Back is not a day-by-day walk). The view follows the finger a little. Taps on the dates and flicks slide the way the days go (`html[data-cz-dir="next"|"prev"]`, `.cz-in-next|prev` without View Transitions; nothing under reduced motion).
 - **Plans first**: plans and park blocks are the cards; bookings are `booked_line` (`.cz-bk`): time, icon, title, "Booked", a link to Help (`#hp-hotel`, `#hp-car`, else `/trip/help`). A day with no plan shows `#cz-empty` above its booking lines.
-- **Say the plan**: editors get `#cz-say` ("Change this day", `/trip/ask?day=N`); an empty day gets `#cz-say-talk` (`&mode=talk`) and `#cz-say-paste` (`&mode=paste`). Viewers get neither.
+- **Say the plan**: an empty day gets `#cz-say-talk` (`&mode=talk`) and `#cz-say-paste` (`&mode=paste`) for editors. Any other day is changed from the centre Ask tab, which the script points at the day shown (`askHere`, F-092). Viewers get neither.
 - **Morning push** title "Today's plan · <place>", opening `/trip/canvas?day=<today>` (`morning.message(..., day=n)`); Today's heading has `#tp-open-day` ("Day plan") to the day it shows.
 
 Tests: `tests/test_day_plan.py`, `tests_browser/test_day_plan.py` (flicks both ways, edges, not on a vertical move or a held step, the slide's direction, dates, Help, Ask links, 390 and 320). Screenshots: `F090_SHOTS=<folder> pixi run pytest -p no:randomly tests_browser/test_day_plan.py -k screenshots`.
+
+## Today is the day view (F-092)
+
+A bare `/trip` (the Today tab, the installed app's start, "Back to Today") warms the map cache and redirects to `tripcanvas.today_url`: today during the trip, the first day before it, the last after. The old Today page stays behind its query addresses (`/trip?tab=…`, `?day=`, `?add=1`). On today the day view starts with `now_card` (Today's own up-next card with Leave by, Directions and Uber, or on a flight day the flight with everyone's passes), drawn inside `geo.cache_scope`. The week and the day have a Day | Week toggle; transitions are short and soft (`--cz-dur` 280ms, scale 0.98/1.02). The morning plan switch and the Face ID card are in Help (`#hp-settings`). The service worker also saves the last plain day view as `/trip`, so an offline start opens the plan (`assets/sw.js` `remember`). Tests: `tests/test_today_cut.py`, `tests/test_map.py` (Leave by on the day view), `tests_browser/test_pwa.py` (offline start).

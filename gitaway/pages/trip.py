@@ -421,6 +421,10 @@ def register(app):
         if (r := _guard(session)):
             return r
         if not request.url.query:      # F-092: Today is the day view; this page stays (with a query) for its tabs, its days and the add sheet
+            try:
+                tripgeo.warm(session)  # the app opens here: fill the map cache for Leave by, at most once an hour (F-068)
+            except Exception:
+                log.exception("could not start the map fill")
             from gitaway.pages import tripcanvas
             return RedirectResponse(tripcanvas.today_url(session), status_code=303)
         ua = request.headers.get("user-agent", "")
