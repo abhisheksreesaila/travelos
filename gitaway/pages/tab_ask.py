@@ -67,12 +67,12 @@ def _viewer_card():
                cls="ak-card ak-center", id="ak-viewer", role="status")
 
 
-def _day_picker(t, day, today):
+def _day_picker(t, day, today, auto=False):
     options = [Option("Let GitAway place it", value="", selected=(day is None))]
     for i, d in enumerate(cal.days(t)):
         label = f"{d.strftime('%a %b')} {d.day}" + (" · today" if i == today else "")
         options.append(Option(label, value=str(i), selected=(i == day)))
-    return Label(Span("Which day", cls="ak-label"), Select(*options, name="day", id="ak-day", data_ga_label="Which day"), cls="ak-field")
+    return Label(Span("Which day", cls="ak-label"), Select(*options, name="day", id="ak-day", data_ga_label="Which day", **({"data_auto": str(day)} if auto else {})), cls="ak-field")
 
 
 def _box(request, session, day, text="", error="", mode=""):
@@ -80,15 +80,18 @@ def _box(request, session, day, text="", error="", mode=""):
     t = cal.trip("", b)
     today = speak.today_index(session)
     extra = {"data_mode": mode} if mode in MODES else {}
+    auto = day is None and today is not None and say.route(text) == "change"
+    if auto:
+        day = today         # on the trip the box opens on today; a long paste is left for GitAway to place
     return Form(
         trip_field(),
         Div(error, role="alert", cls="tp-error ak-error", id="ak-error") if error else "",
-        _day_picker(t, day, today),
+        _day_picker(t, day, today, auto),
         Div(Button(icon("mic", 24, 2.2), Span("Tap to talk", id="ak-mic-label"), type="button", id="ak-mic", cls="tp-btn tp-btn-white ak-mic", hidden=True, aria_pressed="false"),
             Button(icon("clipboard", 22, 2.2), Span("Paste"), type="button", id="ak-paste", cls="tp-btn tp-btn-white ak-paste"), cls="ak-inputs"),
         Span("", id="ak-mic-status", cls="ak-mic-status", role="status", aria_live="polite"),
         Label(Span("What do you want to change or add?", cls="ak-label"),
-              Textarea(text, name="text", id="ak-text", rows="5", required=True, autocomplete="off", spellcheck="true", data_limit=str(say.LIMIT),
+              Textarea(text, name="text", id="ak-text", rows="5", required=True, autocomplete="off", spellcheck="true", data_limit=str(say.LIMIT), data_long=str(speak.MAX_REQUEST),
                        placeholder="Say it, type it or paste it. A change (\"move lunch to 12:30\") or a whole plan from a message or a web page."), cls="ak-field"),
         P("", id="ak-count", cls="ak-count", role="status", aria_live="polite", hidden=True),
         P(icon("mic", 16, 2.4), "On an iPhone, tap the microphone on the keyboard to dictate.", cls="ak-hint", id="ak-hint"),
@@ -214,6 +217,8 @@ def register(app):
 
     def next_page(request, session, step, text, day, status=200, error=""):
         """The questions or the preview a step asks for."""
+        if step["state"].get("kind") == "change" and isinstance(step["state"].get("day"), int):
+            day = step["state"]["day"]      # the day it was read for (asked, or guessed from today), not the box's: Apply and "Change it" carry it
         if step["questions"]:
             return show(request, session, day=day, text=text, step=step, error=error, status=status)
         return show(request, session, day=day, text=text, step=step, preview=True, status=status)
@@ -285,7 +290,7 @@ def register(app):
                 done = await run_in_threadpool(say.apply, session, state, "", form.get("trip") or None)
             except ValueError as e:     # json, then SayError: both are fit to show
                 return show(request, session, day=day, text=text, error=str(e) if isinstance(e, say.SayError) else "That plan was lost. Ask again.", status=409)
-            return RedirectResponse(f"{day_url(done['days'][0])}&done={done['count']}&kind=plan&steps={done['steps']}", status_code=303)
+            return RedirectResponse(f"{day_url(min(done['days']))}&done={done['count']}&kind=plan&steps={done['steps']}", status_code=303)
         try:
             ops = json.loads((form.get("ops") or "")[:MAX_FIELD])
         except ValueError:

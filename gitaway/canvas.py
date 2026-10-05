@@ -320,8 +320,27 @@ def save(session, draft, answers) -> dict:
                 for i, d in enumerate(draft["days"]):
                     day, start, end, title = cal._clean(t, blocks, day=picked[i], start=DAY_START, end=DAY_END, title=d["place"], kind="fun")
                     twin = familydb.row(db, "SELECT act_id FROM activities WHERE trip_id = :t AND scope = '' AND gone = 0 AND day = :d AND title = :n", t=fam.trip_id, d=day, n=title)
-                    if twin and familydb.row(db, "SELECT 1 AS x FROM block_parts WHERE trip_id = :t AND act_id = :a", t=fam.trip_id, a=twin["act_id"]):
-                        raise CanvasError(f"{title} is already planned on {cal._when(t, day, start).split(' ')[0]}. Pick another day, or open it and change it there.")
+                    old_parts = _stored_parts(db, fam.trip_id, twin["act_id"]) if twin else []
+                    if old_parts:       # the park is already planned that day: its parts and steps are added to, nothing is duplicated
+                        when = cal._when(t, day, start).split(" ")[0]
+                        plan_in = merge_plan(old_parts, d["parts"])
+                        if not plan_in:
+                            raise CanvasError(f"{title} is already planned on {when} with all of this. Pick another day, or open it and change it there.")
+                        if len(old_parts) + sum(1 for m in plan_in if m["into"] is None) > MAX_PARTS:
+                            raise CanvasError(f"{title} on {when} would have more than {MAX_PARTS} parts. Open it and change it there.")
+                        made.append((twin["act_id"], title, day))
+                        pos = len(old_parts)
+                        for m in plan_in:
+                            if m["into"] is None:
+                                part, first = uuid.uuid4().hex, 0
+                                _put(db, "block_parts", {"id": part, "trip_id": fam.trip_id, "act_id": twin["act_id"], "position": pos, "name": m["part"]["name"], "time_of_day": m["part"]["time_of_day"]})
+                                pos += 1
+                            else:
+                                part, first = old_parts[m["into"]]["id"], old_parts[m["into"]]["n"]
+                            for n, s in enumerate(m["steps"]):
+                                _step(db, fam.trip_id, twin["act_id"], part, first + n, s["title"], s["time"], [resolved[x] if not x.startswith("g:") else x for x in s["who_raw"]], s["note"], s["kind"], 0)
+                                steps_made += 1
+                        continue
                     if len(cal._live_acts(db, fam.trip_id, "")) + len(made) >= cal.MAX_ACTIVITIES:
                         raise CanvasError(cal.FULL)
                     q += 1
@@ -347,6 +366,42 @@ def save(session, draft, answers) -> dict:
         except cal.CalendarError as e:
             raise CanvasError(str(e))
     return {"acts": made, "steps": steps_made, "lists": len(draft["lists"])}
+
+
+def _stored_parts(db, trip_id, act) -> list:
+    """The parts a block already has, in order: [{"id", "name", "n": steps in the part, "titles": every step title in the block}]."""
+    parts = familydb.rows(db, "SELECT id, name FROM block_parts WHERE trip_id = :t AND act_id = :a ORDER BY position, rowid", t=trip_id, a=act)
+    steps = familydb.rows(db, "SELECT part_id, title FROM block_steps WHERE trip_id = :t AND act_id = :a AND aside = 0", t=trip_id, a=act)
+    titles = [x["title"] for x in steps]
+    return [{"id": p["id"], "name": p["name"], "n": sum(1 for x in steps if x["part_id"] == p["id"]), "titles": titles} for p in parts]
+
+
+def merge_plan(old_parts, new_parts) -> list:
+    """What pasting `new_parts` (a draft day's parts) onto a block that already has `old_parts` (dicts with "name" and "titles", every step title in the block)
+    adds: [{"part": the draft part, "into": index of the same-named old part or None, "steps": the steps not already in the block}]. A part adding nothing is left out."""
+    have = list(old_parts[0]["titles"]) if old_parts else []
+    out = []
+    for p in new_parts:
+        into = next((i for i, o in enumerate(old_parts) if o["name"].casefold() == p["name"].casefold()), None)
+        fresh = []
+        for s in p["steps"]:
+            if not any(same_step(s["title"], h) for h in have):
+                fresh.append(s)
+                have.append(s["title"])
+        if into is None or fresh:
+            out.append({"part": p, "into": into, "steps": fresh})
+    return out
+
+
+def existing_park(session, day, title):
+    """The parts the trip already has for park `title` on trip day `day` (for merge_plan: [{"name", "titles"}]), or [] when there is none."""
+    for a in cal.activities(session):
+        if a.day == day and a.title == title:
+            view = block(session, a.id)
+            parts = view["parts"] if view else []
+            titles = [s["title"] for p in parts for s in p["steps"]]
+            return [{"name": p["name"], "titles": titles} for p in parts]
+    return []
 
 
 def _put(db, table, row):

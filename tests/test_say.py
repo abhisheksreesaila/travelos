@@ -338,3 +338,165 @@ def test_the_same_park_twice_on_a_day_keeps_the_text_and_says_why(client, azure)
     assert client.post("/trip/ask/apply", data=posted, follow_redirects=False).status_code == 303
     again = client.post("/trip/ask/apply", data=posted, follow_redirects=False)
     assert again.status_code == 409 and "already planned" in again.text and fields(again.text, "ak-form")["text"] == samples.text()
+
+
+# ---- F-087 review fixes -------------------------------------------------------------------------------------------------------
+
+from tests.test_speak import clock
+
+
+def _selected_day(html):
+    m = re.search(r'<option[^>]*value="(\d*)"[^>]*selected', html) or re.search(r'<option[^>]*selected[^>]*value="(\d*)"', html)
+    return m.group(1) if m else None
+
+
+def test_a_short_change_with_no_day_is_asked_the_day_then_applies(client, azure, announced):
+    book(client)
+    r = client.post("/trip/ask/propose", data={"day": "", "text": "Add a swim at 4pm"})
+    posted = fields(r.text, "ak-questions-form")
+    posted["a_day"] = "1"
+    azure.answer = answer(op("add_plan", title="Swim", start="16:00", end="17:00"))
+    r = client.post("/trip/ask/answer", data=posted)
+    apply = fields(r.text, "ak-apply-form")
+    assert apply["day"] == "1"
+    r = client.post("/trip/ask/apply", data=apply, follow_redirects=False)
+    assert r.status_code == 303 and "day=1&done=1" in r.headers["location"]
+    assert [(a.title, a.day) for a in cal.activities(person("ari"))] == [("Swim", 1)] and len(announced) == 1
+
+
+def test_during_the_trip_a_short_change_with_no_day_goes_to_today_without_asking(client, azure, announced, monkeypatch):
+    book(client)
+    clock(monkeypatch, 2026, 10, 17, 9)
+    azure.answer = answer(op("add_plan", title="Swim", start="16:00", end="17:00"))
+    r = client.post("/trip/ask/propose", data={"day": "", "text": "Add a swim at 4pm"})
+    assert 'id="ak-questions"' not in r.text and 'id="ak-prop"' in r.text and "Saturday, Oct 17" in r.text
+    r = client.post("/trip/ask/apply", data=fields(r.text, "ak-apply-form"), follow_redirects=False)
+    assert r.status_code == 303 and [(a.title, a.day) for a in cal.activities(person("ari"))] == [("Swim", 1)] and len(announced) == 1
+
+
+def test_during_the_trip_a_long_paste_with_no_day_still_lets_gitaway_place_it(client, azure, monkeypatch):
+    book(client)
+    clock(monkeypatch, 2026, 10, 17, 9)
+    r = client.post("/trip/ask/propose", data={"day": "", "text": samples.text()})
+    assert "Which day is Universal Studios Hollywood?" in r.text
+
+
+def test_the_day_picker_opens_on_today_during_the_trip_unless_the_text_is_a_long_paste(client, azure, monkeypatch):
+    book(client)
+    assert _selected_day(client.get("/trip/ask").text) == ""            # before the trip: let GitAway place it
+    clock(monkeypatch, 2026, 10, 18, 9)
+    assert _selected_day(client.get("/trip/ask").text) == "2"
+    back = client.post("/trip/ask/edit", data={"day": "", "text": samples.text()})
+    assert _selected_day(back.text) == ""
+
+
+def test_a_plans_apply_checks_the_trip_and_says_so_plainly(client, azure):
+    book(client)
+    s = person("ari")
+    step = say.start(s, samples.text(), SAT)
+    step = say.answer(s, step["state"], form(step))
+    with pytest.raises(say.SayError, match="trip changed"):
+        say.apply(s, step["state"], "", "some-other-trip")
+    assert cal.activities(s) == []
+    r = client.post("/trip/ask/propose", data={"day": str(SAT), "text": samples.text()})
+    r = client.post("/trip/ask/answer", data=fields(r.text, "ak-questions-form"))
+    posted = fields(r.text, "ak-apply-form")
+    posted["trip"] = "some-other-trip"
+    r = client.post("/trip/ask/apply", data=posted, follow_redirects=False)
+    assert cal.activities(s) == []      # a tab drawn for a trip this family does not have reaches no trip at all (the same as a change)
+
+
+def _more(reply):
+    """The sample plan with one more step in Lower Lot, a new Evening part, and a repeat of a ride already there."""
+    reply["days"][0]["parts"][0]["steps"].append(samples.S("Despicable Me Minion Mayhem"))
+    reply["days"][0]["parts"][0]["steps"].append(samples.S("Revenge of the Mummy"))
+    reply["days"][0]["parts"].append(samples.P("Evening", [samples.S("Fireworks", kind="show")], "Evening"))
+    return reply
+
+
+def _plan_onto_sat(client):
+    r = client.post("/trip/ask/propose", data={"day": str(SAT), "text": samples.text()})
+    return client.post("/trip/ask/answer", data=fields(r.text, "ak-questions-form"))
+
+
+def test_a_park_pasted_onto_a_day_that_has_it_merges_and_the_preview_says_what_is_added(client, azure, announced):
+    book(client)
+    s = person("ari")
+    assert client.post("/trip/ask/apply", data=fields(_plan_onto_sat(client).text, "ak-apply-form"), follow_redirects=False).status_code == 303
+    before = canvas.block(s, "a1")
+    azure.answer = _more(samples.model_answer())
+    r = _plan_onto_sat(client)
+    assert 'id="ak-prop"' in r.text and 'data-kind="changed"' in r.text and "Evening" in r.text and "Adds 1 area" in r.text
+    r = client.post("/trip/ask/apply", data=fields(r.text, "ak-apply-form"), follow_redirects=False)
+    assert r.status_code == 303 and len(announced) == 2
+    block = canvas.block(s, "a1")
+    assert [a.title for a in cal.activities(s)] == ["Universal Studios Hollywood"]
+    assert [p["name"] for p in block["parts"]][-1] == "Evening" and len(block["parts"]) == len(before["parts"]) + 1
+    lower = [p for p in block["parts"] if p["name"] == "Lower Lot"][0]["steps"]
+    assert [x["title"] for x in lower].count("Revenge of the Mummy") == 1 and "Despicable Me Minion Mayhem" in [x["title"] for x in lower]
+    assert [x["title"] for p in block["parts"] for x in p["steps"]].count("Fireworks") == 1
+
+
+def test_pasting_exactly_what_is_already_there_is_said_in_the_preview_and_refused_at_apply(client, azure):
+    book(client)
+    client.post("/trip/ask/apply", data=fields(_plan_onto_sat(client).text, "ak-apply-form"), follow_redirects=False)
+    r = _plan_onto_sat(client)
+    assert "Nothing new" in r.text
+    again = client.post("/trip/ask/apply", data=fields(r.text, "ak-apply-form"), follow_redirects=False)
+    assert again.status_code == 409 and "already planned" in again.text
+
+
+def test_the_done_page_opens_on_the_earliest_day(client, azure):
+    book(client)
+    r = client.post("/trip/ask/propose", data={"day": "", "text": samples.text()})
+    posted = fields(r.text, "ak-questions-form")
+    posted.update({"a_park:0": "3", "a_park:1": "1"})
+    r = client.post("/trip/ask/answer", data=posted)
+    r = client.post("/trip/ask/apply", data=fields(r.text, "ak-apply-form"), follow_redirects=False)
+    assert r.headers["location"].startswith("/trip/ask?day=1&done=2")
+
+
+def test_parts_that_do_not_fit_on_one_day_are_named_in_the_preview(client, azure):
+    book(client)
+    s = person("ari")
+    reply = samples.model_answer()
+    reply["days"][1]["parts"] += [samples.P(f"Extra {i}", [samples.S(f"Ride {i}")]) for i in range(4)]
+    azure.answer = reply
+    step = say.start(s, samples.text(), MON)
+    step = say.answer(s, step["state"], form(step)) if step["questions"] else step
+    assert len(step["state"]["draft"]["days"][0]["parts"]) == canvas.MAX_PARTS
+    assert any("Extra 3" in t and "did not fit" in t for t in step["preview"]["tidy"])
+
+
+def test_a_plan_cannot_be_placed_on_a_day_that_has_passed_but_today_is_fine(client, azure, monkeypatch):
+    book(client)
+    s = person("ari")
+    clock(monkeypatch, 2026, 10, 18, 9)
+    with pytest.raises(say.SayError, match="already passed"):
+        say.start(s, samples.text(), 0)
+    assert azure.sent == []
+    assert say.start(s, samples.text(), 2)["state"]["days"] == [2]
+    step = say.start(s, samples.text(), None)
+    with pytest.raises(say.SayError, match="already passed") as err:
+        say.answer(s, step["state"], form(step, **{"park:0": "0", "park:1": "3"}))
+    assert err.value.step["questions"]
+    ok = say.answer(s, step["state"], form(step, **{"park:0": "2", "park:1": "3"}))
+    doctored = dict(ok["state"], days=[0, 3])
+    with pytest.raises(say.SayError, match="already passed"):
+        say.apply(s, doctored, "", None)
+    assert cal.activities(s) == []
+
+
+def test_when_every_park_has_a_date_inside_the_trip_there_is_no_day_question(client, azure):
+    book(client)
+    s = person("ari")
+    reply = samples.model_answer()
+    reply["days"][0]["date"], reply["days"][1]["date"] = "2026-10-17", "2026-10-19"
+    azure.answer = reply
+    step = say.start(s, samples.text(), None)
+    assert not [q for q in step["questions"] if q["id"].startswith("park:")]
+    step = say.answer(s, step["state"], form(step)) if step["questions"] else step
+    assert [g["day"] for g in step["preview"]["groups"]] == [SAT, MON]
+    reply["days"][1]["date"] = "2027-01-01"       # outside the trip: ask
+    azure.answer = reply
+    assert "park:1" in asked(say.start(s, samples.text(), None))

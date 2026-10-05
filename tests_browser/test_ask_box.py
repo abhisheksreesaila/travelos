@@ -219,3 +219,19 @@ def test_the_site_keeps_answering_while_the_model_is_slow(phone, base_url, model
     worker.join(10)
     assert status == 200 and model.sent
     assert len(waits) >= 3 and max(waits) < 0.5, waits
+
+
+def test_the_day_picker_that_opened_on_today_follows_a_long_paste_until_a_day_is_picked(phone, base_url):
+    page = phone()
+    page.goto(f"{base_url}/trip/ask")
+    page.evaluate("() => { const s = document.getElementById('ak-day'); s.dataset.auto = '2'; s.value = '2'; }")     # as drawn on a trip day
+    page.locator("#ak-text").fill("move lunch to 12:30")
+    expect(page.locator("#ak-day")).to_have_value("2")
+    page.locator("#ak-text").fill("Universal day. " * 80)
+    expect(page.locator("#ak-day")).to_have_value("")
+    page.locator("#ak-text").fill("move lunch")
+    expect(page.locator("#ak-day")).to_have_value("2")
+    page.locator("#ak-day").select_option("1")
+    page.locator("#ak-text").fill("Universal day. " * 80)
+    expect(page.locator("#ak-day")).to_have_value("1")
+    assert page.evaluate("() => parseFloat(document.getElementById('ak-text').style.height) >= 13 * parseFloat(getComputedStyle(document.documentElement).fontSize) - 1")

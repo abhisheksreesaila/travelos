@@ -46,9 +46,21 @@
 
   // ---- the box grows, and counts near the limit ----
   var limit = parseInt(box.dataset.limit, 10) || 20000;
+  // On the trip the day picker opens on today. A long paste is a plan for GitAway to place, so until the person picks a day themselves it follows the length.
+  var dayPick = document.getElementById('ak-day');
+  var longAt = parseInt(box.dataset.long, 10) || 0;
+  var picked = false;
+  if (dayPick) dayPick.addEventListener('change', function () { picked = true; });
+  function placeByLength() {
+    if (!dayPick || picked || !dayPick.dataset.auto || !longAt) return;
+    var words = box.value.split(/\s+/).join(' ').trim();
+    dayPick.value = words.length > longAt ? '' : dayPick.dataset.auto;
+  }
   function refresh() {
     box.style.height = 'auto';
-    box.style.height = Math.min(box.scrollHeight, Math.max(window.innerHeight * 0.6, 160)) + 'px';
+    var rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 12;
+    box.style.height = Math.min(box.scrollHeight, Math.max(window.innerHeight * 0.6, 13 * rem)) + 'px';
+    placeByLength();
     var n = box.value.length;
     if (!count) return;
     if (n > limit) {
