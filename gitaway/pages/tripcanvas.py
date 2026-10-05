@@ -354,7 +354,7 @@ def strip(v, day):
     return Nav(*cards, cls="cz-strip", aria_label="Days of the trip", style=f"--days:{min(len(cards), 7)}")
 
 
-BOOKED_HELP = {"bed": "/trip/help#hp-hotel", "hotel": "/trip/help#hp-hotel", "car": "/trip/help#hp-car"}
+BOOKED_HELP = {"bed": "/trip/help#hp-hotel", "hotel": "/trip/help#hp-hotel", "car": "/trip/help#hp-car", "plane": "/trip/help#hp-passes"}
 
 
 def booked_line(x):

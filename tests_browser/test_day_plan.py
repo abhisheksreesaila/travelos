@@ -147,3 +147,13 @@ def test_screenshots(canvas_page):
     page.set_viewport_size({"width": 1280, "height": 800})
     open_day(page, 1)
     page.screenshot(path=os.path.join(out, "day1-1280.png"), full_page=True)
+
+
+def test_todays_day_plan_button_opens_that_day_and_the_heading_fits_at_320(canvas_page):
+    page = canvas_page()
+    page.set_viewport_size(NARROW)
+    page.goto(re.sub(r"^(https?://[^/]+).*", lambda m: f"{m.group(1)}/trip?day=3", page.url))
+    page.wait_for_selector("#tp-open-day")
+    checks(page)
+    page.locator("#tp-open-day").click()
+    page.wait_for_selector(".cz-view[data-level=day][data-day='3']")

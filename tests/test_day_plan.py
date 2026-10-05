@@ -9,7 +9,7 @@ from gitaway import morning
 from tests.test_canvas import azure, rows  # noqa: F401 - fixtures
 from tests.test_canvas_pages import added, crew  # noqa: F401 - fixtures
 from tests.test_trip_canvas import bare, tag, text, trip  # noqa: F401 - fixtures
-from tests.test_signin import sign_in
+
 
 
 def day(client, n):
@@ -67,7 +67,7 @@ def test_bookings_are_quiet_lines_in_time_order_with_a_tap_to_their_details(trip
     lines = re.findall(r'<a\b[^>]*class="cz-bk[ "][^>]*>.*?</a>', page, re.S)
     assert len(lines) == 2
     flight, hotel = lines
-    assert "8:05 AM" in text(flight) and "SFO" in text(flight) and 'href="/trip/help' in flight
+    assert "8:05 AM" in text(flight) and "SFO" in text(flight) and 'href="/trip/help#hp-passes"' in flight
     assert "3:00 PM" in text(hotel) and "Check in" in text(hotel) and 'href="/trip/help#hp-hotel"' in hotel
     assert "cz-plain is-booked" not in page        # no booking is a bright card any more
 
@@ -114,6 +114,16 @@ def test_today_has_a_day_plan_button(trip):
     assert 'href="/trip/canvas?day=0"' in tag(page, "tp-open-day") and re.search(r'id="tp-open-day"[^>]*>.*?Day plan</a>', page, re.S)
 
 
+def test_during_the_trip_today_is_ringed_and_named(trip, monkeypatch):
+    from datetime import datetime, timezone
+    from gitaway import catalog
+    now = datetime(2026, 10, 19, 15, 0, tzinfo=timezone.utc)      # Monday 8:00 AM in Los Angeles: day 4 of 5
+    monkeypatch.setattr(catalog, "now_utc", lambda: now)
+    monkeypatch.setattr(catalog, "today", lambda: now.astimezone(catalog.TZ).date())
+    days = pills(day(trip, 1))
+    assert ["is-today" in a for a in days] == [False, False, False, True, False] and ", today" in days[3]
+    assert 'href="/trip/canvas?day=3"' in tag(bare(trip.get("/trip").text), "tp-open-day")
+
+
 def test_signed_out_day_goes_to_sign_in(client):
     assert client.get("/trip/canvas?day=1", follow_redirects=False).headers["location"].startswith("/signin")
-    sign_in(client)

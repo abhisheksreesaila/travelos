@@ -394,7 +394,6 @@ html[data-cz-dir="prev"]::view-transition-new(root) { animation: cz-in-left 320m
 @keyframes cz-in-left { from { opacity: 0; transform: translateX(-18%); } }
 .cz .cz-view.cz-in-next { animation: cz-in-right 320ms ease both; }
 .cz .cz-view.cz-in-prev { animation: cz-in-left 320ms ease both; }
-.cz .cz-view.is-flicking { transition: none; }
 @media (prefers-reduced-motion: reduce) { .cz .cz-view.cz-in-next, .cz .cz-view.cz-in-prev { animation: none; } }
 @media (min-width: 721px) {
   .cz .cz-dpills { display: none; }     /* a laptop has the week strip across the top */
