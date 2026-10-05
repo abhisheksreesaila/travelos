@@ -354,6 +354,21 @@ def test_sos_opens_the_emergency_sheet_with_every_call_link(imported_page, base_
     expect(page.locator("#morning-plan #tp-morning")).to_be_visible()
 
 
+def test_sos_opens_with_no_connection_and_closes_three_ways(imported_page, base_url):
+    page = imported_page()
+    day(page, base_url, 1)
+    page.context.set_offline(True)                                                  # Help's emergency card promised to open offline: SOS does too
+    url = page.url
+    for how in ("button", "scrim", "key"):
+        page.locator("#cz-sos").click()
+        expect(page.locator(".cz-sheet-sos")).to_be_visible()
+        assert page.locator(".cz-sheet-sos a[href='tel:911']").count() == 1 and page.url == url
+        close_sheet(page, how)
+    page.locator("#cz-sos").click()
+    expect(page.locator(".cz-sheet-sos")).to_have_count(1)                           # a second tap on the button does not stack a second sheet
+    page.context.set_offline(False)
+
+
 def test_the_tab_bar_is_four_tabs_with_ask_in_the_middle(imported_page):
     page = imported_page()
     labels = page.locator(".ph-tab").all_inner_texts()

@@ -422,9 +422,9 @@ html[data-cz-dir="prev"]::view-transition-new(root) { animation: cz-in-left 320m
 .cz .cz-kchip[aria-pressed="true"]::before { background: var(--ink); }
 
 /* on the day the who and list chips are one quiet line that scrolls along, under the kind row */
-.cz .cz-filters-day { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -1rem; padding: 0 1rem; scroll-snap-type: x proximity; }
-.cz .cz-filters-day::-webkit-scrollbar { display: none; }
-.cz .cz-filters-day .cz-fchip { flex: none; scroll-snap-align: start; }
+.cz .cz-filters[data-compact] { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -1rem; padding: 0 1rem; scroll-snap-type: x proximity; }
+.cz .cz-filters[data-compact]::-webkit-scrollbar { display: none; }
+.cz .cz-filters[data-compact] .cz-fchip { flex: none; scroll-snap-align: start; }
 
 /* the filter at work: a week row with nothing to show shrinks to a thin line, a bare plan link is gone */
 .cz .cz-openday, .cz .cz-thin-t { display: none; }

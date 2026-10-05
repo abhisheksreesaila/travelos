@@ -274,6 +274,15 @@ def test_the_sos_sheet_points_to_the_morning_plan_when_push_is_set_up(trip, monk
     assert 'id="tp-morning"' in trip.get("/family").text
 
 
+def test_every_week_and_day_page_carries_the_sos_sheet_inert_so_it_opens_offline(trip):
+    for url in ("/trip/canvas", "/trip/canvas?day=2", "/trip/canvas?day=1&frag=1"):
+        page = bare(trip.get(url).text)
+        tpl = page[page.index('<template id="cz-sos-tpl">'):].split("</template>")[0]
+        assert 'href="tel:911"' in tpl and 'href="tel:+13105550100"' in tpl and "cz-sheet-sos" in tpl
+    sos = bare(trip.get("/trip/canvas?day=1&sos=1").text)
+    assert "cz-sos-tpl" not in sos                                                  # when the sheet is the level it is not drawn twice
+
+
 def test_the_sos_sheet_is_for_every_role_and_asks_for_a_number_when_nobody_has_one(crew):
     owner, ed, vi = crew
     page = bare(vi.get("/trip/canvas?sos=1").text)

@@ -19,7 +19,7 @@ wide day view: the week as a strip across the top, the day's parts as lanes, the
 import json
 from urllib.parse import urlencode
 
-from fasthtml.common import A, Button, Details, Div, Form, H1, H2, H3, Header, Input, Label, Link, Main, Nav, P, Section, Span, Summary, to_xml
+from fasthtml.common import A, Button, Details, Div, Form, H1, H2, H3, Header, Input, Label, Link, Main, Nav, P, Section, Span, Summary, Template, to_xml
 from starlette.responses import RedirectResponse, Response
 
 from gitaway import access, canvas, catalog, members, phone, pickers, plantalk, session as ses, tripcal as cal, tripday as td
@@ -233,7 +233,7 @@ def filter_bar(v, compact=False):
         chips.append(Button(face, label, type="button", cls="cz-fchip", data_f=f"who:{tok}", aria_pressed="false", **({"aria_label": f"{label} (not matched to a person)"} if p["kind"] == "initials" else {})))
     for lst in v["lists"]:
         chips.append(Button(icon("shield", 16, 2.4), lst["name"], type="button", cls="cz-fchip cz-fchip-list", data_f=f"list:{lst['id']}", aria_pressed="false"))
-    return Div(*chips, cls="cz-filters cz-filters-day" if compact else "cz-filters", role="group", aria_label="Show")
+    return Div(*chips, cls="cz-filters", role="group", aria_label="Show", **({"data_compact": "1"} if compact else {}))
 
 
 KINDS = (("all", "All"), ("plan", "Plans"), ("hotel", "Hotels"), ("flight", "Flights"), ("car", "Car"), ("chat", "Chats"))
@@ -347,8 +347,7 @@ def week_view(v, sos=False):
     kicker = f"{t.title.upper()} · {cal.range_label(t.depart, t.return_).upper()}"
     rows = [week_body(v, i, editor) for i in range(len(v["dates"]))]
     body = [head(v, kicker, "The trip", faces=faces, sos=curl(sos=True)), Div(toggle(v, "week"), kinds_bar(), cls="cz-bar"), Div(*rows, cls="cz-week", id="cz-week", style=f"--days:{min(len(rows), 7)}")]
-    if sos:
-        body.append(sos_sheet(v, curl()))
+    body.append(sos_sheet(v, curl()) if sos else sos_template(v, curl()))
     return view("step" if sos else "week", body, zout="sos-open" if sos else "", title="The trip")
 
 
@@ -458,6 +457,8 @@ def day_view(v, day, booked=None, sos=False):
         body.append(booking_sheet(v, day, booked))
     elif sos:
         body.append(sos_sheet(v, curl(day=day)))
+    else:
+        body.append(sos_template(v, curl(day=day)))
     near = {"data_prev": curl(day=day - 1)} if day > 0 else {}
     if day < len(v["dates"]) - 1:
         near["data_next"] = curl(day=day + 1)
@@ -625,6 +626,11 @@ def booking_sheet(v, day, booked_block):
 def sos_sheet(v, close):
     """The emergency sheet (F-093): 911, tonight's front desk, the rental counter, the family's numbers, and a way to "This phone"."""
     return sheet_wrap(close, ["Emergency"], "Who to call", *booked.sos(v, v.get("ua", "")), zk="sos-open", cls="cz-sheet-sos")
+
+
+def sos_template(v, close):
+    """The emergency sheet again, inert, in every week and day page: the script opens it from here without the network, so SOS works with no signal once the page is open (Help promised that)."""
+    return Template(sos_sheet(v, close), id="cz-sos-tpl")
 
 
 ADD_ERRORS = {"title": "Give the step a name.", "time": "That time is not one we can read.", "other": "That step could not be added. Check it and try again."}

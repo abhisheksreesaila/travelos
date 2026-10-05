@@ -10,6 +10,9 @@
 // targets; letting go posts a move and swaps the level in place, with a toast that has Undo. Swipe a step left for Done and Set aside; swipe right (or tap elsewhere) to
 // put them away. Filter chips highlight the steps that match and dim the rest, remembered per person in localStorage. The Move menu on the step sheet does everything
 // dragging does with buttons.
+//
+// F-093: a booking's sheet and the SOS sheet are levels like the step sheet (?booked=, ?sos=1; the page behind stays); the All | Plans | Hotels | Flights | Car | Chats row
+// (applyKinds) shows only what matches on the week and the day, one choice, remembered per person and trip.
 (function () {
   var stage = document.getElementById('cz');
   if (!stage) return;
@@ -137,6 +140,34 @@
     var hero = a.closest('[data-zk]');
     goto(u, { dir: dir, key: dir === 'in' && hero ? hero.dataset.zk : null, mode: 'push' });
   });
+
+  // F-093: SOS opens from the page itself, with no network: the emergency sheet sits inert in a <template> in every week and day page. It adds no history entry; close,
+  // the scrim and Escape take it away again. (With no template, the sheet is already the level and the link is a plain zoom.)
+  document.addEventListener('click', function (e) {
+    if (e.button || !e.target.closest || !stage.contains(e.target)) return;
+    var open = e.target.closest('a.cz-sos');
+    if (open) {
+      var v = view(), tpl = v && v.querySelector('#cz-sos-tpl');
+      if (!tpl) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      if (v.querySelector('.cz-sheet-wrap[data-local]')) return;
+      var frag = tpl.content.cloneNode(true);
+      frag.querySelector('.cz-sheet-wrap').setAttribute('data-local', '1');
+      v.appendChild(frag);
+      var h = v.querySelector('.cz-sheet-wrap[data-local] #cz-sheet-title');
+      if (h) { try { h.focus({ preventScroll: true }); } catch (err) { h.focus(); } }
+      return;
+    }
+    if (e.target.closest('.cz-sheet-wrap[data-local] .cz-close, .cz-sheet-wrap[data-local] .cz-scrim')) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      var w = stage.querySelector('.cz-sheet-wrap[data-local]');
+      if (w) w.remove();
+      var b = stage.querySelector('#cz-sos');
+      if (b) b.focus();
+    }
+  }, true);
 
   // The way up: the sheet's close button when a sheet is open, else the heading's back button.
   function up() { return stage.querySelector('.cz-close') || stage.querySelector('.cz-back'); }
