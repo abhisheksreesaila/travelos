@@ -519,13 +519,13 @@ Captain, 2026-10-04: the project moved from Linux to a Windows VM; the build and
 
 # Plan of the day (brief docs/briefs/day-plan.md, approved 2026-10-04)
 
-## F-090 One day at a time, plans first [todo]
+## F-090 One day at a time, plans first [done]
 Needs: none
-- [ ] the day view (`/trip/canvas?day=N`) has a strip of the trip's dates at the top (the open day marked, today marked, each a tap); a mostly-horizontal flick of 60px or more goes to the next day (left) or the previous day (right) with a sideways slide (instant under reduced motion); a held step still drags; pinch out still goes to the whole trip
-- [ ] on the day, the family's plans are the bright cards; bookings (flights, check-in/out, car) are quiet grey lines in time order with their time and a tap to their details; a day with only bookings still reads as "nothing planned yet" with the bookings below
-- [ ] every day has a clear "Change this day" button (mic) for editors that opens Ask on that day, and an empty day a big "Say the plan for this day" with Talk and Paste; after Apply, "See the day" lands back on the day view
-- [ ] the morning push reads "Today's plan · <place>" and opens the day view for today; Today's heading has a "Day plan" button to it
-- [ ] phone checks at 390 and 320 (no sideways scroll, 44px targets, 13px text) and the laptop view still works; browser tests flick both ways, tap the strip, and press every new button
+- [x] the day view (`/trip/canvas?day=N`) has a strip of the trip's dates at the top (the open day marked, today marked, each a tap); a mostly-horizontal flick of 60px or more goes to the next day (left) or the previous day (right) with a sideways slide (instant under reduced motion); a held step still drags; pinch out still goes to the whole trip
+- [x] on the day, the family's plans are the bright cards; bookings (flights, check-in/out, car) are quiet grey lines in time order with their time and a tap to their details; a day with only bookings still reads as "nothing planned yet" with the bookings below
+- [x] every day has a clear "Change this day" button (mic) for editors that opens Ask on that day, and an empty day a big "Say the plan for this day" with Talk and Paste; after Apply, "See the day" lands back on the day view
+- [x] the morning push reads "Today's plan · <place>" and opens the day view for today; Today's heading has a "Day plan" button to it
+- [x] phone checks at 390 and 320 (no sideways scroll, 44px targets, 13px text) and the laptop view still works; browser tests flick both ways, tap the strip, and press every new button
 
 ## F-091 Talk on the block: text, photos and voice notes on a plan [todo]
 Needs: none
