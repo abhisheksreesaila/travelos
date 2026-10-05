@@ -527,10 +527,10 @@ Needs: none
 - [x] the morning push reads "Today's plan · <place>" and opens the day view for today; Today's heading has a "Day plan" button to it
 - [x] phone checks at 390 and 320 (no sideways scroll, 44px targets, 13px text) and the laptop view still works; browser tests flick both ways, tap the strip, and press every new button
 
-## F-091 Talk on the block: text, photos and voice notes on a plan [todo]
+## F-091 Talk on the block: text, photos and voice notes on a plan [done]
 Needs: none
-- [ ] any plan, and any part of a park day (e.g. Lunch), can hold messages: text, a photo, or a voice note recorded in the app (up to 3 minutes; mp4 on iPhone, webm elsewhere); stored in the family thread with the plan (and part) they belong to, files on the server's volume, family only
-- [ ] the plan (and the part) shows a small indicator only (a bubble with the count; a mic when there is a voice note); tapping it opens that plan's chat: bubbles (mine on the right), voice notes that play in place with their length, photos, who and when; a composer with text, photo and a tap-to-record mic (cancel and send)
-- [ ] each message also shows in the Family tab's thread, labelled with its plan, and the family gets a push (the existing thread push rules); viewers can post messages too, as in the thread
-- [ ] a voice note or photo that is too big, the wrong type or empty is refused with a plain message; tests cover the model, the routes (roles, another family's file is not served) and a browser test records (fake media), sends and plays
+- [x] any plan, and any part of a park day (e.g. Lunch), can hold messages: text, a photo, or a voice note recorded in the app (up to 3 minutes; mp4 on iPhone, webm elsewhere); stored in the family thread with the plan (and part) they belong to, files on the server's volume, family only
+- [x] the plan (and the part) shows a small indicator only (a bubble with the count; a mic when there is a voice note); tapping it opens that plan's chat: bubbles (mine on the right), voice notes that play in place with their length, photos, who and when; a composer with text, photo and a tap-to-record mic (cancel and send)
+- [x] each message also shows in the Family tab's thread, labelled with its plan, and the family gets a push (the existing thread push rules); viewers can post messages too, as in the thread
+- [x] a voice note or photo that is too big, the wrong type or empty is refused with a plain message; tests cover the model, the routes (roles, another family's file is not served) and a browser test records (fake media), sends and plays
 
