@@ -37,9 +37,8 @@ class Overpass:
 @pytest.fixture(autouse=True)
 def fresh(monkeypatch):
     around.clear_cache()
-    for gate in around.GATES:                 # every Overpass mirror has its own gate (F-095)
-        monkeypatch.setattr(gate, "gap", 0.0)
-        monkeypatch.setattr(gate, "shut_until", None)
+    monkeypatch.setattr(around.GATE, "gap", 0.0)
+    monkeypatch.setattr(around.GATE, "shut_until", None)
     yield
     around.clear_cache()
 
@@ -169,10 +168,10 @@ def test_a_refusal_shuts_the_door_for_ten_minutes_and_the_person_gets_a_sentence
     with pytest.raises(around.AroundError) as err:
         around.search("coffee", 1.0, 2.0, "walk", NOW)
     assert str(err.value) == around.NO_PLACES
-    assert all(g.is_shut() for g in around.GATES)          # each mirror refused us, so each is left alone
+    assert around.GATE.is_shut()
     with pytest.raises(around.AroundError):
         around.search("gas", 1.0, 2.0, "walk", NOW)
-    assert len(f.calls) == len(around.MIRRORS)   # each mirror asked once; the second search never left the machine
+    assert len(f.calls) == 1                     # the second never left the machine
 
 
 def test_a_failure_is_not_cached(monkeypatch):
@@ -294,29 +293,3 @@ def test_the_family_preference_is_kept_per_family():
     assert around.vegetarian(ari) is True and around.vegetarian(sam) is False
     around.set_vegetarian(ari, False)
     assert around.vegetarian(ari) is False
-
-
-# ---- F-095: when the main Overpass server refuses or is slow, the next mirror answers --------------------------------------------
-
-class Flaky(Overpass):
-    """The main server fails (a refusal, a timeout); the mirrors answer."""
-    def __call__(self, url, timeout=0):
-        self.calls.append(url)
-        if url.startswith(around.MIRRORS[0].split("?")[0]):
-            raise self.fail
-        return answer(*self.els)
-
-
-@pytest.mark.parametrize("why", ["refused", "timeout"])
-def test_the_next_mirror_answers_when_the_main_server_fails(monkeypatch, why):
-    e = OSError("no")
-    if why == "refused":
-        e.code = 429
-    else:
-        e = TimeoutError("timed out")
-    f = Flaky(node("Coffee Commissary", lat=1.0, lon=2.0, amenity="cafe"), fail=e)
-    monkeypatch.setattr(geo, "fetch", f)
-    got = around.search("coffee", 1.0, 2.0, "walk", NOW)
-    assert got["items"][0]["name"] == "Coffee Commissary"
-    assert len(f.calls) == 2 and f.calls[1].startswith(around.MIRRORS[1].split("?")[0])
-    assert all(m.startswith("https://") for m in around.MIRRORS) and len(around.MIRRORS) >= 3

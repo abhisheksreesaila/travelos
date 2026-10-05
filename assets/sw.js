@@ -80,6 +80,14 @@ async function remember(req, res) {
   const cache = await caches.open(pagesName(who));
   await cache.delete(req);
   await cache.put(req, res.clone());
+  /* F-092: the installed app starts at /trip, which redirects to the day view (the browser follows that redirect, so this worker never sees it).
+     The last day view opened is kept as /trip too, so an offline start opens the plan instead of the offline page. */
+  const url = new URL(req.url);
+  if (url.pathname === "/trip/canvas" && /^\?day=\d+(&trip=[0-9a-f]+)?$/.test(url.search)) {
+    const start = new URL("/trip", url.origin).href;
+    await cache.delete(start);
+    await cache.put(start, res.clone());
+  }
   await trim(cache);
 }
 

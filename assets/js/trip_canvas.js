@@ -400,7 +400,7 @@
   // F-092: the centre Ask is the one way to change the plan, so it opens on the day being looked at (a day, a block or a step on it).
   function askHere() {
     var tab = document.getElementById('ph-tab-ask'), v = view();
-    if (tab && v && v.dataset.day) tab.setAttribute('href', '/trip/ask?day=' + v.dataset.day);
+    if (tab && v) tab.setAttribute('href', v.dataset.day ? '/trip/ask?day=' + v.dataset.day : '/trip/ask');     // the week: no day, Ask places it
   }
   // The open day sits in the middle of the dates across the top (they scroll sideways on a phone).
   function centreDay() {

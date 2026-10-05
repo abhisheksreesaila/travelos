@@ -151,3 +151,20 @@ def test_a_different_person_never_sees_the_previous_persons_saved_pages(ctxs, ba
     page.goto(f"{base_url}/calendar")  # Sam never opened it: the offline page, not Ari's trip
     body = page.locator("body").inner_text().lower()
     assert "offline" in body
+
+
+def test_the_installed_apps_start_page_opens_offline_on_the_day_it_last_showed(ctxs, base_url):
+    """F-092: /trip (the manifest's start_url) redirects to the day view; the worker keeps that page under /trip too, so an offline start is not the offline page."""
+    ctx = ctxs()
+    sign_in(ctx, base_url)
+    book_trip(ctx, base_url)
+    page = ctx.new_page()
+    controlled(page, base_url)
+    page.goto(f"{base_url}/trip")
+    page.wait_for_selector(".cz-view[data-level=day]")
+    online = page.locator(".cz-view h1").inner_text()
+    page.wait_for_timeout(500)            # the worker saves the page after answering
+    ctx.set_offline(True)
+    text = goes_offline_ok(page, f"{base_url}/trip")
+    assert text is not None and "You're offline" not in text      # not the offline page
+    assert page.locator(".cz-view h1").inner_text() == online

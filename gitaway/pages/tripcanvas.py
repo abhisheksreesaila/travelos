@@ -7,12 +7,12 @@ GET  /trip/canvas?step=<id>       one step, as a bottom sheet over its block: no
 POST /trip/canvas/step            Mark done, Not done, Set aside, Put back (the writes are F-080's gitaway.canvas; editors only, gated by gitaway.access)
 
 Every level is drawn by the server and has its own address, so it works without script, the back button works, and a link opens a level directly. With
-script (assets/js/trip_canvas.js) a tap or a two-finger pinch fetches the next level as a fragment (`?frag=1`, no page around it) and swaps it inside a View
+script (assets/js/trip_canvas.js) a tap or the Day | Week toggle fetches the next level as a fragment (`?frag=1`, no page around it) and swaps it inside a View
 Transition: the element that was tapped (a day row, a block card, a step chip) is the one that grows into the next level's header or sheet, and shrinks back on
 zoom out. Where View Transitions are missing it is a short scale and fade; with reduced motion it is an instant swap. A write from the sheet (`X-Canvas: 1`)
 answers 204 and `X-Canvas-Url`, the level to zoom out to.
 
-Today (/trip) stays the first tab; its heading carries a "Week view" link here and the canvas has "Today" in its zoom control. On a laptop the same markup is a
+The Today tab is the day view on today (F-092: a bare /trip redirects here); the centre Ask changes the day being looked at. On a laptop the same markup is a
 wide day view: the week as a strip across the top, the day's parts as lanes, the Set aside tray at the side.
 """
 
@@ -22,7 +22,7 @@ from urllib.parse import urlencode
 from fasthtml.common import A, Button, Details, Div, Form, H1, H2, H3, Header, Input, Label, Link, Main, Nav, P, Section, Span, Summary, Template, to_xml
 from starlette.responses import RedirectResponse, Response
 
-from gitaway import access, canvas, catalog, members, phone, pickers, plantalk, session as ses, tripcal as cal, tripday as td
+from gitaway import access, canvas, catalog, geo, members, phone, pickers, plantalk, session as ses, tripcal as cal, tripday as td
 from gitaway.icons import icon
 from gitaway.layout import avatar, join_note, trip_field
 from gitaway.pages import booked, calendar as calui, passes as passes_ui   # passes: on a flight day the now card is the flight with everyone's passes (F-092)
@@ -79,6 +79,7 @@ def load(session):
     v = dict(session=session, who=who, b=b, t=t, dates=dates, acts=acts, blocks=blocks, plan=pl["blocks"], lists=pl["lists"], act_notes=act_notes, today_idx=today_idx,
              role=access.request_role(), crew=members.crew(session), summaries=td.day_summaries(dates, blocks, acts, today_idx))
     v["by_id"] = {a.id: a for a in acts}
+    v["zone"] = zone
     v["people"] = canvas.family_people(session)
     v["talk"] = plantalk.counts(session)                 # F-091: messages per plan and part, for the chat badges
     for blk in v["plan"].values():                       # which of the trip's lists name each step, for the filters
@@ -131,9 +132,10 @@ def now_card(v, day):
     if day != v["today_idx"]:
         return ""
     from gitaway.pages import trip as trippage
-    tv = trippage.load(v["session"], str(day), v.get("ua", ""))
-    flights, calm, _titles = passes_ui.flight_cards(tv)
-    return Div(flights or trippage.up_card(tv), calm, cls="cz-now", id="cz-now", data_kind="now")
+    with geo.cache_scope(v["session"]):        # Leave by and the Uber link read the family's map cache (gitaway.geo), as on Today
+        tv = trippage.load(v["session"], str(day), v.get("ua", ""))
+        flights, calm, _titles = passes_ui.flight_cards(tv)
+        return Div(flights or trippage.up_card(tv), calm, cls="cz-now", id="cz-now", data_kind="now")
 
 
 def _count(n, one, many):
@@ -334,7 +336,7 @@ def week_body(v, i, editor):
 def toggle(v, current, day=None):
     """Day | Week (F-092): the one way between the two views (pinch is gone). Day opens the day being looked at, else today (the first day before the trip)."""
     if day is None:
-        day = v["today_idx"] if v["today_idx"] is not None else 0
+        day = v["today_idx"] if v["today_idx"] is not None else (len(v["dates"]) - 1 if v["dates"] and catalog.today_in(v["zone"]) > v["dates"][-1] else 0)   # the last day once the trip is over, like the Today tab
     links = [A("Day", href=curl(day=day), id="cz-z-day", cls="cz-seg", aria_current="page" if current == "day" else None, **({} if current == "day" else {"data_zoom": "in"})),
              A("Week", href=curl(), id="cz-z-week", cls="cz-seg", aria_current="page" if current == "week" else None, **({} if current == "week" else {"data_zoom": "out"}))]
     return Nav(*links, cls="cz-segs cz-toggle", aria_label="Day or week")
@@ -425,16 +427,13 @@ def day_pills(v, day):
     return Nav(*items, cls="cz-dpills", id="cz-dpills", aria_label="Days of the trip")
 
 
-def say_bar(day, empty):
-    """Change the day by voice (F-090): one clear button, or for a day with nothing planned the two ways in (talk, paste). Opens Ask on this day (F-087)."""
-    if empty:
-        return Div(Span(icon("mic", 30, 2.2), cls="cz-say-ico", aria_hidden="true"), P("Nothing planned yet", cls="cz-say-h"),
-                   P("Say the plan for this day, or paste it from a message. GitAway lays it out and asks if something is unclear.", cls="cz-sub"),
-                   Div(A(icon("mic", 20, 2.4), "Say the plan for this day", href=f"/trip/ask?day={day}&mode=talk", id="cz-say-talk", cls="tp-btn tp-btn-coral cz-say-go"),
-                       A(icon("note", 18, 2.4), "Paste a plan", href=f"/trip/ask?day={day}&mode=paste", id="cz-say-paste", cls="tp-btn tp-btn-white cz-say-go"), cls="cz-say-acts"),
-                   cls="cz-empty cz-say-empty", id="cz-empty")
-    return A(Span(icon("mic", 20, 2.4), cls="cz-say-mic", aria_hidden="true"), Span(Span("Change this day", cls="cz-say-t"), Span("Talk, type or paste", cls="cz-say-s"), cls="cz-say-text"),
-             href=f"/trip/ask?day={day}", id="cz-say", cls="cz-say")
+def say_bar(day):
+    """A day with nothing planned (F-090): the two ways in, talk and paste, opening Ask on this day (F-087). Any other day is changed from the centre Ask (F-092)."""
+    return Div(Span(icon("mic", 30, 2.2), cls="cz-say-ico", aria_hidden="true"), P("Nothing planned yet", cls="cz-say-h"),
+               P("Say the plan for this day, or paste it from a message. GitAway lays it out and asks if something is unclear.", cls="cz-sub"),
+               Div(A(icon("mic", 20, 2.4), "Say the plan for this day", href=f"/trip/ask?day={day}&mode=talk", id="cz-say-talk", cls="tp-btn tp-btn-coral cz-say-go"),
+                   A(icon("note", 18, 2.4), "Paste a plan", href=f"/trip/ask?day={day}&mode=paste", id="cz-say-paste", cls="tp-btn tp-btn-white cz-say-go"), cls="cz-say-acts"),
+               cls="cz-empty cz-say-empty", id="cz-empty")
 
 
 def day_view(v, day, booked=None, sos=False):
@@ -445,7 +444,7 @@ def day_view(v, day, booked=None, sos=False):
     cards = [(_block_card(v, x) if kind == "block" else booked_line(v, x) if kind == "booked" else _simple(kind, x, v)) for kind, x in ents]
     aside = [s for kind, x in ents if kind == "block" for s in v["plan"][x.id]["aside"]]
     if not planned:
-        empty = say_bar(day, True) if editor else Div(P("Nothing planned yet", cls="cz-say-h"), P("Nobody has planned this day yet.", cls="cz-sub"), cls="cz-empty cz-say-empty", id="cz-empty", data_kind="empty")
+        empty = say_bar(day) if editor else Div(P("Nothing planned yet", cls="cz-say-h"), P("Nobody has planned this day yet.", cls="cz-sub"), cls="cz-empty cz-say-empty", id="cz-empty", data_kind="empty")
         cards = [empty, *cards]
     kicker = f"{d.strftime('%a %b').upper()} {d.day} · DAY {day + 1} OF {len(v['dates'])}"
     first = next((x for kind, x in ents if kind == "block"), None)
