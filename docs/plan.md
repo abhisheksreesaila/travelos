@@ -597,13 +597,13 @@ Captain, 2026-10-05: "just like an event, you should be able to select the time�
 - [ ] on the day grid an editor holds an empty slot (or taps it, then taps the "+" that appears): a 1-hour block appears there snapped to 15 minutes, with its title field open in place and the keyboard up; typing a title and Enter (or tapping away) saves it; Escape or an empty title removes it; it can be dragged and resized at once with the F-097 gestures; Undo toast; the family is told once
 - [ ] a viewer gets nothing; reduced motion; browser tests at 390 and 320 create, rename-on-create, cancel, and move a new block
 
-## F-102 Ask hears you on the iPhone app [doing]
+## F-102 Ask hears you on the iPhone app [done]
 Captain, 2026-10-05: the Ask mic "is not capturing or transcribing". Cause: Ask only uses the browser's speech recognition, which iPhone does not give to Home Screen apps. Fix: record on the phone (as voice notes do) and transcribe on the server through gitaway/ai.py (job "transcribe"), falling back to it whenever speech recognition is missing or fails.
-Provider: Sarvam AI (captain, 2026-10-05), key SARVAM_API_KEY on Railway; checked from this machine: saarika:v2.5 transcribed a spoken clip correctly (en-IN). Azure's gpt-5.6-sol cannot transcribe (OperationNotSupported).
-- [ ] where speech recognition is missing or fails (Home Screen app on iPhone), the Ask mic records (MediaRecorder, as F-091) with a clear recording state and stop, uploads the audio, and the transcript fills the box for review; up to 3 minutes; a failure keeps any typed text and says so plainly
-- [ ] the transcription runs through gitaway/ai.py as job "transcribe" (logged like every AI call, no audio or text kept), its deployment one setting; tests use a fake transport; browser test with a fake microphone
-- [ ] the Ask box looks like GitAway: the handwriting note font and warm note look (readable, 13px floor, grows with the text); dictated words fade in, interim words lighter until final; nothing moves under reduced motion
-- [ ] the speech-to-text provider is one setting with a small adapter per provider (Azure now; the captain will bring another that handles Hindi and Indian languages), with an optional language hint (auto-detect by default)
+Provider: Sarvam AI (captain, 2026-10-05), key SARVAM_API_KEY on Railway; checked from this machine: saarika:v2.5 transcribed a spoken clip correctly (en-IN). Azure's gpt-5.6-sol cannot transcribe (OperationNotSupported). A real MediaRecorder recording (audio/mp4, 1 s chunks, as iPhone Safari makes) was transcribed correctly by Sarvam on 2026-10-06; the iPhone app itself is still to be tried.
+- [x] where speech recognition is missing or fails (Home Screen app on iPhone), the Ask mic records (MediaRecorder, as F-091) with a clear recording state and stop, uploads the audio, and the transcript fills the box for review; up to 3 minutes; a failure keeps any typed text and says so plainly
+- [x] the transcription runs through gitaway/ai.py as job "transcribe" (logged like every AI call, no audio or text kept), its deployment one setting; tests use a fake transport; browser test with a fake microphone
+- [x] the Ask box looks like GitAway: the handwriting note font and warm note look (readable, 13px floor, grows with the text); dictated words fade in, interim words lighter until final; nothing moves under reduced motion
+- [x] the speech-to-text provider is one setting with a small adapter per provider (Azure now; the captain will bring another that handles Hindi and Indian languages), with an optional language hint (auto-detect by default)
 
 ## F-103 A small Day | Week switch; the top folds away [todo]
 Captain, 2026-10-05: the Day | Week toggle "is very big and occupies a lot of real estate… make it subtle… bold and obvious, but it doesn't have to be so big… it should fade away, and the only thing I should see is a compact version". · Needs: F-101 (same heading code)
