@@ -611,7 +611,7 @@ Captain, 2026-10-05: the Day | Week toggle "is very big and occupies a lot of re
 - [x] scrolling the day folds the heading, the filters and the date strip into one compact sticky bar (day name, the small switch, SOS, map), and scrolling back up or tapping it opens them again, smoothly and calm under reduced motion; the week keeps its full heading
 - [x] phone checks at 390 and 320; browser tests scroll, fold, unfold and press the switch both ways
 
-## F-104 Ask is a sheet over the day [todo]
+## F-104 Ask is a sheet over the day [doing]
 Captain, 2026-10-06 (screenshot of the Ask page): "two ask buttons… confusing and redundant"; "instead of opening up the whole new page and sort of masking the whole calendar page, you can just open a sheet from the bottom… extending from the Ask button… I speak and I press OK, it shows me what it does, and then I press OK and it just puts it in the calendar. The calendar is always in my purview." · Needs: F-087, F-102, F-097
 - [ ] on a phone, the centre Ask tab opens a glass bottom sheet that grows out of the Ask button over the current screen (the day view stays visible above it; on other tabs it opens over that tab), with the day being looked at already chosen (a small date chip changes it); it closes by swipe-down, the scrim, or Escape, shrinking back into the button; calm under reduced motion
 - [ ] the sheet holds only: the big mic (listening starts on open where the browser allows, else one tap), the hand-font note box (F-102 look), a small Paste icon, and one primary "Done"; no page title, no second Ask button, no "Which day" dropdown, no keyboard-mic hint when recording works
