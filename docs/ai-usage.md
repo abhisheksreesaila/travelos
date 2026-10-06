@@ -12,7 +12,9 @@ Azure OpenAI is a stopgap for the October 2026 trip. Every call goes through `gi
 | `around-you` | Around you (Map tab, F-073): from up to 15 places OpenStreetMap lists near the family (name, distance in metres, open now, a few tags such as cuisine) it picks the best 5 for the chip that was tapped (vegetarian food, coffee, groceries, Costco/Walmart, pharmacy, gas, restrooms) and gives each a one-line reason. The model gets the category, whether the family eats vegetarian and that list, never a coordinate, an address or a family member's name. Every id it returns is checked against the list (unknown and repeated ones are dropped); if it is off, busy, fails or returns nothing valid, places are ordered by distance with closed ones last. | A map search. Candidate to drop: distance plus open now is already a fair ranking and the one-line reason is the only thing it adds. | F-073 |
 | `ocr` | Reads a boarding pass or a booking from a photo. | Typing the numbers in. Candidate to replace with a dedicated OCR/vision service or on-device reading. | later |
 
-`convert`, `speak` and `around-you` exist today; the others are named so the log and the report already have a place for them.
+| `transcribe` | Ask's microphone where the phone has no working speech recognition (the iPhone Home Screen app; F-102): the page records up to 3 minutes (MediaRecorder), `POST /trip/ask/transcribe` sends the audio (at most 4 MB, checked by its first bytes) to a speech-to-text deployment and the words are added to the Ask box for review. | Typing, or the keyboard's own dictation (which still works and costs nothing). A speech model, not a chat model: nothing else here can turn audio into text. Candidate to drop if the keyboard's dictation is enough, or to swap to a provider that handles Hindi and other Indian languages (see below). The audio exists only in memory for the request; neither it nor the words are kept or logged (the log row has no tokens). Editors only, like the rest of Ask. | F-102 |
+
+`convert`, `speak`, `around-you` and `transcribe` exist today; the others are named so the log and the report already have a place for them.
 
 ## What is logged
 
@@ -39,6 +41,25 @@ Settings only (environment variables), no code change:
 | `GITAWAY_AI_ENDPOINT_<JOB>`, `GITAWAY_AI_KEY_<JOB>` | A different provider for one job: any OpenAI-compatible `/openai/v1` endpoint. |
 
 `<JOB>` is the job name in capitals with `-` as `_` (`AROUND_YOU`).
+
+### Voice typing (`transcribe`)
+
+| Variable | Effect |
+|---|---|
+| `AZURE_OPENAI_TRANSCRIBE_DEPLOYMENT` | The speech-to-text deployment (for example a `gpt-4o-transcribe` or `whisper` one). It never falls back to the chat deployment. Without it the route answers "Voice typing isn't set up yet — tap the microphone on your keyboard to dictate". `GITAWAY_AI_DEPLOYMENT_TRANSCRIBE` overrides it. |
+| `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_ENDPOINT` | The same key and endpoint as the other jobs (`GITAWAY_AI_KEY_TRANSCRIBE` / `GITAWAY_AI_ENDPOINT_TRANSCRIBE` override them). |
+| `AZURE_OPENAI_TRANSCRIBE_API_VERSION` | Optional; default `2024-06-01`. |
+| `GITAWAY_AI_TRANSCRIBE_PROVIDER` | Optional; default `azure`. Which adapter in `ai.PROVIDERS` does the call. An unknown name switches the job off. |
+
+The language is detected by the service (Hindi mixed with English comes back as spoken). `ai.transcribe(..., language="hi")` and the route's optional `lang` field pass a hint; the page does not send one yet (`data-lang` on the box would).
+
+**Adding a provider** (for example for Hindi and other Indian languages). Add one entry to `ai.PROVIDERS` in `gitaway/ai.py`, three small functions, and nothing else: the call, the 45 s limit, the one-at-a-time rule, the log and the fixed failure sentences are shared.
+
+1. `configured()`: true when all its settings (key, endpoint or region, model) are present.
+2. `request(audio, filename, mime, language)` returns `(url, headers, body)`: its endpoint, its auth header (`api-key`, `Authorization: Bearer ...`, `xi-api-key`...), and the request body (multipart with the file, or the raw audio bytes with a content type). `language` is a code or `None` for auto-detect.
+3. `text(reply)` returns the words from the response body (the JSON field that holds the transcript); raise `ValueError`, `KeyError` or `TypeError` when the shape is wrong.
+
+Then set `GITAWAY_AI_TRANSCRIBE_PROVIDER=<name>` and its own settings. `tests/test_transcribe.py` shows a fake adapter (`test_another_provider_is_one_setting_and_one_small_adapter`): copy it for the new one, with a recorded sample response.
 
 ## Tests
 

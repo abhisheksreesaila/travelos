@@ -96,6 +96,9 @@ def _endpoint(job) -> str:
 
 
 def configured(job=None) -> bool:
+    if job == "transcribe":
+        adapter = PROVIDERS.get(transcribe_provider())
+        return bool(adapter and adapter["configured"]())
     return bool(_key(job) and _endpoint(job) and deployment(job))
 
 
@@ -205,13 +208,40 @@ def _call(job, family, system, user, schema, name, timeout) -> dict:
 NOT_HEARD = "Nothing could be heard in that recording. Try again, a little closer to the microphone, or type it."
 
 
-def _transcribe_url(job) -> str:
+def transcribe_provider() -> str:
+    """Which speech-to-text provider job "transcribe" uses: GITAWAY_AI_TRANSCRIBE_PROVIDER, default "azure"."""
+    return (os.environ.get("GITAWAY_AI_TRANSCRIBE_PROVIDER") or "azure").strip().lower()
+
+
+def _azure_configured() -> bool:
+    job = "transcribe"
+    return bool(_key(job) and _endpoint(job) and deployment(job))
+
+
+def _azure_request(audio, filename, mime, language) -> tuple:
+    """(url, headers, body) of an Azure OpenAI audio transcription. No `language` means the model detects it (Hindi mixed with English comes back as spoken)."""
+    job = "transcribe"
     base = _endpoint(job).rstrip("/")
     for tail in ("/openai/v1", "/openai"):
         if base.endswith(tail):
             base = base[: -len(tail)]
     version = os.environ.get("AZURE_OPENAI_TRANSCRIBE_API_VERSION", "").strip() or TRANSCRIBE_API_VERSION
-    return f"{base}/openai/deployments/{deployment(job)}/audio/transcriptions?api-version={version}"
+    url = f"{base}/openai/deployments/{deployment(job)}/audio/transcriptions?api-version={version}"
+    fields = {"model": deployment(job), "response_format": "json"}
+    if language:
+        fields["language"] = language
+    ctype, body = _multipart(fields, filename, mime, audio)
+    return url, {"api-key": _key(job), "Content-Type": ctype}, body
+
+
+def _json_text(reply) -> str:
+    return str(json.loads(reply)["text"]).strip()
+
+
+# One adapter per provider. To add one (docs/ai-usage.md): "configured" says whether its settings are all there; "request" builds (url, headers, body) for one
+# recording and an optional language hint (a code like "hi", or None to auto-detect); "text" reads the words out of the response body (raise ValueError, KeyError
+# or TypeError when the shape is wrong). The call, the log, the time limit and the fixed failure sentences stay here, the same for every provider.
+PROVIDERS = {"azure": {"configured": _azure_configured, "request": _azure_request, "text": _json_text}}
 
 
 def _multipart(fields, filename, mime, data) -> tuple:
@@ -223,9 +253,10 @@ def _multipart(fields, filename, mime, data) -> tuple:
     return f"multipart/form-data; boundary={boundary}", b"".join(parts)
 
 
-def transcribe(family, audio: bytes, filename="voice.m4a", mime="audio/mp4", *, timeout=None) -> str:
+def transcribe(family, audio: bytes, filename="voice.m4a", mime="audio/mp4", *, language=None, timeout=None) -> str:
     """Job "transcribe": turn a recording into text through the speech-to-text deployment. `family` is the family's id (for the log only). Returns the words
-    (never empty); raises AIError with a sentence fit to show. The audio and the words are never kept or logged: the log row holds the job, the deployment,
+    (never empty); `language` is an optional hint ("hi"; None detects it, so Hindi mixed with English comes back as spoken); the provider is one setting
+    (GITAWAY_AI_TRANSCRIBE_PROVIDER, default "azure"; PROVIDERS holds one small adapter each); raises AIError with a sentence fit to show. The audio and the words are never kept or logged: the log row holds the job, the deployment,
     the time and ok or the kind of error, like every call."""
     job = "transcribe"
     if not configured(job):
@@ -243,14 +274,15 @@ def transcribe(family, audio: bytes, filename="voice.m4a", mime="audio/mp4", *, 
     start, code = time.monotonic(), "error"
     try:
         try:
-            ctype, body = _multipart({"model": deployment(job), "response_format": "json"}, filename, mime, audio)
+            adapter = PROVIDERS[transcribe_provider()]
+            url, headers, body = adapter["request"](audio, filename, mime, language or None)
             send = TRANSPORT or _http
-            status, reply = send(_transcribe_url(job), {"api-key": _key(job), "Content-Type": ctype}, body, timeout)
+            status, reply = send(url, headers, body, timeout)
             if not 200 <= status < 300:
                 code = f"http_{status}"
                 raise AIError(FAILED, code)
             try:
-                words = str(json.loads(reply)["text"]).strip()
+                words = adapter["text"](reply)
             except (ValueError, KeyError, TypeError):
                 code = "bad_reply"
                 raise AIError(FAILED, code)

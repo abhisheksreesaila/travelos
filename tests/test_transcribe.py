@@ -171,3 +171,47 @@ def test_a_viewer_is_refused_and_an_editor_is_not(client, on):
     assert post(vi, voice("mp4")).status_code == 403
     assert fake.sent == []
     assert post(ed, voice("mp4")).status_code == 200
+
+
+# ---- the provider is one setting; a language hint is optional ----------------------------------------------------------------------
+
+def test_a_language_hint_is_sent_only_when_given(on):
+    fake = on()
+    ai.transcribe("fam1", voice("mp4"))
+    assert b'name="language"' not in fake.sent[0]["body"]               # no hint: the service detects it (Hindi mixed with English as spoken)
+    ai.transcribe("fam1", voice("mp4"), language="hi")
+    assert b'name="language"\r\n\r\nhi\r\n' in fake.sent[1]["body"]
+
+
+def test_the_route_passes_a_valid_hint_and_ignores_a_bad_one(ari, on):
+    fake = on()
+    assert post(ari, voice("mp4"), lang="hi").status_code == 200
+    assert post(ari, voice("mp4"), lang="hi; drop table").status_code == 200
+    assert b'name="language"\r\n\r\nhi\r\n' in fake.sent[0]["body"] and b'name="language"' not in fake.sent[1]["body"]
+
+
+def test_another_provider_is_one_setting_and_one_small_adapter(on, monkeypatch):
+    fake = on(raw=json.dumps({"transcript": "namaste, lunch at 12:30"}))
+    seen = {}
+
+    def request(audio, filename, mime, language):
+        seen.update(audio=audio, language=language)
+        return "https://stt.example.com/v1/listen", {"Authorization": "Token k"}, audio
+
+    monkeypatch.setitem(ai.PROVIDERS, "other", {"configured": lambda: True, "request": request, "text": lambda reply: json.loads(reply)["transcript"]})
+    monkeypatch.setenv("GITAWAY_AI_TRANSCRIBE_PROVIDER", "other")
+    monkeypatch.setenv("AZURE_OPENAI_TRANSCRIBE_DEPLOYMENT", "")          # azure's own settings are not needed for it
+    assert ai.configured("transcribe")
+    before = len(rows())
+    assert ai.transcribe("fam1", voice("webm"), language="hi") == "namaste, lunch at 12:30"
+    assert seen["language"] == "hi" and fake.sent[0]["url"] == "https://stt.example.com/v1/listen" and fake.sent[0]["headers"] == {"Authorization": "Token k"}
+    assert rows()[before]["ok"] == 1                                       # logged like every call
+
+
+def test_an_unknown_provider_is_off(on, monkeypatch):
+    on()
+    monkeypatch.setenv("GITAWAY_AI_TRANSCRIBE_PROVIDER", "nobody")
+    assert not ai.configured("transcribe")
+    with pytest.raises(ai.AIError) as e:
+        ai.transcribe("fam1", voice("mp4"))
+    assert e.value.code == "off"

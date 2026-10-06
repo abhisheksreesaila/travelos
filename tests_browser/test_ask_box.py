@@ -1,6 +1,7 @@
 """F-087: the one Ask box in a real browser at phone width: tap to talk (continuous, shown live), Paste, the count near the limit, a pasted itinerary asking its
 quick questions, the day-by-day preview, Apply, "See the day" on the day view; the modes the day view links to. A fake model answers (nothing reaches Azure).
 Nothing scrolls sideways at 390 and 320; text stays at the floor and every control is a full target."""
+import re
 import time
 
 import pytest
@@ -235,3 +236,172 @@ def test_the_day_picker_that_opened_on_today_follows_a_long_paste_until_a_day_is
     page.locator("#ak-text").fill("Universal day. " * 80)
     expect(page.locator("#ak-day")).to_have_value("1")
     assert page.evaluate("() => parseFloat(document.getElementById('ak-text').style.height) >= 13 * parseFloat(getComputedStyle(document.documentElement).fontSize) - 1")
+
+
+# ---- F-102: where speech recognition is missing or fails (an iPhone Home Screen app) the mic records and the server transcribes ----------------------------------
+
+FAKE_MIC = """(() => {
+  navigator.mediaDevices.getUserMedia = async () => {
+    const ctx = new AudioContext(); await ctx.resume();
+    const osc = ctx.createOscillator(); const dest = ctx.createMediaStreamDestination();
+    osc.connect(dest); osc.start();
+    return dest.stream;
+  };
+})();"""
+ERRORING_SPEECH = """
+window.SpeechRecognition = window.webkitSpeechRecognition = class {
+  start() { window.__started = (window.__started || 0) + 1; setTimeout(() => this.onerror && this.onerror({error: 'service-not-allowed'}), 20); }
+  stop() { this.onend && this.onend(); }
+  abort() {}
+};"""
+SILENT_SPEECH = """
+window.SpeechRecognition = window.webkitSpeechRecognition = class {
+  start() { window.__started = (window.__started || 0) + 1; }
+  stop() { this.onend && this.onend(); }
+  abort() {}
+};"""
+INSTALLED_IPHONE = """
+Object.defineProperty(navigator, 'userAgent', {get: () => 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148'});
+Object.defineProperty(navigator, 'standalone', {get: () => true});"""
+HEARD = "move lunch to 12:30"
+
+
+class Heard:
+    """A fake `ai.TRANSPORT` for the speech-to-text call: waits a moment (so the waiting state can be seen), then answers like Azure."""
+
+    def __init__(self, delay=0.6, status=200, text=HEARD):
+        self.delay, self.status, self.text, self.sent = delay, status, text, []
+
+    def __call__(self, url, headers, body, timeout):
+        import json
+        time.sleep(self.delay)
+        self.sent.append(body)
+        return self.status, json.dumps({"text": self.text})
+
+
+@pytest.fixture
+def stt(monkeypatch):
+    monkeypatch.setenv("AZURE_OPENAI_API_KEY", "k")
+    monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://example.openai.azure.com")
+    monkeypatch.setenv("AZURE_OPENAI_TRANSCRIBE_DEPLOYMENT", "stt-test")
+    fake = Heard()
+    monkeypatch.setattr(ai, "TRANSPORT", fake)
+    return fake
+
+
+def record_and_stop(page, seconds=1.3):
+    mic = page.locator("#ak-mic")
+    mic.click()
+    expect(mic).to_have_class(re.compile("is-recording"))
+    page.wait_for_timeout(int(seconds * 1000))
+    mic.click()
+
+
+def test_without_speech_recognition_the_mic_records_shows_the_state_and_adds_the_words(phone, base_url, stt):
+    page = phone(NO_SPEECH + FAKE_MIC)
+    page.goto(f"{base_url}/trip/ask?day={DAY}")
+    mic = page.locator("#ak-mic")
+    expect(mic).to_be_visible()
+    page.locator("#ak-text").fill("Hello.")
+    mic.click()
+    expect(mic).to_have_class(re.compile("is-recording"))
+    expect(page.locator("#ak-mic-label")).to_have_text("Stop")
+    expect(page.locator("#ak-mic-time")).to_be_visible()
+    expect(page.locator("#ak-rec-cancel")).to_be_visible()
+    expect(page.locator("#ak-paste")).to_be_hidden()
+    page.wait_for_timeout(1300)
+    assert page.locator("#ak-mic-time").inner_text() != "0:00"
+    fits(page)
+    mic.click()                                                         # Stop: it uploads and shows that it is working
+    expect(page.locator("#ak-transcribing")).to_be_visible()
+    expect(page.locator("#ak-transcribing")).to_contain_text("Transcribing")
+    expect(mic).to_be_disabled()
+    expect(page.locator("#ak-text")).to_have_value("Hello. " + HEARD)  # appended, what was typed is kept
+    expect(page.locator("#ak-transcribing")).to_be_hidden()
+    expect(page.locator("#ak-mic-status")).to_contain_text("Added what you said")
+    expect(mic).not_to_have_class(re.compile("is-recording"))
+    expect(page.locator("#ak-paste")).to_be_visible()
+    assert len(stt.sent) == 1 and b"stt-test" in stt.sent[0]
+    fits(page)
+
+
+def test_cancel_throws_the_recording_away_without_sending_it(phone, base_url, stt):
+    page = phone(NO_SPEECH + FAKE_MIC)
+    page.goto(f"{base_url}/trip/ask?day={DAY}")
+    page.locator("#ak-mic").click()
+    expect(page.locator("#ak-rec-cancel")).to_be_visible()
+    page.wait_for_timeout(1200)
+    page.locator("#ak-rec-cancel").click()
+    expect(page.locator("#ak-mic")).not_to_have_class(re.compile("is-recording"))
+    expect(page.locator("#ak-text")).to_have_value("")
+    page.wait_for_timeout(300)
+    assert stt.sent == []
+
+
+def test_a_speech_recognition_error_switches_to_recording(phone, base_url, stt):
+    page = phone(ERRORING_SPEECH + FAKE_MIC)       # the iPhone app: the API exists but answers service-not-allowed
+    page.goto(f"{base_url}/trip/ask?day={DAY}")
+    page.locator("#ak-mic").click()
+    expect(page.locator("#ak-mic")).to_have_class(re.compile("is-recording"))
+    page.wait_for_timeout(1200)
+    page.locator("#ak-mic").click()
+    expect(page.locator("#ak-text")).to_have_value(HEARD)
+
+
+def test_speech_recognition_that_hears_nothing_for_a_few_seconds_switches_to_recording(phone, base_url, stt):
+    page = phone(SILENT_SPEECH + FAKE_MIC)
+    page.goto(f"{base_url}/trip/ask?day={DAY}")
+    page.locator("#ak-mic").click()
+    expect(page.locator("#ak-mic")).not_to_have_class(re.compile("is-recording"))
+    expect(page.locator("#ak-mic")).to_have_class(re.compile("is-recording"), timeout=9000)
+    assert page.evaluate("window.__started") == 1
+
+
+def test_in_the_installed_iphone_app_it_records_straight_away(phone, base_url, stt):
+    page = phone(INSTALLED_IPHONE + FAKE_SPEECH + FAKE_MIC)
+    page.goto(f"{base_url}/trip/ask?day={DAY}")
+    page.locator("#ak-mic").click()
+    expect(page.locator("#ak-mic")).to_have_class(re.compile("is-recording"))
+    assert page.evaluate("window.__rec") is None                      # speech recognition was never started
+
+
+def test_when_voice_typing_is_not_set_up_it_says_so_and_keeps_the_typed_text(phone, base_url, monkeypatch):
+    monkeypatch.setenv("AZURE_OPENAI_TRANSCRIBE_DEPLOYMENT", "")
+    page = phone(NO_SPEECH + FAKE_MIC)
+    page.goto(f"{base_url}/trip/ask?day={DAY}")
+    page.locator("#ak-text").fill("Pool at 3")
+    record_and_stop(page)
+    expect(page.locator("#ak-mic-status")).to_contain_text("Voice typing isn't set up yet")
+    expect(page.locator("#ak-mic-status")).to_contain_text("tap the microphone on your keyboard")
+    expect(page.locator("#ak-text")).to_have_value("Pool at 3")
+    expect(page.locator("#ak-mic")).to_be_enabled()
+
+
+def test_a_failed_transcription_keeps_the_typed_text_and_says_so(phone, base_url, stt, monkeypatch):
+    monkeypatch.setattr(ai, "TRANSPORT", Heard(delay=0.1, status=500))
+    page = phone(NO_SPEECH + FAKE_MIC)
+    page.goto(f"{base_url}/trip/ask?day={DAY}")
+    page.locator("#ak-text").fill("Pool at 3")
+    record_and_stop(page)
+    expect(page.locator("#ak-mic-status")).to_contain_text("could not do that")
+    expect(page.locator("#ak-mic-status")).to_contain_text("What you typed is still in the box")
+    expect(page.locator("#ak-text")).to_have_value("Pool at 3")
+
+
+def test_the_box_is_a_handwritten_note_and_words_still_being_heard_look_lighter(phone, base_url):
+    page = phone(NO_SPEECH + FAKE_SPEECH)
+    page.goto(f"{base_url}/trip/ask?day={DAY}")
+    style = "() => { const s = getComputedStyle(document.getElementById('ak-text')); return {font: s.fontFamily, size: parseFloat(s.fontSize), bg: s.backgroundColor, color: s.color}; }"
+    typed = page.evaluate(style)
+    assert "Caveat" in typed["font"] and typed["size"] >= 13
+    page.locator("#ak-text").fill("Typed words look like the others.")
+    assert page.evaluate(style)["font"] == typed["font"]
+    page.locator("#ak-mic").click()
+    expect(page.locator("#ak-text")).to_have_attribute("data-words", "interim")      # the fake recogniser never says a result is final
+    interim = page.evaluate(style)
+    assert interim["color"] != typed["color"] and interim["font"] == typed["font"]
+    page.locator("#ak-mic").click()
+    expect(page.locator("#ak-text")).to_have_attribute("data-words", "final")
+    page.wait_for_timeout(500)
+    assert page.evaluate(style)["color"] == typed["color"]
+    fits(page)

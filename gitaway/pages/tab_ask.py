@@ -16,6 +16,7 @@ own dictation always work.
 """
 
 import json
+import re
 
 from fasthtml.common import A, Button, Div, Fieldset, Form, H2, H3, Input, Label, Legend, Link, Option, P, Select, Span, Textarea
 from starlette.concurrency import run_in_threadpool
@@ -87,9 +88,12 @@ def _box(request, session, day, text="", error="", mode=""):
         trip_field(),
         Div(error, role="alert", cls="tp-error ak-error", id="ak-error") if error else "",
         _day_picker(t, day, today, auto),
-        Div(Button(icon("mic", 24, 2.2), Span("Tap to talk", id="ak-mic-label"), type="button", id="ak-mic", cls="tp-btn tp-btn-white ak-mic", hidden=True, aria_pressed="false"),
-            Button(icon("clipboard", 22, 2.2), Span("Paste"), type="button", id="ak-paste", cls="tp-btn tp-btn-white ak-paste"), cls="ak-inputs"),
+        Div(Button(Span(cls="ak-dot", aria_hidden="true"), icon("mic", 24, 2.2), Span("Tap to talk", id="ak-mic-label"), Span("0:00", id="ak-mic-time", cls="ak-time", hidden=True),
+                   type="button", id="ak-mic", cls="tp-btn tp-btn-white ak-mic", hidden=True, aria_pressed="false", data_max_secs=str(voicenotes.MAX_SECONDS)),
+            Button(icon("clipboard", 22, 2.2), Span("Paste"), type="button", id="ak-paste", cls="tp-btn tp-btn-white ak-paste"),
+            Button(icon("x", 22, 2.2), Span("Cancel"), type="button", id="ak-rec-cancel", cls="tp-btn tp-btn-white ak-cancel", hidden=True), cls="ak-inputs"),
         Span("", id="ak-mic-status", cls="ak-mic-status", role="status", aria_live="polite"),
+        P(icon("pencil", 16, 2.4), Span("Transcribing…"), Span("", id="ak-tr-elapsed", cls="ak-elapsed"), cls="ak-progress", id="ak-transcribing", hidden=True, role="status"),
         Label(Span("What do you want to change or add?", cls="ak-label"),
               Textarea(text, name="text", id="ak-text", rows="5", required=True, autocomplete="off", spellcheck="true", data_limit=str(say.LIMIT), data_long=str(speak.MAX_REQUEST),
                        placeholder="Say it, type it or paste it. A change (\"move lunch to 12:30\") or a whole plan from a message or a web page."), cls="ak-field"),
@@ -364,8 +368,10 @@ def register_transcribe(app):
             kind, _ = voicenotes.check(data, form.get("secs"))
         except voicenotes.VoiceError as e:
             return PlainTextResponse(str(e).replace("voice note", "recording"), status_code=e.status)
+        lang = form.get("lang") or ""
+        lang = lang if re.fullmatch(r"[a-z]{2,3}(-[A-Za-z]{2,4})?", lang) else None      # an optional hint; anything else is ignored and the service detects the language
         try:
-            words = await run_in_threadpool(ai.transcribe, (session or {}).get("tenant_id", ""), data, f"voice.{voicenotes.TYPES[kind][0]}", MIMES[kind])
+            words = await run_in_threadpool(lambda: ai.transcribe((session or {}).get("tenant_id", ""), data, f"voice.{voicenotes.TYPES[kind][0]}", MIMES[kind], language=lang))
         except ai.AIError as e:
             return PlainTextResponse(str(e), status_code=503)
         return JSONResponse({"text": words[: say.LIMIT]})
