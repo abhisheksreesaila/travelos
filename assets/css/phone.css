@@ -81,3 +81,7 @@
 .tp-head-btns .tp-edit { margin-top: 0; }
 .tp-head-btns .ak-open-icon { width: 2.75rem; padding: 0; justify-content: center; }
 .tp-addtrip { align-self: flex-start; background: var(--coral); color: var(--ink); font-weight: 800; box-shadow: 0 0.1875rem 0 var(--coral-deep); }
+
+/* F-093: the small SOS button in the Ask and Family headings (opens the emergency sheet) */
+.tp .ph-sos { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; gap: 0.25rem; min-width: 2.75rem; min-height: 2.75rem; padding: 0 0.75rem; border-radius: var(--r-pill); background: var(--bubble-tint); color: var(--bubble-ink);
+  font-weight: 800; font-size: max(var(--text-min), 0.8125rem); letter-spacing: 0.04em; text-decoration: none; }

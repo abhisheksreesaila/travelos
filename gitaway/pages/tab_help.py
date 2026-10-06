@@ -122,7 +122,8 @@ def content(request, session):
             cls="hp-sos-b"),
         cls="hp-sos", id="hp-sos")
     problem = Div("That number did not look right. Try something like +1 310 555 0100.", role="alert", cls="hp-problem", id="hp-problem") if request.query_params.get("problem") == "phone" else ""
-    return Div(problem, *cards, sos, passes_ui.section(request, session, can_edit), cls="hp")   # F-093: the morning plan and Face ID live on /family ("This phone")
+    back = A(icon("chev-left", 16, 2.6), "Back to the day", href="/trip", id="hp-back", cls="hp-back")
+    return Div(back, problem, *cards, sos, passes_ui.section(request, session, can_edit), cls="hp")   # F-093: the morning plan and Face ID live on /family ("This phone")
 
 
 def register(app):
@@ -131,5 +132,6 @@ def register(app):
         try:
             phones.set_stay_phone(session, kind, index, phone)
         except phones.PhoneError as e:
-            return RedirectResponse("/trip/help?problem=phone", status_code=303)
+            back = passes_ui.safe_back(next)
+            return RedirectResponse(f"{back}{'&' if '?' in back else '?'}err=phone" if back else "/trip/help?problem=phone", status_code=303)
         return RedirectResponse(passes_ui.safe_back(next) or "/trip/help", status_code=303)

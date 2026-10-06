@@ -105,7 +105,7 @@ def test_an_editor_can_add_or_fix_the_hotel_phone_from_the_sheet_and_comes_back_
     r = trip.post("/trip/help/phone", data={"kind": "hotel", "index": "0", "phone": "+1 310 555 0100", "next": "https://evil.example/x"}, follow_redirects=False)
     assert r.headers["location"] == "/trip/help"                         # only a canvas address is a way back
     r = trip.post("/trip/help/phone", data={"kind": "hotel", "index": "0", "phone": "nope", "next": unescape(back)}, follow_redirects=False)
-    assert r.headers["location"] == "/trip/help?problem=phone"
+    assert r.headers["location"] == unescape(back) + "&err=phone"      # review: a refused number goes back to the sheet with the reason
 
 
 # ---- car -------------------------------------------------------------------------------------------------------------------------
