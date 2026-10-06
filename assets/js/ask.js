@@ -452,19 +452,25 @@
         if (on && label) label.textContent = b.textContent;
       });
     };
-    chip.addEventListener('click', function () {
-      var open = picks.hidden;
-      picks.hidden = !open;
-      chip.setAttribute('aria-expanded', open ? 'true' : 'false');
-    });
+    var MO = window.GA && GA.motion, shut = 0;
+    var show = function (on) {           // F-109: the row of days grows out of the chip and folds back into it
+      var was = !picks.hidden;
+      chip.setAttribute('aria-expanded', on ? 'true' : 'false');
+      if (on === was) return;
+      shut += 1;
+      var mine = shut;
+      if (on) { picks.hidden = false; if (MO) MO.open(picks, chip); return; }
+      if (!MO || MO.reduced()) { picks.hidden = true; return; }
+      MO.close(picks, chip).then(function () { if (mine === shut) picks.hidden = true; });
+    };
+    chip.addEventListener('click', function () { show(picks.hidden); });
     picks.addEventListener('click', function (e) {
       var b = e.target.closest && e.target.closest('.ak-dpick');
       if (!b) return;
       dayPick.value = b.dataset.d;
       dayPick.dispatchEvent(new Event('change', { bubbles: true }));
       sync();
-      picks.hidden = true;
-      chip.setAttribute('aria-expanded', 'false');
+      show(false);
     });
     dayPick.addEventListener('ak:day', sync);
   }

@@ -234,10 +234,15 @@
       if (!tpl) return;
       e.preventDefault();
       e.stopImmediatePropagation();
-      if (v.querySelector('.cz-sheet-wrap[data-local]')) return;
+      var old = v.querySelector('.cz-sheet-wrap[data-local]');
+      if (old && !old.dataset.closing) return;
+      if (old) old.remove();      // one still folding back into the button: this tap opens a fresh one
       var frag = tpl.content.cloneNode(true);
       frag.querySelector('.cz-sheet-wrap').setAttribute('data-local', '1');
       v.appendChild(frag);
+      var lw = v.querySelector('.cz-sheet-wrap[data-local]');
+      lw._from = open;
+      if (window.GA && GA.motion) GA.motion.open(lw.querySelector('.cz-sheet'), open, { scrim: lw.querySelector('.cz-scrim') });      // F-109: the sheet grows out of the SOS button
       var h = v.querySelector('.cz-sheet-wrap[data-local] #cz-sheet-title');
       if (h) { try { h.focus({ preventScroll: true }); } catch (err) { h.focus(); } }
       return;
@@ -246,8 +251,12 @@
       e.preventDefault();
       e.stopImmediatePropagation();
       var w = stage.querySelector('.cz-sheet-wrap[data-local]');
-      if (w) w.remove();
       var b = stage.querySelector('.cz-fold.is-on .cz-sos') || stage.querySelector('#cz-sos');      // F-103: the folded bar's own SOS when that is the one on screen
+      if (w && window.GA && GA.motion && !reduced.matches && w.querySelector('.cz-sheet')) {      // F-109: it folds back into the button
+        if (w.dataset.closing) return;
+        w.dataset.closing = '1'; w.setAttribute('inert', '');
+        GA.motion.close(w.querySelector('.cz-sheet'), b || w._from, { scrim: w.querySelector('.cz-scrim') }).then(function () { w.remove(); });
+      } else if (w) w.remove();
       if (b) { try { b.focus({ preventScroll: true }); } catch (err) { b.focus(); } }
     }
   }, true);

@@ -1,5 +1,5 @@
 """F-108: the one toast. Every pop-up message is a light frosted pill at the top, just under the heading (the day's heading, the compact bar that replaces it, the phone header on Family),
-centred and never wider than 22rem, its words wrapping; Undo is a clear 2.75rem button inside it; it glides down 0.75rem while fading in (no bounce), a new one takes the old one's place
+centred and never wider than 22rem, its words wrapping; Undo is a clear 2.75rem button inside it; it grows out of what was tapped with the one liquid spring (F-109), a new one takes the old one's place
 without the pill moving, it fades away after 4.5 s (9 s with Undo) and waits while it is pressed; reduced motion has no glide; it never covers the heading's controls or the tab bar and
 sits above the Ask sheet. At 390 and 320 wide. Screenshots on request: F108_SHOTS=<folder>."""
 import os
@@ -135,7 +135,7 @@ def test_long_words_wrap_and_nothing_is_cut(canvas_page, vp):
 
 # ---- how it moves --------------------------------------------------------------------------------------------------------------------
 
-def test_it_glides_down_with_the_pages_calm_motion_and_reduced_motion_has_no_glide(browser, base_url, model, vp):
+def test_it_grows_with_the_one_liquid_spring_and_reduced_motion_has_no_movement(browser, base_url, model, vp):
     results = {}
     for motion in ("no-preference", "reduce"):
         ctx = browser.new_context(viewport=vp, reduced_motion=motion, has_touch=True, is_mobile=True)
@@ -146,20 +146,19 @@ def test_it_glides_down_with_the_pages_calm_motion_and_reduced_motion_has_no_gli
             page = ctx.new_page()
             page.goto(f"{base_url}/trip/family")
             page.wait_for_selector(".tp-head")
-            page.evaluate("""() => { GA.toast('Calm'); window.__start = (() => { const t = document.querySelector('.ga-toast'), s = getComputedStyle(t);
-                 return { opacity: s.opacity, translate: s.translate }; })(); }""")
-            start = page.evaluate("window.__start")
+            page.evaluate("""() => { GA.toast('Calm'); window.__anims = document.querySelector('.ga-toast').getAnimations().map(a => ({ kf: a.effect.getKeyframes(), t: a.effect.getTiming() })); }""")
+            anims = page.evaluate("window.__anims")
             settled(page)
-            end = toast(page).evaluate("t => { const s = getComputedStyle(t); return { opacity: s.opacity, translate: s.translate, dur: s.transitionDuration, prop: s.transitionProperty, ease: s.transitionTimingFunction }; }")
-            results[motion] = (start, end)
+            tokens = page.evaluate("""() => { const cs = getComputedStyle(document.documentElement); return { dur: GA.motion.t('spring'), ease: cs.getPropertyValue('--motion-spring').trim() }; }""")
+            results[motion] = (anims, tokens, toast(page).evaluate("t => getComputedStyle(t).transitionDuration"))
         finally:
             ctx.close()
-    start, end = results["no-preference"]
-    assert start["opacity"] == "0" and start["translate"] == "0px -12px"                  # 0.75rem above where it settles
-    assert end["opacity"] == "1" and end["translate"] in ("none", "0px", "0px 0px")
-    assert end["dur"].startswith("0.24s") and "translate" in end["prop"] and "opacity" in end["prop"] and "cubic-bezier(0.25, 0.8, 0.25, 1)" in end["ease"]      # --motion-dur and --motion-ease: no spring
-    start, end = results["reduce"]
-    assert start["translate"] in ("none", "0px", "0px 0px") and end["dur"] in ("0s", "0s, 0s")
+    anims, tokens, _ = results["no-preference"]
+    assert len(anims) == 1 and tokens["dur"] == 380                                       # the one spring's duration (--motion-spring-dur)
+    assert anims[0]["t"]["duration"] == tokens["dur"] and anims[0]["t"]["easing"].replace(" ", "") == "cubic-bezier(0.3,1.35,0.5,1)" and tokens["ease"] == "cubic-bezier(.3, 1.35, .5, 1)"
+    assert "scale" in anims[0]["kf"][0]["transform"] and anims[0]["kf"][1]["transform"] == "none"      # it grows (a transform on one layer) and lands
+    anims, _, trans = results["reduce"]
+    assert anims == [] and trans in ("0s", "0s, 0s")
 
 
 def test_a_new_toast_takes_the_old_ones_place_without_stacking_or_moving(canvas_page, vp):
@@ -251,7 +250,7 @@ def test_reduced_motion_removes_it_at_once_with_no_fade(canvas_page, vp):
     page.clock.install()
     say(page, "Quiet")
     page.clock.run_for(100)
-    assert toast(page).evaluate("t => getComputedStyle(t).transitionDuration") in ("0s", "0s, 0s") and toast(page).evaluate("t => getComputedStyle(t).translate") in ("none", "0px", "0px 0px")
+    assert toast(page).evaluate("t => getComputedStyle(t).transitionDuration") in ("0s", "0s, 0s") and toast(page).evaluate("t => t.getAnimations().length") == 0
     page.clock.run_for(4500)
     assert toast(page).count() == 0
 

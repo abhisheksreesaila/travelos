@@ -5,10 +5,10 @@
 //   GA.toast('Could not save that', { error: true })
 //   GA.hideToast(instant)                                                    fade it away (or remove it at once)
 //
-// One toast at a time: a new one takes the old one's place without the pill moving (only its words crossfade), so a burst of messages never stacks or slides again. It glides down
-// 0.75rem while fading in, fades out after 4.5 s (9 s with Undo), and waits while a finger (or the pointer, or the keyboard) is on it. It is placed under the lowest visible part of the
+// One toast at a time: a new one takes the old one's place without the pill moving (only its words crossfade), so a burst of messages never stacks or slides again. It grows out of what was
+// tapped (GA.motion, the one liquid spring: motion.js) and folds back into it after 4.5 s (9 s with Undo), and waits while a finger (or the pointer, or the keyboard) is on it. It is placed under the lowest visible part of the
 // heading (the day's heading, the compact bar that replaces it, or the phone header on Family and Ask) so it never covers the Day | Week switch, the map or SOS, and it keeps up while the
-// page scrolls. role=status with aria-live polite: a screen reader says it once. Reduced motion: no glide and no fade (the CSS sets the transitions to none; the removal is not delayed).
+// page scrolls. role=status with aria-live polite: a screen reader says it once. Reduced motion: no movement and no fade (the removal is not delayed).
 // A toast the server drew with the page (.ga-toast-static: the calendar's, the old Today page's) is only placed here.
 (function () {
   var GA = window.GA = window.GA || {};
@@ -48,6 +48,11 @@
       if (!moved) break;
     }
     return y;
+  }
+  // nothing was tapped: it grows out of a small place just above where it settles
+  function fallback(n) {
+    var r = GA.motion.box(n);
+    return { left: r.left + r.width * 0.15, top: r.top - rem() * 0.75, width: r.width * 0.7, height: r.height * 0.6 };
   }
   function place(n) {
     var y = anchor(n);
@@ -119,8 +124,9 @@
         el.classList.toggle('is-error', latest.error);
         body.classList.remove('is-swap');
         place(el);
-      }, reduced.matches ? 0 : 100);
+      }, reduced.matches ? 0 : GA.motion.t('fade'));
       el.classList.add('is-in');                                  // (a toast on its way out is called back)
+      el.getAnimations().forEach(function (a) { a.cancel(); });
       arm(ms);
       return el;
     }
@@ -142,8 +148,9 @@
     mine.addEventListener('focusin', function () { clearTimers(); });
     mine.addEventListener('focusout', function () { if (el === mine && !pressed) arm(); });
     mine._release = release;
-    void mine.offsetWidth;                                        // the starting state is painted, then the glide runs
-    requestAnimationFrame(function () { if (el === mine) mine.classList.add('is-in'); });
+    mine.classList.add('is-in');
+    mine._from = GA.motion.origin();                              // what was tapped a moment ago: the toast grows out of it and folds back into it
+    GA.motion.open(mine, mine._from || fallback(mine));
     arm(ms);
     return el;
   };
@@ -162,6 +169,7 @@
     if (instant === true || reduced.matches) { drop(); return; }
     gone.classList.remove('is-in');
     el = gone;
-    removeT = setTimeout(drop, 320);                              // after its fade
+    GA.motion.close(gone, gone._from && gone._from.isConnected ? gone._from : fallback(gone));
+    removeT = setTimeout(drop, GA.motion.t('dur') + 80);          // after its fold
   };
 })();

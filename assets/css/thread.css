@@ -49,8 +49,8 @@
   .ft-compose { bottom: calc(var(--tabs-h) + env(safe-area-inset-bottom)); }
 }
 @media (prefers-reduced-motion: no-preference) {
-  .ft-thread > .is-new { animation: ft-in 0.18s var(--ease-out); }
-  @keyframes ft-in { from { opacity: 0; transform: translateY(0.25rem); } to { opacity: 1; transform: none; } }
+  .ft-thread > .is-new { animation: ft-in var(--motion-settle-dur) var(--motion-spring); }
+  @keyframes ft-in { from { opacity: 0; transform: translateY(0.5rem) scale(.96); } to { opacity: 1; transform: none; } }
 }
 
 /* F-084, F-094: the invite link (admin) or the family link (everyone else) at the end of the header line: small, quiet, still a 2.75rem target. */
