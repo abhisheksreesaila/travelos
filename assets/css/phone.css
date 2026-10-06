@@ -44,11 +44,10 @@
 @media (max-width: 720px), (display-mode: standalone) {
   .tp { --tabs-h: 5.5rem; }
   .ph-back { display: none; }
-  .ph-tabs { position: fixed; z-index: 30; left: 0; right: 0; bottom: 0; max-width: 36rem; margin: 0 auto; height: calc(var(--tabs-h) + env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
-    padding: 0.375rem max(0.5rem, env(safe-area-inset-right)) calc(0.375rem + env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left)); background: var(--card); box-shadow: 0 -1px 0 rgba(30, 26, 46, .1); }
+  .ph-tabs { position: fixed; z-index: 30; left: 0; right: 0; bottom: 0; max-width: 36rem; margin: 0 auto; height: calc(var(--tabs-h) + env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+    padding: 0.375rem max(0.5rem, env(safe-area-inset-right)) calc(0.375rem + env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left)); background: var(--card); box-shadow: 0 -1px 0 rgba(30, 26, 46, .1); }   /* F-096: three equal columns, Ask in the true centre; glass is added below */
   .tp .ph-tab { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.125rem; min-height: 2.75rem; border-radius: 1rem; font-weight: 700; font-size: max(var(--text-min), 0.8125rem); color: var(--ink-3); text-decoration: none; }
   .tp .ph-tab[aria-current="page"] { color: var(--ink); font-weight: 800; }
-  .tp .ph-tab#ph-tab-family { grid-column: 4 / span 2; }   /* F-093: four tabs on a five-column bar, so Ask stays in the centre (the third column) */
   .ph-ti { display: flex; align-items: center; justify-content: center; width: 2.75rem; height: 1.75rem; border-radius: var(--r-pill); }
   .ph-tab[aria-current="page"] .ph-ti { background: var(--accent-tint); }
   .ph-ask .ph-ti { width: 3.25rem; height: 3.25rem; margin-top: -1.625rem; background: var(--coral); color: var(--ink); box-shadow: 0 0.25rem 0 var(--coral-deep), 0 0.75rem 1.5rem -0.625rem var(--coral-deep); }
@@ -81,3 +80,15 @@
 .tp-head-btns .tp-edit { margin-top: 0; }
 .tp-head-btns .ak-open-icon { width: 2.75rem; padding: 0; justify-content: center; }
 .tp-addtrip { align-self: flex-start; background: var(--coral); color: var(--ink); font-weight: 800; box-shadow: 0 0.1875rem 0 var(--coral-deep); }
+
+/* F-096: the tab bar is glass (it floats over the page). Solid card by default; translucent with a strong blur only where the browser can blur;
+   solid again when the person asks for less transparency. 84% keeps the labels at 4.5:1 over the darkest thing that scrolls behind. */
+@media (max-width: 720px), (display-mode: standalone) {
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    .ph-tabs { background: color-mix(in srgb, color-mix(in srgb, var(--card) 84%, var(--paper-2)) 84%, transparent); -webkit-backdrop-filter: blur(1.25rem) saturate(1.6); backdrop-filter: blur(1.25rem) saturate(1.6);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .6), 0 -1px 0 rgba(30, 26, 46, .1), 0 -0.5rem 1.5rem -0.75rem rgba(30, 26, 46, .18); }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .ph-tabs { background: var(--card); -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: 0 -1px 0 rgba(30, 26, 46, .1); }
+  }
+}

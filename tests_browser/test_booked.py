@@ -369,10 +369,10 @@ def test_sos_opens_with_no_connection_and_closes_three_ways(imported_page, base_
     page.context.set_offline(False)
 
 
-def test_the_tab_bar_is_four_tabs_with_ask_in_the_middle(imported_page):
+def test_the_tab_bar_is_three_tabs_with_ask_in_the_middle(imported_page):
     page = imported_page()
     labels = page.locator(".ph-tab").all_inner_texts()
-    assert [x.strip() for x in labels] == ["Today", "Map", "Ask", "Family"]
+    assert [x.strip() for x in labels] == ["Today", "Ask", "Family"]
     ask = page.locator("#ph-tab-ask").bounding_box()
     assert abs((ask["x"] + ask["width"] / 2) - PHONE["width"] / 2) < 2
     bar = page.locator(".ph-tabs").bounding_box()

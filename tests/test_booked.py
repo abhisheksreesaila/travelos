@@ -236,9 +236,9 @@ def test_the_who_and_list_filters_stay_and_the_kind_row_comes_first(client, azur
 
 # ---- Help leaves the tab bar, SOS opens the emergency sheet ------------------------------------------------------------------------
 
-def test_the_tab_bar_is_today_map_ask_family_and_the_centre_is_ask(trip):
+def test_the_tab_bar_is_today_ask_family_and_the_centre_is_ask(trip):
     nav = re.search(r'<nav[^>]*class="ph-tabs".*?</nav>', trip.get("/trip/canvas").text, re.S).group(0)
-    assert re.findall(r'href="([^"]+)"', nav) == ["/trip", "/trip/map", "/trip/ask", "/trip/family"] and "Help" not in text(nav)
+    assert re.findall(r'href="([^"]+)"', nav) == ["/trip", "/trip/ask", "/trip/family"] and "Help" not in text(nav)
     assert "ph-ask" in tag(nav, "ph-tab-ask")
 
 
