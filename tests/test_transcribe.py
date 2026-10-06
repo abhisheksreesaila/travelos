@@ -365,3 +365,53 @@ def test_an_unknown_provider_is_off(on, monkeypatch):
     with pytest.raises(ai.AIError) as e:
         ai.transcribe("fam1", voice("mp4"))
     assert e.value.code == "off"
+
+
+# ---- review fixes ------------------------------------------------------------------------------------------------------------------
+
+def test_the_english_swap_cannot_blow_up_memory(client):
+    from gitaway import say
+    from gitaway.pages import tab_ask
+    big = "x" * 20000
+    text = "a" * 2000 + " " + "ab " * 700
+    out = tab_ask._for_the_planner(text, [["a", big]] * 20)         # one-letter passages are skipped
+    assert out == text
+    out = tab_ask._for_the_planner("abc " * 2000, [["abc", big]] * 20)
+    assert len(out) <= say.LIMIT + 1                                  # stops as soon as it is over the limit
+    out = tab_ask._for_the_planner("abc abc abc", [["abc", "XYZ"]])
+    assert out == "XYZ abc abc"                                       # one swap per dictated passage
+
+
+def test_a_piece_waits_for_a_busy_line_instead_of_leaving_a_gap(on):
+    import threading
+    import time
+    on()
+    ai._in_flight.add(("transcribe", "famwait"))
+    threading.Timer(0.4, lambda: ai._in_flight.discard(("transcribe", "famwait"))).start()
+    assert ai.transcribe("famwait", voice("mp4"), wait=3) == SECRET_WORDS
+    ai._in_flight.add(("transcribe", "famwait"))
+    try:
+        t0 = time.monotonic()
+        with pytest.raises(ai.AIError) as e:
+            ai.transcribe("famwait", voice("mp4"), wait=0.3)
+        assert e.value.code == "busy" and time.monotonic() - t0 >= 0.3
+    finally:
+        ai._in_flight.discard(("transcribe", "famwait"))
+
+
+def test_a_family_is_limited_in_pieces_per_window_and_it_says_so(sarvam, monkeypatch):
+    sarvam(raw=json.dumps({"transcript": "hi", "language_code": "en-IN"}))
+    monkeypatch.setattr(ai, "TRANSCRIBE_CAP", (2, 600))
+    ai.transcribe("famcap", voice("mp4"))
+    ai.transcribe("famcap", voice("mp4"), english=True)               # a translation is not another piece
+    ai.transcribe("famcap", voice("mp4"))
+    with pytest.raises(ai.AIError) as e:
+        ai.transcribe("famcap", voice("mp4"))
+    assert e.value.code == "limit" and "resting for a few minutes" in str(e.value)
+    ai.transcribe("another-family", voice("mp4"))                     # per family
+
+
+def test_the_recording_limit_message_says_recordings(ari, on):
+    on()
+    r = post(ari, voice("mp4"), secs="400")
+    assert r.status_code == 413 and r.text == "Recordings can be up to 3 minutes."

@@ -43,8 +43,8 @@ def model(monkeypatch):
 def phone(browser, base_url):
     contexts = []
 
-    def make(init_script=None, permissions=None):
-        ctx = browser.new_context(viewport=PHONE, reduced_motion="reduce", has_touch=True, is_mobile=True, permissions=permissions)
+    def make(init_script=None, permissions=None, motion="reduce"):
+        ctx = browser.new_context(viewport=PHONE, reduced_motion=motion, has_touch=True, is_mobile=True, permissions=permissions)
         ctx.set_default_timeout(9000)
         contexts.append(ctx)
         if init_script:
@@ -465,3 +465,69 @@ def test_the_box_is_a_handwritten_note_and_words_still_being_heard_look_lighter(
     page.wait_for_timeout(500)
     assert page.evaluate(style)["color"] == typed["color"]
     fits(page)
+
+
+# ---- F-102 review fixes ---------------------------------------------------------------------------------------------------------------
+
+def test_words_type_in_one_by_one_when_motion_is_allowed(phone, base_url, stt, monkeypatch):
+    monkeypatch.setattr(ai, "TRANSPORT", Heard(delay=0.1, text="one two three four five six seven eight nine ten eleven twelve"))
+    page = phone(NO_SPEECH + FAKE_MIC, motion="no-preference")
+    page.goto(f"{base_url}/trip/ask?day={DAY}")
+    page.evaluate("""() => { window.__seen = []; const b = document.getElementById('ak-text');
+        new MutationObserver(() => {}).observe(b, {attributes: true});
+        setInterval(() => window.__seen.push([b.value, b.classList.contains('is-typing-in'), b.getAttribute('data-words')]), 40); }""")
+    record_and_stop(page)
+    expect(page.locator("#ak-mic-status")).to_contain_text("Added what you said", timeout=9000)
+    seen = page.evaluate("window.__seen")
+    lengths = sorted({len(v.split()) for v, _, _ in seen if v})
+    assert len(lengths) >= 4 and 12 in lengths                              # words arrived over time, not all at once
+    assert any(typing and w == "interim" for v, typing, w in seen if v)      # the class and the lighter look are on while they come in
+    final = seen[-1]
+    assert final[1] is False and final[2] == "final"
+
+
+def test_a_piece_that_finds_the_line_busy_is_tried_again_in_order(phone, base_url, monkeypatch):
+    import json
+    monkeypatch.setenv("SARVAM_API_KEY", "sk-test")
+    monkeypatch.setattr(ai, "TRANSPORT", lambda url, headers, body, timeout: (200, json.dumps({"transcript": "after the wait", "language_code": "en-IN"})))
+    real, calls = ai.transcribe, []
+
+    def flaky(*a, **kw):
+        calls.append(1)
+        if len(calls) == 1:
+            raise ai.AIError(ai.BUSY, "busy")
+        return real(*a, **kw)
+    monkeypatch.setattr(ai, "transcribe", flaky)
+    page = phone(NO_SPEECH + FAKE_MIC)
+    page.goto(f"{base_url}/trip/ask?day={DAY}")
+    record_and_stop(page)
+    expect(page.locator("#ak-text")).to_have_value("after the wait", timeout=12000)
+    assert len(calls) == 2
+
+
+def test_a_rotation_that_cannot_start_ends_the_recording_with_what_was_said(phone, base_url, stt, monkeypatch):
+    monkeypatch.setattr(ai, "TRANSPORT", Heard(delay=0.1))
+    breaks = "(() => { const Real = window.MediaRecorder; window.__starts = 0; window.MediaRecorder = class extends Real { start(...a) { window.__starts++; if (window.__starts === 2) throw new Error('no'); return super.start(...a); } }; })();"
+    page = phone(NO_SPEECH + FAKE_MIC + breaks)
+    page.goto(f"{base_url}/trip/ask?day={DAY}")
+    page.evaluate("document.getElementById('ak-mic').dataset.pieceSecs = '1'")
+    page.locator("#ak-mic").click()
+    expect(page.locator("#ak-mic")).to_have_class(re.compile("is-recording"))
+    expect(page.locator("#ak-mic")).not_to_have_class(re.compile("is-recording"), timeout=6000)      # the second recorder would not start: the recording closed
+    expect(page.locator("#ak-text")).to_have_value(HEARD, timeout=6000)                               # what was said up to then is kept
+    expect(page.locator("#ak-mic")).to_be_enabled()
+    assert page.evaluate("window.__starts") == 2
+
+
+def test_hiding_the_page_finishes_the_piece_and_cancel_returns_focus_to_the_mic(phone, base_url, stt):
+    page = phone(NO_SPEECH + FAKE_MIC)
+    page.goto(f"{base_url}/trip/ask?day={DAY}")
+    page.locator("#ak-mic").click()
+    expect(page.locator("#ak-mic")).to_have_class(re.compile("is-recording"))
+    page.wait_for_timeout(1300)
+    page.evaluate("() => { Object.defineProperty(document, 'hidden', {configurable: true, get: () => true}); document.dispatchEvent(new Event('visibilitychange')); }")
+    expect(page.locator("#ak-text")).to_have_value(HEARD, timeout=6000)                  # the piece was sent without waiting for the 25 s timer
+    expect(page.locator("#ak-mic")).to_have_class(re.compile("is-recording"))             # and recording goes on
+    page.locator("#ak-rec-cancel").click()
+    expect(page.locator("#ak-mic")).not_to_have_class(re.compile("is-recording"))
+    expect(page.locator("#ak-mic")).to_be_focused()

@@ -66,6 +66,7 @@ def _no_ai_network(monkeypatch):
     def refuse(url, headers, body, timeout):
         raise OSError("the network is off in tests")
     monkeypatch.setattr(ai, "TRANSPORT", refuse)
+    ai._transcribe_hits.clear()      # F-102: the per-family cap on voice pieces starts empty in every test
 
 
 @pytest.fixture(autouse=True)
