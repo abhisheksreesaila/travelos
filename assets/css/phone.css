@@ -92,3 +92,7 @@
     .ph-tabs { background: var(--card); -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: 0 -1px 0 rgba(30, 26, 46, .1); }
   }
 }
+
+/* F-093: the small SOS button in the Ask and Family headings (opens the emergency sheet) */
+.tp .ph-sos { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; gap: 0.25rem; min-width: 2.75rem; min-height: 2.75rem; padding: 0 0.75rem; border-radius: var(--r-pill); background: var(--bubble-tint); color: var(--bubble-ink);
+  font-weight: 800; font-size: max(var(--text-min), 0.8125rem); letter-spacing: 0.04em; text-decoration: none; }

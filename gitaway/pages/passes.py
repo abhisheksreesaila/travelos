@@ -80,8 +80,8 @@ def _field(label, name, value="", **attrs):
 
 # ---- Help: the "Passes & documents" section ------------------------------------------------------------------------------
 
-def _flight_form(f=None):
-    """Add a flight, or fix one that was added by hand (f is its dict)."""
+def _flight_form(f=None, back=""):
+    """Add a flight, or fix one that was added by hand (f is its dict). `back`: a canvas address to return to (F-093)."""
     f = f or {}
     trip = ses.open_trip_id()
     return Form(
@@ -92,7 +92,7 @@ def _flight_form(f=None):
         Div(_field("Date it leaves", "fly_on", f["date"].isoformat() if f else "", type="date", required=True),
             _field("Time it leaves", "time", f"{f['depart_min'] // 60:02d}:{f['depart_min'] % 60:02d}" if f else "", type="time", required=True), cls="pz-two"),
         _field("Terminal (optional)", "terminal", f.get("terminal", ""), maxlength="12", autocomplete="off", placeholder="7"),
-        Input(type="hidden", name="trip", value=trip), Input(type="hidden", name="flight_id", value=f.get("id", "")),
+        Input(type="hidden", name="trip", value=trip), Input(type="hidden", name="flight_id", value=f.get("id", "")), _back_field(back),
         Div(Button("Save the flight", type="submit", cls="tp-btn tp-btn-ink pz-save"), cls="hp-fix-acts"),
         action="/trip/help/flight", method="post", enctype="application/x-www-form-urlencoded", cls="hp-fix-form pz-form", data_form="flight")
 
@@ -159,15 +159,20 @@ def pass_cards(f, ps, can_edit, names, back="", n=0):
     return cards, add
 
 
+def flight_tools(f, can_edit, back="", gone="", n=0):
+    """Fix and Remove for a flight an editor added by hand (an imported leg has neither). `gone`: where to go once it is removed (its sheet would be gone). Help and the canvas's flight sheet (F-093)."""
+    if not (can_edit and f["source"] == "added"):
+        return []
+    return [Details(Summary(icon("pencil", 15, 2.4), "Fix this flight", cls="tp-mini hp-fix-sum"), _flight_form(f, back), cls="hp-fix", data_fix=f"flight-{n}"),
+            _confirm_remove("/trip/help/flight/remove", "flight_id", f["id"], f"{f['name']} and its passes", "Remove this flight", gone)]
+
+
 def _flight_block(f, ps, can_edit, names, n):
     head = Div(Span(icon("plane", 22, 2.2), cls="hp-ico hp-sky", aria_hidden="true"),
                Div(H2(f"{f['name']} · {f['origin']} → {f['dest']}", cls="hp-h"), Span(f"{day_label(f['date'])} · departs {clock(f['depart_min'])}" + (f" · Terminal {f['terminal']}" if f["terminal"] else ""), cls="hp-addr"), cls="hp-who"), cls="hp-row")
     cards, add = pass_cards(f, ps, can_edit, names, n=n)
     tools = [add] if add else []
-    if can_edit:
-        if f["source"] == "added":
-            tools.append(Details(Summary(icon("pencil", 15, 2.4), "Fix this flight", cls="tp-mini hp-fix-sum"), _flight_form(f), cls="hp-fix", data_fix=f"flight-{n}"))
-            tools.append(_confirm_remove("/trip/help/flight/remove", "flight_id", f["id"], f"{f['name']} and its passes", "Remove this flight"))
+    tools += flight_tools(f, can_edit, n=n)
     return Div(head, *cards, Div(*tools, cls="pz-tools") if tools else "", cls="hp-card pz-flight", id=f"pz-flight-{n}", data_flight=f["key"])
 
 
@@ -324,9 +329,9 @@ def safe_back(url):
 
 
 def _back(err="", anchor="hp-passes", to=""):
-    """Back to where the form was: the canvas sheet it was opened in when it succeeded, else Help (which shows the reason when it did not)."""
-    if to and not err:
-        return RedirectResponse(to, status_code=303)
+    """Back to where the form was: the canvas sheet it was opened in (with `err=` when it was refused, for the sheet to say why), else Help."""
+    if to:
+        return RedirectResponse(to + (f"{'&' if '?' in to else '?'}err={err}" if err else ""), status_code=303)
     return RedirectResponse(("/trip/help" + (f"?err={err}" if err else "")) + f"#{anchor}", status_code=303)
 
 
@@ -334,26 +339,26 @@ def register(app):
     app.add_middleware(BodyLimit)
 
     @app.post("/trip/help/flight")
-    def save_flight(session, trip: str = "", flight_id: str = "", airline: str = "", number: str = "", from_code: str = "", to_code: str = "", fly_on: str = "", time: str = "", terminal: str = ""):
+    def save_flight(session, trip: str = "", flight_id: str = "", airline: str = "", number: str = "", from_code: str = "", to_code: str = "", fly_on: str = "", time: str = "", terminal: str = "", next: str = ""):
         if not _signed_in(session):
             return Response("Sign in first.", status_code=401)
         try:
             passes.save_flight(session, trip_id=trip, flight_id=flight_id, airline=airline, number=number, origin=from_code, dest=to_code, fly_on=fly_on, time=time, terminal=terminal)
         except passes.PassError as e:
-            return _back(e.key)
-        return _back()
+            return _back(e.key, to=safe_back(next))
+        return _back(to=safe_back(next))
 
     @app.post("/trip/help/flight/remove")
-    def remove_flight(session, flight_id: str = "", trip: str = ""):
+    def remove_flight(session, flight_id: str = "", trip: str = "", next: str = ""):
         if not _signed_in(session):
             return Response("Sign in first.", status_code=401)
         try:
             found = passes.remove_flight(session, flight_id, trip)
         except passes.PassError as e:
-            return _back(e.key)
+            return _back(e.key, to=safe_back(next))
         if not found:
-            return _back("flight_missing")
-        return _back()
+            return _back("flight_missing", to=safe_back(next))
+        return _back(to=safe_back(next))
 
     @app.post(FORM)
     async def save_pass(request, session):
@@ -370,7 +375,7 @@ def register(app):
                     session, trip_id=form.get("trip") or "", pass_id=form.get("pass_id") or "", flight=form.get("flight") or "", traveller=form.get("traveller") or "", seat=form.get("seat") or "",
                     grp=form.get("grp") or "", gate=form.get("gate") or "", boards=form.get("boards") or "", app_url=form.get("app_url") or "", data=data or None))
         except passes.PassError as e:
-            return _back(e.key)
+            return _back(e.key, to=safe_back(form.get("next")))
         return _back(to=safe_back(form.get("next")))
 
     @app.post("/trip/help/pass/remove")
@@ -380,9 +385,9 @@ def register(app):
         try:
             found = passes.remove_pass(session, pass_id, trip)
         except passes.PassError as e:
-            return _back(e.key)
+            return _back(e.key, to=safe_back(next))
         if not found:
-            return _back("pass_missing")
+            return _back("pass_missing", to=safe_back(next))
         return _back(to=safe_back(next))
 
     @app.get(GATE)

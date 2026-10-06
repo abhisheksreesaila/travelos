@@ -34,8 +34,10 @@ def tabbar(active):
     return Nav(*links, cls="ph-tabs", aria_label="Trip")
 
 
-def header(kicker, title, faces=()):
-    return Header(Div(Span(kicker, cls="tp-head-k"), H1(title, id="tp-title-h"), cls="tp-head-text"), Div(*faces, cls="tp-faces") if faces else "", cls="tp-head")
+def header(kicker, title, faces=(), sos=False):
+    """`sos`: a small SOS button (F-093) that opens the emergency sheet on the trip canvas; the Ask and Family tabs have it, the canvas has its own."""
+    button = A(icon("life", 18, 2.4), Span("SOS"), href="/trip/canvas?sos=1", id="ph-sos", cls="ph-sos", aria_label="Emergency: call 911 and your people") if sos else ""
+    return Header(Div(Span(kicker, cls="tp-head-k"), H1(title, id="tp-title-h"), cls="tp-head-text"), button, Div(*faces, cls="tp-faces") if faces else "", cls="tp-head")
 
 
 def coming(name, line, ico):
