@@ -108,3 +108,17 @@ def test_the_family_page_offers_face_id_to_someone_without_a_passkey(trip):
     html = trip.get("/family").text
     assert 'id="pk-card"' in html and 'id="this-phone"' in html and "/assets/js/passkeys.js" in html
     assert 'id="pk-card"' not in trip.get("/trip/help").text
+
+
+def test_the_now_card_ends_with_its_buttons_and_a_booking_title_opens_its_sheet(trip, monkeypatch):
+    at(monkeypatch, datetime(2026, 10, 17, 18, 0, tzinfo=timezone.utc))     # Saturday 11:00 AM: Universal is on
+    card = re.search(r'<div[^>]*id="tp-up".*?</div>\s*</div>', trip.get("/trip/canvas?day=1").text, re.S).group(0)
+    assert "tp-up-compact" in card and ">Details<" not in card and "data-up-details" not in card
+    at(monkeypatch, datetime(2026, 10, 16, 21, 0, tzinfo=timezone.utc))     # Friday 2:00 PM: check-in at 3:00 is up next
+    page = bare(trip.get("/trip/canvas?day=0").text)
+    link = re.search(r'<a[^>]*id="tp-up-open"[^>]*>', page)
+    assert link and "booked=" in link.group(0), "a booking up next opens its sheet from its title"
+    href = re.search(r'href="([^"]+)"', link.group(0)).group(1)
+    lines = [re.search(r'href="([^"]+)"', a).group(1) for a in re.findall(r'<a\b[^>]*class="cz-bk[^"]*"[^>]*>', page)]
+    assert href in lines      # the same sheet its booking line opens
+    assert trip.get(href.replace("&amp;", "&")).status_code == 200
