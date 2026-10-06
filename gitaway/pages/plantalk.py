@@ -3,8 +3,7 @@
 GET  /trip/talk?act=aN[&part=pN]         the chat: bubbles (mine on the right), voice notes that play in place, photos; a composer with text, photo and a
                                          tap-to-record mic. Inside the phone shell; the header names the plan (and part) and goes back to its day.
 GET  /trip/talk/items?act=&part=&since=  the items after `since` as an HTML fragment (the page polls it like the Family tab does); the highest item
-                                         number is in the `X-Thread-Last` header. With `before=N&limit=k` (F-106, the plan card's "Earlier") the k messages before
-                                         number N instead, oldest first: `X-Thread-First` is the lowest number shown, `X-Thread-More` 1 when older ones remain
+                                         number is in the `X-Thread-Last` header.
 POST /trip/talk/message                  a text message (fields act, part, text, trip, since)
 POST /trip/talk/photo                    a photo (multipart: `photo`, optional `caption`, act, part, trip)
 POST /trip/talk/voice                    a voice note (multipart: `voice`, `secs` as the page timed it, act, part, trip)
@@ -139,17 +138,6 @@ def _new(session, act, part, since, trip=""):
     return Response(body, media_type="text/html; charset=utf-8", headers={"X-Thread-Last": str(its[-1]["n"] if its else max(0, since)), "Cache-Control": "no-store"})
 
 
-def _older(session, act, part, before, limit, trip=""):
-    """The messages before `before` (the card's "Earlier", F-106), at most `limit`, oldest first: X-Thread-First is the lowest number shown, X-Thread-More says whether older ones remain."""
-    try:
-        its, more = plantalk.window(session, act, part, before=before, limit=max(1, min(limit, 50)), trip=trip or None)
-    except familythread.StaleTrip:
-        return PlainTextResponse(plantalk.STALE, status_code=409)
-    me, zone = ses.current_traveler(session).id, ses.trip_zone(session)
-    body = "".join(to_xml(v) for v in tab_family.fragment(its, me, zone))
-    return Response(body, media_type="text/html; charset=utf-8", headers={"X-Thread-First": str(its[0]["n"] if its else before), "X-Thread-More": "1" if more else "0", "Cache-Control": "no-store"})
-
-
 def _done(request, session, act, part, since, trip, error=None, status=400):
     """The answer to a write: the new items (script), a plain message with a status (script, refused), or a redirect to the chat."""
     if request.headers.get("x-fragment") == "1":
@@ -174,10 +162,10 @@ def register(app):
             return RedirectResponse("/trip/canvas", status_code=303)
 
     @app.get("/trip/talk/items")
-    def items(session, act: str = "", part: str = "", since: int = 0, trip: str = "", before: int = 0, limit: int = 8):
+    def items(session, act: str = "", part: str = "", since: int = 0, trip: str = ""):
         if not _signed_in(session):
             return Response(status_code=401)
-        return _older(session, act, part, before, limit, trip) if before > 0 else _new(session, act, part, since, trip)
+        return _new(session, act, part, since, trip)
 
     @app.post("/trip/talk/message")
     def message(request, session, act: str = "", part: str = "", text: str = "", since: int = 0, trip: str = "", cid: str = ""):

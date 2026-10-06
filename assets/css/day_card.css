@@ -1,5 +1,4 @@
-/* Tap a plan: its note and its chat, right there (F-106). A card that grows out of the block over the day: the note on top as the sticky, then the plan's chat with its box docked
-   at the bottom. Loaded after day_grid.css and thread.css. Sizes are rem off the one root; text never goes under --cz-small (13px on a phone); touch targets are 2.75rem.
+/* Tap a plan: its note, right there (F-106, F-107). A card that grows out of the block over the day: the plan's name, the note as the sticky, then "Open chat" and "Rides". Loaded after day_grid.css and thread.css. Sizes are rem off the one root; text never goes under --cz-small (13px on a phone); touch targets are 2.75rem.
    The card is placed by day_card.js (left, top, width, height in pixels, inside what can be seen) and grows with a transform; the rest of the day dims under .cz-card-scrim. */
 
 .cz .cz-card-wrap { position: fixed; z-index: 31; inset: 0; padding-top: env(safe-area-inset-top); pointer-events: none; }      /* over the tab bar too (it is inert while the card is open: a tap there folds the card) */
@@ -17,19 +16,19 @@
 .cz .cz-card-when { margin: 0.125rem 0 0; font-size: var(--cz-small); font-weight: 700; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .cz .cz-card-x { flex-shrink: 0; width: 2.75rem; height: 2.75rem; padding: 0; border: 0; border-radius: var(--r-pill); background: var(--paper-2); color: var(--ink); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
 .cz .cz-card-x svg { width: 1.25rem; height: 1.25rem; }
-.cz .cz-card-x:focus-visible, .cz .cz-card-link:focus-visible, .cz .cz-card-earlier:focus-visible, .cz .cz-card-note:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.125rem; }
+.cz .cz-card-x:focus-visible, .cz .cz-card-link:focus-visible, .cz .cz-card-note:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.125rem; }
 
-/* the body: links, the sticky, then the chat, which takes the rest of the height and scrolls on its own (the box stays at the bottom) */
-.cz .cz-card-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+/* the body: the sticky, then the links; the card is as tall as these (up to what the screen leaves) and the body scrolls when they are longer */
+.cz .cz-card-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
 .cz .cz-card-loading { margin: 0; padding: 1rem 1.125rem; font-weight: 700; color: var(--ink-2); }
-.cz .cz-card-inner { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 0.5rem; padding: 0 0.75rem 0.5rem 1rem; }
+.cz .cz-card-inner { flex: 0 0 auto; display: flex; flex-direction: column; gap: 0.5rem; padding: 0 0.75rem 0.75rem 1rem; }
 .cz .cz-card-links { flex-shrink: 0; display: flex; flex-wrap: wrap; gap: 0.375rem; }
 .cz .cz-card-link { display: inline-flex; align-items: center; gap: 0.375rem; min-height: 2.75rem; padding: 0 0.875rem; border-radius: var(--r-pill); background: var(--paper-2); color: var(--ink); font-weight: 800; font-size: max(var(--text-min), 0.875rem); text-decoration: none; cursor: pointer; }
 .cz .cz-card-link:hover { background: var(--bubble-tint); }
 .cz .cz-card-link svg { width: 1rem; height: 1rem; flex-shrink: 0; }
 
 /* the sticky: the whole note, in the hand font, on yellow paper. An editor's own note is tappable; "Add a note" is the empty sticky. */
-.cz .cz-card-notes { flex: 0 1 auto; display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; max-height: 38%; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0.25rem 0.5rem 0.375rem 0.125rem; }
+.cz .cz-card-notes { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; padding: 0.25rem 0.5rem 0.375rem 0.125rem; }
 .cz .cz-card-note { display: flex; flex-direction: column; align-items: flex-start; max-width: 100%; box-sizing: border-box; margin: 0; padding: 0.25rem 0.875rem 0.375rem; border: 0; border-radius: 0.375rem; background: var(--note); color: var(--ink); text-align: left;
   font-family: var(--font-hand); font-weight: 700; font-size: 1.5rem; line-height: 1.1; box-shadow: var(--shadow-sticker); transform: rotate(-0.8deg); overflow-wrap: anywhere; }
 .cz .cz-card-note + .cz-card-note { transform: rotate(0.7deg); }
@@ -44,23 +43,6 @@
   font-family: var(--font-hand); font-weight: 700; font-size: 1.5rem; line-height: 1.1; }
 .cz .cz-card-err { color: var(--coral-deep); font-family: var(--font-body); font-weight: 800; font-size: var(--cz-small); }
 .cz .cz-card-err:empty { display: none; }
-
-/* the chat: the box (thread.css, plantalk.css) docked at the bottom of the card, the messages scrolling above it, few messages sitting right above the box */
-.cz .cz-chat { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 0.375rem; }
-.cz .cz-card-scroll { flex: 1 1 auto; min-height: 5rem; display: flex; flex-direction: column; gap: 0.5rem; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 0.25rem 0; scrollbar-width: none; }
-.cz .cz-card-scroll::-webkit-scrollbar { display: none; }
-.cz .cz-card-scroll > .ft-thread { margin-top: auto; flex-shrink: 0; }
-.cz .cz-card-scroll > .ft-empty { flex-shrink: 0; margin-top: 0; padding: 1rem; }
-.cz .cz-card-earlier { flex-shrink: 0; align-self: center; display: inline-flex; align-items: center; gap: 0.375rem; min-height: 2.75rem; padding: 0 1rem; border: 0; border-radius: var(--r-pill); background: var(--paper-2); color: var(--ink); font: inherit; font-weight: 800; font-size: max(var(--text-min), 0.875rem); cursor: pointer; }
-.cz .cz-card-earlier svg { transform: rotate(-90deg); }
-.cz .cz-card-earlier:disabled { opacity: 0.5; cursor: default; }
-.cz .cz-chat .ft-compose { position: static; flex-shrink: 0; padding: 0.375rem 0 0.25rem; background: transparent; }
-.cz .cz-chat .ft-input { background: var(--paper-2); box-shadow: none; }
-.cz .cz-chat .ft-round { background: var(--paper-2); box-shadow: none; }
-.cz .cz-chat .pt-rec { position: static; flex-shrink: 0; background: var(--paper-2); box-shadow: none; }
-.cz .cz-chat .ft-error { flex-shrink: 0; margin: 0; }
-.cz .cz-chat .ft-bub { box-shadow: none; background: var(--paper-2); }
-.cz .cz-chat .ft-me .ft-bub { background: var(--ink); }
 
 /* a touch of glass (F-096): the card floats, so it is translucent where the browser can blur, and solid for people who ask for less transparency */
 @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) and (color: color-mix(in srgb, red 50%, transparent)) {
