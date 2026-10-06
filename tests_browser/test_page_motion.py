@@ -149,3 +149,23 @@ def test_signing_out_drops_a_prefetched_page(ctxs, base_url):
     with page.expect_navigation() as nav:
         page.evaluate("document.querySelector('#ph-tab-ask').click()")
     assert nav.value.headers.get("x-ga-prefetch") is None
+
+
+STAMP = """addEventListener('click', () => { try { sessionStorage.setItem('t0', String(performance.timeOrigin + performance.now())); } catch (x) {} }, true);
+addEventListener('pagereveal', e => { try { sessionStorage.setItem('reveal', String(performance.timeOrigin + performance.now()));
+  setTimeout(() => { sessionStorage.setItem('vt2', e.viewTransition ? [...e.viewTransition.types].sort().join(',') : 'none'); }, 0); } catch (x) {} });"""
+
+
+def test_a_tab_switch_on_a_warm_copy_reaches_the_new_page_within_150_ms_and_runs_the_transition(ctxs, base_url):
+    ctx = ctxs()
+    ctx.add_init_script(STAMP)
+    signed_in(ctx, base_url)
+    page = ctx.new_page()
+    controlled(page, base_url, "/trip/family")
+    tap_then_navigate(page, "#ph-tab-ask")                      # pointerdown first, then the click 400 ms later
+    page.wait_for_url("**/trip/ask")
+    page.wait_for_function("sessionStorage.getItem('vt2') !== null")
+    ms = page.evaluate("Number(sessionStorage.getItem('reveal')) - Number(sessionStorage.getItem('t0'))")
+    print(f"\nF099 tab switch, warm service-worker copy: click -> pagereveal {ms:.0f} ms")
+    assert 0 <= ms < 150
+    assert page.evaluate("sessionStorage.getItem('vt2')") == "ga-fwd"

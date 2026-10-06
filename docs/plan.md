@@ -584,8 +584,8 @@ Needs: F-097
 Captain, 2026-10-05: moving between screens (week to day, a chat bubble to its chat, the tabs) feels "abrupt… like stop and go… fragmented"; "I would rather give that extra micro second to animate"; it must feel like an app, not a website. · Needs: none (the canvas part waits for F-097)
 - [x] same-site page navigations animate (cross-document View Transitions: a short shared fade/slide, the tab bar and heading held still, forward and back in opposite directions) where the browser supports them, and nothing moves under reduced motion; no white flash between pages
 - [x] a link starts loading when the finger touches it (pointerdown), and the service worker answers that navigation from the fresh prefetched copy at once (a few seconds' freshness, per person, never a POST or an auth route); tabs, chat bubbles, booking and map links all benefit
-- [ ] on the canvas the next levels (every day of the trip from the week, neighbours from a day) are fetched while idle so Day | Week and the flick start at once; one motion token set (duration, easing) used by every transition
-- [ ] measured in the browser test: a tab switch and week-to-day render within a target (e.g. under 150 ms after the tap on a warm cache) and the transition runs; checked on the captain's iPhone after deploy
+- [x] on the canvas the next levels (every day of the trip from the week, neighbours from a day) are fetched while idle so Day | Week and the flick start at once; one motion token set (duration, easing) used by every transition
+- [ ] measured in the browser test (done: tab switch ~27 ms, week to day 7–15 ms on a warm cache; the iPhone check after deploy is the captain's): a tab switch and week-to-day render within a target (e.g. under 150 ms after the tap on a warm cache) and the transition runs; checked on the captain's iPhone after deploy
 
 ## F-100 The chat box stays at the bottom [todo]
 Captain, 2026-10-05 (screenshot of a plan chat): the message box sits right after the messages; after sending, the screen jumps to an empty bottom. It must be fixed at the bottom like WhatsApp. · Needs: F-094

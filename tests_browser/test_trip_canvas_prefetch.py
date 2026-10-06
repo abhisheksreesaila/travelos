@@ -7,6 +7,8 @@ import re
 import pytest
 from playwright.sync_api import expect
 
+from gitaway import canvas
+from tests.test_signin import person
 from tests_browser.helpers import PHONE
 from tests_browser.test_day_plan import flick, open_day
 from tests_browser.test_trip_canvas import canvas_page, checks, model, open_block, settle  # noqa: F401 - fixtures and helpers
@@ -94,12 +96,14 @@ def test_a_date_and_a_flick_to_a_neighbour_swap_without_a_request(canvas_page):
     assert t1 - t0 < TARGET_MS + 100                   # the synthetic gesture itself takes a few ms on top of the swap
 
 
-def test_a_write_empties_the_prefetched_levels(canvas_page):
+def test_a_write_empties_the_prefetched_levels_so_the_week_shows_it(canvas_page):
+    """All in the page, no reload: the week was fetched ahead before the write, and after it the week must show the step as done."""
     page = canvas_page(motion="no-preference")
-    n = days_on_week(page)
-    wait_idle(page, None, n)
+    wait_idle(page, None, days_on_week(page))
+    assert "1/14" not in page.locator(".cz-view[data-level=week]").inner_text()
     page.locator(".cz-row-link[href*='day=1']").click()
     expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
+    page.wait_for_timeout(800)                           # the day has fetched the week ahead, from before the write
     open_block(page)
     expect(page.locator(".cz-view[data-level=block]")).to_be_visible()
     page.locator('.cz-step:has-text("Revenge of the Mummy")').click()
@@ -108,34 +112,59 @@ def test_a_write_empties_the_prefetched_levels(canvas_page):
     expect(page.locator(".cz-step.is-done", has_text="Revenge of the Mummy")).to_be_visible()
     settle(page)
     seen.clear()
-    page.wait_for_timeout(300)
-    page.go_back()                                       # the day, which was fetched before the write
+    page.go_back()                                       # the day, fetched before the write: it must be asked for again
     expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
-    assert any("day=1" in u for u in seen), seen         # it asked again: nothing from before the write is shown
-    page.wait_for_timeout(800)
-    seen.clear()
+    assert any("day=1" in u for u in seen), seen
+    page.wait_for_timeout(300)
     page.locator("#cz-z-week").click()
     expect(page.locator(".cz-view[data-level=week]")).to_be_visible()
-    # the week was prefetched from the day after the write, so this one may or may not ask; what matters is that it is current
-    assert page.evaluate("document.querySelector('.cz-view').dataset.level") == "week"
+    settle(page)
+    expect(page.locator(".cz-view[data-level=week]")).to_contain_text("1/14")      # the week as it is now, not the copy from before the write
 
 
-def test_a_prefetched_level_is_dropped_after_a_write_and_never_shown_stale(canvas_page):
+def test_a_level_shown_from_an_old_copy_is_brought_up_to_date_when_someone_else_changed_it(canvas_page):
     page = canvas_page(motion="no-preference")
     wait_idle(page, None, days_on_week(page))
-    # a stale copy of the Universal day sits in the cache; a write must make the next view ask the server again
-    page.evaluate("() => { window.__n0 = performance.getEntriesByType('resource').filter(e => e.name.includes('frag=1')).length; }")
-    page.goto(page.url + "?block=a1")
-    page.locator('.cz-step:has-text("Revenge of the Mummy")').click()
-    page.get_by_role("button", name="Mark done").click()
-    expect(page.locator(".cz-prog")).to_have_text("1 of 14 done")
-    page.locator(".cz-back").click()                      # the day
-    expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
-    page.locator(".cz-back").click()
-    expect(page.locator(".cz-view[data-level=week]")).to_be_visible()
     page.locator(".cz-row-link[href*='day=1']").click()
-    page.locator(".cz-gb-open").click(position={"x": 90, "y": 40})
-    expect(page.locator(".cz-prog")).to_have_text("1 of 14 done")      # the block shows the step done, however the page got here
+    expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
+    page.wait_for_timeout(5800)                          # the week copy is now older than the staleness window
+    ari = person("ari")
+    blocks = canvas.plan(ari)["blocks"]
+    step = next(st for blk in blocks.values() for pt in blk["parts"] for st in pt["steps"])
+    canvas.set_done(ari, step["id"])                     # another person's tick, made on the server: nothing in this page knows
+    seen = watch(page)
+    page.locator("#cz-z-week").click()                   # shown at once from the old copy...
+    expect(page.locator(".cz-view[data-level=week]")).to_be_visible()
+    assert "1/" not in page.locator(".cz-view[data-level=week]").inner_text()
+    expect(page.locator(".cz-view[data-level=week]")).to_contain_text("1/", timeout=6000)      # ...then quietly replaced by the server's copy
+    assert any("frag=1" in u for u in seen)
+
+
+def test_a_quiet_update_waits_while_a_field_is_being_typed_in(canvas_page):
+    page = canvas_page(motion="no-preference")
+    wait_idle(page, None, days_on_week(page))
+    page.locator(".cz-row-link[href*='day=1']").click()
+    expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
+    page.wait_for_timeout(5800)
+    ari = person("ari")
+    step = next(st for blk in canvas.plan(ari)["blocks"].values() for pt in blk["parts"] for st in pt["steps"])
+    canvas.set_done(ari, step["id"])
+    page.locator("#cz-z-week").click()
+    expect(page.locator(".cz-view[data-level=week]")).to_be_visible()
+    page.evaluate("() => { const i = document.createElement('input'); i.id = 'zz-typing'; document.querySelector('.cz-view').appendChild(i); i.focus(); }")
+    page.wait_for_timeout(1500)
+    assert page.evaluate("document.activeElement.id") == "zz-typing"                  # the field is still there: nothing replaced the level under the cursor
+    assert "1/" not in page.locator(".cz-view[data-level=week]").inner_text()
+
+
+def test_coming_back_from_the_bfcache_shows_the_server_copy(canvas_page):
+    page = canvas_page(motion="no-preference")
+    wait_idle(page, None, days_on_week(page))
+    ari = person("ari")
+    step = next(st for blk in canvas.plan(ari)["blocks"].values() for pt in blk["parts"] for st in pt["steps"])
+    canvas.set_done(ari, step["id"])
+    page.evaluate("window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }))")
+    expect(page.locator(".cz-view[data-level=week]")).to_contain_text("1/", timeout=6000)
 
 
 def test_reduced_motion_is_still_instant_and_prefetched(canvas_page):
