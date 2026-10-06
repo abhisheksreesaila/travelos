@@ -107,7 +107,7 @@ def test_tap_zooms_week_to_day_to_block_to_step_and_every_way_back(canvas_page, 
     expect(page.locator(".cz-view[data-level=block]")).to_be_visible()
     page.locator(".cz-back").click()                           # block > day
     expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
-    page.locator(".cz-back").click()                           # day > week
+    page.locator("#cz-z-week").click()                         # day > week (F-103: on a phone the Week side of the switch is the way up; the chevron is hidden)
     expect(page.locator(".cz-view[data-level=week]")).to_be_visible()
     assert page.url.startswith(f"{base_url}/trip/canvas") and "day=" not in page.url and "block=" not in page.url
     for _ in range(3):                                         # the back buttons were the browser's Back: nothing piled up
@@ -151,7 +151,7 @@ def test_a_free_day_plus_opens_the_add_sheet_and_every_week_row_opens_its_day(ca
         page.locator(".cz-row").nth(i).locator(".cz-row-link").click()
         expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
         assert f"day={i}" in page.url
-        page.locator(".cz-back").click()
+        page.locator("#cz-z-week").click()
         expect(page.locator(".cz-view[data-level=week]")).to_be_visible()
 
 
@@ -192,7 +192,7 @@ def test_the_tapped_element_is_named_before_and_after_the_view_transition(canvas
     vt = page.evaluate("window.__vt")
     assert vt["calls"] == 1 and vt["old"] == [["day-1"]] and vt["new"] == [["day-1"]] and vt["dir"] == ["in"]      # the day row grew into the day heading
     assert page.evaluate("[...document.querySelectorAll('[data-zk]')].filter(n => n.style.viewTransitionName).length") == 0     # and the name is gone again
-    page.locator(".cz-back").click()
+    page.locator("#cz-z-week").click()
     expect(page.locator(".cz-view[data-level=week]")).to_be_visible()
     settle(page)
     vt = page.evaluate("window.__vt")

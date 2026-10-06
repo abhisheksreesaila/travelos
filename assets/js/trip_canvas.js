@@ -247,8 +247,8 @@
       e.stopImmediatePropagation();
       var w = stage.querySelector('.cz-sheet-wrap[data-local]');
       if (w) w.remove();
-      var b = stage.querySelector('#cz-sos');
-      if (b) b.focus();
+      var b = stage.querySelector('.cz-fold.is-on .cz-sos') || stage.querySelector('#cz-sos');      // F-103: the folded bar's own SOS when that is the one on screen
+      if (b) { try { b.focus({ preventScroll: true }); } catch (err) { b.focus(); } }
     }
   }, true);
 
@@ -515,7 +515,7 @@
     flick = null;
     var v = view();
     if (!v || v.dataset.level !== 'day' || e.pointerType === 'mouse' || count() > 1) return;
-    if (e.target.closest && e.target.closest('.cz-dpills, .cz-strip, .cz-filters, .cz-kinds, .cz-sheet, input, textarea, select')) return;
+    if (e.target.closest && e.target.closest('.cz-dpills, .cz-strip, .cz-filters, .cz-kinds, .cz-fold, .cz-sheet, input, textarea, select')) return;
     flick = { id: e.pointerId, x: e.clientX, y: e.clientY, at: Date.now(), v: v };
   });
   stage.addEventListener('pointermove', function (e) {
