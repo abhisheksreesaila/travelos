@@ -2,8 +2,7 @@
    at the bottom. Loaded after day_grid.css and thread.css. Sizes are rem off the one root; text never goes under --cz-small (13px on a phone); touch targets are 2.75rem.
    The card is placed by day_card.js (left, top, width, height in pixels, inside what can be seen) and grows with a transform; the rest of the day dims under .cz-card-scrim. */
 
-.cz .cz-card-wrap { position: fixed; z-index: 26; inset: 0; padding-top: env(safe-area-inset-top); pointer-events: none; }
-@media (max-width: 720px), (display-mode: standalone) { .cz .cz-card-wrap { bottom: calc(var(--tabs-h, 0rem) + env(safe-area-inset-bottom)); } }
+.cz .cz-card-wrap { position: fixed; z-index: 31; inset: 0; padding-top: env(safe-area-inset-top); pointer-events: none; }      /* over the tab bar too (it is inert while the card is open: a tap there folds the card) */
 .cz .cz-card-scrim { position: absolute; inset: 0; background: rgba(30, 26, 46, .3); pointer-events: auto; touch-action: none; }
 .cz .cz-card { --accent: var(--bubble); position: absolute; display: flex; flex-direction: column; box-sizing: border-box; min-width: 0; border-radius: 1.75rem; background: var(--card); color: var(--ink); overflow: hidden; pointer-events: auto;
   box-shadow: inset 0.25rem 0 0 var(--accent), var(--shadow-lg); transform-origin: 0 0; will-change: transform; outline: none; }

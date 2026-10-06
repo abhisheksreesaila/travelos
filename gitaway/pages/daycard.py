@@ -3,7 +3,7 @@ and takes its one write.
 
 GET  /trip/canvas/card?act=aN[&trip=]   the card's body as a fragment: the plan's note(s) as the sticky (an editor edits a note of their own in place, or adds one), then the
                                         plan's chat (the latest few messages, "Earlier" for more, the box with text, photo and mic) and the links "Open chat" and, on a park block, "Rides"
-POST /trip/canvas/actnote               a note on a plan: fields act, text, and note (the id of the person's own note to change; none adds one). JSON {note: {id, text}}, or 422 {error}
+POST /trip/canvas/actnote               a note on a plan: fields act (required), text, and note (the id of the person's own note to change; none adds one, with `id` the calendar's next number as the page was given it, so a retry adds nothing twice). JSON {note: {id, text}}, or 422 {error}
 
 The chat is the plan's own talk (gitaway/plantalk.py, F-091): the card reuses its box and messages and the chat scripts (thread.js, plantalk.js), which the card's script loads when the
 first card opens. The note is a row of the calendar's notes (gitaway/tripcal.py): the write is `cal.add_note` or `cal.edit_note`, so a viewer (no editor role) is refused by gitaway.access.
@@ -52,7 +52,7 @@ def notes_view(session, act, editor):
     if editor:
         empty = not stickers
         stickers.append(Button(icon("plus", 16, 2.6), Span("Add a note"), type="button", cls="cz-card-note cz-card-add" + (" is-empty" if empty else ""), data_add="1"))
-    return Div(*stickers, cls="cz-card-notes", aria_label="Notes") if stickers else ""
+    return Div(*stickers, cls="cz-card-notes", aria_label="Notes", **({"data_next": cal.next_id(session)} if editor else {})) if stickers else ""
 
 
 def chat_view(session, a, trip):
@@ -111,8 +111,10 @@ def register(app):
             return r
         form = await request.form()
         act, note_id, text = tc._field(form, "act", 20), tc._field(form, "note", 12), str(form.get("text") or "")[:cal.MAX_NOTE * 3]
+        if not act:
+            return tc._json({"error": "Pick a plan to write the note on."}, 422)
         try:
-            n = cal.edit_note(session, note_id, text) if note_id else cal.add_note(session, text, act=act)
+            n = cal.edit_note(session, note_id, text) if note_id else cal.add_note(session, text, act=act, id=tc._field(form, "id", 12) or None)      # the card's own id: a retry after a lost reply adds nothing twice
         except cal.CalendarError as e:
             return tc._json({"error": str(e)}, 422)
         return tc._json({"note": {"id": n.id, "text": n.text}})

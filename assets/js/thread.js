@@ -8,7 +8,23 @@
   "use strict";
   var thread = document.getElementById("ft-thread");
   if (!thread) return;
+  var root = document.getElementById("ft");
   var $ = function (id) { return document.getElementById(id); };
+  // F-106: in a plan's card this script is bound again for each card; the listeners on the window, the visual viewport and the document, and the timer, are taken off when the card closes
+  // (its #ft gets "ft-close") or the chat is found gone. window.__ftBound counts the chats bound now, for the tests.
+  var counts = window.__ftBound = window.__ftBound || { thread: 0, plantalk: 0 };
+  counts.thread++;
+  var undo = [];
+  function listen(target, type, fn, opt) { target.addEventListener(type, fn, opt); undo.push(function () { target.removeEventListener(type, fn, opt); }); }
+  var unbound = false;
+  function teardown() {
+    if (unbound) return;
+    unbound = true;
+    counts.thread--;
+    undo.forEach(function (f) { f(); });
+    undo = [];
+    stop();
+  }
   var empty = $("ft-empty"), form = $("ft-compose"), text = $("ft-text"), error = $("ft-error");
   function tripId() { return thread.getAttribute("data-trip") || ""; }
   var interval = parseInt(thread.getAttribute("data-poll"), 10) || 5000;
@@ -57,8 +73,8 @@
     else { root.removeProperty("--vvh"); root.removeProperty("--vvtop"); }
     if (was || covered) toBottom();
   }
-  if (vv) { vv.addEventListener("resize", fit); vv.addEventListener("scroll", fit); }
-  window.addEventListener("resize", fit);
+  if (vv) { listen(vv, "resize", fit); listen(vv, "scroll", fit); }
+  listen(window, "resize", fit);
   if (text) {
     text.addEventListener("focus", function () { setTimeout(function () { fit(); toBottom(); }, 250); });
     text.addEventListener("blur", function () { setTimeout(fit, 150); });
@@ -97,7 +113,7 @@
   }
 
   function poll(mine) {
-    if (!thread.isConnected) { stop(); return Promise.resolve(); }      // F-106: the card this chat was in has been folded away
+    if (!thread.isConnected) { teardown(); return Promise.resolve(); }      // F-106: the card this chat was in has been folded away
     if (inflight || document.visibilityState === "hidden") return Promise.resolve();
     inflight = true;
     return timed(join(pollUrl) + "since=" + last + "&trip=" + encodeURIComponent(tripId()), { credentials: "same-origin", headers: { Accept: "text/html" } }, sendTimeout())
@@ -109,11 +125,12 @@
   function start() { if (!timer) timer = setInterval(poll, interval); }
   function stop() { if (timer) { clearInterval(timer); timer = null; } }
   function shown() {
-    if (!thread.isConnected) { stop(); document.removeEventListener("visibilitychange", shown); return; }
+    if (!thread.isConnected) { teardown(); return; }
     if (document.visibilityState === "hidden") { stop(); return; }
     poll(); start();
   }
-  document.addEventListener("visibilitychange", shown);
+  listen(document, "visibilitychange", shown);
+  if (root) root.addEventListener("ft-close", teardown);
   if (document.visibilityState !== "hidden") start();
   toBottom();
   // The chat's own script (plantalk.js) fires this after it sent a photo or a voice note: show what is new now, and scroll to it.

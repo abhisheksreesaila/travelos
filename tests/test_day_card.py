@@ -230,3 +230,52 @@ def test_the_short_name_of_a_pill_is_the_first_part_of_the_booking_title(trip):
     assert tc.short_title("Check in · Hotel Maya · 2 rooms") == "Check in"
     assert tc.short_title("Delta 123 · SFO → LAX") == "Delta 123"
     assert tc.short_title("Airport") == "Airport"
+
+
+# ---- review fixes ---------------------------------------------------------------------------------------------------------------
+
+def note_texts(act):
+    return [n.text for n in cal.notes(ari()) if n.act == act]
+
+
+def test_the_note_route_needs_a_plan_and_a_retry_with_the_same_id_adds_nothing_twice(trip):
+    a = plan(ari(), "Pool", 10 * 60, 11 * 60)
+    r = trip.post("/trip/canvas/actnote", data={"text": "Bring towels"}, headers={"X-Canvas": "1"})
+    assert r.status_code == 422 and "plan" in r.json()["error"] and [n for n in cal.notes(ari()) if n.text == "Bring towels"] == []
+    nid = f"n{cal.next_id(ari())}"
+    first = trip.post("/trip/canvas/actnote", data={"act": a.id, "text": "Bring towels", "id": nid}, headers={"X-Canvas": "1"}).json()
+    again = trip.post("/trip/canvas/actnote", data={"act": a.id, "text": "Bring towels", "id": nid}, headers={"X-Canvas": "1"}).json()
+    assert first["note"]["id"] == again["note"]["id"] == nid and note_texts(a.id) == ["Bring towels"]
+
+
+def test_the_card_carries_the_calendars_next_number_for_a_new_note(trip):
+    a = plan(ari(), "Pool", 10 * 60, 11 * 60)
+    assert f'data-next="{cal.next_id(ari())}"' in card(trip, a.id).text
+
+
+def test_changing_a_note_takes_the_calendars_write_lock_like_every_other_update(trip, monkeypatch):
+    a = plan(ari(), "Pool", 10 * 60, 11 * 60)
+    mine = cal.add_note(ari(), "Bring towels", act=a.id)
+    seen = []
+    real = cal._begin
+    monkeypatch.setattr(cal, "_begin", lambda *args, **kw: (seen.append(1), real(*args, **kw))[1])
+    cal.edit_note(ari(), mine.id, "Bring two towels")
+    assert seen
+
+
+def test_plans_that_share_lanes_are_inset_together_when_any_of_them_is_over_a_booking(trip):
+    me = ari()
+    a = plan(me, "Long afternoon", 13 * 60, 16 * 60 + 30, day=0)       # over the 3 PM check-in line
+    b = plan(me, "Late swim", 16 * 60 + 5, 17 * 60 + 30, day=0)        # shares a lane row with it, but starts after the line's reach
+    c = plan(me, "Dinner", 19 * 60, 20 * 60, day=0)                    # a different row: needs no room
+    page = day(trip, 0)
+    assert "is-inset" in block_html(page, a.id) and "is-inset" in block_html(page, b.id) and "is-inset" not in block_html(page, c.id)
+
+
+def test_a_pill_shows_the_time_and_icon_on_top_and_the_short_name_below_with_the_full_title_for_a_screen_reader(trip):
+    me = ari()
+    plan(me, "Long afternoon", 14 * 60, 16 * 60, day=0)
+    pill = [x for x in lines(day(trip, 0)) if "is-pill" in x][0]
+    top = pill[:pill.index('class="cz-bk-t"')]
+    assert "<svg" in top and "3 PM" in text(top)                                          # the time and the icon come first, in one row
+    assert text(pill).index("3 PM") < text(pill).index("Check in") and "Tidewater" not in text(pill) and re.search(r'aria-label="Check in · [^"]+, 3:00 PM, booked"', unescape(pill))

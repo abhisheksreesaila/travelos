@@ -12,6 +12,9 @@
   var $ = function (id) { return document.getElementById(id); };
   var form = $("ft-compose"), error = $("ft-error"), mic = $("pt-mic"), rec = $("pt-rec"), timer = $("pt-timer"), state = $("pt-state");
   var photoBtn = $("pt-photo-btn"), photoIn = $("pt-photo"), cancel = $("pt-cancel"), sendBtn = $("pt-rec-send");
+  var counts = window.__ftBound = window.__ftBound || { thread: 0, plantalk: 0 };      // F-106: the chats bound now, for the tests
+  counts.plantalk++;
+  root.addEventListener("ft-close", function () { counts.plantalk--; }, { once: true });
   var MAX = parseInt(root.getAttribute("data-max-secs"), 10) || 180;
   var TYPES = ["audio/mp4", "audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus"];
 
@@ -126,6 +129,7 @@
       action = "send"; recorder.stop();
     } else post();
   });
-  root.addEventListener("ft-close", function () { if (recorder && recorder.state === "recording") { action = "cancel"; recorder.stop(); } release(); });   // F-106: the plan card this was in is folding away
-  window.addEventListener("pagehide", function () { if (recorder && recorder.state === "recording") { action = "cancel"; recorder.stop(); } release(); });
+  function leave() { if (recorder && recorder.state === "recording") { action = "cancel"; recorder.stop(); } release(); }
+  window.addEventListener("pagehide", leave);
+  root.addEventListener("ft-close", function () { leave(); window.removeEventListener("pagehide", leave); });   // F-106: the plan card this was in is folding away
 })();

@@ -62,12 +62,12 @@
 .cz .cz-gb.is-tight .cz-gb-t { grid-column: 1 / -1; }
 .cz .cz-gb.is-tight .cz-gb-note { margin-top: 0; align-self: center; }
 /* F-106: a booking under a plan: a slim pill at the left edge, in the lane the plan leaves free (the plan is .is-inset). Time on top, the icon beside it, the short name under. */
-.cz .cz-gb.is-inset { --bkw: 5.25rem; }
-.cz .cz-gbk.is-pill { right: auto; width: 5rem; z-index: 3; display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 0.0625rem; text-align: left; min-height: 2.75rem; padding: 0.25rem 0.4375rem; border-radius: 0.875rem; text-decoration: none; overflow: hidden; contain: layout paint; }
-.cz .cz-gbk.is-pill .cz-bk-time { font-size: var(--cz-small); line-height: 1.15; font-weight: 800; white-space: nowrap; }
-.cz .cz-gbk.is-pill .cz-bk-row { display: flex; align-items: center; gap: 0.25rem; min-width: 0; color: var(--ink-3); }
+.cz .cz-gb.is-inset { --bkw: 6rem; }
+.cz .cz-gbk.is-pill { right: auto; width: 5.75rem; z-index: 3; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 0.0625rem; text-align: left; min-height: 2.75rem; padding: 0.25rem 0.4375rem; border-radius: 0.875rem; text-decoration: none; contain: layout style; }
+.cz .cz-gbk.is-pill .cz-bk-row { display: flex; align-items: center; justify-content: space-between; gap: 0.25rem; min-width: 0; color: var(--ink-3); }
+.cz .cz-gbk.is-pill .cz-bk-time { font-size: var(--cz-small); line-height: 1.15; font-weight: 800; white-space: nowrap; color: var(--ink-2); }
 .cz .cz-gbk.is-pill .cz-bk-row svg { flex-shrink: 0; width: 0.875rem; height: 0.875rem; }
-.cz .cz-gbk.is-pill .cz-bk-t { flex: 1 1 0; min-width: 0; font-size: var(--cz-small); line-height: 1.15; white-space: nowrap; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 0.75rem), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 0.75rem), transparent); }
+.cz .cz-gbk.is-pill .cz-bk-t { flex: none; min-width: 0; font-size: var(--cz-small); line-height: 1.15; white-space: normal; overflow-wrap: normal; word-break: normal; }      /* wraps to a second line; a word is never cut */
 .cz .cz-gbk.is-pill:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.0625rem; }
 .cz .cz-gb-open { position: absolute; inset: 0; z-index: 1; border-radius: inherit; }
 .cz .cz-gb-grip { position: absolute; z-index: 2; left: 50%; bottom: 0.1875rem; width: 2rem; height: 0.25rem; margin-left: -1rem; border-radius: var(--r-pill); background: rgba(30, 26, 46, .28); pointer-events: none; }

@@ -526,11 +526,22 @@ PILL_SPAN = 60       # a plan within this many minutes below a booking's line is
 
 
 def booking_pill(v, x, top, lo):
-    """A booking that a plan overlaps (F-106): a slim pill at the left edge of the grid, in the lane the plan leaves free (icon, time, short title), still a link to its sheet."""
-    when = cal.fmt_time(x.label_start if getattr(x, "label_start", None) is not None else x.start)
-    return A(Span(compact_time(x.label_start if getattr(x, "label_start", None) is not None else x.start), cls="cz-bk-time"),
-             Span(icon(getattr(x, "icon", "") or "lock", 14, 2.4), Span(short_title(x.title), cls="cz-bk-t"), cls="cz-bk-row"),
-             href=curl(day=x.day, booked=x.id), cls="cz-bk cz-gbk is-pill", data_zoom="in", data_zk=f"bkg-{x.id}", style=f"--s:{top - lo}", aria_label=f"{x.title}, {when}, booked", **kind_attrs(v, "booked", x))
+    """A booking that a plan overlaps (F-106): a slim pill at the left edge of the grid, in the lane the plan leaves free: the time and the icon on top, the short name wrapped below (words are
+    never cut; the full title is the label a screen reader reads and the booking's sheet shows). Still a link to the sheet."""
+    at = x.label_start if getattr(x, "label_start", None) is not None else x.start
+    return A(Span(Span(compact_time(at), cls="cz-bk-time"), icon(getattr(x, "icon", "") or "lock", 14, 2.4), cls="cz-bk-row"), Span(short_title(x.title), cls="cz-bk-t"),
+             href=curl(day=x.day, booked=x.id), cls="cz-bk cz-gbk is-pill", data_zoom="in", data_zk=f"bkg-{x.id}", style=f"--s:{top - lo}", aria_label=f"{x.title}, {cal.fmt_time(at)}, booked", **kind_attrs(v, "booked", x))
+
+
+def overlap_groups(plans):
+    """The plans split into groups that overlap one another, directly or through a third (they share lanes, so they must all keep the same left edge)."""
+    out = []
+    for a in sorted(plans, key=lambda p: (p.start, p.id)):
+        if out and a.start < max(p.end for p in out[-1]):
+            out[-1].append(a)
+        else:
+            out.append([a])
+    return out
 
 
 def time_grid(v, day, ents):
@@ -544,7 +555,8 @@ def time_grid(v, day, ents):
     gutter = [Span(hour_label(h % 24 if h < 24 else 0), cls="cz-g-hour cz-cs", style=f"--s:{h * 60 - lo}") for h in hours]
     rules = [Span(cls=f"cz-g-line cz-cs{' is-half' if m else ''}", style=f"--s:{h * 60 + m - lo}") for h in hours[:-1] for m in (0, 30)] + [Span(cls="cz-g-line cz-cs", style=f"--s:{hi - lo}")]
     covered = {x.id: [a for a in plans if a.start < top + PILL_SPAN and a.end > top] for x, top in lines}      # the plans over each booking line (F-106)
-    inset = {a.id for under in covered.values() for a in under}
+    over = {a.id for under in covered.values() for a in under}
+    inset = {a.id for group in overlap_groups(plans) if any(a.id in over for a in group) for a in group}      # plans that share lanes share a left edge: one inset, all inset
     bk = [booking_pill(v, x, top, lo) if covered[x.id] else
           A(Span(icon(getattr(x, "icon", "") or "lock", 16, 2.4), Span(cal.fmt_time(x.label_start if getattr(x, "label_start", None) is not None else x.start), cls="cz-bk-time"), Span(x.title, cls="cz-bk-t"),
               Span("Booked", cls="cz-bk-tag"), cls="cz-gbk-in cz-cs"), href=curl(day=x.day, booked=x.id), cls="cz-bk cz-gbk", data_zoom="in", data_zk=f"bkg-{x.id}", style=f"--s:{top - lo}", **kind_attrs(v, "booked", x))
