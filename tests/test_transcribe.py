@@ -150,6 +150,13 @@ def test_too_big_and_too_long_are_refused(ari, on):
     assert fake.sent == []
 
 
+def test_a_piece_over_the_speech_services_limit_is_refused_plainly(ari, on):
+    fake = on()
+    r = post(ari, voice("mp4"), secs="45")
+    assert r.status_code == 413 and "30 seconds at a time" in r.text and fake.sent == []
+    assert post(ari, voice("mp4"), secs="29").status_code == 200
+
+
 def test_a_service_failure_answers_with_a_plain_sentence(ari, on):
     on(failure=TimeoutError("slow"))
     r = post(ari, voice("mp4"))

@@ -110,7 +110,7 @@ def _box(request, session, day, text="", error="", mode="", heard=()):
         Div(error, role="alert", cls="tp-error ak-error", id="ak-error") if error else "",
         _day_picker(t, day, today, auto),
         Div(Button(Span(cls="ak-dot", aria_hidden="true"), icon("mic", 24, 2.2), Span("Tap to talk", id="ak-mic-label"), Span("0:00", id="ak-mic-time", cls="ak-time", hidden=True),
-                   type="button", id="ak-mic", cls="tp-btn tp-btn-white ak-mic", hidden=True, aria_pressed="false", data_max_secs=str(voicenotes.MAX_SECONDS)),
+                   type="button", id="ak-mic", cls="tp-btn tp-btn-white ak-mic", hidden=True, aria_pressed="false", data_max_secs=str(voicenotes.MAX_SECONDS), data_piece_secs=str(PIECE_SECONDS)),
             Button(icon("clipboard", 22, 2.2), Span("Paste"), type="button", id="ak-paste", cls="tp-btn tp-btn-white ak-paste"),
             Button(icon("x", 22, 2.2), Span("Cancel"), type="button", id="ak-rec-cancel", cls="tp-btn tp-btn-white ak-cancel", hidden=True), cls="ak-inputs"),
         Span("", id="ak-mic-status", cls="ak-mic-status", role="status", aria_live="polite"),
@@ -374,6 +374,8 @@ class UploadLimit:
         await self.app(scope, receive, send)
 
 
+PIECE_SECONDS = 25          # the page rotates its recorder this often (data-piece-secs on the mic)
+PIECE_MAX_SECONDS = 30      # Sarvam's speech-to-text refuses audio over 30 s ("use the batch API")
 MIMES = {"mp4": "audio/mp4", "webm": "audio/webm", "ogg": "audio/ogg"}
 
 
@@ -393,9 +395,11 @@ def register_transcribe(app):
             return PlainTextResponse("Record something first.", status_code=400)
         data = await f.read(voicenotes.MAX_BYTES + 1)
         try:
-            kind, _ = voicenotes.check(data, form.get("secs"))
+            kind, secs = voicenotes.check(data, form.get("secs"))
         except voicenotes.VoiceError as e:
             return PlainTextResponse(str(e).replace("voice note", "recording"), status_code=e.status)
+        if secs > PIECE_MAX_SECONDS:       # the page sends a long recording in pieces of about 25 s; the speech service takes 30 s at most per call
+            return PlainTextResponse(f"The voice service takes {PIECE_MAX_SECONDS} seconds at a time. Update the page and record again.", status_code=413)
         lang = form.get("lang") or ""
         lang = lang if re.fullmatch(r"[a-z]{2,3}(-[A-Za-z]{2,4})?", lang) else None      # an optional hint; anything else is ignored and the service detects the language
         try:

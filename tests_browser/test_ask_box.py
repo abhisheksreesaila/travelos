@@ -388,6 +388,35 @@ def test_a_failed_transcription_keeps_the_typed_text_and_says_so(phone, base_url
     expect(page.locator("#ak-text")).to_have_value("Pool at 3")
 
 
+def test_a_long_recording_is_sent_in_pieces_on_one_stream_and_the_words_arrive_in_order(phone, base_url, monkeypatch):
+    import json
+    monkeypatch.setenv("SARVAM_API_KEY", "sk-test")
+    monkeypatch.setattr(ai, "TRANSPORT", None)
+    calls = []
+
+    def transport(url, headers, body, timeout):
+        time.sleep(0.15)
+        calls.append(len(body))
+        return 200, json.dumps({"transcript": f"part {len(calls)}", "language_code": "en-IN"})
+
+    monkeypatch.setattr(ai, "TRANSPORT", transport)
+    page = phone(NO_SPEECH + FAKE_MIC + "window.__gum = 0; const g = navigator.mediaDevices.getUserMedia; navigator.mediaDevices.getUserMedia = (...a) => { window.__gum++; return g(...a); };")
+    page.goto(f"{base_url}/trip/ask?day={DAY}")
+    page.evaluate("document.getElementById('ak-mic').dataset.pieceSecs = '1.5'")        # the page rotates every 25 s; shortened to keep the test fast
+    page.locator("#ak-text").fill("Start.")
+    page.locator("#ak-mic").click()
+    expect(page.locator("#ak-mic")).to_have_class(re.compile("is-recording"))
+    expect(page.locator("#ak-text")).to_have_value("Start. part 1", timeout=6000)      # the first piece's words arrive while still recording
+    expect(page.locator("#ak-mic")).to_have_class(re.compile("is-recording"))
+    expect(page.locator("#ak-mic")).to_be_enabled()
+    page.wait_for_timeout(1500)
+    page.locator("#ak-mic").click()
+    expect(page.locator("#ak-mic-status")).to_contain_text("Added what you said", timeout=9000)
+    value = page.locator("#ak-text").input_value()
+    assert len(calls) >= 2 and value == "Start. " + " ".join(f"part {i}" for i in range(1, len(calls) + 1))      # every piece, in order, after what was typed
+    assert page.evaluate("window.__gum") == 1                                          # one microphone permission for all pieces
+
+
 def test_hindi_is_kept_as_said_with_a_quiet_understood_as_line_and_the_english_goes_to_the_planner(phone, base_url, monkeypatch):
     import json
     hindi, english = "दोपहर 12:30 पर लंच", "Lunch at 12:30"

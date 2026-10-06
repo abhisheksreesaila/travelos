@@ -177,7 +177,11 @@
   }
 
   // ---- recording ----
-  var recording = false, recorder = null, stream = null, chunks = [], started = 0, ticker = null, action = '', busyUp = false;
+  // The recorder is rotated every PIECE seconds (25): the current MediaRecorder stops and a new one starts on the SAME stream at once (no new permission prompt), so every
+  // piece is a standalone file with its own header. Each finished piece is uploaded one at a time while the person keeps talking, and its words are appended to the
+  // box in order. The speech service takes about 30 seconds per piece. The whole recording stops at MAX (3 minutes).
+  var recording = false, recorder = null, stream = null, started = 0, ticker = null, action = '', inflight = 0, busyUp = false;
+  var gen = 0, queue = Promise.resolve(), pieces = 0, gotWords = false, failed = '', piece = 25, recType = '';
   var TYPES = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'];
   function pickType() {
     for (var i = 0; i < TYPES.length; i++) { try { if (MediaRecorder.isTypeSupported(TYPES[i])) return TYPES[i]; } catch (e) { /* next */ } }
@@ -193,24 +197,26 @@
     if (paste) paste.hidden = on;
     ui(on);
     if (on) note('Recording. Tap Stop when you are done.');
+    busyState();
   }
   function reset() {
     clearInterval(ticker); ticker = null; release();
-    recorder = null; chunks = []; action = '';
+    recorder = null; action = '';
     recUi(false);
   }
-  function working_(on) {
-    busyUp = on;
-    if (mic) mic.disabled = on;
-    if (working) {
-      working.hidden = !on;
-      if (on) {
-        var t0 = Date.now();
-        clearInterval(working.timer);
-        working.timer = setInterval(function () { if (workingClock) workingClock.textContent = Math.round((Date.now() - t0) / 1000) + ' s'; }, 500);
-        if (workingClock) workingClock.textContent = '0 s';
-      } else clearInterval(working.timer);
+  function busyState() {      // "Transcribing…" shows while any piece is out; the mic stays a Stop button while recording and waits otherwise
+    busyUp = inflight > 0 && !recording;
+    if (mic) mic.disabled = busyUp;
+    if (!working) return;
+    var on = inflight > 0;
+    if (on && working.hidden) {
+      var t0 = Date.now();
+      clearInterval(working.timer);
+      working.timer = setInterval(function () { if (workingClock) workingClock.textContent = Math.round((Date.now() - t0) / 1000) + ' s'; }, 500);
+      if (workingClock) workingClock.textContent = '0 s';
     }
+    if (!on) clearInterval(working.timer);
+    working.hidden = !on;
   }
   // What was said in another language: the box keeps it as said; the English the service gave for it travels in the hidden `heard` field, so the planner reads English.
   var heardField = form.elements.heard, understood = document.getElementById('ak-understood');
@@ -230,64 +236,95 @@
   }
   box.addEventListener('input', showUnderstood);
   showUnderstood();
-  function addWords(text, english) {     // the transcript joins what is there; it writes itself in word by word (not under reduced motion)
-    var start = box.value ? box.value.replace(/\s+$/, '') + ' ' : '';
-    var list = text.split(/\s+/).filter(Boolean);
-    text = list.join(' ');
-    var done = function () { rememberHeard(text, english); };
-    if (reduced || list.length < 2) { box.value = start + text; words('final'); refresh(); done(); return; }
-    var i = 0;
-    words('interim');
-    box.classList.add('is-typing-in');
-    var timer = setInterval(function () {
-      i += 1;
-      box.value = start + list.slice(0, i).join(' ');
-      refresh();
-      if (i >= list.length) { clearInterval(timer); words('final'); box.classList.remove('is-typing-in'); done(); }
-    }, 70);
+  function addWords(text, english) {     // the piece's words join what is there, in order; they write themselves in word by word (not under reduced motion). Returns a promise.
+    return new Promise(function (resolve) {
+      var start = box.value ? box.value.replace(/\s+$/, '') + ' ' : '';
+      var list = text.split(/\s+/).filter(Boolean);
+      text = list.join(' ');
+      var done = function () { rememberHeard(text, english); resolve(); };
+      if (reduced || list.length < 2) { box.value = start + text; words('final'); refresh(); done(); return; }
+      var i = 0;
+      words('interim');
+      box.classList.add('is-typing-in');
+      var timer = setInterval(function () {
+        i += 1;
+        box.value = start + list.slice(0, i).join(' ');
+        refresh();
+        if (i >= list.length) { clearInterval(timer); words('final'); box.classList.remove('is-typing-in'); done(); }
+      }, 70);
+    });
   }
-  function upload(blob, secs) {
-    working_(true);
-    note('');
-    var form_ = new FormData();
-    form_.append('audio', blob, 'voice.' + (/mp4/.test(blob.type) ? 'm4a' : /ogg/.test(blob.type) ? 'ogg' : 'webm'));
-    form_.append('secs', String(Math.max(1, Math.round(secs))));
+  function send(blob, secs, mine) {       // one piece to the server; resolves when its words are in the box (or it failed)
+    var body = new FormData();
+    body.append('audio', blob, 'voice.' + (/mp4/.test(blob.type) ? 'm4a' : /ogg/.test(blob.type) ? 'ogg' : 'webm'));
+    body.append('secs', String(Math.max(1, Math.round(secs))));
     var lang = (box.dataset.lang || '').trim();
-    if (lang) form_.append('lang', lang);
-    fetch('/trip/ask/transcribe', { method: 'POST', credentials: 'same-origin', body: form_ }).then(function (r) {
-      if (r.ok) return r.json().then(function (j) { addWords(j.text || '', j.english || ''); note('Added what you said. Check it, then tap Ask GitAway.'); });
+    if (lang) body.append('lang', lang);
+    return fetch('/trip/ask/transcribe', { method: 'POST', credentials: 'same-origin', body: body }).then(function (r) {
+      if (mine !== gen) return;
+      if (r.ok) return r.json().then(function (j) { gotWords = true; return addWords(j.text || '', j.english || ''); });
       return r.text().then(function (t) {
-        var said = r.status === 503 && t === NO_VOICE ? NO_VOICE : (t && t.length < 200 ? t : 'That did not work.');
-        note(said + kept());
+        if (/^Nothing could be heard/.test(t) && (pieces > 1 || recording)) return;       // a quiet stretch in a long recording is not a failure
+        failed = r.status === 503 && t === NO_VOICE ? NO_VOICE : (t && t.length < 200 ? t : 'That did not work.');
       });
-    }, function () { note('That did not upload. Try again, or type it.' + kept()); }).then(function () { working_(false); if (mic) mic.focus(); });
+    }, function () { if (mine === gen) failed = 'That did not upload. Try again, or type it.'; });
   }
-  function stopped() {
-    var secs = Math.min(MAX, (Date.now() - started) / 1000);
-    var type = (recorder && recorder.mimeType) || 'audio/webm';
-    var blob = new Blob(chunks, { type: type });
-    var cancelled = action === 'cancel';
-    reset();
-    if (cancelled) { note('Recording thrown away.'); return; }
-    if (secs < 1 || !blob.size) { note('Record a little longer, then tap Stop.'); return; }
-    upload(blob, secs);
+  function enqueue(blob, secs) {
+    var mine = gen;
+    pieces += 1;
+    inflight += 1;
+    busyState();
+    queue = queue.then(function () { return mine === gen ? send(blob, secs, mine) : null; }).then(function () {
+      inflight -= 1;
+      busyState();
+      if (mine === gen) finished();
+    });
+  }
+  function finished() {       // nothing more is coming: say how it went
+    if (inflight > 0 || recording) return;
+    if (failed) note(failed + kept()); else if (gotWords) note('Added what you said. Check it, then tap Ask GitAway.');
+    if (mic) mic.focus();
+  }
+  function startPiece() {     // a new recorder on the stream that is already open
+    var r, cs = [], t0 = Date.now();
+    try { r = recType ? new MediaRecorder(stream, { mimeType: recType }) : new MediaRecorder(stream); } catch (e) { return false; }
+    recorder = r;
+    r.ondataavailable = function (e) { if (e.data && e.data.size) cs.push(e.data); };
+    r.onstop = function () {
+      var secs = (Date.now() - t0) / 1000;
+      var blob = new Blob(cs, { type: r.mimeType || recType || 'audio/webm' });
+      var last = action === 'stop' || action === 'limit' || action === 'cancel';
+      if (action === 'cancel') { reset(); note('Recording thrown away.'); return; }
+      if (blob.size && secs >= 0.5) enqueue(blob, secs);
+      if (!last) return;
+      var empty = pieces === 0;
+      reset();
+      if (empty) note('Record a little longer, then tap Stop.'); else finished();
+    };
+    r.start();
+    return true;
   }
   function startRecording() {
     if (recording || busyUp) return;
     navigator.mediaDevices.getUserMedia({ audio: true }).then(function (s) {
-      stream = s; chunks = []; action = '';
-      var type = pickType();
-      try { recorder = type ? new MediaRecorder(stream, { mimeType: type }) : new MediaRecorder(stream); }
-      catch (e) { release(); recorder = null; note('This phone cannot record here. Tap the microphone on your keyboard to dictate.'); return; }
-      recorder.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
-      recorder.onstop = stopped;
-      recorder.start();
+      stream = s; action = ''; pieces = 0; gotWords = false; failed = ''; gen += 1;
+      recType = pickType();
+      piece = parseFloat(mic && mic.dataset.pieceSecs) || 25;
+      if (!startPiece()) { release(); recorder = null; note('This phone cannot record here. Tap the microphone on your keyboard to dictate.'); return; }
       started = Date.now();
+      var lastCut = started;
       recUi(true);
       ticker = setInterval(function () {
-        var e = Math.min(MAX, (Date.now() - started) / 1000);
+        var now = Date.now(), e = Math.min(MAX, (now - started) / 1000);
         if (timeEl) timeEl.textContent = clock(e);
-        if (e >= MAX && recorder && recorder.state === 'recording') recorder.stop();      // the limit: what was said is transcribed
+        if (!recorder || recorder.state !== 'recording') return;
+        if (e >= MAX) { action = 'limit'; recorder.stop(); return; }       // the limit: the last piece is transcribed
+        if ((now - lastCut) / 1000 >= piece) {                              // rotate: close this piece and open the next on the same stream
+          lastCut = now;
+          var old = recorder;
+          startPiece();
+          old.stop();
+        }
       }, 250);
     }).catch(function (err) {
       release();
@@ -296,13 +333,14 @@
     });
   }
   if (cancelBtn) cancelBtn.addEventListener('click', function () {
+    gen += 1;       // pieces still out are dropped; words already added stay
     if (recorder && recorder.state === 'recording') { action = 'cancel'; recorder.stop(); } else reset();
   });
   window.addEventListener('pagehide', function () { if (recorder && recorder.state === 'recording') { action = 'cancel'; recorder.stop(); } release(); });
 
   function toggle() {
     if (busyUp) return;
-    if (recording) { if (recorder && recorder.state === 'recording') recorder.stop(); return; }
+    if (recording) { if (recorder && recorder.state === 'recording') { action = 'stop'; recorder.stop(); } return; }
     if (preferRecord) { startRecording(); return; }
     if (wanted || listening) {
       wanted = false;
