@@ -555,9 +555,9 @@ Captain, 2026-10-05: Help is not useful as its own tab; tap a hotel or flight on
 - [x] Help leaves the tab bar; an SOS sheet (911, hotel, rental counter, family phones) is always one tap away; the morning plan and Face ID cards keep a quiet home
 - [x] phone checks and a browser test pressing every new button
 
-## F-094 The family chat, lighter and instant [doing]
+## F-094 The family chat, lighter and instant [done]
 Captain, 2026-10-05: keep the family chat, but the chat/photos switch must be small, and a sent bubble should appear at once and fade in so the delay is not felt. · Needs: none
-- [ ] a small, quiet chat/photos switch; a sent message shows at once (fading in), confirmed quietly, a failed one offers Retry without losing the text; poll items fade in; plan chats behave the same
+- [x] a small, quiet chat/photos switch; a sent message shows at once (fading in), confirmed quietly, a failed one offers Retry without losing the text; poll items fade in; plan chats behave the same
 
 ## F-096 Three tabs and a touch of glass [todo]
 Captain, 2026-10-05: four tabs around a raised centre break the symmetry ("either three or five, you cannot have four"); "a sheet here and there can be a little translucent… a Liquid Glass effect". Claude's call: three tabs, glass only on what floats. · Needs: F-093
