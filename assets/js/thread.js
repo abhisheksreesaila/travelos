@@ -36,20 +36,26 @@
 
   // F-100: the iPhone keyboard shrinks the visual viewport, not the page. The docked column follows it (--vvh, --vvtop), the tab bar steps aside
   // (.kb-open) and the newest message stays in view above the box. `reference` is the tallest the viewport has been.
-  var vv = window.visualViewport, app = document.querySelector(".tp"), reference = window.innerHeight;
+  // The reference is kept per width: a rotation or a resized window starts it again, and a shrink counts as the keyboard only while a field has focus
+  // and the page is not pinch-zoomed.
+  var vv = window.visualViewport, app = document.querySelector(".tp"), reference = window.innerHeight, refWidth = window.innerWidth;
+  function typing() { var a = document.activeElement; return !!a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA" || a.isContentEditable); }
   function fit() {
     if (!vv || !app) return;
-    var was = nearBottom();
-    if (!(text && document.activeElement === text) && window.innerHeight > reference) reference = window.innerHeight;
-    reference = Math.max(reference, vv.height + vv.offsetTop);
-    var covered = reference - (vv.height + vv.offsetTop) > 80;     // 80px: ignore the browser's own bar growing and shrinking
     var root = document.documentElement.style;
+    if (!docked()) { app.classList.remove("kb-open"); root.removeProperty("--vvh"); root.removeProperty("--vvtop"); return; }
+    var was = nearBottom();
+    if (window.innerWidth !== refWidth) { refWidth = window.innerWidth; reference = window.innerHeight; }
+    if (!typing() && window.innerHeight > reference) reference = window.innerHeight;
+    reference = Math.max(reference, vv.height + vv.offsetTop);
+    var covered = typing() && vv.scale <= 1.01 && reference - (vv.height + vv.offsetTop) > 80;     // 80px: ignore the browser's own bar growing and shrinking
     app.classList.toggle("kb-open", covered);
     if (covered) { root.setProperty("--vvh", vv.height + "px"); root.setProperty("--vvtop", vv.offsetTop + "px"); }
     else { root.removeProperty("--vvh"); root.removeProperty("--vvtop"); }
     if (was || covered) toBottom();
   }
   if (vv) { vv.addEventListener("resize", fit); vv.addEventListener("scroll", fit); }
+  window.addEventListener("resize", fit);
   if (text) {
     text.addEventListener("focus", function () { setTimeout(function () { fit(); toBottom(); }, 250); });
     text.addEventListener("blur", function () { setTimeout(fit, 150); });

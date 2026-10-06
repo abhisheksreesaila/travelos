@@ -57,7 +57,12 @@ def test_pick_photos_with_the_camera_button_and_see_them_in_the_thread_and_the_s
     expect(page.locator("#ft-camera")).to_be_visible()
     pick(page, "#ft-camera", f["stroll"], f["morning"], f["sunday"])
     expect(page.locator("#ft-thread img.ft-photo")).to_have_count(3, timeout=15000)               # a card per photo, in the thread
-    assert loaded(page.locator("#ft-thread img.ft-photo").first)                                  # served to the family's own browser
+    imgs = page.locator("#ft-thread img.ft-photo")
+    page.wait_for_function("(() => { const i = document.querySelectorAll('#ft-thread img.ft-photo'); return i[i.length - 1].complete && i[i.length - 1].naturalWidth > 0; })()")
+    assert loaded(imgs.last)                                                                      # F-100: the list opens at the newest, which loads at once
+    imgs.first.scroll_into_view_if_needed()                                                       # the first loads when scrolled to (lazy, inside the docked list)
+    page.wait_for_function("(() => { const i = document.querySelector('#ft-thread img.ft-photo'); return i.complete && i.naturalWidth > 0; })()")
+    assert loaded(imgs.first)                                                                     # served to the family's own browser
     page.locator("#fam-photos").click()                                                          # the switch, without a reload
     expect(page.locator("#fp")).to_be_visible()
     expect(page.locator("#ft-chat")).to_be_hidden()

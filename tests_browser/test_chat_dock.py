@@ -133,3 +133,45 @@ def test_an_empty_plan_chat_keeps_the_box_at_the_bottom(canvas_page, base_url):
     tabs = rect(page, ".ph-tabs")
     assert tabs["top"] - rect(page, "#ft-compose")["bottom"] < 24
     assert re.search(r"fixed", page.evaluate("getComputedStyle(document.querySelector('.tp')).position"))
+
+
+@pytest.mark.parametrize("size", [{"width": 640, "height": 360}, {"width": 320, "height": 568}], ids=["landscape", "small"])
+def test_turning_or_resizing_the_phone_never_hides_the_tab_bar(canvas_page, base_url, size):
+    page = family(canvas_page, base_url, PHONE)
+    page.set_viewport_size(size)                                       # a rotation or a smaller window, with no keyboard (nothing is focused)
+    page.wait_for_timeout(400)
+    expect(page.locator(".ph-tabs")).to_be_visible()
+    assert page.evaluate("document.querySelector('.tp').classList.contains('kb-open')") is False
+    docked(page)
+
+
+def test_the_recording_bar_takes_the_boxs_place_above_the_tab_bar(canvas_page, base_url):
+    from tests_browser.test_plan_talk import FAKE_MIC
+    page = canvas_page()
+    page.add_init_script(FAKE_MIC)
+    lunch_chat(page, base_url)
+    start = rect(page, "#ft-compose")
+    page.locator("#pt-mic").click()
+    expect(page.locator("#pt-rec")).to_be_visible()
+    bar, tabs = rect(page, "#pt-rec"), rect(page, ".ph-tabs")
+    assert bar["bottom"] <= tabs["top"] + 1 and tabs["top"] - bar["bottom"] < 24, (bar, tabs)
+    assert abs(bar["bottom"] - start["bottom"]) < 12, (bar, start)    # where the box was
+    page.locator("#pt-cancel").click()
+    expect(page.locator("#ft-compose")).to_be_visible()
+    assert rect(page, "#ft-compose") == start
+
+
+@pytest.mark.parametrize("where", ["family", "plan"])
+def test_an_error_line_goes_above_the_box_and_the_box_does_not_move(canvas_page, base_url, where):
+    page = canvas_page()
+    if where == "family":
+        page.goto(f"{base_url}/trip/family")
+        page.wait_for_selector("#ft-compose")
+    else:
+        lunch_chat(page, base_url)
+    start = rect(page, "#ft-compose")
+    page.locator("#ft-text").fill("   ")
+    page.locator("#ft-send").click()
+    expect(page.locator("#ft-error")).to_be_visible()
+    assert rect(page, "#ft-error")["bottom"] <= rect(page, "#ft-compose")["top"] + 1
+    assert rect(page, "#ft-compose") == start
