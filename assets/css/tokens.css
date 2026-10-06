@@ -52,6 +52,14 @@
   --motion-dur: 240ms;
   --motion-ease: cubic-bezier(.25, .8, .25, 1);
   --motion-shift: 1.25rem;
+  /* F-109: the one liquid motion (the F-106 plan card): everything that opens grows out of what was tapped with this soft spring and folds back into it; assets/js/motion.js (GA.motion) reads these,
+     and no other duration is written where a sheet, menu, popover, toast or screen change moves (tests_browser/test_motion.py scans for it). Reduced motion: no movement, a --motion-fade at most. */
+  --motion-spring-dur: 380ms;
+  --motion-spring: cubic-bezier(.3, 1.35, .5, 1);
+  --motion-out: cubic-bezier(.4, 0, .8, .4);      /* the fold: it leaves quicker than it came (--motion-dur long) */
+  --motion-settle-dur: 280ms;     /* a new bubble or block settling into place */
+  --motion-quick: 160ms;           /* a glide of a few pixels, a quick fade */
+  --motion-fade: 120ms;            /* what remains under reduced motion */
 }
 
 @media (max-width: 720px) { :root { font-size: 16px; --text-min: 13px; } }

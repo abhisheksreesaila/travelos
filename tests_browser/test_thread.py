@@ -286,7 +286,7 @@ def test_new_bubbles_fade_in_unless_motion_is_reduced(pair):
     ari.locator("#ft-send").click()
     expect(mate.locator("#ft-thread .ft-msg")).to_contain_text("Fade me", timeout=9000)
     durations = mate.evaluate("window.__fade")
-    assert durations and 150 <= durations[0][0] <= 200
+    assert durations and durations[0][0] == 280                                   # --motion-settle-dur: the one soft spring (F-109)
     ari.evaluate("""() => { window.__fade = []; new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => { if (n.nodeType === 1) window.__fade.push(n.getAnimations().length); }))).observe(document.getElementById('ft-thread'), { childList: true }); }""")
     ari.locator("#ft-text").fill("Mine fades too")
     ari.locator("#ft-send").click()

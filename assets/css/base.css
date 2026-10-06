@@ -146,9 +146,9 @@ html:has(body > [data-theme="pacific"]) { background: #F4F9FF; }
 .tp-head { view-transition-name: ph-head; }
 .ga-header { view-transition-name: ga-header; }   /* the laptop's site header holds still too */
 ::view-transition-group(cz-tabs), ::view-transition-group(ph-head), ::view-transition-group(ga-header) { animation: none; }
-:root:active-view-transition-type(ga-fwd, ga-back)::view-transition-group(root) { animation-duration: var(--motion-dur); animation-timing-function: var(--motion-ease); }
+:root:active-view-transition-type(ga-fwd, ga-back)::view-transition-group(root) { animation-duration: var(--motion-spring-dur); animation-timing-function: var(--motion-spring); }
 :root:active-view-transition-type(ga-fwd, ga-back)::view-transition-old(root),
-:root:active-view-transition-type(ga-fwd, ga-back)::view-transition-new(root) { animation-duration: var(--motion-dur); animation-timing-function: var(--motion-ease); animation-fill-mode: both; }
+:root:active-view-transition-type(ga-fwd, ga-back)::view-transition-new(root) { animation-duration: var(--motion-spring-dur); animation-timing-function: var(--motion-spring); animation-fill-mode: both; }
 :root:active-view-transition-type(ga-fwd)::view-transition-old(root) { animation-name: ga-leave-left; }
 :root:active-view-transition-type(ga-fwd)::view-transition-new(root) { animation-name: ga-enter-right; }
 :root:active-view-transition-type(ga-back)::view-transition-old(root) { animation-name: ga-leave-right; }

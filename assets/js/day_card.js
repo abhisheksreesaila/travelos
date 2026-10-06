@@ -7,15 +7,15 @@
 // It always sits inside what can be seen: above the tab bar and, with the keyboard up (editing a note), above the keyboard. The card lives beside the stage (not in it), so a
 // refresh of the day behind it (after a note is saved) never takes it away; CZ.editing keeps the quiet revalidation off while it is open.
 //
-// Motion. The card grows from the block's own rectangle with a short spring (a transform on one layer; its words fade in a moment later, so nothing is seen squashed), the rest of the
-// day dims, and a fold runs it backwards into the block. Reduced motion: no spring, an instant change. Holds, drags, resizes, the hold menu and hold-on-empty-time are not touched: the
+// Motion. The card grows from the block's own rectangle with the one liquid spring (GA.motion.open, motion.js: a transform on one layer; its words fade in a moment later, so nothing is seen squashed), the rest of the
+// day dims, and a fold (GA.motion.close) runs it backwards into the block. Reduced motion: no spring, an instant change. Holds, drags, resizes, the hold menu and hold-on-empty-time are not touched: the
 // card only answers the click that a tap makes (the click a held block makes is already guarded by trip_canvas.js, CZ.guard).
 (function () {
   var CZ = window.CZ;
   if (!CZ) return;
   var stage = CZ.stage;
   var main = document.getElementById('main') || document.body;
-  var SPRING = 'cubic-bezier(.3, 1.35, .5, 1)', OUT = 'cubic-bezier(.4, 0, .8, .4)';
+  var MO = window.GA && GA.motion;      // the one liquid motion (motion.js, F-109): the spring, the fold and their timings are its tokens
   var open = null;                 // the card on screen: { wrap, card, scrim, block, act, folding, note }
   var fetched = {};                // act -> { at, promise }: the fragment fetched ahead of the tap
 
@@ -77,13 +77,9 @@
     c.style.top = top + 'px'; c.style.height = h + 'px';
     o.g = { left: g.left, top: top, width: g.width, height: h };
     if (glide && was && !CZ.reduced.matches && c.animate && (Math.abs(was.top - top) > 1 || Math.abs(was.height - h) > 1)) {      // the words arrived or grew: the card follows them, gently
-      c.animate([{ top: was.top + 'px', height: was.height + 'px' }, { top: top + 'px', height: h + 'px' }], { duration: 180, easing: 'ease-out' });
+      MO.run(c, [{ top: was.top + 'px', height: was.height + 'px' }, { top: top + 'px', height: h + 'px' }], { t: 'quick' });
     }
   }
-  function squash(g, r) {          // the transform that makes the card look like the block it grows from
-    return 'translate(' + (r.left - g.left) + 'px,' + (r.top - g.top) + 'px) scale(' + (r.width / g.width) + ',' + (r.height / g.height) + ')';
-  }
-
   // ---- open ---------------------------------------------------------------------------------------------------------------------
   function show(block) {
     if (open || !block || !block.dataset.act) return;
@@ -115,12 +111,7 @@
     lock(open);
     place(open, geometry(wrap, r));
     CZ.cardOpen = true;
-    if (!CZ.reduced.matches && card.animate) {
-      card.style.transformOrigin = '0 0';
-      card.animate([{ transform: squash(open.g, r), borderRadius: '0.875rem' }, { transform: 'none', borderRadius: '1.75rem' }], { duration: 380, easing: SPRING });
-      scrim.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 220, easing: 'ease-out' });
-      content.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 160, delay: 110, easing: 'ease-out', fill: 'backwards' });
-    }
+    if (!CZ.reduced.matches) MO.open(card, r, { scrim: scrim, content: content, radius: ['0.875rem', '1.75rem'] });
     try { card.focus({ preventScroll: true }); } catch (e) { /* no focus */ }
     scrim.addEventListener('click', function () { fold(); });
     x.addEventListener('click', function () { fold(); });
@@ -287,14 +278,10 @@
     o.folding = true;
     var act = o.act, card = o.card;
     var done = function () { cleanup(); focusBlock(act); };
-    var b = blockOf(act), r = b ? b.getBoundingClientRect() : null;
+    var b = blockOf(act);
     if (CZ.reduced.matches || !card.animate) { done(); return; }
-    var to = r && r.bottom > 0 && r.top < window.innerHeight ? squash(o.g, r) : 'translateY(' + (window.innerHeight * 0.1) + 'px) scale(.9)';
-    var a = card.animate([{ transform: from || card.style.transform || 'none', opacity: 1 }, { transform: to, opacity: 0.2 }], { duration: 240, easing: OUT, fill: 'forwards' });
-    o.content.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 110, easing: 'ease-in', fill: 'forwards' });
-    o.scrim.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 240, easing: 'ease-in', fill: 'forwards' });
-    a.onfinish = done;
-    setTimeout(function () { if (open === o) done(); }, 400);
+    MO.close(card, b, { scrim: o.scrim, content: o.content, from: from || card.style.transform || undefined, radius: ['0.875rem', '1.75rem'] }).then(done);
+    setTimeout(function () { if (open === o) done(); }, MO.t('dur') + 160);
   }
 
   // Swipe down on the card's top (its handle and heading) folds it; a short pull springs back.
@@ -320,9 +307,8 @@
         o.scrim.style.opacity = '';
         if (!dy) return;
         if (CZ.reduced.matches || !o.card.animate) { o.card.style.transform = ''; return; }
-        var back = o.card.animate([{ transform: 'translateY(' + dy + 'px)' }, { transform: 'none' }], { duration: 260, easing: SPRING });
         o.card.style.transform = '';
-        back.onfinish = function () { o.card.style.transform = ''; };
+        MO.spring(o.card, 'translateY(' + dy + 'px)');
       }
       h.addEventListener('pointerup', end);
       h.addEventListener('pointercancel', end);

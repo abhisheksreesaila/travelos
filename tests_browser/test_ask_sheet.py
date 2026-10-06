@@ -146,11 +146,10 @@ def test_the_sheet_grows_out_of_the_button_and_is_calm_under_reduced_motion(phon
     page.wait_for_timeout(400)
     page.evaluate("""() => { document.getElementById('ph-tab-ask').click(); }""")
     page.wait_for_selector("#ak-sheet")
-    info = page.evaluate("""() => { const s = document.getElementById('ak-sheet'), r = s.getBoundingClientRect(), b = document.querySelector('#ph-tab-ask .ph-ti').getBoundingClientRect();
-        const o = getComputedStyle(s).transformOrigin.split(' ').map(parseFloat);
-        return { anims: s.getAnimations().length, ox: s.offsetLeft + o[0], oy: s.offsetTop + o[1], bx: b.left + b.width / 2, by: b.top + b.height / 2 }; }""")
+    info = page.evaluate("""() => { const s = document.getElementById('ak-sheet'), b = document.querySelector('#ph-tab-ask .ph-ti').getBoundingClientRect(), m = GA.motion.log.filter(l => l.kind === 'open').pop();
+        return { anims: s.getAnimations().length, from: m.from, bx: b.left, by: b.top, bw: b.width, bh: b.height }; }""")
     assert info["anims"] >= 1                                                                # it animates in
-    assert abs(info["ox"] - info["bx"]) < 3 and abs(info["oy"] - info["by"]) < 3             # from the Ask button
+    assert abs(info["from"]["left"] - info["bx"]) < 3 and abs(info["from"]["top"] - info["by"]) < 3 and abs(info["from"]["width"] - info["bw"]) < 3     # from the Ask button's own box (F-109: tests_browser/test_motion.py samples the frames)
     page.wait_for_timeout(500)
     page.keyboard.press("Escape")
     page.wait_for_function("document.getElementById('ak-sheet') === null", timeout=3000)

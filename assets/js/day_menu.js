@@ -7,6 +7,7 @@
 (function () {
   var CZ = window.CZ;
   if (!CZ || !CZ.setTimes) return;
+  var MO = window.GA && GA.motion;      // the one liquid motion (motion.js, F-109)
   var stage = CZ.stage;
   var MAX_TITLE = 40, STEP = 15, FINE = 5, MIN_LEN = 15, DAY_END = 22 * 60;
   var fineOn = false;       // the menu's own 5-minute switch: precision for a person who has no zoom (reduced motion) or would rather press than drag
@@ -48,7 +49,11 @@
     var m = menu;
     menu = null;
     document.removeEventListener('pointerdown', outside, true);
-    if (m.node.parentNode) m.node.parentNode.removeChild(m.node);
+    var gone = function () { if (m.node.parentNode) m.node.parentNode.removeChild(m.node); };
+    if (MO && !MO.reduced() && m.node.parentNode) {      // F-109: it folds back into the block it grew out of
+      m.node.setAttribute('inert', ''); m.node.setAttribute('aria-hidden', 'true'); m.node.style.pointerEvents = 'none';
+      MO.close(m.node, m.block && m.block.isConnected ? m.block : null).then(gone);
+    } else gone();
     if (m.block && m.block.isConnected) { m.block.classList.remove('is-wiggle', 'is-menu'); if (returnFocus) focusBlock(m.block); }
     CZ.menuOpen = false;
   }
@@ -105,6 +110,7 @@
     b.classList.add('is-menu');
     if (!CZ.reduced.matches) b.classList.add('is-wiggle');
     place(node, b);
+    if (MO) MO.open(node, b);       // F-109: it grows out of the block that was held
     document.addEventListener('pointerdown', outside, true);
     // A keyboard or a screen reader lands on the first choice; a finger that held the block lands on the menu itself (no focus ring on a button nobody asked for), and Escape and the arrow keys work from there.
     var first = kbd ? ((focusItem && node.querySelector('[data-do="' + focusItem + '"]:not(:disabled)')) || node.querySelector('.cz-mi:not(:disabled)')) : node;

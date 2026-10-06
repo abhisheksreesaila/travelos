@@ -50,6 +50,7 @@ def test_hold_and_let_go_wiggles_the_block_and_offers_the_menu_with_every_choice
     assert "/trip/talk?act=" in menu.get_by_role("menuitem", name="Chat").get_attribute("href")
     shot(page, "menu-390.png")
     assert now(lunch.id)[:2] == (12 * 60, 13 * 60) and page.locator(".ga-toast").count() == 0
+    page.wait_for_function("document.querySelector('.cz-menu').getAnimations().length === 0")      # F-109: it has grown out of the block (a control is measured at rest)
     checks(page)                                                                    # 44px targets, 13px text, no sideways scroll, with the menu open
 
 
