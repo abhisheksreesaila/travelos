@@ -15,7 +15,7 @@ from tests.test_signin import sign_in
 from tests.test_trip_import import imported
 from tests.test_trip_phone import plan, tag
 
-BAR = ("/trip", "/trip/map", "/trip/ask", "/trip/family")   # F-093: Help left the bar; its route still works
+BAR = ("/trip", "/trip/ask", "/trip/family")   # F-096: three tabs, Ask in the middle; Map is a button in the day heading
 PATHS = {"today": "/trip", "map": "/trip/map", "ask": "/trip/ask", "family": "/trip/family", "help": "/trip/help"}
 
 
@@ -45,12 +45,13 @@ def bar(html):
 
 # ---- the bar ------------------------------------------------------------------------------------------------------------
 
-def test_the_tab_bar_has_four_tabs_in_order_and_ask_is_raised():
-    nav = str(phone.tabbar("map"))
+def test_the_tab_bar_has_three_tabs_in_order_and_ask_is_raised():
+    nav = str(phone.tabbar("family"))
     labels = re.findall(r"</svg></span>([A-Za-z]+)</a>", nav)
-    assert labels == ["Today", "Map", "Ask", "Family"]
+    assert labels == ["Today", "Ask", "Family"]
     assert re.findall(r'href="([^"]+)"', nav) == list(BAR)
-    assert nav.count('aria-current="page"') == 1 and re.search(r'id="ph-tab-map"[^>]*aria-current="page"|aria-current="page"[^>]*id="ph-tab-map"', nav)
+    assert nav.count('aria-current="page"') == 1 and re.search(r'id="ph-tab-family"[^>]*aria-current="page"|aria-current="page"[^>]*id="ph-tab-family"', nav)
+    assert "ph-tab-map" not in nav
     assert "ph-ask" in re.search(r'<a[^>]*id="ph-tab-ask"[^>]*>', nav).group(0)
 
 
@@ -60,8 +61,8 @@ def test_every_trip_screen_sits_in_the_shell(client, key):
     html = client.get(PATHS[key]).text
     hrefs, nav = bar(html)
     assert hrefs == list(BAR)
-    if key == "help":       # F-093: Help is not on the bar, so no tab is current there
-        assert nav.count('aria-current="page"') == 0 and 'id="ph-tab-help"' not in nav
+    if key in ("help", "map"):       # F-093, F-096: Help and Map are not on the bar, so no tab is current there
+        assert nav.count('aria-current="page"') == 0 and f'id="ph-tab-{key}"' not in nav
     else:
         assert re.search(r'id="ph-tab-%s"[^>]*aria-current="page"' % key, nav) or re.search(r'aria-current="page"[^>]*id="ph-tab-%s"' % key, nav)
         assert nav.count('aria-current="page"') == 1
@@ -103,7 +104,7 @@ def test_the_map_tab_is_the_real_map_in_the_shell(client):
     html = client.get("/trip/map").text
     assert "is coming" not in html and 'id="mp-daychip"' in html and ">Map</h1>" in html
     assert "/assets/vendor/leaflet/leaflet.js" in html and "/assets/js/map.js" in html and "/assets/css/map.css" in html
-    assert 'id="ph-tab-map"' in html
+    assert 'id="ph-tab-map"' not in html and 'id="ph-tab-today"' in html      # F-096: Map left the bar; the page still works
 
 
 def test_a_tab_module_can_be_swapped_without_touching_the_shell(client, monkeypatch):

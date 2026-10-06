@@ -189,11 +189,18 @@ def sos_link(url):
     return A(icon("life", 18, 2.4), Span("SOS"), href=url, cls="cz-sos", id="cz-sos", aria_label="Emergency: call 911 and your people", data_zoom="in", data_zk="sos-open")
 
 
-def head(v, kicker, title, key="", back=None, back_label="", faces=None, sos=""):
+def map_link(day):
+    """The small map button in a day's heading (F-096, replaces the Map tab): opens that day's map. A plain link, so the page changes; it is not a zoom."""
+    return A(icon("map", 20, 2.4), href=f"/trip/map?day={day}", cls="cz-mapbtn", id="cz-mapbtn", aria_label="Map of this day")
+
+
+def head(v, kicker, title, key="", back=None, back_label="", faces=None, sos="", mapday=None):
     """The heading every level starts with. Week: plain. Deeper: a dark card with the way back, which is what the tapped element grows into."""
     inner = [Div(Span(kicker, cls="cz-head-k"), H1(title, id="cz-title", tabindex="-1"), cls="cz-head-text")]
     if back:
         inner.insert(0, A(icon("chev-left", 22, 2.6), href=back, cls="cz-back", aria_label=back_label, data_zoom="out"))
+    if mapday is not None:
+        inner.append(map_link(mapday))
     if sos:
         inner.append(sos_link(sos))
     if faces:
@@ -452,7 +459,7 @@ def day_view(v, day, booked=None, sos=False):
         cards = [empty, *cards]
     kicker = f"{d.strftime('%a %b').upper()} {d.day} · DAY {day + 1} OF {len(v['dates'])}"
     first = next((x for kind, x in ents if kind == "block"), None)
-    body = [head(v, kicker, d.strftime("%A"), key=f"day-{day}", back=curl(), back_label="Zoom out to the week", sos=curl(day=day, sos=True)), Div(toggle(v, "day", day), kinds_bar(), cls="cz-bar"), day_pills(v, day), strip(v, day),
+    body = [head(v, kicker, d.strftime("%A"), key=f"day-{day}", back=curl(), back_label="Zoom out to the week", sos=curl(day=day, sos=True), mapday=day), Div(toggle(v, "day", day), kinds_bar(), cls="cz-bar"), day_pills(v, day), strip(v, day),
             now_card(v, day),      # F-092: the centre Ask changes the day; on today the day starts with what is happening now
             *([filter_bar(v, True)] if first else []), *([dropbars(v)] if first and editor else []),
             Div(Div(*cards, *(listmore(v, first) if first else []), P("Nothing here for this filter.", cls="cz-sub cz-kind-none", hidden=True), cls="cz-day-main"), Div(_tray(aside, editor), cls="cz-day-side"), cls="cz-day-body")]
