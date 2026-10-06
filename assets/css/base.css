@@ -133,3 +133,30 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 @media (max-width: 825px) { .fr-paths, .fr-paths.fr-two { grid-template-columns: minmax(0, 1fr); } .fr-path { flex-direction: row; align-items: center; flex-wrap: wrap; } .fr-body { flex: 1 1 12rem; } .fr-choices { flex: 1 1 100%; } }
 @media (max-width: 720px) { .fr-lede { font-size: 1.0625rem; } .fr-path { min-height: 2.75rem; } }
 .fr .eyebrow { font-size: max(var(--text-min), 0.875rem); font-weight: 800; letter-spacing: .08em; color: var(--accent-deep); }
+
+/* F-099: moving between screens. No white flash: the page colour sits on html too (the installed app shows it behind a page that is still loading). */
+html { background: var(--ground); }
+html:has(body > [data-theme="pacific"]) { background: #F4F9FF; }
+
+/* Same-site navigations are a short cross-document view transition. The tab bar and the heading are named so they hold still while the
+   rest of the page slides: forward moves left, back moves right (the inline script in layout.HEAD tags the transition ga-fwd / ga-back).
+   Where the browser has no cross-document transitions the rules are ignored and the page just loads. */
+@view-transition { navigation: auto; }
+.ph-tabs { view-transition-name: cz-tabs; }
+.tp-head { view-transition-name: ph-head; }
+::view-transition-group(cz-tabs), ::view-transition-group(ph-head) { animation: none; }
+:root:active-view-transition-type(ga-fwd, ga-back)::view-transition-group(root) { animation-duration: var(--motion-dur); animation-timing-function: var(--motion-ease); }
+:root:active-view-transition-type(ga-fwd, ga-back)::view-transition-old(root),
+:root:active-view-transition-type(ga-fwd, ga-back)::view-transition-new(root) { animation-duration: var(--motion-dur); animation-timing-function: var(--motion-ease); animation-fill-mode: both; }
+:root:active-view-transition-type(ga-fwd)::view-transition-old(root) { animation-name: ga-leave-left; }
+:root:active-view-transition-type(ga-fwd)::view-transition-new(root) { animation-name: ga-enter-right; }
+:root:active-view-transition-type(ga-back)::view-transition-old(root) { animation-name: ga-leave-right; }
+:root:active-view-transition-type(ga-back)::view-transition-new(root) { animation-name: ga-enter-left; }
+@keyframes ga-leave-left { to { opacity: 0; transform: translateX(calc(var(--motion-shift) * -1)); } }
+@keyframes ga-leave-right { to { opacity: 0; transform: translateX(var(--motion-shift)); } }
+@keyframes ga-enter-right { from { opacity: 0; transform: translateX(var(--motion-shift)); } }
+@keyframes ga-enter-left { from { opacity: 0; transform: translateX(calc(var(--motion-shift) * -1)); } }
+@media (prefers-reduced-motion: reduce) {
+  @view-transition { navigation: none; }
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+}

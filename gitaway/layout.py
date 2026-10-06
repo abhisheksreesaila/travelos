@@ -61,7 +61,24 @@ def join_note():
         buttons = [Form(here, Button("OK", type="submit", cls="btn btn-sm"), action="/family/stay", method="post")]
     return Div(Span(note["text"], cls="ga-note-text"), Div(*buttons, cls="ga-note-actions"), role="status", id="ga-note", cls="ga-note")
 
+# F-099: tags each cross-document page change as forward or back so base.css can slide it the right way. Inline, because the reveal
+# of the new page can fire before a deferred script runs. Needs pageswap/pagereveal (Chrome 124+, Safari 18.2+); elsewhere it does nothing.
+PAGE_MOVES_JS = """(function () {
+  function go(act) {
+    if (!act || act.navigationType === 'reload') return '';
+    if (act.navigationType !== 'traverse') return 'ga-fwd';
+    return act.from && act.entry && act.entry.index > act.from.index ? 'ga-fwd' : 'ga-back';
+  }
+  function tag(e, act) {
+    var t = go(act);
+    if (t && e.viewTransition && e.viewTransition.types) e.viewTransition.types.add(t);
+  }
+  addEventListener('pageswap', function (e) { tag(e, e.activation); });
+  addEventListener('pagereveal', function (e) { tag(e, window.navigation && navigation.activation); });
+})();"""
+
 HEAD = (
+    Script(PAGE_MOVES_JS),
     # Install on iPhone (F-044): manifest, theme colour, Apple tags, service worker registration
     Link(rel="manifest", href="/manifest.webmanifest"),
     Link(rel="apple-touch-icon", href="/assets/icons/apple-touch-icon.png"),

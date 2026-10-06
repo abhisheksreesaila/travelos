@@ -12,6 +12,30 @@
     });
   }
   if (!document.querySelector('meta[name="ga-user"]')) forgetPages();
+  /* F-099: a finger touching a link starts loading its page; the service worker keeps the copy for a few seconds and answers the tap with it.
+     Plain same-site page links only: not the trip canvas's zoom links (it loads those itself), new tabs, downloads, sign-in or sign-out routes. */
+  var AUTH = /^\/(login|logout|signin|signout|auth)(\/|$)/;
+  var touched = {};
+  function prefetchable(a) {
+    if (!a || !a.href || a.target || a.hasAttribute("download") || a.hasAttribute("data-zoom") || a.getAttribute("href").charAt(0) === "#") return null;
+    var rel = a.getAttribute("rel") || "";
+    if (/\bexternal\b/.test(rel)) return null;
+    var u;
+    try { u = new URL(a.href, location.href); } catch (x) { return null; }
+    if (u.origin !== location.origin || AUTH.test(u.pathname) || u.pathname.indexOf("/assets/") === 0) return null;
+    if (u.pathname === location.pathname && u.search === location.search) return null;
+    return u.pathname + u.search;
+  }
+  document.addEventListener("pointerdown", function (e) {
+    var ctl = navigator.serviceWorker.controller;
+    var c = navigator.connection;
+    if (!ctl || (c && c.saveData) || (e.pointerType === "mouse" && e.button !== 0)) return;
+    var url = prefetchable(e.target && e.target.closest ? e.target.closest("a") : null);
+    var now = Date.now();
+    if (!url || (touched[url] && now - touched[url] < 2000)) return;
+    touched[url] = now;
+    ctl.postMessage({ type: "prefetch", url: url });
+  }, { passive: true });
   document.addEventListener("submit", function (e) {
     var form = e.target;
     if (form && form.getAttribute && form.getAttribute("action") === "/signout" && window.caches) {
