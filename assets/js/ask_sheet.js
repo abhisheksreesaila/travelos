@@ -126,7 +126,7 @@
   function behind(on) {
     if (!on) { inerted.forEach(function (n) { n.removeAttribute('inert'); }); inerted = []; return; }
     Array.prototype.forEach.call(app.children, function (n) {      // everything beside the sheet, so Tab never leaves it (the toast is not inert: it is only said)
-      if (n === wrap || n.hasAttribute('inert') || /^(SCRIPT|STYLE|LINK)$/.test(n.tagName)) return;
+      if (n === wrap || n.id === 'ga-toast' || n.hasAttribute('inert') || /^(SCRIPT|STYLE|LINK)$/.test(n.tagName)) return;
       n.setAttribute('inert', '');
       inerted.push(n);
     });

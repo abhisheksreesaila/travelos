@@ -1,8 +1,8 @@
 """Tap a plan: its note, right there (F-106, F-107). On the day grid a tap on a block opens a card over the day (assets/js/day_card.js); this module draws what is in it
 and takes its one write. The card holds the title and time, the notes and two links; the chat is not in it (the captain: "No message needed inside block"), "Open chat" leads to it.
 
-GET  /trip/canvas/card?act=aN[&trip=]   the card's body as a fragment: the plan's note(s) as the sticky (an editor edits a note of their own in place, or adds one), then the
-                                        links "Open chat" (with how much was said, "Open chat · 3") and, on a park block, "Rides"
+GET  /trip/canvas/card?act=aN[&trip=]   the card's body as a fragment: the links "Open chat" (with how much was said, "Open chat · 3") and, on a park block, "Rides", then the plan's note(s) as the sticky
+                                        (an editor edits a note of their own in place, or adds one)
 POST /trip/canvas/actnote               a note on a plan: fields act (required), text, and note (the id of the person's own note to change; none adds one, with `id` the calendar's next number as the page was given it, so a retry adds nothing twice). JSON {note: {id, text}}, or 422 {error}
 
 The note is a row of the calendar's notes (gitaway/tripcal.py): the write is `cal.add_note` or `cal.edit_note`, so a viewer (no editor role) is refused by gitaway.access.

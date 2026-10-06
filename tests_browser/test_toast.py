@@ -47,8 +47,11 @@ def settled(page):
 def no_cover(page):
     """Nothing of the heading (its switch, map, SOS) is under the toast."""
     return page.evaluate("""() => { const t = document.querySelector('.ga-toast').getBoundingClientRect(); let hit = [];
-      document.querySelectorAll('.cz-head a, .cz-head button, .cz-fold.is-on a, .cz-fold.is-on button, .tp-head a, .tp-head button').forEach(b => { const r = b.getBoundingClientRect();
-        if (r.width && r.height && !(r.right <= t.left || r.left >= t.right || r.bottom <= t.top || r.top >= t.bottom)) hit.push(b.textContent.trim() || b.id); });
+      document.querySelectorAll('a, button, input, textarea, select, [role=button]').forEach(b => {
+        if (b.closest('.ga-toast, #cz-grid, #cz-week, .ph-tabs, [inert], [hidden], .cz-fold:not(.is-on)') || b.closest('.ft-thread')) return;
+        const s = getComputedStyle(b), r = b.getBoundingClientRect();
+        if (s.visibility === 'hidden' || s.display === 'none' || !r.width || !r.height) return;
+        if (!(r.right <= t.left || r.left >= t.right || r.bottom <= t.top || r.top >= t.bottom)) hit.push((b.textContent.trim() || b.id || b.className).slice(0, 30)); });
       return hit; }""")
 
 
@@ -66,7 +69,7 @@ def test_the_toast_sits_centred_under_the_days_heading_above_the_grid_and_the_ta
     assert abs((t["x"] + t["w"] / 2) - vp["width"] / 2) <= 1 and t["w"] <= 22 * 16 + 1    # centred, at most 22rem
     assert t["x"] >= 8 and t["r"] <= vp["width"] - 8
     assert no_cover(page) == []
-    box = toast(page).evaluate("t => ({ undo: t.querySelector('.ga-toast-undo').getBoundingClientRect().height, w: t.querySelector('.ga-toast-undo').getBoundingClientRect().width, role: t.getAttribute('role'), live: t.getAttribute('aria-live'), id: t.id })")
+    box = toast(page).evaluate("t => ({ undo: t.querySelector('.ga-toast-undo').getBoundingClientRect().height, w: t.querySelector('.ga-toast-undo').getBoundingClientRect().width, role: t.parentElement.getAttribute('role'), live: t.parentElement.getAttribute('aria-live'), id: t.parentElement.id })")
     assert box["undo"] >= 43.9 and box["w"] >= 43.9 and box["role"] == "status" and box["live"] == "polite"
     shot(page, "toast-390.png")
 
@@ -177,7 +180,7 @@ def test_a_new_toast_takes_the_old_ones_place_without_stacking_or_moving(canvas_
     assert toast(page).locator(".ga-toast-undo").count() == 0 and toast(page).locator(".ga-toast-t").count() == 1
     again = rect(page, ".ga-toast")
     assert abs(again["y"] - first["y"]) <= 1 and page.evaluate("document.querySelector('.ga-toast').classList.contains('is-in')")      # the pill did not slide again
-    assert toast(page).get_attribute("id") == "ga-toast"
+    assert page.locator("#ga-toast").count() == 1
 
 
 def test_two_real_moves_in_a_row_leave_one_toast_and_undo_puts_the_plan_back(canvas_page, vp):
@@ -263,3 +266,123 @@ def test_the_ask_sheets_result_is_the_same_toast_with_a_link_to_the_day(canvas_p
     link = toast(page).locator("a.ga-toast-act")
     expect(link).to_have_text("See the day")
     assert link.bounding_box()["height"] >= 43.9 and page.locator(".ak-toast, .cz-toast, .cal-toast").count() == 0
+
+
+# ---- review fixes -----------------------------------------------------------------------------------------------------------------
+
+def present(page):
+    return page.evaluate("document.querySelectorAll('.ga-toast').length")
+
+
+def fading(page):
+    return page.evaluate("(() => { const t = document.querySelector('.ga-toast'); return !!t && !t.classList.contains('is-in'); })()")
+
+
+def finger_down(page):
+    page.evaluate("document.querySelector('.ga-toast').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerType: 'touch' }))")
+
+
+def finger_up(page):
+    page.evaluate("window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerType: 'touch' }))")
+
+
+def test_a_finger_landing_on_a_fading_toast_does_not_keep_the_next_one_from_hiding(canvas_page, vp):
+    page = canvas_page(viewport=vp, motion="no-preference")
+    open_day(page)
+    page.clock.install()
+    say(page, "First")
+    page.clock.run_for(4600)
+    assert fading(page)
+    finger_down(page)                                                                       # it is on its way out and the finger never lets go cleanly
+    page.clock.run_for(600)
+    say(page, "Second")
+    page.clock.run_for(200)
+    assert present(page) == 1 and not fading(page)
+    page.clock.run_for(4600)
+    page.clock.run_for(600)
+    assert present(page) == 0                                                               # the next toast hid on time
+
+
+def test_a_toast_called_back_during_its_fade_is_held_by_a_finger_and_let_go_again(canvas_page, vp):
+    page = canvas_page(viewport=vp, motion="no-preference")
+    open_day(page)
+    page.clock.install()
+    say(page, "First")
+    page.clock.run_for(4600)
+    assert fading(page)
+    say(page, "Called back")
+    page.clock.run_for(300)
+    assert not fading(page)
+    finger_down(page)
+    page.clock.run_for(30000)
+    assert present(page) == 1 and not fading(page)
+    finger_up(page)
+    page.clock.run_for(4600)
+    page.clock.run_for(600)
+    assert present(page) == 0
+
+
+def test_leaving_a_toast_with_the_pointer_waits_its_own_time_not_4_and_a_half_seconds(canvas_page, vp):
+    page = canvas_page(viewport=vp, motion="no-preference")
+    open_day(page)
+    page.clock.install()
+    say(page, "With undo", undo=True)
+    page.clock.run_for(200)
+    page.evaluate("() => { const t = document.querySelector('.ga-toast'); t.dispatchEvent(new MouseEvent('mouseenter')); t.dispatchEvent(new MouseEvent('mouseleave')); }")
+    page.clock.run_for(6000)
+    assert present(page) == 1 and not fading(page)
+    page.clock.run_for(3500)
+    page.clock.run_for(600)
+    assert present(page) == 0
+
+
+def test_one_empty_live_region_is_always_there_and_holds_the_toast(canvas_page, vp):
+    page = canvas_page(viewport=vp)
+    open_day(page)
+    got = page.evaluate("() => { const l = document.getElementById('ga-toast'); return l && { role: l.getAttribute('role'), live: l.getAttribute('aria-live'), text: l.textContent, kids: l.children.length, n: document.querySelectorAll('#ga-toast').length }; }")
+    assert got == {"role": "status", "live": "polite", "text": "", "kids": 0, "n": 1}            # there before any toast, and empty
+    say(page, "Said", undo=True)
+    settled(page)
+    assert page.evaluate("document.querySelectorAll('#ga-toast').length") == 1 and page.evaluate("document.getElementById('ga-toast').contains(document.querySelector('.ga-toast'))")
+    expect(page.locator("#ga-toast")).to_contain_text("Said")
+    assert page.evaluate("document.querySelector('.ga-toast').getAttribute('role')") is None
+
+
+def test_the_toast_sits_under_the_kinds_row_and_over_no_control_on_the_day(canvas_page, vp):
+    page = canvas_page(viewport=vp)
+    plan("Lunch", 12 * 60, 13 * 60)
+    open_day(page)
+    page.evaluate("window.scrollTo(0, 0)")
+    say(page, undo=True)
+    settled(page)
+    assert no_cover(page) == []
+    bar = rect(page, ".cz-bar")
+    assert bar is None or rect(page, ".ga-toast")["y"] >= bar["b"] - 0.5
+
+
+def test_the_toast_is_over_no_control_on_family_in_its_chat_and_photos_view(canvas_page, vp, base_url):
+    page = canvas_page(viewport=vp)
+    for view in ("", "?view=photos"):
+        page.goto(f"{base_url}/trip/family{view}")
+        page.wait_for_selector(".fam-bar")
+        say(page, undo=True)
+        settled(page)
+        assert no_cover(page) == [], view
+        assert rect(page, ".ga-toast")["y"] >= rect(page, ".fam-bar")["b"] - 0.5
+        page.evaluate("GA.hideToast(true)")
+
+
+def test_the_toast_is_over_no_control_on_the_calendar_page(canvas_page, vp, base_url):
+    page = canvas_page(viewport=vp)
+    page.goto(f"{base_url}/calendar")
+    page.wait_for_selector("#cal-import")
+    page.wait_for_load_state("networkidle")
+    page.wait_for_timeout(600)                                                               # the page's own script has laid it out
+    say(page, undo=True)
+    settled(page)
+    top = rect(page, ".ga-toast")
+    assert top["y"] >= rect(page, ".cal-bar")["b"] - 0.5                                    # under the whole top bar, "Import a booked trip" and the rest of its buttons
+    hit = page.evaluate("""() => { const t = document.querySelector('.ga-toast').getBoundingClientRect();
+      return [...document.querySelectorAll('.cal-bar a, .cal-bar button, .cal-bar input')].filter(b => { if (b.closest('.cal-trips-pop')) return false; const r = b.getBoundingClientRect();
+        return r.width && r.height && !(r.right <= t.left || r.left >= t.right || r.bottom <= t.top || r.top >= t.bottom); }).map(b => b.textContent.trim()); }""")
+    assert hit == []                                                                         # (the page below the bar is a long list of controls: the pill floats over its top)

@@ -1,6 +1,6 @@
 // Tap a plan: its note, right there (F-106, F-107). A tap (not a hold) on a block of the day grid expands the block, in place, into a card over the grid: the plan's name and time, the
-// whole note as the sticky (an editor taps one of their own notes to edit it right there, or "Add a note"), and the links "Open chat" (with how much was said) and, on a park block,
-// "Rides" to its block level. No messages and no box in it: the chat is its own page. Tap outside, Escape or a swipe down on the card's top folds it back into the block.
+// links "Open chat" (with how much was said) and, on a park block, "Rides" to its block level, then the whole note as the sticky (an editor taps one of their own notes to edit it right
+// there, or "Add a note"). No messages and no box in it: the chat is its own page. Tap outside, Escape or a swipe down on the card's top folds it back into the block.
 //
 // How it fits. The card's body is a fragment the server draws (GET /trip/canvas/card, gitaway/pages/daycard.py), fetched as soon as a finger goes down on a block, so the tap that
 // follows has nothing to wait for; the card opens at once with the title and time and fills in when the fragment arrives, then is as tall as its words (up to what the screen leaves).
@@ -247,7 +247,7 @@
     o.locked = [];
     for (var n = o.wrap; n && n.parentElement && n !== document.documentElement; n = n.parentElement) {
       Array.prototype.forEach.call(n.parentElement.children, function (c) {
-        if (c !== n && !c.hasAttribute('inert') && !/^(SCRIPT|STYLE|LINK|TEMPLATE)$/.test(c.tagName)) { c.setAttribute('inert', ''); o.locked.push(c); }
+        if (c !== n && c.id !== 'ga-toast' && !c.hasAttribute('inert') && !/^(SCRIPT|STYLE|LINK|TEMPLATE)$/.test(c.tagName)) { c.setAttribute('inert', ''); o.locked.push(c); }
       });
     }
   }

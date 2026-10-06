@@ -1,4 +1,4 @@
-/* Tap a plan: its note, right there (F-106, F-107). A card that grows out of the block over the day: the plan's name, the note as the sticky, then "Open chat" and "Rides". Loaded after day_grid.css and thread.css. Sizes are rem off the one root; text never goes under --cz-small (13px on a phone); touch targets are 2.75rem.
+/* Tap a plan: its note, right there (F-106, F-107). A card that grows out of the block over the day: the plan's name, then "Open chat" and "Rides", then the note as the sticky. Loaded after day_grid.css and thread.css. Sizes are rem off the one root; text never goes under --cz-small (13px on a phone); touch targets are 2.75rem.
    The card is placed by day_card.js (left, top, width, height in pixels, inside what can be seen) and grows with a transform; the rest of the day dims under .cz-card-scrim. */
 
 .cz .cz-card-wrap { position: fixed; z-index: 31; inset: 0; padding-top: env(safe-area-inset-top); pointer-events: none; }      /* over the tab bar too (it is inert while the card is open: a tap there folds the card) */
@@ -18,7 +18,7 @@
 .cz .cz-card-x svg { width: 1.25rem; height: 1.25rem; }
 .cz .cz-card-x:focus-visible, .cz .cz-card-link:focus-visible, .cz .cz-card-note:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.125rem; }
 
-/* the body: the sticky, then the links; the card is as tall as these (up to what the screen leaves) and the body scrolls when they are longer */
+/* the body: the links, then the sticky; the card is as tall as these (up to what the screen leaves) and the body scrolls when they are longer */
 .cz .cz-card-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
 .cz .cz-card-loading { margin: 0; padding: 1rem 1.125rem; font-weight: 700; color: var(--ink-2); }
 .cz .cz-card-inner { flex: 0 0 auto; display: flex; flex-direction: column; gap: 0.5rem; padding: 0 0.75rem 0.75rem 1rem; }
