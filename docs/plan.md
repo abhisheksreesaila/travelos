@@ -564,3 +564,18 @@ Captain, 2026-10-05: four tabs around a raised centre break the symmetry ("eithe
 - [x] the tab bar is Today · Ask · Family with Ask in the true centre; Map becomes a small map button in the day heading (beside SOS) opening that day's map; `/trip/map` keeps working
 - [x] the tab bar and the sheets (step, booking, SOS, add) are translucent with a strong blur (Liquid Glass feel) over a tinted base so text stays at full contrast; cards and text stay solid
 - [x] `prefers-reduced-transparency: reduce` and browsers without backdrop-filter get solid surfaces; phone checks at 390 and 320; contrast checked on the sheets over the busiest day
+
+# The day you edit with your finger (brief docs/briefs/touch-day.md, approved 2026-10-05)
+
+## F-097 The day as a time grid; move and resize by touch [todo]
+Needs: F-090, F-092, F-093
+- [ ] on a phone the day view draws the family's plans as blocks on an hour grid sized by their length (overlaps side by side, bookings as the quiet background lines of F-090/F-093 at their times, today's now line); a blank day keeps Talk / Paste; the week, the filters, Day | Week, the flick between days and SOS keep working; a laptop gets the same grid wider
+- [ ] editors hold a block ~350 ms and drag to move it (15-minute snap, live time label, edge scroll), and hold its bottom edge and drag to change its length (min 15 minutes) while the grid zooms in around the finger (~2.5×, 5-minute snap while zoomed) and eases back on release; each change saves through the calendar's own rules and shows an Undo toast; viewers get no gestures
+- [ ] a plan Ask adds without a length gets 1 hour
+- [ ] browser tests (390 and 320) drive move, resize-with-zoom, Undo, a viewer, reduced motion; phone checks (no sideways scroll, 44px targets, 13px text)
+
+## F-098 Hold menu, rename in place, delete [todo]
+Needs: F-097
+- [ ] hold and release a block without moving: it wiggles and a small menu offers Chat (opens its plan chat), Rename, Delete (asks once; Undo after), plus Earlier / Later / Shorter / Longer by 15 minutes for keyboards and screen readers
+- [ ] double-tap a block's title (or Rename) edits it in place; Enter or tapping away saves, Escape cancels; a too-long or empty title is refused plainly
+- [ ] tap still opens the block; browser tests press every menu item and the double-tap
