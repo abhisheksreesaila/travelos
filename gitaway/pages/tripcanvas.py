@@ -141,7 +141,7 @@ def now_card(v, day):
     with geo.cache_scope(v["session"]):        # Leave by and the Uber link read the family's map cache (gitaway.geo), as on Today
         tv = trippage.load(v["session"], str(day), v.get("ua", ""))
         flights, calm, _titles = passes_ui.flight_cards(tv)
-        return Div(flights or trippage.up_card(tv), calm, cls="cz-now", id="cz-now", data_kind="now")
+        return Div(flights or trippage.up_card(tv, compact=True), calm, cls="cz-now", id="cz-now", data_kind="now")
 
 
 def _count(n, one, many):

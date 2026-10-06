@@ -96,3 +96,8 @@
 /* F-093: the small SOS button in the Ask and Family headings (opens the emergency sheet) */
 .tp .ph-sos { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; gap: 0.25rem; min-width: 2.75rem; min-height: 2.75rem; padding: 0 0.75rem; border-radius: var(--r-pill); background: var(--bubble-tint); color: var(--bubble-ink);
   font-weight: 800; font-size: max(var(--text-min), 0.8125rem); letter-spacing: 0.04em; text-decoration: none; }
+
+/* The day view's now card is compact (F-092, captain 2026-10-06): it ends with its two buttons. */
+.tp-up-compact .tp-up-when { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.tp-up-compact .tp-up-link { color: inherit; text-decoration: underline; text-decoration-thickness: 0.0625rem; text-underline-offset: 0.25rem; }
+.tp-up-compact .ph-details { align-self: flex-start; }

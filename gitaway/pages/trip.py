@@ -106,7 +106,7 @@ def _icon(item, size=22):
     return icon(item.icon or "pin", size, 2.2)
 
 
-def up_card(v):
+def up_card(v, compact=False):
     up, ph, t = v["up"], v["phase"], v["t"]
     if ph == "before" and v["sel"] == 0:
         first = v["first"][0] if v["first"] else None
@@ -128,6 +128,15 @@ def up_card(v):
         buttons.append(A(icon("car", 18, 2.4), "Uber", href=td.uber_url(item.place, td.cached_coords(item.place)), target="_blank", rel="noopener", cls="tp-btn tp-btn-white", id="tp-uber"))
     elif up.uber:
         buttons.append(A("Get an Uber" if up.uber.kind == "offer" else "Your Uber", href=up.uber.href, cls="tp-btn tp-btn-white", id="tp-uber"))
+    if compact:
+        # F-092 now card on the day view: it ends with Directions and Uber (the captain, 2026-10-06: "after those two buttons, it should end"). No Details row: a
+        # booking's title opens its sheet (F-093: confirmation, phone, address), an overlap is a small tag by the time, notes fold above the buttons.
+        title = item.title if item else "You are all caught up"
+        if item and item.kind in ("flight", "hotel", "car"):
+            title = A(item.title, href=f"/trip/canvas?day={v['sel']}&booked={item.id}&trip={ses.open_trip_id()}", cls="tp-up-link", id="tp-up-open")
+        when = Div(Span(up.detail, cls="tp-up-sub"), overlap_tag(item) if item and item.overlaps else "", cls="tp-up-when")
+        return Div(Span(pulse, up.kicker, cls="tp-kicker"), Span(title, cls="tp-up-title"), when, leave, notes_fold(item, "ph-details") if item else "",
+                   Div(*buttons, cls="tp-up-actions") if buttons else "", cls="tp-up tp-up-compact", id="tp-up")
     return Div(Span(pulse, up.kicker, cls="tp-kicker"), Span(item.title if item else "You are all caught up", cls="tp-up-title"), Span(up.detail, cls="tp-up-sub"), leave,
                Div(*buttons, cls="tp-up-actions") if buttons else "", notes_fold(item, "ph-details") if item else "", up_details(item) if item else "", cls="tp-up", id="tp-up")
 
