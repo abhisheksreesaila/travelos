@@ -119,7 +119,7 @@
       if (Math.hypot(e.clientX - f.x0, e.clientY - f.y0) <= SLOP && Date.now() - f.at < HOLD) showChip(f.g, e.clientX, e.clientY);
       return;
     }
-    CZ.guard(300, stage);
+    CZ.guard(300, f.draft);        // the click a lifting finger makes lands on the new block, and is not a tap on anything else
     openField(f.g, f.draft);                                           // inside the pointerup: a user activation, so the keyboard really opens on iOS
     CZ.held = !!making;                                                // (the flick's own pointerup, on the stage, has already looked at it)
   });
@@ -147,9 +147,17 @@
     if (!on) {
       if (making && making.grid) making.grid.classList.remove('is-making');
       making = null;
-      CZ.held = false;
+      if (!count()) { CZ.held = false; return; }
+      // The tap that put the field away is still down: it must not turn into the flick between days (the grid was calm while the title was typed). Held until it lifts.
+      var rel = function () { document.removeEventListener('pointerup', rel); document.removeEventListener('pointercancel', rel); clearTimeout(t); if (!making && !h) CZ.held = false; };
+      var t = setTimeout(rel, 2000);
+      document.addEventListener('pointerup', rel);
+      document.addEventListener('pointercancel', rel);
     }
   }
+
+  var before = CZ.editing;
+  CZ.editing = function () { return !!making || !!h || !!chip || (before ? before() : false); };      // trip_canvas.js never re-swaps the page (F-099 revalidation) under a title being typed, a hold or the "+"
 
   // ---- the "+" ---------------------------------------------------------------------------------------------------------------------
   function showChip(g, x, y) {
@@ -167,7 +175,6 @@
       e.preventDefault();
       dropChip();
       if (making) return;
-      CZ.guard(300, stage);
       openField(g, newBlock(g, s));                                    // a click: a user activation
     });
     plane.appendChild(ghost);
