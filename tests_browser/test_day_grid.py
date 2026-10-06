@@ -91,7 +91,7 @@ def label(page):
 
 
 def toast(page):
-    return page.locator(".cz-toast")
+    return page.locator(".ga-toast")
 
 
 def shot(page, name):
@@ -310,7 +310,7 @@ def test_a_viewer_sees_the_grid_and_holding_a_block_does_nothing(canvas_page, br
         end = slide(page, start, (start[0], start[1] + 80))
         fire(page, "pointerup", *end)
         page.wait_for_timeout(300)
-        assert page.locator(".cz-toast").count() == 0 and now(lunch.id)[:2] == (12 * 60, 13 * 60)
+        assert page.locator(".ga-toast").count() == 0 and now(lunch.id)[:2] == (12 * 60, 13 * 60)
         assert page.evaluate(OVERFLOW) <= 0
     finally:
         ctx.close()
@@ -354,7 +354,7 @@ def test_two_fingers_never_lift_and_a_tap_on_a_plain_plan_opens_its_chat(phone):
     fire(phone, "pointerup", x + 20, y + 20, pid=8)
     fire(phone, "pointerup", x, y)
     phone.wait_for_timeout(200)
-    assert phone.locator(".cz-view").get_attribute("data-level") == "day" and phone.locator(".cz-toast").count() == 0
+    assert phone.locator(".cz-view").get_attribute("data-level") == "day" and phone.locator(".ga-toast").count() == 0
     phone.locator(f"{sel} .cz-gb-open").click(position={"x": 60, "y": 40})      # F-106: a tap on a plan opens its card; the full chat page is "Open chat" in it
     phone.locator("#cz-card-chat").click()
     phone.wait_for_url(re.compile(r"/trip/talk\?act=" + lunch.id))
@@ -442,7 +442,7 @@ def test_a_pointercancel_while_held_puts_everything_back(phone):
     fire(phone, "pointercancel", *end)
     phone.wait_for_timeout(200)
     assert phone.locator(".is-held, .cz-g-ghost, .cz-g-label").count() == 0 and phone.evaluate("CZ.held") is False
-    assert phone.locator(".cz-toast").count() == 0 and now(lunch.id)[:2] == (12 * 60, 13 * 60)
+    assert phone.locator(".ga-toast").count() == 0 and now(lunch.id)[:2] == (12 * 60, 13 * 60)
     assert phone.evaluate(f"document.querySelector('.cz-gb[data-act=\"{lunch.id}\"]').style.transform") == ""
 
 

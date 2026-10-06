@@ -35,10 +35,8 @@
   function join(url) { return url + (url.indexOf("?") < 0 ? "?" : "&"); }
 
   // F-100: on the phone the message list scrolls on its own (the box is docked under it); elsewhere the page scrolls.
-  // F-106: in a plan's card on the day grid (day_card.js) the messages sit in the card's own scroll box (.cz-card-scroll), on every screen size; the card places itself above the keyboard.
-  var box = thread.closest ? thread.closest(".cz-card-scroll") : null;
-  function docked() { return !!box || window.getComputedStyle(thread).overflowY === "auto"; }
-  function scroller() { return box || thread; }
+  function docked() { return window.getComputedStyle(thread).overflowY === "auto"; }
+  function scroller() { return thread; }
   function nearBottom() {
     if (docked()) { var sc = scroller(); return sc.scrollHeight - sc.scrollTop - sc.clientHeight < 160; }
     return window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 160;
@@ -51,7 +49,7 @@
   var stuck = true;
   scroller().addEventListener("scroll", function () { stuck = nearBottom(); }, { passive: true });
   thread.addEventListener("load", function () { if (stuck) toBottom(); }, true);
-  if (!box) window.addEventListener("load", function () { toBottom(); });
+  window.addEventListener("load", function () { toBottom(); });
 
   // F-100: the iPhone keyboard shrinks the visual viewport, not the page. The docked column follows it (--vvh, --vvtop), the tab bar steps aside
   // (.kb-open) and the newest message stays in view above the box. `reference` is the tallest the viewport has been.
@@ -60,7 +58,7 @@
   var vv = window.visualViewport, app = document.querySelector(".tp"), reference = window.innerHeight, refWidth = window.innerWidth;
   function typing() { var a = document.activeElement; return !!a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA" || a.isContentEditable); }
   function fit() {
-    if (!vv || !app || box) return;
+    if (!vv || !app) return;
     var root = document.documentElement.style;
     if (!docked()) { app.classList.remove("kb-open"); root.removeProperty("--vvh"); root.removeProperty("--vvtop"); return; }
     var was = nearBottom();

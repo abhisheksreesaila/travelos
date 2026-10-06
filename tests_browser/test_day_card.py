@@ -1,7 +1,7 @@
-"""F-106: tap a plan, and its note and its chat open right there, as a card over the day. At 390 and 320 wide: a block shows one line of its note that fades (nothing cut mid-word
-without a fade), a chat count, and a booking a plan overlaps is a pill beside it, never under it; a tap (not a hold) grows the block into a card with the whole note and the plan's chat;
-an editor edits their own note in place or adds one; a message is sent from the docked box; "Earlier" brings older messages; tap outside, Escape or a swipe down fold it back; a viewer reads
-the note and may talk; a park block's card has "Rides" for its block level; holds, drags, resizes and the hold menu are untouched. A finger is a pointer that goes down, waits and lets go
+"""F-106/F-107: tap a plan, and its note opens right there, as a card over the day. At 390 and 320 wide: a block shows one line of its note that fades (nothing cut mid-word
+without a fade), a chat count, and a booking a plan overlaps is a pill beside it, never under it; a tap (not a hold) grows the block into a card with the whole note and "Open chat"
+(no messages, no box); an editor edits their own note in place or adds one, with the keyboard up the card stays above it; tap outside, Escape or a swipe down fold it back; a viewer reads
+the note and can open the chat; a park block's card has "Rides" for its block level; holds, drags, resizes and the hold menu are untouched. A finger is a pointer that goes down, waits and lets go
 (synthetic pointer events, as in the F-097 tests), or Playwright's real touch tap. Screenshots on request: F106_SHOTS=<folder>."""
 import os
 import re
@@ -109,7 +109,7 @@ def test_a_block_with_talk_shows_its_count_and_a_mic_for_a_voice_note(phone):
 
 # ---- the card --------------------------------------------------------------------------------------------------------------------
 
-def test_a_tap_opens_a_card_over_the_block_with_the_whole_note_and_the_chat_and_the_day_dims(phone):
+def test_a_tap_opens_a_card_over_the_block_with_the_whole_note_and_open_chat_and_the_day_dims(phone):
     lower, upper, water = long_day()
     say(lower.id, 3)
     open_day(phone, 0)
@@ -119,14 +119,23 @@ def test_a_tap_opens_a_card_over_the_block_with_the_whole_note_and_the_chat_and_
     note = card(phone).locator(".cz-card-note").first
     expect(note).to_have_text(LONG)                                                       # the whole note, as typed
     assert note.evaluate("n => n.scrollHeight <= n.clientHeight + 1") and note.evaluate("n => getComputedStyle(n).fontFamily").find("Caveat") >= 0
-    expect(card(phone).locator(".ft-bub").first).to_be_visible()
-    assert phone.locator("#cz-card-earlier").count() == 0
+    expect(card(phone).locator("#cz-card-chat")).to_have_text("Open chat · 3")             # how much was said, not what
+    for gone in ("#ft", "#ft-text", "#ft-compose", ".ft-bub", "#pt-mic", "#pt-photo-btn", "#cz-card-earlier"):
+        assert card(phone).locator(gone).count() == 0, gone                                # no messages, no box, no mic or camera in the card
+    assert phone.locator("script[src*='thread.js'], script[src*='plantalk.js'], script[src*='voicenote.js']").count() == 0
     assert phone.evaluate("location.pathname + location.search") .startswith("/trip/canvas?day=0")      # nothing was navigated to
     assert phone.locator(".cz-card-scrim").evaluate("s => getComputedStyle(s).backgroundColor") != "rgba(0, 0, 0, 0)"
-    inside = card(phone).evaluate("c => { const r = c.getBoundingClientRect(); return r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight; }")
-    assert inside and phone.evaluate("CZ.cardOpen") is True
+    phone.wait_for_timeout(450)
+    assert above_bar(phone) and phone.evaluate("CZ.cardOpen") is True
     shot(phone, "card-390.png")
     checks(phone)
+
+
+def above_bar(page):
+    """The card lies inside the screen and above the tab bar (nothing of it is under the bar)."""
+    return page.evaluate("""() => { const r = document.querySelector('.cz-card').getBoundingClientRect(), t = document.querySelector('.ph-tabs');
+      const top = t && getComputedStyle(t).display !== 'none' ? t.getBoundingClientRect().top : innerHeight;
+      return r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= top + 0.5; }""")
 
 
 def note_texts(act):
@@ -183,43 +192,6 @@ def test_an_empty_plan_has_an_add_a_note_sticky_and_the_note_is_saved_as_theirs(
     assert note_texts(lunch.id) == ["Bring sunscreen", "And a hat"]
 
 
-def test_a_message_is_sent_from_the_docked_box_and_the_block_counts_it(phone):
-    lunch = plan("Lunch", 12 * 60, 13 * 60)
-    open_day(phone)
-    tap(phone, lunch.id)
-    box_ = card(phone).locator("#ft-text")
-    expect(box_).to_be_visible()
-    c, f = card(phone).bounding_box(), card(phone).locator("#ft-compose").bounding_box()
-    assert f["y"] + f["height"] <= c["y"] + c["height"] + 1 and f["y"] > c["y"] + c["height"] * 0.6          # the box is docked at the bottom of the card
-    box_.fill("Mario Kart after lunch")
-    box_.press("Enter")
-    expect(card(phone).locator(".ft-bub", has_text="Mario Kart after lunch")).to_be_visible()
-    phone.wait_for_function("() => !document.querySelector('.cz-card .is-pending')")
-    assert [i["text"] for i in plantalk.items(ari(), lunch.id)] == ["Mario Kart after lunch"]
-    expect(card(phone).locator("#pt-photo-btn")).to_be_visible()
-    expect(card(phone).locator("#pt-mic")).to_be_visible()                                                   # the chat's own scripts were bound in the card
-    shot(phone, "chat-sent-390.png")
-
-
-def test_earlier_brings_older_messages_above_without_moving_what_is_read(phone):
-    lunch = plan("Lunch", 12 * 60, 13 * 60)
-    say(lunch.id, 20)
-    open_day(phone)
-    tap(phone, lunch.id)
-    expect(card(phone).locator(".ft-msg")).to_have_count(8)
-    expect(card(phone).locator(".ft-msg").last).to_contain_text("message 20")
-    scroller = card(phone).locator(".cz-card-scroll")
-    assert scroller.evaluate("s => s.scrollHeight - s.scrollTop - s.clientHeight < 4")                       # it opens at the newest
-    scroller.evaluate("s => { s.scrollTop = 0; }")
-    card(phone).locator("#cz-card-earlier").tap()
-    expect(card(phone).locator(".ft-msg")).to_have_count(16)
-    expect(card(phone).locator(".ft-msg").first).to_contain_text("message 5")
-    scroller.evaluate("s => { s.scrollTop = 0; }")
-    card(phone).locator("#cz-card-earlier").tap()
-    expect(card(phone).locator(".ft-msg")).to_have_count(20)
-    expect(card(phone).locator("#cz-card-earlier")).to_have_count(0)                                         # no more: the button goes
-
-
 # ---- folding ---------------------------------------------------------------------------------------------------------------------
 
 def test_tap_outside_escape_the_close_button_and_a_swipe_down_all_fold_the_card_back(phone):
@@ -260,22 +232,9 @@ def test_a_short_pull_on_the_card_springs_back_and_does_not_fold(phone):
     expect(card(phone)).to_be_visible()
 
 
-def test_a_voice_note_being_recorded_is_not_thrown_away_by_a_stray_tap(phone):
-    lunch = plan("Lunch", 12 * 60, 13 * 60)
-    open_day(phone)
-    tap(phone, lunch.id)
-    expect(card(phone).locator("#pt-rec")).to_be_attached()
-    phone.evaluate("() => { document.querySelector('.cz-card #pt-rec').hidden = false; }")                    # the bar a recording shows
-    c = card(phone).bounding_box()
-    phone.touchscreen.tap(c["x"] / 2, c["y"] + c["height"] / 2)
-    phone.keyboard.press("Escape")
-    phone.wait_for_timeout(300)
-    expect(card(phone)).to_be_visible()
-
-
 # ---- who, and what stays as it was ------------------------------------------------------------------------------------------------
 
-def test_a_viewer_reads_the_note_and_may_talk_but_cannot_edit_it(canvas_page, browser, base_url):
+def test_a_viewer_reads_the_note_cannot_edit_it_and_can_open_the_chat(canvas_page, browser, base_url):
     owner = canvas_page(viewport=PHONE)
     lunch = plan("Lunch", 12 * 60, 13 * 60)
     cal.add_note(ari(), "Bring towels", act=lunch.id)
@@ -295,11 +254,10 @@ def test_a_viewer_reads_the_note_and_may_talk_but_cannot_edit_it(canvas_page, br
         expect(card(page).locator(".cz-card-by")).to_have_text("Ari Rivera")                                  # whose note it is
         card(page).locator(".cz-card-note").tap()
         assert card(page).locator(".cz-card-edit").count() == 0 and card(page).locator(".cz-card-add").count() == 0
-        card(page).locator("#ft-text").fill("See you there")
-        card(page).locator("#ft-text").press("Enter")
-        expect(card(page).locator(".ft-bub", has_text="See you there")).to_be_visible()
-        page.wait_for_function("() => !document.querySelector('.cz-card .is-pending')")
-        assert [i["text"] for i in plantalk.items(ari(), lunch.id)] == ["See you there"]
+        assert card(page).locator("#ft-text").count() == 0 and card(page).locator("#cz-card-chat").count() == 1
+        card(page).locator("#cz-card-chat").tap()                                                         # a viewer may still go and talk
+        page.wait_for_url(re.compile(r"/trip/talk\?act=" + lunch.id))
+        expect(page.locator("#ft-text")).to_be_visible()
         assert note_texts(lunch.id) == ["Bring towels"]
     finally:
         ctx.close()
@@ -318,15 +276,19 @@ def test_a_park_block_card_has_rides_which_zooms_to_its_block_level(phone):
     expect(phone.locator(".cz-view[data-level=day]")).to_be_visible()
 
 
-def test_a_plain_plan_tap_stays_on_the_day_and_open_chat_is_in_the_card(phone):
+def test_a_plain_plan_tap_stays_on_the_day_and_open_chat_lands_on_that_plans_chat(phone):
     lunch = plan("Lunch", 12 * 60, 13 * 60)
     open_day(phone)
     tap(phone, lunch.id)
     expect(card(phone)).to_be_visible()
     assert phone.evaluate("location.pathname") == "/trip/canvas"
     assert card(phone).locator("#cz-card-rides").count() == 0
+    expect(card(phone).locator("#cz-card-chat")).to_have_text("Open chat")                                   # nothing said yet: no count
+    box_ = card(phone).locator("#cz-card-chat").bounding_box()
+    assert box_["height"] >= 43                                                                              # a finger can hit it
     card(phone).locator("#cz-card-chat").tap()
-    phone.wait_for_url(re.compile(r"/trip/talk\?act="))
+    phone.wait_for_url(re.compile(r"/trip/talk\?act=" + lunch.id))
+    expect(phone.locator("#ft-text")).to_be_visible()
 
 
 def ppm_step(page):
@@ -346,7 +308,7 @@ def test_a_hold_still_lifts_and_a_hold_without_moving_still_opens_the_menu_not_t
     start = hold_block(phone, lunch.id)
     end = slide(phone, start, (start[0], start[1] + ppm_step(phone) * 2))
     fire(phone, "pointerup", *end)
-    expect(phone.locator(".cz-toast")).to_contain_text("Lunch moved to 12:30 PM")
+    expect(phone.locator(".ga-toast")).to_contain_text("Lunch moved to 12:30 PM")
     assert card(phone).count() == 0 and now(lunch.id)[0] == 12 * 60 + 30
 
 
@@ -388,19 +350,58 @@ def test_the_card_grows_with_a_spring_and_reduced_motion_has_none(browser, base_
             ctx.close()
 
 
-def test_with_the_keyboard_up_the_card_stays_inside_what_is_left_and_the_box_stays_in_view(phone):
+def keyboard(page, height):
+    """What the iPhone does: the layout viewport keeps its size, the visual viewport loses `height` pixels at the bottom."""
+    page.evaluate("""h => { const vv = window.visualViewport; window.__kb = h;
+      Object.defineProperty(vv, 'height', { configurable: true, get: () => window.innerHeight - window.__kb });
+      vv.dispatchEvent(new Event('resize')); }""", height)
+    page.wait_for_timeout(250)
+
+
+def test_with_the_keyboard_up_while_a_note_is_edited_the_card_fits_above_the_keyboard(phone):
     lunch = plan("Lunch", 12 * 60, 13 * 60)
-    say(lunch.id, 6)
+    cal.add_note(ari(), "Tacos at the pier", act=lunch.id)
     open_day(phone)
     tap(phone, lunch.id)
     expect(card(phone)).to_be_visible()
-    card(phone).locator("#ft-text").tap()
-    phone.set_viewport_size({"width": phone.viewport_size["width"], "height": 380})            # what the keyboard leaves
-    phone.wait_for_timeout(200)
-    c = card(phone).bounding_box()
-    f = card(phone).locator("#ft-compose").bounding_box()
-    assert c["y"] >= 0 and c["y"] + c["height"] <= 380 + 1 and f["y"] + f["height"] <= 380 + 1 and f["y"] >= c["y"]
-    expect(card(phone).locator(".ft-msg").last).to_be_visible()
+    phone.wait_for_timeout(450)
+    assert above_bar(phone)                                                                                   # keyboard down: above the tab bar
+    card(phone).locator(".cz-card-note.is-mine").tap()
+    field = card(phone).locator(".cz-card-edit")
+    expect(field).to_be_focused()
+    height = phone.viewport_size["height"]
+    keyboard(phone, 336)
+    up = height - 336
+    c, f = card(phone).bounding_box(), field.bounding_box()
+    assert c["y"] >= 0 and c["y"] + c["height"] <= up + 1                                                     # the card is above the keyboard (and so above the hidden tab bar)
+    assert f["y"] >= c["y"] and f["y"] + f["height"] <= up + 1                                                # the field being written in is in view
+    expect(card(phone).locator(".cz-card-x")).to_be_visible()
+    field.fill("Tacos at the pier, then a very long walk back along the sand while the kids run ahead and the sun goes down over the water again")
+    phone.wait_for_timeout(250)
+    c, f = card(phone).bounding_box(), field.bounding_box()
+    assert c["y"] + c["height"] <= up + 1 and f["y"] + f["height"] <= up + 1 and f["y"] >= c["y"]            # growing words stay above it
+    shot(phone, "card-kb-390.png")
+    keyboard(phone, 0)
+    field.press("Escape")
+    expect(card(phone).locator(".cz-card-edit")).to_have_count(0)
+    phone.wait_for_timeout(300)
+    assert above_bar(phone)
+
+
+def test_a_card_with_many_long_notes_fits_above_the_tab_bar_and_scrolls_inside(phone):
+    lunch = plan("Lunch", 12 * 60, 13 * 60)
+    for i in range(8):
+        cal.add_note(ari(), f"Note {i + 1}: " + LONG[:100], act=lunch.id)
+    open_day(phone)
+    tap(phone, lunch.id)
+    expect(card(phone).locator(".cz-card-note").first).to_be_visible()
+    phone.wait_for_timeout(450)
+    assert above_bar(phone)
+    body = card(phone).locator(".cz-card-body")
+    assert body.evaluate("b => b.scrollHeight > b.clientHeight + 4 && getComputedStyle(b).overflowY === 'auto'")      # the notes scroll in the card; the card does not grow past the screen
+    card(phone).locator(".cz-card-note").last.scroll_into_view_if_needed()
+    expect(card(phone).locator(".cz-card-note").last).to_be_in_viewport()
+    expect(card(phone).locator(".cz-card-x")).to_be_visible()
 
 
 # ---- review fixes ------------------------------------------------------------------------------------------------------------------
@@ -428,17 +429,23 @@ def test_plans_sharing_lanes_keep_one_left_edge_when_one_of_them_is_over_a_booki
     shot(phone, "lanes-390.png")
 
 
-def test_opening_and_folding_the_card_twenty_times_leaves_no_listeners_or_timers_behind(phone):
+def test_opening_and_folding_the_card_twenty_times_leaves_no_listeners_or_scripts_behind(phone):
     lunch = plan("Lunch", 12 * 60, 13 * 60)
     open_day(phone)
+    phone.evaluate("""() => { const A = EventTarget.prototype.addEventListener, R = EventTarget.prototype.removeEventListener; window.__net = 0;
+      const mine = t => t === document || t === window || t === window.visualViewport || t === document.body;
+      EventTarget.prototype.addEventListener = function (...a) { if (mine(this)) window.__net++; return A.apply(this, a); };
+      EventTarget.prototype.removeEventListener = function (...a) { if (mine(this)) window.__net--; return R.apply(this, a); }; }""")
+    seen = []
     for i in range(20):
         tap(phone, lunch.id)
-        expect(card(phone).locator("#ft-text")).to_be_visible()
-        if i == 0:
-            assert phone.evaluate("window.__ftBound") == {"thread": 1, "plantalk": 1}
+        expect(card(phone).locator(".cz-card-link").first).to_be_visible()
         phone.keyboard.press("Escape")
         expect(card(phone)).to_have_count(0)
-    assert phone.evaluate("window.__ftBound") == {"thread": 0, "plantalk": 0}
+        if i == 0:
+            seen.append(phone.evaluate("window.__net"))
+    assert phone.evaluate("window.__net") == seen[0] == 0                                                  # the card binds nothing to the page that it does not take away
+    assert phone.evaluate("window.__ftBound === undefined") and phone.evaluate("document.querySelectorAll('.cz-card-wrap, .cz-card').length") == 0
 
 
 def test_a_strip_of_the_day_stays_above_the_card_to_tap_on_even_on_a_small_phone(phone):
@@ -457,7 +464,7 @@ def test_the_keyboard_stays_in_the_card_while_it_is_open_and_the_rest_of_the_pag
     lunch = plan("Lunch", 12 * 60, 13 * 60)
     open_day(phone)
     tap(phone, lunch.id)
-    expect(card(phone).locator("#ft-text")).to_be_visible()
+    expect(card(phone).locator(".cz-card-link").first).to_be_visible()
     inert = phone.evaluate("() => [...document.querySelectorAll('[inert]')].map(n => n.id || n.className)")
     assert any("ph-tabs" in x for x in inert) and "cz" in inert                                      # the tab bar and the day
     for _ in range(25):
@@ -504,14 +511,3 @@ def test_a_card_does_not_fold_while_its_note_is_being_saved_and_a_failed_save_sa
     assert card(phone).locator(".cz-card-edit").input_value() == "A second one" and note_texts(lunch.id) == ["Bring sunscreen"]
 
 
-def test_a_message_sent_in_the_card_is_there_when_it_is_opened_again_at_once(phone):
-    lunch = plan("Lunch", 12 * 60, 13 * 60)
-    open_day(phone)
-    tap(phone, lunch.id)
-    card(phone).locator("#ft-text").fill("Mario Kart after lunch")
-    card(phone).locator("#ft-text").press("Enter")
-    phone.wait_for_function("() => !document.querySelector('.cz-card .is-pending') && document.querySelector('.cz-card .ft-bub')")
-    phone.keyboard.press("Escape")
-    expect(card(phone)).to_have_count(0)
-    tap(phone, lunch.id)
-    expect(card(phone).locator(".ft-bub", has_text="Mario Kart after lunch")).to_have_count(1)

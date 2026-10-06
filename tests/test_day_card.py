@@ -1,7 +1,8 @@
-"""F-106: tap a plan, and its note and its chat open right there as a card over the day. The server side: the note's write (an editor edits a note of their own or adds one), the
-card's fragment (the sticky, the latest few messages with "Earlier", the composer, "Rides" on a park block), the older messages, the grid's one-line note preview and chat count,
+"""F-106/F-107: tap a plan, and its note opens right there as a card over the day. The server side: the note's write (an editor edits a note of their own or adds one), the
+card's fragment (the sticky, "Open chat" with its count, "Rides" on a park block), the older messages, the grid's one-line note preview and chat count,
 and bookings that a plan overlaps becoming slim pills in a lane of their own. The trip is the demo booking plus the plain plans each test adds (Sunday, day 2, is free)."""
 
+import os
 import re
 from html import unescape
 
@@ -95,7 +96,7 @@ def test_an_empty_note_is_an_add_a_note_placeholder_for_an_editor_and_nothing_fo
     a = plan(ari(), "Pool", 10 * 60, 11 * 60)
     assert "Add a note" in card(owner, a.id).text and 'class="cz-card-note' in card(owner, a.id).text
     seen = card(viewer, a.id).text
-    assert "Add a note" not in seen and "cz-card-note" not in seen and 'id="ft-compose"' in seen        # a viewer may still talk
+    assert "Add a note" not in seen and "cz-card-note" not in seen and 'id="ft-compose"' not in seen and "Open chat" in seen        # a viewer has the chat link
 
 
 def test_a_viewer_reads_the_note_and_cannot_edit_it(crew, azure):
@@ -107,29 +108,31 @@ def test_a_viewer_reads_the_note_and_cannot_edit_it(crew, azure):
     assert "Bring towels" in html and "data-note=" in html and 'data-mine="1"' not in html and "Add a note" not in html
 
 
-def test_the_card_has_the_chat_the_latest_few_with_earlier_and_the_composer(trip):
+def test_the_card_is_the_note_only_no_messages_no_composer_and_open_chat_counts_what_was_said(trip):
     a = plan(ari(), "Pool", 10 * 60, 11 * 60)
+    plain = card(trip, a.id).text
+    assert re.search(r'id="cz-card-chat"[^>]*>(?:(?!</a>).)*Open chat(?!\s*·)', unescape(plain), re.S)      # nothing said yet: just "Open chat"
     say(a.id, 12)
     html = card(trip, a.id).text
-    assert "message 12" in html and "message 5" in html and "message 4<" not in html and "message 1<" not in html
-    assert 'data-more="1"' in html and "Earlier" in html
-    for ident in ("ft", "ft-thread", "ft-compose", "ft-text", "pt-mic", "pt-photo", "pt-rec", "ft-error"):
-        assert f'id="{ident}"' in html, ident
-    assert 'data-poll-url="/trip/talk/items?act=' in html and 'name="act"' in html
-    few = plan(ari(), "Ice cream", 15 * 60, 16 * 60)
-    say(few.id, 3)
-    assert 'data-more="0"' in card(trip, few.id).text and "Earlier" not in card(trip, few.id).text
+    assert "Open chat · 12" in text(html) or "Open chat · 12" in unescape(html)
+    assert f'href="/trip/talk?act={a.id}' in unescape(html)
+    for gone in ("ft-thread", "ft-compose", "ft-text", "pt-mic", "pt-photo", "pt-rec", "Earlier", "message 12", "data-poll-url"):
+        assert gone not in html, gone
 
 
-def test_earlier_messages_come_back_in_pages_oldest_first(trip):
+def test_the_chat_count_on_the_link_is_the_plans_own_and_the_loading_words_are_about_the_note(trip):
+    a, b = plan(ari(), "Pool", 10 * 60, 11 * 60), plan(ari(), "Lunch", 12 * 60, 13 * 60)
+    say(a.id, 2)
+    assert "Open chat · 2" in unescape(card(trip, a.id).text) and "Open chat ·" not in unescape(card(trip, b.id).text)
+    js = open(os.path.join(os.path.dirname(__file__), "..", "assets", "js", "day_card.js"), encoding="utf-8").read()
+    assert "Opening the note'" in js and "and chat" not in js and "chatScripts" not in js and "bindEarlier" not in js and "ft-close" not in js
+
+
+def test_the_older_messages_route_is_gone_with_the_card_chat(trip):
     a = plan(ari(), "Pool", 10 * 60, 11 * 60)
     say(a.id, 16)
-    first = int(re.search(r'data-first="(\d+)"', card(trip, a.id).text).group(1))
-    r = trip.get(f"/trip/talk/items?act={a.id}&before={first}&limit=5")
-    got = re.findall(r"message (\d+)<", r.text)
-    assert r.status_code == 200 and got == ["4", "5", "6", "7", "8"] and r.headers["x-thread-more"] == "1" and int(r.headers["x-thread-first"]) < first
-    rest = trip.get(f"/trip/talk/items?act={a.id}&before={r.headers['x-thread-first']}&limit=5")
-    assert re.findall(r"message (\d+)<", rest.text) == ["1", "2", "3"] and rest.headers["x-thread-more"] == "0"
+    r = trip.get(f"/trip/talk/items?act={a.id}&before=9&limit=5")
+    assert "x-thread-first" not in r.headers          # `before` is ignored now: the page's poll (since=) is all that is left
 
 
 def test_a_park_block_card_has_rides_and_a_part_chat_is_not_in_the_plans(trip):

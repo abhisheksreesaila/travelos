@@ -1,11 +1,11 @@
-// Tap a plan: its note and its chat, right there (F-106). A tap (not a hold) on a block of the day grid expands the block, in place, into a card over the grid: the whole note on top
-// as the sticky (an editor taps one of their own notes to edit it right there, or "Add a note"), then the plan's chat (the latest few messages, "Earlier" for more, the box with text,
-// photo and mic), and for a park block a "Rides" link to its block level. Tap outside, Escape or a swipe down on the card's top folds it back into the block.
+// Tap a plan: its note, right there (F-106, F-107). A tap (not a hold) on a block of the day grid expands the block, in place, into a card over the grid: the plan's name and time, the
+// whole note as the sticky (an editor taps one of their own notes to edit it right there, or "Add a note"), and the links "Open chat" (with how much was said) and, on a park block,
+// "Rides" to its block level. No messages and no box in it: the chat is its own page. Tap outside, Escape or a swipe down on the card's top folds it back into the block.
 //
 // How it fits. The card's body is a fragment the server draws (GET /trip/canvas/card, gitaway/pages/daycard.py), fetched as soon as a finger goes down on a block, so the tap that
-// follows has nothing to wait for; the card opens at once with the title and time and fills in when the fragment arrives. The chat is the chat page's own markup and scripts
-// (thread.js, plantalk.js, voicenote.js), loaded the first time a card opens and bound again for each card; a folded card's chat stops polling by itself. The card lives beside the
-// stage (not in it), so a refresh of the day behind it (after a note is saved) never takes it away; CZ.editing keeps the quiet revalidation off while it is open.
+// follows has nothing to wait for; the card opens at once with the title and time and fills in when the fragment arrives, then is as tall as its words (up to what the screen leaves).
+// It always sits inside what can be seen: above the tab bar and, with the keyboard up (editing a note), above the keyboard. The card lives beside the stage (not in it), so a
+// refresh of the day behind it (after a note is saved) never takes it away; CZ.editing keeps the quiet revalidation off while it is open.
 //
 // Motion. The card grows from the block's own rectangle with a short spring (a transform on one layer; its words fade in a moment later, so nothing is seen squashed), the rest of the
 // day dims, and a fold runs it backwards into the block. Reduced motion: no spring, an instant change. Holds, drags, resizes, the hold menu and hold-on-empty-time are not touched: the
@@ -18,7 +18,6 @@
   var SPRING = 'cubic-bezier(.3, 1.35, .5, 1)', OUT = 'cubic-bezier(.4, 0, .8, .4)';
   var open = null;                 // the card on screen: { wrap, card, scrim, block, act, folding, note }
   var fetched = {};                // act -> { at, promise }: the fragment fetched ahead of the tap
-  var voiceLoaded = false;
 
   function rem() { return parseFloat(getComputedStyle(document.documentElement).fontSize) || 16; }
   function clamp(v, lo, hi) { return Math.min(Math.max(v, lo), hi); }
@@ -57,23 +56,29 @@
   // ---- where the card goes ------------------------------------------------------------------------------------------------------
   // Over the block, as wide as the screen allows (a laptop: a column), as tall as the screen allows up to about 34 rem, and always inside what can be seen: above the tab bar and,
   // with the keyboard up, above the keyboard. `r` is the block's rectangle.
+  // The card is as tall as its words (up to `max`) and never lower than the tab bar's top or the keyboard's: `max` is what is left between the strip above and the floor.
   function geometry(wrap, r) {
     var vv = window.visualViewport, u = rem();
-    var tabs = document.querySelector('.ph-tabs'), reserve = tabs && getComputedStyle(tabs).display !== 'none' ? tabs.offsetHeight : 0;
-    var vw = wrap.clientWidth, floor = wrap.clientHeight - reserve, top0 = parseFloat(getComputedStyle(wrap).paddingTop) || 0;
     var kb = !!vv && vv.height < window.innerHeight - 80;          // the keyboard is up: every bit of height is needed; otherwise a strip of the day stays above the card to tap
+    var tabs = document.querySelector('.ph-tabs'), reserve = !kb && tabs && getComputedStyle(tabs).display !== 'none' ? tabs.offsetHeight : 0;      // the tab bar steps aside for the keyboard
+    var vw = wrap.clientWidth, floor = wrap.clientHeight - reserve, top0 = parseFloat(getComputedStyle(wrap).paddingTop) || 0;
     var topMin = top0 + u * (kb ? 0.5 : 4);
     if (vv) { topMin = Math.max(topMin, vv.offsetTop + u * 0.5); floor = Math.min(floor, vv.offsetTop + vv.height); }
     floor -= u * 0.5;
-    var h = Math.min(u * 34, Math.max(u * 12, floor - topMin));
     var w = Math.min(u * 30, vw - u);
-    var top = clamp(r ? r.top - u * 0.25 : topMin, topMin, Math.max(topMin, floor - h));
     var left = clamp(r ? r.left : (vw - w) / 2, u * 0.5, Math.max(u * 0.5, vw - w - u * 0.5));
-    return { left: left, top: top, width: w, height: h };
+    return { left: left, width: w, topMin: topMin, floor: floor, max: Math.min(u * 34, Math.max(u * 6, floor - topMin)), r: r };
   }
-  function place(o, g) {
-    o.card.style.left = g.left + 'px'; o.card.style.top = g.top + 'px'; o.card.style.width = g.width + 'px'; o.card.style.height = g.height + 'px';
-    o.g = g;
+  function place(o, g, glide) {
+    var c = o.card, u = rem(), was = o.g;
+    c.style.left = g.left + 'px'; c.style.width = g.width + 'px'; c.style.maxHeight = g.max + 'px'; c.style.height = 'auto';
+    var h = Math.min(c.offsetHeight, g.max);                       // as tall as what is in it
+    var top = clamp(g.r ? g.r.top - u * 0.25 : g.topMin, g.topMin, Math.max(g.topMin, g.floor - h));
+    c.style.top = top + 'px'; c.style.height = h + 'px';
+    o.g = { left: g.left, top: top, width: g.width, height: h };
+    if (glide && was && !CZ.reduced.matches && c.animate && (Math.abs(was.top - top) > 1 || Math.abs(was.height - h) > 1)) {      // the words arrived or grew: the card follows them, gently
+      c.animate([{ top: was.top + 'px', height: was.height + 'px' }, { top: top + 'px', height: h + 'px' }], { duration: 180, easing: 'ease-out' });
+    }
   }
   function squash(g, r) {          // the transform that makes the card look like the block it grows from
     return 'translate(' + (r.left - g.left) + 'px,' + (r.top - g.top) + 'px) scale(' + (r.width / g.width) + ',' + (r.height / g.height) + ')';
@@ -100,7 +105,7 @@
     x.appendChild(svg('M18 6 6 18M6 6l12 12'));
     head.appendChild(ti); head.appendChild(x);
     var body = mk('div', 'cz-card-body'); body.setAttribute('aria-busy', 'true');
-    body.appendChild(mk('p', 'cz-card-loading', 'Opening the note and chat'));
+    body.appendChild(mk('p', 'cz-card-loading', 'Opening the note'));
     content.appendChild(grab); content.appendChild(head); content.appendChild(body);
     card.appendChild(content);
     wrap.appendChild(scrim); wrap.appendChild(card);
@@ -118,16 +123,13 @@
     }
     try { card.focus({ preventScroll: true }); } catch (e) { /* no focus */ }
     scrim.addEventListener('click', function () { fold(); });
-    var forget = function () { delete fetched[act]; };                          // what was said changes what the next card must show
-    card.addEventListener('submit', forget, true);
-    card.addEventListener('ft-refresh', forget, true);
     x.addEventListener('click', function () { fold(); });
     swipe(open, [grab, head]);
     fetchCard(act).then(function (html) { if (open && open.card === card) fill(open, html); }, function () {
       if (!open || open.card !== card) return;
       body.removeAttribute('aria-busy');
       body.textContent = '';
-      var p = mk('p', 'cz-card-loading', 'The note and chat could not load. ');
+      var p = mk('p', 'cz-card-loading', 'The note could not load. ');
       var a = mk('a', 'cz-card-link', 'Open chat'); a.href = block.dataset.talk || ('/trip/talk?act=' + encodeURIComponent(act));
       p.appendChild(a); body.appendChild(p);
     });
@@ -147,49 +149,8 @@
       closeNow();
       CZ.goto(CZ.path(href), { dir: 'in', key: hero ? 'blk-' + o.act : null, mode: 'push' });
     });
-    var chat = inner.querySelector('#ft');
-    if (chat) { bindEarlier(o, chat); chatScripts(); }
+    refit(true);                                                       // the card is as tall as its note now
     o.card.dispatchEvent(new CustomEvent('cz:cardready', { bubbles: true }));
-  }
-
-  // The chat's own scripts bind to the ids in the fragment: thread.js polls and sends, plantalk.js has the photo button and the mic. They run again for each card (the old card's chat
-  // sees it is gone and stops); voicenote.js is one listener on the document, so it loads once.
-  function chatScripts() {
-    function add(src, then) {
-      var s = document.createElement('script');
-      s.src = src; s.async = false;
-      s.onload = s.onerror = function () { s.remove(); if (then) then(); };
-      document.body.appendChild(s);
-    }
-    if (!voiceLoaded) { voiceLoaded = true; add('/assets/js/voicenote.js'); }
-    add('/assets/js/thread.js');
-    add('/assets/js/plantalk.js');
-  }
-
-  // "Earlier": the messages before the oldest one shown, put above it without moving what is being read.
-  function bindEarlier(o, chat) {
-    var more = chat.querySelector('#cz-card-earlier'), thread = chat.querySelector('#ft-thread'), box = chat.querySelector('.cz-card-scroll');
-    if (!more || !thread || !box) return;
-    var busy = false;
-    more.addEventListener('click', function () {
-      if (busy) return;
-      busy = true; more.disabled = true;
-      var url = '/trip/talk/items?act=' + encodeURIComponent(o.act) + '&before=' + encodeURIComponent(thread.getAttribute('data-first') || '0') + '&limit=8' + (trip() ? '&trip=' + encodeURIComponent(trip()) : '');
-      fetch(url, { credentials: 'same-origin', headers: { Accept: 'text/html' } }).then(function (r) {
-        if (!r.ok) throw new Error('earlier');
-        var first = r.headers.get('X-Thread-First'), left = r.headers.get('X-Thread-More') === '1';
-        return r.text().then(function (html) {
-          var holder = document.createElement('div');
-          holder.innerHTML = html;
-          var before = box.scrollHeight, top = box.scrollTop;
-          Array.prototype.slice.call(holder.children).reverse().forEach(function (el) { thread.insertBefore(el, thread.firstChild); });
-          box.scrollTop = top + (box.scrollHeight - before);
-          if (first) thread.setAttribute('data-first', first);
-          thread.setAttribute('data-more', left ? '1' : '0');
-          if (!left) more.remove(); else { more.disabled = false; busy = false; }
-        });
-      }).catch(function () { more.disabled = false; busy = false; });
-    });
   }
 
   // ---- the note, in place ----------------------------------------------------------------------------------------------------
@@ -222,7 +183,7 @@
     o.note = ta;
     var over = false, sending = false;
     o.cancelNote = null;
-    function size() { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight + 2, rem() * 9) + 'px'; }
+    function size() { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight + 2, rem() * 9) + 'px'; refit(); }
     function finish(restore) {
       over = true; o.note = null;
       n.classList.remove('is-editing');
@@ -281,8 +242,6 @@
   }
 
   // ---- fold ---------------------------------------------------------------------------------------------------------------------
-  function recording() { return !!(open && open.card.querySelector('#pt-rec:not([hidden])')); }      // a voice note being recorded is not thrown away by a stray tap
-
   // While the card is open it is the whole page: every other part of the page (the day, the heading, the tab bar) is inert, so a keyboard or a screen reader stays in the card.
   function lock(o) {
     o.locked = [];
@@ -307,8 +266,6 @@
   function cleanup() {
     var o = open;
     if (!o) return;
-    var chat = o.card.querySelector('#ft');
-    if (chat) chat.dispatchEvent(new Event('ft-close'));
     o.wrap.remove();
     unlock(o);
     o.block.classList.remove('is-card');
@@ -324,7 +281,7 @@
 
   function fold(from) {
     var o = open;
-    if (!o || o.folding || recording()) return;
+    if (!o || o.folding) return;
     if (o.saving) return;                                          // a note is on its way: the card stays until it has landed (or failed, and says so)
     if (o.note && o.commitNote) { o.commitNote(); if (o.saving || o.note) return; }      // a note being edited is saved first; if that cannot be done, the card stays and shows why
     o.folding = true;
@@ -392,17 +349,16 @@
     fold();
   }, true);
 
-  // The iPhone keyboard shrinks the visual viewport, not the page: the card stays inside what is left, the newest message stays in view above the box.
+  // The iPhone keyboard shrinks the visual viewport, not the page: the card stays inside what is left (above the keyboard, never under the tab bar), and the note being written stays in view.
   var vv = window.visualViewport;
-  function refit() {
+  function refit(glide) {
     if (!open || open.folding) return;
     var r = open.block && open.block.isConnected ? open.block.getBoundingClientRect() : null;
-    place(open, geometry(open.wrap, r));
-    var box = open.card.querySelector('.cz-card-scroll');
-    if (box && document.activeElement && document.activeElement.id === 'ft-text') box.scrollTop = box.scrollHeight;
+    place(open, geometry(open.wrap, r), glide === true);
+    if (open.note) open.note.scrollIntoView({ block: 'nearest' });
   }
-  if (vv) { vv.addEventListener('resize', refit); vv.addEventListener('scroll', refit); }
-  window.addEventListener('resize', refit);
+  if (vv) { vv.addEventListener('resize', function () { refit(); }); vv.addEventListener('scroll', function () { refit(); }); }
+  window.addEventListener('resize', function () { refit(); });
 
   // Anything that leaves the day (Rides, Back, a date) takes the card with it; a refresh of the same day (after a write) does not.
   stage.addEventListener('cz:swap', function (e) { if (open && !(e.detail && e.detail.quiet)) closeNow(); });

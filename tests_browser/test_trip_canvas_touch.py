@@ -99,7 +99,7 @@ def block(page, act="a1", extra=""):
 
 
 def toast(page):
-    return page.locator(".cz-toast")
+    return page.locator(".ga-toast")
 
 
 # ---- hold and drag ------------------------------------------------------------------------------------------------------------
@@ -615,7 +615,7 @@ def test_a_drop_swaps_the_level_with_the_same_animation_as_the_zoom(canvas_page)
     settle(page)
     vt = page.evaluate("window.__vt")
     assert vt["calls"] >= 1 and vt["dir"][0] == "side"
-    assert toast(page).evaluate("e => getComputedStyle(e).animationName") == "cz-rise"
+    assert "translate" in toast(page).evaluate("e => getComputedStyle(e).transitionProperty")      # it glides in (F-108)
 
 
 def test_reduced_motion_drops_swap_at_once_and_the_toast_does_not_move(canvas_page):
@@ -625,7 +625,7 @@ def test_reduced_motion_drops_swap_at_once_and_the_toast_does_not_move(canvas_pa
     drag(page, '.cz-swipe:has-text("Minion Mayhem") .cz-step', '.cz-bpart:has(h2:text-is("Lunch"))')
     expect(toast(page)).to_be_visible()
     assert page.evaluate("window.__vt.calls") == 0
-    assert toast(page).evaluate("e => getComputedStyle(e).animationName") == "none"
+    assert toast(page).evaluate("e => getComputedStyle(e).transitionDuration") in ("0s", "0s, 0s")
     swipe(page, '.cz-swipe:has-text("King Kong") .cz-step', -150)
     assert page.locator('.cz-swipe:has-text("King Kong") .cz-step').evaluate("e => getComputedStyle(e).transitionDuration") in ("0s", "0s, 0s")
 
@@ -670,7 +670,7 @@ def test_the_phone_checks_hold_with_the_toast_on_the_screen(canvas_page):
     expect(toast(page)).to_be_visible()
     box = toast(page).bounding_box()
     tabs = page.locator(".ph-tabs").bounding_box()
-    assert box["y"] + box["height"] <= tabs["y"] + 1                                          # above the tab bar
+    assert box["y"] + box["height"] <= tabs["y"] + 1 and box["y"] < tabs["y"] / 2               # clear of the tab bar: it is at the top
     checks(page)
 
 
@@ -693,20 +693,20 @@ def test_screenshots(canvas_page):
     swipe(page, '.cz-swipe:has-text("King Kong") .cz-step', -150)
     page.screenshot(path=f"{out}/03-swipe-390.png")
     page.locator(".cz-prog").click()
-    page.evaluate("document.getElementById('cz-toast') && document.getElementById('cz-toast').remove()")
+    page.evaluate("document.getElementById('ga-toast') && document.getElementById('ga-toast').remove()")
     drag(page, '.cz-swipe:has-text("Revenge of the Mummy") .cz-step', '.cz-swipe:has-text("King Kong")', at="top")
-    page.wait_for_selector(".cz-toast")
+    page.wait_for_selector(".ga-toast")
     page.screenshot(path=f"{out}/04-moved-undo-toast-390.png")
-    page.evaluate("document.getElementById('cz-toast').remove()")
+    page.evaluate("document.getElementById('ga-toast').remove()")
     start = hold(page, '.cz-swipe:has-text("King Kong") .cz-step')
     expect(page.locator(".cz-lift")).to_have_count(1)
     cell =page.locator(f'.cz-dd[data-drop-act="{dca}"]').bounding_box()
     move_to(page, start, (cell["x"] + cell["width"] / 2, cell["y"] + cell["height"] / 2))
     page.screenshot(path=f"{out}/05-drag-to-another-day-390.png")
     fire(page, "pointerup", cell["x"] + cell["width"] / 2, cell["y"] + cell["height"] / 2)
-    page.wait_for_selector(".cz-toast")
+    page.wait_for_selector(".ga-toast")
     page.screenshot(path=f"{out}/05b-after-day-drop-390.png")
-    page.evaluate("document.getElementById('cz-toast').remove()")
+    page.evaluate("document.getElementById('ga-toast').remove()")
     start = hold(page, '.cz-swipe .cz-step', nth=2)
     tray = page.locator(".cz-dropaside").bounding_box()
     move_to(page, start, (tray["x"] + tray["width"] / 2, tray["y"] + tray["height"] / 2))
@@ -767,7 +767,7 @@ def test_a_real_finger_that_moves_at_once_is_a_scroll_and_lifts_nothing(canvas_p
         page.wait_for_timeout(16)
     page.wait_for_timeout(450)
     touch(cdp, "touchEnd", x, y - 220)
-    assert page.locator(".cz-lift").count() == 0 and page.locator(".cz-toast").count() == 0
+    assert page.locator(".cz-lift").count() == 0 and page.locator(".ga-toast").count() == 0
     assert page.evaluate("scrollY") > y0 + 20 or page.evaluate("scrollY") != y0
     assert page.locator(".is-lifted").count() == 0
 
@@ -785,7 +785,7 @@ def test_a_pointercancel_during_a_drag_leaves_no_lifted_chip_and_changes_nothing
     assert page.locator(".is-lifted, .is-target, .is-before, .is-end").count() == 0
     assert "cz-dragging" not in page.locator("#cz").get_attribute("class")
     page.wait_for_timeout(300)
-    assert page.locator(".cz-toast").count() == 0 and part_titles("a1", "Upper Lot") == before
+    assert page.locator(".ga-toast").count() == 0 and part_titles("a1", "Upper Lot") == before
 
 
 def test_a_drop_that_lands_during_a_zoom_waits_for_it_and_then_refreshes(canvas_page):

@@ -101,14 +101,6 @@ def items(session, act, part="", since=0, trip=None) -> list:
     return [it for it in its if it["payload"].get("act") == act and (it["payload"].get("part") or "") == (part or "")]
 
 
-def window(session, act, part="", before=None, limit=8, trip=None):
-    """(the newest `limit` items of a chat, oldest first, and whether older ones exist), only those before rowid `before` when given: the card's "latest few" and its "Earlier" (F-106)."""
-    its = items(session, act, part, trip=trip)
-    if before:
-        its = [it for it in its if it["n"] < int(before)]
-    return its[-limit:], len(its) > limit
-
-
 def voice_file(session, item_id):
     """(path, mime) of the voice note in the thread item `item_id` of the signed-in person's family, or None. Another family's item is never found."""
     if not isinstance(item_id, str) or not item_id.isalnum() or len(item_id) > 64:

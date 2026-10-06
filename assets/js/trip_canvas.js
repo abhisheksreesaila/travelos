@@ -328,32 +328,11 @@
   });
 
   // ---- the toast, and Undo ----------------------------------------------------------------------------------------------
-  var toast = null, toastTimer = 0;
-  function hideToast() {
-    clearTimeout(toastTimer);
-    if (toast && toast.parentNode) toast.parentNode.removeChild(toast);
-    toast = null;
-  }
+  // F-108: the one toast is assets/js/toast.js (GA.toast); a function is the day grid's own Undo, anything else the snapshot the server's undo route takes.
+  function hideToast(instant) { if (window.GA && GA.hideToast) GA.hideToast(instant); }
   function showToast(text, undo) {
-    hideToast();
-    toast = document.createElement('div');
-    toast.className = 'cz-toast';
-    toast.id = 'cz-toast';
-    toast.setAttribute('role', 'status');
-    var t = document.createElement('span');
-    t.className = 'cz-toast-t';
-    t.textContent = text;
-    toast.appendChild(t);
-    if (undo) {
-      var b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'cz-toast-undo';
-      b.textContent = 'Undo';
-      b.addEventListener('click', function () { if (typeof undo === 'function') { hideToast(); undo(); } else doUndo(undo); });      // a function is the day grid's own Undo
-      toast.appendChild(b);
-    }
-    (document.getElementById('main') || document.body).appendChild(toast);
-    toastTimer = setTimeout(hideToast, undo ? 9000 : 4500);
+    if (!window.GA || !GA.toast) return;
+    GA.toast(text, undo ? { undo: function () { if (typeof undo === 'function') undo(); else doUndo(undo); } } : null);
   }
   function tripBody(fields) {
     var body = new URLSearchParams();

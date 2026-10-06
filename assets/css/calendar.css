@@ -184,12 +184,8 @@ a.cal-w-head:hover, a.cal-w-head:focus-visible { box-shadow: 0 0 0 0.125rem var(
 .cal-formnote { padding: 0.5rem 0.75rem; border-radius: 0.25rem 0.875rem 0.875rem 0.875rem; background: var(--sun-tint); font-weight: 600; font-size: 0.9375rem; overflow-wrap: anywhere; }
 .cal-delete { min-height: 2.75rem; padding: 0; border: 0; background: none; color: var(--coral-deep); font: 800 0.9375rem var(--font-body); text-decoration: underline; text-underline-offset: 0.25rem; cursor: pointer; }
 
-/* Toasts */
-.cal-toast { position: fixed; left: 0; right: 0; margin-inline: auto; width: max-content; bottom: calc(1.25rem + env(safe-area-inset-bottom)); z-index: 60; max-width: calc(100% - 2rem); box-sizing: border-box; padding: 0.625rem 0.75rem 0.625rem 1.125rem; border-radius: var(--r-pill); background: var(--ink); color: #fff; font-weight: 700; display: flex; align-items: center; gap: 0.875rem; flex-wrap: wrap; box-shadow: var(--shadow-lg); animation: cal-rise .32s var(--ease-spring) both; }
-.cal-toast-error { background: var(--accent-tint); color: var(--ink); box-shadow: 0 0 0 0.125rem var(--coral-deep), var(--shadow-lg); }
-.cal-toast form { display: inline-flex; }
-.cal-undo { min-height: 2.5rem; padding: 0 1.125rem; border: 0; border-radius: var(--r-pill); background: var(--sun); color: var(--ink); font: 800 0.9375rem var(--font-body); cursor: pointer; }
-.cal-toast .cal-dismiss { color: #fff; }
+/* Toasts: the shared look is toast.css (F-108); only what the calendar adds is here */
+.cal-undo { min-height: 2.75rem; padding: 0 1.125rem; border: 0; border-radius: var(--r-pill); background: var(--ink); color: #FFFFFF; font: 800 0.9375rem var(--font-body); cursor: pointer; }
 
 /* No booking */
 .cal-first { min-height: calc(100vh - 8.75rem); display: grid; place-items: center; padding: 1.5rem 1rem; }
@@ -203,7 +199,7 @@ a.cal-w-head:hover, a.cal-w-head:focus-visible { box-shadow: 0 0 0 0.125rem var(
 @keyframes cal-pop { 0% { transform: scale(.6); opacity: 0 } 70% { transform: scale(1.04); opacity: 1 } 100% { transform: scale(1) } }
 @keyframes cal-rise { from { transform: translateY(1.5rem); opacity: 0 } to { transform: none; opacity: 1 } }
 @media (prefers-reduced-motion: reduce) {
-  .cal-pop, .cal-dialog, .cal-toast { animation: none; }
+  .cal-pop, .cal-dialog { animation: none; }
   .cal-btn:hover, .cal-chip:hover { transform: none; }
   .cal-scroll { scroll-behavior: auto; }
 }
@@ -237,7 +233,6 @@ a.cal-w-head:hover, a.cal-w-head:focus-visible { box-shadow: 0 0 0 0.125rem var(
   .cal-js .cal-notes-body { display: none; padding: 0 1rem 1rem; }
   .cal-js .cal-notes.open .cal-notes-body { display: flex; }
   .cal-js .cal-notes-head h2 { display: none; }
-  .cal-js .cal-toast { bottom: calc(4.75rem + env(safe-area-inset-bottom)); }
 }
 
 /* Booked blocks flow icon, time and title as one text run so a one-hour block still shows the whole title */
@@ -312,7 +307,6 @@ a.cal-w-head:hover, a.cal-w-head:focus-visible { box-shadow: 0 0 0 0.125rem var(
 @media (max-width: 720px) {
   .cal-avatars { flex: 1 1 100%; margin-left: 0; order: 3; }
   .cal-linkfield { flex-basis: 100%; }
-  .cal-toast { left: 1rem; right: 1rem; margin-inline: 0; width: auto; max-width: none; border-radius: 1.5rem; padding-left: 1.125rem; }
 }
 
 /* Fit (F-019): on desktop and tablet the Days view is exactly one viewport tall. The bar, strip and day headers stay put,

@@ -133,8 +133,8 @@ def test_the_tab_opens_a_sheet_over_the_day_and_talking_ends_in_a_block_on_the_g
     expect(page.locator("#ak-sheet")).to_have_count(0)                                      # closed
     expect(page.locator('.cz-gb[data-title="Pool"]')).to_be_visible()                       # the day behind it was brought up to date
     expect(page.locator(".cz-gb.ak-fresh")).to_have_count(1)                                # and the new block glows for a moment
-    expect(page.locator("#ak-toast")).to_contain_text("Added 1 plan")
-    expect(page.locator("#ak-toast")).to_contain_text("The family has been told")
+    expect(page.locator("#ga-toast")).to_contain_text("Added 1 plan")
+    expect(page.locator("#ga-toast")).to_contain_text("The family has been told")
     assert page.url == url and overflow(page) <= 0
     expect(page.locator(".cz-gb.ak-fresh")).to_have_count(0, timeout=4000)
     expect(page.locator("#ph-tab-ask")).to_be_focused()
@@ -226,9 +226,9 @@ def test_it_opens_over_family_and_apply_leaves_a_link_to_the_day(phone, base_url
     answer_chips(page)
     page.locator("#ak-apply").click()
     expect(page.locator("#ak-sheet")).to_have_count(0)
-    expect(page.locator("#ak-toast")).to_contain_text("Added 1 plan")
-    expect(page.locator("#ak-toast a")).to_have_text("See the day")
-    page.locator("#ak-toast a").click()
+    expect(page.locator("#ga-toast")).to_contain_text("Added 1 plan")
+    expect(page.locator("#ga-toast a")).to_have_text("See the day")
+    page.locator("#ga-toast a").click()
     page.wait_for_url(re.compile(r"/trip/canvas\?day=\d"))
     expect(page.locator('.cz-gb[data-title="Pool"]')).to_be_visible()
 

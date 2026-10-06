@@ -1,0 +1,29 @@
+/* The one toast (F-108). Every pop-up message in GitAway (a plan moved, Undo, the Ask sheet's result, the calendar's added/deleted lines, an error) is this: a light frosted pill at the top,
+   just under the heading (assets/js/toast.js measures where that is and sets --ga-toast-y), centred, never wider than 22rem, its words wrap and are never cut. It glides down 0.75rem while it
+   fades in over the page's one calm motion (--motion-dur, --motion-ease: no bounce), a new one takes its place (the words crossfade, the pill does not move) and it fades away. Reduced motion:
+   no glide and no fade, it simply appears and goes. Loaded by layout.styles() on every page. Sizes are rem; the touch target (Undo) is 2.75rem. */
+:root { --ga-toast-y: 4.5rem; }
+
+.ga-toast { position: fixed; z-index: 80; left: 0; right: 0; margin-inline: auto; top: calc(max(var(--ga-toast-y), env(safe-area-inset-top, 0px)) + 0.5rem); width: max-content; max-width: min(22rem, calc(100% - 2rem)); box-sizing: border-box;
+  display: flex; align-items: center; justify-content: center; gap: 0.375rem 0.75rem; padding: 0.3125rem 0.3125rem 0.3125rem 1.125rem; border-radius: 1.75rem; color: var(--ink); font-weight: 800; font-size: max(var(--text-min), 0.9375rem); line-height: 1.25; text-align: left;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--card) 96%, transparent), color-mix(in srgb, var(--paper) 82%, transparent)); border: 1px solid rgba(30, 26, 46, .1);
+  -webkit-backdrop-filter: blur(1rem) saturate(1.5); backdrop-filter: blur(1rem) saturate(1.5); box-shadow: 0 0.5rem 1.5rem -0.5rem rgba(30, 26, 46, .28), inset 0 1px 0 rgba(255, 255, 255, .7);
+  opacity: 0; translate: 0 -0.75rem; transition: opacity var(--motion-dur) var(--motion-ease), translate var(--motion-dur) var(--motion-ease); pointer-events: auto; }
+.ga-toast.is-in { opacity: 1; translate: 0 0; }
+.ga-toast-body { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; min-width: 0; max-width: 100%; opacity: 1; transition: opacity 0.1s ease; }
+.ga-toast-body.is-swap { opacity: 0; }
+.ga-toast-t { min-width: 0; overflow-wrap: anywhere; padding: 0.25rem 0; flex: 1 1 auto; }
+.ga-toast-act { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; min-width: 2.75rem; min-height: 2.75rem; padding: 0 1.125rem; border: 0; border-radius: var(--r-pill); background: var(--ink); color: #FFFFFF;
+  font-family: var(--font-body); font-weight: 800; font-size: max(var(--text-min), 0.9375rem); text-decoration: none; cursor: pointer; }
+.ga-toast-act:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.125rem; }
+.ga-toast.is-error, .ga-toast.cal-toast-error { box-shadow: 0 0 0 0.125rem var(--coral-deep), 0 0.5rem 1.5rem -0.5rem rgba(30, 26, 46, .28); }
+.ga-toast form { display: inline-flex; margin: 0; }
+.ga-toast .cal-dismiss { color: var(--ink); font-weight: 800; }
+
+/* a toast the server drew with the page (the calendar's, the old Today page's): it is there from the start and glides in once */
+.ga-toast-static { opacity: 1; translate: 0 0; flex-wrap: wrap; }
+@media (prefers-reduced-motion: no-preference) { .ga-toast-static { animation: ga-toast-in var(--motion-dur) var(--motion-ease) both; } }
+@keyframes ga-toast-in { from { opacity: 0; translate: 0 -0.75rem; } }
+
+@media (prefers-reduced-transparency: reduce) { .ga-toast { background: var(--card); -webkit-backdrop-filter: none; backdrop-filter: none; } }
+@media (prefers-reduced-motion: reduce) { .ga-toast, .ga-toast-body { transition: none; translate: 0 0; animation: none; } }

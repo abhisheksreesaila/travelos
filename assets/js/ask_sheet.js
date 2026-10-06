@@ -21,7 +21,6 @@
   var FRESH = 300000;
   var cache = {};
   var wrap = null, sheet = null, scroll = null, ctl = null, closing = false, back = [];
-  var toast = null, toastTimer = 0;
 
   function url() { return tab.getAttribute('href') || '/trip/ask'; }
   function ms() { var v = parseFloat(getComputedStyle(root).getPropertyValue('--motion-dur')); return v > 0 ? v : 240; }
@@ -315,24 +314,7 @@
     }
     setTimeout(function () { hit.forEach(function (n) { n.classList.remove('ak-fresh'); }); }, 2200);
   }
-  function say(text, href) {
-    if (toast && toast.parentNode) toast.parentNode.removeChild(toast);
-    clearTimeout(toastTimer);
-    toast = document.createElement('div');
-    toast.className = 'ak-toast';
-    toast.id = 'ak-toast';
-    toast.setAttribute('role', 'status');
-    var t = document.createElement('span');
-    t.className = 'ak-toast-t';
-    t.textContent = text || 'Done';
-    toast.appendChild(t);
-    if (href) {
-      var a = document.createElement('a');
-      a.href = href;
-      a.textContent = 'See the day';
-      toast.appendChild(a);
-    }
-    app.appendChild(toast);
-    toastTimer = setTimeout(function () { if (toast && toast.parentNode) toast.parentNode.removeChild(toast); toast = null; }, 7000);
+  function say(text, href) {      // the one toast (toast.js): over the sheet or the day, at the top
+    if (window.GA && GA.toast) GA.toast(text || 'Done', href ? { href: href, label: 'See the day', ms: 7000 } : null);
   }
 })();

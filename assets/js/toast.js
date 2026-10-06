@@ -1,0 +1,134 @@
+// The one toast (F-108). GA.toast(text, opts) shows a short message as a light frosted pill at the top of the screen, just under the heading (assets/css/toast.css has the look).
+//
+//   GA.toast('Lunch moved to 12:30 PM', { undo: function () { ... } })      a clear Undo button inside it (the toast then stays 9 s instead of 4.5 s)
+//   GA.toast('Added 1 plan', { href: '/trip/canvas?day=1', label: 'See the day' })      a link inside it
+//   GA.toast('Could not save that', { error: true })
+//   GA.hideToast(instant)                                                    fade it away (or remove it at once)
+//
+// One toast at a time: a new one takes the old one's place without the pill moving (only its words crossfade), so a burst of messages never stacks or slides again. It glides down
+// 0.75rem while fading in, fades out after 4.5 s (9 s with Undo), and waits while a finger (or the pointer, or the keyboard) is on it. It is placed under the lowest visible part of the
+// heading (the day's heading, the compact bar that replaces it, or the phone header on Family and Ask) so it never covers the Day | Week switch, the map or SOS, and it keeps up while the
+// page scrolls. role=status with aria-live polite: a screen reader says it once. Reduced motion: no glide and no fade (the CSS sets the transitions to none; the removal is not delayed).
+// A toast the server drew with the page (.ga-toast-static: the calendar's, the old Today page's) is only placed here.
+(function () {
+  var GA = window.GA = window.GA || {};
+  if (GA.toast) return;
+  var el = null, body = null, hideT = 0, swapT = 0, removeT = 0, latest = null, pressed = false, queued = false;
+  var HEADS = ['.cz-fold.is-on .cz-fold-bar', '.cz-head', '.tp-head', '.ga-header'];
+  var reduced = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+
+  function rem() { return parseFloat(getComputedStyle(document.documentElement).fontSize) || 16; }
+
+  // How far down the screen the lowest visible part of the heading reaches (0 when none is on screen: the toast then sits just under the top of the screen).
+  function anchor() {
+    var y = 0;
+    HEADS.forEach(function (sel) {
+      var n = document.querySelector(sel);
+      if (!n) return;
+      var s = getComputedStyle(n);
+      if (s.visibility === 'hidden' || s.display === 'none' || parseFloat(s.opacity) < 0.1) return;
+      var r = n.getBoundingClientRect();
+      if (r.width && r.height && r.bottom > 0 && r.top < window.innerHeight * 0.4 && r.bottom > y) y = r.bottom;
+    });
+    return y;
+  }
+  function place(n) {
+    var y = anchor();
+    if (y) n.style.setProperty('--ga-toast-y', y + 'px'); else n.style.removeProperty('--ga-toast-y');
+  }
+  function follow() {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(function () {
+      queued = false;
+      if (el) place(el);
+      document.querySelectorAll('.ga-toast-static').forEach(place);
+    });
+  }
+  window.addEventListener('scroll', follow, { passive: true, capture: true });
+  window.addEventListener('resize', follow);
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', follow); else follow();
+
+  function clearTimers() { clearTimeout(hideT); hideT = 0; }
+  function arm(ms) {
+    clearTimers();
+    if (pressed) return;
+    hideT = setTimeout(function () { GA.hideToast(); }, ms);
+  }
+
+  function fill(into, o) {
+    var t = document.createElement('span');
+    t.className = 'ga-toast-t';
+    t.textContent = o.text;
+    into.appendChild(t);
+    if (typeof o.undo === 'function') {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'ga-toast-act ga-toast-undo'; b.textContent = 'Undo';
+      b.addEventListener('click', function () { var f = o.undo; GA.hideToast(true); f(); });
+      into.appendChild(b);
+    } else if (o.href) {
+      var a = document.createElement('a');
+      a.className = 'ga-toast-act'; a.href = o.href; a.textContent = o.label || 'Open';
+      into.appendChild(a);
+    }
+  }
+
+  GA.toast = function (text, opts) {
+    var o = { text: String(text || 'Done'), undo: opts && opts.undo, href: opts && opts.href, label: opts && opts.label, error: !!(opts && opts.error) };
+    var ms = (opts && opts.ms) || (o.undo ? 9000 : 4500);
+    clearTimeout(removeT); removeT = 0;
+    if (el && el.isConnected) {                                   // in place: the pill stays, its words crossfade
+      latest = o;
+      clearTimeout(swapT);
+      body.classList.add('is-swap');
+      swapT = setTimeout(function () {
+        body.textContent = '';
+        fill(body, latest);
+        el.classList.toggle('is-error', latest.error);
+        body.classList.remove('is-swap');
+        place(el);
+      }, reduced.matches ? 0 : 100);
+      el.classList.add('is-in');                                  // (a toast on its way out is called back)
+      arm(ms);
+      return el;
+    }
+    el = document.createElement('div');
+    el.className = 'ga-toast' + (o.error ? ' is-error' : '');
+    el.id = 'ga-toast';
+    el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite'); el.setAttribute('aria-atomic', 'true');
+    body = document.createElement('div');
+    body.className = 'ga-toast-body';
+    el.appendChild(body);
+    place(el);
+    document.body.appendChild(el);
+    fill(body, o);
+    var mine = el;
+    mine.addEventListener('pointerdown', function () { pressed = true; clearTimers(); });
+    function release() { if (!pressed) return; pressed = false; if (el === mine) arm(o.undo ? 9000 : 4500); }
+    window.addEventListener('pointerup', release, true);
+    window.addEventListener('pointercancel', release, true);
+    mine.addEventListener('mouseenter', function () { clearTimers(); });
+    mine.addEventListener('mouseleave', function () { if (!pressed && el === mine) arm(4500); });
+    mine.addEventListener('focusin', function () { clearTimers(); });
+    mine.addEventListener('focusout', function () { if (el === mine && !pressed) arm(4500); });
+    mine._release = release;
+    void mine.offsetWidth;                                        // the starting state is painted, then the glide runs
+    requestAnimationFrame(function () { if (el === mine) mine.classList.add('is-in'); });
+    arm(ms);
+    return el;
+  };
+
+  GA.hideToast = function (instant) {
+    clearTimers(); clearTimeout(swapT);
+    var gone = el;
+    if (!gone) return;
+    pressed = false;
+    window.removeEventListener('pointerup', gone._release, true);
+    window.removeEventListener('pointercancel', gone._release, true);
+    function drop() { if (gone.parentNode) gone.parentNode.removeChild(gone); if (el === gone) { el = null; body = null; } }
+    if (instant === true || reduced.matches) { drop(); return; }
+    gone.classList.remove('is-in');
+    el = gone;
+    removeT = setTimeout(drop, 320);                              // after its fade
+  };
+})();
