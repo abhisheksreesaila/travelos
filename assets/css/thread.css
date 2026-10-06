@@ -56,3 +56,29 @@
 /* F-084, F-094: the invite link (admin) or the family link (everyone else) at the end of the header line: small, quiet, still a 2.75rem target. */
 .ft-people-btn { display: inline-flex; align-items: center; gap: 0.375rem; min-height: 2.75rem; min-width: 2.75rem; padding: 0 0.5rem; justify-content: center; font-weight: 700; font-size: max(var(--text-min), 0.875rem); color: var(--ink-2); text-decoration: none; background: none; }
 .ft-people-btn:hover, .ft-people-btn:focus-visible { color: var(--ink); }
+
+/* F-100: the chat box stays at the bottom, like WhatsApp. On the phone (and the Home Screen app) the Family chat and a plan chat become a full-height column
+   fixed to the visible screen: heading, a message list that scrolls on its own (it opens at the newest, which sits right above the box), the box, and the tab bar.
+   thread.js sets --vvh / --vvtop from the visual viewport, so the column shrinks to what is left above the iPhone keyboard (the box rides up with it) and the
+   tab bar steps aside (.kb-open). The Photos view is not a chat: it keeps normal page scrolling. */
+@media (max-width: 720px), (display-mode: standalone) {
+  .tp:is(:has(#ft-chat:not([hidden])), :has(#ft.pt)) {
+    position: fixed; top: var(--vvtop, 0px); left: 0; right: 0; height: var(--vvh, 100dvh); min-height: 0; margin: 0 auto; display: flex; flex-direction: column; overflow: hidden;
+    padding-bottom: calc(var(--tabs-h) + env(safe-area-inset-bottom));
+  }
+  .tp.kb-open:is(:has(#ft-chat:not([hidden])), :has(#ft.pt)) { padding-bottom: 0.25rem; }
+  .tp.kb-open .ph-tabs { display: none; }
+  .tp:is(:has(#ft-chat:not([hidden])), :has(#ft.pt)) > * { flex-shrink: 0; }
+  .tp:is(:has(#ft-chat:not([hidden])), :has(#ft.pt)) > .ph-main { flex: 1 1 auto; min-height: 0; }
+  .tp:is(:has(#ft-chat:not([hidden])), :has(#ft.pt)) > .ph-main > .ft { flex: 1 1 auto; min-height: 0; }
+  .tp:is(:has(#ft-chat:not([hidden])), :has(#ft.pt)) > .ph-main > .ft > :not(.ft-thread, .ft-panel) { flex-shrink: 0; }
+  .tp:has(#ft-chat:not([hidden])) .ft-panel:not([hidden]) { flex: 1 1 auto; min-height: 0; gap: 0.5rem; }
+  .tp:is(:has(#ft-chat:not([hidden])), :has(#ft.pt)) .ft-thread { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 0.25rem 0; scrollbar-width: none; }
+  .tp:is(:has(#ft-chat:not([hidden])), :has(#ft.pt)) .ft-thread::before { content: ""; margin-top: auto; }   /* few messages sit at the bottom, right above the box */
+  .tp:is(:has(#ft-chat:not([hidden])), :has(#ft.pt)) .ft-thread::-webkit-scrollbar { display: none; }
+  .tp:is(:has(#ft-chat:not([hidden])), :has(#ft.pt)) .ft-compose { position: static; padding: 0.375rem 0 0.5rem; flex-shrink: 0; }
+  .tp:is(:has(#ft-chat:not([hidden])), :has(#ft.pt)) .ft-empty { flex-shrink: 0; margin-top: 0; }
+  .tp:is(:has(#ft-chat:not([hidden])), :has(#ft.pt)) .tp-head { padding-bottom: 0.25rem; }
+  .tp:is(:has(#ft-chat:not([hidden])), :has(#ft.pt)) :is(.ft-compose, .pt-rec) { order: 5; }          /* the box (or the recording bar) is always last ... */
+  .tp:is(:has(#ft-chat:not([hidden])), :has(#ft.pt)) .ft-error { order: 4; flex-shrink: 0; margin: 0; }   /* ... and an error line sits above it, so the box never moves */
+}

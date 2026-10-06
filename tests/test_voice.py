@@ -66,7 +66,7 @@ def test_no_audio_is_ever_captured():
     The one exception is a plan's chat (F-091, assets/js/plantalk.js): a person taps the mic to leave a voice note, which is recorded only until Send or Cancel."""
     for path in [*(ROOT / "assets/js").glob("*.js"), *(ROOT / "gitaway").rglob("*.py")]:
         text = path.read_text(encoding="utf-8")
-        if path.name != "plantalk.js":
+        if path.name not in ("plantalk.js", "ask.js"):      # F-102: Ask's mic records too, where the browser has no speech recognition (tap, Stop or Cancel; never kept)
             assert "getUserMedia" not in text.replace("never call getUserMedia", ""), path.name
             assert "MediaRecorder" not in text, path.name
         if path.name != "ask.js":

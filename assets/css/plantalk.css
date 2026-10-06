@@ -52,3 +52,9 @@
 .pt-row:empty { display: none; }
 .cz-part-h .pt-badge { margin-left: auto; }
 .pt-badge-part { padding: 0; }
+
+/* F-100: in the docked chat the recording bar takes the box's place at the bottom of the column */
+@media (max-width: 720px), (display-mode: standalone) {
+  .tp:has(#ft.pt) .pt-rec { position: static; flex-shrink: 0; margin-bottom: 0.5rem; }
+  .tp:has(#ft.pt) .pt { padding-bottom: 0; }
+}
