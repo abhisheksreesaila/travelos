@@ -16,12 +16,13 @@ own dictation always work.
 """
 
 import json
+import re
 
 from fasthtml.common import A, Button, Div, Fieldset, Form, H2, H3, Input, Label, Legend, Link, Option, P, Select, Span, Textarea
 from starlette.concurrency import run_in_threadpool
-from starlette.responses import RedirectResponse
+from starlette.responses import JSONResponse, PlainTextResponse, RedirectResponse
 
-from gitaway import access, ai, canvas, familythread, pickers, say, session as ses, speak, tripcal as cal
+from gitaway import access, ai, canvas, familythread, pickers, say, session as ses, speak, tripcal as cal, voicenotes
 from gitaway.icons import icon
 from gitaway.layout import trip_field
 
@@ -59,6 +60,27 @@ def _hidden(name, value):
     return Input(type="hidden", name=name, value="" if value is None else str(value))
 
 
+def _heard(raw) -> list:
+    """What was dictated in another language: [[what was said, its English], ...] from the page's hidden field. Anything malformed is dropped."""
+    try:
+        items = json.loads((raw or "")[:MAX_FIELD])
+    except ValueError:
+        return []
+    out = []
+    for it in items if isinstance(items, list) else []:
+        if isinstance(it, list) and len(it) == 2 and all(isinstance(x, str) and x.strip() for x in it):
+            out.append([it[0][: say.LIMIT], it[1][: say.LIMIT]])
+    return out[:20]
+
+
+def _for_the_planner(text, heard) -> str:
+    """The box's text with each dictated passage swapped for its English version, so the planner reads English; typed words and edits stay as they are, and a
+    passage the person changed is simply left as written (the planner reads any language)."""
+    for spoken, english in heard:
+        text = text.replace(spoken, english)
+    return text
+
+
 # ---- pieces --------------------------------------------------------------------------------------------------------------
 
 def _viewer_card():
@@ -75,7 +97,7 @@ def _day_picker(t, day, today, auto=False):
     return Label(Span("Which day", cls="ak-label"), Select(*options, name="day", id="ak-day", data_ga_label="Which day", **({"data_auto": str(day)} if auto else {})), cls="ak-field")
 
 
-def _box(request, session, day, text="", error="", mode=""):
+def _box(request, session, day, text="", error="", mode="", heard=()):
     b = ses.booking(session)
     t = cal.trip("", b)
     today = speak.today_index(session)
@@ -87,12 +109,17 @@ def _box(request, session, day, text="", error="", mode=""):
         trip_field(),
         Div(error, role="alert", cls="tp-error ak-error", id="ak-error") if error else "",
         _day_picker(t, day, today, auto),
-        Div(Button(icon("mic", 24, 2.2), Span("Tap to talk", id="ak-mic-label"), type="button", id="ak-mic", cls="tp-btn tp-btn-white ak-mic", hidden=True, aria_pressed="false"),
-            Button(icon("clipboard", 22, 2.2), Span("Paste"), type="button", id="ak-paste", cls="tp-btn tp-btn-white ak-paste"), cls="ak-inputs"),
+        Div(Button(Span(cls="ak-dot", aria_hidden="true"), icon("mic", 24, 2.2), Span("Tap to talk", id="ak-mic-label"), Span("0:00", id="ak-mic-time", cls="ak-time", hidden=True),
+                   type="button", id="ak-mic", cls="tp-btn tp-btn-white ak-mic", hidden=True, aria_pressed="false", data_max_secs=str(voicenotes.MAX_SECONDS), data_piece_secs=str(PIECE_SECONDS)),
+            Button(icon("clipboard", 22, 2.2), Span("Paste"), type="button", id="ak-paste", cls="tp-btn tp-btn-white ak-paste"),
+            Button(icon("x", 22, 2.2), Span("Cancel"), type="button", id="ak-rec-cancel", cls="tp-btn tp-btn-white ak-cancel", hidden=True), cls="ak-inputs"),
         Span("", id="ak-mic-status", cls="ak-mic-status", role="status", aria_live="polite"),
+        P(icon("pencil", 16, 2.4), Span("Transcribing…"), Span("", id="ak-tr-elapsed", cls="ak-elapsed"), cls="ak-progress", id="ak-transcribing", hidden=True, role="status"),
         Label(Span("What do you want to change or add?", cls="ak-label"),
               Textarea(text, name="text", id="ak-text", rows="5", required=True, autocomplete="off", spellcheck="true", data_limit=str(say.LIMIT), data_long=str(speak.MAX_REQUEST),
                        placeholder="Say it, type it or paste it. A change (\"move lunch to 12:30\") or a whole plan from a message or a web page."), cls="ak-field"),
+        P("", id="ak-understood", cls="ak-understood", role="status", aria_live="polite", hidden=True),
+        _hidden("heard", json.dumps(list(heard), ensure_ascii=False, separators=(",", ":")) if heard else ""),
         P("", id="ak-count", cls="ak-count", role="status", aria_live="polite", hidden=True),
         P(icon("mic", 16, 2.4), "On an iPhone, tap the microphone on the keyboard to dictate.", cls="ak-hint", id="ak-hint"),
         P(icon("pencil", 16, 2.4), Span("Reading it…", id="ak-progress-text"), Span("", id="ak-elapsed", cls="ak-elapsed"),
@@ -116,8 +143,9 @@ def _group(g):
     return Div(H3(g["label"], cls="ak-dayh"), Div(*[_chip(c) for c in g["chips"]], cls="ak-chips"), cls="ak-day", data_day=str(g["day"]))
 
 
-def _proposal(session, step, text, day, t):
+def _proposal(session, step, text, day, t, heard=()):
     prev = step["preview"]
+    kept = _hidden("heard", json.dumps(list(heard), ensure_ascii=False, separators=(",", ":")) if heard else "")
     plan = prev["kind"] == "plan"
     state = step["state"]
     keep = [trip_field(), _hidden("day", day), _hidden("text", text)]
@@ -130,7 +158,7 @@ def _proposal(session, step, text, day, t):
         Div(P("Left out:", cls="ak-label"), *[P(d, cls="ak-dropped") for d in prev["dropped"]], cls="ak-card ak-leftout", id="ak-leftout") if prev["dropped"] else "",
         Form(*keep, *payload, Button(icon("check", 20, 3), "Apply and tell the family", type="submit", cls="tp-btn tp-btn-coral ak-go", id="ak-apply"),
              action="/trip/ask/apply", method="post", id="ak-apply-form"),
-        Div(Form(_hidden("day", day), _hidden("text", text), Button("Change it", type="submit", cls="tp-btn tp-btn-white", id="ak-change"), action="/trip/ask/edit", method="post", id="ak-change-form"),
+        Div(Form(_hidden("day", day), _hidden("text", text), kept, Button("Change it", type="submit", cls="tp-btn tp-btn-white", id="ak-change"), action="/trip/ask/edit", method="post", id="ak-change-form"),
             A("Cancel", href=day_url(day), cls="tp-btn tp-btn-white", id="ak-cancel"), cls="ak-acts"),
         P("Nothing changes until you tap Apply.", cls="ak-fine"),
         cls="ak-prop", id="ak-prop")
@@ -147,11 +175,12 @@ def _question(q):
                     cls="ak-card ak-q", data_q=q["id"])
 
 
-def _questions(session, step, text, day, error=""):
+def _questions(session, step, text, day, error="", heard=()):
     qs = step["questions"]
+    kept = _hidden("heard", json.dumps(list(heard), ensure_ascii=False, separators=(",", ":")) if heard else "")
     return Div(
         Div(error, role="alert", cls="tp-error ak-error", id="ak-error") if error else "",
-        Form(trip_field(), _hidden("day", day), _hidden("text", text), _hidden("state", json.dumps(step["state"], separators=(",", ":"))),
+        Form(trip_field(), _hidden("day", day), _hidden("text", text), kept, _hidden("state", json.dumps(step["state"], separators=(",", ":"))),
              Div(Span("QUICK QUESTION" if len(qs) == 1 else f"{len(qs)} QUICK QUESTIONS", cls="ak-label"), P("The answer GitAway would guess is already chosen. Change it with one tap.", cls="ak-fine ak-left"), cls="ak-qhead"),
              *[_question(q) for q in qs],
              P(icon("pencil", 16, 2.4), Span("Reading it…"), Span("", cls="ak-elapsed"), cls="ak-progress", id="ak-q-progress", hidden=True, role="status"),
@@ -186,9 +215,9 @@ def content(request, session):
     day = st["day"] if "day" in st else _day_of(request, session)
     t = cal.trip("", ses.booking(session))
     if st.get("preview"):
-        return Div(_proposal(session, st["step"], st.get("text", ""), day, t), cls="ak")
+        return Div(_proposal(session, st["step"], st.get("text", ""), day, t, st.get("heard", ())), cls="ak")
     if st.get("step"):
-        return Div(_questions(session, st["step"], st.get("text", ""), day, st.get("error", "")), cls="ak")
+        return Div(_questions(session, st["step"], st.get("text", ""), day, st.get("error", ""), st.get("heard", ())), cls="ak")
     done = request.query_params.get("done", "")
     plan = request.query_params.get("kind") == "plan"
     if day is not None and done.isdigit() and 0 < int(done) <= (canvas.MAX_DAYS if plan else speak.MAX_OPS):
@@ -196,7 +225,7 @@ def content(request, session):
         merged = request.query_params.get("merged", "")
         return Div(_done(session, day, int(done), "plan" if plan else "", int(steps) if steps.isdigit() else 0, int(merged) if merged.isdigit() else 0), cls="ak")
     mode = request.query_params.get("mode", "")
-    return Div(_box(request, session, day, st.get("text", ""), st.get("error", ""), st.get("mode", mode)), cls="ak")
+    return Div(_box(request, session, day, st.get("text", ""), st.get("error", ""), st.get("mode", mode), st.get("heard", ())), cls="ak")
 
 
 def ask_button(day, compact=False, ident="ak-open") -> A:
@@ -209,8 +238,11 @@ def ask_button(day, compact=False, ident="ak-open") -> A:
 
 def register(app):
     from gitaway.pages import phone_tabs
+    register_transcribe(app)
 
     def show(request, session, *, status=200, **state):
+        form = getattr(request, "_form", None)         # what was dictated in another language travels with the box through every step
+        state.setdefault("heard", _heard(form.get("heard")) if form is not None else [])
         request.scope["ask"] = state
         page = phone_tabs.tab_page("ask", request, session)
         if status == 200:
@@ -241,8 +273,9 @@ def register(app):
         form = await request.form()
         text = (form.get("text") or "")[: say.LIMIT + 1]
         day = _day_of(request, session, form.get("day", ""))
+        planner = _for_the_planner(text, _heard(form.get("heard")))     # English for what was said in another language; the box keeps the original
         try:
-            step = await run_in_threadpool(say.start, session, text, day)   # the model takes seconds: never on the event loop (context variables travel along)
+            step = await run_in_threadpool(say.start, session, planner, day)   # the model takes seconds: never on the event loop (context variables travel along)
         except (say.SayError, speak.SpeakError, canvas.CanvasError) as e:
             return show(request, session, day=day, text=text, error=str(e), status=422)
         except ai.AIError as e:
@@ -310,3 +343,73 @@ def register(app):
 def _guard(session):
     from gitaway import phone
     return phone.guard(session, "/trip/ask")
+
+
+# ---- voice typing where the phone has no speech recognition (F-102) ------------------------------------------------------
+
+TRANSCRIBE_PATH = "/trip/ask/transcribe"
+NO_VOICE = "Voice typing isn't set up yet — tap the microphone on your keyboard to dictate."
+OVERHEAD = 100_000   # the form's own fields around the recording
+
+
+class UploadLimit:
+    """Refuse an oversized recording from its Content-Length, before a byte of the body is read or parsed."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http" and scope["method"] == "POST" and scope["path"] == TRANSCRIBE_PATH:
+            headers = dict(scope["headers"])
+            try:
+                size = int(headers.get(b"content-length") or 0)
+            except ValueError:
+                size = 0
+            if b"content-length" not in headers:
+                await PlainTextResponse("Send the recording with its length.", status_code=411)(scope, receive, send)
+                return
+            if size > voicenotes.MAX_BYTES + OVERHEAD:
+                await PlainTextResponse(f"That recording is too large (at most {voicenotes.MAX_BYTES // (1024 * 1024)} MB).", status_code=413)(scope, receive, send)
+                return
+        await self.app(scope, receive, send)
+
+
+PIECE_SECONDS = 25          # the page rotates its recorder this often (data-piece-secs on the mic)
+PIECE_MAX_SECONDS = 30      # Sarvam's speech-to-text refuses audio over 30 s ("use the batch API")
+MIMES = {"mp4": "audio/mp4", "webm": "audio/webm", "ogg": "audio/ogg"}
+
+
+def register_transcribe(app):
+    app.add_middleware(UploadLimit)
+
+    @app.post(TRANSCRIBE_PATH)
+    async def transcribe(request, session):
+        """A recording from the Ask box's microphone -> {"text"}. Editors only (gitaway.access). The audio lives in memory for this request and is never written."""
+        if ses.current_traveler(session) is None:
+            return PlainTextResponse("Sign in first.", status_code=401)
+        if not ai.configured("transcribe"):
+            return PlainTextResponse(NO_VOICE, status_code=503)
+        form = await request.form()
+        f = form.get("audio")
+        if not hasattr(f, "read"):
+            return PlainTextResponse("Record something first.", status_code=400)
+        data = await f.read(voicenotes.MAX_BYTES + 1)
+        try:
+            kind, secs = voicenotes.check(data, form.get("secs"))
+        except voicenotes.VoiceError as e:
+            return PlainTextResponse(str(e).replace("voice note", "recording"), status_code=e.status)
+        if secs > PIECE_MAX_SECONDS:       # the page sends a long recording in pieces of about 25 s; the speech service takes 30 s at most per call
+            return PlainTextResponse(f"The voice service takes {PIECE_MAX_SECONDS} seconds at a time. Update the page and record again.", status_code=413)
+        lang = form.get("lang") or ""
+        lang = lang if re.fullmatch(r"[a-z]{2,3}(-[A-Za-z]{2,4})?", lang) else None      # an optional hint; anything else is ignored and the service detects the language
+        try:
+            words = await run_in_threadpool(lambda: ai.transcribe((session or {}).get("tenant_id", ""), data, f"voice.{voicenotes.TYPES[kind][0]}", MIMES[kind], language=lang))
+        except ai.AIError as e:
+            return PlainTextResponse(str(e), status_code=503)
+        english = ""
+        if words.language and not words.language.lower().startswith("en"):      # said in Hindi, Tamil...: the planner also gets it in English; the person keeps what they said
+            try:
+                english = str(await run_in_threadpool(lambda: ai.transcribe((session or {}).get("tenant_id", ""), data, f"voice.{voicenotes.TYPES[kind][0]}", MIMES[kind], english=True)))
+            except ai.AIError:
+                english = ""     # not fatal: the planner is told to write titles in English whatever the language
+        return JSONResponse({"text": words[: say.LIMIT], "language": words.language, "english": english[: say.LIMIT]})

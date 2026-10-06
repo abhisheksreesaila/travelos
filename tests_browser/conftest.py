@@ -23,7 +23,7 @@ os.environ["DB_TYPE"] = "SQLITE"
 os.environ["DB_NAME"] = "app_host"
 # Set empty, not removed: fh-saas loads the project's .env on import and fills in any key that is missing,
 # so real Google keys in a developer's .env would hide the dev sign-in from the tests.
-for _key in ("GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "AZURE_OPENAI_API_KEY", "AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_DEPLOYMENT", "AZURE_OPENAI_API_VERSION"):
+for _key in ("GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "AZURE_OPENAI_API_KEY", "AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_DEPLOYMENT", "AZURE_OPENAI_API_VERSION", "AZURE_OPENAI_TRANSCRIBE_DEPLOYMENT", "SARVAM_API_KEY", "GITAWAY_AI_TRANSCRIBE_PROVIDER"):
     os.environ[_key] = ""
 for _key in [k for k in os.environ if k.startswith("GITAWAY_AI_")]:
     os.environ[_key] = ""  # per-job AI settings from a shell or .env must not reach a test (F-079)

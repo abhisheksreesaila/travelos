@@ -155,8 +155,8 @@ def test_the_busy_state_is_shown_while_the_model_works(phone, base_url, model, m
 NO_SPEECH = "delete window.SpeechRecognition; delete window.webkitSpeechRecognition;"
 
 
-def test_the_microphone_button_is_hidden_when_the_browser_cannot_listen(phone, base_url):
-    page = phone(NO_SPEECH)
+def test_the_microphone_button_is_hidden_when_the_browser_cannot_listen_or_record(phone, base_url):
+    page = phone(NO_SPEECH + "delete window.MediaRecorder;")      # F-102: with a recorder the mic shows even without speech recognition
     page.goto(f"{base_url}/trip/ask?day={DAY}")
     expect(page.locator("#ak-text")).to_be_visible()
     expect(page.locator("#ak-mic")).to_be_hidden()
