@@ -59,8 +59,10 @@
   // with the keyboard up, above the keyboard. `r` is the block's rectangle.
   function geometry(wrap, r) {
     var vv = window.visualViewport, u = rem();
-    var vw = wrap.clientWidth, floor = wrap.clientHeight, top0 = parseFloat(getComputedStyle(wrap).paddingTop) || 0;
-    var topMin = top0 + u * 0.5;
+    var tabs = document.querySelector('.ph-tabs'), reserve = tabs && getComputedStyle(tabs).display !== 'none' ? tabs.offsetHeight : 0;
+    var vw = wrap.clientWidth, floor = wrap.clientHeight - reserve, top0 = parseFloat(getComputedStyle(wrap).paddingTop) || 0;
+    var kb = !!vv && vv.height < window.innerHeight - 80;          // the keyboard is up: every bit of height is needed; otherwise a strip of the day stays above the card to tap
+    var topMin = top0 + u * (kb ? 0.5 : 4);
     if (vv) { topMin = Math.max(topMin, vv.offsetTop + u * 0.5); floor = Math.min(floor, vv.offsetTop + vv.height); }
     floor -= u * 0.5;
     var h = Math.min(u * 34, Math.max(u * 12, floor - topMin));
@@ -103,9 +105,9 @@
     card.appendChild(content);
     wrap.appendChild(scrim); wrap.appendChild(card);
     main.appendChild(wrap);
-    stage.setAttribute('inert', '');
     open = { wrap: wrap, card: card, scrim: scrim, content: content, body: body, block: block, act: act, folding: false };
     block.classList.add('is-card');
+    lock(open);
     place(open, geometry(wrap, r));
     CZ.cardOpen = true;
     if (!CZ.reduced.matches && card.animate) {
@@ -116,6 +118,9 @@
     }
     try { card.focus({ preventScroll: true }); } catch (e) { /* no focus */ }
     scrim.addEventListener('click', function () { fold(); });
+    var forget = function () { delete fetched[act]; };                          // what was said changes what the next card must show
+    card.addEventListener('submit', forget, true);
+    card.addEventListener('ft-refresh', forget, true);
     x.addEventListener('click', function () { fold(); });
     swipe(open, [grab, head]);
     fetchCard(act).then(function (html) { if (open && open.card === card) fill(open, html); }, function () {
@@ -216,6 +221,7 @@
     n.appendChild(ta); n.appendChild(err);
     o.note = ta;
     var over = false, sending = false;
+    o.cancelNote = null;
     function size() { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight + 2, rem() * 9) + 'px'; }
     function finish(restore) {
       over = true; o.note = null;
@@ -224,23 +230,24 @@
       restore.forEach(function (c) { n.appendChild(c); });
       if (n.dataset.mine === '1') { n.setAttribute('role', 'button'); n.tabIndex = 0; }
     }
-    function cancel() { if (over) return; finish(keep); }
+    function cancel() { if (over || sending) return; o.commitNote = null; finish(keep); }
     o.cancelNote = cancel;
+    o.commitNote = function () { commit(); };
     function commit() {
       if (over) return;
       if (sending) return;
       var v = ta.value.replace(/\s+/g, ' ').trim();
       if (!v || v === was) { cancel(); return; }
-      sending = true;
+      sending = true; o.saving = true;
       ta.disabled = true;
-      CZ.post('/trip/canvas/actnote', CZ.tripBody({ act: o.act, text: v, note: id })).then(function (res) {
+      CZ.post('/trip/canvas/actnote', CZ.tripBody({ act: o.act, text: v, note: id, id: add && area.dataset.next ? 'n' + area.dataset.next : undefined })).then(function (res) {
         var saved = res.note || { id: id, text: v };
         if (!over) over = true;
-        o.note = null;
+        o.note = null; o.saving = false; o.commitNote = null;
+        if (add) area.dataset.next = String((parseInt(String(saved.id).slice(1), 10) || 0) + 1);
         n.classList.remove('is-editing');
         n.textContent = '';
         if (add) {                     // the empty sticky becomes the note, and a quiet "Add a note" follows it
-          var again = n.cloneNode(false);
           n.dataset.note = saved.id; n.dataset.mine = '1'; n.removeAttribute('data-add'); n.classList.remove('cz-card-add', 'is-empty'); n.classList.add('is-mine'); n.setAttribute('role', 'button'); n.tabIndex = 0;
           n.setAttribute('aria-label', 'Edit this note: ' + saved.text);
           n.appendChild(mk('span', 'cz-card-text', saved.text));
@@ -255,7 +262,7 @@
         if (CZ.forget) CZ.forget();
         CZ.quiet();                    // the block behind the card shows the new words
       }, function (e) {
-        sending = false;
+        sending = false; o.saving = false;
         ta.disabled = false;
         err.textContent = e && e.soft ? e.soft : 'Could not save that. Try again.';
         ta.focus();
@@ -276,13 +283,34 @@
   // ---- fold ---------------------------------------------------------------------------------------------------------------------
   function recording() { return !!(open && open.card.querySelector('#pt-rec:not([hidden])')); }      // a voice note being recorded is not thrown away by a stray tap
 
+  // While the card is open it is the whole page: every other part of the page (the day, the heading, the tab bar) is inert, so a keyboard or a screen reader stays in the card.
+  function lock(o) {
+    o.locked = [];
+    for (var n = o.wrap; n && n.parentElement && n !== document.documentElement; n = n.parentElement) {
+      Array.prototype.forEach.call(n.parentElement.children, function (c) {
+        if (c !== n && !c.hasAttribute('inert') && !/^(SCRIPT|STYLE|LINK|TEMPLATE)$/.test(c.tagName)) { c.setAttribute('inert', ''); o.locked.push(c); }
+      });
+    }
+  }
+  function unlock(o) { (o.locked || []).forEach(function (c) { c.removeAttribute('inert'); }); o.locked = []; }
+  var TABBABLE = 'a[href], button:not([disabled]), input:not([type="hidden"]):not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Tab' || !open) return;
+    var items = Array.prototype.filter.call(open.card.querySelectorAll(TABBABLE), function (n) { return !n.hidden && n.getClientRects().length > 0; });
+    if (!items.length) { e.preventDefault(); return; }
+    var a = document.activeElement, first = items[0], last = items[items.length - 1];
+    if (!open.card.contains(a) || a === open.card) { e.preventDefault(); (e.shiftKey ? last : first).focus(); }
+    else if (e.shiftKey && a === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && a === last) { e.preventDefault(); first.focus(); }
+  }, true);
+
   function cleanup() {
     var o = open;
     if (!o) return;
     var chat = o.card.querySelector('#ft');
     if (chat) chat.dispatchEvent(new Event('ft-close'));
     o.wrap.remove();
-    stage.removeAttribute('inert');
+    unlock(o);
     o.block.classList.remove('is-card');
     open = null;
     CZ.cardOpen = false;
@@ -297,7 +325,8 @@
   function fold(from) {
     var o = open;
     if (!o || o.folding || recording()) return;
-    if (o.note) { try { o.note.blur(); } catch (e) { /* the note saves as it loses the focus */ } }
+    if (o.saving) return;                                          // a note is on its way: the card stays until it has landed (or failed, and says so)
+    if (o.note && o.commitNote) { o.commitNote(); if (o.saving || o.note) return; }      // a note being edited is saved first; if that cannot be done, the card stays and shows why
     o.folding = true;
     var act = o.act, card = o.card;
     var done = function () { cleanup(); focusBlock(act); };
@@ -367,7 +396,6 @@
   var vv = window.visualViewport;
   function refit() {
     if (!open || open.folding) return;
-    var g = geometry(open.wrap, null);
     var r = open.block && open.block.isConnected ? open.block.getBoundingClientRect() : null;
     place(open, geometry(open.wrap, r));
     var box = open.card.querySelector('.cz-card-scroll');

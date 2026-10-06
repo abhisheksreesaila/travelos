@@ -401,3 +401,117 @@ def test_with_the_keyboard_up_the_card_stays_inside_what_is_left_and_the_box_sta
     f = card(phone).locator("#ft-compose").bounding_box()
     assert c["y"] >= 0 and c["y"] + c["height"] <= 380 + 1 and f["y"] + f["height"] <= 380 + 1 and f["y"] >= c["y"]
     expect(card(phone).locator(".ft-msg").last).to_be_visible()
+
+
+# ---- review fixes ------------------------------------------------------------------------------------------------------------------
+
+def test_a_pills_words_are_never_cut_the_short_name_wraps_below_the_time(phone):
+    long_day()
+    open_day(phone, 0)
+    show(phone, ".cz-gbk.is-pill")
+    got = phone.locator(".cz-gbk.is-pill").evaluate("""p => { const t = p.querySelector('.cz-bk-t'), r = p.querySelector('.cz-bk-row');
+      return { w: t.scrollWidth <= t.clientWidth + 0.5, h: p.scrollHeight <= p.clientHeight + 1, pw: p.scrollWidth <= p.clientWidth + 1, below: t.getBoundingClientRect().top >= r.getBoundingClientRect().bottom - 1, text: t.textContent }; }""")
+    assert got == {"w": True, "h": True, "pw": True, "below": True, "text": "Check in"}
+    assert phone.locator(".cz-bk-t").evaluate_all("els => els.every(t => t.scrollWidth <= t.clientWidth + 0.5)")
+    shot(phone, "pill2-390.png")
+
+
+def test_plans_sharing_lanes_keep_one_left_edge_when_one_of_them_is_over_a_booking(phone):
+    a = plan("Long afternoon", 13 * 60, 16 * 60 + 30, day=0)
+    b = plan("Late swim", 16 * 60 + 5, 17 * 60 + 30, day=0)
+    open_day(phone, 0)
+    show(phone, f'.cz-gb[data-act="{b.id}"]')
+    ba, bb = box(phone, f'.cz-gb[data-act="{a.id}"]'), box(phone, f'.cz-gb[data-act="{b.id}"]')
+    pill = box(phone, ".cz-gbk.is-pill")
+    assert ba["x"] + ba["width"] <= bb["x"] + 0.5 or bb["x"] + bb["width"] <= ba["x"] + 0.5       # side by side, not on top of each other
+    assert min(ba["x"], bb["x"]) >= pill["x"] + pill["width"] - 0.5                                 # both clear of the pill's lane
+    shot(phone, "lanes-390.png")
+
+
+def test_opening_and_folding_the_card_twenty_times_leaves_no_listeners_or_timers_behind(phone):
+    lunch = plan("Lunch", 12 * 60, 13 * 60)
+    open_day(phone)
+    for i in range(20):
+        tap(phone, lunch.id)
+        expect(card(phone).locator("#ft-text")).to_be_visible()
+        if i == 0:
+            assert phone.evaluate("window.__ftBound") == {"thread": 1, "plantalk": 1}
+        phone.keyboard.press("Escape")
+        expect(card(phone)).to_have_count(0)
+    assert phone.evaluate("window.__ftBound") == {"thread": 0, "plantalk": 0}
+
+
+def test_a_strip_of_the_day_stays_above_the_card_to_tap_on_even_on_a_small_phone(phone):
+    lunch = plan("Lunch", 12 * 60, 13 * 60)
+    open_day(phone)
+    tap(phone, lunch.id)
+    expect(card(phone)).to_be_visible()
+    phone.wait_for_timeout(450)
+    c = card(phone).bounding_box()
+    assert c["y"] >= 60
+    phone.touchscreen.tap(c["x"] + c["width"] / 2, c["y"] / 2)
+    expect(card(phone)).to_have_count(0)
+
+
+def test_the_keyboard_stays_in_the_card_while_it_is_open_and_the_rest_of_the_page_is_inert(phone):
+    lunch = plan("Lunch", 12 * 60, 13 * 60)
+    open_day(phone)
+    tap(phone, lunch.id)
+    expect(card(phone).locator("#ft-text")).to_be_visible()
+    inert = phone.evaluate("() => [...document.querySelectorAll('[inert]')].map(n => n.id || n.className)")
+    assert any("ph-tabs" in x for x in inert) and "cz" in inert                                      # the tab bar and the day
+    for _ in range(25):
+        phone.keyboard.press("Tab")
+        assert phone.evaluate("!!document.activeElement.closest('.cz-card')")
+    for _ in range(25):
+        phone.keyboard.press("Shift+Tab")
+        assert phone.evaluate("!!document.activeElement.closest('.cz-card')")
+    phone.keyboard.press("Escape")
+    expect(card(phone)).to_have_count(0)
+    assert phone.evaluate("document.querySelectorAll('[inert]').length") == 0
+
+
+def test_a_card_does_not_fold_while_its_note_is_being_saved_and_a_failed_save_says_so_in_the_card(phone):
+    lunch = plan("Lunch", 12 * 60, 14 * 60)
+    open_day(phone)
+    tap(phone, lunch.id)
+    card(phone).locator(".cz-card-add").tap()
+    field = card(phone).locator(".cz-card-edit")
+    field.fill("Bring sunscreen")
+    seen = []
+
+    def slow(route):
+        seen.append(1)
+        phone.wait_for_timeout(700)
+        route.continue_()
+    phone.route("**/trip/canvas/actnote", slow)
+    field.press("Enter")
+    c = card(phone).bounding_box()
+    phone.touchscreen.tap(c["x"] + c["width"] / 2, c["y"] / 2)                                       # tap outside while it is on its way
+    phone.keyboard.press("Escape")
+    phone.wait_for_timeout(200)
+    expect(card(phone)).to_be_visible()
+    expect(card(phone).locator(".cz-card-note .cz-card-text")).to_have_text("Bring sunscreen", timeout=6000)
+    assert note_texts(lunch.id) == ["Bring sunscreen"] and len(seen) == 1
+    phone.unroute("**/trip/canvas/actnote")
+    phone.route("**/trip/canvas/actnote", lambda route: route.fulfill(status=500, body="no"))
+    card(phone).locator(".cz-card-add").tap()
+    card(phone).locator(".cz-card-edit").fill("A second one")
+    c = card(phone).bounding_box()
+    phone.touchscreen.tap(c["x"] + c["width"] / 2, c["y"] / 2)                                       # tapping away tries to save it, fails, and stays
+    expect(card(phone).locator(".cz-card-err")).to_have_text(re.compile("could not save", re.I))
+    expect(card(phone)).to_be_visible()
+    assert card(phone).locator(".cz-card-edit").input_value() == "A second one" and note_texts(lunch.id) == ["Bring sunscreen"]
+
+
+def test_a_message_sent_in_the_card_is_there_when_it_is_opened_again_at_once(phone):
+    lunch = plan("Lunch", 12 * 60, 13 * 60)
+    open_day(phone)
+    tap(phone, lunch.id)
+    card(phone).locator("#ft-text").fill("Mario Kart after lunch")
+    card(phone).locator("#ft-text").press("Enter")
+    phone.wait_for_function("() => !document.querySelector('.cz-card .is-pending') && document.querySelector('.cz-card .ft-bub')")
+    phone.keyboard.press("Escape")
+    expect(card(phone)).to_have_count(0)
+    tap(phone, lunch.id)
+    expect(card(phone).locator(".ft-bub", has_text="Mario Kart after lunch")).to_have_count(1)

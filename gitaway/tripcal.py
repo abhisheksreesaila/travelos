@@ -760,6 +760,7 @@ def edit_note(session, id, text, demo=""):
             raise CalendarError(f"Keep notes to {MAX_NOTE} characters.")
         db, scope = fam.db, _scope(demo)
         with familydb.transaction(db):
+            _begin(db, fam.trip_id, scope, fam.traveler.id)       # the write lock every other update takes
             row = familydb.row(db, "SELECT * FROM notes WHERE trip_id = :t AND scope = :s AND note_id = :i AND gone = 0", t=fam.trip_id, s=scope, i=id) if isinstance(id, str) else None
             if row is None or not row["act_id"]:
                 raise CalendarError("That note is not here any more.")
