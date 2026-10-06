@@ -131,6 +131,7 @@ def test_a_park_day_with_bookings_fits_and_the_park_block_opens_its_block(phone)
     checks(phone)
     open_day(phone, 1)
     phone.locator(".cz-gb-open").click(force=True)
+    phone.locator("#cz-card-rides").click()      # F-106: a tap opens the card; Rides is the way to the block level
     expect(phone.locator(".cz-view[data-level=block]")).to_be_visible()
 
 
@@ -354,7 +355,8 @@ def test_two_fingers_never_lift_and_a_tap_on_a_plain_plan_opens_its_chat(phone):
     fire(phone, "pointerup", x, y)
     phone.wait_for_timeout(200)
     assert phone.locator(".cz-view").get_attribute("data-level") == "day" and phone.locator(".cz-toast").count() == 0
-    phone.locator(f"{sel} .cz-gb-open").click(position={"x": 60, "y": 40})      # the captain's call: a tap on a plan opens its chat (a park block opens its block)
+    phone.locator(f"{sel} .cz-gb-open").click(position={"x": 60, "y": 40})      # F-106: a tap on a plan opens its card; the full chat page is "Open chat" in it
+    phone.locator("#cz-card-chat").click()
     phone.wait_for_url(re.compile(r"/trip/talk\?act=" + lunch.id))
     expect(phone.locator("#ft-compose")).to_be_visible()
 

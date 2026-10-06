@@ -56,6 +56,7 @@ def test_sos_is_one_tap_on_the_plan_the_family_tab_and_the_ask_page(canvas_page,
     page.goto(f"{base_url}/trip/canvas?day=1")
     page.wait_for_selector(".cz-gb")
     page.locator(".cz-gb-open").first.click(position={"x": 90, "y": 40})
+    page.locator("#cz-card-rides").click()      # F-106: a tap opens the card; Rides is the way to the block level
     page.wait_for_selector(".cz-view[data-level=block]")
     page.locator("#cz-sos").click()
     expect(page.locator(".cz-sheet-sos a[href='tel:911']")).to_be_visible()

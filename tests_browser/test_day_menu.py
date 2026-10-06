@@ -128,6 +128,7 @@ def test_deleting_a_park_day_says_what_goes_with_it_and_undo_brings_every_step_b
     toast(phone).get_by_role("button", name="Undo").click()
     expect(toast(phone)).to_contain_text("is back")
     phone.locator(".cz-gb-open").click(position={"x": 90, "y": 40})
+    phone.locator("#cz-card-rides").click()      # F-106: a tap opens the card; Rides is the way to the block level
     expect(phone.locator(".cz-view[data-level=block]")).to_be_visible()
     assert phone.locator(".cz-swipe").count() == 14
 
@@ -218,6 +219,7 @@ def test_a_park_block_menu_and_a_tap_that_still_opens_it(phone):
     assert phone.locator(".cz-view").get_attribute("data-level") == "day"
     phone.wait_for_timeout(400)                                                    # the click a lifting finger makes is not a tap: a real tap comes later
     phone.locator(".cz-gb-open").click(position={"x": 90, "y": 120})               # a tap on the body of the block opens it at once
+    phone.locator("#cz-card-rides").click()      # F-106: a tap opens the card; Rides is the way to the block level
     expect(phone.locator(".cz-view[data-level=block]")).to_be_visible()
 
 
@@ -338,7 +340,9 @@ def test_a_double_tap_on_a_park_blocks_title_edits_it_and_does_not_open_it_while
     phone.locator(f"{block(act)} .cz-gb-edit").press("Escape")
     phone.wait_for_timeout(600)                                                           # the double tap's own clicks are over
     t = box(phone, f"{block(act)} .cz-gb-t")
-    phone.touchscreen.tap(t["x"] + 20, t["y"] + t["height"] / 2)                          # one tap on the title still opens the block, after a moment
+    phone.touchscreen.tap(t["x"] + 20, t["y"] + t["height"] / 2)                          # one tap on the title still opens it, after a moment (F-106: the card; Rides goes on to the block)
+    expect(phone.locator(".cz-card")).to_be_visible()
+    phone.locator("#cz-card-rides").click()
     expect(phone.locator(".cz-view[data-level=block]")).to_be_visible()
 
 
