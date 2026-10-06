@@ -129,25 +129,26 @@ def test_the_family_tab_shows_each_message_labelled_with_its_plan_and_plays_voic
     assert "on Venice Canals stroll" in unescape(trip.get("/trip/family/thread?since=0").text)
 
 
-def test_the_canvas_shows_a_small_badge_and_a_quiet_start_on_plain_plans_only(trip, ari):
+def test_the_day_grid_shows_how_much_was_said_and_the_parts_start_a_chat_one_tap_in(trip, ari):
     act, lunch, stroll = ids(ari)
     day = cal.get_activity(ari, stroll).day
     uni_day = cal.get_activity(ari, act).day
     html = unescape(trip.get(f"/trip/canvas?day={day}").text)
-    assert html.count("pt-badge-new") >= 1 and f"/trip/talk?act={stroll}" in html           # "+ chat" on the plain plan's card
-    park = unescape(trip.get(f"/trip/canvas?day={uni_day}").text)
-    m = re.search(r'<a [^>]*href="/trip/talk\?act=%s&part=%s[^"]*"[^>]*>' % (act, lunch), park)
+    assert f'data-act="{stroll}"' in html and "cz-gb-chat" not in html                # F-097: nothing said yet, nothing drawn on the block (the hold menu's Chat starts one, F-098)
+    block = unescape(trip.get(f"/trip/canvas?block={act}").text)
+    m = re.search(r'<a [^>]*href="/trip/talk\?act=%s&part=%s[^"]*"[^>]*>' % (act, lunch), block)
     assert m and "pt-badge-part" in m.group(0) and "Start a chat about this part" in m.group(0)     # a quiet bubble on a part, so a chat can start there
     plantalk.post_message(ari, act, lunch, "yes")
     plantalk.post_voice(ari, act, lunch, voice(), 3)
     plantalk.post_message(ari, stroll, "", "hi")
-    park = unescape(trip.get(f"/trip/canvas?day={uni_day}").text)
-    m = re.search(r'<a [^>]*href="/trip/talk\?act=%s&part=%s[^"]*"[^>]*>(.*?)</a>' % (act, lunch), park, re.S)
+    block = unescape(trip.get(f"/trip/canvas?block={act}").text)
+    m = re.search(r'<a [^>]*href="/trip/talk\?act=%s&part=%s[^"]*"[^>]*>(.*?)</a>' % (act, lunch), block, re.S)
     assert m and ">2<" in m.group(1) and "<rect" in m.group(1)                              # the count, and the mic icon for the voice note
-    assert "2 messages, with a voice note" in park
-    assert f"part={lunch}" in unescape(trip.get(f"/trip/canvas?block={act}").text)
+    assert "2 messages, with a voice note" in block
+    park = unescape(trip.get(f"/trip/canvas?day={uni_day}").text)
+    assert re.search(r'class="cz-gb-chat"[^>]*>.*?<span class="pt-n">2</span>', park, re.S) and 'data-chat="1"' in park       # the day's block says how much was said on it, and the Chats filter finds it
     plain = unescape(trip.get(f"/trip/canvas?day={day}").text)
-    assert "1 message" in plain
+    assert re.search(r'class="cz-gb-chat"[^>]*>.*?<span class="pt-n">1</span>', plain, re.S)
 
 
 def test_a_plan_message_pushes_the_family_with_the_plan_named(trip, ari, monkeypatch):

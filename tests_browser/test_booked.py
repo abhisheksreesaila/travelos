@@ -303,17 +303,16 @@ def test_chats_shows_the_plans_and_parts_with_messages_and_the_step_filters_stay
     assert kinds.bounding_box()["y"] < filters.bounding_box()["y"]                          # the new row comes first, both are compact
     assert filters.bounding_box()["height"] < 120
     page.locator(".cz-kchip", has_text="Chats").click()
-    expect(page.locator(".cz-block")).to_be_visible()
-    assert page.locator(".cz-part:not(.is-off)").count() == 1
-    expect(page.locator(".cz-part:not(.is-off)")).to_contain_text("Lunch")
+    expect(page.locator(".cz-gb")).to_be_visible()                                            # F-097: the block with a message on one of its parts
+    assert page.locator(".cz-gb:visible").count() == 1 and page.locator(".cz-gb .cz-gb-chat").count() == 1
     checks(page)
     page.locator(".cz-fchip", has_text="Everyone").click()                                    # the who and list filters still work
     page.locator(".cz-kchip", has_text="Plans").click()
-    assert page.locator(".cz-part:not(.is-off)").count() > 1
+    assert page.locator(".cz-gb:visible").count() == 1
     day(page, base_url, 3)                                                                    # California Adventure: nothing said yet
     expect(page.locator(".cz-kinds [aria-pressed=true]")).to_have_text("Plans")
     page.locator(".cz-kchip", has_text="Chats").click()
-    expect(page.locator(".cz-block")).to_be_hidden()
+    expect(page.locator(".cz-gb")).to_be_hidden()
     expect(page.locator(".cz-kind-none")).to_be_visible()
     page.goto(f"{base_url}/trip/canvas")
     page.wait_for_selector(".cz-week")

@@ -20,6 +20,7 @@
   var reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
   var RANK = { week: 0, day: 1, block: 2, step: 3 };
   var KEY = /^[a-z]{3}-[A-Za-z0-9-]+$/;
+  var CZ = { stage: stage, held: false };      // what the day grid's script (day_grid.js) uses; `held` is true while it holds a block
   var cache = {};          // url -> { at, promise }: a level fetched as the finger went down, used by the tap that follows
   var busy = false;
   var waiting = null;      // the browser's Back or Forward pressed while a zoom was running: run it when that zoom is done
@@ -46,12 +47,14 @@
     return p;
   }
 
+  var curMode = '';        // how the level being shown was reached (push, replace, stay, pop), for the day grid's scroll
+  var quietSwap = false;   // a swap that only brings the level up to date after a write: nothing moves, and focus stays where it was
   function swap(html, dir) {
     stage.innerHTML = html;
     var v = view();
     if (!v) return;
     if (v.dataset.title) document.title = 'GitAway · ' + v.dataset.title;
-    var focus = v.querySelector('#cz-sheet-title') || v.querySelector('#cz-title');
+    var focus = quietSwap ? null : v.querySelector('#cz-sheet-title') || v.querySelector('#cz-title');
     if (focus) { try { focus.focus({ preventScroll: true }); } catch (e) { focus.focus(); } }
     if (dir && !(document.startViewTransition && !reduced.matches)) {
       v.classList.add('cz-in-' + dir);
@@ -61,6 +64,7 @@
     applyKinds();
     centreDay();
     askHere();
+    stage.dispatchEvent(new CustomEvent('cz:swap', { detail: { quiet: quietSwap, mode: curMode } }));      // the day grid (day_grid.js) starts its scroll and its focus here
   }
 
   // Name the element that zooms, run the swap inside a View Transition, and clear the name afterwards.
@@ -97,6 +101,7 @@
     if (busy) { if (o.mode === 'pop') waiting = u; return Promise.resolve(); }
     busy = true;
     var dir = o.dir || directionTo(u);
+    curMode = o.mode || '';
     var v = view(), y0 = window.scrollY;
     var key = o.key !== undefined ? o.key : (dir === 'out' && v ? v.dataset.zout : null);
     return fetchLevel(u).then(function (html) {
@@ -105,9 +110,11 @@
           history.replaceState(Object.assign({}, history.state, { y: window.scrollY }), '');
           history.pushState({ cz: 1, from: path(location.href) }, '', u);
           window.scrollTo(0, 0);
+          if (CZ.afterScroll) CZ.afterScroll();       // the day grid scrolls to the day's first plan, inside the swap so the transition carries it
         } else if (o.mode === 'replace') {
           history.replaceState(Object.assign({}, history.state, { cz: 1 }), '', u);
           window.scrollTo(0, 0);
+          if (CZ.afterScroll) CZ.afterScroll();
         } else if (o.mode === 'stay') {
           window.scrollTo(0, y0);
         } else if (o.mode === 'pop') {
@@ -254,7 +261,7 @@
       b.type = 'button';
       b.className = 'cz-toast-undo';
       b.textContent = 'Undo';
-      b.addEventListener('click', function () { doUndo(undo); });
+      b.addEventListener('click', function () { if (typeof undo === 'function') { hideToast(); undo(); } else doUndo(undo); });      // a function is the day grid's own Undo
       toast.appendChild(b);
     }
     (document.getElementById('main') || document.body).appendChild(toast);
@@ -425,7 +432,7 @@
   });
   stage.addEventListener('pointermove', function (e) {
     if (!flick || e.pointerId !== flick.id) return;
-    if (count() > 1 || (g && g.mode === 'drag')) { flick.v.style.transform = ''; flick = null; return; }
+    if (count() > 1 || (g && g.mode === 'drag') || CZ.held) { flick.v.style.transform = ''; flick = null; return; }      // a held block (day_grid.js) never flicks
     var dx = e.clientX - flick.x, dy = e.clientY - flick.y;
     if (!reduced.matches && Math.abs(dx) > Math.abs(dy) * 1.5 && Math.abs(dx) > 12) {
       var edge = (dx < 0 && !flick.v.dataset.next) || (dx > 0 && !flick.v.dataset.prev);
@@ -437,7 +444,7 @@
     var f = flick;
     flick = null;
     f.v.style.transform = '';
-    if (e.type !== 'pointerup' || busy || (g && g.mode === 'drag')) return;
+    if (e.type !== 'pointerup' || busy || (g && g.mode === 'drag') || CZ.held) return;
     var dx = e.clientX - f.x, dy = e.clientY - f.y;
     if (Math.abs(dx) < FLICK || Math.abs(dx) < Math.abs(dy) * 1.5 || Date.now() - f.at > 900) return;
     var u = dx < 0 ? f.v.dataset.next : f.v.dataset.prev;
@@ -552,6 +559,9 @@
     var tray = el.closest('[data-drop-aside]');
     if (tray && !g.adding) return g.item.dataset.aside === '1' ? null : { kind: 'aside', el: tray };
     var part = el.closest('[data-part]');
+    if (!part && el.closest('.cz-gb-open')) {          // on the day grid a park block's link covers its part labels: the label under the finger is the part
+      part = document.elementsFromPoint(x, y).filter(function (n) { return n.matches && n.matches('.cz-gb-part'); })[0] || null;
+    }
     if (!part || !part.dataset.act || !stage.contains(part)) return null;
     var items = Array.prototype.filter.call(part.querySelectorAll('[data-drag]'), function (n) { return n !== g.item && !n.classList.contains('cz-chip-aside'); });
     var pr = part.getBoundingClientRect(), before = null;
@@ -643,6 +653,26 @@
     var open = e.target.closest ? e.target.closest('.cz-swipe.is-open') : null;
     if (open && !e.target.closest('.cz-swipe-acts')) { e.preventDefault(); e.stopImmediatePropagation(); closeSwipes(); }
   }, true);
+
+  // The day grid's script needs a few of these. `quiet` brings the level up to date after a write with no animation, the scroll kept and the focus left alone.
+  CZ.view = view; CZ.post = post; CZ.tripBody = tripBody; CZ.showToast = showToast; CZ.hideToast = hideToast; CZ.here = here; CZ.reduced = reduced; CZ.goto = goto; CZ.path = path;
+  CZ.busy = function () { return busy; };
+  CZ.guard = function (ms, el) { clickGuard = Date.now() + ms; guardItem = el; };      // the click a lifting finger makes is not a tap on what it lifted from
+  CZ.quiet = function () {
+    return new Promise(function (done) {
+      whenIdle(function () {
+        cache = {};
+        var y = window.scrollY;
+        fetchLevel(here()).then(function (html) {
+          quietSwap = true;
+          try { swap(html, ''); } finally { quietSwap = false; }
+          window.scrollTo(0, y);
+          done(true);
+        }).catch(function () { done(false); });
+      });
+    });
+  };
+  window.CZ = CZ;
 
   applyFilter();
   applyKinds();

@@ -55,7 +55,7 @@ def test_today_starts_with_whats_happening_now_and_other_days_do_not(trip, monke
     at(monkeypatch, datetime(2026, 10, 17, 18, 0, tzinfo=timezone.utc))     # Saturday 11:00 AM: Universal is on
     page = bare(trip.get("/trip/canvas?day=1").text)
     assert 'id="tp-up"' in page and "HAPPENING NOW" in page and "Universal Studios Hollywood" in page
-    assert page.index('id="cz-dpills"') < page.index('id="tp-up"') < page.index('class="cz-block"')
+    assert page.index('id="cz-dpills"') < page.index('id="tp-up"') < page.index('id="cz-grid"')
     assert 'id="tp-up"' not in bare(trip.get("/trip/canvas?day=3").text)
 
 

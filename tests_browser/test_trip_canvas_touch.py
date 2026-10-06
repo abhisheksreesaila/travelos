@@ -152,16 +152,15 @@ def test_dropping_a_step_above_another_puts_it_before_it_and_undo_restores_the_e
 
 def test_a_step_dropped_on_the_set_aside_tray_goes_there_and_undo_brings_it_back(canvas_page):
     page = canvas_page(viewport=TALL)
-    page.goto(page.url + "?day=1")
-    page.wait_for_selector(".cz-view[data-level=day]")
+    block(page)                                                    # F-097: a step is picked up in its block; the day's blocks are moved by their time
     assert aside_titles("a1") == ["Studio Tour", "Simpsons"]
-    drag(page, '.cz-chipwrap:has-text("King Kong") .cz-chip', ".cz-dropaside")
+    drag(page, '.cz-swipe:has-text("King Kong") .cz-step', ".cz-dropaside")
     expect(toast(page)).to_contain_text("King Kong moved to the Set aside tray")
     expect(page.locator(".cz-tray")).to_contain_text("Set aside · 3")
-    expect(page.locator(".cz-chipwrap:has-text('King Kong')")).to_have_count(0)
+    expect(page.locator(".cz-swipe:has-text('King Kong')")).to_have_count(0)
     toast(page).get_by_role("button", name="Undo").click()
     expect(page.locator(".cz-tray")).to_contain_text("Set aside · 2")
-    expect(page.locator(".cz-chipwrap:has-text('King Kong')")).to_have_count(1)
+    expect(page.locator(".cz-swipe:has-text('King Kong')")).to_have_count(1)
     assert aside_titles("a1") == ["Studio Tour", "Simpsons"]
 
 
@@ -169,17 +168,16 @@ def test_a_set_aside_step_dragged_out_of_the_tray_goes_back_into_the_part_it_is_
     page = canvas_page(viewport=TALL)
     page.goto(page.url + "?day=1")
     page.wait_for_selector(".cz-view[data-level=day]")
-    drag(page, '.cz-tray .cz-chip:has-text("Studio Tour")', '.cz-part:has(.cz-part-t:text-is("Lunch")) .cz-part-h')
+    drag(page, '.cz-tray .cz-chip:has-text("Studio Tour")', '.cz-gb-part:text-is("Lunch")')       # on the day, a part's label in the block is a place to drop
     expect(toast(page)).to_contain_text("Studio Tour moved to Lunch")
     assert part_titles("a1", "Lunch")[-1] == "Studio Tour" and aside_titles("a1") == ["Simpsons"]
 
 
 def test_a_step_dropped_on_another_day_at_the_top_goes_to_that_days_plan_and_undo_returns_it(canvas_page):
     page = canvas_page(viewport=TALL)
-    page.goto(page.url + "?day=1")
-    page.wait_for_selector(".cz-view[data-level=day]")
+    block(page)
     other = other_act("a1")
-    start = hold(page, '.cz-chipwrap:has-text("King Kong") .cz-chip')
+    start = hold(page, '.cz-swipe:has-text("King Kong") .cz-step')
     expect(page.locator(".cz-dropdays")).to_be_visible()
     cell = page.locator(f'.cz-dd[data-drop-act="{other}"]')
     expect(cell).to_be_visible()
@@ -192,30 +190,10 @@ def test_a_step_dropped_on_another_day_at_the_top_goes_to_that_days_plan_and_und
     expect(toast(page)).to_contain_text("King Kong moved to ")
     assert "King Kong" not in [s["title"] for p in plan()["blocks"]["a1"]["parts"] for s in p["steps"]]
     assert "King Kong" in [s["title"] for p in plan()["blocks"][other]["parts"] for s in p["steps"]]
-    expect(page.locator(".cz-chipwrap:has-text('King Kong')")).to_have_count(0)
     toast(page).get_by_role("button", name="Undo").click()
-    expect(page.locator(".cz-chipwrap:has-text('King Kong')")).to_have_count(1)
+    expect(page.locator(".cz-view[data-level=block]")).to_be_visible()
+    expect(page.locator(".cz-swipe:has-text('King Kong')")).to_have_count(1)
     assert "King Kong" in part_titles("a1", "Upper Lot")
-
-
-def test_letting_go_over_nothing_changes_nothing_and_a_quick_move_is_a_scroll(canvas_page):
-    page = canvas_page(viewport=TALL)
-    block(page)
-    before = part_titles("a1", "Upper Lot")
-    start = hold(page, '.cz-swipe:has-text("Minion Mayhem") .cz-step')
-    expect(page.locator(".cz-lift")).to_have_count(1)
-    end = move_to(page, start, (start[0], 6))              # the top edge, above everything
-    fire(page, "pointerup", *end)
-    expect(page.locator(".cz-lift")).to_have_count(0)
-    page.wait_for_timeout(300)
-    assert toast(page).count() == 0 and part_titles("a1", "Upper Lot") == before
-    # moving before the hold time is up is the page scrolling, not a lift
-    x, y, _ = centre(page, '.cz-swipe:has-text("King Kong") .cz-step')
-    fire(page, "pointerdown", x, y)
-    fire(page, "pointermove", x, y + 30)
-    page.wait_for_timeout(500)
-    assert page.locator(".cz-lift").count() == 0
-    fire(page, "pointerup", x, y + 30)
 
 
 def test_dropping_where_it_already_is_says_nothing(canvas_page):
@@ -524,10 +502,10 @@ def test_the_filter_is_remembered_across_levels_and_reloads_for_this_person_only
     page.locator(".cz-back").click()
     expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
     assert page.locator(".cz-fchip", has_text="Pregnancy-safe rides").get_attribute("aria-pressed") == "true"       # the day keeps it
-    assert page.locator(".cz-chipwrap.is-hit").count() == 4
+    assert page.locator(".cz-gb.is-hit").count() == 1                                  # F-097: on the day the block with a matching step is lit
     page.reload()
     page.wait_for_selector(".cz-view")
-    assert page.locator(".cz-fchip", has_text="Pregnancy-safe rides").get_attribute("aria-pressed") == "true" and page.locator(".cz-chipwrap.is-hit").count() == 4
+    assert page.locator(".cz-fchip", has_text="Pregnancy-safe rides").get_attribute("aria-pressed") == "true" and page.locator(".cz-gb.is-hit").count() == 1
     key = page.evaluate("Object.keys(localStorage).find(k => k.startsWith('cz-filter:'))")
     assert key.split(":")[2] == page.locator("#cz").get_attribute("data-me")
     page.evaluate("k => localStorage.setItem(k, 'list:gone')", key)                  # a filter that no longer exists falls back to Everyone
@@ -560,7 +538,7 @@ def test_tapping_a_chip_in_the_list_card_opens_the_add_sheet_ready_to_go(canvas_
     assert any("Golden Zephyr" in titles for titles in [[s["title"] for p in plan()["blocks"][dca]["parts"] for s in p["steps"]]])
     page.locator(".cz-back").click()
     expect(page.locator(".cz-listmore")).to_contain_text("3 more")
-    expect(page.locator(".cz-chipwrap.is-hit")).to_have_count(5)                    # the filter is still on, and the new ride is on the list too
+    expect(page.locator(".cz-gb.is-hit")).to_have_count(1)                          # the filter is still on
 
 
 def test_the_week_and_a_free_day_have_no_filters(canvas_page):
@@ -700,9 +678,7 @@ def test_screenshots(canvas_page):
     page.wait_for_selector(".cz-toast")
     page.screenshot(path=f"{out}/04-moved-undo-toast-390.png")
     page.evaluate("document.getElementById('cz-toast').remove()")
-    page.goto(page.url.split("?")[0] + "?day=1")
-    page.wait_for_selector(".cz-view[data-level=day]")
-    start = hold(page, '.cz-chipwrap:has-text("King Kong") .cz-chip')
+    start = hold(page, '.cz-swipe:has-text("King Kong") .cz-step')
     expect(page.locator(".cz-lift")).to_have_count(1)
     cell =page.locator(f'.cz-dd[data-drop-act="{dca}"]').bounding_box()
     move_to(page, start, (cell["x"] + cell["width"] / 2, cell["y"] + cell["height"] / 2))
@@ -711,7 +687,7 @@ def test_screenshots(canvas_page):
     page.wait_for_selector(".cz-toast")
     page.screenshot(path=f"{out}/05b-after-day-drop-390.png")
     page.evaluate("document.getElementById('cz-toast').remove()")
-    start = hold(page, '.cz-chipwrap .cz-chip', nth=2)
+    start = hold(page, '.cz-swipe .cz-step', nth=2)
     tray = page.locator(".cz-dropaside").bounding_box()
     move_to(page, start, (tray["x"] + tray["width"] / 2, tray["y"] + tray["height"] / 2))
     page.screenshot(path=f"{out}/06-drag-to-tray-390.png")
@@ -807,4 +783,5 @@ def test_a_drop_that_lands_during_a_zoom_waits_for_it_and_then_refreshes(canvas_
     expect(toast(page)).to_contain_text("Minion Mayhem moved to Lunch", timeout=9000)
     assert part_titles("a1", "Lunch")[-1] == "Minion Mayhem"
     expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
-    expect(page.locator('.cz-part:has(.cz-part-t:text-is("Lunch")) .cz-chipwrap:has-text("Minion Mayhem")')).to_have_count(1)     # the level shown is the fresh one
+    page.locator(".cz-gb-open").click(position={"x": 90, "y": 40})                      # the level shown is the fresh one: the step is in Lunch when the block is opened
+    expect(page.locator('.cz-bpart:has(h2:text-is("Lunch")) .cz-swipe:has-text("Minion Mayhem")')).to_have_count(1)

@@ -95,21 +95,26 @@ def test_a_day_has_the_week_one_tap_out(trip):
 
 # ---- the day ---------------------------------------------------------------------------------------------------------------
 
-def test_a_day_shows_its_block_with_parts_chips_stickers_who_and_the_set_aside_tray(trip):
+def test_a_day_shows_its_block_on_the_grid_with_its_parts_and_the_set_aside_tray(trip):
     page = trip.get("/trip/canvas?day=1").text
     assert 'data-level="day"' in page and re.search(r'<h1[^>]*id="cz-title"[^>]*>(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)<', page)
     for part in ("Lower Lot", "Lunch", "Harry Potter world", "Upper Lot"):
-        assert part in page
-    assert page.count('class="cz-chip') >= 14 and "Revenge of the Mummy" in page
-    assert "roughest ride" in page and 'cz-sticker cz-sticker-chip' in page         # notes stuck on their ride
+        assert part in page                                                    # F-097: the parts are small labels in the block (the steps are one tap in, on the block)
+    assert 'id="cz-grid"' in page and "Revenge of the Mummy" not in page
     assert "Set aside · 2" in page and "Studio Tour" in page and "Simpsons" in page   # the day's tray
+    assert f'href="/trip/canvas?block={uni_id()}"' in bare(page) and f'href="/trip/canvas?step={step_id(trip, "Studio Tour")}"' in bare(page)
+
+
+def test_a_steps_who_is_drawn_as_avatars_on_its_row_in_the_block(trip):
+    block = f"/trip/canvas?block={uni_id()}"
+    step = lambda page: next(c for c in page.split('class="cz-step"') if "Hippogriff" in c.split("</a>")[0]).split("</a>")[0]  # noqa: E731
+    page = trip.get(block).text
+    assert "cz-av-initials" in step(page) and "not matched to a person" in step(page)          # H and B, as the messages wrote them, dashed
+    assert "roughest ride" in page and "cz-sticker cz-sticker-step" in page         # notes stuck on their ride
     me = person("ari")["user_id"]
     run("UPDATE block_steps SET who = :w WHERE title = 'Hippogriff'", w=json.dumps([f"m:{me}", "n:Bhoomija"]))
-    hippo = next(c for c in trip.get("/trip/canvas?day=1").text.split('class="cz-chipwrap"') if "Hippogriff" in c.split("</a>")[0])
+    hippo = step(trip.get(block).text)
     assert 'aria-label="Bhoomija"' in hippo and "cz-av-named" in hippo and "cz-av-member" in hippo               # who, as avatars: a member, and a name nobody matched
-    init = next(c for c in page.split('class="cz-chipwrap"') if "Hippogriff" in c.split("</a>")[0])
-    assert "cz-av-initials" in init and "not matched to a person" in init               # H and B, as the messages wrote them, dashed
-    assert f'href="/trip/canvas?block={uni_id()}"' in bare(page) and f'href="/trip/canvas?step={step_id(trip, "King Kong")}"' in bare(page)
 
 
 def test_the_unmatched_initials_are_drawn_dashed(trip):

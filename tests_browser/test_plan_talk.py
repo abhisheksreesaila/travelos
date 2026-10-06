@@ -25,9 +25,11 @@ def lunch_chat(page, base_url):
     """Open the Universal day, find Lunch and go to its chat."""
     page.goto(f"{base_url}/trip/canvas?day=1")
     page.wait_for_selector(".cz-view[data-level=day]")
-    part = page.locator(".cz-part", has_text="Lunch").first.get_attribute("data-part")
-    act = page.locator(".cz-block").first.get_attribute("data-act")
-    page.locator(f'.cz-part[data-part="{part}"] .pt-badge').click()      # the part's own bubble, as a person would
+    act = page.locator(".cz-gb").first.get_attribute("data-act")
+    page.locator(".cz-gb-open").click(force=True)                         # F-097: the day's block opens its parts, each with its own bubble
+    page.wait_for_selector(".cz-view[data-level=block]")
+    part = page.locator(".cz-bpart", has_text="Lunch").first.get_attribute("data-part")
+    page.locator(f'.cz-bpart[data-part="{part}"] .pt-badge').click()      # the part's own bubble, as a person would
     page.wait_for_url(re.compile(r"/trip/talk\?act="))
     page.wait_for_selector("#ft-compose")
     return act, part
@@ -94,10 +96,13 @@ def test_text_photo_and_a_recorded_voice_note_that_plays(canvas_page, base_url, 
     # the badge on the plan's day, and the Family tab's label and player
     page.goto(f"{base_url}/trip/canvas?day=1")
     page.wait_for_selector(".cz-view[data-level=day]")
-    badge = page.locator(f'.cz-part a.pt-badge[href*="part={part}"]')
+    expect(page.locator(".cz-gb .cz-gb-chat .pt-n")).to_have_text("3")      # F-097: the day's block says how much was said; its parts' own bubbles are one tap in
+    checks(page)
+    page.locator(".cz-gb-open").click(force=True)
+    page.wait_for_selector(".cz-view[data-level=block]")
+    badge = page.locator(f'.cz-bpart a.pt-badge[href*="part={part}"]')
     expect(badge).to_be_visible()
     expect(badge.locator(".pt-n")).to_have_text("3")
-    checks(page)
     badge.click()
     expect(page.locator("#ft-thread .ft-msg")).to_have_count(3)
     page.goto(f"{base_url}/trip/family")

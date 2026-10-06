@@ -559,3 +559,16 @@ def test_the_card_and_the_done_page_say_added_to_after_a_merge(client, azure, an
     assert "added to Universal Studios Hollywood on Sat" in announced[-1][1] or "added to Universal Studios Hollywood on Sat" in announced[-1][0]
     assert "merged=1" in r.headers["location"]
     assert "to what was already planned on Saturday, Oct 17" in client.get(r.headers["location"]).text
+
+
+def test_a_plan_with_a_start_and_no_length_gets_an_hour_and_nobody_is_asked(client, azure, announced):
+    """F-097: Ask no longer asks how long; a plan placed without a length is an hour, and the grid is where it is stretched."""
+    book(client)
+    s = person("ari")
+    azure.answer = answer(op("add_plan", title="Gelato", start="15:30"), op("add_plan", title="Late swim", start="21:30"))
+    step = say.start(s, "Gelato at 3:30 and a late swim at 9:30", SAT)
+    assert step["questions"] == []
+    chips = step["preview"]["groups"][0]["chips"]
+    assert [c["label"] for c in chips] == ["Gelato", "Late swim"] and "3:30" in chips[0]["after"] and "4:30" in chips[0]["after"]
+    say.apply(s, step["state"], step["preview"]["token"], None)
+    assert ("Gelato", "15:30", "16:30") in plans(s) and ("Late swim", "21:30", "22:00") in plans(s)      # the hour stops where the grid does

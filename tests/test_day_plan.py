@@ -79,7 +79,7 @@ def test_a_day_with_only_bookings_says_nothing_is_planned_and_still_shows_them(t
 
 def test_a_park_day_shows_its_plan_as_the_card_and_no_booking_line(trip):
     page = day(trip, 1)
-    assert "Universal Studios Hollywood" in text(page) and 'class="cz-block"' in page and 'class="cz-bk' not in page and 'id="cz-empty"' not in page
+    assert "Universal Studios Hollywood" in text(page) and 'id="cz-grid"' in page and re.search(r'class="cz-gb [^"]*is-park', page) and 'class="cz-bk' not in page and 'id="cz-empty"' not in page
 
 
 # ---- change this day -----------------------------------------------------------------------------------------------------------

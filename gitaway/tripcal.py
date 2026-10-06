@@ -30,6 +30,8 @@ GRID_END = 22 * 60
 DEFAULT_START = 7 * 60
 SNAP = 15
 MIN_LEN = 30
+FINE_SNAP = 5       # the touch day grid (F-097): 5-minute times, 15-minute plans
+FINE_MIN_LEN = 15
 CHECK_IN = 15 * 60
 CHECK_OUT = 11 * 60
 STAY_LEN = 90
@@ -486,8 +488,8 @@ def last_deleted(session, demo=""):
 
 # ---- validation ----------------------------------------------------------------------------------------------------
 
-def snap(m):
-    return round(m / SNAP) * SNAP
+def snap(m, grain=SNAP):
+    return round(m / grain) * grain
 
 
 def parse_time(value, what):
@@ -499,9 +501,10 @@ def parse_time(value, what):
     return int(m.group(1)) * 60 + int(m.group(2))
 
 
-def _clean(t, blocks, *, day, start, end, title, kind):
+def _clean(t, blocks, *, day, start, end, title, kind, fine=False):
     """Validate an activity on trip `t` with booked `blocks`. Overlapping a booking, a ride or another plan is never refused (F-086:
-    families split up); `overlaps` tags it where it is listed."""
+    families split up); `overlaps` tags it where it is listed. `fine` is the touch day grid's grain (F-097): times snap to 5 minutes and a plan may be
+    15 minutes long, where the forms keep 15 and 30."""
     title = " ".join((title or "").split())
     if not title:
         raise CalendarError("Give it a title.")
@@ -516,14 +519,15 @@ def _clean(t, blocks, *, day, start, end, title, kind):
         raise CalendarError("Pick a day.")
     if not 0 <= day < n:
         raise CalendarError("Pick a day inside your trip.")
-    s, e = snap(parse_time(start, "start")), snap(parse_time(end, "end"))
+    grain, shortest = (FINE_SNAP, FINE_MIN_LEN) if fine else (SNAP, MIN_LEN)
+    s, e = snap(parse_time(start, "start"), grain), snap(parse_time(end, "end"), grain)
     lo = grid_start(blocks)
     if not (lo <= s and e <= GRID_END):
         raise CalendarError(f"Plan between {fmt_time(lo)} and {fmt_time(GRID_END)}.")
     if e <= s:
         raise CalendarError("The end has to be after the start.")
-    if e - s < MIN_LEN:
-        raise CalendarError(f"Give it at least {MIN_LEN} minutes.")
+    if e - s < shortest:
+        raise CalendarError(f"Give it at least {shortest} minutes.")
     return day, s, e, title
 
 
@@ -571,16 +575,23 @@ def _who(fam):
     return familythread.first_name(fam.traveler)
 
 
-def _say_update(session, fam, scope, t, row, d, s, e, title):
-    """The card for an edit: moved (day or start), resized (end only) or renamed; nothing when nothing the family would notice changed."""
-    was = (row["day"], row["start_min"], row["end_min"], row["title"])
-    who = _who(fam)
+def update_card(who, t, was, d, s, e, title):
+    """(text, action) of the card for an edit, or None: moved (day or start), resized (end only) or renamed; nothing when nothing the family would notice
+    changed. `was` is (day, start, end, title) before the edit."""
     if (d, s) != (was[0], was[1]):
-        _say(session, fam, scope, f"{who} moved {title} to {_when(t, d, s)}", "move")
-    elif e != was[2]:
-        _say(session, fam, scope, f"{who} changed {title} to end at {fmt_time(e)}", "move")
-    elif title != was[3]:
-        _say(session, fam, scope, f"{who} renamed {was[3]} to {title}", "change")
+        return f"{who} moved {title} to {_when(t, d, s)}", "move"
+    if e != was[2]:
+        return f"{who} changed {title} to end at {fmt_time(e)}", "move"
+    if title != was[3]:
+        return f"{who} renamed {was[3]} to {title}", "change"
+    return None
+
+
+def _say_update(session, fam, scope, t, row, d, s, e, title):
+    """The card for an edit (see `update_card`)."""
+    card = update_card(_who(fam), t, (row["day"], row["start_min"], row["end_min"], row["title"]), d, s, e, title)
+    if card:
+        _say(session, fam, scope, card[0], card[1])
 
 
 # ---- activities ----------------------------------------------------------------------------------------------------
@@ -628,8 +639,9 @@ def update_activity(session, id_, *, day=None, start=None, end=None, title=None,
             return update_in(session, fam, t, blocks, id_, day=day, start=start, end=end, title=title, kind=kind, scope=scope)
 
 
-def update_in(session, fam, t, blocks, id_, *, day=None, start=None, end=None, title=None, kind=None, scope="", say=True):
-    """`update_activity`'s work inside the caller's open transaction on `fam` (F-072 applies several changes as one). `say=False` writes no thread card."""
+def update_in(session, fam, t, blocks, id_, *, day=None, start=None, end=None, title=None, kind=None, scope="", say=True, fine=False):
+    """`update_activity`'s work inside the caller's open transaction on `fam` (F-072 applies several changes as one). `say=False` writes no thread card.
+    `fine` is the touch grid's grain (F-097, see `_clean`)."""
     db = fam.db
     _begin(db, fam.trip_id, scope, fam.traveler.id)
     row = familydb.row(db, "SELECT * FROM activities WHERE trip_id = :t AND scope = :s AND act_id = :i AND gone = 0", t=fam.trip_id, s=scope, i=id_)
@@ -637,7 +649,7 @@ def update_in(session, fam, t, blocks, id_, *, day=None, start=None, end=None, t
         raise CalendarError("That activity is gone.")
     d, s, e, name = _clean(
         t, blocks, day=row["day"] if day is None else day, start=row["start_min"] if start is None else start,
-        end=row["end_min"] if end is None else end, title=row["title"] if title is None else title, kind=row["kind"] if kind is None else kind)
+        end=row["end_min"] if end is None else end, title=row["title"] if title is None else title, kind=row["kind"] if kind is None else kind, fine=fine)
     changes = {}
     if (day, start, end) != (None, None, None):
         changes.update(day=d, start_min=s, end_min=e)

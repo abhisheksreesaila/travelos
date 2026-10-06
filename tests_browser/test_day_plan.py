@@ -89,10 +89,11 @@ def test_the_slide_runs_the_way_the_days_go(canvas_page):
     assert page.evaluate("window.__vt.dir").count("next") == 1 and page.evaluate("window.__vt.dir")[-1] == "prev"
 
 
-def test_holding_a_step_still_drags_it_and_does_not_flick(canvas_page):
+def test_holding_a_set_aside_step_still_drags_it_and_does_not_flick(canvas_page):
     page = canvas_page()
     open_day(page, 1)
-    chip = page.locator("[data-drag]").first
+    chip = page.locator("[data-drag]").first                  # F-097: the day's steps live in their block; the Set aside tray is still on the day
+    chip.evaluate("e => e.scrollIntoView({block: 'center'})")
     b = chip.bounding_box()
     x, y = b["x"] + b["width"] / 2, b["y"] + b["height"] / 2
     page.evaluate("""([x, y]) => { const el = document.elementFromPoint(x, y);

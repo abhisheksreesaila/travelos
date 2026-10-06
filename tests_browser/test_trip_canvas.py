@@ -79,6 +79,11 @@ def checks(page):
     assert page.evaluate(SMALL_CONTROLS) == []
 
 
+def open_block(page):
+    """Tap the park block on the day (F-097: it is a block on the grid, and a tap near its top opens it)."""
+    page.locator(".cz-gb-open").click(position={"x": 90, "y": 40})
+
+
 # ---- tap through every level and back ---------------------------------------------------------------------------------------
 
 def test_tap_zooms_week_to_day_to_block_to_step_and_every_way_back(canvas_page, base_url):
@@ -89,7 +94,7 @@ def test_tap_zooms_week_to_day_to_block_to_step_and_every_way_back(canvas_page, 
     expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
     assert "/trip/canvas?day=1" in page.url and "Lower Lot" in page.locator("#cz").inner_text()
     checks(page)
-    page.locator(".cz-block-head").click()
+    open_block(page)
     expect(page.locator(".cz-view[data-level=block]")).to_be_visible()
     assert "block=a1" in page.url and page.locator(".cz-bpart").count() >= 4
     checks(page)
@@ -109,12 +114,12 @@ def test_tap_zooms_week_to_day_to_block_to_step_and_every_way_back(canvas_page, 
         assert page.evaluate("history.length") < 12
 
 
-def test_a_day_chip_zooms_straight_into_its_sheet_and_closing_it_lands_on_the_block(canvas_page):
+def test_a_set_aside_chip_on_the_day_zooms_straight_into_its_sheet_and_closing_it_lands_on_the_block(canvas_page):
     page = canvas_page()
     page.goto(page.url + "?day=1")
-    page.locator('.cz-chip:has-text("Revenge of the Mummy")').click()
+    page.locator('.cz-tray .cz-chip:has-text("Studio Tour")').click()           # F-097: the day's steps are one tap in; the Set aside tray is still on the day
     expect(page.locator(".cz-view[data-level=step]")).to_be_visible()
-    expect(page.locator("#cz-sheet-title")).to_have_text("Revenge of the Mummy")
+    expect(page.locator("#cz-sheet-title")).to_have_text("Studio Tour")
     page.keyboard.press("Escape")                              # the keyboard's way out
     expect(page.locator(".cz-view[data-level=block]")).to_be_visible()
 
@@ -155,7 +160,7 @@ def test_a_free_day_plus_opens_the_add_sheet_and_every_week_row_opens_its_day(ca
 def test_back_and_forward_walk_the_levels_and_a_level_opens_directly(canvas_page, base_url):
     page = canvas_page()
     page.locator(".cz-row", has_text="Universal").locator(".cz-row-link").click()
-    page.locator(".cz-block-head").click()
+    open_block(page)
     page.locator('.cz-step:has-text("King Kong")').click()
     expect(page.locator(".cz-view[data-level=step]")).to_be_visible()
     page.go_back()
@@ -193,7 +198,7 @@ def test_the_tapped_element_is_named_before_and_after_the_view_transition(canvas
     vt = page.evaluate("window.__vt")
     assert vt["calls"] == 2 and vt["old"][1] == ["day-1"] and vt["new"][1] == ["day-1"] and vt["dir"][1] == "out"   # the heading shrank back into the row
     page.locator(".cz-row", has_text="Universal").locator(".cz-row-link").click()
-    page.locator(".cz-block-head").click()
+    open_block(page)
     expect(page.locator(".cz-view[data-level=block]")).to_be_visible()
     settle(page)
     assert page.evaluate("window.__vt.old[window.__vt.old.length - 1]") == [page.evaluate("document.querySelector('.cz-view').dataset.zout")]
@@ -208,7 +213,7 @@ def test_reduced_motion_swaps_instantly_with_no_transition(canvas_page):
     page = canvas_page(motion="reduce")
     page.locator(".cz-row", has_text="Universal").locator(".cz-row-link").click()
     expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
-    page.locator(".cz-block-head").click()
+    open_block(page)
     expect(page.locator(".cz-view[data-level=block]")).to_be_visible()
     assert page.evaluate("window.__vt.calls") == 0
     assert page.evaluate("document.documentElement.dataset.czDir") is None
@@ -247,8 +252,8 @@ def test_a_back_press_during_a_running_zoom_is_not_lost(canvas_page):
 
 def test_mark_done_from_the_step_sheet_closes_it_and_the_step_is_done(canvas_page):
     page = canvas_page()
-    page.goto(page.url + "?day=1")
-    page.locator('.cz-chip:has-text("Revenge of the Mummy")').click()
+    page.goto(page.url + "?block=a1")
+    page.locator('.cz-step:has-text("Revenge of the Mummy")').click()
     page.get_by_role("button", name="Mark done").click()
     expect(page.locator(".cz-view[data-level=block]")).to_be_visible()
     expect(page.locator(".cz-step.is-done", has_text="Revenge of the Mummy")).to_be_visible()
@@ -263,8 +268,8 @@ def test_mark_done_from_the_step_sheet_closes_it_and_the_step_is_done(canvas_pag
 
 def test_set_aside_and_put_back_from_the_sheet_and_the_tray(canvas_page):
     page = canvas_page()
-    page.goto(page.url + "?day=1")
-    page.locator('.cz-chip:has-text("King Kong")').click()
+    page.goto(page.url + "?block=a1")
+    page.locator('.cz-step:has-text("King Kong")').click()
     page.get_by_role("button", name="Set aside").click()
     expect(page.locator(".cz-view[data-level=block]")).to_be_visible()
     expect(page.locator(".cz-tray")).to_contain_text("Set aside · 3")
@@ -278,15 +283,18 @@ def test_set_aside_and_put_back_from_the_sheet_and_the_tray(canvas_page):
     assert page.locator(".cz-tray .cz-chip").count() == 2
 
 
-def test_a_write_survives_the_browsers_back_button(canvas_page):
+def test_a_write_survives_the_browsers_back_and_forward_buttons(canvas_page):
     page = canvas_page()
-    page.goto(page.url + "?day=1")
-    page.locator('.cz-chip:has-text("King Kong")').click()
+    page.locator(".cz-row", has_text="Universal").locator(".cz-row-link").click()
+    open_block(page)
+    page.locator('.cz-step:has-text("King Kong")').click()
     page.get_by_role("button", name="Mark done").click()
     expect(page.locator(".cz-view[data-level=block]")).to_be_visible()
     page.go_back()
     expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
-    expect(page.locator(".cz-chip.is-done", has_text="King Kong")).to_be_visible()     # fresh, not what was drawn before the tap
+    page.go_forward()
+    expect(page.locator(".cz-view[data-level=block]")).to_be_visible()
+    expect(page.locator(".cz-step.is-done", has_text="King Kong")).to_be_visible()     # fresh, not what was drawn before the tap
 
 
 # ---- notes, stickers and lanes -------------------------------------------------------------------------------------------------
@@ -299,8 +307,7 @@ def test_notes_show_on_their_block_and_step_and_lanes_show_when_people_split_up(
             familydb.run(fam.db, "UPDATE block_steps SET time = '13:00', who = :w WHERE title = 'Forbidden Journey'", w=json.dumps(["g:Adults"]))
             familydb.run(fam.db, "UPDATE block_steps SET time = '13:00', who = :w WHERE title = 'Hippogriff'", w=json.dumps(["g:Kids"]))
     page.goto(page.url + "?day=1")
-    expect(page.locator(".cz-sticker-chip", has_text="roughest ride")).to_be_visible()      # a note on its ride
-    page.locator(".cz-block-head").click()
+    open_block(page)
     expect(page.locator(".cz-sticker-step", has_text="main!!!")).to_be_visible()
     lanes = page.locator(".cz-lanes")
     expect(lanes).to_have_count(1)
@@ -334,9 +341,8 @@ def test_desktop_shows_the_week_strip_the_parts_as_lanes_and_the_tray_at_the_sid
     strip = page.locator(".cz-strip")
     expect(strip).to_be_visible()
     assert strip.locator(".cz-strip-day").count() == 5 and strip.locator(".is-open").count() == 1
-    part = page.locator(".cz-part").first
-    head, chips = part.locator(".cz-part-h").bounding_box(), part.locator(".cz-chips").bounding_box()
-    assert chips["x"] > head["x"] + head["width"] - 2 and abs(chips["y"] - head["y"]) < 40         # the part is a lane: its name on the left, its rides beside it
+    grid = page.locator("#cz-grid").bounding_box()                                                  # the same grid, wider
+    assert grid["width"] > 700 and page.locator(".cz-gb.is-park").bounding_box()["width"] > 600
     main, tray = page.locator(".cz-day-main").bounding_box(), page.locator(".cz-tray").bounding_box()
     assert tray["x"] > main["x"] + main["width"] - 2                                                # the Set aside tray sits at the side
     assert page.evaluate(OVERFLOW) <= 0
@@ -344,11 +350,9 @@ def test_desktop_shows_the_week_strip_the_parts_as_lanes_and_the_tray_at_the_sid
     other.click()                                                                                   # a day in the strip swaps the day, no page load
     expect(page.locator(".cz-strip-day.is-open")).to_have_attribute("href", re.compile(r"/trip/canvas\?day=3(&|$)"))
     assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth")
-    head = page.locator(".cz-block-head").first            # the block's heading keeps its size next to the week strip (a flex-basis once squeezed its title)
-    title, box = head.locator(".cz-card-t").bounding_box(), head.bounding_box()
-    assert title["width"] > 150 and title["height"] < 40 and 30 < box["height"] < 90 and box["width"] > 400
     page.locator(".cz-strip-day").nth(1).click()
-    page.locator(".cz-chip", has_text="Revenge of the Mummy").click()
+    open_block(page)
+    page.locator(".cz-step", has_text="Revenge of the Mummy").click()
     expect(page.get_by_role("dialog")).to_be_visible()
     page.get_by_role("button", name="Mark done").click()
     expect(page.locator(".cz-view[data-level=block]")).to_be_visible()
@@ -374,7 +378,7 @@ def test_screenshots(canvas_page):
     page.goto(page.url.split("?")[0] + "?day=1")
     page.wait_for_selector(".cz-view[data-level=day]")
     page.evaluate("document.documentElement.style.setProperty('--cz-dur', '6000ms')")        # slow it down so the middle of the zoom can be caught
-    page.locator(".cz-block-head").click()
+    open_block(page)
     page.wait_for_timeout(2600)
     page.screenshot(path=f"{out}/mid-transition-390.png")
 

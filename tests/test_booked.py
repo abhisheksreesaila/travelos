@@ -232,7 +232,7 @@ def test_the_who_and_list_filters_stay_and_the_kind_row_comes_first(client, azur
     added(client)
     page = bare(client.get("/trip/canvas?day=1").text)
     assert 'class="cz-filters"' in page and page.index('class="cz-kinds"') < page.index('class="cz-filters"')
-    assert re.search(r'data-kind="plan"[^>]*class="cz-block"|class="cz-block"[^>]*data-kind="plan"', page)
+    assert re.search(r'<div[^>]*data-kind="plan"[^>]*class="cz-gb ', page)      # F-097: a plan is a block on the grid
 
 # ---- Help leaves the tab bar, SOS opens the emergency sheet ------------------------------------------------------------------------
 

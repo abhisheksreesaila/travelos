@@ -289,8 +289,9 @@ def test_an_editor_sees_the_drag_data_the_swipe_actions_and_the_drop_targets(tri
     parts = [t for t in opening_tags(block, "cz-bpart") if "cz-triplist" not in t["class"]]
     assert parts and all(t.get("data-act") == uni and t.get("data-part") for t in parts)
     day = trip.get("/trip/canvas?day=1").text
-    assert f'data-drag="{sid}"' in day and 'data-drop-aside="1"' in day
-    assert opening_tags(day, "cz-part") and all(t.get("data-act") == uni and t.get("data-part") for t in opening_tags(day, "cz-part"))
+    assert f'data-drag="{sid}"' not in day and 'data-drop-aside="1"' in day      # F-097: steps are picked up in their block; the day's blocks are moved by their time
+    labels = opening_tags(day, "cz-gb-part")
+    assert labels and all(t.get("data-act") == uni and t.get("data-part") for t in labels)      # a part's label is still somewhere to drop a list chip or a set-aside step
     swipe = forms_in(block, "/trip/canvas/step")
     assert any(re.search(r'name="do" value="done"', f) for f in swipe) and any('name="do" value="aside"' in f for f in swipe)
     assert all(f'value="/trip/canvas?block={uni}"' in bare(f) for f in swipe if "cz-sw-form" in f)
@@ -328,7 +329,8 @@ def test_every_step_carries_who_and_the_lists_that_name_it(trip):
     assert by_id[step_id(trip, "Web Slingers")]["data-lists"] == lst and by_id[step_id(trip, "Radiator Springs Racers")]["data-lists"] == ""
     assert json.loads(by_id[step_id(trip, "Web Slingers")]["data-who"]) == []
     day = trip.get("/trip/canvas?day=3").text
-    assert all("data-who" in t and "data-lists" in t for t in opening_tags(day, "cz-chipwrap"))
+    blocks = opening_tags(day, "cz-gb")
+    assert blocks and all("data-who" in t and "data-lists" in t for t in blocks)         # F-097: the filters light a block when any of its steps match
 
 
 def test_the_list_card_counts_what_is_not_in_the_day_and_offers_each_as_a_chip(trip):
