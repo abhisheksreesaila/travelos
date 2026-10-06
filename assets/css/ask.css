@@ -13,6 +13,8 @@
 #ak-text.is-typing-in { animation: ak-ink 0.5s ease-out; }
 @keyframes ak-ink { from { opacity: 0.55; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { #ak-text { transition: none; } #ak-text.is-typing-in { animation: none; } }
+.ak-understood { margin: 0; font-weight: 700; font-size: max(var(--text-min), 0.875rem); color: var(--ink-2); overflow-wrap: anywhere; }
+.ak-understood[hidden] { display: none; }
 /* recording: the big mic is the Stop button with a red dot and the time; Cancel sits beside it */
 .ak-dot { display: none; width: 0.875rem; height: 0.875rem; border-radius: 50%; background: var(--coral-deep); flex: none; }
 .ak-mic.is-recording .ak-dot { display: inline-block; }

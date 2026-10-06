@@ -83,6 +83,8 @@ TRANSCRIBE_API_VERSION = "2024-06-01"
 
 def deployment(job=None) -> str:
     if job == "transcribe":     # speech-to-text is its own deployment: the chat deployment cannot do it
+        if transcribe_provider() == "sarvam":
+            return _sarvam_model()      # the log's "deployment" column holds the model
         return _setting(job, "GITAWAY_AI_DEPLOYMENT", "AZURE_OPENAI_TRANSCRIBE_DEPLOYMENT")
     return _setting(job, "GITAWAY_AI_DEPLOYMENT", "AZURE_OPENAI_DEPLOYMENT")
 
@@ -205,12 +207,52 @@ def _call(job, family, system, user, schema, name, timeout) -> dict:
     return answer
 
 
-NOT_HEARD = "Nothing could be heard in that recording. Try again, a little closer to the microphone, or type it."
+UNREADABLE = "The voice service could not read that recording. Tap the microphone on your keyboard to dictate, or type it."
+NOT_HEARD ="Nothing could be heard in that recording. Try again, a little closer to the microphone, or type it."
 
 
 def transcribe_provider() -> str:
-    """Which speech-to-text provider job "transcribe" uses: GITAWAY_AI_TRANSCRIBE_PROVIDER, default "azure"."""
-    return (os.environ.get("GITAWAY_AI_TRANSCRIBE_PROVIDER") or "azure").strip().lower()
+    """Which speech-to-text provider job "transcribe" uses: GITAWAY_AI_TRANSCRIBE_PROVIDER (sarvam or azure); else sarvam when SARVAM_API_KEY is set, else azure."""
+    chosen = (os.environ.get("GITAWAY_AI_TRANSCRIBE_PROVIDER") or "").strip().lower()
+    return chosen or ("sarvam" if (os.environ.get("SARVAM_API_KEY") or "").strip() else "azure")
+
+
+SARVAM_URL = "https://api.sarvam.ai/speech-to-text"
+SARVAM_TRANSLATE_URL = "https://api.sarvam.ai/speech-to-text-translate"
+SARVAM_MODEL = "saarika:v2.5"
+SARVAM_LANGUAGES = {"hi": "hi-IN", "en": "en-IN", "bn": "bn-IN", "gu": "gu-IN", "kn": "kn-IN", "ml": "ml-IN", "mr": "mr-IN", "od": "od-IN", "pa": "pa-IN", "ta": "ta-IN", "te": "te-IN"}
+
+
+def _sarvam_model() -> str:
+    return (os.environ.get("SARVAM_STT_MODEL") or "").strip() or SARVAM_MODEL
+
+
+def _sarvam_configured() -> bool:
+    return bool((os.environ.get("SARVAM_API_KEY") or "").strip())
+
+
+def _sarvam_request(audio, filename, mime, language) -> tuple:
+    """Sarvam AI speech-to-text: multipart `file`, `model`, `language_code` ("unknown" detects it, so Hindi and English mixed come back as spoken), the key in
+    `api-subscription-key`; the answer is JSON with `transcript`."""
+    code = "unknown" if not language else SARVAM_LANGUAGES.get(language.lower(), language)
+    ctype, body = _multipart({"model": _sarvam_model(), "language_code": code}, filename, mime, audio)
+    return SARVAM_URL, {"api-subscription-key": os.environ["SARVAM_API_KEY"].strip(), "Content-Type": ctype}, body
+
+
+def _sarvam_text(reply) -> str:
+    return str(json.loads(reply)["transcript"]).strip()
+
+
+def _sarvam_language(reply) -> str:
+    return str(json.loads(reply).get("language_code") or "")
+
+
+def _sarvam_english_request(audio, filename, mime) -> tuple:
+    """Sarvam's speech-to-English translation (the saaras model; any Indian language, or a mix, in; English text out; the language is detected):
+    POST /speech-to-text-translate, multipart `file` and `model`, the same key header; the answer has `transcript` (the English) and `language_code` (the one detected)."""
+    model = (os.environ.get("SARVAM_TRANSLATE_MODEL") or "").strip() or "saaras:v2.5"
+    ctype, body = _multipart({"model": model}, filename, mime, audio)
+    return SARVAM_TRANSLATE_URL, {"api-subscription-key": os.environ["SARVAM_API_KEY"].strip(), "Content-Type": ctype}, body
 
 
 def _azure_configured() -> bool:
@@ -241,7 +283,8 @@ def _json_text(reply) -> str:
 # One adapter per provider. To add one (docs/ai-usage.md): "configured" says whether its settings are all there; "request" builds (url, headers, body) for one
 # recording and an optional language hint (a code like "hi", or None to auto-detect); "text" reads the words out of the response body (raise ValueError, KeyError
 # or TypeError when the shape is wrong). The call, the log, the time limit and the fixed failure sentences stay here, the same for every provider.
-PROVIDERS = {"azure": {"configured": _azure_configured, "request": _azure_request, "text": _json_text}}
+PROVIDERS = {"azure": {"configured": _azure_configured, "request": _azure_request, "text": _json_text},
+             "sarvam": {"configured": _sarvam_configured, "request": _sarvam_request, "text": _sarvam_text, "language": _sarvam_language, "english_request": _sarvam_english_request}}
 
 
 def _multipart(fields, filename, mime, data) -> tuple:
@@ -253,7 +296,12 @@ def _multipart(fields, filename, mime, data) -> tuple:
     return f"multipart/form-data; boundary={boundary}", b"".join(parts)
 
 
-def transcribe(family, audio: bytes, filename="voice.m4a", mime="audio/mp4", *, language=None, timeout=None) -> str:
+class Words(str):
+    """What was said, as text; `.language` is the language the service detected ("hi-IN"), or "" when it did not say."""
+    language = ""
+
+
+def transcribe(family, audio: bytes, filename="voice.m4a", mime="audio/mp4", *, language=None, english=False, timeout=None) -> "Words":
     """Job "transcribe": turn a recording into text through the speech-to-text deployment. `family` is the family's id (for the log only). Returns the words
     (never empty); `language` is an optional hint ("hi"; None detects it, so Hindi mixed with English comes back as spoken); the provider is one setting
     (GITAWAY_AI_TRANSCRIBE_PROVIDER, default "azure"; PROVIDERS holds one small adapter each); raises AIError with a sentence fit to show. The audio and the words are never kept or logged: the log row holds the job, the deployment,
@@ -275,14 +323,18 @@ def transcribe(family, audio: bytes, filename="voice.m4a", mime="audio/mp4", *, 
     try:
         try:
             adapter = PROVIDERS[transcribe_provider()]
-            url, headers, body = adapter["request"](audio, filename, mime, language or None)
+            if english and "english_request" not in adapter:
+                code = "no_translate"
+                raise AIError(FAILED, code)
+            url, headers, body = adapter["english_request"](audio, filename, mime) if english else adapter["request"](audio, filename, mime, language or None)
             send = TRANSPORT or _http
             status, reply = send(url, headers, body, timeout)
             if not 200 <= status < 300:
                 code = f"http_{status}"
-                raise AIError(FAILED, code)
+                raise AIError(UNREADABLE if status in (400, 415, 422) else FAILED, code)
             try:
-                words = adapter["text"](reply)
+                words = Words(adapter["text"](reply))
+                words.language = (adapter["language"](reply) if "language" in adapter else "") or ""
             except (ValueError, KeyError, TypeError):
                 code = "bad_reply"
                 raise AIError(FAILED, code)

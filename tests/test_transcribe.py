@@ -121,7 +121,7 @@ def ari(client):
 def test_a_recording_comes_back_as_text_and_nothing_is_kept(ari, on):
     fake = on()
     r = post(ari, voice("mp4"))
-    assert r.status_code == 200 and r.json() == {"text": SECRET_WORDS}
+    assert r.status_code == 200 and r.json() == {"text": SECRET_WORDS, "language": "", "english": ""}
     assert len(fake.sent) == 1
     assert not voicenotes.root().exists() or not any(voicenotes.root().rglob("*.*"))       # the audio was only ever in memory
 
@@ -206,6 +206,149 @@ def test_another_provider_is_one_setting_and_one_small_adapter(on, monkeypatch):
     assert ai.transcribe("fam1", voice("webm"), language="hi") == "namaste, lunch at 12:30"
     assert seen["language"] == "hi" and fake.sent[0]["url"] == "https://stt.example.com/v1/listen" and fake.sent[0]["headers"] == {"Authorization": "Token k"}
     assert rows()[before]["ok"] == 1                                       # logged like every call
+
+
+@pytest.fixture
+def sarvam(on, monkeypatch):
+    monkeypatch.setenv("SARVAM_API_KEY", "sk-sarvam-test")
+    monkeypatch.setenv("AZURE_OPENAI_TRANSCRIBE_DEPLOYMENT", "")
+    monkeypatch.delenv("GITAWAY_AI_TRANSCRIBE_PROVIDER", raising=False)
+    monkeypatch.delenv("SARVAM_STT_MODEL", raising=False)
+    return lambda **kw: on(**kw)
+
+
+def test_sarvam_is_the_default_when_its_key_is_set_and_azure_is_one_setting_away(sarvam, monkeypatch):
+    assert ai.transcribe_provider() == "sarvam" and ai.configured("transcribe")
+    monkeypatch.setenv("GITAWAY_AI_TRANSCRIBE_PROVIDER", "azure")
+    assert ai.transcribe_provider() == "azure" and not ai.configured("transcribe")        # azure still needs its own transcribe deployment
+    monkeypatch.setenv("AZURE_OPENAI_TRANSCRIBE_DEPLOYMENT", "stt-test")
+    assert ai.configured("transcribe")
+    monkeypatch.delenv("GITAWAY_AI_TRANSCRIBE_PROVIDER")
+    monkeypatch.setenv("SARVAM_API_KEY", "")
+    assert ai.transcribe_provider() == "azure"
+
+
+def test_sarvam_gets_the_file_the_model_the_key_header_and_detects_the_language(sarvam):
+    fake = sarvam(raw=json.dumps({"transcript": "Lunch at Universal, फिर Mario Kart", "language_code": "hi-IN"}))
+    before = len(rows())
+    assert ai.transcribe("fam1", voice("mp4"), "voice.m4a", "audio/mp4") == "Lunch at Universal, फिर Mario Kart"
+    sent = fake.sent[0]
+    assert sent["url"] == "https://api.sarvam.ai/speech-to-text" and sent["headers"]["api-subscription-key"] == "sk-sarvam-test"
+    body = sent["body"]
+    assert voice("mp4") in body and b'name="file"; filename="voice.m4a"' in body and b"Content-Type: audio/mp4" in body
+    assert b'name="model"\r\n\r\nsaarika:v2.5\r\n' in body and b'name="language_code"\r\n\r\nunknown\r\n' in body
+    row = rows()[before]
+    assert row["ok"] == 1 and row["deployment"] == "saarika:v2.5" and "Mario" not in json.dumps(row) and "sk-sarvam" not in json.dumps(row)
+
+
+def test_a_sarvam_language_hint_becomes_its_language_code(sarvam):
+    fake = sarvam(raw=json.dumps({"transcript": "ok"}))
+    ai.transcribe("fam1", voice("webm"), "voice.webm", "audio/webm", language="hi")
+    assert b'name="language_code"\r\n\r\nhi-IN\r\n' in fake.sent[0]["body"]
+
+
+def test_a_recording_the_service_refuses_gets_a_plain_message(sarvam):
+    sarvam(status=400, raw='{"error": {"message": "unsupported format Bhoomija"}}')
+    before = len(rows())
+    with pytest.raises(ai.AIError) as e:
+        ai.transcribe("fam1", voice("webm"), "voice.webm", "audio/webm")
+    assert str(e.value) == ai.UNREADABLE and "Bhoomija" not in str(e.value) and e.value.code == "http_400"
+    assert rows()[before]["error"] == "http_400"
+
+
+# ---- said in Hindi (or another language): kept as said, with an English version for the planner -----------------------------------------------------------------
+
+HINDI = "दोपहर 12:30 पर लंच"
+ENGLISH = "Lunch at 12:30"
+
+
+class Router:
+    """Sarvam's two endpoints (shaped like the documented responses) and the chat model, behind one `ai.TRANSPORT`."""
+
+    def __init__(self, language="hi-IN", translate_status=200):
+        from tests import canvas_samples as samples
+        from tests.test_speak import answer, op
+        self.language, self.translate_status = language, translate_status
+        self.chat = samples.FakeAzure(answer(op("add_plan", title="Lunch", start="12:30", end="13:30")))
+        self.urls = []
+
+    def __call__(self, url, headers, body, timeout):
+        self.urls.append(url)
+        if url.endswith("/speech-to-text-translate"):
+            return self.translate_status, json.dumps({"request_id": "r2", "transcript": ENGLISH, "language_code": self.language, "diarized_transcript": None, "language_probability": 0.95})
+        if url.endswith("/speech-to-text"):
+            said = HINDI if self.language != "en-IN" else ENGLISH
+            return 200, json.dumps({"request_id": "r1", "transcript": said, "language_code": self.language, "diarized_transcript": None, "language_probability": 0.97})
+        return self.chat(url, headers, body, timeout)
+
+
+@pytest.fixture
+def hindi(sarvam, monkeypatch):
+    monkeypatch.setenv("AZURE_OPENAI_API_KEY", "k")
+    monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://example.openai.azure.com")
+    monkeypatch.setenv("AZURE_OPENAI_DEPLOYMENT", "gpt-test")
+
+    def use(**kw):
+        router = Router(**kw)
+        monkeypatch.setattr(ai, "TRANSPORT", router)
+        return router
+    return use
+
+
+def test_the_translation_request_is_the_documented_one(sarvam):
+    fake = sarvam(raw=json.dumps({"transcript": ENGLISH, "language_code": "hi-IN"}))
+    words = ai.transcribe("fam1", voice("webm"), "voice.webm", "audio/webm", english=True)
+    assert words == ENGLISH and words.language == "hi-IN"
+    sent = fake.sent[0]
+    assert sent["url"] == "https://api.sarvam.ai/speech-to-text-translate" and sent["headers"]["api-subscription-key"] == "sk-sarvam-test"
+    assert b'name="model"\r\n\r\nsaaras:v2.5\r\n' in sent["body"] and b"language_code" not in sent["body"] and b'name="file"; filename="voice.webm"' in sent["body"]
+
+
+def test_a_hindi_recording_comes_back_as_said_with_its_english(ari, hindi):
+    router = hindi()
+    r = post(ari, voice("mp4"))
+    assert r.status_code == 200 and r.json() == {"text": HINDI, "language": "hi-IN", "english": ENGLISH}
+    assert [u.rsplit("/", 1)[1] for u in router.urls] == ["speech-to-text", "speech-to-text-translate"]
+
+
+def test_english_speech_needs_no_translation_and_a_failed_translation_is_not_fatal(ari, hindi):
+    router = hindi(language="en-IN")
+    assert post(ari, voice("mp4")).json() == {"text": ENGLISH, "language": "en-IN", "english": ""}
+    assert len(router.urls) == 1
+    hindi(translate_status=500)
+    assert post(ari, voice("mp4")).json() == {"text": HINDI, "language": "hi-IN", "english": ""}
+
+
+def test_what_was_said_in_hindi_reaches_the_planner_in_english_and_the_box_keeps_hindi(client, hindi):
+    from tests.test_calendar import book
+    from tests.test_say import fields
+    book(client)
+    router = hindi()
+    said = post(client, voice("mp4")).json()
+    heard = json.dumps([[said["text"], said["english"]]], ensure_ascii=False)
+    typed = "Please add " + HINDI
+    r = client.post("/trip/ask/propose", data={"day": "1", "text": typed, "heard": heard})
+    asked = json.dumps(router.chat.sent[0], ensure_ascii=False)
+    assert "Please add Lunch at 12:30" in asked and HINDI not in asked      # the planner read English
+    assert 'id="ak-prop"' in r.text and "Lunch" in r.text                   # an English title in the preview
+    kept = fields(r.text, "ak-change-form")
+    assert kept["text"] == typed and json.loads(kept["heard"]) == [[HINDI, ENGLISH]]      # "Change it": the box has what was said, and the English stays with it
+    back = client.post("/trip/ask/edit", data=kept)
+    assert fields(back.text, "ak-form")["text"] == typed and json.loads(fields(back.text, "ak-form")["heard"]) == [[HINDI, ENGLISH]]
+    assert 'id="ak-understood"' in back.text
+
+
+def test_a_changed_dictation_is_sent_as_written(client, hindi):
+    from tests.test_calendar import book
+    book(client)
+    router = hindi()
+    client.post("/trip/ask/propose", data={"day": "1", "text": "दोपहर 1 बजे लंच", "heard": json.dumps([[HINDI, ENGLISH]], ensure_ascii=False)})
+    assert "दोपहर 1 बजे लंच" in json.dumps(router.chat.sent[0], ensure_ascii=False)
+
+
+def test_the_planners_instructions_ask_for_english_titles():
+    from gitaway import canvas, speak
+    assert "in English" in speak.SYSTEM and "in English" in canvas.SYSTEM
 
 
 def test_an_unknown_provider_is_off(on, monkeypatch):

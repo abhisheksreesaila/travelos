@@ -65,7 +65,7 @@ SCHEMA = _obj({
     "notes_kept": {"type": "array", "items": _text()},
     "merged_repeats": {"type": "integer"}})
 
-SYSTEM = """You turn a family's pasted text messages about their trip into a structured plan. Answer with JSON that matches the schema and nothing else.
+SYSTEM = """You turn a family's pasted text messages about their trip into a structured plan. Answer with JSON that matches the schema and nothing else. The text may be in Hindi or another language, or a mix with English: understand it, and write every plan, part and step title and note in English unless they were written in English already; keep names of people and places as spoken.
 
 Rules:
 - One entry in days for each park or place (the text may mix two parks in one stream with no dates; start a new day when the park changes). label is the heading the family used; park_or_place is the park's proper name.

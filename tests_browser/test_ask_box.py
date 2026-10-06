@@ -388,6 +388,37 @@ def test_a_failed_transcription_keeps_the_typed_text_and_says_so(phone, base_url
     expect(page.locator("#ak-text")).to_have_value("Pool at 3")
 
 
+def test_hindi_is_kept_as_said_with_a_quiet_understood_as_line_and_the_english_goes_to_the_planner(phone, base_url, monkeypatch):
+    import json
+    hindi, english = "दोपहर 12:30 पर लंच", "Lunch at 12:30"
+    monkeypatch.setenv("SARVAM_API_KEY", "sk-test")
+    monkeypatch.setenv("AZURE_OPENAI_API_KEY", "k")
+    monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://example.openai.azure.com")
+    monkeypatch.setenv("AZURE_OPENAI_DEPLOYMENT", "gpt-test")
+    chat = samples.FakeAzure()
+
+    def transport(url, headers, body, timeout):
+        if url.endswith("/speech-to-text-translate"):
+            return 200, json.dumps({"transcript": english, "language_code": "hi-IN"})
+        if url.endswith("/speech-to-text"):
+            return 200, json.dumps({"transcript": hindi, "language_code": "hi-IN"})
+        return chat(url, headers, body, timeout)
+
+    monkeypatch.setattr(ai, "TRANSPORT", transport)
+    page = phone(NO_SPEECH + FAKE_MIC)
+    page.goto(f"{base_url}/trip/ask?day={DAY}")
+    expect(page.locator("#ak-understood")).to_be_hidden()
+    record_and_stop(page)
+    expect(page.locator("#ak-text")).to_have_value(hindi)                       # as said, in the hand font
+    expect(page.locator("#ak-understood")).to_have_text("Understood as: " + english)
+    fits(page)
+    page.locator("#ak-go").click()
+    page.wait_for_selector("#ak-questions, #ak-prop, #ak-error")
+    asked = json.dumps(chat.sent[0], ensure_ascii=False)
+    assert english in asked and hindi not in asked                              # the planner read English
+    page.go_back()
+
+
 def test_the_box_is_a_handwritten_note_and_words_still_being_heard_look_lighter(phone, base_url):
     page = phone(NO_SPEECH + FAKE_SPEECH)
     page.goto(f"{base_url}/trip/ask?day={DAY}")

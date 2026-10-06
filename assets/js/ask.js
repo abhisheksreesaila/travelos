@@ -212,10 +212,30 @@
       } else clearInterval(working.timer);
     }
   }
-  function addWords(text) {     // the transcript joins what is there; it writes itself in word by word (not under reduced motion)
+  // What was said in another language: the box keeps it as said; the English the service gave for it travels in the hidden `heard` field, so the planner reads English.
+  var heardField = form.elements.heard, understood = document.getElementById('ak-understood');
+  function heardList() { try { var v = JSON.parse(heardField && heardField.value || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; } }
+  function showUnderstood() {
+    if (!understood) return;
+    var now = heardList().filter(function (p) { return box.value.indexOf(p[0]) >= 0; });
+    if (heardField) heardField.value = now.length ? JSON.stringify(now) : '';
+    understood.hidden = !now.length;
+    understood.textContent = now.length ? 'Understood as: ' + now.map(function (p) { return p[1]; }).join(' ') : '';
+  }
+  function rememberHeard(spoken, english) {
+    if (!heardField || !english || english === spoken) return;
+    var list = heardList(); list.push([spoken, english]);
+    heardField.value = JSON.stringify(list);
+    showUnderstood();
+  }
+  box.addEventListener('input', showUnderstood);
+  showUnderstood();
+  function addWords(text, english) {     // the transcript joins what is there; it writes itself in word by word (not under reduced motion)
     var start = box.value ? box.value.replace(/\s+$/, '') + ' ' : '';
     var list = text.split(/\s+/).filter(Boolean);
-    if (reduced || list.length < 2) { box.value = start + text; words('final'); refresh(); return; }
+    text = list.join(' ');
+    var done = function () { rememberHeard(text, english); };
+    if (reduced || list.length < 2) { box.value = start + text; words('final'); refresh(); done(); return; }
     var i = 0;
     words('interim');
     box.classList.add('is-typing-in');
@@ -223,7 +243,7 @@
       i += 1;
       box.value = start + list.slice(0, i).join(' ');
       refresh();
-      if (i >= list.length) { clearInterval(timer); words('final'); box.classList.remove('is-typing-in'); }
+      if (i >= list.length) { clearInterval(timer); words('final'); box.classList.remove('is-typing-in'); done(); }
     }, 70);
   }
   function upload(blob, secs) {
@@ -235,7 +255,7 @@
     var lang = (box.dataset.lang || '').trim();
     if (lang) form_.append('lang', lang);
     fetch('/trip/ask/transcribe', { method: 'POST', credentials: 'same-origin', body: form_ }).then(function (r) {
-      if (r.ok) return r.json().then(function (j) { addWords(j.text || ''); note('Added what you said. Check it, then tap Ask GitAway.'); });
+      if (r.ok) return r.json().then(function (j) { addWords(j.text || '', j.english || ''); note('Added what you said. Check it, then tap Ask GitAway.'); });
       return r.text().then(function (t) {
         var said = r.status === 503 && t === NO_VOICE ? NO_VOICE : (t && t.length < 200 ? t : 'That did not work.');
         note(said + kept());

@@ -44,12 +44,19 @@ Settings only (environment variables), no code change:
 
 ### Voice typing (`transcribe`)
 
+The provider is **Sarvam AI** (Hindi and other Indian languages, mixed with English) whenever `SARVAM_API_KEY` is set; Azure speech-to-text is the alternative (`GITAWAY_AI_TRANSCRIBE_PROVIDER=azure`, and it needs its own deployment because the chat one cannot transcribe). Nothing else needs setting on Railway for Sarvam: `SARVAM_API_KEY` (optional `SARVAM_STT_MODEL`, default `saarika:v2.5`; `SARVAM_TRANSLATE_MODEL`, default `saaras:v2.5`).
+
+How a recording flows (F-102): the page records (MediaRecorder: `audio/mp4` on iPhone, `audio/webm` elsewhere, at most 3 minutes, 4 MB) and posts it to `/trip/ask/transcribe`. Sarvam `POST https://api.sarvam.ai/speech-to-text` (`api-subscription-key` header; multipart `file`, `model=saarika:v2.5`, `language_code=unknown` to detect it) returns `{"transcript", "language_code"}`; the box shows `transcript` as said, in the language it was said. When `language_code` is not English, a second call to `POST /speech-to-text-translate` (`model=saaras:v2.5`; same key; returns `{"transcript"}` in English) gives the English version. The page keeps the pair in a hidden `heard` field and shows "Understood as: ..." quietly under the box; when the person taps Ask, the planner receives the box's text with each dictated passage swapped for its English, so plan and step titles come out in English (the planner prompts in `speak.py` and `canvas.py` also say to write titles in English whatever the language). A passage the person edited is sent as written, and the planner reads it in any language. A failed translation is not an error: the planner gets the original and is told to write English titles. Both calls are logged as job `transcribe` (two rows for a non-English recording), never the audio or words.
+
+Limits found: Sarvam's docs list WAV, MP3, AAC, AIFF, OGG, OPUS, FLAC, MP4/M4A, AMR, WMA and WebM, so both recorder formats are listed as accepted; this was read from its documentation, not tried with a real iPhone recording. A recording the service refuses (HTTP 400, 415 or 422) shows "The voice service could not read that recording. Tap the microphone on your keyboard to dictate, or type it." and no transcoding is attempted. Translation adds a second round trip (a few seconds) for non-English speech. Sarvam documents the REST speech-to-text endpoint "for quick responses under 30 seconds" (it states no hard limit; longer audio is for its Batch API): a 3-minute recording may be refused or cut. Not tried with a long real recording yet: check it before relying on long dictation, and if it fails, split the recording on the page into 30 s pieces.
+
 | Variable | Effect |
 |---|---|
+| `SARVAM_API_KEY` | Switches voice typing on with Sarvam AI (the default provider when it is set). |
 | `AZURE_OPENAI_TRANSCRIBE_DEPLOYMENT` | The speech-to-text deployment (for example a `gpt-4o-transcribe` or `whisper` one). It never falls back to the chat deployment. Without it the route answers "Voice typing isn't set up yet — tap the microphone on your keyboard to dictate". `GITAWAY_AI_DEPLOYMENT_TRANSCRIBE` overrides it. |
 | `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_ENDPOINT` | The same key and endpoint as the other jobs (`GITAWAY_AI_KEY_TRANSCRIBE` / `GITAWAY_AI_ENDPOINT_TRANSCRIBE` override them). |
 | `AZURE_OPENAI_TRANSCRIBE_API_VERSION` | Optional; default `2024-06-01`. |
-| `GITAWAY_AI_TRANSCRIBE_PROVIDER` | Optional; default `azure`. Which adapter in `ai.PROVIDERS` does the call. An unknown name switches the job off. |
+| `GITAWAY_AI_TRANSCRIBE_PROVIDER` | Optional; `sarvam` or `azure`; default `sarvam` when `SARVAM_API_KEY` is set, else `azure`. Which adapter in `ai.PROVIDERS` does the call. An unknown name switches the job off. |
 
 The language is detected by the service (Hindi mixed with English comes back as spoken). `ai.transcribe(..., language="hi")` and the route's optional `lang` field pass a hint; the page does not send one yet (`data-lang` on the box would).
 
