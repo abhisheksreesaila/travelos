@@ -621,3 +621,9 @@ Captain, 2026-10-06 (screenshot of the Ask page): "two ask buttons… confusing 
 ## F-105 The now card ends with its two buttons [done]
 Captain, 2026-10-06 (screenshot of the Breakfast up-next card): the "Details" button under Directions and Uber is "irritating… not minimalistic… after those two buttons, it should end". · Needs: F-092
 - [x] on the day view the now card has no Details row: it ends with Directions and Uber; a booking's title opens its sheet (F-093: confirmation, phone, address); an overlap is a small tag by the time; notes fold above the buttons; the old Today page keeps its Details
+
+## F-106 Tap a plan: its note and its chat, right there [todo]
+Captain, 2026-10-06 (screenshot of a day): "The notes are not visible properly on the calendar block. It has to be a note I can see. And chat with family right there?" The grid cut long notes mid-line, and a block covered the 11 AM check-in line. · Needs: F-097, F-101, F-091
+- [ ] on the grid a block shows its title, time and a one-line note preview that fades (never cut mid-word), plus a small chat count; a booking that a plan overlaps is never hidden (it becomes a slim pill at the block's edge, still tappable to its sheet)
+- [ ] tapping a block (not a hold) expands it in place into a card over the grid: the full note on top as the sticky (editable in place for editors, F-098 title editing kept), then the plan's chat (latest messages, a reply box, mic for a voice note, camera; F-091/F-094/F-100 behaviour), and for a park day a "Rides" link to its block level; tap outside, Escape or swipe down folds it back; smooth and calm under reduced motion
+- [ ] holds, drags, resizes, the hold menu and making a plan on empty time keep working; viewers read the note and the chat (and may post in the chat, as F-091 allows); browser tests at 390 and 320 open, read a long note in full, edit a note, send a message, fold, and check no text is cut; phone checks
