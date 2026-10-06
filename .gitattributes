@@ -1,0 +1,11 @@
+# Keep LF everywhere: `railway up` uploads the working copy, and on Windows git otherwise checks text out with CRLF (2026-10-05).
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.heic binary
+*.pdf binary
+*.ico binary
+*.woff2 binary
+*.db binary
