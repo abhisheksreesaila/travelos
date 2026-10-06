@@ -18,7 +18,7 @@ from gitaway import assetver, session as ses, showcase
 from gitaway.layout import PAPER, page
 
 SW_PATH = Path(__file__).resolve().parent.parent.parent / "assets" / "sw.js"
-PRECACHED_ASSETS = ("/assets/css/tokens.css", "/assets/css/base.css", "/assets/js/pwa.js")
+PRECACHED_ASSETS = ("/assets/css/tokens.css", "/assets/css/base.css", "/assets/js/pwa.js", "/assets/js/page_moves.js")
 
 
 def service_worker_source():

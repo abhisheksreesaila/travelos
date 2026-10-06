@@ -133,7 +133,7 @@ def test_the_return_day_has_the_check_out_and_the_drop_off_sheets(imported_page,
 
 
 def test_a_booking_sheet_opened_by_address_works_without_script(browser, base_url):
-    ctx = browser.new_context(viewport=PHONE, java_script_enabled=False)
+    ctx = browser.new_context(viewport=PHONE, java_script_enabled=False, reduced_motion="reduce")  # F-099: a page change otherwise fades for a moment, during which the page ignores clicks
     ctx.request.post(f"{base_url}/signin", form={"email": EDITOR, "next": "/", "intent": "save"}, max_redirects=0)
     ctx.request.post(f"{base_url}/trips/import/save", form={"text": TEMPLATE}, max_redirects=0)
     page = ctx.new_page()
