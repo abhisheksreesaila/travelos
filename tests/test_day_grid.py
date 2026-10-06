@@ -99,9 +99,26 @@ def test_the_grid_is_wide_enough_for_an_early_and_a_late_plan_and_never_cut(trip
     assert (lo, hi) == (5 * 60, 23 * 60)
 
 
-def test_a_blank_day_keeps_talk_and_paste_and_has_no_grid(trip):
+def test_a_blank_day_gives_an_editor_the_grid_under_one_compact_talk_and_paste_row(trip):
+    """F-101: empty time can be held on a blank day too; the big empty card is a one-row card above the grid. A viewer keeps the plain blank view."""
     page = day(trip, 2)
-    assert 'id="cz-grid"' not in page and 'id="cz-say-talk"' in page and 'id="cz-say-paste"' in page
+    assert 'id="cz-grid"' in page and blocks(page) == [] and 'cz-say-compact' in tag(page, "cz-empty")
+    assert page.index('id="cz-say-talk"') < page.index('id="cz-grid"') and 'id="cz-say-paste"' in page
+    assert "Nothing planned yet" not in text(page) and "paste it from a message" not in text(page)
+    assert 'class="cz-gadd' not in page and re.search(r'data-next="\d+"', tag(page, "cz-grid"))       # the keyboard's "Add a plan" is drawn by the script; the grid carries the calendar's next number
+
+
+def test_a_viewer_keeps_the_plain_blank_day(crew, azure):
+    ari, viewer = crew
+    added(ari)
+    seen = bare(viewer.get("/trip/canvas?day=2").text)
+    assert 'id="cz-grid"' not in seen and "Nothing planned yet" in text(seen) and 'id="cz-say-talk"' not in seen
+    assert not re.search(r'data-next="\d', tag(bare(viewer.get("/trip/canvas?day=1").text), "cz-grid"))
+
+
+def test_a_blank_day_with_bookings_draws_them_as_lines_on_the_editors_grid(trip):
+    page = day(trip, 0)
+    assert 'id="cz-grid"' in page and blocks(page) == [] and page.count('class="cz-bk cz-gbk"') == 2 and 'id="cz-say-talk"' in page
 
 
 def test_today_has_a_now_line_on_the_grid(trip, monkeypatch):
@@ -222,7 +239,7 @@ def test_adding_a_plan_by_touch_saves_it_with_the_calendars_rules_and_undo_remov
     got = r.json()
     assert r.status_code == 200 and got["toast"] == "Pier walk added" and got["plan"]["start"] == 14 * 60 + 15 and got["plan"]["end"] == 15 * 60 + 15
     a = cal.get_activity(me, got["plan"]["act"])
-    assert (a.day, a.title, a.kind) == (2, "Pier walk", "fun") and got["undo"] == {"added": a.id}
+    assert (a.day, a.title, a.kind) == (2, "Pier walk", "fun") and got["undo"] == {"added": a.id, "after": {"day": 2, "start": 14 * 60 + 15, "end": 15 * 60 + 15, "title": "Pier walk"}}
     page = day(trip, 2)
     assert [b["data-title"] for b in blocks(page)] == ["Pier walk"]
     back = post_plan(trip, op="undo", undo=json.dumps(got["undo"])).json()

@@ -131,13 +131,13 @@ def _image_url(url) -> bool:
     return isinstance(url, str) and 0 < len(url) <= 1000 and ((url.startswith("/") and not url.startswith("//")) or url.startswith("https://"))
 
 
-def change(session, fam, text, *, trip_id=None, action="change"):
+def change(session, fam, text, *, trip_id=None, action="change", extra=None):
     """Write the card for a plan change, inside the caller's open transaction, and queue the family's push (sent off the request). `text` is
     plain: "Abhi moved Griffith Observatory to Tue 10:00 AM". `action` (add, move, remove, change) picks the card's icon."""
     trip_id = trip_id or fam.trip_id
     if not trip_id or not text:
         return
-    _insert(fam.db, trip_id, "change", fam.traveler.id, first_name(fam.traveler), text, {"action": action})
+    _insert(fam.db, trip_id, "change", fam.traveler.id, first_name(fam.traveler), text, {"action": action, **(extra or {})})      # `extra`: what the touch grid keeps on its card to change it in place (planedit)
     me = fam.traveler.id
     familydb.after_commit(lambda: announce(session, trip_id, "Plan changed", _safe(text), exclude=me))   # only once the change is really saved
 

@@ -410,6 +410,13 @@ def day_pills(v, day):
     return Nav(*items, cls="cz-dpills", id="cz-dpills", aria_label="Days of the trip")
 
 
+def say_bar_compact(day):
+    """F-101: on a blank day the editor's grid is there to hold, so Talk / Paste shrink to one row above it (same ids and links as `say_bar`)."""
+    return Div(A(icon("mic", 20, 2.4), "Say the plan", href=f"/trip/ask?day={day}&mode=talk", id="cz-say-talk", cls="tp-btn tp-btn-coral cz-say-go"),
+               A(icon("note", 18, 2.4), "Paste a plan", href=f"/trip/ask?day={day}&mode=paste", id="cz-say-paste", cls="tp-btn tp-btn-white cz-say-go"),
+               cls="cz-empty cz-say-empty cz-say-compact", id="cz-empty")
+
+
 def say_bar(day):
     """A day with nothing planned (F-090): the two ways in, talk and paste, opening Ask on this day (F-087). Any other day is changed from the centre Ask (F-092)."""
     return Div(Span(icon("mic", 30, 2.2), cls="cz-say-ico", aria_hidden="true"), P("Nothing planned yet", cls="cz-say-h"),
@@ -511,7 +518,8 @@ def time_grid(v, day, ents):
     if day == v["today_idx"] and lo <= (nm := td.now_minute(v["clock"])) <= hi:
         now = Span(Span(cls="cz-now-dot"), cls="cz-nowline", id="cz-nowline", data_m=str(nm), style=f"--s:{nm - lo}", aria_label="Now", role="img")
     plane = Div(*rules, *bk, *blocks, now, cls="cz-g-plane")
-    return Div(Div(*gutter, plane, cls="cz-g-zoom"), cls=f"cz-grid{' has-bk' if lines else ''}", id="cz-grid", data_lo=str(lo), data_hi=str(hi), data_day=str(day), style=f"--n:{(hi - lo) / 60:g}", role="group", aria_label="The day, hour by hour")
+    nxt = {"data_next": cal.next_id(v["session"])} if edit else {}      # the calendar's next number: a new plan made here carries its own id (a retry after a lost reply adds nothing twice)
+    return Div(Div(*gutter, plane, cls="cz-g-zoom"), cls=f"cz-grid{' has-bk' if lines else ''}", id="cz-grid", data_lo=str(lo), data_hi=str(hi), data_day=str(day), **nxt, style=f"--n:{(hi - lo) / 60:g}", role="group", aria_label="The day, hour by hour")
 
 
 def day_view(v, day, booked=None, sos=False):
@@ -519,10 +527,10 @@ def day_view(v, day, booked=None, sos=False):
     d = v["dates"][day]
     ents = entries(v, day)
     planned = [(kind, x) for kind, x in ents if kind != "booked"]
-    cards = [time_grid(v, day, ents)] if planned else [booked_line(v, x) for _, x in ents]      # a blank day keeps Talk / Paste and its booking lines
+    cards = [time_grid(v, day, ents)] if planned or editor else [booked_line(v, x) for _, x in ents]      # a blank day: an editor gets the grid too (hold empty time, F-101); a viewer the booking lines
     aside = [s for kind, x in ents if kind == "block" for s in v["plan"][x.id]["aside"]]
     if not planned:
-        empty = say_bar(day) if editor else Div(P("Nothing planned yet", cls="cz-say-h"), P("Nobody has planned this day yet.", cls="cz-sub"), cls="cz-empty cz-say-empty", id="cz-empty", data_kind="empty")
+        empty = say_bar_compact(day) if editor else Div(P("Nothing planned yet", cls="cz-say-h"), P("Nobody has planned this day yet.", cls="cz-sub"), cls="cz-empty cz-say-empty", id="cz-empty", data_kind="empty")
         cards = [empty, *cards]
     kicker = f"{d.strftime('%a %b').upper()} {d.day} · DAY {day + 1} OF {len(v['dates'])}"
     first = next((x for kind, x in ents if kind == "block"), None)
@@ -834,7 +842,7 @@ def plan_write(session, op, act, form):
         start, end, day = _minutes(form, "start"), _minutes(form, "end"), _field(form, "day", 3)
         if start is None or end is None:
             raise cal.CalendarError("That time is not one we can read.")
-        got = planedit.add(session, day=day, start=start, end=end, title=str(form.get("title") or "")[:200])
+        got = planedit.add(session, day=day, start=start, end=end, title=str(form.get("title") or "")[:200], id=_field(form, "id", 8) or None)
         a = got["act"]
         return {"toast": f"{a.title} added", "undo": got["undo"], "plan": {"act": a.id, "start": a.start, "end": a.end, "title": a.title}}
     if op != "edit":

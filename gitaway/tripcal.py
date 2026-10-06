@@ -554,12 +554,12 @@ def _insert_note(db, fam, scope, id_, seq, text, act=None, author=""):
                               "act_id": act, "author": author, "added_by": fam.traveler.id, "gone": 0, "created_at": familydb.now()}, ["pk"], auto_commit=False)
 
 
-def _say(session, fam, scope, text, action):
+def _say(session, fam, scope, text, action, extra=None):
     """Write the family thread's card for a plan change (F-070), inside the open transaction. The pretend "long" demo calendar writes none."""
     if scope:
         return
     from gitaway import familythread  # here: familythread -> morning -> tripcal
-    familythread.change(session, fam, text, action=action)
+    familythread.change(session, fam, text, action=action, extra=extra)
 
 
 def _list(titles):
@@ -626,7 +626,8 @@ def add_activity(session, *, day, start, end, title, kind="fun", demo="", id=Non
             id = id or f"a{st['q'] + 1}"
             _insert_activity(db, fam, scope, id, _number(id), day, s, e, title, kind)
             _bump(db, fam.trip_id, scope, _number(id))
-            _say(session, fam, scope, f"{_who(fam)} added {title} on {_when(t, day, s)}", "add")
+            tag = {"key": f"plan:{id}", "orig": [day, s, e, title]} if fine else None      # the touch grid's card is changed in place by a move or rename that follows (planedit._tell)
+            _say(session, fam, scope, f"{_who(fam)} added {title} on {_when(t, day, s)}", "add", tag)
             return Activity(id, day, s, e, title, kind)
 
 
