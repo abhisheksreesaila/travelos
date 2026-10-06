@@ -64,7 +64,6 @@
   .tp-panel > .tp-sharebar { order: 8; }
   .tp-panel > .tp-full { order: 9; }
   .tp-plus { right: max(1.125rem, calc(env(safe-area-inset-right) + 0.75rem)); }
-  .tp-toast { bottom: calc(var(--tabs-h) + env(safe-area-inset-bottom) + 5.5rem); }
   .ph-route { height: 4.625rem; }
 }
 @media (min-width: 721px) and (display-mode: standalone) { .ph-tabs { max-width: 36rem; } }

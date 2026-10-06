@@ -120,8 +120,6 @@
 .tp-tab { display: flex; align-items: center; justify-content: center; border-radius: 1rem; font-weight: 800; font-size: 0.9375rem; text-decoration: none; text-align: center; }
 .tp-tab[aria-current="page"] { background: var(--accent-tint, #FFE6DA); }
 
-.tp-toast { position: fixed; z-index: 40; left: 50%; transform: translateX(-50%); bottom: calc(var(--tabs-h) + env(safe-area-inset-bottom) + 5.5rem); max-width: calc(100% - 2rem); padding: 0.75rem 1.125rem; border-radius: var(--r-pill); background: var(--ink); color: #FFFFFF; font-weight: 800; font-size: max(var(--text-min), 0.9375rem); text-align: center; }
-.tp-toast-error { background: var(--bubble); color: var(--ink); }
 
 /* the add sheet (bottom sheet) */
 .tp-sheet { position: fixed; inset: 0; z-index: 50; display: none; align-items: flex-end; }

@@ -159,7 +159,7 @@ def test_escape_an_empty_title_and_tapping_away_from_nothing_remove_the_block_an
     fire(day, "pointerup", ax, ay, pid=8)
     expect(new_block(day)).to_have_count(0)
     day.wait_for_timeout(300)
-    assert len(made()) == base and day.locator(".cz-toast").count() == 0 and day.evaluate("CZ.held") is False
+    assert len(made()) == base and day.locator(".ga-toast").count() == 0 and day.evaluate("CZ.held") is False
 
 
 def test_a_title_the_calendar_refuses_stays_open_with_the_reason_and_a_tap_away_gives_it_up(day):
@@ -371,7 +371,7 @@ def test_a_viewer_holding_or_tapping_empty_time_gets_nothing(canvas_page, browse
         fire(page, "pointerdown", x, y, pid=8)
         fire(page, "pointerup", x, y, pid=8)
         page.wait_for_timeout(200)
-        assert page.locator(".is-new, .cz-gnew, .cz-gb-edit, .cz-toast").count() == 0 and len(made()) == 1
+        assert page.locator(".is-new, .cz-gnew, .cz-gb-edit, .ga-toast").count() == 0 and len(made()) == 1
     finally:
         ctx.close()
 

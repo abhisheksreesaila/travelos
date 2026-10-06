@@ -308,7 +308,7 @@ def test_a_hold_still_lifts_and_a_hold_without_moving_still_opens_the_menu_not_t
     start = hold_block(phone, lunch.id)
     end = slide(phone, start, (start[0], start[1] + ppm_step(phone) * 2))
     fire(phone, "pointerup", *end)
-    expect(phone.locator(".cz-toast")).to_contain_text("Lunch moved to 12:30 PM")
+    expect(phone.locator(".ga-toast")).to_contain_text("Lunch moved to 12:30 PM")
     assert card(phone).count() == 0 and now(lunch.id)[0] == 12 * 60 + 30
 
 

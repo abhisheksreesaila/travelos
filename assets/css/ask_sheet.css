@@ -53,9 +53,3 @@
 .ak-fresh { outline: 0.1875rem solid var(--coral); outline-offset: 0.125rem; }
 @media (prefers-reduced-motion: no-preference) { .ak-fresh { animation: ak-fresh 1.6s ease-out; } }
 @keyframes ak-fresh { from { box-shadow: 0 0 0 0.75rem rgba(255, 115, 82, .45); } to { box-shadow: 0 0 0 0 rgba(255, 115, 82, 0); } }
-.ak-toast { position: fixed; z-index: 80; left: 50%; translate: -50% 0; bottom: calc(var(--tabs-h, 0rem) + env(safe-area-inset-bottom) + 1rem); width: max-content; max-width: calc(100% - 2rem); display: flex; align-items: center; gap: 0.75rem;
-  padding: 0.3125rem 0.3125rem 0.3125rem 1.125rem; border-radius: 1.75rem; background: var(--ink); color: #FFFFFF; font-weight: 800; font-size: max(var(--text-min), 0.9375rem); line-height: 1.2; box-shadow: var(--shadow-lg); }
-.ak-toast-t { min-width: 0; overflow-wrap: anywhere; padding: 0.25rem 0; }
-.ak-toast a { flex-shrink: 0; display: inline-flex; align-items: center; min-width: 2.75rem; min-height: 2.75rem; padding: 0 1.125rem; border-radius: var(--r-pill); background: var(--sun); color: var(--ink); text-decoration: none; }
-@media (prefers-reduced-motion: no-preference) { .ak-toast { animation: ak-rise 0.28s var(--motion-ease) both; } }
-@keyframes ak-rise { from { opacity: 0; translate: -50% 0.75rem; } }

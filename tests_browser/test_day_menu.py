@@ -49,7 +49,7 @@ def test_hold_and_let_go_wiggles_the_block_and_offers_the_menu_with_every_choice
     assert names == ["Chat", "Rename", "Delete", "Earlier", "Later", "Shorter", "Longer"]
     assert "/trip/talk?act=" in menu.get_by_role("menuitem", name="Chat").get_attribute("href")
     shot(page, "menu-390.png")
-    assert now(lunch.id)[:2] == (12 * 60, 13 * 60) and page.locator(".cz-toast").count() == 0
+    assert now(lunch.id)[:2] == (12 * 60, 13 * 60) and page.locator(".ga-toast").count() == 0
     checks(page)                                                                    # 44px targets, 13px text, no sideways scroll, with the menu open
 
 
@@ -207,7 +207,7 @@ def test_tapping_away_puts_the_menu_away_and_does_nothing_else(phone):
     phone.touchscreen.tap(8, b["y"] + b["height"] / 2)                                # empty grid beside the hours, clear of the menu
     expect(phone.locator(".cz-menu")).to_have_count(0)
     expect(phone.locator(".is-wiggle, .is-menu")).to_have_count(0)
-    assert phone.locator(".cz-toast").count() == 0 and phone.locator(".cz-view").get_attribute("data-level") == "day"
+    assert phone.locator(".ga-toast").count() == 0 and phone.locator(".cz-view").get_attribute("data-level") == "day"
 
 
 def test_a_park_block_menu_and_a_tap_that_still_opens_it(phone):
@@ -282,7 +282,7 @@ def test_escape_cancels_and_tapping_away_saves(phone):
     field.fill("Nothing")
     field.press("Escape")
     expect(field).to_have_count(0)
-    assert now(lunch.id)[2] == "Lunch" and phone.locator(".cz-toast").count() == 0 and phone.locator(".cz-view").get_attribute("data-level") == "day"
+    assert now(lunch.id)[2] == "Lunch" and phone.locator(".ga-toast").count() == 0 and phone.locator(".cz-view").get_attribute("data-level") == "day"
     expect(phone.locator(f"{block(lunch.id)} .cz-gb-t")).to_have_text("Lunch")
     double_tap_title(phone, lunch.id)
     field = phone.locator(f"{block(lunch.id)} .cz-gb-edit")
@@ -307,7 +307,7 @@ def test_an_empty_or_too_long_title_is_refused_in_plain_words_and_nothing_is_sav
     field.fill("x" * 41)
     field.press("Enter")
     expect(phone.locator(".cz-gb-err")).to_have_text("Keep the title to 40 characters.")
-    assert now(lunch.id)[2] == "Lunch" and phone.locator(".cz-toast").count() == 0
+    assert now(lunch.id)[2] == "Lunch" and phone.locator(".ga-toast").count() == 0
     field.fill("Lunch with the whole family")
     expect(phone.locator(".cz-gb-err")).to_have_text("")                                   # typing clears the reason
     field.fill("")
@@ -327,7 +327,7 @@ def test_saving_an_unchanged_title_says_nothing(phone):
     double_tap_title(phone, lunch.id)
     phone.locator(f"{block(lunch.id)} .cz-gb-edit").press("Enter")
     expect(phone.locator(".cz-gb-edit")).to_have_count(0)
-    assert phone.locator(".cz-toast").count() == 0
+    assert phone.locator(".ga-toast").count() == 0
 
 
 def test_a_double_tap_on_a_park_blocks_title_edits_it_and_does_not_open_it_while_one_tap_does(phone):
@@ -410,7 +410,7 @@ def test_holding_the_bottom_edge_and_letting_go_without_moving_opens_the_menu_an
     fire(phone, "pointerup", x, y)
     expect(phone.locator(".cz-menu")).to_be_visible()
     expect(phone.locator(".cz-g-zoom.is-zooming")).to_have_count(0, timeout=3000)
-    assert now(lunch.id)[:2] == (12 * 60, 13 * 60) and phone.locator(".cz-toast").count() == 0 and phone.evaluate("CZ.held") is False
+    assert now(lunch.id)[:2] == (12 * 60, 13 * 60) and phone.locator(".ga-toast").count() == 0 and phone.evaluate("CZ.held") is False
 
 
 def test_a_move_by_dragging_still_works_and_does_not_open_the_menu(phone):

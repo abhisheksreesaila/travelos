@@ -190,15 +190,7 @@
 
   // ---- copy the fake invite link ---------------------------------------------------------------------------------
   function flash(text) {
-    $$(".cal-flash").forEach((t) => t.remove());
-    const t = document.createElement("div");
-    t.className = "cal-toast cal-toast-live cal-flash";
-    t.setAttribute("role", "status");
-    const s = document.createElement("span");
-    s.textContent = text;
-    t.append(s);
-    document.body.append(t);
-    setTimeout(() => t.remove(), 3500);
+    if (window.GA && GA.toast) GA.toast(text);
   }
   document.addEventListener("click", async (e) => {
     const b = e.target.closest("[data-copy]");

@@ -87,6 +87,8 @@ def styles(*extra, theme="sunset"):
         *((Meta(name="ga-user", content=key),) if key else ()),
         Link(rel="stylesheet", href="/assets/css/tokens.css"),
         Link(rel="stylesheet", href="/assets/css/base.css"),
+        Link(rel="stylesheet", href="/assets/css/toast.css"),         # F-108: the one toast, on every page
+        Script(src="/assets/js/toast.js", defer=True),
         *extra,
     )
 

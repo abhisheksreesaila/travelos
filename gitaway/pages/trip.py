@@ -405,7 +405,7 @@ def _trip_page(session, ua="", tab="today", day="", sheet=None, new="", notice="
     for key, p in zip(("today", "days", "notes"), panels):
         if key != tab:
             p(hidden=True)
-    toast = Div(f"Added “{added.title}” at {cal.fmt_time(added.start)}", role="status", cls="tp-toast", id="tp-toast") if added else (Div(notice, role="alert", cls="tp-toast tp-toast-error") if notice else "")
+    toast = Div(f"Added “{added.title}” at {cal.fmt_time(added.start)}", role="status", cls="ga-toast ga-toast-static tp-toast", id="tp-toast") if added else (Div(notice, role="alert", cls="ga-toast ga-toast-static is-error tp-toast tp-toast-error") if notice else "")
     viewing = P("You are a viewer in this family: you can look at everything but not change it.", id="tp-viewer", role="status", cls="tp-viewer") if v["role"] == "viewer" else ""
     plus = A(icon("plus", 28, 2.8), href=trip_url(add="1", day=v["sel"]), id="tp-add", aria_label="Add a plan", cls="tp-plus", data_open_sheet="") if editor else ""
     body = phone.shell("today", header(v, tab), join_note(), viewing, tab_bar(tab), Main(*panels, id="main"), toast, plus, add_sheet(v, sheet) if editor else "",

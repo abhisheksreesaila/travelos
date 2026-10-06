@@ -445,7 +445,7 @@ def detail_modal(ctx, detail):
 
 
 def toast(kind, text, *extra, tid=None):
-    return Div(Span(text, id=tid), *extra, role="alert" if kind == "error" else "status", cls=f"cal-toast cal-toast-{kind}")
+    return Div(Span(text, id=tid), *extra, role="alert" if kind == "error" else "status", cls=f"ga-toast ga-toast-static cal-toast cal-toast-{kind}")
 
 
 # ---- page ----------------------------------------------------------------------------------------------------------
