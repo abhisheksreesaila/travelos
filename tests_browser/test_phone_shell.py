@@ -61,7 +61,15 @@ def test_every_tab_is_pressed_and_lands_in_the_shell(shell, base_url):
     bar = page.locator(".ph-tabs")
     expect(bar).to_be_visible()
     for key, name, path in TABS:
-        page.locator(f"#ph-tab-{key}").click()
+        if key == "ask":        # F-104: the centre tab opens the sheet over the screen (tests_browser/test_ask_sheet.py); the page is still its address
+            page.wait_for_timeout(400)
+            page.locator("#ph-tab-ask").click()
+            expect(page.locator("#ak-sheet")).to_be_visible()
+            page.keyboard.press("Escape")
+            expect(page.locator("#ak-sheet")).to_have_count(0)
+            page.goto(base_url + path)
+        else:
+            page.locator(f"#ph-tab-{key}").click()
         page.wait_for_url(re.compile(r"/trip/canvas\?day=") if key == "today" else re.compile(re.escape(path)))    # F-092: Today is the day view
         expect(page.locator(f"#ph-tab-{key}")).to_have_attribute("aria-current", "page")
         expect(bar).to_be_visible()

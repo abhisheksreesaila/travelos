@@ -351,10 +351,28 @@ def test_a_speech_recognition_error_switches_to_recording(phone, base_url, stt):
 def test_speech_recognition_that_hears_nothing_for_a_few_seconds_switches_to_recording(phone, base_url, stt):
     page = phone(SILENT_SPEECH + FAKE_MIC)
     page.goto(f"{base_url}/trip/ask?day={DAY}")
+    page.evaluate("document.getElementById('ak-mic').dataset.server = ''")      # a server with no voice service: the browser's recognition goes first (F-104)
     page.locator("#ak-mic").click()
     expect(page.locator("#ak-mic")).not_to_have_class(re.compile("is-recording"))
     expect(page.locator("#ak-mic")).to_have_class(re.compile("is-recording"), timeout=9000)
     assert page.evaluate("window.__started") == 1
+
+
+def test_wherever_the_browser_can_record_it_records_for_the_server_and_recognition_is_only_the_fallback(phone, base_url, stt):
+    """F-104: an iPhone's dictation does not understand Tamil, so a browser that can record never uses its own recognition when the server can transcribe (Sarvam)."""
+    page = phone(FAKE_SPEECH + FAKE_MIC)               # speech recognition exists, and so does the microphone
+    page.goto(f"{base_url}/trip/ask?day={DAY}")
+    page.locator("#ak-mic").click()
+    expect(page.locator("#ak-mic")).to_have_class(re.compile("is-recording"))
+    assert page.evaluate("window.__rec") is None
+    page.wait_for_timeout(1200)
+    page.locator("#ak-mic").click()
+    expect(page.locator("#ak-text")).to_have_value(HEARD)
+    assert len(stt.sent) == 1
+    cant = phone(FAKE_SPEECH + "delete window.MediaRecorder;")      # cannot record: recognition is the fallback
+    cant.goto(f"{base_url}/trip/ask?day={DAY}")
+    cant.locator("#ak-mic").click()
+    expect(cant.locator("#ak-text")).to_have_value("move lunch to 12:30")
 
 
 def test_in_the_installed_iphone_app_it_records_straight_away(phone, base_url, stt):

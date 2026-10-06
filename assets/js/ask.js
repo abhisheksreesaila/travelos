@@ -7,15 +7,22 @@
 //    straight to it), the mic records (MediaRecorder, up to 3 minutes) and /trip/ask/transcribe turns it into words, added to the box (F-102);
 //  - ?mode=paste puts the Paste button first and focuses it; ?mode=talk starts listening where it can, else focuses the box;
 //  - shows that the model is working (with the seconds so far) and stops a second tap of Ask, Continue or Apply.
+// F-104: the same box also lives in the Ask sheet (assets/js/ask_sheet.js), which draws the fragments and calls AskBox.init(root) on each; init returns { destroy } (stops the
+// recorder and drops the page-wide listeners). Where the browser can record, the voice is always recorded and transcribed on the server (Sarvam: Tamil, Hindi and the other
+// Indian languages); the browser's own speech recognition is only the fallback where recording is impossible (or the server has no voice service).
 (function () {
-  var form = document.getElementById('ak-form');
-  var box = document.getElementById('ak-text');
-  var mic = document.getElementById('ak-mic');
-  var micLabel = document.getElementById('ak-mic-label');
-  var paste = document.getElementById('ak-paste');
-  var say = document.getElementById('ak-mic-status');
-  var count = document.getElementById('ak-count');
-  var go = document.getElementById('ak-go');
+  function init(root) {
+  function $(id) { return root.querySelector('#' + id); }
+  var offs = [];
+  function on(target, type, fn, opt) { target.addEventListener(type, fn, opt); offs.push(function () { target.removeEventListener(type, fn, opt); }); }
+  var form = $('ak-form');
+  var box = $('ak-text');
+  var mic = $('ak-mic');
+  var micLabel = $('ak-mic-label');
+  var paste = $('ak-paste');
+  var say = $('ak-mic-status');
+  var count = $('ak-count');
+  var go = $('ak-go');
   var Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
   function busy(f, button, label, progress) {
@@ -35,20 +42,24 @@
       }, 0);
     });
   }
-  if (form && go) busy(form, go, 'Reading…', document.getElementById('ak-progress'));
-  var questions = document.getElementById('ak-questions-form');
-  if (questions) busy(questions, document.getElementById('ak-continue'), 'Working…', document.getElementById('ak-q-progress'));
-  var applyForm = document.getElementById('ak-apply-form');
-  if (applyForm) busy(applyForm, document.getElementById('ak-apply'), 'Applying…', null);
+  if (form && go) busy(form, go, 'Reading…', $('ak-progress'));
+  var questions = $('ak-questions-form');
+  if (questions) busy(questions, $('ak-continue'), 'Working…', $('ak-q-progress'));
+  var applyForm = $('ak-apply-form');
+  if (applyForm) busy(applyForm, $('ak-apply'), 'Applying…', null);
+  // In the sheet a single question is one tap: choosing an answer sends it.
+  if (questions && questions.dataset.tap) questions.addEventListener('change', function (e) {
+    if (e.target && e.target.type === 'radio' && !questions.dataset.sent) questions.requestSubmit($('ak-continue'));
+  });
 
-  if (!form || !box) return;
+  if (!form || !box) return { destroy: function () {} };
 
   function note(text) { if (say) say.textContent = text; }
 
   // ---- the box grows, and counts near the limit ----
   var limit = parseInt(box.dataset.limit, 10) || 20000;
   // On the trip the day picker opens on today. A long paste is a plan for GitAway to place, so until the person picks a day themselves it follows the length.
-  var dayPick = document.getElementById('ak-day');
+  var dayPick = $('ak-day');
   var longAt = parseInt(box.dataset.long, 10) || 0;
   var picked = false;
   if (dayPick) dayPick.addEventListener('change', function () { picked = true; });
@@ -56,6 +67,7 @@
     if (!dayPick || picked || !dayPick.dataset.auto || !longAt) return;
     var words = box.value.split(/\s+/).join(' ').trim();
     dayPick.value = words.length > longAt ? '' : dayPick.dataset.auto;
+    dayPick.dispatchEvent(new CustomEvent('ak:day'));
   }
   function refresh() {
     box.style.height = 'auto';
@@ -77,7 +89,7 @@
     }
   }
   box.addEventListener('input', refresh);
-  window.addEventListener('resize', refresh);
+  on(window, 'resize', refresh);
   refresh();
 
   // ---- Paste ----
@@ -115,14 +127,37 @@
   var canRecord = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
   var ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var installed = !!(navigator.standalone || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches));
-  var preferRecord = canRecord && (!Recognition || (ios && installed));
+  // Wherever the browser can record and the server has a voice service (data-server), the voice is recorded and transcribed there: the browser's own recognition (an iPhone's
+  // dictation) does not understand Tamil, Hindi and the rest, which Sarvam does. Recognition is only the fallback.
+  function preferRecord() { return canRecord && !!mic && mic.dataset.server === '1'; }
   var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var timeEl = document.getElementById('ak-mic-time');
-  var cancelBtn = document.getElementById('ak-rec-cancel');
-  var working = document.getElementById('ak-transcribing');
-  var workingClock = document.getElementById('ak-tr-elapsed');
+  var timeEl = $('ak-mic-time');
+  var cancelBtn = $('ak-rec-cancel');
+  var working = $('ak-transcribing');
+  var workingClock = $('ak-tr-elapsed');
   var MAX = parseInt(mic && mic.dataset.maxSecs, 10) || 180;
   var NO_VOICE = "Voice typing isn't set up yet — tap the microphone on your keyboard to dictate.";
+
+  // Diagnostics (F-104): where the microphone path stops, one tiny line per step to POST /trip/ask/mic-event, which the server writes to its log. Never audio, never words.
+  var sent = 0;
+  function diag(stage, name, detail) {
+    if (sent >= 40 || !window.fetch) return;
+    sent += 1;
+    try {
+      fetch('/trip/ask/mic-event', { method: 'POST', credentials: 'same-origin', keepalive: true, headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+        body: JSON.stringify({ stage: stage, name: String(name || '').slice(0, 40), detail: String(detail || '').slice(0, 120) }) }).catch(function () {});
+    } catch (e) { /* diagnostics must never get in the way */ }
+  }
+  function why() {
+    return 'canRecord=' + (canRecord ? 1 : 0) + ' recognition=' + (Recognition ? 1 : 0) + ' ios=' + (ios ? 1 : 0) + ' installed=' + (installed ? 1 : 0) + ' server=' + (mic && mic.dataset.server === '1' ? 1 : 0) + ' sheet=' + (form.dataset.sheet ? 1 : 0) + ' type=' + (recType || '');
+  }
+  function blocked(err) {
+    var n = err && err.name;
+    return n === 'NotFoundError' ? 'No microphone was found on this phone.'
+      : n === 'NotAllowedError' || n === 'SecurityError' ? 'The microphone is blocked for GitAway. Allow it in Settings > GitAway (or Safari > Microphone), then tap the mic again.'
+      : n === 'NotReadableError' ? 'The microphone is being used by another app. Close it and tap the mic again.'
+      : 'The microphone could not start' + (n ? ' (' + n + ')' : '') + '. You can type instead.';
+  }
 
   function words(state) { box.setAttribute('data-words', state); }
   function kept() { return box.value.trim() ? ' What you typed is still in the box.' : ''; }
@@ -160,6 +195,7 @@
     };
     rec.onerror = function (e) {
       if (e.error === 'no-speech' || e.error === 'aborted') return;
+      diag('speech', 'error', e.error);
       giveUp(e.error === 'not-allowed' || e.error === 'service-not-allowed' ? 'The microphone is off for this site. You can type instead.' : 'Could not hear you. You can type instead.');
     };
     rec.onend = function () {
@@ -168,6 +204,7 @@
       words('final');
       ui(false);
       if (say && say.textContent.indexOf('Listening') === 0) note('');
+      sendWhenDone();
     };
     rec.start();
     ui(true);
@@ -194,7 +231,7 @@
     if (mic) mic.classList.toggle('is-recording', on);
     if (timeEl) { timeEl.hidden = !on; if (on) timeEl.textContent = '0:00'; }
     if (cancelBtn) cancelBtn.hidden = !on;
-    if (paste) paste.hidden = on;
+    if (paste && !sheet) paste.hidden = on;
     ui(on);
     if (on) note('Recording. Tap Stop when you are done.');
     busyState();
@@ -219,7 +256,7 @@
     working.hidden = !on;
   }
   // What was said in another language: the box keeps it as said; the English the service gave for it travels in the hidden `heard` field, so the planner reads English.
-  var heardField = form.elements.heard, understood = document.getElementById('ak-understood');
+  var heardField = form.elements.heard, understood = $('ak-understood');
   function heardList() { try { var v = JSON.parse(heardField && heardField.value || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; } }
   function showUnderstood() {
     if (!understood) return;
@@ -260,17 +297,19 @@
     body.append('secs', String(Math.max(1, Math.round(secs))));
     var lang = (box.dataset.lang || '').trim();
     if (lang) body.append('lang', lang);
+    diag('piece', 'upload', 'bytes=' + blob.size + ' secs=' + Math.round(secs) + ' type=' + (blob.type || ''));
     return fetch('/trip/ask/transcribe', { method: 'POST', credentials: 'same-origin', body: body }).then(function (r) {
       if (mine !== gen) return;
-      if (r.ok) return r.json().then(function (j) { gotWords = true; return addWords(j.text || '', j.english || ''); });
+      if (r.ok) return r.json().then(function (j) { gotWords = true; diag('result', j.text ? 'ok' : 'empty', 'status=' + r.status + ' lang=' + String(j.language || '').slice(0, 8)); return addWords(j.text || '', j.english || ''); });
       return r.text().then(function (t) {
+        diag('result', 'error', 'status=' + r.status);
         if (/^The assistant is busy/.test(t) && (tries || 0) < 3) {      // the line was taken (the server already waited a few seconds): try this piece again, keeping order
           return new Promise(function (go) { setTimeout(go, 2500); }).then(function () { return mine === gen ? send(blob, secs, mine, (tries || 0) + 1) : null; });
         }
         if (/^Nothing could be heard/.test(t) && (pieces > 1 || recording)) return;       // a quiet stretch in a long recording is not a failure
         failed = r.status === 503 && t === NO_VOICE ? NO_VOICE : (t && t.length < 200 ? t : 'That did not work.');
       });
-    }, function () { if (mine === gen) failed = 'That did not upload. Try again, or type it.'; });
+    }, function (err) { diag('result', 'network', err && err.name); if (mine === gen) failed = 'That did not upload. Try again, or type it.'; });
   }
   function enqueue(blob, secs) {
     var mine = gen;
@@ -285,12 +324,14 @@
   }
   function finished() {       // nothing more is coming: say how it went
     if (inflight > 0 || recording) return;
-    if (failed) note(failed + kept()); else if (gotWords) note('Added what you said. Check it, then tap Ask GitAway.');
+    if (failed) note(failed + kept()); else if (gotWords) note(sheet ? 'Added what you said.' : 'Added what you said. Check it, then tap Ask GitAway.');
     if (mic) mic.focus();
+    sendWhenDone();
   }
   function startPiece() {     // a new recorder on the stream that is already open
     var r, cs = [], t0 = Date.now(), n = 0;
-    try { r = recType ? new MediaRecorder(stream, { mimeType: recType }) : new MediaRecorder(stream); } catch (e) { return false; }
+    try { r = recType ? new MediaRecorder(stream, { mimeType: recType }) : new MediaRecorder(stream); } catch (e) { diag('recorder', 'error', (e && e.name) + ' type=' + recType); return false; }
+    r.onerror = function (e) { diag('recorder', 'error', (e && e.error && e.error.name) || 'error'); };
     // One chunk a second (the recorder's own clock, which does not stop when the screen locks): a piece is closed by the page's timer, by the screen going away,
     // or by the recorder having produced `piece` chunks, whichever comes first.
     r.ondataavailable = function (e) {
@@ -309,8 +350,9 @@
       reset();
       if (empty) note('Record a little longer, then tap Stop.'); else finished();
     };
-    try { r.start(1000); } catch (e) { return false; }
+    try { r.start(1000); } catch (e) { diag('recorder', 'error', (e && e.name) + ' on start'); return false; }
     recorder = r;
+    diag('recorder', 'start', 'type=' + (r.mimeType || recType));
     return true;
   }
   var lastCut = 0;
@@ -324,6 +366,7 @@
   function startRecording() {
     if (recording || busyUp) return;
     navigator.mediaDevices.getUserMedia({ audio: true }).then(function (s) {
+      diag('gum', 'granted', '');
       stream = s; action = ''; pieces = 0; gotWords = false; failed = ''; gen += 1;
       recType = pickType();
       piece = parseFloat(mic && mic.dataset.pieceSecs) || 25;
@@ -340,7 +383,8 @@
       }, 250);
     }).catch(function (err) {
       release();
-      note((err && err.name === 'NotFoundError' ? 'No microphone was found.' : 'The microphone is blocked. Allow it in the settings, or tap the microphone on your keyboard.') + kept());
+      diag('gum', 'refused', err && err.name);
+      note(blocked(err) + kept());
       if (form.dataset.mode === 'talk') box.focus();
     });
   }
@@ -348,13 +392,36 @@
     gen += 1;       // pieces still out are dropped; words already added stay
     if (recorder && recorder.state === 'recording') { action = 'cancel'; recorder.stop(); } else reset();
   });
-  document.addEventListener('visibilitychange', function () { if (document.hidden) rotate(); });      // the screen locked or the app was left: finish this piece now, timers may stop
-  window.addEventListener('pagehide', function () { if (recorder && recorder.state === 'recording') { action = 'cancel'; recorder.stop(); } release(); });
+  on(document, 'visibilitychange', function () { if (document.hidden) rotate(); });      // the screen locked or the app was left: finish this piece now, timers may stop
+  on(window, 'pagehide', function () { if (recorder && recorder.state === 'recording') { action = 'cancel'; recorder.stop(); } release(); });
+
+  var sheet = !!form.dataset.sheet, sendAfter = false;
+  function sendWhenDone() {
+    if (!sendAfter || recording || inflight > 0 || listening) return;
+    sendAfter = false;
+    if (box.value.trim() && !form.dataset.sent) form.requestSubmit(go);
+  }
+  if (sheet) {
+    // Done pressed while still talking: finish the recording (or the listening), wait for the words, then send.
+    go.addEventListener('click', function (e) {      // a click, not the submit: an empty required box would stop the submit before it fires
+      if (!(recording || inflight > 0 || listening || wanted)) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      sendAfter = true;
+      if (recording) { if (recorder && recorder.state === 'recording') { action = 'stop'; recorder.stop(); } }
+      else if (wanted || listening) { wanted = false; clearHeard(); try { rec.stop(); } catch (err) { ui(false); sendWhenDone(); } }
+    }, true);
+    // the keyboard-mic hint only where this phone can neither record nor recognise speech
+    var hint = $('ak-hint');
+    if (hint) hint.hidden = !!(Recognition || canRecord);
+  }
 
   function toggle() {
     if (busyUp) return;
     if (recording) { if (recorder && recorder.state === 'recording') { action = 'stop'; recorder.stop(); } return; }
-    if (preferRecord) { startRecording(); return; }
+    diag('tap', 'mic', why());
+    if (preferRecord()) { diag('mode', 'record', why()); startRecording(); return; }
+    if (!(wanted || listening)) diag('mode', Recognition ? 'web-speech' : 'none', why());
     if (wanted || listening) {
       wanted = false;
       clearHeard();
@@ -367,6 +434,34 @@
   if (mic && (Recognition || canRecord)) {
     mic.hidden = false;
     mic.addEventListener('click', toggle);
+  } else if (mic) diag('mode', 'none', why());       // neither recording nor recognition here: the mic stays hidden, typing and the keyboard's dictation are all there is
+
+  // ---- the Ask sheet's date chip: it opens a row of days; a pick moves the hidden day field and the chip's words ----
+  var chip = $('ak-chip'), picks = $('ak-days-pick');
+  if (chip && picks && dayPick) {
+    var label = $('ak-chip-label');
+    var sync = function () {
+      Array.prototype.forEach.call(picks.querySelectorAll('.ak-dpick'), function (b) {
+        var on = b.dataset.d === dayPick.value;
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        if (on && label) label.textContent = b.textContent;
+      });
+    };
+    chip.addEventListener('click', function () {
+      var open = picks.hidden;
+      picks.hidden = !open;
+      chip.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    picks.addEventListener('click', function (e) {
+      var b = e.target.closest && e.target.closest('.ak-dpick');
+      if (!b) return;
+      dayPick.value = b.dataset.d;
+      dayPick.dispatchEvent(new Event('change', { bubbles: true }));
+      sync();
+      picks.hidden = true;
+      chip.setAttribute('aria-expanded', 'false');
+    });
+    dayPick.addEventListener('ak:day', sync);
   }
 
   var mode = form.dataset.mode;
@@ -374,4 +469,18 @@
   if (mode === 'talk') {
     if (mic && (Recognition || canRecord)) toggle(); else box.focus();
   }
+  return {
+    destroy: function () {
+      wanted = false; sendAfter = false; gen += 1;
+      clearHeard();
+      if (rec) { try { rec.abort(); } catch (e) { /* already stopped */ } }
+      if (recorder && recorder.state === 'recording') { action = 'cancel'; try { recorder.stop(); } catch (e) { /* stopped */ } }
+      release();
+      clearInterval(ticker); if (working) clearInterval(working.timer);
+      offs.forEach(function (off) { off(); });
+    }
+  };
+  }
+  window.AskBox = { init: init };
+  if (document.getElementById('ak-form')) init(document);
 })();

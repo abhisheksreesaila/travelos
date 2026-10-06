@@ -45,12 +45,12 @@ def test_a_tab_switch_runs_a_view_transition_forward_and_back_runs_the_other_way
     ctx.add_init_script(RECORD)
     signed_in(ctx, base_url)
     page = ctx.new_page()
-    page.goto(f"{base_url}/trip/family")
-    page.click("#ph-tab-ask")
-    page.wait_for_url("**/trip/ask")
+    page.goto(f"{base_url}/trip/ask")
+    page.click("#ph-tab-family")
+    page.wait_for_url("**/trip/family")
     assert vt(page) == "ga-fwd"
     page.go_back()
-    page.wait_for_url("**/trip/family")
+    page.wait_for_url("**/trip/ask")
     assert vt(page) == "ga-back"
 
 
@@ -59,9 +59,9 @@ def test_nothing_animates_under_reduced_motion(ctxs, base_url):
     ctx.add_init_script(RECORD)
     signed_in(ctx, base_url)
     page = ctx.new_page()
-    page.goto(f"{base_url}/trip/family")
-    page.click("#ph-tab-ask")
-    page.wait_for_url("**/trip/ask")
+    page.goto(f"{base_url}/trip/ask")
+    page.click("#ph-tab-family")
+    page.wait_for_url("**/trip/family")
     assert vt(page) == "none"
 
 
@@ -89,19 +89,19 @@ def test_a_tap_starts_loading_and_the_next_navigation_is_answered_from_the_prefe
     ctx = ctxs()
     signed_in(ctx, base_url)
     page = ctx.new_page()
-    controlled(page, base_url, "/trip/family")
-    res = tap_then_navigate(page, "#ph-tab-ask")
+    controlled(page, base_url, "/trip/ask")
+    res = tap_then_navigate(page, "#ph-tab-family")
     assert res.headers.get("x-ga-prefetch") == "1"
-    assert page.url.endswith("/trip/ask") and "Ask" in page.locator(".tp-head").inner_text()
+    assert page.url.endswith("/trip/family")
 
 
 def test_without_a_touch_the_navigation_is_not_prefetched(ctxs, base_url):
     ctx = ctxs()
     signed_in(ctx, base_url)
     page = ctx.new_page()
-    controlled(page, base_url, "/trip/family")
+    controlled(page, base_url, "/trip/ask")
     with page.expect_navigation() as nav:
-        page.evaluate("document.querySelector('#ph-tab-ask').click()")
+        page.evaluate("document.querySelector('#ph-tab-family').click()")
     assert nav.value.headers.get("x-ga-prefetch") is None
 
 
@@ -109,11 +109,11 @@ def test_a_prefetched_copy_is_used_once_and_goes_stale_after_a_few_seconds(ctxs,
     ctx = ctxs()
     signed_in(ctx, base_url)
     page = ctx.new_page()
-    controlled(page, base_url, "/trip/family")
-    page.locator("#ph-tab-ask").dispatch_event("pointerdown")
+    controlled(page, base_url, "/trip/ask")
+    page.locator("#ph-tab-family").dispatch_event("pointerdown")
     page.wait_for_timeout(5600)
     with page.expect_navigation() as nav:
-        page.evaluate("document.querySelector('#ph-tab-ask').click()")
+        page.evaluate("document.querySelector('#ph-tab-family').click()")
     assert nav.value.headers.get("x-ga-prefetch") is None
 
 
@@ -142,12 +142,12 @@ def test_signing_out_drops_a_prefetched_page(ctxs, base_url):
     ctx = ctxs()
     signed_in(ctx, base_url)
     page = ctx.new_page()
-    controlled(page, base_url, "/trip/family")
-    page.locator("#ph-tab-ask").dispatch_event("pointerdown")
+    controlled(page, base_url, "/trip/ask")
+    page.locator("#ph-tab-family").dispatch_event("pointerdown")
     page.wait_for_timeout(400)
     page.evaluate("fetch('/signout', {method: 'POST'}).then(r => r.status)")
     with page.expect_navigation() as nav:
-        page.evaluate("document.querySelector('#ph-tab-ask').click()")
+        page.evaluate("document.querySelector('#ph-tab-family').click()")
     assert nav.value.headers.get("x-ga-prefetch") is None
 
 
@@ -161,9 +161,9 @@ def test_a_tab_switch_on_a_warm_copy_reaches_the_new_page_within_150_ms_and_runs
     ctx.add_init_script(STAMP)
     signed_in(ctx, base_url)
     page = ctx.new_page()
-    controlled(page, base_url, "/trip/family")
-    tap_then_navigate(page, "#ph-tab-ask")                      # pointerdown first, then the click 400 ms later
-    page.wait_for_url("**/trip/ask")
+    controlled(page, base_url, "/trip/ask")
+    tap_then_navigate(page, "#ph-tab-family")                      # pointerdown first, then the click 400 ms later
+    page.wait_for_url("**/trip/family")
     page.wait_for_function("sessionStorage.getItem('vt2') !== null")
     ms = page.evaluate("Number(sessionStorage.getItem('reveal')) - Number(sessionStorage.getItem('t0'))")
     print(f"\nF099 tab switch, warm service-worker copy: click -> pagereveal {ms:.0f} ms")

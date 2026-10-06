@@ -272,10 +272,10 @@ ENGLISH = "Lunch at 12:30"
 class Router:
     """Sarvam's two endpoints (shaped like the documented responses) and the chat model, behind one `ai.TRANSPORT`."""
 
-    def __init__(self, language="hi-IN", translate_status=200):
+    def __init__(self, language="hi-IN", translate_status=200, said=None):
         from tests import canvas_samples as samples
         from tests.test_speak import answer, op
-        self.language, self.translate_status = language, translate_status
+        self.language, self.translate_status, self.said = language, translate_status, said
         self.chat = samples.FakeAzure(answer(op("add_plan", title="Lunch", start="12:30", end="13:30")))
         self.urls = []
 
@@ -284,7 +284,8 @@ class Router:
         if url.endswith("/speech-to-text-translate"):
             return self.translate_status, json.dumps({"request_id": "r2", "transcript": ENGLISH, "language_code": self.language, "diarized_transcript": None, "language_probability": 0.95})
         if url.endswith("/speech-to-text"):
-            said = HINDI if self.language != "en-IN" else ENGLISH
+            said = self.said or (HINDI if self.language != "en-IN" else ENGLISH)
+            self.detected = b'name="language_code"\r\n\r\nunknown\r\n' in body        # no language was named: Sarvam is asked to detect it
             return 200, json.dumps({"request_id": "r1", "transcript": said, "language_code": self.language, "diarized_transcript": None, "language_probability": 0.97})
         return self.chat(url, headers, body, timeout)
 
@@ -316,6 +317,25 @@ def test_a_hindi_recording_comes_back_as_said_with_its_english(ari, hindi):
     r = post(ari, voice("mp4"))
     assert r.status_code == 200 and r.json() == {"text": HINDI, "language": "hi-IN", "english": ENGLISH}
     assert [u.rsplit("/", 1)[1] for u in router.urls] == ["speech-to-text", "speech-to-text-translate"]
+
+
+TAMIL = "மதியம் 12:30 மணிக்கு மதிய உணவு"
+
+
+def test_a_tamil_recording_is_detected_kept_as_said_and_reaches_the_planner_in_english(client, hindi):
+    """F-104: the captain dictated Tamil. The recording goes to Sarvam (saarika:v2.5, language_code=unknown detects ta-IN), the words come back as said and the
+    speech-to-text-translate step gives the English the planner reads."""
+    from tests.test_calendar import book
+    book(client)
+    router = hindi(language="ta-IN", said=TAMIL)
+    said = post(client, voice("mp4")).json()
+    assert said == {"text": TAMIL, "language": "ta-IN", "english": ENGLISH}
+    assert router.detected and [u.rsplit("/", 1)[1] for u in router.urls] == ["speech-to-text", "speech-to-text-translate"]
+    heard = json.dumps([[said["text"], said["english"]]], ensure_ascii=False)
+    r = client.post("/trip/ask/propose", data={"day": "1", "text": TAMIL, "heard": heard})
+    asked = json.dumps(router.chat.sent[0], ensure_ascii=False)
+    assert ENGLISH in asked and TAMIL not in asked                          # an English plan from Tamil speech
+    assert 'id="ak-prop"' in r.text and "Lunch" in r.text
 
 
 def test_english_speech_needs_no_translation_and_a_failed_translation_is_not_fatal(ari, hindi):

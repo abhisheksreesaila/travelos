@@ -120,8 +120,10 @@ def test_bookings_are_quiet_and_their_line_opens_its_sheet_in_place(canvas_page)
 def test_the_centre_ask_and_an_empty_days_talk_and_paste_open_ask_on_that_day(canvas_page):
     page = canvas_page()
     open_day(page, 1)
-    page.locator("#ph-tab-ask").click()      # F-092: the centre Ask opens on the day shown
+    assert page.locator("#ph-tab-ask").get_attribute("href").endswith("/trip/ask?day=1")      # F-092: the centre Ask is pointed at the day shown (F-104 opens it as a sheet on that day)
+    page.goto(page.url.split("/trip/canvas")[0] + "/trip/ask?day=1")
     page.wait_for_url(re.compile(r"/trip/ask\?day=1"))
+    open_day(page, 1)
     open_day(page, 2)
     page.locator("#cz-say-talk").click()
     page.wait_for_url(re.compile(r"/trip/ask\?day=2&mode=talk"))

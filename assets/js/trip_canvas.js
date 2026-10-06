@@ -745,6 +745,7 @@
   // The day grid's script needs a few of these. `quiet` brings the level up to date after a write with no animation, the scroll kept and the focus left alone.
   CZ.view = view; CZ.post = post; CZ.tripBody = tripBody; CZ.showToast = showToast; CZ.hideToast = hideToast; CZ.here = here; CZ.reduced = reduced; CZ.goto = goto; CZ.path = path;
   CZ.busy = function () { return busy; };
+  CZ.forget = function () { cache = {}; };      // the Ask sheet (ask_sheet.js) changed the plan: no level fetched before may be shown
   CZ.guard = function (ms, el) { clickGuard = Date.now() + ms; guardItem = el; };      // the click a lifting finger makes is not a tap on what it lifted from
   CZ.quiet = function () {
     return new Promise(function (done) {

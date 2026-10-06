@@ -18,9 +18,9 @@ own dictation always work.
 import json
 import re
 
-from fasthtml.common import A, Button, Div, Fieldset, Form, H2, H3, Input, Label, Legend, Link, Option, P, Select, Span, Textarea
+from fasthtml.common import A, Button, Div, Fieldset, Form, H2, H3, Input, Label, Legend, Link, Option, P, Select, Span, Textarea, to_xml
 from starlette.concurrency import run_in_threadpool
-from starlette.responses import JSONResponse, PlainTextResponse, RedirectResponse
+from starlette.responses import JSONResponse, PlainTextResponse, RedirectResponse, Response
 
 from gitaway import access, ai, canvas, familythread, pickers, say, session as ses, speak, tripcal as cal, voicenotes
 from gitaway.icons import icon
@@ -101,6 +101,49 @@ def _day_picker(t, day, today, auto=False):
     return Label(Span("Which day", cls="ak-label"), Select(*options, name="day", id="ak-day", data_ga_label="Which day", **({"data_auto": str(day)} if auto else {})), cls="ak-field")
 
 
+def _day_chip(t, day, today, auto):
+    """The sheet's day: a small date chip that opens a row of the trip's days (and "Any day": GitAway places it). The hidden `day` field carries the choice; the script
+    (assets/js/ask_sheet.js) moves it and the chip's words. Without script the chip does nothing and the day stays as drawn."""
+    days = [("", "Any day")] + [(str(i), f"{d.strftime('%a %b')} {d.day}" + (" · today" if i == today else "")) for i, d in enumerate(cal.days(t))]
+    label = dict(days).get("" if day is None else str(day), "Any day")
+    return Div(
+        Div(Button(icon("calendar", 16, 2.4), Span(label, id="ak-chip-label"), type="button", id="ak-chip", cls="ak-chip-day", aria_expanded="false", aria_controls="ak-days-pick", data_ga_label="Which day"),
+            cls="ak-chiprow"),
+        Div(*[Button(name, type="button", cls="ak-dpick", data_d=v, aria_pressed="true" if v == ("" if day is None else str(day)) else "false") for v, name in days],
+            id="ak-days-pick", cls="ak-dpicks", role="group", aria_label="Which day", hidden=True),
+        Input(type="hidden", name="day", id="ak-day", value="" if day is None else str(day), **({"data_auto": str(day)} if auto else {})),
+        cls="ak-daybar")
+
+
+def _sheet_box(request, session, day, text="", error="", mode="", heard=()):
+    """The box as the Ask sheet draws it (F-104): the day chip, the big mic, the note, a small Paste, one Done. No title, no day dropdown, no second Ask button, and the keyboard-mic
+    hint only where this phone cannot record or recognise speech (the script shows it then)."""
+    t = cal.trip("", ses.booking(session))
+    today = speak.today_index(session)
+    auto = day is None and today is not None and say.route(text) == "change"
+    if auto:
+        day = today
+    return Form(
+        trip_field(),
+        Div(error, role="alert", cls="tp-error ak-error", id="ak-error") if error else "",
+        Div(_day_chip(t, day, today, auto), Button(icon("clipboard", 20, 2.2), Span("Paste", cls="sr-only"), type="button", id="ak-paste", cls="ak-paste-icon", title="Paste", aria_label="Paste"), cls="ak-sheet-top"),
+        Div(Button(Span(cls="ak-dot", aria_hidden="true"), icon("mic", 34, 2.2), Span("Tap to talk", id="ak-mic-label"), Span("0:00", id="ak-mic-time", cls="ak-time", hidden=True),
+                   type="button", id="ak-mic", cls="ak-mic ak-bigmic", hidden=True, aria_pressed="false", data_max_secs=str(voicenotes.MAX_SECONDS), data_piece_secs=str(PIECE_SECONDS),
+                   data_server="1" if ai.configured("transcribe") else ""),
+            Button(icon("x", 18, 2.4), Span("Cancel"), type="button", id="ak-rec-cancel", cls="ak-cancel", hidden=True), cls="ak-microw"),
+        Span("", id="ak-mic-status", cls="ak-mic-status", role="status", aria_live="polite"),
+        P(icon("pencil", 16, 2.4), Span("Transcribing…"), Span("", id="ak-tr-elapsed", cls="ak-elapsed"), cls="ak-progress", id="ak-transcribing", hidden=True, role="status"),
+        Textarea(text, name="text", id="ak-text", rows="3", required=True, autocomplete="off", spellcheck="true", aria_label="What do you want to change or add?", data_limit=str(say.LIMIT), data_long=str(speak.MAX_REQUEST),
+                 placeholder="Say it or type it…"),
+        P("", id="ak-understood", cls="ak-understood", role="status", aria_live="polite", hidden=True),
+        _hidden("heard", json.dumps(list(heard), ensure_ascii=False, separators=(",", ":")) if heard else ""),
+        P("", id="ak-count", cls="ak-count", role="status", aria_live="polite", hidden=True),
+        P(icon("mic", 16, 2.4), "Tap the microphone on the keyboard to dictate.", cls="ak-hint", id="ak-hint", hidden=True),
+        P(icon("pencil", 16, 2.4), Span("Reading it…", id="ak-progress-text"), Span("", id="ak-elapsed", cls="ak-elapsed"), cls="ak-progress", id="ak-progress", hidden=True, role="status"),
+        Button("Done", type="submit", cls="tp-btn tp-btn-coral ak-go", id="ak-go"),
+        action="/trip/ask/propose", method="post", id="ak-form", cls="ak-form ak-sheetform", data_sheet="1", **({"data_mode": mode} if mode in MODES else {}))
+
+
 def _box(request, session, day, text="", error="", mode="", heard=()):
     b = ses.booking(session)
     t = cal.trip("", b)
@@ -114,7 +157,8 @@ def _box(request, session, day, text="", error="", mode="", heard=()):
         Div(error, role="alert", cls="tp-error ak-error", id="ak-error") if error else "",
         _day_picker(t, day, today, auto),
         Div(Button(Span(cls="ak-dot", aria_hidden="true"), icon("mic", 24, 2.2), Span("Tap to talk", id="ak-mic-label"), Span("0:00", id="ak-mic-time", cls="ak-time", hidden=True),
-                   type="button", id="ak-mic", cls="tp-btn tp-btn-white ak-mic", hidden=True, aria_pressed="false", data_max_secs=str(voicenotes.MAX_SECONDS), data_piece_secs=str(PIECE_SECONDS)),
+                   type="button", id="ak-mic", cls="tp-btn tp-btn-white ak-mic", hidden=True, aria_pressed="false", data_max_secs=str(voicenotes.MAX_SECONDS), data_piece_secs=str(PIECE_SECONDS),
+                   data_server="1" if ai.configured("transcribe") else ""),
             Button(icon("clipboard", 22, 2.2), Span("Paste"), type="button", id="ak-paste", cls="tp-btn tp-btn-white ak-paste"),
             Button(icon("x", 22, 2.2), Span("Cancel"), type="button", id="ak-rec-cancel", cls="tp-btn tp-btn-white ak-cancel", hidden=True), cls="ak-inputs"),
         Span("", id="ak-mic-status", cls="ak-mic-status", role="status", aria_live="polite"),
@@ -147,7 +191,7 @@ def _group(g):
     return Div(H3(g["label"], cls="ak-dayh"), Div(*[_chip(c) for c in g["chips"]], cls="ak-chips"), cls="ak-day", data_day=str(g["day"]))
 
 
-def _proposal(session, step, text, day, t, heard=()):
+def _proposal(session, step, text, day, t, heard=(), sheet=False):
     prev = step["preview"]
     kept = _hidden("heard", json.dumps(list(heard), ensure_ascii=False, separators=(",", ":")) if heard else "")
     plan = prev["kind"] == "plan"
@@ -160,12 +204,12 @@ def _proposal(session, step, text, day, t, heard=()):
         Div(*[_group(g) for g in prev["groups"]], cls="ak-days", id="ak-chips"),
         Div(P("Also:", cls="ak-label"), *[P(x, cls="ak-dropped") for x in prev["tidy"]], cls="ak-card ak-leftout", id="ak-tidy") if prev["tidy"] else "",
         Div(P("Left out:", cls="ak-label"), *[P(d, cls="ak-dropped") for d in prev["dropped"]], cls="ak-card ak-leftout", id="ak-leftout") if prev["dropped"] else "",
-        Form(*keep, *payload, Button(icon("check", 20, 3), "Apply and tell the family", type="submit", cls="tp-btn tp-btn-coral ak-go", id="ak-apply"),
+        Form(*keep, *payload, Button(icon("check", 20, 3), "Apply" if sheet else "Apply and tell the family", type="submit", cls="tp-btn tp-btn-coral ak-go", id="ak-apply"),
              action="/trip/ask/apply", method="post", id="ak-apply-form"),
         Div(Form(_hidden("day", day), _hidden("text", text), kept, Button("Change it", type="submit", cls="tp-btn tp-btn-white", id="ak-change"), action="/trip/ask/edit", method="post", id="ak-change-form"),
-            A("Cancel", href=day_url(day), cls="tp-btn tp-btn-white", id="ak-cancel"), cls="ak-acts"),
-        P("Nothing changes until you tap Apply.", cls="ak-fine"),
-        cls="ak-prop", id="ak-prop")
+            *([] if sheet else [A("Cancel", href=day_url(day), cls="tp-btn tp-btn-white", id="ak-cancel")]), cls="ak-acts"),
+        *([] if sheet else [P("Nothing changes until you tap Apply.", cls="ak-fine")]),
+        cls="ak-prop ak-prop-sheet" if sheet else "ak-prop", id="ak-prop")
 
 
 def _option(qid, o, suggest, picked):
@@ -179,7 +223,7 @@ def _question(q):
                     cls="ak-card ak-q", data_q=q["id"])
 
 
-def _questions(session, step, text, day, error="", heard=()):
+def _questions(session, step, text, day, error="", heard=(), sheet=False):
     qs = step["questions"]
     kept = _hidden("heard", json.dumps(list(heard), ensure_ascii=False, separators=(",", ":")) if heard else "")
     return Div(
@@ -190,8 +234,8 @@ def _questions(session, step, text, day, error="", heard=()):
              P(icon("pencil", 16, 2.4), Span("Reading it…"), Span("", cls="ak-elapsed"), cls="ak-progress", id="ak-q-progress", hidden=True, role="status"),
              Button("Continue", type="submit", cls="tp-btn tp-btn-coral ak-go", id="ak-continue"),
              Button("Change the words", type="submit", cls="tp-btn tp-btn-white ak-go", id="ak-change-text", formaction="/trip/ask/edit", formnovalidate=True),
-             P("Nothing changes until you tap Apply.", cls="ak-fine"),
-             action="/trip/ask/answer", method="post", id="ak-questions-form", cls="ak-form"),
+             *([] if sheet else [P("Nothing changes until you tap Apply.", cls="ak-fine")]),
+             action="/trip/ask/answer", method="post", id="ak-questions-form", cls="ak-form", **({"data_tap": "1"} if sheet and len(qs) == 1 else {})),     # in the sheet one question is one tap
         id="ak-questions")
 
 
@@ -232,6 +276,53 @@ def content(request, session):
     return Div(_box(request, session, day, st.get("text", ""), st.get("error", ""), st.get("mode", mode), st.get("heard", ())), cls="ak")
 
 
+def wants_sheet(request) -> bool:
+    """The Ask sheet (F-104, assets/js/ask_sheet.js) asks for the box, the questions and the preview as fragments with this header."""
+    return request.headers.get("x-ask") == "1"
+
+
+def sheet_fragment(request, session, status=200):
+    """What the sheet shows for this step: the box, the follow-up questions or the preview, alone (no page around it)."""
+    st = _state(request)
+    day = st["day"] if "day" in st else _day_of(request, session)
+    t = cal.trip("", ses.booking(session))
+    if st.get("preview"):
+        body = _proposal(session, st["step"], st.get("text", ""), day, t, st.get("heard", ()), sheet=True)
+    elif st.get("step"):
+        body = _questions(session, st["step"], st.get("text", ""), day, st.get("error", ""), st.get("heard", ()), sheet=True)
+    else:
+        body = _sheet_box(request, session, day, st.get("text", ""), st.get("error", ""), st.get("mode", ""), st.get("heard", ()))
+    return Response(to_xml(Div(body, id="ak-sheet-body")), status_code=status, media_type="text/html; charset=utf-8", headers={"Cache-Control": "no-store"})
+
+
+def sheet_open(request, session):
+    """GET /trip/ask?day=N with X-Ask: the box the sheet opens with (it starts listening when the page lets it: data-mode=talk). Editors only."""
+    if not access.can_edit(access.request_role()):
+        return PlainTextResponse("Only editors can change the plan.", status_code=403)
+    request.scope["ask"] = {"mode": "talk"}
+    return sheet_fragment(request, session)
+
+
+def _toast(kinds, count, plan=False) -> str:
+    """"Added 3 plans · Moved 1 · The family has been told", from what Apply did."""
+    if plan:
+        return f"Added {count} {'day' if count == 1 else 'days'} · The family has been told"
+    n = lambda *k: sum(1 for x in kinds if x in k)
+    parts = []
+    if n("add_plan", "add_step"):
+        adds = n("add_plan", "add_step")
+        word = "plan" if n("add_step") == 0 else "step" if n("add_plan") == 0 else "item"
+        parts.append(f"Added {adds} {word}{'s' if adds != 1 else ''}")
+    if n("move_plan", "move_step"):
+        parts.append(f"Moved {n('move_plan', 'move_step')}")
+    if n("remove_plan"):
+        parts.append(f"Removed {n('remove_plan')}")
+    rest = len(kinds) - n("add_plan", "add_step", "move_plan", "move_step", "remove_plan")
+    if rest:
+        parts.append(f"Changed {rest}")
+    return " · ".join(parts or [f"Changed {count}"]) + " · The family has been told"
+
+
 def ask_button(day, compact=False, ident="ak-open") -> A:
     """The small "Ask GitAway" button the canvas puts on a day or a block: opens this tab with that day selected. `compact` is the round microphone alone (its name is
     still read out), for Today's heading where there is no room for the words."""
@@ -248,6 +339,8 @@ def register(app):
         form = getattr(request, "_form", None)         # what was dictated in another language travels with the box through every step
         state.setdefault("heard", _heard(form.get("heard")) if form is not None else [])
         request.scope["ask"] = state
+        if wants_sheet(request):
+            return sheet_fragment(request, session, status)
         page = phone_tabs.tab_page("ask", request, session)
         if status == 200:
             return page
@@ -330,6 +423,8 @@ def register(app):
                 done = await run_in_threadpool(say.apply, session, state, "", form.get("trip") or None)
             except ValueError as e:     # json, then SayError: both are fit to show
                 return show(request, session, day=day, text=text, error=str(e) if isinstance(e, say.SayError) else "That plan was lost. Ask again.", status=409)
+            if wants_sheet(request):
+                return JSONResponse({"ok": True, "day": min(done["days"]), "ids": [], "toast": _toast([], done["count"], plan=True)})
             return RedirectResponse(f"{day_url(min(done['days']))}&done={done['count']}&kind=plan&steps={done['steps']}&merged={done['merged']}", status_code=303)
         try:
             ops = json.loads((form.get("ops") or "")[:MAX_FIELD])
@@ -341,6 +436,8 @@ def register(app):
             done = await run_in_threadpool(speak.apply, session, day, ops, form.get("token") or "", form.get("trip") or None)
         except (speak.SpeakError, familythread.ThreadError) as e:
             return show(request, session, day=day, text=text, error=str(e), status=409)
+        if wants_sheet(request):
+            return JSONResponse({"ok": True, "day": day, "ids": done["ids"], "toast": _toast(done["kinds"], done["count"])})
         return RedirectResponse(f"{day_url(day)}&done={done['count']}", status_code=303)
 
 
@@ -378,6 +475,36 @@ class UploadLimit:
         await self.app(scope, receive, send)
 
 
+# ---- where the microphone path stops (F-104) -----------------------------------------------------------------------------------
+
+import logging
+import time
+from collections import defaultdict, deque
+
+LOG = logging.getLogger("gitaway.ask")
+MIC_STAGES = ("tap", "mode", "gum", "recorder", "piece", "result", "speech")
+MIC_RATE = (60, 60.0)            # at most 60 events per person per minute
+MIC_MAX_BODY = 1024
+_mic_hits: dict = defaultdict(deque)
+_SAFE = re.compile(r"[^A-Za-z0-9 _.,:=;/+()\-]")
+
+
+def _mic_clean(value, limit) -> str:
+    """A short machine-made fact (an error's name, a size, a mime type): anything else becomes "?", so a log line can neither be forged nor carry words."""
+    return _SAFE.sub("?", str(value if isinstance(value, (str, int, float)) else "")[:limit])
+
+
+def mic_allowed(who, now=None) -> bool:
+    now = time.monotonic() if now is None else now
+    hits = _mic_hits[who]
+    while hits and now - hits[0] > MIC_RATE[1]:
+        hits.popleft()
+    if len(hits) >= MIC_RATE[0]:
+        return False
+    hits.append(now)
+    return True
+
+
 PIECE_SECONDS = 25          # the page rotates its recorder this often (data-piece-secs on the mic)
 PIECE_MAX_SECONDS = 30      # Sarvam's speech-to-text refuses audio over 30 s ("use the batch API")
 MIMES = {"mp4": "audio/mp4", "webm": "audio/webm", "ogg": "audio/ogg"}
@@ -385,6 +512,30 @@ MIMES = {"mp4": "audio/mp4", "webm": "audio/webm", "ogg": "audio/ogg"}
 
 def register_transcribe(app):
     app.add_middleware(UploadLimit)
+
+    @app.post("/trip/ask/mic-event")
+    async def mic_event(request, session):
+        """One step of the Ask microphone, from the page: {stage, name, detail} (short facts such as an error's name or a recording's size; no audio, no words). Editors only (the
+        access gate, like every Ask write). Logged as one line by "gitaway.ask" so `railway logs` shows where voice stops on a phone; never stored. 204; 429 past 60 a minute."""
+        who = ses.current_traveler(session)
+        if who is None:
+            return PlainTextResponse("Sign in first.", status_code=401)
+        try:
+            size = int(request.headers.get("content-length") or 0)
+        except ValueError:
+            size = 0
+        if size > MIC_MAX_BODY:
+            return PlainTextResponse("Too large.", status_code=413)
+        if not mic_allowed(who.id):
+            return PlainTextResponse("Slow down.", status_code=429)
+        try:
+            data = json.loads((await request.body())[:MIC_MAX_BODY])
+        except ValueError:
+            return PlainTextResponse("Not understood.", status_code=400)
+        if not isinstance(data, dict) or data.get("stage") not in MIC_STAGES:
+            return PlainTextResponse("Not understood.", status_code=400)
+        LOG.info("ask mic stage=%s name=%s detail=%s", data["stage"], _mic_clean(data.get("name"), 40), _mic_clean(data.get("detail"), 120))
+        return Response(status_code=204)
 
     @app.post(TRANSCRIBE_PATH)
     async def transcribe(request, session):
