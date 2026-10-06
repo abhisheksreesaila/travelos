@@ -37,7 +37,7 @@
         if (progress) {
           progress.hidden = false;
           var clock = progress.querySelector('.ak-elapsed');
-          if (clock) setInterval(function () { clock.textContent = Math.round((Date.now() - started) / 1000) + ' s'; }, 1000);
+          if (clock) { clearInterval(f._clock); f._clock = setInterval(function () { clock.textContent = Math.round((Date.now() - started) / 1000) + ' s'; }, 1000); offs.push(function () { clearInterval(f._clock); }); }
         }
       }, 0);
     });
@@ -48,8 +48,13 @@
   var applyForm = $('ak-apply-form');
   if (applyForm) busy(applyForm, $('ak-apply'), 'Applying…', null);
   // In the sheet a single question is one tap: choosing an answer sends it.
+  // With several, each question is its own row of chips: a tap answers that question, and when every one has been answered the proposal comes (Done accepts the suggestions as they are).
   if (questions && questions.dataset.tap) questions.addEventListener('change', function (e) {
-    if (e.target && e.target.type === 'radio' && !questions.dataset.sent) questions.requestSubmit($('ak-continue'));
+    if (!(e.target && e.target.type === 'radio') || questions.dataset.sent) return;
+    var q = e.target.closest('.ak-q');
+    if (q) q.dataset.answered = '1';
+    var all = questions.querySelectorAll('.ak-q');
+    if (questions.querySelectorAll('.ak-q[data-answered]').length === all.length) questions.requestSubmit($('ak-continue'));
   });
 
   if (!form || !box) return { destroy: function () {} };

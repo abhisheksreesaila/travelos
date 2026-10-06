@@ -232,10 +232,10 @@ def _questions(session, step, text, day, error="", heard=(), sheet=False):
              Div(Span("QUICK QUESTION" if len(qs) == 1 else f"{len(qs)} QUICK QUESTIONS", cls="ak-label"), P("The answer GitAway would guess is already chosen. Change it with one tap.", cls="ak-fine ak-left"), cls="ak-qhead"),
              *[_question(q) for q in qs],
              P(icon("pencil", 16, 2.4), Span("Reading it…"), Span("", cls="ak-elapsed"), cls="ak-progress", id="ak-q-progress", hidden=True, role="status"),
-             Button("Continue", type="submit", cls="tp-btn tp-btn-coral ak-go", id="ak-continue"),
+             Button("Done" if sheet else "Continue", type="submit", cls="tp-btn tp-btn-coral ak-go", id="ak-continue"),
              Button("Change the words", type="submit", cls="tp-btn tp-btn-white ak-go", id="ak-change-text", formaction="/trip/ask/edit", formnovalidate=True),
              *([] if sheet else [P("Nothing changes until you tap Apply.", cls="ak-fine")]),
-             action="/trip/ask/answer", method="post", id="ak-questions-form", cls="ak-form", **({"data_tap": "1"} if sheet and len(qs) == 1 else {})),     # in the sheet one question is one tap
+             action="/trip/ask/answer", method="post", id="ak-questions-form", cls="ak-form", **({"data_tap": "1", **({"data_single": "1"} if len(qs) == 1 else {})} if sheet else {})),     # in the sheet a tap answers a question; the last one brings the proposal
         id="ak-questions")
 
 
@@ -496,6 +496,8 @@ def _mic_clean(value, limit) -> str:
 
 def mic_allowed(who, now=None) -> bool:
     now = time.monotonic() if now is None else now
+    for k in [k for k, v in _mic_hits.items() if k != who and (not v or now - v[-1] > MIC_RATE[1])]:
+        del _mic_hits[k]                    # nobody who has been quiet for a window keeps a list
     hits = _mic_hits[who]
     while hits and now - hits[0] > MIC_RATE[1]:
         hits.popleft()
@@ -520,16 +522,23 @@ def register_transcribe(app):
         who = ses.current_traveler(session)
         if who is None:
             return PlainTextResponse("Sign in first.", status_code=401)
+        if "content-length" not in request.headers:
+            return PlainTextResponse("Send the event with its length.", status_code=411)
         try:
-            size = int(request.headers.get("content-length") or 0)
+            size = int(request.headers["content-length"])
         except ValueError:
-            size = 0
+            size = MIC_MAX_BODY + 1
         if size > MIC_MAX_BODY:
             return PlainTextResponse("Too large.", status_code=413)
         if not mic_allowed(who.id):
             return PlainTextResponse("Slow down.", status_code=429)
+        body = b""
+        async for chunk in request.stream():       # never more than 1 KB is read, whatever the header says
+            body += chunk
+            if len(body) > MIC_MAX_BODY:
+                return PlainTextResponse("Too large.", status_code=413)
         try:
-            data = json.loads((await request.body())[:MIC_MAX_BODY])
+            data = json.loads(body)
         except ValueError:
             return PlainTextResponse("Not understood.", status_code=400)
         if not isinstance(data, dict) or data.get("stage") not in MIC_STAGES:
