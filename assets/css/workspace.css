@@ -20,20 +20,20 @@
 .ws-avatar { width: 2.75rem; height: 2.75rem; border-radius: var(--r-pill); border: 0.1875rem solid #fff; display: grid; place-items: center; font-weight: 800; }
 
 /* Cost ledger: one slim line in the top bar (F-031). Total opens the breakdown popover; scrolling a detail down shrinks it to a pill. */
-.ws-ledger { position: relative; margin-left: auto; height: 2.75rem; flex-shrink: 0; display: flex; align-items: center; gap: 0.625rem; padding: 0 0.25rem 0 1rem; border-radius: var(--r-pill); background: var(--card); box-shadow: 0 0 0 1px var(--line), 0 0.1875rem 0 var(--line); transition: padding .3s var(--ease-out); }
-.ws-lines { display: flex; align-items: center; gap: 0.5rem; max-width: 32rem; overflow: hidden; white-space: nowrap; opacity: 1; transition: max-width .3s var(--ease-out), opacity .2s, margin .3s var(--ease-out), visibility 0s; }
+.ws-ledger { position: relative; margin-left: auto; height: 2.75rem; flex-shrink: 0; display: flex; align-items: center; gap: 0.625rem; padding: 0 0.25rem 0 1rem; border-radius: var(--r-pill); background: var(--card); box-shadow: 0 0 0 1px var(--line), 0 0.1875rem 0 var(--line); transition: padding var(--motion-dur) var(--ease-out); }
+.ws-lines { display: flex; align-items: center; gap: 0.5rem; max-width: 32rem; overflow: hidden; white-space: nowrap; opacity: 1; transition: max-width var(--motion-dur) var(--ease-out), opacity var(--motion-quick), margin var(--motion-dur) var(--ease-out), visibility 0s; }
 .ws-line-item { display: inline-flex; align-items: center; gap: 0.25rem; font-weight: 700; font-size: 0.9375rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .ws-ledger.is-pill { padding-left: 0.625rem; }
-.ws-ledger.is-pill .ws-lines { max-width: 0; opacity: 0; margin-right: -0.625rem; visibility: hidden; transition: max-width .3s var(--ease-out), opacity .2s, margin .3s var(--ease-out), visibility 0s .3s; }
+.ws-ledger.is-pill .ws-lines { max-width: 0; opacity: 0; margin-right: -0.625rem; visibility: hidden; transition: max-width var(--motion-dur) var(--ease-out), opacity var(--motion-quick), margin var(--motion-dur) var(--ease-out), visibility 0s var(--motion-dur); }
 .ws-ledger.is-pill .ws-total { cursor: zoom-out; }
 .ws-op { font-family: var(--font-display); font-weight: 800; font-size: 1.125rem; color: rgba(30, 26, 46, .35); }
 .ws-total { border: 0; background: transparent; padding: 0.25rem 0.375rem; border-radius: 0.625rem; cursor: pointer; font-family: var(--font-display); font-weight: 800; font-size: 1.375rem; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
 .ws-total::after { content: ""; display: inline-block; width: 0.375rem; height: 0.375rem; margin-left: 0.375rem; border-right: 0.125rem solid var(--ink-2); border-bottom: 0.125rem solid var(--ink-2); transform: translateY(-0.1875rem) rotate(45deg); }
 .ws-total[aria-expanded="true"]::after { transform: translateY(0.0625rem) rotate(-135deg); }
 .ws-book { min-height: 2.25rem; padding: 0 1.125rem; font-size: 1rem; flex-shrink: 0; }
-.ws-pop { position: absolute; top: calc(100% + 0.625rem); right: 0; z-index: 30; width: 27rem; max-width: calc(100vw - 2rem); box-sizing: border-box; padding: 1rem 1.125rem; border-radius: 1.25rem; background: var(--card); box-shadow: 0 0 0 1px var(--line), var(--shadow-md); display: flex; flex-direction: column; align-items: flex-start; gap: 0.625rem; animation: ws-pop-in .18s var(--ease-out); }
+.ws-pop { position: absolute; top: calc(100% + 0.625rem); right: 0; z-index: 30; width: 27rem; max-width: calc(100vw - 2rem); box-sizing: border-box; padding: 1rem 1.125rem; border-radius: 1.25rem; background: var(--card); box-shadow: 0 0 0 1px var(--line), var(--shadow-md); display: flex; flex-direction: column; align-items: flex-start; gap: 0.625rem; }
 .ws-pop[hidden] { display: none; }
-@keyframes ws-pop-in { from { opacity: 0; transform: translateY(-0.375rem); } to { opacity: 1; transform: none; } }
+.ws-pop[data-folding] { pointer-events: none; }
 .ws-slots { display: flex; flex-direction: column; gap: 0.625rem; width: 100%; }
 .ws-slot { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
 .ws-tile { width: 2.5rem; height: 2.5rem; border-radius: 0.75rem; display: grid; place-items: center; flex-shrink: 0; }
@@ -45,7 +45,7 @@
 .ws-chip { min-height: 1.625rem; padding: 0.1875rem 0.625rem; line-height: 1.2; border-radius: var(--r-pill); font-size: max(var(--text-min), 0.8125rem); font-weight: 800; display: flex; align-items: center; }
 
 /* Panes */
-.ws-grid { flex: 1; min-height: 0; display: grid; gap: 0.875rem; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr) minmax(0, .95fr) minmax(0, 1fr); transition: grid-template-columns .3s var(--ease-out); }
+.ws-grid { flex: 1; min-height: 0; display: grid; gap: 0.875rem; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr) minmax(0, .95fr) minmax(0, 1fr); transition: grid-template-columns var(--motion-dur) var(--ease-out); }
 .ws-grid[data-focus="stays"] { grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr) minmax(0, .95fr) minmax(0, 1fr); }
 .ws-grid[data-focus="cars"] { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr); }
 .ws-grid:is([data-focus="weather"], [data-focus="map"], [data-focus="news"], [data-focus="community"]) { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, .95fr) minmax(0, 1.2fr); }
@@ -66,7 +66,7 @@
 .ws-cards { display: flex; flex-direction: column; gap: 0.625rem; overflow-y: auto; min-height: 0; padding: 0.5rem; margin: -0.5rem; }
 
 /* Offer cards */
-.ws-offer { min-width: 0; width: 100%; text-align: left; border: 0; cursor: pointer; color: var(--ink); padding: 0.875rem 1rem; border-radius: var(--r-md); background: #FAF7F2; box-shadow: 0 0 0 1px var(--line); display: flex; flex-direction: column; gap: 0.375rem; font-size: 1rem; line-height: 1.3; transition: transform .18s var(--ease-spring), box-shadow .18s; }
+.ws-offer { min-width: 0; width: 100%; text-align: left; border: 0; cursor: pointer; color: var(--ink); padding: 0.875rem 1rem; border-radius: var(--r-md); background: #FAF7F2; box-shadow: 0 0 0 1px var(--line); display: flex; flex-direction: column; gap: 0.375rem; font-size: 1rem; line-height: 1.3; transition: transform var(--motion-quick) var(--ease-spring), box-shadow var(--motion-quick); }
 .ws-offer:hover { transform: translateY(-0.125rem); }
 .ws-offer[aria-pressed="true"] { background: #FFF4EF; box-shadow: 0 0 0 0.1875rem var(--coral), 0 0.5rem 1.125rem -0.625rem rgba(201, 67, 31, .6); }
 .ws-row { display: flex; align-items: center; gap: 0.5rem; width: 100%; flex-wrap: wrap; }
@@ -116,7 +116,7 @@
 
 .ws-detail-panel { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .ws-detail-panel[hidden] { display: none; }
-.ws-grid[data-expanded] .ws-detail-panel:not([hidden]) { animation: ws-rise .3s var(--ease-out); }
+.ws-grid[data-expanded] .ws-detail-panel:not([hidden]) { animation: ws-rise var(--motion-dur) var(--ease-out); }
 @keyframes ws-rise { from { opacity: 0; transform: translateY(0.5rem); } to { opacity: 1; transform: none; } }
 .ws-dscroll { flex: 1; min-height: 0; overflow: auto; padding: 1.5rem 1.75rem; display: flex; flex-direction: column; gap: 1.375rem; }
 .ws-hero { margin: 0; position: relative; height: 17.5rem; flex-shrink: 0; border-radius: var(--r-md); overflow: hidden; background: var(--sky-tint); }
@@ -150,7 +150,7 @@
 /* fare types and checked bags (F-027) */
 .ws-fare-block { display: flex; flex-direction: column; gap: 0.75rem; }
 .ws-fares { display: grid; grid-template-columns: repeat(auto-fit, minmax(12.5rem, 1fr)); gap: 0.875rem; }
-.ws-fare { min-width: 0; text-align: left; border: 0; border-radius: var(--r-md); background: #FAF7F2; color: var(--ink); padding: 1.125rem; display: flex; flex-direction: column; gap: 0.75rem; cursor: pointer; font: inherit; transition: transform .18s var(--ease-spring); }
+.ws-fare { min-width: 0; text-align: left; border: 0; border-radius: var(--r-md); background: #FAF7F2; color: var(--ink); padding: 1.125rem; display: flex; flex-direction: column; gap: 0.75rem; cursor: pointer; font: inherit; transition: transform var(--motion-quick) var(--ease-spring); }
 .ws-fare:hover { transform: translateY(-0.125rem); }
 .ws-fare[aria-checked="true"] { background: #FFF4EF; box-shadow: 0 0 0 0.1875rem var(--coral); }
 .ws-fare-head { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.5rem; }
@@ -178,7 +178,7 @@
 .ws-cb-err { font-size: max(var(--text-min), 0.8125rem); font-weight: 700; color: var(--sun); }
 .ws-cb-err[hidden] { display: none; }
 .ws-cb-price { font-family: var(--font-display); font-weight: 800; font-size: 1.75rem; font-variant-numeric: tabular-nums; flex-shrink: 0; }
-.ws-choose { min-height: 3.5rem; padding: 0 1.75rem; border: 0; border-radius: var(--r-pill); background: var(--coral); color: var(--ink); box-shadow: 0 0.25rem 0 var(--coral-deep); font-size: 1.0625rem; font-weight: 800; cursor: pointer; flex-shrink: 0; transition: transform .12s, box-shadow .12s; }
+.ws-choose { min-height: 3.5rem; padding: 0 1.75rem; border: 0; border-radius: var(--r-pill); background: var(--coral); color: var(--ink); box-shadow: 0 0.25rem 0 var(--coral-deep); font-size: 1.0625rem; font-weight: 800; cursor: pointer; flex-shrink: 0; transition: transform var(--motion-quick), box-shadow var(--motion-quick); }
 .ws-choose:hover { transform: translateY(-1px); }
 .ws-choose:active { transform: translateY(0.25rem); box-shadow: 0 0 0 var(--coral-deep); }
 .ws-choose[aria-pressed="true"] { background: var(--mint); box-shadow: 0 0.25rem 0 var(--mint-ink); }
@@ -212,13 +212,13 @@
 .ws-aerial { container-type: inline-size; border-radius: var(--r-md); overflow: hidden; background: var(--sky-tint); display: flex; flex-direction: column; }
 .ws-viewport { position: relative; height: 16rem; overflow: hidden; perspective: 56.25rem; flex-shrink: 0; }
 .ws-plane { position: absolute; left: -20%; top: -30%; width: 140%; height: 160%; transform-origin: 50% 50%; transform-style: preserve-3d; background: var(--skeleton);
-  transform: rotateX(42deg) rotateZ(calc(-8deg + var(--spin, 0deg))) translate(var(--tx, 0%), var(--ty, 0%)); transition: transform .7s var(--ease-out); }
+  transform: rotateX(42deg) rotateZ(calc(-8deg + var(--spin, 0deg))) translate(var(--tx, 0%), var(--ty, 0%)); transition: transform var(--motion-spring-dur) var(--ease-out); }
 .ws-streets { position: absolute; inset: 0; background-image: repeating-linear-gradient(0deg, transparent 0 2.875rem, var(--card) 2.875rem 3.25rem), repeating-linear-gradient(90deg, transparent 0 3.875rem, var(--card) 3.875rem 4.25rem); }
 .ws-sea { position: absolute; left: 0; top: 0; bottom: 0; width: 22%; background: var(--block-pacific); }
 .ws-shore { position: absolute; left: 22%; top: 0; bottom: 0; width: 8%; background: var(--sun-tint); }
 .ws-park { position: absolute; left: 58%; top: 18%; width: 16%; height: 14%; border-radius: 1.125rem; background: var(--mint-tint); }
 .ws-pin { position: absolute; padding: 0; border: 0; background: transparent; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 0.125rem;
-  transform: translate(-50%, -100%) rotateX(-40deg); transform-origin: 50% 100%; transition: transform .3s var(--ease-spring); }
+  transform: translate(-50%, -100%) rotateX(-40deg); transform-origin: 50% 100%; transition: transform var(--motion-dur) var(--ease-spring); }
 .ws-pin[aria-pressed="true"] { transform: translate(-50%, -100%) rotateX(-40deg) scale(1.2); z-index: 2; }
 .ws-pin-bub { min-height: 2.375rem; padding: 0 0.75rem 0 0.375rem; border-radius: var(--r-pill); border: 0.1875rem solid var(--card); box-shadow: 0 0.375rem 0.875rem -0.375rem rgba(30, 26, 46, .45); color: var(--ink); display: flex; align-items: center; gap: 0.375rem; font-size: max(var(--text-min), 0.8125rem); font-weight: 800; white-space: nowrap; }
 .ws-pin-ico { width: 1.375rem; height: 1.375rem; border-radius: var(--r-pill); background: var(--card); color: var(--ink); display: grid; place-items: center; }
@@ -281,7 +281,7 @@
 .ws-addon-policy { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 1rem 1.75rem; }
 .ws-addon-policy > .ws-seam:first-child { flex: 1 1 20rem; min-width: 0; }
 .ws-addon-row { display: flex; flex-wrap: wrap; gap: 0.625rem; }
-.ws-addon { min-height: 3.25rem; padding: 0.375rem 1.125rem 0.375rem 0.75rem; border: 0; border-radius: var(--r-pill); background: #FAF7F2; color: var(--ink); display: flex; align-items: center; gap: 0.625rem; cursor: pointer; font-size: 0.9375rem; font-weight: 800; text-align: left; transition: transform .18s var(--ease-spring); }
+.ws-addon { min-height: 3.25rem; padding: 0.375rem 1.125rem 0.375rem 0.75rem; border: 0; border-radius: var(--r-pill); background: #FAF7F2; color: var(--ink); display: flex; align-items: center; gap: 0.625rem; cursor: pointer; font-size: 0.9375rem; font-weight: 800; text-align: left; transition: transform var(--motion-quick) var(--ease-spring); }
 .ws-addon:hover { transform: translateY(-0.125rem); }
 .ws-addon[aria-pressed="true"] { background: #FFF4EF; box-shadow: 0 0 0 0.1875rem var(--coral); }
 .ws-dot { width: 1.75rem; height: 1.75rem; border-radius: var(--r-pill); background: var(--card); display: grid; place-items: center; flex-shrink: 0; }
@@ -340,7 +340,7 @@
 .ws-beach-line { stroke: var(--coral-deep); stroke-width: 2.5; stroke-dasharray: 5 5; stroke-linecap: round; vector-effect: non-scaling-stroke; }
 .ws-beach-dot { position: absolute; width: 0.75rem; height: 0.75rem; margin: -0.375rem 0 0 -0.375rem; border-radius: var(--r-pill); background: var(--coral-deep); border: 0.125rem solid var(--card); }
 .ws-mark { position: absolute; transform: translate(-50%, -50%); height: 1.625rem; padding: 0 0.625rem; border-radius: var(--r-pill); border: 0.125rem solid var(--card); font-size: max(var(--text-min), 0.75rem); font-weight: 800; display: flex; align-items: center; white-space: nowrap; color: var(--ink); }
-.ws-mark-pin { background: var(--coral); box-shadow: var(--shadow-sticker); z-index: 2; transition: left .3s var(--ease-out), top .3s var(--ease-out); }
+.ws-mark-pin { background: var(--coral); box-shadow: var(--shadow-sticker); z-index: 2; transition: left var(--motion-dur) var(--ease-out), top var(--motion-dur) var(--ease-out); }
 .ws-mark-airport { background: var(--sky); }
 .ws-mark-landmark { background: var(--grape); }
 .ws-map-caption { font-size: max(var(--text-min), 0.8125rem); font-weight: 700; color: var(--ink-2); }
@@ -478,7 +478,7 @@
 }
 
 /* Skipping a lane and the rides card (F-033). A skipped lane is one slim, friendly row; Undo is one tap. */
-.ws-skip { min-width: 0; width: 100%; text-align: left; cursor: pointer; color: var(--ink-2); padding: 0.625rem 0.875rem; border-radius: var(--r-md); border: 0.125rem dashed rgba(30, 26, 46, .22); background: transparent; display: flex; flex-direction: column; gap: 0.125rem; font-size: 1rem; line-height: 1.3; min-height: 2.75rem; transition: background .18s var(--ease-out), border-color .18s var(--ease-out); }
+.ws-skip { min-width: 0; width: 100%; text-align: left; cursor: pointer; color: var(--ink-2); padding: 0.625rem 0.875rem; border-radius: var(--r-md); border: 0.125rem dashed rgba(30, 26, 46, .22); background: transparent; display: flex; flex-direction: column; gap: 0.125rem; font-size: 1rem; line-height: 1.3; min-height: 2.75rem; transition: background var(--motion-quick) var(--ease-out), border-color var(--motion-quick) var(--ease-out); }
 .ws-skip:hover { background: var(--mint-tint); border-color: var(--mint-ink); color: var(--ink); }
 .ws-skip-row { display: flex; align-items: center; gap: 0.5rem; font-weight: 800; color: var(--ink); }
 .ws-skip-sub { padding-left: 1.625rem; font-size: max(var(--text-min), 0.8125rem); font-weight: 700; color: var(--ink-3); }

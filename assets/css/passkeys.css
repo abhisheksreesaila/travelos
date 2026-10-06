@@ -26,7 +26,7 @@
 
 /* The welcome moment after a Face ID sign-in: the whole screen, above the sign-in page */
 .si-welcome { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 1.5rem; text-align: center;
-  background: linear-gradient(170deg, var(--sky-tint), var(--card) 60%, var(--sun-tint)); color: var(--ink); animation: sw-in 0.25s var(--ease-out); }
+  background: linear-gradient(170deg, var(--sky-tint), var(--card) 60%, var(--sun-tint)); color: var(--ink); animation: sw-in var(--motion-quick) var(--ease-out); }
 .si-welcome[hidden] { display: none !important; }
 .sw-brand { display: flex; align-items: center; gap: 0.5rem; font-weight: 800; }
 .sw-glyph { width: 7rem; height: 7rem; border-radius: 2rem; background: var(--card); box-shadow: var(--shadow-sm); display: flex; align-items: center; justify-content: center; }

@@ -13,6 +13,7 @@
 (function () {
   var GA = window.GA = window.GA || {};
   if (GA.toast) return;
+  var MO = (window.GA && GA.motion) || (function () { var r = function () { return Promise.resolve(); }; return { open: r, close: r, spring: r, flip: r, run: r, settle: r, reflow: function (e, c, o) { c(); if (o && o.during) o.during(); return r(); }, origin: function () { return null; }, box: function (e) { return e.getBoundingClientRect(); }, reduced: function () { return true; }, t: function () { return 240; } }; })();
   var el = null, body = null, hideT = 0, swapT = 0, removeT = 0, latest = null, pressed = false, queued = false, curMs = 4500;
   // the heading and every row of controls under it: the day's kinds and step filters, Family's Chat / Photos / Invite and Quiet rows, the calendar's top bar
   var HEADS = ['.cz-fold.is-on .cz-fold-bar', '.cz-head', '.cz-bar', '.cz-filters', '.tp-head', '.fam-bar', '.ft-notify', '.ga-header', '.cal-bar'];
@@ -119,7 +120,7 @@
         el.classList.toggle('is-error', latest.error);
         body.classList.remove('is-swap');
         place(el);
-      }, reduced.matches ? 0 : GA.motion.t('fade'));
+      }, reduced.matches ? 0 : MO.t('fade'));
       el.classList.add('is-in');                                  // (a toast on its way out is called back)
       el.getAnimations().forEach(function (a) { a.cancel(); });
       arm(ms);
@@ -144,8 +145,8 @@
     mine.addEventListener('focusout', function () { if (el === mine && !pressed) arm(); });
     mine._release = release;
     mine.classList.add('is-in');
-    mine._from = GA.motion.origin();                              // what was tapped a moment ago: the toast grows out of it and folds back into it
-    GA.motion.open(mine, mine._from);
+    mine._from = MO.origin();                              // what was tapped a moment ago: the toast grows out of it and folds back into it
+    MO.open(mine, mine._from);
     arm(ms);
     return el;
   };
@@ -164,7 +165,7 @@
     if (instant === true || reduced.matches) { drop(); return; }
     gone.classList.remove('is-in');
     el = gone;
-    GA.motion.close(gone, gone._from && gone._from.isConnected ? gone._from : null);
-    removeT = setTimeout(drop, GA.motion.t('dur') + 80);          // after its fold
+    MO.close(gone, gone._from && gone._from.isConnected ? gone._from : null);
+    removeT = setTimeout(drop, MO.t('dur') + 80);          // after its fold
   };
 })();

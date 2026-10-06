@@ -43,10 +43,10 @@
 .fk-draft { background: #FFF4EF; border: 0.125rem dashed var(--coral); }
 .fk-draft[hidden] { display: none; }
 .fk-half { left: 50%; }
-.fk-draft.is-applying { animation: fk-settle .55s var(--ease-spring) both; animation-delay: calc(var(--i, 0) * 70ms); }
+.fk-draft.is-applying { animation: fk-settle var(--motion-fade) var(--ease-spring) both; animation-delay: calc(var(--i, 0) * var(--motion-fade)); }
 @keyframes fk-settle { 0% { transform: scale(1); } 45% { transform: scale(1.06); background: var(--sun-tint); border-color: transparent; } 100% { transform: scale(1); background: var(--sun-tint); border-color: transparent; } }
 @keyframes fk-pop { 0% { transform: scale(.6); opacity: 0; } 70% { transform: scale(1.05); opacity: 1; } 100% { transform: scale(1); } }
-.fk-pop { animation: fk-pop .4s var(--ease-spring) both; }
+.fk-pop { animation: fk-pop var(--motion-dur) var(--ease-spring) both; }
 
 /* The side card */
 .fk-side { padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; }

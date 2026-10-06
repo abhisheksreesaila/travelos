@@ -7,7 +7,7 @@
 (function () {
   var CZ = window.CZ;
   if (!CZ || !CZ.setTimes) return;
-  var MO = window.GA && GA.motion;      // the one liquid motion (motion.js, F-109)
+  var MO = (window.GA && GA.motion) || (function () { var r = function () { return Promise.resolve(); }; return { open: r, close: r, spring: r, flip: r, run: r, settle: r, reflow: function (e, c, o) { c(); if (o && o.during) o.during(); return r(); }, origin: function () { return null; }, box: function (e) { return e.getBoundingClientRect(); }, reduced: function () { return true; }, t: function () { return 240; } }; })();      // the one liquid motion (motion.js, F-109)
   var stage = CZ.stage;
   var MAX_TITLE = 40, STEP = 15, FINE = 5, MIN_LEN = 15, DAY_END = 22 * 60;
   var fineOn = false;       // the menu's own 5-minute switch: precision for a person who has no zoom (reduced motion) or would rather press than drag

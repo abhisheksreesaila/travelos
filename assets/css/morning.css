@@ -10,8 +10,8 @@
 
 /* the switch */
 .mp-switch { position: relative; flex-shrink: 0; width: 3.5rem; min-height: 2.75rem; padding: 0; border: 0; background: transparent; cursor: pointer; }
-.mp-switch::before { content: ""; position: absolute; left: 0; top: 50%; width: 3.5rem; height: 2rem; margin-top: -1rem; border-radius: var(--r-pill); background: var(--grape); transition: background 0.15s var(--ease-out); }
-.mp-knob { position: absolute; left: 0.25rem; top: 50%; width: 1.5rem; height: 1.5rem; margin-top: -0.75rem; border-radius: var(--r-pill); background: #FFFFFF; box-shadow: var(--shadow-sticker); transition: transform 0.15s var(--ease-out); }
+.mp-switch::before { content: ""; position: absolute; left: 0; top: 50%; width: 3.5rem; height: 2rem; margin-top: -1rem; border-radius: var(--r-pill); background: var(--grape); transition: background var(--motion-quick) var(--ease-out); }
+.mp-knob { position: absolute; left: 0.25rem; top: 50%; width: 1.5rem; height: 1.5rem; margin-top: -0.75rem; border-radius: var(--r-pill); background: #FFFFFF; box-shadow: var(--shadow-sticker); transition: transform var(--motion-quick) var(--ease-out); }
 .mp-switch.is-on::before { background: var(--mint); }
 .mp-switch.is-on .mp-knob { transform: translateX(1.5rem); }
 @media (prefers-reduced-motion: reduce) { .mp-switch::before, .mp-knob { transition: none; } }

@@ -32,9 +32,8 @@
 .ga-scrim { display: none; }
 .ga-pop {
   position: fixed; z-index: 1000; max-width: calc(100vw - 1rem); box-sizing: border-box; border-radius: var(--r-lg); background: var(--card);
-  box-shadow: var(--shadow-lg); color: var(--ink); animation: ga-pop-in .16s var(--ease-out);
+  box-shadow: var(--shadow-lg); color: var(--ink);
 }
-@keyframes ga-pop-in { from { opacity: 0; transform: translateY(-0.25rem); } to { opacity: 1; transform: none; } }
 
 /* Dropdown list and chip grid */
 .ga-pop-list { padding: 0.5rem; max-height: min(20rem, 60vh); overflow: auto; }
@@ -65,7 +64,7 @@
 .ga-row { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0.25rem; }
 .ga-row [role="gridcell"] { display: flex; min-width: 0; }
 .ga-dow { height: 1.75rem; display: flex; align-items: center; justify-content: center; font-size: max(var(--text-min), 0.75rem); font-weight: 800; color: var(--ink-3); }
-.ga-day { width: 100%; height: 3rem; padding: 0; border: 0; border-radius: 0.875rem; background: var(--card); color: var(--ink); font: 800 0.9375rem var(--font-body); cursor: pointer; transition: transform .12s var(--ease-spring); }
+.ga-day { width: 100%; height: 3rem; padding: 0; border: 0; border-radius: 0.875rem; background: var(--card); color: var(--ink); font: 800 0.9375rem var(--font-body); cursor: pointer; transition: transform var(--motion-quick) var(--ease-spring); }
 .ga-day:hover:not(:disabled) { transform: scale(1.08); }
 .ga-day.is-in { background: var(--accent-tint); border-radius: 0.625rem; }
 .ga-day.is-end { background: var(--coral); border-radius: var(--r-pill); }
@@ -78,7 +77,7 @@
 /* Phones: a bottom sheet, 44px targets */
 @media (max-width: 720px) {
   .ga-scrim { display: block; position: fixed; inset: 0; z-index: 999; background: color-mix(in srgb, var(--ink) 45%, transparent); }
-  .ga-pop { left: 0; right: 0; bottom: 0; top: auto; max-width: none; width: auto; border-radius: var(--r-lg) var(--r-lg) 0 0; padding-bottom: env(safe-area-inset-bottom); max-height: 88vh; overflow: auto; animation: ga-sheet-in .2s var(--ease-out); }
+  .ga-pop { left: 0; right: 0; bottom: 0; top: auto; max-width: none; width: auto; border-radius: var(--r-lg) var(--r-lg) 0 0; padding-bottom: env(safe-area-inset-bottom); max-height: 88vh; overflow: auto; }
   .ga-pop.ga-pop-cal { width: auto; }
   .ga-pop-list { max-height: 70vh; }
   .ga-pop-list.is-chips-box { min-width: 0; }
@@ -95,7 +94,6 @@
   .ga-tiles, .ga-cal-head, .ga-cal-foot { padding-inline: 0.75rem; }
   .ga-row { gap: 0.125rem; }
 }
-@keyframes ga-sheet-in { from { transform: translateY(100%); } to { transform: none; } }
 @media (prefers-reduced-motion: reduce) {
   .ga-pop { animation: none; }
   .ga-day { transition: none; }

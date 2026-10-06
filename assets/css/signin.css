@@ -33,7 +33,7 @@
 
 /* ---- the boarding pass ---- */
 .si-pass { display: flex; align-items: center; justify-content: center; padding: 2.5rem; min-width: 0; overflow-y: auto; }
-.si-card { width: min(27.5rem, 100%); border-radius: var(--r-lg); background: var(--card); box-shadow: var(--shadow-lg); overflow: hidden; animation: ga-pop .45s var(--ease-spring) both; }
+.si-card { width: min(27.5rem, 100%); border-radius: var(--r-lg); background: var(--card); box-shadow: var(--shadow-lg); overflow: hidden; animation: ga-pop var(--motion-spring-dur) var(--ease-spring) both; }
 .si-body { display: flex; flex-direction: column; gap: 1.125rem; padding: 1.75rem 2rem 1.5rem; }
 .si-top { display: flex; align-items: center; gap: 0.625rem; }
 .si-logo { display: grid; place-items: center; width: 2.25rem; height: 2.25rem; flex: none; border-radius: 0.6875rem; background: var(--coral); box-shadow: 0 0.1875rem 0 var(--coral-deep); color: var(--ink); }
@@ -44,8 +44,8 @@
 .si-card p { margin: 0; }
 #si-desc { font-size: 1rem; font-weight: 600; line-height: 1.5; color: var(--ink-2); }
 .si-google, .si-dev { min-height: 3.75rem; width: 100%; justify-content: center; gap: 0.75rem; font-size: 1.125rem; font-weight: 800; }
-.si-google { transition: transform .15s var(--ease-spring), box-shadow .15s; }
-.si-google svg { transition: transform .25s var(--ease-spring); }
+.si-google { transition: transform var(--motion-quick) var(--ease-spring), box-shadow var(--motion-quick); }
+.si-google svg { transition: transform var(--motion-quick) var(--ease-spring); }
 .si-google:hover svg { transform: translateX(0.375rem) rotate(-8deg); }
 .si-g { display: grid; place-items: center; width: 1.875rem; height: 1.875rem; border-radius: var(--r-pill); background: var(--card); color: var(--ink); font-family: var(--font-display); font-weight: 800; font-size: 1.0625rem; }
 .si-perf { margin: 0 1.5rem; border-top: 0.1875rem dashed var(--skeleton); }
@@ -57,7 +57,7 @@
 .si-dev-box { font-size: max(var(--text-min), 0.875rem); font-weight: 700; color: var(--ink-2); }
 .si-sum { font-size: 1rem; display: flex; align-items: center; gap: 0.375rem; min-height: 2.75rem; cursor: pointer; list-style: none; }
 .si-sum::-webkit-details-marker { display: none; }
-.si-sum svg { flex: none; transition: transform .2s var(--ease-out); }
+.si-sum svg { flex: none; transition: transform var(--motion-quick) var(--ease-out); }
 .si-dev-box[open] .si-sum svg { transform: rotate(90deg); }
 .si-dev-form { display: flex; flex-direction: column; gap: 0.75rem; padding-top: 0.25rem; }
 .si-field { display: flex; flex-direction: column; gap: 0.125rem; padding: 0.625rem 1rem; border-radius: 1.125rem; background: var(--card); box-shadow: var(--shadow-sm); }

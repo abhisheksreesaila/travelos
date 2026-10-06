@@ -15,7 +15,7 @@
 .hub-chip {
   display: inline-flex; align-items: center; gap: 0.5rem; min-height: 2.75rem; padding: 0 1rem; border-radius: var(--r-pill);
   background: var(--card); box-shadow: 0 0 0 1px var(--line); color: var(--ink); font-weight: 800; font-size: 0.9375rem; text-decoration: none;
-  transition: transform .15s var(--ease-out), box-shadow .15s var(--ease-out);
+  transition: transform var(--motion-quick) var(--ease-out), box-shadow var(--motion-quick) var(--ease-out);
 }
 .hub-chip:hover { color: var(--ink); transform: translateY(-1px); }
 .hub-chip[aria-current="true"] { box-shadow: 0 0 0 0.1875rem var(--ink); }
@@ -26,7 +26,7 @@
 .hub-card {
   display: flex; flex-direction: column; gap: 0.75rem; padding: 0.75rem 0.75rem 1.125rem; border-radius: var(--r-lg); background: var(--card);
   box-shadow: var(--shadow-md); color: var(--ink); text-decoration: none; transform: rotate(var(--tilt, 0deg));
-  transition: transform .2s var(--ease-out), box-shadow .2s var(--ease-out);
+  transition: transform var(--motion-quick) var(--ease-out), box-shadow var(--motion-quick) var(--ease-out);
 }
 .hub-card:hover { color: var(--ink); transform: rotate(0deg) translateY(-0.25rem); box-shadow: var(--shadow-lg); }
 .hub-photo { position: relative; height: 11rem; border-radius: var(--r-md); overflow: hidden; display: grid; place-items: center; }

@@ -13,7 +13,7 @@
 /* Continue card */
 .st-continue {
   display: flex; align-items: center; gap: 0.875rem; padding: 0.875rem 1.125rem; border-radius: var(--r-lg);
-  background: var(--card); color: var(--ink); text-decoration: none; box-shadow: var(--shadow-md); animation: ga-pop .4s var(--ease-spring) backwards;
+  background: var(--card); color: var(--ink); text-decoration: none; box-shadow: var(--shadow-md); animation: ga-pop var(--motion-dur) var(--ease-spring) backwards;
 }
 .st-continue:hover, .st-continue:focus-visible { color: var(--ink); box-shadow: 0 0 0 0.1875rem var(--ink); }
 .st-continue-ico { flex: none; width: 2.75rem; height: 2.75rem; border-radius: 0.875rem; display: grid; place-items: center; transform: rotate(-4deg); }
@@ -25,7 +25,7 @@
 /* The form card */
 .st-card {
   padding: 1.75rem; border-radius: var(--r-xl); background: var(--block-sunset); display: flex; flex-direction: column; gap: 1.125rem;
-  box-shadow: 0 0.75rem 1.5rem -0.75rem rgba(30,26,46,.4); animation: ga-pop .4s var(--ease-spring) backwards;
+  box-shadow: 0 0.75rem 1.5rem -0.75rem rgba(30,26,46,.4); animation: ga-pop var(--motion-dur) var(--ease-spring) backwards;
 }
 .st-errors { padding: 0.875rem 1.125rem; border-radius: var(--r-md); background: var(--card); box-shadow: 0 0 0 0.1875rem var(--coral-deep); display: flex; flex-direction: column; gap: 0.25rem; }
 .st-error-link { font-weight: 800; font-size: 1.0625rem; color: var(--coral-deep); }
@@ -34,7 +34,7 @@
 .st-where { margin: 0; padding: 0; border: 0; min-width: 0; display: flex; flex-direction: column; gap: 0.75rem; }
 .st-legend { padding: 0; font-size: max(var(--text-min), 0.875rem); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .st-chips { display: flex; flex-wrap: wrap; gap: 0.75rem; }
-.st-chip { position: relative; display: inline-flex; transform: rotate(var(--tilt, 0deg)); transition: transform .15s var(--ease-out); }
+.st-chip { position: relative; display: inline-flex; transform: rotate(var(--tilt, 0deg)); transition: transform var(--motion-quick) var(--ease-out); }
 .st-chip:hover:not(.is-soon) { transform: rotate(0deg) translateY(-0.125rem); }
 .st-chip input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
 .st-chip.is-soon input { cursor: not-allowed; }

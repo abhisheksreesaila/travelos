@@ -7,7 +7,7 @@
 .cal-draft-half { z-index: 1; }
 .cal-draft-tag { margin-top: auto; align-self: flex-start; height: 1.125rem; padding: 0 0.4375rem; border-radius: var(--r-pill); background: var(--card); font-size: max(var(--text-min), 0.6875rem); font-weight: 800; display: inline-flex; align-items: center; }
 .cal-draft:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.125rem; z-index: 5; }
-.cal-draft.is-applying { animation: vo-settle .55s var(--ease-spring) both; animation-delay: calc(var(--i, 0) * 70ms); }
+.cal-draft.is-applying { animation: vo-settle var(--motion-fade) var(--ease-spring) both; animation-delay: calc(var(--i, 0) * var(--motion-fade)); }
 @keyframes vo-settle { 0% { transform: scale(1); } 45% { transform: scale(1.06); background: var(--sun-tint); border-color: transparent; } 100% { transform: scale(1); background: var(--sun-tint); border-color: transparent; } }
 /* While the sentence is still being heard the drafts have not been understood yet */
 .cal[data-hearing] .cal-draft { display: none; }
@@ -52,7 +52,7 @@
 /* The question and the preview wait until the sentence is heard */
 .vo-after { display: flex; flex-direction: column; gap: 0.625rem; }
 .vo-panel.is-typing .vo-after { visibility: hidden; }
-.vo-after.vo-pop { animation: vo-pop .4s var(--ease-spring) both; }
+.vo-after.vo-pop { animation: vo-pop var(--motion-dur) var(--ease-spring) both; }
 @keyframes vo-pop { 0% { transform: scale(.94); opacity: 0; } 70% { transform: scale(1.02); opacity: 1; } 100% { transform: scale(1); } }
 .vo-ask { padding: 0.75rem 1rem; border-radius: 1.25rem; background: var(--sun-tint); display: flex; flex-direction: column; gap: 0.625rem; }
 .vo-ask.is-done { background: var(--mint-tint); }

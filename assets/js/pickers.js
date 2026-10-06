@@ -8,6 +8,7 @@
   var phone = window.matchMedia("(max-width: 720px)");
   var widgets = [];   // {refresh()} for every dressed control
   var open = null;    // the one open popover: {trigger, close(refocus)}
+  var MO = (window.GA && GA.motion) || (function () { var r = function () { return Promise.resolve(); }; return { open: r, close: r, spring: r, flip: r, run: r, settle: r, reflow: function (e, c, o) { c(); if (o && o.during) o.during(); return r(); }, origin: function () { return null; }, box: function (e) { return e.getBoundingClientRect(); }, reduced: function () { return true; }, t: function () { return 240; } }; })();      // the one liquid motion (motion.js, F-109): a popover or sheet grows out of the field that opened it and folds back into it
 
   // ---- tiny helpers ---------------------------------------------------------------------------------------------------
   function el(tag, props, kids) {
@@ -92,10 +93,12 @@
       document.removeEventListener("pointerdown", outside, true);
       window.removeEventListener("resize", position);
       window.removeEventListener("scroll", position, true);
-      box.remove(); scrim.remove();
       trigger.setAttribute("aria-expanded", "false");
       if (open && open.box === box) open = null;
       if (refocus) trigger.focus();
+      if (MO.reduced()) { box.remove(); scrim.remove(); return; }
+      box.setAttribute("inert", ""); box.style.pointerEvents = "none"; scrim.style.pointerEvents = "none";
+      MO.close(box, trigger.isConnected ? trigger : null, { scrim: scrim }).then(function () { box.remove(); scrim.remove(); });
     }
     box.addEventListener("keydown", function (e) {
       e.stopPropagation(); // the calendar modal also listens for Escape and Tab on the document
@@ -116,6 +119,7 @@
     window.addEventListener("resize", position);
     window.addEventListener("scroll", position, true);
     position();
+    MO.open(box, trigger, { scrim: scrim });
     open = { trigger: trigger, box: box, close: close };
     if (focusEl) focusEl.focus({ preventScroll: true });
     return { close: close, position: position };
