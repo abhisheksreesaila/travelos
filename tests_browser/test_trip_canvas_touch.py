@@ -196,6 +196,26 @@ def test_a_step_dropped_on_another_day_at_the_top_goes_to_that_days_plan_and_und
     assert "King Kong" in part_titles("a1", "Upper Lot")
 
 
+def test_letting_go_over_nothing_changes_nothing_and_a_quick_move_is_a_scroll(canvas_page):
+    page = canvas_page(viewport=TALL)
+    block(page)
+    before = part_titles("a1", "Upper Lot")
+    start = hold(page, '.cz-swipe:has-text("Minion Mayhem") .cz-step')
+    expect(page.locator(".cz-lift")).to_have_count(1)
+    end = move_to(page, start, (start[0], 6))              # the top edge, above everything
+    fire(page, "pointerup", *end)
+    expect(page.locator(".cz-lift")).to_have_count(0)
+    page.wait_for_timeout(300)
+    assert toast(page).count() == 0 and part_titles("a1", "Upper Lot") == before
+    # moving before the hold time is up is the page scrolling, not a lift
+    x, y, _ = centre(page, '.cz-swipe:has-text("King Kong") .cz-step')
+    fire(page, "pointerdown", x, y)
+    fire(page, "pointermove", x, y + 30)
+    page.wait_for_timeout(500)
+    assert page.locator(".cz-lift").count() == 0
+    fire(page, "pointerup", x, y + 30)
+
+
 def test_dropping_where_it_already_is_says_nothing(canvas_page):
     page = canvas_page(viewport=TALL)
     block(page)

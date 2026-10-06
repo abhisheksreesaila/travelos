@@ -339,7 +339,7 @@ def test_a_flick_on_empty_grid_still_changes_the_day_and_a_held_block_never_does
     expect(phone.locator(".cz-view")).to_have_attribute("data-day", "3")
 
 
-def test_tapping_a_plain_block_does_nothing_and_two_fingers_never_lift(phone):
+def test_two_fingers_never_lift_and_a_tap_on_a_plain_plan_opens_its_chat(phone):
     lunch = plan("Lunch", 12 * 60, 13 * 60)
     open_day(phone)
     sel = f'.cz-gb[data-act="{lunch.id}"]'
@@ -354,6 +354,46 @@ def test_tapping_a_plain_block_does_nothing_and_two_fingers_never_lift(phone):
     fire(phone, "pointerup", x, y)
     phone.wait_for_timeout(200)
     assert phone.locator(".cz-view").get_attribute("data-level") == "day" and phone.locator(".cz-toast").count() == 0
+    phone.locator(f"{sel} .cz-gb-open").click(position={"x": 60, "y": 40})      # the captain's call: a tap on a plan opens its chat (a park block opens its block)
+    phone.wait_for_url(re.compile(r"/trip/talk\?act=" + lunch.id))
+    expect(phone.locator("#ft-compose")).to_be_visible()
+
+
+def test_every_block_is_a_44px_target_even_a_15_minute_one_and_its_words_are_not_cut_by_the_phone_checks(phone):
+    from gitaway import planedit
+    a = plan("Coffee with the family", 10 * 60, 10 * 60 + 30)
+    planedit.change(ari(), a.id, end=10 * 60 + 15)
+    b = plan("Pick up the rental car", 11 * 60, 11 * 60 + 30)
+    open_day(phone)
+    sizes = phone.evaluate("[...document.querySelectorAll('.cz-gb')].map(e => { const r = e.getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; })")
+    assert sizes and all(w >= 44 and h >= 43.5 for w, h in sizes), sizes
+    checks(phone)
+    sel = f'.cz-gb[data-act="{a.id}"]'
+    show(phone, sel)
+    phone.locator(f"{sel} .cz-gb-menubtn").focus()                    # focused, a short block shows all of itself, and the keyboard sees where it is
+    assert phone.evaluate(f"document.querySelector('{sel} .cz-gb-in').scrollHeight <= document.querySelector('{sel}').getBoundingClientRect().height + 1")
+    phone.keyboard.press("Shift+Tab")                                  # a keyboard move, so the focus ring is the keyboard's
+    phone.keyboard.press("Tab")
+    assert phone.evaluate(f"getComputedStyle(document.querySelector('{sel}')).outlineStyle") == "solid"
+
+
+def test_a_failed_save_puts_the_block_back_even_when_the_refresh_cannot_load(phone):
+    lunch = plan("Lunch", 12 * 60, 13 * 60)
+    open_day(phone)
+    phone.route("**/trip/canvas/plan", lambda r: r.abort())
+    phone.route(re.compile(r".*frag=1.*"), lambda r: r.abort())
+    start = hold_block(phone, lunch.id)
+    end = slide(phone, start, (start[0], start[1] + ppm(phone) * 45))
+    fire(phone, "pointerup", *end)
+    expect(toast(phone)).to_contain_text("Could not save")
+    sel = f'.cz-gb[data-act="{lunch.id}"]'
+    assert phone.locator(sel).get_attribute("data-s") == str(12 * 60) and "12:00 – 1:00 PM" in phone.locator(f"{sel} .cz-gb-when").inner_text()
+    assert now(lunch.id)[:2] == (12 * 60, 13 * 60) and phone.evaluate("CZ.held") is False
+    phone.unroute("**/trip/canvas/plan")
+    phone.unroute(re.compile(r".*frag=1.*"))
+    start = hold_block(phone, lunch.id)                                # gestures are not stuck waiting
+    expect(phone.locator(".cz-g-label")).to_have_count(1)
+    fire(phone, "pointerup", *start)
 
 
 def touch(cdp, kind, x, y):
