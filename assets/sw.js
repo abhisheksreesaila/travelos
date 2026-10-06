@@ -139,8 +139,13 @@ async function fromPrefetch(req) {
   const entry = held.get(req.url);
   if (!entry || Date.now() - entry.t >= FRESH_MS || req.cache === "reload" || req.cache === "no-cache") return null;
   held.delete(req.url);
-  const slow = new Promise((resolve) => setTimeout(() => resolve(null), PAGE_TIMEOUT));
+  const TIMED_OUT = {};
+  const slow = new Promise((resolve) => setTimeout(() => resolve(TIMED_OUT), PAGE_TIMEOUT));
   const got = await Promise.race([entry.done, slow]);
+  if (got === TIMED_OUT) {   // a hanging connection: show the saved page now rather than start a second wait
+    const who = await getWho();
+    return (who && (await (await caches.open(pagesName(who))).match(req))) || null;
+  }
   if (!got || entry.who !== (await getWho())) return null;
   const headers = new Headers(got.headers);
   headers.set("x-ga-prefetch", "1");
@@ -154,7 +159,11 @@ self.addEventListener("message", (event) => {
 
 self.addEventListener("fetch", (event) => {
   const req = event.request;
-  if (held.size && (req.method !== "GET" || AUTH_PATH.test(new URL(req.url).pathname))) held.clear();
+  if (req.method !== "GET" || AUTH_PATH.test(new URL(req.url).pathname)) {
+    held.clear();
+    // A copy fetched while the write was still being saved could show the old data: clear again once the write has had time to land.
+    event.waitUntil(new Promise((resolve) => setTimeout(resolve, 2000)).then(() => held.clear()));
+  }
   const kind = routeFor(req);
   if (kind === "asset") event.respondWith(assetFirst(req));
   else if (kind === "page") event.respondWith(fromPrefetch(req).then((hit) => hit || pageNetworkFirst(req)));
