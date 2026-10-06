@@ -126,5 +126,6 @@
       action = "send"; recorder.stop();
     } else post();
   });
+  root.addEventListener("ft-close", function () { if (recorder && recorder.state === "recording") { action = "cancel"; recorder.stop(); } release(); });   // F-106: the plan card this was in is folding away
   window.addEventListener("pagehide", function () { if (recorder && recorder.state === "recording") { action = "cancel"; recorder.stop(); } release(); });
 })();

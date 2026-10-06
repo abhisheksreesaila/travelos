@@ -82,6 +82,7 @@ def checks(page):
 def open_block(page):
     """Tap the park block on the day (F-097: it is a block on the grid, and a tap near its top opens it)."""
     page.locator(".cz-gb-open").click(position={"x": 90, "y": 40})
+    page.locator("#cz-card-rides").click()      # F-106: a tap opens the card; Rides is the way to the block level
 
 
 # ---- tap through every level and back ---------------------------------------------------------------------------------------

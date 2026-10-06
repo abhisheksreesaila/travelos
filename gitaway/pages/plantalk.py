@@ -3,7 +3,8 @@
 GET  /trip/talk?act=aN[&part=pN]         the chat: bubbles (mine on the right), voice notes that play in place, photos; a composer with text, photo and a
                                          tap-to-record mic. Inside the phone shell; the header names the plan (and part) and goes back to its day.
 GET  /trip/talk/items?act=&part=&since=  the items after `since` as an HTML fragment (the page polls it like the Family tab does); the highest item
-                                         number is in the `X-Thread-Last` header
+                                         number is in the `X-Thread-Last` header. With `before=N&limit=k` (F-106, the plan card's "Earlier") the k messages before
+                                         number N instead, oldest first: `X-Thread-First` is the lowest number shown, `X-Thread-More` 1 when older ones remain
 POST /trip/talk/message                  a text message (fields act, part, text, trip, since)
 POST /trip/talk/photo                    a photo (multipart: `photo`, optional `caption`, act, part, trip)
 POST /trip/talk/voice                    a voice note (multipart: `voice`, `secs` as the page timed it, act, part, trip)
@@ -58,6 +59,24 @@ def _head(a, p, session):
     return when, a.title
 
 
+def composer(act, part, trip, who):
+    """The recording bar, the box (text, photo, mic, send), the photo input and the error line of a plan's chat: the chat page's and the plan card's (F-106)."""
+    return [
+        Div(Span(cls="pt-dot", aria_hidden="true"), Span("0:00", id="pt-timer", cls="pt-timer", role="timer"), Span("Recording", cls="pt-state", id="pt-state"),
+            Button(icon("x", 18, 2.4), Span("Cancel"), type="button", id="pt-cancel", cls="pt-btn pt-cancel"),
+            Button(icon("arrow-right", 18, 2.4), Span("Send"), type="button", id="pt-rec-send", cls="pt-btn pt-send"),
+            id="pt-rec", cls="pt-rec", hidden=True),
+        Form(Input(type="hidden", name="trip", value=trip), Input(type="hidden", name="act", value=act), Input(type="hidden", name="part", value=part),
+             Input(type="text", name="text", id="ft-text", maxlength=str(familythread.MAX_MESSAGE), placeholder="Message the family", autocomplete="off", aria_label=f"Message about {who}", cls="ft-input", required=True),
+             Label(icon("camera", 20, 2.2), Span("Add a photo", cls="sr-only"), fr="pt-photo", id="pt-photo-btn", cls="ft-round pt-photo-btn", hidden=True),
+             Button(icon("mic", 20, 2.2), Span("Record a voice note", cls="sr-only"), type="button", id="pt-mic", cls="ft-round", hidden=True),
+             Button(icon("arrow-right", 20, 2.4), Span("Send", cls="sr-only"), type="submit", id="ft-send", cls="ft-send"),
+             method="post", action="/trip/talk/message", id="ft-compose", cls="ft-compose"),
+        Input(type="file", id="pt-photo", accept="image/*", cls="sr-only", aria_label="Add a photo", data_max=str(photos.MAX_BYTES)),      # focusable (visually hidden): a keyboard or screen reader reaches it; the label is what a finger taps
+        P("", id="ft-error", cls="ft-error", role="alert", hidden=True)
+    ]
+
+
 def content(session, a, p):
     its = plantalk.items(session, a.id, p["id"] if p else "")
     me, zone = ses.current_traveler(session).id, ses.trip_zone(session)
@@ -70,18 +89,7 @@ def content(session, a, p):
         A(icon("chev-left", 18, 2.4), "Back to the day", href=f"/trip/canvas?day={a.day}" + (f"&trip={quote(trip)}" if trip else ""), cls="fp-back", id="pt-back"),
         Div(*tab_family.fragment(its, me, zone), id="ft-thread", cls="ft-thread", data_last=str(last), data_poll=str(POLL_MS), data_trip=trip, data_poll_url=poll, role="log", aria_live="polite", aria_label=f"Chat: {who}"),
         P("Nothing said here yet. Write a note, add a photo or leave a voice note.", id="ft-empty", cls="ft-empty", hidden=bool(its)),
-        Div(Span(cls="pt-dot", aria_hidden="true"), Span("0:00", id="pt-timer", cls="pt-timer", role="timer"), Span("Recording", cls="pt-state", id="pt-state"),
-            Button(icon("x", 18, 2.4), Span("Cancel"), type="button", id="pt-cancel", cls="pt-btn pt-cancel"),
-            Button(icon("arrow-right", 18, 2.4), Span("Send"), type="button", id="pt-rec-send", cls="pt-btn pt-send"),
-            id="pt-rec", cls="pt-rec", hidden=True),
-        Form(Input(type="hidden", name="trip", value=trip), Input(type="hidden", name="act", value=a.id), Input(type="hidden", name="part", value=part),
-             Input(type="text", name="text", id="ft-text", maxlength=str(familythread.MAX_MESSAGE), placeholder="Message the family", autocomplete="off", aria_label=f"Message about {who}", cls="ft-input", required=True),
-             Label(icon("camera", 20, 2.2), Span("Add a photo", cls="sr-only"), fr="pt-photo", id="pt-photo-btn", cls="ft-round pt-photo-btn", hidden=True),
-             Button(icon("mic", 20, 2.2), Span("Record a voice note", cls="sr-only"), type="button", id="pt-mic", cls="ft-round", hidden=True),
-             Button(icon("arrow-right", 20, 2.4), Span("Send", cls="sr-only"), type="submit", id="ft-send", cls="ft-send"),
-             method="post", action="/trip/talk/message", id="ft-compose", cls="ft-compose"),
-        Input(type="file", id="pt-photo", accept="image/*", cls="sr-only", aria_label="Add a photo", data_max=str(photos.MAX_BYTES)),      # focusable (visually hidden): a keyboard or screen reader reaches it; the label is what a finger taps
-        P("", id="ft-error", cls="ft-error", role="alert", hidden=True),
+        *composer(a.id, part, trip, who),
         id="ft", cls="ft pt", data_act=a.id, data_part=part, data_max_secs=str(voicenotes.MAX_SECONDS), data_url="/trip/talk")
 
 
@@ -131,6 +139,17 @@ def _new(session, act, part, since, trip=""):
     return Response(body, media_type="text/html; charset=utf-8", headers={"X-Thread-Last": str(its[-1]["n"] if its else max(0, since)), "Cache-Control": "no-store"})
 
 
+def _older(session, act, part, before, limit, trip=""):
+    """The messages before `before` (the card's "Earlier", F-106), at most `limit`, oldest first: X-Thread-First is the lowest number shown, X-Thread-More says whether older ones remain."""
+    try:
+        its, more = plantalk.window(session, act, part, before=before, limit=max(1, min(limit, 50)), trip=trip or None)
+    except familythread.StaleTrip:
+        return PlainTextResponse(plantalk.STALE, status_code=409)
+    me, zone = ses.current_traveler(session).id, ses.trip_zone(session)
+    body = "".join(to_xml(v) for v in tab_family.fragment(its, me, zone))
+    return Response(body, media_type="text/html; charset=utf-8", headers={"X-Thread-First": str(its[0]["n"] if its else before), "X-Thread-More": "1" if more else "0", "Cache-Control": "no-store"})
+
+
 def _done(request, session, act, part, since, trip, error=None, status=400):
     """The answer to a write: the new items (script), a plain message with a status (script, refused), or a redirect to the chat."""
     if request.headers.get("x-fragment") == "1":
@@ -155,8 +174,10 @@ def register(app):
             return RedirectResponse("/trip/canvas", status_code=303)
 
     @app.get("/trip/talk/items")
-    def items(session, act: str = "", part: str = "", since: int = 0, trip: str = ""):
-        return _new(session, act, part, since, trip) if _signed_in(session) else Response(status_code=401)
+    def items(session, act: str = "", part: str = "", since: int = 0, trip: str = "", before: int = 0, limit: int = 8):
+        if not _signed_in(session):
+            return Response(status_code=401)
+        return _older(session, act, part, before, limit, trip) if before > 0 else _new(session, act, part, since, trip)
 
     @app.post("/trip/talk/message")
     def message(request, session, act: str = "", part: str = "", text: str = "", since: int = 0, trip: str = "", cid: str = ""):

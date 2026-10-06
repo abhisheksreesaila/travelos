@@ -29,8 +29,8 @@ from gitaway.pages import booked, calendar as calui, passes as passes_ui   # pas
 from gitaway.pages.around_ui import around_url
 from gitaway.pages.plantalk import talk_badge   # F-091: the chat badge on a plan and on a part
 
-HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/help.css"), *passes_ui.HEAD, Link(rel="stylesheet", href="/assets/css/trip_canvas.css"), Link(rel="stylesheet", href="/assets/css/day_grid.css"), Link(rel="stylesheet", href="/assets/css/plantalk.css"))   # pickers: the add-a-step sheet has a time field (F-082)
-SCRIPTS = ("/assets/js/trip_canvas.js", "/assets/js/day_grid.js", "/assets/js/day_menu.js", "/assets/js/day_new.js", "/assets/js/day_fold.js")
+HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/help.css"), *passes_ui.HEAD, Link(rel="stylesheet", href="/assets/css/trip_canvas.css"), Link(rel="stylesheet", href="/assets/css/day_grid.css"), Link(rel="stylesheet", href="/assets/css/plantalk.css"), Link(rel="stylesheet", href="/assets/css/thread.css"), Link(rel="stylesheet", href="/assets/css/day_card.css"))   # pickers: the add-a-step sheet has a time field (F-082)
+SCRIPTS = ("/assets/js/trip_canvas.js", "/assets/js/day_grid.js", "/assets/js/day_menu.js", "/assets/js/day_new.js", "/assets/js/day_fold.js", "/assets/js/day_card.js")
 RANK = {"week": 0, "day": 1, "block": 2, "step": 3}
 PART_TINTS = ("sky", "sun", "grape", "bubble", "mint")
 MAX_FACES = 5
@@ -472,15 +472,33 @@ def _union_who(steps):
     return sorted({t for k in keys for t in k})
 
 
-def grid_block(v, a, lane, lanes, lo, edit):
-    """One plan as a block: its place and size are its time (CSS reads --s and --l), side by side with the plans it overlaps (--lane of --lanes). A park block (a plan with parts
-    and steps) is a link to its block level with its parts as small labels; a plan is a block too (move and resize it, F-097). A viewer's plan opens its chat."""
+def short_title(title):
+    """The first part of a booking's title ("Check in · Hotel Maya · 2 rooms" -> "Check in"): what a slim pill has room for."""
+    return title.split(" · ")[0].strip() or title
+
+
+def compact_time(m):
+    """"11 AM", "11:30 AM": a time with no ":00", for a pill."""
+    t = cal.fmt_time(m)
+    return t.replace(":00", "", 1)
+
+
+def note_preview(v, act):
+    """The one line of a block's note: every note on the plan, in order, joined (the card shows them in full)."""
+    return " · ".join(text for _, text in v["act_notes"].get(act, []))
+
+
+def grid_block(v, a, lane, lanes, lo, edit, inset=False):
+    """One plan as a block: its place and size are its time (CSS reads --s and --l), side by side with the plans it overlaps (--lane of --lanes). The block shows its title, its time,
+    one line of its note (it fades at the end, F-106) and how much was said in its chat; a tap anywhere on it opens its card (day_card.js), which has the whole note and the chat. Without
+    script the tap is a link: a park block's goes to its block level, a plan's to its chat page (F-097, F-106). `inset` makes room at the left for a booking pill (F-106)."""
     park = has_block(v, a.id)
     blk = v["plan"][a.id] if park else None
     steps = [*_all_steps(blk), *blk["aside"]] if park else []
     k = a.kind if a.kind in KIND_TINT else "fun"
     chat = any(c[0] == a.id for c in v["talk"])
     n = sum(m["n"] for key, m in v["talk"].items() if key[0] == a.id)
+    voice = any(m["voice"] for key, m in v["talk"].items() if key[0] == a.id)
     attrs = {**kind_attrs(v, "block" if park else "plan", a), "data_act": a.id, "data_s": str(a.start), "data_e": str(a.end), "data_day": str(a.day), "data_title": a.title,
              "data_steps": str(len(steps))}
     if edit:
@@ -488,21 +506,31 @@ def grid_block(v, a, lane, lanes, lo, edit):
     if park:
         attrs.update(data_who=json.dumps(_union_who(_all_steps(blk)), separators=(",", ":")), data_lists=" ".join(sorted({x for s in steps for x in (s.get("lists") or [])})), data_zk=f"blk-{a.id}")
     when = span_label(a.start, a.end)
+    said = f"{n} message{'' if n == 1 else 's'}" + (", with a voice note" if voice else "")
+    preview = note_preview(v, a.id)
     inner = [Span(a.title, cls="cz-gb-t", id=f"cz-t-{a.id}"), Span(when, cls="cz-gb-when"),
+             Span(preview, cls="cz-gb-note") if preview else "",
              Span(*[Span(p["name"], cls="cz-gb-part", data_part=p["id"], data_act=a.id) for p in blk["parts"]], cls="cz-gb-parts") if park else "",
-             Span(icon("chat", 14, 2.4), Span(str(n), cls="pt-n"), cls="cz-gb-chat", aria_hidden="true") if chat else "",
-             Span(*[sticker(text, by) for by, text in v["act_notes"].get(a.id, [])], cls="cz-gb-notes") if v["act_notes"].get(a.id) else ""]
-    extra = []
-    if park:
-        extra.append(A(href=curl(block=a.id), cls="cz-gb-open", data_zoom="in", aria_label=f"Open {a.title}, {when}"))
+             Span(icon("chat", 14, 2.4), Span(str(n), cls="pt-n"), icon("mic", 13, 2.4) if voice else "", cls="cz-gb-chat", aria_hidden="true") if chat else ""]
+    link = A(href=curl(block=a.id) if park else plantalk.url(a.id, "", ses.open_trip_id()), cls="cz-gb-open", data_card="1",
+             aria_label=f"Open {a.title}, {when}" + (f", {said}" if chat else ""), **({"data_zoom": "in"} if park else {}))
+    extra = [link]
     if edit:
         extra += [Span(cls="cz-gb-grip", aria_hidden="true"), Button(f"Change {a.title}", type="button", cls="sr-only cz-gb-menubtn")]
-    cls = f"cz-gb cz-k-{k}" + (" is-park" if park else "") + (" is-short" if a.end - a.start < 45 else "") + (" has-chat" if chat else "")
+    cls = f"cz-gb cz-k-{k}" + (" is-park" if park else "") + (" is-short" if a.end - a.start < 45 else " is-tight" if a.end - a.start < 75 and not park else "") + (" has-chat" if chat else "") + (" is-inset" if inset else "")
     style = f"--s:{a.start - lo};--l:{a.end - a.start};--lane:{lane};--lanes:{lanes}"
-    label = {"aria_label": f"{a.title}, {when}"} if not park else {}
-    if not park:      # a tap on a plan opens its chat, for everyone (the captain's call); a park block opens its block level
-        extra.insert(0, A(href=plantalk.url(a.id, "", ses.open_trip_id()), cls="cz-gb-open", aria_label=f"Open the chat for {a.title}, {when}"))
-    return Div(Div(*inner, cls="cz-gb-in cz-cs"), *extra, cls=cls, style=style, **({"tabindex": "-1"} if park else {}), **label, **attrs)
+    return Div(Div(*inner, cls="cz-gb-in cz-cs"), *extra, cls=cls, style=style, **({"tabindex": "-1"} if park else {}), **attrs)
+
+
+PILL_SPAN = 60       # a plan within this many minutes below a booking's line is "over" it: the booking then draws as a pill beside the plan (F-106)
+
+
+def booking_pill(v, x, top, lo):
+    """A booking that a plan overlaps (F-106): a slim pill at the left edge of the grid, in the lane the plan leaves free (icon, time, short title), still a link to its sheet."""
+    when = cal.fmt_time(x.label_start if getattr(x, "label_start", None) is not None else x.start)
+    return A(Span(compact_time(x.label_start if getattr(x, "label_start", None) is not None else x.start), cls="cz-bk-time"),
+             Span(icon(getattr(x, "icon", "") or "lock", 14, 2.4), Span(short_title(x.title), cls="cz-bk-t"), cls="cz-bk-row"),
+             href=curl(day=x.day, booked=x.id), cls="cz-bk cz-gbk is-pill", data_zoom="in", data_zk=f"bkg-{x.id}", style=f"--s:{top - lo}", aria_label=f"{x.title}, {when}, booked", **kind_attrs(v, "booked", x))
 
 
 def time_grid(v, day, ents):
@@ -515,16 +543,19 @@ def time_grid(v, day, ents):
     lane = calui.lanes(plans)
     gutter = [Span(hour_label(h % 24 if h < 24 else 0), cls="cz-g-hour cz-cs", style=f"--s:{h * 60 - lo}") for h in hours]
     rules = [Span(cls=f"cz-g-line cz-cs{' is-half' if m else ''}", style=f"--s:{h * 60 + m - lo}") for h in hours[:-1] for m in (0, 30)] + [Span(cls="cz-g-line cz-cs", style=f"--s:{hi - lo}")]
-    bk = [A(Span(icon(getattr(x, "icon", "") or "lock", 16, 2.4), Span(cal.fmt_time(x.label_start if getattr(x, "label_start", None) is not None else x.start), cls="cz-bk-time"), Span(x.title, cls="cz-bk-t"),
+    covered = {x.id: [a for a in plans if a.start < top + PILL_SPAN and a.end > top] for x, top in lines}      # the plans over each booking line (F-106)
+    inset = {a.id for under in covered.values() for a in under}
+    bk = [booking_pill(v, x, top, lo) if covered[x.id] else
+          A(Span(icon(getattr(x, "icon", "") or "lock", 16, 2.4), Span(cal.fmt_time(x.label_start if getattr(x, "label_start", None) is not None else x.start), cls="cz-bk-time"), Span(x.title, cls="cz-bk-t"),
               Span("Booked", cls="cz-bk-tag"), cls="cz-gbk-in cz-cs"), href=curl(day=x.day, booked=x.id), cls="cz-bk cz-gbk", data_zoom="in", data_zk=f"bkg-{x.id}", style=f"--s:{top - lo}", **kind_attrs(v, "booked", x))
           for x, top in lines]
-    blocks = [grid_block(v, a, *lane[a.id], lo, edit) for a in plans]
+    blocks = [grid_block(v, a, *lane[a.id], lo, edit, a.id in inset) for a in plans]
     now = ""
     if day == v["today_idx"] and lo <= (nm := td.now_minute(v["clock"])) <= hi:
         now = Span(Span(cls="cz-now-dot"), cls="cz-nowline", id="cz-nowline", data_m=str(nm), style=f"--s:{nm - lo}", aria_label="Now", role="img")
     plane = Div(*rules, *bk, *blocks, now, cls="cz-g-plane")
     nxt = {"data_next": cal.next_id(v["session"])} if edit else {}      # the calendar's next number: a new plan made here carries its own id (a retry after a lost reply adds nothing twice)
-    return Div(Div(*gutter, plane, cls="cz-g-zoom"), cls=f"cz-grid{' has-bk' if lines else ''}", id="cz-grid", data_lo=str(lo), data_hi=str(hi), data_day=str(day), **nxt, style=f"--n:{(hi - lo) / 60:g}", role="group", aria_label="The day, hour by hour")
+    return Div(Div(*gutter, plane, cls="cz-g-zoom"), cls=f"cz-grid{' has-bk' if lines else ''}{' has-pill' if inset else ''}", id="cz-grid", data_lo=str(lo), data_hi=str(hi), data_day=str(day), **nxt, style=f"--n:{(hi - lo) / 60:g}", role="group", aria_label="The day, hour by hour")
 
 
 def fold_bar(v, day):

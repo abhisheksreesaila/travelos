@@ -804,4 +804,5 @@ def test_a_drop_that_lands_during_a_zoom_waits_for_it_and_then_refreshes(canvas_
     assert part_titles("a1", "Lunch")[-1] == "Minion Mayhem"
     expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
     page.locator(".cz-gb-open").click(position={"x": 90, "y": 40})                      # the level shown is the fresh one: the step is in Lunch when the block is opened
+    page.locator("#cz-card-rides").click()      # F-106: a tap opens the card; Rides is the way to the block level
     expect(page.locator('.cz-bpart:has(h2:text-is("Lunch")) .cz-swipe:has-text("Minion Mayhem")')).to_have_count(1)
