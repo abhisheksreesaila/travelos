@@ -254,7 +254,7 @@
       }, 70);
     });
   }
-  function send(blob, secs, mine) {       // one piece to the server; resolves when its words are in the box (or it failed)
+  function send(blob, secs, mine, tries) {       // one piece to the server; resolves when its words are in the box (or it failed)
     var body = new FormData();
     body.append('audio', blob, 'voice.' + (/mp4/.test(blob.type) ? 'm4a' : /ogg/.test(blob.type) ? 'ogg' : 'webm'));
     body.append('secs', String(Math.max(1, Math.round(secs))));
@@ -264,6 +264,9 @@
       if (mine !== gen) return;
       if (r.ok) return r.json().then(function (j) { gotWords = true; return addWords(j.text || '', j.english || ''); });
       return r.text().then(function (t) {
+        if (/^The assistant is busy/.test(t) && (tries || 0) < 3) {      // the line was taken (the server already waited a few seconds): try this piece again, keeping order
+          return new Promise(function (go) { setTimeout(go, 2500); }).then(function () { return mine === gen ? send(blob, secs, mine, (tries || 0) + 1) : null; });
+        }
         if (/^Nothing could be heard/.test(t) && (pieces > 1 || recording)) return;       // a quiet stretch in a long recording is not a failure
         failed = r.status === 503 && t === NO_VOICE ? NO_VOICE : (t && t.length < 200 ? t : 'That did not work.');
       });
@@ -286,23 +289,37 @@
     if (mic) mic.focus();
   }
   function startPiece() {     // a new recorder on the stream that is already open
-    var r, cs = [], t0 = Date.now();
+    var r, cs = [], t0 = Date.now(), n = 0;
     try { r = recType ? new MediaRecorder(stream, { mimeType: recType }) : new MediaRecorder(stream); } catch (e) { return false; }
-    recorder = r;
-    r.ondataavailable = function (e) { if (e.data && e.data.size) cs.push(e.data); };
+    // One chunk a second (the recorder's own clock, which does not stop when the screen locks): a piece is closed by the page's timer, by the screen going away,
+    // or by the recorder having produced `piece` chunks, whichever comes first.
+    r.ondataavailable = function (e) {
+      if (e.data && e.data.size) cs.push(e.data);
+      n += 1;
+      if (recorder === r && n >= piece && r.state === 'recording') rotate();
+    };
     r.onstop = function () {
-      var secs = (Date.now() - t0) / 1000;
+      var secs = Math.min(n || (Date.now() - t0) / 1000, 30, (Date.now() - t0) / 1000 + 1);
       var blob = new Blob(cs, { type: r.mimeType || recType || 'audio/webm' });
       var last = action === 'stop' || action === 'limit' || action === 'cancel';
-      if (action === 'cancel') { reset(); note('Recording thrown away.'); return; }
+      if (action === 'cancel') { reset(); note('Recording thrown away.'); if (mic) mic.focus(); return; }
       if (blob.size && secs >= 0.5) enqueue(blob, secs);
       if (!last) return;
       var empty = pieces === 0;
       reset();
       if (empty) note('Record a little longer, then tap Stop.'); else finished();
     };
-    r.start();
+    try { r.start(1000); } catch (e) { return false; }
+    recorder = r;
     return true;
+  }
+  var lastCut = 0;
+  function rotate() {     // close this piece and open the next on the same stream; if the next cannot start the recording ends here, with what was said so far
+    if (!recorder || recorder.state !== 'recording') return;
+    var old = recorder;
+    lastCut = Date.now();
+    if (!startPiece()) action = 'limit';
+    old.stop();
   }
   function startRecording() {
     if (recording || busyUp) return;
@@ -312,19 +329,14 @@
       piece = parseFloat(mic && mic.dataset.pieceSecs) || 25;
       if (!startPiece()) { release(); recorder = null; note('This phone cannot record here. Tap the microphone on your keyboard to dictate.'); return; }
       started = Date.now();
-      var lastCut = started;
+      lastCut = started;
       recUi(true);
       ticker = setInterval(function () {
         var now = Date.now(), e = Math.min(MAX, (now - started) / 1000);
         if (timeEl) timeEl.textContent = clock(e);
         if (!recorder || recorder.state !== 'recording') return;
         if (e >= MAX) { action = 'limit'; recorder.stop(); return; }       // the limit: the last piece is transcribed
-        if ((now - lastCut) / 1000 >= piece) {                              // rotate: close this piece and open the next on the same stream
-          lastCut = now;
-          var old = recorder;
-          startPiece();
-          old.stop();
-        }
+        if ((now - lastCut) / 1000 >= piece) rotate();
       }, 250);
     }).catch(function (err) {
       release();
@@ -336,6 +348,7 @@
     gen += 1;       // pieces still out are dropped; words already added stay
     if (recorder && recorder.state === 'recording') { action = 'cancel'; recorder.stop(); } else reset();
   });
+  document.addEventListener('visibilitychange', function () { if (document.hidden) rotate(); });      // the screen locked or the app was left: finish this piece now, timers may stop
   window.addEventListener('pagehide', function () { if (recorder && recorder.state === 'recording') { action = 'cancel'; recorder.stop(); } release(); });
 
   function toggle() {

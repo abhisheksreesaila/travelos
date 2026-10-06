@@ -76,8 +76,12 @@ def _heard(raw) -> list:
 def _for_the_planner(text, heard) -> str:
     """The box's text with each dictated passage swapped for its English version, so the planner reads English; typed words and edits stay as they are, and a
     passage the person changed is simply left as written (the planner reads any language)."""
-    for spoken, english in heard:
-        text = text.replace(spoken, english)
+    for spoken, english in list(heard)[:20]:
+        if len(spoken) < 3:
+            continue        # a stray letter would match everywhere
+        text = text.replace(spoken, english, 1)
+        if len(text) > say.LIMIT:
+            return text[: say.LIMIT + 1]       # over the limit: say.start refuses it with the usual message
     return text
 
 
@@ -384,7 +388,7 @@ def register_transcribe(app):
 
     @app.post(TRANSCRIBE_PATH)
     async def transcribe(request, session):
-        """A recording from the Ask box's microphone -> {"text"}. Editors only (gitaway.access). The audio lives in memory for this request and is never written."""
+        """A recording from the Ask box's microphone -> {"text"}. Editors only (gitaway.access). The audio is only ever the request's own upload (over 1 MB the server spools it to a temp file that is deleted when the request ends); GitAway never writes it to the data folder."""
         if ses.current_traveler(session) is None:
             return PlainTextResponse("Sign in first.", status_code=401)
         if not ai.configured("transcribe"):
@@ -397,7 +401,7 @@ def register_transcribe(app):
         try:
             kind, secs = voicenotes.check(data, form.get("secs"))
         except voicenotes.VoiceError as e:
-            return PlainTextResponse(str(e).replace("voice note", "recording"), status_code=e.status)
+            return PlainTextResponse(str(e).replace("Voice notes", "Recordings").replace("voice note", "recording"), status_code=e.status)
         if secs > PIECE_MAX_SECONDS:       # the page sends a long recording in pieces of about 25 s; the speech service takes 30 s at most per call
             return PlainTextResponse(f"The voice service takes {PIECE_MAX_SECONDS} seconds at a time. Update the page and record again.", status_code=413)
         lang = form.get("lang") or ""

@@ -296,26 +296,56 @@ def _multipart(fields, filename, mime, data) -> tuple:
     return f"multipart/form-data; boundary={boundary}", b"".join(parts)
 
 
+RESTING = "Voice typing is resting for a few minutes. Tap the microphone on your keyboard to dictate, or type it."
+TRANSCRIBE_CAP = (30, 600)      # pieces per family, per this many seconds (counted in memory, like the other gates)
+_transcribe_hits: dict = {}
+
+
+def _resting(family) -> bool:
+    """Count one piece for `family`; True when it is over the cap."""
+    count, window = TRANSCRIBE_CAP
+    now = time.monotonic()
+    with _guard:
+        hits = [t for t in _transcribe_hits.get(family or "", []) if now - t < window]
+        over = len(hits) >= count
+        if not over:
+            hits.append(now)
+        _transcribe_hits[family or ""] = hits
+        if len(_transcribe_hits) > 2000:
+            for k in [k for k, v in _transcribe_hits.items() if not v or now - v[-1] >= window]:
+                _transcribe_hits.pop(k, None)
+    return over
+
+
 class Words(str):
     """What was said, as text; `.language` is the language the service detected ("hi-IN"), or "" when it did not say."""
     language = ""
 
 
-def transcribe(family, audio: bytes, filename="voice.m4a", mime="audio/mp4", *, language=None, english=False, timeout=None) -> "Words":
+def transcribe(family, audio: bytes, filename="voice.m4a", mime="audio/mp4", *, language=None, english=False, timeout=None, wait=6.0) -> "Words":
     """Job "transcribe": turn a recording into text through the speech-to-text deployment. `family` is the family's id (for the log only). Returns the words
     (never empty); `language` is an optional hint ("hi"; None detects it, so Hindi mixed with English comes back as spoken); the provider is one setting
-    (GITAWAY_AI_TRANSCRIBE_PROVIDER, default "azure"; PROVIDERS holds one small adapter each); raises AIError with a sentence fit to show. The audio and the words are never kept or logged: the log row holds the job, the deployment,
-    the time and ok or the kind of error, like every call."""
+    (GITAWAY_AI_TRANSCRIBE_PROVIDER: sarvam or azure; sarvam when SARVAM_API_KEY is set, else azure; PROVIDERS holds one small adapter each); a busy line is waited
+    for up to `wait` seconds; a family is limited to TRANSCRIBE_CAP pieces per window; raises AIError with a sentence fit to show. The audio and the words are never
+    kept or logged: the log row holds the job, the deployment, the time and ok or the kind of error, like every call."""
     job = "transcribe"
     if not configured(job):
         _log(job, family, deployment(job), 0, 0, 0, False, "off")
         raise AIError(NOT_ON, "off")
     timeout = timeout or JOBS[job][0]
     me = (job, family or "")
-    with _guard:
-        taken = me not in _in_flight and _global.acquire(blocking=False)
-        if taken:
-            _in_flight.add(me)
+    if not english and _resting(family):
+        _log(job, family, deployment(job), 0, 0, 0, False, "limit")
+        raise AIError(RESTING, "limit")
+    until = time.monotonic() + max(0, wait)      # a piece that finds the line busy waits its turn a few seconds instead of leaving a gap in what was said
+    while True:
+        with _guard:
+            taken = me not in _in_flight and _global.acquire(blocking=False)
+            if taken:
+                _in_flight.add(me)
+        if taken or time.monotonic() >= until:
+            break
+        time.sleep(0.1)
     if not taken:
         _log(job, family, deployment(job), 0, 0, 0, False, "busy")
         raise AIError(BUSY, "busy")
