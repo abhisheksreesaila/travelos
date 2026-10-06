@@ -475,6 +475,36 @@ class UploadLimit:
         await self.app(scope, receive, send)
 
 
+# ---- where the microphone path stops (F-104) -----------------------------------------------------------------------------------
+
+import logging
+import time
+from collections import defaultdict, deque
+
+LOG = logging.getLogger("gitaway.ask")
+MIC_STAGES = ("tap", "mode", "gum", "recorder", "piece", "result", "speech")
+MIC_RATE = (60, 60.0)            # at most 60 events per person per minute
+MIC_MAX_BODY = 1024
+_mic_hits: dict = defaultdict(deque)
+_SAFE = re.compile(r"[^A-Za-z0-9 _.,:=;/+()\-]")
+
+
+def _mic_clean(value, limit) -> str:
+    """A short machine-made fact (an error's name, a size, a mime type): anything else becomes "?", so a log line can neither be forged nor carry words."""
+    return _SAFE.sub("?", str(value if isinstance(value, (str, int, float)) else "")[:limit])
+
+
+def mic_allowed(who, now=None) -> bool:
+    now = time.monotonic() if now is None else now
+    hits = _mic_hits[who]
+    while hits and now - hits[0] > MIC_RATE[1]:
+        hits.popleft()
+    if len(hits) >= MIC_RATE[0]:
+        return False
+    hits.append(now)
+    return True
+
+
 PIECE_SECONDS = 25          # the page rotates its recorder this often (data-piece-secs on the mic)
 PIECE_MAX_SECONDS = 30      # Sarvam's speech-to-text refuses audio over 30 s ("use the batch API")
 MIMES = {"mp4": "audio/mp4", "webm": "audio/webm", "ogg": "audio/ogg"}
@@ -482,6 +512,30 @@ MIMES = {"mp4": "audio/mp4", "webm": "audio/webm", "ogg": "audio/ogg"}
 
 def register_transcribe(app):
     app.add_middleware(UploadLimit)
+
+    @app.post("/trip/ask/mic-event")
+    async def mic_event(request, session):
+        """One step of the Ask microphone, from the page: {stage, name, detail} (short facts such as an error's name or a recording's size; no audio, no words). Editors only (the
+        access gate, like every Ask write). Logged as one line by "gitaway.ask" so `railway logs` shows where voice stops on a phone; never stored. 204; 429 past 60 a minute."""
+        who = ses.current_traveler(session)
+        if who is None:
+            return PlainTextResponse("Sign in first.", status_code=401)
+        try:
+            size = int(request.headers.get("content-length") or 0)
+        except ValueError:
+            size = 0
+        if size > MIC_MAX_BODY:
+            return PlainTextResponse("Too large.", status_code=413)
+        if not mic_allowed(who.id):
+            return PlainTextResponse("Slow down.", status_code=429)
+        try:
+            data = json.loads((await request.body())[:MIC_MAX_BODY])
+        except ValueError:
+            return PlainTextResponse("Not understood.", status_code=400)
+        if not isinstance(data, dict) or data.get("stage") not in MIC_STAGES:
+            return PlainTextResponse("Not understood.", status_code=400)
+        LOG.info("ask mic stage=%s name=%s detail=%s", data["stage"], _mic_clean(data.get("name"), 40), _mic_clean(data.get("detail"), 120))
+        return Response(status_code=204)
 
     @app.post(TRANSCRIBE_PATH)
     async def transcribe(request, session):

@@ -148,3 +148,48 @@ def test_apply_reports_the_plans_it_moved_and_added(client, azure):
     r = client.post("/trip/ask/propose", data={"day": "1", "text": "move lunch, add pool"}, headers=SHEET)
     j = client.post("/trip/ask/apply", data=fields(r.text, "ak-apply-form"), headers=SHEET).json()
     assert "a1" in j["ids"] and len(j["ids"]) == 2 and j["toast"].startswith("Added 1 plan · Moved 1")
+
+
+# ---- where the microphone path stops: one log line per step, nothing stored (F-104) ------------------------------------------------
+
+def test_a_mic_event_is_one_log_line_with_no_audio_and_no_words(client, caplog):
+    import logging
+    from gitaway.pages import tab_ask
+    book(client)
+    tab_ask._mic_hits.clear()
+    with caplog.at_level(logging.INFO, logger="gitaway.ask"):
+        r = client.post("/trip/ask/mic-event", json={"stage": "gum", "name": "refused", "detail": "NotAllowedError", "text": "move Bhoomija's ride", "audio": "AAAA"})
+    assert r.status_code == 204
+    lines = [x.getMessage() for x in caplog.records if x.name == "gitaway.ask"]
+    assert lines == ["ask mic stage=gum name=refused detail=NotAllowedError"]
+    assert "Bhoomija" not in caplog.text and "AAAA" not in caplog.text
+
+
+def test_a_mic_event_cannot_forge_a_log_line_or_carry_a_long_story(client, caplog):
+    import logging
+    from gitaway.pages import tab_ask
+    book(client)
+    tab_ask._mic_hits.clear()
+    with caplog.at_level(logging.INFO, logger="gitaway.ask"):
+        client.post("/trip/ask/mic-event", json={"stage": "mode", "name": "record\nask mic stage=fake", "detail": "x" * 500 + "<script>"})
+    line = [x.getMessage() for x in caplog.records if x.name == "gitaway.ask"][0]
+    assert "\n" not in line and len(line) < 200 and "<" not in line
+
+
+def test_a_mic_event_is_checked_gated_and_rate_limited(client):
+    from gitaway.pages import tab_ask
+    book(client)
+    tab_ask._mic_hits.clear()
+    assert client.post("/trip/ask/mic-event", json={"stage": "bogus"}).status_code == 400
+    assert client.post("/trip/ask/mic-event", content=b"not json", headers={"content-type": "text/plain"}).status_code == 400
+    assert client.post("/trip/ask/mic-event", json={"stage": "tap", "detail": "y" * 3000}).status_code == 413
+    mail = addr("micvw")
+    invite(client, mail, "viewer")
+    vi = browser(client)
+    sign_in(vi, mail)
+    assert vi.post("/trip/ask/mic-event", json={"stage": "tap"}).status_code == 403            # editors only, like every Ask write
+    assert browser(client).post("/trip/ask/mic-event", json={"stage": "tap"}).status_code != 204        # signed out
+    tab_ask._mic_hits.clear()
+    codes = [client.post("/trip/ask/mic-event", json={"stage": "tap", "name": "mic"}).status_code for _ in range(62)]
+    assert codes[:60] == [204] * 60 and codes[60:] == [429, 429]
+    assert cal.activities(person("ari")) == []                                                   # nothing is stored anywhere

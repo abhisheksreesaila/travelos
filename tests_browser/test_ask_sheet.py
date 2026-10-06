@@ -294,6 +294,36 @@ def test_the_page_still_works_with_no_script_and_a_viewer_gets_the_page_not_a_sh
     expect(viewer.locator("#ak-viewer")).to_be_visible()
 
 
+def test_every_step_of_the_microphone_is_reported_to_the_server_log_without_audio_or_words(phone, base_url, model):
+    page = phone()
+    events = []
+    page.on("request", lambda r: events.append(json.loads(r.post_data)) if r.url.endswith("/trip/ask/mic-event") else None)
+    day_page(page, base_url)
+    open_sheet(page)
+    talk_and_done(page)
+    page.wait_for_selector("#ak-questions-form, #ak-prop")
+    page.wait_for_timeout(300)
+    stages = [(e["stage"], e["name"]) for e in events]
+    assert stages[:2] == [("tap", "mic"), ("mode", "record")] and ("gum", "granted") in stages and ("recorder", "start") in stages
+    assert ("piece", "upload") in stages and ("result", "ok") in stages
+    mode = [e for e in events if e["stage"] == "mode"][0]["detail"]
+    assert "canRecord=1" in mode and "recognition=" in mode and "ios=" in mode and "installed=" in mode and "server=1" in mode
+    assert "bytes=" in [e for e in events if e["stage"] == "piece"][0]["detail"]
+    assert HEARD not in json.dumps(events)                                                      # no words, no audio
+
+
+def test_a_blocked_microphone_says_so_in_plain_words_and_reports_it(phone, base_url, model):
+    refused = "navigator.mediaDevices.getUserMedia = () => Promise.reject(Object.assign(new Error('no'), {name: 'NotAllowedError'}));"
+    page = phone(refused)
+    events = []
+    page.on("request", lambda r: events.append(json.loads(r.post_data)) if r.url.endswith("/trip/ask/mic-event") else None)
+    day_page(page, base_url)
+    open_sheet(page)
+    expect(page.locator("#ak-mic-status")).to_contain_text("The microphone is blocked for GitAway. Allow it in Settings > GitAway (or Safari > Microphone)")
+    page.wait_for_timeout(300)
+    assert ("gum", "refused") in [(e["stage"], e["name"]) for e in events] and [e for e in events if e["stage"] == "gum"][0]["detail"] == "NotAllowedError"
+
+
 def test_screenshots(phone, base_url, model):
     """F104_SHOTS=<folder> pixi run pytest -p no:randomly tests_browser/test_ask_sheet.py -k screenshots"""
     import os

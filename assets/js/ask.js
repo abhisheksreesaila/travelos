@@ -138,6 +138,27 @@
   var MAX = parseInt(mic && mic.dataset.maxSecs, 10) || 180;
   var NO_VOICE = "Voice typing isn't set up yet — tap the microphone on your keyboard to dictate.";
 
+  // Diagnostics (F-104): where the microphone path stops, one tiny line per step to POST /trip/ask/mic-event, which the server writes to its log. Never audio, never words.
+  var sent = 0;
+  function diag(stage, name, detail) {
+    if (sent >= 40 || !window.fetch) return;
+    sent += 1;
+    try {
+      fetch('/trip/ask/mic-event', { method: 'POST', credentials: 'same-origin', keepalive: true, headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+        body: JSON.stringify({ stage: stage, name: String(name || '').slice(0, 40), detail: String(detail || '').slice(0, 120) }) }).catch(function () {});
+    } catch (e) { /* diagnostics must never get in the way */ }
+  }
+  function why() {
+    return 'canRecord=' + (canRecord ? 1 : 0) + ' recognition=' + (Recognition ? 1 : 0) + ' ios=' + (ios ? 1 : 0) + ' installed=' + (installed ? 1 : 0) + ' server=' + (mic && mic.dataset.server === '1' ? 1 : 0) + ' sheet=' + (form.dataset.sheet ? 1 : 0) + ' type=' + (recType || '');
+  }
+  function blocked(err) {
+    var n = err && err.name;
+    return n === 'NotFoundError' ? 'No microphone was found on this phone.'
+      : n === 'NotAllowedError' || n === 'SecurityError' ? 'The microphone is blocked for GitAway. Allow it in Settings > GitAway (or Safari > Microphone), then tap the mic again.'
+      : n === 'NotReadableError' ? 'The microphone is being used by another app. Close it and tap the mic again.'
+      : 'The microphone could not start' + (n ? ' (' + n + ')' : '') + '. You can type instead.';
+  }
+
   function words(state) { box.setAttribute('data-words', state); }
   function kept() { return box.value.trim() ? ' What you typed is still in the box.' : ''; }
   function ui(on) {
@@ -174,6 +195,7 @@
     };
     rec.onerror = function (e) {
       if (e.error === 'no-speech' || e.error === 'aborted') return;
+      diag('speech', 'error', e.error);
       giveUp(e.error === 'not-allowed' || e.error === 'service-not-allowed' ? 'The microphone is off for this site. You can type instead.' : 'Could not hear you. You can type instead.');
     };
     rec.onend = function () {
@@ -275,17 +297,19 @@
     body.append('secs', String(Math.max(1, Math.round(secs))));
     var lang = (box.dataset.lang || '').trim();
     if (lang) body.append('lang', lang);
+    diag('piece', 'upload', 'bytes=' + blob.size + ' secs=' + Math.round(secs) + ' type=' + (blob.type || ''));
     return fetch('/trip/ask/transcribe', { method: 'POST', credentials: 'same-origin', body: body }).then(function (r) {
       if (mine !== gen) return;
-      if (r.ok) return r.json().then(function (j) { gotWords = true; return addWords(j.text || '', j.english || ''); });
+      if (r.ok) return r.json().then(function (j) { gotWords = true; diag('result', j.text ? 'ok' : 'empty', 'status=' + r.status + ' lang=' + String(j.language || '').slice(0, 8)); return addWords(j.text || '', j.english || ''); });
       return r.text().then(function (t) {
+        diag('result', 'error', 'status=' + r.status);
         if (/^The assistant is busy/.test(t) && (tries || 0) < 3) {      // the line was taken (the server already waited a few seconds): try this piece again, keeping order
           return new Promise(function (go) { setTimeout(go, 2500); }).then(function () { return mine === gen ? send(blob, secs, mine, (tries || 0) + 1) : null; });
         }
         if (/^Nothing could be heard/.test(t) && (pieces > 1 || recording)) return;       // a quiet stretch in a long recording is not a failure
         failed = r.status === 503 && t === NO_VOICE ? NO_VOICE : (t && t.length < 200 ? t : 'That did not work.');
       });
-    }, function () { if (mine === gen) failed = 'That did not upload. Try again, or type it.'; });
+    }, function (err) { diag('result', 'network', err && err.name); if (mine === gen) failed = 'That did not upload. Try again, or type it.'; });
   }
   function enqueue(blob, secs) {
     var mine = gen;
@@ -306,7 +330,8 @@
   }
   function startPiece() {     // a new recorder on the stream that is already open
     var r, cs = [], t0 = Date.now(), n = 0;
-    try { r = recType ? new MediaRecorder(stream, { mimeType: recType }) : new MediaRecorder(stream); } catch (e) { return false; }
+    try { r = recType ? new MediaRecorder(stream, { mimeType: recType }) : new MediaRecorder(stream); } catch (e) { diag('recorder', 'error', (e && e.name) + ' type=' + recType); return false; }
+    r.onerror = function (e) { diag('recorder', 'error', (e && e.error && e.error.name) || 'error'); };
     // One chunk a second (the recorder's own clock, which does not stop when the screen locks): a piece is closed by the page's timer, by the screen going away,
     // or by the recorder having produced `piece` chunks, whichever comes first.
     r.ondataavailable = function (e) {
@@ -325,8 +350,9 @@
       reset();
       if (empty) note('Record a little longer, then tap Stop.'); else finished();
     };
-    try { r.start(1000); } catch (e) { return false; }
+    try { r.start(1000); } catch (e) { diag('recorder', 'error', (e && e.name) + ' on start'); return false; }
     recorder = r;
+    diag('recorder', 'start', 'type=' + (r.mimeType || recType));
     return true;
   }
   var lastCut = 0;
@@ -340,6 +366,7 @@
   function startRecording() {
     if (recording || busyUp) return;
     navigator.mediaDevices.getUserMedia({ audio: true }).then(function (s) {
+      diag('gum', 'granted', '');
       stream = s; action = ''; pieces = 0; gotWords = false; failed = ''; gen += 1;
       recType = pickType();
       piece = parseFloat(mic && mic.dataset.pieceSecs) || 25;
@@ -356,7 +383,8 @@
       }, 250);
     }).catch(function (err) {
       release();
-      note((err && err.name === 'NotFoundError' ? 'No microphone was found.' : 'The microphone is blocked. Allow it in the settings, or tap the microphone on your keyboard.') + kept());
+      diag('gum', 'refused', err && err.name);
+      note(blocked(err) + kept());
       if (form.dataset.mode === 'talk') box.focus();
     });
   }
@@ -391,7 +419,9 @@
   function toggle() {
     if (busyUp) return;
     if (recording) { if (recorder && recorder.state === 'recording') { action = 'stop'; recorder.stop(); } return; }
-    if (preferRecord()) { startRecording(); return; }
+    diag('tap', 'mic', why());
+    if (preferRecord()) { diag('mode', 'record', why()); startRecording(); return; }
+    if (!(wanted || listening)) diag('mode', Recognition ? 'web-speech' : 'none', why());
     if (wanted || listening) {
       wanted = false;
       clearHeard();
@@ -404,7 +434,7 @@
   if (mic && (Recognition || canRecord)) {
     mic.hidden = false;
     mic.addEventListener('click', toggle);
-  }
+  } else if (mic) diag('mode', 'none', why());       // neither recording nor recognition here: the mic stays hidden, typing and the keyboard's dictation are all there is
 
   // ---- the Ask sheet's date chip: it opens a row of days; a pick moves the hidden day field and the chip's words ----
   var chip = $('ak-chip'), picks = $('ak-days-pick');
