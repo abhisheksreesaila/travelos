@@ -62,6 +62,7 @@ def join_note():
     return Div(Span(note["text"], cls="ga-note-text"), Div(*buttons, cls="ga-note-actions"), role="status", id="ga-note", cls="ga-note")
 
 HEAD = (
+    Script(src="/assets/js/page_moves.js"),  # F-099: forward/back tag for the page-change transition; not deferred (see the file)
     # Install on iPhone (F-044): manifest, theme colour, Apple tags, service worker registration
     Link(rel="manifest", href="/manifest.webmanifest"),
     Link(rel="apple-touch-icon", href="/assets/icons/apple-touch-icon.png"),

@@ -42,7 +42,7 @@ def today(browser, base_url, monkeypatch):
 @pytest.mark.parametrize("viewport", [PHONE, LAPTOP], ids=["390", "1280"])
 def test_directions_carry_the_place_and_the_confirmation_shows_only_after_a_tap(today, base_url, viewport):
     page = today(viewport)
-    page.goto(base_url + "/trip")
+    page.goto(base_url + "/trip?tab=today")
     page.wait_for_load_state("networkidle")
     link = page.locator('[data-dir="a1"]')
     expect(link).to_be_visible()
@@ -62,7 +62,7 @@ def test_directions_carry_the_place_and_the_confirmation_shows_only_after_a_tap(
 @pytest.mark.parametrize("viewport", [PHONE, LAPTOP], ids=["390", "1280"])
 def test_share_hands_the_days_text_to_the_share_sheet(today, base_url, viewport):
     page = today(viewport, STUB_SHARE)
-    page.goto(base_url + "/trip")
+    page.goto(base_url + "/trip?tab=today")
     page.locator("#tp-share").click()
     shared = page.evaluate("window.__shared")
     assert len(shared) == 1 and shared[0]["text"].startswith("Fri Oct 16 · ") and "5:00 PM Griffith Observatory" in shared[0]["text"]
@@ -72,7 +72,7 @@ def test_share_hands_the_days_text_to_the_share_sheet(today, base_url, viewport)
 @pytest.mark.parametrize("viewport", [PHONE, LAPTOP], ids=["390", "1280"])
 def test_share_copies_the_text_and_says_copied_when_there_is_no_share_sheet(today, base_url, viewport):
     page = today(viewport, STUB_COPY)
-    page.goto(base_url + "/trip")
+    page.goto(base_url + "/trip?tab=today")
     page.locator("#tp-share").click()
     expect(page.locator("#tp-share-status")).to_have_text("Copied")
     assert "5:00 PM Griffith Observatory" in page.evaluate("window.__copied")[0]
@@ -81,7 +81,7 @@ def test_share_copies_the_text_and_says_copied_when_there_is_no_share_sheet(toda
 @pytest.mark.parametrize("viewport", [PHONE, LAPTOP], ids=["390", "1280"])
 def test_the_day_picker_opens_another_day_and_the_share_text_follows(today, base_url, viewport):
     page = today(viewport)
-    page.goto(base_url + "/trip")
+    page.goto(base_url + "/trip?tab=today")
     page.locator('#tp-strip [data-day="1"]').click()
     page.wait_for_url("**/trip?day=1")
     expect(page.locator("#tp-share")).to_have_attribute("data-share-text", __import__("re").compile(r"^Sat Oct 17 · "))
@@ -89,6 +89,6 @@ def test_the_day_picker_opens_another_day_and_the_share_text_follows(today, base
 
 def test_the_plus_sits_at_the_columns_right_edge_on_a_laptop(today, base_url):
     page = today(LAPTOP)
-    page.goto(base_url + "/trip")
+    page.goto(base_url + "/trip?tab=today")
     plus, col = page.locator("#tp-add").bounding_box(), page.locator("#tp-app").bounding_box()
     assert abs((plus["x"] + plus["width"]) - (col["x"] + col["width"])) <= 20, (plus, col)

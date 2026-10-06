@@ -7,7 +7,7 @@ from tests_browser.test_trip_phone import phone, pin  # noqa: F401 - fixtures
 def test_focus_stays_inside_the_open_sheet(phone, base_url, pin):
     pin(date(2026, 10, 17), 9 * 60)
     page = phone()
-    page.goto(base_url + "/trip")
+    page.goto(base_url + "/trip?tab=today")
     page.click("#tp-add")
     inside = "document.getElementById('tp-sheet').contains(document.activeElement)"
     for _ in range(14):

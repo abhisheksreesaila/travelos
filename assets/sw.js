@@ -101,10 +101,72 @@ async function pageNetworkFirst(req) {
   try { return (await Promise.race([network, slow])) || saved; } catch (e) { return saved; }
 }
 
+/* F-099: a link the finger touched is fetched at once and the copy kept in memory for FRESH_MS, for the person who was signed in then.
+   The next navigation to that URL gets it (once), marked `x-ga-prefetch: 1`; otherwise the network-first logic above runs.
+   Never a redirect, a non-200, a non-page, another person's page, an auth route or a POST; any POST or auth request drops every held copy. */
+const FRESH_MS = 5000;
+const MAX_HELD = 8;
+const held = new Map();
+
+function startPrefetch(raw) {
+  const url = new URL(raw, self.location.origin);
+  if (routeFor({ method: "GET", url: url.href, mode: "navigate" }) !== "page") return null;
+  const key = url.href;
+  const old = held.get(key);
+  if (old && Date.now() - old.t < FRESH_MS) return old.done;
+  for (const [k, v] of held) if (Date.now() - v.t >= FRESH_MS) held.delete(k);
+  while (held.size >= MAX_HELD) held.delete(held.keys().next().value);
+  const entry = { t: Date.now(), who: "", done: null };
+  entry.done = (async () => {
+    const who = await getWho();
+    if (!who) return null;
+    entry.who = who;
+    const req = new Request(key, { credentials: "same-origin", headers: { Accept: "text/html" } });
+    const res = await fetch(req);
+    const type = res.headers.get("content-type") || "";
+    if (res.status !== 200 || res.redirected || !type.startsWith("text/html")) return null;
+    const body = await res.clone().arrayBuffer();
+    const m = /<meta name="ga-user" content="([0-9a-f]+)">/.exec(new TextDecoder().decode(body));
+    if (!m || m[1] !== who) return null;
+    try { await remember(req, res.clone()); } catch (e) {}
+    return { body, headers: new Headers(res.headers) };
+  })().catch(() => null);
+  held.set(key, entry);
+  return entry.done;
+}
+
+async function fromPrefetch(req) {
+  const entry = held.get(req.url);
+  if (!entry || Date.now() - entry.t >= FRESH_MS || req.cache === "reload" || req.cache === "no-cache") return null;
+  held.delete(req.url);
+  const TIMED_OUT = {};
+  const slow = new Promise((resolve) => setTimeout(() => resolve(TIMED_OUT), PAGE_TIMEOUT));
+  const got = await Promise.race([entry.done, slow]);
+  if (got === TIMED_OUT) {   // a hanging connection: show the saved page now rather than start a second wait
+    const who = await getWho();
+    return (who && (await (await caches.open(pagesName(who))).match(req))) || null;
+  }
+  if (!got || entry.who !== (await getWho())) return null;
+  const headers = new Headers(got.headers);
+  headers.set("x-ga-prefetch", "1");
+  return new Response(got.body.slice(0), { status: 200, headers });
+}
+
+self.addEventListener("message", (event) => {
+  const d = event.data;
+  if (d && d.type === "prefetch" && typeof d.url === "string") event.waitUntil(Promise.resolve(startPrefetch(d.url)).catch(() => {}));
+});
+
 self.addEventListener("fetch", (event) => {
-  const kind = routeFor(event.request);
-  if (kind === "asset") event.respondWith(assetFirst(event.request));
-  else if (kind === "page") event.respondWith(pageNetworkFirst(event.request));
+  const req = event.request;
+  if (req.method !== "GET" || AUTH_PATH.test(new URL(req.url).pathname)) {
+    held.clear();
+    // A copy fetched while the write was still being saved could show the old data: clear again once the write has had time to land.
+    event.waitUntil(new Promise((resolve) => setTimeout(resolve, 2000)).then(() => held.clear()));
+  }
+  const kind = routeFor(req);
+  if (kind === "asset") event.respondWith(assetFirst(req));
+  else if (kind === "page") event.respondWith(fromPrefetch(req).then((hit) => hit || pageNetworkFirst(req)));
 });
 
 /* The morning plan push (F-066) and the family thread push (F-070, tag "family-thread", url /trip/family). A push is always shown (iOS requires it);
