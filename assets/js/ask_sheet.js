@@ -112,7 +112,7 @@
     pointOrigin();                              // after the content: the sheet's height decides where its top is
     animate(parts.scrim, [{ opacity: 0 }, { opacity: 1 }]);
     animate(sheet, [{ transform: 'scale(0.08)', opacity: 0 }, { transform: 'none', opacity: 1 }]);
-    if (html === null) entry.p.then(function (h) { if (wrap && !closing) { fill(h, true); pointOrigin(); } }, function () { if (wrap) { wrap.remove(); wrap = null; behind(false); location.href = tab.href; } });
+    if (html === null) entry.p.then(function (h) { if (wrap && !closing) { fill(h, true, true); pointOrigin(); } }, function () { if (wrap) { wrap.remove(); wrap = null; behind(false); location.href = tab.href; } });
     document.addEventListener('keydown', onKey, true);
     if (window.visualViewport) { window.visualViewport.addEventListener('resize', kb); window.visualViewport.addEventListener('scroll', kb); }
     back.push(function () {
@@ -123,18 +123,24 @@
   }
 
   // the page behind is for looking only while the sheet is open
+  var inerted = [];
   function behind(on) {
-    ['main', 'ph-tabs'].forEach(function (k) {
-      var n = k === 'main' ? document.getElementById('main') : document.querySelector('.' + k);
-      if (n) { if (on) n.setAttribute('inert', ''); else n.removeAttribute('inert'); }
+    if (!on) { inerted.forEach(function (n) { n.removeAttribute('inert'); }); inerted = []; return; }
+    Array.prototype.forEach.call(app.children, function (n) {      // everything beside the sheet, so Tab never leaves it (the toast is not inert: it is only said)
+      if (n === wrap || n.hasAttribute('inert') || /^(SCRIPT|STYLE|LINK)$/.test(n.tagName)) return;
+      n.setAttribute('inert', '');
+      inerted.push(n);
     });
   }
 
   // a fragment becomes the sheet's content and the box in it is started
-  function fill(html, first) {
+  function fill(html, first, late) {
     if (ctl) { ctl.destroy(); ctl = null; }
     scroll.innerHTML = html;
     scroll.scrollTop = 0;
+    // The box came after the tap, so the tap's user activation may be gone: do not start the microphone by itself, show the big mic ready to tap.
+    var f = late && scroll.querySelector('#ak-form');
+    if (f) f.removeAttribute('data-mode');
     ctl = window.AskBox.init(scroll);
     if (!first) { try { sheet.focus({ preventScroll: true }); } catch (e) { /* old browser */ } }
   }
@@ -145,7 +151,16 @@
     wrap.style.setProperty('--ak-kb', Math.max(0, window.innerHeight - vv.height - vv.offsetTop) + 'px');
   }
   function onKey(e) {
-    if (e.key !== 'Escape' || !wrap) return;
+    if (!wrap) return;
+    if (e.key === 'Tab') {        // the sheet is a dialog: Tab goes round inside it
+      var all = Array.prototype.filter.call(sheet.querySelectorAll('button, a[href], input, textarea, select, [tabindex]:not([tabindex="-1"])'), function (n) { return !n.disabled && !n.hidden && n.offsetParent !== null; });
+      if (!all.length) { e.preventDefault(); return; }
+      var first = all[0], last = all[all.length - 1], at = document.activeElement;
+      if (e.shiftKey && (at === first || at === sheet || !sheet.contains(at))) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && (at === last || !sheet.contains(at))) { e.preventDefault(); first.focus(); }
+      return;
+    }
+    if (e.key !== 'Escape') return;
     e.preventDefault();
     e.stopImmediatePropagation();
     close();
@@ -237,6 +252,7 @@
   }
   function oops(f, labels, text) {
     delete f.dataset.sent;
+    clearInterval(f._clock);
     f.removeAttribute('aria-busy');
     var bs = f.querySelectorAll('button');
     bs.forEach(function (b, i) { b.disabled = false; if (labels[i] !== undefined) b.textContent = labels[i]; });

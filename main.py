@@ -21,6 +21,21 @@ from gitaway.pages.family import PRIVATE
 ROOT = Path(__file__).parent.resolve()
 
 configure_logging()
+
+
+def configure_gitaway_logging():
+    """gitaway.* loggers (ask, thread, morning ...) print to stderr at INFO, so `railway logs` shows them. fh-saas's configure_logging only covers `fh_saas`."""
+    import logging
+    top = logging.getLogger("gitaway")
+    top.setLevel(logging.INFO)
+    if not top.handlers:
+        h = logging.StreamHandler()
+        h.setFormatter(logging.Formatter("%(levelname)s %(name)s: %(message)s"))
+        top.addHandler(h)
+    top.propagate = False
+
+
+configure_gitaway_logging()
 auth.configure_storage()  # SQLite under GITAWAY_DATA_DIR; this also makes it the working directory, so nothing below may use relative paths
 
 # fh-saas hydrates request.state.user only on the private paths; every other page is public and reads the session itself.

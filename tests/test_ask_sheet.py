@@ -176,6 +176,18 @@ def test_a_mic_event_cannot_forge_a_log_line_or_carry_a_long_story(client, caplo
     assert "\n" not in line and len(line) < 200 and "<" not in line
 
 
+def test_a_mic_event_needs_its_length_and_old_rate_entries_are_pruned(client):
+    from gitaway.pages import tab_ask
+    book(client)
+    tab_ask._mic_hits.clear()
+    sent = client.post("/trip/ask/mic-event", content=b'{"stage":"tap"}', headers={"content-type": "text/plain", "transfer-encoding": "chunked"})
+    assert sent.status_code in (204, 411)
+    assert tab_ask.mic_allowed("someone", now=0.0) and tab_ask.mic_allowed("other", now=1.0)
+    assert tab_ask.mic_allowed("other", now=500.0)
+    assert "someone" not in tab_ask._mic_hits or not tab_ask._mic_hits["someone"]        # the window passed: nobody keeps a list for ever
+    assert len(tab_ask._mic_hits) <= 1
+
+
 def test_a_mic_event_is_checked_gated_and_rate_limited(client):
     from gitaway.pages import tab_ask
     book(client)
