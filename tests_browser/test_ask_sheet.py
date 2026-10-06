@@ -294,6 +294,61 @@ def test_the_page_still_works_with_no_script_and_a_viewer_gets_the_page_not_a_sh
     expect(viewer.locator("#ak-viewer")).to_be_visible()
 
 
+def test_tab_never_leaves_the_sheet_on_family_and_the_page_is_free_again_after(phone, base_url, model):
+    page = phone(size=(320, 640))
+    page.goto(f"{base_url}/trip/family")
+    page.wait_for_timeout(500)
+    page.locator("#ph-tab-ask").click()
+    expect(page.locator("#ak-sheet")).to_be_visible()
+    for _ in range(25):
+        page.keyboard.press("Tab")
+        assert page.evaluate("!!document.activeElement.closest('#ak-sheet')"), page.evaluate("document.activeElement.outerHTML.slice(0, 80)")
+    for _ in range(25):
+        page.keyboard.press("Shift+Tab")
+        assert page.evaluate("!!document.activeElement.closest('#ak-sheet')")
+    assert page.evaluate("document.querySelectorAll('#ph-app > [inert]').length") >= 2
+    page.keyboard.press("Escape")
+    expect(page.locator("#ak-sheet")).to_have_count(0)
+    assert page.evaluate("document.querySelectorAll('[inert]').length") == 0
+
+
+def test_a_box_that_arrives_after_the_tap_does_not_start_the_microphone_by_itself(phone, base_url, model):
+    slow = FAKE_MIC + """(() => { const f = window.fetch; window.fetch = (u, o) => (o && o.headers && o.headers['X-Ask'] && !o.method)
+        ? new Promise(r => setTimeout(r, 1500)).then(() => f(u, o)) : f(u, o); })();"""        # the box takes 1.5 s: it is not there when the finger lands
+    page = phone(slow)
+    day_page(page, base_url)
+    page.locator("#ph-tab-ask").click()                                  # at once: the box has not been fetched yet
+    expect(page.locator("#ak-sheet")).to_be_visible()
+    expect(page.locator("#ak-mic")).to_be_visible(timeout=6000)
+    expect(page.locator("#ak-mic-label")).to_have_text("Tap to talk")
+    page.wait_for_timeout(500)
+    expect(page.locator("#ak-mic")).not_to_have_class(re.compile("is-recording"))
+    page.locator("#ak-mic").click()
+    expect(page.locator("#ak-mic")).to_have_class(re.compile("is-recording"))
+
+
+def test_two_questions_are_two_rows_of_chips_and_the_last_tap_brings_the_proposal(phone, base_url, model):
+    model.chat.answer = answer(op("add_plan", title="Pool"), op("add_plan", title="Spa"))
+    page = phone(NO_SPEECH)
+    day_page(page, base_url)
+    open_sheet(page)
+    page.locator("#ak-text").fill("add pool and spa")
+    page.locator("#ak-go").click()
+    page.wait_for_selector("#ak-questions-form")
+    assert page.locator("#ak-questions-form .ak-q").count() == 2
+    expect(page.locator("#ak-continue")).to_have_text("Done")
+    page.locator('[data-q="time:0"] .ak-opt:not(:has(input:checked))').first.click()
+    expect(page.locator("#ak-questions-form")).to_be_visible()                     # one answered: still asking
+    page.locator('[data-q="time:1"] .ak-opt:not(:has(input:checked))').first.click()
+    expect(page.locator("#ak-prop")).to_be_visible()
+    assert page.locator('.ak-chip[data-kind="new"]').count() == 2
+    page.locator("#ak-change").click()                                              # and Done accepts the suggestions as they are
+    page.locator("#ak-go").click()
+    page.wait_for_selector("#ak-questions-form")
+    page.locator("#ak-continue").click()
+    expect(page.locator("#ak-prop")).to_be_visible()
+
+
 def test_every_step_of_the_microphone_is_reported_to_the_server_log_without_audio_or_words(phone, base_url, model):
     page = phone()
     events = []
