@@ -30,7 +30,7 @@ from gitaway.pages.around_ui import around_url
 from gitaway.pages.plantalk import talk_badge   # F-091: the chat badge on a plan and on a part
 
 HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/help.css"), *passes_ui.HEAD, Link(rel="stylesheet", href="/assets/css/trip_canvas.css"), Link(rel="stylesheet", href="/assets/css/day_grid.css"), Link(rel="stylesheet", href="/assets/css/plantalk.css"))   # pickers: the add-a-step sheet has a time field (F-082)
-SCRIPTS = ("/assets/js/trip_canvas.js", "/assets/js/day_grid.js")
+SCRIPTS = ("/assets/js/trip_canvas.js", "/assets/js/day_grid.js", "/assets/js/day_menu.js")
 RANK = {"week": 0, "day": 1, "block": 2, "step": 3}
 PART_TINTS = ("sky", "sun", "grape", "bubble", "mint")
 MAX_FACES = 5
@@ -471,6 +471,8 @@ def grid_block(v, a, lane, lanes, lo, edit):
     n = sum(m["n"] for key, m in v["talk"].items() if key[0] == a.id)
     attrs = {**kind_attrs(v, "block" if park else "plan", a), "data_act": a.id, "data_s": str(a.start), "data_e": str(a.end), "data_day": str(a.day), "data_title": a.title,
              "data_steps": str(len(steps))}
+    if edit:
+        attrs["data_talk"] = plantalk.url(a.id, "", ses.open_trip_id())          # the hold menu's Chat (F-098); data-chat is the filter's "has messages"
     if park:
         attrs.update(data_who=json.dumps(_union_who(_all_steps(blk)), separators=(",", ":")), data_lists=" ".join(sorted({x for s in steps for x in (s.get("lists") or [])})), data_zk=f"blk-{a.id}")
     when = span_label(a.start, a.end)

@@ -45,8 +45,8 @@
     var el = e.target.closest ? e.target.closest('.cz-gb') : null;
     if (!el || !stage.contains(el) || e.target.closest('input, textarea')) return;
     var r = el.getBoundingClientRect();
-    var edge = clamp(r.height * 0.4, rem() * 0.75, rem() * 1.75);        // the bottom edge: a hand's width of the block's last stretch
-    gg = { id: e.pointerId, el: el, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, mode: 'wait', resize: e.clientY >= r.bottom - edge, moved: false, dirty: false };
+    var edge = Math.min(clamp(r.height * 0.4, rem() * 0.75, rem() * 1.75), r.height * 0.45);        // the bottom edge: a hand's width of the block's last stretch (never more than its lower half)
+    gg = { id: e.pointerId, el: el, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, mode: 'wait', resize: e.clientY > r.bottom - edge, moved: false, dirty: false };
     gg.timer = setTimeout(lift, HOLD);
   });
 
@@ -223,8 +223,14 @@
     cancelAnimationFrame(gg.raf || 0);
     var g = gg;
     gg = null;
-    if (g.mode === 'wait') return;                                          // a tap: the click that follows opens the block
+    if (g.mode === 'wait') { if (CZ.tap) CZ.tap(g.el, e); return; }        // a tap: the click that follows opens the block (two taps on a title edit it: day_menu.js)
     CZ.guard(300, g.el);
+    if (!g.resize && !g.moved && CZ.hold) {                                 // held and let go without moving: it is not moved, it gets its menu (day_menu.js)
+      g.el.style.transform = '';
+      unhold(g);
+      CZ.hold(g.el);
+      return;
+    }
     g.y = e.clientY;
     g.x = e.clientX;
     paint(g);
@@ -329,6 +335,34 @@
       return CZ.quiet().then(function () { CZ.showToast(res.toast || 'Put back'); });
     }, function (err) { CZ.showToast(err && err.soft ? err.soft : 'Could not undo that.'); });
   }
+
+  // A change that did not come from a drag (the menu's Earlier, Later, Shorter, Longer): the same landing, the same save.
+  CZ.setTimes = function (el, s, e) {
+    var g = el.closest('#cz-grid');
+    if (!g || busy) return false;
+    var from = el.getBoundingClientRect();
+    busy = true;
+    el.style.setProperty('--s', s - +g.dataset.lo);
+    el.style.setProperty('--l', e - s);
+    el.dataset.s = s;
+    el.dataset.e = e;
+    setWhen(el, s, e);
+    land(el, from, {}, function () { save({ el: el }, { start: s, end: e }); });
+    return true;
+  };
+  CZ.undo = undo;
+
+  // A refresh after a write replaces the page: the block that had the keyboard's focus gets it back.
+  CZ.beforeQuiet = function () {
+    var f = document.activeElement, b = f && f.closest && stage.contains(f) ? f.closest('.cz-gb') : null;
+    if (!b) return null;
+    var act = b.dataset.act, button = f.classList.contains('cz-gb-menubtn');
+    return function () {
+      var n = stage.querySelector('.cz-gb[data-act="' + act + '"]');
+      n = n && (button ? n.querySelector('.cz-gb-menubtn') : n);
+      if (n) { try { n.focus({ preventScroll: true }); } catch (e) { n.focus(); } }
+    };
+  };
 
   // After an Undo the blocks travel from where they were to where they are, so the change reads as a move and not as a flicker.
   var flipOnSwap = null;

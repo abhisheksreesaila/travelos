@@ -132,6 +132,9 @@ def test_an_editor_can_lift_blocks_and_has_a_keyboard_way_in(trip):
     page = day(trip, 2)
     assert 'data-edit="1"' in trip.get("/trip/canvas?day=2").text and 'class="cz-gb-grip"' in page
     assert 'class="sr-only cz-gb-menubtn">Change Lunch<' in page
+    (b,) = blocks(page)
+    assert b["data-talk"].startswith(f"/trip/talk?act={b['data-act']}") and b["data-steps"] == "0"      # F-098: the hold menu's Chat, and what a delete would take with it
+    assert 'src="/assets/js/day_menu.js' in trip.get("/trip/canvas?day=2").text
 
 
 def test_a_viewer_gets_the_grid_and_no_gestures(crew, azure):
@@ -142,7 +145,7 @@ def test_a_viewer_gets_the_grid_and_no_gestures(crew, azure):
     assert 'data-edit="1"' not in viewer.get("/trip/canvas?day=2").text and 'id="cz-grid"' in page
     assert "cz-gb-grip" not in page and "cz-gb-menubtn" not in page
     (b,) = blocks(page)
-    assert "/trip/talk?act=" in b["href"]                                  # a viewer's tap on a plan goes to its chat
+    assert "data-talk" not in page and "/trip/talk?act=" in b["href"]                                # a viewer's tap on a plan goes to its chat
     park = bare(viewer.get("/trip/canvas?day=1").text)
     assert "cz-gb-grip" not in park and f'href="/trip/canvas?block={uni_id()}"' in park
 

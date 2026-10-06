@@ -664,8 +664,10 @@
         cache = {};
         var y = window.scrollY;
         fetchLevel(here()).then(function (html) {
+          var back = CZ.beforeQuiet ? CZ.beforeQuiet() : null;      // the day grid puts the focus back on the block that had it
           quietSwap = true;
           try { swap(html, ''); } finally { quietSwap = false; }
+          if (back) back();
           window.scrollTo(0, y);
           done(true);
         }).catch(function () { done(false); });
