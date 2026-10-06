@@ -153,11 +153,12 @@ def _patch_change(ctx, ops, answers) -> list:
 
 
 def _hour_long(ops) -> list:
-    """A plan Ask adds with a start and no length gets an hour (F-097): the model is not asked, and neither is the family. Capped at the end of the grid."""
+    """A plan Ask adds with a start and no length gets an hour (F-097): the model is not asked, and neither is the family. A late one ends at the calendar's
+    10 PM instead (a 9:30 swim is 9:30–10:00); one starting after 9:30 PM can't have the 30-minute minimum and is left out with the calendar's reason."""
     out = []
     for o in ops:
         if o.get("op") == "add_plan" and speak._clock(o.get("start")) and not speak._clock(o.get("end")):
-            o = dict(o, end=speak._hhmm(min(speak._minutes(speak._clock(o["start"])) + 60, 23 * 60 + 59)))
+            o = dict(o, end=speak._hhmm(min(speak._minutes(speak._clock(o["start"])) + 60, 22 * 60)))
         out.append(o)
     return out
 

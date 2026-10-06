@@ -578,11 +578,13 @@ def test_a_plan_with_a_start_and_no_length_gets_an_hour_and_nobody_is_asked(clie
     """F-097: Ask no longer asks how long; a plan placed without a length is an hour, and the grid is where it is stretched."""
     book(client)
     s = person("ari")
-    azure.answer = answer(op("add_plan", title="Gelato", start="15:30"), op("add_plan", title="Late swim", start="21:45"), op("add_plan", title="Night walk", start="22:00"))
-    step = say.start(s, "Gelato at 3:30, a late swim at 9:45, a night walk at 10", SAT)
+    azure.answer = answer(op("add_plan", title="Gelato", start="15:30"), op("add_plan", title="Late swim", start="21:30"), op("add_plan", title="Later swim", start="21:45"),
+                          op("add_plan", title="Night walk", start="22:00"))
+    step = say.start(s, "Gelato at 3:30, a late swim at 9:30, another at 9:45, a night walk at 10", SAT)
     assert step["questions"] == []
     chips = step["preview"]["groups"][0]["chips"]
-    assert [c["label"] for c in chips] == ["Gelato"] and "3:30" in chips[0]["after"] and "4:30" in chips[0]["after"]
-    assert len(step["preview"]["dropped"]) == 2        # a full hour would pass the day's 10 PM end: left out with the calendar's reason, not squeezed into a 15-minute plan
+    assert [c["label"] for c in chips] == ["Gelato", "Late swim"] and "3:30" in chips[0]["after"] and "4:30" in chips[0]["after"]
+    assert "9:30" in chips[1]["after"] and "10:00" in chips[1]["after"]      # a late plan ends at the calendar's 10 PM
+    assert len(step["preview"]["dropped"]) == 2        # 9:45 and 10:00 can't have the 30-minute minimum before 10 PM: left out with the calendar's reason
     say.apply(s, step["state"], step["preview"]["token"], None)
-    assert plans(s) == [("Gelato", "15:30", "16:30")]
+    assert plans(s) == [("Gelato", "15:30", "16:30"), ("Late swim", "21:30", "22:00")]
