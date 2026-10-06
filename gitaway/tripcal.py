@@ -748,6 +748,27 @@ def add_note(session, text, act=None, demo="", id=None):
             return Note(id, text, act or None, "", fam.traveler.id)
 
 
+def edit_note(session, id, text, demo=""):
+    """Change the words of a note on a plan (F-106: the sticky in the plan's card is edited in place). Only the person who wrote it may: a note a pretend friend or another
+    member wrote is theirs. The same rules as a new note (not empty, MAX_NOTE). Returns the note."""
+    with ses.family(session) as fam:
+        _need(fam, demo)
+        text = " ".join((text or "").split())
+        if not text:
+            raise CalendarError("Write something first.")
+        if len(text) > MAX_NOTE:
+            raise CalendarError(f"Keep notes to {MAX_NOTE} characters.")
+        db, scope = fam.db, _scope(demo)
+        with familydb.transaction(db):
+            row = familydb.row(db, "SELECT * FROM notes WHERE trip_id = :t AND scope = :s AND note_id = :i AND gone = 0", t=fam.trip_id, s=scope, i=id) if isinstance(id, str) else None
+            if row is None or not row["act_id"]:
+                raise CalendarError("That note is not here any more.")
+            if row["added_by"] != fam.traveler.id or row["author"]:
+                raise CalendarError("That note is someone else's.")
+            familydb.run(db, "UPDATE notes SET body = :b WHERE trip_id = :t AND scope = :s AND note_id = :i", b=text, t=fam.trip_id, s=scope, i=id)
+            return _note({**row, "body": text})
+
+
 # ---- scripted liveness (F-020) -------------------------------------------------------------------------------------
 
 def _live_friend(db, trip_id):
