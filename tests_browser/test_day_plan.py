@@ -159,3 +159,22 @@ def test_todays_day_plan_button_opens_that_day_and_the_heading_fits_at_320(canva
     checks(page)
     page.locator("#tp-open-day").click()
     page.wait_for_selector(".cz-view[data-level=day][data-day='3']")
+
+
+def test_a_booking_up_next_opens_its_sheet_in_place_from_the_now_card(canvas_page, monkeypatch):
+    """F-105: the now card ends with its buttons; when a booking is up next, its title (44px tall) opens the booking's sheet over the day, without a page load."""
+    from datetime import datetime, timezone
+    from gitaway import catalog
+    now = datetime(2026, 10, 16, 21, 0, tzinfo=timezone.utc)      # Friday 2:00 PM in Los Angeles: check-in at 3:00 is up next
+    monkeypatch.setattr(catalog, "now_utc", lambda: now)
+    monkeypatch.setattr(catalog, "today", lambda: now.astimezone(catalog.TZ).date())
+    page = canvas_page()
+    open_day(page, 0)
+    link = page.locator("#tp-up-open")
+    expect(link).to_be_visible()
+    assert link.bounding_box()["height"] >= 43.5
+    assert page.locator("#tp-up").get_by_text("Details", exact=True).count() == 0
+    page.evaluate("window.__loads = performance.getEntriesByType('navigation').length; window.__marker = 1")
+    link.click()
+    expect(page.locator(".cz-sheet-bk")).to_be_visible()
+    assert page.evaluate("window.__marker") == 1          # the same page: the sheet opened in place

@@ -133,7 +133,8 @@ def up_card(v, compact=False):
         # booking's title opens its sheet (F-093: confirmation, phone, address), an overlap is a small tag by the time, notes fold above the buttons.
         title = item.title if item else "You are all caught up"
         if item and item.kind in ("flight", "hotel", "car"):
-            title = A(item.title, href=f"/trip/canvas?day={v['sel']}&booked={item.id}&trip={ses.open_trip_id()}", cls="tp-up-link", id="tp-up-open")
+            from gitaway.pages.tripcanvas import curl     # the canvas imports this module: a late import keeps the two from importing each other at load
+            title = A(item.title, href=curl(day=v["sel"], booked=item.id), cls="tp-up-link", id="tp-up-open", data_zoom="in", data_zk=f"bkg-{item.id}")   # opens in place, as the booking line does
         when = Div(Span(up.detail, cls="tp-up-sub"), overlap_tag(item) if item and item.overlaps else "", cls="tp-up-when")
         return Div(Span(pulse, up.kicker, cls="tp-kicker"), Span(title, cls="tp-up-title"), when, leave, notes_fold(item, "ph-details") if item else "",
                    Div(*buttons, cls="tp-up-actions") if buttons else "", cls="tp-up tp-up-compact", id="tp-up")
