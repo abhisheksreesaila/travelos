@@ -22,7 +22,7 @@ from urllib.parse import urlencode
 from fasthtml.common import A, Button, Details, Div, Form, H1, H2, H3, Header, Input, Label, Link, Main, Nav, P, Section, Span, Summary, Template, to_xml
 from starlette.responses import RedirectResponse, Response
 
-from gitaway import access, canvas, catalog, geo, members, phone, pickers, plantalk, session as ses, tripcal as cal, tripday as td
+from gitaway import access, canvas, catalog, geo, members, passes, phone, pickers, plantalk, session as ses, tripcal as cal, tripday as td
 from gitaway.icons import icon
 from gitaway.layout import avatar, join_note, trip_field
 from gitaway.pages import booked, calendar as calui, passes as passes_ui   # passes: on a flight day the now card is the flight with everyone's passes (F-092)
@@ -66,6 +66,10 @@ def load(session):
     notes = cal.notes(session)
     pl = canvas.plan(session)
     blocks = [x for x in cal.booked_blocks(b, t) + cal.ride_blocks(session, b, t) if x.kind != "ride"]
+    for f in passes.flights(session):                    # a flight an editor added by hand is a booking line on its day, with a sheet (F-093)
+        at = (f["date"] - t.depart).days
+        if f["source"] == "added" and 0 <= at < len(dates):
+            blocks.append(cal.Block("fl-" + f["id"][:12], at, f["depart_min"], min(f["depart_min"] + 60, 24 * 60 - 1), f"{f['name']} · {f['origin']} → {f['dest']}", "booked", True, "plane"))
     zone = ses.trip_zone(session)
     ph, n = td.phase(t, catalog.today_in(td.clock_zone(cal.plan_of(b) if cal.is_imported(b) else None, zone)))
     today_idx = n if ph == "during" else None
@@ -349,7 +353,7 @@ def week_view(v, sos=False):
     kicker = f"{t.title.upper()} · {cal.range_label(t.depart, t.return_).upper()}"
     rows = [week_body(v, i, editor) for i in range(len(v["dates"]))]
     body = [head(v, kicker, "The trip", faces=faces, sos=curl(sos=True)), Div(toggle(v, "week"), kinds_bar(), cls="cz-bar"), Div(*rows, cls="cz-week", id="cz-week", style=f"--days:{min(len(rows), 7)}")]
-    body.append(sos_sheet(v, curl()) if sos else sos_template(v, curl()))
+    body.append(sos_sheet(v, curl(), curl(sos=True)) if sos else sos_template(v, curl(), curl(sos=True)))
     return view("step" if sos else "week", body, zout="sos-open" if sos else "", title="The trip")
 
 
@@ -455,9 +459,9 @@ def day_view(v, day, booked=None, sos=False):
     if booked:
         body.append(booking_sheet(v, day, booked))
     elif sos:
-        body.append(sos_sheet(v, curl(day=day)))
+        body.append(sos_sheet(v, curl(day=day), curl(day=day, sos=True)))
     else:
-        body.append(sos_template(v, curl(day=day)))
+        body.append(sos_template(v, curl(day=day), curl(day=day, sos=True)))
     near = {"data_prev": curl(day=day - 1)} if day > 0 else {}
     if day < len(v["dates"]) - 1:
         near["data_next"] = curl(day=day + 1)
@@ -501,7 +505,7 @@ def ideas_button(day, ident):
     return A(icon("spark", 14, 2.4), "Ideas", href=around_url(day=day, cat="veg"), cls="btn btn-sm tp-edit ar-ideas", id=ident, title="Ideas for this meal near you")
 
 
-def block_view(v, act_id, open_step=None, adding=None):
+def block_view(v, act_id, open_step=None, adding=None, sos=False):
     a = v["by_id"][act_id]
     blk = v["plan"][act_id]
     d = v["dates"][a.day]
@@ -530,7 +534,7 @@ def block_view(v, act_id, open_step=None, adding=None):
     if editor and blk["parts"]:
         add_btn = A(icon("plus", 18, 2.6), "Add a step", href=curl(block=a.id, add=True), id="cz-add", cls="tp-btn tp-btn-ink cz-add", data_zoom="in", **({} if adding else {"data_zk": "stp-new"}))
     kicker = f"{d.strftime('%a %b').upper()} {d.day} · {cal.fmt_time(a.start)} – {cal.fmt_time(a.end)}"
-    body = [head(v, kicker, a.title, key=f"blk-{a.id}", back=curl(day=a.day), back_label="Zoom out to the day", faces=faces_of(allsteps, 4)),
+    body = [head(v, kicker, a.title, key=f"blk-{a.id}", back=curl(day=a.day), back_label="Zoom out to the day", faces=faces_of(allsteps, 4), sos=curl(block=a.id, sos=True)),
             Div(*notes, cls="cz-notes") if notes else "", Div(Span(f"{done} of {n} done", cls="cz-prog"), legend, add_btn, talk_badge(v["talk"], a.id), cls="cz-block-meta"),
             filter_bar(v), *([dropbars(v)] if editor else []),
             Div(*sections, cls="cz-bparts"), *listmore(v, a), Div(_tray(blk["aside"], editor, open_id=open_id), cls="cz-block-side"), *lists]
@@ -538,7 +542,11 @@ def block_view(v, act_id, open_step=None, adding=None):
         body.append(sheet(v, open_step, a))
     elif adding is not None:
         body.append(add_sheet(v, a, adding))
-    return view("step" if open_step or adding is not None else "block", body, zout=f"stp-{open_id}" if open_step else "stp-new" if adding is not None else f"blk-{a.id}", title=a.title, data_day=str(a.day), data_block=a.id)
+    elif sos:
+        body.append(sos_sheet(v, curl(block=a.id), curl(block=a.id, sos=True)))
+    else:
+        body.append(sos_template(v, curl(block=a.id), curl(block=a.id, sos=True)))
+    return view("step" if open_step or adding is not None or sos else "block", body, zout=f"stp-{open_id}" if open_step else "stp-new" if adding is not None else "sos-open" if sos else f"blk-{a.id}", title=a.title, data_day=str(a.day), data_block=a.id)
 
 
 # ---- step -------------------------------------------------------------------------------------------------------------------
@@ -618,18 +626,18 @@ def sheet_wrap(close, pills, title, *body, zk, cls="", **attrs):
 def booking_sheet(v, day, booked_block):
     """A booking's sheet over its day (F-093): `booked_block` is (the block, what it is). Everything Help showed for it, drawn by gitaway.pages.booked."""
     x, found = booked_block
-    pills, title, body = booked.sheet(v, found, v.get("ua", ""), curl(day=x.day, booked=x.id))
-    return sheet_wrap(curl(day=day), pills, title, *body, zk=f"bkg-{x.id}", cls="cz-sheet-bk", data_booked=x.id)
+    pills, title, body = booked.sheet(v, found, v.get("ua", ""), curl(day=x.day, booked=x.id), curl(day=x.day))
+    return sheet_wrap(curl(day=day), pills, title, booked.problem(v.get("err", "")), *body, zk=f"bkg-{x.id}", cls="cz-sheet-bk", data_booked=x.id)
 
 
-def sos_sheet(v, close):
+def sos_sheet(v, close, back=""):
     """The emergency sheet (F-093): 911, tonight's front desk, the rental counter, the family's numbers, and a way to "This phone"."""
-    return sheet_wrap(close, ["Emergency"], "Who to call", *booked.sos(v, v.get("ua", "")), zk="sos-open", cls="cz-sheet-sos")
+    return sheet_wrap(close, ["Emergency"], "Who to call", booked.problem(v.get("err", "")), *booked.sos(v, v.get("ua", ""), back or close), zk="sos-open", cls="cz-sheet-sos")
 
 
-def sos_template(v, close):
+def sos_template(v, close, back=""):
     """The emergency sheet again, inert, in every week and day page: the script opens it from here without the network, so SOS works with no signal once the page is open (Help promised that)."""
-    return Template(sos_sheet(v, close), id="cz-sos-tpl")
+    return Template(sos_sheet(v, close, back), id="cz-sos-tpl")
 
 
 ADD_ERRORS = {"title": "Give the step a name.", "time": "That time is not one we can read.", "other": "That step could not be added. Check it and try again."}
@@ -684,6 +692,8 @@ def resolve(v, day="", block="", step="", add=None, booked_id="", sos=False):
         if not has_block(v, block[:8]):
             return None
         opening = add if add is not None and access.can_edit(v["role"]) and v["plan"][block[:8]]["parts"] else None
+        if sos and opening is None and not step:
+            return "step", block_view(v, block[:8], sos=True)
         return ("step" if opening is not None else "block", block_view(v, block[:8], adding=opening))
     if day:
         return ("day", day_view(v, int(day))) if day.isdigit() and int(day) < len(v["dates"]) else None
@@ -723,7 +733,8 @@ def register(app):
         if (r := _guard(session)):
             return r
         v = load(session)
-        v["ua"] = request.headers.get("user-agent", "")       # the now card's Directions open Apple Maps on Apple devices
+        v["ua"] = request.headers.get("user-agent", "")
+        v["err"] = err[:20]       # the now card's Directions open Apple Maps on Apple devices
         adding = {"part": part[:40], "title": title[:80], "note": note[:canvas.MAX_NOTE], "err": err[:8]} if add == "1" else None
         got = resolve(v, day[:3], block, step[:40], adding, booked[:20], sos == "1")
         if got is None:

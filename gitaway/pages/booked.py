@@ -11,9 +11,9 @@ canvas address of the sheet. Nothing here knows the canvas's markup: gitaway/pag
 
 import re
 
-from fasthtml.common import A, Div, H2, P, Span
+from fasthtml.common import A, Details, Div, H2, P, Span, Summary
 
-from gitaway import catalog, morning, passes, passkeys, phones, session as ses, tripcal as cal, tripday as td, tripimport as ti
+from gitaway import access, catalog, morning, passes, passkeys, phones, session as ses, tripcal as cal, tripday as td, tripimport as ti
 from gitaway.icons import icon
 from gitaway.pages import passes as passes_ui, tab_help
 
@@ -23,6 +23,9 @@ def find(v, block_id):
     A red-eye's two halves (`-d`, `-a`) are one booking."""
     base = re.sub(r"-[da]$", "", block_id or "")
     b = v["b"]
+    if base.startswith("fl-"):                           # a flight an editor added by hand: its id is the start of the flight's own
+        f = next((x for x in passes.flights(v["session"]) if x["source"] == "added" and x["id"][:12] == base[3:]), None)
+        return ("added", f, 0) if f else None
     if cal.is_imported(b):
         plan = cal.plan_of(b)
         for spec in ti.block_specs(plan):
@@ -80,24 +83,45 @@ def _flight(v, i, leg, can_edit, back):
         Div(Span("Passes & documents", cls="hp-k"), *cards, add, cls="bk-passes", id="bk-passes")]
 
 
-def _demo_flight(v, x):
-    return ["Flight"], x.name, [Span("Add the boarding passes on Help once you have them.", cls="hp-addr")]
+def _demo_flight(v, x, can_edit):
+    note = Span("Boarding passes are added on the trip's flights.", cls="hp-addr")
+    return ["Flight"], x.name, [note, A(icon("ticket", 18, 2.4), "Add the boarding passes", href="/trip/help#hp-passes", cls="tp-btn tp-btn-white", id="bk-add-passes") if can_edit else ""]
 
 
-def sheet(v, found, ua, back):
-    """(pill words, title, body children) of a booking's sheet."""
+def _added_flight(v, f, can_edit, back, gone):
+    key = f["key"]
+    ps = passes.listing(v["session"]).get(key, [])
+    cards, add = passes_ui.pass_cards(f, ps, can_edit, passes.travellers(v["session"]), back)
+    leaves = f"{passes_ui.day_label(f['date'])}, {passes_ui.clock(f['depart_min'])}" + (f" · Terminal {f['terminal']}" if f["terminal"] else "")
+    show = A(icon("ticket", 18, 2.4), "Show everyone's passes", href=passes_ui.gate_url(key), cls="tp-btn tp-btn-coral", id="bk-show-passes") if ps else ""
+    return ["Flight", passes_ui.day_label(f["date"])], f"{f['origin']} → {f['dest']}", [
+        Span(f["name"], cls="hp-addr", id="bk-flight"), Div(_kv("LEAVES", leaves, "bk-leaves"), cls="hp-times bk-stack"), show,
+        Div(Span("Passes & documents", cls="hp-k"), *cards, add, *passes_ui.flight_tools(f, can_edit, back, gone), cls="bk-passes", id="bk-passes")]
+
+
+def problem(err):
+    """The reason a refused save in a sheet gives (the redirect adds `err=`), or nothing."""
+    if err == "phone":
+        return Div("That number did not look right. Try something like +1 310 555 0100.", role="alert", cls="hp-problem", id="bk-problem")
+    return Div(passes.ERRORS[err], role="alert", cls="hp-problem", id="bk-problem") if err in passes.ERRORS else ""
+
+
+def sheet(v, found, ua, back, gone=""):
+    """(pill words, title, body children) of a booking's sheet. `gone`: where to go when the booking itself is removed."""
     kind, item, index = found
-    can_edit = v["role"] in ("admin", "editor")
+    can_edit = access.can_edit(v["role"])
+    if kind == "added":
+        return _added_flight(v, item, can_edit, back, gone)
     if kind in ("checkin", "checkout"):
         return _hotel(v, kind, item, index, ua, can_edit, back) if cal.is_imported(v["b"]) else _demo_stay(v, kind, item, ua)
     if kind in ("pickup", "dropoff"):
         return _car(v, kind, item, ua, can_edit, back)
     if kind == "leg":
         return _flight(v, index, item, can_edit, back)
-    return _demo_flight(v, item)
+    return _demo_flight(v, item, can_edit)
 
 
-def sos(v, ua):
+def sos(v, ua, back=""):
     """The emergency sheet's body: 911, tonight's front desk, the rental counter, the family's numbers."""
     session, b = v["session"], v["b"]
     today = catalog.today_in(ses.trip_zone(session))
@@ -113,6 +137,8 @@ def sos(v, ua):
     contacts, has_mine = tab_help._family(session)
     rows.append(Div(Span("The family", cls="hp-k"), Div(*contacts, cls="hp-contacts", id="sos-contacts") if contacts else P("Nobody has added a phone number yet.", cls="hp-empty", id="sos-nocontacts"),
                     A("Add your number", href="/family#my-phone", cls="hp-add", id="sos-add-mine") if not has_mine else "", cls="bk-sos-row bk-sos-family"))
+    if access.can_edit(v["role"]):                                   # a flight Help's "Add a flight" used to be the only way to add
+        rows.append(Div(Span("This trip", cls="hp-k"), Details(Summary(icon("plus", 15, 2.4), "Add a flight", cls="tp-mini hp-fix-sum"), passes_ui._flight_form(None, back), cls="hp-fix", id="sos-add-flight"), cls="bk-sos-row"))
     if morning.configured() or passkeys.configured():       # the family page has these two cards only where the server can do them
         rows.append(Div(Span("This phone", cls="hp-k"), A(icon("bell", 18, 2.4), "Morning plan and Face ID", href="/family#morning-plan" if morning.configured() else "/family#this-phone", cls="tp-btn tp-btn-white", id="sos-phone"), cls="bk-sos-row"))
     return rows
