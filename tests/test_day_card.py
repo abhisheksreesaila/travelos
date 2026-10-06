@@ -148,3 +148,85 @@ def test_the_card_for_a_plan_that_is_gone_is_a_404_and_signed_out_goes_to_sign_i
 def test_the_card_is_for_the_open_trip_only(trip):
     a = plan(ari(), "Pool", 10 * 60, 11 * 60)
     assert card(trip, a.id, trip="deadbeef").status_code == 409
+
+
+# ---- the grid: a one-line note, a chat count, bookings that stay in view --------------------------------------------------------
+
+def block_html(page, act):
+    """The markup of one plan's block: from its opening tag to where the next block, booking line or the now line starts."""
+    tags = [m for m in re.finditer(r'<div\b[^>]*\bclass="cz-gb[ "][^>]*>', page)]
+    (m,) = [t for t in tags if f'data-act="{act}"' in t.group(0)]
+    rest = page[m.end():]
+    end = re.search(r'<div\b[^>]*\bclass="cz-gb[ "]|<span[^>]*class="cz-nowline|</div>\s*</div>\s*</div>', rest)
+    return m.group(0) + rest[:end.start() if end else len(rest)]
+
+
+def test_a_block_shows_a_one_line_note_preview_and_no_sticky(trip):
+    me = ari()
+    a = plan(me, "Universal Lower Lot", 9 * 60 + 30, 11 * 60 + 30)
+    cal.add_note(me, "H and B play. You can go on the big slide twice", act=a.id)
+    cal.add_note(me, "Bring snacks", act=a.id)
+    page = day(trip, 2)
+    mine = block_html(page, a.id)
+    assert re.search(r'<span class="cz-gb-note">H and B play\. You can go on the big slide twice · Bring snacks</span>', mine)
+    assert "cz-sticker" not in mine and "cz-gb-notes" not in mine           # the full note is the card's, not the block's
+    plain = plan(me, "Lunch", 12 * 60, 13 * 60)
+    assert "cz-gb-note" not in block_html(day(trip, 2), plain.id)
+
+
+def test_a_block_shows_how_much_was_said_and_a_mic_when_one_was_a_voice_note(trip):
+    a = plan(ari(), "Pool", 10 * 60, 11 * 60)
+    assert "cz-gb-chat" not in block_html(day(trip, 2), a.id)
+    say(a.id, 3)
+    chip = chat_chip(day(trip, 2), a.id)
+    assert text(chip) == "3" and chip.count("<svg") == 1
+    from tests.voice_files import voice
+    plantalk.post_voice(ari(), a.id, "", voice("mp4"), "9")
+    chip = chat_chip(day(trip, 2), a.id)
+    assert text(chip) == "4" and chip.count("<svg") == 2
+
+
+def chat_chip(page, act):
+    """The small chat count on a block: the markup from its span to the end of the block's words."""
+    mine = block_html(page, act)
+    at = mine.rindex("<span", 0, mine.index('class="cz-gb-chat"'))
+    return mine[at:mine.index("</div>")]
+
+
+def test_every_block_opens_the_card_with_a_link_that_still_works_without_script(trip):
+    me = ari()
+    a = plan(me, "Pool", 10 * 60, 11 * 60)
+    page = day(trip, 2)
+    assert re.search(r'<a [^>]*href="/trip/talk\?act=%s[^"]*"[^>]*data-card="1"[^>]*class="cz-gb-open"' % a.id, unescape(block_html(page, a.id)))
+    park = block_html(day(trip, 1), uni_id())
+    assert f'href="/trip/canvas?block={uni_id()}"' in unescape(park) and 'data-card="1"' in park
+
+
+def lines(page):
+    return re.findall(r'<a\b[^>]*class="cz-bk cz-gbk[^"]*"[^>]*>.*?</a>', page, re.S)
+
+
+def test_a_booking_a_plan_overlaps_becomes_a_pill_in_its_own_lane_and_the_plan_makes_room(trip):
+    """The captain's day: a 9:30 to 11:30 block over the 11 AM line. The booking stays whole, as a link to its sheet."""
+    me = ari()
+    over = plan(me, "Universal Lower Lot", 9 * 60 + 30, 11 * 60 + 30, day=0)
+    clear = plan(me, "Beach walk", 17 * 60, 18 * 60, day=0)
+    page = day(trip, 0)
+    flight, hotel = lines(page)
+    assert "is-pill" not in flight and "is-pill" not in hotel            # 8:05 and 3:00 PM have no plan over them: the quiet full-width lines stay
+
+    cal.update_activity(me, over.id, start=8 * 60, end=9 * 60)           # now the plan starts under the 8:05 flight line
+    page = day(trip, 0)
+    flight, hotel = lines(page)
+    assert "is-pill" in flight and "is-pill" not in hotel
+    assert 'href="/trip/canvas?day=0&amp;booked=b-out"' in flight and "8:05 AM" in text(flight) and "--s:65" in flight
+    assert 'aria-label="' in flight and "booked" in flight.lower()
+    assert "is-inset" in block_html(page, over.id) and "is-inset" not in block_html(page, clear.id)
+    assert "has-pill" in tag(page, "cz-grid")
+
+
+def test_the_short_name_of_a_pill_is_the_first_part_of_the_booking_title(trip):
+    from gitaway.pages import tripcanvas as tc
+    assert tc.short_title("Check in · Hotel Maya · 2 rooms") == "Check in"
+    assert tc.short_title("Delta 123 · SFO → LAX") == "Delta 123"
+    assert tc.short_title("Airport") == "Airport"
