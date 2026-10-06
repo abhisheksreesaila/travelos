@@ -618,6 +618,6 @@ Captain, 2026-10-06 (screenshot of the Ask page): "two ask buttons… confusing 
 - [ ] Done shows the proposal in the sheet (new / moved / removed chips, follow-up questions as one-tap chips, scrolling inside the sheet when long) with "Apply" and "Change it"; Apply saves (one transaction, family told once), the sheet closes and the new or changed blocks appear in the grid with a short highlight and an Undo-style toast; a failure keeps the text in the sheet
 - [ ] `/trip/ask` keeps working as a page (old links, laptop, no script); browser tests at 390 and 320 open the sheet from the tab on the day and on Family, talk with the fake mic, Done, a question chip, Apply, see the block on the grid, close by swipe and scrim; phone checks
 
-## F-105 The now card ends with its two buttons [doing]
+## F-105 The now card ends with its two buttons [done]
 Captain, 2026-10-06 (screenshot of the Breakfast up-next card): the "Details" button under Directions and Uber is "irritating… not minimalistic… after those two buttons, it should end". · Needs: F-092
 - [x] on the day view the now card has no Details row: it ends with Directions and Uber; a booking's title opens its sheet (F-093: confirmation, phone, address); an overlap is a small tag by the time; notes fold above the buttons; the old Today page keeps its Details
