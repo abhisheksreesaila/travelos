@@ -18,8 +18,42 @@
   function sendTimeout() { return parseInt(thread.getAttribute("data-send-timeout"), 10) || 15000; }   // a request that never answers ends as a failed send
   function join(url) { return url + (url.indexOf("?") < 0 ? "?" : "&"); }
 
-  function nearBottom() { return window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 160; }
-  function toBottom() { window.scrollTo(0, document.documentElement.scrollHeight); }
+  // F-100: on the phone the message list scrolls on its own (the box is docked under it); elsewhere the page scrolls.
+  function docked() { return window.getComputedStyle(thread).overflowY === "auto"; }
+  function nearBottom() {
+    if (docked()) return thread.scrollHeight - thread.scrollTop - thread.clientHeight < 160;
+    return window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 160;
+  }
+  function toBottom() {
+    if (docked()) { thread.scrollTop = thread.scrollHeight; return; }
+    window.scrollTo(0, document.documentElement.scrollHeight);
+  }
+  // A photo that finishes loading under the newest message must not push it out of view.
+  var stuck = true;
+  thread.addEventListener("scroll", function () { stuck = nearBottom(); }, { passive: true });
+  thread.addEventListener("load", function () { if (stuck) toBottom(); }, true);
+  window.addEventListener("load", function () { toBottom(); });
+
+  // F-100: the iPhone keyboard shrinks the visual viewport, not the page. The docked column follows it (--vvh, --vvtop), the tab bar steps aside
+  // (.kb-open) and the newest message stays in view above the box. `reference` is the tallest the viewport has been.
+  var vv = window.visualViewport, app = document.querySelector(".tp"), reference = window.innerHeight;
+  function fit() {
+    if (!vv || !app) return;
+    var was = nearBottom();
+    if (!(text && document.activeElement === text) && window.innerHeight > reference) reference = window.innerHeight;
+    reference = Math.max(reference, vv.height + vv.offsetTop);
+    var covered = reference - (vv.height + vv.offsetTop) > 80;     // 80px: ignore the browser's own bar growing and shrinking
+    var root = document.documentElement.style;
+    app.classList.toggle("kb-open", covered);
+    if (covered) { root.setProperty("--vvh", vv.height + "px"); root.setProperty("--vvtop", vv.offsetTop + "px"); }
+    else { root.removeProperty("--vvh"); root.removeProperty("--vvtop"); }
+    if (was || covered) toBottom();
+  }
+  if (vv) { vv.addEventListener("resize", fit); vv.addEventListener("scroll", fit); }
+  if (text) {
+    text.addEventListener("focus", function () { setTimeout(function () { fit(); toBottom(); }, 250); });
+    text.addEventListener("blur", function () { setTimeout(fit, 150); });
+  }
   function fail(message) { error.textContent = message || ""; error.hidden = !message; }
 
   function timed(url, options, ms) {
