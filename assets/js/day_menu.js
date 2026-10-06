@@ -220,13 +220,30 @@
     return !t ? { err: REFUSALS.empty } : t.length > MAX_TITLE ? { err: REFUSALS.long } : { title: t };
   }
   function rename(b) {
-    if (!editing() || !b || !b.isConnected || b.classList.contains('is-editing')) return;
+    if (!b) return;
+    titleField(b, {
+      value: titleOf(b),
+      label: 'Name of this plan',
+      same: titleOf(b),
+      save: function (title) { return CZ.post('/trip/canvas/plan', CZ.tripBody({ op: 'edit', act: b.dataset.act, title: title, next: CZ.here() })); },
+      saved: function (res, title) { b.querySelector('.cz-gb-t').textContent = title; b.dataset.title = title; }
+    });
+  }
+
+  // The title field in a block, shared by Rename (above) and a new plan (day_new.js, F-101: `discard` removes the block when the title is left empty).
+  //   o.value, o.label   what the field holds and is called      o.same    the title it already has (saving that changes nothing, posts nothing)
+  //   o.save(title)      -> the write's promise                  o.saved(res, title)   after it landed (the toast and Undo are shown here)
+  //   o.settle           ms after opening in which losing the focus is the touch's own mouse events, not a tap away: the field takes it back
+  //   o.discard          an empty title (Enter, tapping away) or Escape gives the block up: o.cancel() runs, and nothing is saved or refused
+  // Returns { input }. Call it from inside the gesture's own pointerup or click when the keyboard has to open (the iOS rule, day_new.js).
+  function titleField(b, o) {
+    if (!editing() || !b || !b.isConnected || b.classList.contains('is-editing')) return null;
     var t = b.querySelector('.cz-gb-t');
-    if (!t) return;
+    if (!t) return null;
     var input = mk('input', 'cz-gb-edit');
     input.type = 'text';
-    input.value = titleOf(b);
-    input.setAttribute('aria-label', 'Name of this plan');
+    input.value = o.value || '';
+    input.setAttribute('aria-label', o.label || 'Name of this plan');
     input.setAttribute('enterkeyhint', 'done');
     input.setAttribute('autocomplete', 'off');
     input.setAttribute('autocapitalize', 'sentences');
@@ -240,32 +257,38 @@
     var over = false;
     function stop(keep) {
       over = true;
+      document.removeEventListener('pointerdown', away, true);
       input.remove(); err.remove();
       t.hidden = false;
       b.classList.remove('is-editing');
-      if (keep) focusBlock(b);
+      if (keep && !o.discard) focusBlock(b);
     }
+    function giveUp() { stop(false); if (o.cancel) o.cancel(); }
+    // iOS does not blur a field when the finger lands on something that is not a control, so a tap anywhere else puts the field away itself (it saves, as tapping away does).
+    var left = false;      // a real tap away (the next pointerdown), as against the touch's own mouse events right after the field opened (o.settle)
+    function away(e) { if (e.target !== input && !(e.target.closest && e.target.closest('.cz-gb-edit'))) { left = true; input.blur(); } }
+    document.addEventListener('pointerdown', away, true);
     function commit(fromBlur) {
       if (over) return;
       var got = check(input.value);
       if (got.err) {
-        if (fromBlur) { stop(false); CZ.showToast(got.err); return; }       // tapped away from a title that cannot be saved: it goes back as it was, with the reason
+        if (o.discard && !input.value.trim()) { giveUp(); return; }        // a new plan with no title is no plan
+        if (fromBlur) { stop(false); if (o.cancel) o.cancel(); CZ.showToast(got.err); return; }       // tapped away from a title that cannot be saved: it goes back as it was, with the reason
         err.textContent = got.err;
         input.setAttribute('aria-invalid', 'true');
         input.focus();
         return;
       }
-      if (got.title === titleOf(b)) { stop(!fromBlur); return; }
+      if (got.title === o.same) { stop(!fromBlur); return; }
       input.disabled = true;
-      CZ.post('/trip/canvas/plan', CZ.tripBody({ op: 'edit', act: b.dataset.act, title: got.title, next: CZ.here() })).then(function (res) {
-        t.textContent = got.title;
-        b.dataset.title = got.title;
+      o.save(got.title).then(function (res) {
         stop(!fromBlur);
+        if (o.saved) o.saved(res, got.title);
         if (res.toast) CZ.showToast(res.toast, res.undo ? function () { CZ.undo(res.undo); } : null);
         return CZ.quiet();
       }, function (e) {
         input.disabled = false;
-        if (fromBlur) { stop(false); CZ.showToast(e && e.soft ? e.soft : 'Could not save that.'); return; }
+        if (fromBlur) { stop(false); if (o.cancel) o.cancel(); CZ.showToast(e && e.soft ? e.soft : 'Could not save that.'); return; }
         err.textContent = e && e.soft ? e.soft : 'Could not save that.';
         input.setAttribute('aria-invalid', 'true');
         input.focus();
@@ -273,14 +296,19 @@
     }
     input.addEventListener('keydown', function (e) {
       if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); commit(false); }
-      else if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); stop(true); }
+      else if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); if (o.discard) giveUp(); else stop(true); }
       else e.stopPropagation();
     }, true);
     input.addEventListener('input', function () { err.textContent = ''; input.removeAttribute('aria-invalid'); });
-    input.addEventListener('blur', function () { setTimeout(function () { commit(true); }, 0); });
+    var born = Date.now();
+    input.addEventListener('blur', function () {
+      if (o.settle && !left && Date.now() - born < o.settle && !over) { try { input.focus({ preventScroll: true }); } catch (x) { /* kept blurred */ } return; }      // the mouse events a touch ends with take the focus back: not a tap away
+      setTimeout(function () { commit(true); }, 0);
+    });
     try { input.focus({ preventScroll: true }); } catch (e) { input.focus(); }
     input.select();
     setTimeout(function () { if (!over && input.isConnected) input.scrollIntoView({ block: 'center', behavior: 'auto' }); }, 320);      // above the phone's keyboard
+    return { input: input };
   }
 
   // ---- taps: a double tap on a title edits it ---------------------------------------------------------------------------------------
@@ -313,6 +341,7 @@
   // ---- from the grid ------------------------------------------------------------------------------------------------------------
   CZ.hold = function (b) { open(b, null); };
   CZ.rename = rename;
+  CZ.titleField = titleField;      // day_new.js (F-101) types a new plan's title into the same field
   stage.addEventListener('cz:swap', function (e) {
     if (!menu) return;
     var b = e.detail && e.detail.quiet ? stage.querySelector('.cz-gb[data-act="' + menu.act + '"]') : null;
