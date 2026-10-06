@@ -5,7 +5,7 @@
 // grows it out of the Ask button: transform-origin at the button, scale and fade with --motion-dur / --motion-ease (Web Animations; none under reduced motion). The forms inside
 // (box, follow-up questions, preview, Apply) post with X-Ask and get fragments back, so the whole conversation stays in the sheet; ask.js (AskBox.init) drives the box in it.
 //
-// The iOS rule. Safari starts the microphone only from a user activation, so the tap on the tab must reach getUserMedia in the same task: the fragment and ask.js are therefore
+// The iOS rule. Safari starts the microphone only from a user activation, so the tap on the tab must start the microphone in the same task: the fragment and ask.js are therefore
 // fetched ahead of time (on load, when the shown day changes, and as the finger goes down on the tab), and the click handler puts the box in and starts it synchronously (data-mode="talk").
 // Only if the fragment has not arrived yet does the sheet open empty and fill when it does; then recording may need one more tap on the big mic.
 //
