@@ -1,13 +1,11 @@
-# Handoff (2026-10-04)
+# Handoff (2026-10-06)
 
 Where things stand for the next session.
 
-- Live: https://gitaway.me (Railway "gitaway"/"web"). Master = what's live; GitHub origin is up to date. Railway does not deploy on push: deploy with `railway up --ci --service web` (the Windows VM is logged in and linked since 2026-10-05), then push master to GitHub.
-- Done and live: the mobile companion (Today, Map, Family + photos, Help, morning push, Face ID), Paste & Convert, trip canvas with semantic zoom, touch moves and filters, Ask GitAway (voice/text proposals), Around you, Passes & documents, clean production, privacy and terms.
-- Plans and status: docs/plan.md (tickets), docs/briefs/ (approved briefs: trip-week, mobile-companion, trip-canvas), designs in docs/design/canvas/ (Mobile-Storyboards-v1, Plan-Steps-v1, Trip-Canvas-v2).
-- Shipped 2026-10-05 (live): F-090 plan of the day (dates on top, flick between days, bookings quiet, Change this day), F-091 talk on a plan (text, photo, voice notes), F-087 one Ask box (talk/type/paste, follow-ups, one preview, Apply). Not yet tried on a real iPhone, voice recording above all.
-- Next ticket: F-077 Forget a person safely (the forget-person script is dry-run only until then). Open: F-089, one Windows-only browser test (passes swipe).
-- The captain is on the trip (Oct 4–10, 2026) and will send live feedback; fix and deploy each item through the reviewer.
-- After the trip: review what the AI did (`pixi run ai-report`, docs/ai-usage.md) and decide per job.
-- Known trade-offs told to the captain: pinch on the canvas replaces page zoom there; Ask removals can't be undone; plans may overlap (Ask warns).
-- All old agent worktrees were removed on 2026-10-04 (every one was merged and clean). The unused Sept 29 "Field Notes" redesign spec is kept on branch worktree-opus-redesign-spec.
+- Live: https://gitaway.me (Railway "gitaway"/"web"). Master = what's live; GitHub origin is up to date. Railway does not deploy on push: deploy with `railway up --ci --service web` from this Windows VM (logged in and linked), then push master. Checkouts are LF (.gitattributes) so the upload matches git; Cloudflare caches unversioned asset URLs, so check a live file with `?q=<random>`.
+- The phone app is now the plan of the day: Today = the day view on today (F-092), an hour grid you edit by touch (F-097/F-098 move, resize with zoom, hold menu; F-101 hold empty time to make a plan), bookings open in place with SOS and filters (F-093), three tabs Today · Ask · Family with glass (F-096), smooth page and level changes with prefetch (F-099), a docked chat box (F-100), Ask hears you through Sarvam AI in any Indian language with English plans (F-102), a small Day | Week switch and a folding top (F-103).
+- Briefs: docs/briefs/day-plan.md, docs/briefs/touch-day.md (approved by the captain on the trip). Canvas doc: docs/trip-canvas.md (every F-090..F-103 section). AI: docs/ai-usage.md (jobs, Sarvam's 30 s limit, providers).
+- To try on the captain's iPhone (headless tests can't): Ask recording in the Home Screen app, the keyboard opening when a new plan is made, the chat box with the keyboard up, the resize zoom and hold timing, F-099's iPhone check.
+- Parked: F-095 Around you (maps/coffee) by the captain; F-077 Forget a person safely. Open: F-089 one Windows-only browser test (passes gate swipe).
+- Not reachable on the new screens yet (captain to decide): Share this day, the Notes tab, the scheduled-Uber list.
+- The captain's bar (docs/lessons.md 2026-10-05): touch-first, minimal, smooth, never a form where a finger will do.
