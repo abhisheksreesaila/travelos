@@ -637,3 +637,9 @@ Captain, 2026-10-06 (screenshot of the card with the keyboard up, its message bo
 Captain, 2026-10-06: the pop-up notifications "are little jittery… should come at the top? Or in the middle… light gradient, subtle". · Needs: none
 - [ ] every in-app toast (the canvas's move/resize/Undo toasts, the Ask sheet's result, the chat and booking messages that use a toast) appears at the top just under the heading as a light, frosted pill with a soft gradient, gliding down gently (no jump), one at a time (a new one replaces the old in place), and fading away; Undo stays a clear button inside it; reduced motion: no glide; screen readers hear it (role=status)
 - [ ] it never covers the day's heading controls or the tab bar, works over the day, the week, Family and the Ask sheet, and browser tests check its place at 390 and 320, the replace-in-place, Undo, and reduced motion
+
+## F-109 One liquid motion everywhere [todo]
+Captain, 2026-10-06: the F-106 card "opens up… like a liquid… with a slight animation, and closes the animation. That's the micro interaction that I need throughout the app… makes the whole app look really pleasant." · Needs: F-107, F-108
+- [ ] one shared motion module (the F-106 card's grow-from-the-tapped-thing spring, its easing and timing, as tokens and one small script helper) used by every sheet (booking, SOS, step, add a step, the Ask sheet), the hold menu, the date chip popover and the toasts: each grows out of what was tapped and folds back into it on close
+- [ ] screen moves share it: Day ↔ Week, opening a plan's chat, tab switches (F-099), and new chat bubbles and new or moved grid blocks settle in with the same soft spring; nothing jumps; reduced motion: no movement, a short fade at most
+- [ ] browser tests check each sheet opens from and closes into its origin (transform-origin / bounding boxes at start and end), the shared tokens are the only durations used, and reduced motion
