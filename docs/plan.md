@@ -586,3 +586,19 @@ Captain, 2026-10-05: moving between screens (week to day, a chat bubble to its c
 - [x] a link starts loading when the finger touches it (pointerdown), and the service worker answers that navigation from the fresh prefetched copy at once (a few seconds' freshness, per person, never a POST or an auth route); tabs, chat bubbles, booking and map links all benefit
 - [ ] on the canvas the next levels (every day of the trip from the week, neighbours from a day) are fetched while idle so Day | Week and the flick start at once; one motion token set (duration, easing) used by every transition
 - [ ] measured in the browser test: a tab switch and week-to-day render within a target (e.g. under 150 ms after the tap on a warm cache) and the transition runs; checked on the captain's iPhone after deploy
+
+## F-100 The chat box stays at the bottom [todo]
+Captain, 2026-10-05 (screenshot of a plan chat): the message box sits right after the messages; after sending, the screen jumps to an empty bottom. It must be fixed at the bottom like WhatsApp. · Needs: F-094
+- [ ] in the Family chat and every plan chat the composer is docked above the tab bar (safe areas and the iPhone keyboard respected: it rides up with the keyboard), the messages scroll in the space above it and open scrolled to the newest, which sits right above the box; sending keeps the newest in view; no empty gap below the last message
+- [ ] phone checks at 390 and 320 with the keyboard area simulated; browser tests send several messages and check the box stays put and the newest is visible
+
+## F-101 Make a plan by touching empty time [todo]
+Captain, 2026-10-05: "just like an event, you should be able to select the time… create an event. Then you just drag, and… give it a title… and boom, it should be done… driven off that calendar". · Needs: F-097, F-099 (grid script)
+- [ ] on the day grid an editor holds an empty slot (or taps it, then taps the "+" that appears): a 1-hour block appears there snapped to 15 minutes, with its title field open in place and the keyboard up; typing a title and Enter (or tapping away) saves it; Escape or an empty title removes it; it can be dragged and resized at once with the F-097 gestures; Undo toast; the family is told once
+- [ ] a viewer gets nothing; reduced motion; browser tests at 390 and 320 create, rename-on-create, cancel, and move a new block
+
+## F-102 Ask hears you on the iPhone app [blocked]
+Captain, 2026-10-05: the Ask mic "is not capturing or transcribing". Cause: Ask only uses the browser's speech recognition, which iPhone does not give to Home Screen apps. Fix: record on the phone (as voice notes do) and transcribe on the server through gitaway/ai.py (job "transcribe"), falling back to it whenever speech recognition is missing or fails.
+Blocked: in the Azure OpenAI resource GitAway already uses, deploy a speech-to-text model (gpt-4o-mini-transcribe, or whisper) and tell Claude its deployment name; Claude sets it on Railway as AZURE_OPENAI_TRANSCRIBE_DEPLOYMENT. The code is built and tested in the meantime.
+- [ ] where speech recognition is missing or fails (Home Screen app on iPhone), the Ask mic records (MediaRecorder, as F-091) with a clear recording state and stop, uploads the audio, and the transcript fills the box for review; up to 3 minutes; a failure keeps any typed text and says so plainly
+- [ ] the transcription runs through gitaway/ai.py as job "transcribe" (logged like every AI call, no audio or text kept), its deployment one setting; tests use a fake transport; browser test with a fake microphone
