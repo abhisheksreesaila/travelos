@@ -9,6 +9,7 @@
 //   GA.motion.spring(el, fromTransform)                                  let go of a drag: back to rest with the spring
 //   GA.motion.run(el, frames, { t: 'quick', ease: 'calm' })              any other small move, with a token's duration and easing
 //   GA.motion.origin()                                                   the thing tapped a moment ago (a toast, which nobody tapped, grows from it); null if nothing was
+// With no origin (or one scrolled off the screen) a thing rises from a small place just above where it rests.
 // `origin` is an element, a DOMRect-like { left, top, width, height } or a point { x, y }. Only transform and opacity are animated (the radius at most), so it stays on the compositor.
 // Reduced motion: nothing moves and nothing fades: it simply appears and goes (the promise resolves at once). GA.motion.log keeps the last few moves { kind, from, to, dur, easing } for the tests.
 (function () {
@@ -47,6 +48,12 @@
     if (own) el.style.transform = own;
     return r;
   }
+  function natural(el) {                  // the layout box of an element that is being moved by a scale and a translate (transform-origin 0 0): the box we see, less the transform
+    var r = rectOf(el), m = /^matrix\(([^)]+)\)$/.exec(getComputedStyle(el).transform || '');
+    if (!m) return r;
+    var v = m[1].split(',').map(parseFloat), a = v[0] || 1, d = v[3] || 1;
+    return { left: r.left - v[4], top: r.top - v[5], width: r.width / a, height: r.height / d };
+  }
   function squash(to, from) {              // the transform that makes `el` (at `to`) look like the thing it grows from
     var sx = Math.max(from.width / Math.max(to.width, 1), 0.04), sy = Math.max(from.height / Math.max(to.height, 1), 0.04);
     return 'translate(' + (from.left - to.left) + 'px,' + (from.top - to.top) + 'px) scale(' + sx + ',' + sy + ')';
@@ -54,6 +61,7 @@
   function note(kind, from, to, dur, easing) {
     var l = M.log; l.push({ kind: kind, from: from, to: to, dur: dur, easing: easing });
     if (l.length > 24) l.shift();
+    return l[l.length - 1];
   }
   function go(el, frames, dur, easing, extra) {
     if (!el || !el.animate) return Promise.resolve();
@@ -67,16 +75,29 @@
   M.open = function (el, origin, o) {
     o = o || {};
     var from = rectOf(origin);
-    if (reduced() || !el.animate || !from) return Promise.resolve();
+    if (reduced() || !el.animate) return Promise.resolve();
     var to = box(el), dur = t('spring'), e = ease('spring'), done = [];
+    if (!onScreen(from)) from = { left: to.left + to.width * 0.15, top: to.top - rem() * 0.75, width: to.width * 0.7, height: to.height * 0.6 };      // nothing (on screen) was tapped: it rises from a small place just above where it rests
     el.style.transformOrigin = '0 0';
     var sq = squash(to, from);
     var frames = [{ transform: sq, opacity: 0.35 }, { transform: 'none', opacity: 1 }];
     if (o.radius) { frames[0].borderRadius = o.radius[0]; frames[1].borderRadius = o.radius[1]; }
-    done.push(go(el, frames, dur, e, { fill: 'backwards' }));
+    var main = el.animate(frames, { duration: dur, easing: e, fill: 'backwards' });
+    done.push(main.finished.catch(function () {}));
+    var rec = note('open', from, to, dur, e);
+    // A sheet may still change size in the moment after it opens (a status line, a field): while it grows, the grow is aimed at where it really rests (its box, with the running transform taken out; no seeking).
+    (function retarget() {
+      if (!el.isConnected || main.playState !== 'running') return;
+      var now = natural(el);
+      if (Math.abs(now.left - to.left) >= 1 || Math.abs(now.top - to.top) >= 1 || Math.abs(now.width - to.width) >= 1 || Math.abs(now.height - to.height) >= 1) {
+        to = rec.to = now;
+        frames[0].transform = squash(now, from);
+        main.effect.setKeyframes(frames);
+      }
+      requestAnimationFrame(retarget);
+    })();
     if (o.scrim) done.push(go(o.scrim, [{ opacity: 0 }, { opacity: 1 }], t('calm'), ease('calm'), { fill: 'backwards' }));
     if (o.content) done.push(go(o.content, [{ opacity: 0 }, { opacity: 1 }], t('quick'), ease('calm'), { delay: Math.round(dur * 0.3), fill: 'backwards' }));
-    note('open', from, to, dur, e);
     return Promise.all(done);
   };
 

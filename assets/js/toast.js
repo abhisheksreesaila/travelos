@@ -49,11 +49,6 @@
     }
     return y;
   }
-  // nothing was tapped: it grows out of a small place just above where it settles
-  function fallback(n) {
-    var r = GA.motion.box(n);
-    return { left: r.left + r.width * 0.15, top: r.top - rem() * 0.75, width: r.width * 0.7, height: r.height * 0.6 };
-  }
   function place(n) {
     var y = anchor(n);
     if (y) n.style.setProperty('--ga-toast-y', y + 'px'); else n.style.removeProperty('--ga-toast-y');
@@ -150,7 +145,7 @@
     mine._release = release;
     mine.classList.add('is-in');
     mine._from = GA.motion.origin();                              // what was tapped a moment ago: the toast grows out of it and folds back into it
-    GA.motion.open(mine, mine._from || fallback(mine));
+    GA.motion.open(mine, mine._from);
     arm(ms);
     return el;
   };
@@ -169,7 +164,7 @@
     if (instant === true || reduced.matches) { drop(); return; }
     gone.classList.remove('is-in');
     el = gone;
-    GA.motion.close(gone, gone._from && gone._from.isConnected ? gone._from : fallback(gone));
+    GA.motion.close(gone, gone._from && gone._from.isConnected ? gone._from : null);
     removeT = setTimeout(drop, GA.motion.t('dur') + 80);          // after its fold
   };
 })();

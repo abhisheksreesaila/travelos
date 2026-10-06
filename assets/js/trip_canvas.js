@@ -117,9 +117,11 @@
   }
 
   // Name the element that zooms, run the swap inside a View Transition, and clear the name afterwards.
+  // The thing named `key`: a sheet over a level (a booking's) wins over the line it was opened from, which stays on the page behind it (F-109: the line grows into the sheet, the sheet folds back into the line).
+  function hero(key) { return stage.querySelector('.cz-sheet[data-zk="' + key + '"]') || stage.querySelector('[data-zk="' + key + '"]'); }
   function run(html, dir, key, after) {
     var animate = !reduced.matches && typeof document.startViewTransition === 'function';
-    var from = animate && key && KEY.test(key) ? stage.querySelector('[data-zk="' + key + '"]') : null;
+    var from = animate && key && KEY.test(key) ? hero(key) : null;
     if (!animate) { swap(html, reduced.matches ? '' : dir); if (after) after(); return Promise.resolve(); }
     root.dataset.czDir = dir;
     if (from) from.style.viewTransitionName = 'cz-hero';
@@ -127,7 +129,7 @@
       if (from) from.style.viewTransitionName = '';
       swap(html, '');
       if (after) after();
-      var to = key && KEY.test(key) ? stage.querySelector('[data-zk="' + key + '"]') : null;
+      var to = key && KEY.test(key) ? hero(key) : null;
       if (to) to.style.viewTransitionName = 'cz-hero';
     });
     var clear = function () {

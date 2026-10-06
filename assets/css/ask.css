@@ -7,7 +7,7 @@
 .ak-label { font-size: max(var(--text-min), 0.8125rem); font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); margin: 0; }
 #ak-day { min-height: 3rem; padding: 0 0.875rem; border: 0.125rem solid var(--line); border-radius: 1rem; background: var(--card); color: var(--ink); font-family: var(--font-body); font-size: 1rem; font-weight: 700; }
 /* the box is a note being written (F-102): the sticker's warm paper and handwriting, large and readable; words still being recognised are lighter until they are final */
-#ak-text { width: 100%; min-height: 9rem; padding: 0.875rem 1.125rem; border: 0.125rem solid var(--line); border-radius: 1rem; background: var(--note); color: var(--ink); font-family: var(--font-hand); font-weight: 700; font-size: 1.75rem; line-height: 1.2; resize: none; overflow-y: auto; box-shadow: var(--shadow-sticker); transition: color 0.35s ease; }
+#ak-text { width: 100%; min-height: 9rem; padding: 0.875rem 1.125rem; border: 0.125rem solid var(--line); border-radius: 1rem; background: var(--note); color: var(--ink); font-family: var(--font-hand); font-weight: 700; font-size: 1.75rem; line-height: 1.2; resize: none; overflow-y: auto; box-shadow: var(--shadow-sticker); transition: color var(--motion-dur) ease; }
 #ak-text::placeholder { color: var(--ink-2); font-weight: 600; opacity: 1; }
 #ak-text[data-words="interim"] { color: var(--ink-3); }
 #ak-text.is-typing-in { animation: ak-ink 0.5s ease-out; }
