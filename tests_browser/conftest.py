@@ -83,7 +83,7 @@ def base_url():
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
         port = s.getsockname()[1]
-    server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port, log_level="warning"))
+    server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port, log_level="warning", timeout_graceful_shutdown=2))      # F-099/F-101: idle-time fetches can still be open when the session ends; do not wait for them
     thread = threading.Thread(target=server.run, daemon=True)
     thread.start()
     for _ in range(100):

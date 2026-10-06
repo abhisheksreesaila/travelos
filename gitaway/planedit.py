@@ -68,35 +68,35 @@ def _tell(session, fam, t, act_id, was, now):
     familydb.run(fam.db, "UPDATE thread SET payload = :p WHERE rowid = :n", p=payload, n=made["n"])
 
 
-def add(session, *, day, start, end, title):
-    """Make a plan (F-101: the touch grid's hold on empty time), through the calendar's own add rules with the grid's grain. The family is told once, and the card
-    is tagged like `change`'s so a move, resize or rename of the new plan right after (inside `canvas.CARD_WINDOW`) changes that card and sends nothing more.
-    -> {"act": the plan, "undo": {"added": its id}}"""
-    a = cal.add_activity(session, day=day, start=start, end=end, title=title, kind="fun", fine=True)
+def add(session, *, day, start, end, title, id=None):
+    """Make a plan (F-101: the touch grid's hold on empty time), through the calendar's own add rules with the grid's grain. The family is told once: the card is written in
+    the add's own transaction with a tag, so a move, resize or rename of the new plan right after (inside `canvas.CARD_WINDOW`) changes that card and sends nothing more.
+    `id` is the client's own (the grid carries the calendar's next number), so a retry after a lost reply adds nothing twice (`tripcal.add_activity`).
+    -> {"act": the plan, "undo": {"added": its id, "after": what it was made as}}"""
+    a = cal.add_activity(session, day=day, start=start, end=end, title=title, kind="fun", fine=True, id=id)
     if a is None:
         raise cal.CalendarError("That did not work.")
-    with ses.family(session) as fam, familydb.transaction(fam.db):
-        last = familydb.row(fam.db, "SELECT rowid AS n, * FROM thread WHERE trip_id = :t ORDER BY rowid DESC LIMIT 1", t=fam.trip_id)
-        if last and last["kind"] == "change" and last["author"] == fam.traveler.id and f" added {a.title} on " in last["text"]:
-            payload = json.dumps({"action": "add", "key": f"plan:{a.id}", "orig": [a.day, a.start, a.end, a.title]}, separators=(",", ":"))
-            familydb.run(fam.db, "UPDATE thread SET payload = :p WHERE rowid = :n", p=payload, n=last["n"])
-    return {"act": a, "undo": {"added": a.id}}
+    return {"act": a, "undo": {"added": a.id, "after": {"day": a.day, "start": a.start, "end": a.end, "title": a.title}}}
 
 
 def unadd(session, snapshot):
-    """Undo of `add`: the plan goes (its parts and steps too, as for a delete). While the family's card for it is still the newest, it goes too, as if nothing happened;
-    after other news, they are told it was removed."""
+    """Undo of `add`: the plan goes (its parts and steps too, as for a delete). Refused when someone changed it since (the snapshot's "after" is what it was made as). While
+    the family's card for it is still the newest, it goes too, as if nothing happened; after other news, they are told it was removed."""
     act = snapshot.get("added") if isinstance(snapshot, dict) else None
-    if not isinstance(act, str) or act.startswith("b-") or not act:
+    after = snapshot.get("after") if isinstance(snapshot, dict) and isinstance(snapshot.get("after"), dict) else {}
+    if not isinstance(act, str) or act.startswith("b-") or not act or not (_int(after.get("day")) and _int(after.get("start")) and _int(after.get("end")) and isinstance(after.get("title"), str)):
         raise cal.CalendarError("There is nothing to undo.")
     with ses.family(session) as fam:
         if not fam or not fam.trip_id:
             raise cal.CalendarError("There is nothing to undo.")
         with familydb.transaction(fam.db):
+            row = familydb.row(fam.db, "SELECT * FROM activities WHERE trip_id = :t AND scope = '' AND act_id = :i AND gone = 0", t=fam.trip_id, i=act[:20])
+            if row is None:
+                raise cal.CalendarError("That plan is gone.")
+            if (row["day"], row["start_min"], row["end_min"], row["title"]) != (after["day"], after["start"], after["end"], after["title"]):
+                raise cal.CalendarError("Someone changed it since. Nothing was undone.")
             card = _last_card(fam, f"plan:{act}")
             gone = cal.delete_in(session, fam, act[:20], say=not card)
-            if gone is None:
-                raise cal.CalendarError("That plan is gone.")
             if card:
                 familydb.run(fam.db, "DELETE FROM thread WHERE rowid = :n", n=card["n"])
     return gone

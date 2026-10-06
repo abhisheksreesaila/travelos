@@ -137,7 +137,7 @@ def test_a_park_day_with_bookings_fits_and_the_park_block_opens_its_block(phone)
 def test_a_blank_day_keeps_talk_and_paste_and_the_week_the_filters_and_sos_still_work(phone):
     open_day(phone)
     expect(phone.locator("#cz-say-talk")).to_be_visible()
-    assert phone.locator("#cz-grid").count() == 0
+    assert phone.locator("#cz-grid").count() == 1 and phone.locator(".cz-gb").count() == 0      # F-101: an editor's blank day has the grid, under the compact Talk / Paste row
     plan("Lunch", 12 * 60, 13 * 60)
     open_day(phone)
     assert phone.locator("#cz-grid").count() == 1 and phone.locator("#cz-say-talk").count() == 0

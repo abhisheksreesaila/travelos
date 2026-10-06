@@ -210,6 +210,9 @@ def test_a_new_plan_can_be_held_and_moved_at_once_and_the_family_is_told_once(da
     assert now(a.id)[:2] == (16 * 60, 17 * 60)
     mine = cards()[before:]
     assert len(mine) == 1 and "added Pier walk" in mine[0]["text"] and "4:00 PM" in mine[0]["text"]       # one card, still saying added, with where it ended up
+    expect(day.locator(sel)).to_be_visible()                                                               # the refresh after the move has landed (the page is swapped under the block)
+    day.wait_for_timeout(300)
+    show(day, sel)
     edge = box(day, sel)                                                                                   # and resized: the F-097 edge gesture
     ex, ey = edge["x"] + edge["width"] / 2, edge["y"] + edge["height"] - 7
     fire(day, "pointerdown", ex, ey)
@@ -388,3 +391,91 @@ def test_the_new_block_pops_in_but_not_with_reduced_motion(canvas_page):
     fire(page, "pointerup", *spot(page, 15 * 60))
     page.keyboard.press("Escape")
     expect(new_block(page)).to_have_count(0)
+
+
+def test_a_refresh_dropped_as_stale_is_asked_for_again_so_a_failed_write_cannot_leave_a_draft_on_screen(day):
+    """Review: the refresh after a create was fetched, then another write (which failed, so brought no refresh of its own) bumped the write count: the stale copy is dropped and
+    the page must still end up showing what is saved (a real block, not the draft with no data-act)."""
+    held = []
+    pattern = re.compile(rf".*day={SUNDAY}&frag=1$")
+    day.route(pattern, lambda route: held.append((route, route.fetch())) if not held else route.continue_())      # only the create's own refresh is held back
+    start_creating(day)
+    day.keyboard.type("Pier walk")
+    day.keyboard.press("Enter")
+    for _ in range(60):
+        if held:
+            break
+        day.wait_for_timeout(50)
+    assert held, "the create's refresh was never asked for"
+    day.route("**/trip/canvas/plan", lambda route: route.abort())
+    day.evaluate("CZ.post('/trip/canvas/plan', new URLSearchParams({ op: 'delete', act: 'a99' })).catch(() => {})")      # a later write that fails
+    day.wait_for_timeout(300)
+    day.unroute("**/trip/canvas/plan")
+    held[0][0].fulfill(response=held[0][1])                      # the old answer arrives: dropped, and asked for again (now unrouted)
+    day.wait_for_function("() => document.querySelector('.cz-gb[data-title=\"Pier walk\"][data-act]')")
+    assert day.locator(".cz-gb.is-new").count() == 0
+
+
+def test_a_blank_day_can_be_held_too_with_one_compact_row_of_talk_and_paste(phone):
+    open_day(phone)                                                                                          # the free day, nothing planned
+    assert phone.locator("#cz-grid").count() == 1 and phone.locator(".cz-gb").count() == 0
+    row = box(phone, "#cz-empty")
+    assert row["height"] < 90 and phone.locator("#cz-say-talk").is_visible() and phone.locator("#cz-say-paste").is_visible()
+    assert abs(box(phone, "#cz-say-talk")["y"] - box(phone, "#cz-say-paste")["y"]) < 4                        # one row
+    checks(phone)
+    start_creating(phone, 10 * 60 + 5)
+    phone.keyboard.type("First plan")
+    phone.keyboard.press("Enter")
+    expect(toast(phone)).to_contain_text("First plan added")
+    assert [(a.start, a.end) for a in made() if a.title == "First plan"] == [(10 * 60, 11 * 60)]
+    phone.wait_for_function("() => document.querySelector('.cz-gb[data-title=\"First plan\"][data-act]')")
+    assert phone.locator("#cz-empty").count() == 0                                                           # it has a plan now: the card is gone
+
+
+def test_a_viewer_of_a_blank_day_has_no_grid_to_hold(canvas_page, browser, base_url):
+    owner = canvas_page(viewport=PHONE)
+    mail = f"vi.ewer@{uuid.uuid4().hex[:8]}.example.com"
+    assert owner.context.request.post(f"{base_url}/family/invite", form={"email": mail, "role": "viewer"}, max_redirects=0).status < 400
+    ctx = browser.new_context(viewport=PHONE, reduced_motion="reduce", has_touch=True, is_mobile=True)
+    try:
+        ctx.set_default_timeout(9000)
+        ctx.request.post(f"{base_url}/signin", form={"email": mail, "next": "/", "intent": "save"}, max_redirects=0)
+        page = ctx.new_page()
+        page.goto(f"{base_url}/trip/canvas?day={SUNDAY}")
+        page.wait_for_selector(".cz-view[data-level=day]")
+        assert page.locator("#cz-grid").count() == 0 and "Nothing planned yet" in page.locator("#main").inner_text()
+    finally:
+        ctx.close()
+
+
+def test_a_retry_after_a_lost_reply_does_not_make_the_plan_twice(day):
+    start_creating(day)
+    day.keyboard.type("Pier walk")
+    day.route("**/trip/canvas/plan", lambda route: (route.fetch(), route.abort()))                           # the server makes it, the reply never comes
+    day.keyboard.press("Enter")
+    expect(day.locator(".cz-gb-err")).to_contain_text("Could not save", timeout=15000)
+    day.unroute("**/trip/canvas/plan")
+    expect(field(day)).to_be_focused()
+    day.keyboard.press("Enter")                                                                              # the finger tries again with the same plan
+    expect(toast(day)).to_contain_text("Pier walk added")
+    assert [a.title for a in made()].count("Pier walk") == 1
+    assert len([c for c in cards() if "added Pier walk" in c["text"]]) == 1
+
+
+def test_losing_the_focus_right_after_it_opens_keeps_the_field_and_does_not_refocus_from_the_blur(day):
+    day.evaluate(LOG)
+    start_creating(day)
+    field(day).evaluate("e => e.blur()")                                                                      # the touch's own mouse events take the focus at once
+    day.wait_for_timeout(120)
+    assert field(day).count() == 1 and day.evaluate("window.__focus") == [["INPUT", "pointerup"]]             # still open, and nothing tried to focus it again from a blur
+    field(day).tap()                                                                                          # a tap on it brings the keyboard back
+    expect(field(day)).to_be_focused()
+
+
+def test_the_add_a_plan_button_shows_when_the_keyboard_reaches_it(day):
+    day.locator(".cz-gadd").focus()
+    day.keyboard.press("Shift+Tab")
+    day.keyboard.press("Tab")                                                                                 # a keyboard move, so focus-visible
+    b = box(day, ".cz-gadd")
+    assert b["width"] > 40 and b["height"] >= 43.5
+    expect(day.locator(".cz-gadd")).to_be_in_viewport()

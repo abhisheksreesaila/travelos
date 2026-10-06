@@ -752,7 +752,7 @@
         cache = {};
         var y = window.scrollY, e0 = epoch;
         fetchLevel(here()).then(function (html) {
-          if (e0 !== epoch) { done(false); return; }       // another write started meanwhile: its own refresh brings the page up to date, and this copy is already old
+          if (e0 !== epoch) { whenIdle(function () { CZ.quiet().then(done); }); return; }       // a write ran meanwhile, so this copy is already old: ask again (even if that write fails and brings no refresh of its own)
           var back = CZ.beforeQuiet ? CZ.beforeQuiet() : null;      // the day grid puts the focus back on the block that had it
           quietSwap = true;
           try { swap(html, ''); } finally { quietSwap = false; }

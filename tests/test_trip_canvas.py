@@ -124,7 +124,7 @@ def test_the_unmatched_initials_are_drawn_dashed(trip):
 
 def test_a_free_day_asks_editors_to_say_the_plan(trip):
     page = trip.get("/trip/canvas?day=2").text      # F-090: talk or paste the plan (Ask on that day) instead of one plan at a time
-    assert 'id="cz-empty"' in page and "Say the plan for this day" in page and "/trip/ask?day=2&amp;mode=talk" in page
+    assert 'id="cz-empty"' in page and "Say the plan" in page and "/trip/ask?day=2&amp;mode=talk" in page
 
 
 def test_a_day_that_does_not_exist_goes_back_to_the_week(trip):

@@ -116,6 +116,10 @@
 .cz .cz-gb-edit[aria-invalid="true"] { border-color: var(--coral-deep); }
 .cz .cz-gb-err { color: var(--coral-deep); font-weight: 800; font-size: var(--cz-small); line-height: 1.2; }
 .cz .cz-gb-err:empty { display: none; }
+/* a blank day for an editor: Talk / Paste are one small row above the grid, which is there to hold */
+.cz .cz-empty.cz-say-compact { flex-direction: row; gap: 0.5rem; padding: 0.5rem; border-radius: 1.125rem; }
+.cz .cz-say-compact .cz-say-go { flex: 1 1 0; min-width: 0; min-height: 2.75rem; }
+.cz .cz-gadd:focus-visible { position: static; width: auto; height: auto; margin: 0.25rem; padding: 0.5rem 0.875rem; clip: auto; clip-path: none; overflow: visible; white-space: normal; display: inline-flex; min-height: 2.75rem; align-items: center; border-radius: var(--r-pill); background: var(--ink); color: #FFFFFF; font-weight: 800; position: relative; z-index: 9; }
 /* a new plan (F-101): hold empty time, or tap it and tap the "+". The block pops in, follows the finger, then its title field opens; the rest of the grid is calm meanwhile. */
 .cz .cz-gb.is-new { z-index: 8; box-shadow: inset 0.25rem 0 0 var(--accent), var(--shadow-lg), 0 0 0 0.125rem var(--coral); animation: cz-pop 0.18s var(--cz-ease); }
 .cz .cz-grid.is-making .cz-gb:not(.is-new), .cz .cz-grid.is-making .cz-gbk { opacity: 0.55; pointer-events: none; transition: opacity 0.16s ease; }

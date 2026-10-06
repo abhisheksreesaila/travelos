@@ -125,11 +125,25 @@
   });
 
   // ---- the field -----------------------------------------------------------------------------------------------------------------
+  var sent = {};          // grid's next number -> how many ids it has handed out since the page was drawn
+  function newId(g) {
+    var n = parseInt(g.dataset.next, 10);
+    if (!n) return '';
+    var k = sent[n] || 0;
+    sent[n] = k + 1;
+    return 'a' + (n + k);
+  }
   function openField(g, draft) {
-    var s = +draft.dataset.s, e = +draft.dataset.e;
+    var s = +draft.dataset.s, e = +draft.dataset.e, id = null;
     var f = CZ.titleField(draft, {
       value: '', label: 'Name of the new plan', same: null, discard: true, settle: 350,
-      save: function (title) { return CZ.post('/trip/canvas/plan', CZ.tripBody({ op: 'add', day: g.dataset.day, start: s, end: e, title: title, next: CZ.here() })); },
+      save: function (title) {
+        // The plan's own id, from the calendar's next number the grid carries: a retry after a lost reply (or Enter pressed again) names the same plan, so it is never made twice.
+        if (id === null) id = newId(g);
+        var fields = { op: 'add', day: g.dataset.day, start: s, end: e, title: title, next: CZ.here() };
+        if (id) fields.id = id;
+        return CZ.post('/trip/canvas/plan', CZ.tripBody(fields));
+      },
       saved: function (res, title) { draft.querySelector('.cz-gb-t').textContent = title; calm(false); },      // the refresh that follows makes it a real block
       cancel: function () { if (draft.parentNode) draft.parentNode.removeChild(draft); calm(false); }
     });

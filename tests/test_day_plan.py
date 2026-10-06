@@ -72,9 +72,16 @@ def test_bookings_are_quiet_lines_in_time_order_with_a_tap_to_their_details(trip
     assert "cz-plain is-booked" not in page        # no booking is a bright card any more
 
 
-def test_a_day_with_only_bookings_says_nothing_is_planned_and_still_shows_them(trip):
+def test_a_day_with_only_bookings_still_shows_them_under_the_editors_compact_row(trip):
     page = day(trip, 0)
-    assert "Nothing planned yet" in text(page) and page.index('id="cz-empty"') < page.index('class="cz-bk')
+    assert page.index('id="cz-empty"') < page.index('id="cz-grid"') < page.index('class="cz-bk') and "Nothing planned yet" not in text(page)      # F-101: the grid is there to hold
+
+
+def test_a_viewer_keeps_the_plain_blank_day_with_its_booking_lines(azure, crew):
+    ari, viewer = crew
+    added(ari)
+    seen = bare(viewer.get("/trip/canvas?day=0").text)
+    assert "Nothing planned yet" in text(seen) and seen.index('id="cz-empty"') < seen.index('class="cz-bk')                                    # a viewer keeps the plain blank view
 
 
 def test_a_park_day_shows_its_plan_as_the_card_and_no_booking_line(trip):
@@ -90,7 +97,7 @@ def test_an_empty_day_offers_talk_and_paste_to_an_editor(trip):
     assert 'id="cz-say-talk"' not in park
     free = day(trip, 2)
     assert 'href="/trip/ask?day=2&amp;mode=talk"' in tag(free, "cz-say-talk") and 'href="/trip/ask?day=2&amp;mode=paste"' in tag(free, "cz-say-paste")
-    assert "Say the plan for this day" in text(free) and 'id="cz-say"' not in free
+    assert "Say the plan" in text(free) and "Paste a plan" in text(free) and 'id="cz-say"' not in free
 
 
 def test_a_viewer_sees_the_day_but_no_way_to_change_it(azure, crew):

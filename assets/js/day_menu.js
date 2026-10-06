@@ -302,7 +302,9 @@
     input.addEventListener('input', function () { err.textContent = ''; input.removeAttribute('aria-invalid'); });
     var born = Date.now();
     input.addEventListener('blur', function () {
-      if (o.settle && !left && Date.now() - born < o.settle && !over) { try { input.focus({ preventScroll: true }); } catch (x) { /* kept blurred */ } return; }      // the mouse events a touch ends with take the focus back: not a tap away
+      // The mouse events a touch ends with can take the focus back right after it opened: that is not a tap away, so the field stays open. It is not refocused from here (iOS refuses
+      // a focus() outside a user activation): if the keyboard went down, the field is still there and a tap on it brings the keyboard back.
+      if (o.settle && !left && Date.now() - born < o.settle && !over) return;
       setTimeout(function () { commit(true); }, 0);
     });
     try { input.focus({ preventScroll: true }); } catch (e) { input.focus(); }

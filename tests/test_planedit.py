@@ -165,7 +165,7 @@ def test_add_makes_the_plan_through_the_calendars_rules_with_a_five_minute_grain
     got = planedit.add(ari, day=1, start=14 * 60 + 5, end=15 * 60 + 5, title="  Pier   walk ")
     a = cal.get_activity(ari, got["act"].id)
     assert (a.day, a.start, a.end, a.title, a.kind) == (1, 14 * 60 + 5, 15 * 60 + 5, "Pier walk", "fun")
-    assert got["undo"] == {"added": a.id}
+    assert got["undo"] == {"added": a.id, "after": {"day": 1, "start": 14 * 60 + 5, "end": 15 * 60 + 5, "title": "Pier walk"}}
     planedit.add(ari, day=1, start=14 * 60 + 30, end=15 * 60, title="Overlap is fine")       # F-086: families split up
     for bad, why in (({"title": "   "}, "Give it a title."), ({"title": "x" * 41}, "40 characters"), ({"day": 99}, "inside your trip"),
                      ({"start": 21 * 60 + 30, "end": 22 * 60 + 30}, "Plan between")):
@@ -203,6 +203,27 @@ def test_undoing_an_add_removes_the_plan_and_the_card_nobody_needs(ari, announce
         planedit.unadd(ari, got["undo"])
     with pytest.raises(cal.CalendarError):
         planedit.unadd(ari, {"added": "b-out"})
+
+
+def test_undoing_an_add_is_refused_when_someone_changed_the_plan_since(ari, announced):
+    got = planedit.add(ari, day=1, start=14 * 60, end=15 * 60, title="Pier walk")
+    cal.update_activity(ari, got["act"].id, title="Pier stroll")                          # another member renames it
+    with pytest.raises(cal.CalendarError) as e:
+        planedit.unadd(ari, got["undo"])
+    assert "Someone changed it since" in str(e.value) and cal.get_activity(ari, got["act"].id).title == "Pier stroll"
+    with pytest.raises(cal.CalendarError):
+        planedit.unadd(ari, {"added": got["act"].id})                                       # a snapshot without "after" is not ours
+
+
+def test_the_added_card_is_tagged_in_the_adds_own_transaction_and_a_retry_adds_nothing_twice(ari, announced):
+    base = len(cards(ari))
+    first = planedit.add(ari, day=1, start=14 * 60, end=15 * 60, title="Pier walk", id="a77")
+    again = planedit.add(ari, day=1, start=14 * 60, end=15 * 60, title="Pier walk", id="a77")      # the reply was lost and the finger sent it again
+    assert first["act"].id == again["act"].id == "a77"
+    assert [a.title for a in cal.activities(ari)].count("Pier walk") == 1 and len(cards(ari)) == base + 1 and len(announced) == 1
+    assert '"key":"plan:a77"' in cards(ari)[-1]["payload"]
+    with pytest.raises(cal.CalendarError):
+        planedit.add(ari, day=1, start=14 * 60, end=15 * 60, title="Bad id", id="x1")
 
 
 def test_undoing_an_add_after_the_family_saw_other_news_says_it_was_removed(ari, announced):
