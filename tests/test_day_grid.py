@@ -162,7 +162,7 @@ def test_moving_a_plan_saves_it_and_answers_with_the_toast_and_an_undo(trip):
     r = edit(trip, a.id, start=12 * 60 + 30, end=13 * 60 + 30)
     got = r.json()
     assert r.status_code == 200 and got["toast"] == "Lunch moved to 12:30 PM" and got["plan"]["start"] == 750
-    assert got["undo"] == {"act": a.id, "day": 2, "start": 720, "end": 780, "title": "Lunch"}
+    assert got["undo"] == {"act": a.id, "day": 2, "start": 720, "end": 780, "title": "Lunch", "after": {"day": 2, "start": 750, "end": 810, "title": "Lunch"}}
     assert cal.get_activity(me, a.id).start == 750
     back = trip.post("/trip/canvas/plan", data={"op": "undo", "undo": json.dumps(got["undo"])}, headers={"X-Canvas": "1"})
     assert back.json()["toast"] == "Put back" and cal.get_activity(me, a.id).start == 720

@@ -501,7 +501,7 @@ def parse_time(value, what):
     return int(m.group(1)) * 60 + int(m.group(2))
 
 
-def _clean(t, blocks, *, day, start, end, title, kind, fine=False):
+def _clean(t, blocks, *, day, start, end, title, kind, fine=False, was=None):
     """Validate an activity on trip `t` with booked `blocks`. Overlapping a booking, a ride or another plan is never refused (F-086:
     families split up); `overlaps` tags it where it is listed. `fine` is the touch day grid's grain (F-097): times snap to 5 minutes and a plan may be
     15 minutes long, where the forms keep 15 and 30."""
@@ -520,7 +520,11 @@ def _clean(t, blocks, *, day, start, end, title, kind, fine=False):
     if not 0 <= day < n:
         raise CalendarError("Pick a day inside your trip.")
     grain, shortest = (FINE_SNAP, FINE_MIN_LEN) if fine else (SNAP, MIN_LEN)
-    s, e = snap(parse_time(start, "start"), grain), snap(parse_time(end, "end"), grain)
+    s, e = parse_time(start, "start"), parse_time(end, "end")
+    keep = was or (None, None)
+    s, e = (s if s == keep[0] else snap(s, grain)), (e if e == keep[1] else snap(e, grain))      # a time nobody changed is not snapped again (a 12:05 plan made on the phone)
+    if was and e - s == was[1] - was[0]:
+        shortest = 1                                                                              # nor is a length nobody changed held to the forms' minimum (a 15-minute plan, moved or renamed)
     lo = grid_start(blocks)
     if not (lo <= s and e <= GRID_END):
         raise CalendarError(f"Plan between {fmt_time(lo)} and {fmt_time(GRID_END)}.")
@@ -649,7 +653,7 @@ def update_in(session, fam, t, blocks, id_, *, day=None, start=None, end=None, t
         raise CalendarError("That activity is gone.")
     d, s, e, name = _clean(
         t, blocks, day=row["day"] if day is None else day, start=row["start_min"] if start is None else start,
-        end=row["end_min"] if end is None else end, title=row["title"] if title is None else title, kind=row["kind"] if kind is None else kind, fine=fine)
+        end=row["end_min"] if end is None else end, title=row["title"] if title is None else title, kind=row["kind"] if kind is None else kind, fine=fine, was=(row["start_min"], row["end_min"]))
     changes = {}
     if (day, start, end) != (None, None, None):
         changes.update(day=d, start_min=s, end_min=e)

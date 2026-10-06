@@ -261,7 +261,7 @@ def _check_time(ctx, title, start, end, day=None, old=None):
     if not s or not e:
         raise SpeakError(f"{title}: the time was not clear")
     try:
-        _, sm, em, _ = cal._clean(ctx["t"], ctx["blocks"], day=day, start=_minutes(s), end=_minutes(e), title=title, kind="fun")
+        _, sm, em, _ = cal._clean(ctx["t"], ctx["blocks"], day=day, start=_minutes(s), end=_minutes(e), title=title, kind="fun", was=(old[1], old[2]) if old else None)
     except cal.CalendarError as err:
         raise SpeakError(f"{title}: {err}")
     unchanged = old is not None and (old[0], old[1]) == (day, sm)

@@ -157,7 +157,7 @@ def _hour_long(ops) -> list:
     out = []
     for o in ops:
         if o.get("op") == "add_plan" and speak._clock(o.get("start")) and not speak._clock(o.get("end")):
-            o = dict(o, end=speak._hhmm(min(speak._minutes(speak._clock(o["start"])) + 60, cal.GRID_END)))
+            o = dict(o, end=speak._hhmm(min(speak._minutes(speak._clock(o["start"])) + 60, 23 * 60 + 59)))
         out.append(o)
     return out
 
