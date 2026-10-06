@@ -19,9 +19,9 @@ import json
 
 from fasthtml.common import A, Button, Div, Fieldset, Form, H2, H3, Input, Label, Legend, Link, Option, P, Select, Span, Textarea
 from starlette.concurrency import run_in_threadpool
-from starlette.responses import RedirectResponse
+from starlette.responses import JSONResponse, PlainTextResponse, RedirectResponse
 
-from gitaway import access, ai, canvas, familythread, pickers, say, session as ses, speak, tripcal as cal
+from gitaway import access, ai, canvas, familythread, pickers, say, session as ses, speak, tripcal as cal, voicenotes
 from gitaway.icons import icon
 from gitaway.layout import trip_field
 
@@ -209,6 +209,7 @@ def ask_button(day, compact=False, ident="ak-open") -> A:
 
 def register(app):
     from gitaway.pages import phone_tabs
+    register_transcribe(app)
 
     def show(request, session, *, status=200, **state):
         request.scope["ask"] = state
@@ -310,3 +311,61 @@ def register(app):
 def _guard(session):
     from gitaway import phone
     return phone.guard(session, "/trip/ask")
+
+
+# ---- voice typing where the phone has no speech recognition (F-102) ------------------------------------------------------
+
+TRANSCRIBE_PATH = "/trip/ask/transcribe"
+NO_VOICE = "Voice typing isn't set up yet — tap the microphone on your keyboard to dictate."
+OVERHEAD = 100_000   # the form's own fields around the recording
+
+
+class UploadLimit:
+    """Refuse an oversized recording from its Content-Length, before a byte of the body is read or parsed."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http" and scope["method"] == "POST" and scope["path"] == TRANSCRIBE_PATH:
+            headers = dict(scope["headers"])
+            try:
+                size = int(headers.get(b"content-length") or 0)
+            except ValueError:
+                size = 0
+            if b"content-length" not in headers:
+                await PlainTextResponse("Send the recording with its length.", status_code=411)(scope, receive, send)
+                return
+            if size > voicenotes.MAX_BYTES + OVERHEAD:
+                await PlainTextResponse(f"That recording is too large (at most {voicenotes.MAX_BYTES // (1024 * 1024)} MB).", status_code=413)(scope, receive, send)
+                return
+        await self.app(scope, receive, send)
+
+
+MIMES = {"mp4": "audio/mp4", "webm": "audio/webm", "ogg": "audio/ogg"}
+
+
+def register_transcribe(app):
+    app.add_middleware(UploadLimit)
+
+    @app.post(TRANSCRIBE_PATH)
+    async def transcribe(request, session):
+        """A recording from the Ask box's microphone -> {"text"}. Editors only (gitaway.access). The audio lives in memory for this request and is never written."""
+        if ses.current_traveler(session) is None:
+            return PlainTextResponse("Sign in first.", status_code=401)
+        if not ai.configured("transcribe"):
+            return PlainTextResponse(NO_VOICE, status_code=503)
+        form = await request.form()
+        f = form.get("audio")
+        if not hasattr(f, "read"):
+            return PlainTextResponse("Record something first.", status_code=400)
+        data = await f.read(voicenotes.MAX_BYTES + 1)
+        try:
+            kind, _ = voicenotes.check(data, form.get("secs"))
+        except voicenotes.VoiceError as e:
+            return PlainTextResponse(str(e).replace("voice note", "recording"), status_code=e.status)
+        try:
+            words = await run_in_threadpool(ai.transcribe, (session or {}).get("tenant_id", ""), data, f"voice.{voicenotes.TYPES[kind][0]}", MIMES[kind])
+        except ai.AIError as e:
+            return PlainTextResponse(str(e), status_code=503)
+        return JSONResponse({"text": words[: say.LIMIT]})
