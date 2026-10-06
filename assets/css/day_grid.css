@@ -67,7 +67,7 @@
 .cz .cz-gbk.is-pill .cz-bk-row { display: flex; align-items: center; justify-content: space-between; gap: 0.25rem; min-width: 0; color: var(--ink-3); }
 .cz .cz-gbk.is-pill .cz-bk-time { font-size: var(--cz-small); line-height: 1.15; font-weight: 800; white-space: nowrap; color: var(--ink-2); }
 .cz .cz-gbk.is-pill .cz-bk-row svg { flex-shrink: 0; width: 0.875rem; height: 0.875rem; }
-.cz .cz-gbk.is-pill .cz-bk-t { flex: none; min-width: 0; font-size: var(--cz-small); line-height: 1.15; white-space: normal; overflow-wrap: normal; word-break: normal; }      /* wraps to a second line; a word is never cut */
+.cz .cz-gbk.is-pill .cz-bk-t { flex: none; min-width: 0; font-size: var(--cz-small); line-height: 1.15; white-space: normal; overflow-wrap: break-word; word-break: normal; }      /* wraps to a second line; only a single word too long for the pill breaks, never spilling out */
 .cz .cz-gbk.is-pill:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.0625rem; }
 .cz .cz-gb-open { position: absolute; inset: 0; z-index: 1; border-radius: inherit; }
 .cz .cz-gb-grip { position: absolute; z-index: 2; left: 50%; bottom: 0.1875rem; width: 2rem; height: 0.25rem; margin-left: -1rem; border-radius: var(--r-pill); background: rgba(30, 26, 46, .28); pointer-events: none; }
