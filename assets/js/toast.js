@@ -13,27 +13,44 @@
 (function () {
   var GA = window.GA = window.GA || {};
   if (GA.toast) return;
-  var el = null, body = null, hideT = 0, swapT = 0, removeT = 0, latest = null, pressed = false, queued = false;
-  var HEADS = ['.cz-fold.is-on .cz-fold-bar', '.cz-head', '.tp-head', '.ga-header'];
+  var el = null, body = null, hideT = 0, swapT = 0, removeT = 0, latest = null, pressed = false, queued = false, curMs = 4500;
+  // the heading and every row of controls under it: the day's kinds and step filters, Family's Chat / Photos / Invite and Quiet rows, the calendar's top bar
+  var HEADS = ['.cz-fold.is-on .cz-fold-bar', '.cz-head', '.cz-bar', '.cz-filters', '.tp-head', '.fam-bar', '.ft-notify', '.ga-header', '.cal-bar'];
   var reduced = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
 
   function rem() { return parseFloat(getComputedStyle(document.documentElement).fontSize) || 16; }
 
-  // How far down the screen the lowest visible part of the heading reaches (0 when none is on screen: the toast then sits just under the top of the screen).
-  function anchor() {
-    var y = 0;
+  // How far down the screen the pill's top must be (0 when nothing is in the way: it then sits just under the top of the screen). Under the lowest visible part of the heading and the
+  // rows of controls beneath it (HEADS), then lower still while any other control (a date, a chip, a button) would be under the pill: it never covers something to tap. The day's grid and
+  // the family thread are content, not controls, so the pill may float over them.
+  var CONTROLS = 'a, button, input, textarea, select, [role=button], [tabindex]:not([tabindex="-1"])';
+  function visible(n) {
+    var s = getComputedStyle(n);
+    return s.visibility !== 'hidden' && s.display !== 'none' && parseFloat(s.opacity) >= 0.1;
+  }
+  function anchor(pill) {
+    var y = 0, gap = rem() * 0.5, limit = window.innerHeight * 0.75;
     HEADS.forEach(function (sel) {
       var n = document.querySelector(sel);
-      if (!n) return;
-      var s = getComputedStyle(n);
-      if (s.visibility === 'hidden' || s.display === 'none' || parseFloat(s.opacity) < 0.1) return;
+      if (!n || !visible(n)) return;
       var r = n.getBoundingClientRect();
       if (r.width && r.height && r.bottom > 0 && r.top < window.innerHeight * 0.4 && r.bottom > y) y = r.bottom;
     });
+    var h = pill.offsetHeight, pr = pill.getBoundingClientRect(), list = Array.prototype.slice.call(document.querySelectorAll(CONTROLS));
+    list = list.filter(function (n) { return !n.closest('.ga-live, #cz-grid, #cz-week, .ft-thread, .ph-tabs, [inert], [hidden], .cz-fold:not(.is-on), .cz-card-wrap, .ak-sheet-wrap') && visible(n); });
+    for (var i = 0; i < 24; i++) {
+      var top = Math.max(y, 0) + gap, moved = false;
+      for (var k = 0; k < list.length; k++) {
+        var r2 = list[k].getBoundingClientRect();        if (!r2.width || !r2.height || r2.bottom <= top || r2.top >= top + h || r2.right <= pr.left || r2.left >= pr.right) continue;
+        if (r2.bottom + gap > limit) continue;      // far down the screen: leave it
+        y = Math.max(y, r2.bottom); moved = true;
+      }
+      if (!moved) break;
+    }
     return y;
   }
   function place(n) {
-    var y = anchor();
+    var y = anchor(n);
     if (y) n.style.setProperty('--ga-toast-y', y + 'px'); else n.style.removeProperty('--ga-toast-y');
   }
   function follow() {
@@ -51,10 +68,24 @@
 
   function clearTimers() { clearTimeout(hideT); hideT = 0; }
   function arm(ms) {
+    if (typeof ms === 'number') curMs = ms;
     clearTimers();
     if (pressed) return;
-    hideT = setTimeout(function () { GA.hideToast(); }, ms);
+    hideT = setTimeout(function () { GA.hideToast(); }, curMs);
   }
+
+  // One live region that is always on the page, empty, from the start: a screen reader announces what is put into it (a region made together with its words is often missed).
+  // The pill is inside it.
+  function live() {
+    var l = document.getElementById('ga-toast');
+    if (l) return l;
+    l = document.createElement('div');
+    l.id = 'ga-toast'; l.className = 'ga-live';
+    l.setAttribute('role', 'status'); l.setAttribute('aria-live', 'polite'); l.setAttribute('aria-atomic', 'true');
+    document.body.appendChild(l);
+    return l;
+  }
+  if (document.body) live(); else document.addEventListener('DOMContentLoaded', live);
 
   function fill(into, o) {
     var t = document.createElement('span');
@@ -77,6 +108,7 @@
     var o = { text: String(text || 'Done'), undo: opts && opts.undo, href: opts && opts.href, label: opts && opts.label, error: !!(opts && opts.error) };
     var ms = (opts && opts.ms) || (o.undo ? 9000 : 4500);
     clearTimeout(removeT); removeT = 0;
+    pressed = false;                                              // a new toast starts free: a finger that was on the last one does not hold this one
     if (el && el.isConnected) {                                   // in place: the pill stays, its words crossfade
       latest = o;
       clearTimeout(swapT);
@@ -94,23 +126,21 @@
     }
     el = document.createElement('div');
     el.className = 'ga-toast' + (o.error ? ' is-error' : '');
-    el.id = 'ga-toast';
-    el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite'); el.setAttribute('aria-atomic', 'true');
     body = document.createElement('div');
     body.className = 'ga-toast-body';
     el.appendChild(body);
-    place(el);
-    document.body.appendChild(el);
+    live().appendChild(el);
     fill(body, o);
+    place(el);
     var mine = el;
-    mine.addEventListener('pointerdown', function () { pressed = true; clearTimers(); });
-    function release() { if (!pressed) return; pressed = false; if (el === mine) arm(o.undo ? 9000 : 4500); }
-    window.addEventListener('pointerup', release, true);
+    mine.addEventListener('pointerdown', function () { if (!mine.classList.contains('is-in')) return; pressed = true; clearTimers(); });      // a finger on a fading toast holds nothing
+    function release() { if (!pressed) return; pressed = false; if (el === mine) arm(); }
+    window.addEventListener('pointerup', release, true);           // kept until the toast is dropped, so a toast called back from its fade is released too
     window.addEventListener('pointercancel', release, true);
-    mine.addEventListener('mouseenter', function () { clearTimers(); });
-    mine.addEventListener('mouseleave', function () { if (!pressed && el === mine) arm(4500); });
+    mine.addEventListener('mouseenter', function () { if (mine.classList.contains('is-in')) clearTimers(); });
+    mine.addEventListener('mouseleave', function () { if (!pressed && el === mine) arm(); });
     mine.addEventListener('focusin', function () { clearTimers(); });
-    mine.addEventListener('focusout', function () { if (el === mine && !pressed) arm(4500); });
+    mine.addEventListener('focusout', function () { if (el === mine && !pressed) arm(); });
     mine._release = release;
     void mine.offsetWidth;                                        // the starting state is painted, then the glide runs
     requestAnimationFrame(function () { if (el === mine) mine.classList.add('is-in'); });
@@ -123,9 +153,12 @@
     var gone = el;
     if (!gone) return;
     pressed = false;
-    window.removeEventListener('pointerup', gone._release, true);
-    window.removeEventListener('pointercancel', gone._release, true);
-    function drop() { if (gone.parentNode) gone.parentNode.removeChild(gone); if (el === gone) { el = null; body = null; } }
+    function drop() {
+      window.removeEventListener('pointerup', gone._release, true);
+      window.removeEventListener('pointercancel', gone._release, true);
+      if (gone.parentNode) gone.parentNode.removeChild(gone);
+      if (el === gone) { el = null; body = null; }
+    }
     if (instant === true || reduced.matches) { drop(); return; }
     gone.classList.remove('is-in');
     el = gone;
