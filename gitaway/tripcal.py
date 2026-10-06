@@ -600,13 +600,13 @@ def _say_update(session, fam, scope, t, row, d, s, e, title):
 
 # ---- activities ----------------------------------------------------------------------------------------------------
 
-def add_activity(session, *, day, start, end, title, kind="fun", demo="", id=None):
-    """Add an activity. An `id` that already exists returns the existing one, so a refreshed form adds nothing."""
+def add_activity(session, *, day, start, end, title, kind="fun", demo="", id=None, fine=False):
+    """Add an activity. An `id` that already exists returns the existing one, so a refreshed form adds nothing. `fine` is the touch grid's grain (F-097, see `_clean`)."""
     _valid_id(id)
     with ses.family(session) as fam:
         b, t, blocks = _need(fam, demo)
         blocks = blocks + ride_blocks(session, b, t)  # a scheduled Uber is busy time
-        day, s, e, title = _clean(t, blocks, day=day, start=start, end=end, title=title, kind=kind)
+        day, s, e, title = _clean(t, blocks, day=day, start=start, end=end, title=title, kind=kind, fine=fine)
         if id and id[0] != "a":
             raise CalendarError("That id is not valid.")
         db, scope = fam.db, _scope(demo)

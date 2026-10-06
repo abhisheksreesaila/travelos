@@ -157,3 +157,56 @@ def test_delete_asks_nothing_of_the_model_and_undelete_puts_it_back(ari, announc
     assert back.id == a.id and cal.get_activity(ari, a.id).start == 12 * 60
     with pytest.raises(cal.CalendarError):
         planedit.delete(ari, "a99")
+
+
+# ---- F-101: a plan made by touching empty time ------------------------------------------------------------------------------------
+
+def test_add_makes_the_plan_through_the_calendars_rules_with_a_five_minute_grain(ari, announced):
+    got = planedit.add(ari, day=1, start=14 * 60 + 5, end=15 * 60 + 5, title="  Pier   walk ")
+    a = cal.get_activity(ari, got["act"].id)
+    assert (a.day, a.start, a.end, a.title, a.kind) == (1, 14 * 60 + 5, 15 * 60 + 5, "Pier walk", "fun")
+    assert got["undo"] == {"added": a.id}
+    planedit.add(ari, day=1, start=14 * 60 + 30, end=15 * 60, title="Overlap is fine")       # F-086: families split up
+    for bad, why in (({"title": "   "}, "Give it a title."), ({"title": "x" * 41}, "40 characters"), ({"day": 99}, "inside your trip"),
+                     ({"start": 21 * 60 + 30, "end": 22 * 60 + 30}, "Plan between")):
+        args = {"day": 1, "start": 600, "end": 660, "title": "Ok", **bad}
+        with pytest.raises(cal.CalendarError) as e:
+            planedit.add(ari, **args)
+        assert why in str(e.value)
+
+
+def test_a_new_plan_tells_the_family_once_and_a_move_or_rename_right_after_changes_that_same_card(ari, announced):
+    base = len(cards(ari))
+    got = planedit.add(ari, day=1, start=14 * 60, end=15 * 60, title="Pier walk")
+    assert len(cards(ari)) == base + 1 and "added Pier walk" in cards(ari)[-1]["text"]
+    planedit.change(ari, got["act"].id, start=15 * 60, end=16 * 60)
+    planedit.change(ari, got["act"].id, title="Pier stroll")
+    now = cards(ari)[base:]
+    assert len(now) == 1 and "added Pier stroll" in now[0]["text"] and "3:00 PM" in now[0]["text"]
+    assert [t for t, _, _ in announced].count("Plan changed") == 1                          # one push for the whole making of it
+
+
+def test_a_move_back_to_where_it_was_made_does_not_take_the_added_card_away(ari, announced):
+    base = len(cards(ari))
+    got = planedit.add(ari, day=1, start=14 * 60, end=15 * 60, title="Pier walk")
+    moved = planedit.change(ari, got["act"].id, start=15 * 60, end=16 * 60)
+    planedit.restore(ari, moved["undo"])
+    assert len(cards(ari)) == base + 1 and "added Pier walk" in cards(ari)[-1]["text"]
+
+
+def test_undoing_an_add_removes_the_plan_and_the_card_nobody_needs(ari, announced):
+    base = len(cards(ari))
+    got = planedit.add(ari, day=1, start=14 * 60, end=15 * 60, title="Pier walk")
+    planedit.unadd(ari, got["undo"])
+    assert cal.get_activity(ari, got["act"].id) is None and len(cards(ari)) == base
+    with pytest.raises(cal.CalendarError):
+        planedit.unadd(ari, got["undo"])
+    with pytest.raises(cal.CalendarError):
+        planedit.unadd(ari, {"added": "b-out"})
+
+
+def test_undoing_an_add_after_the_family_saw_other_news_says_it_was_removed(ari, announced):
+    got = planedit.add(ari, day=1, start=14 * 60, end=15 * 60, title="Pier walk")
+    lunch(ari)                                                                          # another card lands after ours
+    planedit.unadd(ari, got["undo"])
+    assert "removed Pier walk" in cards(ari)[-1]["text"]
