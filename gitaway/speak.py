@@ -633,6 +633,7 @@ def apply(session, day, raw_ops, token, trip=None) -> dict:
                     raise SpeakError(changed)
                 text = card_text(ctx, familythread.first_name(fam.traveler), ops)
                 live = len(cal._live_acts(db, fam.trip_id, ""))
+                touched = []        # the plans and steps this changes, so the page can light them up (F-104)
                 for op in ops:
                     if op["op"] == "remove_plan":
                         if cal.delete_in(session, fam, op["id"], say=False) is None:
@@ -640,6 +641,8 @@ def apply(session, day, raw_ops, token, trip=None) -> dict:
                         live -= 1
                 for op in ops:
                     k = op["op"]
+                    if k not in ("remove_plan", "add_plan"):
+                        touched.append(op.get("id") or op.get("block_id") or "")
                     if k == "move_plan":
                         target = (_date.fromisoformat(op["date"]) - ctx["t"].depart).days
                         cal.update_in(session, fam, ctx["t"], ctx["blocks"], op["id"], day=target, start=_minutes(op["start"]), end=_minutes(op["end"]), say=False)
@@ -651,6 +654,7 @@ def apply(session, day, raw_ops, token, trip=None) -> dict:
                         act = f"a{q}"
                         cal._insert_activity(db, fam, "", act, q, d, st, en, title, "fun")
                         live += 1
+                        touched.append(act)
                         if op["note"]:
                             _add_note(db, fam, act, op["note"])
                     elif k == "add_step":
@@ -670,4 +674,4 @@ def apply(session, day, raw_ops, token, trip=None) -> dict:
                 familythread.change(session, fam, text, action="change")
         except cal.CalendarError as e:
             raise SpeakError(str(e))
-    return {"count": len(ops), "text": text}
+    return {"count": len(ops), "text": text, "ids": [x for x in touched if x], "kinds": [o["op"] for o in ops]}

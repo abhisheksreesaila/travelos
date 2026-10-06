@@ -18,7 +18,7 @@ from urllib.parse import quote
 from fasthtml.common import A, Div, H1, H2, Header, Link, Nav, P, Script, Span, Title
 from starlette.responses import RedirectResponse
 
-from gitaway import session as ses
+from gitaway import access, session as ses
 from gitaway.icons import icon
 from gitaway.layout import styles
 
@@ -28,9 +28,19 @@ TAB_KEYS = tuple(t[0] for t in TABS)
 HEAD = (Link(rel="stylesheet", href="/assets/css/trip.css"), Link(rel="stylesheet", href="/assets/css/phone.css"))  # the shared phone look, then the shell
 
 
+def ask_sheet(active) -> bool:
+    """F-104: on a phone the centre Ask tab opens a sheet over the screen instead of a page: for editors, on every tab but Ask itself (which is the page the sheet falls back to)."""
+    return active != "ask" and access.can_edit(access.request_role())
+
+
+SHEET_HEAD = (Link(rel="stylesheet", href="/assets/css/ask.css"), Link(rel="stylesheet", href="/assets/css/ask_sheet.css"))
+SHEET_SCRIPTS = ("/assets/js/ask.js", "/assets/js/ask_sheet.js")
+
+
 def tabbar(active):
+    sheet = ask_sheet(active)
     links = [A(Span(icon(ico, 22, 2.2), cls="ph-ti"), name, href=href, id=f"ph-tab-{key}", cls=f"ph-tab{' ph-ask' if key == 'ask' else ''}",
-               aria_current="page" if key == active else None) for key, name, ico, href in TABS]
+               aria_current="page" if key == active else None, **({"data_ask": "sheet", "aria_haspopup": "dialog"} if sheet and key == "ask" else {})) for key, name, ico, href in TABS]
     return Nav(*links, cls="ph-tabs", aria_label="Trip")
 
 
@@ -47,6 +57,8 @@ def coming(name, line, ico):
 
 def shell(active, *content, title="", head=(), scripts=(), **attrs):
     attrs.setdefault("id", "ph-app")
+    if ask_sheet(active):
+        head, scripts = (*head, *SHEET_HEAD), (*scripts, *SHEET_SCRIPTS)
     return (
         Title(f"GitAway · {title}" if title else "GitAway"),
         *styles(*head, *HEAD),

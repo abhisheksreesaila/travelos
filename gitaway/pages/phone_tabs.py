@@ -29,6 +29,8 @@ def register(app):
         def route(request, session):
             if (r := phone.guard(session, f"/trip/{key}")):
                 return r
+            if key == "ask" and tab_ask.wants_sheet(request):        # F-104: the sheet fetches the box alone
+                return tab_ask.sheet_open(request, session)
             return tab_page(key, request, session)
         return route
 
