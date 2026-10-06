@@ -94,9 +94,9 @@
     var b = tab.querySelector('.ph-ti') || tab, r = b.getBoundingClientRect();
     return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
   }
-  function pointOrigin() {
-    var s = sheet.getBoundingClientRect(), o = origin();
-    sheet.style.transformOrigin = (o.x - s.left) + 'px ' + (o.y - s.top) + 'px';
+  function pointOrigin() {       // the point of the sheet that sits on the Ask button (offsets, so a transform in progress does not matter; the wrap fills the viewport)
+    var o = origin();
+    sheet.style.transformOrigin = (o.x - sheet.offsetLeft) + 'px calc(100% + ' + (o.y - sheet.offsetTop - sheet.offsetHeight) + 'px)';       // from the bottom edge: the sheet grows upward when the mic starts
   }
 
   function open() {
@@ -107,21 +107,19 @@
     app.appendChild(wrap);
     wrap.classList.add('is-open');
     behind(true);
-    pointOrigin();
+    if (html !== null) fill(html, true);        // the box is in (and the microphone started) inside this tap, before anything animates
+    else scroll.innerHTML = '<div id="ak-sheet-body"><p class="ak-fine" role="status">Getting ready…</p></div>';
+    pointOrigin();                              // after the content: the sheet's height decides where its top is
     animate(parts.scrim, [{ opacity: 0 }, { opacity: 1 }]);
     animate(sheet, [{ transform: 'scale(0.08)', opacity: 0 }, { transform: 'none', opacity: 1 }]);
-    if (html !== null) fill(html, true);
-    else {
-      scroll.innerHTML = '<div id="ak-sheet-body"><p class="ak-fine" role="status">Getting ready…</p></div>';
-      entry.p.then(function (h) { if (wrap && !closing) fill(h, true); }, function () { if (wrap) { wrap.remove(); wrap = null; behind(false); location.href = tab.href; } });
-    }
+    if (html === null) entry.p.then(function (h) { if (wrap && !closing) { fill(h, true); pointOrigin(); } }, function () { if (wrap) { wrap.remove(); wrap = null; behind(false); location.href = tab.href; } });
     document.addEventListener('keydown', onKey, true);
     if (window.visualViewport) { window.visualViewport.addEventListener('resize', kb); window.visualViewport.addEventListener('scroll', kb); }
     back.push(function () {
       document.removeEventListener('keydown', onKey, true);
       if (window.visualViewport) { window.visualViewport.removeEventListener('resize', kb); window.visualViewport.removeEventListener('scroll', kb); }
     });
-    try { sheet.focus({ preventScroll: true }); } catch (err) { /* old browser */ }
+    if (!sheet.contains(document.activeElement)) { try { sheet.focus({ preventScroll: true }); } catch (err) { /* old browser */ } }       // unless the box already took it (no microphone: the note)
   }
 
   // the page behind is for looking only while the sheet is open
@@ -194,7 +192,7 @@
       d = null;
       var v = a && b && b[0] > a[0] ? (b[1] - a[1]) / (b[0] - a[0]) : 0;       // px per ms over the last few moves
       var scrim = wrap && wrap.querySelector('.ak-scrim');
-      if (!cancel && (dd.dy > h * 0.3 || v > 0.5)) {
+      if (!cancel && (dd.dy > h * 0.3 || (v > 0.5 && dd.dy > 24))) {        // a third of the way, or a quick flick (more than half a pixel a millisecond)
         sheet.style.transform = '';
         if (scrim) scrim.style.opacity = '';
         // the sheet is already part way down: shrink from where it is

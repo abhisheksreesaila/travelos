@@ -129,7 +129,7 @@
   var installed = !!(navigator.standalone || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches));
   // Wherever the browser can record and the server has a voice service (data-server), the voice is recorded and transcribed there: the browser's own recognition (an iPhone's
   // dictation) does not understand Tamil, Hindi and the rest, which Sarvam does. Recognition is only the fallback.
-  var preferRecord = canRecord && !!mic && mic.dataset.server === '1';
+  function preferRecord() { return canRecord && !!mic && mic.dataset.server === '1'; }
   var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var timeEl = $('ak-mic-time');
   var cancelBtn = $('ak-rec-cancel');
@@ -209,7 +209,7 @@
     if (mic) mic.classList.toggle('is-recording', on);
     if (timeEl) { timeEl.hidden = !on; if (on) timeEl.textContent = '0:00'; }
     if (cancelBtn) cancelBtn.hidden = !on;
-    if (paste) paste.hidden = on;
+    if (paste && !sheet) paste.hidden = on;
     ui(on);
     if (on) note('Recording. Tap Stop when you are done.');
     busyState();
@@ -375,7 +375,7 @@
   }
   if (sheet) {
     // Done pressed while still talking: finish the recording (or the listening), wait for the words, then send.
-    form.addEventListener('submit', function (e) {
+    go.addEventListener('click', function (e) {      // a click, not the submit: an empty required box would stop the submit before it fires
       if (!(recording || inflight > 0 || listening || wanted)) return;
       e.preventDefault();
       e.stopImmediatePropagation();
@@ -391,7 +391,7 @@
   function toggle() {
     if (busyUp) return;
     if (recording) { if (recorder && recorder.state === 'recording') { action = 'stop'; recorder.stop(); } return; }
-    if (preferRecord) { startRecording(); return; }
+    if (preferRecord()) { startRecording(); return; }
     if (wanted || listening) {
       wanted = false;
       clearHeard();

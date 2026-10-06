@@ -45,6 +45,7 @@
 .ak-sheetform .ak-go { min-height: 3.25rem; }
 .ak-prop-sheet { padding: 0; box-shadow: none; background: transparent; }
 .ak-prop-sheet .ak-phead { padding-top: 0.125rem; }
+.ak-prop-sheet .ak-acts { grid-template-columns: 1fr; }
 #ak-questions-form[data-tap] #ak-continue { display: none; }
 #ak-sheet-body .ak-opt { min-height: 2.75rem; }
 
