@@ -87,7 +87,7 @@ def test_a_date_and_a_flick_to_a_neighbour_swap_without_a_request(canvas_page):
       window.__flick = new Promise(res => { const mo = new MutationObserver(() => { if (st.querySelector('.cz-view') !== was) { mo.disconnect(); window.fetch = real; res(performance.now()); } });
         mo.observe(st, { childList: true }); }); }""")
     t0 = page.evaluate("performance.now()")
-    flick(page, -160 if page.locator(".cz-view").get_attribute("data-next") else 160)
+    flick(page, -160 if page.locator(".cz-view").get_attribute("data-next") else 160, y=640)      # (F-103: the heading is shorter, so 420 is now on a booking line)
     t1 = page.evaluate("window.__flick")
     settle(page)
     print(f"\nF099 date pill -> day {r['ms']:.0f} ms; flick (pointer events -> new day in the DOM, synthetic gesture included) {t1 - t0:.0f} ms")
