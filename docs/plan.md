@@ -587,10 +587,10 @@ Captain, 2026-10-05: moving between screens (week to day, a chat bubble to its c
 - [x] on the canvas the next levels (every day of the trip from the week, neighbours from a day) are fetched while idle so Day | Week and the flick start at once; one motion token set (duration, easing) used by every transition
 - [ ] measured in the browser test (done: tab switch ~27 ms, week to day 7–15 ms on a warm cache; the iPhone check after deploy is the captain's): a tab switch and week-to-day render within a target (e.g. under 150 ms after the tap on a warm cache) and the transition runs; checked on the captain's iPhone after deploy
 
-## F-100 The chat box stays at the bottom [todo]
+## F-100 The chat box stays at the bottom [done]
 Captain, 2026-10-05 (screenshot of a plan chat): the message box sits right after the messages; after sending, the screen jumps to an empty bottom. It must be fixed at the bottom like WhatsApp. · Needs: F-094
-- [ ] in the Family chat and every plan chat the composer is docked above the tab bar (safe areas and the iPhone keyboard respected: it rides up with the keyboard), the messages scroll in the space above it and open scrolled to the newest, which sits right above the box; sending keeps the newest in view; no empty gap below the last message
-- [ ] phone checks at 390 and 320 with the keyboard area simulated; browser tests send several messages and check the box stays put and the newest is visible
+- [x] in the Family chat and every plan chat the composer is docked above the tab bar (safe areas and the iPhone keyboard respected: it rides up with the keyboard), the messages scroll in the space above it and open scrolled to the newest, which sits right above the box; sending keeps the newest in view; no empty gap below the last message
+- [x] phone checks at 390 and 320 with the keyboard area simulated; browser tests send several messages and check the box stays put and the newest is visible
 
 ## F-101 Make a plan by touching empty time [todo]
 Captain, 2026-10-05: "just like an event, you should be able to select the time… create an event. Then you just drag, and… give it a title… and boom, it should be done… driven off that calendar". · Needs: F-097, F-099 (grid script)
