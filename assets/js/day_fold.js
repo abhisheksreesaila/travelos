@@ -2,8 +2,8 @@
 //
 // The captain, on the trip: the heading, the filters and the dates "occupy a lot of real estate... it's almost like it should fade away, and the only thing I should see is a compact
 // version". The day's heading, kinds row, date strip and filters scroll away as they always did; once the last of them has left the top of the screen, a compact bar (the day's name,
-// the small Day | Week switch, SOS, map: `.cz-fold`, drawn by the server) slides in at the top. Scrolling back up brings the top back and the bar goes; a tap on the bar (its name, or
-// any bare part of it) scrolls back up at once. The switch, SOS and map in the bar work as they do in the heading.
+// the small Day | Week switch, map, SOS: `.cz-fold`, drawn by the server) slides in at the top. Scrolling back up brings the top back and the bar goes; a tap on the bar (its name, or
+// any bare part of it) scrolls back up at once. The switch, map and SOS in the bar work as they do in the heading.
 //
 // Nothing here changes the layout: the bar sits in a zero-height sticky box and only its transform and opacity move, so the grid's coordinates under a finger never shift. The state is
 // still left alone while a block is held, dragged or resized, a hold menu or a title field is open, or a zoom is running, and brought up to date when that is over.

@@ -605,8 +605,8 @@ Provider: Sarvam AI (captain, 2026-10-05), key SARVAM_API_KEY on Railway; checke
 - [x] the Ask box looks like GitAway: the handwriting note font and warm note look (readable, 13px floor, grows with the text); dictated words fade in, interim words lighter until final; nothing moves under reduced motion
 - [x] the speech-to-text provider is one setting with a small adapter per provider (Azure now; the captain will bring another that handles Hindi and Indian languages), with an optional language hint (auto-detect by default)
 
-## F-103 A small Day | Week switch; the top folds away [todo]
+## F-103 A small Day | Week switch; the top folds away [done]
 Captain, 2026-10-05: the Day | Week toggle "is very big and occupies a lot of real estate… make it subtle… bold and obvious, but it doesn't have to be so big… it should fade away, and the only thing I should see is a compact version". · Needs: F-101 (same heading code)
-- [ ] Day | Week is a small, crisp segmented switch inside the dark heading (no row of its own), still 44px to tap and clearly showing which is on
-- [ ] scrolling the day folds the heading, the filters and the date strip into one compact sticky bar (day name, the small switch, SOS, map), and scrolling back up or tapping it opens them again, smoothly and calm under reduced motion; the week keeps its full heading
-- [ ] phone checks at 390 and 320; browser tests scroll, fold, unfold and press the switch both ways
+- [x] Day | Week is a small, crisp segmented switch inside the dark heading (no row of its own), still 44px to tap and clearly showing which is on
+- [x] scrolling the day folds the heading, the filters and the date strip into one compact sticky bar (day name, the small switch, SOS, map), and scrolling back up or tapping it opens them again, smoothly and calm under reduced motion; the week keeps its full heading
+- [x] phone checks at 390 and 320; browser tests scroll, fold, unfold and press the switch both ways

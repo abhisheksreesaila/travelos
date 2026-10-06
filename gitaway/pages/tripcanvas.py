@@ -528,7 +528,7 @@ def time_grid(v, day, ents):
 
 
 def fold_bar(v, day):
-    """F-103: the day's heading, filters and dates folded into one compact bar (the day's name, the small switch, SOS, map). It is in the page from the start but takes no room
+    """F-103: the day's heading, filters and dates folded into one compact bar (the day's name, the small switch, map, SOS). It is in the page from the start but takes no room
     (a zero-height sticky box, so showing it never moves anything) and is hidden and inert; day_fold.js shows it once the top of the day has scrolled away, and a tap on it scrolls back up."""
     return Div(Div(Button(Span(day_title(v, day)), type="button", cls="cz-fold-name", aria_label="Show the top of the day"), toggle(v, "day", day, ids=False), map_link(day, ident=False), sos_link(curl(day=day, sos=True), ident=False), cls="cz-fold-bar"),
                cls="cz-fold", inert=True, aria_hidden="true")
