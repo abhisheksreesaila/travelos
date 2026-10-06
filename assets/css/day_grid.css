@@ -9,7 +9,6 @@
 
 .cz .cz-grid { --hh: 4.5rem; --mm: calc(var(--hh) / 60); --gut: 3.25rem; --zk: 1; position: relative; height: calc(var(--n) * var(--hh) + 1.25rem); margin-top: 0.25rem; overflow: hidden; contain: layout style;
   touch-action: pan-y pinch-zoom; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
-.cz .cz-grid.has-bk { --bkw: 2.5rem; }
 .cz .cz-g-zoom { position: absolute; left: 0; right: 0; top: 0.625rem; height: calc(var(--n) * var(--hh)); transform-origin: 0 0; }
 .cz .cz-g-zoom.is-zooming { will-change: transform; }
 .cz .cz-cs { transform: scaleY(calc(1 / var(--zk))); transform-origin: 0 0; }
@@ -21,7 +20,7 @@
 .cz .cz-g-line { position: absolute; left: 0; right: 0; top: calc(var(--s) * var(--mm)); height: 1px; background: var(--line); }
 .cz .cz-g-line.is-half { background: transparent; border-top: 1px dashed var(--line); height: 0; }
 
-/* bookings: quiet lines behind the plans (F-090, F-093). The icon sits in a strip the plans leave free, so it shows even under a plan. */
+/* bookings: quiet lines behind the plans (F-090, F-093). A line a plan overlaps is a slim pill instead (F-106, below), so no booking is ever hidden under a block. */
 .cz .cz-gbk { position: absolute; z-index: 1; left: 0; right: 0; top: calc(var(--s) * var(--mm)); display: block; min-height: 2.75rem; padding: 0 0.5rem; border-radius: 0.875rem;
   background: color-mix(in srgb, var(--paper-2) 82%, transparent); border: 0.0625rem dashed rgba(30, 26, 46, .2); color: var(--ink-3); font-size: var(--cz-small); }
 .cz .cz-gbk-in { display: flex; align-items: center; gap: 0.5rem; min-height: 2.625rem; min-width: 0; transform-origin: 0 50%; }
@@ -53,7 +52,23 @@
 .cz .cz-gb-parts { display: flex; flex-wrap: wrap; gap: 0.1875rem 0.25rem; margin-top: 0.125rem; }
 .cz .cz-gb-part { padding: 0 0.4375rem; border-radius: var(--r-pill); background: rgba(255, 255, 255, .72); font-size: var(--cz-small); font-weight: 700; line-height: 1.35; color: var(--ink-2); }
 .cz .cz-gb-chat { position: absolute; top: 0.25rem; right: 0.375rem; display: inline-flex; align-items: center; gap: 0.1875rem; font-size: var(--cz-small); font-weight: 800; color: var(--ink-2); }
-.cz .cz-gb.has-chat .cz-gb-t { padding-right: 2.25rem; }
+.cz .cz-gb.has-chat .cz-gb-t { padding-right: 2.75rem; }
+/* F-106: a block carries one line of its note, in the sticky's hand, which fades out at its end instead of being cut; the whole note is in the card a tap opens. */
+.cz .cz-gb-note { align-self: flex-start; max-width: 100%; margin-top: 0.125rem; padding: 0 1.25rem 0 0.375rem; border-radius: 0.1875rem; background: var(--note); color: var(--ink); font-family: var(--font-hand); font-weight: 700; font-size: 1.125rem; line-height: 1.15;
+  white-space: nowrap; overflow: hidden; box-sizing: border-box; -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 1.5rem), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 1.5rem), transparent); }
+.cz .cz-gb.is-short .cz-gb-note { flex: 0 1 auto; margin-top: 0; }
+/* a block 45 to 75 minutes long has no room for a line of its own: its note shares the time's row and fades at the block's edge */
+.cz .cz-gb.is-tight .cz-gb-in { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; column-gap: 0.5rem; }
+.cz .cz-gb.is-tight .cz-gb-t { grid-column: 1 / -1; }
+.cz .cz-gb.is-tight .cz-gb-note { margin-top: 0; align-self: center; }
+/* F-106: a booking under a plan: a slim pill at the left edge, in the lane the plan leaves free (the plan is .is-inset). Time on top, the icon beside it, the short name under. */
+.cz .cz-gb.is-inset { --bkw: 5.25rem; }
+.cz .cz-gbk.is-pill { right: auto; width: 5rem; z-index: 3; display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 0.0625rem; text-align: left; min-height: 2.75rem; padding: 0.25rem 0.4375rem; border-radius: 0.875rem; text-decoration: none; overflow: hidden; contain: layout paint; }
+.cz .cz-gbk.is-pill .cz-bk-time { font-size: var(--cz-small); line-height: 1.15; font-weight: 800; white-space: nowrap; }
+.cz .cz-gbk.is-pill .cz-bk-row { display: flex; align-items: center; gap: 0.25rem; min-width: 0; color: var(--ink-3); }
+.cz .cz-gbk.is-pill .cz-bk-row svg { flex-shrink: 0; width: 0.875rem; height: 0.875rem; }
+.cz .cz-gbk.is-pill .cz-bk-t { flex: 1 1 0; min-width: 0; font-size: var(--cz-small); line-height: 1.15; white-space: nowrap; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 0.75rem), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 0.75rem), transparent); }
+.cz .cz-gbk.is-pill:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.0625rem; }
 .cz .cz-gb-open { position: absolute; inset: 0; z-index: 1; border-radius: inherit; }
 .cz .cz-gb-grip { position: absolute; z-index: 2; left: 50%; bottom: 0.1875rem; width: 2rem; height: 0.25rem; margin-left: -1rem; border-radius: var(--r-pill); background: rgba(30, 26, 46, .28); pointer-events: none; }
 .cz .cz-gb.is-short .cz-gb-grip { display: none; }
@@ -138,7 +153,6 @@
 /* a laptop: the same grid, wider, with a taller hour */
 @media (min-width: 721px) {
   .cz .cz-grid { --hh: 5.5rem; --gut: 3.5rem; }
-  .cz .cz-grid.has-bk { --bkw: 3rem; }
   .cz .cz-gb { cursor: grab; }
   .cz a.cz-gb { cursor: pointer; }
 }

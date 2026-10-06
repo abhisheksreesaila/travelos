@@ -29,8 +29,8 @@ from gitaway.pages import booked, calendar as calui, passes as passes_ui   # pas
 from gitaway.pages.around_ui import around_url
 from gitaway.pages.plantalk import talk_badge   # F-091: the chat badge on a plan and on a part
 
-HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/help.css"), *passes_ui.HEAD, Link(rel="stylesheet", href="/assets/css/trip_canvas.css"), Link(rel="stylesheet", href="/assets/css/day_grid.css"), Link(rel="stylesheet", href="/assets/css/plantalk.css"))   # pickers: the add-a-step sheet has a time field (F-082)
-SCRIPTS = ("/assets/js/trip_canvas.js", "/assets/js/day_grid.js", "/assets/js/day_menu.js", "/assets/js/day_new.js", "/assets/js/day_fold.js")
+HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/help.css"), *passes_ui.HEAD, Link(rel="stylesheet", href="/assets/css/trip_canvas.css"), Link(rel="stylesheet", href="/assets/css/day_grid.css"), Link(rel="stylesheet", href="/assets/css/plantalk.css"), Link(rel="stylesheet", href="/assets/css/thread.css"), Link(rel="stylesheet", href="/assets/css/day_card.css"))   # pickers: the add-a-step sheet has a time field (F-082)
+SCRIPTS = ("/assets/js/trip_canvas.js", "/assets/js/day_grid.js", "/assets/js/day_menu.js", "/assets/js/day_new.js", "/assets/js/day_fold.js", "/assets/js/day_card.js")
 RANK = {"week": 0, "day": 1, "block": 2, "step": 3}
 PART_TINTS = ("sky", "sun", "grape", "bubble", "mint")
 MAX_FACES = 5
@@ -517,7 +517,7 @@ def grid_block(v, a, lane, lanes, lo, edit, inset=False):
     extra = [link]
     if edit:
         extra += [Span(cls="cz-gb-grip", aria_hidden="true"), Button(f"Change {a.title}", type="button", cls="sr-only cz-gb-menubtn")]
-    cls = f"cz-gb cz-k-{k}" + (" is-park" if park else "") + (" is-short" if a.end - a.start < 45 else "") + (" has-chat" if chat else "") + (" is-inset" if inset else "")
+    cls = f"cz-gb cz-k-{k}" + (" is-park" if park else "") + (" is-short" if a.end - a.start < 45 else " is-tight" if a.end - a.start < 75 and not park else "") + (" has-chat" if chat else "") + (" is-inset" if inset else "")
     style = f"--s:{a.start - lo};--l:{a.end - a.start};--lane:{lane};--lanes:{lanes}"
     return Div(Div(*inner, cls="cz-gb-in cz-cs"), *extra, cls=cls, style=style, **({"tabindex": "-1"} if park else {}), **attrs)
 
