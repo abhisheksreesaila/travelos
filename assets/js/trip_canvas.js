@@ -21,7 +21,8 @@
   var RANK = { week: 0, day: 1, block: 2, step: 3 };
   var KEY = /^[a-z]{3}-[A-Za-z0-9-]+$/;
   var CZ = { stage: stage, held: false };      // what the day grid's script (day_grid.js) uses; `held` is true while it holds a block
-  var cache = {};          // url -> { at, promise }: a level fetched as the finger went down, used by the tap that follows
+  var FRESH = 60000;       // how long a fetched level may be shown without asking again (F-099); every write empties the cache
+  var cache = {};          // url -> { at, promise }: a level fetched ahead of time (idle, or as the finger went down), used by the tap that follows
   var busy = false;
   var waiting = null;      // the browser's Back or Forward pressed while a zoom was running: run it when that zoom is done
   var idleQ = [];          // work that needs the zoom to be finished (a refresh after a drop)
@@ -37,7 +38,7 @@
 
   function fetchLevel(u) {
     var now = Date.now(), hit = cache[u];
-    if (hit && now - hit.at < 4000) return hit.promise;
+    if (hit && now - hit.at < FRESH) return hit.promise;
     var p = fetch(fragUrl(u), { credentials: 'same-origin', headers: { 'X-Canvas': '1' } }).then(function (r) {
       if (!r.ok) throw new Error('level ' + r.status);
       return r.text();
@@ -46,6 +47,50 @@
     p.catch(function () { delete cache[u]; });
     return p;
   }
+
+  // F-099: while the canvas sits idle the next levels are fetched, so Day | Week, a date, a flick and Back swap with nothing to wait for. The week fetches every day;
+  // a day fetches its neighbours, the week and the other dates. Fragments only, two at a time, in idle time, never on Data Saver or a slow link. Every write empties `cache`.
+  var pq = [], pActive = 0, pPlanned = 0;
+  var idle = window.requestIdleCallback ? function (fn) { window.requestIdleCallback(fn, { timeout: 1500 }); } : function (fn) { setTimeout(fn, 200); };
+  function frugal() {
+    var c = navigator.connection;
+    return !!(c && (c.saveData || /(^|-)2g$/.test(c.effectiveType || '')));
+  }
+  function fresh(u) { var h = cache[u]; return !!h && Date.now() - h.at < FRESH; }
+  function nextLevels() {
+    var v = view(), out = [];
+    if (!v) return out;
+    var add = function (u) { if (u && out.indexOf(u) < 0) out.push(u); };
+    if (v.dataset.level === 'week') {
+      v.querySelectorAll('a.cz-row-link[data-zoom="in"]').forEach(function (a) { add(path(a.href)); });
+    } else if (v.dataset.level === 'day') {
+      add(v.dataset.next && path(v.dataset.next));
+      add(v.dataset.prev && path(v.dataset.prev));
+      var wk = v.querySelector('#cz-z-week');
+      if (wk) add(path(wk.href));
+      v.querySelectorAll('.cz-dpills a[href]').forEach(function (a) { add(path(a.href)); });
+    }
+    var here = path(location.href);
+    return out.filter(function (u) { return u !== here; });
+  }
+  function pump() {
+    while (pActive < 2 && pq.length) {
+      var u = pq.shift();
+      if (fresh(u)) continue;
+      pActive++;
+      fetchLevel(u).catch(function () {}).then(function () { pActive--; if (pq.length) idle(pump); });
+    }
+  }
+  function prefetch() {
+    if (frugal() || document.hidden) return;
+    var mine = ++pPlanned;
+    idle(function () {
+      if (mine !== pPlanned) return;      // a newer level was shown meanwhile
+      pq = nextLevels().filter(function (u) { return !fresh(u); });
+      pump();
+    });
+  }
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) prefetch(); });
 
   var curMode = '';        // how the level being shown was reached (push, replace, stay, pop), for the day grid's scroll
   var quietSwap = false;   // a swap that only brings the level up to date after a write: nothing moves, and focus stays where it was
@@ -64,6 +109,7 @@
     applyKinds();
     centreDay();
     askHere();
+    prefetch();
     stage.dispatchEvent(new CustomEvent('cz:swap', { detail: { quiet: quietSwap, mode: curMode } }));      // the day grid (day_grid.js) starts its scroll and its focus here
   }
 
@@ -683,4 +729,5 @@
   applyKinds();
   centreDay();
   askHere();
+  prefetch();
 })();

@@ -599,6 +599,14 @@ Captain, 2026-10-05: "just like an event, you should be able to select the time�
 
 ## F-102 Ask hears you on the iPhone app [blocked]
 Captain, 2026-10-05: the Ask mic "is not capturing or transcribing". Cause: Ask only uses the browser's speech recognition, which iPhone does not give to Home Screen apps. Fix: record on the phone (as voice notes do) and transcribe on the server through gitaway/ai.py (job "transcribe"), falling back to it whenever speech recognition is missing or fails.
-Blocked: in the Azure OpenAI resource GitAway already uses, deploy a speech-to-text model (gpt-4o-mini-transcribe, or whisper) and tell Claude its deployment name; Claude sets it on Railway as AZURE_OPENAI_TRANSCRIBE_DEPLOYMENT. The code is built and tested in the meantime.
+Blocked: in the Azure OpenAI resource GitAway already uses, deploy a speech-to-text model (gpt-4o-mini-transcribe, or whisper) and tell Claude its deployment name; Claude sets it on Railway as AZURE_OPENAI_TRANSCRIBE_DEPLOYMENT. Checked 2026-10-05: gpt-5.6-sol answers "OperationNotSupported" for audio transcriptions and refuses audio in chat. The code is built and tested in the meantime.
 - [ ] where speech recognition is missing or fails (Home Screen app on iPhone), the Ask mic records (MediaRecorder, as F-091) with a clear recording state and stop, uploads the audio, and the transcript fills the box for review; up to 3 minutes; a failure keeps any typed text and says so plainly
 - [ ] the transcription runs through gitaway/ai.py as job "transcribe" (logged like every AI call, no audio or text kept), its deployment one setting; tests use a fake transport; browser test with a fake microphone
+- [ ] the Ask box looks like GitAway: the handwriting note font and warm note look (readable, 13px floor, grows with the text); dictated words fade in, interim words lighter until final; nothing moves under reduced motion
+- [ ] the speech-to-text provider is one setting with a small adapter per provider (Azure now; the captain will bring another that handles Hindi and Indian languages), with an optional language hint (auto-detect by default)
+
+## F-103 A small Day | Week switch; the top folds away [todo]
+Captain, 2026-10-05: the Day | Week toggle "is very big and occupies a lot of real estate… make it subtle… bold and obvious, but it doesn't have to be so big… it should fade away, and the only thing I should see is a compact version". · Needs: F-101 (same heading code)
+- [ ] Day | Week is a small, crisp segmented switch inside the dark heading (no row of its own), still 44px to tap and clearly showing which is on
+- [ ] scrolling the day folds the heading, the filters and the date strip into one compact sticky bar (day name, the small switch, SOS, map), and scrolling back up or tapping it opens them again, smoothly and calm under reduced motion; the week keeps its full heading
+- [ ] phone checks at 390 and 320; browser tests scroll, fold, unfold and press the switch both ways
