@@ -23,12 +23,7 @@
   var wrap = null, sheet = null, scroll = null, ctl = null, closing = false, back = [];
 
   function url() { return tab.getAttribute('href') || '/trip/ask'; }
-  function ms() { var v = parseFloat(getComputedStyle(root).getPropertyValue('--motion-dur')); return v > 0 ? v : 240; }
-  function ease() { return getComputedStyle(root).getPropertyValue('--motion-ease').trim() || 'ease-out'; }
-  function animate(el, frames, opts) {
-    if (reduced.matches || !el.animate) return Promise.resolve();
-    return el.animate(frames, Object.assign({ duration: ms(), easing: ease(), fill: 'both' }, opts || {})).finished.catch(function () {});
-  }
+  var MO = window.GA && GA.motion;      // the one liquid motion (motion.js, F-109): the sheet grows out of the Ask button and folds back into it
 
   // ---- the fragment, fetched ahead -------------------------------------------------------------------------------------------
   function get(u) {
@@ -89,14 +84,7 @@
     return { scrim: scrim };
   }
 
-  function origin() {
-    var b = tab.querySelector('.ph-ti') || tab, r = b.getBoundingClientRect();
-    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-  }
-  function pointOrigin() {       // the point of the sheet that sits on the Ask button (offsets, so a transform in progress does not matter; the wrap fills the viewport)
-    var o = origin();
-    sheet.style.transformOrigin = (o.x - sheet.offsetLeft) + 'px calc(100% + ' + (o.y - sheet.offsetTop - sheet.offsetHeight) + 'px)';       // from the bottom edge: the sheet grows upward when the mic starts
-  }
+  function origin() { return tab.querySelector('.ph-ti') || tab; }      // the Ask button's own icon: what the sheet grows out of and folds back into
 
   function open() {
     closing = false;
@@ -108,10 +96,8 @@
     behind(true);
     if (html !== null) fill(html, true);        // the box is in (and the microphone started) inside this tap, before anything animates
     else scroll.innerHTML = '<div id="ak-sheet-body"><p class="ak-fine" role="status">Getting ready…</p></div>';
-    pointOrigin();                              // after the content: the sheet's height decides where its top is
-    animate(parts.scrim, [{ opacity: 0 }, { opacity: 1 }]);
-    animate(sheet, [{ transform: 'scale(0.08)', opacity: 0 }, { transform: 'none', opacity: 1 }]);
-    if (html === null) entry.p.then(function (h) { if (wrap && !closing) { fill(h, true, true); pointOrigin(); } }, function () { if (wrap) { wrap.remove(); wrap = null; behind(false); location.href = tab.href; } });
+    MO.open(sheet, origin(), { scrim: parts.scrim });      // after the content: the sheet's height decides where it grows to
+    if (html === null) entry.p.then(function (h) { if (wrap && !closing) fill(h, true, true); },function () { if (wrap) { wrap.remove(); wrap = null; behind(false); location.href = tab.href; } });
     document.addEventListener('keydown', onKey, true);
     if (window.visualViewport) { window.visualViewport.addEventListener('resize', kb); window.visualViewport.addEventListener('scroll', kb); }
     back.push(function () {
@@ -170,14 +156,10 @@
     if (!wrap || closing) return Promise.resolve();
     closing = true;
     if (ctl) { ctl.destroy(); ctl = null; }
-    var w = wrap, s = sheet, from = getComputedStyle(s).transform;
-    pointOrigin();
+    var w = wrap, s = sheet;
     var scrim = w.querySelector('.ak-scrim');
     w.classList.remove('is-open');
-    return Promise.all([
-      animate(scrim, [{ opacity: parseFloat(getComputedStyle(scrim).opacity) || 1 }, { opacity: 0 }]),
-      animate(s, [{ transform: from === 'none' ? 'none' : from, opacity: 1 }, { transform: 'scale(0.08)', opacity: 0 }]),
-    ]).then(function () {
+    return MO.close(s, origin(), { scrim: scrim }).then(function () {
       if (w.parentNode) w.parentNode.removeChild(w);
       back.forEach(function (f) { f(); });
       back = [];
@@ -214,10 +196,9 @@
         close();
         return;
       }
-      sheet.style.transition = reduced.matches ? 'none' : 'transform ' + ms() + 'ms ' + ease();
       sheet.style.transform = '';
       if (scrim) scrim.style.opacity = '';
-      setTimeout(function () { if (sheet) sheet.style.transition = ''; }, ms() + 20);
+      MO.spring(sheet, 'translateY(' + dd.dy + 'px)');      // a short pull springs back
     }
     grab.addEventListener('pointerdown', function (e) {
       if (closing || e.button > 0) return;
