@@ -211,6 +211,44 @@ def test_delete_says_how_much_went_with_a_park_day_and_undo_puts_it_all_back(tri
     assert cal.get_activity(me, uni) is not None and len(rows(me, "SELECT * FROM block_steps WHERE act_id = :a", a=uni)) == 16
 
 
+def post_plan(client, **fields):
+    return client.post("/trip/canvas/plan", data=fields, headers={"X-Canvas": "1"})
+
+
+def test_adding_a_plan_by_touch_saves_it_with_the_calendars_rules_and_undo_removes_it(trip):
+    """F-101: op=add makes a plan on the day at the minutes the finger chose; Undo ({"added": id}) takes it away."""
+    me = person("ari")
+    r = post_plan(trip, op="add", day=2, start=14 * 60 + 15, end=15 * 60 + 15, title="  Pier   walk ")
+    got = r.json()
+    assert r.status_code == 200 and got["toast"] == "Pier walk added" and got["plan"]["start"] == 14 * 60 + 15 and got["plan"]["end"] == 15 * 60 + 15
+    a = cal.get_activity(me, got["plan"]["act"])
+    assert (a.day, a.title, a.kind) == (2, "Pier walk", "fun") and got["undo"] == {"added": a.id}
+    page = day(trip, 2)
+    assert [b["data-title"] for b in blocks(page)] == ["Pier walk"]
+    back = post_plan(trip, op="undo", undo=json.dumps(got["undo"])).json()
+    assert back["toast"] == "Pier walk removed" and cal.get_activity(me, a.id) is None
+
+
+def test_adding_a_plan_refuses_what_the_calendar_refuses_and_saves_nothing(trip):
+    me = person("ari")
+    base = len(cal.activities(me))
+    for fields, words in (({"title": ""}, "Give it a title."), ({"title": "x" * 41}, "40 characters"), ({"day": 99}, "inside your trip"), ({"day": "x"}, "Pick a day"),
+                          ({"start": 21 * 60 + 30, "end": 22 * 60 + 30}, "Plan between"), ({"start": "nine"}, "not one we can read"), ({"end": ""}, "not one we can read")):
+        r = post_plan(trip, **{"op": "add", "day": 2, "start": 600, "end": 660, "title": "Ok", **fields})
+        assert r.status_code == 422 and words in r.json()["error"], fields
+    assert len(cal.activities(me)) == base
+
+
+def test_a_viewer_cannot_add_a_plan_and_the_grid_offers_it_only_to_editors(crew, azure):
+    ari, viewer = crew
+    added(ari)
+    plan(person("ari"), "Lunch", 12 * 60, 13 * 60)
+    base = len(cal.activities(person("ari")))
+    assert post_plan(viewer, op="add", day=2, start=600, end=660, title="Sneaky").status_code == 403
+    assert len(cal.activities(person("ari"))) == base
+    assert 'data-edit="1"' in ari.get("/trip/canvas?day=2").text and 'data-edit' not in viewer.get("/trip/canvas?day=2").text.split('id="cz"')[1].split(">")[0]
+
+
 def test_an_undo_that_is_not_ours_is_refused(trip):
     for undo in ("", "nope", json.dumps({"act": "a1", "day": "x"}), json.dumps({"deleted": "a99"})):
         r = trip.post("/trip/canvas/plan", data={"op": "undo", "undo": undo}, headers={"X-Canvas": "1"})

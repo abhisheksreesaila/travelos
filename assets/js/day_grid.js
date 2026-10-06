@@ -41,7 +41,7 @@
   document.addEventListener('pointercancel', liftFinger, true);
 
   stage.addEventListener('pointerdown', function (e) {
-    if (!editing() || gg || busy || e.button > 0 || count() !== 1) return;
+    if (!editing() || gg || busy || CZ.held || e.button > 0 || count() !== 1) return;        // CZ.held: a new plan's title is being typed (day_new.js): the grid is calm
     var el = e.target.closest ? e.target.closest('.cz-gb') : null;
     if (!el || !stage.contains(el) || e.target.closest('input, textarea')) return;
     var r = el.getBoundingClientRect();
@@ -361,6 +361,7 @@
     return true;
   };
   CZ.undo = undo;
+  CZ.span = span;      // "12:30 – 1:30 PM", for the block a new plan starts as (day_new.js)
 
   // A refresh after a write replaces the page: the block that had the keyboard's focus gets it back.
   CZ.beforeQuiet = function () {

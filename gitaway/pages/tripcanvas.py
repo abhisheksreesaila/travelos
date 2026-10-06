@@ -30,7 +30,7 @@ from gitaway.pages.around_ui import around_url
 from gitaway.pages.plantalk import talk_badge   # F-091: the chat badge on a plan and on a part
 
 HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/help.css"), *passes_ui.HEAD, Link(rel="stylesheet", href="/assets/css/trip_canvas.css"), Link(rel="stylesheet", href="/assets/css/day_grid.css"), Link(rel="stylesheet", href="/assets/css/plantalk.css"))   # pickers: the add-a-step sheet has a time field (F-082)
-SCRIPTS = ("/assets/js/trip_canvas.js", "/assets/js/day_grid.js", "/assets/js/day_menu.js")
+SCRIPTS = ("/assets/js/trip_canvas.js", "/assets/js/day_grid.js", "/assets/js/day_menu.js", "/assets/js/day_new.js")
 RANK = {"week": 0, "day": 1, "block": 2, "step": 3}
 PART_TINTS = ("sky", "sun", "grape", "bubble", "mint")
 MAX_FACES = 5
@@ -822,11 +822,21 @@ def plan_write(session, op, act, form):
             snap = json.loads(_field(form, "undo", 2000) or "null")
         except ValueError:
             snap = None
+        if isinstance(snap, dict) and snap.get("added"):
+            gone = planedit.unadd(session, snap)
+            return {"toast": f"{gone.title} removed"}
         if isinstance(snap, dict) and snap.get("deleted"):
             a = planedit.undelete(session, str(snap["deleted"])[:20])
             return {"toast": f"{a.title} is back", "plan": {"act": a.id, "start": a.start, "end": a.end, "title": a.title}}
         a = planedit.restore(session, snap)
         return {"toast": "Put back", "plan": {"act": a.id, "start": a.start, "end": a.end, "title": a.title}}
+    if op == "add":      # F-101: a plan made by touching empty time; the script sends the day, the start and the end in minutes, and the title
+        start, end, day = _minutes(form, "start"), _minutes(form, "end"), _field(form, "day", 3)
+        if start is None or end is None:
+            raise cal.CalendarError("That time is not one we can read.")
+        got = planedit.add(session, day=day, start=start, end=end, title=str(form.get("title") or "")[:200])
+        a = got["act"]
+        return {"toast": f"{a.title} added", "undo": got["undo"], "plan": {"act": a.id, "start": a.start, "end": a.end, "title": a.title}}
     if op != "edit":
         raise cal.CalendarError("That did not work.")
     title = form.get("title")

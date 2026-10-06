@@ -165,6 +165,40 @@ def test_a_nudge_that_would_leave_the_day_or_the_minimum_is_not_offered(phone):
     assert menu_item(phone, "Later").is_disabled() and menu_item(phone, "Longer").is_disabled() and menu_item(phone, "Earlier").is_enabled()
 
 
+def test_a_refresh_that_was_fetched_before_a_nudge_never_redraws_the_block_as_it_was(phone):
+    """Review (F-101 session): under load a nudge's refresh answered after the next nudge had started and redrew the block as it was before, so the next tap started from the
+    old time (Shorter applied twice: "now ends 12:45 PM"). Each refresh is fetched at once but answered by the test late, in the order it likes."""
+    lunch = plan("Lunch", 12 * 60, 13 * 60)
+    open_day(phone)
+    held = []
+
+    def hold_back(route):
+        held.append((route, route.fetch()))                    # the server's answer as it is now, handed to the page later
+
+    phone.route(re.compile(rf".*day={SUNDAY}&frag=1$"), hold_back)
+    hold_and_let_go(phone, lunch.id)
+    menu_item(phone, "Longer").click()
+    expect(toast(phone)).to_contain_text("now ends 1:15 PM")
+    phone.wait_for_function("() => true")
+    deadline = 40
+    while not held and deadline:
+        phone.wait_for_timeout(50)
+        deadline -= 1
+    assert held, "the first nudge's refresh was never asked for"
+    menu_item(phone, "Shorter").click()
+    expect(toast(phone)).to_contain_text("now ends 1:00 PM")
+    first = held[0]
+    first[0].fulfill(response=first[1])                          # the old answer (the block as it was after the first nudge only) arrives now
+    phone.wait_for_timeout(400)
+    assert phone.locator(block(lunch.id)).get_attribute("data-e") == str(13 * 60)            # it is not drawn again
+    assert now(lunch.id)[:2] == (12 * 60, 13 * 60)
+    for route, resp in held[1:]:
+        route.fulfill(response=resp)
+    phone.unroute(re.compile(rf".*day={SUNDAY}&frag=1$"))
+    menu_item(phone, "Shorter").click()                          # and the next tap starts from the true time
+    expect(toast(phone)).to_contain_text("now ends 12:45 PM")
+
+
 def test_tapping_away_puts_the_menu_away_and_does_nothing_else(phone):
     lunch = plan("Lunch", 12 * 60, 13 * 60)
     open_day(phone)

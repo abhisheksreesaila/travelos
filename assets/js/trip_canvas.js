@@ -156,8 +156,9 @@
     idle(function () {
       if (path(location.href) !== u || !calm()) return;
       delete cache[u];
+      var e0 = epoch;
       fetchLevel(u).then(function (html) {
-        if (html !== old && html !== shown && path(location.href) === u && shown === old && calm()) quietShow(html);
+        if (e0 === epoch && html !== old && html !== shown && path(location.href) === u && shown === old && calm()) quietShow(html);
       }).catch(function () {});
     });
   }
@@ -277,7 +278,14 @@
 
   // ---- writes ------------------------------------------------------------------------------------------------------------
   // Every write posts with X-Canvas. The server answers 204 + X-Canvas-Url (a tick, a note), or JSON {url, toast, undo} (a move, an add, an undo), or 422 {error}.
+  // `epoch` counts writes (it moves when one starts and when it ends): a copy of a level fetched before a write, which answers after it, is stale and is never shown (the hold
+  // menu's second nudge would otherwise start from a block drawn as it was before the first one).
+  var epoch = 0;
   function post(url, body) {
+    epoch++;
+    return post1(url, body).then(function (r) { epoch++; return r; }, function (e) { epoch++; throw e; });
+  }
+  function post1(url, body) {
     var ctl = typeof AbortController === 'function' ? new AbortController() : null;
     var timer = ctl ? setTimeout(function () { ctl.abort(); }, 12000) : 0;      // a write that never answers must not leave the day waiting for ever
     return fetch(url, { method: 'POST', body: body, credentials: 'same-origin', headers: { 'X-Canvas': '1' }, signal: ctl ? ctl.signal : undefined }).then(function (r) {
@@ -742,8 +750,9 @@
     return new Promise(function (done) {
       whenIdle(function () {
         cache = {};
-        var y = window.scrollY;
+        var y = window.scrollY, e0 = epoch;
         fetchLevel(here()).then(function (html) {
+          if (e0 !== epoch) { done(false); return; }       // another write started meanwhile: its own refresh brings the page up to date, and this copy is already old
           var back = CZ.beforeQuiet ? CZ.beforeQuiet() : null;      // the day grid puts the focus back on the block that had it
           quietSwap = true;
           try { swap(html, ''); } finally { quietSwap = false; }

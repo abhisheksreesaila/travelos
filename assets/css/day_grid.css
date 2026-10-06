@@ -111,12 +111,21 @@
 /* rename in place: the title becomes a field right there (16px so a phone does not zoom in to it) */
 .cz .cz-gb.is-editing { box-shadow: inset 0.25rem 0 0 var(--accent), var(--shadow-lg), 0 0 0 0.125rem var(--coral); z-index: 8; contain: layout style; overflow: visible; height: auto; min-height: calc(var(--l) * var(--mm)); scale: 1; }   /* a short block grows while its title is edited */
 .cz .cz-gb.is-editing .cz-gb-grip { display: none; }
-.cz .cz-gb-edit { width: 100%; min-height: 2.5rem; margin: 0.125rem 0; padding: 0.25rem 0.5rem; border: 0.125rem solid var(--ink); border-radius: 0.75rem; background: #FFFFFF; color: var(--ink); font-family: var(--font-body); font-weight: 800; font-size: 1rem; line-height: 1.2; box-sizing: border-box; }
+.cz .cz-gb-edit { width: 100%; min-height: 2.75rem; margin: 0.125rem 0; padding: 0.25rem 0.5rem; border: 0.125rem solid var(--ink); border-radius: 0.75rem; background: #FFFFFF; color: var(--ink); font-family: var(--font-body); font-weight: 800; font-size: 1rem; line-height: 1.2; box-sizing: border-box; }
 .cz .cz-gb-edit:focus { outline: none; border-color: var(--coral); }
 .cz .cz-gb-edit[aria-invalid="true"] { border-color: var(--coral-deep); }
 .cz .cz-gb-err { color: var(--coral-deep); font-weight: 800; font-size: var(--cz-small); line-height: 1.2; }
 .cz .cz-gb-err:empty { display: none; }
+/* a new plan (F-101): hold empty time, or tap it and tap the "+". The block pops in, follows the finger, then its title field opens; the rest of the grid is calm meanwhile. */
+.cz .cz-gb.is-new { z-index: 8; box-shadow: inset 0.25rem 0 0 var(--accent), var(--shadow-lg), 0 0 0 0.125rem var(--coral); animation: cz-pop 0.18s var(--cz-ease); }
+.cz .cz-grid.is-making .cz-gb:not(.is-new), .cz .cz-grid.is-making .cz-gbk { opacity: 0.55; pointer-events: none; transition: opacity 0.16s ease; }
+.cz .cz-gnew-ghost { position: absolute; z-index: 1; left: 0; right: 0; top: calc(var(--s) * var(--mm)); height: calc(var(--l) * var(--mm)); border-radius: 0.875rem; border: 0.125rem dashed var(--ink-3); background: rgba(255, 255, 255, .45); pointer-events: none; animation: cz-pop 0.16s var(--cz-ease); }
+.cz .cz-gnew { position: absolute; z-index: 9; top: calc(var(--s) * var(--mm) + var(--l, 60) * var(--mm) / 2 - 1.375rem); width: 2.75rem; height: 2.75rem; padding: 0; border: 0; border-radius: var(--r-pill); background: var(--ink); color: #FFFFFF; box-shadow: var(--shadow-lg); display: inline-flex; align-items: center; justify-content: center; touch-action: manipulation; cursor: pointer; animation: cz-pop 0.16s var(--cz-ease); }
+.cz .cz-gnew svg { width: 1.25rem; height: 1.25rem; }
+.cz .cz-gnew:focus-visible { outline: 0.1875rem solid var(--coral); outline-offset: 0.125rem; }
 @media (prefers-reduced-motion: reduce) {
+  .cz .cz-gb.is-new, .cz .cz-gnew-ghost, .cz .cz-gnew { animation: none; }
+  .cz .cz-grid.is-making .cz-gb:not(.is-new), .cz .cz-grid.is-making .cz-gbk { transition: none; }
   .cz .cz-gb.is-wiggle { animation: none; }
   .cz .cz-menu { animation: none; }
   .cz .cz-gb.is-leaving { transition: none; }

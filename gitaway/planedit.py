@@ -21,20 +21,37 @@ def _int(v):
     return isinstance(v, int) and not isinstance(v, bool)
 
 
+def _payload(card):
+    try:
+        return json.loads(card["payload"] or "{}")
+    except ValueError:
+        return {}
+
+
+def _last_card(fam, key):
+    """The family thread's newest card when it is this person's own card for plan `key` (see `_tell`) and still inside the window, else None."""
+    last = familydb.row(fam.db, "SELECT rowid AS n, * FROM thread WHERE trip_id = :t ORDER BY rowid DESC LIMIT 1", t=fam.trip_id)
+    if not last or last["kind"] != "change" or last["author"] != fam.traveler.id:
+        return None
+    payload = _payload(last)
+    age = (datetime.now(timezone.utc) - datetime.fromisoformat(last["created_at"])).total_seconds()
+    return last if payload.get("key") == key and age <= canvas.CARD_WINDOW and isinstance(payload.get("orig"), list) else None
+
+
 def _tell(session, fam, t, act_id, was, now):
     """The family's card for this plan's change, coalesced. `was` and `now` are (day, start, end, title)."""
     key = f"plan:{act_id}"
     who = familythread.first_name(fam.traveler)
-    last = familydb.row(fam.db, "SELECT rowid AS n, * FROM thread WHERE trip_id = :t ORDER BY rowid DESC LIMIT 1", t=fam.trip_id)
-    card, orig = None, list(was)
-    if last and last["kind"] == "change" and last["author"] == fam.traveler.id:
-        try:
-            payload = json.loads(last["payload"] or "{}")
-        except ValueError:
-            payload = {}
-        age = (datetime.now(timezone.utc) - datetime.fromisoformat(last["created_at"])).total_seconds()
-        if payload.get("key") == key and age <= canvas.CARD_WINDOW and isinstance(payload.get("orig"), list):
-            card, orig = last, payload["orig"]
+    card, orig = _last_card(fam, key), list(was)
+    adding = bool(card) and _payload(card).get("action") == "add"
+    if card:
+        orig = _payload(card)["orig"]
+    if adding:
+        # F-101: a plan just made, then moved, resized or renamed inside the window: the one card keeps saying it was added, with the plan as it now is.
+        text = f"{who} added {now[3]} on {cal._when(t, now[0], now[1])}"
+        payload = json.dumps({"action": "add", "key": key, "orig": orig}, separators=(",", ":"))
+        familydb.run(fam.db, "UPDATE thread SET text = :x, payload = :p WHERE rowid = :n", x=text, p=payload, n=card["n"])
+        return
     if tuple(orig) == tuple(now):
         if card:
             familydb.run(fam.db, "DELETE FROM thread WHERE rowid = :n", n=card["n"])      # back where it began: nothing happened
@@ -49,6 +66,40 @@ def _tell(session, fam, t, act_id, was, now):
     familythread.change(session, fam, text[0], action=text[1])
     made = familydb.row(fam.db, "SELECT rowid AS n FROM thread WHERE trip_id = :t ORDER BY rowid DESC LIMIT 1", t=fam.trip_id)
     familydb.run(fam.db, "UPDATE thread SET payload = :p WHERE rowid = :n", p=payload, n=made["n"])
+
+
+def add(session, *, day, start, end, title):
+    """Make a plan (F-101: the touch grid's hold on empty time), through the calendar's own add rules with the grid's grain. The family is told once, and the card
+    is tagged like `change`'s so a move, resize or rename of the new plan right after (inside `canvas.CARD_WINDOW`) changes that card and sends nothing more.
+    -> {"act": the plan, "undo": {"added": its id}}"""
+    a = cal.add_activity(session, day=day, start=start, end=end, title=title, kind="fun", fine=True)
+    if a is None:
+        raise cal.CalendarError("That did not work.")
+    with ses.family(session) as fam, familydb.transaction(fam.db):
+        last = familydb.row(fam.db, "SELECT rowid AS n, * FROM thread WHERE trip_id = :t ORDER BY rowid DESC LIMIT 1", t=fam.trip_id)
+        if last and last["kind"] == "change" and last["author"] == fam.traveler.id and f" added {a.title} on " in last["text"]:
+            payload = json.dumps({"action": "add", "key": f"plan:{a.id}", "orig": [a.day, a.start, a.end, a.title]}, separators=(",", ":"))
+            familydb.run(fam.db, "UPDATE thread SET payload = :p WHERE rowid = :n", p=payload, n=last["n"])
+    return {"act": a, "undo": {"added": a.id}}
+
+
+def unadd(session, snapshot):
+    """Undo of `add`: the plan goes (its parts and steps too, as for a delete). While the family's card for it is still the newest, it goes too, as if nothing happened;
+    after other news, they are told it was removed."""
+    act = snapshot.get("added") if isinstance(snapshot, dict) else None
+    if not isinstance(act, str) or act.startswith("b-") or not act:
+        raise cal.CalendarError("There is nothing to undo.")
+    with ses.family(session) as fam:
+        if not fam or not fam.trip_id:
+            raise cal.CalendarError("There is nothing to undo.")
+        with familydb.transaction(fam.db):
+            card = _last_card(fam, f"plan:{act}")
+            gone = cal.delete_in(session, fam, act[:20], say=not card)
+            if gone is None:
+                raise cal.CalendarError("That plan is gone.")
+            if card:
+                familydb.run(fam.db, "DELETE FROM thread WHERE rowid = :n", n=card["n"])
+    return gone
 
 
 def change(session, act_id, *, start=None, end=None, title=None, day=None, expect=None):
