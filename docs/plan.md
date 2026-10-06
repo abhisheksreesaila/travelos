@@ -628,12 +628,12 @@ Captain, 2026-10-06 (screenshot of a day): "The notes are not visible properly o
 - [x] tapping a block (not a hold) expands it in place into a card over the grid: the full note on top as the sticky (editable in place for editors, F-098 title editing kept), then the plan's chat (latest messages, a reply box, mic for a voice note, camera; F-091/F-094/F-100 behaviour), and for a park day a "Rides" link to its block level; tap outside, Escape or swipe down folds it back; smooth and calm under reduced motion
 - [x] holds, drags, resizes, the hold menu and making a plan on empty time keep working; viewers read the note and the chat (and may post in the chat, as F-091 allows); browser tests at 390 and 320 open, read a long note in full, edit a note, send a message, fold, and check no text is cut; phone checks
 
-## F-107 The plan card is the note [todo]
+## F-107 The plan card is the note [done]
 Captain, 2026-10-06 (screenshot of the card with the keyboard up, its message box squeezed under the tab bar): "No message needed inside block… too much info… notes are fine." · Needs: F-106
-- [ ] the card holds the plan's title and time, its notes (read, edit your own, Add a note) and the links "Open chat" (with the chat count) and, on a park day, "Rides"; no messages, no composer, no mic or camera in the card; it never sits under the tab bar or the keyboard
-- [ ] the F-106 browser tests are reworked to the note-only card (open, read a long note, edit, add, fold every way, viewer, focus, no listener leaks, the keyboard while editing a note); Open chat lands on the plan's chat
+- [x] the card holds the plan's title and time, its notes (read, edit your own, Add a note) and the links "Open chat" (with the chat count) and, on a park day, "Rides"; no messages, no composer, no mic or camera in the card; it never sits under the tab bar or the keyboard
+- [x] the F-106 browser tests are reworked to the note-only card (open, read a long note, edit, add, fold every way, viewer, focus, no listener leaks, the keyboard while editing a note); Open chat lands on the plan's chat
 
-## F-108 Calm notifications at the top [todo]
+## F-108 Calm notifications at the top [doing]
 Captain, 2026-10-06: the pop-up notifications "are little jittery… should come at the top? Or in the middle… light gradient, subtle". · Needs: none
 - [ ] every in-app toast (the canvas's move/resize/Undo toasts, the Ask sheet's result, the chat and booking messages that use a toast) appears at the top just under the heading as a light, frosted pill with a soft gradient, gliding down gently (no jump), one at a time (a new one replaces the old in place), and fading away; Undo stays a clear button inside it; reduced motion: no glide; screen readers hear it (role=status)
 - [ ] it never covers the day's heading controls or the tab bar, works over the day, the week, Family and the Ask sheet, and browser tests check its place at 390 and 320, the replace-in-place, Undo, and reduced motion
