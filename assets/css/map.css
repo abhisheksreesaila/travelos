@@ -49,3 +49,6 @@
 .mp-li-text { display: flex; flex-direction: column; min-width: 0; }
 .mp-unknown { margin: 0; font-weight: 700; color: var(--ink-2); }
 .mp-edit { align-self: flex-start; }
+
+/* F-096: Map has no tab, so it starts with the way back to its day */
+.mp-back { display: inline-flex; align-items: center; gap: 0.25rem; min-height: 2.75rem; padding: 0 0.75rem 0 0.25rem; font-weight: 800; color: var(--ink); text-decoration: none; align-self: flex-start; }

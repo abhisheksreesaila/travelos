@@ -84,7 +84,7 @@
 /* F-096: the tab bar is glass (it floats over the page). Solid card by default; translucent with a strong blur only where the browser can blur;
    solid again when the person asks for less transparency. 84% keeps the labels at 4.5:1 over the darkest thing that scrolls behind. */
 @media (max-width: 720px), (display-mode: standalone) {
-  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) and (color: color-mix(in srgb, red 50%, transparent)) {   /* iOS 15.4–16.1 blur but lack color-mix: they keep the solid base */
     .ph-tabs { background: color-mix(in srgb, color-mix(in srgb, var(--card) 84%, var(--paper-2)) 84%, transparent); -webkit-backdrop-filter: blur(1.25rem) saturate(1.6); backdrop-filter: blur(1.25rem) saturate(1.6);
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, .6), 0 -1px 0 rgba(30, 26, 46, .1), 0 -0.5rem 1.5rem -0.75rem rgba(30, 26, 46, .18); }
   }

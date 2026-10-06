@@ -455,8 +455,8 @@ html[data-cz-dir="prev"]::view-transition-new(root) { animation: cz-in-left 320m
 
 /* ---- F-096: a touch of glass. Only what floats (the sheets here, the tab bar in phone.css) is translucent; cards and text stay solid.
    The base is the solid card; a tinted, mostly opaque base plus a strong blur is added only where the browser can blur, and removed again for people who ask for less transparency.
-   At 86% the text keeps 4.5:1 even over the darkest thing behind a sheet (tests_browser/test_glass.py measures it). */
-@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+   At 86% the text keeps 4.5:1 even over the darkest thing behind a sheet (tests_browser/test_glass_js.py measures it). */
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) and (color: color-mix(in srgb, red 50%, transparent)) {   /* iOS 15.4–16.1 blur but lack color-mix: they keep the solid base */
   .cz .cz-sheet { background: color-mix(in srgb, var(--card) 86%, var(--paper-2)); background: color-mix(in srgb, color-mix(in srgb, var(--card) 86%, var(--paper-2)) 86%, transparent);
     -webkit-backdrop-filter: blur(1.25rem) saturate(1.6); backdrop-filter: blur(1.25rem) saturate(1.6); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .55), var(--shadow-lg); }
 }

@@ -8,7 +8,7 @@ from tests.test_booked import trip  # noqa: F401 - fixture
 from tests.test_trip_canvas import bare, tag
 
 CSS = Path(__file__).resolve().parent.parent / "assets" / "css"
-SUPPORTS = "@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))"
+SUPPORTS = "@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) and (color: color-mix(in srgb, red 50%, transparent))"   # needs color-mix too: iOS 15.4–16.1 keep the solid base
 
 
 def test_the_day_heading_has_a_map_button_that_opens_that_days_map(trip):
@@ -61,3 +61,8 @@ def test_cards_and_text_stay_solid():
         css = (CSS / name).read_text(encoding="utf-8")
         for rule in re.findall(r"([^{}]+)\{([^{}]*backdrop-filter[^{}]*)\}", css):
             assert not re.search(r"\.(tp-card|tp-row|cz-block|cz-card|bk-sos-row)\b", rule[0]), rule[0]
+
+
+def test_the_map_starts_with_the_way_back_to_its_day(trip):
+    page = bare(trip.get("/trip/map?day=2").text)       # Map has no tab now: the way back is on the page
+    assert 'href="/trip/canvas?day=2"' in tag(page, "mp-back") and "Back to" in page

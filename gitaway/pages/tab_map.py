@@ -160,7 +160,8 @@ def content(request, session):
         if left:
             body.append(P("Finding places on the map…", role="status", cls="mp-finding", id="mp-finding"))
         body.append(stop_list(stops, v))
-    return (around_ui.segment("stops", v["sel"]), day_picker(v), chip, *body,
+    back = A(icon("chev-left", 18, 2.6), f"Back to {d.strftime('%A')}", href=f"/trip/canvas?day={v['sel']}", cls="mp-back", id="mp-back")   # F-096: Map has no tab now; this is the way back to the day
+    return (back, around_ui.segment("stops", v["sel"]), day_picker(v), chip, *body,
             Script(_json(data), type="application/json", id="mp-data"))
 
 

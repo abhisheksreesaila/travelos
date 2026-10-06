@@ -1,4 +1,4 @@
-"""The phone shell's other four tabs (F-067): /trip/map, /trip/ask, /trip/family and /trip/help.
+"""The phone shell's pages besides the canvas (F-067; since F-096 only Ask and Family are tabs): /trip/map, /trip/ask, /trip/family and /trip/help.
 
 Each route only builds the shell (heading, tab bar) and asks its own module for the content: gitaway/pages/tab_<name>.py `content(request, session)`.
 Replace a tab by editing that module; nothing here changes. Every role can open a tab (a tab that writes adds its own POST route,
