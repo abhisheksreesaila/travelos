@@ -33,7 +33,7 @@ def test_a_move_keeps_the_length_and_saves_through_the_calendar(ari, announced):
     got = planedit.change(ari, a.id, start=12 * 60 + 30, end=13 * 60 + 30)
     assert (got["act"].start, got["act"].end) == (12 * 60 + 30, 13 * 60 + 30)
     assert (cal.get_activity(ari, a.id).start, cal.get_activity(ari, a.id).end) == (12 * 60 + 30, 13 * 60 + 30)
-    assert got["undo"] == {"act": a.id, "day": 1, "start": 12 * 60, "end": 13 * 60, "title": "Lunch at the pier"}
+    assert got["undo"] == {"act": a.id, "day": 1, "start": 12 * 60, "end": 13 * 60, "title": "Lunch at the pier", "after": {"day": 1, "start": 750, "end": 810, "title": "Lunch at the pier"}}
 
 
 def test_a_resize_can_use_five_minutes_and_fifteen_as_the_shortest(ari):
@@ -52,6 +52,30 @@ def test_the_desktop_form_keeps_its_fifteen_minute_snap_and_thirty_minute_minimu
     assert cal.update_activity(ari, a.id, end=12 * 60 + 40).end == 12 * 60 + 45
     with pytest.raises(cal.CalendarError):
         cal.update_activity(ari, a.id, end=12 * 60 + 15)
+
+
+def test_times_nobody_changed_are_never_resnapped_or_held_to_the_forms_minimum(ari, announced):
+    """Review: a plan made on the phone (12:05, or 15 minutes long) must still be renamable and savable from the desktop form and by Ask."""
+    a = lunch(ari)
+    planedit.change(ari, a.id, start=12 * 60 + 5, end=12 * 60 + 20)               # 12:05, 15 minutes
+    base = len(cards(ari))
+    got = cal.update_activity(ari, a.id, title="Lunch 2")                          # a title-only edit, as the desktop and Ask make it
+    assert (got.start, got.end, got.title) == (12 * 60 + 5, 12 * 60 + 20, "Lunch 2")
+    assert [c["text"] for c in cards(ari)[base:]] == [f"{cards(ari)[-1]['text']}"] and "renamed" in cards(ari)[-1]["text"] and "moved" not in cards(ari)[-1]["text"]
+    got = cal.update_activity(ari, a.id, day=1, start="12:05", end="12:20", title="Lunch 3", kind="food")      # the desktop form re-sends every field
+    assert (got.start, got.end) == (12 * 60 + 5, 12 * 60 + 20)
+    with pytest.raises(cal.CalendarError):                                         # but a time that did change is held to the form's rules
+        cal.update_activity(ari, a.id, end="12:25")
+
+
+def test_undo_refuses_when_someone_changed_the_plan_since(ari):
+    a = lunch(ari)
+    got = planedit.change(ari, a.id, start=12 * 60 + 30, end=13 * 60 + 30)
+    assert got["undo"]["after"] == {"day": 1, "start": 12 * 60 + 30, "end": 13 * 60 + 30, "title": "Lunch at the pier"}
+    planedit.change(ari, a.id, title="Dinner instead")                             # another member's later change
+    with pytest.raises(cal.CalendarError) as e:
+        planedit.restore(ari, got["undo"])
+    assert "Someone changed it since" in str(e.value) and cal.get_activity(ari, a.id).title == "Dinner instead" and cal.get_activity(ari, a.id).start == 12 * 60 + 30
 
 
 def test_the_calendars_rules_refuse_what_they_always_refused(ari):

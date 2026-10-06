@@ -225,8 +225,9 @@
     gg = null;
     if (g.mode === 'wait') { if (CZ.tap) CZ.tap(g.el, e); return; }        // a tap: the click that follows opens the block (two taps on a title edit it: day_menu.js)
     CZ.guard(300, g.el);
-    if (!g.resize && !g.moved && CZ.hold) {                                 // held and let go without moving: it is not moved, it gets its menu (day_menu.js)
+    if (!g.moved && CZ.hold) {                                              // held (by the edge too) and let go without moving: nothing changes, it gets its menu (day_menu.js)
       g.el.style.transform = '';
+      if (g.resize) { g.el.style.height = ''; endZoom(); }
       unhold(g);
       CZ.hold(g.el);
       return;
@@ -267,7 +268,7 @@
     el.dataset.s = s;
     el.dataset.e = s + dur;
     setWhen(el, s, s + dur);
-    land(el, from, g, function () { save(g, { start: s, end: s + dur }); });
+    land(el, from, g, function () { save(g, { start: s, end: s + dur }, { s: g.s0, e: g.e0 }); });
   }
 
   // Resize: the grid eases back to normal while the block keeps the length it was given.
@@ -282,7 +283,7 @@
     dropLabel();
     endZoom(function () {
       el.style.height = '';
-      if (changed) save(g, { start: g.s0, end: e }); else busy = false;
+      if (changed) save(g, { start: g.s0, end: e }, { s: g.s0, e: g.e0 }); else busy = false;
     });
   }
 
@@ -315,15 +316,24 @@
     if (then) then();
   }
   // ---- saving, the toast and Undo -----------------------------------------------------------------------------------------
-  function save(g, fields) {
-    var body = CZ.tripBody(Object.assign({ op: 'edit', act: g.el.dataset.act, next: CZ.here() }, fields));
+  function save(g, fields, old) {
+    var el = g.el;
+    var body = CZ.tripBody(Object.assign({ op: 'edit', act: el.dataset.act, next: CZ.here() }, fields));
     return CZ.post('/trip/canvas/plan', body).then(function (res) {
       busy = false;
       if (res.toast) CZ.showToast(res.toast, res.undo ? function () { undo(res.undo); } : null);
       return CZ.quiet();
     }, function (err) {
       busy = false;
-      CZ.showToast(err && err.soft ? err.soft : 'Could not save that.');
+      if (old && el.isConnected) {            // refused or never answered: the block goes back where it was, even if the refresh below cannot be fetched
+        var lo = +el.closest('#cz-grid').dataset.lo;
+        el.style.setProperty('--s', old.s - lo);
+        el.style.setProperty('--l', old.e - old.s);
+        el.dataset.s = old.s;
+        el.dataset.e = old.e;
+        setWhen(el, old.s, old.e);
+      }
+      CZ.showToast(err && err.soft ? err.soft : 'Could not save that. Check your connection.');
       return CZ.quiet();                      // the page shows what is really saved
     });
   }
@@ -340,14 +350,14 @@
   CZ.setTimes = function (el, s, e) {
     var g = el.closest('#cz-grid');
     if (!g || busy) return false;
-    var from = el.getBoundingClientRect();
+    var from = el.getBoundingClientRect(), old = { s: +el.dataset.s, e: +el.dataset.e };
     busy = true;
     el.style.setProperty('--s', s - +g.dataset.lo);
     el.style.setProperty('--l', e - s);
     el.dataset.s = s;
     el.dataset.e = e;
     setWhen(el, s, e);
-    land(el, from, {}, function () { save({ el: el }, { start: s, end: e }); });
+    land(el, from, {}, function () { save({ el: el }, { start: s, end: e }, old); });
     return true;
   };
   CZ.undo = undo;

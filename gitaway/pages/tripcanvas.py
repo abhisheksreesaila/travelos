@@ -488,8 +488,8 @@ def grid_block(v, a, lane, lanes, lo, edit):
     cls = f"cz-gb cz-k-{k}" + (" is-park" if park else "") + (" is-short" if a.end - a.start < 45 else "") + (" has-chat" if chat else "")
     style = f"--s:{a.start - lo};--l:{a.end - a.start};--lane:{lane};--lanes:{lanes}"
     label = {"aria_label": f"{a.title}, {when}"} if not park else {}
-    if not park and not edit:
-        return A(Div(*inner, cls="cz-gb-in cz-cs"), href=plantalk.url(a.id, "", ses.open_trip_id()), cls=cls, style=style, aria_label=f"{a.title}, {when}: open the chat", **attrs)
+    if not park:      # a tap on a plan opens its chat, for everyone (the captain's call); a park block opens its block level
+        extra.insert(0, A(href=plantalk.url(a.id, "", ses.open_trip_id()), cls="cz-gb-open", aria_label=f"Open the chat for {a.title}, {when}"))
     return Div(Div(*inner, cls="cz-gb-in cz-cs"), *extra, cls=cls, style=style, **({"tabindex": "-1"} if park else {}), **label, **attrs)
 
 

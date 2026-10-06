@@ -8,7 +8,9 @@
   var CZ = window.CZ;
   if (!CZ || !CZ.setTimes) return;
   var stage = CZ.stage;
-  var MAX_TITLE = 40, STEP = 15, DAY_END = 22 * 60;
+  var MAX_TITLE = 40, STEP = 15, FINE = 5, MIN_LEN = 15, DAY_END = 22 * 60;
+  var fineOn = false;       // the menu's own 5-minute switch: precision for a person who has no zoom (reduced motion) or would rather press than drag
+  function nstep() { return fineOn ? FINE : STEP; }
   var menu = null;          // the open menu: { el, block, act, node, return: the thing to focus when it closes }
   var lastTap = null, opening = 0;
 
@@ -87,10 +89,14 @@
     nudge.setAttribute('aria-label', 'By 15 minutes');
     [['earlier', 'Earlier', 'up'], ['later', 'Later', 'down'], ['shorter', 'Shorter', 'shorter'], ['longer', 'Longer', 'longer']].forEach(function (n) {
       var it = item('button', n[1], n[2], { id: n[0] });
-      it.setAttribute('aria-label', n[1] + ' by 15 minutes');
+      it.setAttribute('aria-label', n[1] + ' by ' + nstep() + ' minutes');
       nudge.appendChild(it);
     });
     node.appendChild(nudge);
+    var fine = item('button', 'Fine: 5 min', 'shorter', { id: 'fine' });
+    fine.setAttribute('role', 'menuitemcheckbox');
+    fine.classList.add('cz-mi-fine');
+    node.appendChild(fine);
     syncNudges(node, k);
     node.addEventListener('focusin', function (e) { if (menu && e.target.dataset && e.target.dataset.do) menu.focusId = e.target.dataset.do; });
     stage.appendChild(node);
@@ -107,7 +113,13 @@
 
   // What the four nudges may still do: not before the grid starts, not past its end, not under 15 minutes.
   function syncNudges(node, k) {
-    var ok = { earlier: k.s - STEP >= k.lo, later: k.e + STEP <= k.hi, shorter: k.e - k.s - STEP >= STEP, longer: k.e + STEP <= k.hi };
+    var d = nstep(), ok = { earlier: k.s - d >= k.lo, later: k.e + d <= k.hi, shorter: k.e - k.s - d >= MIN_LEN, longer: k.e + d <= k.hi };
+    var f = node.querySelector('[data-do="fine"]');
+    if (f) { f.setAttribute('aria-checked', fineOn ? 'true' : 'false'); f.classList.toggle('is-on', fineOn); }
+    ['earlier', 'later', 'shorter', 'longer'].forEach(function (id) {
+      var it = node.querySelector('[data-do="' + id + '"]');
+      if (it) it.setAttribute('aria-label', it.textContent.trim() + ' by ' + d + ' minutes');
+    });
     Object.keys(ok).forEach(function (id) {
       var it = node.querySelector('[data-do="' + id + '"]');
       if (!it) return;
@@ -159,12 +171,13 @@
     e.preventDefault();
     if (what === 'rename') { close(false); rename(b); return; }
     if (what === 'delete') { confirmDelete(); return; }
-    var k = bounds(b), s = k.s, en = k.e;
-    if (what === 'earlier') { s -= STEP; en -= STEP; }
-    else if (what === 'later') { s += STEP; en += STEP; }
-    else if (what === 'shorter') en -= STEP;
-    else if (what === 'longer') en += STEP;
-    if (s < k.lo || en > k.hi || en - s < STEP) return;
+    var k = bounds(b), s = k.s, en = k.e, d = nstep();
+    if (what === 'fine') { fineOn = !fineOn; syncNudges(menu.node, k); return; }
+    if (what === 'earlier') { s -= d; en -= d; }
+    else if (what === 'later') { s += d; en += d; }
+    else if (what === 'shorter') en -= d;
+    else if (what === 'longer') en += d;
+    if (s < k.lo || en > k.hi || en - s < MIN_LEN) return;
     CZ.setTimes(b, s, en);              // the menu stays for the next nudge: the page behind it is brought up to date, and the menu goes back on the same block (cz:swap, below)
   }
 

@@ -51,7 +51,7 @@ def _tell(session, fam, t, act_id, was, now):
     familydb.run(fam.db, "UPDATE thread SET payload = :p WHERE rowid = :n", p=payload, n=made["n"])
 
 
-def change(session, act_id, *, start=None, end=None, title=None, day=None):
+def change(session, act_id, *, start=None, end=None, title=None, day=None, expect=None):
     """Edit one plan: any of its start, end, title or day. -> {"act": the plan now, "undo": the snapshot `restore` takes, "changed": whether anything differs}."""
     if not isinstance(act_id, str) or act_id.startswith("b-"):
         raise cal.CalendarError("Booked items are locked. Change your booking to move them.")
@@ -65,18 +65,24 @@ def change(session, act_id, *, start=None, end=None, title=None, day=None):
             if row is None:
                 raise cal.CalendarError("That plan is gone.")
             was = (row["day"], row["start_min"], row["end_min"], row["title"])
-            a = cal.update_in(session, fam, t, blocks, act_id, day=day, start=start, end=end, title=title, scope="", say=False, fine=True)
+            if expect is not None and tuple(expect) != was:
+                raise cal.CalendarError("Someone changed it since. Nothing was undone.")      # an Undo must not overwrite another member's later change
+            a =cal.update_in(session, fam, t, blocks, act_id, day=day, start=start, end=end, title=title, scope="", say=False, fine=True)
             now = (a.day, a.start, a.end, a.title)
             _tell(session, fam, t, act_id, was, now)
-    return {"act": a, "changed": was != now, "undo": {"act": act_id, "day": was[0], "start": was[1], "end": was[2], "title": was[3]}}
+    return {"act": a, "changed": was != now, "undo": {"act": act_id, "day": was[0], "start": was[1], "end": was[2], "title": was[3],
+                                                      "after": {"day": now[0], "start": now[1], "end": now[2], "title": now[3]}}}
 
 
 def restore(session, snapshot):
     """Undo: put a plan back as the snapshot `change` gave says. The snapshot comes from the page, so every field is checked."""
     s = snapshot if isinstance(snapshot, dict) else {}
-    if not (isinstance(s.get("act"), str) and _int(s.get("day")) and _int(s.get("start")) and _int(s.get("end")) and isinstance(s.get("title"), str)):
+    after = s.get("after") if isinstance(s.get("after"), dict) else {}
+    if not (isinstance(s.get("act"), str) and _int(s.get("day")) and _int(s.get("start")) and _int(s.get("end")) and isinstance(s.get("title"), str)
+            and _int(after.get("day")) and _int(after.get("start")) and _int(after.get("end")) and isinstance(after.get("title"), str)):
         raise cal.CalendarError("There is nothing to undo.")
-    return change(session, s["act"][:20], day=s["day"], start=s["start"], end=s["end"], title=s["title"])["act"]
+    return change(session, s["act"][:20], day=s["day"], start=s["start"], end=s["end"], title=s["title"],
+                  expect=(after["day"], after["start"], after["end"], after["title"]))["act"]
 
 
 def delete(session, act_id):

@@ -201,7 +201,10 @@
   // ---- writes ------------------------------------------------------------------------------------------------------------
   // Every write posts with X-Canvas. The server answers 204 + X-Canvas-Url (a tick, a note), or JSON {url, toast, undo} (a move, an add, an undo), or 422 {error}.
   function post(url, body) {
-    return fetch(url, { method: 'POST', body: body, credentials: 'same-origin', headers: { 'X-Canvas': '1' } }).then(function (r) {
+    var ctl = typeof AbortController === 'function' ? new AbortController() : null;
+    var timer = ctl ? setTimeout(function () { ctl.abort(); }, 12000) : 0;      // a write that never answers must not leave the day waiting for ever
+    return fetch(url, { method: 'POST', body: body, credentials: 'same-origin', headers: { 'X-Canvas': '1' }, signal: ctl ? ctl.signal : undefined }).then(function (r) {
+      clearTimeout(timer);
       if (r.status === 422) return r.json().then(function (j) { var e = new Error('refused'); e.soft = j.error || 'That did not work.'; throw e; });
       if (r.status === 204) { var next = r.headers.get('X-Canvas-Url'); if (!next) throw new Error('write'); return { url: next }; }
       if (!r.ok) throw new Error('write ' + r.status);

@@ -201,6 +201,8 @@ def test_the_keyboard_has_the_menu_too_and_escape_closes_it_without_zooming_out(
     phone.keyboard.press("ArrowRight")
     expect(menu_item(phone, "Rename")).to_be_focused()
     phone.keyboard.press("End")
+    expect(phone.get_by_role("menuitemcheckbox", name=re.compile("^Fine"))).to_be_focused()
+    phone.keyboard.press("ArrowUp")
     expect(menu_item(phone, "Longer")).to_be_focused()
     phone.keyboard.press("Enter")
     expect(toast(phone)).to_contain_text("now ends 1:15 PM")
@@ -343,6 +345,35 @@ def test_reduced_motion_does_not_wiggle(canvas_page):
     hold_and_let_go(page, lunch.id)
     assert page.locator(block(lunch.id)).evaluate("e => e.getAnimations().length") == 0
     expect(page.locator(block(lunch.id))).to_have_class(re.compile(r"is-menu"))              # the block still shows which one the menu is for
+
+
+def test_the_menu_has_a_five_minute_switch_so_precision_needs_no_zoom(canvas_page):
+    page = canvas_page(viewport=PHONE, motion="reduce")
+    lunch = plan("Lunch", 12 * 60, 13 * 60)
+    open_day(page)
+    hold_and_let_go(page, lunch.id)
+    fine = page.get_by_role("menuitemcheckbox", name=re.compile("^Fine"))
+    assert fine.get_attribute("aria-checked") == "false"
+    fine.click()
+    assert fine.get_attribute("aria-checked") == "true" and menu_item(page, "Later").get_attribute("aria-label") == "Later by 5 minutes"
+    menu_item(page, "Later").click()
+    expect(toast(page)).to_contain_text("Lunch moved to 12:05 PM")
+    assert now(lunch.id)[:2] == (12 * 60 + 5, 13 * 60 + 5)
+    expect(page.get_by_role("menuitemcheckbox", name=re.compile("^Fine"))).to_have_attribute("aria-checked", "true")
+    menu_item(page, "Shorter").click()
+    expect(toast(page)).to_contain_text("now ends 1:00 PM")
+    assert now(lunch.id)[:2] == (12 * 60 + 5, 13 * 60)
+    checks(page)
+
+
+def test_holding_the_bottom_edge_and_letting_go_without_moving_opens_the_menu_and_changes_nothing(phone):
+    lunch = plan("Lunch", 12 * 60, 13 * 60)
+    open_day(phone)
+    x, y = hold_block(phone, lunch.id, edge=True)
+    fire(phone, "pointerup", x, y)
+    expect(phone.locator(".cz-menu")).to_be_visible()
+    expect(phone.locator(".cz-g-zoom.is-zooming")).to_have_count(0, timeout=3000)
+    assert now(lunch.id)[:2] == (12 * 60, 13 * 60) and phone.locator(".cz-toast").count() == 0 and phone.evaluate("CZ.held") is False
 
 
 def test_a_move_by_dragging_still_works_and_does_not_open_the_menu(phone):

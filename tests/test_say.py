@@ -561,14 +561,28 @@ def test_the_card_and_the_done_page_say_added_to_after_a_merge(client, azure, an
     assert "to what was already planned on Saturday, Oct 17" in client.get(r.headers["location"]).text
 
 
+def test_ask_can_move_a_fifteen_minute_plan_made_on_the_phone(client, azure, announced):
+    from gitaway import planedit
+    book(client)
+    s = person("ari")
+    a = cal.add_activity(s, day=SAT, start="12:00", end="13:00", title="Coffee", kind="food")
+    planedit.change(s, a.id, end=12 * 60 + 15)
+    azure.answer = answer(op("move_plan", id=a.id, start="13:00", end="13:15"))
+    step = say.start(s, "Move coffee to 1", SAT)
+    assert step["questions"] == [] and not step["preview"]["dropped"]
+    say.apply(s, step["state"], step["preview"]["token"], None)
+    assert plans(s) == [("Coffee", "13:00", "13:15")]
+
+
 def test_a_plan_with_a_start_and_no_length_gets_an_hour_and_nobody_is_asked(client, azure, announced):
     """F-097: Ask no longer asks how long; a plan placed without a length is an hour, and the grid is where it is stretched."""
     book(client)
     s = person("ari")
-    azure.answer = answer(op("add_plan", title="Gelato", start="15:30"), op("add_plan", title="Late swim", start="21:30"))
-    step = say.start(s, "Gelato at 3:30 and a late swim at 9:30", SAT)
+    azure.answer = answer(op("add_plan", title="Gelato", start="15:30"), op("add_plan", title="Late swim", start="21:45"), op("add_plan", title="Night walk", start="22:00"))
+    step = say.start(s, "Gelato at 3:30, a late swim at 9:45, a night walk at 10", SAT)
     assert step["questions"] == []
     chips = step["preview"]["groups"][0]["chips"]
-    assert [c["label"] for c in chips] == ["Gelato", "Late swim"] and "3:30" in chips[0]["after"] and "4:30" in chips[0]["after"]
+    assert [c["label"] for c in chips] == ["Gelato"] and "3:30" in chips[0]["after"] and "4:30" in chips[0]["after"]
+    assert len(step["preview"]["dropped"]) == 2        # a full hour would pass the day's 10 PM end: left out with the calendar's reason, not squeezed into a 15-minute plan
     say.apply(s, step["state"], step["preview"]["token"], None)
-    assert ("Gelato", "15:30", "16:30") in plans(s) and ("Late swim", "21:30", "22:00") in plans(s)      # the hour stops where the grid does
+    assert plans(s) == [("Gelato", "15:30", "16:30")]
