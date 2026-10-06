@@ -1,0 +1,126 @@
+/* The day as a time grid (F-097, F-098): the family's plans as blocks on an hour grid, sized by their length; bookings as quiet lines at their times; today's now line.
+   Loaded after trip_canvas.css. Every rule sits under .cz. Sizes are rem off the one root; text never goes under --cz-small.
+
+   How it moves without jank. Position and size are CSS variables (--s minutes from the grid's first hour, --l minutes long; 1 minute = --mm). A held block follows the
+   finger with `transform` only (the compositor does it), snapped to 15 minutes by a dashed ghost; a resize changes one absolutely positioned block's height, no
+   other layout is touched (the grid is `contain: layout`). The zoom while resizing is a `scaleY` on one layer (.cz-g-zoom); everything that has words in it carries
+   .cz-cs, which scales back by 1/--zk so text and hairlines keep their size while the time between them stretches. The script drives --zk and the transform together, one
+   value per frame, so they never disagree. */
+
+.cz .cz-grid { --hh: 4.5rem; --mm: calc(var(--hh) / 60); --gut: 3.25rem; --zk: 1; position: relative; height: calc(var(--n) * var(--hh) + 1.25rem); margin-top: 0.25rem; overflow: hidden; contain: layout style;
+  touch-action: pan-y pinch-zoom; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+.cz .cz-grid.has-bk { --bkw: 2.5rem; }
+.cz .cz-g-zoom { position: absolute; left: 0; right: 0; top: 0.625rem; height: calc(var(--n) * var(--hh)); transform-origin: 0 0; }
+.cz .cz-g-zoom.is-zooming { will-change: transform; }
+.cz .cz-cs { transform: scaleY(calc(1 / var(--zk))); transform-origin: 0 0; }
+.cz .cz-g-plane { position: absolute; left: var(--gut); right: 0; top: 0; bottom: 0; }
+
+/* the hours down the side, and a hairline for each hour and half hour */
+.cz .cz-g-hour { position: absolute; left: 0; width: calc(var(--gut) - 0.5rem); top: calc(var(--s) * var(--mm)); margin-top: -0.5625rem; text-align: right; line-height: 1.125rem; font-size: var(--cz-small); font-weight: 700; color: var(--ink-3);
+  font-variant-numeric: tabular-nums; white-space: nowrap; transform-origin: 100% 50%; }
+.cz .cz-g-line { position: absolute; left: 0; right: 0; top: calc(var(--s) * var(--mm)); height: 1px; background: var(--line); }
+.cz .cz-g-line.is-half { background: transparent; border-top: 1px dashed var(--line); height: 0; }
+
+/* bookings: quiet lines behind the plans (F-090, F-093). The icon sits in a strip the plans leave free, so it shows even under a plan. */
+.cz .cz-gbk { position: absolute; z-index: 1; left: 0; right: 0; top: calc(var(--s) * var(--mm)); display: block; min-height: 2.75rem; padding: 0 0.5rem; border-radius: 0.875rem;
+  background: color-mix(in srgb, var(--paper-2) 82%, transparent); border: 0.0625rem dashed rgba(30, 26, 46, .2); color: var(--ink-3); font-size: var(--cz-small); }
+.cz .cz-gbk-in { display: flex; align-items: center; gap: 0.5rem; min-height: 2.625rem; min-width: 0; transform-origin: 0 50%; }
+.cz .cz-gbk .cz-bk-time { flex-shrink: 0; }
+.cz .cz-gbk .cz-bk-t { min-width: 0; flex: 1; font-size: var(--cz-small); }
+.cz .cz-gbk .cz-bk-tag { flex-shrink: 0; }
+
+/* a plan: a block whose place and height are its time */
+.cz .cz-gb { --tint: var(--bubble-tint); --accent: var(--bubble); position: absolute; z-index: 2; top: calc(var(--s) * var(--mm)); height: calc(var(--l) * var(--mm));
+  left: calc(var(--bkw, 0rem) + (100% - var(--bkw, 0rem)) * var(--lane) / var(--lanes)); width: calc((100% - var(--bkw, 0rem)) / var(--lanes) - 0.25rem);
+  border-radius: 0.875rem; background: var(--tint); color: var(--ink); overflow: hidden; contain: layout paint; box-shadow: inset 0.25rem 0 0 var(--accent), var(--shadow-sm); text-decoration: none;
+  touch-action: pan-y pinch-zoom; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; cursor: default; transition: box-shadow 0.16s ease, opacity 0.16s ease, scale 0.16s var(--cz-ease); }
+.cz a.cz-gb { cursor: pointer; }
+.cz .cz-gb.is-park, .cz a.cz-gb { min-height: 2.75rem; }      /* what is a link is a 44px target, however short the plan */
+.cz .cz-gb:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.125rem; }
+.cz .cz-k-food { --tint: var(--sun-tint); --accent: var(--sun); }
+.cz .cz-k-outdoors { --tint: var(--mint-tint); --accent: var(--mint); }
+.cz .cz-k-culture { --tint: var(--grape-tint); --accent: var(--grape); }
+.cz .cz-k-travel { --tint: var(--sky-tint); --accent: var(--sky); }
+.cz .cz-gb-in { position: relative; display: flex; flex-direction: column; gap: 0.0625rem; padding: 0.25rem 0.5rem 0.25rem 0.75rem; min-width: 0; }
+.cz .cz-gb.is-park .cz-gb-in { padding-top: 0.375rem; }
+.cz .cz-gb-t { font-weight: 800; font-size: var(--cz-body); line-height: 1.15; overflow-wrap: anywhere; }
+.cz .cz-gb-when { font-size: var(--cz-small); font-weight: 700; line-height: 1.15; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.cz .cz-gb.is-short .cz-gb-in { flex-direction: row; flex-wrap: wrap; gap: 0 0.5rem; align-items: baseline; padding-top: 0.0625rem; padding-bottom: 0; }
+.cz .cz-gb.is-short .cz-gb-t { line-height: 1.1; }
+.cz .cz-gb-parts { display: flex; flex-wrap: wrap; gap: 0.1875rem 0.25rem; margin-top: 0.125rem; }
+.cz .cz-gb-part { padding: 0 0.4375rem; border-radius: var(--r-pill); background: rgba(255, 255, 255, .72); font-size: var(--cz-small); font-weight: 700; line-height: 1.35; color: var(--ink-2); }
+.cz .cz-gb-chat { position: absolute; top: 0.25rem; right: 0.375rem; display: inline-flex; align-items: center; gap: 0.1875rem; font-size: var(--cz-small); font-weight: 800; color: var(--ink-2); }
+.cz .cz-gb.has-chat .cz-gb-t { padding-right: 2.25rem; }
+.cz .cz-gb-open { position: absolute; inset: 0; z-index: 1; border-radius: inherit; }
+.cz .cz-gb-grip { position: absolute; z-index: 2; left: 50%; bottom: 0.1875rem; width: 2rem; height: 0.25rem; margin-left: -1rem; border-radius: var(--r-pill); background: rgba(30, 26, 46, .28); pointer-events: none; }
+.cz .cz-gb.is-short .cz-gb-grip { display: none; }
+.cz .cz-gb.is-dim { opacity: 0.35; }
+.cz .cz-gb.is-hit { box-shadow: inset 0.25rem 0 0 var(--accent), 0 0 0 0.1875rem var(--coral); }
+
+/* now */
+.cz .cz-nowline { position: absolute; z-index: 5; left: -0.375rem; right: 0; top: calc(var(--s) * var(--mm)); height: 0.125rem; margin-top: -0.0625rem; border-radius: var(--r-pill); background: var(--coral); pointer-events: none; transform-origin: 0 50%; transform: scaleY(calc(1 / var(--zk))); }
+.cz .cz-now-dot { position: absolute; left: 0; top: 50%; width: 0.625rem; height: 0.625rem; margin-top: -0.3125rem; border-radius: var(--r-pill); background: var(--coral); }
+
+/* held: a block lifted off the grid follows the finger; a dashed ghost shows the 15-minute slot it will land in */
+.cz .cz-gb.is-held { z-index: 7; scale: 1.03; box-shadow: inset 0.25rem 0 0 var(--accent), var(--shadow-lg), 0 0 0 0.125rem var(--ink); transition: box-shadow 0.16s ease, scale 0.16s var(--cz-ease); }
+.cz .cz-gb.is-held.is-moving { transition: box-shadow 0.16s ease; }
+.cz .cz-gb.is-resizing { z-index: 7; box-shadow: inset 0.25rem 0 0 var(--accent), var(--shadow-lg), 0 0 0 0.125rem var(--coral); transition: none; }
+.cz .cz-gb.is-landing { transition: transform 0.2s var(--cz-ease), height 0.2s var(--cz-ease), box-shadow 0.2s ease, scale 0.2s var(--cz-ease); }
+.cz .cz-g-ghost { position: absolute; z-index: 1; left: 0; top: 0; border-radius: 0.875rem; border: 0.125rem dashed var(--ink-3); background: rgba(255, 255, 255, .45); pointer-events: none; will-change: transform; }
+.cz .cz-grid.is-editing-time .cz-gb:not(.is-held):not(.is-resizing) { opacity: 0.72; }
+
+/* the time under the finger */
+.cz .cz-g-label { position: fixed; z-index: 75; left: 0; top: 0; min-width: 11rem; display: flex; flex-direction: column; align-items: flex-start; padding: 0.375rem 0.875rem; border-radius: 1.25rem; background: var(--ink); color: #FFFFFF; font-weight: 800;
+  font-size: var(--cz-body); line-height: 1.15; font-variant-numeric: tabular-nums; box-shadow: var(--shadow-lg); pointer-events: none; will-change: transform; white-space: nowrap; }
+.cz .cz-g-label small { font-size: var(--cz-small); font-weight: 700; color: var(--sun); }
+
+@media (prefers-reduced-motion: reduce) {
+  .cz .cz-gb, .cz .cz-gb.is-held, .cz .cz-gb.is-landing { transition: none; }
+}
+
+/* F-098: hold and let go without moving. The block wiggles a little while its menu is open; the menu is a small card beside it. */
+.cz .cz-gb.is-menu { z-index: 6; scale: 1.02; box-shadow: inset 0.25rem 0 0 var(--accent), var(--shadow-lg), 0 0 0 0.125rem var(--ink); }
+.cz .cz-gb.is-wiggle { animation: cz-wiggle 0.42s ease-in-out infinite alternate; transform-origin: 50% 50%; }
+@keyframes cz-wiggle { from { rotate: -0.6deg; } to { rotate: 0.6deg; } }
+.cz .cz-gb.is-leaving { opacity: 0; scale: 0.96; transition: opacity 0.18s ease, scale 0.18s ease; pointer-events: none; }
+.cz .cz-menu { position: absolute; z-index: 60; display: flex; flex-direction: column; gap: 0.5rem; width: min(20rem, calc(100vw - 1rem)); padding: 0.625rem; border-radius: 1.5rem; background: var(--card); box-shadow: var(--shadow-lg), 0 0 0 1px rgba(30, 26, 46, .08);
+  animation: cz-pop 0.16s var(--cz-ease) both; transform-origin: 50% 0; }
+@keyframes cz-pop { from { opacity: 0; scale: 0.94; } }
+.cz .cz-menu:focus { outline: none; }
+.cz .cz-menu-t { margin: 0; padding: 0.125rem 0.375rem 0; font-weight: 800; font-size: var(--cz-body); line-height: 1.2; overflow-wrap: anywhere; }
+.cz .cz-menu-sub { margin: 0; padding: 0 0.375rem; font-size: var(--cz-small); color: var(--ink-2); line-height: 1.3; }
+.cz .cz-menu-main, .cz .cz-menu-ask { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.375rem; }
+.cz .cz-menu-ask { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.cz .cz-menu-nudge { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.375rem; padding-top: 0.5rem; border-top: 1px solid var(--line); }
+.cz .cz-mi { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.125rem; min-height: 3.5rem; padding: 0.375rem 0.25rem; border: 0; border-radius: 1.125rem; background: var(--paper-2); color: var(--ink); font-family: var(--font-body);
+  font-weight: 800; font-size: var(--cz-small); line-height: 1.1; text-decoration: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.cz .cz-menu-nudge .cz-mi { min-height: 2.75rem; background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
+.cz .cz-mi:hover { background: var(--sun-tint); }
+.cz .cz-mi:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.0625rem; }
+.cz .cz-mi:disabled { opacity: 0.4; cursor: default; }
+.cz .cz-mi.is-danger { background: var(--coral); color: #FFFFFF; }
+.cz .cz-mi-ico { width: 1.25rem; height: 1.25rem; flex-shrink: 0; }
+.cz .cz-mi-t { min-width: 0; text-align: center; }
+.cz .cz-mi-chat { background: var(--bubble-tint); } .cz .cz-mi-delete { color: var(--coral-deep); }
+
+/* rename in place: the title becomes a field right there (16px so a phone does not zoom in to it) */
+.cz .cz-gb.is-editing { box-shadow: inset 0.25rem 0 0 var(--accent), var(--shadow-lg), 0 0 0 0.125rem var(--coral); z-index: 8; contain: layout style; overflow: visible; height: auto; min-height: calc(var(--l) * var(--mm)); scale: 1; }   /* a short block grows while its title is edited */
+.cz .cz-gb.is-editing .cz-gb-grip { display: none; }
+.cz .cz-gb-edit { width: 100%; min-height: 2.5rem; margin: 0.125rem 0; padding: 0.25rem 0.5rem; border: 0.125rem solid var(--ink); border-radius: 0.75rem; background: #FFFFFF; color: var(--ink); font-family: var(--font-body); font-weight: 800; font-size: 1rem; line-height: 1.2; box-sizing: border-box; }
+.cz .cz-gb-edit:focus { outline: none; border-color: var(--coral); }
+.cz .cz-gb-edit[aria-invalid="true"] { border-color: var(--coral-deep); }
+.cz .cz-gb-err { color: var(--coral-deep); font-weight: 800; font-size: var(--cz-small); line-height: 1.2; }
+.cz .cz-gb-err:empty { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .cz .cz-gb.is-wiggle { animation: none; }
+  .cz .cz-menu { animation: none; }
+  .cz .cz-gb.is-leaving { transition: none; }
+}
+
+/* a laptop: the same grid, wider, with a taller hour */
+@media (min-width: 721px) {
+  .cz .cz-grid { --hh: 5.5rem; --gut: 3.5rem; }
+  .cz .cz-grid.has-bk { --bkw: 3rem; }
+  .cz .cz-gb { cursor: grab; }
+  .cz a.cz-gb { cursor: pointer; }
+}

@@ -22,15 +22,15 @@ from urllib.parse import urlencode
 from fasthtml.common import A, Button, Details, Div, Form, H1, H2, H3, Header, Input, Label, Link, Main, Nav, P, Section, Span, Summary, Template, to_xml
 from starlette.responses import RedirectResponse, Response
 
-from gitaway import access, canvas, catalog, geo, members, passes, phone, pickers, plantalk, session as ses, tripcal as cal, tripday as td
+from gitaway import access, canvas, catalog, geo, members, passes, phone, pickers, plantalk, planedit, session as ses, tripcal as cal, tripday as td
 from gitaway.icons import icon
 from gitaway.layout import avatar, join_note, trip_field
 from gitaway.pages import booked, calendar as calui, passes as passes_ui   # passes: on a flight day the now card is the flight with everyone's passes (F-092)
 from gitaway.pages.around_ui import around_url
 from gitaway.pages.plantalk import talk_badge   # F-091: the chat badge on a plan and on a part
 
-HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/help.css"), *passes_ui.HEAD, Link(rel="stylesheet", href="/assets/css/trip_canvas.css"), Link(rel="stylesheet", href="/assets/css/plantalk.css"))   # pickers: the add-a-step sheet has a time field (F-082)
-SCRIPTS = ("/assets/js/trip_canvas.js",)
+HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/help.css"), *passes_ui.HEAD, Link(rel="stylesheet", href="/assets/css/trip_canvas.css"), Link(rel="stylesheet", href="/assets/css/day_grid.css"), Link(rel="stylesheet", href="/assets/css/plantalk.css"))   # pickers: the add-a-step sheet has a time field (F-082)
+SCRIPTS = ("/assets/js/trip_canvas.js", "/assets/js/day_grid.js", "/assets/js/day_menu.js")
 RANK = {"week": 0, "day": 1, "block": 2, "step": 3}
 PART_TINTS = ("sky", "sun", "grape", "bubble", "mint")
 MAX_FACES = 5
@@ -71,7 +71,8 @@ def load(session):
         if f["source"] == "added" and 0 <= at < len(dates):
             blocks.append(cal.Block("fl-" + f["id"][:12], at, f["depart_min"], min(f["depart_min"] + 60, 24 * 60 - 1), f"{f['name']} · {f['origin']} → {f['dest']}", "booked", True, "plane"))
     zone = ses.trip_zone(session)
-    ph, n = td.phase(t, catalog.today_in(td.clock_zone(cal.plan_of(b) if cal.is_imported(b) else None, zone)))
+    clock = td.clock_zone(cal.plan_of(b) if cal.is_imported(b) else None, zone)
+    ph, n = td.phase(t, catalog.today_in(clock))
     today_idx = n if ph == "during" else None
     people = {f.name.casefold(): f for f in ses.friends(session)}
     family = members.family_people(session)
@@ -84,6 +85,7 @@ def load(session):
              role=access.request_role(), crew=members.crew(session), summaries=td.day_summaries(dates, blocks, acts, today_idx))
     v["by_id"] = {a.id: a for a in acts}
     v["zone"] = zone
+    v["clock"] = clock
     v["people"] = canvas.family_people(session)
     v["talk"] = plantalk.counts(session)                 # F-091: messages per plan and part, for the chat badges
     for blk in v["plan"].values():                       # which of the trip's lists name each step, for the filters
@@ -366,41 +368,11 @@ def week_view(v, sos=False):
 
 # ---- day --------------------------------------------------------------------------------------------------------------------
 
-def _chip(s, edit, hero=True):
-    done = Span(icon("check", 14, 3), cls="cz-tick", aria_hidden="true") if s["done"] else ""
-    face = faces_of([s], 3)
-    kids = [done, Span(s["title"], cls="cz-chip-t"), Span(s["time"], cls="cz-chip-time") if s["time"] else "", face]
-    return Span(A(*kids, Span(" (done)", cls="sr-only") if s["done"] else "", href=curl(step=s["id"]), cls=f"cz-chip{' is-done' if s['done'] else ''}", data_zoom="in", **({"data_zk": f"stp-{s['id']}"} if hero else {})),
-                sticker(s["note"], cls="cz-sticker-chip") if s["note"] else "", cls="cz-chipwrap", data_step=s["id"], **step_data(s, edit))
-
-
 def _tray(steps, edit, ident="cz-tray", open_id=""):
     if not steps:
         return ""
     chips = [A(icon("undo", 14, 2.4), Span(s["title"], cls="cz-chip-t"), href=curl(step=s["id"]), cls="cz-chip cz-chip-aside", data_zoom="in", **({"data_zk": f"stp-{s['id']}"} if s["id"] != open_id else {}), **step_data(s, edit)) for s in steps]
     return Section(Div(H3(icon("tray", 16, 2.4), f"Set aside · {len(steps)}", cls="cz-tray-t"), Span("still in the trip", cls="cz-sub"), cls="cz-tray-h"), Div(*chips, cls="cz-tray-chips"), cls="cz-tray", id=ident, aria_label="Set aside")
-
-
-def _block_card(v, a):
-    edit = access.can_edit(v["role"])
-    blk = v["plan"][a.id]
-    n, done = _counts(blk)
-    notes = [sticker(text, by) for by, text in v["act_notes"].get(a.id, [])]
-    parts = []
-    for k, p in enumerate(blk["parts"]):
-        steps = [Div(_chip(s, edit), cls="cz-chipcell") for s in p["steps"]]
-        parts.append(Div(Div(Span(p["name"], cls="cz-part-t"), Span(p["time_of_day"], cls="cz-when") if p["time_of_day"] else "", Span(_count(len(p["steps"]), "ride", "rides"), cls="cz-part-n"), talk_badge(v["talk"], a.id, p["id"]), cls="cz-part-h"),
-                          Div(*steps, cls="cz-chips") if steps else P("Nothing here yet.", cls="cz-sub"), cls=f"cz-part cz-pt-{PART_TINTS[k % 5]}", data_part=p["id"], data_act=a.id, **({"data_chat": "1"} if (a.id, p["id"]) in v["talk"] else {})))
-    return Div(A(Span(icon("sight", 22, 2.4), cls="cz-ico"), Div(Span(a.title, cls="cz-card-t"), Span(f"{cal.fmt_time(a.start)} – {cal.fmt_time(a.end)} · {done} of {n} done", cls="cz-sub"), cls="cz-card-text"),
-                 Span(icon("chev-right", 20, 2.6), cls="cz-go"), href=curl(block=a.id), cls="cz-block-head", data_zoom="in", data_zk=f"blk-{a.id}"),
-               Div(*notes, cls="cz-notes") if notes else "", Div(talk_badge(v["talk"], a.id), cls="pt-row"), Div(*parts, cls="cz-parts"), cls="cz-block", data_act=a.id, **kind_attrs(v, "block", a))
-
-
-def _simple(kind, x, v):
-    ico = getattr(x, "icon", "") or ("pin" if kind == "plan" else "pin")
-    notes = [sticker(text, by) for by, text in v["act_notes"].get(x.id, [])] if kind == "plan" else []
-    return Div(Div(Span(icon(ico, 20, 2.4), cls="cz-ico"), Div(Span(x.title, cls="cz-card-t"), Span(f"{cal.fmt_time(x.start)}" + (f" – {cal.fmt_time(x.end)}" if x.end else ""), cls="cz-sub"), cls="cz-card-text"), cls="cz-simple-h"),
-               Div(*notes, cls="cz-notes") if notes else "", Div(talk_badge(v["talk"], x.id), cls="pt-row") if kind == "plan" else "", cls=f"cz-block cz-plain{' is-booked' if kind == 'booked' else ''}", **kind_attrs(v, kind, x))
 
 
 def strip(v, day):
@@ -447,12 +419,107 @@ def say_bar(day):
                cls="cz-empty cz-say-empty", id="cz-empty")
 
 
+# ---- the day as a time grid (F-097) -------------------------------------------------------------------------------------------
+
+BOOKING_ROOM = 40       # minutes of grid a booking line takes (its 2.75rem tap target): a booking close after another slides below it, its label still says its true time
+KIND_TINT = {"fun": "bubble", "food": "sun", "outdoors": "mint", "culture": "grape", "travel": "sky"}
+
+
+def hour_label(h):
+    return f"{h % 12 or 12} {'AM' if h < 12 else 'PM'}"
+
+
+def span_label(s, e):
+    """"12:00 – 1:30 PM": the meridiem once when both ends share it."""
+    a, b = cal.fmt_time(s), cal.fmt_time(e)
+    return f"{a.rsplit(' ', 1)[0]} – {b}" if a[-2:] == b[-2:] else f"{a} – {b}"
+
+
+def grid_bookings(booked):
+    """[(booking, the minute its line is drawn at)]: in time order, a line that would sit on the one above slides down below it."""
+    out, floor = [], -BOOKING_ROOM
+    for x in sorted(booked, key=lambda b: (b.start, b.id)):
+        top = max(x.start, floor + BOOKING_ROOM)
+        out.append((x, top))
+        floor = top
+    return out
+
+
+def grid_range(plans, lines):
+    """(first, last) minute the day's grid shows: 7 AM to 10 PM, wider for an earlier or later booking or plan, on whole hours."""
+    lo = min([cal.DEFAULT_START, *(a.start for a in plans), *(t for _, t in lines)]) // 60 * 60
+    hi = max([cal.GRID_END, *(a.end for a in plans), *(t + BOOKING_ROOM for _, t in lines)])
+    return lo, min(-(-hi // 60) * 60, 24 * 60)
+
+
+def _union_who(steps):
+    """The who a block carries for the filters: nobody in particular when any step is for everyone (it then matches each person), else everyone named."""
+    keys = [s["who_key"] for s in steps]
+    if not keys or any(not k for k in keys):
+        return []
+    return sorted({t for k in keys for t in k})
+
+
+def grid_block(v, a, lane, lanes, lo, edit):
+    """One plan as a block: its place and size are its time (CSS reads --s and --l), side by side with the plans it overlaps (--lane of --lanes). A park block (a plan with parts
+    and steps) is a link to its block level with its parts as small labels; a plan is a block too (move and resize it, F-097). A viewer's plan opens its chat."""
+    park = has_block(v, a.id)
+    blk = v["plan"][a.id] if park else None
+    steps = [*_all_steps(blk), *blk["aside"]] if park else []
+    k = a.kind if a.kind in KIND_TINT else "fun"
+    chat = any(c[0] == a.id for c in v["talk"])
+    n = sum(m["n"] for key, m in v["talk"].items() if key[0] == a.id)
+    attrs = {**kind_attrs(v, "block" if park else "plan", a), "data_act": a.id, "data_s": str(a.start), "data_e": str(a.end), "data_day": str(a.day), "data_title": a.title,
+             "data_steps": str(len(steps))}
+    if edit:
+        attrs["data_talk"] = plantalk.url(a.id, "", ses.open_trip_id())          # the hold menu's Chat (F-098); data-chat is the filter's "has messages"
+    if park:
+        attrs.update(data_who=json.dumps(_union_who(_all_steps(blk)), separators=(",", ":")), data_lists=" ".join(sorted({x for s in steps for x in (s.get("lists") or [])})), data_zk=f"blk-{a.id}")
+    when = span_label(a.start, a.end)
+    inner = [Span(a.title, cls="cz-gb-t", id=f"cz-t-{a.id}"), Span(when, cls="cz-gb-when"),
+             Span(*[Span(p["name"], cls="cz-gb-part", data_part=p["id"], data_act=a.id) for p in blk["parts"]], cls="cz-gb-parts") if park else "",
+             Span(icon("chat", 14, 2.4), Span(str(n), cls="pt-n"), cls="cz-gb-chat", aria_hidden="true") if chat else "",
+             Span(*[sticker(text, by) for by, text in v["act_notes"].get(a.id, [])], cls="cz-gb-notes") if v["act_notes"].get(a.id) else ""]
+    extra = []
+    if park:
+        extra.append(A(href=curl(block=a.id), cls="cz-gb-open", data_zoom="in", aria_label=f"Open {a.title}, {when}"))
+    if edit:
+        extra += [Span(cls="cz-gb-grip", aria_hidden="true"), Button(f"Change {a.title}", type="button", cls="sr-only cz-gb-menubtn")]
+    cls = f"cz-gb cz-k-{k}" + (" is-park" if park else "") + (" is-short" if a.end - a.start < 45 else "") + (" has-chat" if chat else "")
+    style = f"--s:{a.start - lo};--l:{a.end - a.start};--lane:{lane};--lanes:{lanes}"
+    label = {"aria_label": f"{a.title}, {when}"} if not park else {}
+    if not park and not edit:
+        return A(Div(*inner, cls="cz-gb-in cz-cs"), href=plantalk.url(a.id, "", ses.open_trip_id()), cls=cls, style=style, aria_label=f"{a.title}, {when}: open the chat", **attrs)
+    return Div(Div(*inner, cls="cz-gb-in cz-cs"), *extra, cls=cls, style=style, **({"tabindex": "-1"} if park else {}), **label, **attrs)
+
+
+def time_grid(v, day, ents):
+    """The day's plans as blocks on an hour grid sized by their length (overlaps side by side), its bookings as quiet lines at their times, today's now line."""
+    edit = access.can_edit(v["role"])
+    plans = [x for kind, x in ents if kind != "booked"]
+    lines = grid_bookings([x for kind, x in ents if kind == "booked"])
+    lo, hi = grid_range(plans, lines)
+    hours = list(range(lo // 60, hi // 60 + 1))
+    lane = calui.lanes(plans)
+    gutter = [Span(hour_label(h % 24 if h < 24 else 0), cls="cz-g-hour cz-cs", style=f"--s:{h * 60 - lo}") for h in hours]
+    rules = [Span(cls=f"cz-g-line cz-cs{' is-half' if m else ''}", style=f"--s:{h * 60 + m - lo}") for h in hours[:-1] for m in (0, 30)] + [Span(cls="cz-g-line cz-cs", style=f"--s:{hi - lo}")]
+    bk = [A(Span(icon(getattr(x, "icon", "") or "lock", 16, 2.4), Span(cal.fmt_time(x.label_start if getattr(x, "label_start", None) is not None else x.start), cls="cz-bk-time"), Span(x.title, cls="cz-bk-t"),
+              Span("Booked", cls="cz-bk-tag"), cls="cz-gbk-in cz-cs"), href=curl(day=x.day, booked=x.id), cls="cz-bk cz-gbk", data_zoom="in", data_zk=f"bkg-{x.id}", style=f"--s:{top - lo}", **kind_attrs(v, "booked", x))
+          for x, top in lines]
+    blocks = [grid_block(v, a, *lane[a.id], lo, edit) for a in plans]
+    now = ""
+    if day == v["today_idx"] and lo <= (nm := td.now_minute(v["clock"])) <= hi:
+        now = Span(Span(cls="cz-now-dot"), cls="cz-nowline", id="cz-nowline", data_m=str(nm), style=f"--s:{nm - lo}", aria_label="Now", role="img")
+    plane = Div(*rules, *bk, *blocks, now, cls="cz-g-plane")
+    return Div(Div(*gutter, plane, cls="cz-g-zoom"), cls=f"cz-grid{' has-bk' if lines else ''}", id="cz-grid", data_lo=str(lo), data_hi=str(hi), data_day=str(day), style=f"--n:{(hi - lo) / 60:g}", role="group", aria_label="The day, hour by hour")
+
+
 def day_view(v, day, booked=None, sos=False):
     editor = access.can_edit(v["role"])
     d = v["dates"][day]
     ents = entries(v, day)
     planned = [(kind, x) for kind, x in ents if kind != "booked"]
-    cards = [(_block_card(v, x) if kind == "block" else booked_line(v, x) if kind == "booked" else _simple(kind, x, v)) for kind, x in ents]
+    cards = [time_grid(v, day, ents)] if planned else [booked_line(v, x) for _, x in ents]      # a blank day keeps Talk / Paste and its booking lines
     aside = [s for kind, x in ents if kind == "block" for s in v["plan"][x.id]["aside"]]
     if not planned:
         empty = say_bar(day) if editor else Div(P("Nothing planned yet", cls="cz-say-h"), P("Nobody has planned this day yet.", cls="cz-sub"), cls="cz-empty cz-say-empty", id="cz-empty", data_kind="empty")
@@ -734,6 +801,48 @@ def _field(form, name, cap=80):
     return str(form.get(name) or "")[:cap]
 
 
+def _minutes(form, name):
+    """A start or end the script sent as whole minutes after midnight (None when it sent none)."""
+    raw = str(form.get(name) or "").strip()
+    if not raw:
+        return None
+    if not raw.isdigit() or len(raw) > 4:
+        raise cal.CalendarError("That time is not one we can read.")
+    return int(raw)
+
+
+def plan_write(session, op, act, form):
+    """One write of the day grid -> the JSON the script gets: the toast's words, the snapshot Undo posts back, and the plan as it is now."""
+    if op == "delete":
+        gone = planedit.delete(session, act)
+        more = f" and its {_count(gone['steps'], 'step', 'steps')}" if gone["steps"] else ""
+        return {"toast": f"{gone['title']}{more} deleted", "undo": {"deleted": act}}
+    if op == "undo":
+        try:
+            snap = json.loads(_field(form, "undo", 2000) or "null")
+        except ValueError:
+            snap = None
+        if isinstance(snap, dict) and snap.get("deleted"):
+            a = planedit.undelete(session, str(snap["deleted"])[:20])
+            return {"toast": f"{a.title} is back", "plan": {"act": a.id, "start": a.start, "end": a.end, "title": a.title}}
+        a = planedit.restore(session, snap)
+        return {"toast": "Put back", "plan": {"act": a.id, "start": a.start, "end": a.end, "title": a.title}}
+    if op != "edit":
+        raise cal.CalendarError("That did not work.")
+    title = form.get("title")
+    got = planedit.change(session, act, start=_minutes(form, "start"), end=_minutes(form, "end"), title=None if title is None else str(title)[:200])
+    a, was = got["act"], got["undo"]
+    if not got["changed"]:
+        toast = ""
+    elif a.title != was["title"]:
+        toast = f"Renamed to {a.title}"
+    elif a.start != was["start"]:
+        toast = f"{a.title} moved to {cal.fmt_time(a.start)}"
+    else:
+        toast = f"{a.title} now ends {cal.fmt_time(a.end)}"
+    return {"toast": toast, "undo": got["undo"] if got["changed"] else None, "plan": {"act": a.id, "start": a.start, "end": a.end, "title": a.title}}
+
+
 def register(app):
     @app.get("/trip/canvas")
     def canvas_page(request, session, day: str = "", block: str = "", step: str = "", frag: str = "", add: str = "", part: str = "", title: str = "", note: str = "", err: str = "", booked: str = "", sos: str = ""):
@@ -804,6 +913,20 @@ def register(app):
         except (canvas.CanvasError, ValueError):
             return _json({"error": "There is nothing to undo."}, 422) if _script(request) else RedirectResponse(nxt, status_code=303)
         return _json({"url": nxt, "toast": "Moved back"}) if _script(request) else RedirectResponse(nxt, status_code=303)
+
+    @app.post("/trip/canvas/plan")
+    async def canvas_plan(request, session):
+        """The day grid's writes (F-097, F-098): `op` is edit (any of start, end as minutes, title), undo (the snapshot an edit returned) or delete. The script gets
+        JSON {toast, undo, plan}; a refusal is 422 {error} in the calendar's own words. Editors only, by gitaway.access."""
+        if (r := _guard(session)):
+            return r
+        form = await request.form()
+        op, act, nxt = _field(form, "op", 8), _field(form, "act", 20), safe_next(form.get("next"))
+        try:
+            got = plan_write(session, op, act, form)
+        except cal.CalendarError as e:
+            return _json({"error": str(e)}, 422) if _script(request) else RedirectResponse(nxt, status_code=303)
+        return _json(got) if _script(request) else RedirectResponse(nxt, status_code=303)
 
     @app.post("/trip/canvas/add")
     async def canvas_add(request, session):

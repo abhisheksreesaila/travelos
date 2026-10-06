@@ -152,8 +152,19 @@ def _patch_change(ctx, ops, answers) -> list:
     return ops
 
 
+def _hour_long(ops) -> list:
+    """A plan Ask adds with a start and no length gets an hour (F-097): the model is not asked, and neither is the family. Capped at the end of the grid."""
+    out = []
+    for o in ops:
+        if o.get("op") == "add_plan" and speak._clock(o.get("start")) and not speak._clock(o.get("end")):
+            o = dict(o, end=speak._hhmm(min(speak._minutes(speak._clock(o["start"])) + 60, cal.GRID_END)))
+        out.append(o)
+    return out
+
+
 def _settle_change(session, state, ctx=None) -> dict:
     ctx = ctx or speak.load_day(session, state["day"])
+    state = dict(state, ops=_hour_long(state["ops"]))
     questions = _change_questions(ctx, state["ops"])
     if questions:
         return {"state": state, "questions": questions}
