@@ -615,7 +615,7 @@ def test_a_drop_swaps_the_level_with_the_same_animation_as_the_zoom(canvas_page)
     settle(page)
     vt = page.evaluate("window.__vt")
     assert vt["calls"] >= 1 and vt["dir"][0] == "side"
-    assert "translate" in toast(page).evaluate("e => getComputedStyle(e).transitionProperty")      # it glides in (F-108)
+    assert page.evaluate("GA.motion.log.some(l => l.kind === 'open')")      # the toast grew in with the one spring (F-108, F-109)
 
 
 def test_reduced_motion_drops_swap_at_once_and_the_toast_does_not_move(canvas_page):
