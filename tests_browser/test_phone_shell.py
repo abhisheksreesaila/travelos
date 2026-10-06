@@ -62,7 +62,7 @@ def test_every_tab_is_pressed_and_lands_in_the_shell(shell, base_url):
     expect(bar).to_be_visible()
     for key, name, path in TABS:
         page.locator(f"#ph-tab-{key}").click()
-        page.wait_for_url(re.compile(r"/trip/canvas\?day=") if key == "today" else f"**{path}")      # F-092: Today is the day view
+        page.wait_for_url(re.compile(r"/trip/canvas\?day=") if key == "today" else re.compile(re.escape(path)))    # F-092: Today is the day view
         expect(page.locator(f"#ph-tab-{key}")).to_have_attribute("aria-current", "page")
         expect(bar).to_be_visible()
         assert bar.locator("a").count() == 3
