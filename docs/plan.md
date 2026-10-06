@@ -592,10 +592,10 @@ Captain, 2026-10-05 (screenshot of a plan chat): the message box sits right afte
 - [x] in the Family chat and every plan chat the composer is docked above the tab bar (safe areas and the iPhone keyboard respected: it rides up with the keyboard), the messages scroll in the space above it and open scrolled to the newest, which sits right above the box; sending keeps the newest in view; no empty gap below the last message
 - [x] phone checks at 390 and 320 with the keyboard area simulated; browser tests send several messages and check the box stays put and the newest is visible
 
-## F-101 Make a plan by touching empty time [todo]
+## F-101 Make a plan by touching empty time [done]
 Captain, 2026-10-05: "just like an event, you should be able to select the time… create an event. Then you just drag, and… give it a title… and boom, it should be done… driven off that calendar". · Needs: F-097, F-099 (grid script)
-- [ ] on the day grid an editor holds an empty slot (or taps it, then taps the "+" that appears): a 1-hour block appears there snapped to 15 minutes, with its title field open in place and the keyboard up; typing a title and Enter (or tapping away) saves it; Escape or an empty title removes it; it can be dragged and resized at once with the F-097 gestures; Undo toast; the family is told once
-- [ ] a viewer gets nothing; reduced motion; browser tests at 390 and 320 create, rename-on-create, cancel, and move a new block
+- [x] on the day grid an editor holds an empty slot (or taps it, then taps the "+" that appears): a 1-hour block appears there snapped to 15 minutes, with its title field open in place and the keyboard up; typing a title and Enter (or tapping away) saves it; Escape or an empty title removes it; it can be dragged and resized at once with the F-097 gestures; Undo toast; the family is told once
+- [x] a viewer gets nothing; reduced motion; browser tests at 390 and 320 create, rename-on-create, cancel, and move a new block
 
 ## F-102 Ask hears you on the iPhone app [done]
 Captain, 2026-10-05: the Ask mic "is not capturing or transcribing". Cause: Ask only uses the browser's speech recognition, which iPhone does not give to Home Screen apps. Fix: record on the phone (as voice notes do) and transcribe on the server through gitaway/ai.py (job "transcribe"), falling back to it whenever speech recognition is missing or fails.
