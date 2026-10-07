@@ -659,3 +659,9 @@ Captain, 2026-10-07: "Messages can have a smooth effect when we type a message�
 - [x] sending a message (Family chat and plan chats): the new bubble grows out of the message box and rises into place with the shared spring while the messages above glide up to make room (FLIP), the box clears smoothly; a message from someone else settles in the same way; reduced motion: a short fade
 - [x] moving, resizing or nudging a block: the block stays exactly where it was dropped while the change saves; when the day refreshes, nothing re-draws under it (the refreshed block takes over the same spot) and it settles into its snapped place with one soft spring and a gentle overshoot; other blocks that shift glide too; the toast waits until the block has landed (about a beat) and then glides in; no flash, no jump
 - [x] browser tests sample frames from the drop through the save and refresh to rest: the block's position never jumps more than a small step between frames, there is exactly one settle, the toast starts after the settle; the sent bubble starts at the box and ends in the list; reduced motion
+
+## F-113 The sent bubble is smooth on the iPhone [doing]
+Captain, 2026-10-07, after F-112 went live: "Message bubble is jittery… you can pick any animation but smooth." · Needs: F-112
+- [x] a sent bubble rises from the box with one plain animation (translate, a slight scale, the calm ease-out, no overshoot); the bubbles above glide up with the same curve; nothing is counter-scaled frame by frame
+- [x] the server's confirmation swaps the words in place with no second move (the "Sending" line is the time line's height)
+- [x] tests_browser/test_liquid.py: the bubble above never jumps between frames, at 390 and 320

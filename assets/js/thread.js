@@ -87,8 +87,10 @@
 
   // Put what the server sent into the thread. An item of mine that carries the client id (cid) of a pending or failed bubble replaces that bubble in
   // place (no second fade, order kept); anything else new is appended and fades in.
-  // F-112: the one liquid motion (GA.motion, motion.js). Before the list changes the bubbles in view are measured; afterwards each one that moved (the list scrolled up to make room)
-  // glides from where it was to where it is, with the same spring; a new bubble settles into place (one that I sent grows out of the box, see the send below). Reduced motion: a short fade.
+  // F-112: before the list changes the bubbles in view are measured; afterwards each one that moved (the list scrolled up to make room) glides from where it was to where it is, and a
+  // new bubble settles into place (one that I sent rises out of the box, see the send below). Reduced motion: a short fade.
+  // F-113: every move here is one plain animation of `translate` (and `scale`) that the phone runs off the main thread, all with the same smooth ease-out, no overshoot: no per-frame
+  // counter-scaling of the words (it stuttered on the iPhone) and no second move when the server confirms (the pending bubble already has the time line's height).
   function motion() { return window.GA && window.GA.motion; }      // (read when needed: motion.js is deferred)
   function snapshot() {
     var out = [], MO = motion();
@@ -100,11 +102,26 @@
     });
     return out;
   }
-  function glide(snap) { var MO = motion(); snap.forEach(function (s) { if (s.el.isConnected) MO.land(s.el, s.r); }); }
-  // The server's copy of a bubble I sent takes the pending one's place without a new element: the same box keeps its place and its motion, takes the server's words, time and classes
-  // (its "Sending" look fades to the full look), and moves from its old size to its new one if the time made it a little wider.
+  var SMOOTH = { t: "spring", ease: "calm" };
+  function glide(snap) {
+    var MO = motion();
+    snap.forEach(function (s) {
+      if (!s.el.isConnected) return;
+      var dy = s.r.top - s.el.getBoundingClientRect().top;
+      if (Math.abs(dy) >= 0.5) MO.run(s.el, [{ translate: "0 " + dy + "px" }, { translate: "0 0" }], SMOOTH);
+    });
+  }
+  // A bubble I sent rises from the box into its place, a touch smaller at first (about its bottom corner, like a message leaving the field), in the same ease-out as the list's glide.
+  function rise(el, from) {
+    var MO = motion(), dy = Math.max(0, from.top - el.getBoundingClientRect().top);
+    MO.log.push({ kind: "rise" });
+    el.style.transformOrigin = "100% 100%";
+    MO.run(el, [{ translate: "0 " + dy + "px", scale: ".92", opacity: 0.5 }, { translate: "0 0", scale: "1", opacity: 1 }], SMOOTH);
+  }
+  // The server's copy of a bubble I sent takes the pending one's place without a new element: the same box keeps its place, takes the server's words, time and classes
+  // (its "Sending" look fades to the full look). Nothing moves: the "Sending" line and the time line are the same height.
   function adopt(old, fresh) {
-    var MO = motion(), bub = old.querySelector(".ft-bub"), from = bub && bub.getBoundingClientRect(), a, i, kids = old.children, news = fresh.children;
+    var a, i, kids = old.children, news = fresh.children;
     for (i = old.attributes.length - 1; i >= 0; i--) { a = old.attributes[i].name; if (a !== "class" && a !== "style" && !fresh.hasAttribute(a)) old.removeAttribute(a); }
     for (i = 0; i < fresh.attributes.length; i++) { a = fresh.attributes[i]; if (a.name === "class") old.className = a.value + (old.classList.contains("is-new") ? " is-new" : ""); else old.setAttribute(a.name, a.value); }
     if (kids.length === news.length) {
@@ -114,10 +131,8 @@
         kids[i].innerHTML = news[i].innerHTML;
       }
     } else { old.innerHTML = fresh.innerHTML; }
-    bub = old.querySelector(".ft-bub");
-    if (MO && bub && from) MO.land(bub, { left: from.left, top: from.top, width: from.width, height: from.height });
   }
-  // The bubble may still be growing out of the box (its words are counter-scaled frame by frame): its content is only swapped once that has finished, never under the motion.
+  // The bubble may still be rising out of the box: its content is only swapped once that has finished, never under the motion.
   function handOver(old, fresh) {
     old._adopt = true;                                    // delivered from now on, whatever the reply does
     var running = old.getAnimations ? old.getAnimations({ subtree: true }) : [];
@@ -256,7 +271,7 @@
     toBottom();
     if (MO) {
       if (MO.reduced()) MO.fade(el);
-      else { MO.open(el, from); glide(snap); MO.run(text, [{ opacity: 0.4 }, { opacity: 1 }], { t: "quick" }); }      // the bubble grows out of the box, the ones above glide up, the box clears
+      else { rise(el, from); glide(snap); }      // the bubble rises out of the box, the ones above glide up
     }
     deliver(el);
   });

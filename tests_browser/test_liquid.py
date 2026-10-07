@@ -4,7 +4,7 @@ finger lets go (or the menu is pressed, or Send is) through the save and the ref
     replaces the element), exactly one `land` animation moves it, and the toast's first frame comes after the block has landed (the save is slow here on purpose, so the refresh and the
     toast would otherwise arrive mid-move); Undo still works the moment the toast shows;
   - a block that another block's move pushed aside glides to its new lane (no jump);
-  - a sent bubble's first frame sits at the box and its last in the list, the bubble before it glides up without a jump, the same element lives through the server's confirmation (no flash:
+  - a sent bubble (one plain rise, F-113) first frame sits at the box and its last in the list, the bubble before it glides up without a jump, the same element lives through the server's confirmation (no flash:
     its opacity never steps), a message that arrives settles the same way; reduced motion only fades."""
 import re
 import time
@@ -256,7 +256,7 @@ def test_a_sent_bubble_grows_out_of_the_box_rises_into_place_and_the_list_glides
     after = [next(m for m in o["m"] if m["id"] == next(iter(ids)))["top"] for o in mine if o["t"] > t_conf - 20]
     assert after and max(abs(b - a) for a, b in zip(after, after[1:])) < 8, after      # the time line the server adds makes the bubble a line taller: it grows into it by a move, not a jump
     assert abs(after[-1] - after[-2]) < 0.5
-    assert page.evaluate("GA.motion.log.filter(e => e.kind === 'open').length") >= 1
+    assert page.evaluate("GA.motion.log.filter(e => e.kind === 'rise').length") >= 1
 
 
 def test_a_message_that_arrives_settles_the_same_way(canvas_page, base_url, vp):

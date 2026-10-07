@@ -39,7 +39,7 @@
 .ft-input { flex: 1; min-width: 0; min-height: 2.75rem; padding: 0 1rem; border: 0; border-radius: var(--r-pill); background: var(--card); box-shadow: var(--shadow-sm); font: inherit; font-weight: 600; font-size: max(var(--text-min), 1rem); color: var(--ink); }
 .ft-send { width: 2.75rem; height: 2.75rem; flex-shrink: 0; border: 0; border-radius: var(--r-pill); background: var(--coral); color: var(--ink); display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .ft-msg.is-sending .ft-bub { opacity: 0.7; }
-.ft-state { display: inline; }
+.ft-state { display: block; }      /* (the same line as the server's time below the words: confirming the bubble does not change its height, F-113) */
 .ft-msg.is-failed .ft-state { color: var(--coral-deep); font-weight: 800; }
 .ft-me.is-failed .ft-state { color: var(--sun); }
 .ft-retry { min-height: 2.75rem; min-width: 2.75rem; margin-left: 0.5rem; padding: 0 0.75rem; border: 0; border-radius: var(--r-pill); background: var(--card); color: var(--ink); font: inherit; font-weight: 800; font-size: max(var(--text-min), 0.875rem); cursor: pointer; }
