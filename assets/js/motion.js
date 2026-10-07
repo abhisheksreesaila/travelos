@@ -9,6 +9,7 @@
 //   GA.motion.spring(el, fromTransform)                                  let go of a drag: back to rest with the spring
 //   GA.motion.run(el, frames, { t: 'quick', ease: 'calm' })              any other small move, with a token's duration and easing
 //   GA.motion.origin()                                                   the thing tapped a moment ago (a toast, which nobody tapped, grows from it); null if nothing was
+// While the box is scaled, its children are counter-scaled (and the box clips), so words never stretch (F-111).
 // With no origin (or one scrolled off the screen) a thing rises from a small place just above where it rests.
 // `origin` is an element, a DOMRect-like { left, top, width, height } or a point { x, y }. Only transform and opacity are animated (the radius at most), so it stays on the compositor.
 // Reduced motion: nothing moves and nothing fades: it simply appears and goes (the promise resolves at once). GA.motion.log keeps the last few moves { kind, from, to, dur, easing } for the tests.
@@ -83,6 +84,52 @@
     return a.finished.catch(function () {});
   }
 
+  // The words of a thing that grows or folds keep their shape: while `el` is scaled (a grow out of what was tapped, a fold into it) each child of `el` is scaled by the exact inverse, frame by frame,
+  // about the box's own corner (sampled from the same easing: 1/scale is not a straight line), and the box clips what it has not grown to yet. Frames for the child: scale `s0` (a vector)
+  // to `s1`, in the box's own scale at the start and end of the move. The children are measured before anything is animated, with their own counter-scale taken out.
+  var KEEP = 'ga-keep', N = 48;
+  function keepWords(el, to, s0, s1, easing, dur, o) {
+    var kids = Array.prototype.slice.call(el.children || []).filter(function (k) { return k.animate && getComputedStyle(k).display !== 'contents'; }), curve = bezier(easing), made = [];
+    kids.forEach(function (k) { k.getAnimations().forEach(function (a) { if (a.id === KEEP) a.cancel(); }); });
+    function frames(origin, a0, a1) {
+      var out = [], i, p, sx, sy;
+      for (i = 0; i <= N; i++) {
+        p = curve(i / N);
+        sx = a0[0] + (a1[0] - a0[0]) * p;
+        sy = a0[1] + (a1[1] - a0[1]) * p;
+        out.push({ offset: i / N, transform: 'scale(' + (1 / Math.max(sx, 0.01)) + ',' + (1 / Math.max(sy, 0.01)) + ')', transformOrigin: origin });
+      }
+      return out;
+    }
+    kids.forEach(function (k) {
+      var r = rectOf(k), a = k.animate(frames((to.left - r.left) + 'px ' + (to.top - r.top) + 'px', s0, s1), Object.assign({ duration: dur, easing: 'linear' }, o || {}));
+      a.id = KEEP;
+      made.push({ k: k, a: a });
+    });
+    var out = made.map(function (m) { return m.a.finished.catch(function () {}); });
+    // The box was aimed at a new rest (it changed size around its move): the words follow, with the box's new scales. Where the box's corner is in a word's own space is the same in the picture as at
+    // rest (the counter-scale cancels the box's), so it is read from the boxes as they are now; call this before the box's own frames change.
+    out.refit = function (a0, a1) {
+      var er = rectOf(el);
+      made.forEach(function (m) {
+        if (m.a.playState !== 'running') return;
+        var r = rectOf(m.k);
+        m.a.effect.setKeyframes(frames((er.left - r.left) + 'px ' + (er.top - r.top) + 'px', a0, a1));
+      });
+    };
+    // the box clips its words until it has landed (then lets its shadow and anything that pokes out show again); started after the box's own move, with `clip()`
+    out.clip = function () {
+      var c = el.animate([{ clipPath: 'inset(0)', offset: 0 }, { clipPath: 'inset(0)', offset: 0.85 }, { clipPath: 'inset(-4rem)', offset: 1 }], Object.assign({ duration: dur, easing: 'linear' }, o || {}));
+      return c.finished.catch(function () {});
+    };
+    return out;
+  }
+  function scaleOf(tf) {
+    if (!tf || tf === 'none') return [1, 1];
+    var m = new DOMMatrix(tf);
+    return [m.a || 1, m.d || 1];
+  }
+
   var M = GA.motion = { log: [], t: t, ease: ease, reduced: reduced, box: box };
 
   // Grow `el` out of `origin`.
@@ -96,10 +143,12 @@
     var sq = squash(to, from);
     var frames = [{ transform: sq, opacity: 0.35 }, { transform: 'none', opacity: 1 }];
     if (o.radius) { frames[0].borderRadius = o.radius[0]; frames[1].borderRadius = o.radius[1]; }
+    var kept = keepWords(el, to, scaleOf(sq), [1, 1], e, dur, { fill: 'backwards' });      // (measured before the box is moved)
+    done.push.apply(done, kept);
     var main = el.animate(frames, { duration: dur, easing: e, fill: 'backwards' });
-    done.push(main.finished.catch(function () {}));
+    done.push(main.finished.catch(function () {}), kept.clip());
     var rec = note('open', from, to, dur, e);
-    follow(main, el, to, frames, 0, function (now) { to = rec.to = now; return squash(now, from); });
+    follow(main, el, to, frames, 0, function (now) { var q = squash(now, from); kept.refit(scaleOf(q), [1, 1]); to = rec.to = now; return q; });
     if (o.scrim) done.push(go(o.scrim, [{ opacity: 0 }, { opacity: 1 }], t('calm'), ease('calm'), { fill: 'backwards' }));
     if (o.content) done.push(go(o.content, [{ opacity: 0 }, { opacity: 1 }], t('quick'), ease('calm'), { delay: Math.round(dur * 0.3), fill: 'backwards' }));
     return Promise.all(done);
@@ -117,9 +166,11 @@
     var end = onScreen(target) ? squash(to, target) : 'translateY(' + Math.round(window.innerHeight * 0.1) + 'px) scale(.9)';
     var frames = [{ transform: !start || start === 'matrix(1, 0, 0, 1, 0, 0)' ? 'none' : start, opacity: op >= 0 ? op : 1 }, { transform: end, opacity: Math.min(0.2, op >= 0 ? op : 1) }];
     if (o.radius) { frames[0].borderRadius = rad || o.radius[1]; frames[1].borderRadius = o.radius[0]; }
+    var kept = keepWords(el, to, scaleOf(frames[0].transform), scaleOf(end), e, dur, { fill: 'forwards' });
+    done.push.apply(done, kept);
     var fold = el.animate(frames, { duration: dur, easing: e, fill: 'forwards' });
-    done.push(fold.finished.catch(function () {}));
-    if (onScreen(target)) follow(fold, el, to, frames, 1, function (now) { return squash(now, target); });
+    done.push(fold.finished.catch(function () {}), kept.clip());
+    if (onScreen(target)) follow(fold, el, to, frames, 1, function (now) { var q = squash(now, target); kept.refit(scaleOf(frames[0].transform), scaleOf(q)); return q; });
     if (o.scrim) done.push(go(o.scrim, [{ opacity: parseFloat(getComputedStyle(o.scrim).opacity) || 1 }, { opacity: 0 }], dur, ease('calm'), { fill: 'forwards' }));
     if (o.content) done.push(go(o.content, [{ opacity: cop >= 0 ? cop : 1 }, { opacity: 0 }], t('fade'), ease('calm'), { fill: 'forwards' }));
     note('close', to, target, dur, e);
