@@ -110,6 +110,22 @@ def test_holding_another_block_moves_the_knobs_to_it(phone):
     expect(phone.locator(block(b.id))).to_have_class(re.compile(r"is-selected"))
 
 
+def test_the_hold_menu_never_covers_a_knob_while_it_grows_or_after(canvas_page):
+    page = canvas_page(motion="no-preference")
+    lunch = plan("Lunch", 12 * 60, 13 * 60)
+    open_day(page)
+    select(page, lunch.id)                                                              # the menu has only just started to grow out of the block
+    for wait in (0, 700):
+        page.wait_for_timeout(wait)
+        for which in ("top", "bottom"):
+            x, y = knob(page, which)
+            assert page.evaluate("([x, y]) => { const e = document.elementFromPoint(x, y); return !!(e && e.closest('.cz-g-knob')); }", [x, y]), (wait, which)
+        for which in ("top", "bottom"):                                                 # and its whole touch area, to the edge of the block's far side
+            b = box(page, f".cz-g-knob.is-{which} i")
+            m = page.locator(".cz-menu").bounding_box()
+            assert b["y"] + b["height"] <= m["y"] + 1 or b["y"] >= m["y"] + m["height"] - 1 or wait == 0, (which, b, m)
+
+
 # ---- the knobs ------------------------------------------------------------------------------------------------------------------------
 
 def test_the_bottom_knob_changes_the_end_in_one_touch_with_no_second_hold(phone):
@@ -223,13 +239,62 @@ def test_dragging_the_selected_body_moves_the_block_at_once(phone):
     assert phone.evaluate("CZ.held") is False
 
 
-def test_a_tap_on_a_selected_body_opens_its_card_and_puts_the_knobs_away(phone):
+def test_a_tap_on_a_selected_body_only_puts_the_knobs_away_and_opens_no_card(phone):
     lunch = plan("Lunch", 12 * 60, 13 * 60)
     open_day(phone)
-    x, y = select(phone, lunch.id)
+    select(phone, lunch.id)
     phone.locator(".cz-menu").evaluate("m => m.remove()")
     phone.locator(f"{block(lunch.id)} .cz-gb-open").click(position={"x": 60, "y": 40})
     expect(phone.locator(".cz-g-knobs")).to_have_count(0)
+    phone.wait_for_timeout(500)
+    assert phone.locator(".cz-card").count() == 0                                        # the next tap opens it
+    phone.locator(f"{block(lunch.id)} .cz-gb-open").click(position={"x": 60, "y": 40})
+    expect(phone.locator(".cz-card")).to_be_visible()
+
+
+def test_a_selected_block_taller_than_most_of_the_screen_still_scrolls_under_a_flick_and_needs_a_fresh_hold_to_move(phone):
+    big = plan("Beach day", 8 * 60, 18 * 60)                                             # ten hours: taller than 60% of the screen
+    small = plan("Lunch", 19 * 60, 20 * 60)
+    open_day(phone)
+    x, y = select(phone, big.id)
+    assert phone.evaluate("s => getComputedStyle(document.querySelector(s)).touchAction", block(big.id)) == "pan-y pinch-zoom"
+    fire(phone, "pointerdown", x, y)
+    phone.wait_for_timeout(40)
+    slide(phone, (x, y), (x, y + 60))
+    assert phone.locator(".cz-g-label").count() == 0 and phone.locator(".is-held").count() == 0     # a drag is a scroll: it moved nothing
+    fire(phone, "pointerup", x, y + 60)
+    phone.wait_for_timeout(300)
+    assert now(big.id)[:2] == (8 * 60, 18 * 60)
+    select(phone, small.id)                                                               # a short block keeps the move-at-once body
+    assert phone.evaluate("s => getComputedStyle(document.querySelector(s)).touchAction", block(small.id)) == "none"
+    select(phone, big.id)
+    phone.keyboard.press("Escape")                                                        # the menu away (the knobs stay)
+    expect(phone.locator(".cz-menu")).to_have_count(0)
+    x, y = hold_block(phone, big.id)                                                  # held again (a fresh hold) it lifts, and then it moves
+    expect(phone.locator(block(big.id))).to_have_class(re.compile(r"is-held"))
+    fire(phone, "pointerup", x, y)
+
+
+def test_renaming_puts_the_knobs_away_so_they_never_sit_on_the_title_field(phone):
+    lunch = plan("Lunch", 12 * 60, 13 * 60)
+    open_day(phone)
+    select(phone, lunch.id)
+    phone.locator('.cz-mi[data-do="rename"]').click()
+    expect(phone.locator(".cz-gb-edit")).to_be_visible()
+    assert phone.locator(".cz-g-knobs, .is-selected").count() == 0
+    phone.keyboard.press("Escape")
+    expect(phone.locator(".cz-gb-edit")).to_have_count(0)
+    select(phone, lunch.id)                                                               # (a double tap cannot rename a selected block: its first tap only deselects)
+    phone.locator(".cz-menu").evaluate("m => m.remove()")
+    t = box(phone, f"{block(lunch.id)} .cz-gb-t")
+    phone.touchscreen.tap(t["x"] + 10, t["y"] + t["height"] / 2)
+    expect(phone.locator(".cz-g-knobs")).to_have_count(0)
+    phone.wait_for_timeout(700)
+    for _ in range(2):
+        phone.touchscreen.tap(t["x"] + 10, t["y"] + t["height"] / 2)
+        phone.wait_for_timeout(60)
+    expect(phone.locator(".cz-gb-edit")).to_be_visible()
+    assert phone.locator(".cz-g-knobs").count() == 0
 
 
 def test_a_viewer_gets_no_knobs(canvas_page, browser, base_url):

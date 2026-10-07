@@ -29,7 +29,7 @@ def lines(path):
 def test_the_tokens_are_the_cards_spring_and_one_set():
     css = (ASSETS / "css" / "tokens.css").read_text(encoding="utf-8")
     for token, value in (("--motion-spring-dur", "380ms"), ("--motion-spring", "cubic-bezier(.3, 1.35, .5, 1)"), ("--motion-dur", "240ms"), ("--motion-out", "cubic-bezier(.4, 0, .8, .4)"),
-                         ("--motion-settle-dur", "280ms"), ("--motion-quick", "160ms"), ("--motion-fade", "120ms")):
+                         ("--motion-settle-dur", "280ms"), ("--motion-quick", "160ms"), ("--motion-fade", "120ms"), ("--motion-wiggle", "420ms")):
         assert re.search(rf"{re.escape(token)}:\s*{re.escape(value)}", css), token
     canvas = (ASSETS / "css" / "trip_canvas.css").read_text(encoding="utf-8")
     assert ":root { --cz-dur: var(--motion-spring-dur); --cz-ease: var(--motion-spring); }" in canvas      # the canvas's levels (Day | Week, sheets) are the same spring
@@ -81,6 +81,11 @@ def test_the_stand_in_for_the_helper_is_defined_once_and_no_script_carries_a_cop
         assert "var MO = window.GA.motion" in text, name
     copies = [p.name for p in (ASSETS / "js").glob("*.js") if "reflow: function" in p.read_text(encoding="utf-8")]
     assert copies == ["motion_fallback.js"], copies
+
+
+def test_the_wiggle_of_a_held_block_and_of_its_knobs_is_one_token():
+    grid = (ASSETS / "css" / "day_grid.css").read_text(encoding="utf-8")
+    assert grid.count("animation: cz-wiggle var(--motion-wiggle)") == 2 and "cz-wiggle 0." not in grid
 
 
 def test_the_helper_is_on_every_page_before_the_toast():

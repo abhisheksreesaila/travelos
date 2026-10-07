@@ -57,7 +57,7 @@
     if (!el || !stage.contains(el) || e.target.closest('input, textarea')) return;
     var r = el.getBoundingClientRect();
     var edge = Math.min(clamp(r.height * 0.4, rem() * 0.75, rem() * 1.75), r.height * 0.45);        // the bottom edge: a hand's width of the block's last stretch (never more than its lower half)
-    var own = !!sel && sel.el === el;                                                         // F-110: a touch on the selected block's body moves it as soon as it travels (no second hold)
+    var own = !!sel && sel.el === el && !el.classList.contains('is-tall');                                                       // F-110: a touch on the selected block's body moves it as soon as it travels (no second hold)
     gg = { id: e.pointerId, el: el, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, mode: 'wait', resize: !own && e.clientY > r.bottom - edge, edge: 'end', own: own, moved: false, dirty: false };
     if (own) CZ.held = true;                                                                  // so a sideways drag is never taken for the flick between days
     gg.timer = setTimeout(lift, HOLD);
@@ -125,6 +125,7 @@
     });
     el.parentNode.insertBefore(layer, el.nextSibling);
     el.classList.add('is-selected');
+    el.classList.toggle('is-tall', el.offsetHeight > window.innerHeight * 0.6);      // a block that fills the screen must still let a flick scroll the day
     sel = { el: el, act: el.dataset.act, layer: layer, ro: null };
     place();
     if (window.ResizeObserver) { sel.ro = new ResizeObserver(place); sel.ro.observe(el); }
@@ -135,14 +136,20 @@
     var s = sel;
     sel = null;
     if (s.ro) s.ro.disconnect();
-    if (s.el.isConnected) s.el.classList.remove('is-selected');
+    if (s.el.isConnected) s.el.classList.remove('is-selected', 'is-tall');
     var gone = function () { if (s.layer.parentNode) s.layer.parentNode.removeChild(s.layer); };
     if (now || CZ.reduced.matches || !s.layer.isConnected) gone();
     else { s.layer.classList.add('is-away'); s.layer.style.pointerEvents = 'none'; setTimeout(gone, ms('quick')); }
   }
   function deselect() { clearSel(false); }
+  var swallow = null;      // the click that ends a tap which only deselected: it is registered here, before the card's own click handler (day_card.js loads after this file)
+  document.addEventListener('click', function (e) {
+    if (swallow && Date.now() < swallow.until && swallow.el.contains(e.target)) { e.preventDefault(); e.stopImmediatePropagation(); }
+    swallow = null;
+  }, true);
   CZ.deselect = deselect;
   document.addEventListener('pointerdown', function (e) {        // a touch anywhere else puts the knobs away (and does what it would have done: scrolls, taps, holds)
+    swallow = null;                                              // (a new touch is a new tap: the last one's click, if it never came, is not waited for)
     if (!sel) return;
     var t = e.target;
     if (t.closest && (t.closest('.cz-g-knobs, .cz-menu, .ga-toast') || sel.el.contains(t))) return;
@@ -322,7 +329,12 @@
     var g = gg;
     gg = null;
     if (g.mode === 'wait') {                                               // a tap: the click that follows opens the block (two taps on a title edit it: day_menu.js)
-      if (g.own) { CZ.held = false; deselect(); }                          // (a tap on the selected block opens its card: the knobs go)
+      if (g.own) CZ.held = false;
+      if (sel && sel.el === g.el) {                                        // a tap on the selected block only puts the knobs away: the click it makes opens nothing
+        deselect();
+        swallow = { el: g.el, until: Date.now() + 600 };
+        return;
+      }
       if (CZ.tap) CZ.tap(g.el, e);
       return;
     }

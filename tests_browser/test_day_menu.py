@@ -219,6 +219,9 @@ def test_a_park_block_menu_and_a_tap_that_still_opens_it(phone):
     expect(phone.locator(".cz-menu")).to_have_count(0)
     assert phone.locator(".cz-view").get_attribute("data-level") == "day"
     phone.wait_for_timeout(400)                                                    # the click a lifting finger makes is not a tap: a real tap comes later
+    phone.locator(".cz-gb-open").click(position={"x": 90, "y": 120})               # F-110: the block is still selected after the hold: this tap only puts its knobs away
+    expect(phone.locator(".cz-g-knobs")).to_have_count(0)
+    phone.wait_for_timeout(500)
     phone.locator(".cz-gb-open").click(position={"x": 90, "y": 120})               # a tap on the body of the block opens it at once
     phone.locator("#cz-card-rides").click()      # F-106: a tap opens the card; Rides is the way to the block level
     expect(phone.locator(".cz-view[data-level=block]")).to_be_visible()

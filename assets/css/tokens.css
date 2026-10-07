@@ -60,6 +60,7 @@
   --motion-settle-dur: 280ms;     /* a new bubble or block settling into place */
   --motion-quick: 160ms;           /* a glide of a few pixels, a quick fade */
   --motion-fade: 120ms;            /* what remains under reduced motion */
+  --motion-wiggle: 420ms;          /* the held block's little wiggle while its menu is open, and its knobs' (F-098, F-110): a loop, not a move */
 }
 
 @media (max-width: 720px) { :root { font-size: 16px; --text-min: 13px; } }
