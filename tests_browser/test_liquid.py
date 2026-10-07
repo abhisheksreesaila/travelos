@@ -291,3 +291,20 @@ def test_reduced_motion_a_sent_bubble_only_fades(canvas_page, base_url, vp):
     assert [e["kind"] for e in log] == ["fade"], log
     got = page.locator("#ft-thread .ft-msg").last.evaluate("e => e.getAnimations().length")
     assert got == 0
+
+
+def test_two_quick_sends_never_make_a_bubble_jump(canvas_page, base_url, vp):
+    """F-113 review: a second Send while the first bubble is still rising: every bubble keeps moving from where the eye saw it."""
+    page = family(canvas_page, base_url, vp)
+    send_and_wait(page, "First")
+    slow_message(page)
+    page.evaluate("(" + REC.strip() + ")()")
+    page.locator("#ft-text").fill("Second one")
+    page.locator("#ft-send").click()
+    page.wait_for_timeout(120)
+    page.locator("#ft-text").fill("Third one")
+    page.locator("#ft-send").click()
+    rec = frames(page, 2500)
+    for word in ("First", "Second"):
+        tops = [next(m for m in o["m"] if m["text"].startswith(word))["top"] for o in rec if any(m["text"].startswith(word) for m in o["m"])]
+        assert max(abs(b - a) for a, b in zip(tops, tops[1:])) < 16, word

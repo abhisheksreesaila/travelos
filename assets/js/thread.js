@@ -107,8 +107,9 @@
     var MO = motion();
     snap.forEach(function (s) {
       if (!s.el.isConnected) return;
+      s.el.getAnimations().forEach(function (a) { a.cancel(); });      // a rise or glide still running (a quick second Send): the new glide starts from where the eye saw it (`s.r`), not with a jump
       var dy = s.r.top - s.el.getBoundingClientRect().top;
-      if (Math.abs(dy) >= 0.5) MO.run(s.el, [{ translate: "0 " + dy + "px" }, { translate: "0 0" }], SMOOTH);
+      if (Math.abs(dy) >= 0.5) MO.run(s.el, [{ transform: "translateY(" + dy + "px)" }, { transform: "none" }], SMOOTH);
     });
   }
   // A bubble I sent rises from the box into its place, a touch smaller at first (about its bottom corner, like a message leaving the field), in the same ease-out as the list's glide.
@@ -116,7 +117,7 @@
     var MO = motion(), dy = Math.max(0, from.top - el.getBoundingClientRect().top);
     MO.log.push({ kind: "rise" });
     el.style.transformOrigin = "100% 100%";
-    MO.run(el, [{ translate: "0 " + dy + "px", scale: ".92", opacity: 0.5 }, { translate: "0 0", scale: "1", opacity: 1 }], SMOOTH);
+    MO.run(el, [{ transform: "translateY(" + dy + "px) scale(.92)", opacity: 0.5 }, { transform: "none", opacity: 1 }], SMOOTH);      // (one transform: the iPhone runs it off the main thread)
   }
   // The server's copy of a bubble I sent takes the pending one's place without a new element: the same box keeps its place, takes the server's words, time and classes
   // (its "Sending" look fades to the full look). Nothing moves: the "Sending" line and the time line are the same height.
