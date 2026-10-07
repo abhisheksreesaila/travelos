@@ -128,6 +128,8 @@ def test_deleting_a_park_day_says_what_goes_with_it_and_undo_brings_every_step_b
     expect(toast(phone)).to_contain_text("Universal Studios Hollywood and its 16 steps deleted")
     toast(phone).get_by_role("button", name="Undo").click()
     expect(toast(phone)).to_contain_text("is back")
+    phone.wait_for_function("() => { const b = document.querySelector('.cz-gb.is-park'); return b && b.getAnimations({ subtree: true }).length === 0; }")      # the block that came back has landed (a tap in its first frames can miss)
+    phone.wait_for_timeout(500)                                                                       # (the tap that undid it is over: day_grid swallows the click of a tap that only deselects)
     phone.locator(".cz-gb-open").click(position={"x": 90, "y": 40})
     phone.locator("#cz-card-rides").click()      # F-106: a tap opens the card; Rides is the way to the block level
     expect(phone.locator(".cz-view[data-level=block]")).to_be_visible()
