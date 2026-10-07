@@ -531,7 +531,9 @@
         var o = before[b.dataset.act];
         if (o) { arrived(b); arrived(b.nextElementSibling); wiggleTo(b, o.wiggle[0]); wiggleTo(b.nextElementSibling, o.wiggle[1]); }      // the wiggle of a block whose menu is open goes on from where it was, not from its start
         if (!o || (Math.abs(o.top - b.offsetTop) < 2 && Math.abs(o.left - b.offsetLeft) < 2 && Math.abs(o.width - b.offsetWidth) < 2 && Math.abs(o.height - b.offsetHeight) < 2)) return;      // it did not move (the wiggle only tilts it)
-        GA.motion.land(b, o.eye);
+        landing++;      // (a refresh must not swap the day under a neighbour's glide either: CZ.landing)
+        var over = function () { landing--; };
+        GA.motion.land(b, o.eye).then(over, over);
       });
     };
   };

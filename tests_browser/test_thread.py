@@ -324,3 +324,31 @@ def test_two_messages_arriving_in_one_poll_both_show(pair):
         expect(ari.locator("#ft-thread .ft-msg .ft-bub").filter(has_text=word)).to_have_count(1)
     expect(mate.locator("#ft-thread .ft-msg")).to_have_count(3, timeout=9000)
     assert mate.locator("#ft-thread .ft-msg").all_inner_texts()[2].count("Three") == 1
+
+
+def test_a_poll_that_delivers_my_message_first_and_then_a_lost_reply_leaves_it_delivered_and_the_next_send_goes(pair):
+    """F-112 review: the server saved the message, a poll brought it (the pending bubble was taken over), then the reply never came. Nothing is marked failed, nothing throws, and a second Send works."""
+    ari, _ = pair()
+    errors = []
+    ari.on("pageerror", lambda e: errors.append(str(e)))
+    ari.evaluate("window.__rej = []; window.addEventListener('unhandledrejection', e => window.__rej.push(String(e.reason)))")
+
+    def saved_then_lost(route):
+        route.fetch()                                                                         # the server has it
+        ari.evaluate("document.getElementById('ft-thread').dispatchEvent(new Event('ft-refresh'))")      # a poll brings it first
+        ari.wait_for_timeout(1500)
+        route.abort()                                                                         # then the reply is lost
+
+    ari.route("**/trip/family/message", saved_then_lost)
+    ari.locator("#ft-text").fill("Saved but the reply was lost")
+    ari.locator("#ft-send").click()
+    ari.wait_for_timeout(2500)
+    ari.unroute("**/trip/family/message")
+    expect(ari.locator("#ft-thread .ft-msg", has_text="Saved but the reply was lost")).to_have_count(1)
+    expect(ari.locator("#ft-thread .is-failed, #ft-thread .is-sending, #ft-thread .is-pending")).to_have_count(0)
+    ari.locator("#ft-text").fill("Second message")
+    ari.locator("#ft-send").click()
+    expect(ari.locator("#ft-thread .ft-msg", has_text="Second message")).to_have_count(1)
+    expect(ari.locator("#ft-thread .is-pending")).to_have_count(0)
+    expect(ari.locator("#ft-thread .is-failed")).to_have_count(0)
+    assert errors == [] and ari.evaluate("window.__rej") == []
