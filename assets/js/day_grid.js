@@ -103,6 +103,7 @@
     s.top = el.offsetTop + 'px';
     s.width = el.offsetWidth + 'px';
     s.height = el.offsetHeight + 'px';
+    el.classList.toggle('is-tall', el.offsetHeight > window.innerHeight * 0.6);      // resized past (or back under) 60% of the screen while selected: touch-action follows
   }
   function wake() {                                  // a gesture is over: the knobs are back on the block's real edges
     if (!sel || !sel.layer.isConnected) return;

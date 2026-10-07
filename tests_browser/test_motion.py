@@ -597,3 +597,87 @@ def test_reduced_motion_the_pickers_and_the_ledger_popover_do_not_animate(anywhe
     calm(page, "#ws-pop")
     page.click("#ws-total")
     expect(page.locator("#ws-pop")).to_be_hidden()
+
+
+# ---- F-111: what GROWS or FOLDS (open/close) never stretches its words either ---------------------------------------------------------------------------------
+# The same measure as above, taken on the first moments of every thing that grows out of what was tapped: the row of days, the hold menu, the SOS sheet, the plan card, a picker's
+# popover and the toast, at 390 and 320 wide, while it opens and again while it folds.
+
+EVERY_WORD = "*"
+
+
+def grow_keeps_shape(page, sel, skip=None):
+    page.wait_for_selector(sel)
+    keeps_shape(page.evaluate(SHAPE, [sel, EVERY_WORD, skip]))
+
+
+def fold_keeps_shape(page, sel, trigger):
+    trigger()
+    page.wait_for_function("s => { const e = document.querySelector(s); return e && e.getAnimations().length }", arg=sel)
+    keeps_shape(page.evaluate(SHAPE, [sel, EVERY_WORD, None]))
+
+
+@pytest.mark.parametrize("size", SIZES, ids=["390", "320"])
+def test_the_days_row_keeps_its_words_unsquished_while_it_grows_and_folds(phone, base_url, size):
+    page = phone(size=size, motion="no-preference")
+    day_page(page, base_url)
+    slow(page)
+    open_sheet(page)
+    page.wait_for_timeout(SLOW + 300)
+    page.locator("#ak-chip").click()
+    expect(page.locator("#ak-days-pick")).to_be_visible()
+    page.evaluate("(() => { const s = document.getElementById('ak-sheet'); [s, ...s.children].forEach(n => n.getAnimations().forEach(a => a.finish())); })()")
+    grow_keeps_shape(page, "#ak-days-pick")
+    page.wait_for_timeout(SLOW + 300)
+    fold_keeps_shape(page, "#ak-days-pick", lambda: page.locator("#ak-chip").click())
+
+
+@pytest.mark.parametrize("size", SIZES, ids=["390", "320"])
+def test_the_hold_menu_and_the_plan_card_keep_their_words_unsquished_while_they_grow_and_fold(phone, base_url, size):
+    page = phone(size=size, motion="no-preference")
+    day_page(page, base_url)
+    slow(page)
+    page.wait_for_timeout(400)
+    block = '.cz-gb[data-act="a1"]'
+    page.locator(block).evaluate("e => e.scrollIntoView({ block: 'center' })")
+    page.wait_for_timeout(200)
+    page.evaluate("b => CZ.hold(document.querySelector(b))", block)
+    grow_keeps_shape(page, ".cz-menu")
+    page.wait_for_timeout(SLOW + 300)
+    fold_keeps_shape(page, ".cz-menu", lambda: page.keyboard.press("Escape"))
+    page.wait_for_timeout(SLOW + 300)
+    page.evaluate("b => CZ.openCard(document.querySelector(b))", block)
+    grow_keeps_shape(page, ".cz-card")
+    page.wait_for_timeout(SLOW + 300)
+    fold_keeps_shape(page, ".cz-card", lambda: page.keyboard.press("Escape"))
+
+
+@pytest.mark.parametrize("vp", [PHONE, NARROW], ids=["390", "320"])
+def test_the_sos_sheet_keeps_its_words_unsquished_while_it_grows_and_folds(booked_page, vp):
+    page = booked_page(viewport=vp)
+    slow(page)
+    page.locator("#cz-sos").click()
+    grow_keeps_shape(page, ".cz-sheet-sos")
+    page.wait_for_timeout(SLOW + 300)
+    fold_keeps_shape(page, ".cz-sheet-sos", lambda: page.locator(".cz-sheet-sos .cz-close").click())
+
+
+@pytest.mark.parametrize("size", SIZES, ids=["390", "320"])
+def test_the_toast_keeps_its_words_unsquished_while_it_grows_and_folds(phone, base_url, size):
+    page = phone(size=size, motion="no-preference")
+    day_page(page, base_url)
+    slow(page)
+    page.wait_for_timeout(400)
+    page.evaluate("""() => { document.getElementById('ph-tab-ask').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerType: 'touch' })); GA.toast('Lunch moved to 12:30 PM'); }""")
+    grow_keeps_shape(page, ".ga-toast")
+    page.wait_for_timeout(SLOW + 300)
+    fold_keeps_shape(page, ".ga-toast", lambda: page.evaluate("GA.hideToast()"))
+
+
+@pytest.mark.parametrize("vp", [PHONE, NARROW], ids=["390", "320"])
+def test_a_picker_popover_keeps_its_words_unsquished_while_it_grows_and_folds(anywhere, vp):
+    page = anywhere("/start", vp)
+    page.get_by_role("button", name=re.compile("^Leaving:")).click()
+    grow_keeps_shape(page, ".ga-pop")
+    page.wait_for_timeout(SLOW + 300)
+    fold_keeps_shape(page, ".ga-pop", lambda: page.keyboard.press("Escape"))

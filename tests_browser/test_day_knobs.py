@@ -275,6 +275,18 @@ def test_a_selected_block_taller_than_most_of_the_screen_still_scrolls_under_a_f
     fire(phone, "pointerup", x, y)
 
 
+def test_a_selected_block_resized_past_most_of_the_screen_switches_to_scrolling_touch_and_back(phone):
+    lunch = plan("Lunch", 12 * 60, 13 * 60)
+    open_day(phone)
+    select(phone, lunch.id)
+    touch = "s => getComputedStyle(document.querySelector(s)).touchAction"
+    assert phone.evaluate(touch, block(lunch.id)) == "none"
+    phone.evaluate("s => { const e = document.querySelector(s); e.style.height = Math.round(innerHeight * 0.7) + 'px'; }", block(lunch.id))
+    phone.wait_for_function("s => getComputedStyle(document.querySelector(s)).touchAction === 'pan-y pinch-zoom'", arg=block(lunch.id))
+    phone.evaluate("s => { document.querySelector(s).style.height = '60px'; }", block(lunch.id))
+    phone.wait_for_function("s => getComputedStyle(document.querySelector(s)).touchAction === 'none'", arg=block(lunch.id))
+
+
 def test_renaming_puts_the_knobs_away_so_they_never_sit_on_the_title_field(phone):
     lunch = plan("Lunch", 12 * 60, 13 * 60)
     open_day(phone)
