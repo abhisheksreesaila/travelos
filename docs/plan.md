@@ -650,6 +650,6 @@ Captain, 2026-10-06 (screenshot of a 9 AM–4 PM block): the small bar at the bo
 - [x] a block taller than the screen keeps its title and time stuck to the top of its visible part while the day scrolls
 - [x] browser tests at 390 and 320: no handle at rest, knobs after a hold, start and end changed by each knob, the sticky title; phone checks
 
-## F-111 The Ask days row grows without squashing its words [todo]
+## F-111 The Ask days row grows without squashing its words [done]
 Found reviewing F-110: the Ask sheet's row of days (#ak-days-pick) grows out of the chip through GA.motion.open, which scales its text for a moment; F-110 counter-scaled only `flip`. · Needs: F-109
-- [ ] GA.motion.open/close counter-scale (or clip) their content so words never stretch while any sheet, menu, row or popover grows or folds; the shape test (within 2% over the frames) covers the days row, the hold menu, the SOS sheet and the plan card
+- [x] GA.motion.open/close counter-scale (or clip) their content so words never stretch while any sheet, menu, row or popover grows or folds; the shape test (within 2% over the frames) covers the days row, the hold menu, the SOS sheet and the plan card
