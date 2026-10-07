@@ -122,7 +122,7 @@
         place(el);
       }, reduced.matches ? 0 : MO.t('fade'));
       el.classList.add('is-in');                                  // (a toast on its way out is called back)
-      el.getAnimations().forEach(function (a) { a.cancel(); });
+      MO.stop(el);
       arm(ms);
       return el;
     }

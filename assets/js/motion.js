@@ -8,6 +8,7 @@
 //   GA.motion.settle(el, { y })                                         a new bubble or block: it rises a few pixels, from a little smaller, with the same spring
 //   GA.motion.spring(el, fromTransform)                                  let go of a drag: back to rest with the spring
 //   GA.motion.run(el, frames, { t: 'quick', ease: 'calm' })              any other small move, with a token's duration and easing
+//   GA.motion.stop(el)                                                   cancel whatever is moving `el` (and its words' counter-scale); use it instead of cancelling by hand
 //   GA.motion.origin()                                                   the thing tapped a moment ago (a toast, which nobody tapped, grows from it); null if nothing was
 // While the box is scaled, its children are counter-scaled (and the box clips), so words never stretch (F-111).
 // With no origin (or one scrolled off the screen) a thing rises from a small place just above where it rests.
@@ -90,23 +91,28 @@
   var KEEP = 'ga-keep', N = 48;
   function keepWords(el, to, s0, s1, easing, dur, o) {
     var kids = Array.prototype.slice.call(el.children || []).filter(function (k) { return k.animate && getComputedStyle(k).display !== 'contents'; }), curve = bezier(easing), made = [];
-    kids.forEach(function (k) { k.getAnimations().forEach(function (a) { if (a.id === KEEP) a.cancel(); }); });
-    function frames(origin, a0, a1) {
+    kids.forEach(function (k) { dropKeep(k, true); });
+    function frames(a0, a1) {
       var out = [], i, p, sx, sy;
       for (i = 0; i <= N; i++) {
         p = curve(i / N);
         sx = a0[0] + (a1[0] - a0[0]) * p;
         sy = a0[1] + (a1[1] - a0[1]) * p;
-        out.push({ offset: i / N, transform: 'scale(' + (1 / Math.max(sx, 0.01)) + ',' + (1 / Math.max(sy, 0.01)) + ')', transformOrigin: origin });
+        out.push({ offset: i / N, transform: 'scale(' + (1 / Math.max(sx, 0.01)) + ',' + (1 / Math.max(sy, 0.01)) + ')' });
       }
       return out;
     }
     kids.forEach(function (k) {
-      var r = rectOf(k), a = k.animate(frames((to.left - r.left) + 'px ' + (to.top - r.top) + 'px', s0, s1), Object.assign({ duration: dur, easing: 'linear' }, o || {}));
+      var r = rectOf(k), a;
+      if (k._gaPrev === undefined) k._gaPrev = k.style.transformOrigin;      // the corner is a style for the move's duration (not part of the keyframes: they stay on the compositor)
+      k.style.transformOrigin = (to.left - r.left) + 'px ' + (to.top - r.top) + 'px';
+      a = k.animate(frames(s0, s1), Object.assign({ duration: dur, easing: 'linear' }, o || {}));
       a.id = KEEP;
       made.push({ k: k, a: a });
     });
-    var out = made.map(function (m) { return m.a.finished.catch(function () {}); });
+    var out = made.map(function (m) {
+      return m.a.finished.then(function () { if (!(o && o.fill === 'forwards')) dropKeep(m.k, false); }, function () {});      // a fold stays as it ends until the thing is removed
+    });
     // The box was aimed at a new rest (it changed size around its move): the words follow, with the box's new scales. Where the box's corner is in a word's own space is the same in the picture as at
     // rest (the counter-scale cancels the box's), so it is read from the boxes as they are now; call this before the box's own frames change.
     out.refit = function (a0, a1) {
@@ -114,23 +120,39 @@
       made.forEach(function (m) {
         if (m.a.playState !== 'running') return;
         var r = rectOf(m.k);
-        m.a.effect.setKeyframes(frames((er.left - r.left) + 'px ' + (er.top - r.top) + 'px', a0, a1));
+        m.k.style.transformOrigin = (er.left - r.left) + 'px ' + (er.top - r.top) + 'px';
+        m.a.effect.setKeyframes(frames(a0, a1));
       });
     };
-    // the box clips its words until it has landed (then lets its shadow and anything that pokes out show again); started after the box's own move, with `clip()`
+    // the box clips its words until it has landed (then lets its shadow and anything that pokes out show again); a fold eases the clip in over its first frames, from wherever it is (a fold that
+    // interrupts a grow does not snap it); started after the box's own move, with `clip()`
     out.clip = function () {
-      var c = el.animate([{ clipPath: 'inset(0)', offset: 0 }, { clipPath: 'inset(0)', offset: 0.85 }, { clipPath: 'inset(-4rem)', offset: 1 }], Object.assign({ duration: dur, easing: 'linear' }, o || {}));
+      var free = 'inset(-4rem)', from = o && o.clipFrom && o.clipFrom !== 'none' ? o.clipFrom : free;
+      var fr = o && o.fill === 'forwards' ? [{ clipPath: from, offset: 0 }, { clipPath: 'inset(0)', offset: 0.15 }, { clipPath: 'inset(0)', offset: 1 }]
+        : [{ clipPath: 'inset(0)', offset: 0 }, { clipPath: 'inset(0)', offset: 0.85 }, { clipPath: free, offset: 1 }];
+      var c = el.animate(fr, { duration: dur, easing: 'linear', fill: o && o.fill });
       return c.finished.catch(function () {});
     };
     return out;
   }
+  function dropKeep(k, keepStyle) {              // the counter-scale of a word box goes (and the corner it was scaled about is put back)
+    k.getAnimations().forEach(function (a) { if (a.id === KEEP) a.cancel(); });
+    if (!keepStyle && k._gaPrev !== undefined) { k.style.transformOrigin = k._gaPrev; delete k._gaPrev; }
+  }
+  // Stop whatever moved `el` (a toast called back while it folds): its own animations and its words' counter-scale go, and every word box is at its own size again.
+  M_stop = function (el) {
+    if (!el) return;
+    el.getAnimations().forEach(function (a) { a.cancel(); });
+    Array.prototype.forEach.call(el.children || [], function (k) { dropKeep(k, false); });
+  };
+  var M_stop;
   function scaleOf(tf) {
     if (!tf || tf === 'none') return [1, 1];
     var m = new DOMMatrix(tf);
     return [m.a || 1, m.d || 1];
   }
 
-  var M = GA.motion = { log: [], t: t, ease: ease, reduced: reduced, box: box };
+  var M = GA.motion = { log: [], t: t, ease: ease, reduced: reduced, box: box, stop: function (el) { M_stop(el); } };
 
   // Grow `el` out of `origin`.
   M.open = function (el, origin, o) {
@@ -159,14 +181,14 @@
     o = o || {};
     if (reduced() || !el.animate) return Promise.resolve();
     var cs = getComputedStyle(el);      // where it is right now: closing in the middle of opening starts from there (no flash back to full)
-    var start = o.from || cs.transform, op = parseFloat(cs.opacity), rad = cs.borderRadius;
+    var start = o.from || cs.transform, op = parseFloat(cs.opacity), rad = cs.borderRadius, clip0 = cs.clipPath;
     var cop = o.content ? parseFloat(getComputedStyle(o.content).opacity) : 1;
     var to = box(el), target = rectOf(origin), dur = t('dur'), e = ease('out'), done = [];
     el.style.transformOrigin = '0 0';
     var end = onScreen(target) ? squash(to, target) : 'translateY(' + Math.round(window.innerHeight * 0.1) + 'px) scale(.9)';
     var frames = [{ transform: !start || start === 'matrix(1, 0, 0, 1, 0, 0)' ? 'none' : start, opacity: op >= 0 ? op : 1 }, { transform: end, opacity: Math.min(0.2, op >= 0 ? op : 1) }];
     if (o.radius) { frames[0].borderRadius = rad || o.radius[1]; frames[1].borderRadius = o.radius[0]; }
-    var kept = keepWords(el, to, scaleOf(frames[0].transform), scaleOf(end), e, dur, { fill: 'forwards' });
+    var kept = keepWords(el, to, scaleOf(frames[0].transform), scaleOf(end), e, dur, { fill: 'forwards', clipFrom: clip0 });
     done.push.apply(done, kept);
     var fold = el.animate(frames, { duration: dur, easing: e, fill: 'forwards' });
     done.push(fold.finished.catch(function () {}), kept.clip());

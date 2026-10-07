@@ -681,3 +681,87 @@ def test_a_picker_popover_keeps_its_words_unsquished_while_it_grows_and_folds(an
     grow_keeps_shape(page, ".ga-pop")
     page.wait_for_timeout(SLOW + 300)
     fold_keeps_shape(page, ".ga-pop", lambda: page.keyboard.press("Escape"))
+
+
+# ---- F-111 review: a thing called back from its fold keeps no leftover counter-scale -----------------------------------------------------------------------------
+
+@pytest.mark.parametrize("tapped", [True, False], ids=["tap", "no-tap"])
+def test_a_toast_called_back_during_its_fade_has_its_words_at_their_own_size(phone, base_url, tapped):
+    page = phone(motion="no-preference")
+    day_page(page, base_url)
+    page.wait_for_timeout(400)
+    if tapped:
+        page.evaluate("document.getElementById('ph-tab-ask').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerType: 'touch' }))")
+    page.evaluate("GA.toast('Lunch moved to 12:30 PM')")
+    page.wait_for_timeout(600)
+    page.evaluate("GA.hideToast()")
+    page.wait_for_function("document.querySelector('.ga-toast').getAnimations().length > 1")
+    page.wait_for_timeout(80)                                                                    # the fold is under way: its words are scaled down
+    page.evaluate("GA.toast('Back again')")
+    page.wait_for_timeout(100)
+    got = page.evaluate("""() => [...document.querySelectorAll('.ga-toast, .ga-toast *')].map(e => getComputedStyle(e).transform).filter(t => t !== 'none')""")
+    assert got == [], got
+    page.wait_for_timeout(700)
+    assert page.evaluate("document.querySelector('.ga-toast-body').getAnimations().length") == 0
+
+
+
+CLIP = """([sel, at]) => {
+  const el = document.querySelector(sel), as = el.getAnimations().filter(a => a.effect.getKeyframes().some(k => k.clipPath !== undefined));
+  if (!as.length) return null;
+  const a = as[as.length - 1]; a.pause(); a.currentTime = a.effect.getComputedTiming().endTime * at;
+  return getComputedStyle(el).clipPath;
+}"""
+
+
+def test_a_fold_eases_its_clip_in_and_a_fold_that_interrupts_a_grow_does_not_snap_it(phone, base_url):
+    page = phone(motion="no-preference")
+    day_page(page, base_url)
+    slow(page)
+    page.wait_for_timeout(400)
+    page.evaluate("GA.toast('Saved')")
+    page.wait_for_timeout(SLOW + 400)
+    page.evaluate("GA.hideToast()")
+    page.wait_for_function("document.querySelector('.ga-toast').getAnimations().length > 1")
+    first = page.evaluate(CLIP, [".ga-toast", 0])
+    assert first not in ("inset(0px)", "none") and page.evaluate(CLIP, [".ga-toast", 0.4]) == "inset(0px)", first          # the shadow does not vanish in one frame
+    page.evaluate("document.getElementById('ph-tab-ask').click()")                                       # a sheet half way through its grow: its clip is still shut
+    page.wait_for_selector("#ak-sheet")
+    page.wait_for_timeout(SLOW * 0.5)
+    page.keyboard.press("Escape")
+    page.wait_for_function("document.querySelector('#ak-sheet').getAnimations().some(a => a.effect.getKeyframes().some(k => k.clipPath !== undefined && k.offset === 0.15))")
+    snap = page.evaluate(CLIP, ["#ak-sheet", 0])
+    assert snap == "inset(0px)", snap                                                                   # the fold starts where the grow left it
+
+
+def test_the_words_counter_scale_keeps_the_corner_as_a_style_not_in_its_keyframes(phone, base_url):
+    page = phone(motion="no-preference")
+    day_page(page, base_url)
+    slow(page)
+    page.wait_for_timeout(400)
+    page.evaluate("GA.toast('Saved')")
+    got = page.evaluate("""() => { const b = document.querySelector('.ga-toast-body'), a = b.getAnimations().find(x => x.id === 'ga-keep');
+      return { keys: a.effect.getKeyframes().some(k => k.transformOrigin !== undefined), style: b.style.transformOrigin }; }""")
+    assert got["keys"] is False and got["style"], got
+    page.wait_for_timeout(SLOW + 400)
+    assert page.evaluate("document.querySelector('.ga-toast-body').style.transformOrigin") == ""
+
+
+@pytest.mark.parametrize("size", SIZES, ids=["390", "320"])
+def test_the_ask_sheet_itself_keeps_its_words_unsquished_while_it_grows_and_folds(phone, base_url, size):
+    page = phone(size=size, motion="no-preference")
+    day_page(page, base_url)
+    slow(page)
+    page.wait_for_timeout(400)
+    page.evaluate("document.getElementById('ph-tab-ask').click()")
+    grow_keeps_shape(page, "#ak-sheet")
+    page.wait_for_timeout(SLOW + 400)
+    fold_keeps_shape(page, "#ak-sheet", lambda: page.keyboard.press("Escape"))
+
+
+def test_the_ledger_popover_keeps_its_words_unsquished_while_it_grows_and_folds(anywhere):
+    page = anywhere("/plan", {"width": 1440, "height": 900}, ready="#ws-grid[data-focus]")
+    page.click("#ws-total")
+    grow_keeps_shape(page, "#ws-pop")
+    page.wait_for_timeout(SLOW + 400)
+    fold_keeps_shape(page, "#ws-pop", lambda: page.click("#ws-total"))
