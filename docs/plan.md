@@ -644,11 +644,11 @@ Captain, 2026-10-06: the F-106 card "opens up… like a liquid… with a slight 
 - [x] screen moves share it: Day ↔ Week, opening a plan's chat, tab switches (F-099), and new chat bubbles and new or moved grid blocks settle in with the same soft spring; nothing jumps; reduced motion: no movement, a short fade at most
 - [x] browser tests check each sheet opens from and closes into its origin (transform-origin / bounding boxes at start and end), the shared tokens are the only durations used, and reduced motion
 
-## F-110 Resize knobs like Apple Calendar; a long block keeps its name in view [todo]
+## F-110 Resize knobs like Apple Calendar; a long block keeps its name in view [done]
 Captain, 2026-10-06 (screenshot of a 9 AM–4 PM block): the small bar at the bottom of every block looks like the iPhone sheet grabber, so he flicks it and the page just scrolls. The same screenshot shows a long block scrolled under the heading with no name visible. · Needs: F-097, F-106
-- [ ] at rest a block has no handle; holding a block lifts it and shows two small round knobs (top edge and bottom edge, as Apple Calendar does while editing) that change the start or the end with the F-097 zoom; dragging the body moves it; a tap elsewhere puts the knobs away; the hold menu (F-098) still opens on a hold-and-release
-- [ ] a block taller than the screen keeps its title and time stuck to the top of its visible part while the day scrolls
-- [ ] browser tests at 390 and 320: no handle at rest, knobs after a hold, start and end changed by each knob, the sticky title; phone checks
+- [x] at rest a block has no handle; holding a block lifts it and shows two small round knobs (top edge and bottom edge, as Apple Calendar does while editing) that change the start or the end with the F-097 zoom; dragging the body moves it; a tap elsewhere puts the knobs away; the hold menu (F-098) still opens on a hold-and-release
+- [x] a block taller than the screen keeps its title and time stuck to the top of its visible part while the day scrolls
+- [x] browser tests at 390 and 320: no handle at rest, knobs after a hold, start and end changed by each knob, the sticky title; phone checks
 
 ## F-111 The Ask days row grows without squashing its words [todo]
 Found reviewing F-110: the Ask sheet's row of days (#ak-days-pick) grows out of the chip through GA.motion.open, which scales its text for a moment; F-110 counter-scaled only `flip`. · Needs: F-109
