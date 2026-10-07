@@ -8,13 +8,18 @@
 // (.cz-g-zoom) with its origin on the edge being dragged; --zk carries the same number to what has words in it, which scales back by 1/--zk, so text keeps its size.
 // Reduced motion: no zoom, no easing; moves and resizes keep the 15-minute snap.
 //
+// F-110: no handle at rest. A block that was held and let go stays SELECTED (it keeps its lift, its hold menu opens as before) and shows two small round knobs, as Apple Calendar does
+// while an event is being edited: the top one changes the start, the bottom one the end, each with the same zoom (the start edge is a resize of its own: same route, same rules).
+// While a block is selected a touch on a knob drags that edge at once, a touch on its body (past a few pixels) moves it at once, and a touch anywhere else puts the knobs away and
+// scrolls as usual (a selected block itself does not scroll under a finger: touch-action none, so a drag on it is never taken for a scroll). It stays selected through the save.
+//
 // F-098 adds the hold menu, the wiggle, rename in place and delete (further down).
 (function () {
   var CZ = window.CZ;
   if (!CZ) return;
   var stage = CZ.stage;
   var root = document.documentElement;
-  var HOLD = 350, SLOP = 10, TURN = 4;
+  var HOLD = 350, SLOP = 10, TURN = 4, DRAG = 6;
   var GRAIN = 15, FINE = 5, ZOOM = 2.5, MIN_LEN = 15, DAY_END = 22 * 60;
   var ptrs = {};          // fingers down: two fingers are never a gesture of ours
   var gg = null;          // the gesture in progress
@@ -42,11 +47,19 @@
 
   stage.addEventListener('pointerdown', function (e) {
     if (!editing() || gg || busy || CZ.held || e.button > 0 || count() !== 1) return;        // CZ.held: a new plan's title is being typed (day_new.js): the grid is calm
+    var knob = sel && e.target.closest ? e.target.closest('.cz-g-knob') : null;
+    if (knob && sel.layer.contains(knob)) {                                                  // F-110: a knob of the selected block: that edge is dragged at once, with the zoom
+      gg = { id: e.pointerId, el: sel.el, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, mode: 'wait', resize: true, edge: knob.classList.contains('is-top') ? 'start' : 'end', knob: knob, moved: false, dirty: false };
+      lift();
+      return;
+    }
     var el = e.target.closest ? e.target.closest('.cz-gb') : null;
     if (!el || !stage.contains(el) || e.target.closest('input, textarea')) return;
     var r = el.getBoundingClientRect();
     var edge = Math.min(clamp(r.height * 0.4, rem() * 0.75, rem() * 1.75), r.height * 0.45);        // the bottom edge: a hand's width of the block's last stretch (never more than its lower half)
-    gg = { id: e.pointerId, el: el, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, mode: 'wait', resize: e.clientY > r.bottom - edge, moved: false, dirty: false };
+    var own = !!sel && sel.el === el;                                                         // F-110: a touch on the selected block's body moves it as soon as it travels (no second hold)
+    gg = { id: e.pointerId, el: el, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, mode: 'wait', resize: !own && e.clientY > r.bottom - edge, edge: 'end', own: own, moved: false, dirty: false };
+    if (own) CZ.held = true;                                                                  // so a sideways drag is never taken for the flick between days
     gg.timer = setTimeout(lift, HOLD);
   });
 
@@ -55,7 +68,9 @@
     gg.x = e.clientX;
     gg.y = e.clientY;
     if (gg.mode === 'wait') {
-      if (Math.hypot(gg.x - gg.x0, gg.y - gg.y0) > SLOP) { clearTimeout(gg.timer); gg = null; }       // it is a scroll, or the flick between days: not ours
+      var far = Math.hypot(gg.x - gg.x0, gg.y - gg.y0);
+      if (gg.own && far > DRAG) { clearTimeout(gg.timer); lift(); return; }
+      if (far > SLOP) { clearTimeout(gg.timer); if (gg.own) CZ.held = false; gg = null; }       // it is a scroll, or the flick between days: not ours
       return;
     }
     if (!gg.moved && Math.hypot(gg.x - gg.x0, gg.y - gg.y0) > TURN) gg.moved = true;
@@ -72,9 +87,73 @@
     cancelAnimationFrame(gg.raf || 0);
     var g = gg;
     gg = null;
-    if (g.mode !== 'wait') { restore(g); unhold(g); }
+    if (g.mode !== 'wait') { restore(g); unhold(g); wake(); } else if (g.own) CZ.held = false;
   }
   document.addEventListener('pointercancel', function (e) { if (gg && e.pointerId === gg.id) cancel(); });
+
+  // ---- selected: two knobs beside the block (F-110) -----------------------------------------------------------------------------
+  // The knobs live in a layer next to the block, the size of the block (the block itself clips its words), so they straddle its edges. The layer follows the block's size (a
+  // ResizeObserver: a short block opens out while its menu is open) and is told where the block is while an edge is dragged.
+  var sel = null;       // { el, act, layer, ro }
+  function ms(name) { return window.GA && GA.motion ? GA.motion.t(name) : 160; }
+  function place() {
+    if (!sel || !sel.el.isConnected || !sel.layer.isConnected) return;
+    var s = sel.layer.style, el = sel.el;
+    s.left = el.offsetLeft + 'px';
+    s.top = el.offsetTop + 'px';
+    s.width = el.offsetWidth + 'px';
+    s.height = el.offsetHeight + 'px';
+  }
+  function wake() {                                  // a gesture is over: the knobs are back on the block's real edges
+    if (!sel || !sel.layer.isConnected) return;
+    place();
+    sel.layer.classList.remove('is-away');
+  }
+  function select(el, quiet) {
+    if (!el || !el.isConnected) return;
+    if (sel && sel.el === el && sel.layer.isConnected) return;
+    clearSel(true);
+    var layer = document.createElement('div');
+    layer.className = 'cz-g-knobs';
+    layer.setAttribute('aria-hidden', 'true');
+    layer.style.setProperty('--accent', getComputedStyle(el).getPropertyValue('--accent'));
+    ['top', 'bottom'].forEach(function (w) {
+      var k = document.createElement('div');
+      k.className = 'cz-g-knob cz-cs is-' + w;
+      k.appendChild(document.createElement('i'));
+      layer.appendChild(k);
+    });
+    el.parentNode.insertBefore(layer, el.nextSibling);
+    el.classList.add('is-selected');
+    sel = { el: el, act: el.dataset.act, layer: layer, ro: null };
+    place();
+    if (window.ResizeObserver) { sel.ro = new ResizeObserver(place); sel.ro.observe(el); }
+    if (!quiet && window.GA && GA.motion) layer.querySelectorAll('i').forEach(function (i) { GA.motion.run(i, [{ transform: 'scale(0.4)', opacity: 0 }, { transform: 'none', opacity: 1 }], { t: 'settle', ease: 'spring' }); });
+  }
+  function clearSel(now) {
+    if (!sel) return;
+    var s = sel;
+    sel = null;
+    if (s.ro) s.ro.disconnect();
+    if (s.el.isConnected) s.el.classList.remove('is-selected');
+    var gone = function () { if (s.layer.parentNode) s.layer.parentNode.removeChild(s.layer); };
+    if (now || CZ.reduced.matches || !s.layer.isConnected) gone();
+    else { s.layer.classList.add('is-away'); s.layer.style.pointerEvents = 'none'; setTimeout(gone, ms('quick')); }
+  }
+  function deselect() { clearSel(false); }
+  CZ.deselect = deselect;
+  document.addEventListener('pointerdown', function (e) {        // a touch anywhere else puts the knobs away (and does what it would have done: scrolls, taps, holds)
+    if (!sel) return;
+    var t = e.target;
+    if (t.closest && (t.closest('.cz-g-knobs, .cz-menu, .ga-toast') || sel.el.contains(t))) return;
+    deselect();
+  }, true);
+  document.addEventListener('keydown', function (e) {            // Escape puts the knobs away (the menu's own Escape comes first when it is open)
+    if (!sel || e.key !== 'Escape' || CZ.menuOpen || (e.target.closest && e.target.closest('input, textarea'))) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    deselect();
+  }, true);
 
   // ---- lift: read the geometry once, then only write ------------------------------------------------------------------------
   function lift() {
@@ -95,9 +174,12 @@
     gg.left = el.offsetLeft;
     gg.width = el.offsetWidth;
     gg.grab = gg.y0 + sy - (gg.top0 + (gg.s0 - gg.lo) * gg.ppm);        // where on the block the finger took it (move)
-    gg.off = gg.y0 + sy - (gg.top0 + (gg.e0 - gg.lo) * gg.ppm);         // and how far from the bottom edge (resize)
-    gg.cur = gg.resize ? gg.e0 : gg.s0;
+    var edgeAt = gg.edge === 'start' ? gg.s0 : gg.e0;                    // the edge a resize drags: the end (the bottom edge), or the start (the top knob, F-110)
+    gg.off = gg.y0 + sy - (gg.top0 + (edgeAt - gg.lo) * gg.ppm);        // and how far from it the finger took hold (resize)
+    gg.cur = gg.resize ? edgeAt : gg.s0;
     gg.h0 = br.height;
+    gg.minh = rem() * 2.75;                                              // a block is never drawn shorter than a finger
+    if (sel && sel.el === el) { if (gg.knob) gg.knob.classList.add('is-on'); else sel.layer.classList.add('is-away'); }
     var tabs = document.querySelector('.ph-tabs');
     gg.bottom = (tabs && getComputedStyle(tabs).display !== 'none' ? tabs.getBoundingClientRect().top : window.innerHeight) - 72;      // the tab bar is not part of the page to scroll under
     el.classList.add(gg.resize ? 'is-resizing' : 'is-held');
@@ -148,7 +230,7 @@
   function startZoom() {
     Z.grid = gg.g;
     Z.zoom = gg.zoom;
-    gg.oy = (gg.e0 - gg.lo) * gg.ppm;                                    // the edge being dragged, in the layer: the zoom's origin, so it stays under the finger
+    gg.oy = ((gg.edge === 'start' ? gg.s0 : gg.e0) - gg.lo) * gg.ppm;   // the edge being dragged, in the layer: the zoom's origin, so it stays under the finger
     gg.bottomPage = gg.top0 + gg.oy;
     Z.zoom.style.transformOrigin = '0 ' + gg.oy + 'px';
     Z.zoom.classList.add('is-zooming');
@@ -188,12 +270,28 @@
     if (gg.resize) {
       var k = Z.k, grain = gg.zoomed && k > 1.5 ? FINE : GRAIN;
       var eu = gg.oy + (fy - gg.off - gg.bottomPage) / k;                  // the edge, in the layer's own pixels
-      var e = clamp(Math.round((gg.lo + eu / gg.ppm) / grain) * grain, gg.s0 + MIN_LEN, Math.min(gg.hi, DAY_END));
-      if (e !== gg.cur) { buzz(4); gg.cur = e; setWhen(gg.el, gg.s0, e); }
-      gg.el.style.height = ((e - gg.s0) * gg.ppm) + 'px';
-      snapped = e;
-      text = span(gg.s0, e);
-      small = lenText(e - gg.s0);
+      var at = gg.lo + eu / gg.ppm;
+      if (gg.edge === 'start') {                                           // the top knob: the start moves, the end stays (never within 15 minutes of it)
+        var s0 = clamp(Math.round(at / grain) * grain, gg.lo, gg.e0 - MIN_LEN);
+        if (s0 !== gg.cur) { buzz(4); gg.cur = s0; setWhen(gg.el, s0, gg.e0); }
+        gg.el.style.top = ((s0 - gg.lo) * gg.ppm) + 'px';
+        gg.el.style.height = ((gg.e0 - s0) * gg.ppm) + 'px';
+        snapped = s0;
+        text = span(s0, gg.e0);
+        small = lenText(gg.e0 - s0);
+      } else {
+        var e = clamp(Math.round(at / grain) * grain, gg.s0 + MIN_LEN, Math.min(gg.hi, DAY_END));
+        if (e !== gg.cur) { buzz(4); gg.cur = e; setWhen(gg.el, gg.s0, e); }
+        gg.el.style.height = ((e - gg.s0) * gg.ppm) + 'px';
+        snapped = e;
+        text = span(gg.s0, e);
+        small = lenText(e - gg.s0);
+      }
+      if (sel && sel.el === gg.el) {                                       // the knobs follow the block's edges (their layer is the block's own box)
+        var top = (((gg.edge === 'start' ? gg.cur : gg.s0) - gg.lo) * gg.ppm), h = ((gg.edge === 'start' ? gg.e0 - gg.cur : gg.cur - gg.s0) * gg.ppm);
+        sel.layer.style.top = top + 'px';
+        sel.layer.style.height = Math.max(h, gg.minh) + 'px';
+      }
     } else {
       var dur = gg.e0 - gg.s0, maxStart = Math.max(gg.lo, Math.min(gg.hi, DAY_END) - dur);
       var topPage = fy - gg.grab, base = gg.top0 + (gg.s0 - gg.lo) * gg.ppm;
@@ -223,12 +321,23 @@
     cancelAnimationFrame(gg.raf || 0);
     var g = gg;
     gg = null;
-    if (g.mode === 'wait') { if (CZ.tap) CZ.tap(g.el, e); return; }        // a tap: the click that follows opens the block (two taps on a title edit it: day_menu.js)
+    if (g.mode === 'wait') {                                               // a tap: the click that follows opens the block (two taps on a title edit it: day_menu.js)
+      if (g.own) { CZ.held = false; deselect(); }                          // (a tap on the selected block opens its card: the knobs go)
+      if (CZ.tap) CZ.tap(g.el, e);
+      return;
+    }
     CZ.guard(300, g.el);
-    if (!g.moved && CZ.hold) {                                              // held (by the edge too) and let go without moving: nothing changes, it gets its menu (day_menu.js)
+    if (!g.moved && g.knob) {                                              // a knob touched and let go without moving: nothing changes, and it is no hold
+      g.el.style.height = ''; g.el.style.top = '';
+      unhold(g);
+      endZoom(wake);
+      return;
+    }
+    if (!g.moved && CZ.hold) {                                              // held (by the edge too) and let go without moving: nothing changes, it gets its menu (day_menu.js), and stays selected with its knobs
       g.el.style.transform = '';
       if (g.resize) { g.el.style.height = ''; endZoom(); }
       unhold(g);
+      select(g.el);
       CZ.hold(g.el);
       return;
     }
@@ -240,6 +349,7 @@
 
   function unhold(g) {
     CZ.held = false;
+    if (g.knob) g.knob.classList.remove('is-on');
     g.el.classList.remove('is-held', 'is-resizing', 'is-moving');
     g.g.classList.remove('is-editing-time');
     if (g.ghost && g.ghost.parentNode) g.ghost.parentNode.removeChild(g.ghost);
@@ -248,11 +358,12 @@
   function restore(g) {                       // a gesture that did not finish: the block as it was
     g.el.style.transform = '';
     g.el.style.height = '';
+    g.el.style.top = '';
     endZoom();
   }
 
   function release(g) {
-    var changed = g.resize ? g.cur !== g.e0 : g.cur !== g.s0;
+    var changed = g.resize ? g.cur !== (g.edge === 'start' ? g.s0 : g.e0) : g.cur !== g.s0;
     if (g.resize) releaseResize(g, changed); else releaseMove(g, changed);
   }
 
@@ -273,22 +384,27 @@
 
   // Resize: the grid eases back to normal while the block keeps the length it was given.
   function releaseResize(g, changed) {
-    var el = g.el, e = g.cur;
+    var el = g.el, start = g.edge === 'start', s = start ? g.cur : g.s0, e = start ? g.e0 : g.cur;
     if (changed) {
+      el.dataset.s = s;
       el.dataset.e = e;
-      el.style.setProperty('--l', e - g.s0);
-      setWhen(el, g.s0, e);
+      el.style.setProperty('--s', s - g.lo);
+      el.style.setProperty('--l', e - s);
+      setWhen(el, s, e);
     }
     unholdSoon(g);
     dropLabel();
     endZoom(function () {
       el.style.height = '';
-      if (changed) save(g, { start: g.s0, end: e }, { s: g.s0, e: g.e0 }); else busy = false;
+      el.style.top = '';
+      wake();
+      if (changed) save(g, { start: s, end: e }, { s: g.s0, e: g.e0 }); else busy = false;
     });
   }
 
   function unholdSoon(g) {                    // the lifted look goes at once; the label and the ghost stay until the block has landed
     CZ.held = false;
+    if (g.knob) g.knob.classList.remove('is-on');
     g.el.classList.remove('is-held', 'is-resizing');
     g.g.classList.remove('is-editing-time');
     busy = true;
@@ -313,6 +429,7 @@
   function finishLand(g, then) {
     if (g.ghost && g.ghost.parentNode) g.ghost.parentNode.removeChild(g.ghost);
     dropLabel();
+    wake();
     if (then) then();
   }
   // ---- saving, the toast and Undo -----------------------------------------------------------------------------------------
@@ -352,6 +469,7 @@
     if (!g || busy) return false;
     var from = el.getBoundingClientRect(), old = { s: +el.dataset.s, e: +el.dataset.e };
     busy = true;
+    if (sel && sel.el === el) sel.layer.classList.add('is-away');          // the knobs wait while the block travels
     el.style.setProperty('--s', s - +g.dataset.lo);
     el.style.setProperty('--l', e - s);
     el.dataset.s = s;
@@ -425,6 +543,11 @@
 
   stage.addEventListener('cz:swap', function (e) {
     startNow();
+    if (sel) {                                           // the page behind the knobs was replaced: after a save the same plan is still selected; going somewhere else puts the knobs away
+      var act = sel.act, again = e.detail && e.detail.quiet ? stage.querySelector('.cz-gb[data-act="' + act + '"]') : null;
+      clearSel(true);
+      if (again && editing()) select(again, true);
+    }
     if (flipOnSwap && e.detail && e.detail.quiet) { var b = flipOnSwap; flipOnSwap = null; flipAll(b); }
   });
   CZ.afterScroll = scrollToPlans;      // trip_canvas.js calls it right after a level it pushed or replaced is scrolled to the top

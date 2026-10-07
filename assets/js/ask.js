@@ -452,7 +452,7 @@
         if (on && label) label.textContent = b.textContent;
       });
     };
-    var MO = (window.GA && GA.motion) || (function () { var r = function () { return Promise.resolve(); }; return { open: r, close: r, spring: r, flip: r, run: r, settle: r, reflow: function (e, c, o) { c(); if (o && o.during) o.during(); return r(); }, origin: function () { return null; }, box: function (e) { return e.getBoundingClientRect(); }, reduced: function () { return true; }, t: function () { return 240; } }; })(), shut = 0;
+    var MO = window.GA.motion, shut = 0;
     var show = function (on) {           // F-109: the row of days grows out of the chip and folds back into it
       var was = !picks.hidden;
       chip.setAttribute('aria-expanded', on ? 'true' : 'false');

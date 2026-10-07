@@ -7,7 +7,7 @@
 (function () {
   var CZ = window.CZ;
   if (!CZ || !CZ.setTimes) return;
-  var MO = (window.GA && GA.motion) || (function () { var r = function () { return Promise.resolve(); }; return { open: r, close: r, spring: r, flip: r, run: r, settle: r, reflow: function (e, c, o) { c(); if (o && o.during) o.during(); return r(); }, origin: function () { return null; }, box: function (e) { return e.getBoundingClientRect(); }, reduced: function () { return true; }, t: function () { return 240; } }; })();      // the one liquid motion (motion.js, F-109)
+  var MO = window.GA.motion;      // the one liquid motion (motion.js, F-109)
   var stage = CZ.stage;
   var MAX_TITLE = 40, STEP = 15, FINE = 5, MIN_LEN = 15, DAY_END = 22 * 60;
   var fineOn = false;       // the menu's own 5-minute switch: precision for a person who has no zoom (reduced motion) or would rather press than drag
@@ -63,7 +63,7 @@
   }
   function outside(e) {
     if (!menu || menu.node.contains(e.target)) return;
-    var onBlock = e.target.closest && e.target.closest('.cz-gb') === menu.block;
+    var onBlock = e.target.closest && (e.target.closest('.cz-gb') === menu.block || e.target.closest('.cz-g-knobs'));      // (F-110: the block's knobs are the block)
     close(false);
     if (!onBlock) CZ.guard(450, stage);      // the tap that put the menu away is only that: it opens nothing
   }

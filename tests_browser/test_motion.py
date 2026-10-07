@@ -107,7 +107,7 @@ def test_the_date_chip_row_grows_out_of_the_chip_and_folds_back_into_it(phone, b
     page.wait_for_timeout(SLOW + 300)                                                           # the sheet itself has landed (its transform moves everything inside it)
     page.locator("#ak-chip").click()
     expect(page.locator("#ak-days-pick")).to_be_visible()
-    page.evaluate("document.getElementById('ak-sheet').getAnimations().forEach(a => a.finish())")      # the sheet's own move to its new size (below) is done: the chip is where it rests
+    page.evaluate("(() => { const s = document.getElementById('ak-sheet'); [s, ...s.children].forEach(n => n.getAnimations().forEach(a => a.finish())); })()")      # the sheet's own move to its new size (below), and its words' counter-scale (F-110), are done: the chip is where it rests
     grows(page, "#ak-days-pick", page.evaluate(BOX, "#ak-chip"))
     page.wait_for_timeout(500)
     page.evaluate("""() => document.addEventListener('click', e => { const n = e.target.closest('#ak-chip'); if (n) { const r = n.getBoundingClientRect(); window.__tapped = { x: r.x, y: r.y, w: r.width, h: r.height }; } }, true)""")
@@ -505,6 +505,84 @@ def test_the_ledger_breakdown_grows_out_of_the_total_and_folds_back_into_it(anyw
     page.click("#ws-total")
     page.wait_for_function("document.querySelector('#ws-pop').getAnimations().length")
     folds(page, "#ws-pop", origin)
+
+
+def test_without_motion_js_the_stand_in_keeps_every_sheet_working_and_throws_nothing(canvas_page):
+    """F-110: the one shared stand-in (motion_fallback.js) answers when motion.js did not load: the hold menu and the plan card open and close, instantly, with no error."""
+    page = canvas_page(motion="no-preference")
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.evaluate("navigator.serviceWorker ? navigator.serviceWorker.getRegistrations().then(rs => Promise.all(rs.map(r => r.unregister()))) : 0")      # the page's own requests reach the route, not a cached copy
+    page.route(re.compile(r"/assets/js/motion\.js"), lambda r: r.abort())
+    lunch = plan("Lunch", 12 * 60, 13 * 60)
+    open_day(page)
+    assert page.evaluate("GA.motion.fallback === true")
+    sel = f'.cz-gb[data-act="{lunch.id}"]'
+    page.evaluate("b => CZ.hold(document.querySelector(b))", sel)
+    expect(page.locator(".cz-menu")).to_be_visible()
+    page.keyboard.press("Escape")
+    expect(page.locator(".cz-menu")).to_have_count(0)
+    page.evaluate("b => CZ.openCard(document.querySelector(b))", sel)
+    expect(page.locator(".cz-card")).to_be_visible()
+    page.evaluate("CZ.foldCard()")
+    expect(page.locator(".cz-card")).to_have_count(0)
+    page.evaluate("GA.toast && GA.toast('Hello')")
+    assert errors == [], errors
+
+
+# ---- F-110: while a box changes size, its words keep their shape ------------------------------------------------------------------------------------------
+# A box that is scaled from its old size to its new one used to squish the words in it for a moment. Each test pauses every animation under the box, steps through the move
+# in twenty frames and measures the words' own boxes (a span's width over its height): within 2% of what it is at rest, in every frame, while the box itself really changes size.
+
+SHAPE = """([sel, words, skip]) => {
+  const root = document.querySelector(sel), kids = [root, ...root.querySelectorAll('*')];
+  const spans = [...root.querySelectorAll(words)].filter(e => !e.children.length && e.textContent.trim() && e.getClientRects().length && !(skip && e.closest(skip)));
+  const as = kids.flatMap(k => k.getAnimations()).filter(a => a.playState === 'running' && Number.isFinite(a.effect.getComputedTiming().endTime));
+  if (!as.length || !spans.length) return null;
+  const ratio = e => { const r = e.getBoundingClientRect(); return r.width / r.height; };
+  const rootBox = () => { const r = root.getBoundingClientRect(); return [r.width, r.height]; };
+  const end = Math.max(...as.map(a => a.effect.getComputedTiming().endTime));
+  as.forEach(a => a.pause());
+  const frames = [];
+  for (let i = 0; i <= 20; i++) { as.forEach(a => { a.currentTime = Math.min(end, a.effect.getComputedTiming().endTime) * i / 20; }); frames.push({ box: rootBox(), ratios: spans.map(ratio) }); }
+  as.forEach(a => a.cancel());
+  const rest = spans.map(ratio);
+  return { frames, rest, count: spans.length, names: spans.map(e => e.tagName + '#' + e.id + '.' + e.className + ':' + e.textContent.trim().slice(0, 20) + ' in ' + (e.parentElement.closest('[id]') || {}).id) };
+}"""
+
+
+def keeps_shape(got):
+    assert got and got["count"], "nothing moved, or no words to measure"
+    first, last = got["frames"][0]["box"], got["frames"][-1]["box"]
+    assert abs(first[1] - last[1]) > 15 or abs(first[0] - last[0]) > 15, got["frames"][0]["box"]      # the box really changes size
+    worst = max(abs(r / rest - 1) for f in got["frames"] for r, rest in zip(f["ratios"], got["rest"]))
+    assert worst <= 0.02, (worst, [(n, round(max(abs(f['ratios'][i] / got['rest'][i] - 1) for f in got['frames']), 3)) for i, n in enumerate(got['names'])])
+
+
+def test_the_flip_never_stretches_the_words_in_the_box_it_scales(phone, base_url):
+    page = phone(motion="no-preference")
+    day_page(page, base_url)
+    page.evaluate("""() => { const d = document.createElement('div'); d.id = 'flipbox';
+      d.style.cssText = 'position:fixed;left:20px;top:140px;width:240px;height:220px;background:#eee;overflow:hidden';
+      d.innerHTML = '<span id=w1 style="display:inline-block">A line of words</span><p style="margin:12px 0 0"><span>And another one</span></p>'; document.body.appendChild(d);
+      window.__flip = GA.motion.flip(d, { left: 20, top: 140, width: 240, height: 90 }, { left: 20, top: 140, width: 240, height: 220 }); }""")
+    keeps_shape(page.evaluate(SHAPE, ["#flipbox", "span"]))
+
+
+def test_the_ask_sheet_keeps_its_words_unsquished_while_the_chip_row_opens_and_closes(phone, base_url):
+    page = phone(motion="no-preference")
+    day_page(page, base_url)
+    slow(page)
+    open_sheet(page)
+    page.wait_for_timeout(SLOW + 300)
+    page.locator("#ak-chip").click()
+    expect(page.locator("#ak-days-pick")).to_be_visible()
+    words = "span, label, button, p, h2, h3"      # every word in the sheet except the row of days, which is itself growing out of the chip (it has its own move)
+    keeps_shape(page.evaluate(SHAPE, ["#ak-sheet", words, "#ak-days-pick"]))
+    page.wait_for_timeout(SLOW + 300)
+    page.locator("#ak-chip").click()
+    expect(page.locator("#ak-days-pick")).to_be_hidden(timeout=9000)
+    keeps_shape(page.evaluate(SHAPE, ["#ak-sheet", words, "#ak-days-pick"]))
 
 
 def test_reduced_motion_the_pickers_and_the_ledger_popover_do_not_animate(anywhere):

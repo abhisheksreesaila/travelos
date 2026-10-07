@@ -40,7 +40,7 @@ def tap(page, act):
     show(page, sel)
     b = box(page, sel)
     top = max(b["y"], 120)                                                                    # a tall block starts above the screen: tap where it can be seen
-    page.touchscreen.tap(b["x"] + b["width"] * 0.72, top + min(34, (min(b["y"] + b["height"], 700) - top) / 2))
+    page.touchscreen.tap(b["x"] + b["width"] * 0.72, top + min(40, (min(b["y"] + b["height"], 700) - top) / 2))
 
 
 def say(act, n, part=""):

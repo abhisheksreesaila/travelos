@@ -147,7 +147,8 @@ def test_an_editor_can_lift_blocks_and_has_a_keyboard_way_in(trip):
     me = person("ari")
     plan(me, "Lunch", 12 * 60, 13 * 60)
     page = day(trip, 2)
-    assert 'data-edit="1"' in trip.get("/trip/canvas?day=2").text and 'class="cz-gb-grip"' in page
+    assert 'data-edit="1"' in trip.get("/trip/canvas?day=2").text and "cz-gb-grip" not in page      # F-110: no grabber bar at rest; the knobs come with a hold
+    assert 'class="cz-gb-head"' in page
     assert 'class="sr-only cz-gb-menubtn">Change Lunch<' in page
     (b,) = blocks(page)
     assert b["data-talk"].startswith(f"/trip/talk?act={b['data-act']}") and b["data-steps"] == "0"      # F-098: the hold menu's Chat, and what a delete would take with it
@@ -192,6 +193,18 @@ def test_resizing_takes_five_minutes_and_says_when_it_now_ends(trip):
     got = edit(trip, a.id, start=12 * 60, end=12 * 60 + 35).json()
     assert got["toast"] == "Lunch now ends 12:35 PM" and cal.get_activity(me, a.id).end == 12 * 60 + 35
     assert edit(trip, a.id, start=12 * 60, end=12 * 60 + 15).json()["plan"]["end"] == 12 * 60 + 15
+
+
+def test_dragging_the_top_knob_changes_only_the_start_through_the_same_rules_and_says_so(trip):
+    """F-110: the start edge is a resize too: same route, same refusals, the card coalesced, its own toast, and an Undo that puts the start back."""
+    me = person("ari")
+    a = plan(me, "Lunch", 12 * 60, 13 * 60)
+    got = edit(trip, a.id, start=12 * 60 + 20, end=13 * 60).json()
+    assert got["toast"] == "Lunch now starts 12:20 PM" and (cal.get_activity(me, a.id).start, cal.get_activity(me, a.id).end) == (12 * 60 + 20, 13 * 60)
+    assert edit(trip, a.id, start=13 * 60, end=13 * 60).status_code == 422               # not shorter than the minimum
+    assert edit(trip, a.id, start=6 * 60, end=13 * 60).status_code == 422                # not before the day's first hour
+    back = trip.post("/trip/canvas/plan", data={"op": "undo", "undo": json.dumps(got["undo"])}, headers={"X-Canvas": "1"})
+    assert back.json()["toast"] == "Put back" and cal.get_activity(me, a.id).start == 12 * 60
 
 
 def test_a_rename_is_trimmed_and_a_nothing_change_says_nothing(trip):

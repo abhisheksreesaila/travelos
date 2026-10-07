@@ -23,7 +23,7 @@
   var wrap = null, sheet = null, scroll = null, ctl = null, closing = false, back = [];
 
   function url() { return tab.getAttribute('href') || '/trip/ask'; }
-  var MO = (window.GA && GA.motion) || (function () { var r = function () { return Promise.resolve(); }; return { open: r, close: r, spring: r, flip: r, run: r, settle: r, reflow: function (e, c, o) { c(); if (o && o.during) o.during(); return r(); }, origin: function () { return null; }, box: function (e) { return e.getBoundingClientRect(); }, reduced: function () { return true; }, t: function () { return 240; } }; })();      // the one liquid motion (motion.js, F-109): the sheet grows out of the Ask button and folds back into it
+  var MO = window.GA.motion;      // the one liquid motion (motion.js, F-109): the sheet grows out of the Ask button and folds back into it
 
   // ---- the fragment, fetched ahead -------------------------------------------------------------------------------------------
   function get(u) {

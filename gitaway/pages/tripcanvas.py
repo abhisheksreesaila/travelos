@@ -508,7 +508,7 @@ def grid_block(v, a, lane, lanes, lo, edit, inset=False):
     when = span_label(a.start, a.end)
     said = f"{n} message{'' if n == 1 else 's'}" + (", with a voice note" if voice else "")
     preview = note_preview(v, a.id)
-    inner = [Span(a.title, cls="cz-gb-t", id=f"cz-t-{a.id}"), Span(when, cls="cz-gb-when"),
+    inner = [Span(Span(a.title, cls="cz-gb-t", id=f"cz-t-{a.id}"), Span(when, cls="cz-gb-when"), cls="cz-gb-head"),      # F-110: the title and the time stay in view at the top of a tall block (sticky)
              Span(preview, cls="cz-gb-note") if preview else "",
              Span(*[Span(p["name"], cls="cz-gb-part", data_part=p["id"], data_act=a.id) for p in blk["parts"]], cls="cz-gb-parts") if park else "",
              Span(icon("chat", 14, 2.4), Span(str(n), cls="pt-n"), icon("mic", 13, 2.4) if voice else "", cls="cz-gb-chat", aria_hidden="true") if chat else ""]
@@ -516,7 +516,7 @@ def grid_block(v, a, lane, lanes, lo, edit, inset=False):
              aria_label=f"Open {a.title}, {when}" + (f", {said}" if chat else ""), **({"data_zoom": "in"} if park else {}))
     extra = [link]
     if edit:
-        extra += [Span(cls="cz-gb-grip", aria_hidden="true"), Button(f"Change {a.title}", type="button", cls="sr-only cz-gb-menubtn")]
+        extra += [Button(f"Change {a.title}", type="button", cls="sr-only cz-gb-menubtn")]
     cls = f"cz-gb cz-k-{k}" + (" is-park" if park else "") + (" is-short" if a.end - a.start < 45 else " is-tight" if a.end - a.start < 75 and not park else "") + (" has-chat" if chat else "") + (" is-inset" if inset else "")
     style = f"--s:{a.start - lo};--l:{a.end - a.start};--lane:{lane};--lanes:{lanes}"
     return Div(Div(*inner, cls="cz-gb-in cz-cs"), *extra, cls=cls, style=style, **({"tabindex": "-1"} if park else {}), **attrs)
@@ -909,6 +909,8 @@ def plan_write(session, op, act, form):
         toast = ""
     elif a.title != was["title"]:
         toast = f"Renamed to {a.title}"
+    elif a.start != was["start"] and a.end == was["end"]:
+        toast = f"{a.title} now starts {cal.fmt_time(a.start)}"      # F-110: the top knob changed the start alone
     elif a.start != was["start"]:
         toast = f"{a.title} moved to {cal.fmt_time(a.start)}"
     else:
