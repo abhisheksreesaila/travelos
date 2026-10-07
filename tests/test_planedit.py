@@ -231,3 +231,15 @@ def test_undoing_an_add_after_the_family_saw_other_news_says_it_was_removed(ari,
     lunch(ari)                                                                          # another card lands after ours
     planedit.unadd(ari, got["undo"])
     assert "removed Pier walk" in cards(ari)[-1]["text"]
+
+
+def test_dragging_the_start_edge_is_one_coalesced_card_and_keeps_the_end_and_the_minimum(ari, announced):
+    """F-110: the top knob changes only the start; it goes through the same rules and shares the one family card."""
+    a = lunch(ari)
+    base = len(cards(ari))
+    planedit.change(ari, a.id, start=12 * 60 + 20, end=13 * 60)
+    got = planedit.change(ari, a.id, start=12 * 60 + 45, end=13 * 60)
+    assert (got["act"].start, got["act"].end) == (12 * 60 + 45, 13 * 60) and len(cards(ari)[base:]) == 1
+    with pytest.raises(cal.CalendarError) as e:
+        planedit.change(ari, a.id, start=12 * 60 + 55, end=13 * 60)
+    assert "15 minutes" in str(e.value)

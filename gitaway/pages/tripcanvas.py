@@ -909,6 +909,8 @@ def plan_write(session, op, act, form):
         toast = ""
     elif a.title != was["title"]:
         toast = f"Renamed to {a.title}"
+    elif a.start != was["start"] and a.end == was["end"]:
+        toast = f"{a.title} now starts {cal.fmt_time(a.start)}"      # F-110: the top knob changed the start alone
     elif a.start != was["start"]:
         toast = f"{a.title} moved to {cal.fmt_time(a.start)}"
     else:
