@@ -13,7 +13,7 @@
 (function () {
   var GA = window.GA = window.GA || {};
   if (GA.toast) return;
-  var MO = (window.GA && GA.motion) || (function () { var r = function () { return Promise.resolve(); }; return { open: r, close: r, spring: r, flip: r, run: r, settle: r, reflow: function (e, c, o) { c(); if (o && o.during) o.during(); return r(); }, origin: function () { return null; }, box: function (e) { return e.getBoundingClientRect(); }, reduced: function () { return true; }, t: function () { return 240; } }; })();
+  var MO = window.GA.motion;
   var el = null, body = null, hideT = 0, swapT = 0, removeT = 0, latest = null, pressed = false, queued = false, curMs = 4500;
   // the heading and every row of controls under it: the day's kinds and step filters, Family's Chat / Photos / Invite and Quiet rows, the calendar's top bar
   var HEADS = ['.cz-fold.is-on .cz-fold-bar', '.cz-head', '.cz-bar', '.cz-filters', '.tp-head', '.fam-bar', '.ft-notify', '.ga-header', '.cal-bar'];

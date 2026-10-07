@@ -126,13 +126,47 @@
     return Promise.all(done);
   };
 
+  // The progress of a CSS cubic-bezier easing (the spring token: it overshoots) at time x in 0..1, for the words that are held still while their box scales (see flip).
+  function bezier(str) {
+    var m = /cubic-bezier\(([^)]+)\)/.exec(str || ''), v = m ? m[1].split(',').map(parseFloat) : [0.25, 0.1, 0.25, 1];
+    var ax = 3 * v[0] - 3 * v[2] + 1, bx = 3 * v[2] - 6 * v[0], cx = 3 * v[0], ay = 3 * v[1] - 3 * v[3] + 1, by = 3 * v[3] - 6 * v[1], cy = 3 * v[1];
+    return function (x) {
+      var s = x, i;
+      for (i = 0; i < 8; i++) {                                                       // Newton, then bisection when it cannot get there
+        var f = ((ax * s + bx) * s + cx) * s - x, d = (3 * ax * s + 2 * bx) * s + cx;
+        if (Math.abs(f) < 1e-5) break;
+        if (Math.abs(d) < 1e-6) { i = 8; break; }
+        s -= f / d;
+      }
+      if (i === 8 || !(s >= 0 && s <= 1)) { var lo = 0, hi = 1; s = x; for (i = 0; i < 30; i++) { var g = ((ax * s + bx) * s + cx) * s; if (g < x) lo = s; else hi = s; s = (lo + hi) / 2; } }
+      return ((ay * s + by) * s + cy) * s;
+    };
+  }
+
   // Something that is already open changes size or place (the card follows its words, a pane expands): it goes from where it was to where it is with a transform (never top, height or width).
+  // The box is scaled, its words are not: each child of `el` is scaled by the inverse, frame by frame, about the box's own corner, so text never stretches (the box clips what it has not
+  // grown to yet). The children's frames are sampled from the same spring, 1/scale is not a straight line, so a plain pair of keyframes would be wrong in the middle.
   M.flip = function (el, from, to) {
     if (reduced() || !el || !el.animate || !from || !to) return Promise.resolve();
     if (Math.abs(from.left - to.left) < 1 && Math.abs(from.top - to.top) < 1 && Math.abs(from.width - to.width) < 1 && Math.abs(from.height - to.height) < 1) return Promise.resolve();
     el.style.transformOrigin = '0 0';
-    note('flip', from, to, t('spring'), ease('spring'));
-    return go(el, [{ transform: squash(to, from) }, { transform: 'none' }], t('spring'), ease('spring'));
+    var dur = t('spring'), e = ease('spring');
+    note('flip', from, to, dur, e);
+    var kids = Array.prototype.slice.call(el.children || []), out = [go(el, [{ transform: squash(to, from) }, { transform: 'none' }], dur, e)];
+    if (kids.length) {
+      var er = rectOf(el), sx0 = Math.max(from.width / Math.max(to.width, 1), 0.04), sy0 = Math.max(from.height / Math.max(to.height, 1), 0.04), curve = bezier(e), N = 24;
+      kids.forEach(function (k) {
+        var r = rectOf(k), frames = [], i, p, sx, sy, origin = (er.left - r.left) + 'px ' + (er.top - r.top) + 'px';
+        for (i = 0; i <= N; i++) {
+          p = curve(i / N);
+          sx = sx0 + (1 - sx0) * p;
+          sy = sy0 + (1 - sy0) * p;
+          frames.push({ offset: i / N, transform: i === N ? 'none' : 'scale(' + (1 / sx) + ',' + (1 / sy) + ')', transformOrigin: origin });
+        }
+        out.push(go(k, frames, dur, 'linear'));
+      });
+    }
+    return Promise.all(out);
   };
 
   // `change()` alters the layout around `el` (a row opens inside a bottom sheet, so the sheet gets taller): `el` moves from its old box to its new one with the spring. `o.during` runs after the change and

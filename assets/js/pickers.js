@@ -8,7 +8,7 @@
   var phone = window.matchMedia("(max-width: 720px)");
   var widgets = [];   // {refresh()} for every dressed control
   var open = null;    // the one open popover: {trigger, close(refocus)}
-  var MO = (window.GA && GA.motion) || (function () { var r = function () { return Promise.resolve(); }; return { open: r, close: r, spring: r, flip: r, run: r, settle: r, reflow: function (e, c, o) { c(); if (o && o.during) o.during(); return r(); }, origin: function () { return null; }, box: function (e) { return e.getBoundingClientRect(); }, reduced: function () { return true; }, t: function () { return 240; } }; })();      // the one liquid motion (motion.js, F-109): a popover or sheet grows out of the field that opened it and folds back into it
+  var MO = window.GA.motion;      // the one liquid motion (motion.js, F-109): a popover or sheet grows out of the field that opened it and folds back into it
 
   // ---- tiny helpers ---------------------------------------------------------------------------------------------------
   function el(tag, props, kids) {

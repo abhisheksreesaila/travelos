@@ -7,7 +7,7 @@
   var data = JSON.parse(dataEl.textContent);
   var PANES = { 1: 'flights', 2: 'stays', 3: 'cars', 4: 'weather', 5: 'map', 6: 'news', 7: 'community' };
   var still = window.matchMedia('(prefers-reduced-motion: reduce)');
-  var MO = (window.GA && GA.motion) || (function () { var r = function () { return Promise.resolve(); }; return { open: r, close: r, spring: r, flip: r, run: r, settle: r, reflow: function (e, c, o) { c(); if (o && o.during) o.during(); return r(); }, origin: function () { return null; }, box: function (e) { return e.getBoundingClientRect(); }, reduced: function () { return true; }, t: function () { return 240; } }; })();      // the one liquid motion (motion.js, F-109)
+  var MO = window.GA.motion;      // the one liquid motion (motion.js, F-109)
   var phone = window.matchMedia('(max-width: 720px)');
   // The lane picks, plus the stay's rooms and add-ons as compact codes ("cq1", "bf") (null means "the default") and the flight's
   // fare and checked bags ("main", "2"; "" means Basic and none).

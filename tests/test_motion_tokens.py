@@ -72,16 +72,22 @@ def test_every_sheet_menu_popover_toast_and_card_goes_through_the_helper():
         assert "cubic-bezier" not in text and ".animate(" not in text, name           # no easing or hand-made animation of its own
 
 
-def test_every_script_that_uses_the_helper_still_works_without_it():
+def test_the_stand_in_for_the_helper_is_defined_once_and_no_script_carries_a_copy():
+    """F-110: a page whose motion.js did not load gets instant changes, never an error: from ONE stand-in (motion_fallback.js, loaded right after motion.js), not seven pasted copies."""
+    stand_in = (ASSETS / "js" / "motion_fallback.js").read_text(encoding="utf-8")
+    assert "GA.motion = {" in stand_in and "if (GA.motion) return;" in stand_in               # it yields to the real helper
     for name in ("day_card.js", "ask_sheet.js", "day_menu.js", "ask.js", "toast.js", "pickers.js", "workspace.js"):
         text = (ASSETS / "js" / name).read_text(encoding="utf-8")
-        assert "(window.GA && GA.motion) ||" in text, name            # a page without motion.js gets instant changes, never an error
+        assert "var MO = window.GA.motion" in text, name
+    copies = [p.name for p in (ASSETS / "js").glob("*.js") if "reflow: function" in p.read_text(encoding="utf-8")]
+    assert copies == ["motion_fallback.js"], copies
 
 
 def test_the_helper_is_on_every_page_before_the_toast():
     from gitaway.layout import styles
     html = "".join(str(x) for x in styles())
     assert "/assets/js/motion.js" in html and html.index("/assets/js/motion.js") < html.index("/assets/js/toast.js")
+    assert html.index("/assets/js/motion.js") < html.index("/assets/js/motion_fallback.js") < html.index("/assets/js/toast.js")      # the stand-in is after the helper, before every user of it
 
 
 def test_the_screen_moves_use_the_spring_tokens():

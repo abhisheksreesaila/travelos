@@ -89,6 +89,7 @@ def styles(*extra, theme="sunset"):
         Link(rel="stylesheet", href="/assets/css/base.css"),
         Link(rel="stylesheet", href="/assets/css/toast.css"),         # F-108: the one toast, on every page
         Script(src="/assets/js/motion.js", defer=True),               # F-109: the one liquid motion (GA.motion); before every script that opens something
+        Script(src="/assets/js/motion_fallback.js", defer=True),     # F-110: the one stand-in when motion.js did not load, so no script carries a copy
         Script(src="/assets/js/toast.js", defer=True),
         *extra,
     )
