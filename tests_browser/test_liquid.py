@@ -15,15 +15,15 @@ from playwright.sync_api import expect
 from tests_browser.helpers import PHONE
 from tests_browser.test_day_grid import fire, hold_block, now, open_day, plan, ppm, slide, toast
 from tests_browser.test_day_menu import hold_and_let_go, menu_item
-from tests_browser.test_trip_canvas import canvas_page, model  # noqa: F401 - fixtures
+from tests_browser.test_trip_canvas import NARROW, canvas_page, model  # noqa: F401 - fixtures
 
 # One recorder for the whole page: every frame, the geometry of the plan blocks (by act), a serial for each element (to see it being replaced), the number of land/flip animations on it,
 # the toast, and the chat bubbles (by position from the end of the list).
 REC = """() => { window.__rec = []; const t0 = performance.now(), ids = new WeakMap(); let n = 0; const id = e => { if (!ids.has(e)) ids.set(e, ++n); return ids.get(e); };
   (function f() {
-    const o = { t: performance.now() - t0, y: scrollY, b: {}, m: [] };
+    const o = { t: performance.now() - t0, y: scrollY, b: {}, m: [], landing: !!(window.CZ && CZ.landing && CZ.landing()) };
     document.querySelectorAll('.cz-gb[data-act]').forEach(b => { const r = b.getBoundingClientRect();
-      o.b[b.dataset.act] = { top: r.top, left: r.left, height: r.height, width: r.width, id: id(b), lands: b.getAnimations().filter(a => a.id === 'ga-land').length, sel: b.classList.contains('is-selected') }; });
+      o.b[b.dataset.act] = { top: r.top, left: r.left, height: r.height, width: r.width, id: id(b), lands: b.getAnimations().filter(a => a.id === 'ga-land').length, moving: b.getAnimations().filter(a => a.transitionProperty === undefined && a.animationName === undefined).length, sel: b.classList.contains('is-selected') }; });
     const z = document.querySelector('.cz-g-zoom'); o.zoom = !!(z && z.classList.contains('is-zooming'));
     const q = document.querySelector('.ga-toast'); if (q) { const r = q.getBoundingClientRect(); o.q = { top: r.top, op: +getComputedStyle(q).opacity }; }
     const th = document.getElementById('ft-thread'); if (th) { o.th = th.getBoundingClientRect().toJSON(); const c = document.getElementById('ft-compose'); o.c = c.getBoundingClientRect().toJSON();
@@ -87,10 +87,15 @@ def slow_save(page, seconds=0.35):
     page.route("**/trip/canvas/plan", hold)
 
 
+@pytest.fixture(params=[PHONE, NARROW], ids=['390', '320'])
+def vp(request):
+    return request.param
+
+
 # ---- the block --------------------------------------------------------------------------------------------------------------------------
 
-def test_a_dropped_block_lands_with_one_spring_and_the_refresh_does_not_re_draw_it(canvas_page):
-    page = canvas_page(viewport=PHONE, motion="no-preference")
+def test_a_dropped_block_lands_with_one_spring_and_the_refresh_does_not_re_draw_it(canvas_page, vp):
+    page = canvas_page(viewport=vp, motion="no-preference")
     lunch = plan("Lunch", 12 * 60, 13 * 60)
     open_day(page)
     slow_save(page)
@@ -109,8 +114,8 @@ def test_a_dropped_block_lands_with_one_spring_and_the_refresh_does_not_re_draw_
     assert now(lunch.id)[:2] == (12 * 60, 13 * 60)
 
 
-def test_a_resized_block_keeps_its_length_through_the_save_and_the_refresh(canvas_page):
-    page = canvas_page(viewport=PHONE, motion="no-preference")
+def test_a_resized_block_keeps_its_length_through_the_save_and_the_refresh(canvas_page, vp):
+    page = canvas_page(viewport=vp, motion="no-preference")
     lunch = plan("Lunch", 12 * 60, 13 * 60)
     open_day(page)
     slow_save(page)
@@ -132,8 +137,8 @@ def test_a_resized_block_keeps_its_length_through_the_save_and_the_refresh(canva
     assert now(lunch.id)[:2] == (12 * 60, 13 * 60 + 20)
 
 
-def test_a_menu_nudge_lands_the_same_way_and_the_menu_and_knobs_come_through_the_refresh(canvas_page):
-    page = canvas_page(viewport=PHONE, motion="no-preference")
+def test_a_menu_nudge_lands_the_same_way_and_the_menu_and_knobs_come_through_the_refresh(canvas_page, vp):
+    page = canvas_page(viewport=vp, motion="no-preference")
     lunch = plan("Lunch", 12 * 60, 13 * 60)
     open_day(page)
     hold_and_let_go(page, lunch.id)
@@ -151,8 +156,8 @@ def test_a_menu_nudge_lands_the_same_way_and_the_menu_and_knobs_come_through_the
     expect(page.locator(".cz-g-knobs")).to_have_count(1)
 
 
-def test_a_block_pushed_aside_by_a_move_glides_to_its_new_lane(canvas_page):
-    page = canvas_page(viewport=PHONE, motion="no-preference")
+def test_a_block_pushed_aside_by_a_move_glides_to_its_new_lane(canvas_page, vp):
+    page = canvas_page(viewport=vp, motion="no-preference")
     a = plan("Lunch", 12 * 60, 13 * 60)
     b = plan("Museum", 14 * 60, 15 * 60)
     open_day(page)
@@ -167,12 +172,15 @@ def test_a_block_pushed_aside_by_a_move_glides_to_its_new_lane(canvas_page):
     assert abs(tr[-1][1]["width"] - tr[0][1]["width"]) > 20                                # it was made narrower for the lane
     ws = steps(tr, "width")
     assert max(ws) <= max(0.5 * abs(tr[-1][1]["width"] - tr[0][1]["width"]), 6) or max(ws) < 30, ws
+    assert [o["t"] for o in rec if any(v["moving"] for v in o["b"].values()) and not o["landing"]] == []      # a refresh never swaps the day under a glide (CZ.landing covers the neighbours' too)
+    glide_b = [o for o in rec if o["b"].get(str(b.id), {}).get("moving")]
+    assert glide_b and all(o["landing"] for o in glide_b)
     after = [v for t, v in tr if t > max(t for t, v in tr if v["lands"] or v["id"] == tr[0][1]["id"]) + 450]
     assert max(abs(after[0][k] - after[-1][k]) for k in ("top", "left", "width", "height")) < 0.5
 
 
-def test_reduced_motion_a_dropped_block_does_not_travel(canvas_page):
-    page = canvas_page(viewport=PHONE, motion="reduce")
+def test_reduced_motion_a_dropped_block_does_not_travel(canvas_page, vp):
+    page = canvas_page(viewport=vp, motion="reduce")
     lunch = plan("Lunch", 12 * 60, 13 * 60)
     open_day(page)
     start = hold_block(page, lunch.id)
@@ -185,8 +193,8 @@ def test_reduced_motion_a_dropped_block_does_not_travel(canvas_page):
 
 # ---- the chat -----------------------------------------------------------------------------------------------------------------------------
 
-def family(canvas_page, base_url, motion="no-preference"):
-    page = canvas_page(viewport=PHONE, motion=motion)
+def family(canvas_page, base_url, vp, motion="no-preference"):
+    page = canvas_page(viewport=vp, motion=motion)
     page.goto(f"{base_url}/trip/family")
     page.wait_for_selector("#ft-compose")
     return page
@@ -206,8 +214,21 @@ def slow_message(page, seconds=0.8):
     page.route("**/trip/family/message", hold)
 
 
-def test_a_sent_bubble_grows_out_of_the_box_rises_into_place_and_the_list_glides_up(canvas_page, base_url):
-    page = family(canvas_page, base_url)
+def test_the_servers_copy_waits_for_the_bubble_to_finish_growing(canvas_page, base_url, vp):
+    page = family(canvas_page, base_url, vp)
+    send_and_wait(page, "First")
+    page.evaluate("(" + REC.strip() + ")()")                                                # (a fast answer: it arrives while the bubble is still growing out of the box)
+    page.locator("#ft-text").fill("Quick answer")
+    page.locator("#ft-send").click()
+    rec = frames(page, 1500)
+    mine = [(o, next(m for m in o["m"] if m["text"].startswith("Quick"))) for o in rec if any(m["text"].startswith("Quick") for m in o["m"])]
+    growing = [m for o, m in mine if m["anims"]]
+    assert growing and all(m["pending"] and m["text"].endswith("Sending") for m in growing), [m["text"] for m in growing]      # its words are not swapped under the motion
+    assert not mine[-1][1]["pending"]                                                       # and it does take the server's copy once it has landed
+
+
+def test_a_sent_bubble_grows_out_of_the_box_rises_into_place_and_the_list_glides_up(canvas_page, base_url, vp):
+    page = family(canvas_page, base_url, vp)
     send_and_wait(page, "First")
     slow_message(page)
     page.evaluate("(" + REC.strip() + ")()")
@@ -238,8 +259,8 @@ def test_a_sent_bubble_grows_out_of_the_box_rises_into_place_and_the_list_glides
     assert page.evaluate("GA.motion.log.filter(e => e.kind === 'open').length") >= 1
 
 
-def test_a_message_that_arrives_settles_the_same_way(canvas_page, base_url):
-    page = family(canvas_page, base_url)
+def test_a_message_that_arrives_settles_the_same_way(canvas_page, base_url, vp):
+    page = family(canvas_page, base_url, vp)
     send_and_wait(page, "First")
     page.evaluate("(" + REC.strip() + ")()")
     page.evaluate("""() => { const f = new URLSearchParams(new FormData(document.getElementById('ft-compose'))); f.set('text', 'From the pool'); f.set('cid', 'other1'); f.set('since', '99999');
@@ -256,8 +277,8 @@ def test_a_message_that_arrives_settles_the_same_way(canvas_page, base_url):
         assert max(abs(b["top"] - a["top"]) for a, b in zip(prev, prev[1:])) <= total * 0.35 + 2
 
 
-def test_reduced_motion_a_sent_bubble_only_fades(canvas_page, base_url):
-    page = family(canvas_page, base_url, motion="reduce")
+def test_reduced_motion_a_sent_bubble_only_fades(canvas_page, base_url, vp):
+    page = family(canvas_page, base_url, vp, motion="reduce")
     slow_message(page, 0.4)
     page.locator("#ft-text").fill("Quiet hello")
     page.evaluate("(" + REC.strip() + ")()")

@@ -117,6 +117,13 @@
     bub = old.querySelector(".ft-bub");
     if (MO && bub && from) MO.land(bub, { left: from.left, top: from.top, width: from.width, height: from.height });
   }
+  // The bubble may still be growing out of the box (its words are counter-scaled frame by frame): its content is only swapped once that has finished, never under the motion.
+  function handOver(old, fresh) {
+    old._adopt = true;                                    // delivered from now on, whatever the reply does
+    var running = old.getAnimations ? old.getAnimations({ subtree: true }) : [];
+    if (!running.length) { adopt(old, fresh); return; }
+    Promise.all(running.map(function (a) { return a.finished.catch(function () {}); })).then(function () { adopt(old, fresh); });
+  }
   function merge(html, n, mine) {
     if (!html.trim() || n <= last) return;
     var stick = mine || nearBottom(), snap = snapshot(), fresh = [], MO = motion();
@@ -126,7 +133,7 @@
       var id = parseInt(el.getAttribute("data-n"), 10) || 0;
       if (id <= last) return;
       var cid = el.getAttribute("data-cid"), waiting = cid ? thread.querySelector('.is-pending[data-cid="' + cid + '"]') : null;
-      if (waiting) { adopt(waiting, el); return; }
+      if (waiting) { handOver(waiting, el); return; }
       if (!MO) el.classList.add("is-new");
       thread.appendChild(el);
       fresh.push(el);
@@ -190,8 +197,11 @@
     el.setAttribute("data-cid", newId());
     return el;
   }
+  function pending(el) { return !!el.parentNode && el.classList.contains("is-pending") && !el._adopt; }      // F-112: a poll may have handed the bubble over to the server's copy: it is delivered, whatever the reply does
   function settle(el, ok, message) {
+    if (!pending(el)) return;
     var state = el.querySelector(".ft-state"), old = el.querySelector(".ft-retry");
+    if (!state) return;
     if (old) old.remove();
     el.classList.toggle("is-sending", ok === null);
     el.classList.toggle("is-failed", ok === false);
@@ -206,7 +216,7 @@
   function deliver(el) {
     settle(el, null);
     chain = chain.then(function () {
-      if (!el.parentNode) return;                      // a poll already brought the real one
+      if (!pending(el)) return;                        // a poll already brought the real one
       var fields = new URLSearchParams(new FormData(form));   // trip and (a plan's chat) act and part
       fields.set("text", el.getAttribute("data-text"));
       fields.set("cid", el.getAttribute("data-cid"));
@@ -222,11 +232,14 @@
             }
             if (!r.ok) throw new Error(r.status === 409 ? html : "");
             merge(html, parseInt(r.headers.get("X-Thread-Last"), 10) || 0, true);   // replaces this bubble in place, by its id
-            if (el.parentNode && el.classList.contains("is-pending")) el.remove();           // the answer did not carry it (a poll got there first); a bubble the answer took over stays (F-112)
+            if (pending(el)) el.remove();           // the answer did not carry it (a poll got there first); a bubble the answer took over stays (F-112)
           });
         })
-        .catch(function (err) { settle(el, false, err instanceof TypeError || err.name === "AbortError" || !err.message || err.message.length > 120 ? "" : err.message); text.focus(); });
-    });
+        .catch(function (err) {
+          if (!pending(el)) return;                    // delivered already (a poll got there first): a lost reply is nothing to report
+          settle(el, false, err instanceof TypeError || err.name === "AbortError" || !err.message || err.message.length > 120 ? "" : err.message); text.focus();
+        });
+    }).catch(function () {});                          // the chain never rejects: the next Send always goes
   }
   if (form) form.addEventListener("submit", function (e) {
     e.preventDefault();
