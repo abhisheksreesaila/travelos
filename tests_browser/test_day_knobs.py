@@ -284,9 +284,12 @@ def test_renaming_puts_the_knobs_away_so_they_never_sit_on_the_title_field(phone
     assert phone.locator(".cz-g-knobs, .is-selected").count() == 0
     phone.keyboard.press("Escape")
     expect(phone.locator(".cz-gb-edit")).to_have_count(0)
-    select(phone, lunch.id)
+    select(phone, lunch.id)                                                               # (a double tap cannot rename a selected block: its first tap only deselects)
     phone.locator(".cz-menu").evaluate("m => m.remove()")
     t = box(phone, f"{block(lunch.id)} .cz-gb-t")
+    phone.touchscreen.tap(t["x"] + 10, t["y"] + t["height"] / 2)
+    expect(phone.locator(".cz-g-knobs")).to_have_count(0)
+    phone.wait_for_timeout(700)
     for _ in range(2):
         phone.touchscreen.tap(t["x"] + 10, t["y"] + t["height"] / 2)
         phone.wait_for_timeout(60)
