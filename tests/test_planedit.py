@@ -243,3 +243,16 @@ def test_dragging_the_start_edge_is_one_coalesced_card_and_keeps_the_end_and_the
     with pytest.raises(cal.CalendarError) as e:
         planedit.change(ari, a.id, start=12 * 60 + 55, end=13 * 60)
     assert "15 minutes" in str(e.value)
+
+
+def test_the_family_card_says_what_changed_a_start_alone_an_end_alone_or_a_move(ari, announced):
+    a = lunch(ari)
+    base = len(cards(ari))
+    planedit.change(ari, a.id, start=12 * 60 + 20, end=13 * 60)
+    assert cards(ari)[base:][-1]["text"].endswith("changed Lunch at the pier to start at 12:20 PM")
+    b = cal.add_activity(ari, day=1, start=15 * 60, end=16 * 60, title="Pool", kind="fun")
+    planedit.change(ari, b.id, end=16 * 60 + 30)
+    assert cards(ari)[-1]["text"].endswith("changed Pool to end at 4:30 PM")
+    c = cal.add_activity(ari, day=1, start=17 * 60, end=18 * 60, title="Walk", kind="fun")
+    planedit.change(ari, c.id, start=17 * 60 + 30, end=18 * 60 + 30)
+    assert " moved Walk to " in cards(ari)[-1]["text"]

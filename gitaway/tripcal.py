@@ -582,6 +582,8 @@ def _who(fam):
 def update_card(who, t, was, d, s, e, title):
     """(text, action) of the card for an edit, or None: moved (day or start), resized (end only) or renamed; nothing when nothing the family would notice
     changed. `was` is (day, start, end, title) before the edit."""
+    if d == was[0] and s != was[1] and e == was[2]:      # F-110: the top knob changed the start alone
+        return f"{who} changed {title} to start at {fmt_time(s)}", "move"
     if (d, s) != (was[0], was[1]):
         return f"{who} moved {title} to {_when(t, d, s)}", "move"
     if e != was[2]:

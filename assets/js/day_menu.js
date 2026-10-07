@@ -110,7 +110,10 @@
     b.classList.add('is-menu');
     if (!CZ.reduced.matches) b.classList.add('is-wiggle');
     place(node, b);
-    if (MO) MO.open(node, b);       // F-109: it grows out of the block that was held
+    if (MO) {                       // F-109: it grows out of the block that was held; while it grows it is not a target, so the block's knobs (F-110) can be grabbed through it
+      node.style.pointerEvents = 'none';
+      MO.open(node, b).then(function () { if (node.isConnected && !node.hasAttribute('inert')) node.style.pointerEvents = ''; });
+    }
     document.addEventListener('pointerdown', outside, true);
     // A keyboard or a screen reader lands on the first choice; a finger that held the block lands on the menu itself (no focus ring on a button nobody asked for), and Escape and the arrow keys work from there.
     var first = kbd ? ((focusItem && node.querySelector('[data-do="' + focusItem + '"]:not(:disabled)')) || node.querySelector('.cz-mi:not(:disabled)')) : node;
@@ -140,8 +143,10 @@
     var tabs = document.querySelector('.ph-tabs'), floor = (tabs && getComputedStyle(tabs).display !== 'none' ? tabs.getBoundingClientRect().top : window.innerHeight) - 8;
     var w = Math.min(node.offsetWidth, window.innerWidth - 16), h = node.offsetHeight;
     var x = clamp(br.left, 8, window.innerWidth - w - 8);
-    var y = br.bottom + 8;
-    if (y + h > floor) y = br.top - h - 8;
+    var gap = 8 + (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16) * 1.375;      // clear of the knobs' touch areas (F-110: 2.75rem across, centred on the block's edges)
+    var y = br.bottom + gap;
+    if (y + h > floor) y = br.top - h - gap;
+    if (y < 8 && br.bottom + gap + h <= window.innerHeight - 8) y = br.bottom + gap;      // no room either side above the tab bar: under the block, over the tab bar, rather than over the block's knobs
     if (y < 8) y = clamp(Math.max(br.top, 8) + (Math.min(br.bottom, floor) - Math.max(br.top, 8)) / 2 - h / 2, 8, Math.max(8, floor - h));
     node.style.left = (x - sr.left) + 'px';
     node.style.top = (y - sr.top) + 'px';
@@ -246,6 +251,7 @@
     if (!editing() || !b || !b.isConnected || b.classList.contains('is-editing')) return null;
     var t = b.querySelector('.cz-gb-t');
     if (!t) return null;
+    if (CZ.deselect) CZ.deselect();      // F-110: the knobs go while the title is typed, so the top one never sits on the field
     var input = mk('input', 'cz-gb-edit');
     input.type = 'text';
     input.value = o.value || '';
