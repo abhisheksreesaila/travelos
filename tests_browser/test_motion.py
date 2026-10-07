@@ -93,6 +93,7 @@ def test_the_ask_sheet_grows_out_of_the_ask_button_and_folds_back_into_it(phone,
       const spy = Element.prototype.animate; Element.prototype.animate = function (...a) { const x = spy.apply(this, a); window.__fold = window.__fold || []; window.__fold.push(x); return x; }; }""")
     page.keyboard.press("Escape")
     page.wait_for_function("window.__fold && window.__fold.length")
+    page.wait_for_timeout(200)                                                                   # the sheet settles its size as the microphone stops: the fold follows it
     got = page.evaluate("""() => { const a = window.__fold.find(x => x.effect.target.id === 'ak-sheet'); const t = a.effect.getTiming(), el = a.effect.target; a.pause(); a.currentTime = a.effect.getComputedTiming().endTime;
       const r = el.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height, dur: t.duration, easing: t.easing }; }""")
     assert near(got, origin) and got["dur"] == SLOW and norm(got["easing"]) == norm(OUT), (got, origin)
