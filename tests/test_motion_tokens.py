@@ -4,14 +4,20 @@ import re
 from pathlib import Path
 
 ASSETS = Path(__file__).resolve().parent.parent / "assets"
-CSS = ["day_grid.css", "day_card.css", "trip_canvas.css", "thread.css", "toast.css", "ask_sheet.css", "ask.css"]
-JS = ["motion.js", "day_card.js", "ask_sheet.js", "ask.js", "day_menu.js", "toast.js", "thread.js", "day_grid.js", "day_new.js", "day_fold.js", "trip_canvas.js", "page_moves.js"]
+# F-109: EVERY stylesheet and script under assets/ (nothing is skipped); tokens.css is where the durations live.
+CSS = sorted(p.name for p in (ASSETS / "css").glob("*.css") if p.name != "tokens.css")
+JS = sorted(p.name for p in (ASSETS / "js").glob("*.js"))
 # What may keep a literal time, and why. None of these is a sheet, menu, popover, toast or screen move.
+ALLOWED_FILES = {
+    "landing.css": "the marketing page's hero and feature illustrations (a demo that plays on hover: staggered delays, a drawn line, a cursor); not part of the app",
+}
 ALLOWED_CSS = (
-    "cz-wiggle 0.42s",       # the held block's looping wiggle (feedback while a finger holds it)
-    "ak-fresh 1.6s",         # the glow on what Apply changed, a few seconds of attention, not a move
+    "infinite",              # every looping decoration: the held block's wiggle, the recording dot, the mic pulse, presence dots, the plane and clouds on sign-in, bobbing stickers, shimmer
     "ak-ink 0.5s",           # the typed words fading in
-    "ak-blink 1s", "ak-pulse 1.2s",   # the recording dot and the mic's pulse (infinite loops)
+    "ak-fresh 1.6s",         # the glow on what Apply changed: a few seconds of attention, not a move
+    "cal-ring 2s",           # the ring on a live calendar item (three pulses)
+    "pay-fall 1.8s",         # the confetti on the payment page
+    "si-stick",              # the sign-in stickers' staggered start (a loop)
 )
 TIME = re.compile(r"(?<![\w.-])(\d*\.?\d+)(ms|s)\b")
 
@@ -32,6 +38,8 @@ def test_the_tokens_are_the_cards_spring_and_one_set():
 def test_no_animation_or_transition_duration_is_written_outside_the_tokens():
     bad = []
     for name in CSS:
+        if name in ALLOWED_FILES:
+            continue
         for n, line in enumerate(lines(f"css/{name}"), 1):
             if not re.search(r"transition|animation|duration|delay", line) or line.lstrip().startswith(("/*", "*", "//")):
                 continue
@@ -40,9 +48,6 @@ def test_no_animation_or_transition_duration_is_written_outside_the_tokens():
                 if m.group(1) in ("0", "0.0") or any(a in code for a in ALLOWED_CSS):
                     continue
                 bad.append(f"{name}:{n}: {code.strip()[:110]}")
-    for n, line in enumerate(lines("css/base.css"), 1):          # the page changes (cross-document view transitions)
-        if "view-transition" in line and TIME.search(re.sub(r"/\*.*?\*/", "", line)):
-            bad.append(f"base.css:{n}: {line.strip()[:110]}")
     assert not bad, "\n".join(bad)
 
 
@@ -58,12 +63,19 @@ def test_no_script_gives_an_animation_a_duration_of_its_own():
 
 
 def test_every_sheet_menu_popover_toast_and_card_goes_through_the_helper():
-    for name, calls in (("ask_sheet.js", ("MO.open(", "MO.close(", "MO.spring(")), ("day_card.js", ("MO.open(", "MO.close(", "MO.spring(")), ("day_menu.js", ("MO.open(", "MO.close(")),
-                        ("ask.js", ("MO.open(", "MO.close(")), ("toast.js", ("GA.motion.open(", "GA.motion.close(")), ("trip_canvas.js", ("GA.motion.open(", "GA.motion.close("))):
+    for name, calls in (("ask_sheet.js", ("MO.open(", "MO.close(", "MO.spring(")), ("day_card.js", ("MO.open(", "MO.close(", "MO.spring(", "MO.flip(")), ("day_menu.js", ("MO.open(", "MO.close(")),
+                        ("ask.js", ("MO.open(", "MO.close(", "MO.reflow(")), ("toast.js", ("MO.open(", "MO.close(")), ("trip_canvas.js", ("GA.motion.open(", "GA.motion.close(")),
+                        ("pickers.js", ("MO.open(", "MO.close(")), ("workspace.js", ("MO.open(", "MO.close(", "MO.flip("))):
         text = (ASSETS / "js" / name).read_text(encoding="utf-8")
         for call in calls:
             assert call in text, (name, call)
         assert "cubic-bezier" not in text and ".animate(" not in text, name           # no easing or hand-made animation of its own
+
+
+def test_every_script_that_uses_the_helper_still_works_without_it():
+    for name in ("day_card.js", "ask_sheet.js", "day_menu.js", "ask.js", "toast.js", "pickers.js", "workspace.js"):
+        text = (ASSETS / "js" / name).read_text(encoding="utf-8")
+        assert "(window.GA && GA.motion) ||" in text, name            # a page without motion.js gets instant changes, never an error
 
 
 def test_the_helper_is_on_every_page_before_the_toast():

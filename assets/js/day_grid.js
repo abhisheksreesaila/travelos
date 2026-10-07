@@ -308,7 +308,7 @@
     el.style.transform = '';
     var ended = false, end = function () { if (ended) return; ended = true; el.classList.remove('is-landing'); finishLand(g, then); };
     el.addEventListener('transitionend', end, { once: true });
-    setTimeout(end, GA.motion.t('settle') + 60);
+    setTimeout(end, (window.GA && GA.motion ? GA.motion.t('settle') : 280) + 60);
   }
   function finishLand(g, then) {
     if (g.ghost && g.ghost.parentNode) g.ghost.parentNode.removeChild(g.ghost);
@@ -399,7 +399,7 @@
       var h = b.style.height;
       b.style.transform = '';
       b.style.height = '';
-      setTimeout(function () { b.classList.remove('is-landing'); }, GA.motion.t('settle') + 60);
+      setTimeout(function () { b.classList.remove('is-landing'); }, (window.GA && GA.motion ? GA.motion.t('settle') : 280) + 60);
     });
   }
 

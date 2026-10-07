@@ -53,7 +53,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   background: var(--btn-bg); color: var(--btn-fg);
   font: 800 1.125rem/1 var(--font-body); text-decoration: none; cursor: pointer;
   box-shadow: 0 0 0 1px var(--line), 0 0.25rem 0 var(--btn-ledge);
-  transition: transform .15s var(--ease-out), box-shadow .15s var(--ease-out);
+  transition: transform var(--motion-quick) var(--ease-out), box-shadow var(--motion-quick) var(--ease-out);
 }
 .btn:hover { color: var(--btn-fg); transform: translateY(-1px); box-shadow: 0 0 0 1px var(--line), 0 0.3125rem 0 var(--btn-ledge); }
 .btn:active { transform: translateY(0.25rem); box-shadow: 0 0 0 1px var(--line), 0 0 0 var(--btn-ledge); }
@@ -120,7 +120,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .fr-path {
   display: flex; flex-direction: column; align-items: flex-start; gap: 0.75rem; padding: 1.25rem; min-height: 2.75rem; border-radius: var(--r-lg);
   background: var(--card); box-shadow: var(--shadow-md); color: var(--ink); text-decoration: none; text-align: left;
-  transition: transform .15s var(--ease-out), box-shadow .15s var(--ease-out);
+  transition: transform var(--motion-quick) var(--ease-out), box-shadow var(--motion-quick) var(--ease-out);
 }
 .fr-path:hover, .fr-path:focus-visible { color: var(--ink); transform: translateY(-0.1875rem); box-shadow: var(--shadow-lg); }
 .fr-ico { width: 3rem; height: 3rem; border-radius: 0.875rem; display: grid; place-items: center; flex: none; }

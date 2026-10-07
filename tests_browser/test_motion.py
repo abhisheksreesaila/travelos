@@ -29,7 +29,7 @@ def norm(s):
 PROBE = """([sel, kind]) => {
   const el = document.querySelector(sel);
   if (!el) return null;
-  const as = el.getAnimations().filter(a => { const k = a.effect.getKeyframes(); return k.length === 2 && k[0].transform !== undefined && (kind === 'open' ? k[1].transform === 'none' : k[1].transform !== 'none'); });
+  const as = el.getAnimations().filter(a => { const k = a.effect.getKeyframes(); return k.length === 2 && k[0].transform !== undefined && (kind === 'open' ? k[1].transform === 'none' && k[0].opacity !== undefined : k[1].transform !== 'none'); });
   const a = as[as.length - 1];
   if (!a) return null;
   const box = () => { const r = el.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; };
@@ -93,6 +93,7 @@ def test_the_ask_sheet_grows_out_of_the_ask_button_and_folds_back_into_it(phone,
       const spy = Element.prototype.animate; Element.prototype.animate = function (...a) { const x = spy.apply(this, a); window.__fold = window.__fold || []; window.__fold.push(x); return x; }; }""")
     page.keyboard.press("Escape")
     page.wait_for_function("window.__fold && window.__fold.length")
+    page.wait_for_timeout(200)                                                                   # the sheet settles its size as the microphone stops: the fold follows it
     got = page.evaluate("""() => { const a = window.__fold.find(x => x.effect.target.id === 'ak-sheet'); const t = a.effect.getTiming(), el = a.effect.target; a.pause(); a.currentTime = a.effect.getComputedTiming().endTime;
       const r = el.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height, dur: t.duration, easing: t.easing }; }""")
     assert near(got, origin) and got["dur"] == SLOW and norm(got["easing"]) == norm(OUT), (got, origin)
@@ -106,6 +107,7 @@ def test_the_date_chip_row_grows_out_of_the_chip_and_folds_back_into_it(phone, b
     page.wait_for_timeout(SLOW + 300)                                                           # the sheet itself has landed (its transform moves everything inside it)
     page.locator("#ak-chip").click()
     expect(page.locator("#ak-days-pick")).to_be_visible()
+    page.evaluate("document.getElementById('ak-sheet').getAnimations().forEach(a => a.finish())")      # the sheet's own move to its new size (below) is done: the chip is where it rests
     grows(page, "#ak-days-pick", page.evaluate(BOX, "#ak-chip"))
     page.wait_for_timeout(500)
     page.evaluate("""() => document.addEventListener('click', e => { const n = e.target.closest('#ak-chip'); if (n) { const r = n.getBoundingClientRect(); window.__tapped = { x: r.x, y: r.y, w: r.width, h: r.height }; } }, true)""")
@@ -353,3 +355,167 @@ def test_reduced_motion_new_bubbles_and_blocks_do_not_settle(canvas_page):
     got = page.locator(f'.cz-gb[data-act="{lunch.id}"]').evaluate("""e => { e.classList.add('is-new', 'is-landing'); const s = getComputedStyle(e); return [s.animationName, s.transitionDuration]; }""")
     assert got[0] == "none"
     assert got[1] in ("0s", "0s, 0s, 0s, 0s")
+
+
+# ---- the Ask sheet does not jump when the date chip's row opens or closes (it moves from its old size to its new one) --------------------------
+
+TOPS = """sel => { const el = document.querySelector(sel);
+  const as = el.getAnimations().filter(a => { const k = a.effect.getKeyframes(); return k.length === 2 && k[0].transform !== undefined && k[1].transform === 'none' && k[0].opacity === undefined; });
+  const a = as[as.length - 1]; if (!a) return null;
+  const end = a.effect.getComputedTiming().endTime, tops = []; a.pause();
+  for (let i = 0; i <= 20; i++) { a.currentTime = end * i / 20; tops.push(el.getBoundingClientRect().top); }
+  a.cancel(); return { tops, rest: el.getBoundingClientRect().top }; }"""
+
+
+def smooth(page, before_top):
+    got = page.evaluate(TOPS, "#ak-sheet")
+    assert got, "the sheet did not move"
+    tops, rest = got["tops"], got["rest"]
+    delta = abs(rest - before_top)
+    assert delta > 20, delta                                                                    # the row really changes the sheet's size
+    assert abs(tops[0] - before_top) <= 3 and abs(tops[-1] - rest) <= 3, (tops[0], before_top, tops[-1], rest)       # starts where the sheet was, ends where it is
+    assert max(abs(b - a) for a, b in zip(tops, tops[1:])) <= delta * 0.4, tops                # no single step is a jump
+
+
+def test_the_ask_sheet_moves_smoothly_when_the_chip_row_opens_and_closes(phone, base_url):
+    page = phone(motion="no-preference")
+    day_page(page, base_url)
+    slow(page)
+    open_sheet(page)
+    page.wait_for_timeout(SLOW + 300)
+    top = page.evaluate("document.getElementById('ak-sheet').getBoundingClientRect().top")
+    page.locator("#ak-chip").click()                                                            # taller: the row opens
+    expect(page.locator("#ak-days-pick")).to_be_visible()
+    smooth(page, top)
+    page.wait_for_timeout(300)
+    top = page.evaluate("document.getElementById('ak-sheet').getBoundingClientRect().top")
+    page.locator("#ak-chip").click()                                                            # shorter: the row folds, then the sheet settles
+    expect(page.locator("#ak-days-pick")).to_be_hidden(timeout=9000)
+    smooth(page, top)
+
+
+# ---- an interrupted move: closing in the middle of opening, and tapping twice ----------------------------------------------------------------
+
+def closing_keyframe(page, sel):
+    return page.evaluate("""s => { const el = document.querySelector(s); const as = el.getAnimations().filter(a => { const k = a.effect.getKeyframes(); return k.length === 2 && k[1].transform !== 'none' && k[0].transform !== undefined; });
+        const a = as[as.length - 1]; return a ? a.effect.getKeyframes()[0].opacity : null; }""", sel)
+
+
+def test_closing_in_the_middle_of_opening_starts_from_where_it_is(phone, base_url):
+    page = phone(motion="no-preference")
+    day_page(page, base_url)
+    slow(page)
+    open_sheet(page)
+    page.wait_for_timeout(150)
+    page.keyboard.press("Escape")
+    page.wait_for_function("document.querySelector('#ak-sheet') && document.querySelector('#ak-sheet').getAnimations().length")
+    op = closing_keyframe(page, "#ak-sheet")
+    assert op is not None and 0.3 < float(op) < 0.8, op                                         # the sheet was about half there: it folds from that, not from fully opaque
+
+
+def test_a_double_tap_or_an_early_close_never_throws_and_leaves_nothing_behind(phone, base_url):
+    page = phone(motion="no-preference")
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    day_page(page, base_url)
+    page.wait_for_timeout(400)
+    block = '.cz-gb[data-act="a1"]'
+    page.locator(block).evaluate("e => e.scrollIntoView({ block: 'center' })")
+    page.wait_for_timeout(200)
+    page.evaluate("b => CZ.openCard(document.querySelector(b))", block)                       # the card: closed at 100 ms, twice
+    page.wait_for_timeout(100)
+    page.keyboard.press("Escape")
+    page.evaluate("CZ.foldCard()")
+    expect(page.locator(".cz-card")).to_have_count(0)
+    assert page.evaluate("!!document.activeElement.closest('.cz-gb')")
+    page.evaluate("b => CZ.hold(document.querySelector(b))", block)                           # the hold menu
+    page.wait_for_timeout(100)
+    page.keyboard.press("Escape")
+    page.keyboard.press("Escape")
+    expect(page.locator(".cz-menu")).to_have_count(0)
+    page.evaluate("document.getElementById('ph-tab-ask').click(); document.getElementById('ph-tab-ask').click()")      # the Ask sheet: two taps, then closed early
+    page.wait_for_selector("#ak-sheet")
+    page.wait_for_timeout(100)
+    page.keyboard.press("Escape")
+    page.keyboard.press("Escape")
+    expect(page.locator("#ak-sheet")).to_have_count(0)
+    expect(page.locator("#ph-tab-ask")).to_be_focused()
+    assert errors == [], errors
+
+
+def test_the_sos_sheet_closed_at_100_ms_or_twice_is_removed_and_focus_returns(booked_page):
+    page = booked_page(motion="no-preference")
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.locator("#cz-sos").click()
+    page.wait_for_timeout(100)
+    page.locator(".cz-sheet-sos .cz-close").dispatch_event("click")
+    page.keyboard.press("Escape")
+    expect(page.locator(".cz-sheet-sos")).to_have_count(0)
+    assert page.evaluate("document.activeElement.id") == "cz-sos"
+    page.locator("#cz-sos").click()                                                             # and it opens again
+    expect(page.locator(".cz-sheet-sos")).to_have_count(1)
+    assert errors == [], errors
+
+
+# ---- the pickers and the booking workspace's popover -----------------------------------------------------------------------------------------
+
+@pytest.fixture
+def anywhere(browser, base_url):
+    contexts = []
+
+    def make(path, viewport, motion="no-preference", ready="html[data-ga-ready]"):
+        ctx = browser.new_context(viewport=viewport, reduced_motion=motion)
+        ctx.set_default_timeout(9000)
+        contexts.append(ctx)
+        page = ctx.new_page()
+        page.goto(f"{base_url}{path}")
+        page.wait_for_selector(ready)
+        page.wait_for_function("document.getAnimations().length === 0")                          # the page's own entrance has played
+        slow(page)
+        return page
+
+    yield make
+    for c in contexts:
+        c.close()
+
+
+@pytest.mark.parametrize("vp", [{"width": 1440, "height": 900}, PHONE], ids=["desktop", "390"])
+def test_a_picker_popover_grows_out_of_its_field_and_folds_back_into_it(anywhere, vp):
+    page = anywhere("/start", vp)
+    trigger = page.get_by_role("button", name=re.compile("^Leaving:"))
+    page.evaluate("""() => document.addEventListener('click', e => { const n = e.target.closest('.ga-pick-btn, button'); if (n) { const r = n.getBoundingClientRect(); window.__tapped = { x: r.x, y: r.y, w: r.width, h: r.height }; } }, true)""")
+    trigger.click()                                                                              # (the field's box where the finger was: it is pressed a little)
+    origin = page.evaluate("window.__tapped")
+    expect(page.locator(".ga-pop")).to_be_visible()
+    grows(page, ".ga-pop", origin)
+    page.wait_for_timeout(300)
+    page.keyboard.press("Escape")
+    page.wait_for_function("document.querySelector('.ga-pop') && document.querySelector('.ga-pop').getAnimations().length")
+    folds(page, ".ga-pop", page.evaluate(BOX, trigger.element_handle()))
+
+
+def test_the_ledger_breakdown_grows_out_of_the_total_and_folds_back_into_it(anywhere):
+    page = anywhere("/plan", {"width": 1440, "height": 900}, ready="#ws-grid[data-focus]")
+    origin = page.evaluate(BOX, "#ws-total")
+    page.click("#ws-total")
+    expect(page.locator("#ws-pop")).to_be_visible()
+    grows(page, "#ws-pop", origin)
+    page.wait_for_timeout(300)
+    page.click("#ws-total")
+    page.wait_for_function("document.querySelector('#ws-pop').getAnimations().length")
+    folds(page, "#ws-pop", origin)
+
+
+def test_reduced_motion_the_pickers_and_the_ledger_popover_do_not_animate(anywhere):
+    page = anywhere("/start", PHONE, motion="reduce")
+    page.get_by_role("button", name=re.compile("^Leaving:")).click()
+    expect(page.locator(".ga-pop")).to_be_visible()
+    calm(page, ".ga-pop")
+    page.keyboard.press("Escape")
+    expect(page.locator(".ga-pop")).to_have_count(0)
+    page = anywhere("/plan", {"width": 1440, "height": 900}, motion="reduce", ready="#ws-grid[data-focus]")
+    page.click("#ws-total")
+    calm(page, "#ws-pop")
+    page.click("#ws-total")
+    expect(page.locator("#ws-pop")).to_be_hidden()

@@ -15,7 +15,7 @@
   if (!CZ) return;
   var stage = CZ.stage;
   var main = document.getElementById('main') || document.body;
-  var MO = window.GA && GA.motion;      // the one liquid motion (motion.js, F-109): the spring, the fold and their timings are its tokens
+  var MO = (window.GA && GA.motion) || (function () { var r = function () { return Promise.resolve(); }; return { open: r, close: r, spring: r, flip: r, run: r, settle: r, reflow: function (e, c, o) { c(); if (o && o.during) o.during(); return r(); }, origin: function () { return null; }, box: function (e) { return e.getBoundingClientRect(); }, reduced: function () { return true; }, t: function () { return 240; } }; })();      // (a page without motion.js still works: everything is instant) the one liquid motion (motion.js, F-109): the spring, the fold and their timings are its tokens
   var open = null;                 // the card on screen: { wrap, card, scrim, block, act, folding, note }
   var fetched = {};                // act -> { at, promise }: the fragment fetched ahead of the tap
 
@@ -76,8 +76,8 @@
     var top = clamp(g.r ? g.r.top - u * 0.25 : g.topMin, g.topMin, Math.max(g.topMin, g.floor - h));
     c.style.top = top + 'px'; c.style.height = h + 'px';
     o.g = { left: g.left, top: top, width: g.width, height: h };
-    if (glide && was && !CZ.reduced.matches && c.animate && (Math.abs(was.top - top) > 1 || Math.abs(was.height - h) > 1)) {      // the words arrived or grew: the card follows them, gently
-      MO.run(c, [{ top: was.top + 'px', height: was.height + 'px' }, { top: top + 'px', height: h + 'px' }], { t: 'quick' });
+    if (glide && was && !CZ.reduced.matches && c.animate && !c.getAnimations().length && (Math.abs(was.top - top) > 1 || Math.abs(was.height - h) > 1)) {      // the words arrived or grew: the card follows them, gently
+      MO.flip(c, was, o.g);
     }
   }
   // ---- open ---------------------------------------------------------------------------------------------------------------------

@@ -7,6 +7,7 @@
   var data = JSON.parse(dataEl.textContent);
   var PANES = { 1: 'flights', 2: 'stays', 3: 'cars', 4: 'weather', 5: 'map', 6: 'news', 7: 'community' };
   var still = window.matchMedia('(prefers-reduced-motion: reduce)');
+  var MO = (window.GA && GA.motion) || (function () { var r = function () { return Promise.resolve(); }; return { open: r, close: r, spring: r, flip: r, run: r, settle: r, reflow: function (e, c, o) { c(); if (o && o.during) o.during(); return r(); }, origin: function () { return null; }, box: function (e) { return e.getBoundingClientRect(); }, reduced: function () { return true; }, t: function () { return 240; } }; })();      // the one liquid motion (motion.js, F-109)
   var phone = window.matchMedia('(max-width: 720px)');
   // The lane picks, plus the stay's rooms and add-ons as compact codes ("cq1", "bf") (null means "the default") and the flight's
   // fare and checked bags ("main", "2"; "" means Basic and none).
@@ -579,10 +580,7 @@
     if (!target || still.matches || !target.animate || !before.width) return;
     var after = target.getBoundingClientRect();
     if (!after.width) return;
-    target.animate([
-      { transformOrigin: 'top left', transform: 'translate(' + (before.left - after.left) + 'px,' + (before.top - after.top) + 'px) scale(' + (before.width / after.width) + ',' + (before.height / after.height) + ')' },
-      { transformOrigin: 'top left', transform: 'none' }
-    ], { duration: 320, easing: 'cubic-bezier(.2,.8,.2,1)' });
+    MO.flip(target, before, after);      // the pane goes from where it was to where it is, with the one spring (F-109)
   }
 
   // Open a split pane: the current pick (or the offer in the URL) is shown, and focus lands on its card.
@@ -643,11 +641,13 @@
   var ledger = document.querySelector('.ws-ledger');
   var totalBtn = document.getElementById('ws-total');
   var pop = document.getElementById('ws-pop');
-  function popOpen() { return !!pop && !pop.hidden; }
+  function popOpen() { return !!pop && !pop.hidden && !pop.dataset.folding; }
   function setPop(open, moveFocus) {
     if (!pop || popOpen() === open) return;
-    pop.hidden = !open;
     totalBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open) { delete pop.dataset.folding; pop.hidden = false; MO.open(pop, totalBtn); }      // it grows out of the total and folds back into it
+    else if (MO.reduced()) pop.hidden = true;
+    else { pop.dataset.folding = '1'; MO.close(pop, totalBtn).then(function () { if (pop.dataset.folding) { pop.hidden = true; delete pop.dataset.folding; } }); }
     if (open) { setPill(false); if (moveFocus) pop.focus(); }
     else if (moveFocus) totalBtn.focus();
   }

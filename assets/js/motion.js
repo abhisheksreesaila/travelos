@@ -58,6 +58,20 @@
     var sx = Math.max(from.width / Math.max(to.width, 1), 0.04), sy = Math.max(from.height / Math.max(to.height, 1), 0.04);
     return 'translate(' + (from.left - to.left) + 'px,' + (from.top - to.top) + 'px) scale(' + sx + ',' + sy + ')';
   }
+  // A sheet may still change size in the moment around its move (a status line comes or goes, a field): while it runs, its end is aimed at where the element really rests (its box with the running
+  // transform taken out; never seeking). `aim(now)` gives the new transform for frame `key`.
+  function follow(anim, el, to, frames, key, aim) {
+    (function look() {
+      if (!el.isConnected || anim.playState !== 'running') return;
+      var now = natural(el);
+      if (Math.abs(now.left - to.left) >= 1 || Math.abs(now.top - to.top) >= 1 || Math.abs(now.width - to.width) >= 1 || Math.abs(now.height - to.height) >= 1) {
+        to = now;
+        frames[key].transform = aim(now);
+        anim.effect.setKeyframes(frames);
+      }
+      requestAnimationFrame(look);
+    })();
+  }
   function note(kind, from, to, dur, easing) {
     var l = M.log; l.push({ kind: kind, from: from, to: to, dur: dur, easing: easing });
     if (l.length > 24) l.shift();
@@ -85,17 +99,7 @@
     var main = el.animate(frames, { duration: dur, easing: e, fill: 'backwards' });
     done.push(main.finished.catch(function () {}));
     var rec = note('open', from, to, dur, e);
-    // A sheet may still change size in the moment after it opens (a status line, a field): while it grows, the grow is aimed at where it really rests (its box, with the running transform taken out; no seeking).
-    (function retarget() {
-      if (!el.isConnected || main.playState !== 'running') return;
-      var now = natural(el);
-      if (Math.abs(now.left - to.left) >= 1 || Math.abs(now.top - to.top) >= 1 || Math.abs(now.width - to.width) >= 1 || Math.abs(now.height - to.height) >= 1) {
-        to = rec.to = now;
-        frames[0].transform = squash(now, from);
-        main.effect.setKeyframes(frames);
-      }
-      requestAnimationFrame(retarget);
-    })();
+    follow(main, el, to, frames, 0, function (now) { to = rec.to = now; return squash(now, from); });
     if (o.scrim) done.push(go(o.scrim, [{ opacity: 0 }, { opacity: 1 }], t('calm'), ease('calm'), { fill: 'backwards' }));
     if (o.content) done.push(go(o.content, [{ opacity: 0 }, { opacity: 1 }], t('quick'), ease('calm'), { delay: Math.round(dur * 0.3), fill: 'backwards' }));
     return Promise.all(done);
@@ -105,17 +109,42 @@
   M.close = function (el, origin, o) {
     o = o || {};
     if (reduced() || !el.animate) return Promise.resolve();
-    var start = o.from || getComputedStyle(el).transform;
+    var cs = getComputedStyle(el);      // where it is right now: closing in the middle of opening starts from there (no flash back to full)
+    var start = o.from || cs.transform, op = parseFloat(cs.opacity), rad = cs.borderRadius;
+    var cop = o.content ? parseFloat(getComputedStyle(o.content).opacity) : 1;
     var to = box(el), target = rectOf(origin), dur = t('dur'), e = ease('out'), done = [];
     el.style.transformOrigin = '0 0';
     var end = onScreen(target) ? squash(to, target) : 'translateY(' + Math.round(window.innerHeight * 0.1) + 'px) scale(.9)';
-    var frames = [{ transform: !start || start === 'matrix(1, 0, 0, 1, 0, 0)' ? 'none' : start, opacity: 1 }, { transform: end, opacity: 0.2 }];
-    if (o.radius) { frames[0].borderRadius = o.radius[1]; frames[1].borderRadius = o.radius[0]; }
-    done.push(go(el, frames, dur, e, { fill: 'forwards' }));
+    var frames = [{ transform: !start || start === 'matrix(1, 0, 0, 1, 0, 0)' ? 'none' : start, opacity: op >= 0 ? op : 1 }, { transform: end, opacity: Math.min(0.2, op >= 0 ? op : 1) }];
+    if (o.radius) { frames[0].borderRadius = rad || o.radius[1]; frames[1].borderRadius = o.radius[0]; }
+    var fold = el.animate(frames, { duration: dur, easing: e, fill: 'forwards' });
+    done.push(fold.finished.catch(function () {}));
+    if (onScreen(target)) follow(fold, el, to, frames, 1, function (now) { return squash(now, target); });
     if (o.scrim) done.push(go(o.scrim, [{ opacity: parseFloat(getComputedStyle(o.scrim).opacity) || 1 }, { opacity: 0 }], dur, ease('calm'), { fill: 'forwards' }));
-    if (o.content) done.push(go(o.content, [{ opacity: 1 }, { opacity: 0 }], t('fade'), ease('calm'), { fill: 'forwards' }));
+    if (o.content) done.push(go(o.content, [{ opacity: cop >= 0 ? cop : 1 }, { opacity: 0 }], t('fade'), ease('calm'), { fill: 'forwards' }));
     note('close', to, target, dur, e);
     return Promise.all(done);
+  };
+
+  // Something that is already open changes size or place (the card follows its words, a pane expands): it goes from where it was to where it is with a transform (never top, height or width).
+  M.flip = function (el, from, to) {
+    if (reduced() || !el || !el.animate || !from || !to) return Promise.resolve();
+    if (Math.abs(from.left - to.left) < 1 && Math.abs(from.top - to.top) < 1 && Math.abs(from.width - to.width) < 1 && Math.abs(from.height - to.height) < 1) return Promise.resolve();
+    el.style.transformOrigin = '0 0';
+    note('flip', from, to, t('spring'), ease('spring'));
+    return go(el, [{ transform: squash(to, from) }, { transform: 'none' }], t('spring'), ease('spring'));
+  };
+
+  // `change()` alters the layout around `el` (a row opens inside a bottom sheet, so the sheet gets taller): `el` moves from its old box to its new one with the spring. `o.during` runs after the change and
+  // before the move starts (so others can measure the new layout untransformed).
+  M.reflow = function (el, change, o) {
+    o = o || {};
+    if (reduced() || !el || !el.animate) { change(); if (o.during) o.during(); return Promise.resolve(); }
+    var before = box(el);
+    change();
+    var after = box(el);
+    if (o.during) o.during();
+    return M.flip(el, before, after);
   };
 
   // A new bubble or block: it rises a few pixels from a little smaller and settles with the spring (no movement under reduced motion).

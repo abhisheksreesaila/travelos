@@ -452,16 +452,25 @@
         if (on && label) label.textContent = b.textContent;
       });
     };
-    var MO = window.GA && GA.motion, shut = 0;
+    var MO = (window.GA && GA.motion) || (function () { var r = function () { return Promise.resolve(); }; return { open: r, close: r, spring: r, flip: r, run: r, settle: r, reflow: function (e, c, o) { c(); if (o && o.during) o.during(); return r(); }, origin: function () { return null; }, box: function (e) { return e.getBoundingClientRect(); }, reduced: function () { return true; }, t: function () { return 240; } }; })(), shut = 0;
     var show = function (on) {           // F-109: the row of days grows out of the chip and folds back into it
       var was = !picks.hidden;
       chip.setAttribute('aria-expanded', on ? 'true' : 'false');
       if (on === was) return;
       shut += 1;
       var mine = shut;
-      if (on) { picks.hidden = false; if (MO) MO.open(picks, chip); return; }
-      if (!MO || MO.reduced()) { picks.hidden = true; return; }
-      MO.close(picks, chip).then(function () { if (mine === shut) picks.hidden = true; });
+      var sheet = chip.closest('.ak-sheet');      // the sheet is anchored at the bottom: the row makes it taller or shorter, and the sheet moves from its old size to the new one with the spring instead of jumping
+      if (on) {
+        var reveal = function () { picks.hidden = false; };
+        if (sheet) MO.reflow(sheet, reveal, { during: function () { MO.open(picks, chip); } });
+        else { reveal(); MO.open(picks, chip); }
+        return;
+      }
+      MO.close(picks, chip).then(function () {
+        if (mine !== shut) return;
+        var hide = function () { picks.hidden = true; };
+        if (sheet && sheet.isConnected) MO.reflow(sheet, hide); else hide();
+      });
     };
     chip.addEventListener('click', function () { show(picks.hidden); });
     picks.addEventListener('click', function (e) {
