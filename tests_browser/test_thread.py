@@ -297,7 +297,8 @@ def test_new_bubbles_fade_in_unless_motion_is_reduced(pair):
     ari.locator("#ft-text").fill("Still")
     ari.locator("#ft-send").click()
     expect(mate.locator("#ft-thread .ft-msg").last).to_contain_text("Still", timeout=9000)
-    assert all(not d for d in mate.evaluate("window.__fade"))
+    got = mate.evaluate("window.__fade")
+    assert got and all(d in ([], [120]) for d in got)                                # F-112: reduced motion is a short fade (--motion-fade) and nothing else
 
 
 @pytest.mark.parametrize("viewport", [PHONE, NARROW], ids=["390", "320"])

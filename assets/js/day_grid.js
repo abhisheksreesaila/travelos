@@ -383,16 +383,19 @@
   // Move: the block lands in its slot (a FLIP: its place is changed at once, and it travels the last bit), then the change is saved.
   function releaseMove(g, changed) {
     var el = g.el, dur = g.e0 - g.s0;
-    var from = el.getBoundingClientRect();
+    var from = el.getBoundingClientRect();      // where the finger left it (lifted: a little bigger)
     unholdSoon(g);
     el.style.transform = '';
-    if (!changed) { land(el, from, g, function () { busy = false; }); return; }
     var s = g.cur;
-    el.style.setProperty('--s', s - g.lo);
-    el.dataset.s = s;
-    el.dataset.e = s + dur;
-    setWhen(el, s, s + dur);
-    land(el, from, g, function () { save(g, { start: s, end: s + dur }, { s: g.s0, e: g.e0 }); });
+    if (changed) {
+      el.style.setProperty('--s', s - g.lo);
+      el.dataset.s = s;
+      el.dataset.e = s + dur;
+      setWhen(el, s, s + dur);
+    }
+    var landed = land(el, from, g);
+    if (!changed) { landed.then(function () { busy = false; }); return; }
+    save(g, { start: s, end: s + dur }, { s: g.s0, e: g.e0 }, landed);      // saved while it travels; the toast and the refresh wait until it has landed
   }
 
   // Resize: the grid eases back to normal while the block keeps the length it was given.
@@ -426,53 +429,52 @@
     var w = el.querySelector('.cz-gb-when');
     if (w) w.textContent = span(s, e);
   }
-  // FLIP: the block's real place has changed; draw it where it was, then let it travel.
-  function land(el, from, g, then) {
-    var to = el.getBoundingClientRect();
-    var dy = from.top - to.top;
-    if (CZ.reduced.matches || (Math.abs(dy) < 1 && Math.abs(from.height - to.height) < 1)) { finishLand(g, then); return; }
-    el.style.transform = 'translate3d(0,' + dy + 'px,0)';
-    void el.offsetHeight;                      // one deliberate read, after all the writes: the starting place is now the one the transition leaves from
-    el.classList.add('is-landing');
-    el.style.transform = '';
-    var ended = false, end = function () { if (ended) return; ended = true; el.classList.remove('is-landing'); finishLand(g, then); };
-    el.addEventListener('transitionend', end, { once: true });
-    setTimeout(end, (window.GA && GA.motion ? GA.motion.t('settle') : 280) + 60);
+  // FLIP, one move (GA.motion.land): the block's real place has changed; it is drawn where the eye saw it (`from`) and travels to its place with the spring and a gentle overshoot. The
+  // promise resolves when it has landed; the ghost, the label and the knobs wait for that. Nothing re-draws it after: the refreshed day takes over the same spot (see CZ.snap).
+  var landing = 0;
+  function land(el, from, g) {
+    var done = function () { landing--; el.classList.remove('is-landing'); if (g.ghost && g.ghost.parentNode) g.ghost.parentNode.removeChild(g.ghost); dropLabel(); wake(); };
+    landing++;
+    el.classList.add('is-landing');      // (its lift folds out with the move: no second ease on `scale`)
+    var p = window.GA && GA.motion ? GA.motion.land(el, from) : Promise.resolve();
+    return p.then(done, done);
   }
-  function finishLand(g, then) {
-    if (g.ghost && g.ghost.parentNode) g.ghost.parentNode.removeChild(g.ghost);
-    dropLabel();
-    wake();
-    if (then) then();
-  }
+  CZ.landing = function () { return landing > 0; };
   // ---- saving, the toast and Undo -----------------------------------------------------------------------------------------
-  function save(g, fields, old) {
-    var el = g.el;
+  // `landed` is the block's own move (it is saved while it travels): the toast glides in and the day is refreshed only once the block is at rest, so nothing is drawn over a move in progress.
+  function save(g, fields, old, landed) {
+    var el = g.el, wait = landed || Promise.resolve();
     var body = CZ.tripBody(Object.assign({ op: 'edit', act: el.dataset.act, next: CZ.here() }, fields));
     return CZ.post('/trip/canvas/plan', body).then(function (res) {
-      busy = false;
-      if (res.toast) CZ.showToast(res.toast, res.undo ? function () { undo(res.undo); } : null);
-      return CZ.quiet();
+      return wait.then(function () {
+        busy = false;
+        if (res.toast) CZ.showToast(res.toast, res.undo ? function () { undo(res.undo); } : null);
+        return CZ.quiet();
+      });
     }, function (err) {
-      busy = false;
-      if (old && el.isConnected) {            // refused or never answered: the block goes back where it was, even if the refresh below cannot be fetched
-        var lo = +el.closest('#cz-grid').dataset.lo;
-        el.style.setProperty('--s', old.s - lo);
-        el.style.setProperty('--l', old.e - old.s);
-        el.dataset.s = old.s;
-        el.dataset.e = old.e;
-        setWhen(el, old.s, old.e);
-      }
-      CZ.showToast(err && err.soft ? err.soft : 'Could not save that. Check your connection.');
-      return CZ.quiet();                      // the page shows what is really saved
+      return wait.then(function () {
+        var back = Promise.resolve();
+        if (old && el.isConnected) {            // refused or never answered: the block goes back where it was (it travels there), even if the refresh below cannot be fetched
+          var lo = +el.closest('#cz-grid').dataset.lo, from = el.getBoundingClientRect();
+          el.style.setProperty('--s', old.s - lo);
+          el.style.setProperty('--l', old.e - old.s);
+          el.dataset.s = old.s;
+          el.dataset.e = old.e;
+          setWhen(el, old.s, old.e);
+          back = land(el, from, {});
+        }
+        return back.then(function () {
+          busy = false;
+          CZ.showToast(err && err.soft ? err.soft : 'Could not save that. Check your connection.');
+          return CZ.quiet();                      // the page shows what is really saved
+        });
+      });
     });
   }
 
   function undo(snap) {
-    var before = rects();
     CZ.post('/trip/canvas/plan', CZ.tripBody({ op: 'undo', undo: JSON.stringify(snap), next: CZ.here() })).then(function (res) {
-      flipOnSwap = before;
-      return CZ.quiet().then(function () { CZ.showToast(res.toast || 'Put back'); });
+      return CZ.quiet().then(function () { CZ.showToast(res.toast || 'Put back'); });      // (the blocks glide from where they were: CZ.snap)
     }, function (err) { CZ.showToast(err && err.soft ? err.soft : 'Could not undo that.'); });
   }
 
@@ -488,7 +490,7 @@
     el.dataset.s = s;
     el.dataset.e = e;
     setWhen(el, s, e);
-    land(el, from, {}, function () { save({ el: el }, { start: s, end: e }, old); });
+    save({ el: el }, { start: s, end: e }, old, land(el, from, {}));
     return true;
   };
   CZ.undo = undo;
@@ -506,33 +508,33 @@
     };
   };
 
-  // After an Undo the blocks travel from where they were to where they are, so the change reads as a move and not as a flicker.
-  var flipOnSwap = null;
-  function rects() {
-    var out = {};
-    stage.querySelectorAll('.cz-gb[data-act]').forEach(function (b) { var r = b.getBoundingClientRect(); out[b.dataset.act] = { top: r.top, height: r.height }; });
-    return out;
+  // A refresh that follows a write (a drop, a nudge, an Undo, or someone else's change) re-draws the day, but the eye must not see it: every block is measured before the swap by its plan
+  // (data-act) and, after it (and the scroll put back), drawn where it was and sent to where it is, with the same spring (GA.motion.land). A block that did not move does not move now; one that
+  // did (an overlap changed, an Undo) glides. trip_canvas.js calls this before a quiet swap and runs what it returns after.
+  function wiggleOf(n) { var a = n && n.getAnimations ? n.getAnimations().filter(function (x) { return x.animationName === 'cz-wiggle'; })[0] : null; return a ? a.currentTime : null; }
+  function arrived(n) {      // a re-drawn block (or its knobs) is born in the state the old one was in (lifted by its selection or its menu): the eases that would play from "plain" to that are over at once, nothing pops
+    if (n && n.getAnimations) n.getAnimations().forEach(function (a) { if (a.transitionProperty !== undefined) a.finish(); });
   }
-  function flipAll(before) {
-    if (CZ.reduced.matches) return;
-    stage.querySelectorAll('.cz-gb[data-act]').forEach(function (b) {
-      var o = before[b.dataset.act];
-      if (!o) return;
-      var r = b.getBoundingClientRect();
-      if (Math.abs(o.top - r.top) < 1 && Math.abs(o.height - r.height) < 1) return;
-      b.style.transform = 'translate3d(0,' + (o.top - r.top) + 'px,0)';
-      b.style.height = o.height + 'px';
-    });
-    void stage.offsetHeight;
-    stage.querySelectorAll('.cz-gb[data-act]').forEach(function (b) {
-      if (!b.style.transform && !b.style.height) return;
-      b.classList.add('is-landing');
-      var h = b.style.height;
-      b.style.transform = '';
-      b.style.height = '';
-      setTimeout(function () { b.classList.remove('is-landing'); }, (window.GA && GA.motion ? GA.motion.t('settle') : 280) + 60);
-    });
+  function wiggleTo(n, at) {
+    var a = at !== null && n && n.getAnimations ? n.getAnimations().filter(function (x) { return x.animationName === 'cz-wiggle'; })[0] : null;
+    if (a) a.currentTime = at;
   }
+  CZ.snap = function () {
+    if (CZ.reduced.matches || !(window.GA && GA.motion)) return null;
+    var before = {};
+    stage.querySelectorAll('.cz-gb[data-act]').forEach(function (b) {
+      var r = b.getBoundingClientRect();      // what the eye sees (a transform, the menu's wiggle, included), and where the block really is
+      before[b.dataset.act] = { eye: { left: r.left, top: r.top, width: r.width, height: r.height }, top: b.offsetTop, left: b.offsetLeft, width: b.offsetWidth, height: b.offsetHeight, wiggle: [wiggleOf(b), wiggleOf(b.nextElementSibling)] };
+    });
+    return function () {
+      stage.querySelectorAll('.cz-gb[data-act]').forEach(function (b) {
+        var o = before[b.dataset.act];
+        if (o) { arrived(b); arrived(b.nextElementSibling); wiggleTo(b, o.wiggle[0]); wiggleTo(b.nextElementSibling, o.wiggle[1]); }      // the wiggle of a block whose menu is open goes on from where it was, not from its start
+        if (!o || (Math.abs(o.top - b.offsetTop) < 2 && Math.abs(o.left - b.offsetLeft) < 2 && Math.abs(o.width - b.offsetWidth) < 2 && Math.abs(o.height - b.offsetHeight) < 2)) return;      // it did not move (the wiggle only tilts it)
+        GA.motion.land(b, o.eye);
+      });
+    };
+  };
 
   // ---- scroll to the day's first plan (or now), and keep the now line moving ---------------------------------------------------
   function scrollToPlans() {
@@ -561,7 +563,6 @@
       clearSel(true);
       if (again && editing()) select(again, true);
     }
-    if (flipOnSwap && e.detail && e.detail.quiet) { var b = flipOnSwap; flipOnSwap = null; flipAll(b); }
   });
   CZ.afterScroll = scrollToPlans;      // trip_canvas.js calls it right after a level it pushed or replaced is scrolled to the top
   startNow();

@@ -87,23 +87,56 @@
 
   // Put what the server sent into the thread. An item of mine that carries the client id (cid) of a pending or failed bubble replaces that bubble in
   // place (no second fade, order kept); anything else new is appended and fades in.
+  // F-112: the one liquid motion (GA.motion, motion.js). Before the list changes the bubbles in view are measured; afterwards each one that moved (the list scrolled up to make room)
+  // glides from where it was to where it is, with the same spring; a new bubble settles into place (one that I sent grows out of the box, see the send below). Reduced motion: a short fade.
+  function motion() { return window.GA && window.GA.motion; }      // (read when needed: motion.js is deferred)
+  function snapshot() {
+    var out = [], MO = motion();
+    if (!MO || MO.reduced()) return out;
+    var view = docked() ? thread.getBoundingClientRect() : { top: 0, bottom: window.innerHeight };
+    Array.prototype.forEach.call(thread.children, function (c) {
+      var r = c.getBoundingClientRect();
+      if (r.bottom > view.top && r.top < view.bottom) out.push({ el: c, r: { left: r.left, top: r.top, width: r.width, height: r.height } });
+    });
+    return out;
+  }
+  function glide(snap) { var MO = motion(); snap.forEach(function (s) { if (s.el.isConnected) MO.land(s.el, s.r); }); }
+  // The server's copy of a bubble I sent takes the pending one's place without a new element: the same box keeps its place and its motion, takes the server's words, time and classes
+  // (its "Sending" look fades to the full look), and moves from its old size to its new one if the time made it a little wider.
+  function adopt(old, fresh) {
+    var MO = motion(), bub = old.querySelector(".ft-bub"), from = bub && bub.getBoundingClientRect(), a, i, kids = old.children, news = fresh.children;
+    for (i = old.attributes.length - 1; i >= 0; i--) { a = old.attributes[i].name; if (a !== "class" && a !== "style" && !fresh.hasAttribute(a)) old.removeAttribute(a); }
+    for (i = 0; i < fresh.attributes.length; i++) { a = fresh.attributes[i]; if (a.name === "class") old.className = a.value + (old.classList.contains("is-new") ? " is-new" : ""); else old.setAttribute(a.name, a.value); }
+    if (kids.length === news.length) {
+      for (i = 0; i < kids.length; i++) {
+        if (kids[i].tagName !== news[i].tagName) { kids[i].replaceWith(news[i].cloneNode(true)); continue; }
+        kids[i].className = news[i].className;
+        kids[i].innerHTML = news[i].innerHTML;
+      }
+    } else { old.innerHTML = fresh.innerHTML; }
+    bub = old.querySelector(".ft-bub");
+    if (MO && bub && from) MO.land(bub, { left: from.left, top: from.top, width: from.width, height: from.height });
+  }
   function merge(html, n, mine) {
     if (!html.trim() || n <= last) return;
-    var stick = mine || nearBottom();
+    var stick = mine || nearBottom(), snap = snapshot(), fresh = [], MO = motion();
     var holder = document.createElement("div");
     holder.innerHTML = html;
     Array.prototype.slice.call(holder.children).forEach(function (el) {   // a copy: appending moves each child out of the live list
       var id = parseInt(el.getAttribute("data-n"), 10) || 0;
       if (id <= last) return;
       var cid = el.getAttribute("data-cid"), waiting = cid ? thread.querySelector('.is-pending[data-cid="' + cid + '"]') : null;
-      if (waiting) { waiting.replaceWith(el); return; }
-      el.classList.add("is-new");
+      if (waiting) { adopt(waiting, el); return; }
+      if (!MO) el.classList.add("is-new");
       thread.appendChild(el);
+      fresh.push(el);
     });
     last = n;
     thread.setAttribute("data-last", String(last));
     if (empty) empty.hidden = true;
     if (stick) toBottom();
+    glide(snap);
+    fresh.forEach(function (el) { if (MO) (MO.reduced() ? MO.fade : MO.settle)(el); });
   }
   function append(response, mine) {
     var n = parseInt(response.headers.get("X-Thread-Last"), 10) || 0;
@@ -189,7 +222,7 @@
             }
             if (!r.ok) throw new Error(r.status === 409 ? html : "");
             merge(html, parseInt(r.headers.get("X-Thread-Last"), 10) || 0, true);   // replaces this bubble in place, by its id
-            if (el.parentNode) el.remove();           // the answer did not carry it (a poll got there first)
+            if (el.parentNode && el.classList.contains("is-pending")) el.remove();           // the answer did not carry it (a poll got there first); a bubble the answer took over stays (F-112)
           });
         })
         .catch(function (err) { settle(el, false, err instanceof TypeError || err.name === "AbortError" || !err.message || err.message.length > 120 ? "" : err.message); text.focus(); });
@@ -201,12 +234,17 @@
     if (!value) { fail("Write something first."); return; }
     fail("");
     var el = pendingBubble(value);
-    el.classList.add("is-new");
+    var MO = motion(), snap = snapshot(), box = text.getBoundingClientRect(), from = { left: box.left, top: box.top, width: box.width, height: box.height };
+    if (!MO) el.classList.add("is-new");
     thread.appendChild(el);
     if (empty) empty.hidden = true;
     text.value = "";
     text.focus();
     toBottom();
+    if (MO) {
+      if (MO.reduced()) MO.fade(el);
+      else { MO.open(el, from); glide(snap); MO.run(text, [{ opacity: 0.4 }, { opacity: 1 }], { t: "quick" }); }      // the bubble grows out of the box, the ones above glide up, the box clears
+    }
     deliver(el);
   });
 
