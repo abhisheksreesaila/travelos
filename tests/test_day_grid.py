@@ -147,7 +147,8 @@ def test_an_editor_can_lift_blocks_and_has_a_keyboard_way_in(trip):
     me = person("ari")
     plan(me, "Lunch", 12 * 60, 13 * 60)
     page = day(trip, 2)
-    assert 'data-edit="1"' in trip.get("/trip/canvas?day=2").text and 'class="cz-gb-grip"' in page
+    assert 'data-edit="1"' in trip.get("/trip/canvas?day=2").text and "cz-gb-grip" not in page      # F-110: no grabber bar at rest; the knobs come with a hold
+    assert 'class="cz-gb-head"' in page
     assert 'class="sr-only cz-gb-menubtn">Change Lunch<' in page
     (b,) = blocks(page)
     assert b["data-talk"].startswith(f"/trip/talk?act={b['data-act']}") and b["data-steps"] == "0"      # F-098: the hold menu's Chat, and what a delete would take with it

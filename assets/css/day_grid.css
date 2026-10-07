@@ -7,7 +7,7 @@
    .cz-cs, which scales back by 1/--zk so text and hairlines keep their size while the time between them stretches. The script drives --zk and the transform together, one
    value per frame, so they never disagree. */
 
-.cz .cz-grid { --hh: 4.5rem; --mm: calc(var(--hh) / 60); --gut: 3.25rem; --zk: 1; position: relative; height: calc(var(--n) * var(--hh) + 1.25rem); margin-top: 0.25rem; overflow: hidden; contain: layout style;
+.cz .cz-grid { --hh: 4.5rem; --mm: calc(var(--hh) / 60); --gut: 3.25rem; --zk: 1; position: relative; height: calc(var(--n) * var(--hh) + 1.25rem); margin-top: 0.25rem; overflow: clip; contain: layout style;
   touch-action: pan-y pinch-zoom; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
 .cz .cz-g-zoom { position: absolute; left: 0; right: 0; top: 0.625rem; height: calc(var(--n) * var(--hh)); transform-origin: 0 0; }
 .cz .cz-g-zoom.is-zooming { will-change: transform; }
@@ -31,7 +31,7 @@
 /* a plan: a block whose place and height are its time */
 .cz .cz-gb { --tint: var(--bubble-tint); --accent: var(--bubble); position: absolute; z-index: 2; top: calc(var(--s) * var(--mm)); height: calc(var(--l) * var(--mm));
   left: calc(var(--bkw, 0rem) + (100% - var(--bkw, 0rem)) * var(--lane) / var(--lanes)); width: calc((100% - var(--bkw, 0rem)) / var(--lanes) - 0.25rem);
-  border-radius: 0.875rem; background: var(--tint); color: var(--ink); overflow: hidden; contain: layout paint; box-shadow: inset 0.25rem 0 0 var(--accent), var(--shadow-sm); text-decoration: none;
+  border-radius: 0.875rem; background: var(--tint); color: var(--ink); overflow: clip; contain: layout paint; box-shadow: inset 0.25rem 0 0 var(--accent), var(--shadow-sm); text-decoration: none;
   touch-action: pan-y pinch-zoom; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; cursor: default; transition: box-shadow var(--motion-quick) ease, opacity var(--motion-quick) ease, scale var(--motion-quick) var(--cz-ease); }
 .cz a.cz-gb { cursor: pointer; }
 .cz .cz-gb { min-height: 2.75rem; }      /* every block is a 44px target, however short the plan; its time is in its words, and a short block fades what does not fit */
@@ -43,15 +43,20 @@
 .cz .cz-k-outdoors { --tint: var(--mint-tint); --accent: var(--mint); }
 .cz .cz-k-culture { --tint: var(--grape-tint); --accent: var(--grape); }
 .cz .cz-k-travel { --tint: var(--sky-tint); --accent: var(--sky); }
-.cz .cz-gb-in { position: relative; display: flex; flex-direction: column; gap: 0.0625rem; padding: 0.25rem 0.5rem 0.25rem 0.75rem; min-width: 0; }
-.cz .cz-gb.is-park .cz-gb-in { padding-top: 0.375rem; }
+.cz .cz-gb-in { position: relative; display: flex; flex-direction: column; gap: 0.0625rem; padding: 0.5rem 0.5rem 0.25rem 0.75rem; min-width: 0; }      /* the top padding leaves room for the top knob (F-110) */
+.cz .cz-gb.is-park .cz-gb-in { padding-top: 0.5rem; }
+/* F-110: the block fills its own height (so the head has room to travel) and its title and time are one sticky head: on a block taller than the screen they stay at the top of what is
+   visible, just under the folded bar (F-103), while the day scrolls, and leave with the block's bottom edge. A short or tight block has no room to scroll in, so its head has no box. */
+.cz .cz-gb-in { min-height: 100%; box-sizing: border-box; }
+.cz .cz-gb-head { position: sticky; top: calc(env(safe-area-inset-top) + 4rem); z-index: 1; display: flex; flex-direction: column; gap: 0.0625rem; min-width: 0; background: var(--tint); }
+.cz .cz-gb.is-short .cz-gb-head, .cz .cz-gb.is-tight .cz-gb-head { display: contents; }
 .cz .cz-gb-t { font-weight: 800; font-size: var(--cz-body); line-height: 1.15; overflow-wrap: anywhere; }
 .cz .cz-gb-when { font-size: var(--cz-small); font-weight: 700; line-height: 1.15; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .cz .cz-gb.is-short .cz-gb-in { flex-direction: row; flex-wrap: wrap; gap: 0 0.5rem; align-items: baseline; padding-top: 0.0625rem; padding-bottom: 0; }
 .cz .cz-gb.is-short .cz-gb-t { line-height: 1.1; }
 .cz .cz-gb-parts { display: flex; flex-wrap: wrap; gap: 0.1875rem 0.25rem; margin-top: 0.125rem; }
 .cz .cz-gb-part { padding: 0 0.4375rem; border-radius: var(--r-pill); background: rgba(255, 255, 255, .72); font-size: var(--cz-small); font-weight: 700; line-height: 1.35; color: var(--ink-2); }
-.cz .cz-gb-chat { position: absolute; top: 0.25rem; right: 0.375rem; display: inline-flex; align-items: center; gap: 0.1875rem; font-size: var(--cz-small); font-weight: 800; color: var(--ink-2); }
+.cz .cz-gb-chat { position: absolute; z-index: 2; top: 0.25rem; right: 0.375rem; display: inline-flex; align-items: center; gap: 0.1875rem; font-size: var(--cz-small); font-weight: 800; color: var(--ink-2); }
 .cz .cz-gb.has-chat .cz-gb-t { padding-right: 2.75rem; }
 /* F-106: a block carries one line of its note, in the sticky's hand, which fades out at its end instead of being cut; the whole note is in the card a tap opens. */
 .cz .cz-gb-note { align-self: flex-start; max-width: 100%; margin-top: 0.125rem; padding: 0 1.25rem 0 0.375rem; border-radius: 0.1875rem; background: var(--note); color: var(--ink); font-family: var(--font-hand); font-weight: 700; font-size: 1.125rem; line-height: 1.15;
@@ -70,8 +75,6 @@
 .cz .cz-gbk.is-pill .cz-bk-t { flex: none; min-width: 0; font-size: var(--cz-small); line-height: 1.15; white-space: normal; overflow-wrap: break-word; word-break: normal; }      /* wraps to a second line; only a single word too long for the pill breaks, never spilling out */
 .cz .cz-gbk.is-pill:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.0625rem; }
 .cz .cz-gb-open { position: absolute; inset: 0; z-index: 1; border-radius: inherit; }
-.cz .cz-gb-grip { position: absolute; z-index: 2; left: 50%; bottom: 0.1875rem; width: 2rem; height: 0.25rem; margin-left: -1rem; border-radius: var(--r-pill); background: rgba(30, 26, 46, .28); pointer-events: none; }
-.cz .cz-gb.is-short .cz-gb-grip { display: none; }
 .cz .cz-gb.is-dim { opacity: 0.35; }
 .cz .cz-gb.is-hit { box-shadow: inset 0.25rem 0 0 var(--accent), 0 0 0 0.1875rem var(--coral); }
 
@@ -86,6 +89,23 @@
 .cz .cz-gb.is-landing { transition: transform var(--motion-settle-dur) var(--motion-spring), height var(--motion-settle-dur) var(--motion-ease), box-shadow var(--motion-settle-dur) ease, scale var(--motion-settle-dur) var(--motion-spring); }
 .cz .cz-g-ghost { position: absolute; z-index: 1; left: 0; top: 0; border-radius: 0.875rem; border: 0.125rem dashed var(--ink-3); background: rgba(255, 255, 255, .45); pointer-events: none; will-change: transform; }
 .cz .cz-grid.is-editing-time .cz-gb:not(.is-held):not(.is-resizing) { opacity: 0.72; }
+
+/* F-110: a held block stays selected after the hold: it keeps its lift and shows two small round knobs, as Apple Calendar does while an event is being edited. The top one (at the top
+   right) changes the start, the bottom one (at the bottom left) the end; touching the body moves the block at once (a selected block does not scroll under a finger: tap elsewhere to
+   put the knobs away and scroll). The knobs sit in a layer beside the block (the block clips its own words), the size of the block, so they straddle its edges and never cover its title.
+   Each is a 0.75rem white circle with the block's colour as a ring and a 2.75rem touch area; the layer is moved by the script with the block while it is dragged. */
+.cz .cz-gb.is-selected { z-index: 7; touch-action: none; box-shadow: inset 0.25rem 0 0 var(--accent), var(--shadow-lg), 0 0 0 0.125rem var(--accent); }
+.cz .cz-gb.is-selected.is-short .cz-gb-in, .cz .cz-gb.is-selected.is-tight .cz-gb-in { padding-right: 2.5rem; }      /* a block with no room above its words keeps them clear of the top knob on the right */
+.cz .cz-g-knobs { --accent: var(--bubble); position: absolute; z-index: 9; pointer-events: none; }
+.cz .cz-g-knobs.is-away { opacity: 0; transition: opacity var(--motion-quick) ease; }
+.cz .cz-gb.is-menu + .cz-g-knobs { scale: 1.02; }
+.cz .cz-gb.is-wiggle + .cz-g-knobs { animation: cz-wiggle 0.42s ease-in-out infinite alternate; transform-origin: 50% 50%; }
+.cz .cz-g-knob { position: absolute; width: 0; height: 0; }
+.cz .cz-g-knob.is-top { left: calc(100% - 1.5rem); top: 0; }
+.cz .cz-g-knob.is-bottom { left: 1.5rem; top: 100%; }
+.cz .cz-g-knob i { position: absolute; left: -1.375rem; top: -1.375rem; width: 2.75rem; height: 2.75rem; pointer-events: auto; touch-action: none; cursor: ns-resize; -webkit-tap-highlight-color: transparent; }
+.cz .cz-g-knob i::after { content: ""; position: absolute; left: 1rem; top: 1rem; width: 0.75rem; height: 0.75rem; border-radius: var(--r-pill); background: #FFFFFF; box-shadow: 0 0 0 0.125rem var(--accent), var(--shadow-sm); }
+.cz .cz-g-knob.is-on i::after { box-shadow: 0 0 0 0.25rem var(--ink), var(--shadow-lg); }
 
 /* the time under the finger */
 .cz .cz-g-label { position: fixed; z-index: 75; left: 0; top: 0; min-width: 11rem; display: flex; flex-direction: column; align-items: flex-start; padding: 0.375rem 0.875rem; border-radius: 1.25rem; background: var(--ink); color: #FFFFFF; font-weight: 800;
@@ -125,7 +145,6 @@
 
 /* rename in place: the title becomes a field right there (16px so a phone does not zoom in to it) */
 .cz .cz-gb.is-editing { box-shadow: inset 0.25rem 0 0 var(--accent), var(--shadow-lg), 0 0 0 0.125rem var(--coral); z-index: 8; contain: layout style; overflow: visible; height: auto; min-height: calc(var(--l) * var(--mm)); scale: 1; }   /* a short block grows while its title is edited */
-.cz .cz-gb.is-editing .cz-gb-grip { display: none; }
 .cz .cz-gb-edit { width: 100%; min-height: 2.75rem; margin: 0.125rem 0; padding: 0.25rem 0.5rem; border: 0.125rem solid var(--ink); border-radius: 0.75rem; background: #FFFFFF; color: var(--ink); font-family: var(--font-body); font-weight: 800; font-size: 1rem; line-height: 1.2; box-sizing: border-box; }
 .cz .cz-gb-edit:focus { outline: none; border-color: var(--coral); }
 .cz .cz-gb-edit[aria-invalid="true"] { border-color: var(--coral-deep); }

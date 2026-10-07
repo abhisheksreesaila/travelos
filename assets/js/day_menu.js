@@ -63,7 +63,7 @@
   }
   function outside(e) {
     if (!menu || menu.node.contains(e.target)) return;
-    var onBlock = e.target.closest && e.target.closest('.cz-gb') === menu.block;
+    var onBlock = e.target.closest && (e.target.closest('.cz-gb') === menu.block || e.target.closest('.cz-g-knobs'));      // (F-110: the block's knobs are the block)
     close(false);
     if (!onBlock) CZ.guard(450, stage);      // the tap that put the menu away is only that: it opens nothing
   }
