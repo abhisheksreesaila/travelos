@@ -638,11 +638,11 @@ Captain, 2026-10-06: the pop-up notifications "are little jittery… should come
 - [x] every in-app toast (the canvas's move/resize/Undo toasts, the Ask sheet's result, the chat and booking messages that use a toast) appears at the top just under the heading as a light, frosted pill with a soft gradient, gliding down gently (no jump), one at a time (a new one replaces the old in place), and fading away; Undo stays a clear button inside it; reduced motion: no glide; screen readers hear it (role=status)
 - [x] it never covers the day's heading controls or the tab bar, works over the day, the week, Family and the Ask sheet, and browser tests check its place at 390 and 320, the replace-in-place, Undo, and reduced motion
 
-## F-109 One liquid motion everywhere [todo]
+## F-109 One liquid motion everywhere [done]
 Captain, 2026-10-06: the F-106 card "opens up… like a liquid… with a slight animation, and closes the animation. That's the micro interaction that I need throughout the app… makes the whole app look really pleasant." · Needs: F-107, F-108
-- [ ] one shared motion module (the F-106 card's grow-from-the-tapped-thing spring, its easing and timing, as tokens and one small script helper) used by every sheet (booking, SOS, step, add a step, the Ask sheet), the hold menu, the date chip popover and the toasts: each grows out of what was tapped and folds back into it on close
-- [ ] screen moves share it: Day ↔ Week, opening a plan's chat, tab switches (F-099), and new chat bubbles and new or moved grid blocks settle in with the same soft spring; nothing jumps; reduced motion: no movement, a short fade at most
-- [ ] browser tests check each sheet opens from and closes into its origin (transform-origin / bounding boxes at start and end), the shared tokens are the only durations used, and reduced motion
+- [x] one shared motion module (the F-106 card's grow-from-the-tapped-thing spring, its easing and timing, as tokens and one small script helper) used by every sheet (booking, SOS, step, add a step, the Ask sheet), the hold menu, the date chip popover and the toasts: each grows out of what was tapped and folds back into it on close
+- [x] screen moves share it: Day ↔ Week, opening a plan's chat, tab switches (F-099), and new chat bubbles and new or moved grid blocks settle in with the same soft spring; nothing jumps; reduced motion: no movement, a short fade at most
+- [x] browser tests check each sheet opens from and closes into its origin (transform-origin / bounding boxes at start and end), the shared tokens are the only durations used, and reduced motion
 
 ## F-110 Resize knobs like Apple Calendar; a long block keeps its name in view [todo]
 Captain, 2026-10-06 (screenshot of a 9 AM–4 PM block): the small bar at the bottom of every block looks like the iPhone sheet grabber, so he flicks it and the page just scrolls. The same screenshot shows a long block scrolled under the heading with no name visible. · Needs: F-097, F-106
