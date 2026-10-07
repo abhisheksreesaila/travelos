@@ -653,3 +653,9 @@ Captain, 2026-10-06 (screenshot of a 9 AM–4 PM block): the small bar at the bo
 ## F-111 The Ask days row grows without squashing its words [done]
 Found reviewing F-110: the Ask sheet's row of days (#ak-days-pick) grows out of the chip through GA.motion.open, which scales its text for a moment; F-110 counter-scaled only `flip`. · Needs: F-109
 - [x] GA.motion.open/close counter-scale (or clip) their content so words never stretch while any sheet, menu, row or popover grows or folds; the shape test (within 2% over the frames) covers the days row, the hold menu, the SOS sheet and the plan card
+
+## F-112 A sent bubble and a changed block move like liquid [todo]
+Captain, 2026-10-07: "Messages can have a smooth effect when we type a message… a bubble"; "when we change a block, the notification and current item get a liquid motion effect, it's jittery, it does not smoothly bounce." · Needs: F-109, F-111
+- [ ] sending a message (Family chat and plan chats): the new bubble grows out of the message box and rises into place with the shared spring while the messages above glide up to make room (FLIP), the box clears smoothly; a message from someone else settles in the same way; reduced motion: a short fade
+- [ ] moving, resizing or nudging a block: the block stays exactly where it was dropped while the change saves; when the day refreshes, nothing re-draws under it (the refreshed block takes over the same spot) and it settles into its snapped place with one soft spring and a gentle overshoot; other blocks that shift glide too; the toast waits until the block has landed (about a beat) and then glides in; no flash, no jump
+- [ ] browser tests sample frames from the drop through the save and refresh to rest: the block's position never jumps more than a small step between frames, there is exactly one settle, the toast starts after the settle; the sent bubble starts at the box and ends in the list; reduced motion
