@@ -292,8 +292,9 @@ def test_a_dropped_block_settles_with_the_spring(canvas_page):
     page = canvas_page(motion="no-preference")
     lunch = plan("Lunch", 12 * 60, 13 * 60)
     open_day(page)
-    got = page.locator(f'.cz-gb[data-act="{lunch.id}"]').evaluate("""e => { e.classList.add('is-landing'); const s = getComputedStyle(e); return [s.transitionDuration, s.transitionTimingFunction, s.transitionProperty]; }""")
-    assert got[0].startswith("0.28s") and norm(SPRING) in norm(got[1]) and "transform" in got[2] and "height" in got[2], got
+    page.evaluate("""act => { const b = document.querySelector(`.cz-gb[data-act="${act}"]`), r = b.getBoundingClientRect(); b.style.setProperty('--s', +b.style.getPropertyValue('--s') + 15); GA.motion.land(b, r); }""", lunch.id)      # F-112: GA.motion.land moves it
+    got = page.evaluate("""act => { const a = document.querySelector(`.cz-gb[data-act="${act}"]`).getAnimations().find(x => x.id === 'ga-land'); const t = a.effect.getTiming(); return [t.duration, t.easing, Object.keys(a.effect.getKeyframes()[0]).filter(k => !['offset', 'computedOffset', 'easing', 'composite'].includes(k))]; }""", lunch.id)
+    assert got[0] == SPRING_MS and norm(got[1]) == norm(SPRING) and got[2] == ["translate"], got
 
 
 def test_a_new_block_settles_with_the_spring(canvas_page):
@@ -354,7 +355,8 @@ def test_reduced_motion_new_bubbles_and_blocks_do_not_settle(canvas_page):
     open_day(page)
     got = page.locator(f'.cz-gb[data-act="{lunch.id}"]').evaluate("""e => { e.classList.add('is-new', 'is-landing'); const s = getComputedStyle(e); return [s.animationName, s.transitionDuration]; }""")
     assert got[0] == "none"
-    assert got[1] in ("0s", "0s, 0s, 0s, 0s")
+    assert got[1] in ("0s", "0s, 0s, 0s, 0s", "0s, 0s")
+    assert page.evaluate("""act => { const b = document.querySelector(`.cz-gb[data-act="${act}"]`), r = b.getBoundingClientRect(); b.style.setProperty('--s', +b.style.getPropertyValue('--s') + 15); GA.motion.land(b, r); return b.getAnimations().length + GA.motion.log.length; }""", lunch.id) == 0      # F-112: no land under reduced motion
 
 
 # ---- the Ask sheet does not jump when the date chip's row opens or closes (it moves from its old size to its new one) --------------------------

@@ -144,15 +144,16 @@
   // Nothing is moving, held, open or being typed: only then may a fresh copy replace what is on the screen.
   function calm() {
     var a = document.activeElement, v = view();
-    return !busy && !CZ.held && !g && !flick && count() === 0 && !!v && (v.dataset.level === 'week' || v.dataset.level === 'day') &&
+    return !busy && !CZ.held && !(CZ.landing && CZ.landing()) && !g && !flick && count() === 0 && !!v && (v.dataset.level === 'week' || v.dataset.level === 'day') &&
       !stage.querySelector('.cz-sheet-wrap, .cz-lift, .cz-dragging') && !(a && stage.contains(a) && a.matches('input, textarea, select, [contenteditable]')) && !(CZ.editing && CZ.editing());
   }
   function quietShow(html) {
-    var y = window.scrollY, back = CZ.beforeQuiet ? CZ.beforeQuiet() : null;
+    var y = window.scrollY, back = CZ.beforeQuiet ? CZ.beforeQuiet() : null, snap = CZ.snap ? CZ.snap() : null;      // F-112: the blocks glide from where they were (no re-draw to see)
     quietSwap = true;
     try { swap(html, ''); } finally { quietSwap = false; }
     if (back) back();
     window.scrollTo(0, y);
+    if (snap) snap();
   }
   function revalidate(u, old) {
     idle(function () {
@@ -744,11 +745,12 @@
         var y = window.scrollY, e0 = epoch;
         fetchLevel(here()).then(function (html) {
           if (e0 !== epoch) { whenIdle(function () { CZ.quiet().then(done); }); return; }       // a write ran meanwhile, so this copy is already old: ask again (even if that write fails and brings no refresh of its own)
-          var back = CZ.beforeQuiet ? CZ.beforeQuiet() : null;      // the day grid puts the focus back on the block that had it
+          var back = CZ.beforeQuiet ? CZ.beforeQuiet() : null, snap = CZ.snap ? CZ.snap() : null;      // the day grid puts the focus back on the block that had it, and sends each block from where it was to where it is
           quietSwap = true;
           try { swap(html, ''); } finally { quietSwap = false; }
           if (back) back();
           window.scrollTo(0, y);
+          if (snap) snap();
           done(true);
         }).catch(function () { done(false); });
       });

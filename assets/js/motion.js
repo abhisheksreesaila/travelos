@@ -6,7 +6,10 @@
 //   GA.motion.open(el, origin, { scrim, content, radius: [from, to] })   grow `el` (already in the page, at its final place) out of `origin`; resolves when it has landed
 //   GA.motion.close(el, origin, { scrim, content, from, radius })        fold `el` into `origin` (or, with no origin on screen, down and away); resolves when it is gone (the caller removes it)
 //   GA.motion.settle(el, { y })                                         a new bubble or block: it rises a few pixels, from a little smaller, with the same spring
-//   GA.motion.spring(el, fromTransform)                                  let go of a drag: back to rest with the spring
+//   GA.motion.land(el, from)                                            (F-112) `el` is at its real place but is drawn where `from` (a rect) was: it travels there with the spring (a block dropped or nudged, a
+//                                                                        block or bubble the day or the list moved under; resolves when it has landed)
+//   GA.motion.fade(el)                                                   reduced motion's version of a new bubble: a short fade, the one fade that is kept
+//   GA.motion.spring(el, fromTransform)                                let go of a drag: back to rest with the spring
 //   GA.motion.run(el, frames, { t: 'quick', ease: 'calm' })              any other small move, with a token's duration and easing
 //   GA.motion.stop(el)                                                   cancel whatever is moving `el` (and its words' counter-scale); use it instead of cancelling by hand
 //   GA.motion.origin()                                                   the thing tapped a moment ago (a toast, which nobody tapped, grows from it); null if nothing was
@@ -262,6 +265,38 @@
     var dur = t('settle'), e = ease('spring');
     note('settle', null, null, dur, e);
     return go(el, [{ transform: 'translateY(' + y + 'px) scale(.96)', opacity: 0 }, { transform: 'none', opacity: 1 }], dur, e, { fill: 'backwards' });
+  };
+
+  // A block (or a bubble) that is already at its real place, but is still drawn where it was (`from`: a DOMRect-like of what the eye saw a moment ago, a lifted and dragged block, or the
+  // same block just before the day was re-drawn): it travels from there to its place with the spring, one animation of transform alone, a gentle overshoot at the end. Whatever was moving
+  // it is taken over (its running land stops where it is: `from` is read by the caller, from the screen, so the new move starts exactly there). The resolved promise means "it has landed".
+  // Words are only held still when the size really changes (a resize undone); a small difference (the lifted block's 3% scale) just folds out with the box.
+  M.land = function (el, from, o) {
+    o = o || {};
+    if (reduced() || !el || !el.animate || !from) return Promise.resolve();
+    el.getAnimations().forEach(function (a) { if (a.id === 'ga-land') a.cancel(); });      // (not box(): a block's wiggle is a CSS animation that must go on)
+    var to = rectOf(el);
+    if (Math.abs(from.left - to.left) < 0.5 && Math.abs(from.top - to.top) < 0.5 && Math.abs(from.width - to.width) < 0.5 && Math.abs(from.height - to.height) < 0.5) return Promise.resolve();
+    var was = el.style.transformOrigin, big = Math.abs(from.height / Math.max(to.height, 1) - 1) > 0.05 || Math.abs(from.width / Math.max(to.width, 1) - 1) > 0.05;
+    if (big) return M.flip(el, from, to).then(function () { el.style.transformOrigin = was; });
+    var dur = t('spring'), e = ease('spring'), a;
+    note('land', from, to, dur, e);
+    if (Math.abs(from.width - to.width) < 0.5 && Math.abs(from.height - to.height) < 0.5) {      // only a move: the `translate` property, so a wiggle (a transform of the block's own) goes on under it, with no jump when it ends
+      a = el.animate([{ translate: (from.left - to.left) + 'px ' + (from.top - to.top) + 'px' }, { translate: '0px 0px' }], { duration: dur, easing: e });
+    } else {
+      el.style.transformOrigin = '0 0';
+      a = el.animate([{ transform: squash(to, from) }, { transform: 'none' }], { duration: dur, easing: e });
+    }
+    a.id = 'ga-land';
+    var back = function () { if (el.isConnected && !el.getAnimations().some(function (x) { return x.id === 'ga-land'; })) el.style.transformOrigin = was; };
+    return Promise.race([a.finished.then(back, back), new Promise(function (r) { setTimeout(r, dur + 150); })]);      // (a block taken out of the page by a refresh still lets the caller go on)
+  };
+
+  // Reduced motion's version of a new bubble: it only fades in, quickly (the one place a fade is kept).
+  M.fade = function (el) {
+    if (!el || !el.animate) return Promise.resolve();
+    note('fade', null, null, t('fade'), ease('calm'));
+    return go(el, [{ opacity: 0 }, { opacity: 1 }], t('fade'), ease('calm'), { fill: 'backwards' });
   };
 
   // Let go of a drag: back to rest with the spring.

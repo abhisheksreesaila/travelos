@@ -104,4 +104,5 @@ def test_the_screen_moves_use_the_spring_tokens():
     thread = (ASSETS / "css" / "thread.css").read_text(encoding="utf-8")
     assert "animation: ft-in var(--motion-settle-dur) var(--motion-spring)" in thread                                                        # a new chat bubble
     grid = (ASSETS / "css" / "day_grid.css").read_text(encoding="utf-8")
-    assert "animation: cz-pop var(--motion-settle-dur) var(--motion-spring)" in grid and "transform var(--motion-settle-dur) var(--motion-spring)" in grid      # a new and a moved block
+    assert "animation: cz-pop var(--motion-settle-dur) var(--motion-spring)" in grid      # a new block (a moved one is GA.motion.land, F-112)
+    assert "GA.motion.land" in (ASSETS / "js" / "day_grid.js").read_text(encoding="utf-8")

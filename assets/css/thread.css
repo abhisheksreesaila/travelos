@@ -49,7 +49,8 @@
   .ft-compose { bottom: calc(var(--tabs-h) + env(safe-area-inset-bottom)); }
 }
 @media (prefers-reduced-motion: no-preference) {
-  .ft-thread > .is-new { animation: ft-in var(--motion-settle-dur) var(--motion-spring); }
+  .ft-thread > .is-new { animation: ft-in var(--motion-settle-dur) var(--motion-spring); }      /* (only without GA.motion: thread.js moves bubbles itself, F-112) */
+  .ft-msg .ft-bub { transition: opacity var(--motion-quick) ease; }      /* a bubble I sent firms up from its "Sending" look when the server has it */
   @keyframes ft-in { from { opacity: 0; transform: translateY(0.5rem) scale(.96); } to { opacity: 1; transform: none; } }
 }
 

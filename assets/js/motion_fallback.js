@@ -7,7 +7,7 @@
   var done = function () { return Promise.resolve(); };
   GA.motion = {
     fallback: true, log: [],
-    open: done, close: done, stop: function () {}, spring: done, flip: done, run: done, settle: done,
+    open: done, close: done, stop: function () {}, spring: done, flip: done, run: done, settle: done, land: done, fade: done,
     reflow: function (el, change, o) { change(); if (o && o.during) o.during(); return done(); },
     origin: function () { return null; },
     box: function (el) { return el.getBoundingClientRect(); },
