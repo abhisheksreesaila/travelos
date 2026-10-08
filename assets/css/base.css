@@ -146,15 +146,15 @@ html:has(body > [data-theme="pacific"]) { background: #F4F9FF; }
 .tp-head { view-transition-name: ph-head; }
 .ga-header { view-transition-name: ga-header; }   /* the laptop's site header holds still too */
 ::view-transition-group(cz-tabs), ::view-transition-group(ph-head), ::view-transition-group(ga-header) { animation: none; }
-:root:active-view-transition-type(ga-fwd, ga-back)::view-transition-group(root) { animation-duration: var(--motion-spring-dur); animation-timing-function: var(--motion-spring); }
+:root:active-view-transition-type(ga-fwd, ga-back)::view-transition-group(root) { animation-duration: var(--motion-spring-dur); animation-timing-function: var(--motion-ease); }
 :root:active-view-transition-type(ga-fwd, ga-back)::view-transition-old(root),
-:root:active-view-transition-type(ga-fwd, ga-back)::view-transition-new(root) { animation-duration: var(--motion-spring-dur); animation-timing-function: var(--motion-spring); animation-fill-mode: both; }
+:root:active-view-transition-type(ga-fwd, ga-back)::view-transition-new(root) { animation-duration: var(--motion-spring-dur); animation-timing-function: var(--motion-ease); animation-fill-mode: both; }
 :root:active-view-transition-type(ga-fwd)::view-transition-old(root) { animation-name: ga-leave-left; }
 :root:active-view-transition-type(ga-fwd)::view-transition-new(root) { animation-name: ga-enter-right; }
 :root:active-view-transition-type(ga-back)::view-transition-old(root) { animation-name: ga-leave-right; }
 :root:active-view-transition-type(ga-back)::view-transition-new(root) { animation-name: ga-enter-left; }
-@keyframes ga-leave-left { to { opacity: 0; transform: translateX(calc(var(--motion-shift) * -1)); } }
-@keyframes ga-leave-right { to { opacity: 0; transform: translateX(var(--motion-shift)); } }
+@keyframes ga-leave-left { 50% { opacity: 0; } to { opacity: 0; transform: translateX(calc(var(--motion-shift) * -1)); } }      /* (the old page is gone by half way, so the two never ghost over each other, F-114) */
+@keyframes ga-leave-right { 50% { opacity: 0; } to { opacity: 0; transform: translateX(var(--motion-shift)); } }
 @keyframes ga-enter-right { from { opacity: 0; transform: translateX(var(--motion-shift)); } }
 @keyframes ga-enter-left { from { opacity: 0; transform: translateX(calc(var(--motion-shift) * -1)); } }
 @media (prefers-reduced-motion: reduce) {

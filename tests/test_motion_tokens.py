@@ -32,7 +32,7 @@ def test_the_tokens_are_the_cards_spring_and_one_set():
                          ("--motion-settle-dur", "280ms"), ("--motion-quick", "160ms"), ("--motion-fade", "120ms"), ("--motion-wiggle", "420ms")):
         assert re.search(rf"{re.escape(token)}:\s*{re.escape(value)}", css), token
     canvas = (ASSETS / "css" / "trip_canvas.css").read_text(encoding="utf-8")
-    assert ":root { --cz-dur: var(--motion-spring-dur); --cz-ease: var(--motion-spring); }" in canvas      # the canvas's levels (Day | Week, sheets) are the same spring
+    assert ":root { --cz-dur: var(--motion-spring-dur); --cz-ease: var(--motion-ease); }" in canvas      # the canvas's levels (Day | Week, sheets) glide with the calm ease, no overshoot (F-114)
 
 
 def test_no_animation_or_transition_duration_is_written_outside_the_tokens():
@@ -97,7 +97,7 @@ def test_the_helper_is_on_every_page_before_the_toast():
 
 def test_the_screen_moves_use_the_spring_tokens():
     base = (ASSETS / "css" / "base.css").read_text(encoding="utf-8")
-    assert "animation-duration: var(--motion-spring-dur); animation-timing-function: var(--motion-spring)" in base          # the page changes (F-099)
+    assert "animation-duration: var(--motion-spring-dur); animation-timing-function: var(--motion-ease)" in base          # the page changes (F-099), calm, no overshoot (F-114)
     canvas = (ASSETS / "css" / "trip_canvas.css").read_text(encoding="utf-8")
     assert "::view-transition-group(cz-hero) { animation-duration: var(--cz-dur); animation-timing-function: var(--cz-ease)" in canvas      # the tapped thing grows into the next level
     assert "animation: cz-come-in var(--cz-dur) var(--cz-ease) both" in canvas                                                               # Day | Week

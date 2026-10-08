@@ -665,3 +665,8 @@ Captain, 2026-10-07, after F-112 went live: "Message bubble is jittery… you ca
 - [x] a sent bubble rises from the box with one plain animation (translate, a slight scale, the calm ease-out, no overshoot); the bubbles above glide up with the same curve; nothing is counter-scaled frame by frame
 - [x] the server's confirmation swaps the words in place with no second move (the "Sending" line is the time line's height)
 - [x] tests_browser/test_liquid.py: the bubble above never jumps between frames, at 390 and 320
+
+## F-114 Moving between screens is smooth [done]
+Captain, 2026-10-07: "When we move between screens it's jittery. Page transitions have to be smooth too." · Needs: F-099
+- [x] every screen move (tabs, back, Day | Week, a sheet level, the next or previous day) glides with the calm ease (`--motion-ease`), no overshoot; the spring stays for small things that settle
+- [x] a page change: the old page is gone by half way, so the two pages never ghost over each other

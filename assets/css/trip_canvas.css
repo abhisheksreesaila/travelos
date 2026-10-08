@@ -5,7 +5,7 @@
    The zoom: the element that was tapped (a day row, a block card, a step chip) is named `cz-hero` for the View Transition, so it grows into the next level's heading or
    sheet and shrinks back. The page behind it softly scales and fades (zoom in: it comes toward you; zoom out: it recedes). Without View Transitions the new level pops in
    with a short scale and fade. With reduced motion nothing moves. */
-:root { --cz-dur: var(--motion-spring-dur); --cz-ease: var(--motion-spring); }   /* F-099: aliases of the one motion set in tokens.css (page changes use it too); on the root, so the transition's own pseudo-elements see them */
+:root { --cz-dur: var(--motion-spring-dur); --cz-ease: var(--motion-ease); }   /* F-114: the calm ease, no overshoot (a whole screen that bounces reads as a jitter). F-099: aliases of the one motion set in tokens.css (page changes use it too); on the root, so the transition's own pseudo-elements see them */
 .cz { --cz-small: max(var(--text-min), 0.8125rem); --cz-body: max(var(--text-min), 0.875rem); gap: 0; }
 .cz * { box-sizing: border-box; }
 .cz-stage { position: relative; min-width: 0; touch-action: pan-y pinch-zoom; }   /* sideways moves are the flick; the page's own pinch zoom works (F-092) */

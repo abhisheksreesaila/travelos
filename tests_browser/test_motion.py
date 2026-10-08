@@ -15,6 +15,7 @@ from tests_browser.test_day_grid import ari, open_day, plan  # noqa: F401
 from tests_browser.test_trip_canvas import NARROW, canvas_page, model  # noqa: F401 - fixtures
 
 SPRING = "cubic-bezier(0.3, 1.35, 0.5, 1)"
+CALM = "cubic-bezier(0.25, 0.8, 0.25, 1)"            # screen moves (F-114)
 OUT = "cubic-bezier(0.4, 0, 0.8, 0.4)"
 SPRING_MS, FOLD_MS = 380, 240                      # the tokens' values (--motion-spring-dur, --motion-dur)
 SLOW = 2500                                        # the tests that sample frames slow the tokens down so a sheet that settles its size in its first moments is caught at rest
@@ -206,7 +207,7 @@ def level_grows(page, tap, origin_sel, sheet_sel):
     page.wait_for_timeout(SPRING_MS + 250)
     sheet = page.evaluate(BOX, sheet_sel)
     assert near(got["last"], sheet, 3), (got["last"], sheet)                             # ends as the sheet
-    assert got["dur"] == SPRING_MS and norm(got["easing"]) == norm(SPRING), got           # the one spring
+    assert got["dur"] == SPRING_MS and norm(got["easing"]) == norm(CALM), got             # the screen move's calm ease
     page.locator(".cz-sheet .cz-close").click()
     page.wait_for_function("document.documentElement.dataset.czDir")
     back = hero(page)
@@ -214,7 +215,7 @@ def level_grows(page, tap, origin_sel, sheet_sel):
     page.wait_for_timeout(SPRING_MS + 250)
     expect(page.locator(sheet_sel)).to_have_count(0)
     assert near(back["last"], page.evaluate(BOX, origin_sel), 3)                         # lands back on the tapped thing
-    assert back["dur"] == SPRING_MS and norm(back["easing"]) == norm(SPRING)
+    assert back["dur"] == SPRING_MS and norm(back["easing"]) == norm(CALM)
 
 
 @pytest.mark.parametrize("vp", [PHONE, NARROW], ids=["390", "320"])
@@ -285,7 +286,7 @@ def test_day_to_week_uses_the_same_spring(canvas_page):
     page.wait_for_function("document.documentElement.dataset.czDir")
     page.wait_for_function("document.getAnimations().some(a => /view-transition-(old|new)\\(root\\)/.test(a.effect.pseudoElement || ''))")
     got = page.evaluate("""() => document.getAnimations().filter(a => /view-transition-(old|new)\\(root\\)/.test(a.effect.pseudoElement || '')).map(a => { const t = a.effect.getTiming(); return [t.duration, a.effect.getKeyframes()[0].easing]; })""")
-    assert got and all(d == SPRING_MS and norm(e) == norm(SPRING) for d, e in got), got
+    assert got and all(d == SPRING_MS and norm(e) == norm(CALM) for d, e in got), got
 
 
 def test_a_dropped_block_settles_with_the_spring(canvas_page):
