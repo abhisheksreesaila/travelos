@@ -684,3 +684,7 @@ Captain, 2026-10-07: "There is a second lag when I switch between Family and Tod
 ## F-117 The folded day bar just appears [done]
 Captain, 2026-10-08: the compact bar (day name, Day | Week, map, SOS) that shows once the top of the day scrolls off "shows up with a bounce. Can it just load normally." · Needs: F-103
 - [x] the bar appears with a very short fade (`--motion-fade`), no slide; under reduced motion at once
+
+## F-118 Chat messages just appear, as in WhatsApp [done]
+Captain, 2026-10-08: "The messaging still feels a little jittery… follow the WhatsApp model of not having any animation… the pop and the push… feels a little irritating." · Replaces the chat half of F-112/F-113
+- [x] a message I send and one that arrives are simply there; the list is at its end at once; nothing in the chat animates (no rise, glide, settle, fade or opacity transition)

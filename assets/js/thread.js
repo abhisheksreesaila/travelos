@@ -86,45 +86,15 @@
   }
 
   // Put what the server sent into the thread. An item of mine that carries the client id (cid) of a pending or failed bubble replaces that bubble in
-  // place (no second fade, order kept); anything else new is appended and fades in.
-  // F-112: before the list changes the bubbles in view are measured; afterwards each one that moved (the list scrolled up to make room) glides from where it was to where it is, and a
-  // new bubble settles into place (one that I sent rises out of the box, see the send below). Reduced motion: a short fade.
-  // F-113: every move here is one plain animation of `translate` (and `scale`) that the phone runs off the main thread, all with the same smooth ease-out, no overshoot: no per-frame
-  // counter-scaling of the words (it stuttered on the iPhone) and no second move when the server confirms (the pending bubble already has the time line's height).
-  function motion() { return window.GA && window.GA.motion; }      // (read when needed: motion.js is deferred)
-  function snapshot() {
-    var out = [], MO = motion();
-    if (!MO || MO.reduced()) return out;
-    var view = docked() ? thread.getBoundingClientRect() : { top: 0, bottom: window.innerHeight };
-    Array.prototype.forEach.call(thread.children, function (c) {
-      var r = c.getBoundingClientRect();
-      if (r.bottom > view.top && r.top < view.bottom) out.push({ el: c, r: { left: r.left, top: r.top, width: r.width, height: r.height } });
-    });
-    return out;
-  }
-  var SMOOTH = { t: "spring", ease: "calm" };
-  function glide(snap) {
-    var MO = motion();
-    snap.forEach(function (s) {
-      if (!s.el.isConnected) return;
-      s.el.getAnimations().forEach(function (a) { a.cancel(); });      // a rise or glide still running (a quick second Send): the new glide starts from where the eye saw it (`s.r`), not with a jump
-      var dy = s.r.top - s.el.getBoundingClientRect().top;
-      if (Math.abs(dy) >= 0.5) MO.run(s.el, [{ transform: "translateY(" + dy + "px)" }, { transform: "none" }], SMOOTH);
-    });
-  }
-  // A bubble I sent rises from the box into its place, a touch smaller at first (about its bottom corner, like a message leaving the field), in the same ease-out as the list's glide.
-  function rise(el, from) {
-    var MO = motion(), dy = Math.max(0, from.top - el.getBoundingClientRect().top);
-    MO.log.push({ kind: "rise" });
-    el.style.transformOrigin = "100% 100%";
-    MO.run(el, [{ transform: "translateY(" + dy + "px) scale(.92)", opacity: 0.5 }, { transform: "none", opacity: 1 }], SMOOTH);      // (one transform: the iPhone runs it off the main thread)
-  }
+  // place (order kept); anything else new is appended.
+  // F-118: no motion at all, as in WhatsApp: a message I send, or one that arrives, is simply there, and the list is simply at its end (the captain found the rise and
+  // glide of F-112/F-113 irritating). The CSS has no transition on a bubble either.
   // The server's copy of a bubble I sent takes the pending one's place without a new element: the same box keeps its place, takes the server's words, time and classes
-  // (its "Sending" look fades to the full look). Nothing moves: the "Sending" line and the time line are the same height.
+  // (its "Sending" look becomes the full look). Nothing moves: the "Sending" line and the time line are the same height.
   function adopt(old, fresh) {
     var a, i, kids = old.children, news = fresh.children;
     for (i = old.attributes.length - 1; i >= 0; i--) { a = old.attributes[i].name; if (a !== "class" && a !== "style" && !fresh.hasAttribute(a)) old.removeAttribute(a); }
-    for (i = 0; i < fresh.attributes.length; i++) { a = fresh.attributes[i]; if (a.name === "class") old.className = a.value + (old.classList.contains("is-new") ? " is-new" : ""); else old.setAttribute(a.name, a.value); }
+    for (i = 0; i < fresh.attributes.length; i++) { a = fresh.attributes[i]; if (a.name === "class") old.className = a.value; else old.setAttribute(a.name, a.value); }
     if (kids.length === news.length) {
       for (i = 0; i < kids.length; i++) {
         if (kids[i].tagName !== news[i].tagName) { kids[i].replaceWith(news[i].cloneNode(true)); continue; }
@@ -133,16 +103,13 @@
       }
     } else { old.innerHTML = fresh.innerHTML; }
   }
-  // The bubble may still be rising out of the box: its content is only swapped once that has finished, never under the motion.
   function handOver(old, fresh) {
     old._adopt = true;                                    // delivered from now on, whatever the reply does
-    var running = old.getAnimations ? old.getAnimations({ subtree: true }) : [];
-    if (!running.length) { adopt(old, fresh); return; }
-    Promise.all(running.map(function (a) { return a.finished.catch(function () {}); })).then(function () { adopt(old, fresh); });
+    adopt(old, fresh);
   }
   function merge(html, n, mine) {
     if (!html.trim() || n <= last) return;
-    var stick = mine || nearBottom(), snap = snapshot(), fresh = [], MO = motion();
+    var stick = mine || nearBottom();
     var holder = document.createElement("div");
     holder.innerHTML = html;
     Array.prototype.slice.call(holder.children).forEach(function (el) {   // a copy: appending moves each child out of the live list
@@ -150,16 +117,12 @@
       if (id <= last) return;
       var cid = el.getAttribute("data-cid"), waiting = cid ? thread.querySelector('.is-pending[data-cid="' + cid + '"]') : null;
       if (waiting) { handOver(waiting, el); return; }
-      if (!MO) el.classList.add("is-new");
       thread.appendChild(el);
-      fresh.push(el);
     });
     last = n;
     thread.setAttribute("data-last", String(last));
     if (empty) empty.hidden = true;
     if (stick) toBottom();
-    glide(snap);
-    fresh.forEach(function (el) { if (MO) (MO.reduced() ? MO.fade : MO.settle)(el); });
   }
   function append(response, mine) {
     var n = parseInt(response.headers.get("X-Thread-Last"), 10) || 0;
@@ -264,17 +227,11 @@
     if (!value) { fail("Write something first."); return; }
     fail("");
     var el = pendingBubble(value);
-    var MO = motion(), snap = snapshot(), box = text.getBoundingClientRect(), from = { left: box.left, top: box.top, width: box.width, height: box.height };
-    if (!MO) el.classList.add("is-new");
     thread.appendChild(el);
     if (empty) empty.hidden = true;
     text.value = "";
     text.focus();
     toBottom();
-    if (MO) {
-      if (MO.reduced()) MO.fade(el);
-      else { rise(el, from); glide(snap); }      // the bubble rises out of the box, the ones above glide up
-    }
     deliver(el);
   });
 

@@ -101,8 +101,6 @@ def test_the_screen_moves_use_the_spring_tokens():
     canvas = (ASSETS / "css" / "trip_canvas.css").read_text(encoding="utf-8")
     assert "::view-transition-group(cz-hero) { animation-duration: var(--cz-dur); animation-timing-function: var(--cz-ease)" in canvas      # the tapped thing grows into the next level
     assert "animation: cz-come-in var(--cz-dur) var(--cz-ease) both" in canvas                                                               # Day | Week
-    thread = (ASSETS / "css" / "thread.css").read_text(encoding="utf-8")
-    assert "animation: ft-in var(--motion-settle-dur) var(--motion-spring)" in thread                                                        # a new chat bubble
     grid = (ASSETS / "css" / "day_grid.css").read_text(encoding="utf-8")
     assert "animation: cz-pop var(--motion-settle-dur) var(--motion-spring)" in grid      # a new block (a moved one is GA.motion.land, F-112)
     assert "GA.motion.land" in (ASSETS / "js" / "day_grid.js").read_text(encoding="utf-8")

@@ -277,29 +277,24 @@ def test_a_refused_message_goes_back_to_the_box_with_the_reason(pair):
     assert ari.locator("#ft-text").input_value() == "x" * 700 and ari.evaluate("document.activeElement.id") == "ft-text"
 
 
-def test_new_bubbles_fade_in_unless_motion_is_reduced(pair):
+def test_new_bubbles_just_appear_with_no_motion_as_in_whatsapp(pair):
+    """F-118: the captain found the rise and glide irritating. A message I send and one that arrives are simply there: no animation on any bubble, and the
+    bubbles above do not move gradually (they are at their new place in the next frame)."""
     ari, mate = pair()
     for p in (ari, mate):
         p.emulate_media(reduced_motion="no-preference")
-    mate.evaluate("""() => { window.__fade = []; new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => { if (n.nodeType === 1) window.__fade.push(n.getAnimations().map(a => a.effect.getTiming().duration)); }))).observe(document.getElementById('ft-thread'), { childList: true }); }""")
-    ari.locator("#ft-text").fill("Fade me")
+    watch = """() => { window.__anims = []; const th = document.getElementById('ft-thread');
+      new MutationObserver(() => requestAnimationFrame(() => window.__anims.push(Array.from(th.querySelectorAll('*')).concat([th]).reduce((n, e) => n + e.getAnimations().length, 0)))).observe(th, { childList: true, subtree: true, characterData: true }); }"""
+    mate.evaluate(watch)
+    ari.evaluate(watch)
+    ari.locator("#ft-text").fill("Just there")
     ari.locator("#ft-send").click()
-    expect(mate.locator("#ft-thread .ft-msg")).to_contain_text("Fade me", timeout=9000)
-    durations = mate.evaluate("window.__fade")
-    assert durations and durations[0][0] == 280                                   # --motion-settle-dur: the one soft spring (F-109)
-    ari.evaluate("""() => { window.__fade = []; new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => { if (n.nodeType === 1) window.__fade.push(n.getAnimations().length); }))).observe(document.getElementById('ft-thread'), { childList: true }); }""")
-    ari.locator("#ft-text").fill("Mine fades too")
-    ari.locator("#ft-send").click()
-    expect(ari.locator("#ft-thread .ft-me").last).to_contain_text("Mine fades too")
-    assert ari.evaluate("window.__fade")[0] >= 1
-    mate.emulate_media(reduced_motion="reduce")
-    mate.evaluate("window.__fade = []")
-    ari.locator("#ft-text").fill("Still")
-    ari.locator("#ft-send").click()
-    expect(mate.locator("#ft-thread .ft-msg").last).to_contain_text("Still", timeout=9000)
-    got = mate.evaluate("window.__fade")
-    assert got and all(d in ([], [120]) for d in got)                                # F-112: reduced motion is a short fade (--motion-fade) and nothing else
-
+    expect(ari.locator("#ft-thread .ft-me").last).to_contain_text("Just there")
+    expect(mate.locator("#ft-thread .ft-msg").last).to_contain_text("Just there", timeout=9000)
+    ari.wait_for_timeout(300)
+    assert ari.evaluate("window.__anims") and set(ari.evaluate("window.__anims")) == {0}
+    assert mate.evaluate("window.__anims") and set(mate.evaluate("window.__anims")) == {0}
+    assert ari.evaluate("typeof GA === 'undefined' || !GA.motion || GA.motion.log.length === 0")
 
 @pytest.mark.parametrize("viewport", [PHONE, NARROW], ids=["390", "320"])
 def test_the_pending_and_failed_bubbles_fit_the_phone(pair, viewport):
