@@ -144,7 +144,7 @@
         if (id) fields.id = id;
         return CZ.post('/trip/canvas/plan', CZ.tripBody(fields));
       },
-      saved: function (res, title) { draft.querySelector('.cz-gb-t').textContent = title; calm(false); },      // the refresh that follows makes it a real block
+      saved: function (res, title) { draft.querySelector('.cz-gb-t').textContent = title; if (CZ.showPlans) CZ.showPlans(); calm(false); },      // the refresh that follows makes it a real block
       cancel: function () { if (draft.parentNode) draft.parentNode.removeChild(draft); calm(false); }
     });
     if (!f) { if (draft.parentNode) draft.parentNode.removeChild(draft); calm(false); return; }

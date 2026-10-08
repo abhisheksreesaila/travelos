@@ -479,3 +479,16 @@ def test_the_add_a_plan_button_shows_when_the_keyboard_reaches_it(day):
     b = box(day, ".cz-gadd")
     assert b["width"] > 40 and b["height"] >= 43.5
     expect(day.locator(".cz-gadd")).to_be_in_viewport()
+
+
+def test_a_new_plan_is_not_hidden_by_the_chats_filter_the_day_goes_back_to_all(day):
+    """F-115: the captain had Chats chosen (it is remembered); the plan he made vanished. Saving a new plan puts the filter back to All, so it shows."""
+    day.locator('.cz-kchip[data-k="chat"]').click()
+    expect(day.locator('.cz-kchip[data-k="chat"]')).to_have_attribute("aria-pressed", "true")
+    start_creating(day)
+    day.keyboard.type("Pier walk")
+    day.keyboard.press("Enter")
+    expect(toast(day)).to_contain_text("Pier walk added")
+    day.wait_for_function("() => document.querySelector('.cz-gb[data-title=\"Pier walk\"]')")
+    expect(day.locator('.cz-gb[data-title="Pier walk"]')).to_be_visible()
+    expect(day.locator('.cz-kchip[data-k="all"]')).to_have_attribute("aria-pressed", "true")

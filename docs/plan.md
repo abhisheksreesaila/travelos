@@ -670,3 +670,7 @@ Captain, 2026-10-07, after F-112 went live: "Message bubble is jittery… you ca
 Captain, 2026-10-07: "When we move between screens it's jittery. Page transitions have to be smooth too." · Needs: F-099
 - [x] every screen move (tabs, back, Day | Week, a sheet level, the next or previous day) glides with the calm ease (`--motion-ease`), no overshoot; the spring stays for small things that settle
 - [x] a page change: the old page is gone by half way, so the two pages never ghost over each other
+
+## F-115 A new plan is never hidden by the filter [done]
+Captain, 2026-10-07: "When I add a block, the notification is good but the block disappears." He had Chats chosen (the filter is remembered), so the new plan was filtered out. · Needs: F-093, F-101
+- [x] saving a new plan while a filter that hides plans is on (Chats, Hotels, Flights, Car) puts the day back to All, and the plan shows
