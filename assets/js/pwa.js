@@ -6,6 +6,22 @@
     var today = sessionStorage.getItem("ga-today");
     if (today && /^\/trip\/canvas(\?[^#]*)?$/.test(today)) document.querySelectorAll('#ph-tab-today, a.ph-back[href="/trip"]').forEach(function (a) { a.setAttribute("href", today); });
   } catch (e) { /* no storage: the tab keeps /trip */ }
+  /* F-120: iOS (the Home Screen app) can leave the fixed tab bar where the keyboard pushed it, a keyboard's height up the screen and scrolling with the page. When the
+     keyboard goes (the visible area grows back), the page is nudged so the bar is laid out again at the bottom. */
+  var vv = window.visualViewport;
+  if (vv) {
+    var lastH = vv.height;
+    vv.addEventListener("resize", function () {
+      var grew = vv.height - lastH > 100;
+      lastH = vv.height;
+      if (!grew) return;
+      window.scrollTo(window.scrollX, window.scrollY);
+      var bar = document.querySelector(".ph-tabs");
+      if (!bar) return;
+      bar.style.transform = "translateZ(0)";
+      requestAnimationFrame(function () { requestAnimationFrame(function () { bar.style.transform = ""; }); });
+    });
+  }
   if (!("serviceWorker" in navigator)) return;
   window.addEventListener("load", function () {
     navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(function () {});

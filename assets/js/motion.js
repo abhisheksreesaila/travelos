@@ -24,7 +24,7 @@
   var reducedQ = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
   var NAMES = { spring: '--motion-spring-dur', calm: '--motion-dur', dur: '--motion-dur', settle: '--motion-settle-dur', quick: '--motion-quick', fade: '--motion-fade' };
   var EASES = { spring: '--motion-spring', calm: '--motion-ease', out: '--motion-out' };
-  var FALLBACK = { spring: 380, calm: 240, dur: 240, settle: 280, quick: 160, fade: 120 };
+  var FALLBACK = { spring: 520, calm: 240, dur: 240, settle: 280, quick: 160, fade: 120 };
 
   function css(n) { return getComputedStyle(root).getPropertyValue(n).trim(); }
   function t(name) {                       // a duration token, in milliseconds

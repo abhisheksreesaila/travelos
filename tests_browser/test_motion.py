@@ -14,10 +14,10 @@ from tests_browser.test_ask_sheet import day_page, phone, open_sheet  # noqa: F4
 from tests_browser.test_day_grid import ari, open_day, plan  # noqa: F401
 from tests_browser.test_trip_canvas import NARROW, canvas_page, model  # noqa: F401 - fixtures
 
-SPRING = "cubic-bezier(0.3, 1.35, 0.5, 1)"
+SPRING = "cubic-bezier(0.3, 1.12, 0.4, 1)"
 CALM = "cubic-bezier(0.25, 0.8, 0.25, 1)"            # screen moves (F-114)
 OUT = "cubic-bezier(0.4, 0, 0.8, 0.4)"
-SPRING_MS, FOLD_MS = 380, 240                      # the tokens' values (--motion-spring-dur, --motion-dur)
+SPRING_MS, FOLD_MS = 520, 240                      # the tokens' values (--motion-spring-dur, --motion-dur)
 SLOW = 2500                                        # the tests that sample frames slow the tokens down so a sheet that settles its size in its first moments is caught at rest
 SIZES = [(390, 844), (320, 640)]
 
