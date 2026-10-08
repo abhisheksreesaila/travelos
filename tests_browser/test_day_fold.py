@@ -190,13 +190,13 @@ def test_a_title_field_being_typed_keeps_the_bar_as_it_is(phone):
     wait_folded(phone, False)
 
 
-def test_the_bar_slides_with_motion_and_only_appears_under_reduced_motion(canvas_page):
+def test_the_bar_just_appears_with_a_short_fade_and_at_once_under_reduced_motion(canvas_page):
     page = canvas_page(viewport=PHONE, motion="no-preference")
     plan("Lunch", 12 * 60, 13 * 60)
     open_day(page)
     css = "e => { const s = getComputedStyle(e); return [s.transitionProperty, s.transitionDuration]; }"
     props, dur = page.locator(".cz-fold-bar").evaluate(css)
-    assert "transform" in props and "opacity" in props and "height" not in props and "top" not in props      # transforms and opacity only, no height thrash
+    assert "opacity" in props and "transform" not in props and "height" not in props and "top" not in props      # F-117: a short fade, it does not slide in
     assert dur.split(",")[0] != "0s"
     page.emulate_media(reduced_motion="reduce")
     props, dur = page.locator(".cz-fold-bar").evaluate(css)

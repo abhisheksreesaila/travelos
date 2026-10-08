@@ -680,3 +680,7 @@ Captain, 2026-10-07: "There is a second lag when I switch between Family and Tod
 - [x] a tab screen seen before (the day, the week, Family) opens at once from the service worker's saved copy, marked `data-ga-stale`, while a fresh copy is fetched; the day revalidates and the chat polls, so it is up to date a moment later; a fresh prefetched copy still wins
 - [x] the Today tab goes straight back to the day last shown in this visit (no /trip redirect); a new visit still starts at today
 - [x] a page change is a quick cross-fade (`--motion-dur`), nothing slides; the heading swaps at once with no blur
+
+## F-117 The folded day bar just appears [done]
+Captain, 2026-10-08: the compact bar (day name, Day | Week, map, SOS) that shows once the top of the day scrolls off "shows up with a bounce. Can it just load normally." · Needs: F-103
+- [x] the bar appears with a very short fade (`--motion-fade`), no slide; under reduced motion at once

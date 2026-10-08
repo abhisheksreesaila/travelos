@@ -467,9 +467,9 @@ html { scroll-padding-top: calc(env(safe-area-inset-top) + 4.5rem); }      /* wh
 .cz .cz-fold { position: sticky; top: 0; z-index: 20; height: 0; margin-bottom: -0.75rem; pointer-events: none; }
 .cz .cz-fold-bar { position: absolute; left: 0; right: 0; top: calc(env(safe-area-inset-top) + 0.25rem); display: flex; align-items: center; gap: 0.5rem; min-height: 3.5rem; padding: 0.375rem 0.5rem 0.375rem 1rem; border-radius: 1.75rem;
   color: #FFFFFF; background: color-mix(in srgb, var(--ink) 94%, transparent); -webkit-backdrop-filter: blur(0.75rem) saturate(1.4); backdrop-filter: blur(0.75rem) saturate(1.4); box-shadow: var(--shadow-md);
-  transform: translateY(calc(-100% - env(safe-area-inset-top) - 1rem)); opacity: 0; visibility: hidden; pointer-events: none;
-  transition: transform var(--cz-dur) var(--cz-ease), opacity var(--cz-dur) var(--cz-ease), visibility 0s linear var(--cz-dur); }
-.cz .cz-fold.is-on .cz-fold-bar { transform: none; opacity: 1; visibility: visible; pointer-events: auto; transition-delay: 0s; }
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity var(--motion-fade) linear, visibility 0s linear var(--motion-fade); }      /* F-117: it just appears (a very short fade), it does not slide or bounce in */
+.cz .cz-fold.is-on .cz-fold-bar { opacity: 1; visibility: visible; pointer-events: auto; transition-delay: 0s; }
 .cz .cz-fold-name { flex: 1 1 0; min-width: 0; min-height: 2.75rem; margin: 0; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; font-family: var(--font-display); font-weight: 800; font-size: 1.125rem; line-height: 1.1;
   letter-spacing: -0.02em; text-align: left; cursor: pointer; }
 .cz .cz-fold-name:focus-visible { outline: 0.125rem solid var(--sun); outline-offset: 0.125rem; border-radius: var(--r-pill); }
