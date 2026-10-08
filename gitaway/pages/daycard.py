@@ -48,11 +48,12 @@ def notes_view(session, act, editor):
 
 
 def links_view(v, a, trip):
-    """"Open chat" (the full chat page) and, on a park block, "Rides" (the block level: what a tap on a park block used to do)."""
+    """"Open chat" (the full chat page) and, on a park block, "Open plan" (the block level: what a tap on a park block used to do)."""
     said = sum(m["n"] for key, m in v["talk"].items() if key[0] == a.id)
     out = [A(icon("chat", 16, 2.4), Span(f"Open chat · {said}" if said else "Open chat"), href=plantalk.url(a.id, "", trip), cls="cz-card-link", id="cz-card-chat")]
-    if tc.has_block(v, a.id):
-        out.append(A(icon("car", 16, 2.4), Span("Rides"), href=tc.curl(block=a.id), cls="cz-card-link", id="cz-card-rides", data_zoom="in", data_zk=f"blk-{a.id}"))
+    if tc.has_block(v, a.id):       # F-119: "Rides" read as Uber rides; this is the plan's steps, so it says so and shows how far along
+        n, done = tc._counts(v["plan"][a.id])
+        out.insert(0, A(icon("clipboard", 16, 2.4), Span(f"Open plan · {done} of {n} done" if n else "Open plan"), href=tc.curl(block=a.id), cls="cz-card-link", id="cz-card-rides", data_zoom="in", data_zk=f"blk-{a.id}"))
     return Div(*out, cls="cz-card-links")
 
 

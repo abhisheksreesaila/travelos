@@ -87,7 +87,7 @@ def test_the_card_shows_the_note_in_full_as_a_sticky_and_an_editor_can_edit_thei
     assert long in unescape(html) and f'data-note="{mine.id}"' in html and 'data-mine="1"' in html and 'class="cz-card-note' in html
     assert "Add a note" in html                     # one quiet line for another note
     assert "Open chat" in html and f'href="/trip/talk?act={a.id}' in unescape(html)
-    assert "Rides" not in html                       # a plain plan has no block level
+    assert "Open plan" not in html                       # a plain plan has no block level
 
 
 def test_an_empty_note_is_an_add_a_note_placeholder_for_an_editor_and_nothing_for_a_viewer(crew, azure):
@@ -138,7 +138,7 @@ def test_the_older_messages_route_is_gone_with_the_card_chat(trip):
 def test_a_park_block_card_has_rides_and_a_part_chat_is_not_in_the_plans(trip):
     uni = uni_id()
     html = unescape(card(trip, uni).text)
-    assert re.search(r'<a [^>]*href="/trip/canvas\?block=%s[^"]*"[^>]*>(?:(?!</a>).)*Rides' % uni, html, re.S)
+    assert re.search(r'<a [^>]*href="/trip/canvas\?block=%s[^"]*"[^>]*>(?:(?!</a>).)*Open plan · \d+ of \d+ done' % uni, html, re.S)
     assert 'data-zoom="in"' in html
 
 
