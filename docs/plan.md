@@ -674,3 +674,9 @@ Captain, 2026-10-07: "When we move between screens it's jittery. Page transition
 ## F-115 A new plan is never hidden by the filter [done]
 Captain, 2026-10-07: "When I add a block, the notification is good but the block disappears." He had Chats chosen (the filter is remembered), so the new plan was filtered out. · Needs: F-093, F-101
 - [x] saving a new plan while a filter that hides plans is on (Chats, Hotels, Flights, Car) puts the day back to All, and the plan shows
+
+## F-116 Today and Family switch at once [done]
+Captain, 2026-10-07: "There is a second lag when I switch between Family and Today… also the upper part bounced… it does something weird when I switch screens." · Needs: F-099
+- [x] a tab screen seen before (the day, the week, Family) opens at once from the service worker's saved copy, marked `data-ga-stale`, while a fresh copy is fetched; the day revalidates and the chat polls, so it is up to date a moment later; a fresh prefetched copy still wins
+- [x] the Today tab goes straight back to the day last shown in this visit (no /trip redirect); a new visit still starts at today
+- [x] a page change is a quick cross-fade (`--motion-dur`), nothing slides; the heading swaps at once with no blur

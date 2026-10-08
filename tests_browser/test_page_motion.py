@@ -169,3 +169,25 @@ def test_a_tab_switch_on_a_warm_copy_reaches_the_new_page_within_150_ms_and_runs
     print(f"\nF099 tab switch, warm service-worker copy: click -> pagereveal {ms:.0f} ms")
     assert 0 <= ms < 150
     assert page.evaluate("sessionStorage.getItem('vt2')") == "ga-fwd"
+
+
+def test_switching_between_today_and_family_opens_the_saved_copy_at_once_and_it_brings_itself_up_to_date(ctxs, base_url):
+    """F-116: the captain felt a second's lag between Today and Family. A tab screen seen before opens from the saved copy (marked stale) while a fresh one is fetched;
+    the Today tab goes straight back to the day last shown (no /trip redirect); the chat polls at once and the day revalidates, so a message sent meanwhile shows."""
+    ctx = ctxs()
+    signed_in(ctx, base_url)
+    page = ctx.new_page()
+    controlled(page, base_url, "/trip/canvas?day=0")
+    page.goto(f"{base_url}/trip/family")
+    page.wait_for_selector("#ft-compose")
+    assert page.locator("#ph-tab-today").get_attribute("href") == "/trip/canvas?day=0"
+    page.locator("#ph-tab-today").click()
+    page.wait_for_url("**/trip/canvas?day=0")
+    page.wait_for_selector(".cz-view")
+    assert page.evaluate("document.documentElement.hasAttribute('data-ga-stale')")
+    with page.expect_request(lambda r: "since=" in r.url, timeout=4000):
+        ctx.request.post(f"{base_url}/trip/family/message", form={"text": "Sent while away", "cid": "away1", "since": "0"}, headers={"X-Fragment": "1"})
+        page.locator("#ph-tab-family").click()
+        page.wait_for_url("**/trip/family")
+    assert page.evaluate("document.documentElement.hasAttribute('data-ga-stale')")
+    page.wait_for_selector("#ft-thread .ft-msg:has-text('Sent while away')")

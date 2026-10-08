@@ -113,6 +113,7 @@
     centreDay();
     askHere();
     prefetch();
+    rememberToday();
     stage.dispatchEvent(new CustomEvent('cz:swap', { detail: { quiet: quietSwap, mode: curMode } }));      // the day grid (day_grid.js) starts its scroll and its focus here
   }
 
@@ -141,6 +142,12 @@
     return t.finished.catch(function () {});
   }
 
+  // F-116: the day or week on the screen is where the Today tab comes back to (pwa.js), for the rest of this visit.
+  function rememberToday() {
+    var u = path(location.href);
+    if (!/^\/trip\/canvas(\?(day=\d+(&trip=[0-9a-f]+)?|trip=[0-9a-f]+))?$/.test(u)) return;
+    try { sessionStorage.setItem('ga-today', u); } catch (e) { /* not stored */ }
+  }
   // Nothing is moving, held, open or being typed: only then may a fresh copy replace what is on the screen.
   function calm() {
     var a = document.activeElement, v = view();
@@ -202,6 +209,7 @@
       return run(html, dir, key, remember);
     }).catch(function () { location.href = u; }).then(function () {
       busy = false;
+      rememberToday();
       if (copy !== null && levelOf(u) !== 'step' && levelOf(u) !== 'block') revalidate(u, copy);
       if (waiting) { waiting = null; goto(path(location.href), { mode: 'pop' }); }     // the address bar is the truth: show what it says
       while (idleQ.length && !busy) idleQ.shift()();
@@ -765,4 +773,6 @@
   centreDay();
   askHere();
   prefetch();
+  rememberToday();
+  if (document.documentElement.hasAttribute('data-ga-stale')) revalidate(path(location.href), '');      // F-116: opened at once from the saved copy (sw.js): bring it up to date quietly
 })();

@@ -131,6 +131,7 @@ function startPrefetch(raw) {
     try { await remember(req, res.clone()); } catch (e) {}
     return { body, headers: new Headers(res.headers) };
   })().catch(() => null);
+  entry.done.then(() => { entry.ready = true; });
   held.set(key, entry);
   return entry.done;
 }
@@ -152,6 +153,27 @@ async function fromPrefetch(req) {
   return new Response(got.body.slice(0), { status: 200, headers });
 }
 
+/* F-116: the tab screens (the day, the week, Family) open at once from the copy saved last time, marked `data-ga-stale` on its <html>, while a fresh copy is fetched
+   and saved behind it; the page then brings itself up to date (trip_canvas.js revalidates the level, thread.js polls). Anything else stays network first. */
+function tabScreen(req) {
+  if (req.mode !== "navigate") return false;
+  const url = new URL(req.url);
+  if (url.pathname === "/trip/family") return /^(\?trip=[0-9a-f]+)?$/.test(url.search);
+  return url.pathname === "/trip/canvas" && /^(\?day=\d+(&trip=[0-9a-f]+)?|\?trip=[0-9a-f]+)?$/.test(url.search);
+}
+async function staleTab(event) {
+  const req = event.request;
+  if (req.cache === "reload" || req.cache === "no-cache") return null;
+  const who = await getWho();
+  const saved = who ? await (await caches.open(pagesName(who))).match(req) : undefined;
+  if (!saved) return null;
+  if (!held.has(req.url)) event.waitUntil(fetch(req).then((res) => remember(req, res)).catch(() => {}));     // (a copy the finger already asked for is saved by the prefetch)
+  const html = (await saved.text()).replace(/<html(?=[\s>])/i, '<html data-ga-stale="1"');
+  const headers = new Headers(saved.headers);
+  headers.delete("content-length");      // (the body is a few bytes longer now)
+  return new Response(html, { status: 200, headers });
+}
+
 self.addEventListener("message", (event) => {
   const d = event.data;
   if (d && d.type === "prefetch" && typeof d.url === "string") event.waitUntil(Promise.resolve(startPrefetch(d.url)).catch(() => {}));
@@ -166,7 +188,11 @@ self.addEventListener("fetch", (event) => {
   }
   const kind = routeFor(req);
   if (kind === "asset") event.respondWith(assetFirst(req));
-  else if (kind === "page") event.respondWith(fromPrefetch(req).then((hit) => hit || pageNetworkFirst(req)));
+  else if (kind === "page") {
+    const ready = held.get(req.url);      // F-116: a fresh copy the finger already brought wins; one still on its way does not hold up a tab screen that has a saved copy
+    const first = ready && ready.ready ? fromPrefetch(req) : tabScreen(req) ? staleTab(event) : Promise.resolve(null);
+    event.respondWith(first.catch(() => null).then((hit) => hit || fromPrefetch(req)).then((hit) => hit || pageNetworkFirst(req)));
+  }
 });
 
 /* The morning plan push (F-066) and the family thread push (F-070, tag "family-thread", url /trip/family). A push is always shown (iOS requires it);

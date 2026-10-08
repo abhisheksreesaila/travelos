@@ -1,5 +1,11 @@
 /* Registers the service worker (F-044) and forgets the saved pages when a traveler signs out. */
 (function () {
+  /* F-116: the Today tab goes straight back to the day (or week) last shown in this visit, not through /trip's redirect: one trip to the server less, and the
+     service worker can open it at once from its saved copy. A new visit (the app started again) still asks /trip for today. */
+  try {
+    var today = sessionStorage.getItem("ga-today");
+    if (today && /^\/trip\/canvas(\?[^#]*)?$/.test(today)) document.querySelectorAll('#ph-tab-today, a.ph-back[href="/trip"]').forEach(function (a) { a.setAttribute("href", today); });
+  } catch (e) { /* no storage: the tab keeps /trip */ }
   if (!("serviceWorker" in navigator)) return;
   window.addEventListener("load", function () {
     navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(function () {});

@@ -97,7 +97,7 @@ def test_the_helper_is_on_every_page_before_the_toast():
 
 def test_the_screen_moves_use_the_spring_tokens():
     base = (ASSETS / "css" / "base.css").read_text(encoding="utf-8")
-    assert "animation-duration: var(--motion-spring-dur); animation-timing-function: var(--motion-ease)" in base          # the page changes (F-099), calm, no overshoot (F-114)
+    assert "animation-duration: var(--motion-dur); animation-timing-function: var(--motion-ease)" in base          # the page changes (F-099): a quick calm cross-fade (F-114, F-116)
     canvas = (ASSETS / "css" / "trip_canvas.css").read_text(encoding="utf-8")
     assert "::view-transition-group(cz-hero) { animation-duration: var(--cz-dur); animation-timing-function: var(--cz-ease)" in canvas      # the tapped thing grows into the next level
     assert "animation: cz-come-in var(--cz-dur) var(--cz-ease) both" in canvas                                                               # Day | Week

@@ -186,6 +186,7 @@
   listen(document, "visibilitychange", shown);
   if (root) root.addEventListener("ft-close", teardown);
   if (document.visibilityState !== "hidden") start();
+  if (document.documentElement.hasAttribute("data-ga-stale")) poll();      // F-116: opened at once from the saved copy (sw.js): fetch what is new now
   toBottom();
   // The chat's own script (plantalk.js) fires this after it sent a photo or a voice note: show what is new now, and scroll to it.
   thread.addEventListener("ft-refresh", function () { inflight = false; poll(true); });
