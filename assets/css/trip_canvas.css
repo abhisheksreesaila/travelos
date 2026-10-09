@@ -309,6 +309,10 @@ html[data-cz-dir="side"]::view-transition-new(root) { animation: cz-come-side va
 .cz .cz-note-sum, .cz .cz-move-sum { display: flex; align-items: center; gap: 0.5rem; min-height: 2.75rem; font-weight: 800; font-size: var(--cz-body); cursor: pointer; list-style: none; }
 .cz .cz-note-sum::-webkit-details-marker, .cz .cz-move-sum::-webkit-details-marker { display: none; }
 .cz .cz-note-form { display: flex; gap: 0.5rem; padding-bottom: 0.75rem; }
+/* F-121: the step sheet's note is a sticky you write on */
+.cz .cz-note-in.cz-note-sticky { min-height: 3.25rem; padding: 0.375rem 0.875rem; border: 0; border-radius: 0.375rem; background: var(--note); color: var(--ink); font-family: var(--font-hand); font-weight: 700; font-size: 1.75rem; line-height: 1.1; transform: rotate(-1deg); box-shadow: var(--shadow-sticker); }
+.cz .cz-note-in.cz-note-sticky::placeholder { color: var(--ink-3); }
+.cz .cz-note-in.cz-note-sticky:focus { outline: 0.1875rem solid var(--focus, #2f80ed); outline-offset: 0.125rem; transform: none; }
 .cz .cz-note-in, .cz .cz-field { flex: 1; min-width: 0; min-height: 2.75rem; padding: 0 0.875rem; border: 0.125rem solid rgba(30, 26, 46, .2); border-radius: 1rem; background: var(--card); color: var(--ink); font-family: var(--font-body); font-weight: 700; font-size: max(var(--text-min), 1rem); }
 .cz .cz-save { min-height: 2.75rem; }
 .cz .cz-move-items { display: flex; flex-direction: column; gap: 0.375rem; padding-bottom: 0.75rem; }

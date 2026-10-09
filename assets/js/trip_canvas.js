@@ -321,6 +321,12 @@
     return new Promise(function (done) { whenIdle(function () { cache = {}; goto(here(), { dir: "side", mode: "stay", key: null }).then(done, done); }); });
   }
 
+  // F-121: the step sheet's note is written on the sticky itself and saved when the keyboard goes (no Save button to find)
+  document.addEventListener('change', function (e) {
+    var i = e.target;
+    if (!i.matches || !i.matches('.cz-note-sticky') || i.value === i.defaultValue || !i.form) return;
+    if (i.form.requestSubmit) i.form.requestSubmit(); else i.form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+  });
   document.addEventListener('submit', function (e) {
     var f = e.target;
     if (!f.matches || !f.matches('form[data-cz-form]') || e.defaultPrevented) return;

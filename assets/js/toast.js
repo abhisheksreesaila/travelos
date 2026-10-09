@@ -63,7 +63,8 @@
       document.querySelectorAll('.ga-toast-static').forEach(place);
     });
   }
-  window.addEventListener('scroll', follow, { passive: true, capture: true });
+  // F-121: no following the scroll: a notice re-placed on every scrolled frame shook and fluttered; it stays where it first appeared, and moves once only when the day's compact bar comes or goes (day_fold.js).
+  document.addEventListener('cz:fold', follow);
   window.addEventListener('resize', follow);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', follow); else follow();
 

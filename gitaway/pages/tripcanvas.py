@@ -693,32 +693,6 @@ def _post_form(action, fields, *content, cls="cz-act-form", **attrs):
     return Form(*[_hidden(k, val) for k, val in fields.items()], trip_field(), *content, action=action, method="post", data_cz_form="", cls=cls, **attrs)
 
 
-def move_menu(v, s, act_id, part_id, close):
-    """The same targets as dragging, as buttons (for a keyboard or a screen reader): earlier or later in its part, each other part of the block, each other day with a plan."""
-    blk = v["plan"][act_id]
-    items = []
-
-    def go(label, ico, **fields):
-        items.append(_post_form("/trip/canvas/move", {"step": s["id"], "next": close, **fields}, Button(icon(ico, 18, 2.4), label, type="submit", cls="tp-btn tp-btn-white cz-move-btn"), cls="cz-move-form"))
-
-    here = next((p for p in blk["parts"] if p["id"] == part_id), None)
-    if here and not s["aside"]:
-        order = [x["id"] for x in here["steps"]]
-        i = order.index(s["id"])
-        if i > 0:
-            go(f"Earlier in {here['name']}", "chev-left", part=here["id"], before=order[i - 1])
-        if i < len(order) - 1:
-            go(f"Later in {here['name']}", "chev-right", part=here["id"], before=order[i + 2] if i + 2 < len(order) else "")
-    for p in blk["parts"]:
-        if p["id"] != part_id or s["aside"]:
-            go(f"{'Put into' if s['aside'] else 'To'} {p['name']}", "arrow-right", part=p["id"])
-    for other_id, other in v["plan"].items():
-        o = v["by_id"].get(other_id)
-        if o and other_id != act_id and other["parts"]:
-            go(f"To {v['dates'][o.day].strftime('%A')}, {o.title}", "calendar", act=other_id)
-    return Details(Summary(icon("grip", 18, 2.4), "Move", cls="cz-move-sum"), Div(*items, cls="cz-move-items"), cls="cz-move", id="cz-move") if items else ""
-
-
 def sheet(v, found, a):
     s, act_id, part, tod = found
     editor = access.can_edit(v["role"])
@@ -732,22 +706,22 @@ def sheet(v, found, a):
         def post(do, label, cls, ico):
             return _post_form("/trip/canvas/step", {"step": s["id"], "do": do, "next": close}, Button(icon(ico, 18, 2.6), label, type="submit", cls=cls))
         main = post("undone", "Not done", "tp-btn tp-btn-white cz-act cz-act-main", "x") if s["done"] else post("done", "Mark done", "tp-btn tp-btn-coral cz-act cz-act-main", "check")
-        side = post("back", "Put back", "tp-btn tp-btn-white cz-act", "undo") if s["aside"] else post("aside", "Set aside", "tp-btn tp-btn-white cz-act", "tray")
+        side = post("back", "Put back", "tp-btn tp-btn-white cz-act", "undo") if s["aside"] else ""      # F-121: no Set aside here (a swipe still has it); a step already set aside can be put back
         buttons = Div(main, side, cls="cz-acts")
         sheet_url = curl(step=s["id"])
         note_form = _post_form("/trip/canvas/note", {"step": s["id"], "next": sheet_url},
-                               Input(type="text", name="note", value=s["note"], maxlength=str(canvas.MAX_NOTE), placeholder="Say it in a few words", aria_label="Note", cls="cz-note-in"),
-                               Button("Save note", type="submit", cls="tp-btn tp-btn-ink cz-save"), cls="cz-note-form", data_cz_stay="")
-        more = Div(Details(Summary(icon("pencil", 18, 2.4), "Edit the note" if s["note"] else "Add a note, a fun one", cls="cz-note-sum"), note_form, cls="cz-notebox", id="cz-notebox"),
-                   move_menu(v, s, act_id, s["part"], close), cls="cz-more")
+                               Input(type="text", name="note", value=s["note"], maxlength=str(canvas.MAX_NOTE), placeholder="+ Add a note", aria_label="Note", cls="cz-note-in cz-note-sticky", enterkeyhint="done"),
+                               Button("Save note", type="submit", cls="sr-only cz-save"), cls="cz-note-form", data_cz_stay="")
+        # F-121: the note is the sticky itself: tap it and write; it saves when the keyboard goes (trip_canvas.js). No Move here: the calendar is where things move.
+        more = Div(note_form, cls="cz-more", id="cz-notebox")
     else:
         buttons = P("You can look at this step but not change it.", cls="cz-sub cz-viewer", id="cz-viewer")
     return Div(A(href=close, cls="cz-scrim", aria_label="Close", tabindex="-1", data_zoom="out"),
                Div(Div(cls="cz-grab", aria_hidden="true"),
                    Div(Div(*[Span(x, cls="cz-pill") for x in (part, where) if x], cls="cz-pills"), A(icon("x", 20, 2.6), href=close, cls="cz-close", aria_label="Close", data_zoom="out"), cls="cz-sheet-top"),
                    H2(s["title"], id="cz-sheet-title", tabindex="-1"), Span(state, cls="cz-state", id="cz-state") if state else "",
-                   sticker(s["note"], "Note", cls="cz-sticker-sheet") if s["note"] else "",
-                   Div(Span("Who's going", cls="cz-label"), who), buttons, more,
+                   more if editor else sticker(s["note"], "Note", cls="cz-sticker-sheet") if s["note"] else "",
+                   Div(Span("Who's going", cls="cz-label"), who), buttons,
                    cls="cz-sheet", role="dialog", aria_modal="true", aria_labelledby="cz-sheet-title", data_zk=f"stp-{s['id']}", data_step=s["id"]), cls="cz-sheet-wrap")
 
 

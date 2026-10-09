@@ -222,40 +222,18 @@ def test_add_a_step_is_a_button_on_the_block_for_editors_and_the_sheet_closes_ba
 def test_a_note_is_added_edited_and_cleared_from_the_step_sheet(trip):
     sid = step_id(trip, "King Kong")
     sheet = trip.get(f"/trip/canvas?step={sid}").text
-    assert "Add a note, a fun one" in sheet and 'name="note"' in sheet
+    assert "+ Add a note" in sheet and 'name="note"' in sheet
     f = forms_in(sheet, "/trip/canvas/note")[0]
     assert "name=\"trip\"" in f
     r = trip.post("/trip/canvas/note", data={**form_data(f), "note": "Go first!"}, follow_redirects=False)
     assert r.status_code == 303 and bare(r.headers["location"]) == f"/trip/canvas?step={sid}"
     again = trip.get(r.headers["location"]).text
-    assert "Go first!" in again and "Edit the note" in again
+    assert "Go first!" in again and 'value="Go first!"' in again
     assert trip.post("/trip/canvas/note", data={**form_data(f), "note": ""}, headers=JS).status_code == 204
-    assert "Add a note, a fun one" in trip.get(f"/trip/canvas?step={sid}").text
+    assert "+ Add a note" in trip.get(f"/trip/canvas?step={sid}").text
 
 
 # ---- the Move menu --------------------------------------------------------------------------------------------------------
-
-def test_the_step_sheet_has_a_move_menu_with_the_same_targets_and_every_button_lands(trip):
-    uni = uni_id()
-    sid = step_id(trip, "Minion Mayhem")
-    page = trip.get(f"/trip/canvas?step={sid}").text
-    menu = page.split('id="cz-move"')[1].split("</details>")[0]
-    for label in ("Earlier in Upper Lot", "To Lunch", "To Lower Lot", "Disney California Adventure"):
-        assert label in menu, label
-    fs = forms_in(menu, "/trip/canvas/move")
-    assert len(fs) >= 6
-    for f in fs[:]:
-        data = {**form_data(f)}
-        r = trip.post("/trip/canvas/move", data=data, follow_redirects=False)
-        assert r.status_code == 303 and r.headers["location"].startswith("/trip/canvas?block="), f
-    assert sum(1 for s in plan()["blocks"][uni]["parts"] for _ in s["steps"]) + sum(len(b["aside"]) for b in plan()["blocks"].values()) >= 0
-
-
-def test_the_move_menu_for_a_set_aside_step_offers_to_put_it_into_each_part(trip):
-    sid = step_id(trip, "Studio Tour")
-    menu = trip.get(f"/trip/canvas?step={sid}").text.split('id="cz-move"')[1].split("</details>")[0]
-    assert "Put into Lunch" in menu and "Earlier in" not in menu
-
 
 # ---- viewers --------------------------------------------------------------------------------------------------------------
 

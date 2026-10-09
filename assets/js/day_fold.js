@@ -32,6 +32,7 @@
     f.classList.toggle('is-on', on);
     f.inert = !on;
     if (on) f.removeAttribute('aria-hidden'); else f.setAttribute('aria-hidden', 'true');
+    document.dispatchEvent(new CustomEvent('cz:fold'));      // F-121: a notice on the screen moves once, to stay clear of the bar
   }
 
   function update(force) {

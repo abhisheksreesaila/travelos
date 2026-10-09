@@ -398,7 +398,7 @@ def test_the_sheet_time_field_is_the_gitaway_picker_and_can_be_picked(canvas_pag
     page.keyboard.press("Escape")
 
 
-# ---- notes and the Move menu ----------------------------------------------------------------------------------------------------
+# ---- notes on the step sheet -----------------------------------------------------------------------------------------------------
 
 def open_step(page, title):
     block(page)
@@ -406,60 +406,29 @@ def open_step(page, title):
     expect(page.locator(".cz-view[data-level=step]")).to_be_visible()
 
 
-def test_add_edit_and_clear_a_note_on_the_step_sheet(canvas_page):
+def test_the_step_sheets_note_is_a_sticky_written_on_directly_and_saved_when_the_keyboard_goes(canvas_page):
+    """F-121: no Edit the note button, no Set aside, no Move: the note is the sticky; it saves on change (the keyboard's done)."""
     page = canvas_page(viewport=TALL)
     open_step(page, "Revenge of the Mummy")
-    expect(page.locator(".cz-sheet .cz-sticker")).to_have_count(0)
-    page.locator(".cz-note-sum").click()
-    page.fill(".cz-note-in", "Sit in the front")
-    page.get_by_role("button", name="Save note").click()
-    expect(page.locator(".cz-sticker-sheet")).to_contain_text("Sit in the front")
+    sheet = page.locator(".cz-sheet")
+    expect(sheet.get_by_role("button", name="Set aside")).to_have_count(0)
+    expect(sheet.locator(".cz-move, .cz-note-sum")).to_have_count(0)
+    note = page.locator(".cz-note-sticky")
+    expect(note).to_have_value("")
+    note.fill("Sit in the front")
+    note.press("Enter")
+    expect(page.locator(".cz-note-sticky")).to_have_value("Sit in the front")
     assert page.locator(".cz-view").get_attribute("data-level") == "step"        # it stays on the step
-    expect(page.locator(".cz-note-sum")).to_contain_text("Edit the note")
     page.locator(".cz-close").click()
     expect(page.locator('.cz-swipe:has-text("Revenge of the Mummy") .cz-sticker-step')).to_contain_text("Sit in the front")
     page.locator('.cz-swipe:has-text("Revenge of the Mummy") .cz-step').click()
-    page.locator(".cz-note-sum").click()
-    page.fill(".cz-note-in", "")
-    page.get_by_role("button", name="Save note").click()
-    expect(page.locator(".cz-sticker-sheet")).to_have_count(0)
-    expect(page.locator(".cz-note-sum")).to_contain_text("Add a note")
+    note = page.locator(".cz-note-sticky")
+    note.fill("")
+    note.blur()
+    expect(page.locator(".cz-note-sticky")).to_have_value("")
+    page.wait_for_function("() => !document.querySelector('.cz-note-form[data-sent]')")
     step = [s for p in plan()["blocks"]["a1"]["parts"] for s in p["steps"] if s["title"] == "Revenge of the Mummy"][0]
     assert step["note"] == ""
-
-
-def test_the_move_menu_on_the_step_sheet_does_what_dragging_does(canvas_page):
-    page = canvas_page(viewport=TALL)
-    open_step(page, "Minion Mayhem")
-    page.locator(".cz-move-sum").click()
-    for label in ("Earlier in Upper Lot", "To Lunch", "To Lower Lot"):
-        expect(page.get_by_role("button", name=label)).to_be_visible()
-    checks(page)
-    page.get_by_role("button", name="To Lunch").click()
-    expect(toast(page)).to_contain_text("Minion Mayhem moved to Lunch")
-    expect(page.locator(".cz-view[data-level=block]")).to_be_visible()
-    assert part_titles("a1", "Lunch")[-1] == "Minion Mayhem"
-    toast(page).get_by_role("button", name="Undo").click()
-    expect(toast(page)).to_have_text("Moved back")
-    assert "Minion Mayhem" in part_titles("a1", "Upper Lot")
-    open_step(page, "Minion Mayhem")
-    page.locator(".cz-move-sum").click()
-    other = other_act("a1")
-    page.get_by_role("button", name="Disney California Adventure").click()
-    expect(toast(page)).to_contain_text("Minion Mayhem moved to ")
-    expect(page.locator(".cz-view[data-level=block]")).to_be_visible()
-    assert f"block={other}" in page.url
-
-
-def test_the_move_menu_works_from_the_keyboard(canvas_page):
-    page = canvas_page(viewport=TALL)
-    open_step(page, "King Kong")
-    page.locator(".cz-move-sum").focus()
-    page.keyboard.press("Enter")
-    expect(page.get_by_role("button", name="To Lunch")).to_be_visible()
-    page.get_by_role("button", name="To Lunch").focus()
-    page.keyboard.press("Enter")
-    expect(toast(page)).to_contain_text("King Kong moved to Lunch")
 
 
 # ---- filters ---------------------------------------------------------------------------------------------------------------------
@@ -649,8 +618,6 @@ def test_everything_fits_at_320_with_44px_targets_and_no_sideways_scroll(canvas_
     checks(page)
     page.locator(".cz-close").click()
     page.locator(".cz-swipe .cz-step").first.click()
-    page.locator(".cz-note-sum").click()
-    page.locator(".cz-move-sum").click()
     checks(page)
 
 
@@ -724,10 +691,7 @@ def test_screenshots(canvas_page):
     page.screenshot(path=f"{out}/08-add-a-step-390.png")
     page.locator(".cz-close").click()
     page.locator(".cz-swipe .cz-step").first.click()
-    page.locator(".cz-note-sum").click()
-    page.screenshot(path=f"{out}/09-step-sheet-note-and-move-390.png")
-    page.locator(".cz-move-sum").click()
-    page.screenshot(path=f"{out}/10-move-menu-390.png")
+    page.screenshot(path=f"{out}/09-step-sheet-390.png")
 
 
 # ---- review fixes: real touch events (CDP), a cancelled drag ---------------------------------------------------------------------
