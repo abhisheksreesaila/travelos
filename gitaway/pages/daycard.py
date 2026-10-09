@@ -95,4 +95,5 @@ def register(app):
             n = cal.edit_note(session, note_id, text) if note_id else cal.add_note(session, text, act=act, id=tc._field(form, "id", 12) or None)      # the card's own id: a retry after a lost reply adds nothing twice
         except cal.CalendarError as e:
             return tc._json({"error": str(e)}, 422)
-        return tc._json({"note": {"id": n.id, "text": n.text}})
+        got = {"note": {"id": n.id, "text": n.text}}
+        return tc._reply(request, session, got, tc.safe_next(form.get("next"))) if form.get("next") else tc._json(got)      # F-124: with the day drawn after it

@@ -37,7 +37,10 @@
     return /(^|&)step=/.test(q) || /(^|&)add=1/.test(q) || /(^|&)booked=/.test(q) || /(^|&)sos=1/.test(q) ? 'step' : /(^|&)block=/.test(q) ? 'block' : /(^|&)day=/.test(q) ? 'day' : 'week';
   }
 
+  // F-124: a write's reply carries the level drawn after it (`level`), kept here until the next write: the refresh that follows the write needs no second trip to the server.
+  var handed = null;
   function fetchLevel(u) {
+    if (handed && handed.u === u && handed.e === epoch) return Promise.resolve(handed.html);
     var now = Date.now(), hit = cache[u];
     if (hit && now - hit.at < FRESH) return hit.promise;
     var p = fetch(fragUrl(u), { credentials: 'same-origin', headers: { 'X-Canvas': '1' } }).then(function (r) {
@@ -305,12 +308,16 @@
   var epoch = 0;
   function post(url, body) {
     epoch++;
-    return post1(url, body).then(function (r) { epoch++; return r; }, function (e) { epoch++; throw e; });
+    return post1(url, body).then(function (r) {
+      epoch++;
+      handed = r && typeof r.level === 'string' && r.url ? { u: path(r.url), html: r.level, e: epoch } : null;
+      return r;
+    }, function (e) { epoch++; handed = null; throw e; });
   }
   function post1(url, body) {
     var ctl = typeof AbortController === 'function' ? new AbortController() : null;
     var timer = ctl ? setTimeout(function () { ctl.abort(); }, 12000) : 0;      // a write that never answers must not leave the day waiting for ever
-    return fetch(url, { method: 'POST', body: body, credentials: 'same-origin', headers: { 'X-Canvas': '1' }, signal: ctl ? ctl.signal : undefined }).then(function (r) {
+    return fetch(url, { method: 'POST', body: body, credentials: 'same-origin', headers: { 'X-Canvas': '1', 'X-Canvas-Level': '1' }, signal: ctl ? ctl.signal : undefined }).then(function (r) {
       clearTimeout(timer);
       if (r.status === 422) return r.json().then(function (j) { var e = new Error('refused'); e.soft = j.error || 'That did not work.'; throw e; });
       if (r.status === 204) { var next = r.headers.get('X-Canvas-Url'); if (!next) throw new Error('write'); return { url: next }; }
@@ -353,10 +360,12 @@
     var body = new URLSearchParams(new FormData(f));
     var buttons = f.querySelectorAll('button');
     buttons.forEach(function (b) { b.disabled = true; });
+    var early = tickNow(f, body);
     post(f.action, body).then(function (res) {
       cache = {};
       if (res.toast) showToast(res.toast, res.undo);
-      if (path(res.url) === here()) inPlace(res.url);      // F-122: a write that stays on this level (a tick, a note) updates it where it is, with no fade
+      if (early) CZ.quiet();                               // already on the screen: the reply only brings the counts up to date, in place
+      else if (path(res.url) === here()) inPlace(res.url);      // F-122: a write that stays on this level (a tick, a note) updates it where it is, with no fade
       else if (f.hasAttribute('data-cz-stay')) goto(res.url, { dir: 'side', mode: 'stay', key: null });
       else zoomOutTo(res.url);
     }).catch(function (err) {
@@ -367,9 +376,26 @@
         delete f.dataset.sent;
         return;
       }
+      if (early) { showToast('Could not save that. Check your connection.'); CZ.quiet(); return; }      // the screen goes back to what is saved
       f.submit();     // the plain form post does the same write and redirects to the level
     });
   });
+
+  // F-126: Done and Not done never wait for the server. The swipe's Done ticks the row where it is; the sheet's Mark done goes back to the plan at once with the
+  // row already ticked. The save runs behind (its reply brings the counts up to date, F-124). True when it was shown early.
+  function tickNow(f, body) {
+    var d = body.get('do'), sid = body.get('step'), next = body.get('next');
+    if (f.getAttribute('action') !== '/trip/canvas/step' || (d !== 'done' && d !== 'undone') || !sid || !next) return false;
+    var mark = function () {
+      var row = stage.querySelector('.cz-step[data-step="' + sid + '"]');
+      if (row) row.classList.toggle('is-done', d === 'done');
+    };
+    if (path(next) === here()) { mark(); closeSwipes(); return true; }      // (the swiped row slides shut as it ticks)
+    if (busy) return false;
+    stage.addEventListener('cz:swap', mark, { once: true });
+    zoomOutTo(next);
+    return true;
+  }
 
   // ---- the toast, and Undo ----------------------------------------------------------------------------------------------
   // F-108: the one toast is assets/js/toast.js (GA.toast); a function is the day grid's own Undo, anything else the snapshot the server's undo route takes.

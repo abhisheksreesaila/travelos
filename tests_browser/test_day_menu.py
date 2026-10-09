@@ -183,6 +183,7 @@ def test_a_refresh_that_was_fetched_before_a_nudge_never_redraws_the_block_as_it
             held.append((route, route.fetch()))                # the first refresh only: the server's answer as it is now, handed to the page later
 
     phone.route(re.compile(rf".*day={SUNDAY}&frag=1$"), hold_back)
+    phone.route("**/trip/canvas/plan", lambda r: r.continue_(headers={k: v for k, v in r.request.headers.items() if k.lower() != "x-canvas-level"}))      # (F-124 hands the level over with the write; here the old separate refresh is what is raced)
     hold_and_let_go(phone, lunch.id)
     menu_item(phone, "Longer").click()
     expect(toast(phone)).to_contain_text("now ends 1:15 PM")

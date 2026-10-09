@@ -192,7 +192,7 @@
       if (!v || v === was) { cancel(); return; }
       sending = true; o.saving = true;
       ta.disabled = true;
-      CZ.post('/trip/canvas/actnote', CZ.tripBody({ act: o.act, text: v, note: id, id: add && area.dataset.next ? 'n' + area.dataset.next : undefined })).then(function (res) {
+      CZ.post('/trip/canvas/actnote', CZ.tripBody({ act: o.act, text: v, note: id, id: add && area.dataset.next ? 'n' + area.dataset.next : undefined, next: CZ.here() })).then(function (res) {
         var saved = res.note || { id: id, text: v };
         if (!over) over = true;
         o.note = null; o.saving = false; o.commitNote = null;

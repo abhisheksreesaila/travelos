@@ -18,7 +18,8 @@
 .cz .cz-head-text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
 .cz .cz-head-k { font-size: var(--cz-small); font-weight: 800; letter-spacing: 0.04em; color: var(--ink-3); }
 .cz .cz-head h1 { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 1.75rem; line-height: 1.08; letter-spacing: -0.03em; overflow-wrap: anywhere; }
-.cz .cz-head.is-deep { padding: 0.75rem; border-radius: 1.75rem; color: #FFFFFF; background: color-mix(in srgb, var(--ink) 94%, transparent); -webkit-backdrop-filter: blur(0.75rem) saturate(1.4); backdrop-filter: blur(0.75rem) saturate(1.4); box-shadow: var(--shadow-md); }
+/* F-127: the dark head and the compact bar are solid ink: a blur under a 94% fill could not be seen and cost every scrolled frame */
+.cz .cz-head.is-deep { padding: 0.75rem; border-radius: 1.75rem; color: #FFFFFF; background: var(--ink); box-shadow: var(--shadow-md); }
 .cz .cz-head.is-deep { flex-wrap: wrap; }
 .cz .cz-head.is-deep .cz-faces { flex-basis: 100%; padding: 0 0 0 3.5rem; }
 .cz .cz-head.is-deep .cz-av-initials { border-color: rgba(255, 255, 255, .75); color: #FFFFFF; }
@@ -132,6 +133,12 @@
 .cz .cz-step { display: flex; align-items: flex-start; gap: 0.625rem; min-height: 2.75rem; padding: 0.5rem 0.75rem; border-radius: 1.125rem; background: var(--card); box-shadow: var(--shadow-sm); color: var(--ink); min-width: 0; }
 .cz .cz-ring { border: 0.125rem solid var(--ink-3); margin-top: 0.0625rem; }
 .cz .cz-step.is-done .cz-ring { background: var(--mint); border-color: var(--mint); }
+/* F-125: the circle is a tick box: a finger-sized target around it, and the fill and check change quickly, with no movement */
+.cz .cz-ring { position: relative; transition: background-color var(--motion-quick) var(--motion-ease), border-color var(--motion-quick) var(--motion-ease); }
+.cz .cz-ring::before { content: ""; position: absolute; inset: -0.625rem; }
+.cz .cz-ring svg { opacity: 0; transition: opacity var(--motion-quick) var(--motion-ease); }
+.cz .cz-step.is-done .cz-ring svg { opacity: 1; }
+.cz .cz-step-t { transition: color var(--motion-quick) var(--motion-ease); }
 .cz .cz-step.is-done .cz-step-t { text-decoration: line-through; color: var(--ink-3); }
 .cz .cz-step-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.125rem; }
 .cz .cz-step-line { display: flex; gap: 0.5rem; align-items: baseline; flex-wrap: wrap; }
@@ -470,7 +477,7 @@ html[data-cz-dir="prev"]::view-transition-new(root) { animation: cz-in-left var(
 html { scroll-padding-top: calc(env(safe-area-inset-top) + 4.5rem); }      /* what is scrolled into view (a focused field, scrollIntoView) stops below the bar */
 .cz .cz-fold { position: sticky; top: 0; z-index: 20; height: 0; margin-bottom: -0.75rem; pointer-events: none; }
 .cz .cz-fold-bar { position: absolute; left: 0; right: 0; top: calc(env(safe-area-inset-top) + 0.25rem); display: flex; align-items: center; gap: 0.5rem; min-height: 3.5rem; padding: 0.375rem 0.5rem 0.375rem 1rem; border-radius: 1.75rem;
-  color: #FFFFFF; background: color-mix(in srgb, var(--ink) 94%, transparent); -webkit-backdrop-filter: blur(0.75rem) saturate(1.4); backdrop-filter: blur(0.75rem) saturate(1.4); box-shadow: var(--shadow-md);
+  color: #FFFFFF; background: var(--ink); box-shadow: var(--shadow-md);
   opacity: 0; visibility: hidden; pointer-events: none;
   transition: opacity var(--motion-fade) linear, visibility 0s linear var(--motion-fade); }      /* F-117: it just appears (a very short fade), it does not slide or bounce in */
 .cz .cz-fold.is-on .cz-fold-bar { opacity: 1; visibility: visible; pointer-events: auto; transition-delay: 0s; }

@@ -356,3 +356,15 @@ def test_canvas_addresses_carry_the_trip_so_a_stale_tab_stays_on_its_trip(trip):
 def test_week_view_links_in_today_keep_their_trip(trip):
     today = trip.get("/trip?day=1").text
     assert re.search(r'href="/trip/canvas\?block=a1&amp;trip=[0-9a-f]+"', today)
+
+
+def test_a_write_asked_for_its_level_carries_the_screen_after_it(trip):
+    """F-124: one round trip per write: with X-Canvas-Level the reply has the level drawn after the write, the same as a fetch of it would be."""
+    uni, sid = uni_id(), step_id(trip, "King Kong")
+    nxt = f"/trip/canvas?block={uni}"
+    r = trip.post("/trip/canvas/step", data={"step": sid, "do": "done", "next": nxt}, headers={"X-Canvas": "1", "X-Canvas-Level": "1"})
+    got = r.json()
+    assert r.status_code == 200 and got["url"] == nxt
+    assert got["level"] == trip.get(nxt + "&frag=1").text and "is-done" in got["level"]
+    plain = trip.post("/trip/canvas/step", data={"step": sid, "do": "undone", "next": nxt}, headers={"X-Canvas": "1"})
+    assert plain.status_code == 204                                                    # without the ask, the old reply

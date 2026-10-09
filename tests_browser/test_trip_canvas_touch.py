@@ -4,6 +4,7 @@ Done and Set aside, and right (or tap elsewhere) to put them away; add a step fr
 sheet; filter chips by person and by list (highlight what matches, dim the rest, remembered per person); the list card and its chips; a viewer can filter and nothing
 else. Also 320 wide, reduced motion, the View Transition on a drop, no sideways scroll and 44px targets. The trip is the captain's Universal + California Adventure
 messages through a canned model answer; nothing here reaches the network."""
+import re
 import os
 import uuid
 
@@ -770,3 +771,24 @@ def test_a_drop_that_lands_during_a_zoom_waits_for_it_and_then_refreshes(canvas_
     page.locator(".cz-gb-open").click(position={"x": 90, "y": 40})                      # the level shown is the fresh one: the step is in Lunch when the block is opened
     page.locator("#cz-card-rides").click()      # F-106: a tap opens the card; Rides is the way to the block level
     expect(page.locator('.cz-bpart:has(h2:text-is("Lunch")) .cz-swipe:has-text("Minion Mayhem")')).to_have_count(1)
+
+
+def test_tapping_a_steps_circle_ticks_it_at_once_and_saves_without_opening_the_sheet(canvas_page):
+    """F-125 (and F-124: the reply carries the level, so the counts come up to date with no second fetch)."""
+    page = canvas_page(viewport=PHONE)
+    block(page)
+    row = page.locator('.cz-swipe:has-text("King Kong") .cz-step')
+    prog = page.locator(".cz-prog").inner_text()
+    fetched = []                                                                                  # (idle prefetches of the steps are fine; a re-fetch of this block is not)
+    page.on("request", lambda r: fetched.append(r.url) if "frag=1" in r.url and "block=" in r.url else None)
+    row.locator(".cz-ring").click()
+    expect(row).to_have_class(re.compile(r"\bis-done\b"))
+    assert page.locator(".cz-view").get_attribute("data-level") == "block"                  # the sheet did not open
+    expect(page.locator(".cz-prog")).not_to_have_text(prog)                                    # the count follows, in place
+    step = [s for p in plan()["blocks"]["a1"]["parts"] for s in p["steps"] if s["title"].startswith("King Kong")][0]
+    assert step["done"] and fetched == []
+    page.locator('.cz-swipe:has-text("King Kong") .cz-ring').click()                         # and back
+    expect(page.locator('.cz-swipe:has-text("King Kong") .cz-step')).not_to_have_class(re.compile(r"\bis-done\b"))
+    page.wait_for_function("() => !document.querySelector('.cz-step[data-ticking]')")
+    step = [s for p in plan()["blocks"]["a1"]["parts"] for s in p["steps"] if s["title"].startswith("King Kong")][0]
+    assert not step["done"]

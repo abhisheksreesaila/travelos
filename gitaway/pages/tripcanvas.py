@@ -17,7 +17,7 @@ wide day view: the week as a strip across the top, the day's parts as lanes, the
 """
 
 import json
-from urllib.parse import urlencode
+from urllib.parse import parse_qs, urlencode, urlsplit
 
 from fasthtml.common import A, Button, Details, Div, Form, H1, H2, H3, Header, Input, Label, Link, Main, Nav, P, Section, Span, Summary, Template, to_xml
 from starlette.responses import RedirectResponse, Response
@@ -30,7 +30,7 @@ from gitaway.pages.around_ui import around_url
 from gitaway.pages.plantalk import talk_badge   # F-091: the chat badge on a plan and on a part
 
 HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/help.css"), *passes_ui.HEAD, Link(rel="stylesheet", href="/assets/css/trip_canvas.css"), Link(rel="stylesheet", href="/assets/css/day_grid.css"), Link(rel="stylesheet", href="/assets/css/plantalk.css"), Link(rel="stylesheet", href="/assets/css/day_card.css"))   # pickers: the add-a-step sheet has a time field (F-082)
-SCRIPTS = ("/assets/js/vendor/idiomorph.js", "/assets/js/trip_canvas.js", "/assets/js/day_grid.js", "/assets/js/day_menu.js", "/assets/js/day_new.js", "/assets/js/day_fold.js", "/assets/js/day_card.js")
+SCRIPTS = ("/assets/js/vendor/idiomorph.js", "/assets/js/trip_canvas.js", "/assets/js/canvas_tick.js", "/assets/js/day_grid.js", "/assets/js/day_menu.js", "/assets/js/day_new.js", "/assets/js/day_fold.js", "/assets/js/day_card.js")
 RANK = {"week": 0, "day": 1, "block": 2, "step": 3}
 PART_TINTS = ("sky", "sun", "grape", "bubble", "mint")
 MAX_FACES = 5
@@ -628,7 +628,7 @@ def lane_label(s):
 
 
 def _row(s, hero, edit):
-    ring = Span(icon("check", 16, 3) if s["done"] else "", cls="cz-ring", aria_hidden="true")
+    ring = Span(icon("check", 16, 3), cls="cz-ring", aria_hidden="true")      # F-125: the check is always there, shown when done, so a tap can tick the circle at once
     link = A(ring, Div(Div(Span(s["time"], cls="cz-time") if s["time"] else "", Span(s["title"], cls="cz-step-t"), cls="cz-step-line"), sticker(s["note"], cls="cz-sticker-step") if s["note"] else "", cls="cz-step-main"),
              faces_of([s], 3), Span("Done", cls="sr-only") if s["done"] else "", href=curl(step=s["id"]), cls=f"cz-step{' is-done' if s['done'] else ''}", data_zoom="in", data_step=s["id"], **({"data_zk": f"stp-{s['id']}"} if hero else {}))
     return Div(swipe_buttons(s) if edit else "", link, cls="cz-swipe", **step_data(s, edit))
@@ -834,6 +834,25 @@ def _script(request):
     return request.headers.get("x-canvas") == "1"
 
 
+def level_html(session, request, url):
+    """F-124: the fragment the canvas address `url` answers (as GET ?frag=1 would), so a write's reply carries the screen after it: one round trip, not two.
+    None when it is not a plain level of the open trip (the script then fetches it as before)."""
+    q = {k: v[0] for k, v in parse_qs(urlsplit(url).query).items()}
+    if (q.get("trip") and q["trip"] != ses.open_trip_id()) or q.get("add") or q.get("err"):
+        return None
+    v = load(session)
+    v["ua"], v["err"] = request.headers.get("user-agent", ""), ""
+    got = resolve(v, q.get("day", "")[:3], q.get("block", ""), q.get("step", "")[:40], None, q.get("booked", "")[:20], q.get("sos") == "1")
+    return to_xml(got[1]) if got else None
+
+
+def _reply(request, session, data, url):
+    """A script's write reply: `data`, and (when the script asks with X-Canvas-Level) the level at `url` drawn after the write."""
+    if request.headers.get("x-canvas-level") == "1" and (html := level_html(session, request, url)) is not None:
+        data = {**data, "url": url, "level": html}
+    return _json(data)
+
+
 def _field(form, name, cap=80):
     return str(form.get(name) or "")[:cap]
 
@@ -929,6 +948,8 @@ def register(app):
         except canvas.CanvasError:
             pass       # a step someone else just removed: show where we were
         if _script(request):
+            if request.headers.get("x-canvas-level") == "1":
+                return _reply(request, session, {"url": nxt}, nxt)
             return Response(status_code=204, headers={"X-Canvas-Url": nxt, "Cache-Control": "no-store"})
         return RedirectResponse(nxt, status_code=303)
 
@@ -947,7 +968,7 @@ def register(app):
         url = curl(block=r["act"]) if r["act"] != r["undo"]["act"] and nxt.startswith("/trip/canvas?block=") else nxt
         if not _script(request):
             return RedirectResponse(url, status_code=303)
-        return _json({"url": url, "toast": f"{r['title']} moved to {r['where']}" if r["changed"] else "", "undo": r["undo"] if r["changed"] else None})
+        return _reply(request, session, {"url": url, "toast": f"{r['title']} moved to {r['where']}" if r["changed"] else "", "undo": r["undo"] if r["changed"] else None}, url)
 
     @app.post("/trip/canvas/undo")
     async def canvas_undo(request, session):
@@ -961,7 +982,7 @@ def register(app):
             canvas.restore(session, json.loads(raw) if raw else None)
         except (canvas.CanvasError, ValueError):
             return _json({"error": "There is nothing to undo."}, 422) if _script(request) else RedirectResponse(nxt, status_code=303)
-        return _json({"url": nxt, "toast": "Moved back"}) if _script(request) else RedirectResponse(nxt, status_code=303)
+        return _reply(request, session, {"url": nxt, "toast": "Moved back"}, nxt) if _script(request) else RedirectResponse(nxt, status_code=303)
 
     @app.post("/trip/canvas/plan")
     async def canvas_plan(request, session):
@@ -975,7 +996,7 @@ def register(app):
             got = plan_write(session, op, act, form)
         except cal.CalendarError as e:
             return _json({"error": str(e)}, 422) if _script(request) else RedirectResponse(nxt, status_code=303)
-        return _json(got) if _script(request) else RedirectResponse(nxt, status_code=303)
+        return _reply(request, session, got, nxt) if _script(request) else RedirectResponse(nxt, status_code=303)
 
     @app.post("/trip/canvas/add")
     async def canvas_add(request, session):
@@ -994,7 +1015,7 @@ def register(app):
             code = "title" if "name" in msg else "time" if "time" in msg else "other"
             return RedirectResponse(curl(block=act, add=True, part=_field(form, "part", 40), title=_field(form, "title"), note=_field(form, "note", canvas.MAX_NOTE), err=code), status_code=303)
         title = " ".join(_field(form, "title", 200).split())[:80]
-        return _json({"url": nxt, "toast": f"{title} added"}) if _script(request) else RedirectResponse(nxt, status_code=303)
+        return _reply(request, session, {"url": nxt, "toast": f"{title} added"}, nxt) if _script(request) else RedirectResponse(nxt, status_code=303)
 
     @app.post("/trip/canvas/note")
     async def canvas_note(request, session):
@@ -1007,5 +1028,7 @@ def register(app):
         except canvas.CanvasError:
             pass
         if _script(request):
+            if request.headers.get("x-canvas-level") == "1":
+                return _reply(request, session, {"url": nxt}, nxt)
             return Response(status_code=204, headers={"X-Canvas-Url": nxt, "Cache-Control": "no-store"})
         return RedirectResponse(nxt, status_code=303)
