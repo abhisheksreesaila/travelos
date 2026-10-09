@@ -16,7 +16,7 @@ SHOTS = os.environ.get("GLASS_SHOTS")
 
 COLOURS = """() => {
   const rgba = (el) => getComputedStyle(el).backgroundColor;
-  const sheet = document.querySelector('.cz-sheet'), bar = document.querySelector('.ph-tabs');
+  const sheet = document.querySelector('.cz-sheet'), bar = document.querySelector('.ph-tabs-r');
   const out = {};
   for (const [k, el] of [['sheet', sheet], ['bar', bar]]) if (el) {
     const cs = getComputedStyle(el);
@@ -52,16 +52,16 @@ def over(bg, backdrop):
 
 
 @pytest.mark.parametrize("viewport", [PHONE, NARROW], ids=["390", "320"])
-def test_the_bar_is_three_equal_columns_with_ask_in_the_true_centre(imported_page, base_url, viewport):
+def test_the_bar_is_a_today_pill_on_the_left_and_a_capsule_on_the_right(imported_page, base_url, viewport):
+    """F-133: Calendar's bar: Today a pill at the left edge, Ask and Family one capsule at the right edge, every target 44px."""
     page = imported_page(viewport=viewport)
     day(page, base_url, 1)
-    boxes = [page.locator(f"#ph-tab-{k}").bounding_box() for k in ("today", "ask", "family")]
     assert page.locator(".ph-tab").count() == 3
-    widths = [round(b["width"]) for b in boxes]
-    assert max(widths) - min(widths) <= 1
-    bar = page.locator(".ph-tabs").bounding_box()
-    mid = boxes[1]["x"] + boxes[1]["width"] / 2
-    assert abs(mid - (bar["x"] + bar["width"] / 2)) < 1.5 and abs(mid - viewport["width"] / 2) < 1.5
+    today, cap = page.locator("#ph-tab-today").bounding_box(), page.locator(".ph-tabs-r").bounding_box()
+    assert today["x"] < 24 and cap["x"] + cap["width"] > viewport["width"] - 24 and abs((today["y"] + today["height"] / 2) - (cap["y"] + cap["height"] / 2)) < 1.5
+    for k in ("today", "ask", "family"):
+        b = page.locator(f"#ph-tab-{k}").bounding_box()
+        assert b["width"] >= 43.5 and b["height"] >= 43.5
     assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth")
 
 

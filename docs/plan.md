@@ -730,3 +730,15 @@ Measured at 4x CPU slowdown: a drop's toast and refresh landed in one ~80 ms tas
 
 ## F-132 Step sheets fetched ahead [done]
 On a block, the sheets of the steps on the screen (up to 8, about 4 KB each over Cloudflare's compression) are fetched in idle time and after a scroll, so a tap opens one with nothing to wait for.
+
+## F-133 Calendar's bottom bar [done]
+Captain 2026-10-09: "lower tab like Apple Calendar". Today is a floating pill on the left (back to today from anywhere); Ask (coral mic) and Family are one glass capsule on the right. Same three links and ids; the nav itself takes no taps.
+
+## F-134 The way back names where it goes [done]
+"‹ Trip" on a day, "‹ Thu 9" on a block, and "‹ Trip" in the folded day bar. On a phone it replaces the day's Day | Week switch (the week keeps the switch, where Day opens today).
+
+## F-135 A tap moves at once [done]
+A day or block not in hand within 70 ms is not waited for: the zoom runs straight into its outline (the heading, named as the tapped row named it, and soft rows) and the level fills in place when it comes.
+
+## F-136 Swipe in from the left edge to go back [done]
+On a day or a block, a finger from the left edge moving right drags the level and, past 80 px, zooms out (less springs back). It wins over the day flick and a hold at the edge.

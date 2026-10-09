@@ -150,7 +150,7 @@ def test_a_blank_day_keeps_talk_and_paste_and_the_week_the_filters_and_sos_still
     phone.locator("#cz-sos").click()
     expect(phone.get_by_role("dialog")).to_be_visible()
     phone.locator(".cz-close").click()
-    phone.locator("#cz-z-week").click()
+    phone.locator(".cz-head .cz-back").click()
     expect(phone.locator(".cz-view[data-level=week]")).to_be_visible()
 
 

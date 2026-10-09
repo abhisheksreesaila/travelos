@@ -215,7 +215,7 @@ def test_the_week_row_link_still_opens_the_day(imported_page):
     page = imported_page()
     page.locator(".cz-row[data-day='2'] .cz-row-link").click()
     expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
-    page.locator("#cz-z-week").click()
+    page.locator(".cz-head .cz-back").click()
     page.locator(".cz-row[data-day='0'] .cz-row-link").click()                        # a row of only bookings has its Open the day link
     expect(page.locator(".cz-view[data-level=day][data-day='0']")).to_be_visible()
 
@@ -368,12 +368,12 @@ def test_sos_opens_with_no_connection_and_closes_three_ways(imported_page, base_
     page.context.set_offline(False)
 
 
-def test_the_tab_bar_is_three_tabs_with_ask_in_the_middle(imported_page):
+def test_the_tab_bar_is_today_on_the_left_and_ask_and_family_on_the_right(imported_page):
     page = imported_page()
-    labels = page.locator(".ph-tab").all_inner_texts()
-    assert [x.strip() for x in labels] == ["Today", "Ask", "Family"]
-    ask = page.locator("#ph-tab-ask").bounding_box()
-    assert abs((ask["x"] + ask["width"] / 2) - PHONE["width"] / 2) < 2
+    labels = [page.locator(f"#ph-tab-{k}").text_content().strip() for k in ("today", "ask", "family")]
+    assert labels == ["Today", "Ask", "Family"]      # F-133: Ask and Family show icons; their names are still their names
+    today, ask, fam = (page.locator(f"#ph-tab-{k}").bounding_box() for k in ("today", "ask", "family"))
+    assert today["x"] + today["width"] < PHONE["width"] / 2 < ask["x"] < fam["x"]
     bar = page.locator(".ph-tabs").bounding_box()
     for tab in page.locator(".ph-tab").all():
         box = tab.bounding_box()

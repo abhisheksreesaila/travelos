@@ -39,9 +39,10 @@ SHEET_SCRIPTS = ("/assets/js/ask.js", "/assets/js/ask_sheet.js")
 
 def tabbar(active):
     sheet = ask_sheet(active)
-    links = [A(Span(icon(ico, 22, 2.2), cls="ph-ti"), name, href=href, id=f"ph-tab-{key}", cls=f"ph-tab{' ph-ask' if key == 'ask' else ''}",
+    links = [A(Span(icon(ico, 22, 2.2), cls="ph-ti"), Span(name, cls="ph-tl"), href=href, id=f"ph-tab-{key}", cls=f"ph-tab ph-tab-{key}{' ph-ask' if key == 'ask' else ''}",
                aria_current="page" if key == active else None, **({"data_ask": "sheet", "aria_haspopup": "dialog"} if sheet and key == "ask" else {})) for key, name, ico, href in TABS]
-    return Nav(*links, cls="ph-tabs", aria_label="Trip")
+    # F-133: Calendar's bar: Today a pill on the left, Ask and Family one capsule on the right, both floating over the page.
+    return Nav(links[0], Div(*links[1:], cls="ph-tabs-r"), cls="ph-tabs", aria_label="Trip")
 
 
 def header(kicker, title, faces=(), sos=False):

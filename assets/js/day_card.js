@@ -139,7 +139,7 @@
       e.preventDefault();
       var hero = blockOf(o.act), href = rides.getAttribute('href');
       closeNow();
-      CZ.goto(CZ.path(href), { dir: 'in', key: hero ? 'blk-' + o.act : null, mode: 'push' });
+      CZ.goto(CZ.path(href), { dir: 'in', key: hero ? 'blk-' + o.act : null, mode: 'push', title: hero ? hero.dataset.title : '' });
     });
     refit(true);                                                       // the card is as tall as its note now
     o.card.dispatchEvent(new CustomEvent('cz:cardready', { bubbles: true }));

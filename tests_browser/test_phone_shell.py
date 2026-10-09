@@ -92,13 +92,13 @@ def test_every_tab_is_pressed_and_lands_in_the_shell(shell, base_url):
         checks(page)
 
 
-def test_ask_is_raised_above_the_other_tabs(shell, base_url):
+def test_ask_is_the_coral_button_in_the_capsule_on_the_right(shell, base_url):
     page = shell()
     page.goto(base_url + "/trip?tab=today")
     ask = page.locator("#ph-tab-ask .ph-ti").bounding_box()
-    today = page.locator("#ph-tab-today .ph-ti").bounding_box()
-    bar = page.locator(".ph-tabs").bounding_box()
-    assert ask["y"] < today["y"] - 8 and ask["y"] < bar["y"] and ask["height"] > today["height"]
+    today = page.locator("#ph-tab-today").bounding_box()
+    assert ask["x"] > today["x"] + today["width"] and ask["height"] >= 43.5
+    assert page.evaluate("getComputedStyle(document.querySelector('#ph-tab-ask .ph-ti')).backgroundColor") != "rgba(0, 0, 0, 0)"
 
 
 def test_the_bar_stays_put_when_the_page_scrolls_and_does_not_cover_the_end(shell, base_url):

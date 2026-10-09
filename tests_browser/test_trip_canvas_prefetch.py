@@ -63,7 +63,7 @@ def test_a_week_row_and_back_to_the_week_swap_without_a_request(canvas_page):
     expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
     settle(page)
     page.wait_for_timeout(600)
-    b = page.evaluate(TIMED_CLICK, "#cz-z-week")      # a day prefetches its week too
+    b = page.evaluate(TIMED_CLICK, ".cz-head .cz-back")      # a day prefetches its week too
     expect(page.locator(".cz-view[data-level=week]")).to_be_visible()
     settle(page)
     print(f"\nF099 week row -> day {a['ms']:.0f} ms; Week toggle -> week {b['ms']:.0f} ms")
@@ -116,7 +116,7 @@ def test_a_write_empties_the_prefetched_levels_so_the_week_shows_it(canvas_page)
     expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
     assert any("day=1" in u for u in seen), seen
     page.wait_for_timeout(300)
-    page.locator("#cz-z-week").click()
+    page.locator(".cz-head .cz-back").click()
     expect(page.locator(".cz-view[data-level=week]")).to_be_visible()
     settle(page)
     expect(page.locator(".cz-view[data-level=week]")).to_contain_text("1/14")      # the week as it is now, not the copy from before the write
@@ -133,7 +133,7 @@ def test_a_level_shown_from_an_old_copy_is_brought_up_to_date_when_someone_else_
     step = next(st for blk in blocks.values() for pt in blk["parts"] for st in pt["steps"])
     canvas.set_done(ari, step["id"])                     # another person's tick, made on the server: nothing in this page knows
     seen = watch(page)
-    page.locator("#cz-z-week").click()                   # shown at once from the old copy...
+    page.locator(".cz-head .cz-back").click()                   # shown at once from the old copy...
     expect(page.locator(".cz-view[data-level=week]")).to_be_visible()
     assert "1/" not in page.locator(".cz-view[data-level=week]").inner_text()
     expect(page.locator(".cz-view[data-level=week]")).to_contain_text("1/", timeout=6000)      # ...then quietly replaced by the server's copy
@@ -149,7 +149,7 @@ def test_a_quiet_update_waits_while_a_field_is_being_typed_in(canvas_page):
     ari = person("ari")
     step = next(st for blk in canvas.plan(ari)["blocks"].values() for pt in blk["parts"] for st in pt["steps"])
     canvas.set_done(ari, step["id"])
-    page.locator("#cz-z-week").click()
+    page.locator(".cz-head .cz-back").click()
     expect(page.locator(".cz-view[data-level=week]")).to_be_visible()
     page.evaluate("() => { const i = document.createElement('input'); i.id = 'zz-typing'; document.querySelector('.cz-view').appendChild(i); i.focus(); }")
     page.wait_for_timeout(1500)
@@ -201,3 +201,39 @@ def test_the_canvas_and_the_page_changes_use_one_motion_token_set(canvas_page):
     got = page.evaluate("""() => { const cs = getComputedStyle(document.documentElement);
       return ['--motion-screen-dur', '--motion-ease', '--cz-dur', '--cz-ease'].map(k => cs.getPropertyValue(k).trim()); }""")      # F-114: the screen moves glide with the calm ease, no overshoot
     assert got[0] and got[1] and got[0] == got[2] and got[1] == got[3], got
+
+
+def test_a_level_not_in_hand_zooms_at_once_into_its_outline_and_fills_in_when_it_comes(canvas_page):
+    """F-135: a slow answer is not waited for. The tap zooms straight into the day's outline (the heading, named as the row named it, and soft rows); the day fills it in place."""
+    page = canvas_page(motion="no-preference")
+    page.route(re.compile(r"/trip/canvas\?day=\d+.*frag=1"), lambda route: (page.wait_for_timeout(700), route.continue_()))
+    page.evaluate("window.__t0 = 0; new MutationObserver(() => { if (!window.__t0 && document.querySelector('.cz-skel')) window.__t0 = performance.now(); }).observe(document.getElementById('cz'), {childList: true, subtree: true})")
+    link = page.locator("a.cz-row-link").first
+    name = link.get_attribute("data-title")
+    page.evaluate("CZ.forget()")                                                     # (the week fetched its days ahead; this one must come slowly)
+    t = page.evaluate("() => { const t = performance.now(); document.querySelector('a.cz-row-link').click(); return t; }")
+    page.wait_for_selector(".cz-view.cz-skel[data-level=day]", timeout=2000)
+    assert page.evaluate("window.__t0") - t < 200                                      # the zoom started at once, not after the server answered
+    assert page.locator(".cz-skel #cz-title").inner_text() == name and page.locator(".cz-skel-row").count() == 5
+    page.wait_for_selector(".cz-view[data-level=day]:not(.cz-skel)", timeout=6000)
+    settle(page)
+    assert page.locator(".cz-skel").count() == 0 and page.locator(".cz-fold").count() == 1 and page.locator(".cz-head .cz-back-t").inner_text() == "Trip"
+    assert re.search(r"[?&]day=\d+", page.url)
+    page.unroute_all(behavior="ignoreErrors")      # (the idle fetches of the day's neighbours may still be held)
+
+
+def test_a_swipe_in_from_the_left_edge_goes_back_a_level(canvas_page):
+    """F-136: from the left edge of a day, a finger moving right is "‹ Trip"; a short one springs back."""
+    page = canvas_page(motion="no-preference")
+    page.locator("a.cz-row-link").first.click()
+    page.wait_for_selector(".cz-view[data-level=day]:not(.cz-skel)")
+    settle(page)
+    swipe = """(dx) => { const st = document.getElementById('cz'), y = 400;
+      const ev = (t, x) => st.dispatchEvent(new PointerEvent(t, {pointerId: 7, pointerType: 'touch', clientX: x, clientY: y, bubbles: true, isPrimary: true}));
+      ev('pointerdown', 6); for (let i = 1; i <= 6; i++) ev('pointermove', 6 + dx * i / 6); ev('pointerup', 6 + dx); }"""
+    page.evaluate(swipe, 40)                                        # too short: it stays on the day
+    page.wait_for_timeout(500)
+    assert page.locator(".cz-view").get_attribute("data-level") == "day"
+    assert page.evaluate("document.querySelector('.cz-view').style.transform") == ""
+    page.evaluate(swipe, 160)
+    page.wait_for_selector(".cz-view[data-level=week]", timeout=4000)

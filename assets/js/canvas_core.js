@@ -263,6 +263,28 @@
     return from === null || to === null || from === to ? 'side' : to > from ? 'next' : 'prev';
   }
 
+  // ---- F-135: a tap moves at once ----------------------------------------------------------------------------------------------
+  // A level not yet in hand when the finger lifts is not waited for: the zoom starts with its outline (the heading the tapped element grows into, named as the link
+  // named it, and soft placeholder rows), and the level fills in place when it comes. Week and sheets wait (the week is always fetched ahead; a sheet without its
+  // words is no use).
+  var SLOW = 70;          // ms: a level that answers sooner swaps whole, with no outline first
+  function esc(t) { return String(t || '').replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function outline(u, o, key) {
+    var lvl = levelOf(u);
+    if (lvl !== 'day' && lvl !== 'block') return null;
+    var back = lvl === 'day' ? 'Trip' : '';
+    var bars = '';
+    for (var i = 0; i < 5; i++) bars += '<div class="cz-skel-row" style="--i:' + i + '"></div>';
+    return '<section class="cz-view cz-level-' + lvl + ' cz-skel" data-level="' + lvl + '" data-title="' + esc(o.title) + '" tabindex="-1" aria-busy="true">' +
+      '<header class="cz-head is-deep"' + (key && KEY.test(key) ? ' data-zk="' + key + '"' : '') + '><span class="cz-back' + (back ? ' has-text' : '') + '" aria-hidden="true">' +
+      '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>' +
+      (back ? '<span class="cz-back-t">' + back + '</span>' : '') + '</span><div class="cz-head-text"><span class="cz-head-k">&nbsp;</span><h1 id="cz-title" tabindex="-1">' + esc(o.title) + '</h1></div></header>' +
+      '<div class="cz-skel-body">' + bars + '</div></section>';
+  }
+  function soon(p, ms) {
+    return Promise.race([p, new Promise(function (r) { setTimeout(function () { r(null); }, ms); })]);
+  }
+
   function goto(u, o) {
     o = o || {};
     if (busy) { if (o.mode === 'pop') waiting = u; return Promise.resolve(); }
@@ -272,9 +294,33 @@
     var v = view(), y0 = window.scrollY;
     var key = o.key !== undefined ? o.key : (dir === 'out' && v ? v.dataset.zout : null);
     var age = cache[u] ? Date.now() - cache[u].at : 0, copy = null;
-    return fetchLevel(u).then(function (html) {
+    var level = fetchLevel(u);
+    var sketch = dir === 'in' && !reduced.matches ? outline(u, o, key) : null;
+    return (sketch ? soon(level, SLOW) : level).then(function (got) {
+      if (got !== null) return got;
+      var at = epoch;
+      // nothing yet: the zoom runs now into the outline, and the level fills it when it comes
+      return run(sketch, dir, key, remember).then(function () { return level; }).then(function (html) {
+        if (here() !== u) return null;      // gone elsewhere meanwhile
+        swap(html, '', true);
+        var nv = view();
+        if (nv) nv.classList.add('cz-filled');
+        if (CZ.afterScroll && (o.mode === 'push' || o.mode === 'replace')) CZ.afterScroll();
+        if (at !== epoch) quiet();          // a write landed meanwhile: this copy may be older than it
+        return null;
+      });
+    }).then(function (html) {
+      if (html === null) return;
       if (age > STALE) copy = html;
-      var remember = function () {
+      return run(html, dir, key, remember);
+    }).catch(function () { location.href = u; }).then(function () {
+      busy = false;
+      rememberToday();
+      if (copy !== null && levelOf(u) !== 'step' && levelOf(u) !== 'block') revalidate(u, copy);
+      if (waiting) { waiting = null; goto(here(), { mode: 'pop' }); }     // the address bar is the truth: show what it says
+      drain();
+    });
+    function remember() {
         if (o.mode === 'push') {
           history.replaceState(Object.assign({}, history.state, { y: window.scrollY }), '');
           history.pushState({ cz: 1, from: here() }, '', u);
@@ -289,15 +335,7 @@
         } else if (o.mode === 'pop') {
           window.scrollTo(0, (history.state && history.state.y) || 0);
         }
-      };
-      return run(html, dir, key, remember);
-    }).catch(function () { location.href = u; }).then(function () {
-      busy = false;
-      rememberToday();
-      if (copy !== null && levelOf(u) !== 'step' && levelOf(u) !== 'block') revalidate(u, copy);
-      if (waiting) { waiting = null; goto(here(), { mode: 'pop' }); }     // the address bar is the truth: show what it says
-      drain();
-    });
+    }
   }
   function zoomOutTo(u) {
     // Zooming out to where we came from is the browser's Back, so the history stays tidy; the popstate handler does the swap.
@@ -314,7 +352,7 @@
     if (dir === 'out') { zoomOutTo(u); return; }
     if (dir === 'side') dir = sideways(u);
     var from = a.closest('[data-zk]');
-    goto(u, { dir: dir, key: dir === 'in' && from ? from.dataset.zk : null, mode: 'push' });
+    goto(u, { dir: dir, key: dir === 'in' && from ? from.dataset.zk : null, mode: 'push', title: a.dataset.title || '' });
   });
   // The way up: the sheet's close button when a sheet is open, else the heading's back button.
   document.addEventListener('keydown', function (e) {

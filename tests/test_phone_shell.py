@@ -47,7 +47,7 @@ def bar(html):
 
 def test_the_tab_bar_has_three_tabs_in_order_and_ask_is_raised():
     nav = str(phone.tabbar("family"))
-    labels = re.findall(r"</svg></span>([A-Za-z]+)</a>", nav)
+    labels = re.findall(r"<span class=\"ph-tl\">([A-Za-z]+)</span>", nav)
     assert labels == ["Today", "Ask", "Family"]
     assert re.findall(r'href="([^"]+)"', nav) == list(BAR)
     assert nav.count('aria-current="page"') == 1 and re.search(r'id="ph-tab-family"[^>]*aria-current="page"|aria-current="page"[^>]*id="ph-tab-family"', nav)

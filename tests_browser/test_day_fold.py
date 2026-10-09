@@ -44,23 +44,19 @@ def wait_folded(page, on):
     page.wait_for_function("on => document.querySelector('.cz-fold').classList.contains('is-on') === on", arg=on)
 
 
-def test_the_switch_is_small_inside_the_dark_heading_with_no_row_of_its_own_and_44px_to_tap(day):
-    head = box(day, ".cz-head")
-    track, d, w = box(day, ".cz-head .cz-segs"), box(day, "#cz-z-day"), box(day, "#cz-z-week")
-    assert track["height"] <= 34 and track["width"] <= 130                       # small and crisp (it was a 44px-tall pill of its own, on a row of its own)
-    assert d["height"] >= 43.9 and w["height"] >= 43.9 and d["width"] >= 43.9 and w["width"] >= 43.9      # still 44px to tap
-    assert head["y"] <= track["y"] and track["y"] + track["height"] <= head["y"] + head["height"]      # inside the heading
-    assert day.locator(".cz-bar .cz-segs, .cz-bar #cz-z-day").count() == 0     # not on the kinds row
-    assert day.locator("#cz-z-day").get_attribute("aria-current") == "page" and day.locator("#cz-z-week").get_attribute("aria-current") is None
-    on, off = (day.locator(s).evaluate("e => { const b = getComputedStyle(e, '::before'); return [b.backgroundColor, getComputedStyle(e).color]; }") for s in ("#cz-z-day", "#cz-z-week"))
-    assert on[0] != "rgba(0, 0, 0, 0)" and off[0] == "rgba(0, 0, 0, 0)" and on[1] != off[1]      # the open side is a solid pill, the other plain words
+def test_a_phones_day_heading_has_the_named_way_back_and_no_switch(day):
+    """F-134: "‹ Trip" at the left of the dark heading, 44px to tap, is the way up; the Day | Week switch stays on the week."""
+    head, back = box(day, ".cz-head"), box(day, ".cz-head .cz-back")
+    assert back["height"] >= 43.9 and back["width"] >= 43.9 and head["x"] <= back["x"] and back["y"] >= head["y"]
+    assert day.locator(".cz-head .cz-back .cz-back-t").inner_text() == "Trip"
+    assert not day.locator("#cz-z-week").is_visible() and not day.locator(".cz-head .cz-segs").is_visible()
     assert day.locator(".cz-head h1").bounding_box()["height"] > 0
     assert day.evaluate("() => { const h = document.querySelector('.cz-head h1'); return h.scrollWidth <= h.clientWidth + 1; }")      # the day's name is not cut off
     checks(day)
 
 
-def test_the_switch_works_both_ways_in_the_heading_and_the_week_has_it_too(day):
-    day.locator("#cz-z-week").click()
+def test_back_goes_up_to_the_week_and_the_weeks_switch_comes_back_to_the_day(day):
+    day.locator(".cz-head .cz-back").click()
     day.wait_for_selector(".cz-view[data-level=week]")
     settle(day)
     assert day.locator(".cz-head .cz-segs #cz-z-week").get_attribute("aria-current") == "page"
@@ -100,9 +96,9 @@ def test_scrolling_the_day_folds_the_top_into_one_compact_bar_and_scrolling_back
     b = bar.bounding_box()
     assert 0 <= b["y"] <= 12 and b["height"] < 80 and b["x"] >= 0 and b["x"] + b["width"] <= day.viewport_size["width"]      # one compact bar at the top
     assert bar.locator(".cz-fold-name").inner_text().startswith("Sunday")
-    for part in (".cz-seg >> nth=0", ".cz-seg >> nth=1", ".cz-sos", ".cz-mapbtn"):
+    for part in (".cz-fold-back", ".cz-sos", ".cz-mapbtn"):
         pb = bar.locator(part).bounding_box()
-        assert pb and pb["x"] >= b["x"] and pb["x"] + pb["width"] <= b["x"] + b["width"] + 0.5 and pb["height"] >= 43.9, part      # the switch, SOS and the map, each 44px to tap, none outside it
+        assert pb and pb["x"] >= b["x"] and pb["x"] + pb["width"] <= b["x"] + b["width"] + 0.5 and pb["height"] >= 43.9, part      # the switch, SOS and the map, each 44px to tap, none outside it (F-134: the way back, not the switch)
     nb = bar.locator(".cz-fold-name").bounding_box()
     assert nb["width"] > 40 and bar.locator(".cz-fold-name").evaluate("e => e.scrollWidth <= e.clientWidth + 1")      # the name is not cut off
     shot(day, "day-folded-390.png")
@@ -141,7 +137,7 @@ def test_tapping_the_bar_opens_the_top_again(day):
     day.wait_for_function("window.scrollY < 4")
 
 
-def test_the_switch_sos_and_map_in_the_folded_bar_work_directly(day):
+def test_back_sos_and_map_in_the_folded_bar_work_directly(day):
     scroll_to(day, 900)
     wait_folded(day, True)
     assert day.locator(".cz-fold-bar .cz-mapbtn").get_attribute("href") == f"/trip/map?day={SUNDAY}"
@@ -151,7 +147,7 @@ def test_the_switch_sos_and_map_in_the_folded_bar_work_directly(day):
     day.locator(".cz-sheet-wrap .cz-close").first.click()
     expect(day.locator(".cz-sheet-sos")).to_have_count(0)
     assert abs(day.evaluate("scrollY") - y) < 3                                 # closing does not jump up to the heading's SOS
-    day.locator(".cz-fold-bar .cz-seg >> nth=1").click()                        # Week, from the folded bar
+    day.locator(".cz-fold-bar .cz-fold-back").click()                           # "‹ Trip", from the folded bar
     day.wait_for_selector(".cz-view[data-level=week]")
     settle(day)
     assert level(day) == "week"

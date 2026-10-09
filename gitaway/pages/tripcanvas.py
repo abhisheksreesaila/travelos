@@ -196,12 +196,12 @@ def map_link(day, ident=True):
     return A(icon("map", 20, 2.4), href=f"/trip/map?day={day}", cls="cz-mapbtn", aria_label="Map of this day", **({"id": "cz-mapbtn"} if ident else {}))
 
 
-def head(v, kicker, title, key="", back=None, back_label="", faces=None, sos="", mapday=None, switch=None):
+def head(v, kicker, title, key="", back=None, back_label="", faces=None, sos="", mapday=None, switch=None, back_text=""):
     """The heading every level starts with. Week: plain. Deeper: a dark card with the way back, which is what the tapped element grows into. The week and the day carry
-    the small Day | Week switch inside it (F-103), between the words and the buttons."""
+    the small Day | Week switch inside it (F-103), between the words and the buttons. F-134: the way back names where it goes (`back_text`: "Trip", "Thu 9"), like Calendar's "‹ October"."""
     inner = [Div(Span(*kicker if isinstance(kicker, tuple) else (kicker,), cls="cz-head-k"), H1(title, id="cz-title", tabindex="-1"), cls="cz-head-text")]
     if back:
-        inner.insert(0, A(icon("chev-left", 22, 2.6), href=back, cls="cz-back", aria_label=back_label, data_zoom="out"))
+        inner.insert(0, A(icon("chev-left", 22, 2.6), Span(back_text, cls="cz-back-t", aria_hidden="true") if back_text else "", href=back, cls=f"cz-back{' has-text' if back_text else ''}", aria_label=back_label, data_zoom="out"))
     if switch is not None:      # the switch, map and SOS travel together: on the narrowest phone they wrap as one group under the words
         inner.append(Div(switch, *([map_link(mapday)] if mapday is not None else []), *([sos_link(sos)] if sos else []), cls="cz-head-ctl"))
     else:
@@ -324,7 +324,7 @@ def week_body(v, i, editor):
     thin = Span("", cls="cz-thin-t")
     if not ents:
         add = A(icon("plus", 20, 2.6), href=f"/trip?add=1&day={i}", cls="cz-plus", aria_label=f"Add something to {label}") if editor else ""
-        return Div(badge, A(Span("Free day", cls="cz-free-t"), Span("Nothing planned yet", cls="cz-sub"), thin, href=curl(day=i), cls="cz-row-link cz-free", data_zoom="in", aria_label=f"{label}: free day"), add,
+        return Div(badge, A(Span("Free day", cls="cz-free-t"), Span("Nothing planned yet", cls="cz-sub"), thin, href=curl(day=i), cls="cz-row-link cz-free", data_zoom="in", data_title=v["dates"][i].strftime("%A"), aria_label=f"{label}: free day"), add,
                    cls="cz-row is-free", data_zk=key, data_day=str(i))
     plans, bookings = [], []
     for n, (kind, x) in enumerate(ents):
@@ -346,7 +346,7 @@ def week_body(v, i, editor):
             plans.append(Div(Span(icon(ico, 18, 2.4), cls="cz-ico"), Span(x.title, cls="cz-card-t"), Span(cal.fmt_time(x.start), cls="cz-sub"), cls="cz-wcard cz-simple", **attrs))
     more = Span(f"and {len(ents) - 3} more", cls="cz-sub cz-more", hidden=True) if len(ents) > 3 else ""      # the script shows three entries and this line; with a filter on, every match
     openday = Span("Open the day", icon("chev-right", 16, 2.6), cls="cz-sub cz-openday") if not plans else ""
-    link = A(*plans, more, openday, thin, href=curl(day=i), cls="cz-row-link", data_zoom="in", aria_label=f"{label}: {s.head}")
+    link = A(*plans, more, openday, thin, href=curl(day=i), cls="cz-row-link", data_zoom="in", data_title=v["dates"][i].strftime("%A"), aria_label=f"{label}: {s.head}")
     return Div(badge, Div(link, *bookings, cls="cz-row-main"), cls=f"cz-row{' is-today' if i == v['today_idx'] else ''}", data_zk=key, data_day=str(i))
 
 
@@ -573,7 +573,8 @@ def time_grid(v, day, ents):
 def fold_bar(v, day):
     """F-103: the day's heading, filters and dates folded into one compact bar (the day's name, the small switch, map, SOS). It is in the page from the start but takes no room
     (a zero-height sticky box, so showing it never moves anything) and is hidden and inert; day_fold.js shows it once the top of the day has scrolled away, and a tap on it scrolls back up."""
-    return Div(Div(Button(Span(day_title(v, day)), type="button", cls="cz-fold-name", aria_label="Show the top of the day"), toggle(v, "day", day, ids=False), map_link(day, ident=False), sos_link(curl(day=day, sos=True), ident=False), cls="cz-fold-bar"),
+    back = A(icon("chev-left", 20, 2.6), Span("Trip", cls="cz-back-t", aria_hidden="true"), href=curl(), cls="cz-back cz-fold-back has-text", aria_label="Zoom out to the week", data_zoom="out")
+    return Div(Div(back, Button(Span(day_title(v, day)), type="button", cls="cz-fold-name", aria_label="Show the top of the day"), toggle(v, "day", day, ids=False), map_link(day, ident=False), sos_link(curl(day=day, sos=True), ident=False), cls="cz-fold-bar"),
                cls="cz-fold", inert=True, aria_hidden="true")
 
 
@@ -589,7 +590,7 @@ def day_view(v, day, booked=None, sos=False):
         cards = [empty, *cards]
     kicker = (f"{d.strftime('%a %b').upper()} {d.day}", Span(f" · DAY {day + 1} OF {len(v['dates'])}", cls="cz-k-day"))      # the day count drops out on a phone (F-103: the heading is one row)
     first =next((x for kind, x in ents if kind == "block"), None)
-    body = [fold_bar(v, day), head(v, kicker, d.strftime("%A"), key=f"day-{day}", back=curl(), back_label="Zoom out to the week", sos=curl(day=day, sos=True), mapday=day, switch=toggle(v, "day", day)), Div(kinds_bar(), cls="cz-bar"), day_pills(v, day), strip(v, day),
+    body = [fold_bar(v, day), head(v, kicker, d.strftime("%A"), key=f"day-{day}", back=curl(), back_label="Zoom out to the week", back_text="Trip", sos=curl(day=day, sos=True), mapday=day, switch=toggle(v, "day", day)), Div(kinds_bar(), cls="cz-bar"), day_pills(v, day), strip(v, day),
             now_card(v, day),      # F-092: the centre Ask changes the day; on today the day starts with what is happening now
             *([filter_bar(v, True)] if first else []), *([dropbars(v)] if first and editor else []),
             Div(Div(*cards, *(listmore(v, first) if first else []), P("Nothing here for this filter.", cls="cz-sub cz-kind-none", hidden=True), cls="cz-day-main"), Div(_tray(aside, editor), cls="cz-day-side"), cls="cz-day-body")]
@@ -671,7 +672,7 @@ def block_view(v, act_id, open_step=None, adding=None, sos=False):
     if editor and blk["parts"]:
         add_btn = A(icon("plus", 18, 2.6), "Add a step", href=curl(block=a.id, add=True), id="cz-add", cls="tp-btn tp-btn-ink cz-add", data_zoom="in", **({} if adding else {"data_zk": "stp-new"}))
     kicker = f"{d.strftime('%a %b').upper()} {d.day} · {cal.fmt_time(a.start)} – {cal.fmt_time(a.end)}"
-    body = [head(v, kicker, a.title, key=f"blk-{a.id}", back=curl(day=a.day), back_label="Zoom out to the day", faces=faces_of(allsteps, 4), sos=curl(block=a.id, sos=True)),
+    body = [head(v, kicker, a.title, key=f"blk-{a.id}", back=curl(day=a.day), back_label="Zoom out to the day", back_text=f"{d.strftime('%a')} {d.day}", faces=faces_of(allsteps, 4), sos=curl(block=a.id, sos=True)),
             Div(*notes, cls="cz-notes") if notes else "", Div(Span(f"{done} of {n} done", cls="cz-prog"), legend, add_btn, talk_badge(v["talk"], a.id), cls="cz-block-meta"),
             filter_bar(v), *([dropbars(v)] if editor else []),
             Div(*sections, cls="cz-bparts"), *listmore(v, a), Div(_tray(blk["aside"], editor, open_id=open_id), cls="cz-block-side"), *lists]

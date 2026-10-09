@@ -231,7 +231,7 @@ def test_the_week_shows_the_new_plan_even_though_it_was_fetched_ahead_before(day
     expect(toast(day)).to_contain_text("Pier walk added")
     day.wait_for_function("() => document.querySelector('.cz-gb[data-title=\"Pier walk\"][data-act]')")                          # the refresh has landed (a week opened meanwhile would be swapped back)
     day.evaluate("scrollTo(0, 0)")
-    day.locator("#cz-z-week").click()
+    day.locator(".cz-head .cz-back").click()
     settle(day)
     expect(day.locator(".cz-view[data-level=week]")).to_contain_text("Pier walk", timeout=20000)                 # (the cache was emptied by the write, so the week is fetched now, behind the idle fetches)
 

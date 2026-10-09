@@ -54,6 +54,41 @@
   stage.addEventListener('pointerup', endFlick);
   stage.addEventListener('pointercancel', endFlick);
 
+  // ---- F-136: from the left edge, back up a level ---------------------------------------------------------------------------------
+  // A finger that starts at the screen's left edge on a day or a block and moves right is the heading's way back ("‹ Trip", "‹ Thu 9"), as on any iPhone screen:
+  // the level follows the finger, and letting go past EDGE_GO zooms out (anything less springs back). It wins over the day's flick to the previous day.
+  var EDGE = 24, EDGE_GO = 80, edge = null;
+  stage.addEventListener('pointerdown', function (e) {
+    edge = null;
+    var v = CZ.view();
+    if (!v || (v.dataset.level !== 'day' && v.dataset.level !== 'block') || e.pointerType === 'mouse' || e.clientX > EDGE || count() > 1) return;
+    if (!v.querySelector('.cz-head .cz-back')) return;
+    flick = null;
+    edge = { id: e.pointerId, x: e.clientX, y: e.clientY, v: v, on: false };
+  });
+  stage.addEventListener('pointermove', function (e) {
+    if (!edge || e.pointerId !== edge.id) return;
+    var dx = e.clientX - edge.x, dy = e.clientY - edge.y;
+    if (!edge.on && (Math.abs(dy) > Math.abs(dx) || count() > 1 || CZ.held || (g && g.mode === 'drag'))) { edge = null; return; }
+    if (dx > 8) edge.on = true;
+    if (edge.on && !reduced.matches) { edge.v.style.transition = 'none'; edge.v.style.transform = 'translateX(' + Math.max(0, dx) * 0.6 + 'px)'; edge.v.style.opacity = String(1 - Math.min(0.35, dx / 900)); }
+  });
+  function endEdge(e) {
+    if (!edge || e.pointerId !== edge.id) return;
+    var ed = edge, dx = e.clientX - ed.x;
+    edge = null;
+    if (!ed.on) return;
+    guard(300, ed.v);
+    var go = e.type === 'pointerup' && dx > EDGE_GO && !CZ.busy();
+    var back = go ? ed.v.querySelector('.cz-head .cz-back') : null;
+    if (back) { CZ.zoomOutTo(path(back.href)); return; }      // (the level stays where the finger left it: the zoom out carries on from there)
+    ed.v.style.transition = 'transform var(--motion-dur) var(--motion-ease), opacity var(--motion-dur) var(--motion-ease)';      // not far enough: it springs back
+    ed.v.style.transform = ''; ed.v.style.opacity = '';
+    ed.v.addEventListener('transitionend', function () { ed.v.style.transition = ''; }, { once: true });
+  }
+  stage.addEventListener('pointerup', endEdge);
+  stage.addEventListener('pointercancel', endEdge);
+
   // ---- hold to move, swipe for Done and Set aside (editors only) ------------------------------------------------------------------
   // One gesture at a time, from pointerdown on a step (data-drag) or on a list chip (data-add-title):
   //   wait   the finger is down and still. After HOLD ms the step is lifted (drag). Moving more than SLOP first is a scroll (or, sideways on a row, a swipe).
@@ -95,7 +130,7 @@
     var item = e.target.closest ? e.target.closest('[data-drag], .cz-addchip[data-add-title]') : null;
     var onActs = e.target.closest ? e.target.closest('.cz-swipe-acts') : null;
     if (!onActs) closeSwipes(item && item.classList.contains('cz-swipe') ? item : null);
-    if (!item || !stage.contains(item) || onActs) return;
+    if (!item || !stage.contains(item) || onActs || edge) return;      // (F-136: a finger at the left edge is the way back)
     endGesture();
     g = { id: e.pointerId, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, item: item, mode: 'wait', adding: !item.hasAttribute('data-drag'), swipe: item.classList.contains('cz-swipe') };
     g.timer = setTimeout(pickUp, HOLD);

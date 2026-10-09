@@ -486,10 +486,14 @@ html { scroll-padding-top: calc(env(safe-area-inset-top) + 4.5rem); }      /* wh
 .cz .cz-fold-name:focus-visible { outline: 0.125rem solid var(--sun); outline-offset: 0.125rem; border-radius: var(--r-pill); }
 @media (prefers-reduced-motion: reduce) { .cz .cz-fold-bar, .cz .cz-fold.is-on .cz-fold-bar { transition: none; } }
 
-/* A phone's day heading is one row: the Week side of the switch is the way back (the chevron stays in the page for Escape and the keyboard), and SOS is its icon (its accessible name is
-   unchanged) so the day's name keeps its room. The folded bar does the same. */
+/* F-134: the way back names where it goes ("‹ Trip", "‹ Thu 9"), as Calendar's "‹ October" does. On a phone it is the way up from a day (the Day | Week switch stays on the week,
+   where Day opens today); SOS is its icon (its accessible name is unchanged) so the day's name keeps its room. The folded bar does the same. */
+.cz .cz-back.has-text { width: auto; gap: 0.0625rem; padding: 0 0.875rem 0 0.375rem; font-weight: 800; font-size: 1.0625rem; letter-spacing: -0.01em; -webkit-tap-highlight-color: transparent; transition: transform var(--motion-dur) var(--motion-ease); }
+.cz .cz-back.has-text:active { transform: scale(.92); transition-duration: 0s; }
+.cz .cz-fold-back { display: none; }
 @media (max-width: 720px) {
-  .cz .cz-head.has-switch .cz-back { display: none; }
+  .cz .cz-level-day .cz-head.has-switch .cz-segs, .cz .cz-fold-bar .cz-segs { display: none; }
+  .cz .cz-fold-back { display: inline-flex; }
 }
 @media (max-width: 440px) {
   .cz .cz-head.has-switch, .cz .cz-fold-bar { gap: 0.5rem; }
@@ -499,3 +503,12 @@ html { scroll-padding-top: calc(env(safe-area-inset-top) + 4.5rem); }      /* wh
   .cz .cz-head.has-switch .cz-sos, .cz .cz-fold-bar .cz-sos { position: relative; }
 }
 @media (max-width: 360px) { .cz .cz-fold-bar { gap: 0.25rem; padding-left: 0.75rem; } }
+
+/* F-135: a level not in hand when the finger lifts: the zoom runs at once into its outline (the heading and soft rows), and the level fills in when it comes (its body fades up). */
+.cz .cz-skel-body { display: flex; flex-direction: column; gap: 0.625rem; padding-top: 0.25rem; }
+.cz .cz-skel-row { height: 4.25rem; border-radius: 1.25rem; background: var(--paper-2); opacity: calc(1 - var(--i) * .16); animation: cz-skel calc(var(--motion-screen-dur) * 3) var(--motion-ease) infinite alternate; }
+.cz .cz-skel .cz-head h1:empty::before { content: ""; display: block; width: 9rem; height: 1.5rem; border-radius: 0.5rem; background: rgba(255, 255, 255, .16); }
+@keyframes cz-skel { to { background: var(--card); } }
+.cz .cz-view.cz-filled > :not(.cz-head):not(.cz-fold) { animation: cz-fill var(--motion-dur) var(--motion-ease) both; }
+@keyframes cz-fill { from { opacity: 0; transform: translateY(0.5rem); } }
+@media (prefers-reduced-motion: reduce) { .cz .cz-skel-row, .cz .cz-view.cz-filled > * { animation: none; } }

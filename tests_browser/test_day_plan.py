@@ -71,7 +71,7 @@ def test_tapping_a_date_opens_it_and_keeps_it_in_view(canvas_page):
     expect(page.locator("#cz-dpills .cz-dp.is-open")).to_have_attribute("aria-current", "date")
     box, bar = page.locator("#cz-dpills .is-open").bounding_box(), page.locator("#cz-dpills").bounding_box()
     assert box["x"] >= bar["x"] - 1 and box["x"] + box["width"] <= bar["x"] + bar["width"] + 1
-    page.locator("#cz-z-week").click()
+    page.locator(".cz-head .cz-back").click()
     expect(page.locator(".cz-view")).to_have_attribute("data-level", "week")
 
 
