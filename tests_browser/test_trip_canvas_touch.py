@@ -794,3 +794,18 @@ def test_tapping_a_steps_circle_ticks_it_at_once_and_saves_without_opening_the_s
     page.wait_for_function("() => !document.querySelector('.cz-step[data-ticking]')")
     step = [s for p in plan()["blocks"]["a1"]["parts"] for s in p["steps"] if s["title"].startswith("King Kong")][0]
     assert not step["done"]
+
+
+def test_the_sheets_of_the_steps_on_the_screen_are_fetched_ahead(canvas_page):
+    """F-132: on a block, the step sheets in view are fetched in idle time, so the tap on one asks the server for nothing."""
+    page = canvas_page(viewport=PHONE)
+    block(page)
+    row = page.locator('.cz-swipe .cz-step').first
+    href = row.get_attribute("href")
+    sid = re.search(r"step=([0-9a-f]+)", href).group(1)
+    page.wait_for_function(f"() => performance.getEntriesByType('resource').some(e => e.name.includes('step={sid}') && e.name.includes('frag=1'))", timeout=5000)
+    asked = []
+    page.on("request", lambda r: asked.append(r.url) if f"step={sid}" in r.url else None)
+    row.locator(".cz-step-t").click()
+    expect(page.locator(".cz-view[data-level=step]")).to_be_visible()
+    assert asked == []

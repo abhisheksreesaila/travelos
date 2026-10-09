@@ -77,6 +77,12 @@
       var wk = v.querySelector('#cz-z-week');
       if (wk) add(path(wk.href));
       v.querySelectorAll('.cz-dpills a[href]').forEach(function (a) { add(path(a.href)); });
+    } else if (v.dataset.level === 'block') {      // F-132: the sheets of the steps on the screen (about 4 KB each on the wire), so a tap on one opens it with nothing to wait for
+      var h = window.innerHeight;
+      Array.prototype.slice.call(v.querySelectorAll('a.cz-step[data-zoom="in"]')).filter(function (a) {
+        var r = a.getBoundingClientRect();
+        return r.bottom > 0 && r.top < h;
+      }).slice(0, 8).forEach(function (a) { add(path(a.href)); });
     }
     var now = here();
     return out.filter(function (u) { return u !== now; });
@@ -99,6 +105,8 @@
     });
   }
   document.addEventListener('visibilitychange', function () { if (!document.hidden) prefetch(); });
+  var scrolled = 0;      // a block's steps that come into view are fetched too
+  window.addEventListener('scroll', function () { clearTimeout(scrolled); scrolled = setTimeout(function () { var v = view(); if (v && v.dataset.level === 'block') prefetch(); }, 300); }, { passive: true });
   // A level is fetched as soon as a finger goes down on a link to it, so the tap that follows has nothing to wait for.
   document.addEventListener('pointerdown', function (e) {
     var a = e.target.closest ? e.target.closest('a[data-zoom]') : null;
@@ -110,9 +118,25 @@
   var quietSwap = false;   // a swap that only brings the level up to date: nothing moves, and focus stays where it was
   var shown = '';          // the fragment on the stage, to see whether a fresh copy differs
   // F-122: `inPlace` updates what is already on the screen to the fresh copy, changing only what differs (vendor/idiomorph.js): nothing is rebuilt, so nothing flashes.
+  // F-131: what the scripts own rides through it: their classes on an element the server also draws (the compact bar shown, a block selected, a filter's highlight), the
+  // compact bar's inert state, and the hold menu (a node the server never draws). Without that the morph took them off and the scripts put them back a moment later, after
+  // a layout in between: the compact bar faded in again and the selected block re-grew on every refresh.
+  var OWN = ['is-on', 'is-selected', 'is-menu', 'is-wiggle', 'is-hit', 'is-dim', 'is-off', 'is-thin', 'is-bare', 'cz-flt-on'];
+  var MORPH = {
+    morphStyle: 'innerHTML', ignoreActiveValue: true,
+    callbacks: {
+      beforeNodeMorphed: function (old, fresh) {
+        if (old.nodeType !== 1 || fresh.nodeType !== 1 || !old.classList) return true;
+        for (var i = 0; i < OWN.length; i++) if (old.classList.contains(OWN[i])) fresh.classList.add(OWN[i]);
+        if (old.classList.contains('cz-fold')) ['inert', 'aria-hidden'].forEach(function (a) { if (old.hasAttribute(a)) fresh.setAttribute(a, old.getAttribute(a)); else fresh.removeAttribute(a); });
+        return true;
+      },
+      beforeNodeRemoved: function (old) { return !(old.classList && old.classList.contains('cz-menu')); }
+    }
+  };
   function swap(html, dir, inPlace) {
     shown = html;
-    if (inPlace && window.Idiomorph) Idiomorph.morph(stage, html, { morphStyle: 'innerHTML', ignoreActiveValue: true });
+    if (inPlace && window.Idiomorph) Idiomorph.morph(stage, html, MORPH);
     else stage.innerHTML = html;
     var v = view();
     if (!v) return;
@@ -129,7 +153,7 @@
   // What every level needs once it is on the screen (and once at start): the modules' hooks (the filters), the dates centred, Ask on this day, the next levels fetched.
   function settled() {
     CZ.onSwap.forEach(function (fn) { fn(); });
-    centreDay();
+    if (!quietSwap) centreDay();      // (a refresh in place keeps the dates where they were: no layout to read)
     askHere();
     prefetch();
     rememberToday();
@@ -204,16 +228,23 @@
     });
   }
   // After a write (or coming back to the page): the level on the screen, brought up to date in place once any zoom is over. Resolves true when it was.
+  function nextFrame(fn) {
+    var ran = false, go = function () { if (!ran) { ran = true; fn(); } };
+    requestAnimationFrame(function () { setTimeout(go, 0); });      // after the frame in hand is drawn (a write's reply can land inside a frame, as an animation ends)
+    setTimeout(go, 100);          // (no frames come while the page is hidden)
+  }
   function quiet() {
     return new Promise(function (done) {
       whenIdle(function () {
         cache = {};
         var e0 = epoch, u = here();
         fetchLevel(u).then(function (html) {
-          if (e0 !== epoch) { whenIdle(function () { quiet().then(done); }); return; }       // a write ran meanwhile, so this copy is already old: ask again
-          if (here() !== u) { done(false); return; }
-          morphIn(html);
-          done(true);
+          nextFrame(function () {          // F-131: its own frame, not the one the toast that came with the write is drawn in (two short frames, not one long one)
+            if (e0 !== epoch) { whenIdle(function () { quiet().then(done); }); return; }       // a write ran meanwhile, so this copy is already old: ask again
+            if (here() !== u) { done(false); return; }
+            morphIn(html);
+            done(true);
+          });
         }).catch(function () { done(false); });
       });
     });

@@ -724,3 +724,9 @@ A whole screen moving (a zoom between levels, a sheet over one) has its own toke
 
 ## F-130 Cards fetched ahead [done]
 The day fetches the cards of the plans on the screen in idle time (and after a scroll, and again after every swap), so a tap opens a card that already has its words.
+
+## F-131 A refresh keeps what the scripts own, in its own frame [done]
+Measured at 4x CPU slowdown: a drop's toast and refresh landed in one ~80 ms task. The morph now keeps the scripts' classes (the compact bar shown, the selected block, the filters' marks) and the hold menu, so nothing fades in again; the dates are not re-centred on a refresh; and the refresh is drawn in the frame after the toast's. A drop now has no task over 50 ms; scrolling had none already.
+
+## F-132 Step sheets fetched ahead [done]
+On a block, the sheets of the steps on the screen (up to 8, about 4 KB each over Cloudflare's compression) are fetched in idle time and after a scroll, so a tap opens one with nothing to wait for.
