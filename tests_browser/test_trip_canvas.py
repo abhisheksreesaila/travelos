@@ -270,8 +270,7 @@ def test_mark_done_from_the_step_sheet_closes_it_and_the_step_is_done(canvas_pag
 def test_set_aside_and_put_back_from_the_sheet_and_the_tray(canvas_page):
     page = canvas_page()
     page.goto(page.url + "?block=a1")
-    page.locator('.cz-step:has-text("King Kong")').click()
-    page.get_by_role("button", name="Set aside").click()
+    page.locator('.cz-swipe:has-text("King Kong") .cz-sw-aside').evaluate("b => b.form.requestSubmit()")      # F-121: Set aside is on the swipe only, not the sheet
     expect(page.locator(".cz-view[data-level=block]")).to_be_visible()
     expect(page.locator(".cz-tray")).to_contain_text("Set aside · 3")
     expect(page.locator(".cz-tray")).to_contain_text("King Kong")
@@ -319,7 +318,7 @@ def test_notes_show_on_their_block_and_step_and_lanes_show_when_people_split_up(
     expect(lanes).to_contain_text("Kids")
     assert page.evaluate(OVERFLOW) <= 0
     page.locator(".cz-lane .cz-step", has_text="Hippogriff").click()
-    expect(page.locator(".cz-sticker-sheet")).to_contain_text("H and B walk")
+    expect(page.locator(".cz-note-sticky")).to_have_value("H and B walk")      # F-121: an editor's note is the sticky you write on
 
 
 def test_every_level_fits_at_320_and_390(canvas_page):

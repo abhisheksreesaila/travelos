@@ -96,9 +96,11 @@
   var curMode = '';        // how the level being shown was reached (push, replace, stay, pop), for the day grid's scroll
   var quietSwap = false;   // a swap that only brings the level up to date after a write: nothing moves, and focus stays where it was
   var shown = '';          // the fragment on the stage, to see whether a fresh copy differs
-  function swap(html, dir) {
+  // F-122: `inPlace` updates what is already on the screen to the fresh copy, changing only what differs (vendor/idiomorph.js): nothing is rebuilt, so nothing flashes.
+  function swap(html, dir, inPlace) {
     shown = html;
-    stage.innerHTML = html;
+    if (inPlace && window.Idiomorph) Idiomorph.morph(stage, html, { morphStyle: 'innerHTML', ignoreActiveValue: true });
+    else stage.innerHTML = html;
     var v = view();
     if (!v) return;
     if (v.dataset.title) document.title = 'GitAway · ' + v.dataset.title;
@@ -157,7 +159,7 @@
   function quietShow(html) {
     var y = window.scrollY, back = CZ.beforeQuiet ? CZ.beforeQuiet() : null, snap = CZ.snap ? CZ.snap() : null;      // F-112: the blocks glide from where they were (no re-draw to see)
     quietSwap = true;
-    try { swap(html, ''); } finally { quietSwap = false; }
+    try { swap(html, '', true); } finally { quietSwap = false; }
     if (back) back();
     window.scrollTo(0, y);
     if (snap) snap();
@@ -317,6 +319,21 @@
     });
   }
   function here() { return path(location.href); }
+  function inPlace(u) {
+    if (busy) return goto(u, { dir: 'side', mode: 'stay', key: null });
+    busy = true;
+    delete cache[u];
+    var y = window.scrollY;
+    return fetchLevel(u).then(function (html) {
+      if (path(location.href) !== u) return;
+      quietSwap = true;
+      try { swap(html, '', true); } finally { quietSwap = false; }
+      window.scrollTo(0, y);
+    }).catch(function () { location.href = u; }).then(function () {
+      busy = false;
+      while (idleQ.length && !busy) idleQ.shift()();
+    });
+  }
   function refresh() {      // a drop or an Undo that lands during a zoom waits for it, then shows the level as it is now
     return new Promise(function (done) { whenIdle(function () { cache = {}; goto(here(), { dir: "side", mode: "stay", key: null }).then(done, done); }); });
   }
@@ -339,7 +356,8 @@
     post(f.action, body).then(function (res) {
       cache = {};
       if (res.toast) showToast(res.toast, res.undo);
-      if (f.hasAttribute('data-cz-stay')) goto(res.url, { dir: 'side', mode: 'stay', key: null });
+      if (path(res.url) === here()) inPlace(res.url);      // F-122: a write that stays on this level (a tick, a note) updates it where it is, with no fade
+      else if (f.hasAttribute('data-cz-stay')) goto(res.url, { dir: 'side', mode: 'stay', key: null });
       else zoomOutTo(res.url);
     }).catch(function (err) {
       if (err && err.soft) {            // refused with a reason: say it where the person is looking, and let them try again

@@ -141,7 +141,8 @@ def test_a_blank_day_keeps_talk_and_paste_and_the_week_the_filters_and_sos_still
     assert phone.locator("#cz-grid").count() == 1 and phone.locator(".cz-gb").count() == 0      # F-101: an editor's blank day has the grid, under the compact Talk / Paste row
     plan("Lunch", 12 * 60, 13 * 60)
     open_day(phone)
-    assert phone.locator("#cz-grid").count() == 1 and phone.locator("#cz-say-talk").count() == 0
+    expect(phone.locator("#cz-say-talk")).to_have_count(0)        # (F-116: the saved copy may show first; it brings itself up to date in place)
+    assert phone.locator("#cz-grid").count() == 1
     phone.locator(".cz-kchip", has_text="Hotels").click()
     expect(phone.locator(".cz-gb:visible")).to_have_count(0)    # the kind filter hides plans
     phone.locator(".cz-kchip", has_text="All").click()
