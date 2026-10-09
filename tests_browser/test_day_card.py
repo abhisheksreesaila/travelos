@@ -511,3 +511,16 @@ def test_a_card_does_not_fold_while_its_note_is_being_saved_and_a_failed_save_sa
     assert card(phone).locator(".cz-card-edit").input_value() == "A second one" and note_texts(lunch.id) == ["Bring sunscreen"]
 
 
+
+
+@pytest.mark.parametrize("phone", [PHONE], indirect=True, ids=["390"])
+def test_the_cards_on_the_screen_are_fetched_ahead_so_a_tap_has_nothing_to_wait_for(phone):
+    """F-130: in idle time the day fetches the cards of the plans on the screen; the tap that follows asks the server for nothing."""
+    lower, upper, water = long_day()
+    open_day(phone, 0)
+    phone.wait_for_function(f"() => performance.getEntriesByType('resource').some(e => e.name.includes('/trip/canvas/card?act={lower.id}'))", timeout=5000)
+    asked = []
+    phone.on("request", lambda r: asked.append(r.url) if "/trip/canvas/card" in r.url else None)
+    tap(phone, lower.id)
+    expect(card(phone).locator(".cz-card-note").first).to_have_text(LONG)
+    assert asked == []

@@ -18,6 +18,7 @@
   var MO = window.GA.motion;      // (a page without motion.js still works: everything is instant) the one liquid motion (motion.js, F-109): the spring, the fold and their timings are its tokens
   var open = null;                 // the card on screen: { wrap, card, scrim, block, act, folding, note }
   var fetched = {};                // act -> { at, promise }: the fragment fetched ahead of the tap
+  var AHEAD = 30000;               // F-130: how long a card fetched ahead may be shown without asking again (every swap forgets them all)
 
   function rem() { return parseFloat(getComputedStyle(document.documentElement).fontSize) || 16; }
   function clamp(v, lo, hi) { return Math.min(Math.max(v, lo), hi); }
@@ -38,7 +39,7 @@
   function cardUrl(act) { return '/trip/canvas/card?act=' + encodeURIComponent(act) + (trip() ? '&trip=' + encodeURIComponent(trip()) : ''); }
   function fetchCard(act) {
     var hit = fetched[act];
-    if (hit && Date.now() - hit.at < 8000) return hit.promise;
+    if (hit && Date.now() - hit.at < AHEAD) return hit.promise;
     var p = fetch(cardUrl(act), { credentials: 'same-origin', headers: { 'X-Canvas': '1' } }).then(function (r) {
       if (!r.ok) throw new Error('card ' + r.status);
       return r.text();
@@ -348,6 +349,27 @@
 
   // Anything that leaves the day (Rides, Back, a date) takes the card with it; a refresh of the same day (after a write) does not.
   stage.addEventListener('cz:swap', function (e) { if (open && !(e.detail && e.detail.quiet)) closeNow(); });
+
+  // F-130: the cards of the plans on the screen are fetched in idle time, so a tap opens a card that already has its words. Every swap (a write, someone else's
+  // change, another day) forgets them and fetches again what is on the screen; a scroll fetches what came into view. Never on Data Saver or a slow link.
+  function frugal() { var c = navigator.connection; return !!(c && (c.saveData || /(^|-)2g$/.test(c.effectiveType || ''))); }
+  var idle = window.requestIdleCallback ? function (fn) { window.requestIdleCallback(fn, { timeout: 2000 }); } : function (fn) { setTimeout(fn, 400); };
+  function ahead() {
+    if (frugal() || document.hidden) return;
+    idle(function () {
+      var h = window.innerHeight, n = 0;
+      stage.querySelectorAll('.cz-gb[data-act] .cz-gb-open[data-card]').forEach(function (a) {
+        var r = a.getBoundingClientRect(), act = a.closest('.cz-gb').dataset.act, hit = fetched[act];
+        if (n >= 6 || r.bottom < 0 || r.top > h || (hit && Date.now() - hit.at < AHEAD)) return;
+        n++;
+        fetchCard(act).catch(function () {});
+      });
+    });
+  }
+  var scrolled = 0;
+  stage.addEventListener('cz:swap', function () { fetched = {}; ahead(); });
+  window.addEventListener('scroll', function () { clearTimeout(scrolled); scrolled = setTimeout(ahead, 250); }, { passive: true });
+  ahead();
   window.addEventListener('pagehide', function () { if (open) closeNow(); });
 
   var before = CZ.editing;

@@ -718,3 +718,9 @@ The dark head and the compact bar dropped their invisible backdrop blur (94% ink
 
 ## F-128 The canvas script in modules [done]
 Captain, 2026-10-08: "write good modular code with speed and micro interactions in mind". trip_canvas.js (830 lines) is now canvas_core.js (levels, fetching, swaps, the write transport) plus canvas_filters.js, canvas_writes.js, canvas_sos.js, canvas_gestures.js; drops, adds and Undo refresh in place too (they faded the level in again).
+
+## F-129 Screens move in 360ms [done]
+A whole screen moving (a zoom between levels, a sheet over one) has its own token, --motion-screen-dur 360ms (about an iPhone push); cards keep the softer 520ms the captain asked for.
+
+## F-130 Cards fetched ahead [done]
+The day fetches the cards of the plans on the screen in idle time (and after a scroll, and again after every swap), so a tap opens a card that already has its words.
