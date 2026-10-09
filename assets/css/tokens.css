@@ -57,6 +57,7 @@
   --motion-spring-dur: 520ms;      /* F-120: slower and calmer, the captain asked */
   --motion-spring: cubic-bezier(.3, 1.12, .4, 1);
   --motion-out: cubic-bezier(.4, 0, .8, .4);      /* the fold: it leaves quicker than it came (--motion-dur long) */
+  --motion-screen-dur: 360ms;     /* F-129: a whole screen moving (a zoom between levels, a sheet over one): about an iPhone push, quicker than a card growing */
   --motion-settle-dur: 280ms;     /* a new bubble or block settling into place */
   --motion-quick: 160ms;           /* a glide of a few pixels, a quick fade */
   --motion-fade: 120ms;            /* what remains under reduced motion */

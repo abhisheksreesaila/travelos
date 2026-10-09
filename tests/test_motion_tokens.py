@@ -28,11 +28,11 @@ def lines(path):
 
 def test_the_tokens_are_the_cards_spring_and_one_set():
     css = (ASSETS / "css" / "tokens.css").read_text(encoding="utf-8")
-    for token, value in (("--motion-spring-dur", "520ms"), ("--motion-spring", "cubic-bezier(.3, 1.12, .4, 1)"), ("--motion-dur", "240ms"), ("--motion-out", "cubic-bezier(.4, 0, .8, .4)"),
+    for token, value in (("--motion-spring-dur", "520ms"), ("--motion-spring", "cubic-bezier(.3, 1.12, .4, 1)"), ("--motion-dur", "240ms"), ("--motion-screen-dur", "360ms"), ("--motion-out", "cubic-bezier(.4, 0, .8, .4)"),
                          ("--motion-settle-dur", "280ms"), ("--motion-quick", "160ms"), ("--motion-fade", "120ms"), ("--motion-wiggle", "420ms")):
         assert re.search(rf"{re.escape(token)}:\s*{re.escape(value)}", css), token
     canvas = (ASSETS / "css" / "trip_canvas.css").read_text(encoding="utf-8")
-    assert ":root { --cz-dur: var(--motion-spring-dur); --cz-ease: var(--motion-ease); }" in canvas      # the canvas's levels (Day | Week, sheets) glide with the calm ease, no overshoot (F-114)
+    assert ":root { --cz-dur: var(--motion-screen-dur); --cz-ease: var(--motion-ease); }" in canvas      # the canvas's levels (Day | Week, sheets) glide with the calm ease, no overshoot (F-114)
 
 
 def test_no_animation_or_transition_duration_is_written_outside_the_tokens():

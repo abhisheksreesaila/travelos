@@ -17,7 +17,7 @@ from tests_browser.test_trip_canvas import NARROW, canvas_page, model  # noqa: F
 SPRING = "cubic-bezier(0.3, 1.12, 0.4, 1)"
 CALM = "cubic-bezier(0.25, 0.8, 0.25, 1)"            # screen moves (F-114)
 OUT = "cubic-bezier(0.4, 0, 0.8, 0.4)"
-SPRING_MS, FOLD_MS = 520, 240                      # the tokens' values (--motion-spring-dur, --motion-dur)
+SPRING_MS, FOLD_MS, SCREEN_MS = 520, 240, 360          # the tokens' values (--motion-spring-dur, --motion-dur, --motion-screen-dur: a whole screen moving, F-129)
 SLOW = 2500                                        # the tests that sample frames slow the tokens down so a sheet that settles its size in its first moments is caught at rest
 SIZES = [(390, 844), (320, 640)]
 
@@ -204,18 +204,18 @@ def level_grows(page, tap, origin_sel, sheet_sel):
     got = hero(page)
     assert near(got["first"], origin, 3), (got["first"], origin)                       # starts as the tapped thing
     expect(page.locator(sheet_sel)).to_be_visible()
-    page.wait_for_timeout(SPRING_MS + 250)
+    page.wait_for_timeout(SCREEN_MS + 250)
     sheet = page.evaluate(BOX, sheet_sel)
     assert near(got["last"], sheet, 3), (got["last"], sheet)                             # ends as the sheet
-    assert got["dur"] == SPRING_MS and norm(got["easing"]) == norm(CALM), got             # the screen move's calm ease
+    assert got["dur"] == SCREEN_MS and norm(got["easing"]) == norm(CALM), got             # the screen move's calm ease
     page.locator(".cz-sheet .cz-close").click()
     page.wait_for_function("document.documentElement.dataset.czDir")
     back = hero(page)
     assert near(back["first"], sheet, 3), (back["first"], sheet)
-    page.wait_for_timeout(SPRING_MS + 250)
+    page.wait_for_timeout(SCREEN_MS + 250)
     expect(page.locator(sheet_sel)).to_have_count(0)
     assert near(back["last"], page.evaluate(BOX, origin_sel), 3)                         # lands back on the tapped thing
-    assert back["dur"] == SPRING_MS and norm(back["easing"]) == norm(CALM)
+    assert back["dur"] == SCREEN_MS and norm(back["easing"]) == norm(CALM)
 
 
 @pytest.mark.parametrize("vp", [PHONE, NARROW], ids=["390", "320"])
@@ -286,7 +286,7 @@ def test_day_to_week_uses_the_same_spring(canvas_page):
     page.wait_for_function("document.documentElement.dataset.czDir")
     page.wait_for_function("document.getAnimations().some(a => /view-transition-(old|new)\\(root\\)/.test(a.effect.pseudoElement || ''))")
     got = page.evaluate("""() => document.getAnimations().filter(a => /view-transition-(old|new)\\(root\\)/.test(a.effect.pseudoElement || '')).map(a => { const t = a.effect.getTiming(); return [t.duration, a.effect.getKeyframes()[0].easing]; })""")
-    assert got and all(d == SPRING_MS and norm(e) == norm(CALM) for d, e in got), got
+    assert got and all(d == SCREEN_MS and norm(e) == norm(CALM) for d, e in got), got
 
 
 def test_a_dropped_block_settles_with_the_spring(canvas_page):
