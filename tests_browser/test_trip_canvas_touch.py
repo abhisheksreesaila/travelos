@@ -575,7 +575,8 @@ def test_a_viewer_can_filter_but_not_drag_swipe_add_or_move(canvas_page, browser
 
 # ---- the animation, reduced motion and the narrow phone --------------------------------------------------------------------------
 
-def test_a_drop_swaps_the_level_with_the_same_animation_as_the_zoom(canvas_page):
+def test_a_drop_brings_the_level_up_to_date_in_place_with_no_fade(canvas_page):
+    """F-128: a drop used to fade the whole level in again (a View Transition); now the level is morphed where it is and only the moved step changes."""
     page = canvas_page(viewport=TALL, motion="no-preference")
     block(page)
     settle(page)
@@ -584,7 +585,8 @@ def test_a_drop_swaps_the_level_with_the_same_animation_as_the_zoom(canvas_page)
     expect(toast(page)).to_contain_text("moved to Lunch")
     settle(page)
     vt = page.evaluate("window.__vt")
-    assert vt["calls"] >= 1 and vt["dir"][0] == "side"
+    assert vt["calls"] == 0
+    expect(page.locator('.cz-bpart:has(h2:text-is("Lunch"))')).to_contain_text("Minion Mayhem")
     assert page.evaluate("GA.motion.log.some(l => l.kind === 'open')")      # the toast grew in with the one spring (F-108, F-109)
 
 

@@ -14,7 +14,7 @@ def test_every_page_loads_the_one_toast(client):
 def test_the_other_toasts_are_gone_from_the_styles_and_scripts():
     for sub in ("css", "js"):
         for f in (ASSETS / sub).glob("*"):
-            if f.name in ("toast.css", "toast.js"):
+            if f.name in ("toast.css", "toast.js") or not f.is_file():      # (js/vendor/ holds a library, F-122)
                 continue
             text = f.read_text(encoding="utf-8")
             for old in (".cz-toast", ".ak-toast", "ak-toast", "cz-toast", ".tp-toast {", ".cal-toast {"):

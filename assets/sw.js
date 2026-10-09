@@ -154,7 +154,7 @@ async function fromPrefetch(req) {
 }
 
 /* F-116: the tab screens (the day, the week, Family) open at once from the copy saved last time, marked `data-ga-stale` on its <html>, while a fresh copy is fetched
-   and saved behind it; the page then brings itself up to date (trip_canvas.js revalidates the level, thread.js polls). Anything else stays network first. */
+   and saved behind it; the page then brings itself up to date (canvas_core.js revalidates the level, thread.js polls). Anything else stays network first. */
 function tabScreen(req) {
   if (req.mode !== "navigate") return false;
   const url = new URL(req.url);

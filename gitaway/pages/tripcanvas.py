@@ -7,7 +7,7 @@ GET  /trip/canvas?step=<id>       one step, as a bottom sheet over its block: no
 POST /trip/canvas/step            Mark done, Not done, Set aside, Put back (the writes are F-080's gitaway.canvas; editors only, gated by gitaway.access)
 
 Every level is drawn by the server and has its own address, so it works without script, the back button works, and a link opens a level directly. With
-script (assets/js/trip_canvas.js) a tap or the Day | Week toggle fetches the next level as a fragment (`?frag=1`, no page around it) and swaps it inside a View
+script (assets/js/canvas_core.js and its modules, F-128) a tap or the Day | Week toggle fetches the next level as a fragment (`?frag=1`, no page around it) and swaps it inside a View
 Transition: the element that was tapped (a day row, a block card, a step chip) is the one that grows into the next level's header or sheet, and shrinks back on
 zoom out. Where View Transitions are missing it is a short scale and fade; with reduced motion it is an instant swap. A write from the sheet (`X-Canvas: 1`)
 answers 204 and `X-Canvas-Url`, the level to zoom out to.
@@ -30,7 +30,7 @@ from gitaway.pages.around_ui import around_url
 from gitaway.pages.plantalk import talk_badge   # F-091: the chat badge on a plan and on a part
 
 HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/help.css"), *passes_ui.HEAD, Link(rel="stylesheet", href="/assets/css/trip_canvas.css"), Link(rel="stylesheet", href="/assets/css/day_grid.css"), Link(rel="stylesheet", href="/assets/css/plantalk.css"), Link(rel="stylesheet", href="/assets/css/day_card.css"))   # pickers: the add-a-step sheet has a time field (F-082)
-SCRIPTS = ("/assets/js/vendor/idiomorph.js", "/assets/js/trip_canvas.js", "/assets/js/canvas_tick.js", "/assets/js/day_grid.js", "/assets/js/day_menu.js", "/assets/js/day_new.js", "/assets/js/day_fold.js", "/assets/js/day_card.js")
+SCRIPTS = ("/assets/js/vendor/idiomorph.js", "/assets/js/canvas_core.js", "/assets/js/canvas_filters.js", "/assets/js/canvas_writes.js", "/assets/js/canvas_sos.js", "/assets/js/canvas_gestures.js", "/assets/js/canvas_tick.js", "/assets/js/day_grid.js", "/assets/js/day_menu.js", "/assets/js/day_new.js", "/assets/js/day_fold.js", "/assets/js/day_card.js")
 RANK = {"week": 0, "day": 1, "block": 2, "step": 3}
 PART_TINTS = ("sky", "sun", "grape", "bubble", "mint")
 MAX_FACES = 5
@@ -712,7 +712,7 @@ def sheet(v, found, a):
         note_form = _post_form("/trip/canvas/note", {"step": s["id"], "next": sheet_url},
                                Input(type="text", name="note", value=s["note"], maxlength=str(canvas.MAX_NOTE), placeholder="+ Add a note", aria_label="Note", cls="cz-note-in cz-note-sticky", enterkeyhint="done"),
                                Button("Save note", type="submit", cls="sr-only cz-save"), cls="cz-note-form", data_cz_stay="")
-        # F-121: the note is the sticky itself: tap it and write; it saves when the keyboard goes (trip_canvas.js). No Move here: the calendar is where things move.
+        # F-121: the note is the sticky itself: tap it and write; it saves when the keyboard goes (canvas_writes.js). No Move here: the calendar is where things move.
         more = Div(note_form, cls="cz-more", id="cz-notebox")
     else:
         buttons = P("You can look at this step but not change it.", cls="cz-sub cz-viewer", id="cz-viewer")

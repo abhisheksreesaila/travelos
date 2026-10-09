@@ -64,7 +64,7 @@ def test_no_script_gives_an_animation_a_duration_of_its_own():
 
 def test_every_sheet_menu_popover_toast_and_card_goes_through_the_helper():
     for name, calls in (("ask_sheet.js", ("MO.open(", "MO.close(", "MO.spring(")), ("day_card.js", ("MO.open(", "MO.close(", "MO.spring(", "MO.flip(")), ("day_menu.js", ("MO.open(", "MO.close(")),
-                        ("ask.js", ("MO.open(", "MO.close(", "MO.reflow(")), ("toast.js", ("MO.open(", "MO.close(")), ("trip_canvas.js", ("GA.motion.open(", "GA.motion.close(")),
+                        ("ask.js", ("MO.open(", "MO.close(", "MO.reflow(")), ("toast.js", ("MO.open(", "MO.close(")), ("canvas_sos.js", ("GA.motion.open(", "GA.motion.close(")),
                         ("pickers.js", ("MO.open(", "MO.close(")), ("workspace.js", ("MO.open(", "MO.close(", "MO.flip("))):
         text = (ASSETS / "js" / name).read_text(encoding="utf-8")
         for call in calls:

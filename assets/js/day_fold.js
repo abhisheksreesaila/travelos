@@ -1,4 +1,4 @@
-// The top of the day folds away (F-103). Needs trip_canvas.js, which loads first (window.CZ).
+// The top of the day folds away (F-103). Needs canvas_core.js, which loads first (window.CZ).
 //
 // The captain, on the trip: the heading, the filters and the dates "occupy a lot of real estate... it's almost like it should fade away, and the only thing I should see is a compact
 // version". The day's heading, kinds row, date strip and filters scroll away as they always did; once the last of them has left the top of the screen, a compact bar (the day's name,

@@ -700,3 +700,21 @@ Captain, 2026-10-08: no Set aside (the swipe keeps it), no Edit the note button 
 
 ## F-122 Updates in place, no rebuild [done]
 Captain, 2026-10-08: "is it redrawing some parts". A write that stays on the level and the F-116 background refresh now morph the screen (assets/js/vendor/idiomorph.js) instead of replacing it with a fade.
+
+## F-123 A block change updates the day in place [done]
+Captain, 2026-10-08: "after I change the calendar block I can feel the refresh". CZ.quiet (every block move, nudge, Undo) morphs instead of rebuilding the day.
+
+## F-124 One round trip per write [done]
+Every canvas write sent with `X-Canvas-Level: 1` answers with the level drawn after it (`level`, tripcanvas.py `_reply`), so the refresh that follows needs no second fetch. The day card's notes too.
+
+## F-125 Tap a step's circle to tick it [done]
+The circle on a step is a tick box (Reminders): it fills at once, the save runs behind (canvas_tick.js). The rest of the row still opens the sheet.
+
+## F-126 Done never waits [done]
+The swipe's Done ticks the row at once and slides it shut; the sheet's Mark done goes back to the plan at once with the row ticked. A failed save puts it back with a toast.
+
+## F-127 Solid dark bars [done]
+The dark head and the compact bar dropped their invisible backdrop blur (94% ink): cheaper scrolling on the phone.
+
+## F-128 The canvas script in modules [done]
+Captain, 2026-10-08: "write good modular code with speed and micro interactions in mind". trip_canvas.js (830 lines) is now canvas_core.js (levels, fetching, swaps, the write transport) plus canvas_filters.js, canvas_writes.js, canvas_sos.js, canvas_gestures.js; drops, adds and Undo refresh in place too (they faded the level in again).

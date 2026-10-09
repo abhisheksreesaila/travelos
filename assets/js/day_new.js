@@ -1,4 +1,4 @@
-// Make a plan by touching empty time on the day grid (F-101). Needs trip_canvas.js, day_grid.js and day_menu.js, which load first.
+// Make a plan by touching empty time on the day grid (F-101). Needs canvas_core.js, day_grid.js and day_menu.js, which load first.
 //
 //   Hold empty time about 350 ms (a finger that stays still; a scroll or the flick between days starts earlier and is left alone): a one-hour block appears there, snapped to
 //   15 minutes, and follows the finger until it lets go. On release its title field opens in place (the same field as Rename, day_menu.js `CZ.titleField`) with the keyboard up.
@@ -171,7 +171,7 @@
   }
 
   var before = CZ.editing;
-  CZ.editing = function () { return !!making || !!h || !!chip || (before ? before() : false); };      // trip_canvas.js never re-swaps the page (F-099 revalidation) under a title being typed, a hold or the "+"
+  CZ.editing = function () { return !!making || !!h || !!chip || (before ? before() : false); };      // canvas_core.js never re-swaps the page (F-099 revalidation) under a title being typed, a hold or the "+"
 
   // ---- the "+" ---------------------------------------------------------------------------------------------------------------------
   function showChip(g, x, y) {

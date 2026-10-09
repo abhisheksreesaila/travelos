@@ -1,4 +1,4 @@
-// The hold menu, rename in place and delete on the day grid (F-098). Needs trip_canvas.js and day_grid.js, which load first and hand over two moments:
+// The hold menu, rename in place and delete on the day grid (F-098). Needs canvas_core.js and day_grid.js, which load first and hand over two moments:
 //   CZ.hold(block)      a block was held and let go without moving: it wiggles and a small menu pops beside it: Chat, Rename, Delete, and Earlier, Later, Shorter and
 //                       Longer by 15 minutes (the same moves as dragging, for a keyboard or a screen reader; they are a real menu, role="menu").
 //   CZ.tap(block, e)    a tap: two quick taps on a title edit it in place. A park block's single tap on its title waits a moment for a second tap before it opens.

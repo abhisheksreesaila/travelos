@@ -1,7 +1,7 @@
 // The day as a time grid (F-097): hold a block about 350 ms to lift it and drag it to a new time (15-minute snap, the time shown under the finger, the page scrolls at the
 // top and bottom edge); hold its bottom edge to change its length, while the grid zooms in around the finger (about 2.5x, 5-minute snap) and eases back on release. Each
 // change saves through the calendar's own rules (POST /trip/canvas/plan) and shows a toast with Undo. Editors only: a viewer's page has no data-edit and no gestures.
-// Needs trip_canvas.js, which loads first and shares its toast, writes, quiet refresh and the flick (a held block never flicks, CZ.held).
+// Needs canvas_core.js, which loads first and shares its toast, writes, quiet refresh and the flick (a held block never flicks, CZ.held).
 //
 // Smoothness: nothing here reads layout inside a frame. The geometry is read once when a block is lifted; after that each frame writes a `transform` (a move), one height
 // on one absolutely positioned block (a resize) and the zoom's scale, all from the latest pointer position, one rAF at a time. The zoom is a scaleY on one layer
@@ -510,7 +510,7 @@
 
   // A refresh that follows a write (a drop, a nudge, an Undo, or someone else's change) re-draws the day, but the eye must not see it: every block is measured before the swap by its plan
   // (data-act) and, after it (and the scroll put back), drawn where it was and sent to where it is, with the same spring (GA.motion.land). A block that did not move does not move now; one that
-  // did (an overlap changed, an Undo) glides. trip_canvas.js calls this before a quiet swap and runs what it returns after.
+  // did (an overlap changed, an Undo) glides. canvas_core.js calls this before a quiet swap and runs what it returns after.
   function wiggleOf(n) { var a = n && n.getAnimations ? n.getAnimations().filter(function (x) { return x.animationName === 'cz-wiggle'; })[0] : null; return a ? a.currentTime : null; }
   function arrived(n) {      // a re-drawn block (or its knobs) is born in the state the old one was in (lifted by its selection or its menu): the eases that would play from "plain" to that are over at once, nothing pops
     if (n && n.getAnimations) n.getAnimations().forEach(function (a) { if (a.transitionProperty !== undefined) a.finish(); });
@@ -566,7 +566,7 @@
       if (again && editing()) select(again, true);
     }
   });
-  CZ.afterScroll = scrollToPlans;      // trip_canvas.js calls it right after a level it pushed or replaced is scrolled to the top
+  CZ.afterScroll = scrollToPlans;      // canvas_core.js calls it right after a level it pushed or replaced is scrolled to the top
   startNow();
   if (window.scrollY < 4) scrollToPlans();
 })();

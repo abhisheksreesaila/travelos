@@ -1,6 +1,6 @@
 // F-125: tap a step's circle to tick it, as in Reminders. The circle fills and the title strikes at once; the save runs behind, and its reply brings the
 // counts up to date in place (F-124). A refused or lost save puts the step back and says so. The rest of the row still opens the step's sheet.
-// Editors only (the stage's data-edit). Loaded after trip_canvas.js (CZ.post, CZ.quiet).
+// Editors only (the stage's data-edit). Loaded after canvas_core.js (CZ.post, CZ.quiet).
 (function () {
   'use strict';
   var stage = document.getElementById('cz');

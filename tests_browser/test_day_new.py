@@ -399,6 +399,7 @@ def test_a_refresh_dropped_as_stale_is_asked_for_again_so_a_failed_write_cannot_
     held = []
     pattern = re.compile(rf".*day={SUNDAY}&frag=1$")
     day.route(pattern, lambda route: held.append((route, route.fetch())) if not held else route.continue_())      # only the create's own refresh is held back
+    day.route("**/trip/canvas/plan", lambda r: r.continue_(headers={k: v for k, v in r.request.headers.items() if k.lower() != "x-canvas-level"}))      # (F-124 hands the level over with the write; here the old separate refresh is what is raced)
     start_creating(day)
     day.keyboard.type("Pier walk")
     day.keyboard.press("Enter")

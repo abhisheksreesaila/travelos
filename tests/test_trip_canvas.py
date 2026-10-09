@@ -70,7 +70,7 @@ def test_signed_out_goes_to_sign_in_and_a_family_with_no_trip_to_start(client):
 def test_the_canvas_is_inside_the_phone_shell_with_today_current(trip):
     r = trip.get("/trip/canvas")
     assert r.status_code == 200 and 'class="ph-tabs"' in r.text and 'aria-current="page"' in tag(r.text, "ph-tab-today") and 'data-level="week"' in r.text
-    assert 'src="/assets/js/trip_canvas.js' in r.text and "trip_canvas.css" in r.text and 'id="cz"' in r.text
+    assert 'src="/assets/js/canvas_core.js' in r.text and "trip_canvas.css" in r.text and 'id="cz"' in r.text
 
 
 # ---- the week --------------------------------------------------------------------------------------------------------------

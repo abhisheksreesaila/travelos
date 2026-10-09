@@ -199,5 +199,5 @@ def test_data_saver_skips_the_prefetch_and_the_tap_still_works(browser, base_url
 def test_the_canvas_and_the_page_changes_use_one_motion_token_set(canvas_page):
     page = canvas_page(motion="no-preference")
     got = page.evaluate("""() => { const cs = getComputedStyle(document.documentElement);
-      return ['--motion-spring-dur', '--motion-spring', '--cz-dur', '--cz-ease'].map(k => cs.getPropertyValue(k).trim()); }""")
+      return ['--motion-spring-dur', '--motion-ease', '--cz-dur', '--cz-ease'].map(k => cs.getPropertyValue(k).trim()); }""")      # F-114: the screen moves glide with the calm ease, no overshoot
     assert got[0] and got[1] and got[0] == got[2] and got[1] == got[3], got

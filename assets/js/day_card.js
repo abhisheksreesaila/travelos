@@ -9,7 +9,7 @@
 //
 // Motion. The card grows from the block's own rectangle with the one liquid spring (GA.motion.open, motion.js: a transform on one layer; its words fade in a moment later, so nothing is seen squashed), the rest of the
 // day dims, and a fold (GA.motion.close) runs it backwards into the block. Reduced motion: no spring, an instant change. Holds, drags, resizes, the hold menu and hold-on-empty-time are not touched: the
-// card only answers the click that a tap makes (the click a held block makes is already guarded by trip_canvas.js, CZ.guard).
+// card only answers the click that a tap makes (the click a held block makes is already guarded by canvas_core.js, CZ.guard).
 (function () {
   var CZ = window.CZ;
   if (!CZ) return;
@@ -351,7 +351,7 @@
   window.addEventListener('pagehide', function () { if (open) closeNow(); });
 
   var before = CZ.editing;
-  CZ.editing = function () { return !!open || (before ? before() : false); };      // trip_canvas.js never swaps the day under an open card (typing, a message being sent)
+  CZ.editing = function () { return !!open || (before ? before() : false); };      // canvas_core.js never swaps the day under an open card (typing, a message being sent)
   CZ.openCard = show;
   CZ.foldCard = fold;
 })();
