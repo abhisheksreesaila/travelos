@@ -688,3 +688,15 @@ Captain, 2026-10-08: the compact bar (day name, Day | Week, map, SOS) that shows
 ## F-118 Chat messages just appear, as in WhatsApp [done]
 Captain, 2026-10-08: "The messaging still feels a little jittery… follow the WhatsApp model of not having any animation… the pop and the push… feels a little irritating." · Replaces the chat half of F-112/F-113
 - [x] a message I send and one that arrives are simply there; the list is at its end at once; nothing in the chat animates (no rise, glide, settle, fade or opacity transition)
+
+## F-119 The card says "Open plan · N of M done", not "Rides" [done]
+Captain, 2026-10-08: liked the block level but could not find it; "Rides" read as Uber rides.
+
+## F-120 The tab bar goes back down after the keyboard; calmer card motion [done]
+Captain, 2026-10-08: the Ask bar stuck mid-screen and scrolled with the plan (iOS keeps a fixed bar where the keyboard pushed it); the card motion slower and smoother (--motion-spring-dur 520ms, softer overshoot).
+
+## F-121 The step sheet: Mark done and a sticky you write on [done]
+Captain, 2026-10-08: no Set aside (the swipe keeps it), no Edit the note button (the sticky is the field, saved on change), no Move (the calendar is where things move). Notices stop following the scroll (they shook); they move once when the compact bar comes or goes.
+
+## F-122 Updates in place, no rebuild [done]
+Captain, 2026-10-08: "is it redrawing some parts". A write that stays on the level and the F-116 background refresh now morph the screen (assets/js/vendor/idiomorph.js) instead of replacing it with a fade.
