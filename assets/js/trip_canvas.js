@@ -781,7 +781,7 @@
           if (e0 !== epoch) { whenIdle(function () { CZ.quiet().then(done); }); return; }       // a write ran meanwhile, so this copy is already old: ask again (even if that write fails and brings no refresh of its own)
           var back = CZ.beforeQuiet ? CZ.beforeQuiet() : null, snap = CZ.snap ? CZ.snap() : null;      // the day grid puts the focus back on the block that had it, and sends each block from where it was to where it is
           quietSwap = true;
-          try { swap(html, ''); } finally { quietSwap = false; }
+          try { swap(html, '', true); } finally { quietSwap = false; }      // F-123: in place, so a block change does not rebuild the day
           if (back) back();
           window.scrollTo(0, y);
           if (snap) snap();

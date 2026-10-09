@@ -72,7 +72,7 @@ def check_one_settle_and_toast_after(page, rec, act, log_before, rest_step=0.5):
     first_toast = min(o["t"] for o in rec if "q" in o)
     assert first_toast > rest, (first_toast, rest)                                        # the toast glides in after the block has landed
     swapped = [t for (t, v), (_, w) in zip(tr, tr[1:]) if v["id"] != w["id"]]
-    assert swapped and swapped[0] > rest - 1, (swapped, rest)                             # the day was refreshed (the element replaced) only once it rested
+    assert not swapped or swapped[0] > rest - 1, (swapped, rest)                          # F-123: the refresh updates the day in place (the element is kept); never replaced mid-move
     lands = [e for e in page.evaluate("GA.motion.log")[log_before:] if e["kind"] in ("land", "flip")]
     assert len(lands) == 1, lands                                                         # exactly one settle ran for the change
     assert lands[0]["dur"] == page.evaluate("GA.motion.t('spring')")                      # the shared spring, from the token
@@ -174,7 +174,7 @@ def test_a_block_pushed_aside_by_a_move_glides_to_its_new_lane(canvas_page, vp):
     assert [o["t"] for o in rec if any(v["moving"] for v in o["b"].values()) and not o["landing"]] == []      # a refresh never swaps the day under a glide (CZ.landing covers the neighbours' too)
     glide_b = [o for o in rec if o["b"].get(str(b.id), {}).get("moving")]
     assert glide_b and all(o["landing"] for o in glide_b)
-    after = [v for t, v in tr if t > max(t for t, v in tr if v["lands"] or v["id"] == tr[0][1]["id"]) + 450]
+    after = [v for t, v in tr if t > max(t for t, v in tr if v["lands"] or v["moving"]) + 450]      # (F-123: the element is kept through the refresh)
     assert max(abs(after[0][k] - after[-1][k]) for k in ("top", "left", "width", "height")) < 0.5
 
 
