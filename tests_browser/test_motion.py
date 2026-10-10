@@ -17,7 +17,7 @@ from tests_browser.test_trip_canvas import NARROW, canvas_page, model  # noqa: F
 SPRING = "cubic-bezier(0.3, 1.12, 0.4, 1)"
 CALM = "cubic-bezier(0.22, 1, 0.36, 1)"              # screen moves: no overshoot (F-114), a long soft landing (F-137)
 OUT = "cubic-bezier(0.4, 0, 0.8, 0.4)"
-SPRING_MS, FOLD_MS, SCREEN_MS = 520, 240, 420          # the tokens' values (--motion-spring-dur, --motion-dur, --motion-screen-dur: a whole screen moving, F-129)
+SPRING_MS, FOLD_MS, SCREEN_MS = 520, 240, 500          # the tokens' values (--motion-spring-dur, --motion-dur, --motion-screen-dur: a whole screen moving, F-129)
 SLOW = 2500                                        # the tests that sample frames slow the tokens down so a sheet that settles its size in its first moments is caught at rest
 SIZES = [(390, 844), (320, 640)]
 
@@ -207,7 +207,7 @@ def level_grows(page, tap, origin_sel, sheet_sel):
     page.wait_for_timeout(SCREEN_MS + 250)
     sheet = page.evaluate(BOX, sheet_sel)
     assert near(got["last"], sheet, 3), (got["last"], sheet)                             # ends as the sheet
-    assert got["dur"] == SCREEN_MS and norm(got["easing"]) == norm(CALM), got             # the screen move's calm ease
+    assert got["dur"] == SCREEN_MS and norm(got["easing"]) == norm(SPRING), got           # F-138: the tapped thing moves like a card, with the soft spring
     page.locator(".cz-sheet .cz-close").click()
     page.wait_for_function("document.documentElement.dataset.czDir")
     back = hero(page)
@@ -215,7 +215,7 @@ def level_grows(page, tap, origin_sel, sheet_sel):
     page.wait_for_timeout(SCREEN_MS + 250)
     expect(page.locator(sheet_sel)).to_have_count(0)
     assert near(back["last"], page.evaluate(BOX, origin_sel), 3)                         # lands back on the tapped thing
-    assert back["dur"] == SCREEN_MS and norm(back["easing"]) == norm(CALM)
+    assert back["dur"] == SCREEN_MS and norm(back["easing"]) == norm(SPRING)
 
 
 @pytest.mark.parametrize("vp", [PHONE, NARROW], ids=["390", "320"])

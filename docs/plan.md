@@ -745,3 +745,6 @@ On a day or a block, a finger from the left edge moving right drags the level an
 
 ## F-137 A liquid zoom between week and day [done]
 Captain 2026-10-10: "a little more liquid when it switches from week to day". The screens zoom about the tapped row (the old one swells past, the new one rises out of that point; out is the reverse, about the row being returned to), the row's words hand over quickly so nothing smears, and the zoom has a long soft landing (--motion-zoom, 420 ms, no overshoot).
+
+## F-138 More liquid still [done]
+Captain 2026-10-10: "faster, could be a little liquidy". The zoom is 500 ms; the tapped row (or step) moves with the cards' soft spring, a small give at the end; the screens behind soften with a slight blur as they pass (they never overshoot).

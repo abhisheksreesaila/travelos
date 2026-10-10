@@ -28,7 +28,7 @@ def lines(path):
 
 def test_the_tokens_are_the_cards_spring_and_one_set():
     css = (ASSETS / "css" / "tokens.css").read_text(encoding="utf-8")
-    for token, value in (("--motion-spring-dur", "520ms"), ("--motion-spring", "cubic-bezier(.3, 1.12, .4, 1)"), ("--motion-dur", "240ms"), ("--motion-screen-dur", "420ms"), ("--motion-out", "cubic-bezier(.4, 0, .8, .4)"),
+    for token, value in (("--motion-spring-dur", "520ms"), ("--motion-spring", "cubic-bezier(.3, 1.12, .4, 1)"), ("--motion-dur", "240ms"), ("--motion-screen-dur", "500ms"), ("--motion-out", "cubic-bezier(.4, 0, .8, .4)"),
                          ("--motion-settle-dur", "280ms"), ("--motion-quick", "160ms"), ("--motion-fade", "120ms"), ("--motion-wiggle", "420ms")):
         assert re.search(rf"{re.escape(token)}:\s*{re.escape(value)}", css), token
     canvas = (ASSETS / "css" / "trip_canvas.css").read_text(encoding="utf-8")
@@ -99,7 +99,7 @@ def test_the_screen_moves_use_the_spring_tokens():
     base = (ASSETS / "css" / "base.css").read_text(encoding="utf-8")
     assert "animation-duration: var(--motion-dur); animation-timing-function: var(--motion-ease)" in base          # the page changes (F-099): a quick calm cross-fade (F-114, F-116)
     canvas = (ASSETS / "css" / "trip_canvas.css").read_text(encoding="utf-8")
-    assert "::view-transition-group(cz-hero) { animation-duration: var(--cz-dur); animation-timing-function: var(--cz-ease)" in canvas      # the tapped thing grows into the next level
+    assert "::view-transition-group(cz-hero) { animation-duration: var(--cz-dur); animation-timing-function: var(--motion-spring)" in canvas      # the tapped thing grows into the next level
     assert "animation: cz-come-in var(--cz-dur) var(--cz-ease) both" in canvas                                                               # Day | Week
     grid = (ASSETS / "css" / "day_grid.css").read_text(encoding="utf-8")
     assert "animation: cz-pop var(--motion-settle-dur) var(--motion-spring)" in grid      # a new block (a moved one is GA.motion.land, F-112)
