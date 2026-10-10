@@ -15,9 +15,9 @@ from tests_browser.test_day_grid import ari, open_day, plan  # noqa: F401
 from tests_browser.test_trip_canvas import NARROW, canvas_page, model  # noqa: F401 - fixtures
 
 SPRING = "cubic-bezier(0.3, 1.12, 0.4, 1)"
-CALM = "cubic-bezier(0.25, 0.8, 0.25, 1)"            # screen moves (F-114)
+CALM = "cubic-bezier(0.22, 1, 0.36, 1)"              # screen moves: no overshoot (F-114), a long soft landing (F-137)
 OUT = "cubic-bezier(0.4, 0, 0.8, 0.4)"
-SPRING_MS, FOLD_MS, SCREEN_MS = 520, 240, 360          # the tokens' values (--motion-spring-dur, --motion-dur, --motion-screen-dur: a whole screen moving, F-129)
+SPRING_MS, FOLD_MS, SCREEN_MS = 520, 240, 420          # the tokens' values (--motion-spring-dur, --motion-dur, --motion-screen-dur: a whole screen moving, F-129)
 SLOW = 2500                                        # the tests that sample frames slow the tokens down so a sheet that settles its size in its first moments is caught at rest
 SIZES = [(390, 844), (320, 640)]
 

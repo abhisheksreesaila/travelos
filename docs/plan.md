@@ -742,3 +742,6 @@ A day or block not in hand within 70 ms is not waited for: the zoom runs straigh
 
 ## F-136 Swipe in from the left edge to go back [done]
 On a day or a block, a finger from the left edge moving right drags the level and, past 80 px, zooms out (less springs back). It wins over the day flick and a hold at the edge.
+
+## F-137 A liquid zoom between week and day [done]
+Captain 2026-10-10: "a little more liquid when it switches from week to day". The screens zoom about the tapped row (the old one swells past, the new one rises out of that point; out is the reverse, about the row being returned to), the row's words hand over quickly so nothing smears, and the zoom has a long soft landing (--motion-zoom, 420 ms, no overshoot).
