@@ -21,7 +21,7 @@ _LEG = re.compile(r"\b([A-Z]{3}) → ([A-Z]{3})\b")
 
 
 def is_phone(ua) -> bool:
-    """A phone's browser (not a tablet's): a plain /calendar sends these to /trip."""
+    """A phone's browser (not a tablet's): the install's start page, /trip, is the day view for them as for everyone."""
     return bool(_PHONE.search(ua or "")) and "iPad" not in (ua or "")
 
 

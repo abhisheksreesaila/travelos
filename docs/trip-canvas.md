@@ -266,7 +266,7 @@ The captain's web brief (`docs/briefs/web-trip.md`, item 6) retired the old trip
 | The old calendar did | Now |
 |---|---|
 | Trip title, dates and the price line | The top bar's trip picker (name and dates) and the day's heading. The price is dropped from this screen (`/booked` and the pay page show it). |
-| "2 trips" switcher; Plan another trip; Import a booked trip | The top bar's trip picker menu: switch (`POST /trips/switch`), Plan another trip, Import a trip you booked. |
+| "2 trips" switcher; Plan another trip; Import a booked trip | The top bar's trip picker menu (from 1020px): switch (`POST /trips/switch`), Plan another trip, Import a trip you booked (not offered to a viewer). Below 1020px (a phone, a tablet) the same menu (`topbar.trip_menu()`, class `ga-tb-phonepick`, same markup and `topbar.js`) sits above the title of the day, the week and Today and opens as a bottom sheet. Tests: `tests_browser/test_trip_switcher.py` (390 and 800), `tests/test_topbar.py`. |
 | Edit trip (imported trips) | `/trip/details` and the Today page (`#tp-edit-trip`), and the map's "Edit trip" for a booking it cannot place. |
 | Whole trip / Day by day, day chips, `#d3` anchors | The canvas: Week and Day, the day chips, `/trip/canvas?day=N`. |
 | Hour grid: blocks side by side, drag to move, drag the foot to resize, keys, a ghost to add | The canvas day grid: hold to move or resize, the hold menu, hold empty time to make a plan (F-097, F-098, F-101); the desktop mouse and keyboard versions are F-140 and F-144. |

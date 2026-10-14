@@ -114,7 +114,7 @@ def test_viewers_see_no_button_and_cannot_open_or_save(crew):
         assert 'id="ti-edit-trip"' in who.get(f"/trip/details?trip={trip_id}").text
         assert who.get(edit_url(trip_id)).status_code == 200
     html = viewer.get(f"/trip/details?trip={trip_id}").text
-    assert 'id="ti-edit-trip"' not in html and 'id="cal-edit-trip"' not in viewer.get(f"/calendar?trip={trip_id}").text and 'id="tp-edit-trip"' not in viewer.get(f"/trip?trip={trip_id}").text
+    assert 'id="ti-edit-trip"' not in html and 'id="tp-edit-trip"' not in viewer.get(f"/trip?trip={trip_id}").text
     assert viewer.get(edit_url(trip_id)).status_code == 403
     for path in ("/trips/build", "/trips/build/save"):
         assert viewer.post(path, data={"edit": trip_id, "trip": trip_id, "replace": trip_id}, follow_redirects=False).status_code == 403, path

@@ -817,7 +817,7 @@ Brief: docs/briefs/web-trip.md · Design: docs/design/web-trip.md (tokens) · Ne
 
 ## F-147 Retire the old trip calendar [review]
 Brief: docs/briefs/web-trip.md · Needs: F-139, F-143
-Built: docs/trip-canvas.md "Retired: the old calendar (F-147)" has the inventory. For the captain to decide: Share trip now lives only under Community trips -> Share yours; changing a plan's kind or day has no touch/mouse path (Ask moves it); the stored pretend-friends and the `long` demo scope remain in the model, undrawn.
+Review fixes: the phone and tablet trip menu (above the title), the viewer's import, the stale tests. Built: docs/trip-canvas.md "Retired: the old calendar (F-147)" has the inventory. For the captain to decide: Share trip now lives only under Community trips -> Share yours; changing a plan's kind or day has no touch/mouse path (Ask moves it); the stored pretend-friends and the `long` demo scope remain in the model, undrawn.
 - [x] before removal, list everything the old calendar page does and where each one now lives (or that it is dropped with the captain's brief: the 8-button row, Your forks, the separate notes panel)
 - [x] /calendar goes to the trip's day (or week) on every screen size; Invite lives in Family; no page links to /calendar any more
 - [x] /trips goes to the current trip instead of a 404

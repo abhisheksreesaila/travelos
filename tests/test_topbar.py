@@ -4,6 +4,7 @@ Where it shows (desktop only) and what each link does are checked in a browser: 
 import re
 
 from tests.test_calendar import book
+from tests.test_roles import crew  # noqa: F401 - a fixture
 from tests.test_signin import sign_in
 from tests.test_trip_import import imported
 
@@ -119,3 +120,36 @@ def test_trip_opens_day_one_before_the_trip_and_today_during_it(client, monkeypa
     assert client.get("/trip", follow_redirects=False).headers["location"].startswith("/trip/canvas?day=0")      # today is Sep 30
     monkeypatch.setattr(catalog, "today", lambda: date(2026, 10, 18), raising=False)
     assert client.get("/trip", follow_redirects=False).headers["location"].startswith("/trip/canvas?day=2")      # Oct 18 is the trip's third day
+
+
+# ---- the trip menu below 1020px (F-147 review) ----------------------------------------------------------------------------
+
+def phone_pick(html):
+    """The trip menu in the heading of a phone or tablet screen (the bar itself is hidden there)."""
+    m = re.search(r'<details[^>]*ga-tb-phonepick.*?</details>', html, re.S)
+    return m.group(0) if m else ""
+
+
+def test_the_phone_screens_carry_the_trip_menu_with_the_same_items_as_the_bar(client):
+    from tests.test_calendar import PICK
+    book(client)
+    book(client, d="2026-10-23", r="2026-10-26", a="2", k="4,7")
+    for path in ("/trip/canvas?day=0", "/trip/canvas", "/trip?day=0"):
+        html = client.get(path).text
+        menu = phone_pick(html)
+        assert menu, path
+        assert menu.count('action="/trips/switch"') == 2 and 'href="/start"' in menu and 'href="/trips/import"' in menu, path
+        assert "Plan another trip" in menu and "Import a trip you booked" in menu
+
+
+def test_a_family_with_no_trip_has_no_trip_menu_and_a_level_below_a_day_does_not_repeat_it(client):
+    sign_in(client)
+    assert phone_pick(client.get("/family").text) == ""
+
+
+def test_a_viewer_is_not_offered_the_import_in_either_menu(crew):
+    owner, _, viewer = crew
+    for who, offered in ((owner, True), (viewer, False)):
+        html = who.get("/trip/canvas?day=0").text
+        for menu in (bar(html), phone_pick(html)):
+            assert ('href="/trips/import"' in menu) is offered

@@ -73,7 +73,8 @@ def restart():
 def trip_buttons(html):
     """[(trip id, is the open one)] for the trip picker in the top bar, in the order shown."""
     out = []
-    for form in re.findall(r"<form\b[^>]*action=\"/trips/switch\"[^>]*>.*?</form>", html, re.S):
+    bar = re.search(r'<header[^>]*class="ga-topbar".*?</header>', html, re.S)
+    for form in re.findall(r"<form\b[^>]*action=\"/trips/switch\"[^>]*>.*?</form>", bar.group(0) if bar else "", re.S):
         trip = re.search(r'name="trip" value="([^"]+)"', form).group(1)
         out.append((trip, 'aria-current="true"' in form))
     return out

@@ -1,4 +1,4 @@
-// The top bar's two menus (the trip picker and the avatar) and the "/" key (F-139, gitaway/topbar.py). The menus are <details>: a menu grows out of its button and folds back into it
+// The top bar's two menus (the trip picker and the avatar) and the "/" key (F-139, gitaway/topbar.py). The trip picker's twin in the heading of a phone or tablet screen (.ga-tb-phonepick, F-147) is the same <details> and behaves the same. The menus are <details>: a menu grows out of its button and folds back into it
 // with the one liquid motion (GA.motion, motion.js); it closes on Esc, on a press outside it, and when another opens. "/" goes to Ask (the link beside it), unless a field has focus.
 // The key clicks the Ask link beside it. The link is the Ask page; on the trip canvas's day and week (a laptop) day_ask.js (F-142) catches that click and opens Ask in the panel instead.
 (function () {
@@ -6,7 +6,7 @@
   var bar = document.querySelector('.ga-topbar');
   if (!bar) return;
 
-  function menus() { return Array.prototype.slice.call(bar.querySelectorAll('.ga-tb-menu')); }
+  function menus() { return Array.prototype.slice.call(document.querySelectorAll('.ga-tb-menu')); }
   function popOf(d) { return d.querySelector('.ga-tb-pop'); }
   function sumOf(d) { return d.querySelector('summary'); }
 
@@ -20,7 +20,7 @@
     } else done();
   }
 
-  bar.addEventListener('toggle', function (e) {
+  document.addEventListener('toggle', function (e) {
     var d = e.target;
     if (!d.classList || !d.classList.contains('ga-tb-menu') || !d.open) return;
     menus().forEach(function (o) { if (o !== d) fold(o, false); });         // one menu open at a time

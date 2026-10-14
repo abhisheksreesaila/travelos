@@ -4,6 +4,26 @@
 .ga-topbar { display: none; }
 .ga-topbar { --tb-sun-bg: var(--sun-tint); --tb-sun-ink: var(--sun-ink); --tb-sos-bg: var(--bubble-tint); --tb-sos-ink: var(--bubble-ink); --tb-line: rgba(30, 26, 46, .14); }
 
+/* The trip menu in the heading of a phone or tablet screen (F-147 review): the bar's picker, as a quiet line above the title that opens a bottom sheet. Hidden where the bar shows. */
+.ga-tb-phonepick { align-self: flex-start; margin: 0 0 0.25rem -0.5rem; }
+.ga-tb-phonepick > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; min-height: 2.75rem; padding: 0 0.5rem; border-radius: var(--r-pill); color: var(--ink); font: 800 max(var(--text-min), 0.875rem)/1.1 var(--font-body); }
+.ga-tb-phonepick > summary::-webkit-details-marker { display: none; }
+.ga-tb-phonepick .ga-tb-tdot { display: grid; place-items: center; width: 1.75rem; height: 1.75rem; border-radius: 50%; background: var(--sun-tint); color: var(--sun-ink); flex-shrink: 0; }
+.ga-tb-phonepick .ga-tb-pickname { overflow-wrap: anywhere; }
+.ga-tb-phonepick .ga-tb-pickdates { display: none; }
+.ga-tb-phonepick .ga-tb-chev { transform: rotate(90deg); color: var(--ink-3); flex-shrink: 0; }
+.ga-tb-phonepick > summary:focus-visible, .ga-tb-phonepick .ga-tb-sw:focus-visible, .ga-tb-phonepick .ga-tb-item:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.125rem; }
+.ga-tb-phonepick .ga-tb-pop { position: fixed; left: 0.75rem; right: 0.75rem; bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px)); z-index: 90; max-height: 70vh; overflow-y: auto; padding: 0.5rem; border-radius: 1.5rem; background: var(--card); box-shadow: var(--shadow-lg); display: flex; flex-direction: column; gap: 0.25rem; color: var(--ink); }
+.ga-tb-phonepick .ga-tb-k { padding: 0.5rem 0.75rem 0.25rem; font-size: max(var(--text-min), 0.75rem); font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+.ga-tb-phonepick .ga-tb-solo { margin: 0; padding: 0.5rem 0.75rem; color: var(--ink-2); }
+.ga-tb-phonepick .ga-tb-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.125rem; }
+.ga-tb-phonepick .ga-tb-sw { width: 100%; min-height: 2.75rem; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 0.125rem; padding: 0.5rem 0.75rem; border: 0; border-radius: 1rem; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.ga-tb-phonepick .ga-tb-sw[aria-current="true"] { background: var(--sun-tint); }
+.ga-tb-phonepick .ga-tb-sw-name { font-weight: 800; }
+.ga-tb-phonepick .ga-tb-sw-dates { color: var(--ink-3); font-weight: 600; font-size: max(var(--text-min), 0.8125rem); }
+.ga-tb-phonepick .ga-tb-item { display: flex; align-items: center; gap: 0.625rem; width: 100%; min-height: 2.75rem; padding: 0 0.75rem; border: 0; border-radius: 1rem; background: none; color: var(--ink); font: 700 max(var(--text-min), 1rem) var(--font-body); text-align: left; text-decoration: none; cursor: pointer; }
+@media (min-width: 1020px) { .ga-tb-phonepick { display: none; } }
+
 @media (min-width: 1020px) {
   .ga-topbar { position: relative; z-index: 50; display: flex; align-items: center; gap: 1.5rem; height: 4.8333rem; padding: 0 2.3333rem; box-sizing: border-box; font-family: var(--font-body); font-size: max(var(--text-min), 1.0833rem); font-weight: 600; color: var(--ink); }
   .ga-header[data-has-topbar] { display: none; }

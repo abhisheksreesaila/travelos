@@ -18,7 +18,7 @@ from fasthtml.common import NotStr, A, Button, Details, Div, Form, H1, H2, Heade
 from fasthtml.core import FtResponse
 from starlette.responses import RedirectResponse
 
-from gitaway import access, canvas, catalog, geo, members, phone, tripgeo, pickers, session as ses, tripcal as cal, tripday as td
+from gitaway import access, canvas, catalog, geo, members, phone, tripgeo, pickers, session as ses, tripcal as cal, tripday as td, topbar
 from gitaway.icons import icon
 from gitaway.layout import avatar, join_note, trip_field
 from gitaway.pages import dayshared as calui, morning as morning_ui, passes as passes_ui, passkeys as passkeys_ui, rides as rides_ui, tab_ask
@@ -382,7 +382,7 @@ def header(v, tab):
     dates = f"{t.title.upper()} · {cal.range_label(t.depart, t.return_).upper()}"
     day_of = f"{t.title.upper()} · DAY {v['sel'] + 1} OF {len(v['dates'])}" if v["phase"] == "during" and v["today_idx"] == v["sel"] else dates
     kicker = day_of if tab == "today" else dates
-    return Header(Div(Span(kicker, cls="tp-head-k", id="tp-head-k", data_today=day_of, data_other=dates),
+    return Header(Div(topbar.trip_menu() if tab == "today" else "", Span(kicker, cls="tp-head-k", id="tp-head-k", data_today=day_of, data_other=dates),
                       H1({"today": _title_today(v), "days": f"Your {len(v['dates'])} days", "notes": "Trip notes"}[tab], id="tp-title-h"),
                       Div(A(icon("pencil", 14, 2.4), "Add to the trip", href="/trip/ask?mode=paste", cls="btn btn-sm tp-edit tp-addtrip", id="tp-add-trip") if access.can_edit(v["role"]) else "",
                           A(icon("calendar", 14, 2.4), "Day plan", href=f"/trip/canvas?day={v['sel']}", cls="btn btn-sm tp-edit tp-opencanvas", id="tp-open-day"),   # F-090: the plan of the day shown here, for every role
@@ -455,7 +455,7 @@ def register(app):
         if sheet is not None and (title or kind or at):      # Around you's "Add to plan": the sheet opens with the place's name, its kind and the next free hour
             vals = {"title": " ".join(title.split())[: cal.MAX_TITLE], "kind": kind if kind in cal.KINDS else "fun"}
             try:
-                vals["start"] = cal.hhmm(cal.snap(cal.parse_time(at, "start")))
+                vals["start"] = cal.hhmm(min(max(cal.snap(cal.parse_time(at, "start")), cal.DEFAULT_START), cal.GRID_END - cal.MIN_LEN))   # inside the day's hours
             except cal.CalendarError:
                 pass
             sheet = {"vals": vals}

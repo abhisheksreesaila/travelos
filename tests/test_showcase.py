@@ -62,9 +62,8 @@ def test_production_alone_turns_the_showcase_off_and_keeps_the_dev_sign_in_locke
 # ---- production: hidden routes ----
 
 HIDDEN_GET = ["/community", "/discover", "/discover?tag=beach", "/creators", "/creators/draft", "/creators/finish", "/creators/done", "/forks", "/share", "/share/done",
-              "/calendar?demo=long", "/calendar?demo=long&view=days"] + [f"/trips/{s}" for s in SLUGS] + ["/trips/anything-shared"]
-HIDDEN_POST = ["/fork", "/save", "/unsave", "/share", "/share/unpublish", "/forks/apply", "/forks/undo", "/creators", "/creators/draft", "/creators/finish",
-               "/calendar/friends", "/calendar/live"]
+              "/trip/canvas?demo=long"] + [f"/trips/{s}" for s in SLUGS] + ["/trips/anything-shared"]
+HIDDEN_POST = ["/fork", "/save", "/unsave", "/share", "/share/unpublish", "/forks/apply", "/forks/undo", "/creators", "/creators/draft", "/creators/finish"]
 
 
 @pytest.mark.parametrize("path", HIDDEN_GET)
@@ -161,12 +160,9 @@ def booked_then_real(client, monkeypatch):
 
 def test_a_booked_trip_has_no_forks_share_or_pretend_friends(client, monkeypatch):
     booked_then_real(client, monkeypatch)
-    h = client.get("/calendar").text
-    assert_real(h, "/calendar")
-    assert 'action="/share"' not in h and "/calendar/friends" not in h
-    assert 'href="/family' in h
-    invite = client.get("/calendar?invite=1")
-    assert invite.status_code == 200 and "pretend" not in invite.text and "nobody is really emailed" not in invite.text
+    h = client.get("/trip/canvas").text
+    assert_real(h, "/trip/canvas")
+    assert 'action="/share"' not in h and 'href="/forks' not in h
 
 
 def test_the_service_worker_version_changes_with_the_mode(client, monkeypatch):

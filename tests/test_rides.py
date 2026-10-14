@@ -310,11 +310,11 @@ def test_booked_lists_the_scheduled_rides_and_offers_the_rest(client):
     assert 'href="/rides/r1"' in html and "leg=depart" in html and "leg=arrive" not in html
 
 
-def test_a_booking_with_a_car_has_no_ride_blocks_or_offers(client):
+def test_a_booking_with_a_car_has_no_ride_items_or_offers(client):
     sign_in(client)
     book(client, "f=f1&h=h1&c=c1")
-    html = client.get("/calendar?view=days").text
-    assert "/rides/new" not in html and "Schedule an Uber" not in client.get("/booked").text
+    days = client.get("/trip?day=0").text + client.get("/trip?day=4").text
+    assert "/rides/new" not in days and "Schedule an Uber" not in days + client.get("/booked").text
 
 
 # ---- storage -----------------------------------------------------------------------------------------------------

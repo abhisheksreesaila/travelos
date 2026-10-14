@@ -224,7 +224,3 @@ def test_ten_adults_open_intact():
     plan = plan_of(text)
     assert plan.adults == 10 and tb.build(tb.load(tb.dump(tb.from_plan(plan)))) == plan
 
-
-def test_viewers_do_not_see_the_calendar_import_button(crew):
-    _, _, viewer = crew
-    assert 'id="cal-import"' not in viewer.get("/calendar").text

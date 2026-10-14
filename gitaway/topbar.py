@@ -38,9 +38,10 @@ def _link(label, href, key, current, ico=None, **extra):
     return A(icon(ico, 15, 2.2) if ico else "", label, href=href, cls=f"ga-tb-link ga-tb-{key}", aria_current="page" if key == current else None, **extra)
 
 
-def _trip_pick(trips, b):
-    """The trip picker: the open trip's name and dates; its menu switches trips (POST /trips/switch, as the calendar's did) and plans or imports another."""
-    from gitaway import tripcal as cal
+def _trip_pick(trips, b, phone=False):
+    """The trip picker: the open trip's name and dates; its menu switches trips (POST /trips/switch, as the calendar's did) and plans or imports another.
+    `phone` is the same menu in the heading of a phone or tablet screen (topbar.css makes it a bottom sheet below 1020px and hides it above). A viewer cannot import."""
+    from gitaway import access, tripcal as cal
     t = cal.trip("", b) if b else None
     dates = cal.range_label(t.depart, t.return_) if t else ""
     mine = [Li(Form(Input(type="hidden", name="trip", value=x.id), Input(type="hidden", name="next", value="/trip"),
@@ -53,9 +54,23 @@ def _trip_pick(trips, b):
         Div(Span("Your trips", cls="ga-tb-k") if len(trips) > 1 else P("This is your only trip so far. Add another and switch between them here.", cls="ga-tb-solo"),
             Ul(*mine, cls="ga-tb-list") if len(trips) > 1 else "",
             A(icon("plus", 16, 2.4), "Plan another trip", href="/start", cls="ga-tb-item"),
-            A(icon("ledger", 16, 2.4), "Import a trip you booked", href="/trips/import", cls="ga-tb-item"),
+            A(icon("ledger", 16, 2.4), "Import a trip you booked", href="/trips/import", cls="ga-tb-item") if access.request_role() != "viewer" else "",
             cls="ga-tb-pop ga-tb-pop-trip"),
-        cls="ga-tb-menu ga-tb-picker")
+        cls="ga-tb-menu ga-tb-picker" + (" ga-tb-phonepick" if phone else ""))
+
+
+def trip_menu():
+    """The trip menu for a phone or tablet screen's heading (F-147 review: the bar is only there from 1020px): "" when nobody is signed in or there is no trip."""
+    session = ses.request_session()
+    if ses.request_traveler() is None or session is None:
+        return ""
+    try:
+        trips = ses.trips(session)
+        b = ses.booking(session) if trips else None
+    except Exception:
+        log.exception("could not read the family's trips for the trip menu")
+        return ""
+    return _trip_pick(trips, b, phone=True) if trips and b is not None else ""
 
 
 def _me(who):

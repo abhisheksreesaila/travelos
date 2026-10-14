@@ -381,3 +381,12 @@ def test_one_person_cannot_hammer_the_search(client, world, monkeypatch):
     assert r.status_code == 429
     t[0] += 61
     assert search(client, cat="gas").status_code == 200
+
+
+def test_a_start_outside_the_days_hours_is_brought_inside_them(client, world):
+    from gitaway import tripcal as cal
+    imported(client)
+    early = client.get("/trip?add=1&day=1&at=03:00&title=Dawn").text
+    late = client.get("/trip?add=1&day=1&at=23:59&title=Midnight").text
+    assert re.search(r'name="start"[^>]*value="07:00"', early)
+    assert re.search(r'name="start"[^>]*value="%s"' % cal.hhmm(cal.GRID_END - cal.MIN_LEN), late)

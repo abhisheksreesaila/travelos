@@ -22,7 +22,7 @@ from urllib.parse import parse_qs, urlencode, urlsplit
 from fasthtml.common import A, Button, Details, Div, Form, H1, H2, H3, Header, Input, Label, Link, Main, Nav, P, Section, Span, Summary, Template, to_xml
 from starlette.responses import RedirectResponse, Response
 
-from gitaway import access, canvas, catalog, geo, members, passes, phone, pickers, plantalk, planedit, session as ses, tripcal as cal, tripday as td
+from gitaway import access, canvas, catalog, geo, members, passes, phone, pickers, plantalk, planedit, session as ses, tripcal as cal, tripday as td, topbar
 from gitaway.icons import icon
 from gitaway.layout import avatar, join_note, trip_field
 from gitaway.pages import booked, dayshared as calui, daydock, passes as passes_ui, weekdesk   # passes: on a flight day the now card is the flight with everyone's passes (F-092)
@@ -201,7 +201,8 @@ def map_link(day, ident=True):
 def head(v, kicker, title, key="", back=None, back_label="", faces=None, sos="", mapday=None, switch=None, back_text="", chips=None):
     """The heading every level starts with. Week: plain. Deeper: a dark card with the way back, which is what the tapped element grows into. The week and the day carry
     the small Day | Week switch inside it (F-103), between the words and the buttons. F-134: the way back names where it goes (`back_text`: "Trip", "Thu 9"), like Calendar's "‹ October"."""
-    inner = [Div(Span(*kicker if isinstance(kicker, tuple) else (kicker,), cls="cz-head-k"), H1(title, id="cz-title", tabindex="-1"), cls="cz-head-text")]
+    inner = [Div(topbar.trip_menu() if switch is not None else "",     # a phone or tablet has no top bar: the day and the week carry its trip menu
+                 Span(*kicker if isinstance(kicker, tuple) else (kicker,), cls="cz-head-k"), H1(title, id="cz-title", tabindex="-1"), cls="cz-head-text")]
     if back:
         inner.insert(0, A(icon("chev-left", 22, 2.6), Span(back_text, cls="cz-back-t", aria_hidden="true") if back_text else "", href=back, cls=f"cz-back{' has-text' if back_text else ''}", aria_label=back_label, data_zoom="out"))
     if chips is not None:       # F-140: on a laptop the five day chips sit inside the ink header (CSS hides them below 1020px, where the week strip stays)

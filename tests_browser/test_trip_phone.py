@@ -190,3 +190,11 @@ def test_f085_notes_start_folded_and_a_tap_opens_them_in_place(phone, base_url, 
     up.click()
     expect(page.locator(".tp-pnote", has_text="Note n1")).to_be_visible()
     assert page.evaluate(OVERFLOW) == 0
+
+
+def test_open_the_whole_trip_lands_on_the_week(phone, base_url):
+    page = phone()
+    page.goto(base_url + "/trip?tab=today")
+    page.get_by_role("link", name="Open the whole trip").click()
+    page.wait_for_url(re.compile(r"/trip/canvas(\?trip=\w+)?$"))
+    expect(page.locator(".cz-view[data-level=week]")).to_be_visible()

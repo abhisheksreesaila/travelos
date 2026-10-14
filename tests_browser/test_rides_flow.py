@@ -103,3 +103,6 @@ def test_a_scheduled_ride_shows_on_the_booked_trip_and_its_day(signed_in, viewpo
     block.click()  # the item opens the ride
     expect(page.locator("#rd-status")).to_have_attribute("data-status", "scheduled")
     assert page.url.endswith("/rides/r1")
+    page.click("#rd-cal")                      # the ride page's way back to the trip lands on the trip's day
+    page.wait_for_url("**/trip/canvas*")
+    expect(page.locator(".cz-view[data-level=day]")).to_be_visible()

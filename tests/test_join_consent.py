@@ -133,7 +133,7 @@ def test_someone_with_trips_of_their_own_is_asked_before_being_moved(owner):
     assert session_data(again)["tenant_id"] == own and members.role_in(user_id(again), tenant(owner)) == "editor"  # joined, but not moved
     html = again.get("/calendar?view=days").text
     assert "You joined Ari Rivera" in html and 'action="/family/switch"' in html and 'action="/family/stay"' in html
-    assert "Venice" not in html and 'id="cal-viewer"' not in html
+    assert "Venice" not in html
     again.post("/family/switch", data={"tenant": tenant(owner), "next": "/calendar"}, follow_redirects=False)
     assert session_data(again)["tenant_id"] == tenant(owner) and 'id="ga-note"' not in again.get("/calendar?view=days").text
 
