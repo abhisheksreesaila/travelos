@@ -77,6 +77,10 @@
   map = L.map(mapEl, { zoomControl: true, attributionControl: true, scrollWheelZoom: false, tap: true });
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }).addTo(map);
 
+  mapEl._leaflet = map;
+  // The map's box can change without the window resizing (the laptop layout gives it whatever the window leaves): tell the library each time.
+  if (window.ResizeObserver) new ResizeObserver(function () { map.invalidateSize({ animate: false }); }).observe(mapEl);
+
   var bounds = [];
   var near = stops.filter(function (s) { return s.kind !== 'flight'; }); // a flight leaves from an airport far away: the view fits the stops you drive to
   stops.forEach(function (s) {
