@@ -224,12 +224,28 @@ def test_a_short_pull_on_the_card_springs_back_and_does_not_fold(phone):
     open_day(phone)
     tap(phone, lunch.id)
     h = card(phone).locator(".cz-card-head").bounding_box()
+    start = card(phone).bounding_box()
     x, y = h["x"] + 120, h["y"] + 20
     fire(phone, "pointerdown", x, y)
-    slide(phone, (x, y), (x, y + 40), steps=4, wait=12)
+    slide(phone, (x, y), (x, y + 40), steps=4, wait=80)                                           # a slow, short pull: under 90px and slower than 0.5px/ms (a fast 30px+ flick folds, by design: day_card.js `quick`)
     fire(phone, "pointerup", x, y + 40)
     phone.wait_for_timeout(400)
     expect(card(phone)).to_be_visible()
+    end = card(phone).bounding_box()
+    assert abs(end["y"] - start["y"]) < 1 and abs(end["x"] - start["x"]) < 1                       # it sprang back to where it was
+    assert phone.evaluate("document.querySelector('.cz-card').style.transform") == ""
+
+
+def test_a_quick_flick_down_on_the_card_folds_it_even_when_short(phone):
+    lunch = plan("Lunch", 12 * 60, 13 * 60)
+    open_day(phone)
+    tap(phone, lunch.id)
+    h = card(phone).locator(".cz-card-head").bounding_box()
+    x, y = h["x"] + 120, h["y"] + 8                                                                # the synthetic events go to the element under the point, so stay inside the heading
+    phone.evaluate("""([x, y]) => { const at = (yy) => document.elementFromPoint(x, yy) || document.body;      // down, move and up in one task: the clock cannot make it slow
+      const ev = (k, yy) => at(yy).dispatchEvent(new PointerEvent(k, { pointerId: 7, pointerType: 'touch', clientX: x, clientY: yy, bubbles: true, cancelable: true, isPrimary: true }));
+      ev('pointerdown', y); ev('pointermove', y + 40); ev('pointerup', y + 40); }""", [x, y])
+    expect(card(phone)).to_have_count(0)
 
 
 # ---- who, and what stays as it was ------------------------------------------------------------------------------------------------
