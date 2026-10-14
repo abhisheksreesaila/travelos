@@ -800,7 +800,7 @@ Brief: docs/briefs/web-trip.md · Design: A1, A2 · Needs: F-141
 - [ ] viewers get none of the write moves (existing access rules); browser tests drive each move with a mouse
 - [ ] dragging past the visible hours scrolls the grid card (day_grid.js and canvas_gestures.js use the card's scroll, not the window's), and a wheel scroll during a hold keeps the plan under the pointer
 
-## F-145 Desktop week: the whole trip at a glance [review]
+## F-145 Desktop week: the whole trip at a glance [done]
 Brief: docs/briefs/web-trip.md · Design: A4 · Needs: F-139
 - [x] on a desktop the week is one column per day under the ink trip header (filters and Day | Week): a day-colour header, then compact rows of time, a title on at most two lines and a kind icon
 - [x] plans show a step and message summary; a free day shows a dashed card with Say the plan; today is outlined
