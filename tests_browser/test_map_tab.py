@@ -21,8 +21,8 @@ def map_page(browser, base_url, monkeypatch):
     contexts, requested = [], []
     monkeypatch.setattr(geo, "fetch", Maps())
 
-    def make(day="0"):
-        ctx = browser.new_context(viewport=PHONE, reduced_motion="reduce", has_touch=True, is_mobile=True)
+    def make(day="0", viewport=PHONE):
+        ctx = browser.new_context(viewport=viewport, reduced_motion="reduce", has_touch=viewport is PHONE, is_mobile=viewport is PHONE)
         ctx.set_default_timeout(5000)
         contexts.append(ctx)
 
@@ -101,3 +101,36 @@ def test_phone_has_no_small_text_or_small_controls_on_the_map_page(map_page):
     page.evaluate("document.querySelector('.leaflet-control-attribution').hidden = true")  # OpenStreetMap's required credit keeps its own small size
     assert page.evaluate(SMALL_TEXT) == []
     assert page.evaluate(SMALL_CONTROLS) == []
+
+
+@pytest.mark.parametrize("viewport", [{"width": 1440, "height": 900}, {"width": 1280, "height": 800}], ids=["1440", "1280"])
+def test_the_map_fits_a_laptop_window_and_fills_the_space(map_page, viewport):
+    """F-148: under the top bar the page is no taller than the window, and the map takes the room the header and the stop list leave."""
+    page = map_page(viewport=viewport)
+    page.wait_for_timeout(300)
+    assert page.evaluate("document.documentElement.scrollHeight <= document.documentElement.clientHeight"), page.evaluate("document.documentElement.scrollHeight")
+    box = page.locator("#mp-map").bounding_box()
+    assert box["height"] >= viewport["height"] * 0.6, box
+    # the list stands beside the map from the row the map's header starts on, fits the page and scrolls on its own
+    assert page.evaluate("(() => { const l = document.getElementById('mp-list'), b = document.getElementById('mp-back'); const r = l.getBoundingClientRect(); return Math.abs(r.top - b.getBoundingClientRect().top) <= 12 && r.bottom <= window.innerHeight && getComputedStyle(l).overflowY === 'auto'; })()")
+    # the library follows the container when its height changes (a shorter window): it never keeps drawing for the old size
+    page.set_viewport_size({"width": viewport["width"], "height": viewport["height"] - 150})
+    page.wait_for_timeout(300)
+    assert page.evaluate("(() => { const m = document.getElementById('mp-map'); return m._leaflet.getSize().y === m.clientHeight; })()")
+    assert page.evaluate("document.documentElement.scrollHeight <= document.documentElement.clientHeight")
+
+
+SEG_ROOM = "[...document.querySelectorAll('.mp-seg')].map(a => { const r = document.createRange(); r.selectNodeContents(a); return a.getBoundingClientRect().width - r.getBoundingClientRect().width; })"
+SEG_BOX = "(() => { const r = document.querySelector('.mp-segs').getBoundingClientRect(); return [r.left, r.top, r.width, r.height].map(Math.round); })()"
+
+
+@pytest.mark.parametrize("width", [1280, 1020])
+def test_the_stops_and_around_switch_has_room_around_its_text_and_stays_put(map_page, width):
+    """F-148 review: each segment has space either side of its words, and the switch is the same size and place in both views."""
+    page = map_page(viewport={"width": width, "height": 800})
+    assert all(room >= 1.5 * 12 for room in page.evaluate(SEG_ROOM)), page.evaluate(SEG_ROOM)
+    stops = page.evaluate(SEG_BOX)
+    page.click("#mp-seg-around")
+    page.wait_for_selector("#ar")
+    assert all(room >= 1.5 * 12 for room in page.evaluate(SEG_ROOM)), page.evaluate(SEG_ROOM)
+    assert page.evaluate(SEG_BOX) == stops
