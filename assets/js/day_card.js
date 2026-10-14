@@ -362,10 +362,11 @@
   function ahead() {
     if (frugal() || document.hidden) return;
     idle(function () {
-      var h = window.innerHeight, n = 0;
+      var lo = 0, h = window.innerHeight, n = 0, card = DESK.matches ? stage.querySelector('.cz-view[data-day] .cz-day-body') : null;
+      if (card) { var cr = card.getBoundingClientRect(); lo = cr.top; h = cr.bottom; }      // F-144: on a laptop the grid scrolls inside its own card, so what is in view is what is in the card
       stage.querySelectorAll('.cz-gb[data-act] .cz-gb-open[data-card]').forEach(function (a) {
         var r = a.getBoundingClientRect(), act = a.closest('.cz-gb').dataset.act, hit = fetched[key(act, DESK.matches)];
-        if (n >= 6 || r.bottom < 0 || r.top > h || (hit && Date.now() - hit.at < AHEAD)) return;
+        if (n >= 6 || r.bottom < lo || r.top > h || (hit && Date.now() - hit.at < AHEAD)) return;
         n++;
         fetchCard(act, DESK.matches).catch(function () {});
       });
@@ -374,6 +375,10 @@
   var scrolled = 0;
   stage.addEventListener('cz:swap', function () { fetched = {}; ahead(); });
   window.addEventListener('scroll', function () { clearTimeout(scrolled); scrolled = setTimeout(ahead, 250); }, { passive: true });
+  document.addEventListener('scroll', function (e) {      // F-144: and so does a scroll of the grid card (scroll does not bubble: it is caught on the way down)
+    var t = e.target;
+    if (t && t.classList && t.classList.contains('cz-day-body')) { clearTimeout(scrolled); scrolled = setTimeout(ahead, 250); }
+  }, { capture: true, passive: true });
   ahead();
   window.addEventListener('pagehide', function () { if (open) closeNow(); });
 

@@ -792,15 +792,15 @@ Brief: docs/briefs/web-trip.md · Design: A3 · Needs: F-140
 - [x] a new message shows without reloading, as on the phone
 - [x] the plan pane's chat (F-141) also shows others' new messages without reloading
 
-## F-144 Mouse and keyboard on the day [todo]
+## F-144 Mouse and keyboard on the day [done]
 Brief: docs/briefs/web-trip.md · Design: A1, A2 · Needs: F-141
-- [ ] drag on empty time draws a new plan (dashed outline with its times); Enter or typing names it, Esc cancels
-- [ ] drag a plan to move it; pull the knob at its foot to resize; both snap like the phone and offer Undo
-- [ ] hover shows the knob and a ⋯ button; ⋯ or right-click opens rename and delete
-- [ ] keys: T today, ← and → days, W and D week or day, `/` Ask, Esc closes the panel; none fire while typing
-- [ ] viewers get none of the write moves (existing access rules); browser tests drive each move with a mouse
-- [ ] cards fetched ahead follow the grid card's scroll on a laptop (today they listen to the window, so plans scrolled into view aren't fetched)
-- [ ] dragging past the visible hours scrolls the grid card (day_grid.js and canvas_gestures.js use the card's scroll, not the window's), and a wheel scroll during a hold keeps the plan under the pointer
+- [x] drag on empty time draws a new plan (dashed outline with its times); Enter or typing names it, Esc cancels
+- [x] drag a plan to move it; pull the knob at its foot to resize; both snap like the phone and offer Undo
+- [x] hover shows the knob and a ⋯ button; ⋯ or right-click opens rename and delete
+- [x] keys: T today, ← and → days, W and D week or day, `/` Ask, Esc closes the panel; none fire while typing
+- [x] viewers get none of the write moves (existing access rules); browser tests drive each move with a mouse
+- [x] cards fetched ahead follow the grid card's scroll on a laptop (today they listen to the window, so plans scrolled into view aren't fetched)
+- [x] dragging past the visible hours scrolls the grid card (day_grid.js and canvas_gestures.js use the card's scroll, not the window's), and a wheel scroll during a hold keeps the plan under the pointer
 
 ## F-145 Desktop week: the whole trip at a glance [done]
 Brief: docs/briefs/web-trip.md · Design: A4 · Needs: F-139
@@ -836,3 +836,11 @@ Bug, found while building F-139..F-148: tests_browser/test_day_card.py::test_a_s
 Bug, found in F-141's review (already there in F-140): on the desktop day a long park block's title and time are sticky with the phone's offset (`assets/css/day_grid.css:51`, `top: calc(env(safe-area-inset-top) + 4rem)`), so inside the scrolling grid card they sit 4rem down, on top of the part chips.
 - [x] at 1440×900 and 1280×800 a park block's title, time and part chips never overlap, at the top of the grid and while the grid scrolls
 - [x] the phone's sticky title is unchanged
+
+## F-151 Drag a plan onto a day chip to move it (laptop) [todo]
+Captain, 2026-10-14: "on a laptop, drag a plan onto a day chip to move it, absolutely needed". With the old calendar retired (F-147), moving a plan to another day was only possible through Ask. Brief: docs/briefs/web-trip.md · Needs: F-144
+- [ ] on a desktop, dragging a plan from the grid onto one of the day chips in the ink header moves it to that day at the same time; the chip shows it will take the drop while hovered
+- [ ] the move saves through the canvas's existing write path, shows the existing toast with Undo, and the plan disappears from this day in place
+- [ ] dropping back on the grid, on the current day's chip, or pressing Esc mid-drag leaves the plan where it was
+- [ ] overlapping plans on the target day sit side by side as they do today (lanes); nothing is changed silently
+- [ ] viewers can't drag; the phone's touch moves are unchanged; browser tests drive the drag with a real mouse at 1440 and 1280
