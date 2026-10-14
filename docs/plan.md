@@ -827,10 +827,10 @@ Found in F-139's review: /trip/map is taller than the window at 1440×900 (1096p
 - [x] /trip/map fits 1440×900 and 1280×800 at 100% zoom under the top bar, with the map filling the space instead of a fixed height
 - [x] the phone map is unchanged
 
-## F-149 A short pull on the phone card springs back [todo]
+## F-149 A short pull on the phone card springs back [review]
 Bug, found while building F-139..F-148: tests_browser/test_day_card.py::test_a_short_pull_on_the_card_springs_back_and_does_not_fold fails at 390 and 320 on master (it failed before the web work too). Find whether the card or the test is wrong.
-- [ ] a short downward pull on the open plan card at 390 and 320 springs back and does not fold the card, on the phone
-- [ ] the test passes in the full browser run and in random order
+- [x] a short downward pull on the open plan card at 390 and 320 springs back and does not fold the card, on the phone
+- [x] the test passes in the full browser run and in random order
 
 ## F-150 A park block's title no longer covers its parts on a laptop [todo]
 Bug, found in F-141's review (already there in F-140): on the desktop day a long park block's title and time are sticky with the phone's offset (`assets/css/day_grid.css:51`, `top: calc(env(safe-area-inset-top) + 4rem)`), so inside the scrolling grid card they sit 4rem down, on top of the part chips.
