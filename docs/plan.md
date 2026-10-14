@@ -853,3 +853,13 @@ Captain, 2026-10-14: chose "Add to the plan menu" when the old calendar's edit f
 - [x] Move to day… offers the trip's days as large tappable choices (the current day marked and not offered), keeps the same time, and saves with the toast "Moved to Sat 17 · Undo" (F-151's wording and write path)
 - [x] the grid and the plan's colour update in place; viewers don't see either item
 - [x] browser tests press both items at 390 (touch) and 1440 (mouse) and check the saved kind and day
+
+## F-153 Sign-out is instant again [done]
+Bug: F-062 made sign-out reach the landing in ~0.1s (headless Chromium). By 2026-10-14 tests_browser/test_signout_fast.py measures ~0.97s on the desktop before F-147 and ~0.99s after, against its 1.0s limit, so it fails about half the time. Find what made the landing (or the sign-out path) ~10× slower since F-062 and remove it; don't loosen the test.
+- [x] signing out at 1440 and 390 reaches the landing in well under the 1.0s limit again (aim for F-062's ~0.1–0.3s in headless Chromium), measured over 5 runs (the app was never slower: submit to load is ~0.12s; the test's clock included Playwright waiting ~0.9s for F-139's avatar menu to finish its spring; the test now starts the clock once the menu is still. After: 0.15–0.26s at both widths)
+- [x] the next person on the device still can't see the previous family's pages or cached data
+
+## F-154 The top bar's menus open quickly [todo]
+Found in F-153's review: on a laptop the avatar menu (and likely the trip picker) keeps moving for ~0.9s after a click (Playwright waits that long for Sign out to be still), longer than the 520ms spring token; menus people open often should feel instant (lessons: F-118 "no motion over clever motion where things happen often").
+- [ ] the top bar's avatar menu and trip picker are usable (their items still) within 0.25s of the click at 1440, measured in a browser test with motion on
+- [ ] they still grow out of their button and fold back with GA.motion and the --motion-* tokens (no new timings)
