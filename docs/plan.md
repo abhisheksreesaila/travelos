@@ -808,7 +808,7 @@ Brief: docs/briefs/web-trip.md · Design: A4 · Needs: F-139
 - [ ] a trip longer than five days scrolls sideways inside the week area, never the page
 - [ ] fits 1440×900 and 1280×800 at 100% zoom
 
-## F-146 Family, trip details and Start in the new look [review]
+## F-146 Family, trip details and Start in the new look [done]
 Brief: docs/briefs/web-trip.md · Design: docs/design/web-trip.md (tokens) · Needs: F-139
 - [x] /family (people, roles, invitations), /trip/details and /start use the top bar, the white cards and the type of the trip screens; nothing they do today is lost
 - [x] each fits 1440×900 without page scroll for its main content; every button still has a test that presses it
