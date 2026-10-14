@@ -111,9 +111,26 @@ def test_the_map_fits_a_laptop_window_and_fills_the_space(map_page, viewport):
     assert page.evaluate("document.documentElement.scrollHeight <= document.documentElement.clientHeight"), page.evaluate("document.documentElement.scrollHeight")
     box = page.locator("#mp-map").bounding_box()
     assert box["height"] >= viewport["height"] * 0.6, box
-    assert page.evaluate("document.querySelector('#mp-list').getBoundingClientRect().bottom <= window.innerHeight")
+    # the list stands beside the map from the row the map's header starts on, fits the page and scrolls on its own
+    assert page.evaluate("(() => { const l = document.getElementById('mp-list'), b = document.getElementById('mp-back'); const r = l.getBoundingClientRect(); return Math.abs(r.top - b.getBoundingClientRect().top) <= 12 && r.bottom <= window.innerHeight && getComputedStyle(l).overflowY === 'auto'; })()")
     # the library follows the container when its height changes (a shorter window): it never keeps drawing for the old size
     page.set_viewport_size({"width": viewport["width"], "height": viewport["height"] - 150})
     page.wait_for_timeout(300)
     assert page.evaluate("(() => { const m = document.getElementById('mp-map'); return m._leaflet.getSize().y === m.clientHeight; })()")
     assert page.evaluate("document.documentElement.scrollHeight <= document.documentElement.clientHeight")
+
+
+SEG_ROOM = "[...document.querySelectorAll('.mp-seg')].map(a => { const r = document.createRange(); r.selectNodeContents(a); return a.getBoundingClientRect().width - r.getBoundingClientRect().width; })"
+SEG_BOX = "(() => { const r = document.querySelector('.mp-segs').getBoundingClientRect(); return [r.left, r.top, r.width, r.height].map(Math.round); })()"
+
+
+@pytest.mark.parametrize("width", [1280, 1020])
+def test_the_stops_and_around_switch_has_room_around_its_text_and_stays_put(map_page, width):
+    """F-148 review: each segment has space either side of its words, and the switch is the same size and place in both views."""
+    page = map_page(viewport={"width": width, "height": 800})
+    assert all(room >= 1.5 * 12 for room in page.evaluate(SEG_ROOM)), page.evaluate(SEG_ROOM)
+    stops = page.evaluate(SEG_BOX)
+    page.click("#mp-seg-around")
+    page.wait_for_selector("#ar")
+    assert all(room >= 1.5 * 12 for room in page.evaluate(SEG_ROOM)), page.evaluate(SEG_ROOM)
+    assert page.evaluate(SEG_BOX) == stops
