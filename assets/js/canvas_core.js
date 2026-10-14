@@ -167,13 +167,15 @@
     root.style.setProperty('--cz-ox', r ? Math.round(r.left + r.width / 2) + 'px' : '50%');
     root.style.setProperty('--cz-oy', r ? Math.round(Math.max(0, Math.min(h, r.top + Math.min(r.height, h) / 2))) + 'px' : '30%');
   }
+  var via = null;          // the link that started a zoom from the desktop week's columns (its row is the origin of the zoom)
   function hero(key) { return stage.querySelector('.cz-sheet[data-zk="' + key + '"]') || stage.querySelector('[data-zk="' + key + '"]'); }
   function run(html, dir, key, after) {
     var animate = !reduced.matches && typeof document.startViewTransition === 'function';
     var from = animate && key && KEY.test(key) ? hero(key) : null;
     if (!animate) { swap(html, reduced.matches ? '' : dir); if (after) after(); return Promise.resolve(); }
     root.dataset.czDir = dir;
-    origin(from);
+    origin(via && via.isConnected ? via : from);      // F-145: the desktop week zooms about the row that was clicked, the column is what grows
+    via = null;
     if (from) from.style.viewTransitionName = 'cz-hero';
     var t = document.startViewTransition(function () {
       if (from) from.style.viewTransitionName = '';
@@ -360,6 +362,7 @@
     if (dir === 'out') { zoomOutTo(u); return; }
     if (dir === 'side') dir = sideways(u);
     var from = a.closest('[data-zk]');
+    via = a.closest('.cz-wcol') ? a : null;
     goto(u, { dir: dir, key: dir === 'in' && from ? from.dataset.zk : null, mode: 'push', title: a.dataset.title || '' });
   });
   // The way up: the sheet's close button when a sheet is open, else the heading's back button.
