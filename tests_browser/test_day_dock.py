@@ -133,7 +133,7 @@ def test_the_panel_tabs_go_to_family_and_ask(signed_in):
     page.wait_for_url("**/trip/family")
     page.go_back()
     page.locator("#cz-dock .cz-dock-tab", has_text="Ask").click()
-    page.wait_for_url("**/trip/ask?day=1*")
+    expect(page.locator("#cz-dock[data-mode=ask] #ak-form")).to_be_visible()      # F-142: Ask is a mode of the panel, not a page
 
 
 def test_the_chips_and_day_week_move_between_levels_without_a_page_load(signed_in):
@@ -204,13 +204,12 @@ def test_the_phone_now_line_has_no_pill(signed_in, monkeypatch):
     expect(page.locator("#cz-nowline .cz-now-t")).to_be_hidden()
 
 
-@pytest.mark.parametrize("sel,url", [("#cz-desk-paste", "/trip/ask?day=1&mode=paste"), ("#cz-desk-talk", "/trip/ask?day=1&mode=talk"), ("#cz-dock-mic", "/trip/ask?day=1&mode=talk"), ("#cz-dock-compose", "/trip/ask?day=1")],
-                         ids=["paste", "say", "mic", "compose"])
-def test_paste_say_mic_and_compose_land_on_ask(signed_in, sel, url):
+@pytest.mark.parametrize("sel", ["#cz-desk-paste", "#cz-desk-talk", "#cz-dock-mic", "#cz-dock-compose"], ids=["paste", "say", "mic", "compose"])
+def test_paste_say_mic_and_compose_open_the_ask_box_in_the_panel(signed_in, sel):      # F-142: they no longer leave the day (tests_browser/test_day_ask.py has the details)
     page = signed_in(DESKTOP, path="/trip/canvas?day=1")
     page.locator(sel).click()
-    page.wait_for_url("**" + url + "*" if "mode" in url else "**" + url)
-    expect(page.locator(".ak")).to_be_visible()
+    expect(page.locator("#cz-dock .cz-ak #ak-form")).to_be_visible()
+    assert "/trip/ask" not in page.url
 
 
 def test_directions_opens_a_map_for_the_up_next_place_in_a_new_tab(signed_in, monkeypatch):

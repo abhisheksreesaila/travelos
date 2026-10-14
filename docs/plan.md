@@ -778,11 +778,11 @@ Brief: docs/briefs/web-trip.md · Design: A1 · Needs: F-140
 - [x] Esc or the close button returns the panel to Up next; the address keeps the open plan, so a reload shows it again
 - [x] the panel's change uses GA.motion and the --motion-* tokens only
 
-## F-142 Ask in the panel [todo]
+## F-142 Ask in the panel [review]
 Brief: docs/briefs/web-trip.md · Design: A2 · Needs: F-140
-- [ ] the top bar's Ask, the panel's Ask tab and the `/` key open the Ask box in the panel (AskBox reused), with the mic
-- [ ] a proposal is shown in the panel; Apply changes the grid in place and tells the family, as on the phone
-- [ ] Say the plan and Paste a plan open the same box in the panel
+- [x] the top bar's Ask, the panel's Ask tab and the `/` key open the Ask box in the panel (AskBox reused), with the mic
+- [x] a proposal is shown in the panel; Apply changes the grid in place and tells the family, as on the phone
+- [x] Say the plan and Paste a plan open the same box in the panel
 
 ## F-143 Family chat in the panel [todo]
 Brief: docs/briefs/web-trip.md · Design: A3 · Needs: F-140

@@ -6,7 +6,7 @@ clicked: Up next, Later today, the Ask box) is this ticket; `plan` (F-141), `fam
 Up next reads what Today reads (`pages.trip.load`: the day's timeline, the next item, the drive time when the family's map knows it); nothing is invented.
 """
 
-from fasthtml.common import A, Aside, Button, Div, Form, H2, H3, Header, Input, Nav, Option, P, Section, Select, Span
+from fasthtml.common import A, Aside, Button, Div, Form, H2, H3, Header, Input, Kbd, Nav, Option, P, Section, Select, Span
 
 from gitaway import access, familythread, geo, plantalk, session as ses, tripcal as cal, tripday as td
 from gitaway.icons import icon
@@ -211,6 +211,6 @@ def panel(v, day, plan=""):
     from gitaway.pages import tripcanvas as tc
     a = v["by_id"].get(plan) if plan else None
     a = a if a is not None and a.day == day else None
-    compose = A(Span("Type to Ask", cls="cz-compose-t"), Span(icon("arrow-right", 16, 2.6), cls="cz-compose-go"), href=f"/trip/ask?day={day}", cls="cz-compose", id="cz-dock-compose") \
+    compose = A(Span("Type to Ask", cls="cz-compose-t"), Span("or press", cls="cz-compose-or"), Kbd("/", cls="cz-kbd"), Span(icon("arrow-right", 16, 2.6), cls="cz-compose-go"), href=f"/trip/ask?day={day}", cls="cz-compose", id="cz-dock-compose") \
         if access.can_edit(v["role"]) else ""
-    return Aside(tabs(day), Div(*idle(v, day), cls="cz-dock-body", data_pane="idle"), *(plan_pane(v, a) if a else ()), compose, cls="cz-dock", id="cz-dock", data_mode="plan" if a else "idle", data_day=str(day), data_base=tc.curl(day=day), data_plan_url=tc.curl(day=day, plan="PLAN"), data_dow=v["dates"][day].strftime("%a"), aria_label="The day's panel")
+    return Aside(tabs(day), Div(*idle(v, day), cls="cz-dock-body", data_pane="idle"), *(plan_pane(v, a) if a else ()), compose, cls="cz-dock", id="cz-dock", data_mode="plan" if a else "idle", data_day=str(day), data_base=tc.curl(day=day), data_plan_url=tc.curl(day=day, plan="PLAN"), data_dow=v["dates"][day].strftime("%a"), **({"data_ask": "1"} if access.can_edit(v["role"]) else {}), aria_label="The day's panel")
