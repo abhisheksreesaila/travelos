@@ -35,8 +35,9 @@ def test_a_park_blocks_title_never_covers_its_parts(canvas_page, viewport):
     body = page.locator(".cz-day-body")
     body.evaluate("e => { e.scrollTop = 0 }")
     assert_clear(page)
-    for top in range(20, 420, 20):      # the grid card scrolls part-way into the block
-        body.evaluate("(e, n) => { e.scrollTop = n }", top)
+    block_top = body.evaluate("e => e.querySelector('.cz-gb.is-park').getBoundingClientRect().top - e.getBoundingClientRect().top + e.scrollTop")      # the block's top in the card's scroll coordinates
+    for off in range(-20, 101, 10):      # the grid card scrolls from just before the block's top to part-way into it
+        body.evaluate("(e, n) => { e.scrollTop = n }", max(0, block_top + off))
         assert_clear(page, scrolled=True)
 
 
