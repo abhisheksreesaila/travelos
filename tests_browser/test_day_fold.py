@@ -205,7 +205,7 @@ def test_the_bar_just_appears_with_a_short_fade_and_at_once_under_reduced_motion
 
 
 def test_a_laptop_gets_the_bar_too(canvas_page):
-    page = canvas_page(viewport={"width": 1280, "height": 800}, touch=False)
+    page = canvas_page(viewport={"width": 1000, "height": 800}, touch=False)
     plan("Lunch", 12 * 60, 13 * 60)
     open_day(page)
     scroll_to(page, 1200)

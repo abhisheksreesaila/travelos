@@ -155,7 +155,7 @@ def test_a_blank_day_keeps_talk_and_paste_and_the_week_the_filters_and_sos_still
 
 
 def test_a_laptop_gets_the_same_grid_wider(canvas_page):
-    page = canvas_page(viewport={"width": 1280, "height": 800}, touch=False)
+    page = canvas_page(viewport={"width": 1000, "height": 800}, touch=False)
     lunch = plan("Lunch", 12 * 60, 13 * 60)
     open_day(page)
     b = box(page, f'.cz-gb[data-act="{lunch.id}"]')

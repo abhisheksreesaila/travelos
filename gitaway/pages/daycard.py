@@ -13,7 +13,7 @@ from starlette.responses import PlainTextResponse, Response
 
 from gitaway import access, familythread, members, plantalk, session as ses, tripcal as cal
 from gitaway.icons import icon
-from gitaway.pages import dayshared as calui, tripcanvas as tc
+from gitaway.pages import dayshared as calui, daydock, tripcanvas as tc
 
 def plan_notes(session, act):
     """[(Note, name to show or "" for the person's own)] of a plan, oldest first."""
@@ -47,18 +47,27 @@ def notes_view(session, act, editor):
     return Div(*stickers, cls="cz-card-notes", aria_label="Notes", **({"data_next": cal.next_id(session)} if editor else {})) if stickers else ""
 
 
+def plan_link(v, a):
+    """"Open plan · 2 of 3 done" on a park block: the block level, what a tap on a park block used to do (F-119: "Rides" read as Uber rides; this is the plan's steps). Nothing for a plan with no parts.
+    The phone's card and the desktop panel (F-141) draw the same link."""
+    if not tc.has_block(v, a.id):
+        return None
+    n, done = tc._counts(v["plan"][a.id])
+    return A(icon("clipboard", 16, 2.4), Span(f"Open plan · {done} of {n} done" if n else "Open plan"), href=tc.curl(block=a.id), cls="cz-card-link", id="cz-card-rides", data_zoom="in", data_zk=f"blk-{a.id}")
+
+
 def links_view(v, a, trip):
-    """"Open chat" (the full chat page) and, on a park block, "Open plan" (the block level: what a tap on a park block used to do)."""
+    """"Open chat" (the full chat page) and, on a park block, "Open plan"."""
     said = sum(m["n"] for key, m in v["talk"].items() if key[0] == a.id)
     out = [A(icon("chat", 16, 2.4), Span(f"Open chat · {said}" if said else "Open chat"), href=plantalk.url(a.id, "", trip), cls="cz-card-link", id="cz-card-chat")]
-    if tc.has_block(v, a.id):       # F-119: "Rides" read as Uber rides; this is the plan's steps, so it says so and shows how far along
-        n, done = tc._counts(v["plan"][a.id])
-        out.insert(0, A(icon("clipboard", 16, 2.4), Span(f"Open plan · {done} of {n} done" if n else "Open plan"), href=tc.curl(block=a.id), cls="cz-card-link", id="cz-card-rides", data_zoom="in", data_zk=f"blk-{a.id}"))
+    if (link := plan_link(v, a)) is not None:
+        out.insert(0, link)
     return Div(*out, cls="cz-card-links")
 
 
-def card_body(session, act, trip=""):
-    """The card's body for plan `act` as an element, or None when the plan is not on this trip. Raises familythread.StaleTrip for another trip's page."""
+def card_body(session, act, trip="", panel=False):
+    """The card's body for plan `act` as an element, or None when the plan is not on this trip. Raises familythread.StaleTrip for another trip's page. `panel`: the desktop panel's pane and
+    compose bar for the plan (F-141, gitaway/pages/daydock.py `plan_pane`: the same note markup, plus who, steps and the plan's chat) instead of the phone card."""
     v = tc.load(session)
     a = v["by_id"].get(act)
     if a is None:
@@ -66,17 +75,19 @@ def card_body(session, act, trip=""):
     open_trip = ses.open_trip_id()
     if trip and trip != open_trip:
         raise familythread.StaleTrip(plantalk.STALE)
+    if panel:
+        return Div(*daydock.plan_pane(v, a), cls="cz-pp-frag")
     editor = access.can_edit(v["role"])
     return Div(links_view(v, a, open_trip), notes_view(session, a.id, editor), cls="cz-card-inner", data_act=a.id)
 
 
 def register(app):
     @app.get("/trip/canvas/card")
-    def card(session, act: str = "", trip: str = ""):
+    def card(session, act: str = "", trip: str = "", panel: str = ""):
         if (r := tc._guard(session)):
             return r
         try:
-            body = card_body(session, act[:20], trip[:40])
+            body = card_body(session, act[:20], trip[:40], panel == "1")
         except familythread.StaleTrip:
             return PlainTextResponse(plantalk.STALE, status_code=409)
         if body is None:

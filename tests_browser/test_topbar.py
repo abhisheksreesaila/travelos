@@ -225,8 +225,8 @@ def test_the_avatar_menu_has_no_community_with_the_showcase_off(signed_in, monke
     expect(page.locator(f"{BAR} .ga-tb-pop-me")).not_to_contain_text("Community")
 
 
-FITS = ["/trip/canvas", "/trip/family", "/trip/ask", "/trip?tab=notes", "/trip/help"]
-TALL = ["/trip/canvas?day=0", "/trip/map"]     # their own content is taller than the window (the day's hours, the help card, the map): the bar must still add nothing but its own height
+FITS = ["/trip/canvas", "/trip/family", "/trip/ask", "/trip?tab=notes", "/trip/help", "/trip/map"]
+TALL = ["/trip/canvas?day=0"]     # their own content is taller than the window (the day's hours, the help card): the bar must still add nothing but its own height
 
 
 @pytest.mark.parametrize("viewport", [DESKTOP, LAPTOP], ids=["1440", "1280"])

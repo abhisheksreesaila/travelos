@@ -1,0 +1,202 @@
+/* The desktop day: a grid on the left, a docked panel on the right (F-140; frame A2 of docs/design/canvas/Web-Trip-v1.html, docs/design/web-trip.md "Layout"; design pixels / 12 = rem).
+   From 1020px up (and not an installed Home Screen app) the day is two columns with the page itself not scrolling: the ink header with the five day chips inline, the filters row with
+   Paste a plan and Say the plan, and the hour grid in a white card that scrolls by itself; on the right the panel (`.cz-dock`) with its own scrolling body. Below 1020px nothing here
+   applies: 721 to 1019 keeps the tablet day and the phone is untouched. Loaded after day_grid.css and day_card.css. Sizes are rem off the one root. Motion: none of its own. */
+.cz .cz-hchips, .cz .cz-desk-say, .cz .cz-dock { display: none; }
+.cz .cz-day-left { display: contents; }
+.cz .cz-now-t { display: none; }
+
+@media (min-width: 1020px) and (not (display-mode: standalone)) {
+  /* the page is as tall as the window under the top bar and does not scroll; the week and every other level scroll inside it */
+  .tp[data-canvas] { --dock-w: clamp(31rem, 28vw, 33.6667rem); --pad-x: 2.3333rem; max-width: none; height: calc(100vh - 4.8333rem); height: calc(100dvh - 4.8333rem); min-height: 0; margin: 0; padding: 0 var(--pad-x) 1.5rem;
+    display: flex; flex-direction: column; overflow: hidden; background: transparent; }
+  .tp[data-canvas] > .ga-note { flex-shrink: 0; }
+  .tp[data-canvas] > .ph-main.cz { flex: 1; min-height: 0; min-width: 0; }
+  .cz > .cz-stage { height: 100%; display: flex; flex-direction: column; min-height: 0; }
+  .cz .cz-stage > .cz-view { flex: 1; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; }
+  .cz .cz-stage > .cz-view[data-day] { overflow: visible; display: grid; grid-template-columns: minmax(0, 1fr) var(--dock-w); grid-template-rows: minmax(0, 1fr); column-gap: 1.5rem; gap: 0 1.5rem; }
+
+  /* left column */
+  .cz .cz-view[data-day] .cz-day-left { display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; min-height: 0; }
+  .cz .cz-view[data-day] .cz-fold, .cz .cz-view[data-day] .cz-strip, .cz .cz-view[data-day] .cz-now, .cz .cz-view[data-day] .cz-say-compact { display: none; }       /* the top bar has SOS and Trip; the chips replace the strip; the panel replaces the now card */
+  .cz .cz-view[data-day] .cz-head .cz-back, .cz .cz-view[data-day] .cz-head .cz-sos { display: none; }
+  .cz .cz-view[data-day] .cz-head { flex-shrink: 0; flex-wrap: nowrap; gap: 1rem; padding: 0.8333rem 1rem; border-radius: 1.8333rem; }
+  .cz .cz-view[data-day] .cz-head-text { flex: 0 0 auto; min-width: 7.5rem; }
+  .cz .cz-view[data-day] .cz-head.is-deep h1 { font-size: 2rem; }
+  .cz .cz-view[data-day] .cz-head-ctl { margin-left: auto; display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+  .cz .cz-view[data-day] .cz-head.is-deep .cz-faces { display: none; }
+
+  .cz .cz-hchips { display: flex; flex: 1; min-width: 0; gap: 0.5rem; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
+  .cz .cz-hchips::-webkit-scrollbar { display: none; }
+  .cz .cz-hchip { flex: 0 0 auto; display: flex; flex-direction: column; gap: 0.0833rem; min-width: 5.5rem; max-width: 9rem; padding: 0.5rem 0.75rem; border-radius: 1rem; background: rgba(255, 255, 255, .1); color: #FFFFFF; }
+  .cz .cz-hchip:hover { background: rgba(255, 255, 255, .18); }
+  .cz .cz-hchip:focus-visible { outline: 0.1667rem solid var(--sun); outline-offset: 0.125rem; }
+  .cz .cz-hc-top { display: flex; align-items: baseline; gap: 0.375rem; }
+  .cz .cz-hc-dow { font-size: var(--cz-small); font-weight: 800; letter-spacing: 0.06em; color: rgba(255, 255, 255, .82); }
+  .cz .cz-hc-num { font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; line-height: 1; }
+  .cz .cz-hc-head { font-size: var(--cz-small); font-weight: 700; line-height: 1.15; color: rgba(255, 255, 255, .82); overflow-wrap: anywhere; }
+  .cz .cz-hchip.is-open { background: #FFFFFF; color: var(--ink); }
+  .cz .cz-hchip.is-open .cz-hc-dow, .cz .cz-hchip.is-open .cz-hc-head { color: var(--ink-2); }
+  .cz .cz-hchip.is-open .cz-hc-num { color: var(--coral-deep); }
+  .cz .cz-hchip.is-today:not(.is-open) .cz-hc-num { color: var(--sun); }
+
+  .cz .cz-view[data-day] .cz-bar { flex-shrink: 0; flex-wrap: nowrap; }
+  .cz .cz-desk-say { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+  .cz .cz-desk-btn { display: inline-flex; align-items: center; gap: 0.5rem; min-height: 2.75rem; padding: 0 1.1667rem; border-radius: var(--r-pill); font-weight: 800; font-size: var(--cz-body); white-space: nowrap; color: var(--ink); }
+  .cz .cz-desk-btn.is-white { background: #FFFFFF; box-shadow: 0 0.1875rem 0 rgba(30, 26, 46, .16), var(--shadow-sm); }
+  .cz .cz-desk-btn.is-coral { background: var(--coral); box-shadow: 0 0.1875rem 0 var(--coral-deep); }
+  .cz .cz-desk-btn:focus-visible { outline: 0.1667rem solid var(--ink); outline-offset: 0.1667rem; }
+  .cz .cz-view[data-day] .cz-filters[data-compact], .cz .cz-view[data-day] .cz-dropbars { flex-shrink: 0; }
+
+  /* the grid: a white card that scrolls by itself (the page and the header do not) */
+  .cz .cz-view[data-day] .cz-day-body { display: block; flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; padding: 0 1.25rem 0 0.5rem;
+    border-radius: 1.8333rem; background: var(--card); box-shadow: var(--shadow-md); }
+  .cz .cz-view[data-day] .cz-day-body::after { content: ""; position: sticky; bottom: 0; display: block; height: 2.5rem; margin-top: -2.5rem; background: linear-gradient(to bottom, rgba(255, 255, 255, 0), var(--card)); pointer-events: none; }
+  .cz .cz-view[data-day] .cz-day-main { padding-top: 0.5rem; }
+  .cz .cz-view[data-day] .cz-day-side { position: static; padding: 0 0 1rem 3rem; }
+  .cz .cz-view[data-day] .cz-grid { --hh: 4.5rem; --gut: 3.5rem; }
+
+  /* the now line: thinner, with its time in a coral-deep pill at the right end (the phone keeps the plain line) */
+  .cz .cz-view[data-day] .cz-nowline { height: 0.1667rem; margin-top: -0.0833rem; left: -0.5rem; }
+  .cz .cz-view[data-day] .cz-now-t { display: block; position: absolute; right: 0; top: 50%; transform: translateY(-50%); padding: 0.0833rem 0.5rem; border-radius: var(--r-pill); background: var(--coral-deep); color: #FFFFFF;
+    font-size: var(--cz-small); font-weight: 800; line-height: 1.3; font-variant-numeric: tabular-nums; }
+
+  /* the panel */
+  .cz .cz-dock { display: flex; flex-direction: column; min-width: 0; min-height: 0; border-radius: 1.8333rem; background: var(--card); box-shadow: var(--shadow-md); overflow: hidden; }
+  .cz .cz-dock-tabs { flex-shrink: 0; display: flex; gap: 0.25rem; padding: 0.75rem 0.75rem 0.5rem; border-bottom: 0.0625rem solid var(--line); }
+  .cz .cz-dock-tab { flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.5rem; min-height: 2.75rem; padding: 0 0.75rem; border: 0; border-radius: var(--r-pill); background: transparent; font: 800 var(--cz-body) var(--font-body); color: var(--ink-2); cursor: pointer; }
+  .cz .cz-dock-tab:hover { background: var(--paper); }
+  .cz .cz-dock-tab.is-on { background: var(--paper-2); color: var(--ink); }
+  .cz .cz-dock-tab:focus-visible { outline: 0.1667rem solid var(--ink); outline-offset: -0.1667rem; }
+  .cz .cz-dock-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 1rem; padding: 1.0833rem 1.25rem 1.25rem; }
+  .cz .cz-dock-k { margin: 0 0 0.5rem; font-size: var(--cz-small); font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); }
+
+  .cz .cz-up { flex-shrink: 0; display: flex; flex-direction: column; gap: 0.5rem; padding: 1.25rem; border-radius: 1.5rem; background: var(--ink); color: #FFFFFF; box-shadow: var(--shadow-md); }
+  .cz .cz-up-k { font-size: var(--cz-small); font-weight: 800; letter-spacing: 0.08em; color: var(--sun); }
+  .cz .cz-up-title { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 1.75rem; line-height: 1.1; letter-spacing: -0.02em; overflow-wrap: anywhere; }
+  .cz .cz-up-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.5rem; margin: 0; font-size: var(--cz-body); font-weight: 600; color: #DDD8EA; }
+  .cz .cz-up-meta > * + *::before { content: "\00b7"; margin-right: 0.5rem; }
+  .cz .cz-up-meta .cz-faces { padding-left: 0.4375rem; }
+  .cz .cz-up-meta .cz-faces::before { content: none; }
+  .cz .cz-up .cz-av { border-color: var(--ink); }
+  .cz .cz-up-acts { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+  .cz .cz-dock-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; min-height: 2.75rem; padding: 0 1.1667rem; border-radius: var(--r-pill); font-weight: 800; font-size: var(--cz-body); color: var(--ink); white-space: nowrap; }
+  .cz .cz-dock-btn.is-coral { background: var(--coral); box-shadow: 0 0.1875rem 0 var(--coral-deep); }
+  .cz .cz-dock-btn.is-white { background: #FFFFFF; box-shadow: 0 0.1875rem 0 rgba(255, 255, 255, .3); }
+  .cz .cz-dock-btn:focus-visible { outline: 0.1667rem solid var(--sun); outline-offset: 0.1667rem; }
+
+  .cz .cz-later { flex-shrink: 0; }
+  .cz .cz-later-row { display: grid; grid-template-columns: 4.5rem minmax(0, 1fr) auto; align-items: baseline; gap: 0.75rem; padding: 0.625rem 0; border-top: 0.0625rem solid var(--line); font-size: var(--cz-body); }
+  .cz .cz-later-time { font-weight: 800; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .cz .cz-later-t { font-weight: 700; overflow-wrap: anywhere; }
+  .cz .cz-later-tag { font-size: var(--cz-small); font-weight: 700; color: var(--ink-3); }
+
+  .cz .cz-dock-ask { flex-shrink: 0; }
+  .cz .cz-ask-card { position: relative; display: flex; flex-direction: column; gap: 0.5rem; padding: 1rem 1.0833rem 3.75rem; border-radius: 1.25rem; background: var(--paper); box-shadow: inset 0 0 0 0.0625rem var(--line); }
+  .cz .cz-ask-eg { margin: 0; font-size: var(--cz-body); font-weight: 600; color: var(--ink-2); }
+  .cz .cz-ask-mic { position: absolute; right: 0.75rem; bottom: 0.75rem; width: 2.75rem; height: 2.75rem; display: grid; place-items: center; border-radius: 50%; background: var(--coral); color: var(--ink); box-shadow: 0 0.1875rem 0 var(--coral-deep); }
+  .cz .cz-ask-mic:focus-visible { outline: 0.1667rem solid var(--ink); outline-offset: 0.1667rem; }
+
+  .cz .cz-compose { flex-shrink: 0; display: flex; align-items: center; gap: 0.5rem; margin: 0 0.75rem 0.75rem; min-height: 3rem; padding: 0.25rem 0.375rem 0.25rem 1rem; border-radius: var(--r-pill); background: var(--paper); box-shadow: inset 0 0 0 0.0625rem var(--line); font-size: var(--cz-body); font-weight: 600; color: var(--ink-3); }
+  .cz .cz-compose-t { flex: 1; }
+  .cz .cz-compose-go { width: 2.5rem; height: 2.5rem; display: grid; place-items: center; border-radius: 50%; background: var(--coral); color: var(--ink); box-shadow: 0 0.125rem 0 var(--coral-deep); }
+  .cz .cz-compose:focus-visible { outline: 0.1667rem solid var(--ink); outline-offset: 0.1667rem; }
+
+  /* F-150: a long block's title and time stick to the grid card's own top, not 4rem down (that is the phone's, under its folded bar): at 4rem they floated over the part chips */
+  .cz .cz-view[data-day] .cz-gb-head { top: 0.25rem; }
+}
+
+@media (min-width: 1020px) and (max-width: 1300px) and (not (display-mode: standalone)) {
+  .tp[data-canvas] { --pad-x: 1.8333rem; }
+  .cz .cz-view[data-day] .cz-head { gap: 0.75rem; padding: 0.75rem; }
+  .cz .cz-hchip { min-width: 4.75rem; padding: 0.4167rem 0.5833rem; }
+}
+
+/* the top bar has SOS and the avatar: the week's heading drops its own (the day's did above) */
+@media (min-width: 1020px) and (not (display-mode: standalone)) {
+  .cz .cz-level-week .cz-head .cz-sos, .cz .cz-level-week .cz-head .cz-faces { display: none; }
+}
+
+/* F-141: a clicked plan opens in the panel (frame A1 of docs/design/canvas/Web-Trip-v1.html). The mode switch is `#cz-dock[data-mode]`: in plan mode the plan's pane (`.cz-pp`, drawn by
+   daydock.plan_pane) and its message bar (`.cz-pp-foot`) replace Up next and the Ask bar; Up next stays in the page (Esc shows it again). The block that is open wears a 3px coral ring. */
+@media (min-width: 1020px) and (not (display-mode: standalone)) {
+  .cz .cz-gb.is-ringed { box-shadow: 0 0 0 0.25rem var(--coral); z-index: 2; }
+  .cz .cz-dock { position: relative; }
+  .cz .cz-dock.is-moving { overflow: visible; }
+  .cz .cz-dock[data-mode="plan"] [data-pane="idle"], .cz .cz-dock[data-mode="plan"] .cz-compose { display: none; }
+  .cz .cz-dock:not([data-mode="plan"]) .cz-pp-foot, .cz .cz-dock:not([data-mode="plan"]) .cz-pp:not(.is-leaving) { display: none; }
+  .cz .cz-pp { background: var(--card); border-radius: 1.5rem; }
+  .cz .cz-pp.is-leaving { overflow: hidden; }
+  .cz .cz-pp:focus { outline: none; }
+
+  .cz .cz-pp-hd { display: flex; align-items: flex-start; gap: 1rem; }
+  .cz .cz-pp-ic { flex: 0 0 auto; width: 3.3333rem; height: 3.3333rem; border-radius: 1.0833rem; display: grid; place-items: center; background: var(--tint, var(--bubble-tint)); color: var(--ink); }
+  .cz .cz-pp-ic svg { width: 1.5833rem; height: 1.5833rem; }
+  .cz .cz-pp-ti { flex: 1; min-width: 0; }
+  .cz .cz-pp-eb { font-size: var(--cz-small); font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); }
+  .cz .cz-pp-t { margin: 0.1667rem 0 0; font-family: var(--font-display); font-weight: 800; font-size: 1.8333rem; line-height: 1.1; letter-spacing: -0.02em; overflow-wrap: anywhere; }
+  .cz .cz-pp-x { flex: 0 0 auto; display: flex; align-items: center; gap: 0.5rem; }
+  .cz .cz-pp-kbd { font-size: var(--cz-small); font-weight: 700; color: var(--ink-3); background: var(--paper-2); border-radius: 0.4167rem; padding: 0.0833rem 0.4167rem; box-shadow: inset 0 0 0 0.0625rem var(--line-2); }
+  .cz .cz-pp-close { width: 2.75rem; height: 2.75rem; display: grid; place-items: center; border: 0; border-radius: 50%; background: var(--paper-2); color: var(--ink); cursor: pointer; }
+  .cz .cz-pp-close:hover { background: var(--bubble-tint); }
+  .cz .cz-pp-close:focus-visible, .cz .cz-pp-asidebtn:focus-visible, .cz .cz-pp-add:focus-visible, .cz .cz-pp-aside-btn:focus-visible, .cz .cz-pp-ring:focus-visible,
+  .cz .cz-pstep .cz-ring:focus-visible, .cz .cz-pp-open:focus-visible, .cz .cz-pp-text:focus-visible, .cz .cz-pp-send:focus-visible { outline: 0.1667rem solid var(--ink); outline-offset: 0.1667rem; }
+
+  .cz .cz-pp-who { display: flex; align-items: center; gap: 0.6667rem; font-size: var(--cz-body); font-weight: 700; color: var(--ink-2); }
+  .cz .cz-pp-who .cz-faces { padding-left: 0.4375rem; }
+  .cz .cz-pp .cz-card-notes { padding: 0.25rem 0.5rem 0.375rem 0.125rem; }
+  .cz .cz-pp .cz-card-link { align-self: flex-start; }
+  .cz .cz-pp-sec { display: flex; align-items: center; justify-content: space-between; gap: 0.6667rem; }
+  .cz .cz-pp-k { margin: 0; font-size: var(--cz-small); font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); }
+  .cz .cz-pp-asidebtn, .cz .cz-pp-open { min-height: 2.75rem; padding: 0 0.25rem; border: 0; background: transparent; font: 700 var(--cz-body) var(--font-body); color: var(--coral-deep); cursor: pointer; }
+  .cz .cz-pp-asidebtn:hover, .cz .cz-pp-open:hover { text-decoration: underline; }
+  .cz .cz-pp-none { margin: 0; font-size: var(--cz-body); font-weight: 600; color: var(--ink-3); }
+
+  .cz .cz-pp-steps-sec, .cz .cz-pp-chat { display: flex; flex-direction: column; gap: 0.25rem; }
+  .cz .cz-pp-steps { display: flex; flex-direction: column; gap: 0.1667rem; }
+  .cz .cz-pp-part { margin-top: 0.5rem; font-size: var(--cz-small); font-weight: 800; color: var(--ink-3); }
+  .cz .cz-pstep { display: flex; align-items: center; gap: 0.8333rem; min-height: 2.75rem; padding: 0.3333rem 0.6667rem; border-radius: 0.8333rem; font-size: var(--cz-body); font-weight: 600; }
+  .cz .cz-pstep:hover, .cz .cz-pstep:focus-within { background: var(--paper-2); }
+  .cz .cz-pstep .cz-ring { padding: 0; background: transparent; color: var(--ink); cursor: pointer; }
+  .cz .cz-pstep span.cz-ring { cursor: default; }
+  .cz .cz-pstep.is-done .cz-ring { background: var(--mint); border-color: var(--mint); }
+  .cz .cz-pstep.is-done .cz-ring svg { opacity: 1; }
+  .cz .cz-ptx { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .cz .cz-pstep.is-done .cz-ptx { text-decoration: line-through; color: var(--ink-3); }
+  .cz .cz-pmeta { flex: 0 1 auto; max-width: 9rem; text-align: right; color: var(--ink-3); font-size: var(--cz-small); font-weight: 700; overflow-wrap: anywhere; }
+  .cz .cz-pstep { position: relative; }
+  .cz .cz-pp-aside-f { position: absolute; right: 0.25rem; top: 50%; margin: 0; transform: translateY(-50%); display: flex; }
+  .cz .cz-pstep:hover .cz-pmeta, .cz .cz-pstep:focus-within .cz-pmeta { visibility: hidden; }
+  .cz .cz-pp-aside-btn { width: 2.25rem; height: 2.25rem; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--ink-3); cursor: pointer; opacity: 0; }
+  .cz .cz-pstep:hover .cz-pp-aside-btn, .cz .cz-pstep:focus-within .cz-pp-aside-btn, .cz .cz-pp-aside .cz-pp-aside-btn { opacity: 1; }
+  .cz .cz-pp-aside-btn:hover { background: var(--paper); color: var(--ink); }
+  .cz .cz-pp-aside .cz-pmeta { display: none; }
+  .cz .cz-pp-aside { display: flex; flex-direction: column; gap: 0.1667rem; margin-top: 0.25rem; padding-top: 0.5rem; border-top: 0.0625rem solid var(--line); }
+  .cz .cz-pp-aside[hidden], .cz .cz-pp-addf[hidden] { display: none; }
+
+  .cz .cz-pp-add { display: flex; align-items: center; gap: 0.8333rem; width: 100%; min-height: 2.75rem; padding: 0.3333rem 0.6667rem; border: 0; border-radius: 0.8333rem; background: transparent; font: 600 var(--cz-body) var(--font-body); color: var(--ink-3); text-align: left; cursor: pointer; }
+  .cz .cz-pp-add svg { width: 1.5rem; height: 1.5rem; padding: 0.25rem; border: 0.125rem dashed var(--line-2); border-radius: 50%; box-sizing: border-box; }
+  .cz .cz-pp-add:hover { background: var(--paper-2); color: var(--ink); }
+  .cz .cz-pp-addf { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; padding: 0.5rem 0.6667rem; border-radius: 0.8333rem; background: var(--paper-2); }
+  .cz .cz-pp-in, .cz .cz-pp-part-pick { min-height: 2.75rem; padding: 0 1rem; border: 0; border-radius: var(--r-pill); background: var(--card); box-shadow: inset 0 0 0 0.0625rem var(--line-2); font: 600 var(--cz-body) var(--font-body); color: var(--ink); }
+  .cz .cz-pp-in { flex: 1 1 10rem; min-width: 0; }
+  .cz .cz-pp-in:focus-visible, .cz .cz-pp-part-pick:focus-visible { outline: 0.1667rem solid var(--ink); outline-offset: 0.1667rem; }
+  .cz .cz-pp-go { border: 0; cursor: pointer; }
+  .cz .cz-pp-addf .cz-error { flex-basis: 100%; margin: 0; }
+
+  .cz .cz-pp-msgs { gap: 0.6667rem; padding-top: 0.25rem; }
+  .cz .cz-pp-msgs .ft-msg { max-width: 92%; }
+  .cz .cz-pp-msgs .ft-bub { background: var(--paper-2); box-shadow: none; font-size: var(--cz-body); }
+  .cz .cz-pp-msgs .ft-me .ft-bub { background: var(--ink); color: #FFFFFF; }
+
+  .cz .cz-pp-foot { flex-shrink: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin: 0 0.75rem 0.75rem; min-height: 3rem; padding: 0.25rem 0.375rem 0.25rem 1rem; border-radius: 1.5rem; background: var(--paper); box-shadow: inset 0 0 0 0.0625rem var(--line); }
+  .cz .cz-pp-text { flex: 1; min-width: 0; min-height: 2.5rem; padding: 0; border: 0; background: transparent; font: 600 var(--cz-body) var(--font-body); color: var(--ink); }
+  .cz .cz-pp-text:focus-visible { outline: none; }
+  .cz .cz-pp-foot:focus-within { box-shadow: inset 0 0 0 0.125rem var(--ink); }
+  .cz .cz-pp-send { border: 0; cursor: pointer; }
+  .cz .cz-pp-foot .cz-error { flex-basis: 100%; margin: 0 0 0.25rem; font-size: var(--cz-small); }
+  .cz .cz-pp-foot .cz-error:empty { display: none; }
+
+  .cz .cz-pp-skel { height: 3.3333rem; border-radius: 1rem; background: var(--paper-2); }
+  .cz .cz-pp-skel:nth-of-type(2) { height: 5rem; }
+}

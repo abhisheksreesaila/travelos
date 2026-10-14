@@ -70,7 +70,7 @@
     if (!v) return out;
     var add = function (u) { if (u && out.indexOf(u) < 0) out.push(u); };
     if (v.dataset.level === 'week') {
-      v.querySelectorAll('a.cz-row-link[data-zoom="in"]').forEach(function (a) { add(path(a.href)); });
+      v.querySelectorAll('a.cz-row-link[data-zoom="in"], a.cz-wopen[data-zoom="in"], a.cz-wi.is-plan[data-zoom="in"]').forEach(function (a) { add(path(a.href)); });      // F-145: the desktop week's Open the day and plan rows too
     } else if (v.dataset.level === 'day') {
       add(v.dataset.next && path(v.dataset.next));
       add(v.dataset.prev && path(v.dataset.prev));
@@ -121,12 +121,16 @@
   // F-131: what the scripts own rides through it: their classes on an element the server also draws (the compact bar shown, a block selected, a filter's highlight), the
   // compact bar's inert state, and the hold menu (a node the server never draws). Without that the morph took them off and the scripts put them back a moment later, after
   // a layout in between: the compact bar faded in again and the selected block re-grew on every refresh.
-  var OWN = ['is-on', 'is-selected', 'is-menu', 'is-wiggle', 'is-hit', 'is-dim', 'is-off', 'is-thin', 'is-bare', 'cz-flt-on'];
+  var OWN = ['is-on', 'is-selected', 'is-menu', 'is-wiggle', 'is-hit', 'is-dim', 'is-off', 'is-thin', 'is-bare', 'cz-flt-on', 'is-ringed'];
   var MORPH = {
     morphStyle: 'innerHTML', ignoreActiveValue: true,
     callbacks: {
       beforeNodeMorphed: function (old, fresh) {
         if (old.nodeType !== 1 || fresh.nodeType !== 1 || !old.classList) return true;
+        // F-141: the docked panel (day_dock.js) is left alone while it moves; a message being written in it, and what an editor opened in it (Add a step, the Set aside list), stay as they are
+        if (old.id === 'cz-dock' && CZ.dockBusy && CZ.dockBusy()) return false;
+        if (old.classList.contains('cz-pp-text') && old.value) return false;
+        if (old.hasAttribute('data-keep-state')) ['hidden', 'aria-expanded'].forEach(function (a) { if (old.hasAttribute(a)) fresh.setAttribute(a, old.getAttribute(a)); else fresh.removeAttribute(a); });
         for (var i = 0; i < OWN.length; i++) if (old.classList.contains(OWN[i])) fresh.classList.add(OWN[i]);
         if (old.classList.contains('cz-fold')) ['inert', 'aria-hidden'].forEach(function (a) { if (old.hasAttribute(a)) fresh.setAttribute(a, old.getAttribute(a)); else fresh.removeAttribute(a); });
         return true;
@@ -167,13 +171,19 @@
     root.style.setProperty('--cz-ox', r ? Math.round(r.left + r.width / 2) + 'px' : '50%');
     root.style.setProperty('--cz-oy', r ? Math.round(Math.max(0, Math.min(h, r.top + Math.min(r.height, h) / 2))) + 'px' : '30%');
   }
-  function hero(key) { return stage.querySelector('.cz-sheet[data-zk="' + key + '"]') || stage.querySelector('[data-zk="' + key + '"]'); }
+  var via = null;          // the link that started a zoom from the desktop week's columns (its row is the origin of the zoom)
+  function boxed(n) { return n.getClientRects().length > 0; }      // F-145: the week draws a phone row and a desktop column with the same key, only one has a box
+  function hero(key) {
+    var all = stage.querySelectorAll('[data-zk="' + key + '"]'), pick = null;
+    for (var i = 0; i < all.length; i++) if (boxed(all[i]) && !pick) pick = all[i];
+    return stage.querySelector('.cz-sheet[data-zk="' + key + '"]') || pick || all[0] || null;
+  }
   function run(html, dir, key, after) {
     var animate = !reduced.matches && typeof document.startViewTransition === 'function';
     var from = animate && key && KEY.test(key) ? hero(key) : null;
     if (!animate) { swap(html, reduced.matches ? '' : dir); if (after) after(); return Promise.resolve(); }
     root.dataset.czDir = dir;
-    origin(from);
+    origin(via && via.isConnected ? via : from);      // F-145: the desktop week zooms about the row that was clicked, the column is what grows
     if (from) from.style.viewTransitionName = 'cz-hero';
     var t = document.startViewTransition(function () {
       if (from) from.style.viewTransitionName = '';
@@ -295,7 +305,7 @@
 
   function goto(u, o) {
     o = o || {};
-    if (busy) { if (o.mode === 'pop') waiting = u; return Promise.resolve(); }
+    if (busy) { via = null; if (o.mode === 'pop') waiting = u; return Promise.resolve(); }
     busy = true;
     var dir = o.dir || directionTo(u);
     curMode = o.mode || '';
@@ -323,6 +333,7 @@
       return run(html, dir, key, remember);
     }).catch(function () { location.href = u; }).then(function () {
       busy = false;
+      via = null;      // the tapped link belongs to this zoom only, animated or not
       rememberToday();
       if (copy !== null && levelOf(u) !== 'step' && levelOf(u) !== 'block') revalidate(u, copy);
       if (waiting) { waiting = null; goto(here(), { mode: 'pop' }); }     // the address bar is the truth: show what it says
@@ -360,6 +371,7 @@
     if (dir === 'out') { zoomOutTo(u); return; }
     if (dir === 'side') dir = sideways(u);
     var from = a.closest('[data-zk]');
+    via = a.closest('.cz-wcol') ? a : null;
     goto(u, { dir: dir, key: dir === 'in' && from ? from.dataset.zk : null, mode: 'push', title: a.dataset.title || '' });
   });
   // The way up: the sheet's close button when a sheet is open, else the heading's back button.

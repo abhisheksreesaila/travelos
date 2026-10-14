@@ -237,3 +237,23 @@ def test_a_swipe_in_from_the_left_edge_goes_back_a_level(canvas_page):
     assert page.evaluate("document.querySelector('.cz-view').style.transform") == ""
     page.evaluate(swipe, 160)
     page.wait_for_selector(".cz-view[data-level=week]", timeout=4000)
+
+
+def test_a_desktop_week_plan_row_and_open_the_day_swap_without_a_request(canvas_page):
+    """F-145: the idle prefetch also fetches each plan row's address (`?day=N&plan=`) and Open the day, so a click on either is not a cold fetch."""
+    from tests_browser.helpers import DESKTOP
+    page = canvas_page(viewport=DESKTOP, motion="no-preference", touch=False)
+    n = page.evaluate("new Set([...document.querySelectorAll('.cz-wcol a.cz-wopen, .cz-wcol a.cz-wi.is-plan')].map(a => a.getAttribute('href'))).size")
+    assert n >= 6                                           # five Open the day, and at least one plan row
+    wait_idle(page, None, n)
+    a = page.evaluate(TIMED_CLICK, ".cz-wcol a.cz-wi.is-plan")
+    expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
+    settle(page)
+    page.wait_for_timeout(600)
+    b = page.evaluate(TIMED_CLICK, "#cz-z-week")
+    expect(page.locator(".cz-view[data-level=week]")).to_be_visible()
+    settle(page)
+    page.wait_for_timeout(600)
+    c = page.evaluate(TIMED_CLICK, ".cz-wcol[data-day='2'] a.cz-wopen")
+    expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
+    assert a["asked"] == [] and c["asked"] == [], (a, c)

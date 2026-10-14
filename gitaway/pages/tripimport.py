@@ -182,7 +182,7 @@ def details_page(plan, trip_id="", admin=False, editor=False):
                 A(icon("pencil", 16, 2.4), "Edit trip", href=f"/trips/build/edit?trip={trip_id}", cls="btn btn-sm", id="ti-edit-trip") if editor and trip_id else "",
                 A("Correct it", href=PATH, cls="ti-link", id="ti-correct"),
                 A("Delete this trip", href=f"/trip/delete?trip={trip_id}", cls="ti-link ti-danger", id="ti-delete") if admin and trip_id else "", cls="ti-actions"), cls="ti-head"),
-        Div(*plan_sections(plan), cls="ti-stack ti-wide", id="ti-details"), cls="ti-wrap"), head=HEAD)
+        Div(*plan_sections(plan), cls="ti-stack ti-wide", id="ti-details"), cls="ti-wrap ti-detail-page"), head=HEAD)
 
 
 def _sorry(title, message, *links, status=200):
