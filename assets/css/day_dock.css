@@ -113,3 +113,87 @@
 @media (min-width: 1020px) and (not (display-mode: standalone)) {
   .cz .cz-level-week .cz-head .cz-sos, .cz .cz-level-week .cz-head .cz-faces { display: none; }
 }
+
+/* F-141: a clicked plan opens in the panel (frame A1 of docs/design/canvas/Web-Trip-v1.html). The mode switch is `#cz-dock[data-mode]`: in plan mode the plan's pane (`.cz-pp`, drawn by
+   daydock.plan_pane) and its message bar (`.cz-pp-foot`) replace Up next and the Ask bar; Up next stays in the page (Esc shows it again). The block that is open wears a 3px coral ring. */
+@media (min-width: 1020px) and (not (display-mode: standalone)) {
+  .cz .cz-gb.is-ringed { box-shadow: 0 0 0 0.25rem var(--coral); z-index: 2; }
+  .cz .cz-dock { position: relative; }
+  .cz .cz-dock.is-moving { overflow: visible; }
+  .cz .cz-dock[data-mode="plan"] [data-pane="idle"], .cz .cz-dock[data-mode="plan"] .cz-compose { display: none; }
+  .cz .cz-dock:not([data-mode="plan"]) .cz-pp-foot, .cz .cz-dock:not([data-mode="plan"]) .cz-pp:not(.is-leaving) { display: none; }
+  .cz .cz-pp { background: var(--card); border-radius: 1.5rem; }
+  .cz .cz-pp.is-leaving { overflow: hidden; }
+  .cz .cz-pp:focus { outline: none; }
+
+  .cz .cz-pp-hd { display: flex; align-items: flex-start; gap: 1rem; }
+  .cz .cz-pp-ic { flex: 0 0 auto; width: 3.3333rem; height: 3.3333rem; border-radius: 1.0833rem; display: grid; place-items: center; background: var(--tint, var(--bubble-tint)); color: var(--ink); }
+  .cz .cz-pp-ic svg { width: 1.5833rem; height: 1.5833rem; }
+  .cz .cz-pp-ti { flex: 1; min-width: 0; }
+  .cz .cz-pp-eb { font-size: var(--cz-small); font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); }
+  .cz .cz-pp-t { margin: 0.1667rem 0 0; font-family: var(--font-display); font-weight: 800; font-size: 1.8333rem; line-height: 1.1; letter-spacing: -0.02em; overflow-wrap: anywhere; }
+  .cz .cz-pp-x { flex: 0 0 auto; display: flex; align-items: center; gap: 0.5rem; }
+  .cz .cz-pp-kbd { font-size: var(--cz-small); font-weight: 700; color: var(--ink-3); background: var(--paper-2); border-radius: 0.4167rem; padding: 0.0833rem 0.4167rem; box-shadow: inset 0 0 0 0.0625rem var(--line-2); }
+  .cz .cz-pp-close { width: 2.75rem; height: 2.75rem; display: grid; place-items: center; border: 0; border-radius: 50%; background: var(--paper-2); color: var(--ink); cursor: pointer; }
+  .cz .cz-pp-close:hover { background: var(--bubble-tint); }
+  .cz .cz-pp-close:focus-visible, .cz .cz-pp-asidebtn:focus-visible, .cz .cz-pp-add:focus-visible, .cz .cz-pp-aside-btn:focus-visible, .cz .cz-pp-ring:focus-visible,
+  .cz .cz-pstep .cz-ring:focus-visible, .cz .cz-pp-open:focus-visible, .cz .cz-pp-text:focus-visible, .cz .cz-pp-send:focus-visible { outline: 0.1667rem solid var(--ink); outline-offset: 0.1667rem; }
+
+  .cz .cz-pp-who { display: flex; align-items: center; gap: 0.6667rem; font-size: var(--cz-body); font-weight: 700; color: var(--ink-2); }
+  .cz .cz-pp-who .cz-faces { padding-left: 0.4375rem; }
+  .cz .cz-pp .cz-card-notes { padding: 0.25rem 0.5rem 0.375rem 0.125rem; }
+  .cz .cz-pp .cz-card-link { align-self: flex-start; }
+  .cz .cz-pp-sec { display: flex; align-items: center; justify-content: space-between; gap: 0.6667rem; }
+  .cz .cz-pp-k { margin: 0; font-size: var(--cz-small); font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); }
+  .cz .cz-pp-asidebtn, .cz .cz-pp-open { min-height: 2.75rem; padding: 0 0.25rem; border: 0; background: transparent; font: 700 var(--cz-body) var(--font-body); color: var(--coral-deep); cursor: pointer; }
+  .cz .cz-pp-asidebtn:hover, .cz .cz-pp-open:hover { text-decoration: underline; }
+  .cz .cz-pp-none { margin: 0; font-size: var(--cz-body); font-weight: 600; color: var(--ink-3); }
+
+  .cz .cz-pp-steps-sec, .cz .cz-pp-chat { display: flex; flex-direction: column; gap: 0.25rem; }
+  .cz .cz-pp-steps { display: flex; flex-direction: column; gap: 0.1667rem; }
+  .cz .cz-pp-part { margin-top: 0.5rem; font-size: var(--cz-small); font-weight: 800; color: var(--ink-3); }
+  .cz .cz-pstep { display: flex; align-items: center; gap: 0.8333rem; min-height: 2.75rem; padding: 0.3333rem 0.6667rem; border-radius: 0.8333rem; font-size: var(--cz-body); font-weight: 600; }
+  .cz .cz-pstep:hover, .cz .cz-pstep:focus-within { background: var(--paper-2); }
+  .cz .cz-pstep .cz-ring { padding: 0; background: transparent; color: var(--ink); cursor: pointer; }
+  .cz .cz-pstep span.cz-ring { cursor: default; }
+  .cz .cz-pstep.is-done .cz-ring { background: var(--mint); border-color: var(--mint); }
+  .cz .cz-pstep.is-done .cz-ring svg { opacity: 1; }
+  .cz .cz-ptx { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .cz .cz-pstep.is-done .cz-ptx { text-decoration: line-through; color: var(--ink-3); }
+  .cz .cz-pmeta { flex: 0 1 auto; max-width: 9rem; text-align: right; color: var(--ink-3); font-size: var(--cz-small); font-weight: 700; overflow-wrap: anywhere; }
+  .cz .cz-pstep { position: relative; }
+  .cz .cz-pp-aside-f { position: absolute; right: 0.25rem; top: 50%; margin: 0; transform: translateY(-50%); display: flex; }
+  .cz .cz-pstep:hover .cz-pmeta, .cz .cz-pstep:focus-within .cz-pmeta { visibility: hidden; }
+  .cz .cz-pp-aside-btn { width: 2.25rem; height: 2.25rem; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--ink-3); cursor: pointer; opacity: 0; }
+  .cz .cz-pstep:hover .cz-pp-aside-btn, .cz .cz-pstep:focus-within .cz-pp-aside-btn, .cz .cz-pp-aside .cz-pp-aside-btn { opacity: 1; }
+  .cz .cz-pp-aside-btn:hover { background: var(--paper); color: var(--ink); }
+  .cz .cz-pp-aside .cz-pmeta { display: none; }
+  .cz .cz-pp-aside { display: flex; flex-direction: column; gap: 0.1667rem; margin-top: 0.25rem; padding-top: 0.5rem; border-top: 0.0625rem solid var(--line); }
+  .cz .cz-pp-aside[hidden], .cz .cz-pp-addf[hidden] { display: none; }
+
+  .cz .cz-pp-add { display: flex; align-items: center; gap: 0.8333rem; width: 100%; min-height: 2.75rem; padding: 0.3333rem 0.6667rem; border: 0; border-radius: 0.8333rem; background: transparent; font: 600 var(--cz-body) var(--font-body); color: var(--ink-3); text-align: left; cursor: pointer; }
+  .cz .cz-pp-add svg { width: 1.5rem; height: 1.5rem; padding: 0.25rem; border: 0.125rem dashed var(--line-2); border-radius: 50%; box-sizing: border-box; }
+  .cz .cz-pp-add:hover { background: var(--paper-2); color: var(--ink); }
+  .cz .cz-pp-addf { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; padding: 0.5rem 0.6667rem; border-radius: 0.8333rem; background: var(--paper-2); }
+  .cz .cz-pp-in, .cz .cz-pp-part-pick { min-height: 2.75rem; padding: 0 1rem; border: 0; border-radius: var(--r-pill); background: var(--card); box-shadow: inset 0 0 0 0.0625rem var(--line-2); font: 600 var(--cz-body) var(--font-body); color: var(--ink); }
+  .cz .cz-pp-in { flex: 1 1 10rem; min-width: 0; }
+  .cz .cz-pp-in:focus-visible, .cz .cz-pp-part-pick:focus-visible { outline: 0.1667rem solid var(--ink); outline-offset: 0.1667rem; }
+  .cz .cz-pp-go { border: 0; cursor: pointer; }
+  .cz .cz-pp-addf .cz-error { flex-basis: 100%; margin: 0; }
+
+  .cz .cz-pp-msgs { gap: 0.6667rem; padding-top: 0.25rem; }
+  .cz .cz-pp-msgs .ft-msg { max-width: 92%; }
+  .cz .cz-pp-msgs .ft-bub { background: var(--paper-2); box-shadow: none; font-size: var(--cz-body); }
+  .cz .cz-pp-msgs .ft-me .ft-bub { background: var(--ink); color: #FFFFFF; }
+
+  .cz .cz-pp-foot { flex-shrink: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin: 0 0.75rem 0.75rem; min-height: 3rem; padding: 0.25rem 0.375rem 0.25rem 1rem; border-radius: 1.5rem; background: var(--paper); box-shadow: inset 0 0 0 0.0625rem var(--line); }
+  .cz .cz-pp-text { flex: 1; min-width: 0; min-height: 2.5rem; padding: 0; border: 0; background: transparent; font: 600 var(--cz-body) var(--font-body); color: var(--ink); }
+  .cz .cz-pp-text:focus-visible { outline: none; }
+  .cz .cz-pp-foot:focus-within { box-shadow: inset 0 0 0 0.125rem var(--ink); }
+  .cz .cz-pp-send { border: 0; cursor: pointer; }
+  .cz .cz-pp-foot .cz-error { flex-basis: 100%; margin: 0 0 0.25rem; font-size: var(--cz-small); }
+  .cz .cz-pp-foot .cz-error:empty { display: none; }
+
+  .cz .cz-pp-skel { height: 3.3333rem; border-radius: 1rem; background: var(--paper-2); }
+  .cz .cz-pp-skel:nth-of-type(2) { height: 5rem; }
+}

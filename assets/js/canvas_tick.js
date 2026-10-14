@@ -10,11 +10,13 @@
   function ring(e) {
     if (stage.dataset.edit !== '1' || e.button) return null;
     var r = e.target.closest ? e.target.closest('.cz-ring') : null;
-    return r && stage.contains(r) ? r.closest('.cz-step[data-step]') : null;
+    return r && stage.contains(r) ? r.closest('.cz-step[data-step], .cz-pstep[data-step]') : null;      // (F-141: the panel's step rows are .cz-pstep)
   }
 
   function set(step, done) {
     step.classList.toggle('is-done', done);
+    var b = step.querySelector('button.cz-ring');
+    if (b) b.setAttribute('aria-pressed', done ? 'true' : 'false');
   }
 
   function tick(step) {

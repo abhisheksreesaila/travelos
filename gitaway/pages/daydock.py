@@ -165,16 +165,16 @@ def _steps(v, a, nxt, editor):
         rows = [P("No steps yet.", cls="cz-pp-none")]
     aside = blk["aside"]
     head = Div(H3(f"Steps · {done} of {n} done" if n else "Steps", cls="cz-pp-k"),
-               Button(f"Set aside ({len(aside)})", type="button", cls="cz-pp-asidebtn", aria_expanded="false", aria_controls="cz-pp-aside", data_aside_toggle="") if aside else "", cls="cz-pp-sec")
-    tray = Div(*[_step_row(s, nxt, editor, aside=True) for s in aside], cls="cz-pp-aside", id="cz-pp-aside", hidden=True) if aside else ""
+               Button(f"Set aside ({len(aside)})", type="button", cls="cz-pp-asidebtn", aria_expanded="false", aria_controls="cz-pp-aside", data_aside_toggle="", data_keep_state="") if aside else "", cls="cz-pp-sec")
+    tray = Div(*[_step_row(s, nxt, editor, aside=True) for s in aside], cls="cz-pp-aside", id="cz-pp-aside", hidden=True, data_keep_state="") if aside else ""
     add = ""
     if editor and parts:
         pick = Select(*[Option(p["name"], value=p["id"]) for p in parts], name="part", aria_label="Which part of the day", cls="cz-pp-part-pick") if len(parts) > 1 else _hidden("part", parts[0]["id"])
-        add = Div(Button(icon("plus", 16, 2.6), Span("Add a step"), type="button", cls="cz-pp-add", data_add_step="", aria_expanded="false"),
+        add = Div(Button(icon("plus", 16, 2.6), Span("Add a step"), type="button", cls="cz-pp-add", data_add_step="", aria_expanded="false", data_keep_state=""),
                   Form(_hidden("act", a.id), _hidden("who", "all"), _hidden("next", nxt), trip_field(),
                        Input(type="text", name="title", maxlength="80", placeholder="Churro break", aria_label="What is the step", autocomplete="off", cls="cz-pp-in", required=True), pick,
                        Button(icon("plus", 16, 2.6), Span("Add step"), type="submit", cls="cz-dock-btn is-coral cz-pp-go"),
-                       P("", role="alert", cls="cz-error"), action="/trip/canvas/add", method="post", data_cz_form="", cls="cz-pp-addf", hidden=True), cls="cz-pp-addwrap")
+                       P("", role="alert", cls="cz-error"), action="/trip/canvas/add", method="post", data_cz_form="", cls="cz-pp-addf", hidden=True, data_keep_state=""), cls="cz-pp-addwrap")
     return Div(head, Div(*rows, cls="cz-pp-steps"), add, tray, cls="cz-pp-steps-sec")
 
 
@@ -210,8 +210,9 @@ def plan_pane(v, a):
 
 def panel(v, day, plan=""):
     """`plan`: the id of a plan on this day to open in the panel (the address's `plan=`); anything else leaves the panel idle. Both panes are always drawn so Esc can show Up next again."""
+    from gitaway.pages import tripcanvas as tc
     a = v["by_id"].get(plan) if plan else None
     a = a if a is not None and a.day == day else None
     compose = A(Span("Type to Ask", cls="cz-compose-t"), Span(icon("arrow-right", 16, 2.6), cls="cz-compose-go"), href=f"/trip/ask?day={day}", cls="cz-compose", id="cz-dock-compose") \
         if access.can_edit(v["role"]) else ""
-    return Aside(tabs(day), Div(*idle(v, day), cls="cz-dock-body", data_pane="idle"), *(plan_pane(v, a) if a else ()), compose, cls="cz-dock", id="cz-dock", data_mode="plan" if a else "idle", data_day=str(day), aria_label="The day's panel")
+    return Aside(tabs(day), Div(*idle(v, day), cls="cz-dock-body", data_pane="idle"), *(plan_pane(v, a) if a else ()), compose, cls="cz-dock", id="cz-dock", data_mode="plan" if a else "idle", data_day=str(day), data_base=tc.curl(day=day), data_dow=v["dates"][day].strftime("%a"), aria_label="The day's panel")

@@ -36,22 +36,26 @@
   function blockOf(act) { return stage.querySelector('.cz-gb[data-act="' + act + '"]'); }
 
   // ---- the fragment -------------------------------------------------------------------------------------------------------
-  function cardUrl(act) { return '/trip/canvas/card?act=' + encodeURIComponent(act) + (trip() ? '&trip=' + encodeURIComponent(trip()) : ''); }
-  function fetchCard(act) {
-    var hit = fetched[act];
+  // F-141: on a laptop (the docked panel, day_dock.js) the same route answers the panel's pane and compose bar (`panel=1`), fetched ahead and kept the same way.
+  var DESK = window.matchMedia('(min-width: 1020px) and (not (display-mode: standalone))');
+  function cardUrl(act, panel) { return '/trip/canvas/card?act=' + encodeURIComponent(act) + (panel ? '&panel=1' : '') + (trip() ? '&trip=' + encodeURIComponent(trip()) : ''); }
+  function key(act, panel) { return panel ? act + ':p' : act; }
+  function forgetCard(act) { delete fetched[key(act)]; delete fetched[key(act, true)]; }
+  function fetchCard(act, panel) {
+    var k = key(act, panel), hit = fetched[k];
     if (hit && Date.now() - hit.at < AHEAD) return hit.promise;
-    var p = fetch(cardUrl(act), { credentials: 'same-origin', headers: { 'X-Canvas': '1' } }).then(function (r) {
+    var p = fetch(cardUrl(act, panel), { credentials: 'same-origin', headers: { 'X-Canvas': '1' } }).then(function (r) {
       if (!r.ok) throw new Error('card ' + r.status);
       return r.text();
     });
-    fetched[act] = { at: Date.now(), promise: p };
-    p.catch(function () { delete fetched[act]; });
+    fetched[k] = { at: Date.now(), promise: p };
+    p.catch(function () { delete fetched[k]; });
     return p;
   }
   document.addEventListener('pointerdown', function (e) {
     if (open || !e.target.closest) return;
     var a = e.target.closest('.cz-gb-open[data-card]');
-    if (a && stage.contains(a)) { var b = a.closest('.cz-gb'); if (b && b.dataset.act) fetchCard(b.dataset.act).catch(function () {}); }
+    if (a && stage.contains(a)) { var b = a.closest('.cz-gb'); if (b && b.dataset.act) fetchCard(b.dataset.act, DESK.matches).catch(function () {}); }
   }, { passive: true });
 
   // ---- where the card goes ------------------------------------------------------------------------------------------------------
@@ -211,7 +215,7 @@
           n.setAttribute('aria-label', 'Edit this note: ' + saved.text);
           n.appendChild(mk('span', 'cz-card-text', saved.text));
         }
-        delete fetched[o.act];
+        forgetCard(o.act);
         if (CZ.forget) CZ.forget();
         CZ.quiet();                    // the block behind the card shows the new words
       }, function (e) {
@@ -325,6 +329,7 @@
     if (!b || b.classList.contains('is-editing')) return;
     e.preventDefault();
     e.stopImmediatePropagation();
+    if (DESK.matches && CZ.dockOpen && CZ.dockOpen(b)) return;      // F-141: on a laptop the plan opens in the docked panel (day_dock.js), not in a sheet over the day
     show(b);
   }, true);
 
@@ -359,10 +364,10 @@
     idle(function () {
       var h = window.innerHeight, n = 0;
       stage.querySelectorAll('.cz-gb[data-act] .cz-gb-open[data-card]').forEach(function (a) {
-        var r = a.getBoundingClientRect(), act = a.closest('.cz-gb').dataset.act, hit = fetched[act];
+        var r = a.getBoundingClientRect(), act = a.closest('.cz-gb').dataset.act, hit = fetched[key(act, DESK.matches)];
         if (n >= 6 || r.bottom < 0 || r.top > h || (hit && Date.now() - hit.at < AHEAD)) return;
         n++;
-        fetchCard(act).catch(function () {});
+        fetchCard(act, DESK.matches).catch(function () {});
       });
     });
   }
@@ -376,4 +381,6 @@
   CZ.editing = function () { return !!open || (before ? before() : false); };      // canvas_core.js never swaps the day under an open card (typing, a message being sent)
   CZ.openCard = show;
   CZ.foldCard = fold;
+  CZ.fetchCard = fetchCard;            // F-141: the panel asks for the plan's pane the same way (fetched ahead, kept 30 s)
+  CZ.cardNotes = bindNotes;            // and edits the note in place with the same code
 })();

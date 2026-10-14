@@ -121,12 +121,16 @@
   // F-131: what the scripts own rides through it: their classes on an element the server also draws (the compact bar shown, a block selected, a filter's highlight), the
   // compact bar's inert state, and the hold menu (a node the server never draws). Without that the morph took them off and the scripts put them back a moment later, after
   // a layout in between: the compact bar faded in again and the selected block re-grew on every refresh.
-  var OWN = ['is-on', 'is-selected', 'is-menu', 'is-wiggle', 'is-hit', 'is-dim', 'is-off', 'is-thin', 'is-bare', 'cz-flt-on'];
+  var OWN = ['is-on', 'is-selected', 'is-menu', 'is-wiggle', 'is-hit', 'is-dim', 'is-off', 'is-thin', 'is-bare', 'cz-flt-on', 'is-ringed'];
   var MORPH = {
     morphStyle: 'innerHTML', ignoreActiveValue: true,
     callbacks: {
       beforeNodeMorphed: function (old, fresh) {
         if (old.nodeType !== 1 || fresh.nodeType !== 1 || !old.classList) return true;
+        // F-141: the docked panel (day_dock.js) is left alone while it moves; a message being written in it, and what an editor opened in it (Add a step, the Set aside list), stay as they are
+        if (old.id === 'cz-dock' && CZ.dockBusy && CZ.dockBusy()) return false;
+        if (old.classList.contains('cz-pp-text') && old.value) return false;
+        if (old.hasAttribute('data-keep-state')) ['hidden', 'aria-expanded'].forEach(function (a) { if (old.hasAttribute(a)) fresh.setAttribute(a, old.getAttribute(a)); else fresh.removeAttribute(a); });
         for (var i = 0; i < OWN.length; i++) if (old.classList.contains(OWN[i])) fresh.classList.add(OWN[i]);
         if (old.classList.contains('cz-fold')) ['inert', 'aria-hidden'].forEach(function (a) { if (old.hasAttribute(a)) fresh.setAttribute(a, old.getAttribute(a)); else fresh.removeAttribute(a); });
         return true;
