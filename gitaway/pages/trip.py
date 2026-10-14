@@ -382,7 +382,8 @@ def header(v, tab):
     dates = f"{t.title.upper()} · {cal.range_label(t.depart, t.return_).upper()}"
     day_of = f"{t.title.upper()} · DAY {v['sel'] + 1} OF {len(v['dates'])}" if v["phase"] == "during" and v["today_idx"] == v["sel"] else dates
     kicker = day_of if tab == "today" else dates
-    return Header(Div(topbar.trip_menu() if tab == "today" else "", Span(kicker, cls="tp-head-k", id="tp-head-k", data_today=day_of, data_other=dates),
+    eyebrow = Span(kicker, cls="tp-head-k", id="tp-head-k", data_today=day_of, data_other=dates)
+    return Header(Div((topbar.trip_menu(eyebrow) if tab == "today" else "") or eyebrow,
                       H1({"today": _title_today(v), "days": f"Your {len(v['dates'])} days", "notes": "Trip notes"}[tab], id="tp-title-h"),
                       Div(A(icon("pencil", 14, 2.4), "Add to the trip", href="/trip/ask?mode=paste", cls="btn btn-sm tp-edit tp-addtrip", id="tp-add-trip") if access.can_edit(v["role"]) else "",
                           A(icon("calendar", 14, 2.4), "Day plan", href=f"/trip/canvas?day={v['sel']}", cls="btn btn-sm tp-edit tp-opencanvas", id="tp-open-day"),   # F-090: the plan of the day shown here, for every role

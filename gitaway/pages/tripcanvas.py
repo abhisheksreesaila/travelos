@@ -201,8 +201,9 @@ def map_link(day, ident=True):
 def head(v, kicker, title, key="", back=None, back_label="", faces=None, sos="", mapday=None, switch=None, back_text="", chips=None):
     """The heading every level starts with. Week: plain. Deeper: a dark card with the way back, which is what the tapped element grows into. The week and the day carry
     the small Day | Week switch inside it (F-103), between the words and the buttons. F-134: the way back names where it goes (`back_text`: "Trip", "Thu 9"), like Calendar's "‹ October"."""
-    inner = [Div(topbar.trip_menu() if switch is not None else "",     # a phone or tablet has no top bar: the day and the week carry its trip menu
-                 Span(*kicker if isinstance(kicker, tuple) else (kicker,), cls="cz-head-k"), H1(title, id="cz-title", tabindex="-1"), cls="cz-head-text")]
+    words = kicker if isinstance(kicker, tuple) else (kicker,)
+    eyebrow = (topbar.trip_menu(*words, sum_cls="cz-head-k") if switch is not None else "") or Span(*words, cls="cz-head-k")      # a phone or tablet has no top bar: on the day and the week the eyebrow opens its trip menu
+    inner = [Div(eyebrow, H1(title, id="cz-title", tabindex="-1"), cls="cz-head-text")]
     if back:
         inner.insert(0, A(icon("chev-left", 22, 2.6), Span(back_text, cls="cz-back-t", aria_hidden="true") if back_text else "", href=back, cls=f"cz-back{' has-text' if back_text else ''}", aria_label=back_label, data_zoom="out"))
     if chips is not None:       # F-140: on a laptop the five day chips sit inside the ink header (CSS hides them below 1020px, where the week strip stays)

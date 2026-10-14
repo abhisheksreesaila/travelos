@@ -142,9 +142,20 @@ def test_the_phone_screens_carry_the_trip_menu_with_the_same_items_as_the_bar(cl
         assert "Plan another trip" in menu and "Import a trip you booked" in menu
 
 
-def test_a_family_with_no_trip_has_no_trip_menu_and_a_level_below_a_day_does_not_repeat_it(client):
+def test_a_family_with_no_trip_has_no_trip_menu(client):
     sign_in(client)
     assert phone_pick(client.get("/family").text) == ""
+
+
+def test_the_menu_is_the_eyebrow_line_itself_not_another_row(client):
+    """The line that already names the trip (week, Today) or the day is the button."""
+    book(client)
+    week, day, today = (client.get(p).text for p in ("/trip/canvas", "/trip/canvas?day=1", "/trip?day=1"))
+    for html, words in ((week, "LA WITH THE KIDS · OCT 16 – 20"), (day, "SAT OCT 17"), (today, "LA WITH THE KIDS · OCT 16 – 20")):
+        m = re.search(r'<summary[^>]*>(.*?)</summary>', phone_pick(html), re.S)
+        assert m and words in re.sub(r"<[^>]+>", "", m.group(1)), words
+        assert re.search(r'<summary[^>]*class="[^"]*(cz-head-k|ga-tb-psum)', phone_pick(html))
+    assert all(h.count("ga-tb-phonepick") == 1 for h in (week, day, today))      # one menu on a page, in the eyebrow
 
 
 def test_a_viewer_is_not_offered_the_import_in_either_menu(crew):

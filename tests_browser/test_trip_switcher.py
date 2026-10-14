@@ -84,3 +84,48 @@ def test_the_laptop_has_the_bar_picker_and_not_this_one(family_with_two_trips):
     page = family_with_two_trips({"width": 1440, "height": 900})
     expect(page.locator(MENU)).to_be_hidden()
     expect(page.locator(".ga-topbar .ga-tb-picker summary")).to_be_visible()
+
+
+# ---- the eyebrow is the button: no extra row, readable on every level, a dimmed screen behind the sheet (F-147 re-review) ----
+
+LEVELS = {"day": "/trip/canvas?day=1", "week": "/trip/canvas", "today": "/trip?tab=today"}
+# The top of each title before this menu existed (measured on master at 390 and 800 with this fixture): the menu adds no row.
+TITLE_TOP = {(390, "day"): 43.5, (390, "week"): 59, (390, "today"): 39.5, (800, "day"): 34.5, (800, "week"): 31.5, (800, "today"): 31.5}
+
+CONTRAST = """(sel) => {
+  const el = document.querySelector(sel);
+  const rgba = c => { const m = c.match(/[\\d.]+/g).map(Number); return [m[0], m[1], m[2], m.length > 3 ? m[3] : 1]; };
+  let bg = [255, 255, 255];
+  const layers = [];
+  for (let n = el; n; n = n.parentElement) { const c = rgba(getComputedStyle(n).backgroundColor); if (c[3] > 0) { layers.push(c); if (c[3] >= 1) break; } }
+  for (const c of layers.reverse()) bg = bg.map((v, i) => v * (1 - c[3]) + c[i] * c[3]);
+  const lin = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+  const L = c => 0.2126 * lin(c[0]) + 0.7152 * lin(c[1]) + 0.0722 * lin(c[2]);
+  const fg = rgba(getComputedStyle(el).color);
+  const a = L(bg) + 0.05, b = L(fg) + 0.05;
+  return Math.max(a, b) / Math.min(a, b);
+}"""
+
+
+@pytest.mark.parametrize("level", list(LEVELS))
+@pytest.mark.parametrize("viewport", [PHONE, TABLET], ids=["390", "800"])
+def test_the_trigger_is_readable_adds_no_height_and_is_a_44px_target(family_with_two_trips, viewport, level):
+    page = family_with_two_trips(viewport, LEVELS[level])
+    summary = page.locator(f"{MENU} > summary")
+    expect(summary).to_be_visible()
+    assert page.evaluate(CONTRAST, f"{MENU} > summary") >= 4.5, level
+    root = page.evaluate("parseFloat(getComputedStyle(document.documentElement).fontSize)")
+    assert summary.bounding_box()["height"] >= 2.75 * root - 0.5
+    top = page.locator("h1").first.bounding_box()["y"]
+    assert abs(top - TITLE_TOP[(viewport["width"], level)]) <= 1, (level, top)
+
+
+@pytest.mark.parametrize("level", list(LEVELS))
+def test_the_sheet_has_a_dimmed_screen_and_a_tap_on_it_closes_the_sheet(family_with_two_trips, level):
+    page = family_with_two_trips(PHONE, LEVELS[level])
+    pop = open_menu(page)
+    dim = page.evaluate(f"getComputedStyle(document.querySelector('{MENU}'), '::before').backgroundColor")
+    assert dim not in ("rgba(0, 0, 0, 0)", "transparent"), dim
+    page.mouse.click(PHONE["width"] / 2, max(pop.bounding_box()["y"] / 2, 5))
+    expect(page.locator(f"{MENU} .ga-tb-pop")).to_be_hidden()
+    assert LEVELS[level].split("?")[0] in page.url      # nothing underneath was pressed

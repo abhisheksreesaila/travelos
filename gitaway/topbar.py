@@ -38,9 +38,10 @@ def _link(label, href, key, current, ico=None, **extra):
     return A(icon(ico, 15, 2.2) if ico else "", label, href=href, cls=f"ga-tb-link ga-tb-{key}", aria_current="page" if key == current else None, **extra)
 
 
-def _trip_pick(trips, b, phone=False):
+def _trip_pick(trips, b, phone=False, label=(), sum_cls=""):
     """The trip picker: the open trip's name and dates; its menu switches trips (POST /trips/switch, as the calendar's did) and plans or imports another.
-    `phone` is the same menu in the heading of a phone or tablet screen (topbar.css makes it a bottom sheet below 1020px and hides it above). A viewer cannot import."""
+    `phone` is the same menu on a phone or tablet screen (topbar.css makes it a bottom sheet below 1020px and hides it above); its button is the `label` line the heading
+    already has (the eyebrow), with a small chevron, so the heading gets no extra row. A viewer cannot import."""
     from gitaway import access, tripcal as cal
     t = cal.trip("", b) if b else None
     dates = cal.range_label(t.depart, t.return_) if t else ""
@@ -48,9 +49,11 @@ def _trip_pick(trips, b, phone=False):
                     Button(Span(x.title, cls="ga-tb-sw-name"), Span(x.detail, cls="ga-tb-sw-dates"), type="submit", aria_current="true" if x.current else None, cls="ga-tb-sw"),
                     action="/trips/switch", method="post")) for x in trips]
     name = t.title if t else (trips[0].title if trips else "")
+    summary = (Summary(*label, icon("chev-right", 12, 2.8, "ga-tb-chev"), cls=f"ga-tb-psum {sum_cls}".strip(), aria_label=f"Trip: {name}. Switch trips") if phone else
+               Summary(Span(icon("sun", 15, 2.2), cls="ga-tb-tdot"), Span(name, cls="ga-tb-pickname"), Span(dates, cls="ga-tb-pickdates") if dates else "", icon("chev-right", 14, 2.6, "ga-tb-chev"),
+                       cls="ga-tb-sum", aria_label=f"Trip: {name}. Switch trips"))
     return Details(
-        Summary(Span(icon("sun", 15, 2.2), cls="ga-tb-tdot"), Span(name, cls="ga-tb-pickname"), Span(dates, cls="ga-tb-pickdates") if dates else "", icon("chev-right", 14, 2.6, "ga-tb-chev"),
-                cls="ga-tb-sum", aria_label=f"Trip: {name}. Switch trips"),
+        summary,
         Div(Span("Your trips", cls="ga-tb-k") if len(trips) > 1 else P("This is your only trip so far. Add another and switch between them here.", cls="ga-tb-solo"),
             Ul(*mine, cls="ga-tb-list") if len(trips) > 1 else "",
             A(icon("plus", 16, 2.4), "Plan another trip", href="/start", cls="ga-tb-item"),
@@ -59,8 +62,9 @@ def _trip_pick(trips, b, phone=False):
         cls="ga-tb-menu ga-tb-picker" + (" ga-tb-phonepick" if phone else ""))
 
 
-def trip_menu():
-    """The trip menu for a phone or tablet screen's heading (F-147 review: the bar is only there from 1020px): "" when nobody is signed in or there is no trip."""
+def trip_menu(*label, sum_cls=""):
+    """The trip menu for a phone or tablet screen (the bar is only there from 1020px), as the button of `label`, the heading's own eyebrow line.
+    "" when nobody is signed in or there is no trip (the caller then draws the plain label)."""
     session = ses.request_session()
     if ses.request_traveler() is None or session is None:
         return ""
@@ -70,7 +74,7 @@ def trip_menu():
     except Exception:
         log.exception("could not read the family's trips for the trip menu")
         return ""
-    return _trip_pick(trips, b, phone=True) if trips and b is not None else ""
+    return _trip_pick(trips, b, phone=True, label=label, sum_cls=sum_cls) if trips and b is not None else ""
 
 
 def _me(who):

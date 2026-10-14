@@ -29,7 +29,7 @@
   }, true);
 
   document.addEventListener('pointerdown', function (e) {
-    menus().forEach(function (d) { if (d.open && !d.contains(e.target)) fold(d, false); });
+    menus().forEach(function (d) { if (d.open && (!d.contains(e.target) || e.target === d)) fold(d, false); });      // e.target === d: the dimmed screen behind a phone's sheet (the menu's own ::before)
   }, true);
 
   document.addEventListener('keydown', function (e) {

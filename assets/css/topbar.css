@@ -4,16 +4,15 @@
 .ga-topbar { display: none; }
 .ga-topbar { --tb-sun-bg: var(--sun-tint); --tb-sun-ink: var(--sun-ink); --tb-sos-bg: var(--bubble-tint); --tb-sos-ink: var(--bubble-ink); --tb-line: rgba(30, 26, 46, .14); }
 
-/* The trip menu in the heading of a phone or tablet screen (F-147 review): the bar's picker, as a quiet line above the title that opens a bottom sheet. Hidden where the bar shows. */
-.ga-tb-phonepick { align-self: flex-start; margin: 0 0 0.25rem -0.5rem; }
-.ga-tb-phonepick > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; min-height: 2.75rem; padding: 0 0.5rem; border-radius: var(--r-pill); color: var(--ink); font: 800 max(var(--text-min), 0.875rem)/1.1 var(--font-body); }
-.ga-tb-phonepick > summary::-webkit-details-marker { display: none; }
-.ga-tb-phonepick .ga-tb-tdot { display: grid; place-items: center; width: 1.75rem; height: 1.75rem; border-radius: 50%; background: var(--sun-tint); color: var(--sun-ink); flex-shrink: 0; }
-.ga-tb-phonepick .ga-tb-pickname { overflow-wrap: anywhere; }
-.ga-tb-phonepick .ga-tb-pickdates { display: none; }
-.ga-tb-phonepick .ga-tb-chev { transform: rotate(90deg); color: var(--ink-3); flex-shrink: 0; }
-.ga-tb-phonepick > summary:focus-visible, .ga-tb-phonepick .ga-tb-sw:focus-visible, .ga-tb-phonepick .ga-tb-item:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.125rem; }
-.ga-tb-phonepick .ga-tb-pop { position: fixed; left: 0.75rem; right: 0.75rem; bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px)); z-index: 90; max-height: 70vh; overflow-y: auto; padding: 0.5rem; border-radius: 1.5rem; background: var(--card); box-shadow: var(--shadow-lg); display: flex; flex-direction: column; gap: 0.25rem; color: var(--ink); }
+/* The trip menu on a phone or tablet screen (F-147): the heading's own eyebrow line is the button (a small chevron after it), so the heading is no taller. The 2.75rem target is
+   padding taken back with a negative margin. It opens as a bottom sheet over a dimmed screen, like the date picker's (pickers.css .ga-scrim, .ga-pop). Hidden where the bar shows. */
+.ga-tb-phonepick { display: block; min-width: 0; }
+.ga-tb-psum { list-style: none; cursor: pointer; display: flex; width: fit-content; max-width: 100%; align-items: center; gap: 0.25rem; box-sizing: border-box; position: relative; padding: 0.875rem 0.5rem; margin: -0.875rem -0.5rem; }
+.ga-tb-psum::-webkit-details-marker { display: none; }
+.ga-tb-psum .ga-tb-chev { transform: rotate(90deg); flex-shrink: 0; opacity: .8; }
+.ga-tb-psum:focus-visible, .ga-tb-phonepick .ga-tb-sw:focus-visible, .ga-tb-phonepick .ga-tb-item:focus-visible { outline: 0.1875rem solid currentColor; outline-offset: 0.125rem; border-radius: 0.5rem; }
+.ga-tb-phonepick[open]::before { content: ""; position: fixed; inset: 0; z-index: 998; background: color-mix(in srgb, var(--ink) 45%, transparent); }
+.ga-tb-phonepick .ga-tb-pop { position: fixed; left: 0; right: 0; bottom: 0; z-index: 999; max-height: 88vh; overflow-y: auto; padding: 0.5rem 0.5rem calc(0.5rem + env(safe-area-inset-bottom, 0px)); border-radius: var(--r-lg) var(--r-lg) 0 0; background: var(--card); box-shadow: var(--shadow-lg); display: flex; flex-direction: column; gap: 0.25rem; color: var(--ink); font-weight: 400; letter-spacing: normal; text-transform: none; }
 .ga-tb-phonepick .ga-tb-k { padding: 0.5rem 0.75rem 0.25rem; font-size: max(var(--text-min), 0.75rem); font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
 .ga-tb-phonepick .ga-tb-solo { margin: 0; padding: 0.5rem 0.75rem; color: var(--ink-2); }
 .ga-tb-phonepick .ga-tb-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.125rem; }
@@ -82,3 +81,4 @@
   .ga-tb-nav { margin-left: 0.8333rem; }
   .ga-tb-link { padding: 0 1rem; }
 }
+.tp-head:has(.ga-tb-phonepick[open]) { view-transition-name: none; }   /* a view-transition name makes the heading a stacking context, which would keep the open sheet under the tab bar */
