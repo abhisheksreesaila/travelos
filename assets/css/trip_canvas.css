@@ -205,13 +205,20 @@ html[data-cz-dir="side"]::view-transition-new(root) { animation: cz-come-side va
 @keyframes cz-come-out { from { opacity: 0; transform: scale(1.12); filter: blur(0.375rem); } 45% { opacity: 1; } 70% { filter: blur(0); } }
 @keyframes cz-away-side { to { opacity: 0; } }
 @keyframes cz-come-side { from { opacity: 0; } }
+/* F-156: the laptop (JS sets data-cz-dir="calm" and cz-in-calm, GA.motion.calm()): one short cross-fade of the whole level, nothing scales, travels or blurs, and nothing is named to grow */
+html[data-cz-dir="calm"]::view-transition-group(root) { animation: none; }
+html[data-cz-dir="calm"]::view-transition-old(root) { animation: cz-calm-out var(--motion-desk) var(--motion-ease) both; }
+html[data-cz-dir="calm"]::view-transition-new(root) { animation: cz-calm-in var(--motion-desk) var(--motion-ease) both; }
+@keyframes cz-calm-out { to { opacity: 0; } }
+@keyframes cz-calm-in { from { opacity: 0; } }
+.cz .cz-view.cz-in-calm { animation: cz-calm-in var(--motion-desk) var(--motion-ease) both; }
 .ph-tabs { view-transition-name: cz-tabs; }
 .cz .cz-view.cz-in-in { animation: cz-come-in var(--cz-dur) var(--cz-ease) both; }
 .cz .cz-view.cz-in-out { animation: cz-come-out var(--cz-dur) var(--cz-ease) both; }
 .cz .cz-view.cz-in-side { animation: cz-come-side var(--cz-dur) var(--cz-ease) both; }
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
-  .cz .cz-view.cz-in-in, .cz .cz-view.cz-in-out, .cz .cz-view.cz-in-side { animation: none; }
+  .cz .cz-view.cz-in-in, .cz .cz-view.cz-in-out, .cz .cz-view.cz-in-side, .cz .cz-view.cz-in-calm { animation: none; }
 }
 
 /* a laptop: the wide day view (frame 11). The week is a strip across the top, a day's parts are lanes, the Set aside tray sits at the side. */

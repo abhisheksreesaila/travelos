@@ -152,6 +152,22 @@
     p.appendChild(a); pane.appendChild(p);
   }
 
+  // F-156, the laptop: no outline first. The plan on the screen (or the panel as it is) stays until the words are in hand (they are fetched ahead, so it is usually the same frame), and then the
+  // pane with its words replaces it with the helper's short fade.
+  function enterCalm(act, block, from) {
+    var d = dock(), words = CZ.fetchCard ? CZ.fetchCard(act, true) : Promise.reject(new Error('no cards'));
+    return words.then(function (html) { return html; }, function () { return null; }).then(function (html) {
+      if (!dock() || Dock.mode() !== 'plan' || lastAct !== act) return null;      // the panel went elsewhere while it waited
+      var old = d.querySelector('.cz-pp:not(.is-leaving)'), pane = mk('section', 'cz-dock-body cz-pp'), compose = d.querySelector('.cz-compose');
+      if (old) { old.remove(); var of = d.querySelector('.cz-pp-foot'); if (of) of.remove(); }
+      pane.dataset.pane = 'plan'; pane.dataset.act = act; pane.setAttribute('aria-labelledby', 'cz-pp-title'); pane.tabIndex = -1;
+      d.insertBefore(pane, compose || null);
+      if (html === null) failed(pane); else fill(pane, html);
+      try { pane.focus({ preventScroll: true }); } catch (e) { /* no focus */ }
+      return from === 'plan' ? MO.settle(pane) : MO.open(pane, block || null);
+    });
+  }
+
   Dock.register('plan', {
     tab: 'plan',
     same: function (o, d) { var p = d.querySelector('.cz-pp:not(.is-leaving)'); return !!p && p.dataset.act === o.act; },
@@ -160,6 +176,7 @@
       var d = dock(), act = o.act, block = o.block || blockOf(act), old = d.querySelector('.cz-pp:not(.is-leaving)');
       lastAct = act;
       ringBlock(act);
+      if (MO && MO.calm()) return enterCalm(act, block, from);
       if (old) { old.remove(); var of = d.querySelector('.cz-pp-foot'); if (of) of.remove(); }
       var pane = outline(block, act), compose = d.querySelector('.cz-compose');
       d.insertBefore(pane, compose || null);

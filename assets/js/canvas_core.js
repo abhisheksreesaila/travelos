@@ -18,6 +18,8 @@
   if (!stage) return;
   var root = document.documentElement;
   var reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+  var deskQ = window.matchMedia('(min-width: 1020px) and (not (display-mode: standalone))');
+  function laptop() { return window.GA && GA.motion && GA.motion.calm ? GA.motion.calm() : deskQ.matches; }      // F-156: the laptop changes level with a short fade and nothing else (GA.motion.calm: the one desktop rule)
   var RANK = { week: 0, day: 1, block: 2, step: 3 };
   var KEY = /^[a-z]{3}-[A-Za-z0-9-]+$/;
   var CZ = { stage: stage, held: false, onSwap: [] };      // `held` is true while the day grid (day_grid.js) holds a block
@@ -148,6 +150,7 @@
     if (v.dataset.title) document.title = 'GitAway · ' + v.dataset.title;
     var focus = quietSwap ? null : v.querySelector('#cz-sheet-title') || v.querySelector('#cz-title');
     if (focus) { try { focus.focus({ preventScroll: true }); } catch (e) { focus.focus(); } }
+    if (dir && laptop()) dir = 'calm';
     if (dir && !(document.startViewTransition && !reduced.matches)) {
       v.classList.add('cz-in-' + dir);
       v.addEventListener('animationend', function () { v.classList.remove('cz-in-' + dir); }, { once: true });
@@ -180,19 +183,19 @@
     return stage.querySelector('.cz-sheet[data-zk="' + key + '"]') || pick || all[0] || null;
   }
   function run(html, dir, key, after) {
-    var animate = !reduced.matches && typeof document.startViewTransition === 'function';
-    var from = animate && key && KEY.test(key) ? hero(key) : null;
+    var animate = !reduced.matches && typeof document.startViewTransition === 'function', soft = laptop();
+    var from = animate && !soft && key && KEY.test(key) ? hero(key) : null;      // (the laptop names no hero: nothing grows out of what was clicked)
     if (!animate) { swap(html, reduced.matches ? '' : dir); if (after) after(); return Promise.resolve(); }
-    root.dataset.czDir = dir;
-    origin(via && via.isConnected ? via : from);      // F-145: the desktop week zooms about the row that was clicked, the column is what grows
+    root.dataset.czDir = soft ? 'calm' : dir;
+    if (!soft) origin(via && via.isConnected ? via : from);      // F-145: the desktop week zooms about the row that was clicked, the column is what grows
     if (from) from.style.viewTransitionName = 'cz-hero';
     var t = document.startViewTransition(function () {
       if (from) from.style.viewTransitionName = '';
       swap(html, '');
       if (after) after();
-      var to = key && KEY.test(key) ? hero(key) : null;
+      var to = !soft && key && KEY.test(key) ? hero(key) : null;
       if (to) to.style.viewTransitionName = 'cz-hero';
-      if (!from && to && dir === 'out') origin(to);      // zooming out: about where this level sits in the one above
+      if (!soft && !from && to && dir === 'out') origin(to);      // zooming out: about where this level sits in the one above
     });
     var clear = function () {
       delete root.dataset.czDir;
@@ -314,7 +317,7 @@
     var key = o.key !== undefined ? o.key : (dir === 'out' && v ? v.dataset.zout : null);
     var age = cache[u] ? Date.now() - cache[u].at : 0, copy = null;
     var level = fetchLevel(u);
-    var sketch = dir === 'in' && !reduced.matches ? outline(u, o, key) : null;
+    var sketch = dir === 'in' && !reduced.matches && !laptop() ? outline(u, o, key) : null;      // (the laptop keeps the old level until the new one is in hand: never an outline first)
     return (sketch ? soon(level, SLOW) : level).then(function (got) {
       if (got !== null) return got;
       var at = epoch;

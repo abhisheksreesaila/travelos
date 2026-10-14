@@ -17,14 +17,18 @@
 // With no origin (or one scrolled off the screen) a thing rises from a small place just above where it rests.
 // `origin` is an element, a DOMRect-like { left, top, width, height } or a point { x, y }. Only transform and opacity are animated (the radius at most), so it stays on the compositor.
 // Reduced motion: nothing moves and nothing fades: it simply appears and goes (the promise resolves at once). GA.motion.log keeps the last few moves { kind, from, to, dur, easing } for the tests.
+// F-156, the laptop is calm: from 1020px up, and not the installed app (the same query as the desktop layouts), GA.motion.calm() is true and every helper above is a short opacity fade (--motion-desk)
+// instead of its spring: nothing grows out of what was tapped, nothing scales, travels or clips; flip, land, reflow and spring simply arrive. Callers do not branch on it: they call the same
+// open/close/settle/run and the helper decides by width. The phone and the installed app keep the liquid motion above, unchanged.
 (function () {
   var GA = window.GA = window.GA || {};
   if (GA.motion) return;
   var root = document.documentElement;
   var reducedQ = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
-  var NAMES = { spring: '--motion-spring-dur', calm: '--motion-dur', dur: '--motion-dur', settle: '--motion-settle-dur', quick: '--motion-quick', fade: '--motion-fade' };
+  var deskQ = window.matchMedia ? window.matchMedia('(min-width: 1020px) and (not (display-mode: standalone))') : { matches: false };      // F-156: the one desktop query (same as day_dock.css)
+  var NAMES = { desk: '--motion-desk', spring: '--motion-spring-dur', calm: '--motion-dur', dur: '--motion-dur', settle: '--motion-settle-dur', quick: '--motion-quick', fade: '--motion-fade' };
   var EASES = { spring: '--motion-spring', calm: '--motion-ease', out: '--motion-out' };
-  var FALLBACK = { spring: 520, calm: 240, dur: 240, settle: 280, quick: 160, fade: 120 };
+  var FALLBACK = { desk: 140, spring: 520, calm: 240, dur: 240, settle: 280, quick: 160, fade: 120 };
 
   function css(n) { return getComputedStyle(root).getPropertyValue(n).trim(); }
   function t(name) {                       // a duration token, in milliseconds
@@ -35,6 +39,7 @@
   function ease(name) { return css(EASES[name] || name) || 'ease-out'; }
   function rem() { return parseFloat(getComputedStyle(root).fontSize) || 16; }
   function reduced() { return reducedQ.matches; }
+  function calm() { return deskQ.matches; }
 
   function rectOf(o) {
     if (!o) return null;
@@ -155,13 +160,32 @@
     return [m.a || 1, m.d || 1];
   }
 
-  var M = GA.motion = { log: [], t: t, ease: ease, reduced: reduced, box: box, stop: function (el) { M_stop(el); } };
+  var M = GA.motion = { log: [], t: t, ease: ease, reduced: reduced, calm: calm, box: box, stop: function (el) { M_stop(el); } };
+
+  // F-156: the laptop's version of open and close: the box stays where it is and fades (its scrim with it); a fold that interrupts a fade starts from the opacity it has reached.
+  function fadeIn(el, kind, o) {
+    var dur = t('desk'), e = ease('calm'), done = [];
+    M_stop(el);
+    note(kind, null, box(el), dur, e).calm = true;
+    done.push(go(el, [{ opacity: 0 }, { opacity: 1 }], dur, e, { fill: 'backwards' }));
+    if (o && o.scrim) done.push(go(o.scrim, [{ opacity: 0 }, { opacity: 1 }], dur, e, { fill: 'backwards' }));
+    return Promise.all(done);
+  }
+  function fadeOut(el, o) {
+    var dur = t('desk'), e = ease('calm'), op = parseFloat(getComputedStyle(el).opacity), done = [];
+    M_stop(el);
+    note('close', box(el), null, dur, e).calm = true;
+    done.push(go(el, [{ opacity: op >= 0 ? op : 1 }, { opacity: 0 }], dur, e, { fill: 'forwards' }));
+    if (o && o.scrim) done.push(go(o.scrim, [{ opacity: parseFloat(getComputedStyle(o.scrim).opacity) || 1 }, { opacity: 0 }], dur, e, { fill: 'forwards' }));
+    return Promise.all(done);
+  }
 
   // Grow `el` out of `origin`.
   M.open = function (el, origin, o) {
     o = o || {};
     var from = rectOf(origin);
     if (reduced() || !el.animate) return Promise.resolve();
+    if (calm()) return fadeIn(el, 'open', o);
     var to = box(el), dur = t(o.t || 'spring'), e = ease(o.ease || 'spring'), done = [];      // o.t / o.ease: another token's duration and easing, for a thing opened often (a top-bar menu)
     if (!onScreen(from)) from = { left: to.left + to.width * 0.15, top: to.top - rem() * 0.75, width: to.width * 0.7, height: to.height * 0.6 };      // nothing (on screen) was tapped: it rises from a small place just above where it rests
     el.style.transformOrigin = '0 0';
@@ -183,6 +207,7 @@
   M.close = function (el, origin, o) {
     o = o || {};
     if (reduced() || !el.animate) return Promise.resolve();
+    if (calm()) return fadeOut(el, o);
     var cs = getComputedStyle(el);      // where it is right now: closing in the middle of opening starts from there (no flash back to full)
     var start = o.from || cs.transform, op = parseFloat(cs.opacity), rad = cs.borderRadius, clip0 = cs.clipPath;
     var cop = o.content ? parseFloat(getComputedStyle(o.content).opacity) : 1;
@@ -223,7 +248,7 @@
   // The box is scaled, its words are not: each child of `el` is scaled by the inverse, frame by frame, about the box's own corner, so text never stretches (the box clips what it has not
   // grown to yet). The children's frames are sampled from the same spring, 1/scale is not a straight line, so a plain pair of keyframes would be wrong in the middle.
   M.flip = function (el, from, to) {
-    if (reduced() || !el || !el.animate || !from || !to) return Promise.resolve();
+    if (reduced() || calm() || !el || !el.animate || !from || !to) return Promise.resolve();
     if (Math.abs(from.left - to.left) < 1 && Math.abs(from.top - to.top) < 1 && Math.abs(from.width - to.width) < 1 && Math.abs(from.height - to.height) < 1) return Promise.resolve();
     el.style.transformOrigin = '0 0';
     var dur = t('spring'), e = ease('spring');
@@ -249,7 +274,7 @@
   // before the move starts (so others can measure the new layout untransformed).
   M.reflow = function (el, change, o) {
     o = o || {};
-    if (reduced() || !el || !el.animate) { change(); if (o.during) o.during(); return Promise.resolve(); }
+    if (reduced() || calm() || !el || !el.animate) { change(); if (o.during) o.during(); return Promise.resolve(); }
     var before = box(el);
     change();
     var after = box(el);
@@ -261,6 +286,7 @@
   M.settle = function (el, o) {
     o = o || {};
     if (reduced() || !el || !el.animate) return Promise.resolve();
+    if (calm()) return fadeIn(el, 'settle', o);
     var y = (o.y !== undefined ? o.y : 0.5) * rem();
     var dur = t('settle'), e = ease('spring');
     note('settle', null, null, dur, e);
@@ -273,7 +299,7 @@
   // Words are only held still when the size really changes (a resize undone); a small difference (the lifted block's 3% scale) just folds out with the box.
   M.land = function (el, from, o) {
     o = o || {};
-    if (reduced() || !el || !el.animate || !from) return Promise.resolve();
+    if (reduced() || calm() || !el || !el.animate || !from) return Promise.resolve();      // (on the laptop a block that moved is simply at its new place)
     el.getAnimations().forEach(function (a) { if (a.id === 'ga-land') a.cancel(); });      // (not box(): a block's wiggle is a CSS animation that must go on)
     var to = rectOf(el);
     if (Math.abs(from.left - to.left) < 0.5 && Math.abs(from.top - to.top) < 0.5 && Math.abs(from.width - to.width) < 0.5 && Math.abs(from.height - to.height) < 0.5) return Promise.resolve();
@@ -301,7 +327,7 @@
 
   // Let go of a drag: back to rest with the spring.
   M.spring = function (el, fromTransform) {
-    if (reduced() || !el.animate) return Promise.resolve();
+    if (reduced() || calm() || !el.animate) return Promise.resolve();
     return go(el, [{ transform: fromTransform }, { transform: 'none' }], t('spring'), ease('spring'));
   };
 
@@ -309,6 +335,11 @@
   M.run = function (el, frames, o) {
     o = o || {};
     if (reduced() || !el || !el.animate) return Promise.resolve();
+    if (calm()) {      // only the fading part of a move survives on the laptop: a frame keeps its opacity and drops everything that travels or scales
+      frames = frames.map(function (f) { return f.opacity === undefined ? null : { opacity: f.opacity }; });
+      if (frames.some(function (f) { return !f; })) return Promise.resolve();
+      return go(el, frames, t('desk'), ease(o.ease || 'calm'), o.fill ? { fill: o.fill } : null);
+    }
     return go(el, frames, t(o.t || 'quick'), ease(o.ease || 'calm'), o.fill ? { fill: o.fill } : null);
   };
 

@@ -180,20 +180,6 @@ def test_a_trip_longer_than_five_days_scrolls_sideways_inside_the_week_area(brow
     ctx.close()
 
 
-def test_week_to_day_zooms_about_the_clicked_row(browser, base_url):
-    ctx, page = long_trip(browser, base_url, viewport=DESKTOP, motion="no-preference")
-    cal.add_activity(person("ari"), day=1, start=10 * 60, end=11 * 60, title="Pier walk", kind="fun")
-    page.goto(f"{base_url}/trip/canvas")
-
-    row = page.locator(".cz-wcol[data-day='1'] .cz-wi").first
-    box = row.bounding_box()
-    row.click()
-    page.wait_for_selector(".cz-view[data-level=day][data-day='1']")
-    ox, oy = page.evaluate("[parseFloat(document.documentElement.style.getPropertyValue('--cz-ox')), parseFloat(document.documentElement.style.getPropertyValue('--cz-oy'))]")
-    assert abs(ox - (box["x"] + box["width"] / 2)) < 2 and abs(oy - (box["y"] + box["height"] / 2)) < 2
-    ctx.close()
-
-
 @pytest.mark.parametrize("viewport,name", [(TABLET, "1000"), (PHONE, "390")], ids=["tablet", "phone"])
 def test_the_tablet_and_the_phone_keep_the_rows(signed_in, viewport, name):
     page = signed_in(viewport, path="/trip/canvas")
@@ -202,32 +188,3 @@ def test_the_tablet_and_the_phone_keep_the_rows(signed_in, viewport, name):
     expect(page.locator("#cz-week .cz-row")).to_have_count(5)
     assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth")
     shot(page, f"week-{name}.png")
-
-
-HERO_SPY = """() => { window.__hero = []; const real = document.startViewTransition.bind(document);
-  const seen = (when) => [...document.querySelectorAll('[data-zk]')].filter(n => n.style.viewTransitionName === 'cz-hero').map(n => ({ when, zk: n.dataset.zk, tag: n.className.split(' ')[0], box: n.getClientRects().length > 0 }));
-  document.startViewTransition = function (cb) { window.__hero.push(...seen('before'));
-    return real(function () { const r = cb(); window.__hero.push(...seen('after')); return r; }); }; }"""
-
-
-def test_the_visible_column_is_the_hero_going_in_and_coming_back(browser, base_url):
-    ctx, page = long_trip(browser, base_url, viewport=DESKTOP, motion="no-preference")
-    cal.add_activity(person("ari"), day=1, start=10 * 60, end=11 * 60, title="Pier walk", kind="fun")
-    page.goto(f"{base_url}/trip/canvas")
-
-    page.evaluate(HERO_SPY)
-    page.locator(".cz-wcol[data-day='1'] .cz-wi").first.click()
-    page.wait_for_selector(".cz-view[data-level=day][data-day='1']")
-    page.wait_for_timeout(800)
-    going = page.evaluate("window.__hero")
-    assert {"when": "before", "zk": "day-1", "tag": "cz-wcol", "box": True} in going      # the column grows into the day header, not the hidden phone row
-    assert any(x["when"] == "after" and x["tag"] == "cz-head" for x in going)
-    page.evaluate("window.__hero = []")
-    page.locator("#cz-z-week").click()
-    page.wait_for_selector(".cz-view[data-level=week]")
-    page.wait_for_timeout(800)
-    back = page.evaluate("window.__hero")
-    assert any(x["when"] == "before" and x["tag"] == "cz-head" and x["zk"] == "day-1"  for x in back)      # the header folds into the column
-    assert {"when": "after", "zk": "day-1", "tag": "cz-wcol", "box": True} in back
-    assert not any(x["tag"] == "cz-row" for x in going + back)
-    ctx.close()

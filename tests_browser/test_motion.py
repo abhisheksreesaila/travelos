@@ -483,7 +483,7 @@ def anywhere(browser, base_url):
         c.close()
 
 
-@pytest.mark.parametrize("vp", [{"width": 1440, "height": 900}, PHONE], ids=["desktop", "390"])
+@pytest.mark.parametrize("vp", [{"width": 1000, "height": 800}, PHONE], ids=["tablet", "390"])      # (F-156: from 1020px the laptop only fades; tests_browser/test_calm_desktop.py)
 def test_a_picker_popover_grows_out_of_its_field_and_folds_back_into_it(anywhere, vp):
     page = anywhere("/start", vp)
     trigger = page.get_by_role("button", name=re.compile("^Leaving:"))
@@ -499,7 +499,7 @@ def test_a_picker_popover_grows_out_of_its_field_and_folds_back_into_it(anywhere
 
 
 def test_the_ledger_breakdown_grows_out_of_the_total_and_folds_back_into_it(anywhere):
-    page = anywhere("/plan", {"width": 1440, "height": 900}, ready="#ws-grid[data-focus]")
+    page = anywhere("/plan", {"width": 1000, "height": 800}, ready="#ws-grid[data-focus]")      # (a tablet: the laptop only fades, F-156)
     origin = page.evaluate(BOX, "#ws-total")
     page.click("#ws-total")
     expect(page.locator("#ws-pop")).to_be_visible()
@@ -763,7 +763,7 @@ def test_the_ask_sheet_itself_keeps_its_words_unsquished_while_it_grows_and_fold
 
 
 def test_the_ledger_popover_keeps_its_words_unsquished_while_it_grows_and_folds(anywhere):
-    page = anywhere("/plan", {"width": 1440, "height": 900}, ready="#ws-grid[data-focus]")
+    page = anywhere("/plan", {"width": 1000, "height": 800}, ready="#ws-grid[data-focus]")      # (a tablet: the laptop only fades, F-156)
     page.click("#ws-total")
     grow_keeps_shape(page, "#ws-pop")
     page.wait_for_timeout(SLOW + 400)

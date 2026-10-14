@@ -15,7 +15,7 @@ RECORD = """([menu, itemSel]) => new Promise(done => {
   d.querySelector('summary').click();
   (function look() {
     const now = performance.now() - t0;
-    if (!anim) { anim = pop.getAnimations().find(a => a.effect.getKeyframes().some(f => f.transform && f.transform !== 'none')); if (anim) began = now; }      // the grow starts a moment after the click (the toggle event); a busy machine delays that, not the menu
+    if (!anim) { anim = pop.getAnimations().find(a => a.effect.getKeyframes().some(f => f.opacity !== undefined)); if (anim) began = now; }      // the grow starts a moment after the click (the toggle event); a busy machine delays that, not the menu
     rows.push({ at: now, spots: spots(), opacity: parseFloat(getComputedStyle(pop).opacity) });
     if (now < 1500) return requestAnimationFrame(look);
     const rest = rows[rows.length - 1].spots;
@@ -55,29 +55,24 @@ def test_the_menu_is_usable_within_a_quarter_second_with_motion_on(lively, menu,
     got = page.evaluate(RECORD, [menu, items])
     print(f"\n{menu}: {got['n']} items, last movement {got['lastMove']:.0f} ms after the grow began")
     assert got["n"] >= 2
-    assert got["duration"] == 240, "it grows with --motion-dur (240ms), not the spring"          # the animation's own length, whatever the machine's speed
+    assert got["duration"] == 140, "F-156: on the laptop it fades with --motion-desk (140ms), not the spring"          # the animation's own length, whatever the machine's speed
     assert got["lastMove"] <= LIMIT_MS, got["trail"]
 
 
 @pytest.mark.parametrize("menu", [".ga-tb-account", ".ga-tb-picker:not(.ga-tb-phonepick)"], ids=["avatar", "trip-picker"])
-def test_the_menu_still_grows_out_of_its_button_and_folds_back_with_the_tokens(lively, menu):
+def test_the_menu_fades_in_and_out_with_the_desktop_token(lively, menu):
     page = lively()
     page.wait_for_timeout(600)
-    tokens = page.evaluate("({ dur: getComputedStyle(document.documentElement).getPropertyValue('--motion-dur').trim(), ease: getComputedStyle(document.documentElement).getPropertyValue('--motion-ease').trim(), out: getComputedStyle(document.documentElement).getPropertyValue('--motion-out').trim() })")
-    button = page.locator(f"{menu} > summary").bounding_box()
+    desk = page.evaluate("getComputedStyle(document.documentElement).getPropertyValue('--motion-desk').trim()")
     page.evaluate("GA.motion.log.length = 0")
     page.click(f"{menu} > summary")
     page.wait_for_timeout(400)
     grow = page.evaluate("GA.motion.log.filter(m => m.kind === 'open').pop()")
-    assert grow, "the menu opened with GA.motion"
-    assert f"{grow['dur']}ms" == tokens["dur"] and grow["easing"] == tokens["ease"]          # a token's duration and easing, none of its own
-    assert abs(grow["from"]["left"] - button["x"]) < 1 and abs(grow["from"]["top"] - button["y"]) < 1      # it grows out of its button
+    assert grow and grow["calm"] and f"{grow['dur']}ms" == desk          # F-156: a short fade with the desktop token; it does not grow out of the button
     page.keyboard.press("Escape")
     page.wait_for_timeout(500)
     fold = page.evaluate("GA.motion.log.filter(m => m.kind === 'close').pop()")
-    assert fold, "the menu folded with GA.motion"
-    assert f"{fold['dur']}ms" == tokens["dur"] and fold["easing"] == tokens["out"]
-    assert abs(fold["to"]["left"] - button["x"]) < 1 and abs(fold["to"]["top"] - button["y"]) < 1       # and folds back into it
+    assert fold and fold["calm"] and f"{fold['dur']}ms" == desk
     assert page.evaluate(f"!document.querySelector('{menu}').open")
 
 
