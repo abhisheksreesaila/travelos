@@ -94,11 +94,14 @@ def idle(v, day):
     return [card, later, ask_box(day) if access.can_edit(v["role"]) else ""]
 
 
-def tabs(day, active="plan"):
-    def tab(key, label, ico, **kw):
+def tabs(day, active="plan", unread=0):
+    """`unread`: how many messages in the trip's chats this person has not read, shown on the Family tab (F-143)."""
+    from gitaway.pages import familydock, tripcanvas as tc
+
+    def tab(key, label, ico, *more, **kw):
         on = key == active
-        return (Button if "href" not in kw else A)(icon(ico, 16, 2.4), Span(label), role="tab", aria_selected="true" if on else "false", cls=f"cz-dock-tab{' is-on' if on else ''}", data_tab=key, **({"type": "button"} if "href" not in kw else {}), **kw)
-    return Nav(tab("plan", "Plan", "calendar"), tab("family", "Family", "chat", href="/trip/family"), tab("ask", "Ask", "mic", href=f"/trip/ask?day={day}"), cls="cz-dock-tabs", role="tablist", aria_label="Panel")
+        return (Button if "href" not in kw else A)(icon(ico, 16, 2.4), Span(label), *more, role="tab", aria_selected="true" if on else "false", cls=f"cz-dock-tab{' is-on' if on else ''}", data_tab=key, **({"type": "button"} if "href" not in kw else {}), **kw)
+    return Nav(tab("plan", "Plan", "calendar"), tab("family", "Family", "chat", familydock.unread_badge(unread), href=tc.curl(day=day, panel="family")), tab("ask", "Ask", "mic", href=f"/trip/ask?day={day}"), cls="cz-dock-tabs", role="tablist", aria_label="Panel")
 
 
 KIND_ICON = {"fun": "star", "food": "food", "outdoors": "tree", "culture": "sight", "travel": "car"}
@@ -206,11 +209,17 @@ def plan_pane(v, a):
     return pane, foot
 
 
-def panel(v, day, plan=""):
-    """`plan`: the id of a plan on this day to open in the panel (the address's `plan=`); anything else leaves the panel idle. Both panes are always drawn so Esc can show Up next again."""
-    from gitaway.pages import tripcanvas as tc
+def panel(v, day, plan="", family=None):
+    """`plan`: the id of a plan on this day to open in the panel (the address's `plan=`); anything else leaves the panel idle. Both panes are always drawn so Esc can show Up next again.
+    `family`: the key of a chat to open in the Family mode instead (the address's `panel=family&thread=`, F-143; gitaway/pages/familydock.py draws it); a plan wins."""
+    from gitaway import familychats
+    from gitaway.pages import familydock, tripcanvas as tc
     a = v["by_id"].get(plan) if plan else None
     a = a if a is not None and a.day == day else None
+    fam = familydock.pane(v["session"], day, family) if family and not a else ()      # (drawing a chat reads it: the count below leaves it out)
     compose = A(Span("Type to Ask", cls="cz-compose-t"), Span(icon("arrow-right", 16, 2.6), cls="cz-compose-go"), href=f"/trip/ask?day={day}", cls="cz-compose", id="cz-dock-compose") \
         if access.can_edit(v["role"]) else ""
-    return Aside(tabs(day), Div(*idle(v, day), cls="cz-dock-body", data_pane="idle"), *(plan_pane(v, a) if a else ()), compose, cls="cz-dock", id="cz-dock", data_mode="plan" if a else "idle", data_day=str(day), data_base=tc.curl(day=day), data_plan_url=tc.curl(day=day, plan="PLAN"), data_dow=v["dates"][day].strftime("%a"), aria_label="The day's panel")
+    mode = "plan" if a else "family" if fam else "idle"
+    return Aside(tabs(day, mode if mode == "family" else "plan", familychats.unread_total(v["session"])), Div(*idle(v, day), cls="cz-dock-body", data_pane="idle"), *(plan_pane(v, a) if a else ()), *fam, compose,
+                 cls="cz-dock", id="cz-dock", data_mode=mode, data_day=str(day), data_base=tc.curl(day=day), data_plan_url=tc.curl(day=day, plan="PLAN"), data_family_url=tc.curl(day=day, panel="family", thread="THREAD"),
+                 data_dow=v["dates"][day].strftime("%a"), aria_label="The day's panel")

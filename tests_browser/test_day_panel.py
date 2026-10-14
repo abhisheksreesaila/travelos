@@ -232,20 +232,20 @@ def test_the_ring_follows_when_the_panel_switches_plans(canvas_page, viewport):
 def test_the_tabs_switch_modes_without_a_page_load(desk):
     act = park(desk)
     desk.evaluate("window.__loaded = 1")
-    desk.evaluate("""Dock.register('family', { tab: 'family', enter(o, from) { document.getElementById('cz-dock').dataset.seen = from; }, leave() {} })""")
     click_block(desk, act)
     expect(pane(desk)).to_be_visible()
-    desk.locator("#cz-dock .cz-dock-tab[data-tab=family]").click()
+    desk.locator("#cz-dock .cz-dock-tab[data-tab=family]").click()                    # Family (F-143) is registered: the panel switches in place
     expect(desk.locator("#cz-dock")).to_have_attribute("data-mode", "family")
     expect(desk.locator("#cz-dock .cz-dock-tab[data-tab=family]")).to_have_attribute("aria-selected", "true")
     expect(desk.locator("#cz-dock .cz-dock-tab[data-tab=plan]")).to_have_attribute("aria-selected", "false")
-    expect(desk.locator("#cz-dock")).to_have_attribute("data-seen", "plan")
     expect(pane(desk)).to_have_count(0)
-    assert desk.url.endswith(f"day={SATURDAY}") or "plan=" not in desk.url
+    expect(desk.locator("#cz-dock .cz-fam")).to_be_visible()
+    assert "plan=" not in desk.url
     assert desk.evaluate("window.__loaded") == 1                                       # no page load
     desk.locator("#cz-dock .cz-dock-tab[data-tab=plan]").click()                       # back to Plan: the plan that was open
     expect(pane(desk)).to_be_visible()
     assert mode(desk) == "plan" and desk.evaluate("window.__loaded") == 1 and f"plan={act}" in desk.url
+    expect(desk.locator("#cz-dock .cz-fam")).to_have_count(0)
 
 
 def test_a_tab_nobody_registered_keeps_its_link(desk):
@@ -278,13 +278,14 @@ def test_open_plan_in_the_pane_lands_on_the_block_level(desk):
     expect(desk.locator(".cz-view[data-level=block]")).to_be_visible()
 
 
-def test_open_in_family_lands_on_the_plans_chat(desk):
+def test_open_in_family_opens_the_plans_chat_in_the_panel(desk):
     act = park(desk)
     click_block(desk, act)
     expect(pane(desk).locator(".cz-pstep[data-step]").first).to_be_visible()
-    pane(desk).locator("#cz-pp-family").click()
-    desk.wait_for_url(re.compile(rf"/trip/talk\?act={act}"))
-    expect(desk.locator("#ft-compose")).to_be_visible()
+    pane(desk).locator("#cz-pp-family").click()                                       # F-143: in place, not the phone's chat page
+    expect(desk.locator("#cz-dock .cz-fam")).to_be_visible()
+    expect(desk.locator("#cz-dock #ft-compose")).to_be_visible()
+    assert mode(desk) == "family" and f"thread={act}" in desk.url
 
 
 def test_send_works_with_the_mouse(desk):

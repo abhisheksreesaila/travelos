@@ -130,8 +130,7 @@ def test_with_nothing_up_next_it_says_so_and_shows_ask(signed_in):
 def test_the_panel_tabs_go_to_family_and_ask(signed_in):
     page = signed_in(DESKTOP, path="/trip/canvas?day=1")
     page.locator("#cz-dock .cz-dock-tab", has_text="Family").click()
-    page.wait_for_url("**/trip/family")
-    page.go_back()
+    expect(page.locator("#cz-dock")).to_have_attribute("data-mode", "family")      # F-143: Family switches the panel in place
     page.locator("#cz-dock .cz-dock-tab", has_text="Ask").click()
     page.wait_for_url("**/trip/ask?day=1*")
 

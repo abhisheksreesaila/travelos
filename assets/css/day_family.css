@@ -1,0 +1,40 @@
+/* Family chat in the panel (F-143; frame A3 of docs/design/canvas/Web-Trip-v1.html). The panel's Family mode: the trip's chats as rows (the whole trip first, then each plan's and part's, with
+   an unread count), "People and invites", the open chat, and its message bar at the panel's foot. Same line as the desktop day (1020px up, not an installed app); below it the panel is not
+   drawn. The chat itself is the Family tab's markup and thread.css. Sizes are rem; no motion of its own (a new message is simply there: F-118). Loaded after day_dock.css. */
+@media (min-width: 1020px) and (not (display-mode: standalone)) {
+  .cz .cz-dock[data-mode="family"] [data-pane="idle"], .cz .cz-dock[data-mode="family"] .cz-compose { display: none; }
+  .cz .cz-dock:not([data-mode="family"]) .cz-fam, .cz .cz-dock:not([data-mode="family"]) .cz-fam-foot { display: none; }
+
+  .cz .cz-dock-un { display: inline-block; min-width: 1.25rem; padding: 0 0.4375rem; border-radius: var(--r-pill); background: var(--coral); color: var(--ink); font-size: var(--cz-small); font-weight: 800; line-height: 1.375rem; text-align: center; font-variant-numeric: tabular-nums; }
+
+  .cz .cz-fam { overflow: hidden; gap: 0.5rem; padding-bottom: 0.5rem; }
+  .cz .cz-fam:focus { outline: none; }
+  .cz .cz-fam-list { flex: 0 1 auto; min-height: 0; max-height: 45%; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 0.125rem; }
+  .cz .cz-fam-th { flex-shrink: 0; display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem; border-radius: 0.75rem; color: var(--ink); }
+  .cz .cz-fam-th:hover { background: var(--paper); }
+  .cz .cz-fam-th.is-on { background: var(--paper-2); box-shadow: inset 0 0 0 0.0625rem var(--line); }
+  .cz .cz-fam-th:focus-visible { outline: 0.1667rem solid var(--ink); outline-offset: -0.1667rem; }
+  .cz .cz-fam-ic { flex: 0 0 auto; width: 2.5rem; height: 2.5rem; border-radius: 0.8333rem; display: grid; place-items: center; background: var(--tint, var(--bubble-tint)); color: var(--ink); }
+  .cz .cz-fam-ic-trip { background: var(--sun-tint); }
+  .cz .cz-fam-tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.0833rem; }
+  .cz .cz-fam-tt { font-weight: 800; font-size: var(--cz-body); line-height: 1.2; overflow-wrap: anywhere; }
+  .cz .cz-fam-ls { font-size: var(--cz-small); font-weight: 600; line-height: 1.25; color: var(--ink-3); overflow-wrap: anywhere; }
+  .cz .cz-fam-un { flex: 0 0 auto; min-width: 1.25rem; padding: 0 0.4375rem; border-radius: var(--r-pill); background: var(--coral); color: var(--ink); font-size: var(--cz-small); font-weight: 800; line-height: 1.375rem; text-align: center; font-variant-numeric: tabular-nums; }
+
+  .cz .cz-fam-people { flex-shrink: 0; align-self: flex-start; display: inline-flex; align-items: center; gap: 0.5rem; min-height: 2.25rem; padding: 0 0.75rem; border-radius: var(--r-pill); font-size: var(--cz-small); font-weight: 800; color: var(--ink-2); }
+  .cz .cz-fam-people:hover { background: var(--paper); color: var(--ink); }
+  .cz .cz-fam-people:focus-visible { outline: 0.1667rem solid var(--ink); outline-offset: 0.1667rem; }
+  .cz .cz-fam-hd { flex-shrink: 0; margin: 0.25rem 0 0; padding-top: 0.75rem; border-top: 0.0625rem solid var(--line); overflow-wrap: anywhere; text-transform: none; letter-spacing: 0; color: var(--ink-2); }
+
+  /* the chat: the Family tab's bubbles, in the panel's colours; this list is the one that scrolls (thread.js scrolls it to its newest message) */
+  .cz .cz-fam-msgs { flex: 1 1 auto; min-height: 6rem; overflow-y: auto; overscroll-behavior: contain; gap: 0.6667rem; padding: 0.25rem 0; scrollbar-width: thin; }
+  .cz .cz-fam-msgs .ft-msg { max-width: 92%; }
+  .cz .cz-fam-msgs .ft-bub { background: var(--paper-2); box-shadow: none; font-size: var(--cz-body); }
+  .cz .cz-fam-msgs .ft-me .ft-bub { background: var(--ink); color: #FFFFFF; }
+  .cz .cz-fam .cz-pp-none { flex-shrink: 0; margin: 0; }
+
+  .cz .cz-fam-foot { flex-shrink: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin: 0 0.75rem 0.75rem; min-height: 3rem; padding: 0.25rem 0.375rem 0.25rem 1rem; border-radius: 1.5rem; background: var(--paper); box-shadow: inset 0 0 0 0.0625rem var(--line); }
+  .cz .cz-fam-foot:focus-within { box-shadow: inset 0 0 0 0.125rem var(--ink); }
+  .cz .cz-fam-foot .cz-error { flex-basis: 100%; margin: 0 0 0.25rem; font-size: var(--cz-small); }
+  .cz .cz-fam-foot .cz-error:empty { display: none; }
+}

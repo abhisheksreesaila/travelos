@@ -28,5 +28,15 @@ class ThreadPref:
     pending: int = 0
 
 
-THREAD_TABLES = [(ThreadItem, "thread", "id"), (ThreadPref, "thread_prefs", "user_id")]
+class ThreadRead:
+    """How far one person has read one chat (F-143): `pk` is "<user id>|<chat key>", `key` "trip" (the whole trip's chat), "<plan id>" or "<plan id>:<part id>" (a plan's or a
+    part's chat), or "*" (everything: the phone's Family tab shows all of it). `last_n` is the rowid of the newest item read. A message is unread when it is by someone else and
+    newer than both the chat's own mark and "*"."""
+    pk: str
+    user_id: str
+    key: str
+    last_n: int = 0
+
+
+THREAD_TABLES = [(ThreadItem, "thread", "id"), (ThreadPref, "thread_prefs", "user_id"), (ThreadRead, "thread_reads", "pk")]
 THREAD_INDEXES = [("thread", ["trip_id"], False, "ix_thread_trip")]

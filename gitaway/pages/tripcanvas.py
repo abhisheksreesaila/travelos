@@ -29,19 +29,21 @@ from gitaway.pages import booked, calendar as calui, daydock, passes as passes_u
 from gitaway.pages.around_ui import around_url
 from gitaway.pages.plantalk import talk_badge   # F-091: the chat badge on a plan and on a part
 
-HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/help.css"), *passes_ui.HEAD, Link(rel="stylesheet", href="/assets/css/trip_canvas.css"), Link(rel="stylesheet", href="/assets/css/day_grid.css"), Link(rel="stylesheet", href="/assets/css/plantalk.css"), Link(rel="stylesheet", href="/assets/css/day_card.css"), Link(rel="stylesheet", href="/assets/css/thread.css"), Link(rel="stylesheet", href="/assets/css/day_dock.css"), Link(rel="stylesheet", href="/assets/css/week_desk.css"))   # pickers: the add-a-step sheet has a time field (F-082)
-SCRIPTS = ("/assets/js/vendor/idiomorph.js", "/assets/js/canvas_core.js", "/assets/js/canvas_filters.js", "/assets/js/canvas_writes.js", "/assets/js/canvas_sos.js", "/assets/js/canvas_gestures.js", "/assets/js/canvas_tick.js", "/assets/js/day_grid.js", "/assets/js/day_menu.js", "/assets/js/day_new.js", "/assets/js/day_fold.js", "/assets/js/day_card.js", "/assets/js/day_dock.js")
+HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/help.css"), *passes_ui.HEAD, Link(rel="stylesheet", href="/assets/css/trip_canvas.css"), Link(rel="stylesheet", href="/assets/css/day_grid.css"), Link(rel="stylesheet", href="/assets/css/plantalk.css"), Link(rel="stylesheet", href="/assets/css/day_card.css"), Link(rel="stylesheet", href="/assets/css/thread.css"), Link(rel="stylesheet", href="/assets/css/day_dock.css"), Link(rel="stylesheet", href="/assets/css/day_family.css"), Link(rel="stylesheet", href="/assets/css/week_desk.css"))   # pickers: the add-a-step sheet has a time field (F-082)
+SCRIPTS = ("/assets/js/vendor/idiomorph.js", "/assets/js/canvas_core.js", "/assets/js/canvas_filters.js", "/assets/js/canvas_writes.js", "/assets/js/canvas_sos.js", "/assets/js/canvas_gestures.js", "/assets/js/canvas_tick.js", "/assets/js/day_grid.js", "/assets/js/day_menu.js", "/assets/js/day_new.js", "/assets/js/day_fold.js", "/assets/js/day_card.js", "/assets/js/day_dock.js", "/assets/js/day_family.js")
 RANK = {"week": 0, "day": 1, "block": 2, "step": 3}
 PART_TINTS = ("sky", "sun", "grape", "bubble", "mint")
 MAX_FACES = 5
 
 
-def curl(day=None, block="", step="", add=False, part="", title="", note="", err="", booked="", sos=False, plan=""):
+def curl(day=None, block="", step="", add=False, part="", title="", note="", err="", booked="", sos=False, plan="", panel="", thread=""):
     """The address of a level: the week with nothing, else a day, a block or a step. `add` opens the add-a-step sheet over a block (with the part, title and note
     it starts with, and the reason the last try was refused). `booked` opens a booking's sheet over its day (F-093), `sos` the emergency sheet over the day or the week."""
     q = {"step": step} if step else {"block": block} if block else {"day": day} if day is not None else {}
     if plan and day is not None:
         q = {"day": day, "plan": plan}      # F-145: the day with this plan selected in the panel (F-141 reads `plan`)
+    if panel == "family" and day is not None and not plan:
+        q = {"day": day, "panel": "family", **({"thread": thread} if thread and thread != "trip" else {})}      # F-143: the day with the Family chats open in the panel (and this chat)
     if booked:
         q = {"day": day if day is not None else 0, "booked": booked}
     elif sos:
@@ -123,16 +125,21 @@ def find_step(v, step_id):
     return None
 
 
-def today_url(session, day=""):
-    """Where the Today tab goes (F-092): the day asked for, else today during the trip, the first day before it and the last day after it."""
+def today_day(session, day="") -> int:
+    """The day number the Today tab opens (F-092): the day asked for, else today during the trip, the first day before it and the last day after it."""
     b = ses.booking(session)
     t = cal.trip("", b)
     last = len(cal.days(t)) - 1
     if day.isdigit() and int(day) <= last:
-        return curl(day=int(day))
+        return int(day)
     zone = td.clock_zone(cal.plan_of(b) if cal.is_imported(b) else None, ses.trip_zone(session))
     ph, n = td.phase(t, catalog.today_in(zone))
-    return curl(day=n if ph == "during" else 0 if ph == "before" else last)
+    return n if ph == "during" else 0 if ph == "before" else last
+
+
+def today_url(session, day=""):
+    """Where the Today tab goes (F-092): the day asked for, else today during the trip, the first day before it and the last day after it."""
+    return curl(day=today_day(session, day))
 
 
 def now_card(v, day):
@@ -611,7 +618,7 @@ def day_view(v, day, booked=None, sos=False):
             now_card(v, day),      # F-092: the centre Ask changes the day; on today the day starts with what is happening now
             *([filter_bar(v, True)] if first else []), *([dropbars(v)] if first and editor else []),
             Div(Div(*cards, *(listmore(v, first) if first else []), P("Nothing here for this filter.", cls="cz-sub cz-kind-none", hidden=True), cls="cz-day-main"), Div(_tray(aside, editor), cls="cz-day-side"), cls="cz-day-body")]
-    body = [Div(*left, cls="cz-day-left"), daydock.panel(v, day, v.get("ring", ""))]      # F-140: on a laptop the left column (heading, filters, grid) and the panel are the day's two columns; below 1020px the wrapper is `display: contents`
+    body = [Div(*left, cls="cz-day-left"), daydock.panel(v, day, v.get("ring", ""), v.get("family"))]      # F-140: on a laptop the left column (heading, filters, grid) and the panel are the day's two columns; below 1020px the wrapper is `display: contents`
     if booked:
         body.append(booking_sheet(v, day, booked))
     elif sos:
@@ -803,7 +810,7 @@ def add_sheet(v, a, adding):
 
 # ---- the page and the routes ---------------------------------------------------------------------------------------------
 
-def resolve(v, day="", block="", step="", add=None, booked_id="", sos=False, plan=""):
+def resolve(v, day="", block="", step="", add=None, booked_id="", sos=False, plan="", panel="", thread=""):
     """(level, the view) for the address, or None when it names something that is not there (the caller goes back to the week). `add`: the add-a-step sheet's
     starting values, shown over the block when asked for (editors only)."""
     if booked_id:
@@ -828,6 +835,7 @@ def resolve(v, day="", block="", step="", add=None, booked_id="", sos=False, pla
     if day:
         if day.isdigit() and int(day) < len(v["dates"]):
             v["ring"] = plan[:20] if (v["by_id"].get(plan[:20]) and v["by_id"][plan[:20]].day == int(day)) else ""      # F-141: the plan open in the panel (the address's `plan=`; it must be on this day): the day rings its block and the panel draws its card
+            v["family"] = (thread[:60] or "trip") if panel == "family" and not v["ring"] else None      # F-143: the Family chats open in the panel (the address's `panel=family&thread=`)
             return "day", day_view(v, int(day))
         return None
     return "week", week_view(v)
@@ -864,7 +872,7 @@ def level_html(session, request, url):
         return None
     v = load(session)
     v["ua"], v["err"] = request.headers.get("user-agent", ""), ""
-    got = resolve(v, q.get("day", "")[:3], q.get("block", ""), q.get("step", "")[:40], None, q.get("booked", "")[:20], q.get("sos") == "1", q.get("plan", ""))
+    got = resolve(v, q.get("day", "")[:3], q.get("block", ""), q.get("step", "")[:40], None, q.get("booked", "")[:20], q.get("sos") == "1", q.get("plan", ""), q.get("panel", ""), q.get("thread", ""))
     return to_xml(got[1]) if got else None
 
 
@@ -935,14 +943,14 @@ def plan_write(session, op, act, form):
 
 def register(app):
     @app.get("/trip/canvas")
-    def canvas_page(request, session, day: str = "", block: str = "", step: str = "", frag: str = "", add: str = "", part: str = "", title: str = "", note: str = "", err: str = "", booked: str = "", sos: str = "", plan: str = ""):
+    def canvas_page(request, session, day: str = "", block: str = "", step: str = "", frag: str = "", add: str = "", part: str = "", title: str = "", note: str = "", err: str = "", booked: str = "", sos: str = "", plan: str = "", panel: str = "", thread: str = ""):
         if (r := _guard(session)):
             return r
         v = load(session)
         v["ua"] = request.headers.get("user-agent", "")
         v["err"] = err[:20]       # the now card's Directions open Apple Maps on Apple devices
         adding = {"part": part[:40], "title": title[:80], "note": note[:canvas.MAX_NOTE], "err": err[:8]} if add == "1" else None
-        got = resolve(v, day[:3], block, step[:40], adding, booked[:20], sos == "1", plan)
+        got = resolve(v, day[:3], block, step[:40], adding, booked[:20], sos == "1", plan, panel, thread)
         if got is None:
             if frag == "1":
                 return Response("not found", status_code=404, media_type="text/plain")   # the script then loads the address as a page, which goes to the week

@@ -784,13 +784,13 @@ Brief: docs/briefs/web-trip.md · Design: A2 · Needs: F-140
 - [ ] a proposal is shown in the panel; Apply changes the grid in place and tells the family, as on the phone
 - [ ] Say the plan and Paste a plan open the same box in the panel
 
-## F-143 Family chat in the panel [todo]
+## F-143 Family chat in the panel [review]
 Brief: docs/briefs/web-trip.md · Design: A3 · Needs: F-140
-- [ ] the top bar's Family and the panel's Family tab list the trip's chats (whole trip first, then each plan's) with unread counts, and open a thread below with compose
-- [ ] the Family tab links to "People and invites" (the /family page) for members and invitations
-- [ ] opening /trip/family/thread directly on a desktop shows the day with that thread open, never a blank page
-- [ ] a new message shows without reloading, as on the phone
-- [ ] the plan pane's chat (F-141) also shows others' new messages without reloading
+- [x] the top bar's Family and the panel's Family tab list the trip's chats (whole trip first, then each plan's) with unread counts, and open a thread below with compose
+- [x] the Family tab links to "People and invites" (the /family page) for members and invitations
+- [x] opening /trip/family/thread directly on a desktop shows the day with that thread open, never a blank page
+- [x] a new message shows without reloading, as on the phone
+- [x] the plan pane's chat (F-141) also shows others' new messages without reloading
 
 ## F-144 Mouse and keyboard on the day [todo]
 Brief: docs/briefs/web-trip.md · Design: A1, A2 · Needs: F-141
