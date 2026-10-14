@@ -206,16 +206,29 @@
   }
 
   // The page scrolls while a lifted step is held near the top or the bottom edge (unless it is over the days or the tray).
+  // F-144: from 1020px the page itself does not scroll: the grid card and the panel's body do, each inside its own box, so the edge that counts is the box's, whichever one the pointer is over.
+  var DESK = window.matchMedia('(min-width: 1020px) and (not (display-mode: standalone))');
+  function boxes() { return DESK.matches ? Array.prototype.slice.call(stage.querySelectorAll('.cz-view[data-day] .cz-day-body, #cz-dock .cz-dock-body')) : []; }
   function scroller() {
     if (!g || g.mode !== 'drag') return;
-    var dy = 0;
+    var dy = 0, inBox = null;
     if (!g.target || g.target.kind === 'part' || !g.target.kind) {
-      if (g.y < 110) dy = -Math.ceil((110 - g.y) / 6);
-      else if (g.y > window.innerHeight - 56) dy = Math.ceil((g.y - (window.innerHeight - 56)) / 3);
+      var rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 12, zone = rem * 3;
+      boxes().forEach(function (b) {
+        var r = b.getBoundingClientRect();
+        if (inBox || g.x < r.left || g.x > r.right || g.y < r.top - zone || g.y > r.bottom + zone) return;
+        if (g.y < r.top + zone) { inBox = b; dy = -Math.ceil(Math.min(1, (r.top + zone - g.y) / zone) * 14) - 1; }
+        else if (g.y > r.bottom - zone) { inBox = b; dy = Math.ceil(Math.min(1, (g.y - (r.bottom - zone)) / zone) * 14) + 1; }
+      });
+      if (!DESK.matches) {
+        if (g.y < 110) dy = -Math.ceil((110 - g.y) / 6);
+        else if (g.y > window.innerHeight - 56) dy = Math.ceil((g.y - (window.innerHeight - 56)) / 3);
+      }
     }
-    if (dy) { window.scrollBy(0, dy); place(); }
+    if (dy) { if (inBox) inBox.scrollBy(0, dy); else window.scrollBy(0, dy); place(); }
     g.raf = requestAnimationFrame(scroller);
   }
+  document.addEventListener('scroll', function () { if (g && g.mode === 'drag') place(); }, true);      // a wheel turned while a step is held: what is under the pointer is looked at again
 
   document.addEventListener('pointermove', function (e) {
     if (!g || e.pointerId !== g.id) return;
