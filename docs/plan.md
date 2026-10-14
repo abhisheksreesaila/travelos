@@ -859,12 +859,28 @@ Bug: F-062 made sign-out reach the landing in ~0.1s (headless Chromium). By 2026
 - [x] signing out at 1440 and 390 reaches the landing in well under the 1.0s limit again (aim for F-062's ~0.1–0.3s in headless Chromium), measured over 5 runs (the app was never slower: submit to load is ~0.12s; the test's clock included Playwright waiting ~0.9s for F-139's avatar menu to finish its spring; the test now starts the clock once the menu is still. After: 0.15–0.26s at both widths)
 - [x] the next person on the device still can't see the previous family's pages or cached data
 
-## F-154 The top bar's menus open quickly [todo]
+## F-154 The top bar's menus open quickly [done]
 Found in F-153's review: on a laptop the avatar menu (and likely the trip picker) keeps moving for ~0.9s after a click (Playwright waits that long for Sign out to be still), longer than the 520ms spring token; menus people open often should feel instant (lessons: F-118 "no motion over clever motion where things happen often").
-- [ ] the top bar's avatar menu and trip picker are usable (their items still) within 0.25s of the click at 1440, measured in a browser test with motion on
-- [ ] they still grow out of their button and fold back with GA.motion and the --motion-* tokens (no new timings)
+- [x] the top bar's avatar menu and trip picker are usable (their items still) within 0.25s of the click at 1440, measured in a browser test with motion on
+- [x] they still grow out of their button and fold back with GA.motion and the --motion-* tokens (no new timings)
 
 ## F-155 The day panel never errors when a booking vanishes mid-request [review]
 Bug, seen twice in browser runs (F-143 and F-154 reviews): `gitaway/tripcal.py` `_lane` raises AttributeError ('NoneType' has no attribute 'get') while drawing the day panel (`daydock.idle` → `trip.load` → `ride_offers` → `rides_of(None)`); the booking read succeeded earlier in the same request and was gone later. Likely a request racing a test's cleanup, but a real family deleting a trip while another member's page refreshes could hit it too.
 - [x] a day or panel request whose booking disappears partway returns a normal page (or a clean redirect to Start), never a 500, with a test that deletes the booking between the two reads
 - [x] no AttributeError from `_lane` in a full browser run's server log
+
+## F-156 Calm motion on the laptop [todo]
+Captain, 2026-10-14: "it has too many movements… week - day, all interact flickers and shows… ok on mobile, it goes with iOS liquid motion expectation… on web, it's too much… it needs to be subtle, very." Brief: docs/briefs/web-trip.md · Needs: none
+- [ ] on a desktop (≥1020px, not the installed app) week↔day, day↔day and day↔block change with a short opacity cross-fade only: no zoom, scale, blur or travel, and nothing grows out of what was clicked
+- [ ] panels, cards, sheets, menus and toasts on a desktop appear with a short fade (or instantly), never a spring or overshoot; the shared motion helper decides by width so callers don't fork
+- [ ] no flicker: a click that changes the view never shows an empty outline then fills in on a desktop (content already fetched is swapped in one frame; otherwise the old view stays until the new one is ready)
+- [ ] the phone and the installed app keep their current liquid motion unchanged (existing motion tests stay green)
+- [ ] a browser test at 1440 with motion on records frames for week→day, a plan click, the panel tabs and a toast, and finds no transform animation and no frame with an outline-only view
+
+## F-157 Move plans on the desktop week [todo]
+Captain, 2026-10-14: "on the week view, I should be able to move in desktop since I can see all at once." Brief: docs/briefs/web-trip.md · Needs: F-151
+- [ ] on a desktop, dragging a plan row from one day's column to another moves it to that day at the same time (the column under the pointer shows it will take the drop), with the existing toast "Moved to Sat 17 · Undo" and write path (F-151)
+- [ ] the row leaves its column and appears in the new one in time order, in place (no page reload), with calm desktop motion (F-156)
+- [ ] dropping back on its own column or pressing Esc leaves it where it was; a click (no drag) still opens the day with the plan in the panel
+- [ ] bookings (flights, hotels, cars) can't be dragged; viewers can't drag; on a long trip the week scrolls sideways when the pointer holds near its edge
+- [ ] browser tests drive it with a real mouse at 1440 and 1280; the phone and tablet week are unchanged

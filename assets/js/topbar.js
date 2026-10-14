@@ -25,7 +25,8 @@
     if (!d.classList || !d.classList.contains('ga-tb-menu') || !d.open) return;
     menus().forEach(function (o) { if (o !== d) fold(o, false); });         // one menu open at a time
     var pop = popOf(d);
-    if (MO && pop) MO.open(pop, sumOf(d));
+    // F-154: the bar's menus are opened all the time, so they grow with the calm --motion-dur (240ms, no overshoot) and are still within a quarter second; the phone's trip sheet keeps the spring
+    if (MO && pop) MO.open(pop, sumOf(d), d.classList.contains('ga-tb-phonepick') ? {} : { t: 'dur', ease: 'calm' });
   }, true);
 
   document.addEventListener('pointerdown', function (e) {

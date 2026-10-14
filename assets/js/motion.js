@@ -3,7 +3,7 @@
 // the tokens in tokens.css (--motion-spring-dur / --motion-spring for what grows, --motion-dur / --motion-out for what folds, --motion-quick, --motion-settle-dur, --motion-fade); no
 // component writes a duration or an easing of its own (tests_browser/test_motion.py scans for that).
 //
-//   GA.motion.open(el, origin, { scrim, content, radius: [from, to] })   grow `el` (already in the page, at its final place) out of `origin`; resolves when it has landed
+//   GA.motion.open(el, origin, { scrim, content, radius: [from, to], t, ease })   grow `el` (already in the page, at its final place) out of `origin`; resolves when it has landed
 //   GA.motion.close(el, origin, { scrim, content, from, radius })        fold `el` into `origin` (or, with no origin on screen, down and away); resolves when it is gone (the caller removes it)
 //   GA.motion.settle(el, { y })                                         a new bubble or block: it rises a few pixels, from a little smaller, with the same spring
 //   GA.motion.land(el, from)                                            (F-112) `el` is at its real place but is drawn where `from` (a rect) was: it travels there with the spring (a block dropped or nudged, a
@@ -162,7 +162,7 @@
     o = o || {};
     var from = rectOf(origin);
     if (reduced() || !el.animate) return Promise.resolve();
-    var to = box(el), dur = t('spring'), e = ease('spring'), done = [];
+    var to = box(el), dur = t(o.t || 'spring'), e = ease(o.ease || 'spring'), done = [];      // o.t / o.ease: another token's duration and easing, for a thing opened often (a top-bar menu)
     if (!onScreen(from)) from = { left: to.left + to.width * 0.15, top: to.top - rem() * 0.75, width: to.width * 0.7, height: to.height * 0.6 };      // nothing (on screen) was tapped: it rises from a small place just above where it rests
     el.style.transformOrigin = '0 0';
     var sq = squash(to, from);
