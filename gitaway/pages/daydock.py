@@ -99,6 +99,6 @@ def tabs(day, active="plan"):
 
 
 def panel(v, day):
-    compose = A(Span("Type to Ask", cls="cz-compose-t"), Span("or press", cls="cz-compose-or"), Span("/", cls="cz-kbd"), Span(icon("arrow-right", 16, 2.6), cls="cz-compose-go"), href=f"/trip/ask?day={day}", cls="cz-compose", id="cz-dock-compose") \
+    compose = A(Span("Type to Ask", cls="cz-compose-t"), Span(icon("arrow-right", 16, 2.6), cls="cz-compose-go"), href=f"/trip/ask?day={day}", cls="cz-compose", id="cz-dock-compose") \
         if access.can_edit(v["role"]) else ""
     return Aside(tabs(day), Div(*idle(v, day), cls="cz-dock-body", data_pane="idle"), compose, cls="cz-dock", id="cz-dock", data_mode="idle", data_day=str(day), aria_label="The day's panel")

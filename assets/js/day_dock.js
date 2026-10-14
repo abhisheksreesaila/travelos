@@ -10,8 +10,14 @@
 
   function rem() { return parseFloat(getComputedStyle(document.documentElement).fontSize) || 12; }
 
+  function showChip() {          // a trip of many days: the chips scroll inside the header, and the open day is kept in view
+    var n = stage.querySelector('.cz-hchips'), c = n && n.querySelector('.is-open');
+    if (c && n.scrollWidth > n.clientWidth) n.scrollLeft = c.offsetLeft - (n.clientWidth - c.offsetWidth) / 2 - n.offsetLeft;
+  }
+
   function place() {
     if (!desk.matches) return;
+    showChip();
     var scroller = stage.querySelector('.cz-view[data-day] .cz-day-body'), grid = stage.querySelector('#cz-grid');
     var zoom = grid && grid.querySelector('.cz-g-zoom');
     if (!scroller || !zoom) return;

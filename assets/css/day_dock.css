@@ -4,6 +4,7 @@
    applies: 721 to 1019 keeps the tablet day and the phone is untouched. Loaded after day_grid.css and day_card.css. Sizes are rem off the one root. Motion: none of its own. */
 .cz .cz-hchips, .cz .cz-desk-say, .cz .cz-dock { display: none; }
 .cz .cz-day-left { display: contents; }
+.cz .cz-now-t { display: none; }
 
 @media (min-width: 1020px) and (not (display-mode: standalone)) {
   /* the page is as tall as the window under the top bar and does not scroll; the week and every other level scroll inside it */
@@ -25,8 +26,9 @@
   .cz .cz-view[data-day] .cz-head-ctl { margin-left: auto; display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
   .cz .cz-view[data-day] .cz-head.is-deep .cz-faces { display: none; }
 
-  .cz .cz-hchips { display: flex; flex: 1; min-width: 0; gap: 0.5rem; justify-content: flex-start; }
-  .cz .cz-hchip { display: flex; flex-direction: column; gap: 0.0833rem; min-width: 5.5rem; max-width: 9rem; padding: 0.5rem 0.75rem; border-radius: 1rem; background: rgba(255, 255, 255, .1); color: #FFFFFF; }
+  .cz .cz-hchips { display: flex; flex: 1; min-width: 0; gap: 0.5rem; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
+  .cz .cz-hchips::-webkit-scrollbar { display: none; }
+  .cz .cz-hchip { flex: 0 0 auto; display: flex; flex-direction: column; gap: 0.0833rem; min-width: 5.5rem; max-width: 9rem; padding: 0.5rem 0.75rem; border-radius: 1rem; background: rgba(255, 255, 255, .1); color: #FFFFFF; }
   .cz .cz-hchip:hover { background: rgba(255, 255, 255, .18); }
   .cz .cz-hchip:focus-visible { outline: 0.1667rem solid var(--sun); outline-offset: 0.125rem; }
   .cz .cz-hc-top { display: flex; align-items: baseline; gap: 0.375rem; }
@@ -53,6 +55,11 @@
   .cz .cz-view[data-day] .cz-day-main { padding-top: 0.5rem; }
   .cz .cz-view[data-day] .cz-day-side { position: static; padding: 0 0 1rem 3rem; }
   .cz .cz-view[data-day] .cz-grid { --hh: 4.5rem; --gut: 3.5rem; }
+
+  /* the now line: thinner, with its time in a coral-deep pill at the right end (the phone keeps the plain line) */
+  .cz .cz-view[data-day] .cz-nowline { height: 0.1667rem; margin-top: -0.0833rem; left: -0.5rem; }
+  .cz .cz-view[data-day] .cz-now-t { display: block; position: absolute; right: 0; top: 50%; transform: translateY(-50%); padding: 0.0833rem 0.5rem; border-radius: var(--r-pill); background: var(--coral-deep); color: #FFFFFF;
+    font-size: var(--cz-small); font-weight: 800; line-height: 1.3; font-variant-numeric: tabular-nums; }
 
   /* the panel */
   .cz .cz-dock { display: flex; flex-direction: column; min-width: 0; min-height: 0; border-radius: 1.8333rem; background: var(--card); box-shadow: var(--shadow-md); overflow: hidden; }
@@ -91,9 +98,7 @@
   .cz .cz-ask-mic:focus-visible { outline: 0.1667rem solid var(--ink); outline-offset: 0.1667rem; }
 
   .cz .cz-compose { flex-shrink: 0; display: flex; align-items: center; gap: 0.5rem; margin: 0 0.75rem 0.75rem; min-height: 3rem; padding: 0.25rem 0.375rem 0.25rem 1rem; border-radius: var(--r-pill); background: var(--paper); box-shadow: inset 0 0 0 0.0625rem var(--line); font-size: var(--cz-body); font-weight: 600; color: var(--ink-3); }
-  .cz .cz-compose-t { flex: 0 0 auto; }
-  .cz .cz-compose-or { flex: 1; }
-  .cz .cz-kbd { padding: 0.0833rem 0.4167rem; border-radius: 0.4167rem; background: var(--paper-2); font-weight: 700; box-shadow: inset 0 0 0 0.0625rem var(--line); }
+  .cz .cz-compose-t { flex: 1; }
   .cz .cz-compose-go { width: 2.5rem; height: 2.5rem; display: grid; place-items: center; border-radius: 50%; background: var(--coral); color: var(--ink); box-shadow: 0 0.125rem 0 var(--coral-deep); }
   .cz .cz-compose:focus-visible { outline: 0.1667rem solid var(--ink); outline-offset: 0.1667rem; }
 }

@@ -170,3 +170,109 @@ def test_the_tablet_and_the_phone_keep_their_day(signed_in, viewport, name):
     assert page.evaluate("document.documentElement.scrollHeight > document.documentElement.clientHeight")      # the page scrolls as before
     assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth")
     shot(page, f"day-{name}.png")
+
+
+# ---- F-140 review: the now line's pill, every new control pressed, a long trip, the block and the tray --------------------------------------------
+
+from tests_browser.test_phone_polish import OVERFLOW, SMALL_TEXT  # noqa: E402
+SMALL_TEXT = SMALL_TEXT.replace("12.95", "10.95")      # desktop floor: 11px (--text-min), the phone's is 13px
+from tests_browser.test_trip_canvas import canvas_page, model  # noqa: E402,F401 - fixtures
+
+
+def root(page):
+    return page.url.split("/trip/")[0]
+
+
+def test_the_desktop_now_line_is_a_thin_coral_line_with_a_coral_deep_time_pill(signed_in, monkeypatch):
+    at(monkeypatch, SAT_NOON)
+    page = signed_in(DESKTOP, path="/trip/canvas?day=1")
+    pill = page.locator("#cz-nowline .cz-now-t")
+    expect(pill).to_be_visible()
+    expect(pill).to_have_text("12:40")
+    look = page.evaluate("""() => { const l = document.querySelector('#cz-nowline'), p = l.querySelector('.cz-now-t'), lb = l.getBoundingClientRect(), pb = p.getBoundingClientRect();
+        return { h: lb.height, line: getComputedStyle(l).backgroundColor, pill: getComputedStyle(p).backgroundColor, ink: getComputedStyle(p).color, atRight: lb.right - pb.right, centred: Math.abs((pb.top + pb.bottom) / 2 - (lb.top + lb.bottom) / 2) } }""")
+    assert abs(look["h"] - 2) < 0.6 and look["line"] == "rgb(255, 115, 82)"          # 0.1667rem at the 12px root, the coral
+    assert look["pill"] == "rgb(201, 67, 31)" and look["ink"] == "rgb(255, 255, 255)"      # the coral-deep pill
+    assert look["atRight"] < 4 and look["centred"] < 2
+
+
+def test_the_phone_now_line_has_no_pill(signed_in, monkeypatch):
+    at(monkeypatch, SAT_NOON)
+    page = signed_in(PHONE, path="/trip/canvas?day=1")
+    expect(page.locator("#cz-nowline")).to_be_visible()
+    expect(page.locator("#cz-nowline .cz-now-t")).to_be_hidden()
+
+
+@pytest.mark.parametrize("sel,url", [("#cz-desk-paste", "/trip/ask?day=1&mode=paste"), ("#cz-desk-talk", "/trip/ask?day=1&mode=talk"), ("#cz-dock-mic", "/trip/ask?day=1&mode=talk"), ("#cz-dock-compose", "/trip/ask?day=1")],
+                         ids=["paste", "say", "mic", "compose"])
+def test_paste_say_mic_and_compose_land_on_ask(signed_in, sel, url):
+    page = signed_in(DESKTOP, path="/trip/canvas?day=1")
+    page.locator(sel).click()
+    page.wait_for_url("**" + url + "*" if "mode" in url else "**" + url)
+    expect(page.locator(".ak")).to_be_visible()
+
+
+def test_directions_opens_a_map_for_the_up_next_place_in_a_new_tab(signed_in, monkeypatch):
+    at(monkeypatch, SAT_NOON)
+    page = signed_in(DESKTOP, path="/trip/canvas?day=1")
+    plans()
+    page.reload()
+    link = page.locator("#cz-up-directions")
+    href = link.get_attribute("href")
+    assert link.get_attribute("target") == "_blank" and "google.com/maps" in href and "Dinner+at+CityWalk" in href
+    page.context.route("**/maps/**", lambda route: route.fulfill(status=200, body="map"))
+    with page.expect_popup() as pop:
+        link.click()
+    assert "google.com/maps" in pop.value.url
+    pop.value.close()
+
+
+def test_open_the_plan_zooms_a_park_plan_to_its_block_and_opens_a_bookings_sheet(canvas_page, monkeypatch):
+    at(monkeypatch, SAT_NOON)
+    page = canvas_page(viewport=DESKTOP, touch=False)
+    page.goto(root(page) + "/trip/canvas?day=1")
+    page.wait_for_selector(".cz-view[data-level=day][data-day='1']")
+    expect(page.locator("#cz-up")).to_contain_text("Universal")
+    page.evaluate("window.__marker = 1")
+    page.locator("#cz-up-open").click()
+    expect(page.locator(".cz-view[data-level=block]")).to_be_visible()
+    assert page.evaluate("window.__marker") == 1
+    at(monkeypatch, datetime(2026, 10, 16, 21, 0, tzinfo=timezone.utc))      # Friday 2 PM: the 3 PM check-in is up next
+    page.goto(root(page) + "/trip/canvas?day=0")
+    expect(page.locator("#cz-up")).to_contain_text("Check in")
+    page.locator("#cz-up-open").click()
+    expect(page.locator(".cz-sheet-bk")).to_be_visible()
+
+
+def test_from_the_panel_to_the_block_to_a_step_done_and_the_tray_is_reachable(canvas_page, monkeypatch):
+    at(monkeypatch, SAT_NOON)
+    page = canvas_page(viewport=DESKTOP, touch=False)
+    page.goto(root(page) + "/trip/canvas?day=1")
+    page.wait_for_selector(".cz-view[data-level=day][data-day='1']")
+    tray = page.locator(".cz-tray")
+    tray.scroll_into_view_if_needed()
+    expect(tray).to_be_visible()
+    inside = page.evaluate("""() => { const s = document.querySelector('.cz-day-body').getBoundingClientRect(), t = document.querySelector('.cz-tray').getBoundingClientRect(); return t.top >= s.top - 1 && t.bottom <= s.bottom + 1 }""")
+    assert inside and page.evaluate(NO_SCROLL) == [True, True, 0]
+    page.locator("#cz-up-open").click()
+    expect(page.locator(".cz-view[data-level=block]")).to_be_visible()
+    page.locator(".cz-step", has_text="Revenge of the Mummy").click()
+    expect(page.get_by_role("dialog")).to_be_visible()
+    page.get_by_role("button", name="Mark done").click()
+    expect(page.locator(".cz-view[data-level=block]")).to_be_visible()
+    assert page.evaluate(OVERFLOW) <= 0 and page.evaluate(SMALL_TEXT) == []
+
+
+def test_a_long_trip_scrolls_its_chips_inside_the_header(browser, base_url):
+    ctx = browser.new_context(viewport=LAPTOP, reduced_motion="reduce")
+    ctx.set_default_timeout(5000)
+    ctx.request.post(f"{base_url}/signin", form={"email": "ari.rivera@example.com", "next": "/", "intent": "pay"}, max_redirects=0)
+    ctx.request.post(f"{base_url}/pay", form={"f": "f1", "h": "h1", "c": "c1", "d": "2026-10-23", "r": "2026-11-01", "a": "2", "k": "4,7"}, max_redirects=0)
+    page = ctx.new_page()
+    page.goto(f"{base_url}/trip/canvas?day=8")
+    expect(page.locator(".cz-hchip")).to_have_count(10)
+    m = page.evaluate("""() => { const h = document.querySelector('.cz-head').getBoundingClientRect(), n = document.querySelector('.cz-hchips'), o = document.querySelector('.cz-hchip.is-open').getBoundingClientRect(), nb = n.getBoundingClientRect(),
+        c = document.querySelector('.cz-head-ctl').getBoundingClientRect();
+        return { grows: n.scrollWidth > n.clientWidth, within: nb.left >= h.left && nb.right <= h.right + 0.5, beforeCtl: nb.right <= c.left + 0.5, seen: o.left >= nb.left - 1 && o.right <= nb.right + 1, page: document.documentElement.scrollWidth <= document.documentElement.clientWidth } }""")
+    assert m == {"grows": True, "within": True, "beforeCtl": True, "seen": True, "page": True}
+    ctx.close()

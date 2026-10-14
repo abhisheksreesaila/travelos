@@ -555,6 +555,8 @@
     tick = setInterval(function () {
       var m = base + Math.floor((Date.now() - t0) / 60000);
       line.style.setProperty('--s', m - lo);
+      var t = line.querySelector('.cz-now-t');      // F-140: the desktop's time pill follows the line
+      if (t) t.textContent = ((Math.floor(m / 60) % 12) || 12) + ':' + ('0' + (m % 60)).slice(-2);
     }, 20000);
   }
 

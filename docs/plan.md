@@ -798,6 +798,7 @@ Brief: docs/briefs/web-trip.md · Design: A1, A2 · Needs: F-141
 - [ ] hover shows the knob and a ⋯ button; ⋯ or right-click opens rename and delete
 - [ ] keys: T today, ← and → days, W and D week or day, `/` Ask, Esc closes the panel; none fire while typing
 - [ ] viewers get none of the write moves (existing access rules); browser tests drive each move with a mouse
+- [ ] dragging past the visible hours scrolls the grid card (day_grid.js and canvas_gestures.js use the card's scroll, not the window's), and a wheel scroll during a hold keeps the plan under the pointer
 
 ## F-145 Desktop week: the whole trip at a glance [todo]
 Brief: docs/briefs/web-trip.md · Design: A4 · Needs: F-139

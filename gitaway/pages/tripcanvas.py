@@ -579,7 +579,7 @@ def time_grid(v, day, ents):
     blocks = [grid_block(v, a, *lane[a.id], lo, edit, a.id in inset) for a in plans]
     now = ""
     if day == v["today_idx"] and lo <= (nm := td.now_minute(v["clock"])) <= hi:
-        now = Span(Span(cls="cz-now-dot"), cls="cz-nowline", id="cz-nowline", data_m=str(nm), style=f"--s:{nm - lo}", aria_label="Now", role="img")
+        now = Span(Span(cls="cz-now-dot"), Span(f"{nm // 60 % 12 or 12}:{nm % 60:02d}", cls="cz-now-t"), cls="cz-nowline", id="cz-nowline", data_m=str(nm), style=f"--s:{nm - lo}", aria_label="Now", role="img")
     plane = Div(*rules, *bk, *blocks, now, cls="cz-g-plane")
     nxt = {"data_next": cal.next_id(v["session"])} if edit else {}      # the calendar's next number: a new plan made here carries its own id (a retry after a lost reply adds nothing twice)
     return Div(Div(*gutter, plane, cls="cz-g-zoom"), cls=f"cz-grid{' has-bk' if lines else ''}{' has-pill' if inset else ''}", id="cz-grid", data_lo=str(lo), data_hi=str(hi), data_day=str(day), **nxt, style=f"--n:{(hi - lo) / 60:g}", role="group", aria_label="The day, hour by hour")
