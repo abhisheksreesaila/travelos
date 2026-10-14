@@ -25,12 +25,12 @@ from starlette.responses import RedirectResponse, Response
 from gitaway import access, canvas, catalog, geo, members, passes, phone, pickers, plantalk, planedit, session as ses, tripcal as cal, tripday as td
 from gitaway.icons import icon
 from gitaway.layout import avatar, join_note, trip_field
-from gitaway.pages import booked, calendar as calui, passes as passes_ui   # passes: on a flight day the now card is the flight with everyone's passes (F-092)
+from gitaway.pages import booked, calendar as calui, daydock, passes as passes_ui   # passes: on a flight day the now card is the flight with everyone's passes (F-092)
 from gitaway.pages.around_ui import around_url
 from gitaway.pages.plantalk import talk_badge   # F-091: the chat badge on a plan and on a part
 
-HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/help.css"), *passes_ui.HEAD, Link(rel="stylesheet", href="/assets/css/trip_canvas.css"), Link(rel="stylesheet", href="/assets/css/day_grid.css"), Link(rel="stylesheet", href="/assets/css/plantalk.css"), Link(rel="stylesheet", href="/assets/css/day_card.css"))   # pickers: the add-a-step sheet has a time field (F-082)
-SCRIPTS = ("/assets/js/vendor/idiomorph.js", "/assets/js/canvas_core.js", "/assets/js/canvas_filters.js", "/assets/js/canvas_writes.js", "/assets/js/canvas_sos.js", "/assets/js/canvas_gestures.js", "/assets/js/canvas_tick.js", "/assets/js/day_grid.js", "/assets/js/day_menu.js", "/assets/js/day_new.js", "/assets/js/day_fold.js", "/assets/js/day_card.js")
+HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/help.css"), *passes_ui.HEAD, Link(rel="stylesheet", href="/assets/css/trip_canvas.css"), Link(rel="stylesheet", href="/assets/css/day_grid.css"), Link(rel="stylesheet", href="/assets/css/plantalk.css"), Link(rel="stylesheet", href="/assets/css/day_card.css"), Link(rel="stylesheet", href="/assets/css/day_dock.css"))   # pickers: the add-a-step sheet has a time field (F-082)
+SCRIPTS = ("/assets/js/vendor/idiomorph.js", "/assets/js/canvas_core.js", "/assets/js/canvas_filters.js", "/assets/js/canvas_writes.js", "/assets/js/canvas_sos.js", "/assets/js/canvas_gestures.js", "/assets/js/canvas_tick.js", "/assets/js/day_grid.js", "/assets/js/day_menu.js", "/assets/js/day_new.js", "/assets/js/day_fold.js", "/assets/js/day_card.js", "/assets/js/day_dock.js")
 RANK = {"week": 0, "day": 1, "block": 2, "step": 3}
 PART_TINTS = ("sky", "sun", "grape", "bubble", "mint")
 MAX_FACES = 5
@@ -196,12 +196,14 @@ def map_link(day, ident=True):
     return A(icon("map", 20, 2.4), href=f"/trip/map?day={day}", cls="cz-mapbtn", aria_label="Map of this day", **({"id": "cz-mapbtn"} if ident else {}))
 
 
-def head(v, kicker, title, key="", back=None, back_label="", faces=None, sos="", mapday=None, switch=None, back_text=""):
+def head(v, kicker, title, key="", back=None, back_label="", faces=None, sos="", mapday=None, switch=None, back_text="", chips=None):
     """The heading every level starts with. Week: plain. Deeper: a dark card with the way back, which is what the tapped element grows into. The week and the day carry
     the small Day | Week switch inside it (F-103), between the words and the buttons. F-134: the way back names where it goes (`back_text`: "Trip", "Thu 9"), like Calendar's "‹ October"."""
     inner = [Div(Span(*kicker if isinstance(kicker, tuple) else (kicker,), cls="cz-head-k"), H1(title, id="cz-title", tabindex="-1"), cls="cz-head-text")]
     if back:
         inner.insert(0, A(icon("chev-left", 22, 2.6), Span(back_text, cls="cz-back-t", aria_hidden="true") if back_text else "", href=back, cls=f"cz-back{' has-text' if back_text else ''}", aria_label=back_label, data_zoom="out"))
+    if chips is not None:       # F-140: on a laptop the five day chips sit inside the ink header (CSS hides them below 1020px, where the week strip stays)
+        inner.append(chips)
     if switch is not None:      # the switch, map and SOS travel together: on the narrowest phone they wrap as one group under the words
         inner.append(Div(switch, *([map_link(mapday)] if mapday is not None else []), *([sos_link(sos)] if sos else []), cls="cz-head-ctl"))
     else:
@@ -394,6 +396,19 @@ def strip(v, day):
         cards.append(A(Div(Span(s.dow, cls="cz-strip-dow"), Span(str(s.num), cls=f"cz-strip-num ink-{s.tint}")), Span(s.head, cls="cz-strip-head"), Div(*segs[:8], cls="cz-bars", aria_hidden="true"),
                        href=curl(day=i), cls=f"cz-strip-day{' is-open' if i == day else ''}", aria_current="date" if i == day else None, data_zoom="side", aria_label=f"{v['dates'][i].strftime('%A %b')} {s.num}: {s.head}"))
     return Nav(*cards, cls="cz-strip", aria_label="Days of the trip", style=f"--days:{min(len(cards), 7)}")
+
+
+def head_chips(v, day):
+    """F-140: the days of the trip as chips inside the day's ink header (a laptop). Each is a zoom to that day like a strip card (`data-zoom="side"`)."""
+    items = [A(Span(Span(s.dow, cls="cz-hc-dow"), Span(str(s.num), cls="cz-hc-num"), cls="cz-hc-top"), Span(s.head, cls="cz-hc-head"), href=curl(day=i), cls=f"cz-hchip{' is-open' if i == day else ''}{' is-today' if i == v['today_idx'] else ''}",
+               aria_current="date" if i == day else None, data_zoom="side", aria_label=f"{v['dates'][i].strftime('%A %b')} {s.num}: {s.head}" + (", today" if i == v["today_idx"] else "")) for i, s in enumerate(v["summaries"])]
+    return Nav(*items, cls="cz-hchips", aria_label="Days of the trip")
+
+
+def say_pair(day):
+    """F-140: Paste a plan and Say the plan at the right of the filters row (a laptop; editors only). The links open Ask on this day, as the compact bar's do."""
+    return Div(A(icon("note", 18, 2.4), "Paste a plan", href=f"/trip/ask?day={day}&mode=paste", cls="cz-desk-btn is-white", id="cz-desk-paste"),
+               A(icon("mic", 18, 2.4), "Say the plan", href=f"/trip/ask?day={day}&mode=talk", cls="cz-desk-btn is-coral", id="cz-desk-talk"), cls="cz-desk-say")
 
 
 def booked_line(v, x):
@@ -590,10 +605,11 @@ def day_view(v, day, booked=None, sos=False):
         cards = [empty, *cards]
     kicker = (f"{d.strftime('%a %b').upper()} {d.day}", Span(f" · DAY {day + 1} OF {len(v['dates'])}", cls="cz-k-day"))      # the day count drops out on a phone (F-103: the heading is one row)
     first =next((x for kind, x in ents if kind == "block"), None)
-    body = [fold_bar(v, day), head(v, kicker, d.strftime("%A"), key=f"day-{day}", back=curl(), back_label="Zoom out to the week", back_text="Trip", sos=curl(day=day, sos=True), mapday=day, switch=toggle(v, "day", day)), Div(kinds_bar(), cls="cz-bar"), day_pills(v, day), strip(v, day),
+    left = [fold_bar(v, day), head(v, kicker, d.strftime("%A"), key=f"day-{day}", back=curl(), back_label="Zoom out to the week", back_text="Trip", sos=curl(day=day, sos=True), mapday=day, switch=toggle(v, "day", day), chips=head_chips(v, day)), Div(kinds_bar(), say_pair(day) if editor else "", cls="cz-bar"), day_pills(v, day), strip(v, day),
             now_card(v, day),      # F-092: the centre Ask changes the day; on today the day starts with what is happening now
             *([filter_bar(v, True)] if first else []), *([dropbars(v)] if first and editor else []),
             Div(Div(*cards, *(listmore(v, first) if first else []), P("Nothing here for this filter.", cls="cz-sub cz-kind-none", hidden=True), cls="cz-day-main"), Div(_tray(aside, editor), cls="cz-day-side"), cls="cz-day-body")]
+    body = [Div(*left, cls="cz-day-left"), daydock.panel(v, day)]      # F-140: on a laptop the left column (heading, filters, grid) and the panel are the day's two columns; below 1020px the wrapper is `display: contents`
     if booked:
         body.append(booking_sheet(v, day, booked))
     elif sos:
