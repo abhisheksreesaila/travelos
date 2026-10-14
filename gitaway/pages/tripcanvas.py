@@ -29,7 +29,7 @@ from gitaway.pages import booked, calendar as calui, daydock, passes as passes_u
 from gitaway.pages.around_ui import around_url
 from gitaway.pages.plantalk import talk_badge   # F-091: the chat badge on a plan and on a part
 
-HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/help.css"), *passes_ui.HEAD, Link(rel="stylesheet", href="/assets/css/trip_canvas.css"), Link(rel="stylesheet", href="/assets/css/day_grid.css"), Link(rel="stylesheet", href="/assets/css/plantalk.css"), Link(rel="stylesheet", href="/assets/css/day_card.css"), Link(rel="stylesheet", href="/assets/css/day_dock.css"))   # pickers: the add-a-step sheet has a time field (F-082)
+HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/help.css"), *passes_ui.HEAD, Link(rel="stylesheet", href="/assets/css/trip_canvas.css"), Link(rel="stylesheet", href="/assets/css/day_grid.css"), Link(rel="stylesheet", href="/assets/css/plantalk.css"), Link(rel="stylesheet", href="/assets/css/day_card.css"), Link(rel="stylesheet", href="/assets/css/thread.css"), Link(rel="stylesheet", href="/assets/css/day_dock.css"))   # pickers: the add-a-step sheet has a time field (F-082)
 SCRIPTS = ("/assets/js/vendor/idiomorph.js", "/assets/js/canvas_core.js", "/assets/js/canvas_filters.js", "/assets/js/canvas_writes.js", "/assets/js/canvas_sos.js", "/assets/js/canvas_gestures.js", "/assets/js/canvas_tick.js", "/assets/js/day_grid.js", "/assets/js/day_menu.js", "/assets/js/day_new.js", "/assets/js/day_fold.js", "/assets/js/day_card.js", "/assets/js/day_dock.js")
 RANK = {"week": 0, "day": 1, "block": 2, "step": 3}
 PART_TINTS = ("sky", "sun", "grape", "bubble", "mint")
@@ -532,7 +532,7 @@ def grid_block(v, a, lane, lanes, lo, edit, inset=False):
     extra = [link]
     if edit:
         extra += [Button(f"Change {a.title}", type="button", cls="sr-only cz-gb-menubtn")]
-    cls = f"cz-gb cz-k-{k}" + (" is-park" if park else "") + (" is-short" if a.end - a.start < 45 else " is-tight" if a.end - a.start < 75 and not park else "") + (" has-chat" if chat else "") + (" is-inset" if inset else "")
+    cls = f"cz-gb cz-k-{k}" + (" is-ringed" if v.get("ring") == a.id else "") + (" is-park" if park else "") + (" is-short" if a.end - a.start < 45 else " is-tight" if a.end - a.start < 75 and not park else "") + (" has-chat" if chat else "") + (" is-inset" if inset else "")
     style = f"--s:{a.start - lo};--l:{a.end - a.start};--lane:{lane};--lanes:{lanes}"
     return Div(Div(*inner, cls="cz-gb-in cz-cs"), *extra, cls=cls, style=style, **({"tabindex": "-1"} if park else {}), **attrs)
 
@@ -609,7 +609,7 @@ def day_view(v, day, booked=None, sos=False):
             now_card(v, day),      # F-092: the centre Ask changes the day; on today the day starts with what is happening now
             *([filter_bar(v, True)] if first else []), *([dropbars(v)] if first and editor else []),
             Div(Div(*cards, *(listmore(v, first) if first else []), P("Nothing here for this filter.", cls="cz-sub cz-kind-none", hidden=True), cls="cz-day-main"), Div(_tray(aside, editor), cls="cz-day-side"), cls="cz-day-body")]
-    body = [Div(*left, cls="cz-day-left"), daydock.panel(v, day)]      # F-140: on a laptop the left column (heading, filters, grid) and the panel are the day's two columns; below 1020px the wrapper is `display: contents`
+    body = [Div(*left, cls="cz-day-left"), daydock.panel(v, day, v.get("ring", ""))]      # F-140: on a laptop the left column (heading, filters, grid) and the panel are the day's two columns; below 1020px the wrapper is `display: contents`
     if booked:
         body.append(booking_sheet(v, day, booked))
     elif sos:
@@ -801,7 +801,7 @@ def add_sheet(v, a, adding):
 
 # ---- the page and the routes ---------------------------------------------------------------------------------------------
 
-def resolve(v, day="", block="", step="", add=None, booked_id="", sos=False):
+def resolve(v, day="", block="", step="", add=None, booked_id="", sos=False, plan=""):
     """(level, the view) for the address, or None when it names something that is not there (the caller goes back to the week). `add`: the add-a-step sheet's
     starting values, shown over the block when asked for (editors only)."""
     if booked_id:
@@ -824,7 +824,10 @@ def resolve(v, day="", block="", step="", add=None, booked_id="", sos=False):
             return "step", block_view(v, block[:8], sos=True)
         return ("step" if opening is not None else "block", block_view(v, block[:8], adding=opening))
     if day:
-        return ("day", day_view(v, int(day))) if day.isdigit() and int(day) < len(v["dates"]) else None
+        if day.isdigit() and int(day) < len(v["dates"]):
+            v["ring"] = plan[:20] if (v["by_id"].get(plan[:20]) and v["by_id"][plan[:20]].day == int(day)) else ""      # F-141: the plan open in the panel (the address's `plan=`; it must be on this day): the day rings its block and the panel draws its card
+            return "day", day_view(v, int(day))
+        return None
     return "week", week_view(v)
 
 
@@ -859,7 +862,7 @@ def level_html(session, request, url):
         return None
     v = load(session)
     v["ua"], v["err"] = request.headers.get("user-agent", ""), ""
-    got = resolve(v, q.get("day", "")[:3], q.get("block", ""), q.get("step", "")[:40], None, q.get("booked", "")[:20], q.get("sos") == "1")
+    got = resolve(v, q.get("day", "")[:3], q.get("block", ""), q.get("step", "")[:40], None, q.get("booked", "")[:20], q.get("sos") == "1", q.get("plan", ""))
     return to_xml(got[1]) if got else None
 
 
@@ -930,14 +933,14 @@ def plan_write(session, op, act, form):
 
 def register(app):
     @app.get("/trip/canvas")
-    def canvas_page(request, session, day: str = "", block: str = "", step: str = "", frag: str = "", add: str = "", part: str = "", title: str = "", note: str = "", err: str = "", booked: str = "", sos: str = ""):
+    def canvas_page(request, session, day: str = "", block: str = "", step: str = "", frag: str = "", add: str = "", part: str = "", title: str = "", note: str = "", err: str = "", booked: str = "", sos: str = "", plan: str = ""):
         if (r := _guard(session)):
             return r
         v = load(session)
         v["ua"] = request.headers.get("user-agent", "")
         v["err"] = err[:20]       # the now card's Directions open Apple Maps on Apple devices
         adding = {"part": part[:40], "title": title[:80], "note": note[:canvas.MAX_NOTE], "err": err[:8]} if add == "1" else None
-        got = resolve(v, day[:3], block, step[:40], adding, booked[:20], sos == "1")
+        got = resolve(v, day[:3], block, step[:40], adding, booked[:20], sos == "1", plan)
         if got is None:
             if frag == "1":
                 return Response("not found", status_code=404, media_type="text/plain")   # the script then loads the address as a page, which goes to the week
