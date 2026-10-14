@@ -33,7 +33,7 @@ def test_a_move_keeps_the_length_and_saves_through_the_calendar(ari, announced):
     got = planedit.change(ari, a.id, start=12 * 60 + 30, end=13 * 60 + 30)
     assert (got["act"].start, got["act"].end) == (12 * 60 + 30, 13 * 60 + 30)
     assert (cal.get_activity(ari, a.id).start, cal.get_activity(ari, a.id).end) == (12 * 60 + 30, 13 * 60 + 30)
-    assert got["undo"] == {"act": a.id, "day": 1, "start": 12 * 60, "end": 13 * 60, "title": "Lunch at the pier", "after": {"day": 1, "start": 750, "end": 810, "title": "Lunch at the pier"}}
+    assert got["undo"] == {"act": a.id, "day": 1, "start": 12 * 60, "end": 13 * 60, "title": "Lunch at the pier", "kind": "food", "after": {"day": 1, "start": 750, "end": 810, "title": "Lunch at the pier", "kind": "food"}}
 
 
 def test_a_resize_can_use_five_minutes_and_fifteen_as_the_shortest(ari):
@@ -58,7 +58,7 @@ def test_times_nobody_changed_are_never_resnapped_or_held_to_the_forms_minimum(a
     """Review: a plan made on the phone (12:05, or 15 minutes long) must still be renamable and savable from the desktop form and by Ask."""
     a = lunch(ari)
     planedit.change(ari, a.id, start=12 * 60 + 5, end=12 * 60 + 20)               # 12:05, 15 minutes
-    base = len(cards(ari))
+    base, said = len(cards(ari)), len(announced)
     got = cal.update_activity(ari, a.id, title="Lunch 2")                          # a title-only edit, as the desktop and Ask make it
     assert (got.start, got.end, got.title) == (12 * 60 + 5, 12 * 60 + 20, "Lunch 2")
     assert [c["text"] for c in cards(ari)[base:]] == [f"{cards(ari)[-1]['text']}"] and "renamed" in cards(ari)[-1]["text"] and "moved" not in cards(ari)[-1]["text"]
@@ -71,7 +71,7 @@ def test_times_nobody_changed_are_never_resnapped_or_held_to_the_forms_minimum(a
 def test_undo_refuses_when_someone_changed_the_plan_since(ari):
     a = lunch(ari)
     got = planedit.change(ari, a.id, start=12 * 60 + 30, end=13 * 60 + 30)
-    assert got["undo"]["after"] == {"day": 1, "start": 12 * 60 + 30, "end": 13 * 60 + 30, "title": "Lunch at the pier"}
+    assert got["undo"]["after"] == {"day": 1, "start": 12 * 60 + 30, "end": 13 * 60 + 30, "title": "Lunch at the pier", "kind": "food"}
     planedit.change(ari, a.id, title="Dinner instead")                             # another member's later change
     with pytest.raises(cal.CalendarError) as e:
         planedit.restore(ari, got["undo"])
@@ -124,7 +124,7 @@ def test_undo_puts_back_the_exact_time_and_name_through_the_same_rules(ari):
 
 def test_one_nudge_tells_the_family_once_and_more_nudges_change_that_card_in_place(ari, announced):
     a = lunch(ari)
-    base = len(cards(ari))
+    base, said = len(cards(ari)), len(announced)
     planedit.change(ari, a.id, start=12 * 60 + 30, end=13 * 60 + 30)
     planedit.change(ari, a.id, start=13 * 60, end=14 * 60)
     planedit.change(ari, a.id, end=14 * 60 + 30)
@@ -135,7 +135,7 @@ def test_one_nudge_tells_the_family_once_and_more_nudges_change_that_card_in_pla
 
 def test_undoing_back_to_where_it_began_takes_the_card_away(ari, announced):
     a = lunch(ari)
-    base = len(cards(ari))
+    base, said = len(cards(ari)), len(announced)
     got = planedit.change(ari, a.id, start=12 * 60 + 30, end=13 * 60 + 30)
     assert len(cards(ari)) == base + 1
     planedit.restore(ari, got["undo"])
@@ -144,7 +144,7 @@ def test_undoing_back_to_where_it_began_takes_the_card_away(ari, announced):
 
 def test_a_rename_is_its_own_card_and_someone_elses_card_is_left_alone(ari, announced):
     a = lunch(ari)
-    base = len(cards(ari))
+    base, said = len(cards(ari)), len(announced)
     planedit.change(ari, a.id, title="Tacos")
     assert "renamed" in cards(ari)[-1]["text"] and len(cards(ari)) == base + 1
 
@@ -176,7 +176,7 @@ def test_add_makes_the_plan_through_the_calendars_rules_with_a_five_minute_grain
 
 
 def test_a_new_plan_tells_the_family_once_and_a_move_or_rename_right_after_changes_that_same_card(ari, announced):
-    base = len(cards(ari))
+    base, said = len(cards(ari)), len(announced)
     got = planedit.add(ari, day=1, start=14 * 60, end=15 * 60, title="Pier walk")
     assert len(cards(ari)) == base + 1 and "added Pier walk" in cards(ari)[-1]["text"]
     planedit.change(ari, got["act"].id, start=15 * 60, end=16 * 60)
@@ -187,7 +187,7 @@ def test_a_new_plan_tells_the_family_once_and_a_move_or_rename_right_after_chang
 
 
 def test_a_move_back_to_where_it_was_made_does_not_take_the_added_card_away(ari, announced):
-    base = len(cards(ari))
+    base, said = len(cards(ari)), len(announced)
     got = planedit.add(ari, day=1, start=14 * 60, end=15 * 60, title="Pier walk")
     moved = planedit.change(ari, got["act"].id, start=15 * 60, end=16 * 60)
     planedit.restore(ari, moved["undo"])
@@ -195,7 +195,7 @@ def test_a_move_back_to_where_it_was_made_does_not_take_the_added_card_away(ari,
 
 
 def test_undoing_an_add_removes_the_plan_and_the_card_nobody_needs(ari, announced):
-    base = len(cards(ari))
+    base, said = len(cards(ari)), len(announced)
     got = planedit.add(ari, day=1, start=14 * 60, end=15 * 60, title="Pier walk")
     planedit.unadd(ari, got["undo"])
     assert cal.get_activity(ari, got["act"].id) is None and len(cards(ari)) == base
@@ -216,11 +216,11 @@ def test_undoing_an_add_is_refused_when_someone_changed_the_plan_since(ari, anno
 
 
 def test_the_added_card_is_tagged_in_the_adds_own_transaction_and_a_retry_adds_nothing_twice(ari, announced):
-    base = len(cards(ari))
+    base, said = len(cards(ari)), len(announced)
     first = planedit.add(ari, day=1, start=14 * 60, end=15 * 60, title="Pier walk", id="a77")
     again = planedit.add(ari, day=1, start=14 * 60, end=15 * 60, title="Pier walk", id="a77")      # the reply was lost and the finger sent it again
     assert first["act"].id == again["act"].id == "a77"
-    assert [a.title for a in cal.activities(ari)].count("Pier walk") == 1 and len(cards(ari)) == base + 1 and len(announced) == 1
+    assert [a.title for a in cal.activities(ari)].count("Pier walk") == 1 and len(cards(ari)) == base + 1 and len(announced) == said + 1
     assert '"key":"plan:a77"' in cards(ari)[-1]["payload"]
     with pytest.raises(cal.CalendarError):
         planedit.add(ari, day=1, start=14 * 60, end=15 * 60, title="Bad id", id="x1")
@@ -236,7 +236,7 @@ def test_undoing_an_add_after_the_family_saw_other_news_says_it_was_removed(ari,
 def test_dragging_the_start_edge_is_one_coalesced_card_and_keeps_the_end_and_the_minimum(ari, announced):
     """F-110: the top knob changes only the start; it goes through the same rules and shares the one family card."""
     a = lunch(ari)
-    base = len(cards(ari))
+    base, said = len(cards(ari)), len(announced)
     planedit.change(ari, a.id, start=12 * 60 + 20, end=13 * 60)
     got = planedit.change(ari, a.id, start=12 * 60 + 45, end=13 * 60)
     assert (got["act"].start, got["act"].end) == (12 * 60 + 45, 13 * 60) and len(cards(ari)[base:]) == 1
@@ -247,7 +247,7 @@ def test_dragging_the_start_edge_is_one_coalesced_card_and_keeps_the_end_and_the
 
 def test_the_family_card_says_what_changed_a_start_alone_an_end_alone_or_a_move(ari, announced):
     a = lunch(ari)
-    base = len(cards(ari))
+    base, said = len(cards(ari)), len(announced)
     planedit.change(ari, a.id, start=12 * 60 + 20, end=13 * 60)
     assert cards(ari)[base:][-1]["text"].endswith("changed Lunch at the pier to start at 12:20 PM")
     b = cal.add_activity(ari, day=1, start=15 * 60, end=16 * 60, title="Pool", kind="fun")
@@ -256,3 +256,39 @@ def test_the_family_card_says_what_changed_a_start_alone_an_end_alone_or_a_move(
     c = cal.add_activity(ari, day=1, start=17 * 60, end=18 * 60, title="Walk", kind="fun")
     planedit.change(ari, c.id, start=17 * 60 + 30, end=18 * 60 + 30)
     assert " moved Walk to " in cards(ari)[-1]["text"]
+
+
+# ---- F-152: the plan's kind ----------------------------------------------------------------------------------------------------
+
+def test_undo_of_a_move_refuses_when_someone_retyped_the_plan_since_and_the_reverse(ari):
+    a = lunch(ari)
+    moved = planedit.change(ari, a.id, start=12 * 60 + 30, end=13 * 60 + 30)
+    planedit.change(ari, a.id, kind="culture")                                     # another member's later type change
+    with pytest.raises(cal.CalendarError) as e:
+        planedit.restore(ari, moved["undo"])
+    assert "Someone changed it since" in str(e.value) and cal.get_activity(ari, a.id).kind == "culture" and cal.get_activity(ari, a.id).start == 12 * 60 + 30
+    b = lunch(ari, 15 * 60, 16 * 60)
+    retyped = planedit.change(ari, b.id, kind="travel")
+    planedit.change(ari, b.id, start=15 * 60 + 30, end=16 * 60 + 30)               # someone moved it after the type change
+    with pytest.raises(cal.CalendarError):
+        planedit.restore(ari, retyped["undo"])
+    assert cal.get_activity(ari, b.id).kind == "travel"
+    planedit.change(ari, b.id, kind="fun")                                         # and someone retyped it again
+    c = planedit.change(ari, b.id, kind="outdoors")
+    planedit.change(ari, b.id, kind="food")
+    with pytest.raises(cal.CalendarError):
+        planedit.restore(ari, c["undo"])
+
+
+def test_a_type_change_tells_the_family_once_and_undoing_it_takes_the_card_away(ari, announced):
+    a = lunch(ari)
+    base, said = len(cards(ari)), len(announced)
+    got = planedit.change(ari, a.id, kind="culture")
+    assert [c["text"] for c in cards(ari)[base:]] == [f"{cards(ari)[-1]['text']}"] and "changed Lunch at the pier to Culture" in cards(ari)[-1]["text"]
+    assert len(announced) == said + 1
+    planedit.change(ari, a.id, kind="travel")                                      # again inside the window: the same card, saying where it ended
+    assert len(cards(ari)) == base + 1 and "to Travel" in cards(ari)[-1]["text"] and len(announced) == said + 1
+    planedit.change(ari, a.id, kind="food")                                        # back where it began: nothing happened
+    assert len(cards(ari)) == base
+    planedit.change(ari, a.id, kind="food")                                        # the same kind changes nothing and says nothing
+    assert len(cards(ari)) == base and got["changed"]
