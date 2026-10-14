@@ -87,6 +87,13 @@
       var t = link.querySelector('.cz-thin-t');
       if (t) t.textContent = thin ? 'Nothing for ' + (KIND_WORD[k] || k) : '';
     });
+    v.querySelectorAll('.cz-wcol').forEach(function (col) {      // F-145: the desktop week's columns: a row that does not match is hidden, a column with none says so
+      var shown = 0, rows = col.querySelectorAll('[data-kind]');
+      rows.forEach(function (n) { var ok = !on || hit(n); n.classList.toggle('is-off', !ok); if (ok) shown++; });
+      var none = col.querySelector('.cz-wnone');
+      if (none) none.textContent = on && rows.length && shown === 0 ? 'Nothing for ' + (KIND_WORD[k] || k) : '';
+      col.classList.toggle('is-none', on && rows.length > 0 && shown === 0);
+    });
     var main = v.querySelector('.cz-day-main');                  // the day
     if (main) {
       var seen = 0;

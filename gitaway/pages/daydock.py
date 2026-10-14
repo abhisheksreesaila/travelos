@@ -5,7 +5,6 @@ with a tab row (Plan, Family, Ask), a scrolling body `.cz-dock-body[data-pane]` 
 clicked: Up next, Later today, the Ask box) is this ticket; `plan` (F-141), `family` (F-143) and `ask` (F-142) swap the body and set `data-mode` and the selected tab.
 Up next reads what Today reads (`pages.trip.load`: the day's timeline, the next item, the drive time when the family's map knows it); nothing is invented.
 """
-from urllib.parse import urlencode
 
 from fasthtml.common import A, Aside, Button, Div, Form, H2, H3, Header, Input, Nav, Option, P, Section, Select, Span
 
@@ -108,8 +107,7 @@ KIND_ICON = {"fun": "star", "food": "food", "outdoors": "tree", "culture": "sigh
 def plan_url(day, act):
     """The address that keeps a plan open in the panel (F-141): the day's own address and `plan=<id>`, so a reload shows it again."""
     from gitaway.pages import tripcanvas as tc
-    base = tc.curl(day=day)
-    return base + ("&" if "?" in base else "?") + urlencode({"plan": act})
+    return tc.curl(day=day, plan=act)      # the one helper: F-145's week rows build the same address
 
 
 def _hidden(name, value):
@@ -215,4 +213,4 @@ def panel(v, day, plan=""):
     a = a if a is not None and a.day == day else None
     compose = A(Span("Type to Ask", cls="cz-compose-t"), Span(icon("arrow-right", 16, 2.6), cls="cz-compose-go"), href=f"/trip/ask?day={day}", cls="cz-compose", id="cz-dock-compose") \
         if access.can_edit(v["role"]) else ""
-    return Aside(tabs(day), Div(*idle(v, day), cls="cz-dock-body", data_pane="idle"), *(plan_pane(v, a) if a else ()), compose, cls="cz-dock", id="cz-dock", data_mode="plan" if a else "idle", data_day=str(day), data_base=tc.curl(day=day), data_dow=v["dates"][day].strftime("%a"), aria_label="The day's panel")
+    return Aside(tabs(day), Div(*idle(v, day), cls="cz-dock-body", data_pane="idle"), *(plan_pane(v, a) if a else ()), compose, cls="cz-dock", id="cz-dock", data_mode="plan" if a else "idle", data_day=str(day), data_base=tc.curl(day=day), data_plan_url=tc.curl(day=day, plan="PLAN"), data_dow=v["dates"][day].strftime("%a"), aria_label="The day's panel")

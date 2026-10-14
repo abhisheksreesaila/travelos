@@ -90,6 +90,7 @@ def view(request, session, v):
     day = v["sel"]
     editor = access.can_edit(v["role"])
     return Div(
+        A(icon("chev-left", 18, 2.6), f"Back to {v['dates'][day].strftime('%A')}", href=f"/trip/canvas?day={day}", cls="mp-back", id="mp-back"),   # shown from 1020px up only, so the switch stays where it is in Today's stops (map.css, F-148)
         segment("around", day),
         Div(Span("Around you", cls="ar-ttl"), Span(icon("pin", 16, 2.4), "Tap a button to look nearby", cls="ar-loc", id="ar-loc", role="status", aria_live="polite"), cls="ar-head"),
         Div(*[_chip(k, c, picked) for k, c in around.CATEGORIES.items()], cls="ar-chips", role="group", aria_label="What are you looking for", id="ar-chips"),

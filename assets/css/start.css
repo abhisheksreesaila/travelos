@@ -107,3 +107,27 @@
 
 /* "Import a booked trip" (F-058): a visible button under the intro, where trips start. */
 .st-import { align-self: flex-start; margin-top: 0.5rem; }
+
+/* F-146: "Where to?" in the web look. From 1020px up it is two columns (the intro, the way back to your trip and the import on the left; the form as a white card on the right) so the whole
+   page fits a laptop screen; below that the wrapper vanishes and the page is the single column it was. */
+.st-left { display: contents; }
+@media (min-width: 1020px) {
+  .st { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); column-gap: 2rem; align-items: start; width: min(100rem, 100% - 4.6667rem); max-width: none; padding-block: 1.5rem 2rem; }
+  .st-left { display: flex; flex-direction: column; gap: 1.25rem; min-width: 0; }
+  .st-hero h1 { font-size: clamp(4rem, 6vw, 6rem); }
+  .st-hero p { font-size: 1.25rem; }
+  .st-card { background: var(--card); box-shadow: var(--shadow-md); border-radius: var(--r-lg); padding: 1.75rem 2rem; animation: none; }
+  .st-field { background: var(--paper-2); box-shadow: inset 0 0 0 1px var(--line); }
+  .st-card .st-face { box-shadow: var(--shadow-sm); border-color: var(--card); }
+  .st-card .st-chip.is-soon .st-face { box-shadow: none; background: var(--paper-2); }
+  .st-row { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .st-row > :nth-child(1), .st-row > :nth-child(2), .st-row > :nth-child(3) { grid-column: span 2; }
+  .st-row > :nth-child(4), .st-row > :nth-child(5) { grid-column: span 3; }
+  .st-note { color: var(--ink-3); }
+  .st .fr-paths, .st .fr-paths.fr-two { grid-template-columns: minmax(0, 1fr); gap: 0.75rem; }
+  .st .fr-path { flex-direction: row; align-items: center; flex-wrap: wrap; padding: 1rem 1.25rem; }
+  .st .fr-body { flex: 1 1 12rem; }
+  .st .fr-choices { flex: 0 0 auto; }
+  .st .fr-h { font-size: 2.25rem; }
+  .st .fr-lede { font-size: 1.0625rem; }
+}

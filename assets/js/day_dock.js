@@ -155,7 +155,7 @@
   Dock.register('plan', {
     tab: 'plan',
     same: function (o, d) { var p = d.querySelector('.cz-pp:not(.is-leaving)'); return !!p && p.dataset.act === o.act; },
-    url: function (o, d) { return d.dataset.base + (d.dataset.base.indexOf('?') < 0 ? '?' : '&') + 'plan=' + encodeURIComponent(o.act); },
+    url: function (o, d) { return d.dataset.planUrl.replace('PLAN', encodeURIComponent(o.act)); },      // (the server's own address with the plan in it: tripcanvas.curl(day, plan))
     enter: function (o, from) {
       var d = dock(), act = o.act, block = o.block || blockOf(act), old = d.querySelector('.cz-pp:not(.is-leaving)');
       lastAct = act;

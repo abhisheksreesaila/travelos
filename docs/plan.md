@@ -800,18 +800,18 @@ Brief: docs/briefs/web-trip.md · Design: A1, A2 · Needs: F-141
 - [ ] viewers get none of the write moves (existing access rules); browser tests drive each move with a mouse
 - [ ] dragging past the visible hours scrolls the grid card (day_grid.js and canvas_gestures.js use the card's scroll, not the window's), and a wheel scroll during a hold keeps the plan under the pointer
 
-## F-145 Desktop week: the whole trip at a glance [todo]
+## F-145 Desktop week: the whole trip at a glance [done]
 Brief: docs/briefs/web-trip.md · Design: A4 · Needs: F-139
-- [ ] on a desktop the week is one column per day under the ink trip header (filters and Day | Week): a day-colour header, then compact rows of time, a title on at most two lines and a kind icon
-- [ ] plans show a step and message summary; a free day shows a dashed card with Say the plan; today is outlined
-- [ ] clicking a row opens that day with the plan in the panel; Open the day opens the day
-- [ ] a trip longer than five days scrolls sideways inside the week area, never the page
-- [ ] fits 1440×900 and 1280×800 at 100% zoom
+- [x] on a desktop the week is one column per day under the ink trip header (filters and Day | Week): a day-colour header, then compact rows of time, a title on at most two lines and a kind icon
+- [x] plans show a step and message summary; a free day shows a dashed card with Say the plan; today is outlined
+- [x] clicking a row opens that day with the plan in the panel; Open the day opens the day
+- [x] a trip longer than five days scrolls sideways inside the week area, never the page
+- [x] fits 1440×900 and 1280×800 at 100% zoom
 
-## F-146 Family, trip details and Start in the new look [todo]
+## F-146 Family, trip details and Start in the new look [done]
 Brief: docs/briefs/web-trip.md · Design: docs/design/web-trip.md (tokens) · Needs: F-139
-- [ ] /family (people, roles, invitations), /trip/details and /start use the top bar, the white cards and the type of the trip screens; nothing they do today is lost
-- [ ] each fits 1440×900 without page scroll for its main content; every button still has a test that presses it
+- [x] /family (people, roles, invitations), /trip/details and /start use the top bar, the white cards and the type of the trip screens; nothing they do today is lost
+- [x] each fits 1440×900 without page scroll for its main content; every button still has a test that presses it
 
 ## F-147 Retire the old trip calendar [todo]
 Brief: docs/briefs/web-trip.md · Needs: F-139, F-143
@@ -820,7 +820,12 @@ Brief: docs/briefs/web-trip.md · Needs: F-139, F-143
 - [ ] /trips goes to the current trip instead of a 404
 - [ ] the old calendar's code, styles and tests that only served it are removed; the suite stays green
 
-## F-148 Map fits a laptop window [todo]
+## F-148 Map fits a laptop window [done]
 Found in F-139's review: /trip/map is taller than the window at 1440×900 (1096px with the top bar; 1038px before it). Not in the web-trip brief's tickets; small follow-up.
-- [ ] /trip/map fits 1440×900 and 1280×800 at 100% zoom under the top bar, with the map filling the space instead of a fixed height
-- [ ] the phone map is unchanged
+- [x] /trip/map fits 1440×900 and 1280×800 at 100% zoom under the top bar, with the map filling the space instead of a fixed height
+- [x] the phone map is unchanged
+
+## F-149 A short pull on the phone card springs back [todo]
+Bug, found while building F-139..F-148: tests_browser/test_day_card.py::test_a_short_pull_on_the_card_springs_back_and_does_not_fold fails at 390 and 320 on master (it failed before the web work too). Find whether the card or the test is wrong.
+- [ ] a short downward pull on the open plan card at 390 and 320 springs back and does not fold the card, on the phone
+- [ ] the test passes in the full browser run and in random order

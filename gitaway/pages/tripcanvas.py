@@ -25,21 +25,23 @@ from starlette.responses import RedirectResponse, Response
 from gitaway import access, canvas, catalog, geo, members, passes, phone, pickers, plantalk, planedit, session as ses, tripcal as cal, tripday as td
 from gitaway.icons import icon
 from gitaway.layout import avatar, join_note, trip_field
-from gitaway.pages import booked, calendar as calui, daydock, passes as passes_ui   # passes: on a flight day the now card is the flight with everyone's passes (F-092)
+from gitaway.pages import booked, calendar as calui, daydock, passes as passes_ui, weekdesk   # passes: on a flight day the now card is the flight with everyone's passes (F-092)
 from gitaway.pages.around_ui import around_url
 from gitaway.pages.plantalk import talk_badge   # F-091: the chat badge on a plan and on a part
 
-HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/help.css"), *passes_ui.HEAD, Link(rel="stylesheet", href="/assets/css/trip_canvas.css"), Link(rel="stylesheet", href="/assets/css/day_grid.css"), Link(rel="stylesheet", href="/assets/css/plantalk.css"), Link(rel="stylesheet", href="/assets/css/day_card.css"), Link(rel="stylesheet", href="/assets/css/thread.css"), Link(rel="stylesheet", href="/assets/css/day_dock.css"))   # pickers: the add-a-step sheet has a time field (F-082)
+HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/help.css"), *passes_ui.HEAD, Link(rel="stylesheet", href="/assets/css/trip_canvas.css"), Link(rel="stylesheet", href="/assets/css/day_grid.css"), Link(rel="stylesheet", href="/assets/css/plantalk.css"), Link(rel="stylesheet", href="/assets/css/day_card.css"), Link(rel="stylesheet", href="/assets/css/thread.css"), Link(rel="stylesheet", href="/assets/css/day_dock.css"), Link(rel="stylesheet", href="/assets/css/week_desk.css"))   # pickers: the add-a-step sheet has a time field (F-082)
 SCRIPTS = ("/assets/js/vendor/idiomorph.js", "/assets/js/canvas_core.js", "/assets/js/canvas_filters.js", "/assets/js/canvas_writes.js", "/assets/js/canvas_sos.js", "/assets/js/canvas_gestures.js", "/assets/js/canvas_tick.js", "/assets/js/day_grid.js", "/assets/js/day_menu.js", "/assets/js/day_new.js", "/assets/js/day_fold.js", "/assets/js/day_card.js", "/assets/js/day_dock.js")
 RANK = {"week": 0, "day": 1, "block": 2, "step": 3}
 PART_TINTS = ("sky", "sun", "grape", "bubble", "mint")
 MAX_FACES = 5
 
 
-def curl(day=None, block="", step="", add=False, part="", title="", note="", err="", booked="", sos=False):
+def curl(day=None, block="", step="", add=False, part="", title="", note="", err="", booked="", sos=False, plan=""):
     """The address of a level: the week with nothing, else a day, a block or a step. `add` opens the add-a-step sheet over a block (with the part, title and note
     it starts with, and the reason the last try was refused). `booked` opens a booking's sheet over its day (F-093), `sos` the emergency sheet over the day or the week."""
     q = {"step": step} if step else {"block": block} if block else {"day": day} if day is not None else {}
+    if plan and day is not None:
+        q = {"day": day, "plan": plan}      # F-145: the day with this plan selected in the panel (F-141 reads `plan`)
     if booked:
         q = {"day": day if day is not None else 0, "booked": booked}
     elif sos:
@@ -368,7 +370,7 @@ def week_view(v, sos=False):
     faces = Div(avatar(v["who"], "cz-av"), *[avatar(f, "cz-av") for f in v["crew"]], cls="cz-faces")
     kicker = f"{t.title.upper()} · {cal.range_label(t.depart, t.return_).upper()}"
     rows = [week_body(v, i, editor) for i in range(len(v["dates"]))]
-    body = [head(v, kicker, "The trip", faces=faces, sos=curl(sos=True), switch=toggle(v, "week")), Div(kinds_bar(), cls="cz-bar"), Div(*rows, cls="cz-week", id="cz-week", style=f"--days:{min(len(rows), 7)}")]
+    body = [head(v, kicker, "The trip", faces=faces, sos=curl(sos=True), switch=toggle(v, "week")), Div(kinds_bar(), cls="cz-bar"), Div(*rows, cls="cz-week", id="cz-week", style=f"--days:{min(len(rows), 7)}"), weekdesk.columns(v, editor)]      # F-145: a laptop draws the columns, the phone and the tablet the rows
     body.append(sos_sheet(v, curl(), curl(sos=True)) if sos else sos_template(v, curl(), curl(sos=True)))
     return view("step" if sos else "week", body, zout="sos-open" if sos else "", title="The trip")
 
