@@ -5,6 +5,7 @@ import re
 
 from tests.test_calendar import book
 from tests.test_signin import sign_in
+from tests.test_trip_import import imported
 
 
 def bar(html):
@@ -50,12 +51,14 @@ def test_the_current_section_is_marked(client):
     assert marked(client.get("/trip/family").text) == ["Family"]
     assert marked(client.get("/family").text) == ["Family"]
     assert marked(client.get("/trip/canvas?day=0").text) == ["Trip"]
-    assert marked(client.get("/trip/details").text) == ["Trip"]
+    imported(client)                                               # /trip/details is the imported trip's page
+    r = client.get("/trip/details")
+    assert r.status_code == 200 and marked(r.text) == ["Trip"]
 
 
 def test_the_trip_canvas_and_the_phone_tabs_carry_the_bar(client):
     book(client)
-    for path in ("/trip/canvas?day=0", "/trip/canvas", "/trip/ask", "/trip/family", "/calendar"):
+    for path in ("/trip/canvas?day=0", "/trip/canvas", "/trip/ask", "/trip/family", "/trip/help", "/trip/map", "/trip?tab=notes", "/calendar"):
         assert bar(client.get(path).text), path
 
 
