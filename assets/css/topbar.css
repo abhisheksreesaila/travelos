@@ -21,7 +21,11 @@
 .ga-tb-phonepick .ga-tb-sw-name { font-weight: 800; }
 .ga-tb-phonepick .ga-tb-sw-dates { color: var(--ink-3); font-weight: 600; font-size: max(var(--text-min), 0.8125rem); }
 .ga-tb-phonepick .ga-tb-item { display: flex; align-items: center; gap: 0.625rem; width: 100%; min-height: 2.75rem; padding: 0 0.75rem; border: 0; border-radius: 1rem; background: none; color: var(--ink); font: 700 max(var(--text-min), 1rem) var(--font-body); text-align: left; text-decoration: none; cursor: pointer; }
-@media (min-width: 1020px) { .ga-tb-phonepick { display: none; } }
+/* From 1020px the bar has the picker: the eyebrow stays as the plain line it was (no chevron, no sheet, nothing to press). topbar.js also takes it out of the tab order. */
+@media (min-width: 1020px) {
+  .ga-tb-phonepick > .ga-tb-pop, .ga-tb-phonepick[open]::before, .ga-tb-psum .ga-tb-chev { display: none; }
+  .ga-tb-psum { pointer-events: none; cursor: default; padding: 0; margin: 0; }
+}
 
 @media (min-width: 1020px) {
   .ga-topbar { position: relative; z-index: 50; display: flex; align-items: center; gap: 1.5rem; height: 4.8333rem; padding: 0 2.3333rem; box-sizing: border-box; font-family: var(--font-body); font-size: max(var(--text-min), 1.0833rem); font-weight: 600; color: var(--ink); }

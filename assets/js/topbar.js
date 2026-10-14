@@ -32,6 +32,18 @@
     menus().forEach(function (d) { if (d.open && (!d.contains(e.target) || e.target === d)) fold(d, false); });      // e.target === d: the dimmed screen behind a phone's sheet (the menu's own ::before)
   }, true);
 
+  // From 1020px the phone menu's button is only the heading's eyebrow line (topbar.css): not in the tab order and not announced as a menu or a button.
+  var wide = window.matchMedia ? window.matchMedia('(min-width: 1020px)') : { matches: false };
+  function plainEyebrow() {
+    Array.prototype.forEach.call(document.querySelectorAll('.ga-tb-phonepick'), function (d) {
+      var s = sumOf(d);
+      if (wide.matches) { d.open = false; s.setAttribute('tabindex', '-1'); s.setAttribute('role', 'presentation'); if (s.hasAttribute('aria-label')) { s.setAttribute('data-label', s.getAttribute('aria-label')); s.removeAttribute('aria-label'); } s.setAttribute('data-plain', '1'); }
+      else if (s.hasAttribute('data-plain')) { s.removeAttribute('tabindex'); s.removeAttribute('role'); s.removeAttribute('data-plain'); if (s.hasAttribute('data-label')) s.setAttribute('aria-label', s.getAttribute('data-label')); }
+    });
+  }
+  plainEyebrow();
+  if (wide.addEventListener) wide.addEventListener('change', plainEyebrow);
+
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
       menus().forEach(function (d) { if (d.open) fold(d, true); });

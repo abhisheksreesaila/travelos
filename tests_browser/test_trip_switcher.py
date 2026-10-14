@@ -80,9 +80,9 @@ def test_the_week_and_the_old_today_page_carry_the_menu_too(family_with_two_trip
     expect(page.locator(f"{MENU} .ga-tb-pop")).to_be_hidden()
 
 
-def test_the_laptop_has_the_bar_picker_and_not_this_one(family_with_two_trips):
+def test_the_laptop_has_the_bar_picker_and_this_one_is_not_a_menu_there(family_with_two_trips):
     page = family_with_two_trips({"width": 1440, "height": 900})
-    expect(page.locator(MENU)).to_be_hidden()
+    expect(page.locator(f"{MENU} .ga-tb-pop")).to_be_hidden()
     expect(page.locator(".ga-topbar .ga-tb-picker summary")).to_be_visible()
 
 
@@ -129,3 +129,17 @@ def test_the_sheet_has_a_dimmed_screen_and_a_tap_on_it_closes_the_sheet(family_w
     page.mouse.click(PHONE["width"] / 2, max(pop.bounding_box()["y"] / 2, 5))
     expect(page.locator(f"{MENU} .ga-tb-pop")).to_be_hidden()
     assert LEVELS[level].split("?")[0] in page.url      # nothing underneath was pressed
+
+
+@pytest.mark.parametrize("level,words", [("day", "SAT OCT 24"), ("week", "LA WITH THE KIDS · OCT 23 – 26"), ("today", "LA WITH THE KIDS · OCT 23 – 26")])
+@pytest.mark.parametrize("width", [1440, 1280])
+def test_on_a_laptop_the_eyebrow_line_stays_as_plain_text(family_with_two_trips, width, level, words):
+    page = family_with_two_trips({"width": width, "height": 900}, LEVELS[level])
+    line = page.locator(f"{MENU} > summary")
+    expect(line).to_be_visible()
+    expect(line).to_contain_text(words)
+    assert page.evaluate(f"getComputedStyle(document.querySelector('{MENU} > summary')).pointerEvents") == "none"
+    assert line.get_attribute("tabindex") == "-1" and line.get_attribute("role") == "presentation"
+    expect(page.locator(f"{MENU} .ga-tb-chev")).to_be_hidden()
+    expect(page.locator(f"{MENU} .ga-tb-pop")).to_be_hidden()
+    assert line.evaluate("e => e.closest('details').open") is False
