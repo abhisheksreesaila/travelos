@@ -252,6 +252,29 @@ def test_open_in_family_opens_that_plans_chat_in_place(desk, mates):
     assert f"thread={act}" in desk.url
 
 
+def test_the_keys_with_the_chats_open_and_focus_in_the_message_bar(desk):
+    open_day(desk, SATURDAY)
+    open_family(desk)
+    box = dock(desk).locator("#ft-text")
+    box.click()
+    box.fill("half a message")
+    desk.keyboard.press("ArrowLeft")                                                      # arrows, letters and / belong to the box while typing
+    desk.keyboard.press("t")
+    desk.keyboard.press("/")
+    expect(box).to_have_value("half a messagt/e")                                          # the caret moved one left, then t and / were typed there
+    assert desk.url.count("day=1") == 1 and mode(desk) == "family"                          # the day did not change, no key fired
+    desk.keyboard.press("Escape")                                                         # first Esc: only leaves the box, the words are kept
+    assert mode(desk) == "family" and desk.locator(".cz-view[data-level=day]").count() == 1
+    assert box.input_value() == "half a messagt/e" and not desk.evaluate("document.activeElement && document.activeElement.id === 'ft-text'")
+    desk.keyboard.press("ArrowRight")                                                     # focus is out of the box: the day's arrow works and the chats stay open
+    desk.wait_for_function("() => document.querySelector('.cz-view[data-day]').dataset.day === '2'")
+    expect(dock(desk).locator(".cz-fam")).to_be_visible()
+    assert mode(desk) == "family"
+    desk.keyboard.press("Escape")                                                         # second Esc: back to Up next; the day stays a day (no zoom out to the week)
+    expect(dock(desk).locator("[data-pane=idle]")).to_be_visible()
+    assert mode(desk) != "family" and desk.locator(".cz-view[data-level=day]").count() == 1
+
+
 def test_the_chats_stay_open_when_another_day_is_picked(desk):
     open_day(desk, SATURDAY)
     open_family(desk)

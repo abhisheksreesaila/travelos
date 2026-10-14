@@ -118,6 +118,17 @@
     if (Dock.show('family', { key: p.dataset.act })) e.preventDefault();
   });
 
+  // Esc (F-144 keeps the keys, each thing closes in its own file): in the chats it puts the panel back to Up next, like the plan's pane; a message being written is not thrown away, the
+  // first Esc only leaves the box. Before the canvas's own Escape, which would zoom the day out to the week.
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape' || e.defaultPrevented || !desk.matches || Dock.mode() !== 'family' || CZ.menuOpen || e.isComposing) return;
+    if (stage.querySelector('.cz-sheet-wrap, .cz-card-wrap, .cz-menu')) return;
+    var t = e.target;
+    e.preventDefault(); e.stopImmediatePropagation();
+    if (t && t.id === 'ft-text' && t.value) { t.blur(); return; }
+    Dock.close();
+  }, true);
+
   // ---- live -------------------------------------------------------------------------------------------------------------------------
   function refreshList() {
     var d = dock(), p = pane();
