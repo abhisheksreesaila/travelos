@@ -4,6 +4,7 @@ place, glows what changed and toasts that the family has been told. On the week 
 A fake model and a fake microphone answer (nothing reaches Azure or Sarvam). Screenshots on request: F142_SHOTS=<folder>."""
 import os
 import re
+import uuid
 
 import pytest
 from playwright.sync_api import expect
@@ -267,3 +268,87 @@ def test_the_tablet_keeps_the_ask_page_links(signed_in):
     expect(page.locator(DOCK)).to_be_hidden()
     page.evaluate("document.getElementById('cz-desk-talk').click()")                          # (the buttons are not drawn at this width: the link itself is followed)
     page.wait_for_url(re.compile(r"/trip/ask\?day=1&mode=talk"))
+
+
+# ---- review follow-ups: decided when it is asked, viewers, block and step, the fallback and another day ------------------------------
+
+def test_a_page_first_loaded_at_a_block_then_zoomed_out_to_the_day_opens_the_panel(desk, base_url):
+    act = desk.locator(".cz-gb.is-park").first.get_attribute("data-act")
+    desk.goto(f"{base_url}/trip/canvas?block={act}")
+    desk.wait_for_selector(".cz-view[data-level=block]")
+    desk.evaluate("window.__loaded = 1")
+    desk.evaluate("CZ.goto(document.querySelector('.cz-view[data-level=block] .cz-back').getAttribute('href'))")      # zoom out to the day (the back link is not drawn on a laptop)
+    desk.wait_for_selector(".cz-view[data-level=day]")
+    desk.locator(f"{BAR} .ga-tb-ask").click()
+    ready(desk)
+
+
+def test_a_block_and_a_step_keep_the_plain_link(desk, base_url):
+    act = desk.locator(".cz-gb.is-park").first.get_attribute("data-act")
+    desk.goto(f"{base_url}/trip/canvas?block={act}")
+    desk.wait_for_selector(".cz-view[data-level=block]")
+    assert desk.evaluate("[Dock.show('ask'), Dock.has('ask')]") == [False, False]
+    desk.locator(f"{BAR} .ga-tb-ask").click()
+    desk.wait_for_url(re.compile(r"/trip/ask"))
+    desk.goto(f"{base_url}/trip/canvas?block={act}")
+    desk.wait_for_selector(".cz-view[data-level=block]")
+    step = desk.locator(".cz-view[data-level=block] a[href*='step=']").first.get_attribute("href")
+    desk.goto(f"{base_url}{step}")
+    desk.wait_for_selector(".cz-view[data-level=step]")
+    desk.locator(f"{BAR} .ga-tb-ask").click()
+    desk.wait_for_url(re.compile(r"/trip/ask"))
+
+
+def test_dock_show_ask_is_false_on_the_week_so_a_caller_can_fall_back(canvas_page, voice):
+    page = canvas_page(viewport=DESKTOP, touch=False)
+    page.wait_for_selector(".cz-view[data-level=week]")
+    assert page.evaluate("Dock.show('ask', {})") is False
+
+
+def test_a_viewer_clicking_ask_on_the_canvas_lands_on_the_only_editors_page(canvas_page, browser, base_url, voice):
+    owner = canvas_page(viewport=DESKTOP, touch=False)
+    mail = f"vi.panel@{uuid.uuid4().hex[:8]}.example.com"
+    assert owner.context.request.post(f"{base_url}/family/invite", form={"email": mail, "role": "viewer"}, max_redirects=0).status < 400
+    ctx = browser.new_context(viewport=DESKTOP, reduced_motion="reduce")
+    try:
+        ctx.set_default_timeout(9000)
+        ctx.request.post(f"{base_url}/signin", form={"email": mail, "next": "/", "intent": "save"}, max_redirects=0)
+        viewer = ctx.new_page()
+        viewer.goto(f"{base_url}/trip/canvas?day=1")
+        viewer.wait_for_selector(".cz-view[data-level=day]")
+        assert viewer.locator("#cz-dock").get_attribute("data-ask") is None
+        viewer.locator("#cz-dock .cz-dock-tab[data-tab=ask]").click()
+        viewer.wait_for_url(re.compile(r"/trip/ask"))
+        expect(viewer.locator("#ak-viewer")).to_be_visible()
+        viewer.go_back()
+        viewer.wait_for_selector(".cz-view[data-level=day]")
+        viewer.locator(f"{BAR} .ga-tb-ask").click()
+        viewer.wait_for_url(re.compile(r"/trip/ask"))
+        expect(viewer.locator("#ak-viewer")).to_be_visible()
+    finally:
+        ctx.close()
+
+
+def test_when_the_box_cannot_load_the_panel_says_so_and_offers_the_page(desk):
+    desk.route(re.compile(r"/trip/ask\?day=\d+&mode=type"), lambda route: route.fulfill(status=500, body="no"))
+    desk.locator(f"{BAR} .ga-tb-ask").click()
+    link = desk.locator(f"{DOCK} .cz-ak .cz-pp-open")
+    expect(link).to_have_text("Open the Ask page")
+    link.click()
+    desk.wait_for_url(re.compile(r"/trip/ask\?day=1"))
+    expect(desk.locator("#ak-form")).to_be_visible()
+
+
+def test_apply_after_choosing_another_day_shows_that_day(desk):
+    desk.locator(f"{BAR} .ga-tb-ask").click()
+    ready(desk)
+    desk.locator("#ak-text").fill(HEARD)
+    desk.locator("#ak-chip").click()
+    desk.locator('.ak-dpick[data-d="2"]').click()
+    desk.locator("#ak-go").click()
+    expect(desk.locator(f"{DOCK} #ak-prop")).to_be_visible()
+    desk.locator("#ak-apply").click()
+    desk.wait_for_selector(".cz-view[data-level=day][data-day='2']")
+    expect(desk.locator('.cz-gb[data-title="Pool"]')).to_be_visible()
+    expect(desk.locator("#ga-toast")).to_contain_text("The family has been told")
+    assert mode(desk) == "idle" and desk.evaluate("window.__loaded") == 1

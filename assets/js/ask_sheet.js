@@ -16,28 +16,15 @@
   if (!tab || tab.dataset.ask !== 'sheet') return;
   var root = document.documentElement;
   var app = document.getElementById('ph-app') || document.body;
-  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
   var phone = window.matchMedia('(max-width: 720px), (display-mode: standalone)');
-  var FRESH = 300000;
-  var cache = {};
-  var wrap = null, sheet = null, scroll = null, ctl = null, closing = false, back = [];
+    var wrap = null, sheet = null, scroll = null, ctl = null, closing = false, back = [];
 
   function url() { return tab.getAttribute('href') || '/trip/ask'; }
   var MO = window.GA.motion;      // the one liquid motion (motion.js, F-109): the sheet grows out of the Ask button and folds back into it
 
-  // ---- the fragment, fetched ahead -------------------------------------------------------------------------------------------
-  function get(u) {
-    var hit = cache[u];
-    if (hit && Date.now() - hit.at < FRESH) return hit;
-    var entry = { at: Date.now(), html: null, p: null };
-    entry.p = fetch(u, { credentials: 'same-origin', headers: { 'X-Ask': '1' } }).then(function (r) {
-      if (!r.ok) throw new Error('ask ' + r.status);
-      return r.text();
-    }).then(function (h) { entry.html = h; return h; });
-    entry.p.catch(function () { if (cache[u] === entry) delete cache[u]; });
-    cache[u] = entry;
-    return entry;
-  }
+  // ---- the fragment, fetched ahead (ask_flow.js) ---------------------------------------------------------------------------------
+  var frags = window.AskFlow.fragments();
+  function get(u) { return frags.get(u); }
   var idle = window.requestIdleCallback ? function (fn) { window.requestIdleCallback(fn, { timeout: 2000 }); } : function (fn) { setTimeout(fn, 300); };
   function ahead() {
     var c = navigator.connection;
@@ -47,7 +34,7 @@
   ahead();
   if (window.MutationObserver) new MutationObserver(ahead).observe(tab, { attributes: true, attributeFilter: ['href'] });
   tab.addEventListener('pointerdown', function () { get(url()).p.catch(function () {}); }, { passive: true });
-  window.addEventListener('pageshow', function (e) { if (e.persisted) { cache = {}; ahead(); } });
+  window.addEventListener('pageshow', function (e) { if (e.persisted) { frags.clear(); ahead(); } });
 
   // ---- open -------------------------------------------------------------------------------------------------------------------
   tab.addEventListener('click', function (e) {
@@ -224,78 +211,16 @@
     sheet.addEventListener('touchcancel', function () { if (t && t.on) end(true); t = null; });
   }
 
-  // ---- the forms inside post with X-Ask ---------------------------------------------------------------------------------------
-  function ids() {
-    var out = {};
-    document.querySelectorAll('.cz-gb[data-act]').forEach(function (n) { out[n.dataset.act] = 1; });
-    return out;
-  }
-  function oops(f, labels, text) {
-    delete f.dataset.sent;
-    clearInterval(f._clock);
-    f.removeAttribute('aria-busy');
-    var bs = f.querySelectorAll('button');
-    bs.forEach(function (b, i) { b.disabled = false; if (labels[i] !== undefined) b.textContent = labels[i]; });
-    var slot = scroll && scroll.querySelector('#ak-error');
-    if (!slot) {
-      slot = document.createElement('div');
-      slot.id = 'ak-error';
-      slot.className = 'tp-error ak-error';
-      slot.setAttribute('role', 'alert');
-      f.insertBefore(slot, f.firstChild);
-    }
-    slot.textContent = text;
-  }
+  // ---- the forms inside post with X-Ask (ask_flow.js) --------------------------------------------------------------------------
   function onSubmit(e) {
-    var f = e.target;
-    if (e.defaultPrevented || !f.matches || !f.closest('#ak-sheet-body')) return;
-    e.preventDefault();
-    var action = (e.submitter && e.submitter.getAttribute('formaction')) || f.getAttribute('action');
-    var labels = Array.prototype.map.call(f.querySelectorAll('button'), function (b) { return b.textContent; });
-    var applying = f.id === 'ak-apply-form', before = applying ? ids() : null;
-    fetch(action, { method: 'POST', body: new URLSearchParams(new FormData(f)), credentials: 'same-origin', headers: { 'X-Ask': '1' } }).then(function (r) {
-      var json = /json/.test(r.headers.get('content-type') || '');
-      return r.text().then(function (text) { return { ok: r.ok, status: r.status, json: json, text: text }; });
-    }).then(function (r) {
-      if (!wrap || closing) return;
-      if (r.json && r.ok) { applied(JSON.parse(r.text), before); return; }
-      if (/id="ak-sheet-body"/.test(r.text)) { fill(r.text, false); return; }
-      oops(f, labels, r.status === 403 ? 'Only editors can change the plan.' : 'That did not go through. Try again.');
-    }, function () { if (wrap && !closing) oops(f, labels, 'That did not go through. Check the connection and try again. What you said is still here.'); });
-  }
-
-  // ---- Apply worked: close, bring the day up to date, glow what changed, say so ---------------------------------------------------
-  function applied(j, before) {
-    cache = {};
-    var CZ = window.CZ, v = CZ && CZ.view ? CZ.view() : null;
-    var shown = v && v.dataset.level === 'day' ? v.dataset.day : null;
-    var other = j.day !== null && j.day !== undefined && shown !== null && String(j.day) !== shown;      // another day was chosen: show that one
-    var closed = close();
-    var refreshed;
-    if (!v) refreshed = Promise.resolve();
-    else if (other && CZ.forget) { CZ.forget(); refreshed = CZ.goto('/trip/canvas?day=' + j.day, { dir: 'side', mode: 'replace', key: null }); }
-    else refreshed = CZ.quiet();
-    Promise.all([closed, refreshed]).then(function () {
-      glow(j.ids || [], before || {});
-      say(j.toast, !v && j.day !== null && j.day !== undefined ? '/trip/canvas?day=' + j.day : '');
-      ahead();
+    window.AskFlow.submit(e, {
+      alive: function () { return wrap && !closing; },
+      root: function () { return scroll; },
+      fill: function (html) { fill(html, false); },
+      applied: function (j, before) {      // Apply worked: close, bring the day up to date, glow what changed, say so
+        frags.clear();
+        window.AskFlow.applied(j, before, close()).then(ahead);
+      }
     });
-  }
-  function glow(wanted, before) {
-    var hit = [];
-    wanted.forEach(function (id) {
-      document.querySelectorAll('.cz-gb[data-act="' + id + '"], [data-drag="' + id + '"]').forEach(function (n) { hit.push(n); });
-    });
-    document.querySelectorAll('.cz-gb[data-act]').forEach(function (n) { if (!before[n.dataset.act] && hit.indexOf(n) < 0) hit.push(n); });
-    hit.forEach(function (n) { n.classList.add('ak-fresh'); });
-    var first = hit[0];
-    if (first) {
-      var r = first.getBoundingClientRect();
-      if (r.top < 0 || r.bottom > window.innerHeight - 96) first.scrollIntoView({ block: 'center', behavior: reduced.matches ? 'auto' : 'smooth' });
-    }
-    setTimeout(function () { hit.forEach(function (n) { n.classList.remove('ak-fresh'); }); }, 2200);
-  }
-  function say(text, href) {      // the one toast (toast.js): over the sheet or the day, at the top
-    if (window.GA && GA.toast) GA.toast(text || 'Done', href ? { href: href, label: 'See the day', ms: 7000 } : null);
   }
 })();

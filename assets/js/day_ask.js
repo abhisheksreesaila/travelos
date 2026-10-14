@@ -11,10 +11,10 @@
 (function () {
   var stage = document.getElementById('cz'), CZ = window.CZ, Dock = window.Dock, MO = window.GA && window.GA.motion;
   if (!stage || !CZ || !Dock || !MO) return;
-  if (!stage.querySelector('#cz-dock[data-ask], [data-ask-day]')) return;      // a viewer has no Ask to write with (neither the day's panel nor the week is marked for them): the tab and the links keep going to the page that says so
   var desk = window.matchMedia('(min-width: 1020px) and (not (display-mode: standalone))');
-  var FRESH = 30000;
-  var cache = {}, ctl = null, body = null, leaving = Promise.resolve(), going = false;
+  var fr = null;      // (ask_flow.js and ask.js come with the page shell, after this file: used when asked)
+  function frags() { return fr || (fr = window.AskFlow.fragments(30000)); }
+  var ctl = null, body = null, leaving = Promise.resolve(), going = false;
 
   function dock() { return document.getElementById('cz-dock'); }
   function pane() { var d = dock(); return d && d.querySelector('.cz-ak:not(.is-leaving)'); }
@@ -30,18 +30,7 @@
 
   // ---- the fragment, fetched ahead (the microphone starts inside the click, so the box must be there already) ------------------------
   function url(day, mode) { return '/trip/ask?day=' + day + '&mode=' + mode; }
-  function get(u) {
-    var hit = cache[u];
-    if (hit && Date.now() - hit.at < FRESH) return hit;
-    var entry = { at: Date.now(), html: null, p: null };
-    entry.p = fetch(u, { credentials: 'same-origin', headers: { 'X-Ask': '1' } }).then(function (r) {
-      if (!r.ok) throw new Error('ask ' + r.status);
-      return r.text();
-    }).then(function (h) { entry.html = h; return h; });
-    entry.p.catch(function () { if (cache[u] === entry) delete cache[u]; });
-    cache[u] = entry;
-    return entry;
-  }
+  function get(u) { return frags().get(u); }
   function target(a) {                                       // a link to the Ask page on this canvas -> { day, mode } or null
     var u;
     try { u = new URL(a.getAttribute('href'), location.href); } catch (e) { return null; }
@@ -103,7 +92,7 @@
         if (!p.isConnected) return;
         body.textContent = '';
         var m = mk('p', 'ak-fine', 'Ask could not load. '), a = mk('a', 'cz-pp-open', 'Open the Ask page');
-        a.href = url(day, mode).replace('&mode=' + mode, ''); m.appendChild(a); body.appendChild(m);
+        a.setAttribute('data-ask-page', ''); a.href = url(day, mode).replace('&mode=' + mode, ''); m.appendChild(a); body.appendChild(m);
       });
       if (!p.contains(document.activeElement)) { try { p.focus({ preventScroll: true }); } catch (e) { /* no focus */ } }
       return landed;
@@ -121,6 +110,14 @@
       return leaving;
     }
   });
+
+  // Whether Ask is the panel's to show is decided when it is asked (the level on the screen now, not the page that was loaded): an editor's day carries `data-ask` on its panel, an editor's week
+  // `data-ask-day`; a viewer's carry neither, and block and step levels have no panel. `Dock.has('ask')` and `Dock.show('ask')` follow it: **`Dock.show('ask')` is false where there is no panel
+  // to show it in (the week, a block, a viewer), so a caller (F-144's `/`) can fall back to the link**; the links themselves (target() below) open the day first on the week.
+  function can() { return !!stage.querySelector('#cz-dock[data-ask], [data-ask-day]'); }
+  var has = Dock.has, show = Dock.show;
+  Dock.has = function (m) { return m === 'ask' ? has.call(Dock, m) && can() : has.call(Dock, m); };
+  Dock.show = function (m, o) { return m === 'ask' && !can() ? false : show.call(Dock, m, o); };
 
   // the day's own refreshes leave the panel alone while Ask is open: what is being said is not thrown away
   var busy = CZ.dockBusy;
@@ -147,78 +144,26 @@
   document.addEventListener('click', function (e) {
     if (e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || !desk.matches || !e.target.closest) return;
     var a = e.target.closest('a[href]');
-    if (!a || a.closest('.cz-dock-tabs') || !Dock.has('ask')) return;      // (the tab is the dock's own: day_dock.js shows the mode)
+    if (!a || a.hasAttribute('data-ask-page') || a.closest('.cz-dock-tabs') || !Dock.has('ask')) return;      // (the tab is the dock's own: day_dock.js shows the mode)
     var t = target(a);
     if (!t) return;
     e.preventDefault();
     openAsk(t, a);
   }, true);
 
-  // ---- the forms in the panel post with X-Ask and get the next step back ---------------------------------------------------------------
-  function ids() {
-    var out = {};
-    document.querySelectorAll('.cz-gb[data-act]').forEach(function (n) { out[n.dataset.act] = 1; });
-    return out;
-  }
-  function oops(f, labels, text) {
-    delete f.dataset.sent;
-    clearInterval(f._clock);
-    f.removeAttribute('aria-busy');
-    f.querySelectorAll('button').forEach(function (b, i) { b.disabled = false; if (labels[i] !== undefined) b.textContent = labels[i]; });
-    var slot = body && body.querySelector('#ak-error');
-    if (!slot) {
-      slot = mk('div', 'tp-error ak-error'); slot.id = 'ak-error'; slot.setAttribute('role', 'alert');
-      f.insertBefore(slot, f.firstChild);
-    }
-    slot.textContent = text;
-  }
+  // ---- the forms in the panel post with X-Ask and get the next step back (ask_flow.js) ---------------------------------------------------
   function onSubmit(e) {
-    var f = e.target, p = e.currentTarget;
-    if (e.defaultPrevented || !f.matches || !f.closest('#ak-sheet-body')) return;
-    e.preventDefault();
-    var action = (e.submitter && e.submitter.getAttribute('formaction')) || f.getAttribute('action');
-    var labels = Array.prototype.map.call(f.querySelectorAll('button'), function (b) { return b.textContent; });
-    var applying = f.id === 'ak-apply-form', before = applying ? ids() : null;
-    fetch(action, { method: 'POST', body: new URLSearchParams(new FormData(f)), credentials: 'same-origin', headers: { 'X-Ask': '1' } }).then(function (r) {
-      var json = /json/.test(r.headers.get('content-type') || '');
-      return r.text().then(function (text) { return { ok: r.ok, status: r.status, json: json, text: text }; });
-    }).then(function (r) {
-      if (!p.isConnected || p.classList.contains('is-leaving')) return;
-      if (r.json && r.ok) { applied(JSON.parse(r.text), before); return; }
-      if (/id="ak-sheet-body"/.test(r.text)) { fill(r.text, false); return; }
-      oops(f, labels, r.status === 403 ? 'Only editors can change the plan.' : 'That did not go through. Try again.');
-    }, function () { if (p.isConnected) oops(f, labels, 'That did not go through. Check the connection and try again. What you said is still here.'); });
-  }
-
-  // ---- Apply worked: back to Up next, the grid up to date in place, what changed glows, the toast says so -----------------------------------
-  function applied(j, before) {
-    cache = {};
-    var v = CZ.view(), shown = v && v.dataset.level === 'day' ? v.dataset.day : null;
-    var other = j.day !== null && j.day !== undefined && shown !== null && String(j.day) !== shown;      // another day was chosen: show that one
-    Dock.close();
-    var refreshed = leaving.then(function () {
-      if (!v) return null;
-      if (other && CZ.forget) { CZ.forget(); return CZ.goto('/trip/canvas?day=' + j.day, { dir: 'side', mode: 'replace', key: null }); }
-      return CZ.quiet();
+    var p = e.currentTarget;
+    window.AskFlow.submit(e, {
+      alive: function () { return p.isConnected && !p.classList.contains('is-leaving'); },
+      root: function () { return body; },
+      fill: function (html) { fill(html, false); },
+      applied: function (j, before) {      // Apply worked: back to Up next, then the grid up to date in place, what changed glows, the toast says so
+        frags().clear();
+        Dock.close();
+        window.AskFlow.applied(j, before, leaving, true);
+      }
     });
-    refreshed.then(function () {
-      glow(j.ids || [], before || {});
-      if (window.GA && GA.toast) GA.toast(j.toast || 'Done');
-    });
-  }
-  function glow(wanted, before) {
-    var hit = [];
-    wanted.forEach(function (id) {
-      document.querySelectorAll('.cz-gb[data-act="' + id + '"], [data-drag="' + id + '"]').forEach(function (n) { hit.push(n); });
-    });
-    document.querySelectorAll('.cz-gb[data-act]').forEach(function (n) { if (!before[n.dataset.act] && hit.indexOf(n) < 0) hit.push(n); });
-    hit.forEach(function (n) { n.classList.add('ak-fresh'); });
-    var one = hit[0];
-    if (one) {
-      var r = one.getBoundingClientRect();
-      if (r.top < 0 || r.bottom > window.innerHeight) one.scrollIntoView({ block: 'center' });
-    }
-    setTimeout(function () { hit.forEach(function (n) { n.classList.remove('ak-fresh'); }); }, 2200);
   }
 
   // ---- Esc, and a day shown anew -------------------------------------------------------------------------------------------------------
