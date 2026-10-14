@@ -70,7 +70,7 @@
     if (!v) return out;
     var add = function (u) { if (u && out.indexOf(u) < 0) out.push(u); };
     if (v.dataset.level === 'week') {
-      v.querySelectorAll('a.cz-row-link[data-zoom="in"]').forEach(function (a) { add(path(a.href)); });
+      v.querySelectorAll('a.cz-row-link[data-zoom="in"], a.cz-wopen[data-zoom="in"], a.cz-wi.is-plan[data-zoom="in"]').forEach(function (a) { add(path(a.href)); });      // F-145: the desktop week's Open the day and plan rows too
     } else if (v.dataset.level === 'day') {
       add(v.dataset.next && path(v.dataset.next));
       add(v.dataset.prev && path(v.dataset.prev));
@@ -168,14 +168,18 @@
     root.style.setProperty('--cz-oy', r ? Math.round(Math.max(0, Math.min(h, r.top + Math.min(r.height, h) / 2))) + 'px' : '30%');
   }
   var via = null;          // the link that started a zoom from the desktop week's columns (its row is the origin of the zoom)
-  function hero(key) { return stage.querySelector('.cz-sheet[data-zk="' + key + '"]') || stage.querySelector('[data-zk="' + key + '"]'); }
+  function boxed(n) { return n.getClientRects().length > 0; }      // F-145: the week draws a phone row and a desktop column with the same key, only one has a box
+  function hero(key) {
+    var all = stage.querySelectorAll('[data-zk="' + key + '"]'), pick = null;
+    for (var i = 0; i < all.length; i++) if (boxed(all[i]) && !pick) pick = all[i];
+    return stage.querySelector('.cz-sheet[data-zk="' + key + '"]') || pick || all[0] || null;
+  }
   function run(html, dir, key, after) {
     var animate = !reduced.matches && typeof document.startViewTransition === 'function';
     var from = animate && key && KEY.test(key) ? hero(key) : null;
     if (!animate) { swap(html, reduced.matches ? '' : dir); if (after) after(); return Promise.resolve(); }
     root.dataset.czDir = dir;
     origin(via && via.isConnected ? via : from);      // F-145: the desktop week zooms about the row that was clicked, the column is what grows
-    via = null;
     if (from) from.style.viewTransitionName = 'cz-hero';
     var t = document.startViewTransition(function () {
       if (from) from.style.viewTransitionName = '';
@@ -297,7 +301,7 @@
 
   function goto(u, o) {
     o = o || {};
-    if (busy) { if (o.mode === 'pop') waiting = u; return Promise.resolve(); }
+    if (busy) { via = null; if (o.mode === 'pop') waiting = u; return Promise.resolve(); }
     busy = true;
     var dir = o.dir || directionTo(u);
     curMode = o.mode || '';
@@ -325,6 +329,7 @@
       return run(html, dir, key, remember);
     }).catch(function () { location.href = u; }).then(function () {
       busy = false;
+      via = null;      // the tapped link belongs to this zoom only, animated or not
       rememberToday();
       if (copy !== null && levelOf(u) !== 'step' && levelOf(u) !== 'block') revalidate(u, copy);
       if (waiting) { waiting = null; goto(here(), { mode: 'pop' }); }     // the address bar is the truth: show what it says
