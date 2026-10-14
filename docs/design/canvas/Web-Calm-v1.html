@@ -1,0 +1,338 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>GitAway · Calm laptop skin v1</title>
+<!-- Captain, 2026-10-14: "keep the colors same, what do u think about this theme, not colors .. finxplorer.com".
+     FINXPLORER's structure (flat surfaces, hairlines, flat pills, eyebrow + two-tone titles, data rows, one accent block)
+     with GitAway's palette. Laptop only; the phone keeps its playful, tactile look. Frames are real 1440x900 / 1280x800. -->
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Figtree:wght@400;500;600;700;800&display=swap');
+:root {
+  --fd: 'Bricolage Grotesque', 'Figtree', system-ui, sans-serif;
+  --fb: 'Figtree', system-ui, sans-serif;
+  --ink: #1E1A2E; --ink-2: #4A4460; --ink-3: #5A5470;
+  --paper: #FFF8EE; --paper-2: #FAF7F2; --card: #FFFFFF;
+  --coral: #FF7352; --coral-deep: #C9431F; --coral-tint: #FFE6DA;
+  --sun: #FFC93C; --sun-tint: #FFF1C2; --sun-ink: #8A6200;
+  --mint: #48D1A0; --mint-tint: #D4F7EA; --mint-ink: #16865F;
+  --sky: #5AB0FF; --sky-tint: #DDEEFF; --sky-ink: #1B6FC9;
+  --grape: #C3B2FF; --grape-tint: #ECE4FF; --grape-ink: #6A4FD6;
+  --bubble: #FF8CC6; --bubble-tint: #FFE3F1; --bubble-ink: #C23B82;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: #EDE6DA; color: var(--ink); }
+body { font: 500 13px/1.45 var(--fb); -webkit-font-smoothing: antialiased; }
+h1, h2, h3 { font-family: var(--fd); font-weight: 800; letter-spacing: -0.03em; margin: 0; }
+p { margin: 0; }
+button { font: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: pointer; }
+svg.i { width: 14px; height: 14px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Board */
+.board { max-width: 1500px; margin: 0 auto; padding: 36px 32px 80px; }
+.btop { display: flex; align-items: flex-end; gap: 24px; margin-bottom: 8px; }
+.btop .eb { font: 800 12px var(--fb); letter-spacing: .1em; color: var(--coral-deep); text-transform: uppercase; margin-bottom: 4px; }
+.btop h1 { font-size: 34px; }
+.btop h1 em { font-style: normal; color: var(--coral-deep); }
+.btop p { color: var(--ink-2); max-width: 820px; margin-top: 6px; font-size: 15px; }
+.zoom { margin-left: auto; display: flex; gap: 4px; background: var(--card); border-radius: 999px; padding: 4px; border: 1px solid rgba(30,26,46,.1); }
+.zoom button { padding: 6px 14px; border-radius: 999px; font-weight: 700; }
+.zoom button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+.what { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 28px; margin: 22px 0 8px; color: var(--ink-2); }
+.what div b { display: block; color: var(--ink); font-weight: 800; }
+.label { font: 700 12px var(--fb); color: var(--ink-3); margin: 34px 0 8px; }
+.label b { color: var(--ink); font-size: 14px; }
+.shell { overflow: hidden; border-radius: 12px; box-shadow: 0 24px 48px -24px rgba(30,26,46,.35); }
+
+/* ===== Frame (calm skin) ===== */
+.f { width: 1440px; height: 900px; background: var(--paper); display: flex; flex-direction: column; overflow: hidden; transform-origin: 0 0;
+  --line: rgba(30,26,46,.10); --line-2: rgba(30,26,46,.16); --surface: var(--card); --surface-2: var(--paper-2); --muted: var(--ink-3); --text: var(--ink); --text-2: var(--ink-2);
+  --hh: 50px; --panel: 404px; --pad: 32px; color: var(--text); }
+.f.s1280 { width: 1280px; height: 800px; --hh: 44px; --panel: 372px; --pad: 24px; }
+.f.dark { --paper: #17141F; --surface: #1F1B2A; --surface-2: #262133; --line: rgba(255,255,255,.08); --line-2: rgba(255,255,255,.14); --muted: #A39DB8; --text: #F4F1FA; --text-2: #CFC9DE;
+  --sun-tint: rgba(255,201,60,.14); --mint-tint: rgba(72,209,160,.14); --grape-tint: rgba(195,178,255,.16); --sky-tint: rgba(90,176,255,.14); --bubble-tint: rgba(255,140,198,.14); --coral-tint: rgba(255,115,82,.16);
+  --sun-ink: #FFC93C; --mint-ink: #48D1A0; --grape-ink: #C3B2FF; --sky-ink: #5AB0FF; --bubble-ink: #FF8CC6; --coral-deep: #FF8A6B; background: var(--paper); }
+
+/* Top bar: flat, hairline under it */
+.tb { height: 56px; flex-shrink: 0; display: flex; align-items: center; gap: 28px; padding: 0 var(--pad); border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 9px; font: 800 13px var(--fb); letter-spacing: .16em; }
+.brand .m { width: 24px; height: 24px; border-radius: 7px; background: var(--coral); display: grid; place-items: center; color: var(--ink); }
+.brand .m svg.i { width: 14px; height: 14px; stroke-width: 2.4; }
+.nav { display: flex; gap: 22px; margin-left: 12px; height: 100%; }
+.nav a { display: flex; align-items: center; gap: 6px; font-weight: 600; color: var(--muted); text-decoration: none; height: 100%; border-bottom: 2px solid transparent; padding-top: 2px; }
+.nav a.on { color: var(--text); border-bottom-color: var(--coral); font-weight: 700; }
+.nav kbd { font: 700 10px var(--fb); color: var(--muted); border: 1px solid var(--line-2); border-radius: 4px; padding: 0 4px; }
+.tb .sp { flex: 1; }
+.pick { display: flex; align-items: center; gap: 6px; font-weight: 700; color: var(--text); }
+.pick span { color: var(--muted); font-weight: 500; }
+.sos { font: 800 11px var(--fb); letter-spacing: .08em; color: var(--bubble-ink); border: 1px solid var(--line-2); border-radius: 999px; padding: 5px 11px; }
+.av { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font: 800 11px var(--fb); background: var(--sun-tint); color: var(--sun-ink); }
+
+/* Body */
+.bd { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0,1fr) var(--panel); gap: 24px; padding: 22px var(--pad) 24px; }
+.col { min-height: 0; display: flex; flex-direction: column; gap: 14px; }
+
+/* Heading: eyebrow + two-tone title, controls on the right */
+.hd { display: flex; align-items: flex-end; gap: 18px; flex-shrink: 0; }
+.hd .eb { font: 700 11.5px var(--fb); letter-spacing: .02em; color: var(--coral-deep); display: flex; align-items: center; gap: 8px; }
+.hd .eb .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--mint); }
+.hd h2 { font-size: 30px; line-height: 1.05; margin-top: 6px; }
+.hd h2 em { font-style: normal; color: var(--coral-deep); }
+.hd .sp { flex: 1; }
+.seg { display: flex; border: 1px solid var(--line-2); border-radius: 999px; padding: 2px; }
+.seg b { padding: 5px 13px; border-radius: 999px; font-weight: 700; font-size: 12px; color: var(--muted); }
+.seg b.on { background: var(--text); color: var(--paper); }
+.ib { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--line-2); color: var(--text-2); }
+
+/* Day tabs: flat, hairline, the day's tint as a small key */
+.tabs { display: flex; border-bottom: 1px solid var(--line); flex-shrink: 0; }
+.tab { padding: 8px 16px 10px; display: flex; align-items: baseline; gap: 8px; border-bottom: 2px solid transparent; margin-bottom: -1px; color: var(--muted); }
+.tab .k { width: 8px; height: 8px; border-radius: 2px; align-self: center; }
+.tab .d { font: 700 11px var(--fb); letter-spacing: .06em; }
+.tab .n { font: 800 17px var(--fd); color: var(--text); }
+.tab .w { font-size: 11.5px; font-weight: 600; }
+.tab.on { border-bottom-color: var(--text); color: var(--text-2); }
+.tab.on .n { color: var(--coral-deep); }
+
+/* Filters + actions */
+.fr { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.pill { padding: 4px 11px; border-radius: 999px; font-weight: 600; color: var(--muted); font-size: 12px; border: 1px solid transparent; }
+.pill.on { border-color: var(--line-2); color: var(--text); background: var(--surface); }
+.fr .sp { flex: 1; }
+.btn { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 15px; border-radius: 999px; font-weight: 700; font-size: 12.5px; }
+.btn.pri { background: var(--coral); color: var(--ink); }
+.btn.sec { border: 1px solid var(--line-2); color: var(--text); background: var(--surface); }
+
+/* Grid: flat surface, hairlines, blocks with a left key bar */
+.grid { position: relative; flex: 1; min-height: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.grid .in { position: absolute; inset: 10px 14px 0 0; }
+.hr { position: absolute; left: 0; right: 0; height: var(--hh); border-top: 1px solid var(--line); }
+.hr .t { position: absolute; left: 0; width: 60px; top: -8px; text-align: right; font: 600 11px var(--fb); color: var(--muted); background: var(--surface); padding-right: 10px; }
+.blk { position: absolute; left: 74px; right: 4px; border-radius: 8px; padding: 7px 12px 7px 14px; display: flex; gap: 10px; align-items: flex-start; overflow: hidden; }
+.blk::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; }
+.blk .tm { font-weight: 600; font-size: 11.5px; color: var(--text-2); white-space: nowrap; }
+.blk .ti { font-weight: 700; font-size: 13px; }
+.blk .bk { margin-left: auto; font: 700 10.5px var(--fb); letter-spacing: .06em; color: var(--muted); }
+.blk.booked { background: var(--surface-2); border: 1px solid var(--line); align-items: center; }
+.blk.booked::before { background: var(--line-2); }
+.blk .tile { width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; font: 800 9px var(--fb); flex-shrink: 0; }
+.blk.plan .ti { font-family: var(--fd); font-weight: 800; letter-spacing: -0.02em; font-size: 14px; }
+.blk.sun { background: var(--sun-tint); } .blk.sun::before { background: var(--sun); }
+.blk.bubble { background: var(--bubble-tint); } .blk.bubble::before { background: var(--bubble); }
+.blk .steps { display: flex; gap: 12px; margin-top: 3px; font-size: 11.5px; color: var(--text-2); font-weight: 600; }
+.blk .steps i { font-style: normal; } .blk .steps i.done { text-decoration: line-through; color: var(--muted); }
+.blk.sel { box-shadow: inset 0 0 0 2px var(--coral); }
+.now { position: absolute; left: 66px; right: 0; border-top: 1.5px solid var(--coral); z-index: 2; }
+.now::before { content: ""; position: absolute; left: -3px; top: -4px; width: 7px; height: 7px; border-radius: 50%; background: var(--coral); }
+.now span { position: absolute; right: 6px; top: -9px; font: 700 10.5px var(--fb); color: var(--coral-deep); background: var(--surface); padding: 0 4px; }
+
+/* Panel: flat surface, tabs as text with underline */
+.pn { min-height: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; display: flex; flex-direction: column; overflow: hidden; }
+.pt { display: flex; gap: 20px; padding: 0 20px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
+.pt b { padding: 13px 0 11px; font-weight: 600; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; display: flex; gap: 6px; align-items: center; }
+.pt b.on { color: var(--text); border-bottom-color: var(--text); font-weight: 700; }
+.pt .c { font: 800 10px var(--fb); background: var(--coral); color: var(--ink); border-radius: 999px; padding: 0 6px; }
+.pb { flex: 1; min-height: 0; overflow: hidden; padding: 18px 20px; display: flex; flex-direction: column; gap: 16px; }
+.pf { flex-shrink: 0; padding: 12px 14px; border-top: 1px solid var(--line); }
+.sec { font: 700 11px var(--fb); color: var(--coral-deep); display: flex; gap: 8px; align-items: center; }
+.sec .sp { flex: 1; } .sec a { color: var(--muted); font-weight: 600; text-decoration: none; }
+
+/* The one accent block */
+.acc { background: var(--ink); color: #fff; border-radius: 14px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+.f.dark .acc { background: var(--coral); color: var(--ink); }
+.acc .eb { font: 700 11px var(--fb); color: var(--sun); display: flex; justify-content: space-between; }
+.f.dark .acc .eb { color: var(--ink); }
+.acc h3 { font-size: 22px; line-height: 1.1; }
+.acc .meta { font-size: 12px; opacity: .75; font-weight: 600; }
+.acc .row { display: flex; gap: 8px; }
+.acc .btn.pri { background: var(--coral); }
+.f.dark .acc .btn.pri { background: var(--ink); color: #fff; }
+.acc .btn.ghost { border: 1px solid rgba(255,255,255,.25); color: inherit; }
+.f.dark .acc .btn.ghost { border-color: rgba(30,26,46,.3); }
+.chipnew { font: 700 11px var(--fb); background: var(--mint); color: var(--ink); border-radius: 999px; padding: 2px 9px; align-self: flex-start; }
+
+/* Data rows */
+.rows { display: flex; flex-direction: column; }
+.r { display: flex; align-items: center; gap: 12px; padding: 10px 2px; border-bottom: 1px solid var(--line); }
+.r:last-child { border-bottom: 0; }
+.r .tile { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; font: 800 10px var(--fb); flex-shrink: 0; }
+.r .nm { font-weight: 700; }
+.r .dt { font-size: 11.5px; color: var(--muted); font-weight: 600; }
+.r .rt { margin-left: auto; font-weight: 700; font-size: 12.5px; text-align: right; white-space: nowrap; }
+.r .rt small { display: block; color: var(--muted); font-weight: 600; font-size: 11px; }
+.r .bx { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--line-2); flex-shrink: 0; }
+.r .bx.on { background: var(--mint); border-color: var(--mint); }
+.r.done .nm { text-decoration: line-through; color: var(--muted); }
+.ask { border: 1px solid var(--line-2); border-radius: 12px; padding: 12px; color: var(--muted); font-weight: 600; display: flex; flex-direction: column; gap: 10px; }
+.ask .r2 { display: flex; gap: 6px; align-items: center; }
+.sug { font-size: 11.5px; font-weight: 600; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--text-2); }
+.mic { margin-left: auto; width: 32px; height: 32px; border-radius: 50%; background: var(--coral); color: var(--ink); display: grid; place-items: center; }
+.cmp { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line-2); border-radius: 999px; padding: 4px 4px 4px 14px; color: var(--muted); font-weight: 600; }
+.cmp .sp { flex: 1; } .cmp kbd { font: 700 10px var(--fb); border: 1px solid var(--line-2); border-radius: 4px; padding: 0 4px; }
+.cmp .go { width: 28px; height: 28px; border-radius: 50%; background: var(--coral); color: var(--ink); display: grid; place-items: center; }
+.ph { display: flex; gap: 12px; align-items: flex-start; }
+.ph .tile { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; background: var(--bubble-tint); color: var(--bubble-ink); flex-shrink: 0; }
+.ph .tile svg.i { width: 18px; height: 18px; }
+.ph .eb { font: 700 11px var(--fb); color: var(--coral-deep); }
+.ph h3 { font-size: 22px; line-height: 1.1; margin-top: 3px; }
+.ph .x { margin-left: auto; color: var(--muted); display: flex; gap: 6px; align-items: center; font-size: 11px; }
+.ph .x kbd { font: 700 10px var(--fb); border: 1px solid var(--line-2); border-radius: 4px; padding: 0 4px; }
+.note { border-left: 2px solid var(--sun); padding: 6px 12px; color: var(--text-2); font-weight: 600; background: var(--sun-tint); border-radius: 0 8px 8px 0; }
+.msg { display: flex; gap: 10px; padding: 6px 0; }
+.msg .tile { width: 24px; height: 24px; border-radius: 6px; display: grid; place-items: center; font: 800 9px var(--fb); flex-shrink: 0; }
+.msg b { font-size: 12px; } .msg p { color: var(--text-2); }
+.msg .tm { margin-left: auto; color: var(--muted); font-size: 11px; font-weight: 600; }
+
+/* Week: numbered columns like FINXPLORER's lens cards */
+.wk { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 14px; }
+.wc { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.wc .h { padding: 16px 16px 12px; border-bottom: 1px solid var(--line); }
+.wc .h .key { display: flex; align-items: center; gap: 8px; }
+.wc .h .key i { width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center; font: 800 13px var(--fd); font-style: normal; }
+.wc .h .no { font: 700 11px var(--fb); letter-spacing: .02em; }
+.wc .h h3 { font-size: 17px; margin-top: 8px; }
+.wc .h p { color: var(--muted); font-size: 11.5px; font-weight: 600; margin-top: 2px; }
+.wc .its { padding: 4px 14px; flex: 1; }
+.wc .r { padding: 9px 0; gap: 10px; align-items: flex-start; }
+.wc .r .tm { width: 52px; flex-shrink: 0; font-size: 11px; font-weight: 700; color: var(--muted); padding-top: 1px; }
+.wc .r .nm { font-size: 12.5px; line-height: 1.3; }
+.wc .r .dt { margin-top: 2px; }
+.wc .r.plan .nm { font-family: var(--fd); font-weight: 800; letter-spacing: -0.01em; font-size: 13.5px; }
+.wc .free { margin: 10px 14px; border: 1px dashed var(--line-2); border-radius: 10px; padding: 12px; color: var(--muted); font-weight: 600; display: flex; flex-direction: column; gap: 10px; }
+.wc .free b { color: var(--text); }
+.wc .ft { padding: 10px 14px; border-top: 1px solid var(--line); font-weight: 700; font-size: 12px; display: flex; justify-content: space-between; color: var(--text-2); }
+.wc.today { border-color: var(--text); }
+.wc .r.drag { opacity: .35; }
+.wc.drop { box-shadow: inset 0 0 0 2px var(--coral); }
+.ghostrow { position: absolute; width: 230px; background: var(--surface); border: 1px solid var(--line-2); border-radius: 10px; padding: 9px 12px; box-shadow: 0 10px 24px -12px rgba(30,26,46,.35); font-weight: 700; display: flex; gap: 10px; }
+.ghostrow span { color: var(--muted); font-size: 11px; }
+</style>
+
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-route" viewBox="0 0 24 24"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-map" viewBox="0 0 24 24"><path d="M14.1 6 9.9 4 3 7v13l6.9-3 4.2 2L21 16V3z"/><path d="M9.9 4v13M14.1 6v13"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3"/></symbol>
+  <symbol id="i-paste" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><path d="M12 10V2M4.9 10.9 3.5 9.5M2 18h2M20 18h2M19.1 10.9l1.4-1.4M22 22H2M8 6l4-4 4 4M16 18a4 4 0 0 0-8 0"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-plane" viewBox="0 0 24 24"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+</svg>
+
+<div class="board">
+  <div class="btop">
+    <div>
+      <div class="eb">Laptop skin · keeps GitAway's colours</div>
+      <h1>Calm on the laptop. <em>Same GitAway.</em></h1>
+      <p>FINXPLORER's structure with our palette: flat surfaces and hairlines instead of shadows, flat pills instead of tactile ledges, an eyebrow and a two-tone title on every heading, scannable data rows, and one strong accent block per screen. Laptop only — the phone keeps its playful look. Motion is the quiet fade from F-156.</p>
+    </div>
+    <div class="zoom"><button data-z="fit" aria-pressed="true">Fit</button><button data-z="1" aria-pressed="false">Actual size</button></div>
+  </div>
+  <div class="what">
+    <div><b>Surfaces</b>White cards with a 1px hairline, radius 14, no layered shadows. Sections split by hairlines.</div>
+    <div><b>Type</b>Small coral eyebrow over a two-tone Bricolage title ("Saturday. <span style="color:var(--coral-deep)">Universal day.</span>").</div>
+    <div><b>Accent</b>Only Up next is a solid block. Everything else is quiet; the day colours become small keys and tile tints.</div>
+  </div>
+
+  <div class="label"><b>C1 · Day, a plan open</b> · 1440×900 · light</div>
+  <div class="shell" data-f="c1"></div>
+  <div class="label"><b>C2 · Day during the trip, nothing open</b> · 1280×800 · light</div>
+  <div class="shell" data-f="c2"></div>
+  <div class="label"><b>C3 · Week, a plan being dragged to Sunday (F-157)</b> · 1440×900 · light</div>
+  <div class="shell" data-f="c3"></div>
+  <div class="label"><b>C4 · Option: the same day in dark</b> · 1440×900 · dark (only if you want it; colours stay ours, the accent block turns coral)</div>
+  <div class="shell" data-f="c4"></div>
+</div>
+
+<script>
+const I = n => `<svg class="i"><use href="#i-${n}"/></svg>`;
+const START = 7;
+const tb = (on='trip') => `<header class="tb">
+  <div class="brand"><span class="m">${I('route')}</span>GITAWAY</div>
+  <nav class="nav"><a class="${on==='trip'?'on':''}">Trip</a><a class="${on==='family'?'on':''}">Family</a><a>Ask <kbd>/</kbd></a></nav>
+  <span class="sp"></span>
+  <button class="pick">LA with the kids <span>Oct 16 – 20</span>${I('down')}</button>
+  <span class="sos">SOS</span><span class="av">AR</span></header>`;
+const days = [['FRI',16,'Fly in','sun'],['SAT',17,'Universal','mint'],['SUN',18,'Beach','grape'],['MON',19,'Open','sky'],['TUE',20,'Fly home','bubble']];
+const head = (sel, live) => `<div class="hd"><div>
+    <div class="eb">${live?'<span class="dot"></span>Today · ':''}${days[sel][0]} OCT ${days[sel][1]} · DAY ${sel+1} OF 5</div>
+    <h2>${['Friday','Saturday','Sunday','Monday','Tuesday'][sel]}. <em>${['Fly in, check in.','Universal day.','Beach day.','Wide open.','Fly home.'][sel]}</em></h2></div>
+  <span class="sp"></span><div class="seg"><b class="on">Day</b><b>Week</b></div><span class="ib">${I('map')}</span></div>
+  <div class="tabs">${days.map((d,i)=>`<div class="tab ${i===sel?'on':''}"><span class="k" style="background:var(--${d[3]})"></span><span class="d">${d[0]}</span><span class="n">${d[1]}</span><span class="w">${d[2]}</span></div>`).join('')}</div>`;
+const fr = () => `<div class="fr">${['All','Plans','Hotels','Flights','Car','Chats'].map((f,i)=>`<span class="pill ${i===0?'on':''}">${f}</span>`).join('')}<span class="sp"></span>
+  <button class="btn sec">${I('paste')}Paste a plan</button><button class="btn pri">${I('mic')}Say the plan</button></div>`;
+const items = [
+  {s:8.08,e:9.4,k:'booked',tile:'AS',tc:'sky',tm:'8:05 AM',ti:'Alaska Airlines AS 1234 · SFO → LAX'},
+  {s:10,e:10.75,k:'booked',tile:'HZ',tc:'sun',tm:'10:00 AM',ti:'Pick up Hertz car · LAX'},
+  {s:12.5,e:14,k:'plan sun',tm:'12:30 – 2:00',ti:'Lunch at Grand Central Market',steps:[['Eggslut','done'],['Tacos for Leo',''],['Ice cream','']]},
+  {s:15,e:15.75,k:'booked',tile:'EH',tc:'grape',tm:'3:00 PM',ti:'Check in · The Example Hotel Santa Monica'},
+  {s:17.5,e:19,k:'plan bubble',tm:'5:30 – 7:00',ti:'Santa Monica Pier sunset',steps:[['Park at the pier',''],['Ferris wheel',''],['Churros','']],id:'pier'},
+];
+const grid = (o={}) => `<div class="grid"><div class="in">
+  ${Array.from({length:16},(_,i)=>{const h=START+i;const l=h===12?'12 PM':h>12?(h-12)+' PM':h+' AM';return `<div class="hr" style="top:calc(var(--hh)*${i})"><span class="t">${l}</span></div>`}).join('')}
+  ${items.map(it=>{const top=`calc(var(--hh)*${it.s-START} + 2px)`,ht=`calc(var(--hh)*${it.e-it.s} - 4px)`;
+    if(it.k==='booked')return `<div class="blk booked" style="top:${top};height:${ht}"><span class="tile" style="background:var(--${it.tc}-tint);color:var(--${it.tc}-ink)">${it.tile}</span><span class="tm">${it.tm}</span><span class="ti">${it.ti}</span><span class="bk">BOOKED</span></div>`;
+    return `<div class="blk ${it.k}${o.sel&&o.sel===it.id?' sel':''}" style="top:${top};height:${ht}"><div><div class="tm">${it.tm}</div><div class="ti">${it.ti}</div><div class="steps">${it.steps.map(s=>`<i class="${s[1]}">${s[0]}</i>`).join('<i>·</i>')}</div></div></div>`}).join('')}
+  ${o.now?`<div class="now" style="top:calc(var(--hh)*${o.now-START})"><span>4:10 PM</span></div>`:''}
+  </div></div>`;
+const tile = (t,c) => `<span class="tile" style="background:var(--${c}-tint);color:var(--${c}-ink)">${t}</span>`;
+const tabs = on => `<div class="pt"><b class="${on==='plan'?'on':''}">Plan</b><b class="${on==='family'?'on':''}">Family <span class="c">2</span></b><b class="${on==='ask'?'on':''}">Ask</b></div>`;
+const panelPlan = () => `<aside class="pn">${tabs('plan')}<div class="pb">
+  <div class="ph"><span class="tile">${I('sun')}</span><div><div class="eb">Plan · Fri 5:30 – 7:00 PM</div><h3>Santa Monica Pier sunset</h3></div><span class="x"><kbd>esc</kbd>${I('x')}</span></div>
+  <div class="note">Kids want the ferris wheel.</div>
+  <div><div class="sec">Steps · 1 of 3 done<span class="sp"></span><a>Set aside (1)</a></div>
+  <div class="rows">
+    <div class="r done"><span class="bx on"></span><div><div class="nm">Park at the pier lot</div></div><div class="rt">5:15</div></div>
+    <div class="r"><span class="bx"></span><div><div class="nm">Pacific Park ferris wheel</div><div class="dt">Leo, Noor</div></div><div class="rt">6:15</div></div>
+    <div class="r"><span class="bx"></span><div><div class="nm">Churros at the end of the pier</div><div class="dt">Everyone</div></div><div class="rt">6:45</div></div>
+  </div></div>
+  <div><div class="sec">Chat on this plan<span class="sp"></span><a>Open in Family</a></div>
+  <div class="msg">${tile('MA','mint')}<div><b>Maya</b><p>Sunset is 6:32 — on the wheel by 6:15</p></div><span class="tm">2:04</span></div>
+  <div class="msg">${tile('LE','sky')}<div><b>Leo</b><p>can we get churros FIRST</p></div><span class="tm">2:06</span></div>
+  <div class="msg">${tile('AR','sun')}<div><b>You</b><p>Churros after, deal</p></div><span class="tm">2:07</span></div></div>
+  </div><div class="pf"><div class="cmp">Message the family…<span class="sp"></span><span class="go">${I('send')}</span></div></div></aside>`;
+const panelIdle = () => `<aside class="pn">${tabs('plan')}<div class="pb">
+  <div class="acc"><div class="eb"><span>UP NEXT · IN 20 MIN</span><span>12 min drive</span></div><h3>Santa Monica Pier sunset</h3>
+    <div class="meta">5:30 – 7:00 PM · Everyone · 3 steps</div><div class="row"><button class="btn pri">Directions</button><button class="btn ghost">Open the plan</button></div></div>
+  <div><div class="sec">Later today</div><div class="rows">
+    <div class="r">${tile('?','coral')}<div><div class="nm">Dinner</div><div class="dt">Nothing planned yet</div></div><div class="rt">8:00 PM</div></div>
+    <div class="r">${tile('U','mint')}<div><div class="nm">Universal Studios</div><div class="dt">Tomorrow · leave by 8:15</div></div><div class="rt">9:00 AM<small>Sat</small></div></div>
+  </div></div>
+  <div><div class="sec">Ask or change something</div>
+  <div class="ask">“Move lunch to 1:30” · “Where can we eat near the pier?”<div class="r2"><span class="sug">Dinner nearby</span><span class="sug">Plan tomorrow</span><span class="mic">${I('mic')}</span></div></div></div>
+  </div><div class="pf"><div class="cmp">Type to Ask · or press <kbd>/</kbd><span class="sp"></span><span class="go">${I('send')}</span></div></div></aside>`;
+const week = () => {
+  const C = [
+    ['sun','01','FRI 16','Fly in, check in','4 bookings · 1 plan',[['8:05 AM','Alaska AS 1234 · SFO → LAX','','AS'],['10:00 AM','Hertz car · LAX','','HZ'],['12:30 PM','Lunch at Grand Central Market','plan','3 steps · 1 done'],['3:00 PM','Check in · Example Hotel','','EH'],['5:30 PM','Santa Monica Pier sunset','plan drag','3 steps · 4 messages']]],
+    ['mint','02','SAT 17','Universal day','1 plan · 9 rides',[['8:15 AM','Leave for Universal','',''],['9:00 AM','Universal Studios','plan','Super Nintendo World · Lower Lot'],['7:30 PM','Dinner at CityWalk','plan','']]],
+    ['grape','03','SUN 18','Beach day','2 plans',[['10:00 AM','Will Rogers beach','plan','Leo, Noor · boogie boards'],['1:00 PM','Lunch · Malibu Farm','plan','']]],
+    ['sky','04','MON 19','Wide open','',null],
+    ['bubble','05','TUE 20','Fly home','3 bookings',[['11:00 AM','Check out · Example Hotel','',''],['12:00 PM','Drop off Hertz car','',''],['2:10 PM','Alaska AS 1235 · LAX → SFO','','']]],
+  ];
+  return `<div class="wk" style="position:relative">${C.map((c,ci)=>`<div class="wc ${ci===0?'today':''} ${ci===2?'drop':''}">
+    <div class="h"><div class="key"><i style="background:var(--${c[0]}-tint);color:var(--${c[0]}-ink)">${c[1]}</i><span class="no" style="color:var(--${c[0]}-ink)">${c[2]}</span></div><h3>${c[3]}</h3><p>${c[4]||'Nothing planned'}</p></div>
+    ${c[5]?`<div class="its rows">${c[5].map(r=>`<div class="r ${r[2]}"><span class="tm">${r[0]}</span><div><div class="nm">${r[1]}</div>${r[3]&&r[2]?`<div class="dt">${r[3]}</div>`:''}</div></div>`).join('')}</div>`
+      :`<div class="free"><b>Free day</b>Nothing planned yet<button class="btn sec" style="align-self:flex-start">${I('mic')}Say the plan</button></div><div style="flex:1"></div>`}
+    <div class="ft"><span>Open the day</span>${I('chev')}</div></div>`).join('')}
+    <div class="ghostrow" style="left:calc(40% + 30px);top:300px">Santa Monica Pier sunset <span>5:30 PM → Sun 18</span></div></div>`;
+};
+const weekHead = () => `<div class="hd"><div><div class="eb">LA with the kids · Oct 16 – 20 · 2 adults, 2 kids</div><h2>The trip. <em>Five days in LA.</em></h2></div>
+  <span class="sp"></span><div class="fr">${['All','Plans','Hotels','Flights','Car'].map((f,i)=>`<span class="pill ${i===0?'on':''}">${f}</span>`).join('')}</div>
+  <div class="seg"><b>Day</b><b class="on">Week</b></div><span class="ib">${I('map')}</span></div>`;
+const F = {
+  c1: () => `<div class="f">${tb()}<div class="bd"><div class="col">${head(0)}${fr()}${grid({sel:'pier'})}</div>${panelPlan()}</div></div>`,
+  c2: () => `<div class="f s1280">${tb()}<div class="bd"><div class="col">${head(0,true)}${fr()}${grid({now:16.17})}</div>${panelIdle()}</div></div>`,
+  c3: () => `<div class="f">${tb()}<div class="bd" style="grid-template-columns:1fr"><div class="col">${weekHead()}${week()}</div></div></div>`,
+  c4: () => `<div class="f dark">${tb()}<div class="bd"><div class="col">${head(0,true)}${fr()}${grid({now:16.17})}</div>${panelIdle()}</div></div>`,
+};
+document.querySelectorAll('[data-f]').forEach(el => el.innerHTML = F[el.dataset.f]());
+let mode = 'fit';
+function layout() {
+  const avail = document.querySelector('.board').clientWidth - 64;
+  document.querySelectorAll('.shell').forEach(sh => { const f = sh.firstElementChild, w = f.offsetWidth, h = f.offsetHeight, s = mode === 'fit' ? Math.min(1, avail / w) : 1;
+    f.style.transform = `scale(${s})`; sh.style.width = w*s+'px'; sh.style.height = h*s+'px'; });
+}
+document.querySelectorAll('.zoom button').forEach(b => b.onclick = () => { mode = b.dataset.z; document.querySelectorAll('.zoom button').forEach(x => x.setAttribute('aria-pressed', x === b));
+  document.querySelector('.board').style.maxWidth = mode === 'fit' ? '1500px' : 'none'; layout(); });
+addEventListener('resize', layout); document.fonts.ready.then(layout); layout();
+</script>
