@@ -762,13 +762,13 @@ Brief: docs/briefs/web-trip.md · Design: docs/design/web-trip.md (Top bar) · N
 - [x] on a phone nothing changes (the bottom tabs stay; no top bar)
 - [x] a browser test presses each top-bar link and checks where it lands
 
-## F-140 Desktop day: grid and docked panel [todo]
+## F-140 Desktop day: grid and docked panel [review]
 Brief: docs/briefs/web-trip.md · Design: A2 · Needs: F-139
-- [ ] on a desktop the day is two columns: the ink day header with the five day chips inline, the filters with Paste a plan and Say the plan, and the hour grid on the left; the panel on the right
-- [ ] only the grid and the panel scroll; the grid opens at 7 AM, or at now during the trip, with the coral now line
-- [ ] with nothing clicked the panel shows Up next (time, drive, who, Directions, Open the plan), Later today, and the Ask box; with nothing up next it says so and shows Ask
-- [ ] fits 1440×900 and 1280×800 at 100% zoom with no page scroll
-- [ ] the day chips and Day | Week move between levels with the existing liquid zoom
+- [x] on a desktop the day is two columns: the ink day header with the five day chips inline, the filters with Paste a plan and Say the plan, and the hour grid on the left; the panel on the right
+- [x] only the grid and the panel scroll; the grid opens at 7 AM, or at now during the trip, with the coral now line
+- [x] with nothing clicked the panel shows Up next (time, drive, who, Directions, Open the plan), Later today, and the Ask box; with nothing up next it says so and shows Ask
+- [x] fits 1440×900 and 1280×800 at 100% zoom with no page scroll
+- [x] the day chips and Day | Week move between levels with the existing liquid zoom
 
 ## F-141 A clicked plan opens in the panel [todo]
 Brief: docs/briefs/web-trip.md · Design: A1 · Needs: F-140
