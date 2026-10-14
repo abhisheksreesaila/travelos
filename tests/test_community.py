@@ -5,6 +5,7 @@ import re
 from starlette.testclient import TestClient
 
 from gitaway import community, familydb, familydb_social as social
+from tests.pagebody import without_bar
 from tests.test_calendar import add, book
 from tests.test_signin import session_data, sign_in, stored_booking, tid
 
@@ -116,7 +117,7 @@ def test_forking_a_community_trip_from_another_family_keeps_it_in_the_forkers_fa
     sam = _signed_in(client, "sam")
     assert sam.post("/fork", data={"next": f"/trips/{slug}"}, follow_redirects=False).status_code == 303
     assert "LA with the kids" in sam.get("/forks").text
-    assert "LA with the kids" not in client.get("/forks").text and social.slugs(session_data(client), "forks") == []  # Ari's family did not fork it
+    assert "LA with the kids" not in without_bar(client.get("/forks").text) and social.slugs(session_data(client), "forks") == []  # Ari's family did not fork it
 
 
 def test_the_done_page_and_calendar_explain_the_snapshot_and_offer_unpublish(client):

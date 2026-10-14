@@ -391,6 +391,7 @@ def invite_link(booking_id):
 
 
 _request_traveler = ContextVar("gitaway_traveler", default=None)
+_request_session = ContextVar("gitaway_session", default=None)
 _request_path = ContextVar("gitaway_path", default="/")
 _request_forks = ContextVar("gitaway_forks", default=0)
 _request_tenant = ContextVar("gitaway_tenant", default=None)
@@ -439,6 +440,7 @@ async def bind(req, session):
     """
     slide(session)
     _request_traveler.set(current_traveler(session))
+    _request_session.set(session)
     req.scope[PRIVATE_SCOPE_KEY] = _request_traveler.get() is not None  # main.py's no_store_when_signed_in reads this
     asked, safe = req.query_params.get("trip"), req.method in ("GET", "HEAD")
     if not safe and req.url.path != "/trips/switch":  # the switcher's own `trip` field names the trip to open, not the one being edited
@@ -474,6 +476,11 @@ def as_signed_out():
 
 def request_traveler():
     return _request_traveler.get()
+
+
+def request_session():
+    """The session dict of this request (set by `bind`), for the shared top bar, which reads the family's trips; None outside a request."""
+    return _request_session.get()
 
 
 def request_fork_count():

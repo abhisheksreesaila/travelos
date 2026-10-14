@@ -3,6 +3,7 @@
 import re
 from urllib.parse import quote
 
+from tests.pagebody import without_bar
 from tests.test_signin import session_data, sign_in, stored_calendar, tid
 
 PICK = {"f": "f1", "h": "h1", "c": "c1"}
@@ -199,6 +200,7 @@ def test_text_is_escaped_everywhere(client):
 def test_the_long_demo_has_twenty_day_chips_and_a_month_crossing_title(client):
     book(client)
     html = client.get("/calendar?demo=long&view=days").text
+    bar_free = without_bar(html)  # the top bar names the open trip with its dates
     assert html.count("data-chip=") == 20 and html.count("data-day-head") == 20
     assert "Oct 16 – Nov 4" in html and "Oct 16 – 4" not in html
     chip = tag(html, "data-chip", "16")  # Nov 1
@@ -209,7 +211,7 @@ def test_the_long_demo_has_twenty_day_chips_and_a_month_crossing_title(client):
     assert html.count("data-day-head") == 20
     assert 'data-block="b-back"' in html and tag(html, "data-block", "b-back")["data-day"] == "19"
     assert 'value="long"' in html  # forms carry the demo through
-    assert len(ids(html)) >= 4 and "Oct 16 – 20" not in html
+    assert len(ids(html)) >= 4 and "Oct 16 – 20" not in bar_free
 
 
 def test_the_default_trip_hides_the_demo_and_keeps_its_own_activities(client):

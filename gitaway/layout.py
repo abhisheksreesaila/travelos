@@ -88,9 +88,11 @@ def styles(*extra, theme="sunset"):
         Link(rel="stylesheet", href="/assets/css/tokens.css"),
         Link(rel="stylesheet", href="/assets/css/base.css"),
         Link(rel="stylesheet", href="/assets/css/toast.css"),         # F-108: the one toast, on every page
+        Link(rel="stylesheet", href="/assets/css/topbar.css"),        # F-139: the signed-in desktop's one top bar (shown from 1020px up)
         Script(src="/assets/js/motion.js", defer=True),               # F-109: the one liquid motion (GA.motion); before every script that opens something
         Script(src="/assets/js/motion_fallback.js", defer=True),     # F-110: the one stand-in when motion.js did not load, so no script carries a copy
         Script(src="/assets/js/toast.js", defer=True),
+        Script(src="/assets/js/topbar.js", defer=True),               # F-139: the top bar's two menus and the "/" key
         *extra,
     )
 
@@ -123,15 +125,20 @@ def account(traveler=None):
 
 
 def site_header(current: str = "", traveler=None, nav: bool = True):
-    """The header. `nav=False` is the landing's: the brand and the account only."""
+    """The header. `nav=False` is the landing's: the brand and the account only.
+
+    A signed-in person's page (nav=True) also carries the one top bar (F-139, gitaway.topbar) before it: topbar.css shows the bar from 1020px up and
+    hides this header there; below that width this header is what shows, as before."""
+    from gitaway import topbar  # here, not at the top: topbar reads the family through gitaway.session
     links = [A(label, href=href, aria_current="page" if href == current else None) for label, href in (NAV if showcase.on() else REAL_NAV)]
-    return Header(
+    top = topbar.bar() if nav and traveler is None else ""
+    return (top, Header(
         A("Skip to content", href="#main", cls="ga-skip"),
         brand(),
         *((Nav(*links, cls="ga-nav", aria_label="Main"),) if nav else ()),
         account(traveler),
-        cls="ga-header ga-wrap",
-    )
+        cls="ga-header ga-wrap", **({"data_has_topbar": "1"} if top else {}),
+    ))
 
 
 def site_footer(links=()):

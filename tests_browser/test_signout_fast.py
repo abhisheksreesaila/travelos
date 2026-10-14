@@ -12,6 +12,13 @@ from tests_browser.test_pwa import PAGE_CACHES, book_trip, controlled
 def sign_in(ctx, base_url):
     ctx.request.post(f"{base_url}/signin", form={"email": "ari.rivera@example.com", "next": "/", "intent": "pay"}, max_redirects=0)
 
+def sign_out_button(page):
+    """The Sign out button that shows at this width: the avatar menu's in the laptop's top bar (opened first), else the site header's (F-139)."""
+    if page.locator(".ga-topbar").is_visible():
+        page.click(".ga-tb-account summary")
+    return page.locator("button.ga-signout:visible, button.ga-tb-out:visible").first
+
+
 THRESHOLD_SECONDS = 1.0  # the ticket: back on the landing within about a second
 
 
@@ -28,8 +35,9 @@ def test_pressing_sign_out_reaches_the_landing_fast_and_forgets_the_family(brows
         assert page.evaluate(PAGE_CACHES), "the family's pages were saved"
         page.goto(f"{base_url}/community")  # a page with the site header (the calendar has its own)
         page.evaluate("localStorage.setItem('ga-test', 'previous family')")
+        button = sign_out_button(page)
         start = time.perf_counter()
-        page.locator("button.ga-signout").first.click()
+        button.click()
         page.wait_for_url(f"{base_url}/")
         page.wait_for_load_state("load")
         elapsed = time.perf_counter() - start
@@ -65,7 +73,7 @@ def test_back_after_sign_out_never_shows_the_previous_persons_pages(browser, bas
             controlled(page, base_url)
         page.goto(f"{base_url}/calendar")
         page.goto(f"{base_url}/community")
-        page.locator("button.ga-signout").first.click()
+        sign_out_button(page).click()
         page.wait_for_url(f"{base_url}/")
         page.wait_for_load_state("load")
         page.wait_for_timeout(500)

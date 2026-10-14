@@ -17,6 +17,7 @@ import pytest
 from sqlalchemy import text
 
 from gitaway import auth, catalog, familydb, session as ses, tripcal as cal
+from tests.pagebody import without_bar
 from tests.test_calendar import FORM, add, book, tag
 from tests.test_signin import EMAILS, person, session_data, sign_in, stored_calendar
 
@@ -390,7 +391,7 @@ def test_a_form_drawn_for_a_trip_carries_that_trip(client):
     a, b = two_trips(client)
     html = client.get("/calendar?view=days&add=1").text
     assert f'name="trip" value="{b}"' in html
-    assert f'name="trip" value="{a}"' not in html.split('class="cal-trips"')[0]
+    assert f'name="trip" value="{a}"' not in without_bar(html).split('class="cal-trips"')[0]
 
 
 def test_a_stale_tab_posting_with_its_trip_id_changes_that_trip_not_the_open_one(client):

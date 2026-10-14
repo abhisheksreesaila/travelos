@@ -21,7 +21,7 @@ from fasthtml.common import A, Aside, Button, Details, Div, Fieldset, Form, H1, 
 from fasthtml.core import FtResponse
 from starlette.responses import RedirectResponse
 
-from gitaway import access, catalog, firstrun, forks as forks_model, members, pickers, session as ses, showcase, tripcal as cal, tripday
+from gitaway import access, catalog, firstrun, forks as forks_model, members, pickers, session as ses, showcase, tripcal as cal, topbar, tripday
 from gitaway.icons import icon
 from gitaway.layout import avatar, brand, join_note, styles, trip_field
 from gitaway import voice as vo
@@ -620,7 +620,7 @@ def calendar_page(session, demo="", view="", form=None, notice=None, new="", und
     body = (
         Title(f"GitAway · {trip_name(t)} calendar"),
         *styles(*HEAD),
-        Div(A("Skip to content", href="#main", cls="ga-skip"), Main(app, id="main"), data_theme="sunset", cls="cal-shell"),
+        Div(A("Skip to content", href="#main", cls="ga-skip"), topbar.bar(), Main(app, id="main"), data_theme="sunset", cls="cal-shell"),   # F-139: the one top bar from 1020px up
         Script(src="/assets/js/calendar.js", defer=True), Script(src="/assets/js/voice.js", defer=True),
     )
     return FtResponse(body, status_code=status) if status != 200 else body
@@ -630,7 +630,7 @@ def no_booking():
     return (
         Title("GitAway · Trip calendar"),
         *styles(*HEAD),
-        Div(A("Skip to content", href="#main", cls="ga-skip"),
+        Div(A("Skip to content", href="#main", cls="ga-skip"), topbar.bar(),
             Main(Header(brand("/"), cls="cal-bar"), join_note(),
                  Section(Div(firstrun.welcome("Your calendar starts with a trip",
                                               "It fills in with your flights and hotel as soon as you plan or import one. Then the fun part starts: adding the gaps.",

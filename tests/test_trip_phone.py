@@ -8,6 +8,7 @@ from html import unescape
 import pytest
 
 from gitaway import catalog, rides, tripday as td
+from tests.pagebody import without_bar
 from tests.test_calendar import book, tag
 from tests.test_members import addr, browser, invite
 from tests.test_signin import sign_in, stored_calendar
@@ -267,7 +268,7 @@ def test_the_sheet_saves_a_time_that_overlaps_a_scheduled_ride(client):
 def test_every_post_form_on_the_trip_view_names_its_trip(client):
     book(client)
     for path in ("/trip?tab=today", "/trip?tab=notes", "/trip?add=1"):
-        html = client.get(path).text
+        html = without_bar(client.get(path).text)   # the top bar's Sign out and trip switch are not writes to a trip
         forms = [f for f in re.findall(r"<form\b[^>]*>.*?</form>", html, re.S) if 'method="post"' in f[:f.index(">")]]
         assert len(forms) >= 1
         for f in forms:

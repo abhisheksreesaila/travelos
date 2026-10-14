@@ -6,6 +6,7 @@ import re
 import pytest
 
 from gitaway import catalog, community
+from tests.pagebody import without_bar
 from tests.test_calendar import FORM, add, book
 from tests.test_signin import session_data, sign_in, stored_booking, tid
 
@@ -118,7 +119,7 @@ def test_signed_in_travelers_own_trip_keeps_the_marker_among_the_community(clien
     share(client)
     book(client, "sam")
     share(client)
-    html = client.get("/community").text
+    html = without_bar(client.get("/community").text)
     assert html.count("LA with the kids") == 2 and html.count("Your trip") == 1
 
 
@@ -128,7 +129,7 @@ def test_the_shared_trip_shows_in_the_hub_and_filters(client):
     html = client.get("/community").text
     assert "LA with the kids" in html and "Your trip" in html
     assert "LA with the kids" in client.get("/community?kid=1").text
-    assert "LA with the kids" not in client.get("/community?pet=1").text
+    assert "LA with the kids" not in without_bar(client.get("/community?pet=1").text)
 
 
 def test_the_booking_reference_never_appears_anywhere_it_could_leak(client):

@@ -1,0 +1,61 @@
+/* The one top bar of the signed-in web (F-139, gitaway/topbar.py): brand, a pill nav (Trip | Family | Ask with the coral mic dot and the "/" key hint), a spacer, the trip picker,
+   SOS and the avatar menu. Drawn from the design's frame A1 (docs/design/web-trip.md, "Top bar"; design pixels / 12 = rem). It shows from 1020px up only: below that the page's own
+   header (laptop-narrow and tablet) or the phone's bottom tabs stay exactly as they were. Loaded by layout.styles() on every page, after base.css. Sizes are rem. */
+.ga-topbar { display: none; }
+.ga-topbar { --tb-sun-bg: #FFF1C2; --tb-sun-ink: #8A6200; --tb-sos-bg: #FFE3F1; --tb-sos-ink: #C23B82; --tb-line: rgba(30, 26, 46, .14); }
+
+@media (min-width: 1020px) {
+  .ga-topbar { position: relative; z-index: 50; display: flex; align-items: center; gap: 1.5rem; height: 4.8333rem; padding: 0 2.3333rem; box-sizing: border-box; font-family: var(--font-body); font-size: max(var(--text-min), 1.0833rem); font-weight: 600; color: var(--ink); }
+  .ga-header[data-has-topbar] { display: none; }
+  .ga-topbar + * .cal-bar > .ga-brand, .ga-topbar ~ .cal-bar > .ga-brand { display: none; }   /* the old calendar's own header (F-147 retires it) keeps its title row; the brand is the bar's now */
+  .ga-topbar a { text-decoration: none; color: inherit; }
+  .ga-topbar .ga-brand { gap: 0.75rem; flex-shrink: 0; }
+  .ga-topbar .ga-brand-mark { width: 2.5rem; height: 2.5rem; border-radius: 0.75rem; box-shadow: 0 0.25rem 0 var(--coral-deep); }
+  .ga-topbar .ga-brand-name { font-size: 1.5rem; }
+
+  .ga-tb-nav { display: flex; gap: 0.3333rem; margin-left: 1.5rem; padding: 0.3333rem; border-radius: var(--r-pill); background: var(--card); box-shadow: var(--shadow-sm); flex-shrink: 0; }
+  .ga-tb-link { display: flex; align-items: center; gap: 0.5833rem; min-height: 2.25rem; padding: 0 1.25rem; border-radius: var(--r-pill); font-weight: 700; color: var(--ink-2); white-space: nowrap; }
+  .ga-tb-link:hover { color: var(--ink); background: var(--paper-2); }
+  .ga-tb-link[aria-current="page"] { background: var(--ink); color: #FFFFFF; }
+  .ga-tb-ask { color: var(--ink); padding-left: 0.5rem; }
+  .ga-tb-dot { width: 1.8333rem; height: 1.8333rem; border-radius: 50%; background: var(--coral); display: grid; place-items: center; box-shadow: 0 0.1667rem 0 var(--coral-deep); color: var(--ink); }
+  .ga-tb-kbd { font: 700 max(var(--text-min), 0.8333rem) var(--font-body); color: var(--ink-3); background: var(--paper-2); border-radius: 0.4167rem; padding: 0.0833rem 0.4167rem; box-shadow: inset 0 0 0 1px var(--tb-line); }
+  .ga-tb-link[aria-current="page"] .ga-tb-kbd { background: rgba(255, 255, 255, .14); color: rgba(255, 255, 255, .72); box-shadow: none; }
+  .ga-tb-sp { flex: 1; min-width: 0; }
+
+  .ga-tb-menu { position: relative; }
+  .ga-tb-sum { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 0.6667rem; min-height: 2.5rem; padding: 0.5rem 0.6667rem 0.5rem 0.5rem; border-radius: var(--r-pill); font-weight: 700; white-space: nowrap; }
+  .ga-tb-sum::-webkit-details-marker { display: none; }
+  .ga-tb-sum:hover { background: var(--card); box-shadow: var(--shadow-sm); }
+  .ga-tb-menu[open] > .ga-tb-sum { background: var(--card); box-shadow: var(--shadow-sm); }
+  .ga-tb-sum:focus-visible, .ga-tb-link:focus-visible, .ga-tb-sos:focus-visible, .ga-tb-item:focus-visible, .ga-tb-sw:focus-visible { outline: 0.1667rem solid var(--ink); outline-offset: 0.1667rem; }
+  .ga-tb-tdot { width: 2.1667rem; height: 2.1667rem; border-radius: 50%; background: var(--tb-sun-bg); color: var(--tb-sun-ink); display: grid; place-items: center; flex-shrink: 0; }
+  .ga-tb-pickdates { color: var(--ink-3); font-weight: 600; }
+  .ga-tb-chev { transform: rotate(90deg); color: var(--ink-3); flex-shrink: 0; }
+  .ga-tb-sum-me { padding: 0.25rem; }
+  .ga-tb-av { width: 2.6667rem; height: 2.6667rem; border-radius: 50%; display: grid; place-items: center; font: 800 max(var(--text-min), 1rem) var(--font-body); box-shadow: var(--shadow-sm); }
+
+  .ga-tb-sos { display: flex; align-items: center; gap: 0.5rem; min-height: 2.25rem; padding: 0 1rem; border-radius: var(--r-pill); background: var(--tb-sos-bg); color: var(--tb-sos-ink) !important; font-weight: 800; letter-spacing: .04em; font-size: max(var(--text-min), 1rem); flex-shrink: 0; }
+  .ga-tb-sos:hover { box-shadow: var(--shadow-sm); }
+
+  .ga-tb-pop { position: absolute; top: calc(100% + 0.5rem); right: 0; z-index: 60; min-width: 17rem; max-width: 24rem; padding: 0.5rem; border-radius: 1.5rem; background: var(--card); box-shadow: var(--shadow-lg); display: flex; flex-direction: column; gap: 0.25rem; }
+  .ga-tb-k { padding: 0.5rem 0.75rem 0.25rem; font-size: max(var(--text-min), 0.9167rem); font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+  .ga-tb-solo { margin: 0; padding: 0.5rem 0.75rem; color: var(--ink-2); }
+  .ga-tb-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.125rem; }
+  .ga-tb-sw { width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 0.0833rem; padding: 0.5833rem 0.75rem; border: 0; border-radius: 1rem; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+  .ga-tb-sw:hover { background: var(--paper-2); }
+  .ga-tb-sw[aria-current="true"] { background: var(--tb-sun-bg); }
+  .ga-tb-sw-name { font-weight: 800; }
+  .ga-tb-sw-dates { color: var(--ink-3); font-weight: 600; font-size: max(var(--text-min), 0.9167rem); }
+  .ga-tb-item { display: flex; align-items: center; gap: 0.6667rem; width: 100%; min-height: 2.5rem; padding: 0 0.75rem; border: 0; border-radius: 1rem; background: none; color: var(--ink); font: 700 max(var(--text-min), 1.0833rem) var(--font-body); text-align: left; cursor: pointer; }
+  .ga-tb-item:hover { background: var(--paper-2); }
+  .ga-tb-who { padding: 0.5rem 0.75rem 0; font-weight: 800; }
+  .ga-tb-mail { padding: 0 0.75rem 0.5rem; color: var(--ink-3); font-weight: 600; font-size: max(var(--text-min), 0.9167rem); overflow-wrap: anywhere; }
+  .ga-tb-account .ga-tb-pop { min-width: 15rem; }
+}
+
+@media (min-width: 1020px) and (max-width: 1300px) {
+  .ga-topbar { gap: 1.1667rem; padding: 0 1.8333rem; }
+  .ga-tb-nav { margin-left: 0.8333rem; }
+  .ga-tb-link { padding: 0 1rem; }
+}

@@ -18,7 +18,7 @@ from urllib.parse import quote
 from fasthtml.common import A, Div, H1, H2, Header, Link, Nav, P, Script, Span, Title
 from starlette.responses import RedirectResponse
 
-from gitaway import access, session as ses
+from gitaway import access, session as ses, topbar
 from gitaway.icons import icon
 from gitaway.layout import styles
 
@@ -63,6 +63,7 @@ def shell(active, *content, title="", head=(), scripts=(), **attrs):
     return (
         Title(f"GitAway · {title}" if title else "GitAway"),
         *styles(*head, *HEAD),
+        topbar.bar(),   # F-139: the signed-in laptop's one top bar; topbar.css shows it from 1020px up, so the phone and the tablet are as they were
         Div(A("Skip to content", href="#main", cls="ga-skip"), *content, A("Back to Today", href="/trip", cls="ph-back") if active != "today" else "", tabbar(active),
             data_theme="sunset", data_screen=active, cls="tp ph", **attrs),
         *[Script(src=s, defer=True) for s in scripts],

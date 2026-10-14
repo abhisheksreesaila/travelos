@@ -753,14 +753,14 @@ Captain 2026-10-10: "faster, could be a little liquidy". The zoom is 500 ms; the
 
 Brief: docs/briefs/web-trip.md (approved 2026-10-13) · Design: docs/design/web-trip.md (option A, docs/design/canvas/Web-Trip-v1.html). Desktop means a viewport ≥ 1020px; 721–1019 keeps today's layout; the phone (≤ 720) is unchanged and its tests stay green. Every screen is checked at 1440×900 and 1280×800 at 100% zoom: main content fits without page scrolling, no label is cut off, no sideways scroll (lessons 2026-09-30).
 
-## F-139 One top bar for the signed-in web [todo]
+## F-139 One top bar for the signed-in web [review]
 Brief: docs/briefs/web-trip.md · Design: docs/design/web-trip.md (Top bar) · Needs: none
-- [ ] every signed-in page on a desktop shows the same top bar: brand, Trip | Family | Ask, the trip picker, SOS and the avatar menu (with Sign out); the current section is marked
-- [ ] the trip canvas (day and week) shows it too, so there is a way to Family and Ask on a laptop
-- [ ] Trip opens the current trip's day (today during the trip, else day 1); the trip picker switches trips (existing `/trips/switch`); a family with no trip gets Start
-- [ ] the signed-out landing and sign-in keep their own header; booking pages keep their placeholders
-- [ ] on a phone nothing changes (the bottom tabs stay; no top bar)
-- [ ] a browser test presses each top-bar link and checks where it lands
+- [x] every signed-in page on a desktop shows the same top bar: brand, Trip | Family | Ask, the trip picker, SOS and the avatar menu (with Sign out); the current section is marked
+- [x] the trip canvas (day and week) shows it too, so there is a way to Family and Ask on a laptop
+- [x] Trip opens the current trip's day (today during the trip, else day 1); the trip picker switches trips (existing `/trips/switch`); a family with no trip gets Start
+- [x] the signed-out landing and sign-in keep their own header; booking pages keep their placeholders
+- [x] on a phone nothing changes (the bottom tabs stay; no top bar)
+- [x] a browser test presses each top-bar link and checks where it lands
 
 ## F-140 Desktop day: grid and docked panel [todo]
 Brief: docs/briefs/web-trip.md · Design: A2 · Needs: F-139
