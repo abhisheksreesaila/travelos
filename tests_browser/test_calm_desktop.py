@@ -175,3 +175,14 @@ def test_escape_closes_the_menu_and_only_the_menu_then_the_next_one_zooms_out(li
     expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
     page.keyboard.press("Escape")
     expect(page.locator(".cz-view[data-level=week]")).to_be_visible()
+
+
+def test_a_second_quick_escape_during_the_menus_fold_reaches_the_canvas(lively):
+    page = lively()
+    page.click(".ga-tb-account > summary")
+    expect(page.locator(".ga-tb-account")).to_have_attribute("open", "")
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(40)
+    page.keyboard.press("Escape")
+    expect(page.locator(".cz-view[data-level=week]")).to_be_visible()
+    assert page.evaluate("!document.querySelector('.ga-tb-account').open")

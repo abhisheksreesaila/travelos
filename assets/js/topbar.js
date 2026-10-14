@@ -46,13 +46,14 @@
   if (wide.addEventListener) wide.addEventListener('change', plainEyebrow);
   document.addEventListener('cz:swap', plainEyebrow, true);      // the canvas redraws the heading in place when the level changes (canvas_core.js): the new eyebrow is plain again too
 
+  document.addEventListener('keydown', function (e) {      // (capture: before the canvas's and the panel's own Esc)
+    if (e.key !== 'Escape') return;
+    var shut = false;
+    menus().forEach(function (d) { if (d.open && !d.hasAttribute('data-closing')) { fold(d, true); shut = true; } });      // (a menu already folding is not closed again: a second Esc reaches the canvas)
+    if (shut) { e.preventDefault(); e.stopImmediatePropagation(); }      // F-156: Esc closed the menu and nothing else: the canvas does not also zoom out
+  }, true);
+
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') {
-      var shut = false;
-      menus().forEach(function (d) { if (d.open) { fold(d, true); shut = true; } });
-      if (shut) { e.preventDefault(); e.stopImmediatePropagation(); }      // F-156: Esc closed the menu and nothing else: the canvas does not also zoom out
-      return;
-    }
     if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented) return;
     var t = e.target, tag = t && t.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (t && t.isContentEditable)) return;
@@ -60,5 +61,5 @@
     if (!ask || getComputedStyle(bar).display === 'none') return;           // no bar at this width (the phone and the tablet): "/" does nothing
     e.preventDefault();
     ask.click();
-  }, true);
+  });
 })();
