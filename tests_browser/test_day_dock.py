@@ -105,7 +105,7 @@ def test_during_the_trip_the_grid_opens_at_now_with_the_coral_line_and_the_panel
     shot(page, f"day-during-{viewport['width']}.png")
 
 
-def test_open_the_plan_opens_a_plain_plans_card(signed_in):
+def test_open_the_plan_opens_a_plain_plans_card_in_the_panel(signed_in):      # F-141: the card is the panel, no longer a sheet over the day
     page = signed_in(DESKTOP, path="/trip/canvas?day=2")
     cal.add_activity(person("ari"), day=2, start=10 * 60, end=11 * 60, title="Slow breakfast", kind="food")
     page.reload()
@@ -113,7 +113,8 @@ def test_open_the_plan_opens_a_plain_plans_card(signed_in):
     expect(up).to_contain_text("FIRST UP")
     expect(up).to_contain_text("Slow breakfast")
     page.locator("#cz-up-open").click()
-    expect(page.locator(".cz-card")).to_be_visible()
+    expect(page.locator("#cz-dock .cz-pp .cz-pp-t")).to_have_text("Slow breakfast")
+    assert page.locator(".cz-card").count() == 0 and page.locator("#cz-dock").get_attribute("data-mode") == "plan"
 
 
 def test_with_nothing_up_next_it_says_so_and_shows_ask(signed_in):

@@ -770,13 +770,13 @@ Brief: docs/briefs/web-trip.md · Design: A2 · Needs: F-139
 - [x] fits 1440×900 and 1280×800 at 100% zoom with no page scroll
 - [x] the day chips and Day | Week move between levels with the existing liquid zoom
 
-## F-141 A clicked plan opens in the panel [todo]
+## F-141 A clicked plan opens in the panel [review]
 Brief: docs/briefs/web-trip.md · Design: A1 · Needs: F-140
-- [ ] clicking a plan rings it in coral and opens its card in the panel (the same card as the phone: who, note, steps, the plan's chat and compose) instead of a sheet over the day
-- [ ] steps tick with one click, as on the phone; Add a step and Set aside work
-- [ ] the panel shows the plan's outline at once and fills in (cards fetched ahead keep working)
-- [ ] Esc or the close button returns the panel to Up next; the address keeps the open plan, so a reload shows it again
-- [ ] the panel's change uses GA.motion and the --motion-* tokens only
+- [x] clicking a plan rings it in coral and opens its card in the panel (the same card as the phone: who, note, steps, the plan's chat and compose) instead of a sheet over the day
+- [x] steps tick with one click, as on the phone; Add a step and Set aside work
+- [x] the panel shows the plan's outline at once and fills in (cards fetched ahead keep working)
+- [x] Esc or the close button returns the panel to Up next; the address keeps the open plan, so a reload shows it again
+- [x] the panel's change uses GA.motion and the --motion-* tokens only
 
 ## F-142 Ask in the panel [todo]
 Brief: docs/briefs/web-trip.md · Design: A2 · Needs: F-140
