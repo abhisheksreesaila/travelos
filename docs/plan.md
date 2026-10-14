@@ -842,5 +842,5 @@ Captain, 2026-10-14: "on a laptop, drag a plan onto a day chip to move it, absol
 - [ ] on a desktop, dragging a plan from the grid onto one of the day chips in the ink header moves it to that day at the same time; the chip shows it will take the drop while hovered
 - [ ] the move saves through the canvas's existing write path, shows the existing toast with Undo, and the plan disappears from this day in place
 - [ ] dropping back on the grid, on the current day's chip, or pressing Esc mid-drag leaves the plan where it was
-- [ ] a plan that would clash or fall outside the trip is refused with a clear toast (no silent change)
+- [ ] overlapping plans on the target day sit side by side as they do today (lanes); nothing is changed silently
 - [ ] viewers can't drag; the phone's touch moves are unchanged; browser tests drive the drag with a real mouse at 1440 and 1280
