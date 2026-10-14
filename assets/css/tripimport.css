@@ -64,3 +64,18 @@
 .ti-link { display: inline-flex; align-items: center; min-height: 2.75rem; font-weight: 800; color: var(--ink-2); text-decoration: underline; text-underline-offset: 0.25rem; }
 .ti-danger { color: var(--coral-deep); }
 .ti-match { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.75rem; border-radius: var(--r-md); background: var(--sun-tint); }
+
+/* F-146: the trip details in the web look: a heading row (title and what you can do on the left, the buttons on the right), then the cards in columns so a whole booking fits a laptop
+   screen. Only the details page (.ti-detail-page); the preview keeps its own layout. Below 1020px it stays the single column it was. */
+@media (min-width: 1020px) {
+  .ti-detail-page { width: min(100rem, 100% - 4.6667rem); padding-top: 1.25rem; gap: 1.25rem; }
+  .ti-detail-page .ti-head { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.25rem 1.5rem; }
+  .ti-detail-page .ti-title { flex: 1 1 100%; font-size: 2.6667rem; }
+  .ti-detail-page .ti-lede { flex: 1 1 24rem; }
+  .ti-detail-page .ti-actions { flex: 0 0 auto; }
+  .ti-detail-page .ti-wide { max-width: none; display: block; columns: 3; column-gap: 1rem; }
+  .ti-detail-page .ti-sec { break-inside: avoid; margin-bottom: 1rem; padding: 1.25rem 1.5rem; }
+  .ti-detail-page .ti-item { background: var(--paper-2); }
+  .ti-detail-page .ti-chip { background: var(--paper-2); }
+}
+@media (min-width: 1020px) and (max-width: 1299px) { .ti-detail-page .ti-wide { columns: 2; } }

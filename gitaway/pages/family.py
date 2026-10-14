@@ -137,21 +137,22 @@ def family_page(request, session, error="", status=200, email="", role="editor",
              Button("Create invite link", type="submit", cls="btn btn-primary fam-go"), action="/family/invite", method="post", id="fam-invite-form", cls="fam-inviteform"),
         aria_labelledby="fam-invite-h", id="invite", cls="fam-sec") if my_role == "admin" else ""
     waiting = Section(H2("Waiting to join", id="fam-wait-h"), Ul(*[_invite_row(i, request) for i in pending], cls="fam-list", id="fam-pending"),
-                      aria_labelledby="fam-wait-h", cls="fam-sec") if pending else ""
+                      aria_labelledby="fam-wait-h", id="fam-waiting", cls="fam-sec") if pending else ""
     alone = Section(H2("Just you so far", id="fam-alone-h"),
                     P("Trips are better with company. Invite the people you travel with and they can add plans, leave notes and see the same calendar."),
                     A("Invite someone", href="#invite", cls="btn btn-primary btn-sm"),  # the only member is the admin
                     aria_labelledby="fam-alone-h", id="fam-alone", cls="fam-sec fam-alone") if len(crew) == 1 and not pending else ""
     note = P("Only a family admin can invite people or change who is in the family.", cls="fam-sub", id="fam-note") if my_role != "admin" else ""
+    people = Section(H2("Who is in", id="fam-members-h"), Ul(*[_member_row(m, me, my_role, tid) for m in crew], cls="fam-list", id="fam-members"),
+                     note, aria_labelledby="fam-members-h", cls="fam-sec fam-people")
+    # F-146: on a laptop the page is two columns (people and invitations on the left, my own settings on the right); the wrappers are display: contents
+    # below 1020px and `order` keeps the phone's single column in the order it always had.
     out = page("Your family", Div(
-        H1("Your family"),
-        P(f"Signed in as {user['email']}.", id="fam-who"),
-        P(f"Role: {my_role}.", id="fam-role"),
-        P(f"{members.family_label(tid)} · family space {tid}", id="fam-tenant", cls="fam-small"),
-        switcher,
-        Section(H2("Who is in", id="fam-members-h"), Ul(*[_member_row(m, me, my_role, tid) for m in crew], cls="fam-list", id="fam-members"),
-                note, aria_labelledby="fam-members-h", cls="fam-sec"),
-        _phone_section(session, phone_error, phone_typed), _food_section(session, my_role in ("admin", "editor")), _morning_section(session), passkeys_ui.family_section(request, session), alone, waiting, invite_form,
+        Div(H1("Your family"),
+            Div(P(f"Signed in as {user['email']}.", id="fam-who"), P(f"Role: {my_role}.", id="fam-role"), P(f"{members.family_label(tid)} · family space {tid}", id="fam-tenant", cls="fam-small"), cls="fam-ident"),
+            cls="fam-head"),
+        Div(people, alone, waiting, invite_form, cls="fam-col fam-col-people"),
+        Div(switcher, _phone_section(session, phone_error, phone_typed), _food_section(session, my_role in ("admin", "editor")), _morning_section(session), passkeys_ui.family_section(request, session), cls="fam-col fam-col-me"),
         cls="fam",
     ), head=HEAD)
     return out if status == 200 else Response(to_xml(out), status_code=status, media_type="text/html")
