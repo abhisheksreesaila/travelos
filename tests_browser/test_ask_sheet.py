@@ -12,7 +12,7 @@ from playwright.sync_api import expect
 from gitaway import ai
 from tests import canvas_samples as samples
 from tests.test_speak import answer, op
-from tests_browser.helpers import PHONE
+from tests_browser.helpers import PHONE, seed_plan
 from tests_browser.test_ask_box import FAKE_MIC, HEARD, NO_SPEECH
 from tests_browser.test_phone_polish import SMALL_CONTROLS, SMALL_TEXT
 
@@ -61,7 +61,7 @@ def phone(browser, base_url):
         if seed:
             ctx.request.post(f"{base_url}/pay", form={"f": "f1", "h": "h1", "c": "c1"}, max_redirects=0)
             for id_, start, end, title, kind in (("a1", "12:00", "13:00", "Lunch", "food"), ("a2", "15:00", "17:00", "Griffith Observatory", "culture")):
-                ctx.request.post(f"{base_url}/calendar/activities", form={"id": id_, "day": str(DAY), "start": start, "end": end, "title": title, "kind": kind}, max_redirects=0)
+                seed_plan(ctx.request, base_url, **{"id": id_, "day": str(DAY), "start": start, "end": end, "title": title, "kind": kind})
         return ctx.new_page()
 
     yield make

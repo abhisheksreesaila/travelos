@@ -7,7 +7,7 @@ import uuid
 import pytest
 from playwright.sync_api import expect
 
-from tests_browser.helpers import PHONE
+from tests_browser.helpers import PHONE, seed_plan
 
 NARROW = {"width": 320, "height": 640}
 
@@ -66,7 +66,7 @@ def test_a_message_posted_in_one_browser_appears_in_the_other_within_the_poll_in
 
 def test_a_plan_change_shows_up_as_a_card_for_the_other_browser(pair, base_url):
     ari, mate = pair()
-    ari.context.request.post(f"{base_url}/calendar/activities", form={"id": "a1", "day": "1", "start": "10:00", "end": "11:00", "title": "Griffith Observatory", "kind": "culture"}, max_redirects=0)
+    seed_plan(ari.context.request, base_url, **{"id": "a1", "day": "1", "start": "10:00", "end": "11:00", "title": "Griffith Observatory", "kind": "culture"})
     card = mate.locator("#ft-thread .ft-sys")
     expect(card).to_contain_text("added Griffith Observatory on", timeout=9000)
     expect(card).to_contain_text("Plan change")

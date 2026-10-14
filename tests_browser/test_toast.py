@@ -371,18 +371,3 @@ def test_the_toast_is_over_no_control_on_family_in_its_chat_and_photos_view(canv
         assert rect(page, ".ga-toast")["y"] >= rect(page, ".fam-bar")["b"] - 0.5
         page.evaluate("GA.hideToast(true)")
 
-
-def test_the_toast_is_over_no_control_on_the_calendar_page(canvas_page, vp, base_url):
-    page = canvas_page(viewport=vp)
-    page.goto(f"{base_url}/calendar")
-    page.wait_for_selector("#cal-import")
-    page.wait_for_load_state("networkidle")
-    page.wait_for_timeout(600)                                                               # the page's own script has laid it out
-    say(page, undo=True)
-    settled(page)
-    top = rect(page, ".ga-toast")
-    assert top["y"] >= rect(page, ".cal-bar")["b"] - 0.5                                    # under the whole top bar, "Import a booked trip" and the rest of its buttons
-    hit = page.evaluate("""() => { const t = document.querySelector('.ga-toast').getBoundingClientRect();
-      return [...document.querySelectorAll('.cal-bar a, .cal-bar button, .cal-bar input')].filter(b => { if (b.closest('.cal-trips-pop')) return false; const r = b.getBoundingClientRect();
-        return r.width && r.height && !(r.right <= t.left || r.left >= t.right || r.bottom <= t.top || r.top >= t.bottom); }).map(b => b.textContent.trim()); }""")
-    assert hit == []                                                                         # (the page below the bar is a long list of controls: the pill floats over its top)

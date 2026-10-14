@@ -88,45 +88,18 @@ def test_a_bad_phone_keeps_what_was_typed_and_says_why(signed_in):
 
 
 @pytest.mark.parametrize("viewport", [DESKTOP, PHONE], ids=["desktop", "phone"])
-def test_a_scheduled_ride_shows_on_the_booked_trip_and_its_calendar(signed_in, viewport):
+def test_a_scheduled_ride_shows_on_the_booked_trip_and_its_day(signed_in, viewport):
     page = signed_in(viewport)
     schedule_arrival(page)
     page.goto(page.url.split("/rides")[0] + "/plan/pay?" + PICKS)
     page.click("#pay-go")
     expect(page.locator("#pay-ride-box")).to_contain_text("UberX · LAX → The Tidewater")
     page.click("#pay-cal")
-    page.wait_for_selector(".cal-whole")
-    expect(page.locator(".cal-w-ride", has_text="Uber · UberX · LAX → The Tidewater")).to_be_visible()
-    page.click("text=Day by day")
-    page.wait_for_selector("#cal-scroll")
-    block = page.locator('.cal-ride[data-block="r1"]')
-    expect(block).to_have_attribute("data-start", str(9 * 60 + 32 + 30))
+    page.wait_for_url("**/trip/canvas*")
+    page.goto(page.url.split("/trip")[0] + "/trip?day=0")
+    block = page.locator('a[href="/rides/r1"]')
+    expect(block).to_contain_text("Uber · UberX · LAX → The Tidewater")
     no_sideways_scroll(page)
-    block.click()  # the block opens the ride
+    block.click()  # the item opens the ride
     expect(page.locator("#rd-status")).to_have_attribute("data-status", "scheduled")
     assert page.url.endswith("/rides/r1")
-
-
-def test_a_departure_ride_is_drawn_over_check_out_at_a_readable_width(signed_in):
-    page = signed_in(DESKTOP)
-    page.click('[data-schedule="depart"]')
-    page.click('[data-choose="x"]')
-    page.fill("[name=first]", "Ari")
-    page.fill("[name=last]", "Rivera")
-    page.fill("[name=phone]", "(310) 555-0123")
-    page.click("#rd-go")
-    expect(page.locator("#rd-status")).to_have_attribute("data-status", "scheduled")
-    page.goto(page.url.split("/rides")[0] + "/plan/pay?" + PICKS)
-    page.click("#pay-go")
-    page.click("#pay-cal")
-    page.click("text=Day by day")
-    page.wait_for_selector("#cal-scroll")
-    ride = page.locator('.cal-ride[data-block="r1"]')
-    checkout = page.locator('.cal-booked[data-block="b-out2"]')
-    rb, cb = ride.bounding_box(), checkout.bounding_box()
-    assert rb["width"] >= 120
-    assert rb["width"] >= cb["width"] - 8  # full width, not a sliver beside check out
-    assert rb["y"] < cb["y"] + cb["height"] and cb["y"] < rb["y"] + rb["height"]  # it does overlap check out in time
-    assert ride.get_attribute("aria-label").startswith("Simulated ride: Uber · UberX · The Tidewater → LAX")
-    ride.hover()
-    expect(ride).to_contain_text("The Tidewater → LAX")

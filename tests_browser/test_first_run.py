@@ -29,7 +29,7 @@ def no_sideways_scroll(page):
 
 
 @pytest.mark.parametrize("viewport", [DESKTOP, PHONE], ids=["desktop", "phone"])
-@pytest.mark.parametrize("path", ["/start", "/calendar", "/forks"])
+@pytest.mark.parametrize("path", ["/start", "/forks"])
 def test_the_three_ways_in_are_visible_and_fit(new_family, base_url, viewport, path):
     page = new_family(viewport)
     page.goto(f"{base_url}{path}")

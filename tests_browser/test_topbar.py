@@ -40,7 +40,7 @@ BAR = ".ga-topbar"
 
 
 @pytest.mark.parametrize("viewport", [DESKTOP, LAPTOP], ids=["1440", "1280"])
-@pytest.mark.parametrize("path", ["/trip/canvas?day=0", "/trip/canvas", "/family", "/trip/details", "/trip/ask", "/trip/family", "/calendar"])
+@pytest.mark.parametrize("path", ["/trip/canvas?day=0", "/trip/canvas", "/family", "/trip/details", "/trip/ask", "/trip/family"])
 def test_every_signed_in_page_shows_the_same_bar(signed_in, viewport, path):
     page = signed_in(viewport, path=path, imported=path == "/trip/details")     # /trip/details is the imported trip's page
     assert "No imported trip" not in page.content()
@@ -243,7 +243,7 @@ def test_the_bar_does_not_make_a_phone_shell_page_taller_than_it_needs(signed_in
 
 
 @pytest.mark.parametrize("width", [1440, 1000, 390])
-@pytest.mark.parametrize("path", ["/trip/canvas", "/family", "/calendar", "/trip/ask"])
+@pytest.mark.parametrize("path", ["/trip/canvas", "/family", "/trip/ask"])
 def test_exactly_one_skip_link_is_there_at_each_width(signed_in, width, path):
     page = signed_in({"width": width, "height": 900}, path=path)
     shown = page.evaluate("[...document.querySelectorAll('.ga-skip')].filter(a => a.getClientRects().length > 0).length")

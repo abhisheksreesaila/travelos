@@ -6,7 +6,7 @@ A family is an fh-saas tenant (ADR-0004). Everything a family plans together liv
 |---|---|
 | `gitaway/familydb.py` | The tables (`FAMILY_TABLES`), how a database is opened, the small SQL helpers. Screens never import it. |
 | `gitaway/session.py` | `family(session)`, `booking`, `book`, `trips`, `switch_trip`, `friends`, `add_friend`, `remembered_plan`. |
-| `gitaway/tripcal.py` | The calendar: `activities`, `add_activity`, `notes`, `add_note`, `delete_activity`, `undo_delete`, `live_add`, `apply_plans`, `remove_plans`. |
+| `gitaway/tripcal.py` | The calendar: `activities`, `add_activity`, `notes`, `add_note`, `delete_activity`, `undo_delete`, `apply_plans`, `remove_plans`. |
 | `gitaway/rides.py` | `list_rides`, `get_ride`, `save_ride`, `cancel_ride`, `step_ride`: the only code that touches the `rides` table. |
 | `gitaway/familydb_social.py` | The forks and saves tables (F-041); `familydb` appends `SOCIAL_TABLES` to `FAMILY_TABLES`. |
 | `gitaway/familydb_import.py` | The `trip_imports` table (F-042): one validated template per imported trip, confirmation numbers included; `familydb.booking_for_trip` reads it back as the booking dict (under `"imported"`). |
@@ -46,7 +46,7 @@ The write lock and the host-database lock (`gitaway/hostdb.py`) are per process.
 
 ## Which trip a request works on
 
-Every calendar, voice, forks-apply and ride form carries a hidden `trip` (the trip the page was drawn for), and `calendar.js` sends it with its moves, deletes and live adds. `session.family` resolves it against the family's own trips; only a plain GET with no `trip` uses the person's open trip (`members.trip_id`). A write naming a trip the family does not have changes nothing, so a stale tab cannot write into the trip someone else opened since.
+Every trip, forks-apply and ride form carries a hidden `trip` (the trip the page was drawn for), and the canvas scripts send it with their moves and deletes. `session.family` resolves it against the family's own trips; only a plain GET with no `trip` uses the person's open trip (`members.trip_id`). A write naming a trip the family does not have changes nothing, so a stale tab cannot write into the trip someone else opened since.
 
 ## Limits (a demo family stays small)
 

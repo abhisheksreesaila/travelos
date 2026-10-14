@@ -33,7 +33,7 @@ def test_pressing_sign_out_reaches_the_landing_fast_and_forgets_the_family(brows
         controlled(page, base_url)
         page.goto(f"{base_url}/calendar")
         assert page.evaluate(PAGE_CACHES), "the family's pages were saved"
-        page.goto(f"{base_url}/community")  # a page with the site header (the calendar has its own)
+        page.goto(f"{base_url}/community")  # a page with the site header
         page.evaluate("localStorage.setItem('ga-test', 'previous family')")
         button = sign_out_button(page)
         start = time.perf_counter()

@@ -21,7 +21,7 @@ To use real Google sign-in instead of the dev sign-in, follow `docs/setup.md` â†
    - Quote confirmation numbers if you like, though they're kept exactly as typed either way.
    - Use `hotels:` for two hotels.
    - Delete `car:` if you'll use rides.
-4. Open **Import a trip** (`/trips/import`), paste the block, press **Preview**, check it, then press **Save**. The calendar opens on your trip. Your bookings sit on the calendar locked (with a lock), and the trip header says "Booked elsewhere Â· Expedia".
+4. Open **Import a trip** (`/trips/import`), paste the block, press **Preview**, check it, then press **Save**. The trip opens on its first day. Your bookings sit on the days as booked lines, and the trip says "Booked elsewhere Â· Expedia".
 5. Made a mistake? Fix the template and import it again. The preview offers **Replace the existing trip**, and your plans, notes and rides are kept.
 
 ## 3. Invite your family
@@ -39,7 +39,7 @@ To use real Google sign-in instead of the dev sign-in, follow `docs/setup.md` â†
 - **Calendar:** opens on the whole-trip view. **Day by day** shows the hour grid, where you can add, move and resize plans. Everyone sees everyone's changes.
 - **Talk to plan:** a scripted voice demo fills free slots, using the same preview and apply steps as forks.
 - **Your forks:** fork or save any trip from **Community trips**, then apply it into your empty slots.
-- **Rides:** with no car, the calendar and rides card offer **Schedule an Uber** for landing and the flight home. It's simulated, follows Uber's real steps, and appears on the calendar.
+- **Rides:** with no car, the day lists and the rides card offer **Schedule an Uber** for landing and the flight home. It's simulated, follows Uber's real steps, and appears on the day.
 - **Share:** publishes a snapshot of the trip to the hub (no notes, confirmations or prices). **Update shared page** refreshes it, and **Unpublish** takes it down.
 
 ## 5. On your iPhone

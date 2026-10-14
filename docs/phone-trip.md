@@ -11,7 +11,7 @@
 ## Who gets it
 
 - `/trip` opens for anyone signed in with a trip (signed out goes to sign-in, no trip goes to `/start`).
-- A **plain** `/calendar` (no query) on a phone browser (`tripday.is_phone`: iPhone, Android phone; not iPad) redirects to `/trip`. `/calendar?view=whole` or any other query is never redirected, so "Open the full calendar" (on the trip view) and every in-calendar link keep working. Desktops and tablets keep the calendar.
+- `/calendar` is only an old address (F-147): on every screen size it redirects to the trip's day (`/trip/canvas?day=N`), and "Open the whole trip" (on this page) opens the week. See `docs/trip-canvas.md` "Retired: the old calendar".
 - The manifest's `start_url` is `/trip`; the "Continue" card on `/start` links to `/trip` on phones.
 
 ## Today

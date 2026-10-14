@@ -54,17 +54,17 @@ def goes_offline_ok(page, url):
     return page.locator("body").inner_text()
 
 
-def test_a_booked_trip_calendar_is_served_offline_and_an_unvisited_page_gets_the_offline_page(ctxs, base_url):
+def test_a_booked_trips_day_is_served_offline_and_an_unvisited_page_gets_the_offline_page(ctxs, base_url):
     ctx = ctxs()
     sign_in(ctx, base_url)
     book_trip(ctx, base_url)
     page = ctx.new_page()
     controlled(page, base_url)
-    page.goto(f"{base_url}/calendar")
+    page.goto(f"{base_url}/trip/canvas?day=0")
     online_text = page.locator("#main").inner_text()
     assert "Los Angeles" in online_text or "LA" in online_text
     ctx.set_offline(True)
-    page.goto(f"{base_url}/calendar")
+    page.goto(f"{base_url}/trip/canvas?day=0")
     assert page.locator("#main").inner_text() == online_text
     page.goto(f"{base_url}/never-visited")
     assert "offline" in page.locator("body").inner_text().lower()
@@ -124,12 +124,12 @@ def test_signing_out_leaves_no_private_page_offline(ctxs, base_url):
     book_trip(ctx, base_url)
     page = ctx.new_page()
     controlled(page, base_url)
-    page.goto(f"{base_url}/calendar")
+    page.goto(f"{base_url}/trip/canvas?day=0")
     assert page.evaluate(PAGE_CACHES)
     page.evaluate("fetch('/signout', {method: 'POST'}).then(r => r.status)")
     assert page.evaluate("caches.keys().then(k => k.length)") == 0
     ctx.set_offline(True)
-    text = goes_offline_ok(page, f"{base_url}/calendar")
+    text = goes_offline_ok(page, f"{base_url}/trip/canvas?day=0")
     assert text is None or "Ari" not in text and "Los Angeles" not in text
 
 
@@ -139,7 +139,7 @@ def test_a_different_person_never_sees_the_previous_persons_saved_pages(ctxs, ba
     book_trip(ctx, base_url)
     page = ctx.new_page()
     controlled(page, base_url)
-    page.goto(f"{base_url}/calendar")
+    page.goto(f"{base_url}/trip/canvas?day=0")
     ari_caches = page.evaluate(PAGE_CACHES)
     assert len(ari_caches) == 1
     sign_in(ctx, base_url, "sam")
@@ -148,7 +148,7 @@ def test_a_different_person_never_sees_the_previous_persons_saved_pages(ctxs, ba
     sam_caches = page.evaluate(PAGE_CACHES)
     assert len(sam_caches) == 1 and sam_caches != ari_caches
     ctx.set_offline(True)
-    page.goto(f"{base_url}/calendar")  # Sam never opened it: the offline page, not Ari's trip
+    page.goto(f"{base_url}/trip/canvas?day=0")  # Sam never opened it: the offline page, not Ari's trip
     body = page.locator("body").inner_text().lower()
     assert "offline" in body
 

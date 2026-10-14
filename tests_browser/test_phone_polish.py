@@ -29,7 +29,7 @@ def phone_page(browser, base_url):
     ctx.close()
 
 
-@pytest.mark.parametrize("path", ["/plan", "/calendar", "/calendar?demo=long"])
+@pytest.mark.parametrize("path", ["/plan", "/calendar"])
 def test_phone_has_no_small_text_small_controls_or_sideways_scroll(phone_page, base_url, path):
     phone_page.goto(base_url + path)
     phone_page.wait_for_load_state("networkidle")

@@ -1,4 +1,4 @@
-"""F-042: import a trip in a real (headless) browser: paste the template, preview, save, and see the booked-elsewhere blocks on the calendar.
+"""F-042: import a trip in a real (headless) browser: paste the template, preview, save, and see the booked-elsewhere lines on the days.
 Waits are on selectors and state, never on sleeps."""
 import re
 from pathlib import Path
@@ -33,7 +33,7 @@ def no_sideways_scroll(page):
 
 
 @pytest.mark.parametrize("viewport", [DESKTOP, PHONE], ids=["desktop", "phone"])
-def test_paste_preview_save_and_see_it_on_the_calendar(signed_in, base_url, viewport):
+def test_paste_preview_save_and_see_it_on_its_days(signed_in, base_url, viewport):
     page = signed_in(viewport)
     page.goto(f"{base_url}/trips/import")
     expect(page.locator("#ti-template")).to_have_attribute("href", "/trips/import/template")
@@ -43,16 +43,14 @@ def test_paste_preview_save_and_see_it_on_the_calendar(signed_in, base_url, view
     expect(page.locator("#ti-hotel")).to_contain_text("123 Ocean Ave, Santa Monica")
     no_sideways_scroll(page)
     page.click("#ti-save")
-    page.wait_for_url("**/calendar")
-    expect(page.locator("h1")).to_contain_text("LA with the kids")
-    expect(page.locator(".cal-tripline")).to_contain_text("booked elsewhere · Expedia")
-    page.goto(f"{base_url}/calendar?view=days")
-    out = page.locator('[data-block="b-out"]')
-    expect(out).to_contain_text("Alaska Airlines AS 1234")
-    expect(page.locator('[data-block="b-in"]')).to_have_count(1)
+    page.wait_for_url("**/trip/canvas*")
+    expect(page.locator("#cz")).to_be_visible()
+    page.goto(f"{base_url}/trip/canvas?day=0")
+    expect(page.locator('a[href*="booked=b-out"]').first).to_contain_text("Alaska Airlines AS 1234")
+    expect(page.locator('a[href*="booked=b-in"]').first).to_be_attached()
     no_sideways_scroll(page)
-    page.goto(f"{base_url}/calendar?view=days&detail=b-out")
-    expect(page.locator("#cal-confirmation")).to_have_text("ABCDEF")
+    page.goto(f"{base_url}/trip/canvas?day=0&booked=b-out")
+    expect(page.locator("#cz")).to_contain_text("ABCDEF")
 
 
 def test_a_mistake_shows_a_friendly_line_specific_error_and_keeps_the_text(signed_in, base_url):
@@ -72,18 +70,9 @@ def test_late_events_fit_inside_the_grid(signed_in, base_url):
     page.fill("#ti-text", late)
     page.click("#ti-preview")
     page.click("#ti-save")
-    page.wait_for_url("**/calendar")
-    page.goto(f"{base_url}/calendar?view=days")
-    expect(page.locator("#cal-app")).to_have_attribute("data-grid-end", "1440")
-    expect(page.locator(".cal-hour").last).to_have_text("11 PM")
-    for block_id, day in (("b-in", 0), ("b-back", 4)):
-        box = page.locator(f'[data-block="{block_id}"]').bounding_box()
-        body = page.locator(f'.cal-body[data-day="{day}"]').bounding_box()
-        assert box["y"] >= body["y"] - 1 and box["y"] + box["height"] <= body["y"] + body["height"] + 1, block_id
-    root = page.evaluate("parseFloat(getComputedStyle(document.documentElement).fontSize)")
-    flight = page.locator('[data-block="b-back"]')
-    assert flight.bounding_box()["height"] >= 1.2 * root  # about 30 minutes tall (1.25rem), not a line
-    expect(flight.locator(".cal-time")).to_have_text("11:50 PM")  # the label keeps the true time
+    page.wait_for_url("**/trip/canvas*")
+    page.goto(f"{base_url}/trip/canvas?day=4")
+    expect(page.locator('a[href*="booked=b-back"]').first).to_be_attached()     # the flight at 11:50 PM is a line on the last day
     no_sideways_scroll(page)
 
 
@@ -157,12 +146,13 @@ def test_import_a_booked_trip_is_a_visible_button_where_trips_start(signed_in, b
     page.fill("#ti-text", TEMPLATE)
     page.click("#ti-preview")
     page.click("#ti-save")
-    page.wait_for_url("**/calendar")
-    expect(page.locator("#cal-import")).to_be_visible()
+    page.wait_for_url("**/trip/canvas*")
     no_sideways_scroll(page)
-    page.click("#cal-import")
-    page.wait_for_url("**/trips/import")
-    expect(page.locator("#ti-text")).to_be_visible()
+    if viewport["width"] >= 1020:        # the top bar's trip menu offers the next import
+        page.click(".ga-tb-picker summary")
+        page.click('.ga-tb-pop-trip a[href="/trips/import"]')
+        page.wait_for_url("**/trips/import")
+        expect(page.locator("#ti-text")).to_be_visible()
 
 
 def test_rename_a_placeholder_kid_in_the_builder_and_see_it_in_the_preview(signed_in, base_url):

@@ -43,7 +43,7 @@ A person in two families gets a switcher on `/family` (`POST /family/switch`). `
 
 - It reads the person's role **from the membership row**, never the cookie. A removed member's next request moves them to another family of theirs (or signs them out if they have none); a changed role takes effect on the next request and the cookie's `tenant_role` is brought into step.
 - Any request that is not a read (GET, HEAD, OPTIONS) needs the **editor** role, unless its path is on `OPEN_POSTS` / `OPEN_PREFIXES` (sign in and out, switching trip, switching family, creator drafts, using an invite link) or on `ADMIN_POSTS` (invite, revoke, change role, remove: **admin**).
-- A refused person gets a 403 with a friendly message. A refused calendar write returns the calendar with the message on it (its soft navigation swaps that page in).
+- A refused person gets a 403 with a friendly message. A refused write returns the plain "Not allowed" page with the message and a way back to the trip.
 
 A new write route is therefore safe by default. `tests/test_roles.py` walks every POST route in the app as a viewer and fails if one is neither refused nor on the expected open list, so opening a route takes two deliberate edits.
 
@@ -57,11 +57,11 @@ Fh-saas's `require_role` is not used: with `setup_tenant_db=False` the beforewar
 
 `layout.cache_key` (the `ga-user` meta the service worker files saved pages under) hashes the person **and the active family**, so switching family or being removed changes the key and the other family's saved pages are dropped.
 
-## The calendar
+## The trip screens
 
-- Avatars and "planning with you" are the family's real members (`members.crew`), on every trip.
-- The pretend friends (the Mom / Sam quick picks) and Mom's scripted add (F-020) only exist on **demo trips** (`trips.source = 'demo'`, `session.Family.is_demo`). On any other trip the Invite button goes to `/family#invite`, and `POST /calendar/friends` is refused with a message.
-- Viewers get a banner, no add/edit/invite/voice dialogs, no Share button, and cannot drag blocks (`cal-readonly`).
+- The Family page lists the family's real members (`members.crew`) and their roles; invitations are `/family#invite` (`/invite` redirects there).
+- Viewers see the trip but get no write moves (the canvas hides them; `access.py` refuses the writes) and no Share button.
+- The pretend friends and Mom's scripted add (F-020) were retired with the old calendar (F-147); only the stored friends remain readable, for notes they wrote.
 
 ## Known limits
 

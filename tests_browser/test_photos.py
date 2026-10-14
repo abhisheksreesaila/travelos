@@ -5,7 +5,7 @@ import pytest
 from playwright.sync_api import expect
 
 from tests.photo_files import image
-from tests_browser.helpers import PHONE
+from tests_browser.helpers import PHONE, seed_plan
 
 NARROW = {"width": 320, "height": 640}
 
@@ -21,7 +21,7 @@ def family(browser, base_url, tmp_path):
         contexts.append(ctx)
         ctx.request.post(f"{base_url}/signin", form={"email": "ari.rivera@example.com", "next": "/", "intent": "save"}, max_redirects=0)
         ctx.request.post(f"{base_url}/pay", form={"f": "f1", "h": "h1", "c": "c1"}, max_redirects=0)
-        ctx.request.post(f"{base_url}/calendar/activities", form={"id": "a1", "day": "1", "start": "10:00", "end": "11:30", "title": "Venice Canals stroll", "kind": "outdoors"}, max_redirects=0)
+        seed_plan(ctx.request, base_url, **{"id": "a1", "day": "1", "start": "10:00", "end": "11:30", "title": "Venice Canals stroll", "kind": "outdoors"})
         page = ctx.new_page()
         page.goto(f"{base_url}/trip/family")
         files = {}

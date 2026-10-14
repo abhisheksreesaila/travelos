@@ -62,10 +62,7 @@ def test_invite_then_join_as_a_second_dev_user_and_see_the_trip(contexts, base_u
     other.click("#join-signin")
     other.fill("#si-email", sam)
     other.click("#si-dev-form button[type=submit]")
-    other.wait_for_url("**/calendar")
-    other.goto(f"{base_url}/calendar?view=days")
-    expect(other.locator("h1")).to_contain_text("LA with the kids")
-    expect(other.locator(".cal-presence")).to_contain_text("Ari Rivera is planning with you")
+    other.wait_for_url("**/trip/canvas*")
     other.goto(f"{base_url}/family")
     expect(other.locator("#fam-role")).to_contain_text("editor")
     expect(other.locator(".fam-member")).to_have_count(2)
@@ -76,20 +73,21 @@ def test_invite_then_join_as_a_second_dev_user_and_see_the_trip(contexts, base_u
     expect(page.locator("#fam-pending")).to_have_count(0)
 
 
-def test_a_viewer_can_look_but_the_calendar_shows_why_they_cannot_change_it(contexts, base_url):
+def test_a_viewer_can_look_but_cannot_change_the_trip(contexts, base_url):
     page = owner_page(contexts, base_url, DESKTOP)
     vi = f"vi.ewer@{uuid.uuid4().hex[:8]}.example.com"
     invite_from_page(page, vi, "viewer")
     ctx = contexts(DESKTOP)
     ctx.request.post(f"{base_url}/signin", form={"email": vi, "next": "/", "intent": "save"}, max_redirects=0)
     other = ctx.new_page()
-    other.goto(f"{base_url}/calendar?view=days")
-    expect(other.locator("#cal-viewer")).to_be_visible()
-    expect(other.locator("#cal-invite-btn")).to_have_count(0)
-    expect(other.locator(".cal-dayadd").first).to_be_hidden()  # no way to add: the plus, the empty-day card and the note box are gone
-    expect(other.locator(".cal-composer")).to_be_hidden()
-    # a write posted from the page is refused with the message on the calendar, and nothing is added
-    other.evaluate("""async () => { await fetch('/calendar/activities', {method: 'POST', body: new URLSearchParams({id: 'a1', day: '1', start: '10:00', end: '11:00', title: 'Sneaky', kind: 'fun'})}); }""")
+    other.goto(f"{base_url}/trip?tab=today")
+    expect(other.locator("#tp-viewer")).to_be_visible()
+    expect(other.locator("#tp-add")).to_have_count(0)                       # no way to add: the plus is gone
+    other.goto(f"{base_url}/trip/canvas?day=1")
+    expect(other.locator("#cz")).not_to_have_attribute("data-edit", "1")
+    # a write posted from the page is refused, and nothing is added
+    status = other.evaluate("""async () => (await fetch('/trip/plans', {method: 'POST', body: new URLSearchParams({id: 'a1', day: '1', start: '10:00', title: 'Sneaky', kind: 'fun'})})).status""")
+    assert status == 403
     other.reload()
     expect(other.locator("text=Sneaky")).to_have_count(0)
 

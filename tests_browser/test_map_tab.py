@@ -9,7 +9,7 @@ from playwright.sync_api import expect
 from gitaway import geo
 from tests.test_map import Maps
 from tests.test_trip_import import TEMPLATE
-from tests_browser.helpers import PHONE
+from tests_browser.helpers import PHONE, seed_plan
 from tests_browser.test_phone_polish import OVERFLOW, SMALL_CONTROLS, SMALL_TEXT
 
 TILE = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==")
@@ -34,7 +34,7 @@ def map_page(browser, base_url, monkeypatch):
         ctx.request.post(f"{base_url}/signin", form={"email": "ari.rivera@example.com", "next": "/", "intent": "save"}, max_redirects=0)
         ctx.request.post(f"{base_url}/trips/import/save", form={"text": TEMPLATE}, max_redirects=0)
         for id_, start, end, title in (("a1", "17:00", "19:30", "Griffith Observatory"), ("a2", "20:00", "21:00", "Mystery Cafe")):
-            ctx.request.post(f"{base_url}/calendar/activities", form={"id": id_, "day": "0", "start": start, "end": end, "title": title, "kind": "culture"}, max_redirects=0)
+            seed_plan(ctx.request, base_url, **{"id": id_, "day": "0", "start": start, "end": end, "title": title, "kind": "culture"})
         page = ctx.new_page()
         page.goto(f"{base_url}/trip/map?day={day}")
         page.wait_for_selector("#mp-map[data-ready]")
@@ -82,8 +82,8 @@ def test_a_list_row_selects_its_stop_and_the_list_names_the_place_it_could_not_f
     expect(page.locator("#mp-s-name")).to_have_text("Griffith Observatory")
     expect(page.locator('.mp-pin-wrap[data-stop="4"]')).to_have_class(re.compile("is-sel"))
     expect(page.locator('[data-unknown="5"]')).to_have_text("Couldn’t find this place on the map.")
-    page.get_by_role("link", name="Fix it in the calendar").click()  # a plan is fixed in the calendar, on its day
-    page.wait_for_url(re.compile(r"/calendar\?view=whole"))
+    page.get_by_role("link", name="Fix it on its day").click()  # a plan is fixed on its day
+    page.wait_for_url(re.compile(r"/trip/canvas\?day="))
 
 
 def test_the_route_is_drawn_and_the_page_never_scrolls_sideways(map_page):

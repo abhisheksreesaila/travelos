@@ -1,4 +1,4 @@
-"""F-055: the guided trip builder in a real (headless) browser at phone width: walk every question, preview, save, see it on the calendar.
+"""F-055: the guided trip builder in a real (headless) browser at phone width: walk every question, preview, save, see it on its days.
 Waits are on selectors and state, never on sleeps."""
 import re
 
@@ -50,7 +50,7 @@ def next_step(page, title):
     big_enough(page)
 
 
-def test_walk_the_whole_builder_at_390_and_see_the_trip_on_the_calendar(phone, base_url):
+def test_walk_the_whole_builder_at_390_and_see_the_trip_on_its_days(phone, base_url):
     page = phone
     page.goto(f"{base_url}/trips/build")
     expect(page.locator("#tb-count")).to_have_text("Step 1 of 7")
@@ -108,9 +108,8 @@ def test_walk_the_whole_builder_at_390_and_see_the_trip_on_the_calendar(phone, b
     expect(page.locator("#ti-travelers")).to_contain_text("age 7")
     no_sideways_scroll(page)
     page.click("#ti-save")
-    page.wait_for_url("**/calendar")
-    expect(page.locator("h1")).to_contain_text("LA with the kids")
-    expect(page.locator(".cal-tripline")).to_contain_text("booked elsewhere · Expedia")
+    page.wait_for_url("**/trip/canvas*")
+    expect(page.locator("#cz")).to_be_visible()
     assert not page.errors
 
 

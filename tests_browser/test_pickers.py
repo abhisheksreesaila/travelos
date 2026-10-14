@@ -137,25 +137,6 @@ def test_steppers_change_how_many_kids_and_show_their_ages(make):
     assert page.input_value("#st-n") == "6"
 
 
-def test_a_time_list_has_typeahead_and_keeps_the_native_value(make):
-    page = make("/calendar?add=2&at=11:00", signed_in=True)
-    start = page.get_by_role("button", name=re.compile("^Start:"))
-    expect(start).to_contain_text("11:00 AM")
-    start.focus()
-    page.keyboard.press("Enter")
-    page.keyboard.type("1:15 p")
-    page.keyboard.press("Enter")
-    assert page.input_value('input[name="start"]') == "13:15"
-    expect(start).to_contain_text("1:15 PM")
-    day_pick = page.get_by_role("button", name=re.compile("^Day:"))
-    day_pick.focus()
-    page.keyboard.press("Enter")
-    page.keyboard.press("ArrowDown")
-    page.keyboard.press("Enter")
-    assert page.input_value('select[name="day"]') != "2"
-    assert not page.errors
-
-
 def test_on_a_phone_the_calendar_is_a_bottom_sheet(make):
     page = make("/start", viewport=PHONE)
     page.get_by_role("button", name=re.compile("^Leaving:")).click()
@@ -205,26 +186,6 @@ def test_a_click_on_the_stepper_label_goes_to_the_stepper_and_it_follows_the_for
     # the form (or the browser restoring a value) changes the select: the stepper shows it
     page.evaluate("() => { const s = document.getElementById('st-a'); s.value = '5'; s.dispatchEvent(new Event('change', {bubbles: true})); }")
     expect(page.get_by_role("group", name=re.compile("^Adults")).locator(".ga-step-n")).to_have_text("5")
-
-
-def test_swapping_the_calendar_form_in_and_out_does_not_pile_up_controls(make):
-    page = make("/calendar?view=days", signed_in=True)
-    page.wait_for_timeout(200)
-
-    def cycle():
-        page.locator('a[href*="add="]').first.click()
-        page.wait_for_selector(".cal-modal select[name=day]", state="attached")
-        page.wait_for_timeout(100)
-        page.locator(".cal-cancel").click()
-        page.wait_for_selector(".cal-modal", state="detached")
-        page.wait_for_timeout(100)
-
-    cycle()
-    after_one = page.evaluate("GAPickers.count()")
-    for _ in range(5):
-        cycle()
-    assert page.evaluate("GAPickers.count()") == after_one  # closed forms are forgotten, not kept
-    assert not page.errors
 
 
 def test_a_server_error_shows_on_the_visible_control_and_the_summary_link_goes_there(make):

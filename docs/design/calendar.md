@@ -1,5 +1,7 @@
 # Design handoff: trip calendar (F-019) and live friends (F-020)
 
+> Retired in F-147: `/calendar` is only an address that redirects to the trip's day. See `docs/trip-canvas.md` "Retired: the old calendar" for where each part went. Kept for history.
+
 **Approved:** 2026-09-30. Artboard: `docs/design/canvas/Calendar.dc.html`.
 **System:** `design-system/DESIGN-SYSTEM.md`. Build every page head with `layout.styles(...)`.
 

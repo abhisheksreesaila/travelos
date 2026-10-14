@@ -7,7 +7,7 @@ from playwright.sync_api import expect
 
 from gitaway import catalog, tripday
 from tests.test_trip_import import SECRETS, TEMPLATE
-from tests_browser.helpers import PHONE
+from tests_browser.helpers import PHONE, seed_plan
 from tests_browser.test_phone_polish import OVERFLOW, SMALL_CONTROLS, SMALL_TEXT
 
 LAPTOP = {"width": 1280, "height": 800}
@@ -28,7 +28,7 @@ def today(browser, base_url, monkeypatch):
         contexts.append(ctx)
         ctx.request.post(f"{base_url}/signin", form={"email": "ari.rivera@example.com", "next": "/", "intent": "save"}, max_redirects=0)
         ctx.request.post(f"{base_url}/trips/import/save", form={"text": TEMPLATE}, max_redirects=0)
-        ctx.request.post(f"{base_url}/calendar/activities", form={"id": "a1", "day": "0", "start": "17:00", "end": "19:30", "title": "Griffith Observatory", "kind": "culture"}, max_redirects=0)
+        seed_plan(ctx.request, base_url, **{"id": "a1", "day": "0", "start": "17:00", "end": "19:30", "title": "Griffith Observatory", "kind": "culture"})
         page = ctx.new_page()
         if script:
             page.add_init_script(script)

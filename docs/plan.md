@@ -812,12 +812,13 @@ Brief: docs/briefs/web-trip.md · Design: docs/design/web-trip.md (tokens) · Ne
 - [ ] /family (people, roles, invitations), /trip/details and /start use the top bar, the white cards and the type of the trip screens; nothing they do today is lost
 - [ ] each fits 1440×900 without page scroll for its main content; every button still has a test that presses it
 
-## F-147 Retire the old trip calendar [todo]
+## F-147 Retire the old trip calendar [review]
 Brief: docs/briefs/web-trip.md · Needs: F-139, F-143
-- [ ] before removal, list everything the old calendar page does and where each one now lives (or that it is dropped with the captain's brief: the 8-button row, Your forks, the separate notes panel)
-- [ ] /calendar goes to the trip's day (or week) on every screen size; Invite lives in Family; no page links to /calendar any more
-- [ ] /trips goes to the current trip instead of a 404
-- [ ] the old calendar's code, styles and tests that only served it are removed; the suite stays green
+Built: docs/trip-canvas.md "Retired: the old calendar (F-147)" has the inventory. For the captain to decide: Share trip now lives only under Community trips -> Share yours; changing a plan's kind or day has no touch/mouse path (Ask moves it); the stored pretend-friends and the `long` demo scope remain in the model, undrawn.
+- [x] before removal, list everything the old calendar page does and where each one now lives (or that it is dropped with the captain's brief: the 8-button row, Your forks, the separate notes panel)
+- [x] /calendar goes to the trip's day (or week) on every screen size; Invite lives in Family; no page links to /calendar any more
+- [x] /trips goes to the current trip instead of a 404
+- [x] the old calendar's code, styles and tests that only served it are removed; the suite stays green
 
 ## F-148 Map fits a laptop window [todo]
 Found in F-139's review: /trip/map is taller than the window at 1440×900 (1096px with the top bar; 1038px before it). Not in the web-trip brief's tickets; small follow-up.

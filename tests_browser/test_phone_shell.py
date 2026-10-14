@@ -10,7 +10,7 @@ from playwright.sync_api import expect
 
 from gitaway import catalog, tripday
 from tests.test_trip_import import TEMPLATE
-from tests_browser.helpers import PHONE
+from tests_browser.helpers import PHONE, seed_plan
 from tests_browser.test_phone_polish import OVERFLOW, SMALL_CONTROLS, SMALL_TEXT
 
 LAPTOP = {"width": 1280, "height": 800}
@@ -39,9 +39,9 @@ def shell(browser, base_url, clock):
         contexts.append(ctx)
         ctx.request.post(f"{base_url}/signin", form={"email": "ari.rivera@example.com", "next": "/", "intent": "save"}, max_redirects=0)
         ctx.request.post(f"{base_url}/trips/import/save", form={"text": TEMPLATE}, max_redirects=0)
-        ctx.request.post(f"{base_url}/calendar/activities", form={"id": "a1", "day": "1", "start": "17:00", "end": "19:30", "title": "Griffith Observatory", "kind": "culture"}, max_redirects=0)
-        ctx.request.post(f"{base_url}/calendar/activities", form={"id": "a2", "day": "1", "start": "20:00", "end": "21:00", "title": "Tacos on the pier", "kind": "food"}, max_redirects=0)
-        ctx.request.post(f"{base_url}/calendar/activities", form={"id": "a3", "day": "1", "start": "09:00", "end": "10:00", "title": "Pancakes", "kind": "food"}, max_redirects=0)
+        seed_plan(ctx.request, base_url, **{"id": "a1", "day": "1", "start": "17:00", "end": "19:30", "title": "Griffith Observatory", "kind": "culture"})
+        seed_plan(ctx.request, base_url, **{"id": "a2", "day": "1", "start": "20:00", "end": "21:00", "title": "Tacos on the pier", "kind": "food"})
+        seed_plan(ctx.request, base_url, **{"id": "a3", "day": "1", "start": "09:00", "end": "10:00", "title": "Pancakes", "kind": "food"})
         return ctx.new_page()
 
     yield make

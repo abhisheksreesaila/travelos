@@ -39,21 +39,20 @@ def no_sideways_scroll(page):
     assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth")
 
 
-@pytest.mark.parametrize("viewport,button", [(DESKTOP, "#cal-edit-trip"), (PHONE, "#tp-edit-trip")], ids=["desktop", "phone"])
-def test_edit_a_flight_time_and_a_hotel_name_and_see_both_on_the_calendar(signed_in, base_url, viewport, button):
+@pytest.mark.parametrize("viewport,button", [(DESKTOP, "#tp-edit-trip"), (PHONE, "#tp-edit-trip")], ids=["desktop", "phone"])
+def test_edit_a_flight_time_and_a_hotel_name_and_see_both_on_the_days(signed_in, base_url, viewport, button):
     page = signed_in(viewport)
     page.goto(f"{base_url}/trips/import")
     page.fill("#ti-text", TEMPLATE)
     page.click("#ti-preview")
     page.click("#ti-save")
-    page.wait_for_url("**/calendar")
+    page.wait_for_url("**/trip/canvas*")
     # a plan that must survive the edit
     added = page.request.post(f"{base_url}/trip/plans", form={"id": "a1", "day": "1", "start": "12:00", "title": "Tacos", "kind": "fun"}, max_redirects=0)
     assert added.status in (200, 303)
-    page.goto(f"{base_url}/calendar?view=days")
+    page.goto(f"{base_url}/trip/canvas?day=1")
     expect(page.locator("body")).to_contain_text("Tacos")
-    # the button is on the calendar's trip bar, the details page and the phone trip view
-    expect(page.locator("#cal-edit-trip")).to_be_visible()
+    # the button is on the details page and the phone trip view
     page.goto(f"{base_url}/trip?tab=today")
     expect(page.locator("#tp-edit-trip")).to_be_visible()
     page.goto(f"{base_url}/trip/details")
@@ -62,7 +61,7 @@ def test_edit_a_flight_time_and_a_hotel_name_and_see_both_on_the_calendar(signed
     assert page.input_value("#tb-title") == "LA with the kids"
     page.click("#tb-cancel")  # Cancel in edit mode goes back to the trip's details
     page.wait_for_url("**/trip/details?trip=*")
-    page.goto(f"{base_url}/trip?tab=today" if button == "#tp-edit-trip" else f"{base_url}/calendar")
+    page.goto(f"{base_url}/trip?tab=today")
     page.click(button)
     expect(page.locator("#tb-form")).to_be_visible()
     expect(page.locator("#tb-heading")).to_have_text("Where are you going?")
@@ -85,11 +84,11 @@ def test_edit_a_flight_time_and_a_hotel_name_and_see_both_on_the_calendar(signed
     expect(page.locator(".ti-match")).to_contain_text("plans, notes and rides stay")
     no_sideways_scroll(page)
     page.click("#ti-save-changes")
-    page.wait_for_url("**/calendar")
-    page.goto(f"{base_url}/calendar?view=days")
-    expect(page.locator('[data-block="b-out"]')).to_contain_text("7:20")
-    expect(page.locator('[data-block="b-in"]')).to_contain_text("The Corrected Inn")
-    expect(page.locator('[data-block="b-in"]')).to_have_count(1)
+    page.wait_for_url("**/trip/canvas*")
+    page.goto(f"{base_url}/trip/canvas?day=0")
+    expect(page.locator('a[href*="booked=b-out"]').first).to_contain_text("7:20")
+    expect(page.locator('a[href*="booked=b-in"]').first).to_contain_text("The Corrected Inn")
+    page.goto(f"{base_url}/trip/canvas?day=1")
     expect(page.locator("body")).to_contain_text("Tacos")  # the plan is still there
     no_sideways_scroll(page)
     assert not page.errors

@@ -7,7 +7,7 @@ import pytest
 from playwright.sync_api import expect
 
 from gitaway import catalog, tripday
-from tests_browser.helpers import PHONE
+from tests_browser.helpers import PHONE, seed_plan
 from tests_browser.test_phone_polish import OVERFLOW, SMALL_CONTROLS, SMALL_TEXT
 
 NARROW = {"width": 320, "height": 640}
@@ -33,7 +33,7 @@ def phone(browser, base_url):
         contexts.append(ctx)
         ctx.request.post(f"{base_url}/signin", form={"email": "ari.rivera@example.com", "next": "/", "intent": "save"}, max_redirects=0)
         ctx.request.post(f"{base_url}/pay", form={"f": "f1", "h": "h1", "c": "c1"}, max_redirects=0)
-        ctx.request.post(f"{base_url}/calendar/activities", form={"id": "a1", "day": "1", "start": "17:00", "end": "19:30", "title": "Griffith Observatory", "kind": "culture"}, max_redirects=0)
+        seed_plan(ctx.request, base_url, **{"id": "a1", "day": "1", "start": "17:00", "end": "19:30", "title": "Griffith Observatory", "kind": "culture"})
         return ctx.new_page()
 
     yield make
@@ -64,7 +64,7 @@ def test_before_the_trip_it_shows_the_countdown_and_day_one(phone, base_url):
     assert page.evaluate(OVERFLOW) == 0
 
 
-def test_the_plus_adds_a_plan_in_two_taps_and_the_calendar_has_it(phone, base_url, pin):
+def test_the_plus_adds_a_plan_in_two_taps_and_the_day_has_it(phone, base_url, pin):
     pin(date(2026, 10, 17), 9 * 60)
     page = phone()
     page.goto(base_url + "/trip?tab=today")
@@ -77,8 +77,8 @@ def test_the_plus_adds_a_plan_in_two_taps_and_the_calendar_has_it(phone, base_ur
     page.wait_for_url("**/trip?day=1&new=*")
     expect(page.locator("#tp-toast")).to_contain_text("Added “Tacos on Abbot Kinney”")
     expect(page.locator("#tp-panel-today")).to_contain_text("Tacos on Abbot Kinney")
-    page.goto(base_url + "/calendar?view=whole")
-    expect(page.locator(".cal-whole")).to_contain_text("Tacos on Abbot Kinney")
+    page.goto(base_url + "/trip/canvas?day=1")
+    expect(page.locator(".cz-view[data-level=day]")).to_contain_text("Tacos on Abbot Kinney")
 
 
 def test_a_plan_added_over_a_booking_is_saved_and_tagged(phone, base_url, pin):
@@ -156,22 +156,22 @@ def test_reduced_motion_stops_the_pulse_and_normal_motion_pulses(phone, base_url
     assert lively.evaluate("getComputedStyle(document.querySelector('.tp-pulse')).animationName") != "none"
 
 
-def test_a_phone_opening_the_calendar_lands_on_the_day_view(phone, base_url):
+def test_a_phone_opening_the_old_calendar_address_lands_on_the_day_view(phone, base_url):
     page = phone(user_agent=IPHONE_UA)
     page.goto(base_url + "/calendar")
     page.wait_for_url(re.compile(r"/trip/canvas\?day=\d"))      # F-092: /trip is the day view
     expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
-    page.goto(base_url + "/calendar?view=whole")      # the full calendar is still one address away
-    assert "/calendar?view=whole" in page.url
+    page.goto(base_url + "/calendar?view=whole")      # an old link with a query lands on the day too
+    page.wait_for_url(re.compile(r"/trip/canvas\?day=\d"))
 
 
 @pytest.mark.parametrize("viewport", [PHONE, NARROW], ids=["390", "320"])
 def test_f085_notes_start_folded_and_a_tap_opens_them_in_place(phone, base_url, pin, viewport):
     pin(date(2026, 10, 17), 16 * 60 + 20)
     page = phone(viewport)
-    page.request.post(f"{base_url}/calendar/activities", form={"id": "a2", "day": "1", "start": "20:00", "end": "21:00", "title": "Tacos", "kind": "food"}, max_redirects=0)
+    seed_plan(page.request, base_url, **{"id": "a2", "day": "1", "start": "20:00", "end": "21:00", "title": "Tacos", "kind": "food"})
     for n, act in (("n1", "a1"), ("n2", "a2"), ("n3", "a2")):
-        page.request.post(f"{base_url}/calendar/notes", form={"id": n, "text": f"Note {n}", "act": act}, max_redirects=0)
+        page.request.post(f"{base_url}/trip/canvas/actnote", form={"id": n, "text": f"Note {n}", "act": act}, max_redirects=0)
     page.goto(base_url + "/trip?tab=today")
     page.wait_for_load_state("networkidle")
     summary = page.locator("[data-notes=a2] summary")
