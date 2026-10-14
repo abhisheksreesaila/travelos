@@ -784,7 +784,7 @@ Brief: docs/briefs/web-trip.md · Design: A2 · Needs: F-140
 - [x] a proposal is shown in the panel; Apply changes the grid in place and tells the family, as on the phone
 - [x] Say the plan and Paste a plan open the same box in the panel
 
-## F-143 Family chat in the panel [review]
+## F-143 Family chat in the panel [done]
 Brief: docs/briefs/web-trip.md · Design: A3 · Needs: F-140
 - [x] the top bar's Family and the panel's Family tab list the trip's chats (whole trip first, then each plan's) with unread counts, and open a thread below with compose
 - [x] the Family tab links to "People and invites" (the /family page) for members and invitations
