@@ -43,6 +43,7 @@
   }
   plainEyebrow();
   if (wide.addEventListener) wide.addEventListener('change', plainEyebrow);
+  document.addEventListener('cz:swap', plainEyebrow, true);      // the canvas redraws the heading in place when the level changes (canvas_core.js): the new eyebrow is plain again too
 
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {

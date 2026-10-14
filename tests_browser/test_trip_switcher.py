@@ -143,3 +143,21 @@ def test_on_a_laptop_the_eyebrow_line_stays_as_plain_text(family_with_two_trips,
     expect(page.locator(f"{MENU} .ga-tb-chev")).to_be_hidden()
     expect(page.locator(f"{MENU} .ga-tb-pop")).to_be_hidden()
     assert line.evaluate("e => e.closest('details').open") is False
+
+
+def test_the_eyebrow_stays_plain_after_the_canvas_swaps_day_and_week_in_place(family_with_two_trips):
+    page = family_with_two_trips({"width": 1440, "height": 900}, LEVELS["day"])
+
+    def plain():
+        summaries = page.locator(f"{MENU} > summary")
+        assert summaries.count() == 1
+        s = summaries.first
+        assert s.get_attribute("tabindex") == "-1" and s.get_attribute("role") == "presentation" and s.get_attribute("aria-label") is None
+        expect(s).to_be_visible()
+
+    plain()
+    for name, level in (("Week", "week"), ("Day", "day"), ("Week", "week")):
+        page.locator(".cz-head .cz-seg", has_text=name).first.click()
+        page.wait_for_selector(f".cz-view[data-level={level}]")
+        page.wait_for_timeout(700)
+        plain()
