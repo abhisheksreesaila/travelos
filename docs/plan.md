@@ -839,12 +839,11 @@ Bug, found in F-141's review (already there in F-140): on the desktop day a long
 
 ## F-151 Drag a plan onto a day chip to move it (laptop) [done]
 Captain, 2026-10-14: "on a laptop, drag a plan onto a day chip to move it, absolutely needed". With the old calendar retired (F-147), moving a plan to another day was only possible through Ask. Brief: docs/briefs/web-trip.md · Needs: F-144
-<<<<<<< HEAD
-- [ ] on a desktop, dragging a plan from the grid onto one of the day chips in the ink header moves it to that day at the same time; the chip shows it will take the drop while hovered
-- [ ] the move saves through the canvas's existing write path, shows the existing toast with Undo, and the plan disappears from this day in place
-- [ ] dropping back on the grid, on the current day's chip, or pressing Esc mid-drag leaves the plan where it was
-- [ ] overlapping plans on the target day sit side by side as they do today (lanes); nothing is changed silently
-- [ ] viewers can't drag; the phone's touch moves are unchanged; browser tests drive the drag with a real mouse at 1440 and 1280
+- [x] on a desktop, dragging a plan from the grid onto one of the day chips in the ink header moves it to that day at the same time; the chip shows it will take the drop while hovered
+- [x] the move saves through the canvas's existing write path, shows the existing toast with Undo, and the plan disappears from this day in place
+- [x] dropping back on the grid, on the current day's chip, or pressing Esc mid-drag leaves the plan where it was
+- [x] overlapping plans on the target day sit side by side as they do today (lanes); nothing is changed silently
+- [x] viewers can't drag; the phone's touch moves are unchanged; browser tests drive the drag with a real mouse at 1440 and 1280
 
 ## F-152 Change type and Move to day in the plan menu [todo]
 Captain, 2026-10-14: chose "Add to the plan menu" when the old calendar's edit form (the only place to change a plan's kind, and the phone's way to move a plan to another day) was retired in F-147. Brief: docs/briefs/web-trip.md · Needs: F-147, F-151
@@ -853,10 +852,3 @@ Captain, 2026-10-14: chose "Add to the plan menu" when the old calendar's edit f
 - [ ] Move to day… offers the trip's days as large tappable choices (the current day marked and not offered), keeps the same time, and saves with the toast "Moved to Sat 17 · Undo" (F-151's wording and write path)
 - [ ] the grid and the plan's colour update in place; viewers don't see either item
 - [ ] browser tests press both items at 390 (touch) and 1440 (mouse) and check the saved kind and day
-=======
-- [x] on a desktop, dragging a plan from the grid onto one of the day chips in the ink header moves it to that day at the same time; the chip shows it will take the drop while hovered
-- [x] the move saves through the canvas's existing write path, shows the existing toast with Undo, and the plan disappears from this day in place
-- [x] dropping back on the grid, on the current day's chip, or pressing Esc mid-drag leaves the plan where it was
-- [x] overlapping plans on the target day sit side by side as they do today (lanes); nothing is changed silently
-- [x] viewers can't drag; the phone's touch moves are unchanged; browser tests drive the drag with a real mouse at 1440 and 1280
->>>>>>> worktree-agent-aae427c0e3610868f
