@@ -6,7 +6,7 @@ clicked: Up next, Later today, the Ask box) is this ticket; `plan` (F-141), `fam
 Up next reads what Today reads (`pages.trip.load`: the day's timeline, the next item, the drive time when the family's map knows it); nothing is invented.
 """
 
-from fasthtml.common import A, Aside, Button, Div, Form, H2, H3, Header, Input, Nav, Option, P, Section, Select, Span
+from fasthtml.common import A, Aside, Button, Div, Form, H2, H3, Header, Input, Kbd, Nav, Option, P, Section, Select, Span
 
 from gitaway import access, familythread, geo, plantalk, session as ses, tripcal as cal, tripday as td
 from gitaway.icons import icon
@@ -217,9 +217,9 @@ def panel(v, day, plan="", family=None):
     a = v["by_id"].get(plan) if plan else None
     a = a if a is not None and a.day == day else None
     fam = familydock.pane(v["session"], day, family, mark=False) if family and not a else ()      # (day_family.js marks it read when it starts the pane on a laptop; the count leaves it out)
-    compose = A(Span("Type to Ask", cls="cz-compose-t"), Span(icon("arrow-right", 16, 2.6), cls="cz-compose-go"), href=f"/trip/ask?day={day}", cls="cz-compose", id="cz-dock-compose") \
+    compose = A(Span("Type to Ask", cls="cz-compose-t"), Span("or press", cls="cz-compose-or"), Kbd("/", cls="cz-kbd"), Span(icon("arrow-right", 16, 2.6), cls="cz-compose-go"), href=f"/trip/ask?day={day}", cls="cz-compose", id="cz-dock-compose") \
         if access.can_edit(v["role"]) else ""
     mode = "plan" if a else "family" if fam else "idle"
     return Aside(tabs(day, mode if mode == "family" else "plan", familychats.unread_total(v["session"], family if fam else "")), Div(*idle(v, day), cls="cz-dock-body", data_pane="idle"), *(plan_pane(v, a) if a else ()), *fam, compose,
                  cls="cz-dock", id="cz-dock", data_mode=mode, data_day=str(day), data_base=tc.curl(day=day), data_plan_url=tc.curl(day=day, plan="PLAN"), data_family_url=tc.curl(day=day, panel="family", thread="THREAD"),
-                 data_dow=v["dates"][day].strftime("%a"), aria_label="The day's panel")
+                 data_dow=v["dates"][day].strftime("%a"), **({"data_ask": "1"} if access.can_edit(v["role"]) else {}), aria_label="The day's panel")

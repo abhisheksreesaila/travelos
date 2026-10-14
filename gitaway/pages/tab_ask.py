@@ -296,10 +296,11 @@ def sheet_fragment(request, session, status=200):
 
 
 def sheet_open(request, session):
-    """GET /trip/ask?day=N with X-Ask: the box the sheet opens with (it starts listening when the page lets it: data-mode=talk). Editors only."""
+    """GET /trip/ask?day=N with X-Ask: the box the sheet opens with (it starts listening when the page lets it: data-mode=talk). Editors only.
+    `mode=` is for the laptop's panel (F-142): paste focuses the note ready for a long paste, anything else that is not "talk" (it asks for `type`) leaves the microphone to be tapped."""
     if not access.can_edit(access.request_role()):
         return PlainTextResponse("Only editors can change the plan.", status_code=403)
-    request.scope["ask"] = {"mode": "talk"}
+    request.scope["ask"] = {"mode": request.query_params.get("mode", "talk")}
     return sheet_fragment(request, session)
 
 

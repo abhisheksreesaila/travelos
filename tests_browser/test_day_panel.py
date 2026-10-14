@@ -248,9 +248,9 @@ def test_the_tabs_switch_modes_without_a_page_load(desk):
     expect(desk.locator("#cz-dock .cz-fam")).to_have_count(0)
 
 
-def test_a_tab_nobody_registered_keeps_its_link(desk):
-    desk.locator("#cz-dock .cz-dock-tab[data-tab=ask]").click()
-    desk.wait_for_url(re.compile(r"/trip/ask"))
+def test_a_mode_nobody_registered_is_not_handled(desk):      # (the tabs follow their own link then; Ask is registered by F-142, tests_browser/test_day_ask.py)
+    assert desk.evaluate("[Dock.has('nonesuch'), Dock.show('nonesuch')]") == [False, False]
+    assert mode(desk) == "idle"
 
 
 def test_the_panels_change_runs_on_the_shared_motion(canvas_page):

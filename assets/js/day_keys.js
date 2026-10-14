@@ -30,7 +30,9 @@
   keys.w = function () { press('#cz-z-week[data-zoom]'); };
   keys.d = function () { press('#cz-z-day[data-zoom]'); };
   keys['/'] = function () {
-    if (window.Dock && Dock.has('ask')) { Dock.show('ask', {}); return; }
+    if (window.Dock && Dock.has('ask') && Dock.show('ask', {})) return;      // false where there is no panel to show it in (the week): F-142's link click then opens the day with Ask
+    var link = document.getElementById('ga-tb-ask');
+    if (link) { link.click(); return; }
     if (press('.cz-dock-tab[data-tab="ask"]')) return;          // (its link: /trip/ask?day=N)
     location.assign('/trip/ask');
   };

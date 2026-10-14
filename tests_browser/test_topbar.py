@@ -86,11 +86,11 @@ def test_family_from_a_page_with_no_day_goes_to_the_day_with_the_chats_open(sign
 
 
 def test_ask_opens_the_ask_box_and_the_slash_key_goes_there_too(signed_in):
-    page = signed_in(DESKTOP)
+    page = signed_in(DESKTOP, path="/family")                         # (on the trip canvas Ask opens in the panel instead: F-142, tests_browser/test_day_ask.py)
     page.click(f"{BAR} .ga-tb-ask")
     page.wait_for_url("**/trip/ask")
     expect(page.locator("#main textarea").first).to_be_visible()      # the Ask box: say or type the plan
-    page = signed_in(DESKTOP, path="/trip/canvas?day=0")
+    page = signed_in(DESKTOP, path="/family")
     page.keyboard.press("/")
     page.wait_for_url("**/trip/ask")
 

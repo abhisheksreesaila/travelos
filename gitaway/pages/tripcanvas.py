@@ -29,8 +29,8 @@ from gitaway.pages import booked, calendar as calui, daydock, passes as passes_u
 from gitaway.pages.around_ui import around_url
 from gitaway.pages.plantalk import talk_badge   # F-091: the chat badge on a plan and on a part
 
-HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/help.css"), *passes_ui.HEAD, Link(rel="stylesheet", href="/assets/css/trip_canvas.css"), Link(rel="stylesheet", href="/assets/css/day_grid.css"), Link(rel="stylesheet", href="/assets/css/plantalk.css"), Link(rel="stylesheet", href="/assets/css/day_card.css"), Link(rel="stylesheet", href="/assets/css/thread.css"), Link(rel="stylesheet", href="/assets/css/day_dock.css"), Link(rel="stylesheet", href="/assets/css/week_desk.css"), Link(rel="stylesheet", href="/assets/css/day_mouse.css"), Link(rel="stylesheet", href="/assets/css/day_family.css"))   # pickers: the add-a-step sheet has a time field (F-082)
-SCRIPTS = ("/assets/js/vendor/idiomorph.js", "/assets/js/canvas_core.js", "/assets/js/canvas_filters.js", "/assets/js/canvas_writes.js", "/assets/js/canvas_sos.js", "/assets/js/canvas_gestures.js", "/assets/js/canvas_tick.js", "/assets/js/day_grid.js", "/assets/js/day_menu.js", "/assets/js/day_new.js", "/assets/js/day_fold.js", "/assets/js/day_card.js", "/assets/js/day_dock.js", "/assets/js/day_mouse.js", "/assets/js/day_keys.js", "/assets/js/day_family.js")
+HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/help.css"), *passes_ui.HEAD, Link(rel="stylesheet", href="/assets/css/trip_canvas.css"), Link(rel="stylesheet", href="/assets/css/day_grid.css"), Link(rel="stylesheet", href="/assets/css/plantalk.css"), Link(rel="stylesheet", href="/assets/css/day_card.css"), Link(rel="stylesheet", href="/assets/css/thread.css"), Link(rel="stylesheet", href="/assets/css/day_dock.css"), Link(rel="stylesheet", href="/assets/css/week_desk.css"), Link(rel="stylesheet", href="/assets/css/day_mouse.css"), Link(rel="stylesheet", href="/assets/css/day_family.css"), Link(rel="stylesheet", href="/assets/css/day_ask.css"))   # pickers: the add-a-step sheet has a time field (F-082)
+SCRIPTS = ("/assets/js/vendor/idiomorph.js", "/assets/js/canvas_core.js", "/assets/js/canvas_filters.js", "/assets/js/canvas_writes.js", "/assets/js/canvas_sos.js", "/assets/js/canvas_gestures.js", "/assets/js/canvas_tick.js", "/assets/js/day_grid.js", "/assets/js/day_menu.js", "/assets/js/day_new.js", "/assets/js/day_fold.js", "/assets/js/day_card.js", "/assets/js/day_dock.js", "/assets/js/day_mouse.js", "/assets/js/day_keys.js", "/assets/js/day_family.js", "/assets/js/day_ask.js")
 RANK = {"week": 0, "day": 1, "block": 2, "step": 3}
 PART_TINTS = ("sky", "sun", "grape", "bubble", "mint")
 MAX_FACES = 5
@@ -379,7 +379,8 @@ def week_view(v, sos=False):
     rows = [week_body(v, i, editor) for i in range(len(v["dates"]))]
     body = [head(v, kicker, "The trip", faces=faces, sos=curl(sos=True), switch=toggle(v, "week")), Div(kinds_bar(), cls="cz-bar"), Div(*rows, cls="cz-week", id="cz-week", style=f"--days:{min(len(rows), 7)}"), weekdesk.columns(v, editor)]      # F-145: a laptop draws the columns, the phone and the tablet the rows
     body.append(sos_sheet(v, curl(), curl(sos=True)) if sos else sos_template(v, curl(), curl(sos=True)))
-    return view("step" if sos else "week", body, zout="sos-open" if sos else "", title="The trip")
+    ask_day = v["today_idx"] if v["today_idx"] is not None else 0      # F-142: Ask on the week opens the day with the Ask panel (day_ask.js): today, else the first day
+    return view("step" if sos else "week", body, zout="sos-open" if sos else "", title="The trip", **({"data_ask_day": str(ask_day)} if editor else {}))
 
 
 # ---- day --------------------------------------------------------------------------------------------------------------------
