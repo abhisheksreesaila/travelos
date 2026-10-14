@@ -837,10 +837,10 @@ Bug, found in F-141's review (already there in F-140): on the desktop day a long
 - [x] at 1440×900 and 1280×800 a park block's title, time and part chips never overlap, at the top of the grid and while the grid scrolls
 - [x] the phone's sticky title is unchanged
 
-## F-151 Drag a plan onto a day chip to move it (laptop) [todo]
+## F-151 Drag a plan onto a day chip to move it (laptop) [review]
 Captain, 2026-10-14: "on a laptop, drag a plan onto a day chip to move it, absolutely needed". With the old calendar retired (F-147), moving a plan to another day was only possible through Ask. Brief: docs/briefs/web-trip.md · Needs: F-144
-- [ ] on a desktop, dragging a plan from the grid onto one of the day chips in the ink header moves it to that day at the same time; the chip shows it will take the drop while hovered
-- [ ] the move saves through the canvas's existing write path, shows the existing toast with Undo, and the plan disappears from this day in place
-- [ ] dropping back on the grid, on the current day's chip, or pressing Esc mid-drag leaves the plan where it was
-- [ ] overlapping plans on the target day sit side by side as they do today (lanes); nothing is changed silently
-- [ ] viewers can't drag; the phone's touch moves are unchanged; browser tests drive the drag with a real mouse at 1440 and 1280
+- [x] on a desktop, dragging a plan from the grid onto one of the day chips in the ink header moves it to that day at the same time; the chip shows it will take the drop while hovered
+- [x] the move saves through the canvas's existing write path, shows the existing toast with Undo, and the plan disappears from this day in place
+- [x] dropping back on the grid, on the current day's chip, or pressing Esc mid-drag leaves the plan where it was
+- [x] overlapping plans on the target day sit side by side as they do today (lanes); nothing is changed silently
+- [x] viewers can't drag; the phone's touch moves are unchanged; browser tests drive the drag with a real mouse at 1440 and 1280

@@ -210,10 +210,10 @@ def test_dropping_back_on_the_grid_still_moves_its_time_as_before(desk):
 def test_a_booking_is_not_dragged_to_another_day(desk):
     desk.goto(desk.url.replace(f"day={SUNDAY}", "day=0"))
     desk.wait_for_selector('.cz-view[data-level=day][data-day="0"]')
-    booked = desk.locator(".cz-gb:not([data-act])")
+    booked = desk.locator(".cz-gbk:not(.is-pill)")
     assert booked.count() > 0
     desk.evaluate("document.querySelector('.cz-day-body').scrollTop = 0")
-    before = desk.locator(".cz-gb").count()
+    before = desk.locator(".cz-gb, .cz-gbk").count()
     b = booked.first.bounding_box()
     desk.mouse.move(b["x"] + b["width"] / 2, b["y"] + b["height"] / 2)
     desk.mouse.down()
@@ -221,7 +221,7 @@ def test_a_booking_is_not_dragged_to_another_day(desk):
     assert desk.locator(".cz-hchip.is-drop-target").count() == 0 and desk.locator(".cz-hchips.is-dropping").count() == 0
     desk.mouse.up()
     desk.wait_for_timeout(300)
-    assert toast(desk).count() == 0 and desk.locator(".cz-gb").count() == before
+    assert toast(desk).count() == 0 and desk.locator(".cz-gb, .cz-gbk").count() == before
 
 
 # ---- a viewer, a long trip --------------------------------------------------------------------------------------------------------
