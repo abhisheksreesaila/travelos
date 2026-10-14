@@ -877,7 +877,7 @@ Captain, 2026-10-14: "it has too many movements… week - day, all interact flic
 - [ ] the phone and the installed app keep their current liquid motion unchanged (existing motion tests stay green)
 - [ ] a browser test at 1440 with motion on records frames for week→day, a plan click, the panel tabs and a toast, and finds no transform animation and no frame with an outline-only view
 
-## F-157 Move plans on the desktop week [review]
+## F-157 Move plans on the desktop week [done]
 Captain, 2026-10-14: "on the week view, I should be able to move in desktop since I can see all at once." Brief: docs/briefs/web-trip.md · Needs: F-151
 - [x] on a desktop, dragging a plan row from one day's column to another moves it to that day at the same time (the column under the pointer shows it will take the drop), with the existing toast "Moved to Sat 17 · Undo" and write path (F-151)
 - [x] the row leaves its column and appears in the new one in time order, in place (no page reload), with calm desktop motion (F-156)
