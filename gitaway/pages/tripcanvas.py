@@ -439,8 +439,15 @@ def day_pills(v, day):
         cls = "cz-dp" + (" is-open" if i == day else "") + (" is-today" if i == v["today_idx"] else "") + (" has-plans" if planned else "")
         label = f"{v['dates'][i].strftime('%A %b')} {s.num}" + (", today" if i == v["today_idx"] else "") + ("" if planned else ", nothing planned")
         items.append(A(Span(s.dow, cls="cz-dp-dow"), Span(str(s.num), cls="cz-dp-num"), Span(cls="cz-dp-dot", aria_hidden="true"),
-                       href=curl(day=i), cls=cls, aria_current="date" if i == day else None, aria_label=label, data_zoom="side"))
+                       href=curl(day=i), cls=cls, aria_current="date" if i == day else None, aria_label=label, data_zoom="side",
+                       data_move_day=str(i), data_move_label=f"{v['dates'][i].strftime('%a')} {s.num}"))      # F-152: the plan menu's Move to day offers these
     return Nav(*items, cls="cz-dpills", id="cz-dpills", aria_label="Days of the trip")
+
+
+def kind_choices():
+    """F-152: the plan menu's Change type offers these (day_menu.js copies them): each kind of plan with its icon and colour, hidden until the menu asks."""
+    return Div(*[Button(icon(daydock.KIND_ICON[k], 20, 2.4), Span(label, cls="cz-mi-t"), type="button", cls=f"cz-mi cz-kc cz-k-{k}", role="menuitemradio", data_pick_kind=k, data_label=label)
+                 for k, (label, _) in cal.KINDS.items()], id="cz-kinds-tpl", hidden=True, aria_hidden="true")
 
 
 def say_bar_compact(day):
@@ -527,7 +534,7 @@ def grid_block(v, a, lane, lanes, lo, edit, inset=False):
     chat = any(c[0] == a.id for c in v["talk"])
     n = sum(m["n"] for key, m in v["talk"].items() if key[0] == a.id)
     voice = any(m["voice"] for key, m in v["talk"].items() if key[0] == a.id)
-    attrs = {**kind_attrs(v, "block" if park else "plan", a), "data_act": a.id, "data_s": str(a.start), "data_e": str(a.end), "data_day": str(a.day), "data_title": a.title,
+    attrs = {**kind_attrs(v, "block" if park else "plan", a), "data_act": a.id, "data_s": str(a.start), "data_e": str(a.end), "data_day": str(a.day), "data_title": a.title, "data_type": k,
              "data_steps": str(len(steps))}
     if edit:
         attrs["data_talk"] = plantalk.url(a.id, "", ses.open_trip_id())          # the hold menu's Chat (F-098); data-chat is the filter's "has messages"
@@ -622,7 +629,7 @@ def day_view(v, day, booked=None, sos=False):
             now_card(v, day),      # F-092: the centre Ask changes the day; on today the day starts with what is happening now
             *([filter_bar(v, True)] if first else []), *([dropbars(v)] if first and editor else []),
             Div(Div(*cards, *(listmore(v, first) if first else []), P("Nothing here for this filter.", cls="cz-sub cz-kind-none", hidden=True), cls="cz-day-main"), Div(_tray(aside, editor), cls="cz-day-side"), cls="cz-day-body")]
-    body = [Div(*left, cls="cz-day-left"), daydock.panel(v, day, v.get("ring", ""), v.get("family"))]      # F-140: on a laptop the left column (heading, filters, grid) and the panel are the day's two columns; below 1020px the wrapper is `display: contents`
+    body = [Div(*left, cls="cz-day-left"), daydock.panel(v, day, v.get("ring", ""), v.get("family")), *([kind_choices()] if editor else [])]     # F-140: on a laptop the left column (heading, filters, grid) and the panel are the day's two columns; below 1020px the wrapper is `display: contents`
     if booked:
         body.append(booking_sheet(v, day, booked))
     elif sos:
@@ -931,12 +938,14 @@ def plan_write(session, op, act, form):
         raise cal.CalendarError("That did not work.")
     title = form.get("title")
     to_day = _field(form, "day", 4) or None       # F-151: a plan dropped on another day's chip keeps its times; planedit checks the day is inside the trip
-    got = planedit.change(session, act, start=_minutes(form, "start"), end=_minutes(form, "end"), title=None if title is None else str(title)[:200], day=to_day)
+    got = planedit.change(session, act, start=_minutes(form, "start"), end=_minutes(form, "end"), title=None if title is None else str(title)[:200], day=to_day, kind=_field(form, "kind", 12) or None)
     a, was = got["act"], got["undo"]
     if not got["changed"]:
         toast = ""
     elif a.day != was["day"]:
         toast = f"Moved to {planedit.day_label(session, a.day)}"
+    elif a.kind != was["kind"]:
+        toast = f"{a.title} is now {cal.KINDS[a.kind][0]}"        # F-152: Change type in the plan menu
     elif a.title != was["title"]:
         toast = f"Renamed to {a.title}"
     elif a.start != was["start"] and a.end == was["end"]:

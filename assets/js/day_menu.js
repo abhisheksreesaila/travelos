@@ -23,6 +23,7 @@
   function icon(name) {
     var paths = {
       chat: 'M21 12a8 8 0 0 1-11.5 7.2L4 20.5l1.4-4.6A8 8 0 1 1 21 12Z', pencil: 'M4 20h4L19 9l-4-4L4 16v4ZM13 7l4 4', trash: 'M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13M10 11v6M14 11v6',
+      tag: 'M3 12V4h8l10 10-8 8L3 12ZM7.5 7.5h.01', cal: 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4', back: 'M19 12H5M12 5l-7 7 7 7',
       up: 'M12 19V5M5 12l7-7 7 7', down: 'M12 5v14M19 12l-7 7-7-7', shorter: 'M5 9h14M5 15h14M9 4l3 3 3-3M9 20l3-3 3 3', longer: 'M5 12h14M9 8l3-4 3 4M9 16l3 4 3-4'
     };
     var s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -73,14 +74,8 @@
     return { lo: g ? +g.dataset.lo : 420, hi: Math.min(g ? +g.dataset.hi : DAY_END, DAY_END), s: +b.dataset.s, e: +b.dataset.e };
   }
 
-  function open(b, focusItem, kbd) {
-    if (!editing() || !b || !b.isConnected) return;
-    close(false);
-    var steps = +b.dataset.steps || 0, k = bounds(b);
-    var node = mk('div', 'cz-menu');
-    node.setAttribute('role', 'menu');
-    node.tabIndex = -1;
-    node.setAttribute('aria-label', titleOf(b) + ': what to do');
+  // The menu's first step: what can be done to the plan. (F-152: Change type and Move to day open a second step in this same menu, below.)
+  function render(node, b) {
     node.appendChild(mk('p', 'cz-menu-t', titleOf(b)));
     var main = mk('div', 'cz-menu-main');
     var chat = item('chat', 'Chat', 'chat', { id: 'chat' });
@@ -89,6 +84,12 @@
     main.appendChild(item('rename', 'Rename', 'pencil', { id: 'rename' }));
     main.appendChild(item('delete', 'Delete', 'trash', { id: 'delete' }));
     node.appendChild(main);
+    if (/^a\d/.test(b.dataset.act || '')) {      // a plan, not a booking
+      var more = mk('div', 'cz-menu-more');
+      more.appendChild(item('button', 'Change type', 'tag', { id: 'type' }));
+      more.appendChild(item('button', 'Move to day…', 'cal', { id: 'moveday' }));
+      node.appendChild(more);
+    }
     var nudge = mk('div', 'cz-menu-nudge');
     nudge.setAttribute('role', 'group');
     nudge.setAttribute('aria-label', 'By 15 minutes');
@@ -102,7 +103,18 @@
     fine.setAttribute('role', 'menuitemcheckbox');
     fine.classList.add('cz-mi-fine');
     node.appendChild(fine);
-    syncNudges(node, k);
+    syncNudges(node, bounds(b));
+  }
+
+  function open(b, focusItem, kbd) {
+    if (!editing() || !b || !b.isConnected) return;
+    close(false);
+    var k = bounds(b);
+    var node = mk('div', 'cz-menu');
+    node.setAttribute('role', 'menu');
+    node.tabIndex = -1;
+    node.setAttribute('aria-label', titleOf(b) + ': what to do');
+    render(node, b);
     node.addEventListener('focusin', function (e) { if (menu && e.target.dataset && e.target.dataset.do) menu.focusId = e.target.dataset.do; });
     stage.appendChild(node);
     menu = { block: b, act: b.dataset.act, node: node, focusId: focusItem || '' };
@@ -182,6 +194,11 @@
     e.preventDefault();
     if (what === 'rename') { close(false); rename(b); return; }
     if (what === 'delete') { confirmDelete(); return; }
+    if (what === 'type') { pickType(); return; }
+    if (what === 'moveday') { pickDay(); return; }
+    if (what === 'back') { toFirstStep(); return; }
+    if (what === 'pick-kind') { saveEdit(b, { kind: it.dataset.kind }); return; }
+    if (what === 'pick-day') { saveEdit(b, { day: it.dataset.day }); return; }
     var k = bounds(b), s = k.s, en = k.e, d = nstep();
     if (what === 'fine') { fineOn = !fineOn; syncNudges(menu.node, k); return; }
     if (what === 'earlier') { s -= d; en -= d; }
@@ -190,6 +207,94 @@
     else if (what === 'longer') en += d;
     if (s < k.lo || en > k.hi || en - s < MIN_LEN) return;
     CZ.setTimes(b, s, en);              // the menu stays for the next nudge: the page behind it is brought up to date, and the menu goes back on the same block (cz:swap, below)
+  }
+
+  // ---- Change type and Move to day (F-152): a second step inside the same menu, large choices, no dropdown --------------------------------------------
+  // The step's words and choices replace the menu's content and rise in with the shared settle; Back (or Escape, which closes the whole menu) goes the other way.
+  function toStep(title, sub, cls, build) {
+    var node = menu.node, b = menu.block;
+    node.textContent = '';
+    node.setAttribute('aria-label', title);
+    var step = mk('div', 'cz-menu-step');
+    step.appendChild(mk('p', 'cz-menu-t', title));
+    if (sub) step.appendChild(mk('p', 'cz-menu-sub', sub));
+    var grid = mk('div', cls);
+    grid.setAttribute('role', 'group');
+    grid.setAttribute('aria-label', title);
+    build(grid);
+    step.appendChild(grid);
+    var back = item('button', 'Back', 'back', { id: 'back' });
+    back.classList.add('cz-mi-back');
+    step.appendChild(back);
+    node.appendChild(step);
+    place(node, b);
+    if (MO) MO.settle(step, { y: 0.375 });
+    var first = step.querySelector('.cz-mi[aria-checked="false"], .cz-mi:not([aria-checked])') || back;
+    try { first.focus({ preventScroll: true }); } catch (e) { first.focus(); }
+  }
+  function toFirstStep() {
+    var node = menu.node, b = menu.block;
+    node.textContent = '';
+    node.setAttribute('aria-label', titleOf(b) + ': what to do');
+    render(node, b);
+    place(node, b);
+    if (MO) MO.settle(node.querySelector('.cz-menu-main'), { y: 0.25 });
+    var again = node.querySelector('[data-do="' + (menu.focusId || 'type') + '"]:not(:disabled)') || node.querySelector('.cz-mi:not(:disabled)');
+    if (again) { try { again.focus({ preventScroll: true }); } catch (e) { again.focus(); } }
+  }
+  function pickType() {
+    var b = menu.block, now = b.dataset.type || 'fun';
+    var tpl = stage.querySelectorAll('#cz-kinds-tpl [data-pick-kind]');
+    toStep('Change type', titleOf(b), 'cz-menu-kinds', function (grid) {
+      Array.prototype.forEach.call(tpl, function (src) {
+        var k = src.dataset.pickKind, c = src.cloneNode(true), here = k === now;
+        c.dataset.do = 'pick-kind';
+        c.dataset.kind = k;
+        c.setAttribute('aria-checked', here ? 'true' : 'false');
+        if (here) c.classList.add('is-here');
+        c.querySelector('svg').classList.add('cz-mi-ico');
+        grid.appendChild(c);
+      });
+    });
+  }
+  function pickDay() {
+    var b = menu.block, now = b.dataset.day;
+    var pills = stage.querySelectorAll('.cz-dpills [data-move-day]');
+    toStep('Move to day', titleOf(b), 'cz-menu-days', function (grid) {
+      Array.prototype.forEach.call(pills, function (src) {
+        var d = src.dataset.moveDay, w = (src.dataset.moveLabel || '').split(' ');
+        var label = mk('span', 'cz-dc-dow', w[0] || ''), num = mk('span', 'cz-dc-num', w[1] || '');
+        if (d === now) {      // the day it is on: marked, and not something to pick
+          var here = mk('span', 'cz-dc is-here');
+          here.setAttribute('aria-label', (src.dataset.moveLabel || '') + ', where it is now');
+          here.appendChild(label); here.appendChild(num);
+          grid.appendChild(here);
+          return;
+        }
+        var c = mk('button', 'cz-mi cz-dc');
+        c.type = 'button';
+        c.setAttribute('role', 'menuitem');
+        c.setAttribute('aria-label', 'Move to ' + src.dataset.moveLabel);
+        c.dataset.do = 'pick-day';
+        c.dataset.day = d;
+        c.appendChild(label); c.appendChild(num);
+        grid.appendChild(c);
+      });
+    });
+  }
+  // The write is the canvas's own edit with a kind or a day (F-151, F-152); the toast has its Undo. A plan moved away leaves the laptop's panel for Up next (it would show a plan that is not on
+  // this day); a plan that only changed type stays open in the panel, which is brought up to date with the day.
+  function saveEdit(b, fields) {
+    var act = b.dataset.act, pane = document.querySelector('#cz-dock .cz-pp:not(.is-leaving)');
+    close(false);
+    var body = CZ.tripBody(Object.assign({ op: 'edit', act: act, next: CZ.here() }, fields));
+    CZ.post('/trip/canvas/plan', body).then(function (res) {
+      if (fields.day != null && pane && pane.dataset.act === act && window.Dock) Dock.close();
+      if (res.toast) CZ.showToast(res.toast, res.undo ? function () { CZ.undo(res.undo); } : null);
+      return CZ.quiet();
+    }, function (err) {
+      CZ.showToast(err && err.soft ? err.soft : 'Could not save that. Check your connection.');
+    });
   }
 
   // ---- delete: asked once, in the menu, then Undo ------------------------------------------------------------------------------

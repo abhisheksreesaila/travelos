@@ -46,7 +46,7 @@ def test_hold_and_let_go_wiggles_the_block_and_offers_the_menu_with_every_choice
     menu = page.locator(".cz-menu")
     assert menu.get_attribute("role") == "menu"
     names = [t.strip() for t in menu.get_by_role("menuitem").all_inner_texts()]
-    assert names == ["Chat", "Rename", "Delete", "Earlier", "Later", "Shorter", "Longer"]
+    assert names == ["Chat", "Rename", "Delete", "Change type", "Move to day…", "Earlier", "Later", "Shorter", "Longer"]
     assert "/trip/talk?act=" in menu.get_by_role("menuitem", name="Chat").get_attribute("href")
     shot(page, "menu-390.png")
     assert now(lunch.id)[:2] == (12 * 60, 13 * 60) and page.locator(".ga-toast").count() == 0

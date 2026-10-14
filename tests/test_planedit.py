@@ -33,7 +33,7 @@ def test_a_move_keeps_the_length_and_saves_through_the_calendar(ari, announced):
     got = planedit.change(ari, a.id, start=12 * 60 + 30, end=13 * 60 + 30)
     assert (got["act"].start, got["act"].end) == (12 * 60 + 30, 13 * 60 + 30)
     assert (cal.get_activity(ari, a.id).start, cal.get_activity(ari, a.id).end) == (12 * 60 + 30, 13 * 60 + 30)
-    assert got["undo"] == {"act": a.id, "day": 1, "start": 12 * 60, "end": 13 * 60, "title": "Lunch at the pier", "after": {"day": 1, "start": 750, "end": 810, "title": "Lunch at the pier"}}
+    assert got["undo"] == {"act": a.id, "day": 1, "start": 12 * 60, "end": 13 * 60, "title": "Lunch at the pier", "kind": "food", "after": {"day": 1, "start": 750, "end": 810, "title": "Lunch at the pier", "kind": "food"}}
 
 
 def test_a_resize_can_use_five_minutes_and_fifteen_as_the_shortest(ari):
@@ -71,7 +71,7 @@ def test_times_nobody_changed_are_never_resnapped_or_held_to_the_forms_minimum(a
 def test_undo_refuses_when_someone_changed_the_plan_since(ari):
     a = lunch(ari)
     got = planedit.change(ari, a.id, start=12 * 60 + 30, end=13 * 60 + 30)
-    assert got["undo"]["after"] == {"day": 1, "start": 12 * 60 + 30, "end": 13 * 60 + 30, "title": "Lunch at the pier"}
+    assert got["undo"]["after"] == {"day": 1, "start": 12 * 60 + 30, "end": 13 * 60 + 30, "title": "Lunch at the pier", "kind": "food"}
     planedit.change(ari, a.id, title="Dinner instead")                             # another member's later change
     with pytest.raises(cal.CalendarError) as e:
         planedit.restore(ari, got["undo"])

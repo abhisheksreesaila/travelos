@@ -846,10 +846,10 @@ Captain, 2026-10-14: "on a laptop, drag a plan onto a day chip to move it, absol
 - [x] overlapping plans on the target day sit side by side as they do today (lanes); nothing is changed silently
 - [x] viewers can't drag; the phone's touch moves are unchanged; browser tests drive the drag with a real mouse at 1440 and 1280
 
-## F-152 Change type and Move to day in the plan menu [todo]
+## F-152 Change type and Move to day in the plan menu [review]
 Captain, 2026-10-14: chose "Add to the plan menu" when the old calendar's edit form (the only place to change a plan's kind, and the phone's way to move a plan to another day) was retired in F-147. Brief: docs/briefs/web-trip.md · Needs: F-147, F-151
-- [ ] the phone's hold menu and the laptop's ⋯ / right-click menu (the same menu, day_menu.js) have "Change type" and "Move to day…"
-- [ ] Change type offers the plan kinds as large tappable choices (no dropdown), marks the current one, and saves at once with the existing toast and Undo
-- [ ] Move to day… offers the trip's days as large tappable choices (the current day marked and not offered), keeps the same time, and saves with the toast "Moved to Sat 17 · Undo" (F-151's wording and write path)
-- [ ] the grid and the plan's colour update in place; viewers don't see either item
-- [ ] browser tests press both items at 390 (touch) and 1440 (mouse) and check the saved kind and day
+- [x] the phone's hold menu and the laptop's ⋯ / right-click menu (the same menu, day_menu.js) have "Change type" and "Move to day…"
+- [x] Change type offers the plan kinds as large tappable choices (no dropdown), marks the current one, and saves at once with the existing toast and Undo
+- [x] Move to day… offers the trip's days as large tappable choices (the current day marked and not offered), keeps the same time, and saves with the toast "Moved to Sat 17 · Undo" (F-151's wording and write path)
+- [x] the grid and the plan's colour update in place; viewers don't see either item
+- [x] browser tests press both items at 390 (touch) and 1440 (mouse) and check the saved kind and day

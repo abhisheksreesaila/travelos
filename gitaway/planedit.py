@@ -102,8 +102,8 @@ def unadd(session, snapshot):
     return gone
 
 
-def change(session, act_id, *, start=None, end=None, title=None, day=None, expect=None):
-    """Edit one plan: any of its start, end, title or day. -> {"act": the plan now, "undo": the snapshot `restore` takes, "changed": whether anything differs}."""
+def change(session, act_id, *, start=None, end=None, title=None, day=None, kind=None, expect=None):
+    """Edit one plan: any of its start, end, title, day or kind (F-152: the plan menu's Change type; the calendar refuses a kind it does not know). -> {"act": the plan now, "undo": the snapshot `restore` takes, "changed": whether anything differs}."""
     if not isinstance(act_id, str) or act_id.startswith("b-"):
         raise cal.CalendarError("Booked items are locked. Change your booking to move them.")
     with ses.family(session) as fam:
@@ -115,14 +115,15 @@ def change(session, act_id, *, start=None, end=None, title=None, day=None, expec
             row = familydb.row(db, "SELECT * FROM activities WHERE trip_id = :t AND scope = '' AND act_id = :i AND gone = 0", t=fam.trip_id, i=act_id)
             if row is None:
                 raise cal.CalendarError("That plan is gone.")
-            was = (row["day"], row["start_min"], row["end_min"], row["title"])
+            was, was_kind = (row["day"], row["start_min"], row["end_min"], row["title"]), row["kind"]
             if expect is not None and tuple(expect) != was:
                 raise cal.CalendarError("Someone changed it since. Nothing was undone.")      # an Undo must not overwrite another member's later change
-            a =cal.update_in(session, fam, t, blocks, act_id, day=day, start=start, end=end, title=title, scope="", say=False, fine=True)
+            a =cal.update_in(session, fam, t, blocks, act_id, day=day, start=start, end=end, title=title, kind=kind or None, scope="", say=False, fine=True)
             now = (a.day, a.start, a.end, a.title)
             _tell(session, fam, t, act_id, was, now)
-    return {"act": a, "changed": was != now, "undo": {"act": act_id, "day": was[0], "start": was[1], "end": was[2], "title": was[3],
-                                                      "after": {"day": now[0], "start": now[1], "end": now[2], "title": now[3]}}}
+    return {"act": a, "changed": was != now or was_kind != a.kind,
+            "undo": {"act": act_id, "day": was[0], "start": was[1], "end": was[2], "title": was[3], "kind": was_kind,
+                     "after": {"day": now[0], "start": now[1], "end": now[2], "title": now[3], "kind": a.kind}}}
 
 
 def day_label(session, day):
@@ -138,9 +139,10 @@ def restore(session, snapshot):
     s = snapshot if isinstance(snapshot, dict) else {}
     after = s.get("after") if isinstance(s.get("after"), dict) else {}
     if not (isinstance(s.get("act"), str) and _int(s.get("day")) and _int(s.get("start")) and _int(s.get("end")) and isinstance(s.get("title"), str)
-            and _int(after.get("day")) and _int(after.get("start")) and _int(after.get("end")) and isinstance(after.get("title"), str)):
+            and _int(after.get("day")) and _int(after.get("start")) and _int(after.get("end")) and isinstance(after.get("title"), str)
+            and isinstance(s.get("kind", ""), str)):
         raise cal.CalendarError("There is nothing to undo.")
-    return change(session, s["act"][:20], day=s["day"], start=s["start"], end=s["end"], title=s["title"],
+    return change(session, s["act"][:20], day=s["day"], start=s["start"], end=s["end"], title=s["title"], kind=s.get("kind") or None,
                   expect=(after["day"], after["start"], after["end"], after["title"]))["act"]
 
 
