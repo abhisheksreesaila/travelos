@@ -48,7 +48,9 @@
 
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
-      menus().forEach(function (d) { if (d.open) fold(d, true); });
+      var shut = false;
+      menus().forEach(function (d) { if (d.open) { fold(d, true); shut = true; } });
+      if (shut) { e.preventDefault(); e.stopImmediatePropagation(); }      // F-156: Esc closed the menu and nothing else: the canvas does not also zoom out
       return;
     }
     if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented) return;
@@ -58,5 +60,5 @@
     if (!ask || getComputedStyle(bar).display === 'none') return;           // no bar at this width (the phone and the tablet): "/" does nothing
     e.preventDefault();
     ask.click();
-  });
+  }, true);
 })();

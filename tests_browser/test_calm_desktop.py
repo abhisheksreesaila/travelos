@@ -139,3 +139,39 @@ def test_the_phone_keeps_its_liquid_zoom(lively):
     page.wait_for_timeout(700)
     moving, skel, n, every = findings(page)
     assert moving, "the phone's zoom still scales and blurs"
+
+
+BUSY = """() => { window.__busy = []; const done = () => {}; const v = () => document.querySelector('.cz-view'), seen = [];
+  const t0 = performance.now(), seen2 = window.__busy; (function look() { const row = document.querySelector('.is-pending');
+    seen2.push({ at: performance.now() - t0, busy: v() && v().getAttribute('aria-busy'), cursor: getComputedStyle(document.body).cursor, dim: row ? getComputedStyle(row).opacity : null });
+    if (performance.now() - t0 < 2600) requestAnimationFrame(look); })(); }"""
+
+
+def test_a_slow_level_shows_a_quiet_busy_state_that_clears_on_the_swap(lively):
+    page = lively(path="/trip/canvas")
+    page.evaluate("() => { const real = window.fetch; window.fetch = (u, o) => /frag=1/.test(String(u)) ? new Promise(r => setTimeout(r, 1500)).then(() => real(u, o)) : real(u, o); CZ.forget(); }")
+    page.evaluate(RECORDER)
+    page.evaluate(BUSY)
+    page.locator(".cz-wcol[data-day='1'] .cz-wopen").click()
+    page.wait_for_timeout(2000)
+    seen = page.evaluate('window.__busy')
+    early = [f for f in seen if f["at"] < 90]
+    assert all(not f["busy"] for f in early), "nothing is shown for a level that is quick"
+    mid = [f for f in seen if 400 < f["at"] < 1300]
+    assert mid and all(f["busy"] == "true" and f["cursor"] == "progress" and f["dim"] is not None and float(f["dim"]) < 1 for f in mid), mid[:3]
+    expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
+    assert page.evaluate("!document.querySelector('.cz-view').hasAttribute('aria-busy') && !document.documentElement.classList.contains('cz-pending') && !document.querySelector('.is-pending')")
+    moving, skel, n, every = findings(page)
+    assert not moving and skel == 0, moving
+
+
+def test_escape_closes_the_menu_and_only_the_menu_then_the_next_one_zooms_out(lively):
+    page = lively()
+    page.click(".ga-tb-account > summary")
+    expect(page.locator(".ga-tb-account")).to_have_attribute("open", "")
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(500)
+    assert page.evaluate("!document.querySelector('.ga-tb-account').open")
+    expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
+    page.keyboard.press("Escape")
+    expect(page.locator(".cz-view[data-level=week]")).to_be_visible()

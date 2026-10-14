@@ -205,6 +205,9 @@ html[data-cz-dir="side"]::view-transition-new(root) { animation: cz-come-side va
 @keyframes cz-come-out { from { opacity: 0; transform: scale(1.12); filter: blur(0.375rem); } 45% { opacity: 1; } 70% { filter: blur(0); } }
 @keyframes cz-away-side { to { opacity: 0; } }
 @keyframes cz-come-side { from { opacity: 0; } }
+/* F-156: a level that is slow to come, on a laptop: the pointer shows progress and the clicked row dims; opacity only */
+html.cz-pending, html.cz-pending * { cursor: progress; }
+.cz .is-pending { opacity: .6; transition: opacity var(--motion-desk) var(--motion-ease); }
 /* F-156: the laptop (JS sets data-cz-dir="calm" and cz-in-calm, GA.motion.calm()): one short cross-fade of the whole level, nothing scales, travels or blurs, and nothing is named to grow */
 html[data-cz-dir="calm"]::view-transition-group(root) { animation: none; }
 html[data-cz-dir="calm"]::view-transition-old(root) { animation: cz-calm-out var(--motion-desk) var(--motion-ease) both; }

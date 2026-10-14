@@ -307,6 +307,27 @@
     return Promise.race([p, new Promise(function (r) { setTimeout(function () { r(null); }, ms); })]);
   }
 
+  // F-156: the laptop moves nothing while a level is on its way, so a slow one must not look dead: after --motion-quick with nothing back, the view says it is busy (aria-busy), the pointer shows
+  // progress and the clicked row dims (opacity only). All of it goes the moment the level arrives or fails.
+  function pending(level, el) {
+    if (!laptop()) return;
+    var wait = window.GA && GA.motion ? GA.motion.t('quick') : 160, mark = null;
+    var timer = setTimeout(function () {
+      var cv = view();
+      if (cv) cv.setAttribute('aria-busy', 'true');
+      root.classList.add('cz-pending');
+      if (el && el.isConnected) { mark = el.closest('.cz-wi, .cz-wcol, .cz-hchip') || el; mark.classList.add('is-pending'); }
+    }, wait);
+    function clear() {
+      clearTimeout(timer);
+      root.classList.remove('cz-pending');
+      if (mark) mark.classList.remove('is-pending');
+      var cv = view();
+      if (cv) cv.removeAttribute('aria-busy');
+    }
+    level.then(clear, clear);
+  }
+
   function goto(u, o) {
     o = o || {};
     if (busy) { via = null; if (o.mode === 'pop') waiting = u; return Promise.resolve(); }
@@ -317,6 +338,7 @@
     var key = o.key !== undefined ? o.key : (dir === 'out' && v ? v.dataset.zout : null);
     var age = cache[u] ? Date.now() - cache[u].at : 0, copy = null;
     var level = fetchLevel(u);
+    pending(level, o.el);
     var sketch = dir === 'in' && !reduced.matches && !laptop() ? outline(u, o, key) : null;      // (the laptop keeps the old level until the new one is in hand: never an outline first)
     return (sketch ? soon(level, SLOW) : level).then(function (got) {
       if (got !== null) return got;
@@ -376,7 +398,7 @@
     if (dir === 'side') dir = sideways(u);
     var from = a.closest('[data-zk]');
     via = a.closest('.cz-wcol') ? a : null;
-    goto(u, { dir: dir, key: dir === 'in' && from ? from.dataset.zk : null, mode: 'push', title: a.dataset.title || '' });
+    goto(u, { dir: dir, key: dir === 'in' && from ? from.dataset.zk : null, mode: 'push', title: a.dataset.title || '', el: a });
   });
   // The way up: the sheet's close button when a sheet is open, else the heading's back button.
   document.addEventListener('keydown', function (e) {
