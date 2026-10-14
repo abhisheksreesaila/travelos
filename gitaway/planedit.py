@@ -68,6 +68,31 @@ def _tell(session, fam, t, act_id, was, now):
     familydb.run(fam.db, "UPDATE thread SET payload = :p WHERE rowid = :n", p=payload, n=made["n"])
 
 
+def _tell_kind(session, fam, act_id, title, was, now):
+    """F-152: the family's card for a type change ("Ari changed Lunch to Food"). Like a move's, one card however many times the same person retypes the plan inside
+    `canvas.CARD_WINDOW` (it keeps what the kind was before, in `orig`), and changing it back takes the card away."""
+    key = f"kind:{act_id}"
+    last = familydb.row(fam.db, "SELECT rowid AS n, * FROM thread WHERE trip_id = :t ORDER BY rowid DESC LIMIT 1", t=fam.trip_id)
+    card = None
+    if last and last["kind"] == "change" and last["author"] == fam.traveler.id:
+        payload = _payload(last)
+        age = (datetime.now(timezone.utc) - datetime.fromisoformat(last["created_at"])).total_seconds()
+        if payload.get("key") == key and age <= canvas.CARD_WINDOW and isinstance(payload.get("orig"), str):
+            card, was = last, payload["orig"]
+    if was == now:
+        if card:
+            familydb.run(fam.db, "DELETE FROM thread WHERE rowid = :n", n=card["n"])
+        return
+    text = f"{familythread.first_name(fam.traveler)} changed {title} to {cal.KINDS[now][0]}"
+    payload = json.dumps({"action": "change", "key": key, "orig": was}, separators=(",", ":"))
+    if card:
+        familydb.run(fam.db, "UPDATE thread SET text = :x, payload = :p WHERE rowid = :n", x=text, p=payload, n=card["n"])
+        return
+    familythread.change(session, fam, text, action="change")
+    made = familydb.row(fam.db, "SELECT rowid AS n FROM thread WHERE trip_id = :t ORDER BY rowid DESC LIMIT 1", t=fam.trip_id)
+    familydb.run(fam.db, "UPDATE thread SET payload = :p WHERE rowid = :n", p=payload, n=made["n"])
+
+
 def add(session, *, day, start, end, title, id=None):
     """Make a plan (F-101: the touch grid's hold on empty time), through the calendar's own add rules with the grid's grain. The family is told once: the card is written in
     the add's own transaction with a tag, so a move, resize or rename of the new plan right after (inside `canvas.CARD_WINDOW`) changes that card and sends nothing more.
@@ -116,11 +141,13 @@ def change(session, act_id, *, start=None, end=None, title=None, day=None, kind=
             if row is None:
                 raise cal.CalendarError("That plan is gone.")
             was, was_kind = (row["day"], row["start_min"], row["end_min"], row["title"]), row["kind"]
-            if expect is not None and tuple(expect) != was:
+            if expect is not None and tuple(expect) != (was + (was_kind,))[:len(expect)]:
                 raise cal.CalendarError("Someone changed it since. Nothing was undone.")      # an Undo must not overwrite another member's later change
             a =cal.update_in(session, fam, t, blocks, act_id, day=day, start=start, end=end, title=title, kind=kind or None, scope="", say=False, fine=True)
             now = (a.day, a.start, a.end, a.title)
             _tell(session, fam, t, act_id, was, now)
+            if was == now:
+                _tell_kind(session, fam, act_id, a.title, was_kind, a.kind)
     return {"act": a, "changed": was != now or was_kind != a.kind,
             "undo": {"act": act_id, "day": was[0], "start": was[1], "end": was[2], "title": was[3], "kind": was_kind,
                      "after": {"day": now[0], "start": now[1], "end": now[2], "title": now[3], "kind": a.kind}}}
@@ -143,7 +170,7 @@ def restore(session, snapshot):
             and isinstance(s.get("kind", ""), str)):
         raise cal.CalendarError("There is nothing to undo.")
     return change(session, s["act"][:20], day=s["day"], start=s["start"], end=s["end"], title=s["title"], kind=s.get("kind") or None,
-                  expect=(after["day"], after["start"], after["end"], after["title"]))["act"]
+                  expect=(after["day"], after["start"], after["end"], after["title"]) + ((after["kind"],) if isinstance(after.get("kind"), str) else ()))["act"]
 
 
 def delete(session, act_id):

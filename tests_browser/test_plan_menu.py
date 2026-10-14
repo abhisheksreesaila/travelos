@@ -14,7 +14,7 @@ from tests_browser.helpers import DESKTOP, PHONE
 from tests_browser.test_day_grid import SUNDAY, ari, box, checks, open_day, plan
 from tests_browser.test_day_menu import hold_and_let_go
 from tests_browser.test_day_mouse import center, scroll_to, toast
-from tests_browser.test_trip_canvas import canvas_page, model  # noqa: F401 - fixtures
+from tests_browser.test_trip_canvas import NARROW, canvas_page, model  # noqa: F401 - fixtures
 
 SATURDAY = SUNDAY - 1
 
@@ -110,7 +110,7 @@ def test_move_to_day_offers_the_trips_days_without_the_plans_own_and_one_tap_mov
     settled(phone)
     item(phone, "Move to day").tap()
     days = phone.locator(".cz-menu-days .cz-dc")
-    n = len(cal.get_activity(ari(), lunch.id) and phone.locator(".cz-dpills [data-move-day]").all())
+    n = phone.locator(".cz-dpills [data-move-day]").count()
     expect(days).to_have_count(n)
     here = phone.locator(".cz-menu-days .cz-dc.is-here")
     expect(here).to_have_count(1)
@@ -150,7 +150,34 @@ def test_a_failed_save_says_so_and_changes_nothing(phone):
     assert got(lunch.id).kind == "fun"
 
 
+@pytest.mark.parametrize("step", ["Change type", "Move to day"])
+def test_both_steps_fit_and_are_touchable_on_the_smallest_phone(canvas_page, step):
+    page = canvas_page(viewport=NARROW, motion="no-preference")
+    lunch = lunch_on(page)
+    hold_and_let_go(page, lunch.id)
+    settled(page)
+    item(page, step).tap()
+    page.wait_for_timeout(500)
+    checks(page)                                                                    # 44px targets, 13px text, no sideways scroll
+    m = box(page, ".cz-menu")
+    assert m["x"] >= 7 and m["x"] + m["width"] <= NARROW["width"] - 7 and m["y"] >= 7 and m["y"] + m["height"] <= NARROW["height"]
+
+
 # ---- the laptop --------------------------------------------------------------------------------------------------------------------
+
+def test_a_hovered_type_keeps_its_own_colour(desk):
+    lunch = lunch_on(desk)
+    laptop_menu(desk, lunch.id)
+    item(desk, "Change type").click()
+    desk.wait_for_timeout(400)
+    tile = desk.locator(".cz-menu-kinds .cz-mi", has_text="Culture")
+    before = tile.evaluate("e => getComputedStyle(e).backgroundColor")
+    tile.hover()
+    desk.wait_for_timeout(150)
+    assert tile.evaluate("e => getComputedStyle(e).backgroundColor") == before
+    grape = desk.evaluate("() => { const d = document.createElement('i'); d.style.background = 'var(--grape-tint)'; document.body.append(d); const c = getComputedStyle(d).backgroundColor; d.remove(); return c; }")
+    assert before == grape
+
 
 @pytest.mark.parametrize("how", ["button", "right-click"])
 def test_the_laptop_menu_opened_by_the_dots_or_a_right_click_has_both_steps_and_a_mouse_picks(desk, how):
