@@ -75,7 +75,7 @@
 
 /* Moving a plan with the mouse (F-157, week_drag.js). No motion: the lifted copy follows the pointer, the column under it takes a coral ring and a quiet tint. */
 @media (min-width: 1020px) and (not (display-mode: standalone)) {
-  .cz .cz-wi[data-wk-act] { cursor: grab; -webkit-user-drag: none; }
+  .cz .cz-stage[data-edit="1"] .cz-wi[data-wk-act] { cursor: grab; -webkit-user-drag: none; }
   html.cz-wk-moving, html.cz-wk-moving * { cursor: grabbing !important; user-select: none; }
   .cz .cz-wi.is-lifted, .cz .cz-wi.is-saving { opacity: 0.45; }
   .cz .cz-wk.is-dragging .cz-wcol.is-drop-target { box-shadow: 0 0 0 0.1875rem var(--coral), var(--shadow-md); }

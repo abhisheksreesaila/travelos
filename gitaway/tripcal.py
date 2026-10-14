@@ -152,7 +152,10 @@ def is_imported(b) -> bool:
 
 
 def _lane(b, key, kind):
-    """The offer a booking `b` holds for one lane, or None when that lane was skipped (older bookings always have all three)."""
+    """The offer a booking `b` holds for one lane, or None when that lane was skipped (older bookings always have all three), or when there is no booking at all (F-155: it was deleted
+    between two reads of one request; every caller already reads "no offer" as "nothing booked")."""
+    if not b:
+        return None
     given = b.get(key)
     if b.get("imported"):  # booked elsewhere (F-042): stand-ins for the offers, built from the stored template
         build = {"flight": tripimport.flight_offer, "stay": tripimport.stay_offer, "car": tripimport.car_offer}[kind]

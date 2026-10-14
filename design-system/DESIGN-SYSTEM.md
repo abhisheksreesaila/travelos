@@ -84,3 +84,13 @@ Day colours cycle sun, mint, grape, sky, bubble. Big day numbers use a deeper in
 - **Skeleton to itinerary**: skeleton blocks #F2ECE3 at the real shapes' radius, with a lighter band (#FBF7F1) sweeping across every 1.4s, linear. When content lands, each block cross-fades (opacity plus 8px rise) over 400ms ease-out, with days staggered 120ms apart.
 - **Celebrate**: a single confetti burst in palette colours on booking or forking. Never loops.
 - **Reduced motion**: everything settles instantly; no loops.
+
+## Laptop skin (F-158)
+Captain, 2026-10-14: FINXPLORER's structure, GitAway's colours, light only. Applies to signed-in pages on a desktop (≥1020px, not the installed app); the phone and the landing keep the playful, tactile look above. Board: `docs/design/canvas/Web-Calm-v1.html` (frames C1–C3; C4 dark was not chosen).
+- **Surfaces**: white cards with a 1px hairline (`rgba(30,26,46,.10)`), radius 14 (design 18.67 → write 1.1667rem at the 12px root), no layered shadows; sections split by hairlines.
+- **Headings**: a small coral-deep eyebrow (11.5px, 700) over a two-tone Bricolage title — the first phrase ink, the second coral-deep ("Friday. *Fly in, check in.*").
+- **Top bar**: flat on paper with a hairline under it; text links, the current one ink with a 2px coral underline.
+- **Buttons**: flat pills, no ledge — primary coral with ink text, secondary white with a hairline.
+- **Data rows**: tile (30px, the kind's tint with its deep ink, initials or icon) · name (700) over a muted detail · right-aligned time; hairline between rows.
+- **One accent block per screen**: the ink Up next card. The day colours become small keys (day tabs, week column numbers) and tile tints.
+- **Motion**: the calm desktop fade (F-156).

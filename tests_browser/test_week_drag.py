@@ -229,8 +229,12 @@ def test_a_long_trips_week_scrolls_sideways_when_a_plan_is_held_near_its_edge(br
         far = page.locator(".cz-wcol.is-drop-target")
         expect(far).to_have_count(1)
         day = far.get_attribute("data-day")
+        scrolled = page.evaluate("() => document.querySelector('#cz-wk').scrollLeft")
+        assert scrolled > 20
         page.mouse.up()
         expect(page.locator(".ga-toast")).to_contain_text("Moved to")
+        page.wait_for_timeout(300)
+        assert page.evaluate("() => document.querySelector('#cz-wk').scrollLeft") == scrolled      # the refresh did not send the week back to the start
         assert cal.get_activity(ari(), "a77").day == int(day)
         assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth")
     finally:
@@ -252,3 +256,55 @@ def test_the_tablet_and_phone_week_do_not_drag(canvas_page, viewport):
         page.mouse.move(x + 40, y + 40, steps=5)
         assert page.locator(".cz-wi-copy").count() == 0 and page.evaluate("document.documentElement.classList.contains('cz-wk-moving')") is False
         page.mouse.up()
+
+
+def test_a_lifted_plan_is_put_back_when_the_window_loses_focus_or_the_button_was_let_go_out_of_sight(desk):
+    act = lunch(desk)
+    for how in ("blur", "nobutton"):
+        lift(desk, act)
+        desk.mouse.move(*mid(col(desk, SATURDAY)), steps=5)
+        if how == "blur":
+            desk.evaluate("window.dispatchEvent(new Event('blur'))")
+        else:
+            desk.evaluate("() => document.dispatchEvent(new PointerEvent('pointermove', { pointerId: 1, pointerType: 'mouse', buttons: 0, clientX: 600, clientY: 300, bubbles: true }))")
+        desk.wait_for_function("() => !document.querySelector('.cz-wi-copy, .is-drop-target, .is-lifted')")
+        desk.mouse.up()
+        desk.wait_for_timeout(250)
+        assert desk.locator(".ga-toast").count() == 0 and day_of(act) == SUNDAY
+        expect(desk.locator(".cz-view")).to_have_attribute("data-level", "week")
+
+
+def test_only_editors_get_the_grab_cursor_on_a_plan_row(desk, browser, base_url):
+    assert desk.locator(".cz-wk .cz-wi[data-wk-act]").first.evaluate("n => getComputedStyle(n).cursor") == "grab"
+    ctx = browser.new_context(viewport=DESKTOP, reduced_motion="reduce")
+    try:
+        ctx.set_default_timeout(9000)
+        mail = f"vi.ewer@{uuid.uuid4().hex[:8]}.example.com"
+        assert desk.context.request.post(f"{base_url}/family/invite", form={"email": mail, "role": "viewer"}, max_redirects=0).status < 400
+        ctx.request.post(f"{base_url}/signin", form={"email": mail, "next": "/", "intent": "save"}, max_redirects=0)
+        page = ctx.new_page()
+        page.goto(f"{base_url}/trip/canvas")
+        page.wait_for_selector("#cz-wk")
+        assert page.locator(".cz-wk .cz-wi[data-wk-act]").count() > 0
+        assert page.locator(".cz-wk .cz-wi[data-wk-act]").first.evaluate("n => getComputedStyle(n).cursor") != "grab"
+    finally:
+        ctx.close()
+
+
+def test_a_columns_own_scroll_stays_where_it_was_after_a_drop(desk):
+    act = lunch(desk)
+    for h in range(7, 21):                                                                       # make the Saturday card tall enough to scroll
+        plan(f"Stop {h}", h * 60, h * 60 + 30, day=SATURDAY)
+        plan(f"Then {h}", h * 60 + 30, h * 60 + 60, day=SATURDAY)
+    desk.reload()
+    desk.wait_for_selector("#cz-wk")
+    js = "() => document.querySelector('.cz-wcol[data-day=\"%d\"] .cz-wlist').scrollTop" % SATURDAY
+    desk.evaluate("() => { document.querySelector('.cz-wcol[data-day=\"%d\"] .cz-wlist').scrollTop = 120; }" % SATURDAY)
+    before = desk.evaluate(js)
+    assert before > 0
+    lift(desk, act)
+    desk.mouse.move(*mid(col(desk, SATURDAY)), steps=6)
+    desk.mouse.up()
+    expect(desk.locator(".ga-toast")).to_contain_text("Moved to")
+    desk.wait_for_timeout(300)
+    assert desk.evaluate(js) == before

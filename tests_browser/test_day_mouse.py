@@ -485,3 +485,24 @@ def test_a_step_held_at_the_edge_of_the_grid_card_scrolls_that_card_and_a_wheel_
     after = page.locator(".cz-lift").bounding_box()
     assert abs(after["y"] - lift["y"]) < 3 and abs(after["x"] - lift["x"]) < 3             # the chip is still under the pointer
     page.mouse.up()
+
+
+def test_a_drag_ends_when_the_window_loses_focus_or_the_button_was_let_go_out_of_sight(desk):
+    lunch = plan("Lunch", 12 * 60, 13 * 60)
+    desk.reload()
+    desk.wait_for_selector("#cz-grid")
+    for how in ("blur", "nobutton"):
+        scroll_to(desk, 12 * 60 + 30)
+        x, y = center(desk, lunch.id)
+        desk.mouse.move(x, y)
+        desk.mouse.down()
+        desk.mouse.move(x + 20, y + 60, steps=5)
+        desk.wait_for_selector(".cz-gb.is-held")
+        if how == "blur":
+            desk.evaluate("window.dispatchEvent(new Event('blur'))")
+        else:
+            desk.evaluate("([x, y]) => document.dispatchEvent(new PointerEvent('pointermove', { pointerId: 1, pointerType: 'mouse', buttons: 0, clientX: x, clientY: y, bubbles: true }))", [x + 20, y + 80])
+        desk.wait_for_function("() => !document.querySelector('.cz-gb.is-held')")
+        desk.mouse.up()
+        desk.wait_for_timeout(250)
+        assert now(lunch.id)[:2] == (12 * 60, 13 * 60) and desk.locator(".ga-toast").count() == 0

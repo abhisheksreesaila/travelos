@@ -2,6 +2,8 @@
 filters row, and the docked panel (`#cz-dock`, mode idle) with Up next, Later today and the Ask box, or "nothing up next" and Ask. Where things sit (two columns, only the grid and
 the panel scroll, no page scroll at 1440x900 and 1280x800) is checked in a real browser: tests_browser/test_day_dock.py. The sample trip: Fri 16 fly in, Sat 17 Universal, Sun 18 free."""
 import re
+
+import pytest
 from datetime import datetime, timezone
 
 from gitaway import catalog, tripcal as cal
@@ -111,3 +113,57 @@ def test_another_day_shows_its_first_plan_as_up_next(trip, monkeypatch):
     cal.add_activity(me, day=2, start=13 * 60, end=14 * 60, title="Pool", kind="fun")
     t = text(dock(day(trip, 2)))      # today is before the trip
     assert "FIRST UP" in t and "Slow breakfast" in t and "Pool" in t and "Later today" not in t and "Later on" in t
+
+
+def _vanishing_load(monkeypatch, gone_after):
+    """Wrap pages.trip.load (the panel's own read): `gone_after(session)` runs first, inside it, to make the booking disappear."""
+    from gitaway.pages import trip as trippage
+    real_load = trippage.load
+
+    def load(session, *a, **kw):
+        gone_after(session)
+        return real_load(session, *a, **kw)
+
+    monkeypatch.setattr(trippage, "load", load)
+
+
+def _no_500(r):
+    assert r.status_code in (200, 303), r.status_code
+    if r.status_code == 303:
+        assert r.headers["location"] == "/start"
+    else:
+        assert 'id="cz-dock"' in r.text
+
+
+@pytest.mark.parametrize("showcase", ["0", "1"])
+def test_a_booking_that_vanishes_mid_request_never_errors_the_panel(trip, monkeypatch, showcase):
+    """F-155: the day read the booking, then the panel's own read (pages.trip.load) found it gone (a family deleted the trip meanwhile): a normal page, not a 500.
+    Both showcase modes: ride_offers returns early with the showcase off, so only "1" reached `_lane` first."""
+    from gitaway import session as ses
+    monkeypatch.setenv("GITAWAY_SHOWCASE", showcase)
+    real_booking, gone = ses.booking, []
+
+    def go(session):
+        gone.append(1)                      # from here on this request's booking reads come back empty
+
+    _vanishing_load(monkeypatch, go)
+    monkeypatch.setattr(ses, "booking", lambda session: None if gone else real_booking(session))
+    _no_500(trip.get("/trip/canvas?day=1", follow_redirects=False))
+
+
+@pytest.mark.parametrize("showcase", ["0", "1"])
+def test_a_trip_really_deleted_mid_request_never_errors_the_panel(client, monkeypatch, showcase):
+    """The real case: importer.delete runs inside the panel's load, as another member deleting the trip would."""
+    from gitaway import importer, session as ses
+    from tests.test_signin import sign_in
+    from tests.test_trip_import import imported
+    monkeypatch.setenv("GITAWAY_SHOWCASE", showcase)
+    sign_in(client)
+    assert imported(client).status_code == 303
+    ari = person("ari")
+    trip_id = ses.trips(ari)[0].id
+    _vanishing_load(monkeypatch, lambda session: importer.delete(ari, trip_id))
+    r = client.get("/trip/canvas?day=1", follow_redirects=False)
+    _no_500(r)
+    if r.status_code == 200:
+        assert "Nothing up next" in r.text

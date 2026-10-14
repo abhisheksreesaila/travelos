@@ -107,8 +107,10 @@
       if (Math.hypot(g.x - g.x0, g.y - g.y0) <= CZ.DRAG) return;
       lift();
     }
+    if (g.lifted && !e.buttons) { end(); return; }      // the button was let go where no pointerup came (outside the window): it is over
     place(); target();
   }, true);
+  window.addEventListener('blur', function () { if (g && g.lifted) end(); });      // the window lost focus mid-drag: put it back
   function up(e) {
     if (!g || e.pointerId !== g.id) return;
     if (!g.lifted) { g = null; return; }
