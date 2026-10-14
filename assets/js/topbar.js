@@ -1,6 +1,6 @@
 // The top bar's two menus (the trip picker and the avatar) and the "/" key (F-139, gitaway/topbar.py). The menus are <details>: a menu grows out of its button and folds back into it
 // with the one liquid motion (GA.motion, motion.js); it closes on Esc, on a press outside it, and when another opens. "/" goes to Ask (the link beside it), unless a field has focus.
-// Until Ask is docked in a panel (F-142) the link is the Ask page; this script only follows it.
+// The key clicks the Ask link beside it. The link is the Ask page; on the trip canvas's day and week (a laptop) day_ask.js (F-142) catches that click and opens Ask in the panel instead.
 (function () {
   var MO = window.GA && window.GA.motion;
   var bar = document.querySelector('.ga-topbar');

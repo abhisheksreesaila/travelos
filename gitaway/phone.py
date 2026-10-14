@@ -34,7 +34,7 @@ def ask_sheet(active) -> bool:
 
 
 SHEET_HEAD = (Link(rel="stylesheet", href="/assets/css/ask.css"), Link(rel="stylesheet", href="/assets/css/ask_sheet.css"))
-SHEET_SCRIPTS = ("/assets/js/ask.js", "/assets/js/ask_sheet.js")
+SHEET_SCRIPTS = ("/assets/js/ask.js", "/assets/js/ask_flow.js", "/assets/js/ask_sheet.js")
 
 
 def tabbar(active):

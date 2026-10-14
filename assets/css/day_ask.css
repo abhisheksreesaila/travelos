@@ -1,0 +1,20 @@
+/* Ask in the panel (F-142, frame A2 of docs/design/canvas/Web-Trip-v1.html; assets/js/day_ask.js). From 1020px up the panel's third mode: `#cz-dock[data-mode="ask"]` shows the Ask box (the phone's own
+   fragments, styled by ask.css and ask_sheet.css) in a pane of its own, in place of Up next and the compose bar. Sizes are rem off the one root. Motion: none of its own (GA.motion in the script). */
+.cz .cz-ak { display: none; }
+@media (min-width: 1020px) and (not (display-mode: standalone)) {
+  .cz .cz-dock[data-mode="ask"] [data-pane="idle"], .cz .cz-dock[data-mode="ask"] .cz-compose { display: none; }
+  .cz .cz-dock:not([data-mode="ask"]) .cz-ak:not(.is-leaving) { display: none; }
+  .cz .cz-ak { display: flex; background: var(--card); border-radius: 1.5rem; }
+  .cz .cz-ak.is-leaving { overflow: hidden; }
+  .cz .cz-ak:focus { outline: none; }
+  .cz .cz-ak-hd { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+  .cz .cz-ak-t { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 1.8333rem; line-height: 1.1; letter-spacing: -0.02em; }
+  .cz .cz-ak-body { display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; }
+  .cz .cz-ak-body > #ak-sheet-body { display: flex; flex-direction: column; gap: 0.75rem; }
+  .cz .cz-ak .ak-sheetform #ak-text { font-size: 1.25rem; }
+  .cz .cz-ak .ak-fine { margin: 0; font-size: var(--cz-body); font-weight: 600; color: var(--ink-3); }
+
+  /* the compose bar's hint: "Type to Ask  or press  /" */
+  .cz .cz-compose-or { font-size: var(--cz-small); font-weight: 700; color: var(--ink-3); }
+  .cz .cz-kbd { font: 700 var(--cz-small) var(--font-body); color: var(--ink-3); background: var(--paper-2); border-radius: 0.4167rem; padding: 0.0833rem 0.4167rem; box-shadow: inset 0 0 0 0.0625rem var(--line-2); }
+}
