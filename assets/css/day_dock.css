@@ -101,6 +101,9 @@
   .cz .cz-compose-t { flex: 1; }
   .cz .cz-compose-go { width: 2.5rem; height: 2.5rem; display: grid; place-items: center; border-radius: 50%; background: var(--coral); color: var(--ink); box-shadow: 0 0.125rem 0 var(--coral-deep); }
   .cz .cz-compose:focus-visible { outline: 0.1667rem solid var(--ink); outline-offset: 0.1667rem; }
+
+  /* F-150: a long block's title and time stick to the grid card's own top, not 4rem down (that is the phone's, under its folded bar): at 4rem they floated over the part chips */
+  .cz .cz-view[data-day] .cz-gb-head { top: 0.25rem; }
 }
 
 @media (min-width: 1020px) and (max-width: 1300px) and (not (display-mode: standalone)) {

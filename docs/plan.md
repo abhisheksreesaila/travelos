@@ -832,7 +832,7 @@ Bug, found while building F-139..F-148: tests_browser/test_day_card.py::test_a_s
 - [ ] a short downward pull on the open plan card at 390 and 320 springs back and does not fold the card, on the phone
 - [ ] the test passes in the full browser run and in random order
 
-## F-150 A park block's title no longer covers its parts on a laptop [todo]
+## F-150 A park block's title no longer covers its parts on a laptop [review]
 Bug, found in F-141's review (already there in F-140): on the desktop day a long park block's title and time are sticky with the phone's offset (`assets/css/day_grid.css:51`, `top: calc(env(safe-area-inset-top) + 4rem)`), so inside the scrolling grid card they sit 4rem down, on top of the part chips.
-- [ ] at 1440×900 and 1280×800 a park block's title, time and part chips never overlap, at the top of the grid and while the grid scrolls
-- [ ] the phone's sticky title is unchanged
+- [x] at 1440×900 and 1280×800 a park block's title, time and part chips never overlap, at the top of the grid and while the grid scrolls
+- [x] the phone's sticky title is unchanged
