@@ -97,6 +97,8 @@ def test_no_page_scrolls_sideways_at_any_width(ari, base_url, path, size):
 
 def test_a_family_with_many_people_keeps_the_page_still_and_scrolls_the_list(ari, contexts, base_url):
     ctx, page = ari
+    for i in range(3):
+        join_as(contexts, base_url, page, f"member{i}.{uuid.uuid4().hex[:6]}@example.com")
     for i in range(6):
         page.goto(f"{base_url}/family")
         page.fill("#fam-email", f"guest{i}.{uuid.uuid4().hex[:6]}@example.com")
@@ -108,9 +110,21 @@ def test_a_family_with_many_people_keeps_the_page_still_and_scrolls_the_list(ari
     assert fits(page)[0] <= fits(page)[1]  # the lists scroll inside their cards, the page stays put
     assert page.locator("#fam-pending").evaluate("e => getComputedStyle(e).overflowY") == "auto"
     assert page.locator("#fam-members").evaluate("e => getComputedStyle(e).overflowY") == "auto"
+    expect(page.locator(".fam-member")).to_have_count(4)
+    assert page.locator("#fam-members").evaluate("e => e.scrollHeight > e.clientHeight")  # four members do not fit the 15rem cap: the list scrolls inside its card
 
 
 # ---- /family: every button ---------------------------------------------------------------------------------------------
+
+def test_invite_someone_takes_a_lone_admin_to_the_invite_form(ari, base_url):
+    ctx, page = ari
+    page.goto(f"{base_url}/family")
+    page.click("#fam-alone a:has-text('Invite someone')")
+    assert page.url.endswith("/family#invite")
+    expect(page.locator("#invite")).to_be_in_viewport()
+    page.fill("#fam-email", "pat@example.com")
+    expect(page.locator("#fam-email")).to_have_value("pat@example.com")
+
 
 def test_the_invitations_section_keeps_its_stable_id_and_the_invite_form_works(ari, base_url):
     ctx, page = ari
