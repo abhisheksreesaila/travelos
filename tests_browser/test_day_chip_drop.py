@@ -4,6 +4,7 @@ pointer shows a coral ring, the open day's chip does not); letting go on a chip 
 the header's empty space or back on the grid leave the plan (the grid moves its time as before); a plan landing among others sits beside them (lanes); a booking is not draggable;
 a viewer cannot drag; a long trip's chips scroll when a plan is held near their end. Screenshots on request: F151_SHOTS=<folder>."""
 import os
+import re
 import uuid
 
 import pytest
@@ -17,6 +18,7 @@ from tests_browser.test_topbar import LAPTOP
 from tests_browser.test_trip_canvas import canvas_page, model  # noqa: F401 - fixtures
 
 SATURDAY = SUNDAY - 1
+DROP = re.compile(r"is-drop-target")
 
 
 def shot(page, name):
@@ -69,8 +71,8 @@ def test_a_held_plan_shows_which_chip_will_take_it_and_the_open_day_does_not_acc
     lift(desk, lunch.id)
     expect(desk.locator(".cz-hchips.is-dropping")).to_be_visible()
     desk.mouse.move(*mid(desk, chip(desk, SATURDAY)), steps=6)
-    expect(chip(desk, SATURDAY)).to_have_class(__import__("re").compile(r"is-drop-target"))
-    expect(desk.locator(".cz-g-label")).to_contain_text("Move to Sat 17")
+    expect(chip(desk, SATURDAY)).to_have_class(DROP)
+    expect(desk.locator(".cz-g-label")).to_be_hidden()                                          # the ring says it: the label is not drawn over the header
     assert desk.locator(".cz-hchip.is-drop-target").count() == 1
     ring = chip(desk, SATURDAY).evaluate("n => getComputedStyle(n).boxShadow")
     assert "rgb(255, 115, 82)" in ring                                                          # the coral ring (--coral)
@@ -78,7 +80,7 @@ def test_a_held_plan_shows_which_chip_will_take_it_and_the_open_day_does_not_acc
     desk.mouse.move(*mid(desk, chip(desk, SUNDAY)), steps=4)                                    # the open day: no ring, no drop
     assert desk.locator(".cz-hchip.is-drop-target").count() == 0
     desk.mouse.move(*mid(desk, chip(desk, 3)), steps=4)
-    expect(chip(desk, 3)).to_have_class(__import__("re").compile(r"is-drop-target"))
+    expect(chip(desk, 3)).to_have_class(DROP)
     desk.mouse.up()
     desk.wait_for_function("() => !document.querySelector('.cz-hchips.is-dropping')")
     assert desk.locator(".cz-hchip.is-drop-target").count() == 0
@@ -163,13 +165,25 @@ def test_a_plan_open_in_the_panel_stays_there_when_another_plan_is_moved(desk):
     assert desk.locator("#cz-dock .cz-pp:not(.is-leaving)").get_attribute("data-act") == tea.id
 
 
+def test_a_failed_save_brings_the_plan_back_with_a_toast(desk):
+    lunch = lunch_on_sunday(desk)
+    desk.route("**/trip/canvas/plan", lambda r: r.fulfill(status=500, body="boom"))
+    lift(desk, lunch.id)
+    desk.mouse.move(*mid(desk, chip(desk, SATURDAY)), steps=6)
+    desk.mouse.up()
+    expect(toast(desk)).to_contain_text("Could not save")
+    desk.wait_for_function("(id) => { const b = document.querySelector('.cz-gb[data-act=\"' + id + '\"]'); return b && getComputedStyle(b).opacity === '1' && !b.getAnimations().length; }", arg=lunch.id)
+    expect(block(desk, lunch.id)).to_be_visible()
+    assert day_of(lunch.id) == SUNDAY and now(lunch.id)[:2] == (12 * 60, 13 * 60)
+
+
 # ---- the plan stays ---------------------------------------------------------------------------------------------------------------
 
 def test_escape_mid_drag_over_a_chip_leaves_the_plan_where_it_was(desk):
     lunch = lunch_on_sunday(desk)
     lift(desk, lunch.id)
     desk.mouse.move(*mid(desk, chip(desk, SATURDAY)), steps=6)
-    expect(chip(desk, SATURDAY)).to_have_class(__import__("re").compile(r"is-drop-target"))
+    expect(chip(desk, SATURDAY)).to_have_class(DROP)
     desk.keyboard.press("Escape")
     desk.wait_for_function("() => !document.querySelector('.cz-gb.is-held') && !document.querySelector('.cz-hchips.is-dropping')")
     desk.mouse.up()
@@ -287,7 +301,7 @@ def test_a_long_trips_chips_scroll_when_a_plan_is_held_near_their_end(browser, b
         assert page.evaluate("() => document.querySelector('.cz-hchips').scrollLeft") == stop
         far = page.locator('.cz-hchip[data-move-day="8"]')
         page.mouse.move(*mid(page, far), steps=4)
-        expect(far).to_have_class(__import__("re").compile(r"is-drop-target"))
+        expect(far).to_have_class(DROP)
         page.mouse.up()
         expect(page.locator(".ga-toast")).to_contain_text("Moved to")
         page.wait_for_selector('.cz-gb[data-act="a77"]', state="detached")

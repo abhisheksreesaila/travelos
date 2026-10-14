@@ -355,6 +355,7 @@
     gg.snapped = snapped;
     gg.chip = gg.chips ? CZ.chipDrop.over(gg.x, gg.y) : null;           // F-151: the day chip under the pointer that will take the plan
     if (gg.chip) { text = 'Move to ' + gg.chip.dataset.moveLabel; small = 'same time'; }
+    label.style.visibility = gg.chip ? 'hidden' : '';                  // (the coral ring says it; the label must not sit over the header)
     var w = label.firstChild, sm = label.lastChild;
     if (w.textContent !== text) w.textContent = text;
     if (sm.textContent !== small) sm.textContent = small;
