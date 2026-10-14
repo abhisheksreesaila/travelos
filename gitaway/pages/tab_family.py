@@ -15,10 +15,12 @@ import hashlib
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from fasthtml.common import A, Audio, Button, Div, Form, Img, Input, Link, Noscript, P, Span, to_xml
+import json
+
+from fasthtml.common import A, Audio, Button, Div, Form, Img, Input, Link, Noscript, P, Script, Span, to_xml
 from starlette.responses import JSONResponse, PlainTextResponse, RedirectResponse, Response
 
-from gitaway import familythread, plantalk, session as ses
+from gitaway import familychats, familythread, plantalk, session as ses
 from gitaway.icons import icon
 from gitaway.pages import photos as photos_ui
 
@@ -134,7 +136,7 @@ def content(request, session):
                  Button(Span(cls="mp-knob"), Span("Quiet", cls="ft-quiet-label"), type="submit", role="switch", aria_checked="true" if quiet else "false", id="ft-quiet", cls=f"mp-switch ft-switch{' is-on' if quiet else ''}"),
                  method="post", action="/trip/family/quiet", cls="ft-quiet-form"),
             cls="ft-notify"),
-        Div(*fragment(its, me, zone, plantalk.labels(session)), id="ft-thread", cls="ft-thread", data_last=str(last), data_poll=str(POLL_MS), data_trip=trip, role="log", aria_live="polite", aria_label="Family thread"),
+        Div(*fragment(its, me, zone, plantalk.labels(session)), id="ft-thread", cls="ft-thread", data_last=str(last), data_poll=str(POLL_MS), data_poll_url="/trip/family/thread?read=1", data_trip=trip, role="log", aria_live="polite", aria_label="Family thread"),
         P("No messages yet. Say hello, or change a plan and it shows up here.", id="ft-empty", cls="ft-empty", hidden=bool(its)),
         Form(Input(type="hidden", name="trip", value=trip),
              Input(type="text", name="text", id="ft-text", maxlength=str(familythread.MAX_MESSAGE), placeholder="Message the family", autocomplete="off", aria_label="Message the family", cls="ft-input", required=True),
@@ -148,6 +150,18 @@ def content(request, session):
                id="ft", cls="ft", data_view=view)
 
 
+def head_for(request, session):
+    """F-143. What phone_tabs adds to this page's <head>: on a laptop (the trip canvas's 1020px line) the Family chats live in the day's panel, so the page goes on to the day with them open
+    before anything below it is drawn or fetched; on the phone and the tablet it is the page it always was, and the person has now seen all of it (every chat, `seen` in
+    gitaway/pages/familydock.py), as the panel's counts need."""
+    from gitaway.pages import tripcanvas as tc
+    if request.query_params.get("view") == "photos" or not session.get("user_id"):
+        return ()
+    panel = tc.curl(day=tc.today_day(session), panel="family")
+    return (Script("(function(){if(window.matchMedia('(min-width: 1020px) and (not (display-mode: standalone))').matches){location.replace(" + json.dumps(panel) + ");return;}"
+                   "fetch('/trip/family/seen',{method:'POST',credentials:'same-origin',body:new URLSearchParams({key:'*'})}).catch(function(){});})();"),)
+
+
 def _signed_in(session):
     return ses.current_traveler(session) is not None
 
@@ -156,26 +170,37 @@ STALE = "This trip changed. Reload the page."
 SORRY = "That did not send. Try again."
 
 
-def _new_items(session, since, trip=""):
-    """The items after `since` as an HTML fragment; the highest item number goes in X-Thread-Last. 409 when the page was drawn for another trip."""
+def _new_items(session, since, trip="", scope="", read=False):
+    """The items after `since` as an HTML fragment; the highest item number goes in X-Thread-Last. 409 when the page was drawn for another trip. `scope` "trip": only what belongs to no plan
+    (the panel's Whole trip, F-143); `read`: the person is looking at the chat, so what is returned is marked read."""
     try:
-        its = familythread.items(session, since=max(0, since), trip=trip or None)
+        its = familythread.items(session, since=max(0, since), trip=trip or None, scope="trip" if scope == "trip" else "")
     except familythread.StaleTrip:
         return PlainTextResponse(STALE, status_code=409)
+    if read and its:      # the person is looking at it: the panel's whole-trip chat, or the phone's Family tab (every chat)
+        familychats.mark_read(session, familychats.TRIP if scope == "trip" else familychats.EVERYTHING, its[-1]["n"])
     me, zone = ses.current_traveler(session).id, ses.trip_zone(session)
-    body = "".join(to_xml(v) for v in fragment(its, me, zone, plantalk.labels(session)))
+    body = "".join(to_xml(v) for v in fragment(its, me, zone, plantalk.labels(session) if scope != "trip" else None))
     return Response(body, media_type="text/html; charset=utf-8", headers={"X-Thread-Last": str(its[-1]["n"] if its else max(0, since)), "Cache-Control": "no-store"})
+
+
+def wants_page(request) -> bool:
+    """True for a person opening the address (a browser navigation), false for the page's own polling (fetch). Browsers say so in Sec-Fetch-Mode; an older one in its Accept."""
+    h = request.headers
+    return h.get("sec-fetch-mode") == "navigate" or h.get("sec-fetch-dest") == "document" or "application/xhtml+xml" in h.get("accept", "")
 
 
 def register(app):
     photos_ui.register(app)
 
     @app.get("/trip/family/thread")
-    def poll(session, since: int = 0, trip: str = ""):
-        return _new_items(session, since, trip) if _signed_in(session) else Response(status_code=401)
+    def poll(request, session, since: int = 0, trip: str = "", scope: str = "", read: str = ""):
+        if wants_page(request):      # F-143: opened in the browser's address bar, it is the Family page (on a laptop that goes on to the day with the chat open), never a bare fragment
+            return RedirectResponse("/trip/family", status_code=303)
+        return _new_items(session, since, trip, scope, read == "1") if _signed_in(session) else Response(status_code=401)
 
     @app.post("/trip/family/message")
-    def message(request, session, text: str = "", since: int = 0, trip: str = "", cid: str = ""):
+    def message(request, session, text: str = "", since: int = 0, trip: str = "", cid: str = "", scope: str = ""):
         if not _signed_in(session):
             return Response("Sign in first.", status_code=401)
         wants_fragment = request.headers.get("x-fragment") == "1"
@@ -187,7 +212,7 @@ def register(app):
             return PlainTextResponse(str(e), status_code=400) if wants_fragment else RedirectResponse("/trip/family", status_code=303)
         if not wants_fragment:
             return RedirectResponse("/trip/family", status_code=303)
-        return _new_items(session, since, trip)
+        return _new_items(session, since, trip, scope)
 
     @app.post("/trip/family/quiet")
     def quiet(request, session, quiet: str = "1"):

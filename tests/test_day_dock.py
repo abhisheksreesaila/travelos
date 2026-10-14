@@ -60,7 +60,7 @@ def test_the_panel_is_one_container_with_a_mode_and_three_tabs(trip):
     tabs = re.search(r'role="tablist".*?</nav>', d, re.S).group(0)
     assert [text(t) for t in re.findall(r"<(?:a|button)\b[^>]*>.*?</(?:a|button)>", tabs, re.S)] == ["Plan", "Family", "Ask"]
     assert 'aria-selected="true"' in re.findall(r"<(?:a|button)\b[^>]*>", tabs)[0]
-    assert 'href="/trip/family"' in tabs and "/trip/ask?day=1" in tabs
+    assert 'href="/trip/canvas?day=1&amp;panel=family' in tabs and "/trip/ask?day=1" in tabs      # F-143: Family opens the day's own panel (a page without script lands there too)
 
 
 def test_during_the_trip_the_panel_shows_up_next_later_today_and_the_ask_box(trip, monkeypatch):

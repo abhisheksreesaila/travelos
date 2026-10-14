@@ -20,7 +20,7 @@ from fasthtml.common import A, Button, Div, Form, Input, Label, Link, Main, P, S
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import FileResponse, PlainTextResponse, RedirectResponse, Response
 
-from gitaway import familythread, phone, photos, plantalk, session as ses, tripcal as cal, voicenotes
+from gitaway import familychats, familythread, phone, photos, plantalk, session as ses, tripcal as cal, voicenotes
 from gitaway.icons import icon
 from gitaway.pages import tab_family
 
@@ -82,7 +82,9 @@ def content(session, a, p):
     trip = ses.open_trip_id()
     part = p["id"] if p else ""
     last = its[-1]["n"] if its else 0
-    poll = f"/trip/talk/items?act={quote(a.id)}" + (f"&part={quote(part)}" if part else "")
+    if last:
+        familychats.mark_read(session, familychats.key_of(a.id, p["id"] if p else ""), last)      # F-143: opening a chat reads it
+    poll = f"/trip/talk/items?act={quote(a.id)}" + (f"&part={quote(part)}" if part else "") + "&read=1"
     who = a.title if not p else f"{p['name']} · {a.title}"
     return Div(
         A(icon("chev-left", 18, 2.4), "Back to the day", href=f"/trip/canvas?day={a.day}" + (f"&trip={quote(trip)}" if trip else ""), cls="fp-back", id="pt-back"),
@@ -127,12 +129,14 @@ def _signed_in(session):
     return ses.current_traveler(session) is not None
 
 
-def _new(session, act, part, since, trip=""):
+def _new(session, act, part, since, trip="", read=False):
     """The chat's items after `since` as a fragment (X-Thread-Last holds the highest number); 409 when the page was drawn for another trip."""
     try:
         its = plantalk.items(session, act, part, since=max(0, since), trip=trip or None)
     except familythread.StaleTrip:
         return PlainTextResponse(plantalk.STALE, status_code=409)
+    if read and its:      # F-143: the person is looking at this chat (the desktop panel's live poll): what is returned is read
+        familychats.mark_read(session, familychats.key_of(act, part), its[-1]["n"])
     me, zone = ses.current_traveler(session).id, ses.trip_zone(session)
     body = "".join(to_xml(v) for v in tab_family.fragment(its, me, zone))
     return Response(body, media_type="text/html; charset=utf-8", headers={"X-Thread-Last": str(its[-1]["n"] if its else max(0, since)), "Cache-Control": "no-store"})
@@ -162,10 +166,10 @@ def register(app):
             return RedirectResponse("/trip/canvas", status_code=303)
 
     @app.get("/trip/talk/items")
-    def items(session, act: str = "", part: str = "", since: int = 0, trip: str = ""):
+    def items(session, act: str = "", part: str = "", since: int = 0, trip: str = "", read: str = ""):
         if not _signed_in(session):
             return Response(status_code=401)
-        return _new(session, act, part, since, trip)
+        return _new(session, act, part, since, trip, read == "1")
 
     @app.post("/trip/talk/message")
     def message(request, session, act: str = "", part: str = "", text: str = "", since: int = 0, trip: str = "", cid: str = ""):

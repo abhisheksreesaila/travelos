@@ -25,6 +25,8 @@ SCRIPT_SRC = "/assets/js/topbar.js"
 def section(path: str) -> str:
     """Which of Trip, Family and Ask a path belongs to: "ask", "family", "trip", or "" (the community and the like)."""
     p = (path or "").split("?")[0].rstrip("/") or "/"
+    if p == "/trip/canvas" and "panel=family" in (path or "").partition("?")[2].split("&"):
+        return "family"      # F-143: the day with the Family chats open in the panel
     if p == "/trip/ask":
         return "ask"
     if p == "/family" or p.startswith("/family/") or p == "/trip/family" or p.startswith("/trip/family/"):

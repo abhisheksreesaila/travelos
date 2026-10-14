@@ -60,15 +60,18 @@ def _check(fam, trip):
         raise StaleTrip("This trip changed. Reload the page.")
 
 
-def items(session, since=0, limit=SHOWN, trip=None) -> list:
+WHOLE_TRIP = "AND NOT (kind IN ('message', 'photo', 'voice') AND payload LIKE '%\"act\":\"%')"      # F-143: what belongs to no plan's chat (the panel's "Whole trip")
+
+
+def items(session, since=0, limit=SHOWN, trip=None, scope="") -> list:
     """The thread of the trip this person has open (or `trip`, which must be that trip: StaleTrip otherwise): items after rowid `since` (oldest first),
-    at most the newest `limit`. [] when signed out."""
+    at most the newest `limit`. [] when signed out. `scope` "trip" leaves out what was said on a plan or a part (those have their own chats, F-091)."""
     from gitaway import session as ses
     with ses.family(session) as fam:
         if not fam or not fam.trip_id:
             return []
         _check(fam, trip)
-        found = familydb.rows(fam.db, "SELECT * FROM (SELECT rowid AS n, * FROM thread WHERE trip_id = :t AND rowid > :s ORDER BY rowid DESC LIMIT :l) ORDER BY n",
+        found = familydb.rows(fam.db, f"SELECT * FROM (SELECT rowid AS n, * FROM thread WHERE trip_id = :t AND rowid > :s {WHOLE_TRIP if scope == 'trip' else ''} ORDER BY rowid DESC LIMIT :l) ORDER BY n",
                               t=fam.trip_id, s=int(since or 0), l=limit)
     return [_item(r) for r in found]
 

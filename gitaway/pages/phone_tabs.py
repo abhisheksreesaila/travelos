@@ -21,7 +21,7 @@ def tab_page(key, request, session):
     kicker = f"{t.title.upper()} · {cal.range_label(t.depart, t.return_).upper()}"
     faces = [avatar(ses.current_traveler(session), "tp-av"), *[avatar(f, "tp-av") for f in members.crew(session)]]
     return phone.shell(key, phone.header(kicker, mod.TITLE, faces, sos=key in ("ask", "family")), join_note(), Main(mod.content(request, session), id="main", cls="ph-main"),
-                       title=mod.TITLE, head=getattr(mod, "HEAD", ()), scripts=getattr(mod, "SCRIPTS", ()))
+                       title=mod.TITLE, head=(*(mod.head_for(request, session) if hasattr(mod, "head_for") else ()), *getattr(mod, "HEAD", ())), scripts=getattr(mod, "SCRIPTS", ()))
 
 
 def register(app):

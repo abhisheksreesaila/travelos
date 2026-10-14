@@ -130,6 +130,7 @@
         // F-141: the docked panel (day_dock.js) is left alone while it moves; a message being written in it, and what an editor opened in it (Add a step, the Set aside list), stay as they are
         if (old.id === 'cz-dock' && CZ.dockBusy && CZ.dockBusy()) return false;
         if (old.classList.contains('cz-pp-text') && old.value) return false;
+        if (old.hasAttribute('data-live')) return false;      // F-143: the Family chats in the panel are kept up to date by their own script (thread.js), a refresh of the day leaves them be
         if (old.hasAttribute('data-keep-state')) ['hidden', 'aria-expanded'].forEach(function (a) { if (old.hasAttribute(a)) fresh.setAttribute(a, old.getAttribute(a)); else fresh.removeAttribute(a); });
         for (var i = 0; i < OWN.length; i++) if (old.classList.contains(OWN[i])) fresh.classList.add(OWN[i]);
         if (old.classList.contains('cz-fold')) ['inert', 'aria-hidden'].forEach(function (a) { if (old.hasAttribute(a)) fresh.setAttribute(a, old.getAttribute(a)); else fresh.removeAttribute(a); });
