@@ -859,10 +859,10 @@ Bug: F-062 made sign-out reach the landing in ~0.1s (headless Chromium). By 2026
 - [x] signing out at 1440 and 390 reaches the landing in well under the 1.0s limit again (aim for F-062's ~0.1–0.3s in headless Chromium), measured over 5 runs (the app was never slower: submit to load is ~0.12s; the test's clock included Playwright waiting ~0.9s for F-139's avatar menu to finish its spring; the test now starts the clock once the menu is still. After: 0.15–0.26s at both widths)
 - [x] the next person on the device still can't see the previous family's pages or cached data
 
-## F-154 The top bar's menus open quickly [todo]
+## F-154 The top bar's menus open quickly [done]
 Found in F-153's review: on a laptop the avatar menu (and likely the trip picker) keeps moving for ~0.9s after a click (Playwright waits that long for Sign out to be still), longer than the 520ms spring token; menus people open often should feel instant (lessons: F-118 "no motion over clever motion where things happen often").
-- [ ] the top bar's avatar menu and trip picker are usable (their items still) within 0.25s of the click at 1440, measured in a browser test with motion on
-- [ ] they still grow out of their button and fold back with GA.motion and the --motion-* tokens (no new timings)
+- [x] the top bar's avatar menu and trip picker are usable (their items still) within 0.25s of the click at 1440, measured in a browser test with motion on
+- [x] they still grow out of their button and fold back with GA.motion and the --motion-* tokens (no new timings)
 
 ## F-155 The day panel never errors when a booking vanishes mid-request [todo]
 Bug, seen twice in browser runs (F-143 and F-154 reviews): `gitaway/tripcal.py` `_lane` raises AttributeError ('NoneType' has no attribute 'get') while drawing the day panel (`daydock.idle` → `trip.load` → `ride_offers` → `rides_of(None)`); the booking read succeeded earlier in the same request and was gone later. Likely a request racing a test's cleanup, but a real family deleting a trip while another member's page refreshes could hit it too.
