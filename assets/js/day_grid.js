@@ -14,6 +14,11 @@
 // scrolls as usual (a selected block itself does not scroll under a finger: touch-action none, so a drag on it is never taken for a scroll). It stays selected through the save.
 //
 // F-098 adds the hold menu, the wiggle, rename in place and delete (further down).
+//
+// F-144: a mouse on the desktop day (from 1020px) needs no hold. Press a plan and drag past a few pixels to move it (a click still opens it in the panel); the knob at its foot (day_mouse.js
+// shows it on hover) resizes at once. Both snap like the phone, with no zoom (a mouse is exact), and save through the same path with the same Undo. The grid there scrolls inside its own
+// card, so the edge scroll, the geometry and the label read the card's scroll (`scrollY()`), not the window's; a wheel turned during a hold repaints, so the plan stays under the pointer.
+// Escape drops a plan in the air back where it was.
 (function () {
   var CZ = window.CZ;
   if (!CZ) return;
@@ -27,6 +32,14 @@
   var label = null;
   var busy = false;       // a block is landing: no new gesture until it has
   var tick = 0;
+  var DESK = window.matchMedia('(min-width: 1020px) and (not (display-mode: standalone))');      // the same query as day_dock.css
+
+  // F-144: a mouse on the desktop day, and the card that scrolls there. A touch screen of any size keeps the phone's gestures.
+  function mouseOn(e) { return !!e && e.pointerType === 'mouse' && DESK.matches; }
+  function box() { return DESK.matches ? stage.querySelector('.cz-view[data-day] .cz-day-body') : null; }
+  function scrollY() { var b = box(); return b ? b.scrollTop : window.scrollY; }
+  CZ.mouseOn = mouseOn;
+  CZ.dayBox = box;
 
   function editing() { return stage.dataset.edit === '1'; }
   function grid() { return stage.querySelector('#cz-grid'); }
@@ -53,8 +66,19 @@
       lift();
       return;
     }
+    var mouse = mouseOn(e), tk = mouse && e.target.closest ? e.target.closest('.cz-g-tknob') : null;
+    if (tk && tk.closest('.cz-g-tools') && tk.closest('.cz-g-tools').block) {                  // F-144: the hover knob at a plan's foot: its end is dragged at once, with the mouse
+      gg = { id: e.pointerId, el: tk.closest('.cz-g-tools').block, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, mode: 'wait', resize: true, edge: 'end', knob: tk, mouse: true, moved: false, dirty: false };
+      e.preventDefault();
+      lift();
+      return;
+    }
     var el = e.target.closest ? e.target.closest('.cz-gb') : null;
-    if (!el || !stage.contains(el) || e.target.closest('input, textarea')) return;
+    if (!el || !stage.contains(el) || e.target.closest('input, textarea, .cz-g-tools')) return;
+    if (mouse) {                                                                              // F-144: press and drag moves it; a click opens it (the panel), as before
+      gg = { id: e.pointerId, el: el, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, mode: 'wait', resize: false, edge: 'end', mouse: true, moved: false, dirty: false };
+      return;
+    }
     var r = el.getBoundingClientRect();
     var edge = Math.min(clamp(r.height * 0.4, rem() * 0.75, rem() * 1.75), r.height * 0.45);        // the bottom edge: a hand's width of the block's last stretch (never more than its lower half)
     var own = !!sel && sel.el === el && !el.classList.contains('is-tall');                                                       // F-110: a touch on the selected block's body moves it as soon as it travels (no second hold)
@@ -69,6 +93,7 @@
     gg.y = e.clientY;
     if (gg.mode === 'wait') {
       var far = Math.hypot(gg.x - gg.x0, gg.y - gg.y0);
+      if (gg.mouse) { if (far > DRAG) lift(); return; }                                       // F-144: no hold with a mouse; a small wobble is still a click
       if (gg.own && far > DRAG) { clearTimeout(gg.timer); lift(); return; }
       if (far > SLOP) { clearTimeout(gg.timer); if (gg.own) CZ.held = false; gg = null; }       // it is a scroll, or the flick between days: not ours
       return;
@@ -163,6 +188,14 @@
     deselect();
   }, true);
 
+  document.addEventListener('keydown', function (e) {            // F-144: Escape drops a plan held in the air (before the panel's and the canvas's Escape)
+    if (!gg || gg.mode !== 'held' || e.key !== 'Escape') return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    cancel();
+  }, true);
+  document.addEventListener('scroll', function () { if (gg && gg.mode === 'held') gg.dirty = true; }, true);      // F-144: a wheel turned during a hold: the plan is painted again under the pointer
+
   // ---- lift: read the geometry once, then only write ------------------------------------------------------------------------
   function lift() {
     if (!gg || gg.mode !== 'wait') return;
@@ -176,7 +209,7 @@
     gg.hi = +g.dataset.hi;
     gg.s0 = +el.dataset.s;
     gg.e0 = +el.dataset.e;
-    var sy = window.scrollY, zr = zoom.getBoundingClientRect(), br = el.getBoundingClientRect();
+    var sy = scrollY(), zr = zoom.getBoundingClientRect(), br = el.getBoundingClientRect();
     gg.ppm = zoom.offsetHeight / (gg.hi - gg.lo);                        // pixels per minute
     gg.top0 = zr.top + sy;                                                // the layer's top, in page coordinates
     gg.left = el.offsetLeft;
@@ -190,11 +223,16 @@
     if (sel && sel.el === el) { if (gg.knob) gg.knob.classList.add('is-on'); else sel.layer.classList.add('is-away'); }
     var tabs = document.querySelector('.ph-tabs');
     gg.bottom = (tabs && getComputedStyle(tabs).display !== 'none' ? tabs.getBoundingClientRect().top : window.innerHeight) - 72;      // the tab bar is not part of the page to scroll under
+    gg.edgeTop = 88; gg.zoneTop = 88; gg.edgeBot = gg.bottom; gg.zoneBot = 72; gg.box = null;
+    var card = gg.mouse ? box() : null;                                  // F-144: on the desktop the grid card scrolls, and its edges are where the scroll starts
+    if (card) { var cr = card.getBoundingClientRect(), zone = rem() * 3; gg.box = card; gg.edgeTop = cr.top + zone; gg.zoneTop = zone; gg.edgeBot = cr.bottom - zone; gg.zoneBot = zone; }
+    if (gg.mouse && !gg.knob) gg.moved = true;                           // (it was lifted by travelling: letting go is a drop, never a hold menu)
+    if (gg.knob) gg.knob.classList.add('is-on');
     el.classList.add(gg.resize ? 'is-resizing' : 'is-held');
     g.classList.add('is-editing-time');
     buzz(14);
     makeLabel();
-    if (gg.resize) startZoom(); else makeGhost();
+    if (gg.resize) { gg.oy = ((gg.edge === 'start' ? gg.s0 : gg.e0) - gg.lo) * gg.ppm; gg.bottomPage = gg.top0 + gg.oy; if (!gg.mouse) startZoom(); } else makeGhost();      // (a mouse is exact: no zoom)
     paint(gg);
     gg.raf = requestAnimationFrame(frame);
   }
@@ -238,8 +276,6 @@
   function startZoom() {
     Z.grid = gg.g;
     Z.zoom = gg.zoom;
-    gg.oy = ((gg.edge === 'start' ? gg.s0 : gg.e0) - gg.lo) * gg.ppm;   // the edge being dragged, in the layer: the zoom's origin, so it stays under the finger
-    gg.bottomPage = gg.top0 + gg.oy;
     Z.zoom.style.transformOrigin = '0 ' + gg.oy + 'px';
     Z.zoom.classList.add('is-zooming');
     gg.zoomed = !CZ.reduced.matches;
@@ -263,17 +299,17 @@
   function frame() {
     if (!gg || gg.mode !== 'held') return;
     var zoomed = gg.resize && Z.k > 1.01;
-    var top = 88, bottom = gg.bottom;
+    var top = gg.edgeTop, bottom = gg.edgeBot;
     var dy = 0, speed = zoomed ? 7 : 11;
-    if (gg.y < top) dy = -Math.ceil(Math.min(1, (top - gg.y) / top) * speed) - 1;
-    else if (gg.y > bottom) dy = Math.ceil(Math.min(1, (gg.y - bottom) / 72) * speed) + 1;
-    if (dy) { window.scrollBy(0, dy); gg.dirty = true; }
+    if (gg.y < top) dy = -Math.ceil(Math.min(1, (top - gg.y) / gg.zoneTop) * speed) - 1;
+    else if (gg.y > bottom) dy = Math.ceil(Math.min(1, (gg.y - bottom) / gg.zoneBot) * speed) + 1;
+    if (dy) { if (gg.box) gg.box.scrollBy(0, dy); else window.scrollBy(0, dy); gg.dirty = true; }
     if (gg.dirty) { gg.dirty = false; paint(gg); }
     gg.raf = requestAnimationFrame(frame);
   }
 
   function paint(gg) {
-    var sy = window.scrollY, fy = gg.y + sy;
+    var sy = scrollY(), fy = gg.y + sy;
     var snapped, text, small;
     if (gg.resize) {
       var k = Z.k, grain = gg.zoomed && k > 1.5 ? FINE : GRAIN;
@@ -317,8 +353,8 @@
     if (w.textContent !== text) w.textContent = text;
     if (sm.textContent !== small) sm.textContent = small;
     if (!gg.lw) { gg.lw = label.offsetWidth; gg.lh = label.offsetHeight; }       // measured once: the label's width is fixed (min-width), its height never changes
-    var x = clamp(gg.x - gg.lw / 2, 8, window.innerWidth - gg.lw - 8), y = gg.y - gg.lh - 64;
-    if (y < 8) y = gg.y + 56;
+    var x = clamp(gg.x - gg.lw / 2, 8, window.innerWidth - gg.lw - 8), y = gg.y - gg.lh - (gg.mouse ? 22 : 64);      // (a pointer is small: the label sits close above it)
+    if (y < 8) y = gg.y + (gg.mouse ? 28 : 56);
     label.style.transform = 'translate3d(' + x + 'px,' + y + 'px,0)';
   }
 

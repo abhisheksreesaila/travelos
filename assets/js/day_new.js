@@ -13,6 +13,10 @@
 // While a title is typed the rest of the grid is calm: other blocks and bookings are dimmed and take no touches, a sideways flick does not change the day, no gesture starts, and
 // a tap anywhere else (even on something that is not a control, where iOS would not blur the field) saves the title (day_menu.js `away`).
 // Viewers: no data-edit, so none of this runs. Reduced motion: the block appears without its pop.
+//
+// F-144: a mouse on the desktop day draws instead of holding. Press empty time and drag past a few pixels: a dashed outline with its times (`.is-drawing`) stretches from where the
+// button went down to the pointer, up or down, snapped to 15 minutes at both ends (never shorter than 15). Letting go opens the title field in place (typing names it, Enter saves);
+// Escape, in the air or in the field, drops it. The grid card scrolls when the pointer is held at its top or foot edge (day_grid.js has the card; a wheel turn repaints the outline).
 (function () {
   var CZ = window.CZ;
   if (!CZ || !CZ.titleField) return;
@@ -44,18 +48,20 @@
     var g = grid();
     if (!g || !editing() || e.button > 0) return null;
     var t = e.target;
-    if (!t.closest || !t.closest('.cz-g-plane') || t.closest('.cz-gb, .cz-gbk, .cz-gnew, input, textarea, .cz-menu')) return null;
+    if (!t.closest || !t.closest('.cz-g-plane') || t.closest('.cz-gb, .cz-gbk, .cz-gnew, .cz-g-tools, input, textarea, .cz-menu')) return null;
     return g;
   }
 
   // ---- the block ---------------------------------------------------------------------------------------------------------------
   function mk(tag, cls) { var n = document.createElement(tag); if (cls) n.className = cls; return n; }
-  function put(draft, g, s) {
+  function put(draft, g, s, e) {
+    e = e || s + LEN;
     draft.style.setProperty('--s', s - +g.dataset.lo);
+    draft.style.setProperty('--l', e - s);
     draft.dataset.s = s;
-    draft.dataset.e = s + LEN;
+    draft.dataset.e = e;
     var w = draft.querySelector('.cz-gb-when');
-    if (w) w.textContent = CZ.span(s, s + LEN);
+    if (w) w.textContent = CZ.span(s, e);
   }
   function newBlock(g, s) {
     var d = mk('div', 'cz-gb cz-k-fun is-new');
@@ -77,8 +83,9 @@
     if (h || making || CZ.held || count() !== 1) return;
     var g = emptyTime(e);
     if (!g) return;
-    h = { id: e.pointerId, x0: e.clientX, y0: e.clientY, y: e.clientY, at: Date.now(), mode: 'wait', g: g, type: e.pointerType };
-    h.timer = setTimeout(lift, HOLD);
+    h = { id: e.pointerId, x0: e.clientX, y0: e.clientY, y: e.clientY, at: Date.now(), mode: 'wait', g: g, type: e.pointerType, mouse: !!(CZ.mouseOn && CZ.mouseOn(e)) };
+    if (h.mouse) h.from = rawAt(g, e.clientY);                                  // F-144: no hold with a mouse; the outline starts where the button went down
+    else h.timer = setTimeout(lift, HOLD);
   });
   function lift() {
     if (!h || h.mode !== 'wait' || !h.g.isConnected) { h = null; return; }
@@ -89,9 +96,48 @@
     buzz(14);
     // No focus here: this is a timer, and iOS would refuse the keyboard. See the note at the top; `openField` runs from the pointerup.
   }
+  // ---- F-144: draw with a mouse ------------------------------------------------------------------------------------------------
+  function rawAt(g, y) {
+    var zoom = g.querySelector('.cz-g-zoom'), lo = +g.dataset.lo, hi = +g.dataset.hi;
+    return lo + (y - zoom.getBoundingClientRect().top) / (zoom.offsetHeight / (hi - lo));
+  }
+  function drawTo() {                                 // the outline from where the button went down to the pointer, both ends on the 15-minute grid
+    var g = h.g, lo = +g.dataset.lo, top = Math.min(+g.dataset.hi, DAY_END), at = rawAt(g, h.y);
+    var s = clamp(Math.floor(Math.min(h.from, at) / GRAIN) * GRAIN, lo, top - GRAIN), e = clamp(Math.ceil(Math.max(h.from, at) / GRAIN) * GRAIN, s + GRAIN, top);
+    if (s !== h.s || e !== h.e) { h.s = s; h.e = e; put(h.draft, g, s, e); buzz(4); }
+  }
+  function startDraw() {
+    h.mode = 'held';
+    h.s = h.e = 0;
+    h.draft = newBlock(h.g, slotAt(h.g, h.y));
+    h.draft.classList.add('is-drawing');
+    CZ.held = true;
+    drawTo();
+    h.raf = requestAnimationFrame(drawFrame);
+  }
+  function drawFrame() {                              // each frame: the card scrolls while the pointer rests at its top or foot edge, and the outline follows what is under the pointer
+    if (!h || h.mode !== 'held' || !h.mouse) return;
+    var b = CZ.dayBox && CZ.dayBox();
+    if (b) {
+      var r = b.getBoundingClientRect(), zone = (parseFloat(getComputedStyle(document.documentElement).fontSize) || 12) * 2.5, dy = 0;
+      if (h.y < r.top + zone) dy = -Math.ceil(Math.min(1, (r.top + zone - h.y) / zone) * 10) - 1;
+      else if (h.y > r.bottom - zone) dy = Math.ceil(Math.min(1, (h.y - (r.bottom - zone)) / zone) * 10) + 1;
+      if (dy) b.scrollBy(0, dy);
+    }
+    drawTo();
+    h.raf = requestAnimationFrame(drawFrame);
+  }
+  document.addEventListener('keydown', function (e) {  // Escape in the air drops the outline (before the panel's Escape and the canvas's)
+    if (!h || h.mode !== 'held' || !h.mouse || e.key !== 'Escape') return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    cancelHold();
+  }, true);
+
   document.addEventListener('pointermove', function (e) {
     if (!h || e.pointerId !== h.id) return;
     h.y = e.clientY;
+    if (h.mouse) { if (h.mode === 'wait' && Math.hypot(e.clientX - h.x0, e.clientY - h.y0) > 6) startDraw(); return; }
     if (h.mode === 'wait') {
       if (Math.hypot(e.clientX - h.x0, e.clientY - h.y0) > SLOP) { clearTimeout(h.timer); h = null; }       // a scroll, or the flick between days
       return;
@@ -105,6 +151,7 @@
   function cancelHold() {
     if (!h) return;
     clearTimeout(h.timer);
+    cancelAnimationFrame(h.raf || 0);
     if (h.draft && h.draft.parentNode) h.draft.parentNode.removeChild(h.draft);
     if (h.mode === 'held') CZ.held = false;
     h = null;
@@ -113,8 +160,10 @@
   document.addEventListener('pointerup', function (e) {
     if (!h || e.pointerId !== h.id) return;
     clearTimeout(h.timer);
+    cancelAnimationFrame(h.raf || 0);
     var f = h;
     h = null;
+    if (f.mouse && f.mode === 'held') f.draft.classList.remove('is-drawing');
     if (f.mode === 'wait') {                                           // a tap on empty time: the "+" for that slot
       if (Math.hypot(e.clientX - f.x0, e.clientY - f.y0) <= SLOP && Date.now() - f.at < HOLD) showChip(f.g, e.clientX, e.clientY);
       return;

@@ -792,15 +792,15 @@ Brief: docs/briefs/web-trip.md · Design: A3 · Needs: F-140
 - [ ] a new message shows without reloading, as on the phone
 - [ ] the plan pane's chat (F-141) also shows others' new messages without reloading
 
-## F-144 Mouse and keyboard on the day [todo]
+## F-144 Mouse and keyboard on the day [review]
 Brief: docs/briefs/web-trip.md · Design: A1, A2 · Needs: F-141
-- [ ] drag on empty time draws a new plan (dashed outline with its times); Enter or typing names it, Esc cancels
-- [ ] drag a plan to move it; pull the knob at its foot to resize; both snap like the phone and offer Undo
-- [ ] hover shows the knob and a ⋯ button; ⋯ or right-click opens rename and delete
-- [ ] keys: T today, ← and → days, W and D week or day, `/` Ask, Esc closes the panel; none fire while typing
-- [ ] viewers get none of the write moves (existing access rules); browser tests drive each move with a mouse
-- [ ] cards fetched ahead follow the grid card's scroll on a laptop (today they listen to the window, so plans scrolled into view aren't fetched)
-- [ ] dragging past the visible hours scrolls the grid card (day_grid.js and canvas_gestures.js use the card's scroll, not the window's), and a wheel scroll during a hold keeps the plan under the pointer
+- [x] drag on empty time draws a new plan (dashed outline with its times); Enter or typing names it, Esc cancels
+- [x] drag a plan to move it; pull the knob at its foot to resize; both snap like the phone and offer Undo
+- [x] hover shows the knob and a ⋯ button; ⋯ or right-click opens rename and delete
+- [x] keys: T today, ← and → days, W and D week or day, `/` Ask, Esc closes the panel; none fire while typing
+- [x] viewers get none of the write moves (existing access rules); browser tests drive each move with a mouse
+- [x] cards fetched ahead follow the grid card's scroll on a laptop (today they listen to the window, so plans scrolled into view aren't fetched)
+- [x] dragging past the visible hours scrolls the grid card (day_grid.js and canvas_gestures.js use the card's scroll, not the window's), and a wheel scroll during a hold keeps the plan under the pointer
 
 ## F-145 Desktop week: the whole trip at a glance [done]
 Brief: docs/briefs/web-trip.md · Design: A4 · Needs: F-139
