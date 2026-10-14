@@ -10,7 +10,7 @@ from playwright.sync_api import expect
 
 from gitaway import tripcal as cal
 from tests.test_signin import person
-from tests_browser.helpers import DESKTOP
+from tests_browser.helpers import DESKTOP, PHONE
 from tests_browser.test_day_grid import open_day
 from tests_browser.test_topbar import LAPTOP
 from tests_browser.test_trip_canvas import WIDE, canvas_page, model  # noqa: F401 - fixtures
@@ -253,7 +253,7 @@ def test_a_tab_nobody_registered_keeps_its_link(desk):
     desk.wait_for_url(re.compile(r"/trip/ask"))
 
 
-def test_the_panels_change_runs_on_the_shared_motion_and_a_phone_width_is_untouched(canvas_page):
+def test_the_panels_change_runs_on_the_shared_motion(canvas_page):
     page = canvas_page(viewport=DESKTOP, motion="no-preference", touch=False)
     open_day(page, SATURDAY)
     act = park(page)
@@ -265,6 +265,67 @@ def test_the_panels_change_runs_on_the_shared_motion_and_a_phone_width_is_untouc
     expect(page.locator("#cz-dock [data-pane=idle]")).to_be_visible()
     page.wait_for_function("document.querySelectorAll('#cz-dock .cz-pp').length === 0")
     assert "close" in page.evaluate("GA.motion.log.map(m => m.kind)")
+
+
+def test_open_plan_in_the_pane_lands_on_the_block_level(desk):
+    act = park(desk)
+    click_block(desk, act)
+    expect(pane(desk).locator(".cz-pstep[data-step]").first).to_be_visible()
+    link = pane(desk).locator("#cz-card-rides")
+    expect(link).to_contain_text("Open plan · 0 of 14 done")
+    link.click()
+    desk.wait_for_url(re.compile(rf"block={act}"))
+    expect(desk.locator(".cz-view[data-level=block]")).to_be_visible()
+
+
+def test_open_in_family_lands_on_the_plans_chat(desk):
+    act = park(desk)
+    click_block(desk, act)
+    expect(pane(desk).locator(".cz-pstep[data-step]").first).to_be_visible()
+    pane(desk).locator("#cz-pp-family").click()
+    desk.wait_for_url(re.compile(rf"/trip/talk\?act={act}"))
+    expect(desk.locator("#ft-compose")).to_be_visible()
+
+
+def test_send_works_with_the_mouse(desk):
+    act = park(desk)
+    click_block(desk, act)
+    expect(pane(desk).locator(".cz-pstep[data-step]").first).to_be_visible()
+    desk.locator("#cz-dock .cz-pp-text").fill("Sent with the button")
+    desk.locator("#cz-dock .cz-pp-send").click()
+    expect(pane(desk).locator("#cz-pp-msgs").get_by_text("Sent with the button")).to_be_visible()
+    expect(desk.locator("#cz-dock .cz-pp-text")).to_have_value("")
+
+
+def test_a_refresh_keeps_the_half_typed_message_and_the_open_set_aside_list(desk):
+    act = park(desk)
+    click_block(desk, act)
+    expect(pane(desk).locator(".cz-pstep[data-step]").first).to_be_visible()
+    pane(desk).locator(".cz-pp-asidebtn").click()
+    expect(pane(desk).locator("#cz-pp-aside")).to_be_visible()
+    desk.locator("#cz-dock .cz-pp-text").fill("half a thought")
+    desk.evaluate("window.__swaps = 0; document.getElementById('cz').addEventListener('cz:swap', () => window.__swaps++)")
+    sid = pane(desk).locator(".cz-pp-steps .cz-pstep[data-step]:not(.is-done)").first.get_attribute("data-step")
+    step = pane(desk).locator(f".cz-pp-steps .cz-pstep[data-step=\"{sid}\"]")
+    step.locator(".cz-ring").click()                                      # a tick: the day is refreshed in place afterwards
+    expect(step).to_have_class(re.compile("is-done"))
+    desk.wait_for_function("window.__swaps >= 1")
+    desk.wait_for_timeout(300)
+    assert desk.locator("#cz-dock .cz-pp-text").input_value() == "half a thought"
+    expect(pane(desk).locator("#cz-pp-aside")).to_be_visible()
+    expect(pane(desk).locator(".cz-pp-asidebtn")).to_have_attribute("aria-expanded", "true")
+
+
+def test_a_phone_width_tap_still_opens_the_card_sheet(canvas_page):
+    page = canvas_page(viewport=PHONE)
+    open_day(page, SATURDAY)
+    act = park(page)
+    b = block(page, act)
+    b.scroll_into_view_if_needed()
+    box = b.bounding_box()
+    page.touchscreen.tap(box["x"] + box["width"] * 0.72, max(box["y"], 120) + 40)
+    expect(page.locator(".cz-card")).to_be_visible()
+    assert "plan=" not in page.url and page.locator("#cz-dock").evaluate("e => getComputedStyle(e).display") == "none"
 
 
 def test_the_tablet_keeps_its_card_sheet(canvas_page):
