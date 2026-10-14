@@ -869,7 +869,7 @@ Bug, seen twice in browser runs (F-143 and F-154 reviews): `gitaway/tripcal.py` 
 - [x] a day or panel request whose booking disappears partway returns a normal page (or a clean redirect to Start), never a 500, with a test that deletes the booking between the two reads
 - [x] no AttributeError from `_lane` in a full browser run's server log
 
-## F-156 Calm motion on the laptop [review]
+## F-156 Calm motion on the laptop [done]
 Captain, 2026-10-14: "it has too many movements… week - day, all interact flickers and shows… ok on mobile, it goes with iOS liquid motion expectation… on web, it's too much… it needs to be subtle, very." Brief: docs/briefs/web-trip.md · Needs: none
 - [x] on a desktop (≥1020px, not the installed app) week↔day, day↔day and day↔block change with a short opacity cross-fade only: no zoom, scale, blur or travel, and nothing grows out of what was clicked
 - [x] panels, cards, sheets, menus and toasts on a desktop appear with a short fade (or instantly), never a spring or overshoot; the shared motion helper decides by width so callers don't fork
