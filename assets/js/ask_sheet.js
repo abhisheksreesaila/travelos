@@ -17,7 +17,7 @@
   var root = document.documentElement;
   var app = document.getElementById('ph-app') || document.body;
   var phone = window.matchMedia('(max-width: 720px), (display-mode: standalone)');
-    var wrap = null, sheet = null, scroll = null, ctl = null, closing = false, back = [];
+  var wrap = null, sheet = null, scroll = null, ctl = null, closing = false, back = [];
 
   function url() { return tab.getAttribute('href') || '/trip/ask'; }
   var MO = window.GA.motion;      // the one liquid motion (motion.js, F-109): the sheet grows out of the Ask button and folds back into it

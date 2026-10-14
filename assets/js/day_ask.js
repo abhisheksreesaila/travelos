@@ -43,7 +43,7 @@
     return { day: day, mode: m === 'talk' || m === 'paste' ? m : 'type' };
   }
   function ahead(e) {
-    if (!desk.matches) return;
+    if (!desk.matches || !Dock.has('ask')) return;      // (a viewer's page has no ask_flow.js and no Ask to fetch)
     var a = e.target.closest && e.target.closest('a[href*="/trip/ask"]'), t = a && target(a);
     if (t) get(url(t.day, t.mode)).p.catch(function () {});
   }

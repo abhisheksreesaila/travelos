@@ -317,6 +317,12 @@ def test_a_viewer_clicking_ask_on_the_canvas_lands_on_the_only_editors_page(canv
         viewer.goto(f"{base_url}/trip/canvas?day=1")
         viewer.wait_for_selector(".cz-view[data-level=day]")
         assert viewer.locator("#cz-dock").get_attribute("data-ask") is None
+        errors = []
+        viewer.on("pageerror", lambda e: errors.append(str(e)))
+        viewer.locator(f"{BAR} .ga-tb-ask").hover()                                                # the pointer coming over Ask fetches nothing and throws nothing
+        viewer.locator("#cz-dock .cz-dock-tab[data-tab=ask]").hover()
+        viewer.wait_for_timeout(400)
+        assert errors == []
         viewer.locator("#cz-dock .cz-dock-tab[data-tab=ask]").click()
         viewer.wait_for_url(re.compile(r"/trip/ask"))
         expect(viewer.locator("#ak-viewer")).to_be_visible()
