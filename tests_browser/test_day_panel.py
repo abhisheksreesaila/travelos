@@ -70,7 +70,7 @@ def test_a_click_rings_the_plan_in_coral_and_opens_its_card_in_the_panel(desk):
     expect(block(desk, act)).to_have_class(re.compile("is-ringed"))
     coral = desk.evaluate("() => { const s = document.createElement('i'); s.style.color = 'var(--coral)'; document.body.append(s); const c = getComputedStyle(s).color; s.remove(); return c; }")
     ring = block(desk, act).evaluate("e => getComputedStyle(e).boxShadow")
-    assert coral in ring and re.search(r"0px 0px 0px 2px inset", ring), ring            # F-158: a 2px inset coral ring, like the board's selected block (the root is 12px: 0.1667rem)
+    assert coral in ring and re.search(r"0px 0px 0px 2(\.\d+)?px inset", ring), ring            # F-158: a 2px inset coral ring, like the board's selected block (the root is 12px: 0.1667rem)
     expect(desk.locator("#cz-dock [data-pane=idle]")).to_be_hidden()
     expect(desk.locator("#cz-dock .cz-dock-tab.is-on")).to_have_text("Plan")
     # who, the note slip, steps, the chat, the compose bar at the foot
