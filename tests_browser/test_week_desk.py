@@ -132,7 +132,8 @@ def test_a_booking_row_opens_its_sheet_and_say_the_plan_goes_to_ask(signed_in):
     assert "booked=" in page.url
     page.goto(page.url.split("/trip/canvas")[0] + "/trip/canvas")
     page.locator(".cz-wcol[data-day='3'] .cz-wsay").click()
-    page.wait_for_url("**/trip/ask?day=3&mode=talk*")
+    page.wait_for_selector(".cz-view[data-level=day][data-day='3']")          # F-142: the day opens with the Ask panel in it
+    expect(page.locator("#cz-dock[data-mode=ask] #ak-form")).to_be_visible()
 
 
 def test_the_kind_filters_in_the_header_filter_the_columns(signed_in):
