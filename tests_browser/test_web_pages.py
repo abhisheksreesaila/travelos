@@ -64,7 +64,7 @@ def join_as(contexts, base_url, owner_page, email, role="editor"):
     other.click("#join-signin")
     other.fill("#si-email", email)
     other.click("#si-dev-form button[type=submit]")
-    other.wait_for_url("**/calendar")
+    other.wait_for_url("**/trip/canvas*")
     return other
 
 
@@ -187,7 +187,7 @@ def test_change_role_remove_leave_and_switch_family(ari, contexts, base_url):
 
 # ---- /trip/details: every button ---------------------------------------------------------------------------------------
 
-@pytest.mark.parametrize("button,url", [("#ti-cal", "**/calendar"), ("#ti-edit-trip", "**/trips/build/edit?trip=*"), ("#ti-correct", "**/trips/import"), ("#ti-delete", "**/trip/delete?trip=*")])
+@pytest.mark.parametrize("button,url", [("#ti-cal", "**/trip/canvas*"), ("#ti-edit-trip", "**/trips/build/edit?trip=*"), ("#ti-correct", "**/trips/import"), ("#ti-delete", "**/trip/delete?trip=*")])
 def test_every_trip_details_button_lands_where_it_says(ari, base_url, button, url):
     ctx, page = ari
     page.goto(f"{base_url}/trip/details")
@@ -204,7 +204,7 @@ def test_start_import_continue_steppers_and_find_my_trip(ari, base_url):
     page.wait_for_url("**/trips/import")
     page.goto(f"{base_url}/start")
     page.click(".st-continue")
-    page.wait_for_url("**/calendar")
+    page.wait_for_url("**/trip/canvas*")
     page.goto(f"{base_url}/start")
     expect(page.locator("#st-form input[name=to][value=la]")).to_be_checked()
     adults = page.locator("[data-field=a] .ga-step-btn.is-more")  # the plus of the Adults stepper
