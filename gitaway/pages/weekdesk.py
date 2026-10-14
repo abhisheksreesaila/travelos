@@ -38,7 +38,7 @@ def _row(v, i, kind, x):
     when = tc.compact_time(x.start)
     summary = _summary(v, blk, x)
     return A(Span(when, cls="cz-wi-time"), Span(Span(x.title, cls="cz-wi-t"), Span(summary, cls="cz-wi-s") if summary else "", cls="cz-wi-body"), Span(icon(ico, 18, 2.4), cls="cz-wi-ico", aria_hidden="true"),
-             href=tc.curl(day=i, plan=x.id), cls="cz-wi is-plan", data_zoom="in", data_title=title, aria_label=f"{x.title}, {when}" + (f", {summary}" if summary else "") + ": open the day", **attrs)
+             href=tc.curl(day=i, plan=x.id), cls="cz-wi is-plan", data_zoom="in", data_title=title, aria_label=f"{x.title}, {when}" + (f", {summary}" if summary else "") + ": open the day", data_wk_act=x.id, **attrs)      # (F-157: the mouse lifts a plan row by this id; a booking has none)
 
 
 def _column(v, i, editor):

@@ -877,10 +877,10 @@ Captain, 2026-10-14: "it has too many movements… week - day, all interact flic
 - [ ] the phone and the installed app keep their current liquid motion unchanged (existing motion tests stay green)
 - [ ] a browser test at 1440 with motion on records frames for week→day, a plan click, the panel tabs and a toast, and finds no transform animation and no frame with an outline-only view
 
-## F-157 Move plans on the desktop week [todo]
+## F-157 Move plans on the desktop week [review]
 Captain, 2026-10-14: "on the week view, I should be able to move in desktop since I can see all at once." Brief: docs/briefs/web-trip.md · Needs: F-151
-- [ ] on a desktop, dragging a plan row from one day's column to another moves it to that day at the same time (the column under the pointer shows it will take the drop), with the existing toast "Moved to Sat 17 · Undo" and write path (F-151)
-- [ ] the row leaves its column and appears in the new one in time order, in place (no page reload), with calm desktop motion (F-156)
-- [ ] dropping back on its own column or pressing Esc leaves it where it was; a click (no drag) still opens the day with the plan in the panel
-- [ ] bookings (flights, hotels, cars) can't be dragged; viewers can't drag; on a long trip the week scrolls sideways when the pointer holds near its edge
-- [ ] browser tests drive it with a real mouse at 1440 and 1280; the phone and tablet week are unchanged
+- [x] on a desktop, dragging a plan row from one day's column to another moves it to that day at the same time (the column under the pointer shows it will take the drop), with the existing toast "Moved to Sat 17 · Undo" and write path (F-151)
+- [x] the row leaves its column and appears in the new one in time order, in place (no page reload), with calm desktop motion (F-156)
+- [x] dropping back on its own column or pressing Esc leaves it where it was; a click (no drag) still opens the day with the plan in the panel
+- [x] bookings (flights, hotels, cars) can't be dragged; viewers can't drag; on a long trip the week scrolls sideways when the pointer holds near its edge
+- [x] browser tests drive it with a real mouse at 1440 and 1280; the phone and tablet week are unchanged

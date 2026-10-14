@@ -72,3 +72,13 @@
   .cz .cz-wh { padding: 0.8333rem 1rem 0.6667rem; }
   .cz .cz-wlist { padding: 0.5rem; }
 }
+
+/* Moving a plan with the mouse (F-157, week_drag.js). No motion: the lifted copy follows the pointer, the column under it takes a coral ring and a quiet tint. */
+@media (min-width: 1020px) and (not (display-mode: standalone)) {
+  .cz .cz-wi[data-wk-act] { cursor: grab; -webkit-user-drag: none; }
+  html.cz-wk-moving, html.cz-wk-moving * { cursor: grabbing !important; user-select: none; }
+  .cz .cz-wi.is-lifted, .cz .cz-wi.is-saving { opacity: 0.45; }
+  .cz .cz-wk.is-dragging .cz-wcol.is-drop-target { box-shadow: 0 0 0 0.1875rem var(--coral), var(--shadow-md); }
+  .cz .cz-wk.is-dragging .cz-wcol.is-drop-target .cz-wlist { background: var(--paper); }
+  .cz-wi-copy { box-sizing: border-box; background: var(--card); box-shadow: var(--shadow-md); opacity: 0.96; border-radius: 0.9167rem; }
+}
