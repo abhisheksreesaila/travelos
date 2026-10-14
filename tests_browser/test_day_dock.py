@@ -192,7 +192,7 @@ def test_the_desktop_now_line_is_a_thin_coral_line_with_a_coral_deep_time_pill(s
     look = page.evaluate("""() => { const l = document.querySelector('#cz-nowline'), p = l.querySelector('.cz-now-t'), lb = l.getBoundingClientRect(), pb = p.getBoundingClientRect();
         return { h: lb.height, line: getComputedStyle(l).backgroundColor, pill: getComputedStyle(p).backgroundColor, ink: getComputedStyle(p).color, atRight: lb.right - pb.right, centred: Math.abs((pb.top + pb.bottom) / 2 - (lb.top + lb.bottom) / 2) } }""")
     assert abs(look["h"] - 2) < 0.6 and look["line"] == "rgb(255, 115, 82)"          # 0.1667rem at the 12px root, the coral
-    assert look["pill"] == "rgb(201, 67, 31)" and look["ink"] == "rgb(255, 255, 255)"      # the coral-deep pill
+    assert look["ink"] == "rgb(201, 67, 31)" and look["pill"] != "rgb(201, 67, 31)"      # F-158: the time in coral-deep ink on the card, no pill
     assert look["atRight"] < 4 and look["centred"] < 2
 
 
@@ -272,6 +272,6 @@ def test_a_long_trip_scrolls_its_chips_inside_the_header(browser, base_url):
     expect(page.locator(".cz-hchip")).to_have_count(10)
     m = page.evaluate("""() => { const h = document.querySelector('.cz-head').getBoundingClientRect(), n = document.querySelector('.cz-hchips'), o = document.querySelector('.cz-hchip.is-open').getBoundingClientRect(), nb = n.getBoundingClientRect(),
         c = document.querySelector('.cz-head-ctl').getBoundingClientRect();
-        return { grows: n.scrollWidth > n.clientWidth, within: nb.left >= h.left && nb.right <= h.right + 0.5, beforeCtl: nb.right <= c.left + 0.5, seen: o.left >= nb.left - 1 && o.right <= nb.right + 1, page: document.documentElement.scrollWidth <= document.documentElement.clientWidth } }""")
+        return { grows: n.scrollWidth > n.clientWidth, within: nb.left >= h.left && nb.right <= h.right + 0.5, beforeCtl: nb.top >= c.bottom - 0.5, seen: o.left >= nb.left - 1 && o.right <= nb.right + 1, page: document.documentElement.scrollWidth <= document.documentElement.clientWidth } }""")
     assert m == {"grows": True, "within": True, "beforeCtl": True, "seen": True, "page": True}
     ctx.close()

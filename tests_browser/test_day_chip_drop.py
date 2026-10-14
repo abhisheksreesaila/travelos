@@ -200,7 +200,7 @@ def test_dropping_on_the_open_days_chip_or_on_the_headers_empty_space_leaves_the
     desk.wait_for_timeout(300)
     assert toast(desk).count() == 0 and day_of(lunch.id) == SUNDAY and now(lunch.id)[:2] == (12 * 60, 13 * 60)
     lift(desk, lunch.id)
-    head = desk.locator(".cz-head").bounding_box()
+    head = desk.locator(".cz-head-text").bounding_box()
     desk.mouse.move(head["x"] + 40, head["y"] + head["height"] - 4, steps=6)                    # the heading's own words, not a chip
     desk.mouse.up()
     desk.wait_for_timeout(300)
@@ -299,6 +299,8 @@ def test_a_long_trips_chips_scroll_when_a_plan_is_held_near_their_end(browser, b
         stop = page.evaluate("() => document.querySelector('.cz-hchips').scrollLeft")
         page.wait_for_timeout(200)
         assert page.evaluate("() => document.querySelector('.cz-hchips').scrollLeft") == stop
+        page.mouse.move(nav["x"] + nav["width"] - 12, nav["y"] + nav["height"] / 2, steps=6)         # F-158: the tabs are wider, so hold at the end until the row reaches it
+        page.wait_for_function("() => { const n = document.querySelector('.cz-hchips'); return n.scrollLeft + n.clientWidth >= n.scrollWidth - 2; }")
         far = page.locator('.cz-hchip[data-move-day="8"]')
         page.mouse.move(*mid(page, far), steps=4)
         expect(far).to_have_class(DROP)

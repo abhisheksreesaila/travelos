@@ -33,7 +33,7 @@ def test_one_column_per_day_with_a_colour_header_and_open_the_day(trip):
     for i, c in enumerate(cols):
         assert re.search(rf'<a [^>]*href="/trip/canvas\?day={i}"[^>]*>[^<]*(?:<[^>]+>[^<]*)*Open the day', c, re.S), i
         assert 'data-zoom="in"' in re.search(rf'<a [^>]*href="/trip/canvas\?day={i}"[^>]*>', c).group(0)
-    assert text(cols[0]).startswith("FRI 16") and text(cols[1]).startswith("SAT 17")
+    assert text(cols[0]).startswith("01 FRI 16") and text(cols[1]).startswith("02 SAT 17")      # F-158: the numbered key first
 
 
 def test_rows_show_time_title_and_a_kind_icon(trip):

@@ -205,12 +205,26 @@ def map_link(day, ident=True):
     return A(icon("map", 20, 2.4), href=f"/trip/map?day={day}", cls="cz-mapbtn", aria_label="Map of this day", **({"id": "cz-mapbtn"} if ident else {}))
 
 
-def head(v, kicker, title, key="", back=None, back_label="", faces=None, sos="", mapday=None, switch=None, back_text="", chips=None):
+NUMBER_WORDS = ("zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve")
+
+
+def day_line(s):
+    """F-158: the day's one-line summary as the second, coral half of the laptop's heading ("Fly in, check in."): the summary the chips already show (the day's plans, its first plan, or "Wide open")."""
+    return s.head.replace(" · ", ", ") + "."
+
+
+def trip_line(t, n):
+    """F-158: the week's second phrase from the trip's real length and place: "Five days in LA."."""
+    words = NUMBER_WORDS[n] if n < len(NUMBER_WORDS) else str(n)
+    return f"{words.capitalize()} day{'s' if n != 1 else ''}" + (f" in {t.place}." if getattr(t, "place", "") else ".")
+
+
+def head(v, kicker, title, key="", back=None, back_label="", faces=None, sos="", mapday=None, switch=None, back_text="", chips=None, two=""):
     """The heading every level starts with. Week: plain. Deeper: a dark card with the way back, which is what the tapped element grows into. The week and the day carry
     the small Day | Week switch inside it (F-103), between the words and the buttons. F-134: the way back names where it goes (`back_text`: "Trip", "Thu 9"), like Calendar's "‹ October"."""
     words = kicker if isinstance(kicker, tuple) else (kicker,)
     eyebrow = (topbar.trip_menu(*words, sum_cls="cz-head-k") if switch is not None else "") or Span(*words, cls="cz-head-k")      # a phone or tablet has no top bar: on the day and the week the eyebrow opens its trip menu
-    inner = [Div(eyebrow, H1(title, id="cz-title", tabindex="-1"), cls="cz-head-text")]
+    inner = [Div(eyebrow, H1(title, id="cz-title", tabindex="-1"), *((Span(two, cls="ga-h-two"),) if two else ()), cls="cz-head-text")]      # F-158: the laptop's two-tone heading is the title, then `two` in coral (the phone and the tablet hide it)
     if back:
         inner.insert(0, A(icon("chev-left", 22, 2.6), Span(back_text, cls="cz-back-t", aria_hidden="true") if back_text else "", href=back, cls=f"cz-back{' has-text' if back_text else ''}", aria_label=back_label, data_zoom="out"))
     if chips is not None:       # F-140: on a laptop the five day chips sit inside the ink header (CSS hides them below 1020px, where the week strip stays)
@@ -379,7 +393,7 @@ def week_view(v, sos=False):
     faces = Div(avatar(v["who"], "cz-av"), *[avatar(f, "cz-av") for f in v["crew"]], cls="cz-faces")
     kicker = f"{t.title.upper()} · {cal.range_label(t.depart, t.return_).upper()}"
     rows = [week_body(v, i, editor) for i in range(len(v["dates"]))]
-    body = [head(v, kicker, "The trip", faces=faces, sos=curl(sos=True), switch=toggle(v, "week")), Div(kinds_bar(), cls="cz-bar"), Div(*rows, cls="cz-week", id="cz-week", style=f"--days:{min(len(rows), 7)}"), weekdesk.columns(v, editor)]      # F-145: a laptop draws the columns, the phone and the tablet the rows
+    body = [head(v, kicker, "The trip", faces=faces, sos=curl(sos=True), switch=toggle(v, "week"), two=trip_line(t, len(v["dates"]))), Div(kinds_bar(), cls="cz-bar"), Div(*rows, cls="cz-week", id="cz-week", style=f"--days:{min(len(rows), 7)}"), weekdesk.columns(v, editor)]      # F-145: a laptop draws the columns, the phone and the tablet the rows
     body.append(sos_sheet(v, curl(), curl(sos=True)) if sos else sos_template(v, curl(), curl(sos=True)))
     ask_day = v["today_idx"] if v["today_idx"] is not None else 0      # F-142: Ask on the week opens the day with the Ask panel (day_ask.js): today, else the first day
     return view("step" if sos else "week", body, zout="sos-open" if sos else "", title="The trip", **({"data_ask_day": str(ask_day)} if editor else {}))
@@ -623,9 +637,9 @@ def day_view(v, day, booked=None, sos=False):
     if not planned:
         empty = say_bar_compact(day) if editor else Div(P("Nothing planned yet", cls="cz-say-h"), P("Nobody has planned this day yet.", cls="cz-sub"), cls="cz-empty cz-say-empty", id="cz-empty", data_kind="empty")
         cards = [empty, *cards]
-    kicker = (f"{d.strftime('%a %b').upper()} {d.day}", Span(f" · DAY {day + 1} OF {len(v['dates'])}", cls="cz-k-day"))      # the day count drops out on a phone (F-103: the heading is one row)
+    kicker = (*((Span("TODAY · ", cls="cz-k-today"),) if day == v["today_idx"] else ()), f"{d.strftime('%a %b').upper()} {d.day}", Span(f" · DAY {day + 1} OF {len(v['dates'])}", cls="cz-k-day"))      # the day count drops out on a phone (F-103: the heading is one row)
     first =next((x for kind, x in ents if kind == "block"), None)
-    left = [fold_bar(v, day), head(v, kicker, d.strftime("%A"), key=f"day-{day}", back=curl(), back_label="Zoom out to the week", back_text="Trip", sos=curl(day=day, sos=True), mapday=day, switch=toggle(v, "day", day), chips=head_chips(v, day)), Div(kinds_bar(), say_pair(day) if editor else "", cls="cz-bar"), day_pills(v, day), strip(v, day),
+    left = [fold_bar(v, day), head(v, kicker, d.strftime("%A"), key=f"day-{day}", back=curl(), back_label="Zoom out to the week", back_text="Trip", sos=curl(day=day, sos=True), mapday=day, switch=toggle(v, "day", day), chips=head_chips(v, day), two=day_line(v["summaries"][day])), Div(kinds_bar(), say_pair(day) if editor else "", cls="cz-bar"), day_pills(v, day), strip(v, day),
             now_card(v, day),      # F-092: the centre Ask changes the day; on today the day starts with what is happening now
             *([filter_bar(v, True)] if first else []), *([dropbars(v)] if first and editor else []),
             Div(Div(*cards, *(listmore(v, first) if first else []), P("Nothing here for this filter.", cls="cz-sub cz-kind-none", hidden=True), cls="cz-day-main"), Div(_tray(aside, editor), cls="cz-day-side"), cls="cz-day-body")]

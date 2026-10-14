@@ -71,7 +71,7 @@ def up_card(v, tv, day, kicker, item):
 def later_rows(day, today, rest):
     if not rest:
         return ""
-    rows = [Div(Span(cal.fmt_time(x.start), cls="cz-later-time"), Span(x.title, cls="cz-later-t"), Span(x.label, cls="cz-later-tag"), cls="cz-later-row") for x in rest[:LATER_MAX]]
+    rows = [Div(Span(icon(x.icon or KIND_ICON.get("fun"), 16, 2.2), cls=f"cz-later-tile cz-lt-{x.tint}", aria_hidden="true"), Span(cal.fmt_time(x.start), cls="cz-later-time"), Span(x.title, cls="cz-later-t"), Span(x.label, cls="cz-later-tag"), cls="cz-later-row") for x in rest[:LATER_MAX]]      # F-158: a laptop draws a data row: a tile in the kind's tint, the name over its kind, the time at the right
     return Div(H3("Later today" if day == today else "Later on", cls="cz-dock-k"), *rows, cls="cz-later", id="cz-later")
 
 

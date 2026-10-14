@@ -94,6 +94,7 @@ def styles(*extra, theme="sunset"):
         Script(src="/assets/js/toast.js", defer=True),
         Script(src="/assets/js/topbar.js", defer=True),               # F-139: the top bar's two menus and the "/" key
         *extra,
+        Link(rel="stylesheet", href="/assets/css/desk_skin.css"),     # F-158: the calm laptop skin, last so it wins over every page's own CSS; every rule in it sits under the desktop query and a signed-in page's top bar, so the phone, the tablet, the installed app and the landing never see it
     )
 
 NAV = [("Community trips", "/community"), ("Plan a trip", "/start"), ("For creators", "/creators")]

@@ -148,7 +148,7 @@ def family_page(request, session, error="", status=200, email="", role="editor",
     # F-146: on a laptop the page is two columns (people and invitations on the left, my own settings on the right); the wrappers are display: contents
     # below 1020px and `order` keeps the phone's single column in the order it always had.
     out = page("Your family", Div(
-        Div(H1("Your family"),
+        Div(H1("Your family"), Span("Who is on the trip.", cls="ga-h-two"),
             Div(P(f"Signed in as {user['email']}.", id="fam-who"), P(f"Role: {my_role}.", id="fam-role"), P(f"{members.family_label(tid)} · family space {tid}", id="fam-tenant", cls="fam-small"), cls="fam-ident"),
             cls="fam-head"),
         Div(people, alone, waiting, invite_form, cls="fam-col fam-col-people"),

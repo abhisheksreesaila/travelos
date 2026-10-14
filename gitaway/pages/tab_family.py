@@ -25,6 +25,7 @@ from gitaway.icons import icon
 from gitaway.pages import photos as photos_ui
 
 TITLE = "Family"
+TWO = "Everyone, one chat."
 HEAD = (*photos_ui.HEAD, Link(rel="stylesheet", href="/assets/css/plantalk.css"))
 SCRIPTS = ("/assets/js/thread.js", "/assets/js/photos.js", "/assets/js/voicenote.js")
 POLL_MS = 5000

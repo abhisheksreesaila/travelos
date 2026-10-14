@@ -16,6 +16,10 @@
   --paper: #FFF8EE;
   --card: #FFFFFF;
   --line: rgba(30, 26, 46, 0.08);
+  --hairline: rgba(30, 26, 46, 0.10);      /* F-158: the laptop skin's card edge, and the lines between its rows */
+  --hairline-2: rgba(30, 26, 46, 0.16);    /* F-158: a control's edge (an outlined pill, a field) */
+  --coral-tint: #FFE6DA;                   /* F-158: a quiet coral fill (your own chat message) */
+  --r-card: 1.1667rem;                     /* F-158: the laptop's card radius (design 14px) */
 
   --coral: #FF7352;
   --coral-deep: #C9431F;
