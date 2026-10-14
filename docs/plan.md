@@ -762,7 +762,7 @@ Brief: docs/briefs/web-trip.md · Design: docs/design/web-trip.md (Top bar) · N
 - [x] on a phone nothing changes (the bottom tabs stay; no top bar)
 - [x] a browser test presses each top-bar link and checks where it lands
 
-## F-140 Desktop day: grid and docked panel [review]
+## F-140 Desktop day: grid and docked panel [done]
 Brief: docs/briefs/web-trip.md · Design: A2 · Needs: F-139
 - [x] on a desktop the day is two columns: the ink day header with the five day chips inline, the filters with Paste a plan and Say the plan, and the hour grid on the left; the panel on the right
 - [x] only the grid and the panel scroll; the grid opens at 7 AM, or at now during the trip, with the coral now line
