@@ -30,7 +30,7 @@ from gitaway.pages.around_ui import around_url
 from gitaway.pages.plantalk import talk_badge   # F-091: the chat badge on a plan and on a part
 
 HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/help.css"), *passes_ui.HEAD, Link(rel="stylesheet", href="/assets/css/trip_canvas.css"), Link(rel="stylesheet", href="/assets/css/day_grid.css"), Link(rel="stylesheet", href="/assets/css/plantalk.css"), Link(rel="stylesheet", href="/assets/css/day_card.css"), Link(rel="stylesheet", href="/assets/css/thread.css"), Link(rel="stylesheet", href="/assets/css/day_dock.css"), Link(rel="stylesheet", href="/assets/css/week_desk.css"), Link(rel="stylesheet", href="/assets/css/day_mouse.css"), Link(rel="stylesheet", href="/assets/css/day_ask.css"))   # pickers: the add-a-step sheet has a time field (F-082)
-SCRIPTS = ("/assets/js/vendor/idiomorph.js", "/assets/js/canvas_core.js", "/assets/js/canvas_filters.js", "/assets/js/canvas_writes.js", "/assets/js/canvas_sos.js", "/assets/js/canvas_gestures.js", "/assets/js/canvas_tick.js", "/assets/js/day_grid.js", "/assets/js/day_menu.js", "/assets/js/day_new.js", "/assets/js/day_fold.js", "/assets/js/day_card.js", "/assets/js/day_dock.js", "/assets/js/day_mouse.js", "/assets/js/day_keys.js", "/assets/js/day_ask.js")
+SCRIPTS = ("/assets/js/vendor/idiomorph.js", "/assets/js/canvas_core.js", "/assets/js/canvas_filters.js", "/assets/js/canvas_writes.js", "/assets/js/canvas_sos.js", "/assets/js/canvas_gestures.js", "/assets/js/canvas_tick.js", "/assets/js/day_grid.js", "/assets/js/day_menu.js", "/assets/js/day_new.js", "/assets/js/day_fold.js", "/assets/js/day_card.js", "/assets/js/day_dock.js", "/assets/js/day_mouse.js", "/assets/js/day_chipdrop.js", "/assets/js/day_keys.js", "/assets/js/day_ask.js")
 RANK = {"week": 0, "day": 1, "block": 2, "step": 3}
 PART_TINTS = ("sky", "sun", "grape", "bubble", "mint")
 MAX_FACES = 5
@@ -404,7 +404,8 @@ def strip(v, day):
 def head_chips(v, day):
     """F-140: the days of the trip as chips inside the day's ink header (a laptop). Each is a zoom to that day like a strip card (`data-zoom="side"`)."""
     items = [A(Span(Span(s.dow, cls="cz-hc-dow"), Span(str(s.num), cls="cz-hc-num"), cls="cz-hc-top"), Span(s.head, cls="cz-hc-head"), href=curl(day=i), cls=f"cz-hchip{' is-open' if i == day else ''}{' is-today' if i == v['today_idx'] else ''}",
-               aria_current="date" if i == day else None, data_zoom="side", aria_label=f"{v['dates'][i].strftime('%A %b')} {s.num}: {s.head}" + (", today" if i == v["today_idx"] else "")) for i, s in enumerate(v["summaries"])]
+               aria_current="date" if i == day else None, data_zoom="side", data_move_day=str(i), data_move_label=f"{v['dates'][i].strftime('%a')} {s.num}",
+               aria_label=f"{v['dates'][i].strftime('%A %b')} {s.num}: {s.head}" + (", today" if i == v["today_idx"] else "")) for i, s in enumerate(v["summaries"])]
     return Nav(*items, cls="cz-hchips", aria_label="Days of the trip")
 
 
@@ -919,10 +920,13 @@ def plan_write(session, op, act, form):
     if op != "edit":
         raise cal.CalendarError("That did not work.")
     title = form.get("title")
-    got = planedit.change(session, act, start=_minutes(form, "start"), end=_minutes(form, "end"), title=None if title is None else str(title)[:200])
+    to_day = _field(form, "day", 4) or None       # F-151: a plan dropped on another day's chip keeps its times; planedit checks the day is inside the trip
+    got = planedit.change(session, act, start=_minutes(form, "start"), end=_minutes(form, "end"), title=None if title is None else str(title)[:200], day=to_day)
     a, was = got["act"], got["undo"]
     if not got["changed"]:
         toast = ""
+    elif a.day != was["day"]:
+        toast = f"Moved to {planedit.day_label(session, a.day)}"
     elif a.title != was["title"]:
         toast = f"Renamed to {a.title}"
     elif a.start != was["start"] and a.end == was["end"]:

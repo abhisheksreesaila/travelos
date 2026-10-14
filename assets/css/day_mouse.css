@@ -36,4 +36,10 @@
 
   /* a plan with its menu open grows only a little, and only taller: a wide block must not spill over the hour labels */
   .cz .cz-gb.is-menu { scale: 1 1.03; }
+  /* F-151: a plan held with the mouse can be dropped on a day chip in the ink header: the row shows where it can go, the chip under the pointer takes it (coral ring), the day it is on does not */
+  .cz .cz-hchips.is-dropping .cz-hchip { outline: 0.125rem dashed rgba(255, 255, 255, .55); outline-offset: -0.125rem; transition: background var(--motion-quick) ease, box-shadow var(--motion-quick) ease; }
+  .cz .cz-hchips.is-dropping .cz-hchip.is-open { outline: 0; opacity: 0.55; cursor: not-allowed; }
+  .cz .cz-hchips.is-dropping .cz-hchip.is-drop-target { outline: 0; background: var(--card); color: var(--ink); box-shadow: 0 0 0 0.1875rem var(--coral); }
+  .cz .cz-hchips.is-dropping .cz-hchip.is-drop-target .cz-hc-dow, .cz .cz-hchips.is-dropping .cz-hchip.is-drop-target .cz-hc-head { color: var(--ink-2); }
+  .cz .cz-hchips.is-dropping .cz-hchip.is-drop-target .cz-hc-num { color: var(--coral-deep); }
 }

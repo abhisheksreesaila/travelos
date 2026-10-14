@@ -12,7 +12,7 @@ changed in place (no second push), and an Undo that brings the plan back to wher
 """
 
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from gitaway import canvas, familydb, familythread, session as ses, tripcal as cal
 
@@ -123,6 +123,14 @@ def change(session, act_id, *, start=None, end=None, title=None, day=None, expec
             _tell(session, fam, t, act_id, was, now)
     return {"act": a, "changed": was != now, "undo": {"act": act_id, "day": was[0], "start": was[1], "end": was[2], "title": was[3],
                                                       "after": {"day": now[0], "start": now[1], "end": now[2], "title": now[3]}}}
+
+
+def day_label(session, day):
+    """"Sat 17": the weekday and date of plan day `day` (0 is the first trip day), as the day chips and the move toast say it."""
+    with ses.family(session) as fam:
+        t = cal._need(fam, "")[1]
+    d = t.depart + timedelta(days=day)
+    return f"{d.strftime('%a')} {d.day}"
 
 
 def restore(session, snapshot):
