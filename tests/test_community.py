@@ -83,7 +83,7 @@ def test_the_snapshot_has_no_notes_friends_reference_or_prices(client):
     book(client)
     client.post("/calendar/friends", data={"name": "Grandma Zelda"})
     add(client)
-    client.post("/calendar/notes", data={"id": "n9", "text": "Secret passcode hunter2", "act": "a1"})
+    client.post("/trip/canvas/actnote", data={"id": "n9", "text": "Secret passcode hunter2", "act": "a1"})
     share(client)
     row = community.rows()[0]
     slug = row["slug"]
@@ -120,18 +120,15 @@ def test_forking_a_community_trip_from_another_family_keeps_it_in_the_forkers_fa
     assert "LA with the kids" not in without_bar(client.get("/forks").text) and social.slugs(session_data(client), "forks") == []  # Ari's family did not fork it
 
 
-def test_the_done_page_and_calendar_explain_the_snapshot_and_offer_unpublish(client):
+def test_the_done_page_explains_the_snapshot_and_offers_unpublish(client):
     book(client)
-    assert "/share/unpublish" not in client.get("/calendar").text and "Update shared page" not in client.get("/calendar").text
     share(client)
     slug = shared_slug()
     done = client.get("/share/done").text
     assert "This is a snapshot. Share again to update it." in done and 'action="/share/unpublish"' in done
-    cal = client.get("/calendar").text
-    assert "Update shared page" in cal and 'action="/share/unpublish"' in cal
     r = client.post("/share/unpublish", data={"slug": slug}, follow_redirects=False)
     assert r.status_code == 303 and community.get(slug) is None
-    assert "Share trip" in client.get("/calendar").text
+    assert client.get("/share/done", follow_redirects=False).headers["location"] == "/share"   # nothing shared any more: back to the options
 
 
 def test_only_the_owner_can_unpublish_over_http(client):

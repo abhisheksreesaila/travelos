@@ -4,8 +4,8 @@ import re
 from datetime import date
 from urllib.parse import quote, urlsplit, parse_qs
 
-from gitaway import catalog
-from tests.test_signin import session_data, sign_in, stored_booking, tid
+from gitaway import catalog, session as ses, tripcal
+from tests.test_signin import person, session_data, sign_in, stored_booking, tid
 
 SAMPLE = catalog.SAMPLE_TRIP
 THREE_NIGHTS = "d=2026-10-16&r=2026-10-19&a=2&k=4,7"
@@ -110,17 +110,16 @@ def test_signed_out_pay_goes_through_sign_in_and_back_with_the_trip(client):
     assert money(T3) in client.get(nxt).text
 
 
-def test_booking_keeps_the_trip_and_the_calendar_follows_it(client):
+def test_booking_keeps_the_trip_and_the_days_follow_it(client):
     sign_in(client)
     r = client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1", "d": "2026-10-16", "r": "2026-10-19", "a": "2", "k": "4,7"}, follow_redirects=False)
     assert r.headers["location"] == "/booked"
     b = stored_booking()
     assert b["total_cents"] == catalog.quote("f1", "h1", "c1", trip=T3).total_cents
     assert "3 nights" in client.get("/booked").text
-    cal = client.get("/calendar").text
-    assert "Oct 16 – 19" in cal and money(T3) in cal
-    days = client.get("/calendar?view=days").text
-    assert len(re.findall(r'data-chip="\d"', days)) == 4  # 3 nights is 4 days
+    assert "Oct 16 – 19" in client.get("/trip/canvas").text
+    b = ses.booking(person())
+    assert len(tripcal.days(tripcal.trip_of(b))) == 4  # 3 nights is 4 days
 
 
 def test_booking_the_same_picks_for_another_trip_is_a_different_booking(client):
@@ -138,13 +137,11 @@ def test_sample_booking_has_no_trip_field_and_the_same_id_as_before(client):
     assert "trip" not in b and b["total_cents"] == 308_800
 
 
-def test_a_one_night_trip_still_works_on_the_calendar(client):
+def test_a_one_night_trip_still_works_on_its_days(client):
     sign_in(client)
     client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1", "d": "2026-10-16", "r": "2026-10-17", "a": "1"})
     assert client.get("/calendar").status_code == 200
-    assert client.get("/calendar?view=days").status_code == 200
-    client.post("/calendar/friends", data={"name": "Mom"})
-    assert client.post("/calendar/live", follow_redirects=False).status_code == 303
+    assert client.get("/trip/canvas?day=1").status_code == 200 and client.get("/trip?day=1").status_code == 200
 
 
 def test_workspace_change_link_returns_to_start_with_the_trip(client):
@@ -153,13 +150,15 @@ def test_workspace_change_link_returns_to_start_with_the_trip(client):
     assert "/start" in hrefs(client.get("/plan").text)
 
 
-def test_a_three_adult_booking_shows_two_rooms_on_booked_and_the_calendar(client):
+def test_a_three_adult_booking_shows_two_rooms_on_booked_and_the_trip(client):
     sign_in(client)
     client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1", "d": "2026-10-16", "r": "2026-10-20", "a": "3", "k": "4,7"})
     assert "City-view Double Queen ×2" in client.get("/booked").text
-    cal = client.get("/calendar").text
-    assert cal.count("City-view Double Queen ×2") >= 2  # check-in block and the "Booked!" note
-    assert "City-view Double Queen)" not in cal
+    from gitaway.pages import dayshared
+    b = ses.booking(person())
+    seen = " ".join([x.title for x in tripcal.booked_blocks(b, tripcal.trip_of(b))] + [dayshared.booked_note(b)])
+    assert seen.count("City-view Double Queen ×2") >= 2  # check-in block and the "Booked!" note
+    assert "City-view Double Queen)" not in seen
 
 
 def test_long_demo_never_returns_before_departing():
@@ -175,5 +174,6 @@ def test_a_booked_trip_stays_itself_after_its_departure_passes(client, monkeypat
     monkeypatch.setattr(catalog, "today", lambda: date(2026, 12, 1))
     booked = client.get("/booked").text
     assert "City-view Double Queen ×2" in booked and "3 nights" in booked
-    cal = client.get("/calendar").text
-    assert "Oct 17 – 20" in cal and "City-view Double Queen ×2" in cal
+    assert "Oct 17 – 20" in client.get("/trip/canvas").text
+    b = ses.booking(person())
+    assert "City-view Double Queen ×2" in " ".join(x.title for x in tripcal.booked_blocks(b, tripcal.trip_of(b)))

@@ -37,7 +37,7 @@ def test_the_pages_with_pickers_load_the_picker_script_and_styles(client):
 def test_every_page_with_a_select_or_a_date_or_time_field_loads_the_pickers(client):
     """A new page with such a field must add *pickers.HEAD, or its browser-default widgets show."""
     book(client)
-    paths = ["/", "/start", "/discover", "/plan", "/calendar?view=days", "/calendar?add=2&at=11:00", "/family", "/trips", "/creators", "/trips/import", "/rides", "/pay", "/trip?tab=today"]
+    paths = ["/", "/start", "/discover", "/plan", "/calendar", "/trip?add=1&day=2&at=11:00", "/family", "/trips", "/creators", "/trips/import", "/rides", "/pay", "/trip?tab=today"]
     for route in client.app.routes:
         path = getattr(route, "path", "")
         if "GET" in (getattr(route, "methods", None) or set()) and "{" not in path and path not in paths and not path.startswith(("/assets", "/auth", "/logout", "/healthz")):
@@ -53,8 +53,8 @@ def test_every_page_with_a_select_or_a_date_or_time_field_loads_the_pickers(clie
     assert "/start" in found and "/family" in found and "/trip?tab=today" in found  # the walk really reached pages with fields
 
 
-def test_the_calendar_form_keeps_native_day_and_time_fields(client):
+def test_the_add_sheet_keeps_native_time_fields(client):
     book(client)
-    html = client.get("/calendar?add=2&at=11:00").text
+    html = client.get("/trip?add=1&day=2&at=11:00").text
     assert re.search(r'<input[^>]*type="time"[^>]*name="start"', html) or re.search(r'<input[^>]*name="start"[^>]*type="time"', html)
-    assert re.search(r'<select[^>]*name="day"', html)
+    assert 'value="11:00"' in html

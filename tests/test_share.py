@@ -29,13 +29,6 @@ def test_share_needs_a_traveler_and_a_booked_trip(client):
     assert client.get("/share").status_code == 200 and "Import a trip you booked" in client.get("/share").text
 
 
-def test_the_calendar_share_button_is_one_tap(client):
-    book(client)
-    html = client.get("/calendar").text
-    assert re.search(r'<form[^>]*action="/share"[^>]*method="post"', html) or re.search(r'<form[^>]*method="post"[^>]*action="/share"', html)
-    assert "Share trip" in html
-
-
 def test_one_tap_publishes_and_confirms_with_a_link_to_the_page(client):
     book(client)
     r = share(client)
@@ -68,8 +61,8 @@ def test_the_page_never_has_notes_friends_invites_or_money(client):
     book(client)
     client.post("/calendar/friends", data={"name": "Grandma Zelda"})
     add(client)
-    client.post("/calendar/notes", data={"id": "n9", "text": "Secret passcode hunter2", "act": "a1"})
-    client.post("/calendar/notes", data={"id": "n8", "text": "Bring the family treasure"})
+    client.post("/trip/canvas/actnote", data={"id": "n9", "text": "Secret passcode hunter2", "act": "a1"})
+    client.post("/trip/notes", data={"id": "n8", "text": "Bring the family treasure"})
     share(client)
     html = client.get(f"/trips/{slug_of(client)}").text.split("<main")[1].split("</main>")[0]  # the page, not the viewer's own header
     for private in ["hunter2", "family treasure", "Grandma Zelda", "Ari Rivera", "/join/", "GA-", "gitaway.example"]:

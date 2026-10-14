@@ -65,17 +65,11 @@ def allows(role, need) -> bool:
 
 
 def refusal(request, session, role):
-    """The friendly page a refused person gets (403). Calendar writes get the calendar back with the message on it, since its soft navigation swaps that page in."""
+    """The friendly page a refused person gets (403)."""
     message = EDITOR_MESSAGE if role != "viewer" else VIEWER_MESSAGE
-    if request.url.path.startswith("/calendar"):
-        try:
-            from gitaway.pages.calendar import calendar_page
-            return calendar_page(session, notice=message, status=403)
-        except Exception:  # no booking to show, say: the plain page below
-            pass
     from fasthtml.common import A, Div, H1, P, Section, to_xml
     body = page("Not allowed", Section(Div(H1("Only editors can change that"), P(message, id="refusal"),
-                                            A("Back to the calendar", href="/calendar", cls="btn btn-primary"), cls="ga-wrap"), cls="ga-soon ga-wrap"))
+                                            A("Back to the trip", href="/trip", cls="btn btn-primary"), cls="ga-wrap"), cls="ga-soon ga-wrap"))
     return Response(to_xml(body), status_code=403, media_type="text/html")
 
 

@@ -9,7 +9,7 @@ from tests.test_trip_phone import at, plan, text  # noqa: F401 - `at` is a fixtu
 def test_today_shows_the_newest_two_note_slips_under_the_hotel_card_with_a_link_to_all_notes(client, at):
     book(client)
     for i, t in enumerate(("Oldest note", "Bring sunscreen", "Churros after the observatory"), 1):
-        client.post("/calendar/notes", data={"id": f"n{i}", "text": t})
+        client.post("/trip/notes", data={"id": f"n{i}", "text": t})
     at(date(2026, 10, 17), "09:00")
     html = client.get("/trip?tab=today").text
     today = html.split('id="tp-panel-today"')[1].split('id="tp-panel-days"')[0]

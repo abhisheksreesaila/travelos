@@ -37,12 +37,6 @@ CHECK_OUT = 11 * 60
 STAY_LEN = 90
 MAX_TITLE = 40
 MAX_NOTE = 140
-LIVE_FRIEND = "Mom"
-LIVE_TITLE = "Travel Town steam trains"
-LIVE_DAY = 2  # Sunday on the sample trip
-LIVE_START = 10 * 60
-LIVE_LEN = 150
-LIVE_NOTE = "Added Travel Town on Sunday. The little one will love the trains."
 
 # kind -> (label, tint token name)
 KINDS = {"fun": ("Fun", "bubble"), "food": ("Food", "sun"), "outdoors": ("Outdoors", "mint"),
@@ -770,63 +764,6 @@ def edit_note(session, id, text, demo=""):
                 raise CalendarError("That note is someone else's.")
             familydb.run(db, "UPDATE notes SET body = :b WHERE trip_id = :t AND scope = :s AND note_id = :i", b=text, t=fam.trip_id, s=scope, i=id)
             return _note({**row, "body": text})
-
-
-# ---- scripted liveness (F-020) -------------------------------------------------------------------------------------
-
-def _live_friend(db, trip_id):
-    """The name the scripted friend is invited under on this trip, or None."""
-    found = familydb.row(db, "SELECT name FROM friends WHERE trip_id = :t AND lower(name) = :n", t=trip_id, n=LIVE_FRIEND.casefold())
-    return found["name"] if found else None
-
-
-def live_pending(session, demo=""):
-    """True while Mom is invited and her scripted add has not happened (or been skipped) for this trip. Only ever true on a demo trip."""
-    with ses.family(session) as fam:
-        if not fam or not fam.trip_id or not fam.is_demo() or not fam.booking() or not _live_friend(fam.db, fam.trip_id):
-            return False
-        return not _peek(fam.db, fam.trip_id, _scope(demo))["live"]
-
-
-def _free_slot(blocks, acts, day, gs):
-    """The first start for LIVE_LEN minutes with nothing on it: 10:00, then later mornings, then earlier ones."""
-    taken = [(b.start, b.end) for b in blocks if b.day == day] + [(a.start, a.end) for a in acts if a.day == day]
-    lo, hi = day_window(blocks, day)  # not before you land, not too close to the flight home
-    later = range(LIVE_START, 12 * 60 + 1, 30)
-    earlier = range(LIVE_START - 30, gs - 1, -30)
-    for s in [*later, *earlier]:
-        if s >= max(gs, lo) and s + LIVE_LEN <= hi and not any(s < e and b < s + LIVE_LEN for b, e in taken):
-            return s
-    return None
-
-
-def live_add(session, demo=""):
-    """Mom adds her activity and a note, once per trip. Returns the new Activity, or None.
-
-    None means nothing was added: she is not invited, it already happened, or no free slot was left (then the script is
-    marked done so it does not try again). Posting it again is a no-op, so a reload never duplicates it.
-    """
-    with ses.family(session) as fam:
-        if not fam or not fam.trip_id or not fam.is_demo() or not fam.booking():  # the scripted friend only plays on the demo trip (F-043)
-            return None
-        _, t, blocks = _need(fam, demo)
-        db, scope = fam.db, _scope(demo)
-        with familydb.transaction(db):
-            st = _begin(db, fam.trip_id, scope, fam.traveler.id)
-            name = _live_friend(db, fam.trip_id)
-            if st["live"] or not name:
-                return None
-            day = min(LIVE_DAY, (t.return_ - t.depart).days)  # a short trip has no third day: use its last
-            start = _free_slot(blocks, [_act(r) for r in _live_acts(db, fam.trip_id, scope)], day, grid_start(blocks))
-            familydb.run(db, "UPDATE cal_state SET live = 1 WHERE pk = :pk", pk=f"{fam.trip_id}~{scope}")
-            if start is None:
-                return None
-            n = st["q"]
-            note = LIVE_NOTE.replace("on Sunday", f"on {(t.depart + timedelta(days=day)):%A}")
-            _insert_activity(db, fam, scope, f"a{n + 1}", n + 1, day, start, start + LIVE_LEN, LIVE_TITLE, "fun", name)
-            _insert_note(db, fam, scope, f"n{n + 2}", n + 2, note, f"a{n + 1}", name)
-            _bump(db, fam.trip_id, scope, n + 2)
-            return Activity(f"a{n + 1}", day, start, start + LIVE_LEN, LIVE_TITLE, "fun", name)
 
 
 # ---- applying a fork (F-021) ---------------------------------------------------------------------------------------

@@ -37,16 +37,6 @@ def test_icons_scale_with_the_root():
     assert ".btn-round svg { width:" in (CSS_DIR / "itinerary.css").read_text()
 
 
-def test_calendar_hour_grid_is_in_rem(client):
-    from tests.test_calendar import book
-
-    book(client)
-    html = client.get("/calendar?view=days").text
-    assert re.search(r"--top:[\d.]+rem;--h:[\d.]+rem", html)
-    assert not re.search(r"--top:[\d.]+px", html)
-    assert "HOUR_REM = 3" in client.get("/assets/js/calendar.js").text
-
-
 def test_no_text_below_11px_on_desktop_and_tablet():
     """Any font size under 11px at the 12px root (0.9167rem) must go through the --text-min floor."""
     for path in CSS:

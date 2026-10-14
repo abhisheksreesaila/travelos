@@ -98,13 +98,13 @@ def _form(vals, errors):
 
 
 def continue_card(session, phone=False):
-    """"Continue LA with the kids": the booked trip (opens its calendar) or the picks the traveler left in the workspace."""
+    """"Continue LA with the kids": the booked trip (opens its days) or the picks the traveler left in the workspace."""
     if not ses.current_traveler(session):
         return ""
     b = ses.booking(session)
     if b:
         # F-054: on a phone the booked trip opens on the phone trip view
-        t, href, tail = tripcal.trip_of(b), "/trip" if phone else "/calendar", ("booked elsewhere" if tripcal.is_imported(b) else f"booked, {catalog.money(b['total_cents'])}")
+        t, href, tail = tripcal.trip_of(b), "/trip", ("booked elsewhere" if tripcal.is_imported(b) else f"booked, {catalog.money(b['total_cents'])}")
     elif (saved := ses.remembered_plan(session)):
         p = {k: v[0] for k, v in parse_qs(saved).items()}
         t, href, tail = catalog.trip_from_url(p.get("d"), p.get("r"), p.get("a"), p.get("k")), f"/plan?{saved}", "your picks are saved"

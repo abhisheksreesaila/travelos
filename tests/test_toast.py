@@ -28,9 +28,3 @@ def test_the_one_toast_has_the_calm_look_and_motion():
     js = (ASSETS / "js" / "toast.js").read_text(encoding="utf-8")
     assert "4500" in js and "9000" in js and "aria-live" in js and "'status'" in js
 
-
-def test_the_calendars_server_drawn_toasts_use_the_shared_classes():
-    from gitaway.pages import calendar as calui
-    from fasthtml.common import to_xml
-    html = to_xml(calui.toast("error", "Nope", tid="t"))
-    assert 'class="ga-toast ga-toast-static cal-toast cal-toast-error"' in html and 'role="alert"' in html and 'id="t"' in html

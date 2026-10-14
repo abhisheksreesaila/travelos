@@ -245,7 +245,7 @@ def register(app):
         family = members.family_label(inv["tenant_id"])
         if inv["state"] == "accepted" and uid and inv["accepted_by"] == uid and members.role_in(uid, inv["tenant_id"]):
             members.set_active(session, inv["tenant_id"])  # signing in through this link already joined them; take them in
-            return RedirectResponse("/calendar", status_code=303)
+            return RedirectResponse("/trip", status_code=303)
         if inv["state"] != "pending":
             return _problem_page(members.InviteProblem(inv["state"], {"expired": "That invite has expired. Ask the family admin for a new one.", "revoked": "That invite was taken back. Ask the family admin for a new one.",
                                                                        "accepted": "That invite was already used."}[inv["state"]]), bool(uid))
@@ -272,4 +272,4 @@ def register(app):
         except members.InviteProblem as e:
             return _problem_page(e, True)
         members.set_active(session, joined["tenant_id"])
-        return RedirectResponse("/calendar", status_code=303)
+        return RedirectResponse("/trip", status_code=303)

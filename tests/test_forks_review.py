@@ -90,16 +90,13 @@ def test_short_titles_never_exceed_the_limit_or_come_back_empty():
 
 def test_undo_only_removes_what_that_apply_added(client):
     book(client)
-    client.post("/calendar/friends", data={"name": "Mom"})
-    client.post("/calendar/live")
     fork(client)
     add(client, id="a9", title="Mine")
     first = apply(client, "d1s2")
     ids = re.search(r"applied=([a0-9,]+)", first.headers["location"]).group(1)
     own = [a["i"] for a in stored_calendar()["a"] if a["t"] == "Mine"]
-    mom = [a["i"] for a in stored_calendar()["a"] if a.get("b") == "Mom"]
-    client.post("/forks/undo", data={"ids": ",".join([*own, *mom]), "src": TRIP})  # a hand-made id list
-    assert "Mine" in titles(client) and "Travel Town steam trains" in titles(client)
+    client.post("/forks/undo", data={"ids": ",".join(own), "src": TRIP})  # a hand-made id list
+    assert "Mine" in titles(client)
     client.post("/forks/undo", data={"ids": ids, "src": OTHER})  # the wrong fork
     assert "Santa Monica Pier & Pacific Park" in titles(client)
     client.post("/forks/undo", data={"ids": ids})  # no fork named
@@ -155,8 +152,7 @@ def test_the_calendar_accepts_a_plan_close_to_the_flight_home(client):
 def test_moving_a_plan_later_than_the_flight_home_is_allowed_too(client):
     book(client, **THREE_NIGHTS)
     add(client, id="a1", day="1", start="10:00", end="11:00")
-    r = client.post("/calendar/activities/a1/move", data={"day": "3", "start": "16:00", "end": "17:00"}, follow_redirects=False)
-    assert r.status_code == 303
+    cal.update_activity(person(), "a1", day="3", start="16:00", end="17:00")
     assert any(a["i"] == "a1" and a["d"] == 3 for a in stored_calendar()["a"])
 
 
@@ -199,27 +195,6 @@ def test_a_creator_trip_can_be_forked_saved_and_applied(client):
 TWO_NIGHTS = dict(d="2026-10-16", r="2026-10-18", a="2", k="4,7")  # the last day is index 2, where Mom's scripted add happens
 
 
-def test_moms_scripted_add_stays_inside_the_flight_window_on_a_short_trip(client):
-    book(client, f="f2", **TWO_NIGHTS)  # f2's flight home leaves at 12:30 PM, so the last day closes at 10:30 AM
-    client.post("/calendar/friends", data={"name": "Mom"})
-    client.post("/calendar/live")
-    mom = [a for a in stored_calendar()["a"] if a.get("b") == "Mom"]
-    assert len(mom) == 1 and mom[0]["d"] == 2
-    b = stored_booking()
-    blocks = cal.booked_blocks(b, cal.trip_of(b))
-    lo, hi = cal.day_window(blocks, mom[0]["d"])
-    assert lo <= mom[0]["s"] and mom[0]["e"] <= hi
-    assert mom[0]["e"] <= 10 * 60 + 30
-
-
-def test_moms_add_is_skipped_when_no_slot_fits_the_window(client, monkeypatch):
-    book(client, f="f2", **TWO_NIGHTS)
-    monkeypatch.setattr(cal, "LIVE_LEN", 600)  # ten hours cannot fit anywhere on that last day
-    client.post("/calendar/friends", data={"name": "Mom"})
-    client.post("/calendar/live")
-    assert not [a for a in stored_calendar()["a"] if a.get("b") == "Mom"]
-
-
 def test_renaming_and_moving_an_older_item_late_both_work(client):
     book(client, f="f2", **{"d": "2026-10-16", "r": "2026-10-20", "a": "2", "k": "4,7"})  # a 12:30 PM flight: the last day closes at 10:30 AM
     with ses.family(person()) as fam:  # an item from before that rule: put in the table directly, past the check
@@ -227,7 +202,6 @@ def test_renaming_and_moving_an_older_item_late_both_work(client):
                                            "end_min": 645, "title": "Old plan", "kind": "fun", "author": "", "added_by": "", "gone": 0, "created_at": familydb.now()}, ["pk"])
         familydb.run(fam.db, "INSERT OR IGNORE INTO cal_state (pk, trip_id, scope, q, live) VALUES (:pk, :t, '', 1, 0)", pk=f"{fam.trip_id}~", t=fam.trip_id)
         fam.db.conn.commit()
-    r = client.post("/calendar/activities/a1", data={"title": "Renamed", "day": "4", "start": "09:00", "end": "10:45", "kind": "fun"}, follow_redirects=False)
-    assert r.status_code == 303 and "Renamed" in titles(client)
-    r = client.post("/calendar/activities/a1", data={"title": "Renamed", "day": "4", "start": "09:15", "end": "11:00", "kind": "fun"}, follow_redirects=False)
-    assert r.status_code == 303  # F-086: moving it later than the flight window is allowed too
+    cal.update_activity(person(), "a1", title="Renamed", day="4", start="09:00", end="10:45", kind="fun")
+    assert "Renamed" in titles(client)
+    cal.update_activity(person(), "a1", title="Renamed", day="4", start="09:15", end="11:00", kind="fun")   # F-086: moving it later than the flight window is allowed too

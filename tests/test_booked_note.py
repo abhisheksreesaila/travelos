@@ -8,8 +8,8 @@ from tests.test_trip_import import TEMPLATE, imported, no_car
 
 
 def first_note(client):
-    html = client.get("/calendar?view=days").text
-    return unescape(re.search(r'cal-note-first.*?class="cal-notetext">([^<]*)<', html, re.S).group(1))
+    from gitaway.pages import dayshared
+    return dayshared.booked_note(ses.booking(person()))
 
 
 def test_the_first_note_names_the_car_only_when_there_is_one(client):

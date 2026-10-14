@@ -62,7 +62,7 @@ def options_page(session):
                     Div(Span("Stays private", cls="sh-k"), Span("Notes, who's coming, the booking reference and what you paid", cls="sh-v"), cls="sh-box"), cls="sh-boxes"),
                 Div(Span("Tags", cls="sh-label"), Div(*[_tag_pick(k, k in tags) for k in hub.TAGS], cls="sh-picks"), cls="sh-group", role="group", aria_label="Tags"),
                 Div(Span("Colour theme", cls="sh-label"), Div(*[_theme_pick(k, label, k == theme) for k, label in THEMES], cls="sh-picks"), cls="sh-group", role="group", aria_label="Colour theme"),
-                Div(Button("Publish to GitAway", type="submit", cls="btn btn-primary"), A("Not now", href="/calendar", cls="btn"), cls="sh-actions"),
+                Div(Button("Publish to GitAway", type="submit", cls="btn btn-primary"), A("Not now", href="/trip", cls="btn"), cls="sh-actions"),
                 cls="sh-form"),
             Input(type="hidden", name="custom", value="1"), action="/share", method="post", cls="sh-dialog card"),
         cls="sh ga-wrap"), head=HEAD)
@@ -97,7 +97,7 @@ def register(app):
     @app.post("/share")
     def publish(session, custom: str = "", theme: str = "", tag: list[str] = None):
         if not ses.current_traveler(session):
-            return _signin("/calendar")
+            return _signin("/trip")
         if not ses.booking(session):
             return sorry(NO_BOOKING, 409)
         try:
@@ -110,9 +110,9 @@ def register(app):
     def unpublish(session, slug: str = ""):
         """Take the signed-in owner's shared trip down. Anyone else's slug does nothing (community.unpublish checks the owner)."""
         if not ses.current_traveler(session):
-            return _signin("/calendar")
+            return _signin("/trip")
         community.unpublish(session, slug)
-        return RedirectResponse("/calendar", status_code=303)
+        return RedirectResponse("/trip", status_code=303)
 
     @app.get("/share/done")
     def done(session):

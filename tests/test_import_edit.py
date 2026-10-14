@@ -136,10 +136,11 @@ def test_a_text_that_does_not_read_goes_back_to_the_paste_page_with_the_problems
 def test_the_import_button_is_where_trips_start(client):
     sign_in(client)
     client.post("/trips/import/save", data={"text": TEMPLATE})
-    for path in ("/start", "/calendar"):
-        html = client.get(path).text
-        assert re.search(r'<a [^>]*href="/trips/import"[^>]*>(?:(?!</a>).)*Import a booked trip', html, re.S), path
-        assert re.search(r'<a [^>]*class="[^"]*\bbtn\b[^"]*"[^>]*href="/trips/import"|<a [^>]*href="/trips/import"[^>]*class="[^"]*\bbtn\b', html), path
+    html = client.get("/start").text
+    assert re.search(r'<a [^>]*href="/trips/import"[^>]*>(?:(?!</a>).)*Import a booked trip', html, re.S)
+    assert re.search(r'<a [^>]*class="[^"]*\bbtn\b[^"]*"[^>]*href="/trips/import"|<a [^>]*href="/trips/import"[^>]*class="[^"]*\bbtn\b', html)
+    bar = client.get("/trip/canvas").text      # and the top bar's trip menu, on the trip itself
+    assert re.search(r'<a [^>]*href="/trips/import"[^>]*>(?:(?!</a>).)*Import a trip you booked', bar, re.S)
 
 
 def test_the_pdf_picker_is_a_styled_button_that_shows_the_file_name(client):

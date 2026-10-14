@@ -171,12 +171,12 @@ def test_continue_picks_card_goes_back_to_the_picks_above_the_form(client):
     assert "Oct 16 – 19" in h
 
 
-def test_continue_booked_card_opens_the_calendar_and_wins_over_picks(client):
+def test_continue_booked_card_opens_the_trip_and_wins_over_picks(client):
     sign_in(client)
     client.get("/plan?f=f2&h=h3&c=c1")
     client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1", "d": "2026-10-16", "r": "2026-10-19", "a": "2", "k": "4,7"})
     h = client.get("/start").text
-    assert "Continue LA with the kids" in h and 'href="/calendar"' in h and "booked" in h
+    assert "Continue LA with the kids" in h and 'href="/trip"' in h and "booked" in h
     assert h.index("Continue LA") < h.index('id="st-form"')
 
 

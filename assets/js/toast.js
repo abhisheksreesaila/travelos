@@ -9,14 +9,14 @@
 // tapped (GA.motion, the one liquid spring: motion.js) and folds back into it after 4.5 s (9 s with Undo), and waits while a finger (or the pointer, or the keyboard) is on it. It is placed under the lowest visible part of the
 // heading (the day's heading, the compact bar that replaces it, or the phone header on Family and Ask) so it never covers the Day | Week switch, the map or SOS, and it keeps up while the
 // page scrolls. role=status with aria-live polite: a screen reader says it once. Reduced motion: no movement and no fade (the removal is not delayed).
-// A toast the server drew with the page (.ga-toast-static: the calendar's, the old Today page's) is only placed here.
+// A toast the server drew with the page (.ga-toast-static: the old Today page's) is only placed here.
 (function () {
   var GA = window.GA = window.GA || {};
   if (GA.toast) return;
   var MO = window.GA.motion;
   var el = null, body = null, hideT = 0, swapT = 0, removeT = 0, latest = null, pressed = false, queued = false, curMs = 4500;
-  // the heading and every row of controls under it: the day's kinds and step filters, Family's Chat / Photos / Invite and Quiet rows, the calendar's top bar
-  var HEADS = ['.cz-fold.is-on .cz-fold-bar', '.cz-head', '.cz-bar', '.cz-filters', '.tp-head', '.fam-bar', '.ft-notify', '.ga-header', '.cal-bar'];
+  // the heading and every row of controls under it: the day's kinds and step filters, Family's Chat / Photos / Invite and Quiet rows
+  var HEADS = ['.cz-fold.is-on .cz-fold-bar', '.cz-head', '.cz-bar', '.cz-filters', '.tp-head', '.fam-bar', '.ft-notify', '.ga-header'];
   var reduced = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
 
   function rem() { return parseFloat(getComputedStyle(document.documentElement).fontSize) || 16; }

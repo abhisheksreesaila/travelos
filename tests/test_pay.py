@@ -71,9 +71,9 @@ def test_booked_shows_flight_and_hotel(client):
     client.post("/pay", data=DATA)
     html = client.get("/booked").text
     assert "going to LA!" in html
-    assert "Pacific Hop 88" in html and "Hotel Marigold" in html and "Open my trip calendar" in html
-    assert 'href="/calendar"' in html
-    assert client.get("/calendar?view=days").status_code == 200
+    assert "Pacific Hop 88" in html and "Hotel Marigold" in html and "Open my trip" in html
+    assert 'href="/trip"' in html
+    assert client.get("/calendar").status_code == 200
 
 
 def test_booked_without_booking_redirects_to_plan(client):

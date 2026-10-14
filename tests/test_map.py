@@ -78,8 +78,8 @@ def test_a_place_the_geocoder_cannot_find_is_listed_under_the_map_with_a_way_to_
     assert "Mystery Cafe" not in [s["title"] for s in data_of(html)["stops"]]  # no pin without coordinates
     text = " ".join(visible(html).split())
     assert "Couldn’t find this place on the map." in text
-    assert "Mystery Cafe" in text and "Fix it in the calendar" in text
-    assert 'href="/calendar?view=whole#d0"' in html  # a plan is fixed in the calendar, not in Edit trip
+    assert "Mystery Cafe" in text and "Fix it on its day" in text
+    assert 'href="/trip/canvas?day=0' in html  # a plan is fixed on its day, not in Edit trip
 
 
 def test_a_booking_that_cannot_be_found_links_to_edit_trip(client, maps, monkeypatch):

@@ -1,4 +1,4 @@
-"""F-046: a viewer sees no "Talk to plan" and no live "Schedule an Uber" links (like the add links); editors still do."""
+"""F-046: a viewer sees no live "Schedule an Uber" links (like the add links); editors still do."""
 import pytest
 
 from tests.test_calendar import book
@@ -18,14 +18,12 @@ def pair(client):
     return client, other
 
 
-def test_a_viewer_does_not_get_talk_to_plan_or_live_uber_links_on_the_calendar(pair):
+def test_a_viewer_does_not_get_live_uber_links_on_the_day(pair):
     ari, vi = pair
-    editor = ari.get("/calendar?view=days").text
-    assert "Talk to plan" in editor and "Schedule an Uber" in editor and 'data-offer="ro-arrive"' in editor
-    seen = vi.get("/calendar?view=days").text
-    assert "Talk to plan" not in seen and "Schedule an Uber" not in seen and "data-offer" not in seen and "/rides/new" not in seen
-    whole = vi.get("/calendar?view=whole").text
-    assert "Talk to plan" not in whole and "/rides/new" not in whole
+    editor = ari.get("/trip?day=0").text
+    assert "Schedule an Uber" in editor and "/rides/new" in editor
+    seen = vi.get("/trip?day=0").text
+    assert "Schedule an Uber" not in seen and "/rides/new" not in seen
 
 
 def test_a_viewer_does_not_get_schedule_links_on_the_booking_pages(pair):
@@ -40,4 +38,4 @@ def test_a_viewer_still_sees_the_rides_that_are_scheduled(pair):
     ari, vi = pair
     from tests.test_rides import schedule
     assert schedule(ari).status_code == 303
-    assert "Simulated ride" in vi.get("/calendar?view=days").text
+    assert "simulated" in vi.get("/trip?day=0").text and 'href="/rides/r1"' in vi.get("/trip?day=0").text

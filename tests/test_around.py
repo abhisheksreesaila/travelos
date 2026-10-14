@@ -294,17 +294,18 @@ def add_href(html, name):
     return tag_href(one_card(html, name), "ar-add")
 
 
-def test_add_to_plan_opens_the_calendars_add_form_with_the_name_and_the_next_free_half_hour(client, world):
+def test_add_to_plan_opens_the_trips_add_sheet_with_the_name_and_the_next_free_half_hour(client, world):
     imported(client)
-    plan(client, id="a1", day="1", start="12:00", end="14:00", title="Busy lunch", kind="food")
+    plan(client, id="a1", day="1", start="12:00", end="13:00", title="Busy lunch", kind="food")
+    plan(client, id="a2", day="1", start="13:00", end="14:00", title="Busy coffee", kind="food")
     href = add_href(search(client).text, "Green Bowl")
     u = urlparse(href)
     q = parse_qs(u.query)
-    assert u.path == "/calendar" and q["add"] == ["1"] and q["title"] == ["Green Bowl"] and q["kind"] == ["food"] and q["view"] == ["days"]
+    assert u.path == "/trip" and q["add"] == ["1"] and q["day"] == ["1"] and q["title"] == ["Green Bowl"] and q["kind"] == ["food"]
     assert q["at"] == ["14:00"]                       # it is Saturday 12:40 and 12:00-14:00 is taken: the next half hour with an hour free
     form = client.get(href).text
-    assert re.search(r'name="title"[^>]*value="Green Bowl"', form) and re.search(r'name="start"[^>]*value="14:00"', form) and re.search(r'name="end"[^>]*value="15:00"', form)
-    assert re.search(r'name="day"', form) and 'value="food"' in form
+    assert re.search(r'name="title"[^>]*value="Green Bowl"', form) and re.search(r'name="start"[^>]*value="14:00"', form)
+    assert re.search(r'name="day"', form) and re.search(r'value="food"[^>]*checked', form)
 
 
 def test_saving_that_form_adds_the_plan_writes_the_card_and_tells_the_family(client, world):
@@ -314,7 +315,7 @@ def test_saving_that_form_adds_the_plan_writes_the_card_and_tells_the_family(cli
     href = add_href(search(client).text, "Green Bowl")
     form = client.get(href).text
     data = {"id": re.search(r'name="id" value="(a\d+)"', form).group(1), "day": "1", "start": "13:00", "end": "14:00", "title": "Green Bowl", "kind": "food"}
-    r = client.post("/calendar/activities", data=data, follow_redirects=False)
+    r = client.post("/trip/plans", data=data, follow_redirects=False)
     assert r.status_code == 303
     assert any(a["t"] == "Green Bowl" and a["d"] == 1 for a in stored_calendar()["a"])
     items = familythread.items(person("ari"))
@@ -323,16 +324,16 @@ def test_saving_that_form_adds_the_plan_writes_the_card_and_tells_the_family(cli
 
 def test_it_goes_through_the_calendars_own_checks(client, world):
     imported(client)
-    r = client.post("/calendar/activities", data={"id": "a9", "day": "0", "start": "07:00", "end": "08:00", "title": "Green Bowl", "kind": "food"})
+    r = client.post("/trip/plans", data={"id": "a9", "day": "0", "start": "07:00", "end": "08:00", "title": "Green Bowl", "kind": "food"})
     assert r.status_code == 200 and stored_calendar()["a"]      # before the flight lands is fine (F-086): plans may overlap bookings
-    r = client.post("/calendar/activities", data={"id": "a10", "day": "9", "start": "07:00", "end": "08:00", "title": "Nowhere", "kind": "food"})
+    r = client.post("/trip/plans", data={"id": "a10", "day": "9", "start": "07:00", "end": "08:00", "title": "Nowhere", "kind": "food"})
     assert r.status_code == 409                                   # a day outside the trip is still refused
 
 
 def test_a_long_name_is_cut_to_the_calendars_limit_and_a_bad_kind_is_fun(client, world):
     imported(client)
-    form = client.get("/calendar?view=days&add=1&at=12:00&title=" + "x" * 80 + "&kind=hacker").text
-    assert re.search(r'name="title"[^>]*value="x{40}"', form) and 'value="fun"' in form
+    form = client.get("/trip?add=1&day=1&at=12:00&title=" + "x" * 80 + "&kind=hacker").text
+    assert re.search(r'name="title"[^>]*value="x{40}"', form) and re.search(r'value="fun"[^>]*checked', form)
 
 
 def test_viewers_see_the_cards_but_no_add_to_plan_and_cannot_turn_the_preference_on(client, world):

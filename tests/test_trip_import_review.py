@@ -37,9 +37,8 @@ def test_two_hotels_put_both_stays_on_the_calendar_and_rides_go_to_the_hotel_of_
     arrive = rides.leg_plan("arrive", cal.flight_of(b), cal.stay_for(b, "arrive"), cal.trip_of(b))
     depart = rides.leg_plan("depart", cal.flight_of(b), cal.stay_for(b, "depart"), cal.trip_of(b))
     assert arrive.dropoff.name == "First Inn" and depart.pickup.name == "Second Inn" and depart.pickup.address.startswith("2 Second St")
-    html = unescape(client.get("/calendar?view=days").text)
-    assert "Schedule an Uber · LAX → First Inn" in html and "Second Inn → LAX" in html
-    assert "222" in client.get("/calendar?detail=b-hout2").text and "111" in client.get("/calendar?detail=b-out2").text
+    assert "Schedule an Uber · LAX → First Inn" in unescape(client.get("/trip?day=0").text) and "Second Inn → LAX" in unescape(client.get("/trip?day=4").text)
+    assert "222" in client.get("/trip/canvas?day=4&booked=b-hout2").text and "111" in client.get("/trip/canvas?day=2&booked=b-out2").text
     text = visible(client.get("/trip/details").text)
     assert "First Inn" in text and "Second Inn" in text
 
@@ -60,7 +59,7 @@ def test_late_events_stay_inside_the_day_and_the_grid_grows_to_hold_them(client)
     assert "b-back-a" not in blocks  # the landing is the day after the trip ends: no column for it
     assert all(0 <= x.start and x.end <= 24 * 60 - 1 for x in blocks.values())
     assert cal.grid_end(list(blocks.values())) == 24 * 60 and cal.grid_end([]) == 22 * 60
-    assert 'data-grid-end="1440"' in client.get("/calendar?view=days").text
+    assert client.get("/trip/canvas?day=4").status_code == 200
 
 
 def test_a_red_eye_blocks_the_landing_morning_and_the_leaving_evening():

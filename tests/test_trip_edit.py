@@ -4,6 +4,7 @@ import re
 from html import unescape
 
 from gitaway import rides, session as ses, tripcal as cal
+from tests.test_calendar import book
 from tests.test_import_edit import _Fields, walk_from
 from tests.test_roles import crew  # noqa: F401 - a fixture: an admin, an editor and a viewer
 from tests.test_signin import person, sign_in
@@ -51,12 +52,12 @@ def test_the_details_page_has_an_edit_button_that_opens_the_builder_filled(clien
         assert expected in visible(w.html), expected
 
 
-def test_the_calendar_trip_bar_and_the_phone_view_have_the_button_for_a_saved_trip_and_not_for_the_demo(client):
+def test_the_phone_view_has_the_button_for_a_saved_trip_and_not_for_the_demo(client):
     sign_in(client)
-    assert 'id="cal-edit-trip"' not in client.get("/calendar").text  # a sample trip has no stored plan
+    book(client)
+    assert 'id="tp-edit-trip"' not in client.get("/trip?day=0").text  # a sample trip has no stored plan
     imported(client)
     [trip_id] = trip_ids()
-    assert 'id="cal-edit-trip"' in client.get(f"/calendar?trip={trip_id}").text
     phone = client.get(f"/trip?trip={trip_id}").text
     assert 'id="tp-edit-trip"' in phone and f'href="/trips/build/edit?trip={trip_id}"' in phone
 

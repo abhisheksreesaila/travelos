@@ -7,11 +7,11 @@ from html import unescape
 
 import pytest
 
-from gitaway import catalog, rides, tripday as td
+from gitaway import catalog, rides, tripcal as cal, tripday as td
 from tests.pagebody import without_bar
 from tests.test_calendar import book, tag
 from tests.test_members import addr, browser, invite
-from tests.test_signin import sign_in, stored_calendar
+from tests.test_signin import person, sign_in, stored_calendar
 from tests.test_trip_import import SECRETS, TEMPLATE, imported, visible
 
 IPHONE = {"user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"}
@@ -29,7 +29,11 @@ def at(monkeypatch):
 
 
 def plan(client, id="a1", day="1", start="17:00", end="19:30", title="Griffith Observatory", kind="culture"):
-    return client.post("/calendar/activities", data={"id": id, "day": day, "start": start, "end": end, "title": title, "kind": kind}, follow_redirects=False)
+    """A plan through the add sheet's route (which runs an hour), then given its end through the model, so tests can have the length they need."""
+    r = client.post("/trip/plans", data={"id": id, "day": day, "start": start, "title": title, "kind": kind}, follow_redirects=False)
+    if r.status_code == 303 and end:
+        cal.update_activity(person(), id, end=end)
+    return r
 
 
 def raw(html, id_):
@@ -53,21 +57,18 @@ def test_signed_out_goes_through_sign_in_and_a_signed_in_family_with_no_trip_goe
     assert r.status_code == 303 and r.headers["location"] == "/start"
 
 
-def test_phones_are_sent_to_the_trip_view_from_a_plain_calendar_but_not_from_a_calendar_with_a_view(client):
+def test_every_screen_size_is_sent_from_the_old_calendar_to_the_trips_day(client):
     book(client)
-    r = client.get("/calendar", headers=IPHONE, follow_redirects=False)
-    assert r.status_code == 303 and r.headers["location"] == "/trip"
-    assert client.get("/calendar", headers=ANDROID, follow_redirects=False).headers["location"] == "/trip"
-    assert client.get("/calendar?view=whole", headers=IPHONE, follow_redirects=False).status_code == 200  # the "full calendar" link
-    assert client.get("/calendar?view=days&add=1", headers=IPHONE, follow_redirects=False).status_code == 200
-    assert client.get("/calendar", follow_redirects=False).status_code == 200  # a desktop keeps today's calendar
-    assert client.get("/calendar", headers={"user-agent": "Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) Mobile/15E148 Safari/604.1"}, follow_redirects=False).status_code == 200
+    for headers in (IPHONE, ANDROID, {}, {"user-agent": "Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) Mobile/15E148 Safari/604.1"}):
+        for path in ("/calendar", "/calendar?view=whole", "/calendar?view=days&add=1"):
+            r = client.get(path, headers=headers, follow_redirects=False)
+            assert r.status_code == 303 and r.headers["location"].startswith("/trip/canvas"), (path, headers)
 
 
 def test_the_installed_app_opens_on_the_trip_view_and_the_continue_card_lands_there_on_a_phone(client):
     assert client.get("/manifest.webmanifest").json()["start_url"] == "/trip"
     book(client)
-    assert 'href="/calendar"' in client.get("/start").text
+    assert 'href="/trip"' in client.get("/start").text
     assert 'href="/trip"' in client.get("/start", headers=IPHONE).text
 
 
@@ -89,7 +90,7 @@ def test_before_the_trip_it_counts_the_days_and_shows_day_one(client, at):
 def test_after_the_trip_it_is_a_recap(client, at):
     book(client)
     plan(client)
-    client.post("/calendar/notes", data={"id": "n1", "text": "Great trip"})
+    client.post("/trip/notes", data={"id": "n1", "text": "Great trip"})
     at(date(2026, 10, 25))
     t = text(client.get("/trip?tab=today").text)
     assert "WELCOME HOME" in t and "5 days in LA" in t and "1 plan · 1 note" in t
@@ -348,7 +349,7 @@ def test_each_place_has_a_directions_link_and_a_booking_shows_its_confirmation_o
 def test_a_plan_says_who_added_it_and_shows_the_notes_written_on_it(client, at):
     book(client)
     plan(client)
-    client.post("/calendar/notes", data={"id": "n1", "text": "Bring jackets", "act": "a1"})
+    client.post("/trip/canvas/actnote", data={"id": "n1", "text": "Bring jackets", "act": "a1"})
     at(date(2026, 10, 17), "12:00")
     html = text(client.get("/trip?tab=today").text)
     assert "added by you" in html and "Bring jackets" in html
@@ -357,7 +358,7 @@ def test_a_plan_says_who_added_it_and_shows_the_notes_written_on_it(client, at):
 def test_the_shared_text_is_the_days_times_and_plans_with_no_prices_confirmations_or_notes(client, at):
     imported(client)
     plan(client, "a1", "0", "17:00", "19:30", "Griffith Observatory", "culture")
-    client.post("/calendar/notes", data={"id": "n1", "text": "private-ish note", "act": "a1"})
+    client.post("/trip/canvas/actnote", data={"id": "n1", "text": "private-ish note", "act": "a1"})
     at(date(2026, 10, 16), "08:00")
     out = share_attr(client.get("/trip?tab=today").text)
     lines = out.split("\n")
@@ -380,10 +381,9 @@ def test_any_day_opens_with_day_and_today_is_the_default_before_during_and_after
     assert 'data-day="0"' in raw(client.get("/trip?day=0").text, "tp-app")
 
 
-def test_a_viewer_can_share_the_day_and_the_calendar_links_to_it(client, at):
+def test_a_viewer_can_share_the_day(client, at):
     book(client)
     plan(client)
-    assert 'id="cal-today-view"' in client.get("/calendar?view=whole").text and "Today, to share" in text(client.get("/calendar?view=whole").text)
     mail = addr("vi2")
     invite(client, mail, "viewer")
     viewer = browser(client)
@@ -391,18 +391,6 @@ def test_a_viewer_can_share_the_day_and_the_calendar_links_to_it(client, at):
     at(date(2026, 10, 17), "12:00")
     html = viewer.get("/trip?tab=today").text
     assert 'id="tp-share"' in html and "Griffith Observatory" in share_attr(html) and 'id="tp-add"' not in html
-    assert 'id="cal-today-view"' in viewer.get("/calendar?view=whole").text
-
-
-def test_the_calendars_today_link_carries_the_open_trip_and_lands_on_the_trip_view(client, at):
-    book(client)
-    plan(client)
-    at(date(2026, 10, 17), "12:00")
-    link = tag(client.get("/calendar?view=whole").text, "id", "cal-today-view")
-    href = unescape(link["href"])
-    assert re.fullmatch(r"/trip\?trip=\w+", href)
-    r = client.get(href)
-    assert r.status_code == 200 and 'id="tp-app"' in r.text and f'data-trip="{href.split("=")[1]}"' in r.text
 
 
 def test_the_demo_bookings_share_text_has_no_prices(client, at):

@@ -44,7 +44,7 @@ def subscribe(client, endpoint=EP, time="07:30", **keys):
 
 
 def plan(client, id="a1", day="1", start="09:00", end="10:00", title="Griffith Observatory"):
-    return client.post("/calendar/activities", data={"id": id, "day": day, "start": start, "end": end, "title": title, "kind": "culture"}, follow_redirects=False)
+    return client.post("/trip/plans", data={"id": id, "day": day, "start": start, "end": end, "title": title, "kind": "culture"}, follow_redirects=False)
 
 
 @pytest.fixture

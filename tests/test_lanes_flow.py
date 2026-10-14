@@ -347,16 +347,18 @@ def test_an_old_booking_with_the_retired_no_car_id_still_reads(client):
 # ---- the calendar ----------------------------------------------------------------------------------------------------
 
 def blocks_of(client, url):
+    """The booked blocks the trip gets from a booking (ids), and their titles as one text."""
     sign_in(client)
     post(client, url)
-    html = client.get("/calendar?view=days").text
-    return re.findall(r'data-block="([\w-]+)"', html), html
+    b = ses.booking(person())
+    blocks = cal.booked_blocks(b, cal.trip_of(b))
+    return [x.id for x in blocks], " ".join(x.title for x in blocks)
 
 
 @pytest.mark.parametrize("url,expected", [(SAMPLE, ["b-out", "b-in", "b-out2", "b-back"]), (NO_CAR, ["b-out", "b-in", "b-out2", "b-back"]),
                                           (STAY_ONLY, ["b-in", "b-out2"]), (FLIGHT_ONLY, ["b-out", "b-back"]),
                                           ("f=none&h=none&c=c1", []), ("f=none&h=h2&c=c2", ["b-in", "b-out2"])])
-def test_the_calendar_has_blocks_only_for_what_was_booked(client, url, expected):
+def test_the_trip_has_blocks_only_for_what_was_booked(client, url, expected):
     found, html = blocks_of(client, url)
     assert sorted(set(found)) == sorted(expected)
 
@@ -372,17 +374,17 @@ def test_flight_only_has_flight_blocks_but_no_check_in_or_check_out(client):
     assert "Skylark Air 214 · SFO → LAX" in html and "Check in" not in html and "Check out" not in html
 
 
-def test_the_calendar_welcome_note_fits_the_mix(client):
-    _, html = blocks_of(client, STAY_ONLY)
-    assert "Booked! Your stay at The Tidewater (" in html and "flights" not in html.split("Booked! Your")[1].split("on the calendar")[0]
-    _, html = blocks_of(client, SAMPLE)
-    assert "Booked! Your flights, The Tidewater" in html
+def test_the_welcome_note_fits_the_mix(client):
+    blocks_of(client, STAY_ONLY)
+    note = booked_note_text(client, STAY_ONLY)
+    assert "Booked! Your stay at The Tidewater (" in note and "flights" not in note.split("on the calendar")[0]
+    assert "Booked! Your flights, The Tidewater" in booked_note_text(client, SAMPLE)
 
 
-def test_a_car_only_booking_still_opens_a_calendar_with_no_booked_blocks(client):
-    found, html = blocks_of(client, "f=none&h=none&c=c1")
-    assert found == [] and client.get("/calendar").status_code == 200
-    assert "Breeze Rentals" in html  # named in the welcome note
+def test_a_car_only_booking_still_opens_the_trip_with_no_booked_blocks(client):
+    found, _ = blocks_of(client, "f=none&h=none&c=c1")
+    assert found == [] and client.get("/trip/canvas").status_code == 200
+    assert "Breeze Rentals" in booked_note_text(client, "f=none&h=none&c=c1")  # named in the welcome note
 
 
 # ---- the flight window (F-021) does not apply without a flight ------------------------------------------------------
@@ -404,17 +406,16 @@ def test_no_flight_means_no_window_and_a_flight_still_has_one():
 def test_activities_before_landing_and_near_the_flight_home_are_allowed_with_no_flight(client):
     sign_in(client)
     post(client, STAY_ONLY)
-    ok_first = client.post("/calendar/activities", data={"id": "a1", "day": "0", "start": "07:30", "end": "08:30", "title": "Early breakfast", "kind": "food"}, follow_redirects=False)
-    ok_last = client.post("/calendar/activities", data={"id": "a2", "day": "4", "start": "17:00", "end": "18:00", "title": "Last dinner", "kind": "food"}, follow_redirects=False)
+    ok_first = client.post("/trip/plans", data={"id": "a1", "day": "0", "start": "07:30", "title": "Early breakfast", "kind": "food"}, follow_redirects=False)
+    ok_last = client.post("/trip/plans", data={"id": "a2", "day": "4", "start": "17:00", "title": "Last dinner", "kind": "food"}, follow_redirects=False)
     assert ok_first.status_code in (200, 303) and ok_last.status_code in (200, 303)
-    html = client.get("/calendar?view=days").text
-    assert "Early breakfast" in html and "Last dinner" in html
+    assert {a.title for a in cal.activities(person())} == {"Early breakfast", "Last dinner"}
 
 
 def test_a_plan_before_the_flight_lands_is_saved(client):
     sign_in(client)
     post(client, FLIGHT_ONLY)
-    r = client.post("/calendar/activities", data={"id": "a1", "day": "0", "start": "07:00", "end": "07:45", "title": "Early breakfast", "kind": "food"}, follow_redirects=False)
+    r = client.post("/trip/plans", data={"id": "a1", "day": "0", "start": "07:00", "title": "Early breakfast", "kind": "food"}, follow_redirects=False)
     assert r.status_code == 303  # F-086: the window only guides suggestions now
 
 
@@ -439,7 +440,7 @@ def test_car_only_wording_is_true(client):
     sign_in(client)
     post(client, "f=none&h=none&c=c1")
     assert "Your car is booked. It has no block on the calendar" in client.get("/booked").text
-    assert "rental is booked. It has no block here" in client.get("/calendar?view=days").text
+    assert "rental is booked. It has no block here" in booked_note_text(client, "f=none&h=none&c=c2")
 
 
 def test_shared_trip_lede_describes_only_the_lanes_booked():
@@ -455,8 +456,9 @@ def test_one_airport_buffer():
 
 
 def booked_note_text(client, url):
-    _, html = blocks_of(client, url)
-    return re.search(r'class="cal-notetext"[^>]*>(.*?)</span>', html, re.S).group(1).replace("&amp;", "&")
+    from gitaway.pages import dayshared
+    blocks_of(client, url)
+    return dayshared.booked_note(ses.booking(person()))
 
 
 def test_the_booked_note_reads_naturally_for_every_mix(client):

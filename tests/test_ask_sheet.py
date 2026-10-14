@@ -127,7 +127,7 @@ def test_a_stale_proposal_fails_in_the_sheet_and_keeps_the_words(client, azure):
     book(client)
     r = client.post("/trip/ask/propose", data={"day": "1", "text": "add pool at 3"}, headers=SHEET)
     posted = fields(r.text, "ak-apply-form")
-    client.post("/calendar/activities", data={"id": "a9", "day": "1", "start": "10:00", "end": "11:00", "title": "Breakfast", "kind": "food"})      # the day moved on
+    client.post("/trip/plans", data={"id": "a9", "day": "1", "start": "10:00", "end": "11:00", "title": "Breakfast", "kind": "food"})      # the day moved on
     again = client.post("/trip/ask/apply", data=posted, headers=SHEET)
     assert again.status_code == 409 and "changed while you were deciding" in again.text and fields(again.text, "ak-form")["text"] == "add pool at 3"
     assert len(cal.activities(person("ari"))) == 1
@@ -143,7 +143,7 @@ def test_the_toast_says_what_was_done():
 
 def test_apply_reports_the_plans_it_moved_and_added(client, azure):
     book(client)
-    client.post("/calendar/activities", data={"id": "a1", "day": "1", "start": "12:00", "end": "13:00", "title": "Lunch", "kind": "food"})
+    client.post("/trip/plans", data={"id": "a1", "day": "1", "start": "12:00", "end": "13:00", "title": "Lunch", "kind": "food"})
     azure.answer = answer(op("move_plan", id="a1", start="12:30", end="13:30"), op("add_plan", title="Pool", start="15:00", end="16:00"))
     r = client.post("/trip/ask/propose", data={"day": "1", "text": "move lunch, add pool"}, headers=SHEET)
     j = client.post("/trip/ask/apply", data=fields(r.text, "ak-apply-form"), headers=SHEET).json()

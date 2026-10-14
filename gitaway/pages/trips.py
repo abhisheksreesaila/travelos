@@ -1,6 +1,6 @@
 """Public itinerary pages at /trips/{slug} (F-014 renders the scrapbook page for known trips) and the family's trip switcher (F-040).
 
-POST /trips/switch   open another of the family's trips for the signed-in person (trip=<id>), then back to their calendar
+POST /trips/switch   open another of the family's trips for the signed-in person (trip=<id>), then back to the trip
 """
 
 from fasthtml.common import A, Div, H1, P, Section
@@ -28,6 +28,13 @@ def not_found():
 
 
 def register(app):
+    @app.get("/trips")
+    @app.get("/trips/")
+    def current_trip(session, day: str = ""):
+        """/trips has nothing of its own: it goes to the current trip (the one address that used to be a 404)."""
+        from gitaway.pages.calendar import to_the_trip
+        return to_the_trip(session, day)
+
     @app.get("/trips/{slug}")
     def trip(session, slug: str, theme: str = "", state: str = ""):
         found = forks_model.resolve(slug)
@@ -37,8 +44,8 @@ def register(app):
 
     @app.post("/trips/switch")
     def switch(session, trip: str = "", next: str = ""):
-        """Open another of the family's trips. A trip that is not the family's changes nothing. Always lands on the calendar (or `next`)."""
+        """Open another of the family's trips. A trip that is not the family's changes nothing. Always lands on the trip (or `next`)."""
         if not ses.current_traveler(session):
-            return RedirectResponse("/signin?next=%2Fcalendar", status_code=303)
+            return RedirectResponse("/signin?next=%2Ftrip", status_code=303)
         ses.switch_trip(session, trip)
-        return RedirectResponse(ses.safe_next(next, "/calendar"), status_code=303)
+        return RedirectResponse(ses.safe_next(next, "/trip"), status_code=303)

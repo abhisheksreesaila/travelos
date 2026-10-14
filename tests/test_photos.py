@@ -360,9 +360,9 @@ def test_photos_show_in_a_strip_per_day_with_the_latest_pinned_to_its_plan(trip)
 
 def test_the_polaroid_names_the_plan_and_counts_the_photos_on_it(trip):
     upload(trip, jpg(taken=STROLL))
-    upload(trip, jpg(taken="2026:10:17 11:00:00"))
+    upload(trip, jpg(taken="2026:10:17 10:45:00"))
     html = trip.get("/trip/family?view=photos").text
-    assert "Pinned to Venice Canals stroll" in html and "2 photos on this stop" in html and "Venice Canals stroll · 11:00 AM" in html
+    assert "Pinned to Venice Canals stroll" in html and "2 photos on this stop" in html and "Venice Canals stroll · 10:45 AM" in html
 
 
 def test_the_thread_shows_the_photo_card(trip):

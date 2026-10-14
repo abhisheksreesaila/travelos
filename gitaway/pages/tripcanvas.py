@@ -25,7 +25,7 @@ from starlette.responses import RedirectResponse, Response
 from gitaway import access, canvas, catalog, geo, members, passes, phone, pickers, plantalk, planedit, session as ses, tripcal as cal, tripday as td
 from gitaway.icons import icon
 from gitaway.layout import avatar, join_note, trip_field
-from gitaway.pages import booked, calendar as calui, passes as passes_ui   # passes: on a flight day the now card is the flight with everyone's passes (F-092)
+from gitaway.pages import booked, dayshared as calui, passes as passes_ui   # passes: on a flight day the now card is the flight with everyone's passes (F-092)
 from gitaway.pages.around_ui import around_url
 from gitaway.pages.plantalk import talk_badge   # F-091: the chat badge on a plan and on a part
 

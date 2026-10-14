@@ -40,7 +40,7 @@ def _resolve_imported(session, f, leg=""):
 def _picks_link(flight, stay, trip):
     """Back to the picks in the workspace, or to the calendar for an imported trip (it has no picks)."""
     if flight is not None and familydb_import.is_offer(flight.id):
-        return "/calendar"
+        return "/trip"
     return plan.plan_path(flight.id, stay.id if stay else None, None, None, trip)
 
 
@@ -131,7 +131,7 @@ def _head(p, flight, step):
 
 
 def back_href():
-    return "/calendar"
+    return "/trip"
 
 
 def estimate_card(e, href):
@@ -201,8 +201,8 @@ def flow(session, path, leg, f, h, c, d, r, a, k, p="", vals=None, error="", sta
         return sign_in_page(path)
     flight, stay, trip, problem = _resolve(f, h, c, d, r, a, k, session, leg)
     if problem:
-        back = "/calendar" if familydb_import.is_offer(f) else plan.plan_path(*plan.resolve_pick(f, h, c), None, trip)
-        return message_page("No Uber to schedule", problem, A("Back to my calendar" if back == "/calendar" else "Back to my picks", href=back, cls="btn btn-ink"))
+        back = "/trip" if familydb_import.is_offer(f) else plan.plan_path(*plan.resolve_pick(f, h, c), None, trip)
+        return message_page("No Uber to schedule", problem, A("Back to my trip" if back == "/trip" else "Back to my picks", href=back, cls="btn btn-ink"))
     try:
         leg_plan = rides.leg_plan(leg, flight, stay, trip)
     except rides.RideError as e:
@@ -280,9 +280,9 @@ def ride_view(session, r, error="", status=200):
         Div(Span("Request", cls="rd-k"), Span(r.request_id, cls="rd-v rd-mono", id="rd-request"), cls="rd-kv"),
         P(where, cls="rd-note"),
         *controls,
-        Div(A("Open my trip calendar", href="/calendar", cls="btn btn-ink btn-sm", id="rd-cal") if on_cal else
+        Div(A("Open my trip", href="/trip", cls="btn btn-ink btn-sm", id="rd-cal") if on_cal else
             A("Back to my picks", href="/plan" + (f"?{ses.remembered_plan(session)}" if ses.remembered_plan(session) else ""), cls="btn btn-sm", id="rd-picks"),
-            A("Schedule another Uber", href="/calendar", cls="rd-link") if r.canceled and on_cal else "", cls="rd-actions"),
+            A("Schedule another Uber", href="/trip", cls="rd-link") if r.canceled and on_cal else "", cls="rd-actions"),
         cls="rd-card rd-aside",
     )
     out = page(f"Your Uber · {LEG_TITLE[r.leg]}", Div(
@@ -292,7 +292,7 @@ def ride_view(session, r, error="", status=200):
 
 
 def not_found():
-    return message_page("We couldn't find that ride", "It may have been removed, or it belongs to another traveler.", A("Open my trip calendar", href="/calendar", cls="btn btn-ink"), status=404)
+    return message_page("We couldn't find that ride", "It may have been removed, or it belongs to another traveler.", A("Open my trip", href="/trip", cls="btn btn-ink"), status=404)
 
 
 # ---- routes ----------------------------------------------------------------------------------------------------------
@@ -311,7 +311,7 @@ def register(app):
         vals = {"first": first, "last": last, "phone": phone}
         flight, stay, trip, problem = _resolve(f, h, c, d, r, a, k, session, leg)
         if problem:
-            return message_page("No Uber to schedule", problem, A("Back to my picks", href="/calendar" if familydb_import.is_offer(f) else "/plan", cls="btn btn-ink"))
+            return message_page("No Uber to schedule", problem, A("Back to my picks", href="/trip" if familydb_import.is_offer(f) else "/plan", cls="btn btn-ink"))
         try:
             leg_plan = rides.leg_plan(leg, flight, stay, trip)
         except rides.RideError as e:  # a bad leg: nothing to quote or schedule

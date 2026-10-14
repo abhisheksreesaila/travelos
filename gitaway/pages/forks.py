@@ -82,7 +82,7 @@ def calendar_view(session, placements=(), author="", fresh=(), demo=""):
         Div(Span("Your calendar", cls="fk-card-title"),
             Div(Button(icon("chev-left", 16, 2.6), type="button", data_dir="-1", aria_label="Earlier days", cls="fk-navbtn"),
                 Button(icon("chev-right", 16, 2.6), type="button", data_dir="1", aria_label="Later days", cls="fk-navbtn"), cls="fk-nav", hidden=True) if len(cols) > 3 else "",
-            A("Open the calendar", href="/calendar?view=days", cls="fk-link"), cls="fk-card-head"),
+            A("Open the trip", href="/trip", cls="fk-link"), cls="fk-card-head"),
         Div(gutter, Div(*cols, cls="fk-scroll", id="fk-scroll", role="region", aria_label="Days", tabindex="0"), cls="fk-grid", style=f"--n:{len(cols)}"),
         cls="fk-cal card", aria_label="Trip calendar")
 
@@ -112,7 +112,7 @@ def _card(e, tag, booked, current=""):
 
 def list_panel(session, booked, current=""):
     mine, kept = forks_model.forked(session), forks_model.saved(session)
-    blocks = [H2("Your forks", Span(str(len(mine)), cls="cal-count fk-count"), id="fk-title")]
+    blocks = [H2("Your forks", Span(str(len(mine)), cls="fk-count"), id="fk-title")]
     if mine:
         blocks += [_card(e, "fork", booked, current) for e in mine]
         blocks.append(P("Pick one to preview its plans in your empty slots. Nothing changes until you apply." if booked
@@ -121,7 +121,7 @@ def list_panel(session, booked, current=""):
         blocks.append(Div(Span(icon("fork", 28, 2.2), cls="fk-bigicon"), P("Nothing forked or saved yet. Fork a community trip and its plans wait here, ready for your calendar."),
                           A("Browse community trips", href="/community", cls="btn btn-primary btn-sm"), cls="fk-none"))
     if kept:
-        blocks += [H2("Saved", Span(str(len(kept)), cls="cal-count fk-count"), cls="fk-sub"),
+        blocks += [H2("Saved", Span(str(len(kept)), cls="fk-count"), cls="fk-sub"),
                    *[Div(_card(e, "saved", booked),
                          Form(Input(type="hidden", name="next", value=f"/trips/{e.slug}"), Button(icon("fork", 16, 2.4), "Fork it", type="submit", cls="btn btn-sm"), action="/fork", method="post", cls="fk-forkit"),
                          cls="fk-saved") for e in kept]]

@@ -29,7 +29,7 @@ def section(path: str) -> str:
         return "ask"
     if p == "/family" or p.startswith("/family/") or p == "/trip/family" or p.startswith("/trip/family/"):
         return "family"
-    if p in ("/trip", "/calendar", "/start", "/plan", "/rides") or p.startswith(("/trip/", "/calendar/", "/trips/build", "/trips/import", "/plan/", "/start/")):
+    if p in ("/trip", "/start", "/plan", "/rides") or p.startswith(("/trip/", "/trips/build", "/trips/import", "/plan/", "/start/")):
         return "trip"
     return ""
 

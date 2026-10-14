@@ -43,10 +43,11 @@ def test_start_has_no_welcome_for_signed_out_visitors_or_families_with_a_trip(cl
     assert "Start your first trip" not in client.get("/start").text
 
 
-def test_the_calendar_welcomes_a_new_family_instead_of_a_dead_end(new):
+def test_the_old_calendar_address_welcomes_a_new_family_at_start_instead_of_a_dead_end(new):
+    assert new.get("/calendar", follow_redirects=False).headers["location"] == "/start"
     html = new.get("/calendar").text
     w = welcome_of(html)
-    assert all(p in w for p in PATHS) and {"/start", "/trips/import", "/community"} <= links(w)
+    assert all(p in w for p in PATHS) and {"#st-form", "/trips/import", "/community"} <= links(w)
     assert "<h1" in html and "Book a trip first" not in html
 
 
@@ -81,10 +82,10 @@ def test_trip_details_with_no_trip_points_to_the_ways_in(new):
 
 def test_the_trip_switcher_with_one_trip_offers_the_next_one(client):
     book(client)
-    html = client.get("/calendar").text
-    pop = html.split('class="cal-trips"')[1].split("</details>")[0]
-    assert "1 trip" in pop and "Plan another trip" in pop and "Import a trip you booked" in pop
-    assert "data-trip=" not in pop  # nothing to switch to yet
+    html = client.get("/trip/canvas").text
+    pop = html.split('ga-tb-pop-trip')[1].split("</details>")[0]
+    assert "only trip so far" in pop and "Plan another trip" in pop and "Import a trip you booked" in pop
+    assert "/trips/switch" not in pop  # nothing to switch to yet
 
 
 def test_the_community_page_invites_the_first_share_until_someone_shares(client):

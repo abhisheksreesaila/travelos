@@ -4,7 +4,7 @@ stands in for the real one; nothing here talks to the network."""
 
 import pytest
 
-from gitaway import familythread as ft, morning
+from gitaway import familythread as ft, morning, tripcal as cal
 from tests.test_calendar import FORM, add, book
 from tests.test_members import addr, browser, invite, tenant
 from tests.test_signin import person, sign_in, tid
@@ -134,33 +134,32 @@ def test_adding_a_plan_writes_a_card_saying_who_what_and_when(client):
 def test_moving_a_plan_writes_a_moved_card_with_the_new_time(client):
     book(client)
     add(client, id="a1", title="Griffith Observatory", day="1", start="10:00", end="11:00")
-    r = client.post("/calendar/activities/a1/move", data={"day": "2", "start": "14:30", "end": "15:30"}, follow_redirects=False)
-    assert r.status_code in (200, 303)
+    cal.update_activity(person("ari"), "a1", day="2", start="14:30", end="15:30")
     assert cards(client)[-1].startswith("Ari moved Griffith Observatory to ") and cards(client)[-1].endswith(" 2:30 PM")
 
 
 def test_resizing_a_plan_says_when_it_now_ends(client):
     book(client)
     add(client, id="a1", title="Beach", day="1", start="10:00", end="11:00")
-    client.post("/calendar/activities/a1/move", data={"day": "1", "start": "10:00", "end": "12:00"}, follow_redirects=False)
+    cal.update_activity(person("ari"), "a1", day="1", start="10:00", end="12:00")
     assert cards(client)[-1] == "Ari changed Beach to end at 12:00 PM"
 
 
 def test_renaming_a_plan_writes_a_card_and_an_unchanged_save_writes_none(client):
     book(client)
     add(client, id="a1", title="Beach", day="1", start="10:00", end="11:00")
-    client.post("/calendar/activities/a1", data={"day": "1", "start": "10:00", "end": "11:00", "title": "Beach", "kind": "fun"}, follow_redirects=False)
+    cal.update_activity(person("ari"), "a1", day="1", start="10:00", end="11:00", title="Beach", kind="fun")
     assert len(cards(client)) == 1
-    client.post("/calendar/activities/a1", data={"day": "1", "start": "10:00", "end": "11:00", "title": "Surf lesson", "kind": "fun"}, follow_redirects=False)
+    cal.update_activity(person("ari"), "a1", day="1", start="10:00", end="11:00", title="Surf lesson", kind="fun")
     assert cards(client)[-1] == "Ari renamed Beach to Surf lesson"
 
 
 def test_deleting_and_undoing_write_cards(client):
     book(client)
     add(client, id="a1", title="Beach", day="1", start="10:00", end="11:00")
-    client.post("/calendar/activities/a1/delete", data={}, follow_redirects=False)
+    cal.delete_activity(person("ari"), "a1")
     assert cards(client)[-1] == "Ari removed Beach"
-    client.post("/calendar/undo", data={"id": "a1"}, follow_redirects=False)
+    cal.undo_delete(person("ari"), "a1")
     assert cards(client)[-1] == "Ari put back Beach"
 
 
@@ -175,12 +174,6 @@ def test_applying_and_removing_a_forks_plans_write_one_card_each(client):
     assert again == [] and len(cards(client)) == 1                      # nothing added, nothing said
     cal.remove_plans(ari, plans, [a.id for a in added], by="Maya")
     assert cards(client)[-1] == "Ari removed Pier walk and Tacos"
-
-
-def test_the_pretend_long_calendar_writes_no_cards(client):
-    book(client)
-    client.post("/calendar/activities", data={**FORM, "id": "a1", "demo": "long"}, follow_redirects=False)
-    assert cards(client) == []
 
 
 # ---- the page and the poll fragment ----------------------------------------------------------------------------------------
@@ -284,7 +277,7 @@ def test_a_viewer_may_talk_and_go_quiet_but_not_change_a_plan(crew):
     r = say(viewer, "Can I bring the dog?")
     assert r.status_code == 200 and "Can I bring the dog?" in r.text
     assert viewer.post("/trip/family/quiet", data={"quiet": "1"}, headers={"X-Fragment": "1"}).status_code == 200
-    refused = viewer.post("/calendar/activities", data={**FORM, "id": "a1"}, follow_redirects=False)
+    refused = viewer.post("/trip/plans", data={**FORM, "id": "a1"}, follow_redirects=False)
     assert refused.status_code == 403
     assert [i["kind"] for i in ft.items(person("ari"))] == ["message"]     # the viewer's message is there; a refused change left no card
 

@@ -98,18 +98,17 @@ def test_tapping_a_chip_asks_the_phone_and_shows_cards_with_directions_and_call(
     page.screenshot(path=str(shots / "around-390.png"), full_page=True)
 
 
-def test_add_to_plan_opens_the_calendar_form_and_the_plan_lands_on_the_day(around_page, world):
+def test_add_to_plan_opens_the_add_sheet_and_the_plan_lands_on_the_day(around_page, world):
     page = around_page()
     page.locator("#ar-chip-veg").click()
     page.locator(".ar-card").first.locator(".ar-add").click()
-    page.wait_for_url(re.compile(r"/calendar\?"))
+    page.wait_for_url(re.compile(r"/trip\?"))
     expect(page.locator('input[name="title"]')).to_have_value("Green Bowl")
     expect(page.locator('input[name="start"]')).to_have_value("13:00")                      # it is 12:40 on the open day: the next half hour
     expect(page.locator('input[name="kind"][value="food"]')).to_be_checked()
     page.get_by_role("button", name="Add to the trip").click()
-    page.wait_for_selector(".cal-modal", state="detached")
     expect(page.locator("body")).to_contain_text("Green Bowl")
-    page.goto(page.url.split("/calendar")[0] + "/trip/family")                              # the family was told: a change card is in the thread
+    page.goto(page.url.split("/trip")[0] + "/trip/family")                              # the family was told: a change card is in the thread
     expect(page.locator("#ft-thread")).to_contain_text("Green Bowl")
 
 

@@ -233,44 +233,44 @@ def test_the_phone_number_is_kept_in_the_session_and_never_in_a_link(client):
         assert not [h for h in re.findall(r'href="([^"]+)"', html) if PHONE_DIGITS in h or "555" in h]
 
 
-# ---- the calendar and /booked ------------------------------------------------------------------------------------
+# ---- the trip's days and /booked ---------------------------------------------------------------------------------
 
-def test_a_scheduled_ride_is_a_block_on_the_trip_calendar(client):
+FIRST_DAY, LAST_DAY = "/trip?day=0", "/trip?day=4"      # the day list of the Today page: arriving and flying home
+
+
+def test_a_scheduled_ride_is_an_item_on_the_trips_day(client):
     sign_in(client)
     book(client)
-    assert "Uber · UberX · LAX → The Tidewater" not in client.get("/calendar?view=days").text
+    assert "Uber · UberX · LAX → The Tidewater" not in client.get(FIRST_DAY).text
     schedule(client, "arrive")
-    html = client.get("/calendar?view=days").text
+    html = client.get(FIRST_DAY).text
     assert "Uber · UberX · LAX → The Tidewater" in unescape(html)
-    block = re.search(r'<a[^>]*data-block="r1"[^>]*>', html).group(0)
-    assert 'href="/rides/r1"' in block and 'data-day="0"' in block and f'data-start="{602}"' in block and f'data-end="{602 + 25}"' in block
+    assert 'href="/rides/r1"' in html
 
 
-def test_the_whole_trip_view_lists_the_ride(client):
+def test_the_last_day_lists_the_ride_home(client):
     sign_in(client)
     book(client)
     schedule(client, "depart")
-    text = visible(client.get("/calendar").text)
+    text = visible(client.get(LAST_DAY).text)
     assert "Uber · UberX · The Tidewater → LAX" in text and "11:45 AM" in text
 
 
-def test_before_a_ride_the_calendar_offers_to_schedule_one_and_a_scheduled_leg_stops_offering(client):
+def test_before_a_ride_the_day_offers_to_schedule_one_and_a_scheduled_leg_stops_offering(client):
     sign_in(client)
     book(client)
-    html = client.get("/calendar?view=days").text
-    assert 'href="/rides/new?leg=arrive&amp;f=f1&amp;h=h1&amp;c=none"' in html and 'href="/rides/new?leg=depart&amp;f=f1&amp;h=h1&amp;c=none"' in html
+    assert 'href="/rides/new?leg=arrive&amp;f=f1&amp;h=h1&amp;c=none"' in client.get(FIRST_DAY).text and 'href="/rides/new?leg=depart&amp;f=f1&amp;h=h1&amp;c=none"' in client.get(LAST_DAY).text
     schedule(client, "arrive")
-    html = client.get("/calendar?view=days").text
-    assert "leg=arrive" not in html and "leg=depart" in html
+    assert "leg=arrive" not in client.get(FIRST_DAY).text and "leg=depart" in client.get(LAST_DAY).text
 
 
-def test_a_cancelled_ride_leaves_the_calendar_and_the_offer_comes_back(client):
+def test_a_cancelled_ride_leaves_the_day_and_the_offer_comes_back(client):
     sign_in(client)
     book(client)
     schedule(client)
     client.post("/rides/r1/cancel")
-    html = client.get("/calendar?view=days").text
-    assert 'data-block="r1"' not in html and "leg=arrive" in html
+    html = client.get(FIRST_DAY).text
+    assert 'href="/rides/r1"' not in html and "leg=arrive" in html
 
 
 def test_a_ride_scheduled_before_booking_appears_once_the_same_trip_is_booked(client):
@@ -278,23 +278,23 @@ def test_a_ride_scheduled_before_booking_appears_once_the_same_trip_is_booked(cl
     schedule(client)  # from the workspace, before paying
     assert "once this trip is booked" in visible(client.get("/rides/r1").text)
     book(client)
-    assert 'data-block="r1"' in client.get("/calendar?view=days").text
+    assert 'href="/rides/r1"' in client.get(FIRST_DAY).text
 
 
-def test_a_ride_for_other_picks_does_not_show_on_this_trips_calendar(client):
+def test_a_ride_for_other_picks_does_not_show_on_this_trips_days(client):
     sign_in(client)
     schedule(client, pick="f=f2&h=h2&c=none")
     book(client)  # f1 / h1
-    assert 'data-block="r1"' not in client.get("/calendar?view=days").text
+    assert 'href="/rides/r1"' not in client.get(FIRST_DAY).text
 
 
-def test_a_flight_only_trip_rides_to_the_city_centre_and_shows_on_the_calendar(client):
+def test_a_flight_only_trip_rides_to_the_city_centre_and_shows_on_the_day(client):
     sign_in(client)
     pick = "f=f1&h=none&c=none"
     assert "Los Angeles city centre" in visible(new_page(client, pick=pick).text)
     book(client, pick)
     assert schedule(client, pick=pick).status_code == 303
-    assert "Uber · UberX · LAX → Los Angeles city centre" in unescape(client.get("/calendar?view=days").text)
+    assert "Uber · UberX · LAX → Los Angeles city centre" in unescape(client.get(FIRST_DAY).text)
     assert "Los Angeles city centre" in visible(client.get("/booked").text)
 
 

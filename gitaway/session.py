@@ -39,8 +39,6 @@ class Traveler:
 
 _COLORS = ("sun", "sky", "grape", "mint", "bubble")
 BUDGET = 2600  # bytes of session JSON; base64 adds a third plus a signature, keeping the whole cookie near 3.4 KB (limit 3.6 KB, browsers drop >4 KB)
-MAX_FRIENDS = 6
-MAX_FRIEND_NAME = 20
 DEMO_FRIENDS = ("Mom", "Sam")
 _FRIEND_COLORS = ("sun", "sky", "grape", "mint", "bubble")
 INTENTS = ("save", "pay", "invite", "fork", "publish", "ride", "join")
@@ -321,10 +319,6 @@ def book(session, quote):
         return familydb.booking_for_trip(db, trip_id)
 
 
-class FriendError(ValueError):
-    """An invite the demo refuses; the message is fit to show the traveler."""
-
-
 @dataclass(frozen=True)
 class Friend:
     name: str
@@ -346,43 +340,6 @@ def friends(session):
         if not fam or not fam.trip_id or not fam.is_demo():
             return []
         return [_friend(r["name"]) for r in familydb.rows(fam.db, "SELECT name FROM friends WHERE trip_id = :t ORDER BY rowid", t=fam.trip_id)]
-
-
-def friend_named(session, name):
-    return next((f for f in friends(session) if f.name.casefold() == (name or "").casefold()), None)
-
-
-def add_friend(session, name):
-    """Invite a friend by name to the open trip. The same friend (any capitals) is never added twice.
-
-    Returns the Friend. Raises FriendError for a bad name or too many friends.
-    """
-    t = current_traveler(session)
-    if not t:
-        raise FriendError("Sign in to invite friends.")
-    name = " ".join((name or "").split())
-    if not name:
-        raise FriendError("Type a name first.")
-    if len(name) > MAX_FRIEND_NAME:
-        raise FriendError(f"Keep the name to {MAX_FRIEND_NAME} characters.")
-    if name.casefold() == "you":
-        raise FriendError("That one is you. Pick another name.")
-    with family(session) as fam:
-        if not fam or not fam.trip_id:
-            raise FriendError("Book a trip first, then invite friends.")
-        if not fam.is_demo():
-            raise FriendError("Real trips are planned with real people: invite family by email on the Family page.")
-        db = fam.db
-        with familydb.transaction(db):
-            familydb.lock(db)
-            mine = [r["name"] for r in familydb.rows(db, "SELECT name FROM friends WHERE trip_id = :t ORDER BY rowid", t=fam.trip_id)]
-            if (found := next((n for n in mine if n.casefold() == name.casefold()), None)):
-                return _friend(found)
-            if len(mine) >= MAX_FRIENDS:
-                raise FriendError(f"That is {MAX_FRIENDS} friends already. This demo keeps it small.")
-            insert_only(db, "friends", {"pk": f"{fam.trip_id}~{name.casefold()}", "trip_id": fam.trip_id, "name": name, "created_at": familydb.now()},
-                        ["pk"], auto_commit=False)
-    return _friend(name)
 
 
 def invite_link(booking_id):

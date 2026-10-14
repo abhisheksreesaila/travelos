@@ -15,7 +15,7 @@ from fasthtml.common import A, Button, Div, H2, Li, Link, Nav, NotStr, Ol, P, Sc
 
 from gitaway import access, familydb, geo, session as ses, tripcal as cal, tripday as td
 from gitaway.icons import icon
-from gitaway.pages import around_ui, calendar as calui, trip as trip_ui
+from gitaway.pages import around_ui, trip as trip_ui
 
 TITLE = "Map"
 HEAD = (Link(rel="stylesheet", href="/assets/vendor/leaflet/leaflet.css"), Link(rel="stylesheet", href="/assets/css/map.css"), *around_ui.HEAD)  # trip.css and phone.css come with the shell
@@ -98,11 +98,11 @@ def day_picker(v):
 
 
 def edit_link(v, stop):
-    """How to fix a place the map could not find: a booking (flight, hotel, car) is fixed in Edit trip, a plan in the calendar on its day."""
+    """How to fix a place the map could not find: a booking (flight, hotel, car) is fixed in Edit trip, a plan on its day."""
     if not access.can_edit(v["role"]):
         return ""
     if stop["kind"] == "plan":
-        return A(icon("pencil", 14, 2.4), "Fix it in the calendar", href=f"{calui.cal_url('', view='whole')}#d{v['sel']}", cls="btn btn-sm mp-edit")
+        return A(icon("pencil", 14, 2.4), "Fix it on its day", href=trip_ui._canvas_curl(day=v["sel"]), cls="btn btn-sm mp-edit")
     if cal.is_imported(v["b"]) and ses.open_trip_id():
         return A(icon("pencil", 14, 2.4), "Edit trip", href=f"/trips/build/edit?trip={ses.open_trip_id()}", cls="btn btn-sm mp-edit")
     return ""

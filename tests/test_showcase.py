@@ -193,26 +193,10 @@ def test_the_local_copy_still_shows_all_sample_data(client):
     sign_in(client)
     assert "Browse community trips" in client.get("/start").text
     book(client)
-    c = client.get("/calendar").text
-    assert "Your forks" in c and 'action="/share"' in c
-    assert client.get("/calendar?demo=long").status_code == 200
+    assert client.get("/community").status_code == 200 and client.get("/share").status_code == 200
 
 
 # ---- production: no scripted demo, and the preview books nothing ----
-
-def test_talk_to_plan_is_gone_in_production_and_its_routes_404(client, monkeypatch):
-    booked_then_real(client, monkeypatch)
-    h = client.get("/calendar").text
-    assert "Talk to plan" not in h and "vo-open" not in h
-    assert "vo-panel" not in client.get("/calendar?view=days&voice=1&hear=1").text
-    for path in ["/calendar/voice/apply", "/calendar/voice/undo"]:
-        assert client.post(path, data={}, follow_redirects=False).status_code == 404
-
-
-def test_the_local_copy_keeps_talk_to_plan(client):
-    book(client)
-    assert "Talk to plan" in client.get("/calendar").text
-
 
 def test_the_booking_preview_writes_nothing_in_production(real, client):
     from tests.test_calendar import PICK
@@ -223,7 +207,7 @@ def test_the_booking_preview_writes_nothing_in_production(real, client):
     r = client.get("/plan/pay?f=f1&h=h1&c=c1", follow_redirects=False)
     assert r.status_code == 200 and msg in r.text
     assert client.get("/booked", follow_redirects=False).status_code == 303
-    assert "Your calendar starts with a trip" in client.get("/calendar").text
+    assert "Start your first trip" in client.get("/calendar").text
     assert client.get("/start").text.count("Continue ") == 0
 
 
@@ -231,10 +215,10 @@ def test_the_booking_preview_writes_nothing_in_production(real, client):
 
 def test_no_uber_offers_or_rides_in_production_and_they_stay_locally(client, monkeypatch):
     monkeypatch.setenv("GITAWAY_SHOWCASE", "1")
-    book(client, c="none")                       # flight and stay, no car: the calendar offers rides
-    assert "Schedule an Uber" in client.get("/calendar?view=days").text
+    book(client, c="none")                       # flight and stay, no car: the day offers rides
+    assert "Schedule an Uber" in client.get("/trip?day=0").text
     monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
-    for path in ["/calendar?view=days", "/calendar", "/trip"]:
+    for path in ["/trip?day=0", "/calendar", "/trip"]:
         r = client.get(path, follow_redirects=True)
         assert r.status_code == 200 and "Uber" not in r.text and "/rides" not in r.text, path
     assert client.get("/rides/new", follow_redirects=False).status_code == 404
@@ -243,10 +227,10 @@ def test_no_uber_offers_or_rides_in_production_and_they_stay_locally(client, mon
         assert client.post(path, data={}, follow_redirects=False).status_code == 404, path
 
 
-@pytest.mark.parametrize("path", ["/calendar/activities", "/calendar/notes", "/calendar/undo", "/calendar/activities/a1/delete", "/calendar/activities/a1/move"])
+@pytest.mark.parametrize("path", ["/trip/plans", "/trip/notes", "/trip/canvas/plan", "/trip/canvas/actnote"])
 def test_demo_long_in_a_form_body_writes_nothing_in_production(client, monkeypatch, path):
     booked_then_real(client, monkeypatch)
     r = client.post(path, data={"demo": "long", "id": "a1", "day": "1", "start": "10:00", "end": "11:00", "title": "Sneaky", "text": "Sneaky"}, follow_redirects=False)
     assert r.status_code == 404
     monkeypatch.setenv("GITAWAY_SHOWCASE", "1")
-    assert "Sneaky" not in client.get("/calendar?demo=long&view=days").text
+    assert "Sneaky" not in client.get("/trip/canvas?demo=long&day=1").text

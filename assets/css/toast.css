@@ -15,11 +15,10 @@
 .ga-toast-act { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; min-width: 2.75rem; min-height: 2.75rem; padding: 0 1.125rem; border: 0; border-radius: var(--r-pill); background: var(--ink); color: #FFFFFF;
   font-family: var(--font-body); font-weight: 800; font-size: max(var(--text-min), 0.9375rem); text-decoration: none; cursor: pointer; }
 .ga-toast-act:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.125rem; }
-.ga-toast.is-error, .ga-toast.cal-toast-error { box-shadow: 0 0 0 0.125rem var(--coral-deep), 0 0.5rem 1.5rem -0.5rem rgba(30, 26, 46, .28); }
+.ga-toast.is-error { box-shadow: 0 0 0 0.125rem var(--coral-deep), 0 0.5rem 1.5rem -0.5rem rgba(30, 26, 46, .28); }
 .ga-toast form { display: inline-flex; margin: 0; }
-.ga-toast .cal-dismiss { color: var(--ink); font-weight: 800; }
 
-/* a toast the server drew with the page (the calendar's, the old Today page's): it is there from the start and glides in once */
+/* a toast the server drew with the page (the old Today page's): it is there from the start and glides in once */
 .ga-toast-static { opacity: 1; translate: 0 0; flex-wrap: wrap; }
 @media (prefers-reduced-motion: no-preference) { .ga-toast-static { animation: ga-toast-in var(--motion-spring-dur) var(--motion-spring) both; } }
 @keyframes ga-toast-in { from { opacity: 0; translate: 0 -0.75rem; } }

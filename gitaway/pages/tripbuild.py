@@ -236,7 +236,7 @@ def plan_title(session, trip_id):
 
 
 def gone():
-    return tip._sorry("Edit a trip", "That trip is not there any more, or it was not saved in GitAway. Open your calendar and pick the trip again.", A("Back to the calendar", href="/calendar", cls="btn btn-ink"), status=404)
+    return tip._sorry("Edit a trip", "That trip is not there any more, or it was not saved in GitAway. Open your trip and pick it again.", A("Back to the trip", href="/trip", cls="btn btn-ink"), status=404)
 
 
 def advance(session, form):
@@ -291,7 +291,7 @@ def register(app):
         if not ses.current_traveler(session):
             return RedirectResponse("/signin?next=%2Ftrip%2Fdetails&intent=save", status_code=303)
         if not tip.can_import(session):
-            return tip._sorry("Edit a trip", "Only editors and admins of your family can edit a trip. Ask the family owner for editor access.", A("Back to the calendar", href="/calendar", cls="btn btn-ink"), status=403)
+            return tip._sorry("Edit a trip", "Only editors and admins of your family can edit a trip. Ask the family owner for editor access.", A("Back to the trip", href="/trip", cls="btn btn-ink"), status=403)
         plan = edit_plan(session, trip)
         return step_page(1, tb.from_plan(plan), edit=trip) if plan else gone()
 
@@ -325,4 +325,4 @@ def register(app):
             importer.save(session, plan, None if edit else (token or None), edit or replace or None)
         except importer.SaveError as e:
             return step_page(len(LABELS), d, status=409, notice=str(e), edit=edit)
-        return RedirectResponse("/calendar", status_code=303)
+        return RedirectResponse("/trip", status_code=303)

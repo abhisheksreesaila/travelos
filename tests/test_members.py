@@ -108,7 +108,7 @@ def test_the_invited_email_signs_in_joins_the_family_and_sees_its_trips(owner):
     assert sign_in(other, sam, next="/calendar").status_code == 303
     data = session_data(other)
     assert data["tenant_id"] == tenant(owner) and data["tenant_role"] == "editor"
-    html = other.get("/calendar?view=days").text
+    html = other.get("/calendar").text
     assert "LA with the kids" in html and "Book a trip first" not in html
     mine = other.get("/family").text
     assert sam in mine and "Role: editor" in mine and "Ari Rivera" in mine
@@ -164,7 +164,7 @@ def test_the_link_signs_the_person_in_first_then_joins_them(owner):
     nxt = f"/join/{inv['token']}"
     assert sign_in(other, sam, next=nxt, intent="join").headers["location"] == nxt
     back = other.get(nxt, follow_redirects=False)
-    assert back.status_code == 303 and back.headers["location"] == "/calendar"
+    assert back.status_code == 303 and back.headers["location"] == "/trip"
     assert session_data(other)["tenant_id"] == tenant(owner)
 
 
@@ -177,9 +177,9 @@ def test_a_signed_in_person_with_the_right_email_joins_with_one_button(owner):
     page = other.get(f"/join/{inv['token']}").text
     assert 'id="join-go"' in page and "Join Ari Rivera" in page
     r = other.post(f"/join/{inv['token']}", follow_redirects=False)
-    assert r.status_code == 303 and r.headers["location"] == "/calendar"
+    assert r.status_code == 303 and r.headers["location"] == "/trip"
     assert session_data(other)["tenant_id"] == tenant(owner) != own
-    assert "LA with the kids" in other.get("/calendar?view=days").text
+    assert "LA with the kids" in other.get("/calendar").text
 
 
 def test_a_token_holder_with_a_different_email_cannot_join(owner, caplog):
@@ -266,15 +266,15 @@ def test_removing_a_member_ends_their_access_on_their_next_request(owner):
     invite(owner, sam, "editor")
     other = browser(owner)
     sign_in(other, sam)
-    assert other.get("/calendar?view=days").status_code == 200 and tenant(other) == tenant(owner)
+    assert other.get("/calendar").status_code == 200 and tenant(other) == tenant(owner)
     r = owner.post("/family/remove", data={"user": user_id(other)}, follow_redirects=False)
     assert r.status_code == 303
     assert members.role_in(user_id(other), tenant(owner)) is None
-    html = other.get("/calendar?view=days").text  # their next request
-    assert "LA with the kids" not in html and "Your calendar starts with a trip" in html
+    html = other.get("/calendar").text  # their next request
+    assert "LA with the kids" not in html and "Start your first trip" in html
     assert session_data(other)["tenant_id"] != tenant(owner)  # moved to the family they have of their own
-    assert other.post("/calendar/activities", data={"id": "a1", "day": "1", "start": "10:00", "end": "11:00", "title": "Sneak in"}, follow_redirects=False).status_code in (303, 409)
-    assert "Sneak in" not in owner.get("/calendar?view=days").text
+    assert other.post("/trip/plans", data={"id": "a1", "day": "1", "start": "10:00", "end": "11:00", "title": "Sneak in"}, follow_redirects=False).status_code in (303, 409)
+    assert "Sneak in" not in owner.get("/calendar").text
     assert sam not in owner.get("/family").text.split("Waiting to join")[0].split("Who is in")[1]
 
 
@@ -284,10 +284,10 @@ def test_a_changed_role_takes_effect_on_the_next_request(owner):
     other = browser(owner)
     sign_in(other, sam)
     add = {"id": "a1", "day": "1", "start": "10:00", "end": "11:00", "title": "Venice Canals stroll", "kind": "outdoors"}
-    assert other.post("/calendar/activities", data=add, follow_redirects=False).status_code == 303
+    assert other.post("/trip/plans", data=add, follow_redirects=False).status_code == 303
     r = owner.post("/family/role", data={"user": user_id(other), "role": "viewer"}, follow_redirects=False)
     assert r.status_code == 303 and members.role_in(user_id(other), tenant(owner)) == "viewer"
-    refused = other.post("/calendar/activities", data={**add, "id": "a2", "title": "Second"}, follow_redirects=False)
+    refused = other.post("/trip/plans", data={**add, "id": "a2", "title": "Second"}, follow_redirects=False)
     assert refused.status_code == 403
     assert session_data(other)["tenant_role"] == "viewer"  # the cookie's copy follows
 
@@ -367,9 +367,9 @@ def test_someone_in_two_families_gets_a_switcher_that_changes_the_active_family(
     assert 'id="fam-switcher"' in page and "Working here" in page and 'action="/family/switch"' in page
     r = other.post("/family/switch", data={"tenant": own}, follow_redirects=False)
     assert r.status_code == 303 and session_data(other)["tenant_id"] == own and session_data(other)["tenant_role"] == "owner"
-    assert "Your calendar starts with a trip" in other.get("/calendar?view=days").text
+    assert "Start your first trip" in other.get("/calendar").text
     other.post("/family/switch", data={"tenant": tenant(owner)})
-    assert "LA with the kids" in other.get("/calendar?view=days").text
+    assert "LA with the kids" in other.get("/calendar").text
 
 
 def test_a_family_that_is_not_mine_cannot_be_switched_to(owner, client):
@@ -378,7 +378,7 @@ def test_a_family_that_is_not_mine_cannot_be_switched_to(owner, client):
     mine = tenant(stranger)
     stranger.post("/family/switch", data={"tenant": tenant(owner)}, follow_redirects=False)
     assert tenant(stranger) == mine
-    assert "LA with the kids" not in stranger.get("/calendar?view=days").text
+    assert "LA with the kids" not in stranger.get("/calendar").text
     stranger.post("/family/switch", data={"tenant": "nonsense"}, follow_redirects=False)
     assert tenant(stranger) == mine
 
@@ -414,12 +414,12 @@ def test_a_google_sign_in_joins_the_invited_family(owner, google, monkeypatch): 
     invite(owner, sam, "viewer")
     fake_google(monkeypatch, sam, sub=f"sub-{uuid.uuid4().hex}")
     other = browser(owner)
-    other.get("/login?next=/calendar", follow_redirects=False)
+    other.get("/login?next=/trip", follow_redirects=False)
     state = session_data(other)["oauth_state"]
     r = other.get(f"/auth/callback?code=c&state={state}", follow_redirects=False)
-    assert r.status_code == 303 and r.headers["location"] == "/calendar"
+    assert r.status_code == 303 and r.headers["location"] == "/trip"
     assert session_data(other)["tenant_id"] == tenant(owner) and session_data(other)["tenant_role"] == "viewer"
-    assert "LA with the kids" in other.get("/calendar?view=days").text
+    assert "LA with the kids" in other.get("/calendar").text
     assert members.pending_invites(tenant(owner)) == []
 
 
@@ -446,7 +446,7 @@ def test_memberships_and_pending_invites_survive_a_restart(owner):
     restart()
     members.forget_tables()
     assert session_data(other)["tenant_id"] == tenant(owner)
-    assert "LA with the kids" in other.get("/calendar?view=days").text  # the same cookie, nothing in memory
+    assert "LA with the kids" in other.get("/calendar").text  # the same cookie, nothing in memory
     assert {m["email"] for m in members.members(tenant(owner))} >= {sam, "ari.rivera@example.com"}
     assert [i["token"] for i in members.pending_invites(tenant(owner))] == [pending["token"]]
     assert owner.get(f"/family").text.count("fam-invite") >= 1

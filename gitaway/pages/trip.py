@@ -5,7 +5,7 @@ GET  /trip[?tab=today|days|notes][&day=<index>][&add=1][&new=<activity id>]   th
 POST /trip/plans                                                                 add a plan (title, start, kind) with the calendar's own validation
 POST /trip/notes                                                                 add a trip note
 
-Phones are sent here from a plain /calendar (gitaway.pages.calendar); anyone can open /trip, and "Open the full calendar" goes the
+Anyone can open /trip (a plain /trip is the day view; /calendar is only an old address for it), and "Open the whole trip" goes the
 other way. It is the installed app's start page (the manifest's start_url). The data and the rules are the calendar's: gitaway.tripcal
 validates, the roles come from gitaway.access (a viewer sees no + and no composer), and every form carries `trip`.
 """
@@ -21,7 +21,7 @@ from starlette.responses import RedirectResponse
 from gitaway import access, canvas, catalog, geo, members, phone, tripgeo, pickers, session as ses, tripcal as cal, tripday as td
 from gitaway.icons import icon
 from gitaway.layout import avatar, join_note, trip_field
-from gitaway.pages import calendar as calui, morning as morning_ui, passes as passes_ui, passkeys as passkeys_ui, rides as rides_ui, tab_ask
+from gitaway.pages import dayshared as calui, morning as morning_ui, passes as passes_ui, passkeys as passkeys_ui, rides as rides_ui, tab_ask
 
 log = logging.getLogger(__name__)
 HEAD = (*pickers.HEAD, *morning_ui.HEAD, *passkeys_ui.HEAD[:1], *passes_ui.HEAD)  # trip.css and phone.css come with the shell (gitaway.phone.HEAD)
@@ -31,6 +31,12 @@ TABS = (("today", "Today"), ("days", "All days"), ("notes", "Notes"))
 def trip_url(**q):
     params = [(k, v) for k, v in q.items() if v not in ("", None)]
     return "/trip" + (f"?{urlencode(params)}" if params else "")
+
+
+def _canvas_curl(**q):
+    """The address of a level of the trip canvas (the week, a day, a booking over its day). A late import: the canvas imports this module."""
+    from gitaway.pages.tripcanvas import curl
+    return curl(**q)
 
 
 def _hidden(name, value):
@@ -65,7 +71,7 @@ def load(session, day_arg="", ua=""):
     past = ph == "after" or (today_idx is not None and sel < today_idx)
     ctx = {"booking": b}
     ride_href = lambda blk: calui.ride_href(ctx, blk)  # noqa: E731
-    detail_href = lambda blk: calui.cal_url("", view="days", detail=blk.id, trip=ses.open_trip_id())  # noqa: E731
+    detail_href = lambda blk: _canvas_curl(day=blk.day, booked=blk.id)  # noqa: E731   (the booking opens in place over its day)
     dest = t.destination_name
 
     family = members.family_people(session)
@@ -255,7 +261,7 @@ def today_panel(v):
     parts.append(morning_ui.card(v["zone"]))  # F-066: the morning plan push, drawn by its own module
     parts.append(v.get("faceid", ""))  # F-074: "Use Face ID next time", hidden until passkeys.js says this is the Home Screen app
     parts.append(note_strip(v))
-    parts.append(A(icon("arrow-right", 18, 2.4), "Open the full calendar", href="/calendar?view=whole", cls="tp-full"))
+    parts.append(A(icon("arrow-right", 18, 2.4), "Open the whole trip", href=_canvas_curl(), cls="tp-full"))
     return Section(*parts, id="tp-panel-today", cls="tp-panel", role="tabpanel", aria_label="Today", data_title=_title_today(v))
 
 
@@ -427,7 +433,7 @@ def _guard(session):
 
 def register(app):
     @app.get("/trip")
-    def trip(session, request, tab: str = "", day: str = "", add: str = "", new: str = ""):
+    def trip(session, request, tab: str = "", day: str = "", add: str = "", new: str = "", title: str = "", kind: str = "", at: str = ""):
         if (r := _guard(session)):
             return r
         if not request.url.query:      # F-092: Today is the day view; this page stays (with a query) for its tabs, its days and the add sheet
@@ -439,6 +445,13 @@ def register(app):
             return RedirectResponse(tripcanvas.today_url(session), status_code=303)
         ua = request.headers.get("user-agent", "")
         sheet = {} if add == "1" else None
+        if sheet is not None and (title or kind or at):      # Around you's "Add to plan": the sheet opens with the place's name, its kind and the next free hour
+            vals = {"title": " ".join(title.split())[: cal.MAX_TITLE], "kind": kind if kind in cal.KINDS else "fun"}
+            try:
+                vals["start"] = cal.hhmm(cal.snap(cal.parse_time(at, "start")))
+            except cal.CalendarError:
+                pass
+            sheet = {"vals": vals}
         try:
             tripgeo.warm(session)  # fill the map cache in the background, at most once an hour (F-068)
         except Exception:  # Today never fails because the map cache could not be filled

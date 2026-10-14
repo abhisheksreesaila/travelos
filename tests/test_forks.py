@@ -46,14 +46,12 @@ def test_signed_out_forks_page_invites_sign_in_and_changes_nothing(client):
         assert r.status_code == 303 and r.headers["location"].startswith("/signin")
 
 
-def test_the_list_shows_any_number_of_forks_and_the_calendar_button_counts_them(client):
+def test_the_list_shows_any_number_of_forks_and_the_plan_page_counts_them(client):
     book(client)
     assert "Nothing forked or saved yet" in client.get("/forks").text
     fork(client), fork(client, OTHER)
     html = client.get("/forks").text
     assert html.index("Sun, tacos") < html.index("LA for two") and html.count('class="fk-pick') == 2
-    cal = client.get("/calendar").text
-    assert re.search(r'href="/forks"[^>]*>Your forks<span[^>]*>2</span>', cal)
     assert "Your forks · 2" in client.get("/plan").text
 
 
@@ -62,7 +60,7 @@ def test_forking_twice_lists_it_once_and_a_vanished_trip_is_not_listed(client):
     fork(client), fork(client)
     client.post("/fork", data={"next": "/trips/nothing-here"}, follow_redirects=False)
     assert client.get("/forks").text.count('class="fk-pick') == 1
-    assert re.search(r'href="/forks"[^>]*>Your forks<span[^>]*>1</span>', client.get("/calendar").text)
+    assert "Your forks · 1" in client.get("/plan").text
 
 
 def test_a_hub_trip_can_be_forked_like_a_sample_itinerary(client):
@@ -160,14 +158,13 @@ def test_a_plan_over_a_booked_block_is_ticked_and_tagged(client):
     assert 'data-key="d1s0"' in html
 
 
-def test_a_friends_plan_under_a_fork_plan_tags_it_and_it_stays_ticked(client):
+def test_a_family_plan_under_a_fork_plan_tags_it_and_it_stays_ticked(client):
     book(client)
-    client.post("/calendar/friends", data={"name": "Mom"})
-    client.post("/calendar/live")
+    add(client, id="a1", day="3", start="10:00", title="Travel Town steam trains")
     fork(client)
     html = client.get(f"/forks?open={TRIP}").text
     keys = plan_keys(html)
-    assert keys["d3s0"] == (True, False)  # Travel Town on Sunday 10:00, where Mom's steam trains already are
+    assert keys["d3s0"] == (True, False)  # Travel Town on Sunday 10:00, where the family's steam trains already are
     assert "Overlaps Travel Town steam trains" in html
     assert 'data-key="d3s0"' in html and not re.search(r'data-key="d3s0"[^>]*hidden', html)
 

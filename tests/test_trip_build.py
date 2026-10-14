@@ -74,7 +74,7 @@ def test_the_questions_build_exactly_the_trip_the_template_does(client):
     w = whole_trip(Walk(client))
     assert "Check your trip" in w.text and 'id="ti-save"' in w.html  # the importer's own preview
     r = client.post(f"{PATH}/save", data={"draft": draft_of(w.html)}, follow_redirects=False)
-    assert r.status_code == 303 and r.headers["location"] == "/calendar"
+    assert r.status_code == 303 and r.headers["location"] == "/trip"
     built = importer.plan_of(person())
     assert built == ti.parse(TEMPLATE).plan  # flights, hotel, car, party, confirmation numbers: all of it
     trips = ses.trips(person())
@@ -93,13 +93,13 @@ def test_the_preview_is_the_import_preview_with_confirmations_and_booked_elsewhe
         assert f'id="{card}"' in w.html and f'id="{card}"' in import_preview
 
 
-def test_the_calendar_shows_the_same_blocks_as_an_imported_template(client):
+def test_the_trip_shows_the_same_blocks_as_an_imported_template(client):
     sign_in(client)
     w = whole_trip(Walk(client))
     client.post(f"{PATH}/save", data={"draft": draft_of(w.html)})
-    html = client.get("/calendar?view=days").text
-    assert "Alaska Airlines AS 1234" in html and "booked elsewhere" in html
-    assert 'data-block="b-out"' in html and 'data-block="b-in"' in html
+    html = client.get("/trip/canvas?day=0").text
+    assert "Alaska Airlines AS 1234" in html
+    assert "booked=b-out" in html and "booked=b-in" in html
     assert "ABCDEF" not in html  # confirmation numbers stay out of the page and its blocks
 
 

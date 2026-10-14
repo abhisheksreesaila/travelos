@@ -17,8 +17,7 @@ from gitaway import auth
 
 # Paths (and everything under them) that exist only for sample or community content.
 HIDDEN = ("/community", "/discover", "/creators", "/forks", "/share", "/save", "/unsave", "/fork",
-          "/calendar/friends", "/calendar/live", "/calendar/voice",
-          "/rides")  # pretend friends (friends, live), the scripted voice demo, the simulated Uber (rides)
+          "/rides")  # the simulated Uber (rides)
 _NOT_ITINERARY = ("build", "import", "switch")  # /trips/<word> routes that are the family's own
 _ITINERARY = re.compile(r"/trips/([^/]+)/?")
 

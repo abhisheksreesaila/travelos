@@ -184,7 +184,7 @@ def celebration(b, session=None):
         P(tripcal.booked_sentence(b)),
         Div(*pills, cls="pay-pills"),
         rides_list(b, session) if session is not None else "",
-        A("Open my trip calendar", href="/calendar", cls="btn btn-ink pay-cal", id="pay-cal"),
+        A("Open my trip", href="/trip", cls="btn btn-ink pay-cal", id="pay-cal"),
         Span(f"Booking {b['id']} · simulated, nothing was charged", cls="pay-ref"),
         aria_labelledby="pay-done-title", cls="pay-done",
     )

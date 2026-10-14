@@ -178,7 +178,7 @@ def preview_page(text, parsed, match=None, moves=0, *, fields=None, save_action=
 def details_page(plan, trip_id="", admin=False, editor=False):
     return page(f"{plan.title}: details", Div(
         Div(H1(plan.title, cls="ti-title"), P(f"Booked elsewhere · {plan.booked_on}. Confirmation numbers are shown only to your family.", cls="ti-lede"),
-            Div(A(icon("arrow-right", 16, 2.6), "Open the calendar", href="/calendar", cls="btn btn-sm", id="ti-cal"),
+            Div(A(icon("arrow-right", 16, 2.6), "Open the trip", href="/trip", cls="btn btn-sm", id="ti-cal"),
                 A(icon("pencil", 16, 2.4), "Edit trip", href=f"/trips/build/edit?trip={trip_id}", cls="btn btn-sm", id="ti-edit-trip") if editor and trip_id else "",
                 A("Correct it", href=PATH, cls="ti-link", id="ti-correct"),
                 A("Delete this trip", href=f"/trip/delete?trip={trip_id}", cls="ti-link ti-danger", id="ti-delete") if admin and trip_id else "", cls="ti-actions"), cls="ti-head"),
@@ -267,7 +267,7 @@ def register(app):
             importer.save(session, parsed.plan, token or None, replace or None)
         except importer.SaveError as e:
             return paste_page(text, [str(e)], status=409)
-        return RedirectResponse("/calendar", status_code=303)
+        return RedirectResponse("/trip", status_code=303)
 
     @app.get(f"{PATH}/template")
     def template():
@@ -280,7 +280,7 @@ def register(app):
         plan = importer.plan_of(session)
         if plan is None:
             return _sorry("No imported trip is open", "Details with confirmation numbers are kept for trips you import. Open one from your calendar, or import a trip.",
-                          A("Import a trip", href=PATH, cls="btn btn-ink"), A("Plan a trip", href="/start", cls="btn btn-sm"), *([A("Browse community trips", href="/community", cls="btn btn-sm")] if showcase.on() else []), A("Back to the calendar", href="/calendar", cls="btn btn-sm"), status=404)
+                          A("Import a trip", href=PATH, cls="btn btn-ink"), A("Plan a trip", href="/start", cls="btn btn-sm"), *([A("Browse community trips", href="/community", cls="btn btn-sm")] if showcase.on() else []), A("Back to the trip", href="/trip", cls="btn btn-sm"), status=404)
         return details_page(plan, ses.open_trip_id(), can_delete(session), can_import(session))
 
     @app.get("/trip/delete")
@@ -288,20 +288,20 @@ def register(app):
         if not ses.current_traveler(session):
             return RedirectResponse("/signin?next=%2Ftrip%2Fdetails&intent=save", status_code=303)
         if not can_delete(session):
-            return _sorry("Delete a trip", "Only the admins of your family can delete a trip.", A("Back to the calendar", href="/calendar", cls="btn btn-ink"), status=403)
+            return _sorry("Delete a trip", "Only the admins of your family can delete a trip.", A("Back to the trip", href="/trip", cls="btn btn-ink"), status=403)
         plan = importer.plan_of(session, trip or None)
         if plan is None:
-            return _sorry("Nothing to delete", "That trip is not there, or it was not imported (only imported trips can be deleted here).", A("Back to the calendar", href="/calendar", cls="btn btn-ink"), status=404)
+            return _sorry("Nothing to delete", "That trip is not there, or it was not imported (only imported trips can be deleted here).", A("Back to the trip", href="/trip", cls="btn btn-ink"), status=404)
         return _sorry(f"Delete “{plan.title}”?", "This removes the trip from your family: its booked items, calendar plans, notes and Uber rides. If you or anyone in your family shared it, the shared page comes down too. It cannot be undone.",
                       Form(Input(type="hidden", name="trip", value=trip), Button("Delete this trip", type="submit", cls="btn btn-ink", id="ti-confirm-delete"),
-                           action="/trip/delete", method="post"), A("Keep it", href="/calendar", cls="ti-link"))
+                           action="/trip/delete", method="post"), A("Keep it", href="/trip", cls="ti-link"))
 
     @app.post("/trip/delete")
     def delete_do(session, trip: str = ""):
         if not ses.current_traveler(session):
             return RedirectResponse("/signin?next=%2Ftrip%2Fdetails&intent=save", status_code=303)
         if not can_delete(session):
-            return _sorry("Delete a trip", "Only the admins of your family can delete a trip.", A("Back to the calendar", href="/calendar", cls="btn btn-ink"), status=403)
+            return _sorry("Delete a trip", "Only the admins of your family can delete a trip.", A("Back to the trip", href="/trip", cls="btn btn-ink"), status=403)
         if not importer.delete(session, trip):
-            return _sorry("Nothing to delete", "That trip is not there, or it was not imported.", A("Back to the calendar", href="/calendar", cls="btn btn-ink"), status=404)
-        return RedirectResponse("/calendar", status_code=303)
+            return _sorry("Nothing to delete", "That trip is not there, or it was not imported.", A("Back to the trip", href="/trip", cls="btn btn-ink"), status=404)
+        return RedirectResponse("/trip", status_code=303)

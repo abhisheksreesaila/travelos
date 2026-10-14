@@ -141,8 +141,8 @@ def free_slot(v, kind, now) -> int:
 
 
 def add_url(v, name, kind, at) -> str:
-    from gitaway.pages import calendar as calui
-    return calui.cal_url("", view="days", add=v["sel"], at=cal.hhmm(at), title=name[: cal.MAX_TITLE], kind=kind, trip=ses.open_trip_id())
+    from gitaway.pages import trip as trip_ui     # the add sheet of the trip page opens with the place filled in
+    return trip_ui.trip_url(add="1", day=v["sel"], at=cal.hhmm(at), title=name[: cal.MAX_TITLE], kind=kind, trip=ses.open_trip_id())
 
 
 def card(v, c, kind, at, editor):

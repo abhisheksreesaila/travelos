@@ -88,25 +88,25 @@ def test_editors_are_not_refused_the_plan_routes(crew):
 def test_a_refused_viewer_gets_a_friendly_message_and_nothing_changes(crew):
     owner, _, viewer = crew
     before = stored_calendar()
-    r = viewer.post("/calendar/activities", data={"id": "a1", **FORM}, follow_redirects=False)
-    assert r.status_code == 403 and "look at this family" in r.text and 'id="cal-app"' in r.text  # the calendar again, with the message
+    r = viewer.post("/trip/plans", data={"id": "a1", **FORM}, follow_redirects=False)
+    assert r.status_code == 403 and "look at this family" in r.text and "Back to the trip" in r.text
     r = viewer.post("/share", data={}, follow_redirects=False)
-    assert r.status_code == 403 and "Ask a family admin to make you an editor" in r.text and "Back to the calendar" in r.text
+    assert r.status_code == 403 and "Ask a family admin to make you an editor" in r.text and "Back to the trip" in r.text
     assert stored_calendar() == before
 
 
 def test_viewers_cannot_write_through_the_other_family_routes_either(crew):
     owner, _, viewer = crew
-    for path, data in [("/calendar/notes", {"id": "n1", "text": "hello"}), ("/calendar/friends", {"name": "Mom"}), ("/save", {"next": "/trips/sun-tacos-and-tide-pools"}),
-                       ("/rides", {}), ("/forks/apply", {}), ("/calendar/undo", {}), ("/fork", {"next": "/trips/sun-tacos-and-tide-pools"}), ("/pay", {"f": "f1"})]:
+    for path, data in [("/trip/notes", {"id": "n1", "text": "hello"}), ("/trip/canvas/plan", {"op": "delete", "act": "a1"}), ("/save", {"next": "/trips/sun-tacos-and-tide-pools"}),
+                       ("/rides", {}), ("/forks/apply", {}), ("/trip/canvas/undo", {}), ("/fork", {"next": "/trips/sun-tacos-and-tide-pools"}), ("/pay", {"f": "f1"})]:
         assert viewer.post(path, data=data, follow_redirects=False).status_code == 403, path
     assert stored_calendar()["n"] == [] and stored_calendar()["a"] == []
 
 
 def test_a_viewer_still_reads_everything_and_may_switch_trips(crew):
     owner, editor, viewer = crew
-    editor.post("/calendar/activities", data={"id": "a1", **FORM})
-    html = viewer.get("/calendar?view=days").text
+    editor.post("/trip/plans", data={"id": "a1", **FORM})
+    html = viewer.get("/trip/canvas?day=1").text
     assert "Venice Canals stroll" in html and "LA with the kids" in html
     assert viewer.post("/trips/switch", data={"trip": "x"}, follow_redirects=False).status_code == 303
     assert viewer.get("/family").status_code == 200
@@ -114,13 +114,13 @@ def test_a_viewer_still_reads_everything_and_may_switch_trips(crew):
 
 def test_an_editor_edits_the_calendar_and_the_viewer_sees_it(crew):
     owner, editor, viewer = crew
-    assert editor.post("/calendar/activities", data={"id": "a1", **FORM}, follow_redirects=False).status_code == 303
-    assert "Venice Canals stroll" in viewer.get("/calendar?view=days").text
+    assert editor.post("/trip/plans", data={"id": "a1", **FORM}, follow_redirects=False).status_code == 303
+    assert "Venice Canals stroll" in viewer.get("/trip/canvas?day=1").text
     assert editor.post("/family/invite", data={"email": addr(), "role": "viewer"}, follow_redirects=False).status_code == 403
 
 
 def test_a_signed_out_post_is_not_a_role_question(client):
-    r = client.post("/calendar/activities", data={"id": "a1", **FORM}, follow_redirects=False)
+    r = client.post("/trip/plans", data={"id": "a1", **FORM}, follow_redirects=False)
     assert r.status_code == 303 and "/signin" in r.headers["location"]
 
 
@@ -134,6 +134,6 @@ def test_a_request_with_a_forged_role_in_the_cookie_still_follows_the_membership
 def test_a_refusal_page_is_private_no_store(crew):
     """F-062: the refusal can show the family's calendar, so the browser must not keep it either."""
     _, _, viewer = crew
-    r = viewer.post("/calendar/activities", data=FORM, follow_redirects=False)
+    r = viewer.post("/trip/plans", data=FORM, follow_redirects=False)
     assert r.status_code == 403
     assert r.headers["cache-control"] == "private, no-store"

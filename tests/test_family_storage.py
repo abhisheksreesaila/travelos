@@ -71,11 +71,11 @@ def restart():
 
 
 def trip_buttons(html):
-    """[(trip id, is the open one)] for the trip switcher on the calendar, in the order shown."""
+    """[(trip id, is the open one)] for the trip picker in the top bar, in the order shown."""
     out = []
-    for m in re.findall(r"<button[^>]*data-trip=\"[^\"]+\"[^>]*>", html):
-        attrs = dict(re.findall(r'([\w-]+)="([^"]*)"', m))
-        out.append((attrs["data-trip"], attrs.get("aria-current") == "true"))
+    for form in re.findall(r"<form\b[^>]*action=\"/trips/switch\"[^>]*>.*?</form>", html, re.S):
+        trip = re.search(r'name="trip" value="([^"]+)"', form).group(1)
+        out.append((trip, 'aria-current="true"' in form))
     return out
 
 
@@ -84,24 +84,22 @@ def trip_buttons(html):
 def test_trips_bookings_activities_notes_and_friends_are_rows_in_the_family_file(client):
     book(client)
     add(client, id="a1")
-    client.post("/calendar/notes", data={"id": "n2", "text": "Bring hats"})
-    client.post("/calendar/friends", data={"name": "Mom"})
+    client.post("/trip/notes", data={"id": "n2", "text": "Bring hats"})
     s = person()
-    assert [count(s, t) for t in ("trips", "bookings", "activities", "notes", "friends")] == [1, 1, 1, 1, 1]
+    assert [count(s, t) for t in ("trips", "bookings", "activities", "notes")] == [1, 1, 1, 1]
     assert set(session_data(client)) <= set(ses.AUTH_KEYS)  # the cookie holds only the sign-in
 
 
 def test_everything_survives_a_restart_of_the_server(client):
     book(client)
     add(client, id="a1", title="Venice Canals stroll")
-    client.post("/calendar/notes", data={"id": "n2", "text": "Bring hats", "act": "a1"})
-    client.post("/calendar/friends", data={"name": "Mom"})
+    client.post("/trip/canvas/actnote", data={"id": "n2", "text": "Bring hats", "act": "a1"})
     client.get("/plan?f=f2&h=h3&c=c1")
-    before = client.get("/calendar?view=days").text
+    before = client.get("/trip/canvas?day=1").text
     restart()
-    again = client.get("/calendar?view=days").text  # same cookie, nothing in memory
-    assert "Venice Canals stroll" in again and "Mom" in again
-    assert tag(before, "data-id", "a1") == tag(again, "data-id", "a1")
+    again = client.get("/trip/canvas?day=1").text  # same cookie, nothing in memory
+    assert "Venice Canals stroll" in again and "Bring hats" in client.get("/trip/canvas/card?act=a1").text
+    assert tag(before, "data-act", "a1") == tag(again, "data-act", "a1")
     assert [n["t"] for n in stored_calendar()["n"]] == ["Bring hats"] and ses.remembered_plan(person()).startswith("f=f2")
 
 
@@ -137,8 +135,6 @@ def test_two_members_of_a_family_see_and_edit_the_same_trip():
         cal.add_note(sam, "Sam was here")
         assert {a.title for a in cal.activities(ari)} == {"Ari's plan", "Sam's plan"}
         assert [n.text for n in cal.notes(ari)] == ["Sam was here"]
-        ses.add_friend(ari, "Mom")
-        assert [f.name for f in ses.friends(sam)] == ["Mom"]
 
 
 def test_two_members_over_http_share_the_calendar(client):
@@ -183,19 +179,19 @@ def test_booking_again_with_other_picks_makes_another_trip_instead_of_replacing_
     assert ses.trips(s)[0].current and not ses.trips(s)[1].current
 
 
-def test_the_calendar_lists_the_trips_and_switching_opens_the_other_with_its_own_activities(client):
+def test_the_top_bar_lists_the_trips_and_switching_opens_the_other_with_its_own_activities(client):
     book(client)
     add(client, id="a1", title="Sample trip plan")
     book(client, **THREE_NIGHTS)
     add(client, id="a1", title="Three night plan", day="1")
-    html = client.get("/calendar?view=days").text
+    html = client.get("/trip/canvas?day=1").text
     buttons = trip_buttons(html)
     assert len(buttons) == 2 and [cur for _, cur in buttons] == [True, False]
     assert "Three night plan" in html and "Sample trip plan" not in html
     other = buttons[1][0]
     r = client.post("/trips/switch", data={"trip": other}, follow_redirects=False)
-    assert r.status_code == 303 and r.headers["location"] == "/calendar"
-    html = client.get("/calendar?view=days").text
+    assert r.status_code == 303 and r.headers["location"] == "/trip"
+    html = client.get("/trip/canvas?day=1").text
     assert "Sample trip plan" in html and "Three night plan" not in html
     assert [cur for _, cur in trip_buttons(html)] == [False, True]
     assert "Oct 16 – 20" in html  # the sample trip's dates
@@ -226,17 +222,15 @@ def test_the_paid_trip_opens_on_the_calendar_and_pay_again_reopens_it(client):
 
 def test_the_switcher_stays_out_of_the_way_with_one_trip(client):
     book(client)
-    assert trip_buttons(client.get("/calendar").text) == []
+    assert trip_buttons(client.get("/trip/canvas").text) == []
 
 
-def test_every_trip_has_its_own_ids_notes_friends_and_live_script(client):
+def test_every_trip_has_its_own_ids_and_notes(client):
     book(client)
-    client.post("/calendar/friends", data={"name": "Mom"})
-    client.post("/calendar/live")
-    assert any(a.get("b") == "Mom" for a in stored_calendar()["a"])
+    add(client)
+    assert stored_calendar()["a"]
     book(client, **THREE_NIGHTS)
-    assert stored_calendar()["a"] == [] and [f.name for f in ses.friends(person())] == []  # nothing carried over
-    assert not cal.live_pending(person())  # Mom is not on this trip yet
+    assert stored_calendar()["a"] == [] and stored_calendar()["n"] == []  # nothing carried over
 
 
 # ---- at the same moment ---------------------------------------------------------------------------------------------
@@ -389,43 +383,41 @@ def titles_of(trip_id):
 
 def test_a_form_drawn_for_a_trip_carries_that_trip(client):
     a, b = two_trips(client)
-    html = client.get("/calendar?view=days&add=1").text
-    assert f'name="trip" value="{b}"' in html
-    assert f'name="trip" value="{a}"' not in without_bar(html).split('class="cal-trips"')[0]
+    html = client.get("/trip?add=1&day=1").text
+    assert f'name="trip" value="{b}"' in without_bar(html).split('id="tp-form"')[1].split("</form>")[0]
 
 
 def test_a_stale_tab_posting_with_its_trip_id_changes_that_trip_not_the_open_one(client):
     a, b = two_trips(client)
     client.post("/trips/switch", data={"trip": a})  # another tab opened trip A
-    r = client.post("/calendar/activities/a1/delete", data={"trip": b}, follow_redirects=False)  # the old tab still shows trip B
+    r = client.post("/trip/canvas/plan", data={"op": "delete", "act": "a1", "trip": b}, follow_redirects=False)  # the old tab still shows trip B
     assert r.status_code == 303
     assert titles_of(a) == ["Trip A plan"]  # trip A's a1 was never touched
     assert titles_of(b) == []  # the delete landed in B, the trip the form was drawn for
-    client.post("/calendar/activities", data={**FORM, "id": "a7", "title": "Late add", "trip": b})
+    client.post("/trip/plans", data={**FORM, "id": "a7", "title": "Late add", "trip": b})
     assert "Late add" not in titles_of(a) and "Late add" in titles_of(b)
 
 
 def test_a_write_naming_a_trip_the_family_does_not_have_changes_nothing(client):
     a, b = two_trips(client)
-    r = client.post("/calendar/activities/a1/delete", data={"trip": "not-a-trip"}, follow_redirects=False)
+    r = client.post("/trip/canvas/plan", data={"op": "delete", "act": "a1", "trip": "not-a-trip"}, follow_redirects=False)
     assert r.status_code in (303, 409)
     assert titles_of(b) == ["Trip B plan"] and titles_of(a) == ["Trip A plan"]
-    client.post("/calendar/activities", data={**FORM, "id": "a8", "title": "Nope", "trip": "not-a-trip"})
+    client.post("/trip/plans", data={**FORM, "id": "a8", "title": "Nope", "trip": "not-a-trip"})
     assert "Nope" not in titles_of(b) + titles_of(a)
 
 
 def test_a_plain_get_uses_the_open_trip_and_an_unknown_trip_falls_back_to_it(client):
     a, b = two_trips(client)
-    assert "Trip B plan" in client.get("/calendar?view=days").text
-    assert "Trip B plan" in client.get("/calendar?view=days&trip=nope").text
-    assert "Trip A plan" in client.get(f"/calendar?view=days&trip={a}").text
+    assert "Trip B plan" in client.get("/trip/canvas?day=1").text
+    assert "Trip B plan" in client.get("/trip/canvas?day=1&trip=nope").text
+    assert "Trip A plan" in client.get(f"/trip/canvas?day=1&trip={a}").text
 
 
-def test_forks_apply_and_voice_forms_carry_the_trip(client):
+def test_forks_apply_forms_carry_the_trip(client):
     a, b = two_trips(client)
     client.post("/fork", data={"next": "/trips/sun-tacos-and-tide-pools"})
     assert f'name="trip" value="{b}"' in client.get("/forks?open=sun-tacos-and-tide-pools").text
-    assert f'name="trip" value="{b}"' in client.get("/calendar?voice=1&night=0").text
     client.post("/trips/switch", data={"trip": a})
     r = client.post("/forks/apply", data={"slug": "sun-tacos-and-tide-pools", "pick": ["d1s2"], "trip": b}, follow_redirects=False)
     assert r.status_code == 303
@@ -438,9 +430,9 @@ def test_only_the_last_deleted_activity_is_kept_for_undo_older_ones_are_removed_
     book(client)
     for i in range(1, 5):
         add(client, id=f"a{i}", title=f"Plan {i}", start=f"{7 + i}:00", end=f"{7 + i}:30")
-        client.post("/calendar/notes", data={"id": f"n{10 + i}", "text": f"note {i}", "act": f"a{i}"})
+        client.post("/trip/canvas/actnote", data={"id": f"n{10 + i}", "text": f"note {i}", "act": f"a{i}"})
     for i in range(1, 5):
-        client.post(f"/calendar/activities/a{i}/delete")
+        client.post("/trip/canvas/plan", data={"op": "delete", "act": f"a{i}"})
     s = person()
     assert count(s, "activities") == 1 and count(s, "notes") == 1  # just a4 and its note, for Undo
     assert cal.undo_delete(s, "a4").title == "Plan 4"
@@ -451,9 +443,9 @@ def test_only_the_last_deleted_activity_is_kept_for_undo_older_ones_are_removed_
 def test_the_notes_ceiling_refuses_more_and_keeps_what_there_is(client, monkeypatch):
     monkeypatch.setattr(cal, "MAX_NOTES", 3)
     book(client)
-    codes = [client.post("/calendar/notes", data={"id": f"n{i + 1}", "text": f"note {i}"}).status_code for i in range(6)]
+    codes = [client.post("/trip/notes", data={"id": f"n{i + 1}", "text": f"note {i}"}).status_code for i in range(6)]
     assert 409 in codes and len(stored_calendar()["n"]) == 3
-    assert "a lot planned" in client.post("/calendar/notes", data={"id": "n99", "text": "one more"}).text
+    assert "a lot planned" in client.post("/trip/notes", data={"id": "n99", "text": "one more"}).text
 
 
 def test_every_use_of_the_host_database_goes_through_the_one_lock(monkeypatch):
@@ -491,15 +483,14 @@ def test_sharing_from_a_stale_tab_publishes_the_trip_the_page_showed_not_the_ope
     assert r.status_code == 303 and community.rows() == []
 
 
-def test_every_post_form_on_the_calendar_forks_voice_rides_and_share_pages_names_its_trip(client):
+def test_every_post_form_on_the_trip_forks_rides_and_share_pages_names_its_trip(client):
     from tests.test_rides import schedule
     a, b = two_trips(client)
     client.post("/fork", data={"next": "/trips/sun-tacos-and-tide-pools"})
     book(client, **{"f": "f1", "h": "h1", "c": "none"})
     schedule(client, "arrive", pick="f=f1&h=h1&c=none")
     client.post("/share", data={})
-    pages = ["/calendar?view=days", "/calendar?view=days&add=1", "/calendar?view=days&edit=a1", "/calendar?invite=1", "/calendar?voice=1&night=0",
-             "/calendar?voice=1&hear=1", "/forks", "/forks?open=sun-tacos-and-tide-pools", "/share", "/share/done", "/rides/r1",
+    pages = ["/trip?day=1", "/trip?add=1&day=1", "/trip/canvas?day=1", "/forks", "/forks?open=sun-tacos-and-tide-pools", "/share", "/share/done", "/rides/r1",
              "/rides/new?leg=depart&f=f1&h=h1&c=none"]
     seen = 0
     for path in pages:
@@ -510,7 +501,7 @@ def test_every_post_form_on_the_calendar_forks_voice_rides_and_share_pages_names
                 continue
             seen += 1
             assert 'name="trip"' in form, (path, head)
-    assert seen >= 12
+    assert seen >= 9
 
 
 def test_cancelled_rides_do_not_count_toward_the_family_ceiling_and_unused_ones_are_removed(client, monkeypatch):

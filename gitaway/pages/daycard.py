@@ -13,7 +13,7 @@ from starlette.responses import PlainTextResponse, Response
 
 from gitaway import access, familythread, members, plantalk, session as ses, tripcal as cal
 from gitaway.icons import icon
-from gitaway.pages import calendar as calui, tripcanvas as tc
+from gitaway.pages import dayshared as calui, tripcanvas as tc
 
 def plan_notes(session, act):
     """[(Note, name to show or "" for the person's own)] of a plan, oldest first."""

@@ -4,8 +4,8 @@ from urllib.parse import parse_qs, urlparse
 
 import pytest
 
-from gitaway import catalog
-from tests.test_signin import session_data, sign_in, stored_booking, tid
+from gitaway import catalog, session as ses, tripcal as cal
+from tests.test_signin import person, session_data, sign_in, stored_booking, tid
 
 DONE = "f=f1&h=h1&c=c1&fare=main&bags=2"  # Skylark 214, Main fare, 2 bags
 T5 = catalog.trip_from_url("2026-10-16", "2026-10-20", "3", "4,7")  # 3 adults + 2 kids = 5 travelers
@@ -240,21 +240,20 @@ def test_signed_out_pay_keeps_the_fare_through_sign_in(client):
 
 # ---- calendar and /booked ----------------------------------------------------------------------------------------
 
-def test_the_calendar_flight_blocks_name_the_fare_and_bags(client):
+def test_the_flight_blocks_name_the_fare_and_bags(client):
     sign_in(client)
     client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1", "fare": "main", "bags": "2"})
-    html = client.get("/calendar?view=days").text
-    assert "Skylark Air 214 · SFO → LAX · Main fare · 2 bags" in html
-    assert "Skylark Air 214 · LAX → SFO · Main fare · 2 bags" in html
-    assert re.search(r'class="cal-tripline"[^>]*>[^<]*\$3,468<', html)
+    titles = [x.title for x in cal.booked_blocks(ses.booking(person()), cal.trip_of(ses.booking(person())))]
+    assert "Skylark Air 214 · SFO → LAX · Main fare · 2 bags" in titles
+    assert "Skylark Air 214 · LAX → SFO · Main fare · 2 bags" in titles
 
 
-def test_a_default_booking_keeps_the_calendar_block_text(client):
+def test_a_default_booking_keeps_the_block_text(client):
     sign_in(client)
     client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1"})
-    html = client.get("/calendar?view=days").text
-    assert "Skylark Air 214 · SFO → LAX<" in html or "Skylark Air 214 · SFO → LAX\"" in html
-    assert "Basic fare" not in html
+    titles = [x.title for x in cal.booked_blocks(ses.booking(person()), cal.trip_of(ses.booking(person())))]
+    assert "Skylark Air 214 · SFO → LAX" in titles
+    assert not any("Basic fare" in t for t in titles)
 
 
 def test_booked_names_the_fare_and_bags(client):
