@@ -298,6 +298,21 @@ def test_a_long_chat_scrolls_inside_the_panel_not_the_page(desk, mates):
     assert bottom["y"] + bottom["height"] <= desk.viewport_size["height"]
 
 
+def test_the_address_with_the_chats_open_does_nothing_below_a_laptop(canvas_page, mates):
+    page = canvas_page(viewport=TABLET, touch=False)
+    mates(page).say("Not seen yet")
+    asked = []
+    page.on("request", lambda r: asked.append(r.url) if re.search(r"/trip/(family/(thread|list|seen|panel)|talk/items)", r.url) else None)
+    page.goto(re.sub(r"^(https?://[^/]+).*", r"\1/trip/canvas?day=1&panel=family", page.url))
+    page.wait_for_selector(".cz-view[data-day]")
+    page.wait_for_timeout(6500)
+    assert asked == []                                                                    # nothing polled, nothing marked read
+    assert page.locator("#ft").count() == 0 and page.locator("#ft-thread").count() == 0   # no chat of the panel in the page for another chat script to bind to
+    expect(page.locator("#cz-dock")).to_be_hidden()
+    unread = page.context.request.get(re.sub(r"^(https?://[^/]+).*", r"\1/trip/canvas?day=1", page.url)).text()
+    assert 'cz-dock-un' in unread                                                          # still unread: the person never saw it
+
+
 @pytest.mark.parametrize("viewport,name", [(TABLET, "1000"), (PHONE, "390")])
 def test_a_tablet_and_a_phone_keep_todays_family_chat(canvas_page, viewport, name, mates):
     page = canvas_page(viewport=viewport, touch=viewport is PHONE)

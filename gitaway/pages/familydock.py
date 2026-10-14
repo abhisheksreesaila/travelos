@@ -71,8 +71,9 @@ def _thread(session, key):
     return f"{plantalk.label(a, p)} · {_when(session, a)}", its, poll, {"act": a.id, "part": p["id"] if p else ""}, "/trip/talk/message"
 
 
-def pane(session, day, key=fc.TRIP):
-    """-> (the pane, the message bar) for the chat `key` (the whole trip when `key` names nothing that is there). Opening a chat marks what it shows as read."""
+def pane(session, day, key=fc.TRIP, mark=True):
+    """-> (the pane, the message bar) for the chat `key` (the whole trip when `key` names nothing that is there). Opening a chat marks what it shows as read, unless `mark` is False (the
+    day drawn with the chats in the address: on a screen that is not a laptop's nobody sees them; the script marks them when it starts the pane)."""
     key = fc.key_of(*fc.split(key))      # anything that is not a plain key is the whole trip
     try:
         heading, its, poll, fields, action = _thread(session, key)
@@ -81,7 +82,7 @@ def pane(session, day, key=fc.TRIP):
         heading, its, poll, fields, action = _thread(session, key)
     me, zone, trip = ses.current_traveler(session).id, ses.trip_zone(session), ses.open_trip_id() or ""
     last = its[-1]["n"] if its else 0
-    if last:
+    if last and mark:
         fc.mark_read(session, key, last)
     chats = fc.threads(session, key)
     pane_ = Section(
@@ -112,11 +113,11 @@ def register(app):
         return Response("".join(to_xml(x) for x in body), media_type="text/html; charset=utf-8", headers={"X-Family-Unread": str(fc.unread_total(session)), "Cache-Control": "no-store"})
 
     @app.post("/trip/family/seen")
-    def seen(session, key: str = "*"):
-        """I have read the chat `key` ("*": all of them, as the phone's Family page shows them) up to now."""
+    def seen(session, key: str = "*", upto: int = 0):
+        """I have read the chat `key` ("*": all of them, as the phone's Family page shows them) up to item `upto`, or up to now."""
         if not ses.current_traveler(session):
             return Response("Sign in first.", status_code=401)
-        fc.mark_read(session, key[:60], fc.newest(session))
+        fc.mark_read(session, key[:60], upto or fc.newest(session))
         return Response(status_code=204)
 
     @app.get("/trip/family/list")

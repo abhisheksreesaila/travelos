@@ -37,8 +37,10 @@
   function script(src) { var s = document.createElement('script'); s.src = src; s.async = false; document.body.appendChild(s); return s; }
   function boot() {                       // the phone's own script on the new pane, and the notes' player once
     var p = pane();
-    if (!p) return;
+    if (!p || !desk.matches) return;
     key = p.dataset.key || TRIP;
+    var last = p.querySelector('#ft-thread') ? p.querySelector('#ft-thread').dataset.last : '0';      // what the pane shows is now seen (the server only marks what it draws on a laptop's request)
+    fetch('/trip/family/seen', { method: 'POST', credentials: 'same-origin', body: new URLSearchParams({ key: key, upto: last || '0' }) }).then(function () { refreshList(); }, function () { /* the next poll marks it */ });
     var s = script('/assets/js/thread.js');
     s.addEventListener('load', function () { s.remove(); });
     if (!voiceLoaded) { voiceLoaded = true; script('/assets/js/voicenote.js'); }
@@ -194,6 +196,11 @@
       setTimeout(function () { if (open && Dock.mode() !== 'family') Dock.show('family', { key: key }); }, 0);      // (after the canvas has written the new day's address, which the panel then adds to)
     }
   });
-  if (pane()) { open = true; boot(); }     // the address had the chats open: the server drew them, so only start them
+  if (pane() && !desk.matches) drop();     // below 1020px nobody sees the panel: its chat is not started, not marked read and not left in the page for another chat script to find
+  else if (pane()) { open = true; boot(); }     // the address had the chats open: the server drew them, so only start them
   else sync();
+  desk.addEventListener('change', function () {      // a window made wide (or narrow) after the page loaded
+    if (!desk.matches) { open = false; drop(); sync(); }
+    else if (Dock.mode() === 'family' && !pane()) { open = true; load(key, false); }
+  });
 })();

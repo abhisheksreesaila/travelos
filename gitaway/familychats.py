@@ -2,7 +2,7 @@
 
 * A chat is named by a key: "trip" (the whole trip: messages, photos, voice notes and plan-change cards that belong to no plan), "<plan id>" or "<plan id>:<part id>"
   (what was said on a plan or a part: gitaway/plantalk.py).
-* Read marks are per person and per chat (the `thread_reads` table): a message is unread when someone else wrote it and it is newer than that chat's mark and than the
+* Read marks are per person, per trip and per chat (the `thread_reads` table; plan ids and row numbers repeat or run on across a family's trips): a message is unread when someone else wrote it and it is newer than that chat's mark and than the
   mark "*" (everything read: the phone's Family tab shows all chats at once). Plan-change cards never count. Nothing here sends or changes a plan.
 """
 
@@ -37,7 +37,7 @@ def _of(payload) -> str:
 
 def _read(fam):
     rows = familydb.rows(fam.db, "SELECT rowid AS n, kind, author, author_name, text, payload FROM thread WHERE trip_id = :t AND kind IN ('message', 'photo', 'voice') ORDER BY rowid", t=fam.trip_id)
-    marks = {r["key"]: r["last_n"] for r in familydb.rows(fam.db, "SELECT key, last_n FROM thread_reads WHERE user_id = :u", u=fam.traveler.id)}
+    marks = {r["key"]: r["last_n"] for r in familydb.rows(fam.db, "SELECT key, last_n FROM thread_reads WHERE user_id = :u AND trip_id = :t", u=fam.traveler.id, t=fam.trip_id)}
     return rows, marks
 
 
@@ -51,13 +51,13 @@ def _unread(rows, marks, me) -> dict:
     return out
 
 
-def unread_total(session) -> int:
-    """How many messages in the open trip's chats someone else wrote that this person has not read."""
+def unread_total(session, leave_out="") -> int:
+    """How many messages in the open trip's chats someone else wrote that this person has not read (`leave_out`: not counting that chat, the one being looked at)."""
     with ses.family(session) as fam:
         if not fam or not fam.trip_id:
             return 0
         rows, marks = _read(fam)
-        return sum(_unread(rows, marks, fam.traveler.id).values())
+        return sum(n for k, n in _unread(rows, marks, fam.traveler.id).items() if k != leave_out)
 
 
 def threads(session, open_key="") -> list:
@@ -95,11 +95,11 @@ def mark_read(session, key, upto) -> None:
     if upto <= 0 or not (key == EVERYTHING or key == TRIP or split(key) != ("", "")):
         return
     with ses.family(session) as fam:
-        if not fam:
+        if not fam or not fam.trip_id:
             return
         with familydb.transaction(fam.db):
-            familydb.run(fam.db, "INSERT INTO thread_reads (pk, user_id, key, last_n) VALUES (:p, :u, :k, :n) ON CONFLICT(pk) DO UPDATE SET last_n = MAX(thread_reads.last_n, :n)",
-                         p=f"{fam.traveler.id}|{key}", u=fam.traveler.id, k=key, n=upto)
+            familydb.run(fam.db, "INSERT INTO thread_reads (pk, user_id, trip_id, key, last_n) VALUES (:p, :u, :t, :k, :n) ON CONFLICT(pk) DO UPDATE SET last_n = MAX(thread_reads.last_n, :n)",
+                         p=f"{fam.traveler.id}|{fam.trip_id}|{key}", u=fam.traveler.id, t=fam.trip_id, k=key, n=upto)
 
 
 def newest(session) -> int:

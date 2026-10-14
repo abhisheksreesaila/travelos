@@ -102,3 +102,38 @@ def test_the_whole_trip_scope_leaves_out_plan_chats(chats):
     assert said() == ["everyone", "on the stroll"]            # the phone's Family tab keeps showing all of it
     assert said(scope="trip") == ["everyone"]
     assert any(i["kind"] == "change" for i in ft.items(ari, scope="trip"))                 # plan-change cards belong to the whole trip
+
+
+# ---- two trips: a read mark belongs to its trip ------------------------------------------------------------------------------
+
+def _someone_says(trip_id, text, act=""):
+    """A message by another member written straight into a trip of Ari's family (the numbers of the rows run on across trips; plan ids repeat in each)."""
+    from gitaway import familydb, session as ses
+    with ses.family(person("ari")) as fam:
+        with familydb.transaction(fam.db):
+            ft._insert(fam.db, trip_id, "message", "someone-else", "Sam", text, {"act": act, "part": ""} if act else None)
+
+
+def _open(trip_id):
+    from gitaway import session as ses
+    s = person("ari")
+    ses.switch_trip(s, trip_id)
+    return s
+
+
+def test_reading_one_trips_chats_never_changes_the_others_unread(client, azure):
+    from tests.test_family_storage import two_trips
+    a, b = two_trips(client)
+    for t in (a, b):
+        _someone_says(t, f"whole trip {t}")
+        _someone_says(t, f"on a1 {t}", act="a1")
+    assert fc.unread_total(_open(a)) == 2 and fc.unread_total(_open(b)) == 2
+    sb = _open(b)
+    fc.mark_read(sb, "trip", fc.newest(sb))
+    fc.mark_read(sb, "a1", fc.newest(sb))
+    assert fc.unread_total(sb) == 0
+    assert fc.unread_total(_open(a)) == 2                    # trip A is as it was
+    _someone_says(b, "later")
+    sa = _open(a)
+    fc.mark_read(sa, "*", fc.newest(sa))                     # the phone's "everything" mark in A ...
+    assert fc.unread_total(sa) == 0 and fc.unread_total(_open(b)) == 1      # ... is A's only

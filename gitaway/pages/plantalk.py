@@ -84,7 +84,7 @@ def content(session, a, p):
     last = its[-1]["n"] if its else 0
     if last:
         familychats.mark_read(session, familychats.key_of(a.id, p["id"] if p else ""), last)      # F-143: opening a chat reads it
-    poll = f"/trip/talk/items?act={quote(a.id)}" + (f"&part={quote(part)}" if part else "")
+    poll = f"/trip/talk/items?act={quote(a.id)}" + (f"&part={quote(part)}" if part else "") + "&read=1"
     who = a.title if not p else f"{p['name']} · {a.title}"
     return Div(
         A(icon("chev-left", 18, 2.4), "Back to the day", href=f"/trip/canvas?day={a.day}" + (f"&trip={quote(trip)}" if trip else ""), cls="fp-back", id="pt-back"),

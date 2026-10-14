@@ -146,6 +146,27 @@ def test_the_family_page_hands_a_laptop_on_to_the_day_and_marks_a_phone_read(cre
     script = re.search(r"<script>\(function\(\)\{if\(window\.matchMedia\('\(min-width: 1020px\) and \(not \(display-mode: standalone\)\)'\)\.matches\).*?</script>", html, re.S).group(0)
     assert 'location.replace("/trip/canvas?day=' in script and "panel=family" in script and "/trip/family/seen" in script
     assert "location.replace" not in crew[0].get("/trip/family?view=photos").text         # Photos stay on their page
+    at = html.index("location.replace")      # FastHTML keeps a script in the body, so it is the first thing in it: nothing is drawn, and no photo is fetched, before it
+    assert html.index("<body") < at < html.index('id="main"') and at < html.index("ga-topbar")
+
+def test_the_phones_own_polls_mark_what_they_show_as_read(crew, chats):
+    ari, ed, vi, park, lunch, stroll = chats
+    assert 'data-poll-url="/trip/family/thread?read=1"' in crew[0].get("/trip/family").text
+    say(ed, "one"), say(ed, "two", act=stroll)
+    crew[0].get("/trip/family/thread?since=0&read=1")                          # the Family tab shows every chat
+    assert fc.unread_total(ari) == 0
+    say(ed, "three", act=stroll)
+    assert f"/trip/talk/items?act={stroll}&amp;read=1" in crew[0].get(f"/trip/talk?act={stroll}").text
+
+
+def test_the_day_drawn_with_the_chats_in_the_address_reads_nothing_until_the_script_starts_them(crew, chats):
+    ari, ed, vi, park, lunch, stroll = chats
+    say(ed, "hello all")
+    page = crew[0].get("/trip/canvas?day=1&panel=family").text
+    assert fc.unread_total(ari) == 1                                            # (a screen with no panel was never shown them)
+    assert "cz-dock-un" not in page                                             # the tab leaves the open chat out of its count
+    assert crew[0].post("/trip/family/seen", data={"key": "trip", "upto": str(fc.newest(ari))}).status_code == 204
+    assert fc.unread_total(ari) == 0
 
 
 def test_seen_marks_everything_or_one_chat_read_and_is_for_every_role(crew, chats):

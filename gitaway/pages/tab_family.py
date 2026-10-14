@@ -136,7 +136,7 @@ def content(request, session):
                  Button(Span(cls="mp-knob"), Span("Quiet", cls="ft-quiet-label"), type="submit", role="switch", aria_checked="true" if quiet else "false", id="ft-quiet", cls=f"mp-switch ft-switch{' is-on' if quiet else ''}"),
                  method="post", action="/trip/family/quiet", cls="ft-quiet-form"),
             cls="ft-notify"),
-        Div(*fragment(its, me, zone, plantalk.labels(session)), id="ft-thread", cls="ft-thread", data_last=str(last), data_poll=str(POLL_MS), data_trip=trip, role="log", aria_live="polite", aria_label="Family thread"),
+        Div(*fragment(its, me, zone, plantalk.labels(session)), id="ft-thread", cls="ft-thread", data_last=str(last), data_poll=str(POLL_MS), data_poll_url="/trip/family/thread?read=1", data_trip=trip, role="log", aria_live="polite", aria_label="Family thread"),
         P("No messages yet. Say hello, or change a plan and it shows up here.", id="ft-empty", cls="ft-empty", hidden=bool(its)),
         Form(Input(type="hidden", name="trip", value=trip),
              Input(type="text", name="text", id="ft-text", maxlength=str(familythread.MAX_MESSAGE), placeholder="Message the family", autocomplete="off", aria_label="Message the family", cls="ft-input", required=True),
@@ -147,18 +147,19 @@ def content(request, session):
         id="ft-chat", cls="ft-panel", data_view="chat", hidden=view != "chat")
     return Div(_bar(getattr(request.state, "family_role", None), view), P("", id="ph-status", cls="fp-status", role="status", hidden=True), chat,
                photos_ui.view(session, hidden=view != "photos", error=request.query_params.get("error", "")[:200] if view == "photos" else ""), photos_ui.pickers(),
-               _handover(session, view), id="ft", cls="ft", data_view=view)
+               id="ft", cls="ft", data_view=view)
 
 
-def _handover(session, view):
-    """F-143. On a laptop (the trip canvas's 1020px line) the Family chats live in the day's panel, so this page goes on to the day with them open; on the phone and the tablet it is
-    the page it always was, and the person has now seen all of it (every chat, `seen` in gitaway/pages/familydock.py), as the panel's counts need."""
+def head_for(request, session):
+    """F-143. What phone_tabs adds to this page's <head>: on a laptop (the trip canvas's 1020px line) the Family chats live in the day's panel, so the page goes on to the day with them open
+    before anything below it is drawn or fetched; on the phone and the tablet it is the page it always was, and the person has now seen all of it (every chat, `seen` in
+    gitaway/pages/familydock.py), as the panel's counts need."""
     from gitaway.pages import tripcanvas as tc
-    if view != "chat" or not session.get("user_id"):
-        return ""
+    if request.query_params.get("view") == "photos" or not session.get("user_id"):
+        return ()
     panel = tc.curl(day=tc.today_day(session), panel="family")
-    return Script("(function(){if(window.matchMedia('(min-width: 1020px) and (not (display-mode: standalone))').matches){location.replace(" + json.dumps(panel) + ");return;}"
-                  "fetch('/trip/family/seen',{method:'POST',credentials:'same-origin',body:new URLSearchParams({key:'*'})}).catch(function(){});})();")
+    return (Script("(function(){if(window.matchMedia('(min-width: 1020px) and (not (display-mode: standalone))').matches){location.replace(" + json.dumps(panel) + ");return;}"
+                   "fetch('/trip/family/seen',{method:'POST',credentials:'same-origin',body:new URLSearchParams({key:'*'})}).catch(function(){});})();"),)
 
 
 def _signed_in(session):
@@ -176,8 +177,8 @@ def _new_items(session, since, trip="", scope="", read=False):
         its = familythread.items(session, since=max(0, since), trip=trip or None, scope="trip" if scope == "trip" else "")
     except familythread.StaleTrip:
         return PlainTextResponse(STALE, status_code=409)
-    if read and its and scope == "trip":
-        familychats.mark_read(session, familychats.TRIP, its[-1]["n"])
+    if read and its:      # the person is looking at it: the panel's whole-trip chat, or the phone's Family tab (every chat)
+        familychats.mark_read(session, familychats.TRIP if scope == "trip" else familychats.EVERYTHING, its[-1]["n"])
     me, zone = ses.current_traveler(session).id, ses.trip_zone(session)
     body = "".join(to_xml(v) for v in fragment(its, me, zone, plantalk.labels(session) if scope != "trip" else None))
     return Response(body, media_type="text/html; charset=utf-8", headers={"X-Thread-Last": str(its[-1]["n"] if its else max(0, since)), "Cache-Control": "no-store"})
