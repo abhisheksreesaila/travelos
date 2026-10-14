@@ -111,3 +111,26 @@ def test_another_day_shows_its_first_plan_as_up_next(trip, monkeypatch):
     cal.add_activity(me, day=2, start=13 * 60, end=14 * 60, title="Pool", kind="fun")
     t = text(dock(day(trip, 2)))      # today is before the trip
     assert "FIRST UP" in t and "Slow breakfast" in t and "Pool" in t and "Later today" not in t and "Later on" in t
+
+
+def test_a_booking_that_vanishes_mid_request_never_errors_the_panel(trip, monkeypatch):
+    """F-155: the day read the booking, then the panel's own read (pages.trip.load) found it gone (a family deleted the trip meanwhile): a normal page, not a 500."""
+    from gitaway import session as ses
+    from gitaway.pages import trip as trippage
+    real_booking, real_load, gone = ses.booking, trippage.load, []
+
+    def load(*a, **kw):
+        gone.append(1)                      # from here on this request's booking reads come back empty
+        try:
+            return real_load(*a, **kw)
+        finally:
+            gone.pop()
+
+    monkeypatch.setattr(trippage, "load", load)
+    monkeypatch.setattr(ses, "booking", lambda session: None if gone else real_booking(session))
+    r = trip.get("/trip/canvas?day=1", follow_redirects=False)
+    assert r.status_code in (200, 303), r.status_code
+    if r.status_code == 303:
+        assert r.headers["location"] == "/start"
+    else:
+        assert 'id="cz-dock"' in r.text

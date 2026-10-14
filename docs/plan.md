@@ -864,7 +864,7 @@ Found in F-153's review: on a laptop the avatar menu (and likely the trip picker
 - [ ] the top bar's avatar menu and trip picker are usable (their items still) within 0.25s of the click at 1440, measured in a browser test with motion on
 - [ ] they still grow out of their button and fold back with GA.motion and the --motion-* tokens (no new timings)
 
-## F-155 The day panel never errors when a booking vanishes mid-request [todo]
+## F-155 The day panel never errors when a booking vanishes mid-request [review]
 Bug, seen twice in browser runs (F-143 and F-154 reviews): `gitaway/tripcal.py` `_lane` raises AttributeError ('NoneType' has no attribute 'get') while drawing the day panel (`daydock.idle` → `trip.load` → `ride_offers` → `rides_of(None)`); the booking read succeeded earlier in the same request and was gone later. Likely a request racing a test's cleanup, but a real family deleting a trip while another member's page refreshes could hit it too.
-- [ ] a day or panel request whose booking disappears partway returns a normal page (or a clean redirect to Start), never a 500, with a test that deletes the booking between the two reads
-- [ ] no AttributeError from `_lane` in a full browser run's server log
+- [x] a day or panel request whose booking disappears partway returns a normal page (or a clean redirect to Start), never a 500, with a test that deletes the booking between the two reads
+- [x] no AttributeError from `_lane` in a full browser run's server log
