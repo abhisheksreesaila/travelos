@@ -859,7 +859,7 @@ Bug: F-062 made sign-out reach the landing in ~0.1s (headless Chromium). By 2026
 - [x] signing out at 1440 and 390 reaches the landing in well under the 1.0s limit again (aim for F-062's ~0.1–0.3s in headless Chromium), measured over 5 runs (the app was never slower: submit to load is ~0.12s; the test's clock included Playwright waiting ~0.9s for F-139's avatar menu to finish its spring; the test now starts the clock once the menu is still. After: 0.15–0.26s at both widths)
 - [x] the next person on the device still can't see the previous family's pages or cached data
 
-## F-154 The top bar's menus open quickly [todo]
+## F-154 The top bar's menus open quickly [review]
 Found in F-153's review: on a laptop the avatar menu (and likely the trip picker) keeps moving for ~0.9s after a click (Playwright waits that long for Sign out to be still), longer than the 520ms spring token; menus people open often should feel instant (lessons: F-118 "no motion over clever motion where things happen often").
-- [ ] the top bar's avatar menu and trip picker are usable (their items still) within 0.25s of the click at 1440, measured in a browser test with motion on
-- [ ] they still grow out of their button and fold back with GA.motion and the --motion-* tokens (no new timings)
+- [x] the top bar's avatar menu and trip picker are usable (their items still) within 0.25s of the click at 1440, measured in a browser test with motion on
+- [x] they still grow out of their button and fold back with GA.motion and the --motion-* tokens (no new timings)
