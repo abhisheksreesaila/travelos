@@ -820,7 +820,7 @@ Brief: docs/briefs/web-trip.md · Needs: F-139, F-143
 - [ ] /trips goes to the current trip instead of a 404
 - [ ] the old calendar's code, styles and tests that only served it are removed; the suite stays green
 
-## F-148 Map fits a laptop window [review]
+## F-148 Map fits a laptop window [done]
 Found in F-139's review: /trip/map is taller than the window at 1440×900 (1096px with the top bar; 1038px before it). Not in the web-trip brief's tickets; small follow-up.
 - [x] /trip/map fits 1440×900 and 1280×800 at 100% zoom under the top bar, with the map filling the space instead of a fixed height
 - [x] the phone map is unchanged
