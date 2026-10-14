@@ -16,6 +16,15 @@ def sign_out_button(page):
     """The Sign out button that shows at this width: the avatar menu's in the laptop's top bar (opened first), else the site header's (F-139)."""
     if page.locator(".ga-topbar").is_visible():
         page.click(".ga-tb-account summary")
+        # F-153: the menu grows open with the spring (F-109); Playwright's click waits for it to stop moving, so wait here, before the clock starts
+        page.wait_for_function("""new Promise(done => {
+            const b = document.querySelector('.ga-tb-out'); let last = '', since = performance.now();
+            (function look() {
+                const r = b.getBoundingClientRect(), now = JSON.stringify(r);
+                if (now !== last) { last = now; since = performance.now(); }
+                if (performance.now() - since > 150) done(true); else requestAnimationFrame(look);
+            })();
+        })""")  # still for 150 ms: the menu has finished opening
     return page.locator("button.ga-signout:visible, button.ga-tb-out:visible").first
 
 
