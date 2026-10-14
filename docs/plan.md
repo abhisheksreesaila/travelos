@@ -748,3 +748,73 @@ Captain 2026-10-10: "a little more liquid when it switches from week to day". Th
 
 ## F-138 More liquid still [done]
 Captain 2026-10-10: "faster, could be a little liquidy". The zoom is 500 ms; the tapped row (or step) moves with the cards' soft spring, a small give at the end; the screens behind soften with a slight blur as they pass (they never overshoot).
+
+# The web gets the same love (laptop trip pages)
+
+Brief: docs/briefs/web-trip.md (approved 2026-10-13) · Design: docs/design/web-trip.md (option A, docs/design/canvas/Web-Trip-v1.html). Desktop means a viewport ≥ 1020px; 721–1019 keeps today's layout; the phone (≤ 720) is unchanged and its tests stay green. Every screen is checked at 1440×900 and 1280×800 at 100% zoom: main content fits without page scrolling, no label is cut off, no sideways scroll (lessons 2026-09-30).
+
+## F-139 One top bar for the signed-in web [todo]
+Brief: docs/briefs/web-trip.md · Design: docs/design/web-trip.md (Top bar) · Needs: none
+- [ ] every signed-in page on a desktop shows the same top bar: brand, Trip | Family | Ask, the trip picker, SOS and the avatar menu (with Sign out); the current section is marked
+- [ ] the trip canvas (day and week) shows it too, so there is a way to Family and Ask on a laptop
+- [ ] Trip opens the current trip's day (today during the trip, else day 1); the trip picker switches trips (existing `/trips/switch`); a family with no trip gets Start
+- [ ] the signed-out landing and sign-in keep their own header; booking pages keep their placeholders
+- [ ] on a phone nothing changes (the bottom tabs stay; no top bar)
+- [ ] a browser test presses each top-bar link and checks where it lands
+
+## F-140 Desktop day: grid and docked panel [todo]
+Brief: docs/briefs/web-trip.md · Design: A2 · Needs: F-139
+- [ ] on a desktop the day is two columns: the ink day header with the five day chips inline, the filters with Paste a plan and Say the plan, and the hour grid on the left; the panel on the right
+- [ ] only the grid and the panel scroll; the grid opens at 7 AM, or at now during the trip, with the coral now line
+- [ ] with nothing clicked the panel shows Up next (time, drive, who, Directions, Open the plan), Later today, and the Ask box; with nothing up next it says so and shows Ask
+- [ ] fits 1440×900 and 1280×800 at 100% zoom with no page scroll
+- [ ] the day chips and Day | Week move between levels with the existing liquid zoom
+
+## F-141 A clicked plan opens in the panel [todo]
+Brief: docs/briefs/web-trip.md · Design: A1 · Needs: F-140
+- [ ] clicking a plan rings it in coral and opens its card in the panel (the same card as the phone: who, note, steps, the plan's chat and compose) instead of a sheet over the day
+- [ ] steps tick with one click, as on the phone; Add a step and Set aside work
+- [ ] the panel shows the plan's outline at once and fills in (cards fetched ahead keep working)
+- [ ] Esc or the close button returns the panel to Up next; the address keeps the open plan, so a reload shows it again
+- [ ] the panel's change uses GA.motion and the --motion-* tokens only
+
+## F-142 Ask in the panel [todo]
+Brief: docs/briefs/web-trip.md · Design: A2 · Needs: F-140
+- [ ] the top bar's Ask, the panel's Ask tab and the `/` key open the Ask box in the panel (AskBox reused), with the mic
+- [ ] a proposal is shown in the panel; Apply changes the grid in place and tells the family, as on the phone
+- [ ] Say the plan and Paste a plan open the same box in the panel
+
+## F-143 Family chat in the panel [todo]
+Brief: docs/briefs/web-trip.md · Design: A3 · Needs: F-140
+- [ ] the top bar's Family and the panel's Family tab list the trip's chats (whole trip first, then each plan's) with unread counts, and open a thread below with compose
+- [ ] the Family tab links to "People and invites" (the /family page) for members and invitations
+- [ ] opening /trip/family/thread directly on a desktop shows the day with that thread open, never a blank page
+- [ ] a new message shows without reloading, as on the phone
+
+## F-144 Mouse and keyboard on the day [todo]
+Brief: docs/briefs/web-trip.md · Design: A1, A2 · Needs: F-141
+- [ ] drag on empty time draws a new plan (dashed outline with its times); Enter or typing names it, Esc cancels
+- [ ] drag a plan to move it; pull the knob at its foot to resize; both snap like the phone and offer Undo
+- [ ] hover shows the knob and a ⋯ button; ⋯ or right-click opens rename and delete
+- [ ] keys: T today, ← and → days, W and D week or day, `/` Ask, Esc closes the panel; none fire while typing
+- [ ] viewers get none of the write moves (existing access rules); browser tests drive each move with a mouse
+
+## F-145 Desktop week: the whole trip at a glance [todo]
+Brief: docs/briefs/web-trip.md · Design: A4 · Needs: F-139
+- [ ] on a desktop the week is one column per day under the ink trip header (filters and Day | Week): a day-colour header, then compact rows of time, a title on at most two lines and a kind icon
+- [ ] plans show a step and message summary; a free day shows a dashed card with Say the plan; today is outlined
+- [ ] clicking a row opens that day with the plan in the panel; Open the day opens the day
+- [ ] a trip longer than five days scrolls sideways inside the week area, never the page
+- [ ] fits 1440×900 and 1280×800 at 100% zoom
+
+## F-146 Family, trip details and Start in the new look [todo]
+Brief: docs/briefs/web-trip.md · Design: docs/design/web-trip.md (tokens) · Needs: F-139
+- [ ] /family (people, roles, invitations), /trip/details and /start use the top bar, the white cards and the type of the trip screens; nothing they do today is lost
+- [ ] each fits 1440×900 without page scroll for its main content; every button still has a test that presses it
+
+## F-147 Retire the old trip calendar [todo]
+Brief: docs/briefs/web-trip.md · Needs: F-139, F-143
+- [ ] before removal, list everything the old calendar page does and where each one now lives (or that it is dropped with the captain's brief: the 8-button row, Your forks, the separate notes panel)
+- [ ] /calendar goes to the trip's day (or week) on every screen size; Invite lives in Family; no page links to /calendar any more
+- [ ] /trips goes to the current trip instead of a 404
+- [ ] the old calendar's code, styles and tests that only served it are removed; the suite stays green
