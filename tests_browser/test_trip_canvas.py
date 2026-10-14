@@ -16,7 +16,7 @@ from tests_browser.helpers import PHONE
 from tests_browser.test_phone_polish import OVERFLOW, SMALL_CONTROLS, SMALL_TEXT
 
 NARROW = {"width": 320, "height": 640}
-WIDE = {"width": 1280, "height": 800}
+WIDE = {"width": 1000, "height": 800}      # F-140: from 1020px the day is the docked-panel layout (tests_browser/test_day_dock.py); 721 to 1019 keeps the wide day these tests check
 SPY = """(() => { window.__vt = { calls: 0, old: [], new: [], dir: [] };
   const real = document.startViewTransition && document.startViewTransition.bind(document);
   if (!real) return;

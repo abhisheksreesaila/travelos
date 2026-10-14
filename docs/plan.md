@@ -762,13 +762,13 @@ Brief: docs/briefs/web-trip.md · Design: docs/design/web-trip.md (Top bar) · N
 - [x] on a phone nothing changes (the bottom tabs stay; no top bar)
 - [x] a browser test presses each top-bar link and checks where it lands
 
-## F-140 Desktop day: grid and docked panel [todo]
+## F-140 Desktop day: grid and docked panel [done]
 Brief: docs/briefs/web-trip.md · Design: A2 · Needs: F-139
-- [ ] on a desktop the day is two columns: the ink day header with the five day chips inline, the filters with Paste a plan and Say the plan, and the hour grid on the left; the panel on the right
-- [ ] only the grid and the panel scroll; the grid opens at 7 AM, or at now during the trip, with the coral now line
-- [ ] with nothing clicked the panel shows Up next (time, drive, who, Directions, Open the plan), Later today, and the Ask box; with nothing up next it says so and shows Ask
-- [ ] fits 1440×900 and 1280×800 at 100% zoom with no page scroll
-- [ ] the day chips and Day | Week move between levels with the existing liquid zoom
+- [x] on a desktop the day is two columns: the ink day header with the five day chips inline, the filters with Paste a plan and Say the plan, and the hour grid on the left; the panel on the right
+- [x] only the grid and the panel scroll; the grid opens at 7 AM, or at now during the trip, with the coral now line
+- [x] with nothing clicked the panel shows Up next (time, drive, who, Directions, Open the plan), Later today, and the Ask box; with nothing up next it says so and shows Ask
+- [x] fits 1440×900 and 1280×800 at 100% zoom with no page scroll
+- [x] the day chips and Day | Week move between levels with the existing liquid zoom
 
 ## F-141 A clicked plan opens in the panel [todo]
 Brief: docs/briefs/web-trip.md · Design: A1 · Needs: F-140
@@ -798,6 +798,7 @@ Brief: docs/briefs/web-trip.md · Design: A1, A2 · Needs: F-141
 - [ ] hover shows the knob and a ⋯ button; ⋯ or right-click opens rename and delete
 - [ ] keys: T today, ← and → days, W and D week or day, `/` Ask, Esc closes the panel; none fire while typing
 - [ ] viewers get none of the write moves (existing access rules); browser tests drive each move with a mouse
+- [ ] dragging past the visible hours scrolls the grid card (day_grid.js and canvas_gestures.js use the card's scroll, not the window's), and a wheel scroll during a hold keeps the plan under the pointer
 
 ## F-145 Desktop week: the whole trip at a glance [todo]
 Brief: docs/briefs/web-trip.md · Design: A4 · Needs: F-139
@@ -819,7 +820,7 @@ Brief: docs/briefs/web-trip.md · Needs: F-139, F-143
 - [ ] /trips goes to the current trip instead of a 404
 - [ ] the old calendar's code, styles and tests that only served it are removed; the suite stays green
 
-## F-148 Map fits a laptop window [todo]
+## F-148 Map fits a laptop window [done]
 Found in F-139's review: /trip/map is taller than the window at 1440×900 (1096px with the top bar; 1038px before it). Not in the web-trip brief's tickets; small follow-up.
-- [ ] /trip/map fits 1440×900 and 1280×800 at 100% zoom under the top bar, with the map filling the space instead of a fixed height
-- [ ] the phone map is unchanged
+- [x] /trip/map fits 1440×900 and 1280×800 at 100% zoom under the top bar, with the map filling the space instead of a fixed height
+- [x] the phone map is unchanged
