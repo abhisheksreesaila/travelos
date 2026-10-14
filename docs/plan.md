@@ -770,7 +770,7 @@ Brief: docs/briefs/web-trip.md · Design: A2 · Needs: F-139
 - [x] fits 1440×900 and 1280×800 at 100% zoom with no page scroll
 - [x] the day chips and Day | Week move between levels with the existing liquid zoom
 
-## F-141 A clicked plan opens in the panel [review]
+## F-141 A clicked plan opens in the panel [done]
 Brief: docs/briefs/web-trip.md · Design: A1 · Needs: F-140
 - [x] clicking a plan rings it in coral and opens its card in the panel (the same card as the phone: who, note, steps, the plan's chat and compose) instead of a sheet over the day
 - [x] steps tick with one click, as on the phone; Add a step and Set aside work
@@ -827,12 +827,12 @@ Found in F-139's review: /trip/map is taller than the window at 1440×900 (1096p
 - [x] /trip/map fits 1440×900 and 1280×800 at 100% zoom under the top bar, with the map filling the space instead of a fixed height
 - [x] the phone map is unchanged
 
-## F-149 A short pull on the phone card springs back [review]
+## F-149 A short pull on the phone card springs back [done]
 Bug, found while building F-139..F-148: tests_browser/test_day_card.py::test_a_short_pull_on_the_card_springs_back_and_does_not_fold fails at 390 and 320 on master (it failed before the web work too). Find whether the card or the test is wrong.
 - [x] a short downward pull on the open plan card at 390 and 320 springs back and does not fold the card, on the phone
 - [x] the test passes in the full browser run and in random order
 
-## F-150 A park block's title no longer covers its parts on a laptop [review]
+## F-150 A park block's title no longer covers its parts on a laptop [done]
 Bug, found in F-141's review (already there in F-140): on the desktop day a long park block's title and time are sticky with the phone's offset (`assets/css/day_grid.css:51`, `top: calc(env(safe-area-inset-top) + 4rem)`), so inside the scrolling grid card they sit 4rem down, on top of the part chips.
 - [x] at 1440×900 and 1280×800 a park block's title, time and part chips never overlap, at the top of the grid and while the grid scrolls
 - [x] the phone's sticky title is unchanged
