@@ -753,7 +753,7 @@ Captain 2026-10-10: "faster, could be a little liquidy". The zoom is 500 ms; the
 
 Brief: docs/briefs/web-trip.md (approved 2026-10-13) · Design: docs/design/web-trip.md (option A, docs/design/canvas/Web-Trip-v1.html). Desktop means a viewport ≥ 1020px; 721–1019 keeps today's layout; the phone (≤ 720) is unchanged and its tests stay green. Every screen is checked at 1440×900 and 1280×800 at 100% zoom: main content fits without page scrolling, no label is cut off, no sideways scroll (lessons 2026-09-30).
 
-## F-139 One top bar for the signed-in web [review]
+## F-139 One top bar for the signed-in web [done]
 Brief: docs/briefs/web-trip.md · Design: docs/design/web-trip.md (Top bar) · Needs: none
 - [x] every signed-in page on a desktop shows the same top bar: brand, Trip | Family | Ask, the trip picker, SOS and the avatar menu (with Sign out); the current section is marked
 - [x] the trip canvas (day and week) shows it too, so there is a way to Family and Ask on a laptop
@@ -818,3 +818,8 @@ Brief: docs/briefs/web-trip.md · Needs: F-139, F-143
 - [ ] /calendar goes to the trip's day (or week) on every screen size; Invite lives in Family; no page links to /calendar any more
 - [ ] /trips goes to the current trip instead of a 404
 - [ ] the old calendar's code, styles and tests that only served it are removed; the suite stays green
+
+## F-148 Map fits a laptop window [todo]
+Found in F-139's review: /trip/map is taller than the window at 1440×900 (1096px with the top bar; 1038px before it). Not in the web-trip brief's tickets; small follow-up.
+- [ ] /trip/map fits 1440×900 and 1280×800 at 100% zoom under the top bar, with the map filling the space instead of a fixed height
+- [ ] the phone map is unchanged

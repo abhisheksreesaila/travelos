@@ -9,6 +9,8 @@
   .ga-header[data-has-topbar] { display: none; }
   .ga-topbar + * .cal-bar > .ga-brand, .ga-topbar ~ .cal-bar > .ga-brand { display: none; }   /* the old calendar's own header (F-147 retires it) keeps its title row; the brand is the bar's now */
   .ga-topbar ~ .tp { min-height: calc(100vh - 4.8333rem); min-height: calc(100dvh - 4.8333rem); }   /* the phone shell is a full-height screen: the bar's height comes off it, so the page is no taller than the window */
+  .ga-topbar ~ .tp .ph-back { margin-top: 0; }          /* the bar takes 4.8rem of the window: the help page (the tallest that fits) gets 1.5rem back from its own spacing so it still fits */
+  .ga-topbar ~ .tp .tp-head { padding-top: 0; }
   .ga-topbar ~ .tp > .ga-skip, .ga-skip:has(~ .ga-topbar) { display: none; }   /* one "Skip to content" at a time: the bar's own, here; the page's own below 1020px */
   .ga-topbar a { text-decoration: none; color: inherit; }
   .ga-topbar .ga-brand { gap: 0.75rem; flex-shrink: 0; }
