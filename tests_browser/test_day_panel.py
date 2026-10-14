@@ -153,7 +153,7 @@ def test_the_note_is_written_in_the_panel(desk):
 
 
 @pytest.mark.parametrize("viewport", [DESKTOP, LAPTOP], ids=["1440", "1280"])
-def test_the_outline_shows_at_once_and_the_words_fill_in(canvas_page, viewport):
+def test_the_laptop_shows_no_outline_the_pane_comes_with_its_words(canvas_page, viewport):      # F-156: no outline-then-fill on a laptop
     desk = canvas_page(viewport=viewport, touch=False)
     seen = []
 
@@ -166,11 +166,10 @@ def test_the_outline_shows_at_once_and_the_words_fill_in(canvas_page, viewport):
     open_day(desk, SATURDAY)
     act = park(desk)
     click_block(desk, act)
-    expect(pane(desk).locator(".cz-pp-t")).to_have_text(re.compile("Universal"))      # the title from the clicked block, at once
-    expect(pane(desk)).to_have_class(re.compile("is-loading"))
-    expect(pane(desk).locator(".cz-pp-skel").first).to_be_visible()
-    shot(desk, f"plan-loading-{desk.viewport_size['width']}.png")
-    expect(pane(desk)).not_to_have_class(re.compile("is-loading"))
+    desk.wait_for_timeout(300)
+    assert desk.locator(".cz-pp-skel, .cz-pp.is-loading").count() == 0      # still waiting for the words: the panel as it was, never an empty outline
+    expect(pane(desk).locator(".cz-pp-t")).to_have_text(re.compile("Universal"))
+    assert desk.locator(".cz-pp-skel, .cz-pp.is-loading").count() == 0
     expect(pane(desk).locator(".cz-pstep[data-step]").first).to_be_visible()
     assert any("panel=1" in u for u in seen)
 
