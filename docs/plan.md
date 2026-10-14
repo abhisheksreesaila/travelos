@@ -784,13 +784,13 @@ Brief: docs/briefs/web-trip.md · Design: A2 · Needs: F-140
 - [x] a proposal is shown in the panel; Apply changes the grid in place and tells the family, as on the phone
 - [x] Say the plan and Paste a plan open the same box in the panel
 
-## F-143 Family chat in the panel [todo]
+## F-143 Family chat in the panel [done]
 Brief: docs/briefs/web-trip.md · Design: A3 · Needs: F-140
-- [ ] the top bar's Family and the panel's Family tab list the trip's chats (whole trip first, then each plan's) with unread counts, and open a thread below with compose
-- [ ] the Family tab links to "People and invites" (the /family page) for members and invitations
-- [ ] opening /trip/family/thread directly on a desktop shows the day with that thread open, never a blank page
-- [ ] a new message shows without reloading, as on the phone
-- [ ] the plan pane's chat (F-141) also shows others' new messages without reloading
+- [x] the top bar's Family and the panel's Family tab list the trip's chats (whole trip first, then each plan's) with unread counts, and open a thread below with compose
+- [x] the Family tab links to "People and invites" (the /family page) for members and invitations
+- [x] opening /trip/family/thread directly on a desktop shows the day with that thread open, never a blank page
+- [x] a new message shows without reloading, as on the phone
+- [x] the plan pane's chat (F-141) also shows others' new messages without reloading
 
 ## F-144 Mouse and keyboard on the day [done]
 Brief: docs/briefs/web-trip.md · Design: A1, A2 · Needs: F-141
@@ -838,10 +838,18 @@ Bug, found in F-141's review (already there in F-140): on the desktop day a long
 - [x] at 1440×900 and 1280×800 a park block's title, time and part chips never overlap, at the top of the grid and while the grid scrolls
 - [x] the phone's sticky title is unchanged
 
-## F-151 Drag a plan onto a day chip to move it (laptop) [todo]
+## F-151 Drag a plan onto a day chip to move it (laptop) [done]
 Captain, 2026-10-14: "on a laptop, drag a plan onto a day chip to move it, absolutely needed". With the old calendar retired (F-147), moving a plan to another day was only possible through Ask. Brief: docs/briefs/web-trip.md · Needs: F-144
-- [ ] on a desktop, dragging a plan from the grid onto one of the day chips in the ink header moves it to that day at the same time; the chip shows it will take the drop while hovered
-- [ ] the move saves through the canvas's existing write path, shows the existing toast with Undo, and the plan disappears from this day in place
-- [ ] dropping back on the grid, on the current day's chip, or pressing Esc mid-drag leaves the plan where it was
-- [ ] overlapping plans on the target day sit side by side as they do today (lanes); nothing is changed silently
-- [ ] viewers can't drag; the phone's touch moves are unchanged; browser tests drive the drag with a real mouse at 1440 and 1280
+- [x] on a desktop, dragging a plan from the grid onto one of the day chips in the ink header moves it to that day at the same time; the chip shows it will take the drop while hovered
+- [x] the move saves through the canvas's existing write path, shows the existing toast with Undo, and the plan disappears from this day in place
+- [x] dropping back on the grid, on the current day's chip, or pressing Esc mid-drag leaves the plan where it was
+- [x] overlapping plans on the target day sit side by side as they do today (lanes); nothing is changed silently
+- [x] viewers can't drag; the phone's touch moves are unchanged; browser tests drive the drag with a real mouse at 1440 and 1280
+
+## F-152 Change type and Move to day in the plan menu [todo]
+Captain, 2026-10-14: chose "Add to the plan menu" when the old calendar's edit form (the only place to change a plan's kind, and the phone's way to move a plan to another day) was retired in F-147. Brief: docs/briefs/web-trip.md · Needs: F-147, F-151
+- [ ] the phone's hold menu and the laptop's ⋯ / right-click menu (the same menu, day_menu.js) have "Change type" and "Move to day…"
+- [ ] Change type offers the plan kinds as large tappable choices (no dropdown), marks the current one, and saves at once with the existing toast and Undo
+- [ ] Move to day… offers the trip's days as large tappable choices (the current day marked and not offered), keeps the same time, and saves with the toast "Moved to Sat 17 · Undo" (F-151's wording and write path)
+- [ ] the grid and the plan's colour update in place; viewers don't see either item
+- [ ] browser tests press both items at 390 (touch) and 1440 (mouse) and check the saved kind and day

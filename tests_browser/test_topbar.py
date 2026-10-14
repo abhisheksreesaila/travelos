@@ -56,7 +56,7 @@ def test_every_signed_in_page_shows_the_same_bar(signed_in, viewport, path):
 
 
 def test_the_section_you_are_in_is_marked(signed_in):
-    for path, label in [("/trip/canvas?day=0", "Trip"), ("/trip/canvas", "Trip"), ("/family", "Family"), ("/trip/family", "Family"), ("/trip/ask", "Ask/")]:
+    for path, label in [("/trip/canvas?day=0", "Trip"), ("/trip/canvas", "Trip"), ("/family", "Family"), ("/trip/family", "Family"), ("/trip/ask", "Ask/")]:      # (/trip/family goes on to the day with the chats open: Family there too)
         page = signed_in(DESKTOP, path=path)
         expect(page.locator(f"{BAR} .ga-tb-nav a[aria-current='page']")).to_have_text([label])
 
@@ -71,10 +71,18 @@ def test_trip_opens_the_trips_day(signed_in):
 
 def test_family_opens_the_family_chat(signed_in):
     page = signed_in(DESKTOP)
-    page.click(f"{BAR} .ga-tb-family")
-    page.wait_for_url("**/trip/family")
+    page.click(f"{BAR} .ga-tb-family")               # F-143: on a laptop the chats open in the day's panel, in place
+    page.wait_for_url("**/trip/canvas?day=0&panel=family*")
     expect(page.locator(BAR)).to_be_visible()
-    expect(page.locator("#main")).to_be_visible()
+    expect(page.locator("#cz-dock .cz-fam")).to_be_visible()
+    expect(page.locator(f"{BAR} .ga-tb-nav a[aria-current='page']")).to_have_text(["Family"])
+
+
+def test_family_from_a_page_with_no_day_goes_to_the_day_with_the_chats_open(signed_in):
+    page = signed_in(DESKTOP, path="/family")
+    page.click(f"{BAR} .ga-tb-family")
+    page.wait_for_url("**/trip/canvas?day=0&panel=family*")
+    expect(page.locator("#cz-dock .cz-fam")).to_be_visible()
 
 
 def test_ask_opens_the_ask_box_and_the_slash_key_goes_there_too(signed_in):

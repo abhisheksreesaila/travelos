@@ -233,6 +233,7 @@
     g.classList.add('is-editing-time');
     buzz(14);
     makeLabel();
+    gg.chips = !!(gg.mouse && !gg.resize && CZ.chipDrop && /^a\d/.test(el.dataset.act || '') && CZ.chipDrop.begin());      // F-151: a plan (not a booking) held with the mouse can be dropped on a day chip
     if (gg.resize) { gg.oy = ((gg.edge === 'start' ? gg.s0 : gg.e0) - gg.lo) * gg.ppm; gg.bottomPage = gg.top0 + gg.oy; if (!gg.mouse) startZoom(); } else makeGhost();      // (a mouse is exact: no zoom)
     paint(gg);
     gg.raf = requestAnimationFrame(frame);
@@ -304,6 +305,8 @@
     var dy = 0, speed = zoomed ? 7 : 11;
     if (gg.y < top) dy = -Math.ceil(Math.min(1, (top - gg.y) / gg.zoneTop) * speed) - 1;
     else if (gg.y > bottom) dy = Math.ceil(Math.min(1, (gg.y - bottom) / gg.zoneBot) * speed) + 1;
+    if (gg.chips && CZ.chipDrop.tick(gg.x, gg.y)) gg.dirty = true;       // F-151: held near an end of the day chips, they scroll
+    if (dy && gg.chips && CZ.chipDrop.inBand(gg.y)) dy = 0;               // (over the chips the grid card below stays still)
     if (dy) { if (gg.box) gg.box.scrollBy(0, dy); else window.scrollBy(0, dy); gg.dirty = true; }
     if (gg.dirty) { gg.dirty = false; paint(gg); }
     gg.raf = requestAnimationFrame(frame);
@@ -340,7 +343,7 @@
     } else {
       var dur = gg.e0 - gg.s0, maxStart = Math.max(gg.lo, Math.min(gg.hi, DAY_END) - dur);
       var topPage = fy - gg.grab, base = gg.top0 + (gg.s0 - gg.lo) * gg.ppm;
-      var s = clamp(Math.round((gg.lo + (topPage - gg.top0) / gg.ppm) / GRAIN) * GRAIN, gg.lo, maxStart);
+      var s = gg.chips && CZ.chipDrop.inBand(gg.y) ? gg.s0 : clamp(Math.round((gg.lo + (topPage - gg.top0) / gg.ppm) / GRAIN) * GRAIN, gg.lo, maxStart);      // (F-151: over the day chips a plan is not being moved in time: dropped on no chip it stays)
       if (s !== gg.cur) { buzz(4); gg.cur = s; setWhen(gg.el, s, s + dur); }
       var follow = clamp(topPage, gg.top0, gg.top0 + (maxStart - gg.lo) * gg.ppm);
       gg.el.style.transform = 'translate3d(' + clamp((gg.x - gg.x0) * 0.2, -12, 12) + 'px,' + (follow - base) + 'px,0)';
@@ -350,6 +353,9 @@
       small = s === gg.s0 ? 'same time' : 'was ' + clock12(gg.s0);
     }
     gg.snapped = snapped;
+    gg.chip = gg.chips ? CZ.chipDrop.over(gg.x, gg.y) : null;           // F-151: the day chip under the pointer that will take the plan
+    if (gg.chip) { text = 'Move to ' + gg.chip.dataset.moveLabel; small = 'same time'; }
+    label.style.visibility = gg.chip ? 'hidden' : '';                  // (the coral ring says it; the label must not sit over the header)
     var w = label.firstChild, sm = label.lastChild;
     if (w.textContent !== text) w.textContent = text;
     if (sm.textContent !== small) sm.textContent = small;
@@ -402,6 +408,7 @@
     if (g.knob) g.knob.classList.remove('is-on');
     g.el.classList.remove('is-held', 'is-resizing', 'is-moving');
     g.g.classList.remove('is-editing-time');
+    if (g.chips && CZ.chipDrop) CZ.chipDrop.end();
     if (g.ghost && g.ghost.parentNode) g.ghost.parentNode.removeChild(g.ghost);
     dropLabel();
   }
@@ -414,7 +421,8 @@
 
   function release(g) {
     var changed = g.resize ? g.cur !== (g.edge === 'start' ? g.s0 : g.e0) : g.cur !== g.s0;
-    if (g.resize) releaseResize(g, changed); else releaseMove(g, changed);
+    if (g.chip) releaseToDay(g);
+    else if (g.resize) releaseResize(g, changed); else releaseMove(g, changed);
   }
 
   // Move: the block lands in its slot (a FLIP: its place is changed at once, and it travels the last bit), then the change is saved.
@@ -433,6 +441,37 @@
     var landed = land(el, from, g);
     if (!changed) { landed.then(function () { busy = false; }); return; }
     save(g, { start: s, end: s + dur }, { s: g.s0, e: g.e0 }, landed);      // saved while it travels; the toast and the refresh wait until it has landed
+  }
+
+  // F-151: dropped on a day chip. The plan keeps its times and goes to that day: it shrinks into the chip while the write (the canvas's own, with a `day`) is made, then the toast has its
+  // Undo and the day is brought up to date in place, the plan gone from it. A plan open in the panel would be left showing a plan that is not on this day: the panel goes back to Up next.
+  function releaseToDay(g) {
+    var el = g.el, chip = g.chip, to = chip.dataset.moveDay, act = el.dataset.act;
+    var from = el.getBoundingClientRect(), cr = chip.getBoundingClientRect();
+    var dx = cr.left + cr.width / 2 - (from.left + from.width / 2), dy = cr.top + cr.height / 2 - (from.top + from.height / 2);
+    var cur = el.style.transform || 'none', pane = document.querySelector('#cz-dock .cz-pp:not(.is-leaving)');
+    unholdSoon(g);
+    dropLabel();
+    if (g.ghost && g.ghost.parentNode) g.ghost.parentNode.removeChild(g.ghost);
+    var gone = window.GA && GA.motion ? GA.motion.run(el, [{ transform: cur, opacity: 1 }, { transform: 'translate(' + dx + 'px,' + dy + 'px) ' + (cur === 'none' ? '' : cur) + ' scale(0.2)', opacity: 0 }], { t: 'settle', ease: 'calm', fill: 'forwards' }) : Promise.resolve();
+    var body = CZ.tripBody({ op: 'edit', act: act, day: to, next: CZ.here() });
+    CZ.post('/trip/canvas/plan', body).then(function (res) {
+      return gone.then(function () {
+        busy = false;
+        el.style.opacity = '0';
+        if (pane && pane.dataset.act === act && window.Dock) Dock.close();
+        if (res.toast) CZ.showToast(res.toast, res.undo ? function () { undo(res.undo); } : null);
+        return CZ.quiet();
+      });
+    }, function (err) {
+      return gone.then(function () {                    // refused or never answered: the plan comes back where it was
+        busy = false;
+        el.getAnimations().forEach(function (a) { a.cancel(); });
+        el.style.transform = '';
+        CZ.showToast(err && err.soft ? err.soft : 'Could not save that. Check your connection.');
+        return CZ.quiet();
+      });
+    });
   }
 
   // Resize: the grid eases back to normal while the block keeps the length it was given.
@@ -460,6 +499,7 @@
     if (g.knob) g.knob.classList.remove('is-on');
     g.el.classList.remove('is-held', 'is-resizing');
     g.g.classList.remove('is-editing-time');
+    if (g.chips && CZ.chipDrop) CZ.chipDrop.end();
     busy = true;
   }
   function setWhen(el, s, e) {

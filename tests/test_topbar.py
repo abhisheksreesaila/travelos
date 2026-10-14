@@ -52,6 +52,7 @@ def test_the_current_section_is_marked(client):
     assert marked(client.get("/trip/family").text) == ["Family"]
     assert marked(client.get("/family").text) == ["Family"]
     assert marked(client.get("/trip/canvas?day=0").text) == ["Trip"]
+    assert marked(client.get("/trip/canvas?day=0&panel=family").text) == ["Family"]          # F-143: the day with the Family chats open in the panel
     imported(client)                                               # /trip/details is the imported trip's page
     r = client.get("/trip/details")
     assert r.status_code == 200 and marked(r.text) == ["Trip"]

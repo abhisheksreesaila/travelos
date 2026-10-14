@@ -34,6 +34,7 @@ OPEN_POSTS = (
     "/trip/map/around",   # Around you (F-073): looks up places near a point and writes only the place-lookup cache, so every member may ask (a viewer too); the position is in the request only
     "/trip/talk/message", "/trip/talk/photo", "/trip/talk/voice",   # talk on a plan (F-091): text, a photo or a voice note on a plan or part, from any member (viewers too: it changes no plan)
     "/trip/family/message", "/trip/family/quiet",   # a message in the family thread and my own Quiet switch (F-070): every member, viewers too (a viewer cannot change a plan, so never causes a change card)
+    "/trip/family/seen",   # I have read the chats up to now (F-143): my own read mark, every member, viewers too
 )
 OPEN_PREFIXES = ("/join/",)                # using an invite link: the person is joining another family
 ADMIN_POSTS = ("/family/invite", "/family/invite/revoke", "/family/role", "/family/remove", "/trip/delete")  # deleting an imported trip (F-042) is an admin's
