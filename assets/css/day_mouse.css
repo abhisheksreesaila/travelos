@@ -28,5 +28,12 @@
   /* drawing a new plan: a dashed outline with its times, in the day's colour (it becomes a solid plan once it has a name) */
   .cz .cz-gb.is-new.is-drawing { box-sizing: border-box; border: 0.125rem dashed var(--coral-deep); background: color-mix(in srgb, var(--coral) 14%, #FFFFFF); box-shadow: none; animation: none; }
   .cz .cz-gb.is-new.is-drawing .cz-gb-in { padding-left: 0.625rem; }
-  .cz .cz-gb.is-new.is-drawing .cz-gb-when { color: var(--ink); }
+  .cz .cz-gb.is-new.is-drawing .cz-gb-in { align-items: center; justify-content: center; text-align: center; gap: 0.0625rem; }
+  .cz .cz-gb.is-new.is-drawing .cz-gb-t { display: none; }
+  .cz .cz-gb.is-new.is-drawing .cz-gb-when { color: var(--ink); font-size: var(--cz-body); font-weight: 800; }
+  .cz .cz-gb.is-new.is-drawing .cz-gb-when::before { content: "+ New plan \00b7  "; }                  /* "+ New plan · 11:00 AM – 12:00 PM", then the hint (frame A2) */
+  .cz .cz-gb.is-new.is-drawing .cz-gb-in::after { content: "Enter to name it"; font-size: var(--cz-small); font-weight: 700; color: var(--ink-2); }
+
+  /* a plan with its menu open grows only a little, and only taller: a wide block must not spill over the hour labels */
+  .cz .cz-gb.is-menu { scale: 1 1.03; }
 }

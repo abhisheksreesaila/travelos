@@ -40,6 +40,7 @@
   function scrollY() { var b = box(); return b ? b.scrollTop : window.scrollY; }
   CZ.mouseOn = mouseOn;
   CZ.dayBox = box;
+  CZ.DRAG = DRAG;      // the distance a mouse travels before a press is a drag (day_new.js draws with it too)
 
   function editing() { return stage.dataset.edit === '1'; }
   function grid() { return stage.querySelector('#cz-grid'); }
@@ -353,8 +354,8 @@
     if (w.textContent !== text) w.textContent = text;
     if (sm.textContent !== small) sm.textContent = small;
     if (!gg.lw) { gg.lw = label.offsetWidth; gg.lh = label.offsetHeight; }       // measured once: the label's width is fixed (min-width), its height never changes
-    var x = clamp(gg.x - gg.lw / 2, 8, window.innerWidth - gg.lw - 8), y = gg.y - gg.lh - (gg.mouse ? 22 : 64);      // (a pointer is small: the label sits close above it)
-    if (y < 8) y = gg.y + (gg.mouse ? 28 : 56);
+    var x = clamp(gg.x - gg.lw / 2, 8, window.innerWidth - gg.lw - 8), y = gg.y - gg.lh - (gg.mouse ? rem() * 1.8 : 64);      // (a pointer is small: the label sits close above it)
+    if (y < 8) y = gg.y + (gg.mouse ? rem() * 2.3 : 56);
     label.style.transform = 'translate3d(' + x + 'px,' + y + 'px,0)';
   }
 

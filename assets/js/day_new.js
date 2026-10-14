@@ -137,7 +137,7 @@
   document.addEventListener('pointermove', function (e) {
     if (!h || e.pointerId !== h.id) return;
     h.y = e.clientY;
-    if (h.mouse) { if (h.mode === 'wait' && Math.hypot(e.clientX - h.x0, e.clientY - h.y0) > 6) startDraw(); return; }
+    if (h.mouse) { if (h.mode === 'wait' && Math.hypot(e.clientX - h.x0, e.clientY - h.y0) > CZ.DRAG) startDraw(); return; }
     if (h.mode === 'wait') {
       if (Math.hypot(e.clientX - h.x0, e.clientY - h.y0) > SLOP) { clearTimeout(h.timer); h = null; }       // a scroll, or the flick between days
       return;

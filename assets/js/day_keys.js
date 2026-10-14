@@ -13,12 +13,14 @@
 
   function level() { var v = CZ.view && CZ.view(); return v ? v.dataset.level : ''; }
   function press(sel) { var n = document.querySelector(sel); if (n) { n.click(); return true; } return false; }
-  function step(dir) {
-    var v = CZ.view && CZ.view(), u = v && v.dataset.level === 'day' ? v.dataset[dir] : '';
+  function step(dir) {      // the arrows are the day's only: on the week they stay the browser's (a long week scrolls sideways), so this says "not mine"
+    var v = CZ.view && CZ.view();
+    if (!v || v.dataset.level !== 'day') return false;
+    var u = v.dataset[dir];
     if (u) CZ.goto(CZ.path(u), { dir: dir, key: null, mode: 'replace' });
   }
-  keys.ArrowLeft = function () { step('prev'); };
-  keys.ArrowRight = function () { step('next'); };
+  keys.ArrowLeft = function () { return step('prev'); };
+  keys.ArrowRight = function () { return step('next'); };
   keys.t = function () {
     var chip = stage.querySelector('.cz-hchip.is-today');
     if (chip) { if (!chip.classList.contains('is-open')) chip.click(); return; }
@@ -39,7 +41,6 @@
     var k = e.key && e.key.length === 1 ? e.key.toLowerCase() : e.key, fn = keys[k];
     if (!fn || !CZ.view || !CZ.view()) return;
     if (CZ.held || CZ.menuOpen || stage.querySelector('.cz-sheet-wrap, .cz-card-wrap, .cz-menu')) return;
-    e.preventDefault();
-    fn(e);
+    if (fn(e) !== false) e.preventDefault();      // a key that returns false was not claimed
   });
 })();

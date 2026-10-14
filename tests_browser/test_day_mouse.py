@@ -134,11 +134,50 @@ def test_escape_cancels_a_draw_in_the_air_and_a_name_being_typed(desk):
     assert desk.locator(".cz-gb-t", has_text="Never mind").count() == 0 and desk.locator(".ga-toast").count() == 0
 
 
-def test_a_plain_click_on_empty_time_still_makes_no_drag(desk):
+def test_a_plain_click_on_empty_time_draws_nothing_but_shows_the_plus_and_pressing_it_adds_a_plan(desk):
     scroll_to(desk, 10 * 60)
     a = where(desk, 10 * 60 + 20)
     desk.mouse.click(a["x"], a["y"])
     assert desk.locator(".cz-gb.is-drawing").count() == 0
+    plus = desk.locator(".cz-gnew")
+    expect(plus).to_be_visible()
+    plus.click()
+    expect(desk.locator(".cz-gb-edit")).to_be_focused()
+    desk.keyboard.type("Pier stroll")
+    desk.keyboard.press("Enter")
+    act = titled(desk, "Pier stroll")
+    assert now(act) == (10 * 60 + 15, 11 * 60 + 15, "Pier stroll")
+
+
+def test_the_outline_says_new_plan_with_its_times_and_the_hint(desk):
+    scroll_to(desk, 11 * 60)
+    a, b = where(desk, 11 * 60 + 2), where(desk, 11 * 60 + 55)
+    desk.mouse.move(a["x"], a["y"])
+    desk.mouse.down()
+    desk.mouse.move(b["x"], b["y"], steps=6)
+    draft = desk.locator(".cz-gb.is-drawing")
+    expect(draft.locator(".cz-gb-when")).to_have_text("11:00 AM – 12:00 PM")
+    assert desk.evaluate("() => getComputedStyle(document.querySelector('.cz-gb.is-drawing .cz-gb-when'), '::before').content").startswith('"+ New plan')
+    assert "Enter to name it" in desk.evaluate("() => getComputedStyle(document.querySelector('.cz-gb.is-drawing .cz-gb-in'), '::after').content")
+    r, c = draft.bounding_box(), draft.locator(".cz-gb-in").bounding_box()
+    assert abs((c["x"] + c["width"] / 2) - (r["x"] + r["width"] / 2)) < 4                    # centred in the outline
+    desk.keyboard.press("Escape")
+    desk.mouse.up()
+
+
+def test_a_plan_with_its_menu_open_does_not_grow_wider(desk):
+    lunch = plan("Lunch", 12 * 60, 13 * 60)
+    desk.reload()
+    desk.wait_for_selector("#cz-grid")
+    scroll_to(desk, 12 * 60 + 30)
+    before = block(desk, lunch.id).bounding_box()
+    x, y = center(desk, lunch.id)
+    desk.mouse.move(x, y)
+    desk.locator(".cz-g-tmenu").click()
+    expect(desk.locator(".cz-menu")).to_be_visible()
+    desk.wait_for_timeout(300)
+    after = block(desk, lunch.id).bounding_box()
+    assert after["x"] >= before["x"] - 1 and after["x"] + after["width"] <= before["x"] + before["width"] + 1, (before, after)      # inside its lane
 
 
 # ---- move and resize -------------------------------------------------------------------------------------------------------------
@@ -271,6 +310,20 @@ def test_the_arrows_change_the_day_and_w_and_d_switch_week_and_day(desk):
     desk.wait_for_selector(".cz-view[data-level=day]")
 
 
+def test_the_arrows_are_only_the_days_and_on_the_week_they_are_left_to_the_browser(desk):
+    spy = "() => { const first = !window.__arrow; window.__arrow = []; if (first) window.addEventListener('keydown', e => { if (e.key === 'ArrowRight') window.__arrow.push(e.defaultPrevented); }); }"
+    desk.evaluate(spy)
+    desk.keyboard.press("ArrowRight")
+    desk.wait_for_function("d => document.querySelector('.cz-view').dataset.day === d", arg=str(SUNDAY + 1))
+    assert desk.evaluate("window.__arrow") == [True]                                       # on the day it is claimed
+    desk.keyboard.press("w")
+    desk.wait_for_selector(".cz-view[data-level=week]")
+    desk.evaluate(spy)
+    desk.keyboard.press("ArrowRight")
+    desk.wait_for_timeout(200)
+    assert desk.evaluate("window.__arrow") == [False] and desk.locator(".cz-view").get_attribute("data-level") == "week"
+
+
 def test_t_goes_to_today_when_the_trip_has_it_and_says_so_when_it_does_not(desk):
     desk.keyboard.press("ArrowRight")
     desk.wait_for_function("d => document.querySelector('.cz-view').dataset.day === d", arg=str(SUNDAY + 1))
@@ -399,3 +452,36 @@ def test_the_cards_of_plans_scrolled_into_view_in_the_grid_card_are_fetched_ahea
     desk.evaluate("(sel) => { const b = document.querySelector(sel); b.scrollTop = b.scrollHeight; }", BOX)
     desk.wait_for_timeout(1200)
     assert asked, "the card of the plan that scrolled into view was not fetched"
+
+
+def test_a_step_held_at_the_edge_of_the_grid_card_scrolls_that_card_and_a_wheel_keeps_it_under_the_pointer(canvas_page):
+    page = canvas_page(viewport=DESKTOP, touch=False, motion="reduce")
+    open_day(page, 1)                                                                      # Saturday: the park day, with Set aside chips down the card
+    card = page.locator(BOX)
+    page.evaluate("(sel) => { const b = document.querySelector(sel); b.scrollTop = b.scrollHeight; }", BOX)
+    page.wait_for_timeout(100)
+    chip = page.locator(".cz-chip-aside[data-drag]").first
+    cb = card.bounding_box()
+    c = chip.bounding_box()
+    assert cb["y"] <= c["y"] and c["y"] + c["height"] <= cb["y"] + cb["height"], (cb, c)
+    x, y = c["x"] + c["width"] / 2, c["y"] + c["height"] / 2
+    page.mouse.move(x, y)
+    page.mouse.down()
+    page.wait_for_timeout(480)                                                             # held: the step is lifted
+    expect(page.locator(".cz-lift")).to_have_count(1)
+    before = card_scroll(page)
+    page.mouse.move(x, cb["y"] + 8, steps=6)                                               # to the card's top edge
+    page.wait_for_timeout(600)
+    assert card_scroll(page) < before - 40, (before, card_scroll(page))                    # that card scrolled
+    assert page.evaluate("window.scrollY") == 0                                            # not the window
+    py = cb["y"] + cb["height"] / 2
+    page.mouse.move(x, py, steps=4)
+    page.wait_for_timeout(150)
+    lift = page.locator(".cz-lift").bounding_box()
+    at = card_scroll(page)
+    page.mouse.wheel(0, 90)
+    page.wait_for_timeout(300)
+    assert card_scroll(page) != at
+    after = page.locator(".cz-lift").bounding_box()
+    assert abs(after["y"] - lift["y"]) < 3 and abs(after["x"] - lift["x"]) < 3             # the chip is still under the pointer
+    page.mouse.up()
