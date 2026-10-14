@@ -792,7 +792,7 @@ Brief: docs/briefs/web-trip.md · Design: A3 · Needs: F-140
 - [ ] a new message shows without reloading, as on the phone
 - [ ] the plan pane's chat (F-141) also shows others' new messages without reloading
 
-## F-144 Mouse and keyboard on the day [review]
+## F-144 Mouse and keyboard on the day [done]
 Brief: docs/briefs/web-trip.md · Design: A1, A2 · Needs: F-141
 - [x] drag on empty time draws a new plan (dashed outline with its times); Enter or typing names it, Esc cancels
 - [x] drag a plan to move it; pull the knob at its foot to resize; both snap like the phone and offer Undo
