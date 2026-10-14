@@ -99,6 +99,7 @@
       if (far > SLOP) { clearTimeout(gg.timer); if (gg.own) CZ.held = false; gg = null; }       // it is a scroll, or the flick between days: not ours
       return;
     }
+    if (gg.mouse && !e.buttons) { cancel(); return; }                                       // the button was let go out of sight (no pointerup came): the drag is over
     if (!gg.moved && Math.hypot(gg.x - gg.x0, gg.y - gg.y0) > TURN) gg.moved = true;
     gg.dirty = true;
   });
@@ -116,6 +117,7 @@
     if (g.mode !== 'wait') { restore(g); unhold(g); wake(); } else if (g.own) CZ.held = false;
   }
   document.addEventListener('pointercancel', function (e) { if (gg && e.pointerId === gg.id) cancel(); });
+  window.addEventListener('blur', function () { if (gg && gg.mouse) cancel(); });                // the window lost focus mid-drag: put the block back
 
   // ---- selected: two knobs beside the block (F-110) -----------------------------------------------------------------------------
   // The knobs live in a layer next to the block, the size of the block (the block itself clips its words), so they straddle its edges. The layer follows the block's size (a

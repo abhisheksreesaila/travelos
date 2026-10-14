@@ -277,6 +277,8 @@ Design: frame A4 of `docs/design/canvas/Web-Trip-v1.html`, `docs/design/web-trip
 
 **Kind filter.** The same chips filter the columns (`applyKinds`): a row that does not match is hidden (`.is-off`), a column with no match says "Nothing for hotels".
 
+**Moving a plan (F-157).** With a mouse a plan row (`data-wk-act`, plans only: bookings have none) is pressed and pulled past `CZ.DRAG` to lift it (`assets/js/week_drag.js`; a press that does not travel is still the click that opens the day). The column under the pointer gets a coral ring (`is-drop-target`), the plan's own column none; letting go writes `op=edit` with `day` through `CZ.post` (the F-151 write, toast "Moved to Sat 17" and Undo) and `CZ.quiet()` brings the week up to date in place, the row in its new column in time order. Esc, a drop on its own column or outside the columns leaves it. A long trip's week scrolls sideways when the pointer holds within 3 rem of its edge. Laptop and mouse only, editors only; no motion of its own (the 2026-10-14 desktop-motion lesson). Tests: `tests_browser/test_week_drag.py`.
+
 Tests: `tests/test_week_desk.py` (markup: columns, colours, rows, summaries, links, free day, viewer, today), `tests_browser/test_week_desk.py` (1440 and 1280: five columns under the ink header, no page scroll, colours, two-line titles without ellipsis, messages, dashed free day, today outlined, row and Open the day clicks, booking sheet, Say the plan, kind filters, many items scroll inside a card, a 10-day trip scrolls sideways, the zoom origin; 1000 and 390 keep the rows). Screenshots: `F145_SHOTS=<folder> pixi run pytest -p no:randomly tests_browser/test_week_desk.py`.
 
 ## Retired: the old calendar (F-147)

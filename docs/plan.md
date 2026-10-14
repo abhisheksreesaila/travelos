@@ -864,10 +864,10 @@ Found in F-153's review: on a laptop the avatar menu (and likely the trip picker
 - [x] the top bar's avatar menu and trip picker are usable (their items still) within 0.25s of the click at 1440, measured in a browser test with motion on
 - [x] they still grow out of their button and fold back with GA.motion and the --motion-* tokens (no new timings)
 
-## F-155 The day panel never errors when a booking vanishes mid-request [todo]
+## F-155 The day panel never errors when a booking vanishes mid-request [done]
 Bug, seen twice in browser runs (F-143 and F-154 reviews): `gitaway/tripcal.py` `_lane` raises AttributeError ('NoneType' has no attribute 'get') while drawing the day panel (`daydock.idle` → `trip.load` → `ride_offers` → `rides_of(None)`); the booking read succeeded earlier in the same request and was gone later. Likely a request racing a test's cleanup, but a real family deleting a trip while another member's page refreshes could hit it too.
-- [ ] a day or panel request whose booking disappears partway returns a normal page (or a clean redirect to Start), never a 500, with a test that deletes the booking between the two reads
-- [ ] no AttributeError from `_lane` in a full browser run's server log
+- [x] a day or panel request whose booking disappears partway returns a normal page (or a clean redirect to Start), never a 500, with a test that deletes the booking between the two reads
+- [x] no AttributeError from `_lane` in a full browser run's server log
 
 ## F-156 Calm motion on the laptop [review]
 Captain, 2026-10-14: "it has too many movements… week - day, all interact flickers and shows… ok on mobile, it goes with iOS liquid motion expectation… on web, it's too much… it needs to be subtle, very." Brief: docs/briefs/web-trip.md · Needs: none
@@ -877,10 +877,18 @@ Captain, 2026-10-14: "it has too many movements… week - day, all interact flic
 - [x] the phone and the installed app keep their current liquid motion unchanged (existing motion tests stay green)
 - [x] a browser test at 1440 with motion on records frames for week→day, a plan click, the panel tabs and a toast, and finds no transform animation and no frame with an outline-only view
 
-## F-157 Move plans on the desktop week [todo]
+## F-157 Move plans on the desktop week [done]
 Captain, 2026-10-14: "on the week view, I should be able to move in desktop since I can see all at once." Brief: docs/briefs/web-trip.md · Needs: F-151
-- [ ] on a desktop, dragging a plan row from one day's column to another moves it to that day at the same time (the column under the pointer shows it will take the drop), with the existing toast "Moved to Sat 17 · Undo" and write path (F-151)
-- [ ] the row leaves its column and appears in the new one in time order, in place (no page reload), with calm desktop motion (F-156)
-- [ ] dropping back on its own column or pressing Esc leaves it where it was; a click (no drag) still opens the day with the plan in the panel
-- [ ] bookings (flights, hotels, cars) can't be dragged; viewers can't drag; on a long trip the week scrolls sideways when the pointer holds near its edge
-- [ ] browser tests drive it with a real mouse at 1440 and 1280; the phone and tablet week are unchanged
+- [x] on a desktop, dragging a plan row from one day's column to another moves it to that day at the same time (the column under the pointer shows it will take the drop), with the existing toast "Moved to Sat 17 · Undo" and write path (F-151)
+- [x] the row leaves its column and appears in the new one in time order, in place (no page reload), with calm desktop motion (F-156)
+- [x] dropping back on its own column or pressing Esc leaves it where it was; a click (no drag) still opens the day with the plan in the panel
+- [x] bookings (flights, hotels, cars) can't be dragged; viewers can't drag; on a long trip the week scrolls sideways when the pointer holds near its edge
+- [x] browser tests drive it with a real mouse at 1440 and 1280; the phone and tablet week are unchanged
+
+## F-158 The calm laptop look [todo]
+Captain, 2026-10-14: "keep the colors same, what do u think about this theme, not colors .. finxplorer.com" → approved the board in light ("light"). Design: docs/design/canvas/Web-Calm-v1.html (C1–C3) · System: design-system/DESIGN-SYSTEM.md "Laptop skin (F-158)" · Needs: F-156, F-157
+- [ ] on a desktop the top bar, the day (heading, day tabs, filters, grid, panel) and the week match frames C1–C3: flat hairline surfaces, flat pill buttons, eyebrow + two-tone titles, data rows with tiles, one accent block (Up next)
+- [ ] /family, /trip/details, /start, the map and the Ask/Family panels use the same surfaces, buttons and headings
+- [ ] the phone and the installed app look exactly as before (their screenshots and tests unchanged); the landing is unchanged
+- [ ] fits 1440×900 and 1280×800 at 100% zoom, no labels cut off, rem only, colours only from tokens.css
+- [ ] browser tests at 1440 check the skin's key rules (no box-shadow on cards, hairline borders, flat buttons, two-tone heading present) so it can't drift back
