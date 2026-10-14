@@ -815,7 +815,7 @@ Brief: docs/briefs/web-trip.md · Design: docs/design/web-trip.md (tokens) · Ne
 - [x] /family (people, roles, invitations), /trip/details and /start use the top bar, the white cards and the type of the trip screens; nothing they do today is lost
 - [x] each fits 1440×900 without page scroll for its main content; every button still has a test that presses it
 
-## F-147 Retire the old trip calendar [review]
+## F-147 Retire the old trip calendar [done]
 Brief: docs/briefs/web-trip.md · Needs: F-139, F-143
 Review fixes: the phone and tablet trip menu (above the title), the viewer's import, the stale tests. Built: docs/trip-canvas.md "Retired: the old calendar (F-147)" has the inventory. For the captain to decide: Share trip now lives only under Community trips -> Share yours; changing a plan's kind or day has no touch/mouse path (Ask moves it); the stored pretend-friends and the `long` demo scope remain in the model, undrawn.
 - [x] before removal, list everything the old calendar page does and where each one now lives (or that it is dropped with the captain's brief: the 8-button row, Your forks, the separate notes panel)
