@@ -163,6 +163,10 @@
   :root:has(.ga-topbar) .cz .cz-gb.is-short .cz-gb-t { min-width: 0; padding-right: 0.75rem; overflow: hidden; white-space: nowrap; font-size: 1.0833rem; -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 0.75rem), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 0.75rem), transparent); }
   :root:has(.ga-topbar) .cz .cz-gb.is-short .cz-gb-when { flex: none; white-space: nowrap; }
   :root:has(.ga-topbar) .cz .cz-gb.is-short .cz-gb-tag { height: 1.25rem; }
+  /* a tiny plan (15 and 20 minutes, the laptop's fine grain): 13px and 18px of card, so no tile and no pill, the title and the time at the smallest text on one line */
+  :root:has(.ga-topbar) .cz .cz-gb.is-tiny .cz-gb-in { padding-left: 0.75rem; }
+  :root:has(.ga-topbar) .cz .cz-gb.is-tiny .cz-gb-tile, :root:has(.ga-topbar) .cz .cz-gb.is-tiny .cz-gb-tag { display: none; }
+  :root:has(.ga-topbar) .cz .cz-gb.is-tiny .cz-gb-t, :root:has(.ga-topbar) .cz .cz-gb.is-tiny .cz-gb-when { font-size: max(var(--text-min), 0.9167rem); line-height: 1; }
 
   /* a booking: the same card, its kind's tile, the title and a grey BOOKED pill; the time is on the rail (the link's label still says it) */
   :root:has(.ga-topbar) .cz .cz-gbk { min-height: 3rem; padding: 0 0.75rem; border: 1px solid var(--hairline); border-radius: var(--r-sm); background: var(--card); box-shadow: inset 0.25rem 0 0 var(--accent); color: var(--ink); }

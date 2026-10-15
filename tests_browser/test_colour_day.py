@@ -174,11 +174,12 @@ def test_the_phone_and_the_tablet_are_unchanged(signed_in, viewport):
 
 
 def crowd():
-    """The tricky day: starts 30 minutes apart, back-to-back 30 minute plans, a start 35 minutes before the 1 PM label, a 45 minute and a 1 hour plan, two plans at the same minute."""
+    """The tricky day: starts 30 minutes apart, back-to-back 30 minute plans, a start 35 minutes before the 1 PM label, a 45 minute and a 1 hour plan, two plans at the same minute, a 15 and a 20 minute plan."""
     me = person("ari")
     for start, end, title in ((10 * 60, 10 * 60 + 30, "Bakery run"), (10 * 60 + 30, 11 * 60, "Pier walk"), (12 * 60 + 25, 13 * 60 + 25, "Early lunch"), (16 * 60, 16 * 60 + 45, "Ice cream"),
-                              (18 * 60, 19 * 60, "Dinner out"), (20 * 60, 21 * 60, "Night market"), (20 * 60, 20 * 60 + 30, "Taxi home")):
-        cal.add_activity(me, day=0, start=start, end=end, title=title, kind="food")
+                              (18 * 60, 19 * 60, "Dinner out"), (20 * 60, 21 * 60, "Night market"), (20 * 60, 20 * 60 + 30, "Taxi home"),
+                              (13 * 60 + 30, 13 * 60 + 45, "Quick stop"), (14 * 60 + 5, 14 * 60 + 25, "Fuel up")):
+        cal.add_activity(me, day=0, start=start, end=end, title=title, kind="food", fine=True)      # fine: the laptop's 5 minute grain, so 12:25 stays 12:25
 
 
 GEOMETRY = """() => {
@@ -186,8 +187,11 @@ GEOMETRY = """() => {
   const shown = e => getComputedStyle(e).display !== 'none';
   const marks = [...document.querySelectorAll('.cz-g-start')].map(e => ({name: 'start ' + e.textContent, ...box(e)}))
     .concat([...document.querySelectorAll('.cz-g-hour')].filter(shown).map(e => ({name: 'hour ' + e.textContent, ...box(e)})));
-  const cards = [...document.querySelectorAll('.cz-gb:not(.is-new), .cz-gbk:not(.is-pill)')].map(e => ({name: e.textContent.trim().slice(0, 24), ...box(e), when: e.querySelector('.cz-gb-when') ? box(e.querySelector('.cz-gb-when')) : null}));
-  return {marks, cards};
+  const cards = [...document.querySelectorAll('.cz-gb:not(.is-new), .cz-gbk:not(.is-pill)')].map(e => { const tile = e.querySelector('.cz-gb-tile, .cz-gbk-tile');
+    return {name: e.textContent.trim().slice(0, 24), ...box(e), when: e.querySelector('.cz-gb-when') ? box(e.querySelector('.cz-gb-when')) : null, tile: tile && shown(tile) ? box(tile) : null}; });
+  const drift = [...document.querySelectorAll('.cz-g-start')].map(e => { const id = e.dataset.for.split(' ')[0], card = document.querySelector('[data-act="' + id + '"], [data-zk="bkg-' + id + '"]');
+    return {name: 'start ' + e.textContent.trim().replace(/\s+/g, ' '), below: card ? e.getBoundingClientRect().top - card.getBoundingClientRect().top : null}; });
+  return {marks, cards, drift};
 }"""
 
 
@@ -211,8 +215,13 @@ def test_a_crowded_day_never_overlaps_rail_labels_hours_or_cards(signed_in, view
                 continue      # same minute: side by side
             assert not hits(a, b), f"card {a['name']} overlaps {b['name']}"
     for c in got["cards"]:
-        if c["when"]:      # the time text sits inside its card, whatever the plan's length (30 minutes and up)
-            assert c["when"]["t"] >= c["t"] - 0.5 and c["when"]["b"] <= c["b"] + 0.5 and c["when"]["r"] <= c["r"] + 0.5, f"{c['name']}: time outside its card {c}"
+        inside = lambda r: r["t"] >= c["t"] - 0.5 and r["b"] <= c["b"] + 0.5 and r["r"] <= c["r"] + 0.5      # noqa: E731
+        if c["when"]:      # the time text sits inside its card, whatever the plan's length (15 minutes and up)
+            assert inside(c["when"]), f"{c['name']}: time outside its card {c}"
+        if c["tile"]:      # a tile that does not fit is not drawn
+            assert inside(c["tile"]), f"{c['name']}: tile outside its card {c}"
+    for d in got["drift"]:
+        assert d["below"] is None or -0.5 <= d["below"] <= 8, d      # a start label never sits more than a few px below its own card's top
     starts = page.locator(".cz-g-start").all_inner_texts()
     assert len([s for s in starts if s.replace("\n", " ") == "8:00 PM"]) == 1      # two plans at the same minute share one label
     assert page.evaluate(NO_SCROLL)
@@ -232,3 +241,24 @@ def test_a_pill_follows_its_title_on_a_tall_plan(signed_in):
     lunch = page.locator(".cz-gb", has_text="Lunch at Grand Central Market")
     title, tag = lunch.locator(".cz-gb-t").evaluate("e => { const r = document.createRange(); r.selectNodeContents(e); return r.getBoundingClientRect().right; }"), lunch.locator(".cz-gb-tag").evaluate("e => e.getBoundingClientRect().left")
     assert 0 <= tag - title <= 40, (title, tag)      # right after the title, like BOOKED
+
+
+@BOTH
+def test_a_run_of_short_plans_keeps_each_label_by_its_card_and_the_hours_visible(signed_in, viewport):
+    page = signed_in(viewport, path="/trip/canvas?day=0")
+    me = person("ari")
+    for i, title in enumerate(("Stop one", "Stop two", "Stop three", "Stop four")):
+        start = 9 * 60 + 15 + 15 * i
+        cal.add_activity(me, day=0, start=start, end=start + 15, title=title, kind="fun", fine=True)
+    page.reload()
+    expect(page.locator(".cz-gb").first).to_be_visible()
+    got = page.evaluate(GEOMETRY)
+    assert got["drift"], got
+    for d in got["drift"]:
+        assert d["below"] is None or -0.5 <= d["below"] <= 8, d      # no label an hour below its card
+    for c in got["cards"]:
+        if c["when"]:
+            assert c["t"] - 0.5 <= c["when"]["t"] and c["when"]["b"] <= c["b"] + 0.5, f"{c['name']}: its time shows inside the card ({c})"
+    shown = {m["name"] for m in got["marks"]}
+    assert {"hour 11 AM", "hour 1 PM", "hour 2 PM", "hour 4 PM"} <= shown      # the hours far from any start stay
+    shot(page, f"run-{viewport['width']}.png")

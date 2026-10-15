@@ -515,19 +515,29 @@ def split_time(m):
     return tuple(cal.fmt_time(m).split(" "))
 
 
+RAIL_SLIDE = 8       # minutes (about 7px) a printed start may sit below its card's top to clear the label above; a label that would sit lower is not printed, and its card carries its time instead
+
+
 def rail_starts(plans, lines):
     """[(minute drawn at, true start minute, colour class, [ids])] for the laptop's rail (F-159): every plan and booking prints its start at its top. Items starting at the same minute share a label;
-    a label that would sit on the one above slides down below it (RAIL_ROOM), so labels never overlap."""
-    items = [(a.start, a.start, f"cz-k-{a.kind if a.kind in KIND_TINT else 'fun'}", a.id) for a in plans]
-    items += [(top, x.label_start if getattr(x, "label_start", None) is not None else x.start, booking_class(x), x.id) for x, top in lines]
+    a label that would sit on the one above slides down below it (RAIL_ROOM) by at most RAIL_SLIDE minutes, so a label never drifts away from its card. When it cannot fit that way a plan's label is
+    left out (its card shows its time, even a 15 minute one), and a booking's label (its card shows no time) takes the place of the plan labels it would crowd."""
+    items = [(a.start, a.start, f"cz-k-{a.kind if a.kind in KIND_TINT else 'fun'}", a.id, False) for a in plans]
+    items += [(top, x.label_start if getattr(x, "label_start", None) is not None else x.start, booking_class(x), x.id, True) for x, top in lines]
     out, last = [], None
-    for y, at, cls, ident in sorted(items, key=lambda i: (i[0], i[1], i[3])):
+    for y, at, cls, ident, booked in sorted(items, key=lambda i: (i[0], i[1], i[3])):
         if (y, at) == last:      # the same minute as the label above (before it slid): the same label
-            out[-1][3].append(ident)
+            if out and out[-1][1] == at:
+                out[-1][3].append(ident)
             continue
         last = (y, at)
-        out.append([max(y, out[-1][0] + RAIL_ROOM) if out else y, at, cls, [ident]])
-    return out
+        if booked:
+            while out and y - out[-1][0] < RAIL_ROOM and not out[-1][4]:
+                out.pop()
+        drawn = max(y, out[-1][0] + RAIL_ROOM) if out else y
+        if drawn - y <= RAIL_SLIDE:
+            out.append([drawn, at, cls, [ident], booked])
+    return [o[:4] for o in out]
 
 
 def grid_range(plans, lines):
@@ -591,7 +601,7 @@ def grid_block(v, a, lane, lanes, lo, edit, inset=False):
     extra = [link]
     if edit:
         extra += [Button(f"Change {a.title}", type="button", cls="sr-only cz-gb-menubtn")]
-    cls = f"cz-gb cz-k-{k}" + (" is-ringed" if v.get("ring") == a.id else "") + (" is-park" if park else "") + (" is-short" if a.end - a.start < 45 else " is-tight" if a.end - a.start < 75 and not park else "") + (" has-chat" if chat else "") + (" is-inset" if inset else "")
+    cls = f"cz-gb cz-k-{k}" + (" is-ringed" if v.get("ring") == a.id else "") + (" is-park" if park else "") + (" is-tiny" if a.end - a.start < 25 else "") + (" is-short" if a.end - a.start < 45 else " is-tight" if a.end - a.start < 75 and not park else "") + (" has-chat" if chat else "") + (" is-inset" if inset else "")
     style = f"--s:{a.start - lo};--l:{a.end - a.start};--lane:{lane};--lanes:{lanes}"
     return Div(Div(*inner, cls="cz-gb-in cz-cs"), *extra, cls=cls, style=style, **({"tabindex": "-1"} if park else {}), **attrs)
 
