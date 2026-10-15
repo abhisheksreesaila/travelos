@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>GitAway — Day 1 Timeline (Adding Plan)</title>
+<!-- Google Fonts: Bricolage Grotesque, Figtree, Caveat -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;700;800&amp;family=Caveat:wght@600;700&amp;family=Figtree:ital,wght@0,400;0,500;0,600;0,700;1,500&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "primary-container": "#ff7352",
+            "surface-variant": "#e8e2d8",
+            "mint-tint": "#D4F7EA",
+            "on-error-container": "#93000a",
+            "mint-deep": "#16865F",
+            "on-background": "#1e1b16",
+            "paper": "#FFF8EE",
+            "sky-fill": "#5AB0FF",
+            "bubble-deep": "#C23B82",
+            "grape-fill": "#C3B2FF",
+            "tertiary-fixed-dim": "#51dbcf",
+            "sky-tint": "#DDEEFF",
+            "grape-deep": "#6A4FD6",
+            "secondary-fixed": "#e7defa",
+            "tertiary-container": "#00b1a6",
+            "text-secondary": "#4A4460",
+            "mint-fill": "#48D1A0",
+            "surface-tint": "#aa361a",
+            "surface-container-highest": "#e8e2d8",
+            "bubble-fill": "#FF8CC6",
+            "surface-container-lowest": "#ffffff",
+            "secondary-fixed-dim": "#cac3de",
+            "on-secondary-fixed": "#1d192d",
+            "captions": "#5A5470",
+            "sky-deep": "#1B6FC9",
+            "coral": "#FF7352",
+            "on-primary": "#ffffff",
+            "hairline": "rgba(30,26,46,0.10)",
+            "sun-deep": "#8A6200",
+            "error": "#ba1a1a",
+            "outline-variant": "#e0bfb8",
+            "on-surface": "#1e1b16",
+            "on-secondary": "#ffffff",
+            "on-primary-container": "#6b1200",
+            "surface-container-low": "#faf3e9",
+            "ink": "#1E1A2E",
+            "inverse-on-surface": "#f7f0e6",
+            "secondary": "#605b73",
+            "tertiary-fixed": "#72f7eb",
+            "surface-dim": "#e0d9d0",
+            "on-tertiary-container": "#003d38",
+            "on-tertiary-fixed": "#00201d",
+            "control-edge": "rgba(30,26,46,0.16)",
+            "primary-fixed": "#ffdad2",
+            "error-container": "#ffdad6",
+            "background": "#fff8f0",
+            "tertiary": "#006a63",
+            "inverse-surface": "#33302a",
+            "bubble-tint": "#FFE3F1",
+            "inverse-primary": "#ffb4a3",
+            "surface-bright": "#fff8f0",
+            "sun-fill": "#FFC93C",
+            "on-secondary-fixed-variant": "#49445a",
+            "surface-container-high": "#eee7dd",
+            "secondary-container": "#e4dcf8",
+            "surface-container": "#f4ede3",
+            "on-surface-variant": "#58413c",
+            "on-primary-fixed-variant": "#891e04",
+            "sun-tint": "#FFF1C2",
+            "primary-fixed-dim": "#ffb4a3",
+            "on-error": "#ffffff",
+            "coral-deep": "#C9431F",
+            "on-secondary-container": "#655f77",
+            "on-primary-fixed": "#3d0700",
+            "surface-dark": "#FAF7F2",
+            "surface": "#FFFFFF",
+            "grape-tint": "#ECE4FF",
+            "on-tertiary-fixed-variant": "#00504b",
+            "outline": "#8c716b",
+            "on-tertiary": "#ffffff",
+            "coral-tint": "#FFE6DA",
+            "primary": "#aa361a"
+          },
+          "borderRadius": {
+            "DEFAULT": "1rem",
+            "lg": "2rem",
+            "xl": "3rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-xs": "0.25rem",
+            "space-lg": "1.5rem",
+            "space-xl": "2rem",
+            "margin": "1.5rem",
+            "space-sm": "0.5rem",
+            "space-md": "1rem",
+            "gutter": "1rem"
+          },
+          "fontFamily": {
+            "label-sm": ["Figtree", "sans-serif"],
+            "headline-md": ["Bricolage Grotesque", "sans-serif"],
+            "body-lg": ["Figtree", "sans-serif"],
+            "label-md": ["Figtree", "sans-serif"],
+            "headline-sm": ["Bricolage Grotesque", "sans-serif"],
+            "headline-lg": ["Bricolage Grotesque", "sans-serif"],
+            "body-md": ["Figtree", "sans-serif"],
+            "body-sm": ["Figtree", "sans-serif"],
+            "headline-xl": ["Bricolage Grotesque", "sans-serif"],
+            "handwriting": ["Caveat", "cursive"]
+          },
+          "fontSize": {
+            "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "700" }],
+            "headline-md": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+            "label-md": ["14px", { "lineHeight": "18px", "fontWeight": "600" }],
+            "headline-sm": ["18px", { "lineHeight": "24px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "headline-lg": ["28px", { "lineHeight": "34px", "letterSpacing": "-0.03em", "fontWeight": "700" }],
+            "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "headline-xl": ["36px", { "lineHeight": "42px", "letterSpacing": "-0.03em", "fontWeight": "800" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 20px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+    }
+    /* Hide native scrollbars while preserving scrolling */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    @keyframes cursor-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+    .blinking-cursor {
+      display: inline-block;
+      width: 2px;
+      height: 1.35em;
+      background-color: #FF7352;
+      vertical-align: middle;
+      margin-left: 2px;
+      animation: cursor-pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+  </style>
+</head>
+<body class="w-[1440px] h-[900px] overflow-hidden bg-paper text-ink font-body-md select-none flex flex-col antialiased">
+<!-- TOP APP BAR (Shared Component Source of Truth) -->
+<header class="flex justify-between items-center w-full px-space-lg h-16 max-w-full bg-paper border-b border-hairline z-30 shrink-0">
+<!-- Left: Brand Logo & Navigation cluster -->
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-coral inline-block shadow-sm"></span>
+<span class="font-headline-md text-headline-md font-bold text-ink tracking-tight">GitAway</span>
+</div>
+<nav class="flex items-center gap-5 ml-2">
+<!-- Active Tab: Trip -->
+<a class="text-ink font-label-md text-label-md border-b-2 border-coral pb-1 transition-all duration-150 active:scale-95 cursor-pointer" href="#trip">Trip</a>
+<!-- Inactive Tab: Family -->
+<a class="text-text-secondary font-label-md text-label-md hover:text-ink transition-colors duration-150 active:scale-95 cursor-pointer flex items-center gap-1.5" href="#family">
+<span>Family</span>
+<span class="w-1.5 h-1.5 rounded-full bg-coral inline-block"></span>
+</a>
+<!-- Inactive Tab: Ask -->
+<a class="text-text-secondary font-label-md text-label-md hover:text-ink transition-colors duration-150 active:scale-95 cursor-pointer" href="#ask">Ask</a>
+</nav>
+<!-- Trip Selector Pill & Family Avatars Group -->
+<div class="flex items-center gap-2 pl-4 border-l border-hairline">
+<button class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface border border-control-edge hover:bg-coral-tint hover:text-ink transition-colors duration-150 shadow-sm text-ink active:scale-95">
+<span class="font-label-md text-body-sm font-semibold">LA with the kids · Oct 16–20</span>
+<span class="material-symbols-outlined text-[18px] text-text-secondary">expand_more</span>
+</button>
+<!-- Initial Avatars Cluster -->
+<div class="flex items-center -space-x-1.5 bg-surface p-1 rounded-full border border-control-edge shadow-sm" title="Ari, Sam, Maya, and Leo initials avatar group">
+<div class="w-6 h-6 rounded-full bg-sun-fill text-sun-deep flex items-center justify-center font-label-sm text-[10px] font-bold ring-2 ring-surface">A</div>
+<div class="w-6 h-6 rounded-full bg-mint-fill text-mint-deep flex items-center justify-center font-label-sm text-[10px] font-bold ring-2 ring-surface">S</div>
+<div class="w-6 h-6 rounded-full bg-grape-fill text-grape-deep flex items-center justify-center font-label-sm text-[10px] font-bold ring-2 ring-surface">M</div>
+<div class="w-6 h-6 rounded-full bg-sky-fill text-sky-deep flex items-center justify-center font-label-sm text-[10px] font-bold ring-2 ring-surface">L</div>
+</div>
+</div>
+</div>
+<!-- Right: SOS, Notifications & Profile -->
+<div class="flex items-center gap-3">
+<!-- SOS Pill Action -->
+<button class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-coral text-coral-deep bg-coral-tint/50 hover:bg-coral-tint transition-all duration-150 font-label-md text-body-sm active:scale-95 font-bold">
+<span class="material-symbols-outlined text-[16px]">emergency</span>
+<span>SOS</span>
+</button>
+<!-- Notification Bell -->
+<button class="w-9 h-9 rounded-full bg-surface border border-hairline flex items-center justify-center text-text-secondary hover:text-ink hover:bg-coral-tint transition-colors duration-150 relative">
+<span class="material-symbols-outlined text-[19px]">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-coral"></span>
+</button>
+<!-- User Initials Profile -->
+<div class="w-9 h-9 rounded-full bg-ink text-paper font-headline-sm text-body-sm font-bold flex items-center justify-center ring-2 ring-white cursor-pointer shadow-sm">
+        JD
+      </div>
+</div>
+</header>
+<!-- MAIN 2-COLUMN VIEWPORT (Fits precisely in standard 1440x900 viewport) -->
+<main class="flex-1 flex overflow-hidden p-4 gap-4 bg-paper min-h-0">
+<!-- LEFT MAIN AREA: Colour Timeline Itinerary Canvas -->
+<section class="flex-1 flex flex-col h-full overflow-hidden min-w-0">
+<!-- TOP CONTROLS & SUB-NAV ROW -->
+<div class="flex flex-col gap-3 pb-3 shrink-0">
+<!-- Day Chips Across Top -->
+<div class="flex items-center justify-between gap-2">
+<div class="flex items-center gap-2 overflow-x-auto no-scrollbar"><button class="flex items-center gap-2 px-4 py-1.5 rounded-full bg-ink text-white font-label-md text-body-sm font-bold shadow-sm transition-transform active:scale-95 shrink-0"><span>Fri 16 · Fly in, check in</span></button><button class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface border border-hairline text-ink font-label-md text-body-sm font-semibold hover:bg-surface-dark transition-colors shrink-0"><span>Sat 17 · Wide open</span></button><button class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface border border-hairline text-ink font-label-md text-body-sm font-semibold hover:bg-surface-dark transition-colors shrink-0"><span>Sun 18 · Wide open</span></button><button class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface border border-hairline text-ink font-label-md text-body-sm font-semibold hover:bg-surface-dark transition-colors shrink-0"><span>Mon 19 · Wide open</span></button><button class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface border border-hairline text-ink font-label-md text-body-sm font-semibold hover:bg-surface-dark transition-colors shrink-0"><span>Tue 20 · Fly home</span></button></div>
+<!-- Segmented Day / Week Toggle & Action buttons -->
+<div class="flex items-center gap-2 shrink-0">
+<div class="flex items-center bg-surface p-0.5 rounded-full border border-hairline shadow-sm">
+<button class="px-3 py-1 rounded-full bg-ink text-white font-label-md text-[12px] font-bold">Day</button>
+<button class="px-3 py-1 rounded-full text-text-secondary hover:text-ink font-label-md text-[12px] font-semibold">Week</button>
+</div>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface border border-control-edge text-ink font-label-md text-body-sm hover:bg-surface-dark transition-all active:scale-95 shadow-sm">
+<span class="material-symbols-outlined text-[16px] text-text-secondary">content_paste</span>
+<span>+ Paste a plan</span>
+</button>
+<button class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-coral text-white font-label-md text-body-sm font-bold hover:bg-coral-deep shadow-sm transition-all active:scale-95">
+<span class="material-symbols-outlined text-[16px]">mic</span>
+<span>+ Say the plan</span>
+</button>
+</div>
+</div>
+<!-- Filter Sub-row & Day Header Info -->
+<div class="flex items-center justify-between border-t border-hairline/80 pt-2.5">
+<div class="flex items-center gap-1.5">
+<button class="px-3 py-1 rounded-full bg-ink text-white font-label-sm text-[12px] font-bold">All (5)</button>
+<button class="px-3 py-1 rounded-full bg-surface text-text-secondary hover:text-ink font-label-sm text-[12px] font-semibold border border-hairline">Plans (2)</button>
+<button class="px-3 py-1 rounded-full bg-surface text-text-secondary hover:text-ink font-label-sm text-[12px] font-semibold border border-hairline">Hotels (1)</button>
+<button class="px-3 py-1 rounded-full bg-surface text-text-secondary hover:text-ink font-label-sm text-[12px] font-semibold border border-hairline">Flights (1)</button>
+<button class="px-3 py-1 rounded-full bg-surface text-text-secondary hover:text-ink font-label-sm text-[12px] font-semibold border border-hairline">Car</button>
+<button class="px-3 py-1 rounded-full bg-surface text-text-secondary hover:text-ink font-label-sm text-[12px] font-semibold border border-hairline">Chats</button>
+</div>
+<!-- Day 1 Meta Info -->
+<div class="flex items-center gap-3">
+<h1 class="font-headline-md text-headline-sm text-ink font-bold tracking-tight">Friday, Oct 16 — Fly in, check in</h1>
+<span class="text-hairline font-bold">|</span>
+<span class="font-body-sm text-captions">4 items · 2 booked · Ari, Sam, Maya, Leo</span>
+</div>
+</div>
+</div>
+<!-- THE "COLOUR TIMELINE" PANEL (CORE INNOVATION) -->
+<div class="relative flex-1 rounded-3xl bg-surface border border-hairline p-5 overflow-y-auto no-scrollbar shadow-sm flex flex-col">
+<!-- Timeline Container with Time Rail & Cards -->
+<div class="relative w-full flex min-h-[750px] pb-6">
+<!-- Left Axis: Time Rail Continuous Spine -->
+<div class="w-16 shrink-0 relative flex flex-col justify-between py-2 border-r-2 border-hairline/80 pr-2 select-none">
+<!-- 7 AM -->
+<div class="relative flex items-center justify-end h-10">
+<span class="font-label-sm text-[11px] text-captions/80 font-bold">7 AM</span>
+<div class="absolute -right-[9px] w-2 h-0.5 bg-text-secondary/30"></div>
+</div>
+<!-- 8:05 AM Active Flight Time -->
+<div class="relative flex flex-col items-end my-1">
+<span class="font-headline-sm text-[15px] font-extrabold text-ink leading-none">8:05</span>
+<span class="font-label-sm text-[9px] text-captions font-bold uppercase tracking-wider">AM</span>
+<div class="absolute -right-[9px] top-2 w-2 h-1 bg-sky-fill rounded-full"></div>
+</div>
+<!-- 10 AM Tick -->
+<div class="relative flex items-center justify-end h-14">
+<span class="font-label-sm text-[11px] text-captions/60 font-semibold">10:00</span>
+<div class="absolute -right-[9px] w-1.5 h-0.5 bg-hairline"></div>
+</div>
+<!-- 11 AM Tick -->
+<div class="relative flex items-center justify-end h-14">
+<span class="font-label-sm text-[11px] text-captions/60 font-semibold">11:00</span>
+<div class="absolute -right-[9px] w-1.5 h-0.5 bg-hairline"></div>
+</div>
+<!-- 12:30 PM Lunch Time -->
+<div class="relative flex flex-col items-end my-1">
+<span class="font-headline-sm text-[15px] font-extrabold text-ink leading-none">12:30</span>
+<span class="font-label-sm text-[9px] text-captions font-bold uppercase tracking-wider">PM</span>
+<div class="absolute -right-[9px] top-2 w-2 h-1 bg-sun-fill rounded-full"></div>
+</div>
+<!-- 2 PM Tick -->
+<div class="relative flex items-center justify-end h-12">
+<span class="font-label-sm text-[11px] text-captions/60 font-semibold">2:00</span>
+<div class="absolute -right-[9px] w-1.5 h-0.5 bg-hairline"></div>
+</div>
+<!-- 3:00 PM Hotel Check-in -->
+<div class="relative flex flex-col items-end my-1">
+<span class="font-headline-sm text-[15px] font-extrabold text-ink leading-none">3:00</span>
+<span class="font-label-sm text-[9px] text-captions font-bold uppercase tracking-wider">PM</span>
+<div class="absolute -right-[9px] top-2 w-2 h-1 bg-grape-fill rounded-full"></div>
+</div>
+<!-- 4:00 PM Active Slot Rail Indicator in bold coral pill -->
+<div class="relative flex items-center justify-end my-2">
+<div class="bg-coral text-white px-2 py-0.5 rounded-full font-label-sm text-[11px] font-extrabold shadow-sm -mr-3 z-10 ring-2 ring-white">
+                4:00
+              </div>
+</div>
+<!-- 5:30 PM Sunset Plan -->
+<div class="relative flex flex-col items-end my-1">
+<span class="font-headline-sm text-[15px] font-extrabold text-ink leading-none">5:30</span>
+<span class="font-label-sm text-[9px] text-captions font-bold uppercase tracking-wider">PM</span>
+<div class="absolute -right-[9px] top-2 w-2 h-1 bg-mint-fill rounded-full"></div>
+</div>
+<!-- 7:00 PM Tick -->
+<div class="relative flex items-center justify-end h-12">
+<span class="font-label-sm text-[11px] text-captions/60 font-semibold">7:00</span>
+<div class="absolute -right-[9px] w-1.5 h-0.5 bg-hairline"></div>
+</div>
+<!-- 8:30 PM Tick -->
+<div class="relative flex items-center justify-end h-10">
+<span class="font-label-sm text-[11px] text-captions/50 font-semibold">8:30</span>
+<div class="absolute -right-[9px] w-1.5 h-0.5 bg-hairline"></div>
+</div>
+<!-- 10:00 PM Tick -->
+<div class="relative flex items-center justify-end h-10">
+<span class="font-label-sm text-[11px] text-captions/40 font-semibold">10 PM</span>
+<div class="absolute -right-[9px] w-1.5 h-0.5 bg-hairline"></div>
+</div>
+</div>
+<!-- Items Track Along the Timeline -->
+<div class="flex-1 pl-5 flex flex-col gap-4 relative">
+<!-- 1) 8:05 – 9:32 AM: Flight Skylark Air 214 -->
+<div class="bg-surface rounded-2xl p-3.5 border border-control-edge/60 shadow-sm flex items-center justify-between hover:border-hairline transition-all">
+<div class="flex items-center gap-3.5">
+<!-- Sky Blue Icon Tile with Plane Stroke -->
+<div class="w-12 h-12 rounded-xl bg-sky-fill flex items-center justify-center text-white shadow-sm shrink-0">
+<span class="material-symbols-outlined text-[24px]">flight</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-body-lg font-bold text-ink">Skylark Air 214 · SFO → LAX</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-dark text-captions font-label-sm text-[10px] font-bold border border-hairline tracking-wider uppercase">BOOKED</span>
+</div>
+<div class="flex items-center gap-2 mt-0.5 text-captions font-body-sm">
+<span class="font-semibold text-sky-deep">8:05 AM – 9:32 AM (1h 27m)</span>
+<span>·</span>
+<span>Terminal 2 Gate 42B</span>
+<span>·</span>
+<span class="bg-sky-tint/60 text-sky-deep px-1.5 py-0.2 rounded font-mono text-[11px]">Seats 14A, 14B, 14C, 14D</span>
+</div>
+</div>
+</div>
+<!-- Quick action -->
+<div class="flex items-center gap-2 text-text-secondary">
+<button class="p-2 hover:bg-surface-dark rounded-full transition-colors">
+<span class="material-symbols-outlined text-[18px]">more_horiz</span>
+</button>
+</div>
+</div>
+<!-- Proportional Pacing Gap: Drive & Transit (9:32 to 12:30) -->
+<div class="h-6 flex items-center justify-center">
+<div class="w-full border-t border-dashed border-sun-deep/20 relative flex items-center justify-center">
+<span class="bg-surface-dark px-3 font-label-sm text-[11px] text-captions font-semibold rounded-full border border-hairline">Pick up rental minivan &amp; downtown drive · 2 hr 58 min buffer</span>
+</div>
+</div>
+<!-- 2) 12:30 – 2:00 PM: Lunch at Grand Central Market -->
+<div class="bg-surface rounded-2xl p-3.5 border border-control-edge/60 shadow-sm flex items-center justify-between hover:border-hairline transition-all">
+<div class="flex items-center gap-3.5">
+<!-- Sun Yellow Icon Tile with Cutlery -->
+<div class="w-12 h-12 rounded-xl bg-sun-fill flex items-center justify-center text-ink shadow-sm shrink-0">
+<span class="material-symbols-outlined text-[24px]">restaurant</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-body-lg font-bold text-ink">Lunch at Grand Central Market</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-dark text-captions font-label-sm text-[10px] font-bold border border-hairline tracking-wider uppercase">PLAN</span>
+</div>
+<div class="flex items-center gap-2 mt-0.5 text-captions font-body-sm">
+<span class="font-semibold text-ink">12:30 PM – 2:00 PM (1h 30m)</span>
+<span>·</span>
+<span class="text-ink font-medium">Tacos Tumbras &amp; pupusas at Sarita's</span>
+<span class="text-hairline">|</span>
+<span class="text-captions italic">Casual family pick &amp; choose</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 text-text-secondary">
+<button class="p-2 hover:bg-surface-dark rounded-full transition-colors">
+<span class="material-symbols-outlined text-[18px]">more_horiz</span>
+</button>
+</div>
+</div>
+<!-- Proportional Transit Gap: Drive to hotel (2:00 to 3:00) -->
+<div class="h-4 flex items-center">
+<div class="w-full border-t border-dashed border-grape-deep/20 relative flex items-center justify-start pl-8">
+<span class="text-[11px] font-label-sm text-grape-deep/80 font-medium">
+                  25 min drive to Santa Monica via I-10 W
+                </span>
+</div>
+</div>
+<!-- 3) 3:00 – 4:00 PM: Check in · The Tidewater -->
+<div class="bg-surface rounded-2xl p-3.5 border border-control-edge/60 shadow-sm flex items-center justify-between hover:border-hairline transition-all">
+<div class="flex items-center gap-3.5">
+<!-- Grape Purple Icon Tile with Bed -->
+<div class="w-12 h-12 rounded-xl bg-grape-fill flex items-center justify-center text-ink shadow-sm shrink-0">
+<span class="material-symbols-outlined text-[24px]">hotel</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-body-lg font-bold text-ink">Check in · The Tidewater</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-dark text-captions font-label-sm text-[10px] font-bold border border-hairline tracking-wider uppercase">BOOKED</span>
+</div>
+<div class="flex items-center gap-2 mt-0.5 text-captions font-body-sm">
+<span class="font-semibold text-ink">3:00 PM – 4:00 PM</span>
+<span>·</span>
+<span class="text-ink">City-view Double Queen (2 beds, crib ready)</span>
+<span>·</span>
+<span class="bg-surface-dark text-captions px-1.5 py-0.2 rounded font-label-sm text-[11px] border border-hairline">Conf #TW-88219</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 text-text-secondary">
+<button class="p-2 hover:bg-surface-dark rounded-full transition-colors">
+<span class="material-symbols-outlined text-[18px]">more_horiz</span>
+</button>
+</div>
+</div>
+<!-- 4) 4:00 – 5:00 PM [STATE: ADDING A PLAN - CLICKED/FOCUSED IN THE 4:00 PM GAP] -->
+<div class="relative border-2 border-dashed border-coral bg-white/95 rounded-2xl p-4 shadow-md ring-4 ring-coral/15 flex flex-col gap-3 transition-all z-20">
+<!-- Top Drag Handle with Time Badge -->
+<div class="flex items-center justify-between border-b border-hairline pb-2.5">
+<div class="flex items-center gap-2">
+<span class="flex items-center justify-center w-5 h-5 rounded-full bg-coral-tint text-coral-deep cursor-ns-resize">
+<span class="material-symbols-outlined text-[14px]">drag_handle</span>
+</span>
+<span class="bg-coral text-white font-label-sm text-[11px] font-bold px-2.5 py-0.5 rounded-full shadow-sm">
+                    4:00 PM – 5:00 PM · 1 hr slot
+                  </span>
+<span class="text-captions font-body-sm text-[12px]">Drag edges to adjust time range</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="text-body-sm text-captions">Adding item to Friday</span>
+<button class="text-text-secondary hover:text-ink p-1">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+</div>
+<!-- Main Input Area with Blinking Cursor -->
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-coral-tint border border-coral/30 flex items-center justify-center text-coral-deep shrink-0">
+<span class="material-symbols-outlined text-[20px]">add_circle</span>
+</div>
+<div class="flex-1 relative flex items-center">
+<input autofocus="" class="w-full text-headline-sm font-bold text-ink bg-transparent border-0 p-0 focus:ring-0 focus:outline-none placeholder:text-captions/50 tracking-tight" placeholder="What's the plan?" type="text" value="Pool rest &amp; unpack suits"/>
+<span class="blinking-cursor"></span>
+</div>
+</div>
+<!-- Category / Kind Pills Selection -->
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-2">
+<span class="font-label-sm text-captions text-[11px] uppercase tracking-wider font-bold">Category:</span>
+<!-- Sun yellow Food -->
+<button class="px-2.5 py-1 rounded-full bg-sun-tint text-sun-deep border border-sun-fill font-label-md text-[12px] font-semibold hover:bg-sun-fill/40 flex items-center gap-1 transition-transform active:scale-95">
+<span class="w-1.5 h-1.5 rounded-full bg-sun-fill"></span>
+<span>Food</span>
+</button>
+<!-- Mint Outdoors -->
+<button class="px-2.5 py-1 rounded-full bg-mint-tint text-mint-deep border border-mint-fill font-label-md text-[12px] font-semibold hover:bg-mint-fill/40 flex items-center gap-1 transition-transform active:scale-95">
+<span class="w-1.5 h-1.5 rounded-full bg-mint-fill"></span>
+<span>Outdoors</span>
+</button>
+<!-- Bubble Fun (Active / Selected) -->
+<button class="px-3 py-1 rounded-full bg-bubble-fill text-ink font-label-md text-[12px] font-bold flex items-center gap-1 shadow-sm ring-2 ring-bubble-deep/30 transition-transform active:scale-95">
+<span class="w-1.5 h-1.5 rounded-full bg-bubble-deep"></span>
+<span>Fun &amp; Pool</span>
+</button>
+<!-- Grape Culture -->
+<button class="px-2.5 py-1 rounded-full bg-grape-tint text-grape-deep border border-grape-fill font-label-md text-[12px] font-semibold hover:bg-grape-fill/40 flex items-center gap-1 transition-transform active:scale-95">
+<span class="w-1.5 h-1.5 rounded-full bg-grape-fill"></span>
+<span>Culture</span>
+</button>
+<!-- Sky Kids -->
+<button class="px-2.5 py-1 rounded-full bg-sky-tint text-sky-deep border border-sky-fill font-label-md text-[12px] font-semibold hover:bg-sky-fill/40 flex items-center gap-1 transition-transform active:scale-95">
+<span class="w-1.5 h-1.5 rounded-full bg-sky-fill"></span>
+<span>Kids</span>
+</button>
+</div>
+<!-- Action Controls: Cancel & Save -->
+<div class="flex items-center gap-2">
+<button class="px-3 py-1.5 rounded-full text-text-secondary hover:text-ink font-label-md text-body-sm font-semibold hover:bg-surface-dark transition-colors">
+                    Cancel
+                  </button>
+<button class="px-4 py-1.5 rounded-full bg-coral hover:bg-coral-deep text-white font-label-md text-body-sm font-bold shadow-sm transition-all active:scale-95 flex items-center gap-1.5">
+<span>Save Plan</span>
+<span class="font-mono text-[10px] bg-white/20 px-1 py-0.5 rounded font-normal">↵ Enter</span>
+</button>
+</div>
+</div>
+<!-- Bottom Drag Handle -->
+<div class="w-full flex justify-center -mb-2 pt-1">
+<div class="w-12 h-1 bg-coral/40 rounded-full cursor-ns-resize hover:bg-coral transition-colors"></div>
+</div>
+</div>
+<!-- 5) 5:30 – 7:00 PM: Santa Monica Pier sunset -->
+<div class="bg-surface rounded-2xl p-3.5 border border-control-edge/60 shadow-sm flex items-center justify-between hover:border-hairline transition-all">
+<div class="flex items-center gap-3.5">
+<!-- Mint Green Icon Tile with Sunset/Beach -->
+<div class="w-12 h-12 rounded-xl bg-mint-fill flex items-center justify-center text-ink shadow-sm shrink-0">
+<span class="material-symbols-outlined text-[24px]">wb_twilight</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-body-lg font-bold text-ink">Santa Monica Pier sunset</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-dark text-captions font-label-sm text-[10px] font-bold border border-hairline tracking-wider uppercase">PLAN</span>
+</div>
+<div class="flex items-center gap-2 mt-0.5 font-body-sm">
+<span class="font-semibold text-ink">5:30 PM – 7:00 PM (1h 30m)</span>
+<span>·</span>
+<span class="font-body-sm text-[13px] text-captions font-medium italic">
+                      “watch sunset at 6:15 PM, grab churros near carousel!”
+                    </span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 text-text-secondary">
+<button class="p-2 hover:bg-surface-dark rounded-full transition-colors">
+<span class="material-symbols-outlined text-[18px]">more_horiz</span>
+</button>
+</div>
+</div>
+<!-- Proportional Dinner slot indicator -->
+<div class="bg-surface/60 rounded-2xl p-3 border border-dashed border-hairline flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-sun-tint/50 border border-sun-fill/40 flex items-center justify-center text-sun-deep">
+<span class="material-symbols-outlined text-[20px]">dinner_dining</span>
+</div>
+<div>
+<span class="font-headline-sm text-body-md font-bold text-ink/80">Dinner spot (Open) · 7:30 PM</span>
+<p class="font-body-sm text-captions text-[12px]">Ask GitAway for kid-friendly seafood or patio tacos near Ocean Ave</p>
+</div>
+</div>
+<button class="px-3 py-1 rounded-full bg-surface border border-control-edge text-ink font-label-sm text-[11px] font-semibold hover:bg-coral-tint hover:text-coral-deep transition-colors">
+                + Suggest
+              </button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- RIGHT DOCKED PANEL (~410px wide, Inspector, Up Next & Ask Box) -->
+<aside class="w-[410px] bg-white rounded-3xl border border-hairline flex flex-col h-full shadow-sm overflow-hidden shrink-0">
+<!-- Top Navigation Tabs -->
+<div class="flex items-center justify-between px-5 pt-4 pb-3 border-b border-hairline shrink-0">
+<div class="flex items-center gap-2">
+<!-- Active Plan Tab -->
+<button class="px-3 py-1 rounded-full bg-ink text-white font-label-md text-body-sm font-bold shadow-sm">
+            Plan
+          </button>
+<!-- Family Tab with unread dot -->
+<button class="px-3 py-1 rounded-full text-text-secondary hover:text-ink font-label-md text-body-sm font-semibold flex items-center gap-1.5">
+<span>Family</span>
+<span class="px-1.5 py-0.2 rounded-full bg-coral text-white font-label-sm text-[10px] font-bold">1</span>
+</button>
+<!-- Ask Tab -->
+<button class="px-3 py-1 rounded-full text-text-secondary hover:text-ink font-label-md text-body-sm font-semibold">
+            Ask
+          </button>
+</div>
+<div class="flex items-center gap-1 text-captions font-label-sm text-[11px]">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+<span>Pacific Time (PT)</span>
+</div>
+</div>
+<!-- Docked Panel Scrollable Body -->
+<div class="flex-1 overflow-y-auto no-scrollbar p-5 flex flex-col gap-4">
+<!-- UP NEXT HERO CARD: Solid dark Ink card -->
+<div class="bg-ink text-white rounded-2xl p-4 shadow-md flex flex-col gap-3 relative overflow-hidden">
+<div class="absolute -right-4 -bottom-4 w-28 h-28 bg-white/5 rounded-full pointer-events-none"></div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-mint-fill animate-pulse"></span>
+<span class="font-label-sm text-[11px] text-mint-fill font-extrabold uppercase tracking-widest">UP NEXT · IN 45 MIN</span>
+</div>
+<span class="bg-white/10 text-white/90 px-2 py-0.5 rounded text-[10px] font-mono font-medium">ON TIME</span>
+</div>
+<div class="flex items-start gap-3">
+<div class="w-10 h-10 rounded-xl bg-sky-fill/20 text-sky-fill flex items-center justify-center shrink-0 border border-sky-fill/30">
+<span class="material-symbols-outlined text-[22px]">flight_takeoff</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-body-lg font-bold text-white tracking-tight">Skylark Air 214 · SFO → LAX</h3>
+<p class="font-body-sm text-surface-variant text-[13px] mt-0.5">Departing 8:05 AM · Terminal 2 Gate 42B</p>
+<p class="font-body-sm text-mint-fill text-[12px] font-medium mt-1">Boarding Group 3 · 4 Carry-ons scanned</p>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="flex items-center gap-2 pt-1 border-t border-white/10">
+<button class="flex-1 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-label-md text-body-sm font-semibold transition-colors flex items-center justify-center gap-1">
+<span class="material-symbols-outlined text-[16px]">navigation</span>
+<span>Directions</span>
+</button>
+<button class="flex-1 py-1.5 rounded-full bg-coral hover:bg-coral-deep text-white font-label-md text-body-sm font-bold shadow-sm transition-all active:scale-95 flex items-center justify-center gap-1">
+<span>Open the plan</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- DRAFT ITEM CONTEXT INSPECTOR (Shows detail about the active 4:00 PM draft) -->
+<div class="bg-surface-dark border border-hairline rounded-2xl p-3.5 flex flex-col gap-2"><div class="flex items-center justify-between"><span class="font-label-sm text-[11px] text-captions font-bold uppercase tracking-wider">Drafting item</span><span class="font-mono text-[11px] text-captions">4:00 – 5:00 PM</span></div><div class="bg-surface rounded-xl p-3 border border-hairline shadow-2xs"><div class="font-headline-sm text-body-md font-bold text-ink">Pool rest &amp; unpack suits</div><p class="font-body-sm text-captions text-[12px] mt-1">Hotel check-in buffer slot at The Tidewater before sunset at Santa Monica Pier.</p></div></div>
+<!-- LATER TODAY SUMMARY LIST -->
+<div class="flex flex-col gap-2">
+<div class="flex items-center justify-between text-captions">
+<span class="font-label-sm text-[11px] font-bold uppercase tracking-wider">Later Today</span>
+<span class="font-label-sm text-[11px]">3 Remaining</span>
+</div>
+<div class="space-y-1.5">
+<div class="flex items-center justify-between p-2 rounded-xl bg-surface-dark border border-hairline text-ink">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-sun-fill"></span>
+<span class="font-body-sm font-semibold">Grand Central Market</span>
+</div>
+<span class="font-body-sm text-[12px] text-captions font-mono">12:30 PM</span>
+</div>
+<div class="flex items-center justify-between p-2 rounded-xl bg-surface-dark border border-hairline text-ink">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-grape-fill"></span>
+<span class="font-body-sm font-semibold">Check in · The Tidewater</span>
+</div>
+<span class="font-body-sm text-[12px] text-captions font-mono">3:00 PM</span>
+</div>
+<div class="flex items-center justify-between p-2 rounded-xl bg-surface-dark border border-hairline text-ink">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-coral"></span>
+<span class="font-body-sm font-bold">New Plan (Drafting...)</span>
+</div>
+<span class="font-body-sm text-[12px] font-mono font-bold">4:00 PM</span>
+</div>
+<div class="flex items-center justify-between p-2 rounded-xl bg-surface-dark border border-hairline text-ink">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-mint-fill"></span>
+<span class="font-body-sm font-semibold">Santa Monica Pier sunset</span>
+</div>
+<span class="font-body-sm text-[12px] text-captions font-mono">5:30 PM</span>
+</div>
+</div>
+</div>
+<!-- FAMILY CHAT SNIPPET -->
+<div class="bg-surface-dark rounded-2xl p-3.5 border border-hairline flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-[11px] text-captions font-bold uppercase tracking-wider flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">forum</span>
+              Family Sync
+            </span>
+<span class="font-body-sm text-[11px] text-captions">2m ago</span>
+</div>
+<div class="flex items-start gap-2.5">
+<div class="w-7 h-7 rounded-full bg-mint-fill text-mint-deep font-label-sm text-[11px] font-bold flex items-center justify-center shrink-0">
+              S
+            </div>
+<div class="flex-1 bg-surface p-2.5 rounded-xl rounded-tl-none border border-hairline shadow-2xs">
+<span class="font-label-sm text-[11px] font-bold text-ink">Sam</span>
+<p class="font-body-sm text-[13px] text-ink leading-snug mt-0.5">
+                “Can we do the pier before dinner? Leo wants the roller coaster first.”
+              </p>
+<!-- Reaction pills -->
+<div class="flex items-center gap-1.5 mt-2">
+<span class="px-2 py-0.5 rounded-full bg-coral-tint text-coral-deep font-label-sm text-[10px] font-bold border border-coral/30 flex items-center gap-1">
+<span>Maya &amp; Leo agreed</span>
+<span class="font-body-sm text-[13px] text-captions font-medium italic">yes!</span>
+</span>
+<span class="px-1.5 py-0.5 rounded-full bg-surface-dark text-captions text-[10px] font-bold">+</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- DOCKED ASK BOX AT BOTTOM -->
+<div class="p-4 border-t border-hairline bg-surface flex flex-col gap-2 shrink-0">
+<!-- Quick suggestions chips -->
+<div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+<button class="px-2.5 py-1 rounded-full bg-surface-dark hover:bg-coral-tint hover:text-coral-deep text-captions font-label-sm text-[11px] font-semibold whitespace-nowrap transition-colors border border-hairline">
+            “Move lunch to 1:30”
+          </button>
+<button class="px-2.5 py-1 rounded-full bg-surface-dark hover:bg-coral-tint hover:text-coral-deep text-captions font-label-sm text-[11px] font-semibold whitespace-nowrap transition-colors border border-hairline">
+            “Where to eat near hotel?”
+          </button>
+</div>
+<!-- Input Box with Voice & Send -->
+<div class="relative flex items-center">
+<input class="w-full pl-3.5 pr-20 py-2.5 rounded-full bg-surface-dark border border-control-edge text-body-sm text-ink placeholder:text-captions/70 focus:outline-none focus:ring-2 focus:ring-coral/40 focus:border-coral transition-all" placeholder="Move lunch to 1:30, or ask anything..." type="text"/>
+<div class="absolute right-1.5 flex items-center gap-1">
+<button class="w-7 h-7 rounded-full bg-coral-tint text-coral-deep flex items-center justify-center hover:bg-coral hover:text-white transition-colors" title="Voice dictation">
+<span class="material-symbols-outlined text-[16px]">mic</span>
+</button>
+<button class="w-7 h-7 rounded-full bg-ink text-white flex items-center justify-center hover:bg-coral transition-colors" title="Send question">
+<span class="material-symbols-outlined text-[15px]">arrow_upward</span>
+</button>
+</div>
+</div>
+</div>
+</aside>
+</main>
+</body></html>
