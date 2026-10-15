@@ -1,5 +1,5 @@
 """F-158: the calm laptop skin, pinned in a real browser so it cannot drift back. At 1440 and 1280 (the laptop) the day, the week, the panel and the family, import and start pages are flat hairline surfaces
-(no layered shadow on a card, a 1px hairline edge), the buttons are flat pills (no ledge, no lift), the day and the week carry the two-tone heading (the title, then its second phrase in coral), the data rows
+(no layered shadow on a card, a 1px hairline edge), the buttons are flat pills (no ledge, no lift), the day and the week carry the two-tone heading (the title, then its second phrase in grey), the data rows
 have their tiles, and Up next is the one solid accent block. At 390 (phone) and 800 (tablet) none of that shows: the buttons keep their ledge, the day keeps its ink header and the second phrase is not drawn.
 Assets: assets/css/desk_skin.css (loaded last by layout.styles()). Screenshots on request: F158_SHOTS=<folder>."""
 import os
@@ -16,6 +16,7 @@ from tests_browser.test_topbar import LAPTOP, TABLET, signed_in  # noqa: F401 - 
 INK = "rgb(30, 26, 46)"
 CORAL = "rgb(255, 115, 82)"
 CORAL_DEEP = "rgb(201, 67, 31)"
+INK_3 = "rgb(90, 84, 112)"
 HAIRLINE = "rgba(30, 26, 46, 0.1)"
 NO_SCROLL = "document.documentElement.scrollWidth <= document.documentElement.clientWidth && document.documentElement.scrollHeight <= document.documentElement.clientHeight"
 BOTH = pytest.mark.parametrize("viewport", [DESKTOP, LAPTOP], ids=["1440", "1280"])
@@ -79,13 +80,13 @@ def test_the_day_and_the_week_have_the_two_tone_heading(signed_in, viewport):
     two = page.locator(".cz-view[data-day] .ga-h-two")
     expect(two).to_be_visible()
     assert two.inner_text().strip() == "Fly in, check in."
-    assert style(page, ".cz-view[data-day] .ga-h-two", "color")[0] == CORAL_DEEP
+    assert style(page, ".cz-view[data-day] .ga-h-two", "color")[0] == INK_3      # F-159: grey, coral is for primary buttons and the now line
     assert style(page, "#cz-title", "color")[0] == INK
     page.goto(page.url.split("?")[0])
     two = page.locator(".cz-view[data-level=week] .ga-h-two")
     expect(two).to_be_visible()
     assert two.inner_text().strip() == "Five days in LA."          # the trip's real length and place
-    assert style(page, ".cz-view[data-level=week] .ga-h-two", "color")[0] == CORAL_DEEP
+    assert style(page, ".cz-view[data-level=week] .ga-h-two", "color")[0] == INK_3      # F-159: grey, coral is for primary buttons and the now line
     assert page.evaluate(NO_SCROLL)
     shot(page, f"week-{viewport['width']}.png")
 

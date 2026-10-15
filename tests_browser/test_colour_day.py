@@ -13,12 +13,12 @@ from tests_browser.test_topbar import LAPTOP, TABLET, signed_in  # noqa: F401 - 
 INK = "rgb(30, 26, 46)"
 CARD = "rgb(255, 255, 255)"
 PAPER_2 = "rgb(250, 247, 242)"
-INK_2 = "rgb(77, 71, 99)"
+INK_2 = "rgb(74, 68, 96)"
 CORALS = ("rgb(255, 115, 82)", "rgb(201, 67, 31)")
 SUN, SUN_TINT, SUN_INK = "rgb(255, 201, 60)", "rgb(255, 241, 194)", "rgb(138, 98, 0)"
-MINT = "rgb(61, 214, 140)"
-SKY = "rgb(78, 168, 255)"
-GRAPE = "rgb(168, 140, 255)"
+MINT = "rgb(72, 209, 160)"
+SKY = "rgb(90, 176, 255)"
+GRAPE = "rgb(195, 178, 255)"
 NO_SCROLL = "document.documentElement.scrollWidth <= document.documentElement.clientWidth && document.documentElement.scrollHeight <= document.documentElement.clientHeight"
 BOTH = pytest.mark.parametrize("viewport", [DESKTOP, LAPTOP], ids=["1440", "1280"])
 
@@ -34,7 +34,7 @@ def plans(short=False):
     lunch = cal.add_activity(me, day=0, start=12 * 60 + 30, end=14 * 60, title="Lunch at Grand Central Market", kind="food")
     sunset = cal.add_activity(me, day=0, start=17 * 60 + 30, end=19 * 60, title="Santa Monica Pier sunset", kind="outdoors")
     if short:
-        cal.add_activity(me, day=0, start=10 * 60, end=10 * 60 + 30, title="Coffee at the corner bakery on Spring Street", kind="fun")
+        cal.add_activity(me, day=0, start=10 * 60, end=10 * 60 + 30, title="Coffee at the corner bakery, Spring St", kind="fun")
     return lunch, sunset
 
 
@@ -55,7 +55,7 @@ def test_plans_and_bookings_are_white_cards_with_a_kind_tile_and_edge(signed_in,
     page = day(signed_in, viewport)
     lunch = page.locator(".cz-gb", has_text="Lunch at Grand Central Market")
     sunset = page.locator(".cz-gb", has_text="Santa Monica Pier sunset")
-    for card, accent, tint, ink in ((lunch, SUN, SUN_TINT, SUN_INK), (sunset, MINT, "rgb(212, 247, 230)", "rgb(11, 122, 69)")):
+    for card, accent, tint, ink in ((lunch, SUN, SUN_TINT, SUN_INK), (sunset, MINT, "rgb(212, 247, 234)", "rgb(22, 134, 95)")):
         assert card.evaluate("e => getComputedStyle(e).backgroundColor") == CARD
         assert card.evaluate("e => getComputedStyle(e).borderTopWidth") == "1px"
         shadow = card.evaluate("e => getComputedStyle(e).boxShadow")
@@ -66,7 +66,7 @@ def test_plans_and_bookings_are_white_cards_with_a_kind_tile_and_edge(signed_in,
         assert tile.locator("svg").count() == 1
     flight = page.locator(".cz-gbk", has_text="Skylark")
     hotel = page.locator(".cz-gbk", has_text="Check in")
-    for card, accent, tint in ((flight, SKY, "rgb(219, 238, 255)"), (hotel, GRAPE, "rgb(237, 231, 255)")):
+    for card, accent, tint in ((flight, SKY, "rgb(221, 238, 255)"), (hotel, GRAPE, "rgb(236, 228, 255)")):
         assert card.evaluate("e => getComputedStyle(e).backgroundColor") == CARD
         assert f"{accent} 3px 0px 0px 0px inset" in card.evaluate("e => getComputedStyle(e).boxShadow")
         assert card.locator(".cz-gbk-tile").evaluate("e => getComputedStyle(e).backgroundColor") == tint

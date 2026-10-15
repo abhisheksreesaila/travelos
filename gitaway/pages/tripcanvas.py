@@ -638,7 +638,7 @@ def time_grid(v, day, ents):
     inset = {a.id for group in overlap_groups(plans) if any(a.id in over for a in group) for a in group}      # plans that share lanes share a left edge: one inset, all inset
     bk = [booking_pill(v, x, top, lo) if covered[x.id] else
           A(Span(Span(icon(getattr(x, "icon", "") or "lock", 16, 2.4), cls="cz-gbk-tile"), Span(cal.fmt_time(x.label_start if getattr(x, "label_start", None) is not None else x.start), cls="cz-bk-time"), Span(x.title, cls="cz-bk-t"),
-              Span("Booked", cls="cz-bk-tag"), cls="cz-gbk-in cz-cs"), href=curl(day=x.day, booked=x.id), cls=f"cz-bk cz-gbk {booking_class(x)}", data_zoom="in", data_zk=f"bkg-{x.id}", style=f"--s:{top - lo}", **kind_attrs(v, "booked", x))
+              Span("Booked", cls="cz-bk-tag"), cls="cz-gbk-in cz-cs"), href=curl(day=x.day, booked=x.id), cls=f"cz-bk cz-gbk {booking_class(x)}", data_zoom="in", data_zk=f"bkg-{x.id}", style=f"--s:{top - lo}", aria_label=f"{x.title}, {cal.fmt_time(x.label_start if getattr(x, 'label_start', None) is not None else x.start)}, booked", **kind_attrs(v, "booked", x))
           for x, top in lines]
     blocks = [grid_block(v, a, *lane[a.id], lo, edit, a.id in inset) for a in plans]
     now = ""
