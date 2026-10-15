@@ -895,7 +895,7 @@ Captain, 2026-10-14: "keep the colors same, what do u think about this theme, no
 
 # The colour timeline (brief docs/briefs/colour-timeline.md, approved 2026-10-15)
 
-## F-159 The laptop day as a colour timeline [todo]
+## F-159 The laptop day as a colour timeline [review]
 Brief: docs/briefs/colour-timeline.md · Design: docs/design/colour-timeline.md (frame ct-day-desk) · Needs: F-158
 - [ ] on a desktop the day's plans and bookings are white cards at their real times with a kind-coloured icon tile and a 3px left edge in the kind's colour; no day tint anywhere (the day panel is white with a hairline)
 - [ ] every plan and booking prints its start time big on the rail at its top ("12:30" with a small "PM"); an hour label within 30 minutes of a printed start time is hidden, so labels never overlap

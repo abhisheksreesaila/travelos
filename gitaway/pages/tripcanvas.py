@@ -484,6 +484,10 @@ def say_bar(day):
 
 BOOKING_ROOM = 40       # minutes of grid a booking line takes (its 2.75rem tap target): a booking close after another slides below it, its label still says its true time
 KIND_TINT = {"fun": "bubble", "food": "sun", "outdoors": "mint", "culture": "grape", "travel": "sky"}
+KIND_ICON = {"fun": "spark", "food": "food", "outdoors": "tree", "culture": "sight", "travel": "car"}      # the icon tile of a plan on a laptop (F-159)
+BOOKING_KIND = {"flight": "travel", "hotel": "culture"}      # a booking's tile takes a plan kind's colours: flight sky, hotel grape; anything else (a car) is ink
+RAIL_ROOM = 35       # minutes of grid a printed start time takes on the laptop: its label is 2.5833rem tall and the docked day's hour is 4.5rem (day_dock.css), 2.5833 / 4.5 * 60 = 34.4. The grid hands the same number to
+#                      the CSS (--rail), which sizes the label's box from it, so a taller hour only gives more room. Two starts closer than this slide apart, and an hour label the label would touch is hidden.
 
 
 def hour_label(h):
@@ -504,6 +508,36 @@ def grid_bookings(booked):
         out.append((x, top))
         floor = top
     return out
+
+
+def split_time(m):
+    """"12:30 PM" -> ("12:30", "PM"): the rail prints the clock big and the meridiem small."""
+    return tuple(cal.fmt_time(m).split(" "))
+
+
+RAIL_SLIDE = 8       # minutes (about 7px) a printed start may sit below its card's top to clear the label above; a label that would sit lower is not printed, and its card carries its time instead
+
+
+def rail_starts(plans, lines):
+    """[(minute drawn at, true start minute, colour class, [ids])] for the laptop's rail (F-159): every plan and booking prints its start at its top. Items starting at the same minute share a label;
+    a label that would sit on the one above slides down below it (RAIL_ROOM) by at most RAIL_SLIDE minutes, so a label never drifts away from its card. When it cannot fit that way a plan's label is
+    left out (its card shows its time, even a 15 minute one), and a booking's label (its card shows no time) takes the place of the plan labels it would crowd."""
+    items = [(a.start, a.start, f"cz-k-{a.kind if a.kind in KIND_TINT else 'fun'}", a.id, False) for a in plans]
+    items += [(top, x.label_start if getattr(x, "label_start", None) is not None else x.start, booking_class(x), x.id, True) for x, top in lines]
+    out, last = [], None
+    for y, at, cls, ident, booked in sorted(items, key=lambda i: (i[0], i[1], i[3])):
+        if (y, at) == last:      # the same minute as the label above (before it slid): the same label
+            if out and out[-1][1] == at:
+                out[-1][3].append(ident)
+            continue
+        last = (y, at)
+        if booked:
+            while out and y - out[-1][0] < RAIL_ROOM and not out[-1][4]:
+                out.pop()
+        drawn = max(y, out[-1][0] + RAIL_ROOM) if out else y
+        if drawn - y <= RAIL_SLIDE:
+            out.append([drawn, at, cls, [ident], booked])
+    return [o[:4] for o in out]
 
 
 def grid_range(plans, lines):
@@ -557,7 +591,8 @@ def grid_block(v, a, lane, lanes, lo, edit, inset=False):
     when = span_label(a.start, a.end)
     said = f"{n} message{'' if n == 1 else 's'}" + (", with a voice note" if voice else "")
     preview = note_preview(v, a.id)
-    inner = [Span(Span(a.title, cls="cz-gb-t", id=f"cz-t-{a.id}"), Span(when, cls="cz-gb-when"), cls="cz-gb-head"),      # F-110: the title and the time stay in view at the top of a tall block (sticky)
+    inner = [Span(icon(KIND_ICON[k], 20, 2.2), cls="cz-gb-tile", aria_hidden="true"),      # the icon tile and the PLAN pill are a laptop's (F-159)
+             Span(Span(a.title, cls="cz-gb-t", id=f"cz-t-{a.id}"), Span("Plan", cls="cz-gb-tag"), Span(when, cls="cz-gb-when"), cls="cz-gb-head"),      # F-110: the title and the time stay in view at the top of a tall block (sticky)
              Span(preview, cls="cz-gb-note") if preview else "",
              Span(*[Span(p["name"], cls="cz-gb-part", data_part=p["id"], data_act=a.id) for p in blk["parts"]], cls="cz-gb-parts") if park else "",
              Span(icon("chat", 14, 2.4), Span(str(n), cls="pt-n"), icon("mic", 13, 2.4) if voice else "", cls="cz-gb-chat", aria_hidden="true") if chat else ""]
@@ -566,12 +601,17 @@ def grid_block(v, a, lane, lanes, lo, edit, inset=False):
     extra = [link]
     if edit:
         extra += [Button(f"Change {a.title}", type="button", cls="sr-only cz-gb-menubtn")]
-    cls = f"cz-gb cz-k-{k}" + (" is-ringed" if v.get("ring") == a.id else "") + (" is-park" if park else "") + (" is-short" if a.end - a.start < 45 else " is-tight" if a.end - a.start < 75 and not park else "") + (" has-chat" if chat else "") + (" is-inset" if inset else "")
+    cls = f"cz-gb cz-k-{k}" + (" is-ringed" if v.get("ring") == a.id else "") + (" is-park" if park else "") + (" is-tiny" if a.end - a.start < 25 else "") + (" is-short" if a.end - a.start < 45 else " is-tight" if a.end - a.start < 75 and not park else "") + (" has-chat" if chat else "") + (" is-inset" if inset else "")
     style = f"--s:{a.start - lo};--l:{a.end - a.start};--lane:{lane};--lanes:{lanes}"
     return Div(Div(*inner, cls="cz-gb-in cz-cs"), *extra, cls=cls, style=style, **({"tabindex": "-1"} if park else {}), **attrs)
 
 
 PILL_SPAN = 60       # a plan within this many minutes below a booking's line is "over" it: the booking then draws as a pill beside the plan (F-106)
+
+
+def booking_class(x):
+    """The colour class of a booking's dot on the rail (F-159); its card is coloured by its data-kind in CSS."""
+    return f"cz-k-{BOOKING_KIND.get(KIND_OF_ICON.get(getattr(x, 'icon', ''), ''), 'ink')}"
 
 
 def booking_pill(v, x, top, lo):
@@ -601,14 +641,16 @@ def time_grid(v, day, ents):
     lo, hi = grid_range(plans, lines)
     hours = list(range(lo // 60, hi // 60 + 1))
     lane = calui.lanes(plans)
-    gutter = [Span(hour_label(h % 24 if h < 24 else 0), cls="cz-g-hour cz-cs", style=f"--s:{h * 60 - lo}") for h in hours]
+    starts = rail_starts(plans, lines)
+    gutter = [Span(hour_label(h % 24 if h < 24 else 0), cls="cz-g-hour cz-cs" + (" is-near" if any(-30 <= h * 60 - y <= RAIL_ROOM + 8 for y, *_ in starts) else ""), style=f"--s:{h * 60 - lo}") for h in hours]      # is-near: a laptop hides it (F-159)
+    gutter += [Span(Span(split_time(at)[0], cls="cz-g-st-t"), Span(split_time(at)[1], cls="cz-g-st-m"), Span(cls="cz-g-st-dot"), cls=f"cz-g-start cz-cs {cls}", style=f"--s:{y - lo}", data_for=" ".join(ids), aria_hidden="true") for y, at, cls, ids in starts]
     rules = [Span(cls=f"cz-g-line cz-cs{' is-half' if m else ''}", style=f"--s:{h * 60 + m - lo}") for h in hours[:-1] for m in (0, 30)] + [Span(cls="cz-g-line cz-cs", style=f"--s:{hi - lo}")]
     covered = {x.id: [a for a in plans if a.start < top + PILL_SPAN and a.end > top] for x, top in lines}      # the plans over each booking line (F-106)
     over = {a.id for under in covered.values() for a in under}
     inset = {a.id for group in overlap_groups(plans) if any(a.id in over for a in group) for a in group}      # plans that share lanes share a left edge: one inset, all inset
     bk = [booking_pill(v, x, top, lo) if covered[x.id] else
-          A(Span(icon(getattr(x, "icon", "") or "lock", 16, 2.4), Span(cal.fmt_time(x.label_start if getattr(x, "label_start", None) is not None else x.start), cls="cz-bk-time"), Span(x.title, cls="cz-bk-t"),
-              Span("Booked", cls="cz-bk-tag"), cls="cz-gbk-in cz-cs"), href=curl(day=x.day, booked=x.id), cls="cz-bk cz-gbk", data_zoom="in", data_zk=f"bkg-{x.id}", style=f"--s:{top - lo}", **kind_attrs(v, "booked", x))
+          A(Span(Span(icon(getattr(x, "icon", "") or "lock", 16, 2.4), cls="cz-gbk-tile"), Span(cal.fmt_time(x.label_start if getattr(x, "label_start", None) is not None else x.start), cls="cz-bk-time"), Span(x.title, cls="cz-bk-t"),
+              Span("Booked", cls="cz-bk-tag"), cls="cz-gbk-in cz-cs"), href=curl(day=x.day, booked=x.id), cls="cz-bk cz-gbk", data_zoom="in", data_zk=f"bkg-{x.id}", style=f"--s:{top - lo}", aria_label=f"{x.title}, {cal.fmt_time(x.label_start if getattr(x, 'label_start', None) is not None else x.start)}, booked", **kind_attrs(v, "booked", x))
           for x, top in lines]
     blocks = [grid_block(v, a, *lane[a.id], lo, edit, a.id in inset) for a in plans]
     now = ""
@@ -616,7 +658,7 @@ def time_grid(v, day, ents):
         now = Span(Span(cls="cz-now-dot"), Span(f"{nm // 60 % 12 or 12}:{nm % 60:02d}", cls="cz-now-t"), cls="cz-nowline", id="cz-nowline", data_m=str(nm), style=f"--s:{nm - lo}", aria_label="Now", role="img")
     plane = Div(*rules, *bk, *blocks, now, cls="cz-g-plane")
     nxt = {"data_next": cal.next_id(v["session"])} if edit else {}      # the calendar's next number: a new plan made here carries its own id (a retry after a lost reply adds nothing twice)
-    return Div(Div(*gutter, plane, cls="cz-g-zoom"), cls=f"cz-grid{' has-bk' if lines else ''}{' has-pill' if inset else ''}", id="cz-grid", data_lo=str(lo), data_hi=str(hi), data_day=str(day), **nxt, style=f"--n:{(hi - lo) / 60:g}", role="group", aria_label="The day, hour by hour")
+    return Div(Div(*gutter, plane, cls="cz-g-zoom"), cls=f"cz-grid{' has-bk' if lines else ''}{' has-pill' if inset else ''}", id="cz-grid", data_lo=str(lo), data_hi=str(hi), data_day=str(day), **nxt, style=f"--n:{(hi - lo) / 60:g};--rail:{RAIL_ROOM}", role="group", aria_label="The day, hour by hour")
 
 
 def fold_bar(v, day):

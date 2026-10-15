@@ -294,3 +294,13 @@ def test_without_script_a_write_goes_back_to_the_day_and_a_viewer_is_refused(cre
     assert viewer.post("/trip/canvas/plan", data={"op": "edit", "act": a.id, "start": 600, "end": 660}, headers={"X-Canvas": "1"}).status_code == 403
     assert viewer.post("/trip/canvas/plan", data={"op": "delete", "act": a.id}, headers={"X-Canvas": "1"}).status_code == 403
     assert cal.get_activity(person("ari"), a.id).start == 750
+
+
+def test_rail_starts_give_each_start_room_for_its_label_and_share_equal_minutes():
+    from types import SimpleNamespace as N
+
+    from gitaway.pages import tripcanvas as tc
+    plans = [N(id="a", start=600, kind="food"), N(id="b", start=630, kind="food"), N(id="c", start=630, kind="fun")]
+    booking = N(id="k", start=745, label_start=None, icon="hotel")
+    got = tc.rail_starts(plans, [(booking, 745)])
+    assert [(y, at, ids) for y, at, _, ids in got] == [(600, 600, ["a"]), (635, 630, ["b", "c"]), (745, 745, ["k"])]      # the 10:30 label slides 5 minutes down: a label is 35 minutes of the 4.5rem hour
