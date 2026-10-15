@@ -1,0 +1,122 @@
+/* The phone, tablet and installed-app day as a colour timeline (F-160): the laptop's F-159 look (desk_skin.css) in one column. The markup is the same (tripcanvas.rail_starts, the tile, the PLAN pill, the day chips);
+   this file draws it where the laptop's rules do not apply: below 1020px and in the installed app. Frame: docs/design/colour-timeline/restrained/ct-day-phone.png; rules: design-system/DESIGN-SYSTEM.md "The colour timeline".
+   Loaded after day_ask.css and before desk_skin.css (which only matches the desktop query), so every rule sits under .cz .cz-view[data-day].
+
+   Units. The root is 16px on a phone and 12px on a tablet, and the phone's rules (text of 13px, a 44px touch target) must hold on both, so sizes here are `--pu` (one phone rem: 1rem on a phone, 4/3 rem on a tablet), text never goes
+   under `--tmin` (13px) and a target never under `--tap` (44px). Time. Plans keep their phone height rule: a 44px minimum (day_grid.css, test_day_grid.py), so a plan under 45 minutes is one compact row centred in 44px; the rail's
+   labels are sized from the real hour (--mm) and never overlap. Colour is the kind of thing only; the day chips are neutral; nothing here moves (the motion is motion.js's). */
+
+.cz { --pu: 1.3333rem; --tmin: 1.0833rem; --tap: 3.6667rem; }
+@media (max-width: 720px) { .cz { --pu: 1rem; --tmin: 0.8125rem; --tap: 2.75rem; } }
+
+@media (max-width: 1019px), (display-mode: standalone) {
+  .cz .cz-view[data-day] { --cz-small: max(var(--tmin), 0.8125rem); --cz-body: max(var(--tmin), 0.875rem); --shadow-sm: 0 0 0 0 transparent; --shadow-md: 0 0 0 0 transparent; }
+
+  /* ---- the heading: no ink card; the way back, the day's two-tone title, the map and SOS, then the neutral day chips ---- */
+  .cz .cz-view[data-day] .cz-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "back text ctl" "chips chips chips"; align-items: center; gap: calc(var(--pu) * 0.5) calc(var(--pu) * 0.5);
+    padding: calc(var(--pu) * 0.25) 0 0; border-radius: 0; background: none; box-shadow: none; color: var(--ink); }
+  .cz .cz-view[data-day] .cz-head > .cz-back { grid-area: back; min-width: var(--tap); height: var(--tap); border: 1px solid var(--hairline-2); background: none; color: var(--ink); font-size: max(var(--tmin), 1.0625rem); }
+  .cz .cz-view[data-day] .cz-head-text { grid-area: text; display: flex; flex-direction: row; flex-wrap: wrap; align-items: baseline; column-gap: 0; min-width: 0; }
+  .cz .cz-view[data-day] .cz-head-text > details, .cz .cz-view[data-day] .cz-head-text > .cz-head-k { flex-basis: 100%; min-width: 0; }
+  .cz .cz-view[data-day] .cz-head .cz-head-k, .cz .cz-view[data-day] .cz-head .cz-head-k * { color: var(--ink-3); font-size: var(--cz-small); font-weight: 700; letter-spacing: 0.02em; }
+  .cz .cz-view[data-day] .cz-head h1 { margin: 0 0.3em 0 0; font-size: calc(var(--pu) * 1.5); line-height: 1.1; color: var(--ink); }
+  .cz .cz-view[data-day] .cz-head h1::after { content: "."; }
+  .cz .cz-view[data-day] .ga-h-two { display: inline; font-family: var(--font-display); font-weight: 800; font-size: calc(var(--pu) * 1.5); line-height: 1.1; letter-spacing: -0.03em; color: var(--ink-3); }
+  .cz .cz-view[data-day] .cz-head-ctl { grid-area: ctl; margin-left: 0; gap: calc(var(--pu) * 0.375); }
+  .cz .cz-view[data-day] .cz-mapbtn { width: var(--tap); height: var(--tap); border: 1px solid var(--hairline-2); background: none; color: var(--ink-2); }
+  .cz .cz-view[data-day] .cz-head .cz-sos { min-width: var(--tap); min-height: var(--tap); background: var(--bubble-tint); color: var(--bubble-ink); font-size: var(--cz-small); }
+  .cz .cz-view[data-day] .cz-head .cz-segs { height: var(--tap); padding: 0 calc(var(--pu) * 0.125); background: none; box-shadow: none; border: 1px solid var(--hairline-2); }
+  .cz .cz-view[data-day] .cz-head .cz-seg { min-width: var(--tap); min-height: var(--tap); margin: 0; color: var(--ink-3); }
+  .cz .cz-view[data-day] .cz-head .cz-seg::before { inset: calc(var(--pu) * 0.375) 0; }
+  .cz .cz-view[data-day] .cz-head .cz-seg[aria-current="page"] { color: var(--paper); }
+  .cz .cz-view[data-day] .cz-head .cz-seg[aria-current="page"]::before { background: var(--ink); }
+
+  /* the day chips: neutral pills, white with a hairline, the open day solid ink with its title, today ringed in ink; the row scrolls sideways on a longer trip */
+  .cz .cz-view[data-day] .cz-hchips { grid-area: chips; display: flex; gap: calc(var(--pu) * 0.5); overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; touch-action: pan-x; padding: calc(var(--pu) * 0.1875); }
+  .cz .cz-view[data-day] .cz-hchips::-webkit-scrollbar { display: none; }
+  .cz .cz-view[data-day] .cz-hchip { position: relative; flex: none; display: flex; flex-direction: row; align-items: center; gap: calc(var(--pu) * 0.5); min-width: 0; max-width: none; min-height: var(--tap); padding: 0 calc(var(--pu) * 1); border: 1px solid var(--hairline-2); border-radius: var(--r-pill);
+    background: var(--card); color: var(--ink); }
+  .cz .cz-view[data-day] .cz-hchip .cz-hc-top { gap: calc(var(--pu) * 0.5); align-items: baseline; }
+  .cz .cz-view[data-day] .cz-hchip .cz-hc-dow { font-size: var(--cz-small); font-weight: 700; letter-spacing: 0.06em; color: inherit; }
+  .cz .cz-view[data-day] .cz-hchip .cz-hc-num { font-size: calc(var(--pu) * 1.25); color: inherit; }
+  .cz .cz-view[data-day] .cz-hchip .cz-hc-head { position: absolute; width: 0.0625rem; height: 0.0625rem; overflow: hidden; clip-path: inset(50%); white-space: nowrap; font-size: var(--cz-small); font-weight: 600; color: var(--ink-2); }
+  .cz .cz-view[data-day] .cz-hchip.is-open { border-color: var(--ink); background: var(--ink); color: var(--card); }
+  .cz .cz-view[data-day] .cz-hchip.is-open .cz-hc-head { position: static; width: auto; height: auto; overflow: visible; clip-path: none; color: var(--card); }
+  .cz .cz-view[data-day] .cz-hchip.is-today:not(.is-open) { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+  .cz .cz-view[data-day] .cz-hchip:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.125rem; }
+
+  /* the kind row and the filters keep their words and their 44px targets */
+  .cz .cz-view[data-day] .cz-kchip { min-width: var(--tap); min-height: var(--tap); }
+
+  /* ---- the day: one white panel with a hairline, one column (the Set aside tray under the day, never beside it) ---- */
+  .cz .cz-view[data-day] .cz-day-body { display: flex; flex-direction: column; align-items: stretch; gap: calc(var(--pu) * 0.75); padding: 0 calc(var(--pu) * 0.75) calc(var(--pu) * 0.25) calc(var(--pu) * 0.25); border: 1px solid var(--hairline); border-radius: var(--r-card); background: var(--card); box-shadow: none; }
+  .cz .cz-view[data-day] .cz-day-side { position: static; }
+  .cz .cz-view[data-day] .cz-grid { --gut: calc(var(--pu) * 3.75); }
+  .cz .cz-view[data-day] .cz-g-plane { left: calc(var(--gut) + var(--pu) * 0.75); }
+  .cz .cz-view[data-day] .cz-g-zoom::before { content: ""; position: absolute; left: var(--gut); top: 0; bottom: 0; width: 1px; background: var(--hairline); }
+  .cz .cz-view[data-day] .cz-g-line { left: calc(var(--pu) * -0.75); background: var(--hairline); }
+  .cz .cz-view[data-day] .cz-g-line.is-half { border-top-color: transparent; }
+  .cz .cz-view[data-day] .cz-g-hour { width: calc(var(--gut) - var(--pu) * 0.5); font-weight: 600; color: var(--ink-3); }
+  .cz .cz-view[data-day] .cz-g-hour.is-near { display: none; }      /* within 30 minutes of a printed start time, or under its label: the start time replaces it */
+
+  /* every plan and booking prints its start on the rail at its top: the clock big (Bricolage 800), the AM/PM under it, a dot in the kind's colour on the rail. Its box is --rail minutes tall (the real hour, --mm). */
+  .cz .cz-view[data-day] .cz-g-start { position: absolute; z-index: 3; left: 0; width: calc(var(--gut) - var(--pu) * 0.5); top: calc(var(--s) * var(--mm)); height: calc(var(--rail) * var(--mm)); display: flex; flex-direction: column; align-items: flex-end; color: var(--ink);
+    font-variant-numeric: tabular-nums; transform-origin: 100% 0; pointer-events: none; }
+  .cz .cz-view[data-day] .cz-g-st-t { font-family: var(--font-display); font-weight: 800; font-size: calc(var(--pu) * 1.25); line-height: calc(var(--pu) * 1.375); letter-spacing: -0.02em; }
+  .cz .cz-view[data-day] .cz-g-st-m { font-size: var(--tmin); font-weight: 700; line-height: calc(var(--pu) * 0.9375); color: var(--ink-3); }
+  .cz .cz-view[data-day] .cz-g-st-dot { position: absolute; left: calc(var(--gut) - var(--pu) * 0.25 - 0.5px); top: calc(var(--pu) * 0.375); width: calc(var(--pu) * 0.5); height: calc(var(--pu) * 0.5); border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 calc(var(--pu) * 0.125) var(--card); }
+
+  /* the kinds' ink (the tile's icon): plans carry cz-k-<kind>; a booking follows its data-kind (flight sky, hotel grape, a car ink) */
+  .cz .cz-view[data-day] .cz-gb, .cz .cz-view[data-day] .cz-g-start { --kink: var(--bubble-ink); }
+  .cz .cz-view[data-day] .cz-k-food { --kink: var(--sun-ink); }
+  .cz .cz-view[data-day] .cz-k-outdoors { --kink: var(--mint-ink); }
+  .cz .cz-view[data-day] .cz-k-culture { --kink: var(--grape-ink); }
+  .cz .cz-view[data-day] .cz-k-travel { --kink: var(--sky-ink); }
+  .cz .cz-view[data-day] .cz-k-ink, .cz .cz-view[data-day] .cz-gbk { --tint: var(--paper-2); --accent: var(--ink-3); --kink: var(--ink); }
+  .cz .cz-view[data-day] .cz-gbk[data-kind="flight"] { --tint: var(--sky-tint); --accent: var(--sky); --kink: var(--sky-ink); }
+  .cz .cz-view[data-day] .cz-gbk[data-kind="hotel"] { --tint: var(--grape-tint); --accent: var(--grape); --kink: var(--grape-ink); }
+
+  /* a plan: a white card, a hairline, the kind's left edge (the base rule's inset shadow), the icon tile at the left, then the title with its grey PLAN pill and the time. The card is a flex box so its words fill the
+     whole of it, 44px minimum included. */
+  .cz .cz-view[data-day] .cz-gb:not(.is-drawing) { display: flex; min-height: var(--tap); border: 1px solid var(--hairline); border-radius: var(--r-sm); background: var(--card); }
+  .cz .cz-view[data-day] .cz-gb-in { flex: 1 1 auto; min-height: 0; padding: calc(var(--pu) * 0.5) calc(var(--pu) * 0.75) calc(var(--pu) * 0.25) calc(var(--pu) * 3.5); }
+  .cz .cz-view[data-day] .cz-gb-tile, .cz .cz-view[data-day] .cz-gbk-tile { display: grid; place-items: center; flex: none; width: calc(var(--pu) * 2.25); height: calc(var(--pu) * 2.25); border-radius: calc(var(--pu) * 0.625); background: var(--tint); color: var(--kink); }
+  .cz .cz-view[data-day] .cz-gb-tile { position: absolute; left: calc(var(--pu) * 0.625); top: calc(var(--pu) * 0.375); }
+  .cz .cz-view[data-day] .cz-gb-head { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; column-gap: calc(var(--pu) * 0.5); background: var(--card); }
+  .cz .cz-view[data-day] .cz-gb-t { flex: 0 1 auto; min-width: 0; font-family: var(--font-display); font-weight: 700; font-size: calc(var(--pu) * 1.0625); letter-spacing: -0.02em; }
+  .cz .cz-view[data-day] .cz-gb-when { flex: 1 0 100%; font-weight: 600; font-size: var(--cz-small); color: var(--ink-2); }
+  .cz .cz-view[data-day] .cz-gb-tag, .cz .cz-view[data-day] .cz-gbk .cz-bk-tag { display: inline-flex; align-items: center; flex: none; height: calc(var(--pu) * 1.25); padding: 0 calc(var(--pu) * 0.5); border-radius: var(--r-pill); background: var(--paper-2); color: var(--ink-2);
+    font-size: var(--tmin); font-weight: 700; line-height: 1; letter-spacing: 0.06em; text-transform: uppercase; }
+  .cz .cz-view[data-day] .cz-gb-part { background: var(--paper-2); }
+  .cz .cz-view[data-day] .cz-gb.is-ringed { box-shadow: inset 0.25rem 0 0 var(--accent), inset 0 0 0 0.125rem var(--coral); }
+  /* a tight plan (45 to 75 minutes): the title row, the time under it, the note after */
+  .cz .cz-view[data-day] .cz-gb.is-tight .cz-gb-in { display: flex; flex-direction: column; padding-top: calc(var(--pu) * 0.375); }
+  .cz .cz-view[data-day] .cz-gb.is-tight .cz-gb-head { display: flex; }
+  /* a short plan (under 45 minutes) is one row centred in its card (44px at the least): a small tile, the title on one line (a long one fades at the edge), PLAN, the time. A 15 or 20 minute plan is the same row. */
+  .cz .cz-view[data-day] .cz-gb.is-short .cz-gb-in { flex-wrap: nowrap; align-items: center; gap: 0 calc(var(--pu) * 0.5); padding: 0 calc(var(--pu) * 0.625) 0 calc(var(--pu) * 3); -webkit-mask-image: none; mask-image: none; }
+  .cz .cz-view[data-day] .cz-gb.is-short .cz-gb-head { display: contents; }
+  .cz .cz-view[data-day] .cz-gb.is-short .cz-gb-tile { width: calc(var(--pu) * 1.75); height: calc(var(--pu) * 1.75); top: 50%; margin-top: calc(var(--pu) * -0.875); border-radius: calc(var(--pu) * 0.5); }
+  .cz .cz-view[data-day] .cz-gb.is-short .cz-gb-tile svg { width: calc(var(--pu) * 1.125); height: calc(var(--pu) * 1.125); }
+  .cz .cz-view[data-day] .cz-gb.is-short .cz-gb-t { min-width: 0; padding-right: calc(var(--pu) * 0.5); overflow: hidden; white-space: nowrap; -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 0.75rem), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 0.75rem), transparent); }
+  .cz .cz-view[data-day] .cz-gb.is-short .cz-gb-when { flex: none; white-space: nowrap; }
+  .cz .cz-view[data-day] .cz-gb.is-short .cz-gb-tag { display: none; }      /* the row is narrow: the tile already says it is a plan */
+
+  /* long titles wrap to two lines and stop there (the handoff's "Long content"); the whole title is the link's label and the sheet's heading */
+  .cz .cz-view[data-day] .cz-gb:not(.is-short) .cz-gb-t, .cz .cz-view[data-day] .cz-gbk:not(.is-pill) .cz-bk-t { max-height: 2.3em; line-height: 1.15; overflow: hidden; }
+
+  /* a plan beside another one is half a column wide: no tile (the kind's edge still says it), the words use the room */
+  .cz .cz-view[data-day] .cz-gb.is-lane .cz-gb-tile, .cz .cz-view[data-day] .cz-gb.is-lane .cz-gb-tag { display: none; }
+  .cz .cz-view[data-day] .cz-gb.is-lane .cz-gb-in, .cz .cz-view[data-day] .cz-gb.is-lane.is-short .cz-gb-in { padding-left: calc(var(--pu) * 0.75); }
+  .cz .cz-view[data-day] .cz-gb.is-lane.is-short .cz-gb-in { flex-wrap: wrap; align-content: center; }      /* the title and the time on two short lines inside the 44px */
+  .cz .cz-view[data-day] .cz-gb.is-lane.is-short .cz-gb-t { flex: 1 0 100%; }
+
+  /* a booking: the same card, its kind's tile, the title and a grey BOOKED pill; the time is on the rail (the link's label still says it) */
+  .cz .cz-view[data-day] .cz-gbk { min-height: var(--tap); padding: 0 calc(var(--pu) * 0.625); border: 1px solid var(--hairline); border-radius: var(--r-sm); background: var(--card); box-shadow: inset 0.25rem 0 0 var(--accent); color: var(--ink); }
+  .cz .cz-view[data-day] .cz-gbk-in { gap: calc(var(--pu) * 0.625); min-height: calc(var(--tap) - 2px); padding: calc(var(--pu) * 0.25) 0 calc(var(--pu) * 0.25) calc(var(--pu) * 0.125); }
+  .cz .cz-view[data-day] .cz-gbk .cz-bk-time { display: none; }
+  .cz .cz-view[data-day] .cz-gbk .cz-bk-t { flex: 1 1 0; font-family: var(--font-display); font-weight: 700; font-size: calc(var(--pu) * 1); letter-spacing: -0.02em; color: var(--ink); }
+  .cz .cz-view[data-day] .cz-gbk.is-pill { padding: calc(var(--pu) * 0.25) calc(var(--pu) * 0.4375) calc(var(--pu) * 0.25) calc(var(--pu) * 0.625); }
+  .cz .cz-view[data-day] .cz-gbk.is-pill .cz-bk-time { display: block; font-weight: 700; color: var(--ink-2); }
+  .cz .cz-view[data-day] .cz-gbk.is-pill .cz-bk-row svg { color: var(--kink); }
+  .cz .cz-view[data-day] .cz-gbk.is-pill .cz-bk-t { flex: none; font-family: var(--font-body); font-size: var(--cz-small); font-weight: 700; letter-spacing: 0; }
+}

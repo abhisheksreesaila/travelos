@@ -259,7 +259,7 @@
   }
   function pickDay() {
     var b = menu.block, now = b.dataset.day;
-    var pills = stage.querySelectorAll('.cz-dpills [data-move-day]');
+    var pills = stage.querySelectorAll('.cz-hchips [data-move-day]');
     toStep('Move to day', titleOf(b), 'cz-menu-days', function (grid) {
       Array.prototype.forEach.call(pills, function (src) {
         var d = src.dataset.moveDay, w = (src.dataset.moveLabel || '').split(' ');
