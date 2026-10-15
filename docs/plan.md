@@ -892,3 +892,39 @@ Captain, 2026-10-14: "keep the colors same, what do u think about this theme, no
 - [x] the phone and the installed app look exactly as before (their screenshots and tests unchanged); the landing is unchanged
 - [x] fits 1440×900 and 1280×800 at 100% zoom, no labels cut off, rem only, colours only from tokens.css
 - [x] browser tests at 1440 check the skin's key rules (no box-shadow on cards, hairline borders, flat buttons, two-tone heading present) so it can't drift back
+
+# The colour timeline (brief docs/briefs/colour-timeline.md, approved 2026-10-15)
+
+## F-159 The laptop day as a colour timeline [todo]
+Brief: docs/briefs/colour-timeline.md · Design: docs/design/colour-timeline.md (frame ct-day-desk) · Needs: F-158
+- [ ] on a desktop the day's plans and bookings are white cards at their real times with a kind-coloured icon tile and a 3px left edge in the kind's colour; no day tint anywhere (the day panel is white with a hairline)
+- [ ] every plan and booking prints its start time big on the rail at its top ("12:30" with a small "PM"); an hour label within 30 minutes of a printed start time is hidden, so labels never overlap
+- [ ] day tabs are neutral pills, the open day solid ink; PLAN and BOOKED are grey pills; coral appears only on primary buttons and the now line; Up next stays the one ink card
+- [ ] bookings show as cards with their kind's tile and a grey BOOKED pill; a short plan keeps its title on one line
+- [ ] it fits 1440×900 and 1280×800 at 100% zoom with no page scroll; rem only; colours only from tokens.css; the F-158 rules it replaces are removed, not overridden
+- [ ] the phone, tablet and installed app are unchanged; browser tests at 1440 and 1280 pin: no day colours, a start time beside every item, no overlapping rail labels, kind edge colours, the open day ink
+
+## F-160 The phone day as a colour timeline [todo]
+Brief: docs/briefs/colour-timeline.md · Design: docs/design/colour-timeline.md (frame ct-day-phone) · Needs: F-159
+- [ ] on the phone, tablet and installed app the day uses the same rail, start times, cards, tiles and neutral day chips as F-159, in one column under the ink Up next card
+- [ ] the ink day header and the coloured day chips are gone; the tab bar, Ask sheet and every touch move (hold, drag, knobs, hold menu) work as before
+- [ ] text is never under 13px and touch targets at least 44px; browser tests at 390 and 800 pin the same rules as F-159
+
+## F-161 Adding and moving in the new look [todo]
+Brief: docs/briefs/colour-timeline.md · Design: docs/design/colour-timeline.md (frames ct-add-*, ct-move-*) · Needs: F-160
+- [ ] a new plan drafted on empty time opens in that gap with a dashed coral edge, the title field focused, kind chips in their colours, and its rail time in coral (phone and laptop)
+- [ ] while a plan is dragged: a faint dashed ghost stays at its old slot, a dashed landing slot shows where it will drop, the rail time turns coral and updates live, and a day chip under the pointer shows "Drop to move to <day>"
+- [ ] the behaviour is exactly as before (same thresholds, saves, undo, viewers can't drag); browser tests drive add and move at 390 and 1440 and check the ghost, the landing slot and the live time
+
+## F-162 The laptop week on one time axis [todo]
+Brief: docs/briefs/colour-timeline.md · Design: docs/design/colour-timeline.md (frame ct-week-desk) · Needs: F-159
+- [ ] on a desktop the week shows the days as columns on one shared hour axis on the left; each plan and booking sits at its time, sized by its length, coloured by kind only (tile and edge)
+- [ ] column headers are neutral (weekday, date, the day's title); an empty day shows a soft dashed "Free day · Say the plan" slot
+- [ ] dragging a plan between days and times (F-157) still works; a long trip scrolls sideways; clicking a day's header opens that day
+- [ ] it fits 1440×900 and 1280×800 at 100% zoom; browser tests at 1440 check items line up with the axis across columns
+
+## F-163 The phone week as day cards [todo]
+Brief: docs/briefs/colour-timeline.md · Design: docs/design/colour-timeline.md (frame ct-week-phone) · Needs: F-160
+- [ ] on the phone the week is a stack of white day cards: weekday, date and title, a mini hour bar with kind-coloured segments, then the day's items as compact rows with their start time and tile
+- [ ] an empty day shows "Free day" with Say the plan; tapping a card opens that day with the phone's liquid motion
+- [ ] browser tests at 390 check one card per day, no day colours, and that a tap opens the right day

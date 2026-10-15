@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>GitAway - LA with the kids</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Caveat:wght@600&family=Figtree:ital,wght@0,300..900;1,300..900&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@100..900&family=Figtree:wght@100..900&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "tertiary-fixed": "#72f7eb",
+            "surface-container-low": "#faf3e9",
+            "sky-deep": "#1B6FC9",
+            "on-error": "#ffffff",
+            "sky-fill": "#5AB0FF",
+            "mint-fill": "#48D1A0",
+            "coral-deep": "#C9431F",
+            "background": "#fff8f0",
+            "control-edge": "rgba(30,26,46,0.16)",
+            "tertiary-container": "#00b1a6",
+            "mint-deep": "#16865F",
+            "secondary-container": "#e4dcf8",
+            "inverse-primary": "#ffb4a3",
+            "on-tertiary-fixed-variant": "#00504b",
+            "surface-container-lowest": "#ffffff",
+            "on-secondary-container": "#655f77",
+            "secondary-fixed": "#e7defa",
+            "on-primary-container": "#6b1200",
+            "tertiary": "#006a63",
+            "surface-container-high": "#eee7dd",
+            "coral-tint": "#FFE6DA",
+            "secondary-fixed-dim": "#cac3de",
+            "mint-tint": "#D4F7EA",
+            "bubble-fill": "#FF8CC6",
+            "on-tertiary-container": "#003d38",
+            "inverse-surface": "#33302a",
+            "captions": "#5A5470",
+            "on-primary-fixed-variant": "#891e04",
+            "inverse-on-surface": "#f7f0e6",
+            "grape-fill": "#C3B2FF",
+            "surface-dim": "#e0d9d0",
+            "surface-container-highest": "#e8e2d8",
+            "bubble-tint": "#FFE3F1",
+            "sun-deep": "#8A6200",
+            "text-secondary": "#4A4460",
+            "tertiary-fixed-dim": "#51dbcf",
+            "error-container": "#ffdad6",
+            "on-tertiary": "#ffffff",
+            "on-secondary": "#ffffff",
+            "on-background": "#1e1b16",
+            "hairline": "rgba(30,26,46,0.10)",
+            "surface-variant": "#e8e2d8",
+            "sky-tint": "#DDEEFF",
+            "coral": "#FF7352",
+            "sun-tint": "#FFF1C2",
+            "on-primary": "#ffffff",
+            "secondary": "#605b73",
+            "grape-deep": "#6A4FD6",
+            "on-surface": "#1e1b16",
+            "error": "#ba1a1a",
+            "surface-container": "#f4ede3",
+            "surface-bright": "#fff8f0",
+            "surface": "#FFFFFF",
+            "primary-fixed": "#ffdad2",
+            "on-surface-variant": "#58413c",
+            "on-primary-fixed": "#3d0700",
+            "grape-tint": "#ECE4FF",
+            "outline": "#8c716b",
+            "outline-variant": "#e0bfb8",
+            "sun-fill": "#FFC93C",
+            "primary-fixed-dim": "#ffb4a3",
+            "on-error-container": "#93000a",
+            "bubble-deep": "#C23B82",
+            "on-secondary-fixed": "#1d192d",
+            "surface-tint": "#aa361a",
+            "on-secondary-fixed-variant": "#49445a",
+            "surface-dark": "#FAF7F2",
+            "on-tertiary-fixed": "#00201d",
+            "primary": "#aa361a",
+            "paper": "#FFF8EE",
+            "primary-container": "#ff7352",
+            "ink": "#1E1A2E"
+          },
+          borderRadius: {
+            DEFAULT: "1rem",
+            lg: "2rem",
+            xl: "3rem",
+            full: "9999px"
+          },
+          spacing: {
+            "space-lg": "1.5rem",
+            "space-xs": "0.25rem",
+            "space-xl": "2rem",
+            gutter: "1rem",
+            "space-md": "1rem",
+            "space-sm": "0.5rem",
+            margin: "1.5rem"
+          },
+          fontFamily: {
+            "headline-md": ["Bricolage Grotesque"],
+            "body-lg": ["Figtree"],
+            "label-md": ["Figtree"],
+            "headline-sm": ["Bricolage Grotesque"],
+            "body-sm": ["Figtree"],
+            "headline-xl": ["Bricolage Grotesque"],
+            "body-md": ["Figtree"],
+            "label-sm": ["Figtree"],
+            "headline-lg": ["Bricolage Grotesque"],
+            "hand": ["Caveat", "cursive"]
+          },
+          fontSize: {
+            "headline-md": ["22px", { lineHeight: "28px", letterSpacing: "-0.02em", fontWeight: "700" }],
+            "body-lg": ["16px", { lineHeight: "24px", fontWeight: "500" }],
+            "label-md": ["14px", { lineHeight: "18px", fontWeight: "600" }],
+            "headline-sm": ["18px", { lineHeight: "24px", letterSpacing: "-0.02em", fontWeight: "700" }],
+            "body-sm": ["12px", { lineHeight: "16px", fontWeight: "400" }],
+            "headline-xl": ["36px", { lineHeight: "42px", letterSpacing: "-0.03em", fontWeight: "800" }],
+            "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+            "label-sm": ["11px", { lineHeight: "14px", letterSpacing: "0.05em", fontWeight: "700" }],
+            "headline-lg": ["28px", { lineHeight: "34px", letterSpacing: "-0.03em", fontWeight: "700" }]
+          }
+        }
+      }
+    };
+  </script>
+<style>
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .map-grid-pattern {
+      background-image: 
+        radial-gradient(rgba(30, 26, 46, 0.06) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-paper text-ink antialiased flex justify-center items-start min-h-screen select-none font-body-md text-body-md">
+<!-- iPhone Canvas Shell: 390px fixed container -->
+<div class="relative w-full max-w-[390px] h-[844px] overflow-hidden bg-paper shadow-2xl flex flex-col justify-between border border-hairline">
+<!-- ================= FULL BLEED MAP CANVAS LAYER ================= -->
+<div class="absolute inset-0 z-0 overflow-hidden pointer-events-none map-grid-pattern bg-[#FBF7F0]">
+<!-- SVG Vector Map Graphic of Los Angeles basin -->
+<svg class="w-full h-full object-cover" fill="none" viewbox="0 0 390 844" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<!-- Subtle water gradient for Santa Monica Bay -->
+<lineargradient id="oceanGrad" x1="0%" x2="100%" y1="0%" y2="100%">
+<stop offset="0%" stop-color="#E2F0FD"></stop>
+<stop offset="100%" stop-color="#D5E8FA"></stop>
+</lineargradient>
+<filter height="140%" id="pinShadow" width="140%" x="-20%" y="-20%">
+<fedropshadow dx="0" dy="3" flood-color="#1E1A2E" flood-opacity="0.18" stddeviation="2.5"></fedropshadow>
+</filter>
+</defs>
+<!-- Pacific Ocean Coastline curve -->
+<path d="M -50 180 C 40 250, 60 380, 20 540 C -10 660, 45 760, -20 860 L -100 860 L -100 180 Z" fill="url(#oceanGrad)"></path>
+<path d="M -50 180 C 40 250, 60 380, 20 540 C -10 660, 45 760, -20 860" fill="none" stroke="#B8DCF8" stroke-linecap="round" stroke-width="3"></path>
+<!-- Green park reserves (Santa Monica Mountains / Griffith) -->
+<path d="M 90 -40 C 150 10, 240 -10, 310 30 C 370 70, 410 40, 440 80 L 440 -40 Z" fill="#EBF7EE"></path>
+<path d="M 40 210 C 90 200, 130 220, 150 260 C 120 290, 70 270, 40 210 Z" fill="#EBF7EE" opacity="0.8"></path>
+<!-- Major Freeways / Roads (I-405, I-10, US-101 lines) -->
+<!-- I-10 Santa Monica Fwy -->
+<path d="M 38 375 C 90 385, 170 380, 240 370 C 290 365, 340 380, 410 395" stroke="#FFFFFF" stroke-linecap="round" stroke-width="8"></path>
+<path d="M 38 375 C 90 385, 170 380, 240 370 C 290 365, 340 380, 410 395" stroke="#E3DEC8" stroke-linecap="round" stroke-width="4"></path>
+<!-- I-405 San Diego Fwy -->
+<path d="M 115 140 C 110 240, 105 340, 120 440 C 135 530, 150 630, 180 720" stroke="#FFFFFF" stroke-linecap="round" stroke-width="7"></path>
+<path d="M 115 140 C 110 240, 105 340, 120 440 C 135 530, 150 630, 180 720" stroke="#E3DEC8" stroke-linecap="round" stroke-width="3.5"></path>
+<!-- Secondary grid streets -->
+<path d="M 0 310 L 390 310 M 0 460 L 390 460 M 0 580 L 390 580 M 180 180 L 180 700 M 270 200 L 270 750" stroke="#EFE9DC" stroke-width="2"></path>
+<!-- Drawn Planned Route Path Connecting Pins (1 -> 2 -> 3 -> 4) -->
+<!-- 1: LAX (128, 595) -> 2: Downtown GCM (295, 362) -> 3: Tidewater (195, 375) -> 4: SM Pier (42, 385) -->
+<path d="M 130 595 C 160 520, 220 470, 290 375" stroke="#FF7352" stroke-dasharray="6 6" stroke-linecap="round" stroke-width="3.5"></path>
+<path d="M 285 365 C 255 362, 225 368, 195 378" stroke="#FF7352" stroke-dasharray="6 6" stroke-linecap="round" stroke-width="3.5"></path>
+<path d="M 188 380 C 135 385, 80 386, 45 387" stroke="#FF7352" stroke-dasharray="6 6" stroke-linecap="round" stroke-width="3.5"></path>
+<!-- Water ripple markings in Santa Monica Bay -->
+<path d="M -10 320 Q 5 316, 20 320 M 5 440 Q 20 436, 35 440 M -15 510 Q 0 506, 15 510" fill="none" opacity="0.6" stroke="#90C5F2" stroke-linecap="round" stroke-width="1.5"></path>
+<!-- Map Location Labels (Hand-drawn / subtle typographic cues) -->
+<text fill="#1B6FC9" font-family="Bricolage Grotesque" font-size="11" font-weight="700" letter-spacing="0.04em" x="14" y="360">SANTA MONICA</text>
+<text fill="#8A6200" font-family="Bricolage Grotesque" font-size="11" font-weight="700" letter-spacing="0.04em" x="248" y="342">DOWNTOWN LA</text>
+<text fill="#4A4460" font-family="Figtree" font-size="10" font-weight="600" x="144" y="618">LAX Airport</text>
+<text fill="#5A5470" font-family="Figtree" font-size="10" font-style="italic" x="8" y="475">Pacific Ocean</text>
+<!-- PIN 1: LAX Sky Blue (#5AB0FF) -->
+<g filter="url(#pinShadow)" transform="translate(112, 565)">
+<path d="M 18 36 C 18 36, 32 23, 32 14 C 32 6.2 25.8 0 18 0 C 10.2 0 4 6.2 4 14 C 4 23, 18 36, 18 36 Z" fill="#5AB0FF"></path>
+<circle cx="18" cy="14" fill="#FFFFFF" r="10"></circle>
+<text fill="#1B6FC9" font-family="Bricolage Grotesque" font-size="12" font-weight="800" text-anchor="middle" x="18" y="18">1</text>
+</g>
+<!-- PIN 2: Grand Central Market Sun Yellow (#FFC93C) -->
+<g filter="url(#pinShadow)" transform="translate(280, 335)">
+<path d="M 18 36 C 18 36, 32 23, 32 14 C 32 6.2 25.8 0 18 0 C 10.2 0 4 6.2 4 14 C 4 23, 18 36, 18 36 Z" fill="#FFC93C"></path>
+<circle cx="18" cy="14" fill="#FFFFFF" r="10"></circle>
+<text fill="#8A6200" font-family="Bricolage Grotesque" font-size="12" font-weight="800" text-anchor="middle" x="18" y="18">2</text>
+</g>
+<!-- PIN 3: The Tidewater Grape Purple (#C3B2FF) -->
+<g filter="url(#pinShadow)" transform="translate(178, 350)">
+<path d="M 18 36 C 18 36, 32 23, 32 14 C 32 6.2 25.8 0 18 0 C 10.2 0 4 6.2 4 14 C 4 23, 18 36, 18 36 Z" fill="#C3B2FF"></path>
+<circle cx="18" cy="14" fill="#FFFFFF" r="10"></circle>
+<text fill="#6A4FD6" font-family="Bricolage Grotesque" font-size="12" font-weight="800" text-anchor="middle" x="18" y="18">3</text>
+</g>
+<!-- PIN 4: Santa Monica Pier Mint Green (#48D1A0) -->
+<g filter="url(#pinShadow)" transform="translate(26, 360)">
+<path d="M 18 36 C 18 36, 32 23, 32 14 C 32 6.2 25.8 0 18 0 C 10.2 0 4 6.2 4 14 C 4 23, 18 36, 18 36 Z" fill="#48D1A0"></path>
+<circle cx="18" cy="14" fill="#FFFFFF" r="10"></circle>
+<text fill="#16865F" font-family="Bricolage Grotesque" font-size="12" font-weight="800" text-anchor="middle" x="18" y="18">4</text>
+</g>
+</svg>
+<!-- Handwritten note floating on the canvas -->
+<div class="absolute top-[425px] left-8 pointer-events-none transform -rotate-6">
+<span class="font-hand text-lg text-coral-deep bg-sun-tint/80 backdrop-blur-sm px-2.5 py-1 rounded-full border border-sun-deep/10 shadow-xs">
+          sunset around 6:48pm!
+        </span>
+</div>
+</div>
+<!-- ================= TOP APP BAR & FIXED HEADER SYSTEM ================= -->
+<header class="relative z-30 w-full pt-10 pb-2 px-4 bg-surface/80 backdrop-blur-md border-b border-hairline flex flex-col gap-2.5">
+<!-- Top Title Row (Shared Components Spec) -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<!-- Family Initials Avatar Group -->
+<div class="flex -space-x-1.5 overflow-hidden p-0.5">
+<span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-sun-fill text-ink font-label-md text-label-md ring-2 ring-white">A</span>
+<span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-bubble-fill text-white font-label-md text-label-md ring-2 ring-white">S</span>
+<span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-sky-fill text-white font-label-md text-label-md ring-2 ring-white">M</span>
+<span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-mint-fill text-ink font-label-md text-label-md ring-2 ring-white">L</span>
+</div>
+<h1 class="font-headline-sm text-headline-sm text-ink tracking-tight font-extrabold">
+            LA with the kids
+          </h1>
+</div>
+<!-- Trailing SOS Action -->
+<button aria-label="Emergency SOS" class="flex items-center gap-1 px-2.5 py-1 rounded-full border border-error/30 bg-error-container/60 text-error font-label-sm text-label-sm active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[16px] leading-none" data-icon="sos">sos</span>
+<span>SOS</span>
+</button>
+</div>
+<!-- Horizontal Day Strip (Restrained, clear pill row) -->
+<div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 -mx-1 px-1">
+<!-- Active Day: Fri 16 -->
+<button class="shrink-0 px-3 py-1.5 rounded-full bg-ink text-white font-label-md text-label-md shadow-xs flex items-center gap-1.5 active:scale-95 transition-transform">
+<span class="w-2 h-2 rounded-full bg-sun-fill"></span>
+<span>Fri 16</span>
+<span class="text-white/60 font-normal text-body-sm">· Fly in, check in</span>
+</button>
+<!-- Sat 17 -->
+<button class="shrink-0 px-3 py-1.5 rounded-full bg-surface-dark/90 text-text-secondary border border-hairline font-label-md text-label-md active:scale-95 transition-transform">
+<span>Sat 17</span>
+<span class="text-captions font-normal text-body-sm">· Wide open</span>
+</button>
+<!-- Sun 18 -->
+<button class="shrink-0 px-3 py-1.5 rounded-full bg-surface-dark/90 text-text-secondary border border-hairline font-label-md text-label-md active:scale-95 transition-transform">
+<span>Sun 18</span>
+<span class="text-captions font-normal text-body-sm">· Wide open</span>
+</button>
+<!-- Mon 19 -->
+<button class="shrink-0 px-3 py-1.5 rounded-full bg-surface-dark/90 text-text-secondary border border-hairline font-label-md text-label-md active:scale-95 transition-transform">
+<span>Mon 19</span>
+<span class="text-captions font-normal text-body-sm">· Wide open</span>
+</button>
+<!-- Tue 20 -->
+<button class="shrink-0 px-3 py-1.5 rounded-full bg-surface-dark/90 text-text-secondary border border-hairline font-label-md text-label-md active:scale-95 transition-transform">
+<span>Tue 20</span>
+<span class="text-captions font-normal text-body-sm">· Fly home</span>
+</button>
+</div>
+<!-- Quick Filter Chips -->
+<div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-0.5 pb-1">
+<button class="shrink-0 px-3 py-1 rounded-full bg-coral text-white font-label-sm text-label-sm active:scale-95 transition-transform">
+          All
+        </button>
+<button class="shrink-0 px-2.5 py-1 rounded-full bg-white/70 backdrop-blur-sm border border-hairline text-text-secondary font-label-sm text-label-sm hover:border-ink/20 active:scale-95 transition-transform">
+          Plans
+        </button>
+<button class="shrink-0 px-2.5 py-1 rounded-full bg-white/70 backdrop-blur-sm border border-hairline text-text-secondary font-label-sm text-label-sm hover:border-ink/20 active:scale-95 transition-transform">
+          Hotels
+        </button>
+<button class="shrink-0 px-2.5 py-1 rounded-full bg-white/70 backdrop-blur-sm border border-hairline text-text-secondary font-label-sm text-label-sm hover:border-ink/20 active:scale-95 transition-transform">
+          Flights
+        </button>
+<button class="shrink-0 px-2.5 py-1 rounded-full bg-white/70 backdrop-blur-sm border border-hairline text-text-secondary font-label-sm text-label-sm hover:border-ink/20 active:scale-95 transition-transform">
+          Car
+        </button>
+<button class="shrink-0 px-2.5 py-1 rounded-full bg-white/70 backdrop-blur-sm border border-hairline text-text-secondary font-label-sm text-label-sm hover:border-ink/20 active:scale-95 transition-transform">
+          Chats
+        </button>
+</div>
+</header>
+<!-- ================= FLOATING STACK CONTENT CANVAS (OVER MAP) ================= -->
+<!-- Scrollable container fitting comfortably over the interactive map sheet -->
+<main class="relative z-20 flex-1 overflow-y-auto px-4 pb-28 pt-2 space-y-3 no-scrollbar">
+<!-- 1. UP NEXT HERO CARD (The primary dark accent block) -->
+<section class="w-full bg-ink text-white rounded-2xl p-4 shadow-md border border-ink/20 relative overflow-hidden transition-all">
+<!-- Glow gradient highlight inside card -->
+<div class="absolute -right-12 -top-12 w-32 h-32 rounded-full bg-coral/20 blur-2xl pointer-events-none"></div>
+<div class="flex items-center justify-between mb-2.5 relative z-10">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-coral-tint text-coral-deep font-label-sm text-label-sm tracking-wider uppercase">
+              UP NEXT
+            </span>
+<span class="text-white/70 font-body-sm text-body-sm flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-mint-fill animate-pulse"></span>
+              In 45 mins
+            </span>
+</div>
+<!-- Quiet BOOKED status badge -->
+<span class="px-2 py-0.5 rounded-full bg-white/10 text-white/90 border border-white/15 font-label-sm text-label-sm tracking-widest uppercase">
+            BOOKED
+          </span>
+</div>
+<div class="relative z-10 mb-3">
+<h2 class="font-headline-sm text-headline-sm text-white tracking-tight leading-tight">
+            Skylark Air 214 · SFO → LAX
+          </h2>
+<p class="font-body-md text-body-md text-white/80 mt-0.5">
+            8:05 AM – 9:32 AM · Terminal 4, Gate 42B
+          </p>
+<p class="font-body-sm text-body-sm text-white/60 mt-1">
+            Seats 14A, 14B, 14C, 14D · Checked: 2 bags
+          </p>
+</div>
+<!-- Action Buttons inside Up Next Card -->
+<div class="flex items-center gap-2 pt-1 relative z-10">
+<button class="flex-1 min-h-[44px] py-2.5 px-4 rounded-full bg-coral text-white font-label-md text-label-md flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-transform">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" viewbox="0 0 24 24">
+<polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
+</svg>
+<span>Directions</span>
+</button>
+<button class="min-h-[44px] py-2.5 px-4 rounded-full bg-white/10 hover:bg-white/15 border border-white/20 text-white font-label-md text-label-md active:scale-95 transition-transform">
+            Open the plan
+          </button>
+</div>
+</section>
+<!-- 2. TODAY'S TIMELINE SHEET (Translucent frosted glass panel) -->
+<section class="w-full bg-white/85 backdrop-blur-md rounded-2xl p-4 border border-hairline shadow-sm space-y-3">
+<div class="flex items-center justify-between border-b border-hairline pb-2.5">
+<div class="flex items-center gap-2">
+<h3 class="font-headline-sm text-headline-sm text-ink font-bold tracking-tight">
+              Today's Schedule
+            </h3>
+<span class="px-2 py-0.5 rounded-full bg-surface-container font-label-sm text-label-sm text-text-secondary">
+              4 stops
+            </span>
+</div>
+<span class="text-captions font-label-sm text-label-sm">Total 34 mi</span>
+</div>
+<!-- Schedule Items List -->
+<div class="space-y-3 pt-1">
+<!-- Item 1: Sky Theme -->
+<div class="flex items-start gap-3 p-2.5 rounded-xl bg-sky-tint/40 border border-sky-fill/20">
+<div class="flex flex-col items-center justify-center w-7 h-7 rounded-full bg-sky-fill text-white font-headline-sm text-headline-sm shrink-0 shadow-xs">
+              1
+            </div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-1">
+<span class="font-label-md text-label-md text-sky-deep font-bold">8:05 – 9:32 AM</span>
+<span class="px-1.5 py-0.2 rounded-full bg-sky-tint text-sky-deep text-[10px] font-bold tracking-wider uppercase border border-sky-fill/30">
+                  BOOKED
+                </span>
+</div>
+<p class="font-body-md text-body-md text-ink font-semibold truncate mt-0.5">
+                Skylark Air 214 SFO → LAX
+              </p>
+<div class="flex items-center gap-2 mt-1">
+<span class="px-2 py-0.5 rounded-full bg-white/90 text-sky-deep font-label-sm text-label-sm border border-sky-fill/20">
+                  flight
+                </span>
+<span class="font-body-sm text-body-sm text-captions">Luggage claim 4</span>
+</div>
+</div>
+</div>
+<!-- Item 2: Sun Theme -->
+<div class="flex items-start gap-3 p-2.5 rounded-xl bg-sun-tint/40 border border-sun-fill/30">
+<div class="flex flex-col items-center justify-center w-7 h-7 rounded-full bg-sun-fill text-ink font-headline-sm text-headline-sm shrink-0 shadow-xs">
+              2
+            </div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-1">
+<span class="font-label-md text-label-md text-sun-deep font-bold">12:30 – 2:00 PM</span>
+<span class="text-captions font-body-sm text-body-sm">45m drive from LAX</span>
+</div>
+<p class="font-body-md text-body-md text-ink font-semibold truncate mt-0.5">
+                Lunch at Grand Central Market
+              </p>
+<div class="flex items-center gap-2 mt-1">
+<span class="px-2 py-0.5 rounded-full bg-white/90 text-sun-deep font-label-sm text-label-sm border border-sun-fill/30">
+                  food · kid friendly
+                </span>
+<span class="font-body-sm text-body-sm text-captions">Tacos & Eggslut</span>
+</div>
+</div>
+</div>
+<!-- Item 3: Grape Theme -->
+<div class="flex items-start gap-3 p-2.5 rounded-xl bg-grape-tint/40 border border-grape-fill/30">
+<div class="flex flex-col items-center justify-center w-7 h-7 rounded-full bg-grape-fill text-ink font-headline-sm text-headline-sm shrink-0 shadow-xs">
+              3
+            </div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-1">
+<span class="font-label-md text-label-md text-grape-deep font-bold">3:00 PM</span>
+<span class="px-1.5 py-0.2 rounded-full bg-grape-tint text-grape-deep text-[10px] font-bold tracking-wider uppercase border border-grape-fill/30">
+                  BOOKED
+                </span>
+</div>
+<p class="font-body-md text-body-md text-ink font-semibold truncate mt-0.5">
+                Check in · The Tidewater
+              </p>
+<div class="flex items-center gap-2 mt-1">
+<span class="px-2 py-0.5 rounded-full bg-white/90 text-grape-deep font-label-sm text-label-sm border border-grape-fill/30">
+                  hotel
+                </span>
+<span class="font-body-sm text-body-sm text-captions">City-view Double Queen</span>
+</div>
+</div>
+</div>
+<!-- Item 4: Mint Theme -->
+<div class="flex items-start gap-3 p-2.5 rounded-xl bg-mint-tint/40 border border-mint-fill/30">
+<div class="flex flex-col items-center justify-center w-7 h-7 rounded-full bg-mint-fill text-ink font-headline-sm text-headline-sm shrink-0 shadow-xs">
+              4
+            </div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-1">
+<span class="font-label-md text-label-md text-mint-deep font-bold">5:30 – 7:00 PM</span>
+<span class="text-captions font-body-sm text-body-sm">Pacific Park</span>
+</div>
+<p class="font-body-md text-body-md text-ink font-semibold truncate mt-0.5">
+                Santa Monica Pier sunset
+              </p>
+<div class="flex items-center gap-2 mt-1">
+<span class="px-2 py-0.5 rounded-full bg-white/90 text-mint-deep font-label-sm text-label-sm border border-mint-fill/30">
+                  outdoors
+                </span>
+<span class="font-body-sm text-body-sm text-captions">Ferris wheel & churros</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- 3. FAMILY CHAT & ASK INTERACTION SECTION -->
+<section class="space-y-2.5">
+<!-- Mini Family Chat Peek Bubble -->
+<div class="w-full bg-white/80 backdrop-blur-md rounded-2xl p-3 border border-hairline shadow-xs flex items-center justify-between gap-2.5">
+<div class="flex items-center gap-2.5 min-w-0">
+<span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-bubble-fill text-white font-headline-sm text-headline-sm shrink-0">
+              S
+            </span>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-label-md text-label-md text-ink font-bold">Sam</span>
+<span class="font-body-sm text-body-sm text-captions">4m ago</span>
+</div>
+<p class="font-body-md text-body-md text-text-secondary truncate">
+                "Can we do the pier before dinner?"
+              </p>
+</div>
+</div>
+<!-- Quick Thumb Reply Pill -->
+<button class="shrink-0 px-3 py-1.5 rounded-full bg-mint-tint border border-mint-deep/20 text-mint-deep font-label-sm text-label-sm hover:bg-mint-fill hover:text-ink active:scale-95 transition-all">
+            Looks doable!
+          </button>
+</div>
+<!-- Floating Ask Box Input Target (Min 48px touch target) -->
+<div class="w-full bg-white/90 backdrop-blur-md rounded-full px-4 py-2 border border-control-edge shadow-sm flex items-center gap-2.5 focus-within:ring-2 focus-within:ring-coral/40 transition-all">
+<span class="material-symbols-outlined text-coral text-[20px]" data-icon="auto_awesome">auto_awesome</span>
+<input class="w-full bg-transparent border-0 p-0 text-ink placeholder:text-captions font-body-md text-body-md focus:ring-0 focus:outline-none" placeholder="Ask or change anything... ('Move lunch to 1:30')" type="text"/>
+<button aria-label="Voice input" class="w-8 h-8 rounded-full bg-coral-tint text-coral flex items-center justify-center active:scale-90 transition-transform shrink-0">
+<span class="material-symbols-outlined text-[18px]" data-icon="mic">mic</span>
+</button>
+</div>
+</section>
+</main>
+<!-- ================= FLOATING GLASS BOTTOM NAVIGATION BAR ================= -->
+<!-- Fully adhering to Shared Components JSON: type=label_icon, labels=["Today", "Ask", "Trip"], icons=["today", "mic", "luggage"] -->
+<nav class="fixed bottom-0 left-0 right-0 z-50 flex justify-around items-center px-6 py-2.5 max-w-[390px] mx-auto pb-safe bg-surface/85 backdrop-blur-md rounded-full mx-4 mb-4 shadow-md border border-hairline">
+<!-- Destination 1: Today (ACTIVE - style_active_navigation executed) -->
+<button aria-label="Today view" class="flex flex-col items-center justify-center text-coral font-bold min-w-[56px] min-h-[48px] active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[22px]" data-icon="today" data-weight="fill" style="font-variation-settings: 'FILL' 1;">today</span>
+<span class="font-label-sm text-label-sm mt-0.5">Today</span>
+</button>
+<!-- Destination 2: Ask (Centre Action Target - Elevated voice pill) -->
+<button aria-label="Ask assistant" class="relative -top-2 flex flex-col items-center justify-center active:scale-95 transition-transform">
+<div class="w-12 h-12 rounded-full bg-coral text-white flex items-center justify-center shadow-lg hover:opacity-95 transition-opacity">
+<span class="material-symbols-outlined text-[24px]" data-icon="mic">mic</span>
+</div>
+<span class="font-label-sm text-label-sm text-ink font-bold mt-0.5">Ask</span>
+</button>
+<!-- Destination 3: Trip (INACTIVE - style_inactive_navigation executed) -->
+<button aria-label="Trip overview" class="flex flex-col items-center justify-center text-text-secondary font-medium min-w-[56px] min-h-[48px] hover:text-coral transition-colors active:scale-95">
+<span class="material-symbols-outlined text-[22px]" data-icon="luggage">luggage</span>
+<span class="font-label-sm text-label-sm mt-0.5">Trip</span>
+</button>
+</nav>
+</div>
+</body></html>
