@@ -37,8 +37,8 @@ def test_every_plan_block_says_its_kind_and_the_day_has_the_choices(trip):
     assert [b["data-type"] for b in blocks(day(trip, 2))] == ["food"]
     for k in cal.KINDS:
         assert f'data-pick-kind="{k}"' in html
-    pills = [t for t in re.findall(r"<a\b[^>]*>", html) if re.search(r'class="cz-dp[ "]', t)]
-    assert pills and all("data-move-day=" in t and "data-move-label=" in t for t in pills)    # the phone's day pills carry the move labels like the laptop's chips
+    pills = [t for t in re.findall(r"<a\b[^>]*>", html) if re.search(r'class="cz-hchip[ "]', t)]
+    assert pills and all("data-move-day=" in t and "data-move-label=" in t for t in pills)    # the day chips carry the move labels like the laptop's chips
 
 
 def test_a_booking_cannot_change_kind(trip):

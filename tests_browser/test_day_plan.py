@@ -64,12 +64,12 @@ def test_the_last_day_does_not_flick_further(canvas_page):
 def test_tapping_a_date_opens_it_and_keeps_it_in_view(canvas_page):
     page = canvas_page()
     open_day(page, 0)
-    pills = page.locator("#cz-dpills .cz-dp:not(.cz-dp-week)")
+    pills = page.locator(".cz-hchips .cz-hchip")
     assert pills.count() == 5
     pills.nth(3).click()
     expect(page.locator(".cz-view")).to_have_attribute("data-day", "3")
-    expect(page.locator("#cz-dpills .cz-dp.is-open")).to_have_attribute("aria-current", "date")
-    box, bar = page.locator("#cz-dpills .is-open").bounding_box(), page.locator("#cz-dpills").bounding_box()
+    expect(page.locator(".cz-hchips .cz-hchip.is-open")).to_have_attribute("aria-current", "date")
+    box, bar = page.locator(".cz-hchips .is-open").bounding_box(), page.locator(".cz-hchips").bounding_box()
     assert box["x"] >= bar["x"] - 1 and box["x"] + box["width"] <= bar["x"] + bar["width"] + 1
     page.locator(".cz-head .cz-back").click()
     expect(page.locator(".cz-view")).to_have_attribute("data-level", "week")
@@ -83,7 +83,7 @@ def test_the_slide_runs_the_way_the_days_go(canvas_page):
     flick(page, -160)
     expect(page.locator(".cz-view")).to_have_attribute("data-day", "2")
     settle(page)
-    page.locator("#cz-dpills .cz-dp:not(.cz-dp-week)").nth(0).click()
+    page.locator(".cz-hchips .cz-hchip").nth(0).click()
     expect(page.locator(".cz-view")).to_have_attribute("data-day", "0")
     settle(page)
     assert page.evaluate("window.__vt.dir").count("next") == 1 and page.evaluate("window.__vt.dir")[-1] == "prev"

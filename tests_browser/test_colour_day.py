@@ -1,4 +1,4 @@
-"""F-159: the laptop day as a colour timeline, pinned in a real browser at 1440 and 1280 (and the phone and tablet unchanged).
+"""F-159: the laptop day as a colour timeline, pinned in a real browser at 1440 and 1280 (the phone and tablet: test_colour_day_phone.py).
 Rules: docs/design/colour-timeline.md, design-system/DESIGN-SYSTEM.md "The colour timeline (F-159)". Screenshots on request: F159_SHOTS=<folder>."""
 import os
 
@@ -160,16 +160,14 @@ def test_the_day_fits_the_screen_with_a_plan_open(signed_in, viewport):
 
 
 @pytest.mark.parametrize("viewport", [PHONE, TABLET], ids=["390", "800"])
-def test_the_phone_and_the_tablet_are_unchanged(signed_in, viewport):
+def test_the_phone_and_the_tablet_wear_the_same_look(signed_in, viewport):
+    """F-160 brought the laptop's look to the phone and the tablet (tests_browser/test_colour_day_phone.py pins it in full): the start times, tiles and pills show, and the block is a white card."""
     page = day(signed_in, viewport)
     for sel in (".cz-g-start", ".cz-gb-tile", ".cz-gb-tag"):
-        for e in page.locator(sel).all():
-            assert e.evaluate("e => getComputedStyle(e).display") == "none", sel
-    assert page.locator(".cz-gbk-tile").first.evaluate("e => getComputedStyle(e).display") == "contents"      # a booking's icon sits in its row as before
-    hours = page.locator(".cz-g-hour")
-    assert all(h.evaluate("e => getComputedStyle(e).display") != "none" for h in hours.all())      # every hour label stays
+        assert page.locator(sel).first.evaluate("e => getComputedStyle(e).display") != "none", sel
+    assert page.locator(".cz-gbk-tile").first.evaluate("e => getComputedStyle(e).display") != "contents"      # a booking's icon is a tile now
     lunch = page.locator(".cz-gb", has_text="Lunch at Grand Central Market")
-    assert lunch.evaluate("e => getComputedStyle(e).backgroundColor") == SUN_TINT      # the block keeps its tint
+    assert lunch.evaluate("e => getComputedStyle(e).backgroundColor") == CARD
     assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth")
 
 

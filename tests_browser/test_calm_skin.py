@@ -161,9 +161,9 @@ def test_the_top_bar_is_flat_text_links_with_a_coral_underline(signed_in):
 @pytest.mark.parametrize("viewport", [PHONE, TABLET], ids=["390", "800"])
 def test_the_phone_and_the_tablet_keep_their_look(signed_in, viewport):
     page = signed_in(viewport, path="/trip/canvas?day=0")
-    expect(page.locator(".ga-h-two").first).to_be_hidden()      # the second phrase is drawn on a laptop only
+    expect(page.locator(".ga-h-two").first).to_be_visible()      # F-160: the day's second phrase is drawn on the phone and the tablet too
     head = style(page, ".cz-view[data-day] .cz-head", "backgroundColor", "borderTopLeftRadius")
-    assert head[0] == INK and float(head[1][:-2]) > 14      # the day keeps its ink header
+    assert head[0] == "rgba(0, 0, 0, 0)" and head[1] == "0px"      # F-160: no ink header on the day any more (tests_browser/test_colour_day_phone.py)
     page.goto(page.url.split("/trip")[0] + "/family")
     buttons = page.locator(".fam .btn")
     shadow = buttons.first.evaluate("e => getComputedStyle(e).boxShadow")

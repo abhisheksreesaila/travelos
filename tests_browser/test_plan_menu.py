@@ -110,7 +110,7 @@ def test_move_to_day_offers_the_trips_days_without_the_plans_own_and_one_tap_mov
     settled(phone)
     item(phone, "Move to day").tap()
     days = phone.locator(".cz-menu-days .cz-dc")
-    n = phone.locator(".cz-dpills [data-move-day]").count()
+    n = phone.locator(".cz-hchips [data-move-day]").count()
     expect(days).to_have_count(n)
     here = phone.locator(".cz-menu-days .cz-dc.is-here")
     expect(here).to_have_count(1)

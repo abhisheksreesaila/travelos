@@ -160,7 +160,7 @@ def test_a_laptop_gets_the_same_grid_wider(canvas_page):
     open_day(page)
     b = box(page, f'.cz-gb[data-act="{lunch.id}"]')
     assert b["width"] > 400 and page.evaluate(OVERFLOW) <= 0
-    assert page.locator(".cz-strip").is_visible() and page.locator("#cz-tray, .cz-day-side").count() >= 1
+    assert page.locator(".cz-hchips").is_visible() and page.locator("#cz-tray, .cz-day-side").count() >= 1
 
 
 # ---- move --------------------------------------------------------------------------------------------------------------------------

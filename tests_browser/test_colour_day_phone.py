@@ -9,6 +9,7 @@ from playwright.sync_api import expect
 from gitaway import tripcal as cal
 from tests.test_signin import person
 from tests_browser.helpers import PHONE
+from tests_browser.test_day_dock import SAT_NOON, at
 from tests_browser.test_colour_day import CARD, CORALS, GEOMETRY, GRAPE, INK, INK_2, MINT, NO_SCROLL, PAPER_2, SKY, SUN, SUN_INK, SUN_TINT, crowd, day, hits, style
 from tests_browser.test_topbar import TABLET, signed_in  # noqa: F401 - fixture
 
@@ -216,3 +217,29 @@ def test_a_run_of_short_plans_keeps_each_label_by_its_card_and_the_hours_visible
     shown = {m["name"] for m in got["marks"]}
     assert {"hour 11 AM", "hour 1 PM", "hour 2 PM", "hour 4 PM"} <= shown
     shot(page, f"run-{viewport['width']}.png")
+
+
+@BOTH
+def test_on_today_the_ink_up_next_card_sits_above_the_day_in_one_column(signed_in, viewport, monkeypatch):
+    at(monkeypatch, SAT_NOON)
+    page = signed_in(viewport, path="/trip/canvas?day=1")
+    page.reload()
+    expect(page.locator(".cz-now")).to_be_visible()
+    up, panel = page.locator(".cz-now").bounding_box(), page.locator(".cz-day-body").bounding_box()
+    chips = page.locator(".cz-hchips").bounding_box()
+    assert chips["y"] + chips["height"] <= up["y"] + 1 and up["y"] + up["height"] <= panel["y"] + 1      # chips, then Up next, then the day
+    assert abs(up["width"] - panel["width"]) <= 2      # the one column
+    assert page.locator(".cz-now .cz-up, .cz-now [id=tp-up]").first.evaluate("e => getComputedStyle(e).backgroundColor") == INK      # the one ink card
+    assert page.locator(".cz-hchip.is-today").count() == 1
+    shot(page, f"today-{viewport['width']}.png")
+    assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth")
+
+
+def test_the_folded_bar_still_comes_in_when_the_top_has_scrolled_away(signed_in):
+    page = day(signed_in, PHONE)
+    page.evaluate("window.scrollTo(0, 400)")
+    expect(page.locator(".cz-fold.is-on")).to_have_count(1)
+    assert page.locator(".cz-fold-bar").evaluate("e => getComputedStyle(e).backgroundColor") == CARD      # no ink bar either
+    shot(page, "folded-390.png")
+    page.evaluate("window.scrollTo(0, 0)")
+    expect(page.locator(".cz-fold.is-on")).to_have_count(0)

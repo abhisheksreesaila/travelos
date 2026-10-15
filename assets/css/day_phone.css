@@ -31,6 +31,18 @@
   .cz .cz-view[data-day] .cz-head .cz-seg[aria-current="page"] { color: var(--paper); }
   .cz .cz-view[data-day] .cz-head .cz-seg[aria-current="page"]::before { background: var(--ink); }
 
+  /* the compact bar that folds in once the top has scrolled away: white with a hairline (it floats, so it keeps a lift), no ink */
+  .cz .cz-view[data-day] .cz-fold-bar { background: var(--card); color: var(--ink); border: 1px solid var(--hairline); box-shadow: var(--shadow-lg); }
+  .cz .cz-view[data-day] .cz-fold-bar .cz-back { min-width: var(--tap); height: var(--tap); border: 1px solid var(--hairline-2); background: none; color: var(--ink); }
+  .cz .cz-view[data-day] .cz-fold-bar .cz-mapbtn { background: none; color: var(--ink-2); }
+  .cz .cz-view[data-day] .cz-fold-bar .cz-sos { min-width: var(--tap); min-height: var(--tap); background: var(--bubble-tint); color: var(--bubble-ink); }
+  .cz .cz-view[data-day] .cz-fold-bar .cz-segs { height: var(--tap); background: none; box-shadow: none; border: 1px solid var(--hairline-2); }
+  .cz .cz-view[data-day] .cz-fold-bar .cz-seg { min-width: var(--tap); min-height: var(--tap); margin: 0; color: var(--ink-3); }
+  .cz .cz-view[data-day] .cz-fold-bar .cz-seg[aria-current="page"] { color: var(--paper); }
+  .cz .cz-view[data-day] .cz-fold-bar .cz-seg[aria-current="page"]::before { background: var(--ink); }
+  .cz .cz-view[data-day] .cz-fold-name { min-height: var(--tap); }
+  .cz .cz-view[data-day] .cz-fold-name:focus-visible { outline-color: var(--ink); }
+
   /* the day chips: neutral pills, white with a hairline, the open day solid ink with its title, today ringed in ink; the row scrolls sideways on a longer trip */
   .cz .cz-view[data-day] .cz-hchips { grid-area: chips; display: flex; gap: calc(var(--pu) * 0.5); overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; touch-action: pan-x; padding: calc(var(--pu) * 0.1875); }
   .cz .cz-view[data-day] .cz-hchips::-webkit-scrollbar { display: none; }
@@ -49,7 +61,7 @@
   .cz .cz-view[data-day] .cz-kchip { min-width: var(--tap); min-height: var(--tap); }
 
   /* ---- the day: one white panel with a hairline, one column (the Set aside tray under the day, never beside it) ---- */
-  .cz .cz-view[data-day] .cz-day-body { display: flex; flex-direction: column; align-items: stretch; gap: calc(var(--pu) * 0.75); padding: 0 calc(var(--pu) * 0.75) calc(var(--pu) * 0.25) calc(var(--pu) * 0.25); border: 1px solid var(--hairline); border-radius: var(--r-card); background: var(--card); box-shadow: none; }
+  .cz .cz-view[data-day] .cz-day-body { display: flex; flex-direction: column; align-items: stretch; gap: calc(var(--pu) * 0.75); padding: 0 calc(var(--pu) * 0.75) 0 calc(var(--pu) * 0.25); border: 1px solid var(--hairline); border-radius: var(--r-card); background: var(--card); box-shadow: none; }
   .cz .cz-view[data-day] .cz-day-side { position: static; }
   .cz .cz-view[data-day] .cz-grid { --gut: calc(var(--pu) * 3.75); }
   .cz .cz-view[data-day] .cz-g-plane { left: calc(var(--gut) + var(--pu) * 0.75); }
@@ -64,7 +76,7 @@
     font-variant-numeric: tabular-nums; transform-origin: 100% 0; pointer-events: none; }
   .cz .cz-view[data-day] .cz-g-st-t { font-family: var(--font-display); font-weight: 800; font-size: calc(var(--pu) * 1.25); line-height: calc(var(--pu) * 1.375); letter-spacing: -0.02em; }
   .cz .cz-view[data-day] .cz-g-st-m { font-size: var(--tmin); font-weight: 700; line-height: calc(var(--pu) * 0.9375); color: var(--ink-3); }
-  .cz .cz-view[data-day] .cz-g-st-dot { position: absolute; left: calc(var(--gut) - var(--pu) * 0.25 - 0.5px); top: calc(var(--pu) * 0.375); width: calc(var(--pu) * 0.5); height: calc(var(--pu) * 0.5); border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 calc(var(--pu) * 0.125) var(--card); }
+  .cz .cz-view[data-day] .cz-g-st-dot { position: absolute; left: calc(var(--gut) - var(--pu) * 0.25); top: calc(var(--pu) * 0.375); width: calc(var(--pu) * 0.5); height: calc(var(--pu) * 0.5); border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 calc(var(--pu) * 0.125) var(--card); }
 
   /* the kinds' ink (the tile's icon): plans carry cz-k-<kind>; a booking follows its data-kind (flight sky, hotel grape, a car ink) */
   .cz .cz-view[data-day] .cz-gb, .cz .cz-view[data-day] .cz-g-start { --kink: var(--bubble-ink); }
@@ -112,7 +124,7 @@
 
   /* a booking: the same card, its kind's tile, the title and a grey BOOKED pill; the time is on the rail (the link's label still says it) */
   .cz .cz-view[data-day] .cz-gbk { min-height: var(--tap); padding: 0 calc(var(--pu) * 0.625); border: 1px solid var(--hairline); border-radius: var(--r-sm); background: var(--card); box-shadow: inset 0.25rem 0 0 var(--accent); color: var(--ink); }
-  .cz .cz-view[data-day] .cz-gbk-in { gap: calc(var(--pu) * 0.625); min-height: calc(var(--tap) - 2px); padding: calc(var(--pu) * 0.25) 0 calc(var(--pu) * 0.25) calc(var(--pu) * 0.125); }
+  .cz .cz-view[data-day] .cz-gbk-in { gap: calc(var(--pu) * 0.625); min-height: calc(var(--tap) - 0.125rem); padding: calc(var(--pu) * 0.25) 0 calc(var(--pu) * 0.25) calc(var(--pu) * 0.125); }
   .cz .cz-view[data-day] .cz-gbk .cz-bk-time { display: none; }
   .cz .cz-view[data-day] .cz-gbk .cz-bk-t { flex: 1 1 0; font-family: var(--font-display); font-weight: 700; font-size: calc(var(--pu) * 1); letter-spacing: -0.02em; color: var(--ink); }
   .cz .cz-view[data-day] .cz-gbk.is-pill { padding: calc(var(--pu) * 0.25) calc(var(--pu) * 0.4375) calc(var(--pu) * 0.25) calc(var(--pu) * 0.625); }
