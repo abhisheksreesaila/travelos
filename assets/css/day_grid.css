@@ -20,6 +20,10 @@
 .cz .cz-g-line { position: absolute; left: 0; right: 0; top: calc(var(--s) * var(--mm)); height: 1px; background: var(--line); }
 .cz .cz-g-line.is-half { background: transparent; border-top: 1px dashed var(--line); height: 0; }
 
+/* F-159: the colour timeline's rail start times, icon tiles and PLAN pill are a laptop's (desk_skin.css draws them); a booking's icon tile is only a wrapper elsewhere */
+.cz .cz-g-start, .cz .cz-gb-tile, .cz .cz-gb-tag { display: none; }
+.cz .cz-gbk-tile { display: contents; }
+
 /* bookings: quiet lines behind the plans (F-090, F-093). A line a plan overlaps is a slim pill instead (F-106, below), so no booking is ever hidden under a block. */
 .cz .cz-gbk { position: absolute; z-index: 1; left: 0; right: 0; top: calc(var(--s) * var(--mm)); display: block; min-height: 2.75rem; padding: 0 0.5rem; border-radius: 0.875rem;
   background: color-mix(in srgb, var(--paper-2) 82%, transparent); border: 0.0625rem dashed rgba(30, 26, 46, .2); color: var(--ink-3); font-size: var(--cz-small); }
