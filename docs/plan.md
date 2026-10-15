@@ -885,7 +885,7 @@ Captain, 2026-10-14: "on the week view, I should be able to move in desktop sinc
 - [x] bookings (flights, hotels, cars) can't be dragged; viewers can't drag; on a long trip the week scrolls sideways when the pointer holds near its edge
 - [x] browser tests drive it with a real mouse at 1440 and 1280; the phone and tablet week are unchanged
 
-## F-158 The calm laptop look [review]
+## F-158 The calm laptop look [done]
 Captain, 2026-10-14: "keep the colors same, what do u think about this theme, not colors .. finxplorer.com" → approved the board in light ("light"). Design: docs/design/canvas/Web-Calm-v1.html (C1–C3) · System: design-system/DESIGN-SYSTEM.md "Laptop skin (F-158)" · Needs: F-156, F-157
 - [x] on a desktop the top bar, the day (heading, day tabs, filters, grid, panel) and the week match frames C1–C3: flat hairline surfaces, flat pill buttons, eyebrow + two-tone titles, data rows with tiles, one accent block (Up next)
 - [x] /family, /trip/details, /start, the map and the Ask/Family panels use the same surfaces, buttons and headings
