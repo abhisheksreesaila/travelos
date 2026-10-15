@@ -89,11 +89,11 @@
   :root:has(.ga-topbar) .cz .cz-hchip.is-today:not(.is-open) { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
   :root:has(.ga-topbar) .cz .cz-hchip:focus-visible { outline-color: var(--ink); outline-offset: 0.1667rem; }
 
-  /* a plan held over the day tabs (F-152): dashed ink tabs, the one under it takes the paper fill and a solid ink ring */
-  :root:has(.ga-topbar) .cz .cz-hchips.is-dropping .cz-hchip { outline: 0.1667rem dashed var(--ink-3); outline-offset: -0.1667rem; }
+  /* a plan held over the day tabs (F-152): dashed tabs, the one under it takes a coral ring and the coral tint */
+  :root:has(.ga-topbar) .cz .cz-hchips.is-dropping .cz-hchip { outline: 0.1667rem dashed var(--hairline-2); outline-offset: -0.1667rem; }
   :root:has(.ga-topbar) .cz .cz-hchips.is-dropping .cz-hchip.is-open { outline: 0; opacity: 0.55; }
-  :root:has(.ga-topbar) .cz .cz-hchips.is-dropping .cz-hchip.is-drop-target { outline: 0; background: var(--paper-2); box-shadow: inset 0 0 0 0.1667rem var(--ink); color: var(--ink); }
-  :root:has(.ga-topbar) .cz .cz-hchips.is-dropping .cz-hchip.is-drop-target .cz-hc-dow, :root:has(.ga-topbar) .cz .cz-hchips.is-dropping .cz-hchip.is-drop-target .cz-hc-num { color: var(--ink); }
+  :root:has(.ga-topbar) .cz .cz-hchips.is-dropping .cz-hchip.is-drop-target { outline: 0; background: var(--coral-tint); box-shadow: inset 0 0 0 0.1667rem var(--coral); color: var(--ink); }
+  :root:has(.ga-topbar) .cz .cz-hchips.is-dropping .cz-hchip.is-drop-target .cz-hc-dow, :root:has(.ga-topbar) .cz .cz-hchips.is-dropping .cz-hchip.is-drop-target .cz-hc-head { color: var(--ink-2); }
 
   /* Day | Week and the map button: a hairline switch, a hairline round button */
   :root:has(.ga-topbar) .cz .cz-segs,
@@ -130,16 +130,18 @@
   :root:has(.ga-topbar) .cz .cz-g-st-m { font-size: max(var(--text-min), 0.9167rem); font-weight: 700; line-height: 1.0833rem; color: var(--ink-3); }
   :root:has(.ga-topbar) .cz .cz-g-st-dot { position: absolute; left: calc(var(--gut) - 0.2708rem); top: 0.4375rem; width: 0.625rem; height: 0.625rem; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 0.1667rem var(--card); }
 
-  /* the kinds' ink (the tile's icon): plans carry cz-k-<kind>; a booking takes a plan kind's colours (flight sky, hotel grape) and a car is ink */
+  /* the kinds' ink (the tile's icon): plans carry cz-k-<kind>; a booking's tile and edge follow its data-kind (flight sky, hotel grape, a car ink) */
   :root:has(.ga-topbar) .cz .cz-gb, :root:has(.ga-topbar) .cz .cz-g-start { --kink: var(--bubble-ink); }
   :root:has(.ga-topbar) .cz .cz-k-food { --kink: var(--sun-ink); }
   :root:has(.ga-topbar) .cz .cz-k-outdoors { --kink: var(--mint-ink); }
   :root:has(.ga-topbar) .cz .cz-k-culture { --kink: var(--grape-ink); }
   :root:has(.ga-topbar) .cz .cz-k-travel { --kink: var(--sky-ink); }
-  :root:has(.ga-topbar) .cz .cz-k-ink { --tint: var(--paper-2); --accent: var(--ink-3); --kink: var(--ink); }
+  :root:has(.ga-topbar) .cz .cz-k-ink, :root:has(.ga-topbar) .cz .cz-gbk { --tint: var(--paper-2); --accent: var(--ink-3); --kink: var(--ink); }
+  :root:has(.ga-topbar) .cz .cz-gbk[data-kind="flight"] { --tint: var(--sky-tint); --accent: var(--sky); --kink: var(--sky-ink); }
+  :root:has(.ga-topbar) .cz .cz-gbk[data-kind="hotel"] { --tint: var(--grape-tint); --accent: var(--grape); --kink: var(--grape-ink); }
 
   /* a plan: a white card, a hairline, the kind's 3px edge (the base rule's inset shadow), the icon tile at the left, then the title with its grey PLAN pill and the time */
-  :root:has(.ga-topbar) .cz .cz-gb { min-height: 3.6667rem; border: 1px solid var(--hairline); border-radius: var(--r-sm); background: var(--card); }
+  :root:has(.ga-topbar) .cz .cz-gb:not(.is-drawing) { min-height: 3.6667rem; border: 1px solid var(--hairline); border-radius: var(--r-sm); background: var(--card); }
   :root:has(.ga-topbar) .cz .cz-gb-in { padding: 0.5rem 0.75rem 0.25rem 4.3333rem; }
   :root:has(.ga-topbar) .cz .cz-gb-tile, :root:has(.ga-topbar) .cz .cz-gbk-tile { display: grid; place-items: center; flex: none; width: 2.8333rem; height: 2.8333rem; border-radius: 0.8333rem; background: var(--tint); color: var(--kink); }
   :root:has(.ga-topbar) .cz .cz-gb-tile { position: absolute; left: 0.75rem; top: 0.4167rem; }

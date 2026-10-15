@@ -518,7 +518,7 @@ def rail_starts(plans, lines):
     """[(minute drawn at, true start minute, colour class, [ids])] for the laptop's rail (F-159): every plan and booking prints its start at its top. Items starting at the same minute share a label;
     a label that would sit on the one above slides down below it (RAIL_ROOM), so labels never overlap."""
     items = [(a.start, a.start, f"cz-k-{a.kind if a.kind in KIND_TINT else 'fun'}", a.id) for a in plans]
-    items += [(top, x.label_start if getattr(x, "label_start", None) is not None else x.start, f"cz-k-{BOOKING_KIND.get(KIND_OF_ICON.get(getattr(x, 'icon', ''), ''), 'ink')}", x.id) for x, top in lines]
+    items += [(top, x.label_start if getattr(x, "label_start", None) is not None else x.start, booking_class(x), x.id) for x, top in lines]
     out = []
     for y, at, cls, ident in sorted(items, key=lambda i: (i[0], i[1], i[3])):
         if out and (out[-1][0], out[-1][1]) == (y, at):
@@ -598,7 +598,7 @@ PILL_SPAN = 60       # a plan within this many minutes below a booking's line is
 
 
 def booking_class(x):
-    """The colour class of a booking's tile and edge on a laptop (F-159)."""
+    """The colour class of a booking's dot on the rail (F-159); its card is coloured by its data-kind in CSS."""
     return f"cz-k-{BOOKING_KIND.get(KIND_OF_ICON.get(getattr(x, 'icon', ''), ''), 'ink')}"
 
 
@@ -607,7 +607,7 @@ def booking_pill(v, x, top, lo):
     never cut; the full title is the label a screen reader reads and the booking's sheet shows). Still a link to the sheet."""
     at = x.label_start if getattr(x, "label_start", None) is not None else x.start
     return A(Span(Span(compact_time(at), cls="cz-bk-time"), icon(getattr(x, "icon", "") or "lock", 14, 2.4), cls="cz-bk-row"), Span(short_title(x.title), cls="cz-bk-t"),
-             href=curl(day=x.day, booked=x.id), cls=f"cz-bk cz-gbk is-pill {booking_class(x)}", data_zoom="in", data_zk=f"bkg-{x.id}", style=f"--s:{top - lo}", aria_label=f"{x.title}, {cal.fmt_time(at)}, booked", **kind_attrs(v, "booked", x))
+             href=curl(day=x.day, booked=x.id), cls="cz-bk cz-gbk is-pill", data_zoom="in", data_zk=f"bkg-{x.id}", style=f"--s:{top - lo}", aria_label=f"{x.title}, {cal.fmt_time(at)}, booked", **kind_attrs(v, "booked", x))
 
 
 def overlap_groups(plans):
@@ -638,7 +638,7 @@ def time_grid(v, day, ents):
     inset = {a.id for group in overlap_groups(plans) if any(a.id in over for a in group) for a in group}      # plans that share lanes share a left edge: one inset, all inset
     bk = [booking_pill(v, x, top, lo) if covered[x.id] else
           A(Span(Span(icon(getattr(x, "icon", "") or "lock", 16, 2.4), cls="cz-gbk-tile"), Span(cal.fmt_time(x.label_start if getattr(x, "label_start", None) is not None else x.start), cls="cz-bk-time"), Span(x.title, cls="cz-bk-t"),
-              Span("Booked", cls="cz-bk-tag"), cls="cz-gbk-in cz-cs"), href=curl(day=x.day, booked=x.id), cls=f"cz-bk cz-gbk {booking_class(x)}", data_zoom="in", data_zk=f"bkg-{x.id}", style=f"--s:{top - lo}", aria_label=f"{x.title}, {cal.fmt_time(x.label_start if getattr(x, 'label_start', None) is not None else x.start)}, booked", **kind_attrs(v, "booked", x))
+              Span("Booked", cls="cz-bk-tag"), cls="cz-gbk-in cz-cs"), href=curl(day=x.day, booked=x.id), cls="cz-bk cz-gbk", data_zoom="in", data_zk=f"bkg-{x.id}", style=f"--s:{top - lo}", aria_label=f"{x.title}, {cal.fmt_time(x.label_start if getattr(x, 'label_start', None) is not None else x.start)}, booked", **kind_attrs(v, "booked", x))
           for x, top in lines]
     blocks = [grid_block(v, a, *lane[a.id], lo, edit, a.id in inset) for a in plans]
     now = ""
