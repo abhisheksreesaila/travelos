@@ -290,21 +290,15 @@ def test_only_editors_get_the_grab_cursor_on_a_plan_row(desk, browser, base_url)
     finally:
         ctx.close()
 
-
-def test_a_columns_own_scroll_stays_where_it_was_after_a_drop(desk):
+def test_the_moved_card_lands_in_the_new_column_at_the_same_height_on_the_axis(desk):
+    """F-162: the plan keeps its time, so on the shared axis it is at the same y in its new column (a day no longer scrolls inside itself)."""
     act = lunch(desk)
-    for h in range(7, 21):                                                                       # make the Saturday card tall enough to scroll
-        plan(f"Stop {h}", h * 60, h * 60 + 30, day=SATURDAY)
-        plan(f"Then {h}", h * 60 + 30, h * 60 + 60, day=SATURDAY)
-    desk.reload()
-    desk.wait_for_selector("#cz-wk")
-    js = "() => document.querySelector('.cz-wcol[data-day=\"%d\"] .cz-wlist').scrollTop" % SATURDAY
-    desk.evaluate("() => { document.querySelector('.cz-wcol[data-day=\"%d\"] .cz-wlist').scrollTop = 120; }" % SATURDAY)
-    before = desk.evaluate(js)
-    assert before > 0
+    before = row(desk, act).bounding_box()
     lift(desk, act)
     desk.mouse.move(*mid(col(desk, SATURDAY)), steps=6)
     desk.mouse.up()
     expect(desk.locator(".ga-toast")).to_contain_text("Moved to")
-    desk.wait_for_timeout(300)
-    assert desk.evaluate(js) == before
+    moved = col(desk, SATURDAY).locator(f'.cz-wi[data-wk-act="{act}"]')
+    expect(moved).to_have_count(1)
+    after = moved.bounding_box()
+    assert abs(after["y"] - before["y"]) < 1 and abs(after["height"] - before["height"]) < 1

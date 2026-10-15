@@ -42,7 +42,7 @@
     var copy = row.cloneNode(true);
     copy.removeAttribute('href'); copy.removeAttribute('data-zoom'); copy.removeAttribute('data-wk-act'); copy.setAttribute('aria-hidden', 'true');
     copy.className += ' cz-wi-copy';
-    copy.style.cssText = 'position:fixed;left:0;top:0;width:' + r.width + 'px;pointer-events:none;z-index:60;';
+    copy.style.cssText = 'position:fixed;left:0;top:0;width:' + r.width + 'px;height:' + r.height + 'px;pointer-events:none;z-index:60;';
     (stage.closest('.cz') || stage).appendChild(copy);      // (inside .cz: the row's rules are scoped to it)
     g.copy = copy;
     row.classList.add('is-lifted');

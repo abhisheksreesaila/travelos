@@ -1,7 +1,7 @@
-"""F-145: the desktop week in a real browser. From 1020px up the week is one column per day under the ink trip header (kind filters, Day | Week): a day-colour header, compact rows (time, a
-title on at most two lines, a kind icon), plans with their step and message summary, a dashed Free day card with Say the plan, today outlined, Open the day at the foot. Clicking a row
-opens that day with the plan selected; a trip longer than five days scrolls sideways inside the week area, never the page; 1440x900 and 1280x800 need no page scroll. 1000 (tablet) and 390
-(phone) keep today's rows. A viewer's page has no Say the plan: tests/test_week_desk.py. Screenshots on request: F145_SHOTS=<folder>."""
+"""F-145, F-162: the desktop week in a real browser. From 1020px up the week is one column per day on a shared hour axis under the trip heading (kind filters, Day | Week): a neutral header that opens
+the day, cards at their times (a title on at most two lines, a kind tile), plans with their step and message summary, a dashed Free day slot with Say the plan, today's header marked. Clicking a card
+opens that day with the plan selected; a trip longer than five days scrolls sideways inside the week area, never the page; 1440x900 and 1280x800 need no page scroll (where the cards sit on the axis:
+test_week_axis.py). 1000 (tablet) and 390 (phone) keep today's rows. A viewer's page has no Say the plan: tests/test_week_desk.py. Screenshots on request: F145_SHOTS=<folder>."""
 import os
 import re
 from datetime import datetime, timezone
@@ -64,24 +64,23 @@ def test_five_columns_under_the_ink_header_and_the_page_does_not_scroll(signed_i
     shot(page, f"week-{viewport['width']}.png")
 
 
-def test_each_day_has_its_colour_as_a_key_with_a_deep_ink_number(signed_in):
-    """F-158: the calm skin keeps the day colours as a small numbered key (01 to 05) in the day's tint with its deep ink, not as a header block."""
+def test_no_day_has_a_colour_in_its_header(signed_in):
+    """F-162: the day colours are gone from the week; every header is the same neutral (a grey Day N pill, ink text)."""
     page = signed_in(DESKTOP, path="/trip/canvas")
-    got = page.evaluate("[...document.querySelectorAll('.cz-wcol')].map(c => [getComputedStyle(c.querySelector('.cz-wh-no')).backgroundColor, getComputedStyle(c.querySelector('.cz-wh-no')).color])")
-    want = page.evaluate("""['sun','mint','grape','sky','bubble'].map(n => { const g = v => { const d = document.createElement('i'); d.style.color = 'var(--' + v + ')'; document.body.append(d); const c = getComputedStyle(d).color; d.remove(); return c; }; return [g(n + '-tint'), g(n + '-ink')]; })""")
-    assert got == want
+    got = page.evaluate("[...document.querySelectorAll('.cz-wcol .cz-wh')].map(h => [getComputedStyle(h).backgroundColor, getComputedStyle(h.querySelector('.cz-wh-no')).backgroundColor, getComputedStyle(h.querySelector('.cz-wh-day')).color])")
+    assert got == [["rgba(0, 0, 0, 0)", "rgb(250, 247, 242)", "rgb(30, 26, 46)"]] * 5
 
 
 @pytest.mark.parametrize("viewport", [DESKTOP, LAPTOP], ids=["1440", "1280"])
-def test_rows_are_time_title_and_icon_and_a_title_wraps_to_two_lines_without_ellipsis(signed_in, viewport):
+def test_cards_are_time_title_and_tile_and_a_title_is_two_lines_at_most_without_ellipsis(signed_in, viewport):
     page = signed_in(viewport, path="/trip/canvas")
     plans()
     page.reload()
     assert page.locator(".cz-wcol[data-day='0'] .cz-wi").count() >= 2
     m = page.evaluate("""() => [...document.querySelectorAll('.cz-wi')].map(r => { const t = r.querySelector('.cz-wi-t'), cs = getComputedStyle(t), lh = parseFloat(cs.lineHeight);
-        return { lines: Math.round(t.getBoundingClientRect().height / lh), ellipsis: cs.textOverflow, clipped: t.scrollWidth > t.clientWidth + 1, ico: !!r.querySelector('.cz-wi-ico svg'), time: !!r.querySelector('.cz-wi-time').textContent.trim(), title: t.textContent }; })""")
-    assert all(x["ico"] and x["time"] and x["ellipsis"] == "clip" and not x["clipped"] for x in m)
-    assert all(x["lines"] <= 2 for x in m), [(x["title"], x["lines"]) for x in m]      # a title (40 characters at most) is two lines or fewer, and whole
+        return { lines: Math.round(t.getBoundingClientRect().height / lh), ellipsis: cs.textOverflow, ico: !!r.querySelector('.cz-wi-ico svg'), time: !!r.querySelector('.cz-wi-time').textContent.trim(), title: t.textContent }; })""")
+    assert all(x["ico"] and x["time"] and x["ellipsis"] == "clip" for x in m)
+    assert all(x["lines"] <= 2 for x in m), [(x["title"], x["lines"]) for x in m]      # a title is two lines or fewer; a card too short or too narrow for that fades its one line (the whole title shows when it is pointed at: test_week_axis.py)
     assert page.evaluate(NO_SCROLL) == [True, True, 0]
 
 
@@ -97,12 +96,12 @@ def test_plans_show_messages_and_a_free_day_is_a_dashed_card(signed_in):
     expect(free.get_by_role("link", name="Say the plan")).to_be_visible()
 
 
-def test_today_is_outlined(signed_in, monkeypatch):
+def test_today_is_marked_in_its_header(signed_in, monkeypatch):
     monkeypatch.setattr(catalog, "now_utc", lambda: SAT_NOON)
     monkeypatch.setattr(catalog, "today", lambda: SAT_NOON.astimezone(catalog.TZ).date())
     page = signed_in(DESKTOP, path="/trip/canvas")
-    sh = page.evaluate("[...document.querySelectorAll('.cz-wcol')].map(c => getComputedStyle(c).borderTopColor)")      # F-158: today's column has an ink edge instead of the others' hairline
-    assert [x == "rgb(30, 26, 46)" for x in sh] == [False, True, False, False, False], sh
+    sh = page.evaluate("[...document.querySelectorAll('.cz-wcol')].map(c => { const t = c.querySelector('.cz-wh-today'); return t ? getComputedStyle(t).backgroundColor : null; })")      # F-162: today's header has the ink "Today" pill where the others have a grey Day N
+    assert sh == [None, "rgb(30, 26, 46)", None, None, None], sh
     expect(page.locator(".cz-wcol.is-today")).to_contain_text("Today")
 
 
@@ -151,15 +150,15 @@ def test_the_kind_filters_in_the_header_filter_the_columns(signed_in):
     expect(page.locator(".cz-wi.is-booked:visible").first).to_be_visible()
 
 
-def test_a_day_with_many_items_scrolls_inside_its_card(signed_in):
+def test_a_day_with_many_items_stays_inside_the_week_area_and_the_page_does_not_scroll(signed_in):
     page = signed_in(LAPTOP, path="/trip/canvas")
     me = person("ari")
     for h in range(8, 20):
         cal.add_activity(me, day=0, start=h * 60, end=h * 60 + 30, title=f"Stop number {h} on the long first day", kind="fun")
     page.reload()
-    m = page.evaluate("""(() => { const l = document.querySelector('.cz-wcol[data-day="0"] .cz-wlist'), c = l.closest('.cz-wcol');
-        return { scrolls: l.scrollHeight > l.clientHeight, inside: c.getBoundingClientRect().bottom <= innerHeight, page: document.documentElement.scrollHeight <= document.documentElement.clientHeight } })()""")
-    assert m == {"scrolls": True, "inside": True, "page": True}
+    m = page.evaluate("""(() => { const w = document.querySelector('#cz-wk').getBoundingClientRect(), c = [...document.querySelectorAll('.cz-wcol[data-day="0"] .cz-wi')].map(n => n.getBoundingClientRect());
+        return { cards: c.length, inside: c.every(r => r.top >= w.top && r.bottom <= w.bottom), page: document.documentElement.scrollHeight <= document.documentElement.clientHeight } })()""")
+    assert m == {"cards": 14, "inside": True, "page": True}      # the 12 new plans and the day's 2 bookings, all on the axis (a day no longer scrolls inside itself)
     shot(page, "week-many-1280.png")
 
 
@@ -167,9 +166,8 @@ def test_a_trip_longer_than_five_days_scrolls_sideways_inside_the_week_area(brow
     ctx, page = long_trip(browser, base_url)
     page.goto(f"{base_url}/trip/canvas")
     expect(page.locator(".cz-wcol")).to_have_count(10)
-    m = page.evaluate("""(() => { const w = document.querySelector('#cz-wk'), c = [...document.querySelectorAll('.cz-wcol')].map(x => x.getBoundingClientRect()), cs = getComputedStyle(w);
-        const inner = w.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-        return { grows: w.scrollWidth > w.clientWidth + 10, overflowX: cs.overflowX, fifth: Math.abs(c[0].width - (inner - 4 * parseFloat(cs.columnGap)) / 5) < 2,
+    m = page.evaluate("""(() => { const w = document.querySelector('#cz-wk'), c = [...document.querySelectorAll('.cz-wcol')].map(x => x.getBoundingClientRect()), cs = getComputedStyle(w), ax = document.querySelector('.cz-wax').getBoundingClientRect();
+        return { grows: w.scrollWidth > w.clientWidth + 10, overflowX: cs.overflowX, fifth: Math.abs(c[0].width - (w.clientWidth - ax.width) / 5) < 2,
                  page: document.documentElement.scrollWidth <= document.documentElement.clientWidth, pageH: document.documentElement.scrollHeight <= document.documentElement.clientHeight } })()""")
     assert m == {"grows": True, "overflowX": "auto", "fifth": True, "page": True, "pageH": True}
     shot(page, "week-10-days-1280-start.png")

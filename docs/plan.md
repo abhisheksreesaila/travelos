@@ -916,7 +916,7 @@ Brief: docs/briefs/colour-timeline.md · Design: docs/design/colour-timeline.md 
 - [ ] while a plan is dragged: a faint dashed ghost stays at its old slot, a dashed landing slot shows where it will drop, the rail time turns coral and updates live, and a day chip under the pointer shows "Drop to move to <day>"
 - [ ] the behaviour is exactly as before (same thresholds, saves, undo, viewers can't drag); browser tests drive add and move at 390 and 1440 and check the ghost, the landing slot and the live time
 
-## F-162 The laptop week on one time axis [todo]
+## F-162 The laptop week on one time axis [review]
 Brief: docs/briefs/colour-timeline.md · Design: docs/design/colour-timeline.md (frame ct-week-desk) · Needs: F-159
 - [ ] on a desktop the week shows the days as columns on one shared hour axis on the left; each plan and booking sits at its time, sized by its length, coloured by kind only (tile and edge)
 - [ ] column headers are neutral (weekday, date, the day's title); an empty day shows a soft dashed "Free day · Say the plan" slot

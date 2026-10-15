@@ -131,7 +131,7 @@
   :root:has(.ga-topbar) .cz .cz-g-st-dot { position: absolute; left: calc(var(--gut) - 0.2708rem); top: 0.4375rem; width: 0.625rem; height: 0.625rem; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 0.1667rem var(--card); }
 
   /* the kinds' ink (the tile's icon): plans carry cz-k-<kind>; a booking's tile and edge follow its data-kind (flight sky, hotel grape, a car ink) */
-  :root:has(.ga-topbar) .cz .cz-gb, :root:has(.ga-topbar) .cz .cz-g-start { --kink: var(--bubble-ink); }
+  :root:has(.ga-topbar) .cz .cz-gb, :root:has(.ga-topbar) .cz .cz-g-start, :root:has(.ga-topbar) .cz .cz-wi { --kink: var(--bubble-ink); }      /* (.cz-wi: the week's cards, F-162) */
   :root:has(.ga-topbar) .cz .cz-k-food { --kink: var(--sun-ink); }
   :root:has(.ga-topbar) .cz .cz-k-outdoors { --kink: var(--mint-ink); }
   :root:has(.ga-topbar) .cz .cz-k-culture { --kink: var(--grape-ink); }
@@ -272,7 +272,7 @@
   :root:has(.ga-topbar) #ak-text { background: var(--sun-tint); border: 1px solid var(--hairline); border-left: 0.1667rem solid var(--sun); border-radius: 0 var(--r-card) var(--r-card) 0; font-family: var(--font-body); font-weight: 600; font-size: 1.1667rem; line-height: 1.5; }
   :root:has(.ga-topbar) #ak-day { border: 1px solid var(--hairline-2); }
 
-  /* ---- the week: numbered columns, each a flat card with a header (01 · FRI 16, a title, a summary), data rows, a footer ---- */
+  /* ---- the week: the heading and the kind filters above the panel (the panel itself is week_desk.css, F-162) ---- */
   :root:has(.ga-topbar) .cz .cz-view:has(> .cz-wk) { row-gap: 1.1667rem; }
   :root:has(.ga-topbar) .cz .cz-view:has(> .cz-wk)::before { display: none; }
   :root:has(.ga-topbar) .cz .cz-view:has(> .cz-wk) .cz-head-text { padding: 0; align-self: end; }
@@ -287,36 +287,6 @@
   :root:has(.ga-topbar) .cz .cz-view:has(> .cz-wk) .cz-seg { color: var(--ink-3); }
   :root:has(.ga-topbar) .cz .cz-view:has(> .cz-wk) .cz-seg[aria-current="page"] { color: var(--paper); }
   :root:has(.ga-topbar) .cz .cz-view:has(> .cz-wk) .cz-seg[aria-current="page"]::before { background: var(--ink); }
-  :root:has(.ga-topbar) .cz .cz-wk { --wg: 1.1667rem; padding: 0.1667rem 0.1667rem 0.3333rem; }
-  :root:has(.ga-topbar) .cz .cz-wcol { border: 1px solid var(--hairline); border-radius: var(--r-card); box-shadow: none; }
-  :root:has(.ga-topbar) .cz .cz-wcol.is-today { border-color: var(--ink); box-shadow: none; }
-  :root:has(.ga-topbar) .cz .cz-wh { display: block; min-height: 0; padding: 1.3333rem 1.3333rem 1rem; background: none; border-bottom: 1px solid var(--hairline); }
-  :root:has(.ga-topbar) .cz .cz-wh-key { display: flex; align-items: center; gap: 0.6667rem; }
-  :root:has(.ga-topbar) .cz .cz-wh-no { display: grid; place-items: center; width: 2.1667rem; height: 2.1667rem; border-radius: 0.5833rem; background: var(--tint); font: 800 1.0833rem var(--font-display); color: var(--deep); }
-  :root:has(.ga-topbar) .cz .cz-wh-dow, :root:has(.ga-topbar) .cz .cz-wh-num { font: 700 max(var(--text-min), 0.9167rem) var(--font-body); letter-spacing: 0.02em; color: var(--deep); }
-  :root:has(.ga-topbar) .cz .cz-wh-dow { letter-spacing: 0.06em; margin-right: -0.3333rem; }
-  :root:has(.ga-topbar) .cz .cz-wh-today { margin-left: auto; padding: 0 0.5rem; background: none; border: 1px solid var(--ink); color: var(--ink); font-size: max(var(--text-min), 0.8333rem); }
-  :root:has(.ga-topbar) .cz .cz-wh-head { display: block; margin: 0.6667rem 0 0; font-family: var(--font-display); font-weight: 800; font-size: 1.4167rem; line-height: 1.1; letter-spacing: -0.03em; text-align: left; color: var(--ink); }
-  :root:has(.ga-topbar) .cz .cz-wh-sum { display: block; margin-top: 0.1667rem; font-size: max(var(--text-min), 0.9583rem); font-weight: 600; color: var(--ink-3); }
-  :root:has(.ga-topbar) .cz .cz-wlist { gap: 0; padding: 0.3333rem 1.1667rem; }
-  :root:has(.ga-topbar) .cz .cz-wi { grid-template-columns: 4.3333rem minmax(0, 1fr); grid-template-areas: "time body"; padding: 0.75rem 0; border-radius: 0; border-bottom: 1px solid var(--hairline); column-gap: 0.8333rem; background: none; }
-  :root:has(.ga-topbar) .cz .cz-wi:last-of-type { border-bottom: 0; }
-  :root:has(.ga-topbar) .cz .cz-wi:hover, :root:has(.ga-topbar) .cz .cz-wi.is-plan, :root:has(.ga-topbar) .cz .cz-wi.is-plan:hover { background: none; box-shadow: none; }
-  :root:has(.ga-topbar) .cz .cz-wi:hover .cz-wi-t { color: var(--coral-deep); }
-  :root:has(.ga-topbar) .cz .cz-wi-time { font-weight: 700; font-size: max(var(--text-min), 0.9167rem); color: var(--ink-3); }
-  :root:has(.ga-topbar) .cz .cz-wi-t { font-size: 1.0417rem; }
-  :root:has(.ga-topbar) .cz .cz-wi.is-plan .cz-wi-t { font-size: 1.125rem; }
-  :root:has(.ga-topbar) .cz .cz-wi-s { margin-top: 0.1667rem; font-size: max(var(--text-min), 0.9583rem); }
-  :root:has(.ga-topbar) .cz .cz-wi-ico { display: none; }
-  :root:has(.ga-topbar) .cz .cz-wfree { margin: 0.8333rem 0; padding: 1rem; border: 1px dashed var(--hairline-2); border-radius: 0.8333rem; }
-  :root:has(.ga-topbar) .cz .cz-wsay, :root:has(.ga-topbar) .cz .cz-wsay:hover { background: var(--card); border-color: var(--hairline-2); }
-  :root:has(.ga-topbar) .cz .cz-wfree-t { font-family: var(--font-body); font-size: 1.0833rem; }
-  :root:has(.ga-topbar) .cz .cz-wft { justify-content: space-between; padding: 0 1.3333rem; border-top: 1px solid var(--hairline); }
-  :root:has(.ga-topbar) .cz .cz-wopen { width: 100%; justify-content: space-between; padding: 0; min-height: 3rem; font-size: 1rem; font-weight: 700; color: var(--ink-2); }
-  :root:has(.ga-topbar) .cz .cz-wopen:hover { background: none; color: var(--ink); }
-  :root:has(.ga-topbar) .cz .cz-wk.is-dragging .cz-wcol.is-drop-target { box-shadow: inset 0 0 0 0.1667rem var(--coral); }
-  :root:has(.ga-topbar) .cz .cz-wk.is-dragging .cz-wcol.is-drop-target .cz-wlist { background: none; }
-  :root:has(.ga-topbar) .cz .cz-wi.cz-wi-copy.is-plan, :root:has(.ga-topbar) .cz .cz-wi.cz-wi-copy.is-plan:hover { background: var(--card); border: 1px solid var(--hairline-2); border-radius: 0.8333rem; box-shadow: var(--shadow-lg); padding: 0.75rem 1rem; }
   :root:has(.ga-topbar) .ak-sheetform .ak-bigmic:not(.is-recording):not([aria-pressed="true"]) { background: var(--coral); color: var(--ink); box-shadow: none; }
 }
 
@@ -325,10 +295,4 @@
   :root:has(.ga-topbar) .cz .cz-hchip { padding-left: 1rem; padding-right: 1rem; }
   :root:has(.ga-topbar) .cz .cz-dock-tabs { padding: 0 1.3333rem; }
   :root:has(.ga-topbar) .cz .cz-dock-body { padding: 1.3333rem; }
-  :root:has(.ga-topbar) .cz .cz-wh { padding: 1.1667rem 1.1667rem 0.8333rem; }
-  :root:has(.ga-topbar) .cz .cz-wlist { padding: 0.3333rem 0.8333rem; }
-  :root:has(.ga-topbar) .cz .cz-wft { padding: 0 1.1667rem; }
-  :root:has(.ga-topbar) .cz .cz-wk { --wg: 0.8333rem; }
-  :root:has(.ga-topbar) .cz .cz-wi { grid-template-columns: 4rem minmax(0, 1fr); column-gap: 0.5rem; }
-  :root:has(.ga-topbar) .cz .cz-wi.is-plan .cz-wi-t, :root:has(.ga-topbar) .cz .cz-wi-t { font-size: 1.0833rem; }
 }
