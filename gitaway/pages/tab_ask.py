@@ -27,6 +27,7 @@ from gitaway.icons import icon
 from gitaway.layout import trip_field
 
 TITLE = "Ask GitAway"
+TWO = "Say it or paste it."      # F-158: the laptop's two-tone heading (the phone hides it)
 HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/ask.css"))
 SCRIPTS = ("/assets/js/ask.js",)
 MAX_FIELD = 200000      # a plan's state (a long paste read into parts and steps) travels in one hidden field

@@ -72,7 +72,7 @@ def paste_page(text="", errors=(), warnings=(), status=200):
         cls="ti-card ti-aside",
     )
     out = page("Import a trip", Div(
-        Div(H1("Import a trip", cls="ti-title"), P("Booked on Expedia or anywhere else? Paste your details and plan the days here.", cls="ti-lede"), cls="ti-head"),
+        Div(H1("Import a trip", cls="ti-title"), Span("Paste what you booked.", cls="ga-h-two"), P("Booked on Expedia or anywhere else? Paste your details and plan the days here.", cls="ti-lede"), cls="ti-head"),
         Div(Div(box, cls="ti-card ti-main"), how, cls="ti-cols"), cls="ti-wrap"), head=HEAD)
     return FtResponse(out, status_code=status) if status != 200 else out
 
@@ -157,7 +157,7 @@ def preview_page(text, parsed, match=None, moves=0, *, fields=None, save_action=
     token = importer.new_token()
     out = page("Preview your trip", Div(
         lead,
-        Div(H1("Check your trip", cls="ti-title"), P("This is exactly what will be saved. Nothing is saved until you press Save.", cls="ti-lede"), cls="ti-head"),
+        Div(H1("Check your trip", cls="ti-title"), Span("Then save it.", cls="ga-h-two"), P("This is exactly what will be saved. Nothing is saved until you press Save.", cls="ti-lede"), cls="ti-head"),
         Div(P("Read from an Expedia itinerary. Expedia names only who booked, so check the travelers and rename the placeholders (like “Adult 3”), then check each line.", cls="ti-note", id="ti-expedia"), cls="ti-warns") if expedia_read else "",
         Div(*[Div(w, cls="ti-warn", role="status") for w in parsed.warnings], cls="ti-warns") if parsed.warnings else "",
         Div(Div(*plan_sections(plan), cls="ti-main ti-stack", id="ti-preview-body"),
@@ -177,7 +177,7 @@ def preview_page(text, parsed, match=None, moves=0, *, fields=None, save_action=
 
 def details_page(plan, trip_id="", admin=False, editor=False):
     return page(f"{plan.title}: details", Div(
-        Div(H1(plan.title, cls="ti-title"), P(f"Booked elsewhere · {plan.booked_on}. Confirmation numbers are shown only to your family.", cls="ti-lede"),
+        Div(H1(plan.title, cls="ti-title"), Span("Every detail, in one place.", cls="ga-h-two"), P(f"Booked elsewhere · {plan.booked_on}. Confirmation numbers are shown only to your family.", cls="ti-lede"),
             Div(A(icon("arrow-right", 16, 2.6), "Open the trip", href="/trip", cls="btn btn-sm", id="ti-cal"),
                 A(icon("pencil", 16, 2.4), "Edit trip", href=f"/trips/build/edit?trip={trip_id}", cls="btn btn-sm", id="ti-edit-trip") if editor and trip_id else "",
                 A("Correct it", href=PATH, cls="ti-link", id="ti-correct"),

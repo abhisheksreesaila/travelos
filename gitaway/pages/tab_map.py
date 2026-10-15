@@ -18,6 +18,7 @@ from gitaway.icons import icon
 from gitaway.pages import around_ui, trip as trip_ui
 
 TITLE = "Map"
+TWO = "Where the day goes."      # F-158: the laptop's two-tone heading (the phone hides it)
 HEAD = (Link(rel="stylesheet", href="/assets/vendor/leaflet/leaflet.css"), Link(rel="stylesheet", href="/assets/css/map.css"), *around_ui.HEAD)  # trip.css and phone.css come with the shell
 SCRIPTS = ("/assets/vendor/leaflet/leaflet.js", "/assets/js/map.js", *around_ui.SCRIPTS)
 NOT_FOUND = "Couldn’t find this place on the map."

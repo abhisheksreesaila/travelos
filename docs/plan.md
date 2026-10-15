@@ -885,10 +885,10 @@ Captain, 2026-10-14: "on the week view, I should be able to move in desktop sinc
 - [x] bookings (flights, hotels, cars) can't be dragged; viewers can't drag; on a long trip the week scrolls sideways when the pointer holds near its edge
 - [x] browser tests drive it with a real mouse at 1440 and 1280; the phone and tablet week are unchanged
 
-## F-158 The calm laptop look [todo]
+## F-158 The calm laptop look [review]
 Captain, 2026-10-14: "keep the colors same, what do u think about this theme, not colors .. finxplorer.com" → approved the board in light ("light"). Design: docs/design/canvas/Web-Calm-v1.html (C1–C3) · System: design-system/DESIGN-SYSTEM.md "Laptop skin (F-158)" · Needs: F-156, F-157
-- [ ] on a desktop the top bar, the day (heading, day tabs, filters, grid, panel) and the week match frames C1–C3: flat hairline surfaces, flat pill buttons, eyebrow + two-tone titles, data rows with tiles, one accent block (Up next)
-- [ ] /family, /trip/details, /start, the map and the Ask/Family panels use the same surfaces, buttons and headings
-- [ ] the phone and the installed app look exactly as before (their screenshots and tests unchanged); the landing is unchanged
-- [ ] fits 1440×900 and 1280×800 at 100% zoom, no labels cut off, rem only, colours only from tokens.css
-- [ ] browser tests at 1440 check the skin's key rules (no box-shadow on cards, hairline borders, flat buttons, two-tone heading present) so it can't drift back
+- [x] on a desktop the top bar, the day (heading, day tabs, filters, grid, panel) and the week match frames C1–C3: flat hairline surfaces, flat pill buttons, eyebrow + two-tone titles, data rows with tiles, one accent block (Up next)
+- [x] /family, /trip/details, /start, the map and the Ask/Family panels use the same surfaces, buttons and headings
+- [x] the phone and the installed app look exactly as before (their screenshots and tests unchanged); the landing is unchanged
+- [x] fits 1440×900 and 1280×800 at 100% zoom, no labels cut off, rem only, colours only from tokens.css
+- [x] browser tests at 1440 check the skin's key rules (no box-shadow on cards, hairline borders, flat buttons, two-tone heading present) so it can't drift back

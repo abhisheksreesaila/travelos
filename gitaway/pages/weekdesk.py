@@ -47,7 +47,11 @@ def _column(v, i, editor):
     ents = tc.entries(v, i)
     today = i == v["today_idx"]
     label = f"{v['dates'][i].strftime('%A %b')} {s.num}"
-    head = Div(Span(s.dow, cls="cz-wh-dow"), Span(str(s.num), cls="cz-wh-num"), Span("Today", cls="cz-wh-today") if today else "", Span(s.head, cls="cz-wh-head"), cls="cz-wh")
+    bookings = sum(1 for kind, _ in ents if kind == "booked")
+    plans = len(ents) - bookings
+    summary = " · ".join(tc._count(n, *words) for n, words in ((bookings, ("booking", "bookings")), (plans, ("plan", "plans"))) if n) or "Nothing planned"      # F-158: "4 bookings · 1 plan"
+    head = Div(Div(Span(f"{i + 1:02d}", cls="cz-wh-no"), Span(s.dow, cls="cz-wh-dow"), Span(str(s.num), cls="cz-wh-num"), Span("Today", cls="cz-wh-today") if today else "", cls="cz-wh-key"),
+               Span(s.head.replace(" · ", ", "), cls="cz-wh-head"), Span(summary, cls="cz-wh-sum"), cls="cz-wh")
     if ents:
         body = Div(*[_row(v, i, kind, x) for kind, x in ents], Span("", cls="cz-wnone"), cls="cz-wlist")
     else:

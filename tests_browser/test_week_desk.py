@@ -64,9 +64,10 @@ def test_five_columns_under_the_ink_header_and_the_page_does_not_scroll(signed_i
     shot(page, f"week-{viewport['width']}.png")
 
 
-def test_each_day_has_its_colour_header_with_a_deep_ink_number(signed_in):
+def test_each_day_has_its_colour_as_a_key_with_a_deep_ink_number(signed_in):
+    """F-158: the calm skin keeps the day colours as a small numbered key (01 to 05) in the day's tint with its deep ink, not as a header block."""
     page = signed_in(DESKTOP, path="/trip/canvas")
-    got = page.evaluate("[...document.querySelectorAll('.cz-wcol')].map(c => [getComputedStyle(c.querySelector('.cz-wh')).backgroundColor, getComputedStyle(c.querySelector('.cz-wh-num')).color])")
+    got = page.evaluate("[...document.querySelectorAll('.cz-wcol')].map(c => [getComputedStyle(c.querySelector('.cz-wh-no')).backgroundColor, getComputedStyle(c.querySelector('.cz-wh-no')).color])")
     want = page.evaluate("""['sun','mint','grape','sky','bubble'].map(n => { const g = v => { const d = document.createElement('i'); d.style.color = 'var(--' + v + ')'; document.body.append(d); const c = getComputedStyle(d).color; d.remove(); return c; }; return [g(n + '-tint'), g(n + '-ink')]; })""")
     assert got == want
 
@@ -100,8 +101,8 @@ def test_today_is_outlined(signed_in, monkeypatch):
     monkeypatch.setattr(catalog, "now_utc", lambda: SAT_NOON)
     monkeypatch.setattr(catalog, "today", lambda: SAT_NOON.astimezone(catalog.TZ).date())
     page = signed_in(DESKTOP, path="/trip/canvas")
-    sh = page.evaluate("[...document.querySelectorAll('.cz-wcol')].map(c => getComputedStyle(c).boxShadow)")
-    assert [bool(re.search(r"rgb\(30, 26, 46\) 0px 0px 0px 2(\.\d+)?px", x)) for x in sh] == [False, True, False, False, False], sh
+    sh = page.evaluate("[...document.querySelectorAll('.cz-wcol')].map(c => getComputedStyle(c).borderTopColor)")      # F-158: today's column has an ink edge instead of the others' hairline
+    assert [x == "rgb(30, 26, 46)" for x in sh] == [False, True, False, False, False], sh
     expect(page.locator(".cz-wcol.is-today")).to_contain_text("Today")
 
 

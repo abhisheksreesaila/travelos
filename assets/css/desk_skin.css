@@ -1,0 +1,297 @@
+/* The calm laptop skin (F-158). Captain, 2026-10-14: FINXPLORER's structure with GitAway's colours, light only. Board: docs/design/canvas/Web-Calm-v1.html (C1 day with a plan open, C2 day during the trip,
+   C3 week with a drag); rules: design-system/DESIGN-SYSTEM.md "Laptop skin (F-158)". Design pixels / 12 = rem.
+
+   One file, loaded LAST by layout.styles() on every page, so it wins over each page's own stylesheet without touching them. Every rule below sits in the desktop query (1020px up, not the installed
+   app: the one GA.motion.calm() and the desktop layouts use) and under `:root:has(.ga-topbar)`, the signed-in pages' top bar. So the phone, the tablet, the installed app, the signed-out pages and the
+   landing never match a rule here and look exactly as before. Colours are tokens only (tokens.css has the hairlines and the coral tint); sizes are rem; nothing here moves (the motion is F-156's).
+
+   Flat on purpose: --shadow-sm and --shadow-md become a zero shadow (a real `none` would void the `inset 0.25rem 0 0 …, var(--shadow-sm)` lists the plan blocks use), the floating things (menus, a lifted
+   plan) keep --shadow-lg, and every card has a 1px hairline instead. */
+
+/* the phone and the tablet carry the second phrase and the live dot in their markup but never show them */
+.ga-h-two, .cz .cz-k-today { display: none; }
+
+@media (min-width: 1020px) and (not (display-mode: standalone)) {
+  :root:has(.ga-topbar) {
+    --shadow-sm: 0 0 0 0 transparent;
+    --shadow-md: 0 0 0 0 transparent;
+    --r-lg: var(--r-card);
+    --r-md: 1rem;
+  }
+
+  :root:has(.ga-topbar) .tp[data-canvas] { padding-top: 1.5rem; }
+
+  /* ---- the top bar: flat on paper, a hairline under it, text links, the current one ink with a coral underline ---- */
+  :root:has(.ga-topbar) .ga-topbar { height: 4.8333rem; border-bottom: 1px solid var(--hairline); }
+  :root:has(.ga-topbar) .ga-topbar .ga-brand { gap: 0.75rem; }
+  :root:has(.ga-topbar) .ga-topbar .ga-brand-mark { width: 2rem; height: 2rem; border-radius: 0.5833rem; box-shadow: none; color: var(--ink); }
+  :root:has(.ga-topbar) .ga-topbar .ga-brand-name { font: 800 1.0833rem var(--font-body); letter-spacing: 0.16em; text-transform: uppercase; }
+  :root:has(.ga-topbar) .ga-tb-nav { align-self: stretch; margin-left: 1rem; padding: 0; gap: 1.8333rem; border-radius: 0; background: none; box-shadow: none; }
+  :root:has(.ga-topbar) .ga-tb-link { min-height: 0; padding: 0; border-radius: 0; border-bottom: 0.1667rem solid transparent; padding-top: 0.1667rem; font-size: max(var(--text-min), 1.0833rem); font-weight: 600; color: var(--ink-3); }
+  :root:has(.ga-topbar) .ga-tb-link:hover { background: none; color: var(--ink); }
+  :root:has(.ga-topbar) .ga-tb-link[aria-current="page"] { background: none; color: var(--ink); font-weight: 700; border-bottom-color: var(--coral); }
+  :root:has(.ga-topbar) .ga-tb-ask { color: var(--ink-3); padding-left: 0; }
+  :root:has(.ga-topbar) .ga-tb-ask[aria-current="page"] { color: var(--ink); }
+  :root:has(.ga-topbar) .ga-tb-dot { display: none; }
+  :root:has(.ga-topbar) .ga-tb-kbd, :root:has(.ga-topbar) .ga-tb-link[aria-current="page"] .ga-tb-kbd { background: none; color: var(--ink-3); box-shadow: none; border: 1px solid var(--hairline-2); border-radius: 0.3333rem; padding: 0 0.3333rem; font-size: max(var(--text-min), 0.8333rem); }
+  :root:has(.ga-topbar) .ga-tb-sum:hover, :root:has(.ga-topbar) .ga-tb-menu[open] > .ga-tb-sum { background: none; box-shadow: none; }
+  :root:has(.ga-topbar) .ga-tb-tdot { display: none; }
+  :root:has(.ga-topbar) .ga-tb-sum { padding-left: 0; }
+  :root:has(.ga-topbar) .ga-tb-sum-me { padding: 0.25rem; }
+  :root:has(.ga-topbar) .ga-tb-sos { background: none; border: 1px solid var(--hairline-2); padding: 0 0.9167rem; min-height: 2.1667rem; font-size: max(var(--text-min), 0.9167rem); letter-spacing: 0.08em; }
+  :root:has(.ga-topbar) .ga-tb-sos:hover { box-shadow: none; background: var(--card); }
+  :root:has(.ga-topbar) .ga-tb-av { width: 2.5rem; height: 2.5rem; box-shadow: none; font-size: max(var(--text-min), 0.9167rem); }
+  :root:has(.ga-topbar) .ga-tb-pop { border-radius: var(--r-card); box-shadow: var(--shadow-lg); border: 1px solid var(--hairline); }
+  :root:has(.ga-topbar) .ga-tb-sw[aria-current="true"] { background: var(--paper-2); }
+
+  /* ---- buttons: flat pills, no ledge. Primary coral with ink text; secondary white with a hairline; ink for the strongest ---- */
+  :root:has(.ga-topbar) .btn,
+  :root:has(.ga-topbar) .tp-btn,
+  :root:has(.ga-topbar) .tp-mini,
+  :root:has(.ga-topbar) .cz-desk-btn,
+  :root:has(.ga-topbar) .cz-dock-btn { box-shadow: none; transform: none; border: 1px solid var(--hairline-2); background: var(--card); color: var(--ink); font-weight: 700; }
+  :root:has(.ga-topbar) .btn { min-height: 2.6667rem; padding: 0 1.25rem; font-size: 1.0417rem; }
+  :root:has(.ga-topbar) .btn-sm { min-height: 2.3333rem; padding: 0 1rem; font-size: 1rem; }
+  :root:has(.ga-topbar) .tp-btn, :root:has(.ga-topbar) .cz-desk-btn, :root:has(.ga-topbar) .cz-dock-btn { min-height: 2.6667rem; padding: 0 1.25rem; font-size: 1.0417rem; }
+  :root:has(.ga-topbar) .btn:hover, :root:has(.ga-topbar) .btn:active { transform: none; box-shadow: none; background: var(--paper-2); }
+  :root:has(.ga-topbar) .btn-primary, :root:has(.ga-topbar) .tp-btn-coral, :root:has(.ga-topbar) .cz-desk-btn.is-coral, :root:has(.ga-topbar) .cz-dock-btn.is-coral,
+  :root:has(.ga-topbar) .btn-primary:hover { background: var(--coral); border-color: var(--coral); color: var(--ink); }
+  :root:has(.ga-topbar) .btn-ink, :root:has(.ga-topbar) .tp-btn-ink, :root:has(.ga-topbar) .btn-ink:hover { background: var(--ink); border-color: var(--ink); color: var(--card) !important; }
+  :root:has(.ga-topbar) .tp-btn-plain { background: none; border-color: transparent; text-decoration: underline; }
+  :root:has(.ga-topbar) .tp-mini { min-height: 2.3333rem; padding: 0 0.9167rem; }
+
+  /* ---- headings: a small coral eyebrow over a two-tone Bricolage title (the first phrase ink, the second coral) ---- */
+  :root:has(.ga-topbar) .cz .cz-head .cz-head-k, :root:has(.ga-topbar) .cz .cz-head .cz-head-k *, :root:has(.ga-topbar) .cz .cz-head.is-deep .cz-head-k { color: var(--coral-deep); }
+  :root:has(.ga-topbar) .cz-head-text > details, :root:has(.ga-topbar) .cz-head-text > .cz-head-k { flex-basis: 100%; min-width: 0; }
+  :root:has(.ga-topbar) .cz-head-k { display: block; flex-basis: 100%; width: auto; font-size: max(var(--text-min), 0.9583rem); font-weight: 700; letter-spacing: 0.02em; }
+  :root:has(.ga-topbar) .cz .cz-k-today { display: inline; }
+  :root:has(.ga-topbar) .cz-k-today::before { content: ""; display: inline-block; width: 0.5rem; height: 0.5rem; margin-right: 0.5rem; vertical-align: 0.0833rem; border-radius: 50%; background: var(--mint); }
+  :root:has(.ga-topbar) .cz-head-text { flex-direction: row; flex-wrap: wrap; align-items: baseline; column-gap: 0; }
+  :root:has(.ga-topbar) .cz-head h1, :root:has(.ga-topbar) .cz .cz-head h1, :root:has(.ga-topbar) .cz-view[data-day] .cz-head.is-deep h1, :root:has(.ga-topbar) .cz .cz-view:has(> .cz-wk) .cz-head h1 { margin-top: 0.5rem; font-size: 2.5rem; line-height: 1.05; color: var(--ink); }
+  :root:has(.ga-topbar) .cz-head h1::after { content: "."; }
+  :root:has(.ga-topbar) .cz .cz-head h1 { margin-right: 0.3em; }
+  :root:has(.ga-topbar) .cz .ga-h-two { display: inline; margin: 0.5rem 0 0; font-family: var(--font-display); font-weight: 800; font-size: 2.5rem; line-height: 1.05; letter-spacing: -0.03em; color: var(--coral-deep); }
+
+  /* the day's heading: no ink card; the title row, then the day chips as flat tabs under a hairline */
+  :root:has(.ga-topbar) .cz-view[data-day] .cz-head,
+  :root:has(.ga-topbar) .cz .cz-head.is-deep { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "text ctl" "chips chips"; align-items: end; gap: 0.75rem 1.5rem; padding: 0; border-radius: 0; background: none; box-shadow: none; color: var(--ink); }
+  :root:has(.ga-topbar) .cz-view[data-day] .cz-head-text { grid-area: text; min-width: 0; }
+  :root:has(.ga-topbar) .cz-view[data-day] .cz-head-ctl { grid-area: ctl; align-self: end; margin-bottom: 0.3333rem; }
+  :root:has(.ga-topbar) .cz .cz-hchips { grid-area: chips; gap: 0; overflow-x: auto; border-bottom: 1px solid var(--hairline); }
+  :root:has(.ga-topbar) .cz .cz-hchip { flex-direction: row; align-items: baseline; flex-wrap: wrap; gap: 0 0.6667rem; min-width: 0; max-width: 13rem; padding: 0.6667rem 1.3333rem 0.8333rem; border-radius: 0; border-bottom: 0.1667rem solid transparent; margin-bottom: -1px; background: none; color: var(--ink-3); }
+  :root:has(.ga-topbar) .cz .cz-hchip:hover { background: none; color: var(--ink); }
+  :root:has(.ga-topbar) .cz .cz-hchip::before { content: ""; align-self: center; width: 0.6667rem; height: 0.6667rem; border-radius: 0.1667rem; background: var(--sun); }
+  :root:has(.ga-topbar) .cz .cz-hchip:nth-child(5n+2)::before { background: var(--mint); }
+  :root:has(.ga-topbar) .cz .cz-hchip:nth-child(5n+3)::before { background: var(--grape); }
+  :root:has(.ga-topbar) .cz .cz-hchip:nth-child(5n+4)::before { background: var(--sky); }
+  :root:has(.ga-topbar) .cz .cz-hchip:nth-child(5n+5)::before { background: var(--bubble); }
+  :root:has(.ga-topbar) .cz .cz-hchip .cz-hc-top { order: 1; gap: 0.6667rem; align-items: baseline; }
+  :root:has(.ga-topbar) .cz .cz-hchip .cz-hc-dow { font-size: max(var(--text-min), 0.9167rem); font-weight: 700; letter-spacing: 0.06em; color: inherit; }
+  :root:has(.ga-topbar) .cz .cz-hchip .cz-hc-num { font-size: 1.4167rem; color: var(--ink); }
+  :root:has(.ga-topbar) .cz .cz-hchip .cz-hc-head { order: 2; flex-basis: 100%; font-size: max(var(--text-min), 0.9583rem); font-weight: 600; color: var(--ink-3); }
+  :root:has(.ga-topbar) .cz .cz-hchip.is-open { background: none; color: var(--ink-2); border-bottom-color: var(--ink); }
+  :root:has(.ga-topbar) .cz .cz-hchip.is-open .cz-hc-dow, :root:has(.ga-topbar) .cz .cz-hchip.is-open .cz-hc-head { color: var(--ink-2); }
+  :root:has(.ga-topbar) .cz .cz-hchip.is-open .cz-hc-num { color: var(--coral-deep); }
+  :root:has(.ga-topbar) .cz .cz-hchip.is-today:not(.is-open) .cz-hc-num { color: var(--ink); }
+  :root:has(.ga-topbar) .cz .cz-hchip:focus-visible { outline-color: var(--ink); outline-offset: -0.1667rem; }
+
+  /* a plan held over the day tabs (F-152): dashed tabs, the one under it takes a coral ring and the coral tint */
+  :root:has(.ga-topbar) .cz .cz-hchips.is-dropping .cz-hchip { outline: 0.1667rem dashed var(--hairline-2); outline-offset: -0.1667rem; }
+  :root:has(.ga-topbar) .cz .cz-hchips.is-dropping .cz-hchip.is-open { outline: 0; opacity: 0.55; }
+  :root:has(.ga-topbar) .cz .cz-hchips.is-dropping .cz-hchip.is-drop-target { outline: 0; background: var(--coral-tint); box-shadow: inset 0 0 0 0.1667rem var(--coral); color: var(--ink); }
+  :root:has(.ga-topbar) .cz .cz-hchips.is-dropping .cz-hchip.is-drop-target .cz-hc-dow, :root:has(.ga-topbar) .cz .cz-hchips.is-dropping .cz-hchip.is-drop-target .cz-hc-head { color: var(--ink-2); }
+
+  /* Day | Week and the map button: a hairline switch, a hairline round button */
+  :root:has(.ga-topbar) .cz .cz-segs,
+  :root:has(.ga-topbar) .cz .cz-head.is-deep .cz-segs { height: 2.3333rem; padding: 0 0.1667rem; background: none; box-shadow: none; border: 1px solid var(--hairline-2); }
+  :root:has(.ga-topbar) .cz .cz-seg { color: var(--ink-3); font-weight: 700; font-size: max(var(--text-min), 1rem); }
+  :root:has(.ga-topbar) .cz .cz-head.is-deep .cz-seg { color: var(--ink-3); }
+  :root:has(.ga-topbar) .cz .cz-seg[aria-current="page"], :root:has(.ga-topbar) .cz .cz-head.is-deep .cz-seg[aria-current="page"] { color: var(--paper); }
+  :root:has(.ga-topbar) .cz .cz-seg[aria-current="page"]::before, :root:has(.ga-topbar) .cz .cz-head.is-deep .cz-seg[aria-current="page"]::before { background: var(--ink); }
+  :root:has(.ga-topbar) .cz .cz-mapbtn { width: 2.6667rem; height: 2.6667rem; background: none; border: 1px solid var(--hairline-2); color: var(--ink-2); }
+  :root:has(.ga-topbar) .cz .cz-mapbtn:hover { background: var(--card); }
+
+  /* filters: quiet pills, the chosen one outlined; Paste a plan and Say the plan at the right */
+  :root:has(.ga-topbar) .cz .cz-kchip { min-width: 0; min-height: 2.3333rem; margin: 0 0.1667rem 0 0; padding: 0 0.9167rem; border: 1px solid transparent; border-radius: var(--r-pill); font-weight: 600; font-size: max(var(--text-min), 1rem); color: var(--ink-3); }
+  :root:has(.ga-topbar) .cz .cz-kchip::before { display: none; }
+  :root:has(.ga-topbar) .cz .cz-kchip:hover { color: var(--ink); }
+  :root:has(.ga-topbar) .cz .cz-kchip[aria-pressed="true"] { border-color: var(--hairline-2); background: var(--card); color: var(--ink); }
+  :root:has(.ga-topbar) .cz .cz-desk-btn { gap: 0.5833rem; }
+
+  /* ---- the day: the hour grid is a flat card with hairlines ---- */
+  :root:has(.ga-topbar) .cz-view[data-day] .cz-day-left { gap: 1.1667rem; }
+  :root:has(.ga-topbar) .cz-view[data-day] .cz-day-body, :root:has(.ga-topbar) .cz .cz-dock { border: 1px solid var(--hairline); border-radius: var(--r-card); box-shadow: none; }
+  :root:has(.ga-topbar) .cz-view[data-day] .cz-day-body { padding: 0 1.1667rem 0 0.3333rem; }
+  :root:has(.ga-topbar) .cz .cz-g-line { background: var(--hairline); }
+  :root:has(.ga-topbar) .cz .cz-g-line.is-half { border-top-color: transparent; }
+  :root:has(.ga-topbar) .cz .cz-g-hour { font-weight: 600; color: var(--ink-3); }
+  :root:has(.ga-topbar) .cz .cz-gb { border-radius: 0.6667rem; }
+  :root:has(.ga-topbar) .cz .cz-gb-t { font-family: var(--font-display); font-weight: 800; font-size: 1.1667rem; letter-spacing: -0.02em; }
+  :root:has(.ga-topbar) .cz .cz-gb-when { font-weight: 600; font-size: max(var(--text-min), 0.9583rem); color: var(--ink-2); }
+  :root:has(.ga-topbar) .cz .cz-gb.is-ringed { box-shadow: inset 0.25rem 0 0 var(--accent), inset 0 0 0 0.1667rem var(--coral); }
+
+  /* a booking is a quiet data row: a tile in its kind's tint, the time, the name, BOOKED at the right */
+  :root:has(.ga-topbar) .cz .cz-gbk { border: 1px solid var(--hairline); border-radius: 0.6667rem; background: var(--paper-2); color: var(--ink); }
+  :root:has(.ga-topbar) .cz .cz-gbk-in { gap: 0.8333rem; }
+  :root:has(.ga-topbar) .cz .cz-gbk-in > svg { flex: none; box-sizing: border-box; width: 1.8333rem; height: 1.8333rem; padding: 0.4167rem; border-radius: 0.5rem; background: var(--sun-tint); color: var(--sun-ink); }
+  :root:has(.ga-topbar) .cz .cz-gbk[data-kind="flight"] .cz-gbk-in > svg { background: var(--sky-tint); color: var(--sky-ink); }
+  :root:has(.ga-topbar) .cz .cz-gbk[data-kind="hotel"] .cz-gbk-in > svg { background: var(--grape-tint); color: var(--grape-ink); }
+  :root:has(.ga-topbar) .cz .cz-gbk[data-kind="car"] .cz-gbk-in > svg { background: var(--sun-tint); color: var(--sun-ink); }
+  :root:has(.ga-topbar) .cz .cz-gbk .cz-bk-time { font-weight: 600; font-size: max(var(--text-min), 0.9583rem); color: var(--ink-2); }
+  :root:has(.ga-topbar) .cz .cz-gbk .cz-bk-t { font-weight: 700; font-size: 1.0833rem; color: var(--ink); }
+  :root:has(.ga-topbar) .cz .cz-gbk .cz-bk-tag { padding: 0; background: none; font-size: max(var(--text-min), 0.9167rem); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); }
+
+  /* the now line: coral, its time in coral ink on the card, no pill */
+  :root:has(.ga-topbar) .cz .cz-nowline { height: 0.125rem; }
+  :root:has(.ga-topbar) .cz-view[data-day] .cz-nowline { height: 0.125rem; margin-top: -0.0625rem; }
+  :root:has(.ga-topbar) .cz-view[data-day] .cz-now-t { right: 0; padding: 0 0.3333rem; border-radius: 0; background: var(--card); color: var(--coral-deep); font-weight: 700; }
+
+  /* ---- the panel: text tabs with an underline, data rows, one accent block ---- */
+  :root:has(.ga-topbar) .cz .cz-dock-tabs { gap: 1.6667rem; padding: 0 1.6667rem; border-bottom: 1px solid var(--hairline); }
+  :root:has(.ga-topbar) .cz .cz-dock-tab { flex: none; justify-content: flex-start; gap: 0.5rem; min-height: 0; padding: 1.0833rem 0 0.9167rem; border-radius: 0; border-bottom: 0.1667rem solid transparent; margin-bottom: -1px; font-size: max(var(--text-min), 1.0833rem); font-weight: 600; color: var(--ink-3); }
+  :root:has(.ga-topbar) .cz .cz-dock-tab:hover { background: none; color: var(--ink); }
+  :root:has(.ga-topbar) .cz .cz-dock-tab.is-on { background: none; color: var(--ink); font-weight: 700; border-bottom-color: var(--ink); }
+  :root:has(.ga-topbar) .cz .cz-dock-body { gap: 1.3333rem; padding: 1.5rem 1.6667rem; }
+  :root:has(.ga-topbar) .cz .cz-dock-k, :root:has(.ga-topbar) .cz .cz-pp-k { margin: 0 0 0.3333rem; font-size: max(var(--text-min), 0.9167rem); font-weight: 700; letter-spacing: 0.02em; text-transform: none; color: var(--coral-deep); }
+  :root:has(.ga-topbar) .cz .cz-dock-un, :root:has(.ga-topbar) .cz .cz-fam-un { background: var(--coral); line-height: 1.1667rem; font-size: max(var(--text-min), 0.9167rem); padding: 0 0.5rem; }
+
+  /* Up next: the one accent block */
+  :root:has(.ga-topbar) .cz .cz-up { gap: 0.8333rem; padding: 1.3333rem 1.5rem; border-radius: var(--r-card); box-shadow: none; }
+  :root:has(.ga-topbar) .cz .cz-up-k { font-size: max(var(--text-min), 0.9167rem); font-weight: 700; letter-spacing: 0.02em; }
+  :root:has(.ga-topbar) .cz .cz-up-title { font-size: 1.8333rem; }
+  :root:has(.ga-topbar) .cz .cz-up-meta { font-size: 1rem; opacity: .75; font-weight: 600; }
+  :root:has(.ga-topbar) .cz .cz-up .cz-dock-btn.is-white { background: none; border-color: color-mix(in srgb, var(--card) 25%, transparent); color: var(--card); }
+  :root:has(.ga-topbar) .cz .cz-up .cz-dock-btn:focus-visible { outline-color: var(--sun); }
+
+  /* Later today: a data row, tile · name over its kind · time */
+  :root:has(.ga-topbar) .cz .cz-later-row { grid-template-columns: 2.5rem minmax(0, 1fr) auto; grid-template-areas: "tile name time" "tile kind time"; align-items: center; column-gap: 1rem; row-gap: 0; padding: 0.8333rem 0.1667rem; border-top: 0; border-bottom: 1px solid var(--hairline); }
+  :root:has(.ga-topbar) .cz .cz-later-row:last-child { border-bottom: 0; }
+  :root:has(.ga-topbar) .cz .cz-later-tile { grid-area: tile; display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: 0.6667rem; background: var(--bubble-tint); color: var(--bubble-ink); }
+  :root:has(.ga-topbar) .cz .cz-lt-sun { background: var(--sun-tint); color: var(--sun-ink); } :root:has(.ga-topbar) .cz .cz-lt-mint { background: var(--mint-tint); color: var(--mint-ink); }
+  :root:has(.ga-topbar) .cz .cz-lt-sky { background: var(--sky-tint); color: var(--sky-ink); } :root:has(.ga-topbar) .cz .cz-lt-grape { background: var(--grape-tint); color: var(--grape-ink); }
+  :root:has(.ga-topbar) .cz .cz-later-t { grid-area: name; font-weight: 700; font-size: 1.0833rem; }
+  :root:has(.ga-topbar) .cz .cz-later-tag { grid-area: kind; font-weight: 600; font-size: max(var(--text-min), 0.9583rem); }
+  :root:has(.ga-topbar) .cz .cz-later-time { grid-area: time; font-weight: 700; font-size: 1.0417rem; color: var(--ink); text-align: right; white-space: nowrap; }
+
+  /* Ask or change something, and the message bars: hairline, no fill, a flat coral round button */
+  :root:has(.ga-topbar) .cz .cz-ask-card { border-radius: 1rem; background: none; box-shadow: none; border: 1px solid var(--hairline-2); }
+  :root:has(.ga-topbar) .cz .cz-ask-eg { font-weight: 600; color: var(--ink-3); }
+  :root:has(.ga-topbar) .cz .cz-ask-mic, :root:has(.ga-topbar) .cz .cz-compose-go { box-shadow: none; }
+  :root:has(.ga-topbar) .cz .cz-ask-mic { width: 2.6667rem; height: 2.6667rem; }
+  :root:has(.ga-topbar) .cz .cz-compose, :root:has(.ga-topbar) .cz .cz-pp-foot, :root:has(.ga-topbar) .cz .cz-fam-foot { margin: 0 1.1667rem 1.1667rem; background: none; box-shadow: none; border: 1px solid var(--hairline-2); border-radius: var(--r-pill); }
+  :root:has(.ga-topbar) .cz .cz-pp-foot:focus-within, :root:has(.ga-topbar) .cz .cz-fam-foot:focus-within { box-shadow: none; border-color: var(--ink); }
+  :root:has(.ga-topbar) .cz .cz-kbd, :root:has(.ga-topbar) .cz .cz-pp-kbd { background: none; box-shadow: none; border: 1px solid var(--hairline-2); border-radius: 0.3333rem; padding: 0 0.3333rem; font-size: max(var(--text-min), 0.8333rem); font-weight: 700; color: var(--ink-3); }
+
+  /* a plan in the panel: a tile, the coral eyebrow, the title; steps as rows; the note as a quiet quote; the chat flat */
+  :root:has(.ga-topbar) .cz .cz-pp-ic { width: 3.3333rem; height: 3.3333rem; border-radius: 0.8333rem; }
+  :root:has(.ga-topbar) .cz .cz-pp-eb { font-size: max(var(--text-min), 0.9167rem); font-weight: 700; letter-spacing: 0.02em; text-transform: none; color: var(--coral-deep); }
+  :root:has(.ga-topbar) .cz .cz-pp-t { font-size: 1.8333rem; margin-top: 0.25rem; }
+  :root:has(.ga-topbar) .cz .cz-pp-close { width: 2.3333rem; height: 2.3333rem; background: none; border: 1px solid var(--hairline-2); }
+  :root:has(.ga-topbar) .cz .cz-pp-who { font-weight: 600; font-size: 1rem; color: var(--ink-3); }
+  :root:has(.ga-topbar) .cz .cz-pp .cz-card-note { border-radius: 0 0.6667rem 0.6667rem 0; border-left: 0.1667rem solid var(--sun); background: var(--sun-tint); box-shadow: none; transform: none; font-family: var(--font-body); font-weight: 600; font-size: 1.0833rem; line-height: 1.4; color: var(--ink-2); padding: 0.5rem 1rem; }
+  :root:has(.ga-topbar) .cz .cz-pp .cz-card-add.is-empty { background: none; color: var(--ink-3); min-width: 0; font-family: var(--font-body); font-size: 1.0833rem; transform: none; box-shadow: none; border-radius: 0; }
+  :root:has(.ga-topbar) .cz .cz-pp .cz-card-notes { padding: 0; }
+  :root:has(.ga-topbar) .cz .cz-pstep { border-radius: 0; padding: 0.6667rem 0.1667rem; border-bottom: 1px solid var(--hairline); gap: 1rem; font-weight: 700; }
+  :root:has(.ga-topbar) .cz .cz-pstep:hover, :root:has(.ga-topbar) .cz .cz-pstep:focus-within { background: none; }
+  :root:has(.ga-topbar) .cz .cz-pstep .cz-ring { width: 1.3333rem; height: 1.3333rem; border-radius: 0.4167rem; border: 0.125rem solid var(--hairline-2); }
+  :root:has(.ga-topbar) .cz .cz-pp-steps { gap: 0; }
+  :root:has(.ga-topbar) .cz .cz-pp-asidebtn, :root:has(.ga-topbar) .cz .cz-pp-open { color: var(--ink-3); font-weight: 600; }
+  :root:has(.ga-topbar) .cz .cz-pp-add svg { border-radius: 0.4167rem; }
+  :root:has(.ga-topbar) .cz .cz-pp-msgs, :root:has(.ga-topbar) .cz .cz-fam-msgs { gap: 0.3333rem; }
+  :root:has(.ga-topbar) .cz .cz-pp-msgs .ft-msg, :root:has(.ga-topbar) .cz .cz-fam-msgs .ft-msg { max-width: 100%; }
+  :root:has(.ga-topbar) .cz .cz-pp-msgs .ft-bub, :root:has(.ga-topbar) .cz .cz-fam-msgs .ft-bub { background: var(--paper-2); border: 1px solid var(--hairline); border-radius: 0.8333rem; box-shadow: none; font-weight: 600; }
+  :root:has(.ga-topbar) .cz .cz-pp-msgs .ft-me .ft-bub, :root:has(.ga-topbar) .cz .cz-fam-msgs .ft-me .ft-bub { background: var(--coral-tint); color: var(--ink); }
+  :root:has(.ga-topbar) .cz .cz-pp-msgs .ft-me .ft-time, :root:has(.ga-topbar) .cz .cz-fam-msgs .ft-me .ft-time { color: var(--ink-3); }
+  :root:has(.ga-topbar) .cz .cz-fam-th.is-on { background: var(--paper-2); box-shadow: none; border: 1px solid var(--hairline); }
+  :root:has(.ga-topbar) .cz .cz-fam-th { border-radius: 0.8333rem; }
+  :root:has(.ga-topbar) .cz .cz-fam-ic { border-radius: 0.6667rem; }
+  :root:has(.ga-topbar) .cz .cz-fam-people { border: 1px solid var(--hairline-2); }
+  :root:has(.ga-topbar) .cz .cz-fam-hd { border-top-color: var(--hairline); }
+  :root:has(.ga-topbar) .cz .cz-ak-t { font-size: 1.8333rem; }
+
+
+  /* ---- the same headings on the other pages: the title, then its second phrase in coral, on one line under the eyebrow ---- */
+  :root:has(.ga-topbar) .fam-head, :root:has(.ga-topbar) .ti-head, :root:has(.ga-topbar) .st-hero, :root:has(.ga-topbar) .tp-head-text { flex-direction: row; flex-wrap: wrap; align-items: baseline; justify-content: flex-start; column-gap: 0; }
+  :root:has(.ga-topbar) .fam-head > .fam-ident, :root:has(.ga-topbar) .ti-head > p, :root:has(.ga-topbar) .st-hero > p, :root:has(.ga-topbar) .st-hero > .eyebrow, :root:has(.ga-topbar) .tp-head-text > .tp-head-k, :root:has(.ga-topbar) .tp-head-text > details { flex-basis: 100%; }
+  :root:has(.ga-topbar) .fam h1, :root:has(.ga-topbar) .ti-title, :root:has(.ga-topbar) .ti-detail-page .ti-title, :root:has(.ga-topbar) .st-hero h1, :root:has(.ga-topbar) #tp-title-h { flex: none; margin: 0 0.3em 0 0; font-size: 2.5rem; line-height: 1.05; letter-spacing: -0.03em; color: var(--ink); }
+  :root:has(.ga-topbar) .fam h1::after, :root:has(.ga-topbar) .ti-title::after, :root:has(.ga-topbar) .st-hero h1::after, :root:has(.ga-topbar) #tp-title-h::after { content: none; }
+  :root:has(.ga-topbar) .fam-head .ga-h-two, :root:has(.ga-topbar) .ti-head .ga-h-two, :root:has(.ga-topbar) .st-hero .ga-h-two, :root:has(.ga-topbar) .tp-head-text .ga-h-two { display: inline; margin: 0; font: 800 2.5rem/1.05 var(--font-display); letter-spacing: -0.03em; color: var(--coral-deep); }
+  :root:has(.ga-topbar) .st-hero .eyebrow, :root:has(.ga-topbar) .tp-head-k { font-size: max(var(--text-min), 0.9583rem); font-weight: 700; letter-spacing: 0.02em; color: var(--coral-deep); }
+  :root:has(.ga-topbar) .st-hero .eyebrow { text-transform: uppercase; }
+  :root:has(.ga-topbar) .st-hero h1 { font-size: 3rem; } :root:has(.ga-topbar) .st-hero .ga-h-two { font-size: 3rem; }
+  :root:has(.ga-topbar) .st-hero p { margin-top: 0.8333rem; }
+
+  /* ---- the same surfaces: white, a hairline, no shadow; fields and chips outlined ---- */
+  :root:has(.ga-topbar) .fam-sec, :root:has(.ga-topbar) .st-continue, :root:has(.ga-topbar) .st-card, :root:has(.ga-topbar) .ti-card, :root:has(.ga-topbar) .ti-sec,
+  :root:has(.ga-topbar) .mp-stage, :root:has(.ga-topbar) .mp-li, :root:has(.ga-topbar) .ak-card, :root:has(.ga-topbar) .ak-prop, :root:has(.ga-topbar) .ar-card, :root:has(.ga-topbar) .hp-card,
+  :root:has(.ga-topbar) .hub-card, :root:has(.ga-topbar) .tp-card, :root:has(.ga-topbar) .tp-empty, :root:has(.ga-topbar) .tp-stay, :root:has(.ga-topbar) .tp-tile, :root:has(.ga-topbar) .rd-card,
+  :root:has(.ga-topbar) .ft-empty, :root:has(.ga-topbar) .ft-notify, :root:has(.ga-topbar) .tp-share, :root:has(.ga-topbar) .ph-route { border: 1px solid var(--hairline); box-shadow: none; border-radius: var(--r-card); }
+  :root:has(.ga-topbar) .fam-link, :root:has(.ga-topbar) .tp-chip, :root:has(.ga-topbar) .tp-back, :root:has(.ga-topbar) .ar-chip, :root:has(.ga-topbar) .mp-daychip,
+  :root:has(.ga-topbar) .fam-select, :root:has(.ga-topbar) .fam-field select, :root:has(.ga-topbar) .fam-field input, :root:has(.ga-topbar) .st-field, :root:has(.ga-topbar) .ft-input { border: 1px solid var(--hairline-2); box-shadow: none; }
+  :root:has(.ga-topbar) .fam-sec { margin-top: 0; padding: 1.5rem 1.6667rem; }
+  :root:has(.ga-topbar) .st-card .st-face { box-shadow: none; }
+  :root:has(.ga-topbar) .fam h2, :root:has(.ga-topbar) .ti-h2, :root:has(.ga-topbar) .ak-card h2 { letter-spacing: -0.03em; }
+  :root:has(.ga-topbar) .ak-label, :root:has(.ga-topbar) .st-card legend { text-transform: none; letter-spacing: 0.02em; font-weight: 700; color: var(--ink-3); }
+  :root:has(.ga-topbar) #ak-text { background: var(--sun-tint); border: 1px solid var(--hairline); border-left: 0.1667rem solid var(--sun); border-radius: 0 var(--r-card) var(--r-card) 0; font-family: var(--font-body); font-weight: 600; font-size: 1.1667rem; line-height: 1.5; }
+  :root:has(.ga-topbar) #ak-day { border: 1px solid var(--hairline-2); }
+
+  /* ---- the week: numbered columns, each a flat card with a header (01 · FRI 16, a title, a summary), data rows, a footer ---- */
+  :root:has(.ga-topbar) .cz .cz-view:has(> .cz-wk) { row-gap: 1.1667rem; }
+  :root:has(.ga-topbar) .cz .cz-view:has(> .cz-wk)::before { display: none; }
+  :root:has(.ga-topbar) .cz .cz-view:has(> .cz-wk) .cz-head-text { padding: 0; align-self: end; }
+  :root:has(.ga-topbar) .cz .cz-view:has(> .cz-wk) .cz-head-k { color: var(--coral-deep); }
+  :root:has(.ga-topbar) .cz .cz-view:has(> .cz-wk) > .cz-bar { align-self: end; margin-bottom: 0.3333rem; }
+  :root:has(.ga-topbar) .cz .cz-view:has(> .cz-wk) .cz-head-ctl { align-self: end; margin: 0 0 0.3333rem; }
+  :root:has(.ga-topbar) .cz .cz-view:has(> .cz-wk) .cz-kchip { color: var(--ink-3); }
+  :root:has(.ga-topbar) .cz .cz-view:has(> .cz-wk) .cz-kchip:hover { color: var(--ink); }
+  :root:has(.ga-topbar) .cz .cz-view:has(> .cz-wk) .cz-kchip[aria-pressed="true"] { color: var(--ink); }
+  :root:has(.ga-topbar) .cz .cz-view:has(> .cz-wk) .cz-kchip:focus-visible { outline-color: var(--ink); outline-offset: 0; }
+  :root:has(.ga-topbar) .cz .cz-view:has(> .cz-wk) .cz-segs { background: none; }
+  :root:has(.ga-topbar) .cz .cz-view:has(> .cz-wk) .cz-seg { color: var(--ink-3); }
+  :root:has(.ga-topbar) .cz .cz-view:has(> .cz-wk) .cz-seg[aria-current="page"] { color: var(--paper); }
+  :root:has(.ga-topbar) .cz .cz-view:has(> .cz-wk) .cz-seg[aria-current="page"]::before { background: var(--ink); }
+  :root:has(.ga-topbar) .cz .cz-wk { --wg: 1.1667rem; padding: 0.1667rem 0.1667rem 0.3333rem; }
+  :root:has(.ga-topbar) .cz .cz-wcol { border: 1px solid var(--hairline); border-radius: var(--r-card); box-shadow: none; }
+  :root:has(.ga-topbar) .cz .cz-wcol.is-today { border-color: var(--ink); box-shadow: none; }
+  :root:has(.ga-topbar) .cz .cz-wh { display: block; min-height: 0; padding: 1.3333rem 1.3333rem 1rem; background: none; border-bottom: 1px solid var(--hairline); }
+  :root:has(.ga-topbar) .cz .cz-wh-key { display: flex; align-items: center; gap: 0.6667rem; }
+  :root:has(.ga-topbar) .cz .cz-wh-no { display: grid; place-items: center; width: 2.1667rem; height: 2.1667rem; border-radius: 0.5833rem; background: var(--tint); font: 800 1.0833rem var(--font-display); color: var(--deep); }
+  :root:has(.ga-topbar) .cz .cz-wh-dow, :root:has(.ga-topbar) .cz .cz-wh-num { font: 700 max(var(--text-min), 0.9167rem) var(--font-body); letter-spacing: 0.02em; color: var(--deep); }
+  :root:has(.ga-topbar) .cz .cz-wh-dow { letter-spacing: 0.06em; margin-right: -0.3333rem; }
+  :root:has(.ga-topbar) .cz .cz-wh-today { margin-left: auto; padding: 0 0.5rem; background: none; border: 1px solid var(--ink); color: var(--ink); font-size: max(var(--text-min), 0.8333rem); }
+  :root:has(.ga-topbar) .cz .cz-wh-head { display: block; margin: 0.6667rem 0 0; font-family: var(--font-display); font-weight: 800; font-size: 1.4167rem; line-height: 1.1; letter-spacing: -0.03em; text-align: left; color: var(--ink); }
+  :root:has(.ga-topbar) .cz .cz-wh-sum { display: block; margin-top: 0.1667rem; font-size: max(var(--text-min), 0.9583rem); font-weight: 600; color: var(--ink-3); }
+  :root:has(.ga-topbar) .cz .cz-wlist { gap: 0; padding: 0.3333rem 1.1667rem; }
+  :root:has(.ga-topbar) .cz .cz-wi { grid-template-columns: 4.3333rem minmax(0, 1fr); grid-template-areas: "time body"; padding: 0.75rem 0; border-radius: 0; border-bottom: 1px solid var(--hairline); column-gap: 0.8333rem; background: none; }
+  :root:has(.ga-topbar) .cz .cz-wi:last-of-type { border-bottom: 0; }
+  :root:has(.ga-topbar) .cz .cz-wi:hover, :root:has(.ga-topbar) .cz .cz-wi.is-plan, :root:has(.ga-topbar) .cz .cz-wi.is-plan:hover { background: none; box-shadow: none; }
+  :root:has(.ga-topbar) .cz .cz-wi:hover .cz-wi-t { color: var(--coral-deep); }
+  :root:has(.ga-topbar) .cz .cz-wi-time { font-weight: 700; font-size: max(var(--text-min), 0.9167rem); color: var(--ink-3); }
+  :root:has(.ga-topbar) .cz .cz-wi-t { font-size: 1.0417rem; }
+  :root:has(.ga-topbar) .cz .cz-wi.is-plan .cz-wi-t { font-size: 1.125rem; }
+  :root:has(.ga-topbar) .cz .cz-wi-s { margin-top: 0.1667rem; font-size: max(var(--text-min), 0.9583rem); }
+  :root:has(.ga-topbar) .cz .cz-wi-ico { display: none; }
+  :root:has(.ga-topbar) .cz .cz-wfree { margin: 0.8333rem 0; padding: 1rem; border: 1px dashed var(--hairline-2); border-radius: 0.8333rem; }
+  :root:has(.ga-topbar) .cz .cz-wsay, :root:has(.ga-topbar) .cz .cz-wsay:hover { background: var(--card); border-color: var(--hairline-2); }
+  :root:has(.ga-topbar) .cz .cz-wfree-t { font-family: var(--font-body); font-size: 1.0833rem; }
+  :root:has(.ga-topbar) .cz .cz-wft { justify-content: space-between; padding: 0 1.3333rem; border-top: 1px solid var(--hairline); }
+  :root:has(.ga-topbar) .cz .cz-wopen { width: 100%; justify-content: space-between; padding: 0; min-height: 3rem; font-size: 1rem; font-weight: 700; color: var(--ink-2); }
+  :root:has(.ga-topbar) .cz .cz-wopen:hover { background: none; color: var(--ink); }
+  :root:has(.ga-topbar) .cz .cz-wk.is-dragging .cz-wcol.is-drop-target { box-shadow: inset 0 0 0 0.1667rem var(--coral); }
+  :root:has(.ga-topbar) .cz .cz-wk.is-dragging .cz-wcol.is-drop-target .cz-wlist { background: none; }
+  :root:has(.ga-topbar) .cz .cz-wi.cz-wi-copy.is-plan, :root:has(.ga-topbar) .cz .cz-wi.cz-wi-copy.is-plan:hover { background: var(--card); border: 1px solid var(--hairline-2); border-radius: 0.8333rem; box-shadow: var(--shadow-lg); padding: 0.75rem 1rem; }
+  :root:has(.ga-topbar) .ak-sheetform .ak-bigmic:not(.is-recording):not([aria-pressed="true"]) { background: var(--coral); color: var(--ink); box-shadow: none; }
+}
+
+/* a narrower laptop: the columns and the heading give a little */
+@media (min-width: 1020px) and (max-width: 1300px) and (not (display-mode: standalone)) {
+  :root:has(.ga-topbar) .cz .cz-hchip { padding-left: 1rem; padding-right: 1rem; }
+  :root:has(.ga-topbar) .cz .cz-dock-tabs { padding: 0 1.3333rem; }
+  :root:has(.ga-topbar) .cz .cz-dock-body { padding: 1.3333rem; }
+  :root:has(.ga-topbar) .cz .cz-wh { padding: 1.1667rem 1.1667rem 0.8333rem; }
+  :root:has(.ga-topbar) .cz .cz-wlist { padding: 0.3333rem 0.8333rem; }
+  :root:has(.ga-topbar) .cz .cz-wft { padding: 0 1.1667rem; }
+  :root:has(.ga-topbar) .cz .cz-wk { --wg: 0.8333rem; }
+  :root:has(.ga-topbar) .cz .cz-wi { grid-template-columns: 4rem minmax(0, 1fr); column-gap: 0.5rem; }
+  :root:has(.ga-topbar) .cz .cz-wi.is-plan .cz-wi-t, :root:has(.ga-topbar) .cz .cz-wi-t { font-size: 1.0833rem; }
+}
