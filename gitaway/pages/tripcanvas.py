@@ -486,7 +486,8 @@ BOOKING_ROOM = 40       # minutes of grid a booking line takes (its 2.75rem tap 
 KIND_TINT = {"fun": "bubble", "food": "sun", "outdoors": "mint", "culture": "grape", "travel": "sky"}
 KIND_ICON = {"fun": "spark", "food": "food", "outdoors": "tree", "culture": "sight", "travel": "car"}      # the icon tile of a plan on a laptop (F-159)
 BOOKING_KIND = {"flight": "travel", "hotel": "culture"}      # a booking's tile takes a plan kind's colours: flight sky, hotel grape; anything else (a car) is ink
-RAIL_ROOM = 30       # minutes of a laptop's 5.5rem hour that a printed start time takes (2.6rem): two starts closer than this slide apart, and an hour label this close to one is hidden
+RAIL_ROOM = 35       # minutes of grid a printed start time takes on the laptop: its label is 2.5833rem tall and the docked day's hour is 4.5rem (day_dock.css), 2.5833 / 4.5 * 60 = 34.4. The grid hands the same number to
+#                      the CSS (--rail), which sizes the label's box from it, so a taller hour only gives more room. Two starts closer than this slide apart, and an hour label the label would touch is hidden.
 
 
 def hour_label(h):
@@ -519,11 +520,12 @@ def rail_starts(plans, lines):
     a label that would sit on the one above slides down below it (RAIL_ROOM), so labels never overlap."""
     items = [(a.start, a.start, f"cz-k-{a.kind if a.kind in KIND_TINT else 'fun'}", a.id) for a in plans]
     items += [(top, x.label_start if getattr(x, "label_start", None) is not None else x.start, booking_class(x), x.id) for x, top in lines]
-    out = []
+    out, last = [], None
     for y, at, cls, ident in sorted(items, key=lambda i: (i[0], i[1], i[3])):
-        if out and (out[-1][0], out[-1][1]) == (y, at):
+        if (y, at) == last:      # the same minute as the label above (before it slid): the same label
             out[-1][3].append(ident)
             continue
+        last = (y, at)
         out.append([max(y, out[-1][0] + RAIL_ROOM) if out else y, at, cls, [ident]])
     return out
 
@@ -630,7 +632,7 @@ def time_grid(v, day, ents):
     hours = list(range(lo // 60, hi // 60 + 1))
     lane = calui.lanes(plans)
     starts = rail_starts(plans, lines)
-    gutter = [Span(hour_label(h % 24 if h < 24 else 0), cls="cz-g-hour cz-cs" + (" is-near" if any(abs(h * 60 - y) <= RAIL_ROOM for y, *_ in starts) else ""), style=f"--s:{h * 60 - lo}") for h in hours]      # is-near: a laptop hides it (F-159)
+    gutter = [Span(hour_label(h % 24 if h < 24 else 0), cls="cz-g-hour cz-cs" + (" is-near" if any(-30 <= h * 60 - y <= RAIL_ROOM + 8 for y, *_ in starts) else ""), style=f"--s:{h * 60 - lo}") for h in hours]      # is-near: a laptop hides it (F-159)
     gutter += [Span(Span(split_time(at)[0], cls="cz-g-st-t"), Span(split_time(at)[1], cls="cz-g-st-m"), Span(cls="cz-g-st-dot"), cls=f"cz-g-start cz-cs {cls}", style=f"--s:{y - lo}", data_for=" ".join(ids), aria_hidden="true") for y, at, cls, ids in starts]
     rules = [Span(cls=f"cz-g-line cz-cs{' is-half' if m else ''}", style=f"--s:{h * 60 + m - lo}") for h in hours[:-1] for m in (0, 30)] + [Span(cls="cz-g-line cz-cs", style=f"--s:{hi - lo}")]
     covered = {x.id: [a for a in plans if a.start < top + PILL_SPAN and a.end > top] for x, top in lines}      # the plans over each booking line (F-106)
@@ -646,7 +648,7 @@ def time_grid(v, day, ents):
         now = Span(Span(cls="cz-now-dot"), Span(f"{nm // 60 % 12 or 12}:{nm % 60:02d}", cls="cz-now-t"), cls="cz-nowline", id="cz-nowline", data_m=str(nm), style=f"--s:{nm - lo}", aria_label="Now", role="img")
     plane = Div(*rules, *bk, *blocks, now, cls="cz-g-plane")
     nxt = {"data_next": cal.next_id(v["session"])} if edit else {}      # the calendar's next number: a new plan made here carries its own id (a retry after a lost reply adds nothing twice)
-    return Div(Div(*gutter, plane, cls="cz-g-zoom"), cls=f"cz-grid{' has-bk' if lines else ''}{' has-pill' if inset else ''}", id="cz-grid", data_lo=str(lo), data_hi=str(hi), data_day=str(day), **nxt, style=f"--n:{(hi - lo) / 60:g}", role="group", aria_label="The day, hour by hour")
+    return Div(Div(*gutter, plane, cls="cz-g-zoom"), cls=f"cz-grid{' has-bk' if lines else ''}{' has-pill' if inset else ''}", id="cz-grid", data_lo=str(lo), data_hi=str(hi), data_day=str(day), **nxt, style=f"--n:{(hi - lo) / 60:g};--rail:{RAIL_ROOM}", role="group", aria_label="The day, hour by hour")
 
 
 def fold_bar(v, day):

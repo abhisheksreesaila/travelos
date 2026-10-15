@@ -149,7 +149,7 @@ def test_a_short_plan_keeps_its_title_on_one_line(signed_in, viewport):
     title = card.locator(".cz-gb-t")
     line = title.evaluate("e => parseFloat(getComputedStyle(e).lineHeight)")
     assert title.evaluate("e => e.getBoundingClientRect().height") <= line * 1.2
-    assert card.evaluate("e => e.getBoundingClientRect().height") >= 40      # a minimum height keeps it readable
+    assert card.evaluate("e => e.getBoundingClientRect().height") <= 30      # its true height: a 30 minute plan is not padded out over the plan after it
     assert card.locator(".cz-gb-tile").evaluate("e => e.getBoundingClientRect().bottom <= e.closest('.cz-gb').getBoundingClientRect().bottom")
 
 
@@ -171,3 +171,64 @@ def test_the_phone_and_the_tablet_are_unchanged(signed_in, viewport):
     lunch = page.locator(".cz-gb", has_text="Lunch at Grand Central Market")
     assert lunch.evaluate("e => getComputedStyle(e).backgroundColor") == SUN_TINT      # the block keeps its tint
     assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth")
+
+
+def crowd():
+    """The tricky day: starts 30 minutes apart, back-to-back 30 minute plans, a start 35 minutes before the 1 PM label, a 45 minute and a 1 hour plan, two plans at the same minute."""
+    me = person("ari")
+    for start, end, title in ((10 * 60, 10 * 60 + 30, "Bakery run"), (10 * 60 + 30, 11 * 60, "Pier walk"), (12 * 60 + 25, 13 * 60 + 25, "Early lunch"), (16 * 60, 16 * 60 + 45, "Ice cream"),
+                              (18 * 60, 19 * 60, "Dinner out"), (20 * 60, 21 * 60, "Night market"), (20 * 60, 20 * 60 + 30, "Taxi home")):
+        cal.add_activity(me, day=0, start=start, end=end, title=title, kind="food")
+
+
+GEOMETRY = """() => {
+  const box = e => { const r = e.getBoundingClientRect(); return {l: r.left, t: r.top, r: r.right, b: r.bottom}; };
+  const shown = e => getComputedStyle(e).display !== 'none';
+  const marks = [...document.querySelectorAll('.cz-g-start')].map(e => ({name: 'start ' + e.textContent, ...box(e)}))
+    .concat([...document.querySelectorAll('.cz-g-hour')].filter(shown).map(e => ({name: 'hour ' + e.textContent, ...box(e)})));
+  const cards = [...document.querySelectorAll('.cz-gb:not(.is-new), .cz-gbk:not(.is-pill)')].map(e => ({name: e.textContent.trim().slice(0, 24), ...box(e), when: e.querySelector('.cz-gb-when') ? box(e.querySelector('.cz-gb-when')) : null}));
+  return {marks, cards};
+}"""
+
+
+def hits(a, b):
+    return min(a["r"], b["r"]) - max(a["l"], b["l"]) > 1 and min(a["b"], b["b"]) - max(a["t"], b["t"]) > 1
+
+
+@BOTH
+def test_a_crowded_day_never_overlaps_rail_labels_hours_or_cards(signed_in, viewport):
+    page = signed_in(viewport, path="/trip/canvas?day=0")
+    crowd()
+    page.reload()
+    expect(page.locator(".cz-gb").first).to_be_visible()
+    got = page.evaluate(GEOMETRY)
+    for i, a in enumerate(got["marks"]):
+        for b in got["marks"][i + 1:]:
+            assert not hits(a, b), f"{a['name']} overlaps {b['name']}"
+    for i, a in enumerate(got["cards"]):
+        for b in got["cards"][i + 1:]:
+            if a["name"] in ("Night market", "Taxi home") and b["name"] in ("Night market", "Taxi home"):
+                continue      # same minute: side by side
+            assert not hits(a, b), f"card {a['name']} overlaps {b['name']}"
+    for c in got["cards"]:
+        if c["when"]:      # the time text sits inside its card, whatever the plan's length (30 minutes and up)
+            assert c["when"]["t"] >= c["t"] - 0.5 and c["when"]["b"] <= c["b"] + 0.5 and c["when"]["r"] <= c["r"] + 0.5, f"{c['name']}: time outside its card {c}"
+    starts = page.locator(".cz-g-start").all_inner_texts()
+    assert len([s for s in starts if s.replace("\n", " ") == "8:00 PM"]) == 1      # two plans at the same minute share one label
+    assert page.evaluate(NO_SCROLL)
+    shot(page, f"crowd-{viewport['width']}.png")
+
+
+@BOTH
+def test_the_tab_titles_stay_readable_to_a_screen_reader_but_do_not_show(signed_in, viewport):
+    page = day(signed_in, viewport)
+    other = page.locator(".cz-hchip:not(.is-open) .cz-hc-head").first
+    assert other.evaluate("e => [getComputedStyle(e).display, e.getBoundingClientRect().width <= 2]") == ["block", True]      # in the page for a screen reader, one pixel for the eye
+    assert other.text_content().strip() == "Wide open"
+
+
+def test_a_pill_follows_its_title_on_a_tall_plan(signed_in):
+    page = day(signed_in, DESKTOP)
+    lunch = page.locator(".cz-gb", has_text="Lunch at Grand Central Market")
+    title, tag = lunch.locator(".cz-gb-t").evaluate("e => { const r = document.createRange(); r.selectNodeContents(e); return r.getBoundingClientRect().right; }"), lunch.locator(".cz-gb-tag").evaluate("e => e.getBoundingClientRect().left")
+    assert 0 <= tag - title <= 40, (title, tag)      # right after the title, like BOOKED
