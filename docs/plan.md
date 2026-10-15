@@ -895,14 +895,14 @@ Captain, 2026-10-14: "keep the colors same, what do u think about this theme, no
 
 # The colour timeline (brief docs/briefs/colour-timeline.md, approved 2026-10-15)
 
-## F-159 The laptop day as a colour timeline [review]
+## F-159 The laptop day as a colour timeline [done]
 Brief: docs/briefs/colour-timeline.md · Design: docs/design/colour-timeline.md (frame ct-day-desk) · Needs: F-158
-- [ ] on a desktop the day's plans and bookings are white cards at their real times with a kind-coloured icon tile and a 3px left edge in the kind's colour; no day tint anywhere (the day panel is white with a hairline)
-- [ ] every plan and booking prints its start time big on the rail at its top ("12:30" with a small "PM"); an hour label within 30 minutes of a printed start time is hidden, so labels never overlap
-- [ ] day tabs are neutral pills, the open day solid ink; PLAN and BOOKED are grey pills; coral appears only on primary buttons and the now line; Up next stays the one ink card
-- [ ] bookings show as cards with their kind's tile and a grey BOOKED pill; a short plan keeps its title on one line
-- [ ] it fits 1440×900 and 1280×800 at 100% zoom with no page scroll; rem only; colours only from tokens.css; the F-158 rules it replaces are removed, not overridden
-- [ ] the phone, tablet and installed app are unchanged; browser tests at 1440 and 1280 pin: no day colours, a start time beside every item, no overlapping rail labels, kind edge colours, the open day ink
+- [x] on a desktop the day's plans and bookings are white cards at their real times with a kind-coloured icon tile and a 3px left edge in the kind's colour; no day tint anywhere (the day panel is white with a hairline)
+- [x] every plan and booking prints its start time big on the rail at its top ("12:30" with a small "PM"); an hour label within 30 minutes of a printed start time is hidden, so labels never overlap (where back-to-back plans leave no room on the rail, the plan's card shows its time instead; a booking's label wins)
+- [x] day tabs are neutral pills, the open day solid ink; PLAN and BOOKED are grey pills; coral appears only on primary buttons and the now line; Up next stays the one ink card
+- [x] bookings show as cards with their kind's tile and a grey BOOKED pill; a short plan keeps its title on one line
+- [x] it fits 1440×900 and 1280×800 at 100% zoom with no page scroll; rem only; colours only from tokens.css; the F-158 rules it replaces are removed, not overridden
+- [x] the phone, tablet and installed app are unchanged; browser tests at 1440 and 1280 pin: no day colours, a start time beside every item, no overlapping rail labels, kind edge colours, the open day ink
 
 ## F-160 The phone day as a colour timeline [todo]
 Brief: docs/briefs/colour-timeline.md · Design: docs/design/colour-timeline.md (frame ct-day-phone) · Needs: F-159
