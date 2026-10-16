@@ -96,12 +96,12 @@
 
   /* a plan: a white card, a hairline, the kind's left edge (the base rule's inset shadow), the icon tile at the left, then the title with its grey PLAN pill and the time. The card is a flex box so its words fill the
      whole of it, 44px minimum included. */
-  .cz .cz-view[data-day] .cz-gb:not(.is-drawing) { display: flex; min-height: calc(var(--tap) + 0.1667rem);      /* (the link over it sits inside the 1px border: still a 44px target) */ border: 1px solid var(--hairline); border-radius: var(--r-sm); background: var(--card); }
+  .cz .cz-view[data-day] .cz-gb:not(.is-drawing) { display: flex; min-height: calc(var(--tap) + 0.1667rem);      /* (the link over it sits inside the 1px border: still a 44px target) */ border: 1px solid var(--hairline); border-radius: var(--r-sm); background: var(--tint); }
   .cz .cz-view[data-day] .cz-gb-in { flex: 1 1 auto; min-height: 0; padding: calc(var(--pu) * 0.5) calc(var(--pu) * 0.75) calc(var(--pu) * 0.25) calc(var(--pu) * 3.5); }
   .cz .cz-view[data-day] .cz-gb { left: calc(var(--bkw, 0rem) + (100% - var(--bkw, 0rem)) * var(--tlane, 0) / var(--tlanes, 1)); width: calc((100% - var(--bkw, 0rem)) / var(--tlanes, 1) - 0.25rem); }      /* side by side whenever the drawn boxes (44px included) collide, not only the times */
-  .cz .cz-view[data-day] .cz-gb-tile, .cz .cz-view[data-day] .cz-gbk-tile { display: grid; place-items: center; flex: none; width: calc(var(--pu) * 2.25); height: calc(var(--pu) * 2.25); border-radius: calc(var(--pu) * 0.625); background: var(--tint); color: var(--kink); }
+  .cz .cz-view[data-day] .cz-gb-tile, .cz .cz-view[data-day] .cz-gbk-tile { display: grid; place-items: center; flex: none; width: calc(var(--pu) * 2.25); height: calc(var(--pu) * 2.25); border-radius: calc(var(--pu) * 0.625); background: var(--card); color: var(--kink); }
   .cz .cz-view[data-day] .cz-gb-tile { position: absolute; left: calc(var(--pu) * 0.625); top: calc(var(--pu) * 0.375); }
-  .cz .cz-view[data-day] .cz-gb-head { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; column-gap: calc(var(--pu) * 0.5); background: var(--card); }
+  .cz .cz-view[data-day] .cz-gb-head { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; column-gap: calc(var(--pu) * 0.5); background: none; }
   .cz .cz-view[data-day] .cz-gb-t { flex: 0 1 auto; min-width: 0; font-family: var(--font-display); font-weight: 700; font-size: calc(var(--pu) * 1.0625); letter-spacing: -0.02em; }
   .cz .cz-view[data-day] .cz-gb-when { flex: 1 0 100%; font-weight: 600; font-size: var(--cz-small); color: var(--ink-2); }
   .cz .cz-view[data-day] .cz-gb-tag, .cz .cz-view[data-day] .cz-gbk .cz-bk-tag { display: inline-flex; align-items: center; flex: none; height: calc(var(--pu) * 1.25); padding: 0 calc(var(--pu) * 0.5); border-radius: var(--r-pill); background: var(--paper-2); color: var(--ink-2);
@@ -164,7 +164,7 @@
   .cz .cz-view[data-day] .cz-gb.is-lane .cz-gb-t { flex: 0 1 auto; }
 
   /* a booking: the same card, its kind's tile, the title and a grey BOOKED pill; the time is on the rail (the link's label still says it) */
-  .cz .cz-view[data-day] .cz-gbk { min-height: var(--tap); padding: 0 calc(var(--pu) * 0.625); border: 1px solid var(--hairline); border-radius: var(--r-sm); background: var(--card); box-shadow: inset 0.25rem 0 0 var(--accent); color: var(--ink); }
+  .cz .cz-view[data-day] .cz-gbk { min-height: var(--tap); padding: 0 calc(var(--pu) * 0.625); border: 1px solid var(--hairline); border-radius: var(--r-sm); background: color-mix(in srgb, var(--tint) 45%, var(--card)); box-shadow: inset 0.25rem 0 0 var(--accent); color: var(--ink); }
   .cz .cz-view[data-day] .cz-gbk-in { gap: calc(var(--pu) * 0.625); min-height: calc(var(--tap) - 0.125rem); padding: calc(var(--pu) * 0.25) 0 calc(var(--pu) * 0.25) calc(var(--pu) * 0.125); }
   .cz .cz-view[data-day] .cz-gbk .cz-bk-time { display: none; }
   .cz .cz-view[data-day] .cz-gbk .cz-bk-t { flex: 1 1 0; font-family: var(--font-display); font-weight: 700; font-size: calc(var(--pu) * 1); letter-spacing: -0.02em; color: var(--ink); }

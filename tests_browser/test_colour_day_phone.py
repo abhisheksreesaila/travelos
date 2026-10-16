@@ -28,25 +28,25 @@ def edge(card, color):
 
 
 @BOTH
-def test_plans_and_bookings_are_white_cards_with_a_kind_tile_and_edge(signed_in, viewport):
+def test_plans_and_bookings_are_kind_filled_cards_with_a_tile_and_edge(signed_in, viewport):
     page = day(signed_in, viewport)
     lunch = page.locator(".cz-gb", has_text="Lunch at Grand Central Market")
     sunset = page.locator(".cz-gb", has_text="Santa Monica Pier sunset")
     for card, accent, tint, ink in ((lunch, SUN, SUN_TINT, SUN_INK), (sunset, MINT, "rgb(212, 247, 234)", "rgb(22, 134, 95)")):
-        assert card.evaluate("e => getComputedStyle(e).backgroundColor") == CARD
+        assert card.evaluate("e => getComputedStyle(e).backgroundColor") == tint      # F-167: filled with its kind's tint
         assert card.evaluate("e => getComputedStyle(e).borderTopWidth") == "1px"
         assert edge(card, accent), card.evaluate("e => getComputedStyle(e).boxShadow")      # the kind's left edge
         tile = card.locator(".cz-gb-tile")
         expect(tile).to_be_visible()
-        assert tile.evaluate("e => getComputedStyle(e).backgroundColor") == tint
+        assert tile.evaluate("e => getComputedStyle(e).backgroundColor") == CARD      # F-167: a white tile reads on the tint
         assert tile.evaluate("e => getComputedStyle(e).color") == ink
         assert tile.locator("svg").count() == 1
     flight = page.locator(".cz-gbk", has_text="Skylark")
     hotel = page.locator(".cz-gbk", has_text="Check in")
     for card, accent, tint in ((flight, SKY, "rgb(221, 238, 255)"), (hotel, GRAPE, "rgb(236, 228, 255)")):
-        assert card.evaluate("e => getComputedStyle(e).backgroundColor") == CARD
+        assert card.evaluate("e => getComputedStyle(e).backgroundColor") not in (CARD, tint)      # F-167: a quieter half-tint
         assert edge(card, accent), card.evaluate("e => getComputedStyle(e).boxShadow")
-        assert card.locator(".cz-gbk-tile").evaluate("e => getComputedStyle(e).backgroundColor") == tint
+        assert card.locator(".cz-gbk-tile").evaluate("e => getComputedStyle(e).backgroundColor") == CARD
         pill = card.locator(".cz-bk-tag")
         expect(pill).to_have_text("Booked")
         assert pill.evaluate("e => [getComputedStyle(e).backgroundColor, getComputedStyle(e).color, getComputedStyle(e).textTransform]") == [PAPER_2, INK_2, "uppercase"]

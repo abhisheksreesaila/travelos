@@ -118,15 +118,15 @@ def test_card_text_is_inside_its_card(signed_in, viewport):
 
 
 @BOTH
-def test_cards_are_white_with_the_kinds_edge_and_tile_and_a_grey_pill(signed_in, viewport):
+def test_cards_are_kind_filled_with_the_kinds_edge_and_tile_and_a_grey_pill(signed_in, viewport):
     page = week(signed_in, viewport)
     lunch = page.locator(".cz-wi", has_text="Lunch at Grand Central Market")
     brunch = page.locator(".cz-wi", has_text="Sunday brunch")
     museum = page.locator(".cz-wi", has_text="Griffith Observatory")
     for card, (edge, tint) in ((lunch, KINDS["food"]), (brunch, KINDS["outdoors"]), (museum, KINDS["culture"])):
-        assert card.evaluate("n => getComputedStyle(n).backgroundColor") == CARD
+        assert card.evaluate("n => getComputedStyle(n).backgroundColor") == tint      # F-167: filled with the kind's tint
         assert f"{edge} 3px 0px 0px 0px inset" in card.evaluate("n => getComputedStyle(n).boxShadow")
-        assert card.locator(".cz-wi-ico").evaluate("n => getComputedStyle(n).backgroundColor") == tint
+        assert card.locator(".cz-wi-ico").evaluate("n => getComputedStyle(n).backgroundColor") == CARD
         assert card.locator(".cz-wi-ico svg").count() == 1
     expect(lunch.locator(".cz-wi-tag")).to_have_text("Plan")
     assert lunch.locator(".cz-wi-tag").evaluate("n => [getComputedStyle(n).backgroundColor, getComputedStyle(n).color]") == ["rgb(250, 247, 242)", "rgb(74, 68, 96)"]
@@ -134,7 +134,7 @@ def test_cards_are_white_with_the_kinds_edge_and_tile_and_a_grey_pill(signed_in,
     hotel = page.locator(".cz-wi.is-booked", has_text="Check in")
     for card, (edge, tint) in ((flight, KINDS["travel"]), (hotel, KINDS["culture"])):
         assert f"{edge} 3px 0px 0px 0px inset" in card.evaluate("n => getComputedStyle(n).boxShadow")
-        assert card.locator(".cz-wi-ico").evaluate("n => getComputedStyle(n).backgroundColor") == tint
+        assert card.locator(".cz-wi-ico").evaluate("n => getComputedStyle(n).backgroundColor") == CARD
         expect(card.locator(".cz-wi-tag")).to_have_text("Booked")
     shot(page, f"cards-{viewport['width']}.png")
 
