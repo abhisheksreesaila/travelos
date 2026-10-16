@@ -939,3 +939,9 @@ Found in F-163's review, 2026-10-15: at 800 wide the day and week heading contro
 Found in F-161's review, 2026-10-15 (predates F-161; same on master's scripts): at 1440 a draft saved by clicking away stays on screen as a dead "is-new" card (still showing its kind chips) until the next refresh, though it is saved. Needs: F-161
 - [ ] after a draft is saved by Enter, Tab or clicking away, it becomes the same block a refresh would draw (title, time, kind tile, rail label), with no leftover draft markup, at 1440, 1280 and 390
 - [ ] a browser test saves by click-away and compares the block with the one drawn after a reload
+
+## F-166 On the laptop week, where you drop a plan sets its time [todo]
+Captain, 2026-10-15: "if you pick up a lower block from Tuesday and put it on upper block on Friday it would have changed time right" (today F-157 keeps the time, so on F-162's time axis the plan jumps back to its old hour in the new column). Needs: F-157, F-162
+- [ ] on a desktop week, dropping a plan sets both its day (the column) and its start (the pointer's height on the axis, snapped to 15 minutes), keeping its length; the rail/axis shows the live time while dragging, as the day does (F-161)
+- [ ] dropping in its own column at a new height changes only its time; the toast reads "Moved to Fri 16, 9:00 AM · Undo" and Undo restores day and time
+- [ ] bookings and viewers still can't drag; browser tests at 1440 and 1280 drop low-to-high across days and check the new day, time and position on the axis
