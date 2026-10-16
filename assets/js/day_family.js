@@ -139,7 +139,7 @@
     if (!b || !t || !first || b.disabled) return;
     e.preventDefault();
     b.disabled = true;
-    var rel = function () { return first.getBoundingClientRect().top - t.getBoundingClientRect().top; }, seen = rel();      // where the oldest message shown now sits: it stays there (a name or a time line it loses to the regrouping is above or inside it)
+    var bub = first.querySelector('.ft-bub') || first, rel = function () { return bub.getBoundingClientRect().top - t.getBoundingClientRect().top; }, seen = rel();      // where the oldest bubble shown now sits: it stays there (the name line it may lose to the regrouping is above it, inside the message)
     fetch(b.dataset.older + '&before=' + encodeURIComponent(first.dataset.n), { credentials: 'same-origin', headers: { Accept: 'text/html' } }).then(function (r) {
       if (!r.ok) throw new Error('no earlier');
       return r.text().then(function (h) { return { h: h, more: r.headers.get('X-Thread-More') === '1' }; });

@@ -53,10 +53,10 @@ def test_earlier_messages_from_the_same_person_regroup_without_the_view_jumping(
     first = th.locator(".ft-msg").first
     n = first.get_attribute("data-n")
     top = th.bounding_box()["y"]
-    before = first.bounding_box()["y"] - top
+    before = first.locator(".ft-bub").bounding_box()["y"] - top
     dock(desk).locator("#ft-older").click()
     expect(th.locator(".ft-bub")).to_have_count(60)
-    after = th.locator(f'.ft-msg[data-n="{n}"]').bounding_box()["y"] - th.bounding_box()["y"]
+    after = th.locator(f'.ft-msg[data-n="{n}"] .ft-bub').bounding_box()["y"] - th.bounding_box()["y"]
     assert [s["name"] for s in seen(th.locator(".ft-msg"))].count(True) == 1               # one run of sixty: the name once, at the very first
     r = runs(th)
     assert r[0] == "ft-first" and r[-1] == "ft-last" and r.count("ft-first") == 1
