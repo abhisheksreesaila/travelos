@@ -92,20 +92,18 @@ def test_the_day_and_the_week_have_the_two_tone_heading(signed_in, viewport):
 
 
 @BOTH
-def test_the_week_is_numbered_columns_with_data_rows(signed_in, viewport):
+def test_the_week_is_flat_columns_on_one_axis_with_hairline_cards(signed_in, viewport):      # F-162: the numbered columns became days on a shared hour axis (test_week_axis.py pins where things sit)
     page = signed_in(viewport, path="/trip/canvas")
     plans()
     page.reload()
     cols = page.locator(".cz-wcol")
     expect(cols).to_have_count(5)
-    expect(page.locator(".cz-wcol .cz-wh-no")).to_have_text(["01", "02", "03", "04", "05"])
-    expect(page.locator(".cz-wcol").first.locator(".cz-wh-sum")).to_have_text("2 bookings · 2 plans")
-    expect(page.locator(".cz-wcol").nth(2).locator(".cz-wh-sum")).to_have_text("Nothing planned")
-    shadow, width, color = style(page, ".cz-wcol:nth-child(2)", "boxShadow", "borderTopWidth", "borderTopColor")
-    assert is_flat(shadow) and (width, color) == ("1px", HAIRLINE)
+    expect(page.locator(".cz-wcol .cz-wh-no")).to_have_text(["Day 1", "Day 2", "Day 3", "Day 4", "Day 5"])
+    shadow, width, color = style(page, ".cz-wcol:nth-child(3)", "boxShadow", "borderLeftWidth", "borderLeftColor")
+    assert is_flat(shadow) and (width, color) == ("1px", HAIRLINE)      # a hairline between the days
     assert style(page, ".cz-wcol .cz-wh", "backgroundColor")[0] in ("rgba(0, 0, 0, 0)", "transparent")      # a flat header, not a day-colour block
-    row_border = style(page, ".cz-wcol .cz-wi", "borderBottomWidth", "borderBottomColor")
-    assert row_border == ["1px", HAIRLINE]                                                  # a hairline between rows
+    card = style(page, ".cz-wcol .cz-wi", "borderTopWidth", "borderTopColor")
+    assert card == ["1px", HAIRLINE]                                                  # a hairline round each card
 
 
 def test_up_next_is_the_only_accent_block(signed_in):
