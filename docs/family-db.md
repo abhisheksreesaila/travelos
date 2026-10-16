@@ -30,6 +30,10 @@ A trip belongs to the family, not to a person. Each member has their own *open* 
 
 `familydb.family_db(request_or_session)` returns the handle (the caller closes it); `familydb.using(session)` is the same as a `with` block and gives `None` when signed out or not a member. Both go through fh-saas `require_tenant_access`, so membership is checked on every open. A Request is accepted for routes; the model modules take the session. Signed out, nothing opens a database: the demo workspace and pay sheet work without one.
 
+## One handle per request (F-172)
+
+Each real open costs a host-database membership check (under the one host lock) and a clone of the family's ~28-table metadata; a day fragment used to open 27 times (~80% of its server time). `main.py` wraps every HTTP request in `familydb.RequestScope` (`familydb.request_scope()`): inside it `family_db` opens a family once and lends the same connection again. The loan is keyed by request, thread, family and person, so another family, person or thread always gets its own handle and nothing crosses requests; a person who is not a member still gets `PermissionError`/`None`. Closing a loan only rolls back what was not committed (what a real close does); the scope closes the real connections when the request ends, on errors too. Writes are unchanged: `familydb.transaction` commits or rolls back on the shared connection, so nothing stays open between uses. Outside a request (the morning job, scripts, model tests) there is no scope and every call opens its own handle as before. `tests/test_request_scope.py` counts the real opens (a day fragment: at most 2) and checks isolation; `scripts/perf/profile_server.py` and `concurrent_server.py` time it.
+
 ## Schema changes: register on open, migrate later
 
 - **Baseline = register on open.** The first time a family is opened in a process, `register_tables` creates any missing table from `FAMILY_TABLES` and `create_indexes` the indexes. It is idempotent, so a new table is one line: `familydb.FAMILY_TABLES.append((Model, "name", "pk"))` (and `FAMILY_INDEXES`).
