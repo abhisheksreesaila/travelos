@@ -48,6 +48,7 @@
     letter-spacing: -0.02em; color: var(--ink); -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 0.75rem), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 0.75rem), transparent); }
   .cz .cz-wr-t.is-cut { -webkit-mask-image: linear-gradient(#000, #000), linear-gradient(90deg, #000 calc(100% - 3em), transparent); mask-image: linear-gradient(#000, #000), linear-gradient(90deg, #000 calc(100% - 3em), transparent);
     -webkit-mask-size: 100% calc(100% - 1.15em), 100% 1.15em; mask-size: 100% calc(100% - 1.15em), 100% 1.15em; -webkit-mask-position: 0 0, 0 100%; mask-position: 0 0, 0 100%; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; }
+  .cz .cz-wr-s { font-size: var(--tmin); font-weight: 600; line-height: 1.25; color: var(--ink-2); }
   .cz .cz-wr-tag { display: inline-flex; align-items: center; flex: none; height: calc(var(--pu) * 1.25); padding: 0 calc(var(--pu) * 0.5); border-radius: var(--r-pill); background: var(--paper-2); color: var(--ink-2); font-size: var(--tmin); font-weight: 700; line-height: 1;
     letter-spacing: 0.06em; text-transform: uppercase; }
 

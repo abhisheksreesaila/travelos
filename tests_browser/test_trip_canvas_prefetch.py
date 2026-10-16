@@ -100,7 +100,7 @@ def test_a_write_empties_the_prefetched_levels_so_the_week_shows_it(canvas_page)
     """All in the page, no reload: the week was fetched ahead before the write, and after it the week must show the step as done."""
     page = canvas_page(motion="no-preference")
     wait_idle(page, None, days_on_week(page))
-    assert "1/14" not in page.locator(".cz-view[data-level=week]").inner_text()
+    assert "1 done" not in page.locator(".cz-view[data-level=week]").inner_text()
     page.locator(".cz-row-link[href*='day=1']").click()
     expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
     page.wait_for_timeout(800)                           # the day has fetched the week ahead, from before the write
@@ -119,7 +119,7 @@ def test_a_write_empties_the_prefetched_levels_so_the_week_shows_it(canvas_page)
     page.locator(".cz-head .cz-back").click()
     expect(page.locator(".cz-view[data-level=week]")).to_be_visible()
     settle(page)
-    expect(page.locator(".cz-view[data-level=week]")).to_contain_text("1/14")      # the week as it is now, not the copy from before the write
+    expect(page.locator(".cz-view[data-level=week]")).to_contain_text("1 done")      # the week as it is now, not the copy from before the write
 
 
 def test_a_level_shown_from_an_old_copy_is_brought_up_to_date_when_someone_else_changed_it(canvas_page):
@@ -136,7 +136,7 @@ def test_a_level_shown_from_an_old_copy_is_brought_up_to_date_when_someone_else_
     page.locator(".cz-head .cz-back").click()                   # shown at once from the old copy...
     expect(page.locator(".cz-view[data-level=week]")).to_be_visible()
     assert "1/" not in page.locator(".cz-view[data-level=week]").inner_text()
-    expect(page.locator(".cz-view[data-level=week]")).to_contain_text("1/", timeout=6000)      # ...then quietly replaced by the server's copy
+    expect(page.locator(".cz-view[data-level=week]")).to_contain_text("1 done", timeout=6000)      # ...then quietly replaced by the server's copy
     assert any("frag=1" in u for u in seen)
 
 
@@ -164,7 +164,7 @@ def test_coming_back_from_the_bfcache_shows_the_server_copy(canvas_page):
     step = next(st for blk in canvas.plan(ari)["blocks"].values() for pt in blk["parts"] for st in pt["steps"])
     canvas.set_done(ari, step["id"])
     page.evaluate("window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }))")
-    expect(page.locator(".cz-view[data-level=week]")).to_contain_text("1/", timeout=6000)
+    expect(page.locator(".cz-view[data-level=week]")).to_contain_text("1 done", timeout=6000)
 
 
 def test_reduced_motion_is_still_instant_and_prefetched(canvas_page):

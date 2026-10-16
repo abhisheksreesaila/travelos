@@ -368,8 +368,9 @@ def _item(v, i, n, kind, x):
         return A(Span(icon(getattr(x, "icon", "") or "pin", 18, 2.4), cls="cz-wr-tile", aria_hidden="true"), Span(Span(when, cls="cz-wr-time"), Span(name, cls="cz-wr-t"), cls="cz-wr-body"), Span("Booked", cls="cz-wr-tag"),
                  href=curl(day=i, booked=x.id), cls="cz-wcard cz-simple is-booked", data_zoom="in", data_zk=f"bkg-{x.id}", aria_label=f"{x.title}, {when}: details", **attrs)
     k = x.kind if x.kind in KIND_TINT else "fun"
-    return Div(Span(icon(KIND_ICON[k], 18, 2.4), cls="cz-wr-tile", aria_hidden="true"), Span(Span(cal.fmt_time(x.start), cls="cz-wr-time"), Span(x.title, cls="cz-wr-t"), cls="cz-wr-body"), Span("Plan", cls="cz-wr-tag"),
-               cls=f"cz-wcard cz-simple cz-k-{k}", **attrs)
+    note = weekdesk.summary(v, v["plan"].get(x.id) if kind == "block" else None, x)      # "14 steps · 1 done · 2 messages", only what is true (the same line as the laptop's card)
+    return Div(Span(icon(KIND_ICON[k], 18, 2.4), cls="cz-wr-tile", aria_hidden="true"), Span(Span(cal.fmt_time(x.start), cls="cz-wr-time"), Span(x.title, cls="cz-wr-t"), Span(note, cls="cz-wr-s") if note else "", cls="cz-wr-body"),
+               Span("Plan", cls="cz-wr-tag"), cls=f"cz-wcard cz-simple cz-k-{k}", **attrs)
 
 
 def week_body(v, i, editor):

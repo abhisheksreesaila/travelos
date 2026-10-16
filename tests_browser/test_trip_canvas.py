@@ -140,12 +140,11 @@ def test_the_today_tab_opens_the_day_and_a_week_row_zooms_in(canvas_page):
     expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
 
 
-def test_a_free_day_plus_opens_the_add_sheet_and_every_week_row_opens_its_day(canvas_page):
+def test_a_free_days_say_the_plan_opens_ask_on_that_day_and_every_week_row_opens_its_day(canvas_page):      # F-163: the day card's Say the plan replaces the free day's plus
     page = canvas_page()
     free = page.locator(".cz-row.is-free").first
-    free.locator(".cz-plus").click()
-    page.wait_for_url("**/trip?add=1&day=*")
-    expect(page.locator("#tp-sheet")).to_be_visible()
+    free.locator(".cz-wsay").click()
+    page.wait_for_url(re.compile(r"/trip/ask\?day=\d&mode=talk"))
     page.go_back()
     rows = page.locator(".cz-row")
     for i in range(rows.count()):

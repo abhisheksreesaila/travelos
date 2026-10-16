@@ -75,17 +75,14 @@ def test_the_canvas_is_inside_the_phone_shell_with_today_current(trip):
 
 # ---- the week --------------------------------------------------------------------------------------------------------------
 
-def test_the_week_has_a_row_per_day_park_days_with_parts_and_free_days_with_a_plus(trip):
+def test_the_week_has_a_day_card_per_day_with_the_plans_steps_and_free_days_with_say_the_plan(trip):      # F-163: the cards replace the rows with parts and the plus
     page = trip.get("/trip/canvas").text
     rowsed = re.findall(r'data-day="\d" class="(cz-row[^"]*)"', page)
     assert len(rowsed) == 5 and sum("is-free" in r for r in rowsed) == 1        # the sample trip is five days; the two park days are the only plans, flights on the ends
-    assert "Universal Studios Hollywood" in page and "Disney California Adventure" in page
-    for part in ("Lower Lot", "Harry Potter world", "Pixar Pier", "Grizzly Peak"):
-        assert part in page
-    assert "4 rides" in page and "8 rides" in page      # Lower Lot, Upper Lot
-    assert 'class="cz-sticker cz-sticker-week' in page and "roughest ride" in page       # a note rides along on the park day
+    week = text(bare(page).split('id="cz-week"')[1].split('id="cz-wk"')[0])
+    assert "9:00 AM Universal Studios Hollywood 14 steps Plan" in week and "9:00 AM Disney California Adventure 9 steps Plan" in week      # a park day's row: its start, title, how much is in it
     assert 'href="/trip/canvas?day=1"' in bare(page) and 'href="/trip/canvas?day=3"' in bare(page)
-    assert 'class="cz-plus"' in page and 'href="/trip?add=1&amp;day=2"' in page
+    assert 'class="cz-wsay"' in page and 'href="/trip/ask?day=2&amp;mode=talk"' in page and "Free day Nothing planned yet Say the plan" in week
     assert "Pinch or tap to zoom" not in page and 'id="cz-z-today"' not in page     # F-092: no zoom control; a tap or a pinch still zooms
 
 
@@ -280,7 +277,7 @@ def test_a_viewer_reads_every_level_and_sees_no_buttons_and_no_plus(crew, azure)
     owner, viewer = crew
     added(owner)
     sid = step_id(owner, "King Kong")
-    assert 'class="cz-plus"' not in viewer.get("/trip/canvas").text and 'class="cz-plus"' in owner.get("/trip/canvas").text
+    assert 'class="cz-wsay"' not in viewer.get("/trip/canvas").text and 'class="cz-wsay"' in owner.get("/trip/canvas").text
     for url in ("/trip/canvas", "/trip/canvas?day=1", f"/trip/canvas?block={uni_id()}"):
         assert viewer.get(url).status_code == 200
     sheet = viewer.get(f"/trip/canvas?step={sid}").text

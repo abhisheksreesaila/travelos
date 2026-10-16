@@ -924,8 +924,8 @@ Brief: docs/briefs/colour-timeline.md · Design: docs/design/colour-timeline.md 
 - [x] dragging a plan between days (F-157, same time) still works; dragging to a new time on the week is not built; a long trip scrolls sideways; clicking a day's header opens that day
 - [x] it fits 1440×900 and 1280×800 at 100% zoom; browser tests at 1440 check items line up with the axis across columns
 
-## F-163 The phone week as day cards [todo]
+## F-163 The phone week as day cards [review]
 Brief: docs/briefs/colour-timeline.md · Design: docs/design/colour-timeline.md (frame ct-week-phone) · Needs: F-160
-- [ ] on the phone the week is a stack of white day cards: weekday, date and title, a mini hour bar with kind-coloured segments, then the day's items as compact rows with their start time and tile
-- [ ] an empty day shows "Free day" with Say the plan; tapping a card opens that day with the phone's liquid motion
-- [ ] browser tests at 390 check one card per day, no day colours, and that a tap opens the right day
+- [x] on the phone the week is a stack of white day cards: weekday, date and title, a mini hour bar with kind-coloured segments, then the day's items as compact rows with their start time and tile
+- [x] an empty day shows "Free day" with Say the plan; tapping a card opens that day with the phone's liquid motion
+- [x] browser tests at 390 check one card per day, no day colours, and that a tap opens the right day
