@@ -254,7 +254,13 @@ class Scope:
     table metadata is cloned. That is the cost of an open (a host-database query under the host lock, and ~28 table clones); a day
     fragment used to pay it 27 times. Each *use* still gets its own short connection from the pool, so a request holds none between
     uses, uses on different threads never share one, and writes keep their short transactions.
-    The entry is keyed by family and person, so another family or person always gets its own, and nothing crosses requests."""
+    The entry is keyed by family and person, so another family or person always gets its own, and nothing crosses requests.
+
+    Rules for code that uses a lent handle: the membership check ran once, at the first use in the request, so nothing that outlives
+    the request's own work (an event stream, a long-running response) may read a family through the scope without checking again.
+    A lent handle is a shallow copy: its connection and its `_tables` are its own, but `meta` (the reflected Table objects) is shared
+    with the other lent handles of that family and person, so never change a table's definition through the table API (`db.t`,
+    `db.create`, `.transform`) on a family handle. GitAway reads and writes with SQL (`rows`, `run`, utils_sql) only."""
 
     def __init__(self):
         self._ready = {}
@@ -262,20 +268,22 @@ class Scope:
         self.closed = False
 
     def lend(self, session, opener):
+        """`session` is a snapshot (`_snapshot`): the key and the membership check read the same values."""
         key = (session.get("tenant_id"), session.get("user_id"))
         with self._lock:
             if self.closed:
                 return None
             template = self._ready.get(key)
         if template is None:
-            template = opener()     # checks membership (PermissionError if not a member), makes sure the tables exist
+            template = opener(session)     # checks membership (PermissionError if not a member), makes sure the tables exist
             template.conn.close()   # the template holds the checked metadata only, no connection
             with self._lock:
                 if self.closed:
                     return None
                 self._ready[key] = template
         db = copy.copy(template)
-        db.conn = template._shared_engine.connect()
+        db._tables = {}                    # DBTable objects remember the handle they were made on: never share them between handles
+        db.conn = template.engine.connect()
         return db
 
     def close(self):
@@ -313,6 +321,10 @@ class RequestScope:
             await self.app(scope, receive, send)
 
 
+def _snapshot(session) -> dict:
+    return {k: session[k] for k in ("user_id", "email", "tenant_id", "tenant_role", "is_sys_admin") if k in session}
+
+
 def _open(session):
     with hostdb.locked():  # the membership check uses fh-saas's one shared host connection
         db = require_tenant_access(session)
@@ -335,9 +347,10 @@ def family_db(source):
     session = getattr(source, "session", None) if hasattr(source, "scope") else source  # a Starlette Request is a Mapping too: ask it for its session
     if session is None or not session.get("user_id"):
         raise ValueError("Authentication required")
+    session = _snapshot(session)    # one read of the session: the scope's key and the membership check see the same person and family
     scope = _scope.get()
     if scope is not None:
-        db = scope.lend(session, lambda: _open(session))
+        db = scope.lend(session, _open)
         if db is not None:
             return db
     return _open(session)

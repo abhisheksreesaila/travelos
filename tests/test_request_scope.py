@@ -65,7 +65,8 @@ def test_every_handle_a_request_opened_is_closed_when_it_ends_even_on_an_error(c
 
     monkeypatch.setattr(familydb, "require_tenant_access", tracked)
     client.get("/trip/canvas?day=1&frag=1", headers=FRAG)
-    assert live and all(db.conn.closed for db in live)
+    assert live
+    assert live[0].engine.pool.checkedout() == 0      # the finished request left no connection out
 
     def explode(db, sql, **p):
         raise RuntimeError("boom")
@@ -167,3 +168,51 @@ def test_a_request_holds_no_pool_connection_between_uses(client):
         for h in held:
             h.conn.close()
         assert pool.checkedout() == 0
+
+
+def test_a_lent_handle_has_its_own_connection_and_its_own_table_cache(client):
+    """fastsql's table objects remember the handle they were made on, so each lent handle starts with an empty cache of its own."""
+    ari = person("ari")
+    with familydb.request_scope():
+        first, second = familydb.family_db(ari), familydb.family_db(ari)
+        try:
+            assert first._tables is not second._tables and first.conn is not second.conn
+            first._tables["probe"] = "first"
+            assert "probe" not in second._tables and "probe" not in familydb.family_db(ari)._tables
+        finally:
+            first.conn.close()
+            second.conn.close()
+
+
+def test_no_gitaway_code_uses_fastsqls_table_api_on_a_family_handle():
+    """fastsql's table API (`db.t`, `db["x"]`, create, transform) does not work on a tenant handle and would share `meta` between lent handles: use SQL."""
+    import re
+    from pathlib import Path
+    pattern = re.compile(r"\bdb\.t\b|\bdb\[|\.db\.t\b|\.db\[|\bdb\.create\(|\.transform\(")
+    hits = [f"{p.name}:{n}" for p in sorted((Path(__file__).resolve().parents[1] / "gitaway").rglob("*.py"))
+            for n, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1)
+            if pattern.search(line) and not line.lstrip().startswith(("#", "with the other lent", "`db.create`"))]
+    assert hits == [], hits
+
+
+class Counting(dict):
+    def __init__(self, *a):
+        super().__init__(*a)
+        self.reads = {}
+
+    def __getitem__(self, k):
+        self.reads[k] = self.reads.get(k, 0) + 1
+        return super().__getitem__(k)
+
+    def get(self, k, default=None):
+        self.reads[k] = self.reads.get(k, 0) + 1
+        return super().get(k, default)
+
+
+def test_the_scope_reads_the_family_and_person_from_the_session_once(client):
+    """The cache key and the membership check must see the same family, even if the session changes between two reads."""
+    sess = Counting(person("ari"))
+    with familydb.request_scope():
+        with familydb.using(sess) as db:
+            assert db is not None
+    assert sess.reads["tenant_id"] == 1 and sess.reads["user_id"] <= 2, sess.reads
