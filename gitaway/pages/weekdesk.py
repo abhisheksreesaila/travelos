@@ -20,7 +20,7 @@ WEEK_MIN = 30      # minutes of axis a card takes at least (a 15 minute plan is 
 SHORT, TIGHT = 60, 90      # a card under SHORT minutes is one row (title and start); under TIGHT it is the title and the time, a tile; from TIGHT it also carries the PLAN / BOOKED pill and the summary
 
 
-def _summary(v, blk, x):
+def summary(v, blk, x):
     """"3 steps · 1 done · 2 messages", only the parts that are true."""
     from gitaway.pages import tripcanvas as tc
     bits = []
@@ -41,10 +41,10 @@ def _drawn(x, hi):
     return s, min(max(x.end, s + WEEK_MIN), hi)
 
 
-def axis_range(v):
-    """(first, last) minute of the shared axis: 7 AM to 10 PM, wider for an earlier or later item in any day, on whole hours."""
+def axis_range(v, days=None):
+    """(first, last) minute of the shared axis: 7 AM to 10 PM, wider for an earlier or later item in any day (or in `days` only: the phone's day card, F-163), on whole hours."""
     from gitaway.pages import tripcanvas as tc
-    items = [x for i in range(len(v["dates"])) for _, x in tc.entries(v, i)]
+    items = [x for i in (range(len(v["dates"])) if days is None else days) for _, x in tc.entries(v, i)]
     lo = min([cal.DEFAULT_START, *(x.start for x in items)]) // 60 * 60
     hi = max([cal.GRID_END, *(x.end for x in items)])      # the true ends: the 30 minute floor of a short card is drawn inside this, it never makes the axis longer
     return lo, min(-(-hi // 60) * 60, 24 * 60)
@@ -72,11 +72,11 @@ def _row(v, i, kind, x, lo, hi, lane, lanes):
     blk = v["plan"].get(x.id) if kind == "block" else None
     full = tc.span_label(x.start, x.end)
     when = tc.compact_time(x.start) if brief else full
-    summary = _summary(v, blk, x)
+    text = summary(v, blk, x)
     return A(Span(icon(tc.KIND_ICON[k], 18, 2.2), cls="cz-wi-ico", aria_hidden="true"),
-             Span(Span(x.title, cls="cz-wi-t"), Span(when, cls="cz-wi-time"), Span("Plan", cls="cz-wi-tag"), Span(summary, cls="cz-wi-s") if summary else "", cls="cz-wi-body"),
+             Span(Span(x.title, cls="cz-wi-t"), Span(when, cls="cz-wi-time"), Span("Plan", cls="cz-wi-tag"), Span(text, cls="cz-wi-s") if text else "", cls="cz-wi-body"),
              href=tc.curl(day=i, plan=x.id), cls=f"cz-wi is-plan {size} cz-k-{k}", data_zoom="in", data_title=title, style=pos, data_s=str(x.start), data_e=str(x.end),
-             aria_label=f"{x.title}, {full}" + (f", {summary}" if summary else "") + ": open the day", data_wk_act=x.id, **attrs)      # (F-157: the mouse lifts a plan card by this id; a booking has none)
+             aria_label=f"{x.title}, {full}" + (f", {text}" if text else "") + ": open the day", data_wk_act=x.id, **attrs)      # (F-157: the mouse lifts a plan card by this id; a booking has none)
 
 
 def _column(v, i, editor, lo, hi):

@@ -60,36 +60,12 @@
 .cz .cz-sticker-by { margin-top: 0.125rem; font-family: var(--font-body); font-size: var(--cz-small); font-weight: 800; color: var(--ink-2); }
 .cz .cz-sticker-chip { margin: -0.1875rem 0 0 0.5rem; transform: rotate(1.5deg); }
 .cz .cz-sticker-step { margin-top: 0.125rem; }
-.cz .cz-sticker-week { margin: 0 0 0 0.25rem; }
 .cz .cz-sticker-sheet { font-size: 1.75rem; padding: 0.375rem 0.875rem 0.5rem; }
 .cz .cz-notes { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0 0.25rem; }
 
-/* week */
-.cz .cz-week { display: flex; flex-direction: column; gap: 0.625rem; }
-.cz .cz-row { display: grid; grid-template-columns: 3.5rem minmax(0, 1fr) auto; gap: 0.5rem; align-items: stretch; }
-.cz .cz-row.is-today .cz-badge { box-shadow: 0 0 0 0.1875rem var(--ink); }
-.cz .cz-badge { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 3.5rem; border-radius: 1rem; }
-.cz .cz-dow { font-size: var(--cz-small); font-weight: 800; letter-spacing: 0.06em; color: var(--ink-2); }
-.cz .cz-num { font-family: var(--font-display); font-weight: 800; font-size: 1.625rem; line-height: 1; }
-.cz .cz-row-link { display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; min-height: 2.75rem; color: var(--ink); }
-.cz .cz-row.is-free .cz-row-link { grid-column: 2; }
-.cz .cz-row-main { grid-column: 2 / -1; display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; }   /* F-093: the day's plans are one link, each booking is a link of its own */
-.cz .cz-wcard { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.625rem 0.75rem; border-radius: 1.25rem; background: var(--card); box-shadow: var(--shadow-sm); min-width: 0; }
-.cz .cz-simple { flex-direction: row; align-items: center; gap: 0.625rem; }
-.cz .cz-simple.is-booked { background: var(--sky-tint); }
-.cz .cz-park { background: var(--grape-tint); box-shadow: 0 0 0 0.125rem var(--grape); }
-.cz .cz-card-h { display: flex; align-items: center; gap: 0.5rem; }
+/* the title and the pill of the sheets (the week's day cards are week_cards.css) */
 .cz .cz-card-t { flex: 1; min-width: 0; font-family: var(--font-display); font-weight: 800; font-size: 1.0625rem; line-height: 1.15; overflow-wrap: anywhere; }
 .cz .cz-pill { padding: 0.0625rem 0.625rem; border-radius: var(--r-pill); background: var(--ink); color: #FFFFFF; font-size: var(--cz-small); font-weight: 800; white-space: nowrap; }
-.cz .cz-ico { flex-shrink: 0; width: 2.25rem; height: 2.25rem; border-radius: 0.75rem; display: inline-flex; align-items: center; justify-content: center; background: var(--grape-tint); }
-.cz .cz-park .cz-ico { background: var(--grape); }
-.cz .cz-minis { display: grid; grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr)); gap: 0.375rem; }
-.cz .cz-mini { display: flex; flex-direction: column; padding: 0.375rem 0.625rem; border-radius: 0.875rem; background: var(--card); border-left: 0.25rem solid var(--mini, var(--grape)); min-width: 0; }
-.cz .cz-mini-name { font-weight: 800; font-size: var(--cz-body); line-height: 1.15; overflow-wrap: anywhere; }
-.cz .cz-mini-sub, .cz .cz-mini-done { font-size: var(--cz-small); font-weight: 700; color: var(--ink-2); }
-.cz .cz-row.is-free .cz-row-link { justify-content: center; padding: 0.625rem 0.875rem; border: 0.125rem dashed rgba(30, 26, 46, .22); border-radius: 1.25rem; background: rgba(255, 255, 255, .55); }
-.cz .cz-free-t { font-weight: 800; font-size: 1rem; }
-.cz .cz-plus { align-self: center; width: 2.75rem; height: 2.75rem; border-radius: var(--r-pill); display: inline-flex; align-items: center; justify-content: center; background: var(--card); box-shadow: var(--shadow-sm); }
 
 /* part colours: a part keeps its colour from the week to the sheet */
 .cz .cz-pt-sky { --mini: var(--sky); --lane: var(--sky); } .cz .cz-pt-sun { --mini: var(--sun); --lane: var(--sun); } .cz .cz-pt-grape { --mini: var(--grape); --lane: var(--grape); }
@@ -228,13 +204,6 @@ html[data-cz-dir="calm"]::view-transition-new(root) { animation: cz-calm-in var(
   .tp[data-canvas] { max-width: 100rem; padding-bottom: 3rem; }
   .cz .cz-head h1 { font-size: 2rem; }
   .cz .cz-head.is-deep h1 { font-size: 1.75rem; }
-  .cz .cz-week { display: grid; grid-template-columns: repeat(var(--days, 7), minmax(0, 1fr)); gap: 0.75rem; align-items: start; }
-  .cz .cz-row { display: flex; flex-direction: column; }
-  .cz .cz-badge { flex-direction: row; gap: 0.5rem; min-height: 2.75rem; }
-  .cz .cz-simple { flex-wrap: wrap; }
-  .cz .cz-wcard .cz-card-t { flex-basis: 8rem; }
-  .cz .cz-row-link, .cz .cz-row.is-free .cz-row-link, .cz .cz-row-main { grid-column: auto; }
-  .cz .cz-plus { align-self: flex-end; margin-top: -3.25rem; margin-right: 0.25rem; }
   .cz .cz-day-body { display: grid; grid-template-columns: minmax(0, 1fr) 20rem; gap: 1rem; align-items: start; }
   .cz .cz-day-side { position: sticky; top: 1rem; }
   .cz .cz-part { display: grid; grid-template-columns: 13rem minmax(0, 1fr); align-items: start; gap: 0.75rem; }
@@ -384,7 +353,6 @@ html[data-cz-dir="prev"]::view-transition-new(root) { animation: cz-in-left var(
 @media (prefers-reduced-motion: reduce) { .cz .cz-view.cz-in-next, .cz .cz-view.cz-in-prev { animation: none; } }
 /* F-092: today in the week, and the now card at the top of today */
 .cz .cz-today { margin-top: 0.125rem; padding: 0 0.375rem; border-radius: var(--r-pill); background: var(--ink); color: #FFFFFF; font-size: var(--cz-small); font-weight: 800; line-height: 1.4; }
-.cz .cz-row.is-today .cz-badge { box-shadow: 0 0 0 0.1875rem var(--coral); }
 .cz .cz-now { display: flex; flex-direction: column; gap: 0.5rem; }
 .cz .cz-now:empty { display: none; }
 .cz .cz-toggle { align-self: flex-start; }
@@ -407,17 +375,6 @@ html[data-cz-dir="prev"]::view-transition-new(root) { animation: cz-in-left var(
 .cz .cz-filters[data-compact]::-webkit-scrollbar { display: none; }
 .cz .cz-filters[data-compact] .cz-fchip { flex: none; scroll-snap-align: start; }
 
-/* the filter at work: a week row with nothing to show shrinks to a thin line, a bare plan link is gone */
-.cz .cz-openday, .cz .cz-thin-t { display: none; }
-.cz .cz-openday { align-items: center; justify-content: flex-end; gap: 0.25rem; min-height: 2.75rem; }
-.cz .cz-view[data-k="all"] .cz-row-link.is-bare .cz-openday { display: inline-flex; }
-.cz .cz-view:not([data-k="all"]) .cz-row-link.is-bare:not(.is-thin) { display: none; }
-.cz .cz-row.is-thin { align-items: center; opacity: 0.7; }
-.cz .cz-row.is-thin .cz-badge { flex-direction: row; gap: 0.375rem; min-height: 2.75rem; }
-.cz .cz-row.is-thin .cz-num { font-size: 1.125rem; }
-.cz .cz-row.is-thin .cz-today, .cz .cz-row.is-thin .cz-plus, .cz .cz-row.is-thin .cz-free-t, .cz .cz-row.is-thin .cz-free .cz-sub { display: none; }
-.cz .cz-row.is-thin .cz-row-link { min-height: 2.75rem; justify-content: center; padding: 0; border: 0; background: transparent; }
-.cz .cz-row.is-thin .cz-thin-t { display: block; font-size: var(--cz-small); font-weight: 700; color: var(--ink-3); }
 .cz .cz-kind-none { margin: 0; padding: 0.75rem 0; }
 
 /* SOS in the heading */
