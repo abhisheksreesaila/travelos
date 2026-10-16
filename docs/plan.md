@@ -961,7 +961,7 @@ Captain, 2026-10-15: "it feels not as fast as I want it to be, it doesn't look z
 # Zippy (F-168 report docs/perf-feel.md; captain 2026-10-16: "the feel should be great … zippy fast … if you have to rewrite it, rewrite it")
 Every ticket measures before and after with scripts/perf (run_all.sh + report.py) and states the numbers in its report; the look does not change unless the ticket says so.
 
-## F-169 A plan opens on the first tap [todo]
+## F-169 A plan opens on the first tap [review]
 Report fix 1 (and the card's 100 ms forced layout from fix 8). Needs: F-168
 - [ ] on the phone a tap on a plan opens its card at once: no 330 ms double-tap wait (day_menu.js ~L475); "open a plan" starts ≤120 ms (CPU 4×, +180 ms) instead of 424
 - [ ] rename stays one gesture away: from the hold menu (already there) and by tapping the title inside the open card; nothing that worked before is lost; the card open does no forced layout over 30 ms

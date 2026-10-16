@@ -41,6 +41,11 @@
 .cz .cz-card-note.is-editing { align-self: stretch; transform: none; padding: 0.25rem 0.5rem 0.375rem; }
 .cz .cz-card-edit { width: 100%; box-sizing: border-box; min-height: 3rem; margin: 0; padding: 0.125rem 0.375rem; border: 0; border-radius: 0.25rem; background: rgba(255, 255, 255, .45); color: var(--ink); resize: none; outline: 0.125rem solid var(--ink);
   font-family: var(--font-hand); font-weight: 700; font-size: 1.5rem; line-height: 1.1; }
+.cz .cz-title-btn { display: block; width: 100%; min-height: 2.75rem; margin: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; letter-spacing: inherit; text-align: left; cursor: text; overflow-wrap: anywhere; -webkit-tap-highlight-color: transparent; }
+.cz .cz-title-btn:focus-visible { outline: 0.125rem solid var(--ink); outline-offset: 0.125rem; border-radius: 0.25rem; }
+.cz .cz-card-name { width: 100%; box-sizing: border-box; min-height: 2.75rem; margin: 0; padding: 0.25rem 0.5rem; border: 0.125rem solid var(--ink); border-radius: 0.75rem; background: #FFFFFF; color: var(--ink); font-family: var(--font-display); font-weight: 800; font-size: 1rem; line-height: 1.2; }
+.cz .cz-card-name:focus { outline: none; border-color: var(--coral); }
+.cz .cz-card-name[aria-invalid="true"] { border-color: var(--coral-deep); }
 .cz .cz-card-err { color: var(--coral-deep); font-family: var(--font-body); font-weight: 800; font-size: var(--cz-small); }
 .cz .cz-card-err:empty { display: none; }
 

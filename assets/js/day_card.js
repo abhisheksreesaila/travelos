@@ -113,11 +113,12 @@
     main.appendChild(wrap);
     open = { wrap: wrap, card: card, scrim: scrim, content: content, body: body, block: block, act: act, folding: false };
     block.classList.add('is-card');
-    lock(open);
+    if (stage.dataset.edit === '1' && CZ.saveTitle) { open.born = Date.now(); renamable(open, t); }
     place(open, geometry(wrap, r));
     CZ.cardOpen = true;
     if (!CZ.reduced.matches) MO.open(card, r, { scrim: scrim, content: content, radius: ['0.875rem', '1.75rem'] });
     try { card.focus({ preventScroll: true }); } catch (e) { /* no focus */ }
+    lock(open);      // last, after every read: marking the whole page inert first made the card's own measuring and focus recalculate the page (F-169: 50 to 90 ms on a slow phone)
     scrim.addEventListener('click', function () { fold(); });
     x.addEventListener('click', function () { fold(); });
     swipe(open, [grab, head]);
@@ -237,6 +238,93 @@
     ta.setSelectionRange(ta.value.length, ta.value.length);
   }
 
+  // ---- the title, in place ----------------------------------------------------------------------------------------------------
+  // F-169: a plan opens on one tap, so renaming is not a double tap on the block any more: an editor taps the title in the open card (or reaches it with Tab and presses Enter) and it
+  // becomes a field. Enter or tapping away saves (the hold menu's rule and write: day_menu.js), Escape puts it back, an empty or too-long title is refused in plain words.
+  var DOUBLE = 400;      // ms after a card opens in which a tap on its title is the second tap of a double tap on the plan, not a wish to rename (the title is under the finger by then)
+  function renamable(o, t) {
+    if (!t || t.querySelector('.cz-title-btn')) return;
+    var text = mk('span', '', t.textContent), btn = mk('button', 'cz-title-btn');
+    btn.type = 'button'; btn.setAttribute('aria-label', 'Rename ' + t.textContent);
+    if (t.id) { text.id = t.id; t.removeAttribute('id'); }      // the dialog is still named by the plain title
+    btn.appendChild(text); t.textContent = ''; t.appendChild(btn);
+    o.born = o.born || Date.now();
+    btn.addEventListener('click', function () { if (Date.now() - o.born > DOUBLE) rename(o, t); });
+  }
+  CZ.renamePane = function (pane) {      // day_dock.js: the laptop panel's title, once its words are in
+    if (stage.dataset.edit !== '1' || !CZ.saveTitle) return;
+    pane._o = pane._o || { act: pane.dataset.act, folding: false };
+    pane._o.born = pane._o.born || Date.now();
+    renamable(pane._o, pane.querySelector('.cz-pp-t'));
+  };
+  CZ.renameTitle = function (act) {      // a double click on a plan's title on a laptop (day_menu.js): the panel's title becomes the field, as soon as the panel has its words
+    function now() {
+      var t = document.querySelector('#cz-dock .cz-pp-t'), pane = t && t.closest('[data-pane="plan"]');
+      if (!pane || pane.dataset.act !== act || pane.classList.contains('is-loading')) return false;
+      CZ.renamePane(pane);
+      var btn = t.querySelector('.cz-title-btn');
+      if (!btn) return false;
+      pane._o.born = 0;
+      rename(pane._o, t);
+      return true;
+    }
+    if (now()) return;
+    var tm = 0;
+    function off() { document.removeEventListener('cz:cardready', got, true); clearTimeout(tm); }
+    function got() { setTimeout(function () { if (now()) off(); }, 60); }      // (after the panel has taken its own focus)
+    document.addEventListener('cz:cardready', got, true);
+    tm = setTimeout(off, 2500);
+  };
+  function rename(o, t) {
+    if (o.folding || o.note || o.saving) return;
+    var blk = o.block || blockOf(o.act), btn = t.querySelector('.cz-title-btn'), text = btn.firstChild;
+    var was = (blk && blk.dataset.title) || text.textContent;
+    var input = mk('input', 'cz-card-name'), err = mk('span', 'cz-card-err');
+    input.type = 'text'; input.value = was;
+    input.setAttribute('aria-label', 'Name of this plan'); input.setAttribute('enterkeyhint', 'done'); input.setAttribute('autocomplete', 'off');
+    input.setAttribute('autocapitalize', 'sentences'); input.setAttribute('spellcheck', 'false');
+    err.setAttribute('role', 'alert');
+    t.hidden = true;
+    t.after(input); input.after(err);
+    o.note = input;
+    var over = false, sending = false;
+    function finish() { over = true; o.note = null; o.commitNote = null; o.cancelNote = null; input.remove(); err.remove(); t.hidden = false; }
+    function cancel() { if (over || sending) return; finish(); try { btn.focus({ preventScroll: true }); } catch (e) { /* no focus */ } }
+    function commit() {
+      if (over || sending) return;
+      var got = CZ.checkTitle(input.value);
+      if (got.err) { err.textContent = got.err; input.setAttribute('aria-invalid', 'true'); input.focus(); return; }
+      if (got.title === was) { cancel(); return; }
+      sending = true; o.saving = true; input.disabled = true;
+      CZ.saveTitle(o.act, got.title).then(function (res) {
+        o.saving = false;
+        text.textContent = got.title; btn.setAttribute('aria-label', 'Rename ' + got.title);
+        if (blk) { blk.dataset.title = got.title; var bt = blk.querySelector('.cz-gb-t'); if (bt) bt.textContent = got.title; }
+        finish();
+        forgetCard(o.act);
+        if (res.toast) CZ.showToast(res.toast, res.undo ? function () { CZ.undo(res.undo); } : null);
+        CZ.quiet();
+      }, function (e) {
+        sending = false; o.saving = false; input.disabled = false;
+        err.textContent = e && e.soft ? e.soft : 'Could not save that. Try again.';
+        input.setAttribute('aria-invalid', 'true');
+        input.focus();
+      });
+    }
+    o.cancelNote = cancel;
+    o.commitNote = commit;
+    input.addEventListener('input', function () { err.textContent = ''; input.removeAttribute('aria-invalid'); });
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); commit(); }
+      else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); cancel(); }
+      else e.stopPropagation();
+    }, true);
+    input.addEventListener('blur', function () { setTimeout(commit, 0); });
+    try { input.focus({ preventScroll: true }); } catch (e) { input.focus(); }
+    input.select();
+    refit();
+  }
+
   // ---- fold ---------------------------------------------------------------------------------------------------------------------
   // While the card is open it is the whole page: every other part of the page (the day, the heading, the tab bar) is inert, so a keyboard or a screen reader stays in the card.
   function lock(o) {
@@ -294,13 +382,15 @@
     var s = null;
     handles.forEach(function (h) {
       h.addEventListener('pointerdown', function (e) {
-        if (e.button > 0 || o.folding || e.target.closest('button, a')) return;
-        s = { id: e.pointerId, y0: e.clientY, t0: Date.now(), dy: 0, el: h };
-        try { h.setPointerCapture(e.pointerId); } catch (err) { /* not capturable */ }
+        var title = e.target.closest('.cz-title-btn');      // the title is a button, but a swipe may start on it: it takes the pointer only once it moves (a tap must stay a click on the button)
+        if (e.button > 0 || o.folding || (!title && e.target.closest('button, a'))) return;
+        s = { id: e.pointerId, y0: e.clientY, t0: Date.now(), dy: 0, el: h, late: !!title };
+        if (!title) { try { h.setPointerCapture(e.pointerId); } catch (err) { /* not capturable */ } }
       });
       h.addEventListener('pointermove', function (e) {
         if (!s || e.pointerId !== s.id) return;
         s.dy = Math.max(0, e.clientY - s.y0);
+        if (s.late && s.dy > 6) { s.late = false; try { h.setPointerCapture(e.pointerId); } catch (err) { /* not capturable */ } }
         o.card.style.transform = s.dy ? 'translateY(' + s.dy + 'px)' : '';
         o.scrim.style.opacity = String(Math.max(0.3, 1 - s.dy / 400));
       });

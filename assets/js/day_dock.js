@@ -141,6 +141,7 @@
     pane.classList.remove('is-loading'); pane.removeAttribute('aria-busy');
     if (nf) { var old = d.querySelector('.cz-pp-foot'); if (old) old.remove(); pane.after(nf); }
     bindNotes(pane);
+    if (CZ.renamePane) CZ.renamePane(pane);
     pane.dispatchEvent(new CustomEvent('cz:cardready', { bubbles: true }));
   }
   function failed(pane) {
@@ -159,6 +160,7 @@
     return words.then(function (html) { return html; }, function () { return null; }).then(function (html) {
       if (!dock() || Dock.mode() !== 'plan' || lastAct !== act) return null;      // the panel went elsewhere while it waited
       var old = d.querySelector('.cz-pp:not(.is-leaving)'), pane = mk('section', 'cz-dock-body cz-pp'), compose = d.querySelector('.cz-compose');
+      if (old && old.dataset.act === act) return null;      // a second click on the same plan while its words were on the way: the pane that came first stays (a title being renamed is not swept away)
       if (old) { old.remove(); var of = d.querySelector('.cz-pp-foot'); if (of) of.remove(); }
       pane.dataset.pane = 'plan'; pane.dataset.act = act; pane.setAttribute('aria-labelledby', 'cz-pp-title'); pane.tabIndex = -1;
       d.insertBefore(pane, compose || null);
@@ -243,7 +245,7 @@
   document.addEventListener('keydown', function (e) {      // Esc: the panel goes back to Up next (before the canvas's own Escape, which would zoom out a level)
     if (e.key !== 'Escape' || e.defaultPrevented || !desk.matches || Dock.mode() !== 'plan' || CZ.menuOpen) return;
     var t = e.target;
-    if (t.classList && t.classList.contains('cz-card-edit')) return;      // a note being written: its own Escape puts the words back
+    if (t.classList && (t.classList.contains('cz-card-edit') || t.classList.contains('cz-card-name'))) return;      // a note being written: its own Escape puts the words back
     if (t.closest && t.closest('.cz-pp-addf')) {                              // the Add a step field: Escape puts it away
       e.preventDefault(); e.stopImmediatePropagation();
       var f = t.closest('.cz-pp-addf'), b = f.parentNode.querySelector('[data-add-step]');

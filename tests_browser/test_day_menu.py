@@ -1,5 +1,5 @@
 """F-098: the hold menu, rename in place and delete on the day grid, in a real browser at 390 and 320. Hold a block and let go without moving: it wiggles and a small menu offers
-Chat, Rename, Delete (asks once, Undo after) and Earlier, Later, Shorter, Longer by 15 minutes; every item is pressed. Two quick taps on a title edit it in place (Enter or tapping
+Chat, Rename, Delete (asks once, Undo after) and Earlier, Later, Shorter, Longer by 15 minutes; every item is pressed. Rename edits the title in place (Enter or tapping
 away saves, Escape cancels, an empty or too-long title is refused plainly); a tap still opens a park block; a viewer has none of it; the keyboard has the menu too; reduced motion
 does not wiggle. A finger is a pointer that goes down, waits and lets go (synthetic pointer events) or a real touch tap (Playwright's touchscreen). Screenshots on request: F097_SHOTS=<folder>."""
 import re
@@ -257,19 +257,17 @@ def test_the_keyboard_has_the_menu_too_and_escape_closes_it_without_zooming_out(
 
 # ---- rename in place --------------------------------------------------------------------------------------------------------------------
 
-def double_tap_title(page, act):
-    t = box(page, f"{block(act)} .cz-gb-t")
-    x, y = t["x"] + min(t["width"] / 2, 30), t["y"] + t["height"] / 2
-    page.touchscreen.tap(x, y)
-    page.wait_for_timeout(110)
-    page.touchscreen.tap(x, y)
+def start_rename(page, act):
+    """F-169: a double tap no longer renames (a tap opens the plan at once): rename is the hold menu's, or the open card's title (test_plan_first_tap.py)."""
+    hold_and_let_go(page, act)
+    menu_item(page, "Rename").click()
 
 
-def test_a_double_tap_on_the_title_edits_it_in_place_and_enter_saves(phone):
+def test_rename_from_the_menu_edits_the_title_in_place_and_enter_saves(phone):
     lunch = plan("Lunch", 12 * 60, 13 * 60)
     open_day(phone)
     show(phone, block(lunch.id))
-    double_tap_title(phone, lunch.id)
+    start_rename(phone, lunch.id)
     field = phone.locator(f"{block(lunch.id)} .cz-gb-edit")
     expect(field).to_be_focused()
     assert box(phone, ".cz-gb-edit")["height"] >= 40 and phone.evaluate("parseFloat(getComputedStyle(document.querySelector('.cz-gb-edit')).fontSize)") >= 16
@@ -284,14 +282,14 @@ def test_escape_cancels_and_tapping_away_saves(phone):
     lunch = plan("Lunch", 12 * 60, 13 * 60)
     open_day(phone)
     show(phone, block(lunch.id))
-    double_tap_title(phone, lunch.id)
+    start_rename(phone, lunch.id)
     field = phone.locator(f"{block(lunch.id)} .cz-gb-edit")
     field.fill("Nothing")
     field.press("Escape")
     expect(field).to_have_count(0)
     assert now(lunch.id)[2] == "Lunch" and phone.locator(".ga-toast").count() == 0 and phone.locator(".cz-view").get_attribute("data-level") == "day"
     expect(phone.locator(f"{block(lunch.id)} .cz-gb-t")).to_have_text("Lunch")
-    double_tap_title(phone, lunch.id)
+    start_rename(phone, lunch.id)
     field = phone.locator(f"{block(lunch.id)} .cz-gb-edit")
     field.fill("Picnic")
     b = box(phone, block(lunch.id))
@@ -304,7 +302,7 @@ def test_an_empty_or_too_long_title_is_refused_in_plain_words_and_nothing_is_sav
     lunch = plan("Lunch", 12 * 60, 13 * 60)
     open_day(phone)
     show(phone, block(lunch.id))
-    double_tap_title(phone, lunch.id)
+    start_rename(phone, lunch.id)
     field = phone.locator(f"{block(lunch.id)} .cz-gb-edit")
     field.fill("   ")
     field.press("Enter")
@@ -331,23 +329,23 @@ def test_saving_an_unchanged_title_says_nothing(phone):
     lunch = plan("Lunch", 12 * 60, 13 * 60)
     open_day(phone)
     show(phone, block(lunch.id))
-    double_tap_title(phone, lunch.id)
+    start_rename(phone, lunch.id)
     phone.locator(f"{block(lunch.id)} .cz-gb-edit").press("Enter")
     expect(phone.locator(".cz-gb-edit")).to_have_count(0)
     assert phone.locator(".ga-toast").count() == 0
 
 
-def test_a_double_tap_on_a_park_blocks_title_edits_it_and_does_not_open_it_while_one_tap_does(phone):
+def test_one_tap_on_a_park_blocks_title_opens_it_and_rename_from_its_menu_does_not(phone):
     open_day(phone, 1)
     act = phone.locator(".cz-gb.is-park").get_attribute("data-act")
-    double_tap_title(phone, act)
+    start_rename(phone, act)
     expect(phone.locator(f"{block(act)} .cz-gb-edit")).to_be_focused()
     phone.wait_for_timeout(500)
     assert phone.locator(".cz-view").get_attribute("data-level") == "day"
     phone.locator(f"{block(act)} .cz-gb-edit").press("Escape")
-    phone.wait_for_timeout(600)                                                           # the double tap's own clicks are over
+    phone.wait_for_timeout(600)
     t = box(phone, f"{block(act)} .cz-gb-t")
-    phone.touchscreen.tap(t["x"] + 20, t["y"] + t["height"] / 2)                          # one tap on the title still opens it, after a moment (F-106: the card; Rides goes on to the block)
+    phone.touchscreen.tap(t["x"] + 20, t["y"] + t["height"] / 2)                          # one tap on the title opens it at once (F-106: the card; Rides goes on to the block)
     expect(phone.locator(".cz-card")).to_be_visible()
     phone.locator("#cz-card-rides").click()
     expect(phone.locator(".cz-view[data-level=block]")).to_be_visible()
