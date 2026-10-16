@@ -35,8 +35,10 @@ def _summary(v, blk, x):
 
 
 def _drawn(x, hi):
-    """(start, end) of the card on the axis: its true start, its true end or WEEK_MIN minutes after the start, never past the axis's end (a drawn-only length does not widen the axis)."""
-    return x.start, min(max(x.end, x.start + WEEK_MIN), hi)
+    """(start, end) of the card on the axis: at least WEEK_MIN minutes tall (a line of text needs that), never past the axis's end. A short plan at the very end of the axis moves its top up to keep
+    the floor (its label still says its true time); a drawn-only length never widens the axis."""
+    s = min(x.start, hi - WEEK_MIN)
+    return s, min(max(x.end, s + WEEK_MIN), hi)
 
 
 def axis_range(v):

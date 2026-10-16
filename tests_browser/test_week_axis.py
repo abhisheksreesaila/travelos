@@ -209,7 +209,7 @@ def test_a_filter_hides_the_cards_that_do_not_match_and_the_axis_stays(signed_in
 
 @BOTH
 def test_a_short_plan_at_the_end_of_the_day_does_not_stretch_the_axis(signed_in, viewport):
-    """A 15 minute plan at 9:45 PM is drawn 30 tall (the floor), but must not push the axis past 10 PM and shrink every hour."""
+    """A 15 minute plan at 9:45 PM keeps the 30 minute floor, but must not push the axis past 10 PM (it would shrink every hour): the card moves its top up to 9:30 and ends at the axis end; its label says 9:45 PM."""
     page = signed_in(viewport, path="/trip/canvas")
     cal.add_activity(person("ari"), day=2, start=21 * 60 + 45, end=22 * 60, title="Last call at the bar", kind="food", fine=True)
     page.reload()
@@ -219,9 +219,29 @@ def test_a_short_plan_at_the_end_of_the_day_does_not_stretch_the_axis(signed_in,
     last = next(i for i in m["items"] if i["title"] == "Last call at the bar")
     line = m["labels"][-1]["y"] + m["labels"][-1]["h"] / 2
     hh = m["labels"][1]["y"] - m["labels"][0]["y"]
-    assert abs(last["y"] - (line - hh / 4)) <= 1.5      # its top is still 9:45 PM
-    assert last["b"] <= line + 1.5      # and it ends at the axis end, not 15 minutes past it
+    assert abs(last["y"] - (line - hh / 2)) <= 1.5 and abs(last["b"] - line) <= 1.5 and abs(last["h"] - hh / 2) <= 2      # 9:30 to 10 PM: 30 minutes tall, on the axis
+    inside = page.evaluate("""() => { const c = document.querySelector('.cz-wi[data-s="1305"]'), b = c.getBoundingClientRect(), t = c.querySelector('.cz-wi-t').getBoundingClientRect(), w = c.querySelector('.cz-wi-time').getBoundingClientRect();
+        return [t, w].every(r => r.top >= b.top - 0.5 && r.bottom <= b.bottom + 0.5 && r.left >= b.left - 0.5 && r.right <= b.right + 0.5) && c.querySelector('.cz-wi-time').textContent.trim() }""")
+    assert inside == "9:45 PM"      # the title and the true time sit inside the card
     assert page.evaluate("(w => w.scrollHeight <= w.clientHeight)(document.querySelector('#cz-wk'))")
+
+
+@BOTH
+def test_titles_cut_while_hidden_by_a_filter_are_faded_when_shown_again_even_after_a_reload(signed_in, viewport):
+    page = signed_in(viewport, path="/trip/canvas")
+    me = person("ari")
+    for t, k in (("Breakfast then the Griffith Observatory", "culture"), ("Beach volleyball tournament", "fun"), ("Boogie boarding", "outdoors")):
+        cal.add_activity(me, day=1, start=9 * 60, end=11 * 60, title=t, kind=k)
+    page.reload()
+    page.wait_for_selector("#cz-wk .cz-wi")
+    page.locator(".cz-kchip", has_text="Hotels").click()      # the plans are hidden (they measure 0)
+    page.reload()                                              # the filter is remembered: the page loads with them hidden
+    page.wait_for_selector("#cz-wk .cz-wi", state="attached")
+    page.locator(".cz-kchip", has_text="All").click()
+    expect(page.locator(".cz-wcol[data-day='1'] .cz-wi:visible")).to_have_count(3)
+    page.wait_for_function("() => document.querySelectorAll('.cz-wcol[data-day=\"1\"] .cz-wi-t.is-cut').length >= 2")
+    bad = page.evaluate("""() => [...document.querySelectorAll('.cz-wi-t')].filter(t => t.clientWidth && (t.scrollHeight > t.clientHeight + 1 || t.scrollWidth > t.clientWidth + 1) && !(t.classList.contains('is-cut') && getComputedStyle(t).maskImage !== 'none')).map(t => t.textContent)""")
+    assert bad == [], bad
 
 
 @BOTH
