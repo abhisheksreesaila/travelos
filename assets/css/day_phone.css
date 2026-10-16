@@ -132,9 +132,26 @@
   }
 
   .cz .cz-view[data-day] .cz-gb.is-lane.is-short .cz-gb-in { flex-direction: column; align-items: flex-start; justify-content: center; gap: 0; padding: 0 calc(var(--pu) * 0.375) 0 calc(var(--pu) * 0.5); }
-  .cz .cz-view[data-day] .cz-gb.is-lane.is-short .cz-gb-t { padding-right: 0; font-size: calc(var(--pu) * 0.875); line-height: 1.05; white-space: normal; overflow-wrap: anywhere; -webkit-mask-image: none; mask-image: none; }      /* a third of a column: the whole title, wrapping if it must */
+  .cz .cz-view[data-day] .cz-gb.is-lane.is-short .cz-gb-t { font-size: var(--cz-small); line-height: 1.05; white-space: normal; max-height: 2.1em; }      /* a third of a column: two lines at most, then the start under them, all inside the 44px */
   .cz .cz-view[data-day] .cz-gb.is-lane .cz-gb-when { display: none; }
   .cz .cz-view[data-day] .cz-gb.is-lane .cz-gb-st { display: block; font-size: var(--cz-small); font-weight: 600; color: var(--ink-2); white-space: nowrap; }      /* half a column has room for the start alone; the card's label says the whole time */
+
+  /* a title never breaks inside a word: it wraps at spaces to two lines at most, and fades where it is cut (its right padding is the fade, so a title that fits is never faded); a word wider than the card fades too */
+  .cz .cz-view[data-day] .cz-gb-t, .cz .cz-view[data-day] .cz-gb-when, .cz .cz-view[data-day] .cz-gb-st { overflow-wrap: normal; word-break: normal; hyphens: none; }
+  .cz .cz-view[data-day] .cz-gb-t { max-height: 2.3em; padding-right: 0.75rem; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 0.75rem), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 0.75rem), transparent); }
+
+  /* the "+N more" card: where more than three plans would be side by side, the third lane is this one kind-neutral card (white, a hairline, 44px at the least); the plans behind it wait, undrawn, for its list (day_more.js) */
+  .cz .cz-view[data-day] .cz-gb.is-more { visibility: hidden; pointer-events: none; }
+  .cz .cz-view[data-day] .cz-g-start.is-hid { display: none; }
+  .cz .cz-view[data-day] .cz-lanemore { position: absolute; z-index: 2; display: flex; align-items: center; justify-content: center; box-sizing: border-box; min-height: calc(var(--tap) + 0.1667rem); padding: 0 calc(var(--pu) * 0.375);
+    top: calc(var(--s) * var(--mm)); left: calc(var(--bkw, 0rem) + (100% - var(--bkw, 0rem)) * var(--tlane) / var(--tlanes)); width: calc((100% - var(--bkw, 0rem)) / var(--tlanes) - 0.25rem);
+    border: 1px solid var(--hairline-2); border-radius: var(--r-sm); background: var(--card); color: var(--ink); font-family: var(--font-display); font-weight: 700; font-size: calc(var(--pu) * 0.9375); letter-spacing: -0.02em; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  .cz .cz-view[data-day] .cz-lanemore-t { white-space: nowrap; }
+  .cz .cz-view[data-day] .cz-lanemore:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.125rem; }
+  .cz .cz-more-rows { display: flex; flex-direction: column; gap: 0.25rem; }
+  .cz .cz-more-row { flex-direction: row; justify-content: flex-start; gap: calc(var(--pu) * 0.75); min-height: var(--tap); padding: 0 calc(var(--pu) * 0.75); text-align: left; font-size: max(var(--tmin), 0.9375rem); }
+  .cz .cz-more-when { flex: none; font-variant-numeric: tabular-nums; color: var(--ink-2); font-weight: 700; }
+  .cz .cz-more-row .cz-mi-t { text-align: left; overflow-wrap: normal; }
 
   /* a plan beside another one is half a column wide: no tile (the kind's edge still says it), the words use the room */
   .cz .cz-view[data-day] .cz-gb.is-lane .cz-gb-tile, .cz .cz-view[data-day] .cz-gb.is-lane .cz-gb-tag { display: none; }

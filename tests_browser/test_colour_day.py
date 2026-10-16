@@ -183,12 +183,12 @@ def crowd():
 GEOMETRY = """() => {
   const box = e => { const r = e.getBoundingClientRect(); return {l: r.left, t: r.top, r: r.right, b: r.bottom}; };
   const shown = e => getComputedStyle(e).display !== 'none';
-  const marks = [...document.querySelectorAll('.cz-g-start')].map(e => ({name: 'start ' + e.textContent, ...box(e)}))
+  const marks = [...document.querySelectorAll('.cz-g-start')].filter(shown).map(e => ({name: 'start ' + e.textContent, ...box(e)}))
     .concat([...document.querySelectorAll('.cz-g-hour')].filter(shown).map(e => ({name: 'hour ' + e.textContent, ...box(e)})));
-  const cards = [...document.querySelectorAll('.cz-gb:not(.is-new), .cz-gbk:not(.is-pill)')].map(e => { const tile = e.querySelector('.cz-gb-tile, .cz-gbk-tile');
+  const cards = [...document.querySelectorAll('.cz-gb:not(.is-new):not(.is-more), .cz-gbk:not(.is-pill)')].map(e => { const tile = e.querySelector('.cz-gb-tile, .cz-gbk-tile');
     return {name: e.textContent.trim().slice(0, 24), ...box(e), when: (w => w ? box(w) : null)([...e.querySelectorAll('.cz-gb-when, .cz-gb-st')].find(shown)),      // (a side-by-side plan on a phone shows its start alone, F-160)
        tile: tile && shown(tile) ? box(tile) : null}; });
-  const drift = [...document.querySelectorAll('.cz-g-start')].map(e => { const id = e.dataset.for.split(' ')[0], card = document.querySelector('[data-act="' + id + '"], [data-zk="bkg-' + id + '"]');
+  const drift = [...document.querySelectorAll('.cz-g-start')].filter(shown).map(e => { const id = e.dataset.for.split(' ')[0], card = document.querySelector('[data-act="' + id + '"], [data-zk="bkg-' + id + '"]');
     return {name: 'start ' + e.textContent.trim().replace(/\s+/g, ' '), below: card ? e.getBoundingClientRect().top - card.getBoundingClientRect().top : null}; });
   return {marks, cards, drift};
 }"""
