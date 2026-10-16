@@ -262,6 +262,10 @@
   // The level as it is now, morphed onto the screen: the scroll kept, the focus put back (the day grid), each block sent from where it was to where it is (CZ.snap).
   function morphIn(html) {
     var y = window.scrollY, back = CZ.beforeQuiet ? CZ.beforeQuiet() : null, snap = CZ.snap ? CZ.snap() : null;
+    // idiomorph (ignoreActiveValue) leaves the whole subtree of the focused element as it is, not just a field's value: a click on empty grid time focuses the day's tabindex=-1 section, and the refresh
+    // after a draft was saved changed nothing (F-165). Only a text control keeps its place; anything else gives up the focus for the morph (beforeQuiet puts it back on a block).
+    var on = document.activeElement;
+    if (on && on !== document.body && stage.contains(on) && !on.matches('input, textarea, select, [contenteditable]')) on.blur();
     quietSwap = true;
     try { swap(html, '', true); } finally { quietSwap = false; }
     if (back) back();
