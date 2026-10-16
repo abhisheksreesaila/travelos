@@ -1016,9 +1016,10 @@ The captain 2026-10-16: "when you click on the family tab, especially for the fi
 - [x] the panel draws the latest messages only (about 30) with older ones on request; the server reads the trip's messages once per request and a GET writes nothing. tests/test_family_panel_fast.py; the Earlier messages button is pressed in tests_browser/test_family_fast.py
 - [x] the phone Family tab is no slower, unread counts and seen marks unchanged; a browser test times the first open with the server slowed 700 ms. The phone page is untouched (no panel is fetched ahead there: tested); the laptop first open is timed with 700 ms in tests_browser/test_family_fast.py
 
-## F-178 Family messages as iMessage-style bubbles [todo]
+## F-178 Family messages as iMessage-style bubbles [review]
 Design: docs/design/family-bubbles/a-phone.png, a-desk.png (option A, chosen by the captain 2026-10-16; Stitch project 5068253051282871529)
 The captain 2026-10-16: "the messages need to have a nice bubble. Like iMessage ... or even like WhatsApp is okay". Today's .ft-bub (assets/css/thread.css) is a plain card. Draft in Stitch (phone and laptop panel) and show the captain before building; build after F-177 (same files). Needs: F-177
-- [ ] mine on the right in a filled colour bubble with white text, theirs on the left in a soft grey bubble, rounded with a tail on the last of a run; consecutive messages from one person group tightly, name and avatar once per run
-- [ ] times quiet (small, under the run or on hover on the laptop); voice notes, photos, plan links and system lines fit the same look
-- [ ] same look on the phone Family tab and the laptop panel; text contrast AA; no new motion
+- [x] mine on the right in a filled colour bubble with white text, theirs on the left in a soft grey bubble, rounded with a tail on the last of a run; consecutive messages from one person group tightly, name and avatar once per run
+- [x] times quiet (small, under the run or on hover on the laptop); voice notes, photos, plan links and system lines fit the same look
+- [x] same look on the phone Family tab and the laptop panel; text contrast AA; no new motion
+Built: mine is --coral-deep #C9431F with white (4.88:1; --coral #FF7352 is 2.8:1, below AA), theirs the new --bubble-grey #E9E6EE with --ink (13:1). Run classes ft-first/ft-last are drawn by tab_family.fragment and kept live by thread.js runs() (one MutationObserver, so sends, polls and Earlier all regroup). Name sits above the first, avatar, time and the pointed corner (tail) at the last; other bubbles show their time as a tooltip. The laptop panel's own bubble colours (day_dock, day_family, desk_skin) were removed so phone and panel are one look. Tests: tests_browser/test_bubbles.py (390 and 1440), tests/test_thread.py. Screenshots: docs/design/family-bubbles/built-phone.png, built-desk.png.

@@ -25,7 +25,7 @@ from gitaway.icons import icon
 from gitaway.pages import tab_family
 
 HEAD = (*tab_family.photos_ui.HEAD, Link(rel="stylesheet", href="/assets/css/plantalk.css"))
-SCRIPTS = ("/assets/js/thread.js", "/assets/js/voicenote.js", "/assets/js/plantalk.js")
+SCRIPTS = ("/assets/js/runs.js", "/assets/js/thread.js", "/assets/js/voicenote.js", "/assets/js/plantalk.js")
 PATHS = ("/trip/talk/photo", "/trip/talk/voice")
 LIMITS = {"/trip/talk/photo": photos.MAX_BYTES, "/trip/talk/voice": voicenotes.MAX_BYTES}
 OVERHEAD = 100_000   # the form's own fields around the file

@@ -2,6 +2,8 @@
 pushes (everyone with the Morning plan on, not the author, not anyone on Quiet, at most one per person per two minutes). A fake push service
 stands in for the real one; nothing here talks to the network."""
 
+import re
+
 import pytest
 
 from gitaway import familythread as ft, morning, tripcal as cal
@@ -214,7 +216,7 @@ def test_my_messages_are_marked_mine_and_others_show_their_name(crew):
     say(client, "from the admin")
     html = ed.get("/trip/family").text
     assert "from the admin" in html and ">Ari<" in html                    # the editor sees who wrote it
-    assert 'ft-msg ft-me' in client.get("/trip/family").text                # and the author sees it as theirs
+    assert re.search(r'class="ft-msg [^"]*\bft-me\b', client.get("/trip/family").text)      # and the author sees it as theirs (F-178: the class list also names the run)
 
 
 def test_a_photo_with_an_image_is_drawn_as_a_card(client):
@@ -528,3 +530,18 @@ def test_one_family_cannot_read_anothers_thread(client):
     assert "Rivera family secret" not in other.get("/trip/family/thread?since=0&trip=anything").text
     assert other.post("/trip/family/message", data={"text": "x"}, headers={"X-Fragment": "1"}).status_code in (400, 409)
     assert [i["text"] for i in ft.items(person("ari"))] == ["the Rivera family secret"]
+
+
+def test_a_run_from_one_person_has_one_first_and_one_last_and_a_plan_change_ends_it():
+    """F-178: the server draws where each message sits in its run; thread.js keeps the same classes live."""
+    from gitaway.pages import tab_family as tf
+    from fasthtml.common import to_xml
+    at = "2026-10-16T09:41:00+00:00"
+    def msg(n, who, kind="message"):
+        return {"n": n, "kind": kind, "author": who, "name": who.title(), "text": f"t{n}", "at": at, "payload": {"action": "move"} if kind == "change" else {}}
+    items = [msg(1, "maya"), msg(2, "maya"), msg(3, "maya"), msg(4, "ari"), msg(5, "ari", "change"), msg(6, "ari")]
+    got = []
+    for v in tf.fragment(items, "ari", "UTC"):
+        c = re.search(r'class="([^"]*)"', to_xml(v)).group(1).split()
+        got.append((("first" if "ft-first" in c else "") + ("last" if "ft-last" in c else ""), "ft-me" in c))
+    assert got == [("first", False), ("", False), ("last", False), ("firstlast", True), ("", False), ("firstlast", True)]   # (the plan change is no bubble: no run classes)

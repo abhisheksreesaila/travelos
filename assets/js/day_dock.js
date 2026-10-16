@@ -280,6 +280,7 @@
       var msgs = document.getElementById('cz-pp-msgs'), quiet = document.getElementById('cz-pp-quiet'), pane = f.previousElementSibling;
       if (msgs) {
         var nodes = parse(got.t);
+        if (window.GA && GA.runs) GA.runs.watch(msgs);      // (F-178: the new bubble joins or starts a run)
         while (nodes.firstChild) msgs.appendChild(nodes.firstChild);
         if (got.last) { msgs.dataset.last = got.last; f.elements.since.value = got.last; }
       }

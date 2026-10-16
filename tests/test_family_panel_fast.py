@@ -57,8 +57,8 @@ def test_a_plan_chat_pages_back_too(crew, chats):
         say(ed, f"c{i:02d}", act=stroll)
     html = crew[0].get(f"/trip/family/panel?thread={stroll}&day=1").text
     thread = html.split('id="ft-thread"')[1].split('id="ft-empty"')[0]
-    assert re.findall(r"c\d\d", thread)[0] == "c11" and len(re.findall(r"c\d\d", thread)) == 30
+    assert re.findall(r">\s*(c\d\d)\s*<", thread)[0] == "c11" and len(re.findall(r">\s*(c\d\d)\s*<", thread)) == 30
     url = unescape(re.search(r'data-older="([^"]+)"', html).group(1))
     first = re.search(r'data-n="(\d+)"', thread).group(1)
     r = crew[0].get(f"{url}&before={first}", headers={"Accept": "text/html"})
-    assert re.findall(r"c\d\d", r.text)[0] == "c01" and len(re.findall(r"c\d\d", r.text)) == 10 and r.headers["x-thread-more"] == "0"
+    assert re.findall(r">\s*(c\d\d)\s*<", r.text)[0] == "c01" and len(re.findall(r">\s*(c\d\d)\s*<", r.text)) == 10 and r.headers["x-thread-more"] == "0"

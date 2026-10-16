@@ -139,14 +139,15 @@
     if (!b || !t || !first || b.disabled) return;
     e.preventDefault();
     b.disabled = true;
-    var high = t.scrollHeight, top = t.scrollTop;
+    var bub = first.querySelector('.ft-bub') || first, rel = function () { return bub.getBoundingClientRect().top - t.getBoundingClientRect().top; }, seen = rel();      // where the oldest bubble shown now sits: it stays there (the name line it may lose to the regrouping is above it, inside the message)
     fetch(b.dataset.older + '&before=' + encodeURIComponent(first.dataset.n), { credentials: 'same-origin', headers: { Accept: 'text/html' } }).then(function (r) {
       if (!r.ok) throw new Error('no earlier');
       return r.text().then(function (h) { return { h: h, more: r.headers.get('X-Thread-More') === '1' }; });
     }).then(function (got) {
       if (!t.isConnected) return;
       t.insertBefore(parse(got.h), t.firstChild);
-      t.scrollTop = top + (t.scrollHeight - high);
+      if (window.GA && GA.runs) GA.runs.fix(t);      // (F-178: the older page may end with the person who wrote the first message shown: regroup before the scroll is put back)
+      t.scrollTop += rel() - seen;
       if (got.more) b.disabled = false; else { b.remove(); }
     }, function () { b.disabled = false; });
   });
@@ -246,6 +247,7 @@
       planBusy = false;
       if (!got || !msgs.isConnected || !got.t.trim()) return;
       var near = pp.scrollHeight - pp.scrollTop - pp.clientHeight < 160, added = 0, nodes = parse(got.t);
+      if (window.GA && GA.runs) GA.runs.watch(msgs);      // (F-178)
       Array.prototype.slice.call(nodes.children).forEach(function (n) {
         var id = n.getAttribute('data-n');
         if (id && msgs.querySelector('[data-n="' + id + '"]')) return;      // already here (mine, just sent)

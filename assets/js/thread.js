@@ -107,6 +107,8 @@
     old._adopt = true;                                    // delivered from now on, whatever the reply does
     adopt(old, fresh);
   }
+  var runs = function () { if (window.GA && GA.runs) GA.runs.fix(thread); };      // (assets/js/runs.js: the first and last of each run; it watches the list too)
+  if (window.GA && GA.runs) { GA.runs.watch(thread); undo.push(function () { if (thread._runs) { thread._runs.disconnect(); thread._runs = null; } }); }
   function merge(html, n, mine) {
     if (!html.trim() || n <= last) return;
     var stick = mine || nearBottom();
@@ -119,6 +121,7 @@
       if (waiting) { handOver(waiting, el); return; }
       thread.appendChild(el);
     });
+    runs();                                               // (a bubble taken over by the server's copy changes classes without moving)
     last = n;
     thread.setAttribute("data-last", String(last));
     if (empty) empty.hidden = true;
@@ -169,10 +172,11 @@
   function pendingBubble(value) {
     var el = document.createElement("div");
     el.className = "ft-msg ft-me is-pending is-sending";
-    var bub = document.createElement("div"); bub.className = "ft-bub";
-    var body = document.createElement("span"); body.className = "ft-body"; body.textContent = value;
+    var stack = document.createElement("div"); stack.className = "ft-stack";
+    var bub = document.createElement("div"); bub.className = "ft-bub"; bub.textContent = value;
     var state = document.createElement("span"); state.className = "ft-time ft-state"; state.textContent = "Sending";
-    bub.appendChild(body); bub.appendChild(state); el.appendChild(bub);
+    stack.appendChild(bub); stack.appendChild(state); el.appendChild(stack);
+    el.setAttribute("data-by", "me|" + (form && form.elements.act ? form.elements.act.value : "") + "|" + (form && form.elements.part ? form.elements.part.value : ""));
     el.setAttribute("data-text", value);
     el.setAttribute("data-cid", newId());
     return el;
