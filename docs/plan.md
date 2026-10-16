@@ -975,10 +975,10 @@ Report fixes 2 and 7. Needs: F-168
 
 ## F-171 One motion for a move; swipes follow the finger [review]
 Report fixes 3 and 4. Needs: F-170
-- [ ] after a drop the refreshed day goes in while the block lands, and the neighbours glide in the same motion (no land, stop, glide); the toast shows at the drop; move settles ≤750 ms on the phone (was 1251)
+- [x] after a drop the refreshed day goes in while the block lands, and the neighbours glide in the same motion (no land, stop, glide); the toast shows at the drop; move settles ≤750 ms on the phone (was 1251)
 - [x] a day swipe follows the finger 1:1 and the slide continues from where the finger let go (no snap back to 0); a short or slow swipe springs back
 - [x] save, undo, refused-save and viewer rules unchanged; browser tests at 390 and 1440 sample the frames (one motion, no pause) and the swipe offset
-- Built 2026-10-16: toast and refresh come with the save reply while the block lands, neighbours glide in the same breath; swipe 1:1, carries on from the lift, short/slow springs back; fingers counted on the document; focus after the hooks. Tests `tests_browser/test_one_motion.py`. Phone move drop to settled 1188 to 885 ms median at tokens 520 (751 with the F-173 tokens, 380/340); the 750 line needs F-173.
+- Built 2026-10-16: toast and refresh come with the save reply while the block lands, neighbours glide in the same breath; swipe 1:1, carries on from the lift, short/slow springs back; fingers counted on the document; focus after the hooks. Tests `tests_browser/test_one_motion.py`. Phone move drop to settled 1188 to 885 ms median at tokens 520 (751 with the F-173 tokens, 380/340); with the merged F-173 tokens (380/340) the median is 735 ms (best 648), load avg 4, so the 750 line holds.
 
 ## F-172 The server opens the family database once per request [done]
 Report fix 6. Read the fh-saas skill first. Needs: F-168
