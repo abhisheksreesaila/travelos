@@ -946,7 +946,7 @@ Captain, 2026-10-15: "if you pick up a lower block from Tuesday and put it on up
 - [ ] dropping in its own column at a new height changes only its time; the toast reads "Moved to Fri 16, 9:00 AM · Undo" and Undo restores day and time
 - [ ] bookings and viewers still can't drag; browser tests at 1440 and 1280 drop low-to-high across days and check the new day, time and position on the axis
 
-## F-167 Blocks filled with their kind's colour [todo]
+## F-167 Blocks filled with their kind's colour [review]
 Captain, 2026-10-15 (after seeing the colour timeline live): "the blocks on the calendar … have like a border … it doesn't look good … the whole block has to be colored like a Teams meeting … a fill color just like you had before, not just a border." Brief: docs/briefs/colour-timeline.md · Needs: F-159..F-163
 - [ ] on the laptop day and week and the phone day, every plan block is filled with its kind's tint (sun, mint, grape, sky, bubble tints from tokens.css), with a darker kind edge on the left and ink text; no white card with only a coloured border
 - [ ] bookings stay visually distinct from plans (e.g. a quieter fill or the BOOKED pill) and the kind tile still reads on the fill
