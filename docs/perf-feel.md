@@ -164,3 +164,27 @@ Fixes 2 and 6 remove most of it.
 The other ~95% is ours: 500 ms motions, deliberate waits (330 ms, 350 ms), and steps that run one after another.
 
 A client-side app would need the same round trips to save. Server fragments plus morphing already give us an instant swap when the copy is in hand: 59 ms to the first frame on a fast phone. What a native app gets for free is finger-tracking gestures and short, interruptible motions. We can do both here (fixes 4 and 5) without changing the stack.
+
+## After the zippy round (F-169..F-173, measured 2026-10-16 on master, load ~3)
+
+Same scripts and conditions (`scripts/perf/run_all.sh`, CPU 4× slower, +180 ms per request, medians). Starts / settled, in ms.
+
+| Tap (phone) | Before | After |
+|---|---|---|
+| Day chip, fetched ahead | 120 / 648 | 87 / 444 |
+| Day chip, not fetched (after a write) | 293 / 836 | 71 / 428 |
+| Swipe to next day | 170 / 718 | 80 / 435 |
+| Week → Day | 340 / 984 | 84 / 450 |
+| Open a plan | 424 / 1023 | 31 / 454 |
+| Ask sheet | 305 / 925 (longest task 331) | 83 / 476 (longest task 73) |
+| Add: Enter → saved | 298 / 1056 | 244 / 715 |
+| Move: drop → settled | 45 / 1251 | 28 / 717 |
+
+| Click (laptop) | Before | After |
+|---|---|---|
+| Day tab, not fetched | 461 / 663 | 62 / 230 |
+| Day tab after 62 s | 318 / 494 | (cached: no wait) |
+| Open a plan (panel) | 44 / 202 | 41 / 196 |
+| Move: drop → settled | 13 / 387 | 220 / 371 (see F-174) |
+
+On a fast phone (CPU 1×) a day change now settles in ~395 ms (was 626) and opening a plan starts in ~36 ms (was 431). Network waits on day changes are gone everywhere; what remains is the save's own round trip on Add.
