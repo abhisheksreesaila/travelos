@@ -1010,11 +1010,11 @@ The captain 2026-10-16: on the laptop week, a plan dragged from Thursday to Tues
 - [x] the save's reply only corrects lanes and shows the toast; a refused save puts the row back where it was with the toast; undo, Escape, own-column and viewer rules unchanged
 - [x] a write does not refetch every plan row of the week in the background (only the day pages): a plan row is fetched once, a stale copy is checked when it is opened (F-170)
 
-## F-177 Family opens at once, the first time too [todo]
+## F-177 Family opens at once, the first time too [review]
 The captain 2026-10-16: "when you click on the family tab, especially for the first time it has to load all the messages so it takes a tad bit time". Cause (investigation): nothing is prefetched; the top bar's Family on the laptop is a full page load of the phone page that then redirects to the canvas; the panel route reads every message of the trip two or three times, marks read in a GET and draws up to 200 messages. Needs: F-143
-- [ ] on the laptop, Family (panel tab or top bar, from the day or the week) shows the messages with no page load and no wait on the network when the page has been idle a moment (the pane is fetched ahead, shown at once, then brought up to date)
-- [ ] the panel draws the latest messages only (about 30) with older ones on request; the server reads the trip's messages once per request and a GET writes nothing
-- [ ] the phone Family tab is no slower, unread counts and seen marks unchanged; a browser test times the first open with the server slowed 700 ms
+- [x] on the laptop, Family (panel tab or top bar, from the day or the week) shows the messages with no page load and no wait on the network when the page has been idle a moment (the pane is fetched ahead, shown at once, then brought up to date). Measured at 1440, click to first message in the panel, server slowed 700 ms, page idle 2.5 s: tab 724 -> 10 ms, top bar on the day 717 -> 10 ms, top bar on the week (day + panel) 203 -> 87 ms (the old week figure had the browser's saved copy of /trip/family; unslowed it was 298 -> 130 ms). Cold (clicked before idle) with 700 ms: 725 -> 726 ms (the one panel request, as before); unslowed 23-49 -> 70-80 ms. tests_browser/test_family_fast.py
+- [x] the panel draws the latest messages only (about 30) with older ones on request; the server reads the trip's messages once per request and a GET writes nothing. tests/test_family_panel_fast.py; the Earlier messages button is pressed in tests_browser/test_family_fast.py
+- [x] the phone Family tab is no slower, unread counts and seen marks unchanged; a browser test times the first open with the server slowed 700 ms. The phone page is untouched (no panel is fetched ahead there: tested); the laptop first open is timed with 700 ms in tests_browser/test_family_fast.py
 
 ## F-178 Family messages as iMessage-style bubbles [todo]
 Design: docs/design/family-bubbles/a-phone.png, a-desk.png (option A, chosen by the captain 2026-10-16; Stitch project 5068253051282871529)

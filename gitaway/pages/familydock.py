@@ -19,6 +19,7 @@ from gitaway.icons import icon
 from gitaway.pages import tab_family
 
 POLL_MS = tab_family.POLL_MS
+PAGE = familythread.PAGE
 PEEK = 56      # the newest line of a chat in its row is shortened to this many characters, at a word
 
 
@@ -38,13 +39,12 @@ def _tile(act, kind):
 def rows(session, day, open_key, shown=None):
     """The chats as links to the day with that chat open. `shown`: the threads already read (so the list is not read twice)."""
     from gitaway.pages import tripcanvas as tc
-    kinds = {a.id: a.kind for a in cal.activities(session)}
     out = []
     for t in shown if shown is not None else fc.threads(session, open_key):
         on = t["key"] == open_key
         unread = 0 if on else t["unread"]
         line = f"{t['who']}: {_short(t['last'])}" if t["last"] else "Nothing said yet"
-        out.append(A(_tile(t["act"], kinds.get(t["act"], "")), Span(Span(t["title"], cls="cz-fam-tt"), Span(line, cls="cz-fam-ls"), cls="cz-fam-tx"),
+        out.append(A(_tile(t["act"], t["kind"]), Span(Span(t["title"], cls="cz-fam-tt"), Span(line, cls="cz-fam-ls"), cls="cz-fam-tx"),
                      Span(str(unread), Span(" unread", cls="sr-only"), cls="cz-fam-un") if unread else "",
                      href=tc.curl(day=day, panel="family", thread=t["key"]), cls=f"cz-fam-th{' is-on' if on else ''}", data_thread=t["key"], aria_current="true" if on else None))
     return Div(*out, cls="cz-fam-list", id="cz-fam-list", aria_label="Chats on this trip")
@@ -61,34 +61,37 @@ def _when(session, a):
 
 
 def _thread(session, key):
-    """(the heading, the items, the live poll's address, the message form's extra fields, its action) of the chat `key`."""
+    """(the heading, the newest PAGE items, the live poll's address, the message form's extra fields, its action, the address of earlier ones or "" when there are none) of the chat `key`."""
     act, part = fc.split(key)
     if not act:
-        return "Whole trip", familythread.items(session, scope="trip"), "/trip/family/thread?scope=trip&read=1", {"scope": "trip"}, "/trip/family/message"
-    a, p = plantalk.target(session, act, part)
-    its = plantalk.items(session, a.id, p["id"] if p else "")
-    poll = f"/trip/talk/items?act={a.id}" + (f"&part={p['id']}" if p else "") + "&read=1"
-    return f"{plantalk.label(a, p)} · {_when(session, a)}", its, poll, {"act": a.id, "part": p["id"] if p else ""}, "/trip/talk/message"
+        its = familythread.items(session, scope="trip", limit=PAGE + 1)
+        poll = "/trip/family/thread?scope=trip"
+        heading, fields, action = "Whole trip", {"scope": "trip"}, "/trip/family/message"
+    else:
+        a, p = plantalk.target(session, act, part)
+        its = plantalk.items(session, a.id, p["id"] if p else "", limit=PAGE + 1)
+        poll = f"/trip/talk/items?act={a.id}" + (f"&part={p['id']}" if p else "")
+        heading, fields, action = f"{plantalk.label(a, p)} · {_when(session, a)}", {"act": a.id, "part": p["id"] if p else ""}, "/trip/talk/message"
+    return heading, its[-PAGE:], poll + "&read=1", fields, action, poll if len(its) > PAGE else ""
 
 
-def pane(session, day, key=fc.TRIP, mark=True):
-    """-> (the pane, the message bar) for the chat `key` (the whole trip when `key` names nothing that is there). Opening a chat marks what it shows as read, unless `mark` is False (the
-    day drawn with the chats in the address: on a screen that is not a laptop's nobody sees them; the script marks them when it starts the pane)."""
+def pane(session, day, key=fc.TRIP):
+    """-> (the pane, the message bar, the Family tab's count) for the chat `key` (the whole trip when `key` names nothing that is there). Drawing it writes nothing (F-177): the script
+    that starts the pane on a laptop says what it showed with /trip/family/seen. The trip's messages are read once, for the rows and the count."""
     key = fc.key_of(*fc.split(key))      # anything that is not a plain key is the whole trip
     try:
-        heading, its, poll, fields, action = _thread(session, key)
+        heading, its, poll, fields, action, older = _thread(session, key)
     except familythread.ThreadError:
         key = fc.TRIP
-        heading, its, poll, fields, action = _thread(session, key)
+        heading, its, poll, fields, action, older = _thread(session, key)
     me, zone, trip = ses.current_traveler(session).id, ses.trip_zone(session), ses.open_trip_id() or ""
     last = its[-1]["n"] if its else 0
-    if last and mark:
-        fc.mark_read(session, key, last)
     chats = fc.threads(session, key)
     pane_ = Section(
         rows(session, day, key, chats),
         A(icon("users", 16, 2.4), Span("People and invites"), href="/family", cls="cz-fam-people", id="cz-fam-people"),
         H3(heading, cls="cz-dock-k cz-fam-hd", id="cz-fam-title"),
+        Button("Earlier messages", type="button", id="ft-older", cls="cz-fam-older", data_older=older) if older else "",
         Div(*tab_family.fragment(its, me, zone), id="ft-thread", cls="ft-thread cz-fam-msgs", data_last=str(last), data_poll=str(POLL_MS), data_trip=trip, data_poll_url=poll,
             role="log", aria_live="polite", aria_label=f"Chat: {heading}"),
         P("Nothing said here yet. Say hello.", id="ft-empty", cls="cz-pp-none", hidden=bool(its)),
@@ -97,7 +100,7 @@ def pane(session, day, key=fc.TRIP, mark=True):
                 Input(type="text", name="text", id="ft-text", maxlength=str(familythread.MAX_MESSAGE), placeholder="Message the family", autocomplete="off", aria_label=f"Message: {heading}", cls="cz-pp-text", required=True),
                 Button(icon("arrow-right", 16, 2.6), Span("Send", cls="sr-only"), type="submit", id="ft-send", cls="cz-compose-go cz-pp-send"),
                 P("", id="ft-error", cls="cz-error", role="alert", hidden=True), action=action, method="post", cls="cz-fam-foot", id="ft-compose", data_pane="family-foot", data_live="")
-    return pane_, foot
+    return pane_, foot, fc.unread_in(chats, key)
 
 
 def _day(day):
@@ -109,8 +112,8 @@ def register(app):
     def panel(session, thread: str = "trip", day: str = "0"):
         if not ses.current_traveler(session):
             return Response(status_code=401)
-        body = pane(session, _day(day), thread[:60])
-        return Response("".join(to_xml(x) for x in body), media_type="text/html; charset=utf-8", headers={"X-Family-Unread": str(fc.unread_total(session)), "Cache-Control": "no-store"})
+        pane_, foot, unread = pane(session, _day(day), thread[:60])
+        return Response(to_xml(pane_) + to_xml(foot), media_type="text/html; charset=utf-8", headers={"X-Family-Unread": str(unread), "Cache-Control": "no-store"})
 
     @app.post("/trip/family/seen")
     def seen(session, key: str = "*", upto: int = 0):
@@ -125,5 +128,5 @@ def register(app):
         if not ses.current_traveler(session):
             return Response(status_code=401)
         chats = fc.threads(session, open[:60])
-        total = sum(t["unread"] for t in chats if t["key"] != open)
+        total = fc.unread_in(chats, open)
         return Response(to_xml(rows(session, _day(day), open[:60], chats)), media_type="text/html; charset=utf-8", headers={"X-Family-Unread": str(total), "Cache-Control": "no-store"})

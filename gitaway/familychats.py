@@ -8,7 +8,7 @@
 
 import json
 
-from gitaway import familydb, plantalk, session as ses
+from gitaway import familydb, plantalk, session as ses, tripcal as cal
 
 TRIP = "trip"
 EVERYTHING = "*"
@@ -68,7 +68,8 @@ def threads(session, open_key="") -> list:
             return []
         rows, marks = _read(fam)
         me = fam.traveler.id
-    unread, labels = _unread(rows, marks, me), plantalk.labels(session)
+    acts = cal.activities(session)
+    unread, labels, kinds = _unread(rows, marks, me), plantalk.labels(session, acts), {a.id: a.kind for a in acts}
     found = {}
     for r in rows:
         k = _of(r["payload"])
@@ -82,8 +83,13 @@ def threads(session, open_key="") -> list:
         title = "Whole trip" if k == TRIP else labels.get((act, part))
         if title is None:
             continue
-        out.append({"key": k, "act": act, "part": part, "title": title, "unread": unread.get(k, 0), **{"last": "", "who": "", "n": 0, "newest": 0, **found.get(k, {})}})
+        out.append({"key": k, "act": act, "part": part, "kind": kinds.get(act, ""), "title": title, "unread": unread.get(k, 0), **{"last": "", "who": "", "n": 0, "newest": 0, **found.get(k, {})}})
     return out
+
+
+def unread_in(chats, open_key="") -> int:
+    """The unread messages in the chats `threads()` returned, not counting the open one (the Family tab's count)."""
+    return sum(t["unread"] for t in chats if t["key"] != open_key)
 
 
 def mark_read(session, key, upto) -> None:

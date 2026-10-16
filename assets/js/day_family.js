@@ -8,13 +8,19 @@
 //   - the rows (who said what last, the counts) are asked again from `/trip/family/list`, and the Family tab's count follows (`X-Family-Unread`);
 //   - a plan's chat in the Plan pane (F-141) asks `/trip/talk/items?act=&since=&read=1` and appends what others said.
 // A hidden tab asks for nothing and asks once as soon as it is shown again. A new message is simply there (no motion, F-118).
+//
+// AT ONCE (F-177): the pane is fetched ahead, when the page has been idle a moment (after it loads, after another day is shown, after Family is left) and on pointerover / pointerdown / focus of
+// the Family tab or the top bar's Family, together with the text of thread.js and voicenote.js. A click then draws the pane in the same frame, from that copy (no request is waited for); the
+// chat polls once straight away for what is new, and the rows follow after /seen. The panel draws the newest 30 messages; "Earlier messages" asks for the 30 before the first one shown.
+// On the week, the top bar's Family opens the day (today, else the first) with the Family panel, as Ask does.
 (function () {
   var stage = document.getElementById('cz');
   if (!stage || !window.Dock) return;
   var CZ = window.CZ, MO = window.GA && window.GA.motion;
   var desk = window.matchMedia('(min-width: 1020px) and (not (display-mode: standalone))');
   var POLL = 5000, TRIP = 'trip';
-  var key = TRIP, token = 0, open = false, timer = 0, busy = false, planBusy = false, voiceLoaded = false;
+  var key = TRIP, token = 0, open = false, timer = 0, busy = false, planBusy = false, voiceLoaded = false, going = false;
+  var AHEAD = 60000, KEEP = 4;       // a copy fetched ahead is used for this long (ms); at most this many are kept
 
   function dock() { return document.getElementById('cz-dock'); }
   function pane() { var d = dock(); return d && d.querySelector('.cz-fam'); }
@@ -34,16 +40,64 @@
     } else if (b.firstChild) b.firstChild.nodeValue = String(total);
   }
 
-  function script(src) { var s = document.createElement('script'); s.src = src; s.async = false; document.body.appendChild(s); return s; }
-  function boot() {                       // the phone's own script on the new pane, and the notes' player once
+  // ---- fetched ahead ----------------------------------------------------------------------------------------------------------------
+  var ahead = {}, code = {};
+  function panelUrl(want, day) { return '/trip/family/panel?thread=' + encodeURIComponent(want) + '&day=' + encodeURIComponent(day); }
+  function warm(want, day) {              // the pane for this chat and day: the copy fetched ahead (or on its way), else a new request
+    var u = panelUrl(want, day), e = ahead[u];
+    if (e && Date.now() - e.at < AHEAD) return e;
+    e = ahead[u] = { at: Date.now(), html: null, total: null, p: null };
+    e.p = fetch(u, { credentials: 'same-origin', headers: { Accept: 'text/html' } }).then(function (r) {
+      if (!r.ok) throw new Error('no panel');
+      return r.text().then(function (t) { e.html = t; e.total = r.headers.get('X-Family-Unread'); return e; });
+    }, function (err) { throw err; });
+    e.p.catch(function () { if (ahead[u] === e) delete ahead[u]; });
+    Object.keys(ahead).sort(function (a, b) { return ahead[b].at - ahead[a].at; }).slice(KEEP).forEach(function (k) { delete ahead[k]; });
+    ['thread', 'voicenote'].forEach(function (n) {      // the phone's script and the notes' player, as text: starting the pane runs them in the same frame
+      if (code[n]) return;
+      code[n] = { text: null };
+      fetch('/assets/js/' + n + '.js', { credentials: 'same-origin' }).then(function (r) { return r.ok ? r.text() : null; }).then(function (t) { code[n].text = t; }, function () { delete code[n]; });
+    });
+    return e;
+  }
+  function soon() {                       // when the page is idle a moment: the pane of the chat last open, for the day on the screen
+    var d = dock(), v = CZ.view(), day = d ? d.dataset.day || '0' : v && v.dataset.level === 'week' ? v.dataset.famDay : '';      // (on the week: the day its Family opens)
+    if (!desk.matches || !day || !Dock.has('family') || !visible() || Dock.mode() === 'family') return;
+    warm(key, day);
+  }
+  function later() {
+    if (window.requestIdleCallback) window.requestIdleCallback(function () { setTimeout(soon, 300); }, { timeout: 2000 });
+    else setTimeout(soon, 600);
+  }
+  function near(e) {                      // the pointer or the keyboard is on a way in
+    if (!desk.matches || !e.target.closest) return;
+    var a = e.target.closest('.cz-dock-tab[data-tab="family"], .ga-tb-family');
+    if (!a) return;
+    var d = dock(), v = CZ.view();
+    if (d && Dock.has('family')) warm(key, d.dataset.day || '0');
+    else if (v && v.dataset.level === 'week' && v.dataset.famDay) warm(key, v.dataset.famDay);
+  }
+  document.addEventListener('pointerover', near, { passive: true });
+  document.addEventListener('pointerdown', near, { passive: true });
+  document.addEventListener('focusin', near);
+
+  function run(name) {                    // a script of the pane, from the text fetched ahead (no wait), else as a script tag
+    var c = code[name], s = document.createElement('script');
+    // (inline code: a future script-src CSP without 'unsafe-inline' would block this silently, and the pane would not start; the sourceURL keeps the file's name in the devtools)
+    if (c && c.text) { s.text = c.text + '\n//# sourceURL=/assets/js/' + name + '.js'; document.body.appendChild(s); s.remove(); return; }
+    s.src = '/assets/js/' + name + '.js'; s.async = false;
+    s.addEventListener('load', function () { s.remove(); });
+    document.body.appendChild(s);
+  }
+  function boot(stale) {                  // the phone's own script on the new pane, and the notes' player once
     var p = pane();
     if (!p || !desk.matches) return;
     key = p.dataset.key || TRIP;
-    var last = p.querySelector('#ft-thread') ? p.querySelector('#ft-thread').dataset.last : '0';      // what the pane shows is now seen (the server only marks what it draws on a laptop's request)
+    var t = p.querySelector('#ft-thread'), last = t ? t.dataset.last : '0';      // what the pane shows is now seen (the server only marks what it draws on a laptop's request)
     fetch('/trip/family/seen', { method: 'POST', credentials: 'same-origin', body: new URLSearchParams({ key: key, upto: last || '0' }) }).then(function () { refreshList(); }, function () { /* the next poll marks it */ });
-    var s = script('/assets/js/thread.js');
-    s.addEventListener('load', function () { s.remove(); });
-    if (!voiceLoaded) { voiceLoaded = true; script('/assets/js/voicenote.js'); }
+    run('thread');
+    if (!voiceLoaded) { voiceLoaded = true; run('voicenote'); }
+    if (stale && t) t.dispatchEvent(new CustomEvent('ft-refresh'));      // the copy is a moment old: what is new comes now, not at the next poll
     sync();
   }
   function unbind() {                     // thread.js takes its listeners and timer off when its root says so
@@ -58,26 +112,44 @@
   }
 
   function load(want, animate) {
-    var d = dock(), mine = ++token, day = d.dataset.day || '0';
-    return fetch('/trip/family/panel?thread=' + encodeURIComponent(want) + '&day=' + encodeURIComponent(day), { credentials: 'same-origin', headers: { Accept: 'text/html' } }).then(function (r) {
-      if (!r.ok) throw new Error('no panel');
-      return r.text().then(function (t) { return { t: t, total: r.headers.get('X-Family-Unread') }; });
-    }).then(function (got) {
+    var d = dock(), mine = ++token, day = d.dataset.day || '0', u = panelUrl(want, day), e = warm(want, day), ahead_ = e.html !== null;      // (fetched ahead: it may be a moment old, so what is new is asked for at once)
+    function show() {                     // the copy is here: the pane is drawn now (the same frame as the click when it was fetched ahead)
+      if (ahead[u] === e) delete ahead[u];      // (it is used once: the next open gets a fresh one, fetched when Family is left)
       if (mine !== token || !dock() || Dock.mode() !== 'family') return;
-      var frag = parse(got.t), np = frag.querySelector('.cz-fam'), nf = frag.querySelector('.cz-fam-foot'), compose = dock().querySelector('.cz-compose');
+      var frag = parse(e.html), np = frag.querySelector('.cz-fam'), nf = frag.querySelector('.cz-fam-foot'), compose = dock().querySelector('.cz-compose');
       if (!np || !nf) throw new Error('no pane');
       drop();
       dock().insertBefore(np, compose || null);
       dock().insertBefore(nf, compose || null);
-      badge(got.total);
-      boot();
+      badge(e.total);
+      boot(ahead_);
       if (animate && MO) MO.settle(np);
-    }).catch(function () {
+    }
+    function failed() {
       if (mine !== token || !dock()) return;
       var p = pane();
-      if (p) { var e = foot() && foot().querySelector('.cz-error'); if (e) { e.textContent = 'The chats could not load. Try again.'; e.hidden = false; } }
-    });
+      if (p) { var er = foot() && foot().querySelector('.cz-error'); if (er) { er.textContent = 'The chats could not load. Try again.'; er.hidden = false; } }
+    }
+    if (e.html !== null) { try { show(); } catch (x) { failed(); } return Promise.resolve(); }
+    return e.p.then(show).catch(failed);
   }
+
+  stage.addEventListener('click', function (e) {          // "Earlier messages": the 30 before the first one shown, put above it without moving what is read
+    var b = e.target.closest ? e.target.closest('#ft-older') : null, t = document.getElementById('ft-thread'), first = t && t.querySelector('[data-n]');
+    if (!b || !t || !first || b.disabled) return;
+    e.preventDefault();
+    b.disabled = true;
+    var high = t.scrollHeight, top = t.scrollTop;
+    fetch(b.dataset.older + '&before=' + encodeURIComponent(first.dataset.n), { credentials: 'same-origin', headers: { Accept: 'text/html' } }).then(function (r) {
+      if (!r.ok) throw new Error('no earlier');
+      return r.text().then(function (h) { return { h: h, more: r.headers.get('X-Thread-More') === '1' }; });
+    }).then(function (got) {
+      if (!t.isConnected) return;
+      t.insertBefore(parse(got.h), t.firstChild);
+      t.scrollTop = top + (t.scrollHeight - high);
+      if (got.more) b.disabled = false; else { b.remove(); }
+    }, function () { b.disabled = false; });
+  });
 
   Dock.register('family', {
     tab: 'family',
@@ -107,10 +179,21 @@
     e.preventDefault();
     if (Dock.mode() === 'family') Dock.show('family', { key: a.dataset.thread });
   });
-  document.addEventListener('click', function (e) {         // the top bar's Family, on the day: the same switch
+  document.addEventListener('click', function (e) {         // the top bar's Family, on the day: the same switch; on the week, the day (today, else the first) with the chats in its panel
     var a = e.target.closest ? e.target.closest('.ga-tb-family') : null;
     if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button || !desk.matches) return;
-    if (Dock.show('family', {})) e.preventDefault();
+    if (Dock.show('family', {})) { e.preventDefault(); return; }
+    var v = CZ.view(), day = v && v.dataset.level === 'week' ? v.dataset.famDay : '';
+    if (!day || !/^\d+$/.test(day)) return;
+    e.preventDefault();
+    if (going) return;
+    going = true;
+    warm(key, day);
+    Promise.resolve(CZ.goto('/trip/canvas?day=' + day, { mode: 'push' })).then(function () {
+      going = false;
+      var nv = CZ.view();
+      if (nv && nv.dataset.level === 'day') Dock.show('family', {});
+    }, function () { going = false; });
   });
   stage.addEventListener('click', function (e) {            // "Open in Family" in a plan's pane: that plan's chat, in place
     var a = e.target.closest ? e.target.closest('#cz-pp-family') : null, p = a && a.closest('.cz-pp');
@@ -191,6 +274,7 @@
   }
   stage.addEventListener('dock:mode', function (e) {      // the top bar marks the section the panel is in: Family while the chats are open, Trip otherwise
     var fam = document.querySelector('.ga-tb-family'), trip = document.querySelector('.ga-tb-trip'), d = e.detail || {};
+    if (d.from === 'family' && d.mode !== 'family') later();      // (the next open is then at once too)
     if (fam && trip && d.mode !== d.from) {
       if (d.mode === 'family') { fam.setAttribute('aria-current', 'page'); trip.removeAttribute('aria-current'); }
       else if (d.from === 'family') { trip.setAttribute('aria-current', 'page'); fam.removeAttribute('aria-current'); }
@@ -203,13 +287,14 @@
   stage.addEventListener('cz:swap', function (e) {
     sync();
     if (e.detail && e.detail.quiet) return;
+    later();
     if (open && desk.matches && Dock.mode() !== 'family') {      // another day: the panel keeps the chats open (the new day's panel came up idle)
       setTimeout(function () { if (open && Dock.mode() !== 'family') Dock.show('family', { key: key }); }, 0);      // (after the canvas has written the new day's address, which the panel then adds to)
     }
   });
   if (pane() && !desk.matches) drop();     // below 1020px nobody sees the panel: its chat is not started, not marked read and not left in the page for another chat script to find
   else if (pane()) { open = true; boot(); }     // the address had the chats open: the server drew them, so only start them
-  else sync();
+  else { sync(); later(); }
   desk.addEventListener('change', function () {      // a window made wide (or narrow) after the page loaded
     if (!desk.matches) { open = false; drop(); sync(); }
     else if (Dock.mode() === 'family' && !pane()) { open = true; load(key, false); }

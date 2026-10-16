@@ -129,17 +129,23 @@ def _signed_in(session):
     return ses.current_traveler(session) is not None
 
 
-def _new(session, act, part, since, trip="", read=False):
+def _new(session, act, part, since, trip="", read=False, before=0, limit=0):
     """The chat's items after `since` as a fragment (X-Thread-Last holds the highest number); 409 when the page was drawn for another trip."""
+    more = False
     try:
-        its = plantalk.items(session, act, part, since=max(0, since), trip=trip or None)
+        if before > 0:      # F-177: the panel's "Earlier messages": the `limit` (30) items before that number
+            limit = min(max(limit, 1), 100) if limit else familythread.PAGE
+            its = plantalk.items(session, act, part, trip=trip or None, before=before, limit=limit + 1)
+            its, more = its[-limit:], len(its) > limit
+        else:
+            its = plantalk.items(session, act, part, since=max(0, since), trip=trip or None)
     except familythread.StaleTrip:
         return PlainTextResponse(plantalk.STALE, status_code=409)
-    if read and its:      # F-143: the person is looking at this chat (the desktop panel's live poll): what is returned is read
+    if read and its and before <= 0:      # F-143: the person is looking at this chat (the desktop panel's live poll): what is returned is read
         familychats.mark_read(session, familychats.key_of(act, part), its[-1]["n"])
     me, zone = ses.current_traveler(session).id, ses.trip_zone(session)
     body = "".join(to_xml(v) for v in tab_family.fragment(its, me, zone))
-    return Response(body, media_type="text/html; charset=utf-8", headers={"X-Thread-Last": str(its[-1]["n"] if its else max(0, since)), "Cache-Control": "no-store"})
+    return Response(body, media_type="text/html; charset=utf-8", headers={"X-Thread-Last": str(its[-1]["n"] if its and before <= 0 else max(0, since)), "X-Thread-More": "1" if more else "0", "Cache-Control": "no-store"})
 
 
 def _done(request, session, act, part, since, trip, error=None, status=400):
@@ -166,10 +172,10 @@ def register(app):
             return RedirectResponse("/trip/canvas", status_code=303)
 
     @app.get("/trip/talk/items")
-    def items(session, act: str = "", part: str = "", since: int = 0, trip: str = "", read: str = ""):
+    def items(session, act: str = "", part: str = "", since: int = 0, trip: str = "", read: str = "", before: int = 0, limit: int = 0):
         if not _signed_in(session):
             return Response(status_code=401)
-        return _new(session, act, part, since, trip, read == "1")
+        return _new(session, act, part, since, trip, read == "1", before, limit)
 
     @app.post("/trip/talk/message")
     def message(request, session, act: str = "", part: str = "", text: str = "", since: int = 0, trip: str = "", cid: str = ""):

@@ -77,9 +77,39 @@ def _empty_community_and_families():
     wipe_everything()
 
 
+SLOWED = []      # F-177: (a regex on the request path, seconds) pairs; a request that matches waits in the server (asyncio), so nothing in the test's own thread is held up
+
+
+class Slowed:
+    """The app behind uvicorn, with the pairs in SLOWED applied: `tests_browser.conftest.slow_server(pattern, seconds)` (it undoes itself) slows the server the way a distant one is slow."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http" and SLOWED:
+            import asyncio
+            import re
+            for pattern, seconds in list(SLOWED):
+                if re.search(pattern, scope["path"]):
+                    await asyncio.sleep(seconds)
+                    break
+        await self.app(scope, receive, send)
+
+
+@pytest.fixture
+def slow_server():
+    """slow_server(pattern, seconds): requests whose path matches wait that long in the server; undone when the test ends."""
+    def make(pattern, seconds):
+        SLOWED.append((pattern, seconds))
+    yield make
+    SLOWED.clear()
+
+
 @pytest.fixture(scope="session")
 def base_url():
     from main import app
+    app = Slowed(app)
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
         port = s.getsockname()[1]

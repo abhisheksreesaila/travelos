@@ -216,10 +216,12 @@ def panel(v, day, plan="", family=None):
     from gitaway.pages import familydock, tripcanvas as tc
     a = v["by_id"].get(plan) if plan else None
     a = a if a is not None and a.day == day else None
-    fam = familydock.pane(v["session"], day, family, mark=False) if family and not a else ()      # (day_family.js marks it read when it starts the pane on a laptop; the count leaves it out)
+    fam, unread = (), None
+    if family and not a:      # (drawing it reads nothing as seen: day_family.js says so when it starts the pane on a laptop; the count leaves the open chat out)
+        *fam, unread = familydock.pane(v["session"], day, family)
     compose = A(Span("Type to Ask", cls="cz-compose-t"), Span("or press", cls="cz-compose-or"), Kbd("/", cls="cz-kbd"), Span(icon("arrow-right", 16, 2.6), cls="cz-compose-go"), href=f"/trip/ask?day={day}", cls="cz-compose", id="cz-dock-compose") \
         if access.can_edit(v["role"]) else ""
     mode = "plan" if a else "family" if fam else "idle"
-    return Aside(tabs(day, mode if mode == "family" else "plan", familychats.unread_total(v["session"], family if fam else "")), Div(*idle(v, day), cls="cz-dock-body", data_pane="idle"), *(plan_pane(v, a) if a else ()), *fam, compose,
+    return Aside(tabs(day, mode if mode == "family" else "plan", unread if unread is not None else familychats.unread_total(v["session"])), Div(*idle(v, day), cls="cz-dock-body", data_pane="idle"), *(plan_pane(v, a) if a else ()), *fam, compose,
                  cls="cz-dock", id="cz-dock", data_mode=mode, data_day=str(day), data_base=tc.curl(day=day), data_plan_url=tc.curl(day=day, plan="PLAN"), data_family_url=tc.curl(day=day, panel="family", thread="THREAD"),
                  data_dow=v["dates"][day].strftime("%a"), **({"data_ask": "1"} if access.can_edit(v["role"]) else {}), aria_label="The day's panel")
