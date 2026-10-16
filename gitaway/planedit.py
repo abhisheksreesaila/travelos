@@ -93,12 +93,12 @@ def _tell_kind(session, fam, act_id, title, was, now):
     familydb.run(fam.db, "UPDATE thread SET payload = :p WHERE rowid = :n", p=payload, n=made["n"])
 
 
-def add(session, *, day, start, end, title, id=None):
+def add(session, *, day, start, end, title, id=None, kind="fun"):
     """Make a plan (F-101: the touch grid's hold on empty time), through the calendar's own add rules with the grid's grain. The family is told once: the card is written in
     the add's own transaction with a tag, so a move, resize or rename of the new plan right after (inside `canvas.CARD_WINDOW`) changes that card and sends nothing more.
-    `id` is the client's own (the grid carries the calendar's next number), so a retry after a lost reply adds nothing twice (`tripcal.add_activity`).
+    `kind` is the draft's chip (Fun when none is picked). `id` is the client's own (the grid carries the calendar's next number), so a retry after a lost reply adds nothing twice (`tripcal.add_activity`).
     -> {"act": the plan, "undo": {"added": its id, "after": what it was made as}}"""
-    a = cal.add_activity(session, day=day, start=start, end=end, title=title, kind="fun", fine=True, id=id)
+    a = cal.add_activity(session, day=day, start=start, end=end, title=title, kind=kind, fine=True, id=id)
     if a is None:
         raise cal.CalendarError("That did not work.")
     return {"act": a, "undo": {"added": a.id, "after": {"day": a.day, "start": a.start, "end": a.end, "title": a.title}}}

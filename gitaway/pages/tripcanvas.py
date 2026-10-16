@@ -1022,7 +1022,7 @@ def plan_write(session, op, act, form):
         start, end, day = _minutes(form, "start"), _minutes(form, "end"), _field(form, "day", 3)
         if start is None or end is None:
             raise cal.CalendarError("That time is not one we can read.")
-        got = planedit.add(session, day=day, start=start, end=end, title=str(form.get("title") or "")[:200], id=_field(form, "id", 8) or None)
+        got = planedit.add(session, day=day, start=start, end=end, title=str(form.get("title") or "")[:200], id=_field(form, "id", 8) or None, kind=_field(form, "kind", 12) or "fun")
         a = got["act"]
         return {"toast": f"{a.title} added", "undo": got["undo"], "plan": {"act": a.id, "start": a.start, "end": a.end, "title": a.title}}
     if op != "edit":
