@@ -466,7 +466,6 @@
     if (g.knob) g.knob.classList.remove('is-on');
     g.el.classList.remove('is-held', 'is-resizing', 'is-moving');
     g.g.classList.remove('is-editing-time');
-    if (calm) { g.el.getBoundingClientRect(); g.el.style.transition = ''; }
     if (g.chips && CZ.chipDrop) CZ.chipDrop.end();
     if (g.ghost && g.ghost.parentNode) g.ghost.parentNode.removeChild(g.ghost);
     dropLabel();
@@ -563,6 +562,7 @@
     if (calm) g.el.style.transition = 'none';
     g.el.classList.remove('is-held', 'is-resizing');
     g.g.classList.remove('is-editing-time');
+    if (calm) { g.el.getBoundingClientRect(); g.el.style.transition = ''; }
     if (g.chips && CZ.chipDrop) CZ.chipDrop.end();
     busy = true;
   }
