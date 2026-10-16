@@ -40,7 +40,7 @@
 .ft-msg:not(.ft-me).ft-last :is(.ft-bub, .ft-photo-bub) { border-bottom-left-radius: 0.1875rem; }      /* the tail: the corner by the avatar (or the edge) comes to a point */
 .ft-me.ft-last :is(.ft-bub, .ft-photo-bub) { border-bottom-right-radius: 0.1875rem; }
 .ft-nm { display: block; padding: 0 0.875rem 0.125rem; font-size: max(var(--text-min), 0.8125rem); font-weight: 800; color: var(--ink-3); }
-.ft-msg:not(.ft-first) .ft-nm { display: none; }
+.ft-msg:not(.ft-first) :is(.ft-nm, .ft-on) { display: none; }
 .ft-time { display: block; padding: 0.125rem 0.875rem 0; font-size: max(var(--text-min), 0.75rem); font-weight: 600; color: var(--ink-3); }      /* quiet: small, under the run's last bubble; the others show it as a tooltip (title) */
 .ft-msg:not(.ft-last):not(.is-sending):not(.is-failed) .ft-time { display: none; }
 .ft-photo { display: block; width: 100%; max-width: 12rem; border-radius: 0.875rem; }

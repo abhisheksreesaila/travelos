@@ -107,22 +107,8 @@
     old._adopt = true;                                    // delivered from now on, whatever the reply does
     adopt(old, fresh);
   }
-  // Runs (F-178): which messages are the first and last of a run from one person (data-by; a plan change or another person ends it). The server draws the same classes
-  // (tab_family.fragment); this keeps them right when a message arrives, is sent here or "Earlier" puts older ones above, so every one of those is one watch on the list.
-  function runs() {
-    var prev = null;
-    Array.prototype.forEach.call(thread.children, function (el) {
-      if (!el.classList.contains("ft-msg")) { prev = null; return; }
-      if (prev) prev.classList.toggle("ft-last", prev.getAttribute("data-by") !== el.getAttribute("data-by"));
-      el.classList.toggle("ft-first", !prev || prev.getAttribute("data-by") !== el.getAttribute("data-by"));
-      el.classList.add("ft-last");
-      prev = el;
-    });
-  }
-  runs();
-  var watch = new MutationObserver(runs);
-  watch.observe(thread, { childList: true });
-  undo.push(function () { watch.disconnect(); });
+  var runs = function () { if (window.GA && GA.runs) GA.runs.fix(thread); };      // (assets/js/runs.js: the first and last of each run; it watches the list too)
+  if (window.GA && GA.runs) { GA.runs.watch(thread); undo.push(function () { if (thread._runs) { thread._runs.disconnect(); thread._runs = null; } }); }
   function merge(html, n, mine) {
     if (!html.trim() || n <= last) return;
     var stick = mine || nearBottom();
@@ -190,7 +176,7 @@
     var bub = document.createElement("div"); bub.className = "ft-bub"; bub.textContent = value;
     var state = document.createElement("span"); state.className = "ft-time ft-state"; state.textContent = "Sending";
     stack.appendChild(bub); stack.appendChild(state); el.appendChild(stack);
-    el.setAttribute("data-by", "me");
+    el.setAttribute("data-by", "me|" + (form && form.elements.act ? form.elements.act.value : "") + "|" + (form && form.elements.part ? form.elements.part.value : ""));
     el.setAttribute("data-text", value);
     el.setAttribute("data-cid", newId());
     return el;

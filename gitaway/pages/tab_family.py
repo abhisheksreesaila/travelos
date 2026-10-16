@@ -27,7 +27,7 @@ from gitaway.pages import photos as photos_ui
 TITLE = "Family"
 TWO = "Everyone, one chat."
 HEAD = (*photos_ui.HEAD, Link(rel="stylesheet", href="/assets/css/plantalk.css"))
-SCRIPTS = ("/assets/js/thread.js", "/assets/js/photos.js", "/assets/js/voicenote.js")
+SCRIPTS = ("/assets/js/runs.js", "/assets/js/thread.js", "/assets/js/photos.js", "/assets/js/voicenote.js")
 POLL_MS = 5000
 QUIET_ON = "Quiet: no notifications from the family thread."
 QUIET_OFF = "Everyone gets a notification when the plan changes."
@@ -72,10 +72,10 @@ def _on(it, labels):
 
 
 def _run_key(it, me):
-    """Who a message is from, for grouping: "me", the author's id, or None for a line that is not a bubble (a plan change, a photo that cannot be drawn). thread.js `runs()` does the same on the page."""
+    """Who a message is from and in which chat, for grouping: "me" or the author's id, then the plan and part ("me||" for the whole trip), or None for a line that is not a bubble (a plan change, a photo that cannot be drawn). assets/js/runs.js does the same on the page."""
     if it["kind"] == "change" or (it["kind"] == "photo" and not familythread._image_url(it["payload"].get("url", ""))):
         return None
-    return "me" if it["author"] == me else it["author"]
+    return f'{"me" if it["author"] == me else it["author"]}|{it["payload"].get("act") or ""}|{it["payload"].get("part") or ""}'     # (a run is one person in one chat: the plan tag is drawn once per run)
 
 
 def item_view(it, me, zone, labels=None, run="ft-first ft-last"):
