@@ -28,7 +28,7 @@
   var deskQ = window.matchMedia ? window.matchMedia('(min-width: 1020px) and (not (display-mode: standalone))') : { matches: false };      // F-156: the one desktop query (same as day_dock.css)
   var NAMES = { desk: '--motion-desk', spring: '--motion-spring-dur', calm: '--motion-dur', dur: '--motion-dur', settle: '--motion-settle-dur', quick: '--motion-quick', fade: '--motion-fade' };
   var EASES = { spring: '--motion-spring', calm: '--motion-ease', out: '--motion-out' };
-  var FALLBACK = { desk: 140, spring: 520, calm: 240, dur: 240, settle: 280, quick: 160, fade: 120 };
+  var FALLBACK = { desk: 140, spring: 380, calm: 240, dur: 240, settle: 280, quick: 160, fade: 120 };
 
   function css(n) { return getComputedStyle(root).getPropertyValue(n).trim(); }
   function t(name) {                       // a duration token, in milliseconds

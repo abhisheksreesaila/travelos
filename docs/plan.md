@@ -985,8 +985,8 @@ Report fix 6. Read the fh-saas skill first. Needs: F-168
 - [x] tenant isolation, roles and every write path unchanged; tests prove a request never sees another family's data and that two concurrent requests for two families stay separate
 - [x] a day fragment renders ≥3× faster server-side (profile_server.py before/after), and two concurrent fragments take no longer than ~2.5× one alone with no lock pile-up (amended 2026-10-16: one Python process serialises CPU work; the 1.2× target needs more workers, a separate ticket)
 
-## F-173 Quicker on slower phones, and a shorter motion [todo]
+## F-173 Quicker on slower phones, and a shorter motion [review]
 Report fixes 8 and 5 (taste call made on the captain's "zippy, whatever it takes", 2026-10-16; the old values are in this ticket so it is one change to undo). Needs: F-168
-- [ ] the Ask sheet opens with no task over 50 ms on the tap (inert one wrapper, start the mic after the sheet's first frame); Week → Day swap does no read-after-write layout thrash
+- [ ] the Ask sheet opens with no task over 50 ms on the tap (inert the page's one or two wrappers, not every child; the mic still starts inside the tap, since iOS needs a user activation; everything else in the open moves after the sheet's first frame); Week → Day swap does no read-after-write layout thrash
 - [ ] phone screen motion 500 → 340 ms (--motion-screen-dur) and springs 520 → 380 ms (--motion-spring-dur), same curves; the laptop's calm fade unchanged; tests/test_motion_tokens.py and tests_browser/test_motion.py updated to the new values, not loosened
 - [ ] a day chip settles ≤480 ms on a fast phone (CPU 1×); Ask starts ≤150 ms at CPU 4×

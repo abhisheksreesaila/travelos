@@ -98,12 +98,15 @@
 
   // A plan's title that needs more than two lines is cut at the second (day_phone.css), and the end of that line fades. One observer re-measures when the box changes size; the fonts arriving
   // change the text, not the box, so they re-measure too.
-  var ro = window.ResizeObserver ? new ResizeObserver(function (l) { l.forEach(function (e) { markCut(e.target); }); }) : null;
-  function markCut(t) { if (t.clientWidth) t.classList.toggle('is-cut', t.scrollHeight > t.clientHeight + 1); }
+  var ro = window.ResizeObserver ? new ResizeObserver(function (l) { markCuts(l.map(function (e) { return e.target; })); }) : null;
+  function markCuts(ts) {      // F-173: every title is measured, then every mark is written (a read after a write makes the browser lay the page out again, once per title)
+    var cut = Array.prototype.map.call(ts, function (t) { return t.clientWidth ? t.scrollHeight > t.clientHeight + 1 : null; });
+    Array.prototype.forEach.call(ts, function (t, i) { if (cut[i] !== null) t.classList.toggle('is-cut', cut[i]); });
+  }
   function watchCuts() {
     var titles = stage.querySelectorAll('.cz-gb-t');
     if (ro) { ro.disconnect(); titles.forEach(function (t) { ro.observe(t); }); }
-    titles.forEach(markCut);
+    markCuts(titles);
   }
   if (CZ.onSwap) CZ.onSwap.push(watchCuts);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(watchCuts);
