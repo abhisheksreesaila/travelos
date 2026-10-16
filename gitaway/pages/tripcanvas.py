@@ -408,7 +408,7 @@ def week_view(v, sos=False):
     body = [head(v, kicker, "The trip", faces=faces, sos=curl(sos=True), switch=toggle(v, "week"), two=trip_line(t, len(v["dates"]))), Div(kinds_bar(), cls="cz-bar"), Div(*rows, cls="cz-week", id="cz-week", style=f"--days:{min(len(rows), 7)}"), weekdesk.columns(v, editor)]      # F-145: a laptop draws the columns, the phone and the tablet the rows
     body.append(sos_sheet(v, curl(), curl(sos=True)) if sos else sos_template(v, curl(), curl(sos=True)))
     ask_day = v["today_idx"] if v["today_idx"] is not None else 0      # F-142: Ask on the week opens the day with the Ask panel (day_ask.js): today, else the first day
-    return view("step" if sos else "week", body, zout="sos-open" if sos else "", title="The trip", **({"data_ask_day": str(ask_day)} if editor else {}))
+    return view("step" if sos else "week", body, zout="sos-open" if sos else "", title="The trip", data_fam_day=str(ask_day), **({"data_ask_day": str(ask_day)} if editor else {}))      # F-177: the same for Family (every role)
 
 
 # ---- day --------------------------------------------------------------------------------------------------------------------
