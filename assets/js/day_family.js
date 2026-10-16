@@ -83,7 +83,8 @@
 
   function run(name) {                    // a script of the pane, from the text fetched ahead (no wait), else as a script tag
     var c = code[name], s = document.createElement('script');
-    if (c && c.text) { s.text = c.text; document.body.appendChild(s); s.remove(); return; }
+    // (inline code: a future script-src CSP without 'unsafe-inline' would block this silently, and the pane would not start; the sourceURL keeps the file's name in the devtools)
+    if (c && c.text) { s.text = c.text + '\n//# sourceURL=/assets/js/' + name + '.js'; document.body.appendChild(s); s.remove(); return; }
     s.src = '/assets/js/' + name + '.js'; s.async = false;
     s.addEventListener('load', function () { s.remove(); });
     document.body.appendChild(s);
@@ -111,7 +112,7 @@
   }
 
   function load(want, animate) {
-    var d = dock(), mine = ++token, day = d.dataset.day || '0', u = panelUrl(want, day), e = warm(want, day), old = Date.now() - e.at > 1500;
+    var d = dock(), mine = ++token, day = d.dataset.day || '0', u = panelUrl(want, day), e = warm(want, day), ahead_ = e.html !== null;      // (fetched ahead: it may be a moment old, so what is new is asked for at once)
     function show() {                     // the copy is here: the pane is drawn now (the same frame as the click when it was fetched ahead)
       if (ahead[u] === e) delete ahead[u];      // (it is used once: the next open gets a fresh one, fetched when Family is left)
       if (mine !== token || !dock() || Dock.mode() !== 'family') return;
@@ -121,7 +122,7 @@
       dock().insertBefore(np, compose || null);
       dock().insertBefore(nf, compose || null);
       badge(e.total);
-      boot(old);
+      boot(ahead_);
       if (animate && MO) MO.settle(np);
     }
     function failed() {

@@ -132,7 +132,7 @@ def test_earlier_messages_are_asked_for_with_a_button_and_keep_the_place(canvas_
     near = page.evaluate("(() => { const t = document.getElementById('ft-thread'); return t.scrollHeight - t.scrollTop - t.clientHeight; })()")
     assert near < 200, near
     mate.say("m46")
-    expect(thread(page).locator(".ft-bub").last).to_contain_text("m46")            # the live poll still adds to the end
+    expect(thread(page).locator(".ft-bub").last).to_contain_text("m46", timeout=9000)            # the live poll (every 5 s) still adds to the end
 
 
 def test_the_phone_family_tab_is_the_page_it_was(canvas_page, mates):
@@ -148,3 +148,16 @@ def test_the_phone_family_tab_is_the_page_it_was(canvas_page, mates):
     page.wait_for_timeout(IDLE_MS)
     assert "panel" not in [s[0] for s in seen]                         # the phone draws the page itself and fetches no panel ahead
     assert "/trip/family" in page.url and "panel=family" not in page.url
+
+
+def test_a_message_sent_after_the_prefetch_shows_at_once_on_the_click(canvas_page, mates):
+    page = canvas_page(viewport=DESKTOP, touch=False)
+    mate = mates(page)
+    mate.say("before the prefetch")
+    open_day(page, SATURDAY)
+    page.wait_for_timeout(IDLE_MS)                                   # the pane is fetched ahead
+    mate.say("after the prefetch")
+    t = time.monotonic()
+    tab(page).click()
+    expect(thread(page).locator(".ft-bub").last).to_contain_text("after the prefetch", timeout=3000)
+    assert time.monotonic() - t < 3                                  # well under the 5 s poll

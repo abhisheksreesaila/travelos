@@ -32,7 +32,7 @@
   .cz .cz-fam-msgs .ft-bub { background: var(--paper-2); box-shadow: none; font-size: var(--cz-body); }
   .cz .cz-fam-msgs .ft-me .ft-bub { background: var(--ink); color: var(--card); }
   .cz .cz-fam .cz-pp-none { flex-shrink: 0; margin: 0; }
-  .cz .cz-fam-older { flex-shrink: 0; align-self: center; min-height: 2.25rem; padding: 0 0.75rem; border: 0; border-radius: var(--r-pill); background: transparent; font: inherit; font-size: var(--cz-small); font-weight: 800; color: var(--ink-2); cursor: pointer; }
+  .cz .cz-fam-older { flex-shrink: 0; align-self: center; min-height: 4rem; padding: 0 1rem; border: 0; border-radius: var(--r-pill); background: transparent; font: inherit; font-size: var(--cz-small); font-weight: 800; color: var(--ink-2); cursor: pointer; }
   .cz .cz-fam-older:hover { background: var(--paper); color: var(--ink); }
   .cz .cz-fam-older:focus-visible { outline: 0.1667rem solid var(--ink); outline-offset: 0.1667rem; }
   .cz .cz-fam-older:disabled { color: var(--ink-3); cursor: default; }
