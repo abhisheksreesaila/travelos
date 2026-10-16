@@ -50,7 +50,7 @@
     if (handed && handed.u === u && handed.e === epoch) return Promise.resolve(handed.html);
     var hit = cache[u];
     if (hit && !force) return hit.promise;
-    if (hit && hit.next) return hit.next;
+    if (hit && hit.next && hit.next.g === gen) return hit.next.p;
     var p = fetch(fragUrl(u), { credentials: 'same-origin', headers: { 'X-Canvas': '1' } }).then(function (r) {
       if (!r.ok) throw new Error('level ' + r.status);
       return r.text();
@@ -58,12 +58,16 @@
     var entry = { at: Date.now(), g: gen, promise: p };
     if (!hit) { cache[u] = entry; p.catch(function () { if (cache[u] === entry) delete cache[u]; }); }
     else {
-      hit.next = p;
+      hit.next = { p: p, g: gen };
       p.then(function () { cache[u] = entry; }, function () { delete hit.next; });
     }
     return p;
   }
   function old(u) { var h = cache[u]; return !!h && (h.g !== gen || Date.now() - h.at > STALE); }      // a copy that may differ from the server's
+  // A block or a step sheet cannot be corrected in place after it is shown (only the day and the week morph), so a copy of one from before a write, or over a minute old, is asked for again
+  // (this is the one level that still waits): a sheet shown stale would say "Mark done" for a step that is done.
+  var SHEET_FRESH = 60000;
+  function sheetStale(u) { var h = cache[u], l = levelOf(u); return !!h && (l === 'step' || l === 'block') && (h.g !== gen || Date.now() - h.at > SHEET_FRESH); }
 
   // F-099: while the canvas sits idle the next levels are fetched, so Day | Week, a date, a flick and Back swap with nothing to wait for. The desktop week fetches every day (the phone week the two cards on the screen, F-170);
   // a day fetches its neighbours, the week and the other dates. Fragments only, two at a time, in idle time, never on Data Saver or a slow link.
@@ -74,7 +78,7 @@
     var c = navigator.connection;
     return !!(c && (c.saveData || /(^|-)2g$/.test(c.effectiveType || '')));
   }
-  function fresh(u) { var h = cache[u]; return !!h && h.g === gen; }      // (a copy that only grew old with time is not fetched again ahead: it is checked when it is shown)
+  function fresh(u) { var h = cache[u]; return !!h && h.g === gen && !sheetStale(u); }      // (a copy that only grew old with time is not fetched again ahead: it is checked when it is shown)
   // The addresses worth having ahead, the likeliest first. `near` (a day's neighbours, the week's days, a block's steps) is fetched at once, `rest` a moment later.
   function nextLevels() {
     var v = view(), near = [], rest = [], now = here();
@@ -135,7 +139,7 @@
   // A level is fetched as soon as a finger goes down on a link to it, so the tap that follows has nothing to wait for.
   document.addEventListener('pointerdown', function (e) {
     var a = e.target.closest ? e.target.closest('a[data-zoom]') : null;
-    if (a && stage.contains(a) && a.dataset.zoom !== 'out') fetchLevel(path(a.href)).catch(function () {});
+    if (a && stage.contains(a) && a.dataset.zoom !== 'out') fetchLevel(path(a.href), sheetStale(path(a.href))).catch(function () {});
   }, { passive: true });
 
   // ---- swapping ---------------------------------------------------------------------------------------------------------------
@@ -357,8 +361,8 @@
     curMode = o.mode || '';
     var v = view(), y0 = window.scrollY;
     var key = o.key !== undefined ? o.key : (dir === 'out' && v ? v.dataset.zout : null);
-    var aged = old(u), copy = null;      // F-170: a copy we have is shown at once; if it may differ from the server's, it is checked behind the zoom (revalidate)
-    var level = fetchLevel(u);
+    var sheet = levelOf(u) === 'step' || levelOf(u) === 'block', aged = !sheet && old(u), copy = null;      // F-170: a copy we have is shown at once; if it may differ from the server's, it is checked behind the zoom (revalidate)
+    var level = fetchLevel(u, sheetStale(u));
     pending(level, o.el);
     var sketch = dir === 'in' && !reduced.matches && !laptop() ? outline(u, o, key) : null;      // (the laptop keeps the old level until the new one is in hand: never an outline first)
     return (sketch ? soon(level, SLOW) : level).then(function (got) {
@@ -382,7 +386,7 @@
       busy = false;
       via = null;      // the tapped link belongs to this zoom only, animated or not
       rememberToday();
-      if (copy !== null && levelOf(u) !== 'step' && levelOf(u) !== 'block') revalidate(u, copy);
+      if (copy !== null) revalidate(u, copy);
       if (waiting) { waiting = null; goto(here(), { mode: 'pop' }); }     // the address bar is the truth: show what it says
       drain();
     });

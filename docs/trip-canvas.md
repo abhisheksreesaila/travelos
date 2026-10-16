@@ -127,6 +127,7 @@ Stale refreshes: `canvas_core.js` counts writes (`epoch`); a revalidation or a q
 - `CZ.post(url, body)` (the one write): bumps `gen`; the reply's `level` is both `handed` (the next `CZ.quiet()` needs no request) and written into the cache for its address, so a write never leaves its own level old. After a write the idle prefetch asks again for the old copies of the likeliest levels first (`near`: a day's two neighbours, the week's visible day rows, a block's visible steps), the rest (the week, far days) 300 ms later.
 - `CZ.quiet()` / `CZ.refresh()`: the level on the screen, brought up to date in place (uses `handed`, else asks).
 - `CZ.forget()`: something changed that no `CZ.post` drew (a chat count, an Ask apply): every copy becomes *old* (still shown at once, then checked). `CZ.forget(true)` also throws every copy away: only for a level that must not flash its old self first (Ask opening another day).
+- A block or step sheet cannot be morphed after it is shown, so one from before a write (or over a minute old) is asked for again when tapped: the one level that still waits.
 - Addresses carry `trip=`, so a copy is never another trip's; `pageshow` from the bfcache (sign-out then Back) drops all copies; a new document starts empty.
 - On the phone the week fetches only the rows that have a box (`boxed`): the desktop columns' plan rows (`a.cz-wi.is-plan`, about 40 KB each) are not fetched where they are hidden.
 
