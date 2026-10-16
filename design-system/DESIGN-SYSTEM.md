@@ -92,7 +92,7 @@ Captain, 2026-10-14: FINXPLORER's structure, GitAway's colours, light only. Appl
 - **Top bar**: flat on paper with a hairline under it; text links, the current one ink with a 2px coral underline.
 - **Buttons**: flat pills, no ledge — primary coral with ink text, secondary white with a hairline.
 - **Data rows**: tile (30px, the kind's tint with its deep ink, initials or icon) · name (700) over a muted detail · right-aligned time; hairline between rows.
-- **One accent block per screen**: the ink Up next card. Day colours are gone from the day (F-159, below); the week keeps them until F-162.
+- **One accent block per screen**: the ink Up next card. Day colours are gone from the day (F-159, below) and the week (F-162, below).
 - **Motion**: the calm desktop fade (F-156).
 - **Code**: one file, `assets/css/desk_skin.css`, loaded last by `layout.styles()` on every page. Every rule sits in the desktop query and under `:root:has(.ga-topbar)` (the signed-in pages' top bar), so the phone, the tablet, the installed app, signed-out pages and the landing never match it. It makes `--shadow-sm` and `--shadow-md` a zero shadow (not `none`: that would void the plan blocks' `inset … , var(--shadow-sm)` lists), keeps `--shadow-lg` for what floats (menus, a lifted plan), and uses the tokens `--hairline`, `--hairline-2`, `--coral-tint`, `--r-card`. The second phrase of a heading is a sibling `<span class="ga-h-two">` after the `<h1>` (hidden everywhere else), so the title's own text is unchanged. `tests_browser/test_calm_skin.py` pins the rules.
 
@@ -106,3 +106,12 @@ Brief `docs/briefs/colour-timeline.md`, handoff `docs/design/colour-timeline.md`
 - **Pills**: PLAN and BOOKED are grey, never coloured.
 - **Coral** only for primary buttons, the now line and its time (and drop or draft states, F-161). Up next stays the one ink card.
 - **Code**: the new markup (rail starts, tile, PLAN pill) is in the page at every width and `day_grid.css` hides it; `desk_skin.css` draws it inside the desktop query, so the phone, the tablet and the installed app are unchanged (F-160 brings them over). `tests_browser/test_colour_day.py` pins the rules at 1440 and 1280.
+
+## The week on one time axis (F-162)
+Brief `docs/briefs/colour-timeline.md`, handoff `docs/design/colour-timeline.md` (frame `ct-week-desk`). The laptop week (1020px up, not the installed app) is one white panel: an hour axis on the left, a column per day. Same rules as the day: colour is the kind only.
+- **Axis**: a sticky first column of hour labels (Figtree 600, `--ink-3`, a label centred on its hour line), 7 AM to 10 PM unless an item is earlier or later in any day. Hour lines are a hairline background of each column.
+- **Hour height** comes from the window: the axis is one box tall (percentages of it), so 15 hours fit under the heading without a page scroll at 1440x900 and 1280x800; below 2.25 rem an hour the panel scrolls inside itself.
+- **Column header**: neutral, the link that opens the day: "Fri 16" (Bricolage 800), a grey `--paper-2` "Day 1" pill (ink "Today" pill on today), the day's title in `--ink-2`. No tint, no coloured key.
+- **Card**: `--card`, a hairline, `--r-sm`, the kind's 3px edge (`--accent`), the kind's tile (`--tint`, icon `--kink`); title Bricolage 700, time Figtree in `--ink-2`, a grey PLAN or BOOKED pill. A card is as tall as it lasts (at least 30 minutes), so at a narrow column the layout steps down with its height: one row under 60 minutes, small tile and one-line title to 90, the full card from 90; side by side with another it is the title and start time only. Pointing at a card opens it down to show everything.
+- **Free day**: a soft dashed `--hairline-2` slot the height of the column, "Free day", "Nothing planned yet", Say the plan.
+- **Code**: `gitaway/pages/weekdesk.py`, `assets/css/week_desk.css` (the old numbered day cards and the F-158 week rules in `desk_skin.css` are gone). `tests_browser/test_week_axis.py` pins it with real rects.

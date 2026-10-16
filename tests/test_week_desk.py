@@ -26,14 +26,15 @@ def columns(wk):
     return re.findall(r'<div\b[^>]*class="cz-wcol[ "][^>]*>.*?(?=<div\b[^>]*class="cz-wcol[ "]|\Z)', wk, re.S)
 
 
-def test_one_column_per_day_with_a_colour_header_and_open_the_day(trip):
+def test_one_column_per_day_with_a_neutral_header_that_opens_the_day(trip):
     cols = columns(week(trip))
     assert len(cols) == 5
-    assert [c for c in re.findall(r'cz-wt-(sun|mint|grape|sky|bubble)', "".join(re.findall(r'<div\b[^>]*class="cz-wcol[^"]*"', "".join(cols))))] == ["sun", "mint", "grape", "sky", "bubble"]
+    assert "cz-wt-" not in "".join(cols)      # F-162: a day has no colour
     for i, c in enumerate(cols):
-        assert re.search(rf'<a [^>]*href="/trip/canvas\?day={i}"[^>]*>[^<]*(?:<[^>]+>[^<]*)*Open the day', c, re.S), i
-        assert 'data-zoom="in"' in re.search(rf'<a [^>]*href="/trip/canvas\?day={i}"[^>]*>', c).group(0)
-    assert text(cols[0]).startswith("01 FRI 16") and text(cols[1]).startswith("02 SAT 17")      # F-158: the numbered key first
+        head = re.search(rf'<a [^>]*href="/trip/canvas\?day={i}"[^>]*class="cz-wh cz-wopen"[^>]*>|<a [^>]*class="cz-wh cz-wopen"[^>]*href="/trip/canvas\?day={i}"[^>]*>', c)
+        assert head and 'data-zoom="in"' in head.group(0), i      # the header is the link that opens the day
+    assert text(cols[0]).startswith("Fri 16 Day 1 Fly in, check in") and text(cols[1]).startswith("Sat 17 Day 2")
+    assert 'class="cz-wax"' in week(trip) and "7 AM" in week(trip) and "10 PM" in week(trip)      # the shared hour axis
 
 
 def test_rows_show_time_title_and_a_kind_icon(trip):
