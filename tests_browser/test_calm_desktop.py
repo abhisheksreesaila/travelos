@@ -117,7 +117,7 @@ def test_a_toast_and_the_top_bar_menu_are_a_fade(lively):
     calm(record(page, lambda: page.click(".ga-tb-account > summary")), "the avatar menu closing")
 
 
-SLOW_FETCH = """() => { const real = window.fetch; window.fetch = (u, o) => /frag=1/.test(String(u)) ? new Promise(r => setTimeout(r, 500)).then(() => real(u, o)) : real(u, o); CZ.forget(); }"""
+SLOW_FETCH = """() => { const real = window.fetch; window.fetch = (u, o) => /frag=1/.test(String(u)) ? new Promise(r => setTimeout(r, 500)).then(() => real(u, o)) : real(u, o); CZ.forget(true); }"""
 
 
 def test_a_click_that_changes_the_level_keeps_the_old_view_until_the_new_one_is_ready(lively):
@@ -149,7 +149,7 @@ BUSY = """() => { window.__busy = []; const done = () => {}; const v = () => doc
 
 def test_a_slow_level_shows_a_quiet_busy_state_that_clears_on_the_swap(lively):
     page = lively(path="/trip/canvas")
-    page.evaluate("() => { const real = window.fetch; window.fetch = (u, o) => /frag=1/.test(String(u)) ? new Promise(r => setTimeout(r, 1500)).then(() => real(u, o)) : real(u, o); CZ.forget(); }")
+    page.evaluate("() => { const real = window.fetch; window.fetch = (u, o) => /frag=1/.test(String(u)) ? new Promise(r => setTimeout(r, 1500)).then(() => real(u, o)) : real(u, o); CZ.forget(true); }")
     page.evaluate(RECORDER)
     page.evaluate(BUSY)
     page.locator(".cz-wcol[data-day='1'] .cz-wopen").click()
