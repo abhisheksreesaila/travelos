@@ -991,3 +991,9 @@ Report fixes 8 and 5 (taste call made on the captain's "zippy, whatever it takes
 - [x] the Ask sheet opens with no task over 50 ms on the tap at CPU 1× and at most one ≤100 ms task at CPU 4× (amended 2026-10-16: that task is the sheet's own layout for the grow-from-tap motion; measured 4× median 72 ms (66–96), was 331; 1× no long task) (inert the page's one or two wrappers, not every child; the mic still starts inside the tap, since iOS needs a user activation; everything else in the open moves after the sheet's first frame); Week → Day swap does no read-after-write layout thrash
 - [x] phone screen motion 500 → 340 ms (--motion-screen-dur) and springs 520 → 380 ms (--motion-spring-dur), same curves; the laptop's calm fade unchanged; tests/test_motion_tokens.py and tests_browser/test_motion.py updated to the new values, not loosened
 - [x] a day chip settles ≤480 ms on a fast phone (CPU 1×); Ask starts ≤150 ms at CPU 4× (measured: chip 396 ms at 1×; Ask start median 82 ms at 4×, 41 ms at 1×)
+
+## F-174 The laptop drop settles at once [todo]
+Found in the post-round measurement, 2026-10-16 (scripts/perf on master after F-171): on the laptop, "move: drag, drop" now waits on the network (first change 220 ms after the drop, net wait 211) where before F-171 it changed at 13 ms. Needs: F-171
+- [ ] on a desktop, the dropped plan settles into its new place (calm fade, no lift shadow/scale left) within one frame of the drop, before the save answers; the save's reply only corrects lanes/neighbours and shows the toast
+- [ ] the phone's one-motion landing (F-171) is unchanged; refused save, undo and viewer rules unchanged
+- [ ] scripts/perf laptop "move" starts ≤50 ms with no network wait before the first change; a browser test at 1440 checks the block is in its new place, unlifted, within 50 ms of the drop with the save slowed 700 ms
