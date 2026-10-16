@@ -121,7 +121,7 @@ def test_tapping_the_title_in_the_open_card_renames_the_plan(canvas_page):
     open_day(page)
     open_card(page, lunch.id)
     btn = card(page).get_by_role("button", name="Rename Lunch")      # a real button inside the heading, announced with what it does
-    assert btn.evaluate("b => b.parentElement.tagName") == "H2" and btn.bounding_box()["height"] >= 44      # (a finger needs 44 px)
+    assert btn.evaluate("b => b.parentElement.tagName") == "H2" and btn.bounding_box()["height"] >= 48      # (a finger needs 48 px, touch.md)
     assert page.get_by_role("dialog", name="Lunch").count() == 1      # the dialog is still named by the plain title
     btn.tap()
     field = card(page).locator(".cz-card-name")
