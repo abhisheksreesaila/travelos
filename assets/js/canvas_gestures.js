@@ -22,7 +22,7 @@
 
   // ---- a flick between days -----------------------------------------------------------------------------------------------------
   var flick = null;
-  var FLICK = 60;
+  var FLICK = 60, SLOP_F = 12;
   stage.addEventListener('pointerdown', function (e) {
     flick = null;
     var v = CZ.view();
@@ -34,10 +34,12 @@
     if (!flick || e.pointerId !== flick.id) return;
     if (count() > 1 || (g && g.mode === 'drag') || CZ.held) { springBack(flick.v); flick = null; return; }      // a held block (day_grid.js) never flicks
     var dx = e.clientX - flick.x, dy = e.clientY - flick.y;
-    if (!reduced.matches && Math.abs(dx) > Math.abs(dy) * 1.5 && Math.abs(dx) > 12) {
+    if (!flick.on && !reduced.matches && Math.abs(dx) > Math.abs(dy) * 1.5 && Math.abs(dx) > SLOP_F) flick.on = true;      // (recognised as a swipe: from here it follows, whatever the finger does next)
+    if (flick.on) {
       var edge = (dx < 0 && !flick.v.dataset.next) || (dx > 0 && !flick.v.dataset.prev);
+      var moved = Math.sign(dx) * Math.max(0, Math.abs(dx) - SLOP_F);      // F-171: the first SLOP_F px only decide that it is a swipe; the level starts from 0 and then follows 1:1, with no jump to the finger
       flick.v.style.transition = 'none';
-      flick.v.style.transform = 'translateX(' + (dx * (edge ? 0.08 : 1)) + 'px)';   // F-171: the finger carries the day 1:1 (barely at the first or last day)
+      flick.v.style.transform = 'translateX(' + (moved * (edge ? 0.08 : 1)) + 'px)';      // (barely at the first or last day)
     }
   });
   // A level the finger moved and did not carry on: it goes back to its place with the calm ease (a move, not a jump).

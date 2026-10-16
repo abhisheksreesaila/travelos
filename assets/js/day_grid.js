@@ -571,7 +571,11 @@
   // promise resolves when it has landed; the ghost, the label and the knobs wait for that. Nothing re-draws it after: the refreshed day takes over the same spot (see CZ.snap).
   var landing = 0;
   function land(el, from, g) {
-    var done = function () { landing--; el.classList.remove('is-landing'); if (g.ghost && g.ghost.parentNode) g.ghost.parentNode.removeChild(g.ghost); dropLabel(); wake(); };
+    var done = function () {
+      var more = el.__again;      // F-171: the refresh moved the block to another lane and CZ.snap landed it again: everything waits for that one
+      if (more) { el.__again = null; return more.then(done, done); }
+      landing--; el.classList.remove('is-landing'); if (g.ghost && g.ghost.parentNode) g.ghost.parentNode.removeChild(g.ghost); dropLabel(); wake();
+    };
     landing++;
     el.classList.add('is-landing');      // (its lift folds out with the move: no second ease on `scale`)
     var p = window.GA && GA.motion ? GA.motion.land(el, from) : Promise.resolve();
@@ -670,7 +674,8 @@
         if (!o || (Math.abs(o.top - b.offsetTop) < 2 && Math.abs(o.left - b.offsetLeft) < 2 && Math.abs(o.width - b.offsetWidth) < 2 && Math.abs(o.height - b.offsetHeight) < 2)) return;      // it did not move (the wiggle only tilts it)
         landing++;      // (a refresh must not swap the day under a neighbour's glide either: CZ.landing)
         var over = function () { landing--; };
-        GA.motion.land(b, o.eye).then(over, over);
+        var again = GA.motion.land(b, o.eye).then(over, over);
+        if (b.classList.contains('is-landing')) b.__again = again;      // (a block still landing from its drop: its first landing's clean-up waits for this one, see land())
       });
     };
   };

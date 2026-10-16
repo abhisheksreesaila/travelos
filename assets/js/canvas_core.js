@@ -161,6 +161,7 @@
         if (old.hasAttribute('data-live')) return false;      // F-143: the Family chats in the panel are kept up to date by their own script (thread.js), a refresh of the day leaves them be
         if (old.hasAttribute('data-keep-state')) ['hidden', 'aria-expanded'].forEach(function (a) { if (old.hasAttribute(a)) fresh.setAttribute(a, old.getAttribute(a)); else fresh.removeAttribute(a); });
         for (var i = 0; i < OWN.length; i++) if (old.classList.contains(OWN[i])) fresh.classList.add(OWN[i]);
+        if (old.classList.contains('is-landing') && old.style.transformOrigin) fresh.style.transformOrigin = old.style.transformOrigin;      // F-171: a block landing (GA.motion.land squashes it about its corner) keeps that pivot when the server's style attribute is synced onto it mid-move: the scale would otherwise pivot about the centre and jump
         if (old.classList.contains('cz-fold')) ['inert', 'aria-hidden'].forEach(function (a) { if (old.hasAttribute(a)) fresh.setAttribute(a, old.getAttribute(a)); else fresh.removeAttribute(a); });
         return true;
       },
