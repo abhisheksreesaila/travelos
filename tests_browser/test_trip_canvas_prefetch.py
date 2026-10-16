@@ -100,8 +100,9 @@ def test_a_date_and_a_flick_to_a_neighbour_swap_without_a_request(canvas_page):
     assert t1 - t0 < TARGET_MS + 100                   # the synthetic gesture itself takes a few ms on top of the swap
 
 
-def test_a_write_empties_the_prefetched_levels_so_the_week_shows_it(canvas_page):
-    """All in the page, no reload: the week was fetched ahead before the write, and after it the week must show the step as done."""
+def test_a_write_leaves_the_copies_in_hand_and_the_week_still_shows_it(canvas_page):
+    """All in the page, no reload: the week was fetched ahead before the write. F-170: that copy is not thrown away but shown at once and checked behind (the day is asked for again),
+    and after the write the week must show the step as done."""
     page = canvas_page(motion="no-preference")
     wait_idle(page, None, week_ahead(page))
     assert "1 done" not in page.locator(".cz-view[data-level=week]").inner_text()

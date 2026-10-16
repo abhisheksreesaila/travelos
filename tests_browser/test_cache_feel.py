@@ -47,6 +47,15 @@ def slow(page, ms=700):
     page.route(re.compile(r"frag=1"), lambda route: (page.wait_for_timeout(ms), route.continue_()))
 
 
+def slow_answers(page, ms=700):
+    """The server sees each level request at once and its answer reaches the page `ms` later: a fetch sent before a write comes back after it, with what the server had then."""
+    def hold(route):
+        got = route.fetch()
+        page.wait_for_timeout(ms)
+        route.fulfill(response=got)
+    page.route(re.compile(r"frag=1"), hold)
+
+
 def move_plan_to_day(page, day):
     """A write made the way the app makes it (CZ.post), then the screen brought up to date."""
     return page.evaluate("""(day) => CZ.post('/trip/canvas/plan', CZ.tripBody({ op: 'edit', act: 'a9', day: String(day), next: CZ.here() })).then(() => CZ.quiet())""", day)
@@ -117,11 +126,16 @@ def test_right_after_a_write_the_neighbours_are_fetched_before_the_rest(canvas_p
 
 def test_after_a_swap_the_neighbours_are_fetched_before_anything_else(canvas_page):
     page = canvas_page(motion="no-preference")
-    page.goto(re.sub(r"\?.*$", "", page.url) + "?day=2")
-    page.wait_for_selector(".cz-view[data-level=day][data-day='2']")
+    open_day(page, 1)
     quiet_network(page)
-    first = page.evaluate(FRAGS)[:2]
-    assert sorted(re.search(r"day=(\d)", u).group(1) for u in first) == ["1", "3"], first
+    page.evaluate("CZ.forget(true)")                    # nothing in hand: the chip's swap asks for day 2, and then the prefetch starts again
+    n0 = page.evaluate(f"{FRAGS}.length")
+    page.locator(".cz-hchips a[href*='day=2']").click()
+    expect(page.locator(".cz-view[data-level=day][data-day='2']")).to_be_visible()
+    quiet_network(page)
+    got = page.evaluate(FRAGS)[n0:]
+    days = [(re.search(r"day=(\d)", u) or [None, "week"])[1] for u in got]
+    assert days[0] == "2" and sorted(days[1:3]) == ["1", "3"], got      # the day itself, then its neighbours, then the rest
 
 
 def test_the_phone_week_fetches_exactly_the_day_cards_and_nothing_hidden(canvas_page):
@@ -167,10 +181,11 @@ def test_another_trip_never_shows_this_trips_copy(family_with_two_trips):
     assert first != second
     assert page.locator(".cz-gb", has_text="Venice Canals stroll").count() == 0          # the open (newest) trip has no such plan
     go = "(t) => CZ.goto('/trip/canvas?day=1&trip=' + t, { mode: 'replace', dir: 'side' })"
-    page.evaluate(go, first)
-    expect(page.locator(".cz-gb", has_text="Venice Canals stroll")).to_have_count(1)
-    page.evaluate(go, second)
-    expect(page.locator(".cz-gb", has_text="Venice Canals stroll")).to_have_count(0)
+    here = lambda: page.locator(".cz-gb", has_text="Venice Canals stroll")
+    for t, plans in ((first, 1), (second, 0), (first, 1), (second, 0)):      # (the third and fourth swaps come from the copies of the first two)
+        page.evaluate(go, t)
+        page.wait_for_function("() => !document.documentElement.dataset.czDir")
+        expect(here()).to_have_count(plans)
 
 
 def test_a_page_brought_back_from_the_back_forward_cache_drops_every_copy(canvas_page, base_url):
@@ -180,3 +195,51 @@ def test_a_page_brought_back_from_the_back_forward_cache_drops_every_copy(canvas
     r = page.evaluate(TIMED_CLICK, ".cz-hchips a[href*='day=2']")
     expect(page.locator(".cz-view[data-level=day][data-day='2']")).to_be_visible()
     assert any("day=2" in u for u in r["asked"]), r      # nothing in hand: the tap asked the server
+
+
+def test_a_day_fetched_before_a_write_and_tapped_after_it_is_corrected(canvas_page, base_url):
+    """The week, a plan moved onto day 2 with the day-2 request already sent (its answer, from before the write, comes late), then a tap on day 2: it fills the outline with the old copy and is corrected."""
+    page = canvas_page(motion="no-preference")
+    seed_plan(page.request, base_url, "a9", "1", "12:00", "13:00", "Lunch F170")
+    page.reload()
+    page.wait_for_selector(".cz-view[data-level=week]")
+    quiet_network(page)
+    page.evaluate("CZ.forget(true)")
+    slow_answers(page, 900)
+    row = ".cz-view[data-level=week] a.cz-row-link[href*='day=2']"
+    page.evaluate("(sel) => { const a = document.querySelector(sel); a.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); a.dispatchEvent(new PointerEvent('pointercancel', { bubbles: true })); }", row)      # day 2 asked for now: the server answers with the plan on day 1
+    page.wait_for_timeout(200)
+    page.evaluate("CZ.post('/trip/canvas/plan', CZ.tripBody({ op: 'edit', act: 'a9', day: '2', next: CZ.here() }))")
+    page.locator(row).click()
+    expect(page.locator(".cz-view[data-level=day][data-day='2']")).to_be_visible(timeout=6000)
+    expect(page.locator(".cz-view .cz-gb", has_text="Lunch F170")).to_have_count(1, timeout=8000)
+    page.unroute_all(behavior="ignoreErrors")
+
+
+def test_a_check_behind_a_shown_day_waits_for_a_calm_moment_instead_of_giving_up(canvas_page, base_url):
+    page = day_with_plan(canvas_page, base_url)
+    slow_answers(page, 900)
+    move_plan_to_day(page, 2)                          # day 2's copy in hand is from before; its new copy is on the way
+    page.locator(".cz-hchips a[href*='day=2']").click()
+    expect(page.locator(".cz-view[data-level=day][data-day='2']")).to_be_visible()
+    page.evaluate("() => { const i = document.createElement('input'); i.id = 'zz-typing'; document.querySelector('.cz-view').appendChild(i); i.focus(); }")      # a field is being typed in
+    page.wait_for_timeout(2500)                        # the answer has come and the screen was not calm: nothing may be swapped under the cursor
+    assert page.evaluate("document.activeElement.id") == "zz-typing"
+    assert page.locator(".cz-view .cz-gb", has_text="Lunch F170").count() == 0
+    page.evaluate("document.getElementById('zz-typing').remove()")      # cancelled
+    expect(page.locator(".cz-view .cz-gb", has_text="Lunch F170")).to_have_count(1, timeout=8000)
+    page.unroute_all(behavior="ignoreErrors")
+
+
+def test_a_step_sheet_fetched_before_a_write_never_says_mark_done_for_a_done_step(canvas_page):
+    page = canvas_page(motion="no-preference")
+    page.goto(page.url.split("?")[0] + "?block=a1")
+    page.wait_for_selector(".cz-view[data-level=block]")
+    quiet_network(page)                                # the steps' sheets are in hand (fetched before the write)
+    step = page.locator('.cz-step:has-text("Revenge of the Mummy")')
+    sid = step.get_attribute("data-step")
+    page.evaluate("(id) => CZ.post('/trip/canvas/step', CZ.tripBody({ step: id, do: 'done', next: CZ.here() })).then(() => CZ.quiet())", sid)
+    expect(page.locator(".cz-step.is-done", has_text="Revenge of the Mummy")).to_be_visible()
+    page.locator(".cz-step.is-done", has_text="Revenge of the Mummy").click()
+    expect(page.get_by_role("button", name="Not done")).to_be_visible()
+    assert page.get_by_role("button", name="Mark done").count() == 0

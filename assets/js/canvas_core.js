@@ -59,7 +59,7 @@
     if (!hit) { cache[u] = entry; p.catch(function () { if (cache[u] === entry) delete cache[u]; }); }
     else {
       hit.next = { p: p, g: gen };
-      p.then(function () { cache[u] = entry; }, function () { delete hit.next; });
+      p.then(function () { if (!cache[u] || cache[u].g <= entry.g) cache[u] = entry; }, function () { delete hit.next; });      // (an older answer arriving late never replaces a newer copy, a write's own level included)
     }
     return p;
   }
@@ -265,12 +265,21 @@
     window.scrollTo(0, y);
     if (snap) snap();
   }
-  function revalidate(u, old) {
+  // F-170: the copy on the screen was shown from the cache: ask the server and, if it differs, morph the changes in. It waits for a calm moment (nothing held, open or typed in) both
+  // before asking and before applying, and gives up only when the person has moved on, a write has run (its own refresh follows) or after about 10 seconds.
+  function revalidate(u, old, tries) {
+    tries = tries || 0;
+    var again = function () { if (tries < 25) setTimeout(function () { revalidate(u, old, tries + 1); }, 400); };
     idle(function () {
-      if (here() !== u || !calm()) return;
+      if (here() !== u || shown !== old) return;
+      if (!calm()) { again(); return; }
       var e0 = epoch;
       fetchLevel(u, true).then(function (html) {
-        if (e0 === epoch && html !== old && html !== shown && here() === u && shown === old && calm()) morphIn(html);
+        (function apply(n) {
+          if (e0 !== epoch || here() !== u || shown !== old || html === old || html === shown) return;
+          if (calm()) morphIn(html);
+          else if (n < 25) setTimeout(function () { apply(n + 1); }, 400);
+        })(0);
       }).catch(function () {});
     });
   }
@@ -361,12 +370,11 @@
     var v = view(), y0 = window.scrollY;
     var key = o.key !== undefined ? o.key : (dir === 'out' && v ? v.dataset.zout : null);
     var sheet = levelOf(u) === 'step' || levelOf(u) === 'block', aged = !sheet && old(u), copy = null;      // F-170: a copy we have is shown at once; if it may differ from the server's, it is checked behind the zoom (revalidate)
-    var level = fetchLevel(u, sheetStale(u));
+    var e0 = epoch, level = fetchLevel(u, sheetStale(u));
     pending(level, o.el);
     var sketch = dir === 'in' && !reduced.matches && !laptop() ? outline(u, o, key) : null;      // (the laptop keeps the old level until the new one is in hand: never an outline first)
     return (sketch ? soon(level, SLOW) : level).then(function (got) {
       if (got !== null) return got;
-      var at = epoch;
       // nothing yet: the zoom runs now into the outline, and the level fills it when it comes
       return run(sketch, dir, key, remember).then(function () { return level; }).then(function (html) {
         if (here() !== u) return null;      // gone elsewhere meanwhile
@@ -374,12 +382,13 @@
         var nv = view();
         if (nv) nv.classList.add('cz-filled');
         if (CZ.afterScroll && (o.mode === 'push' || o.mode === 'replace')) CZ.afterScroll();
-        if (at !== epoch) quiet();          // a write landed meanwhile: this copy may be older than it
+        if (!sheet && (aged || e0 !== epoch)) copy = html;      // F-170: a copy fetched before a write (or kept a while) fills the outline all the same: it is checked behind the zoom like any other
+        if (e0 !== epoch) quiet();          // a write landed meanwhile: this copy may be older than it
         return null;
       });
     }).then(function (html) {
       if (html === null) return;
-      if (aged) copy = html;
+      if (!sheet && (aged || e0 !== epoch)) copy = html;
       return run(html, dir, key, remember);
     }).catch(function () { location.href = u; }).then(function () {
       busy = false;
