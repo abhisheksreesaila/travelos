@@ -243,3 +243,17 @@ def test_a_test_that_installs_no_fake_cannot_reach_the_network():
     # the autouse fixture in tests/conftest.py replaces TRANSPORT with a function that refuses
     with pytest.raises(OSError):
         ai.TRANSPORT("u", {}, b"", 1)
+
+
+def test_a_failed_call_is_one_line_in_the_server_log_without_content(monkeypatch, caplog):
+    """F-175: a deployment that no longer exists failed every call and showed only in the usage table; the server's log says so, with no prompt or reply in it."""
+    import logging
+    monkeypatch.setenv("AZURE_OPENAI_API_KEY", "k")
+    monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://example.openai.azure.com")
+    monkeypatch.setenv("AZURE_OPENAI_DEPLOYMENT", "gone")
+    monkeypatch.setattr(ai, "TRANSPORT", lambda url, headers, body, timeout: (404, '{"error": {"code": "DeploymentNotFound"}}'))
+    with caplog.at_level(logging.WARNING, logger="gitaway.ai"), pytest.raises(ai.AIError):
+        ai.call_json("speak", "fam1", "SECRET SYSTEM", "the family's words", {"type": "object"}, name="x")
+    line = [r.getMessage() for r in caplog.records if r.name == "gitaway.ai"]
+    assert line and "job=speak" in line[0] and "deployment=gone" in line[0] and "error=http_404" in line[0]
+    assert "family's words" not in caplog.text and "SECRET" not in caplog.text

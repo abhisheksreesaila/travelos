@@ -24,6 +24,7 @@ Tests never reach the network: `TRANSPORT` (a function (url, headers, body bytes
 """
 
 import json
+import logging
 import os
 import secrets
 import socket
@@ -37,6 +38,8 @@ from fh_saas.db_host import HostDatabase
 from sqlalchemy import text
 
 from gitaway import hostdb
+
+logger = logging.getLogger("gitaway.ai")
 
 # job -> (seconds before giving up, what it is for). docs/ai-usage.md lists each one with what it replaces.
 JOBS = {
@@ -425,8 +428,11 @@ def forget_table():
 
 
 def _log(job, family, dep, tin, tout, ms, ok, error):
-    """Write one usage row. Never raises: a log that cannot be written must not break the call it describes."""
+    """Write one usage row. Never raises: a log that cannot be written must not break the call it describes. A failure is also one line in the server's log (job, deployment and
+    error code, never content), so a broken setting shows in `railway logs` (F-175: a deleted deployment failed every call for days and showed only as "nothing happens")."""
     at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    if not ok:
+        logger.warning("ai call failed job=%s deployment=%s error=%s ms=%s", job, dep, error or "", int(ms))
     try:
         with hostdb.locked():
             conn = _conn()
