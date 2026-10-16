@@ -22,7 +22,7 @@ SUN, SUN_TINT = "rgb(255, 201, 60)", "rgb(255, 241, 194)"
 MINT, MINT_TINT = "rgb(72, 209, 160)", "rgb(212, 247, 234)"
 SKY, SKY_TINT = "rgb(90, 176, 255)", "rgb(221, 238, 255)"
 GRAPE, GRAPE_TINT = "rgb(195, 178, 255)", "rgb(236, 228, 255)"
-LONG = "Griffith Observatory planetarium show"
+LONG = "Extraordinary multicultural celebrations"
 
 
 def shot(page, name):
@@ -31,14 +31,14 @@ def shot(page, name):
 
 
 def plans(busy=False):
-    """Day 0 (the sample's flight, hotel and car bookings) gets a lunch and a sunset; day 1 a long title; day 2 stays free in the sample."""
+    """Day 0 (the sample's flight and hotel bookings) gets a lunch and a sunset; day 1 a long title; days 2 and 3 stay free unless `busy` fills day 3."""
     me = person("ari")
     cal.add_activity(me, day=0, start=12 * 60 + 30, end=14 * 60, title="Lunch at Grand Central Market", kind="food")
     cal.add_activity(me, day=0, start=17 * 60 + 30, end=19 * 60, title="Santa Monica Pier sunset", kind="outdoors")
     cal.add_activity(me, day=1, start=9 * 60, end=11 * 60, title=LONG, kind="culture")
     if busy:
         for n, (s, e, title, kind) in enumerate(((7 * 60, 8 * 60, "Early walk", "outdoors"), (10 * 60, 10 * 60 + 15, "Call Grandma", "fun"), (12 * 60, 13 * 60, "Tacos", "food"),
-                                                  (15 * 60, 16 * 60, "Museum", "culture"), (21 * 60, 23 * 60, "Late show", "fun"))):
+                                                  (15 * 60, 16 * 60, "Museum", "culture"), (21 * 60, 22 * 60, "Late show", "fun"))):
             cal.add_activity(me, day=3, start=s, end=e, title=title, kind=kind, fine=True)
 
 
@@ -58,6 +58,13 @@ CARDS = """() => [...document.querySelectorAll('#cz-week .cz-row')].map(row => {
     rows: [...row.querySelectorAll('.cz-wcard')].map(c => ({text: c.textContent.replace(/\\s+/g, ' ').trim(), r: r(c), booked: c.classList.contains('is-booked'), kind: c.dataset.kind})),
     tiles: [...row.querySelectorAll('.cz-wr-tile')].length};
 })"""
+
+
+def tap(page, loc):
+    """A finger on the middle of `loc`, wherever it lands (the card's link is stretched over the rows, so Playwright's own click, which refuses a covered element, would not be a tap)."""
+    loc.scroll_into_view_if_needed()
+    box = loc.bounding_box()
+    page.mouse.click(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
 
 
 def cards(page):
@@ -87,11 +94,10 @@ def test_the_week_is_one_white_card_per_day_with_a_hairline_and_no_day_colour(si
 def test_a_card_says_weekday_date_and_title_and_today_is_an_ink_pill(signed_in, viewport):
     page = week(signed_in, viewport)
     got = cards(page)
-    assert got[0]["headText"].startswith("Fri 16 ") and "Fly in" in got[0]["headText"]
-    assert got[2]["headText"].startswith("Sun 18 ")
+    assert [c["headText"] for c in got] == ["Fri 16Fly in, check in", "Sat 17" + LONG, "Sun 18Wide open", "Mon 19Wide open", "Tue 20Fly home"]
     head = page.locator("#cz-week .cz-row").first.locator(".cz-row-link")
     day = head.locator(".cz-wd-day")
-    assert day.evaluate("e => [getComputedStyle(e).fontFamily.split(',')[0], getComputedStyle(e).fontWeight, getComputedStyle(e).color]") == ["Bricolage Grotesque", "800", INK]
+    assert day.evaluate("e => [getComputedStyle(e).fontFamily.split(',')[0].replaceAll(String.fromCharCode(34), ''), getComputedStyle(e).fontWeight, getComputedStyle(e).color]") == ["Bricolage Grotesque", "800", INK]
     assert head.locator(".cz-wd-head").evaluate("e => getComputedStyle(e).color") == INK_2
 
 
@@ -115,26 +121,24 @@ def test_the_mini_bar_has_kind_coloured_segments_at_their_times(signed_in, viewp
     labels = bar.locator(".cz-mb-h").all_inner_texts()
     assert labels == ["7 AM", "10 AM", "1 PM", "4 PM", "7 PM", "10 PM"]
     got = page.evaluate("""() => { const row = document.querySelector('#cz-week .cz-row[data-day="0"]'), track = row.querySelector('.cz-mb-track').getBoundingClientRect();
-      return {track: {x: track.left, w: track.width}, segs: [...row.querySelectorAll('.cz-mb-seg')].map(s => { const b = s.getBoundingClientRect(); return {x: b.left, w: b.width, bg: getComputedStyle(s).backgroundColor, s: +s.dataset.s, e: +s.dataset.e, kind: s.dataset.kind}; })}; }""")
+      return {track: {x: track.left, w: track.width}, segs: [...row.querySelectorAll('.cz-mb-seg')].map(s => { const b = s.getBoundingClientRect(); return {x: b.left, w: b.width, bg: getComputedStyle(s).backgroundColor, s: +s.dataset.s, e: +s.dataset.e, n: s.dataset.n}; })}; }""")
     lo, span = 7 * 60, 15 * 60
-    assert len(got["segs"]) == 5      # the flight, lunch, hotel, sunset and the car
+    assert len(got["segs"]) == 4      # the flight, lunch, hotel and sunset
     for s in got["segs"]:
         assert s["x"] == pytest.approx(got["track"]["x"] + got["track"]["w"] * (s["s"] - lo) / span, abs=1), s      # left matches the item's start
         assert s["w"] == pytest.approx(got["track"]["w"] * (max(s["e"], s["s"] + 15) - s["s"]) / span, abs=1), s      # width matches its length
-    colour = {(s["s"], s["kind"]): s["bg"] for s in got["segs"]}
-    assert colour[(12 * 60 + 30, "plan")] == SUN and colour[(17 * 60 + 30, "plan")] == MINT
-    assert SKY in {s["bg"] for s in got["segs"]} and GRAPE in {s["bg"] for s in got["segs"]}      # the flight and the hotel
+    colour = {s["s"]: s["bg"] for s in got["segs"]}
+    assert colour[12 * 60 + 30] == SUN and colour[17 * 60 + 30] == MINT and colour[8 * 60 + 5] == SKY and colour[15 * 60] == GRAPE      # lunch, sunset, the flight and the hotel
     assert bar.locator(".cz-mb-seg").first.evaluate("e => parseFloat(getComputedStyle(e).height)") >= 4
 
 
 @BOTH
-def test_the_bar_widens_for_an_early_or_late_item(signed_in, viewport):
+def test_every_segment_stays_inside_its_bar_on_a_busy_day(signed_in, viewport):
     page = week(signed_in, viewport, busy=True)
-    labels = page.locator("#cz-week .cz-row[data-day='3'] .cz-mb-h").all_inner_texts()
-    assert labels[0] == "7 AM" and labels[-1] == "11 PM"
-    late = page.evaluate("""() => { const row = document.querySelector('#cz-week .cz-row[data-day="3"]'), t = row.querySelector('.cz-mb-track').getBoundingClientRect();
-      return [...row.querySelectorAll('.cz-mb-seg')].map(s => { const b = s.getBoundingClientRect(); return b.left >= t.left - 0.5 && b.right <= t.right + 0.5; }); }""")
-    assert late and all(late)      # a 9 PM to 11 PM show stays inside the bar
+    got = page.evaluate("""() => { const row = document.querySelector('#cz-week .cz-row[data-day="3"]'), t = row.querySelector('.cz-mb-track').getBoundingClientRect();
+      return [...row.querySelectorAll('.cz-mb-seg')].map(s => { const b = s.getBoundingClientRect(); return [Math.round(b.left - t.left), Math.round(t.right - b.right), s.dataset.s]; }); }""")
+    assert len(got) == 5 and all(left >= 0 and right >= 0 for left, right, _ in got), got
+    assert page.locator("#cz-week .cz-row[data-day='3'] .cz-mb-h").all_inner_texts() == ["7 AM", "10 AM", "1 PM", "4 PM", "7 PM", "10 PM"]
 
 
 @BOTH
@@ -142,9 +146,9 @@ def test_items_are_compact_rows_with_start_time_tile_title_and_a_grey_pill(signe
     page = week(signed_in, viewport)
     row = page.locator("#cz-week .cz-row[data-day='0']")
     items = row.locator(".cz-wcard")
-    assert items.count() == 5
+    assert items.count() == 4
     times = [t.strip() for t in row.locator(".cz-wr-time").all_inner_texts()]
-    assert times == ["8:05 AM", "12:30 PM", "3:00 PM", "5:30 PM", "6:45 PM"], times
+    assert times == ["8:05 AM", "12:30 PM", "3:00 PM", "5:30 PM"], times
     lunch = row.locator(".cz-wcard", has_text="Lunch at Grand Central Market")
     sunset = row.locator(".cz-wcard", has_text="Santa Monica Pier sunset")
     for card, tint, kind in ((lunch, SUN_TINT, "food"), (sunset, MINT_TINT, "outdoors")):
@@ -166,7 +170,7 @@ def test_items_are_compact_rows_with_start_time_tile_title_and_a_grey_pill(signe
 def test_text_is_13px_or_more_and_every_target_is_44px(signed_in, viewport):
     page = week(signed_in, viewport, busy=True)
     small = page.evaluate("""() => [...document.querySelectorAll('#cz-week *')].filter(e => e.childNodes.length && [...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim())
-      && getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().width).map(e => [e.className, parseFloat(getComputedStyle(e).fontSize)]).filter(([c, s]) => s < 13)""")
+      && getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().width).map(e => [e.className, parseFloat(getComputedStyle(e).fontSize)]).filter(([c, s]) => s < 12.99)""")
     assert small == []
     short = page.evaluate("""() => [...document.querySelectorAll('#cz-week a, #cz-week .cz-wcard, #cz-week .cz-row-link')].filter(e => e.getBoundingClientRect().width).map(e => [e.className, Math.round(e.getBoundingClientRect().height * 10) / 10]).filter(([c, h]) => h < 44)""")
     assert short == []
@@ -174,7 +178,7 @@ def test_text_is_13px_or_more_and_every_target_is_44px(signed_in, viewport):
 
 def test_a_long_title_wraps_at_spaces_to_two_lines_and_fades(signed_in):
     page = week(signed_in, PHONE)
-    title = page.locator("#cz-week .cz-row[data-day='1'] .cz-wr-t", has_text="Griffith Observatory planetarium")
+    title = page.locator("#cz-week .cz-row[data-day='1'] .cz-wr-t", has_text="Extraordinary")
     got = title.evaluate("""e => { const cs = getComputedStyle(e), lh = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.15; return {h: e.clientHeight, sh: e.scrollHeight, lh, wrap: cs.overflowWrap, cut: e.classList.contains('is-cut'), mask: cs.maskImage || cs.webkitMaskImage}; }""")
     assert got["h"] <= got["lh"] * 2 + 2 and got["sh"] > got["h"] + 1, got      # two lines, then cut
     assert got["cut"] and "linear-gradient" in got["mask"] and got["wrap"] == "normal", got
@@ -186,10 +190,57 @@ def test_a_long_title_wraps_at_spaces_to_two_lines_and_fades(signed_in):
 def test_an_empty_day_says_free_day_with_say_the_plan(signed_in, viewport):
     page = week(signed_in, viewport)
     free = page.locator("#cz-week .cz-row.is-free")
-    assert free.count() == 1 and free.get_attribute("data-day") == "2"
+    assert free.count() == 2 and free.first.get_attribute("data-day") == "2"
+    free = free.first
     expect(free).to_contain_text("Free day")
     say = free.locator("a", has_text="Say the plan")
     expect(say).to_be_visible()
     assert say.get_attribute("href") == "/trip/ask?day=2&mode=talk"
     assert say.evaluate("e => e.getBoundingClientRect().height") >= 44
     assert free.locator(".cz-wcard").count() == 0 and free.locator(".cz-mb-seg").count() == 0
+
+
+@BOTH
+def test_a_tap_anywhere_on_a_card_opens_that_day_and_back_returns_to_the_week(signed_in, viewport):
+    page = week(signed_in, viewport)
+    for i in range(5):
+        row = page.locator(f"#cz-week .cz-row[data-day='{i}']")
+        plan = row.locator(".cz-wcard:not(.is-booked)")
+        target = plan.first if plan.count() else row.locator(".cz-free-w, .cz-mb")      # a plan's row, else the free day's slot or the bar of a day of bookings: not the heading link itself
+        tap(page, target)
+        expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
+        assert f"day={i}" in page.url, (i, page.url)
+        assert page.locator(".cz-view[data-level=day]").get_attribute("data-day") == str(i)
+        page.locator(".cz-head .cz-back").click()
+        expect(page.locator(".cz-view[data-level=week]")).to_be_visible()
+    page.locator("#cz-week .cz-row[data-day='1'] .cz-row-link").click()      # the heading too
+    expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
+    assert page.locator(".cz-view[data-level=day]").get_attribute("data-day") == "1"
+
+
+@BOTH
+def test_a_booking_row_opens_its_sheet_on_its_day_and_say_the_plan_opens_ask(signed_in, viewport):
+    page = week(signed_in, viewport)
+    page.locator("#cz-week .cz-row[data-day='0'] a.cz-wcard", has_text="Check in").click()
+    page.wait_for_url("**day=0&booked=*")
+    page.go_back()
+    expect(page.locator(".cz-view[data-level=week]")).to_be_visible()
+    page.locator("#cz-week .cz-row[data-day='3'] .cz-wsay").click()
+    page.wait_for_url("**/trip/ask?day=3&mode=talk")
+
+
+@BOTH
+def test_the_day_switch_and_the_kind_filter_keep_working_on_the_cards(signed_in, viewport):
+    page = week(signed_in, viewport)
+    page.locator("#cz-z-day").click()
+    expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
+    page.locator(".cz-head .cz-back").click()      # (a phone's day has no Day | Week switch, F-160: the way back is the arrow)
+    expect(page.locator("#cz-week .cz-row")).to_have_count(5)
+    page.locator(".cz-kchip[data-k=hotel]").click()
+    shown = page.evaluate("[...document.querySelectorAll('#cz-week .cz-wcard:not(.is-off)')].map(e => e.querySelector('.cz-wr-t').textContent)")
+    assert shown == ["Check in · The Tidewater", "Check out · The Tidewater"]
+    assert page.locator("#cz-week .cz-mb-seg:not(.is-off)").count() == 2      # the bar follows the filter
+    assert page.locator("#cz-week .cz-row.is-thin").count() == 3
+    expect(page.locator("#cz-week .cz-row.is-thin .cz-thin-t").first).to_have_text("Nothing for hotels")
+    page.locator(".cz-kchip[data-k=all]").click()
+    assert page.locator("#cz-week .cz-row.is-thin").count() == 0

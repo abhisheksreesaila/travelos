@@ -56,7 +56,6 @@
 
   // ---- kinds: the week and the day show only what matches ----------------------------------------------------------------------
   var KIND_WORD = { plan: 'plans', hotel: 'hotels', flight: 'flights', car: 'the car', chat: 'chats' };
-  var CAP = 3;            // with no filter a week row shows its first three entries and "and N more"
   var kind = store(keyFor('cz-kind'));
   function applyKinds() {
     var v = view();
@@ -69,22 +68,17 @@
     v.dataset.k = k;
     var on = k !== 'all';
     var hit = function (n) { return k === 'chat' ? n.dataset.chat === '1' : n.dataset.kind === k; };
-    v.querySelectorAll('.cz-row').forEach(function (row) {      // the week: a row with nothing to show is a thin line
+    v.querySelectorAll('.cz-row').forEach(function (row) {      // the week's day cards: an item that does not match goes (its bar segment too); a card with nothing to show is a thin line
       var shown = 0;
-      row.querySelectorAll('[data-kind]').forEach(function (n) {
-        var ok = on ? hit(n) : parseInt(n.dataset.n || '0', 10) < CAP;
+      row.querySelectorAll('.cz-wcard[data-kind]').forEach(function (n) {
+        var ok = !on || hit(n);
         n.classList.toggle('is-off', !ok);
+        row.querySelectorAll('.cz-mb-seg[data-n="' + n.dataset.n + '"]').forEach(function (seg) { seg.classList.toggle('is-off', !ok); });
         if (ok) shown++;
       });
-      var more = row.querySelector('.cz-more');
-      if (more) more.hidden = on;
-      var link = row.querySelector('.cz-row-link');
-      if (!link) return;
       var thin = on && shown === 0;
-      link.classList.toggle('is-bare', link.querySelectorAll('[data-kind]:not(.is-off)').length === 0);
-      link.classList.toggle('is-thin', thin);
       row.classList.toggle('is-thin', thin);
-      var t = link.querySelector('.cz-thin-t');
+      var t = row.querySelector('.cz-thin-t');
       if (t) t.textContent = thin ? 'Nothing for ' + (KIND_WORD[k] || k) : '';
     });
     v.querySelectorAll('.cz-wcol').forEach(function (col) {      // F-145: the desktop week's columns: a row that does not match is hidden, a column with none says so
@@ -148,7 +142,7 @@
   var ro = window.ResizeObserver ? new ResizeObserver(function (list) { list.forEach(function (e) { markCut(e.target); }); }) : null;
   function markCut(t) { if (t.clientWidth) t.classList.toggle('is-cut', t.scrollHeight > t.clientHeight + 1 || t.scrollWidth > t.clientWidth + 1); }
   function watchCuts() {
-    var titles = document.querySelectorAll('.cz-wk .cz-wi-t');
+    var titles = document.querySelectorAll('.cz-wk .cz-wi-t, .cz-week .cz-wr-t');
     if (ro) { ro.disconnect(); titles.forEach(function (t) { ro.observe(t); }); }
     titles.forEach(markCut);
   }

@@ -41,10 +41,10 @@ def _drawn(x, hi):
     return s, min(max(x.end, s + WEEK_MIN), hi)
 
 
-def axis_range(v):
-    """(first, last) minute of the shared axis: 7 AM to 10 PM, wider for an earlier or later item in any day, on whole hours."""
+def axis_range(v, days=None):
+    """(first, last) minute of the shared axis: 7 AM to 10 PM, wider for an earlier or later item in any day (or in `days` only: the phone's day card, F-163), on whole hours."""
     from gitaway.pages import tripcanvas as tc
-    items = [x for i in range(len(v["dates"])) for _, x in tc.entries(v, i)]
+    items = [x for i in (range(len(v["dates"])) if days is None else days) for _, x in tc.entries(v, i)]
     lo = min([cal.DEFAULT_START, *(x.start for x in items)]) // 60 * 60
     hi = max([cal.GRID_END, *(x.end for x in items)])      # the true ends: the 30 minute floor of a short card is drawn inside this, it never makes the axis longer
     return lo, min(-(-hi // 60) * 60, 24 * 60)

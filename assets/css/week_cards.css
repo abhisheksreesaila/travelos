@@ -1,0 +1,68 @@
+/* The phone, tablet and installed-app week as day cards (F-163; frame ct-week-phone of docs/design/colour-timeline/restrained, docs/design/colour-timeline.md, design-system/DESIGN-SYSTEM.md "The week as day cards").
+   One white card per day with a hairline: the weekday and date with the day's title (the card's link, stretched over the whole card; "Today" an ink pill), a mini hour bar (the day grid's hours, a segment per plan and booking
+   at its start and as long as it lasts), then the day's plans and bookings as compact rows (a kind tile, the start time, the title, a grey PLAN or BOOKED pill). Colour is the kind of thing only (the tile, the segment);
+   a card, its header and today's pill carry no day colour. From 1020px up (not the installed app) week_desk.css draws the columns instead and these rows are not drawn, so every rule sits in the same query.
+   Sizes are `--pu` (one phone rem: 1rem on a phone, 4/3 rem on a tablet), text never under `--tmin` (13px), every target at least `--tap` (44px); all three come from day_phone.css. Motion: none of its own (canvas_core.js zooms the tap). */
+@media (max-width: 1019px), (display-mode: standalone) {
+  .cz .cz-week { display: flex; flex-direction: column; gap: calc(var(--pu) * 0.75); }
+
+  /* the kinds' tint, edge colour and ink: a plan carries cz-k-<kind>; a booking follows its data-kind (flight sky, hotel grape, a car ink) */
+  .cz .cz-week .cz-k-fun { --tint: var(--bubble-tint); --accent: var(--bubble); --kink: var(--bubble-ink); }
+  .cz .cz-week .cz-k-food { --tint: var(--sun-tint); --accent: var(--sun); --kink: var(--sun-ink); }
+  .cz .cz-week .cz-k-outdoors { --tint: var(--mint-tint); --accent: var(--mint); --kink: var(--mint-ink); }
+  .cz .cz-week .cz-k-culture { --tint: var(--grape-tint); --accent: var(--grape); --kink: var(--grape-ink); }
+  .cz .cz-week .cz-k-travel { --tint: var(--sky-tint); --accent: var(--sky); --kink: var(--sky-ink); }
+  .cz .cz-week .is-booked { --tint: var(--paper-2); --accent: var(--ink-3); --kink: var(--ink); }
+  .cz .cz-week .is-booked[data-kind="flight"] { --tint: var(--sky-tint); --accent: var(--sky); --kink: var(--sky-ink); }
+  .cz .cz-week .is-booked[data-kind="hotel"] { --tint: var(--grape-tint); --accent: var(--grape); --kink: var(--grape-ink); }
+
+  /* the card */
+  .cz .cz-row { position: relative; display: flex; flex-direction: column; gap: calc(var(--pu) * 0.625); padding: calc(var(--pu) * 0.5) calc(var(--pu) * 0.75) calc(var(--pu) * 0.75); background: var(--card); border: 1px solid var(--hairline);
+    border-radius: var(--r-card); box-shadow: none; }
+  .cz .cz-row-link { display: flex; flex-wrap: wrap; align-items: center; gap: 0 calc(var(--pu) * 0.5); min-width: 0; min-height: var(--tap); color: var(--ink); text-decoration: none; }
+  .cz .cz-row-link::after { content: ""; position: absolute; inset: 0; z-index: 1; border-radius: inherit; }      /* a tap anywhere on the card opens the day (a booking's row and Say the plan sit above it) */
+  .cz .cz-wd-day { font-family: var(--font-display); font-weight: 800; font-size: calc(var(--pu) * 1.25); line-height: 1.15; letter-spacing: -0.02em; color: var(--ink); }
+  .cz .cz-wd-head { flex: 1 1 0; min-width: 0; font-weight: 700; font-size: max(var(--tmin), calc(var(--pu) * 1)); line-height: 1.2; color: var(--ink-2); }
+  .cz .cz-row .cz-today { flex: none; margin: 0 0 0 auto; padding: calc(var(--pu) * 0.125) calc(var(--pu) * 0.625); border-radius: var(--r-pill); background: var(--ink); color: var(--card); font-size: var(--tmin); font-weight: 700; line-height: 1.2; }
+
+  /* the mini hour bar */
+  .cz .cz-mb { display: flex; flex-direction: column; gap: calc(var(--pu) * 0.125); padding: 0 calc(var(--pu) * 0.25); }
+  .cz .cz-mb-track { position: relative; height: calc(var(--pu) * 1.25); border-radius: var(--r-pill); background: var(--paper-2); box-shadow: inset 0 0 0 1px var(--hairline); }
+  .cz .cz-mb-seg { position: absolute; top: calc(var(--pu) * 0.3125); bottom: calc(var(--pu) * 0.3125); left: calc(var(--s) / var(--span) * 100%); width: calc(var(--l) / var(--span) * 100%); border-radius: var(--r-pill); background: var(--accent); }
+  .cz .cz-mb-hours { position: relative; height: calc(var(--pu) * 1.25); }
+  .cz .cz-mb-h { position: absolute; top: 0; left: calc(var(--at) / var(--span) * 100%); transform: translateX(-50%); font-size: var(--tmin); font-weight: 600; line-height: 1.2; white-space: nowrap; color: var(--ink-3); }
+  .cz .cz-mb-h.is-start { transform: none; }
+  .cz .cz-mb-h.is-end { transform: translateX(-100%); }
+
+  /* the day's items: compact rows */
+  .cz .cz-wr-list { display: flex; flex-direction: column; gap: calc(var(--pu) * 0.5); }
+  .cz .cz-wcard { display: flex; flex-direction: row; align-items: center; gap: calc(var(--pu) * 0.625); min-width: 0; min-height: var(--tap); padding: calc(var(--pu) * 0.25) calc(var(--pu) * 0.625) calc(var(--pu) * 0.25) calc(var(--pu) * 0.5); box-sizing: border-box;
+    background: var(--card); border: 1px solid var(--hairline); border-radius: var(--r-sm); box-shadow: none; color: var(--ink); text-decoration: none; }
+  .cz a.cz-wcard { position: relative; z-index: 2; }
+  .cz .cz-wr-tile { display: grid; place-items: center; flex: none; width: calc(var(--pu) * 2.25); height: calc(var(--pu) * 2.25); border-radius: calc(var(--pu) * 0.625); background: var(--tint); color: var(--kink); }
+  .cz .cz-wr-tile svg { width: calc(var(--pu) * 1.125); height: calc(var(--pu) * 1.125); }
+  .cz .cz-wr-body { display: flex; flex-direction: column; flex: 1 1 0; min-width: 0; }
+  .cz .cz-wr-time { font-variant-numeric: tabular-nums; font-weight: 700; font-size: var(--tmin); line-height: 1.25; color: var(--ink-2); }
+  /* a title never breaks inside a word: it wraps at spaces to two lines at most and fades where it is cut (its right padding is the fade, so a title that fits is never faded); canvas_filters.js marks a cut one .is-cut */
+  .cz .cz-wr-t { max-height: 2.3em; padding-right: 0.75rem; overflow: hidden; overflow-wrap: normal; word-break: normal; hyphens: none; font-family: var(--font-display); font-weight: 700; font-size: calc(var(--pu) * 1.0625); line-height: 1.15;
+    letter-spacing: -0.02em; color: var(--ink); -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 0.75rem), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 0.75rem), transparent); }
+  .cz .cz-wr-t.is-cut { -webkit-mask-image: linear-gradient(#000, #000), linear-gradient(90deg, #000 calc(100% - 3em), transparent); mask-image: linear-gradient(#000, #000), linear-gradient(90deg, #000 calc(100% - 3em), transparent);
+    -webkit-mask-size: 100% calc(100% - 1.15em), 100% 1.15em; mask-size: 100% calc(100% - 1.15em), 100% 1.15em; -webkit-mask-position: 0 0, 0 100%; mask-position: 0 0, 0 100%; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; }
+  .cz .cz-wr-tag { display: inline-flex; align-items: center; flex: none; height: calc(var(--pu) * 1.25); padding: 0 calc(var(--pu) * 0.5); border-radius: var(--r-pill); background: var(--paper-2); color: var(--ink-2); font-size: var(--tmin); font-weight: 700; line-height: 1;
+    letter-spacing: 0.06em; text-transform: uppercase; }
+
+  /* a free day: a soft dashed slot, Say the plan at its right (editors) */
+  .cz .cz-free { display: flex; align-items: center; justify-content: space-between; gap: calc(var(--pu) * 0.5); min-height: var(--tap); padding: calc(var(--pu) * 0.5) calc(var(--pu) * 0.5) calc(var(--pu) * 0.5) calc(var(--pu) * 0.75); border: 1px dashed var(--hairline-2); border-radius: var(--r-sm); }
+  .cz .cz-free-w { display: flex; flex-direction: column; min-width: 0; }
+  .cz .cz-free-t { font-family: var(--font-display); font-weight: 700; font-size: calc(var(--pu) * 1.0625); line-height: 1.2; color: var(--ink); }
+  .cz .cz-free .cz-sub { font-size: var(--tmin); font-weight: 600; line-height: 1.25; color: var(--ink-2); }
+  .cz .cz-wsay { position: relative; z-index: 2; display: inline-flex; flex: none; align-items: center; gap: calc(var(--pu) * 0.375); min-height: var(--tap); padding: 0 calc(var(--pu) * 0.875); box-sizing: border-box; border: 1px solid var(--hairline-2); border-radius: var(--r-pill);
+    background: var(--card); color: var(--ink); font-weight: 700; font-size: max(var(--tmin), calc(var(--pu) * 0.9375)); text-decoration: none; white-space: nowrap; }
+
+  /* the filter at work (canvas_filters.js): a day with nothing to show shrinks to a thin line saying so */
+  .cz .cz-thin-t { display: none; }
+  .cz .cz-row.is-thin { gap: 0; padding-top: 0; padding-bottom: 0; opacity: 0.7; }
+  .cz .cz-row.is-thin .cz-mb, .cz .cz-row.is-thin .cz-wr-list, .cz .cz-row.is-thin .cz-free, .cz .cz-row.is-thin .cz-today { display: none; }
+  .cz .cz-row.is-thin .cz-thin-t { display: block; flex: 1 1 100%; font-size: var(--tmin); font-weight: 700; color: var(--ink-3); }
+  .cz .cz-row.is-thin .cz-wd-head { display: none; }
+}
