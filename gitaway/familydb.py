@@ -19,8 +19,10 @@ read before they write (the calendar's validation, id counters) start with a wri
 write lock, so the reads that follow cannot be stale. WAL mode keeps readers out of the writers' way.
 """
 
+import copy
 import threading
 from contextlib import contextmanager
+from contextvars import ContextVar
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -247,16 +249,91 @@ def take_opened() -> set:
     return opened
 
 
-def family_db(source):
-    """The signed-in person's family database, ready to use. `source` is a Request or a session mapping.
+class _Lease:
+    """A connection on loan from a request scope: everything goes to the real connection, but `close()` only gives it back
+    (rolling back what was not committed, as a real close does) while the scope closes the real one when the request ends."""
 
-    Checks that the person is an active member of the family named in the session (fh-saas require_tenant_access), and
-    makes sure the tables exist. The caller closes the handle (`db.conn.close()`); `using` does that for you.
-    Raises ValueError when nobody is signed in and PermissionError when they are not a member.
-    """
-    session = getattr(source, "session", None) if hasattr(source, "scope") else source  # a Starlette Request is a Mapping too: ask it for its session
-    if session is None or not session.get("user_id"):
-        raise ValueError("Authentication required")
+    def __init__(self, entry):
+        self._entry = entry
+
+    def __getattr__(self, name):
+        return getattr(self._entry["db"].conn, name)
+
+    def close(self):
+        entry = self._entry
+        entry["out"] -= 1
+        if entry["out"] <= 0 and not entry["db"].conn.closed:
+            entry["db"].conn.rollback()
+
+
+class Scope:
+    """The family handles one request has opened, so the request opens each family once (F-172). A handle belongs to the request, the
+    thread that opened it, the family and the person: a second thread, family or person gets its own, and nothing is shared across requests."""
+
+    def __init__(self):
+        self._entries = {}
+        self._lock = threading.Lock()
+        self.closed = False
+
+    def lease(self, session, opener):
+        key = (threading.get_ident(), session.get("tenant_id"), session.get("user_id"))
+        with self._lock:
+            if self.closed:
+                return None
+            entry = self._entries.get(key)
+        if entry is None:
+            entry = {"db": opener(), "out": 0}
+            with self._lock:
+                if self.closed:
+                    entry["db"].conn.close()
+                    return None
+                self._entries[key] = entry
+        entry["out"] += 1
+        db = copy.copy(entry["db"])
+        db.conn = _Lease(entry)
+        return db
+
+    def close(self):
+        with self._lock:
+            self.closed = True
+            entries, self._entries = list(self._entries.values()), {}
+        for entry in entries:
+            try:
+                entry["db"].conn.close()
+            except Exception:
+                pass
+
+
+_scope = ContextVar("gitaway_family_scope", default=None)
+
+
+@contextmanager
+def request_scope():
+    """Inside this block `family_db` opens each family once and lends the handle out; everything is closed at the end, even on an error.
+    Code outside a request (background jobs, scripts, tests) has no scope and opens a handle per call, as before."""
+    scope = Scope()
+    token = _scope.set(scope)
+    try:
+        yield scope
+    finally:
+        _scope.reset(token)
+        scope.close()
+
+
+class RequestScope:
+    """ASGI middleware: one `request_scope` around every HTTP request (main.py)."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            return await self.app(scope, receive, send)
+        with request_scope():
+            await self.app(scope, receive, send)
+
+
+def _open(session):
     with hostdb.locked():  # the membership check uses fh-saas's one shared host connection
         db = require_tenant_access(session)
     try:
@@ -265,6 +342,25 @@ def family_db(source):
         db.conn.close()
         raise
     return db
+
+
+def family_db(source):
+    """The signed-in person's family database, ready to use. `source` is a Request or a session mapping.
+
+    Checks that the person is an active member of the family named in the session (fh-saas require_tenant_access), and
+    makes sure the tables exist. The caller closes the handle (`db.conn.close()`); `using` does that for you.
+    Inside a request (`request_scope`) the family is opened once and the same connection is lent again; closing it only gives it back.
+    Raises ValueError when nobody is signed in and PermissionError when they are not a member.
+    """
+    session = getattr(source, "session", None) if hasattr(source, "scope") else source  # a Starlette Request is a Mapping too: ask it for its session
+    if session is None or not session.get("user_id"):
+        raise ValueError("Authentication required")
+    scope = _scope.get()
+    if scope is not None:
+        db = scope.lease(session, lambda: _open(session))
+        if db is not None:
+            return db
+    return _open(session)
 
 
 @contextmanager
