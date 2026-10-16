@@ -333,7 +333,7 @@ def test_a_viewer_gets_no_knobs(canvas_page, browser, base_url):
 # ---- a long block keeps its name in view -----------------------------------------------------------------------------------------------
 
 def test_a_block_taller_than_the_screen_keeps_its_title_and_time_at_the_top_of_what_is_visible(phone):
-    big = plan("Beach day with everyone", 7 * 60, 22 * 60)                                # fifteen hours: taller than the screen
+    big = plan("Beach day", 7 * 60, 22 * 60)                                # fifteen hours: taller than the screen
     open_day(phone)
     sel = block(big.id)
     h = phone.viewport_size["height"]

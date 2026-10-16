@@ -89,8 +89,8 @@ def test_the_laptop_has_the_bar_picker_and_this_one_is_not_a_menu_there(family_w
 # ---- the eyebrow is the button: no extra row, readable on every level, a dimmed screen behind the sheet (F-147 re-review) ----
 
 LEVELS = {"day": "/trip/canvas?day=1", "week": "/trip/canvas", "today": "/trip?tab=today"}
-# The top of each title before this menu existed (measured on master at 390 and 800 with this fixture): the menu adds no row.
-TITLE_TOP = {(390, "day"): 43.5, (390, "week"): 59, (390, "today"): 39.5, (800, "day"): 34.5, (800, "week"): 31.5, (800, "today"): 31.5}
+# The top of each title before this menu existed (measured on master at 390 and 800 with this fixture): the menu adds no row. The day's two are re-measured for F-160's plain heading (no ink card around it).
+TITLE_TOP = {(390, "day"): 35.5, (390, "week"): 59, (390, "today"): 39.5, (800, "day"): 32.5, (800, "week"): 31.5, (800, "today"): 31.5}
 
 CONTRAST = """(sel) => {
   const el = document.querySelector(sel);
