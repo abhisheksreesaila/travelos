@@ -904,11 +904,12 @@ Brief: docs/briefs/colour-timeline.md · Design: docs/design/colour-timeline.md 
 - [x] it fits 1440×900 and 1280×800 at 100% zoom with no page scroll; rem only; colours only from tokens.css; the F-158 rules it replaces are removed, not overridden
 - [x] the phone, tablet and installed app are unchanged; browser tests at 1440 and 1280 pin: no day colours, a start time beside every item, no overlapping rail labels, kind edge colours, the open day ink
 
-## F-160 The phone day as a colour timeline [review]
+## F-160 The phone day as a colour timeline [done]
 Brief: docs/briefs/colour-timeline.md · Design: docs/design/colour-timeline.md (frame ct-day-phone) · Needs: F-159
-- [ ] on the phone, tablet and installed app the day uses the same rail, start times, cards, tiles and neutral day chips as F-159, in one column under the ink Up next card
-- [ ] the ink day header and the coloured day chips are gone; the tab bar, Ask sheet and every touch move (hold, drag, knobs, hold menu) work as before
-- [ ] text is never under 13px and touch targets at least 44px; browser tests at 390 and 800 pin the same rules as F-159
+- [x] on the phone, tablet and installed app the day uses the same rail, start times, cards, tiles and neutral day chips as F-159, in one column under the ink Up next card
+- [x] the ink day header and the coloured day chips are gone; the tab bar, Ask sheet and every touch move (hold, drag, knobs, hold menu) work as before
+- [x] text is never under 13px and touch targets at least 44px; browser tests at 390 and 800 pin the same rules as F-159
+- [x] crowded stretches: at most 3 plans side by side on a phone (2 beside a booking); the rest fold into a "+N more" card whose list opens each plan's hold menu
 
 ## F-161 Adding and moving in the new look [todo]
 Brief: docs/briefs/colour-timeline.md · Design: docs/design/colour-timeline.md (frames ct-add-*, ct-move-*) · Needs: F-160
