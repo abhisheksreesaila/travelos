@@ -19,7 +19,7 @@ def day(client, n):
 
 
 def pills(page):
-    return re.findall(r'<a\b[^>]*class="cz-dp(?! cz-dp-week)[ "][^>]*>', page)
+    return re.findall(r'<a\b[^>]*class="cz-hchip[ "][^>]*>', page)
 
 
 # ---- the dates across the top and the neighbours --------------------------------------------------------------------------
@@ -40,10 +40,10 @@ def test_the_week_is_one_tap_out_from_the_dates(trip):
     assert 'href="/trip/canvas"' in week and 'data-zoom="out"' in week
 
 
-def test_a_date_with_plans_is_marked_and_one_with_only_bookings_is_not(trip):
-    days = pills(day(trip, 0))
-    assert "has-plans" in days[1] and "has-plans" in days[3]       # Universal, California Adventure
-    assert "has-plans" not in days[0] and "has-plans" not in days[2]  # only the flight and check in; a free day
+def test_each_date_says_what_the_day_is_in_its_label(trip):
+    labels = [re.search(r'aria-label="([^"]*)"', a).group(1) for a in pills(day(trip, 0))]
+    assert labels[1] == "Saturday Oct 17: Universal Studios Hollywood" and labels[3].startswith("Monday Oct 19: ")      # a day with plans names them (the old dot per planned day is gone: no marks on the days)
+    assert "Wide open" in labels[2]      # a free day says so
 
 
 def test_the_day_knows_its_neighbours_for_the_flick(trip):

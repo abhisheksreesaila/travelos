@@ -78,7 +78,7 @@
       add(v.dataset.prev && path(v.dataset.prev));
       var wk = v.querySelector('#cz-z-week');
       if (wk) add(path(wk.href));
-      v.querySelectorAll('.cz-dpills a[href]').forEach(function (a) { add(path(a.href)); });
+      v.querySelectorAll('.cz-hchips a[href]').forEach(function (a) { add(path(a.href)); });
     } else if (v.dataset.level === 'block') {      // F-132: the sheets of the steps on the screen (about 4 KB each on the wire), so a tap on one opens it with nothing to wait for
       var h = window.innerHeight;
       Array.prototype.slice.call(v.querySelectorAll('a.cz-step[data-zoom="in"]')).filter(function (a) {
@@ -217,10 +217,10 @@
     var tab = document.getElementById('ph-tab-ask'), v = view();
     if (tab && v) tab.setAttribute('href', v.dataset.day ? '/trip/ask?day=' + v.dataset.day : '/trip/ask');     // the week: no day, Ask places it
   }
-  // The open day sits in the middle of the dates across the top (they scroll sideways on a phone).
+  // The open day sits in the middle of the day chips (they scroll sideways when the trip is longer than the row).
   function centreDay() {
-    var bar = stage.querySelector('.cz-dpills'), open = bar && bar.querySelector('.is-open');
-    if (open && bar.scrollWidth > bar.clientWidth) bar.scrollLeft = open.offsetLeft - (bar.clientWidth - open.offsetWidth) / 2;
+    var bar = stage.querySelector('.cz-hchips'), open = bar && bar.querySelector('.is-open');
+    if (open && bar.scrollWidth > bar.clientWidth) bar.scrollLeft += open.getBoundingClientRect().left - bar.getBoundingClientRect().left - (bar.clientWidth - open.offsetWidth) / 2;
   }
 
   // ---- bringing the screen up to date in place --------------------------------------------------------------------------------

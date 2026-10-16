@@ -70,7 +70,7 @@ def test_the_header_chips_filters_and_buttons(signed_in):
     assert page.locator(".cz-head .cz-back").is_hidden() and page.locator(".cz-head .cz-sos").is_hidden()
     expect(page.locator("#cz-z-day")).to_be_visible()
     expect(page.locator("#cz-z-week")).to_be_visible()
-    expect(page.locator(".cz-strip")).to_be_hidden()
+    assert page.locator(".cz-strip").count() == 0      # (F-160: the tablet's week strip is gone, the chips are the one row of days)
     expect(page.locator(".cz-bar").get_by_text("Paste a plan")).to_be_visible()
     expect(page.locator(".cz-bar").get_by_text("Say the plan")).to_be_visible()
     shot(page, "day-before-1440.png")
@@ -165,7 +165,7 @@ def test_the_chips_use_the_liquid_zoom(signed_in):
 def test_the_tablet_and_the_phone_keep_their_day(signed_in, viewport, name):
     page = signed_in({"width": 1000, "height": 800} if name == "1000" else viewport, path="/trip/canvas?day=1")
     expect(page.locator("#cz-dock")).to_be_hidden()
-    expect(page.locator(".cz-hchip").first).to_be_hidden()
+    expect(page.locator(".cz-hchip").first).to_be_visible()      # F-160: the neutral day chips are the phone's and the tablet's row of days too
     expect(page.locator(".cz-desk-say")).to_be_hidden()
     assert page.evaluate("document.documentElement.scrollHeight > document.documentElement.clientHeight")      # the page scrolls as before
     assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth")

@@ -48,7 +48,7 @@
     var g = grid();
     if (!g || !editing() || e.button > 0) return null;
     var t = e.target;
-    if (!t.closest || !t.closest('.cz-g-plane') || t.closest('.cz-gb, .cz-gbk, .cz-gnew, .cz-g-tools, input, textarea, .cz-menu')) return null;
+    if (!t.closest || !t.closest('.cz-g-plane') || t.closest('.cz-gb, .cz-gbk, .cz-lanemore, .cz-gnew, .cz-g-tools, input, textarea, .cz-menu')) return null;
     return g;
   }
 

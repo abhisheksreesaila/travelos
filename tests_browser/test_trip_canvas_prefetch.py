@@ -76,7 +76,7 @@ def test_a_date_and_a_flick_to_a_neighbour_swap_without_a_request(canvas_page):
     open_day(page, 1)
     page.wait_for_function("() => performance.getEntriesByType('resource').filter(e => e.name.includes('frag=1')).length >= 2")
     page.wait_for_timeout(1200)                         # neighbours, the week and the other dates, two at a time
-    r = page.evaluate(TIMED_CLICK, ".cz-dpills a:not(.is-open)")
+    r = page.evaluate(TIMED_CLICK, ".cz-hchips a:not(.is-open)")
     expect(page.locator(".cz-view[data-level=day]")).not_to_have_attribute("data-day", "1")
     settle(page)
     assert r["asked"] == [], r

@@ -333,24 +333,24 @@ def test_every_level_fits_at_320_and_390(canvas_page):
 
 # ---- the laptop's wide day view --------------------------------------------------------------------------------------------------
 
-def test_desktop_shows_the_week_strip_the_parts_as_lanes_and_the_tray_at_the_side(canvas_page):
+def test_the_wide_tablet_shows_the_day_chips_the_parts_as_lanes_and_the_tray_under_the_day(canvas_page):
     page = canvas_page(viewport=WIDE, touch=False)
     assert page.evaluate(OVERFLOW) <= 0
     page.locator(".cz-row", has_text="Universal").locator(".cz-row-link").click()
     expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
-    strip = page.locator(".cz-strip")
+    strip = page.locator(".cz-hchips")
     expect(strip).to_be_visible()
-    assert strip.locator(".cz-strip-day").count() == 5 and strip.locator(".is-open").count() == 1
+    assert strip.locator(".cz-hchip").count() == 5 and strip.locator(".is-open").count() == 1      # F-160: the neutral day chips, where the week strip was
     grid = page.locator("#cz-grid").bounding_box()                                                  # the same grid, wider
     assert grid["width"] > 700 and page.locator(".cz-gb.is-park").bounding_box()["width"] > 600
     main, tray = page.locator(".cz-day-main").bounding_box(), page.locator(".cz-tray").bounding_box()
-    assert tray["x"] > main["x"] + main["width"] - 2                                                # the Set aside tray sits at the side
+    assert tray["y"] >= main["y"] + main["height"] - 2 and tray["x"] < main["x"] + 2                # the Set aside tray sits under the day (F-160: one column)
     assert page.evaluate(OVERFLOW) <= 0
-    other = strip.locator(".cz-strip-day").nth(3)
-    other.click()                                                                                   # a day in the strip swaps the day, no page load
-    expect(page.locator(".cz-strip-day.is-open")).to_have_attribute("href", re.compile(r"/trip/canvas\?day=3(&|$)"))
+    other = strip.locator(".cz-hchip").nth(3)
+    other.click()                                                                                   # a day chip swaps the day, no page load
+    expect(page.locator(".cz-hchip.is-open")).to_have_attribute("href", re.compile(r"/trip/canvas\?day=3(&|$)"))
     assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth")
-    page.locator(".cz-strip-day").nth(1).click()
+    page.locator(".cz-hchip").nth(1).click()
     open_block(page)
     page.locator(".cz-step", has_text="Revenge of the Mummy").click()
     expect(page.get_by_role("dialog")).to_be_visible()

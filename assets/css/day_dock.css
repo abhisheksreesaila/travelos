@@ -18,7 +18,7 @@
 
   /* left column */
   .cz .cz-view[data-day] .cz-day-left { display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; min-height: 0; }
-  .cz .cz-view[data-day] .cz-fold, .cz .cz-view[data-day] .cz-strip, .cz .cz-view[data-day] .cz-now, .cz .cz-view[data-day] .cz-say-compact { display: none; }       /* the top bar has SOS and Trip; the chips replace the strip; the panel replaces the now card */
+  .cz .cz-view[data-day] .cz-fold, .cz .cz-view[data-day] .cz-now, .cz .cz-view[data-day] .cz-say-compact { display: none; }       /* the top bar has SOS and Trip; the chips replace the strip; the panel replaces the now card */
   .cz .cz-view[data-day] .cz-head .cz-back, .cz .cz-view[data-day] .cz-head .cz-sos { display: none; }
   .cz .cz-view[data-day] .cz-head { flex-shrink: 0; flex-wrap: nowrap; gap: 1rem; padding: 0.8333rem 1rem; border-radius: 1.8333rem; }
   .cz .cz-view[data-day] .cz-head-text { flex: 0 0 auto; min-width: 7.5rem; }

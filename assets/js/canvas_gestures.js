@@ -26,7 +26,7 @@
     flick = null;
     var v = CZ.view();
     if (!v || v.dataset.level !== 'day' || e.pointerType === 'mouse' || count() > 1) return;
-    if (e.target.closest && e.target.closest('.cz-dpills, .cz-strip, .cz-filters, .cz-kinds, .cz-fold, .cz-sheet, input, textarea, select')) return;
+    if (e.target.closest && e.target.closest('.cz-hchips, .cz-filters, .cz-kinds, .cz-fold, .cz-sheet, input, textarea, select')) return;
     flick = { id: e.pointerId, x: e.clientX, y: e.clientY, at: Date.now(), v: v };
   });
   stage.addEventListener('pointermove', function (e) {

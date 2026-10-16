@@ -47,7 +47,7 @@ def test_a_plan_is_a_block_whose_place_and_height_are_its_time(trip):
     assert 'data-lo="420"' in grid and 'data-hi="1320"' in grid and "--n:15" in grid       # 7 AM to 10 PM
     (b,) = blocks(page)
     assert (b["data-act"], b["data-s"], b["data-e"], b["data-title"]) == (lunch.id, "720", "810", "Lunch at the pier")
-    assert style(b) == {"s": "300", "l": "90", "lane": "0", "lanes": "1"}                  # 300 minutes after 7 AM, 90 long
+    assert style(b) == {"s": "300", "l": "90", "lane": "0", "lanes": "1", "tlane": "0", "tlanes": "1"}                  # 300 minutes after 7 AM, 90 long
     assert "12:00 – 1:30 PM" in text(page) and "Lunch at the pier" in text(page)
 
 

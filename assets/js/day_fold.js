@@ -12,7 +12,7 @@
   var CZ = window.CZ;
   if (!CZ) return;
   var stage = CZ.stage;
-  var TOP = '.cz-head, .cz-bar, .cz-dpills, .cz-strip, .cz-filters';      // what the bar replaces
+  var TOP = '.cz-head, .cz-bar, .cz-filters';      // what the bar replaces
   var queued = false;
 
   function calm() { return !(CZ.held || CZ.menuOpen || (CZ.editing && CZ.editing())); }

@@ -29,8 +29,8 @@ from gitaway.pages import booked, dayshared as calui, daydock, passes as passes_
 from gitaway.pages.around_ui import around_url
 from gitaway.pages.plantalk import talk_badge   # F-091: the chat badge on a plan and on a part
 
-HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/help.css"), *passes_ui.HEAD, Link(rel="stylesheet", href="/assets/css/trip_canvas.css"), Link(rel="stylesheet", href="/assets/css/day_grid.css"), Link(rel="stylesheet", href="/assets/css/plantalk.css"), Link(rel="stylesheet", href="/assets/css/day_card.css"), Link(rel="stylesheet", href="/assets/css/thread.css"), Link(rel="stylesheet", href="/assets/css/day_dock.css"), Link(rel="stylesheet", href="/assets/css/week_desk.css"), Link(rel="stylesheet", href="/assets/css/day_mouse.css"), Link(rel="stylesheet", href="/assets/css/day_family.css"), Link(rel="stylesheet", href="/assets/css/day_ask.css"))   # pickers: the add-a-step sheet has a time field (F-082)
-SCRIPTS = ("/assets/js/vendor/idiomorph.js", "/assets/js/canvas_core.js", "/assets/js/canvas_filters.js", "/assets/js/canvas_writes.js", "/assets/js/canvas_sos.js", "/assets/js/canvas_gestures.js", "/assets/js/canvas_tick.js", "/assets/js/day_grid.js", "/assets/js/day_menu.js", "/assets/js/day_new.js", "/assets/js/day_fold.js", "/assets/js/day_card.js", "/assets/js/day_dock.js", "/assets/js/day_mouse.js", "/assets/js/day_chipdrop.js", "/assets/js/week_drag.js", "/assets/js/day_keys.js", "/assets/js/day_family.js", "/assets/js/day_ask.js")
+HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/help.css"), *passes_ui.HEAD, Link(rel="stylesheet", href="/assets/css/trip_canvas.css"), Link(rel="stylesheet", href="/assets/css/day_grid.css"), Link(rel="stylesheet", href="/assets/css/plantalk.css"), Link(rel="stylesheet", href="/assets/css/day_card.css"), Link(rel="stylesheet", href="/assets/css/thread.css"), Link(rel="stylesheet", href="/assets/css/day_dock.css"), Link(rel="stylesheet", href="/assets/css/week_desk.css"), Link(rel="stylesheet", href="/assets/css/day_mouse.css"), Link(rel="stylesheet", href="/assets/css/day_family.css"), Link(rel="stylesheet", href="/assets/css/day_ask.css"), Link(rel="stylesheet", href="/assets/css/day_phone.css"))   # pickers: the add-a-step sheet has a time field (F-082)
+SCRIPTS = ("/assets/js/vendor/idiomorph.js", "/assets/js/canvas_core.js", "/assets/js/canvas_filters.js", "/assets/js/canvas_writes.js", "/assets/js/canvas_sos.js", "/assets/js/canvas_gestures.js", "/assets/js/canvas_tick.js", "/assets/js/day_grid.js", "/assets/js/day_menu.js", "/assets/js/day_more.js", "/assets/js/day_new.js", "/assets/js/day_fold.js", "/assets/js/day_card.js", "/assets/js/day_dock.js", "/assets/js/day_mouse.js", "/assets/js/day_chipdrop.js", "/assets/js/week_drag.js", "/assets/js/day_keys.js", "/assets/js/day_family.js", "/assets/js/day_ask.js")
 RANK = {"week": 0, "day": 1, "block": 2, "step": 3}
 PART_TINTS = ("sky", "sun", "grape", "bubble", "mint")
 MAX_FACES = 5
@@ -227,7 +227,7 @@ def head(v, kicker, title, key="", back=None, back_label="", faces=None, sos="",
     inner = [Div(eyebrow, H1(title, id="cz-title", tabindex="-1"), *((Span(two, cls="ga-h-two"),) if two else ()), cls="cz-head-text")]      # F-158: the laptop's two-tone heading is the title, then `two` in coral (the phone and the tablet hide it)
     if back:
         inner.insert(0, A(icon("chev-left", 22, 2.6), Span(back_text, cls="cz-back-t", aria_hidden="true") if back_text else "", href=back, cls=f"cz-back{' has-text' if back_text else ''}", aria_label=back_label, data_zoom="out"))
-    if chips is not None:       # F-140: on a laptop the five day chips sit inside the ink header (CSS hides them below 1020px, where the week strip stays)
+    if chips is not None:       # the day chips sit under the title, at every width (F-160)
         inner.append(chips)
     if switch is not None:      # the switch, map and SOS travel together: on the narrowest phone they wrap as one group under the words
         inner.append(Div(switch, *([map_link(mapday)] if mapday is not None else []), *([sos_link(sos)] if sos else []), cls="cz-head-ctl"))
@@ -408,24 +408,8 @@ def _tray(steps, edit, ident="cz-tray", open_id=""):
     return Section(Div(H3(icon("tray", 16, 2.4), f"Set aside · {len(steps)}", cls="cz-tray-t"), Span("still in the trip", cls="cz-sub"), cls="cz-tray-h"), Div(*chips, cls="cz-tray-chips"), cls="cz-tray", id=ident, aria_label="Set aside")
 
 
-def strip(v, day):
-    """The week across the top (a laptop only): one card per day with a bar segment per part, the open day marked."""
-    cards = []
-    for i, s in enumerate(v["summaries"]):
-        ents = entries(v, i)
-        segs = []
-        for kind, x in ents:
-            if kind == "block":
-                segs += [Span(cls=f"cz-seg-bar cz-pt-{PART_TINTS[k % 5]}") for k, _ in enumerate(v["plan"][x.id]["parts"])]
-            else:
-                segs.append(Span(cls="cz-seg-bar is-plain"))
-        cards.append(A(Div(Span(s.dow, cls="cz-strip-dow"), Span(str(s.num), cls=f"cz-strip-num ink-{s.tint}")), Span(s.head, cls="cz-strip-head"), Div(*segs[:8], cls="cz-bars", aria_hidden="true"),
-                       href=curl(day=i), cls=f"cz-strip-day{' is-open' if i == day else ''}", aria_current="date" if i == day else None, data_zoom="side", aria_label=f"{v['dates'][i].strftime('%A %b')} {s.num}: {s.head}"))
-    return Nav(*cards, cls="cz-strip", aria_label="Days of the trip", style=f"--days:{min(len(cards), 7)}")
-
-
 def head_chips(v, day):
-    """F-140: the days of the trip as chips inside the day's ink header (a laptop). Each is a zoom to that day like a strip card (`data-zoom="side"`)."""
+    """The days of the trip as neutral chips under the day's heading (F-140, F-159, F-160: every width). Each is a zoom to that day (`data-zoom="side"`); the open one shows its title."""
     items = [A(Span(Span(s.dow, cls="cz-hc-dow"), Span(str(s.num), cls="cz-hc-num"), cls="cz-hc-top"), Span(s.head, cls="cz-hc-head"), href=curl(day=i), cls=f"cz-hchip{' is-open' if i == day else ''}{' is-today' if i == v['today_idx'] else ''}",
                aria_current="date" if i == day else None, data_zoom="side", data_move_day=str(i), data_move_label=f"{v['dates'][i].strftime('%a')} {s.num}",
                aria_label=f"{v['dates'][i].strftime('%A %b')} {s.num}: {s.head}" + (", today" if i == v["today_idx"] else "")) for i, s in enumerate(v["summaries"])]
@@ -443,19 +427,6 @@ def booked_line(v, x):
     when = cal.fmt_time(x.label_start if getattr(x, "label_start", None) is not None else x.start)
     return A(Span(when, cls="cz-bk-time"), Span(icon(getattr(x, "icon", "") or "lock", 16, 2.4), cls="cz-bk-ico", aria_hidden="true"), Span(x.title, cls="cz-bk-t"),
              Span("Booked", cls="cz-bk-tag"), href=curl(day=x.day, booked=x.id), cls="cz-bk", data_zoom="in", data_zk=f"bkg-{x.id}", **kind_attrs(v, "booked", x))
-
-
-def day_pills(v, day):
-    """A phone's dates across the top (F-090): the whole trip one tap out, then every day (the open one marked, today ringed, a dot when the family planned something)."""
-    items = []
-    for i, s in enumerate(v["summaries"]):
-        planned = any(kind != "booked" for kind, _ in entries(v, i))
-        cls = "cz-dp" + (" is-open" if i == day else "") + (" is-today" if i == v["today_idx"] else "") + (" has-plans" if planned else "")
-        label = f"{v['dates'][i].strftime('%A %b')} {s.num}" + (", today" if i == v["today_idx"] else "") + ("" if planned else ", nothing planned")
-        items.append(A(Span(s.dow, cls="cz-dp-dow"), Span(str(s.num), cls="cz-dp-num"), Span(cls="cz-dp-dot", aria_hidden="true"),
-                       href=curl(day=i), cls=cls, aria_current="date" if i == day else None, aria_label=label, data_zoom="side",
-                       data_move_day=str(i), data_move_label=f"{v['dates'][i].strftime('%a')} {s.num}"))      # F-152: the plan menu's Move to day offers these
-    return Nav(*items, cls="cz-dpills", id="cz-dpills", aria_label="Days of the trip")
 
 
 def kind_choices():
@@ -571,7 +542,7 @@ def note_preview(v, act):
     return " · ".join(text for _, text in v["act_notes"].get(act, []))
 
 
-def grid_block(v, a, lane, lanes, lo, edit, inset=False):
+def grid_block(v, a, lane, lanes, lo, edit, inset=False, tlane=(0, 1), behind=False):
     """One plan as a block: its place and size are its time (CSS reads --s and --l), side by side with the plans it overlaps (--lane of --lanes). The block shows its title, its time,
     one line of its note (it fades at the end, F-106) and how much was said in its chat; a tap anywhere on it opens its card (day_card.js), which has the whole note and the chat. Without
     script the tap is a link: a park block's goes to its block level, a plan's to its chat page (F-097, F-106). `inset` makes room at the left for a booking pill (F-106)."""
@@ -592,7 +563,7 @@ def grid_block(v, a, lane, lanes, lo, edit, inset=False):
     said = f"{n} message{'' if n == 1 else 's'}" + (", with a voice note" if voice else "")
     preview = note_preview(v, a.id)
     inner = [Span(icon(KIND_ICON[k], 20, 2.2), cls="cz-gb-tile", aria_hidden="true"),      # the icon tile and the PLAN pill are a laptop's (F-159)
-             Span(Span(a.title, cls="cz-gb-t", id=f"cz-t-{a.id}"), Span("Plan", cls="cz-gb-tag"), Span(when, cls="cz-gb-when"), cls="cz-gb-head"),      # F-110: the title and the time stay in view at the top of a tall block (sticky)
+             Span(Span(a.title, cls="cz-gb-t", id=f"cz-t-{a.id}"), Span("Plan", cls="cz-gb-tag"), Span(when, cls="cz-gb-when"), Span(compact_time(a.start), cls="cz-gb-st"), cls="cz-gb-head"),      # F-110: the title and the time stay in view at the top of a tall block (sticky)
              Span(preview, cls="cz-gb-note") if preview else "",
              Span(*[Span(p["name"], cls="cz-gb-part", data_part=p["id"], data_act=a.id) for p in blk["parts"]], cls="cz-gb-parts") if park else "",
              Span(icon("chat", 14, 2.4), Span(str(n), cls="pt-n"), icon("mic", 13, 2.4) if voice else "", cls="cz-gb-chat", aria_hidden="true") if chat else ""]
@@ -601,9 +572,71 @@ def grid_block(v, a, lane, lanes, lo, edit, inset=False):
     extra = [link]
     if edit:
         extra += [Button(f"Change {a.title}", type="button", cls="sr-only cz-gb-menubtn")]
-    cls = f"cz-gb cz-k-{k}" + (" is-ringed" if v.get("ring") == a.id else "") + (" is-park" if park else "") + (" is-tiny" if a.end - a.start < 25 else "") + (" is-short" if a.end - a.start < 45 else " is-tight" if a.end - a.start < 75 and not park else "") + (" has-chat" if chat else "") + (" is-inset" if inset else "")
-    style = f"--s:{a.start - lo};--l:{a.end - a.start};--lane:{lane};--lanes:{lanes}"
+    cls = f"cz-gb cz-k-{k}" + (" is-ringed" if v.get("ring") == a.id else "") + (" is-park" if park else "") + (" is-tiny" if a.end - a.start < 25 else "") + (" is-short" if a.end - a.start < 45 else " is-tight" if a.end - a.start < 75 and not park else "") + (" has-chat" if chat else "") + (" is-inset" if inset else "") + (" is-lane" if tlane[1] > 1 else "") + (" is-more" if behind else "")      # is-lane: side by side with another plan on the phone or tablet, so narrow (it leaves out its tile, F-160)
+    style = f"--s:{a.start - lo};--l:{a.end - a.start};--lane:{lane};--lanes:{lanes};--tlane:{tlane[0]};--tlanes:{tlane[1]}"
     return Div(Div(*inner, cls="cz-gb-in cz-cs"), *extra, cls=cls, style=style, **({"tabindex": "-1"} if park else {}), **attrs)
+
+
+TOUCH_MIN = 40       # minutes a plan's box takes on the phone and tablet: its 44px minimum on a 66 to 72px hour (F-160). Plans whose boxes would collide sit side by side there (--tlane of --tlanes).
+
+
+class _Box:
+    """A plan as the phone draws it: at least TOUCH_MIN minutes long."""
+    def __init__(self, a):
+        self.id, self.start, self.end = a.id, a.start, max(a.end, a.start + TOUCH_MIN)
+
+
+MAX_TOUCH_LANES = 3  # side by side at most; a collision group that needs more shows a "+N more" card in the third lane instead of the plans from that lane on (F-160)
+
+
+def touch_lanes(plans, inset=()):
+    """({plan id: (lane, lanes)}, [(the plans hidden behind one "+N more" card, in time order, lanes, first minute, last minute)]) for the phone and tablet.
+    Plans whose 44px boxes collide share lanes, MAX_TOUCH_LANES at most (two beside a booking's pill: `inset`). Only a plan that finds no free lane at its own time goes behind a card, together with the
+    plans in the last lane that its box meets (the card takes that lane); every plan not behind a card keeps its own lane. A card spans its plans' boxes, so no planned time looks free."""
+    boxes = sorted((_Box(a) for a in plans), key=lambda b: (b.start, b.end, b.id))
+    by_id = {a.id: a for a in plans}
+    out, more = {}, []
+    for group in overlap_groups(boxes):
+        cap = MAX_TOUCH_LANES - 1 if any(b.id in inset for b in group) else MAX_TOUCH_LANES
+        ends, mine, over = [], {}, []
+        for b in sorted(group, key=lambda b: (b.start, b.end, b.id)):
+            free = next((i for i, e in enumerate(ends) if e <= b.start), None)
+            if free is None and len(ends) < cap:
+                ends.append(b.end)
+                free = len(ends) - 1
+            elif free is not None:
+                ends[free] = b.end
+            if free is None:
+                over.append(b)
+            else:
+                mine[b.id] = free
+        n = max(len(ends), 1)
+        out.update({b.id: (mine[b.id], n) for b in group if b.id in mine})
+        if not over:
+            continue
+        behind = list(over) + [b for b in group if mine.get(b.id) == cap - 1 and any(b.start < o.end and b.end > o.start for o in over)]
+        spans = []      # connected stretches of time: one card each
+        for b in sorted(behind, key=lambda b: (b.start, b.id)):
+            if spans and b.start < spans[-1][1]:
+                spans[-1][0].append(b)
+                spans[-1][1] = max(spans[-1][1], b.end)
+            else:
+                spans.append([[b], b.end])
+        for members, end in spans:
+            for b in members:
+                out[b.id] = (cap - 1, cap)
+            more.append(([by_id[b.id] for b in members], cap, members[0].start, end))
+    return out, more
+
+
+def more_card(group, cap, first, last, lo):
+    """The "+N more" card in a group's last lane (F-160): kind-neutral, from the first hidden plan's start to the end of the last hidden box (so no planned time looks free); day_more.js opens the
+    list of the plans behind it."""
+    n = len(group)
+    names = ", ".join(f"{cal.fmt_time(a.start)} {a.title}" for a in group)
+    return Button(Span(f"+{n} more", cls="cz-lanemore-t"), type="button", cls="cz-lanemore",
+                  style=f"--s:{first - lo};--l:{last - first};--tlane:{cap - 1};--tlanes:{cap}" + (";--bkw:6rem" if cap < MAX_TOUCH_LANES else ""),
+                  data_more=" ".join(a.id for a in group), aria_label=f"{n} more plans: {names}. Show the list")
 
 
 PILL_SPAN = 60       # a plan within this many minutes below a booking's line is "over" it: the booking then draws as a pill beside the plan (F-106)
@@ -641,18 +674,20 @@ def time_grid(v, day, ents):
     lo, hi = grid_range(plans, lines)
     hours = list(range(lo // 60, hi // 60 + 1))
     lane = calui.lanes(plans)
-    starts = rail_starts(plans, lines)
-    gutter = [Span(hour_label(h % 24 if h < 24 else 0), cls="cz-g-hour cz-cs" + (" is-near" if any(-30 <= h * 60 - y <= RAIL_ROOM + 8 for y, *_ in starts) else ""), style=f"--s:{h * 60 - lo}") for h in hours]      # is-near: a laptop hides it (F-159)
-    gutter += [Span(Span(split_time(at)[0], cls="cz-g-st-t"), Span(split_time(at)[1], cls="cz-g-st-m"), Span(cls="cz-g-st-dot"), cls=f"cz-g-start cz-cs {cls}", style=f"--s:{y - lo}", data_for=" ".join(ids), aria_hidden="true") for y, at, cls, ids in starts]
-    rules = [Span(cls=f"cz-g-line cz-cs{' is-half' if m else ''}", style=f"--s:{h * 60 + m - lo}") for h in hours[:-1] for m in (0, 30)] + [Span(cls="cz-g-line cz-cs", style=f"--s:{hi - lo}")]
     covered = {x.id: [a for a in plans if a.start < top + PILL_SPAN and a.end > top] for x, top in lines}      # the plans over each booking line (F-106)
     over = {a.id for under in covered.values() for a in under}
     inset = {a.id for group in overlap_groups(plans) if any(a.id in over for a in group) for a in group}      # plans that share lanes share a left edge: one inset, all inset
+    tlane, more = touch_lanes(plans, inset)      # the phone's and tablet's lanes: boxes at least TOUCH_MIN minutes long, three at most (two beside a booking's pill, F-160)
+    hidden = {a.id for group, *_ in more for a in group}
+    starts = rail_starts(plans, lines)
+    gutter = [Span(hour_label(h % 24 if h < 24 else 0), cls="cz-g-hour cz-cs" + (" is-near" if any(-30 <= h * 60 - y <= RAIL_ROOM + 8 for y, *_ in starts) else ""), style=f"--s:{h * 60 - lo}") for h in hours]      # is-near: a laptop hides it (F-159)
+    gutter += [Span(Span(split_time(at)[0], cls="cz-g-st-t"), Span(split_time(at)[1], cls="cz-g-st-m"), Span(cls="cz-g-st-dot"), cls=f"cz-g-start cz-cs {cls}{' is-hid' if set(ids) <= hidden else ''}", style=f"--s:{y - lo}", data_for=" ".join(ids), aria_hidden="true") for y, at, cls, ids in starts]
+    rules = [Span(cls=f"cz-g-line cz-cs{' is-half' if m else ''}", style=f"--s:{h * 60 + m - lo}") for h in hours[:-1] for m in (0, 30)] + [Span(cls="cz-g-line cz-cs", style=f"--s:{hi - lo}")]
     bk = [booking_pill(v, x, top, lo) if covered[x.id] else
           A(Span(Span(icon(getattr(x, "icon", "") or "lock", 16, 2.4), cls="cz-gbk-tile"), Span(cal.fmt_time(x.label_start if getattr(x, "label_start", None) is not None else x.start), cls="cz-bk-time"), Span(x.title, cls="cz-bk-t"),
               Span("Booked", cls="cz-bk-tag"), cls="cz-gbk-in cz-cs"), href=curl(day=x.day, booked=x.id), cls="cz-bk cz-gbk", data_zoom="in", data_zk=f"bkg-{x.id}", style=f"--s:{top - lo}", aria_label=f"{x.title}, {cal.fmt_time(x.label_start if getattr(x, 'label_start', None) is not None else x.start)}, booked", **kind_attrs(v, "booked", x))
           for x, top in lines]
-    blocks = [grid_block(v, a, *lane[a.id], lo, edit, a.id in inset) for a in plans]
+    blocks = [grid_block(v, a, *lane[a.id], lo, edit, a.id in inset, tlane[a.id], a.id in hidden) for a in plans] + [more_card(g, cap, first, last, lo) for g, cap, first, last in more]
     now = ""
     if day == v["today_idx"] and lo <= (nm := td.now_minute(v["clock"])) <= hi:
         now = Span(Span(cls="cz-now-dot"), Span(f"{nm // 60 % 12 or 12}:{nm % 60:02d}", cls="cz-now-t"), cls="cz-nowline", id="cz-nowline", data_m=str(nm), style=f"--s:{nm - lo}", aria_label="Now", role="img")
@@ -681,7 +716,7 @@ def day_view(v, day, booked=None, sos=False):
         cards = [empty, *cards]
     kicker = (*((Span("TODAY · ", cls="cz-k-today"),) if day == v["today_idx"] else ()), f"{d.strftime('%a %b').upper()} {d.day}", Span(f" · DAY {day + 1} OF {len(v['dates'])}", cls="cz-k-day"))      # the day count drops out on a phone (F-103: the heading is one row)
     first =next((x for kind, x in ents if kind == "block"), None)
-    left = [fold_bar(v, day), head(v, kicker, d.strftime("%A"), key=f"day-{day}", back=curl(), back_label="Zoom out to the week", back_text="Trip", sos=curl(day=day, sos=True), mapday=day, switch=toggle(v, "day", day), chips=head_chips(v, day), two=day_line(v["summaries"][day])), Div(kinds_bar(), say_pair(day) if editor else "", cls="cz-bar"), day_pills(v, day), strip(v, day),
+    left = [fold_bar(v, day), head(v, kicker, d.strftime("%A"), key=f"day-{day}", back=curl(), back_label="Zoom out to the week", back_text="Trip", sos=curl(day=day, sos=True), mapday=day, switch=toggle(v, "day", day), chips=head_chips(v, day), two=day_line(v["summaries"][day])), Div(kinds_bar(), say_pair(day) if editor else "", cls="cz-bar"),
             now_card(v, day),      # F-092: the centre Ask changes the day; on today the day starts with what is happening now
             *([filter_bar(v, True)] if first else []), *([dropbars(v)] if first and editor else []),
             Div(Div(*cards, *(listmore(v, first) if first else []), P("Nothing here for this filter.", cls="cz-sub cz-kind-none", hidden=True), cls="cz-day-main"), Div(_tray(aside, editor), cls="cz-day-side"), cls="cz-day-body")]
