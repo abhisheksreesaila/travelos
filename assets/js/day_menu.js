@@ -447,6 +447,17 @@
     return { input: input };
   }
 
+  // A laptop: a double click on a plan's title renames it in the docked panel. The first click has already opened the panel (nothing waits for a second one).
+  var DESK = window.matchMedia('(min-width: 1020px) and (not (display-mode: standalone))');
+  stage.addEventListener('dblclick', function (e) {
+    var b = DESK.matches && editing() && e.target.closest ? e.target.closest('.cz-gb') : null, t = b && b.querySelector('.cz-gb-t');
+    if (!t || !b.dataset.act || !CZ.renameTitle) return;
+    var r = t.getBoundingClientRect(), pad = 10;      // (on the title and a little around it)
+    if (e.clientX < r.left - pad || e.clientX > r.right + pad || e.clientY < r.top - pad || e.clientY > r.bottom + pad) return;
+    e.preventDefault();
+    CZ.renameTitle(b.dataset.act);
+  });
+
   // ---- from the grid ------------------------------------------------------------------------------------------------------------
   CZ.hold = function (b) { open(b, null); };
   CZ.rename = rename;
