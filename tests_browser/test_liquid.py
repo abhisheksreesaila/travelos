@@ -1,8 +1,8 @@
 """F-112: a changed block and a sent bubble move like liquid, in a real browser at 390 wide with the real motion on. Frames are sampled with requestAnimationFrame from the moment the
 finger lets go (or the menu is pressed, or Send is) through the save and the refresh to rest, and the numbers are what the captain's eye sees:
   - a dropped, resized or nudged block never jumps between two frames (a spring's steps stay a fraction of the whole move, and once it is at rest nothing moves, even when the refreshed day
-    replaces the element), exactly one `land` animation moves it, and the toast's first frame comes after the block has landed (the save is slow here on purpose, so the refresh and the
-    toast would otherwise arrive mid-move); Undo still works the moment the toast shows;
+    replaces the element), exactly one `land` animation moves it, and the toast's first frame comes with the save's answer, while the block is still landing (F-171; the save is slow here on purpose, so the answer
+    arrives mid-move); Undo still works the moment the toast shows;
   - a block that another block's move pushed aside glides to its new lane (no jump);
   - (the chat's bubbles no longer move at all, F-118: tests_browser/test_thread.py)."""
 import re
@@ -70,7 +70,7 @@ def check_smooth(rec, act, tolerance=0.3, rest_step=0.5):
 def check_one_settle_and_toast_after(page, rec, act, log_before, rest_step=0.5):
     tr, rest = check_smooth(rec, act, rest_step=rest_step)
     first_toast = min(o["t"] for o in rec if "q" in o)
-    assert first_toast > rest, (first_toast, rest)                                        # the toast glides in after the block has landed
+    assert first_toast < rest, (first_toast, rest)                                        # F-171: the toast glides in with the answer, while the block is still landing (one motion, not land, stop, toast)
     swapped = [t for (t, v), (_, w) in zip(tr, tr[1:]) if v["id"] != w["id"]]
     assert not swapped or swapped[0] > rest - 1, (swapped, rest)                          # F-123: the refresh updates the day in place (the element is kept); never replaced mid-move
     lands = [e for e in page.evaluate("GA.motion.log")[log_before:] if e["kind"] in ("land", "flip")]
@@ -97,7 +97,7 @@ def test_a_dropped_block_lands_with_one_spring_and_the_refresh_does_not_re_draw_
     page = canvas_page(viewport=vp, motion="no-preference")
     lunch = plan("Lunch", 12 * 60, 13 * 60)
     open_day(page)
-    slow_save(page)
+    slow_save(page, 0.2)
     start = hold_block(page, lunch.id)
     step = ppm(page) * 15
     end = slide(page, start, (start[0], start[1] + step * 2 + step * 0.49))             # nearly three steps: it snaps to 30 minutes, nine pixels from the finger
@@ -141,7 +141,7 @@ def test_a_menu_nudge_lands_the_same_way_and_the_menu_and_knobs_come_through_the
     lunch = plan("Lunch", 12 * 60, 13 * 60)
     open_day(page)
     hold_and_let_go(page, lunch.id)
-    slow_save(page)
+    slow_save(page, 0.2)
     log = len(page.evaluate("GA.motion.log"))
     menu_item(page, "Later").scroll_into_view_if_needed()                                  # (Playwright's own scroll to the button is not part of what is measured)
     page.wait_for_timeout(300)

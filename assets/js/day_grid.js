@@ -579,34 +579,31 @@
   }
   CZ.landing = function () { return landing > 0; };
   // ---- saving, the toast and Undo -----------------------------------------------------------------------------------------
-  // `landed` is the block's own move (it is saved while it travels): the toast glides in and the day is refreshed only once the block is at rest, so nothing is drawn over a move in progress.
+  // F-171: one motion. `landed` is the block's own move (it is saved while it travels); the toast and the refreshed day are not held back for it: they come with the reply, while the block is still
+  // landing, and the blocks the move pushed aside glide in the same breath (CZ.snap). The block itself is kept through the refresh (the morph leaves its running move alone). New gestures wait for the landing.
   function save(g, fields, old, landed) {
     var el = g.el, wait = landed || Promise.resolve();
     var body = CZ.tripBody(Object.assign({ op: 'edit', act: el.dataset.act, next: CZ.here() }, fields));
     return CZ.post('/trip/canvas/plan', body).then(function (res) {
-      return wait.then(function () {
-        busy = false;
-        if (res.toast) CZ.showToast(res.toast, res.undo ? function () { undo(res.undo); } : null);
-        return CZ.quiet();
-      });
+      if (res.toast) CZ.showToast(res.toast, res.undo ? function () { undo(res.undo); } : null);
+      var fresh = CZ.quiet();
+      return wait.then(function () { busy = false; return fresh; });      // (the next gesture waits for the landing only, not for the refresh)
     }, function (err) {
-      return wait.then(function () {
-        var back = Promise.resolve();
-        if (old && el.isConnected) {            // refused or never answered: the block goes back where it was (it travels there), even if the refresh below cannot be fetched
-          var lo = +el.closest('#cz-grid').dataset.lo, from = el.getBoundingClientRect();
-          el.style.setProperty('--s', old.s - lo);
-          el.style.setProperty('--l', old.e - old.s);
-          el.dataset.s = old.s;
-          el.dataset.e = old.e;
-          setWhen(el, old.s, old.e);
-          CZ.railTo(el.closest('#cz-grid'), el.dataset.act, old.s);
-          back = land(el, from, {});
-        }
-        return back.then(function () {
-          busy = false;
-          CZ.showToast(err && err.soft ? err.soft : 'Could not save that. Check your connection.');
-          return CZ.quiet();                      // the page shows what is really saved
-        });
+      var back = Promise.resolve();
+      if (old && el.isConnected) {            // refused or never answered: the block goes back where it was (it travels there, taking over its own landing), even if the refresh below cannot be fetched
+        var lo = +el.closest('#cz-grid').dataset.lo, from = el.getBoundingClientRect();
+        el.style.setProperty('--s', old.s - lo);
+        el.style.setProperty('--l', old.e - old.s);
+        el.dataset.s = old.s;
+        el.dataset.e = old.e;
+        setWhen(el, old.s, old.e);
+        CZ.railTo(el.closest('#cz-grid'), el.dataset.act, old.s);
+        back = land(el, from, {});
+      }
+      return Promise.all([back, wait]).then(function () {
+        busy = false;
+        CZ.showToast(err && err.soft ? err.soft : 'Could not save that. Check your connection.');
+        return CZ.quiet();                      // the page shows what is really saved
       });
     });
   }

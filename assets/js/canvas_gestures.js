@@ -1,5 +1,5 @@
 // The trip canvas, fingers (F-082, F-090; a module since F-128). Loaded after canvas_core.js and canvas_writes.js.
-//   A flick left on a day is the next day, right the previous one (the day follows the finger a little).
+//   A flick left on a day is the next day, right the previous one (F-171: the day follows the finger 1:1, the slide goes on from where the finger let go; a short or slow swipe springs back).
 //   Hold a step (about 350 ms) to lift it; a chip follows the finger, and the parts, the days across the top and the Set aside tray light up as drop targets; letting go
 //   posts a move and brings the level up to date in place, with a toast that has Undo. A list chip held the same way is added to a part.
 //   Swipe a step left for Done and Set aside; swipe right (or tap elsewhere) to put them away.
@@ -12,9 +12,10 @@
   var pts = {};
   function count() { return Object.keys(pts).length; }
   stage.addEventListener('pointerdown', function (e) { pts[e.pointerId] = { x: e.clientX, y: e.clientY }; });
+  // (F-171: on the document, in the capture phase: a finger whose element was taken out of the page, or whose cancel comes from outside the canvas, still lifts, or CZ.gesturing() stays true for the page's life)
   function lift(e) { delete pts[e.pointerId]; }
-  stage.addEventListener('pointerup', lift);
-  stage.addEventListener('pointercancel', lift);
+  document.addEventListener('pointerup', lift, true);
+  document.addEventListener('pointercancel', lift, true);
 
   var clickGuard = 0, guardItem = null;     // the click that follows a flick, a drag or a swipe, on what was held, is not a tap
   function guard(ms, el) { clickGuard = Date.now() + ms; guardItem = el; }
@@ -31,28 +32,36 @@
   });
   stage.addEventListener('pointermove', function (e) {
     if (!flick || e.pointerId !== flick.id) return;
-    if (count() > 1 || (g && g.mode === 'drag') || CZ.held) { flick.v.style.transform = ''; flick = null; return; }      // a held block (day_grid.js) never flicks
+    if (count() > 1 || (g && g.mode === 'drag') || CZ.held) { springBack(flick.v); flick = null; return; }      // a held block (day_grid.js) never flicks
     var dx = e.clientX - flick.x, dy = e.clientY - flick.y;
     if (!reduced.matches && Math.abs(dx) > Math.abs(dy) * 1.5 && Math.abs(dx) > 12) {
       var edge = (dx < 0 && !flick.v.dataset.next) || (dx > 0 && !flick.v.dataset.prev);
-      flick.v.style.transform = 'translateX(' + (dx * (edge ? 0.08 : 0.25)) + 'px)';   // follows the finger a little; barely at the first or last day
+      flick.v.style.transition = 'none';
+      flick.v.style.transform = 'translateX(' + (dx * (edge ? 0.08 : 1)) + 'px)';   // F-171: the finger carries the day 1:1 (barely at the first or last day)
     }
   });
+  // A level the finger moved and did not carry on: it goes back to its place with the calm ease (a move, not a jump).
+  function springBack(v) {
+    if (!v.style.transform) return;
+    v.style.transition = 'transform var(--motion-dur) var(--motion-ease)';
+    v.style.transform = '';
+    v.addEventListener('transitionend', function () { v.style.transition = ''; }, { once: true });
+  }
   function endFlick(e) {
     if (!flick || e.pointerId !== flick.id) return;
     var f = flick;
     flick = null;
-    f.v.style.transform = '';
-    if (e.type !== 'pointerup' || CZ.busy() || (g && g.mode === 'drag') || CZ.held) return;
+    var go = e.type === 'pointerup' && !CZ.busy() && !(g && g.mode === 'drag') && !CZ.held;
     var dx = e.clientX - f.x, dy = e.clientY - f.y;
-    if (Math.abs(dx) < FLICK || Math.abs(dx) < Math.abs(dy) * 1.5 || Date.now() - f.at > 900) return;
-    var u = dx < 0 ? f.v.dataset.next : f.v.dataset.prev;
-    if (!u) return;
+    go = go && Math.abs(dx) >= FLICK && Math.abs(dx) >= Math.abs(dy) * 1.5 && Date.now() - f.at <= 900;
+    var u = go ? (dx < 0 ? f.v.dataset.next : f.v.dataset.prev) : '';
+    if (!u) { springBack(f.v); return; }
     guard(250, f.v);
-    CZ.goto(path(u), { dir: dx < 0 ? 'next' : 'prev', key: null, mode: 'replace' });
+    // F-171: the level stays where the finger left it: the slide starts from there (the old screen is captured as it is), it does not snap back to 0 first
+    CZ.goto(path(u), { dir: dx < 0 ? 'next' : 'prev', key: null, mode: 'replace' }).then(function () { if (f.v.isConnected) springBack(f.v); });
   }
-  stage.addEventListener('pointerup', endFlick);
-  stage.addEventListener('pointercancel', endFlick);
+  document.addEventListener('pointerup', endFlick);
+  document.addEventListener('pointercancel', endFlick);
 
   // ---- F-136: from the left edge, back up a level ---------------------------------------------------------------------------------
   // A finger that starts at the screen's left edge on a day or a block and moves right is the heading's way back ("‹ Trip", "‹ Thu 9"), as on any iPhone screen:
@@ -86,8 +95,8 @@
     ed.v.style.transform = ''; ed.v.style.opacity = '';
     ed.v.addEventListener('transitionend', function () { ed.v.style.transition = ''; }, { once: true });
   }
-  stage.addEventListener('pointerup', endEdge);
-  stage.addEventListener('pointercancel', endEdge);
+  document.addEventListener('pointerup', endEdge);
+  document.addEventListener('pointercancel', endEdge);
 
   // ---- hold to move, swipe for Done and Set aside (editors only) ------------------------------------------------------------------
   // One gesture at a time, from pointerdown on a step (data-drag) or on a list chip (data-add-title):
