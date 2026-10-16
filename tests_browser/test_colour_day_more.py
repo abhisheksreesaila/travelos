@@ -149,3 +149,33 @@ def test_a_kind_filter_leaves_no_card_label_or_count_behind(signed_in, viewport)
     shot(page, f"crowd3-filter-{viewport['width']}.png", full=False)
 
 
+
+
+MENU_SCAN = """() => {
+  const menu = document.querySelector('.cz-menu:not(.cz-more-list)'); if (!menu) return {missing: true};
+  const seen = e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== 'hidden'; };
+  const small = [...menu.querySelectorAll('*')].filter(e => seen(e) && [...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim()) && parseFloat(getComputedStyle(e).fontSize) < 12.99)
+    .map(e => e.className.toString() + ' ' + e.textContent.trim().slice(0, 16) + ' ' + getComputedStyle(e).fontSize);
+  const tiny = [...menu.querySelectorAll('button, a, [role=menuitem], .cz-dc')].filter(e => seen(e) && !e.disabled).map(e => { const r = e.getBoundingClientRect(); return [e.textContent.trim().slice(0, 14), Math.round(r.width), Math.round(r.height)]; })
+    .filter(([, w, h]) => w < 43.5 || h < 43.5);
+  const r = menu.getBoundingClientRect();
+  return {small, tiny, inside: r.left >= 0 && r.right <= innerWidth + 0.5};
+}"""
+
+
+@BOTH
+def test_the_open_hold_menu_and_its_move_to_day_step_have_13px_text_and_44px_rows(signed_in, viewport):
+    from tests_browser.test_colour_day import day
+    page = day(signed_in, viewport)
+    page.evaluate("document.querySelector('.cz-gb[data-title^=\"Lunch\"] .cz-gb-menubtn').click()")
+    expect(page.locator(".cz-menu")).to_be_visible()
+    got = page.evaluate(MENU_SCAN)
+    assert got["small"] == [] and got["tiny"] == [] and got["inside"], got
+    page.locator(".cz-menu").get_by_role("menuitem", name="Move to day").click()
+    expect(page.locator(".cz-menu-days .cz-dc").first).to_be_visible()
+    got = page.evaluate(MENU_SCAN)
+    assert got["small"] == [] and got["tiny"] == [] and got["inside"], got
+    page.locator(".cz-menu").get_by_role("menuitem", name="Back").click()
+    page.locator(".cz-menu").get_by_role("menuitem", name="Change type").click()
+    got = page.evaluate(MENU_SCAN)
+    assert got["small"] == [] and got["tiny"] == [], got

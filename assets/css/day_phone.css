@@ -172,4 +172,16 @@
   .cz .cz-view[data-day] .cz-gbk.is-pill .cz-bk-time { display: block; font-weight: 700; color: var(--ink-2); }
   .cz .cz-view[data-day] .cz-gbk.is-pill .cz-bk-row svg { color: var(--kink); }
   .cz .cz-view[data-day] .cz-gbk.is-pill .cz-bk-t { flex: none; font-family: var(--font-body); font-size: var(--cz-small); font-weight: 700; letter-spacing: 0; }
+
+  /* the hold menu and its second steps (Change type, Move to day), which grow out of a plan: 13px text and 44px rows on the tablet too (day_grid.css sizes them off the tablet's 12px root). The menu is a child of the
+     stage, not of the day view, so these sit under .cz alone; the laptop's menu is not in this query. */
+  .cz .cz-menu { width: min(calc(var(--pu) * 20), calc(100vw - 1rem)); }
+  .cz .cz-menu-t { font-size: max(var(--tmin), 0.9375rem); }
+  .cz .cz-menu-sub { font-size: max(var(--tmin), 0.8125rem); }
+  .cz .cz-menu .cz-mi { min-height: var(--tap); font-size: max(var(--tmin), 0.8125rem); }
+  .cz .cz-menu-nudge .cz-mi, .cz .cz-mi-fine, .cz .cz-mi-back, .cz .cz-menu-more .cz-mi { min-height: var(--tap); }
+  .cz .cz-dc { min-height: var(--tap); }
+  .cz .cz-dc-dow { font-size: max(var(--tmin), 0.8125rem); }
+  .cz .cz-dc-num { font-size: max(var(--tmin), 0.9375rem); }
+  .cz span.cz-dc.is-here { min-height: var(--tap); }
 }
