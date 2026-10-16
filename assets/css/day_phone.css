@@ -101,7 +101,7 @@
   .cz .cz-view[data-day] .cz-gb { left: calc(var(--bkw, 0rem) + (100% - var(--bkw, 0rem)) * var(--tlane, 0) / var(--tlanes, 1)); width: calc((100% - var(--bkw, 0rem)) / var(--tlanes, 1) - 0.25rem); }      /* side by side whenever the drawn boxes (44px included) collide, not only the times */
   .cz .cz-view[data-day] .cz-gb-tile, .cz .cz-view[data-day] .cz-gbk-tile { display: grid; place-items: center; flex: none; width: calc(var(--pu) * 2.25); height: calc(var(--pu) * 2.25); border-radius: calc(var(--pu) * 0.625); background: var(--card); color: var(--kink); }
   .cz .cz-view[data-day] .cz-gb-tile { position: absolute; left: calc(var(--pu) * 0.625); top: calc(var(--pu) * 0.375); }
-  .cz .cz-view[data-day] .cz-gb-head { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; column-gap: calc(var(--pu) * 0.5); background: none; }
+  .cz .cz-view[data-day] .cz-gb-head { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; column-gap: calc(var(--pu) * 0.5); background: var(--tint); }
   .cz .cz-view[data-day] .cz-gb-t { flex: 0 1 auto; min-width: 0; font-family: var(--font-display); font-weight: 700; font-size: calc(var(--pu) * 1.0625); letter-spacing: -0.02em; }
   .cz .cz-view[data-day] .cz-gb-when { flex: 1 0 100%; font-weight: 600; font-size: var(--cz-small); color: var(--ink-2); }
   .cz .cz-view[data-day] .cz-gb-tag, .cz .cz-view[data-day] .cz-gbk .cz-bk-tag { display: inline-flex; align-items: center; flex: none; height: calc(var(--pu) * 1.25); padding: 0 calc(var(--pu) * 0.5); border-radius: var(--r-pill); background: var(--paper-2); color: var(--ink-2);

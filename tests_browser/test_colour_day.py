@@ -8,6 +8,7 @@ from playwright.sync_api import expect
 from gitaway import tripcal as cal
 from tests.test_signin import person
 from tests_browser.helpers import DESKTOP, PHONE
+from tests_browser.test_colour_fill import is_quiet
 from tests_browser.test_topbar import LAPTOP, TABLET, signed_in  # noqa: F401 - fixture
 
 INK = "rgb(30, 26, 46)"
@@ -67,7 +68,7 @@ def test_plans_and_bookings_are_kind_filled_cards_with_a_tile_and_edge(signed_in
     flight = page.locator(".cz-gbk", has_text="Skylark")
     hotel = page.locator(".cz-gbk", has_text="Check in")
     for card, accent, tint in ((flight, SKY, "rgb(221, 238, 255)"), (hotel, GRAPE, "rgb(236, 228, 255)")):
-        assert card.evaluate("e => getComputedStyle(e).backgroundColor") not in (CARD, tint)      # F-167: a booking is a quieter half-tint, never white and never a plan's fill
+        assert is_quiet(card.evaluate("e => getComputedStyle(e).backgroundColor"), tint)      # F-167: the kind's tint at 45% over white, exactly
         assert f"{accent} 3px 0px 0px 0px inset" in card.evaluate("e => getComputedStyle(e).boxShadow")
         assert card.locator(".cz-gbk-tile").evaluate("e => getComputedStyle(e).backgroundColor") == CARD
         pill = card.locator(".cz-bk-tag")

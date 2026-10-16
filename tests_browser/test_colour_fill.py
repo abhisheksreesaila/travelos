@@ -50,6 +50,15 @@ def lum(c):
     return 0.2126 * f[0] + 0.7152 * f[1] + 0.0722 * f[2]
 
 
+def quiet(tint):
+    """A booking's fill: its kind's tint at 45% over white (`color-mix(in srgb, tint 45%, white)`), as rgb numbers."""
+    return [255 - (255 - v) * 0.45 for v in rgb(tint)]
+
+
+def is_quiet(bg, tint):
+    return all(abs(a - b) <= 1.5 for a, b in zip(rgb(bg), quiet(tint)))
+
+
 def contrast(a, b):
     la, lb = sorted((lum(rgb(a)), lum(rgb(b))), reverse=True)
     return (la + 0.05) / (lb + 0.05)
@@ -99,7 +108,8 @@ def check(cards):
     bookings = [c for c in cards if c["booked"]]
     assert len(bookings) >= 2
     for c in bookings:
-        assert c["bg"] not in {p["bg"] for p in plans} and c["bg"] != WHITE      # a quieter fill than any plan's tint
+        tint = KIND["travel"][0] if "Skylark" in c["title"] else KIND["culture"][0]      # the flight is sky, the hotel grape
+        assert is_quiet(c["bg"], tint), (c["title"], c["bg"])      # exactly its kind's tint at 45% over white: quieter than any plan's fill, never white
         assert contrast(c["titleInk"], c["bg"]) >= 4.5
         assert c["tileBg"] in (None, WHITE)
         assert c["pillBg"] is None or contrast(c["pillInk"], c["pillBg"]) >= 4.5
@@ -130,3 +140,40 @@ def test_the_week_of_day_cards_keeps_white_rows(signed_in, viewport):
     expect(page.locator("#cz-week .cz-row").first).to_be_visible()
     assert page.locator("#cz-week .cz-wcard").first.evaluate("e => getComputedStyle(e).backgroundColor") in (WHITE, "rgba(0, 0, 0, 0)")
     shot(page, f"week-{viewport['width']}.png")
+
+
+STICKY = """() => { const b = document.querySelector('.cz-gb[data-act]'); const head = b.querySelector('.cz-gb-head'), note = b.querySelector('.cz-gb-note');
+  const stick = parseFloat(getComputedStyle(head).top) || 0, h = head.getBoundingClientRect(), n = note.getBoundingClientRect();
+  let sc = b.parentElement; while (sc && !/(auto|scroll)/.test(getComputedStyle(sc).overflowY)) sc = sc.parentElement;      // the day's own scroller on a laptop, else the page
+  (sc || window).scrollBy(0, h.top - stick + (n.top - h.top) - 0.4 * h.height);      // scrolled until the note's top sits under the stuck head's lower part
+  const r = n => { const x = n.getBoundingClientRect(); return { t: x.top, b: x.bottom }; }, hs = getComputedStyle(head), bs = getComputedStyle(b);
+  return { head: r(head), note: r(note), headBg: hs.backgroundColor, blockBg: bs.backgroundColor, sticky: hs.position }; }"""
+
+
+@pytest.mark.parametrize("viewport", [DESKTOP, PHONE], ids=["1440", "390"])
+def test_a_stuck_title_covers_the_note_it_slides_over(signed_in, viewport):
+    """The sticky head (F-110) once had the card's white behind it; on a filled block it must carry the block's own fill, or the note prints through the title."""
+    page = signed_in(viewport, path="/trip/canvas?day=0")
+    me = person("ari")
+    a = cal.add_activity(me, day=0, start=9 * 60, end=14 * 60, title="Long day at the park", kind="outdoors")
+    cal.add_note(me, "Bring sunscreen, hats and a lot of water for everyone", act=a.id)
+    page.reload()
+    expect(page.locator(".cz-gb-note")).to_be_visible()
+    got = page.evaluate(STICKY)
+    assert got["sticky"] == "sticky"
+    assert got["head"]["t"] < got["note"]["b"] and got["note"]["t"] < got["head"]["b"] or got["note"]["t"] < got["head"]["t"]      # the head is down over (or past) the note's place
+    assert got["headBg"] == got["blockBg"] == KIND["outdoors"][0]      # opaque, the block's own tint: whatever is under the title is covered
+
+
+PANELS = """() => [...document.querySelectorAll('.cz-day-body, .cz-hchip, .cz-hchips, .cz-wcol, .cz-wh, .cz-wk, #cz-wk, .cz-dock, .cz-row')].filter(e => e.getClientRects().length).map(e => [e.className, getComputedStyle(e).backgroundColor])"""
+NEUTRAL = ("rgba(0, 0, 0, 0)", WHITE, INK, "rgb(250, 247, 242)")      # clear, white card, the open day's ink chip, paper
+
+
+@pytest.mark.parametrize("viewport", [DESKTOP, PHONE], ids=["1440", "390"])
+def test_days_stay_uncoloured_only_kinds_carry_colour(signed_in, viewport):
+    """Day chips, the day panel and the week's columns and headers never take a kind or day tint."""
+    for make in (day, week) if viewport is DESKTOP else (day,):
+        page = make(signed_in, viewport)
+        got = page.evaluate(PANELS)
+        assert got
+        assert all(bg in NEUTRAL for _, bg in got), [g for g in got if g[1] not in NEUTRAL]
