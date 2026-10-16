@@ -34,25 +34,25 @@ def _summary(v, blk, x):
     return " · ".join(bits)
 
 
-def _drawn(x):
-    """(start, end) of the card on the axis."""
-    return x.start, max(x.end, x.start + WEEK_MIN)
+def _drawn(x, hi):
+    """(start, end) of the card on the axis: its true start, its true end or WEEK_MIN minutes after the start, never past the axis's end (a drawn-only length does not widen the axis)."""
+    return x.start, min(max(x.end, x.start + WEEK_MIN), hi)
 
 
 def axis_range(v):
     """(first, last) minute of the shared axis: 7 AM to 10 PM, wider for an earlier or later item in any day, on whole hours."""
     from gitaway.pages import tripcanvas as tc
-    drawn = [_drawn(x) for i in range(len(v["dates"])) for _, x in tc.entries(v, i)]
-    lo = min([cal.DEFAULT_START, *(s for s, _ in drawn)]) // 60 * 60
-    hi = max([cal.GRID_END, *(e for _, e in drawn)])
+    items = [x for i in range(len(v["dates"])) for _, x in tc.entries(v, i)]
+    lo = min([cal.DEFAULT_START, *(x.start for x in items)]) // 60 * 60
+    hi = max([cal.GRID_END, *(x.end for x in items)])      # the true ends: the 30 minute floor of a short card is drawn inside this, it never makes the axis longer
     return lo, min(-(-hi // 60) * 60, 24 * 60)
 
 
-def _row(v, i, kind, x, lo, lane, lanes):
+def _row(v, i, kind, x, lo, hi, lane, lanes):
     from gitaway.pages import tripcanvas as tc
     title = v["dates"][i].strftime("%A")
     attrs = tc.kind_attrs(v, kind, x)
-    s, e = _drawn(x)
+    s, e = _drawn(x, hi)
     mins = e - s
     size = ("is-short" if mins < SHORT else "is-tight" if mins < TIGHT else "is-tall") + (" is-lane" if lanes > 1 else "")      # is-lane: side by side with another card, so half a column wide: the start time only, no tile
     brief = mins < SHORT or lanes > 1      # the start time alone
@@ -77,7 +77,7 @@ def _row(v, i, kind, x, lo, lane, lanes):
              aria_label=f"{x.title}, {full}" + (f", {summary}" if summary else "") + ": open the day", data_wk_act=x.id, **attrs)      # (F-157: the mouse lifts a plan card by this id; a booking has none)
 
 
-def _column(v, i, editor, lo):
+def _column(v, i, editor, lo, hi):
     from gitaway.pages import tripcanvas as tc
     s = v["summaries"][i]
     ents = tc.entries(v, i)
@@ -87,18 +87,18 @@ def _column(v, i, editor, lo):
     head = A(Div(Span(f"{s.dow.title()} {s.num}", cls="cz-wh-day"), pill, cls="cz-wh-key"), Span(s.head.replace(" · ", ", "), cls="cz-wh-head"),
              href=tc.curl(day=i), cls="cz-wh cz-wopen", data_zoom="in", data_title=v["dates"][i].strftime("%A"), aria_label=f"Open the day: {label}, {s.head}")
     if ents:
-        lanes = _lanes(ents)
-        body = Div(*[_row(v, i, kind, x, lo, *lanes[f"{kind}:{x.id}"]) for kind, x in ents], Span("", cls="cz-wnone"), cls="cz-wlist")
+        lanes = _lanes(ents, hi)
+        body = Div(*[_row(v, i, kind, x, lo, hi, *lanes[f"{kind}:{x.id}"]) for kind, x in ents], Span("", cls="cz-wnone"), cls="cz-wlist")
     else:
         say = A(icon("mic", 18, 2.4), "Say the plan", href=f"/trip/ask?day={i}&mode=talk", cls="cz-desk-btn is-coral cz-wsay", id=f"cz-wsay-{i}") if editor else ""
         body = Div(Div(Span("Free day", cls="cz-wfree-t"), Span("Nothing planned yet", cls="cz-wfree-s"), say, cls="cz-wfree"), cls="cz-wlist")
     return Div(head, body, cls=f"cz-wcol{' is-today' if today else ''}", data_zk=f"day-{i}", data_day=str(i), role="group", aria_label=f"{label}: {s.head}" + (", today" if today else ""))
 
 
-def _lanes(ents):
+def _lanes(ents, hi):
     """{kind:id: (lane, lanes)}: the day's cards side by side where they overlap on the axis (drawn heights, so a 15 minute plan's 30 minutes count)."""
     from gitaway.pages import dayshared as calui
-    items = [SimpleNamespace(id=f"{kind}:{x.id}", start=_drawn(x)[0], end=_drawn(x)[1]) for kind, x in ents]
+    items = [SimpleNamespace(id=f"{kind}:{x.id}", start=_drawn(x, hi)[0], end=_drawn(x, hi)[1]) for kind, x in ents]
     return calui.lanes(items)
 
 
@@ -111,4 +111,4 @@ def _axis(lo, hi):
 def columns(v, editor):
     n = len(v["dates"])
     lo, hi = axis_range(v)
-    return Div(_axis(lo, hi), *[_column(v, i, editor, lo) for i in range(n)], id="cz-wk", cls=f"cz-wk{' is-long' if n > 5 else ''}", style=f"--days:{n};--span:{hi - lo};--hours:{(hi - lo) / 60:g}")
+    return Div(_axis(lo, hi), *[_column(v, i, editor, lo, hi) for i in range(n)], id="cz-wk", cls=f"cz-wk{' is-long' if n > 5 else ''}", style=f"--days:{n};--span:{hi - lo};--hours:{(hi - lo) / 60:g}")

@@ -60,6 +60,7 @@ def test_the_hour_axis_is_one_column_on_the_left_from_7_am_to_10_pm(signed_in, v
     steps = {round(b - a, 1) for a, b in zip(ys, ys[1:])}
     assert len(steps) == 1 and 30 <= steps.pop() <= 60      # evenly spaced
     assert page.evaluate(NO_SCROLL), "the page scrolls"
+    assert page.evaluate("(w => w.scrollHeight <= w.clientHeight && w.scrollWidth <= w.clientWidth)(document.querySelector('#cz-wk'))"), "the week panel scrolls inside itself"      # a fraction of a pixel over is a permanent scrollbar on a desktop with visible scrollbars
     assert m["labels"][-1]["b"] <= m["wk"]["b"] + 1 and m["labels"][0]["y"] >= m["wk"]["y"]      # the whole axis is inside the week area, which is inside the window
     assert m["wk"]["b"] <= viewport["height"]
     shot(page, f"axis-{viewport['width']}.png")
@@ -204,3 +205,39 @@ def test_a_filter_hides_the_cards_that_do_not_match_and_the_axis_stays(signed_in
     expect(page.locator(".cz-wi.is-booked:visible")).to_have_count(2)      # the sample trip's check in and check out
     expect(page.locator(".cz-wcol[data-day='1'] .cz-wnone")).to_have_text("Nothing for hotels")
     expect(page.locator(".cz-wax-h").first).to_be_visible()
+
+
+@BOTH
+def test_a_short_plan_at_the_end_of_the_day_does_not_stretch_the_axis(signed_in, viewport):
+    """A 15 minute plan at 9:45 PM is drawn 30 tall (the floor), but must not push the axis past 10 PM and shrink every hour."""
+    page = signed_in(viewport, path="/trip/canvas")
+    cal.add_activity(person("ari"), day=2, start=21 * 60 + 45, end=22 * 60, title="Last call at the bar", kind="food", fine=True)
+    page.reload()
+    page.wait_for_selector("#cz-wk .cz-wi")
+    m = page.evaluate(RECTS)
+    assert m["labels"][-1]["hr"] == 22 * 60 and len(m["labels"]) == 16      # still 7 AM to 10 PM
+    last = next(i for i in m["items"] if i["title"] == "Last call at the bar")
+    line = m["labels"][-1]["y"] + m["labels"][-1]["h"] / 2
+    hh = m["labels"][1]["y"] - m["labels"][0]["y"]
+    assert abs(last["y"] - (line - hh / 4)) <= 1.5      # its top is still 9:45 PM
+    assert last["b"] <= line + 1.5      # and it ends at the axis end, not 15 minutes past it
+    assert page.evaluate("(w => w.scrollHeight <= w.clientHeight)(document.querySelector('#cz-wk'))")
+
+
+@BOTH
+def test_a_title_that_does_not_fit_is_faded_not_silently_cut_and_breaks_at_spaces(signed_in, viewport):
+    page = signed_in(viewport, path="/trip/canvas")
+    me = person("ari")
+    cal.add_activity(me, day=1, start=9 * 60, end=11 * 60, title="Breakfast then the Griffith Observatory", kind="culture")
+    cal.add_activity(me, day=1, start=9 * 60, end=11 * 60, title="Beach volleyball tournament", kind="fun")
+    cal.add_activity(me, day=1, start=9 * 60, end=11 * 60, title="Boogie boarding", kind="outdoors")
+    cal.add_activity(me, day=2, start=9 * 60, end=11 * 60, title="Breakfast then lunch at the Griffith", kind="food")
+    cal.add_activity(me, day=2, start=9 * 60, end=11 * 60, title="Boogie boarding", kind="outdoors")
+    page.reload()
+    page.wait_for_selector("#cz-wk .cz-wi")
+    got = page.evaluate("""() => [...document.querySelectorAll('.cz-wcol[data-day="1"] .cz-wi-t, .cz-wcol[data-day="2"] .cz-wi-t')].map(t => ({ title: t.textContent, cut: t.scrollHeight > t.clientHeight + 1 || t.scrollWidth > t.clientWidth + 1, marked: t.classList.contains('is-cut'), mask: getComputedStyle(t).maskImage !== 'none',
+        brokenWord: (() => { const r = document.createRange(); r.selectNodeContents(t); const lines = new Map(); const w = t.textContent.split(' '); return w.some(word => word.length < 12 && (() => { const i = t.textContent.indexOf(word); const a = document.createRange(); a.setStart(t.firstChild, i); a.setEnd(t.firstChild, i + word.length); return a.getClientRects().length > 1; })()); })() }))""")
+    assert len(got) == 5 and any(g["cut"] for g in got)      # the narrow lanes cut the long ones
+    assert all(g["marked"] and g["mask"] for g in got if g["cut"]), got
+    two = [g for g in got if g["title"].startswith("Breakfast then lunch")][0]
+    assert not two["brokenWord"], two      # in a half column a word that fits is never split across two lines (in three lanes a long word has to break)

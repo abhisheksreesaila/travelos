@@ -6,6 +6,11 @@
 // a viewer too). No motion of its own: the lifted copy follows the pointer, and the refreshed week simply has the row in its new column in time order. Needs canvas_core.js and day_grid.js.
 (function () {
   var CZ = window.CZ;
+  // A card's title that does not fit its card is faded at the edge (week_desk.css .is-cut), so a cut is never silent. Measured, not guessed: it is re-measured on every swap, a resize and when the fonts arrive.
+  function markCuts() {
+    document.querySelectorAll('.cz-wk .cz-wi-t').forEach(function (t) { t.classList.toggle('is-cut', t.scrollHeight > t.clientHeight + 1 || t.scrollWidth > t.clientWidth + 1); });
+  }
+  if (CZ) { CZ.onSwap.push(markCuts); window.addEventListener('resize', markCuts); if (document.fonts && document.fonts.ready) document.fonts.ready.then(markCuts); markCuts(); }
   if (!CZ || !CZ.mouseOn) return;
   var stage = CZ.stage;
   var ZONE = 3, SPEED = 14;      // rem: the stretch at each side of the week that scrolls it; px a frame at the very edge

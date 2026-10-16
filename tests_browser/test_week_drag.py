@@ -290,6 +290,7 @@ def test_only_editors_get_the_grab_cursor_on_a_plan_row(desk, browser, base_url)
     finally:
         ctx.close()
 
+
 def test_the_moved_card_lands_in_the_new_column_at_the_same_height_on_the_axis(desk):
     """F-162: the plan keeps its time, so on the shared axis it is at the same y in its new column (a day no longer scrolls inside itself)."""
     act = lunch(desk)

@@ -78,8 +78,9 @@ def test_cards_are_time_title_and_tile_and_a_title_is_two_lines_at_most_without_
     page.reload()
     assert page.locator(".cz-wcol[data-day='0'] .cz-wi").count() >= 2
     m = page.evaluate("""() => [...document.querySelectorAll('.cz-wi')].map(r => { const t = r.querySelector('.cz-wi-t'), cs = getComputedStyle(t), lh = parseFloat(cs.lineHeight);
-        return { lines: Math.round(t.getBoundingClientRect().height / lh), ellipsis: cs.textOverflow, ico: !!r.querySelector('.cz-wi-ico svg'), time: !!r.querySelector('.cz-wi-time').textContent.trim(), title: t.textContent }; })""")
+        return { lines: Math.round(t.getBoundingClientRect().height / lh), ellipsis: cs.textOverflow, clipped: t.scrollWidth > t.clientWidth + 1 || t.scrollHeight > t.clientHeight + 1, cut: t.classList.contains('is-cut'), fade: cs.maskImage !== 'none', ico: !!r.querySelector('.cz-wi-ico svg'), time: !!r.querySelector('.cz-wi-time').textContent.trim(), title: t.textContent }; })""")
     assert all(x["ico"] and x["time"] and x["ellipsis"] == "clip" for x in m)
+    assert all(x["cut"] and x["fade"] for x in m if x["clipped"]), [x["title"] for x in m if x["clipped"] and not x["fade"]]      # a title that is cut is faded at its edge, never cut silently
     assert all(x["lines"] <= 2 for x in m), [(x["title"], x["lines"]) for x in m]      # a title is two lines or fewer; a card too short or too narrow for that fades its one line (the whole title shows when it is pointed at: test_week_axis.py)
     assert page.evaluate(NO_SCROLL) == [True, True, 0]
 

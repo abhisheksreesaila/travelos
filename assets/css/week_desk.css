@@ -39,7 +39,7 @@
   .cz .cz-wax-h { position: absolute; right: 0.6667rem; top: calc(var(--s) / var(--span) * 100%); transform: translateY(-50%); white-space: nowrap; font-size: max(var(--text-min), 0.9167rem); font-weight: 600; line-height: 1; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 
   /* the body of a column: the hour lines are its background, the cards sit on it by percentages of its height */
-  .cz .cz-wlist { position: relative; margin: 0.5rem 0; min-height: 0; }
+  .cz .cz-wlist { position: relative; margin: 0.5rem 0 0.6667rem; min-height: 0; }      /* (the room under the last hour line holds half of its label: a label past the panel would make it scroll) */
   .cz .cz-wcol .cz-wlist { background-image: linear-gradient(var(--hairline) 1px, transparent 1px); background-size: 100% calc(100% / var(--hours)); background-repeat: repeat-y; box-shadow: 0 1px 0 var(--hairline); }
 
   /* a day's header: neutral. Weekday and date, a grey Day N pill (Today, in ink, on today), the day's title under it (two lines, then it fades). It is the link that opens the day. */
@@ -62,7 +62,7 @@
   .cz .cz-wi-ico { flex: none; display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 0.5rem; background: var(--tint); color: var(--kink); }
   .cz .cz-wi-ico svg { width: 1.25rem; height: 1.25rem; }
   .cz .cz-wi-body { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; column-gap: 0.4167rem; row-gap: 0.1667rem; }
-  .cz .cz-wi-t { flex: 1 0 100%; min-width: 0; max-height: 2.4em; overflow: hidden; font-family: var(--font-display); font-weight: 700; font-size: 1.0833rem; line-height: 1.2; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+  .cz .cz-wi-t { flex: 1 0 100%; min-width: 0; max-height: 2.4em; overflow: hidden; font-family: var(--font-display); font-weight: 700; font-size: 1.0833rem; line-height: 1.2; letter-spacing: -0.01em; overflow-wrap: break-word; }      /* words break at spaces; a word wider than the card is the only thing that breaks inside */
   .cz .cz-wi-time { flex: none; font-size: max(var(--text-min), 0.9167rem); font-weight: 600; line-height: 1.2; color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .cz .cz-wi-tag { flex: none; padding: 0.0833rem 0.5rem; border-radius: var(--r-pill); background: var(--paper-2); color: var(--ink-2); font-size: max(var(--text-min), 0.8333rem); font-weight: 700; line-height: 1.2; letter-spacing: 0.06em; text-transform: uppercase; }
   .cz .cz-wi-s { flex: 1 0 100%; font-size: max(var(--text-min), 0.9167rem); font-weight: 600; line-height: 1.25; color: var(--ink-3); overflow-wrap: anywhere; }
@@ -70,13 +70,13 @@
   .cz .cz-wi.is-short { align-items: center; padding-block: 0; }
   .cz .cz-wi.is-short .cz-wi-ico, .cz .cz-wi.is-short .cz-wi-tag, .cz .cz-wi.is-short .cz-wi-s { display: none; }
   .cz .cz-wi.is-short .cz-wi-body { flex-wrap: nowrap; }
-  .cz .cz-wi.is-short .cz-wi-t { flex: 1 1 auto; max-height: none; white-space: nowrap; font-size: 1rem; -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 0.75rem), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 0.75rem), transparent); }
+  .cz .cz-wi.is-short .cz-wi-t { flex: 1 1 auto; max-height: none; white-space: nowrap; font-size: 1rem; }
   .cz .cz-wi.is-short:hover .cz-wi-body, .cz .cz-wi.is-short:focus-visible .cz-wi-body { flex-wrap: wrap; padding-block: 0.25rem; }
   .cz .cz-wi.is-short:hover .cz-wi-t, .cz .cz-wi.is-short:focus-visible .cz-wi-t { flex-basis: 100%; white-space: normal; -webkit-mask-image: none; mask-image: none; }
   /* 60 to 90 minutes: a small tile, the title on one line (it fades) and the time */
   .cz .cz-wi.is-tight .cz-wi-ico { width: 1.5rem; height: 1.5rem; border-radius: 0.4167rem; }
   .cz .cz-wi.is-tight .cz-wi-ico svg { width: 1rem; height: 1rem; }
-  .cz .cz-wi.is-tight .cz-wi-t { max-height: 1.2em; white-space: nowrap; -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 0.75rem), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 0.75rem), transparent); }
+  .cz .cz-wi.is-tight .cz-wi-t { max-height: 1.2em; white-space: nowrap; }
   .cz .cz-wi.is-tight .cz-wi-tag, .cz .cz-wi.is-tight .cz-wi-s { display: none; }
   .cz .cz-wi.is-tight:hover .cz-wi-t, .cz .cz-wi.is-tight:focus-visible .cz-wi-t { max-height: none; white-space: normal; -webkit-mask-image: none; mask-image: none; }
   .cz .cz-wi:is(.is-short, .is-tight):hover .cz-wi-tag, .cz .cz-wi:is(.is-short, .is-tight):focus-visible .cz-wi-tag { display: inline-block; }
@@ -86,6 +86,11 @@
   .cz .cz-wi.is-lane .cz-wi-ico, .cz .cz-wi.is-lane .cz-wi-tag, .cz .cz-wi.is-lane .cz-wi-s { display: none; }
   .cz .cz-wi.is-lane:hover .cz-wi-tag, .cz .cz-wi.is-lane:focus-visible .cz-wi-tag { display: inline-block; }
   /* from 90 minutes: the tile, the title on two lines, the time with PLAN or BOOKED, the summary */
+
+  /* a title that does not fit is cut, never silently: week_drag.js marks it .is-cut and it fades at its edge (down for a title of two lines, across for one); pointing at the card shows it whole */
+  .cz .cz-wi-t.is-cut { -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 0.6rem), transparent); mask-image: linear-gradient(180deg, #000 calc(100% - 0.6rem), transparent); }
+  .cz .cz-wi:is(.is-short, .is-tight) .cz-wi-t.is-cut { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 0.75rem), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 0.75rem), transparent); }
+  .cz .cz-wi:hover .cz-wi-t, .cz .cz-wi:focus-visible .cz-wi-t { max-height: none; white-space: normal; -webkit-mask-image: none !important; mask-image: none !important; }
 
   /* a free day: a soft dashed slot the height of the column */
   .cz .cz-wfree { position: absolute; inset: 0 0.4167rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; padding: 1rem 0.5rem; border: 1px dashed var(--hairline-2); border-radius: var(--r-card); background: var(--card); text-align: center; color: var(--ink-3); font-weight: 600; }
