@@ -1,7 +1,7 @@
 // The hold menu, rename in place and delete on the day grid (F-098). Needs canvas_core.js and day_grid.js, which load first and hand over two moments:
 //   CZ.hold(block)      a block was held and let go without moving: it wiggles and a small menu pops beside it: Chat, Rename, Delete, and Earlier, Later, Shorter and
 //                       Longer by 15 minutes (the same moves as dragging, for a keyboard or a screen reader; they are a real menu, role="menu").
-//   CZ.tap(block, e)    a tap: two quick taps on a title edit it in place. A park block's single tap on its title waits a moment for a second tap before it opens.
+// A tap on a title opens the plan at once (F-169: nothing waits for a second tap); renaming is the menu's Rename here, or a tap on the title inside the open card (day_card.js).
 // Rename in place: the title becomes a field right there; Enter or tapping away saves, Escape cancels; an empty or too-long title is refused in plain words (the
 // calendar's own rule: 1 to 40 characters). Delete asks once, in the menu, and has Undo after. The blocks are editors' only: a viewer's page has no menu button.
 (function () {
@@ -13,8 +13,6 @@
   var fineOn = false;       // the menu's own 5-minute switch: precision for a person who has no zoom (reduced motion) or would rather press than drag
   function nstep() { return fineOn ? FINE : STEP; }
   var menu = null;          // the open menu: { el, block, act, node, return: the thing to focus when it closes }
-  var lastTap = null, opening = 0;
-
   function editing() { return stage.dataset.edit === '1'; }
   function clamp(v, lo, hi) { return Math.min(Math.max(v, lo), hi); }
   function clock12(m) { var h = Math.floor(m / 60) % 24, mm = m % 60; return ((h % 12) || 12) + ':' + (mm < 10 ? '0' : '') + mm + ' ' + (h < 12 ? 'AM' : 'PM'); }
@@ -335,13 +333,14 @@
     var t = v.replace(/\s+/g, ' ').trim();
     return !t ? { err: REFUSALS.empty } : t.length > MAX_TITLE ? { err: REFUSALS.long } : { title: t };
   }
+  function saveTitle(act, title) { return CZ.post('/trip/canvas/plan', CZ.tripBody({ op: 'edit', act: act, title: title, next: CZ.here() })); }
   function rename(b) {
     if (!b) return;
     titleField(b, {
       value: titleOf(b),
       label: 'Name of this plan',
       same: titleOf(b),
-      save: function (title) { return CZ.post('/trip/canvas/plan', CZ.tripBody({ op: 'edit', act: b.dataset.act, title: title, next: CZ.here() })); },
+      save: function (title) { return saveTitle(b.dataset.act, title); },
       saved: function (res, title) { b.querySelector('.cz-gb-t').textContent = title; b.dataset.title = title; }
     });
   }
@@ -448,36 +447,11 @@
     return { input: input };
   }
 
-  // ---- taps: a double tap on a title edits it ---------------------------------------------------------------------------------------
-  function inRect(n, x, y, pad) { var r = n.getBoundingClientRect(); return x >= r.left - pad && x <= r.right + pad && y >= r.top - pad && y <= r.bottom + pad; }
-  CZ.tap = function (b, e) {
-    if (!editing() || b.classList.contains('is-editing')) return;
-    var t = b.querySelector('.cz-gb-t');
-    if (!t || !inRect(t, e.clientX, e.clientY, 10)) { lastTap = null; return; }
-    var now = Date.now();
-    if (lastTap && lastTap.b === b && now - lastTap.at < 330) {
-      lastTap = null;
-      clearTimeout(opening);
-      CZ.guard(500, b);                                            // neither tap opens the block
-      setTimeout(function () { rename(b); }, 80);                   // after the mouse events a tap ends with, which would take the focus straight back
-      return;
-    }
-    lastTap = { b: b, at: now };
-  };
-  // A park block's single tap on its title waits a moment for a second tap; every other tap opens at once.
-  document.addEventListener('click', function (e) {
-    var a = e.target.closest ? e.target.closest('.cz-gb-open') : null;
-    if (!a || !editing() || !lastTap || a.dataset.go) return;
-    var b = a.closest('.cz-gb');
-    if (lastTap.b !== b || Date.now() - lastTap.at > 120) return;
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    opening = setTimeout(function () { lastTap = null; a.dataset.go = '1'; a.click(); delete a.dataset.go; }, 330);
-  }, true);
-
   // ---- from the grid ------------------------------------------------------------------------------------------------------------
   CZ.hold = function (b) { open(b, null); };
   CZ.rename = rename;
+  CZ.checkTitle = check;      // the open card's title field (day_card.js, F-169) uses the same rule and the same write
+  CZ.saveTitle = saveTitle;
   CZ.titleField = titleField;      // day_new.js (F-101) types a new plan's title into the same field
   stage.addEventListener('cz:swap', function (e) {
     if (!menu) return;

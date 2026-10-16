@@ -113,6 +113,7 @@
     main.appendChild(wrap);
     open = { wrap: wrap, card: card, scrim: scrim, content: content, body: body, block: block, act: act, folding: false };
     block.classList.add('is-card');
+    if (stage.dataset.edit === '1' && CZ.saveTitle) renamable(open, t);
     lock(open);
     place(open, geometry(wrap, r));
     CZ.cardOpen = true;
@@ -235,6 +236,62 @@
     size();
     try { ta.focus({ preventScroll: true }); } catch (e) { ta.focus(); }
     ta.setSelectionRange(ta.value.length, ta.value.length);
+  }
+
+  // ---- the title, in place ----------------------------------------------------------------------------------------------------
+  // F-169: a plan opens on one tap, so renaming is not a double tap on the block any more: an editor taps the title in the open card (or reaches it with Tab and presses Enter) and it
+  // becomes a field. Enter or tapping away saves (the hold menu's rule and write: day_menu.js), Escape puts it back, an empty or too-long title is refused in plain words.
+  function renamable(o, t) {
+    t.tabIndex = 0; t.classList.add('is-renamable'); t.setAttribute('aria-description', 'Tap to rename this plan');
+    t.addEventListener('click', function () { rename(o, t); });
+    t.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); rename(o, t); } });
+  }
+  function rename(o, t) {
+    if (o.folding || o.note || o.saving) return;
+    var was = o.block.dataset.title || t.textContent;
+    var input = mk('input', 'cz-card-name'), err = mk('span', 'cz-card-err');
+    input.type = 'text'; input.value = was;
+    input.setAttribute('aria-label', 'Name of this plan'); input.setAttribute('enterkeyhint', 'done'); input.setAttribute('autocomplete', 'off');
+    input.setAttribute('autocapitalize', 'sentences'); input.setAttribute('spellcheck', 'false');
+    err.setAttribute('role', 'alert');
+    t.hidden = true;
+    t.after(input); input.after(err);
+    o.note = input;
+    var over = false, sending = false;
+    function finish() { over = true; o.note = null; o.commitNote = null; o.cancelNote = null; input.remove(); err.remove(); t.hidden = false; }
+    function cancel() { if (over || sending) return; finish(); try { t.focus({ preventScroll: true }); } catch (e) { /* no focus */ } }
+    function commit() {
+      if (over || sending) return;
+      var got = CZ.checkTitle(input.value);
+      if (got.err) { err.textContent = got.err; input.setAttribute('aria-invalid', 'true'); input.focus(); return; }
+      if (got.title === was) { cancel(); return; }
+      sending = true; o.saving = true; input.disabled = true;
+      CZ.saveTitle(o.act, got.title).then(function (res) {
+        o.saving = false;
+        t.textContent = got.title; o.block.dataset.title = got.title;
+        var bt = o.block.querySelector('.cz-gb-t'); if (bt) bt.textContent = got.title;
+        finish();
+        forgetCard(o.act);
+        if (res.toast) CZ.showToast(res.toast, res.undo ? function () { CZ.undo(res.undo); } : null);
+        CZ.quiet();
+      }, function (e) {
+        sending = false; o.saving = false; input.disabled = false;
+        err.textContent = e && e.soft ? e.soft : 'Could not save that. Try again.';
+        input.setAttribute('aria-invalid', 'true');
+        input.focus();
+      });
+    }
+    o.cancelNote = cancel;
+    o.commitNote = commit;
+    input.addEventListener('input', function () { err.textContent = ''; input.removeAttribute('aria-invalid'); });
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); commit(); }
+      else e.stopPropagation();
+    }, true);
+    input.addEventListener('blur', function () { setTimeout(commit, 0); });
+    try { input.focus({ preventScroll: true }); } catch (e) { input.focus(); }
+    input.select();
+    refit();
   }
 
   // ---- fold ---------------------------------------------------------------------------------------------------------------------
