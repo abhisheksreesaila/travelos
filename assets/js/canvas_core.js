@@ -149,7 +149,7 @@
   // F-131: what the scripts own rides through it: their classes on an element the server also draws (the compact bar shown, a block selected, a filter's highlight), the
   // compact bar's inert state, and the hold menu (a node the server never draws). Without that the morph took them off and the scripts put them back a moment later, after
   // a layout in between: the compact bar faded in again and the selected block re-grew on every refresh.
-  var OWN = ['is-on', 'is-selected', 'is-menu', 'is-wiggle', 'is-hit', 'is-dim', 'is-off', 'is-thin', 'is-bare', 'cz-flt-on', 'is-ringed'];
+  var OWN = ['is-on', 'is-selected', 'is-menu', 'is-wiggle', 'is-hit', 'is-dim', 'is-off', 'is-thin', 'is-bare', 'cz-flt-on', 'is-ringed', 'is-landing'];
   var MORPH = {
     morphStyle: 'innerHTML', ignoreActiveValue: true,
     callbacks: {
@@ -161,10 +161,11 @@
         if (old.hasAttribute('data-live')) return false;      // F-143: the Family chats in the panel are kept up to date by their own script (thread.js), a refresh of the day leaves them be
         if (old.hasAttribute('data-keep-state')) ['hidden', 'aria-expanded'].forEach(function (a) { if (old.hasAttribute(a)) fresh.setAttribute(a, old.getAttribute(a)); else fresh.removeAttribute(a); });
         for (var i = 0; i < OWN.length; i++) if (old.classList.contains(OWN[i])) fresh.classList.add(OWN[i]);
+        if (old.classList.contains('is-landing') && old.style.transformOrigin) fresh.style.transformOrigin = old.style.transformOrigin;      // F-171: a block landing (GA.motion.land squashes it about its corner) keeps that pivot when the server's style attribute is synced onto it mid-move: the scale would otherwise pivot about the centre and jump
         if (old.classList.contains('cz-fold')) ['inert', 'aria-hidden'].forEach(function (a) { if (old.hasAttribute(a)) fresh.setAttribute(a, old.getAttribute(a)); else fresh.removeAttribute(a); });
         return true;
       },
-      beforeNodeRemoved: function (old) { return !(old.classList && old.classList.contains('cz-menu')); }
+      beforeNodeRemoved: function (old) { return !(old.classList && (old.classList.contains('cz-menu') || old.classList.contains('cz-g-ghost'))); }      // (F-171: the ghost at a dropped block's old slot goes when the block has landed, not when the refresh comes in)
     }
   };
   function swap(html, dir, inPlace) {
@@ -174,8 +175,6 @@
     var v = view();
     if (!v) return;
     if (v.dataset.title) document.title = 'GitAway · ' + v.dataset.title;
-    var focus = quietSwap ? null : v.querySelector('#cz-sheet-title') || v.querySelector('#cz-title');
-    if (focus) { try { focus.focus({ preventScroll: true }); } catch (e) { focus.focus(); } }
     if (dir && laptop()) dir = 'calm';
     if (dir && !(document.startViewTransition && !reduced.matches)) {
       v.classList.add('cz-in-' + dir);
@@ -183,6 +182,9 @@
     }
     settled();
     stage.dispatchEvent(new CustomEvent('cz:swap', { detail: { quiet: quietSwap, mode: curMode } }));      // the day grid (day_grid.js) starts its scroll and its focus here
+    // F-171: focus last. Focusing right after the write made the browser lay the new level out (about 20 ms on a slow phone) before the hooks above read it, so the layout they need is done once, here, after them
+    var focus = quietSwap ? null : v.querySelector('#cz-sheet-title') || v.querySelector('#cz-title');
+    if (focus) { try { focus.focus({ preventScroll: true }); } catch (e) { focus.focus(); } }
   }
   // What every level needs once it is on the screen (and once at start): the modules' hooks (the filters), the dates centred, Ask on this day, the next levels fetched.
   function settled() {
