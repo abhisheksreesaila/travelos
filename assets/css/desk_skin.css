@@ -143,11 +143,11 @@
 
   /* a plan: a white card, a hairline, the kind's 3px edge (the base rule's inset shadow), the icon tile at the left, then the title with its grey PLAN pill and the time. A card keeps its true height (height is time):
      a 30 minute plan is a compact one-row card, never taller than its slot, so cards never cover one another. */
-  :root:has(.ga-topbar) .cz .cz-gb:not(.is-drawing) { min-height: 0; border: 1px solid var(--hairline); border-radius: var(--r-sm); background: var(--card); }
+  :root:has(.ga-topbar) .cz .cz-gb:not(.is-drawing) { min-height: 0; border: 1px solid var(--hairline); border-radius: var(--r-sm); background: var(--tint); }
   :root:has(.ga-topbar) .cz .cz-gb-in { padding: 0.5rem 0.75rem 0.25rem 4rem; }
-  :root:has(.ga-topbar) .cz .cz-gb-tile, :root:has(.ga-topbar) .cz .cz-gbk-tile { display: grid; place-items: center; flex: none; width: 2.5rem; height: 2.5rem; border-radius: 0.75rem; background: var(--tint); color: var(--kink); }
+  :root:has(.ga-topbar) .cz .cz-gb-tile, :root:has(.ga-topbar) .cz .cz-gbk-tile { display: grid; place-items: center; flex: none; width: 2.5rem; height: 2.5rem; border-radius: 0.75rem; background: var(--card); color: var(--kink); }
   :root:has(.ga-topbar) .cz .cz-gb-tile { position: absolute; left: 0.75rem; top: 0.4167rem; }
-  :root:has(.ga-topbar) .cz .cz-gb-head { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; column-gap: 0.5rem; background: var(--card); }
+  :root:has(.ga-topbar) .cz .cz-gb-head { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; column-gap: 0.5rem; background: var(--tint); }
   :root:has(.ga-topbar) .cz .cz-gb-t { flex: 0 1 auto; min-width: 0; font-family: var(--font-display); font-weight: 700; font-size: 1.25rem; letter-spacing: -0.02em; }
   :root:has(.ga-topbar) .cz .cz-gb-when { flex: 1 0 100%; font-weight: 600; font-size: max(var(--text-min), 0.9583rem); color: var(--ink-2); }
   :root:has(.ga-topbar) .cz .cz-gb-tag, :root:has(.ga-topbar) .cz .cz-gbk .cz-bk-tag { display: inline-flex; align-items: center; flex: none; height: 1.4167rem; padding: 0 0.5833rem; border-radius: var(--r-pill); background: var(--paper-2); color: var(--ink-2); font-size: max(var(--text-min), 0.9167rem); font-weight: 700; line-height: 1; letter-spacing: 0.06em; text-transform: uppercase; }
@@ -170,7 +170,7 @@
   :root:has(.ga-topbar) .cz .cz-gb.is-tiny .cz-gb-t, :root:has(.ga-topbar) .cz .cz-gb.is-tiny .cz-gb-when { font-size: max(var(--text-min), 0.9167rem); line-height: 1; }
 
   /* a booking: the same card, its kind's tile, the title and a grey BOOKED pill; the time is on the rail (the link's label still says it) */
-  :root:has(.ga-topbar) .cz .cz-gbk { min-height: 3rem; padding: 0 0.75rem; border: 1px solid var(--hairline); border-radius: var(--r-sm); background: var(--card); box-shadow: inset 0.25rem 0 0 var(--accent); color: var(--ink); }
+  :root:has(.ga-topbar) .cz .cz-gbk { min-height: 3rem; padding: 0 0.75rem; border: 1px solid var(--hairline); border-radius: var(--r-sm); background: color-mix(in srgb, var(--tint) 45%, var(--card)); box-shadow: inset 0.25rem 0 0 var(--accent); color: var(--ink); }
   :root:has(.ga-topbar) .cz .cz-gbk-in { gap: 0.75rem; min-height: 2.8333rem; padding-left: 0.1667rem; }
   :root:has(.ga-topbar) .cz .cz-gbk .cz-bk-time { display: none; }
   :root:has(.ga-topbar) .cz .cz-gbk .cz-bk-t { flex: 0 1 auto; font-family: var(--font-display); font-weight: 700; font-size: 1.25rem; letter-spacing: -0.02em; color: var(--ink); }

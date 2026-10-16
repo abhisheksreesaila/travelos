@@ -19,8 +19,10 @@ read before they write (the calendar's validation, id counters) start with a wri
 write lock, so the reads that follow cannot be stale. WAL mode keeps readers out of the writers' way.
 """
 
+import copy
 import threading
 from contextlib import contextmanager
+from contextvars import ContextVar
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -247,16 +249,83 @@ def take_opened() -> set:
     return opened
 
 
-def family_db(source):
-    """The signed-in person's family database, ready to use. `source` is a Request or a session mapping.
+class Scope:
+    """What one request has already checked and built for each family (F-172): the person is a member, the tables exist, and fh-saas's
+    table metadata is cloned. That is the cost of an open (a host-database query under the host lock, and ~28 table clones); a day
+    fragment used to pay it 27 times. Each *use* still gets its own short connection from the pool, so a request holds none between
+    uses, uses on different threads never share one, and writes keep their short transactions.
+    The entry is keyed by family and person, so another family or person always gets its own, and nothing crosses requests.
 
-    Checks that the person is an active member of the family named in the session (fh-saas require_tenant_access), and
-    makes sure the tables exist. The caller closes the handle (`db.conn.close()`); `using` does that for you.
-    Raises ValueError when nobody is signed in and PermissionError when they are not a member.
-    """
-    session = getattr(source, "session", None) if hasattr(source, "scope") else source  # a Starlette Request is a Mapping too: ask it for its session
-    if session is None or not session.get("user_id"):
-        raise ValueError("Authentication required")
+    Rules for code that uses a lent handle: the membership check ran once, at the first use in the request, so nothing that outlives
+    the request's own work (an event stream, a long-running response) may read a family through the scope without checking again.
+    A lent handle is a shallow copy: its connection and its `_tables` are its own, but `meta` (the reflected Table objects) is shared
+    with the other lent handles of that family and person, so never change a table's definition through the table API (`db.t`,
+    `db.create`, `.transform`) on a family handle. GitAway reads and writes with SQL (`rows`, `run`, utils_sql) only."""
+
+    def __init__(self):
+        self._ready = {}
+        self._lock = threading.Lock()
+        self.closed = False
+
+    def lend(self, session, opener):
+        """`session` is a snapshot (`_snapshot`): the key and the membership check read the same values."""
+        key = (session.get("tenant_id"), session.get("user_id"))
+        with self._lock:
+            if self.closed:
+                return None
+            template = self._ready.get(key)
+        if template is None:
+            template = opener(session)     # checks membership (PermissionError if not a member), makes sure the tables exist
+            template.conn.close()   # the template holds the checked metadata only, no connection
+            with self._lock:
+                if self.closed:
+                    return None
+                self._ready[key] = template
+        db = copy.copy(template)
+        db._tables = {}                    # DBTable objects remember the handle they were made on: never share them between handles
+        db.conn = template.engine.connect()
+        return db
+
+    def close(self):
+        with self._lock:
+            self.closed = True
+            self._ready = {}
+
+
+_scope = ContextVar("gitaway_family_scope", default=None)
+
+
+@contextmanager
+def request_scope():
+    """Inside this block `family_db` checks and builds each family once; no connection outlives a use, so an error leaves nothing to close.
+    Code outside a request (background jobs, scripts, tests) has no scope and opens a handle per call, as before."""
+    scope = Scope()
+    token = _scope.set(scope)
+    try:
+        yield scope
+    finally:
+        _scope.reset(token)
+        scope.close()
+
+
+class RequestScope:
+    """ASGI middleware: one `request_scope` around every HTTP request (main.py)."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            return await self.app(scope, receive, send)
+        with request_scope():
+            await self.app(scope, receive, send)
+
+
+def _snapshot(session) -> dict:
+    return {k: session[k] for k in ("user_id", "email", "tenant_id", "tenant_role", "is_sys_admin") if k in session}
+
+
+def _open(session):
     with hostdb.locked():  # the membership check uses fh-saas's one shared host connection
         db = require_tenant_access(session)
     try:
@@ -265,6 +334,26 @@ def family_db(source):
         db.conn.close()
         raise
     return db
+
+
+def family_db(source):
+    """The signed-in person's family database, ready to use. `source` is a Request or a session mapping.
+
+    Checks that the person is an active member of the family named in the session (fh-saas require_tenant_access), and
+    makes sure the tables exist. The caller closes the handle (`db.conn.close()`); `using` does that for you.
+    Inside a request (`request_scope`) the membership check and the table metadata are done once per family; each call still gets its own connection.
+    Raises ValueError when nobody is signed in and PermissionError when they are not a member.
+    """
+    session = getattr(source, "session", None) if hasattr(source, "scope") else source  # a Starlette Request is a Mapping too: ask it for its session
+    if session is None or not session.get("user_id"):
+        raise ValueError("Authentication required")
+    session = _snapshot(session)    # one read of the session: the scope's key and the membership check see the same person and family
+    scope = _scope.get()
+    if scope is not None:
+        db = scope.lend(session, _open)
+        if db is not None:
+            return db
+    return _open(session)
 
 
 @contextmanager

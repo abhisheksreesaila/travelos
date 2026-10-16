@@ -430,14 +430,13 @@
     cancelAnimationFrame(gg.raf || 0);
     var g = gg;
     gg = null;
-    if (g.mode === 'wait') {                                               // a tap: the click that follows opens the block (two taps on a title edit it: day_menu.js)
+    if (g.mode === 'wait') {                                               // a tap: the click that follows opens the block at once (F-169)
       if (g.own) CZ.held = false;
       if (sel && sel.el === g.el) {                                        // a tap on the selected block only puts the knobs away: the click it makes opens nothing
         deselect();
         swallow = { el: g.el, until: Date.now() + 600 };
         return;
       }
-      if (CZ.tap) CZ.tap(g.el, e);
       return;
     }
     CZ.guard(300, g.el);

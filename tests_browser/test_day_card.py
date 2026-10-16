@@ -35,7 +35,7 @@ def block(page, act):
 
 
 def tap(page, act):
-    """A real touch tap on a block, away from its title (two quick taps on a title rename it)."""
+    """A real touch tap on a block."""
     sel = f'.cz-gb[data-act="{act}"]'
     show(page, sel)
     b = box(page, sel)
@@ -328,18 +328,6 @@ def test_a_hold_still_lifts_and_a_hold_without_moving_still_opens_the_menu_not_t
     fire(phone, "pointerup", *end)
     expect(phone.locator(".ga-toast")).to_contain_text("Lunch moved to 12:30 PM")
     assert card(phone).count() == 0 and now(lunch.id)[0] == 12 * 60 + 30
-
-
-def test_a_double_tap_on_a_title_still_renames_it_and_opens_no_card(phone):
-    lunch = plan("Lunch", 12 * 60, 13 * 60)
-    open_day(phone)
-    show(phone, f'.cz-gb[data-act="{lunch.id}"]')
-    t = phone.locator(f'.cz-gb[data-act="{lunch.id}"] .cz-gb-t').bounding_box()
-    for _ in range(2):
-        phone.touchscreen.tap(t["x"] + 10, t["y"] + t["height"] / 2)
-        phone.wait_for_timeout(60)
-    expect(phone.locator(".cz-gb-edit")).to_be_visible()
-    assert card(phone).count() == 0
 
 
 # ---- motion and the keyboard --------------------------------------------------------------------------------------------------------
