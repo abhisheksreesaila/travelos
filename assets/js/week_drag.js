@@ -3,7 +3,7 @@
 // same write, toast "Moved to Sat 17" and Undo as dropping on a day chip, F-151). A press that does not travel is still a click and opens the day with the plan in the panel (F-145).
 // The column under the pointer shows it takes the drop (a coral ring and tint); the plan's own column does not. Esc, or letting go on the plan's own column or anywhere else, leaves it.
 // A trip longer than five days scrolls sideways inside the week: held within a few rem of its left or right edge it scrolls. Laptop only, a mouse only, editors only (the server refuses
-// a viewer too). No motion of its own: the lifted copy follows the pointer, and the refreshed week simply has the row in its new column in time order. Needs canvas_core.js and day_grid.js.
+// a viewer too). No motion of its own: the lifted copy follows the pointer, and at the drop the row is put in its new column in time order (F-176), before the save answers. Needs canvas_core.js and day_grid.js.
 (function () {
   var CZ = window.CZ;
   if (!CZ || !CZ.mouseOn) return;
@@ -76,18 +76,33 @@
     g = null;
   }
 
+  // F-176: the row goes into the new column at the drop (it keeps its time, so on the shared axis it keeps its height), alone in its lane; the save's reply redraws the week with
+  // the lanes right and the toast. A refused save puts it back where it was before the week is drawn again.
+  function put(row, col) {
+    var list = col.querySelector('.cz-wlist');
+    if (!list) return;
+    var free = list.querySelector('.cz-wfree'), s = +row.dataset.s, before = null;
+    if (free) free.hidden = true;
+    Array.prototype.some.call(list.querySelectorAll('.cz-wi'), function (n) { if (n !== row && +n.dataset.s > s) { before = n; return true; } return false; });
+    list.insertBefore(row, before || list.querySelector('.cz-wnone'));
+    row.style.setProperty('--lane', '0');
+    row.style.setProperty('--lanes', '1');
+    row.classList.remove('is-lane');
+  }
   function drop(col) {
     var act = g.act, to = col.dataset.day, row = g.row;
     end();
+    var home = { list: row.parentNode, next: row.nextSibling, style: row.getAttribute('style'), cls: row.className }, free = col.querySelector('.cz-wfree');      // (after end(): not lifted)
     busy = true;
-    row.classList.add('is-saving');
+    put(row, col);
     CZ.post('/trip/canvas/plan', CZ.tripBody({ op: 'edit', act: act, day: to, next: CZ.here() })).then(function (res) {
       busy = false;
       if (res.toast) CZ.showToast(res.toast, res.undo ? function () { CZ.undo(res.undo); } : null);
       return CZ.quiet();
     }, function (err) {
       busy = false;
-      row.classList.remove('is-saving');
+      if (home.list.isConnected) { home.list.insertBefore(row, home.next && home.next.parentNode === home.list ? home.next : null); row.setAttribute('style', home.style || ''); row.className = home.cls; }
+      if (free) free.hidden = false;
       CZ.showToast(err && err.soft ? err.soft : 'Could not save that. Check your connection.');
       return CZ.quiet();
     });

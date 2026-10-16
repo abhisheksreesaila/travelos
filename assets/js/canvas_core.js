@@ -86,7 +86,8 @@
     var add = function (list, u) { if (u && u !== now && near.indexOf(u) < 0 && rest.indexOf(u) < 0) list.push(u); };
     if (v.dataset.level === 'week') {
       // F-145: the desktop week's Open the day and plan rows too. F-170: only rows with a box (the phone hides the desktop columns: their plan rows are 40 KB each and never tapped)
-      v.querySelectorAll('a.cz-wopen[data-zoom="in"], a.cz-wi.is-plan[data-zoom="in"]').forEach(function (a) { if (boxed(a)) add(near, path(a.href)); });
+      // F-176: a plan row is fetched once; after a write its stale copy is not fetched again (one per plan, 40 KB each), it is checked when it is opened (F-170)
+      v.querySelectorAll('a.cz-wopen[data-zoom="in"], a.cz-wi.is-plan[data-zoom="in"]').forEach(function (a) { if (boxed(a) && !(a.classList.contains('cz-wi') && cache[path(a.href)])) add(near, path(a.href)); });
       // The phone's day cards (about 35 KB each; the desktop columns' plan rows are never fetched there): every day of the trip, today's and its nearest first, at most WEEK_AHEAD;
       // on a longer trip the cards that come on screen are fetched too (the scroll calls prefetch)
       var h = window.innerHeight, rows = Array.prototype.slice.call(v.querySelectorAll('a.cz-row-link[data-zoom="in"]')).filter(boxed);

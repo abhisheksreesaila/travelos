@@ -303,3 +303,47 @@ def test_the_moved_card_lands_in_the_new_column_at_the_same_height_on_the_axis(d
     expect(moved).to_have_count(1)
     after = moved.bounding_box()
     assert abs(after["y"] - before["y"]) < 1 and abs(after["height"] - before["height"]) < 1
+
+
+def test_the_drop_lands_in_the_new_column_at_once_while_the_save_is_on_its_way(desk):
+    """F-176: the row is in the target column, at its time, unfaded, in the frame after the drop, with the save slowed 700 ms; the reply only tidies up and toasts. A write then
+    does not fetch every plan row of the week again (each is checked when it is opened)."""
+    act = lunch(desk)
+    top = row(desk, act).bounding_box()["y"]
+    gets = []
+    desk.on("request", lambda q: gets.append(q.url) if q.method == "GET" and "plan=" in q.url else None)
+    desk.wait_for_timeout(2500)                                                                 # the plan rows fetched ahead once, as the week came
+    ahead = set(gets)
+    desk.route("**/trip/canvas/plan", lambda r: (desk.wait_for_timeout(700), r.continue_()))
+    lift(desk, act)
+    desk.mouse.move(*mid(col(desk, SATURDAY)), steps=6)
+    mark = len(gets)
+    desk.evaluate("() => { window.__t0 = performance.now(); }")
+    desk.mouse.up()
+    at = desk.evaluate("""act => new Promise(ok => requestAnimationFrame(() => {
+        const n = document.querySelector(`.cz-wcol[data-day="${%d}"] .cz-wi[data-wk-act="${act}"]`);
+        ok(n ? { ms: performance.now() - window.__t0, op: getComputedStyle(n).opacity, y: n.getBoundingClientRect().top, saving: n.classList.contains('is-saving') } : null);
+    }))""" % SATURDAY, act)
+    assert at is not None, "the row is not in the new column in the frame after the drop"
+    assert at["ms"] < 100 and at["op"] == "1" and not at["saving"] and abs(at["y"] - top) <= 1, at
+    assert col(desk, SUNDAY).locator(f'.cz-wi[data-wk-act="{act}"]').count() == 0
+    expect(desk.locator(".ga-toast")).to_contain_text("Moved to Sat 17")
+    expect(col(desk, SATURDAY).locator(f'.cz-wi[data-wk-act="{act}"]')).to_have_count(1)
+    assert day_of(act) == SATURDAY
+    desk.wait_for_timeout(2500)                                                                 # the idle fetches after the write
+    desk.unroute_all(behavior="ignoreErrors")
+    again = [u for u in gets[mark:] if u in ahead]
+    assert ahead and again == [], again                                                         # (the moved plan's new address is new: fetched once)
+
+
+def test_a_refused_drop_puts_the_row_back_where_it_was(desk):
+    act = lunch(desk)
+    desk.route("**/trip/canvas/plan", lambda r: r.fulfill(status=422, content_type="application/json", body='{"error": "That overlaps."}'))
+    lift(desk, act)
+    desk.mouse.move(*mid(col(desk, SATURDAY)), steps=6)
+    desk.mouse.up()
+    expect(desk.locator(".ga-toast")).to_contain_text("That overlaps.")
+    expect(col(desk, SUNDAY).locator(f'.cz-wi[data-wk-act="{act}"]')).to_have_count(1)
+    expect(col(desk, SATURDAY).locator(f'.cz-wi[data-wk-act="{act}"]')).to_have_count(0)
+    assert day_of(act) == SUNDAY
+    assert row(desk, act).evaluate("n => getComputedStyle(n).opacity") == "1"                    # put back as it was, not faded as lifted
