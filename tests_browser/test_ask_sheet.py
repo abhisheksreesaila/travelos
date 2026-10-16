@@ -305,10 +305,25 @@ def test_tab_never_leaves_the_sheet_on_family_and_the_page_is_free_again_after(p
     for _ in range(25):
         page.keyboard.press("Shift+Tab")
         assert page.evaluate("!!document.activeElement.closest('#ak-sheet')")
-    assert page.evaluate("[...document.querySelectorAll('[inert]')].map(n => n.id)") == ["ph-app"]      # F-173: the page behind is one wrapper, not every child of it
+    assert page.evaluate(BEHIND)      # F-173: the page behind is the body's wrappers (page and top bar), not every child of them
     page.keyboard.press("Escape")
     expect(page.locator("#ak-sheet")).to_have_count(0)
     assert page.evaluate("document.querySelectorAll('[inert]').length") == 0
+
+
+BEHIND = """() => { const kids = [...document.body.children].filter(n => !/^(SCRIPT|STYLE|LINK)$/.test(n.tagName) && n.id !== 'ga-toast' && !n.classList.contains('ak-sheet-wrap'));
+  return kids.length > 0 && kids.every(n => n.inert) && document.querySelectorAll('[inert]').length === kids.length; }"""
+
+
+def test_the_first_keystroke_does_not_change_the_boxs_height(phone, base_url, model):
+    """F-173: an empty box is not measured on opening; typing the first letter must not make it jump."""
+    page = phone(FAKE_MIC + NO_SPEECH, size=(390, 800))
+    day_page(page, base_url)
+    open_sheet(page)
+    box = page.locator("#ak-text")
+    before = box.evaluate("e => e.getBoundingClientRect().height")
+    box.press_sequentially("a")
+    assert abs(box.evaluate("e => e.getBoundingClientRect().height") - before) < 1
 
 
 def test_the_tap_only_opens_the_sheet_and_starts_the_microphone_the_page_goes_inert_after_the_first_frame(phone, base_url, model):
@@ -319,8 +334,8 @@ def test_the_tap_only_opens_the_sheet_and_starts_the_microphone_the_page_goes_in
     got = page.evaluate("""() => { document.getElementById('ph-tab-ask').click();
         return { sheet: !!document.getElementById('ak-sheet'), mic: window.__gum || 0, inert: document.querySelectorAll('[inert]').length }; }""")
     assert got == {"sheet": True, "mic": 1, "inert": 0}
-    page.wait_for_function("document.querySelectorAll('[inert]').length === 1")
-    assert page.evaluate("document.querySelector('[inert]').contains(document.getElementById('ph-tab-ask'))")      # the one wrapper is the page that holds the tab
+    page.wait_for_function(BEHIND)
+    assert page.evaluate("[...document.querySelectorAll('[inert]')].every(n => n.parentNode === document.body) && document.querySelector('header.ga-topbar').inert")      # the wide installed app's top bar is behind too
 
 
 def test_a_box_that_arrives_after_the_tap_does_not_start_the_microphone_by_itself(phone, base_url, model):

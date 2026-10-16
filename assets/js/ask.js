@@ -78,7 +78,7 @@
     if (start !== true || box.value) {      // F-173: an empty box on opening is already its natural height; measuring it was a forced layout inside the tap
       box.style.height = 'auto';
       var rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 12;
-      box.style.height = Math.min(box.scrollHeight, Math.max(window.innerHeight * 0.6, 13 * rem)) + 'px';
+      box.style.height = Math.min(box.scrollHeight + box.offsetHeight - box.clientHeight, Math.max(window.innerHeight * 0.6, 13 * rem)) + 'px';      // (+ the borders: the box is border-box, so its natural height is what an empty one already has)
     }
     placeByLength();
     var n = box.value.length;

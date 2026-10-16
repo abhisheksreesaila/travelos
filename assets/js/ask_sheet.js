@@ -15,8 +15,6 @@
   var tab = document.getElementById('ph-tab-ask');
   if (!tab || tab.dataset.ask !== 'sheet') return;
   var root = document.documentElement;
-  var app = tab;      // the page the sheet opens over (the body's child that holds the tab: #ph-app, or the canvas's #cz-app): the one thing made inert (F-173); the sheet itself goes in the body beside it
-  while (app.parentNode && app.parentNode !== document.body) app = app.parentNode;
   var phone = window.matchMedia('(max-width: 720px), (display-mode: standalone)');
   var wrap = null, sheet = null, scroll = null, ctl = null, closing = false, back = [];
 
@@ -96,8 +94,17 @@
     });
   }
 
-  // the page behind is for looking only while the sheet is open: one wrapper is inert, so Tab never leaves the sheet (the toast is outside it, and only said)
-  function behind(on) { if (on) app.setAttribute('inert', ''); else app.removeAttribute('inert'); }
+  // the page behind is for looking only while the sheet is open: the body's own wrappers (the page, and the top bar a wide installed app shows) are inert, not every child in them, so Tab never leaves the sheet.
+  // The toast is left alone (it is only said); the scripts have nothing to focus.
+  var inerted = [];
+  function behind(on) {
+    if (!on) { inerted.forEach(function (n) { n.removeAttribute('inert'); }); inerted = []; return; }
+    Array.prototype.forEach.call(document.body.children, function (n) {
+      if (n === wrap || n.id === 'ga-toast' || n.hasAttribute('inert') || /^(SCRIPT|STYLE|LINK)$/.test(n.tagName)) return;
+      n.setAttribute('inert', '');
+      inerted.push(n);
+    });
+  }
 
   // a fragment becomes the sheet's content and the box in it is started
   function fill(html, first, late) {
