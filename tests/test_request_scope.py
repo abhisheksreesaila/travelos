@@ -74,7 +74,12 @@ def test_every_handle_a_request_opened_is_closed_when_it_ends_even_on_an_error(c
     monkeypatch.setattr(familydb, "rows", explode)
     with pytest.raises(RuntimeError):
         client.get("/trip/canvas?day=1&frag=1", headers=FRAG)
-    assert live and all(db.conn.closed for db in live)
+    monkeypatch.undo()
+    probe = familydb.require_tenant_access(person("ari"))
+    try:
+        assert probe.engine.pool.checkedout() == 1      # only the probe itself: the failed request left no connection out
+    finally:
+        probe.conn.close()
 
 
 def test_two_concurrent_requests_for_two_families_stay_separate(client):
@@ -147,3 +152,18 @@ def test_a_nested_close_leaves_the_handle_usable_and_no_transaction_stays_open(c
                 separate.conn.commit()
             finally:
                 separate.conn.close()
+
+
+def test_a_request_holds_no_pool_connection_between_uses(client):
+    """The scope keeps the verified, ready handle but not a connection: a dozen prefetches at once must not run the pool (5 + 10) dry."""
+    ari = person("ari")
+    with familydb.request_scope():
+        with familydb.using(ari) as db:
+            pool = db.engine.pool
+            assert pool.checkedout() == 1
+        assert pool.checkedout() == 0
+        held = [familydb.family_db(ari) for _ in range(12)]
+        assert len({id(h.conn) for h in held}) == 12      # every use has its own connection
+        for h in held:
+            h.conn.close()
+        assert pool.checkedout() == 0

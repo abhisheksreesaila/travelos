@@ -249,59 +249,39 @@ def take_opened() -> set:
     return opened
 
 
-class _Lease:
-    """A connection on loan from a request scope: everything goes to the real connection, but `close()` only gives it back
-    (rolling back what was not committed, as a real close does) while the scope closes the real one when the request ends."""
-
-    def __init__(self, entry):
-        self._entry = entry
-
-    def __getattr__(self, name):
-        return getattr(self._entry["db"].conn, name)
-
-    def close(self):
-        entry = self._entry
-        entry["out"] -= 1
-        if entry["out"] <= 0 and not entry["db"].conn.closed:
-            entry["db"].conn.rollback()
-
-
 class Scope:
-    """The family handles one request has opened, so the request opens each family once (F-172). A handle belongs to the request, the
-    thread that opened it, the family and the person: a second thread, family or person gets its own, and nothing is shared across requests."""
+    """What one request has already checked and built for each family (F-172): the person is a member, the tables exist, and fh-saas's
+    table metadata is cloned. That is the cost of an open (a host-database query under the host lock, and ~28 table clones); a day
+    fragment used to pay it 27 times. Each *use* still gets its own short connection from the pool, so a request holds none between
+    uses, uses on different threads never share one, and writes keep their short transactions.
+    The entry is keyed by family and person, so another family or person always gets its own, and nothing crosses requests."""
 
     def __init__(self):
-        self._entries = {}
+        self._ready = {}
         self._lock = threading.Lock()
         self.closed = False
 
-    def lease(self, session, opener):
-        key = (threading.get_ident(), session.get("tenant_id"), session.get("user_id"))
+    def lend(self, session, opener):
+        key = (session.get("tenant_id"), session.get("user_id"))
         with self._lock:
             if self.closed:
                 return None
-            entry = self._entries.get(key)
-        if entry is None:
-            entry = {"db": opener(), "out": 0}
+            template = self._ready.get(key)
+        if template is None:
+            template = opener()     # checks membership (PermissionError if not a member), makes sure the tables exist
+            template.conn.close()   # the template holds the checked metadata only, no connection
             with self._lock:
                 if self.closed:
-                    entry["db"].conn.close()
                     return None
-                self._entries[key] = entry
-        entry["out"] += 1
-        db = copy.copy(entry["db"])
-        db.conn = _Lease(entry)
+                self._ready[key] = template
+        db = copy.copy(template)
+        db.conn = template._shared_engine.connect()
         return db
 
     def close(self):
         with self._lock:
             self.closed = True
-            entries, self._entries = list(self._entries.values()), {}
-        for entry in entries:
-            try:
-                entry["db"].conn.close()
-            except Exception:
-                pass
+            self._ready = {}
 
 
 _scope = ContextVar("gitaway_family_scope", default=None)
@@ -309,7 +289,7 @@ _scope = ContextVar("gitaway_family_scope", default=None)
 
 @contextmanager
 def request_scope():
-    """Inside this block `family_db` opens each family once and lends the handle out; everything is closed at the end, even on an error.
+    """Inside this block `family_db` checks and builds each family once; no connection outlives a use, so an error leaves nothing to close.
     Code outside a request (background jobs, scripts, tests) has no scope and opens a handle per call, as before."""
     scope = Scope()
     token = _scope.set(scope)
@@ -349,7 +329,7 @@ def family_db(source):
 
     Checks that the person is an active member of the family named in the session (fh-saas require_tenant_access), and
     makes sure the tables exist. The caller closes the handle (`db.conn.close()`); `using` does that for you.
-    Inside a request (`request_scope`) the family is opened once and the same connection is lent again; closing it only gives it back.
+    Inside a request (`request_scope`) the membership check and the table metadata are done once per family; each call still gets its own connection.
     Raises ValueError when nobody is signed in and PermissionError when they are not a member.
     """
     session = getattr(source, "session", None) if hasattr(source, "scope") else source  # a Starlette Request is a Mapping too: ask it for its session
@@ -357,7 +337,7 @@ def family_db(source):
         raise ValueError("Authentication required")
     scope = _scope.get()
     if scope is not None:
-        db = scope.lease(session, lambda: _open(session))
+        db = scope.lend(session, lambda: _open(session))
         if db is not None:
             return db
     return _open(session)
