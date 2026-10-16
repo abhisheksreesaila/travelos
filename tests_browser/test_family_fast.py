@@ -18,13 +18,10 @@ IDLE_MS = 2500
 SERVER = re.compile(r"/trip/family/(panel|list|thread|seen)")
 
 
-def slow(page, seen):
-    """Every family request waits 700 ms in the server (page.route) and is recorded in `seen` with the time it was asked."""
-    def hold(route):
-        seen.append((route.request.url.split("/trip/family/")[1].split("?")[0], time.monotonic()))
-        time.sleep(SLOW)
-        route.continue_()
-    page.route(SERVER, hold)
+def slow(page, seen, slow_server):
+    """Every family request waits 700 ms in the server itself (conftest `slow_server`: an asyncio sleep, so nothing in the test's thread is held up) and is recorded in `seen`."""
+    slow_server(r"^/trip/family/(panel|list|thread|seen)", SLOW)
+    page.on("request", lambda r: SERVER.search(r.url) and seen.append((SERVER.search(r.url).group(1), time.monotonic())))
 
 
 WATCH = """() => {
@@ -48,13 +45,13 @@ def say(n):
     print(f"F177 {n}") if os.environ.get("F177_TIMES") else None
 
 
-def test_the_family_tab_shows_the_messages_in_the_click_frame_with_the_server_slowed(canvas_page, mates):
+def test_the_family_tab_shows_the_messages_in_the_click_frame_with_the_server_slowed(canvas_page, mates, slow_server):
     page = canvas_page(viewport=DESKTOP, touch=False)
     mate = mates(page)
     mate.say("Are we bringing the scooter?")
     open_day(page, SATURDAY)
     seen = []
-    slow(page, seen)
+    slow(page, seen, slow_server)
     page.evaluate("window.__loaded = 1")
     page.wait_for_timeout(IDLE_MS)                                  # idle a moment: the pane is fetched ahead (slowly)
     asked = [s[0] for s in seen]
@@ -68,13 +65,13 @@ def test_the_family_tab_shows_the_messages_in_the_click_frame_with_the_server_sl
     assert [s[0] for s in seen[before:]].count("panel") == 0         # (no panel request after the click)
 
 
-def test_the_top_bar_family_on_the_day_is_just_as_fast(canvas_page, mates):
+def test_the_top_bar_family_on_the_day_is_just_as_fast(canvas_page, mates, slow_server):
     page = canvas_page(viewport=DESKTOP, touch=False)
     mate = mates(page)
     mate.say("Top bar hello")
     open_day(page, SATURDAY)
     seen = []
-    slow(page, seen)
+    slow(page, seen, slow_server)
     page.evaluate("window.__loaded = 1")
     page.wait_for_timeout(IDLE_MS)
     ms = timed(page, lambda: page.locator(".ga-tb-family").click(), thread(page).locator(".ft-bub").first)
@@ -83,14 +80,14 @@ def test_the_top_bar_family_on_the_day_is_just_as_fast(canvas_page, mates):
     expect(thread(page).locator(".ft-bub").first).to_contain_text("Top bar hello")
 
 
-def test_the_top_bar_family_on_the_week_opens_the_day_with_the_chats_without_a_page_load(canvas_page, mates):
+def test_the_top_bar_family_on_the_week_opens_the_day_with_the_chats_without_a_page_load(canvas_page, mates, slow_server):
     page = canvas_page(viewport=DESKTOP, touch=False)
     mate = mates(page)
     mate.say("Week hello")
     page.goto(re.sub(r"^(https?://[^/]+).*", lambda m: f"{m.group(1)}/trip/canvas", page.url))
     page.wait_for_selector(".cz-view[data-level=week]")
     seen = []
-    slow(page, seen)
+    slow(page, seen, slow_server)
     page.evaluate("window.__loaded = 1")
     page.wait_for_timeout(IDLE_MS)
     assert "panel" in [s[0] for s in seen]                           # fetched ahead on the week too
@@ -101,13 +98,13 @@ def test_the_top_bar_family_on_the_week_opens_the_day_with_the_chats_without_a_p
     expect(thread(page).locator(".ft-bub").first).to_contain_text("Week hello")
 
 
-def test_a_click_before_the_page_was_idle_still_opens_and_shows_the_same_messages(canvas_page, mates):
+def test_a_click_before_the_page_was_idle_still_opens_and_shows_the_same_messages(canvas_page, mates, slow_server):
     page = canvas_page(viewport=DESKTOP, touch=False)
     mate = mates(page)
     mate.say("Cold hello")
     open_day(page, SATURDAY)
     seen = []
-    slow(page, seen)
+    slow(page, seen, slow_server)
     ms = timed(page, lambda: tab(page).click(), thread(page).locator(".ft-bub").first)
     say(f"cold click (not yet idle) -> messages visible: {ms} ms")
     expect(thread(page).locator(".ft-bub").first).to_contain_text("Cold hello")
@@ -135,12 +132,12 @@ def test_earlier_messages_are_asked_for_with_a_button_and_keep_the_place(canvas_
     expect(thread(page).locator(".ft-bub").last).to_contain_text("m46", timeout=9000)            # the live poll (every 5 s) still adds to the end
 
 
-def test_the_phone_family_tab_is_the_page_it_was(canvas_page, mates):
+def test_the_phone_family_tab_is_the_page_it_was(canvas_page, mates, slow_server):
     page = canvas_page(viewport=PHONE)
     mate = mates(page)
     mate.say("Phone hello")
     seen = []
-    slow(page, seen)
+    slow(page, seen, slow_server)
     t = time.monotonic()
     page.goto(re.sub(r"^(https?://[^/]+).*", lambda m: f"{m.group(1)}/trip/family", page.url))
     expect(page.locator("#ft-thread .ft-bub").first).to_contain_text("Phone hello")
@@ -154,9 +151,9 @@ def test_a_message_sent_after_the_prefetch_shows_at_once_on_the_click(canvas_pag
     page = canvas_page(viewport=DESKTOP, touch=False)
     mate = mates(page)
     mate.say("before the prefetch")
-    open_day(page, SATURDAY)
-    page.wait_for_timeout(IDLE_MS)                                   # the pane is fetched ahead
-    mate.say("after the prefetch")
+    with page.expect_response(re.compile(r"/trip/family/panel"), timeout=9000):
+        open_day(page, SATURDAY)                                     # (the page idles a moment, then the pane is fetched ahead)
+    mate.say("after the prefetch")                                   # (the copy is only a moment old when it is clicked)
     t = time.monotonic()
     tab(page).click()
     expect(thread(page).locator(".ft-bub").last).to_contain_text("after the prefetch", timeout=3000)
