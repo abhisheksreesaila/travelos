@@ -945,3 +945,15 @@ Captain, 2026-10-15: "if you pick up a lower block from Tuesday and put it on up
 - [ ] on a desktop week, dropping a plan sets both its day (the column) and its start (the pointer's height on the axis, snapped to 15 minutes), keeping its length; the rail/axis shows the live time while dragging, as the day does (F-161)
 - [ ] dropping in its own column at a new height changes only its time; the toast reads "Moved to Fri 16, 9:00 AM · Undo" and Undo restores day and time
 - [ ] bookings and viewers still can't drag; browser tests at 1440 and 1280 drop low-to-high across days and check the new day, time and position on the axis
+
+## F-167 Blocks filled with their kind's colour [todo]
+Captain, 2026-10-15 (after seeing the colour timeline live): "the blocks on the calendar … have like a border … it doesn't look good … the whole block has to be colored like a Teams meeting … a fill color just like you had before, not just a border." Brief: docs/briefs/colour-timeline.md · Needs: F-159..F-163
+- [ ] on the laptop day and week and the phone day, every plan block is filled with its kind's tint (sun, mint, grape, sky, bubble tints from tokens.css), with a darker kind edge on the left and ink text; no white card with only a coloured border
+- [ ] bookings stay visually distinct from plans (e.g. a quieter fill or the BOOKED pill) and the kind tile still reads on the fill
+- [ ] days stay uncoloured (colour is for kinds only); text contrast on each tint is ≥4.5:1; tiny and lane cards keep their fill
+- [ ] browser tests at 1440, 1280, 800 and 390 check a plan block's background is its kind's tint and no plan block is white
+
+## F-168 The app feels zippy: find and fix the stop-and-go [todo]
+Captain, 2026-10-15: "it feels not as fast as I want it to be, it doesn't look zippy … do it and then do it … the look is there, the UI is there, the feel is not there." Live round trip to gitaway.me is ~0.14–0.25s per request.
+- [ ] a measured report (docs/perf-feel.md): for the common taps (switch day, Day↔Week, open a plan, add, move, Ask, filters) on phone and laptop, the time from tap to first visible response and to settled, the network waits, long tasks, and which steps run one after another; ranked causes with evidence
+- [ ] then tickets for the top fixes (e.g. answer on tap before the server replies, prefetch, run steps in parallel, shorter or overlapping fades), each with a measured before/after target
