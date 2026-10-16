@@ -75,6 +75,7 @@ def test_a_held_plan_shows_which_chip_will_take_it_and_the_open_day_does_not_acc
     expect(desk.locator(".cz-g-label")).to_be_hidden()                                          # the target says it (and its own note): the label is not drawn over the header
     assert desk.locator(".cz-hchip.is-drop-target").count() == 1
     look = chip(desk, SATURDAY).evaluate("n => { const s = getComputedStyle(n); return [s.outlineStyle, s.outlineColor, s.boxShadow]; }")
+    assert chip(desk, SATURDAY).locator(".cz-hc-num").evaluate("n => getComputedStyle(n).color") == "rgb(30, 26, 46)"      # the day number is ink too
     assert look == ["dashed", "rgb(30, 26, 46)", "none"]                                        # F-161: the handoff's ink-dashed target (it was a coral ring), no coral
     shot(desk, "hover-chip.png")
     desk.mouse.move(*mid(desk, chip(desk, SUNDAY)), steps=4)                                    # the open day: no ring, no drop
