@@ -15,7 +15,8 @@
   var tab = document.getElementById('ph-tab-ask');
   if (!tab || tab.dataset.ask !== 'sheet') return;
   var root = document.documentElement;
-  var app = document.getElementById('ph-app') || document.body;
+  var app = tab;      // the page the sheet opens over (the body's child that holds the tab: #ph-app, or the canvas's #cz-app): the one thing made inert (F-173); the sheet itself goes in the body beside it
+  while (app.parentNode && app.parentNode !== document.body) app = app.parentNode;
   var phone = window.matchMedia('(max-width: 720px), (display-mode: standalone)');
   var wrap = null, sheet = null, scroll = null, ctl = null, closing = false, back = [];
 
@@ -78,12 +79,14 @@
     var entry = get(url());
     var parts = make();
     var html = entry.html;
-    app.appendChild(wrap);
+    document.body.appendChild(wrap);
     wrap.classList.add('is-open');
-    behind(true);
     if (html !== null) fill(html, true);        // the box is in (and the microphone started) inside this tap, before anything animates
     else scroll.innerHTML = '<div id="ak-sheet-body"><p class="ak-fine" role="status">Getting ready…</p></div>';
+    if (!sheet.contains(document.activeElement)) { try { sheet.focus({ preventScroll: true }); } catch (err) { /* old browser */ } }       // unless the box already took it (no microphone: the note); before MO.open, so the one layout it forces serves both (F-173)
     MO.open(sheet, origin(), { scrim: parts.scrim });      // after the content: the sheet's height decides where it grows to
+    // F-173: the page behind goes inert after the sheet's first frame, not in the tap (the scrim already catches every touch until then): on a slow phone it was a long task before anything moved
+    requestAnimationFrame(function () { requestAnimationFrame(function () { if (wrap && !closing) behind(true); }); });
     if (html === null) entry.p.then(function (h) { if (wrap && !closing) fill(h, true, true); },function () { if (wrap) { wrap.remove(); wrap = null; behind(false); location.href = tab.href; } });
     document.addEventListener('keydown', onKey, true);
     if (window.visualViewport) { window.visualViewport.addEventListener('resize', kb); window.visualViewport.addEventListener('scroll', kb); }
@@ -91,19 +94,10 @@
       document.removeEventListener('keydown', onKey, true);
       if (window.visualViewport) { window.visualViewport.removeEventListener('resize', kb); window.visualViewport.removeEventListener('scroll', kb); }
     });
-    if (!sheet.contains(document.activeElement)) { try { sheet.focus({ preventScroll: true }); } catch (err) { /* old browser */ } }       // unless the box already took it (no microphone: the note)
   }
 
-  // the page behind is for looking only while the sheet is open
-  var inerted = [];
-  function behind(on) {
-    if (!on) { inerted.forEach(function (n) { n.removeAttribute('inert'); }); inerted = []; return; }
-    Array.prototype.forEach.call(app.children, function (n) {      // everything beside the sheet, so Tab never leaves it (the toast is not inert: it is only said)
-      if (n === wrap || n.id === 'ga-toast' || n.hasAttribute('inert') || /^(SCRIPT|STYLE|LINK)$/.test(n.tagName)) return;
-      n.setAttribute('inert', '');
-      inerted.push(n);
-    });
-  }
+  // the page behind is for looking only while the sheet is open: one wrapper is inert, so Tab never leaves the sheet (the toast is outside it, and only said)
+  function behind(on) { if (on) app.setAttribute('inert', ''); else app.removeAttribute('inert'); }
 
   // a fragment becomes the sheet's content and the box in it is started
   function fill(html, first, late) {

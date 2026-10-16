@@ -155,7 +155,7 @@ def test_it_grows_with_the_one_liquid_spring_and_reduced_motion_has_no_movement(
             ctx.close()
     anims, tokens, _ = results["no-preference"]
     anims = [a for a in anims if a["kf"][0].get("transform")]                       # (F-111: the box also clips its words while it grows: a second animation, of clip-path only)
-    assert len(anims) == 1 and tokens["dur"] == 520                                       # the one spring's duration (--motion-spring-dur)
+    assert len(anims) == 1 and tokens["dur"] == 380                                       # the one spring's duration (--motion-spring-dur)
     assert anims[0]["t"]["duration"] == tokens["dur"] and anims[0]["t"]["easing"].replace(" ", "") == "cubic-bezier(0.3,1.12,0.4,1)" and tokens["ease"] == "cubic-bezier(.3, 1.12, .4, 1)"
     assert "scale" in anims[0]["kf"][0]["transform"] and anims[0]["kf"][1]["transform"] == "none"      # it grows (a transform on one layer) and lands
     anims, _, trans = results["reduce"]

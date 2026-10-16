@@ -74,10 +74,12 @@
     dayPick.value = words.length > longAt ? '' : dayPick.dataset.auto;
     dayPick.dispatchEvent(new CustomEvent('ak:day'));
   }
-  function refresh() {
-    box.style.height = 'auto';
-    var rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 12;
-    box.style.height = Math.min(box.scrollHeight, Math.max(window.innerHeight * 0.6, 13 * rem)) + 'px';
+  function refresh(start) {
+    if (start !== true || box.value) {      // F-173: an empty box on opening is already its natural height; measuring it was a forced layout inside the tap
+      box.style.height = 'auto';
+      var rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 12;
+      box.style.height = Math.min(box.scrollHeight, Math.max(window.innerHeight * 0.6, 13 * rem)) + 'px';
+    }
     placeByLength();
     var n = box.value.length;
     if (!count) return;
@@ -95,7 +97,7 @@
   }
   box.addEventListener('input', refresh);
   on(window, 'resize', refresh);
-  refresh();
+  refresh(true);
 
   // ---- Paste ----
   function insert(text) {

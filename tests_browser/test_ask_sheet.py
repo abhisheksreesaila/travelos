@@ -305,10 +305,22 @@ def test_tab_never_leaves_the_sheet_on_family_and_the_page_is_free_again_after(p
     for _ in range(25):
         page.keyboard.press("Shift+Tab")
         assert page.evaluate("!!document.activeElement.closest('#ak-sheet')")
-    assert page.evaluate("document.querySelectorAll('#ph-app > [inert]').length") >= 2
+    assert page.evaluate("[...document.querySelectorAll('[inert]')].map(n => n.id)") == ["ph-app"]      # F-173: the page behind is one wrapper, not every child of it
     page.keyboard.press("Escape")
     expect(page.locator("#ak-sheet")).to_have_count(0)
     assert page.evaluate("document.querySelectorAll('[inert]').length") == 0
+
+
+def test_the_tap_only_opens_the_sheet_and_starts_the_microphone_the_page_goes_inert_after_the_first_frame(phone, base_url, model):
+    """F-173: the tap's own task is the sheet and the microphone (iOS starts a microphone only from the tap); marking the page behind inert waits for the sheet's first frame."""
+    page = phone(FAKE_MIC + "(() => { const g = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices); navigator.mediaDevices.getUserMedia = (c) => { window.__gum = (window.__gum || 0) + 1; return g(c); }; })();")
+    day_page(page, base_url)
+    page.wait_for_timeout(400)
+    got = page.evaluate("""() => { document.getElementById('ph-tab-ask').click();
+        return { sheet: !!document.getElementById('ak-sheet'), mic: window.__gum || 0, inert: document.querySelectorAll('[inert]').length }; }""")
+    assert got == {"sheet": True, "mic": 1, "inert": 0}
+    page.wait_for_function("document.querySelectorAll('[inert]').length === 1")
+    assert page.evaluate("document.querySelector('[inert]').contains(document.getElementById('ph-tab-ask'))")      # the one wrapper is the page that holds the tab
 
 
 def test_a_box_that_arrives_after_the_tap_does_not_start_the_microphone_by_itself(phone, base_url, model):
