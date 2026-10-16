@@ -19,6 +19,10 @@
 // shows it on hover) resizes at once. Both snap like the phone, with no zoom (a mouse is exact), and save through the same path with the same Undo. The grid there scrolls inside its own
 // card, so the edge scroll, the geometry and the label read the card's scroll (`scrollY()`), not the window's; a wheel turned during a hold repaints, so the plan stays under the pointer.
 // Escape drops a plan in the air back where it was.
+//
+// F-161 (the colour timeline's look, no change of behaviour): a plan in the air leaves a faint dashed ghost at its old slot and shows a dashed landing slot (`.cz-g-land`, inside the ghost) where it
+// will drop; the rail prints its start time in coral at the snapped time while the old time is dimmed (`CZ.rail`, also used by a new plan's draft, day_new.js). Dropped, the rail's own label takes the
+// new time at once (a refused save puts it back); the refresh that follows redraws the rail.
 (function () {
   var CZ = window.CZ;
   if (!CZ) return;
@@ -236,6 +240,7 @@
     buzz(14);
     makeLabel();
     gg.chips = !!(gg.mouse && !gg.resize && CZ.chipDrop && /^a\d/.test(el.dataset.act || '') && CZ.chipDrop.begin());      // F-151: a plan (not a booking) held with the mouse can be dropped on a day chip
+    if (!gg.resize && !gg.knob) gg.rail = CZ.rail(g, (el.className.match(/cz-k-\w+/) || [''])[0], el.dataset.act);
     if (gg.resize) { gg.oy = ((gg.edge === 'start' ? gg.s0 : gg.e0) - gg.lo) * gg.ppm; gg.bottomPage = gg.top0 + gg.oy; if (!gg.mouse) startZoom(); } else makeGhost();      // (a mouse is exact: no zoom)
     paint(gg);
     gg.raf = requestAnimationFrame(frame);
@@ -246,8 +251,12 @@
     ghost.className = 'cz-g-ghost';
     ghost.setAttribute('aria-hidden', 'true');
     ghost.style.cssText = 'left:' + gg.left + 'px;width:' + gg.width + 'px;top:' + ((gg.s0 - gg.lo) * gg.ppm) + 'px;height:' + ((gg.e0 - gg.s0) * gg.ppm) + 'px';
+    var land = document.createElement('div');                  // F-161: the dashed landing slot rides inside the ghost (so one node goes when the drop is over)
+    land.className = 'cz-g-land';
+    ghost.appendChild(land);
     gg.el.parentNode.insertBefore(ghost, gg.el);
     gg.ghost = ghost;
+    gg.land = land;
   }
 
   function makeLabel() {
@@ -260,6 +269,52 @@
     gg.lw = 0;
   }
   function dropLabel() { if (label && label.parentNode) label.parentNode.removeChild(label); label = null; }
+
+  // ---- the rail's start time (F-161) -------------------------------------------------------------------------------------------
+  // The rail prints each plan's start (`.cz-g-start`, data-for = the plans it belongs to). While a plan is moved (or a new one is drafted, day_new.js) `CZ.rail(grid, kindClass, act)` draws one more in
+  // coral at the live, snapped time (`.is-live`), dims the plan's own at its old time (`.is-was`, only when it belongs to that plan alone) and hides the labels it would sit on (`.is-under`).
+  // `end(at)` takes it away; given a minute, the plan's own label is moved there first, so nothing shows the old time once the plan is dropped. Nothing here reads layout: --s is inline.
+  function clockParts(m) { var h = Math.floor(m / 60) % 24, mm = m % 60; return [((h % 12) || 12) + ':' + (mm < 10 ? '0' : '') + mm, h < 12 ? 'AM' : 'PM']; }
+  function paintStart(n, m, lo) {
+    var p = clockParts(m), t = n.firstChild, a = n.children[1];
+    n.style.setProperty('--s', m - lo);
+    if (t.textContent !== p[0]) t.textContent = p[0];
+    if (a.textContent !== p[1]) a.textContent = p[1];
+  }
+  function ownStart(g, act) {
+    var all = g.querySelectorAll('.cz-g-start[data-for~="' + act + '"]');
+    for (var i = 0; i < all.length; i++) if (all[i].dataset['for'] === act && !all[i].classList.contains('is-live')) return all[i];
+    return null;
+  }
+  CZ.railTo = function (g, act, m) { var n = g && act ? ownStart(g, act) : null; if (n) paintStart(n, m, +g.dataset.lo); };      // the plan's own label (when it is not shared) at minute m
+  CZ.rail = function (g, kindClass, act) {
+    var zoom = g.querySelector('.cz-g-zoom'), lo = +g.dataset.lo, room = parseFloat(g.style.getPropertyValue('--rail')) || 35;
+    if (!zoom) return null;
+    var n = document.createElement('span');
+    n.className = 'cz-g-start cz-cs is-live ' + kindClass;
+    n.setAttribute('aria-hidden', 'true');
+    n.innerHTML = '<span class="cz-g-st-t"></span><span class="cz-g-st-m"></span><span class="cz-g-st-dot"></span>';
+    zoom.appendChild(n);
+    var own = act ? ownStart(g, act) : null;
+    if (own) own.classList.add('is-was');
+    var under = Array.prototype.map.call(g.querySelectorAll('.cz-g-hour, .cz-g-start:not(.is-live)'), function (x) { return { n: x, y: parseFloat(x.style.getPropertyValue('--s')), hour: x.classList.contains('cz-g-hour') }; });
+    var done = false;
+    return {
+      kind: function (c) { n.className = 'cz-g-start cz-cs is-live ' + c; },
+      set: function (m) {
+        paintStart(n, m, lo);
+        var at = m - lo;
+        under.forEach(function (u) { var d = u.y - at; u.n.classList.toggle('is-under', u.hour ? d > -20 && d < room : Math.abs(d) < room); });      // an hour label is half a start label tall
+      },
+      end: function (to) {
+        if (done) return;
+        done = true;
+        if (n.parentNode) n.parentNode.removeChild(n);
+        under.forEach(function (u) { u.n.classList.remove('is-under'); });
+        if (own) { own.classList.remove('is-was'); if (to !== undefined && own.isConnected) paintStart(own, to, lo); }
+      }
+    };
+  };
 
   // ---- the zoom -----------------------------------------------------------------------------------------------------------
   function setK(k) {
@@ -349,7 +404,8 @@
       if (s !== gg.cur) { buzz(4); gg.cur = s; setWhen(gg.el, s, s + dur); }
       var follow = clamp(topPage, gg.top0, gg.top0 + (maxStart - gg.lo) * gg.ppm);
       gg.el.style.transform = 'translate3d(' + clamp((gg.x - gg.x0) * 0.2, -12, 12) + 'px,' + (follow - base) + 'px,0)';
-      gg.ghost.style.transform = 'translate3d(0,' + ((s - gg.s0) * gg.ppm) + 'px,0)';
+      gg.land.style.transform = 'translate3d(0,' + ((s - gg.s0) * gg.ppm) + 'px,0)';
+      if (gg.rail) gg.rail.set(s);
       snapped = s;
       text = span(s, s + dur);
       small = s === gg.s0 ? 'same time' : 'was ' + clock12(gg.s0);
@@ -407,6 +463,7 @@
 
   function unhold(g) {
     CZ.held = false;
+    if (g.rail) g.rail.end(g.landAt);
     if (g.knob) g.knob.classList.remove('is-on');
     g.el.classList.remove('is-held', 'is-resizing', 'is-moving');
     g.g.classList.remove('is-editing-time');
@@ -431,6 +488,7 @@
   function releaseMove(g, changed) {
     var el = g.el, dur = g.e0 - g.s0;
     var from = el.getBoundingClientRect();      // where the finger left it (lifted: a little bigger)
+    if (changed) g.landAt = g.cur;              // the rail's own label for it takes the new time as the live one goes
     unholdSoon(g);
     el.style.transform = '';
     var s = g.cur;
@@ -486,6 +544,7 @@
       el.style.setProperty('--l', e - s);
       setWhen(el, s, e);
     }
+    if (start && changed) CZ.railTo(g.g, el.dataset.act, s);
     unholdSoon(g);
     dropLabel();
     endZoom(function () {
@@ -498,6 +557,7 @@
 
   function unholdSoon(g) {                    // the lifted look goes at once; the label and the ghost stay until the block has landed
     CZ.held = false;
+    if (g.rail) g.rail.end(g.landAt);
     if (g.knob) g.knob.classList.remove('is-on');
     g.el.classList.remove('is-held', 'is-resizing');
     g.g.classList.remove('is-editing-time');
@@ -540,6 +600,7 @@
           el.dataset.s = old.s;
           el.dataset.e = old.e;
           setWhen(el, old.s, old.e);
+          CZ.railTo(el.closest('#cz-grid'), el.dataset.act, old.s);
           back = land(el, from, {});
         }
         return back.then(function () {
@@ -569,6 +630,7 @@
     el.dataset.s = s;
     el.dataset.e = e;
     setWhen(el, s, e);
+    CZ.railTo(g, el.dataset.act, s);
     save({ el: el }, { start: s, end: e }, old, land(el, from, {}));
     return true;
   };

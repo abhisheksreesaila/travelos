@@ -350,7 +350,8 @@
   //   o.value, o.label   what the field holds and is called      o.same    the title it already has (saving that changes nothing, posts nothing)
   //   o.save(title)      -> the write's promise                  o.saved(res, title)   after it landed (the toast and Undo are shown here)
   //   o.settle           ms after opening in which losing the focus is the touch's own mouse events, not a tap away: the field takes it back
-  //   o.discard          an empty title (Enter, tapping away) or Escape gives the block up: o.cancel() runs, and nothing is saved or refused
+  //   o.inside           a selector for controls that belong to the field: using one is not tapping away (F-161)
+//   o.discard          an empty title (Enter, tapping away) or Escape gives the block up: o.cancel() runs, and nothing is saved or refused
   // Returns { input }. Call it from inside the gesture's own pointerup or click when the keyboard has to open (the iOS rule, day_new.js).
   function titleField(b, o) {
     if (!editing() || !b || !b.isConnected || b.classList.contains('is-editing')) return null;
@@ -383,7 +384,8 @@
     function giveUp() { stop(false); if (o.cancel) o.cancel(); }
     // iOS does not blur a field when the finger lands on something that is not a control, so a tap anywhere else puts the field away itself (it saves, as tapping away does).
     var left = false;      // a real tap away (the next pointerdown), as against the touch's own mouse events right after the field opened (o.settle)
-    function away(e) { if (e.target !== input && !(e.target.closest && e.target.closest('.cz-gb-edit'))) { left = true; input.blur(); } }
+    function inside(n) { return !!(o.inside && n && n.closest && n.closest(o.inside)); }      // o.inside: a control that belongs to the field (a new plan's kind chips, F-161): using it is not a tap away
+    function away(e) { if (e.target !== input && !(e.target.closest && e.target.closest('.cz-gb-edit')) && !inside(e.target)) { left = true; input.blur(); } }
     document.addEventListener('pointerdown', away, true);
     function commit(fromBlur) {
       if (over) return;
@@ -418,7 +420,8 @@
     }, true);
     input.addEventListener('input', function () { err.textContent = ''; input.removeAttribute('aria-invalid'); });
     var born = Date.now();
-    input.addEventListener('blur', function () {
+    input.addEventListener('blur', function (e) {
+      if (inside(e.relatedTarget)) return;      // the focus went to one of its own chips (the keyboard, or a click that took it): the field is still open
       // The mouse events a touch ends with can take the focus back right after it opened: that is not a tap away, so the field stays open. It is not refocused from here (iOS refuses
       // a focus() outside a user activation): if the keyboard went down, the field is still there and a tap on it brings the keyboard back.
       if (o.settle && !left && Date.now() - born < o.settle && !over) return;

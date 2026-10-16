@@ -15,7 +15,21 @@
   function row() { return stage.querySelector('.cz-view[data-day] .cz-hchips'); }
   function inside(r, x, y) { return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom; }
 
-  function clearHot() { if (hot) { hot.classList.remove('is-drop-target'); hot = null; } }
+  // F-161: the chip under the pointer says what a drop does ("Drop to move to Sat 17"): a note under it, fixed (so the row's own scroll never clips it and nothing around it moves).
+  var note = null;
+  function showNote(chip) {
+    if (!note) {
+      note = document.createElement('div');
+      note.className = 'cz-g-dropnote';
+      note.setAttribute('aria-hidden', 'true');
+      (document.getElementById('main') || document.body).appendChild(note);
+    }
+    note.textContent = 'Drop to move to ' + chip.dataset.moveLabel;
+    var r = chip.getBoundingClientRect(), w = note.offsetWidth;
+    note.style.transform = 'translate3d(' + Math.max(8, Math.min(r.left + r.width / 2 - w / 2, window.innerWidth - w - 8)) + 'px,' + (r.bottom + rem() * 0.5) + 'px,0)';
+  }
+  function dropNote() { if (note && note.parentNode) note.parentNode.removeChild(note); note = null; }
+  function clearHot() { if (hot) { hot.classList.remove('is-drop-target'); hot = null; } dropNote(); }
 
   CZ.chipDrop = {
     // A plan was lifted: the row says where it can go.
@@ -36,7 +50,7 @@
         }
       }
       if (found && found.classList.contains('is-open')) found = null;
-      if (found !== hot) { clearHot(); if (found) { hot = found; hot.classList.add('is-drop-target'); } }
+      if (found !== hot) { clearHot(); if (found) { hot = found; hot.classList.add('is-drop-target'); showNote(found); } }
       return found;
     },
     // Is the pointer over the header row (so the grid card below must not start to scroll)?
