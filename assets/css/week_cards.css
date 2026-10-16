@@ -7,6 +7,13 @@
   /* the heading is two-tone like the day's (F-160): "The trip." in ink, then the second phrase ("Five days in LA.") in grey, on one line */
   .cz .cz-view[data-level="week"] .cz-head h1 { margin: 0 0.3em 0 0; font-size: calc(var(--pu) * 1.5); line-height: 1.1; color: var(--ink); }
   .cz .cz-view[data-level="week"] .cz-head h1::after { content: "."; }
+  /* F-164: the heading's controls hold the phone's rules on a tablet (13px text, 44px targets) like the day's: sizes from --pu / --tmin / --tap, the same values as 1rem / 13px / 2.75rem on a phone */
+  .cz .cz-view[data-level="week"] { --cz-small: max(var(--tmin), 0.8125rem); --cz-body: max(var(--tmin), 0.875rem); }
+  .cz .cz-view[data-level="week"] .cz-head .cz-segs { height: calc(var(--pu) * 2); padding: 0 calc(var(--pu) * 0.125); }
+  .cz .cz-view[data-level="week"] .cz-head .cz-seg { min-width: var(--tap); min-height: var(--tap); margin: calc(var(--pu) * -0.375) 0; padding: 0 calc(var(--pu) * 0.375); }
+  .cz .cz-view[data-level="week"] .cz-head .cz-seg::before { inset: calc(var(--pu) * 0.5) 0; }
+  .cz .cz-view[data-level="week"] .cz-kchip { min-width: var(--tap); min-height: var(--tap); }
+  .cz .cz-view[data-level="week"] .cz-head .cz-sos { min-width: var(--tap); min-height: var(--tap); padding: 0 calc(var(--pu) * 0.75); }
   .cz .cz-view[data-level="week"] .ga-h-two { display: inline; font-family: var(--font-display); font-weight: 800; font-size: calc(var(--pu) * 1.5); line-height: 1.1; letter-spacing: -0.03em; color: var(--ink-3); }
   .cz .cz-week { display: flex; flex-direction: column; gap: calc(var(--pu) * 0.75); }
 

@@ -6,7 +6,7 @@
    under `--tmin` (13px) and a target never under `--tap` (44px). Time. Plans keep their phone height rule: a 44px minimum (day_grid.css, test_day_grid.py), so a plan under 45 minutes is one compact row centred in 44px; the rail's
    labels are sized from the real hour (--mm) and never overlap. Colour is the kind of thing only; the day chips are neutral; nothing here moves (the motion is motion.js's). */
 
-.cz { --pu: 1.3333rem; --tmin: 1.0833rem; --tap: 3.6667rem; }
+.cz { --pu: 1.3333rem; --tmin: 1.0834rem; --tap: 3.6667rem; }      /* 1.0834 x 12px is 13.0008px; 1.0833 gave 12.9996 (F-164) */
 @media (max-width: 720px) { .cz { --pu: 1rem; --tmin: 0.8125rem; --tap: 2.75rem; } }
 
 @media (max-width: 1019px), (display-mode: standalone) {
