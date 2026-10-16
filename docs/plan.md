@@ -979,7 +979,7 @@ Report fixes 3 and 4. Needs: F-170
 - [ ] a day swipe follows the finger 1:1 and the slide continues from where the finger let go (no snap back to 0); a short or slow swipe springs back
 - [ ] save, undo, refused-save and viewer rules unchanged; browser tests at 390 and 1440 sample the frames (one motion, no pause) and the swipe offset
 
-## F-172 The server opens the family database once per request [todo]
+## F-172 The server opens the family database once per request [review]
 Report fix 6. Read the fh-saas skill first. Needs: F-168
 - [ ] one request opens the family database once and reuses it (request-scoped), instead of ~27 times per day fragment; the host-lock pile-up under two concurrent requests is gone
 - [ ] tenant isolation, roles and every write path unchanged; tests prove a request never sees another family's data and that two concurrent requests for two families stay separate
