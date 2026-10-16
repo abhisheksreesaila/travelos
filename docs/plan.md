@@ -934,3 +934,8 @@ Brief: docs/briefs/colour-timeline.md · Design: docs/design/colour-timeline.md 
 Found in F-163's review, 2026-10-15: at 800 wide the day and week heading controls (Day/Week switch, SOS, map, filter chips) are 11px text in 33px targets, under the ≥13px / 44px rule; they predate the colour timeline. Brief: docs/briefs/colour-timeline.md · Needs: F-160, F-163
 - [ ] at 721–1019px every heading control on the day and week (Day/Week switch, SOS, map, filters, Trip) has text ≥13px and a target ≥44px, without wrapping the heading onto extra rows
 - [ ] the phone (390) and laptop (1440, 1280) headers are unchanged; browser tests at 800 scan the heading controls' text and target sizes
+
+## F-165 A plan saved by clicking away settles into a normal block (laptop) [todo]
+Found in F-161's review, 2026-10-15 (predates F-161; same on master's scripts): at 1440 a draft saved by clicking away stays on screen as a dead "is-new" card (still showing its kind chips) until the next refresh, though it is saved. Needs: F-161
+- [ ] after a draft is saved by Enter, Tab or clicking away, it becomes the same block a refresh would draw (title, time, kind tile, rail label), with no leftover draft markup, at 1440, 1280 and 390
+- [ ] a browser test saves by click-away and compares the block with the one drawn after a reload
