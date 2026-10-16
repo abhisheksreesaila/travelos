@@ -992,8 +992,8 @@ Report fixes 8 and 5 (taste call made on the captain's "zippy, whatever it takes
 - [x] phone screen motion 500 → 340 ms (--motion-screen-dur) and springs 520 → 380 ms (--motion-spring-dur), same curves; the laptop's calm fade unchanged; tests/test_motion_tokens.py and tests_browser/test_motion.py updated to the new values, not loosened
 - [x] a day chip settles ≤480 ms on a fast phone (CPU 1×); Ask starts ≤150 ms at CPU 4× (measured: chip 396 ms at 1×; Ask start median 82 ms at 4×, 41 ms at 1×)
 
-## F-174 The laptop drop settles at once [todo]
+## F-174 The laptop drop settles at once [review]
 Found in the post-round measurement, 2026-10-16 (scripts/perf on master after F-171): on the laptop, "move: drag, drop" now waits on the network (first change 220 ms after the drop, net wait 211) where before F-171 it changed at 13 ms. Needs: F-171
-- [ ] on a desktop, the dropped plan settles into its new place (calm fade, no lift shadow/scale left) within one frame of the drop, before the save answers; the save's reply only corrects lanes/neighbours and shows the toast
-- [ ] the phone's one-motion landing (F-171) is unchanged; refused save, undo and viewer rules unchanged
-- [ ] scripts/perf laptop "move" starts ≤50 ms with no network wait before the first change; a browser test at 1440 checks the block is in its new place, unlifted, within 50 ms of the drop with the save slowed 700 ms
+- [x] on a desktop, the dropped plan settles into its new place (calm fade, no lift shadow/scale left) within one frame of the drop, before the save answers; the save's reply only corrects lanes/neighbours and shows the toast
+- [x] the phone's one-motion landing (F-171) is unchanged; refused save, undo and viewer rules unchanged
+- [x] scripts/perf laptop "move" starts ≤50 ms with no network wait before the first change; a browser test at 1440 checks the block is in its new place, unlifted, within 50 ms of the drop with the save slowed 700 ms (measured 2026-10-16: the 220 ms / 211 ms wait did not reproduce on clean master, which already starts at 7 ms with 0 wait (3 runs); the metric was fine. What the person saw was the lift (scale 1.03, ink ring) easing out over 160 ms after the drop; that now ends in the same frame. tests_browser/test_desk_drop.py fails without the fix)
