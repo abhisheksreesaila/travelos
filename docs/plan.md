@@ -1016,7 +1016,7 @@ The captain 2026-10-16: "when you click on the family tab, especially for the fi
 - [x] the panel draws the latest messages only (about 30) with older ones on request; the server reads the trip's messages once per request and a GET writes nothing. tests/test_family_panel_fast.py; the Earlier messages button is pressed in tests_browser/test_family_fast.py
 - [x] the phone Family tab is no slower, unread counts and seen marks unchanged; a browser test times the first open with the server slowed 700 ms. The phone page is untouched (no panel is fetched ahead there: tested); the laptop first open is timed with 700 ms in tests_browser/test_family_fast.py
 
-## F-178 Family messages as iMessage-style bubbles [review]
+## F-178 Family messages as iMessage-style bubbles [done]
 Design: docs/design/family-bubbles/a-phone.png, a-desk.png (option A, chosen by the captain 2026-10-16; Stitch project 5068253051282871529)
 The captain 2026-10-16: "the messages need to have a nice bubble. Like iMessage ... or even like WhatsApp is okay". Today's .ft-bub (assets/css/thread.css) is a plain card. Draft in Stitch (phone and laptop panel) and show the captain before building; build after F-177 (same files). Needs: F-177
 - [x] mine on the right in a filled colour bubble with white text, theirs on the left in a soft grey bubble, rounded with a tail on the last of a run; consecutive messages from one person group tightly, name and avatar once per run
