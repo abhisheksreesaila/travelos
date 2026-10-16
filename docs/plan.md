@@ -971,7 +971,7 @@ Report fix 1 (and the card's 100 ms forced layout from fix 8). Needs: F-168
 Report fixes 2 and 7. Needs: F-168
 - [ ] a level copy fetched ahead is shown at once whatever its age and after any write, and refreshed quietly behind it (only changed nodes morph; no visible second swap when nothing changed); after a write the level the write returned seeds the cache and ±1 day is prefetched first, the rest later
 - [ ] on the phone the week never prefetches desktop-only plan rows (no box); after a swap ±1 day is fetched before anything else
-- [ ] day switch after 62 s or right after a write starts ≤150 ms on the phone and laptop (CPU 4×, +180 ms); a week visit on the phone fetches ≤ 0.1 MB of prefetch; browser tests pin "no network wait on a day switch after a write" and "no hidden-row prefetch"
+- [ ] day switch after 62 s or right after a write starts ≤150 ms on the phone and laptop (CPU 4×, +180 ms); a week visit on the phone prefetches only the day fragments (one per day, nearest first, capped; never hidden desktop rows), so a tap on any day row needs no network wait (amended 2026-10-16: the 0.1 MB bound left cold rows showing an outline first); browser tests pin "no network wait on a day switch after a write" and "no hidden-row prefetch"
 
 ## F-171 One motion for a move; swipes follow the finger [todo]
 Report fixes 3 and 4. Needs: F-170
