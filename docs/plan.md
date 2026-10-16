@@ -1017,6 +1017,7 @@ The captain 2026-10-16: "when you click on the family tab, especially for the fi
 - [ ] the phone Family tab is no slower, unread counts and seen marks unchanged; a browser test times the first open with the server slowed 700 ms
 
 ## F-178 Family messages as iMessage-style bubbles [todo]
+Design: docs/design/family-bubbles/a-phone.png, a-desk.png (option A, chosen by the captain 2026-10-16; Stitch project 5068253051282871529)
 The captain 2026-10-16: "the messages need to have a nice bubble. Like iMessage ... or even like WhatsApp is okay". Today's .ft-bub (assets/css/thread.css) is a plain card. Draft in Stitch (phone and laptop panel) and show the captain before building; build after F-177 (same files). Needs: F-177
 - [ ] mine on the right in a filled colour bubble with white text, theirs on the left in a soft grey bubble, rounded with a tail on the last of a run; consecutive messages from one person group tightly, name and avatar once per run
 - [ ] times quiet (small, under the run or on hover on the laptop); voice notes, photos, plan links and system lines fit the same look

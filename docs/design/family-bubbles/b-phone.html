@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>GitAway - Family Chat</title>
+<!-- Material Symbols Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Bricolage Grotesque & Figtree -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;700;800&amp;family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS v3 -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "inverse-on-surface": "#f7f0e6",
+            "surface-variant": "#e8e2d8",
+            "primary": "#aa361a",
+            "tertiary-fixed-dim": "#51dbcf",
+            "on-primary-fixed": "#3d0700",
+            "on-error-container": "#93000a",
+            "control-edge": "rgba(30,26,46,0.16)",
+            "bubble-tint": "#FFE3F1",
+            "on-primary": "#ffffff",
+            "sun-tint": "#FFF1C2",
+            "on-secondary-fixed": "#1d192d",
+            "hairline": "rgba(30,26,46,0.10)",
+            "surface-dark": "#FAF7F2",
+            "surface-tint": "#aa361a",
+            "surface-container-lowest": "#ffffff",
+            "on-primary-container": "#6b1200",
+            "mint-fill": "#48D1A0",
+            "primary-fixed": "#ffdad2",
+            "mint-tint": "#D4F7EA",
+            "tertiary": "#006a63",
+            "bubble-fill": "#FF8CC6",
+            "sky-deep": "#1B6FC9",
+            "text-secondary": "#4A4460",
+            "on-tertiary": "#ffffff",
+            "grape-deep": "#6A4FD6",
+            "sky-fill": "#5AB0FF",
+            "primary-fixed-dim": "#ffb4a3",
+            "sun-fill": "#FFC93C",
+            "inverse-surface": "#33302a",
+            "on-surface": "#1e1b16",
+            "grape-tint": "#ECE4FF",
+            "tertiary-container": "#00b1a6",
+            "surface-bright": "#fff8f0",
+            "coral-tint": "#FFE6DA",
+            "on-secondary-fixed-variant": "#49445a",
+            "on-error": "#ffffff",
+            "error": "#ba1a1a",
+            "outline": "#8c716b",
+            "coral-deep": "#C9431F",
+            "on-tertiary-fixed": "#00201d",
+            "ink": "#1E1A2E",
+            "surface-container": "#f4ede3",
+            "outline-variant": "#e0bfb8",
+            "sky-tint": "#DDEEFF",
+            "grape-fill": "#C3B2FF",
+            "coral": "#FF7352",
+            "error-container": "#ffdad6",
+            "bubble-deep": "#C23B82",
+            "on-secondary-container": "#655f77",
+            "surface-container-high": "#eee7dd",
+            "surface": "#FFFFFF",
+            "surface-dim": "#e0d9d0",
+            "secondary-fixed": "#e7defa",
+            "paper": "#FFF8EE",
+            "surface-container-highest": "#e8e2d8",
+            "on-surface-variant": "#58413c",
+            "on-primary-fixed-variant": "#891e04",
+            "captions": "#5A5470",
+            "background": "#fff8f0",
+            "mint-deep": "#16865F",
+            "secondary-container": "#e4dcf8",
+            "on-background": "#1e1b16",
+            "sun-deep": "#8A6200",
+            "on-secondary": "#ffffff",
+            "on-tertiary-fixed-variant": "#00504b",
+            "secondary": "#605b73",
+            "surface-container-low": "#faf3e9",
+            "tertiary-fixed": "#72f7eb",
+            "primary-container": "#ff7352",
+            "on-tertiary-container": "#003d38",
+            "inverse-primary": "#ffb4a3",
+            "secondary-fixed-dim": "#cac3de"
+          },
+          "borderRadius": {
+            "DEFAULT": "1rem",
+            "lg": "2rem",
+            "xl": "3rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "margin": "1.5rem",
+            "gutter": "1rem",
+            "space-xl": "2rem",
+            "space-sm": "0.5rem",
+            "space-lg": "1.5rem",
+            "space-md": "1rem",
+            "space-xs": "0.25rem"
+          },
+          "fontFamily": {
+            "headline-xl": ["Bricolage Grotesque"],
+            "headline-lg": ["Bricolage Grotesque"],
+            "body-md": ["Figtree"],
+            "label-sm": ["Figtree"],
+            "body-lg": ["Figtree"],
+            "headline-sm": ["Bricolage Grotesque"],
+            "body-sm": ["Figtree"],
+            "label-md": ["Figtree"],
+            "headline-md": ["Bricolage Grotesque"]
+          },
+          "fontSize": {
+            "headline-xl": ["36px", { "lineHeight": "42px", "letterSpacing": "-0.03em", "fontWeight": "800" }],
+            "headline-lg": ["28px", { "lineHeight": "34px", "letterSpacing": "-0.03em", "fontWeight": "700" }],
+            "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "700" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+            "headline-sm": ["18px", { "lineHeight": "24px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "label-md": ["14px", { "lineHeight": "18px", "fontWeight": "600" }],
+            "headline-md": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      line-height: 1;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      display: none;
+    }
+    .custom-scroll {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-paper text-ink font-body-md antialiased h-full flex justify-center items-center select-none overflow-hidden">
+<!-- Mobile Device Frame Wrapper (390px iPhone footprint) -->
+<div class="relative w-full max-w-[390px] h-full sm:h-[844px] bg-paper sm:rounded-xl shadow-2xl flex flex-col overflow-hidden sm:border sm:border-hairline">
+<!-- TopAppBar Component (from Shared Components JSON & Customised for Family Chat) -->
+<header class="sticky top-0 z-40 bg-surface/85 backdrop-blur-md px-4 pt-3 pb-2.5 border-b border-hairline flex flex-col gap-1.5 transition-all">
+<div class="flex items-center justify-between">
+<!-- Back Navigation & Title -->
+<div class="flex items-center gap-2.5">
+<button class="w-8 h-8 -ml-1.5 rounded-full flex items-center justify-center text-ink hover:opacity-80 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[22px]">arrow_back</span>
+</button>
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5">
+<span class="font-headline-sm text-headline-sm text-ink font-bold tracking-tight">Family</span>
+<span class="w-2 h-2 rounded-full bg-mint-fill animate-pulse"></span>
+</div>
+<span class="font-label-sm text-[10px] text-captions tracking-normal">LA with the kids · Oct 16–20</span>
+</div>
+</div>
+<!-- Trailing Members & Actions -->
+<div class="flex items-center gap-2">
+<!-- Member Avatar Stack & Active Badge -->
+<div class="flex items-center bg-surface-dark px-2 py-1 rounded-full border border-hairline">
+<div class="flex -space-x-1.5 items-center mr-1.5">
+<span class="w-5 h-5 rounded-full bg-coral-tint text-coral-deep font-label-sm text-[9px] flex items-center justify-center font-bold ring-1 ring-surface">A</span>
+<span class="w-5 h-5 rounded-full bg-mint-tint text-mint-deep font-label-sm text-[9px] flex items-center justify-center font-bold ring-1 ring-surface">S</span>
+<span class="w-5 h-5 rounded-full bg-grape-tint text-grape-deep font-label-sm text-[9px] flex items-center justify-center font-bold ring-1 ring-surface">M</span>
+<span class="w-5 h-5 rounded-full bg-sky-tint text-sky-deep font-label-sm text-[9px] flex items-center justify-center font-bold ring-1 ring-surface">H</span>
+</div>
+<span class="font-label-sm text-[9px] text-mint-deep font-extrabold uppercase tracking-wider">4 ACTIVE</span>
+</div>
+<!-- Options Trailing Icon -->
+<button class="w-8 h-8 rounded-full flex items-center justify-center text-text-secondary hover:text-ink active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Chat Messages Scrollable Canvas -->
+<main class="flex-1 overflow-y-auto px-4 py-3 custom-scroll flex flex-col space-y-1">
+<!-- Date Divider Badge -->
+<div class="flex justify-center my-2">
+<span class="px-3 py-1 rounded-full bg-surface/90 border border-hairline text-[11px] font-label-sm text-captions tracking-wide shadow-sm">
+          Today
+        </span>
+</div>
+<!-- INCOMING RUN 1: Maya -->
+<!-- Message 1 (Start of run: Sharp top-left) -->
+<div class="flex flex-col items-start max-w-[82%]">
+<div class="bg-surface rounded-2xl rounded-tl-sm px-3.5 pt-2 pb-1.5 shadow-[0_1px_3px_rgba(30,26,46,0.06)] border border-hairline">
+<div class="font-label-sm text-[12px] text-grape-deep font-bold mb-0.5">Maya</div>
+<div class="font-body-md text-[14px] text-ink leading-snug">
+            Kids are up, leaving the hotel at 8:30?
+          </div>
+<div class="text-right mt-1">
+<span class="font-body-sm text-[10px] text-captions">8:32 AM</span>
+</div>
+</div>
+</div>
+<!-- Message 2 (Subsequent in run: standard rounded, 2px gap) -->
+<div class="flex flex-col items-start max-w-[82%] !mt-[2px]">
+<div class="bg-surface rounded-2xl px-3.5 pt-2 pb-1.5 shadow-[0_1px_3px_rgba(30,26,46,0.06)] border border-hairline">
+<div class="font-body-md text-[14px] text-ink leading-snug">
+            Hrishi wants pancakes first 🥞
+          </div>
+<div class="text-right mt-0.5">
+<span class="font-body-sm text-[10px] text-captions">8:33 AM</span>
+</div>
+</div>
+</div>
+<!-- OUTGOING RUN 1: Ari (Me) -->
+<!-- Message 3 (Start of run: Sharp top-right, pale coral tint) -->
+<div class="flex flex-col items-end self-end max-w-[82%] !mt-3">
+<div class="bg-coral-tint rounded-2xl rounded-tr-sm px-3.5 pt-2 pb-1.5 shadow-[0_1px_2px_rgba(30,26,46,0.05)] border border-coral/20">
+<div class="font-body-md text-[14px] text-ink leading-snug">
+            Yes! Pancakes at Du-pars then Griffith
+          </div>
+<div class="flex items-center justify-end gap-1 mt-1">
+<span class="font-body-sm text-[10px] text-captions">8:35 AM</span>
+<span class="material-symbols-outlined text-[13px] text-captions font-bold">done_all</span>
+</div>
+</div>
+</div>
+<!-- Message 4 (Subsequent in run: standard rounded, 2px gap) -->
+<div class="flex flex-col items-end self-end max-w-[82%] !mt-[2px]">
+<div class="bg-coral-tint rounded-2xl px-3.5 pt-2 pb-1.5 shadow-[0_1px_2px_rgba(30,26,46,0.05)] border border-coral/20">
+<div class="font-body-md text-[14px] text-ink leading-snug">
+            I moved lunch to 12:30
+          </div>
+<div class="flex items-center justify-end gap-1 mt-0.5">
+<span class="font-body-sm text-[10px] text-captions">8:35 AM</span>
+<span class="material-symbols-outlined text-[13px] text-captions font-bold">done_all</span>
+</div>
+</div>
+</div>
+<!-- System Activity Line (Item 5) -->
+<div class="flex justify-center !my-3">
+<div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-dark border border-hairline shadow-xs">
+<span class="material-symbols-outlined text-coral text-[14px]">edit_calendar</span>
+<span class="font-body-sm text-[11px] text-text-secondary font-medium">Ari moved Lunch to 12:30 PM</span>
+</div>
+</div>
+<!-- INCOMING RUN 2: Hrishi -->
+<!-- Message 6: Voice Note Bubble (Sharp top-left) -->
+<div class="flex flex-col items-start max-w-[84%]">
+<div class="bg-surface rounded-2xl rounded-tl-sm px-3.5 pt-2 pb-2 shadow-[0_1px_3px_rgba(30,26,46,0.06)] border border-hairline w-64">
+<div class="font-label-sm text-[12px] text-sky-deep font-bold mb-1">Hrishi</div>
+<!-- Audio Playback Pill UI -->
+<div class="flex items-center gap-2.5 bg-paper/80 p-2 rounded-xl border border-hairline">
+<button class="w-8 h-8 rounded-full bg-ink text-surface flex items-center justify-center shrink-0 active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[18px] ml-0.5" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+<!-- Voice Waveform bars -->
+<div class="flex items-center gap-[3px] flex-1 h-6">
+<span class="w-[3px] h-2 bg-coral rounded-full"></span>
+<span class="w-[3px] h-3 bg-coral rounded-full"></span>
+<span class="w-[3px] h-5 bg-ink rounded-full"></span>
+<span class="w-[3px] h-3 bg-ink/70 rounded-full"></span>
+<span class="w-[3px] h-4 bg-coral rounded-full"></span>
+<span class="w-[3px] h-6 bg-coral rounded-full"></span>
+<span class="w-[3px] h-3 bg-ink/70 rounded-full"></span>
+<span class="w-[3px] h-5 bg-coral rounded-full"></span>
+<span class="w-[3px] h-4 bg-ink rounded-full"></span>
+<span class="w-[3px] h-2 bg-ink/40 rounded-full"></span>
+<span class="w-[3px] h-3 bg-coral rounded-full"></span>
+<span class="w-[3px] h-5 bg-coral rounded-full"></span>
+<span class="w-[3px] h-2 bg-ink/30 rounded-full"></span>
+</div>
+<span class="font-label-sm text-[11px] text-captions shrink-0 font-bold">0:14</span>
+</div>
+<div class="text-right mt-1">
+<span class="font-body-sm text-[10px] text-captions">8:38 AM</span>
+</div>
+</div>
+</div>
+<!-- Message 7: Photo Bubble (2px below, rounded corners) -->
+<div class="flex flex-col items-start max-w-[84%] !mt-[2px]">
+<div class="bg-surface rounded-2xl p-1.5 shadow-[0_1px_3px_rgba(30,26,46,0.06)] border border-hairline w-[232px]">
+<div class="relative rounded-xl overflow-hidden aspect-[4/3] bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A sunlit, candid film-style shot of a joyful family walking along Santa Monica beach shoreline with the iconic pier ferris wheel in the background. Bright sunny morning light, gentle ocean waves washing onto golden sand, warm cinematic tones in coral, mint, and ocean blue." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBOh7dI6xPOyzRShBU9_eEOO4OE3jBNrLWmrARpA_xA5xMiMBZP4-9ll0MEir78EVB2t2Phvk5z01ZXhk27y0zb_DdWZch3vrls4aiVWTnjNdkv4parti4hFKQA2aI4CgEOmqBP_lLxECCZmk1fZ168RhIMKGBh0HkN_9quvk9HPJs6IyF2LXvJ62HFUCrgFenIzk8X9oshxuhC7OyABMKgXnb4v6Ga-K-OTnR6C8txkNKowSAg3FzCsikeg97W1j-Ov4HVRrV6M3c"/>
+<!-- Location Badge Pill -->
+<div class="absolute bottom-2 left-2 px-2.5 py-0.5 rounded-full bg-ink/75 backdrop-blur-sm text-surface text-[10px] font-label-sm flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[12px] text-coral">location_on</span>
+              Santa Monica
+            </div>
+</div>
+<div class="flex justify-between items-center px-1.5 pt-1.5 pb-0.5">
+<span class="font-body-sm text-[11px] text-ink font-medium">Pier morning walk ✨</span>
+<span class="font-body-sm text-[10px] text-captions">8:40 AM</span>
+</div>
+</div>
+</div>
+<!-- OUTGOING RUN 2: Ari (Me) - Item 8: Trip Plan Link Bubble -->
+<div class="flex flex-col items-end self-end max-w-[86%] !mt-3">
+<div class="bg-coral-tint rounded-2xl rounded-tr-sm p-2 shadow-[0_1px_3px_rgba(30,26,46,0.06)] border border-coral/25 w-[250px]">
+<!-- Embedded Plan Card -->
+<div class="bg-surface rounded-xl p-2.5 border border-hairline shadow-xs">
+<div class="flex items-start gap-2.5">
+<div class="w-9 h-9 rounded-xl bg-mint-tint text-mint-deep flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">qr_code_2</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-1 mb-0.5">
+<span class="font-label-sm text-[9px] px-1.5 py-0.2 rounded-full bg-mint-tint text-mint-deep font-bold tracking-wider">CONFIRMED</span>
+<span class="material-symbols-outlined text-captions text-[15px]">chevron_right</span>
+</div>
+<h4 class="font-headline-sm text-[13px] text-ink font-bold leading-tight truncate">Griffith Observatory</h4>
+<p class="font-body-sm text-[11px] text-captions mt-0.5">4:00–6:00 PM · Sat 17</p>
+</div>
+</div>
+</div>
+<!-- Bottom Time & Checkmarks inside bubble -->
+<div class="flex items-center justify-end gap-1 mt-1.5 px-1">
+<span class="font-body-sm text-[10px] text-captions">8:42 AM</span>
+<span class="material-symbols-outlined text-[13px] text-captions font-bold">done_all</span>
+</div>
+</div>
+</div>
+<!-- Spacing block to ensure last message is comfortably above fixed bars -->
+<div class="h-24"></div>
+</main>
+<!-- Floating Message Composer Bar -->
+<div class="absolute bottom-[68px] left-0 right-0 px-3 z-30">
+<div class="flex items-center gap-2">
+<!-- Input capsule -->
+<div class="flex-1 bg-surface/95 backdrop-blur-md rounded-full border border-hairline shadow-md px-3 py-1.5 flex items-center gap-2">
+<button class="w-7 h-7 rounded-full text-text-secondary hover:text-ink active:scale-95 transition-all flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+<input class="flex-1 bg-transparent border-none p-0 text-ink text-[14px] font-body-md focus:ring-0 placeholder:text-captions/70 outline-none" placeholder="Message the family..." type="text"/>
+<button class="w-7 h-7 rounded-full text-text-secondary hover:text-ink active:scale-95 transition-all flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">mood</span>
+</button>
+</div>
+<!-- Coral Round Action Button (Voice/Send) -->
+<button class="w-11 h-11 rounded-full bg-coral text-on-primary flex items-center justify-center shadow-md active:scale-95 transition-transform shrink-0">
+<span class="material-symbols-outlined text-[20px]">mic</span>
+</button>
+</div>
+</div>
+<!-- BottomNavBar (Shared Component implementation with 'Ask' and Glassmorphic pill styling) -->
+<nav class="absolute bottom-2 left-0 right-0 z-40 px-4">
+<div class="bg-surface/90 backdrop-blur-md rounded-full border border-hairline shadow-md flex items-center justify-between px-6 py-1.5">
+<!-- Tab 1: Today -->
+<button class="flex flex-col items-center justify-center text-text-secondary hover:text-coral active:scale-95 transition-all py-1">
+<span class="material-symbols-outlined text-[21px]">calendar_today</span>
+<span class="font-label-sm text-[10px] mt-0.5 font-medium">Today</span>
+</button>
+<!-- Tab 2: Ask (Center highlight voice trigger) -->
+<button class="flex flex-col items-center justify-center -mt-3 active:scale-90 transition-transform">
+<div class="w-11 h-11 rounded-full bg-surface-dark border-2 border-coral shadow-sm flex items-center justify-center text-coral">
+<span class="material-symbols-outlined text-[22px]">mic</span>
+</div>
+<span class="font-label-sm text-[10px] text-coral font-bold mt-0.5">Ask</span>
+</button>
+<!-- Tab 3: Family / Chat (Active destination for this screen) -->
+<button class="flex flex-col items-center justify-center text-coral active:scale-95 transition-all py-1">
+<div class="px-3 py-0.5 rounded-full bg-coral-tint flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">chat_bubble</span>
+</div>
+<span class="font-label-sm text-[10px] mt-0.5 font-bold">Family</span>
+</button>
+<!-- Tab 4: Trip -->
+<button class="flex flex-col items-center justify-center text-text-secondary hover:text-coral active:scale-95 transition-all py-1">
+<span class="material-symbols-outlined text-[21px]">luggage</span>
+<span class="font-label-sm text-[10px] mt-0.5 font-medium">Trip</span>
+</button>
+</div>
+</nav>
+<!-- iOS Home Indicator bar -->
+<div class="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-32 h-1 bg-ink/20 rounded-full z-50 pointer-events-none"></div>
+</div>
+</body></html>

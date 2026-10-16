@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>GitAway - Family Chat</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Figtree:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@100..900&family=Figtree:wght@100..900&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "error": "#ba1a1a",
+            "surface-container-low": "#faf3e9",
+            "on-tertiary-fixed": "#00201d",
+            "surface-dark": "#FAF7F2",
+            "hairline": "rgba(30,26,46,0.10)",
+            "text-secondary": "#4A4460",
+            "tertiary-fixed-dim": "#51dbcf",
+            "on-secondary": "#ffffff",
+            "on-secondary-fixed": "#1d192d",
+            "sky-fill": "#5AB0FF",
+            "grape-tint": "#ECE4FF",
+            "on-surface-variant": "#58413c",
+            "surface-container-lowest": "#ffffff",
+            "mint-tint": "#D4F7EA",
+            "tertiary-container": "#00b1a6",
+            "surface-tint": "#aa361a",
+            "paper": "#FFF8EE",
+            "mint-fill": "#48D1A0",
+            "inverse-primary": "#ffb4a3",
+            "surface": "#FFFFFF",
+            "outline-variant": "#e0bfb8",
+            "background": "#fff8f0",
+            "secondary-fixed": "#e7defa",
+            "surface-container-highest": "#e8e2d8",
+            "error-container": "#ffdad6",
+            "sun-fill": "#FFC93C",
+            "surface-container-high": "#eee7dd",
+            "primary-fixed": "#ffdad2",
+            "on-background": "#1e1b16",
+            "secondary-fixed-dim": "#cac3de",
+            "sun-tint": "#FFF1C2",
+            "outline": "#8c716b",
+            "inverse-surface": "#33302a",
+            "on-primary-fixed": "#3d0700",
+            "tertiary": "#006a63",
+            "surface-dim": "#e0d9d0",
+            "grape-deep": "#6A4FD6",
+            "sky-tint": "#DDEEFF",
+            "on-primary-container": "#6b1200",
+            "coral": "#FF7352",
+            "bubble-fill": "#FF8CC6",
+            "on-tertiary": "#ffffff",
+            "surface-container": "#f4ede3",
+            "on-error-container": "#93000a",
+            "coral-deep": "#C9431F",
+            "inverse-on-surface": "#f7f0e6",
+            "ink": "#1E1A2E",
+            "captions": "#5A5470",
+            "on-primary-fixed-variant": "#891e04",
+            "secondary-container": "#e4dcf8",
+            "control-edge": "rgba(30,26,46,0.16)",
+            "mint-deep": "#16865F",
+            "surface-variant": "#e8e2d8",
+            "primary-fixed-dim": "#ffb4a3",
+            "on-tertiary-container": "#003d38",
+            "primary-container": "#ff7352",
+            "primary": "#aa361a",
+            "on-primary": "#ffffff",
+            "sky-deep": "#1B6FC9",
+            "sun-deep": "#8A6200",
+            "bubble-deep": "#C23B82",
+            "bubble-tint": "#FFE3F1",
+            "tertiary-fixed": "#72f7eb",
+            "grape-fill": "#C3B2FF",
+            "on-tertiary-fixed-variant": "#00504b",
+            "on-secondary-fixed-variant": "#49445a",
+            "coral-tint": "#FFE6DA",
+            "on-error": "#ffffff",
+            "on-surface": "#1e1b16",
+            "surface-bright": "#fff8f0",
+            "on-secondary-container": "#655f77",
+            "secondary": "#605b73"
+          },
+          "borderRadius": {
+            "DEFAULT": "1rem",
+            "lg": "2rem",
+            "xl": "3rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-md": "1rem",
+            "margin": "1.5rem",
+            "space-lg": "1.5rem",
+            "space-xl": "2rem",
+            "space-sm": "0.5rem",
+            "gutter": "1rem",
+            "space-xs": "0.25rem"
+          },
+          "fontFamily": {
+            "headline-lg": ["Bricolage Grotesque"],
+            "body-sm": ["Figtree"],
+            "headline-sm": ["Bricolage Grotesque"],
+            "body-lg": ["Figtree"],
+            "body-md": ["Figtree"],
+            "label-sm": ["Figtree"],
+            "headline-md": ["Bricolage Grotesque"],
+            "headline-xl": ["Bricolage Grotesque"],
+            "label-md": ["Figtree"]
+          },
+          "fontSize": {
+            "headline-lg": ["28px", {"lineHeight": "34px", "letterSpacing": "-0.03em", "fontWeight": "700"}],
+            "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+            "headline-sm": ["18px", {"lineHeight": "24px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+            "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+            "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+            "label-sm": ["11px", {"lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+            "headline-md": ["22px", {"lineHeight": "28px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+            "headline-xl": ["36px", {"lineHeight": "42px", "letterSpacing": "-0.03em", "fontWeight": "800"}],
+            "label-md": ["14px", {"lineHeight": "18px", "fontWeight": "600"}]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 20px;
+      line-height: 1;
+      display: inline-block;
+      text-transform: none;
+      letter-spacing: normal;
+      word-wrap: normal;
+      white-space: nowrap;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+    }
+    /* Hide scrollbars while allowing natural smooth scrolling */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    /* Bubble corner adjustments for authentic run tail feel */
+    .bubble-in-last {
+      border-bottom-left-radius: 4px !important;
+    }
+    .bubble-out-last {
+      border-bottom-right-radius: 4px !important;
+    }
+  </style>
+</head>
+<body class="bg-paper font-body-md text-ink antialiased h-full flex justify-center selection:bg-coral-tint">
+<!-- Mobile Device Frame Container -->
+<div class="w-full max-w-md h-full flex flex-col bg-paper relative overflow-hidden shadow-2xl">
+<!-- Top Bar & Header Section -->
+<header class="bg-paper/95 backdrop-blur-md pt-3 pb-2 px-4 sticky top-0 z-40 border-b border-hairline transition-all">
+<!-- Nav Header Row -->
+<div class="flex items-center justify-between h-11">
+<button aria-label="Go back" class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-surface-container active:scale-95 transition-all text-ink -ml-1">
+<span class="material-symbols-outlined text-[24px]">arrow_back</span>
+</button>
+<!-- Centered Title & Subtitle -->
+<div class="flex flex-col items-center justify-center text-center">
+<div class="flex items-center gap-1.5">
+<h1 class="font-headline-sm text-headline-sm text-ink leading-tight">Family</h1>
+<span class="w-1.5 h-1.5 rounded-full bg-mint-fill"></span>
+</div>
+<p class="font-body-sm text-body-sm text-text-secondary mt-0.5">LA with the kids · Oct 16–20</p>
+</div>
+<!-- Trailing Action -->
+<button aria-label="Details and information" class="w-9 h-9 flex items-center justify-center rounded-full bg-surface hover:bg-surface-container border border-hairline active:scale-95 transition-all text-ink -mr-1">
+<span class="material-symbols-outlined text-[20px] text-text-secondary">more_vert</span>
+</button>
+</div>
+<!-- Avatar Cluster Bar -->
+<div class="flex items-center justify-center gap-3 pt-2 pb-1">
+<!-- Ari (Sun Yellow) -->
+<div class="relative group cursor-pointer active:scale-95 transition-transform flex flex-col items-center">
+<div class="w-8 h-8 rounded-full bg-sun-fill/25 border border-sun-deep/30 flex items-center justify-center text-sun-deep font-headline-sm text-[13px] font-bold shadow-xs">
+            A
+          </div>
+<span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-mint-fill border-2 border-paper"></span>
+</div>
+<!-- Sam (Mint Green) -->
+<div class="relative group cursor-pointer active:scale-95 transition-transform flex flex-col items-center">
+<div class="w-8 h-8 rounded-full bg-mint-tint border border-mint-deep/30 flex items-center justify-center text-mint-deep font-headline-sm text-[13px] font-bold shadow-xs">
+            S
+          </div>
+<span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-mint-fill border-2 border-paper"></span>
+</div>
+<!-- Maya (Grape) -->
+<div class="relative group cursor-pointer active:scale-95 transition-transform flex flex-col items-center">
+<div class="w-8 h-8 rounded-full bg-grape-tint border border-grape-deep/30 flex items-center justify-center text-grape-deep font-headline-sm text-[13px] font-bold shadow-xs">
+            M
+          </div>
+<span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-mint-fill border-2 border-paper"></span>
+</div>
+<!-- Hrishi (Sky Blue) -->
+<div class="relative group cursor-pointer active:scale-95 transition-transform flex flex-col items-center">
+<div class="w-8 h-8 rounded-full bg-sky-tint border border-sky-deep/30 flex items-center justify-center text-sky-deep font-headline-sm text-[13px] font-bold shadow-xs">
+            H
+          </div>
+<span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-mint-fill border-2 border-paper"></span>
+</div>
+<!-- Quick Info Pill -->
+<div class="ml-1 pl-2 border-l border-hairline flex items-center">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container text-captions text-[11px] font-label-sm font-semibold tracking-wide">
+<span class="material-symbols-outlined text-[13px] text-coral">group</span>
+            4 ACTIVE
+          </span>
+</div>
+</div>
+</header>
+<!-- Chat Thread Stream (Scrollable) -->
+<main class="flex-1 overflow-y-auto px-4 py-3 no-scrollbar space-y-3 pb-36">
+<!-- Date Divider -->
+<div class="flex justify-center my-2">
+<span class="px-3 py-1 rounded-full bg-surface-container/70 border border-hairline text-[11px] font-label-sm text-text-secondary">
+          Today 9:41 AM
+        </span>
+</div>
+<!-- RUN 1: Incoming from Maya -->
+<div class="flex flex-col items-start w-full">
+<!-- Sender Name Caption -->
+<span class="font-label-sm text-label-sm text-text-secondary font-medium ml-9 mb-1">Maya</span>
+<!-- Run Bubbles with 28px avatar offset alignment -->
+<div class="flex items-end gap-1.5 w-full">
+<!-- Indent spacer for bubble 1 is simulated by standard left container alignment, avatar at bottom -->
+<div class="flex flex-col items-start space-y-[2px] max-w-[78%] pl-9 relative w-full">
+<!-- Bubble 1 -->
+<div class="bg-surface border border-hairline text-ink px-3.5 py-2 rounded-[18px] rounded-bl-[12px] font-body-md text-body-md shadow-xs leading-snug">
+              Kids are up, leaving the hotel at 8:30?
+            </div>
+<!-- Bubble 2 (Last of run, tail on bottom-left) -->
+<div class="bg-surface border border-hairline text-ink px-3.5 py-2 rounded-[18px] bubble-in-last font-body-md text-body-md shadow-xs leading-snug">
+              Hrishi wants pancakes first
+            </div>
+<!-- Avatar for Maya positioned at bottom left of the run -->
+<div class="absolute left-0 bottom-0 w-7 h-7 rounded-full bg-grape-tint border border-grape-deep/25 flex items-center justify-center text-grape-deep font-headline-sm text-xs font-bold shadow-xs">
+              M
+            </div>
+</div>
+</div>
+</div>
+<!-- RUN 2: Outgoing from Me (Ari) [12px gap from previous sender] -->
+<div class="flex flex-col items-end w-full pt-1.5">
+<div class="flex flex-col items-end space-y-[2px] max-w-[80%]">
+<!-- Bubble 1 -->
+<div class="bg-coral text-white px-3.5 py-2 rounded-[18px] rounded-br-[12px] font-body-md text-body-md shadow-xs leading-snug">
+            Yes! Pancakes at Du-pars then Griffith
+          </div>
+<!-- Bubble 2 (Last of run, tail on bottom-right) -->
+<div class="bg-coral text-white px-3.5 py-2 rounded-[18px] bubble-out-last font-body-md text-body-md shadow-xs leading-snug">
+            I moved lunch to 12:30
+          </div>
+</div>
+</div>
+<!-- System Event Divider (Centered) -->
+<div class="flex justify-center my-2.5">
+<div class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-surface-dark border border-hairline text-[12px] font-body-sm text-text-secondary shadow-xs">
+<span class="material-symbols-outlined text-[15px] text-coral">edit_calendar</span>
+<span>Ari moved <strong class="font-semibold text-ink">Lunch</strong> to 12:30 PM</span>
+</div>
+</div>
+<!-- RUN 3: Incoming from Hrishi [12px gap] -->
+<div class="flex flex-col items-start w-full pt-1">
+<!-- Sender Name Caption -->
+<span class="font-label-sm text-label-sm text-text-secondary font-medium ml-9 mb-1">Hrishi</span>
+<div class="flex items-end gap-1.5 w-full">
+<div class="flex flex-col items-start space-y-[2px] max-w-[80%] pl-9 relative w-full">
+<!-- Bubble 1: Voice Note Bubble -->
+<div class="bg-surface border border-hairline text-ink p-2.5 pr-4 rounded-[18px] rounded-bl-[12px] shadow-xs flex items-center gap-2.5">
+<!-- Play Button -->
+<button class="w-8 h-8 rounded-full bg-ink text-surface flex items-center justify-center flex-shrink-0 active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[18px] ml-0.5">play_arrow</span>
+</button>
+<!-- Waveform Visualizer -->
+<div class="flex items-center gap-[2.5px] h-6 py-1">
+<span class="w-1 bg-coral h-2.5 rounded-full"></span>
+<span class="w-1 bg-coral h-4 rounded-full"></span>
+<span class="w-1 bg-coral h-5 rounded-full"></span>
+<span class="w-1 bg-coral h-3 rounded-full"></span>
+<span class="w-1 bg-coral h-4 rounded-full"></span>
+<span class="w-1 bg-control-edge h-2 rounded-full"></span>
+<span class="w-1 bg-control-edge h-3.5 rounded-full"></span>
+<span class="w-1 bg-control-edge h-5 rounded-full"></span>
+<span class="w-1 bg-control-edge h-4 rounded-full"></span>
+<span class="w-1 bg-control-edge h-2.5 rounded-full"></span>
+<span class="w-1 bg-control-edge h-3 rounded-full"></span>
+<span class="w-1 bg-control-edge h-1.5 rounded-full"></span>
+</div>
+<!-- Duration -->
+<span class="text-[12px] font-label-sm font-semibold text-text-secondary ml-1">0:14</span>
+</div>
+<!-- Bubble 2: Beach Photo Bubble (220px wide, tail bottom-left) -->
+<div class="w-[220px] bg-surface border border-hairline p-1 rounded-[16px] bubble-in-last shadow-xs overflow-hidden">
+<img alt="Sunny Santa Monica beach with golden sand, soft ocean waves, and blue sky, taken on a family trip, candid vacation photo" class="w-full h-36 object-cover rounded-[14px]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDnOabjc3qsy-mB_VA56fobzNBwdeDLDvN4jr4N9FsXFu99zOFVLbOKCck-n4zqbi8U67q3T6B4IHwBsTC5mwHNZgCWADL4VEH09QOZb50VkElwp48s3hNIVIngLg32p7Q4OznH1N4MNIEG47Wq6ew7zRamTY2DpTalNYUkN6UXwHlKEKqaKi0sNt3z6lzafaZjXpKMv08-Jy-n6qd-0XYx6zr595_g_4Xf05W4wdtTau8ClK_GyD_2BniXL86QPcUJEXvpF5QI6c0"/>
+<div class="px-2 py-1.5 flex items-center justify-between text-[11px] text-text-secondary">
+<span class="flex items-center gap-1 font-body-sm">
+<span class="material-symbols-outlined text-[13px] text-sky-deep">photo_camera</span>
+                  Santa Monica
+                </span>
+<span class="font-label-sm">9:43 AM</span>
+</div>
+</div>
+<!-- Avatar for Hrishi at bottom left -->
+<div class="absolute left-0 bottom-0 w-7 h-7 rounded-full bg-sky-tint border border-sky-deep/25 flex items-center justify-center text-sky-deep font-headline-sm text-xs font-bold shadow-xs">
+              H
+            </div>
+</div>
+</div>
+</div>
+<!-- RUN 4: Outgoing from Me (Ari) [12px gap] -->
+<div class="flex flex-col items-end w-full pt-1.5">
+<div class="flex flex-col items-end space-y-[2px] max-w-[85%]">
+<!-- Plan Link Card inside Coral Bubble -->
+<div class="bg-coral text-white p-2 rounded-[20px] bubble-out-last shadow-sm w-full max-w-[280px]">
+<!-- Inner Plan Card -->
+<div class="bg-surface rounded-xl p-3 text-ink shadow-xs border border-white/40">
+<div class="flex items-start gap-2.5">
+<!-- Kind Icon Tile (Mint for Outdoors/Culture) -->
+<div class="w-10 h-10 rounded-full bg-mint-tint flex items-center justify-center flex-shrink-0 text-mint-deep">
+<span class="material-symbols-outlined text-[22px]">qr_code_2</span>
+</div>
+<!-- Plan Info -->
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-1">
+<span class="text-[10px] font-label-sm font-bold uppercase tracking-wider text-coral-deep bg-coral-tint px-2 py-0.5 rounded-full">CONFIRMED</span>
+<span class="material-symbols-outlined text-text-secondary text-[16px]">chevron_right</span>
+</div>
+<h2 class="font-headline-sm text-[15px] font-bold text-ink truncate mt-1">Griffith Observatory</h2>
+<p class="font-body-sm text-body-sm text-text-secondary truncate mt-0.5">4:00–6:00 PM · Sat 17</p>
+</div>
+</div>
+<!-- Quick action footer -->
+<div class="mt-2.5 pt-2 border-t border-hairline flex items-center justify-between text-[11px] font-label-sm font-semibold">
+<span class="text-text-secondary">4 tickets reserved</span>
+<span class="text-coral-deep hover:underline cursor-pointer flex items-center">
+                  View Plan
+                  <span class="material-symbols-outlined text-[13px] ml-0.5">arrow_forward</span>
+</span>
+</div>
+</div>
+<p class="text-right text-[11px] text-white/90 font-body-sm px-2 pt-1 pb-0.5">
+              Locked it in! Meet by the lawn 🔭
+            </p>
+</div>
+<!-- Read Receipt Indicator -->
+<div class="flex items-center gap-1 pr-1 pt-0.5">
+<span class="font-body-sm text-[11px] text-text-secondary font-medium">Read 9:44 AM</span>
+<span class="material-symbols-outlined text-[13px] text-coral">done_all</span>
+</div>
+</div>
+</div>
+</main>
+<!-- Docked Input Composer (Pinned right above the floating navigation) -->
+<div class="absolute bottom-[66px] left-0 right-0 px-3 py-2 bg-surface/95 backdrop-blur-md border-t border-hairline z-40">
+<div class="flex items-center gap-2">
+<!-- Attachment / Plus Action Button -->
+<button aria-label="Add plan or media" class="w-9 h-9 rounded-full bg-surface-container hover:bg-surface-container-high border border-hairline flex items-center justify-center text-ink active:scale-95 transition-all flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+<!-- Message Input Field -->
+<div class="flex-1 relative flex items-center">
+<input class="w-full bg-surface-container-lowest text-ink placeholder:text-captions text-body-md rounded-full px-4 py-2 border border-control-edge focus:outline-none focus:ring-1 focus:ring-coral focus:border-coral transition-all" placeholder="Message the family..." type="text"/>
+<!-- Contextual Emoji / Trip Tag Quick Trigger -->
+<button aria-label="Insert sticker or trip tag" class="absolute right-3 text-text-secondary hover:text-ink active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[18px]">sentiment_satisfied</span>
+</button>
+</div>
+<!-- Mic / Voice Message Button -->
+<button aria-label="Voice memo" class="w-9 h-9 rounded-full bg-surface-container hover:bg-surface-container-high border border-hairline flex items-center justify-center text-ink active:scale-95 transition-all flex-shrink-0">
+<span class="material-symbols-outlined text-[19px]">mic</span>
+</button>
+<!-- Send Arrow Button (Coral) -->
+<button aria-label="Send message" class="w-9 h-9 rounded-full bg-coral hover:bg-coral-deep text-white flex items-center justify-center active:scale-95 transition-all flex-shrink-0 shadow-sm">
+<span class="material-symbols-outlined text-[18px] ml-0.5">arrow_upward</span>
+</button>
+</div>
+</div>
+<!-- Floating Glass Bottom Navigation Bar (Authentic GitAway Shared Component) -->
+<nav class="fixed bottom-0 left-0 right-0 z-50 flex justify-around items-center px-space-md py-space-xs max-w-md mx-auto pointer-events-none">
+<div class="w-full bg-surface/90 backdrop-blur-md border border-hairline rounded-full shadow-sm flex items-center justify-around px-2 py-1 mb-space-md pointer-events-auto">
+<!-- Today Tab -->
+<button class="flex flex-col items-center justify-center text-text-secondary hover:text-ink px-space-md py-space-xs active:scale-95 transition-all duration-150">
+<span class="material-symbols-outlined text-[22px]">calendar_today</span>
+<span class="text-label-sm font-label-sm mt-0.5">Today</span>
+</button>
+<!-- Ask Tab (Elevated central mic button) -->
+<button class="flex flex-col items-center justify-center text-text-secondary hover:text-ink px-space-md py-space-xs active:scale-95 transition-all duration-150 -mt-2">
+<div class="w-10 h-10 rounded-full bg-coral text-white flex items-center justify-center shadow-md active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[20px]">mic</span>
+</div>
+<span class="text-label-sm font-label-sm mt-0.5">Ask</span>
+</button>
+<!-- Family Chat Tab (Active tab for Group Chat) -->
+<button class="flex flex-col items-center justify-center bg-coral-tint text-coral-deep rounded-full px-space-md py-space-xs active:scale-95 transition-all duration-150">
+<span class="material-symbols-outlined text-[22px]" style="font-variation-settings: 'FILL' 1;">chat</span>
+<span class="text-label-sm font-label-sm mt-0.5 font-bold">Family</span>
+</button>
+<!-- Trip Tab -->
+<button class="flex flex-col items-center justify-center text-text-secondary hover:text-ink px-space-md py-space-xs active:scale-95 transition-all duration-150">
+<span class="material-symbols-outlined text-[22px]">luggage</span>
+<span class="text-label-sm font-label-sm mt-0.5">Trip</span>
+</button>
+</div>
+</nav>
+</div>
+</body></html>

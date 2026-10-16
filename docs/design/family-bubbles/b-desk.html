@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1440, height=900, initial-scale=1.0">
+  <title>GitAway — Laptop Family Chat & Timeline (1440x900)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Figtree:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink: '#1E1A2E',
+            'ink-secondary': '#4A4460',
+            'ink-caption': '#736B8E',
+            paper: '#FFF8EE',
+            'paper-card': '#FAF7F2',
+            hairline: 'rgba(30, 26, 46, 0.08)',
+            'hairline-strong': 'rgba(30, 26, 46, 0.14)',
+            coral: '#FF7352',
+            'coral-deep': '#C9431F',
+            'coral-tint': '#FFE8DF',
+            'coral-bubble': '#FFE8DF',
+            // Kind colors
+            'sun-fill': '#FFC93C',
+            'sun-tint': '#FFF6D9',
+            'sun-deep': '#8A6200',
+            'mint-fill': '#48D1A0',
+            'mint-tint': '#E3F8F0',
+            'mint-deep': '#16865F',
+            'grape-fill': '#C3B2FF',
+            'grape-tint': '#EFEAFF',
+            'grape-deep': '#6A4FD6',
+            'sky-fill': '#5AB0FF',
+            'sky-tint': '#E5F3FF',
+            'sky-deep': '#1B6FC9',
+            'bubble-fill': '#FF8CC6',
+            'bubble-tint': '#FFE9F4',
+            'bubble-deep': '#C23B82',
+          },
+          fontFamily: {
+            display: ['"Bricolage Grotesque"', 'sans-serif'],
+            sans: ['"Figtree"', 'sans-serif'],
+            hand: ['"Caveat"', 'cursive'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #FFF8EE;
+      color: #1E1A2E;
+      font-family: 'Figtree', sans-serif;
+      margin: 0;
+      padding: 0;
+      width: 1440px;
+      height: 900px;
+      overflow: hidden;
+      box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 5px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(30, 26, 46, 0.12);
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="bg-paper flex flex-col justify-between select-none">
+
+  <!-- TOP BAR -->
+  <header class="h-[64px] px-8 flex items-center justify-between border-b border-hairline bg-paper z-20 shrink-0">
+    <!-- Left: Brand Logo & Navigation Tabs -->
+    <div class="flex items-center gap-8">
+      <div class="flex items-center gap-2 cursor-pointer">
+        <span class="font-display font-black text-2xl tracking-tight text-ink">GitAway</span>
+        <span class="w-2.5 h-2.5 rounded-full bg-coral mb-0.5"></span>
+      </div>
+
+      <nav class="flex items-center gap-1.5 p-1 bg-white/70 backdrop-blur-sm rounded-full border border-hairline">
+        <button class="px-4 py-1.5 rounded-full text-xs font-semibold text-ink-secondary hover:text-ink transition-colors">Trip</button>
+        <button class="px-4 py-1.5 rounded-full text-xs font-bold text-white bg-ink shadow-sm transition-all flex items-center gap-1.5">
+          <span>Family</span>
+          <span class="w-4 h-4 rounded-full bg-coral text-[10px] text-white flex items-center justify-center font-bold">4</span>
+        </button>
+        <button class="px-4 py-1.5 rounded-full text-xs font-semibold text-ink-secondary hover:text-ink transition-colors flex items-center gap-1">
+          <span>Ask</span>
+          <svg class="w-3.5 h-3.5 text-coral" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a1 1 0 0 1 1 1v1.07A8.001 8.001 0 0 1 20 12v3.586l1.707 1.707A1 1 0 0 1 21 19H3a1 1 0 0 1-.707-1.707L4 15.586V12a8.001 8.001 0 0 1 7-7.93V3a1 1 0 0 1 1-1zm6 10a6 6 0 1 0-12 0v4h12v-4zm-6 9a3 3 0 0 1-2.995-2.824L9 20h6a3 3 0 0 1-2.824 2.995L12 21z"/></svg>
+        </button>
+      </nav>
+    </div>
+
+    <!-- Center/Right: Trip Title, Members, SOS & Notification -->
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-white border border-hairline shadow-sm cursor-pointer hover:border-hairline-strong transition-all">
+        <span class="w-2 h-2 rounded-full bg-mint-fill animate-pulse"></span>
+        <span class="text-xs font-bold text-ink">LA with the kids</span>
+        <span class="text-xs text-ink-caption font-medium">· Oct 16–20</span>
+        <svg class="w-3.5 h-3.5 text-ink-caption" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+      </div>
+
+      <!-- Avatar cluster -->
+      <div class="flex items-center -space-x-1.5">
+        <div class="w-6 h-6 rounded-full bg-sun-fill/25 border-2 border-paper flex items-center justify-center text-[10px] font-bold text-sun-deep">A</div>
+        <div class="w-6 h-6 rounded-full bg-mint-fill/25 border-2 border-paper flex items-center justify-center text-[10px] font-bold text-mint-deep">S</div>
+        <div class="w-6 h-6 rounded-full bg-bubble-fill/25 border-2 border-paper flex items-center justify-center text-[10px] font-bold text-bubble-deep">M</div>
+        <div class="w-6 h-6 rounded-full bg-sky-fill/25 border-2 border-paper flex items-center justify-center text-[10px] font-bold text-sky-deep">H</div>
+      </div>
+
+      <!-- SOS Pill -->
+      <button class="px-3 py-1 rounded-full border border-coral/30 bg-coral/10 text-coral text-xs font-bold flex items-center gap-1 hover:bg-coral hover:text-white transition-all">
+        <span>✳</span>
+        <span>SOS</span>
+      </button>
+
+      <!-- Notification bell -->
+      <button class="w-8 h-8 rounded-full bg-white border border-hairline flex items-center justify-center text-ink-secondary hover:text-ink hover:border-hairline-strong transition-all relative">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+        <span class="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-coral"></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN CANVAS (1440x836) -->
+  <main class="flex-1 flex gap-6 px-8 py-4 overflow-hidden max-h-[836px]">
+
+    <!-- LEFT 2/3 COLUMN: DAY TIMELINE -->
+    <section class="flex-[2] flex flex-col min-w-0 max-h-full">
+      <!-- Days Bar -->
+      <div class="flex items-center justify-between pb-3 shrink-0">
+        <div class="flex items-center gap-2 overflow-x-auto py-0.5">
+          <!-- Active Day Pill -->
+          <button class="px-4 py-2 rounded-full bg-ink text-white text-xs font-bold flex items-center gap-1.5 shadow-sm shrink-0">
+            <span>Fri 16 · Fly in, check in</span>
+          </button>
+          <button class="px-3.5 py-2 rounded-full bg-white border border-hairline hover:border-hairline-strong text-ink text-xs font-medium shrink-0">
+            Sat 17 · Wide open
+          </button>
+          <button class="px-3.5 py-2 rounded-full bg-white border border-hairline hover:border-hairline-strong text-ink text-xs font-medium shrink-0">
+            Sun 18 · Wide open
+          </button>
+          <button class="px-3.5 py-2 rounded-full bg-white border border-hairline hover:border-hairline-strong text-ink text-xs font-medium shrink-0">
+            Mon 19 · Wide open
+          </button>
+          <button class="px-3.5 py-2 rounded-full bg-white border border-hairline hover:border-hairline-strong text-ink text-xs font-medium shrink-0">
+            Tue 20 · Fly home
+          </button>
+        </div>
+
+        <div class="flex items-center gap-2 shrink-0">
+          <button class="px-3.5 py-2 rounded-full bg-white border border-hairline hover:border-hairline-strong text-ink text-xs font-semibold flex items-center gap-1.5 shadow-xs">
+            <span class="text-sm leading-none">+</span>
+            <span>Paste plan</span>
+          </button>
+          <button class="px-4 py-2 rounded-full bg-coral text-ink font-bold text-xs flex items-center gap-1.5 shadow-sm hover:brightness-105 active:scale-95 transition-all">
+            <svg class="w-3.5 h-3.5 text-ink" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg>
+            <span>Say the plan</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Day Subheader -->
+      <div class="flex items-baseline justify-between pt-1 pb-3 shrink-0">
+        <div>
+          <div class="text-[11px] font-bold uppercase tracking-wider text-ink-caption">Day 1 of 5 · Friday, Oct 16</div>
+          <h1 class="font-display font-extrabold text-2xl text-ink tracking-tight mt-0.5">Fly in, check in</h1>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="px-3 py-1 rounded-full bg-sun-tint border border-sun-fill/20 text-sun-deep text-xs font-semibold flex items-center gap-1.5">
+            <span>☀️ 76°F Clear</span>
+          </div>
+          <span class="text-xs text-ink-caption font-medium">4 items · Ari, Sam, Maya, Leo</span>
+        </div>
+      </div>
+
+      <!-- TIMELINE LIST (Scrollable) -->
+      <div class="flex-1 overflow-y-auto pr-2 custom-scroll relative">
+        <!-- Vertical Time Rail -->
+        <div class="absolute left-[72px] top-4 bottom-4 w-px bg-hairline-strong pointer-events-none"></div>
+
+        <div class="space-y-3.5 pb-4">
+
+          <!-- 1. Flight Item (8:05 AM) -->
+          <div class="flex items-start gap-4 group">
+            <!-- Time on Rail -->
+            <div class="w-[60px] text-right shrink-0 pt-3">
+              <div class="font-display font-extrabold text-lg text-ink leading-none">8:05</div>
+              <div class="text-[10px] font-semibold text-ink-caption uppercase">AM</div>
+            </div>
+            <!-- Rail Indicator Node -->
+            <div class="w-6 flex justify-center pt-3.5 shrink-0 z-10">
+              <div class="w-3.5 h-3.5 rounded-full bg-white border-[3px] border-sky-fill shadow-xs"></div>
+            </div>
+            <!-- Plan Card (Filled with soft kind tint) -->
+            <div class="flex-1 bg-sky-tint border border-sky-fill/25 rounded-2xl p-4 transition-all hover:shadow-md hover:border-sky-fill/40">
+              <div class="flex items-start justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-sky-fill text-white flex items-center justify-center shrink-0 shadow-sm">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h3 class="font-display font-bold text-base text-ink">Skylark Air 214 · SFO → LAX</h3>
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/80 text-ink border border-hairline">BOOKED</span>
+                    </div>
+                    <p class="text-xs text-ink-secondary mt-0.5">Terminal 2, Gate 42B · Seats 14A, 14B, 14C, 14D (Whole row)</p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <span class="text-xs font-bold text-sky-deep">8:05 – 9:32 AM</span>
+                  <div class="text-[11px] text-mint-deep font-semibold">On time</div>
+                </div>
+              </div>
+              <div class="mt-2.5 pt-2 border-t border-sky-fill/15 flex items-center gap-4 text-[11px] text-ink-caption">
+                <span class="flex items-center gap-1">🧳 Checked 2 bags</span>
+                <span>⏱ 1h 27m flight time</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Connecting Gap/Buffer -->
+          <div class="flex items-center gap-4 pl-[88px] py-0.5">
+            <div class="px-3 py-1 rounded-full bg-white/90 border border-dashed border-hairline-strong text-[11px] text-ink-caption flex items-center gap-1.5">
+              <span>🚗 Pick up minivan rental @ Avis · 2h 58m buffer & scenic DTLA drive</span>
+            </div>
+          </div>
+
+          <!-- 2. Lunch Item (12:30 PM) -->
+          <div class="flex items-start gap-4 group">
+            <div class="w-[60px] text-right shrink-0 pt-3">
+              <div class="font-display font-extrabold text-lg text-ink leading-none">12:30</div>
+              <div class="text-[10px] font-semibold text-ink-caption uppercase">PM</div>
+            </div>
+            <div class="w-6 flex justify-center pt-3.5 shrink-0 z-10">
+              <div class="w-3.5 h-3.5 rounded-full bg-white border-[3px] border-sun-fill shadow-xs"></div>
+            </div>
+            <!-- Plan Card (Filled with soft sun tint) -->
+            <div class="flex-1 bg-sun-tint border border-sun-fill/30 rounded-2xl p-4 transition-all hover:shadow-md hover:border-sun-fill/50">
+              <div class="flex items-start justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-sun-fill text-sun-deep flex items-center justify-center shrink-0 shadow-sm">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                    <!-- Fork & Spoon representation -->
+                    <span class="font-bold text-sm">🍴</span>
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h3 class="font-display font-bold text-base text-ink">Lunch at Grand Central Market</h3>
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/80 text-ink border border-hairline">PLAN</span>
+                    </div>
+                    <p class="text-xs text-ink-secondary mt-0.5">Tacos Tumbras a Tomas & fresh strawberry agua fresca · Stroller friendly</p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <span class="text-xs font-bold text-sun-deep">12:30 – 2:00 PM</span>
+                  <div class="text-[11px] text-ink-caption">90 min</div>
+                </div>
+              </div>
+              <div class="mt-2.5 pt-2 border-t border-sun-fill/15 flex items-center justify-between">
+                <div class="px-2.5 py-1 rounded-lg bg-white/70 text-sun-deep text-xs font-medium flex items-center gap-1.5">
+                  <span class="font-hand font-bold text-sm text-ink-secondary">Note: bring sunscreen for kids & try pupusas at Sarita's!</span>
+                </div>
+                <span class="text-[11px] text-ink-caption">Ari moved here</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Connecting Gap -->
+          <div class="flex items-center gap-4 pl-[88px] py-0.5">
+            <div class="text-[11px] text-ink-caption flex items-center gap-2">
+              <span class="w-1.5 h-1.5 rounded-full bg-hairline-strong"></span>
+              <span>25 min transit via I-10 W toward Santa Monica oceanfront</span>
+            </div>
+          </div>
+
+          <!-- 3. Hotel Check-in Item (3:00 PM) -->
+          <div class="flex items-start gap-4 group">
+            <div class="w-[60px] text-right shrink-0 pt-3">
+              <div class="font-display font-extrabold text-lg text-ink leading-none">3:00</div>
+              <div class="text-[10px] font-semibold text-ink-caption uppercase">PM</div>
+            </div>
+            <div class="w-6 flex justify-center pt-3.5 shrink-0 z-10">
+              <div class="w-3.5 h-3.5 rounded-full bg-white border-[3px] border-grape-fill shadow-xs"></div>
+            </div>
+            <!-- Plan Card (Filled with soft grape tint) -->
+            <div class="flex-1 bg-grape-tint border border-grape-fill/30 rounded-2xl p-4 transition-all hover:shadow-md hover:border-grape-fill/50">
+              <div class="flex items-start justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-grape-fill text-white flex items-center justify-center shrink-0 shadow-sm">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h3 class="font-display font-bold text-base text-ink">Check in · The Tidewater</h3>
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/80 text-ink border border-hairline">BOOKED</span>
+                    </div>
+                    <p class="text-xs text-ink-secondary mt-0.5">Ocean Ave, Santa Monica · City-view Double Queen · Conf #GW-8821</p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <span class="text-xs font-bold text-grape-deep">3:00 PM Check-in</span>
+                  <div class="text-[11px] text-mint-deep font-semibold">Early check-in confirmed</div>
+                </div>
+              </div>
+              <div class="mt-2.5 pt-2 border-t border-grape-fill/15 flex items-center gap-4 text-[11px] text-ink-caption">
+                <span class="px-2 py-0.5 rounded-full bg-white/80 text-grape-deep font-medium">Valet parking included</span>
+                <span>Crib & pack-and-play requested</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. Sunset Pier Item (5:30 PM) -->
+          <div class="flex items-start gap-4 group">
+            <div class="w-[60px] text-right shrink-0 pt-3">
+              <div class="font-display font-extrabold text-lg text-ink leading-none">5:30</div>
+              <div class="text-[10px] font-semibold text-ink-caption uppercase">PM</div>
+            </div>
+            <div class="w-6 flex justify-center pt-3.5 shrink-0 z-10">
+              <div class="w-3.5 h-3.5 rounded-full bg-white border-[3px] border-mint-fill shadow-xs"></div>
+            </div>
+            <!-- Plan Card (Filled with soft mint tint) -->
+            <div class="flex-1 bg-mint-tint border border-mint-fill/30 rounded-2xl p-4 transition-all hover:shadow-md hover:border-mint-fill/50">
+              <div class="flex items-start justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-mint-fill text-white flex items-center justify-center shrink-0 shadow-sm">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h3 class="font-display font-bold text-base text-ink">Santa Monica Pier sunset</h3>
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/80 text-ink border border-hairline">PLAN</span>
+                    </div>
+                    <p class="text-xs text-ink-secondary mt-0.5">Pacific Park solar ferris wheel & carousel stroll with kids</p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <span class="text-xs font-bold text-mint-deep">5:30 – 7:00 PM</span>
+                  <div class="text-[11px] text-sun-deep font-semibold">Golden Hour</div>
+                </div>
+              </div>
+              <div class="mt-2.5 pt-2 border-t border-mint-fill/15 flex items-center gap-4 text-[11px] text-ink-caption">
+                <span class="flex items-center gap-1 font-medium text-mint-deep">🌅 Sunset at 6:12 PM</span>
+                <span>Grab warm churros near the carousel</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT 1/3 COLUMN: DOCKED PANEL (White Card, 28px radius) -->
+    <aside class="flex-1 flex flex-col bg-white rounded-[28px] border border-hairline shadow-lg overflow-hidden min-w-[420px] max-w-[470px]">
+      
+      <!-- Docked Panel Header / Tabs -->
+      <div class="px-5 pt-4 pb-3 border-b border-hairline bg-white shrink-0">
+        <div class="p-1 bg-paper rounded-full border border-hairline flex items-center justify-between">
+          <button class="flex-1 py-1.5 rounded-full text-xs font-semibold text-ink-secondary hover:text-ink transition-all text-center">
+            Plan
+          </button>
+          <!-- Selected Tab: Family with count -->
+          <button class="flex-1 py-1.5 rounded-full text-xs font-bold text-ink bg-white shadow-xs border border-hairline text-center flex items-center justify-center gap-1.5">
+            <span>Family</span>
+            <span class="w-4 h-4 rounded-full bg-coral text-[10px] text-white flex items-center justify-center font-bold">4</span>
+          </button>
+          <button class="flex-1 py-1.5 rounded-full text-xs font-semibold text-ink-secondary hover:text-ink transition-all text-center flex items-center justify-center gap-1">
+            <span>Ask</span>
+            <span class="text-coral text-xs">✨</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- FAMILY CHAT BODY: WhatsApp Style on Warm Paper (#FFF8EE) -->
+      <div class="flex-1 bg-paper p-4 overflow-y-auto custom-scroll flex flex-col justify-between">
+        
+        <!-- Messages Flow -->
+        <div class="space-y-3">
+
+          <!-- Time divider: Today 9:41 AM -->
+          <div class="flex justify-center my-1">
+            <span class="px-3 py-1 rounded-full bg-white/90 border border-hairline text-[10px] font-bold text-ink-caption tracking-wider uppercase shadow-xs">
+              Today 9:41 AM
+            </span>
+          </div>
+
+          <!-- RUN 1: Maya (Incoming on left, white bubble, sharp top-left corner on first of run) -->
+          <div class="flex flex-col items-start space-y-1 max-w-[85%]">
+            <!-- 1st bubble of Maya's run: sharp top-left corner (rounded-tl-none), rounded-2xl -->
+            <div class="bg-white border border-hairline rounded-2xl rounded-tl-none px-3.5 py-2 shadow-xs relative">
+              <!-- Sender first name in bold small coloured text -->
+              <div class="text-[11px] font-bold text-grape-deep mb-0.5">Maya</div>
+              <div class="text-xs text-ink leading-relaxed">
+                Kids are up, leaving the hotel at 8:30?
+              </div>
+              <div class="text-[9px] text-ink-caption font-medium text-right mt-1">
+                8:32 AM
+              </div>
+            </div>
+
+            <!-- 2nd bubble of Maya's run: fully rounded-2xl (or grouped) -->
+            <div class="bg-white border border-hairline rounded-2xl px-3.5 py-2 shadow-xs relative">
+              <div class="text-xs text-ink leading-relaxed">
+                Hrishi wants pancakes first 🥞
+              </div>
+              <div class="text-[9px] text-ink-caption font-medium text-right mt-1">
+                8:33 AM
+              </div>
+            </div>
+          </div>
+
+          <!-- RUN 2: Mine (Outgoing on right, pale coral-tint bubbles with ink text) -->
+          <div class="flex flex-col items-end space-y-1 ml-auto max-w-[85%]">
+            <!-- 1st bubble: sharp top-right corner or rounded-2xl -->
+            <div class="bg-coral-bubble border border-coral/20 rounded-2xl rounded-tr-none px-3.5 py-2 shadow-xs">
+              <div class="text-xs text-ink font-normal leading-relaxed">
+                Yes! Pancakes at Du-pars then Griffith
+              </div>
+              <div class="text-[9px] text-coral-deep/70 font-semibold text-right mt-1 flex items-center justify-end gap-1">
+                <span>8:35 AM</span>
+                <span>✓✓</span>
+              </div>
+            </div>
+
+            <!-- 2nd bubble -->
+            <div class="bg-coral-bubble border border-coral/20 rounded-2xl px-3.5 py-2 shadow-xs">
+              <div class="text-xs text-ink font-normal leading-relaxed">
+                I moved lunch to 12:30
+              </div>
+              <div class="text-[9px] text-coral-deep/70 font-semibold text-right mt-1 flex items-center justify-end gap-1">
+                <span>8:35 AM</span>
+                <span>✓✓</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- SYSTEM EVENT: Centered small pill "Ari moved Lunch to 12:30 PM" -->
+          <div class="flex justify-center my-1.5">
+            <div class="px-3.5 py-1 rounded-full bg-white border border-hairline-strong text-[11px] font-semibold text-ink-secondary shadow-xs flex items-center gap-1.5">
+              <span>📅</span>
+              <span>Ari moved Lunch to 12:30 PM</span>
+            </div>
+          </div>
+
+          <!-- RUN 3: Hrishi (Incoming on left, white bubble, sharp top-left on 1st) -->
+          <div class="flex flex-col items-start space-y-1.5 max-w-[85%]">
+            <!-- Voice-note bubble: play, waveform, 0:14 -->
+            <div class="bg-white border border-hairline rounded-2xl rounded-tl-none p-3 shadow-xs w-[260px]">
+              <div class="text-[11px] font-bold text-sky-deep mb-1">Hrishi</div>
+              <div class="flex items-center gap-2.5">
+                <!-- Play button -->
+                <button class="w-8 h-8 rounded-full bg-ink text-white flex items-center justify-center shrink-0 hover:scale-105 active:scale-95 transition-transform">
+                  <svg class="w-3.5 h-3.5 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                </button>
+                <!-- Waveform bars -->
+                <div class="flex-1 flex items-center gap-0.5 h-6">
+                  <span class="w-1 bg-coral h-2.5 rounded-full"></span>
+                  <span class="w-1 bg-coral h-4 rounded-full"></span>
+                  <span class="w-1 bg-coral h-5 rounded-full"></span>
+                  <span class="w-1 bg-coral h-3 rounded-full"></span>
+                  <span class="w-1 bg-coral h-6 rounded-full"></span>
+                  <span class="w-1 bg-ink-caption/40 h-4 rounded-full"></span>
+                  <span class="w-1 bg-ink-caption/40 h-2.5 rounded-full"></span>
+                  <span class="w-1 bg-ink-caption/40 h-5 rounded-full"></span>
+                  <span class="w-1 bg-ink-caption/40 h-3.5 rounded-full"></span>
+                  <span class="w-1 bg-ink-caption/40 h-5 rounded-full"></span>
+                  <span class="w-1 bg-ink-caption/40 h-2 rounded-full"></span>
+                  <span class="w-1 bg-ink-caption/40 h-4 rounded-full"></span>
+                </div>
+                <!-- Time length -->
+                <span class="text-[10px] font-semibold text-ink-caption shrink-0">0:14</span>
+              </div>
+              <div class="text-[9px] text-ink-caption font-medium text-right mt-1">
+                8:38 AM
+              </div>
+            </div>
+
+            <!-- Photo bubble of a beach -->
+            <div class="bg-white border border-hairline rounded-2xl p-1.5 shadow-xs w-[240px]">
+              <div class="rounded-xl overflow-hidden relative">
+                <img src="https://lh3.googleusercontent.com/aida/AEtjO1U8XloGilTkUhkQXkQfZmMM8P3tWXcEu6VJWi3hOH1KrM3zaXSMOmEHOd2CIeG0UkukfbAvXHNsCl48j737VHNLKLNbg5k6dd7t2xdZZc2L6Xl1R_NsCa3A907ykcSndl3j28FHTnOhrTV40Zt_xgDPsCh6E_s_YsHbcLht3zVWw_LqfaMiSObBWt9vCpb1Bh6qLK128G1DYlD7_lhWicA27rhtkDwDfrlQ3tjTOkWPfEYtB1Bd1tsb28M" alt="Beach photo" class="w-full h-32 object-cover">
+                <div class="absolute bottom-1.5 left-2 px-2 py-0.5 rounded-full bg-ink/70 backdrop-blur-xs text-white text-[10px] font-medium flex items-center gap-1">
+                  <span>📍 Santa Monica</span>
+                </div>
+              </div>
+              <div class="flex items-center justify-between px-1.5 pt-1.5 pb-0.5">
+                <span class="text-[11px] text-ink-secondary font-medium">Pier morning walk ✨</span>
+                <span class="text-[9px] text-ink-caption">8:40 AM</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- RUN 4: Me (Outgoing on right: plan link bubble with small card) -->
+          <div class="flex flex-col items-end ml-auto max-w-[85%]">
+            <div class="bg-coral-bubble border border-coral/25 rounded-2xl rounded-tr-none p-2 shadow-xs w-[260px]">
+              <div class="text-xs text-ink font-semibold mb-1 px-1">
+                Added to Saturday plan! 🔭
+              </div>
+              
+              <!-- Plan link card inside bubble -->
+              <div class="bg-white border border-hairline rounded-xl p-2.5 flex items-center gap-2.5 shadow-2xs hover:border-coral transition-colors cursor-pointer">
+                <!-- Icon tile (Grape/culture) -->
+                <div class="w-9 h-9 rounded-lg bg-grape-tint border border-grape-fill/30 text-grape-deep flex items-center justify-center shrink-0">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"/></svg>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <div class="font-display font-bold text-xs text-ink truncate">Griffith Observatory</div>
+                  <div class="text-[10px] text-ink-caption mt-0.5">4:00–6:00 PM · Sat 17</div>
+                </div>
+                <div class="text-coral-deep text-xs font-bold">›</div>
+              </div>
+
+              <div class="text-[9px] text-coral-deep/70 font-semibold text-right mt-1.5 px-1 flex items-center justify-end gap-1">
+                <span>8:42 AM</span>
+                <span>✓✓</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- COMPOSER: Composer pill "Message the family" with + and round mic -->
+        <div class="pt-3 shrink-0">
+          <div class="flex items-center gap-2 bg-white rounded-full border border-hairline-strong px-2 py-1.5 shadow-sm focus-within:border-coral transition-all">
+            <!-- + Button -->
+            <button class="w-8 h-8 rounded-full bg-paper hover:bg-hairline text-ink flex items-center justify-center transition-colors shrink-0">
+              <svg class="w-4 h-4 text-ink-secondary" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+            </button>
+
+            <!-- Input Placeholder -->
+            <input type="text" placeholder="Message the family..." class="flex-1 bg-transparent text-xs text-ink placeholder-ink-caption/70 focus:outline-none px-1">
+
+            <!-- Emoji/Attach Icons -->
+            <button class="text-ink-caption hover:text-ink transition-colors p-1">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg>
+            </button>
+
+            <!-- Round Mic Button -->
+            <button class="w-8 h-8 rounded-full bg-coral text-white flex items-center justify-center hover:brightness-105 active:scale-95 transition-all shadow-xs shrink-0">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </aside>
+
+  </main>
+
+</body>
+</html>
