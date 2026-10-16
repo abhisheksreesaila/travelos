@@ -973,7 +973,7 @@ Report fixes 2 and 7. Needs: F-168
 - [x] on the phone the week never prefetches desktop-only plan rows (no box); after a swap ±1 day is fetched before anything else
 - [x] day switch after 62 s or right after a write starts ≤150 ms on the phone and laptop (CPU 4×, +180 ms); a week visit on the phone prefetches only the day fragments (one per day, nearest first, capped; never hidden desktop rows), so a tap on any day row needs no network wait (amended 2026-10-16: the 0.1 MB bound left cold rows showing an outline first); browser tests pin "no network wait on a day switch after a write" and "no hidden-row prefetch"
 
-## F-171 One motion for a move; swipes follow the finger [review]
+## F-171 One motion for a move; swipes follow the finger [done]
 Report fixes 3 and 4. Needs: F-170
 - [x] after a drop the refreshed day goes in while the block lands, and the neighbours glide in the same motion (no land, stop, glide); the toast shows with the save's reply (amended 2026-10-16: its text and Undo come from the server; measured 245 ms after the drop at CPU 4x, +180 ms); move settles ≤750 ms on the phone (was 1251)
 - [x] a day swipe follows the finger 1:1 and the slide continues from where the finger let go (no snap back to 0); a short or slow swipe springs back
