@@ -50,6 +50,8 @@ def test_a_plan_chat_opens_with_its_title_and_posts_to_the_plan(crew, chats):
     assert "Venice Canals stroll" in text(html) and f'data-key="{stroll}"' in html and "Churros after" in html
     assert 'action="/trip/talk/message"' in html and f'name="act" value="{stroll}"' in html and 'name="scope"' not in html
     assert f"/trip/talk/items?act={stroll}&amp;read=1" in html
+    assert fc.unread_total(ari) == 1                                            # (F-177: a GET writes nothing; the script's /seen marks what the pane shows)
+    assert crew[0].post("/trip/family/seen", data={"key": stroll, "upto": str(fc.newest(ari))}).status_code == 204
     assert fc.unread_total(ari) == 0
 
 

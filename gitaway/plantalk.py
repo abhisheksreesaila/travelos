@@ -78,27 +78,28 @@ def counts(session) -> dict:
     return out
 
 
-def labels(session) -> dict:
-    """{(plan id, part id or ""): label} for every plan and part of the open trip, for the Family tab's "on <plan>" tags."""
+def labels(session, acts=None) -> dict:
+    """{(plan id, part id or ""): label} for every plan and part of the open trip, for the Family tab's "on <plan>" tags. `acts`: the trip's plans, when the caller has read them."""
     out = {}
     plan = canvas.plan(session)["blocks"]
-    for a in cal.activities(session):
+    for a in acts if acts is not None else cal.activities(session):
         out[(a.id, "")] = a.title
         for p in (plan.get(a.id) or {}).get("parts", []):
             out[(a.id, p["id"])] = f"{p['name']} · {a.title}"
     return out
 
 
-def items(session, act, part="", since=0, trip=None) -> list:
-    """The chat of a plan (or a part), oldest first, after rowid `since`. Raises StaleTrip when the page was drawn for another trip."""
+def items(session, act, part="", since=0, trip=None, before=0, limit=0) -> list:
+    """The chat of a plan (or a part), oldest first, after rowid `since` and before `before` (0: no end); `limit` keeps only the newest that many (0: all). Raises StaleTrip when the page was drawn for another trip."""
     with ses.family(session) as fam:
         if not fam or not fam.trip_id:
             return []
         ft._check(fam, trip)
-        found = familydb.rows(fam.db, "SELECT rowid AS n, * FROM thread WHERE trip_id = :t AND rowid > :s AND kind IN ('message', 'photo', 'voice') AND payload LIKE :p ORDER BY rowid",
-                              t=fam.trip_id, s=int(since or 0), p=f'%"act":{json.dumps(act)}%')
+        found = familydb.rows(fam.db, "SELECT rowid AS n, * FROM thread WHERE trip_id = :t AND rowid > :s AND kind IN ('message', 'photo', 'voice') AND (:b = 0 OR rowid < :b) AND payload LIKE :p ORDER BY rowid",
+                              t=fam.trip_id, s=int(since or 0), b=int(before or 0), p=f'%"act":{json.dumps(act)}%')
     its = [ft._item(r) for r in found]
-    return [it for it in its if it["payload"].get("act") == act and (it["payload"].get("part") or "") == (part or "")]
+    its = [it for it in its if it["payload"].get("act") == act and (it["payload"].get("part") or "") == (part or "")]
+    return its[-limit:] if limit else its
 
 
 def voice_file(session, item_id):

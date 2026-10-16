@@ -171,18 +171,25 @@ STALE = "This trip changed. Reload the page."
 SORRY = "That did not send. Try again."
 
 
-def _new_items(session, since, trip="", scope="", read=False):
+def _new_items(session, since, trip="", scope="", read=False, before=0, limit=0):
     """The items after `since` as an HTML fragment; the highest item number goes in X-Thread-Last. 409 when the page was drawn for another trip. `scope` "trip": only what belongs to no plan
-    (the panel's Whole trip, F-143); `read`: the person is looking at the chat, so what is returned is marked read."""
+    (the panel's Whole trip, F-143); `read`: the person is looking at the chat, so what is returned is marked read. `before` (F-177): the `limit` (30) items before that number, for the
+    panel's "Earlier messages"; X-Thread-More says whether there are still earlier ones."""
+    more = False
     try:
-        its = familythread.items(session, since=max(0, since), trip=trip or None, scope="trip" if scope == "trip" else "")
+        if before > 0:
+            limit = min(max(limit, 1), 100) if limit else familythread.PAGE
+            its = familythread.items(session, limit=limit + 1, trip=trip or None, scope="trip" if scope == "trip" else "", before=before)
+            its, more = its[-limit:], len(its) > limit
+        else:
+            its = familythread.items(session, since=max(0, since), trip=trip or None, scope="trip" if scope == "trip" else "")
     except familythread.StaleTrip:
         return PlainTextResponse(STALE, status_code=409)
-    if read and its:      # the person is looking at it: the panel's whole-trip chat, or the phone's Family tab (every chat)
+    if read and its and before <= 0:      # the person is looking at it: the panel's whole-trip chat, or the phone's Family tab (every chat)
         familychats.mark_read(session, familychats.TRIP if scope == "trip" else familychats.EVERYTHING, its[-1]["n"])
     me, zone = ses.current_traveler(session).id, ses.trip_zone(session)
     body = "".join(to_xml(v) for v in fragment(its, me, zone, plantalk.labels(session) if scope != "trip" else None))
-    return Response(body, media_type="text/html; charset=utf-8", headers={"X-Thread-Last": str(its[-1]["n"] if its else max(0, since)), "Cache-Control": "no-store"})
+    return Response(body, media_type="text/html; charset=utf-8", headers={"X-Thread-Last": str(its[-1]["n"] if its and before <= 0 else max(0, since)), "X-Thread-More": "1" if more else "0", "Cache-Control": "no-store"})
 
 
 def wants_page(request) -> bool:
@@ -195,10 +202,10 @@ def register(app):
     photos_ui.register(app)
 
     @app.get("/trip/family/thread")
-    def poll(request, session, since: int = 0, trip: str = "", scope: str = "", read: str = ""):
+    def poll(request, session, since: int = 0, trip: str = "", scope: str = "", read: str = "", before: int = 0, limit: int = 0):
         if wants_page(request):      # F-143: opened in the browser's address bar, it is the Family page (on a laptop that goes on to the day with the chat open), never a bare fragment
             return RedirectResponse("/trip/family", status_code=303)
-        return _new_items(session, since, trip, scope, read == "1") if _signed_in(session) else Response(status_code=401)
+        return _new_items(session, since, trip, scope, read == "1", before, limit) if _signed_in(session) else Response(status_code=401)
 
     @app.post("/trip/family/message")
     def message(request, session, text: str = "", since: int = 0, trip: str = "", cid: str = "", scope: str = ""):
