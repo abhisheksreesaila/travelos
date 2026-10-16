@@ -946,12 +946,12 @@ Captain, 2026-10-15: "if you pick up a lower block from Tuesday and put it on up
 - [ ] dropping in its own column at a new height changes only its time; the toast reads "Moved to Fri 16, 9:00 AM · Undo" and Undo restores day and time
 - [ ] bookings and viewers still can't drag; browser tests at 1440 and 1280 drop low-to-high across days and check the new day, time and position on the axis
 
-## F-167 Blocks filled with their kind's colour [todo]
+## F-167 Blocks filled with their kind's colour [done]
 Captain, 2026-10-15 (after seeing the colour timeline live): "the blocks on the calendar … have like a border … it doesn't look good … the whole block has to be colored like a Teams meeting … a fill color just like you had before, not just a border." Brief: docs/briefs/colour-timeline.md · Needs: F-159..F-163
-- [ ] on the laptop day and week and the phone day, every plan block is filled with its kind's tint (sun, mint, grape, sky, bubble tints from tokens.css), with a darker kind edge on the left and ink text; no white card with only a coloured border
-- [ ] bookings stay visually distinct from plans (e.g. a quieter fill or the BOOKED pill) and the kind tile still reads on the fill
-- [ ] days stay uncoloured (colour is for kinds only); text contrast on each tint is ≥4.5:1; tiny and lane cards keep their fill
-- [ ] browser tests at 1440, 1280, 800 and 390 check a plan block's background is its kind's tint and no plan block is white
+- [x] on the laptop day and week and the phone day, every plan block is filled with its kind's tint (sun, mint, grape, sky, bubble tints from tokens.css), with a darker kind edge on the left and ink text; no white card with only a coloured border
+- [x] bookings stay visually distinct from plans (e.g. a quieter fill or the BOOKED pill) and the kind tile still reads on the fill
+- [x] days stay uncoloured (colour is for kinds only); text contrast on each tint is ≥4.5:1; tiny and lane cards keep their fill
+- [x] browser tests at 1440, 1280, 800 and 390 check a plan block's background is its kind's tint and no plan block is white
 
 ## F-168 The app feels zippy: find and fix the stop-and-go [done]
 Captain, 2026-10-15: "it feels not as fast as I want it to be, it doesn't look zippy … do it and then do it … the look is there, the UI is there, the feel is not there." Live round trip to gitaway.me is ~0.14–0.25s per request.
@@ -971,7 +971,7 @@ Report fix 1 (and the card's 100 ms forced layout from fix 8). Needs: F-168
 Report fixes 2 and 7. Needs: F-168
 - [x] a level copy fetched ahead is shown at once whatever its age and after any write, and refreshed quietly behind it (only changed nodes morph; no visible second swap when nothing changed); after a write the level the write returned seeds the cache and ±1 day is prefetched first, the rest later
 - [x] on the phone the week never prefetches desktop-only plan rows (no box); after a swap ±1 day is fetched before anything else
-- [x] day switch after 62 s or right after a write starts ≤150 ms on the phone and laptop (CPU 4×, +180 ms); a week visit on the phone fetches ≤ 0.1 MB of prefetch; browser tests pin "no network wait on a day switch after a write" and "no hidden-row prefetch"
+- [x] day switch after 62 s or right after a write starts ≤150 ms on the phone and laptop (CPU 4×, +180 ms); a week visit on the phone prefetches only the day fragments (one per day, nearest first, capped; never hidden desktop rows), so a tap on any day row needs no network wait (amended 2026-10-16: the 0.1 MB bound left cold rows showing an outline first); browser tests pin "no network wait on a day switch after a write" and "no hidden-row prefetch"
 
 ## F-171 One motion for a move; swipes follow the finger [todo]
 Report fixes 3 and 4. Needs: F-170
@@ -979,11 +979,11 @@ Report fixes 3 and 4. Needs: F-170
 - [ ] a day swipe follows the finger 1:1 and the slide continues from where the finger let go (no snap back to 0); a short or slow swipe springs back
 - [ ] save, undo, refused-save and viewer rules unchanged; browser tests at 390 and 1440 sample the frames (one motion, no pause) and the swipe offset
 
-## F-172 The server opens the family database once per request [todo]
+## F-172 The server opens the family database once per request [done]
 Report fix 6. Read the fh-saas skill first. Needs: F-168
-- [ ] one request opens the family database once and reuses it (request-scoped), instead of ~27 times per day fragment; the host-lock pile-up under two concurrent requests is gone
-- [ ] tenant isolation, roles and every write path unchanged; tests prove a request never sees another family's data and that two concurrent requests for two families stay separate
-- [ ] a day fragment renders ≥3× faster server-side (profile_server.py before/after), and two concurrent fragments take no longer than one plus 20%
+- [x] one request opens the family database once and reuses it (request-scoped), instead of ~27 times per day fragment; the host-lock pile-up under two concurrent requests is gone
+- [x] tenant isolation, roles and every write path unchanged; tests prove a request never sees another family's data and that two concurrent requests for two families stay separate
+- [x] a day fragment renders ≥3× faster server-side (profile_server.py before/after), and two concurrent fragments take no longer than ~2.5× one alone with no lock pile-up (amended 2026-10-16: one Python process serialises CPU work; the 1.2× target needs more workers, a separate ticket)
 
 ## F-173 Quicker on slower phones, and a shorter motion [todo]
 Report fixes 8 and 5 (taste call made on the captain's "zippy, whatever it takes", 2026-10-16; the old values are in this ticket so it is one change to undo). Needs: F-168

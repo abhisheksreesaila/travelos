@@ -55,11 +55,12 @@
 
   /* a plan or a booking: a white card at its start, as tall as it lasts, the kind's tile and 3px edge (--tint, --accent from the cz-k-<kind> classes; --kink in desk_skin.css), lanes side by side */
   .cz .cz-wi { position: absolute; z-index: 2; box-sizing: border-box; top: calc(var(--s) / var(--span) * 100%); height: calc(var(--l) / var(--span) * 100%); left: calc(var(--lane) / var(--lanes) * 100% + 0.25rem); width: calc(100% / var(--lanes) - 0.4167rem);
-    display: flex; align-items: flex-start; gap: 0.5rem; padding: 0.25rem 0.5rem 0.25rem 0.6667rem; overflow: clip; border: 1px solid var(--hairline); border-radius: var(--r-sm); background: var(--card); box-shadow: inset 0.25rem 0 0 var(--accent); color: var(--ink); text-decoration: none; }
+    display: flex; align-items: flex-start; gap: 0.5rem; padding: 0.25rem 0.5rem 0.25rem 0.6667rem; overflow: clip; border: 1px solid var(--hairline); border-radius: var(--r-sm); background: var(--tint); box-shadow: inset 0.25rem 0 0 var(--accent); color: var(--ink); text-decoration: none; }
   .cz .cz-wi.cz-k-fun { --tint: var(--bubble-tint); --accent: var(--bubble); }
+  .cz .cz-wi.is-booked { background: color-mix(in srgb, var(--tint) 45%, var(--card)); }      /* F-167: a booking's fill is a quieter half of its kind's tint, so it never reads as a plan */
   .cz .cz-wi:hover, .cz .cz-wi:focus-visible { z-index: 5; height: auto; min-height: calc(var(--l) / var(--span) * 100%); overflow: visible; box-shadow: inset 0.25rem 0 0 var(--accent), var(--shadow-lg); }      /* a short card opens to its whole text while it is pointed at */
   .cz .cz-wi:focus-visible { outline: 0.1667rem solid var(--ink); outline-offset: 0.0833rem; }
-  .cz .cz-wi-ico { flex: none; display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 0.5rem; background: var(--tint); color: var(--kink); }
+  .cz .cz-wi-ico { flex: none; display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 0.5rem; background: var(--card); color: var(--kink); }
   .cz .cz-wi-ico svg { width: 1.25rem; height: 1.25rem; }
   .cz .cz-wi-body { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; column-gap: 0.4167rem; row-gap: 0.1667rem; }
   .cz .cz-wi-t { flex: 1 0 100%; min-width: 0; max-height: 2.4em; overflow: hidden; font-family: var(--font-display); font-weight: 700; font-size: 1.0833rem; line-height: 1.2; letter-spacing: -0.01em; overflow-wrap: break-word; }      /* words break at spaces; a word wider than the card is the only thing that breaks inside */
