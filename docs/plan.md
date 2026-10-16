@@ -967,7 +967,7 @@ Report fix 1 (and the card's 100 ms forced layout from fix 8). Needs: F-168
 - [x] rename stays one gesture away: from the hold menu (already there) and by tapping the title inside the open card; nothing that worked before is lost; the card open does no forced layout over 30 ms
 - [x] browser tests at 390 and 1440: a single tap opens the card within one frame budget of the tap, a double tap does not open two things, rename from the card works
 
-## F-170 Never wait for a copy we already have [review]
+## F-170 Never wait for a copy we already have [done]
 Report fixes 2 and 7. Needs: F-168
 - [x] a level copy fetched ahead is shown at once whatever its age and after any write, and refreshed quietly behind it (only changed nodes morph; no visible second swap when nothing changed); after a write the level the write returned seeds the cache and ±1 day is prefetched first, the rest later
 - [x] on the phone the week never prefetches desktop-only plan rows (no box); after a swap ±1 day is fetched before anything else
