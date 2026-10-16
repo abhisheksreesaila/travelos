@@ -911,11 +911,11 @@ Brief: docs/briefs/colour-timeline.md · Design: docs/design/colour-timeline.md 
 - [x] text is never under 13px and touch targets at least 44px; browser tests at 390 and 800 pin the same rules as F-159
 - [x] crowded stretches: at most 3 plans side by side on a phone (2 beside a booking); the rest fold into a "+N more" card whose list opens each plan's hold menu
 
-## F-161 Adding and moving in the new look [todo]
+## F-161 Adding and moving in the new look [review]
 Brief: docs/briefs/colour-timeline.md · Design: docs/design/colour-timeline.md (frames ct-add-*, ct-move-*) · Needs: F-160
-- [ ] a new plan drafted on empty time opens in that gap with a dashed coral edge, the title field focused, kind chips in their colours, and its rail time in coral (phone and laptop)
-- [ ] while a plan is dragged: a faint dashed ghost stays at its old slot, a dashed landing slot shows where it will drop, the rail time turns coral and updates live, and a day chip under the pointer shows "Drop to move to <day>"
-- [ ] the behaviour is exactly as before (same thresholds, saves, undo, viewers can't drag); browser tests drive add and move at 390 and 1440 and check the ghost, the landing slot and the live time
+- [x] a new plan drafted on empty time opens in that gap with a dashed coral edge, the title field focused, kind chips in their colours, and its rail time in coral (phone and laptop)
+- [x] while a plan is dragged: a faint dashed ghost stays at its old slot, a dashed landing slot shows where it will drop, the rail time turns coral and updates live, and a day chip under the pointer shows "Drop to move to <day>"
+- [x] the behaviour is exactly as before (same thresholds, saves, undo, viewers can't drag); browser tests drive add and move at 390 and 1440 and check the ghost, the landing slot and the live time
 
 ## F-162 The laptop week on one time axis [done]
 Brief: docs/briefs/colour-timeline.md · Design: docs/design/colour-timeline.md (frame ct-week-desk) · Needs: F-159
