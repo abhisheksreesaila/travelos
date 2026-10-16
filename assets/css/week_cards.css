@@ -4,6 +4,10 @@
    a card, its header and today's pill carry no day colour. From 1020px up (not the installed app) week_desk.css draws the columns instead and these rows are not drawn, so every rule sits in the same query.
    Sizes are `--pu` (one phone rem: 1rem on a phone, 4/3 rem on a tablet), text never under `--tmin` (13px), every target at least `--tap` (44px); all three come from day_phone.css. Motion: none of its own (canvas_core.js zooms the tap). */
 @media (max-width: 1019px), (display-mode: standalone) {
+  /* the heading is two-tone like the day's (F-160): "The trip." in ink, then the second phrase ("Five days in LA.") in grey, on one line */
+  .cz .cz-view[data-level="week"] .cz-head h1 { margin: 0 0.3em 0 0; font-size: calc(var(--pu) * 1.5); line-height: 1.1; color: var(--ink); }
+  .cz .cz-view[data-level="week"] .cz-head h1::after { content: "."; }
+  .cz .cz-view[data-level="week"] .ga-h-two { display: inline; font-family: var(--font-display); font-weight: 800; font-size: calc(var(--pu) * 1.5); line-height: 1.1; letter-spacing: -0.03em; color: var(--ink-3); }
   .cz .cz-week { display: flex; flex-direction: column; gap: calc(var(--pu) * 0.75); }
 
   /* the kinds' tint, edge colour and ink: a plan carries cz-k-<kind>; a booking follows its data-kind (flight sky, hotel grape, a car ink) */

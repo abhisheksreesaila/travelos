@@ -135,7 +135,7 @@ def test_a_level_shown_from_an_old_copy_is_brought_up_to_date_when_someone_else_
     seen = watch(page)
     page.locator(".cz-head .cz-back").click()                   # shown at once from the old copy...
     expect(page.locator(".cz-view[data-level=week]")).to_be_visible()
-    assert "1/" not in page.locator(".cz-view[data-level=week]").inner_text()
+    assert "1 done" not in page.locator(".cz-view[data-level=week]").inner_text()
     expect(page.locator(".cz-view[data-level=week]")).to_contain_text("1 done", timeout=6000)      # ...then quietly replaced by the server's copy
     assert any("frag=1" in u for u in seen)
 
@@ -154,7 +154,7 @@ def test_a_quiet_update_waits_while_a_field_is_being_typed_in(canvas_page):
     page.evaluate("() => { const i = document.createElement('input'); i.id = 'zz-typing'; document.querySelector('.cz-view').appendChild(i); i.focus(); }")
     page.wait_for_timeout(1500)
     assert page.evaluate("document.activeElement.id") == "zz-typing"                  # the field is still there: nothing replaced the level under the cursor
-    assert "1/" not in page.locator(".cz-view[data-level=week]").inner_text()
+    assert "1 done" not in page.locator(".cz-view[data-level=week]").inner_text()
 
 
 def test_coming_back_from_the_bfcache_shows_the_server_copy(canvas_page):

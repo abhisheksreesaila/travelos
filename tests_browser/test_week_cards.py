@@ -244,3 +244,16 @@ def test_the_day_switch_and_the_kind_filter_keep_working_on_the_cards(signed_in,
     expect(page.locator("#cz-week .cz-row.is-thin .cz-thin-t").first).to_have_text("Nothing for hotels")
     page.locator(".cz-kchip[data-k=all]").click()
     assert page.locator("#cz-week .cz-row.is-thin").count() == 0
+
+
+@BOTH
+def test_the_week_heading_is_two_tone_like_the_day(signed_in, viewport):
+    page = week(signed_in, viewport)
+    two = page.locator(".cz-view[data-level=week] .ga-h-two")
+    expect(two).to_be_visible()
+    assert two.inner_text() == "Five days in LA."
+    assert two.evaluate("e => getComputedStyle(e).color") == "rgb(90, 84, 112)"
+    h1 = page.locator(".cz-view[data-level=week] .cz-head h1")
+    assert h1.evaluate("e => getComputedStyle(e).color") == INK and h1.inner_text() == "The trip"
+    a, b = h1.bounding_box(), two.bounding_box()
+    assert b["x"] >= a["x"] + a["width"] - 1 or b["y"] >= a["y"] + a["height"] - 1      # after the first phrase, beside it or wrapped under it, never over it

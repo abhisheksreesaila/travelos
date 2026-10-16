@@ -39,5 +39,5 @@ def test_a_booking_with_no_length_is_drawn_fifteen_minutes_long():
 def test_a_booking_is_its_own_link_and_a_plan_is_not(trip):
     week = bare(trip.get("/trip/canvas").text).split('id="cz-week"')[1].split('id="cz-wk"')[0]
     assert len(re.findall(r'<a\b[^>]*class="cz-wcard cz-simple is-booked"', week)) == 4      # Fri's flight and hotel, Tue's check out and flight home
-    assert 'class="cz-wcard cz-simple cz-k-' in week and not re.search(r'<a\\b[^>]*cz-k-', week)      # a plan's row is not a link of its own: the card's link opens the day
+    assert 'class="cz-wcard cz-simple cz-k-' in week and not re.search(r'<a\b[^>]*cz-k-', week)      # a plan's row is not a link of its own: the card's link opens the day
     assert "9:00 AM Universal Studios Hollywood 14 steps Plan" in text(week)
