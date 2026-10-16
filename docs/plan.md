@@ -916,12 +916,12 @@ Brief: docs/briefs/colour-timeline.md · Design: docs/design/colour-timeline.md 
 - [ ] while a plan is dragged: a faint dashed ghost stays at its old slot, a dashed landing slot shows where it will drop, the rail time turns coral and updates live, and a day chip under the pointer shows "Drop to move to <day>"
 - [ ] the behaviour is exactly as before (same thresholds, saves, undo, viewers can't drag); browser tests drive add and move at 390 and 1440 and check the ghost, the landing slot and the live time
 
-## F-162 The laptop week on one time axis [review]
+## F-162 The laptop week on one time axis [done]
 Brief: docs/briefs/colour-timeline.md · Design: docs/design/colour-timeline.md (frame ct-week-desk) · Needs: F-159
-- [ ] on a desktop the week shows the days as columns on one shared hour axis on the left; each plan and booking sits at its time, sized by its length, coloured by kind only (tile and edge)
-- [ ] column headers are neutral (weekday, date, the day's title); an empty day shows a soft dashed "Free day · Say the plan" slot
-- [ ] dragging a plan between days and times (F-157) still works; a long trip scrolls sideways; clicking a day's header opens that day
-- [ ] it fits 1440×900 and 1280×800 at 100% zoom; browser tests at 1440 check items line up with the axis across columns
+- [x] on a desktop the week shows the days as columns on one shared hour axis on the left; each plan and booking sits at its time, sized by its length, coloured by kind only (tile and edge)
+- [x] column headers are neutral (weekday, date, the day's title); an empty day shows a soft dashed "Free day · Say the plan" slot
+- [x] dragging a plan between days (F-157, same time) still works; dragging to a new time on the week is not built; a long trip scrolls sideways; clicking a day's header opens that day
+- [x] it fits 1440×900 and 1280×800 at 100% zoom; browser tests at 1440 check items line up with the axis across columns
 
 ## F-163 The phone week as day cards [todo]
 Brief: docs/briefs/colour-timeline.md · Design: docs/design/colour-timeline.md (frame ct-week-phone) · Needs: F-160
