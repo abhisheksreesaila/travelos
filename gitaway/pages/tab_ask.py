@@ -48,6 +48,11 @@ def _day_of(request, session, value=None):
         return None
 
 
+def _not_passed(day, today):
+    """F-175: the box opens on the day being looked at, unless that day has passed (Ask refuses past days): then on today."""
+    return today if day is not None and today is not None and day < today else day
+
+
 def _day_name(t, day) -> str:
     d = cal.days(t)[day]
     return f"{d.strftime('%A')}, {d.strftime('%b')} {d.day}"
@@ -121,6 +126,7 @@ def _sheet_box(request, session, day, text="", error="", mode="", heard=()):
     hint only where this phone cannot record or recognise speech (the script shows it then)."""
     t = cal.trip("", ses.booking(session))
     today = speak.today_index(session)
+    day = _not_passed(day, today)
     auto = day is None and today is not None and say.route(text) == "change"
     if auto:
         day = today
@@ -149,6 +155,7 @@ def _box(request, session, day, text="", error="", mode="", heard=()):
     b = ses.booking(session)
     t = cal.trip("", b)
     today = speak.today_index(session)
+    day = _not_passed(day, today)
     extra = {"data_mode": mode} if mode in MODES else {}
     auto = day is None and today is not None and say.route(text) == "change"
     if auto:

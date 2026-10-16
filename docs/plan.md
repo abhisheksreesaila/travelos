@@ -997,3 +997,21 @@ Found in the post-round measurement, 2026-10-16 (scripts/perf on master after F-
 - [x] on a desktop, the dropped plan settles into its new place (no fade, no lift shadow/scale left) within one frame of the drop, before the save answers; the save's reply only corrects lanes/neighbours and shows the toast
 - [x] the phone's one-motion landing (F-171) is unchanged; refused save, undo and viewer rules unchanged
 - [x] scripts/perf laptop "move" starts ≤50 ms with no network wait before the first change; a browser test at 1440 checks the block is in its new place, unlifted, within 50 ms of the drop with the save slowed 700 ms (measured 2026-10-16: the 220 ms / 211 ms wait did not reproduce on clean master, which already starts at 7 ms with 0 wait (3 runs); the metric was fine. What the person saw was the lift (scale 1.03, ink ring) easing out over 160 ms after the drop; that now ends in the same frame. tests_browser/test_desk_drop.py fails without the fix)
+
+## F-175 Ask works again: the right model, and a passed day opens on today [review]
+Bug, the captain 2026-10-16: "when I do transcription on the ask page ... I press the button nothing happens it doesn't add anything to the calendar". Two causes. (1) Production's AZURE_OPENAI_DEPLOYMENT named a deployment that no longer exists on the Azure resource (its one deployment is now gpt-6.1-sol, created about 2026-10-10): every AI call failed with DeploymentNotFound. (2) The laptop panel opened Ask on the day being looked at (day 4, already passed), and Done was refused with only a small line ("That day has already passed"), five times in a row. Needs: none
+- [x] Railway web's AZURE_OPENAI_DEPLOYMENT is the deployment that exists (gpt-6.1-sol); a live probe with production's settings turns six short spoken requests into a proposal (2026-10-16)
+- [x] the Ask box (sheet, panel and page) opens on today when the day asked for has already passed; a day to come is kept; tests/test_ask_sheet.py
+- [ ] confirmed on gitaway.me: say a plan on the laptop's Ask, Done, Apply, and it is on the day
+
+## F-176 The week drop lands at once [todo]
+The captain 2026-10-16: on the laptop week, a plan dragged from Thursday to Tuesday drops, then "there is like a second and a half lag ... then it shows up". Cause: week_drag.js drop() puts the row back, faded, in its old column and waits for the save and the whole week's redraw before it shows in the new one. Needs: F-157
+- [ ] at the drop the row is in the target column, at its time, unfaded, within one frame, with the save slowed 700 ms (browser test at 1440)
+- [ ] the save's reply only corrects lanes and shows the toast; a refused save puts the row back where it was with the toast; undo, Escape, own-column and viewer rules unchanged
+- [ ] a write does not refetch every plan row of the week in the background (only the day pages)
+
+## F-177 Family opens at once, the first time too [todo]
+The captain 2026-10-16: "when you click on the family tab, especially for the first time it has to load all the messages so it takes a tad bit time". Cause (investigation): nothing is prefetched; the top bar's Family on the laptop is a full page load of the phone page that then redirects to the canvas; the panel route reads every message of the trip two or three times, marks read in a GET and draws up to 200 messages. Needs: F-143
+- [ ] on the laptop, Family (panel tab or top bar, from the day or the week) shows the messages with no page load and no wait on the network when the page has been idle a moment (the pane is fetched ahead, shown at once, then brought up to date)
+- [ ] the panel draws the latest messages only (about 30) with older ones on request; the server reads the trip's messages once per request and a GET writes nothing
+- [ ] the phone Family tab is no slower, unread counts and seen marks unchanged; a browser test times the first open with the server slowed 700 ms

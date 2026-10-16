@@ -205,3 +205,17 @@ def test_a_mic_event_is_checked_gated_and_rate_limited(client):
     codes = [client.post("/trip/ask/mic-event", json={"stage": "tap", "name": "mic"}).status_code for _ in range(62)]
     assert codes[:60] == [204] * 60 and codes[60:] == [429, 429]
     assert cal.activities(person("ari")) == []                                                   # nothing is stored anywhere
+
+
+def test_a_day_that_has_passed_opens_on_today_so_what_is_said_is_not_refused(client, azure, monkeypatch):
+    """F-175: on the laptop the Ask panel opened on the day being looked at, an earlier day of the trip; Done was then refused ("That day has already passed") with only a small line.
+    A day that has passed opens on today, the chip says so, and what is said goes on today."""
+    from tests.test_speak import clock
+    book(client)
+    clock(monkeypatch, 2026, 10, 18, 9)                                                   # day 2 is today, day 1 has passed
+    for r in (client.get("/trip/ask?day=1", headers=SHEET), client.get("/trip/ask?day=1&mode=talk", headers=SHEET)):
+        assert fields(r.text, "ak-form")["day"] == "2" and "Sun Oct 18 · today" in r.text
+    assert '<option value="2" selected>' in client.get("/trip/ask?day=1").text                 # the page's own box too
+    assert fields(client.get("/trip/ask?day=3", headers=SHEET).text, "ak-form")["day"] == "3"      # a day to come is kept
+    r = client.post("/trip/ask/propose", data={"text": "Pool at 3", "day": "2"}, headers=SHEET)
+    assert r.status_code == 200 and 'id="ak-prop"' in r.text
