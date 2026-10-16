@@ -350,6 +350,7 @@
   //   o.value, o.label   what the field holds and is called      o.same    the title it already has (saving that changes nothing, posts nothing)
   //   o.save(title)      -> the write's promise                  o.saved(res, title)   after it landed (the toast and Undo are shown here)
   //   o.settle           ms after opening in which losing the focus is the touch's own mouse events, not a tap away: the field takes it back
+  //   o.inside           a selector for controls that belong to the field: using one is not tapping away (F-161)
   //   o.discard          an empty title (Enter, tapping away) or Escape gives the block up: o.cancel() runs, and nothing is saved or refused
   // Returns { input }. Call it from inside the gesture's own pointerup or click when the keyboard has to open (the iOS rule, day_new.js).
   function titleField(b, o) {
@@ -383,10 +384,12 @@
     function giveUp() { stop(false); if (o.cancel) o.cancel(); }
     // iOS does not blur a field when the finger lands on something that is not a control, so a tap anywhere else puts the field away itself (it saves, as tapping away does).
     var left = false;      // a real tap away (the next pointerdown), as against the touch's own mouse events right after the field opened (o.settle)
-    function away(e) { if (e.target !== input && !(e.target.closest && e.target.closest('.cz-gb-edit'))) { left = true; input.blur(); } }
+    function inside(n) { return !!(o.inside && n && n.closest && n.closest(o.inside)); }      // o.inside: a control that belongs to the field (a new plan's kind chips, F-161): using it is not a tap away
+    function away(e) { if (e.target !== input && !(e.target.closest && e.target.closest('.cz-gb-edit')) && !inside(e.target)) { left = true; input.blur(); setTimeout(function () { commit(true); }, 0); } }      // (the focus may be on a chip, where input.blur() does nothing: commit() runs once either way)
     document.addEventListener('pointerdown', away, true);
+    var busy = false;      // a save is on its way: a second reason to commit (the blur and the tap away, the chips' focus leaving) is the same one
     function commit(fromBlur) {
-      if (over) return;
+      if (over || busy) return;
       var got = check(input.value);
       if (got.err) {
         if (o.discard && !input.value.trim()) { giveUp(); return; }        // a new plan with no title is no plan
@@ -398,6 +401,7 @@
       }
       if (got.title === o.same) { stop(!fromBlur); return; }
       input.disabled = true;
+      busy = true;
       o.save(got.title).then(function (res) {
         stop(!fromBlur);
         if (o.saved) o.saved(res, got.title);
@@ -405,6 +409,7 @@
         return CZ.quiet();
       }, function (e) {
         input.disabled = false;
+        busy = false;
         if (fromBlur) { stop(false); if (o.cancel) o.cancel(); CZ.showToast(e && e.soft ? e.soft : 'Could not save that.'); return; }
         err.textContent = e && e.soft ? e.soft : 'Could not save that.';
         input.setAttribute('aria-invalid', 'true');
@@ -417,8 +422,21 @@
       else e.stopPropagation();
     }, true);
     input.addEventListener('input', function () { err.textContent = ''; input.removeAttribute('aria-invalid'); });
+    if (o.inside) {      // F-161: the field and its chips are one place for the keyboard: leaving them together saves (as leaving the field alone does), and Escape on a chip drops the plan like Escape in the field
+      b.addEventListener('focusout', function (e) {
+        var to = e.relatedTarget;
+        if (e.target === input || over || (to && b.contains(to))) return;      // (the field's own blur is handled below)
+        setTimeout(function () { if (!over && !b.contains(document.activeElement)) commit(true); }, 0);
+      });
+      b.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape' || !inside(e.target)) return;
+        e.preventDefault(); e.stopImmediatePropagation();
+        if (o.discard) giveUp(); else stop(true);
+      }, true);
+    }
     var born = Date.now();
-    input.addEventListener('blur', function () {
+    input.addEventListener('blur', function (e) {
+      if (inside(e.relatedTarget)) return;      // the focus went to one of its own chips (the keyboard, or a click that took it): the field is still open
       // The mouse events a touch ends with can take the focus back right after it opened: that is not a tap away, so the field stays open. It is not refocused from here (iOS refuses
       // a focus() outside a user activation): if the keyboard went down, the field is still there and a tap on it brings the keyboard back.
       if (o.settle && !left && Date.now() - born < o.settle && !over) return;

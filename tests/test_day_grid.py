@@ -259,6 +259,17 @@ def test_adding_a_plan_by_touch_saves_it_with_the_calendars_rules_and_undo_remov
     assert back["toast"] == "Pier walk removed" and cal.get_activity(me, a.id) is None
 
 
+def test_a_new_plan_takes_the_kind_picked_on_its_draft_and_is_fun_when_none_is_sent(trip):
+    """F-161: the draft's kind chips send `kind`; no kind (as before) is Fun; a kind that is not one of ours is refused and saves nothing."""
+    me = person("ari")
+    food = post_plan(trip, op="add", day=2, start=600, end=660, title="Brunch", kind="food").json()
+    assert cal.get_activity(me, food["plan"]["act"]).kind == "food"
+    assert cal.get_activity(me, post_plan(trip, op="add", day=2, start=700, end=760, title="Walk").json()["plan"]["act"]).kind == "fun"
+    base = len(cal.activities(me))
+    bad = post_plan(trip, op="add", day=2, start=800, end=860, title="Odd", kind="nope")
+    assert bad.status_code == 422 and bad.json()["error"] == "Pick a kind." and len(cal.activities(me)) == base
+
+
 def test_adding_a_plan_refuses_what_the_calendar_refuses_and_saves_nothing(trip):
     me = person("ari")
     base = len(cal.activities(me))

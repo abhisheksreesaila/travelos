@@ -17,6 +17,9 @@
 // F-144: a mouse on the desktop day draws instead of holding. Press empty time and drag past a few pixels: a dashed outline with its times (`.is-drawing`) stretches from where the
 // button went down to the pointer, up or down, snapped to 15 minutes at both ends (never shorter than 15). Letting go opens the title field in place (typing names it, Enter saves);
 // Escape, in the air or in the field, drops it. The grid card scrolls when the pointer is held at its top or foot edge (day_grid.js has the card; a wheel turn repaints the outline).
+//
+// F-161 (the colour timeline's look): the draft is a dashed coral outline; its start time shows in coral on the rail and follows it (`CZ.rail`, day_grid.js); once its title field is open a row of the
+// kinds' chips sits under the field (copied from the plan menu's `#cz-kinds-tpl`): Fun until another is picked, and the pick is what `op=add` is sent as `kind`.
 (function () {
   var CZ = window.CZ;
   if (!CZ || !CZ.titleField) return;
@@ -62,6 +65,7 @@
     draft.dataset.e = e;
     var w = draft.querySelector('.cz-gb-when');
     if (w) w.textContent = CZ.span(s, e);
+    if (draft.rail) draft.rail.set(s);
   }
   function newBlock(g, s) {
     var d = mk('div', 'cz-gb cz-k-fun is-new');
@@ -72,6 +76,7 @@
     inner.appendChild(mk('span', 'cz-gb-t'));
     inner.appendChild(mk('span', 'cz-gb-when'));
     d.appendChild(inner);
+    d.rail = CZ.rail ? CZ.rail(g, 'cz-k-fun') : null;
     put(d, g, s);
     g.querySelector('.cz-g-plane').appendChild(d);
     return d;
@@ -153,6 +158,7 @@
     clearTimeout(h.timer);
     cancelAnimationFrame(h.raf || 0);
     if (h.draft && h.draft.parentNode) h.draft.parentNode.removeChild(h.draft);
+    if (h.draft && h.draft.rail) h.draft.rail.end();
     if (h.mode === 'held') CZ.held = false;
     h = null;
   }
@@ -183,20 +189,24 @@
     return 'a' + (n + k);
   }
   function openField(g, draft) {
-    var s = +draft.dataset.s, e = +draft.dataset.e, id = null;
+    var s = +draft.dataset.s, e = +draft.dataset.e, id = null, kind = 'fun';
+    var gone = function () { if (draft.parentNode) draft.parentNode.removeChild(draft); if (draft.rail) draft.rail.end(); calm(false); };
     var f = CZ.titleField(draft, {
-      value: '', label: 'Name of the new plan', same: null, discard: true, settle: 350,
+      value: '', label: 'Name of the new plan', same: null, discard: true, settle: 350, inside: '.cz-gb-kinds',
       save: function (title) {
         // The plan's own id, from the calendar's next number the grid carries: a retry after a lost reply (or Enter pressed again) names the same plan, so it is never made twice.
         if (id === null) id = newId(g);
         var fields = { op: 'add', day: g.dataset.day, start: s, end: e, title: title, next: CZ.here() };
+        if (kind !== 'fun') fields.kind = kind;
         if (id) fields.id = id;
         return CZ.post('/trip/canvas/plan', CZ.tripBody(fields));
       },
       saved: function (res, title) { draft.querySelector('.cz-gb-t').textContent = title; if (CZ.showPlans) CZ.showPlans(); calm(false); },      // the refresh that follows makes it a real block
-      cancel: function () { if (draft.parentNode) draft.parentNode.removeChild(draft); calm(false); }
+      cancel: gone
     });
-    if (!f) { if (draft.parentNode) draft.parentNode.removeChild(draft); calm(false); return; }
+    if (!f) { gone(); return; }
+    f.input.placeholder = "What's the plan?";
+    kindRow(draft, f.input, function (k) { kind = k; });
     making = { draft: draft, grid: g, field: f };
     CZ.held = true;
     g.classList.add('is-making');
@@ -205,6 +215,37 @@
       document.addEventListener('touchend', again, { once: true, capture: true });
       document.addEventListener('click', again, { once: true, capture: true });
     }
+  }
+  // The kinds' chips under the title field. A touch must not take the keyboard away (a button's tap would blur the field, which saves or drops the plan): the row swallows mousedown and touchstart, and a
+  // pick is made on pointerup (or on a click with no pointer, from the keyboard); the field gets the focus back. `pick(kind)` tells the caller.
+  function kindRow(draft, input, pick) {
+    var tpl = stage.querySelectorAll('#cz-kinds-tpl [data-pick-kind]'), inner = draft.querySelector('.cz-gb-in');
+    if (!tpl.length || !inner) return;
+    var row = mk('div', 'cz-gb-kinds');
+    row.setAttribute('role', 'radiogroup');
+    row.setAttribute('aria-label', 'Kind of plan');
+    function choose(k) {
+      Array.prototype.forEach.call(row.children, function (c) { var on = c.dataset.kind === k; c.classList.toggle('is-here', on); c.setAttribute('aria-checked', on ? 'true' : 'false'); });
+      draft.className = draft.className.replace(/cz-k-\w+/, 'cz-k-' + k);
+      if (draft.rail) draft.rail.kind('cz-k-' + k);
+      pick(k);
+      try { input.focus({ preventScroll: true }); } catch (e) { input.focus(); }
+    }
+    Array.prototype.forEach.call(tpl, function (src) {
+      var k = src.dataset.pickKind, c = src.cloneNode(true);
+      c.removeAttribute('data-pick-kind');
+      c.setAttribute('role', 'radio');
+      c.dataset.kind = k;
+      c.setAttribute('aria-checked', k === 'fun' ? 'true' : 'false');
+      if (k === 'fun') c.classList.add('is-here');
+      c.querySelector('svg').classList.add('cz-mi-ico');
+      row.appendChild(c);
+    });
+    row.addEventListener('mousedown', function (e) { e.preventDefault(); });
+    row.addEventListener('touchstart', function (e) { if (e.cancelable) e.preventDefault(); }, { passive: false });
+    row.addEventListener('pointerup', function (e) { var c = e.target.closest && e.target.closest('.cz-kc'); if (c && row.contains(c)) { e.stopPropagation(); choose(c.dataset.kind); } });
+    row.addEventListener('click', function (e) { var c = e.target.closest && e.target.closest('.cz-kc'); if (c && row.contains(c) && e.detail === 0) choose(c.dataset.kind); });
+    inner.appendChild(row);
   }
   function calm(on) {
     if (!on) {
