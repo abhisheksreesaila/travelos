@@ -261,3 +261,17 @@ def test_a_run_of_short_plans_keeps_each_label_by_its_card_and_the_hours_visible
     shown = {m["name"] for m in got["marks"]}
     assert {"hour 11 AM", "hour 1 PM", "hour 2 PM", "hour 4 PM"} <= shown      # the hours far from any start stay
     shot(page, f"run-{viewport['width']}.png")
+
+
+@BOTH
+def test_a_kind_filter_takes_the_rail_labels_of_hidden_plans_with_it(signed_in, viewport):
+    """F-160 (the rail code is shared): with Hotels chosen only the hotel's start stays on the rail, and the hour labels its neighbours had hidden come back."""
+    page = day(signed_in, viewport)
+    page.locator(".cz-kchip[data-k=hotel]").click()
+    shown = [t.replace("\n", " ") for t in page.locator(".cz-g-start:visible").all_inner_texts()]
+    assert shown == ["3:00 PM"], shown
+    hours = {h.inner_text() for h in page.locator(".cz-g-hour:visible").all()}
+    assert {"8 AM", "12 PM", "5 PM", "6 PM"} <= hours      # no printed start is beside them any more
+    assert "3 PM" not in hours      # the hotel's own label still covers its hour
+    page.locator(".cz-kchip[data-k=all]").click()
+    assert page.locator(".cz-g-start:visible").count() == 4      # the flight, the hotel, the lunch and the sunset

@@ -245,7 +245,7 @@ def test_the_folded_bar_still_comes_in_when_the_top_has_scrolled_away(signed_in)
     expect(page.locator(".cz-fold.is-on")).to_have_count(0)
 
 
-TAPPABLE = """() => [...document.querySelectorAll('.cz-gb:not(.is-new):not(.is-more), .cz-gbk:not(.is-pill), .cz-more')].map(e => {
+TAPPABLE = """() => [...document.querySelectorAll('.cz-gb:not(.is-new):not(.is-more), .cz-gbk:not(.is-pill), .cz-lanemore')].map(e => {
   e.scrollIntoView({block: 'center'}); const r = e.getBoundingClientRect(), x = r.left + r.width / 2; let seen = 0;      // (centred, clear of the tab bar)
   for (let y = Math.ceil(r.top); y < r.bottom; y++) { const hit = document.elementFromPoint(x, y + 0.5); if (hit && e.contains(hit)) seen++; }
   const start = e.dataset.act ? e.querySelector('.cz-gb-when, .cz-gb-st') : null;

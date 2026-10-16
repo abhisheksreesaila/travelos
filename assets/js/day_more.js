@@ -1,7 +1,8 @@
 // The "+N more" card of a crowded phone or tablet day (F-160). Where more than three plans would stand side by side, the server keeps two lanes and puts the rest behind one kind-neutral card
 // in the third (`.cz-lanemore`, data-more = the ids behind it; those plans are `.is-more`: in place but not drawn). Tapping the card opens a short list of them, each row its start time and its title,
-// in the hold menu's own look (`.cz-menu`, grown out of the card with the shared motion); a row opens that plan's card as a tap on the plan would (day_card.js). Anyone can use it, viewers too:
-// it changes nothing. Needs canvas_core.js (window.CZ), which loads first.
+// in the hold menu's own look (`.cz-menu`, grown out of the card with the shared motion). A row opens the plan's hold menu for an editor (so re-timing, moving to another day, renaming and
+// deleting stay one tap away, as for any plan) and its card for a viewer. The list counts only the plans a filter still shows. Also here: a title cut at its second line is marked `.is-cut`, which
+// day_phone.css fades. Needs canvas_core.js (window.CZ), which loads first.
 (function () {
   var CZ = window.CZ;
   if (!CZ) return;
@@ -42,13 +43,13 @@
   function open(card) {
     close(false);
     var ids = (card.dataset.more || '').split(' ').filter(Boolean);
-    var blocks = ids.map(function (id) { return stage.querySelector('.cz-gb[data-act="' + id + '"]'); }).filter(Boolean);
+    var blocks = ids.map(function (id) { return stage.querySelector('.cz-gb[data-act="' + id + '"]'); }).filter(function (b) { return b && !b.classList.contains('is-off'); });
     if (!blocks.length) return;
     var node = mk('div', 'cz-menu cz-more-list');
     node.setAttribute('role', 'menu');
     node.tabIndex = -1;
     node.setAttribute('aria-label', blocks.length + ' more plans');
-    node.appendChild(mk('p', 'cz-menu-t', blocks.length + ' more at the same time'));
+    node.appendChild(mk('p', 'cz-menu-t', blocks.length + (blocks.length === 1 ? ' more plan' : ' more plans')));
     var rows = mk('div', 'cz-more-rows');
     blocks.forEach(function (b) {
       var row = mk('button', 'cz-mi cz-more-row');
@@ -59,7 +60,8 @@
       row.addEventListener('click', function () {
         var link = b.querySelector('.cz-gb-open');
         close(false);
-        if (link) link.click();      // the plan's own card, as a tap on it would open it
+        if (stage.dataset.edit === '1' && CZ.hold) CZ.hold(b);      // an editor: the hold menu, with every move a held plan has (it cannot be held where it waits)
+        else if (link) link.click();      // a viewer: the plan's own card, as a tap on it would open it
       });
       rows.appendChild(row);
     });
@@ -83,7 +85,27 @@
     if (list && list.card === card) close(true); else open(card);
   });
   document.addEventListener('keydown', function (e) {
-    if (list && e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); close(true); }
+    if (!list) return;
+    if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); close(true); return; }
+    var rows = Array.prototype.slice.call(list.node.querySelectorAll('.cz-more-row')), at = rows.indexOf(document.activeElement), next = null;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') next = rows[(at + 1) % rows.length];
+    else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') next = rows[(at < 0 ? 0 : at - 1 + rows.length) % rows.length];
+    else if (e.key === 'Home') next = rows[0];
+    else if (e.key === 'End') next = rows[rows.length - 1];
+    if (next) { e.preventDefault(); e.stopImmediatePropagation(); next.focus(); }
   }, true);
   stage.addEventListener('cz:swap', function () { if (list && !list.card.isConnected) close(false); });
+
+  // A plan's title that needs more than two lines is cut at the second (day_phone.css), and the end of that line fades. One observer re-measures when the box changes size; the fonts arriving
+  // change the text, not the box, so they re-measure too.
+  var ro = window.ResizeObserver ? new ResizeObserver(function (l) { l.forEach(function (e) { markCut(e.target); }); }) : null;
+  function markCut(t) { if (t.clientWidth) t.classList.toggle('is-cut', t.scrollHeight > t.clientHeight + 1); }
+  function watchCuts() {
+    var titles = stage.querySelectorAll('.cz-gb-t');
+    if (ro) { ro.disconnect(); titles.forEach(function (t) { ro.observe(t); }); }
+    titles.forEach(markCut);
+  }
+  if (CZ.onSwap) CZ.onSwap.push(watchCuts);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(watchCuts);
+  watchCuts();
 })();

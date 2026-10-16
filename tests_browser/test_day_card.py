@@ -75,7 +75,9 @@ def test_a_block_shows_one_line_of_its_note_that_fades_and_nothing_else_is_cut(p
         got = note.evaluate("n => ({ one: n.clientHeight < parseFloat(getComputedStyle(n).lineHeight) * 1.6, mask: getComputedStyle(n).webkitMaskImage || getComputedStyle(n).maskImage, w: n.scrollWidth, c: n.clientWidth, font: getComputedStyle(n).fontFamily })")
         assert got["one"] and "linear-gradient" in got["mask"] and "Caveat" in got["font"]
         title = block(phone, a.id).locator(".cz-gb-t")
-        assert title.evaluate("t => t.scrollHeight <= t.clientHeight + 1 || t.clientHeight >= 2 * parseFloat(getComputedStyle(t).lineHeight) - 1")      # the name is never the part that is cut, unless it needs more than two lines (F-160: a title is two lines at most, then it fades)
+        assert title.evaluate("t => t.scrollHeight <= t.clientHeight + 1 || t.clientHeight >= 2 * parseFloat(getComputedStyle(t).lineHeight) - 1")      # never cut unless it needs more than two lines (F-160)
+        assert title.evaluate("""t => { if (t.scrollHeight <= t.clientHeight + 1) return true; const m = getComputedStyle(t).webkitMaskImage || getComputedStyle(t).maskImage;
+          return t.classList.contains('is-cut') && m.includes('linear-gradient'); }""")      # a cut title has the fade over the end of its last visible line
     long_note = block(phone, lower.id).locator(".cz-gb-note")
     assert long_note.evaluate("n => n.scrollWidth > n.clientWidth")                      # a long note runs past its line, and fades there
     assert block(phone, lower.id).locator(".cz-sticker").count() == 0

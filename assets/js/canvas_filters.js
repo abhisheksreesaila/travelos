@@ -105,7 +105,30 @@
       v.querySelectorAll('.cz-part').forEach(function (p) { p.classList.toggle('is-off', k === 'chat' && p.dataset.chat !== '1'); });
       var none = main.querySelector('.cz-kind-none');
       if (none) none.hidden = !(on && seen === 0);
+      tidyRail(v);
     }
+  }
+  // F-160: what a filter hides leaves nothing behind on the rail or in the "+N more" cards. A start label whose plans are all hidden goes (the laptop's too); a "+N more" card counts only the plans
+  // behind it that still show, and goes at none; an hour label that a printed start no longer covers comes back.
+  function planOf(id) { return stage.querySelector('.cz-gb[data-act="' + id + '"], .cz-gbk[data-zk="bkg-' + id + '"]'); }
+  function tidyRail(v) {
+    v.querySelectorAll('.cz-g-start[data-for]').forEach(function (s) {
+      var live = s.dataset['for'].split(' ').some(function (id) { var b = planOf(id); return b && !b.classList.contains('is-off'); });
+      s.classList.toggle('is-off', !live);
+    });
+    v.querySelectorAll('.cz-lanemore').forEach(function (c) {
+      var n = c.dataset.more.split(' ').filter(function (id) { var b = planOf(id); return b && !b.classList.contains('is-off'); }).length;
+      c.classList.toggle('is-off', n === 0);
+      var t = c.querySelector('.cz-lanemore-t');
+      if (t && n) t.textContent = '+' + n + ' more';
+    });
+    var grid = v.querySelector('#cz-grid'), room = grid ? parseFloat(grid.style.getPropertyValue('--rail')) || 35 : 35;
+    var starts = Array.prototype.filter.call(v.querySelectorAll('.cz-g-start'), function (s) { return !s.classList.contains('is-off') && getComputedStyle(s).display !== 'none'; })
+      .map(function (s) { return parseFloat(s.style.getPropertyValue('--s')); });
+    v.querySelectorAll('.cz-g-hour.is-near').forEach(function (h) {
+      var at = parseFloat(h.style.getPropertyValue('--s'));
+      h.classList.toggle('is-clear', !starts.some(function (y) { return at - y >= -30 && at - y <= room + 8; }));
+    });
   }
   document.addEventListener('click', function (e) {
     var chip = e.target.closest ? e.target.closest('.cz-kchip') : null;

@@ -122,7 +122,7 @@
   :root:has(.ga-topbar) .cz .cz-g-line { left: -1rem; background: var(--hairline); }
   :root:has(.ga-topbar) .cz .cz-g-line.is-half { border-top-color: transparent; }
   :root:has(.ga-topbar) .cz .cz-g-hour { font-weight: 600; color: var(--ink-3); }
-  :root:has(.ga-topbar) .cz .cz-g-hour.is-near { display: none; }      /* within 30 minutes of a printed start time, or under its label: the start time replaces it, so two labels never overlap */
+  :root:has(.ga-topbar) .cz .cz-g-hour.is-near:not(.is-clear) { display: none; }      /* within 30 minutes of a printed start time, or under its label: the start time replaces it, so two labels never overlap */
 
   /* every plan and booking prints its start on the rail at its top: the clock big (Bricolage 800), the AM/PM small under it, a dot in the kind's colour on the rail */
   :root:has(.ga-topbar) .cz .cz-g-start { position: absolute; z-index: 3; left: 0; width: calc(var(--gut) - 0.5rem); top: calc(var(--s) * var(--mm)); height: calc(var(--rail) * var(--mm)); display: flex; flex-direction: column; align-items: flex-end; color: var(--ink); font-variant-numeric: tabular-nums; transform-origin: 100% 0; pointer-events: none; }

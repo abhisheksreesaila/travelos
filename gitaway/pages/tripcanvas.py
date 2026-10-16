@@ -590,28 +590,52 @@ MAX_TOUCH_LANES = 3  # side by side at most; a collision group that needs more s
 
 
 def touch_lanes(plans, inset=()):
-    """({plan id: (lane, lanes)}, [[the plans hidden behind a "+N more" card, in time order]]) for the phone and tablet: plans whose 44px boxes collide share lanes; a group needing more than
-    MAX_TOUCH_LANES keeps all but the last lane and puts every plan from the last lane on behind one card, there. Beside a booking's pill (`inset`) there is room for two lanes, not three."""
-    boxes = {a.id: _Box(a) for a in plans}
-    lane = calui.lanes(list(boxes.values()))
+    """({plan id: (lane, lanes)}, [(the plans hidden behind one "+N more" card, in time order, lanes, first minute, last minute)]) for the phone and tablet.
+    Plans whose 44px boxes collide share lanes, MAX_TOUCH_LANES at most (two beside a booking's pill: `inset`). Only a plan that finds no free lane at its own time goes behind a card, together with the
+    plans in the last lane that its box meets (the card takes that lane); every plan not behind a card keeps its own lane. A card spans its plans' boxes, so no planned time looks free."""
+    boxes = sorted((_Box(a) for a in plans), key=lambda b: (b.start, b.end, b.id))
+    by_id = {a.id: a for a in plans}
     out, more = {}, []
-    for group in overlap_groups(list(boxes.values())):
+    for group in overlap_groups(boxes):
         cap = MAX_TOUCH_LANES - 1 if any(b.id in inset for b in group) else MAX_TOUCH_LANES
-        if lane[group[0].id][1] <= cap:
-            out.update({b.id: lane[b.id] for b in group})
+        ends, mine, over = [], {}, []
+        for b in sorted(group, key=lambda b: (b.start, b.end, b.id)):
+            free = next((i for i, e in enumerate(ends) if e <= b.start), None)
+            if free is None and len(ends) < cap:
+                ends.append(b.end)
+                free = len(ends) - 1
+            elif free is not None:
+                ends[free] = b.end
+            if free is None:
+                over.append(b)
+            else:
+                mine[b.id] = free
+        n = max(len(ends), 1)
+        out.update({b.id: (mine[b.id], n) for b in group if b.id in mine})
+        if not over:
             continue
-        hidden = [a for a in plans if a.id in {b.id for b in group} and lane[a.id][0] >= cap - 1]
-        out.update({b.id: (min(lane[b.id][0], cap - 1), cap) for b in group})
-        more.append((sorted(hidden, key=lambda a: (a.start, a.id)), cap))
+        behind = list(over) + [b for b in group if mine.get(b.id) == cap - 1 and any(b.start < o.end and b.end > o.start for o in over)]
+        spans = []      # connected stretches of time: one card each
+        for b in sorted(behind, key=lambda b: (b.start, b.id)):
+            if spans and b.start < spans[-1][1]:
+                spans[-1][0].append(b)
+                spans[-1][1] = max(spans[-1][1], b.end)
+            else:
+                spans.append([[b], b.end])
+        for members, end in spans:
+            for b in members:
+                out[b.id] = (cap - 1, cap)
+            more.append(([by_id[b.id] for b in members], cap, members[0].start, end))
     return out, more
 
 
-def more_card(group, cap, lo):
-    """The "+N more" card in a group's third lane (F-160): kind-neutral, at the first hidden plan's start; day_more.js opens the list of the plans behind it."""
+def more_card(group, cap, first, last, lo):
+    """The "+N more" card in a group's last lane (F-160): kind-neutral, from the first hidden plan's start to the end of the last hidden box (so no planned time looks free); day_more.js opens the
+    list of the plans behind it."""
     n = len(group)
-    first = group[0]
     names = ", ".join(f"{cal.fmt_time(a.start)} {a.title}" for a in group)
-    return Button(Span(f"+{n} more", cls="cz-lanemore-t"), type="button", cls="cz-lanemore", style=f"--s:{first.start - lo};--tlane:{cap - 1};--tlanes:{cap}" + (";--bkw:6rem" if cap < MAX_TOUCH_LANES else ""),
+    return Button(Span(f"+{n} more", cls="cz-lanemore-t"), type="button", cls="cz-lanemore",
+                  style=f"--s:{first - lo};--l:{last - first};--tlane:{cap - 1};--tlanes:{cap}" + (";--bkw:6rem" if cap < MAX_TOUCH_LANES else ""),
                   data_more=" ".join(a.id for a in group), aria_label=f"{n} more plans: {names}. Show the list")
 
 
@@ -654,7 +678,7 @@ def time_grid(v, day, ents):
     over = {a.id for under in covered.values() for a in under}
     inset = {a.id for group in overlap_groups(plans) if any(a.id in over for a in group) for a in group}      # plans that share lanes share a left edge: one inset, all inset
     tlane, more = touch_lanes(plans, inset)      # the phone's and tablet's lanes: boxes at least TOUCH_MIN minutes long, three at most (two beside a booking's pill, F-160)
-    hidden = {a.id for group, _ in more for a in group}
+    hidden = {a.id for group, *_ in more for a in group}
     starts = rail_starts(plans, lines)
     gutter = [Span(hour_label(h % 24 if h < 24 else 0), cls="cz-g-hour cz-cs" + (" is-near" if any(-30 <= h * 60 - y <= RAIL_ROOM + 8 for y, *_ in starts) else ""), style=f"--s:{h * 60 - lo}") for h in hours]      # is-near: a laptop hides it (F-159)
     gutter += [Span(Span(split_time(at)[0], cls="cz-g-st-t"), Span(split_time(at)[1], cls="cz-g-st-m"), Span(cls="cz-g-st-dot"), cls=f"cz-g-start cz-cs {cls}{' is-hid' if set(ids) <= hidden else ''}", style=f"--s:{y - lo}", data_for=" ".join(ids), aria_hidden="true") for y, at, cls, ids in starts]
@@ -663,7 +687,7 @@ def time_grid(v, day, ents):
           A(Span(Span(icon(getattr(x, "icon", "") or "lock", 16, 2.4), cls="cz-gbk-tile"), Span(cal.fmt_time(x.label_start if getattr(x, "label_start", None) is not None else x.start), cls="cz-bk-time"), Span(x.title, cls="cz-bk-t"),
               Span("Booked", cls="cz-bk-tag"), cls="cz-gbk-in cz-cs"), href=curl(day=x.day, booked=x.id), cls="cz-bk cz-gbk", data_zoom="in", data_zk=f"bkg-{x.id}", style=f"--s:{top - lo}", aria_label=f"{x.title}, {cal.fmt_time(x.label_start if getattr(x, 'label_start', None) is not None else x.start)}, booked", **kind_attrs(v, "booked", x))
           for x, top in lines]
-    blocks = [grid_block(v, a, *lane[a.id], lo, edit, a.id in inset, tlane[a.id], a.id in hidden) for a in plans] + [more_card(g, cap, lo) for g, cap in more]
+    blocks = [grid_block(v, a, *lane[a.id], lo, edit, a.id in inset, tlane[a.id], a.id in hidden) for a in plans] + [more_card(g, cap, first, last, lo) for g, cap, first, last in more]
     now = ""
     if day == v["today_idx"] and lo <= (nm := td.now_minute(v["clock"])) <= hi:
         now = Span(Span(cls="cz-now-dot"), Span(f"{nm // 60 % 12 or 12}:{nm % 60:02d}", cls="cz-now-t"), cls="cz-nowline", id="cz-nowline", data_m=str(nm), style=f"--s:{nm - lo}", aria_label="Now", role="img")
