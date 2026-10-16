@@ -114,11 +114,11 @@
     open = { wrap: wrap, card: card, scrim: scrim, content: content, body: body, block: block, act: act, folding: false };
     block.classList.add('is-card');
     if (stage.dataset.edit === '1' && CZ.saveTitle) renamable(open, t);
-    lock(open);
     place(open, geometry(wrap, r));
     CZ.cardOpen = true;
     if (!CZ.reduced.matches) MO.open(card, r, { scrim: scrim, content: content, radius: ['0.875rem', '1.75rem'] });
     try { card.focus({ preventScroll: true }); } catch (e) { /* no focus */ }
+    lock(open);      // last, after every read: marking the whole page inert first made the card's own measuring and focus recalculate the page (F-169: 50 to 90 ms on a slow phone)
     scrim.addEventListener('click', function () { fold(); });
     x.addEventListener('click', function () { fold(); });
     swipe(open, [grab, head]);
