@@ -929,3 +929,8 @@ Brief: docs/briefs/colour-timeline.md · Design: docs/design/colour-timeline.md 
 - [ ] on the phone the week is a stack of white day cards: weekday, date and title, a mini hour bar with kind-coloured segments, then the day's items as compact rows with their start time and tile
 - [ ] an empty day shows "Free day" with Say the plan; tapping a card opens that day with the phone's liquid motion
 - [ ] browser tests at 390 check one card per day, no day colours, and that a tap opens the right day
+
+## F-164 Tablet header controls at phone sizes [todo]
+Found in F-163's review, 2026-10-15: at 800 wide the day and week heading controls (Day/Week switch, SOS, map, filter chips) are 11px text in 33px targets, under the ≥13px / 44px rule; they predate the colour timeline. Brief: docs/briefs/colour-timeline.md · Needs: F-160, F-163
+- [ ] at 721–1019px every heading control on the day and week (Day/Week switch, SOS, map, filters, Trip) has text ≥13px and a target ≥44px, without wrapping the heading onto extra rows
+- [ ] the phone (390) and laptop (1440, 1280) headers are unchanged; browser tests at 800 scan the heading controls' text and target sizes
