@@ -139,12 +139,15 @@
 
   // F-162: a week card's title that does not fit its card is faded at the edge (week_desk.css .is-cut), so a cut is never silent. One ResizeObserver on the titles covers a card shown again by the
   // filter (it measured 0 while hidden), a resize and a new swap (the titles are observed anew); the fonts arriving change the text, not the box, so they re-measure too.
-  var ro = window.ResizeObserver ? new ResizeObserver(function (list) { list.forEach(function (e) { markCut(e.target); }); }) : null;
-  function markCut(t) { if (t.clientWidth) t.classList.toggle('is-cut', t.scrollHeight > t.clientHeight + 1 || t.scrollWidth > t.clientWidth + 1); }
+  var ro = window.ResizeObserver ? new ResizeObserver(function (list) { markCuts(list.map(function (e) { return e.target; })); }) : null;
+  function markCuts(ts) {      // F-173: every title is measured, then every mark is written (a read after a write makes the browser lay the page out again, once per title)
+    var cut = Array.prototype.map.call(ts, function (t) { return t.clientWidth ? t.scrollHeight > t.clientHeight + 1 || t.scrollWidth > t.clientWidth + 1 : null; });
+    Array.prototype.forEach.call(ts, function (t, i) { if (cut[i] !== null) t.classList.toggle('is-cut', cut[i]); });
+  }
   function watchCuts() {
     var titles = document.querySelectorAll('.cz-wk .cz-wi-t, .cz-week .cz-wr-t');
     if (ro) { ro.disconnect(); titles.forEach(function (t) { ro.observe(t); }); }
-    titles.forEach(markCut);
+    markCuts(titles);
   }
   CZ.onSwap.push(watchCuts);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(watchCuts);

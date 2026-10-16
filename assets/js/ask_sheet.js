@@ -103,7 +103,7 @@
   function fill(html, first, late) {
     if (ctl) { ctl.destroy(); ctl = null; }
     scroll.innerHTML = html;
-    scroll.scrollTop = 0;
+    if (!first) scroll.scrollTop = 0;      // (a new sheet starts at the top; setting it right after the write forced a layout inside the tap, F-173)
     // The box came after the tap, so the tap's user activation may be gone: do not start the microphone by itself, show the big mic ready to tap.
     var f = late && scroll.querySelector('#ak-form');
     if (f) f.removeAttribute('data-mode');
