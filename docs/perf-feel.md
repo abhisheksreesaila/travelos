@@ -185,6 +185,6 @@ Same scripts and conditions (`scripts/perf/run_all.sh`, CPU 4× slower, +180 ms 
 | Day tab, not fetched | 461 / 663 | 62 / 230 |
 | Day tab after 62 s | 318 / 494 | (cached: no wait) |
 | Open a plan (panel) | 44 / 202 | 41 / 196 |
-| Move: drop → settled | 13 / 387 | 220 / 371 (see F-174) |
+| Move: drop → settled | 13 / 387 | 7 / ~370 (the 220 ms in one run did not reproduce; F-174 removed a 160 ms lingering lift) |
 
 On a fast phone (CPU 1×) a day change now settles in ~395 ms (was 626) and opening a plan starts in ~36 ms (was 431). Network waits on day changes are gone everywhere; what remains is the save's own round trip on Add.

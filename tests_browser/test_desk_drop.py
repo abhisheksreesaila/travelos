@@ -45,4 +45,8 @@ def test_on_the_laptop_the_dropped_plan_is_settled_before_the_save_answers(canva
         if o["t"] >= t0 + 50 and o["t"] < reply:                             # from 50 ms after the drop until the answer
             assert o["scale"] == "none" and not o["lifted"], o                    # no lift scale and no ink ring left
             assert o["tf"] == "none" and not o["ghost"] and not o["label"] and o["anims"] == "", o      # no travel, ghost, landing slot, label or animation
+    final = page.evaluate("id => document.querySelector(`.cz-gb[data-act='${id}']`).getBoundingClientRect().top", str(a.id))
+    for o in rec:
+        if o["t"] >= t0 + 50 and o["t"] < reply:
+            assert abs(o["top"] - final) <= 1, (o, final)                         # already in its new place on screen, not only on the server
     assert sum(1 for o in rec if t0 + 50 <= o["t"] < reply) > 20
