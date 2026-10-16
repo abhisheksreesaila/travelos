@@ -983,7 +983,7 @@ Report fixes 3 and 4. Needs: F-170
 Report fix 6. Read the fh-saas skill first. Needs: F-168
 - [ ] one request opens the family database once and reuses it (request-scoped), instead of ~27 times per day fragment; the host-lock pile-up under two concurrent requests is gone
 - [ ] tenant isolation, roles and every write path unchanged; tests prove a request never sees another family's data and that two concurrent requests for two families stay separate
-- [ ] a day fragment renders ≥3× faster server-side (profile_server.py before/after), and two concurrent fragments take no longer than one plus 20%
+- [ ] a day fragment renders ≥3× faster server-side (profile_server.py before/after), and two concurrent fragments take no longer than ~2.5× one alone with no lock pile-up (amended 2026-10-16: one Python process serialises CPU work; the 1.2× target needs more workers, a separate ticket)
 
 ## F-173 Quicker on slower phones, and a shorter motion [todo]
 Report fixes 8 and 5 (taste call made on the captain's "zippy, whatever it takes", 2026-10-16; the old values are in this ticket so it is one change to undo). Needs: F-168
