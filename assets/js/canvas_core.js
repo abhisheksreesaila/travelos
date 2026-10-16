@@ -69,10 +69,10 @@
   var SHEET_FRESH = 60000;
   function sheetStale(u) { var h = cache[u], l = levelOf(u); return !!h && (l === 'step' || l === 'block') && (h.g !== gen || Date.now() - h.at > SHEET_FRESH); }
 
-  // F-099: while the canvas sits idle the next levels are fetched, so Day | Week, a date, a flick and Back swap with nothing to wait for. The desktop week fetches every day (the phone week the two cards on the screen, F-170);
+  // F-099: while the canvas sits idle the next levels are fetched, so Day | Week, a date, a flick and Back swap with nothing to wait for. The desktop week fetches every day (the phone week the same (up to 14 and then what scrolls into view, F-170);
   // a day fetches its neighbours, the week and the other dates. Fragments only, two at a time, in idle time, never on Data Saver or a slow link.
   var pq = [], pActive = 0, pPlanned = 0;
-  var WEEK_AHEAD = 2;      // F-170: day fragments the phone's week fetches ahead (about 70 KB), so a week visit stays under 0.1 MB
+  var WEEK_AHEAD = 14;     // F-170: day fragments the phone's week fetches ahead without scrolling (about 35 KB each)
   var idle = window.requestIdleCallback ? function (fn) { window.requestIdleCallback(fn, { timeout: 1500 }); } : function (fn) { setTimeout(fn, 200); };
   function frugal() {
     var c = navigator.connection;
@@ -87,14 +87,13 @@
     if (v.dataset.level === 'week') {
       // F-145: the desktop week's Open the day and plan rows too. F-170: only rows with a box (the phone hides the desktop columns: their plan rows are 40 KB each and never tapped)
       v.querySelectorAll('a.cz-wopen[data-zoom="in"], a.cz-wi.is-plan[data-zoom="in"]').forEach(function (a) { if (boxed(a)) add(near, path(a.href)); });
-      // The phone's day cards are about 35 KB each: only the ones on (or just below) the screen, today's first, at most WEEK_AHEAD; a scroll brings the next ones, a finger down fetches the one it lands on
-      var h = window.innerHeight, rows = Array.prototype.slice.call(v.querySelectorAll('a.cz-row-link[data-zoom="in"]')).filter(function (a) {
-        if (!boxed(a)) return false;
-        var r = a.getBoundingClientRect();
-        return r.bottom > 0 && r.top < h * 1.5;
-      });
-      rows.sort(function (x, y) { return (y.closest('.is-today') ? 1 : 0) - (x.closest('.is-today') ? 1 : 0); });
-      rows.slice(0, WEEK_AHEAD).forEach(function (a) { add(near, path(a.href)); });
+      // The phone's day cards (about 35 KB each; the desktop columns' plan rows are never fetched there): every day of the trip, today's and its nearest first, at most WEEK_AHEAD;
+      // on a longer trip the cards that come on screen are fetched too (the scroll calls prefetch)
+      var h = window.innerHeight, rows = Array.prototype.slice.call(v.querySelectorAll('a.cz-row-link[data-zoom="in"]')).filter(boxed);
+      var at = Math.max(0, rows.findIndex(function (a) { return !!a.closest('.is-today'); }));
+      var seen = rows.map(function (a, i) { return { a: a, d: Math.abs(i - at) }; }).sort(function (x, y) { return x.d - y.d; }).map(function (x) { return x.a; });
+      seen.slice(0, WEEK_AHEAD).forEach(function (a) { add(near, path(a.href)); });
+      seen.slice(WEEK_AHEAD).forEach(function (a) { var r = a.getBoundingClientRect(); if (r.bottom > 0 && r.top < h * 1.5) add(near, path(a.href)); });
     } else if (v.dataset.level === 'day') {
       add(near, v.dataset.next && path(v.dataset.next));
       add(near, v.dataset.prev && path(v.dataset.prev));

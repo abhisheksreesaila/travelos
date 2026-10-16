@@ -10,7 +10,7 @@ from tests_browser.helpers import DESKTOP, PHONE, seed_plan
 from tests_browser.test_day_plan import open_day
 from tests_browser.test_trip_switcher import MENU, family_with_two_trips  # noqa: F401 - fixture
 from tests_browser.test_trip_canvas import canvas_page, model, settle  # noqa: F401 - fixtures and helpers
-from tests_browser.test_trip_canvas_prefetch import TARGET_MS, TIMED_CLICK, watch
+from tests_browser.test_trip_canvas_prefetch import TARGET_MS, TIMED_CLICK, days_on_week, watch
 
 BOTH = pytest.mark.parametrize("form", [{}, {"viewport": DESKTOP, "touch": False}], ids=["390", "1440"])
 LATER = "(ms) => { const real = Date.now.bind(Date); Date.now = () => real() + ms; }"      # the page's clock jumps ahead (a minute on the day, without the wait)
@@ -124,15 +124,31 @@ def test_after_a_swap_the_neighbours_are_fetched_before_anything_else(canvas_pag
     assert sorted(re.search(r"day=(\d)", u).group(1) for u in first) == ["1", "3"], first
 
 
-def test_the_phone_week_does_not_fetch_the_desktop_plan_rows(canvas_page):
+def test_the_phone_week_fetches_exactly_the_day_cards_and_nothing_hidden(canvas_page):
     page = canvas_page(motion="no-preference")
+    days = days_on_week(page)
     n = quiet_network(page)
     urls = page.evaluate(FRAGS)
-    assert n == len(urls) and urls, urls
+    assert n == len(urls) == days, urls                                  # one fragment per day card, nothing else
     assert [u for u in urls if "plan=" in u] == [], urls                  # a hidden row is never tapped
+    assert len({re.search(r"day=(\d+)", u).group(1) for u in urls}) == days
     size = page.evaluate("performance.getEntriesByType('resource').filter(e => e.name.includes('frag=1')).reduce((a, e) => a + e.encodedBodySize, 0)")
+    one = size / len(urls)
     print(f"\nF170 phone week visit: {len(urls)} fragments, {size / 1000:.0f} KB prefetched")
-    assert size <= 100_000, size
+    assert size <= days * 40_000, size                                    # (a day fragment is about 28 to 35 KB)
+    assert one < 40_000, one
+
+
+def test_a_tap_on_the_last_day_of_the_phone_week_does_not_wait(canvas_page):
+    page = canvas_page(motion="no-preference")
+    quiet_network(page)
+    slow(page)
+    last = page.locator(".cz-view[data-level=week] a.cz-row-link").last.get_attribute("href")
+    r = page.evaluate(TIMED_CLICK, f"a.cz-row-link[href='{last}']")
+    expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
+    assert page.locator(".cz-view.cz-skel").count() == 0                 # no outline first
+    assert r["ms"] < 400, r        # swapped from the copy in hand, not after the 700 ms answer
+    page.unroute_all(behavior="ignoreErrors")
 
 
 def test_the_laptop_week_still_fetches_its_visible_plan_rows(canvas_page):

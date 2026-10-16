@@ -37,8 +37,8 @@ def days_on_week(page):
 
 
 def week_ahead(page):
-    """F-170: the phone's week fetches the (at most two) day cards on the screen ahead, not every day: a week visit stays under 0.1 MB."""
-    return min(days_on_week(page), 2)
+    """F-170: the phone's week fetches every day card ahead (up to 14, then what scrolls into view), never the desktop plan rows."""
+    return min(days_on_week(page), 14)
 
 
 def wait_idle(page, seen, want):
