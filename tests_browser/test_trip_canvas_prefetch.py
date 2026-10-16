@@ -36,6 +36,11 @@ def days_on_week(page):
     return len({a.get_attribute("href") for a in page.locator('.cz-view[data-level=week] a.cz-row-link').all()})
 
 
+def week_ahead(page):
+    """F-170: the phone's week fetches the (at most two) day cards on the screen ahead, not every day: a week visit stays under 0.1 MB."""
+    return min(days_on_week(page), 2)
+
+
 def wait_idle(page, seen, want):
     """Wait until the page has asked for `want` fragments (it does so in idle time), then a beat to be sure nothing more is coming."""
     page.wait_for_function("n => performance.getEntriesByType('resource').filter(e => e.name.includes('frag=1')).length >= n", arg=want, timeout=9000)
@@ -44,9 +49,8 @@ def wait_idle(page, seen, want):
 
 def test_the_week_fetches_every_day_while_idle_and_day_then_swaps_without_a_request(canvas_page):
     page = canvas_page(motion="no-preference")
-    n = days_on_week(page)
-    assert n >= 3
-    wait_idle(page, None, n)
+    assert days_on_week(page) >= 3
+    wait_idle(page, None, week_ahead(page))
     r = page.evaluate(TIMED_CLICK, "#cz-z-day")
     expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
     settle(page)
@@ -58,7 +62,7 @@ def test_the_week_fetches_every_day_while_idle_and_day_then_swaps_without_a_requ
 
 def test_a_week_row_and_back_to_the_week_swap_without_a_request(canvas_page):
     page = canvas_page(motion="no-preference")
-    wait_idle(page, None, days_on_week(page))
+    wait_idle(page, None, week_ahead(page))
     a = page.evaluate(TIMED_CLICK, ".cz-row-link[href*='day=1']")
     expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
     settle(page)
@@ -99,7 +103,7 @@ def test_a_date_and_a_flick_to_a_neighbour_swap_without_a_request(canvas_page):
 def test_a_write_empties_the_prefetched_levels_so_the_week_shows_it(canvas_page):
     """All in the page, no reload: the week was fetched ahead before the write, and after it the week must show the step as done."""
     page = canvas_page(motion="no-preference")
-    wait_idle(page, None, days_on_week(page))
+    wait_idle(page, None, week_ahead(page))
     assert "1 done" not in page.locator(".cz-view[data-level=week]").inner_text()
     page.locator(".cz-row-link[href*='day=1']").click()
     expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
@@ -112,8 +116,9 @@ def test_a_write_empties_the_prefetched_levels_so_the_week_shows_it(canvas_page)
     expect(page.locator(".cz-step.is-done", has_text="Revenge of the Mummy")).to_be_visible()
     settle(page)
     seen.clear()
-    page.go_back()                                       # the day, fetched before the write: it must be asked for again
+    page.go_back()                                       # the day, fetched before the write: shown at once (F-170) and asked for again behind it
     expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
+    page.wait_for_timeout(2000)
     assert any("day=1" in u for u in seen), seen
     page.wait_for_timeout(300)
     page.locator(".cz-head .cz-back").click()
@@ -124,7 +129,7 @@ def test_a_write_empties_the_prefetched_levels_so_the_week_shows_it(canvas_page)
 
 def test_a_level_shown_from_an_old_copy_is_brought_up_to_date_when_someone_else_changed_it(canvas_page):
     page = canvas_page(motion="no-preference")
-    wait_idle(page, None, days_on_week(page))
+    wait_idle(page, None, week_ahead(page))
     page.locator(".cz-row-link[href*='day=1']").click()
     expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
     page.wait_for_timeout(5800)                          # the week copy is now older than the staleness window
@@ -142,7 +147,7 @@ def test_a_level_shown_from_an_old_copy_is_brought_up_to_date_when_someone_else_
 
 def test_a_quiet_update_waits_while_a_field_is_being_typed_in(canvas_page):
     page = canvas_page(motion="no-preference")
-    wait_idle(page, None, days_on_week(page))
+    wait_idle(page, None, week_ahead(page))
     page.locator(".cz-row-link[href*='day=1']").click()
     expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
     page.wait_for_timeout(5800)
@@ -159,7 +164,7 @@ def test_a_quiet_update_waits_while_a_field_is_being_typed_in(canvas_page):
 
 def test_coming_back_from_the_bfcache_shows_the_server_copy(canvas_page):
     page = canvas_page(motion="no-preference")
-    wait_idle(page, None, days_on_week(page))
+    wait_idle(page, None, week_ahead(page))
     ari = person("ari")
     step = next(st for blk in canvas.plan(ari)["blocks"].values() for pt in blk["parts"] for st in pt["steps"])
     canvas.set_done(ari, step["id"])
@@ -169,7 +174,7 @@ def test_coming_back_from_the_bfcache_shows_the_server_copy(canvas_page):
 
 def test_reduced_motion_is_still_instant_and_prefetched(canvas_page):
     page = canvas_page(motion="reduce")
-    wait_idle(page, None, days_on_week(page))
+    wait_idle(page, None, week_ahead(page))
     r = page.evaluate(TIMED_CLICK, "#cz-z-day")
     expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
     print(f"\nF099 reduced motion, week -> Day: {r['ms']:.0f} ms")
@@ -210,7 +215,7 @@ def test_a_level_not_in_hand_zooms_at_once_into_its_outline_and_fills_in_when_it
     page.evaluate("window.__t0 = 0; new MutationObserver(() => { if (!window.__t0 && document.querySelector('.cz-skel')) window.__t0 = performance.now(); }).observe(document.getElementById('cz'), {childList: true, subtree: true})")
     link = page.locator("a.cz-row-link").first
     name = link.get_attribute("data-title")
-    page.evaluate("CZ.forget()")                                                     # (the week fetched its days ahead; this one must come slowly)
+    page.evaluate("CZ.forget(true)")                                                 # (the week fetched its days ahead; this one must come slowly: F-170 `true` throws the copies away)
     t = page.evaluate("() => { const t = performance.now(); document.querySelector('a.cz-row-link').click(); return t; }")
     page.wait_for_selector(".cz-view.cz-skel[data-level=day]", timeout=2000)
     assert page.evaluate("window.__t0") - t < 200                                      # the zoom started at once, not after the server answered

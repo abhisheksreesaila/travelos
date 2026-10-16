@@ -86,7 +86,8 @@
     var other = j.day !== null && j.day !== undefined && shown !== null && String(j.day) !== shown;      // another day was chosen: show that one
     function refresh() {
       if (!v) return Promise.resolve();
-      if (other && CZ.forget) { CZ.forget(); return CZ.goto('/trip/canvas?day=' + j.day, { dir: 'side', mode: 'replace', key: null }); }
+      if (other && CZ.forget) { CZ.forget(true); return CZ.goto('/trip/canvas?day=' + j.day, { dir: 'side', mode: 'replace', key: null }); }
+      if (CZ.forget) CZ.forget();      // (F-170: the other days fetched ahead are checked when next shown)
       return CZ.quiet();
     }
     var done = wait ? Promise.resolve(closed).then(refresh) : Promise.all([closed, refresh()]);      // the panel must be gone first (the day leaves it alone while it is open); the sheet closes as the day updates
