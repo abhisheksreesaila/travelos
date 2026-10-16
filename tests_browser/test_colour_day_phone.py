@@ -16,9 +16,9 @@ from tests_browser.test_topbar import TABLET, signed_in  # noqa: F401 - fixture
 BOTH = pytest.mark.parametrize("viewport", [PHONE, TABLET], ids=["390", "800"])
 
 
-def shot(page, name):
+def shot(page, name, full=True):
     if os.environ.get("F160_SHOTS"):
-        page.screenshot(path=os.path.join(os.environ["F160_SHOTS"], name), full_page=True)
+        page.screenshot(path=os.path.join(os.environ["F160_SHOTS"], name), full_page=full)
 
 
 def edge(card, color):
@@ -243,3 +243,56 @@ def test_the_folded_bar_still_comes_in_when_the_top_has_scrolled_away(signed_in)
     shot(page, "folded-390.png")
     page.evaluate("window.scrollTo(0, 0)")
     expect(page.locator(".cz-fold.is-on")).to_have_count(0)
+
+
+TAPPABLE = """() => [...document.querySelectorAll('.cz-gb:not(.is-new), .cz-gbk:not(.is-pill)')].map(e => {
+  e.scrollIntoView({block: 'center'}); const r = e.getBoundingClientRect(), x = r.left + r.width / 2; let seen = 0;      // (centred, clear of the tab bar)
+  for (let y = Math.ceil(r.top); y < r.bottom; y++) { const hit = document.elementFromPoint(x, y + 0.5); if (hit && e.contains(hit)) seen++; }
+  const start = e.dataset.act ? e.querySelector('.cz-gb-when, .cz-gb-st') : null;
+  const shown = [...e.querySelectorAll('.cz-gb-when, .cz-gb-st')].filter(n => getComputedStyle(n).display !== 'none');
+  const clipped = [...e.querySelectorAll('.cz-gb-when, .cz-gb-st, .cz-gb-t')].filter(n => getComputedStyle(n).display !== 'none' && n.scrollWidth > n.clientWidth + 1).map(n => n.className);
+  return {id: e.dataset.act || e.dataset.zk, name: e.textContent.trim().slice(0, 16), l: r.left, t: r.top + scrollY, r: r.right, b: r.bottom + scrollY, tappable: seen, timeShown: shown.length > 0, clipped,
+    near: [...document.querySelectorAll('.cz-g-start')].some(s => (s.dataset.for || '').split(' ').includes(e.dataset.act || '') && getComputedStyle(s).display !== 'none')};
+})"""
+
+
+def crowded(page):
+    crowd()
+    me = person("ari")
+    for i, title in enumerate(("Stop one", "Stop two", "Stop three", "Stop four")):
+        start = 9 * 60 + 15 + 15 * i
+        cal.add_activity(me, day=0, start=start, end=start + 15, title=title, kind="fun", fine=True)
+    cal.add_activity(me, day=0, start=15 * 60 + 30, end=16 * 60, title="Gelato", kind="food")      # beside the hotel's slim booking pill
+    cal.add_activity(me, day=0, start=15 * 60 + 40, end=16 * 60 + 10, title="Souvenirs", kind="fun")
+    page.reload()
+    expect(page.locator(".cz-gb").first).to_be_visible()
+
+
+@BOTH
+def test_no_card_overlaps_another_and_each_is_a_44px_tap_area_with_its_start_in_view(signed_in, viewport):
+    page = signed_in(viewport, path="/trip/canvas?day=0")
+    crowded(page)
+    cards = page.evaluate(TAPPABLE)
+    for i, a in enumerate(cards):
+        for b in cards[i + 1:]:
+            assert min(a["r"], b["r"]) - max(a["l"], b["l"]) <= 1 or min(a["b"], b["b"]) - max(a["t"], b["t"]) <= 1, f"{a['name']} overlaps {b['name']}"
+        assert a["tappable"] >= 43.5, f"{a['name']}: only {a['tappable']}px of it can be tapped"
+        assert a["clipped"] == [], f"{a['name']}: text cut off {a['clipped']}"
+        if a["id"] and a["id"].startswith("a"):
+            assert a["near"] or a["timeShown"], f"{a['name']}: nothing shows when it starts"
+    shot(page, f"crowd2-{viewport['width']}.png")
+    page.evaluate("window.scrollTo(0, 330)")
+    shot(page, f"crowd2-view-{viewport['width']}.png", full=False)
+    page.evaluate("window.scrollTo(0, 0)")
+    assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth")
+
+
+@BOTH
+def test_a_short_title_with_room_is_not_cut_or_faded(signed_in, viewport):
+    page = signed_in(viewport, path="/trip/canvas?day=0")
+    crowd()
+    page.reload()
+    title = page.locator(".cz-gb", has_text="Bakery run").locator(".cz-gb-t")
+    got = title.evaluate("""e => { const r = document.createRange(); r.selectNodeContents(e); const w = r.getBoundingClientRect(), b = e.getBoundingClientRect(), pad = parseFloat(getComputedStyle(e).paddingRight);
+      return {textRight: w.right, edge: b.right - pad, pad, fade: getComputedStyle(e).webkitMaskImage}; }""")
+    assert got["textRight"] <= got["edge"] + 0.5, got      # all of "Bakery run" is left of where the fade starts

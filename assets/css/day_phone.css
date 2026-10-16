@@ -45,6 +45,10 @@
   .cz .cz-view[data-day] .cz-fold-name { min-height: var(--tap); }
   .cz .cz-view[data-day] .cz-fold-name:focus-visible { outline-color: var(--ink); }
 
+  /* the trip menu opened from the eyebrow: 13px text and 44px rows on the tablet too */
+  .cz .cz-view[data-day] .ga-tb-phonepick .ga-tb-item { min-height: var(--tap); font-size: max(var(--tmin), 1rem); }
+  .cz .cz-view[data-day] .ga-tb-phonepick .ga-tb-solo { font-size: var(--cz-body); }
+
   /* the day chips: neutral pills, white with a hairline, the open day solid ink with its title, today ringed in ink; the row scrolls sideways on a longer trip */
   .cz .cz-view[data-day] .cz-hchips { grid-area: chips; display: flex; gap: calc(var(--pu) * 0.5); overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; touch-action: pan-x; padding: calc(var(--pu) * 0.1875); }
   .cz .cz-view[data-day] .cz-hchips::-webkit-scrollbar { display: none; }
@@ -94,6 +98,7 @@
      whole of it, 44px minimum included. */
   .cz .cz-view[data-day] .cz-gb:not(.is-drawing) { display: flex; min-height: calc(var(--tap) + 0.1667rem);      /* (the link over it sits inside the 1px border: still a 44px target) */ border: 1px solid var(--hairline); border-radius: var(--r-sm); background: var(--card); }
   .cz .cz-view[data-day] .cz-gb-in { flex: 1 1 auto; min-height: 0; padding: calc(var(--pu) * 0.5) calc(var(--pu) * 0.75) calc(var(--pu) * 0.25) calc(var(--pu) * 3.5); }
+  .cz .cz-view[data-day] .cz-gb { left: calc(var(--bkw, 0rem) + (100% - var(--bkw, 0rem)) * var(--tlane, 0) / var(--tlanes, 1)); width: calc((100% - var(--bkw, 0rem)) / var(--tlanes, 1) - 0.25rem); }      /* side by side whenever the drawn boxes (44px included) collide, not only the times */
   .cz .cz-view[data-day] .cz-gb-tile, .cz .cz-view[data-day] .cz-gbk-tile { display: grid; place-items: center; flex: none; width: calc(var(--pu) * 2.25); height: calc(var(--pu) * 2.25); border-radius: calc(var(--pu) * 0.625); background: var(--tint); color: var(--kink); }
   .cz .cz-view[data-day] .cz-gb-tile { position: absolute; left: calc(var(--pu) * 0.625); top: calc(var(--pu) * 0.375); }
   .cz .cz-view[data-day] .cz-gb-head { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; column-gap: calc(var(--pu) * 0.5); background: var(--card); }
@@ -111,18 +116,30 @@
   .cz .cz-view[data-day] .cz-gb.is-short .cz-gb-head { display: contents; }
   .cz .cz-view[data-day] .cz-gb.is-short .cz-gb-tile { width: calc(var(--pu) * 1.75); height: calc(var(--pu) * 1.75); top: 50%; margin-top: calc(var(--pu) * -0.875); border-radius: calc(var(--pu) * 0.5); }
   .cz .cz-view[data-day] .cz-gb.is-short .cz-gb-tile svg { width: calc(var(--pu) * 1.125); height: calc(var(--pu) * 1.125); }
-  .cz .cz-view[data-day] .cz-gb.is-short .cz-gb-t { min-width: 0; padding-right: calc(var(--pu) * 0.5); overflow: hidden; white-space: nowrap; -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 0.75rem), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 0.75rem), transparent); }
+  .cz .cz-view[data-day] .cz-gb.is-short .cz-gb-t { min-width: 0; padding-right: 0.75rem; overflow: hidden; white-space: nowrap; -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 0.75rem), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 0.75rem), transparent); }
   .cz .cz-view[data-day] .cz-gb.is-short .cz-gb-when { flex: none; white-space: nowrap; }
-  .cz .cz-view[data-day] .cz-gb.is-short .cz-gb-tag { display: none; }      /* the row is narrow: the tile already says it is a plan */
 
   /* a booking's long title wraps to two lines and stops there (the handoff's "Long content"; its sheet and its label say it all). A plan's title is never cut (test_day_card.py). */
   .cz .cz-view[data-day] .cz-gbk:not(.is-pill) .cz-bk-t { max-height: 2.3em; line-height: 1.15; overflow: hidden; }
 
+  /* a short plan on a phone is two short lines in its 44px: the title (a long one fades at the edge, its padding is the fade), the time under it. Wider than 720px it stays one row with its PLAN pill. */
+  @media (max-width: 720px) {
+    .cz .cz-view[data-day] .cz-gb.is-short .cz-gb-in { flex-direction: column; align-items: flex-start; justify-content: center; gap: 0; }
+    .cz .cz-view[data-day] .cz-gb.is-short .cz-gb-t { max-width: 100%; box-sizing: border-box; }
+    .cz .cz-view[data-day] .cz-gb.is-short .cz-gb-tag { display: none; }
+    .cz .cz-view[data-day] .cz-gb:not(.is-short) .cz-gb-when { flex: 0 1 auto; }      /* the time and PLAN share the second row, so a long title does not push the time down */
+    .cz .cz-view[data-day] .cz-gb:not(.is-short) .cz-gb-tag { order: 3; }
+  }
+
+  .cz .cz-view[data-day] .cz-gb.is-lane.is-short .cz-gb-in { flex-direction: column; align-items: flex-start; justify-content: center; gap: 0; padding: 0 calc(var(--pu) * 0.375) 0 calc(var(--pu) * 0.5); }
+  .cz .cz-view[data-day] .cz-gb.is-lane.is-short .cz-gb-t { padding-right: 0; font-size: calc(var(--pu) * 0.875); line-height: 1.05; white-space: normal; overflow-wrap: anywhere; -webkit-mask-image: none; mask-image: none; }      /* a third of a column: the whole title, wrapping if it must */
+  .cz .cz-view[data-day] .cz-gb.is-lane .cz-gb-when { display: none; }
+  .cz .cz-view[data-day] .cz-gb.is-lane .cz-gb-st { display: block; font-size: var(--cz-small); font-weight: 600; color: var(--ink-2); white-space: nowrap; }      /* half a column has room for the start alone; the card's label says the whole time */
+
   /* a plan beside another one is half a column wide: no tile (the kind's edge still says it), the words use the room */
   .cz .cz-view[data-day] .cz-gb.is-lane .cz-gb-tile, .cz .cz-view[data-day] .cz-gb.is-lane .cz-gb-tag { display: none; }
   .cz .cz-view[data-day] .cz-gb.is-lane .cz-gb-in, .cz .cz-view[data-day] .cz-gb.is-lane.is-short .cz-gb-in { padding-left: calc(var(--pu) * 0.75); }
-  .cz .cz-view[data-day] .cz-gb.is-lane.is-short .cz-gb-in { flex-wrap: wrap; align-content: center; }      /* the title and the time on two short lines inside the 44px */
-  .cz .cz-view[data-day] .cz-gb.is-lane.is-short .cz-gb-t { flex: 1 0 100%; }
+  .cz .cz-view[data-day] .cz-gb.is-lane .cz-gb-t { flex: 0 1 auto; }
 
   /* a booking: the same card, its kind's tile, the title and a grey BOOKED pill; the time is on the rail (the link's label still says it) */
   .cz .cz-view[data-day] .cz-gbk { min-height: var(--tap); padding: 0 calc(var(--pu) * 0.625); border: 1px solid var(--hairline); border-radius: var(--r-sm); background: var(--card); box-shadow: inset 0.25rem 0 0 var(--accent); color: var(--ink); }

@@ -382,9 +382,6 @@ html[data-cz-dir="prev"]::view-transition-new(root) { animation: cz-in-left var(
 .cz .cz-view.cz-in-next { animation: cz-in-right var(--cz-dur) var(--cz-ease) both; }
 .cz .cz-view.cz-in-prev { animation: cz-in-left var(--cz-dur) var(--cz-ease) both; }
 @media (prefers-reduced-motion: reduce) { .cz .cz-view.cz-in-next, .cz .cz-view.cz-in-prev { animation: none; } }
-@media (min-width: 721px) {
-}
-
 /* F-092: today in the week, and the now card at the top of today */
 .cz .cz-today { margin-top: 0.125rem; padding: 0 0.375rem; border-radius: var(--r-pill); background: var(--ink); color: #FFFFFF; font-size: var(--cz-small); font-weight: 800; line-height: 1.4; }
 .cz .cz-row.is-today .cz-badge { box-shadow: 0 0 0 0.1875rem var(--coral); }

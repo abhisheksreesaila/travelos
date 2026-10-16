@@ -21,7 +21,7 @@
 .cz .cz-g-line.is-half { background: transparent; border-top: 1px dashed var(--line); height: 0; }
 
 /* F-159: the colour timeline's rail start times, icon tiles and PLAN pill are a laptop's (desk_skin.css draws them); a booking's icon tile is only a wrapper elsewhere */
-.cz .cz-g-start, .cz .cz-gb-tile, .cz .cz-gb-tag { display: none; }
+.cz .cz-g-start, .cz .cz-gb-tile, .cz .cz-gb-tag, .cz .cz-gb-st { display: none; }      /* (.cz-gb-st: a side-by-side plan's start alone, the phone's, F-160) */
 .cz .cz-gbk-tile { display: contents; }
 
 /* bookings: quiet lines behind the plans (F-090, F-093). A line a plan overlaps is a slim pill instead (F-106, below), so no booking is ever hidden under a block. */

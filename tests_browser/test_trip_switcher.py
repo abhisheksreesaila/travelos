@@ -89,8 +89,6 @@ def test_the_laptop_has_the_bar_picker_and_this_one_is_not_a_menu_there(family_w
 # ---- the eyebrow is the button: no extra row, readable on every level, a dimmed screen behind the sheet (F-147 re-review) ----
 
 LEVELS = {"day": "/trip/canvas?day=1", "week": "/trip/canvas", "today": "/trip?tab=today"}
-# The top of each title before this menu existed (measured on master at 390 and 800 with this fixture): the menu adds no row. The day's two are re-measured for F-160's plain heading (no ink card around it).
-TITLE_TOP = {(390, "day"): 35.5, (390, "week"): 59, (390, "today"): 39.5, (800, "day"): 32.5, (800, "week"): 31.5, (800, "today"): 31.5}
 
 CONTRAST = """(sel) => {
   const el = document.querySelector(sel);
@@ -117,7 +115,10 @@ def test_the_trigger_is_readable_adds_no_height_and_is_a_44px_target(family_with
     root = page.evaluate("parseFloat(getComputedStyle(document.documentElement).fontSize)")
     assert summary.bounding_box()["height"] >= 2.75 * root - 0.5
     top = page.locator("h1").first.bounding_box()["y"]
-    assert abs(top - TITLE_TOP[(viewport["width"], level)]) <= 1, (level, top)
+    # the baseline is the same page with the menu's tap area taken out: the trigger gets its 44px from padding that a matching negative margin cancels, so with both zeroed the title must not move
+    page.evaluate("""sel => { const s = document.querySelector(sel + ' > summary'); s.style.padding = '0'; s.style.margin = '0'; }""", MENU)
+    plain = page.locator("h1").first.bounding_box()["y"]
+    assert abs(top - plain) <= 1, (level, top, plain)
 
 
 @pytest.mark.parametrize("level", list(LEVELS))

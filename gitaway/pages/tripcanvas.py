@@ -542,7 +542,7 @@ def note_preview(v, act):
     return " · ".join(text for _, text in v["act_notes"].get(act, []))
 
 
-def grid_block(v, a, lane, lanes, lo, edit, inset=False):
+def grid_block(v, a, lane, lanes, lo, edit, inset=False, tlane=(0, 1)):
     """One plan as a block: its place and size are its time (CSS reads --s and --l), side by side with the plans it overlaps (--lane of --lanes). The block shows its title, its time,
     one line of its note (it fades at the end, F-106) and how much was said in its chat; a tap anywhere on it opens its card (day_card.js), which has the whole note and the chat. Without
     script the tap is a link: a park block's goes to its block level, a plan's to its chat page (F-097, F-106). `inset` makes room at the left for a booking pill (F-106)."""
@@ -563,7 +563,7 @@ def grid_block(v, a, lane, lanes, lo, edit, inset=False):
     said = f"{n} message{'' if n == 1 else 's'}" + (", with a voice note" if voice else "")
     preview = note_preview(v, a.id)
     inner = [Span(icon(KIND_ICON[k], 20, 2.2), cls="cz-gb-tile", aria_hidden="true"),      # the icon tile and the PLAN pill are a laptop's (F-159)
-             Span(Span(a.title, cls="cz-gb-t", id=f"cz-t-{a.id}"), Span("Plan", cls="cz-gb-tag"), Span(when, cls="cz-gb-when"), cls="cz-gb-head"),      # F-110: the title and the time stay in view at the top of a tall block (sticky)
+             Span(Span(a.title, cls="cz-gb-t", id=f"cz-t-{a.id}"), Span("Plan", cls="cz-gb-tag"), Span(when, cls="cz-gb-when"), Span(compact_time(a.start), cls="cz-gb-st"), cls="cz-gb-head"),      # F-110: the title and the time stay in view at the top of a tall block (sticky)
              Span(preview, cls="cz-gb-note") if preview else "",
              Span(*[Span(p["name"], cls="cz-gb-part", data_part=p["id"], data_act=a.id) for p in blk["parts"]], cls="cz-gb-parts") if park else "",
              Span(icon("chat", 14, 2.4), Span(str(n), cls="pt-n"), icon("mic", 13, 2.4) if voice else "", cls="cz-gb-chat", aria_hidden="true") if chat else ""]
@@ -572,9 +572,18 @@ def grid_block(v, a, lane, lanes, lo, edit, inset=False):
     extra = [link]
     if edit:
         extra += [Button(f"Change {a.title}", type="button", cls="sr-only cz-gb-menubtn")]
-    cls = f"cz-gb cz-k-{k}" + (" is-ringed" if v.get("ring") == a.id else "") + (" is-park" if park else "") + (" is-tiny" if a.end - a.start < 25 else "") + (" is-short" if a.end - a.start < 45 else " is-tight" if a.end - a.start < 75 and not park else "") + (" has-chat" if chat else "") + (" is-inset" if inset else "") + (" is-lane" if lanes > 1 else "")      # is-lane: side by side with another plan, so narrow (the phone and tablet leave out its tile, F-160)
-    style = f"--s:{a.start - lo};--l:{a.end - a.start};--lane:{lane};--lanes:{lanes}"
+    cls = f"cz-gb cz-k-{k}" + (" is-ringed" if v.get("ring") == a.id else "") + (" is-park" if park else "") + (" is-tiny" if a.end - a.start < 25 else "") + (" is-short" if a.end - a.start < 45 else " is-tight" if a.end - a.start < 75 and not park else "") + (" has-chat" if chat else "") + (" is-inset" if inset else "") + (" is-lane" if tlane[1] > 1 else "")      # is-lane: side by side with another plan on the phone or tablet, so narrow (it leaves out its tile, F-160)
+    style = f"--s:{a.start - lo};--l:{a.end - a.start};--lane:{lane};--lanes:{lanes};--tlane:{tlane[0]};--tlanes:{tlane[1]}"
     return Div(Div(*inner, cls="cz-gb-in cz-cs"), *extra, cls=cls, style=style, **({"tabindex": "-1"} if park else {}), **attrs)
+
+
+TOUCH_MIN = 40       # minutes a plan's box takes on the phone and tablet: its 44px minimum on a 66 to 72px hour (F-160). Plans whose boxes would collide sit side by side there (--tlane of --tlanes).
+
+
+class _Box:
+    """A plan as the phone draws it: at least TOUCH_MIN minutes long."""
+    def __init__(self, a):
+        self.id, self.start, self.end = a.id, a.start, max(a.end, a.start + TOUCH_MIN)
 
 
 PILL_SPAN = 60       # a plan within this many minutes below a booking's line is "over" it: the booking then draws as a pill beside the plan (F-106)
@@ -612,6 +621,7 @@ def time_grid(v, day, ents):
     lo, hi = grid_range(plans, lines)
     hours = list(range(lo // 60, hi // 60 + 1))
     lane = calui.lanes(plans)
+    tlane = calui.lanes([_Box(a) for a in plans])      # the phone's and tablet's lanes: boxes at least TOUCH_MIN minutes long
     starts = rail_starts(plans, lines)
     gutter = [Span(hour_label(h % 24 if h < 24 else 0), cls="cz-g-hour cz-cs" + (" is-near" if any(-30 <= h * 60 - y <= RAIL_ROOM + 8 for y, *_ in starts) else ""), style=f"--s:{h * 60 - lo}") for h in hours]      # is-near: a laptop hides it (F-159)
     gutter += [Span(Span(split_time(at)[0], cls="cz-g-st-t"), Span(split_time(at)[1], cls="cz-g-st-m"), Span(cls="cz-g-st-dot"), cls=f"cz-g-start cz-cs {cls}", style=f"--s:{y - lo}", data_for=" ".join(ids), aria_hidden="true") for y, at, cls, ids in starts]
@@ -623,7 +633,7 @@ def time_grid(v, day, ents):
           A(Span(Span(icon(getattr(x, "icon", "") or "lock", 16, 2.4), cls="cz-gbk-tile"), Span(cal.fmt_time(x.label_start if getattr(x, "label_start", None) is not None else x.start), cls="cz-bk-time"), Span(x.title, cls="cz-bk-t"),
               Span("Booked", cls="cz-bk-tag"), cls="cz-gbk-in cz-cs"), href=curl(day=x.day, booked=x.id), cls="cz-bk cz-gbk", data_zoom="in", data_zk=f"bkg-{x.id}", style=f"--s:{top - lo}", aria_label=f"{x.title}, {cal.fmt_time(x.label_start if getattr(x, 'label_start', None) is not None else x.start)}, booked", **kind_attrs(v, "booked", x))
           for x, top in lines]
-    blocks = [grid_block(v, a, *lane[a.id], lo, edit, a.id in inset) for a in plans]
+    blocks = [grid_block(v, a, *lane[a.id], lo, edit, a.id in inset, tlane[a.id]) for a in plans]
     now = ""
     if day == v["today_idx"] and lo <= (nm := td.now_minute(v["clock"])) <= hi:
         now = Span(Span(cls="cz-now-dot"), Span(f"{nm // 60 % 12 or 12}:{nm % 60:02d}", cls="cz-now-t"), cls="cz-nowline", id="cz-nowline", data_m=str(nm), style=f"--s:{nm - lo}", aria_label="Now", role="img")
