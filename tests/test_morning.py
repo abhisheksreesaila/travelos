@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from gitaway import morning, tripday as td
+from gitaway import catalog, morning, tripday as td
 from tests.test_calendar import book
 from tests.test_members import addr, browser, invite
 from tests.test_signin import person, sign_in
@@ -224,7 +224,8 @@ def test_a_missed_minute_is_made_up_for_within_the_hour_but_not_later(ari):
     assert len(push.sent) == 1
 
 
-def test_nothing_is_sent_before_or_after_the_trip(ari):
+def test_nothing_is_sent_before_or_after_the_trip(ari, monkeypatch):
+    monkeypatch.setattr(catalog, "now_utc", lambda: la(14, 6, 0))     # subscribed before the trip (on the real Oct 16 after 7:30, the first day had "already gone by")
     subscribe(ari)
     push = FakePush()
     morning.run_once(la(15, 7, 30), push)                       # the day before it starts

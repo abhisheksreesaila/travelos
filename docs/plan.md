@@ -1004,11 +1004,11 @@ Bug, the captain 2026-10-16: "when I do transcription on the ask page ... I pres
 - [x] the Ask box (sheet, panel and page) opens on today when the day asked for has already passed; a day to come is kept; tests/test_ask_sheet.py
 - [ ] confirmed on gitaway.me: say a plan on the laptop's Ask, Done, Apply, and it is on the day
 
-## F-176 The week drop lands at once [todo]
+## F-176 The week drop lands at once [review]
 The captain 2026-10-16: on the laptop week, a plan dragged from Thursday to Tuesday drops, then "there is like a second and a half lag ... then it shows up". Cause: week_drag.js drop() puts the row back, faded, in its old column and waits for the save and the whole week's redraw before it shows in the new one. Needs: F-157
-- [ ] at the drop the row is in the target column, at its time, unfaded, within one frame, with the save slowed 700 ms (browser test at 1440)
-- [ ] the save's reply only corrects lanes and shows the toast; a refused save puts the row back where it was with the toast; undo, Escape, own-column and viewer rules unchanged
-- [ ] a write does not refetch every plan row of the week in the background (only the day pages)
+- [x] at the drop the row is in the target column, at its time, unfaded, within one frame, with the save slowed 700 ms (tests_browser/test_week_drag.py, 1440 and 1280; fails without the fix)
+- [x] the save's reply only corrects lanes and shows the toast; a refused save puts the row back where it was with the toast; undo, Escape, own-column and viewer rules unchanged
+- [x] a write does not refetch every plan row of the week in the background (only the day pages): a plan row is fetched once, a stale copy is checked when it is opened (F-170)
 
 ## F-177 Family opens at once, the first time too [todo]
 The captain 2026-10-16: "when you click on the family tab, especially for the first time it has to load all the messages so it takes a tad bit time". Cause (investigation): nothing is prefetched; the top bar's Family on the laptop is a full page load of the phone page that then redirects to the canvas; the panel route reads every message of the trip two or three times, marks read in a GET and draws up to 200 messages. Needs: F-143
