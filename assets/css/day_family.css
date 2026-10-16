@@ -27,10 +27,9 @@
   .cz .cz-fam-hd { flex-shrink: 0; margin: 0.25rem 0 0; padding-top: 0.75rem; border-top: 0.0625rem solid var(--line); overflow-wrap: anywhere; text-transform: none; letter-spacing: 0; color: var(--ink-2); }
 
   /* the chat: the Family tab's bubbles, in the panel's colours; this list is the one that scrolls (thread.js scrolls it to its newest message) */
-  .cz .cz-fam-msgs { flex: 1 1 auto; min-height: 6rem; overflow-y: auto; overscroll-behavior: contain; gap: 0.6667rem; padding: 0.25rem 0; scrollbar-width: thin; }
+  .cz .cz-fam-msgs { flex: 1 1 auto; min-height: 6rem; overflow-y: auto; overscroll-behavior: contain; padding: 0.25rem 0; scrollbar-width: thin; }
   .cz .cz-fam-msgs .ft-msg { max-width: 92%; }
-  .cz .cz-fam-msgs .ft-bub { background: var(--paper-2); box-shadow: none; font-size: var(--cz-body); }
-  .cz .cz-fam-msgs .ft-me .ft-bub { background: var(--ink); color: var(--card); }
+  .cz .cz-fam-msgs .ft-bub { font-size: var(--cz-body); }
   .cz .cz-fam .cz-pp-none { flex-shrink: 0; margin: 0; }
   .cz .cz-fam-older { flex-shrink: 0; align-self: center; min-height: 4rem; padding: 0 1rem; border: 0; border-radius: var(--r-pill); background: transparent; font: inherit; font-size: var(--cz-small); font-weight: 800; color: var(--ink-2); cursor: pointer; }
   .cz .cz-fam-older:hover { background: var(--paper); color: var(--ink); }

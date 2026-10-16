@@ -235,11 +235,6 @@
   :root:has(.ga-topbar) .cz .cz-pp-steps { gap: 0; }
   :root:has(.ga-topbar) .cz .cz-pp-asidebtn, :root:has(.ga-topbar) .cz .cz-pp-open { color: var(--ink-3); font-weight: 600; }
   :root:has(.ga-topbar) .cz .cz-pp-add svg { border-radius: 0.4167rem; }
-  :root:has(.ga-topbar) .cz .cz-pp-msgs, :root:has(.ga-topbar) .cz .cz-fam-msgs { gap: 0.3333rem; }
-  :root:has(.ga-topbar) .cz .cz-pp-msgs .ft-msg, :root:has(.ga-topbar) .cz .cz-fam-msgs .ft-msg { max-width: 100%; }
-  :root:has(.ga-topbar) .cz .cz-pp-msgs .ft-bub, :root:has(.ga-topbar) .cz .cz-fam-msgs .ft-bub { background: var(--paper-2); border: 1px solid var(--hairline); border-radius: 0.8333rem; box-shadow: none; font-weight: 600; }
-  :root:has(.ga-topbar) .cz .cz-pp-msgs .ft-me .ft-bub, :root:has(.ga-topbar) .cz .cz-fam-msgs .ft-me .ft-bub { background: var(--coral-tint); color: var(--ink); }
-  :root:has(.ga-topbar) .cz .cz-pp-msgs .ft-me .ft-time, :root:has(.ga-topbar) .cz .cz-fam-msgs .ft-me .ft-time { color: var(--ink-3); }
   :root:has(.ga-topbar) .cz .cz-fam-th.is-on { background: var(--paper-2); box-shadow: none; border: 1px solid var(--hairline); }
   :root:has(.ga-topbar) .cz .cz-fam-th { border-radius: 0.8333rem; }
   :root:has(.ga-topbar) .cz .cz-fam-ic { border-radius: 0.6667rem; }

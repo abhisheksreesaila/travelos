@@ -36,6 +36,7 @@
   --skeleton-band: #FBF7F1;
   --peach: #FFC9B2;     /* sign-in sky: the warm band */
   --sand: #FFE3A3;      /* sign-in sky: the beach */
+  --bubble-grey: #E9E6EE;   /* F-178: their chat bubble (ink on it is 13:1); mine is --coral-deep with white (4.88:1) */
   --paper-2: #FAF7F2;   /* a step darker than paper: the boarding-pass stub */
 
   --r-sm: 0.75rem;

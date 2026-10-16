@@ -107,6 +107,22 @@
     old._adopt = true;                                    // delivered from now on, whatever the reply does
     adopt(old, fresh);
   }
+  // Runs (F-178): which messages are the first and last of a run from one person (data-by; a plan change or another person ends it). The server draws the same classes
+  // (tab_family.fragment); this keeps them right when a message arrives, is sent here or "Earlier" puts older ones above, so every one of those is one watch on the list.
+  function runs() {
+    var prev = null;
+    Array.prototype.forEach.call(thread.children, function (el) {
+      if (!el.classList.contains("ft-msg")) { prev = null; return; }
+      if (prev) prev.classList.toggle("ft-last", prev.getAttribute("data-by") !== el.getAttribute("data-by"));
+      el.classList.toggle("ft-first", !prev || prev.getAttribute("data-by") !== el.getAttribute("data-by"));
+      el.classList.add("ft-last");
+      prev = el;
+    });
+  }
+  runs();
+  var watch = new MutationObserver(runs);
+  watch.observe(thread, { childList: true });
+  undo.push(function () { watch.disconnect(); });
   function merge(html, n, mine) {
     if (!html.trim() || n <= last) return;
     var stick = mine || nearBottom();
@@ -119,6 +135,7 @@
       if (waiting) { handOver(waiting, el); return; }
       thread.appendChild(el);
     });
+    runs();                                               // (a bubble taken over by the server's copy changes classes without moving)
     last = n;
     thread.setAttribute("data-last", String(last));
     if (empty) empty.hidden = true;
@@ -169,10 +186,11 @@
   function pendingBubble(value) {
     var el = document.createElement("div");
     el.className = "ft-msg ft-me is-pending is-sending";
-    var bub = document.createElement("div"); bub.className = "ft-bub";
-    var body = document.createElement("span"); body.className = "ft-body"; body.textContent = value;
+    var stack = document.createElement("div"); stack.className = "ft-stack";
+    var bub = document.createElement("div"); bub.className = "ft-bub"; bub.textContent = value;
     var state = document.createElement("span"); state.className = "ft-time ft-state"; state.textContent = "Sending";
-    bub.appendChild(body); bub.appendChild(state); el.appendChild(bub);
+    stack.appendChild(bub); stack.appendChild(state); el.appendChild(stack);
+    el.setAttribute("data-by", "me");
     el.setAttribute("data-text", value);
     el.setAttribute("data-cid", newId());
     return el;

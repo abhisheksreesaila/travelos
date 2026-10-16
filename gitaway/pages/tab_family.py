@@ -71,9 +71,17 @@ def _on(it, labels):
     return A(icon("chat", 14, 2.4), Span(f"on {labels[(act, part)]}"), href=plantalk.url(act, part), cls="ft-on")
 
 
-def item_view(it, me, zone, labels=None):
-    """One thread entry. Changes are cards, messages are bubbles (mine on the right), photos show their image, voice notes play in place. A message on a plan
-    carries a tag naming it when `labels` ({(plan, part): label}) is given (the Family tab; the plan's own chat does not repeat it)."""
+def _run_key(it, me):
+    """Who a message is from, for grouping: "me", the author's id, or None for a line that is not a bubble (a plan change, a photo that cannot be drawn). thread.js `runs()` does the same on the page."""
+    if it["kind"] == "change" or (it["kind"] == "photo" and not familythread._image_url(it["payload"].get("url", ""))):
+        return None
+    return "me" if it["author"] == me else it["author"]
+
+
+def item_view(it, me, zone, labels=None, run="ft-first ft-last"):
+    """One thread entry. Changes are centred lines, messages are bubbles (mine on the right), photos show their image, voice notes play in place. A message on a plan
+    carries a tag naming it when `labels` ({(plan, part): label}) is given (the Family tab; the plan's own chat does not repeat it). `run` is "ft-first", "ft-last" or both:
+    where the message sits in a run from one person (name once at the first, avatar and time once at the last, a tail on the last)."""
     at = _clock(it["at"], zone)
     base = {"data_n": str(it["n"]), "data_kind": it["kind"]}
     if it["payload"].get("cid"):
@@ -85,23 +93,34 @@ def item_view(it, me, zone, labels=None):
                    cls=f"ft-sys ft-{_TINTS.get(action, 'plain')}", **base)
     mine = it["author"] == me
     tag = _on(it, labels)
+    base["data_by"] = _run_key(it, me) or ""
+    name = Span(it["name"], cls="ft-nm") if not mine else ""
     if it["kind"] == "photo":
         url = it["payload"].get("url", "")
-        if familythread._image_url(url):
-            pid = it["payload"].get("photo")
-            img = Img(src=url, alt=it["text"] or f"Photo from {it['name']}", loading="lazy", cls="ft-photo")
-            body = Div(tag, Span(it["name"], cls="ft-nm") if pid and not mine else "", A(img, href=f"/trip/photos/{pid}", cls="ft-photo-link") if pid else img, Span(it["text"], cls="ft-cap") if it["text"] else "", Span(at, cls="ft-time") if pid else "", cls="ft-photo-bub")
-            return Div(_avatar(it["name"], it["author"]) if not mine else "", body, cls=f"ft-msg{' ft-me' if mine else ''}", **base)
-        return ""
-    if it["kind"] == "voice":
-        bubble = Div(tag, Span(it["name"], cls="ft-nm") if not mine else "", voice_player(it), Span(at, cls="ft-time"), cls="ft-bub ft-voice")
+        if not familythread._image_url(url):
+            return ""
+        pid = it["payload"].get("photo")
+        img = Img(src=url, alt=it["text"] or f"Photo from {it['name']}", loading="lazy", cls="ft-photo")
+        body = Div(tag, A(img, href=f"/trip/photos/{pid}", cls="ft-photo-link") if pid else img, Span(it["text"], cls="ft-cap") if it["text"] else "", cls="ft-photo-bub", title=at)
+        stack = Div(name if pid else "", body, Span(at, cls="ft-time") if pid else "", cls="ft-stack")
+    elif it["kind"] == "voice":
+        stack = Div(name, Div(tag, voice_player(it), cls="ft-bub ft-voice", title=at), Span(at, cls="ft-time"), cls="ft-stack")
     else:
-        bubble = Div(tag, Span(it["name"], cls="ft-nm") if not mine else "", it["text"], Span(at, cls="ft-time"), cls="ft-bub")
-    return Div(_avatar(it["name"], it["author"]) if not mine else "", bubble, cls=f"ft-msg{' ft-me' if mine else ''}", **base)
+        stack = Div(name, Div(tag, it["text"], cls="ft-bub", title=at), Span(at, cls="ft-time"), cls="ft-stack")
+    return Div(_avatar(it["name"], it["author"]) if not mine else "", stack, cls=f"ft-msg {run}{' ft-me' if mine else ''}", **base)
 
 
 def fragment(its, me, zone, labels=None):
-    return [v for v in (item_view(it, me, zone, labels) for it in its) if v != ""]
+    """The thread's items drawn, with each message's place in its run (the run goes on until another person, a plan change or the end speaks)."""
+    its = [it for it in its if it["kind"] != "photo" or familythread._image_url(it["payload"].get("url", ""))]   # (a photo that cannot be drawn is no part of a run)
+    keys = [_run_key(it, me) for it in its]
+    out = []
+    for i, it in enumerate(its):
+        before = keys[i - 1] if i else None
+        after = keys[i + 1] if i + 1 < len(its) else None
+        run = " ".join(c for c, edge in (("ft-first", before), ("ft-last", after)) if keys[i] is None or edge != keys[i])
+        out.append(item_view(it, me, zone, labels, run))
+    return out
 
 
 def _switch(view):
