@@ -953,7 +953,40 @@ Captain, 2026-10-15 (after seeing the colour timeline live): "the blocks on the 
 - [ ] days stay uncoloured (colour is for kinds only); text contrast on each tint is ≥4.5:1; tiny and lane cards keep their fill
 - [ ] browser tests at 1440, 1280, 800 and 390 check a plan block's background is its kind's tint and no plan block is white
 
-## F-168 The app feels zippy: find and fix the stop-and-go [todo]
+## F-168 The app feels zippy: find and fix the stop-and-go [done]
 Captain, 2026-10-15: "it feels not as fast as I want it to be, it doesn't look zippy … do it and then do it … the look is there, the UI is there, the feel is not there." Live round trip to gitaway.me is ~0.14–0.25s per request.
-- [ ] a measured report (docs/perf-feel.md): for the common taps (switch day, Day↔Week, open a plan, add, move, Ask, filters) on phone and laptop, the time from tap to first visible response and to settled, the network waits, long tasks, and which steps run one after another; ranked causes with evidence
-- [ ] then tickets for the top fixes (e.g. answer on tap before the server replies, prefetch, run steps in parallel, shorter or overlapping fades), each with a measured before/after target
+- [x] a measured report (docs/perf-feel.md): for the common taps (switch day, Day↔Week, open a plan, add, move, Ask, filters) on phone and laptop, the time from tap to first visible response and to settled, the network waits, long tasks, and which steps run one after another; ranked causes with evidence
+- [x] then tickets (F-169..F-174) for the top fixes (e.g. answer on tap before the server replies, prefetch, run steps in parallel, shorter or overlapping fades), each with a measured before/after target
+
+# Zippy (F-168 report docs/perf-feel.md; captain 2026-10-16: "the feel should be great … zippy fast … if you have to rewrite it, rewrite it")
+Every ticket measures before and after with scripts/perf (run_all.sh + report.py) and states the numbers in its report; the look does not change unless the ticket says so.
+
+## F-169 A plan opens on the first tap [todo]
+Report fix 1 (and the card's 100 ms forced layout from fix 8). Needs: F-168
+- [ ] on the phone a tap on a plan opens its card at once: no 330 ms double-tap wait (day_menu.js ~L475); "open a plan" starts ≤120 ms (CPU 4×, +180 ms) instead of 424
+- [ ] rename stays one gesture away: from the hold menu (already there) and by tapping the title inside the open card; nothing that worked before is lost; the card open does no forced layout over 30 ms
+- [ ] browser tests at 390 and 1440: a single tap opens the card within one frame budget of the tap, a double tap does not open two things, rename from the card works
+
+## F-170 Never wait for a copy we already have [todo]
+Report fixes 2 and 7. Needs: F-168
+- [ ] a level copy fetched ahead is shown at once whatever its age and after any write, and refreshed quietly behind it (only changed nodes morph; no visible second swap when nothing changed); after a write the level the write returned seeds the cache and ±1 day is prefetched first, the rest later
+- [ ] on the phone the week never prefetches desktop-only plan rows (no box); after a swap ±1 day is fetched before anything else
+- [ ] day switch after 62 s or right after a write starts ≤150 ms on the phone and laptop (CPU 4×, +180 ms); a week visit on the phone fetches ≤ 0.1 MB of prefetch; browser tests pin "no network wait on a day switch after a write" and "no hidden-row prefetch"
+
+## F-171 One motion for a move; swipes follow the finger [todo]
+Report fixes 3 and 4. Needs: F-170
+- [ ] after a drop the refreshed day goes in while the block lands, and the neighbours glide in the same motion (no land, stop, glide); the toast shows at the drop; move settles ≤750 ms on the phone (was 1251)
+- [ ] a day swipe follows the finger 1:1 and the slide continues from where the finger let go (no snap back to 0); a short or slow swipe springs back
+- [ ] save, undo, refused-save and viewer rules unchanged; browser tests at 390 and 1440 sample the frames (one motion, no pause) and the swipe offset
+
+## F-172 The server opens the family database once per request [todo]
+Report fix 6. Read the fh-saas skill first. Needs: F-168
+- [ ] one request opens the family database once and reuses it (request-scoped), instead of ~27 times per day fragment; the host-lock pile-up under two concurrent requests is gone
+- [ ] tenant isolation, roles and every write path unchanged; tests prove a request never sees another family's data and that two concurrent requests for two families stay separate
+- [ ] a day fragment renders ≥3× faster server-side (profile_server.py before/after), and two concurrent fragments take no longer than one plus 20%
+
+## F-173 Quicker on slower phones, and a shorter motion [todo]
+Report fixes 8 and 5 (taste call made on the captain's "zippy, whatever it takes", 2026-10-16; the old values are in this ticket so it is one change to undo). Needs: F-168
+- [ ] the Ask sheet opens with no task over 50 ms on the tap (inert one wrapper, start the mic after the sheet's first frame); Week → Day swap does no read-after-write layout thrash
+- [ ] phone screen motion 500 → 340 ms (--motion-screen-dur) and springs 520 → 380 ms (--motion-spring-dur), same curves; the laptop's calm fade unchanged; tests/test_motion_tokens.py and tests_browser/test_motion.py updated to the new values, not loosened
+- [ ] a day chip settles ≤480 ms on a fast phone (CPU 1×); Ask starts ≤150 ms at CPU 4×
