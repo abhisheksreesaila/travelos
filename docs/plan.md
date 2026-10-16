@@ -1004,7 +1004,7 @@ Bug, the captain 2026-10-16: "when I do transcription on the ask page ... I pres
 - [x] the Ask box (sheet, panel and page) opens on today when the day asked for has already passed; a day to come is kept; tests/test_ask_sheet.py
 - [ ] confirmed on gitaway.me: say a plan on the laptop's Ask, Done, Apply, and it is on the day
 
-## F-176 The week drop lands at once [review]
+## F-176 The week drop lands at once [done]
 The captain 2026-10-16: on the laptop week, a plan dragged from Thursday to Tuesday drops, then "there is like a second and a half lag ... then it shows up". Cause: week_drag.js drop() puts the row back, faded, in its old column and waits for the save and the whole week's redraw before it shows in the new one. Needs: F-157
 - [x] at the drop the row is in the target column, at its time, unfaded, within one frame, with the save slowed 700 ms (tests_browser/test_week_drag.py, 1440 and 1280; fails without the fix)
 - [x] the save's reply only corrects lanes and shows the toast; a refused save puts the row back where it was with the toast; undo, Escape, own-column and viewer rules unchanged

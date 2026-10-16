@@ -91,8 +91,8 @@
   }
   function drop(col) {
     var act = g.act, to = col.dataset.day, row = g.row;
-    var home = { list: row.parentNode, next: row.nextSibling, style: row.getAttribute('style'), cls: row.className }, free = col.querySelector('.cz-wfree');
     end();
+    var home = { list: row.parentNode, next: row.nextSibling, style: row.getAttribute('style'), cls: row.className }, free = col.querySelector('.cz-wfree');      // (after end(): not lifted)
     busy = true;
     put(row, col);
     CZ.post('/trip/canvas/plan', CZ.tripBody({ op: 'edit', act: act, day: to, next: CZ.here() })).then(function (res) {

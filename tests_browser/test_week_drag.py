@@ -346,3 +346,4 @@ def test_a_refused_drop_puts_the_row_back_where_it_was(desk):
     expect(col(desk, SUNDAY).locator(f'.cz-wi[data-wk-act="{act}"]')).to_have_count(1)
     expect(col(desk, SATURDAY).locator(f'.cz-wi[data-wk-act="{act}"]')).to_have_count(0)
     assert day_of(act) == SUNDAY
+    assert row(desk, act).evaluate("n => getComputedStyle(n).opacity") == "1"                    # put back as it was, not faded as lifted
