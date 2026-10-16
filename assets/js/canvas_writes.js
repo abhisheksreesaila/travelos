@@ -50,7 +50,6 @@
     buttons.forEach(function (b) { b.disabled = true; });
     var early = tickNow(f, body);
     CZ.post(f.action, body).then(function (res) {
-      CZ.forget();
       if (res.toast) showToast(res.toast, res.undo);
       if (early || path(res.url) === here()) CZ.quiet();      // on this level (a tick, a note): brought up to date where it is, no fade
       else if (f.hasAttribute('data-cz-stay')) CZ.goto(res.url, { dir: 'side', mode: 'stay', key: null });

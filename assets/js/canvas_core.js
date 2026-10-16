@@ -24,8 +24,8 @@
   var KEY = /^[a-z]{3}-[A-Za-z0-9-]+$/;
   var CZ = { stage: stage, held: false, onSwap: [] };      // `held` is true while the day grid (day_grid.js) holds a block
   var STALE = 5000;        // a level shown from a copy older than this is fetched again in idle time and quietly updated if it changed (someone else may have edited)
-  var FRESH = 60000;       // how long a fetched level may be shown without asking again (F-099); every write empties the cache
-  var cache = {};          // url -> { at, promise }: a level fetched ahead of time (idle, or as the finger went down), used by the tap that follows
+  var cache = {};          // url -> { at, g, promise }: a level fetched ahead of time (idle, or as the finger went down), used by the tap that follows. F-170: a copy is shown at once whatever its age
+  var gen = 0;             // moves on every write and every CZ.forget: a copy with an older `g` is shown all the same, then checked behind it (revalidate) and corrected if it changed
   var busy = false;
   var waiting = null;      // the browser's Back or Forward pressed while a zoom was running: run it when that zoom is done
   var idleQ = [];          // work that needs the zoom to be finished (a refresh after a drop)
@@ -45,56 +45,76 @@
   // `epoch` counts writes (it moves when one starts and when it ends): a copy of a level fetched before a write, which answers after it, is stale and is never shown.
   // F-124: a write's reply carries the level drawn after it (`level`), kept in `handed` until the next write, so the refresh that follows needs no second trip to the server.
   var epoch = 0, handed = null;
-  function fetchLevel(u) {
+  // F-170: a copy we have is returned at once, of any age. `force` asks the server again and puts the answer in its place when it comes (the old copy stays usable meanwhile).
+  function fetchLevel(u, force) {
     if (handed && handed.u === u && handed.e === epoch) return Promise.resolve(handed.html);
-    var now = Date.now(), hit = cache[u];
-    if (hit && now - hit.at < FRESH) return hit.promise;
+    var hit = cache[u];
+    if (hit && !force) return hit.promise;
+    if (hit && hit.next && hit.next.g === gen) return hit.next.p;
     var p = fetch(fragUrl(u), { credentials: 'same-origin', headers: { 'X-Canvas': '1' } }).then(function (r) {
       if (!r.ok) throw new Error('level ' + r.status);
       return r.text();
     });
-    cache[u] = { at: now, promise: p };
-    p.catch(function () { delete cache[u]; });
+    var entry = { at: Date.now(), g: gen, promise: p };
+    if (!hit) { cache[u] = entry; p.catch(function () { if (cache[u] === entry) delete cache[u]; }); }
+    else {
+      hit.next = { p: p, g: gen };
+      p.then(function () { if (!cache[u] || cache[u].g <= entry.g) cache[u] = entry; }, function () { delete hit.next; });      // (an older answer arriving late never replaces a newer copy, a write's own level included)
+    }
     return p;
   }
+  function old(u) { var h = cache[u]; return !!h && (h.g !== gen || Date.now() - h.at > STALE); }      // a copy that may differ from the server's
+  // A block or a step sheet cannot be corrected in place after it is shown (only the day and the week morph), so a copy of one from before a write, or over a minute old, is asked for again
+  // (this is the one level that still waits): a sheet shown stale would say "Mark done" for a step that is done.
+  var SHEET_FRESH = 60000;
+  function sheetStale(u) { var h = cache[u], l = levelOf(u); return !!h && (l === 'step' || l === 'block') && (h.g !== gen || Date.now() - h.at > SHEET_FRESH); }
 
-  // F-099: while the canvas sits idle the next levels are fetched, so Day | Week, a date, a flick and Back swap with nothing to wait for. The week fetches every day;
+  // F-099: while the canvas sits idle the next levels are fetched, so Day | Week, a date, a flick and Back swap with nothing to wait for. The desktop week fetches every day (the phone week the same (up to 14 and then what scrolls into view, F-170);
   // a day fetches its neighbours, the week and the other dates. Fragments only, two at a time, in idle time, never on Data Saver or a slow link.
   var pq = [], pActive = 0, pPlanned = 0;
+  var WEEK_AHEAD = 14;     // F-170: day fragments the phone's week fetches ahead without scrolling (about 35 KB each)
   var idle = window.requestIdleCallback ? function (fn) { window.requestIdleCallback(fn, { timeout: 1500 }); } : function (fn) { setTimeout(fn, 200); };
   function frugal() {
     var c = navigator.connection;
     return !!(c && (c.saveData || /(^|-)2g$/.test(c.effectiveType || '')));
   }
-  function fresh(u) { var h = cache[u]; return !!h && Date.now() - h.at < FRESH; }
+  function fresh(u) { var h = cache[u]; return !!h && h.g === gen && !sheetStale(u); }      // (a copy that only grew old with time is not fetched again ahead: it is checked when it is shown)
+  // The addresses worth having ahead, the likeliest first. `near` (a day's neighbours, the week's days, a block's steps) is fetched at once, `rest` a moment later.
   function nextLevels() {
-    var v = view(), out = [];
-    if (!v) return out;
-    var add = function (u) { if (u && out.indexOf(u) < 0) out.push(u); };
+    var v = view(), near = [], rest = [], now = here();
+    if (!v) return { near: near, rest: rest };
+    var add = function (list, u) { if (u && u !== now && near.indexOf(u) < 0 && rest.indexOf(u) < 0) list.push(u); };
     if (v.dataset.level === 'week') {
-      v.querySelectorAll('a.cz-row-link[data-zoom="in"], a.cz-wopen[data-zoom="in"], a.cz-wi.is-plan[data-zoom="in"]').forEach(function (a) { add(path(a.href)); });      // F-145: the desktop week's Open the day and plan rows too
+      // F-145: the desktop week's Open the day and plan rows too. F-170: only rows with a box (the phone hides the desktop columns: their plan rows are 40 KB each and never tapped)
+      v.querySelectorAll('a.cz-wopen[data-zoom="in"], a.cz-wi.is-plan[data-zoom="in"]').forEach(function (a) { if (boxed(a)) add(near, path(a.href)); });
+      // The phone's day cards (about 35 KB each; the desktop columns' plan rows are never fetched there): every day of the trip, today's and its nearest first, at most WEEK_AHEAD;
+      // on a longer trip the cards that come on screen are fetched too (the scroll calls prefetch)
+      var h = window.innerHeight, rows = Array.prototype.slice.call(v.querySelectorAll('a.cz-row-link[data-zoom="in"]')).filter(boxed);
+      var at = Math.max(0, rows.findIndex(function (a) { return !!a.closest('.is-today'); }));
+      var seen = rows.map(function (a, i) { return { a: a, d: Math.abs(i - at) }; }).sort(function (x, y) { return x.d - y.d; }).map(function (x) { return x.a; });
+      seen.slice(0, WEEK_AHEAD).forEach(function (a) { add(near, path(a.href)); });
+      seen.slice(WEEK_AHEAD).forEach(function (a) { var r = a.getBoundingClientRect(); if (r.bottom > 0 && r.top < h * 1.5) add(near, path(a.href)); });
     } else if (v.dataset.level === 'day') {
-      add(v.dataset.next && path(v.dataset.next));
-      add(v.dataset.prev && path(v.dataset.prev));
+      add(near, v.dataset.next && path(v.dataset.next));
+      add(near, v.dataset.prev && path(v.dataset.prev));
       var wk = v.querySelector('#cz-z-week');
-      if (wk) add(path(wk.href));
-      v.querySelectorAll('.cz-hchips a[href]').forEach(function (a) { add(path(a.href)); });
+      if (wk) add(rest, path(wk.href));
+      v.querySelectorAll('.cz-hchips a[href]').forEach(function (a) { add(rest, path(a.href)); });
     } else if (v.dataset.level === 'block') {      // F-132: the sheets of the steps on the screen (about 4 KB each on the wire), so a tap on one opens it with nothing to wait for
       var h = window.innerHeight;
       Array.prototype.slice.call(v.querySelectorAll('a.cz-step[data-zoom="in"]')).filter(function (a) {
         var r = a.getBoundingClientRect();
         return r.bottom > 0 && r.top < h;
-      }).slice(0, 8).forEach(function (a) { add(path(a.href)); });
+      }).slice(0, 8).forEach(function (a) { add(near, path(a.href)); });
     }
-    var now = here();
-    return out.filter(function (u) { return u !== now; });
+    return { near: near, rest: rest };
   }
   function pump() {
     while (pActive < 2 && pq.length) {
       var u = pq.shift();
       if (fresh(u)) continue;
       pActive++;
-      fetchLevel(u).catch(function () {}).then(function () { pActive--; if (pq.length) idle(pump); });
+      fetchLevel(u, !!cache[u]).catch(function () {}).then(function () { pActive--; if (pq.length) idle(pump); });
     }
   }
   function prefetch() {
@@ -102,17 +122,23 @@
     var mine = ++pPlanned;
     idle(function () {
       if (mine !== pPlanned) return;      // a newer level was shown meanwhile
-      pq = nextLevels().filter(function (u) { return !fresh(u); });
+      var n = nextLevels();
+      pq = n.near.filter(function (u) { return !fresh(u); });
       pump();
+      if (n.rest.length) setTimeout(function () {      // F-170: the neighbours first (after a write they are what the next tap wants), the rest once those are on their way
+        if (mine !== pPlanned) return;
+        pq = pq.concat(n.rest.filter(function (u) { return !fresh(u); }));
+        pump();
+      }, 300);
     });
   }
   document.addEventListener('visibilitychange', function () { if (!document.hidden) prefetch(); });
   var scrolled = 0;      // a block's steps that come into view are fetched too
-  window.addEventListener('scroll', function () { clearTimeout(scrolled); scrolled = setTimeout(function () { var v = view(); if (v && v.dataset.level === 'block') prefetch(); }, 300); }, { passive: true });
+  window.addEventListener('scroll', function () { clearTimeout(scrolled); scrolled = setTimeout(function () { var v = view(); if (v && (v.dataset.level === 'block' || v.dataset.level === 'week')) prefetch(); }, 300); }, { passive: true });
   // A level is fetched as soon as a finger goes down on a link to it, so the tap that follows has nothing to wait for.
   document.addEventListener('pointerdown', function (e) {
     var a = e.target.closest ? e.target.closest('a[data-zoom]') : null;
-    if (a && stage.contains(a) && a.dataset.zoom !== 'out') fetchLevel(path(a.href)).catch(function () {});
+    if (a && stage.contains(a) && a.dataset.zoom !== 'out') fetchLevel(path(a.href), sheetStale(path(a.href))).catch(function () {});
   }, { passive: true });
 
   // ---- swapping ---------------------------------------------------------------------------------------------------------------
@@ -239,13 +265,21 @@
     window.scrollTo(0, y);
     if (snap) snap();
   }
-  function revalidate(u, old) {
+  // F-170: the copy on the screen was shown from the cache: ask the server and, if it differs, morph the changes in. It waits for a calm moment (nothing held, open or typed in) both
+  // before asking and before applying, and gives up only when the person has moved on, a write has run (its own refresh follows) or after about 10 seconds.
+  function revalidate(u, old, tries) {
+    tries = tries || 0;
+    var again = function () { if (tries < 25) setTimeout(function () { revalidate(u, old, tries + 1); }, 400); };
     idle(function () {
-      if (here() !== u || !calm()) return;
-      delete cache[u];
+      if (here() !== u || shown !== old) return;
+      if (!calm()) { again(); return; }
       var e0 = epoch;
-      fetchLevel(u).then(function (html) {
-        if (e0 === epoch && html !== old && html !== shown && here() === u && shown === old && calm()) morphIn(html);
+      fetchLevel(u, true).then(function (html) {
+        (function apply(n) {
+          if (e0 !== epoch || here() !== u || shown !== old || html === old || html === shown) return;
+          if (calm()) morphIn(html);
+          else if (n < 25) setTimeout(function () { apply(n + 1); }, 400);
+        })(0);
       }).catch(function () {});
     });
   }
@@ -258,9 +292,8 @@
   function quiet() {
     return new Promise(function (done) {
       whenIdle(function () {
-        cache = {};
         var e0 = epoch, u = here();
-        fetchLevel(u).then(function (html) {
+        fetchLevel(u, true).then(function (html) {
           nextFrame(function () {          // F-131: its own frame, not the one the toast that came with the write is drawn in (two short frames, not one long one)
             if (e0 !== epoch) { whenIdle(function () { quiet().then(done); }); return; }       // a write ran meanwhile, so this copy is already old: ask again
             if (here() !== u) { done(false); return; }
@@ -336,13 +369,12 @@
     curMode = o.mode || '';
     var v = view(), y0 = window.scrollY;
     var key = o.key !== undefined ? o.key : (dir === 'out' && v ? v.dataset.zout : null);
-    var age = cache[u] ? Date.now() - cache[u].at : 0, copy = null;
-    var level = fetchLevel(u);
+    var sheet = levelOf(u) === 'step' || levelOf(u) === 'block', aged = !sheet && old(u), copy = null;      // F-170: a copy we have is shown at once; if it may differ from the server's, it is checked behind the zoom (revalidate)
+    var e0 = epoch, level = fetchLevel(u, sheetStale(u));
     pending(level, o.el);
     var sketch = dir === 'in' && !reduced.matches && !laptop() ? outline(u, o, key) : null;      // (the laptop keeps the old level until the new one is in hand: never an outline first)
     return (sketch ? soon(level, SLOW) : level).then(function (got) {
       if (got !== null) return got;
-      var at = epoch;
       // nothing yet: the zoom runs now into the outline, and the level fills it when it comes
       return run(sketch, dir, key, remember).then(function () { return level; }).then(function (html) {
         if (here() !== u) return null;      // gone elsewhere meanwhile
@@ -350,18 +382,19 @@
         var nv = view();
         if (nv) nv.classList.add('cz-filled');
         if (CZ.afterScroll && (o.mode === 'push' || o.mode === 'replace')) CZ.afterScroll();
-        if (at !== epoch) quiet();          // a write landed meanwhile: this copy may be older than it
+        if (!sheet && (aged || e0 !== epoch)) copy = html;      // F-170: a copy fetched before a write (or kept a while) fills the outline all the same: it is checked behind the zoom like any other
+        if (e0 !== epoch) quiet();          // a write landed meanwhile: this copy may be older than it
         return null;
       });
     }).then(function (html) {
       if (html === null) return;
-      if (age > STALE) copy = html;
+      if (!sheet && (aged || e0 !== epoch)) copy = html;
       return run(html, dir, key, remember);
     }).catch(function () { location.href = u; }).then(function () {
       busy = false;
       via = null;      // the tapped link belongs to this zoom only, animated or not
       rememberToday();
-      if (copy !== null && levelOf(u) !== 'step' && levelOf(u) !== 'block') revalidate(u, copy);
+      if (copy !== null) revalidate(u, copy);
       if (waiting) { waiting = null; goto(here(), { mode: 'pop' }); }     // the address bar is the truth: show what it says
       drain();
     });
@@ -418,12 +451,13 @@
   // ---- the one write transport ------------------------------------------------------------------------------------------------
   // Every write posts with X-Canvas (and X-Canvas-Level: the reply carries the level after it). Replies: JSON {url, toast, undo, level}, 204 + X-Canvas-Url, or 422 {error}.
   function post(url, body) {
-    epoch++;
+    epoch++; gen++;
     return send(url, body).then(function (r) {
-      epoch++;
+      epoch++; gen++;
       handed = r && typeof r.level === 'string' && r.url ? { u: path(r.url), html: r.level, e: epoch } : null;
+      if (handed) cache[handed.u] = { at: Date.now(), g: gen, promise: Promise.resolve(handed.html) };      // F-170: the level the write drew is the newest copy there is
       return r;
-    }, function (e) { epoch++; handed = null; throw e; });
+    }, function (e) { epoch++; gen++; handed = null; throw e; });
   }
   function send(url, body) {
     var ctl = typeof AbortController === 'function' ? new AbortController() : null;
@@ -450,7 +484,9 @@
   CZ.quiet = quiet;                                                     // after a write: the level brought up to date in place
   CZ.refresh = quiet;                                                   // (a drop, an add, an Undo: the same, F-128; it used to fade the whole level in again)
   CZ.busy = function () { return busy; };
-  CZ.forget = function () { cache = {}; };      // the Ask sheet (ask_sheet.js) changed the plan: no level fetched before may be shown
+  // F-170: something changed that no write of ours drew: every copy fetched so far is checked when it is next shown. CZ.forget(true) throws them away (the Ask sheet changed the plan: a day it
+  // opens must not flash its old self first).
+  CZ.forget = function (hard) { gen++; if (hard) cache = {}; };
   window.CZ = CZ;
 
   // The level the page opened with. (Each module applies its own part of it when it loads, right after this one: the filters, say.)
