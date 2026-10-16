@@ -24,8 +24,8 @@ Rebuild on the existing hour grid (`tripcanvas.time_grid`, `assets/css/day_grid.
 
 ## States
 - **Empty day**: the rail with a soft dashed "Free day · Say the plan" slot (the week's free-day look) instead of an empty grid.
-- **Adding** (F-101 behaviour): the draft opens in the touched gap with a dashed `--coral` edge, the title field focused ("What's the plan?"), a row of kind chips (each with its kind's tint and ink), "Drag the edges to change the time"; its rail time shows in coral. On the laptop the panel shows the draft too.
-- **Moving** (F-097/F-151 behaviour): the lifted card follows the pointer with `--shadow-lg`; the old slot shows as a faint dashed ghost; the landing slot is dashed; the rail time turns coral and updates live; a day chip under the pointer becomes an ink-dashed drop target ("Drop to move to Sat 17").
+- **Adding** (F-101 behaviour): the draft opens in the touched gap with a dashed `--coral` edge, the title field focused ("What's the plan?"), a row of kind chips (each with its kind's tint and ink), "Drag the edges to change the time"; its rail time shows in coral. On the laptop the panel shows the draft too. *Deliberate cuts (F-161): no "Drag the edges" hint, because the draft has no edges to drag (the plan's knobs come once it is saved); the laptop panel does not mirror the draft (a later ticket). The kind chips are real: the pick is the plan's kind.*
+- **Moving** (F-097/F-151 behaviour): the lifted card follows the pointer with `--shadow-lg`; the old slot shows as a faint dashed ghost; the landing slot is dashed; the rail time turns coral and updates live; a day chip under the pointer becomes an ink-dashed drop target ("Drop to move to Sat 17"). *The landing slot is drawn a halo (1rem) larger than the plan so a band of it shows around the lifted card.*
 - **Long content**: titles wrap to two lines then fade; detail one line.
 - **Loading / offline**: unchanged (skeletons and the existing offline note).
 

@@ -92,7 +92,7 @@
   /* a plan held over the day tabs (F-152): dashed tabs, the one under it takes a coral ring and the coral tint */
   :root:has(.ga-topbar) .cz .cz-hchips.is-dropping .cz-hchip { outline: 0.1667rem dashed var(--hairline-2); outline-offset: -0.1667rem; }
   :root:has(.ga-topbar) .cz .cz-hchips.is-dropping .cz-hchip.is-open { outline: 0; opacity: 0.55; }
-  :root:has(.ga-topbar) .cz .cz-hchips.is-dropping .cz-hchip.is-drop-target { outline: 0; background: var(--coral-tint); box-shadow: inset 0 0 0 0.1667rem var(--coral); color: var(--ink); }
+  :root:has(.ga-topbar) .cz .cz-hchips.is-dropping .cz-hchip.is-drop-target { outline: 0.1667rem dashed var(--ink); outline-offset: -0.1667rem; background: var(--card); box-shadow: none; color: var(--ink); }      /* F-161: the handoff's ink-dashed target (it was a coral ring) */
   :root:has(.ga-topbar) .cz .cz-hchips.is-dropping .cz-hchip.is-drop-target .cz-hc-dow, :root:has(.ga-topbar) .cz .cz-hchips.is-dropping .cz-hchip.is-drop-target .cz-hc-head { color: var(--ink-2); }
 
   /* Day | Week and the map button: a hairline switch, a hairline round button */

@@ -31,9 +31,10 @@ MOVE = """(act) => {
   const g = document.querySelector('#cz-grid'), rect = e => { const b = e.getBoundingClientRect(); return { top: b.top, height: b.height, left: b.left, width: b.width }; };
   const ghost = g.querySelector('.cz-g-ghost'), land = g.querySelector('.cz-g-land'), live = g.querySelector('.cz-g-start.is-live'), card = g.querySelector('.cz-gb[data-act="' + act + '"]');
   const was = [...g.querySelectorAll('.cz-g-start.is-was')], css = (e, ...p) => { const s = getComputedStyle(e); return p.map(k => s[k]); };
+  const halo = parseFloat(getComputedStyle(document.documentElement).fontSize), slot = e => { const b = rect(e); return { top: b.top + halo, height: b.height - 2 * halo, left: b.left + halo, width: b.width - 2 * halo }; };      // the landing slot is drawn 1rem larger than the slot
   return { ghosts: g.querySelectorAll('.cz-g-ghost').length, lands: g.querySelectorAll('.cz-g-land').length, lives: g.querySelectorAll('.cz-g-start.is-live').length,
     ghost: ghost && { ...rect(ghost), css: css(ghost, 'borderTopStyle', 'borderTopColor', 'borderTopWidth') },
-    land: land && { ...rect(land), css: css(land, 'borderTopStyle', 'borderTopColor') },
+    land: land && { ...slot(land), box: rect(land), css: css(land, 'borderTopStyle', 'borderTopColor') },
     live: live && { ...rect(live), t: live.querySelector('.cz-g-st-t').textContent, m: live.querySelector('.cz-g-st-m').textContent, css: css(live, 'color'), mcss: css(live.querySelector('.cz-g-st-m'), 'color'),
                     dot: css(live.querySelector('.cz-g-st-dot'), 'backgroundColor') },
     was: was.map(w => ({ t: w.querySelector('.cz-g-st-t').textContent, op: css(w, 'opacity')[0], deco: css(w.querySelector('.cz-g-st-t'), 'textDecorationLine')[0], f: w.dataset.for })),
@@ -390,3 +391,84 @@ def test_a_draft_that_is_dropped_leaves_nothing_on_the_rail_and_a_plain_save_is_
     field.press("Enter")
     expect(page.locator(".ga-toast")).to_contain_text("Souvenirs added")
     assert [a.kind for a in cal.activities(person("ari")) if a.title == "Souvenirs"] == ["fun"]      # no chip touched: Fun, as before
+
+
+# ---- the lifted card never hides the landing slot ---------------------------------------------------------------------------------------------
+
+@HOW
+def test_a_band_of_the_landing_slot_shows_around_the_lifted_card_whatever_the_distance(signed_in, viewport):
+    page = day(signed_in, viewport)
+    act = page.locator(".cz-gb", has_text="Lunch at Grand Central Market").get_attribute("data-act")
+    hand, sel = Hand(page), f'.cz-gb[data-act="{act}"]'
+    hand.see(sel)
+    x, y = centre(page, sel)
+    hand.lift(x, y)
+    g, at = geo(page), (x, y)
+    for minutes in (60, 64, 70, 45):      # on the 15 minute lines and between them: the card is up to 7.5 minutes off its slot
+        to = (x, y + g["ppm"] * minutes)
+        hand.move(at, to)
+        at = to
+        m = page.evaluate(MOVE, act)
+        box, card = m["land"]["box"], m["card"]
+        bands = [card["top"] - box["top"], (box["top"] + box["height"]) - (card["top"] + card["height"]), card["left"] - box["left"], (box["left"] + box["width"]) - (card["left"] + card["width"])]
+        assert sum(b >= 3 for b in bands) >= 2, (minutes, bands)      # a visible band of dashed slot on at least two sides
+        if minutes == 70:
+            shot(page, f"move-band-{viewport['width']}.png")
+    hand.up(*at)
+    page.wait_for_function("() => !document.querySelector('.cz-g-ghost')")
+
+
+# ---- the keyboard: the title field and its chips are one place ----------------------------------------------------------------------------------
+
+def open_draft(page, viewport, title, minute=10 * 60):
+    x, y, end = draft(page, viewport, minute)
+    if viewport["width"] >= 1020:
+        page.mouse.up()
+    else:
+        fire(page, "pointerup", x, y)
+    field = page.locator(".cz-gb.is-new .cz-gb-edit")
+    expect(field).to_be_focused()
+    field.fill(title)
+    return field
+
+
+def mine(title):
+    return [(a.kind, a.start) for a in cal.activities(person("ari")) if a.title == title]
+
+
+GONE = "() => !document.querySelector('.cz-gb.is-new') && !document.querySelector('#cz-grid.is-making')"
+
+
+@HOW
+def test_tabbing_past_the_chips_saves_the_plan(signed_in, viewport):
+    page = day(signed_in, viewport)
+    open_draft(page, viewport, "Tab saves")
+    for _ in range(6):                     # the field, five chips, then out
+        page.keyboard.press("Tab")
+    expect(page.locator(".ga-toast")).to_contain_text("Tab saves added")
+    assert mine("Tab saves") == [("fun", 10 * 60)]
+    page.wait_for_function(GONE)
+
+
+@HOW
+def test_clicking_away_after_a_chip_has_the_focus_saves_the_plan(signed_in, viewport):
+    page = day(signed_in, viewport)
+    open_draft(page, viewport, "Away saves")
+    page.keyboard.press("Tab")
+    page.keyboard.press("Tab")             # on the Food chip
+    assert page.evaluate("document.activeElement.dataset.kind") == "food"
+    page.mouse.click(4, 4)
+    expect(page.locator(".ga-toast")).to_contain_text("Away saves added")
+    assert mine("Away saves") == [("fun", 10 * 60)]
+    page.wait_for_function(GONE)
+
+
+@HOW
+def test_escape_on_a_chip_drops_the_draft_like_escape_in_the_field(signed_in, viewport):
+    page = day(signed_in, viewport)
+    open_draft(page, viewport, "Escape drops")
+    page.keyboard.press("Tab")
+    assert page.evaluate("document.activeElement.classList.contains('cz-kc')")
+    page.keyboard.press("Escape")
+    page.wait_for_function(GONE)
+    assert mine("Escape drops") == [] and page.evaluate(STALE) == {"stale": [], "left": 0}
