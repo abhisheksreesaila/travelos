@@ -55,3 +55,14 @@ def test_a_saved_draft_becomes_the_block_a_reload_draws(signed_in, viewport, how
     fresh = page.evaluate(BLOCK, title)
     assert saved["html"] == fresh["html"]
     assert saved["rail"] == fresh["rail"] and saved["rail"]
+
+
+# what has the focus before a refresh in place (the title swap() focuses after a zoom, the day's own section a click on empty time focuses) still has it after
+@pytest.mark.parametrize("viewport", [DESKTOP, PHONE], ids=["1440", "390"])
+@pytest.mark.parametrize("target", ["#cz-title", ".cz-view[data-day]"])
+def test_a_refresh_in_place_keeps_the_focus_where_it_was(signed_in, viewport, target):
+    page = day(signed_in, viewport)
+    page.evaluate("(s) => { const e = document.querySelector(s); if (!e.hasAttribute('tabindex')) e.tabIndex = -1; e.focus(); }", target)
+    assert page.evaluate("(s) => document.activeElement === document.querySelector(s)", target)
+    assert page.evaluate("() => CZ.quiet()")           # (true: the level was morphed in place)
+    assert page.evaluate("(s) => document.activeElement === document.querySelector(s)", target)

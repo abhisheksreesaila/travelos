@@ -152,7 +152,7 @@
   // a layout in between: the compact bar faded in again and the selected block re-grew on every refresh.
   var OWN = ['is-on', 'is-selected', 'is-menu', 'is-wiggle', 'is-hit', 'is-dim', 'is-off', 'is-thin', 'is-bare', 'cz-flt-on', 'is-ringed', 'is-landing'];
   var MORPH = {
-    morphStyle: 'innerHTML', ignoreActiveValue: true,
+    morphStyle: 'innerHTML',
     callbacks: {
       beforeNodeMorphed: function (old, fresh) {
         if (old.nodeType !== 1 || fresh.nodeType !== 1 || !old.classList) return true;
@@ -171,7 +171,10 @@
   };
   function swap(html, dir, inPlace) {
     shown = html;
-    if (inPlace && window.Idiomorph) Idiomorph.morph(stage, html, MORPH);
+    // idiomorph's ignoreActiveValue leaves the whole subtree of the focused element as it is, not just a field's value: a click on empty grid time focuses the day's
+    // tabindex=-1 section, and the refresh after a draft was saved changed nothing (F-165). So it is asked for only while a text control has the focus; the focus itself stays put.
+    var on = document.activeElement, typing = !!(on && on.matches && on.matches('input, textarea, select, [contenteditable]'));
+    if (inPlace && window.Idiomorph) Idiomorph.morph(stage, html, Object.assign({}, MORPH, { ignoreActiveValue: typing }));
     else stage.innerHTML = html;
     var v = view();
     if (!v) return;
@@ -262,10 +265,6 @@
   // The level as it is now, morphed onto the screen: the scroll kept, the focus put back (the day grid), each block sent from where it was to where it is (CZ.snap).
   function morphIn(html) {
     var y = window.scrollY, back = CZ.beforeQuiet ? CZ.beforeQuiet() : null, snap = CZ.snap ? CZ.snap() : null;
-    // idiomorph (ignoreActiveValue) leaves the whole subtree of the focused element as it is, not just a field's value: a click on empty grid time focuses the day's tabindex=-1 section, and the refresh
-    // after a draft was saved changed nothing (F-165). Only a text control keeps its place; anything else gives up the focus for the morph (beforeQuiet puts it back on a block).
-    var on = document.activeElement;
-    if (on && on !== document.body && stage.contains(on) && !on.matches('input, textarea, select, [contenteditable]')) on.blur();
     quietSwap = true;
     try { swap(html, '', true); } finally { quietSwap = false; }
     if (back) back();
