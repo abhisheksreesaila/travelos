@@ -935,10 +935,10 @@ Found in F-163's review, 2026-10-15: at 800 wide the day and week heading contro
 - [x] at 721–1019px every heading control on the day and week (Day/Week switch, SOS, map, filters, Trip) has text ≥13px and a target ≥44px, without wrapping the heading onto extra rows
 - [x] the phone (390) and laptop (1440, 1280) headers are unchanged; browser tests at 800 scan the heading controls' text and target sizes
 
-## F-165 A plan saved by clicking away settles into a normal block (laptop) [todo]
+## F-165 A plan saved by clicking away settles into a normal block (laptop) [done]
 Found in F-161's review, 2026-10-15 (predates F-161; same on master's scripts): at 1440 a draft saved by clicking away stays on screen as a dead "is-new" card (still showing its kind chips) until the next refresh, though it is saved. Needs: F-161
-- [ ] after a draft is saved by Enter, Tab or clicking away, it becomes the same block a refresh would draw (title, time, kind tile, rail label), with no leftover draft markup, at 1440, 1280 and 390
-- [ ] a browser test saves by click-away and compares the block with the one drawn after a reload
+- [x] after a draft is saved by Enter, Tab or clicking away, it becomes the same block a refresh would draw (title, time, kind tile, rail label), with no leftover draft markup, at 1440, 1280 and 390
+- [x] a browser test saves by click-away and compares the block with the one drawn after a reload
 
 ## F-166 On the laptop week, where you drop a plan sets its time [todo]
 Captain, 2026-10-15: "if you pick up a lower block from Tuesday and put it on upper block on Friday it would have changed time right" (today F-157 keeps the time, so on F-162's time axis the plan jumps back to its old hour in the new column). Needs: F-157, F-162
