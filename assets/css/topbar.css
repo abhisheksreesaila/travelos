@@ -7,7 +7,7 @@
 /* The trip menu on a phone or tablet screen (F-147): the heading's own eyebrow line is the button (a small chevron after it), so the heading is no taller. The 2.75rem target is
    padding taken back with a negative margin. It opens as a bottom sheet over a dimmed screen, like the date picker's (pickers.css .ga-scrim, .ga-pop). Hidden where the bar shows. */
 .ga-tb-phonepick { display: block; min-width: 0; }
-.ga-tb-psum { list-style: none; cursor: pointer; display: flex; width: fit-content; max-width: 100%; align-items: center; gap: 0.25rem; box-sizing: border-box; position: relative; padding: 0.875rem 0.5rem; margin: -0.875rem -0.5rem; }
+.ga-tb-psum { list-style: none; cursor: pointer; display: flex; width: fit-content; max-width: 100%; align-items: center; gap: 0.25rem; box-sizing: border-box; position: relative; padding: calc(var(--pu, 1rem) * 0.875) 0.5rem; margin: calc(var(--pu, 1rem) * -0.875) -0.5rem; }      /* F-164: --pu (day_phone.css) keeps the target 44px on a tablet, where 1rem is 12px */
 .ga-tb-psum::-webkit-details-marker { display: none; }
 .ga-tb-psum .ga-tb-chev { transform: rotate(90deg); flex-shrink: 0; opacity: .8; }
 .ga-tb-psum:focus-visible, .ga-tb-phonepick .ga-tb-sw:focus-visible, .ga-tb-phonepick .ga-tb-item:focus-visible { outline: 0.1875rem solid currentColor; outline-offset: 0.125rem; border-radius: 0.5rem; }
