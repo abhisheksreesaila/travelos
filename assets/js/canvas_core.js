@@ -152,7 +152,7 @@
   // a layout in between: the compact bar faded in again and the selected block re-grew on every refresh.
   var OWN = ['is-on', 'is-selected', 'is-menu', 'is-wiggle', 'is-hit', 'is-dim', 'is-off', 'is-thin', 'is-bare', 'cz-flt-on', 'is-ringed', 'is-landing'];
   var MORPH = {
-    morphStyle: 'innerHTML', ignoreActiveValue: true,
+    morphStyle: 'innerHTML',
     callbacks: {
       beforeNodeMorphed: function (old, fresh) {
         if (old.nodeType !== 1 || fresh.nodeType !== 1 || !old.classList) return true;
@@ -171,7 +171,10 @@
   };
   function swap(html, dir, inPlace) {
     shown = html;
-    if (inPlace && window.Idiomorph) Idiomorph.morph(stage, html, MORPH);
+    // idiomorph's ignoreActiveValue leaves the whole subtree of the focused element as it is, not just a field's value: a click on empty grid time focuses the day's
+    // tabindex=-1 section, and the refresh after a draft was saved changed nothing (F-165). So it is asked for only while a text control has the focus; the focus itself stays put.
+    var on = document.activeElement, typing = !!(on && on.matches && on.matches('input, textarea, select, [contenteditable]'));
+    if (inPlace && window.Idiomorph) Idiomorph.morph(stage, html, Object.assign({}, MORPH, { ignoreActiveValue: typing }));
     else stage.innerHTML = html;
     var v = view();
     if (!v) return;
