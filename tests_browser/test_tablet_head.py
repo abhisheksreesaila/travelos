@@ -70,7 +70,21 @@ def test_every_tablet_heading_control_is_13px_text_in_a_44px_target(signed_in, l
 def test_the_tablet_heading_stays_on_one_row(signed_in, level):
     page = open_page(signed_in, TABLET, level)
     height, drop, words = measure(page)["head"]
-    assert drop < words, (drop, words)      # the switch, SOS and map start within the words' height: not on a row of their own
+    assert drop < 40, (drop, words)      # the switch, SOS and map start within one line of the words' top (a line is ~32px): not on a row of their own
+
+
+@pytest.mark.parametrize("viewport", [TABLET, PHONE], ids=["800", "390"])
+@ALL
+def test_the_trip_menu_rows_are_13px_text_in_44px_rows(signed_in, viewport, level):
+    page = open_page(signed_in, viewport, level)
+    page.locator(".cz-head summary").first.click()
+    page.wait_for_timeout(400)
+    rows = page.evaluate(MEASURE, ".cz-head .ga-tb-phonepick .ga-tb-item")
+    assert rows, "the Trip menu opens with rows"
+    for text, font, w, h in rows:
+        if font:
+            assert font >= 13, (text, font)
+        assert h >= 44, (text, h)
 
 
 @pytest.mark.parametrize("viewport", [DESKTOP, LAPTOP, PHONE], ids=["1440", "1280", "390"])
