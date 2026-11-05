@@ -10,3 +10,5 @@
 - D-08 · M1: Hawaii becomes Honolulu (key `hi`, airport HNL); offer ids are `<place><kind><n>` (`sdf1`, `hih2`, `nycc1`), LA keeps `f1 h1 c1`; an offer's place is a field on `Offer`, `offers(kind, trip)` filters by `trip.key` · ids stay globally unique so `offer(id)` and old links keep working · yes
 - D-09 · M1: `to=` is in `trip_query` only away from LA (LA URLs unchanged); rides pages take the place from the flight id instead of a new `to` param · LA tests and links stay byte-identical; no signature churn in the Uber flow · yes
 - D-10 · M1: an imported trip landing at JFK or EWR now gets a ride estimate (those airports are in the table); `test_other_airports_have_no_rides` uses SEA as its "unknown airport" · the catalog now knows JFK · yes
+- D-40 · /creators keeps the paste box and gains the pitch plus a creator roster; profiles at /creators/<handle> registered last so draft/finish/done win · old routes keep working, no /creators/new needed · yes
+- D-41 · only the LA creator has a cover photo (the only CC0 area photo available); other creators show none rather than reuse hotel photos · never present hotel photos as places · yes

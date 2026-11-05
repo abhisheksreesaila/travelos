@@ -6,3 +6,4 @@
 - Context panes (weather highs, events, news, map pins) keyed by place; LA-only tip and community pane hidden elsewhere.
 - Threaded `to` through plan, quote, pay, booking records (tripcal), start form and continue card; Uber places for SAN/HNL/JFK/EWR.
 - Known, left alone: calendar weather (`tripcal.weather_for`) is still the LA sample; flight block durations ignore time zones for HNL/JFK; `tests/test_rides.py::test_a_ride_is_stored...` fails on the base too (hard-coded Oct 2026 dates are now past).
+- M4: built creator_profiles data and the profile route; m4 contract tests pass. Full suite green except the ride-pruning test in tests/test_rides.py, which also fails on the base branch. m1 hi/nyc fail until the other agent lands the places.

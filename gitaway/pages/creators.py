@@ -12,11 +12,11 @@ All the rules (link checks, the fixtures, the five fields, publishing) live in g
 
 from urllib.parse import quote
 
-from fasthtml.common import A, Button, Div, Fieldset, Form, H1, H2, Img, Input, Label, Legend, Li, Link, Ol, P, Script, Section, Span, Textarea, Ul
+from fasthtml.common import A, Article, Button, Div, Fieldset, Form, H1, H2, H3, Img, Input, Label, Legend, Li, Link, Ol, P, Script, Section, Span, Textarea, Ul
 from fasthtml.core import FtResponse
 from starlette.responses import RedirectResponse
 
-from gitaway import creators, hub, session as ses
+from gitaway import creator_profiles, creators, hub, session as ses
 from gitaway.creators import MAX, SEASONS
 from gitaway.icons import icon
 from gitaway.itinerary_view import _icon
@@ -49,6 +49,39 @@ def alert(message):
     return P(message, role="alert", cls="cr-alert", id="cr-alert") if message else ""
 
 
+# ---------- pitch and profiles (M4, showcase only) ----------
+
+def pitch():
+    return Section(H2("Paste a link, approve a draft, every stop sends viewers back to your video"),
+                   P("Creators see the terms on day one, and it is free. Your channel link sits on every trip and every stop."),
+                   id="cr-pitch", cls="cr-pitch")
+
+
+def roster():
+    return Section(H2("Creators on GitAway"),
+                   Ul(*[Li(A(Span(c.name, cls="cr-who-name"), Span(f" · {c.place_name}", cls="cr-who-place"), href=f"/creators/{c.handle}")) for c in creator_profiles.CREATORS], cls="cr-roster"),
+                   id="cr-roster", cls="cr-roster-sec")
+
+
+def trip_card(t):
+    return Article(H3(t.title, cls="cr-trip-title"),
+                   P(f"{creator_profiles.PLACE_NAMES[t.place]} · {t.days} days · {t.forks} forks", cls="cr-trip-meta"),
+                   Ul(*[Li(creator_profiles.STICKERS[k], cls="tag cr-sticker") for k in t.stickers], cls="cr-stickers"),
+                   A("Plan this trip", href=t.plan_href(), cls="btn btn-primary btn-sm"), cls="cr-trip")
+
+
+def profile_page(c):
+    photo = creator_profiles.PHOTOS.get(c.place)
+    body = Section(
+        Div(Img(src=photo[0], alt=photo[1], loading="lazy", cls="cr-cover") if photo else "",
+            H1(c.name), P(c.bio, cls="cr-bio"),
+            A(f"{c.channel_label} channel", href=c.channel, rel="noopener", target="_blank", cls="btn cr-channel"),
+            cls="cr-profile-head"),
+        Section(H2(f"{c.name.split()[0]}'s trips"), Div(*[trip_card(t) for t in c.trips], cls="cr-trips"), cls="cr-profile-trips"),
+        P(A("All creators", href="/creators")), cls="cr cr-profile ga-wrap")
+    return page(c.name, body, current="/creators", head=HEAD)
+
+
 # ---------- paste ----------
 
 def paste_page(session, link="", error="", status=200):
@@ -74,7 +107,7 @@ def paste_page(session, link="", error="", status=200):
             P("Demo: nothing is fetched. The draft is a made-up transcript, picked from your link.", cls="cr-fine"),
             A(icon("note", 18, 2.2), "Pick up your draft", href="/creators/draft", cls="btn btn-sm cr-resume") if rec else "",
             cls="cr-paste-copy"),
-        steps, cls="cr cr-paste ga-wrap")
+        steps, pitch(), roster(), cls="cr cr-paste ga-wrap")
     return FtResponse(page("For creators", body, current="/creators", head=HEAD), status_code=status)
 
 
@@ -274,3 +307,10 @@ def register(app):
         mine = creators.published(session, t.id) if t else {}
         slugs = list(mine)
         return done_page(session, slugs[-1]) if slugs else RedirectResponse("/creators", status_code=303)
+
+    @app.get("/creators/{handle}")
+    def profile(handle: str):
+        c = creator_profiles.get(handle)
+        if c is None:
+            return FtResponse(page("Not found", Section(H1("Nothing here"), A("All creators", href="/creators"), cls="ga-soon ga-wrap")), status_code=404)
+        return profile_page(c)
