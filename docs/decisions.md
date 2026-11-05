@@ -6,3 +6,5 @@
 - D-04 · synthetic data is showcase-only (`showcase.on()`); production keeps "sample prices" labels and 404s the sandbox · AGENTS.md rule for sample data · yes
 - D-05 · look: omxqua Travel · Coast family (sand/deep-sea, sea-teal accent, kind colours) on the new and booking/creator pages first, not a whole-app reskin tonight · your design-taste.md assigns Coast to travel; reskinning every page in one night risks the shipped canvas · yes
 - D-06 · creators get profile pages `/creators/<handle>` with four made-up creators (one per place), linking out to YouTube/Instagram and into `/plan?to=` · the marketing story is "every stop sends viewers back to your video" · yes
+- D-40 · /creators keeps the paste box and gains the pitch plus a creator roster; profiles at /creators/<handle> registered last so draft/finish/done win · old routes keep working, no /creators/new needed · yes
+- D-41 · only the LA creator has a cover photo (the only CC0 area photo available); other creators show none rather than reuse hotel photos · never present hotel photos as places · yes
