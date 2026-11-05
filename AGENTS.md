@@ -26,3 +26,5 @@ Keep this file for knowledge useful to almost every future agent session in this
 Do not repeat what the codebase already shows; point to the authoritative file or command instead.
 Prefer rewriting or pruning existing entries over appending new ones.
 When updating this file, preserve this bar for all agents and keep entries concise.
+
+Autopilot run on this branch: see GOAL.md, docs/decisions.md, docs/journal.md. Mode: experiment (this branch only). Ship: direct to this branch; never deploy from it.
