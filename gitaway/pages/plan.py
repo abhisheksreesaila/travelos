@@ -6,20 +6,20 @@ does arithmetic: it asks GET /plan/quote for the ledger figures of whatever is p
 """
 
 import json
-from urllib.parse import quote as urlquote
+from urllib.parse import parse_qsl, quote as urlquote, urlencode
 
 from starlette.responses import HTMLResponse
 
 from fasthtml.common import to_xml, A, Article, Button, Div, Figcaption, Figure, H2, H3, Img, Kbd, Li, Link, Main, NotStr, P, Script, Section, Span, Svg, Title, Ul
 
-from gitaway import access, catalog, context, itineraries, session, showcase
+from gitaway import access, catalog, context, itineraries, partners, session, showcase
 from gitaway import session as session_helpers
 from gitaway.icons import icon
 from gitaway.itinerary_view import fork_href
 from gitaway.layout import avatar, brand, styles
 from gitaway.pages import flight_detail as flight_ui, stay_detail as stay_ui
 
-HEAD = (Link(rel="stylesheet", href="/assets/css/workspace.css"),)
+HEAD = (Link(rel="stylesheet", href="/assets/css/workspace.css"), Link(rel="stylesheet", href="/assets/css/partners.css"))
 DEFAULTS = {"flight": "f1", "stay": "h1", "car": "c1"}  # Los Angeles; see defaults() for the other places
 LANES = ("flight", "stay", "car")
 TAG_FILLS = ["fill-sun", "fill-sky", "fill-mint", "fill-bubble"]
@@ -242,6 +242,24 @@ def _offer_attrs(o, picked, viewing=""):
     if viewing and o.id == viewing:
         attrs["aria_current"] = "true"
     return attrs
+
+
+def go_href(o, trip):
+    """The "Book on <partner>" link of one offer: /go/<offer id> with the trip, which logs the click and sends the traveler to the partner (M2)."""
+    return f"/go/{o.id}?" + urlencode({"to": trip.key, **dict(parse_qsl(catalog.trip_query(trip)))})
+
+
+def book_on(card, o, trip):
+    """`card` followed by its partner link, side by side in one wrapper (a link cannot sit inside the card's button). Plain `card` when there is nowhere to send anyone."""
+    if not partners.available():
+        return card
+    p = partners.for_offer(o)
+    return Div(card, A(icon("link", 16, 2.2), f"Book on {p.name}", href=go_href(o, trip), cls="ws-book-on", rel="sponsored noopener", data_partner=p.key), cls="ws-offer-wrap")
+
+
+def commission_note():
+    """Sponsored links say so (once per lane, at the foot of its cards)."""
+    return Span("Book on links open our partners. They keep your booking; we may earn a commission.", cls="ws-affiliate") if partners.available() else ""
 
 
 def pick_pill():
@@ -584,14 +602,14 @@ def workspace(f, h, c, overlay=(), head=(), x="", v="", stay=None, trip=None, fl
         top_bar(trip, ledger(q, trip)),
         Div(
             pane("flights", 1, "Flights", f"round trip · {len(flights)}",
-                 [flight_card(o, f, viewing["flights"] if expanded == "flights" else "", flight.cents if o.id == f else None) for o in flights], "fill-sun-tint",
+                 [*[book_on(flight_card(o, f, viewing["flights"] if expanded == "flights" else "", flight.cents if o.id == f else None), o, trip) for o in flights], commission_note()], "fill-sun-tint",
                  detail=[flight_detail(o, f, viewing["flights"], flight if o.id == f else catalog.flight_pick(o.id, trip=trip), chosen=o.id == f) for o in flights], expanded=expanded == "flights",
                  screen=screen if expanded == "flights" else "list", lane="flight", skipped=f is None),
             pane("stays", 2, "Stays", trip.nights_text,
-                 [stay_card(o, h, viewing["stays"] if expanded == "stays" else "", stay.cents if o.id == h else None) for o in stays], "fill-mint-tint",
+                 [*[book_on(stay_card(o, h, viewing["stays"] if expanded == "stays" else "", stay.cents if o.id == h else None), o, trip) for o in stays], commission_note()], "fill-mint-tint",
                  detail=[stay_detail(o, h, viewing["stays"], stay if o.id == h else catalog.stay_pick(o.id, trip=trip), chosen=o.id == h) for o in stays], expanded=expanded == "stays",
                  screen=screen if expanded == "stays" else "list", lane="stay", skipped=h is None),
-            pane("cars", 3, "Getting around", "", [car_card(o, c) for o in catalog.offers("car", trip)], "fill-sky-tint",
+            pane("cars", 3, "Getting around", "", [*[book_on(car_card(o, c), o, trip) for o in catalog.offers("car", trip)], commission_note()], "fill-sky-tint",
                  Div(rides_card(q.rides, q) if q.rides else "", id="ws-rides", cls="ws-rides", aria_live="polite"), *([tip] if showcase.on() and la else []),
                  lane="car", skipped=c is None, with_flight=f is not None),
             Div(weather_pane(trip), map_pane(catalog.offer(h, trip) if h else None, trip), news_pane(trip), *([community_pane()] if showcase.on() and la else []), cls="ws-context"),

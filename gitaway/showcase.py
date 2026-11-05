@@ -17,7 +17,8 @@ from gitaway import auth
 
 # Paths (and everything under them) that exist only for sample or community content.
 HIDDEN = ("/community", "/discover", "/creators", "/forks", "/share", "/save", "/unsave", "/fork",
-          "/rides")  # the simulated Uber (rides)
+          "/rides",  # the simulated Uber (rides)
+          "/sandbox")  # the stand-in partner checkout (M3): partners keep real bookings, there is nothing to stand in for
 _NOT_ITINERARY = ("build", "import", "switch")  # /trips/<word> routes that are the family's own
 _ITINERARY = re.compile(r"/trips/([^/]+)/?")
 
@@ -31,9 +32,17 @@ def on() -> bool:
     return not auth.production()
 
 
+def _needs_keys(path: str) -> bool:
+    """Pages that exist off the showcase only with real partner keys: /partners reads real statistics (TRAVELPAYOUTS_TOKEN) and /go/... sends a
+    traveler to a real tracked link (TRAVELPAYOUTS_MARKER); without them there is nothing real to show or send anyone to."""
+    if path == "/partners" or path.startswith("/partners/"):
+        return not os.getenv("TRAVELPAYOUTS_TOKEN", "").strip()
+    return path.startswith("/go/") and not os.getenv("TRAVELPAYOUTS_MARKER", "").strip()
+
+
 def hidden(path: str, query=None) -> bool:
     """Is this request for something that does not exist when the showcase is off?"""
-    if any(path == p or path.startswith(p + "/") for p in HIDDEN):
+    if any(path == p or path.startswith(p + "/") for p in HIDDEN) or _needs_keys(path):
         return True
     m = _ITINERARY.fullmatch(path)
     if m and m.group(1) not in _NOT_ITINERARY:  # /trips/<slug>: a sample or community itinerary page
@@ -48,8 +57,11 @@ async def guard(req, sess):
     gone = hidden(req.url.path, req.query_params)
     if not gone and req.method in ("POST", "PUT", "PATCH", "DELETE") and "form" in req.headers.get("content-type", ""):
         gone = (await req.form()).get("demo") == "long"   # the fixture's name can come in the body too
-    if not gone:
-        return None
+    return not_found() if gone else None
+
+
+def not_found():
+    """The 404 page of everything that does not exist (also what an unknown /go offer gets)."""
     from gitaway.layout import page
     from fasthtml.common import A, Div, H1, P, Section
     return FtResponse(page("Not found", Section(Div(H1("Nothing here"), P("That page isn't part of GitAway."), A("Back home", href="/", cls="btn btn-primary")),
