@@ -35,17 +35,14 @@
 .st-legend { padding: 0; font-size: max(var(--text-min), 0.875rem); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .st-chips { display: flex; flex-wrap: wrap; gap: 0.75rem; }
 .st-chip { position: relative; display: inline-flex; transform: rotate(var(--tilt, 0deg)); transition: transform var(--motion-quick) var(--ease-out); }
-.st-chip:hover:not(.is-soon) { transform: rotate(0deg) translateY(-0.125rem); }
+.st-chip:hover { transform: rotate(0deg) translateY(-0.125rem); }
 .st-chip input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
-.st-chip.is-soon input { cursor: not-allowed; }
 .st-face {
   display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.5rem; min-height: 3.25rem; padding: 0 1.25rem 0 1rem; border-radius: var(--r-pill);
   border: 0.1875rem solid #FFFFFF; box-shadow: var(--shadow-sticker); font-weight: 800; font-size: 1.1875rem; color: var(--ink); background: var(--card);
 }
 .st-chip input:checked + .st-face { background: var(--ink); color: #FFFFFF; }
 .st-chip input:focus-visible + .st-face { outline: 0.1875rem solid var(--ink); outline-offset: 0.1875rem; }
-.st-chip.is-soon .st-face { border-style: dashed; border-color: var(--ink-3); box-shadow: none; background: rgba(255, 255, 255, .55); color: var(--ink-2); }
-.st-soon { white-space: nowrap; padding: 0.125rem 0.5rem; border-radius: var(--r-pill); background: var(--ink); color: #FFFFFF; font-size: max(var(--text-min), 0.75rem); font-weight: 800; letter-spacing: .02em; }
 
 /* Fields: real labels, real date pickers and selects, no typing */
 .st-row { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.2fr) minmax(0, 1.2fr) minmax(0, .8fr) minmax(0, .8fr); gap: 0.625rem; }
@@ -119,8 +116,7 @@
   .st-card { background: var(--card); box-shadow: var(--shadow-md); border-radius: var(--r-lg); padding: 1.75rem 2rem; animation: none; }
   .st-field { background: var(--paper-2); box-shadow: inset 0 0 0 1px var(--line); }
   .st-card .st-face { box-shadow: var(--shadow-sm); border-color: var(--card); }
-  .st-card .st-chip.is-soon .st-face { box-shadow: none; background: var(--paper-2); }
-  .st-row { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .st-card   .st-row { grid-template-columns: repeat(6, minmax(0, 1fr)); }
   .st-row > :nth-child(1), .st-row > :nth-child(2), .st-row > :nth-child(3) { grid-column: span 2; }
   .st-row > :nth-child(4), .st-row > :nth-child(5) { grid-column: span 3; }
   .st-note { color: var(--ink-3); }

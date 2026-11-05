@@ -20,7 +20,7 @@ from gitaway.layout import avatar, brand, styles
 from gitaway.pages import flight_detail as flight_ui, stay_detail as stay_ui
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/workspace.css"),)
-DEFAULTS = {"flight": "f1", "stay": "h1", "car": "c1"}
+DEFAULTS = {"flight": "f1", "stay": "h1", "car": "c1"}  # Los Angeles; see defaults() for the other places
 LANES = ("flight", "stay", "car")
 TAG_FILLS = ["fill-sun", "fill-sky", "fill-mint", "fill-bubble"]
 SPLIT_LANES = {"flights": "flight", "stays": "stay"}  # panes that expand into a list plus a detail panel
@@ -36,24 +36,29 @@ SKIPS = {
 NO_STAY_MAP = "Staying with friends: no hotel pin."
 
 
-def resolve_pick(f, h, c):
+def defaults(trip=catalog.SAMPLE_TRIP):
+    """The first offer of each lane in the trip's place: what a missing or wrong pick falls back to."""
+    return {kind: catalog.offers(kind, trip)[0].id for kind in LANES}
+
+
+def resolve_pick(f, h, c, trip=catalog.SAMPLE_TRIP):
     """The (flight, stay, car) ids to show; None for a lane that is skipped ("none", and the old car "c3").
 
     An unknown or wrong-lane id falls back to that lane's default, so a bad link never skips anything.
     """
-    picked = []
+    picked, fallback = [], defaults(trip)
     for kind, given in zip(LANES, (f, h, c)):
-        valid = {o.id for o in catalog.offers(kind)}
+        valid = {o.id for o in catalog.offers(kind, trip)}
         if given == SKIP or (kind == "car" and given == LEGACY_NO_CAR):
             picked.append(None)
         else:
-            picked.append(given if given in valid else DEFAULTS[kind])
+            picked.append(given if given in valid else fallback[kind])
     return tuple(picked)
 
 
-def resolve_trip(d="", r="", a="", k=""):
-    """The trip the URL names (d, r, a, k: see catalog.trip_query). Nothing or anything bad means the sample trip."""
-    return catalog.trip_from_url(d, r, a, k)
+def resolve_trip(d="", r="", a="", k="", to=""):
+    """The trip the URL names (to, d, r, a, k: see catalog.trip_query). Nothing or anything bad means the sample trip."""
+    return catalog.trip_from_url(d, r, a, k, to)
 
 
 def resolve_stay(h, rooms=None, add=None, trip=catalog.SAMPLE_TRIP):
@@ -220,8 +225,8 @@ def flight_json(state):
 def embedded_data(f, h, c, stay, flight, trip):
     """What the page needs at load: each offer's display strings, the map points, the current pick and the trip's URL params."""
     offers = {o.id: {"name": o.name, "price": catalog.money(o.price_cents)} for k in LANES for o in catalog.offers(k, trip)}
-    maps = {o.id: context.map_for_stay(o) for o in catalog.offers("stay")}
-    return {"offers": offers, "map": maps, "defaults": DEFAULTS, "no_stay_map": NO_STAY_MAP,
+    maps = {o.id: context.map_for_stay(o) for o in catalog.offers("stay", trip)}
+    return {"offers": offers, "map": maps, "defaults": defaults(trip), "no_stay_map": NO_STAY_MAP,
             "pick": {"f": lane_id(f), "h": lane_id(h), "c": lane_id(c), "rooms": explicit_rooms(stay) if stay else None, "add": stay.add_code if stay else None,
                      "fare": flight.fare_code if flight else "", "bags": flight.bags_code if flight else ""},
             "base": plan_path(f, h, c, stay, trip, flight), "tripq": catalog.trip_query(trip)}
@@ -492,10 +497,11 @@ def _map_label(pt, cls, extra=None):
     return Span(pt.label, cls=f"ws-mark {cls}", style=f"left:{_pct(pt.x, w)};top:{_pct(pt.y, h)}", **(extra or {}))
 
 
-def map_pane(stay):
+def map_pane(stay, trip=catalog.SAMPLE_TRIP):
     """The schematic map. `stay` None (staying with friends) draws it for the default stay with no hotel pin or line."""
     w, h = context.MAP_SIZE
-    m = context.map_for_stay(stay or catalog.offer(DEFAULTS["stay"]))
+    airports, landmark = context.PLACE_MARKS[trip.key]
+    m = context.map_for_stay(stay or catalog.offer(defaults(trip)["stay"], trip))
     coast = "M0 0 H96 C110 40 80 70 104 100 S130 140 120 150 H0 Z"
     road = "M96 0 C110 40 80 70 104 100 S130 140 120 150"
     art = Svg(
@@ -507,8 +513,8 @@ def map_pane(stay):
     beach = Span(cls="ws-beach-dot", id="ws-beach-dot", style=f"left:{_pct(m['bx'], w)};top:{_pct(m['by'], h)}", aria_hidden="true")
     canvas = Div(
         art, beach,
-        _map_label(context.LAX, "ws-mark-airport"), _map_label(context.BUR, "ws-mark-airport"),
-        _map_label(context.LANDMARK, "ws-mark-landmark"),
+        *[_map_label(pt, "ws-mark-airport") for pt in airports],
+        _map_label(landmark, "ws-mark-landmark"),
         Span(m["label"], cls="ws-mark ws-mark-pin", id="ws-map-pin", style=f"left:{_pct(m['x'], w)};top:{_pct(m['y'], h)}",
              data_map_pin=stay.id if stay else ""),
         cls="ws-map ws-nostay" if stay is None else "ws-map",
@@ -551,13 +557,13 @@ def community_pane():
     ], "fill-sun", cls_extra="ws-dark")
 
 
-def resolve_view(x, v, f, h):
+def resolve_view(x, v, f, h, trip=catalog.SAMPLE_TRIP):
     """(expanded pane key or '', {lane pane key: offer id being viewed}, screen). Only flights and stays split; a bad x or v is ignored."""
     picks = {"flights": f, "stays": h}
     expanded = x if x in SPLIT_LANES and picks[x] is not None else ""  # a skipped lane has nothing to open
     viewing = dict(picks)
     screen = "list"
-    if expanded and v in {o.id for o in catalog.offers(SPLIT_LANES[expanded])}:
+    if expanded and v in {o.id for o in catalog.offers(SPLIT_LANES[expanded], trip)}:
         viewing[expanded] = v
         screen = "detail"
     return expanded, viewing, screen
@@ -566,12 +572,13 @@ def resolve_view(x, v, f, h):
 def workspace(f, h, c, overlay=(), head=(), x="", v="", stay=None, trip=None, flight=None):
     """The workspace for the lanes picked (f, h, c ids, None where skipped) on `trip`, with the stay and flight picks that go with them."""
     trip = trip or (stay.trip if stay is not None else flight.trip if flight is not None else catalog.SAMPLE_TRIP)
-    expanded, viewing, screen = resolve_view(x, v, f, h)
+    expanded, viewing, screen = resolve_view(x, v, f, h, trip)
     flights, stays = catalog.offers("flight", trip), catalog.offers("stay", trip)
     stay = (stay if stay is not None and stay.stay_id == h and stay.trip == trip else catalog.stay_pick(h, trip=trip)) if h else None
     flight = (flight if flight is not None and flight.flight_id == f and flight.trip == trip else catalog.flight_pick(f, trip=trip)) if f else None
     q = catalog.quote(f, h, c, stay, trip, flight)
     tip = Div("Tip from 312 families: most skipped the car in Santa Monica and rented one for the Griffith Park day only.", cls="ws-tip")
+    la = trip.key == "la"  # the tip and the community trips are about Los Angeles
     body = Main(
         preview_note(),
         top_bar(trip, ledger(q, trip)),
@@ -585,9 +592,9 @@ def workspace(f, h, c, overlay=(), head=(), x="", v="", stay=None, trip=None, fl
                  detail=[stay_detail(o, h, viewing["stays"], stay if o.id == h else catalog.stay_pick(o.id, trip=trip), chosen=o.id == h) for o in stays], expanded=expanded == "stays",
                  screen=screen if expanded == "stays" else "list", lane="stay", skipped=h is None),
             pane("cars", 3, "Getting around", "", [car_card(o, c) for o in catalog.offers("car", trip)], "fill-sky-tint",
-                 Div(rides_card(q.rides, q) if q.rides else "", id="ws-rides", cls="ws-rides", aria_live="polite"), *([tip] if showcase.on() else []),
+                 Div(rides_card(q.rides, q) if q.rides else "", id="ws-rides", cls="ws-rides", aria_live="polite"), *([tip] if showcase.on() and la else []),
                  lane="car", skipped=c is None, with_flight=f is not None),
-            Div(weather_pane(trip), map_pane(catalog.offer(h) if h else None), news_pane(trip), *([community_pane()] if showcase.on() else []), cls="ws-context"),
+            Div(weather_pane(trip), map_pane(catalog.offer(h, trip) if h else None, trip), news_pane(trip), *([community_pane()] if showcase.on() and la else []), cls="ws-context"),
             cls="ws-grid", id="ws-grid", data_focus=expanded or "flights", **(dict(data_expanded=expanded) if expanded else {}),
         ),
         cls="ws", id="main", data_theme="sunset",
@@ -607,23 +614,25 @@ def workspace(f, h, c, overlay=(), head=(), x="", v="", stay=None, trip=None, fl
 def register(app):
     @app.get("/plan")
     def plan(session, f: str = "", h: str = "", c: str = "", x: str = "", v: str = "", rooms: str = None, add: str = None,
-             fare: str = None, bags: str = None, d: str = "", r: str = "", a: str = "", k: str = ""):
-        picks, trip = resolve_pick(f, h, c), resolve_trip(d, r, a, k)
+             fare: str = None, bags: str = None, d: str = "", r: str = "", a: str = "", k: str = "", to: str = ""):
+        trip = resolve_trip(d, r, a, k, to)
+        picks = resolve_pick(f, h, c, trip)
         stay, flight = resolve_stay(picks[1], rooms, add, trip), resolve_flight(picks[0], fare, bags, trip)
-        if any((f, h, c, rooms, add, fare, bags, d, r, a, k)):  # a bare /plan is not "picks"; /start offers to continue the rest
+        if any((f, h, c, rooms, add, fare, bags, d, r, a, k, to)):  # a bare /plan is not "picks"; /start offers to continue the rest
             session_helpers.remember_plan(session, plan_path(*picks, stay, trip, flight)[len("/plan?"):])
         return workspace(*picks, x=x, v=v, stay=stay, flight=flight, trip=trip)
 
     @app.get("/plan/quote")
     def plan_quote(f: str = "", h: str = "", c: str = "", rooms: str = None, add: str = None, fare: str = None, bags: str = None,
-                   d: str = "", r: str = "", a: str = "", k: str = ""):
+                   d: str = "", r: str = "", a: str = "", k: str = "", to: str = ""):
         """The ledger figures for a pick, the flight editor's state for the fare and bags as asked, and the stay editor's state for the
         rooms as asked (even if they sleep too few).
 
         "ledger" prices what can really be booked: for a short pick (rooms that sleep fewer than the party) that is the default
         room plus the asked add-ons. "stay" describes the rooms as asked, so the choose bar can say "Sleeps 2 of 4 · add a room".
         """
-        picks, trip = resolve_pick(f, h, c), resolve_trip(d, r, a, k)
+        trip = resolve_trip(d, r, a, k, to)
+        picks = resolve_pick(f, h, c, trip)
         asked = catalog.parse_stay(picks[1], rooms, add, trip) if picks[1] else None
         real = (asked if asked.fits else catalog.stay_pick(picks[1], None, asked.add_code, trip)) if asked else None
         flight = resolve_flight(picks[0], fare, bags, trip)
@@ -633,4 +642,8 @@ def register(app):
     @app.get("/plan/explore")
     def plan_explore(h: str = ""):
         """The 3D area explorer for a stay, fetched the first time its tab opens."""
-        return HTMLResponse(to_xml(stay_ui.explore(resolve_pick("", h, "")[1] or DEFAULTS["stay"])))
+        try:
+            trip = catalog.sample_trip(catalog.offer_place(h))
+        except KeyError:
+            trip = catalog.SAMPLE_TRIP
+        return HTMLResponse(to_xml(stay_ui.explore(resolve_pick("", h, "", trip)[1] or defaults(trip)["stay"])))

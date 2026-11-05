@@ -68,11 +68,28 @@ LAX = MapPoint(182, 124, "LAX")
 BUR = MapPoint(284, 20, "BUR")
 LANDMARK = MapPoint(236, 60, "Griffith Park")
 
+# Each place's airport pins and landmark pin on the same schematic canvas (Los Angeles is the three above).
+PLACE_MARKS = {
+    "la": ((LAX, BUR), LANDMARK),
+    "sd": ((MapPoint(190, 112, "SAN"),), MapPoint(236, 56, "Balboa Park")),
+    "hi": ((MapPoint(150, 124, "HNL"),), MapPoint(268, 96, "Diamond Head")),
+    "nyc": ((MapPoint(286, 112, "JFK"), MapPoint(60, 40, "EWR")), MapPoint(210, 40, "Central Park")),
+}
+
 # Per stay: where its area pin sits, and the nearest beach point the "hotel to beach" line runs to.
 STAY_PINS = {
     "h1": (MapPoint(134, 34, "Santa Monica"), (100, 44)),
     "h2": (MapPoint(136, 84, "Venice"), (102, 92)),
     "h3": (MapPoint(198, 84, "Downtown"), (104, 66)),
+    "sdh1": (MapPoint(120, 96, "Coronado"), (96, 100)),
+    "sdh2": (MapPoint(130, 28, "La Jolla"), (100, 34)),
+    "sdh3": (MapPoint(190, 76, "Gaslamp"), (104, 84)),
+    "hih1": (MapPoint(210, 100, "Waikiki"), (176, 108)),
+    "hih2": (MapPoint(150, 84, "Ala Moana"), (124, 94)),
+    "hih3": (MapPoint(260, 108, "Diamond Head"), (232, 118)),
+    "nych1": (MapPoint(200, 50, "Midtown"), (200, 50)),
+    "nych2": (MapPoint(236, 96, "Brooklyn"), (212, 104)),
+    "nych3": (MapPoint(168, 112, "Lower Manhattan"), (150, 120)),
 }
 
 
@@ -94,7 +111,12 @@ from datetime import date, timedelta
 SAMPLE_DEPART, SAMPLE_RETURN = date(2026, 10, 16), date(2026, 10, 20)
 WEATHER_DAYS_SHOWN = 10  # a long trip shows its first ten days; the pane says how many there are
 
-_LA_HIGHS = (68, 69, 70, 73, 74, 78, 84, 85, 83, 78, 73, 68)  # typical LA highs by month, deg F
+_HIGHS = {  # typical highs by month, deg F
+    "la": (68, 69, 70, 73, 74, 78, 84, 85, 83, 78, 73, 68),
+    "sd": (66, 66, 67, 69, 70, 72, 75, 77, 76, 73, 70, 66),
+    "hi": (80, 80, 81, 82, 84, 86, 87, 88, 88, 86, 83, 81),
+    "nyc": (39, 42, 50, 62, 72, 80, 85, 83, 76, 65, 54, 44),
+}
 _SKIES = (("sunny", "sun", "sun"), ("clear skies", "sun", "sun"), ("some clouds", "cloud", "sky"),
           ("mostly sunny", "sun", "sun"), ("breezy", "cloud", "sky"))
 
@@ -104,7 +126,7 @@ def _hash(d: date, salt: int = 0) -> int:
 
 
 def _is_sample(trip) -> bool:
-    return trip.depart == SAMPLE_DEPART and trip.return_ == SAMPLE_RETURN
+    return trip.key == "la" and trip.depart == SAMPLE_DEPART and trip.return_ == SAMPLE_RETURN
 
 
 def trip_days(trip) -> list:
@@ -127,7 +149,7 @@ def weather_for(trip) -> list:
         sky, icon, fill = _SKIES[(h >> 16) % len(_SKIES)]
         if d.month in (12, 1, 2, 3) and jitter <= -3:
             sky, icon, fill = "light showers", "cloud", "sky"
-        out.append(Weather(_label(d), _LA_HIGHS[d.month - 1] + jitter, sky, icon, fill))
+        out.append(Weather(_label(d), _HIGHS[trip.key][d.month - 1] + jitter, sky, icon, fill))
     return out
 
 
@@ -143,11 +165,40 @@ _EVENT_POOL = (
 )
 
 
+_EVENT_POOLS = {
+    "sd": (
+        ("Tide Pool Walk at Cabrillo", "Point Loma · 10 AM · kids welcome", "sky"),
+        ("Family Movie on the Sand", "Coronado Beach · sunset", "grape"),
+        ("Fleet Science Night", "Balboa Park · 6 PM", "mint"),
+        ("Farmers Market and Street Music", "Little Italy · 8 AM to 1 PM", "sun"),
+        ("Sea Lion Watch", "La Jolla Cove · free · all day", "bubble"),
+        ("Zoo After Dark", "San Diego Zoo · 5 to 9 PM", "grape"),
+    ),
+    "hi": (
+        ("Hula Under the Stars", "Waikiki · free · 6:30 PM", "mint"),
+        ("Sunrise Hike", "Diamond Head · 6 AM · bring water", "sky"),
+        ("Friday Night Fireworks", "Waikiki Beach · 7:45 PM", "grape"),
+        ("Farmers Market", "Kapiolani · 7 AM to 11 AM", "sun"),
+        ("Outrigger Canoe Ride", "Waikiki · 9 AM · kids welcome", "bubble"),
+        ("Lei-Making Class", "Ala Moana · 2 PM", "mint"),
+    ),
+    "nyc": (
+        ("Free Concert in the Park", "Central Park · 3 PM", "mint"),
+        ("Puppet Show for Kids", "Upper West Side · 11 AM", "grape"),
+        ("Brooklyn Flea Market", "DUMBO · 10 AM to 5 PM", "sun"),
+        ("Harbor Ferry at Sunset", "Battery Park · 5:30 PM", "sky"),
+        ("Natural History Night", "Museum Mile · 6 PM", "bubble"),
+        ("Skyline Lights", "Top of the Rock · 8 PM", "grape"),
+    ),
+}
+
+
 def events_for(trip) -> list:
     """Up to three events on different days of the trip, picked by date."""
     if _is_sample(trip):
         return EVENTS
     days = trip_days(trip)
+    pool = _EVENT_POOLS.get(trip.key, _EVENT_POOL)
     count = min(3, len(days))
     slots = {(k + 1) * len(days) // (count + 1) for k in range(count)}  # spread across the trip
     slots |= set(range(len(days))) - slots if len(slots) < count else set()
@@ -155,11 +206,11 @@ def events_for(trip) -> list:
     out, used = [], set()
     for i in slots:
         d = days[i]
-        j = _hash(d, 7) % len(_EVENT_POOL)
+        j = _hash(d, 7) % len(pool)
         while j in used:
-            j = (j + 1) % len(_EVENT_POOL)
+            j = (j + 1) % len(pool)
         used.add(j)
-        title, sub, fill = _EVENT_POOL[j]
+        title, sub, fill = pool[j]
         out.append(Event(_label(d), title, sub, fill))
     return out
 
@@ -174,10 +225,33 @@ _NEWS_POOL = (
 )
 
 
+_NEWS_POOLS = {
+    "sd": (
+        ("Coronado ferry adds weekend sailings", "Downtown to Coronado · {month}"),
+        ("Free trolley rides for kids on Sundays", "Downtown · {month}"),
+        ("La Jolla Cove opens a new lookout", "La Jolla · {month}"),
+        ("Balboa Park museums extend their hours", "Balboa Park · {month}"),
+    ),
+    "hi": (
+        ("Diamond Head trail needs a timed reservation", "Honolulu · {month}"),
+        ("Waikiki beach shuttle runs every 20 minutes", "Waikiki · {month}"),
+        ("Free hula shows return to Kuhio Beach", "Waikiki · {month}"),
+        ("Ala Moana beach park adds shaded picnic tables", "Ala Moana · {month}"),
+    ),
+    "nyc": (
+        ("Extra subway service on weekends", "Midtown to Brooklyn · {month}"),
+        ("Brooklyn Bridge Park opens a new playground", "Brooklyn · {month}"),
+        ("Statue of Liberty ferries run later", "Battery Park · {month}"),
+        ("Central Park carousel open daily", "Central Park · {month}"),
+    ),
+}
+
+
 def news_for(trip) -> list:
     """Two news items, picked by the trip's first day and dated to its month."""
     if _is_sample(trip):
         return NEWS
     month = f"{trip.depart:%B}"
-    start = _hash(trip.depart, 3) % len(_NEWS_POOL)
-    return [News(t, s.format(month=month)) for t, s in (_NEWS_POOL[(start + i) % len(_NEWS_POOL)] for i in range(2))]
+    pool = _NEWS_POOLS.get(trip.key, _NEWS_POOL)
+    start = _hash(trip.depart, 3) % len(pool)
+    return [News(t, s.format(month=month)) for t, s in (pool[(start + i) % len(pool)] for i in range(2))]

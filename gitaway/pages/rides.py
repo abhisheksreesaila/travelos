@@ -48,8 +48,12 @@ def _resolve(f, h, c, d, r, a, k, session=None, leg=""):
     """(flight offer, stay offer or None, trip) for the picks in a URL, or a message when there is nothing to ride to or from."""
     if familydb_import.is_offer(f):
         return _resolve_imported(session, f, leg)
-    fid, hid, cid = plan.resolve_pick(f, h, c)
-    trip = plan.resolve_trip(d, r, a, k)
+    try:
+        to = catalog.offer_place(f)  # the flight names the place, so the ride links need no to= of their own
+    except KeyError:
+        to = "la"
+    trip = plan.resolve_trip(d, r, a, k, to)
+    fid, hid, cid = plan.resolve_pick(f, h, c, trip)
     if fid is None:
         return None, None, trip, "You're driving, so there's no airport to ride from. Pick a flight first."
     if cid is not None:

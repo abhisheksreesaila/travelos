@@ -129,8 +129,6 @@ def test_a_good_trip_parses():
     (dict(adults="two"), "a", "adult"),
     (dict(kids="4,x"), "k", "age"),
     (dict(kids="4,18"), "k", "age"),
-    (dict(to="sd"), "to", "coming soon"),
-    (dict(to="hi"), "to", "coming soon"),
     (dict(to="mars"), "to", "where"),
     (dict(origin="JFK"), "from", "sfo"),
 ])

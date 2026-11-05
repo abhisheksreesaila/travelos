@@ -46,15 +46,15 @@ def test_every_field_has_a_label(client):
     assert re.search(r"<label[^>]*>(?:(?!</label>).)*Kid 1 age", h, re.S)
 
 
-def test_los_angeles_is_live_and_the_rest_are_coming_soon_and_cannot_be_submitted(client):
+def test_all_four_places_are_offered_and_each_submits_to_its_own_plan(client):
     h = client.get("/start").text
     chips = {re.search(r'value="(\w+)"', t["_raw"]).group(1): t for t in tags(h, "to")}
-    assert set(chips) == {"la", "sd", "hi"}
-    assert "disabled" not in chips["la"]["_raw"] and "checked" in chips["la"]["_raw"]
-    assert "disabled" in chips["sd"]["_raw"] and "disabled" in chips["hi"]["_raw"]
-    assert h.count("coming soon") + h.count("Coming soon") >= 2
+    assert set(chips) == {"la", "sd", "hi", "nyc"}
+    assert "checked" in chips["la"]["_raw"] and not any("disabled" in c["_raw"] for c in chips.values())
+    assert "coming soon" not in h.lower()
     r = submit(client, to="sd")
-    assert r.status_code == 422 and "coming soon" in r.text.lower()
+    assert r.status_code == 303 and r.headers["location"] == "/plan?to=sd&d=2026-10-16&r=2026-10-20&a=2&k=4,7"
+    assert re.search(r'value="hi"[^>]*checked', client.get("/start?to=hi").text)
 
 
 def test_the_sample_trip_submits_to_the_plain_workspace(client):
@@ -203,7 +203,7 @@ def test_a_wrong_kid_age_marks_that_kid_not_the_first(client):
 
 
 def test_the_destination_group_is_marked_invalid_with_its_message(client):
-    h = submit(client, to="sd").text
+    h = submit(client, to="mars").text
     fs = re.search(r"<fieldset[^>]*st-where[^>]*>", h).group(0)
     assert 'aria-invalid="true"' in fs and 'aria-describedby="st-err-to"' in fs
     assert "aria-invalid" not in re.search(r"<fieldset[^>]*st-where[^>]*>", client.get("/start").text).group(0)

@@ -102,7 +102,7 @@ def trip_of(booking=None):
     if not booking or not booking.get("trip"):
         return catalog.SAMPLE_TRIP
     p = {k: v[0] for k, v in parse_qs(booking["trip"]).items()}
-    return catalog.trip_from_url(p.get("d"), p.get("r"), p.get("a"), p.get("k"))
+    return catalog.trip_from_url(p.get("d"), p.get("r"), p.get("a"), p.get("k"), p.get("to"))
 
 
 def trip(demo="", booking=None):
@@ -160,7 +160,7 @@ def _lane(b, key, kind):
     if b.get("imported"):  # booked elsewhere (F-042): stand-ins for the offers, built from the stored template
         build = {"flight": tripimport.flight_offer, "stay": tripimport.stay_offer, "car": tripimport.car_offer}[kind]
         return build(_plan(b), given) if given else None
-    return catalog.offer(given) if given and given in {o.id for o in catalog.offers(kind)} else None  # the retired "c3" no car reads as skipped
+    return catalog.offer(given) if given and given in {o.id for o in catalog.offers(kind, trip_of(b))} else None  # the retired "c3" no car reads as skipped
 
 
 def flight_of(b):

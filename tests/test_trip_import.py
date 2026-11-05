@@ -385,7 +385,7 @@ def test_a_party_of_five_rides_in_an_xl(client, clock):
 
 
 def test_other_airports_have_no_rides(client):
-    imported(client, no_car().replace("to: LAX", "to: JFK").replace("from: LAX", "from: JFK"))
+    imported(client, no_car().replace("to: LAX", "to: SEA").replace("from: LAX", "from: SEA"))
     b = ses.booking(person())
     assert cal.rides_of(b) is None and cal.ride_offers(person(), b, cal.trip("", b)) == []
 

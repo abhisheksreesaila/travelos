@@ -70,20 +70,39 @@ class Place:
 AIRPORTS = {
     "LAX": Place("Los Angeles International Airport (LAX)", "1 World Way, Los Angeles, CA 90045", 33.9416, -118.4085, "LAX"),
     "BUR": Place("Hollywood Burbank Airport (BUR)", "2627 N Hollywood Way, Burbank, CA 91505", 34.2007, -118.3590, "BUR"),
+    "SAN": Place("San Diego International Airport (SAN)", "3325 N Harbor Dr, San Diego, CA 92101", 32.7338, -117.1933, "SAN"),
+    "HNL": Place("Daniel K. Inouye International Airport (HNL)", "300 Rodgers Blvd, Honolulu, HI 96819", 21.3187, -157.9224, "HNL"),
+    "JFK": Place("John F. Kennedy International Airport (JFK)", "Queens, NY 11430", 40.6413, -73.7781, "JFK"),
+    "EWR": Place("Newark Liberty International Airport (EWR)", "3 Brewster Rd, Newark, NJ 07114", 40.6895, -74.1745, "EWR"),
 }
 AREAS = {
     "Santa Monica": (34.0195, -118.4912, "Santa Monica, CA"), "Venice": (33.9850, -118.4695, "Venice, Los Angeles, CA"),
     "Downtown": (34.0407, -118.2468, "Downtown Los Angeles, CA"), "city": (34.0522, -118.2437, "Los Angeles, CA"),
+    "Coronado": (32.6859, -117.1831, "Coronado, CA"), "La Jolla": (32.8328, -117.2713, "La Jolla, San Diego, CA"),
+    "Gaslamp": (32.7110, -117.1600, "Gaslamp Quarter, San Diego, CA"),
+    "Waikiki": (21.2793, -157.8294, "Waikiki, Honolulu, HI"), "Ala Moana": (21.2910, -157.8430, "Ala Moana, Honolulu, HI"),
+    "Diamond Head": (21.2620, -157.8130, "Diamond Head, Honolulu, HI"),
+    "Midtown": (40.7549, -73.9840, "Midtown, New York, NY"), "Brooklyn": (40.7033, -73.9881, "DUMBO, Brooklyn, NY"),
+    "Lower Manhattan": (40.7033, -74.0170, "Lower Manhattan, New York, NY"),
 }
-CITY_CENTRE = "Los Angeles city centre"
+# The city centre a stay-less ride goes to, by airport: (lat, lng, address, name).
+CITY_CENTRES = {
+    "LAX": (*AREAS["city"], "Los Angeles city centre"), "BUR": (*AREAS["city"], "Los Angeles city centre"),
+    "SAN": (32.7157, -117.1611, "San Diego, CA", "San Diego city centre"),
+    "HNL": (21.3069, -157.8583, "Honolulu, HI", "Honolulu city centre"),
+    "JFK": (40.7580, -73.9855, "New York, NY", "New York city centre"), "EWR": (40.7580, -73.9855, "New York, NY", "New York city centre"),
+}
 
 
 def _hotel(airport, stay_id):
     """The dropoff or pickup place for a stay id (or the city centre when there is none)."""
     stay = catalog.offer(stay_id) if stay_id else None
     area = catalog.ride_area(airport, stay)
-    lat, lng, address = AREAS[area]
-    return Place(stay.name if stay else CITY_CENTRE, address, lat, lng, area)
+    if stay:
+        lat, lng, address = AREAS[area] if area != "city" else CITY_CENTRES[airport][:3]
+        return Place(stay.name, address, lat, lng, area)
+    lat, lng, address, name = CITY_CENTRES[airport]
+    return Place(name, address, lat, lng, area)
 
 
 def imported_hotel(name, address) -> Place:

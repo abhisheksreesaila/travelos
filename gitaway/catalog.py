@@ -34,6 +34,11 @@ class TripSearch:
         return f"{self.nights} night{'s' if self.nights != 1 else ''}"
 
     @property
+    def key(self) -> str:
+        """The destination's catalog key ("la", "sd", "hi", "nyc"); "la" for a place the catalog does not know (an imported trip)."""
+        return next((d.key for d in DESTINATIONS if d.name == self.destination_name), "la")
+
+    @property
     def place(self) -> str:
         """The short name of the destination: "LA"."""
         return next((d.short for d in DESTINATIONS if d.name == self.destination_name), self.destination_name)
@@ -78,6 +83,7 @@ class Offer:
     back_arrive_min: int = 0
     stops: str = ""  # flights only: "Nonstop" or "1 stop · SJC", both legs
     aircraft: str = ""  # flights only
+    place: str = "la"  # the destination key whose workspace lists it
 
 
 SAMPLE_TRIP = TripSearch("SFO", "San Francisco", "Los Angeles", ("LAX", "BUR"), date(2026, 10, 16), date(2026, 10, 20), 2, (4, 7))
@@ -98,10 +104,15 @@ class Destination:
     key: str
     name: str
     short: str
-    live: bool  # False: shown as "coming soon" and never accepted
+    airports: tuple  # airports that serve it; the first is the main one
 
 
-DESTINATIONS = (Destination("la", "Los Angeles", "LA", True), Destination("sd", "San Diego", "SD", False), Destination("hi", "Hawaii", "HI", False))
+DESTINATIONS = (
+    Destination("la", "Los Angeles", "LA", ("LAX", "BUR")),
+    Destination("sd", "San Diego", "SD", ("SAN",)),
+    Destination("hi", "Honolulu", "Honolulu", ("HNL",)),
+    Destination("nyc", "New York", "NYC", ("JFK", "EWR")),
+)
 
 
 class TripError(ValueError):
@@ -175,8 +186,6 @@ def parse_trip(origin, to, depart, ret, adults, kids, check_past=False) -> TripS
     dest = next((x for x in DESTINATIONS if x.key == (to or "").strip().lower()), None)
     if dest is None:
         errs.append(("to", "Pick where you want to go."))
-    elif not dest.live:
-        errs.append(("to", f"{dest.name} is coming soon. Los Angeles is open today."))
     d, r = _date(depart), _date(ret)
     if d is None:
         errs.append(("d", "Pick a valid depart date."))
@@ -205,22 +214,29 @@ def parse_trip(origin, to, depart, ret, adults, kids, check_past=False) -> TripS
         errs.append(("a", f"That is more than {MAX_TRAVELERS} travelers. Split it into two trips."))
     if errs:
         raise TripError(errs)
-    return TripSearch(ORIGIN[0], ORIGIN[1], dest.name, ("LAX", "BUR"), d, r, n_adults, tuple(ages))
+    return TripSearch(ORIGIN[0], ORIGIN[1], dest.name, dest.airports, d, r, n_adults, tuple(ages))
+
+
+def sample_trip(to="la") -> TripSearch:
+    """The sample trip's dates and party in destination `to` (missing or unknown means Los Angeles)."""
+    dest = next((x for x in DESTINATIONS if x.key == (to or "").strip().lower()), DESTINATIONS[0])
+    return replace(SAMPLE_TRIP, destination_name=dest.name, airports=dest.airports)
 
 
 def trip_query(trip) -> str:
-    """The URL params that carry a trip: empty for the sample trip, else d=&r=&a=&k= (k left out when nobody is a kid)."""
+    """The URL params that carry a trip: empty for the sample trip, else [to=&]d=&r=&a=&k= (to= only away from Los Angeles; k left out when nobody is a kid)."""
     if trip == SAMPLE_TRIP:
         return ""
-    return f"d={trip.depart.isoformat()}&r={trip.return_.isoformat()}&a={trip.adults}" + (f"&k={','.join(map(str, trip.kid_ages))}" if trip.kid_ages else "")
+    where = f"to={trip.key}&" if trip.key != "la" else ""
+    return f"{where}d={trip.depart.isoformat()}&r={trip.return_.isoformat()}&a={trip.adults}" + (f"&k={','.join(map(str, trip.kid_ages))}" if trip.kid_ages else "")
 
 
-def trip_from_url(d, r, a, k) -> TripSearch:
-    """The trip a URL names. Nothing given, or anything bad, means the sample trip."""
+def trip_from_url(d, r, a, k, to="la") -> TripSearch:
+    """The trip a URL names. Nothing given, or anything bad, means the sample trip (in `to`; Los Angeles when it is missing or unknown)."""
     try:
-        return parse_trip(ORIGIN[0], "la", d or "", r or "", a or "", k or "")
+        return parse_trip(ORIGIN[0], to or "la", d or "", r or "", a or "", k or "")
     except TripError:
-        return SAMPLE_TRIP
+        return sample_trip(to)
 
 
 def _per_night(cents, trip):
@@ -249,6 +265,59 @@ _OFFERS = [
           tags=("Great value",), rating="4.4 · 2.3k reviews"),
     Offer("c1", "car", "Breeze Rentals", "Compact SUV", "2 car seats included", 31_200),
     Offer("c2", "car", "Coastline Cars", "Minivan", "Room for strollers", 39_800),
+    # ---- San Diego (SAN, 1h 35m) -----------------------------------------------------------------------------------
+    Offer("sdf1", "flight", "Harbor Air 640", "7:30 → 9:05", "Nonstop to SAN · 1h 35m · back Tue 5:40 PM", 71_200, ("Best nonstop",), airport="SAN", place="sd",
+          depart_min=450, arrive_min=545, back_depart_min=1060, back_arrive_min=1155, stops="Nonstop", aircraft="Airbus A320"),
+    Offer("sdf2", "flight", "Pacific Hop 41", "6:15 → 7:52", "Nonstop to SAN · 1h 37m · very early start", 64_800, airport="SAN", place="sd",
+          depart_min=375, arrive_min=472, back_depart_min=840, back_arrive_min=937, stops="Nonstop", aircraft="Boeing 737-800"),
+    Offer("sdf3", "flight", "Golden Gate Air 218", "12:10 → 1:44", "Nonstop to SAN · 1h 34m · extra legroom", 83_600, airport="SAN", place="sd",
+          depart_min=730, arrive_min=824, back_depart_min=1110, back_arrive_min=1204, stops="Nonstop", aircraft="Airbus A321neo"),
+    Offer("sdf4", "flight", "Skylark Air 377", "9:45 → 12:50", "1 stop in LAX, lands SAN · 3h 05m", 58_400, ("Cheapest",), airport="SAN", place="sd",
+          depart_min=585, arrive_min=770, back_depart_min=810, back_arrive_min=995, stops="1 stop · LAX", aircraft="Embraer 175"),
+    Offer("sdh1", "stay", "Coronado Shores Inn", "Coronado", "2 rooms · 4 min walk to the beach", 128_000,
+          tags=("Kid friendly", "Pool"), rating="4.7 · 1.1k reviews", place="sd"),
+    Offer("sdh2", "stay", "La Jolla Cove Lodge", "La Jolla", "Family suite · 6 min walk to the cove", 176_400,
+          tags=("Sea view", "Kitchen"), rating="4.8 · 940 reviews", place="sd"),
+    Offer("sdh3", "stay", "Gaslamp Station Hotel", "Gaslamp", "2 queens · 25 min drive to the beach", 98_400,
+          tags=("Great value",), rating="4.3 · 1.9k reviews", place="sd"),
+    Offer("sdc1", "car", "Bayside Rentals", "Compact SUV", "2 car seats included", 27_600, place="sd"),
+    Offer("sdc2", "car", "Sunset Cars", "Minivan", "Room for strollers and surfboards", 33_200, place="sd"),
+    # ---- Honolulu (HNL, 5h 40m; local times are Hawaii time) ----------------------------------------------------------
+    Offer("hif1", "flight", "Aloha Pacific 12", "8:00 → 10:40", "Nonstop to HNL · 5h 40m · back Tue 11:50 AM", 212_800, ("Best nonstop",), airport="HNL", place="hi",
+          depart_min=480, arrive_min=640, back_depart_min=710, back_arrive_min=1170, stops="Nonstop", aircraft="Boeing 787-9"),
+    Offer("hif2", "flight", "Islander Air 88", "10:30 → 1:15", "Nonstop to HNL · 5h 45m · lei greeting at the gate", 236_000, airport="HNL", place="hi",
+          depart_min=630, arrive_min=795, back_depart_min=840, back_arrive_min=1305, stops="Nonstop", aircraft="Airbus A330-200"),
+    Offer("hif3", "flight", "Skylark Air 460", "6:50 → 12:35", "1 stop in LAX, lands HNL · 8h 45m", 189_600, ("Cheapest",), airport="HNL", place="hi",
+          depart_min=410, arrive_min=755, back_depart_min=660, back_arrive_min=1325, stops="1 stop · LAX", aircraft="Boeing 737 MAX 8"),
+    Offer("hif4", "flight", "Aloha Pacific 76", "1:20 → 4:05", "Nonstop to HNL · 5h 45m · lands before sunset", 248_400, airport="HNL", place="hi",
+          depart_min=800, arrive_min=965, back_depart_min=950, back_arrive_min=1415, stops="Nonstop", aircraft="Boeing 787-9"),
+    Offer("hih1", "stay", "Waikiki Tide Resort", "Waikiki", "2 rooms · 2 min walk to the beach", 292_000,
+          tags=("Kid friendly", "Pool"), rating="4.7 · 3.4k reviews", place="hi"),
+    Offer("hih2", "stay", "Ala Moana Suites", "Ala Moana", "Family suite · 10 min walk to the beach park", 236_800,
+          tags=("Kitchen", "Pet friendly"), rating="4.5 · 1.3k reviews", place="hi"),
+    Offer("hih3", "stay", "Diamond Head Lodge", "Diamond Head", "2 queens · 12 min walk to the surf", 348_000,
+          tags=("Quiet", "Sea view"), rating="4.9 · 620 reviews", place="hi"),
+    Offer("hic1", "car", "Island Drive Rentals", "Compact SUV", "2 car seats included", 46_400, place="hi"),
+    Offer("hic2", "car", "Trade Winds Cars", "Jeep Wrangler", "Doors off for the North Shore drive", 58_800, place="hi"),
+    # ---- New York (JFK and EWR, 5h 25m; local times are Eastern) ---------------------------------------------------------
+    Offer("nycf1", "flight", "Liberty Air 502", "7:00 → 3:25", "Nonstop to JFK · 5h 25m · back Tue 12:30 PM", 198_400, ("Best nonstop",), airport="JFK", place="nyc",
+          depart_min=420, arrive_min=925, back_depart_min=750, back_arrive_min=1005, stops="Nonstop", aircraft="Airbus A321neo"),
+    Offer("nycf2", "flight", "Pacific Hop 906", "10:15 → 6:45", "Nonstop to JFK · 5h 30m · evening arrival", 224_800, airport="JFK", place="nyc",
+          depart_min=615, arrive_min=1005, back_depart_min=1090, back_arrive_min=1345, stops="Nonstop", aircraft="Boeing 737-800"),
+    Offer("nycf3", "flight", "Skylark Air 118", "6:00 → 4:50", "1 stop in DEN, lands JFK · 8h 50m", 179_200, ("Cheapest",), airport="JFK", place="nyc",
+          depart_min=360, arrive_min=1010, back_depart_min=700, back_arrive_min=1015, stops="1 stop · DEN", aircraft="Embraer 175"),
+    Offer("nycf4", "flight", "Liberty Air 744", "8:30 → 4:50", "Nonstop to Newark (EWR) · 5h 20m · easy rail into the city", 188_000, airport="EWR", place="nyc",
+          depart_min=510, arrive_min=1010, back_depart_min=780, back_arrive_min=1040, stops="Nonstop", aircraft="Boeing 757-200"),
+    Offer("nycf5", "flight", "Golden Gate Air 66", "5:45 → 3:30", "1 stop in ORD, lands EWR · 7h 45m", 163_200, airport="EWR", place="nyc",
+          depart_min=345, arrive_min=930, back_depart_min=690, back_arrive_min=990, stops="1 stop · ORD", aircraft="Airbus A320"),
+    Offer("nych1", "stay", "The Hudson Hearth", "Midtown", "2 rooms · 6 min walk to Central Park", 312_000,
+          tags=("Kid friendly", "Near the subway"), rating="4.6 · 4.2k reviews", place="nyc"),
+    Offer("nych2", "stay", "Brooklyn Bridge Lofts", "Brooklyn", "Family loft · 5 min walk to the waterfront park", 224_800,
+          tags=("Kitchen", "Great views"), rating="4.7 · 1.5k reviews", place="nyc"),
+    Offer("nych3", "stay", "Battery Park Hotel", "Lower Manhattan", "2 queens · 8 min walk to the ferry", 276_400,
+          tags=("Harbor view",), rating="4.4 · 2.1k reviews", place="nyc"),
+    Offer("nycc1", "car", "Empire Rentals", "Compact SUV", "Garage parking not included", 54_800, place="nyc"),
+    Offer("nycc2", "car", "Five Boroughs Cars", "Minivan", "Garage parking not included", 62_400, place="nyc"),
 ]
 _BY_ID = {o.id: o for o in _OFFERS}
 
@@ -266,7 +335,12 @@ def _priced(o: Offer, trip) -> Offer:
 
 def offers(kind: str, trip=SAMPLE_TRIP) -> list[Offer]:
     """Offers in one workspace lane, in display order, priced for `trip` (default: the sample trip)."""
-    return [_priced(o, trip) for o in _OFFERS if o.kind == kind]
+    return [_priced(o, trip) for o in _OFFERS if o.kind == kind and o.place == trip.key]
+
+
+def offer_place(offer_id: str) -> str:
+    """The destination key an offer belongs to. Raises KeyError for an unknown id."""
+    return _BY_ID[offer_id].place
 
 
 def offer(offer_id: str, trip=SAMPLE_TRIP) -> Offer:
@@ -415,6 +489,184 @@ _STAY_DETAILS = {
             Poi("food", "Grand Central Market", "Food hall", 28, 54, "4 min walk", "Forty food stalls under one roof."),
             Poi("sight", "The Broad", "The Broad", 28, 35, "7 min walk", "Free modern art museum with the mirror room."),
             Poi("beach", "Santa Monica Beach", "Beach, 35 min", 36, 80, "35 min drive", "Or about 50 minutes on the Metro E Line."),
+        ),
+    ),
+    # ---- San Diego ------------------------------------------------------------------------------------------------
+    "sdh1": StayDetail(
+        chips=("Pool", "Crib available", "Bikes to borrow", "4 min to the beach"),
+        highlights=("Kids eat free at the poolside grill", "Bike path to the ferry landing", "Sand toys and boogie boards to borrow"),
+        policy="Free cancellation until {c3}. After that, the first night is charged.",
+        samples=(("Lobby", "lobby-front-desk.jpg"), ("Pool", "pool-courtyard.jpg"), ("Room", "room-bed-lamp.jpg"), ("Breakfast", "breakfast-buffet.jpg")),
+        rooms=(
+            Room("dq", "Garden Double Queen", "Garden view", "2 queen beds", 4, 128_000, "fill-mint-tint", "room-bed-lamp.jpg"),
+            Room("bk", "Bay-view King", "Bay view", "1 king bed", 2, 94_000, "fill-sky-tint", "room-purple-window.jpg"),
+            Room("fs", "Family suite", "Bay view", "King + bunk beds", 5, 164_000, "fill-sun-tint", "room-balcony-view.jpg"),
+        ),
+        coast=True,
+        pois=(
+            Poi("hotel", "Coronado Shores Inn", "Coronado Shores", 44, 50, "", _HOME),
+            Poi("beach", "Coronado Beach", "Beach", 24, 56, "4 min walk", "Wide, flat sand that glitters in the sun."),
+            Poi("sight", "Hotel del Coronado", "Old hotel", 28, 70, "10 min walk", "The red-roofed 1888 hotel with a free lobby tour."),
+            Poi("food", "Orange Avenue", "Orange Ave", 66, 46, "8 min walk", "Ice cream, tacos and a Sunday farmers market."),
+            Poi("park", "Spreckels Park", "Park", 66, 28, "9 min walk", "Big lawn and a playground."),
+            Poi("train", "Ferry landing", "Ferry", 70, 72, "14 min walk", "Ferry across the bay to downtown."),
+        ),
+    ),
+    "sdh2": StayDetail(
+        chips=("Sea view", "Kitchen", "Crib available", "6 min to the cove"),
+        highlights=("Full kitchen in every suite", "Steps from the sea-lion lookout", "Snorkel gear to borrow"),
+        policy="Free cancellation until {c7}. After that, 50% of the stay is charged.",
+        samples=(("Terrace", "pool-courtyard.jpg"), ("Suite", "room-balcony-view.jpg"), ("Kitchen", ""), ("Cove", "")),
+        rooms=(
+            Room("fk", "Family suite with kitchen", "Sea view", "Queen + sofa bed", 4, 176_400, "fill-sky-tint", "room-balcony-view.jpg"),
+            Room("gs", "Garden studio", "Garden view", "1 queen bed", 2, 112_000, "fill-mint-tint", "room-bed-lamp.jpg"),
+            Room("cs", "Cove-view suite", "Cove view", "King + 2 twins", 4, 214_000, "fill-sun-tint", "room-purple-window.jpg"),
+        ),
+        coast=True,
+        pois=(
+            Poi("hotel", "La Jolla Cove Lodge", "Cove Lodge", 46, 52, "", _HOME),
+            Poi("beach", "La Jolla Cove", "Cove", 24, 46, "6 min walk", "Calm water, snorkelling and sea lions on the rocks."),
+            Poi("sight", "Children's Pool", "Seals", 24, 72, "9 min walk", "A sheltered beach shared with harbor seals."),
+            Poi("food", "Prospect Street", "Prospect St", 68, 40, "5 min walk", "Fish tacos, gelato and small shops."),
+            Poi("park", "Ellen Browning Scripps Park", "Park", 36, 28, "7 min walk", "Cliff-top lawn with picnic tables."),
+        ),
+    ),
+    "sdh3": StayDetail(
+        chips=("Great value", "Rooftop pool", "Near the trolley"),
+        highlights=("Trolley to the border and the bay", "Rooftop pool open till 10", "Walk to the ballpark"),
+        policy="Free cancellation until the day before check-in.",
+        samples=(("Rooftop", "rooftop-bar.jpg"), ("Room", "room-dark-wood.jpg"), ("Lobby", "lobby-front-desk.jpg"), ("Breakfast", "breakfast-buffet.jpg")),
+        rooms=(
+            Room("qq", "Double Queen", "City view", "2 queen beds", 4, 98_400, "fill-sun-tint", "room-dark-wood.jpg"),
+            Room("kk", "King room", "City view", "1 king bed", 2, 62_000, "fill-grape-tint", "room-bed-lamp.jpg"),
+            Room("cy", "City suite", "Skyline view", "King + sofa bed", 4, 128_000, "fill-sky-tint", "room-balcony-view.jpg"),
+        ),
+        coast=False,
+        pois=(
+            Poi("hotel", "Gaslamp Station Hotel", "Gaslamp Station", 48, 50, "", _HOME),
+            Poi("train", "Trolley, Gaslamp stop", "Trolley", 70, 54, "3 min walk", "Trolley to the bay, the border and Old Town."),
+            Poi("park", "Waterfront Park", "Waterfront", 28, 34, "12 min walk", "Fountains the kids can run through."),
+            Poi("food", "Little Italy", "Little Italy", 28, 54, "10 min walk", "Pizza, gelato and a Saturday market."),
+            Poi("sight", "Petco Park", "Ballpark", 70, 72, "6 min walk", "Baseball, with a grass hill behind the outfield."),
+            Poi("beach", "Mission Beach", "Beach, 25 min", 18, 80, "25 min drive", "Boardwalk, small rides and a long beach."),
+        ),
+    ),
+    # ---- Honolulu -------------------------------------------------------------------------------------------------
+    "hih1": StayDetail(
+        chips=("Beachfront", "Pool", "Crib available", "2 min to the sand"),
+        highlights=("Kids' lei-making on Tuesdays", "Surf lessons from the beach stand", "Free fireworks view on Fridays"),
+        policy="Free cancellation until {c3}. After that, the first night is charged.",
+        samples=(("Lobby", "lobby-front-desk.jpg"), ("Pool", "pool-courtyard.jpg"), ("Room", "room-purple-window.jpg"), ("Breakfast", "breakfast-buffet.jpg")),
+        rooms=(
+            Room("cq", "City-view Double Queen", "City view", "2 queen beds", 4, 292_000, "fill-grape-tint", "room-bed-lamp.jpg"),
+            Room("ok", "Ocean-view King", "Ocean view", "1 king bed", 2, 214_000, "fill-sky-tint", "room-purple-window.jpg"),
+            Room("fs", "Family suite", "Ocean view", "King + bunk beds", 5, 366_000, "fill-sun-tint", "room-balcony-view.jpg"),
+        ),
+        coast=True,
+        pois=(
+            Poi("hotel", "Waikiki Tide Resort", "Waikiki Tide", 44, 50, "", _HOME),
+            Poi("beach", "Waikiki Beach", "Beach", 24, 60, "2 min walk", "Gentle waves, surf lessons and outrigger canoes."),
+            Poi("sight", "Honolulu Zoo", "Zoo", 70, 66, "12 min walk", "Giraffes and tortoises beside Kapiolani Park."),
+            Poi("food", "Kalakaua Avenue", "Kalakaua Ave", 68, 44, "4 min walk", "Shave ice, shops and evening hula."),
+            Poi("park", "Kapiolani Park", "Park", 76, 80, "14 min walk", "Open lawns and a Sunday kite crowd."),
+            Poi("sight", "Waikiki Aquarium", "Aquarium", 60, 86, "18 min walk", "Hawaiian reef fish and monk seals."),
+        ),
+    ),
+    "hih2": StayDetail(
+        chips=("Kitchen", "Pet friendly", "Crib available", "Next to the mall"),
+        highlights=("Full kitchen in every suite", "Walk to the beach park", "Dogs stay free"),
+        policy="Free cancellation until {c7}. After that, 50% of the stay is charged.",
+        samples=(("Courtyard", "pool-courtyard.jpg"), ("Kitchen", ""), ("Suite", "room-balcony-view.jpg"), ("Lanai", "")),
+        rooms=(
+            Room("fk", "Family suite with kitchen", "Garden view", "Queen + sofa bed", 4, 236_800, "fill-mint-tint", "room-dark-wood.jpg"),
+            Room("gs", "Garden studio", "Garden view", "1 queen bed", 2, 148_000, "fill-bubble-tint", "room-bed-lamp.jpg"),
+            Room("hs", "Harbor-view suite", "Harbor view", "King + 2 twins", 4, 284_000, "fill-sky-tint", "room-purple-window.jpg"),
+        ),
+        coast=True,
+        pois=(
+            Poi("hotel", "Ala Moana Suites", "Ala Moana Suites", 46, 52, "", _HOME),
+            Poi("beach", "Ala Moana Beach Park", "Beach park", 26, 62, "10 min walk", "A calm lagoon, good for little swimmers."),
+            Poi("food", "Ala Moana Center", "Mall", 68, 40, "3 min walk", "Open-air food court and shops."),
+            Poi("park", "Magic Island", "Magic Island", 30, 82, "14 min walk", "Lawns, picnic spots and sunset views."),
+            Poi("sight", "Kakaako murals", "Murals", 74, 66, "18 min walk", "A neighbourhood of giant street art."),
+        ),
+    ),
+    "hih3": StayDetail(
+        chips=("Quiet", "Sea view", "Pool"),
+        highlights=("Hike Diamond Head before breakfast", "Quiet beach a short walk away", "Pool with a shallow end for toddlers"),
+        policy="Free cancellation until the day before check-in.",
+        samples=(("Pool", "pool-courtyard.jpg"), ("Room", "room-balcony-view.jpg"), ("Lobby", "lobby-front-desk.jpg"), ("Breakfast", "breakfast-buffet.jpg")),
+        rooms=(
+            Room("qq", "Double Queen", "Garden view", "2 queen beds", 4, 348_000, "fill-sun-tint", "room-dark-wood.jpg"),
+            Room("kk", "King room", "Sea view", "1 king bed", 2, 244_000, "fill-grape-tint", "room-purple-window.jpg"),
+            Room("cy", "Diamond Head suite", "Crater view", "King + sofa bed", 4, 412_000, "fill-sky-tint", "room-balcony-view.jpg"),
+        ),
+        coast=True,
+        pois=(
+            Poi("hotel", "Diamond Head Lodge", "Diamond Head Lodge", 48, 50, "", _HOME),
+            Poi("park", "Diamond Head trail", "Crater trail", 74, 30, "10 min walk", "A 1.6 mile hike to the crater rim and the view."),
+            Poi("beach", "Kuhio Beach", "Beach", 26, 66, "12 min walk", "A rock-walled pool with calm water."),
+            Poi("food", "Kapahulu Avenue", "Kapahulu Ave", 70, 62, "7 min walk", "Local bakeries and the famous shave ice."),
+            Poi("sight", "Waikiki Aquarium", "Aquarium", 38, 84, "15 min walk", "Hawaiian reef fish and monk seals."),
+        ),
+    ),
+    # ---- New York -------------------------------------------------------------------------------------------------
+    "nych1": StayDetail(
+        chips=("Kid friendly", "Near the subway", "Crib available", "6 min to the park"),
+        highlights=("Kids' welcome pack with a city map", "Subway at the corner", "Quiet floors above the 10th"),
+        policy="Free cancellation until {c3}. After that, the first night is charged.",
+        samples=(("Lobby", "lobby-front-desk.jpg"), ("Room", "room-dark-wood.jpg"), ("Rooftop", "rooftop-bar.jpg"), ("Breakfast", "breakfast-buffet.jpg")),
+        rooms=(
+            Room("dq", "Double Queen", "City view", "2 queen beds", 4, 312_000, "fill-grape-tint", "room-dark-wood.jpg"),
+            Room("kk", "King room", "City view", "1 king bed", 2, 224_000, "fill-sky-tint", "room-bed-lamp.jpg"),
+            Room("fs", "Family suite", "Park view", "King + sofa bed", 5, 396_000, "fill-sun-tint", "room-balcony-view.jpg"),
+        ),
+        coast=False,
+        pois=(
+            Poi("hotel", "The Hudson Hearth", "Hudson Hearth", 48, 50, "", _HOME),
+            Poi("park", "Central Park", "Central Park", 68, 24, "6 min walk", "Playgrounds, a carousel and a zoo."),
+            Poi("train", "Subway, 57th St", "Subway", 30, 44, "2 min walk", "Trains up and down the whole island."),
+            Poi("sight", "Rockefeller Center", "Rockefeller", 70, 62, "10 min walk", "Top of the Rock and a big toy store."),
+            Poi("food", "Hell's Kitchen", "Restaurants", 26, 64, "8 min walk", "Dozens of cheap, quick family dinners."),
+            Poi("sight", "Times Square", "Times Sq", 52, 78, "14 min walk", "Bright, loud and worth ten minutes."),
+        ),
+    ),
+    "nych2": StayDetail(
+        chips=("Kitchen", "Great views", "Crib available", "5 min to the waterfront"),
+        highlights=("Skyline view from the family loft", "Ice cream and a carousel in the park next door", "Walk the bridge to Manhattan"),
+        policy="Free cancellation until {c7}. After that, 50% of the stay is charged.",
+        samples=(("Loft", "room-balcony-view.jpg"), ("Kitchen", ""), ("Room", "room-bed-lamp.jpg"), ("Bridge", "")),
+        rooms=(
+            Room("fl", "Family loft with kitchen", "Skyline view", "Queen + sofa bed", 4, 224_800, "fill-mint-tint", "room-balcony-view.jpg"),
+            Room("gs", "Studio", "Street view", "1 queen bed", 2, 146_000, "fill-bubble-tint", "room-bed-lamp.jpg"),
+            Room("bs", "Bridge-view suite", "Bridge view", "King + 2 twins", 4, 268_000, "fill-sky-tint", "room-purple-window.jpg"),
+        ),
+        coast=True,
+        pois=(
+            Poi("hotel", "Brooklyn Bridge Lofts", "Bridge Lofts", 46, 50, "", _HOME),
+            Poi("park", "Brooklyn Bridge Park", "Waterfront park", 30, 36, "5 min walk", "Playgrounds, pebble beach and skyline views."),
+            Poi("sight", "Brooklyn Bridge", "Bridge", 22, 62, "9 min walk", "Walk it to Manhattan in about 30 minutes."),
+            Poi("food", "DUMBO cobblestones", "DUMBO", 66, 40, "4 min walk", "Pizza, a carousel and photo spots."),
+            Poi("train", "Subway, High St", "Subway", 70, 66, "7 min walk", "Quick trains into Manhattan."),
+        ),
+    ),
+    "nych3": StayDetail(
+        chips=("Harbor view", "Near the ferry", "Pool"),
+        highlights=("Ferry to the Statue of Liberty a short walk away", "Waterfront playground nearby", "Rooms face the harbor"),
+        policy="Free cancellation until the day before check-in.",
+        samples=(("Lobby", "lobby-front-desk.jpg"), ("Room", "room-purple-window.jpg"), ("Pool", "pool-courtyard.jpg"), ("Breakfast", "breakfast-buffet.jpg")),
+        rooms=(
+            Room("qq", "Double Queen", "City view", "2 queen beds", 4, 276_400, "fill-sun-tint", "room-dark-wood.jpg"),
+            Room("kk", "King room", "Harbor view", "1 king bed", 2, 198_000, "fill-grape-tint", "room-purple-window.jpg"),
+            Room("hs", "Harbor suite", "Harbor view", "King + sofa bed", 4, 352_000, "fill-sky-tint", "room-balcony-view.jpg"),
+        ),
+        coast=True,
+        pois=(
+            Poi("hotel", "Battery Park Hotel", "Battery Park Hotel", 48, 50, "", _HOME),
+            Poi("sight", "Statue of Liberty ferry", "Liberty ferry", 26, 70, "8 min walk", "Ferry to Liberty and Ellis Islands."),
+            Poi("park", "Battery Park playground", "Playground", 30, 40, "5 min walk", "Fountains and a carousel by the harbor."),
+            Poi("sight", "9/11 Memorial", "Memorial", 70, 36, "10 min walk", "Quiet pools and a museum."),
+            Poi("train", "Subway, South Ferry", "Subway", 54, 74, "4 min walk", "Trains to the rest of the city."),
         ),
     ),
 }
@@ -727,6 +979,14 @@ _RIDE_TABLE = {
     ("LAX", "Downtown"): (52, 49, 48, 46, 35), ("LAX", "city"): (46, 44, 43, 41, 30),
     ("BUR", "Santa Monica"): (62, 59, 58, 56, 40), ("BUR", "Venice"): (66, 62, 61, 58, 40),
     ("BUR", "Downtown"): (34, 32, 31, 30, 22), ("BUR", "city"): (45, 43, 42, 40, 28),
+    ("SAN", "Coronado"): (28, 26, 27, 25, 20), ("SAN", "La Jolla"): (46, 44, 43, 41, 28),
+    ("SAN", "Gaslamp"): (18, 17, 17, 16, 12), ("SAN", "city"): (22, 21, 20, 19, 14),
+    ("HNL", "Waikiki"): (42, 40, 40, 38, 28), ("HNL", "Ala Moana"): (36, 34, 34, 32, 22),
+    ("HNL", "Diamond Head"): (48, 46, 46, 44, 32), ("HNL", "city"): (40, 38, 38, 36, 26),
+    ("JFK", "Midtown"): (78, 75, 76, 73, 60), ("JFK", "Brooklyn"): (58, 56, 56, 54, 45),
+    ("JFK", "Lower Manhattan"): (72, 70, 70, 68, 55), ("JFK", "city"): (74, 71, 72, 69, 55),
+    ("EWR", "Midtown"): (72, 70, 70, 67, 50), ("EWR", "Brooklyn"): (80, 77, 78, 75, 60),
+    ("EWR", "Lower Manhattan"): (66, 64, 64, 62, 42), ("EWR", "city"): (72, 69, 70, 67, 50),
 }
 CURB_MINUTES = 30  # from landing to the curb with bags
 AIRPORT_BUFFER = 120  # minutes before the flight home that you reach the airport; also the latest a suggested plan ends (tripcal.day_window)
@@ -771,7 +1031,7 @@ class Rides:
 
     @property
     def detail(self) -> str:
-        return f"{self.airport} to {self.area}, both ways" if self.area != "Los Angeles" else f"{self.airport} to the city, both ways"
+        return f"{self.airport} to {self.area}, both ways" if self.area not in {d.name for d in DESTINATIONS} else f"{self.airport} to the city, both ways"
 
 
 def ride_area(airport: str, stay: Offer | None) -> str:

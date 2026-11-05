@@ -21,7 +21,8 @@ from gitaway.pages import plan
 
 HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/start.css"), Script(src="/assets/js/start.js", defer=True))
 MAX_KIDS = catalog.MAX_TRAVELERS - 1
-CHIP_FILLS = {"la": "fill-sun", "sd": "fill-sky-tint", "hi": "fill-mint-tint"}
+CHIP_FILLS = {"la": "fill-sun", "sd": "fill-sky-tint", "hi": "fill-mint-tint", "nyc": "fill-grape-tint"}
+TILTS = (-2, 1.5, -1, 2)
 
 
 def _options(values, current):
@@ -48,11 +49,10 @@ def _control(tag, name, errors, *content, **attrs):
 def _chips(vals, errors):
     chips = []
     for d in catalog.DESTINATIONS:
-        on = d.live and vals["to"] == d.key
         chips.append(Label(
-            Input(type="radio", name="to", value=d.key, **({"checked": True} if on else {}), **({} if d.live else {"disabled": True})),
-            Span(icon("pin", 18, 2.4), Span(d.name), Span("coming soon", cls="st-soon") if not d.live else "", cls=f"st-face {CHIP_FILLS[d.key]}"),
-            cls=f"st-chip{'' if d.live else ' is-soon'}", style=f"--tilt:{(-2, 1.5, -1)[catalog.DESTINATIONS.index(d)]}deg",
+            Input(type="radio", name="to", value=d.key, **({"checked": True} if vals["to"] == d.key else {})),
+            Span(icon("pin", 18, 2.4), Span(d.name), cls=f"st-face {CHIP_FILLS[d.key]}"),
+            cls="st-chip", style=f"--tilt:{TILTS[catalog.DESTINATIONS.index(d)]}deg",
         ))
     err = errors.get("to")
     return Fieldset(
@@ -107,7 +107,7 @@ def continue_card(session, phone=False):
         t, href, tail = tripcal.trip_of(b), "/trip", ("booked elsewhere" if tripcal.is_imported(b) else f"booked, {catalog.money(b['total_cents'])}")
     elif (saved := ses.remembered_plan(session)):
         p = {k: v[0] for k, v in parse_qs(saved).items()}
-        t, href, tail = catalog.trip_from_url(p.get("d"), p.get("r"), p.get("a"), p.get("k")), f"/plan?{saved}", "your picks are saved"
+        t, href, tail = catalog.trip_from_url(p.get("d"), p.get("r"), p.get("a"), p.get("k"), p.get("to")), f"/plan?{saved}", "your picks are saved"
     else:
         return ""
     return A(
@@ -119,7 +119,7 @@ def continue_card(session, phone=False):
 
 
 def values_of(trip):
-    return {"to": "la", "d": trip.depart.isoformat(), "r": trip.return_.isoformat(), "a": trip.adults, "n": len(trip.kid_ages), "ages": list(trip.kid_ages)}
+    return {"to": trip.key, "d": trip.depart.isoformat(), "r": trip.return_.isoformat(), "a": trip.adults, "n": len(trip.kid_ages), "ages": list(trip.kid_ages)}
 
 
 def _submitted(q):
@@ -181,5 +181,5 @@ def register(app):
                 query = catalog.trip_query(trip)
                 return RedirectResponse("/plan" + (f"?{query}" if query else ""), status_code=303)
             return start_page(session, vals, errors, status=422)
-        trip = catalog.trip_from_url(q.get("d"), q.get("r"), q.get("a"), q.get("k"))
+        trip = catalog.trip_from_url(q.get("d"), q.get("r"), q.get("a"), q.get("k"), q.get("to"))
         return start_page(session, values_of(trip), phone=tripday.is_phone(request.headers.get("user-agent")))
