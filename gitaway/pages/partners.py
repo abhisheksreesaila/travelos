@@ -53,7 +53,7 @@ def _sandbox_path(partner, click, offer, trip, tail=""):
     return f"/sandbox/{partner.key}/{click}{tail}" if tail else f"/sandbox/{partner.key}/{click}?" + urlencode({"o": offer.id, **_trip_tail(trip)})
 
 
-def _shell(title, *content, current=""):
+def _shell(title, *content):
     """A standalone full-screen document (no site header), like the pay sheet's pages."""
     return (Title(f"GitAway · {title}"), *styles(*HEAD), Main(*content, id="main", cls=f"pt-stage {ROOT}"))
 

@@ -13,7 +13,6 @@ from datetime import datetime, timedelta
 from fh_saas.utils_sql import insert_only
 
 from gitaway import catalog, familydb, importer, session as ses, tripimport as ti
-from gitaway.partners import for_offer
 
 MAX_ORIGIN = 30   # how long the "Booked elsewhere" label may be (the trip builder's limit)
 
@@ -102,9 +101,9 @@ def book(session, click_id, offer, trip, partner):
         trip_id = importer.save(session, _merged(importer.plan_of(session, match[0]), plan), replace=match[0])
     else:
         trip_id = importer.save(session, plan)
-    sub = record_click(session, click_id, offer, trip, partner)
+    record_click(session, click_id, offer, trip, partner)   # a click made before sign-in has no row yet
     with ses.family(session) as fam:
         with familydb.transaction(fam.db):
-            familydb.run(fam.db, "UPDATE partner_clicks SET state = 'booked', booked_at = :at, commission_cents = :c, confirmation = :n, trip_id = :t WHERE id = :i AND sub_id = :s",
-                         at=familydb.now(), c=partner.estimate_cents(offer.price_cents), n=confirmation, t=trip_id, i=click_id, s=sub)
+            familydb.run(fam.db, "UPDATE partner_clicks SET state = 'booked', booked_at = :at, commission_cents = :c, confirmation = :n, trip_id = :t WHERE id = :i",
+                         at=familydb.now(), c=partner.estimate_cents(offer.price_cents), n=confirmation, t=trip_id, i=click_id)
     return get(session, click_id)

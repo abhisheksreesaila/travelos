@@ -10,10 +10,10 @@ from urllib.parse import parse_qs, urlsplit
 
 import pytest
 
-from gitaway import catalog, partners
+from gitaway import partners
 from gitaway.partners import travelpayouts, uber_deep_link
 from tests.test_members import addr, browser, invite
-from tests.test_signin import sign_in, tid
+from tests.test_signin import sign_in
 
 TRIP = "d=2027-03-05&r=2027-03-09&a=2"
 HI = f"to=hi&{TRIP}"
