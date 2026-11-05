@@ -427,7 +427,7 @@ def test_a_ride_is_stored_with_the_trip_it_was_booked_on_and_other_trips_rides_a
     book(client)
     schedule(client)
     rides.cancel_ride(_Session(client), "r1")  # trip A: a cancelled ride
-    soon = catalog.today() + timedelta(days=20)  # a second trip three weeks out (a ride can be booked up to 30 days ahead), never a date that has gone by
+    soon = rides.now().date() + timedelta(days=20)  # a second trip three weeks out by the rides clock (conftest pins catalog.today, not this one), never a date that has gone by
     other = f"f=f1&h=h1&c=none&d={soon.isoformat()}&r={(soon + timedelta(days=3)).isoformat()}&a=2&k=4,7"
     book(client, pick=other)
     r = schedule(client, pick=other)
