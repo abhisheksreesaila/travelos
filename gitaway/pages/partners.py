@@ -23,7 +23,6 @@ from gitaway.partners import log, statistics, travelpayouts
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/partners.css"),)
 _CLICK = re.compile(r"[0-9a-f]{10}")
-ROOT = "ul-family-travel"
 FINE = "GitAway is a control plane: partners keep your booking, refunds and customer service. We may earn a commission when you book through a partner link."
 
 
@@ -55,11 +54,11 @@ def _sandbox_path(partner, click, offer, trip, tail=""):
 
 def _shell(title, *content):
     """A standalone full-screen document (no site header), like the pay sheet's pages."""
-    return (Title(f"GitAway · {title}"), *styles(*HEAD), Main(*content, id="main", cls=f"pt-stage {ROOT}"))
+    return (Title(f"GitAway · {title}"), *styles(*HEAD), Main(*content, id="main", cls="pt-stage"))
 
 
 def _offer_card(offer, trip):
-    return Div(Span(icon({"flight": "plane", "stay": "bed", "car": "car"}[offer.kind], 22, 2.1), cls="pt-tile", aria_hidden="true"),
+    return Div(Span(icon({"flight": "plane", "stay": "bed", "car": "car"}[offer.kind], 22, 2.1), cls=f"pt-tile pt-k-{offer.kind}", aria_hidden="true"),
                Span(Span(offer.name, cls="pt-name"), Span(offer.headline, cls="pt-line"), Span(f"{trip.depart:%b} {trip.depart.day} – {trip.return_:%b} {trip.return_.day}"
                                                                                            f" · {trip.travelers} travelers", cls="pt-line"), cls="pt-text"),
                Span(catalog.money(offer.price_cents), cls="pt-price"), cls="pt-offer")
@@ -117,7 +116,7 @@ def partners_page(rows, *, live):
             P(note, cls="pt-fine"), P(FINE, cls="pt-fine"),
             Ul(*[_row(r) for r in rows], cls="pt-list", aria_label="Clicks and bookings") if rows else
             Div(P("No clicks yet. Pick a flight, a stay or a car and press Book on a partner.", cls="pt-lead"), A("Plan a trip", href="/plan", cls="btn btn-ink"), cls="pt-empty"),
-            cls="pt-card pt-wide"), cls=f"pt-stage {ROOT}", id="partners"), head=HEAD)
+            cls="pt-card pt-wide"), cls="pt-stage", id="partners"), head=HEAD)
 
 
 def register(app):

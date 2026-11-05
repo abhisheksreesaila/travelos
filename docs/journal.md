@@ -12,3 +12,8 @@
 - `gitaway/partners/` (seam, Travelpayouts links, statistics row), `gitaway/partners/log.py` (clicks and sandbox bookings in the family DB table `partner_clicks`), `gitaway/pages/partners.py` (/go, /sandbox, /partners), "Book on" links on /plan (`ws-offer-wrap` around each card, the link cannot live inside the card's button), `assets/css/partners.css`.
 - First attempt at the contract passed without changes to the tests; the sandbox is a standalone page on purpose: the site header carries a sign-out form that the contract's "first form on the page" regex would have posted to.
 - Ride-pruning test: pinned `catalog.today` hid that the rides clock is real; fixed with a date relative to `rides.now()` (D-28).
+
+## M5 omxqua Coast (ap-m5-look)
+- Plan: skin via a before hook + remapped legacy tokens, then per-page sheets (`plan_coast.css`, `creators_coast.css`, `partners.css` tail). Fonts Geist/Geist Mono + OFL licence copied to `assets/fonts/`.
+- Slip: my lane-switcher constant `LANES` shadowed plan.py's own `LANES` (a 500 on /plan); renamed `SEG_LANES`. Slip 2: `pkill -f` on a pattern killed my own shell; stop by PID only.
+- test_scale rejects px sizes and sub-11px text in any stylesheet: omxqua.css is converted to rem.

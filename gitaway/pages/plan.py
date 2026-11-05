@@ -479,6 +479,16 @@ def preview_note():
     return Span(icon("note", 16, 2.4), showcase.PREVIEW, cls="ws-preview", role="note") if not showcase.on() else ""
 
 
+SEG_LANES = (("flights", "plane", "Flights"), ("stays", "bed", "Stays"), ("cars", "car", "Cars"), ("around", "pin", "Around"))
+
+
+def lane_switch():
+    """The phone's lane switcher (M5): a segmented pill over the swipeable lanes (assets/js/lanes.js). Its thumb follows the swipe; the laptop never shows it."""
+    return Div(Div(Span(cls="ws-seg-thumb", aria_hidden="true"),
+                   *[Button(icon(ic, 18, 2.2), Span(label), type="button", cls=f"ws-seg-b ws-seg-{key}", data_lane=key, aria_pressed="true" if i == 0 else "false") for i, (key, ic, label) in enumerate(SEG_LANES)],
+                   cls="ws-seg", role="group", aria_label="Flights, stays, cars and around"), cls="ws-seg-wrap")
+
+
 def top_bar(trip, ledger_el=None):
     def fmt(d):
         return d.strftime("%a %b ") + str(d.day)
@@ -600,6 +610,7 @@ def workspace(f, h, c, overlay=(), head=(), x="", v="", stay=None, trip=None, fl
     body = Main(
         preview_note(),
         top_bar(trip, ledger(q, trip)),
+        lane_switch(),
         Div(
             pane("flights", 1, "Flights", f"round trip · {len(flights)}",
                  [*[book_on(flight_card(o, f, viewing["flights"] if expanded == "flights" else "", flight.cents if o.id == f else None), o, trip) for o in flights], commission_note()], "fill-sun-tint",
@@ -625,6 +636,7 @@ def workspace(f, h, c, overlay=(), head=(), x="", v="", stay=None, trip=None, fl
         body,
         data,
         Script(src="/assets/js/workspace.js", defer=True),
+        Script(src="/assets/js/lanes.js", defer=True),
         *overlay,
     )
 

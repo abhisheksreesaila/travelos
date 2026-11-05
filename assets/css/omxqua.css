@@ -1,0 +1,125 @@
+/* omxqua · Travel "Coast" (autopilot M5). The design language is ~/.claude/skills/designer/languages/universal (tokens.css, LANGUAGE.md): Material texture (opaque tonal
+   surfaces, state layers, one soft shadow scale; no glass, blur or gradients on chrome) with Liquid motion (springs only for small things under the finger).
+   Used by /plan, /creators, /sandbox and /partners: gitaway/omxqua.py puts `ul-root ul-light ul-family-travel` on <html> for those paths and links this file.
+   The --ul-* names are the language's own; values are rem (the site scales off one root, F-030: 0.75rem laptop, 1rem phone) and the motion durations are the --motion-* tokens
+   (tests/test_motion_tokens.py). Sections: fonts, tokens, legacy remap (the old --ink/--card/... names follow Coast on these pages), buttons, press, focus, chrome. */
+
+@font-face { font-family: "Geist"; src: url("/assets/fonts/geist-variable.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: "Geist Mono"; src: url("/assets/fonts/geist-mono-variable.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+
+/* ---------- tokens (copied from the language, rem) ---------- */
+.ul-root {
+  --ul-font: "Geist", "Inter", system-ui, sans-serif;
+  --ul-font-mono: "Geist Mono", "JetBrains Mono", ui-monospace, monospace;
+  --ul-radius-xs: 0.25rem; --ul-radius-in: 0.625rem; --ul-radius-card: 1rem; --ul-radius-menu: 0.875rem; --ul-radius-full: 62rem;
+  --ul-space-1: 0.25rem; --ul-space-2: 0.5rem; --ul-space-3: 0.75rem; --ul-space-4: 1rem; --ul-space-5: 1.5rem; --ul-space-6: 2rem; --ul-space-7: 3rem;
+  --ul-target: 2.5rem;
+  --ul-spring-fast: linear(0, 0.02, 0.071, 0.142, 0.226, 0.316, 0.407, 0.494, 0.577, 0.653, 0.72, 0.78, 0.831, 0.875, 0.911, 0.94, 0.964, 0.983, 0.997, 1.007, 1.014, 1.019, 1.021, 1.023, 1.023, 1.022, 1.02, 1.018, 1.017, 1.014, 1.012, 1.01, 1.009, 1.007, 1.006, 1.004, 1.003, 1.002, 1.002, 1.001, 1);
+  --ul-spring: linear(0, 0.023, 0.079, 0.154, 0.237, 0.322, 0.405, 0.482, 0.553, 0.617, 0.674, 0.723, 0.766, 0.803, 0.835, 0.862, 0.885, 0.905, 0.921, 0.935, 0.946, 0.955, 0.963, 0.97, 0.975, 0.98, 0.983, 0.986, 0.989, 0.991, 0.993, 0.994, 0.995, 0.996, 0.997, 0.997, 0.998, 0.998, 0.999, 0.999, 1);
+  --ul-spring-fast-dur: var(--motion-spring-dur);   /* phone: the squash and its spring back */
+  --ul-spring-dur: var(--motion-screen-dur);
+  --ul-gentle-in: var(--motion-dur); --ul-gentle-out: var(--motion-quick);
+  --ul-ease-in: var(--motion-ease); --ul-ease-out: var(--motion-out);
+  --ul-press-scale: 0.96;
+  font-family: var(--ul-font);
+  color: var(--ul-ink);
+  background: var(--ul-surface-0);
+}
+@media (pointer: fine) {  /* the laptop is calm: a short fade, no squash (AGENTS.md, F-156) */
+  .ul-root { --ul-spring-fast-dur: var(--motion-desk); --ul-spring-dur: var(--motion-desk); --ul-press-scale: 1; }
+}
+.ul-root { --ul-shadow-1: 0 1px 0.125rem rgba(16,16,20,.06), 0 0 0 1px rgba(16,16,20,.04); --ul-shadow-2: 0 0.375rem 1.125rem rgba(16,16,20,.10), 0 0 0 1px rgba(16,16,20,.05);
+  --ul-shadow-3: 0 1.125rem 3rem rgba(16,16,20,.18), 0 0 0 1px rgba(16,16,20,.06); }
+
+.ul-family-travel.ul-light { --ul-surface-0:#f4f0e9; --ul-surface-1:#fffdf9; --ul-surface-2:#ffffff; --ul-surface-3:#ffffff; --ul-ink:#1d1a16; --ul-ink-2:#5f584e; --ul-ink-faint:#d6cebf; --ul-line:#e7e0d4; --ul-line-2:#f0eadf; --ul-state:29 26 22;
+  --ul-accent:#0b6e69; --ul-on-accent:#ffffff; --ul-ok:#137036; --ul-warn:#8f5400; --ul-bad:#c01f25; --ul-info:#0960b5;
+  --ul-data-1:#3f7a46; --ul-data-2:#c2462b; --ul-data-3:#2f6fbf; --ul-data-4:#9a6700; --ul-data-5:#8a4fa8; --ul-data-6:#7a6a58; }
+.ul-family-travel.ul-night { --ul-surface-0:#0b1214; --ul-surface-1:#121b1e; --ul-surface-2:#182326; --ul-surface-3:#1f2c30; --ul-ink:#e9efee; --ul-ink-2:#9fb0b0; --ul-ink-faint:#3a3a40; --ul-line:#24312f; --ul-line-2:#1a2527; --ul-state:233 239 238;
+  --ul-accent:#5fd4c8; --ul-on-accent:#06201e; --ul-ok:#3ccf6e; --ul-warn:#f5a524; --ul-bad:#f2555a; --ul-info:#6cb6ff;
+  --ul-data-1:#9fd8a0; --ul-data-2:#ff8a6b; --ul-data-3:#6cb6ff; --ul-data-4:#f2c14e; --ul-data-5:#c79bf2; --ul-data-6:#c9b9a5;
+  --ul-shadow-1: 0 1px 0 rgba(255,255,255,.035) inset, 0 1px 0.125rem rgba(0,0,0,.5); --ul-shadow-2: 0 1px 0 rgba(255,255,255,.04) inset, 0 0.375rem 1.125rem rgba(0,0,0,.45); }
+.ul-family-travel { --ul-radius-card: 1rem; --ul-target: 2.5rem; --ul-text: 0.9375rem; }
+
+/* Kinds carry colour, days never do (the family's rule). One name per kind, used by every Coast page. */
+.ul-family-travel {
+  --ul-k-flight: var(--ul-data-3); --ul-k-stay: var(--ul-data-5); --ul-k-car: var(--ul-data-4); --ul-k-food: var(--ul-data-2); --ul-k-see: var(--ul-data-1);
+  --ul-k-flight-tint: color-mix(in srgb, var(--ul-data-3) 13%, var(--ul-surface-1)); --ul-k-stay-tint: color-mix(in srgb, var(--ul-data-5) 13%, var(--ul-surface-1));
+  --ul-k-car-tint: color-mix(in srgb, var(--ul-data-4) 13%, var(--ul-surface-1)); --ul-k-food-tint: color-mix(in srgb, var(--ul-data-2) 13%, var(--ul-surface-1));
+  --ul-k-see-tint: color-mix(in srgb, var(--ul-data-1) 13%, var(--ul-surface-1));
+  --ul-tonal: color-mix(in srgb, var(--ul-ink) 5%, var(--ul-surface-1));    /* a quiet inset fill on a card */
+}
+
+/* ---------- legacy remap: the site's old names follow Coast on these pages, so shared parts (header, top bar, cards, chips) change with no per-class rule ---------- */
+.ul-family-travel {
+  --font-display: var(--ul-font); --font-body: var(--ul-font);
+  --ink: var(--ul-ink); --ink-2: var(--ul-ink-2); --ink-3: var(--ul-ink-2); --ink-ledge: transparent;
+  --ground: var(--ul-surface-0); --paper: var(--ul-surface-0); --paper-2: var(--ul-tonal); --card: var(--ul-surface-1);
+  --line: var(--ul-line); --hairline: var(--ul-line); --hairline-2: color-mix(in srgb, var(--ul-ink) 18%, var(--ul-surface-1));
+  --skeleton: var(--ul-line); --skeleton-band: var(--ul-line-2);
+  --accent: var(--ul-accent); --accent-deep: var(--ul-accent); --coral: var(--ul-accent); --coral-deep: var(--ul-accent); --coral-tint: color-mix(in srgb, var(--ul-accent) 12%, var(--ul-surface-1));
+  --accent-2: var(--ul-k-car-tint);
+  --sun: var(--ul-k-car-tint);   --sun-tint: var(--ul-k-car-tint);   --sun-ink: var(--ul-data-4);
+  --mint: var(--ul-k-see-tint);  --mint-tint: var(--ul-k-see-tint);  --mint-ink: var(--ul-data-1);
+  --sky: var(--ul-k-flight-tint); --sky-tint: var(--ul-k-flight-tint); --sky-ink: var(--ul-data-3);
+  --grape: var(--ul-k-stay-tint); --grape-tint: var(--ul-k-stay-tint); --grape-ink: var(--ul-data-5);
+  --bubble: var(--ul-k-food-tint); --bubble-tint: var(--ul-k-food-tint); --bubble-ink: var(--ul-data-2);
+  --r-sm: 0.625rem; --r-md: 1rem; --r-lg: 1rem; --r-card: 1rem;
+  --shadow-sm: var(--ul-shadow-1); --shadow-md: var(--ul-shadow-1); --shadow-lg: var(--ul-shadow-3); --shadow-sticker: var(--ul-shadow-1);
+  --ease-spring: var(--ul-ease-in);
+  accent-color: var(--ul-accent);
+}
+.ul-family-travel body { font-family: var(--ul-font); font-size: var(--ul-text); color: var(--ul-ink); background: var(--ul-surface-0); }
+.ul-family-travel :is(h1, h2, h3, h4) { font-family: var(--ul-font); font-weight: 600; letter-spacing: -0.02em; }
+.ul-family-travel :is(.ga-page, .ws) { background: var(--ul-surface-0); }
+.ul-family-travel ::selection { background: color-mix(in srgb, var(--ul-accent) 22%, transparent); }
+
+/* money and times are Geist with tabular figures (Geist Mono's wide comma reads badly at size); ids, codes and status badges are Geist Mono */
+.ul-family-travel :is(.ws-price, .ws-price-big, .ws-total, .ws-times, .ws-leg-time, .ws-cb-price, .ws-slot-price, .ws-line-item, .ws-ride-price, .ws-ride-total, .ws-fare-price, .ws-room-price, .pt-price, .pt-v, .ws-temp, .ws-wday) {
+  font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.ul-family-travel :is(.pt-code) { font-family: var(--ul-font-mono); }
+
+/* ---------- chrome: the brand and the footer ---------- */
+.ul-family-travel .ga-brand-mark { background: var(--ul-accent); color: var(--ul-on-accent); box-shadow: var(--ul-shadow-1); }
+.ul-family-travel .ga-brand-mark svg { color: var(--ul-on-accent); }
+.ul-family-travel .ga-brand-name { font-family: var(--ul-font); font-weight: 650; letter-spacing: -0.03em; }
+.ul-family-travel .ga-header { height: auto; min-height: 4.5rem; }
+.ul-family-travel .ga-footer { color: var(--ul-ink-2); font-size: max(var(--text-min), 0.8125rem); font-weight: 500; }
+.ul-family-travel .ga-footer-nav a, .ul-family-travel .ga-nav a { font-weight: 500; }
+.ul-family-travel .ga-avatar { box-shadow: var(--ul-shadow-1); border-color: var(--ul-surface-1); }
+
+/* ---------- buttons: pill = tappable. Filled = accent + shadow-1 (lifts to shadow-2 on hover); tonal = surface-2 + shadow-1; text = no fill ---------- */
+.ul-family-travel :is(.btn, .ws-book-on, .ws-undo, .ws-choose, .ws-skip, .ws-back, .ws-forklist, .ws-fork, .ws-ride-go, .cr-pill, .cr-update) {
+  --ul-bg: var(--ul-surface-2); --ul-fg: var(--ul-ink);
+  background: var(--ul-bg); color: var(--ul-fg); border: 0; border-radius: var(--ul-radius-full); box-shadow: var(--ul-shadow-1);
+  font-family: var(--ul-font); font-weight: 600; letter-spacing: -0.01em; text-decoration: none; cursor: pointer;
+  transition: transform var(--ul-spring-fast-dur) var(--ul-spring-fast), background-color var(--motion-desk), box-shadow var(--motion-desk);
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+}
+.ul-family-travel .btn { min-height: var(--ul-target); padding: 0 1.25rem; font-size: 1rem; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; }
+.ul-family-travel .btn-sm { min-height: var(--ul-target); padding: 0 1rem; font-size: max(var(--text-min), 0.9375rem); }
+.ul-family-travel :is(.btn-primary, .btn-ink, .ws-book, .ws-choose) { --ul-bg: var(--ul-accent); --ul-fg: var(--ul-on-accent); }
+.ul-family-travel :is(.btn:hover, .ws-book-on:hover, .ws-undo:hover, .ws-skip:hover, .ws-back:hover, .ws-fork:hover, .ws-forklist:hover, .ws-ride-go:hover) {
+  background: color-mix(in srgb, var(--ul-bg) 92%, rgb(var(--ul-state))); color: var(--ul-fg); transform: none; box-shadow: var(--ul-shadow-1); }
+.ul-family-travel :is(.btn-primary, .btn-ink, .ws-book, .ws-choose):hover { box-shadow: var(--ul-shadow-2); transform: translateY(-0.0625rem); }
+.ul-family-travel :is(.btn, .ws-book-on, .ws-undo, .ws-choose, .ws-skip, .ws-back, .ws-fork, .ws-forklist, .ws-ride-go, .cr-pill, .cr-update):active {
+  background: color-mix(in srgb, var(--ul-bg) 88%, rgb(var(--ul-state))); transform: scale(var(--ul-press-scale)); box-shadow: var(--ul-shadow-1); }
+.ul-family-travel :is(.btn, .ws-book-on, .ws-choose, .ws-skip, .ws-back, .ws-offer, .ws-focus, .ws-expand, .ws-total, .ws-seg-b, .cr-link, .pt-back, a):focus-visible {
+  outline: 0.125rem solid var(--ul-accent); outline-offset: 0.1875rem; }
+.ul-family-travel :is(.btn, .ws-book, .ws-choose)[aria-disabled="true"], .ul-family-travel .btn:disabled { opacity: .5; box-shadow: none; pointer-events: none; }
+
+/* a card on Coast: surface-1 + shadow-1, radius 16 */
+.ul-family-travel .card { background: var(--ul-surface-1); border-radius: var(--ul-radius-card); box-shadow: var(--ul-shadow-1); }
+.ul-family-travel .tag, .ul-family-travel .sticker { background: var(--ul-tonal); color: var(--ul-ink); border: 0; box-shadow: none; transform: none; font-weight: 600; }
+
+/* status = a mono badge */
+.ul-badge { font: 500 max(var(--text-min), 0.75rem)/1 var(--ul-font-mono); padding: 0.3125rem 0.4375rem; border-radius: var(--ul-radius-xs); border: 1px solid var(--ul-line); color: var(--ul-ink-2); }
+.ul-source { font: max(var(--text-min), 0.75rem) var(--ul-font-mono); color: var(--ul-ink-2); border-top: 1px solid var(--ul-line-2); padding-top: 0.625rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ul-root *, .ul-root *::before, .ul-root *::after { scroll-behavior: auto !important; }
+  .ul-family-travel :is(.btn, .ws-book-on, .ws-choose, .ws-skip, .ws-back, .ws-fork, .ws-forklist, .ws-ride-go, .cr-pill, .cr-update):active { transform: none; }
+}
+
+/* the one loud button keeps its text colour whatever a page or the laptop skin says */
+.ul-family-travel :is(.btn-primary, .btn-ink, .ws-book, .ws-choose, .cr-go) { color: var(--ul-on-accent) !important; }
+.ul-family-travel .ga-nav a[aria-current="page"] { text-decoration-color: var(--ul-accent); }

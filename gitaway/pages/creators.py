@@ -57,9 +57,18 @@ def pitch():
                    id="cr-pitch", cls="cr-pitch")
 
 
+PLACE_KINDS = ("flight", "stay", "car", "food", "see")   # a place keeps one Coast kind colour on every creator card (omxqua.css --ul-k-*)
+
+
+def avatar(c, cls="cr-avatar"):
+    i = list(creator_profiles.PLACE_NAMES).index(c.place) if c.place in creator_profiles.PLACE_NAMES else 0
+    return Span("".join(w[0] for w in c.name.split()[:2]), cls=f"{cls} cr-k-{PLACE_KINDS[i % len(PLACE_KINDS)]}", aria_hidden="true")
+
+
 def roster():
     return Section(H2("Creators on GitAway"),
-                   Ul(*[Li(A(Span(c.name, cls="cr-who-name"), Span(f" · {c.place_name}", cls="cr-who-place"), href=f"/creators/{c.handle}")) for c in creator_profiles.CREATORS], cls="cr-roster"),
+                   Ul(*[Li(A(avatar(c), Span(Span(c.name, cls="cr-who-name"), Span(f"{c.place_name} · {len(c.trips)} trip{'s' if len(c.trips) != 1 else ''}", cls="cr-who-place"), cls="cr-who-text"),
+                             Span(icon("chev-right", 18, 2.2), cls="cr-who-go", aria_hidden="true"), href=f"/creators/{c.handle}", cls="cr-who")) for c in creator_profiles.CREATORS], cls="cr-roster"),
                    id="cr-roster", cls="cr-roster-sec")
 
 
@@ -74,7 +83,7 @@ def profile_page(c):
     photo = creator_profiles.PHOTOS.get(c.place)
     body = Section(
         Div(Img(src=photo[0], alt=photo[1], loading="lazy", cls="cr-cover") if photo else "",
-            H1(c.name), P(c.bio, cls="cr-bio"),
+            Div(avatar(c, "cr-avatar cr-avatar-lg"), H1(c.name), cls="cr-name-row"), P(c.bio, cls="cr-bio"),
             A(f"{c.channel_label} channel", href=c.channel, rel="noopener", target="_blank", cls="btn cr-channel"),
             cls="cr-profile-head"),
         Section(H2(f"{c.name.split()[0]}'s trips"), Div(*[trip_card(t) for t in c.trips], cls="cr-trips"), cls="cr-profile-trips"),
