@@ -57,7 +57,7 @@ def pitch():
                    id="cr-pitch", cls="cr-pitch")
 
 
-PLACE_KINDS = ("flight", "stay", "car", "food", "see")   # a place keeps one Coast kind colour on every creator card (omxqua.css --ul-k-*)
+PLACE_KINDS = ("flight", "stay", "car", "food", "see")   # a place keeps one Coast kind colour on every creator card (omxqua.css --oq-k-*)
 
 
 def avatar(c, cls="cr-avatar"):

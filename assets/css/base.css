@@ -33,8 +33,11 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 /* Header */
 .ga-header { height: calc(5.25rem + env(safe-area-inset-top)); padding-top: env(safe-area-inset-top); display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; }
 .ga-brand { display: flex; align-items: center; gap: 0.625rem; text-decoration: none; }
-.ga-brand-mark { width: 2.5rem; height: 2.5rem; border-radius: var(--r-sm); background: var(--coral); box-shadow: 0 0.1875rem 0 var(--coral-deep); display: grid; place-items: center; }
-.ga-brand-name { font-family: var(--font-display); font-weight: 800; font-size: 1.6875rem; letter-spacing: -0.02em; color: var(--ink); }
+/* THE LOGO, one definition for every page (D-61): an orange tile with the dark fork, and the wordmark in Bricolage 800. It reads literal brand tokens (tokens.css), never --coral or --ink,
+   so no skin (Coast, the laptop skin, a theme) can recolour it; tests_browser/test_brand_mark.py measures it on every page. The sign-in card's logo is the same pair. */
+.ga-brand-mark, .si-logo { width: 2.25rem; height: 2.25rem; flex: none; border-radius: 0.6875rem; background: var(--brand-orange); color: var(--brand-ink); box-shadow: 0 0.0625rem 0.1875rem rgba(30, 26, 46, 0.18); display: grid; place-items: center; }
+.ga-brand-mark svg, .si-logo svg { width: 1.125rem; height: 1.125rem; }
+.ga-brand-name, .si-brand { font-family: var(--font-brand); font-weight: 800; font-size: 1.5rem; letter-spacing: -0.02em; color: var(--brand-ink); }
 .ga-nav { display: flex; align-items: center; gap: 2rem; font-weight: 600; }
 .ga-nav a { text-decoration: none; }
 .ga-nav a[aria-current="page"] { text-decoration: underline; text-decoration-color: var(--accent-2); text-decoration-thickness: 0.25rem; text-underline-offset: 0.5rem; }

@@ -24,8 +24,6 @@
   /* ---- the top bar: flat on paper, a hairline under it, text links, the current one ink with a coral underline ---- */
   :root:has(.ga-topbar) .ga-topbar { height: 4.8333rem; border-bottom: 1px solid var(--hairline); }
   :root:has(.ga-topbar) .ga-topbar .ga-brand { gap: 0.75rem; }
-  :root:has(.ga-topbar) .ga-topbar .ga-brand-mark { width: 2rem; height: 2rem; border-radius: 0.5833rem; box-shadow: none; color: var(--ink); }
-  :root:has(.ga-topbar) .ga-topbar .ga-brand-name { font: 800 1.0833rem var(--font-body); letter-spacing: 0.16em; text-transform: uppercase; }
   :root:has(.ga-topbar) .ga-tb-nav { align-self: stretch; margin-left: 1rem; padding: 0; gap: 1.8333rem; border-radius: 0; background: none; box-shadow: none; }
   :root:has(.ga-topbar) .ga-tb-link { min-height: 0; padding: 0; border-radius: 0; border-bottom: 0.1667rem solid transparent; padding-top: 0.1667rem; font-size: max(var(--text-min), 1.0833rem); font-weight: 600; color: var(--ink-3); }
   :root:has(.ga-topbar) .ga-tb-link:hover { background: none; color: var(--ink); }

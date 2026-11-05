@@ -21,8 +21,8 @@ def _pages(page, base_url):
 def _omxqua(page):
     return page.evaluate("""() => {
       const root = document.documentElement, body = document.body;
-      const fam = root.classList.contains('ul-family-travel') || body.classList.contains('ul-family-travel');
-      const tok = getComputedStyle(root).getPropertyValue('--ul-accent').trim() || getComputedStyle(body).getPropertyValue('--ul-accent').trim();
+      const fam = root.classList.contains('oq-family-travel') || body.classList.contains('oq-family-travel');
+      const tok = getComputedStyle(root).getPropertyValue('--oq-accent').trim() || getComputedStyle(body).getPropertyValue('--oq-accent').trim();
       const blur = [...document.querySelectorAll('*')].some(e => { const s = getComputedStyle(e); return (s.backdropFilter && s.backdropFilter !== 'none') || (s.filter || '').includes('blur'); });
       return {fam, tok, blur};
     }""")
@@ -35,8 +35,8 @@ def test_m5_omxqua_on_phone_and_laptop(browser, base_url):
         for path in list(_pages(page, base_url)):
             page.goto(base_url + path)
             look = _omxqua(page)
-            assert look["fam"], f"{path}: ul-family-travel root"
-            assert look["tok"], f"{path}: --ul-accent token"
+            assert look["fam"], f"{path}: oq-family-travel root"
+            assert look["tok"], f"{path}: --oq-accent token"
             assert not look["blur"], f"{path}: no glass or blur"
         ctx.close()
 

@@ -23,6 +23,10 @@
 
   --coral: #FF7352;
   --coral-deep: #C9431F;
+  /* the logo (D-61): the same on every page, so it reads these and never --coral/--ink, which a skin may remap. White on the tile is only 2.7:1, so its fork is ink (6.3:1). */
+  --brand-orange: #FF7352;
+  --brand-ink: #1E1A2E;
+  --font-brand: 'Bricolage Grotesque', 'Figtree', 'Segoe UI', system-ui, sans-serif;
   --sun: #FFC93C;   --sun-tint: #FFF1C2;   --sun-ink: #8A6200;
   --mint: #48D1A0;  --mint-tint: #D4F7EA;  --mint-ink: #16865F;
   --sky: #5AB0FF;   --sky-tint: #DDEEFF;   --sky-ink: #1B6FC9;

@@ -17,3 +17,7 @@
 - Plan: skin via a before hook + remapped legacy tokens, then per-page sheets (`plan_coast.css`, `creators_coast.css`, `partners.css` tail). Fonts Geist/Geist Mono + OFL licence copied to `assets/fonts/`.
 - Slip: my lane-switcher constant `LANES` shadowed plan.py's own `LANES` (a 500 on /plan); renamed `SEG_LANES`. Slip 2: `pkill -f` on a pattern killed my own shell; stop by PID only.
 - test_scale rejects px sizes and sub-11px text in any stylesheet: omxqua.css is converted to rem.
+
+## Orange accent and omxqua v0.1.6 (ap-orange)
+- Captain: the logo was teal on Coast pages and orange elsewhere (and uppercase and smaller in the top bar). One logo definition now (base.css), Coast accent orange, omxqua `--oq-*` vendored by hand. Decisions D-60 to D-66.
+- Slip: I guessed a contrast ratio (5.82) in a test before computing it (6.30); the test caught it. Compute first.

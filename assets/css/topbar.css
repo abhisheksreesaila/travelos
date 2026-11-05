@@ -36,8 +36,6 @@
   .ga-topbar ~ .tp > .ga-skip, .ga-skip:has(~ .ga-topbar) { display: none; }   /* one "Skip to content" at a time: the bar's own, here; the page's own below 1020px */
   .ga-topbar a { text-decoration: none; color: inherit; }
   .ga-topbar .ga-brand { gap: 0.75rem; flex-shrink: 0; }
-  .ga-topbar .ga-brand-mark { width: 2.5rem; height: 2.5rem; border-radius: 0.75rem; box-shadow: 0 0.25rem 0 var(--coral-deep); }
-  .ga-topbar .ga-brand-name { font-size: 1.5rem; }
 
   .ga-tb-nav { display: flex; gap: 0.3333rem; margin-left: 1.5rem; padding: 0.3333rem; border-radius: var(--r-pill); background: var(--card); box-shadow: var(--shadow-sm); flex-shrink: 0; }
   .ga-tb-link { display: flex; align-items: center; gap: 0.5833rem; min-height: 2.25rem; padding: 0 1.25rem; border-radius: var(--r-pill); font-weight: 700; color: var(--ink-2); white-space: nowrap; }

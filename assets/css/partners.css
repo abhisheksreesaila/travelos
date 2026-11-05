@@ -53,23 +53,23 @@
 
 
 /* omxqua Travel "Coast" (M5): flat tonal surfaces, one shadow scale, kinds carry colour; status is a mono badge */
-.ul-family-travel .pt-stage { background: var(--ul-surface-0); }
-.ul-family-travel .pt-card { border-radius: var(--ul-radius-card); background: var(--ul-surface-1); box-shadow: var(--ul-shadow-2); }
-.ul-family-travel .pt-title { font-weight: 650; letter-spacing: -0.04em; }
-.ul-family-travel .pt-lead { font-weight: 450; }
-.ul-family-travel .pt-fine { font-weight: 400; color: var(--ul-ink-2); }
-.ul-family-travel .pt-chip { border-radius: var(--ul-radius-xs); background: var(--ul-k-car-tint); color: var(--ul-k-car); font: 500 max(var(--text-min), 0.8125rem) var(--ul-font-mono); }
-.ul-family-travel .pt-offer, .ul-family-travel .pt-facts, .ul-family-travel .pt-row { background: var(--ul-surface-0); box-shadow: inset 0 0 0 1px var(--ul-line); border-radius: 0.875rem; }
-.ul-family-travel .pt-tile { background: var(--ul-k-flight-tint); color: var(--ul-k-flight); border-radius: 0.75rem; }
-.ul-family-travel .pt-tile.pt-k-stay { background: var(--ul-k-stay-tint); color: var(--ul-k-stay); }
-.ul-family-travel .pt-tile.pt-k-car { background: var(--ul-k-car-tint); color: var(--ul-k-car); }
-.ul-family-travel .pt-name, .ul-family-travel .pt-who { font-weight: 600; }
-.ul-family-travel .pt-price, .ul-family-travel .pt-v { font-weight: 600; }
-.ul-family-travel .pt-k { font-weight: 400; color: var(--ul-ink-2); }
-.ul-family-travel .pt-badge { background: var(--ul-k-see-tint); color: var(--ul-k-see); }
-.ul-family-travel .pt-status { border-radius: var(--ul-radius-xs); font: 500 max(var(--text-min), 0.75rem) var(--ul-font-mono); }
-.ul-family-travel .pt-st-booked { background: var(--ul-k-see-tint); color: var(--ul-k-see); }
-.ul-family-travel .pt-st-clicked { background: var(--ul-k-car-tint); color: var(--ul-k-car); }
-.ul-family-travel .pt-go { min-height: 3rem; font-size: 1rem; }
-.ul-family-travel .pt-back { font-weight: 500; text-decoration: none; color: var(--ul-accent); }
-.ul-family-travel #pt-summary { font: 500 max(var(--text-min), 0.9375rem) var(--ul-font-mono); color: var(--ul-ink); padding: 0.625rem 0.875rem; border-radius: 0.75rem; background: var(--ul-surface-0); box-shadow: inset 0 0 0 1px var(--ul-line); }
+.oq-family-travel .pt-stage { background: var(--oq-surface-0); }
+.oq-family-travel .pt-card { border-radius: var(--oq-radius-card); background: var(--oq-surface-1); box-shadow: var(--oq-shadow-2); }
+.oq-family-travel .pt-title { font-weight: 650; letter-spacing: -0.04em; }
+.oq-family-travel .pt-lead { font-weight: 450; }
+.oq-family-travel .pt-fine { font-weight: 400; color: var(--oq-ink-2); }
+.oq-family-travel .pt-chip { border-radius: var(--oq-radius-xs); background: var(--oq-k-car-tint); color: var(--oq-k-car); font: 500 max(var(--text-min), 0.8125rem) var(--oq-font-mono); }
+.oq-family-travel .pt-offer, .oq-family-travel .pt-facts, .oq-family-travel .pt-row { background: var(--oq-surface-0); box-shadow: inset 0 0 0 1px var(--oq-line); border-radius: 0.875rem; }
+.oq-family-travel .pt-tile { background: var(--oq-k-flight-tint); color: var(--oq-k-flight); border-radius: 0.75rem; }
+.oq-family-travel .pt-tile.pt-k-stay { background: var(--oq-k-stay-tint); color: var(--oq-k-stay); }
+.oq-family-travel .pt-tile.pt-k-car { background: var(--oq-k-car-tint); color: var(--oq-k-car); }
+.oq-family-travel .pt-name, .oq-family-travel .pt-who { font-weight: 600; }
+.oq-family-travel .pt-price, .oq-family-travel .pt-v { font-weight: 600; }
+.oq-family-travel .pt-k { font-weight: 400; color: var(--oq-ink-2); }
+.oq-family-travel .pt-badge { background: var(--oq-k-see-tint); color: var(--oq-k-see); }
+.oq-family-travel .pt-status { border-radius: var(--oq-radius-xs); font: 500 max(var(--text-min), 0.75rem) var(--oq-font-mono); }
+.oq-family-travel .pt-st-booked { background: var(--oq-k-see-tint); color: var(--oq-k-see); }
+.oq-family-travel .pt-st-clicked { background: var(--oq-k-car-tint); color: var(--oq-k-car); }
+.oq-family-travel .pt-go { min-height: 3rem; font-size: 1rem; }
+.oq-family-travel .pt-back { font-weight: 500; text-decoration: none; color: var(--oq-accent); }
+.oq-family-travel #pt-summary { font: 500 max(var(--text-min), 0.9375rem) var(--oq-font-mono); color: var(--oq-ink); padding: 0.625rem 0.875rem; border-radius: 0.75rem; background: var(--oq-surface-0); box-shadow: inset 0 0 0 1px var(--oq-line); }
