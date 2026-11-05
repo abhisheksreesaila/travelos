@@ -1,5 +1,6 @@
 """F-038: schedule an Uber through the app: the rides card, the flow, the status timeline, the calendar, /booked, storage."""
 import re
+from datetime import timedelta
 from html import unescape
 from urllib.parse import parse_qs, urlsplit
 
@@ -426,8 +427,10 @@ def test_a_ride_is_stored_with_the_trip_it_was_booked_on_and_other_trips_rides_a
     book(client)
     schedule(client)
     rides.cancel_ride(_Session(client), "r1")  # trip A: a cancelled ride
-    book(client, pick="f=f1&h=h1&c=none&d=2026-10-23&r=2026-10-26&a=2&k=4,7")
-    r = schedule(client, pick="f=f1&h=h1&c=none&d=2026-10-23&r=2026-10-26&a=2&k=4,7")
+    soon = catalog.today() + timedelta(days=20)  # a second trip three weeks out (a ride can be booked up to 30 days ahead), never a date that has gone by
+    other = f"f=f1&h=h1&c=none&d={soon.isoformat()}&r={(soon + timedelta(days=3)).isoformat()}&a=2&k=4,7"
+    book(client, pick=other)
+    r = schedule(client, pick=other)
     assert r.status_code == 303
     assert [x.id for x in rides.list_rides(_Session(client))] == ["r1", "r2"]  # trip A's cancelled ride is still there
     with familydb.using(person()) as db:
