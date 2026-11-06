@@ -6,18 +6,18 @@ does arithmetic: it asks GET /plan/quote for the ledger figures of whatever is p
 """
 
 import json
-from urllib.parse import parse_qsl, quote as urlquote, urlencode
+from urllib.parse import quote as urlquote
 
 from starlette.responses import HTMLResponse
 
 from fasthtml.common import cookie, to_xml, A, Article, Button, Div, Figcaption, Figure, H2, H3, Img, Kbd, Li, Link, Main, NotStr, P, Script, Section, Span, Svg, Title, Ul
 
-from gitaway import access, affiliate, auth, catalog, context, itineraries, partners, session, showcase, stats
+from gitaway import access, affiliate, catalog, context, itineraries, partners, session, showcase, stats
 from gitaway import session as session_helpers
 from gitaway.icons import icon
 from gitaway.itinerary_view import fork_href
 from gitaway.layout import avatar, brand, styles
-from gitaway.pages import flight_detail as flight_ui, stay_detail as stay_ui
+from gitaway.pages import flight_detail as flight_ui, plan_search, stay_detail as stay_ui
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/workspace.css"), Link(rel="stylesheet", href="/assets/css/partners.css"))
 DEFAULTS = {"flight": "f1", "stay": "h1", "car": "c1"}  # Los Angeles; see defaults() for the other places
@@ -56,9 +56,9 @@ def resolve_pick(f, h, c, trip=catalog.SAMPLE_TRIP):
     return tuple(picked)
 
 
-def resolve_trip(d="", r="", a="", k="", to=""):
-    """The trip the URL names (to, d, r, a, k: see catalog.trip_query). Nothing or anything bad means the sample trip."""
-    return catalog.trip_from_url(d, r, a, k, to)
+def resolve_trip(d="", r="", a="", k="", to="", home="", focus=""):
+    """The trip the URL names (to, d, r, a, k, home, focus: see catalog.trip_query). Nothing or anything bad means the sample trip."""
+    return catalog.trip_from_url(d, r, a, k, to, home, focus)
 
 
 def resolve_stay(h, rooms=None, add=None, trip=catalog.SAMPLE_TRIP):
@@ -244,9 +244,7 @@ def _offer_attrs(o, picked, viewing=""):
     return attrs
 
 
-def go_href(o, trip):
-    """The "Book on <partner>" link of one offer: /go/<offer id> with the trip, which logs the click and sends the traveler to the partner (M2)."""
-    return f"/go/{o.id}?" + urlencode({"to": trip.key, **dict(parse_qsl(catalog.trip_query(trip)))})
+go_href = partners.go_href   # the "Book on <partner>" link of one offer: /go/<offer id> with the trip, which logs the click and sends the traveler to the partner (M2)
 
 
 def book_on(card, o, trip):
@@ -255,6 +253,15 @@ def book_on(card, o, trip):
         return card
     p = partners.for_offer(o)
     return Div(card, A(icon("link", 16, 2.2), f"Book on {p.name}", href=go_href(o, trip), cls="ws-book-on", rel="sponsored noopener", data_partner=p.key), cls="ws-offer-wrap")
+
+
+def todo_card(trip):
+    """Tickets and things to do (Klook, F-195): one card at the foot of Getting around, the same sponsored link as a Book on link. Nothing where there is nowhere to send anyone."""
+    if not partners.available():
+        return ""
+    o = catalog.search_offer("todo", trip)
+    return Div(Span(o.name, cls="ws-subhead"), Span(o.headline, cls="ws-name"), Span("Klook sells the tickets and keeps your booking.", cls="ws-detail"),
+               A(icon("link", 16, 2.2), trip.todo_cta, href=go_href(o, trip), cls="ws-book-on ws-todo-link", rel="sponsored noopener", data_lane="todo"), cls="ws-todo")
 
 
 def commission_note():
@@ -620,7 +627,7 @@ def workspace(f, h, c, overlay=(), head=(), x="", v="", stay=None, trip=None, fl
                  [*[book_on(stay_card(o, h, viewing["stays"] if expanded == "stays" else "", stay.cents if o.id == h else None), o, trip) for o in stays], commission_note()], "fill-mint-tint",
                  detail=[stay_detail(o, h, viewing["stays"], stay if o.id == h else catalog.stay_pick(o.id, trip=trip), chosen=o.id == h) for o in stays], expanded=expanded == "stays",
                  screen=screen if expanded == "stays" else "list", lane="stay", skipped=h is None),
-            pane("cars", 3, "Getting around", "", [*[book_on(car_card(o, c), o, trip) for o in catalog.offers("car", trip)], commission_note()], "fill-sky-tint",
+            pane("cars", 3, "Getting around", "", [*[book_on(car_card(o, c), o, trip) for o in catalog.offers("car", trip)], todo_card(trip), commission_note()], "fill-sky-tint",
                  Div(rides_card(q.rides, q) if q.rides else "", id="ws-rides", cls="ws-rides", aria_live="polite"), *([tip] if showcase.on() and la else []),
                  lane="car", skipped=c is None, with_flight=f is not None),
             Div(weather_pane(trip), map_pane(catalog.offer(h, trip) if h else None, trip), news_pane(trip), *([community_pane()] if showcase.on() and la else []), cls="ws-context"),
@@ -644,18 +651,23 @@ def workspace(f, h, c, overlay=(), head=(), x="", v="", stay=None, trip=None, fl
 def register(app):
     @app.get("/plan")
     def plan(request, session, f: str = "", h: str = "", c: str = "", x: str = "", v: str = "", rooms: str = None, add: str = None,
-             fare: str = None, bags: str = None, d: str = "", r: str = "", a: str = "", k: str = "", to: str = "", via: str = ""):
-        trip = resolve_trip(d, r, a, k, to)
+             fare: str = None, bags: str = None, d: str = "", r: str = "", a: str = "", k: str = "", to: str = "", via: str = "", home: str = "", focus: str = ""):
+        trip = resolve_trip(d, r, a, k, to, home, focus)
+        creator = affiliate.claimed_via(request, via)     # F-184, F-182: "Plan this trip" on a creator's own page: remember whose trip this is for 30 days, so /go can use their marker
+        cookie_header = cookie(affiliate.COOKIE, creator, **affiliate.cookie_args()) if creator else None
+        if creator:
+            stats.count_plan(request, session, creator)    # F-192: and it is one "Plan this trip" tap on that trip
+        if not showcase.on() and (affiliate.valid_via(via) or affiliate.valid_via(request.cookies.get(affiliate.COOKIE))):
+            # F-195: a reader who came from a creator's trip, off the showcase, is not shown the invented catalog: one honest card per lane
+            bad = home.strip() and not catalog.clean_home(home)
+            body = plan_search.search_page(trip, via=affiliate.valid_via(via), home_raw=home.strip().upper() if bad else "", error=catalog.BAD_HOME if bad else "")
+            return (body, cookie_header) if cookie_header else body
         picks = resolve_pick(f, h, c, trip)
         stay, flight = resolve_stay(picks[1], rooms, add, trip), resolve_flight(picks[0], fare, bags, trip)
         if any((f, h, c, rooms, add, fare, bags, d, r, a, k, to)):  # a bare /plan is not "picks"; /start offers to continue the rest
             session_helpers.remember_plan(session, plan_path(*picks, stay, trip, flight)[len("/plan?"):])
         body = workspace(*picks, x=x, v=v, stay=stay, flight=flight, trip=trip)
-        creator = affiliate.valid_via(via)   # F-184: "Plan this trip" on a creator's page: remember whose trip this is for 30 days, so /go can use their marker
-        if creator and affiliate.seen_on_own_page(request, creator):      # F-182: only a click on that creator's own page sets it
-            stats.count_plan(request, session, creator)                   # F-192: and it is one "Plan this trip" tap on that trip
-            return body, cookie(affiliate.COOKIE, creator, max_age=affiliate.COOKIE_DAYS * 86400, path="/", httponly=True, samesite="lax", secure=auth.production())
-        return body
+        return (body, cookie_header) if cookie_header else body
 
     @app.get("/plan/quote")
     def plan_quote(f: str = "", h: str = "", c: str = "", rooms: str = None, add: str = None, fare: str = None, bags: str = None,

@@ -24,15 +24,17 @@ def new_click_id() -> str:
     return uuid.uuid4().hex[:10]
 
 
-def sub_id(session, trip, offer) -> str:
-    """The Travelpayouts SubID of a click: a short family hash, the place, the first day and the lane. No name, email or address (D-24)."""
+def sub_id(session, trip, offer, via="") -> str:
+    """The Travelpayouts SubID of a click: a short family hash, the place, the first day and the lane, then the handle of the creator whose trip the family planned from
+    (F-195, so Klook's report can be split by creator; at most 40 characters of a public handle, about 70 in all, far under Travelpayouts' 4096). Joined with `_` and the
+    handle's hyphens made `_`: Travelpayouts' help allows only digits, Latin letters and `_` in a SubID (D-164). No name, email or address (D-24)."""
     family = hashlib.sha256(str((session or {}).get("tenant_id") or "").encode()).hexdigest()[:6] if (session or {}).get("tenant_id") else "anon"
-    return f"{family}-{trip.key}-{trip.depart:%y%m%d}-{offer.kind}"
+    return f"{family}_{trip.key}_{trip.depart:%y%m%d}_{offer.kind}" + (f"_{via.replace('-', '_')}" if via else "")
 
 
-def record_click(session, click_id, offer, trip, partner) -> str:
+def record_click(session, click_id, offer, trip, partner, via="") -> str:
     """Log a click for the signed-in person's family. Returns its SubID (a signed-out click is not logged but has one)."""
-    sub = sub_id(session, trip, offer)
+    sub = sub_id(session, trip, offer, via)
     with ses.family(session) as fam:
         if fam:
             with familydb.transaction(fam.db):

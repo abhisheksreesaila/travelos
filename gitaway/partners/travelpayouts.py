@@ -5,7 +5,8 @@
   body `{"trs": <project id>, "marker": <partner id>, "shorten": false, "links": [{"url": <Klook page>, "sub_id": <SubID>}]}`; the answer is
   `{"code": 200, "result": {"links": [{"url", "code": "success", "partner_url": <tracked link>}]}}`.
   It runs at /go time (never while a page renders), with a 2 second timeout, and a good answer is cached per (url, sub_id). With no token, or on any
-  failure, the traveler goes to `KLOOK_FALLBACK_URL` (the plain Klook partner link of our account).
+  failure, the traveler goes to `KLOOK_FALLBACK_URL` (the plain Klook partner link of our account). A failure with a token set (a timeout, a refusal, a project id
+  that is missing or wrong) is a WARNING with its reason and a count on /admin (F-195, gitaway/partners/failures.py); having no token is only an INFO line.
 
 `_post` is the only function that touches a network; tests replace it. Settings come from the environment by name: TRAVELPAYOUTS_MARKER (801445),
 TRAVELPAYOUTS_TOKEN, TRAVELPAYOUTS_TRS (the project id; the Drive script id 596534 is probably it), KLOOK_FALLBACK_URL.
@@ -23,6 +24,10 @@ DEFAULT_KLOOK_FALLBACK = "https://klook.tpx.lv/s1rIcwCA"
 _CACHE: dict = {}
 _CACHE_MAX = 512
 log = logging.getLogger(__name__)
+
+
+class NotConfigured(LookupError):
+    """No token or no marker: the partner-links API is simply not in use (a local copy), which is not a failure."""
 
 
 def marker() -> str:
@@ -58,7 +63,7 @@ def _post(url: str, headers: dict, body: dict, timeout: float) -> dict:
 def create_link(url: str, sub_id: str) -> str:
     """A tracked link for one partner page, from the API. Raises when there is no token or the API does not answer with a success."""
     if not (token() and marker()):
-        raise LookupError("no token or marker")
+        raise NotConfigured("no token or marker")
     body = links_request([(url, sub_id)])
     if body is None:
         raise LookupError("no numeric project id (TRAVELPAYOUTS_TRS) or marker")
@@ -69,6 +74,19 @@ def create_link(url: str, sub_id: str) -> str:
     return link["partner_url"]
 
 
+def _failed(error: Exception) -> None:
+    """Say why the partner-links API did not give a link: one WARNING line and one count for /admin. The token is never in either."""
+    reason = f"{type(error).__name__}: {error}"[:160]
+    if token():
+        reason = reason.replace(token(), "***")
+    log.warning("partner-links API failed, the click goes to the plain Klook link (%s)", reason)
+    try:
+        from gitaway.partners import failures
+        failures.record(reason)
+    except Exception:   # the click must not fail because the count could not be written
+        log.exception("could not count the partner-links failure")
+
+
 def klook_link(url: str, sub_id: str) -> str:
     """Where a Klook click goes: the tracked link of `url` with our SubID, else the plain Klook partner link. Never raises."""
     key = (url, sub_id)
@@ -76,8 +94,11 @@ def klook_link(url: str, sub_id: str) -> str:
         return _CACHE[key]
     try:
         link = create_link(url, sub_id)
-    except Exception as e:   # no token, a timeout, a bad answer: a click must always land somewhere
-        log.info("partner-links API not used (%s: %s)", type(e).__name__, e)
+    except NotConfigured as e:
+        log.info("partner-links API not used (%s)", e)
+        return klook_fallback()
+    except Exception as e:   # a timeout, a bad answer, a wrong project id: a click must always land somewhere, and the failure must be noticed (F-195)
+        _failed(e)
         return klook_fallback()
     if len(_CACHE) >= _CACHE_MAX:
         _CACHE.clear()

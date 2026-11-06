@@ -6,7 +6,7 @@ from urllib.parse import quote
 from gitaway import catalog, session as ses
 from tests.test_signin import person, session_data, sign_in, stored_booking
 
-GOOD = {"go": "1", "from": "SFO", "to": "la", "d": "2026-10-16", "r": "2026-10-20", "a": "2", "n": "2", "k1": "4", "k2": "7"}
+GOOD = {"go": "1", "from": "", "to": "la", "d": "2026-10-16", "r": "2026-10-20", "a": "2", "n": "2", "k1": "4", "k2": "7"}
 
 
 def submit(client, **over):
@@ -35,7 +35,7 @@ def test_start_asks_where_to_and_is_prefilled_with_the_sample_trip(client):
     assert 'method="get"' in form and 'action="/start"' in form
     assert tags(h, "d")[0]["value"] == "2026-10-16" and tags(h, "r")[0]["value"] == "2026-10-20"
     assert tags(h, "d")[0]["type"] == "date" and tags(h, "r")[0]["type"] == "date"
-    assert selected(h, "from") == "SFO" and selected(h, "a") == "2" and selected(h, "n") == "2"
+    assert tags(h, "from")[0]["type"] == "text" and tags(h, "from")[0]["value"] == "" and selected(h, "a") == "2" and selected(h, "n") == "2"
     assert selected(h, "k1") == "4" and selected(h, "k2") == "7"
 
 
@@ -236,3 +236,35 @@ def test_a_stale_pay_link_cannot_book_the_past(client, monkeypatch):
     assert r.headers["location"].startswith("/start?go=1")
     assert stored_booking() is None
     assert "today or later" in client.get(r.headers["location"]).text
+
+
+# ---- F-195: the reader's home airport -------------------------------------------------------------------------------
+
+def test_a_home_airport_goes_to_the_plan_in_capitals(client):
+    r = submit(client, **{"from": "jfk"})
+    assert r.status_code == 303 and r.headers["location"] == "/plan?d=2026-10-16&r=2026-10-20&a=2&k=4,7&home=JFK"
+
+
+def test_leaving_the_airport_empty_is_fine_and_says_nothing_about_it(client):
+    assert "home=" not in submit(client, **{"from": ""}).headers["location"]
+    assert "home=" not in submit(client, **{"from": "  "}).headers["location"]
+
+
+def test_a_bad_airport_code_is_refused_on_its_field_and_kept(client):
+    r = submit(client, **{"from": "S1O"})
+    assert r.status_code == 422 and "three-letter airport code" in r.text
+    assert tags(r.text, "from")[0]["value"] == "S1O" and tags(r.text, "from")[0]["aria-invalid"] == "true"
+
+
+def test_start_prefills_the_airport_and_a_disneyland_trip_survives_the_round_trip(client):
+    h = client.get("/start?d=2027-03-16&r=2027-03-20&a=2&k=4,7&home=JFK&focus=disney").text
+    assert tags(h, "from")[0]["value"] == "JFK"
+    assert tags(h, "focus")[0]["value"] == "disney"
+    r = client.get("/start", params={**GOOD, "from": "JFK", "focus": "disney", "d": "2027-03-16", "r": "2027-03-20"}, follow_redirects=False)
+    assert r.headers["location"] == "/plan?d=2027-03-16&r=2027-03-20&a=2&k=4,7&home=JFK&focus=disney"
+    assert tags(client.get("/start").text, "focus") == []     # no hidden field on the plain sample form
+
+
+def test_a_home_in_the_trip_urls_own_words_still_counts_so_the_stale_pay_link_keeps_it(client):
+    r = client.get("/start", params={"go": "1", "to": "la", "d": "2027-03-16", "r": "2027-03-20", "a": "2", "n": "0", "home": "jfk", "focus": "disney"}, follow_redirects=False)
+    assert r.headers["location"] == "/plan?d=2027-03-16&r=2027-03-20&a=2&home=JFK&focus=disney"

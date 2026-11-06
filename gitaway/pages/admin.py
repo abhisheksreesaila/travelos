@@ -20,9 +20,10 @@ from gitaway import affiliate, catalog, community, creatordraft as cd, members, 
 from gitaway.icons import icon
 from gitaway.layout import page
 from gitaway.pages import creatorclaim as claims
-from gitaway.partners import log
+from gitaway.partners import failures, log
 
 GOAL = 150
+KLOOK_DAYS = 7    # how far back the "Klook links not tracked" count looks (F-195)
 HEAD = (Link(rel="stylesheet", href="/assets/css/admin.css"), *claims.HEAD)
 
 
@@ -97,11 +98,15 @@ def admin_page(drafted=()):
     summary = commission_summary(sheet)
     total = sum(s[3] for s in summary)
     rep = reports.all_reports()
-    cards = (("Creators", f"{len(people)} of {GOAL}", "ad-goal"), ("Live trips", str(live), "ad-live"), ("Reports", str(len(rep)), "ad-reports"), ("Estimated commission", catalog.money(total), "ad-commission"))
+    broken, why = failures.recent(KLOOK_DAYS)
+    cards = (("Creators", f"{len(people)} of {GOAL}", "ad-goal"), ("Live trips", str(live), "ad-live"), ("Reports", str(len(rep)), "ad-reports"), ("Estimated commission", catalog.money(total), "ad-commission"),
+             ("Klook links not tracked", str(broken), "ad-klook-failures"))
     return page("Admin", Main(
         Div(H1("Admin", cls="ad-title"),
             Div(*[Div(Span(label, cls="ad-k"), Span(value, cls="ad-v", id=i)) for label, value, i in cards], cls="ad-cards"),
             P(f"{skipped} {'family' if skipped == 1 else 'families'} could not be read, so {'its' if skipped == 1 else 'their'} clicks are not in these totals.", role="alert", cls="ad-meta", id="ad-skipped") if skipped else "",
+            P(f"{broken} Klook link{'s' if broken != 1 else ''} could not be tracked in the last {KLOOK_DAYS} days (latest: {why}). Those clicks went to the plain Klook link and lost their SubID: check TRAVELPAYOUTS_TRS "
+              "and the token on Railway.", role="alert", cls="ad-meta", id="ad-klook-last") if broken else "",
             Div(Span(cls="ad-bar-fill", style=f"width:{min(100, round(100 * len(people) / GOAL))}%"), cls="ad-bar", role="img", aria_label=f"{len(people)} of {GOAL} creators"),
             claims.section(drafted),
             Section(H2("Waiting for your approval"), P("A trip claimed or published by someone whose email is not at the post's own site. Check it is theirs, then approve it.", cls="ad-meta"),

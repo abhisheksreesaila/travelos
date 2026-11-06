@@ -51,7 +51,9 @@ _MORE = ("""CREATE TABLE IF NOT EXISTS creator_markers (owner_user TEXT PRIMARY 
          """CREATE TABLE IF NOT EXISTS view_seen (day TEXT NOT NULL, h TEXT NOT NULL, slug TEXT NOT NULL, kind TEXT NOT NULL, PRIMARY KEY (day, h, slug, kind))""",
          # F-194: a creator's trip whose ownership the captain has not checked: "pending" (a claim by someone not at the post's site: unlisted), "unverified" (an open import: listed, the byline waits)
          # or "approved". No row: nothing to check. Holds the slug and the post's site only; who published it is read from the trip.
-         """CREATE TABLE IF NOT EXISTS trip_review (slug TEXT PRIMARY KEY, state TEXT NOT NULL, host TEXT NOT NULL DEFAULT '', updated_at TEXT NOT NULL)""")
+         """CREATE TABLE IF NOT EXISTS trip_review (slug TEXT PRIMARY KEY, state TEXT NOT NULL, host TEXT NOT NULL DEFAULT '', updated_at TEXT NOT NULL)""",
+         # F-195: Klook links the partner-links API could not make, per day and reason (gitaway/partners/failures.py): no person in it
+         """CREATE TABLE IF NOT EXISTS klook_failures (day TEXT NOT NULL, reason TEXT NOT NULL, n INTEGER NOT NULL DEFAULT 0, last_at TEXT NOT NULL, PRIMARY KEY (day, reason))""")
 # Words a handle cannot be: each is (or may become) a fixed page under /creators/, which would shadow the profile (tests/test_creator_profiles.py walks the app's routes against this set).
 RESERVED_HANDLES = frozenset({"draft", "finish", "done", "new", "import", "settings", "edit", "preview", "photo", "admin", "report", "go", "drafts", "stats"})
 UP = " AND slug NOT IN (SELECT slug FROM takedowns)"   # the live trips: everything not taken down (F-185)
@@ -358,6 +360,6 @@ def clear() -> None:
     with connect() as db:
         db.conn.execute(text("DELETE FROM published"))
         db.conn.execute(text("DELETE FROM creators"))
-        for table in ("creator_markers", "takedowns", "reports", "via_clicks", "fork_counts", "trip_days", "view_seen", "trip_review"):
+        for table in ("creator_markers", "takedowns", "reports", "via_clicks", "fork_counts", "trip_days", "view_seen", "trip_review", "klook_failures"):
             db.conn.execute(text(f"DELETE FROM {table}"))
         db.conn.commit()

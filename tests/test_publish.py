@@ -238,7 +238,7 @@ def public_everything(client, row):
     hub = s.get("/community").text
     prof = s.get("/creators/ari-rivera").text
     stored = repr({k: v for k, v in community.get(row["slug"]).items() if k not in ("created_at", "updated_at")})   # when it was published is not a date of the trip
-    text = unescape(re.sub(r'/plan\?[^"]*', "", main_of(page) + main_of(hub) + main_of(prof)) + stored)   # "Plan this trip" carries dates ahead, not the trip's own
+    text = unescape(re.sub(r'/(?:plan|go/search-todo)\?[^"]*', "", main_of(page) + main_of(hub) + main_of(prof)) + stored)   # "Plan this trip" and the Tickets card (F-195) carry dates ahead, not the trip's own
     files = b"".join(f.read_bytes() for f in (publish.root() / row["slug"]).iterdir())
     return text, files
 

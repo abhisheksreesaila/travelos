@@ -276,6 +276,23 @@ def _trust(trip):
     return Section(P(line, id="who-earns", cls="trust-line"), report, id="trust", cls="trust ga-wrap")
 
 
+# ---------- tickets and things to do (F-195) ----------
+
+def _todo(trip):
+    """A real trip's Tickets and things to do card (Klook), honest about who it pays: Klook never carries a creator's marker (D-101). Nothing where we plan no place or nowhere to send anyone."""
+    from gitaway import catalog, hub, partners  # here, not at the top: hub reads the community database
+    href = hub.todo_href(trip) if trip.real else ""
+    if not href or not partners.available():
+        return ""
+    where = catalog.sample_trip(trip.plan_to, focus=hub.focus_of(trip))
+    offer = catalog.search_offer("todo", where)
+    return Section(
+        Div(H2(offer.name), P(offer.headline, cls="todo-what"),
+            P(f"Klook sells the tickets and keeps your booking. This link supports GitAway, not {trip.author.split()[0]}.", cls="todo-fine")),
+        A(icon("link", 22, 2.2), where.todo_cta, href=href, rel="sponsored noopener", cls="btn btn-hero", id="todo-klook"),
+        id="todo", cls="todo ga-wrap")
+
+
 # ---------- make it yours ----------
 
 def _yours(trip):
@@ -339,7 +356,7 @@ SCRIPT = Script("""
 def itinerary_body(trip: Itinerary, loading: bool = False, saved: bool = False, forked: bool = False, blog=""):
     if loading:
         return skeleton(trip)
-    return Div(_hero(trip, saved, forked), _board(trip), _days(trip), _tips(trip), _yours(trip), blog, _trust(trip) if trip.real else "", SCRIPT, cls="itinerary")
+    return Div(_hero(trip, saved, forked), _board(trip), _days(trip), _tips(trip), _yours(trip), _todo(trip) if trip.real else "", blog, _trust(trip) if trip.real else "", SCRIPT, cls="itinerary")
 
 
 def itinerary_page(trip: Itinerary, theme=None, loading: bool = False, saved: bool = False, forked: bool = False, blog="", noindex=False):

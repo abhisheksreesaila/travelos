@@ -29,4 +29,4 @@
 .ad-inline { display: inline-flex; margin: 0; }
 .ad-inline .btn { min-height: 2.75rem; }
 .ad-inline .ad-danger { --oq-bg: color-mix(in srgb, var(--oq-bad) 12%, var(--oq-surface-1)); --oq-fg: var(--oq-bad); box-shadow: none; }
-@media (min-width: 40rem) { .ad-cards { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (min-width: 40rem) { .ad-cards { grid-template-columns: repeat(5, minmax(0, 1fr)); } }

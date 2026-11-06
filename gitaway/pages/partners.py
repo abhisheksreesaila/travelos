@@ -30,13 +30,20 @@ def _trip_tail(trip) -> dict:
     return {"to": trip.key, **dict(parse_qsl(catalog.trip_query(trip)))}
 
 
-def _offer(offer_id, d, r, a, k):
-    """(offer, trip) for an offer id and the trip params, or None for an offer the catalog does not have. The offer's own place wins over any `to`."""
+_SEARCH = re.compile(r"search-(flight|stay|todo)")
+
+
+def _offer(offer_id, d, r, a, k, to="", home="", focus="", search=False):
+    """(offer, trip) for an offer id and the trip params, or None for an offer the catalog does not have. The offer's own place wins over any `to`.
+    With `search` (the /go route only: there is no stand-in checkout for them) `search-flight|stay|todo` is the honest search offer of the lane in `to` (F-195)."""
+    if search and (m := _SEARCH.fullmatch(offer_id)):
+        trip = catalog.trip_from_url(d, r, a, k, to, home, focus)
+        return catalog.search_offer(m.group(1), trip), trip
     try:
         place = catalog.offer_place(offer_id)
     except KeyError:
         return None
-    trip = catalog.trip_from_url(d, r, a, k, place)
+    trip = catalog.trip_from_url(d, r, a, k, place, home, focus)
     return catalog.offer(offer_id, trip), trip
 
 
@@ -119,21 +126,27 @@ def partners_page(rows, *, live):
 
 def register(app):
     @app.get("/go/{offer_id}")
-    def go(request, session, offer_id: str, d: str = "", r: str = "", a: str = "", k: str = ""):
-        found = _offer(offer_id, d, r, a, k)
+    def go(request, session, offer_id: str, d: str = "", r: str = "", a: str = "", k: str = "", to: str = "", home: str = "", focus: str = "", via: str = ""):
+        found = _offer(offer_id, d, r, a, k, to, home, focus, search=True)
         if not found:
             return showcase.not_found()
         offer, trip = found
         partner, click = partners.for_offer(offer), log.new_click_id()
-        sub = log.record_click(session, click, offer, trip, partner)
+        clicked_on = affiliate.claimed_via(request, via)                                  # F-195: a click on a creator's own page names their trip (the Tickets card passes `via`)
+        creator = clicked_on or affiliate.valid_via(request.cookies.get(affiliate.COOKIE))   # F-184: else the creator whose trip this family planned from, if any
+        sub = log.record_click(session, click, offer, trip, partner, creator)
         if travelpayouts.marker():
-            via = affiliate.valid_via(request.cookies.get(affiliate.COOKIE))   # F-184: the creator whose trip this family planned from, if any
-            own = affiliate.marker_for(via) if via else ""
-            if via:
+            own = affiliate.marker_for(creator) if creator else ""
+            if creator:
                 me = ses.current_traveler(session)
                 who = f"u:{me.id}" if me else reports.ip_hash(reports.client_ip(request))      # F-182: counted per person or address, an hour at a time
-                affiliate.log_click(via, partner.key, offer.kind, own and partner.key == "aviasales", who)
-            return RedirectResponse(travelpayouts.link_for(partner, offer, trip, sub, own), status_code=302)
+                affiliate.log_click(creator, partner.key, offer.kind, own and partner.key == "aviasales", who)
+            go_to = RedirectResponse(travelpayouts.link_for(partner, offer, trip, sub, own), status_code=302)
+            if clicked_on:
+                go_to.set_cookie(affiliate.COOKIE, clicked_on, **affiliate.cookie_args())
+            return go_to
+        if offer.id.startswith("search-"):     # there is no stand-in checkout for a search: locally it goes straight to the partner's own page
+            return RedirectResponse(partner.target_url(offer, trip), status_code=302)
         return RedirectResponse(_sandbox_path(partner, click, offer, trip), status_code=302)
 
     @app.get("/sandbox/{partner}/{click}")

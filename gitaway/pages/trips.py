@@ -3,11 +3,11 @@
 POST /trips/switch   open another of the family's trips for the signed-in person (trip=<id>), then back to the trip
 """
 
-from fasthtml.common import A, Div, H1, P, Section
+from fasthtml.common import A, Div, H1, P, Section, cookie
 from fasthtml.core import FtResponse
 from starlette.responses import RedirectResponse
 
-from gitaway import community, forks as forks_model, session as ses, showcase, stats
+from gitaway import affiliate, community, forks as forks_model, session as ses, showcase, stats
 from gitaway.pages import blogbutton
 from gitaway.itinerary_view import itinerary_page
 from gitaway.layout import page
@@ -44,9 +44,14 @@ def register(app):
         if found.real:
             stats.count_view(request, session, slug)   # F-192: one reader once a day, no cookie, nothing personal kept (a plain def, so the write is off the event loop)
         waiting = found.real and community.review_state(slug) == "pending"      # F-194: reachable by its link, in no list, and not for search engines
-        shown = itinerary_page(found, theme=theme, loading=(state == "loading"), saved=slug in ses.saved(session), forked=slug in ses.forks(session),
-                               blog=blogbutton.for_owner(session, slug) if found.real else "", noindex=waiting)
-        return FtResponse(shown, headers={"X-Robots-Tag": "noindex, nofollow"}) if waiting else shown
+        forked = slug in ses.forks(session)
+        body = itinerary_page(found, theme=theme, loading=(state == "loading"), saved=slug in ses.saved(session), forked=forked,
+                              blog=blogbutton.for_owner(session, slug) if found.real else "", noindex=waiting)
+        # F-195: a family that forked a creator's trip books for them (every fork path, signed in or through sign-in, ends on this page)
+        via = (cookie(affiliate.COOKIE, found.handle, **affiliate.cookie_args()),) if forked and found.real and affiliate.valid_via(found.handle) else ()
+        if waiting:
+            return FtResponse((body, *via), headers={"X-Robots-Tag": "noindex, nofollow"})
+        return (body, *via) if via else body
 
     @app.post("/trips/switch")
     def switch(session, trip: str = "", next: str = ""):
