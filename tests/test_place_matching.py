@@ -12,7 +12,7 @@ from tests.pagebody import without_bar
 
 
 @pytest.mark.parametrize("destination, key", [
-    ("Walt Disney World, Florida", ""), ("Walt Disney World Resort, Orlando", ""), ("Disneyland Paris", ""), ("Disneyland Resort Paris", ""), ("Hong Kong Disneyland Resort", ""), ("Tokyo Disneyland", ""), ("Disney", ""),
+    ("Walt Disney World, Florida", ""), ("Walt Disney World Resort, Orlando", ""), ("Disneyland Paris", ""), ("Disneyland Resort Paris", ""), ("Hong Kong Disneyland Resort", ""), ("Tokyo Disneyland", ""), ("Tokyo Disneyland Resort", ""), ("Shanghai Disneyland Resort", ""), ("Tokyo Disney Resort", ""), ("Disney", ""),
     ("Lake Tahoe, California", ""), ("Yosemite National Park, California", ""), ("San Francisco, California", ""), ("Napa Valley, California", ""), ("California", ""),
     ("Maui, Hawaii", ""), ("Kauai, Hawaii", ""), ("Big Island, Hawaii", ""), ("Hawaii", ""),
     ("Queenstown, New Zealand", ""),                                       # "queens" inside another word is not Queens
@@ -46,6 +46,12 @@ def test_a_place_the_post_never_names_is_not_trusted_just_because_the_model_said
     paris = "Day one at Disneyland Paris with the kids. We stayed at a hotel near Disneyland Paris and rode Space Mountain."
     d = _draft("la", "", paris)
     assert (d["place"], d["place_name"]) == ("other", "") and "Say where the trip was." in creatordraft.problems({**d, "name": "Maya", "title": "A trip"})
+
+
+@pytest.mark.parametrize("resort", ["Tokyo Disneyland Resort", "Shanghai Disneyland Resort", "Hong Kong Disneyland Resort", "Tokyo Disney Resort"])
+def test_a_post_about_another_countrys_disney_resort_is_never_la_even_when_the_model_says_la(resort):
+    d = _draft("la", "", f"Day one at {resort} with the kids. We stayed near the {resort} and rode Space Mountain.")
+    assert (d["place"], d["place_name"]) == ("other", "")
 
 
 def test_a_place_the_post_names_is_kept():

@@ -42,7 +42,7 @@ NEEDS_EDITOR = "Only an editor or admin of the family can publish a trip. Ask a 
 # the words that put a destination on one of the catalog's places (where "Plan this trip" can go), and the airports that serve them. Only names that are that place and no other:
 # no "disney" (Walt Disney World, Disneyland Paris, Tokyo), no "california" (Tahoe, Yosemite, San Francisco and Napa are California too, and San Diego is not Los Angeles),
 # no "hawaii" (Maui, Kauai and the Big Island are Hawaii, but HNL is on Oahu). Matched as whole words ("queens" is not "Queenstown"). F-194.
-_PLACES = (("la", r"los angeles|anaheim|(?<!hong kong )disneyland resort(?! paris)|santa monica|burbank|pasadena|orange county|hollywood|long beach", {"LAX", "BUR", "SNA", "LGB"}),
+_PLACES = (("la", r"los angeles|anaheim|(?<!hong kong )(?<!tokyo )(?<!shanghai )(?<!paris )disneyland resort(?! paris)|santa monica|burbank|pasadena|orange county|hollywood|long beach", {"LAX", "BUR", "SNA", "LGB"}),
            ("sd", r"san diego|coronado|la jolla", {"SAN"}),
            ("hi", r"honolulu|oahu|waikiki", {"HNL"}),
            ("nyc", r"new york|manhattan|brooklyn|queens", {"JFK", "EWR", "LGA"}))
