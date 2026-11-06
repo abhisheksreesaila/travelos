@@ -8,6 +8,7 @@ from fasthtml.core import FtResponse
 from starlette.responses import RedirectResponse
 
 from gitaway import forks as forks_model, session as ses, showcase
+from gitaway.pages import blogbutton
 from gitaway.itinerary_view import itinerary_page
 from gitaway.layout import page
 
@@ -40,7 +41,8 @@ def register(app):
         found = forks_model.resolve(slug)
         if found is None:
             return not_found()
-        return itinerary_page(found, theme=theme, loading=(state == "loading"), saved=slug in ses.saved(session), forked=slug in ses.forks(session))
+        return itinerary_page(found, theme=theme, loading=(state == "loading"), saved=slug in ses.saved(session), forked=slug in ses.forks(session),
+                              blog=blogbutton.for_owner(session, slug) if found.real else "")
 
     @app.post("/trips/switch")
     def switch(session, trip: str = "", next: str = ""):

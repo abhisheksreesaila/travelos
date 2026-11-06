@@ -322,11 +322,11 @@ SCRIPT = Script("""
 """)
 
 
-def itinerary_body(trip: Itinerary, loading: bool = False, saved: bool = False, forked: bool = False):
+def itinerary_body(trip: Itinerary, loading: bool = False, saved: bool = False, forked: bool = False, blog=""):
     if loading:
         return skeleton(trip)
-    return Div(_hero(trip, saved, forked), _board(trip), _days(trip), _tips(trip), _yours(trip), _trust(trip) if trip.real else "", SCRIPT, cls="itinerary")
+    return Div(_hero(trip, saved, forked), _board(trip), _days(trip), _tips(trip), _yours(trip), blog, _trust(trip) if trip.real else "", SCRIPT, cls="itinerary")
 
 
-def itinerary_page(trip: Itinerary, theme=None, loading: bool = False, saved: bool = False, forked: bool = False):
-    return page(trip.title, itinerary_body(trip, loading, saved, forked), theme=resolve_theme(theme, trip), head=(*HEAD, Link(rel="stylesheet", href="/assets/css/scrapbook.css")) if trip.real else HEAD)
+def itinerary_page(trip: Itinerary, theme=None, loading: bool = False, saved: bool = False, forked: bool = False, blog=""):
+    return page(trip.title, itinerary_body(trip, loading, saved, forked, blog), theme=resolve_theme(theme, trip), head=(*HEAD, Link(rel="stylesheet", href="/assets/css/scrapbook.css")) if trip.real else HEAD)
