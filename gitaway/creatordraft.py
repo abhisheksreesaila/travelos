@@ -576,8 +576,8 @@ def publish(session, d, own) -> dict:
             if f.name not in keep:
                 f.unlink(missing_ok=True)
     state = review_for(session, d)
+    community.set_review(d["slug"], state, domain_of(d))      # before the page exists, so a trip that waits is never listed, not even for a moment; "" clears it, an approved one stays approved
     row = _put(session, d, creator, state in ("", "approved"))
-    community.set_review(d["slug"], state, domain_of(d))      # "" clears it; a trip the captain approved stays approved
     _store(me.id, d, me.id)
     return row
 
