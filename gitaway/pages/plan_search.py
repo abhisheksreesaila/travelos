@@ -6,7 +6,7 @@ on Klook), each a search at the partner for this place, these dates and this par
 without it the flight link leaves the origin out and Aviasales asks. It is drawn by `plan.py`'s route, not registered on its own.
 """
 
-from urllib.parse import urlencode
+from dataclasses import replace
 
 from fasthtml.common import A, Button, Div, Form, H1, H2, Input, Label, Link, Main, P, Section, Span
 
@@ -18,6 +18,15 @@ HEAD = (Link(rel="stylesheet", href="/assets/css/plansearch.css"),)
 ICONS = {"flight": "plane", "stay": "bed", "todo": "ticket"}
 GO_LABELS = {"flight": "Search on Aviasales", "stay": "Find stays on Klook"}
 FINE = "Links open our partners. They keep your booking; we may earn a commission."
+
+
+def ahead(trip):
+    """`trip` with its dates moved to the next ones worth searching, the same length, when they have passed (a stale link, or a bare /plan with the sample's old dates): a search for the past books nothing."""
+    if trip.depart >= catalog.today():
+        return trip
+    from gitaway import publish  # here, not at the top: publish reads the community database
+    depart, ret = publish.sample_dates(trip.nights + 1)
+    return replace(trip, depart=depart, return_=ret)
 
 
 def _go_label(offer, trip):
@@ -51,6 +60,7 @@ def _card(offer, trip, live, *extra):
 
 def search_page(trip, via="", home_raw="", error=""):
     """The honest page for `trip`. `via` is the creator handle to keep on the airport form; `home_raw` and `error` are a mistyped airport code and what is wrong with it."""
+    trip = ahead(trip)
     live = partners.available()
     flight, stay, todo = (catalog.search_offer(k, trip) for k in ("flight", "stay", "todo"))
     query = catalog.trip_query(trip)

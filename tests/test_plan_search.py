@@ -136,3 +136,15 @@ def test_the_honest_page_leaves_no_remembered_picks_behind(client, live):
     sign_in(client, "ari")
     client.get(f"/plan?to=la&{TRIP}&via={handle}")
     assert 'class="st-continue"' not in client.get("/start").text
+
+
+def test_dates_that_have_passed_become_the_next_ones_worth_searching_with_the_same_length(client, live):
+    """A stale link, or a bare /plan with the sample's old October dates, must not send a reader to a search for the past."""
+    _, handle, _ = live
+    html = client.get(f"/plan?to=la&d=2026-01-05&r=2026-01-09&a=2&via={handle}").text
+    assert "Nov 20 – 24" in words(html) and "d=2026-11-20&r=2026-11-24" in html.replace("&amp;", "&")      # the first Friday 45 days on from the test's fixed "today", 5 days long
+
+
+def test_dates_ahead_are_left_alone(client, live):
+    _, handle, _ = live
+    assert "Mar 5 – 9" in words(client.get(f"/plan?to=la&{TRIP}&via={handle}").text)
