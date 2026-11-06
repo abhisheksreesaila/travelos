@@ -74,7 +74,7 @@
   .ga-tb-item { display: flex; align-items: center; gap: 0.6667rem; width: 100%; min-height: 2.5rem; padding: 0 0.75rem; border: 0; border-radius: 1rem; background: none; color: var(--ink); font: 700 max(var(--text-min), 1.0833rem) var(--font-body); text-align: left; cursor: pointer; }
   .ga-tb-item:hover { background: var(--paper-2); }
   .ga-tb-sum-me { position: relative; }
-  .ga-tb-dot-new { position: absolute; top: 0; right: 0; width: 0.8333rem; height: 0.8333rem; border-radius: 50%; background: var(--tb-sos-bg); border: 0.125rem solid var(--card); }
+  .ga-tb-dot-new { position: absolute; top: 0; right: 0; width: 0.8333rem; height: 0.8333rem; border-radius: 50%; background: var(--tb-sos-ink); border: 0.125rem solid var(--card); }
   .ga-tb-new { margin-left: auto; padding: 0.125rem 0.5rem; border-radius: var(--r-pill); background: var(--tb-sos-bg); color: var(--tb-sos-ink); font-size: max(var(--text-min), 0.9167rem); font-weight: 800; }
   .ga-tb-who { padding: 0.5rem 0.75rem 0; font-weight: 800; }
   .ga-tb-mail { padding: 0 0.75rem 0.5rem; color: var(--ink-3); font-weight: 600; font-size: max(var(--text-min), 0.9167rem); overflow-wrap: anywhere; }
