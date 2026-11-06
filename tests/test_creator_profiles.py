@@ -1,7 +1,7 @@
 """M4: creator profiles at /creators/<handle> (showcase only)."""
 import re
 
-from gitaway import creator_profiles as cp
+from gitaway import community, creator_profiles as cp
 
 
 def test_roster_links_every_creator(client):
@@ -37,3 +37,17 @@ def test_hidden_when_showcase_off(client, monkeypatch):
     monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
     assert client.get("/creators/sunny-ines").status_code == 404
     assert client.get("/creators").status_code == 404
+
+
+def test_no_handle_can_collide_with_a_creators_route_now_or_after_one_is_added(client):
+    """F-182 (reviewer Should 8): /creators/<handle> must never be shadowed by a fixed /creators/<word> page. Every fixed route found in the app is reserved, so adding a route without
+    reserving its word fails here; and a person named like one gets a suffixed handle."""
+    import re
+    community.clear()
+    fixed = {m.group(1) for r in client.app.routes if (m := re.fullmatch(r"/creators/([a-z0-9-]+)", getattr(r, "path", "")))}
+    assert {"import", "settings", "draft", "finish", "done"} <= fixed
+    assert fixed <= community.RESERVED_HANDLES, sorted(fixed - community.RESERVED_HANDLES)
+    for n, word in enumerate(sorted(community.RESERVED_HANDLES | {"new"})):
+        c = community.claim_creator(f"reserved-{n}", word.title())
+        assert c["handle"] == f"{word}-2", (word, c)
+    community.clear()

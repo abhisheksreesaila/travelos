@@ -46,6 +46,8 @@ _MORE = ("""CREATE TABLE IF NOT EXISTS creator_markers (owner_user TEXT PRIMARY 
          """CREATE TABLE IF NOT EXISTS fork_counts (slug TEXT PRIMARY KEY, n INTEGER NOT NULL)""",
          """CREATE TABLE IF NOT EXISTS via_clicks (
     id INTEGER PRIMARY KEY AUTOINCREMENT, handle TEXT NOT NULL, partner TEXT NOT NULL, lane TEXT NOT NULL, own_marker INTEGER NOT NULL, clicked_at TEXT NOT NULL, who TEXT NOT NULL DEFAULT '')""")
+# Words a handle cannot be: each is (or may become) a fixed page under /creators/, which would shadow the profile (tests/test_creator_profiles.py walks the app's routes against this set).
+RESERVED_HANDLES = frozenset({"draft", "finish", "done", "new", "import", "settings", "edit", "preview", "photo", "admin", "report", "go"})
 UP = " AND slug NOT IN (SELECT slug FROM takedowns)"   # the live trips: everything not taken down (F-185)
 _ready: set = set()
 
@@ -227,7 +229,7 @@ def claim_creator(owner_user, name) -> dict:
             db.conn.commit()
             return {"handle": mine[0], "owner_user": str(owner_user), "name": name}
         base = slugify(name, 24) or "traveler"
-        taken = {r[0] for r in db.conn.execute(text("SELECT handle FROM creators")).fetchall()} | {c.handle for c in creator_profiles.CREATORS} | {"draft", "finish", "done", "new", "import", "settings"}
+        taken = {r[0] for r in db.conn.execute(text("SELECT handle FROM creators")).fetchall()} | {c.handle for c in creator_profiles.CREATORS} | RESERVED_HANDLES
         handle, n = base, 1
         while handle in taken:
             n += 1
