@@ -131,7 +131,7 @@ def test_a_creator_saves_their_marker(visitor, base_url, viewport):
     page.fill("#st-marker", "555111")
     tap(page, viewport, page.locator("#st-save"))
     expect(page.locator("#st-saved")).to_have_text("Saved.")
-    expect(page.locator("#st-says")).to_contain_text("Flights booked from your trips carry your marker")
+    expect(page.locator("#st-says")).to_contain_text("Flights booked from your trips carry your Travelpayouts marker")
     shot(page, f"marker-{viewport['width']}", full=False)
 
 

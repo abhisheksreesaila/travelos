@@ -9,7 +9,7 @@ Open to everyone, in both showcase modes, with no sample content in it: every wo
 
 from fasthtml.common import A, Button, Details, Div, Form, H1, H2, H3, Img, Label, Li, Link, Ol, P, Script, Section, Span, Summary, Textarea, Ul
 
-from gitaway import community, session as ses
+from gitaway import affiliate, community, session as ses
 from gitaway.icons import icon
 from gitaway.itinerary_view import _icon
 from gitaway.layout import page
@@ -20,13 +20,13 @@ FREE = "Free. Terms shown on day one."
 
 PROMISES = (
     ("spark", "fc-p1", "Under a minute", "Paste your post, glance at the draft, publish. The days, stops and tips are drafted for you; you only fix what is off."),
-    ("link", "fc-p2", "Your links keep paying you", "Add your Travelpayouts marker and flight bookings from your trips carry it, so Aviasales pays you. We say on every trip who earns."),
+    ("link", "fc-p2", "Flights from your trips pay you", f"{affiliate.pays_you()} We say on every trip who earns."),
     ("ext", "fc-p3", "It links back to your post", "Every trip opens with a source card that sends readers to your original post, with your name on it."),
 )
 TERMS = (
     ("What we show", "Your name, the days, stops and tips you approve, up to two photos you pick (copied without where they were taken) and a link to your post. Never anything else."),
     ("Take it down any time", "Unpublish in one tap and the page and its photos go. Anyone can report a trip, and the person who runs GitAway can take a page down."),
-    ("Your marker", "Paste your own Travelpayouts marker once. Flights from your trips use it. Stays and things to do (Klook) use GitAway's account for now, and the trip page says so."),
+    ("Your marker", f"Paste your own Travelpayouts marker once. {affiliate.pays_you()} The trip page says so."),
     ("Later, a share for big creators", "When a creator's trips bring a lot of bookings, we want to share what Klook pays us with them. That is a plan, not a promise of an amount."),
 )
 FAQ = (

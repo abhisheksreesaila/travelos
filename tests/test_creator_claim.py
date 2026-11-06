@@ -248,7 +248,7 @@ def test_the_outreach_message_is_short_warm_personal_and_signed_with_the_captain
     msg = unescape(re.search(r'<textarea[^>]*id="cc-msg-0"[^>]*>(.*?)</textarea>', html, re.S).group(1)).strip()
     assert msg.startswith("Hi Maya,\n") and 'I loved your post "Three easy days in Santa Monica".' in msg
     assert f"https://gitaway.me{link}" in msg
-    for promise in ("under a minute", "Your links keep paying you", "links back to your post"):
+    for promise in ("under a minute", "Flights pay you", "links back to your post"):
         assert promise in msg
     assert msg.endswith("\n\nAbhishek") and "It is free" in msg and len(msg.split()) < 130
     assert 'data-copy="cc-msg-0"' in html and "GitAway does not send this" in html
@@ -258,7 +258,7 @@ def test_outreach_text_is_exactly_this():
     assert cc.outreach("Marcie Cheung", "3 days on Maui", "https://gitaway.me/claim/T", "Sam") == (
         "Hi Marcie,\n\nI loved your post \"3 days on Maui\". I'm Sam, and I'm building GitAway, an app where families fork a trip and plan it together. "
         "I turned your post into a trip so you can see how it looks. Nothing is public until you say so:\n\nhttps://gitaway.me/claim/T\n\nThree promises:\n"
-        "1. It takes under a minute: one tap to publish, or edit first.\n2. Your links keep paying you: add your own affiliate marker and the Book buttons on your trips use it.\n"
+        "1. It takes under a minute: one tap to publish, or edit first.\n2. Flights pay you: Add your Travelpayouts marker and flights booked from your trips carry it, so Aviasales pays you. Stays and things to do support GitAway for now.\n"
         "3. Every trip links back to your post.\n\nIt is free, and you can take it down any time.\n\nSam")
 
 
