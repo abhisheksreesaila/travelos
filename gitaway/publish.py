@@ -70,10 +70,10 @@ def _loads(raw, default):
 
 
 def _draft_of(row, fam, t):
-    b = fam.booking()
+    b = fam.booking()      # the name shown starts as the first name only; the person chooses to show more (F-182)
     return {
         "trip_id": fam.trip_id, "slug": row["slug"] if row else "", "title": row["title"] if row and row["title"] else share.title_for(t),
-        "name": row["name"] if row and row["name"] else fam.traveler.name, "cover": row["cover"] if row else "",
+        "name": row["name"] if row and row["name"] else (fam.traveler.name.split() or [""])[0], "cover": row["cover"] if row else "",
         "stickers": _loads(row["stickers"], []) if row else (["kid"] if t.kid_ages else []),
         "notes": _loads(row["notes"], {}) if row else {}, "tips": _loads(row["tips"], []) if row else [], "photos": _loads(row["photos"], []) if row else [],
         "copies": _loads(row["copies"], {}) if row else {}, "published_by": row["published_by"] if row else "", "published_at": row["published_at"] if row else "",

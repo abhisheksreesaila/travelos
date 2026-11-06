@@ -77,7 +77,7 @@ def test_the_editor_shows_every_day_with_its_photos_and_what_stays_private(famil
     assert "Never shown: booking and confirmation numbers" in html
     assert 'name="note_1"' in html and 'name="note_5"' in html and 'name="note_6"' not in html   # Oct 16 to 20: five days
     assert f'value="{pid}"' in html and f"/trip/photos/{pid}/thumb" in html
-    assert 'value="Ari Rivera"' in html and 'value="LA with the kids"' in html
+    assert 'value="Ari"' in html and 'value="Ari Rivera"' not in html and 'value="LA with the kids"' in html     # F-182 L4: the name shown on a public page starts as the first name only
 
 
 def test_preview_is_the_public_page_with_publish_and_back(family):
@@ -408,3 +408,15 @@ def test_on_the_showcase_the_samples_stay_and_real_creators_join_them(family):
     roster = s.get("/creators").text
     assert "sunny-ines" in roster and "ari-rivera" in roster and "Paste" in roster
     assert s.get("/creators/sunny-ines").status_code == 200
+
+
+def test_a_photo_another_member_added_is_marked_so_the_publisher_checks_with_them(family):
+    """F-182 L4: the editor listed every member's photos alike, so a member's photo could go public on someone else's page unnoticed."""
+    client, pid = family
+    html = client.get("/trip/publish").text
+    tiles = re.findall(r'<div class="pb-tile">.*?</div>', html, re.S)
+    mine = [t for t in tiles if f'value="{pid}"' in t]
+    others = [t for t in tiles if f'value="{pid}"' not in t and "pb-photo" in t]
+    assert len(mine) == 1 and "pb-by" not in mine[0] and "Added by" not in mine[0]
+    assert others and all("Added by Zelda: check with them" in t and "Zelda" in t for t in others)
+    assert "Rivera" not in "".join(others)

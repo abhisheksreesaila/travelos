@@ -49,24 +49,26 @@ def _pill(kind, name, value, label, on, ico=""):
     return Label(Input(type=kind, name=name, value=value, checked=on or None, cls="sr-only"), Span(_icon(ico, 18, 2.2) if ico else "", label, cls="pb-pill"))
 
 
-def _tile(p, picked, cover, fresh):
+def _tile(p, picked, cover, fresh, me):
     pid = p["id"]
+    by = Span(f"Added by {(str(p['author_name']).split() or ['a family member'])[0]}: check with them", cls="pb-by") if p["author"] != me else ""     # F-182: another member's photo goes public only if its publisher means it to
     return Div(
         Label(Input(type="checkbox", name="photos", value=pid, checked=pid in picked or pid in fresh or None, cls="sr-only pb-pick"),
               Img(src=f"/trip/photos/{pid}/thumb", alt=p["plan_title"] or p["caption"] or "A photo from the trip", loading="lazy"),
               Span(icon("check", 16, 3), cls="pb-tick", aria_hidden="true"), cls="pb-photo"),
+        by,
         Label(Input(type="radio", name="cover", value=pid, checked=pid == cover or None, cls="sr-only pb-cover"),
               Span(icon("star", 16, 2.4), Span("Cover", cls="pb-cover-t"), cls="pb-cover-b"), title="Use as the cover photo"),
         cls="pb-tile")
 
 
-def _day(day, d, fresh):
+def _day(day, d, fresh, me):
     n = day["n"]
     return Fieldset(
         Legend(Span(f"Day {n}", cls="pb-day-n"), Span(f"{day['date']:%a %b} {day['date'].day}", cls="pb-day-date")),
         Label("A note for this day", Span(f"Short, in your own words ({publish.MAX_NOTE} characters)", cls="pb-hint"), fr=f"pb-note-{n}", cls="pb-lab"),
         Textarea(d["notes"].get(str(n), ""), id=f"pb-note-{n}", name=f"note_{n}", rows="2", maxlength=str(publish.MAX_NOTE), placeholder="What was this day like?", cls="pb-note"),
-        Div(*[_tile(p, d["photos"], d["cover"], fresh) for p in day["photos"]], cls="pb-grid") if day["photos"] else P("No photos on this day yet.", cls="pb-none"),
+        Div(*[_tile(p, d["photos"], d["cover"], fresh, me) for p in day["photos"]], cls="pb-grid") if day["photos"] else P("No photos on this day yet.", cls="pb-none"),
         cls="pb-day")
 
 
@@ -107,7 +109,7 @@ def editor_page(session, live=None, fresh=(), error="", just=False):
         Fieldset(Legend("Who is it good for?"), Div(*[_pill("checkbox", "stickers", k, label, k in d["stickers"], ico) for k, (label, _t, ico) in hub.TAGS.items()], cls="pb-picks"), cls="pb-card card pb-stickers"),
         Div(H2("Photos and notes"), P(f"Tap a photo to include it. Tap the star to make it the cover. {n_photos} on this trip so far." if n_photos else "No photos on this trip yet. Add some below.", cls="pb-hint"),
             add, cls="pb-sec"),
-        *[_day(day, d, fresh) for day in days],
+        *[_day(day, d, fresh, ses.current_traveler(session).id) for day in days],
         Fieldset(Legend("A few tips"), *[Input(type="text", name="tip", value=t, maxlength=str(publish.MAX_TIP), placeholder="One thing you'd tell a friend going", autocomplete="off", aria_label=f"Tip {i + 1}", cls="pb-input")
                                          for i, t in enumerate(tips)], cls="pb-card card pb-tips"),
         Div(P(error, role="alert", cls="pb-error", id="pb-error") if error else "",
