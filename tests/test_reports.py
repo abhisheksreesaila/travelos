@@ -378,3 +378,26 @@ def test_commission_is_on_the_admin_page_and_no_longer_on_the_family_page(client
     assert numbers(html)["ad-commission"] == "$180.90"
     text_ = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", html))
     assert "Aviasales 1 click · 1 booked · $11.70" in text_ and "Klook 2 clicks · 2 booked · $169.20" in text_
+
+
+def test_a_family_database_that_cannot_be_read_is_logged_and_counted_on_the_admin_page(captain, trip, monkeypatch, caplog):
+    """F-182 (reviewer Should 5): the commission total silently left out an unreadable family. It still renders, but says how many were skipped and logs a content-free warning."""
+    from gitaway import familydb
+    real = familydb.ensure_schema
+    hit = []
+
+    def broken(db, tenant_id):
+        import inspect
+        if not hit and any(f.function == "all_clicks" for f in inspect.stack()):
+            hit.append(tenant_id)
+            raise RuntimeError("secret detail: ari@example.com")
+        return real(db, tenant_id)
+    monkeypatch.setattr(familydb, "ensure_schema", broken)
+    with caplog.at_level("WARNING", logger="gitaway.partners.log"):
+        html = captain.get("/admin").text
+    assert re.search(r'id="ad-skipped"[^>]*>1 family could not be read, so its clicks are not in these totals\.<', html)
+    warns = [r.getMessage() for r in caplog.records if r.name == "gitaway.partners.log"]
+    assert warns == [f"all_clicks: skipped family {hit[0]} (RuntimeError)"] and "ari@example.com" not in "".join(warns)
+    caplog.clear()
+    monkeypatch.setattr(familydb, "ensure_schema", real)
+    assert 'id="ad-skipped"' not in captain.get("/admin").text

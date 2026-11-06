@@ -79,7 +79,7 @@ def admin_page():
     every = community.creators_all()
     clicks = affiliate.clicks_by_creator()
     live = sum(len(c["trips"]) for c in people)
-    sheet = log.all_clicks()
+    sheet, skipped = log.all_clicks()
     summary = commission_summary(sheet)
     total = sum(s[3] for s in summary)
     rep = reports.all_reports()
@@ -87,6 +87,7 @@ def admin_page():
     return page("Admin", Main(
         Div(H1("Admin", cls="ad-title"),
             Div(*[Div(Span(label, cls="ad-k"), Span(value, cls="ad-v", id=i)) for label, value, i in cards], cls="ad-cards"),
+            P(f"{skipped} {'family' if skipped == 1 else 'families'} could not be read, so {'its' if skipped == 1 else 'their'} clicks are not in these totals.", role="alert", cls="ad-meta", id="ad-skipped") if skipped else "",
             Div(Span(cls="ad-bar-fill", style=f"width:{min(100, round(100 * len(people) / GOAL))}%"), cls="ad-bar", role="img", aria_label=f"{len(people)} of {GOAL} creators"),
             Section(H2("Reports"), Ul(*[_report(r) for r in rep], cls="ad-list", id="ad-report-list") if rep else P("No reports.", cls="ad-meta", id="ad-no-reports"), cls="ad-sec"),
             Section(H2("Creators and trips"),
