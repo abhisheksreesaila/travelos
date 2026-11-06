@@ -20,7 +20,6 @@ import re
 import secrets
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from urllib.parse import urlsplit
 
 from sqlalchemy import text
 
@@ -138,12 +137,7 @@ def state(token, user_id="") -> str:
     return "revoked" if r[2] else "expired" if r[1] <= _iso(_now()) else "ok"
 
 
-def domain_of(d) -> str:
-    """The website a draft's post is on ("blog.example.com"), for the claimer to confirm it is theirs."""
-    try:
-        return (urlsplit((d.get("source") or {}).get("url", "")).hostname or "").lower()
-    except ValueError:
-        return ""
+domain_of = cd.domain_of      # the website a draft's post is on, for the claimer to confirm it is theirs
 
 
 def draft_id_of(token) -> str:

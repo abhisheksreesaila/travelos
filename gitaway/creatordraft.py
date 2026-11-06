@@ -23,6 +23,7 @@ import unicodedata
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from sqlalchemy import text
 
@@ -460,8 +461,9 @@ def problems(d) -> list:
     return out
 
 
-def build(d, src, handle="") -> Itinerary:
-    """The public page of a draft as an Itinerary. `src(name)` gives a picked picture's address (the private route for the preview, the public one once published)."""
+def build(d, src, handle="", verified=True) -> Itinerary:
+    """The public page of a draft as an Itinerary. `src(name)` gives a picked picture's address (the private route for the preview, the public one once published). `verified`: the
+    person is at the post's site or the captain has said yes; without it the source card's byline names the site, not the person (F-194)."""
     place = PLACES.get(d["place"]) or d["place_name"]
     name = d["name"] or "a traveler"
     days = []
@@ -472,7 +474,8 @@ def build(d, src, handle="") -> Itinerary:
     shots = [d["copies"][str(n)] for n in order if str(n) in d["copies"]]
     pols = [Polaroid(src(f), f"A photo from {name.split()[0]}'s post", "") for f in shots[:2]]
     s = d.get("source") or {}
-    source = Source(f"{name} · {BYLINE[s['kind']]}" if s.get("kind") in BYLINE else name, s.get("title") or "Their original post", src(shots[0]) if shots else "", "A photo from the post", s.get("url", ""),
+    by = (f"{name} · {BYLINE[s['kind']]}" if s.get("kind") in BYLINE else name) if verified else (f"{domain_of(d)} · {BYLINE[s['kind']]}" if s.get("kind") in BYLINE else domain_of(d))
+    source = Source(by, s.get("title") or "Their original post", src(shots[0]) if shots else "", "A photo from the post", s.get("url", ""),
                     LINK_LABEL.get(s.get("kind"), "Read the original post"), KICKER.get(s.get("kind"), "From the post")) if s.get("url") else None
     count = sum(len(x.stops) for x in days)
     return Itinerary(
@@ -487,12 +490,70 @@ def private_src(did):
     return lambda name: f"/creators/import/{did}/photo/{name}-display.jpg"
 
 
-def preview(owner, d) -> Itinerary:
-    c = community.creator_of(owner)
-    return build(d, private_src(d["id"]), c["handle"] if c else "")
+def preview(session, d) -> Itinerary:
+    c = community.creator_of(session["user_id"])
+    return build(d, private_src(d["id"]), c["handle"] if c else "", review_for(session, d) in ("", "approved"))
+
+
+# ---- whose site it is (F-194) -------------------------------------------------------------------------------------------------
+
+def domain_of(d) -> str:
+    """The website a draft's post is on ("blog.example.com"), for the claimer to confirm it is theirs and for the byline until it is."""
+    try:
+        return (urlsplit((d.get("source") or {}).get("url", "")).hostname or "").lower()
+    except ValueError:
+        return ""
+
+
+def site_matches(email, host) -> bool:
+    """Is this email address at the site `host`: the same domain, a parent of it (me@example.com, blog.example.com) or a subdomain of it (me@mail.example.com, example.com)? "www." does not count."""
+    domain = str(email or "").rpartition("@")[2].strip().lower()
+    host = str(host or "").lower().removeprefix("www.")
+    return bool(domain and host) and (domain == host or host.endswith("." + domain) or domain.endswith("." + host))
+
+
+def _claimed(did) -> bool:
+    """Did the captain pre-draft this draft and has someone claimed it with a link?"""
+    with _db() as db:
+        return db.conn.execute(text("SELECT 1 FROM creator_claims WHERE draft_id = :d AND claimed_by != ''"), {"d": str(did)}).fetchone() is not None
+
+
+def review_for(session, d, claimed=None) -> str:
+    """What the captain still has to check about this person publishing this post: "" (nothing: their verified email is at the post's site, or the post has no site), "approved"
+    (he said yes before), "pending" (a pre-drafted post claimed by someone not at its site: unlisted until he says yes) or "unverified" (their own paste: listed, but the byline
+    shows the site, not their name, until he says yes). `claimed`: whether it is a claim (default: look it up)."""
+    host = domain_of(d)
+    if not host:
+        return ""
+    if community.review_state(d["slug"]) == "approved":
+        return "approved"
+    if session.get("verified") == 1 and site_matches(session.get("email"), host):
+        return ""
+    return "pending" if (_claimed(d["id"]) if claimed is None else claimed) else "unverified"
 
 
 # ---- publishing ---------------------------------------------------------------------------------------------------------------
+
+def _put(session, d, creator, verified) -> dict:
+    """The draft's page as the public snapshot (`session` needs the owner's user_id and tenant_id)."""
+    trip = build(d, lambda n: pub.public_src(d["slug"], n), creator["handle"], verified)
+    return community.publish(session, trip, kind="scrapbook", tags=[k for k in hub.TAGS if k in d["stickers"]], theme="sunset", meta={"handle": creator["handle"], "name": creator["name"], "place": trip.plan_to})
+
+
+def approve(slug) -> bool:
+    """The captain's yes to a trip waiting for him (pending or unverified): it is listed and its byline names the person. False for any other slug."""
+    if community.review_state(slug) not in ("pending", "unverified"):
+        return False
+    row = community.get(slug)
+    with _db() as db:
+        found = db.conn.execute(text("SELECT id, owner_user FROM creator_drafts WHERE slug = :s"), {"s": slug}).fetchone()
+    d = get(found[1], found[0]) if row and found else None
+    creator = community.creator_of(row["owner_user"]) if row else None
+    if d and creator:
+        _put({"user_id": row["owner_user"], "tenant_id": row["owner_family"]}, d, creator, True)      # the snapshot again, with the name in the byline
+    community.set_review(slug, "approved", domain_of(d) if d else "")
+    return True
+
 
 def publish(session, d, own) -> dict:
     """Publish the draft under the signed-in person's name. Needs the "this is my post" tick. Raises HubError with a message fit to show."""
@@ -514,9 +575,9 @@ def publish(session, d, own) -> dict:
         for f in folder.iterdir():
             if f.name not in keep:
                 f.unlink(missing_ok=True)
-    trip = build(d, lambda n: pub.public_src(d["slug"], n), creator["handle"])
-    row = community.publish(session, trip, kind="scrapbook", tags=[k for k in hub.TAGS if k in d["stickers"]], theme="sunset",
-                            meta={"handle": creator["handle"], "name": creator["name"], "place": trip.plan_to})
+    state = review_for(session, d)
+    row = _put(session, d, creator, state in ("", "approved"))
+    community.set_review(d["slug"], state, domain_of(d))      # "" clears it; a trip the captain approved stays approved
     _store(me.id, d, me.id)
     return row
 

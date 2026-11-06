@@ -19,7 +19,7 @@ from fasthtml.core import FtResponse
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import FileResponse, RedirectResponse, Response
 
-from gitaway import ai, creatordraft as cd, importsource, session as ses
+from gitaway import ai, community, creatordraft as cd, importsource, session as ses
 from gitaway.hub import HubError
 from gitaway.icons import icon
 from gitaway.itinerary_view import HEAD as VIEW_HEAD, _icon, itinerary_body
@@ -138,8 +138,10 @@ def editor_page(d, error="", just=False):
               *[P(n, role="note", cls="ci-note", id=f"ci-notice-{i}") for i, n in enumerate(d["notices"])],
               P(f"{unsure} stop{'s' if unsure != 1 else ''} GitAway was not sure of {'are' if unsure != 1 else 'is'} marked \"{cd.UNNAMED}\". Name {'them' if unsure != 1 else 'it'} or take {'them' if unsure != 1 else 'it'} out.",
                 role="note", cls="ci-note ci-unsure-note", id="ci-unsure") if unsure else "", cls="pb-top")
-    done = Div(Span(icon("check", 22, 2.6), "It's live", cls="pb-chip pb-chip-live"), P("Anyone can read it and fork it now. Publish again to update it."),
-               Div(A(icon("share", 20), "View your trip page", href=f"/trips/{d['slug']}", cls="btn btn-primary", id="pb-view"), A("See it in Community trips", href="/community", cls="btn"), cls="pb-actions"),
+    waiting = d["live"] and community.review_state(d["slug"]) == "pending"      # F-194: published, but in no list until the captain says yes
+    done = Div(Span(icon("check", 22, 2.6), "It's live", cls="pb-chip pb-chip-live"),
+               P("It is published but unlisted: only people with its link can see it until the captain approves it. Publish again to update it." if waiting else "Anyone can read it and fork it now. Publish again to update it."),
+               Div(A(icon("share", 20), "View your trip page", href=f"/trips/{d['slug']}", cls="btn btn-primary", id="pb-view"), *([] if waiting else [A("See it in Community trips", href="/community", cls="btn")]), cls="pb-actions"),
                cls="pb-live card", role="status") if d["live"] and just else ""
     paste = Details(Summary("Your pasted text"), P(d["text"], cls="ci-pasted"), cls="ci-details card", id="ci-pasted") if d.get("text") else ""
     tips = (d["tips"] + [""] * 3)[:max(3, min(len(d["tips"]) + 1, cd.MAX_TIPS))]
@@ -173,12 +175,16 @@ def editor_page(d, error="", just=False):
 
 
 def preview_page(session, d, error=""):
-    trip = cd.preview(ses.current_traveler(session).id, d)
+    trip = cd.preview(session, d)
     todo = cd.problems(d)
+    host = cd.domain_of(d)
+    held = {"unverified": f"Its byline shows {host} for now, and your name once the captain has checked that the post is yours.",
+            "pending": f"Your email is not at {host}, so this page will be unlisted until the captain approves it: only people with its link can see it."}.get(cd.review_for(session, d, claimed=cd._claimed(d["id"])), "")
     bar = Div(
         Div(Span(icon("image", 18, 2.4), "This is exactly what strangers will see", cls="pb-pv-t"),
             P("Your photos here are private copies; the published ones are the same pictures without where they were taken.", cls="pb-hint"),
             *([P(" ".join(todo), role="alert", cls="pb-error", id="pb-problems")] if todo else []),
+            P(held, role="note", cls="pb-hint", id="pb-held") if held else "",
             P(error, role="alert", cls="pb-error", id="pb-error") if error else "", cls="pb-pv-text"),
         Div(Form(Label(Input(type="checkbox", name="own", value="1", id="ci-own", cls="ci-own"), Span("This is my post", cls="ci-own-t"), cls="ci-own-l"),
                  Button(icon("check", 20, 2.6), "Update the public page" if d["live"] else "Publish", type="submit", name="do", value="publish", id="pb-publish", cls="btn btn-primary"),

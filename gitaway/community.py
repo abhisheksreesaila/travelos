@@ -48,10 +48,14 @@ _MORE = ("""CREATE TABLE IF NOT EXISTS creator_markers (owner_user TEXT PRIMARY 
     id INTEGER PRIMARY KEY AUTOINCREMENT, handle TEXT NOT NULL, partner TEXT NOT NULL, lane TEXT NOT NULL, own_marker INTEGER NOT NULL, clicked_at TEXT NOT NULL, who TEXT NOT NULL DEFAULT '')""",
          # F-192: a count per trip per day, and who-was-here-today (hashes of the current day only: gitaway/stats.py)
          """CREATE TABLE IF NOT EXISTS trip_days (slug TEXT NOT NULL, day TEXT NOT NULL, views INTEGER NOT NULL DEFAULT 0, forks INTEGER NOT NULL DEFAULT 0, plans INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (slug, day))""",
-         """CREATE TABLE IF NOT EXISTS view_seen (day TEXT NOT NULL, h TEXT NOT NULL, slug TEXT NOT NULL, kind TEXT NOT NULL, PRIMARY KEY (day, h, slug, kind))""")
+         """CREATE TABLE IF NOT EXISTS view_seen (day TEXT NOT NULL, h TEXT NOT NULL, slug TEXT NOT NULL, kind TEXT NOT NULL, PRIMARY KEY (day, h, slug, kind))""",
+         # F-194: a creator's trip whose ownership the captain has not checked: "pending" (a claim by someone not at the post's site: unlisted), "unverified" (an open import: listed, the byline waits)
+         # or "approved". No row: nothing to check. Holds the slug and the post's site only; who published it is read from the trip.
+         """CREATE TABLE IF NOT EXISTS trip_review (slug TEXT PRIMARY KEY, state TEXT NOT NULL, host TEXT NOT NULL DEFAULT '', updated_at TEXT NOT NULL)""")
 # Words a handle cannot be: each is (or may become) a fixed page under /creators/, which would shadow the profile (tests/test_creator_profiles.py walks the app's routes against this set).
 RESERVED_HANDLES = frozenset({"draft", "finish", "done", "new", "import", "settings", "edit", "preview", "photo", "admin", "report", "go", "drafts", "stats"})
 UP = " AND slug NOT IN (SELECT slug FROM takedowns)"   # the live trips: everything not taken down (F-185)
+LISTED = " AND slug NOT IN (SELECT slug FROM trip_review WHERE state = 'pending')"   # the trips in the lists (hub, roster, profiles): not the ones waiting for the captain's yes (F-194)
 _ready: set = set()
 
 
@@ -130,9 +134,10 @@ def get(slug, hidden=False) -> dict | None:
     return _row(r) if r else None
 
 
-def rows(kind="", owner="", hidden=False) -> list:
-    """Published trips, oldest first; `kind` and `owner` (a user id) narrow them. Taken-down trips are left out unless `hidden=True`."""
-    sql, args = "SELECT * FROM published WHERE 1=1" + ("" if hidden else UP), {}
+def rows(kind="", owner="", hidden=False, pending=False) -> list:
+    """Published trips, oldest first; `kind` and `owner` (a user id) narrow them. The lists leave out the trips the captain took down and the ones waiting for his yes (F-194, they
+    are reached by their link only); `pending=True` keeps the waiting ones, `hidden=True` everything (the admin page)."""
+    sql, args = "SELECT * FROM published WHERE 1=1" + ("" if hidden else UP) + ("" if hidden or pending else LISTED), {}
     if kind:
         sql, args["k"] = sql + " AND kind = :k", kind
     if owner:
@@ -192,6 +197,8 @@ def unpublish(session, slug) -> bool:
         return False
     with connect() as db:
         delete_record(db, "published", slug, "slug")
+        db.conn.execute(text("DELETE FROM trip_review WHERE slug = :s"), {"s": slug})      # published again, it is looked at again
+        db.conn.commit()
     return True
 
 
@@ -259,9 +266,9 @@ def real_creators() -> list:
 
 
 def has_real() -> bool:
-    """Is any real family trip published? The live site's community and creator pages exist only from then on."""
+    """Is any real family trip published and listed? The live site's community and creator pages exist only from then on."""
     with connect() as db:
-        return db.conn.execute(text("SELECT 1 FROM published WHERE kind = 'scrapbook'" + UP + " LIMIT 1")).fetchone() is not None
+        return db.conn.execute(text("SELECT 1 FROM published WHERE kind = 'scrapbook'" + UP + LISTED + " LIMIT 1")).fetchone() is not None
 
 
 def is_real(slug) -> bool:
@@ -291,7 +298,7 @@ def most_forked() -> dict | None:
     """The live real trip forked most often (the newest when none has been forked), or None while nothing real is published. One query."""
     with connect() as db:
         r = db.conn.execute(text("SELECT p.* FROM published p LEFT JOIN fork_counts f ON f.slug = p.slug WHERE p.kind = 'scrapbook'"
-                                 + UP.replace("slug NOT IN", "p.slug NOT IN") + " ORDER BY COALESCE(f.n, 0) DESC, p.created_at DESC LIMIT 1")).fetchone()
+                                 + (UP + LISTED).replace("slug NOT IN", "p.slug NOT IN") + " ORDER BY COALESCE(f.n, 0) DESC, p.created_at DESC LIMIT 1")).fetchone()
     return _row(r) if r else None
 
 
@@ -313,6 +320,34 @@ def restore(slug) -> bool:
     return bool(done)
 
 
+# ---- the captain's check of who owns a trip (F-194) -----------------------------------------------------------------------------------
+
+def review_state(slug) -> str:
+    """"pending", "unverified", "approved", or "" when the trip has nothing to be checked."""
+    with connect() as db:
+        r = db.conn.execute(text("SELECT state FROM trip_review WHERE slug = :s"), {"s": slug}).fetchone()
+    return r[0] if r else ""
+
+
+def set_review(slug, state, host="") -> None:
+    """Record that `slug` waits for the captain ("pending" or "unverified"), is "approved", or ("" ) has nothing to check."""
+    with connect() as db:
+        if state:
+            db.conn.execute(text("INSERT INTO trip_review (slug, state, host, updated_at) VALUES (:s, :t, :h, :u) ON CONFLICT(slug) DO UPDATE SET state = :t, host = :h, updated_at = :u"),
+                            {"s": slug, "t": state, "h": host, "u": _now()})
+        else:
+            db.conn.execute(text("DELETE FROM trip_review WHERE slug = :s"), {"s": slug})
+        db.conn.commit()
+
+
+def waiting() -> list:
+    """The live trips waiting for the captain, oldest first: [{"slug", "state" ("pending" or "unverified"), "host", "row" (the published row)}]."""
+    with connect() as db:
+        found = db.conn.execute(text("SELECT r.slug, r.state, r.host FROM trip_review r JOIN published p ON p.slug = r.slug WHERE r.state IN ('pending', 'unverified')"
+                                     " AND r.slug NOT IN (SELECT slug FROM takedowns) ORDER BY p.created_at, p.rowid")).fetchall()
+    return [{"slug": s, "state": st, "host": h, "row": get(s)} for s, st, h in found]
+
+
 def is_down(slug) -> bool:
     with connect() as db:
         return db.conn.execute(text("SELECT 1 FROM takedowns WHERE slug = :s"), {"s": slug}).fetchone() is not None
@@ -323,6 +358,6 @@ def clear() -> None:
     with connect() as db:
         db.conn.execute(text("DELETE FROM published"))
         db.conn.execute(text("DELETE FROM creators"))
-        for table in ("creator_markers", "takedowns", "reports", "via_clicks", "fork_counts", "trip_days", "view_seen"):
+        for table in ("creator_markers", "takedowns", "reports", "via_clicks", "fork_counts", "trip_days", "view_seen", "trip_review"):
             db.conn.execute(text(f"DELETE FROM {table}"))
         db.conn.commit()

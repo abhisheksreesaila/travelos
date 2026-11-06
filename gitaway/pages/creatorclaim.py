@@ -136,20 +136,26 @@ def _signed_out_bar(token, name, domain):
                      P(f"You will be asked to confirm that {domain} is your site.", cls="cl-hint"), cls="cl-actions")))
 
 
-def _claim_bar(token, name, domain, error):
+def _claim_bar(token, name, domain, error, note=""):
     """The bar for a signed-in person: confirm the site, then publish or edit first."""
     return _bar((Div(H1(f"{name}, your post is ready as a trip"), P("GitAway read your post and drafted this. Nothing is public until you publish, and you can take it down any time.", cls="cl-lede"), cls="cl-text"),
                  Form(Label(Input(type="checkbox", name="confirm", value="1", required=True, id="cl-confirm", cls="cl-check"), Span("This is my site ", Span(domain, id="cl-domain", cls="cl-domain"), cls="cl-confirm-t"), cls="cl-confirm"),
                       P(error, role="alert", cls="cl-error", id="cl-error") if error else "",
                       Button(icon("check", 24, 2.8), "This is my post — publish it", type="submit", name="do", value="publish", id="cl-publish", cls="btn btn-primary cl-publish"),
                       Button(icon("note", 20, 2.4), "Edit first", type="submit", name="do", value="edit", id="cl-edit", cls="btn cl-editbtn"),
+                      P(note, role="note", cls="cl-hint", id="cl-held") if note else "",
                       P(f"Publishing says this is your own post. {affiliate.pays_you()} The trip links back to your post.", cls="cl-hint"), action=f"/claim/{token}", method="post", cls="cl-actions")))
 
 
-def _claim_page(token, d, error="", signed_in=True):
+def _claim_page(token, d, error="", session=None):
+    """The claim page: a read-only preview, with the sign-in button when `session` is not a signed-in person's, else the form to claim it."""
     trip = cd.build(d, lambda n: "", "")
     name, domain = d["name"] or "there", cc.domain_of(d)
-    bar = _claim_bar(token, name, domain, error) if signed_in else _signed_out_bar(token, name, domain)
+    if not ses.current_traveler(session):
+        bar = _signed_out_bar(token, name, domain)
+    else:
+        held = cd.review_for(session, d, claimed=True) == "pending"      # F-194: their email is not at the post's site, so the captain looks first
+        bar = _claim_bar(token, name, domain, error, f"Your sign-in email is not at {domain}, so the captain looks at the trip before it is listed." if held else "")
     return page(trip.title or "Your trip", bar, itinerary_body(trip), head=(*VIEW_HEAD, *HEAD, NOINDEX), theme=trip.theme)
 
 
@@ -176,7 +182,7 @@ def register(app):
         if (gone := _gate(token, me)):
             return gone
         d = cd.get(cc.UNCLAIMED, cc.draft_id_of(token))      # a plain def route: it runs in the thread pool
-        return FtResponse(_claim_page(token, d, signed_in=bool(me)), headers=PRIVATE) if d else _message("This link does not work", "That trip is gone.", 404)      # signed out: a read-only preview, sign-in only to claim (F-194)
+        return FtResponse(_claim_page(token, d, session=session), headers=PRIVATE) if d else _message("This link does not work", "That trip is gone.", 404)      # signed out: a read-only preview, sign-in only to claim (F-194)
 
     @app.post("/claim/{token}")
     async def claim(request, session, token: str):
@@ -192,7 +198,7 @@ def register(app):
             d = await run_in_threadpool(cd.get, cc.UNCLAIMED, cc.draft_id_of(token))
             if not d:
                 return _message("This link does not work", "That trip is gone.", 404)
-            return FtResponse(_claim_page(token, d, f"Tick the box to say {cc.domain_of(d)} is your site, then press the button."), status_code=422, headers=PRIVATE)
+            return FtResponse(_claim_page(token, d, f"Tick the box to say {cc.domain_of(d)} is your site, then press the button.", session), status_code=422, headers=PRIVATE)
         did = cc.claim(token, me.id, session.get("email") or "")
         if not did:
             return _gate(token, me) or _message("This link does not work", "Ask the person who sent it for a new one.", 410)
