@@ -16,7 +16,7 @@ from fasthtml.common import A, Article, Button, Div, Fieldset, Form, H1, H2, H3,
 from fasthtml.core import FtResponse
 from starlette.responses import RedirectResponse
 
-from gitaway import creator_profiles, creators, hub, session as ses
+from gitaway import community, creator_profiles, creators, hub, session as ses, showcase
 from gitaway.creators import MAX, SEASONS
 from gitaway.icons import icon
 from gitaway.itinerary_view import _icon
@@ -65,9 +65,43 @@ def avatar(c, cls="cr-avatar"):
     return Span("".join(w[0] for w in c.name.split()[:2]), cls=f"{cls} cr-k-{PLACE_KINDS[i % len(PLACE_KINDS)]}", aria_hidden="true")
 
 
+def real_avatar(name, cls="cr-avatar"):
+    return Span("".join(w[0] for w in name.split()[:2]).upper(), cls=f"{cls} cr-k-{PLACE_KINDS[sum(map(ord, name)) % len(PLACE_KINDS)]}", aria_hidden="true")
+
+
+def _real_item(c):
+    n = len(c["trips"])
+    return Li(A(real_avatar(c["name"]), Span(Span(c["name"], cls="cr-who-name"), Span(f"{n} trip{'s' if n != 1 else ''}", cls="cr-who-place"), cls="cr-who-text"),
+                Span(icon("chev-right", 18, 2.2), cls="cr-who-go", aria_hidden="true"), href=f"/creators/{c['handle']}", cls="cr-who"))
+
+
+def real_index():
+    """/creators off the showcase: only the people who published a real trip, no paste box (the link import is simulated)."""
+    people = community.real_creators()
+    return page("Creators", Section(H1("Creators on GitAway"), P("Families who published a trip they really took. Read it, fork it, plan your own."),
+                                    Ul(*[_real_item(c) for c in people], cls="cr-roster"), cls="cr cr-real ga-wrap"), current="/creators", head=HEAD)
+
+
+def real_profile(handle):
+    """A real creator's page: their name and the trips they published; None when they have none live."""
+    c = next((c for c in community.real_creators() if c["handle"] == handle), None)
+    if c is None:
+        return None
+    cards = [x for x in hub.all_cards(None) if x.real and x.handle == handle]
+    cover = next(((x.photo, x.alt) for x in cards if x.photo), None)
+    body = Section(
+        Div(Img(src=cover[0], alt=cover[1], loading="lazy", cls="cr-cover") if cover else "",
+            Div(real_avatar(c["name"], "cr-avatar cr-avatar-lg"), H1(c["name"]), cls="cr-name-row"),
+            P(f"{len(cards)} trip{'s' if len(cards) != 1 else ''} published on GitAway.", cls="cr-bio"), cls="cr-profile-head"),
+        Section(H2(f"{c['name'].split()[0]}'s trips"), Div(*[hub_card(x, i) for i, x in enumerate(cards)], cls="hub-grid"), cls="cr-profile-trips"),
+        P(A("All creators", href="/creators")), cls="cr cr-profile ga-wrap")
+    return page(c["name"], body, current="/creators", head=(*HUB_HEAD, *HEAD))
+
+
 def roster():
     return Section(H2("Creators on GitAway"),
-                   Ul(*[Li(A(avatar(c), Span(Span(c.name, cls="cr-who-name"), Span(f"{c.place_name} · {len(c.trips)} trip{'s' if len(c.trips) != 1 else ''}", cls="cr-who-place"), cls="cr-who-text"),
+                   Ul(*[_real_item(c) for c in community.real_creators()],
+                      *[Li(A(avatar(c),Span(Span(c.name, cls="cr-who-name"), Span(f"{c.place_name} · {len(c.trips)} trip{'s' if len(c.trips) != 1 else ''}", cls="cr-who-place"), cls="cr-who-text"),
                              Span(icon("chev-right", 18, 2.2), cls="cr-who-go", aria_hidden="true"), href=f"/creators/{c.handle}", cls="cr-who")) for c in creator_profiles.CREATORS], cls="cr-roster"),
                    id="cr-roster", cls="cr-roster-sec")
 
@@ -239,6 +273,8 @@ def _signin(next_path):
 def register(app):
     @app.get("/creators")
     def paste_get(session, link: str = ""):
+        if not showcase.on():
+            return real_index()
         return paste_page(session, link[:creators.MAX_LINK + 100])
 
     @app.post("/creators")
@@ -319,7 +355,9 @@ def register(app):
 
     @app.get("/creators/{handle}")
     def profile(handle: str):
-        c = creator_profiles.get(handle)
+        c = creator_profiles.get(handle) if showcase.on() else None
+        if c is None and (found := real_profile(handle)) is not None:
+            return found
         if c is None:
             return FtResponse(page("Not found", Section(H1("Nothing here"), A("All creators", href="/creators"), cls="ga-soon ga-wrap")), status_code=404)
         return profile_page(c)

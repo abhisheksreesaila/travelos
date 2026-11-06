@@ -1,7 +1,7 @@
 """FastHTML components for the scrapbook itinerary page (F-014)."""
 
-from fasthtml.common import (A, Button, Details, Div, Form, H1, H2, H3, Img, Input, Link, NotStr, P, Script,
-                             Section, Span, Summary)
+from fasthtml.common import (A, Button, Details, Div, Figcaption, Figure, Form, H1, H2, H3, Img, Input, Li, Link, NotStr, P, Script,
+                             Section, Span, Summary, Ul)
 
 from gitaway.icons import icon
 from gitaway.itineraries import STOP_LIMIT, Day, Itinerary, Stop, board_cards, day_color, safe_href
@@ -65,10 +65,17 @@ def save_form(trip, saved=False):
         action="/unsave" if saved else "/save", method="post", cls="save-form")
 
 
+def _plan_button(trip):
+    """"Plan this trip" on a real published trip: the booking workspace at its place with dates ahead; nothing when the place is not one we plan."""
+    from gitaway import hub  # here, not at the top: hub reads the community database
+    href = hub.plan_href(trip) if trip.real else ""
+    return A(icon("plane", 22, 2.2), "Plan this trip", href=href, cls="btn btn-hero", id="plan-this") if href else ""
+
+
 def _actions(trip, saved=False, forked=False):
     return Div(
         A(icon("fork", 22, 2.4), "In your forks" if forked else "Fork this trip", href="/forks" if forked else fork_href(trip), cls="btn btn-primary btn-hero"),
-        Button(icon("share", 20), "Share", type="button", cls="btn btn-hero"),
+        _plan_button(trip) if trip.real else Button(icon("share", 20), "Share", type="button", cls="btn btn-hero"),
         save_form(trip, saved),
         cls="hero-actions",
     )
@@ -103,6 +110,8 @@ def _collage(trip):
     stamp = Div(trip.route, cls="stamp")
     if trip.polaroids:
         shots = [_polaroid(p, f"polaroid-{i}") for i, p in enumerate(trip.polaroids[:2])]
+        if trip.real:  # a real trip's page has no made-up weather
+            return Div(*shots, route, plane, stamp, cls="collage")
         return Div(*shots, route, plane, weather, stamp, cls="collage")
     stickers = [
         Span(icon("pin", 40, 2), cls="sticker-big s1 fill-mint"),
@@ -118,7 +127,8 @@ def _hero(trip, saved=False, forked=False):
                        'fill="none" stroke-linecap="round"/></svg>')
     return Section(
         Div(
-            Div(Span(icon("pin", 16, 2.2), trip.place, cls="place-pill"), Span("Community itinerary"), cls="kicker"),
+            Div(Span(icon("pin", 16, 2.2), trip.place, cls="place-pill"),
+                (A(f"By {trip.author}", href=f"/creators/{trip.handle}", cls="by") if trip.handle else Span(f"By {trip.author}", cls="by")) if trip.real else Span("Community itinerary"), cls="kicker"),
             H1(f"{trip.headline} ", Span(trip.accent, underline, cls="accent-words"), cls="hero-title"),
             P(trip.lede, cls="lede"),
             Div(*[_tag(t) for t in trip.tags], cls="tags") if trip.tags else "",
@@ -204,11 +214,18 @@ def _weather(d: Day):
     return Span(icon("sun", 20, 2), d.weather, cls="rail-weather") if d.weather else ""
 
 
+def _extras(d: Day):
+    """A creator's own words and photos for a day (F-181): the note, then the photos, then the timeline; a sample day has neither."""
+    note = P(d.note, cls="day-note") if d.note else ""
+    shots = Div(*[Figure(Img(src=p.src, alt=p.alt, loading="lazy"), Figcaption(p.caption) if p.caption else "", cls="day-photo") for p in d.photos], cls="day-photos") if d.photos else ""
+    return Div(note, shots, _timeline(d), cls="day-main") if note or shots else _timeline(d)
+
+
 def _day_story(d: Day):
     rail = Div(
         Div(Span("day", cls="badge-l"), Span(str(d.n), cls="badge-n"), cls="day-badge"),
         Span(d.date, cls="rail-date"), H3(d.title, cls="rail-title"), _weather(d), cls="day-rail")
-    return Div(rail, _timeline(d), id=f"day-{d.n}", cls=f"day-story day-{day_color(d.n)}", style=f"--i:{d.n}")
+    return Div(rail, _extras(d), id=f"day-{d.n}", cls=f"day-story day-{day_color(d.n)}", style=f"--i:{d.n}")
 
 
 def _folded(d: Day):
@@ -227,6 +244,14 @@ def _days(trip):
     return Section(*open_days, Div(*folds, cls="folds") if folds else "", cls="days ga-wrap")
 
 
+# ---------- tips (a creator's) ----------
+
+def _tips(trip):
+    if not trip.tips:
+        return ""
+    return Section(H2(f"{trip.author.split()[0]}'s tips"), Ul(*[Li(t) for t in trip.tips], cls="tips-list"), id="tips", cls="tips ga-wrap")
+
+
 # ---------- make it yours ----------
 
 def _yours(trip):
@@ -237,7 +262,7 @@ def _yours(trip):
             P(f"Fork it into your trips, then drop the days you love into your own calendar. "
               f"The original stays exactly as {who} shared it."),
             Div(A(icon("fork", 22, 2.4), "Fork this trip", href=fork_href(trip), cls="btn btn-primary btn-hero"),
-                A("Plan my own trip", href="/plan", cls="btn btn-hero"), cls="hero-actions"),
+                _plan_button(trip) or A("Plan my own trip", href="/plan", cls="btn btn-hero"), cls="hero-actions"),
             cls="yours-copy"),
         Div(Div(cls="fork-back"),
             Div(Span("YOUR FORKS", cls="fork-kicker"), Span(trip.title, cls="fork-title"),
@@ -290,8 +315,8 @@ SCRIPT = Script("""
 def itinerary_body(trip: Itinerary, loading: bool = False, saved: bool = False, forked: bool = False):
     if loading:
         return skeleton(trip)
-    return Div(_hero(trip, saved, forked), _board(trip), _days(trip), _yours(trip), SCRIPT, cls="itinerary")
+    return Div(_hero(trip, saved, forked), _board(trip), _days(trip), _tips(trip), _yours(trip), SCRIPT, cls="itinerary")
 
 
 def itinerary_page(trip: Itinerary, theme=None, loading: bool = False, saved: bool = False, forked: bool = False):
-    return page(trip.title, itinerary_body(trip, loading, saved, forked), theme=resolve_theme(theme, trip), head=HEAD)
+    return page(trip.title, itinerary_body(trip, loading, saved, forked), theme=resolve_theme(theme, trip), head=(*HEAD, Link(rel="stylesheet", href="/assets/css/scrapbook.css")) if trip.real else HEAD)

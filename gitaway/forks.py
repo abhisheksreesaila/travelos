@@ -7,7 +7,7 @@ A slug whose trip is gone (its owner unpublished it) is simply not listed.
 
 from dataclasses import dataclass
 
-from gitaway import community, hub, itineraries, session as ses
+from gitaway import community, hub, itineraries, session as ses, showcase
 from gitaway.itineraries import PIER
 
 
@@ -25,7 +25,7 @@ class Entry:
 
 def resolve(slug):
     """The Itinerary behind a trip slug (a sample or a published trip), or None when it does not exist (any more)."""
-    return itineraries.get(slug) or community.find(slug)
+    return (itineraries.get(slug) if showcase.on() else None) or community.find(slug)  # off the showcase there are no samples to fork (F-064)
 
 
 def entry(session, slug):

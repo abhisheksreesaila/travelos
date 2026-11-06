@@ -34,6 +34,8 @@ class Day:
     weather: str = ""
     stops: list = field(default_factory=list)
     collapsed: bool = False
+    note: str = ""              # a creator's own words about the day (F-181)
+    photos: list = field(default_factory=list)   # Polaroids a creator picked for the day (F-181)
 
 
 @dataclass(frozen=True)
@@ -79,6 +81,11 @@ class Itinerary:
     route: str = "SFO → LAX · 1h 27m"
     author: str = "the author"
     theme: str = "sunset"
+    tips: list = field(default_factory=list)   # a creator's few tips (F-181)
+    real: bool = False          # a real family's trip, published by a person (F-181): no sample weather or route, a creator byline, "Plan this trip"
+    handle: str = ""            # the creator's profile handle: set only on a real published trip (F-181)
+    plan_to: str = ""           # the catalog place "Plan this trip" goes to ("la"), "" when there is none
+    plan_days: int = 0          # how many days "Plan this trip" plans
 
 
 def safe_href(url) -> str:

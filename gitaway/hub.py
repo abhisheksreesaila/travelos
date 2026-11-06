@@ -9,8 +9,9 @@ Pure functions over a session dict (for the signed-in person) and the community 
 """
 
 from dataclasses import dataclass, replace
+from urllib.parse import urlencode
 
-from gitaway import community, itineraries
+from gitaway import community, itineraries, showcase
 from gitaway.community import HubError  # noqa: F401  (the error publishers raise, re-exported for them)
 
 # tag key -> (label, tint token name, icon name)
@@ -34,6 +35,8 @@ class HubCard:
     alt: str = ""
     theme: str = "sunset"
     mine: bool = False        # published by the signed-in traveler
+    real: bool = False        # a real family's published trip (F-181): no sample fork count, no "from creators" source
+    handle: str = ""          # a real trip's creator profile
 
 
 def has_shared() -> bool:
@@ -55,12 +58,26 @@ def _from_itinerary(trip) -> HubCard:
 
 
 def all_cards(session) -> list:
-    """Every trip in the hub: the fake community's first, then everything published (the signed-in person's marked `mine`)."""
+    """Every trip in the hub: the fake community's first, then everything published (the signed-in person's marked `mine`).
+    Off the showcase only real published trips are here (F-181), newest first."""
     me = (session or {}).get("user_id")
+    real = not showcase.on()
     # TODO: paginate; this loads and parses every published snapshot on each hub request.
-    published = [(r, _from_itinerary(community.trip_of(r))) for r in community.rows()]
-    return [*(_from_itinerary(t) for t in itineraries.ITINERARIES.values()),
-            *(replace(c, mine=bool(me) and r["owner_user"] == str(me)) for r, c in published)]
+    published = [(r, _from_itinerary(community.trip_of(r))) for r in community.rows(kind="scrapbook" if real else "")]
+    if real:
+        published.reverse()
+    cards = (replace(c, mine=bool(me) and r["owner_user"] == str(me), real=r["kind"] == "scrapbook", handle=r["meta"].get("handle", "")) for r, c in published)
+    return [*(() if real else (_from_itinerary(t) for t in itineraries.ITINERARIES.values())), *cards]
+
+
+def plan_href(trip) -> str:
+    """"Plan this trip" for a real published trip: the booking workspace at the trip's place with sensible dates ahead (gitaway.publish.sample_dates), "" when
+    the trip's place is not one the workspace plans."""
+    from gitaway import publish
+    if not trip.plan_to:
+        return ""
+    depart, ret = publish.sample_dates(trip.plan_days)
+    return "/plan?" + urlencode({"to": trip.plan_to, "d": depart.isoformat(), "r": ret.isoformat(), "a": 2})
 
 
 def cards(session, *, tags=(), creators=False, q="") -> list:
