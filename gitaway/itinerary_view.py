@@ -1,5 +1,7 @@
 """FastHTML components for the scrapbook itinerary page (F-014)."""
 
+from urllib.parse import urlsplit
+
 from fasthtml.common import (A, Button, Details, Div, Figcaption, Figure, Form, H1, H2, H3, Img, Input, Li, Link, NotStr, P, Script,
                              Section, Span, Summary, Ul)
 
@@ -195,6 +197,9 @@ def _stop(s: Stop, last: bool):
         body.append(Span(s.note, cls="note"))
     if s.photo:
         body.append(Img(src=s.photo, alt=s.photo_alt, cls="stop-photo", loading="lazy"))
+    if (href := safe_href(s.link)):    # a creator's own booking or ticket link (F-196): sponsored, shown by its site's name
+        host = urlsplit(href).hostname.removeprefix("www.")
+        body.append(A(icon("ext", 14, 2.2), Span(host), href=href, rel="sponsored noopener", target="_blank", cls="stop-link", aria_label=f"{s.title} on {host}, opens in a new tab"))
     return Div(
         Span(s.time, cls="stop-time"),
         Div(Span(_icon(s.kind, 24, 2.1), cls=f"bubble bub-{s.bubble}"), Span(cls="line" + (" line-end" if last else "")),
@@ -267,7 +272,8 @@ def _trust(trip):
     from gitaway import affiliate, community  # here, not at the top: both read the community database
     line = affiliate.earning_line(trip.author, bool(affiliate.marker_for(trip.handle)) if trip.handle else False)
     report = A(icon("flag", 18, 2.2), "Report this trip", href=f"/report?trip={trip.slug}", cls="btn btn-sm trust-report", id="report-this") if community.is_real(trip.slug) else ""
-    return Section(P(line, id="who-earns", cls="trust-line"), report, id="trust", cls="trust ga-wrap")
+    own = P(f"Links on a stop are {trip.author}'s own. They may earn them a commission.", id="own-links", cls="trust-line") if any(s.link for d in trip.days for s in d.stops) else ""     # F-196
+    return Section(P(line, id="who-earns", cls="trust-line"), own, report, id="trust", cls="trust ga-wrap")
 
 
 # ---------- make it yours ----------

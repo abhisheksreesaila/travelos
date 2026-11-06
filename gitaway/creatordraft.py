@@ -25,7 +25,7 @@ from pathlib import Path
 
 from sqlalchemy import text
 
-from gitaway import ai, community, creators, hub, photos, publish as pub, safefetch, session as ses, showcase
+from gitaway import ai, community, creators, hub, photos, publish as pub, safefetch, session as ses, showcase, stoplinks
 from gitaway.hub import HubError
 from gitaway.importsource import Material
 from gitaway.itineraries import Day, Itinerary, Polaroid, Source, Stop, Tag
@@ -67,14 +67,14 @@ Rules:
 - title: a short plain trip title, at most 8 words, in the spirit of the post. No quotes, emoji or links.
 - place: la (Los Angeles area, including Anaheim, Disneyland, Santa Monica, Hollywood), sd (San Diego), hi (Hawaii, Honolulu, Oahu, Waikiki), nyc (New York City), or other. When place is other, put the destination's name in place_name, otherwise place_name is an empty string.
 - days: one entry per day of the trip, in order, and days_count is how many. If the post does not split the trip into days, make days only from what it says (a one-day post is one day). Never invent a day or a stop.
-- stops: the places or activities the post names for that day, in the order the post gives them. name is the place or activity as the post names it. If the post does not clearly name the place, give an empty string for name. Never guess a place name. time is a clock time only when the post states one (like "9:00 AM"), otherwise an empty string. note is at most one short sentence from the post (a tip or detail about the stop), otherwise an empty string.
+- stops: the places or activities the post names for that day, in the order the post gives them. name is the place or activity as the post names it. If the post does not clearly name the place, give an empty string for name. Never guess a place name. time is a clock time only when the post states one (like "9:00 AM"), otherwise an empty string. note is at most one short sentence from the post (a tip or detail about the stop), otherwise an empty string. link is a web address only when the post itself gives a web address for this stop (a hotel, ticket or booking link the creator wrote, often shown as [text](address)): copy that address exactly, character for character. Otherwise an empty string. Never make an address up, never change one, never use one that is not about this stop.
 - tips: up to 5 short practical tips the post gives, in the creator's words as far as possible.
 - stickers: "kid", "pet" or "couple", only when the post clearly says the trip suits kids, a pet, or couples. Otherwise leave it out.
-- Plain text only: no HTML, no links, no email addresses, no phone numbers.
+- Plain text only: no HTML, no links (except a stop's link field), no email addresses, no phone numbers.
 Answer only with the JSON object."""
 
-_STOP = {"type": "object", "additionalProperties": False, "required": ["name", "time", "note"],
-         "properties": {"name": {"type": "string"}, "time": {"type": "string"}, "note": {"type": "string"}}}
+_STOP = {"type": "object", "additionalProperties": False, "required": ["name", "time", "note", "link"],
+         "properties": {"name": {"type": "string"}, "time": {"type": "string"}, "note": {"type": "string"}, "link": {"type": "string"}}}
 SCHEMA = {"type": "object", "additionalProperties": False, "required": ["title", "place", "place_name", "days_count", "days", "tips", "stickers"],
           "properties": {"title": {"type": "string"},
                          "place": {"type": "string", "enum": ["la", "sd", "hi", "nyc", "other"]},
@@ -121,22 +121,23 @@ def _grounded(name, source_lower) -> bool:
     return not words or any(w in source_lower for w in words)
 
 
-def _stop(raw, source_lower) -> dict:
+def _stop(raw, source_lower, source="", own="") -> dict:
     raw = raw if isinstance(raw, dict) else {}
     name = _line(raw.get("name"), MAX_STOP)
     if name.lower() in _NO_NAME or not _grounded(name, source_lower):
         name = UNNAMED
-    return {"time": _time(raw.get("time")), "name": name, "note": _line(raw.get("note"), MAX_STOP_NOTE)}
+    return {"time": _time(raw.get("time")), "name": name, "note": _line(raw.get("note"), MAX_STOP_NOTE), "link": stoplinks.keep(raw.get("link"), source, own)}
 
 
-def validate(raw, source, fallback_title="") -> dict:
-    """A draft's content rebuilt from the model's answer, or HubError (EMPTY) when there is no trip in it. `source` is the post's text (for the stop-name check).
+def validate(raw, source, fallback_title="", own="") -> dict:
+    """A draft's content rebuilt from the model's answer, or HubError (EMPTY) when there is no trip in it. `source` is the post's text (for the stop-name check, and a stop's link must be written in it);
+    `own` is the creator's own blog's domain, whose links are allowed too (stoplinks.own_domain).
     Nothing of `raw` is kept as it came: every field is re-typed, cut and cleaned, and unknown fields are dropped."""
     raw = raw if isinstance(raw, dict) else {}
     low = str(source or "").lower()
     days = []
     for d in (raw.get("days") if isinstance(raw.get("days"), list) else [])[:MAX_DAYS]:
-        stops = [_stop(s, low) for s in (d.get("stops") if isinstance(d, dict) and isinstance(d.get("stops"), list) else [])[:MAX_STOPS]]
+        stops = [_stop(s, low, str(source or ""), own) for s in (d.get("stops") if isinstance(d, dict) and isinstance(d.get("stops"), list) else [])[:MAX_STOPS]]
         if stops:
             first = next((s["name"] for s in stops if s["name"] != UNNAMED), "")
             days.append({"title": first[:MAX_DAY_TITLE] or "Out and about", "note": "", "stops": stops})
@@ -160,7 +161,7 @@ def _user_message(m: Material) -> str:
 def ask(owner, family, m: Material) -> dict:
     """The model's draft of `m`, validated. Raises ai.AIError (a sentence fit to show; already logged) or HubError."""
     answer = ai.call_json(JOB, family or owner, SYSTEM, _user_message(m), SCHEMA, name="trip_draft")
-    return validate(answer, m.text, m.title)
+    return validate(answer, m.text, m.title, stoplinks.own_domain(m.kind, m.url))
 
 
 # ---- storage ------------------------------------------------------------------------------------------------------------------
@@ -278,7 +279,7 @@ def blank(owner, m: Material, name="", why="") -> dict:
     kept = m.text[:MAX_KEPT_TEXT]
     if len(m.text) > len(kept):
         notices.append(f"Only the first {MAX_KEPT_TEXT:,} characters of your text are kept beside the editor.")
-    d = _base(m, {"title": _line(m.title, MAX_TITLE), "place": "other", "place_name": "", "days": [{"title": "Day 1", "note": "", "stops": [{"time": "", "name": "", "note": ""}]}], "tips": [], "stickers": []}, name)
+    d = _base(m, {"title": _line(m.title, MAX_TITLE), "place": "other", "place_name": "", "days": [{"title": "Day 1", "note": "", "stops": [{"time": "", "name": "", "note": "", "link": ""}]}], "tips": [], "stickers": []}, name)
     return _create(owner, {**d, "notices": notices, "text": kept})
 
 
@@ -298,6 +299,17 @@ def _check_text(d):
     pub._check_text(*texts)
 
 
+def _link(stop, own) -> str:
+    """The link typed on a stop, kept when it is on the list (stoplinks), else HubError saying which stop and where links may go: a creator's own typing is told, never quietly dropped."""
+    raw = str(stop.get("link") or "").strip()
+    if not raw:
+        return ""
+    if (got := stoplinks.clean(raw, own)):
+        return got
+    where = stoplinks.LIST_TEXT + (", or to your own blog" if own else "")
+    raise HubError(f"The link on \"{_plain(stop.get('name'), MAX_STOP) or 'a stop'}\" can only go to {where}. Use a link from one of those sites, or leave it empty.")
+
+
 def apply(owner, d, form, action="save") -> dict:
     """Keep what the editor posted. `form` has: title, name, place, place_name, stickers (list), tip (list), d<i>_title, d<i>_note, d<i>s<j>_name|time|note, pick (list of
     picture numbers), cover; `action` can add or remove a stop or a day ("add_stop:1", "del_stop:0:2", "add_day", "del_day:1"). The form is the structure: rows it lacks are gone.
@@ -305,9 +317,11 @@ def apply(owner, d, form, action="save") -> dict:
     def val(k):
         v = form.get(k)
         return v if isinstance(v, str) else ""
+    src = d.get("source") or {}
+    own = stoplinks.own_domain(src.get("kind"), src.get("url"))
     rows = {}
     for k in form.keys():
-        m = re.fullmatch(r"d(\d{1,2})(?:s(\d{1,2}))?_(title|note|name|time)", k)
+        m = re.fullmatch(r"d(\d{1,2})(?:s(\d{1,2}))?_(title|note|name|time|link)", k)
         if m:
             rows.setdefault(int(m.group(1)), {"stops": {}})
             if m.group(2) is None:
@@ -323,9 +337,9 @@ def apply(owner, d, form, action="save") -> dict:
             if action == f"del_stop:{i}:{j}":
                 continue
             s = rows[i]["stops"][j]
-            stops.append({"time": _plain(s.get("time"), 12), "name": _plain(s.get("name"), MAX_STOP), "note": _plain(s.get("note"), MAX_STOP_NOTE)})
+            stops.append({"time": _plain(s.get("time"), 12), "name": _plain(s.get("name"), MAX_STOP), "note": _plain(s.get("note"), MAX_STOP_NOTE), "link": _link(s, own)})
         if action == f"add_stop:{i}" and len(stops) < MAX_STOPS:
-            stops.append({"time": "", "name": "", "note": ""})
+            stops.append({"time": "", "name": "", "note": "", "link": ""})
         days.append({"title": _plain(rows[i].get("title"), MAX_DAY_TITLE), "note": _plain(rows[i].get("note"), MAX_NOTE), "stops": stops})
     if action == "add_day" and len(days) < MAX_DAYS:
         days.append({"title": "", "note": "", "stops": [{"time": "", "name": "", "note": ""}]})
@@ -417,7 +431,7 @@ def build(d, src, handle="") -> Itinerary:
     name = d["name"] or "a traveler"
     days = []
     for n, day in enumerate(d["days"], start=1):
-        stops = [Stop(s["time"], s["name"], "star", "sun", note=s["note"]) for s in day["stops"] if s["name"]]
+        stops = [Stop(s["time"], s["name"], "star", "sun", note=s["note"], link=s.get("link", "")) for s in day["stops"] if s["name"]]
         days.append(Day(n, f"DAY {n}", day["title"] or (stops[0].title if stops else "Free day"), "", stops, collapsed=False, note=day["note"]))
     order = ([int(d["cover"])] if d["cover"] != "" else []) + [p for p in d["picks"] if str(p) != d["cover"]]
     shots = [d["copies"][str(n)] for n in order if str(n) in d["copies"]]

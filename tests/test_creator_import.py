@@ -201,7 +201,7 @@ def test_a_long_post_is_cut_with_a_notice_never_silently(web):
 def test_the_answer_is_rebuilt_field_by_field_and_nothing_unknown_survives():
     got = creatordraft.validate({**ANSWER, "system_prompt": "LEAK", "days": [{"stops": [{"name": "Santa Monica Pier", "time": "10:00 AM", "note": "", "extra": "x"}], "extra": 1}]},
                                 "We went to Santa Monica Pier")
-    assert got == {"title": "Three easy days in Santa Monica", "place": "la", "place_name": "", "days": [{"title": "Santa Monica Pier", "note": "", "stops": [{"time": "10:00 AM", "name": "Santa Monica Pier", "note": ""}]}],
+    assert got == {"title": "Three easy days in Santa Monica", "place": "la", "place_name": "", "days": [{"title": "Santa Monica Pier", "note": "", "stops": [{"time": "10:00 AM", "name": "Santa Monica Pier", "note": "", "link": ""}]}],
                    "tips": ["Park at the pier lot before 9.", "Bring layers for the evening."], "stickers": ["kid"]}
 
 
@@ -373,7 +373,7 @@ def test_the_write_it_myself_button_makes_an_empty_draft_even_with_a_key(me, mod
     r = start(me, do="manual", link=POST, text="my notes")
     assert r.status_code == 303 and model.requests == [] and web.calls == []
     d = creatordraft.get(tid(), draft_id(r))
-    assert d["days"] == [{"title": "Day 1", "note": "", "stops": [{"time": "", "name": "", "note": ""}]}] and d["source"]["url"] == POST and d["text"] == "my notes"
+    assert d["days"] == [{"title": "Day 1", "note": "", "stops": [{"time": "", "name": "", "note": "", "link": ""}]}] and d["source"]["url"] == POST and d["text"] == "my notes"
 
 
 def test_on_the_local_showcase_without_a_key_the_old_simulated_draft_stands_in(me, monkeypatch, web):

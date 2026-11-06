@@ -24,6 +24,7 @@ class Stop:
     note: str = ""
     photo: str = ""
     photo_alt: str = ""
+    link: str = ""              # a creator's own booking or ticket link for this stop (F-196: gitaway/stoplinks.py lists where it may go)
 
 
 @dataclass(frozen=True)
