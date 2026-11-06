@@ -1,0 +1,46 @@
+/* All my posts at once and My drafts (F-190): /creators/drafts and its scan page, and the "Import several posts" block on /creators/import. After scrapbook.css and creatorimport.css,
+   whose ci- pieces (cards, inputs, notes) it reuses. Phone first; every control is at least 2.75rem tall (44px on the phone's 16px root). Sizes are rem; the only times are the --motion-*
+   tokens; no glass, no blur. Reduced motion keeps the status dot still. */
+
+.cdr-bulk { display: grid; gap: 0.5rem; padding: 1rem; border-radius: 1rem; background: var(--card); }
+.cdr-bulk .cdr-inline { padding: 0; background: none; }
+.ci.is-drafting .cdr-bulk { display: none; }
+#cdr-mine { justify-self: start; }
+
+/* picking posts */
+.cdr-form { display: grid; gap: 0.75rem; padding: 0.5rem; border-radius: 1rem; background: var(--card); }
+.cdr-posts { list-style: none; margin: 0; padding: 0; display: grid; }
+.cdr-posts li + li { border-top: 0.0625rem solid var(--line); }
+.cdr-pick { display: grid; grid-template-columns: auto 1fr; align-items: start; gap: 0.75rem; min-height: 2.75rem; padding: 0.625rem 0.5rem; cursor: pointer; border-radius: 0.75rem; transition: background-color var(--motion-fade); }
+.cdr-pick:hover { background: var(--paper-2); }
+.cdr-box { width: 1.5rem; height: 1.5rem; margin: 0.125rem 0 0; accent-color: var(--accent); }
+.cdr-txt { display: grid; gap: 0.125rem; min-width: 0; }
+.cdr-t { font-weight: 650; font-size: 1rem; line-height: 1.3; overflow-wrap: anywhere; }
+.cdr-d, .cdr-u, .cdr-host { font-size: 0.875rem; color: var(--ink-2); overflow-wrap: anywhere; }
+.cdr-bar { align-items: center; padding: 0.25rem 0.5rem 0.5rem; }
+.cdr-bar .btn[disabled] { opacity: 0.5; cursor: not-allowed; }
+
+/* the list */
+.cdr { max-width: 46rem; }
+.cdr-list, .cdr-empty { display: grid; gap: 0.75rem; }
+.cdr-empty { padding: 1rem; border-radius: 1rem; background: var(--card); }
+.cdr-busy { display: flex; align-items: center; gap: 0.5rem; }
+.cdr-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.625rem; }
+.cdr-item { display: grid; gap: 0.5rem; padding: 0.875rem 1rem; border-radius: 1rem; background: var(--card); }
+.cdr-new { animation: cdr-in var(--motion-dur) var(--motion-ease) both; }
+.cdr-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 0.75rem; }
+.cdr-name { font-weight: 650; font-size: 1.0625rem; line-height: 1.3; color: var(--ink); overflow-wrap: anywhere; min-width: 0; }
+a.cdr-name { color: var(--accent); text-underline-offset: 0.2rem; min-height: 2.75rem; display: inline-flex; align-items: center; }
+.cdr-host, .cdr-err { margin: 0; }
+.cdr-err { color: var(--oq-bad, #c01f25); font-weight: 600; font-size: 0.9375rem; line-height: 1.4; }
+.cdr-chip { display: inline-flex; align-items: center; gap: 0.375rem; min-height: 2rem; padding: 0.25rem 0.75rem; border-radius: 62rem; background: var(--paper-2); color: var(--ink); font-weight: 600; font-size: 0.9375rem; }
+.cdr-ready { background: color-mix(in srgb, var(--accent) 14%, var(--card)); }
+.cdr-published { background: var(--accent); color: #fff; }
+.cdr-failed { background: color-mix(in srgb, var(--oq-bad, #c01f25) 12%, var(--card)); color: var(--oq-bad, #c01f25); }
+.cdr-drafting svg { animation: cdr-turn calc(var(--motion-screen-dur) * 6) linear infinite; }
+.cdr-s-drafting { opacity: 0.9; }
+.cdr-acts, .cdr-rm { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0.625rem; }
+.cdr-acts .btn, .cdr-rm .btn { min-height: 2.75rem; }
+@keyframes cdr-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes cdr-turn { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .cdr-new { animation-duration: var(--motion-fade); } .cdr-drafting svg { animation: none; } }

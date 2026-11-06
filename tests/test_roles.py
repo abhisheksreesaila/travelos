@@ -30,6 +30,7 @@ OPEN_FOR_VIEWERS = {
     "/report",                                                # reporting a public trip or creator: anyone, signed out too (F-185)
     "/admin/takedown", "/admin/restore",                      # the captain's two buttons: the route answers 404 unless the email is in GITAWAY_ADMIN_EMAILS (F-185)
     "/creators/settings",                                     # a creator's own affiliate marker (F-184)
+    "/creators/drafts/scan", "/creators/drafts/start", "/creators/drafts/{token}",   # a creator's own batch of posts and drafts list (F-190): their drafts, not a family's plan
 }
 ADMIN_ONLY = {"/family/invite", "/family/invite/revoke", "/family/role", "/family/remove", "/trip/delete"}
 

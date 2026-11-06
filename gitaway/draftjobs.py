@@ -186,17 +186,17 @@ def stop() -> None:
 
 def listing(owner) -> list:
     """The person's one list of drafts, drafting first (oldest first), then failed, then the drafts themselves, newest change first. Each row: id, kind ("job" or "draft"), status
-    ("drafting", "failed", "ready" or "published"), title, url (the post's address, or ""), error, slug (a draft's), updated."""
+    ("drafting", "failed", "ready" or "published"), title, url (the post's address, or ""), error, slug (a draft's), updated, now (being drafted this moment)."""
     with _db() as db:
         jobs = db.conn.execute(text("SELECT id, status, title, url, error, created_at FROM creator_draft_jobs WHERE owner_user = :o ORDER BY created_at, id"), {"o": str(owner)}).fetchall()
     with cd._db() as db:
         drafts = db.conn.execute(text("SELECT id, slug, data, published_by, updated_at FROM creator_drafts WHERE owner_user = :o ORDER BY updated_at DESC, id"), {"o": str(owner)}).fetchall()
-    out = [{"id": i, "kind": "job", "status": "failed" if s == "failed" else "drafting", "title": t or u, "url": u, "error": e, "slug": "", "updated": c} for i, s, t, u, e, c in jobs]
+    out = [{"id": i, "kind": "job", "status": "failed" if s == "failed" else "drafting", "title": t or u, "url": u, "error": e, "slug": "", "updated": c, "now": s == "running"} for i, s, t, u, e, c in jobs]
     out.sort(key=lambda r: r["status"] == "failed")
     for i, slug, data, by, updated in drafts:
         d = json.loads(data)
         out.append({"id": i, "kind": "draft", "status": "published" if by else "ready", "title": d.get("title") or "Untitled draft", "url": (d.get("source") or {}).get("url", ""), "error": "",
-                    "slug": slug, "updated": updated})
+                    "slug": slug, "updated": updated, "now": False})
     return out
 
 

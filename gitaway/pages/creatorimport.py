@@ -24,6 +24,7 @@ from gitaway.hub import HubError
 from gitaway.icons import icon
 from gitaway.itinerary_view import HEAD as VIEW_HEAD, _icon, itinerary_body
 from gitaway.layout import page
+from gitaway.pages import creatordrafts
 from gitaway import hub
 
 PATH = "/creators/import"
@@ -61,7 +62,7 @@ def paste_page(session, link="", text="", error="", status=200):
                    Span("Reading your post and drafting the days…", cls="ci-sk-say"),
                    cls="ci-skel", id="ci-skel", hidden=True, role="status", aria_busy="true", aria_label="Drafting your trip")
     body = Section(Div(H1("Turn your post into a trip"), P("Paste a link or your text. GitAway drafts the days, you fix what is off, and nothing is public until you tick \"This is my post\" and publish.", cls="ci-lede"), note, cls="ci-top"),
-                   form, skeleton, P(A("Add your affiliate marker", href="/creators/settings", id="ci-marker"), " so flight bookings from your trips pay you.", cls="ci-hint"), cls="ci ga-wrap")
+                   form, skeleton, creatordrafts.bulk_card() if mode != "manual" else "", P(A("Add your affiliate marker", href="/creators/settings", id="ci-marker"), " so flight bookings from your trips pay you.", cls="ci-hint"), cls="ci ga-wrap")
     return FtResponse(page("Turn your post into a trip", body, current="/creators", head=HEAD), status_code=status)
 
 
