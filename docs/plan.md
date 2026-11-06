@@ -1080,3 +1080,32 @@ Design: omxqua Coast, orange · Needs: F-183
 
 ## F-187 A list of bloggers to invite [todo]
 - [ ] 50 family-travel bloggers and creators (Disneyland, LA, Hawaii, Tahoe, San Diego, New York) with their site, channel, contact page and why they fit, public information only, in docs/research/creators.csv
+
+# Extremely creator-friendly (captain 2026-11-06: "it has to be extremely creator friendly"; autopilot overnight)
+
+## F-188 Ready-made drafts: a creator claims a trip in ten seconds [todo]
+Brief: docs/briefs/creator-import.md · Needs: F-183, F-182 fixes
+- [ ] an admin pastes a creator's post link (or many, from docs/research/creators.csv) and GitAway drafts it privately; nothing is public
+- [ ] each draft gets a private claim link (long random token, expires in 30 days, single owner); the creator signs in, sees their post as a trip, ticks "this is my post", publishes
+- [ ] the admin page lists drafts made, claimed, published, toward 150; an outreach message to copy per creator (never sent by GitAway)
+- [ ] `pixi run draft-creators` drafts every A-priority creator from the CSV when ANTHROPIC_API_KEY is set; without it, says so
+
+## F-189 Share from the phone [todo]
+Needs: F-183
+- [ ] the installed app is a share target (Web Share Target in the manifest): sharing a YouTube video, Instagram post or blog page to GitAway opens the import with the link filled in
+- [ ] signed out: sign in, then land on the same filled-in import
+
+## F-190 All my posts at once [todo]
+Needs: F-183
+- [ ] paste a blog's address: GitAway reads its sitemap or feed (safe fetcher), lists trip-like posts, the creator ticks which to draft (max 20 at a time, counted against the daily limit)
+- [ ] drafts appear in a "My drafts" list to approve one by one
+
+## F-191 A "Plan this trip on GitAway" button for their blog [todo]
+Needs: F-181
+- [ ] each published trip offers a copy-paste button snippet (plain link + small image, no script) and a text link
+- [ ] the button links to the trip with `via=<handle>` honoured (F-184)
+
+## F-192 Creator stats [todo]
+Needs: F-181, F-184
+- [ ] a creator sees per trip: readers (counted without cookies, no personal data), forks, "Plan this trip" taps, partner clicks from their trips
+- [ ] privacy page says how readers are counted
