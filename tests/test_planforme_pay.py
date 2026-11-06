@@ -175,3 +175,22 @@ def test_the_webhook_needs_no_sign_in_and_a_viewer_session_does_not_matter(clien
     o = order()
     sign_in(client, "ari")
     assert hook(client, event(o["id"])).status_code == 200
+
+
+def test_a_huge_webhook_body_is_refused_before_it_is_read_or_believed(client):
+    o = order()
+    body, headers = signed(event(o["id"], padding="x" * (pfm.MAX_WEBHOOK + 10)))
+    r = client.post("/stripe/webhook", content=body, headers=headers)
+    assert r.status_code == 413
+    assert pfm.get(o["id"], o["owner_user"])["status"] == "awaiting_payment"
+
+
+def test_in_production_stripe_sends_the_buyer_back_to_the_public_address_over_https(monkeypatch):
+    from types import SimpleNamespace
+    from gitaway import auth
+    from gitaway.pages import planforme as screens
+    request = SimpleNamespace(base_url="http://whatever.example/")
+    assert screens._base(request) == "http://whatever.example"          # a local copy: where the request came
+    monkeypatch.setattr(auth, "production", lambda: True)
+    monkeypatch.setenv("GITAWAY_PUBLIC_URL", "https://gitaway.me")
+    assert screens._base(request) == "https://gitaway.me"               # production: the configured address, whatever the request says

@@ -360,3 +360,16 @@ def test_from_the_card_to_a_trip_on_the_calendar(client, monkeypatch):
     day = text_of(client.get(f"/trip?trip={trip}").text)
     assert "Disneyland with a four and a seven year old" in day and "3:00 PM TRAVEL Check in and rest" in re.sub(r"\s+", " ", day)
     assert "Let the kids splash in the pool." in day and "Tip: Bring a stroller for the seven year old." in day
+
+
+def test_what_a_buyer_types_is_never_markup_on_their_order_page_or_the_captains(client, monkeypatch):
+    monkeypatch.setenv("GITAWAY_ADMIN_EMAILS", "ari.rivera@example.com")
+    sign_in(client)
+    evil = '"><script>alert(1)</script>'
+    r = client.post("/plan-for-me", data={**FORM, "where": evil, "must": evil}, follow_redirects=False)
+    oid = r.headers["location"].rsplit("/", 1)[1]
+    assert "<script>alert(1)" not in client.get(f"/plan-for-me/{oid}").text
+    assert "&lt;script&gt;alert(1)" in client.get(f"/plan-for-me/{oid}").text
+    assert "<script>alert(1)" not in client.get("/admin").text
+    bad = client.post("/plan-for-me", data={**FORM, "where": evil, "end": "2020-01-01"}, follow_redirects=False)
+    assert bad.status_code == 422 and "<script>alert(1)" not in bad.text and "&lt;script&gt;" in bad.text

@@ -236,6 +236,7 @@ def mark_paid(order_id, event_id, session_id, amount, currency) -> str:
 
 CHECKOUT = None       # tests: a function (Checkout session params) -> {"id", "url"}, used instead of the Stripe SDK
 SESSION_MINUTES = 60  # a Checkout session this long is open (Stripe allows 30 minutes to 24 hours); an unpaid order with a session older than two hours may be trimmed
+MAX_WEBHOOK = 256_000     # bytes: a Stripe event is a few thousand; anything bigger is refused before it is read or checked
 PAID_EVENTS = ("checkout.session.completed", "checkout.session.async_payment_succeeded")
 
 

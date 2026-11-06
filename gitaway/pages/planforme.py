@@ -291,5 +291,10 @@ def register(app):
 
     @app.post("/stripe/webhook")
     async def stripe_webhook(request):
-        status_, answer = await run_in_threadpool(pfm.receive, await request.body(), request.headers.get("stripe-signature", ""))
+        if int(request.headers.get("content-length") or 0) > pfm.MAX_WEBHOOK:
+            return PlainTextResponse("too large", status_code=413)
+        body = await request.body()
+        if len(body) > pfm.MAX_WEBHOOK:
+            return PlainTextResponse("too large", status_code=413)
+        status_, answer = await run_in_threadpool(pfm.receive, body, request.headers.get("stripe-signature", ""))
         return PlainTextResponse(answer, status_code=status_)

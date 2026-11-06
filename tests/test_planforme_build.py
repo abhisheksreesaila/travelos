@@ -156,9 +156,9 @@ def test_the_model_is_asked_once_even_when_the_order_is_built_again(monkeypatch)
     m = model(monkeypatch)
     o = paid()
     pfm.run_pending()
-    n = len(calendar())
+    n, notes = len(calendar()), len(tripcal.notes(person()))
     pfm.write_trip(pfm.get(o["id"], o["owner_user"]), pfm.get(o["id"], o["owner_user"])["result"])
-    assert len(calendar()) == n and len(m.requests) == 1
+    assert len(calendar()) == n and len(tripcal.notes(person())) == notes == 4 and len(m.requests) == 1      # the summary, two tips and the stop's own note, once
     assert len([t for t in ses.trips(person()) if t.title.startswith("Disneyland with")]) == 1
 
 
