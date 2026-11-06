@@ -1111,3 +1111,18 @@ Needs: F-181
 Needs: F-181, F-184
 - [x] a creator sees per trip: readers (counted without cookies, no personal data), forks, "Plan this trip" taps; partner clicks from their trips are shown in total (the cookie holds the handle, not the trip: D-129)
 - [x] privacy page says how readers are counted
+
+# Release review fixes (critique docs/research/critique-2026-11-06.md)
+
+## F-196 Plumbing that breaks readers, families or the law [review]
+Brief: docs/briefs/creator-import.md · Needs: F-183, F-188 · Decisions: D-145 to D-154 (docs/decisions.md; expect renumbering on merge)
+- [x] 1. creator-import never falls back to Azure: with `ANTHROPIC_API_KEY` missing it is off and the paste page says drafting "is not switched on yet", even with `AZURE_OPENAI_*` set; the other jobs keep their Azure default (`tests/test_ai_plumbing.py`)
+- [x] 2. background drafts have their own AI pool (`ai.BACKGROUND_JOBS`: creator-import, plan-for-me listed ahead of F-193) so Ask, speak, voice and Convert always have their three slots; a `busy` answer in `draftjobs.run_one` puts the post back in the queue (not failed, not counted again) and the worker waits instead of spinning
+- [x] 3. `layout.page()` takes a description and Open Graph tags; every `/trips/<slug>` shares its lede, cover (else the app mark) and `og:type=article`, For creators shares its lede; a creator-imported trip says `robots noindex` and the founder's own published family trips stay indexable; For creators says "We tell Google not to index this copy, so your post keeps its ranking."; `/robots.txt` and `/sitemap.xml` list the indexable pages (`tests/test_seo.py`)
+- [x] 4. a stop can carry one link of the creator's own: booking.com, viator.com, getyourguide.com, amazon.com, amzn.to, getawaytoday.com, stay22.com, expedia.com, tripadvisor.com, klook.com or the blog's own domain; the model's links are kept only if listed and written in the post (blog text now keeps `[text](address)`); drawn `rel="sponsored noopener"`; editable in the editor, refused with a sentence when not allowed; the trip page says the links are the creator's own (`tests/test_stop_links.py`)
+- [x] 5. a fork lands something: untimed stops take morning, afternoon and evening slots in order; applying a fork with no trip makes one (the creator's place and length); a fork for another place than the open trip's says so and the button reads "Apply anyway" (`tests/test_fork_lands.py`)
+- [x] 6. a new report is a WARNING line, a "N new" badge on /admin and, when SMTP is set, an email through fh-saas to every admin (page and reason only, never the reporter's words) (`tests/test_report_notify.py`)
+- [x] 7. /terms: creator license, copyright takedown, counter-notice, repeat-infringer policy, DMCA agent from `DMCA_AGENT` ("pending registration" until set), no "sample prices" sentence; /privacy: `ga_via` named as a 30-day affiliate attribution cookie, the Travelpayouts Drive script named (`tests/test_legal_f196.py`; `docs/setup.md`)
+- [x] 8. the source card's link to the creator's post sends the origin (`referrerpolicy="origin"`, no `noreferrer`) and carries `utm_source=gitaway` (`tests/test_source_link.py`)
+- [ ] proven on the running app at phone and desktop width (screens in docs/report/f196-*.png), full suites green
+Blocked (for the captain, not for review): register a DMCA agent at copyright.gov and set `DMCA_AGENT`; for report email set the `SMTP_*` variables and run `pixi add --pypi markdown-merge` (fh-saas needs it and does not declare it); have a lawyer read /terms.
