@@ -1,6 +1,6 @@
 /* Plan it for me (F-193): three small things on /plan-for-me, no framework.
    1. one age picker per kid: the Kids number shows that many of the pickers the server drew (all are there without JavaScript).
-   2. a signed-out visitor's answers are kept in this browser (localStorage, an hour) while they sign in, and put back once on the form when they come back.
+   2. a signed-out visitor's answers are kept in this browser (sessionStorage: this tab only, gone when it closes, an hour at most) while they sign in, and put back once on the form when they come back.
    3. an order that is still being paid or built polls its own status and reloads the page when it changes. */
 (function () {
   var KEY = "ga-plan-for-me";
@@ -23,12 +23,12 @@
     };
     if (out) {
       form.addEventListener("input", function () {
-        try { localStorage.setItem(KEY, JSON.stringify({ at: Date.now(), data: read() })); } catch (e) { /* private mode: the answers are simply not kept */ }
+        try { sessionStorage.setItem(KEY, JSON.stringify({ at: Date.now(), data: read() })); } catch (e) { /* private mode: the answers are simply not kept */ }
       });
     } else {
       try {
-        var saved = JSON.parse(localStorage.getItem(KEY) || "null");
-        localStorage.removeItem(KEY);
+        var saved = JSON.parse(sessionStorage.getItem(KEY) || "null");
+        sessionStorage.removeItem(KEY);
         if (saved && Date.now() - saved.at < 3600 * 1000 && !form.elements.where.value) {
           Object.keys(saved.data).forEach(function (k) {
             var el = form.elements[k];

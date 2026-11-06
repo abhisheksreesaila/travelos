@@ -89,7 +89,7 @@ def test_the_answer_is_rebuilt_a_price_or_opening_hours_never_get_through_and_an
     assert [len(d["stops"]) for d in r["days"]] == [2, 2, 1, 1]                      # the fifth day is past the trip
     d0, d1 = r["days"][0]["stops"], r["days"][1]["stops"]
     assert [(s["start"], s["end"], s["title"], s["kind"]) for s in d0] == [(900, 990, "Check in and rest", "travel"), (1080, 1140, "Dinner · Downtown Disney District", "food")]
-    assert (d1[0]["title"], d1[0]["start"], d1[0]["end"]) == ("Rides before the · Disneyland Park", 540, 690)
+    assert (d1[0]["title"], d1[0]["start"], d1[0]["end"]) == ("Disneyland Park", 540, 690)
     assert d1[0]["note"] == "" and d1[1]["note"] == ""                                # "Tickets cost $120", "Opens at 11am daily"
     assert d1[1]["title"] == "Lunch near the castle"                                  # place_sure was false: no name
     assert r["days"][0]["stops"][0]["note"] == "Let the kids splash in the pool."
@@ -141,7 +141,7 @@ def test_a_paid_order_becomes_a_real_trip_in_the_buyers_family_with_the_cost_kep
     trip = next(t for t in ses.trips(me) if t.id == got["trip_id"])
     assert trip.title == "Disneyland with a four and a seven year old" and trip.detail.endswith("2 adults, 2 kids") and trip.current
     assert calendar() == [(0, 900, 990, "Check in and rest", "travel"), (0, 1080, 1140, "Dinner · Downtown Disney District", "food"),
-                          (1, 540, 690, "Rides before the · Disneyland Park", "fun"), (1, 750, 810, "Lunch near the castle", "food"),
+                          (1, 540, 690, "Disneyland Park", "fun"), (1, 750, 810, "Lunch near the castle", "food"),
                           (2, 600, 690, "Beach morning · Huntington Beach", "outdoors"), (3, 570, 630, "Breakfast", "food")]
     notes = [(n.text, n.act) for n in tripcal.notes(me)]
     assert ("A relaxed long weekend: rides in the morning, long breaks and early nights.", None) in notes
@@ -322,3 +322,56 @@ def test_the_family_thread_says_who_asked_for_the_trip_the_way_it_does_for_any_p
     me = person()
     cards = [i["text"] for i in familythread.items(me, trip=pfm.get(o["id"], o["owner_user"])["trip_id"])]
     assert any(c.startswith("Ari added 6 plans: ") for c in cards), cards
+
+
+# ---- the trip lands where it was made ------------------------------------------------------------------------------
+
+def plans_of(trip_id, who="ari"):
+    token = ses._asked_trip.set(trip_id)
+    try:
+        return [(a.day, a.title) for a in tripcal.activities(person(who))], [n.text for n in tripcal.notes(person(who))]
+    finally:
+        ses._asked_trip.reset(token)
+
+
+def test_a_buyer_who_opens_another_trip_while_the_build_runs_still_gets_the_plans_in_the_new_one(monkeypatch):
+    """The order page says "you can leave this page": the buyer may open one of the family's other trips between the trip being made and its days being written."""
+    from gitaway import importer
+    model(monkeypatch)
+    o = paid()
+    other = importer.save(person(), pfm._plan(pfm.get(o["id"], o["owner_user"]), pfm.validate(copy.deepcopy(ANSWER), o["intake"]), person()), token="0123456789ab")
+    real = tripcal.apply_plans
+
+    def switch_then_apply(session, *a, **kw):
+        assert ses.switch_trip(session, other)      # the buyer taps the other trip right now
+        return real(session, *a, **kw)
+    monkeypatch.setattr(tripcal, "apply_plans", switch_then_apply)
+    assert pfm.run_pending() == 1
+    got = pfm.get(o["id"], o["owner_user"])
+    assert got["status"] == "ready" and got["trip_id"] != other
+    plans, notes = plans_of(got["trip_id"])
+    assert len(plans) == 6 and "Tip: Go left at the castle." in notes
+    assert plans_of(other) == ([], [])      # nothing landed in the family's other trip
+
+
+def test_a_build_that_stopped_after_the_days_before_their_notes_finishes_the_notes_when_it_runs_again(monkeypatch):
+    model(monkeypatch)
+    o = paid()
+    claimed = pfm.claim()
+    result = pfm._make(claimed)
+    real, calls = tripcal.add_note, []
+
+    def dies_on_the_second_note(*a, **kw):
+        calls.append(1)
+        if len(calls) == 2:
+            raise OSError("the process was killed")
+        return real(*a, **kw)
+    monkeypatch.setattr(tripcal, "add_note", dies_on_the_second_note)
+    with pytest.raises(OSError):
+        pfm.write_trip(claimed, result)
+    assert len(calendar()) == 6 and len(tripcal.notes(person())) == 2      # the days and the summary, one note
+    monkeypatch.setattr(tripcal, "add_note", real)
+    trip_id = pfm.write_trip(claimed, result)
+    plans, notes = plans_of(trip_id)
+    assert len(plans) == 6 and len(notes) == 4      # the summary, the stop's note and two tips: each once
+    assert ("Let the kids splash in the pool.", "a1") in [(n.text, n.act) for n in tripcal.notes(person())]

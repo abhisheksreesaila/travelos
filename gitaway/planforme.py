@@ -39,7 +39,8 @@ MAX_MUST = 600                # characters of "must-dos"
 JOB = "plan-for-me"
 MAX_ATTEMPTS = 3              # times a worker may take one order before a restart loop is assumed and it is failed
 MAX_STOPS, MAX_TIPS = 8, 3    # stops a day and tips kept
-MAX_UNPAID = 5                # unfinished orders one person can have at once; the oldest without a checkout goes when they start another
+MAX_UNPAID = 5                # unfinished orders one person can have at once; the oldest without a checkout goes when they start another, and one with a live checkout is never dropped (a sixth is refused)
+MAX_CHECKOUTS = 10            # times one person may ask Stripe about a payment page in an hour (making one or looking at the one already open)
 STATUSES = ("awaiting_payment", "paid", "building", "ready", "failed")
 BUDGETS = {"easy": "Easy on the wallet", "comfortable": "Comfortable", "treat": "Treat ourselves"}
 PACES = {"relaxed": "Relaxed", "balanced": "Balanced", "packed": "Packed"}
@@ -71,8 +72,11 @@ def standin() -> bool:
 
 
 def offered() -> bool:
-    """Is Plan it for me for sale here? With a Stripe key, or locally through the stand-in checkout. In production without the key it is not (no cards, 404s)."""
-    return bool(stripe_key()) or standin()
+    """Is Plan it for me for sale here? Only when everything a sale needs is set, so no card is ever charged that cannot be matched and built: the Stripe key and the webhook secret (without it
+    no payment is ever believed), and an AI key unless this is a local copy that builds a sample. Or, locally, the stand-in checkout. A half-configured deploy shows no cards and 404s."""
+    if stripe_key():
+        return bool(webhook_secret()) and (ai.configured(JOB) or showcase.on())
+    return standin()
 
 
 # ---- the intake -------------------------------------------------------------------------------------------------------
@@ -127,7 +131,13 @@ def _db():
                 intake TEXT NOT NULL, amount_cents INTEGER NOT NULL, stripe_session TEXT NOT NULL DEFAULT '', result TEXT NOT NULL DEFAULT '', trip_id TEXT NOT NULL DEFAULT '',
                 error TEXT NOT NULL DEFAULT '', attempts INTEGER NOT NULL DEFAULT 0, ai_model TEXT NOT NULL DEFAULT '', ai_tokens_in INTEGER NOT NULL DEFAULT 0, ai_tokens_out INTEGER NOT NULL DEFAULT 0,
                 ai_cost_micros INTEGER NOT NULL DEFAULT 0, sample INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL, paid_at TEXT NOT NULL DEFAULT '', updated_at TEXT NOT NULL)"""))
-            db.conn.execute(text("CREATE TABLE IF NOT EXISTS plan_order_events (event_id TEXT PRIMARY KEY, order_id TEXT NOT NULL DEFAULT '', outcome TEXT NOT NULL DEFAULT '', at TEXT NOT NULL)"))
+            db.conn.execute(text("""CREATE TABLE IF NOT EXISTS plan_order_events (event_id TEXT PRIMARY KEY, order_id TEXT NOT NULL DEFAULT '', outcome TEXT NOT NULL DEFAULT '', at TEXT NOT NULL,
+                session_id TEXT NOT NULL DEFAULT '', amount_cents INTEGER NOT NULL DEFAULT 0)"""))
+            have = {r[1] for r in db.conn.execute(text("PRAGMA table_info(plan_order_events)"))}
+            for col, kind in (("session_id", "TEXT NOT NULL DEFAULT ''"), ("amount_cents", "INTEGER NOT NULL DEFAULT 0")):      # a copy made before these columns existed
+                if col not in have:
+                    db.conn.execute(text(f"ALTER TABLE plan_order_events ADD COLUMN {col} {kind}"))
+            db.conn.execute(text("CREATE TABLE IF NOT EXISTS plan_checkouts (owner_user TEXT NOT NULL, at TEXT NOT NULL)"))
             db.conn.commit()
             _ready.add(community._url())
         yield db
@@ -140,7 +150,7 @@ def _now() -> str:
 def clear() -> None:
     """Remove every order and event. For tests."""
     with _db() as db:
-        for table in ("plan_orders", "plan_order_events"):
+        for table in ("plan_orders", "plan_order_events", "plan_checkouts"):
             db.conn.execute(text(f"DELETE FROM {table}"))
         db.conn.commit()
 
@@ -152,15 +162,24 @@ def _order(r) -> dict:
     return out
 
 
+class TooMany(Exception):
+    """The person has asked too much of Stripe or has too many orders waiting to be paid; `str(e)` is a sentence fit to show."""
+
+
 def create_order(owner, tenant, email, intake) -> dict:
-    """An order awaiting payment for `owner`'s family `tenant`, at today's price (`amount_cents` is fixed here and is what the webhook must carry). At most MAX_UNPAID unfinished orders per
-    person: starting another drops the oldest unpaid ones that have no checkout open (or one older than two hours: Stripe's session has expired by then)."""
+    """An order awaiting payment for `owner`'s family `tenant`, at today's price (`amount_cents` is fixed here and is what the webhook must carry). At most MAX_UNPAID orders await payment per
+    person: starting another drops the oldest ones that have no live checkout (none made, or made over two hours ago: Stripe's session has expired by then). An order with a checkout that may still
+    be paid is never dropped, so a payment always finds its order; when that many are live a new one is refused (TooMany)."""
     oid, now = secrets.token_hex(8), _now()
     stale = (datetime.now(timezone.utc) - timedelta(hours=2)).isoformat(timespec="microseconds")
     with _db() as db:
-        db.conn.execute(text("""DELETE FROM plan_orders WHERE owner_user = :o AND status = 'awaiting_payment' AND (stripe_session = '' OR created_at < :stale) AND id NOT IN (
-                SELECT id FROM plan_orders WHERE owner_user = :o AND status = 'awaiting_payment' ORDER BY created_at DESC, id DESC LIMIT :keep)"""),
+        live = "(stripe_session != '' AND updated_at >= :stale)"      # `updated_at` moves only when a checkout is made, while an order awaits payment
+        db.conn.execute(text(f"""DELETE FROM plan_orders WHERE owner_user = :o AND status = 'awaiting_payment' AND NOT {live} AND id NOT IN (
+                SELECT id FROM plan_orders WHERE owner_user = :o AND status = 'awaiting_payment' ORDER BY {live} DESC, created_at DESC, id DESC LIMIT :keep)"""),
                         {"o": str(owner), "stale": stale, "keep": MAX_UNPAID - 1})
+        if db.conn.execute(text("SELECT COUNT(*) FROM plan_orders WHERE owner_user = :o AND status = 'awaiting_payment'"), {"o": str(owner)}).scalar() >= MAX_UNPAID:
+            db.conn.commit()
+            raise TooMany("You already have several orders waiting to be paid. Pay one of them, or try again in an hour.")
         db.conn.execute(text("INSERT INTO plan_orders (id, owner_user, tenant_id, email, intake, amount_cents, created_at, updated_at) VALUES (:i, :o, :t, :e, :n, :a, :c, :c)"),
                         {"i": oid, "o": str(owner), "t": str(tenant), "e": str(email)[:120], "n": json.dumps(intake, separators=(",", ":")), "a": price_cents(), "c": now})
         db.conn.commit()
@@ -189,13 +208,21 @@ def admin_rows() -> list:
         return [_order(r) for r in db.conn.execute(text("SELECT * FROM plan_orders ORDER BY created_at DESC, id DESC")).mappings()]
 
 
-def totals(rows) -> dict:
-    """What the orders add up to: `paid` and `revenue_cents` for the ones that are paid and kept (paid, building, ready), `refunds` and `refund_cents` for the failed ones that were paid
-    (a refund is due, the captain does it in Stripe), and `ai_cost_micros` (millionths of a dollar) for what the agent cost across all of them."""
+def refunds_due() -> list:
+    """Payments that no order can be built from, newest first: a "double" (a second Checkout session paid an order that was already paid) and an "unknown" (a payment for an order that is gone).
+    Each is {"event_id", "order_id", "session_id", "amount_cents", "outcome", "at"}; the captain refunds them in Stripe."""
+    with _db() as db:
+        return [dict(r) for r in db.conn.execute(text("SELECT event_id, order_id, session_id, amount_cents, outcome, at FROM plan_order_events WHERE outcome IN ('double', 'unknown') ORDER BY at DESC, event_id"))
+                .mappings()]
+
+
+def totals(rows, owed_payments=()) -> dict:
+    """What the orders add up to: `paid` and `revenue_cents` for the ones that are paid and kept (paid, building, ready), `refunds` and `refund_cents` for the failed ones that were paid and for
+    `owed_payments` (`refunds_due()`): a refund is due, the captain does it in Stripe; and `ai_cost_micros` (millionths of a dollar) for what the agent cost across all of them."""
     kept = [r for r in rows if r["status"] in ("paid", "building", "ready")]
     owed = [r for r in rows if r["status"] == "failed" and r["paid_at"]]
-    return {"paid": len(kept), "revenue_cents": sum(r["amount_cents"] for r in kept), "refunds": len(owed), "refund_cents": sum(r["amount_cents"] for r in owed),
-            "ai_cost_micros": sum(r["ai_cost_micros"] for r in rows)}
+    return {"paid": len(kept), "revenue_cents": sum(r["amount_cents"] for r in kept), "refunds": len(owed) + len(owed_payments),
+            "refund_cents": sum(r["amount_cents"] for r in owed) + sum(p["amount_cents"] for p in owed_payments), "ai_cost_micros": sum(r["ai_cost_micros"] for r in rows)}
 
 
 def set_session(order_id, session_id) -> None:
@@ -207,10 +234,11 @@ def set_session(order_id, session_id) -> None:
 
 def mark_paid(order_id, event_id, session_id, amount, currency) -> str:
     """What a verified Stripe event for a completed payment does. Returns "paid" (the order is now paid and the worker will build it), "duplicate" (this event id, or another event for the
-    session that already paid it), "double" (a second session paid an order that was already paid: a refund is due, logged), "mismatch" (the amount or currency is not the order's: the
-    order is marked failed, a refund is due) or "unknown" (no such order). The event id is recorded first, in the same transaction, so a repeat of it does nothing at all."""
+    session that already paid it), "double" (a second session paid an order that was already paid: a refund is due, logged and on /admin), "mismatch" (the amount or currency is not the order's: the
+    order is marked failed, a refund is due) or "unknown" (no such order: a refund is due, on /admin). Any session of the order is accepted on purpose: a buyer may pay the first page they opened. The event id is recorded first, in the same transaction, so a repeat of it does nothing at all."""
     with _db() as db:
-        if not db.conn.execute(text("INSERT OR IGNORE INTO plan_order_events (event_id, order_id, at) VALUES (:e, :o, :a)"), {"e": str(event_id), "o": str(order_id), "a": _now()}).rowcount:
+        if not db.conn.execute(text("INSERT OR IGNORE INTO plan_order_events (event_id, order_id, at, session_id, amount_cents) VALUES (:e, :o, :a, :s, :m)"),
+                           {"e": str(event_id), "o": str(order_id)[:64], "a": _now(), "s": str(session_id)[:100], "m": int(amount or 0)}).rowcount:
             return "duplicate"
         o = db.conn.execute(text("SELECT status, amount_cents, stripe_session FROM plan_orders WHERE id = :i"), {"i": str(order_id)}).mappings().fetchone() if _ID.fullmatch(str(order_id)) else None
         if o is None:
@@ -235,8 +263,9 @@ def mark_paid(order_id, event_id, session_id, amount, currency) -> str:
 # ---- Stripe -----------------------------------------------------------------------------------------------------------
 
 CHECKOUT = None       # tests: a function (Checkout session params) -> {"id", "url"}, used instead of the Stripe SDK
+RETRIEVE = None       # tests: a function (session id) -> {"status": "open" | "complete" | "expired", "url"}, used instead of the Stripe SDK
 SESSION_MINUTES = 60  # a Checkout session this long is open (Stripe allows 30 minutes to 24 hours); an unpaid order with a session older than two hours may be trimmed
-MAX_WEBHOOK = 256_000     # bytes: a Stripe event is a few thousand; anything bigger is refused before it is read or checked
+MAX_WEBHOOK = 256_000     # bytes: a Stripe event is a few thousand; anything bigger is refused before it is read or checked (main.py `BodyLimit`)
 PAID_EVENTS = ("checkout.session.completed", "checkout.session.async_payment_succeeded")
 
 
@@ -250,10 +279,36 @@ def _stripe_create(params) -> dict:
     return {"id": session["id"], "url": session["url"]}
 
 
+def _stripe_retrieve(session_id) -> dict:
+    import stripe
+    session = stripe.checkout.Session.retrieve(session_id, api_key=stripe_key())
+    return {"status": session["status"], "url": session["url"]}
+
+
+def _allow_checkout(owner) -> None:
+    """Count one ask of Stripe for `owner`; TooMany when they have made MAX_CHECKOUTS in the last hour. Stripe's own rate limit is the whole account's, so one person must not use it up."""
+    ago = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat(timespec="microseconds")
+    with _db() as db:
+        db.conn.execute(text("DELETE FROM plan_checkouts WHERE at < :a"), {"a": ago})
+        if db.conn.execute(text("SELECT COUNT(*) FROM plan_checkouts WHERE owner_user = :o"), {"o": str(owner)}).scalar() >= MAX_CHECKOUTS:
+            db.conn.commit()
+            raise TooMany("You have tried to pay several times in the last hour. Please wait a little and try again.")
+        db.conn.execute(text("INSERT INTO plan_checkouts (owner_user, at) VALUES (:o, :a)"), {"o": str(owner), "a": _now()})
+        db.conn.commit()
+
+
 def start_checkout(order, base_url) -> str:
-    """Make a Stripe Checkout session for `order` and return its address. Blocking (it calls Stripe): run it in a thread. One line item, mode payment, at the order's own `amount_cents`;
-    `client_reference_id` is the order id, which is how the webhook finds it again. No promotion codes."""
+    """The address where `order` is paid. Blocking (it calls Stripe): run it in a thread. An order that has a Checkout session already gets that one back while it is still open (a second tab or
+    the Back button never opens a second page that could be paid too), or its order page when it was completed (the payment is on its way); only an expired one gets a new session. One line item,
+    mode payment, at the order's own `amount_cents`; `client_reference_id` is the order id, which is how the webhook finds it again. No promotion codes. Raises TooMany past MAX_CHECKOUTS an hour."""
     base = base_url.rstrip("/")
+    _allow_checkout(order["owner_user"])
+    if order["stripe_session"]:
+        old = (RETRIEVE or _stripe_retrieve)(order["stripe_session"])      # an error here stops everything: a second page is never made while the first cannot be read
+        if old["status"] == "open" and old["url"]:
+            return old["url"]
+        if old["status"] == "complete":
+            return f"{base}/plan-for-me/{order['id']}?paid=1"
     params = {"mode": "payment", "client_reference_id": order["id"], "customer_email": order["email"] or None, "metadata": {"order_id": order["id"]},
               "line_items": [{"price_data": {"currency": "usd", "unit_amount": order["amount_cents"], "product_data": {"name": "Plan it for me", "description": PROMISE}}, "quantity": 1}],
               "success_url": f"{base}/plan-for-me/{order['id']}?paid=1", "cancel_url": f"{base}/plan-for-me/{order['id']}", "expires_at": int(time.time()) + SESSION_MINUTES * 60}
@@ -398,7 +453,7 @@ def _one_stop(raw, kind_default="fun") -> dict:
     what, place = _claim(raw.get("what"), 40), _claim(raw.get("place"), 40) if raw.get("place_sure") is True else ""
     if place.lower() in cd._NO_NAME:
         place = ""
-    title = (f"{_cut(what, tripcal.MAX_TITLE - len(place) - 3)} · {place}" if tripcal.MAX_TITLE - len(place) - 3 >= 8 else place) if what and place else what or place or _WORD[kind]      # a place's name is never cut
+    title = (f"{what} · {place}" if len(what) + len(place) + 3 <= tripcal.MAX_TITLE else place) if what and place else what or place or _WORD[kind]      # both whole, or the place alone: never a phrase cut in the middle
     minutes = raw.get("minutes") if isinstance(raw.get("minutes"), int) and not isinstance(raw.get("minutes"), bool) else 90
     t = cd._time(raw.get("time"))
     return {"title": _cut(title, tripcal.MAX_TITLE), "kind": kind, "note": _claim(raw.get("note"), tripcal.MAX_NOTE), "minutes": max(30, min(240, minutes)), "start": tripcal.stop_start(t) if t else None}
@@ -463,9 +518,21 @@ def _plan(order, result, session) -> ti.Plan:
                    travelers=tuple(people), notes="", timezone=result["timezone"])
 
 
+@contextmanager
+def _pinned(trip_id):
+    """Make every calendar call inside the block work on `trip_id`, whichever trip the buyer has open meanwhile (the same context the app reads a `?trip=` address into)."""
+    token = ses._asked_trip.set(trip_id)
+    try:
+        yield
+    finally:
+        ses._asked_trip.reset(token)
+
+
 def write_trip(order, result) -> str:
-    """Write the trip and its days into the buyer's family, as the buyer, and return the trip id. Safe to run again: the trip's id comes from the order (one trip), and a trip that already has
-    plans is taken as built. Raises BuildFailed("left_family") when the buyer is no longer an editor of that family, ("family_full") when it has no room for another trip."""
+    """Write the trip and its days into the buyer's family, as the buyer, and return the trip id. Safe to run again, from any point: the trip's id comes from the order (one trip), the calendar
+    calls are pinned to that trip (the buyer may open another meanwhile), the days are written once (in one transaction with the summary note), and each stop note and tip is added only when the
+    trip does not have it yet, so a run that stopped halfway finishes the rest. Raises BuildFailed("left_family") when the buyer is no longer an editor of that family, ("family_full") when it has
+    no room for another trip."""
     uid, tenant = order["owner_user"], order["tenant_id"]
     if members.role_in(uid, tenant) not in ("admin", "editor"):
         raise BuildFailed("left_family")
@@ -474,17 +541,19 @@ def write_trip(order, result) -> str:
         trip_id = importer.save(session, _plan(order, result, session), token=order["id"][:12])
     except importer.SaveError as e:
         raise BuildFailed("family_full" if "trips already" in str(e) else "not_saved") from None
-    if tripcal.activities(session):
-        return trip_id
     stops = [(i, s) for i, d in enumerate(result["days"]) for s in d["stops"]]
     plans = [tripcal.Plan(f"d{i}s{j}", i, s["start"], s["end"], s["title"], s["kind"]) for j, (i, s) in enumerate(stops)]
-    added, _ = tripcal.apply_plans(session, plans, {p.key for p in plans}, note=lambda chosen: result["summary"])
-    notes = {(p.day, p.start, p.title): s["note"] for p, (_, s) in zip(plans, stops)}
-    for a in added:
-        if (note := notes.get((a.day, a.start, a.title))):
-            tripcal.add_note(session, note, act=a.id)
-    for tip in result["tips"]:
-        tripcal.add_note(session, f"Tip: {tip}")
+    with _pinned(trip_id):
+        if not tripcal.activities(session):
+            tripcal.apply_plans(session, plans, {p.key for p in plans}, note=lambda chosen: result["summary"])
+        have = {(n.text, n.act) for n in tripcal.notes(session)}
+        wanted = {(p.day, p.start, p.title): s["note"] for p, (_, s) in zip(plans, stops)}
+        for a in tripcal.activities(session):
+            if (note := wanted.get((a.day, a.start, a.title))) and (note, a.id) not in have:
+                tripcal.add_note(session, note, act=a.id)
+        for tip in result["tips"]:
+            if (f"Tip: {tip}", None) not in have:
+                tripcal.add_note(session, f"Tip: {tip}")
     return trip_id
 
 

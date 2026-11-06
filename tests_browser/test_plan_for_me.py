@@ -108,7 +108,9 @@ def test_a_stranger_fills_the_intake_signs_in_pays_and_opens_their_trip(setup, s
     assert not too_small(page, CONTROLS), too_small(page, CONTROLS)
     shot(page, f"filled-{w}")
 
-    page.click("#pf-go")      # signed out: sign-in first, the answers are kept in this browser
+    assert page.evaluate("localStorage.getItem('ga-plan-for-me')") is None      # never in the browser's long-lived storage: a shared device keeps nothing once the tab is closed
+    assert "Space Mountain" in page.evaluate("sessionStorage.getItem('ga-plan-for-me')")
+    page.click("#pf-go")      # signed out: sign-in first, the answers are kept in this tab
     expect(page).to_have_url(re.compile(r"/signin\?next=%2Fplan-for-me|/signin\?next=/plan-for-me"))
     page.fill("input[name=email]", "family.rivera@example.com")
     page.click("form button[type=submit]")
@@ -118,6 +120,7 @@ def test_a_stranger_fills_the_intake_signs_in_pays_and_opens_their_trip(setup, s
     expect(page.locator("#pf-must")).to_have_value("Space Mountain and a quiet beach morning")
     expect(page.locator("#pf-kids .pf-kid:not([hidden])")).to_have_count(2)
     expect(page.locator("#pf-go")).to_contain_text("Plan it for me · $29")
+    assert page.evaluate("[localStorage.getItem('ga-plan-for-me'), sessionStorage.getItem('ga-plan-for-me')]") == [None, None]      # put back once, then gone
     shot(page, f"signed-in-{w}")
 
     page.click("#pf-go")

@@ -58,7 +58,37 @@ def test_in_production_without_a_stripe_key_nothing_is_for_sale(client, monkeypa
         assert client.get(path).status_code == 404, path
     assert client.post("/plan-for-me", data=FORM).status_code == 404
     monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_not_real")
-    assert client.get("/plan-for-me").status_code == 200
+    assert client.get("/plan-for-me").status_code == 404          # the key alone is not enough: see the next test
+
+
+def test_in_production_it_is_for_sale_only_with_the_key_the_webhook_secret_and_an_ai_key(client, monkeypatch):
+    """Without the webhook secret every payment would be taken and never believed; without an AI key every buyer would pay and then be refunded."""
+    from tests.test_calendar import book
+    book(client)
+    monkeypatch.setattr(auth, "production", lambda: True)
+    monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
+    for name in ("STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "ANTHROPIC_API_KEY"):
+        monkeypatch.setenv(name, "")
+    cards = lambda: 'id="ga-tb-planforme"' in client.get("/trip").text
+    monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_not_real")
+    assert (pfm.offered(), client.get("/plan-for-me").status_code, client.post("/plan-for-me", data=FORM).status_code, cards()) == (False, 404, 404, False)      # no webhook secret
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", "whsec_test_secret")
+    assert (pfm.offered(), client.get("/plan-for-me").status_code, client.post("/plan-for-me", data=FORM).status_code, cards()) == (False, 404, 404, False)      # no AI key
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-not-a-real-key")
+    assert (pfm.offered(), client.get("/plan-for-me").status_code) == (True, 200)
+    assert cards()
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", "")
+    assert (pfm.offered(), client.get("/plan-for-me").status_code) == (False, 404)
+
+
+def test_on_a_local_copy_a_stripe_key_without_the_webhook_secret_sells_nothing(client, monkeypatch):
+    monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_not_real")
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", "")
+    sign_in(client)
+    r = client.post("/plan-for-me", data=FORM, follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"].endswith("?err=off")      # an order, no payment page: nothing is charged
+    assert "Plan it for me is not for sale here yet. Nothing was charged." in text_of(client.get(r.headers["location"]).text)
+    assert pfm.offered() is False
 
 
 def test_the_stand_in_checkout_is_not_there_in_production_even_with_the_showcase_on(client, monkeypatch):
@@ -112,6 +142,7 @@ def test_a_good_form_makes_an_order_at_the_servers_price_and_goes_to_the_stand_i
 
 def test_with_stripe_the_order_goes_to_checkout_and_the_session_carries_the_orders_price(client, monkeypatch):
     monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_not_real")
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", "whsec_test_secret")
     made = []
     monkeypatch.setattr(pfm, "CHECKOUT", lambda params: made.append(params) or {"id": "cs_test_7", "url": "https://checkout.stripe.test/c/pay/cs_test_7"})
     sign_in(client)
@@ -123,6 +154,7 @@ def test_with_stripe_the_order_goes_to_checkout_and_the_session_carries_the_orde
 
 def test_a_stripe_failure_leaves_the_order_to_pay_again_and_says_nothing_was_charged(client, monkeypatch):
     monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_not_real")
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", "whsec_test_secret")
 
     def down(params):
         raise OSError("stripe is down")

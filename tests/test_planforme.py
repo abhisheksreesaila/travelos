@@ -4,7 +4,7 @@ The screens are tests/test_planforme_pages.py; the money and the trip are tests/
 import pytest
 
 from gitaway import planforme as pfm
-from tests.test_signin import person
+from tests.test_signin import person, sign_in
 
 GOOD = {"where": "Disneyland, California", "start": "2027-03-12", "end": "2027-03-15", "home": "SFO", "adults": "2", "nkids": "2", "k1": "4", "k2": "7",
         "budget": "comfortable", "must": "Space Mountain and a quiet beach morning", "pace": "relaxed"}
@@ -128,3 +128,46 @@ def test_a_paid_order_is_never_the_one_that_goes_when_unpaid_ones_are_trimmed():
     for _ in range(6):
         pfm.create_order(uid, tenant, email, pfm.read_intake(GOOD)[0])
     assert pfm.get(first, uid)["status"] == "paid"
+
+
+def _session(order_id, when="2099-01-01T00:00:00+00:00"):
+    from sqlalchemy import text
+    pfm.set_session(order_id, f"cs_{order_id}")
+    with pfm._db() as db:
+        db.conn.execute(text("UPDATE plan_orders SET updated_at = :w WHERE id = :i"), {"w": when, "i": order_id})
+        db.conn.commit()
+
+
+def test_an_order_with_a_live_checkout_is_never_dropped_and_a_sixth_is_refused():
+    uid, tenant, email = buyer()
+    made = []
+    for _ in range(pfm.MAX_UNPAID):
+        made.append(pfm.create_order(uid, tenant, email, pfm.read_intake(GOOD)[0])["id"])
+        _session(made[-1])
+    with pytest.raises(pfm.TooMany, match="several orders waiting to be paid"):
+        pfm.create_order(uid, tenant, email, pfm.read_intake(GOOD)[0])
+    assert all(pfm.get(i, uid) for i in made)
+    other, otenant, oemail = buyer("sam")
+    assert pfm.create_order(other, otenant, oemail, pfm.read_intake(GOOD)[0])      # the limit is the person's own
+
+
+def test_an_order_whose_checkout_has_expired_makes_room_and_a_checkout_made_now_keeps_an_old_order():
+    uid, tenant, email = buyer()
+    made = [pfm.create_order(uid, tenant, email, pfm.read_intake(GOOD)[0])["id"] for _ in range(pfm.MAX_UNPAID)]
+    for i in made:
+        _session(i, when="2000-01-01T00:00:00+00:00")      # all three-hour-old checkouts at least: Stripe has closed them
+    _session(made[0])      # but the oldest order was paid for again just now
+    newest = pfm.create_order(uid, tenant, email, pfm.read_intake(GOOD)[0])["id"]
+    assert [pfm.get(i, uid) is not None for i in made] == [True, False, True, True, True] and pfm.get(newest, uid)      # the live one stays, the oldest of the closed ones goes
+
+
+def test_the_screen_says_so_in_words_when_a_sixth_order_is_refused(client, monkeypatch):
+    monkeypatch.setattr(pfm, "CHECKOUT", lambda params: {"id": f"cs_{params['client_reference_id']}", "url": "https://checkout.stripe.test/c/pay/x"})
+    monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_not_real")
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", "whsec_test_secret")
+    sign_in(client, "ari")
+    for _ in range(pfm.MAX_UNPAID):
+        assert client.post("/plan-for-me", data=GOOD, follow_redirects=False).status_code == 303
+    r = client.post("/plan-for-me", data=GOOD, follow_redirects=False)
+    assert r.status_code == 429 and "You already have several orders waiting to be paid. Pay one of them, or try again in an hour." in r.text
+    assert 'value="Disneyland, California"' in r.text

@@ -194,3 +194,142 @@ def test_in_production_stripe_sends_the_buyer_back_to_the_public_address_over_ht
     monkeypatch.setattr(auth, "production", lambda: True)
     monkeypatch.setenv("GITAWAY_PUBLIC_URL", "https://gitaway.me")
     assert screens._base(request) == "https://gitaway.me"               # production: the configured address, whatever the request says
+
+
+# ---- one order, one page that can be paid -------------------------------------------------------------------------
+
+def fake_stripe(monkeypatch, status="open"):
+    """Checkout sessions the fake Stripe has made (id -> params) and the status it reports for any of them."""
+    made, state = {}, {"status": status}
+
+    def create(params):
+        sid = f"cs_test_{len(made) + 1}"
+        made[sid] = params
+        return {"id": sid, "url": f"https://checkout.stripe.test/c/pay/{sid}"}
+    monkeypatch.setattr(pfm, "CHECKOUT", create)
+    monkeypatch.setattr(pfm, "RETRIEVE", lambda sid: {"status": state["status"], "url": f"https://checkout.stripe.test/c/pay/{sid}"})
+    return made, state
+
+
+def test_paying_the_same_order_again_gives_back_the_page_already_open_not_a_second_one(monkeypatch):
+    made, _ = fake_stripe(monkeypatch)
+    o = order()
+    first = pfm.start_checkout(o, BASE)
+    again = pfm.start_checkout(pfm.get(o["id"], o["owner_user"]), BASE)      # a second tab, or Back and Pay again
+    assert first == again == "https://checkout.stripe.test/c/pay/cs_test_1" and list(made) == ["cs_test_1"]
+
+
+def test_an_expired_session_gets_a_new_one_and_a_completed_one_goes_to_the_order_page(monkeypatch):
+    made, state = fake_stripe(monkeypatch)
+    o = order()
+    pfm.start_checkout(o, BASE)
+    state["status"] = "expired"
+    assert pfm.start_checkout(pfm.get(o["id"], o["owner_user"]), BASE) == "https://checkout.stripe.test/c/pay/cs_test_2" and len(made) == 2
+    state["status"] = "complete"      # paid; the webhook is on its way
+    assert pfm.start_checkout(pfm.get(o["id"], o["owner_user"]), BASE) == f"{BASE}/plan-for-me/{o['id']}?paid=1" and len(made) == 2
+
+
+def test_when_the_first_page_cannot_be_read_no_second_page_is_made(monkeypatch):
+    made, _ = fake_stripe(monkeypatch)
+    o = order()
+    pfm.start_checkout(o, BASE)
+
+    def down(sid):
+        raise OSError("stripe is down")
+    monkeypatch.setattr(pfm, "RETRIEVE", down)
+    with pytest.raises(OSError):
+        pfm.start_checkout(pfm.get(o["id"], o["owner_user"]), BASE)
+    assert list(made) == ["cs_test_1"]
+
+
+def test_one_person_can_ask_stripe_only_ten_times_an_hour(monkeypatch):
+    made, _ = fake_stripe(monkeypatch)
+    o = order()
+    for _ in range(pfm.MAX_CHECKOUTS):
+        pfm.start_checkout(pfm.get(o["id"], o["owner_user"]), BASE)
+    with pytest.raises(pfm.TooMany, match="several times in the last hour"):
+        pfm.start_checkout(pfm.get(o["id"], o["owner_user"]), BASE)
+    other = order("sam")
+    assert pfm.start_checkout(other, BASE).endswith("cs_test_2")      # someone else is not held back
+    with pfm._db() as db:      # an hour later it is allowed again
+        from sqlalchemy import text
+        db.conn.execute(text("UPDATE plan_checkouts SET at = '2000-01-01T00:00:00+00:00'"))
+        db.conn.commit()
+    assert pfm.start_checkout(pfm.get(o["id"], o["owner_user"]), BASE).endswith("cs_test_1")
+
+
+def test_the_pay_button_says_in_words_when_a_person_has_tried_too_often(client, monkeypatch):
+    fake_stripe(monkeypatch)
+    sign_in(client, "ari")
+    client.post("/plan-for-me", data=GOOD, follow_redirects=False)
+    oid = pfm.admin_rows()[0]["id"]
+    for _ in range(pfm.MAX_CHECKOUTS):
+        client.post(f"/plan-for-me/{oid}/pay", follow_redirects=False)
+    r = client.post(f"/plan-for-me/{oid}/pay", follow_redirects=False)
+    assert r.headers["location"] == f"/plan-for-me/{oid}?err=limit"
+    assert "tried to pay several times in the last hour. Nothing was charged" in client.get(r.headers["location"]).text
+
+
+# ---- payments nobody can build from are the captain's refunds -----------------------------------------------------
+
+def test_a_second_session_paying_a_paid_order_is_a_refund_due_with_its_session_and_amount(client):
+    o = order()
+    hook(client, event(o["id"], session="cs_a", eid="evt_a"))
+    assert hook(client, event(o["id"], session="cs_b", eid="evt_b")).text == "double"
+    (owed,) = pfm.refunds_due()
+    assert (owed["event_id"], owed["order_id"], owed["session_id"], owed["amount_cents"], owed["outcome"]) == ("evt_b", o["id"], "cs_b", 2900, "double")
+    t = pfm.totals(pfm.admin_rows(), pfm.refunds_due())
+    assert (t["paid"], t["revenue_cents"], t["refunds"], t["refund_cents"]) == (1, 2900, 1, 2900)
+
+
+def test_a_payment_for_an_order_that_is_gone_is_a_refund_due_too(client):
+    assert hook(client, event("0" * 16, session="cs_gone", eid="evt_g", amount=2900)).text == "unknown"
+    (owed,) = pfm.refunds_due()
+    assert (owed["order_id"], owed["session_id"], owed["amount_cents"], owed["outcome"]) == ("0" * 16, "cs_gone", 2900, "unknown")
+    assert hook(client, event("0" * 16, session="cs_gone", eid="evt_g", amount=2900)).text == "duplicate" and len(pfm.refunds_due()) == 1
+
+
+def test_a_normal_payment_and_a_repeated_delivery_are_no_refund(client):
+    o = order()
+    hook(client, event(o["id"]))
+    hook(client, event(o["id"]))
+    assert pfm.refunds_due() == []
+
+
+def test_a_chunked_webhook_body_with_no_length_is_cut_off_at_the_limit_not_read_whole(client):
+    """No Content-Length (a chunked request) must not make the server buffer a body of any size: the app is driven as uvicorn drives it, one piece at a time, and stops asking at the limit."""
+    import asyncio
+    o = order()
+    asked, sent = [], []
+
+    async def receive():
+        asked.append(1)
+        return {"type": "http.request", "body": b"x" * (pfm.MAX_WEBHOOK // 10), "more_body": True}
+
+    async def send(message):
+        sent.append(message)
+
+    scope = {"type": "http", "asgi": {"version": "3.0"}, "http_version": "1.1", "method": "POST", "path": "/stripe/webhook", "raw_path": b"/stripe/webhook", "query_string": b"", "root_path": "",
+             "scheme": "http", "server": ("testserver", 80), "client": ("1.2.3.4", 1), "headers": [(b"host", b"testserver"), (b"content-type", b"application/json"), (b"transfer-encoding", b"chunked")]}
+    asyncio.run(client.app(scope, receive, send))
+    assert sent[0]["status"] == 413
+    assert len(asked) <= 12      # 11 pieces pass 256,000 bytes; the rest were never asked for
+    assert pfm.get(o["id"], o["owner_user"])["status"] == "awaiting_payment"
+    assert hook(client, event(o["id"])).text == "paid"      # a normal delivery is still believed
+
+
+def test_a_webhook_that_says_it_is_too_big_is_refused_before_a_byte_is_read(client):
+    import asyncio
+    asked, sent = [], []
+
+    async def receive():
+        asked.append(1)
+        return {"type": "http.request", "body": b"", "more_body": False}
+
+    async def send(message):
+        sent.append(message)
+
+    scope = {"type": "http", "asgi": {"version": "3.0"}, "http_version": "1.1", "method": "POST", "path": "/stripe/webhook", "raw_path": b"/stripe/webhook", "query_string": b"", "root_path": "",
+             "scheme": "http", "server": ("testserver", 80), "client": ("1.2.3.4", 1), "headers": [(b"host", b"testserver"), (b"content-length", str(pfm.MAX_WEBHOOK + 1).encode())]}
+    asyncio.run(client.app(scope, receive, send))
+    assert sent[0]["status"] == 413 and asked == []

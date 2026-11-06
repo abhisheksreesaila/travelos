@@ -58,6 +58,49 @@ auth_before = Beforeware(_locked_auth, skip=auth_before.skip)
 _OPEN = [r"/assets/.*", r"/healthz", r"/badge/.*"]
 
 
+class BodyLimit:
+    """F-193: a request body past a path's limit is refused with a 413 before the app has read it: at once when Content-Length already says so, and as soon as the pieces of a chunked body (no
+    Content-Length) add up past it. FastHTML and our own beforeware read every POST body whole before a route runs, so a limit inside the route would come too late. Only the paths in LIMITS."""
+
+    LIMITS = {"/stripe/webhook": planforme.MAX_WEBHOOK}
+
+    class TooLarge(Exception):
+        pass
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        limit = self.LIMITS.get(scope.get("path")) if scope["type"] == "http" else None
+        if limit is None:
+            await self.app(scope, receive, send)
+            return
+        declared = next((v for k, v in scope.get("headers", []) if k == b"content-length"), b"0")
+        if declared.isdigit() and int(declared) > limit:
+            await Response("too large", status_code=413)(scope, receive, send)
+            return
+        got, started = 0, False
+
+        async def counted():
+            nonlocal got
+            message = await receive()
+            got += len(message.get("body", b"")) if message["type"] == "http.request" else 0
+            if got > limit:
+                raise self.TooLarge
+            return message
+
+        async def tracked(message):
+            nonlocal started
+            started = started or message["type"] == "http.response.start"
+            await send(message)
+
+        try:
+            await self.app(scope, counted, tracked)
+        except self.TooLarge:
+            if not started:
+                await Response("too large", status_code=413)(scope, receive, send)
+
+
 class NoStoreWhenSignedIn:
     """F-062: every signed-in HTML response is `Cache-Control: private, no-store`, so Back after sign-out cannot show the last person's
     pages from the browser's back/forward or HTTP cache. (The service worker's own Cache API copy for offline use ignores no-store and
@@ -130,7 +173,7 @@ class SecurityHeaders:
 
 def make_app():
     auth.check_production_settings()
-    app = FastHTML(before=[Beforeware(access.guard, skip=_OPEN), auth_before, Beforeware(session.bind, skip=_OPEN), Beforeware(showcase.guard, skip=_OPEN), omxqua.before], hdrs=HEAD, title="GitAway", middleware=[Middleware(SecurityHeaders), Middleware(OneAddress),Middleware(NoStoreWhenSignedIn), Middleware(familydb.RequestScope)],
+    app = FastHTML(before=[Beforeware(access.guard, skip=_OPEN), auth_before, Beforeware(session.bind, skip=_OPEN), Beforeware(showcase.guard, skip=_OPEN), omxqua.before], hdrs=HEAD, title="GitAway", middleware=[Middleware(BodyLimit), Middleware(SecurityHeaders), Middleware(OneAddress),Middleware(NoStoreWhenSignedIn), Middleware(familydb.RequestScope)],
                    htmlkw={"lang": "en"}, on_startup=[morning.start, draftjobs.start, planforme.start], secret_key=os.getenv("GITAWAY_SECRET_KEY") or None, key_fname=str(ROOT / ".sesskey"),
                    **auth.session_options())
     app.static_route_exts(prefix="/assets/", static_path=str(ROOT / "assets"))

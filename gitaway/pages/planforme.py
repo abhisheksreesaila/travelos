@@ -164,7 +164,11 @@ def _airport(where) -> str:
     return next((d.airports[0] for d in catalog.DESTINATIONS if d.key == key), "")
 
 
-def order_page(order, paid_back=False, trouble=False):
+TROUBLE = {"1": "We could not open the payment page just now. Nothing was charged. Try again in a moment.",
+           "limit": "You have tried to pay several times in the last hour. Nothing was charged. Please wait a little and try again.", "off": "Plan it for me is not for sale here yet. Nothing was charged."}
+
+
+def order_page(order, paid_back=False, trouble=""):
     status, intake = order["status"], order["intake"]
     head = {"awaiting_payment": ("Almost there", "Pay to start building your trip."), "paid": ("Payment received", "An agent is about to start on your trip."),
             "building": ("Building your trip", "This takes a few minutes. You can leave this page: your trip will be in your calendar."),
@@ -176,8 +180,8 @@ def order_page(order, paid_back=False, trouble=False):
     if status in ("paid", "building") or (status == "awaiting_payment" and paid_back):
         body.append(_steps("paid" if status == "awaiting_payment" else status))
     if status == "awaiting_payment" and not paid_back:
-        if trouble:
-            body.append(P("We could not open the payment page just now. Nothing was charged. Try again in a moment.", role="alert", cls="pf-error", id="pf-trouble"))
+        if trouble in TROUBLE:
+            body.append(P(TROUBLE[trouble], role="alert", cls="pf-error", id="pf-trouble"))
         body.append(Form(Button(icon("lock", 18, 2.4), f"Pay {catalog.money(order['amount_cents'])}", type="submit", cls="btn btn-primary pf-go", id="pf-pay"), action=f"{PATH}/{order['id']}/pay", method="post", cls="pf-act"))
     if status == "ready":
         body.append(Div(A(icon("calendar", 20, 2.4), "Open your trip", href=f"/trip?trip={order['trip_id']}", cls="btn btn-primary pf-go", id="pf-open"), cls="pf-act"))
@@ -209,14 +213,18 @@ def register(app):
         return intake_page(session, {k: q.get(k, "") for k in ("from", "where", "start", "end", "home", "adults", "nkids", "budget", "pace", "must")} | {f"k{i}": q.get(f"k{i}", "") for i in range(1, MAX_KIDS + 1)})
 
     async def _checkout(request, order):
-        """Where an unpaid order goes to be paid: the stand-in locally, else Stripe. (url, error sentence)."""
+        """Where an unpaid order goes to be paid: the stand-in locally, else Stripe. (url, the `err` code the order page says in words: "1" Stripe failed, "limit" too many tries, "off" not for sale)."""
         if pfm.standin():
             return f"/sandbox/plan-for-me/{order['id']}", ""
+        if not pfm.offered():      # a local copy with a Stripe key but no webhook secret: no payment page that could never be matched
+            return "", "off"
         try:
             return await run_in_threadpool(pfm.start_checkout, order, _base(request)), ""
+        except pfm.TooMany:
+            return "", "limit"
         except Exception:  # noqa: BLE001 - the SDK's own errors, a timeout: the log has the type, the buyer a plain sentence
             log.exception("could not open a Stripe Checkout session for order %s", order["id"])
-            return "", "We could not open the payment page just now. Nothing was charged. Try again in a moment."
+            return "", "1"
 
     @app.post(PATH)
     async def intake_post(request, session):
@@ -230,9 +238,12 @@ def register(app):
         vals = {k: str(v) for k, v in form.items() if isinstance(v, str)}
         if errors:
             return intake_page(session, vals, errors, 422)
-        order = await run_in_threadpool(pfm.create_order, me.id, session.get("tenant_id") or "", session.get("email") or "", intake_)
-        url, _why = await _checkout(request, order)
-        return RedirectResponse(url or f"{PATH}/{order['id']}?err=1", status_code=303)
+        try:
+            order = await run_in_threadpool(pfm.create_order, me.id, session.get("tenant_id") or "", session.get("email") or "", intake_)
+        except pfm.TooMany as e:
+            return intake_page(session, vals, {"_": str(e)}, 429)
+        url, why = await _checkout(request, order)
+        return RedirectResponse(url or f"{PATH}/{order['id']}?err={why}", status_code=303)
 
     @app.get(PATH + "/{order_id}")
     def order(session, request, order_id: str):
@@ -242,7 +253,7 @@ def register(app):
         found = _mine(session, order_id)
         if not found:
             return _gone()
-        return order_page(found, paid_back=request.query_params.get("paid") == "1" and found["status"] == "awaiting_payment", trouble=request.query_params.get("err") == "1")
+        return order_page(found, paid_back=request.query_params.get("paid") == "1" and found["status"] == "awaiting_payment", trouble=request.query_params.get("err", ""))
 
     @app.get(PATH + "/{order_id}/status")
     def status(session, order_id: str):
@@ -258,8 +269,8 @@ def register(app):
             return _gone()
         if found["status"] != "awaiting_payment":
             return RedirectResponse(f"{PATH}/{order_id}", status_code=303)
-        url, _why = await _checkout(request, found)
-        return RedirectResponse(url or f"{PATH}/{order_id}?err=1", status_code=303)
+        url, why = await _checkout(request, found)
+        return RedirectResponse(url or f"{PATH}/{order_id}?err={why}", status_code=303)
 
     @app.get(PATH + "/{order_id}/go/{lane}")
     def go(session, order_id: str, lane: str):
@@ -291,10 +302,6 @@ def register(app):
 
     @app.post("/stripe/webhook")
     async def stripe_webhook(request):
-        if int(request.headers.get("content-length") or 0) > pfm.MAX_WEBHOOK:
-            return PlainTextResponse("too large", status_code=413)
-        body = await request.body()
-        if len(body) > pfm.MAX_WEBHOOK:
-            return PlainTextResponse("too large", status_code=413)
+        body = await request.body()      # main.py BodyLimit has already refused anything over pfm.MAX_WEBHOOK
         status_, answer = await run_in_threadpool(pfm.receive, body, request.headers.get("stripe-signature", ""))
         return PlainTextResponse(answer, status_code=status_)

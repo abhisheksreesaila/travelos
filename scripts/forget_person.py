@@ -56,6 +56,7 @@ def community_plan(folder: Path, uid, email):
             ("daily try, picture and blog-scan counts", db, "creator_import_hits", "owner_user = ? OR owner_user = ? OR owner_user = ?", (uid, f"pic:{uid}", f"scan:{uid}")),
             ("their own clicks on a creator's trip", db, "via_clicks", "who = ?", (f"u:{uid}",)),
             ("Plan it for me Stripe event ids of their orders", db, "plan_order_events", "order_id IN (SELECT id FROM plan_orders WHERE owner_user = ? OR (email != '' AND lower(email) = lower(?)))", (uid, email)),      # F-193 (D-161): before the orders, which it reads
+            ("Plan it for me payment-page counts", db, "plan_checkouts", "owner_user = ?", (uid,)),
             ("Plan it for me orders (the intake is personal; Stripe keeps the payment)", db, "plan_orders", "owner_user = ? OR (email != '' AND lower(email) = lower(?))", (uid, email))]
     if slugs:
         rows.append(("fork counts of their trips", db, "fork_counts", f"slug IN ({marks})", tuple(slugs)))

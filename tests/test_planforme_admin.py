@@ -69,3 +69,18 @@ def test_nobody_but_an_admin_sees_any_of_it(client, monkeypatch):
     oid = make("ari", "ready", cost=27_000)
     r = client.get("/admin")
     assert r.status_code == 404 and oid[:8] not in r.text and "Plan it for me orders" not in r.text
+
+
+def test_a_paid_twice_payment_and_a_payment_for_a_gone_order_are_listed_as_refunds_due_and_counted(admin, client, monkeypatch):
+    from tests.test_planforme_pay import SECRET, event, hook
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", SECRET)
+    ok = make("ari", "awaiting_payment")
+    assert hook(client, event(ok, session="cs_a", eid="evt_a")).text == "paid"
+    assert hook(client, event(ok, session="cs_b", eid="evt_b")).text == "double"
+    assert hook(client, event("0" * 16, session="cs_c", eid="evt_c", amount=2900)).text == "unknown"
+    html = admin.get("/admin").text
+    t = text_of(html)
+    assert re.search(r'id="ad-refunds"[^>]*>\s*2 · \$58', html)
+    assert "Paid twice: the order was already paid" in t and "Checkout session cs_b" in t
+    assert "Paid for an order that no longer exists" in t and "Checkout session cs_c" in t
+    assert html.count("Refund due") >= 2 and 'id="refund-evt-evt_b"' in html and 'id="refund-evt-evt_c"' in html
