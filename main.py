@@ -103,9 +103,34 @@ class OneAddress:
         await self.app(scope, receive, send)
 
 
+class SecurityHeaders:
+    """F-182: the standard headers on every response: nobody can frame GitAway (`frame-ancestors 'none'`: no clickjacking), the Referer leaves only for our own pages, a browser never
+    guesses a content type, and in production HSTS pins https for a year. No script-src: the pages use inline scripts and a policy would break them. A response that sets one of
+    these itself (the badge's own CSP) keeps its own."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        async def send_with(message):
+            if message["type"] == "http.response.start":
+                headers = list(message.get("headers", []))
+                have = {k.lower() for k, _ in headers}
+                add = [(b"content-security-policy", b"frame-ancestors 'none'"), (b"referrer-policy", b"same-origin"), (b"x-content-type-options", b"nosniff")]
+                if auth.production():
+                    add.append((b"strict-transport-security", b"max-age=31536000; includeSubDomains"))
+                message = {**message, "headers": headers + [(k, v) for k, v in add if k not in have]}
+            await send(message)
+        await self.app(scope, receive, send_with)
+
+
 def make_app():
     auth.check_production_settings()
-    app = FastHTML(before=[Beforeware(access.guard, skip=_OPEN), auth_before, Beforeware(session.bind, skip=_OPEN), Beforeware(showcase.guard, skip=_OPEN), omxqua.before], hdrs=HEAD, title="GitAway", middleware=[Middleware(OneAddress), Middleware(NoStoreWhenSignedIn), Middleware(familydb.RequestScope)],
+    app = FastHTML(before=[Beforeware(access.guard, skip=_OPEN), auth_before, Beforeware(session.bind, skip=_OPEN), Beforeware(showcase.guard, skip=_OPEN), omxqua.before], hdrs=HEAD, title="GitAway", middleware=[Middleware(SecurityHeaders), Middleware(OneAddress),Middleware(NoStoreWhenSignedIn), Middleware(familydb.RequestScope)],
                    htmlkw={"lang": "en"}, on_startup=[morning.start, draftjobs.start], secret_key=os.getenv("GITAWAY_SECRET_KEY") or None, key_fname=str(ROOT / ".sesskey"),
                    **auth.session_options())
     app.static_route_exts(prefix="/assets/", static_path=str(ROOT / "assets"))
