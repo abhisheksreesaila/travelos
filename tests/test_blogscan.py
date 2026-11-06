@@ -152,3 +152,62 @@ def test_a_real_feed_title_counts_for_ranking():
 def test_the_title_comes_from_the_last_part_of_the_address():
     assert blogscan.title_from_url("https://b.example.com/2025/06/three-days-in-san-diego/") == "Three days in san diego"
     assert blogscan.title_from_url("https://b.example.com/p/12345.html") == "12345"
+
+
+# ---- F-182 fix 2: a scan cannot hold a worker thread for long (M2) and feed links stay on the site (L2) ----------------------------
+
+def test_a_scan_against_a_server_that_never_answers_stops_at_the_budget_and_makes_no_fetch_after_it(monkeypatch):
+    import time
+    monkeypatch.setattr(blogscan, "BUDGET", 1.0)
+    calls = []
+
+    def slow(url, ip, timeout, kind):
+        calls.append((url, round(timeout, 1)))
+        time.sleep(min(timeout, 3))
+        raise TimeoutError("slow")
+
+    monkeypatch.setattr(safefetch, "TRANSPORT", slow)
+    t = time.monotonic()
+    with pytest.raises(blogscan.ScanError):
+        blogscan.discover(SITE)
+    assert time.monotonic() - t < blogscan.BUDGET + 0.75
+    assert calls == [(f"{SITE}/sitemap.xml", 1.0)]          # the first fetch got only what was left of the budget; the home page and the feeds were never tried
+
+
+def test_every_fetch_gets_what_is_left_of_the_budget_as_its_timeout(web, monkeypatch):
+    seen = []
+    w = Web({f"{SITE}/sitemap.xml": xml(SITEMAP)})
+
+    def spy(url, ip, timeout, kind):
+        seen.append(timeout)
+        return w(url, ip, timeout, kind)
+
+    monkeypatch.setattr(safefetch, "TRANSPORT", spy)
+    blogscan.discover(SITE)
+    assert len(seen) == 1 and 0 < seen[0] <= blogscan.BUDGET
+
+
+def test_the_fifth_scan_at_once_is_refused_with_a_friendly_sentence():
+    held = []
+    try:
+        for _ in range(blogscan.SLOTS):
+            cm = blogscan.slot()
+            cm.__enter__()
+            held.append(cm)
+        with pytest.raises(blogscan.ScanError) as e:
+            with blogscan.slot():
+                pass
+        assert str(e.value) == blogscan.BUSY and "try again in a minute" in blogscan.BUSY
+    finally:
+        for cm in held:
+            cm.__exit__(None, None, None)
+    with blogscan.slot():           # a finished scan gives its place back
+        pass
+
+
+def test_a_feed_link_on_the_home_page_to_another_site_is_never_fetched(web):
+    home = '<html><head><link rel="alternate" type="application/rss+xml" href="https://evil.example/feed.xml"><link rel="alternate" type="application/rss+xml" href="/blog.rss"></head></html>'
+    rss = f'<rss><channel><item><link>{SITE}/a-weekend-itinerary-in-maui</link><title>Maui</title></item></channel></rss>'
+    w = web({f"{SITE}/sitemap.xml": GONE, SITE + "/": page(home), f"{SITE}/blog.rss": xml(rss, "application/rss+xml")})
+    assert [p.url for p in blogscan.discover(SITE)] == [f"{SITE}/a-weekend-itinerary-in-maui"]
+    assert not any("evil.example" in c for c in w.calls)

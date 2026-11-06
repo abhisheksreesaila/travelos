@@ -10,7 +10,9 @@ level (its children may not be indexes), at most MAX_URLS addresses are read, an
 
 import logging
 import re
+import threading
 import time
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import timezone
 from email.utils import parsedate_to_datetime
@@ -26,7 +28,9 @@ log = logging.getLogger("gitaway.blogscan")
 SHOWN = 50                 # posts offered to tick
 MAX_URLS = 2000            # addresses read from a sitemap
 MAX_CHILDREN = 8           # child sitemaps read from an index
-BUDGET = 30.0              # seconds for the whole scan
+BUDGET = 30.0              # seconds for the whole scan: checked before every fetch, and each fetch gets only what is left of it as its timeout
+SLOTS = 4                  # scans running at once: each holds one of the server's worker threads for up to BUDGET seconds
+BUSY = "GitAway is reading a lot of blogs right now. Please try again in a minute."
 NONE_FOUND = "GitAway could not find a list of posts on that website. Paste the link to one post instead, or its text."
 BAD_ADDRESS = "Paste your blog's address, like https://yourblog.com."
 
@@ -65,9 +69,27 @@ def same_site(url, host) -> bool:
     return bool(found) and not bad and strip(found) == strip(host.lower())
 
 
-def _get(url, kind):
+_slots = threading.BoundedSemaphore(SLOTS)
+
+
+@contextmanager
+def slot():
+    """One of the SLOTS places for a scan to run in, or ScanError(BUSY) at once when all are taken (never waits). Hold it for the whole scan: the scan runs in the shared thread pool."""
+    if not _slots.acquire(blocking=False):
+        raise ScanError(BUSY)
     try:
-        return safefetch.fetch(url, kind)
+        yield
+    finally:
+        _slots.release()
+
+
+def _get(url, kind, started):
+    """The page, or None when it cannot be read or the budget is used up (nothing is fetched then); the fetch's own timeout is what is left of the budget."""
+    left = BUDGET - (time.monotonic() - started)
+    if left <= 0.25:
+        return None
+    try:
+        return safefetch.fetch(url, kind, timeout=left)
     except safefetch.FetchError as e:
         log.info("scan fetch failed code=%s", e.code)
         return None
@@ -112,7 +134,7 @@ def read_sitemaps(base, host=None, started=None):
             if _local(el.tag) == "url" and (loc := _text(el, "loc")) and same_site(loc, host) and len(out) < MAX_URLS:
                 out.append((loc, _date(_text(el, "lastmod"))))
 
-    first = _get(f"{base}/sitemap.xml", "xml")
+    first = _get(f"{base}/sitemap.xml", "xml", started)
     root = _parse(first.body) if first else None
     if root is None:
         return out
@@ -122,9 +144,9 @@ def read_sitemaps(base, host=None, started=None):
         kids = [loc for el in root if _local(el.tag) == "sitemap" and same_site(loc := _text(el, "loc"), host)]
         kids.sort(key=lambda u: "post" not in u.lower())        # the posts' sitemap before pages, categories and authors
         for kid in kids[:MAX_CHILDREN]:
-            if len(out) >= MAX_URLS or time.monotonic() - started > BUDGET:
+            if len(out) >= MAX_URLS:
                 break
-            got = _get(kid, "xml")
+            got = _get(kid, "xml", started)
             sub = _parse(got.body) if got else None
             if sub is not None and _local(sub.tag) == "urlset":
                 take(sub)
@@ -142,8 +164,8 @@ class _Alternates(HTMLParser):
             self.feeds.append(a["href"])
 
 
-def _feed_urls(base):
-    home = _get(base + "/", "html")
+def _feed_urls(base, host, started):
+    home = _get(base + "/", "html", started)
     found = []
     if home:
         p = _Alternates()
@@ -151,17 +173,15 @@ def _feed_urls(base):
             p.feed(home.text())
         except Exception:  # noqa: BLE001 - a page the parser chokes on has no feed we can find
             pass
-        found = [urljoin(home.url, h.strip()) for h in p.feeds[:3]]
+        found = [u for u in (urljoin(home.url, h.strip()) for h in p.feeds[:3]) if same_site(u, host)]      # a feed on another site is never fetched, like a child sitemap
     return [*found, base + "/feed"]
 
 
 def read_feed(base, host=None, started=None):
     """[(url, title, date)] from the feed the home page points to (else /feed): RSS items or Atom entries on the creator's site. At most MAX_URLS."""
     host, started = host or urlsplit(base).hostname, started or time.monotonic()
-    for feed in _feed_urls(base):
-        if time.monotonic() - started > BUDGET:
-            break
-        got = _get(feed, "xml")
+    for feed in _feed_urls(base, host, started):
+        got = _get(feed, "xml", started)
         root = _parse(got.body) if got else None
         if root is None:
             continue

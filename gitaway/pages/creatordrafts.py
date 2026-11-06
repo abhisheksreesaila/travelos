@@ -18,7 +18,7 @@ from fasthtml.core import FtResponse
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import HTMLResponse, RedirectResponse
 
-from gitaway import blogscan, creatordraft as cd, draftjobs as dj, importsource, session as ses
+from gitaway import blogscan, creatordraft as cd, draftjobs as dj, importsource, reports, session as ses, showcase
 from gitaway.icons import icon
 from gitaway.layout import page
 
@@ -149,18 +149,29 @@ def register(app):
             return _signin(PATH + "/scan")
         return scan_page(session)
 
+    def _find(owner, site):
+        """Blocking, so it runs in the thread pool: take a scan place, count the try, then read the blog. Busy or over a limit is a ScanError with the sentence to show; a refused try costs nothing."""
+        if cd.mode() == "sample":
+            if (hit := dj.may_scan(owner)):
+                raise blogscan.ScanError(dj.SITE_SCAN_HIT if hit == "site" else dj.SCAN_LIMIT_HIT)
+            return blogscan.sample(site)
+        with blogscan.slot():
+            if (hit := dj.may_scan(owner)):
+                raise blogscan.ScanError(dj.SITE_SCAN_HIT if hit == "site" else dj.SCAN_LIMIT_HIT)
+            return blogscan.discover(site)
+
     @app.post(PATH + "/scan")
     async def scan(request, session):
         me = ses.current_traveler(session)
         if not me:
             return _signin(PATH + "/scan")
+        if not reports.same_site(request):
+            return showcase.not_found()
         site = str((await request.form()).get("site") or "").strip()
         if cd.mode() == "manual":
             return scan_page(session, site, error=cd.NOT_ON, status=422)
-        if not await run_in_threadpool(dj.may_scan, me.id):
-            return scan_page(session, site, error=dj.SCAN_LIMIT_HIT, status=422)
         try:
-            posts = await run_in_threadpool(blogscan.sample if cd.mode() == "sample" else blogscan.discover, site)     # fetches the sitemap and the feed: never on the event loop (F-182)
+            posts = await run_in_threadpool(_find, me.id, site)     # fetches the sitemap and the feed: never on the event loop (F-182)
         except blogscan.ScanError as e:
             return scan_page(session, site, error=str(e), status=422)
         return scan_page(session, site, posts)
@@ -170,6 +181,8 @@ def register(app):
         me = ses.current_traveler(session)
         if not me:
             return _signin(PATH)
+        if not reports.same_site(request):
+            return showcase.not_found()
         f = await request.form()
         site = str(f.get("site") or "").strip()
         host = urlsplit(site if "//" in site else "//" + site).hostname or ""
@@ -187,6 +200,8 @@ def register(app):
         me = ses.current_traveler(session)
         if not me:
             return _signin(PATH)
+        if not reports.same_site(request):
+            return showcase.not_found()
         if str((await request.form()).get("do") or "") == "delete":
             d = await run_in_threadpool(cd.get, me.id, token)
             if d:

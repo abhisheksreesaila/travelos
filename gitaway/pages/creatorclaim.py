@@ -196,7 +196,7 @@ def register(app):
         known = {(c["example_post_url"] or "").strip(): c["person"] for c in cc.candidates()}
         jobs += [(u, known[u]) for u in dict.fromkeys(f.getlist("url")) if u in known]      # only an address that is in the list
         results = await run_in_threadpool(_draft_all, str(session["user_id"]), _captain(session), jobs[:MAX_BATCH]) if jobs else [{"link": "", "name": "", "error": "Paste a post link, or tick someone from the list."}]
-        return FtResponse(admin.admin_page(results), headers=NO_STORE)
+        return FtResponse(await run_in_threadpool(admin.admin_page, results), headers=NO_STORE)
 
     @app.post("/admin/link")
     async def link(request, session):
@@ -208,7 +208,8 @@ def register(app):
         if not new:
             return RedirectResponse("/admin#cc-section", status_code=303)
         d = await run_in_threadpool(cd.get, cc.UNCLAIMED, did) or {"title": row["title"]}
-        return FtResponse(admin.admin_page([{"link": row["post_url"], "name": row["name"], "title": d["title"], "message": cc.outreach(row["name"], d["title"], new, _captain(session))}]), headers=NO_STORE)
+        shown = [{"link": row["post_url"], "name": row["name"], "title": d["title"], "message": cc.outreach(row["name"], d["title"], new, _captain(session))}]
+        return FtResponse(await run_in_threadpool(admin.admin_page, shown), headers=NO_STORE)      # the page reads the community database
 
     @app.post("/admin/revoke")
     async def revoke(request, session):

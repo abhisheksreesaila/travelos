@@ -161,12 +161,14 @@ def _http(url, ip, timeout, kind):
         conn.close()
 
 
-def fetch(url, kind="html") -> Fetched:
-    """The bytes at `url` (html, json, xml (a sitemap or a feed, F-190) or image, per `kind`). Raises FetchError with a sentence fit to show; see the module's list for what is refused."""
+def fetch(url, kind="html", timeout=None) -> Fetched:
+    """The bytes at `url` (html, json, xml (a sitemap or a feed, F-190) or image, per `kind`), within TIMEOUT seconds in all, or `timeout` when that is less (a scan passes what is left of its
+    budget, F-182). Raises FetchError with a sentence fit to show; see the module's list for what is refused."""
     started = time.monotonic()
+    total = TIMEOUT if timeout is None else min(TIMEOUT, timeout)
     send = TRANSPORT or _http
     for _hop in range(MAX_REDIRECTS + 1):
-        left = TIMEOUT - (time.monotonic() - started)
+        left = total - (time.monotonic() - started)
         if left <= 0.25:
             raise FetchError("That website took too long to answer.", "timeout")
         _host, _port, ip = check(url)

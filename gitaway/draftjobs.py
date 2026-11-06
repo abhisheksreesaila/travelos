@@ -13,6 +13,7 @@ importsource.gather, which fetches through safefetch), or `sample` in the local 
 
 import json
 import logging
+import os
 import re
 import secrets
 import threading
@@ -29,6 +30,9 @@ log = logging.getLogger("gitaway.draftjobs")
 MAX_BATCH = 20
 SCAN_LIMIT = 30           # blogs one person may have read in a day: each is up to a dozen fetches, so it is counted like a picture fetch
 SCAN_LIMIT_HIT = f"You have looked up {SCAN_LIMIT} blogs today, which is the most for one day. Come back tomorrow, or paste a post's link instead."
+SITE_SCAN_LIMIT = 500     # blogs all creators together may have read in a day (GITAWAY_CREATOR_SCAN_SITE_LIMIT): each is up to a dozen outgoing fetches
+SITE_SCAN_KEY = "*scans*"
+SITE_SCAN_HIT = "GitAway has read as many blogs as it can for today. Come back tomorrow, or paste a post's link instead."
 WORKERS = 2
 UNEXPECTED = "Something went wrong drafting this post. Try pasting its text instead."
 
@@ -63,12 +67,24 @@ def clear() -> None:
         db.conn.commit()
 
 
-def may_scan(owner) -> bool:
-    """Count one blog read for `owner` today (SCAN_LIMIT): the scan is a fetcher, so it is limited like the picture fetches."""
+def site_scan_limit() -> int:
+    raw = os.getenv("GITAWAY_CREATOR_SCAN_SITE_LIMIT", "").strip()
+    return int(raw) if raw.isdigit() else SITE_SCAN_LIMIT
+
+
+def may_scan(owner) -> str:
+    """Count one blog read for `owner` today (SCAN_LIMIT) and one for the whole site (site_scan_limit): the scan is a fetcher, so it is limited like the picture fetches.
+    "" when it may go ahead, else "person" or "site" (nothing counted)."""
+    day = cd._today()
     with cd._db() as db:
-        ok = cd._take(db, f"scan:{owner}", cd._today(), SCAN_LIMIT)
+        if not cd._take(db, f"scan:{owner}", day, SCAN_LIMIT):
+            db.conn.rollback()
+            return "person"
+        if not cd._take(db, SITE_SCAN_KEY, day, site_scan_limit()):
+            db.conn.rollback()
+            return "site"
         db.conn.commit()
-        return ok
+        return ""
 
 
 # ---- queueing -------------------------------------------------------------------------------------------------------------------

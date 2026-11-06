@@ -189,3 +189,29 @@ def test_reading_blogs_is_limited_per_person_per_day(me, model, web, monkeypatch
     assert [scan(me).status_code for _ in range(3)] == [200, 200, 422]
     assert "most for one day" in text(scan(me))
     assert web.calls.count(f"{SITE}/sitemap.xml") == 2          # the refused ones fetched nothing
+
+
+def test_when_all_scan_places_are_taken_the_creator_is_told_to_try_in_a_minute_and_is_not_charged(me, model, web, monkeypatch):    # noqa: F811
+    from gitaway import blogscan
+    monkeypatch.setattr(dj, "SCAN_LIMIT", 1)
+    held = [blogscan.slot() for _ in range(blogscan.SLOTS)]
+    for cm in held:
+        cm.__enter__()
+    try:
+        r = scan(me)
+        assert r.status_code == 422 and blogscan.BUSY in text(r) and web.calls == []
+    finally:
+        for cm in held:
+            cm.__exit__(None, None, None)
+    assert scan(me).status_code == 200          # the refused try did not use up their one scan today
+
+
+def test_the_whole_site_may_read_only_so_many_blogs_a_day(me, model, web, monkeypatch):    # noqa: F811
+    monkeypatch.setenv("GITAWAY_CREATOR_SCAN_SITE_LIMIT", "2")
+    assert [scan(me).status_code for _ in range(3)] == [200, 200, 422]
+    assert dj.SITE_SCAN_HIT in text(scan(me)) and web.calls.count(f"{SITE}/sitemap.xml") == 2
+
+
+def test_starting_a_batch_from_another_site_is_refused(me, model, web):    # noqa: F811
+    r = me.post("/creators/drafts/start", data={"site": SITE, "url": [f"{SITE}/{SLUGS[0]}"]}, headers={"Origin": "https://evil.example", "Sec-Fetch-Site": "cross-site"}, follow_redirects=False)
+    assert r.status_code == 404 and dj.listing(tid()) == []
