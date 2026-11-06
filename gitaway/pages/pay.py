@@ -194,10 +194,10 @@ def celebration(b, session=None):
 def register(app):
     @app.get("/plan/pay")
     def pay_sheet(session, f: str = "", h: str = "", c: str = "", rooms: str = None, add: str = None, fare: str = None, bags: str = None,
-                  d: str = "", r: str = "", a: str = "", k: str = "", to: str = ""):
+                  d: str = "", r: str = "", a: str = "", k: str = "", to: str = "", home: str = "", focus: str = ""):
         if not showcase.on():
             return preview_only()
-        trip = plan.resolve_trip(d, r, a, k, to)
+        trip = plan.resolve_trip(d, r, a, k, to, home, focus)
         picks = plan.resolve_pick(f, h, c, trip)
         stay, flight = plan.resolve_stay(picks[1], rooms, add, trip), plan.resolve_flight(picks[0], fare, bags, trip)
         who = ses.current_traveler(session)
@@ -211,11 +211,11 @@ def register(app):
 
     @app.post("/pay")
     def pay(session, f: str = "", h: str = "", c: str = "", rooms: str = None, add: str = None, fare: str = None, bags: str = None,
-            d: str = "", r: str = "", a: str = "", k: str = "", to: str = ""):
+            d: str = "", r: str = "", a: str = "", k: str = "", to: str = "", home: str = "", focus: str = ""):
         """Books the picks. The total is always recomputed here; rooms that sleep too few become the default room, a bad fare Basic and bad bags none."""
         if not showcase.on():
             return preview_only()
-        trip = plan.resolve_trip(d, r, a, k, to)
+        trip = plan.resolve_trip(d, r, a, k, to, home, focus)
         picks = plan.resolve_pick(f, h, c, trip)
         stay, flight = plan.resolve_stay(picks[1], rooms, add, trip), plan.resolve_flight(picks[0], fare, bags, trip)
         if catalog.is_past(trip.depart, trip.return_):  # a stale link must not book the past: back to the form, which says why

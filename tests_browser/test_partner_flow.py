@@ -14,7 +14,7 @@ def test_book_on_a_partner_from_plan_to_the_partner_log(browser, base_url, viewp
     ctx.request.post(f"{base_url}/signin", form={"email": "ari.rivera@example.com", "next": "/", "intent": "save"}, max_redirects=0)
     page = ctx.new_page()
     page.goto(f"{base_url}/plan?{TRIP}")
-    links = page.locator("a.ws-book-on")
+    links = page.locator("a.ws-book-on:not(.ws-todo-link)")     # the Tickets and things to do card's link is not an offer (F-195)
     assert links.count() == 9                                   # every offer in Honolulu: 4 flights, 3 stays, 2 cars
     sizes = links.evaluate_all("els => els.map(e => e.getBoundingClientRect().height)")
     assert viewport is DESKTOP or min(sizes) >= 40, "on the phone each link is a touch target"

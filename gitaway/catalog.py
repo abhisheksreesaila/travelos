@@ -381,7 +381,8 @@ def search_offer(kind: str, trip) -> Offer:
     """What an honest page offers where we know no real offers (F-195): one search at the partner per lane, `flight`, `stay` or `todo` (KeyError for another).
     No price (the partner shows today's), no made-up airline or hotel: the id is `search-<kind>`."""
     name = SEARCH_KINDS[kind].format(place=trip.destination_name, area=trip.stay_area)
-    return Offer(f"search-{kind}", kind, name, "", "", 0, airport=trip.airports[0] if kind == "flight" else "", place=trip.key)
+    line = ("Disneyland Resort tickets" if trip.focus == "disney" else f"{trip.destination_name} attractions") if kind == "todo" else ""
+    return Offer(f"search-{kind}", kind, name, line, "", 0, airport=trip.airports[0] if kind == "flight" else "", place=trip.key)
 
 
 def offer(offer_id: str, trip=SAMPLE_TRIP) -> Offer:

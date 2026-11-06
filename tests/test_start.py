@@ -263,3 +263,8 @@ def test_start_prefills_the_airport_and_a_disneyland_trip_survives_the_round_tri
     r = client.get("/start", params={**GOOD, "from": "JFK", "focus": "disney", "d": "2027-03-16", "r": "2027-03-20"}, follow_redirects=False)
     assert r.headers["location"] == "/plan?d=2027-03-16&r=2027-03-20&a=2&k=4,7&home=JFK&focus=disney"
     assert tags(client.get("/start").text, "focus") == []     # no hidden field on the plain sample form
+
+
+def test_a_home_in_the_trip_urls_own_words_still_counts_so_the_stale_pay_link_keeps_it(client):
+    r = client.get("/start", params={"go": "1", "to": "la", "d": "2027-03-16", "r": "2027-03-20", "a": "2", "n": "0", "home": "jfk", "focus": "disney"}, follow_redirects=False)
+    assert r.headers["location"] == "/plan?d=2027-03-16&r=2027-03-20&a=2&home=JFK&focus=disney"

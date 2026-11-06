@@ -132,7 +132,7 @@ def _submitted(q):
 
     n = min(whole(q.get("n", "0")), MAX_KIDS)
     raw_ages = [q.get(f"k{i}", "") for i in range(1, n + 1)]
-    vals = {"to": q.get("to", "la"), "from": q.get("from", "").strip().upper(), "focus": q.get("focus", ""), "d": q.get("d", ""), "r": q.get("r", ""), "a": q.get("a", "2"), "n": n,
+    vals = {"to": q.get("to", "la"), "from": (q.get("from") or q.get("home") or "").strip().upper(), "focus": q.get("focus", ""), "d": q.get("d", ""), "r": q.get("r", ""), "a": q.get("a", "2"), "n": n,
             "ages": [whole(a, "") if a.isascii() and a.isdigit() else "" for a in raw_ages]}
     errors = {}
     for i, a in enumerate(raw_ages, 1):

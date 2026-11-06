@@ -523,3 +523,36 @@ def test_without_a_marker_a_search_click_goes_straight_to_the_partner_since_ther
 def test_only_the_three_search_lanes_exist(client, nokeys):
     for bad in ("search-car", "search-ride", "search-", "search-todo2", "SEARCH-todo"):
         assert client.get(f"/go/{bad}?to=hi&{TRIP}", follow_redirects=False).status_code == 404, bad
+
+
+# ---- F-195: the Tickets and things to do card on /plan ---------------------------------------------------------------------
+
+def todo_cards(html):
+    return re.findall(r'<a[^>]*href="(/go/search-todo[^"]*)"[^>]*>(.*?)</a>', html.replace("&amp;", "&"), re.S)
+
+
+def test_plan_has_one_tickets_card_that_goes_to_klook(client, nokeys):
+    html = client.get(f"/plan?{HI}").text
+    ((href, label),) = todo_cards(html)
+    assert href == "/go/search-todo?to=hi&d=2027-03-05&r=2027-03-09&a=2" and "Klook" in text(label)
+    assert "Tickets and things to do" in text(html) and "Honolulu attractions" in text(html)
+
+
+def test_a_disneyland_trip_offers_disneyland_tickets_and_keeps_its_focus_in_every_link(client, nokeys):
+    html = client.get("/plan?to=la&d=2027-03-05&r=2027-03-09&a=2&k=4,7&home=JFK&focus=disney").text
+    ((href, _),) = todo_cards(html)
+    assert href == "/go/search-todo?to=la&d=2027-03-05&r=2027-03-09&a=2&k=4%2C7&home=JFK&focus=disney"
+    assert "Disneyland Resort tickets" in text(html)
+    assert "/go/h1?to=la&d=2027-03-05&r=2027-03-09&a=2&k=4%2C7&home=JFK&focus=disney" in html.replace("&amp;", "&")      # so does a stay's: it will ask Klook for Anaheim
+
+
+def test_an_ordinary_los_angeles_trip_is_not_a_disneyland_one(client, nokeys):
+    html = client.get("/plan?to=la&d=2027-03-05&r=2027-03-09&a=2").text
+    assert "Disneyland" not in html and "Los Angeles attractions" in text(html)
+
+
+def test_the_tickets_card_follows_the_same_rules_as_the_book_links_in_production(client, nokeys, monkeypatch):
+    monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
+    assert todo_cards(client.get(f"/plan?{HI}").text) == []           # no marker: nowhere to send anyone, so no card and no /go/ link at all
+    monkeypatch.setenv("TRAVELPAYOUTS_MARKER", "123456")
+    assert len(todo_cards(client.get(f"/plan?{HI}").text)) == 1

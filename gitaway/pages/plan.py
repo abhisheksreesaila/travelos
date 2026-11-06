@@ -56,9 +56,9 @@ def resolve_pick(f, h, c, trip=catalog.SAMPLE_TRIP):
     return tuple(picked)
 
 
-def resolve_trip(d="", r="", a="", k="", to=""):
-    """The trip the URL names (to, d, r, a, k: see catalog.trip_query). Nothing or anything bad means the sample trip."""
-    return catalog.trip_from_url(d, r, a, k, to)
+def resolve_trip(d="", r="", a="", k="", to="", home="", focus=""):
+    """The trip the URL names (to, d, r, a, k, home, focus: see catalog.trip_query). Nothing or anything bad means the sample trip."""
+    return catalog.trip_from_url(d, r, a, k, to, home, focus)
 
 
 def resolve_stay(h, rooms=None, add=None, trip=catalog.SAMPLE_TRIP):
@@ -255,6 +255,15 @@ def book_on(card, o, trip):
         return card
     p = partners.for_offer(o)
     return Div(card, A(icon("link", 16, 2.2), f"Book on {p.name}", href=go_href(o, trip), cls="ws-book-on", rel="sponsored noopener", data_partner=p.key), cls="ws-offer-wrap")
+
+
+def todo_card(trip):
+    """Tickets and things to do (Klook, F-195): one card at the foot of Getting around, the same sponsored link as a Book on link. Nothing where there is nowhere to send anyone."""
+    if not partners.available():
+        return ""
+    o = catalog.search_offer("todo", trip)
+    return Div(Span(o.name, cls="ws-subhead"), Span(o.headline, cls="ws-name"), Span("Klook sells the tickets and keeps your booking.", cls="ws-detail"),
+               A(icon("link", 16, 2.2), "See tickets on Klook", href=go_href(o, trip), cls="ws-book-on ws-todo-link", rel="sponsored noopener", data_lane="todo"), cls="ws-todo")
 
 
 def commission_note():
@@ -620,7 +629,7 @@ def workspace(f, h, c, overlay=(), head=(), x="", v="", stay=None, trip=None, fl
                  [*[book_on(stay_card(o, h, viewing["stays"] if expanded == "stays" else "", stay.cents if o.id == h else None), o, trip) for o in stays], commission_note()], "fill-mint-tint",
                  detail=[stay_detail(o, h, viewing["stays"], stay if o.id == h else catalog.stay_pick(o.id, trip=trip), chosen=o.id == h) for o in stays], expanded=expanded == "stays",
                  screen=screen if expanded == "stays" else "list", lane="stay", skipped=h is None),
-            pane("cars", 3, "Getting around", "", [*[book_on(car_card(o, c), o, trip) for o in catalog.offers("car", trip)], commission_note()], "fill-sky-tint",
+            pane("cars", 3, "Getting around", "", [*[book_on(car_card(o, c), o, trip) for o in catalog.offers("car", trip)], todo_card(trip), commission_note()], "fill-sky-tint",
                  Div(rides_card(q.rides, q) if q.rides else "", id="ws-rides", cls="ws-rides", aria_live="polite"), *([tip] if showcase.on() and la else []),
                  lane="car", skipped=c is None, with_flight=f is not None),
             Div(weather_pane(trip), map_pane(catalog.offer(h, trip) if h else None, trip), news_pane(trip), *([community_pane()] if showcase.on() and la else []), cls="ws-context"),
@@ -644,8 +653,8 @@ def workspace(f, h, c, overlay=(), head=(), x="", v="", stay=None, trip=None, fl
 def register(app):
     @app.get("/plan")
     def plan(request, session, f: str = "", h: str = "", c: str = "", x: str = "", v: str = "", rooms: str = None, add: str = None,
-             fare: str = None, bags: str = None, d: str = "", r: str = "", a: str = "", k: str = "", to: str = "", via: str = ""):
-        trip = resolve_trip(d, r, a, k, to)
+             fare: str = None, bags: str = None, d: str = "", r: str = "", a: str = "", k: str = "", to: str = "", via: str = "", home: str = "", focus: str = ""):
+        trip = resolve_trip(d, r, a, k, to, home, focus)
         picks = resolve_pick(f, h, c, trip)
         stay, flight = resolve_stay(picks[1], rooms, add, trip), resolve_flight(picks[0], fare, bags, trip)
         if any((f, h, c, rooms, add, fare, bags, d, r, a, k, to)):  # a bare /plan is not "picks"; /start offers to continue the rest
