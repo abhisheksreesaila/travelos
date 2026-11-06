@@ -1055,12 +1055,12 @@ Needs: F-179, F-180, F-181 · reviewer + security-auditor (public publishing, up
 
 # Creators turn a post into a trip (brief docs/briefs/creator-import.md, approved 2026-11-05)
 
-## F-183 Paste a link or text, get a draft trip (Claude Haiku 5.5) [todo]
+## F-183 Paste a link or text, get a draft trip (Claude Haiku 5.5) [review]
 Brief: docs/briefs/creator-import.md · Needs: F-181
-- [ ] blog link → article text and photos; YouTube link → title, description, chapters; Instagram link → asks for the caption; pasted text always
-- [ ] Haiku 5.5 drafts title, place, days, stops, tips, stickers as validated JSON through `gitaway/ai.py` (new job, Anthropic provider, `ANTHROPIC_API_KEY`), logged like every AI call; unsure places become "unnamed stop"
-- [ ] the draft opens in the publish editor with a source card linking back; nothing publishes without "this is my post"
-- [ ] fetching is safe: http(s) only, no private or internal addresses, size and time limits; tests never reach the network
+- [x] blog link → article text and photos; YouTube link → title, description, chapters; Instagram link → asks for the caption; pasted text always
+- [x] Haiku 5.5 drafts title, place, days, stops, tips, stickers as validated JSON through `gitaway/ai.py` (new job, Anthropic provider, `ANTHROPIC_API_KEY`), logged like every AI call; unsure places become "unnamed stop"
+- [x] the draft opens in the publish editor with a source card linking back; nothing publishes without "this is my post"
+- [x] fetching is safe: http(s) only, no private or internal addresses, size and time limits; tests never reach the network
 Blocked (for live use only): set ANTHROPIC_API_KEY in Railway, service web.
 
 ## F-184 Creators keep their affiliate links [todo]

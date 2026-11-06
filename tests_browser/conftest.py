@@ -23,7 +23,7 @@ os.environ["DB_TYPE"] = "SQLITE"
 os.environ["DB_NAME"] = "app_host"
 # Set empty, not removed: fh-saas loads the project's .env on import and fills in any key that is missing,
 # so real Google keys in a developer's .env would hide the dev sign-in from the tests.
-for _key in ("GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "AZURE_OPENAI_API_KEY", "AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_DEPLOYMENT", "AZURE_OPENAI_API_VERSION", "AZURE_OPENAI_TRANSCRIBE_DEPLOYMENT", "SARVAM_API_KEY", "GITAWAY_AI_TRANSCRIBE_PROVIDER"):
+for _key in ("GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "AZURE_OPENAI_API_KEY", "AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_DEPLOYMENT", "AZURE_OPENAI_API_VERSION", "AZURE_OPENAI_TRANSCRIBE_DEPLOYMENT", "SARVAM_API_KEY", "GITAWAY_AI_TRANSCRIBE_PROVIDER", "ANTHROPIC_API_KEY"):
     os.environ[_key] = ""
 for _key in [k for k in os.environ if k.startswith("GITAWAY_AI_")]:
     os.environ[_key] = ""  # per-job AI settings from a shell or .env must not reach a test (F-079)
@@ -40,6 +40,16 @@ def _no_ai_network(monkeypatch):
     def refuse(url, headers, body, timeout):
         raise OSError("the network is off in tests")
     monkeypatch.setattr(ai, "TRANSPORT", refuse)
+
+    def refuse_anthropic(kwargs, timeout):
+        raise OSError("the network is off in tests")
+    monkeypatch.setattr(ai, "ANTHROPIC_TRANSPORT", refuse_anthropic)      # F-183: nor the Anthropic SDK, nor a creator's blog
+    from gitaway import safefetch
+
+    def refuse_fetch(url, ip, timeout, kind):
+        raise OSError("the network is off in tests")
+    monkeypatch.setattr(safefetch, "TRANSPORT", refuse_fetch)
+    monkeypatch.setattr(safefetch, "RESOLVER", lambda host: ["93.184.216.34"])
 
 
 @pytest.fixture(autouse=True)

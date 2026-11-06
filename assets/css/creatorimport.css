@@ -43,7 +43,8 @@
 .ci-time { grid-area: time; }
 .ci-name { grid-area: name; }
 .ci-snote { grid-area: note; }
-.ci-del { grid-area: del; min-width: 2.75rem; min-height: 2.75rem; padding: 0; justify-content: center; }
+.ci-del { grid-area: del; display: inline-flex; align-items: center; justify-content: center; min-width: 2.75rem; min-height: 2.75rem; padding: 0; color: var(--ink); }
+.ci-del svg { width: 1.25rem; height: 1.25rem; flex: none; display: block; }
 .ci-unsure { border-color: var(--oq-warn, #8f5400); background: color-mix(in srgb, var(--oq-warn, #8f5400) 8%, var(--card)); }
 .ci-add, .ci-add-day { min-height: 2.75rem; }
 .ci-own-l { display: inline-flex; align-items: center; gap: 0.625rem; min-height: 2.75rem; font-weight: 600; cursor: pointer; }
