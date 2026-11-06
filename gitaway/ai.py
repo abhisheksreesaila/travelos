@@ -16,7 +16,7 @@ Jobs are the reasons the app calls the model (JOBS below; docs/ai-usage.md says 
 
 (<JOB> is the job's name in capitals, "-" as "_": AROUND_YOU.) Switching a job's model or provider is a setting, never a code change.
 
-    GITAWAY_AI_PROVIDER_<JOB>=anthropic|azure      which service answers a job; job "creator-import" (F-183) defaults to anthropic when ANTHROPIC_API_KEY is set
+    GITAWAY_AI_PROVIDER_<JOB>=anthropic|azure      which service answers a job; job "creator-import" (F-183) is anthropic, and off (not Azure) while ANTHROPIC_API_KEY is missing
     ANTHROPIC_API_KEY                              the key for the anthropic provider (the official SDK reads it itself)
     GITAWAY_AI_MODEL_<JOB>                         another Anthropic model for one job (default claude-haiku-5-5, $0.10 in / $0.50 out per million tokens)
     GITAWAY_AI_EFFORT_<JOB>                        low (default) | medium | high: how hard the Anthropic model thinks
@@ -56,7 +56,7 @@ JOBS = {
     "transcribe": (45, "turn a recorded voice (Ask, where the phone has no speech recognition) into text"),
     "creator-import": (60, "draft a trip from a creator's own post (F-183; Claude Haiku 5.5)"),
 }
-DEFAULT_PROVIDER = {"creator-import": "anthropic"}      # a job listed here uses that provider whenever its key is set; every other job is Azure unless GITAWAY_AI_PROVIDER_<JOB> says otherwise
+DEFAULT_PROVIDER = {"creator-import": "anthropic"}      # a job listed here uses that provider and no other: with its key missing it is OFF, never Azure (F-196); every other job is Azure unless GITAWAY_AI_PROVIDER_<JOB> says otherwise
 ANTHROPIC_MODEL = "claude-haiku-5-5"
 ANTHROPIC_PRICE = {"claude-haiku-5-5": (0.10, 0.50)}      # US dollars per million tokens (input, output), for prompts up to 100K tokens
 ANTHROPIC_MAX_TOKENS = 8000                               # thinking counts toward it; a 14-day draft is about 3,000
@@ -100,11 +100,10 @@ def _anthropic_key() -> str:
 
 
 def provider(job=None) -> str:
-    """Which service answers `job`: "anthropic" or "azure". GITAWAY_AI_PROVIDER_<JOB> wins; else the job's default (creator-import: anthropic) when ANTHROPIC_API_KEY is set."""
+    """Which service answers `job`: "anthropic" or "azure". GITAWAY_AI_PROVIDER_<JOB> wins; else the job's own default (creator-import: anthropic). A job with a default never falls back to
+    Azure when that provider's key is missing: it is off (`configured` is False), so Railway's Azure settings cannot quietly draft a creator's post with another model (F-196)."""
     chosen = (os.environ.get(f"GITAWAY_AI_PROVIDER_{_suffix(job)}") or "").strip().lower()
-    if chosen:
-        return chosen
-    return "anthropic" if DEFAULT_PROVIDER.get(job) == "anthropic" and _anthropic_key() else "azure"
+    return chosen or DEFAULT_PROVIDER.get(job) or "azure"
 
 
 def deployment(job=None) -> str:

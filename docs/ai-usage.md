@@ -50,7 +50,7 @@ The only job on the Anthropic provider. It uses the official `anthropic` SDK wit
 
 | Variable | Effect |
 |---|---|
-| `ANTHROPIC_API_KEY` | Switches `creator-import` on (it makes `anthropic` this job's default provider). |
+| `ANTHROPIC_API_KEY` | Switches `creator-import` on (this job is Anthropic only: with the key missing it is off, and Railway's `AZURE_OPENAI_*` settings never draft a creator's post, F-196). Only `GITAWAY_AI_PROVIDER_CREATOR_IMPORT=azure` moves it, on purpose. |
 | `GITAWAY_AI_PROVIDER_<JOB>` | `anthropic` or `azure`: which service answers any job. |
 | `GITAWAY_AI_MODEL_<JOB>` | Another Anthropic model for the job (default `claude-haiku-5-5`). The cost estimate only knows Haiku 5.5's price. |
 | `GITAWAY_AI_EFFORT_<JOB>` | `low` (default), `medium` or `high`. |
