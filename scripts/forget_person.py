@@ -7,7 +7,7 @@ would delete (a dry run). Tables that do not exist yet are skipped.
                 their families: their member row, push subscriptions, thread settings and their own boarding pass (F-083, a pass whose traveller is them: rows and files).
                 Messages and photos they added stay with the family.
 * --content     also the messages and photos they added in their families (and the photo files), and the boarding passes they added for anyone.
-* always        what they published or sent to the community (F-182): published trips, creator record, drafts, affiliate marker, reports they sent, try counts, and public/<slug>/ pictures.
+* always        what they published or sent to the community (F-182): published trips, creator record, drafts and queued blog posts, affiliate marker, reports they sent, try and scan counts, and public/<slug>/ pictures.
 * --family      the whole family of each family they belong to: its database (and -wal/-shm), photos and passes folders, memberships, invites and its
                 rows in the host. Other members' sign-ins stay. Implies --content.
 """
@@ -48,10 +48,13 @@ def community_plan(folder: Path, uid, email):
     handles = [r[0] for r in c.execute("SELECT handle FROM creators WHERE owner_user = ?", (uid,))] if _has(c, "creators") else []
     c.close()
     marks = ", ".join("?" for _ in slugs)
-    rows = [("published trips", db, "published", "owner_user = ?", (uid,)), ("creator record", db, "creators", "owner_user = ?", (uid,)),
+    # Queued blog posts first (F-182): the worker re-drafts a queued job after a restart (draftjobs.reset_running), so the job goes before the drafts, in the same connection and commit.
+    rows = [("queued draft jobs", db, "creator_draft_jobs", "owner_user = ?", (uid,)),
+            ("published trips", db, "published", "owner_user = ?", (uid,)), ("creator record", db, "creators", "owner_user = ?", (uid,)),
             ("creator drafts", db, "creator_drafts", "owner_user = ?", (uid,)), ("claim links they used", db, "creator_claims", "claimed_by = ?", (uid,)), ("affiliate marker", db, "creator_markers", "owner_user = ?", (uid,)),
             ("reports they sent", db, "reports", "reporter = ? OR (email != '' AND lower(email) = lower(?))", (uid, email)),
-            ("daily try counts", db, "creator_import_hits", "owner_user = ? OR owner_user = ?", (uid, f"pic:{uid}"))]
+            ("daily try, picture and blog-scan counts", db, "creator_import_hits", "owner_user = ? OR owner_user = ? OR owner_user = ?", (uid, f"pic:{uid}", f"scan:{uid}")),
+            ("their own clicks on a creator's trip", db, "via_clicks", "who = ?", (f"u:{uid}",))]
     if slugs:
         rows.append(("fork counts of their trips", db, "fork_counts", f"slug IN ({marks})", tuple(slugs)))
     if handles:
