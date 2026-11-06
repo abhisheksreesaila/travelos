@@ -1028,12 +1028,12 @@ Built: mine is --coral-deep #C9431F with white (4.88:1; --coral #FF7352 is 2.8:1
 
 Work happens on branch `autopilot/booking-creators` (M1-M5 of GOAL.md, plus the orange accent), which merges to master and deploys as one release after review.
 
-## F-179 Real booking links: Aviasales and Klook [todo]
+## F-179 Real booking links: Aviasales and Klook [review]
 Brief: docs/briefs/creator-launch.md · Needs: autopilot branch M2
-- [ ] flights link to an Aviasales search for the trip's route and dates with `marker=801445.<subid>`; no program id needed
-- [ ] stays, cars and things to do link to Klook through the Travelpayouts partner-links API (`TRAVELPAYOUTS_TOKEN`), with a timeout and a cached result; without a token or on an API failure, the plain Klook partner link (`KLOOK_FALLBACK_URL`)
-- [ ] placeholder program ids, Hotellook and DiscoverCars are gone; the partner names on screen are Aviasales and Klook
-- [ ] tests never reach the network; a live probe script checks one real link when the token is set
+- [x] flights link to an Aviasales search for the trip's route and dates with `marker=801445.<subid>`; no program id needed
+- [x] stays, cars and things to do link to Klook through the Travelpayouts partner-links API (`TRAVELPAYOUTS_TOKEN`), with a timeout and a cached result; without a token or on an API failure, the plain Klook partner link (`KLOOK_FALLBACK_URL`)
+- [x] placeholder program ids, Hotellook and DiscoverCars are gone; the partner names on screen are Aviasales and Klook
+- [x] tests never reach the network; a live probe script checks one real link when the token is set
 
 ## F-180 The booking journey [todo]
 Design: docs/design/booking-journey.html · Needs: F-179

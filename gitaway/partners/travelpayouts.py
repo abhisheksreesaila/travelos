@@ -1,16 +1,28 @@
-"""Travelpayouts partner links, shaped like the real "partner links" API (support.travelpayouts.com, "API for Travelpayouts partner links").
+"""Travelpayouts links (D-70). Two ways a traveler is sent to a partner with our marker and this click's SubID:
 
-Real call: POST https://api.travelpayouts.com/links/v1/create with header `X-Access-Token: <TRAVELPAYOUTS_TOKEN>` and a body
-`{"trs": <project id>, "marker": <partner id>, "shorten": true, "links": [{"url": <partner page>, "sub_id": <our SubID>}]}`; the answer is
-`{"code": 200, "result": {"trs", "marker", "shorten", "links": [{"url", "code": "success", "partner_url": <tracked link>}]}}`.
+- Aviasales (flights) takes the marker on the search link itself: `https://www.aviasales.com/search/<route>?marker=<marker>.<sub_id>`. No call, no program id.
+- Klook (stays, cars) needs the partner-links API: POST https://api.travelpayouts.com/links/v1/create, header `X-Access-Token: <TRAVELPAYOUTS_TOKEN>`,
+  body `{"trs": <project id>, "marker": <partner id>, "shorten": false, "links": [{"url": <Klook page>, "sub_id": <SubID>}]}`; the answer is
+  `{"code": 200, "result": {"links": [{"url", "code": "success", "partner_url": <tracked link>}]}}`.
+  It runs at /go time (never while a page renders), with a 2 second timeout, and a good answer is cached per (url, sub_id). With no token, or on any
+  failure, the traveler goes to `KLOOK_FALLBACK_URL` (the plain Klook partner link of our account).
 
-Nothing here calls a network. `client()` hands back the synthetic client unless a token and a marker exist, and even then the real one only
-builds the same tracked link locally until the first live key is wired (D-21). A tracked link is
-`https://tp.media/r?marker=&trs=&p=&u=&campaign_id=&sub_id=`.
+`_post` is the only function that touches a network; tests replace it. Settings come from the environment by name: TRAVELPAYOUTS_MARKER (801445),
+TRAVELPAYOUTS_TOKEN, TRAVELPAYOUTS_TRS (the project id; the Drive script id 596534 is probably it), KLOOK_FALLBACK_URL.
 """
 
+import json
+import logging
 import os
-from urllib.parse import urlencode
+import urllib.request
+from urllib.parse import quote
+
+API = "https://api.travelpayouts.com/links/v1/create"
+TIMEOUT = 2
+DEFAULT_KLOOK_FALLBACK = "https://klook.tpx.lv/s1rIcwCA"
+_CACHE: dict = {}
+_CACHE_MAX = 512
+log = logging.getLogger(__name__)
 
 
 def marker() -> str:
@@ -21,34 +33,56 @@ def token() -> str:
     return os.getenv("TRAVELPAYOUTS_TOKEN", "").strip()
 
 
-def links_request(urls_and_subs, *, shorten=True) -> dict:
+def klook_fallback() -> str:
+    return os.getenv("KLOOK_FALLBACK_URL", "").strip() or DEFAULT_KLOOK_FALLBACK
+
+
+def links_request(urls_and_subs, *, shorten=False) -> dict:
     """The body of the partner-links call for `[(partner page url, sub_id), ...]`."""
     return {"trs": os.getenv("TRAVELPAYOUTS_TRS", "").strip(), "marker": marker(), "shorten": shorten,
             "links": [{"url": url, "sub_id": sub} for url, sub in urls_and_subs]}
 
 
-def tracked_url(body, partner, url, sub_id) -> str:
-    q = {"marker": body["marker"], "trs": body["trs"], "p": partner.program_id, "u": url, "campaign_id": partner.program_id, "sub_id": sub_id}
-    return "https://tp.media/r?" + urlencode({k: v for k, v in q.items() if v != ""})
+def _post(url: str, headers: dict, body: dict, timeout: float) -> dict:
+    """The one network call (the partner-links API). Raises on any failure."""
+    req = urllib.request.Request(url, json.dumps(body).encode(), {**headers, "Content-Type": "application/json"}, method="POST")
+    with urllib.request.urlopen(req, timeout=timeout) as r:   # noqa: S310 (a fixed https URL)
+        return json.load(r)
 
 
-class SyntheticLinks:
-    """Answers like the partner-links API, from the request alone."""
-
-    def create(self, body, partner) -> dict:
-        links = [{"url": link["url"], "code": "success", "partner_url": tracked_url(body, partner, link["url"], link["sub_id"])} for link in body["links"]]
-        return {"code": 200, "result": {"trs": body["trs"], "marker": body["marker"], "shorten": body["shorten"], "links": links}}
-
-
-class RealLinks(SyntheticLinks):
-    """Stands where the real HTTPS call goes once a live key is wired. Today it builds the same links locally, so a key never turns a click into a crash."""
-
-
-def client():
-    return RealLinks() if token() and marker() else SyntheticLinks()
+def create_link(url: str, sub_id: str) -> str:
+    """A tracked link for one partner page, from the API. Raises when there is no token or the API does not answer with a success."""
+    if not (token() and marker()):
+        raise LookupError("no token or marker")
+    answer = _post(API, {"X-Access-Token": token()}, links_request([(url, sub_id)]), TIMEOUT)
+    link = answer["result"]["links"][0]
+    if link.get("code") != "success" or not str(link.get("partner_url", "")).startswith("https://"):
+        raise LookupError(f"the API refused the link: {link.get('code')}")
+    return link["partner_url"]
 
 
-def tracked_link(partner, offer, trip, sub_id) -> str:
-    """The https link a traveler is sent to for `offer`: Travelpayouts' redirect carrying our marker and this click's SubID."""
-    body = links_request([(partner.target_url(offer, trip), sub_id)])
-    return client().create(body, partner)["result"]["links"][0]["partner_url"]
+def klook_link(url: str, sub_id: str) -> str:
+    """Where a Klook click goes: the tracked link of `url` with our SubID, else the plain Klook partner link. Never raises."""
+    key = (url, sub_id)
+    if key in _CACHE:
+        return _CACHE[key]
+    try:
+        link = create_link(url, sub_id)
+    except Exception as e:   # no token, a timeout, a bad answer: a click must always land somewhere
+        log.info("partner-links API not used (%s: %s)", type(e).__name__, e)
+        return klook_fallback()
+    if len(_CACHE) >= _CACHE_MAX:
+        _CACHE.clear()
+    _CACHE[key] = link
+    return link
+
+
+def aviasales_link(url: str, sub_id: str) -> str:
+    """The Aviasales search link with `marker=<marker>.<sub_id>` (the way a Travelpayouts-made Aviasales link carries it)."""
+    return f"{url}{'&' if '?' in url else '?'}marker={quote(marker() + '.' + sub_id, safe='.-')}&sub_id={quote(sub_id, safe='-')}"
+
+
+def link_for(partner, offer, trip, sub_id) -> str:
+    """The https link a traveler is sent to for `offer`."""
+    url = partner.target_url(offer, trip)
+    return aviasales_link(url, sub_id) if partner.key == "aviasales" else klook_link(url, sub_id)

@@ -6,7 +6,7 @@ Branch `autopilot/booking-creators`, not merged to master, not deployed.
 `scripts/check`: M1 PASS · M2 PASS · M3 PASS · M4 PASS · M5 PASS · M6 PASS (full suite included). The reviewer passed it with no blockers.
 
 - **M1 Four places:** LA, San Diego, Honolulu, New York from SFO, each with its own flights, stays, cars, weather, events and news (synthetic, deterministic).
-- **M2 Partner seam:** `gitaway/partners/`: Aviasales (flights), Hotellook (stays), DiscoverCars (cars), Uber deep link, all built Travelpayouts-shaped (marker, SubID). Every offer has a "Book on <partner>" link through `/go/…`. With `TRAVELPAYOUTS_MARKER` set it becomes a real tracked `tp.media` link; without one it goes to an in-app sandbox checkout.
+- **M2 Partner seam:** `gitaway/partners/`: Aviasales (flights), Klook (stays and cars, F-179), Uber deep link, all built Travelpayouts-shaped (marker, SubID). Every offer has a "Book on <partner>" link through `/go/…`. With `TRAVELPAYOUTS_MARKER` set it becomes a real tracked link (Aviasales marker, Klook partner-links API); without one it goes to an in-app sandbox checkout.
 - **M3 Loop closes:** completing the sandbox records a conversion with an estimated commission and puts the booking in the trip as "Booked elsewhere · <partner>". `/partners` lists the family's clicks and bookings.
 - **M4 Creators:** four creators with profiles at `/creators/<handle>`, trips with fork counts and "Plan this trip". The paste-a-link import still works.
 - **M5 omxqua Travel · Coast** on /plan, creators, sandbox and /partners. On a phone the lanes swipe with a segmented switcher and every control is at least 44px; on a laptop the lanes sit side by side.
@@ -20,7 +20,7 @@ cd ../travelos-autopilot && pixi run dev   # http://localhost:5002
 Screenshots: `docs/report/m5-*.png` (phone + laptop).
 
 ## Worth a second look
-1. Commission estimates (D-2x): flights 1.1%, hotels 5%, cars $18 flat. These are placeholders until Travelpayouts shows real rates. The program ids 4114–4116 are placeholders too.
+1. Commission estimates (D-71): flights 1.1%, Klook 5%. Estimates until Travelpayouts statistics are wired. Program ids are gone (F-179).
 2. Phone lanes (D-54): `.ws-grid` itself is the swipe scroller. Try it on your iPhone.
 3. No night mode yet (D-51), and the landing page is still the old look. Only the booking, creator and partner pages are in Coast.
 

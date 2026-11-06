@@ -67,7 +67,7 @@ def _offer_card(offer, trip):
 def checkout_page(partner, click, offer, trip, *, signed_in):
     return _shell(f"{partner.name} checkout", Div(
         Span(f"Sandbox · stand-in for {partner.name}", cls="pt-chip"),
-        H1(f"Your {partner.lane if partner.lane != 'stay' else 'hotel'} on {partner.name}", cls="pt-title"),
+        H1(f"Your {'hotel' if offer.kind == 'stay' else offer.kind} on {partner.name}", cls="pt-title"),
         _offer_card(offer, trip),
         P(f"This page mimics {partner.name}'s checkout so you can feel the whole loop. Nothing is charged and nothing is booked with anyone.", cls="pt-fine"),
         Form(Input(type="hidden", name="o", value=offer.id), *[Input(type="hidden", name=n, value=v) for n, v in _trip_tail(trip).items()],
@@ -109,7 +109,7 @@ def partners_page(rows, *, live):
     booked = [r for r in rows if r["state"] == "booked"]
     total = sum(r["commission_cents"] for r in booked)
     note = ("Live statistics are not connected yet. These are estimates from your family's clicks." if live
-            else "Sample data: clicks and bookings made in the sandbox. Commission is an estimate (flights about 1.1%, stays about 5%, cars about $18).")
+            else "Sample data: clicks and bookings made in the sandbox. Commission is an estimate (flights about 1.1%, stays and cars about 5%).")
     return page("Partners", Main(
         Div(H1("Partner bookings", cls="pt-title"),
             P(f"{len(rows)} click{'s' if len(rows) != 1 else ''} · {len(booked)} booked · estimated commission {catalog.money(total)}", cls="pt-lead", id="pt-summary"),
@@ -129,7 +129,7 @@ def register(app):
         partner, click = partners.for_offer(offer), log.new_click_id()
         sub = log.record_click(session, click, offer, trip, partner)
         if travelpayouts.marker():
-            return RedirectResponse(travelpayouts.tracked_link(partner, offer, trip, sub), status_code=302)
+            return RedirectResponse(travelpayouts.link_for(partner, offer, trip, sub), status_code=302)
         return RedirectResponse(_sandbox_path(partner, click, offer, trip), status_code=302)
 
     @app.get("/sandbox/{partner}/{click}")
