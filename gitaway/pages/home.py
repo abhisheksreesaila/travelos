@@ -4,6 +4,9 @@ Plan a trip leads; forking is one quiet line that scrolls to Community trips. Th
 focus), the shared calendar that plays itself, three community trips, and the creators panel. Design: docs/design/landing-v2.md.
 """
 
+import base64
+import os
+
 from fasthtml.common import A, Article, B, Button, Div, Form, H1, H2, H3, I, Img, Link, NotStr, P, Script, Section, Small, Span
 
 from gitaway import hub, itineraries, session, showcase
@@ -221,6 +224,15 @@ def footer_links():
     return links if session.request_traveler() else [*links, ("Sign in", session.signin_href())]
 
 
+def _drive():
+    """Travelpayouts Drive, their site-verification script: on the signed-out landing only, and only when TRAVELPAYOUTS_DRIVE_ID
+    (the partner id, digits) is set. Never on signed-in pages, which show a family's names and trips."""
+    pid = os.getenv("TRAVELPAYOUTS_DRIVE_ID", "").strip()
+    if not pid.isascii() or not pid.isdigit() or session.request_traveler():
+        return ()
+    return (Script(src=f"https://tp-em.com/{base64.b64encode(pid.encode()).decode()}.js?t={pid}", **{"async": True}),)
+
+
 def register(app):
     @app.get("/")
     def home():
@@ -231,5 +243,5 @@ def register(app):
             _features(),
             _calendar(),
             *([_community(), _creators()] if showcase.on() else []),
-            head=HEAD, nav=False, footer_links=footer_links(),
+            head=(*HEAD, *_drive()), nav=False, footer_links=footer_links(),
         )
