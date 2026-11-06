@@ -82,7 +82,8 @@ def _form(vals, errors):
         summary,
         _chips(vals, errors),
         Div(
-            _field("From", "from", _control(Select, "from", errors, Option(f"{catalog.ORIGIN[1]} ({catalog.ORIGIN[0]})", value=catalog.ORIGIN[0], selected=True)), error=errors.get("from", "")),
+            _field("From", "from", _control(Input, "from", errors, type="text", value=vals["from"], maxlength="3", placeholder="Any, we'll ask", autocomplete="off", autocapitalize="characters", spellcheck="false",
+                                            aria_label="Flying from (airport code, optional)"), error=errors.get("from", "")),
             _field("Leaving", "d", _control(Input, "d", errors, type="date", value=vals["d"], required=True, min=catalog.today().isoformat(), data_ga_range="trip", data_ga_label="Leaving"), error=errors.get("d", "")),
             _field("Back", "r", _control(Input, "r", errors, type="date", value=vals["r"], required=True, min=catalog.today().isoformat(), data_ga_range="trip", data_ga_end="", data_ga_label="Back"), error=errors.get("r", "")),
             _field("Adults", "a", _control(Select, "a", errors, *_options([(i, str(i)) for i in range(1, catalog.MAX_TRAVELERS + 1)], vals["a"]), data_ga="stepper", data_ga_label="Adults", data_ga_hint="18 and over"), error=errors.get("a", "")),
@@ -91,6 +92,7 @@ def _form(vals, errors):
         ),
         ages,
         Input(type="hidden", name="go", value="1"),
+        Input(type="hidden", name="focus", value=vals["focus"]) if vals["focus"] else "",      # a Disneyland trip stays one (F-195)
         Button("Find my trip", icon("arrow-right", 22, 2.6), type="submit", cls="btn btn-ink st-go"),
         P("Sample prices for Los Angeles. More places are on the way.", cls="st-note"),
         action="/start", method="get", cls="st-card", id="st-form", novalidate=True, aria_label="Plan a trip",
@@ -119,7 +121,8 @@ def continue_card(session, phone=False):
 
 
 def values_of(trip):
-    return {"to": trip.key, "d": trip.depart.isoformat(), "r": trip.return_.isoformat(), "a": trip.adults, "n": len(trip.kid_ages), "ages": list(trip.kid_ages)}
+    return {"to": trip.key, "from": trip.home, "d": trip.depart.isoformat(), "r": trip.return_.isoformat(), "a": trip.adults, "n": len(trip.kid_ages), "ages": list(trip.kid_ages),
+            "focus": trip.focus}
 
 
 def _submitted(q):
@@ -129,14 +132,14 @@ def _submitted(q):
 
     n = min(whole(q.get("n", "0")), MAX_KIDS)
     raw_ages = [q.get(f"k{i}", "") for i in range(1, n + 1)]
-    vals = {"to": q.get("to", "la"), "d": q.get("d", ""), "r": q.get("r", ""), "a": q.get("a", "2"), "n": n,
+    vals = {"to": q.get("to", "la"), "from": q.get("from", "").strip().upper(), "focus": q.get("focus", ""), "d": q.get("d", ""), "r": q.get("r", ""), "a": q.get("a", "2"), "n": n,
             "ages": [whole(a, "") if a.isascii() and a.isdigit() else "" for a in raw_ages]}
     errors = {}
     for i, a in enumerate(raw_ages, 1):
         if not (a.isascii() and a.isdigit() and int(a) <= catalog.MAX_KID_AGE):
             errors[f"k{i}"] = f"Pick an age from 0 to {catalog.MAX_KID_AGE} for kid {i}."
     try:
-        trip = catalog.parse_trip(q.get("from", catalog.ORIGIN[0]), vals["to"], vals["d"], vals["r"], vals["a"], ",".join(map(str, vals["ages"])), check_past=True)
+        trip = catalog.parse_trip(vals["from"], vals["to"], vals["d"], vals["r"], vals["a"], ",".join(map(str, vals["ages"])), check_past=True, focus=vals["focus"])
     except catalog.TripError as e:
         trip = None
         for field, msg in e.errors:
@@ -181,5 +184,5 @@ def register(app):
                 query = catalog.trip_query(trip)
                 return RedirectResponse("/plan" + (f"?{query}" if query else ""), status_code=303)
             return start_page(session, vals, errors, status=422)
-        trip = catalog.trip_from_url(q.get("d"), q.get("r"), q.get("a"), q.get("k"), q.get("to"))
+        trip = catalog.trip_from_url(q.get("d"), q.get("r"), q.get("a"), q.get("k"), q.get("to"), q.get("home"), q.get("focus"))
         return start_page(session, values_of(trip), phone=tripday.is_phone(request.headers.get("user-agent")))

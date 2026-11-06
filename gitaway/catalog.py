@@ -20,6 +20,8 @@ class TripSearch:
     return_: date
     adults: int
     kid_ages: tuple
+    home: str = ""    # where the reader said they fly from (an airport code), "" when they have not: the real flight link then leaves the origin out and Aviasales asks (F-195)
+    focus: str = ""   # "disney" on a Los Angeles trip that is really about Disneyland (see FOCUS), else ""
 
     @property
     def nights(self) -> int:
@@ -28,6 +30,21 @@ class TripSearch:
     @property
     def travelers(self) -> int:
         return self.adults + len(self.kid_ages)
+
+    @property
+    def passengers(self) -> tuple:
+        """(adults, children, infants) the way Aviasales counts them: adults are 12 and over, children 2 to 11, infants under 2, and only one infant
+        per adult (a second is booked as a child with a seat). A 15-year-old kid is an adult fare; the sum is always `travelers`."""
+        adults = self.adults + sum(a >= 12 for a in self.kid_ages)
+        children, infants = sum(2 <= a < 12 for a in self.kid_ages), sum(a < 2 for a in self.kid_ages)
+        if infants > adults:
+            children, infants = children + infants - adults, adults
+        return adults, children, infants
+
+    @property
+    def stay_area(self) -> str:
+        """Where to look for a stay: Anaheim for a Disneyland trip, else the destination."""
+        return "Anaheim" if self.focus == "disney" else self.destination_name
 
     @property
     def nights_text(self) -> str:
@@ -96,7 +113,8 @@ SAMPLE_PARTY = SAMPLE_TRIP.travelers
 MAX_NIGHTS = 30
 MAX_TRAVELERS = 8
 MAX_KID_AGE = 17
-ORIGIN = ("SFO", "San Francisco")
+ORIGIN = ("SFO", "San Francisco")   # the sample catalog's own departure city: its invented flights leave from here (F-195: the reader's home airport is TripSearch.home)
+FOCUS = {"la": ("disney",)}          # a place's trips that are about one thing: the Los Angeles place is also where Disneyland trips go (F-195)
 
 
 @dataclass(frozen=True)
@@ -174,15 +192,20 @@ def is_past(depart, ret) -> bool:
     return depart < today() and not (depart == SAMPLE_TRIP.depart and ret == SAMPLE_TRIP.return_)
 
 
-def parse_trip(origin, to, depart, ret, adults, kids, check_past=False) -> TripSearch:
+_AIRPORT = re.compile(r"[A-Z]{3}")
+
+
+def parse_trip(origin, to, depart, ret, adults, kids, check_past=False, focus="") -> TripSearch:
     """A TripSearch from form or URL text, or TripError listing every friendly problem. `kids` is ages, comma separated ("4,7").
+    `origin` is the reader's home airport (three letters) or "" when they have not said (F-195); `focus` is one of FOCUS for the place, else ignored.
 
     Date-agnostic unless `check_past`: stored bookings and URLs are read without it, so an old trip stays what it was.
     Pass check_past=True only where a new trip is entered.
     """
     errs = []
-    if (origin or "").strip().upper() != ORIGIN[0]:
-        errs.append(("from", "We only fly from San Francisco (SFO) for now."))
+    home = (origin or "").strip().upper()
+    if home and not _AIRPORT.fullmatch(home):
+        errs.append(("from", "Use a three-letter airport code, like SFO, or leave it empty."))
     dest = next((x for x in DESTINATIONS if x.key == (to or "").strip().lower()), None)
     if dest is None:
         errs.append(("to", "Pick where you want to go."))
@@ -214,29 +237,37 @@ def parse_trip(origin, to, depart, ret, adults, kids, check_past=False) -> TripS
         errs.append(("a", f"That is more than {MAX_TRAVELERS} travelers. Split it into two trips."))
     if errs:
         raise TripError(errs)
-    return TripSearch(ORIGIN[0], ORIGIN[1], dest.name, dest.airports, d, r, n_adults, tuple(ages))
+    start = home or ORIGIN[0]
+    return TripSearch(start, ORIGIN[1] if start == ORIGIN[0] else start, dest.name, dest.airports, d, r, n_adults, tuple(ages), home,
+                      focus if focus in FOCUS.get(dest.key, ()) else "")
 
 
-def sample_trip(to="la") -> TripSearch:
-    """The sample trip's dates and party in destination `to` (missing or unknown means Los Angeles)."""
+def sample_trip(to="la", home="", focus="") -> TripSearch:
+    """The sample trip's dates and party in destination `to` (missing or unknown means Los Angeles), with the reader's home airport and focus if they gave good ones."""
     dest = next((x for x in DESTINATIONS if x.key == (to or "").strip().lower()), DESTINATIONS[0])
-    return replace(SAMPLE_TRIP, destination_name=dest.name, airports=dest.airports)
+    home = home.strip().upper() if _AIRPORT.fullmatch((home or "").strip().upper()) else ""
+    return replace(SAMPLE_TRIP, destination_name=dest.name, airports=dest.airports, home=home, origin=home or SAMPLE_TRIP.origin,
+                   origin_name=(SAMPLE_TRIP.origin_name if not home or home == ORIGIN[0] else home), focus=focus if focus in FOCUS.get(dest.key, ()) else "")
 
 
 def trip_query(trip) -> str:
-    """The URL params that carry a trip: empty for the sample trip, else [to=&]d=&r=&a=&k= (to= only away from Los Angeles; k left out when nobody is a kid)."""
+    """The URL params that carry a trip: empty for the sample trip, else [to=&]d=&r=&a=&k=[&home=][&focus=] (to= only away from Los Angeles; k left out when nobody is a kid)."""
     if trip == SAMPLE_TRIP:
         return ""
     where = f"to={trip.key}&" if trip.key != "la" else ""
-    return f"{where}d={trip.depart.isoformat()}&r={trip.return_.isoformat()}&a={trip.adults}" + (f"&k={','.join(map(str, trip.kid_ages))}" if trip.kid_ages else "")
+    return (f"{where}d={trip.depart.isoformat()}&r={trip.return_.isoformat()}&a={trip.adults}" + (f"&k={','.join(map(str, trip.kid_ages))}" if trip.kid_ages else "")
+            + (f"&home={trip.home}" if trip.home else "") + (f"&focus={trip.focus}" if trip.focus else ""))
 
 
-def trip_from_url(d, r, a, k, to="la") -> TripSearch:
-    """The trip a URL names. Nothing given, or anything bad, means the sample trip (in `to`; Los Angeles when it is missing or unknown)."""
+def trip_from_url(d, r, a, k, to="la", home="", focus="") -> TripSearch:
+    """The trip a URL names. Nothing given, or anything bad, means the sample trip (in `to`; Los Angeles when it is missing or unknown).
+    A bad `home` or `focus` is dropped, not the trip: the reader just has not said where they fly from."""
+    home = (home or "").strip().upper()
+    home = home if _AIRPORT.fullmatch(home) else ""
     try:
-        return parse_trip(ORIGIN[0], to or "la", d or "", r or "", a or "", k or "")
+        return parse_trip(home, to or "la", d or "", r or "", a or "", k or "", focus=focus or "")
     except TripError:
-        return sample_trip(to)
+        return sample_trip(to, home, focus or "")
 
 
 def _per_night(cents, trip):
