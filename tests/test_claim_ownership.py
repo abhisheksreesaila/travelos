@@ -223,3 +223,23 @@ def test_forgetting_the_publisher_forgets_the_captains_note_on_their_trip(client
     _, row = claim_and_publish(STRANGER, link_of(setup))
     plan, _paths = _load("forget_person").community_plan(Path(os.environ["GITAWAY_DATA_DIR"]), tid(STRANGER), STRANGER)
     assert ("the captain's approval of their trips", "trip_review") in [(label, table) for label, _f, table, _w, _p in plan] and row["slug"] in str(plan)
+
+
+# ---- until the captain looks, the claimer earns nothing from the post --------------------------------------------------------------
+
+def test_a_claimer_elsewhere_has_no_marker_on_flights_until_the_captain_approves(client, setup):
+    from gitaway import affiliate
+    _, row = claim_and_publish(STRANGER, link_of(setup))
+    (creator,) = community.creators_all()
+    affiliate.set_marker(creator["owner_user"], "555111")
+    assert affiliate.marker_for(creator["handle"]) == ""
+    browser(CAP).post("/admin/approve", data={"slug": row["slug"]})
+    assert affiliate.marker_for(creator["handle"]) == "555111"
+
+
+def test_a_claimer_at_the_posts_own_site_has_their_marker_at_once(client, setup):
+    from gitaway import affiliate
+    claim_and_publish(OWNER, link_of(setup))
+    (creator,) = community.creators_all()
+    affiliate.set_marker(creator["owner_user"], "555111")
+    assert affiliate.marker_for(creator["handle"]) == "555111"

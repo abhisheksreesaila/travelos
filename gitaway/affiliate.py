@@ -56,11 +56,15 @@ def marker_of(owner_user) -> str:
 
 
 def marker_for(handle) -> str:
-    """The marker of the creator with this handle, or "" (an unknown handle, a creator without one, anything that is not a handle)."""
+    """The marker of the creator with this handle, or "" (an unknown handle, a creator without one, anything that is not a handle, or a creator whose only trips still wait for the
+    captain's approval: nobody earns from a post that has not been checked is theirs, F-194)."""
     if not _HANDLE.fullmatch(str(handle or "")):
         return ""
+    waiting = "SELECT slug FROM trip_review WHERE state = 'pending'"
     with connect() as db:
-        r = db.conn.execute(text("SELECT m.marker FROM creators c JOIN creator_markers m ON m.owner_user = c.owner_user WHERE c.handle = :h"), {"h": handle}).fetchone()
+        r = db.conn.execute(text("SELECT m.marker FROM creators c JOIN creator_markers m ON m.owner_user = c.owner_user WHERE c.handle = :h "
+                                 f"AND (NOT EXISTS (SELECT 1 FROM published p WHERE p.owner_user = c.owner_user AND p.slug IN ({waiting})) "
+                                 f"OR EXISTS (SELECT 1 FROM published p WHERE p.owner_user = c.owner_user AND p.slug NOT IN ({waiting})))"), {"h": handle}).fetchone()
     return r[0] if r else ""
 
 
