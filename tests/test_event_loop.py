@@ -18,7 +18,7 @@ from tests.creator_import_support import Model, page
 from tests.test_signin import EMAILS
 
 ROOT = Path(__file__).resolve().parent.parent / "gitaway"
-BLOCKING = re.compile(r"^(ai\.(call_json|transcribe)|safefetch\.fetch|importsource\.(gather|offline)|blogscan\.(discover|sample)|(dj|draftjobs)\.\w+|(cd|creatordraft)\.\w+|(cc|creatorclaim)\.draft|admin\.admin_page|expedia\.pdf_text|geo\.\w+|photos\.\w+|time\.sleep|requests\.\w+|urllib\.\w+|httpx\.\w+|_read)$")
+BLOCKING = re.compile(r"^(ai\.(call_json|transcribe)|safefetch\.fetch|importsource\.(gather|offline)|blogscan\.(discover|sample)|(dj|draftjobs)\.\w+|(pfm|planforme)\.\w+|stripe\.[\w.]+|(cd|creatordraft)\.\w+|(cc|creatorclaim)\.draft|admin\.admin_page|expedia\.pdf_text|geo\.\w+|photos\.\w+|time\.sleep|requests\.\w+|urllib\.\w+|httpx\.\w+|_read)$")
 # One-row reads and writes in the local SQLite file are fine on the loop; these are the only listed calls that are.
 FINE = {("gitaway/pages/creatorimport.py", "cd.get"), ("gitaway/pages/creatordrafts.py", "cd.mode"), ("gitaway/pages/creatordrafts.py", "dj.remaining")}
 
