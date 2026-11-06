@@ -1,7 +1,7 @@
 """One real partner-links call (F-179): `pixi run probe-tp`.
 
 Needs TRAVELPAYOUTS_TOKEN and TRAVELPAYOUTS_MARKER (and TRAVELPAYOUTS_TRS, the project id) in the environment. Turns one Klook page into a tracked
-link with a probe SubID and prints it, plus the Aviasales link for a sample trip. Never prints the token. Without a token it says so and exits 1.
+link with a probe SubID and prints it, plus the Aviasales link for a sample trip and the Klook links of F-195 (Disneyland tickets, Anaheim stays, attractions). Never prints the token. Without a token it says so and exits 1.
 """
 
 import sys
@@ -30,7 +30,17 @@ def main() -> int:
         return 2
     print("Klook page:", url)
     print("Klook tracked link:", link)
-    return 0
+    # F-195: the Klook pages the Tickets and Anaheim stay links use (D-145 could not open them: Klook answers 403 to the machine that built them)
+    la = catalog.parse_trip("", "la", "2027-03-05", "2027-03-09", "2", "4,7", focus="disney")
+    status = 0
+    for what, kind, where in (("Disneyland tickets", "todo", la), ("Anaheim stays", "stay", la), ("Honolulu attractions", "todo", trip)):
+        page = for_lane(kind).target_url(catalog.search_offer(kind, where), where)
+        try:
+            print(f"{what}: {page}\n   -> {tp.create_link(page, SUB)}")
+        except Exception as e:
+            print(f"{what}: the partner-links API did not give a link for {page} ({type(e).__name__}: {e})")
+            status = 2
+    return status
 
 
 if __name__ == "__main__":

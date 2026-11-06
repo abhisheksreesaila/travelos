@@ -1111,3 +1111,17 @@ Needs: F-181
 Needs: F-181, F-184
 - [x] a creator sees per trip: readers (counted without cookies, no personal data), forks, "Plan this trip" taps; partner clicks from their trips are shown in total (the cookie holds the handle, not the trip: D-129)
 - [x] privacy page says how readers are counted
+
+# The booking path is the reader's real trip (critique docs/research/critique-2026-11-06.md: Economics, Reader demand)
+
+## F-195 The booking path points at the reader's real trip, and the lane that earns [review]
+Needs: F-184, F-181 · Decisions: D-145 to D-152 · Not touched (another group's): `gitaway/creatordraft.py`, `gitaway/publish.py`
+- [x] Klook "Tickets and things to do": a `todo` target in `gitaway/partners` through the existing partner-links API with a SubID and today's fallback; a Disneyland trip goes to Klook's Disneyland Resort page, any other place to `<place> attractions`; shown as one honest card on the plan workspace (under Getting around), on a creator's trip page and on the honest page; the URLs and what could not be verified are in D-145
+- [x] a Disneyland trip's stay link asks Klook for Anaheim, not "Los Angeles hotels"; a trip is a Disneyland trip only when a creator's trip says so (`focus=disney`, D-146), so a Santa Monica trip is not sent to Anaheim
+- [x] the origin of the outbound Aviasales link is never hard-coded: the reader says a home airport (three letters, checked; on /start and on the honest page) or the link leaves the origin out and Aviasales asks (probed, D-147); `parse_trip` accepts any airport
+- [x] adults, children and infants go to Aviasales apart in its own age bands (probed, D-148); `plan_href` can carry the party, the airport and the focus, and the honest page and /start set them
+- [x] attribution: a creator's handle is in the SubID (D-149) and a family that forks a creator's trip gets `ga_via`, not only a tap on "Plan this trip" (D-150); a Tickets click on a creator's own page counts for them
+- [x] in production a reader from a creator's trip gets one honest card per lane ("Search flights to <place>", "Find stays near <place>", "Tickets and things to do") and no invented offers (D-151)
+- [x] a Klook link the partner-links API cannot make is a WARNING with its reason (no secret) and a count on /admin for the last 7 days (D-152)
+- [x] proof: tests/test_trip.py, test_partners.py, test_affiliate.py, test_plan_search.py, test_klook_failures.py, test_start.py; tests_browser/test_plan_search.py (390 and 1440); the running app driven at both widths in production mode (screenshots with `F195_SHOTS=1` to docs/report/f195-*.png); `pixi run probe-tp` now checks the Klook pages with the captain's token
+- [ ] the captain runs `pixi run probe-tp` once with the token: the Disneyland, Anaheim and attractions links must each print a tracked link (D-145)

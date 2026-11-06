@@ -5,7 +5,7 @@
 .ps-title { margin: 0; font-size: 2rem; line-height: 1.1; letter-spacing: -0.03em; text-wrap: balance; }
 .ps-lede { margin: 0; font-size: 1.125rem; font-weight: 650; color: var(--ink); }
 .ps-fine { margin: 0; font-size: max(var(--text-min), 0.875rem); color: var(--ink-2); text-wrap: pretty; }
-.ps-change { justify-self: start; min-height: 2.75rem; }
+.ps .ps-change { justify-self: start; min-height: 2.75rem; }
 .ps-cards { display: grid; gap: 0.75rem; margin-top: 0.5rem; }
 .ps-card { display: flex; gap: 0.875rem; align-items: flex-start; min-width: 0; padding: 1rem 1.125rem; border-radius: 1.125rem; background: var(--card); box-shadow: var(--shadow-sm); }
 .ps-tile { flex: none; display: grid; place-items: center; width: 3rem; height: 3rem; border-radius: 1rem; color: var(--ink); background: var(--paper-2); }
@@ -16,14 +16,14 @@
 .ps-name { margin: 0; font-size: 1.25rem; line-height: 1.2; letter-spacing: -0.02em; }
 .ps-what { margin: 0; font-weight: 700; }
 .ps-blurb { margin: 0; color: var(--ink-2); font-size: 0.9375rem; line-height: 1.4; text-wrap: pretty; }
-.ps-go { justify-self: start; min-height: 2.75rem; margin-top: 0.25rem; }
+.ps .ps-card .ps-go { justify-self: start; min-height: 2.75rem; margin-top: 0.25rem; }
 .ps-from { display: flex; flex-wrap: wrap; align-items: end; gap: 0.5rem; margin-top: 0.25rem; }
 .ps-field { display: grid; gap: 0.125rem; min-width: 0; }
 .ps-label { font-size: max(var(--text-min), 0.8125rem); font-weight: 700; color: var(--ink-2); }
-.ps-field input { box-sizing: border-box; min-height: 2.75rem; width: 11rem; max-width: 100%; padding: 0 0.875rem; border: 0; border-radius: var(--r-pill, 1rem); background: var(--paper-2); color: var(--ink); font: inherit; text-transform: uppercase; box-shadow: inset 0 0 0 1px var(--line); }
+.ps .ps-field input { box-sizing: border-box; min-height: 2.75rem; width: 9rem; max-width: 100%; padding: 0 0.875rem; border: 0; border-radius: var(--r-pill, 1rem); background: var(--paper-2); color: var(--ink); font: inherit; text-transform: uppercase; box-shadow: inset 0 0 0 1px var(--line); }
 .ps-field input::placeholder { text-transform: none; }
 .ps-field input:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.125rem; }
 .ps-field input[aria-invalid="true"] { box-shadow: 0 0 0 0.1875rem var(--coral-deep); }
-.ps-from .btn { min-height: 2.75rem; }
+.ps .ps-from .btn { min-height: 2.75rem; }
 .ps-error { flex-basis: 100%; color: var(--coral-deep); font-size: max(var(--text-min), 0.875rem); font-weight: 650; }
 @media (min-width: 1020px) { .ps { padding-block: 2.5rem 4rem; } .ps-title { font-size: 2.5rem; } }
