@@ -82,7 +82,7 @@ def trip_menu(*label, sum_cls=""):
 
 def _me(who):
     """The avatar and its menu: who is signed in, People and invites, (the community, only with the showcase on) and Sign out."""
-    extra = [A(icon("star", 16, 2.2), "Community trips", href="/community", cls="ga-tb-item"), A(icon("pencil", 16, 2.2), "For creators" if showcase.on() else "Creators", href="/creators", cls="ga-tb-item")] if showcase.community_open() else []
+    extra = ([A(icon("star", 16, 2.2), "Community trips", href="/community", cls="ga-tb-item")] if showcase.community_open() else []) + [A(icon("pencil", 16, 2.2), "For creators", href="/for-creators", cls="ga-tb-item")]   # F-186: the creators' page exists live from day one
     return Details(
         Summary(Span(who.initials, cls=f"ga-tb-av fill-{who.color}"), cls="ga-tb-sum ga-tb-sum-me", aria_label=f"{who.name}: account menu"),
         Div(Span(who.name, cls="ga-tb-who"), Span(who.blurb, cls="ga-tb-mail"),

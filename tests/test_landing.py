@@ -42,7 +42,7 @@ def test_four_feature_cards(client):
 def test_after_you_book_and_creators_sections(client):
     h = _get(client)
     assert "AFTER YOU BOOK" in h.upper()
-    assert 'href="/creators"' in h and "Share a trip you loved" in h  # v2 copy: inspiring others, not "turn a link into a trip"
+    assert 'href="/for-creators"' in h and "Share a trip you loved" in h  # v2 copy: inspiring others, not "turn a link into a trip"
 
 
 def test_no_old_brand_name(client):

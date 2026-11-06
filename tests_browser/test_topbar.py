@@ -216,7 +216,7 @@ def test_the_picker_menu_imports_a_booked_trip(signed_in):
     expect(page.locator(BAR)).to_be_visible()
 
 
-@pytest.mark.parametrize("label,url", [("Community trips", "**/community"), ("For creators", "**/creators")])
+@pytest.mark.parametrize("label,url", [("Community trips", "**/community"), ("For creators", "**/for-creators")])
 def test_the_avatar_menu_links_to_the_community_and_creators_with_the_showcase_on(signed_in, monkeypatch, label, url):
     monkeypatch.setenv("GITAWAY_SHOWCASE", "1")
     page = signed_in(DESKTOP, path="/family")

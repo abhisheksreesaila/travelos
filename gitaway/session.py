@@ -113,7 +113,11 @@ def _keep(session, table, next_path):
     slug = trip_slug(next_path)
     if not current_traveler(session) or not slug or not forks_model.resolve(slug):
         return False
-    return social.add(session, table, slug)
+    added = social.add(session, table, slug)
+    if added and table == "forks":
+        from gitaway import community  # here, not at the top: community imports the auth package
+        community.bump_fork(slug)   # F-186: the For creators page shows the most-forked real trip
+    return added
 
 
 def add_fork(session, next_path):

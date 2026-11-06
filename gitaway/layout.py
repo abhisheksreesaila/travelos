@@ -97,8 +97,8 @@ def styles(*extra, theme="sunset"):
         Link(rel="stylesheet", href="/assets/css/desk_skin.css"),     # F-158: the calm laptop skin, last so it wins over every page's own CSS; every rule in it sits under the desktop query and a signed-in page's top bar, so the phone, the tablet, the installed app and the landing never see it
     )
 
-NAV = [("Community trips", "/community"), ("Plan a trip", "/start"), ("For creators", "/creators")]
-REAL_NAV = [("Plan a trip", "/start")]   # F-064: the header when there is no sample or community content (showcase.on() is false)
+NAV = [("Community trips", "/community"), ("Plan a trip", "/start"), ("For creators", "/for-creators")]
+REAL_NAV = [("Plan a trip", "/start"), ("For creators", "/for-creators")]   # F-064: the header when there is no sample or community content (showcase.on() is false)
 
 
 def brand(href: str = "/"):

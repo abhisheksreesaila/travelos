@@ -11,6 +11,7 @@ A draft belongs to the person who made it (anyone else gets a 404) and needs no 
 its parameter is called `token` because tests/test_roles.py matches the open prefixes that way.
 """
 
+import re
 from urllib.parse import quote
 
 from fasthtml.common import A, Button, Details, Div, Fieldset, Form, H1, H2, Img, Input, Label, Legend, Link, Option, P, Script, Section, Select, Span, Summary, Textarea
@@ -28,6 +29,7 @@ PATH = "/creators/import"
 HEAD = (Link(rel="stylesheet", href="/assets/css/scrapbook.css"), Link(rel="stylesheet", href="/assets/css/creatorimport.css"), Script(src="/assets/js/creatorimport.js", defer=True))
 STOP_MAX = cd.MAX_STOP
 NOTHING = "Paste the link to your post, or the text of it."
+_LONE_LINK = re.compile(r"https?://\S+", re.I)
 
 
 def _signin(path):
@@ -58,7 +60,7 @@ def paste_page(session, link="", text="", error="", status=200):
                    Span("Reading your post and drafting the days…", cls="ci-sk-say"),
                    cls="ci-skel", id="ci-skel", hidden=True, role="status", aria_busy="true", aria_label="Drafting your trip")
     body = Section(Div(H1("Turn your post into a trip"), P("Paste a link or your text. GitAway drafts the days, you fix what is off, and nothing is public until you tick \"This is my post\" and publish.", cls="ci-lede"), note, cls="ci-top"),
-                   form, skeleton, cls="ci ga-wrap")
+                   form, skeleton, P(A("Add your affiliate marker", href="/creators/settings", id="ci-marker"), " so flight bookings from your trips pay you.", cls="ci-hint"), cls="ci ga-wrap")
     return FtResponse(page("Turn your post into a trip", body, current="/creators", head=HEAD), status_code=status)
 
 
@@ -194,6 +196,8 @@ def register(app):
             return _signin(PATH)
         f = await request.form()
         link, text, how = str(f.get("link") or "").strip(), str(f.get("text") or ""), "manual" if f.get("do") == "manual" else "draft"
+        if not link and _LONE_LINK.fullmatch(text.strip()):   # the For creators page has one box: a lone address in it is the link (F-186)
+            link, text = text.strip(), ""
         if not link and not text.strip() and how == "draft":
             return paste_page(session, "", "", NOTHING, 422)
         made, error = _read(session, link, text, how)

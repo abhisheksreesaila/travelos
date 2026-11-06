@@ -12,7 +12,7 @@ from tests.test_calendar import book
 from tests.test_signin import sign_in
 
 SLUGS = list(itineraries.ITINERARIES)
-SAMPLE_WORDS = ["Community trips", "For creators", "Your forks", "Trips others loved", "Fork a trip a real family took", "Leave a trail",
+SAMPLE_WORDS = ["Community trips", "Your forks", "Trips others loved", "Fork a trip a real family took", "Leave a trail",
                 "Our LA family week", "Forked by", "312 families", "No plans yet?"] + [t.title for t in itineraries.ITINERARIES.values()]
 GONE_HREF = re.compile(r'href="(/community|/discover|/creators|/forks|/share|/rides|/trips/(?!build|import|switch)[^"/?#]+)')
 
@@ -129,10 +129,10 @@ def test_the_landing_search_fields_are_neutral_in_production_and_the_sample_trip
 
 def test_footer_links_are_only_real_destinations(real, client):
     footer = re.search(r"<footer.*?</footer>", client.get("/").text, re.S).group(0)
-    assert re.findall(r'href="([^"]*)"', footer) == ["/signin", "/privacy", "/terms"]
+    assert re.findall(r'href="([^"]*)"', footer) == ["/for-creators", "/signin", "/privacy", "/terms"]
     sign_in(client)
     footer = re.search(r"<footer.*?</footer>", client.get("/").text, re.S).group(0)
-    assert re.findall(r'href="([^"]*)"', footer) == ["/privacy", "/terms"]  # only the legal pages (F-076)
+    assert re.findall(r'href="([^"]*)"', footer) == ["/for-creators", "/privacy", "/terms"]  # the creators page (F-186) and the legal pages (F-076)
 
 
 def test_the_workspace_is_labelled_a_preview_with_sample_prices(real, client):

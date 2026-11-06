@@ -203,7 +203,7 @@ def _creators():
                   "and make someone’s first time there a little easier."),
                 P("“The world is a book, and those who do not travel read only one page.”",
                   NotStr("<cite>Attributed to Saint Augustine</cite>"), cls="quote"),
-                A("Share a trip you loved →", href="/creators", cls="btn-sun"),
+                A("Share a trip you loved →", href="/for-creators", cls="btn-sun"),
                 cls="left",
             ),
             Div(
@@ -220,7 +220,7 @@ def _creators():
 
 def footer_links():
     """The links that left the landing's header. Sign in only while signed out."""
-    links = [("Community trips", "/community"), ("For creators", "/creators")] if showcase.on() else []
+    links = ([("Community trips", "/community")] if showcase.on() else []) + [("For creators", "/for-creators")]
     return links if session.request_traveler() else [*links, ("Sign in", session.signin_href())]
 
 

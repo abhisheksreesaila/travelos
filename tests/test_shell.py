@@ -7,7 +7,7 @@ def test_pages_are_gitaway_pages_with_the_main_navigation(client):
     assert r.status_code == 200
     assert "<title>GitAway" in r.text and "TravelOS" not in r.text
     html = client.get("/community").text
-    for label, href in [("Community trips", "/community"), ("Plan a trip", "/start"), ("For creators", "/creators")]:
+    for label, href in [("Community trips", "/community"), ("Plan a trip", "/start"), ("For creators", "/for-creators")]:
         assert f'href="{href}"' in html and label in html
     assert "/assets/css/tokens.css" in html and "/assets/css/base.css" in html
 

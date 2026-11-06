@@ -1063,20 +1063,20 @@ Brief: docs/briefs/creator-import.md · Needs: F-181
 - [x] fetching is safe: http(s) only, no private or internal addresses, size and time limits; tests never reach the network
 Blocked (for live use only): set ANTHROPIC_API_KEY in Railway, service web.
 
-## F-184 Creators keep their affiliate links [todo]
+## F-184 Creators keep their affiliate links [review]
 Needs: F-179, F-181
-- [ ] a creator can save their Travelpayouts marker (digits only) on their profile; Book buttons from their trips use it with their SubID
-- [ ] no marker: GitAway's; the trip page says plainly who earns
+- [x] a creator can save their Travelpayouts marker (digits only) on their profile; Book buttons from their trips use it with their SubID
+- [x] no marker: GitAway's; the trip page says plainly who earns
 
-## F-185 Report a trip, take it down [todo]
+## F-185 Report a trip, take it down [review]
 Needs: F-181
-- [ ] "Report this trip" on every public trip (reason, optional email); rate limited
-- [ ] an admin-only page lists reports and creators (count toward 150) with one-click take down and restore
+- [x] "Report this trip" on every public trip (reason, optional email); rate limited
+- [x] an admin-only page lists reports and creators (count toward 150) with one-click take down and restore
 
-## F-186 The For creators page [todo]
+## F-186 The For creators page [review]
 Design: omxqua Coast, orange · Needs: F-183
-- [ ] paste box first, a live example trip, the three promises (under a minute, your links keep paying you, links back to your post), free and terms on day one
-- [ ] phone and laptop, 44px targets, no sideways scroll
+- [x] paste box first, a live example trip, the three promises (under a minute, your links keep paying you, links back to your post), free and terms on day one
+- [x] phone and laptop, 44px targets, no sideways scroll
 
 ## F-187 A list of bloggers to invite [todo]
 - [ ] 50 family-travel bloggers and creators (Disneyland, LA, Hawaii, Tahoe, San Diego, New York) with their site, channel, contact page and why they fit, public information only, in docs/research/creators.csv

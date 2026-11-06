@@ -17,3 +17,13 @@
     skel.scrollIntoView({ block: 'nearest' });
   });
 })();
+
+// F-186: text pasted on the For creators page before signing in comes back here, once, if it is less than an hour old.
+(function () {
+  var box = document.getElementById('ci-text');
+  var link = document.getElementById('ci-link');
+  var saved;
+  try { saved = JSON.parse(localStorage.getItem('ga-paste') || 'null'); localStorage.removeItem('ga-paste'); } catch (err) { return; }
+  if (!saved || !saved.text || Date.now() - saved.at > 3600000 || !box || box.value || (link && link.value)) return;
+  if (/^https?:\/\/\S+$/i.test(saved.text.trim()) && link) link.value = saved.text.trim(); else box.value = saved.text;
+})();

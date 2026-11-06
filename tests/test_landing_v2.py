@@ -31,12 +31,12 @@ def test_landing_header_has_only_the_brand_and_sign_in(client):
 def test_other_pages_keep_their_header_nav(client):
     for path in ["/community", "/creators", "/signin"]:
         header = _tag(_get(client, path), "header", "ga-header")
-        assert "/community" in header and "/creators" in header and "/start" in header, path
+        assert "/community" in header and "/for-creators" in header and "/start" in header, path
 
 
 def test_footer_carries_the_links_that_left_the_header(client):
     footer = _tag(_get(client), "footer", "ga-footer")
-    assert _hrefs(footer) == ["/community", "/creators", "/signin", "/privacy", "/terms"]
+    assert _hrefs(footer) == ["/community", "/for-creators", "/signin", "/privacy", "/terms"]
     other = _tag(_get(client, "/community"), "footer", "ga-footer")
     assert "/creators" not in other  # only the landing gets the extra links
 
@@ -48,7 +48,7 @@ def test_signed_in_visitor_sees_their_account_and_no_sign_in_link(client):
     assert "ga-account" in header and 'href="/family"' in header and "Sign out" in header
     assert "ga-nav" not in header
     footer = _tag(h, "footer", "ga-footer")
-    assert _hrefs(footer) == ["/community", "/creators", "/privacy", "/terms"]
+    assert _hrefs(footer) == ["/community", "/for-creators", "/privacy", "/terms"]
 
 
 def test_headline_is_fork_a_getaway_with_the_gloss(client):
@@ -111,7 +111,7 @@ def test_creators_copy_is_about_inspiring_others_not_followers(client):
     assert "make someone’s first time there a little easier" in sec
     assert "Attributed to Saint Augustine" in sec
     assert "follower" not in h.lower() and "subscriber" not in h.lower()
-    assert 'href="/creators"' in sec and "Share a trip you loved" in sec
+    assert 'href="/for-creators"' in sec and "Share a trip you loved" in sec
 
 
 def test_calendar_has_four_people_three_days_and_booked_items_with_a_lock(client):
