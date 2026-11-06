@@ -39,10 +39,11 @@
 .ci-details summary { display: flex; align-items: center; min-height: 2.75rem; font-weight: 600; cursor: pointer; }
 .ci-pasted { margin: 0 0 0.75rem; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 14rem; overflow: auto; color: var(--ink-2); font-size: 0.9375rem; line-height: 1.45; }
 .ci-day { gap: 0.625rem; }
-.ci-stop { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr) 2.75rem; grid-template-areas: "time name del" "note note note"; gap: 0.375rem 0.5rem; align-items: center; }
+.ci-stop { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr) 2.75rem; grid-template-areas: "time name del" "note note note" "link link link"; gap: 0.375rem 0.5rem; align-items: center; }
 .ci-time { grid-area: time; }
 .ci-name { grid-area: name; }
 .ci-snote { grid-area: note; }
+.ci-slink { grid-area: link; }
 .ci-del { grid-area: del; display: inline-flex; align-items: center; justify-content: center; min-width: 2.75rem; min-height: 2.75rem; padding: 0; color: var(--ink); }
 .ci-del svg { width: 1.25rem; height: 1.25rem; flex: none; display: block; }
 .ci-unsure { border-color: var(--oq-warn, #8f5400); background: color-mix(in srgb, var(--oq-warn, #8f5400) 8%, var(--card)); }
@@ -50,4 +51,4 @@
 .ci-own-l { display: inline-flex; align-items: center; gap: 0.625rem; min-height: 2.75rem; font-weight: 600; cursor: pointer; }
 .ci-own { width: 1.5rem; height: 1.5rem; accent-color: var(--accent); }
 .ci-pub { display: flex; flex-wrap: wrap; align-items: center; gap: 0.625rem; }
-@media (min-width: 64rem) { .ci-stop { grid-template-columns: 7rem minmax(0, 2fr) minmax(0, 2fr) 2.75rem; grid-template-areas: "time name note del"; } }
+@media (min-width: 64rem) { .ci-stop { grid-template-columns: 7rem minmax(0, 2fr) minmax(0, 2fr) 2.75rem; grid-template-areas: "time name note del" "link link link link"; } }

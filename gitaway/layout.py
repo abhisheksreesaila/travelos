@@ -118,7 +118,10 @@ def account(traveler=None):
     traveler = traveler or session.request_traveler()
     if not traveler:
         return A("Sign in", href=session.signin_href(), cls="btn btn-sm")
+    from gitaway import topbar  # here, not at the top: topbar reads the family through gitaway.session
+    new, captain = topbar._admin_notice(session.request_session())
     return Div(
+        A(f"Admin ({new} new)" if new else "Admin", href="/admin", cls="ga-admin-link", id="ga-admin-link") if captain else "",     # F-196: the captain's way in, with the reports not yet read
         A(avatar(traveler), href="/family", cls="ga-me", aria_label="Your family and who is in it", title=traveler.name),  # F-043: the family page
         Form(Button("Sign out", type="submit", cls="ga-signout"), action="/signout", method="post"),
         cls="ga-account",
@@ -153,12 +156,30 @@ def site_footer(links=()):
     )
 
 
-def page(title: str, *content, current: str = "", theme: str = "sunset", head=(), nav: bool = True, footer_links=()):
+APP_MARK = "/assets/icons/icon-512.png"   # the picture a shared link shows when the page has none of its own
+
+
+def seo_meta(title: str, description: str = "", image: str = "", og_type: str = "website", noindex: bool = False):
+    """The <meta> tags of a page that is found or shared (F-196): a description and Open Graph (title, description, image, type, address, site name), and `robots noindex` for a page that
+    must not appear in search. Addresses are absolute, on GITAWAY_PUBLIC_URL (a preview card cannot read a relative one). No description means no tags except noindex."""
+    from gitaway import blogbutton  # here, not at the top: it reads the passkey settings
+    tags = [Meta(name="robots", content="noindex")] if noindex else []
+    if not description:
+        return tuple(tags)
+    base = blogbutton.base_url()
+    picture = image or APP_MARK
+    return (*tags, Meta(name="description", content=description), Meta(property="og:title", content=title), Meta(property="og:description", content=description),
+            Meta(property="og:type", content=og_type), Meta(property="og:image", content=picture if picture.startswith("http") else base + picture),
+            Meta(property="og:url", content=base + (session.request_path() or "/").split("?")[0]), Meta(property="og:site_name", content="GitAway"))
+
+
+def page(title: str, *content, current: str = "", theme: str = "sunset", head=(), nav: bool = True, footer_links=(), description: str = "", image: str = "", og_type: str = "website", noindex: bool = False):
     """A full GitAway page. `current` marks the active nav link; `theme` is sunset or pacific.
 
-    `nav=False` drops the header's links (brand and account stay) and `footer_links` adds a footer nav: the landing's pair of options."""
+    `nav=False` drops the header's links (brand and account stay) and `footer_links` adds a footer nav: the landing's pair of options.
+    `description` (with `image` and `og_type`) adds the description and Open Graph tags a search result or a shared link shows; `noindex` keeps the page out of search (see `seo_meta`)."""
     return (
         Title(f"GitAway · {title}" if title else "GitAway"),
-        *styles(*head, theme=theme),
+        *styles(*head, *seo_meta(title, description, image, og_type, noindex), theme=theme),
         Div(site_header(current, nav=nav), join_note(), Main(*content, id="main"), site_footer(footer_links), data_theme=theme, cls="ga-page"),
     )

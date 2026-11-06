@@ -26,7 +26,7 @@ from types import SimpleNamespace
 from fh_saas.utils_sql import delete_record, upsert
 from sqlalchemy import create_engine, text
 
-from gitaway import auth
+from gitaway import auth, stoplinks
 from gitaway.itineraries import Day, Itinerary, Polaroid, Source, Stop, Tag
 
 KINDS = ("shared", "creator", "scrapbook")
@@ -42,7 +42,7 @@ _MORE = ("""CREATE TABLE IF NOT EXISTS creator_markers (owner_user TEXT PRIMARY 
          """CREATE TABLE IF NOT EXISTS takedowns (slug TEXT PRIMARY KEY, taken_at TEXT NOT NULL)""",
          """CREATE TABLE IF NOT EXISTS reports (
     id INTEGER PRIMARY KEY AUTOINCREMENT, kind TEXT NOT NULL, target TEXT NOT NULL, reason TEXT NOT NULL, note TEXT NOT NULL DEFAULT '', email TEXT NOT NULL DEFAULT '',
-    reporter TEXT NOT NULL DEFAULT '', ip_hash TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL)""",
+    reporter TEXT NOT NULL DEFAULT '', ip_hash TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL, seen INTEGER NOT NULL DEFAULT 0)""",
          """CREATE TABLE IF NOT EXISTS fork_counts (slug TEXT PRIMARY KEY, n INTEGER NOT NULL)""",
          """CREATE TABLE IF NOT EXISTS via_clicks (
     id INTEGER PRIMARY KEY AUTOINCREMENT, handle TEXT NOT NULL, partner TEXT NOT NULL, lane TEXT NOT NULL, own_marker INTEGER NOT NULL, clicked_at TEXT NOT NULL, who TEXT NOT NULL DEFAULT '')""",
@@ -87,6 +87,8 @@ def connect():
                 conn.execute(text(stmt))
             if "who" not in [r[1] for r in conn.execute(text("PRAGMA table_info(via_clicks)"))]:      # F-182: a database made before the per-person count gains the column
                 conn.execute(text("ALTER TABLE via_clicks ADD COLUMN who TEXT NOT NULL DEFAULT ''"))
+            if "seen" not in [r[1] for r in conn.execute(text("PRAGMA table_info(reports)"))]:      # F-196: a database made before the admin's "new" badge gains the column
+                conn.execute(text("ALTER TABLE reports ADD COLUMN seen INTEGER NOT NULL DEFAULT 0"))
             conn.commit()
             _ready.add(url)
         yield SimpleNamespace(conn=conn)  # what fh-saas's utils_sql helpers read
@@ -106,7 +108,8 @@ def dump(trip: Itinerary) -> str:
 
 def load(raw: str) -> Itinerary:
     d = json.loads(raw)
-    d["days"] = [Day(**{**x, "stops": [Stop(**s) for s in x["stops"]], "photos": [Polaroid(**p) for p in x.get("photos", [])]}) for x in d["days"]]
+    own = stoplinks.own_domain("blog", (d.get("source") or {}).get("url", ""))      # defence in depth: whatever a snapshot holds, only allowed links are ever drawn
+    d["days"] = [Day(**{**x, "stops": [Stop(**{**s, "link": stoplinks.clean(s.get("link", ""), own)}) for s in x["stops"]], "photos": [Polaroid(**p) for p in x.get("photos", [])]}) for x in d["days"]]
     d["tags"] = [Tag(**t) for t in d.get("tags", [])]
     d["polaroids"] = [Polaroid(**p) for p in d.get("polaroids", [])]
     d["source"] = Source(**d["source"]) if d.get("source") else None

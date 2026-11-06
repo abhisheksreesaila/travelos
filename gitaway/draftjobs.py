@@ -134,11 +134,16 @@ def reset_running() -> None:
         db.conn.commit()
 
 
+_gathered: dict = {}      # job id -> the post's text, kept while a busy line sends the job back to the queue, so each poll does not fetch the creator's blog again
+
+
 def _draft(job):
     owner, url, name = job["owner"], job["url"], job["name"]
     if cd.mode() == "sample":     # the local showcase: a fixture draft, nothing fetched and no model asked
         return cd.sample(owner, importsource.offline(url, ""), name, job["id"])
-    return cd.make(owner, owner, importsource.gather(url, ""), name, job["id"])
+    if job["id"] not in _gathered:
+        _gathered[job["id"]] = importsource.gather(url, "")
+    return cd.make(owner, owner, _gathered[job["id"]], name, job["id"])
 
 
 def _drafted(job) -> bool:
@@ -148,6 +153,7 @@ def _drafted(job) -> bool:
 
 
 def _finish(job_id, error) -> None:
+    _gathered.pop(job_id, None)
     with _db() as db:
         if error:
             db.conn.execute(text("UPDATE creator_draft_jobs SET status = 'failed', error = :e WHERE id = :i"), {"e": error, "i": job_id})
@@ -156,8 +162,15 @@ def _finish(job_id, error) -> None:
         db.conn.commit()
 
 
+def _requeue(job_id) -> None:
+    with _db() as db:
+        db.conn.execute(text("UPDATE creator_draft_jobs SET status = 'queued' WHERE id = :i"), {"i": job_id})
+        db.conn.commit()
+
+
 def run_one() -> bool:
-    """Draft one queued post: its row is deleted and the draft is on the list, or the row says why not. False when nothing was waiting."""
+    """Draft one queued post: its row is deleted and the draft is on the list, or the row says why not. False when nothing was waiting, or when the line was busy: the post goes
+    back to the head of the queue (it was counted once, when it was queued, and is not counted again) and the worker waits a while before trying again (F-196)."""
     job = claim()
     if not job:
         return False
@@ -165,7 +178,12 @@ def run_one() -> bool:
         if not _drafted(job):
             _draft(job)
         error = ""
-    except (importsource.SourceError, ai.AIError, HubError) as e:
+    except ai.AIError as e:
+        if e.code == "busy":
+            _requeue(job["id"])
+            return False
+        error = str(e)
+    except (importsource.SourceError, HubError) as e:
         error = str(e)
     except Exception:  # noqa: BLE001 - one bad post must not stop the worker; the log has the type, the person a fixed sentence
         log.exception("draft job failed")

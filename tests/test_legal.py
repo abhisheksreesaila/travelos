@@ -48,10 +48,11 @@ def test_footer_and_signin_link_to_both(client):
 def test_the_privacy_page_names_both_cookies_the_partner_links_anthropic_and_the_subid(client):
     """F-182 (reviewer Must 2 and 3): ga_via, partner-site tracking, Anthropic for creator import, and the SubID the partners receive were all live and unmentioned."""
     text = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", client.get("/privacy").text)).replace("&#x27;", "'")
-    for phrase in ("Two cookies", "ga_via", "the public handle of the creator", "30 days", "which creator a flight you book supports", "We use no tracking or advertising cookies of our own",
+    for phrase in ("Two cookies", "ga_via", "the public handle of the creator", "30 days", "which creator a flight you book supports", "30-day affiliate attribution cookie",
                    "Partner links", "Aviasales, Klook", "their own sites may set their own tracking cookies",
                    "Anthropic (Claude Haiku)", "Turn your post into a trip", "the text of the post, pasted or read from the link", "and nothing else",
                    "Travelpayouts", "SubID", "no name, email address or other personal detail",
                    "How readers of a creator's trip are counted", "Your address and the name of your browser are never stored"):
         assert phrase in text, phrase
     assert "One cookie keeps you signed in" not in text
+    assert "no tracking or advertising cookies of our own" not in text      # F-196: ga_via is an attribution cookie, and the page says so

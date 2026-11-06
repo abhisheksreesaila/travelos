@@ -3,12 +3,14 @@
 GET  /admin                a summary, the reports, every creator with their trips (take down / restore), and the commission figures (moved here from /partners)
 POST /admin/takedown       hide a published trip and its public photos
 POST /admin/restore        bring it back
+POST /admin/seen           mark the reports up to an id read (F-196): the "N new" count shows on /admin, in the account menu and in the header until then
 
 Who is an admin: the sign-in emails listed in GITAWAY_ADMIN_EMAILS (comma or space separated, any case), never one written in code. For everyone else, signed in or
 not, every address here answers 404 as if there were no such page. Both POSTs also check the request came from our own page (reports.same_site), on top of the
 SameSite=Lax session cookie. They change no family plan, so gitaway/access.py lists them as open to every role: the check is here.
 """
 
+import logging
 import os
 import re
 
@@ -24,6 +26,7 @@ from gitaway.partners import failures, log
 
 GOAL = 150
 KLOOK_DAYS = 7    # how far back the "Klook links not tracked" count looks (F-195)
+logger = logging.getLogger(__name__)
 HEAD = (Link(rel="stylesheet", href="/assets/css/admin.css"), *claims.HEAD)
 
 
@@ -81,11 +84,22 @@ def _report(r):
     trip = community.get(r["target"], hidden=True) if r["kind"] == "trip" else None
     name = trip["title"] if trip else r["target"]
     href = f"/trips/{r['target']}" if r["kind"] == "trip" else f"/creators/{r['target']}"
-    return Li(Div(Span(reports.REASONS.get(r["reason"], r["reason"]), cls="ad-reason"), Span(r["created_at"][:16].replace("T", " "), cls="ad-meta")),
+    return Li(Div(Span(reports.REASONS.get(r["reason"], r["reason"]), cls="ad-reason"), Span("New", cls="ad-new-chip") if not r["seen"] else "", Span(r["created_at"][:16].replace("T", " "), cls="ad-meta")),
               P(A(name, href=href, cls="ad-link"), f" ({'trip' if r['kind'] == 'trip' else 'creator'})", cls="ad-meta"),
               P(r["note"], cls="ad-note") if r["note"] else "", P(f"Reply to: {r['email']}", cls="ad-meta") if r["email"] else "",
               (_button("restore", r["target"], "Restore", "") if community.is_down(r["target"]) else _button("takedown", r["target"], "Take down", "ad-danger")) if trip else "",
               cls="ad-report", id=f"report-{r['id']}")
+
+
+def new_reports(session) -> int:
+    """How many reports the captain has not marked read: 0 for anyone who is not an admin, and when the count cannot be read (a page must not fail for a badge)."""
+    if not is_admin(session):
+        return 0
+    try:
+        return reports.unseen()
+    except Exception:  # noqa: BLE001
+        logger.exception("could not count the new reports")
+        return 0
 
 
 def admin_page(drafted=()):
@@ -101,6 +115,7 @@ def admin_page(drafted=()):
     broken, why = failures.recent(KLOOK_DAYS)
     cards = (("Creators", f"{len(people)} of {GOAL}", "ad-goal"), ("Live trips", str(live), "ad-live"), ("Reports", str(len(rep)), "ad-reports"), ("Estimated commission", catalog.money(total), "ad-commission"),
              ("Klook links not tracked", str(broken), "ad-klook-failures"))
+    fresh = sum(1 for r in rep if not r["seen"])
     return page("Admin", Main(
         Div(H1("Admin", cls="ad-title"),
             Div(*[Div(Span(label, cls="ad-k"), Span(value, cls="ad-v", id=i)) for label, value, i in cards], cls="ad-cards"),
@@ -111,7 +126,8 @@ def admin_page(drafted=()):
             claims.section(drafted),
             Section(H2("Waiting for your approval"), P("A trip claimed or published by someone whose email is not at the post's own site. Check it is theirs, then approve it.", cls="ad-meta"),
                     Ul(*[_waiting(w) for w in waiting], cls="ad-list", id="ad-waiting"), cls="ad-sec", id="ad-waiting-sec") if waiting else "",
-            Section(H2("Reports"), Ul(*[_report(r) for r in rep], cls="ad-list", id="ad-report-list") if rep else P("No reports.", cls="ad-meta", id="ad-no-reports"), cls="ad-sec"),
+            Section(H2("Reports", Span(f"{fresh} new", cls="ad-badge", id="ad-new") if fresh else ""),
+                    Form(Input(type="hidden", name="upto", value=str(rep[0]["id"])), Button("Mark all as read", type="submit", cls="btn btn-sm"), action="/admin/seen", method="post", cls="ad-inline", id="ad-seen") if fresh else "", Ul(*[_report(r) for r in rep], cls="ad-list", id="ad-report-list") if rep else P("No reports.", cls="ad-meta", id="ad-no-reports"), cls="ad-sec"),
             Section(H2("Creators and trips"),
                     Ul(*[_creator(c, community.rows(kind="scrapbook", owner=c["owner_user"], hidden=True), clicks) for c in every], cls="ad-list", id="ad-creators") if every else P("Nobody has published yet.", cls="ad-meta"),
                     cls="ad-sec"),
@@ -137,6 +153,15 @@ def register(app):
             return RedirectResponse(f"/admin#{slug}" if await run_in_threadpool(fn, slug) else "/admin", status_code=303)   # only a slug that exists goes into the address
         handler.__name__ = f"admin_{name}"
         app.post(f"/admin/{name}")(handler)
+
+    @app.post("/admin/seen")
+    async def admin_seen(request, session):
+        if not is_admin(session) or not reports.same_site(request):
+            return showcase.not_found()
+        upto = str((await request.form()).get("upto") or "")
+        if upto.isdigit():
+            reports.mark_seen(int(upto))
+        return RedirectResponse("/admin", status_code=303)
 
     _act("takedown", community.take_down)
     _act("restore", community.restore)

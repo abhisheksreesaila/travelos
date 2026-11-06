@@ -271,7 +271,8 @@ def test_the_stored_snapshot_has_only_the_allowed_fields(family):
     assert set(snap) == {"slug", "title", "headline", "accent", "place", "lede", "days", "tags", "stats", "forks", "source", "polaroids", "weather", "route", "author", "theme",
                          "tips", "real", "handle", "plan_to", "plan_days"}
     assert set(snap["days"][1]) == {"n", "date", "title", "weather", "stops", "collapsed", "note", "photos"}
-    assert set(snap["days"][0]["stops"][0]) == {"time", "title", "kind", "bubble", "booked", "tag", "tag_color", "meta", "note", "photo", "photo_alt"}
+    assert set(snap["days"][0]["stops"][0]) == {"time", "title", "kind", "bubble", "booked", "tag", "tag_color", "meta", "note", "photo", "photo_alt", "link"}
+    assert [s["link"] for d in snap["days"] for s in d["stops"]] == [""] * sum(len(d["stops"]) for d in snap["days"])      # a family's trip has no links: F-196's link field is a creator's alone
     assert set(row["meta"]) == {"handle", "name", "place"} and snap["source"] is None
     assert "Priya" not in repr(row) and "Zelda" not in repr(row)
 

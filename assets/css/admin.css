@@ -19,6 +19,8 @@
 .ad-report p { margin: 0; }
 .ad-reason, .ad-name { font-weight: 650; }
 .ad-meta { color: var(--oq-ink-2); font-size: 0.9375rem; }
+.ad-badge, .ad-new-chip { padding: 0.25rem 0.5rem; border-radius: var(--oq-radius-full); font: 600 max(var(--text-min), 0.75rem) var(--oq-font-mono); background: var(--oq-accent); color: var(--oq-on-accent); }   /* F-196: reports the captain has not seen */
+.ad-badge { margin-left: 0.625rem; vertical-align: middle; }
 .ad-note { padding: 0.5rem 0.75rem; border-radius: var(--oq-radius-in); background: var(--oq-tonal); overflow-wrap: anywhere; }
 .ad-link { display: inline-flex; align-items: center; min-height: 2.75rem; color: var(--oq-ink); font-weight: 600; text-underline-offset: 0.2rem; overflow-wrap: anywhere; }
 .ad-chip, .ad-state { padding: 0.25rem 0.5rem; border-radius: var(--oq-radius-xs); font: 500 max(var(--text-min), 0.75rem) var(--oq-font-mono); background: var(--oq-tonal); color: var(--oq-ink); }

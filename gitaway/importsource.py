@@ -146,7 +146,7 @@ def _blog(url, notices, asked=True) -> Material:
     page = got.text()
     try:
         import trafilatura
-        body = trafilatura.extract(page, url=got.url, include_comments=False, include_tables=False, favor_precision=True) or ""
+        body = trafilatura.extract(page, url=got.url, include_comments=False, include_tables=False, include_links=True, favor_precision=True) or ""      # links stay as [text](address): the creator's own booking links survive into the draft (F-196)
         meta = trafilatura.extract_metadata(page, default_url=got.url)
     except Exception:  # noqa: BLE001 - the extractor failing on a strange page is the same as finding no article
         body, meta = "", None

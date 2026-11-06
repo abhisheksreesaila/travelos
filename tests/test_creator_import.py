@@ -201,13 +201,20 @@ def test_a_long_post_is_cut_with_a_notice_never_silently(web):
 def test_the_answer_is_rebuilt_field_by_field_and_nothing_unknown_survives():
     got = creatordraft.validate({**ANSWER, "system_prompt": "LEAK", "days": [{"stops": [{"name": "Santa Monica Pier", "time": "10:00 AM", "note": "", "extra": "x"}], "extra": 1}]},
                                 "We went to Santa Monica Pier at 10:00 AM. Park at the pier lot before 9. Bring layers for the evening.")      # the post says the time and the 9 (F-194)
-    assert got == {"title": "Three easy days in Santa Monica", "place": "la", "place_name": "", "days": [{"title": "Santa Monica Pier", "note": "", "stops": [{"time": "10:00 AM", "name": "Santa Monica Pier", "note": ""}]}],
+    assert got == {"title": "Three easy days in Santa Monica", "place": "la", "place_name": "", "days": [{"title": "Santa Monica Pier", "note": "", "stops": [{"time": "10:00 AM", "name": "Santa Monica Pier", "note": "", "link": ""}]}],
                    "tips": ["Park at the pier lot before 9.", "Bring layers for the evening."], "stickers": ["kid"]}
 
 
 def test_a_stop_the_post_never_mentions_becomes_an_unnamed_stop():
     got = creatordraft.validate(ANSWER, "Santa Monica Pier, Third Street Promenade and Venice Canals")
     assert [s["name"] for d in got["days"] for s in d["stops"]] == ["Santa Monica Pier", "Third Street Promenade", "Venice Canals", "Unnamed stop"]      # "Eiffel Tower" is not in the post
+
+
+def test_a_name_that_is_only_inside_a_link_address_does_not_count_as_in_the_post():
+    answer = {**ANSWER, "days": [{"stops": [{"name": "Hanauma Bay", "time": "", "note": ""}, {"name": "Pearl Harbor", "time": "", "note": ""}]}]}
+    post = "We booked [the boat tour](https://www.viator.com/tours/Honolulu/hanauma-bay-snorkel/d672-1) and saw https://example.com/pearl-harbor-guide, then went to Pearl Harbor itself."
+    got = creatordraft.validate(answer, post)
+    assert [s["name"] for s in got["days"][0]["stops"]] == ["Unnamed stop", "Pearl Harbor"]      # the address mentions Hanauma, the words of the post do not
 
 
 @pytest.mark.parametrize("name", ["", "?", "Unknown", "TBD", "unnamed stop", "N/A"])
@@ -373,7 +380,7 @@ def test_the_write_it_myself_button_makes_an_empty_draft_even_with_a_key(me, mod
     r = start(me, do="manual", link=POST, text="my notes")
     assert r.status_code == 303 and model.requests == [] and web.calls == []
     d = creatordraft.get(tid(), draft_id(r))
-    assert d["days"] == [{"title": "Day 1", "note": "", "stops": [{"time": "", "name": "", "note": ""}]}] and d["source"]["url"] == POST and d["text"] == "my notes"
+    assert d["days"] == [{"title": "Day 1", "note": "", "stops": [{"time": "", "name": "", "note": "", "link": ""}]}] and d["source"]["url"] == POST and d["text"] == "my notes"
 
 
 def test_on_the_local_showcase_without_a_key_the_old_simulated_draft_stands_in(me, monkeypatch, web):
@@ -531,7 +538,7 @@ def test_the_preview_is_the_public_page_with_the_post_linked_and_the_tick_box(dr
     html = client.get(f"/creators/import/{did}/preview").text
     body = without_bar(html)
     assert "This is exactly what strangers will see" in body and "Santa Monica Pier" in body and "Three easy days in Santa Monica" in body
-    assert re.search(rf'href="{re.escape(POST)}"[^>]*>Read the original post<', body) and "From the blog" in body
+    assert re.search(rf'href="{re.escape(POST)}\?utm_source=gitaway"[^>]*>Read the original post<', body) and "From the blog" in body
     assert 'name="own"' in html and "This is my post" in html and 'id="pb-publish"' in html
 
 
@@ -561,7 +568,7 @@ def test_publish_makes_a_real_public_trip_that_strangers_can_read_and_fork_from(
     assert (trip.source.url, trip.source.kicker, trip.source.byline) == (POST, "From the blog", "Maya Chen · Blog")
     stranger = client.__class__(client.app, client=("127.0.0.1", 50000))
     page_ = without_bar(stranger.get(f"/trips/{d['slug']}").text)
-    assert "Santa Monica Pier" in page_ and "Maya Chen" in page_ and f'href="{POST}"' in page_ and "From the blog" in page_ and "Plan this trip" in page_
+    assert "Santa Monica Pier" in page_ and "Maya Chen" in page_ and f'href="{POST}?utm_source=gitaway"' in page_ and "From the blog" in page_ and "Plan this trip" in page_
     pic = re.search(r'src="(/pub/[^"]+-display\.jpg)"', page_)
     assert pic and stranger.get(pic.group(1)).status_code == 200 and stranger.get(pic.group(1)).headers["content-type"] == "image/jpeg"
 

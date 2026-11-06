@@ -1,5 +1,7 @@
 """FastHTML components for the scrapbook itinerary page (F-014)."""
 
+from urllib.parse import urlsplit
+
 from fasthtml.common import (A, Button, Details, Div, Figcaption, Figure, Form, H1, H2, H3, Img, Input, Li, Link, Meta, NotStr, P, Script,
                              Section, Span, Summary, Ul)
 
@@ -88,6 +90,14 @@ def _actions(trip, saved=False, forked=False):
     )
 
 
+def _from_gitaway(url):
+    """The creator's address with `utm_source=gitaway` added (their analytics then name GitAway), unless it already names a source; the rest of it, fragment included, is untouched."""
+    if "utm_source=" in url:
+        return url
+    base, hash_, fragment = url.partition("#")
+    return f"{base}{'&' if '?' in base else '?'}utm_source=gitaway{hash_}{fragment}"
+
+
 def _source_card(src):
     href = safe_href(src.url)  # a creator's link is only ever an http(s) address
     return Div(
@@ -96,7 +106,7 @@ def _source_card(src):
         Div(Span(src.kicker, cls="src-kicker"),
             Span(src.title, cls="src-title"),
             Span(src.byline, cls="src-by"),
-            A(src.link_label, href=href, rel="noopener noreferrer", target="_blank", cls="src-link") if href else "",
+            A(src.link_label, href=_from_gitaway(href), rel="noopener", referrerpolicy="origin", target="_blank", cls="src-link") if href else "",      # the origin, not the page: the creator sees GitAway traffic (F-196)
             cls="src-body"),
         cls="source-card",
     )
@@ -201,6 +211,9 @@ def _stop(s: Stop, last: bool):
         body.append(Span(s.note, cls="note"))
     if s.photo:
         body.append(Img(src=s.photo, alt=s.photo_alt, cls="stop-photo", loading="lazy"))
+    if (href := safe_href(s.link)):    # a creator's own booking or ticket link (F-196): sponsored, shown by its site's name
+        host = urlsplit(href).hostname.removeprefix("www.")
+        body.append(A(icon("ext", 14, 2.2), Span(host), href=href, rel="sponsored noopener", target="_blank", cls="stop-link", aria_label=f"{s.title} on {host}, opens in a new tab"))
     return Div(
         Span(s.time, cls="stop-time"),
         Div(Span(_icon(s.kind, 24, 2.1), cls=f"bubble bub-{s.bubble}"), Span(cls="line" + (" line-end" if last else "")),
@@ -273,7 +286,8 @@ def _trust(trip):
     from gitaway import affiliate, community  # here, not at the top: both read the community database
     line = affiliate.earning_line(trip.author, bool(affiliate.marker_for(trip.handle)) if trip.handle else False, bool(trip.plan_to))
     report = A(icon("flag", 18, 2.2), "Report this trip", href=f"/report?trip={trip.slug}", cls="btn btn-sm trust-report", id="report-this") if community.is_real(trip.slug) else ""
-    return Section(P(line, id="who-earns", cls="trust-line"), report, id="trust", cls="trust ga-wrap")
+    own = P(f"Links on a stop are {trip.author}'s own. They may earn them a commission.", id="own-links", cls="trust-line") if any(s.link for d in trip.days for s in d.stops) else ""     # F-196
+    return Section(P(line, id="who-earns", cls="trust-line"), own, report, id="trust", cls="trust ga-wrap")
 
 
 # ---------- tickets and things to do (F-195) ----------
@@ -359,6 +373,9 @@ def itinerary_body(trip: Itinerary, loading: bool = False, saved: bool = False, 
     return Div(_hero(trip, saved, forked), _board(trip), _days(trip), _tips(trip), _yours(trip), _todo(trip) if trip.real else "", blog, _trust(trip) if trip.real else "", SCRIPT, cls="itinerary")
 
 
-def itinerary_page(trip: Itinerary, theme=None, loading: bool = False, saved: bool = False, forked: bool = False, blog="", noindex=False):
+def itinerary_page(trip: Itinerary, theme=None, loading: bool = False, saved: bool = False, forked: bool = False, blog="", noindex: bool = False, waiting: bool = False):
+    """The public page of a trip: shared links preview with its lede and cover (F-196); `noindex` keeps a copy of a creator's post out of search, and a trip `waiting` for the captain's
+    yes (F-194) is "noindex, nofollow" (one robots tag, which covers the noindex)."""
     head = (*HEAD, Link(rel="stylesheet", href="/assets/css/scrapbook.css")) if trip.real else HEAD
-    return page(trip.title, itinerary_body(trip, loading, saved, forked, blog), theme=resolve_theme(theme, trip), head=(*head, Meta(name="robots", content="noindex, nofollow")) if noindex else head)
+    return page(trip.title, itinerary_body(trip, loading, saved, forked, blog), theme=resolve_theme(theme, trip), head=(*head, Meta(name="robots", content="noindex, nofollow")) if waiting else head,
+                description=trip.lede, image=trip.polaroids[0].src if trip.polaroids else "", og_type="article", noindex=noindex and not waiting)

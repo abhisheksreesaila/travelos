@@ -19,7 +19,7 @@ from fasthtml.core import FtResponse
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import FileResponse, RedirectResponse, Response
 
-from gitaway import ai, community, creatordraft as cd, importsource, session as ses
+from gitaway import ai, community, creatordraft as cd, importsource, session as ses, stoplinks
 from gitaway.hub import HubError
 from gitaway.icons import icon
 from gitaway.itinerary_view import HEAD as VIEW_HEAD, _icon, itinerary_body
@@ -99,6 +99,7 @@ def _stop(i, j, s):
                Input(type="text", name=f"{k}_name", value=s["name"], placeholder="Where", maxlength=str(STOP_MAX), autocomplete="off", aria_label=f"Day {i + 1} stop {j + 1} name",
                      aria_invalid="true" if s["name"] == cd.UNNAMED else None, cls="pb-input ci-name" + (" ci-unsure" if s["name"] == cd.UNNAMED else "")),
                Input(type="text", name=f"{k}_note", value=s["note"], placeholder="A short note (optional)", maxlength=str(cd.MAX_STOP_NOTE), autocomplete="off", aria_label=f"Day {i + 1} stop {j + 1} note", cls="pb-input ci-snote"),
+               Input(type="text", name=f"{k}_link", value=s.get("link", ""), placeholder="A booking or ticket link (optional)", maxlength=str(stoplinks.MAX), autocomplete="off", inputmode="url", aria_label=f"Day {i + 1} stop {j + 1} link", cls="pb-input ci-slink"),
                Button(icon("x", 18, 2.4), type="submit", name="do", value=f"del_stop:{i}:{j}", formnovalidate=True, aria_label=f"Remove stop {j + 1} from day {i + 1}", cls="btn ci-del"), cls="ci-stop")
 
 
@@ -256,7 +257,7 @@ def register(app):
         try:
             await run_in_threadpool(cd.apply, me.id, d, f, do)     # may fetch and re-encode the picked pictures
         except HubError as e:
-            return editor_page(d, error=str(e))
+            return editor_page(getattr(e, "draft", None) or d, error=str(e))      # a refused link shows the form as typed, with the sentence (F-196)
         return RedirectResponse(f"{PATH}/{token}/preview" if do == "preview" else f"{PATH}/{token}", status_code=303)
 
     @app.get(PATH + "/{token}/preview")

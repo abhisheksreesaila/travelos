@@ -826,17 +826,35 @@ def stop_start(text):
     return int(m.group(1)) % 12 * 60 + int(m.group(2)) + (720 if m.group(3).upper() == "PM" else 0)
 
 
-def fork_plans(itinerary):
-    """The Plans in a fork's itinerary: every stop with a clock time that is not one of the author's own bookings.
+FORK_SLOTS = (9 * 60, 13 * 60, 18 * 60)   # morning, afternoon, evening: where a stop with no clock time lands (F-196)
 
-    Day n of the fork lands on day n of the traveler's trip. A stop has only a start, so it gets a typical length.
+
+def _loose_starts(n):
+    """The start of each of `n` stops with no clock time on one day, in order: spread over the morning, the afternoon and the evening (one stop is the morning, two are the morning and the
+    afternoon, three take all three); a slot that gets more than one stop stacks them a typical stop apart. No start leaves a stop running past the end of the grid."""
+    used, out = {}, []
+    for k in range(n):
+        slot = k * len(FORK_SLOTS) // n
+        out.append(min(FORK_SLOTS[slot] + used.get(slot, 0) * FORK_LEN, GRID_END - FORK_LEN))
+        used[slot] = used.get(slot, 0) + 1
+    return out
+
+
+def fork_plans(itinerary):
+    """The Plans in a fork's itinerary: every stop that is not one of the author's own bookings.
+
+    Day n of the fork lands on day n of the traveler's trip. A stop has only a start, so it gets a typical length. A stop with no clock time (most posts give none) takes a morning,
+    afternoon or evening slot in the order it comes, so a fork always lands something (F-196).
     """
     out = []
     for d in itinerary.days:
+        loose = iter(_loose_starts(sum(1 for s in d.stops if not s.booked and stop_start(s.time) is None)))
         for i, s in enumerate(d.stops):
-            start = stop_start(s.time)
-            if s.booked or start is None:
+            if s.booked:
                 continue
+            start = stop_start(s.time)
+            if start is None:
+                start = next(loose)
             length = FORK_MEAL_LEN if s.kind == "food" else FORK_LEN
             out.append(Plan(f"d{d.n}s{i}", d.n - 1, start, start + length, _short(s.title), _FORK_KIND.get(s.kind, "fun")))
     return out

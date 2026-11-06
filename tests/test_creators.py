@@ -240,7 +240,7 @@ def test_the_trip_page_links_back_to_the_creators_channel(client):
     tag = next(t for t in re.findall(r"<a\b[^>]*>", html) if "src-link" in t)
     href = re.search(r'href="([^"]*)"', tag).group(1)
     assert href.startswith("https://www.youtube.com/@") and safe_href(href) == href
-    assert 'rel="noopener noreferrer"' in tag and "Visit the channel" in html
+    assert 'rel="noopener"' in tag and 'referrerpolicy="origin"' in tag and "Visit the channel" in html
 
 
 def test_instagram_links_link_to_the_instagram_channel(client):
