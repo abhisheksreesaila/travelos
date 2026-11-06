@@ -16,7 +16,7 @@
 .cdr-box { width: 1.5rem; height: 1.5rem; margin: 0.125rem 0 0; accent-color: var(--accent); }
 .cdr-txt { display: grid; gap: 0.125rem; min-width: 0; }
 .cdr-t { font-weight: 650; font-size: 1rem; line-height: 1.3; overflow-wrap: anywhere; }
-.cdr-d, .cdr-u, .cdr-host { font-size: 0.875rem; color: var(--ink-2); overflow-wrap: anywhere; }
+.cdr-d, .cdr-u, .cdr-host { font-size: 0.9375rem; color: var(--ink-2); overflow-wrap: anywhere; }
 .cdr-bar { align-items: center; padding: 0.25rem 0.5rem 0.5rem; }
 .cdr-bar .btn[disabled] { opacity: 0.5; cursor: not-allowed; }
 

@@ -47,7 +47,7 @@ _MORE = ("""CREATE TABLE IF NOT EXISTS creator_markers (owner_user TEXT PRIMARY 
          """CREATE TABLE IF NOT EXISTS via_clicks (
     id INTEGER PRIMARY KEY AUTOINCREMENT, handle TEXT NOT NULL, partner TEXT NOT NULL, lane TEXT NOT NULL, own_marker INTEGER NOT NULL, clicked_at TEXT NOT NULL, who TEXT NOT NULL DEFAULT '')""")
 # Words a handle cannot be: each is (or may become) a fixed page under /creators/, which would shadow the profile (tests/test_creator_profiles.py walks the app's routes against this set).
-RESERVED_HANDLES = frozenset({"draft", "finish", "done", "new", "import", "settings", "edit", "preview", "photo", "admin", "report", "go"})
+RESERVED_HANDLES = frozenset({"draft", "finish", "done", "new", "import", "settings", "edit", "preview", "photo", "admin", "report", "go", "drafts"})
 UP = " AND slug NOT IN (SELECT slug FROM takedowns)"   # the live trips: everything not taken down (F-185)
 _ready: set = set()
 
