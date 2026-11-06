@@ -142,7 +142,7 @@ def test_a_flight_booked_from_a_creators_trip_carries_their_marker_and_the_click
     client.get(f"/plan?to=hi&{TRIP}&via={handle}", headers=seen_on(handle))
     first = flight_marker(client)
     assert first.startswith("555111.")
-    assert re.fullmatch(r"(anon|[0-9a-f]{6})-hi-270305-flight", first.split(".", 1)[1])       # the SubID is still ours: family hash, place, day, lane
+    assert first.split(".", 1)[1] == f"anon-hi-270305-flight-{handle}"       # the SubID is still ours: family hash, place, day, lane, and now whose trip (F-195)
     assert affiliate.clicks_by_creator() == {handle: (1, 1)}
 
 
@@ -248,3 +248,42 @@ def test_a_sample_trip_makes_no_claim_about_who_earns(client):
     from gitaway import itineraries
     page = client.get(f"/trips/{next(iter(itineraries.ITINERARIES))}").text
     assert "who-earns" not in page
+
+
+# ---- F-195: the creator's handle is in the SubID, and a Tickets click on their own page counts for them ------------------------
+
+def test_the_creators_handle_is_in_the_subid_of_flights_and_of_klook_clicks(client, keys, mode):
+    _, handle, _ = live_trip(name="Maya Chen")
+    client.get(f"/plan?to=hi&{TRIP}&via={handle}", headers=seen_on(handle))
+    flight = flight_marker(client).split(".", 1)[1]
+    client.get(f"/go/hih1?to=hi&{TRIP}", follow_redirects=False)
+    stay = keys.calls[-1][2]["links"][0]["sub_id"]
+    assert flight == f"anon-hi-270305-flight-{handle}" and stay == f"anon-hi-270305-stay-{handle}"
+    assert handle == "maya-chen" and len(stay) < 100
+
+
+def test_the_longest_handle_still_fits_travelpayouts_subid():
+    from gitaway import catalog
+    from gitaway.partners import log
+    trip = catalog.sample_trip("hi")
+    assert len(log.sub_id({"tenant_id": "t"}, trip, catalog.offer("hif1", trip), "a" * 40)) <= 100       # Travelpayouts allows 4096; we stay readable
+
+
+def test_no_creator_means_no_handle_in_the_subid(client, keys, mode):
+    assert flight_marker(client).split(".", 1)[1] == "anon-hi-270305-flight"
+
+
+def test_a_tickets_click_on_a_creators_own_page_counts_for_them_and_remembers_them(client, keys, mode):
+    row, handle, _ = live_trip()
+    url = f"/go/search-todo?to=la&{TRIP}&focus=disney&via={handle}"
+    r = client.get(url, headers=seen_on(handle, row["slug"]), follow_redirects=False)
+    assert r.status_code == 302 and f"ga_via={handle}" in r.headers["set-cookie"]
+    assert keys.calls[0][2]["links"][0]["sub_id"] == f"anon-la-270305-todo-{handle}"
+    assert affiliate.clicks_by_creator() == {handle: (1, 0)}      # Klook pays GitAway (D-101), so not "with their marker"
+
+
+def test_a_pasted_tickets_link_names_nobody(client, keys, mode):
+    row, handle, _ = live_trip()
+    r = client.get(f"/go/search-todo?to=la&{TRIP}&via={handle}", headers={"referer": "https://evil.example/x"}, follow_redirects=False)
+    assert "set-cookie" not in r.headers and keys.calls[0][2]["links"][0]["sub_id"] == "anon-la-270305-todo"
+    assert affiliate.clicks_by_creator() == {}

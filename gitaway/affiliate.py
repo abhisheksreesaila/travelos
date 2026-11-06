@@ -17,7 +17,7 @@ from urllib.parse import urlsplit
 
 from sqlalchemy import text
 
-from gitaway import community
+from gitaway import auth, community
 from gitaway.community import HubError, _now, connect
 
 COOKIE = "ga_via"
@@ -86,6 +86,18 @@ def clicks_by_creator() -> dict:
 def valid_via(handle) -> str:
     """The handle when it is a real creator's, else "". What the `via` link parameter and the cookie are checked with."""
     return handle if _HANDLE.fullmatch(str(handle or "")) and community.creator(handle) else ""
+
+
+def cookie_args() -> dict:
+    """How `ga_via` is set, wherever it is set: 30 days, only the handle, not readable by scripts, https-only in production."""
+    return dict(max_age=COOKIE_DAYS * 86400, path="/", httponly=True, samesite="lax", secure=auth.production())
+
+
+def claimed_via(request, via="") -> str:
+    """`via` when it is a real creator's and this request is a click made on that creator's own page (see `seen_on_own_page`), else "": the only way a link names whose trip a
+    reader is booking from (F-182). The plan page and a Tickets card on a creator's page both use it, and then set `ga_via`."""
+    handle = valid_via(via)
+    return handle if handle and seen_on_own_page(request, handle) else ""
 
 
 def earning_line(name, has_marker) -> str:

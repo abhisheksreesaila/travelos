@@ -374,6 +374,16 @@ def offer_place(offer_id: str) -> str:
     return _BY_ID[offer_id].place
 
 
+SEARCH_KINDS = {"flight": "Search flights to {place}", "stay": "Find stays near {area}", "todo": "Tickets and things to do"}
+
+
+def search_offer(kind: str, trip) -> Offer:
+    """What an honest page offers where we know no real offers (F-195): one search at the partner per lane, `flight`, `stay` or `todo` (KeyError for another).
+    No price (the partner shows today's), no made-up airline or hotel: the id is `search-<kind>`."""
+    name = SEARCH_KINDS[kind].format(place=trip.destination_name, area=trip.stay_area)
+    return Offer(f"search-{kind}", kind, name, "", "", 0, airport=trip.airports[0] if kind == "flight" else "", place=trip.key)
+
+
 def offer(offer_id: str, trip=SAMPLE_TRIP) -> Offer:
     """One offer by id, priced for `trip`. Raises KeyError for an unknown id."""
     return _priced(_BY_ID[offer_id], trip)
