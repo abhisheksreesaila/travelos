@@ -1090,10 +1090,10 @@ Brief: docs/briefs/creator-import.md · Needs: F-183, F-182 fixes
 - [ ] the admin page lists drafts made, claimed, published, toward 150; an outreach message to copy per creator (never sent by GitAway)
 - [ ] `pixi run draft-creators` drafts every A-priority creator from the CSV when ANTHROPIC_API_KEY is set; without it, says so
 
-## F-189 Share from the phone [todo]
+## F-189 Share from the phone [review]
 Needs: F-183
-- [ ] the installed app is a share target (Web Share Target in the manifest): sharing a YouTube video, Instagram post or blog page to GitAway opens the import with the link filled in
-- [ ] signed out: sign in, then land on the same filled-in import
+- [x] the installed app is a share target (Web Share Target in the manifest): sharing a YouTube video, Instagram post or blog page to GitAway opens the import with the link filled in
+- [x] signed out: sign in, then land on the same filled-in import
 
 ## F-190 All my posts at once [todo]
 Needs: F-183

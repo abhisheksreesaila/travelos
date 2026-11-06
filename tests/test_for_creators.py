@@ -96,7 +96,7 @@ def test_the_questions_say_what_to_paste_for_instagram_and_youtube(client, mode)
 
 def test_every_question_opens_and_closes_with_a_tap_and_no_script(client, mode):
     html = client.get("/for-creators").text
-    assert len(re.findall(r"<details[^>]*class=\"fc-q\"", html)) == 6 and html.count("<summary>") == 6
+    assert len(re.findall(r"<details[^>]*class=\"fc-q\"", html)) == 7 and html.count("<summary>") == 7
 
 
 # ---- the live example ----------------------------------------------------------------------------------------------

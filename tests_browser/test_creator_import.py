@@ -171,3 +171,25 @@ def test_not_switched_on_yet_is_friendly_and_the_text_editor_still_works(browser
     expect(page.locator("#ci-title")).to_have_value("My two days")
     assert overflow(page) <= 1
     ctx.close()
+
+
+def test_a_shared_link_fills_the_import_and_survives_sign_in(setup, browser, base_url, creator):
+    """F-189: what Android's share sheet opens (/share-to-gitaway?...) lands on the import with the link filled in; signed out it goes through sign-in first. Phone width."""
+    from urllib.parse import quote
+    shared = f"{base_url}/share-to-gitaway?title=Trip&text={quote('Look ' + POST)}"
+    page = creator(PHONE).new_page()                       # signed in
+    page.goto(shared)
+    expect(page.locator("h1")).to_have_text("Turn your post into a trip")
+    expect(page.locator("#ci-link")).to_have_value(POST)
+    assert overflow(page) <= 1
+    out = browser.new_context(viewport=PHONE, has_touch=True, is_mobile=True)      # signed out
+    try:
+        p = out.new_page()
+        p.goto(shared)
+        expect(p).to_have_url(re.compile(r"/signin\?next="))
+        p.fill("input[name=email]", "maya.chen@example.com")
+        p.click("form button[type=submit]")
+        expect(p.locator("#ci-link")).to_have_value(POST)
+        expect(p).to_have_url(re.compile(r"/creators/import\?link="))
+    finally:
+        out.close()

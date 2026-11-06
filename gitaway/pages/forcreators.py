@@ -31,6 +31,7 @@ TERMS = (
 )
 FAQ = (
     ("Does it work with Instagram?", "Instagram does not let anyone read a post, so paste the caption. We keep your link as the source and the draft comes from your words."),
+    ("Can I share a post to GitAway from my phone?", "On Android, install GitAway to your home screen and it shows up in the share sheet: share a YouTube video, an Instagram post or a blog page and the import opens with the link filled in. iPhone does not let web apps receive shares yet, so copy the link, open GitAway and paste it."),
     ("And YouTube?", "We read the title, the description and the chapters. For a better draft, paste the transcript into the box: more of what you said means fewer unnamed stops."),
     ("What about my blog?", "Paste the link. We read the article and offer its pictures (up to two) to pick from, copied without where they were taken."),
     ("What if the draft gets something wrong?", "It happens. A place it is not sure of shows as an unnamed stop, and nothing goes public until you fix it, tick \"This is my post\" and press Publish."),

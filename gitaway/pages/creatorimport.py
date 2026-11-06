@@ -189,10 +189,14 @@ def preview_page(session, d, error=""):
 
 def register(app):
     @app.get(PATH)
-    def paste(session):
+    def paste(session, link: str = ""):
         if not ses.current_traveler(session):
             return _signin(PATH)
-        return paste_page(session)
+        try:
+            link = importsource.clean_link(link)     # a shared link (F-189), filled in and never fetched until Draft is pressed
+        except importsource.SourceError:
+            link = ""
+        return paste_page(session, link)
 
     @app.post(PATH)
     async def draft(request, session):
