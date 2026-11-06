@@ -11,11 +11,13 @@ An order is a short state machine, moved only by guarded UPDATEs (`WHERE status 
 `plan_order_events` holds the Stripe event ids already handled: a repeated webhook finds its id there and does nothing.
 """
 
+import hashlib
 import json
 import logging
 import os
 import re
 import secrets
+import time
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 
@@ -182,24 +184,96 @@ def set_session(order_id, session_id) -> None:
 
 
 def mark_paid(order_id, event_id, session_id, amount, currency) -> str:
-    """What a verified Stripe event for a completed payment does. Returns "paid" (the order is now paid and the worker will build it), "duplicate" (this event id, or a second event for an
-    order already paid), "mismatch" (the amount or currency is not the order's: the order is marked failed, a refund is due) or "unknown" (no such order, or another session's).
-    The event id is recorded first, in the same transaction, so a repeat of it does nothing at all."""
+    """What a verified Stripe event for a completed payment does. Returns "paid" (the order is now paid and the worker will build it), "duplicate" (this event id, or another event for the
+    session that already paid it), "double" (a second session paid an order that was already paid: a refund is due, logged), "mismatch" (the amount or currency is not the order's: the
+    order is marked failed, a refund is due) or "unknown" (no such order). The event id is recorded first, in the same transaction, so a repeat of it does nothing at all."""
     with _db() as db:
         if not db.conn.execute(text("INSERT OR IGNORE INTO plan_order_events (event_id, order_id, at) VALUES (:e, :o, :a)"), {"e": str(event_id), "o": str(order_id), "a": _now()}).rowcount:
             return "duplicate"
         o = db.conn.execute(text("SELECT status, amount_cents, stripe_session FROM plan_orders WHERE id = :i"), {"i": str(order_id)}).mappings().fetchone() if _ID.fullmatch(str(order_id)) else None
-        if o is None or o["stripe_session"] not in ("", session_id):
+        if o is None:
             outcome = "unknown"
         elif o["status"] != "awaiting_payment":
-            outcome = "duplicate"
+            outcome = "duplicate" if o["stripe_session"] == session_id else "double"
+            if outcome == "double":
+                log.warning("plan order %s paid again (session %s): refund one of the two payments in Stripe", order_id, session_id)
         elif int(amount or 0) != o["amount_cents"] or str(currency or "").lower() != "usd":
             db.conn.execute(text("UPDATE plan_orders SET status = 'failed', error = 'amount_mismatch', stripe_session = :s, paid_at = :u, updated_at = :u WHERE id = :i AND status = 'awaiting_payment'"),
                             {"s": session_id, "u": _now(), "i": order_id})
             outcome = "mismatch"
+            log.warning("plan order %s: Stripe session %s carried %s %s, not the order's amount: refund due", order_id, session_id, amount, currency)
         else:
             db.conn.execute(text("UPDATE plan_orders SET status = 'paid', stripe_session = :s, paid_at = :u, updated_at = :u WHERE id = :i AND status = 'awaiting_payment'"), {"s": session_id, "u": _now(), "i": order_id})
             outcome = "paid"
         db.conn.execute(text("UPDATE plan_order_events SET outcome = :x WHERE event_id = :e"), {"x": outcome, "e": str(event_id)})
         db.conn.commit()
     return outcome
+
+
+# ---- Stripe -----------------------------------------------------------------------------------------------------------
+
+CHECKOUT = None       # tests: a function (Checkout session params) -> {"id", "url"}, used instead of the Stripe SDK
+SESSION_MINUTES = 60  # a Checkout session this long is open (Stripe allows 30 minutes to 24 hours); an unpaid order with a session older than two hours may be trimmed
+PAID_EVENTS = ("checkout.session.completed", "checkout.session.async_payment_succeeded")
+
+
+class BadSignature(ValueError):
+    """A webhook body Stripe did not sign for us (or no secret is set to check it with)."""
+
+
+def _stripe_create(params) -> dict:
+    import stripe
+    session = stripe.checkout.Session.create(api_key=stripe_key(), **params)
+    return {"id": session["id"], "url": session["url"]}
+
+
+def start_checkout(order, base_url) -> str:
+    """Make a Stripe Checkout session for `order` and return its address. Blocking (it calls Stripe): run it in a thread. One line item, mode payment, at the order's own `amount_cents`;
+    `client_reference_id` is the order id, which is how the webhook finds it again. No promotion codes."""
+    base = base_url.rstrip("/")
+    params = {"mode": "payment", "client_reference_id": order["id"], "customer_email": order["email"] or None, "metadata": {"order_id": order["id"]},
+              "line_items": [{"price_data": {"currency": "usd", "unit_amount": order["amount_cents"], "product_data": {"name": "Plan it for me", "description": PROMISE}}, "quantity": 1}],
+              "success_url": f"{base}/plan-for-me/{order['id']}?paid=1", "cancel_url": f"{base}/plan-for-me/{order['id']}", "expires_at": int(time.time()) + SESSION_MINUTES * 60}
+    params = {k: v for k, v in params.items() if v is not None}
+    made = (CHECKOUT or _stripe_create)(params)
+    set_session(order["id"], made["id"])
+    return made["url"]
+
+
+def verify_event(payload: bytes, signature: str) -> dict:
+    """The event in a webhook body, only when Stripe signed it for us (STRIPE_WEBHOOK_SECRET, five minutes of tolerance). Raises BadSignature otherwise, and always when no secret is set."""
+    secret = webhook_secret()
+    if not secret:
+        raise BadSignature("no webhook secret")
+    import stripe
+    try:
+        stripe.Webhook.construct_event(payload, signature or "", secret)
+    except (ValueError, stripe.SignatureVerificationError) as e:
+        raise BadSignature(type(e).__name__) from None
+    return json.loads(payload)
+
+
+def handle_event(event) -> str:
+    """What a verified event does: "paid", "duplicate", "double", "mismatch", "unknown" (see `mark_paid`), "waiting" (the session is not paid yet: a later async event settles it) or "ignored"."""
+    obj = ((event.get("data") or {}).get("object") or {}) if isinstance(event, dict) else {}
+    if event.get("type") not in PAID_EVENTS or obj.get("mode") != "payment":
+        return "ignored"
+    if obj.get("payment_status") != "paid":
+        return "waiting"
+    outcome = mark_paid(str(obj.get("client_reference_id") or ""), str(event.get("id") or ""), str(obj.get("id") or ""), obj.get("amount_total"), obj.get("currency"))
+    if outcome == "paid":
+        wake()
+    return outcome
+
+
+def receive(payload: bytes, signature: str) -> tuple:
+    """(status, text) for a webhook delivery: 503 with no secret set, 400 for a body Stripe did not sign, else 200 with what happened. Blocking (SQLite): run it in a thread."""
+    try:
+        event = verify_event(payload, signature)
+    except BadSignature as e:
+        return (503, "not configured") if str(e) == "no webhook secret" else (400, "bad signature")
+    return 200, handle_event(event)
+
+
+def wake() -> None:
+    """Tell the worker there is a paid order to build (the worker itself arrives with the build slice)."""
