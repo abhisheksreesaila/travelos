@@ -10,7 +10,7 @@ from fh_saas.db_host import HostDatabase
 from fh_saas.db_tenant import get_or_create_tenant_db
 from sqlalchemy import text
 
-from gitaway import community, familydb, hostdb, passes, photos, publish, voicenotes
+from gitaway import community, creatordraft, familydb, hostdb, passes, photos, publish, voicenotes
 
 
 def wipe_invites_and_extra_members():
@@ -35,6 +35,7 @@ def wipe_everything():
     forget_schema_cache), so the wipe skips the rest and does not re-check any schema: it was made when the family was opened.
     """
     community.clear()
+    creatordraft.clear()  # F-183: and every creator import draft
     shutil.rmtree(photos.root(), ignore_errors=True)  # F-071: the files of every photo a test added
     shutil.rmtree(passes.root(), ignore_errors=True)  # F-083: and of every boarding pass
     shutil.rmtree(publish.root(), ignore_errors=True)  # F-181: and every published photo copy

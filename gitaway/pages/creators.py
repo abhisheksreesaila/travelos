@@ -79,6 +79,7 @@ def real_index():
     """/creators off the showcase: only the people who published a real trip, no paste box (the link import is simulated)."""
     people = community.real_creators()
     return page("Creators", Section(H1("Creators on GitAway"), P("Families who published a trip they really took. Read it, fork it, plan your own."),
+                                    P(A(icon("note", 18, 2.2), "Turn your own post into a trip", href="/creators/import", cls="btn btn-primary", id="cr-import")),
                                     Ul(*[_real_item(c) for c in people], cls="cr-roster"), cls="cr cr-real ga-wrap"), current="/creators", head=HEAD)
 
 

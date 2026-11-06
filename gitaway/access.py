@@ -27,7 +27,7 @@ OPEN_POSTS = (
     "/trips/switch",                       # which trip I am looking at (my own `members.trip_id`)
     "/family/phone",                       # my own phone number on the Help tab (F-069): every member, viewers too
     "/family/switch", "/family/stay",      # which of my families I am working in; dismissing the "you joined" notice
-    "/creators", "/creators/draft", "/creators/finish",   # a creator draft is a person's own, published to the community, not a family's
+    "/creators", "/creators/draft", "/creators/finish", "/creators/import",   # a creator draft (the old paste-a-link one, and F-183 import drafts under /creators/import/) is a person's own, published to the community, not a family's
     "/trip/morning", "/trip/morning/time", "/trip/morning/off", "/trip/morning/status",   # my own phone's morning plan reminder (F-066): every member, viewers too
     "/trip/photos", "/trip/photos/remove",   # adding a photo (a viewer too: it changes no plan) and removing one (the route checks author-or-admin) (F-071)
     "/passkeys/register/options", "/passkeys/register", "/passkeys/auth/options", "/passkeys/auth", "/passkeys/remove",   # my own Face ID sign-in (F-074): every member, viewers too; the two auth routes are for someone signed out
@@ -36,7 +36,7 @@ OPEN_POSTS = (
     "/trip/family/message", "/trip/family/quiet",   # a message in the family thread and my own Quiet switch (F-070): every member, viewers too (a viewer cannot change a plan, so never causes a change card)
     "/trip/family/seen",   # I have read the chats up to now (F-143): my own read mark, every member, viewers too
 )
-OPEN_PREFIXES = ("/join/",)                # using an invite link: the person is joining another family
+OPEN_PREFIXES = ("/join/", "/creators/import/")                # using an invite link: the person is joining another family
 ADMIN_POSTS = ("/family/invite", "/family/invite/revoke", "/family/role", "/family/remove", "/trip/delete")  # deleting an imported trip (F-042) is an admin's
 
 _role = ContextVar("gitaway_family_role", default=None)

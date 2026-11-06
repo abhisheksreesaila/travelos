@@ -18,6 +18,7 @@ OPEN_FOR_VIEWERS = {
     "/family/phone",                                         # my own phone number (F-069)
     "/trips/switch", "/family/switch", "/family/stay",       # which trip I look at, which family I work in, dismissing the joined notice
     "/creators", "/creators/draft", "/creators/finish",       # a creator draft is the person's own, published to the community
+    "/creators/import", "/creators/import/{token}",           # a creator's import of their own post (F-183): their own draft and their own page, not a family's plan
     "/join/{token}",                                          # using an invite link: joining another family
     "/trip/morning", "/trip/morning/time", "/trip/morning/off", "/trip/morning/status",   # a person's own phone reminder (F-066)
     "/trip/photos", "/trip/photos/remove",                     # a viewer may add photos; removing is author-or-admin, checked by the route (F-071)

@@ -16,6 +16,11 @@ Jobs are the reasons the app calls the model (JOBS below; docs/ai-usage.md says 
 
 (<JOB> is the job's name in capitals, "-" as "_": AROUND_YOU.) Switching a job's model or provider is a setting, never a code change.
 
+    GITAWAY_AI_PROVIDER_<JOB>=anthropic|azure      which service answers a job; job "creator-import" (F-183) defaults to anthropic when ANTHROPIC_API_KEY is set
+    ANTHROPIC_API_KEY                              the key for the anthropic provider (the official SDK reads it itself)
+    GITAWAY_AI_MODEL_<JOB>                         another Anthropic model for one job (default claude-haiku-5-5, $0.10 in / $0.50 out per million tokens)
+    GITAWAY_AI_EFFORT_<JOB>                        low (default) | medium | high: how hard the Anthropic model thinks
+
 Privacy. The log is a table in the HOST database (`ga_ai_usage`): when, job, family id, deployment, tokens in and out, milliseconds, ok or the
 kind of error ("timeout", "http_429", "bad_json"). It never holds a prompt, an answer, a name or the key, and nothing here prints them; a failure
 is told to the person in a fixed sentence, never with the service's own text.
@@ -49,7 +54,13 @@ JOBS = {
     "around-you": (20, "recommendations near where the family is"),
     "ocr": (30, "read a boarding pass or a booking from a photo"),
     "transcribe": (45, "turn a recorded voice (Ask, where the phone has no speech recognition) into text"),
+    "creator-import": (60, "draft a trip from a creator's own post (F-183; Claude Haiku 5.5)"),
 }
+DEFAULT_PROVIDER = {"creator-import": "anthropic"}      # a job listed here uses that provider whenever its key is set; every other job is Azure unless GITAWAY_AI_PROVIDER_<JOB> says otherwise
+ANTHROPIC_MODEL = "claude-haiku-5-5"
+ANTHROPIC_PRICE = {"claude-haiku-5-5": (0.10, 0.50)}      # US dollars per million tokens (input, output), for prompts up to 100K tokens
+ANTHROPIC_MAX_TOKENS = 8000                               # thinking counts toward it; a 14-day draft is about 3,000
+ANTHROPIC_TRANSPORT = None   # tests: a function (request kwargs, timeout) -> a response with .content, .stop_reason and .usage, used instead of the Anthropic SDK
 DEFAULT_TIMEOUT = 20
 TRANSPORT = None   # tests: a function (url, headers, body, timeout) -> (status, text), used instead of the network
 
@@ -84,7 +95,21 @@ def _setting(job, per_job, general) -> str:
 TRANSCRIBE_API_VERSION = "2024-06-01"
 
 
+def _anthropic_key() -> str:
+    return (os.environ.get("ANTHROPIC_API_KEY") or "").strip()
+
+
+def provider(job=None) -> str:
+    """Which service answers `job`: "anthropic" or "azure". GITAWAY_AI_PROVIDER_<JOB> wins; else the job's default (creator-import: anthropic) when ANTHROPIC_API_KEY is set."""
+    chosen = (os.environ.get(f"GITAWAY_AI_PROVIDER_{_suffix(job)}") or "").strip().lower()
+    if chosen:
+        return chosen
+    return "anthropic" if DEFAULT_PROVIDER.get(job) == "anthropic" and _anthropic_key() else "azure"
+
+
 def deployment(job=None) -> str:
+    if provider(job) == "anthropic":     # the log's "deployment" column holds the model
+        return (os.environ.get(f"GITAWAY_AI_MODEL_{_suffix(job)}") or "").strip() or ANTHROPIC_MODEL
     if job == "transcribe":     # speech-to-text is its own deployment: the chat deployment cannot do it
         if transcribe_provider() == "sarvam":
             return _sarvam_model()      # the log's "deployment" column holds the model
@@ -101,6 +126,8 @@ def _endpoint(job) -> str:
 
 
 def configured(job=None) -> bool:
+    if provider(job) == "anthropic":
+        return bool(_anthropic_key())
     if job == "transcribe":
         adapter = PROVIDERS.get(transcribe_provider())
         return bool(adapter and adapter["configured"]())
@@ -156,6 +183,8 @@ def call_json(job, family, system, user, schema, *, name="result", timeout=None)
         _log(job, family, deployment(job), 0, 0, 0, False, "busy")
         raise AIError(BUSY, "busy")
     try:
+        if provider(job) == "anthropic":
+            return _call_anthropic(job, family, system, user, schema, timeout)
         return _call(job, family, system, user, schema, name, timeout)
     finally:
         with _guard:
@@ -207,6 +236,72 @@ def _call(job, family, system, user, schema, name, timeout) -> dict:
         _log(job, family, deployment(job), tin, tout, _ms(start), False, "error")
         raise AIError(FAILED, "error")
     _log(job, family, deployment(job), tin, tout, _ms(start), True, "")
+    return answer
+
+
+# ---- the Anthropic provider (F-183) -------------------------------------------------------------------------------------
+
+CANT_DRAFT = "The assistant could not draft from that. Try pasting the text of your post instead."
+
+
+def cost_usd(model, tokens_in, tokens_out) -> float:
+    """What a call cost in US dollars at the model's published price, or 0.0 for a model not in ANTHROPIC_PRICE."""
+    pin, pout = ANTHROPIC_PRICE.get(model, (0.0, 0.0))
+    return (tokens_in * pin + tokens_out * pout) / 1_000_000
+
+
+def _anthropic_send(kwargs, timeout):
+    import anthropic
+    return anthropic.Anthropic(api_key=_anthropic_key(), timeout=timeout, max_retries=1).messages.create(**kwargs)
+
+
+def _anthropic_error(e) -> tuple:
+    """(code for the log, AIError text) for an exception from the SDK or the transport: only the kind, never the service's own words."""
+    status = getattr(e, "status_code", None)
+    name = type(e).__name__
+    if "Timeout" in name or isinstance(e, (TimeoutError, socket.timeout)):
+        return "timeout", SLOW
+    if isinstance(status, int):
+        return f"http_{status}", FAILED
+    if "Connection" in name or isinstance(e, OSError):
+        return "network", FAILED
+    return "error", FAILED
+
+
+def _call_anthropic(job, family, system, user, schema, timeout) -> dict:
+    """One Messages call that must answer as JSON matching `schema` (structured outputs: `output_config.format`, no prefill). The stop reason is read before the content:
+    a refusal and a cut-off answer are failures, logged by kind. Tokens in and out come from the response's own usage."""
+    model = deployment(job)
+    effort = (os.environ.get(f"GITAWAY_AI_EFFORT_{_suffix(job)}") or "").strip().lower()
+    kwargs = {"model": model, "max_tokens": ANTHROPIC_MAX_TOKENS, "system": system, "messages": [{"role": "user", "content": user}],
+              "output_config": {"effort": effort if effort in ("low", "medium", "high") else "low", "format": {"type": "json_schema", "schema": schema}}}
+    start, tin, tout = time.monotonic(), 0, 0
+    try:
+        resp = (ANTHROPIC_TRANSPORT or _anthropic_send)(kwargs, timeout)
+        usage = getattr(resp, "usage", None)
+        tin, tout = int(getattr(usage, "input_tokens", 0) or 0), int(getattr(usage, "output_tokens", 0) or 0)
+        reason = getattr(resp, "stop_reason", None)
+        if reason == "refusal":
+            raise AIError(CANT_DRAFT, "refusal")
+        if reason == "max_tokens":
+            raise AIError(FAILED, "max_tokens")
+        block = next((b for b in (getattr(resp, "content", None) or []) if getattr(b, "type", "") == "text"), None)
+        if block is None:
+            raise AIError(FAILED, "bad_reply")
+        try:
+            answer = json.loads(block.text)
+        except (ValueError, TypeError):
+            raise AIError(FAILED, "bad_json") from None
+        if not isinstance(answer, dict):
+            raise AIError(FAILED, "bad_json")
+    except AIError as e:
+        _log(job, family, model, tin, tout, _ms(start), False, e.code)
+        raise
+    except Exception as e:  # noqa: BLE001 - the SDK's typed errors, a refused transport, anything else: logged by kind, the person gets a fixed sentence
+        code, say = _anthropic_error(e)
+        _log(job, family, model, tin, tout, _ms(start), False, code)
+        raise AIError(say, code) from None
+    _log(job, family, model, tin, tout, _ms(start), True, "")
     return answer
 
 

@@ -46,6 +46,7 @@ class Source:
     thumb_alt: str
     url: str = ""
     link_label: str = "Watch the original"
+    kicker: str = "From the vlog"   # the small line above the title: a blog post says "From the blog" (F-183)
 
 
 @dataclass(frozen=True)

@@ -11,12 +11,14 @@ pypdf = ">=6.19.0,<7"
 pillow = ">=12.3.0,<13"
 pillow-heif = ">=1.8.0,<2"
 pypdfium2 = ">=5.13.0,<6"
+trafilatura = ">=2.0.0,<3"
 
 [pypi-dependencies]
 python-fasthtml = ">=0.14.13"
 fh-saas = ">=0.9.14"
 pywebpush = ">=2.5.0, <3"
 webauthn = ">=3.0.1, <4"
+anthropic = ">=2.6.0, <3"
 
 [feature.test.dependencies]  # tools for the tests only: the production image (environment "prod") leaves them out
 pytest = "*"
@@ -34,6 +36,7 @@ vapid-keys = "python scripts/vapid_keys.py"  # makes the push keys for the morni
 forget-person = "python scripts/forget_person.py"  # delete a person's (or family's) data by hand; a dry run unless --yes (F-076)
 ai-report = "python scripts/ai_report.py"  # what the AI did: calls, time and tokens per job and per day, no content (F-079)
 probe-tp = "python scripts/probe_travelpayouts.py"  # one real Travelpayouts partner-links call; needs TRAVELPAYOUTS_TOKEN and _MARKER (F-179)
+probe-import = "python scripts/probe_creator_import.py"  # one real creator-import draft with Claude Haiku 5.5: prints the draft JSON, tokens and cost; needs ANTHROPIC_API_KEY (F-183)
 test = "pytest -q -p no:randomly"
 test-random = "pytest -q -p randomly"
 test-browser-install = "playwright install chromium"  # once per machine: downloads the browser the browser suite drives

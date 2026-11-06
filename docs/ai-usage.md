@@ -14,7 +14,9 @@ Azure OpenAI is a stopgap for the October 2026 trip. Every call goes through `gi
 
 | `transcribe` | Ask's microphone where the phone has no working speech recognition (the iPhone Home Screen app; F-102): the page records up to 3 minutes (MediaRecorder), `POST /trip/ask/transcribe` sends the audio (at most 4 MB, checked by its first bytes) to a speech-to-text deployment and the words are added to the Ask box for review. | Typing, or the keyboard's own dictation (which still works and costs nothing). A speech model, not a chat model: nothing else here can turn audio into text. Candidate to drop if the keyboard's dictation is enough, or to swap to a provider that handles Hindi and other Indian languages (see below). The audio is only the request's own upload (over 1 MB the server spools it to a temp file that is deleted when the request ends) and is never written to the data folder; neither it nor the words are kept or logged (the log row has no tokens). Editors only, like the rest of Ask. | F-102 |
 
-`convert`, `speak`, `around-you` and `transcribe` exist today; the others are named so the log and the report already have a place for them.
+| `creator-import` | A creator pastes a blog link, a YouTube link, an Instagram caption or text; the model drafts the trip (title, place, days, stops with times where stated, tips, stickers) as strict JSON for the creator to review in the publish editor (F-183, `gitaway/creatordraft.py`). Claude Haiku 5.5 through the Anthropic provider (below). | Typing a trip in from a post by hand. The post is free text in any layout, so nothing rule-based can read it. The model's answer is never trusted: `creatordraft.validate()` rebuilds it, and unsure places become "Unnamed stop". | F-183 |
+
+`convert`, `speak`, `around-you`, `transcribe` and `creator-import` exist today; the others are named so the log and the report already have a place for them.
 
 ## What is logged
 
@@ -41,6 +43,23 @@ Settings only (environment variables), no code change:
 | `GITAWAY_AI_ENDPOINT_<JOB>`, `GITAWAY_AI_KEY_<JOB>` | A different provider for one job: any OpenAI-compatible `/openai/v1` endpoint. |
 
 `<JOB>` is the job name in capitals with `-` as `_` (`AROUND_YOU`).
+
+### Claude Haiku 5.5 (`creator-import`, F-183)
+
+The only job on the Anthropic provider. It uses the official `anthropic` SDK with `ANTHROPIC_API_KEY` (set it in Railway, service web); with no key the job is off ("drafting is not switched on yet") and nothing is sent.
+
+| Variable | Effect |
+|---|---|
+| `ANTHROPIC_API_KEY` | Switches `creator-import` on (it makes `anthropic` this job's default provider). |
+| `GITAWAY_AI_PROVIDER_<JOB>` | `anthropic` or `azure`: which service answers any job. |
+| `GITAWAY_AI_MODEL_<JOB>` | Another Anthropic model for the job (default `claude-haiku-5-5`). The cost estimate only knows Haiku 5.5's price. |
+| `GITAWAY_AI_EFFORT_<JOB>` | `low` (default), `medium` or `high`. |
+
+The request: one message per draft, the post inside `<post>` tags and a system prompt that says it is untrusted data; structured output (`output_config.format`, a strict JSON schema, no prefill), effort `low`, `max_tokens` 8000, adaptive thinking left to the model. `stop_reason` is checked before the content: `refusal` and `max_tokens` are logged failures (`error` = `refusal`, `max_tokens`) that show the creator a fixed sentence. The log row holds the model, tokens in and out from the response's own usage, milliseconds and ok or the kind of error, never the post or the draft; a failure is also one content-free line in `railway logs`.
+
+Cost at $0.10 in / $0.50 out per million tokens (prompts up to 100K tokens): a 6,000 token post with a 1,500 token draft is about $0.0014; the 30,000 token ceiling (longer posts are cut, with a notice) about $0.005. `ai.cost_usd(model, tokens_in, tokens_out)` computes it. Each person can try 20 drafts a day.
+
+`pixi run probe-import <url>` (or `--text "..."`) makes one real call with `ANTHROPIC_API_KEY` set and prints the validated draft JSON, the tokens, the seconds and the estimate (never the key; its log goes to a throwaway folder). Per the F-175 lesson, when the feature misbehaves live, run it first with production's settings before reading code.
 
 ### Voice typing (`transcribe`)
 
@@ -70,4 +89,4 @@ Then set `GITAWAY_AI_TRANSCRIBE_PROVIDER=<name>` and its own settings. `tests/te
 
 ## Tests
 
-The suite never calls the network: `ai.TRANSPORT` is replaced by a fake, and the conftests pin the `AZURE_*` keys to empty. `python -m gitaway.ai_smoke` (Convert) and `python -m gitaway.speak_smoke` (Ask GitAway, on a canned day) are the real calls, run by hand: they print counts and the time taken only. `python -m gitaway.around_smoke [lat lon]` asks the real Overpass API for vegetarian food and restrooms near a point (default Disneyland) and has the model rank the candidates; it prints counts and seconds, no place names.
+The suite never calls the network: `ai.TRANSPORT`, `ai.ANTHROPIC_TRANSPORT` and `safefetch.TRANSPORT` are replaced by fakes, and the conftests pin the `AZURE_*` and `ANTHROPIC_API_KEY` keys to empty (`tests/test_probe_import.py` runs the real Anthropic SDK against a fake Messages API on localhost). `python -m gitaway.ai_smoke` (Convert) and `python -m gitaway.speak_smoke` (Ask GitAway, on a canned day) are the real calls, run by hand: they print counts and the time taken only. `python -m gitaway.around_smoke [lat lon]` asks the real Overpass API for vegetarian food and restrooms near a point (default Disneyland) and has the model rank the candidates; it prints counts and seconds, no place names.
