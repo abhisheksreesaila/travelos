@@ -92,7 +92,7 @@ def calendar_start(entry):
     n = len(entry.trip.days)
     return Section(
         Span(icon("plane", 36, 2), cls="fk-bigicon"), H2("Applying this starts your trip", id="fk-start"),
-        P(f"{n} day{'s' if n != 1 else ''} in {entry.trip.place}, with the plans on the right. You can change the dates, and add flights and a stay, any time from Trip details."),
+        P(f"{n} day{'s' if n != 1 else ''} in {entry.trip.place}, with the plans on the right. Set your real dates and add flights or a stay from Trip details."),
         cls="fk-cal fk-empty card", id="fk-start-card")
 
 

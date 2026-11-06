@@ -299,26 +299,36 @@ def _check_text(d):
     pub._check_text(*texts)
 
 
-def _link(stop, own) -> str:
-    """The link typed on a stop, kept when it is on the list (stoplinks), else HubError saying which stop and where links may go: a creator's own typing is told, never quietly dropped."""
+class LinkRefused(HubError):
+    """A stop's link that is not on the list. `draft` is the form as the creator posted it (never stored), so the editor can show it again with the sentence and nothing they typed is lost."""
+
+    def __init__(self, message, draft):
+        super().__init__(message)
+        self.draft = draft
+
+
+def _link(stop, own, refused) -> str:
+    """The link typed on a stop, kept when it is on the list (stoplinks). One that is not is kept as typed and its sentence goes into `refused` (which stop, where links may go): a creator's own
+    typing is told, never quietly dropped, and `apply` then stores nothing."""
     raw = str(stop.get("link") or "").strip()
     if not raw:
         return ""
     if (got := stoplinks.clean(raw, own)):
         return got
     where = stoplinks.LIST_TEXT + (", or to your own blog" if own else "")
-    raise HubError(f"The link on \"{_plain(stop.get('name'), MAX_STOP) or 'a stop'}\" can only go to {where}. Use a link from one of those sites, or leave it empty.")
+    refused.append(f"The link on \"{_plain(stop.get('name'), MAX_STOP) or 'a stop'}\" can only go to {where}. Use a link from one of those sites, or leave it empty.")
+    return _plain(raw, stoplinks.MAX)
 
 
 def apply(owner, d, form, action="save") -> dict:
     """Keep what the editor posted. `form` has: title, name, place, place_name, stickers (list), tip (list), d<i>_title, d<i>_note, d<i>s<j>_name|time|note, pick (list of
     picture numbers), cover; `action` can add or remove a stop or a day ("add_stop:1", "del_stop:0:2", "add_day", "del_day:1"). The form is the structure: rows it lacks are gone.
-    Raises HubError (a sentence fit to show) when a text holds an email address; the draft is then unchanged."""
+    Raises HubError (a sentence fit to show) when a text holds an email address, or LinkRefused when a stop's link is not allowed; the draft is then unchanged."""
     def val(k):
         v = form.get(k)
         return v if isinstance(v, str) else ""
     src = d.get("source") or {}
-    own = stoplinks.own_domain(src.get("kind"), src.get("url"))
+    own, refused = stoplinks.own_domain(src.get("kind"), src.get("url")), []
     rows = {}
     for k in form.keys():
         m = re.fullmatch(r"d(\d{1,2})(?:s(\d{1,2}))?_(title|note|name|time|link)", k)
@@ -337,7 +347,7 @@ def apply(owner, d, form, action="save") -> dict:
             if action == f"del_stop:{i}:{j}":
                 continue
             s = rows[i]["stops"][j]
-            stops.append({"time": _plain(s.get("time"), 12), "name": _plain(s.get("name"), MAX_STOP), "note": _plain(s.get("note"), MAX_STOP_NOTE), "link": _link(s, own)})
+            stops.append({"time": _plain(s.get("time"), 12), "name": _plain(s.get("name"), MAX_STOP), "note": _plain(s.get("note"), MAX_STOP_NOTE), "link": _link(s, own, refused)})
         if action == f"add_stop:{i}" and len(stops) < MAX_STOPS:
             stops.append({"time": "", "name": "", "note": "", "link": ""})
         days.append({"title": _plain(rows[i].get("title"), MAX_DAY_TITLE), "note": _plain(rows[i].get("note"), MAX_NOTE), "stops": stops})
@@ -349,6 +359,8 @@ def apply(owner, d, form, action="save") -> dict:
     new = {**d, "title": _plain(val("title"), MAX_TITLE), "name": _plain(val("name"), MAX_NAME), "place": place, "place_name": _plain(val("place_name"), MAX_PLACE) if place == "other" else "",
            "days": days, "tips": [t for t in (_plain(t, MAX_TIP) for t in form.getlist("tip") if isinstance(t, str)) if t][:MAX_TIPS],
            "stickers": [k for k in hub.TAGS if k in form.getlist("stickers")]}
+    if refused:
+        raise LinkRefused(refused[0], new)
     _check_text(new)
     picks = list(dict.fromkeys(int(p) for p in form.getlist("pick") if isinstance(p, str) and p.isdigit() and int(p) < len(d["images"])))[:MAX_PICKS]
     new["copies"], new["picks"] = _photos(owner, d, picks)

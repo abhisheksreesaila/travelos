@@ -167,7 +167,9 @@ def test_a_link_that_is_not_on_the_list_is_refused_with_the_reason_and_nothing_e
     assert r.status_code == 200
     text = unescape(r.text)
     assert 'The link on "Pearl Harbor tour" can only go to booking.com, viator.com, getyourguide.com, amazon.com, amzn.to, getawaytoday.com, stay22.com, expedia.com, tripadvisor.com or klook.com, or to your own blog.' in text
-    assert cd.get(tid(), did) == before
+    assert cd.get(tid(), did) == before                                           # nothing was stored
+    form = dict(form_of(r.text, f"/creators/import/{did}", "ci-edit"))
+    assert form["title"] == "Changed title" and form["d0s1_link"] == "https://evil.example/phish"      # and nothing the creator typed is lost from the page
 
 
 def test_a_link_with_an_email_address_in_it_is_refused(drafted):

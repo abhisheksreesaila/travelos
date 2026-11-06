@@ -248,7 +248,7 @@ def register(app):
         try:
             await run_in_threadpool(cd.apply, me.id, d, f, do)     # may fetch and re-encode the picked pictures
         except HubError as e:
-            return editor_page(d, error=str(e))
+            return editor_page(getattr(e, "draft", None) or d, error=str(e))      # a refused link shows the form as typed, with the sentence (F-196)
         return RedirectResponse(f"{PATH}/{token}/preview" if do == "preview" else f"{PATH}/{token}", status_code=303)
 
     @app.get(PATH + "/{token}/preview")
