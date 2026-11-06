@@ -28,8 +28,10 @@ MAX_BYTES = 2 * 1024 * 1024
 MAX_IMAGE = 8 * 1024 * 1024
 TIMEOUT = 8.0
 USER_AGENT = "GitAwayBot/1.0 (+https://gitaway.me; reads a post its author asked us to read)"
-ACCEPT = {"html": ("text/html", "application/xhtml+xml"), "json": ("application/json",), "xml": ("application/xml", "text/xml", "application/rss+xml", "application/atom+xml"), "image": ("image/jpeg", "image/png", "image/webp")}
-LIMIT = {"html": MAX_BYTES, "json": MAX_BYTES, "xml": MAX_BYTES, "image": MAX_IMAGE}
+USER_AGENT_UNASKED = "GitAwayBot/1.0 (+https://gitaway.me; drafts a public post for its author to look at; the author has not asked us to)"     # the captain's pre-draft (F-194): the author did not ask
+ACCEPT = {"html": ("text/html", "application/xhtml+xml"), "json": ("application/json",), "xml": ("application/xml", "text/xml", "application/rss+xml", "application/atom+xml"), "image": ("image/jpeg", "image/png", "image/webp"),
+          "robots": ("text/plain", "text/html")}
+LIMIT = {"html": MAX_BYTES, "json": MAX_BYTES, "xml": MAX_BYTES, "image": MAX_IMAGE, "robots": MAX_BYTES}
 RESOLVER = None    # tests: a function name -> list of address strings, instead of DNS
 TRANSPORT = None   # tests: a function (url, ip, timeout, kind) -> (status, headers dict with lower-case keys, body bytes), instead of the network
 _CGNAT = ipaddress.ip_network("100.64.0.0/10")
@@ -116,8 +118,8 @@ class _PinnedTLS(http.client.HTTPSConnection):
         self.sock = ssl.create_default_context().wrap_socket(raw, server_hostname=self.host)   # the certificate is checked against the NAME
 
 
-def _http(url, ip, timeout, kind):
-    """One request, no redirect followed: (status, headers, body). Reads at most the limit for `kind` plus one byte, and stops at the deadline."""
+def _http(url, ip, timeout, kind, ua=USER_AGENT):
+    """One request, no redirect followed: (status, headers, body). Reads at most the limit for `kind` plus one byte, and stops at the deadline. `ua` is the User-Agent sent."""
     parts = urlsplit(url)
     cls = _PinnedTLS if parts.scheme == "https" else _Pinned
     conn = cls(parts.hostname, parts.port or (443 if parts.scheme == "https" else 80), timeout=timeout)
@@ -138,7 +140,7 @@ def _http(url, ip, timeout, kind):
     watchdog.start()
     try:
         path = (parts.path or "/") + (f"?{parts.query}" if parts.query else "")
-        conn.request("GET", path, headers={"User-Agent": USER_AGENT, "Accept": ", ".join(ACCEPT[kind]), "Accept-Encoding": "identity"})
+        conn.request("GET", path, headers={"User-Agent": ua, "Accept": ", ".join(ACCEPT[kind]), "Accept-Encoding": "identity"})
         resp = conn.getresponse()
         headers = {k.lower(): v for k, v in resp.getheaders()}
         if resp.status in (301, 302, 303, 307, 308):
@@ -161,12 +163,13 @@ def _http(url, ip, timeout, kind):
         conn.close()
 
 
-def fetch(url, kind="html", timeout=None) -> Fetched:
-    """The bytes at `url` (html, json, xml (a sitemap or a feed, F-190) or image, per `kind`), within TIMEOUT seconds in all, or `timeout` when that is less (a scan passes what is left of its
-    budget, F-182). Raises FetchError with a sentence fit to show; see the module's list for what is refused."""
+def fetch(url, kind="html", timeout=None, asked=True) -> Fetched:
+    """The bytes at `url` (html, json, xml (a sitemap or a feed, F-190), image, or a robots.txt, per `kind`), within TIMEOUT seconds in all, or `timeout` when that is less (a scan passes what is
+    left of its budget, F-182). `asked`: the post's author asked for this read (their own paste); False for the captain's pre-draft, which says so in its User-Agent (F-194).
+    Raises FetchError with a sentence fit to show; see the module's list for what is refused."""
     started = time.monotonic()
     total = TIMEOUT if timeout is None else min(TIMEOUT, timeout)
-    send = TRANSPORT or _http
+    send = TRANSPORT or (lambda u, ip, t, k: _http(u, ip, t, k, USER_AGENT if asked else USER_AGENT_UNASKED))
     for _hop in range(MAX_REDIRECTS + 1):
         left = total - (time.monotonic() - started)
         if left <= 0.25:

@@ -46,9 +46,12 @@ class Web:
     """A fake web (`safefetch.TRANSPORT`): url -> (status, headers, body). Every name resolves to a public address."""
 
     def __init__(self, pages=None):
-        self.pages, self.calls = pages or {}, []
+        self.pages, self.calls, self.robots = pages or {}, [], []
 
     def __call__(self, url, ip, timeout, kind):
+        if url.endswith("/robots.txt"):      # F-194: GitAway reads a site's robots.txt first; a site that lists none has none (404), and it is not counted among the pages read
+            self.robots.append(url)
+            return self.pages.get(url, (404, {"content-type": "text/html"}, b"not found"))
         self.calls.append(url)
         return self.pages[url]
 

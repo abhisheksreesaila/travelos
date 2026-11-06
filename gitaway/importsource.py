@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 from html.parser import HTMLParser
 from urllib.parse import parse_qs, quote, urljoin, urlsplit
 
-from gitaway import safefetch
+from gitaway import robots, safefetch
 from gitaway.itineraries import safe_href
 
 MAX_TEXT_CHARS = 100_000        # about 30,000 tokens; a longer post is cut with a notice, never silently
@@ -129,9 +129,11 @@ def _pictures(page, base):
 
 # ---- the sources -------------------------------------------------------------------------------------------------------------
 
-def _blog(url, notices) -> Material:
+def _blog(url, notices, asked=True) -> Material:
+    if (why := robots.check(url, asked)):      # the site's own file decides whether an AI tool may read this page (F-194)
+        raise SourceError(why)
     try:
-        got = safefetch.fetch(url, "html")
+        got = safefetch.fetch(url, "html", asked=asked)
     except safefetch.FetchError as e:
         raise SourceError(f"{e} You can paste the text of your post instead.") from None
     page = got.text()
@@ -181,19 +183,21 @@ def _watch_description(page) -> str:
     return p.meta.get("og:description") or p.meta.get("description") or ""
 
 
-def _youtube(url, notices) -> Material:
+def _youtube(url, notices, asked=True) -> Material:
     vid = _video_id(url)
     if not re.fullmatch(r"[\w-]{6,20}", vid or ""):
         raise SourceError("That YouTube link goes to a page, not to one video. Paste the link to the video itself.")
     watch = f"https://www.youtube.com/watch?v={vid}"
+    if (why := robots.check(watch, asked)):
+        raise SourceError(why)
     title = by = thumb = description = ""
     try:
-        data = json.loads(safefetch.fetch("https://www.youtube.com/oembed?format=json&url=" + quote(watch, safe=""), "json").text())
+        data = json.loads(safefetch.fetch("https://www.youtube.com/oembed?format=json&url=" + quote(watch, safe=""), "json", asked=asked).text())
         title, by, thumb = str(data.get("title") or ""), str(data.get("author_name") or ""), str(data.get("thumbnail_url") or "")
     except (safefetch.FetchError, ValueError, AttributeError):
         pass
     try:
-        description = _watch_description(safefetch.fetch(watch, "html").text())
+        description = _watch_description(safefetch.fetch(watch, "html", asked=asked).text())
     except safefetch.FetchError:
         pass
     if not title and not description:
@@ -213,8 +217,9 @@ def offline(url="", text="") -> Material:
     return Material(platform(link) if link else "text", _cut((text or "").strip()[:MAX_PASTE], notices), link, notices=notices)
 
 
-def gather(url="", text="") -> Material:
-    """The material to draft from. `url` is the post's address (or ""), `text` what the creator pasted (or ""). Raises SourceError with a sentence fit to show."""
+def gather(url="", text="", asked=True) -> Material:
+    """The material to draft from. `url` is the post's address (or ""), `text` what the creator pasted (or ""). `asked`: the author asked for this read; False for the captain's pre-draft,
+    whose fetches say they did not (F-194). Raises SourceError with a sentence fit to show."""
     link = clean_link(url)
     text = (text or "").strip()[:MAX_PASTE]
     if not link and not text:
@@ -227,7 +232,7 @@ def gather(url="", text="") -> Material:
         return Material("instagram", _cut(text, notices), link, "", "", "", [], notices)
     if kind == "text":
         return Material("text", _cut(text, notices), "", "", "", "", [], notices)
-    got = _blog(link, notices) if kind == "blog" else _youtube(link, notices)
+    got = _blog(link, notices, asked) if kind == "blog" else _youtube(link, notices, asked)
     if text:     # a transcript or notes the creator added: the draft reads them after the page
         if kind == "youtube":
             notices[:] = [n for n in notices if "transcript" not in n]

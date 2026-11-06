@@ -71,6 +71,8 @@ class Pages(Web):
     """The fake web where an address nobody listed is a 404, like the real one."""
 
     def __call__(self, url, ip, timeout, kind):
+        if url.endswith("/robots.txt"):
+            return super().__call__(url, ip, timeout, kind)
         self.calls.append(url)
         return self.pages.get(url, (404, {"content-type": "text/html"}, b"not found"))
 

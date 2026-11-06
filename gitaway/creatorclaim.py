@@ -208,7 +208,7 @@ def draft(admin_id, link, name="", text="") -> tuple:
     if mode == "sample":
         d = cd.sample(UNCLAIMED, importsource.offline(link, ""), name)
     else:
-        d = cd.make(UNCLAIMED, str(admin_id), importsource.gather(link, ""), name)
+        d = cd.make(UNCLAIMED, str(admin_id), importsource.gather(link, "", asked=False), name)      # the author has not asked: the fetch says so (F-194)
     with cd._db() as db:
         token = _issue(db, d["id"], name, link)
     return d, link_for(token)
