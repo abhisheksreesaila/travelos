@@ -69,7 +69,16 @@ def test_partner_links_request_has_the_documented_fields(monkeypatch):
     monkeypatch.setenv("TRAVELPAYOUTS_MARKER", "801445")
     monkeypatch.setenv("TRAVELPAYOUTS_TRS", "596534")
     body = travelpayouts.links_request([("https://www.klook.com/en-US/search/result/?query=x", "ab12cd-hi-270305-stay")])
-    assert body == {"trs": "596534", "marker": "801445", "shorten": False, "links": [{"url": "https://www.klook.com/en-US/search/result/?query=x", "sub_id": "ab12cd-hi-270305-stay"}]}
+    # Numbers, not text: the live API answers 400 "invalid body" to "596534"/"801445" as strings (probed 2026-11-05).
+    assert body == {"trs": 596534, "marker": 801445, "shorten": False, "links": [{"url": "https://www.klook.com/en-US/search/result/?query=x", "sub_id": "ab12cd-hi-270305-stay"}]}
+
+
+def test_no_partner_links_call_without_a_numeric_project_id(monkeypatch):
+    monkeypatch.setenv("TRAVELPAYOUTS_MARKER", "801445")
+    monkeypatch.setenv("TRAVELPAYOUTS_TOKEN", "tok")
+    for trs in ("", "abc"):
+        monkeypatch.setenv("TRAVELPAYOUTS_TRS", trs)
+        assert travelpayouts.links_request([("https://www.klook.com/", "s")]) is None
 
 
 class FakeApi:
@@ -101,7 +110,7 @@ def test_klook_link_calls_the_api_once_with_a_short_timeout_and_caches_it(nokeys
     assert len(api.calls) == 1
     url, headers, body, timeout = api.calls[0]
     assert (url, headers, timeout) == ("https://api.travelpayouts.com/links/v1/create", {"X-Access-Token": "tok"}, 2)
-    assert body["links"] == [{"url": KLOOK_HI, "sub_id": "ab12cd-hi-270305-stay"}] and body["marker"] == "801445" and body["trs"] == "596534"
+    assert body["links"] == [{"url": KLOOK_HI, "sub_id": "ab12cd-hi-270305-stay"}] and body["marker"] == 801445 and body["trs"] == 596534
     travelpayouts.klook_link(KLOOK_HI, "other-sub")      # another SubID is another link
     assert len(api.calls) == 2
 
@@ -111,6 +120,7 @@ def test_klook_link_calls_the_api_once_with_a_short_timeout_and_caches_it(nokeys
 def test_klook_link_falls_back_when_the_api_fails(nokeys, monkeypatch, api):
     monkeypatch.setenv("TRAVELPAYOUTS_MARKER", "801445")
     monkeypatch.setenv("TRAVELPAYOUTS_TOKEN", "tok")
+    monkeypatch.setenv("TRAVELPAYOUTS_TRS", "596534")
     monkeypatch.setattr(travelpayouts, "_post", api)
     assert travelpayouts.klook_link(KLOOK_HI, "s") == "https://klook.tpx.lv/s1rIcwCA"
     assert travelpayouts._CACHE == {}       # a failure is not remembered
@@ -168,6 +178,7 @@ def test_go_flight_with_a_marker_goes_to_an_aviasales_search_with_marker_and_sub
 def test_go_stay_with_a_token_goes_to_the_tracked_klook_link(client, nokeys, monkeypatch):
     monkeypatch.setenv("TRAVELPAYOUTS_MARKER", "801445")
     monkeypatch.setenv("TRAVELPAYOUTS_TOKEN", "tok")
+    monkeypatch.setenv("TRAVELPAYOUTS_TRS", "596534")
     api = FakeApi()
     monkeypatch.setattr(travelpayouts, "_post", api)
     sign_in(client, "ari")
@@ -185,6 +196,7 @@ def test_go_car_without_a_token_goes_to_the_klook_fallback(client, nokeys, monke
 def test_the_plan_page_never_calls_the_partner_api(client, nokeys, monkeypatch):
     monkeypatch.setenv("TRAVELPAYOUTS_MARKER", "801445")
     monkeypatch.setenv("TRAVELPAYOUTS_TOKEN", "tok")
+    monkeypatch.setenv("TRAVELPAYOUTS_TRS", "596534")
     api = FakeApi()
     monkeypatch.setattr(travelpayouts, "_post", api)
     assert client.get(f"/plan?{HI}").status_code == 200 and api.calls == []
@@ -193,6 +205,7 @@ def test_the_plan_page_never_calls_the_partner_api(client, nokeys, monkeypatch):
 def test_the_subid_names_the_family_and_nobody_else(client, nokeys, monkeypatch):
     monkeypatch.setenv("TRAVELPAYOUTS_MARKER", "123456")
     monkeypatch.setenv("TRAVELPAYOUTS_TOKEN", "tok")
+    monkeypatch.setenv("TRAVELPAYOUTS_TRS", "596534")
     monkeypatch.setattr(travelpayouts, "_post", FakeApi())
 
     def sub(c, offer):
@@ -378,6 +391,7 @@ def test_off_the_showcase_a_marker_still_sends_people_to_the_real_partner(client
 def test_off_the_showcase_a_token_opens_partners_with_a_note_that_statistics_are_not_live(client, nokeys, monkeypatch):
     monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
     monkeypatch.setenv("TRAVELPAYOUTS_TOKEN", "tok")
+    monkeypatch.setenv("TRAVELPAYOUTS_TRS", "596534")
     monkeypatch.setenv("TRAVELPAYOUTS_MARKER", "123456")
     sign_in(client, "ari")
     client.get("/go/hif1?" + HI, follow_redirects=False)

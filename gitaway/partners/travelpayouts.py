@@ -37,9 +37,14 @@ def klook_fallback() -> str:
     return os.getenv("KLOOK_FALLBACK_URL", "").strip() or DEFAULT_KLOOK_FALLBACK
 
 
-def links_request(urls_and_subs, *, shorten=False) -> dict:
-    """The body of the partner-links call for `[(partner page url, sub_id), ...]`."""
-    return {"trs": os.getenv("TRAVELPAYOUTS_TRS", "").strip(), "marker": marker(), "shorten": shorten,
+def links_request(urls_and_subs, *, shorten=False) -> dict | None:
+    """The body of the partner-links call for `[(partner page url, sub_id), ...]`, or None without a numeric project id (trs) and marker.
+
+    trs and marker go as numbers: the live API answers 400 "invalid body" when they are strings (probed 2026-11-05)."""
+    trs, mk = os.getenv("TRAVELPAYOUTS_TRS", "").strip(), marker()
+    if not (trs.isascii() and trs.isdigit() and mk.isascii() and mk.isdigit()):
+        return None
+    return {"trs": int(trs), "marker": int(mk), "shorten": shorten,
             "links": [{"url": url, "sub_id": sub} for url, sub in urls_and_subs]}
 
 
@@ -54,7 +59,10 @@ def create_link(url: str, sub_id: str) -> str:
     """A tracked link for one partner page, from the API. Raises when there is no token or the API does not answer with a success."""
     if not (token() and marker()):
         raise LookupError("no token or marker")
-    answer = _post(API, {"X-Access-Token": token()}, links_request([(url, sub_id)]), TIMEOUT)
+    body = links_request([(url, sub_id)])
+    if body is None:
+        raise LookupError("no numeric project id (TRAVELPAYOUTS_TRS) or marker")
+    answer = _post(API, {"X-Access-Token": token()}, body, TIMEOUT)
     link = answer["result"]["links"][0]
     if link.get("code") != "success" or not str(link.get("partner_url", "")).startswith("https://"):
         raise LookupError(f"the API refused the link: {link.get('code')}")
