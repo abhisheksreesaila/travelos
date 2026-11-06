@@ -1114,7 +1114,7 @@ Needs: F-181, F-184
 
 # Launch-day blockers (critique 2026-11-06: Creator supply, Trust and legal, Execution; docs/research/critique-2026-11-06.md)
 
-## F-194 Things that would embarrass or endanger a creator on launch day [review]
+## F-194 Things that would embarrass or endanger a creator on launch day [done]
 Brief: docs/briefs/creator-import.md · Needs: F-188, F-182 fixes
 - [x] places: `disney`, `california` and `hawaii` no longer put a trip at Los Angeles or Honolulu; Walt Disney World, Disneyland Paris, Tokyo Disneyland, Lake Tahoe, Yosemite, San Francisco, Napa, Maui, Kauai and the Big Island map to no place; San Diego, La Jolla and Coronado to `sd`; Anaheim and "Disneyland Resort" stay `la`; the model's pick of a place is kept only when the post names it; a trip at a place GitAway cannot plan says so on its page (no Plan this trip, no "flights support <name>")
 - [x] money wording: one sentence (`affiliate.pays_you`, `affiliate.STAYS`) on the For creators page, the claim page, the outreach message and the settings page: flights booked from their trips carry their marker; stays and things to do support GitAway for now
@@ -1130,7 +1130,7 @@ Tests: `tests/test_place_matching.py`, `test_money_wording.py`, `test_robots.py`
 
 # The booking path is the reader's real trip (critique docs/research/critique-2026-11-06.md: Economics, Reader demand)
 
-## F-195 The booking path points at the reader's real trip, and the lane that earns [review]
+## F-195 The booking path points at the reader's real trip, and the lane that earns [done]
 Needs: F-184, F-181 · Decisions: D-160 to D-167 · Not touched (another group's): `gitaway/creatordraft.py`, `gitaway/publish.py`
 - [x] Klook "Tickets and things to do": a `todo` target in `gitaway/partners` through the existing partner-links API with a SubID and today's fallback; a Disneyland trip goes to Klook's Disneyland Resort page, any other place to `<place> attractions`; shown as one honest card on the plan workspace (under Getting around), on a creator's trip page and on the honest page; the URLs and what could not be verified are in D-160
 - [x] a Disneyland trip's stay link asks Klook for Anaheim, not "Los Angeles hotels"; a trip is a Disneyland trip only when a creator's trip says so (`focus=disney`, D-161), so a Santa Monica trip is not sent to Anaheim
@@ -1146,7 +1146,7 @@ Needs: F-184, F-181 · Decisions: D-160 to D-167 · Not touched (another group's
 
 # Release review fixes (critique docs/research/critique-2026-11-06.md)
 
-## F-196 Plumbing that breaks readers, families or the law [blocked: item 6b, one captain step]
+## F-196 Plumbing that breaks readers, families or the law [review]
 Brief: docs/briefs/creator-import.md · Needs: F-183, F-188 · Decisions: D-171 to D-180 (docs/decisions.md; expect renumbering on merge)
 - [x] 1. creator-import never falls back to Azure: with `ANTHROPIC_API_KEY` missing it is off and the paste page says drafting "is not switched on yet", even with `AZURE_OPENAI_*` set; the other jobs keep their Azure default (`tests/test_ai_plumbing.py`)
 - [x] 2. background drafts have their own AI pool (`ai.BACKGROUND_JOBS`: creator-import, plan-for-me listed ahead of F-193) so Ask, speak, voice and Convert always have their three slots; a `busy` answer in `draftjobs.run_one` puts the post back in the queue (not failed, not counted again) and the worker waits instead of spinning
@@ -1159,3 +1159,6 @@ Brief: docs/briefs/creator-import.md · Needs: F-183, F-188 · Decisions: D-171 
 - [x] 8. the source card's link to the creator's post sends the origin (`referrerpolicy="origin"`, no `noreferrer`) and carries `utm_source=gitaway` (`tests/test_source_link.py`)
 - [ ] proven on the running app at phone and desktop width (screens in docs/report/f196-*.png), full suites green
 Blocked (for the captain, not for review): register a DMCA agent at copyright.gov and set `DMCA_AGENT`; for report email set the `SMTP_*` variables and run `pixi add --pypi markdown-merge` (fh-saas needs it and does not declare it); have a lawyer read /terms.
+Open review findings (reviewer verdict NEEDS WORK, second pass 2026-11-06; merged into autopilot/booking-creators with F-194 and F-195, D-185):
+- [ ] medium, `gitaway/reports.py`: item 6b, the report email, cannot send here: fh-saas `send_email` imports `markdown_merge`, which `pixi.toml` does not declare; `tests/test_report_notify.py` fakes `send_email`, so the real path is unproven. Captain decision: `pixi add --pypi markdown-merge` (a lock change), then one real send to a local SMTP sink, then tick 6b. The fallback (WARNING line, the count in the account menu, header and /admin) works and is tested.
+- [ ] low, `gitaway/draftjobs.py`: `_gathered` (a requeued post's text) is cleared only in `_finish`; a job row removed another way leaves its text in memory until a restart. Optional: drop an entry when it is a few minutes old or its job row is gone.

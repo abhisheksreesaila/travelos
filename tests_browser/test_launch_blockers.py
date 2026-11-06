@@ -97,7 +97,8 @@ def test_a_claim_by_someone_elsewhere_is_unlisted_until_the_captain_approves_it(
     admin.locator(f"#wait-{slug} form[action='/admin/approve'] button").click()
     expect(admin.locator("#ad-waiting-sec")).to_have_count(0)
     seen.reload()
-    expect(seen.locator("meta[name=robots]")).to_have_count(0)
+    expect(seen.locator("meta[name=robots]")).to_have_count(1)                       # the waiting tag is gone; what is left is F-196's one plain noindex on a copy of a creator's post (D-186)
+    expect(seen.locator("meta[name=robots]")).to_have_attribute("content", "noindex")
     assert seen.locator(".src-by").inner_text() == "Maya Chen · Blog"
     assert "Maya Chen" in person(viewport).new_page().goto(f"{base_url}/creators").text()
 
