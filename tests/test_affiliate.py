@@ -40,6 +40,11 @@ def keys(nokeys, monkeypatch):
     return api
 
 
+def seen_on(handle, slug=None):
+    """The headers of a click on "Plan this trip" on the creator's own page (their profile, or one of their trips): the Referer our page makes the browser send."""
+    return {"referer": f"http://testserver/trips/{slug}" if slug else f"http://testserver/creators/{handle}"}
+
+
 def flight_marker(client, offer="hif1"):
     loc = client.get(f"/go/{offer}?to=hi&{TRIP}", follow_redirects=False).headers["location"]
     assert urlsplit(loc).netloc == "www.aviasales.com", loc
@@ -115,12 +120,12 @@ def test_settings_is_not_taken_for_a_creators_name(mode):
 
 def test_plan_from_a_creators_trip_remembers_the_creator_for_30_days_and_only_that(client, keys, mode):
     _, handle, _ = live_trip()
-    r = client.get(f"/plan?to=la&{TRIP}&via={handle}")
+    r = client.get(f"/plan?to=la&{TRIP}&via={handle}", headers=seen_on(handle))
     cookie = r.headers["set-cookie"].lower()
     assert f"ga_via={handle}" in cookie and "max-age=2592000" in cookie and "httponly" in cookie and "samesite=lax" in cookie and "path=/" in cookie and "secure" not in cookie
-    assert "ga_via" not in client.get(f"/plan?to=la&{TRIP}&via=nobody").headers.get("set-cookie", "")
+    assert "ga_via" not in client.get(f"/plan?to=la&{TRIP}&via=nobody", headers=seen_on("nobody")).headers.get("set-cookie", "")
     assert "ga_via" not in client.get(f"/plan?to=la&{TRIP}").headers.get("set-cookie", "")
-    assert "ga_via" not in client.get(f"/plan?to=la&{TRIP}&via=" + "a" * 500).headers.get("set-cookie", "")
+    assert "ga_via" not in client.get(f"/plan?to=la&{TRIP}&via=" + "a" * 500, headers=seen_on("a" * 500)).headers.get("set-cookie", "")
 
 
 def test_the_cookie_is_https_only_in_production(client, keys, monkeypatch):
@@ -128,13 +133,13 @@ def test_the_cookie_is_https_only_in_production(client, keys, monkeypatch):
     monkeypatch.setenv("GITAWAY_ENV", "production")
     monkeypatch.setenv("GITAWAY_SECRET_KEY", "k" * 40)
     _, handle, _ = live_trip()
-    assert "secure" in client.get(f"/plan?to=la&{TRIP}&via={handle}").headers["set-cookie"].lower()
+    assert "secure" in client.get(f"/plan?to=la&{TRIP}&via={handle}", headers=seen_on(handle)).headers["set-cookie"].lower()
 
 
 def test_a_flight_booked_from_a_creators_trip_carries_their_marker_and_the_click_is_counted(client, keys, mode):
     _, handle, owner = live_trip()
     affiliate.set_marker(owner["user_id"], "555111")
-    client.get(f"/plan?to=hi&{TRIP}&via={handle}")
+    client.get(f"/plan?to=hi&{TRIP}&via={handle}", headers=seen_on(handle))
     first = flight_marker(client)
     assert first.startswith("555111.")
     assert re.fullmatch(r"(anon|[0-9a-f]{6})-hi-270305-flight", first.split(".", 1)[1])       # the SubID is still ours: family hash, place, day, lane
@@ -145,7 +150,7 @@ def test_stays_and_cars_still_go_through_our_account(client, keys, mode):
     """D-101: whether the partner-links API takes another account's marker with our token is not verified, so Klook never carries the creator's."""
     _, handle, owner = live_trip()
     affiliate.set_marker(owner["user_id"], "555111")
-    client.get(f"/plan?to=hi&{TRIP}&via={handle}")
+    client.get(f"/plan?to=hi&{TRIP}&via={handle}", headers=seen_on(handle))
     loc = client.get(f"/go/hih1?to=hi&{TRIP}", follow_redirects=False).headers["location"]
     assert loc.startswith("https://klook.tpx.lv/x?sub=")
     (call,) = keys.calls
@@ -156,7 +161,7 @@ def test_stays_and_cars_still_go_through_our_account(client, keys, mode):
 def test_without_a_marker_or_a_cookie_or_with_a_made_up_one_the_marker_is_gitaways(client, keys, mode):
     _, handle, owner = live_trip()
     assert flight_marker(client).startswith("801445.")                        # nobody planned from a trip
-    client.get(f"/plan?to=hi&{TRIP}&via={handle}")
+    client.get(f"/plan?to=hi&{TRIP}&via={handle}", headers=seen_on(handle))
     assert flight_marker(client).startswith("801445.")                        # the creator has no marker
     affiliate.set_marker(owner["user_id"], "555111")
     client.cookies.set("ga_via", "not-a-creator")
@@ -169,7 +174,7 @@ def test_without_a_marker_or_a_cookie_or_with_a_made_up_one_the_marker_is_gitawa
 def test_a_creator_who_removes_their_marker_stops_being_paid_at_the_next_click(client, keys, mode):
     _, handle, owner = live_trip()
     affiliate.set_marker(owner["user_id"], "555111")
-    client.get(f"/plan?to=hi&{TRIP}&via={handle}")
+    client.get(f"/plan?to=hi&{TRIP}&via={handle}", headers=seen_on(handle))
     assert flight_marker(client).startswith("555111.")
     affiliate.set_marker(owner["user_id"], "")
     assert flight_marker(client).startswith("801445.")
@@ -178,9 +183,47 @@ def test_a_creator_who_removes_their_marker_stops_being_paid_at_the_next_click(c
 def test_a_signed_out_click_still_pays_the_creator(client, keys, mode):
     _, handle, owner = live_trip()
     affiliate.set_marker(owner["user_id"], "555111")
-    client.get(f"/plan?to=hi&{TRIP}&via={handle}")
+    client.get(f"/plan?to=hi&{TRIP}&via={handle}", headers=seen_on(handle))
     marker = flight_marker(client)
     assert marker.startswith("555111.") and marker.split(".", 1)[1].startswith("anon-")
+
+
+def test_the_cookie_is_set_only_when_the_click_came_from_that_creators_own_page(client, keys, mode):
+    """F-182 L1: any link anywhere to /plan?via=<handle> used to set a 30-day cookie, so a pasted link could make a stranger's later bookings count for a creator."""
+    row, handle, _ = live_trip()
+    other, other_handle, _ = live_trip("lee@example.com", "Lee Park", "Two days in San Diego")
+    url = f"/plan?to=la&{TRIP}&via={handle}"
+    nowhere = [{}, {"referer": "https://evil.example/trips/" + row["slug"]}, {"referer": f"http://testserver/trips/{other['slug']}"}, {"referer": f"http://testserver/creators/{other_handle}"},
+               {"referer": f"http://testserver/community"}, {"referer": f"http://testserver/creators/{handle}/x"}, {"referer": f"http://evil.example/creators/{handle}"}, {"referer": "not a url"}]
+    for headers in nowhere:
+        assert "ga_via" not in client.get(url, headers=headers).headers.get("set-cookie", ""), headers
+    assert f"ga_via={handle}" in client.get(url, headers=seen_on(handle)).headers["set-cookie"]                           # their profile
+    assert f"ga_via={handle}" in client.get(url, headers=seen_on(handle, row["slug"])).headers["set-cookie"]               # one of their trips
+    assert "ga_via" not in client.get(url, headers=seen_on(handle, other["slug"])).headers.get("set-cookie", "")           # someone else's trip does not vouch for them
+
+
+def test_clicks_are_counted_per_person_or_address_an_hour_so_one_script_cannot_inflate_a_creator(client, keys, mode, monkeypatch):
+    monkeypatch.setattr(affiliate, "VIA_PER_WINDOW", 3)
+    _, handle, _ = live_trip()
+    client.get(f"/plan?to=hi&{TRIP}&via={handle}", headers=seen_on(handle))
+    for _ in range(8):
+        assert flight_marker(client)                                  # every click still goes through to the partner
+    assert affiliate.clicks_by_creator() == {handle: (3, 0)}          # but at most 3 an hour from one address count
+
+
+def test_a_signed_in_person_has_their_own_allowance_not_the_addresss(client, keys, mode, monkeypatch):
+    monkeypatch.setattr(affiliate, "VIA_PER_WINDOW", 2)
+    _, handle, _ = live_trip()
+    sign_in(client, "ari")
+    client.get(f"/plan?to=hi&{TRIP}&via={handle}", headers=seen_on(handle))
+    for _ in range(5):
+        flight_marker(client)
+    assert affiliate.clicks_by_creator() == {handle: (2, 0)}
+    sign_in(client, "sam")
+    client.cookies.set("ga_via", handle)
+    for _ in range(5):
+        flight_marker(client)
+    assert affiliate.clicks_by_creator() == {handle: (4, 0)}
 
 
 # ---- the trip page says who earns -----------------------------------------------------------------------------------

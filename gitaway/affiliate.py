@@ -12,6 +12,8 @@ The page of a published trip says who earns what (`earning_line`), in the same w
 """
 
 import re
+from datetime import datetime, timedelta, timezone
+from urllib.parse import urlsplit
 
 from sqlalchemy import text
 
@@ -20,6 +22,7 @@ from gitaway.community import HubError, _now, connect
 
 COOKIE = "ga_via"
 COOKIE_DAYS = 30
+VIA_PER_WINDOW = 30      # counted /go clicks an hour from one person or address (F-182)
 _MARKER = re.compile(r"[0-9]{3,10}")
 _HANDLE = re.compile(r"[a-z0-9-]{1,40}")
 BAD_MARKER = "A marker is digits only, 3 to 10 of them, like 801445. Find yours in Travelpayouts under Profile."
@@ -61,12 +64,17 @@ def marker_for(handle) -> str:
     return r[0] if r else ""
 
 
-def log_click(handle, partner, lane, own_marker) -> None:
-    """One row for a /go click that came from a creator's trip: which partner and lane, and whether the creator's own marker was on the link."""
+def log_click(handle, partner, lane, own_marker, who="") -> bool:
+    """One row for a /go click that came from a creator's trip: which partner and lane, and whether the creator's own marker was on the link. `who` is the signed-in person ("u:<id>")
+    or the caller's salted address hash: at most VIA_PER_WINDOW rows an hour per `who` (F-182), so one script cannot inflate a creator's count. True when it was counted."""
+    since = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat(timespec="microseconds")
     with connect() as db:
-        db.conn.execute(text("INSERT INTO via_clicks (handle, partner, lane, own_marker, clicked_at) VALUES (:h, :p, :l, :o, :t)"),
-                        {"h": handle, "p": partner, "l": lane, "o": int(bool(own_marker)), "t": _now()})
+        if who and db.conn.execute(text("SELECT COUNT(*) FROM via_clicks WHERE who = :w AND clicked_at > :s"), {"w": who, "s": since}).scalar() >= VIA_PER_WINDOW:
+            return False
+        db.conn.execute(text("INSERT INTO via_clicks (handle, partner, lane, own_marker, clicked_at, who) VALUES (:h, :p, :l, :o, :t, :w)"),
+                        {"h": handle, "p": partner, "l": lane, "o": int(bool(own_marker)), "t": _now(), "w": who})
         db.conn.commit()
+        return True
 
 
 def clicks_by_creator() -> dict:
@@ -85,3 +93,20 @@ def earning_line(name, has_marker) -> str:
     if has_marker:
         return f"Flights booked from this trip support {name}. Stays and things to do support GitAway."
     return "Bookings from this trip support GitAway."
+
+
+def seen_on_own_page(request, handle) -> bool:
+    """Did this request come from the creator's own profile (/creators/<handle>) or one of their published trips (/trips/<slug>) on this site? By the Referer, which the browser
+    sends on a same-site click. The `ga_via` cookie is only set then (F-182): a link anywhere else to /plan?via=<handle> must not decide who a stranger's bookings pay."""
+    try:
+        ref = urlsplit(request.headers.get("referer", ""))
+    except ValueError:
+        return False
+    if ref.scheme not in ("http", "https") or ref.netloc != request.headers.get("host", "") or not ref.netloc:
+        return False
+    path = ref.path.rstrip("/")
+    if path == f"/creators/{handle}":
+        return True
+    m = re.fullmatch(r"/trips/([a-z0-9-]{1,80})", path)
+    row = community.get(m.group(1)) if m else None
+    return bool(row and (row["meta"] or {}).get("handle") == handle)

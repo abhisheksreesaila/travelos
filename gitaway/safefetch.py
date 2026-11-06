@@ -18,6 +18,7 @@ import http.client
 import ipaddress
 import socket
 import ssl
+import threading
 import time
 from dataclasses import dataclass
 from urllib.parse import urljoin, urlsplit
@@ -111,6 +112,7 @@ class _PinnedTLS(http.client.HTTPSConnection):
 
     def connect(self):
         raw = socket.create_connection((self.ip, self.port), self.timeout)
+        self.sock = raw      # so the watchdog can cut a handshake that drips too
         self.sock = ssl.create_default_context().wrap_socket(raw, server_hostname=self.host)   # the certificate is checked against the NAME
 
 
@@ -121,6 +123,19 @@ def _http(url, ip, timeout, kind):
     conn = cls(parts.hostname, parts.port or (443 if parts.scheme == "https" else 80), timeout=timeout)
     conn.ip = ip
     deadline = time.monotonic() + timeout
+    timed_out = threading.Event()
+
+    def cut():      # the hard deadline, from outside the socket: a socket timeout only bounds ONE wait, so a server dripping a byte at a time would hold us for ever
+        timed_out.set()
+        for act in ("shutdown", "close"):
+            try:
+                getattr(conn.sock, act)(*((socket.SHUT_RDWR,) if act == "shutdown" else ()))
+            except (OSError, AttributeError):
+                pass
+
+    watchdog = threading.Timer(timeout, cut)
+    watchdog.daemon = True
+    watchdog.start()
     try:
         path = (parts.path or "/") + (f"?{parts.query}" if parts.query else "")
         conn.request("GET", path, headers={"User-Agent": USER_AGENT, "Accept": ", ".join(ACCEPT[kind]), "Accept-Encoding": "identity"})
@@ -137,7 +152,12 @@ def _http(url, ip, timeout, kind):
                 break
             body += chunk
         return resp.status, headers, bytes(body)
+    except (OSError, http.client.HTTPException, ValueError):
+        if timed_out.is_set():
+            raise TimeoutError("the fetch took too long") from None
+        raise
     finally:
+        watchdog.cancel()
         conn.close()
 
 

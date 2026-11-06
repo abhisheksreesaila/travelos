@@ -105,7 +105,7 @@ def test_publish_from_the_phone_then_a_stranger_reads_it_and_it_comes_down(famil
     expect(p.locator("h1")).to_contain_text("Our Disneyland week")
     expect(p.get_by_text(NOTE)).to_be_visible()
     expect(p.get_by_text(TIP)).to_be_visible()
-    expect(p.locator("a.by")).to_have_text("By Ari Rivera")
+    expect(p.locator("a.by")).to_have_text("By Ari")
     plan = p.locator("#plan-this").first
     assert re.search(r"/plan\?.*to=la", plan.get_attribute("href"))
     imgs = p.locator(".day-photo img")
@@ -117,7 +117,7 @@ def test_publish_from_the_phone_then_a_stranger_reads_it_and_it_comes_down(famil
     shot(p, "public-phone")
 
     p.click("a.by")
-    expect(p.locator("h1")).to_have_text("Ari Rivera")
+    expect(p.locator("h1")).to_have_text("Ari")
     assert overflow(p) <= 1
     shot(p, "profile-phone")
     p.goto(f"{base_url}/community")
@@ -159,7 +159,7 @@ def test_the_laptop_editor_preview_and_public_page_are_calm_and_fit(family, brow
     expect(p.get_by_text(NOTE)).to_be_visible()
     assert overflow(p) <= 1
     shot(p, "public-laptop")
-    p.goto(f"{base_url}/creators/ari-rivera")
+    p.goto(f"{base_url}/creators/ari")
     assert overflow(p) <= 1
     shot(p, "profile-laptop")
     p.goto(f"{base_url}/community")
@@ -176,7 +176,7 @@ def test_the_public_and_publish_pages_wear_the_coast_look_with_no_blur(family, b
         page.goto(base_url + path)
         look = page.evaluate("() => ({fam: document.documentElement.classList.contains('oq-family-travel'), blur: [...document.querySelectorAll('*')].some(e => { const s = getComputedStyle(e); return (s.backdropFilter && s.backdropFilter !== 'none') || (s.filter || '').includes('blur'); })})")
         assert look["fam"] and not look["blur"], path
-    for path in (href, "/creators/ari-rivera", "/creators", "/community"):
+    for path in (href, "/creators/ari", "/creators", "/community"):
         p.goto(base_url + path)
         look = p.evaluate("() => ({fam: document.documentElement.classList.contains('oq-family-travel'), accent: getComputedStyle(document.documentElement).getPropertyValue('--oq-accent').trim(), blur: [...document.querySelectorAll('*')].some(e => { const s = getComputedStyle(e); return (s.backdropFilter && s.backdropFilter !== 'none') || (s.filter || '').includes('blur'); })})")
         assert look["fam"] and look["accent"] == "#c0401c" and not look["blur"], path

@@ -212,3 +212,59 @@ def test_the_real_transport_asks_for_no_compression_and_the_checked_address(monk
     assert (status, body) == (200, b"hello") and dialled == [("93.184.216.34", 80)]
     request = b"".join(sent).decode()
     assert request.startswith("GET /p?a=1 HTTP/1.1") and "Host: blog.example.com" in request and "Accept-Encoding: identity" in request
+
+
+def _drip_server(stage):
+    """A local server that never finishes: stage "body" sends headers then one byte a 0.3 s forever; "headers" sends the status line then one header byte at a time; "silent" accepts and says nothing."""
+    import socket
+    import threading
+    import time
+
+    srv = socket.socket()
+    srv.bind(("127.0.0.1", 0))
+    srv.listen(4)
+    stop = threading.Event()
+
+    def serve():
+        srv.settimeout(0.2)
+        conns = []
+        while not stop.is_set():
+            try:
+                c, _ = srv.accept()
+            except OSError:
+                continue
+            conns.append(c)
+            threading.Thread(target=drip, args=(c,), daemon=True).start()
+        for c in conns:
+            c.close()
+
+    def drip(c):
+        try:
+            c.recv(4096)
+            if stage == "silent":
+                stop.wait(30)
+                return
+            c.sendall(b"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n" + (b"Content-Length: 99999\r\n\r\n" if stage == "body" else b""))
+            while not stop.is_set():
+                c.sendall(b"x" if stage == "body" else b"X-A: ")
+                time.sleep(0.3)
+        except OSError:
+            pass
+
+    threading.Thread(target=serve, daemon=True).start()
+    return srv.getsockname()[1], stop
+
+
+@pytest.mark.parametrize("stage", ["body", "headers", "silent"])
+def test_a_server_that_drips_bytes_cannot_hold_the_fetch_past_the_deadline(stage):
+    """The deadline is enforced from outside the socket: a slow-drip body, slow-drip headers and silence all end within the limit, not when the server gets bored."""
+    import time
+
+    port, stop = _drip_server(stage)
+    try:
+        started = time.monotonic()
+        with pytest.raises((TimeoutError, OSError, safefetch.http.client.HTTPException)):
+            safefetch._http(f"http://127.0.0.1:{port}/", "127.0.0.1", 2, "html")
+        assert time.monotonic() - started < 3.0
+    finally:
+        stop.set()

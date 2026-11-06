@@ -16,6 +16,7 @@ from urllib.parse import quote
 
 from fasthtml.common import A, Button, Details, Div, Fieldset, Form, H1, H2, Img, Input, Label, Legend, Link, Option, P, Script, Section, Select, Span, Summary, Textarea
 from fasthtml.core import FtResponse
+from starlette.concurrency import run_in_threadpool
 from starlette.responses import FileResponse, RedirectResponse, Response
 
 from gitaway import ai, creatordraft as cd, importsource, session as ses
@@ -74,8 +75,8 @@ def _read(session, link, text, how):
                 return None, cd.NOT_ON
             why = "" if how == "manual" else cd.NOT_ON + " Your text is shown beside the editor to write from."
             return cd.blank(me.id, importsource.offline(link, text), name, why), ""
-        if not cd.allow(me.id):
-            return None, cd.LIMIT_HIT
+        if (hit := cd.allow(me.id)):
+            return None, cd.SITE_LIMIT_HIT if hit == "site" else cd.LIMIT_HIT
         if cd.mode() == "sample":      # the local showcase's simulated draft: nothing is fetched and no model is asked
             return cd.sample(me.id, importsource.offline(link, text), name), ""
         return cd.make(me.id, me.id, importsource.gather(link, text), name), ""
@@ -162,9 +163,12 @@ def editor_page(d, error="", just=False):
             Button("Save draft", type="submit", name="do", value="save", cls="btn", id="pb-save"), cls="pb-bar"),
         action=f"{PATH}/{d['id']}", method="post", id="ci-edit", cls="pb-form")
     unpub = Details(Summary(icon("x", 18, 2.4), Span("Unpublish"), cls="pb-unpub", id="pb-unpublish"),
-                    Form(P("This takes the page off GitAway for everyone. Your draft stays here, so you can publish again."), Input(type="hidden", name="do", value="unpublish"),
+                    Form(P("This takes the page off GitAway for everyone. Your draft stays here, so you can publish again; its pictures are deleted and picked again then."), Input(type="hidden", name="do", value="unpublish"),
                          Button("Yes, take it down", type="submit", id="pb-unpublish-yes", cls="btn btn-sm pb-unpub-yes"), action=f"{PATH}/{d['id']}", method="post", cls="pb-unpub-form"), cls="pb-confirm") if d["live"] else ""
-    return page("Check your draft", Section(top, done, _source_card(d), paste, form, unpub, cls="pb ci-edit ga-wrap"), current="/creators", head=HEAD)
+    delete = Details(Summary(icon("x", 18, 2.4), Span("Delete this draft"), cls="pb-unpub", id="ci-delete"),
+                     Form(P("This deletes the draft, its pictures and, if it is live, the public page. It cannot be undone."), Input(type="hidden", name="do", value="delete"),
+                          Button("Yes, delete it", type="submit", id="ci-delete-yes", cls="btn btn-sm pb-unpub-yes"), action=f"{PATH}/{d['id']}", method="post", cls="pb-unpub-form"), cls="pb-confirm")
+    return page("Check your draft", Section(top, done, _source_card(d), paste, form, unpub, delete, cls="pb ci-edit ga-wrap"), current="/creators", head=HEAD)
 
 
 def preview_page(session, d, error=""):
@@ -200,7 +204,7 @@ def register(app):
             link, text = text.strip(), ""
         if not link and not text.strip() and how == "draft":
             return paste_page(session, "", "", NOTHING, 422)
-        made, error = _read(session, link, text, how)
+        made, error = await run_in_threadpool(_read, session, link, text, how)     # fetches the page, asks the model: never on the event loop (F-182)
         if made is None:
             return paste_page(session, link, text, error, 422)
         return RedirectResponse(f"{PATH}/{made['id']}", status_code=303)
@@ -224,16 +228,19 @@ def register(app):
         f = await request.form()
         do = str(f.get("do") or "save")
         if do == "unpublish":
-            cd.unpublish(session, d)
+            await run_in_threadpool(cd.unpublish, session, d)
             return RedirectResponse(f"{PATH}/{token}", status_code=303)
+        if do == "delete":
+            await run_in_threadpool(cd.delete, session, d)
+            return RedirectResponse(PATH, status_code=303)
         if do == "publish":
             try:
-                cd.publish(session, d, f.get("own") == "1")
+                await run_in_threadpool(cd.publish, session, d, f.get("own") == "1")
             except HubError as e:
                 return FtResponse(preview_page(session, d, str(e)), status_code=409 if f.get("own") == "1" else 422)
             return RedirectResponse(f"{PATH}/{token}?live=1", status_code=303)
         try:
-            cd.apply(me.id, d, f, do)
+            await run_in_threadpool(cd.apply, me.id, d, f, do)     # may fetch and re-encode the picked pictures
         except HubError as e:
             return editor_page(d, error=str(e))
         return RedirectResponse(f"{PATH}/{token}/preview" if do == "preview" else f"{PATH}/{token}", status_code=303)

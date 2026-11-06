@@ -155,6 +155,26 @@ def test_everyone_together_have_a_ceiling_too(client, trip, monkeypatch):
     assert [send(client, row["slug"], ip=f"192.0.2.{i}").status_code for i in range(5)] == [200] * 3 + [429] * 2
 
 
+def test_the_ceiling_for_signed_out_reports_does_not_block_a_signed_in_person_and_logs_a_warning(client, trip, monkeypatch, caplog):
+    """F-182 L3: twelve addresses could fill the site-wide 60 an hour and so stop every real reporter. The ceiling is for signed-out reports only; it says so in the log."""
+    row, _, _ = trip
+    monkeypatch.setattr(reports, "ALL_PER_WINDOW", 3)
+    with caplog.at_level("WARNING", logger="gitaway.reports"):
+        assert [send(client, row["slug"], ip=f"192.0.2.{i}").status_code for i in range(5)] == [200] * 3 + [429] * 2
+    assert any("signed-out report ceiling" in r.getMessage() for r in caplog.records) and not any("192.0.2" in r.getMessage() for r in caplog.records)
+    sign_in(client, "sam")
+    assert send(client, row["slug"], ip="198.51.100.77").status_code == 200       # a signed-in person still gets through
+
+
+def test_signed_in_reports_do_not_use_up_the_signed_out_ceiling(client, trip, monkeypatch):
+    row, _, _ = trip
+    monkeypatch.setattr(reports, "ALL_PER_WINDOW", 2)
+    sign_in(client, "sam")
+    assert [send(client, row["slug"]).status_code for _ in range(3)] == [200] * 3
+    out = stranger(client)
+    assert [send(out, row["slug"], ip=f"192.0.2.{i}").status_code for i in range(3)] == [200, 200, 429]
+
+
 def test_the_limit_is_counted_from_the_database_so_a_restart_does_not_reset_it(client, trip):
     row, _, _ = trip
     for _ in range(5):
@@ -209,8 +229,18 @@ def test_the_captain_gets_in_whatever_the_case_or_spacing_of_the_list(client, tr
     assert client.get("/admin").status_code == 200
 
 
-def test_an_address_that_google_has_not_verified_is_not_the_captain():
-    assert admin.is_admin({"email": "cap@example.com", "note": "unverified"}) is False
+def test_an_address_that_google_has_not_verified_is_not_the_captain(client, monkeypatch):
+    """F-182 M1: the flag is session["verified"] (the "unverified" note exists only when an invitation is waiting), so an unverified address with no invitation was let in."""
+    monkeypatch.setenv("GITAWAY_ADMIN_EMAILS", "cap@example.com")
+    assert admin.is_admin({"email": "cap@example.com", "verified": 0}) is False
+    assert admin.is_admin({"email": "cap@example.com"}) is False
+    assert admin.is_admin({"email": "cap@example.com", "verified": 1}) is True
+    from gitaway import auth
+    real = auth.after_sign_in
+    monkeypatch.setattr(auth, "after_sign_in", lambda session, verified=True: real(session, verified=False))
+    sign_in(client, "cap@example.com")
+    assert client.get("/admin").status_code == 404
+    assert client.post("/admin/takedown", data={"slug": "x"}).status_code == 404
 
 
 def test_the_list_is_read_from_the_environment_never_from_code():
@@ -302,7 +332,7 @@ def test_a_taken_down_page_cannot_be_published_again_by_its_owner(captain, trip)
     captain.post("/admin/takedown", data={"slug": row["slug"]})
     with pytest.raises(HubError, match="GitAway took this page down"):
         community.publish(owner, community.trip_of(community.get(row["slug"], hidden=True)), kind="scrapbook")
-    assert community.unpublish(owner, row["slug"]) is False and community.get(row["slug"]) is None
+    assert community.unpublish(owner, row["slug"]) is True and community.get(row["slug"], hidden=True) is None and community.is_down(row["slug"])      # F-182: the owner can delete it; the takedown stays
 
 
 def test_the_admin_lists_a_down_trip_with_a_restore_button_and_a_live_one_with_take_down(captain, trip):
@@ -348,3 +378,26 @@ def test_commission_is_on_the_admin_page_and_no_longer_on_the_family_page(client
     assert numbers(html)["ad-commission"] == "$180.90"
     text_ = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", html))
     assert "Aviasales 1 click · 1 booked · $11.70" in text_ and "Klook 2 clicks · 2 booked · $169.20" in text_
+
+
+def test_a_family_database_that_cannot_be_read_is_logged_and_counted_on_the_admin_page(captain, trip, monkeypatch, caplog):
+    """F-182 (reviewer Should 5): the commission total silently left out an unreadable family. It still renders, but says how many were skipped and logs a content-free warning."""
+    from gitaway import familydb
+    real = familydb.ensure_schema
+    hit = []
+
+    def broken(db, tenant_id):
+        import inspect
+        if not hit and any(f.function == "all_clicks" for f in inspect.stack()):
+            hit.append(tenant_id)
+            raise RuntimeError("secret detail: ari@example.com")
+        return real(db, tenant_id)
+    monkeypatch.setattr(familydb, "ensure_schema", broken)
+    with caplog.at_level("WARNING", logger="gitaway.partners.log"):
+        html = captain.get("/admin").text
+    assert re.search(r'id="ad-skipped"[^>]*>1 family could not be read, so its clicks are not in these totals\.<', html)
+    warns = [r.getMessage() for r in caplog.records if r.name == "gitaway.partners.log"]
+    assert warns == [f"all_clicks: skipped family {hit[0]} (RuntimeError)"] and "ari@example.com" not in "".join(warns)
+    caplog.clear()
+    monkeypatch.setattr(familydb, "ensure_schema", real)
+    assert 'id="ad-skipped"' not in captain.get("/admin").text

@@ -643,7 +643,7 @@ def workspace(f, h, c, overlay=(), head=(), x="", v="", stay=None, trip=None, fl
 
 def register(app):
     @app.get("/plan")
-    def plan(session, f: str = "", h: str = "", c: str = "", x: str = "", v: str = "", rooms: str = None, add: str = None,
+    def plan(request, session, f: str = "", h: str = "", c: str = "", x: str = "", v: str = "", rooms: str = None, add: str = None,
              fare: str = None, bags: str = None, d: str = "", r: str = "", a: str = "", k: str = "", to: str = "", via: str = ""):
         trip = resolve_trip(d, r, a, k, to)
         picks = resolve_pick(f, h, c, trip)
@@ -652,7 +652,7 @@ def register(app):
             session_helpers.remember_plan(session, plan_path(*picks, stay, trip, flight)[len("/plan?"):])
         body = workspace(*picks, x=x, v=v, stay=stay, flight=flight, trip=trip)
         creator = affiliate.valid_via(via)   # F-184: "Plan this trip" on a creator's page: remember whose trip this is for 30 days, so /go can use their marker
-        if creator:
+        if creator and affiliate.seen_on_own_page(request, creator):      # F-182: only a click on that creator's own page sets it
             return body, cookie(affiliate.COOKIE, creator, max_age=affiliate.COOKIE_DAYS * 86400, path="/", httponly=True, samesite="lax", secure=auth.production())
         return body
 

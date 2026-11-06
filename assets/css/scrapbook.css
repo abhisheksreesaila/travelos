@@ -47,6 +47,7 @@ input:focus-visible + .pb-pill { outline: 0.1667rem solid var(--accent); outline
 .pb-pick:checked ~ .pb-tick { background: var(--accent); color: #fff; box-shadow: none; }
 .pb-cover-b { position: absolute; right: 0.25rem; bottom: 0.25rem; display: inline-flex; align-items: center; gap: 0.25rem; min-height: 2.75rem; min-width: 2.75rem; padding: 0 0.625rem; justify-content: center; border-radius: 62rem;
   background: var(--card); color: var(--ink); font-weight: 600; font-size: 0.9375rem; cursor: pointer; transition: background-color var(--motion-quick), color var(--motion-quick); touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.pb-by { position: absolute; left: 0.25rem; bottom: 0.25rem; max-width: calc(100% - 4rem); padding: 0.1875rem 0.5rem; border-radius: 0.5rem; background: var(--card); color: var(--ink); font-size: 0.9375rem; font-weight: 600; line-height: 1.25; pointer-events: none; }
 .pb-cover-t { display: none; }
 .pb-cover:checked + .pb-cover-b { background: var(--accent); color: #fff; }
 .pb-cover:checked + .pb-cover-b .pb-cover-t { display: inline; }

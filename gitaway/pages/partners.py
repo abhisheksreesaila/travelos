@@ -16,7 +16,7 @@ from urllib.parse import parse_qsl, urlencode
 from fasthtml.common import A, Button, Div, Form, H1, H2, Input, Li, Link, Main, P, Span, Title, Ul
 from starlette.responses import RedirectResponse
 
-from gitaway import affiliate, catalog, importer, partners, session as ses, showcase
+from gitaway import affiliate, catalog, importer, partners, reports, session as ses, showcase
 from gitaway.icons import icon
 from gitaway.layout import page, styles
 from gitaway.partners import log, statistics, travelpayouts
@@ -130,7 +130,9 @@ def register(app):
             via = affiliate.valid_via(request.cookies.get(affiliate.COOKIE))   # F-184: the creator whose trip this family planned from, if any
             own = affiliate.marker_for(via) if via else ""
             if via:
-                affiliate.log_click(via, partner.key, offer.kind, own and partner.key == "aviasales")
+                me = ses.current_traveler(session)
+                who = f"u:{me.id}" if me else reports.ip_hash(reports.client_ip(request))      # F-182: counted per person or address, an hour at a time
+                affiliate.log_click(via, partner.key, offer.kind, own and partner.key == "aviasales", who)
             return RedirectResponse(travelpayouts.link_for(partner, offer, trip, sub, own), status_code=302)
         return RedirectResponse(_sandbox_path(partner, click, offer, trip), status_code=302)
 

@@ -70,10 +70,10 @@ def _loads(raw, default):
 
 
 def _draft_of(row, fam, t):
-    b = fam.booking()
+    b = fam.booking()      # the name shown starts as the first name only; the person chooses to show more (F-182)
     return {
         "trip_id": fam.trip_id, "slug": row["slug"] if row else "", "title": row["title"] if row and row["title"] else share.title_for(t),
-        "name": row["name"] if row and row["name"] else fam.traveler.name, "cover": row["cover"] if row else "",
+        "name": row["name"] if row and row["name"] else (fam.traveler.name.split() or [""])[0], "cover": row["cover"] if row else "",
         "stickers": _loads(row["stickers"], []) if row else (["kid"] if t.kid_ages else []),
         "notes": _loads(row["notes"], {}) if row else {}, "tips": _loads(row["tips"], []) if row else [], "photos": _loads(row["photos"], []) if row else [],
         "copies": _loads(row["copies"], {}) if row else {}, "published_by": row["published_by"] if row else "", "published_at": row["published_at"] if row else "",
@@ -283,7 +283,7 @@ def unpublish(session, role="") -> bool:
     """Take the open trip's public page and its photo copies down. The person who published may; so may an admin of the family. False when nothing is live."""
     me = ses.current_traveler(session)
     d = get(session)
-    row = community.get(d["slug"]) if me and d and d["slug"] else None
+    row = community.get(d["slug"], hidden=True) if me and d and d["slug"] else None      # hidden=True: a page the captain took down can still be deleted by its owner (F-182)
     if not row or row["kind"] != "scrapbook":
         return False
     if row["owner_user"] != me.id and not (role == "admin" and row["owner_family"] == str(session.get("tenant_id") or "")):
@@ -306,7 +306,7 @@ def take_down_trip(session, trip_id) -> None:
     with ses.family(session) as fam:
         row = familydb.row(fam.db, "SELECT slug FROM publications WHERE trip_id = :t", t=trip_id) if fam else None
     if row:
-        community.unpublish({"user_id": (community.get(row["slug"]) or {}).get("owner_user", "")}, row["slug"])
+        community.unpublish({"user_id": (community.get(row["slug"], hidden=True) or {}).get("owner_user", "")}, row["slug"])
         _remove_files(row["slug"])
 
 

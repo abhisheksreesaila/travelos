@@ -8,11 +8,14 @@ pasted Expedia booking is shown): one trip per place and dates, so a flight, a s
 import hashlib
 import uuid
 from dataclasses import replace
+import logging
 from datetime import datetime, timedelta
 
 from fh_saas.utils_sql import insert_only
 
 from gitaway import catalog, familydb, importer, session as ses, tripimport as ti
+
+log = logging.getLogger(__name__)
 
 MAX_ORIGIN = 30   # how long the "Booked elsewhere" label may be (the trip builder's limit)
 
@@ -109,18 +112,21 @@ def book(session, click_id, offer, trip, partner):
     return get(session, click_id)
 
 
-def all_clicks() -> list:
-    """Every family's clicks and bookings, newest first: only for the admin page (F-185), which is where GitAway's commission is read. One short visit to each family's database."""
+def all_clicks() -> tuple:
+    """(every family's clicks and bookings newest first, how many families were skipped): only for the admin page (F-185), which is where GitAway's commission is read. One short
+    visit to each family's database; one that cannot be read is skipped, logged (its id and the kind of error, never what it said) and counted, so the totals are not silently low."""
     from fh_saas.db_tenant import get_or_create_tenant_db
     from gitaway import members
-    out = []
+    out, skipped = [], 0
     for tenant_id in members.tenant_ids():
         db = get_or_create_tenant_db(tenant_id)
         try:
             familydb.ensure_schema(db, tenant_id)
             out += familydb.rows(db, "SELECT * FROM partner_clicks")
-        except Exception:   # one family's unreadable database must not blank the page
+        except Exception as e:   # one family's unreadable database must not blank the page
+            skipped += 1
+            log.warning("all_clicks: skipped family %s (%s)", tenant_id, type(e).__name__)
             continue
         finally:
             db.conn.close()
-    return sorted(out, key=lambda r: r["clicked_at"], reverse=True)
+    return sorted(out, key=lambda r: r["clicked_at"], reverse=True), skipped
