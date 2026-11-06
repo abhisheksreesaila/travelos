@@ -7,7 +7,7 @@ a short timeout and a fallback; no test reaches it.
 """
 
 from dataclasses import dataclass
-from urllib.parse import quote, urlencode
+from urllib.parse import parse_qsl, quote, urlencode
 
 from gitaway import catalog
 
@@ -87,6 +87,11 @@ _BY_LANE = {lane: p for p in PARTNERS for lane in p.lanes}
 def for_lane(lane: str) -> Partner:
     """The partner of a lane ("flight", "stay", "car" or "ride"). Raises KeyError."""
     return _BY_LANE[lane]
+
+
+def go_href(offer, trip) -> str:
+    """The /go link of one offer (or search offer) for a trip: it logs the click and sends the traveler to the partner. Carries the trip as catalog.trip_query writes it."""
+    return f"/go/{offer.id}?" + urlencode({"to": trip.key, **dict(parse_qsl(catalog.trip_query(trip)))})
 
 
 def get(key: str) -> Partner | None:

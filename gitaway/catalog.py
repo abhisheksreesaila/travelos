@@ -193,6 +193,13 @@ def is_past(depart, ret) -> bool:
 
 
 _AIRPORT = re.compile(r"[A-Z]{3}")
+BAD_HOME = "Use a three-letter airport code, like SFO, or leave it empty."
+
+
+def clean_home(text) -> str:
+    """The airport code in `text` in capitals, or "" when it is empty or not three letters."""
+    code = (text or "").strip().upper()
+    return code if _AIRPORT.fullmatch(code) else ""
 
 
 def parse_trip(origin, to, depart, ret, adults, kids, check_past=False, focus="") -> TripSearch:
@@ -205,7 +212,7 @@ def parse_trip(origin, to, depart, ret, adults, kids, check_past=False, focus=""
     errs = []
     home = (origin or "").strip().upper()
     if home and not _AIRPORT.fullmatch(home):
-        errs.append(("from", "Use a three-letter airport code, like SFO, or leave it empty."))
+        errs.append(("from", BAD_HOME))
     dest = next((x for x in DESTINATIONS if x.key == (to or "").strip().lower()), None)
     if dest is None:
         errs.append(("to", "Pick where you want to go."))
@@ -245,7 +252,7 @@ def parse_trip(origin, to, depart, ret, adults, kids, check_past=False, focus=""
 def sample_trip(to="la", home="", focus="") -> TripSearch:
     """The sample trip's dates and party in destination `to` (missing or unknown means Los Angeles), with the reader's home airport and focus if they gave good ones."""
     dest = next((x for x in DESTINATIONS if x.key == (to or "").strip().lower()), DESTINATIONS[0])
-    home = home.strip().upper() if _AIRPORT.fullmatch((home or "").strip().upper()) else ""
+    home = clean_home(home)
     return replace(SAMPLE_TRIP, destination_name=dest.name, airports=dest.airports, home=home, origin=home or SAMPLE_TRIP.origin,
                    origin_name=(SAMPLE_TRIP.origin_name if not home or home == ORIGIN[0] else home), focus=focus if focus in FOCUS.get(dest.key, ()) else "")
 
@@ -262,8 +269,7 @@ def trip_query(trip) -> str:
 def trip_from_url(d, r, a, k, to="la", home="", focus="") -> TripSearch:
     """The trip a URL names. Nothing given, or anything bad, means the sample trip (in `to`; Los Angeles when it is missing or unknown).
     A bad `home` or `focus` is dropped, not the trip: the reader just has not said where they fly from."""
-    home = (home or "").strip().upper()
-    home = home if _AIRPORT.fullmatch(home) else ""
+    home = clean_home(home)
     try:
         return parse_trip(home, to or "la", d or "", r or "", a or "", k or "", focus=focus or "")
     except TripError:
