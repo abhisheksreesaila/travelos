@@ -71,7 +71,7 @@ def all_cards(session) -> list:
     return [*(() if real else (_from_itinerary(t) for t in itineraries.ITINERARIES.values())), *cards]
 
 
-_DISNEY = re.compile(r"disney|anaheim", re.I)
+_DISNEY = re.compile(r"disney\s?land|anaheim", re.I)       # not "Walt Disney Concert Hall" or "Disney Hall", which are downtown Los Angeles
 _NOT_CALIFORNIA = re.compile(r"world|paris|tokyo|hong kong|shanghai|orlando|florida", re.I)   # Disneyland Resort is the one in Anaheim, not these
 
 
@@ -82,22 +82,21 @@ def focus_of(trip) -> str:
     return "disney" if trip.plan_to == "la" and _DISNEY.search(said) and not _NOT_CALIFORNIA.search(said) else ""
 
 
-def _params(trip, **party) -> dict | None:
-    """The trip a link from this page names: the place, sensible dates ahead, the reader's party and airport when they have said, the focus, and whose trip it is (F-184). None
+def _params(trip) -> dict | None:
+    """The trip a link from this page names: the place, sensible dates ahead for two adults, the focus, and whose trip it is (F-184). None
     when the trip's place is not one the workspace plans."""
     from gitaway import publish
     if not trip.plan_to:
         return None
     depart, ret = publish.sample_dates(trip.plan_days)
-    adults, kids, home, focus = party.get("adults", 2), party.get("kids", ()), party.get("home", ""), focus_of(trip)
-    return {"to": trip.plan_to, "d": depart.isoformat(), "r": ret.isoformat(), "a": adults, **({"k": ",".join(map(str, kids))} if kids else {}), **({"home": home.strip().upper()} if home else {}),
-            **({"focus": focus} if focus else {}), **({"via": trip.handle} if trip.handle else {})}
+    focus = focus_of(trip)
+    return {"to": trip.plan_to, "d": depart.isoformat(), "r": ret.isoformat(), "a": 2, **({"focus": focus} if focus else {}), **({"via": trip.handle} if trip.handle else {})}
 
 
-def plan_href(trip, adults=2, kids=(), home="") -> str:
+def plan_href(trip) -> str:
     """"Plan this trip" for a real published trip: the booking workspace at the trip's place with sensible dates ahead (gitaway.publish.sample_dates), "" when
-    the trip's place is not one the workspace plans. `kids` (ages) and `home` (an airport code) are what the reader has said about their party and where they fly from."""
-    params = _params(trip, adults=adults, kids=kids, home=home)
+    the trip's place is not one the workspace plans. The reader says their party and airport on the page it opens (F-195)."""
+    params = _params(trip)
     return "/plan?" + urlencode(params) if params else ""
 
 

@@ -148,3 +148,27 @@ def test_dates_that_have_passed_become_the_next_ones_worth_searching_with_the_sa
 def test_dates_ahead_are_left_alone(client, live):
     _, handle, _ = live
     assert "Mar 5 – 9" in words(client.get(f"/plan?to=la&{TRIP}&via={handle}").text)
+
+
+def test_changing_dates_keeps_a_reader_with_no_cookie_on_the_honest_page(client, live):
+    """F-195 review: a pasted /plan?via= link sets no cookie (D-125), so `via` itself must ride through the Change link, /start and its redirect."""
+    _, handle, _ = live
+    page = client.get(f"/plan?to=la&{TRIP}&via={handle}", headers={"referer": "https://evil.example/"})
+    assert "set-cookie" not in page.headers
+    change = re.search(r'href="(/start[^"]*)"[^>]*ps-change', page.text).group(1).replace("&amp;", "&")
+    assert f"via={handle}" in change
+    form = client.get(change).text
+    assert re.search(rf'<input[^>]*name="via"[^>]*value="{handle}"|<input[^>]*value="{handle}"[^>]*name="via"', form)
+    r = client.get("/start", params={"go": "1", "to": "la", "d": "2027-04-02", "r": "2027-04-06", "a": "3", "n": "0", "via": handle}, follow_redirects=False)
+    assert r.headers["location"] == f"/plan?d=2027-04-02&r=2027-04-06&a=3&via={handle}"
+    assert "set-cookie" not in r.headers
+    after = client.get(r.headers["location"])
+    assert "set-cookie" not in after.headers
+    text = words(after.text)
+    assert "Search flights to Los Angeles" in text and "Skylark" not in text and "Preview: sample prices" not in text
+
+
+def test_a_made_up_via_is_not_carried_through_start(client, live):
+    r = client.get("/start", params={"go": "1", "to": "la", "d": "2027-04-02", "r": "2027-04-06", "a": "3", "n": "0", "via": "nobody-here"}, follow_redirects=False)
+    assert r.headers["location"] == "/plan?d=2027-04-02&r=2027-04-06&a=3"
+    assert 'name="via"' not in client.get("/start?via=nobody-here").text

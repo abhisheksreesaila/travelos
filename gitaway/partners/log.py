@@ -26,9 +26,10 @@ def new_click_id() -> str:
 
 def sub_id(session, trip, offer, via="") -> str:
     """The Travelpayouts SubID of a click: a short family hash, the place, the first day and the lane, then the handle of the creator whose trip the family planned from
-    (F-195, so Klook's report can be split by creator; at most 40 characters of a public handle, about 70 in all, far under Travelpayouts' 4096). No name, email or address (D-24)."""
+    (F-195, so Klook's report can be split by creator; at most 40 characters of a public handle, about 70 in all, far under Travelpayouts' 4096). Joined with `_` and the
+    handle's hyphens made `_`: Travelpayouts' help allows only digits, Latin letters and `_` in a SubID (D-149). No name, email or address (D-24)."""
     family = hashlib.sha256(str((session or {}).get("tenant_id") or "").encode()).hexdigest()[:6] if (session or {}).get("tenant_id") else "anon"
-    return f"{family}-{trip.key}-{trip.depart:%y%m%d}-{offer.kind}" + (f"-{via}" if via else "")
+    return f"{family}_{trip.key}_{trip.depart:%y%m%d}_{offer.kind}" + (f"_{via.replace('-', '_')}" if via else "")
 
 
 def record_click(session, click_id, offer, trip, partner, via="") -> str:

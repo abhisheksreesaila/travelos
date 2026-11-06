@@ -72,9 +72,9 @@ def test_commission_estimates_per_partner():
 def test_partner_links_request_has_the_documented_fields(monkeypatch):
     monkeypatch.setenv("TRAVELPAYOUTS_MARKER", "801445")
     monkeypatch.setenv("TRAVELPAYOUTS_TRS", "596534")
-    body = travelpayouts.links_request([("https://www.klook.com/en-US/search/result/?query=x", "ab12cd-hi-270305-stay")])
+    body = travelpayouts.links_request([("https://www.klook.com/en-US/search/result/?query=x", "ab12cd_hi_270305_stay")])
     # Numbers, not text: the live API answers 400 "invalid body" to "596534"/"801445" as strings (probed 2026-11-05).
-    assert body == {"trs": 596534, "marker": 801445, "shorten": False, "links": [{"url": "https://www.klook.com/en-US/search/result/?query=x", "sub_id": "ab12cd-hi-270305-stay"}]}
+    assert body == {"trs": 596534, "marker": 801445, "shorten": False, "links": [{"url": "https://www.klook.com/en-US/search/result/?query=x", "sub_id": "ab12cd_hi_270305_stay"}]}
 
 
 def test_no_partner_links_call_without_a_numeric_project_id(monkeypatch):
@@ -110,11 +110,11 @@ def test_klook_link_calls_the_api_once_with_a_short_timeout_and_caches_it(nokeys
     api = FakeApi()
     monkeypatch.setattr(travelpayouts, "_post", api)
     for _ in range(2):
-        assert travelpayouts.klook_link(KLOOK_HI, "ab12cd-hi-270305-stay") == "https://klook.tpx.lv/x?sub=ab12cd-hi-270305-stay"
+        assert travelpayouts.klook_link(KLOOK_HI, "ab12cd_hi_270305_stay") == "https://klook.tpx.lv/x?sub=ab12cd_hi_270305_stay"
     assert len(api.calls) == 1
     url, headers, body, timeout = api.calls[0]
     assert (url, headers, timeout) == ("https://api.travelpayouts.com/links/v1/create", {"X-Access-Token": "tok"}, 2)
-    assert body["links"] == [{"url": KLOOK_HI, "sub_id": "ab12cd-hi-270305-stay"}] and body["marker"] == 801445 and body["trs"] == 596534
+    assert body["links"] == [{"url": KLOOK_HI, "sub_id": "ab12cd_hi_270305_stay"}] and body["marker"] == 801445 and body["trs"] == 596534
     travelpayouts.klook_link(KLOOK_HI, "other-sub")      # another SubID is another link
     assert len(api.calls) == 2
 
@@ -176,7 +176,7 @@ def test_go_flight_with_a_marker_goes_to_an_aviasales_search_with_marker_and_sub
     assert base == "https://www.aviasales.com/"      # the reader has not said where they fly from: Aviasales asks, with the rest of the search filled in
     assert parse_qs(query)["destination_iata"] == ["HNL"] and parse_qs(query)["adults"] == ["2"]
     marker = parse_qs(query)["marker"][0]
-    assert re.fullmatch(r"801445\.[0-9a-f]{6}-hi-270305-flight", marker)
+    assert re.fullmatch(r"801445\.[0-9a-f]{6}_hi_270305_flight", marker)
     assert "ari" not in marker
 
 
@@ -188,7 +188,7 @@ def test_go_stay_with_a_token_goes_to_the_tracked_klook_link(client, nokeys, mon
     monkeypatch.setattr(travelpayouts, "_post", api)
     sign_in(client, "ari")
     r = client.get(f"/go/hih1?{HI}", follow_redirects=False)
-    assert r.status_code == 302 and re.fullmatch(r"https://klook\.tpx\.lv/x\?sub=[0-9a-f]{6}-hi-270305-stay", r.headers["location"])
+    assert r.status_code == 302 and re.fullmatch(r"https://klook\.tpx\.lv/x\?sub=[0-9a-f]{6}_hi_270305_stay", r.headers["location"])
     assert api.calls[0][2]["links"][0]["url"] == "https://www.klook.com/en-US/search/result/?query=Honolulu%20hotels"
 
 
@@ -221,8 +221,8 @@ def test_the_subid_names_the_family_and_nobody_else(client, nokeys, monkeypatch)
     other = browser(client)
     sign_in(other, addr("lee"))
     c = sub(other, "hif1")
-    assert a.split("-")[0] == b.split("-")[0] and a.split("-")[0] != c.split("-")[0]
-    assert b.endswith("-hi-270305-stay")
+    assert a.split("_")[0] == b.split("_")[0] and a.split("_")[0] != c.split("_")[0]
+    assert b.endswith("_hi_270305_stay")
 
 
 def test_a_signed_out_click_still_redirects_and_logs_nothing(client, nokeys):
@@ -280,7 +280,7 @@ def test_a_booking_records_the_conversion_and_the_family_sees_no_commission(clie
     page = text(client.get("/partners").text)
     assert "1 click · 1 booked" in page and "$11.70" not in page and "estimated commission" not in page.lower()
     assert "Aviasales Booked Aloha Pacific 12" in page
-    assert re.search(r"SubID [0-9a-f]{6}-hi-270305-flight Price at the partner \$1,064 Partner status processing", page)
+    assert re.search(r"SubID [0-9a-f]{6}_hi_270305_flight Price at the partner \$1,064 Partner status processing", page)
 
 
 def test_the_partners_page_lists_every_lane_without_commission(client, nokeys):
@@ -298,7 +298,7 @@ def test_a_click_that_was_not_booked_is_listed_as_clicked(client, nokeys):
     sandbox_of(client, "hic1")
     page = text(client.get("/partners").text)
     assert "1 click · 0 booked" in page
-    assert re.search(r"Klook Clicked Island Drive Rentals SubID [0-9a-f]{6}-hi-270305-car Price at the partner –", page)
+    assert re.search(r"Klook Clicked Island Drive Rentals SubID [0-9a-f]{6}_hi_270305_car Price at the partner –", page)
 
 
 def test_booking_twice_changes_nothing(client, nokeys):
@@ -482,7 +482,7 @@ def test_go_search_flight_is_one_aviasales_search_without_an_invented_offer(clie
     loc = client.get("/go/search-flight?to=la&d=2027-03-05&r=2027-03-09&a=2&home=ord", follow_redirects=False).headers["location"]
     base, _, query = loc.partition("?")
     assert base == "https://www.aviasales.com/search/ORD0503LAX09032"
-    assert re.fullmatch(r"801445\.[0-9a-f]{6}-la-270305-flight", parse_qs(query)["marker"][0])
+    assert re.fullmatch(r"801445\.[0-9a-f]{6}_la_270305_flight", parse_qs(query)["marker"][0])
     assert "Search flights to Los Angeles" in text(client.get("/partners").text)
 
 
@@ -494,7 +494,7 @@ def test_go_search_todo_asks_klook_for_disneyland_tickets_through_the_partner_ap
     monkeypatch.setattr(travelpayouts, "_post", api)
     sign_in(client, "ari")
     r = client.get(f"/go/search-todo?to=la&{TRIP}&focus=disney", follow_redirects=False)
-    assert r.status_code == 302 and re.fullmatch(r"https://klook\.tpx\.lv/x\?sub=[0-9a-f]{6}-la-270305-todo", r.headers["location"])
+    assert r.status_code == 302 and re.fullmatch(r"https://klook\.tpx\.lv/x\?sub=[0-9a-f]{6}_la_270305_todo", r.headers["location"])
     assert api.calls[0][2]["links"][0]["url"] == "https://www.klook.com/en-US/destination/p50042790-disneyland-resort/"
     r = client.get(f"/go/search-todo?to=sd&{TRIP}", follow_redirects=False)
     assert api.calls[1][2]["links"][0]["url"] == "https://www.klook.com/en-US/search/result/?query=San%20Diego%20attractions"

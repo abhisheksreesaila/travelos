@@ -63,7 +63,7 @@ def search_page(trip, via="", home_raw="", error=""):
     trip = ahead(trip)
     live = partners.available()
     flight, stay, todo = (catalog.search_offer(k, trip) for k in ("flight", "stay", "todo"))
-    query = catalog.trip_query(trip)
+    query = "&".join(filter(None, (catalog.trip_query(trip), f"via={via}" if via else "")))
     return page("Plan this trip", Main(
         Div(Span("PLAN THIS TRIP", cls="eyebrow"), H1(f"Book your trip to {trip.destination_name}", cls="ps-title"),
             P(f"{trip.date_label} · {trip.summary}" + (f" · flying from {trip.home}" if trip.home else ""), cls="ps-lede", id="ps-lede"),

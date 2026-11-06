@@ -142,7 +142,7 @@ def test_a_flight_booked_from_a_creators_trip_carries_their_marker_and_the_click
     client.get(f"/plan?to=hi&{TRIP}&via={handle}", headers=seen_on(handle))
     first = flight_marker(client)
     assert first.startswith("555111.")
-    assert first.split(".", 1)[1] == f"anon-hi-270305-flight-{handle}"       # the SubID is still ours: family hash, place, day, lane, and now whose trip (F-195)
+    assert first.split(".", 1)[1] == f"anon_hi_270305_flight_{handle.replace('-', '_')}"       # the SubID is still ours: family hash, place, day, lane, and now whose trip (F-195)
     assert affiliate.clicks_by_creator() == {handle: (1, 1)}
 
 
@@ -185,7 +185,7 @@ def test_a_signed_out_click_still_pays_the_creator(client, keys, mode):
     affiliate.set_marker(owner["user_id"], "555111")
     client.get(f"/plan?to=hi&{TRIP}&via={handle}", headers=seen_on(handle))
     marker = flight_marker(client)
-    assert marker.startswith("555111.") and marker.split(".", 1)[1].startswith("anon-")
+    assert marker.startswith("555111.") and marker.split(".", 1)[1].startswith("anon_")
 
 
 def test_the_cookie_is_set_only_when_the_click_came_from_that_creators_own_page(client, keys, mode):
@@ -258,7 +258,7 @@ def test_the_creators_handle_is_in_the_subid_of_flights_and_of_klook_clicks(clie
     flight = flight_marker(client).split(".", 1)[1]
     client.get(f"/go/hih1?to=hi&{TRIP}", follow_redirects=False)
     stay = keys.calls[-1][2]["links"][0]["sub_id"]
-    assert flight == f"anon-hi-270305-flight-{handle}" and stay == f"anon-hi-270305-stay-{handle}"
+    assert flight == f"anon_hi_270305_flight_{handle.replace('-', '_')}" and stay == f"anon_hi_270305_stay_{handle.replace('-', '_')}"
     assert handle == "maya-chen" and len(stay) < 100
 
 
@@ -269,8 +269,17 @@ def test_the_longest_handle_still_fits_travelpayouts_subid():
     assert len(log.sub_id({"tenant_id": "t"}, trip, catalog.offer("hif1", trip), "a" * 40)) <= 100       # Travelpayouts allows 4096; we stay readable
 
 
+def test_a_subid_uses_only_digits_letters_and_underscores_as_travelpayouts_asks():
+    """F-195 review: their help says SubIDs may hold digits, Latin letters and `_` only, so a hyphenated handle must not be sent as it is."""
+    from gitaway import catalog
+    from gitaway.partners import log
+    trip = catalog.sample_trip("hi")
+    assert log.sub_id({"tenant_id": "t"}, trip, catalog.offer("hif1", trip), "maya-chen-2") == log.sub_id({"tenant_id": "t"}, trip, catalog.offer("hif1", trip)) + "_maya_chen_2"
+    assert re.fullmatch(r"[0-9a-zA-Z_]+", log.sub_id({"tenant_id": "t"}, trip, catalog.offer("hif1", trip), "maya-chen-2"))
+
+
 def test_no_creator_means_no_handle_in_the_subid(client, keys, mode):
-    assert flight_marker(client).split(".", 1)[1] == "anon-hi-270305-flight"
+    assert flight_marker(client).split(".", 1)[1] == "anon_hi_270305_flight"
 
 
 def test_a_tickets_click_on_a_creators_own_page_counts_for_them_and_remembers_them(client, keys, mode):
@@ -278,14 +287,14 @@ def test_a_tickets_click_on_a_creators_own_page_counts_for_them_and_remembers_th
     url = f"/go/search-todo?to=la&{TRIP}&focus=disney&via={handle}"
     r = client.get(url, headers=seen_on(handle, row["slug"]), follow_redirects=False)
     assert r.status_code == 302 and f"ga_via={handle}" in r.headers["set-cookie"]
-    assert keys.calls[0][2]["links"][0]["sub_id"] == f"anon-la-270305-todo-{handle}"
+    assert keys.calls[0][2]["links"][0]["sub_id"] == f"anon_la_270305_todo_{handle.replace('-', '_')}"
     assert affiliate.clicks_by_creator() == {handle: (1, 0)}      # Klook pays GitAway (D-101), so not "with their marker"
 
 
 def test_a_pasted_tickets_link_names_nobody(client, keys, mode):
     row, handle, _ = live_trip()
     r = client.get(f"/go/search-todo?to=la&{TRIP}&via={handle}", headers={"referer": "https://evil.example/x"}, follow_redirects=False)
-    assert "set-cookie" not in r.headers and keys.calls[0][2]["links"][0]["sub_id"] == "anon-la-270305-todo"
+    assert "set-cookie" not in r.headers and keys.calls[0][2]["links"][0]["sub_id"] == "anon_la_270305_todo"
     assert affiliate.clicks_by_creator() == {}
 
 
@@ -333,22 +342,21 @@ def test_a_place_we_cannot_plan_has_no_tickets_card(client, mode, monkeypatch):
     assert "Tickets and things to do" not in to_xml(itinerary_view.itinerary_body(replace(trip, plan_to="")))    # Tahoe, Maui: nothing to plan, nothing to link
 
 
-def test_plan_this_trip_carries_the_party_and_airport_the_reader_set():
+def test_plan_this_trip_names_the_place_the_focus_and_the_creator_and_leaves_the_party_to_the_honest_page():
     from gitaway import hub
     row, handle, _ = live_trip(title="Disneyland for little ones")
     from gitaway import community
     trip = community.trip_of(row)
-    href = hub.plan_href(trip, adults=2, kids=(4, 1), home="jfk")
-    q = parse_qs(urlsplit(href).query)
-    assert (q["to"], q["a"], q["k"], q["home"], q["focus"], q["via"]) == (["la"], ["2"], ["4,1"], ["JFK"], ["disney"], [handle])
-    plain = parse_qs(urlsplit(hub.plan_href(trip)).query)
-    assert plain["a"] == ["2"] and not {"k", "home"} & set(plain)
+    q = parse_qs(urlsplit(hub.plan_href(trip)).query)
+    assert (q["to"], q["a"], q["focus"], q["via"]) == (["la"], ["2"], ["disney"], [handle]) and not {"k", "home"} & set(q)
     assert "focus" not in parse_qs(urlsplit(hub.plan_href(community.trip_of(live_trip("lee@example.com", "Lee Park", "Two days in San Diego")[0]))).query)
 
 
 @pytest.mark.parametrize("title,place,focus", [("Disneyland with toddlers", "Los Angeles, California", "disney"), ("Anaheim and the parks", "Anaheim, California", "disney"),
                                                ("Walt Disney World with kids", "Los Angeles, California", ""), ("Disneyland Paris in winter", "Los Angeles, California", ""),
-                                               ("Three days in Santa Monica", "Los Angeles, California", "")])
+                                               ("Three days in Santa Monica", "Los Angeles, California", ""),
+                                               ("A day at Walt Disney Concert Hall", "Los Angeles, California", ""), ("Disney Hall and the Broad", "Los Angeles, California", ""),
+                                               ("Disneyland day with the kids", "Los Angeles, California", "disney"), ("Disney Land, the easy way", "Los Angeles, California", "disney")])
 def test_a_trip_is_a_disneyland_trip_only_when_it_says_so_and_is_in_california(title, place, focus):
     from gitaway import hub
     from gitaway.itineraries import Itinerary
