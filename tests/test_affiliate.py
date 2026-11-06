@@ -287,3 +287,71 @@ def test_a_pasted_tickets_link_names_nobody(client, keys, mode):
     r = client.get(f"/go/search-todo?to=la&{TRIP}&via={handle}", headers={"referer": "https://evil.example/x"}, follow_redirects=False)
     assert "set-cookie" not in r.headers and keys.calls[0][2]["links"][0]["sub_id"] == "anon-la-270305-todo"
     assert affiliate.clicks_by_creator() == {}
+
+
+# ---- F-195: the Tickets and things to do card on a creator's trip page, and what "Plan this trip" carries --------------------
+
+def todo_link(html):
+    m = re.search(r'<a[^>]*href="(/go/search-todo[^"]*)"[^>]*>', html)
+    return m.group(1).replace("&amp;", "&") if m else None
+
+
+def test_a_creators_trip_page_has_an_honest_tickets_card(client, mode, monkeypatch):
+    monkeypatch.setenv("TRAVELPAYOUTS_MARKER", "801445")
+    row, handle, _ = live_trip(name="Maya Chen")
+    page = without_bar(client.get(f"/trips/{row['slug']}").text)
+    link = todo_link(page)
+    assert link and link.startswith("/go/search-todo?to=la&d=") and link.endswith(f"&a=2&via={handle}") and "focus" not in link
+    words = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", page))
+    assert "Tickets and things to do" in words and "Los Angeles attractions" in words
+    assert "This link supports GitAway, not Maya" in words      # Klook does not carry a creator's marker (D-101)
+
+
+def test_a_disneyland_trip_page_offers_disneyland_tickets(client, mode, monkeypatch):
+    monkeypatch.setenv("TRAVELPAYOUTS_MARKER", "801445")
+    row, handle, _ = live_trip(title="Three days at Disneyland with a toddler")
+    page = without_bar(client.get(f"/trips/{row['slug']}").text)
+    assert "&focus=disney&via=" in todo_link(page) and "Disneyland Resort tickets" in page
+    plan = re.search(r'<a[^>]*id="plan-this"[^>]*href="([^"]+)"|<a[^>]*href="([^"]+)"[^>]*id="plan-this"', page)
+    assert "focus=disney" in (plan.group(1) or plan.group(2))
+
+
+def test_no_tickets_card_where_there_is_nowhere_to_send_anyone(client, nokeys, monkeypatch):
+    monkeypatch.setenv("GITAWAY_SHOWCASE", "0")                       # production without a marker: no /go/ link anywhere
+    row, _, _ = live_trip()
+    assert "/go/" not in client.get(f"/trips/{row['slug']}").text
+
+
+def test_a_place_we_cannot_plan_has_no_tickets_card(client, mode, monkeypatch):
+    from dataclasses import replace
+    from gitaway import community, itinerary_view
+    monkeypatch.setenv("TRAVELPAYOUTS_MARKER", "801445")
+    row, _, _ = live_trip()
+    trip = community.trip_of(row)
+    assert "Tickets and things to do" in without_bar(client.get(f"/trips/{row['slug']}").text)               # the plannable one has it
+    from fasthtml.common import to_xml
+    assert "Tickets and things to do" not in to_xml(itinerary_view.itinerary_body(replace(trip, plan_to="")))    # Tahoe, Maui: nothing to plan, nothing to link
+
+
+def test_plan_this_trip_carries_the_party_and_airport_the_reader_set():
+    from gitaway import hub
+    row, handle, _ = live_trip(title="Disneyland for little ones")
+    from gitaway import community
+    trip = community.trip_of(row)
+    href = hub.plan_href(trip, adults=2, kids=(4, 1), home="jfk")
+    q = parse_qs(urlsplit(href).query)
+    assert (q["to"], q["a"], q["k"], q["home"], q["focus"], q["via"]) == (["la"], ["2"], ["4,1"], ["JFK"], ["disney"], [handle])
+    plain = parse_qs(urlsplit(hub.plan_href(trip)).query)
+    assert plain["a"] == ["2"] and not {"k", "home"} & set(plain)
+    assert "focus" not in parse_qs(urlsplit(hub.plan_href(community.trip_of(live_trip("lee@example.com", "Lee Park", "Two days in San Diego")[0]))).query)
+
+
+@pytest.mark.parametrize("title,place,focus", [("Disneyland with toddlers", "Los Angeles, California", "disney"), ("Anaheim and the parks", "Anaheim, California", "disney"),
+                                               ("Walt Disney World with kids", "Los Angeles, California", ""), ("Disneyland Paris in winter", "Los Angeles, California", ""),
+                                               ("Three days in Santa Monica", "Los Angeles, California", "")])
+def test_a_trip_is_a_disneyland_trip_only_when_it_says_so_and_is_in_california(title, place, focus):
+    from gitaway import hub
+    from gitaway.itineraries import Itinerary
+    trip = Itinerary(slug="x", title=title, headline=title, accent="", place=place, lede="", days=[], plan_to="la", plan_days=3)
+    assert hub.focus_of(trip) == focus
+    assert hub.focus_of(Itinerary(slug="x", title=title, headline=title, accent="", place=place, lede="", days=[], plan_to="hi")) == ""

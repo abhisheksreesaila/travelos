@@ -8,6 +8,7 @@ cards published by the signed-in traveler are marked `mine`.
 Pure functions over a session dict (for the signed-in person) and the community database.
 """
 
+import re
 from dataclasses import dataclass, replace
 from urllib.parse import urlencode
 
@@ -70,14 +71,40 @@ def all_cards(session) -> list:
     return [*(() if real else (_from_itinerary(t) for t in itineraries.ITINERARIES.values())), *cards]
 
 
-def plan_href(trip) -> str:
-    """"Plan this trip" for a real published trip: the booking workspace at the trip's place with sensible dates ahead (gitaway.publish.sample_dates), "" when
-    the trip's place is not one the workspace plans."""
+_DISNEY = re.compile(r"disney|anaheim", re.I)
+_NOT_CALIFORNIA = re.compile(r"world|paris|tokyo|hong kong|shanghai|orlando|florida", re.I)   # Disneyland Resort is the one in Anaheim, not these
+
+
+def focus_of(trip) -> str:
+    """"disney" when a trip in the Los Angeles place is about Disneyland in Anaheim: its place, title, headline or lede says so (F-195). The Los Angeles place is also where
+    other Los Angeles trips go, so its links (stays in Anaheim, Disneyland tickets) only apply to a trip that is one. "" for anything else."""
+    said = f"{trip.place} {trip.title} {trip.headline} {trip.lede}"
+    return "disney" if trip.plan_to == "la" and _DISNEY.search(said) and not _NOT_CALIFORNIA.search(said) else ""
+
+
+def _params(trip, **party) -> dict | None:
+    """The trip a link from this page names: the place, sensible dates ahead, the reader's party and airport when they have said, the focus, and whose trip it is (F-184). None
+    when the trip's place is not one the workspace plans."""
     from gitaway import publish
     if not trip.plan_to:
-        return ""
+        return None
     depart, ret = publish.sample_dates(trip.plan_days)
-    return "/plan?" + urlencode({"to": trip.plan_to, "d": depart.isoformat(), "r": ret.isoformat(), "a": 2, **({"via": trip.handle} if trip.handle else {})})   # via: whose trip this is (F-184)
+    adults, kids, home, focus = party.get("adults", 2), party.get("kids", ()), party.get("home", ""), focus_of(trip)
+    return {"to": trip.plan_to, "d": depart.isoformat(), "r": ret.isoformat(), "a": adults, **({"k": ",".join(map(str, kids))} if kids else {}), **({"home": home.strip().upper()} if home else {}),
+            **({"focus": focus} if focus else {}), **({"via": trip.handle} if trip.handle else {})}
+
+
+def plan_href(trip, adults=2, kids=(), home="") -> str:
+    """"Plan this trip" for a real published trip: the booking workspace at the trip's place with sensible dates ahead (gitaway.publish.sample_dates), "" when
+    the trip's place is not one the workspace plans. `kids` (ages) and `home` (an airport code) are what the reader has said about their party and where they fly from."""
+    params = _params(trip, adults=adults, kids=kids, home=home)
+    return "/plan?" + urlencode(params) if params else ""
+
+
+def todo_href(trip) -> str:
+    """The Tickets and things to do card of a real published trip: /go/search-todo with the same trip as "Plan this trip" (via: the click is theirs, F-195), "" when the place is not planned."""
+    params = _params(trip)
+    return "/go/search-todo?" + urlencode(params) if params else ""
 
 
 def cards(session, *, tags=(), creators=False, q="") -> list:
