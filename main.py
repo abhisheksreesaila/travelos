@@ -54,7 +54,7 @@ def _locked_auth(req, sess):
 
 auth_before = Beforeware(_locked_auth, skip=auth_before.skip)
 
-_OPEN = [r"/assets/.*", r"/healthz"]
+_OPEN = [r"/assets/.*", r"/healthz", r"/badge/.*"]
 
 
 class NoStoreWhenSignedIn:

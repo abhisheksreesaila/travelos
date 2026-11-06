@@ -14,6 +14,7 @@ from gitaway import affiliate, community, session as ses
 from gitaway.community import HubError
 from gitaway.icons import icon
 from gitaway.layout import page
+from gitaway.pages import blogbutton
 
 PATH = "/creators/settings"
 HEAD = (Link(rel="stylesheet", href="/assets/css/report.css"),)
@@ -30,9 +31,10 @@ def settings_page(owner, *, value=None, error="", saved=False):
         P("Saved.", role="status", id="st-saved", cls="rp-ok") if saved else "",
         Div(Button(icon("check", 20, 2.4), "Save", type="submit", id="st-save", cls="btn btn-primary"), cls="rp-actions"),
         action=PATH, method="post", id="st-form", cls="rp-form card")
+    blogs = [blogbutton.panel(r["slug"], creator["handle"], f"bb{i}") for i, r in enumerate(community.rows(owner=owner))] if creator else []   # F-191: the blog button of each live trip
     paying = ("Flights booked from your trips carry your marker, so Aviasales pays you. Stays and things to do (Klook) still go through GitAway's account for now, and the page on each trip says so."
               if marker else "Without a marker, bookings from your trips support GitAway, and your trip pages say so.")
-    return page("Your marker", Section(Div(H1("Keep your affiliate links"), P(paying, cls="rp-lede", id="st-says"), cls="rp-top"), form,
+    return page("Your marker", Section(Div(H1("Keep your affiliate links"), P(paying, cls="rp-lede", id="st-says"), cls="rp-top"), form, *blogs,
                                        P(A("Your creator page", href=f"/creators/{creator['handle']}"), " · ", A("Turn a post into a trip", href="/creators/import"), cls="rp-more") if creator
                                        else P(A("Turn a post into a trip", href="/creators/import"), cls="rp-more"), cls="rp ga-wrap"), head=HEAD)
 

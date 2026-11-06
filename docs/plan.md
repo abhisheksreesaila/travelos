@@ -1100,10 +1100,10 @@ Needs: F-183
 - [ ] paste a blog's address: GitAway reads its sitemap or feed (safe fetcher), lists trip-like posts, the creator ticks which to draft (max 20 at a time, counted against the daily limit)
 - [ ] drafts appear in a "My drafts" list to approve one by one
 
-## F-191 A "Plan this trip on GitAway" button for their blog [todo]
+## F-191 A "Plan this trip on GitAway" button for their blog [review]
 Needs: F-181
-- [ ] each published trip offers a copy-paste button snippet (plain link + small image, no script) and a text link
-- [ ] the button links to the trip with `via=<handle>` honoured (F-184)
+- [x] each published trip offers a copy-paste button snippet (plain link + small image, no script) and a text link
+- [x] the button links to the trip with `via=<handle>` honoured (F-184)
 
 ## F-192 Creator stats [todo]
 Needs: F-181, F-184
