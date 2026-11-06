@@ -184,7 +184,7 @@ def register(app):
         path = publish.public_file(slug, filename)
         if path is None:
             return Response("Not found.", status_code=404)
-        headers = {"Cache-Control": "public, max-age=3600", "X-Content-Type-Options": "nosniff", "ETag": f'"{filename}-{path.stat().st_mtime_ns}"'}
+        headers = {"Cache-Control": "public, no-cache", "X-Content-Type-Options": "nosniff", "ETag": f'"{filename}-{path.stat().st_mtime_ns}"'}
         if request.headers.get("if-none-match") == headers["ETag"]:
             return Response(status_code=304, headers=headers)
         return FileResponse(path, media_type="image/jpeg", headers=headers)

@@ -5,11 +5,16 @@ adds the Coast stylesheets after the page's own, so the old screens keep their m
 The language is omxqua v0.1.6 (~/Projects/omxqua), with GitAway orange as the accent (D-60); the rules for it on this site are in design-system/DESIGN-SYSTEM.md "Coast".
 """
 
+import re
+
 from fasthtml.common import Link
 
 ROOT = "oq-root oq-light oq-family-travel"
 # (path prefix, the stylesheets that go after omxqua.css). /plan/quote is JSON and never reads them.
-SKINS = (("/plan", ("plan_coast.css",)), ("/creators", ("creators_coast.css",)), ("/sandbox", ()), ("/partners", ()))
+SKINS = (("/plan", ("plan_coast.css",)), ("/creators", ("creators_coast.css",)), ("/sandbox", ()), ("/partners", ()),
+         ("/trip/publish", ()), ("/community", ()))   # F-181: publishing a trip, and Community trips (real creator trips live there)
+_TRIP_PAGE = re.compile(r"/trips/([^/]+)/?")
+_NOT_A_TRIP = ("build", "import", "switch")
 
 
 def skin_for(path: str):
@@ -17,6 +22,10 @@ def skin_for(path: str):
     for prefix, sheets in SKINS:
         if path == prefix or path.startswith(prefix + "/"):
             return sheets
+    m = _TRIP_PAGE.fullmatch(path)
+    if m and m.group(1) not in _NOT_A_TRIP:   # a creator's published trip wears the Coast look (F-181); the sample itineraries keep their own
+        from gitaway import community
+        return () if community.is_real(m.group(1)) else None
     return None
 
 

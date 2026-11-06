@@ -307,7 +307,7 @@ def test_a_public_photo_is_served_to_anyone_and_cacheable(family):
     slug = go_live(client, pid)["slug"]
     copy = re.search(r'/pub/[^"]+-display\.jpg', stranger(client).get(f"/trips/{slug}").text).group(0)
     r = stranger(client).get(copy)
-    assert r.status_code == 200 and r.headers["content-type"] == "image/jpeg" and r.headers["cache-control"] == "public, max-age=3600" and r.headers["x-content-type-options"] == "nosniff"
+    assert r.status_code == 200 and r.headers["content-type"] == "image/jpeg" and r.headers["cache-control"] == "public, no-cache" and r.headers["x-content-type-options"] == "nosniff"
     again = stranger(client).get(copy, headers={"if-none-match": r.headers["etag"]})
     assert again.status_code == 304
 

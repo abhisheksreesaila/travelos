@@ -1041,12 +1041,12 @@ Design: docs/design/booking-journey.html · Needs: F-179
 - [ ] a hand-off screen before leaving for the partner; "Did you book it?" when the person comes back (visibilitychange), Yes puts it on the trip as "Booked elsewhere · <partner>"
 - [ ] the sandbox no longer jumps back by itself; commission figures move to an admin-only page
 
-## F-181 Publish a trip as a creator, live [todo]
+## F-181 Publish a trip as a creator, live [review]
 Brief: docs/briefs/creator-launch.md · Needs: none (builds on /share, F-071 photos, M4 profiles)
-- [ ] from a family trip: pick photos, a note per day, tips, preview, publish under the person's name; unpublish any time
-- [ ] never published: confirmation numbers, other members' names, chat, exact stay addresses, photo EXIF/GPS (re-encoded)
-- [ ] published trips and their creator profile show on gitaway.me (showcase off); sample creators and trips stay local-only
-- [ ] a signed-out stranger can read it; signed in, fork it; "Plan this trip" goes to the trip's place
+- [x] from a family trip: pick photos, a note per day, tips, preview, publish under the person's name; unpublish any time
+- [x] never published: confirmation numbers, other members' names, chat, exact stay addresses, photo EXIF/GPS (re-encoded)
+- [x] published trips and their creator profile show on gitaway.me (showcase off); sample creators and trips stay local-only
+- [x] a signed-out stranger can read it; signed in, fork it; "Plan this trip" goes to the trip's place
 
 ## F-182 Release: the booking branch to gitaway.me [todo]
 Needs: F-179, F-180, F-181 · reviewer + security-auditor (public publishing, uploads)
