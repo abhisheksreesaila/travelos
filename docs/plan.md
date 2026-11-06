@@ -1023,3 +1023,32 @@ The captain 2026-10-16: "the messages need to have a nice bubble. Like iMessage 
 - [x] times quiet (small, under the run or on hover on the laptop); voice notes, photos, plan links and system lines fit the same look
 - [x] same look on the phone Family tab and the laptop panel; text contrast AA; no new motion
 Built: mine is --coral-deep #C9431F with white (4.88:1; --coral #FF7352 is 2.8:1, below AA), theirs the new --bubble-grey #E9E6EE with --ink (13:1). Run classes ft-first/ft-last are drawn by tab_family.fragment and kept live by thread.js runs() (one MutationObserver, so sends, polls and Earlier all regroup). Name sits above the first, avatar, time and the pointed corner (tail) at the last; other bubbles show their time as a tooltip. The laptop panel's own bubble colours (day_dock, day_family, desk_skin) were removed so phone and panel are one look. Tests: tests_browser/test_bubbles.py (390 and 1440), tests/test_thread.py. Screenshots: docs/design/family-bubbles/built-phone.png, built-desk.png.
+
+# The first real creator trip (brief docs/briefs/creator-launch.md, approved 2026-11-05)
+
+Work happens on branch `autopilot/booking-creators` (M1-M5 of GOAL.md, plus the orange accent), which merges to master and deploys as one release after review.
+
+## F-179 Real booking links: Aviasales and Klook [todo]
+Brief: docs/briefs/creator-launch.md · Needs: autopilot branch M2
+- [ ] flights link to an Aviasales search for the trip's route and dates with `marker=801445.<subid>`; no program id needed
+- [ ] stays, cars and things to do link to Klook through the Travelpayouts partner-links API (`TRAVELPAYOUTS_TOKEN`), with a timeout and a cached result; without a token or on an API failure, the plain Klook partner link (`KLOOK_FALLBACK_URL`)
+- [ ] placeholder program ids, Hotellook and DiscoverCars are gone; the partner names on screen are Aviasales and Klook
+- [ ] tests never reach the network; a live probe script checks one real link when the token is set
+
+## F-180 The booking journey [todo]
+Design: docs/design/booking-journey.html · Needs: F-179
+- [ ] the total's Book opens a "Book this trip" checklist; cards no longer carry a Book button each
+- [ ] a hand-off screen before leaving for the partner; "Did you book it?" when the person comes back (visibilitychange), Yes puts it on the trip as "Booked elsewhere · <partner>"
+- [ ] the sandbox no longer jumps back by itself; commission figures move to an admin-only page
+
+## F-181 Publish a trip as a creator, live [todo]
+Brief: docs/briefs/creator-launch.md · Needs: none (builds on /share, F-071 photos, M4 profiles)
+- [ ] from a family trip: pick photos, a note per day, tips, preview, publish under the person's name; unpublish any time
+- [ ] never published: confirmation numbers, other members' names, chat, exact stay addresses, photo EXIF/GPS (re-encoded)
+- [ ] published trips and their creator profile show on gitaway.me (showcase off); sample creators and trips stay local-only
+- [ ] a signed-out stranger can read it; signed in, fork it; "Plan this trip" goes to the trip's place
+
+## F-182 Release: the booking branch to gitaway.me [todo]
+Needs: F-179, F-180, F-181 · reviewer + security-auditor (public publishing, uploads)
+- [ ] shipping checklist (what could break, how we'd know, rollback = redeploy the previous Railway deployment)
+- [ ] `TRAVELPAYOUTS_MARKER=801445` (and the token, set by the captain) on Railway; deploy; check the live pages
