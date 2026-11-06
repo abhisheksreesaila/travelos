@@ -174,3 +174,25 @@ def test_the_worker_thread_drafts_a_queued_batch_by_itself(model, web):
 def test_starting_twice_makes_one_set_of_workers():
     a = dj.start(poll=0.05)
     assert dj.start(poll=0.05) is a
+
+
+def test_a_crash_after_the_draft_was_saved_but_before_the_job_row_went_does_not_draft_the_post_again(model, web, monkeypatch):
+    dj.enqueue("p1", "Maya", items(POSTS[0]))
+    real = dj._finish
+
+    def die(job_id, error):
+        raise SystemExit("the process died here")
+
+    monkeypatch.setattr(dj, "_finish", die)
+    with pytest.raises(SystemExit):
+        dj.run_one()
+    monkeypatch.setattr(dj, "_finish", real)
+    assert len(model.requests) == 1 and len(cd_drafts("p1")) == 1
+    dj.reset_running()                  # the next boot
+    assert dj.run_pending() == 1
+    assert len(model.requests) == 1 and web.calls == [POSTS[0]]       # not asked, not fetched again
+    assert [(r["kind"], r["status"]) for r in dj.listing("p1")] == [("draft", "ready")]       # one draft, and the job row is gone
+
+
+def cd_drafts(owner):
+    return [r for r in dj.listing(owner) if r["kind"] == "draft"]

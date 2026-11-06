@@ -264,9 +264,9 @@ def _base(m: Material, content, name) -> dict:
     return {**content, "name": name, "source": _source(m), "images": list(m.images[:12]), "picks": [], "copies": {}, "cover": "", "notices": list(m.notices), "text": ""}
 
 
-def make(owner, family, m: Material, name="") -> dict:
-    """Draft `m` with the model and keep it as `owner`'s draft. Raises ai.AIError or HubError (a sentence fit to show)."""
-    return _create(owner, _base(m, ask(owner, family, m), name))
+def make(owner, family, m: Material, name="", job="") -> dict:
+    """Draft `m` with the model and keep it as `owner`'s draft (`job`: the background job it came from, kept on the draft so a restart never drafts it twice). Raises ai.AIError or HubError (a sentence fit to show)."""
+    return _create(owner, {**_base(m, ask(owner, family, m), name), **({"job": job} if job else {})})
 
 
 def blank(owner, m: Material, name="", why="") -> dict:
@@ -279,13 +279,13 @@ def blank(owner, m: Material, name="", why="") -> dict:
     return _create(owner, {**d, "notices": notices, "text": kept})
 
 
-def sample(owner, m: Material, name="") -> dict:
+def sample(owner, m: Material, name="", job="") -> dict:
     """The old simulated draft (a fixture picked by a hash of what was pasted): for the local showcase when no AI key is set. Never in production."""
     fx = creators.fixture_for(m.url or m.text[:200])
     days = [{"title": x.title, "note": x.highlight, "stops": [{"time": t, "name": title, "note": ""} for t, _at, title, _k, _b in x.stops]} for x in fx.days]
     content = {"title": fx.title, "place": "la", "place_name": "", "days": days, "tips": [fx.tip], "stickers": [creators._WHO[c] for c in fx.guess["w"] if c in creators._WHO]}
     d = _base(m, content, name)
-    return _create(owner, {**d, "notices": ["This is a made-up sample draft: no AI key is set on this copy of GitAway. Replace it with your own days and places."] + d["notices"]})
+    return _create(owner, {**d, "notices": ["This is a made-up sample draft: no AI key is set on this copy of GitAway. Replace it with your own days and places."] + d["notices"], **({"job": job} if job else {})})
 
 
 # ---- the editor's form --------------------------------------------------------------------------------------------------------

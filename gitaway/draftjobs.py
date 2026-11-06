@@ -121,8 +121,23 @@ def reset_running() -> None:
 def _draft(job):
     owner, url, name = job["owner"], job["url"], job["name"]
     if cd.mode() == "sample":     # the local showcase: a fixture draft, nothing fetched and no model asked
-        return cd.sample(owner, importsource.offline(url, ""), name)
-    return cd.make(owner, owner, importsource.gather(url, ""), name)
+        return cd.sample(owner, importsource.offline(url, ""), name, job["id"])
+    return cd.make(owner, owner, importsource.gather(url, ""), name, job["id"])
+
+
+def _drafted(job) -> bool:
+    """Is there already a draft made by this job? A process that died after saving it but before the row was deleted must not draft the post (and ask the model) again."""
+    with cd._db() as db:
+        return db.conn.execute(text("SELECT 1 FROM creator_drafts WHERE owner_user = :o AND json_extract(data, '$.job') = :j"), {"o": job["owner"], "j": job["id"]}).fetchone() is not None
+
+
+def _finish(job_id, error) -> None:
+    with _db() as db:
+        if error:
+            db.conn.execute(text("UPDATE creator_draft_jobs SET status = 'failed', error = :e WHERE id = :i"), {"e": error, "i": job_id})
+        else:
+            db.conn.execute(text("DELETE FROM creator_draft_jobs WHERE id = :i"), {"i": job_id})
+        db.conn.commit()
 
 
 def run_one() -> bool:
@@ -131,19 +146,15 @@ def run_one() -> bool:
     if not job:
         return False
     try:
-        _draft(job)
+        if not _drafted(job):
+            _draft(job)
         error = ""
     except (importsource.SourceError, ai.AIError, HubError) as e:
         error = str(e)
     except Exception:  # noqa: BLE001 - one bad post must not stop the worker; the log has the type, the person a fixed sentence
         log.exception("draft job failed")
         error = UNEXPECTED
-    with _db() as db:
-        if error:
-            db.conn.execute(text("UPDATE creator_draft_jobs SET status = 'failed', error = :e WHERE id = :i"), {"e": error, "i": job["id"]})
-        else:
-            db.conn.execute(text("DELETE FROM creator_draft_jobs WHERE id = :i"), {"i": job["id"]})
-        db.conn.commit()
+    _finish(job["id"], error)
     return True
 
 
