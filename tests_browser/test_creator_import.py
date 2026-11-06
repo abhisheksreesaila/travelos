@@ -108,7 +108,7 @@ def test_paste_a_link_review_the_draft_publish_and_a_stranger_reads_it(setup, cr
     expect(page.locator(".pb-pick").nth(1)).to_be_checked()
     page.click("#pb-preview")
     expect(page.locator("#pb-pv")).to_contain_text("exactly what strangers will see")
-    expect(page.locator(".source-card .src-link")).to_have_attribute("href", POST)
+    expect(page.locator(".source-card .src-link")).to_have_attribute("href", POST + "?utm_source=gitaway")
     assert overflow(page) <= 1
     shot(page, f"preview-{viewport['width']}")
 
@@ -127,7 +127,7 @@ def test_paste_a_link_review_the_draft_publish_and_a_stranger_reads_it(setup, cr
     expect(p.locator("#day-2 .stop-title", has_text="Pacific Park")).to_be_visible()
     expect(p.get_by_text("From the blog")).to_be_visible()
     link = p.locator(".source-card .src-link")
-    expect(link).to_have_attribute("href", POST)
+    expect(link).to_have_attribute("href", POST + "?utm_source=gitaway")
     expect(link).to_have_text("Read the original post")
     img = p.locator(".polaroid img").first
     img.scroll_into_view_if_needed()
