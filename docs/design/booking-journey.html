@@ -1,0 +1,83 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+:root{--o:#c0401c;--sand:#f4f0e9;--ink:#1d1a16;--ink2:#5f584e;--line:#e7e0d4}
+body{margin:0;font-family:var(--font-sans,system-ui)}
+h2{font-size:17px;margin:4px 0 4px}
+p.lead{margin:0 0 14px;color:var(--muted-foreground);font-size:13px;line-height:1.45}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.step{display:flex;flex-direction:column;gap:6px}
+.hd{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600}
+.n{width:20px;height:20px;border-radius:50%;background:var(--o);color:#fff;font-size:11px;display:grid;place-items:center;flex:none}
+.tag{margin-left:auto;font:500 10px var(--font-mono,monospace);padding:2px 6px;border-radius:4px}
+.built{background:var(--success-surface,#1f3a2a);color:var(--success,#5fc27e)}
+.new{background:var(--warning-surface,#3a2f17);color:var(--warning,#e0b04a)}
+.fix{background:var(--destructive-surface,#3a1d1d);color:var(--destructive,#f07070)}
+.frame{height:300px;border-radius:14px;overflow:hidden;border:1px solid var(--border);background:var(--sand)}
+.frame img{width:100%;display:block}
+.cap{font-size:12px;color:var(--muted-foreground);line-height:1.4}
+.m{padding:12px;color:var(--ink);font:13px/1.35 system-ui;height:100%;box-sizing:border-box}
+.card{background:#fffdf9;border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.b{display:block;text-align:center;background:var(--o);color:#fff;border-radius:99px;padding:8px;font-weight:600;font-size:12px;margin-top:6px}
+.b2{display:block;text-align:center;background:#ebe5da;color:var(--ink);border-radius:99px;padding:8px;font-weight:600;font-size:12px;margin-top:6px}
+.row{display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:5px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border:0}.k{font-size:10px;color:var(--ink2);text-transform:uppercase;letter-spacing:.04em}
+.mono{font-family:ui-monospace,monospace;font-size:11px;color:var(--ink2)}
+.pill{font-size:10px;border-radius:99px;padding:2px 7px;background:#ebe5da}.ok{background:#dcefe0;color:#24603a}
+table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
+td,th{text-align:left;padding:7px 6px;border-bottom:1px solid var(--border);vertical-align:top}
+th{font-size:11px;color:var(--muted-foreground);font-weight:600}
+code{font-family:var(--font-mono);font-size:11.5px}
+.sec{margin-top:26px}
+</style></head><body>
+<h2>The booking journey</h2>
+<p class="lead">GitAway plans the trip and keeps the ledger; the partner takes the money. The hard moment is the return: partners never send people back, so GitAway has to ask.</p>
+<div class="grid">
+<div class="step"><div class="hd"><span class="n">1</span>Plan and compare<span class="tag built">built</span></div>
+<div class="frame"><img src="/home/abhisheksreesaila/Projects/travelos-autopilot/docs/report/m5-plan-phone.png"></div>
+<div class="cap">Flights, stays and cars side by side with the total on top. <b>Change:</b> take the "Book on" button off every card. Cards are for choosing; booking happens in step 2.</div></div>
+
+<div class="step"><div class="hd"><span class="n">2</span>"Book this trip"<span class="tag new">proposed</span></div>
+<div class="frame"><div class="m"><div class="k">Book this trip · $4,448</div><div class="mono" style="margin:2px 0 8px">3 to book, on 3 partner sites</div>
+<div class="card"><div class="row"><span>Flight · Aloha Pacific 12</span><b>$1,064</b></div><span class="b">Book on Aviasales</span></div>
+<div class="card"><div class="row"><span>Stay · Waikiki Tide</span><b>$2,920</b></div><span class="b2">Book on hotel partner</span></div>
+<div class="card"><div class="row"><span>Car · Island Drive</span><b>$464</b></div><span class="b2">Book on DiscoverCars</span></div></div></div>
+<div class="cap">The total's Book button opens one checklist sheet. Book in order, one at a time. Prices are from the partner's cache and can move.</div></div>
+
+<div class="step"><div class="hd"><span class="n">3</span>The hand-off<span class="tag new">proposed</span></div>
+<div class="frame"><div class="m"><div class="card"><div class="k">Opening Aviasales</div><b style="font-size:15px">Aloha Pacific 12</b><div class="mono">Mar 5 to Mar 9 · 2 adults</div><div style="margin-top:6px">Last seen at <b>$1,064</b>. Aviasales shows the real price.</div></div>
+<div class="card" style="font-size:12px">Aviasales keeps the booking, refunds and support. When you're done, come back here and we'll add it to your trip.</div>
+<span class="b">Open Aviasales</span><div class="mono" style="text-align:center;margin-top:8px">trip code f81f6f · nothing personal shared</div></div></div>
+<div class="cap">One calm screen so leaving the app doesn't feel like losing the trip. This is when the tracked link (marker + SubID) fires.</div></div>
+
+<div class="step"><div class="hd"><span class="n">4</span>On the partner's site<span class="tag built">stand-in</span></div>
+<div class="frame"><img src="/home/abhisheksreesaila/Projects/travelos-autopilot/docs/report/m5-sandbox-phone.png"></div>
+<div class="cap">Live, this is the real Aviasales in Safari, and GitAway sees nothing. Today a sandbox stands in for it. <b>Fix:</b> live partners never send you back, so "Complete" must not jump back to the trip by itself.</div></div>
+
+<div class="step"><div class="hd"><span class="n">5</span>"Did you book it?"<span class="tag new">proposed</span></div>
+<div class="frame"><div class="m"><div class="card" style="margin-top:30px"><div class="k">Back from Aviasales</div><b style="font-size:15px">Did you book Aloha Pacific 12?</b><span class="b">Yes, it's booked</span><span class="b2">Not yet</span>
+<div style="font-size:11.5px;margin-top:8px;color:var(--ink2)">Or forward the confirmation email to <b>plans@gitaway.me</b> and we'll fill in the times and confirmation number.</div></div></div></div>
+<div class="cap">Asked when the app comes back to the front after a hand-off. Three ways to know: this tap, the forwarded email, and later Travelpayouts' own report by SubID.</div></div>
+
+<div class="step"><div class="hd"><span class="n">6</span>The trip fills in<span class="tag new">proposed</span></div>
+<div class="frame"><div class="m"><div class="k">Honolulu · 1 of 3 booked</div>
+<div class="card"><div class="row"><span>Flight · Aloha Pacific 12</span><span class="pill ok">Booked · Aviasales</span></div>
+<div class="row"><span>Stay · Waikiki Tide</span><span class="pill">to book</span></div>
+<div class="row"><span>Car · Island Drive</span><span class="pill">to book</span></div></div>
+<div class="card" style="font-size:12px">The flight is now a block on Mar 5 in the trip's day view. Anyone in the family can see it.</div></div></div>
+<div class="cap">Bookings become "Booked elsewhere" blocks on the trip, the same way pasted Expedia bookings do (already built). The checklist remembers what's left.</div></div>
+
+<div class="step"><div class="hd"><span class="n">7</span>Your view: what it earned<span class="tag fix">move</span></div>
+<div class="frame"><img src="/home/abhisheksreesaila/Projects/travelos-autopilot/docs/report/m5-partners-phone.png"></div>
+<div class="cap">Clicks, bookings and commission per SubID. <b>Change:</b> travelers shouldn't see commission amounts, so this moves to an admin-only page for you, fed by the Travelpayouts statistics API.</div></div>
+</div>
+
+<div class="sec"><h2>What you plug in</h2>
+<p class="lead">The code reads these by name from Railway's variables. Without them, everything above runs on sample data.</p>
+<table><tr><th>Variable</th><th>Where to find it</th><th>What changes on screen</th></tr>
+<tr><td><code>TRAVELPAYOUTS_MARKER</code></td><td>Travelpayouts dashboard, your partner ID ("marker")</td><td>Book buttons become real tracked links, and they appear on the live site</td></tr>
+<tr><td><code>TRAVELPAYOUTS_TRS</code></td><td>The ID of the Project you create for GitAway</td><td>Clicks are credited to that Project</td></tr>
+<tr><td><code>TRAVELPAYOUTS_TOKEN</code></td><td>Dashboard → API token</td><td>Turns on your earnings page (step 7). Reading the real report is the next code step.</td></tr>
+<tr><td>Program IDs (in code)</td><td>Programs tab, after you connect Aviasales, a hotel brand and DiscoverCars</td><td>Today they're placeholders (4114 to 4116). Send me the three IDs.</td></tr>
+<tr><td>Hotel brand</td><td>Whichever hotel program your Project actually gets</td><td>Decides the name on "Book on …" for stays. Hotellook is a guess; confirm what Travelpayouts offers.</td></tr>
+<tr><td>Uber, routing, LiteAPI, Duffel</td><td>Their developer consoles (cheat sheet)</td><td>Not wired yet. Rides, ride times and live hotel and car prices stay sample data until then.</td></tr>
+</table></div>
+</body></html>

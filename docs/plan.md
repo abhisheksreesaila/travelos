@@ -1052,3 +1052,31 @@ Brief: docs/briefs/creator-launch.md · Needs: none (builds on /share, F-071 pho
 Needs: F-179, F-180, F-181 · reviewer + security-auditor (public publishing, uploads)
 - [ ] shipping checklist (what could break, how we'd know, rollback = redeploy the previous Railway deployment)
 - [ ] `TRAVELPAYOUTS_MARKER=801445` (and the token, set by the captain) on Railway; deploy; check the live pages
+
+# Creators turn a post into a trip (brief docs/briefs/creator-import.md, approved 2026-11-05)
+
+## F-183 Paste a link or text, get a draft trip (Claude Haiku 5.5) [todo]
+Brief: docs/briefs/creator-import.md · Needs: F-181
+- [ ] blog link → article text and photos; YouTube link → title, description, chapters; Instagram link → asks for the caption; pasted text always
+- [ ] Haiku 5.5 drafts title, place, days, stops, tips, stickers as validated JSON through `gitaway/ai.py` (new job, Anthropic provider, `ANTHROPIC_API_KEY`), logged like every AI call; unsure places become "unnamed stop"
+- [ ] the draft opens in the publish editor with a source card linking back; nothing publishes without "this is my post"
+- [ ] fetching is safe: http(s) only, no private or internal addresses, size and time limits; tests never reach the network
+Blocked (for live use only): set ANTHROPIC_API_KEY in Railway, service web.
+
+## F-184 Creators keep their affiliate links [todo]
+Needs: F-179, F-181
+- [ ] a creator can save their Travelpayouts marker (digits only) on their profile; Book buttons from their trips use it with their SubID
+- [ ] no marker: GitAway's; the trip page says plainly who earns
+
+## F-185 Report a trip, take it down [todo]
+Needs: F-181
+- [ ] "Report this trip" on every public trip (reason, optional email); rate limited
+- [ ] an admin-only page lists reports and creators (count toward 150) with one-click take down and restore
+
+## F-186 The For creators page [todo]
+Design: omxqua Coast, orange · Needs: F-183
+- [ ] paste box first, a live example trip, the three promises (under a minute, your links keep paying you, links back to your post), free and terms on day one
+- [ ] phone and laptop, 44px targets, no sideways scroll
+
+## F-187 A list of bloggers to invite [todo]
+- [ ] 50 family-travel bloggers and creators (Disneyland, LA, Hawaii, Tahoe, San Diego, New York) with their site, channel, contact page and why they fit, public information only, in docs/research/creators.csv
