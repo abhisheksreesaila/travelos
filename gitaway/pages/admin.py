@@ -18,10 +18,11 @@ from starlette.responses import RedirectResponse
 from gitaway import affiliate, catalog, community, partners, reports, session as ses, showcase
 from gitaway.icons import icon
 from gitaway.layout import page
+from gitaway.pages import creatorclaim as claims
 from gitaway.partners import log
 
 GOAL = 150
-HEAD = (Link(rel="stylesheet", href="/assets/css/admin.css"),)
+HEAD = (Link(rel="stylesheet", href="/assets/css/admin.css"), *claims.HEAD)
 
 
 def admin_emails() -> set:
@@ -74,7 +75,7 @@ def _report(r):
               cls="ad-report", id=f"report-{r['id']}")
 
 
-def admin_page():
+def admin_page(drafted=()):
     people = community.real_creators()
     every = community.creators_all()
     clicks = affiliate.clicks_by_creator()
@@ -89,6 +90,7 @@ def admin_page():
             Div(*[Div(Span(label, cls="ad-k"), Span(value, cls="ad-v", id=i)) for label, value, i in cards], cls="ad-cards"),
             P(f"{skipped} {'family' if skipped == 1 else 'families'} could not be read, so {'its' if skipped == 1 else 'their'} clicks are not in these totals.", role="alert", cls="ad-meta", id="ad-skipped") if skipped else "",
             Div(Span(cls="ad-bar-fill", style=f"width:{min(100, round(100 * len(people) / GOAL))}%"), cls="ad-bar", role="img", aria_label=f"{len(people)} of {GOAL} creators"),
+            claims.section(drafted),
             Section(H2("Reports"), Ul(*[_report(r) for r in rep], cls="ad-list", id="ad-report-list") if rep else P("No reports.", cls="ad-meta", id="ad-no-reports"), cls="ad-sec"),
             Section(H2("Creators and trips"),
                     Ul(*[_creator(c, community.rows(kind="scrapbook", owner=c["owner_user"], hidden=True), clicks) for c in every], cls="ad-list", id="ad-creators") if every else P("Nobody has published yet.", cls="ad-meta"),

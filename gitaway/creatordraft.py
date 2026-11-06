@@ -170,12 +170,15 @@ _ready: set = set()
 
 @contextmanager
 def _db():
-    """The community database's connection with this module's two tables made (once per database file)."""
+    """The community database's connection with this module's three tables made (once per database file)."""
     with community.connect() as db:
         if community._url() not in _ready:
             db.conn.execute(text("""CREATE TABLE IF NOT EXISTS creator_drafts (
                 id TEXT PRIMARY KEY, owner_user TEXT NOT NULL, slug TEXT NOT NULL UNIQUE, data TEXT NOT NULL, published_by TEXT NOT NULL DEFAULT '',
                 created_at TEXT NOT NULL, updated_at TEXT NOT NULL)"""))
+            db.conn.execute(text("""CREATE TABLE IF NOT EXISTS creator_claims (
+                draft_id TEXT PRIMARY KEY, token_hash TEXT NOT NULL UNIQUE, expires_at TEXT NOT NULL, revoked_at TEXT NOT NULL DEFAULT '', claimed_by TEXT NOT NULL DEFAULT '',
+                claimed_at TEXT NOT NULL DEFAULT '', name TEXT NOT NULL DEFAULT '', post_url TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL)"""))   # F-188: gitaway/creatorclaim.py
             db.conn.execute(text("CREATE TABLE IF NOT EXISTS creator_import_hits (owner_user TEXT NOT NULL, day TEXT NOT NULL, n INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (owner_user, day))"))
             db.conn.commit()
             _ready.add(community._url())
@@ -499,6 +502,7 @@ def clear() -> None:
     """Remove every draft and every try count. For tests."""
     with _db() as db:
         db.conn.execute(text("DELETE FROM creator_drafts"))
+        db.conn.execute(text("DELETE FROM creator_claims"))
         db.conn.execute(text("DELETE FROM creator_import_hits"))
         db.conn.commit()
 

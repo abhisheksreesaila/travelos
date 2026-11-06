@@ -28,6 +28,7 @@ OPEN_FOR_VIEWERS = {
     "/trip/family/message", "/trip/family/quiet",             # a viewer may talk in the family thread and silence their own pushes (F-070)
     "/trip/family/seen",                                      # and mark the chats read for themselves (F-143)
     "/report",                                                # reporting a public trip or creator: anyone, signed out too (F-185)
+    "/admin/draft", "/admin/link", "/admin/revoke", "/claim/{token}",   # F-188: the captain's drafts for creators (404 unless GITAWAY_ADMIN_EMAILS) and a creator claiming their own post
     "/admin/takedown", "/admin/restore",                      # the captain's two buttons: the route answers 404 unless the email is in GITAWAY_ADMIN_EMAILS (F-185)
     "/creators/settings",                                     # a creator's own affiliate marker (F-184)
 }

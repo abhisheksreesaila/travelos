@@ -49,7 +49,7 @@ def community_plan(folder: Path, uid, email):
     c.close()
     marks = ", ".join("?" for _ in slugs)
     rows = [("published trips", db, "published", "owner_user = ?", (uid,)), ("creator record", db, "creators", "owner_user = ?", (uid,)),
-            ("creator drafts", db, "creator_drafts", "owner_user = ?", (uid,)), ("affiliate marker", db, "creator_markers", "owner_user = ?", (uid,)),
+            ("creator drafts", db, "creator_drafts", "owner_user = ?", (uid,)), ("claim links they used", db, "creator_claims", "claimed_by = ?", (uid,)), ("affiliate marker", db, "creator_markers", "owner_user = ?", (uid,)),
             ("reports they sent", db, "reports", "reporter = ? OR (email != '' AND lower(email) = lower(?))", (uid, email)),
             ("daily try counts", db, "creator_import_hits", "owner_user = ? OR owner_user = ?", (uid, f"pic:{uid}"))]
     if slugs:

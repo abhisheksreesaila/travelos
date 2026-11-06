@@ -15,6 +15,7 @@ COPY gitaway ./gitaway
 COPY assets ./assets
 COPY migrations ./migrations
 COPY docs/trip-template.md ./docs/trip-template.md
+COPY docs/research/creators.csv ./docs/research/creators.csv
 RUN printf '#!/bin/bash\nset -e\n. /shell-hook.sh\nmkdir -p "$GITAWAY_DATA_DIR"\ncd "$GITAWAY_DATA_DIR"\nexec python /app/main.py\n' > /entrypoint.sh && chmod +x /entrypoint.sh
 # Production defaults; Railway's variables override them. The volume is mounted at /data (all databases live there).
 ENV GITAWAY_ENV=production GITAWAY_DATA_DIR=/data

@@ -37,6 +37,7 @@ forget-person = "python scripts/forget_person.py"  # delete a person's (or famil
 ai-report = "python scripts/ai_report.py"  # what the AI did: calls, time and tokens per job and per day, no content (F-079)
 probe-tp = "python scripts/probe_travelpayouts.py"  # one real Travelpayouts partner-links call; needs TRAVELPAYOUTS_TOKEN and _MARKER (F-179)
 probe-import = "python scripts/probe_creator_import.py"  # one real creator-import draft with Claude Haiku 5.5: prints the draft JSON, tokens and cost; needs ANTHROPIC_API_KEY (F-183)
+draft-creators = "python scripts/draft_creators.py"  # draft every A-priority creator's example post from docs/research/creators.csv and print the claim links; needs ANTHROPIC_API_KEY (F-188)
 test = "pytest -q -p no:randomly"
 test-random = "pytest -q -p randomly"
 test-browser-install = "playwright install chromium"  # once per machine: downloads the browser the browser suite drives

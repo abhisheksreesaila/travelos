@@ -1083,12 +1083,12 @@ Design: omxqua Coast, orange · Needs: F-183
 
 # Extremely creator-friendly (captain 2026-11-06: "it has to be extremely creator friendly"; autopilot overnight)
 
-## F-188 Ready-made drafts: a creator claims a trip in ten seconds [todo]
+## F-188 Ready-made drafts: a creator claims a trip in ten seconds [review]
 Brief: docs/briefs/creator-import.md · Needs: F-183, F-182 fixes
-- [ ] an admin pastes a creator's post link (or many, from docs/research/creators.csv) and GitAway drafts it privately; nothing is public
-- [ ] each draft gets a private claim link (long random token, expires in 30 days, single owner); the creator signs in, sees their post as a trip, ticks "this is my post", publishes
-- [ ] the admin page lists drafts made, claimed, published, toward 150; an outreach message to copy per creator (never sent by GitAway)
-- [ ] `pixi run draft-creators` drafts every A-priority creator from the CSV when ANTHROPIC_API_KEY is set; without it, says so
+- [x] an admin pastes a creator's post link (or many, from docs/research/creators.csv) and GitAway drafts it privately; nothing is public
+- [x] each draft gets a private claim link (long random token, expires in 30 days, single owner); the creator signs in, sees their post as a trip, ticks "this is my post", publishes
+- [x] the admin page lists drafts made, claimed, published, toward 150; an outreach message to copy per creator (never sent by GitAway)
+- [x] `pixi run draft-creators` drafts every A-priority creator from the CSV when ANTHROPIC_API_KEY is set; without it, says so
 
 ## F-189 Share from the phone [review]
 Needs: F-183
