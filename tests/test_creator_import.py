@@ -531,7 +531,7 @@ def test_the_preview_is_the_public_page_with_the_post_linked_and_the_tick_box(dr
     html = client.get(f"/creators/import/{did}/preview").text
     body = without_bar(html)
     assert "This is exactly what strangers will see" in body and "Santa Monica Pier" in body and "Three easy days in Santa Monica" in body
-    assert re.search(rf'href="{re.escape(POST)}"[^>]*>Read the original post<', body) and "From the blog" in body
+    assert re.search(rf'href="{re.escape(POST)}\?utm_source=gitaway"[^>]*>Read the original post<', body) and "From the blog" in body
     assert 'name="own"' in html and "This is my post" in html and 'id="pb-publish"' in html
 
 
@@ -561,7 +561,7 @@ def test_publish_makes_a_real_public_trip_that_strangers_can_read_and_fork_from(
     assert (trip.source.url, trip.source.kicker, trip.source.byline) == (POST, "From the blog", "Maya Chen · Blog")
     stranger = client.__class__(client.app, client=("127.0.0.1", 50000))
     page_ = without_bar(stranger.get(f"/trips/{d['slug']}").text)
-    assert "Santa Monica Pier" in page_ and "Maya Chen" in page_ and f'href="{POST}"' in page_ and "From the blog" in page_ and "Plan this trip" in page_
+    assert "Santa Monica Pier" in page_ and "Maya Chen" in page_ and f'href="{POST}?utm_source=gitaway"' in page_ and "From the blog" in page_ and "Plan this trip" in page_
     pic = re.search(r'src="(/pub/[^"]+-display\.jpg)"', page_)
     assert pic and stranger.get(pic.group(1)).status_code == 200 and stranger.get(pic.group(1)).headers["content-type"] == "image/jpeg"
 

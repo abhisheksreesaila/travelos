@@ -81,6 +81,14 @@ def _actions(trip, saved=False, forked=False):
     )
 
 
+def _from_gitaway(url):
+    """The creator's address with `utm_source=gitaway` added (their analytics then name GitAway), unless it already names a source; the rest of it, fragment included, is untouched."""
+    if "utm_source=" in url:
+        return url
+    base, hash_, fragment = url.partition("#")
+    return f"{base}{'&' if '?' in base else '?'}utm_source=gitaway{hash_}{fragment}"
+
+
 def _source_card(src):
     href = safe_href(src.url)  # a creator's link is only ever an http(s) address
     return Div(
@@ -89,7 +97,7 @@ def _source_card(src):
         Div(Span(src.kicker, cls="src-kicker"),
             Span(src.title, cls="src-title"),
             Span(src.byline, cls="src-by"),
-            A(src.link_label, href=href, rel="noopener noreferrer", target="_blank", cls="src-link") if href else "",
+            A(src.link_label, href=_from_gitaway(href), rel="noopener", referrerpolicy="origin", target="_blank", cls="src-link") if href else "",      # the origin, not the page: the creator sees GitAway traffic (F-196)
             cls="src-body"),
         cls="source-card",
     )
