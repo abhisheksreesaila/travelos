@@ -40,6 +40,10 @@ def _klook_car(o, trip):
     return f"https://www.klook.com/en-US/search/result/?query={quote(trip.destination_name + ' car rental')}"
 
 
+def _klook_activity(o, trip):
+    return f"https://www.klook.com/en-US/search/result/?query={quote(trip.destination_name + ' things to do')}"
+
+
 def uber_deep_link(pickup: str, dropoff: str) -> str:
     """Uber's universal deep link (the ride lane): opens the Uber app, or m.uber.com, with the pickup and dropoff filled in. No account, no key."""
     start = f"pickup[formatted_address]={quote(pickup)}" if pickup else "pickup=my_location"
@@ -50,7 +54,7 @@ def _uber(o, trip):
     return uber_deep_link("", trip.destination_name)
 
 
-TARGETS = {"flight": _aviasales, "stay": _klook_stay, "car": _klook_car, "ride": _uber}
+TARGETS = {"flight": _aviasales, "stay": _klook_stay, "car": _klook_car, "activity": _klook_activity, "ride": _uber}      # "activity" is Plan it for me's things-to-do link (F-193): Klook's, but not a lane of the catalog, so `for_lane` does not know it
 
 # Rates are estimates (D-71): Aviasales ~1.1% of the fare, Klook 5% (Travelpayouts' Klook page: 5%, 2% on "special activities"), rides nothing.
 PARTNERS = (

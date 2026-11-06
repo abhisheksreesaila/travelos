@@ -99,6 +99,14 @@ def _offline_maps(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _no_plan_worker():
+    """A test that starts the app (a live server) starts the Plan it for me worker with it (planforme.start in on_startup), and it would go on building the paid orders of every later test
+    before the test looks at them. Stop it before each test; a test that wants the worker calls `planforme.start` itself and stops it (F-193)."""
+    from gitaway import planforme
+    planforme.stop()
+
+
+@pytest.fixture(autouse=True)
 def _one_geo_module():
     """A test that removes `gitaway.geo` from sys.modules (to play "no geo module") makes the next import build a second copy, and the package attribute
     `gitaway.geo` then points at the copy while sys.modules holds the original: later tests patch one and the app reads the other. Put both back."""

@@ -284,6 +284,15 @@ def _yours(trip):
     )
 
 
+def plan_for_me_card(title, href, cls="pf-card ga-wrap", price=True):
+    """"Want this built around your family?": the card that leads to Plan it for me (F-193). "" when it is not for sale here (no Stripe key in production)."""
+    from gitaway import planforme as pfm, catalog  # here, not at the top: planforme reads the community database
+    if not pfm.offered():
+        return ""
+    return Section(H2(title), P("Tell us who is going and when. An agent builds your own day-by-day trip in your GitAway account, in a few minutes."),
+                   P(f"{catalog.money(pfm.price_cents())} once. {pfm.PROMISE}" if price else pfm.PROMISE), A(icon("star", 20, 2.4), "Plan it for me", href=href, cls="btn btn-primary", id="plan-for-me-go"), cls=cls, id="plan-for-me")
+
+
 # ---------- skeleton ----------
 
 def skeleton(trip: Itinerary):
@@ -325,8 +334,8 @@ SCRIPT = Script("""
 def itinerary_body(trip: Itinerary, loading: bool = False, saved: bool = False, forked: bool = False, blog=""):
     if loading:
         return skeleton(trip)
-    return Div(_hero(trip, saved, forked), _board(trip), _days(trip), _tips(trip), _yours(trip), blog, _trust(trip) if trip.real else "", SCRIPT, cls="itinerary")
+    return Div(_hero(trip, saved, forked), _board(trip), _days(trip), _tips(trip), _yours(trip), plan_for_me_card("Want this trip built around your family?", f"/plan-for-me?from={trip.slug}", price=False) if trip.real else "", blog, _trust(trip) if trip.real else "", SCRIPT, cls="itinerary")
 
 
 def itinerary_page(trip: Itinerary, theme=None, loading: bool = False, saved: bool = False, forked: bool = False, blog=""):
-    return page(trip.title, itinerary_body(trip, loading, saved, forked, blog), theme=resolve_theme(theme, trip), head=(*HEAD, Link(rel="stylesheet", href="/assets/css/scrapbook.css")) if trip.real else HEAD)
+    return page(trip.title, itinerary_body(trip, loading, saved, forked, blog), theme=resolve_theme(theme, trip), head=(*HEAD, Link(rel="stylesheet", href="/assets/css/scrapbook.css"), Link(rel="stylesheet", href="/assets/css/planforme.css")) if trip.real else HEAD)

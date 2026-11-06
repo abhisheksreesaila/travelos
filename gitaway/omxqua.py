@@ -12,7 +12,7 @@ from fasthtml.common import Link
 ROOT = "oq-root oq-light oq-family-travel"
 # (path prefix, the stylesheets that go after omxqua.css). /plan/quote is JSON and never reads them.
 SKINS = (("/plan", ("plan_coast.css",)), ("/creators", ("creators_coast.css",)), ("/for-creators", ("for_creators.css",)), ("/report", ()), ("/admin", ()), ("/sandbox", ()), ("/partners", ()),
-         ("/trip/publish", ()), ("/community", ()))   # F-181: publishing a trip, and Community trips (real creator trips live there)
+         ("/trip/publish", ()), ("/community", ()), ("/plan-for-me", ()))   # F-181: publishing a trip, and Community trips (real creator trips live there)
 _TRIP_PAGE = re.compile(r"/trips/([^/]+)/?")
 _NOT_A_TRIP = ("build", "import", "switch")
 
