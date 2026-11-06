@@ -131,7 +131,7 @@ def site_header(current: str = "", traveler=None, nav: bool = True):
     A signed-in person's page (nav=True) also carries the one top bar (F-139, gitaway.topbar) before it: topbar.css shows the bar from 1020px up and
     hides this header there; below that width this header is what shows, as before."""
     from gitaway import topbar  # here, not at the top: topbar reads the family through gitaway.session
-    links = [A(label, href=href, aria_current="page" if href == current else None) for label, href in (NAV if showcase.on() else REAL_NAV)]
+    links = [A(label, href=href, aria_current="page" if href == current else None) for label, href in (NAV if showcase.on() else [*REAL_NAV, ("Community trips", "/community")] if showcase.community_open() else REAL_NAV)]
     top = topbar.bar() if nav and traveler is None else ""
     return (top, Header(
         A("Skip to content", href="#main", cls="ga-skip"),

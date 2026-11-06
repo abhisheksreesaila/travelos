@@ -60,6 +60,7 @@ def _trip_pick(trips, b, phone=False, label=(), sum_cls=""):
             Ul(*mine, cls="ga-tb-list") if len(trips) > 1 else "",
             A(icon("plus", 16, 2.4), "Plan another trip", href="/start", cls="ga-tb-item"),
             A(icon("ledger", 16, 2.4), "Import a trip you booked", href="/trips/import", cls="ga-tb-item") if access.request_role() != "viewer" else "",
+            A(icon("share", 16, 2.4), "Publish this trip", href="/trip/publish", cls="ga-tb-item", id="ga-tb-publish") if access.request_role() != "viewer" else "",   # F-181: the trip as a creator page
             cls="ga-tb-pop ga-tb-pop-trip"),
         cls="ga-tb-menu ga-tb-picker" + (" ga-tb-phonepick" if phone else ""))
 
@@ -81,7 +82,7 @@ def trip_menu(*label, sum_cls=""):
 
 def _me(who):
     """The avatar and its menu: who is signed in, People and invites, (the community, only with the showcase on) and Sign out."""
-    extra = [A(icon("star", 16, 2.2), "Community trips", href="/community", cls="ga-tb-item"), A(icon("pencil", 16, 2.2), "For creators", href="/creators", cls="ga-tb-item")] if showcase.on() else []
+    extra = [A(icon("star", 16, 2.2), "Community trips", href="/community", cls="ga-tb-item"), A(icon("pencil", 16, 2.2), "For creators" if showcase.on() else "Creators", href="/creators", cls="ga-tb-item")] if showcase.community_open() else []
     return Details(
         Summary(Span(who.initials, cls=f"ga-tb-av fill-{who.color}"), cls="ga-tb-sum ga-tb-sum-me", aria_label=f"{who.name}: account menu"),
         Div(Span(who.name, cls="ga-tb-who"), Span(who.blurb, cls="ga-tb-mail"),

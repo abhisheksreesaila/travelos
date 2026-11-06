@@ -5,6 +5,8 @@ This is a plain shared database, not a tenant. It lives in the data folder (`GIT
 
     kind "shared"   a family's own trip, published from the calendar (gitaway.share)
     kind "creator"  a trip a creator imported from a link and confirmed (gitaway.creators)
+    kind "scrapbook"  a real family trip published by a person under their own name, with photos, day notes and tips (gitaway.publish, F-181):
+                      the only kind that exists on the live site (showcase off); its photo copies are files under `<data folder>/public/<slug>/`
 
 A published trip is a **snapshot**: the scrapbook page (days, plans, tags) frozen at publish time as JSON, plus its owner
 (the fh-saas user id and the family id). The page at /trips/<slug> is served from the snapshot, so it works for anyone,
@@ -27,11 +29,13 @@ from sqlalchemy import create_engine, text
 from gitaway import auth
 from gitaway.itineraries import Day, Itinerary, Polaroid, Source, Stop, Tag
 
-KINDS = ("shared", "creator")
+KINDS = ("shared", "creator", "scrapbook")
 _SCHEMA = """CREATE TABLE IF NOT EXISTS published (
     slug TEXT PRIMARY KEY, kind TEXT NOT NULL, owner_user TEXT NOT NULL, owner_family TEXT NOT NULL DEFAULT '',
     title TEXT NOT NULL, tags TEXT NOT NULL DEFAULT '[]', theme TEXT NOT NULL DEFAULT 'sunset',
     snapshot TEXT NOT NULL, meta TEXT NOT NULL DEFAULT '{}', created_at TEXT NOT NULL, updated_at TEXT NOT NULL)"""
+_CREATORS = """CREATE TABLE IF NOT EXISTS creators (
+    handle TEXT PRIMARY KEY, owner_user TEXT NOT NULL UNIQUE, name TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)"""
 _ready: set = set()
 
 
@@ -56,6 +60,7 @@ def connect():
     try:
         if url not in _ready:
             conn.execute(text(_SCHEMA))
+            conn.execute(text(_CREATORS))
             conn.commit()
             _ready.add(url)
         yield SimpleNamespace(conn=conn)  # what fh-saas's utils_sql helpers read
@@ -75,7 +80,7 @@ def dump(trip: Itinerary) -> str:
 
 def load(raw: str) -> Itinerary:
     d = json.loads(raw)
-    d["days"] = [Day(**{**x, "stops": [Stop(**s) for s in x["stops"]]}) for x in d["days"]]
+    d["days"] = [Day(**{**x, "stops": [Stop(**s) for s in x["stops"]], "photos": [Polaroid(**p) for p in x.get("photos", [])]}) for x in d["days"]]
     d["tags"] = [Tag(**t) for t in d.get("tags", [])]
     d["polaroids"] = [Polaroid(**p) for p in d.get("polaroids", [])]
     d["source"] = Source(**d["source"]) if d.get("source") else None
@@ -166,8 +171,84 @@ def unpublish(session, slug) -> bool:
     return True
 
 
+# ---- creators (F-181): a person's public name and stable handle -------------------------------------------------------
+
+def creator_of(owner_user) -> dict | None:
+    """The creator record of a person (their user id), or None while they have never published."""
+    with connect() as db:
+        r = db.conn.execute(text("SELECT handle, owner_user, name FROM creators WHERE owner_user = :o"), {"o": str(owner_user)}).fetchone()
+    return dict(r._mapping) if r else None
+
+
+def creator(handle) -> dict | None:
+    """The creator behind a profile handle, or None."""
+    with connect() as db:
+        r = db.conn.execute(text("SELECT handle, owner_user, name FROM creators WHERE handle = :h"), {"h": handle}).fetchone()
+    return dict(r._mapping) if r else None
+
+
+def slugify(text_, limit=30) -> str:
+    """Lowercase letters, digits and single dashes only ("Ari & Sam's Disney!" -> "ari-sam-s-disney"); "" when nothing is left."""
+    import re
+    return re.sub(r"[^a-z0-9]+", "-", str(text_).casefold()).strip("-")[:limit].strip("-")
+
+
+def claim_creator(owner_user, name) -> dict:
+    """The person's creator record, made the first time they publish: the handle comes from the name, is unique (not a sample creator's either)
+    and never changes after that. A later call only updates the name shown. Raises HubError when the name is empty."""
+    from gitaway import creator_profiles
+    name = " ".join(str(name or "").split())[:40]
+    if not name:
+        raise HubError("Add the name to show on your trip.")
+    now = _now()
+    with connect() as db:
+        mine = db.conn.execute(text("SELECT handle FROM creators WHERE owner_user = :o"), {"o": str(owner_user)}).fetchone()
+        if mine:
+            db.conn.execute(text("UPDATE creators SET name = :n, updated_at = :t WHERE owner_user = :o"), {"n": name, "t": now, "o": str(owner_user)})
+            db.conn.commit()
+            return {"handle": mine[0], "owner_user": str(owner_user), "name": name}
+        base = slugify(name, 24) or "traveler"
+        taken = {r[0] for r in db.conn.execute(text("SELECT handle FROM creators")).fetchall()} | {c.handle for c in creator_profiles.CREATORS} | {"draft", "finish", "done", "new"}
+        handle, n = base, 1
+        while handle in taken:
+            n += 1
+            handle = f"{base}-{n}"
+        db.conn.execute(text("INSERT INTO creators (handle, owner_user, name, created_at, updated_at) VALUES (:h, :o, :n, :t, :t)"),
+                        {"h": handle, "o": str(owner_user), "n": name, "t": now})
+        db.conn.commit()
+    return {"handle": handle, "owner_user": str(owner_user), "name": name}
+
+
+def creators_all() -> list:
+    with connect() as db:
+        return [dict(r._mapping) for r in db.conn.execute(text("SELECT handle, owner_user, name FROM creators ORDER BY created_at, rowid")).fetchall()]
+
+
+def real_creators() -> list:
+    """Creators with at least one live published trip, oldest first, each with its `trips` (rows of kind scrapbook)."""
+    out = []
+    for c in creators_all():
+        trips = rows(kind="scrapbook", owner=c["owner_user"])
+        if trips:
+            out.append({**c, "trips": trips})
+    return out
+
+
+def has_real() -> bool:
+    """Is any real family trip published? The live site's community and creator pages exist only from then on."""
+    with connect() as db:
+        return db.conn.execute(text("SELECT 1 FROM published WHERE kind = 'scrapbook' LIMIT 1")).fetchone() is not None
+
+
+def is_real(slug) -> bool:
+    """Is `slug` a live published real trip? (The sample slugs and the old demo kinds are not.)"""
+    row = get(slug)
+    return bool(row) and row["kind"] == "scrapbook"
+
+
 def clear() -> None:
-    """Remove every published trip. For tests."""
+    """Remove every published trip and creator. For tests."""
     with connect() as db:
         db.conn.execute(text("DELETE FROM published"))
+        db.conn.execute(text("DELETE FROM creators"))
         db.conn.commit()
