@@ -88,8 +88,10 @@ def valid_via(handle) -> str:
     return handle if _HANDLE.fullmatch(str(handle or "")) and community.creator(handle) else ""
 
 
-def earning_line(name, has_marker) -> str:
-    """Who earns when someone books from a creator's trip, in plain words."""
+def earning_line(name, has_marker, plannable=True) -> str:
+    """Who earns when someone books from a creator's trip, in plain words. A trip at a place GitAway cannot plan has no booking, so nobody earns from it (F-194)."""
+    if not plannable:
+        return "Nothing on this page can be booked, so nobody earns from it."
     if has_marker:
         return f"Flights booked from this trip support {name}. Stays and things to do support GitAway."
     return "Bookings from this trip support GitAway."

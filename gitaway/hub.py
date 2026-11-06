@@ -16,6 +16,7 @@ from gitaway.community import HubError  # noqa: F401  (the error publishers rais
 
 # tag key -> (label, tint token name, icon name)
 TAGS = {"kid": ("Kid friendly", "sun", "kid"), "pet": ("Pet friendly", "mint", "paw"), "couple": ("Couple friendly", "bubble", "couple")}
+PLACES = {"la": "Los Angeles, California", "sd": "San Diego, California", "hi": "Honolulu, Hawaii", "nyc": "New York City"}   # where "Plan this trip" can go: the catalog's places (F-194)
 MAX_TEXT = 60
 DEFAULT_PHOTO = ("/assets/photos/santa-monica-beach-pier.jpg", "Santa Monica Pier")
 COVERS = {"pier": DEFAULT_PHOTO, "venice": (itineraries.VENICE, "Venice Beach, Los Angeles")}  # cover photo keys a creator trip can use
@@ -78,6 +79,14 @@ def plan_href(trip) -> str:
         return ""
     depart, ret = publish.sample_dates(trip.plan_days)
     return "/plan?" + urlencode({"to": trip.plan_to, "d": depart.isoformat(), "r": ret.isoformat(), "a": 2, **({"via": trip.handle} if trip.handle else {})})   # via: whose trip this is (F-184)
+
+
+def plan_note(trip) -> str:
+    """The sentence a real trip shows where its "Plan this trip" button would be when its place is not one the workspace plans ("" when the button is there)."""
+    if not trip.real or plan_href(trip):
+        return ""
+    names = [p.split(",")[0] for p in PLACES.values()]
+    return f"GitAway can't plan a trip to {trip.place} yet, so there is no Plan this trip button here. It plans {', '.join(names[:-1])} and {names[-1]}."
 
 
 def cards(session, *, tags=(), creators=False, q="") -> list:

@@ -39,10 +39,12 @@ _SLUG = re.compile(r"^[a-z0-9][a-z0-9-]{0,70}$")
 _EMAIL = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
 NEEDS_EDITOR = "Only an editor or admin of the family can publish a trip. Ask a family admin to make you an editor."
 
-# the words that put a destination on one of the catalog's places (where "Plan this trip" can go), and the airports that serve them
-_PLACES = (("la", r"los angeles|anaheim|disney|santa monica|california|burbank|pasadena|orange county|hollywood|long beach", {"LAX", "BUR", "SNA", "LGB"}),
+# the words that put a destination on one of the catalog's places (where "Plan this trip" can go), and the airports that serve them. Only names that are that place and no other:
+# no "disney" (Walt Disney World, Disneyland Paris, Tokyo), no "california" (Tahoe, Yosemite, San Francisco and Napa are California too, and San Diego is not Los Angeles),
+# no "hawaii" (Maui, Kauai and the Big Island are Hawaii, but HNL is on Oahu). Matched as whole words ("queens" is not "Queenstown"). F-194.
+_PLACES = (("la", r"los angeles|anaheim|(?<!hong kong )disneyland resort(?! paris)|santa monica|burbank|pasadena|orange county|hollywood|long beach", {"LAX", "BUR", "SNA", "LGB"}),
            ("sd", r"san diego|coronado|la jolla", {"SAN"}),
-           ("hi", r"honolulu|hawaii|oahu|waikiki", {"HNL"}),
+           ("hi", r"honolulu|oahu|waikiki", {"HNL"}),
            ("nyc", r"new york|manhattan|brooklyn|queens", {"JFK", "EWR", "LGA"}))
 
 
@@ -51,12 +53,22 @@ def root() -> Path:
     return auth.data_dir() / "public"
 
 
+def _says(words, text) -> bool:
+    return bool(re.search(rf"\b(?:{words})\b", str(text).casefold()))
+
+
 def place_key(destination, airports=()) -> str:
     """The catalog place ("la", "sd", "hi", "nyc") a destination belongs to, or "" when it is none of them (then there is no "Plan this trip")."""
-    for key, words, codes in _PLACES:
-        if re.search(words, str(destination).casefold()) or codes & {a.upper() for a in airports}:
+    codes = {a.upper() for a in airports}
+    for key, words, airport_codes in _PLACES:
+        if _says(words, destination) or airport_codes & codes:
             return key
     return ""
+
+
+def names_place(key, text) -> bool:
+    """Does `text` (a whole post) name a place of this catalog place, by the same words `place_key` uses?"""
+    return any(k == key and _says(words, text) for k, words, _codes in _PLACES)
 
 
 # ---- the draft ---------------------------------------------------------------------------------------------------------

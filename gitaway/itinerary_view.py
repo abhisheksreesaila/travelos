@@ -72,6 +72,13 @@ def _plan_button(trip):
     return A(icon("plane", 22, 2.2), "Plan this trip", href=href, cls="btn btn-hero", id="plan-this") if href else ""
 
 
+def _plan_note(trip):
+    """Where "Plan this trip" would be, a real trip at a place GitAway cannot plan says so (F-194)."""
+    from gitaway import hub  # here, not at the top: hub reads the community database
+    note = hub.plan_note(trip)
+    return P(note, id="plan-unavailable", cls="plan-note") if note else ""
+
+
 def _actions(trip, saved=False, forked=False):
     return Div(
         A(icon("fork", 22, 2.4), "In your forks" if forked else "Fork this trip", href="/forks" if forked else fork_href(trip), cls="btn btn-primary btn-hero"),
@@ -134,6 +141,7 @@ def _hero(trip, saved=False, forked=False):
             Div(*[_tag(t) for t in trip.tags], cls="tags") if trip.tags else "",
             _stats(trip),
             _actions(trip, saved, forked),
+            _plan_note(trip),
             _source_card(trip.source) if trip.source else "",
             cls="hero-copy",
         ),
@@ -257,7 +265,7 @@ def _tips(trip):
 def _trust(trip):
     """A real trip's plain statement of who earns from its Book links, and "Report this trip" (only once it is live: a draft's preview has nothing to report)."""
     from gitaway import affiliate, community  # here, not at the top: both read the community database
-    line = affiliate.earning_line(trip.author, bool(affiliate.marker_for(trip.handle)) if trip.handle else False)
+    line = affiliate.earning_line(trip.author, bool(affiliate.marker_for(trip.handle)) if trip.handle else False, bool(trip.plan_to))
     report = A(icon("flag", 18, 2.2), "Report this trip", href=f"/report?trip={trip.slug}", cls="btn btn-sm trust-report", id="report-this") if community.is_real(trip.slug) else ""
     return Section(P(line, id="who-earns", cls="trust-line"), report, id="trust", cls="trust ga-wrap")
 
