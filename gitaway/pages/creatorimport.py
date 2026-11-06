@@ -16,6 +16,7 @@ from urllib.parse import quote
 
 from fasthtml.common import A, Button, Details, Div, Fieldset, Form, H1, H2, Img, Input, Label, Legend, Link, Option, P, Script, Section, Select, Span, Summary, Textarea
 from fasthtml.core import FtResponse
+from starlette.concurrency import run_in_threadpool
 from starlette.responses import FileResponse, RedirectResponse, Response
 
 from gitaway import ai, creatordraft as cd, importsource, session as ses
@@ -74,8 +75,8 @@ def _read(session, link, text, how):
                 return None, cd.NOT_ON
             why = "" if how == "manual" else cd.NOT_ON + " Your text is shown beside the editor to write from."
             return cd.blank(me.id, importsource.offline(link, text), name, why), ""
-        if not cd.allow(me.id):
-            return None, cd.LIMIT_HIT
+        if (hit := cd.allow(me.id)):
+            return None, cd.SITE_LIMIT_HIT if hit == "site" else cd.LIMIT_HIT
         if cd.mode() == "sample":      # the local showcase's simulated draft: nothing is fetched and no model is asked
             return cd.sample(me.id, importsource.offline(link, text), name), ""
         return cd.make(me.id, me.id, importsource.gather(link, text), name), ""
@@ -200,7 +201,7 @@ def register(app):
             link, text = text.strip(), ""
         if not link and not text.strip() and how == "draft":
             return paste_page(session, "", "", NOTHING, 422)
-        made, error = _read(session, link, text, how)
+        made, error = await run_in_threadpool(_read, session, link, text, how)     # fetches the page, asks the model: never on the event loop (F-182)
         if made is None:
             return paste_page(session, link, text, error, 422)
         return RedirectResponse(f"{PATH}/{made['id']}", status_code=303)
@@ -224,16 +225,16 @@ def register(app):
         f = await request.form()
         do = str(f.get("do") or "save")
         if do == "unpublish":
-            cd.unpublish(session, d)
+            await run_in_threadpool(cd.unpublish, session, d)
             return RedirectResponse(f"{PATH}/{token}", status_code=303)
         if do == "publish":
             try:
-                cd.publish(session, d, f.get("own") == "1")
+                await run_in_threadpool(cd.publish, session, d, f.get("own") == "1")
             except HubError as e:
                 return FtResponse(preview_page(session, d, str(e)), status_code=409 if f.get("own") == "1" else 422)
             return RedirectResponse(f"{PATH}/{token}?live=1", status_code=303)
         try:
-            cd.apply(me.id, d, f, do)
+            await run_in_threadpool(cd.apply, me.id, d, f, do)     # may fetch and re-encode the picked pictures
         except HubError as e:
             return editor_page(d, error=str(e))
         return RedirectResponse(f"{PATH}/{token}/preview" if do == "preview" else f"{PATH}/{token}", status_code=303)

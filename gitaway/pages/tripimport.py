@@ -15,6 +15,7 @@ from pathlib import Path
 
 from fasthtml.common import A, Button, Div, Form, H1, H2, H3, Input, Label, Li, Link, Ol, P, Script, Section, Span, Textarea, Ul
 from fasthtml.core import FtResponse
+from starlette.concurrency import run_in_threadpool
 from starlette.datastructures import UploadFile
 from starlette.responses import RedirectResponse, Response
 
@@ -227,7 +228,7 @@ def register(app):
         if file is not None and getattr(file, "filename", ""):  # an uploaded PDF wins over the paste box
             data = await file.read(expedia.MAX_PDF_BYTES + 1)
             try:
-                text = expedia.pdf_text(data)
+                text = await run_in_threadpool(expedia.pdf_text, data)     # parsing a PDF is CPU work (F-182)
             except expedia.PdfProblem as e:
                 return paste_page(text, [str(e)], status=422)
         read, extra = False, ()

@@ -15,6 +15,7 @@ in common with the post becomes "Unnamed stop" (a wrong place name is worse than
 
 import json
 import logging
+import os
 import re
 import secrets
 from contextlib import contextmanager
@@ -32,6 +33,9 @@ log = logging.getLogger("gitaway.creatordraft")
 
 JOB = "creator-import"
 DAILY_LIMIT = 20          # drafts a person can ask for in a day (every try counts, a failed one too: each one fetches a page and may cost a model call)
+SITE_LIMIT = 500          # drafts all creators together in a day, unless GITAWAY_CREATOR_IMPORT_SITE_LIMIT says otherwise
+SITE_KEY = "*site*"       # the site-wide counter's row in creator_import_hits (no person id looks like this)
+PICTURE_LIMIT = 20        # pictures one person may have fetched and re-encoded in a day (each is a fetch of up to 8 MB and an image decode)
 MAX_DAYS, MAX_STOPS, MAX_TIPS, MAX_PICKS = 14, 12, 5, 2
 MAX_TITLE, MAX_NAME, MAX_PLACE, MAX_STOP, MAX_STOP_NOTE, MAX_TIP, MAX_NOTE, MAX_DAY_TITLE = 60, 40, 60, 80, 140, 140, 300, 60
 MAX_KEPT_TEXT = 20_000    # of a pasted text kept beside the editor, when there is no draft to fill it
@@ -43,6 +47,7 @@ LINK_LABEL = {"blog": "Read the original post", "youtube": "Watch the original",
 
 NOT_ON = "Drafting from a link is not switched on yet. You can still paste your text and write the trip yourself."
 LIMIT_HIT = f"You have asked for {DAILY_LIMIT} drafts today, which is the most for one day. Come back tomorrow, or write this one yourself."
+SITE_LIMIT_HIT = "GitAway has drafted as many trips as it can for today. Come back tomorrow, or write this one yourself."
 EMPTY = "GitAway could not find a trip in that. Paste the text of your post (the days and the places in it) and try again, or write it yourself."
 
 _URL = re.compile(r"(?:https?://|www\.)\S+", re.I)
@@ -176,19 +181,45 @@ def _db():
         yield db
 
 
-def allow(owner) -> bool:
-    """Count one try for `owner` today; False (nothing counted) when they have used DAILY_LIMIT."""
-    day = datetime.now(timezone.utc).date().isoformat()
+def site_limit() -> int:
+    """Drafts all creators together may ask for in a day (GITAWAY_CREATOR_IMPORT_SITE_LIMIT, default SITE_LIMIT): the ceiling on the model bill if many accounts are made."""
+    raw = os.getenv("GITAWAY_CREATOR_IMPORT_SITE_LIMIT", "").strip()
+    return int(raw) if raw.isdigit() else SITE_LIMIT
+
+
+def _take(db, key, day, limit) -> bool:
+    """Count one for `key` today unless that would pass `limit`: one statement, so parallel requests cannot all read the same number and each pass (F-182)."""
+    if limit <= 0:
+        return False
+    r = db.conn.execute(text("INSERT INTO creator_import_hits (owner_user, day, n) VALUES (:o, :d, 1) ON CONFLICT (owner_user, day) DO UPDATE SET n = n + 1 WHERE n < :m"),
+                        {"o": key, "d": day, "m": limit})
+    return r.rowcount == 1
+
+
+def _today():
+    return datetime.now(timezone.utc).date().isoformat()
+
+
+def allow(owner) -> str:
+    """Count one try for `owner` today, and one for the whole site. "" when it may go ahead; "person" or "site" (nothing counted) when that limit is used up."""
+    day = _today()
     with _db() as db:
-        row = db.conn.execute(text("SELECT n FROM creator_import_hits WHERE owner_user = :o AND day = :d"), {"o": str(owner), "d": day}).fetchone()
-        if row and row[0] >= DAILY_LIMIT:
-            return False
-        if row:
-            db.conn.execute(text("UPDATE creator_import_hits SET n = n + 1 WHERE owner_user = :o AND day = :d"), {"o": str(owner), "d": day})
-        else:
-            db.conn.execute(text("INSERT INTO creator_import_hits (owner_user, day, n) VALUES (:o, :d, 1)"), {"o": str(owner), "d": day})
+        if not _take(db, str(owner), day, DAILY_LIMIT):
+            db.conn.rollback()
+            return "person"
+        if not _take(db, SITE_KEY, day, site_limit()):
+            db.conn.rollback()
+            return "site"
         db.conn.commit()
-        return True
+        return ""
+
+
+def _may_fetch_picture(owner) -> bool:
+    """Count one picture fetched for `owner` today (PICTURE_LIMIT): un-picking and picking again must not be a free fetcher."""
+    with _db() as db:
+        ok = _take(db, f"pic:{owner}", _today(), PICTURE_LIMIT)
+        db.conn.commit()
+        return ok
 
 
 def _create(owner, data) -> dict:
@@ -299,21 +330,21 @@ def apply(owner, d, form, action="save") -> dict:
            "stickers": [k for k in hub.TAGS if k in form.getlist("stickers")]}
     _check_text(new)
     picks = list(dict.fromkeys(int(p) for p in form.getlist("pick") if isinstance(p, str) and p.isdigit() and int(p) < len(d["images"])))[:MAX_PICKS]
-    new["copies"], new["picks"] = _photos(d, picks)
+    new["copies"], new["picks"] = _photos(owner, d, picks)
     cover = val("cover")
     new["cover"] = cover if cover.isdigit() and int(cover) in new["picks"] else (str(new["picks"][0]) if new["picks"] else "")
     return _store(owner, new)
 
 
-def _photos(d, picks) -> tuple:
+def _photos(owner, d, picks) -> tuple:
     """(copies, picks) after fetching the newly picked pictures from the post and re-encoding them; the ones un-picked lose their files. A picture that cannot be fetched
-    or opened is left out (and the creator is told on the page by it being unticked)."""
+    or opened, or past the day's PICTURE_LIMIT, is left out (and the creator is told on the page by it being unticked)."""
     folder = pub.root() / d["slug"]
     have = {int(k): v for k, v in d.get("copies", {}).items()}
     out, kept = {}, []
     for n in picks:
         name = have.get(n)
-        if not name:
+        if not name and _may_fetch_picture(owner):
             name = _fetch_copy(d["images"][n], folder)
         if name:
             out[str(n)] = name
