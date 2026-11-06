@@ -28,8 +28,8 @@ MAX_BYTES = 2 * 1024 * 1024
 MAX_IMAGE = 8 * 1024 * 1024
 TIMEOUT = 8.0
 USER_AGENT = "GitAwayBot/1.0 (+https://gitaway.me; reads a post its author asked us to read)"
-ACCEPT = {"html": ("text/html", "application/xhtml+xml"), "json": ("application/json",), "image": ("image/jpeg", "image/png", "image/webp")}
-LIMIT = {"html": MAX_BYTES, "json": MAX_BYTES, "image": MAX_IMAGE}
+ACCEPT = {"html": ("text/html", "application/xhtml+xml"), "json": ("application/json",), "xml": ("application/xml", "text/xml", "application/rss+xml", "application/atom+xml"), "image": ("image/jpeg", "image/png", "image/webp")}
+LIMIT = {"html": MAX_BYTES, "json": MAX_BYTES, "xml": MAX_BYTES, "image": MAX_IMAGE}
 RESOLVER = None    # tests: a function name -> list of address strings, instead of DNS
 TRANSPORT = None   # tests: a function (url, ip, timeout, kind) -> (status, headers dict with lower-case keys, body bytes), instead of the network
 _CGNAT = ipaddress.ip_network("100.64.0.0/10")
@@ -162,7 +162,7 @@ def _http(url, ip, timeout, kind):
 
 
 def fetch(url, kind="html") -> Fetched:
-    """The bytes at `url` (html, json or image, per `kind`). Raises FetchError with a sentence fit to show; see the module's list for what is refused."""
+    """The bytes at `url` (html, json, xml (a sitemap or a feed, F-190) or image, per `kind`). Raises FetchError with a sentence fit to show; see the module's list for what is refused."""
     started = time.monotonic()
     send = TRANSPORT or _http
     for _hop in range(MAX_REDIRECTS + 1):

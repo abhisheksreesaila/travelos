@@ -12,6 +12,7 @@ pillow = ">=13.0.0,<14"
 pillow-heif = ">=1.8.0,<2"
 pypdfium2 = ">=5.13.0,<6"
 trafilatura = ">=2.0.0,<3"
+defusedxml = ">=0.7.1,<0.8"
 
 [pypi-dependencies]
 python-fasthtml = ">=0.14.13"
