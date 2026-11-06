@@ -214,7 +214,7 @@ def test_an_email_address_in_the_text_is_refused(family):
     assert publish.get(person("ari"))["tips"] == []
 
 
-def test_a_mention_of_a_family_member_is_flagged_in_the_preview_not_blocked(family):
+def test_a_mention_of_a_family_member_is_flagged_in_the_preview(family):      # and blocks publishing until ticked: tests/test_kids_names.py (F-194)
     client, pid = family
     draft(client, pid, note_2="Zelda loved the teacups.")
     page = client.get("/trip/publish/preview").text

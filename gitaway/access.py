@@ -35,11 +35,11 @@ OPEN_POSTS = (
     "/trip/talk/message", "/trip/talk/photo", "/trip/talk/voice",   # talk on a plan (F-091): text, a photo or a voice note on a plan or part, from any member (viewers too: it changes no plan)
     "/trip/family/message", "/trip/family/quiet",   # a message in the family thread and my own Quiet switch (F-070): every member, viewers too (a viewer cannot change a plan, so never causes a change card)
     "/report",   # reporting a public trip or creator (F-185): anyone, signed out too; it changes no plan
-    "/admin/takedown", "/admin/restore", "/admin/draft", "/admin/link", "/admin/revoke", "/creators/settings",   # the captain's take down and restore, and F-188's drafts for creators (/claim/ is a creator claiming their own post; the route answers 404 to anyone not in GITAWAY_ADMIN_EMAILS, F-185) and my own affiliate marker (F-184)
+    "/admin/takedown", "/admin/restore", "/admin/approve", "/admin/draft", "/admin/link", "/admin/revoke", "/creators/settings",   # the captain's take down and restore, and F-188's drafts for creators (/claim/ is a creator claiming their own post; the route answers 404 to anyone not in GITAWAY_ADMIN_EMAILS, F-185) and my own affiliate marker (F-184)
     "/creators/drafts/scan", "/creators/drafts/start",   # my own batch of posts (F-190): find a blog's posts, queue the ticked ones; the drafts are mine, not a family's
     "/trip/family/seen",   # I have read the chats up to now (F-143): my own read mark, every member, viewers too
 )
-OPEN_PREFIXES = ("/join/", "/creators/import/", "/claim/", "/creators/drafts/")                # using an invite link: the person is joining another family
+OPEN_PREFIXES = ("/join/", "/creators/import/", "/claim/", "/creators/drafts/", "/admin/drafts/")                # using an invite link: the person is joining another family
 ADMIN_POSTS = ("/family/invite", "/family/invite/revoke", "/family/role", "/family/remove", "/trip/delete")  # deleting an imported trip (F-042) is an admin's
 
 _role = ContextVar("gitaway_family_role", default=None)

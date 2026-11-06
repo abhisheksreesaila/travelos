@@ -76,11 +76,11 @@ def test_settings_asks_a_signed_out_visitor_to_sign_in_and_comes_back(client, mo
 def test_a_creator_saves_a_marker_and_sees_what_it_does(client, mode):
     sign_in(client)
     page = client.get("/creators/settings").text
-    assert 'name="marker"' in page and "Without a marker, bookings from your trips support GitAway" in page
+    assert 'name="marker"' in page and "Add your Travelpayouts marker and flights booked from your trips carry it, so Aviasales pays you. Stays and things to do support GitAway for now." in page
     r = client.post("/creators/settings", data={"marker": " 555111 "})
     assert r.status_code == 200 and 'id="st-saved"' in r.text and 'value="555111"' in r.text
     assert affiliate.marker_of(tid()) == "555111"
-    assert "Flights booked from your trips carry your marker, so Aviasales pays you." in r.text and "Klook" in r.text and "GitAway's account" in r.text
+    assert "Flights booked from your trips carry your Travelpayouts marker, so Aviasales pays you. Stays and things to do support GitAway for now." in r.text
 
 
 def test_a_bad_marker_is_refused_and_the_old_one_stays(client, mode):
@@ -234,7 +234,7 @@ def test_the_trip_page_says_plainly_who_earns_with_and_without_a_marker(client, 
     assert re.search(r'id="who-earns"[^>]*>Bookings from this trip support GitAway\.<', page)
     affiliate.set_marker(owner["user_id"], "555111")
     page = without_bar(client.get(f"/trips/{row['slug']}").text)
-    assert re.search(r'id="who-earns"[^>]*>Flights booked from this trip support Maya Chen\. Stays and things to do support GitAway\.<', page)
+    assert re.search(r'id="who-earns"[^>]*>Flights booked from this trip support Maya Chen\. Stays and things to do support GitAway for now\.<', page)
     assert "555111" not in page            # the marker itself is not shown to readers
 
 

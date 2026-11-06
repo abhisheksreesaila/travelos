@@ -13,9 +13,10 @@ import os
 import re
 
 from fasthtml.common import A, Button, Div, Form, H1, H2, Input, Li, Link, Main, P, Section, Span, Ul
+from starlette.concurrency import run_in_threadpool
 from starlette.responses import RedirectResponse
 
-from gitaway import affiliate, catalog, community, partners, reports, session as ses, showcase, stats
+from gitaway import affiliate, catalog, community, creatordraft as cd, members, partners, reports, session as ses, showcase, stats
 from gitaway.icons import icon
 from gitaway.layout import page
 from gitaway.pages import creatorclaim as claims
@@ -55,6 +56,17 @@ def _trip_row(row):
               _button("restore", row["slug"], "Restore", "") if down else _button("takedown", row["slug"], "Take down", "ad-danger"), cls="ad-trip", id=row["slug"])
 
 
+WAITS = {"pending": ("Unlisted until you approve it", "claimed"), "unverified": ("Byline waits for your approval", "published")}
+
+
+def _waiting(w):
+    """One trip waiting for the captain (F-194): what is held back, who published it and whose site the post is on, and the two buttons."""
+    row, (what, verb) = w["row"], WAITS[w["state"]]
+    return Li(Div(A(row["title"], href=f"/trips/{w['slug']}", cls="ad-link"), Span(what, cls="ad-state is-down", id=f"wait-state-{w['slug']}")),
+              P(f"{verb} by {members.email_of(row['owner_user']) or 'someone'} · the post is on {w['host']}", cls="ad-meta"),
+              Div(_button("approve", w["slug"], "Approve", ""), _button("takedown", w["slug"], "Take down", "ad-danger"), cls="cc-acts"), cls="ad-trip", id=f"wait-{w['slug']}")
+
+
 def _creator(c, trips, clicks):
     marker = affiliate.marker_of(c["owner_user"])
     all_, own = clicks.get(c["handle"], (0, 0))
@@ -77,6 +89,7 @@ def _report(r):
 
 def admin_page(drafted=()):
     people = community.real_creators()
+    waiting = [w for w in community.waiting() if w["row"]]
     every = community.creators_all()
     clicks = affiliate.clicks_by_creator()
     live = sum(len(c["trips"]) for c in people)
@@ -91,6 +104,8 @@ def admin_page(drafted=()):
             P(f"{skipped} {'family' if skipped == 1 else 'families'} could not be read, so {'its' if skipped == 1 else 'their'} clicks are not in these totals.", role="alert", cls="ad-meta", id="ad-skipped") if skipped else "",
             Div(Span(cls="ad-bar-fill", style=f"width:{min(100, round(100 * len(people) / GOAL))}%"), cls="ad-bar", role="img", aria_label=f"{len(people)} of {GOAL} creators"),
             claims.section(drafted),
+            Section(H2("Waiting for your approval"), P("A trip claimed or published by someone whose email is not at the post's own site. Check it is theirs, then approve it.", cls="ad-meta"),
+                    Ul(*[_waiting(w) for w in waiting], cls="ad-list", id="ad-waiting"), cls="ad-sec", id="ad-waiting-sec") if waiting else "",
             Section(H2("Reports"), Ul(*[_report(r) for r in rep], cls="ad-list", id="ad-report-list") if rep else P("No reports.", cls="ad-meta", id="ad-no-reports"), cls="ad-sec"),
             Section(H2("Creators and trips"),
                     Ul(*[_creator(c, community.rows(kind="scrapbook", owner=c["owner_user"], hidden=True), clicks) for c in every], cls="ad-list", id="ad-creators") if every else P("Nobody has published yet.", cls="ad-meta"),
@@ -114,9 +129,10 @@ def register(app):
             if not reports.same_site(request):
                 return showcase.not_found()
             slug = str((await request.form()).get("slug") or "")
-            return RedirectResponse(f"/admin#{slug}" if fn(slug) else "/admin", status_code=303)   # only a slug that exists goes into the address
+            return RedirectResponse(f"/admin#{slug}" if await run_in_threadpool(fn, slug) else "/admin", status_code=303)   # only a slug that exists goes into the address
         handler.__name__ = f"admin_{name}"
         app.post(f"/admin/{name}")(handler)
 
     _act("takedown", community.take_down)
     _act("restore", community.restore)
+    _act("approve", cd.approve)      # F-194: the captain's yes to a trip that waits for him

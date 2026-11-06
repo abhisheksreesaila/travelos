@@ -57,6 +57,7 @@ def community_plan(folder: Path, uid, email):
             ("their own clicks on a creator's trip", db, "via_clicks", "who = ?", (f"u:{uid}",))]
     if slugs:
         rows.append(("fork counts of their trips", db, "fork_counts", f"slug IN ({marks})", tuple(slugs)))
+        rows.append(("the captain's approval of their trips", db, "trip_review", f"slug IN ({marks})", tuple(slugs)))      # F-194
     if handles:
         rows.append(("clicks that came from their trips", db, "via_clicks", f"handle IN ({', '.join('?' for _ in handles)})", tuple(handles)))
     return rows, [(f"public pictures of {slug}", folder / "public" / slug) for slug in sorted(slugs)]

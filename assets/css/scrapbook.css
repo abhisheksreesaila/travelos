@@ -73,6 +73,8 @@ input:focus-visible + .pb-pill { outline: 0.1667rem solid var(--accent); outline
 .pb-pv-t { display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 650; font-size: 1.0625rem; }
 .pb-pv-act { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .pb-pv-act .btn { min-height: 2.75rem; }
+.pb-names { display: inline-flex; align-items: center; gap: 0.625rem; min-height: 2.75rem; font-weight: 600; cursor: pointer; }
+.pb-names-box { width: 1.5rem; height: 1.5rem; accent-color: var(--accent); }
 .pb-warn { margin: 0; padding: 0.5rem 0.75rem; border-radius: 0.75rem; background: color-mix(in srgb, var(--oq-warn, #8f5400) 12%, var(--card)); color: var(--ink); font-weight: 600; font-size: 0.9375rem; }
 
 /* ---- what a creator's page adds to the scrapbook ---- */
@@ -99,3 +101,4 @@ a.by { text-decoration: underline; text-underline-offset: 0.2rem; }
 .trust { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem 1.5rem; padding-block: 1.25rem 2rem; border-top: 1px solid var(--line); }
 .trust-line { margin: 0; flex: 1 1 18rem; color: var(--ink-2); font-size: 0.9375rem; line-height: 1.45; text-wrap: pretty; }
 .trust-report { min-height: 2.75rem; }
+.plan-note { margin: 0.75rem 0 0; color: var(--ink-2); font-size: 0.9375rem; line-height: 1.45; text-wrap: pretty; }

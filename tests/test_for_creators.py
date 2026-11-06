@@ -79,12 +79,12 @@ def test_the_paste_box_posts_to_the_import(client, mode):
 
 def test_the_three_promises_free_and_the_terms_are_there_in_plain_words(client, mode):
     text = words(client.get("/for-creators").text)
-    for promise in ("Under a minute", "Your links keep paying you", "It links back to your post"):
+    for promise in ("Under a minute", "Flights from your trips pay you", "It links back to your post"):
         assert promise in text
     assert "Free. Terms shown on day one." in text
     for term in ("What we show", "Take it down any time", "Your marker", "Later, a share for big creators"):
         assert term in text
-    assert "Stays and things to do (Klook) use GitAway's account for now" in text and "That is a plan, not a promise of an amount." in text
+    assert "Stays and things to do support GitAway for now." in text and "That is a plan, not a promise of an amount." in text
 
 
 def test_the_questions_say_what_to_paste_for_instagram_and_youtube(client, mode):

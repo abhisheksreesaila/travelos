@@ -20,11 +20,10 @@ import re
 import secrets
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from urllib.parse import urlsplit
 
 from sqlalchemy import text
 
-from gitaway import blogbutton, creatordraft as cd, importsource
+from gitaway import affiliate, blogbutton, creatordraft as cd, importsource
 from gitaway.hub import HubError
 
 UNCLAIMED = "*unclaimed*"      # the owner of a draft nobody has claimed (no sign-in id looks like this)
@@ -138,12 +137,7 @@ def state(token, user_id="") -> str:
     return "revoked" if r[2] else "expired" if r[1] <= _iso(_now()) else "ok"
 
 
-def domain_of(d) -> str:
-    """The website a draft's post is on ("blog.example.com"), for the claimer to confirm it is theirs."""
-    try:
-        return (urlsplit((d.get("source") or {}).get("url", "")).hostname or "").lower()
-    except ValueError:
-        return ""
+domain_of = cd.domain_of      # the website a draft's post is on, for the claimer to confirm it is theirs
 
 
 def draft_id_of(token) -> str:
@@ -208,7 +202,7 @@ def draft(admin_id, link, name="", text="") -> tuple:
     if mode == "sample":
         d = cd.sample(UNCLAIMED, importsource.offline(link, ""), name)
     else:
-        d = cd.make(UNCLAIMED, str(admin_id), importsource.gather(link, ""), name)
+        d = cd.make(UNCLAIMED, str(admin_id), importsource.gather(link, "", asked=False), name)      # the author has not asked: the fetch says so (F-194)
     with cd._db() as db:
         token = _issue(db, d["id"], name, link)
     return d, link_for(token)
@@ -224,7 +218,7 @@ def outreach(person, title, link, captain) -> str:
             f"I turned your post into a trip so you can see how it looks. Nothing is public until you say so:\n\n{link}\n\n"
             "Three promises:\n"
             "1. It takes under a minute: one tap to publish, or edit first.\n"
-            "2. Your links keep paying you: add your own affiliate marker and the Book buttons on your trips use it.\n"
+            f"2. Flights pay you: {affiliate.pays_you()}\n"
             "3. Every trip links back to your post.\n\n"
             "It is free, and you can take it down any time.\n\n"
             f"{captain}")

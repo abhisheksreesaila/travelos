@@ -128,6 +128,13 @@ def _row(conn, sql, **params):
     return found[0] if found else None
 
 
+def email_of(user_id) -> str:
+    """The sign-in email of a person, or "" (the captain's list of what waits for his yes shows who published it)."""
+    with hostdb.locked():
+        found = _row(_conn(), "SELECT email FROM core_users WHERE id = :u", u=str(user_id))
+    return found["email"] if found else ""
+
+
 def _traveler(user_id, email):
     from gitaway import session as ses
     return ses.current_traveler({"user_id": user_id, "email": email})

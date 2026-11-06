@@ -1,6 +1,7 @@
 """Draft every A-priority creator's example post from docs/research/creators.csv (F-188): `pixi run draft-creators [--limit N]`.
 
-Needs ANTHROPIC_API_KEY in the environment (never printed); without it, says so and exits 1. Each post is read the way the app reads it (safe fetch, Claude Haiku 5.5, validation) into a
+Refuses to run (exit 2) anywhere but on the live data folder (GITAWAY_DATA_DIR=/data): the links it makes are only good where the drafts are, and on a laptop they are not on gitaway.me.
+The captain drafts at https://gitaway.me/admin instead (F-194). Needs ANTHROPIC_API_KEY in the environment (never printed); without it, says so and exits 1. Each post is read the way the app reads it (safe fetch, Claude Haiku 5.5, validation) into a
 private draft owned by no one, with the creator's name from the CSV. A post that already has a draft is skipped, and the site-wide daily AI ceiling (GITAWAY_CREATOR_IMPORT_SITE_LIMIT) stops the run
 when it is used up. The claim links are printed (this is the captain's own terminal) and written to claim-links.csv in the data folder (GITAWAY_DATA_DIR, never committed); each link works once,
 for 30 days, and is stored only as a hash, so the file is the only place they are kept. GitAway sends nothing: the captain copies each message from /admin.
@@ -15,12 +16,20 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 OUT = "claim-links.csv"
+PRODUCTION_DATA_DIR = "/data"      # where the live site keeps its databases (the Dockerfile, docs/setup.md)
+REFUSAL = ("pixi run draft-creators makes claim links that do not work on gitaway.me: it keeps the drafts in this machine's own folder, and the live site cannot see them.\n"
+           "Draft for creators on the live site instead: open https://gitaway.me/admin, sign in with your admin email and use \"Draft for a creator\" (one link, or tick rows of the list).\n"
+           f"Only a machine whose GITAWAY_DATA_DIR is the live data folder ({PRODUCTION_DATA_DIR}) may run this script.")
 
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Draft every A-priority creator's example post and print the claim links.")
     ap.add_argument("--limit", type=int, default=0, help="draft at most this many posts (0: all)")
     args = ap.parse_args(argv)
+    here = (os.environ.get("GITAWAY_DATA_DIR") or "").strip()
+    if not here or os.path.normpath(here) != PRODUCTION_DATA_DIR:      # before anything is read or written: a link made here would not work on the site
+        print(REFUSAL)
+        return 2
     if not (os.environ.get("ANTHROPIC_API_KEY") or "").strip():
         print("ANTHROPIC_API_KEY must be set (it is never printed): drafting a post is a call to Claude Haiku 5.5.\n"
               "Without a key, run the app locally (pixi run dev): the admin page drafts made-up sample drafts so you can try the flow.")

@@ -143,7 +143,7 @@ def clicks(handle) -> dict:
 def report(owner) -> dict:
     """{"trips": [{slug, title, 7, 30, all (each {views, forks, plans}), spark}], "total": {7, 30, all}, "clicks": clicks(handle) or None} for the person's live trips."""
     creator = community.creator_of(owner)
-    trips = community.rows(kind="scrapbook", owner=owner)
+    trips = community.rows(kind="scrapbook", owner=owner, pending=True)      # their own, the waiting ones too (F-194)
     with community.connect() as db:
         per = [{"slug": t["slug"], "title": t["title"], **_group(db.conn, [t["slug"]]), "spark": _spark(db.conn, t["slug"])} for t in trips]
         total = _group(db.conn, [t["slug"] for t in trips])

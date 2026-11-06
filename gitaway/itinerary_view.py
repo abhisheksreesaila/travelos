@@ -1,6 +1,6 @@
 """FastHTML components for the scrapbook itinerary page (F-014)."""
 
-from fasthtml.common import (A, Button, Details, Div, Figcaption, Figure, Form, H1, H2, H3, Img, Input, Li, Link, NotStr, P, Script,
+from fasthtml.common import (A, Button, Details, Div, Figcaption, Figure, Form, H1, H2, H3, Img, Input, Li, Link, Meta, NotStr, P, Script,
                              Section, Span, Summary, Ul)
 
 from gitaway.icons import icon
@@ -72,6 +72,13 @@ def _plan_button(trip):
     return A(icon("plane", 22, 2.2), "Plan this trip", href=href, cls="btn btn-hero", id="plan-this") if href else ""
 
 
+def _plan_note(trip):
+    """Where "Plan this trip" would be, a real trip at a place GitAway cannot plan says so (F-194)."""
+    from gitaway import hub  # here, not at the top: hub reads the community database
+    note = hub.plan_note(trip)
+    return P(note, id="plan-unavailable", cls="plan-note") if note else ""
+
+
 def _actions(trip, saved=False, forked=False):
     return Div(
         A(icon("fork", 22, 2.4), "In your forks" if forked else "Fork this trip", href="/forks" if forked else fork_href(trip), cls="btn btn-primary btn-hero"),
@@ -121,6 +128,12 @@ def _collage(trip):
     return Div(*stickers, route, plane, weather, stamp, cls="collage collage-stickers")
 
 
+def _unlisted(trip) -> bool:
+    """A trip waiting for the captain's yes is in no list and its creator has no profile page yet (F-194)."""
+    from gitaway import community  # here, not at the top: community reads its database
+    return community.review_state(trip.slug) == "pending"
+
+
 def _hero(trip, saved=False, forked=False):
     underline = NotStr('<svg class="underline" viewBox="0 0 300 20" preserveAspectRatio="none" aria-hidden="true">'
                        '<path d="M4 13 C 60 3, 118 19, 176 9 S 268 5, 296 11" stroke="var(--accent-2)" stroke-width="7" '
@@ -128,12 +141,13 @@ def _hero(trip, saved=False, forked=False):
     return Section(
         Div(
             Div(Span(icon("pin", 16, 2.2), trip.place, cls="place-pill"),
-                (A(f"By {trip.author}", href=f"/creators/{trip.handle}", cls="by") if trip.handle else Span(f"By {trip.author}", cls="by")) if trip.real else Span("Community itinerary"), cls="kicker"),
+                (A(f"By {trip.author}", href=f"/creators/{trip.handle}", cls="by") if trip.handle and not _unlisted(trip) else Span(f"By {trip.author}", cls="by")) if trip.real else Span("Community itinerary"), cls="kicker"),
             H1(f"{trip.headline} ", Span(trip.accent, underline, cls="accent-words"), cls="hero-title"),
             P(trip.lede, cls="lede"),
             Div(*[_tag(t) for t in trip.tags], cls="tags") if trip.tags else "",
             _stats(trip),
             _actions(trip, saved, forked),
+            _plan_note(trip),
             _source_card(trip.source) if trip.source else "",
             cls="hero-copy",
         ),
@@ -257,7 +271,7 @@ def _tips(trip):
 def _trust(trip):
     """A real trip's plain statement of who earns from its Book links, and "Report this trip" (only once it is live: a draft's preview has nothing to report)."""
     from gitaway import affiliate, community  # here, not at the top: both read the community database
-    line = affiliate.earning_line(trip.author, bool(affiliate.marker_for(trip.handle)) if trip.handle else False)
+    line = affiliate.earning_line(trip.author, bool(affiliate.marker_for(trip.handle)) if trip.handle else False, bool(trip.plan_to))
     report = A(icon("flag", 18, 2.2), "Report this trip", href=f"/report?trip={trip.slug}", cls="btn btn-sm trust-report", id="report-this") if community.is_real(trip.slug) else ""
     return Section(P(line, id="who-earns", cls="trust-line"), report, id="trust", cls="trust ga-wrap")
 
@@ -328,5 +342,6 @@ def itinerary_body(trip: Itinerary, loading: bool = False, saved: bool = False, 
     return Div(_hero(trip, saved, forked), _board(trip), _days(trip), _tips(trip), _yours(trip), blog, _trust(trip) if trip.real else "", SCRIPT, cls="itinerary")
 
 
-def itinerary_page(trip: Itinerary, theme=None, loading: bool = False, saved: bool = False, forked: bool = False, blog=""):
-    return page(trip.title, itinerary_body(trip, loading, saved, forked, blog), theme=resolve_theme(theme, trip), head=(*HEAD, Link(rel="stylesheet", href="/assets/css/scrapbook.css")) if trip.real else HEAD)
+def itinerary_page(trip: Itinerary, theme=None, loading: bool = False, saved: bool = False, forked: bool = False, blog="", noindex=False):
+    head = (*HEAD, Link(rel="stylesheet", href="/assets/css/scrapbook.css")) if trip.real else HEAD
+    return page(trip.title, itinerary_body(trip, loading, saved, forked, blog), theme=resolve_theme(theme, trip), head=(*head, Meta(name="robots", content="noindex, nofollow")) if noindex else head)

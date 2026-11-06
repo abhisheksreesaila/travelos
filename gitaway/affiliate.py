@@ -56,11 +56,15 @@ def marker_of(owner_user) -> str:
 
 
 def marker_for(handle) -> str:
-    """The marker of the creator with this handle, or "" (an unknown handle, a creator without one, anything that is not a handle)."""
+    """The marker of the creator with this handle, or "" (an unknown handle, a creator without one, anything that is not a handle, or a creator whose only trips still wait for the
+    captain's approval: nobody earns from a post that has not been checked is theirs, F-194)."""
     if not _HANDLE.fullmatch(str(handle or "")):
         return ""
+    waiting = "SELECT slug FROM trip_review WHERE state = 'pending'"
     with connect() as db:
-        r = db.conn.execute(text("SELECT m.marker FROM creators c JOIN creator_markers m ON m.owner_user = c.owner_user WHERE c.handle = :h"), {"h": handle}).fetchone()
+        r = db.conn.execute(text("SELECT m.marker FROM creators c JOIN creator_markers m ON m.owner_user = c.owner_user WHERE c.handle = :h "
+                                 f"AND (NOT EXISTS (SELECT 1 FROM published p WHERE p.owner_user = c.owner_user AND p.slug IN ({waiting})) "
+                                 f"OR EXISTS (SELECT 1 FROM published p WHERE p.owner_user = c.owner_user AND p.slug NOT IN ({waiting})))"), {"h": handle}).fetchone()
     return r[0] if r else ""
 
 
@@ -88,10 +92,23 @@ def valid_via(handle) -> str:
     return handle if _HANDLE.fullmatch(str(handle or "")) and community.creator(handle) else ""
 
 
-def earning_line(name, has_marker) -> str:
-    """Who earns when someone books from a creator's trip, in plain words."""
+# What is true about the money, in one place (F-194): the For creators page, the claim page, the outreach message, the settings page and the trip page all say it with these words.
+# A creator's own links on a stop are a different thing (F-196); if they come back, say so here and every place follows.
+STAYS = "Stays and things to do support GitAway for now."
+
+
+def pays_you(has_marker=False) -> str:
+    """What a creator is told about the money, in plain words: their marker rides on flights booked from their trips, nothing else."""
+    lead = "Flights booked from your trips carry your Travelpayouts marker, so Aviasales pays you." if has_marker else "Add your Travelpayouts marker and flights booked from your trips carry it, so Aviasales pays you."
+    return f"{lead} {STAYS}"
+
+
+def earning_line(name, has_marker, plannable=True) -> str:
+    """Who earns when someone books from a creator's trip, in plain words. A trip at a place GitAway cannot plan has no booking, so nobody earns from it (F-194)."""
+    if not plannable:
+        return "Nothing on this page can be booked, so nobody earns from it."
     if has_marker:
-        return f"Flights booked from this trip support {name}. Stays and things to do support GitAway."
+        return f"Flights booked from this trip support {name}. {STAYS}"
     return "Bookings from this trip support GitAway."
 
 

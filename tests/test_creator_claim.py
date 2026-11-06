@@ -71,6 +71,8 @@ class Pages(Web):
     """The fake web where an address nobody listed is a 404, like the real one."""
 
     def __call__(self, url, ip, timeout, kind):
+        if url.endswith("/robots.txt"):
+            return super().__call__(url, ip, timeout, kind)
         self.calls.append(url)
         return self.pages.get(url, (404, {"content-type": "text/html"}, b"not found"))
 
@@ -154,9 +156,11 @@ def test_a_made_up_or_malformed_token_is_a_404(client, setup):
         assert sam.get(f"/claim/{t}").status_code == 404
 
 
-def test_a_signed_out_visitor_is_sent_to_sign_in_and_back(client, setup):
+def test_a_signed_out_visitor_sees_the_post_as_a_trip_and_is_sent_to_sign_in_only_to_claim(client, setup):      # the preview itself: tests/test_claim_preview.py (F-194)
     link = claim_link(draft(browser(CAP)).text)
     r = browser().get(link, follow_redirects=False)
+    assert r.status_code == 200 and f'href="/signin?next={link}&amp;intent=publish"' in r.text
+    r = browser().post(link, data={"do": "publish", "confirm": "1"}, follow_redirects=False)
     assert r.status_code == 303 and r.headers["location"] == f"/signin?next={link}&intent=publish"
 
 
@@ -248,7 +252,7 @@ def test_the_outreach_message_is_short_warm_personal_and_signed_with_the_captain
     msg = unescape(re.search(r'<textarea[^>]*id="cc-msg-0"[^>]*>(.*?)</textarea>', html, re.S).group(1)).strip()
     assert msg.startswith("Hi Maya,\n") and 'I loved your post "Three easy days in Santa Monica".' in msg
     assert f"https://gitaway.me{link}" in msg
-    for promise in ("under a minute", "Your links keep paying you", "links back to your post"):
+    for promise in ("under a minute", "Flights pay you", "links back to your post"):
         assert promise in msg
     assert msg.endswith("\n\nAbhishek") and "It is free" in msg and len(msg.split()) < 130
     assert 'data-copy="cc-msg-0"' in html and "GitAway does not send this" in html
@@ -258,7 +262,7 @@ def test_outreach_text_is_exactly_this():
     assert cc.outreach("Marcie Cheung", "3 days on Maui", "https://gitaway.me/claim/T", "Sam") == (
         "Hi Marcie,\n\nI loved your post \"3 days on Maui\". I'm Sam, and I'm building GitAway, an app where families fork a trip and plan it together. "
         "I turned your post into a trip so you can see how it looks. Nothing is public until you say so:\n\nhttps://gitaway.me/claim/T\n\nThree promises:\n"
-        "1. It takes under a minute: one tap to publish, or edit first.\n2. Your links keep paying you: add your own affiliate marker and the Book buttons on your trips use it.\n"
+        "1. It takes under a minute: one tap to publish, or edit first.\n2. Flights pay you: Add your Travelpayouts marker and flights booked from your trips carry it, so Aviasales pays you. Stays and things to do support GitAway for now.\n"
         "3. Every trip links back to your post.\n\nIt is free, and you can take it down any time.\n\nSam")
 
 
@@ -333,6 +337,13 @@ def _load(name):
     return m
 
 
+def _drafting_script():
+    """scripts/draft_creators.py as if it ran on the live data folder (it refuses anywhere else: tests/test_draft_creators_script.py): its production folder is this test's."""
+    m = _load("draft_creators")
+    m.PRODUCTION_DATA_DIR = os.environ["GITAWAY_DATA_DIR"]
+    return m
+
+
 def test_forgetting_a_person_removes_the_claim_they_used(client, setup):
     link = claim_link(draft(browser(CAP)).text)
     browser("sam").post(link, data={"do": "edit", "confirm": "1"})
@@ -344,7 +355,7 @@ def test_forgetting_a_person_removes_the_claim_they_used(client, setup):
 
 def test_the_script_without_a_key_explains_and_exits_1(capsys, monkeypatch):
     monkeypatch.setenv("ANTHROPIC_API_KEY", "")
-    assert _load("draft_creators").main([]) == 1
+    assert _drafting_script().main([]) == 1
     out = capsys.readouterr().out
     assert "ANTHROPIC_API_KEY must be set" in out and "pixi run dev" in out and rows() == []
 
@@ -358,7 +369,7 @@ def test_the_script_drafts_every_a_priority_creator_once_and_writes_the_links_to
     monkeypatch.setattr(safefetch, "TRANSPORT", Pages({u: page() for u in blogs}))
     out_file = Path(os.environ["GITAWAY_DATA_DIR"]) / "claim-links.csv"
     out_file.unlink(missing_ok=True)
-    script = _load("draft_creators")
+    script = _drafting_script()
     assert script.main([]) == 3                                                       # the one YouTube video in the list cannot be read here: reported, not hidden
     printed = capsys.readouterr().out
     assert f"{len(blogs)} drafted, 0 already had a draft, 1 failed." in printed and printed.count("https://gitaway.me/claim/") == len(blogs) and "FAILED" in printed
@@ -377,7 +388,7 @@ def test_the_script_stops_at_the_site_wide_ceiling(client, capsys, monkeypatch, 
     monkeypatch.setenv("GITAWAY_CREATOR_IMPORT_SITE_LIMIT", "2")
     out_file = Path(os.environ["GITAWAY_DATA_DIR"]) / "claim-links.csv"
     out_file.unlink(missing_ok=True)
-    assert _load("draft_creators").main([]) == 3
+    assert _drafting_script().main([]) == 3
     assert "2 drafted, 0 already had a draft, 1 failed." in capsys.readouterr().out and len(rows()) == 2
     out_file.unlink(missing_ok=True)
 
