@@ -3,6 +3,8 @@
 GET  /claim/<token>        the creator's post as a trip, read-only, signed in or not (F-194): signed out it asks to sign in only to claim; signed in, "This is my post: publish it" and "Edit first";
                            "already claimed" and the like say so. Never indexed (noindex) or cached (no-store)
 POST /claim/<token>        do=publish (claim, then publish: the tap is the "this is my post" tick) or do=edit (claim, then the F-183 editor)
+GET  /admin/drafts/<id>    the captain's editor for a pre-draft nobody has claimed (F-194): fix what the model got wrong before sending the claim link
+POST /admin/drafts/<id>    save it (the editor's own buttons: add or remove a stop or a day); a claimed draft is its owner's and answers 404 here
 POST /admin/draft          the captain drafts one post (`link`, `name`) or the ticked rows of docs/research/creators.csv (`url`, at most MAX_BATCH at a time) and sees each message to copy
 POST /admin/link           a fresh claim link and message for a draft (links are stored hashed, so an old one cannot be shown again); the old link stops working
 POST /admin/revoke         the link stops working
@@ -37,13 +39,17 @@ STATE_WORDS = {"waiting": "Waiting", "claimed": "Claimed", "revoked": "Revoked",
 
 # ---- the captain's section ----------------------------------------------------------------------------------------------------
 
+def _review_link(draft_id):
+    return A(icon("note", 20, 2.4), "Review the draft", href=f"/admin/drafts/{draft_id}", cls="btn btn-sm cc-review")
+
+
 def _result(i, r):
     if r.get("error"):
         return Li(Span(r["name"] or r["link"], cls="cc-name"), P(r["error"], role="alert", cls="cc-error"), cls="cc-result is-error", id=f"cc-result-{i}")
     field = f"cc-msg-{i}"
     return Li(Span(r["title"] or r["name"], cls="cc-name"), Span(f"for {r['name']}" if r["name"] else "", cls="cc-meta"),
               Textarea(r["message"], id=field, readonly=True, rows="11", spellcheck="false", autocomplete="off", aria_label=f"Message for {r['name'] or 'the creator'}", cls="cc-msg"),
-              Button(icon("link", 20, 2.4), "Copy the message", type="button", data_copy=field, id=f"{field}-copy", cls="btn btn-primary cc-copy"),
+              Button(icon("link", 20, 2.4), "Copy the message", type="button", data_copy=field, id=f"{field}-copy", cls="btn btn-primary cc-copy"), _review_link(r["draft_id"]) if r.get("draft_id") else "",
               P("GitAway does not send this. Paste it into an email or a message yourself.", cls="cc-meta"), cls="cc-result", id=f"cc-result-{i}")
 
 
@@ -53,6 +59,7 @@ def _draft_row(r):
         acts.append(A("View", href=f"/trips/{r['slug']}", cls="btn btn-sm"))
     elif r["state"] in ("waiting", "expired", "revoked"):
         hidden = Input(type="hidden", name="draft_id", value=r["draft_id"])
+        acts.append(_review_link(r["draft_id"]))
         acts.append(Form(hidden, Button("New link and message", type="submit", cls="btn btn-sm"), action="/admin/link", method="post", cls="ad-inline"))
         if r["state"] == "waiting":
             acts.append(Form(hidden, Button("Revoke link", type="submit", cls="btn btn-sm ad-danger"), action="/admin/revoke", method="post", cls="ad-inline"))
@@ -97,7 +104,7 @@ def section(results=()):
 
 
 def _made(captain, link, name, d, claim_link):
-    return {"link": link, "name": name, "title": d["title"], "message": cc.outreach(name, d["title"], claim_link, captain)}
+    return {"link": link, "name": name, "title": d["title"], "draft_id": d["id"], "message": cc.outreach(name, d["title"], claim_link, captain)}
 
 
 def _draft_all(admin_id, captain, jobs):
@@ -241,8 +248,29 @@ def register(app):
         if not new:
             return RedirectResponse("/admin#cc-section", status_code=303)
         d = await run_in_threadpool(cd.get, cc.UNCLAIMED, did) or {"title": row["title"]}
-        shown = [{"link": row["post_url"], "name": row["name"], "title": d["title"], "message": cc.outreach(row["name"], d["title"], new, _captain(session))}]
+        shown = [{"link": row["post_url"], "name": row["name"], "title": d["title"], "draft_id": did, "message": cc.outreach(row["name"], d["title"], new, _captain(session))}]
         return FtResponse(await run_in_threadpool(admin.admin_page, shown), headers=NO_STORE)      # the page reads the community database
+
+    @app.get("/admin/drafts/{token}")
+    def predraft(session, token: str):
+        if not admin.is_admin(session):
+            return showcase.not_found()
+        d = cd.get(cc.UNCLAIMED, token)      # only a draft nobody has claimed: once claimed it is its owner's
+        return FtResponse(creatorimport.editor_page(d, captain=True), headers=PRIVATE) if d else showcase.not_found()
+
+    @app.post("/admin/drafts/{token}")
+    async def predraft_save(request, session, token: str):
+        if not await _gated(request, session):
+            return showcase.not_found()
+        d = await run_in_threadpool(cd.get, cc.UNCLAIMED, token)
+        if not d:
+            return showcase.not_found()
+        f = await request.form()
+        try:
+            await run_in_threadpool(cd.apply, cc.UNCLAIMED, d, f, str(f.get("do") or "save"))
+        except HubError as e:
+            return FtResponse(creatorimport.editor_page(d, error=str(e), captain=True), headers=PRIVATE)
+        return RedirectResponse(f"/admin/drafts/{token}", status_code=303)
 
     @app.post("/admin/revoke")
     async def revoke(request, session):

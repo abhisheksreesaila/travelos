@@ -39,7 +39,7 @@ OPEN_POSTS = (
     "/creators/drafts/scan", "/creators/drafts/start",   # my own batch of posts (F-190): find a blog's posts, queue the ticked ones; the drafts are mine, not a family's
     "/trip/family/seen",   # I have read the chats up to now (F-143): my own read mark, every member, viewers too
 )
-OPEN_PREFIXES = ("/join/", "/creators/import/", "/claim/", "/creators/drafts/")                # using an invite link: the person is joining another family
+OPEN_PREFIXES = ("/join/", "/creators/import/", "/claim/", "/creators/drafts/", "/admin/drafts/")                # using an invite link: the person is joining another family
 ADMIN_POSTS = ("/family/invite", "/family/invite/revoke", "/family/role", "/family/remove", "/trip/delete")  # deleting an imported trip (F-042) is an admin's
 
 _role = ContextVar("gitaway_family_role", default=None)

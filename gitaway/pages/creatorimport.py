@@ -130,11 +130,13 @@ def _source_card(d):
                Span(s.get("by") or "", cls="ci-hint") if s.get("by") else "", cls="ci-source card", id="ci-source")
 
 
-def editor_page(d, error="", just=False):
+def editor_page(d, error="", just=False, captain=False):
+    """The editor. `captain`: the captain reviewing a pre-draft nobody has claimed (F-194): it posts to /admin/drafts/<id>, shows no pictures to pick and nothing to preview, publish or delete."""
+    base = f"/admin/drafts/{d['id']}" if captain else f"{PATH}/{d['id']}"
     place = Select(*[Option(label, value=k, selected=k == d["place"] or None) for k, label in [*cd.PLACES.items(), ("other", "Somewhere else")]], name="place", id="ci-place", cls="pb-input")
     unsure = sum(1 for day in d["days"] for s in day["stops"] if s["name"] == cd.UNNAMED)
-    top = Div(H1("Check your draft"), Span(icon("check", 16, 3), "Live", cls="pb-chip pb-chip-live") if d["live"] else Span(icon("note", 16, 2.4), "Draft: nobody can see this yet", cls="pb-chip"),
-              P("GitAway read your post. Fix anything that is off: nothing is public until you tick \"This is my post\" and publish.", cls="pb-lede"),
+    top = Div(H1("Check this pre-draft" if captain else "Check your draft"), Span(icon("check", 16, 3), "Live", cls="pb-chip pb-chip-live") if d["live"] else Span(icon("note", 16, 2.4), "Draft: nobody can see this yet", cls="pb-chip"),
+              P("Nothing is public. Fix what the model got wrong, then send the claim link." if captain else "GitAway read your post. Fix anything that is off: nothing is public until you tick \"This is my post\" and publish.", cls="pb-lede"),
               *[P(n, role="note", cls="ci-note", id=f"ci-notice-{i}") for i, n in enumerate(d["notices"])],
               P(f"{unsure} stop{'s' if unsure != 1 else ''} GitAway was not sure of {'are' if unsure != 1 else 'is'} marked \"{cd.UNNAMED}\". Name {'them' if unsure != 1 else 'it'} or take {'them' if unsure != 1 else 'it'} out.",
                 role="note", cls="ci-note ci-unsure-note", id="ci-unsure") if unsure else "", cls="pb-top")
@@ -150,7 +152,7 @@ def editor_page(d, error="", just=False):
     form = Form(
         Button("Save", type="submit", name="do", value="save", cls="sr-only", tabindex="-1", aria_hidden="true"),     # Enter in a field saves; it never removes a stop
         Div(Label("Title", fr="ci-title", cls="pb-lab"), Input(type="text", id="ci-title", name="title", value=d["title"], maxlength=str(cd.MAX_TITLE), autocomplete="off", cls="pb-input"),
-            Label("Your name on it", fr="ci-name", cls="pb-lab"), Input(type="text", id="ci-name", name="name", value=d["name"], maxlength=str(cd.MAX_NAME), autocomplete="name", cls="pb-input"),
+            Label("Their name on it" if captain else "Your name on it", fr="ci-name", cls="pb-lab"), Input(type="text", id="ci-name", name="name", value=d["name"], maxlength=str(cd.MAX_NAME), autocomplete="name", cls="pb-input"),
             Label("Where was it?", fr="ci-place", cls="pb-lab"), place,
             Input(type="text", id="ci-place-name", name="place_name", value=d["place_name"], maxlength=str(cd.MAX_PLACE), placeholder="Name the place", autocomplete="off", aria_label="Name of the place", cls="pb-input"),
             cls="pb-card card"),
@@ -160,18 +162,19 @@ def editor_page(d, error="", just=False):
         Button(icon("plus", 18, 2.4), "Add a day", type="submit", name="do", value="add_day", formnovalidate=True, cls="btn ci-add-day", id="ci-add-day") if len(d["days"]) < cd.MAX_DAYS else "",
         Fieldset(Legend("A few tips"), *[Input(type="text", name="tip", value=t, maxlength=str(cd.MAX_TIP), placeholder="One thing you'd tell a friend going", autocomplete="off", aria_label=f"Tip {i + 1}", cls="pb-input")
                                          for i, t in enumerate(tips)], cls="pb-card card pb-tips"),
-        pics,
+        "" if captain else pics,
         Div(P(error, role="alert", cls="pb-error", id="pb-error") if error else "",
-            Button(icon("image", 20, 2.4), "Preview what strangers see", type="submit", name="do", value="preview", cls="btn btn-primary", id="pb-preview"),
-            Button("Save draft", type="submit", name="do", value="save", cls="btn", id="pb-save"), cls="pb-bar"),
-        action=f"{PATH}/{d['id']}", method="post", id="ci-edit", cls="pb-form")
+            *([Button("Save draft", type="submit", name="do", value="save", cls="btn btn-primary", id="pb-save"), A("Back to the admin page", href="/admin#cc-section", cls="btn", id="pb-back-admin")] if captain else
+              [Button(icon("image", 20, 2.4), "Preview what strangers see", type="submit", name="do", value="preview", cls="btn btn-primary", id="pb-preview"),
+               Button("Save draft", type="submit", name="do", value="save", cls="btn", id="pb-save")]), cls="pb-bar"),
+        action=base, method="post", id="ci-edit", cls="pb-form")
     unpub = Details(Summary(icon("x", 18, 2.4), Span("Unpublish"), cls="pb-unpub", id="pb-unpublish"),
                     Form(P("This takes the page off GitAway for everyone. Your draft stays here, so you can publish again; its pictures are deleted and picked again then."), Input(type="hidden", name="do", value="unpublish"),
                          Button("Yes, take it down", type="submit", id="pb-unpublish-yes", cls="btn btn-sm pb-unpub-yes"), action=f"{PATH}/{d['id']}", method="post", cls="pb-unpub-form"), cls="pb-confirm") if d["live"] else ""
     delete = Details(Summary(icon("x", 18, 2.4), Span("Delete this draft"), cls="pb-unpub", id="ci-delete"),
                      Form(P("This deletes the draft, its pictures and, if it is live, the public page. It cannot be undone."), Input(type="hidden", name="do", value="delete"),
                           Button("Yes, delete it", type="submit", id="ci-delete-yes", cls="btn btn-sm pb-unpub-yes"), action=f"{PATH}/{d['id']}", method="post", cls="pb-unpub-form"), cls="pb-confirm")
-    return page("Check your draft", Section(top, done, _source_card(d), paste, form, unpub, delete, cls="pb ci-edit ga-wrap"), current="/creators", head=HEAD)
+    return page("Check this pre-draft" if captain else "Check your draft", Section(top, done, _source_card(d), paste, form, *([] if captain else [unpub, delete]), cls="pb ci-edit ga-wrap"), current="/creators", head=HEAD)
 
 
 def preview_page(session, d, error=""):
