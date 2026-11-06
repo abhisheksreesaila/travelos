@@ -53,7 +53,7 @@ def _draft_row(r):
         acts.append(Form(hidden, Button("New link and message", type="submit", cls="btn btn-sm"), action="/admin/link", method="post", cls="ad-inline"))
         if r["state"] == "waiting":
             acts.append(Form(hidden, Button("Revoke link", type="submit", cls="btn btn-sm ad-danger"), action="/admin/revoke", method="post", cls="ad-inline"))
-    return Li(Div(Span(r["title"] or r["post_url"], cls="cc-name"), Span(r["name"], cls="cc-meta") if r["name"] else "",
+    return Li(Div(Span(r["title"] or r["post_url"], cls="cc-name"), Span(r["name"], cls="cc-meta") if r["name"] else "", Span(f"claimed by {r['email']}", cls="cc-meta cc-by") if r["email"] else "",
                   Span("Published" if r["published"] else STATE_WORDS[r["state"]], cls=f"cc-state is-{'published' if r['published'] else r['state']}")),
               Div(*acts, cls="cc-acts"), cls="cc-draft", id=f"cc-draft-{r['draft_id']}")
 
@@ -118,12 +118,15 @@ def _message(title, body, status):
     return FtResponse(page(title, Section(Div(H1(title), P(body), A("Turn your own post into a trip", href="/creators/import", cls="btn btn-primary"), cls="ga-wrap"), cls="ga-soon ga-wrap")), status_code=status, headers=NO_STORE)
 
 
-def _claim_page(token, d):
+def _claim_page(token, d, error=""):
     trip = cd.build(d, lambda n: "", "")
     name = d["name"] or "there"
+    domain = cc.domain_of(d)
     bar = Div(
         Div(H1(f"{name}, your post is ready as a trip"), P("GitAway read your post and drafted this. Nothing is public until you publish, and you can take it down any time.", cls="cl-lede"), cls="cl-text"),
-        Form(Button(icon("check", 24, 2.8), "This is my post — publish it", type="submit", name="do", value="publish", id="cl-publish", cls="btn btn-primary cl-publish"),
+        Form(Label(Input(type="checkbox", name="confirm", value="1", required=True, id="cl-confirm", cls="cl-check"), Span("This is my site ", Span(domain, id="cl-domain", cls="cl-domain"), cls="cl-confirm-t"), cls="cl-confirm"),
+             P(error, role="alert", cls="cl-error", id="cl-error") if error else "",
+             Button(icon("check", 24, 2.8), "This is my post — publish it", type="submit", name="do", value="publish", id="cl-publish", cls="btn btn-primary cl-publish"),
              Button(icon("note", 20, 2.4), "Edit first", type="submit", name="do", value="edit", id="cl-edit", cls="btn cl-editbtn"),
              P("Publishing says this is your own post. Your links keep paying you, and the trip links back to your post.", cls="cl-hint"), action=f"/claim/{token}", method="post", cls="cl-actions"),
         cls="cl-bar", id="cl-bar", role="region", aria_label="Claim this trip")
@@ -166,11 +169,17 @@ def register(app):
             return showcase.not_found()
         if (cc.state(token, me.id) != "mine") and (gone := _gate(token, me)):
             return gone
-        did = cc.claim(token, me.id)
+        form = await request.form()
+        if cc.state(token, me.id) != "mine" and not form.get("confirm"):      # the claimer says the site is theirs before anything is claimed
+            d = await run_in_threadpool(cd.get, cc.UNCLAIMED, cc.draft_id_of(token))
+            if not d:
+                return _message("This link does not work", "That trip is gone.", 404)
+            return FtResponse(_claim_page(token, d, f"Tick the box to say {cc.domain_of(d)} is your site, then press the button."), status_code=422, headers=NO_STORE)
+        did = cc.claim(token, me.id, session.get("email") or "")
         if not did:
             return _gate(token, me) or _message("This link does not work", "Ask the person who sent it for a new one.", 410)
         d = await run_in_threadpool(cd.get, me.id, did)
-        if str((await request.form()).get("do")) == "edit" or not d:
+        if str(form.get("do")) == "edit" or not d:
             return RedirectResponse(f"{creatorimport.PATH}/{did}", status_code=303)
         try:
             await run_in_threadpool(cd.publish, session, d, True)      # the tap on "This is my post" is the tick; copies pictures, so never on the loop

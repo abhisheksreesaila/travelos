@@ -94,6 +94,7 @@ def test_the_captain_drafts_copies_the_message_and_the_creator_publishes_from_th
     box = p.locator("#cl-publish").bounding_box()
     assert box["height"] >= 44 and box["width"] >= 300
     shot(p, "claim-390")
+    p.check("#cl-confirm")
     p.tap("#cl-publish")
     expect(p.locator("#pb-view")).to_be_visible()
     shot(p, "live-390")

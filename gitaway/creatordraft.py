@@ -178,7 +178,10 @@ def _db():
                 created_at TEXT NOT NULL, updated_at TEXT NOT NULL)"""))
             db.conn.execute(text("""CREATE TABLE IF NOT EXISTS creator_claims (
                 draft_id TEXT PRIMARY KEY, token_hash TEXT NOT NULL UNIQUE, expires_at TEXT NOT NULL, revoked_at TEXT NOT NULL DEFAULT '', claimed_by TEXT NOT NULL DEFAULT '',
-                claimed_at TEXT NOT NULL DEFAULT '', name TEXT NOT NULL DEFAULT '', post_url TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL)"""))   # F-188: gitaway/creatorclaim.py
+                claimed_at TEXT NOT NULL DEFAULT '', name TEXT NOT NULL DEFAULT '', post_url TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL,
+                claimed_email TEXT NOT NULL DEFAULT '')"""))   # F-188: gitaway/creatorclaim.py; claimed_email F-182 (the captain sees who claimed)
+            if "claimed_email" not in [r[1] for r in db.conn.execute(text("PRAGMA table_info(creator_claims)"))]:      # a database made before this gains the column
+                db.conn.execute(text("ALTER TABLE creator_claims ADD COLUMN claimed_email TEXT NOT NULL DEFAULT ''"))
             db.conn.execute(text("CREATE TABLE IF NOT EXISTS creator_import_hits (owner_user TEXT NOT NULL, day TEXT NOT NULL, n INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (owner_user, day))"))
             db.conn.commit()
             _ready.add(community._url())

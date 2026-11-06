@@ -37,7 +37,11 @@
 .cl-actions .btn { min-height: 3.25rem; justify-content: center; font-size: 1.0625rem; }
 .cl-publish { min-height: 3.75rem; font-size: 1.1875rem; font-weight: 650; }
 .cl-hint { margin: 0; color: var(--oq-ink-2); font-size: 0.9375rem; line-height: 1.4; }
-@media (min-width: 40rem) { .cl-actions { grid-template-columns: 1fr auto; align-items: start; } .cl-hint { grid-column: 1 / -1; } }
+@media (min-width: 40rem) { .cl-actions { grid-template-columns: 1fr auto; align-items: start; } .cl-hint, .cl-confirm, .cl-error { grid-column: 1 / -1; } }
+.cl-confirm { display: flex; align-items: center; gap: 0.625rem; min-height: 2.75rem; font-weight: 600; cursor: pointer; }
+.cl-check { inline-size: 1.5rem; block-size: 1.5rem; flex: none; accent-color: var(--oq-accent); }
+.cl-domain { word-break: break-all; }
+.cl-error { margin: 0; color: var(--oq-danger, #b3261e); font-weight: 600; }
 @media (prefers-reduced-motion: reduce) { .cc-result { animation-duration: var(--motion-fade); } }
 .cc-input { width: 100%; box-sizing: border-box; min-height: 2.75rem; padding: 0.625rem 0.875rem; border-radius: 0.75rem; border: 0.0625rem solid var(--oq-line); background: var(--oq-surface-1); color: var(--oq-ink); font: inherit; font-size: 1rem; line-height: 1.4; }
 .cc-input:focus-visible { outline: 0.1667rem solid var(--oq-accent); outline-offset: 0.0625rem; }

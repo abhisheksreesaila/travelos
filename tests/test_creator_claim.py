@@ -113,10 +113,10 @@ def test_a_link_lasts_thirty_days_then_expires(client, setup):
 def test_a_link_works_once_and_the_second_person_sees_already_claimed(client, setup):
     link = claim_link(draft(browser(CAP)).text)
     sam, kim = browser("sam"), browser("kim@example.com")
-    assert sam.post(link, data={"do": "edit"}, follow_redirects=False).status_code == 303
+    assert sam.post(link, data={"do": "edit", "confirm": "1"}, follow_redirects=False).status_code == 303
     r = kim.get(link)
     assert r.status_code == 410 and "Already claimed" in r.text
-    assert kim.post(link, data={"do": "publish"}).status_code == 410
+    assert kim.post(link, data={"do": "publish", "confirm": "1"}).status_code == 410
     assert [x["state"] for x in rows()] == ["claimed"]
     assert stored("SELECT claimed_by FROM creator_claims")[0][0] == tid("sam")
     assert stored("SELECT owner_user FROM creator_drafts")[0][0] == tid("sam")
@@ -125,7 +125,7 @@ def test_a_link_works_once_and_the_second_person_sees_already_claimed(client, se
 def test_the_same_person_coming_back_is_taken_to_their_editor(client, setup):
     link = claim_link(draft(browser(CAP)).text)
     sam = browser("sam")
-    sam.post(link, data={"do": "edit"})
+    sam.post(link, data={"do": "edit", "confirm": "1"})
     r = sam.get(link, follow_redirects=False)
     assert r.status_code == 303 and re.fullmatch(r"/creators/import/[0-9a-f]{16}", r.headers["location"])
 
@@ -175,7 +175,7 @@ def test_a_drafted_post_is_private_and_belongs_to_no_one(client, setup):
 
 def test_claiming_alone_publishes_nothing(client, setup):
     link = claim_link(draft(browser(CAP)).text)
-    browser("sam").post(link, data={"do": "edit"})
+    browser("sam").post(link, data={"do": "edit", "confirm": "1"})
     assert community.rows(kind="scrapbook", hidden=True) == []
     assert [(r["state"], r["published"]) for r in rows()] == [("claimed", False)]
 
@@ -186,7 +186,7 @@ def test_this_is_my_post_publish_it_claims_and_publishes_in_one_tap_under_their_
     html = sam.get(link).text
     assert "Maya Chen, your post is ready as a trip" in html and "This is my post — publish it" in html and "Edit first" in html
     assert community.rows(kind="scrapbook", hidden=True) == []                         # looking is not claiming
-    r = sam.post(link, data={"do": "publish"}, follow_redirects=False)
+    r = sam.post(link, data={"do": "publish", "confirm": "1"}, follow_redirects=False)
     assert r.status_code == 303 and r.headers["location"].endswith("?live=1")
     (row,) = community.rows(kind="scrapbook")
     assert row["owner_user"] == tid("sam") and row["title"] == "Three easy days in Santa Monica"
@@ -200,7 +200,7 @@ def test_a_publish_that_cannot_go_ahead_lands_in_their_editor_with_the_sentence(
     setup.answer = {**CLEAN, "place": "other", "place_name": ""}
     link = claim_link(draft(browser(CAP)).text)
     sam = browser("sam")
-    r = sam.post(link, data={"do": "publish"})
+    r = sam.post(link, data={"do": "publish", "confirm": "1"})
     assert r.status_code == 422 and "Say where the trip was." in r.text and community.rows(kind="scrapbook", hidden=True) == []
     assert sam.get(link, follow_redirects=False).status_code == 303                   # it is theirs now: the link leads to the editor
 
@@ -208,7 +208,7 @@ def test_a_publish_that_cannot_go_ahead_lands_in_their_editor_with_the_sentence(
 def test_edit_first_opens_the_editor_with_the_draft(client, setup):
     link = claim_link(draft(browser(CAP)).text)
     sam = browser("sam")
-    r = sam.post(link, data={"do": "edit"}, follow_redirects=False)
+    r = sam.post(link, data={"do": "edit", "confirm": "1"}, follow_redirects=False)
     html = sam.get(r.headers["location"]).text
     assert 'value="Three easy days in Santa Monica"' in html and 'value="Maya Chen"' in html
 
@@ -232,7 +232,7 @@ def test_the_admin_page_counts_drafts_made_claimed_and_published(client, setup):
     other = "https://blog.example.com/second"
     more_posts(other)
     a, b = claim_link(draft(c).text), claim_link(draft(c, other, "Leslie Harvey").text)
-    browser("sam").post(a, data={"do": "publish"})
+    browser("sam").post(a, data={"do": "publish", "confirm": "1"})
     html = c.get("/admin").text
     for i, n in (("cc-made", "2"), ("cc-claimed", "1"), ("cc-published", "1")):
         assert re.search(rf'id="{i}"[^>]*>{n}<', html), i
@@ -335,7 +335,7 @@ def _load(name):
 
 def test_forgetting_a_person_removes_the_claim_they_used(client, setup):
     link = claim_link(draft(browser(CAP)).text)
-    browser("sam").post(link, data={"do": "edit"})
+    browser("sam").post(link, data={"do": "edit", "confirm": "1"})
     plan, _paths = _load("forget_person").community_plan(Path(os.environ["GITAWAY_DATA_DIR"]), tid("sam"), "sam")
     assert "claim links they used" in [p[0] for p in plan]
 
@@ -398,3 +398,50 @@ def test_the_new_async_handlers_never_do_blocking_work_on_the_loop():
     assert [f"{f.name}: {ast.unparse(c.func)}" for f in handlers for c in _own_calls(f) if BLOCKING.match(ast.unparse(c.func))] == []
     calls = " ".join(ast.unparse(c) for f in handlers for c in _own_calls(f))
     assert "run_in_threadpool(_draft_all" in calls and "run_in_threadpool(cd.publish" in calls
+
+
+# ---- F-182 fix 2 (L4): the claimer confirms the site, and the captain sees who claimed ---------------------------------------------
+
+def test_the_claim_page_shows_the_posts_domain_and_asks_to_confirm_it_is_their_site(client, setup):
+    link = claim_link(draft(browser(CAP)).text)
+    html = browser("sam").get(link).text
+    assert re.search(r'<input[^>]*type="checkbox"[^>]*name="confirm"[^>]*required', html) or re.search(r'<input[^>]*name="confirm"[^>]*type="checkbox"[^>]*required', html)
+    assert re.search(r"This is my site <span[^>]*id=\"cl-domain\"[^>]*>blog\.example\.com</span>", html)
+
+
+def test_claiming_without_the_confirmation_claims_nothing_and_says_why(client, setup):
+    link = claim_link(draft(browser(CAP)).text)
+    sam = browser("sam")
+    for do in ("publish", "edit"):
+        r = sam.post(link, data={"do": do}, follow_redirects=False)
+        assert r.status_code == 422 and "Tick the box to say blog.example.com is your site" in unescape(r.text)
+    assert [x["state"] for x in rows()] == ["waiting"] and stored("SELECT owner_user FROM creator_drafts")[0][0] == cc.UNCLAIMED
+    assert community.rows(kind="scrapbook", hidden=True) == []
+
+
+def test_the_captain_sees_the_email_of_whoever_claimed_next_to_the_draft(client, setup):
+    cap = browser(CAP)
+    link = claim_link(draft(cap).text)
+    assert "kim@example.com" not in cap.get("/admin").text
+    browser("kim@example.com").post(link, data={"do": "edit", "confirm": "1"})
+    assert stored("SELECT claimed_email FROM creator_claims")[0][0] == "kim@example.com"
+    assert "claimed by kim@example.com" in re.search(r'<li id="cc-draft-[0-9a-f]+" class="cc-draft">.*?</li>', cap.get("/admin").text, re.S).group(0)
+
+
+def test_forgetting_the_person_who_claimed_removes_their_email_with_the_claim_row(client, setup):
+    link = claim_link(draft(browser(CAP)).text)
+    browser("sam").post(link, data={"do": "edit", "confirm": "1"})
+    plan, _paths = _load("forget_person").community_plan(Path(os.environ["GITAWAY_DATA_DIR"]), tid("sam"), "sam")
+    assert any(t == "creator_claims" and "claimed_by" in where for _l, _f, t, where, _p in plan)
+
+
+def test_the_access_log_never_carries_a_claim_token():
+    import logging
+    from gitaway import accesslog
+    token = "A" * 43
+    rec = logging.LogRecord("uvicorn.access", logging.INFO, "", 0, '%s - "%s %s HTTP/%s" %d', ("1.2.3.4:5", "GET", f"/claim/{token}?x=1", "1.1", 200), None)
+    assert accesslog.Redact().filter(rec) is True
+    assert token not in rec.getMessage() and "/claim/[link]?x=1" in rec.getMessage()
+    other = logging.LogRecord("uvicorn.access", logging.INFO, "", 0, '%s - "%s %s HTTP/%s" %d', ("1.2.3.4:5", "GET", "/trips/abc", "1.1", 200), None)
+    accesslog.Redact().filter(other)
+    assert "/trips/abc" in other.getMessage()

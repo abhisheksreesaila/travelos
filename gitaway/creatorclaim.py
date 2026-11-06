@@ -20,6 +20,7 @@ import re
 import secrets
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from sqlalchemy import text
 
@@ -77,9 +78,9 @@ def candidates() -> list:
 # ---- storage ------------------------------------------------------------------------------------------------------------------
 
 def listing() -> list:
-    """Every claim, newest first: draft_id, name, post_url, state ("waiting", "claimed", "revoked", "expired"), `published` (the creator published it), `title` and `slug`."""
+    """Every claim, newest first: draft_id, name, post_url, state ("waiting", "claimed", "revoked", "expired"), `published` (the creator published it), `title`, `slug` and `email` (the address the claimer was signed in with, "" until claimed)."""
     with cd._db() as db:
-        rows = db.conn.execute(text("""SELECT c.draft_id, c.name, c.post_url, c.expires_at, c.revoked_at, c.claimed_by, d.data, d.slug, d.published_by FROM creator_claims c
+        rows = db.conn.execute(text("""SELECT c.draft_id, c.name, c.post_url, c.expires_at, c.revoked_at, c.claimed_by, d.data, d.slug, d.published_by, c.claimed_email FROM creator_claims c
                                        LEFT JOIN creator_drafts d ON d.id = c.draft_id ORDER BY c.created_at DESC, c.rowid DESC""")).fetchall()
     now, out = _iso(_now()), []
     for r in rows:
@@ -87,7 +88,7 @@ def listing() -> list:
         title = ""
         if r[6]:
             title = json.loads(r[6]).get("title", "")
-        out.append({"draft_id": r[0], "name": r[1], "post_url": r[2], "state": st, "title": title, "slug": r[7] or "", "published": bool(r[8])})
+        out.append({"draft_id": r[0], "name": r[1], "post_url": r[2], "state": st, "title": title, "slug": r[7] or "", "published": bool(r[8]), "email": r[9]})
     return out
 
 
@@ -137,13 +138,21 @@ def state(token, user_id="") -> str:
     return "revoked" if r[2] else "expired" if r[1] <= _iso(_now()) else "ok"
 
 
+def domain_of(d) -> str:
+    """The website a draft's post is on ("blog.example.com"), for the claimer to confirm it is theirs."""
+    try:
+        return (urlsplit((d.get("source") or {}).get("url", "")).hostname or "").lower()
+    except ValueError:
+        return ""
+
+
 def draft_id_of(token) -> str:
     r = _row(token)
     return r[0] if r else ""
 
 
-def claim(token, user_id) -> str:
-    """Make `user_id` the owner of the draft behind `token`: its id. "" when the link cannot be claimed (used, revoked, expired, unknown). Claiming again as the same person gives the id again."""
+def claim(token, user_id, email="") -> str:
+    """Make `user_id` the owner of the draft behind `token` (and note the `email` they were signed in with, for the captain's list): its id. "" when the link cannot be claimed (used, revoked, expired, unknown). Claiming again as the same person gives the id again."""
     r = _row(token)
     if not r or not user_id:
         return ""
@@ -151,8 +160,8 @@ def claim(token, user_id) -> str:
         return r[0] if r[3] == str(user_id) else ""
     now = _iso(_now())
     with cd._db() as db:
-        won = db.conn.execute(text("""UPDATE creator_claims SET claimed_by = :u, claimed_at = :n WHERE token_hash = :h AND claimed_by = '' AND revoked_at = '' AND expires_at > :n"""),
-                              {"u": str(user_id), "n": now, "h": hash_token(token)})
+        won = db.conn.execute(text("""UPDATE creator_claims SET claimed_by = :u, claimed_at = :n, claimed_email = :e WHERE token_hash = :h AND claimed_by = '' AND revoked_at = '' AND expires_at > :n"""),
+                              {"u": str(user_id), "n": now, "e": str(email or "")[:200], "h": hash_token(token)})
         if won.rowcount != 1:
             db.conn.rollback()
             return ""

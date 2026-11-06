@@ -13,7 +13,7 @@ from fasthtml.common import Beforeware, FastHTML, Response, serve
 from fh_saas.utils_auth import create_auth_beforeware
 from fh_saas.utils_log import configure_logging
 
-from gitaway import access, auth, draftjobs, familydb, hostdb, morning, omxqua, passkeys, session, showcase
+from gitaway import access, accesslog, auth, draftjobs, familydb, hostdb, morning, omxqua, passkeys, session, showcase
 from gitaway.layout import HEAD
 from gitaway.pages import register_all
 from gitaway.pages.family import PRIVATE
@@ -36,6 +36,7 @@ def configure_gitaway_logging():
 
 
 configure_gitaway_logging()
+accesslog.install()      # a claim link's token never reaches the access log
 auth.configure_storage()  # SQLite under GITAWAY_DATA_DIR; this also makes it the working directory, so nothing below may use relative paths
 
 # fh-saas hydrates request.state.user only on the private paths; every other page is public and reads the session itself.
