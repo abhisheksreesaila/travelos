@@ -115,7 +115,7 @@ def drafts_list(owner):
     if not rows:
         return Div(P("No drafts yet. Draft one post from its link, or several from your blog.", cls="ci-hint"), Div(A("Draft one post", href=IMPORT, cls="btn btn-primary"), A("Import several posts", href=f"{PATH}/scan", cls="btn"), cls="ci-actions"),
                    cls="cdr-empty card", id="cdr-list", data_busy="0")
-    note = P(icon("rotate", 18, 2.4), f"Drafting {busy} post{'s' if busy != 1 else ''}, one at a time. You can leave this page: they will be here when you come back.", role="status", cls="ci-note cdr-busy", id="cdr-busy") if busy else ""
+    note = P(icon("rotate", 18, 2.4), f"{busy} still to draft, one at a time. You can leave this page: they will be here when you come back.", role="status", cls="ci-note cdr-busy", id="cdr-busy") if busy else ""
     return Div(note, Ul(*[_row(r) for r in rows], cls="cdr-rows"), id="cdr-list", data_busy="1" if busy else "0", cls="cdr-list")
 
 

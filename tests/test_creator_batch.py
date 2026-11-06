@@ -18,6 +18,7 @@ SITEMAP = ('<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/
 
 @pytest.fixture(autouse=True)
 def _clean():
+    dj.stop()      # no worker from another test's server may take a job these tests are looking at
     cd.clear()
     dj.clear()
     yield

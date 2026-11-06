@@ -13,6 +13,7 @@ POSTS = [f"https://blog.example.com/post-{i}" for i in range(1, 6)]
 
 @pytest.fixture(autouse=True)
 def _clean():
+    dj.stop()      # no worker from another test's server may take a job these tests are looking at
     cd.clear()
     dj.clear()
     yield
