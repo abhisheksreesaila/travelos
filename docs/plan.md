@@ -1028,7 +1028,7 @@ Built: mine is --coral-deep #C9431F with white (4.88:1; --coral #FF7352 is 2.8:1
 
 Work happens on branch `autopilot/booking-creators` (M1-M5 of GOAL.md, plus the orange accent), which merges to master and deploys as one release after review.
 
-## F-179 Real booking links: Aviasales and Klook [review]
+## F-179 Real booking links: Aviasales and Klook [done]
 Brief: docs/briefs/creator-launch.md · Needs: autopilot branch M2
 - [x] flights link to an Aviasales search for the trip's route and dates with `marker=801445.<subid>`; no program id needed
 - [x] stays, cars and things to do link to Klook through the Travelpayouts partner-links API (`TRAVELPAYOUTS_TOKEN`), with a timeout and a cached result; without a token or on an API failure, the plain Klook partner link (`KLOOK_FALLBACK_URL`)
@@ -1041,21 +1041,22 @@ Design: docs/design/booking-journey.html · Needs: F-179
 - [ ] a hand-off screen before leaving for the partner; "Did you book it?" when the person comes back (visibilitychange), Yes puts it on the trip as "Booked elsewhere · <partner>"
 - [ ] the sandbox no longer jumps back by itself; commission figures move to an admin-only page
 
-## F-181 Publish a trip as a creator, live [review]
+## F-181 Publish a trip as a creator, live [done]
 Brief: docs/briefs/creator-launch.md · Needs: none (builds on /share, F-071 photos, M4 profiles)
 - [x] from a family trip: pick photos, a note per day, tips, preview, publish under the person's name; unpublish any time
 - [x] never published: confirmation numbers, other members' names, chat, exact stay addresses, photo EXIF/GPS (re-encoded)
 - [x] published trips and their creator profile show on gitaway.me (showcase off); sample creators and trips stay local-only
 - [x] a signed-out stranger can read it; signed in, fork it; "Plan this trip" goes to the trip's place
 
-## F-182 Release: the booking branch to gitaway.me [todo]
+## F-182 Release: the booking branch to gitaway.me [blocked]
+Blocked: say "ship" to deploy this branch to gitaway.me; set ANTHROPIC_API_KEY and GITAWAY_ADMIN_EMAILS in Railway (service web).
 Needs: F-179, F-180, F-181 · reviewer + security-auditor (public publishing, uploads)
 - [ ] shipping checklist (what could break, how we'd know, rollback = redeploy the previous Railway deployment)
 - [ ] `TRAVELPAYOUTS_MARKER=801445` (and the token, set by the captain) on Railway; deploy; check the live pages
 
 # Creators turn a post into a trip (brief docs/briefs/creator-import.md, approved 2026-11-05)
 
-## F-183 Paste a link or text, get a draft trip (Claude Haiku 5.5) [review]
+## F-183 Paste a link or text, get a draft trip (Claude Haiku 5.5) [done]
 Brief: docs/briefs/creator-import.md · Needs: F-181
 - [x] blog link → article text and photos; YouTube link → title, description, chapters; Instagram link → asks for the caption; pasted text always
 - [x] Haiku 5.5 drafts title, place, days, stops, tips, stickers as validated JSON through `gitaway/ai.py` (new job, Anthropic provider, `ANTHROPIC_API_KEY`), logged like every AI call; unsure places become "unnamed stop"
@@ -1063,50 +1064,50 @@ Brief: docs/briefs/creator-import.md · Needs: F-181
 - [x] fetching is safe: http(s) only, no private or internal addresses, size and time limits; tests never reach the network
 Blocked (for live use only): set ANTHROPIC_API_KEY in Railway, service web.
 
-## F-184 Creators keep their affiliate links [review]
+## F-184 Creators keep their affiliate links [done]
 Needs: F-179, F-181
 - [x] a creator can save their Travelpayouts marker (digits only) on their profile; Book buttons from their trips use it with their SubID
 - [x] no marker: GitAway's; the trip page says plainly who earns
 
-## F-185 Report a trip, take it down [review]
+## F-185 Report a trip, take it down [done]
 Needs: F-181
 - [x] "Report this trip" on every public trip (reason, optional email); rate limited
 - [x] an admin-only page lists reports and creators (count toward 150) with one-click take down and restore
 
-## F-186 The For creators page [review]
+## F-186 The For creators page [done]
 Design: omxqua Coast, orange · Needs: F-183
 - [x] paste box first, a live example trip, the three promises (under a minute, your links keep paying you, links back to your post), free and terms on day one
 - [x] phone and laptop, 44px targets, no sideways scroll
 
-## F-187 A list of bloggers to invite [todo]
+## F-187 A list of bloggers to invite [done]
 - [ ] 50 family-travel bloggers and creators (Disneyland, LA, Hawaii, Tahoe, San Diego, New York) with their site, channel, contact page and why they fit, public information only, in docs/research/creators.csv
 
 # Extremely creator-friendly (captain 2026-11-06: "it has to be extremely creator friendly"; autopilot overnight)
 
-## F-188 Ready-made drafts: a creator claims a trip in ten seconds [review]
+## F-188 Ready-made drafts: a creator claims a trip in ten seconds [done]
 Brief: docs/briefs/creator-import.md · Needs: F-183, F-182 fixes
 - [x] an admin pastes a creator's post link (or many, from docs/research/creators.csv) and GitAway drafts it privately; nothing is public
 - [x] each draft gets a private claim link (long random token, expires in 30 days, single owner); the creator signs in, sees their post as a trip, ticks "this is my post", publishes
 - [x] the admin page lists drafts made, claimed, published, toward 150; an outreach message to copy per creator (never sent by GitAway)
 - [x] `pixi run draft-creators` drafts every A-priority creator from the CSV when ANTHROPIC_API_KEY is set; without it, says so
 
-## F-189 Share from the phone [review]
+## F-189 Share from the phone [done]
 Needs: F-183
 - [x] the installed app is a share target (Web Share Target in the manifest): sharing a YouTube video, Instagram post or blog page to GitAway opens the import with the link filled in
 - [x] signed out: sign in, then land on the same filled-in import
 
-## F-190 All my posts at once [review]
+## F-190 All my posts at once [done]
 Needs: F-183
 - [x] paste a blog's address on the import page ("Import several posts"): GitAway reads its sitemap (index followed one level, at most 2,000 addresses) or its feed (found on the home page) through the safe fetcher in a thread, keeps the creator's own site only, ranks trip-like posts by words (no AI) and lists up to 50 with titles and dates; the creator ticks up to 20, each counted against the daily limit and the site ceiling, and is told how many drafts are left
 - [x] drafting runs in the background: one row per post in a job table, worker threads (one post at a time per person), queued again after a restart; the page polls every few seconds; drafts land in My drafts (`/creators/drafts`: drafting, ready, failed, published; open, delete), the one list every draft shows on, admin-made ones included once claimed (F-188)
 - [x] local showcase: fixtures, no network. Tests: `tests/test_blogscan.py` (parsing, malicious XML, same-site, ranking, limits), `tests/test_draftjobs.py`, `tests/test_creator_batch.py`, `tests/test_event_loop.py`, `tests_browser/test_creator_batch.py` (390 and 1440, shots `docs/report/f190-*.png`)
 
-## F-191 A "Plan this trip on GitAway" button for their blog [review]
+## F-191 A "Plan this trip on GitAway" button for their blog [done]
 Needs: F-181
 - [x] each published trip offers a copy-paste button snippet (plain link + small image, no script) and a text link
 - [x] the button links to the trip with `via=<handle>` honoured (F-184)
 
-## F-192 Creator stats [review]
+## F-192 Creator stats [done]
 Needs: F-181, F-184
 - [x] a creator sees per trip: readers (counted without cookies, no personal data), forks, "Plan this trip" taps; partner clicks from their trips are shown in total (the cookie holds the handle, not the trip: D-129)
 - [x] privacy page says how readers are counted
