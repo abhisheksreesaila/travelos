@@ -16,12 +16,21 @@ HEAD = (Link(rel="stylesheet", href="/assets/css/legal.css"),)
 NOT_LAWYER = "These are plain-language summaries written by the people who run GitAway, not legal advice prepared by a lawyer."
 
 
-def contact():
-    """The deletion contact: a link when GITAWAY_CONTACT_EMAIL is set, else the fallback sentence. Never a built-in address."""
+def contact(then=" and say which family you are in.", id="legal-contact"):
+    """The contact: a link when GITAWAY_CONTACT_EMAIL is set, else the fallback sentence. Never a built-in address. `then` finishes the sentence after the address (deletion by default; the takedown section
+    says what a notice holds); a page that shows it twice gives each its own `id`."""
     addr = os.getenv("GITAWAY_CONTACT_EMAIL", "").strip()
     if addr:
-        return P("Email ", A(addr, href=f"mailto:{addr}", id="legal-contact"), " and say which family you are in.")
-    return P("Contact the person who runs this GitAway site.", id="legal-contact")
+        return P("Email ", A(addr, href=f"mailto:{addr}", id=id), then)
+    return P("Contact the person who runs this GitAway site.", id=id)
+
+
+def dmca_agent():
+    """Who receives copyright notices: the name (and address) in DMCA_AGENT, shown as text; until the agent is registered with the U.S. Copyright Office the page says so (F-196)."""
+    agent = " ".join(os.getenv("DMCA_AGENT", "").split())[:300]
+    if agent:
+        return P("Our designated copyright agent: ", Strong(agent, id="dmca-agent"), ".")
+    return P("Our designated copyright agent is pending registration with the U.S. Copyright Office. Until it is registered, send notices to the contact below.", id="dmca-agent")
 
 
 def _doc(title, lead, sections):
@@ -61,12 +70,13 @@ def privacy():
             Li(Strong("Azure OpenAI (Microsoft)"), " does three jobs. When you tap Convert in Add to the trip, it reads the messages you paste and turns them into a plan; it gets only the text you pasted (so anything you wrote in it, such as a first name) and nothing we add. When you use Ask GitAway, it gets what you ask or say plus the plan for that day: the trip title, the date and time zone, the titles of the plans that day, plan notes and booking titles, the parts and steps with who is on each, and the first names of the family. We never add emails, phone numbers, confirmation numbers, prices or photos to what it gets (only what you or your family wrote in those titles and notes goes). We log that a call happened, which feature it was for, how many tokens it used and how long it took, never what was in it. When you use Around you and the assistant is on, it gets the kind of place you tapped, your family's food preference (vegetarian or not), and a list of the names of nearby places with how far they are and whether they are open. It never gets your location or the names of your family. Later assistant features send what you ask in the same way.")),
             Li(Strong("Sarvam AI (India)"), " turns your voice into words. When you record your voice in the Ask box (only on a phone whose browser cannot turn speech into text itself or when its own speech recognition fails, and only when you tap the microphone), the recording goes to it to be written out as words, and in English too when you spoke another language such as Hindi. It gets the audio and nothing else; GitAway does not keep the recording or the words once they are in your box, and the log only says that a call happened and how long it took."),
             Li(Strong("Anthropic (Claude Haiku)"), " drafts a trip from a creator's post. When a creator uses Turn your post into a trip, it gets the text of the post, pasted or read from the link the creator gave (a blog's article text, or a video's title, description and chapters), and nothing else: not the creator's name or email address, and nothing from any family's trips. Our server reads the page behind the link; the creator checks and fixes the draft before anything is public. We log that a call happened, how many tokens it used and how long it took, never what was in it."),
-            Li(Strong("Travelpayouts, Aviasales and Klook"), " are the partners behind the Book buttons. When you press Book they get a SubID, a short code that tells us which trip, place, day and kind of booking the click came from, with no name, email address or other personal detail. Once you are on their site they see you as any website does, including your IP address.")),  # a new outside AI service gets a bullet here and a test phrase (F-079 logs every call: docs/ai-usage.md)
+            Li(Strong("Travelpayouts, Aviasales and Klook"), " are the partners behind the Book buttons. When you press Book they get a SubID, a short code that tells us which trip, place, day and kind of booking the click came from, with no name, email address or other personal detail. Once you are on their site they see you as any website does, including your IP address."),
+            Li(Strong("Travelpayouts Drive"), " is a script from Travelpayouts (tp-em.com) that GitAway loads only on the landing page you see signed out, and only when it has been switched on, never on a page you see signed in. Travelpayouts uses it to confirm this site is ours and can turn travel links on that page into partner links that credit GitAway. It runs in your browser, so Travelpayouts sees your IP address and browser as any website does, and it may set its own cookies; their policy covers them.")),  # a new outside AI service gets a bullet here and a test phrase (F-079 logs every call: docs/ai-usage.md)
         ("How readers of a creator's trip are counted",
          P("A creator can see how many people read their trip. We count a reader with no cookie and keep nothing about you. When you open a published trip we add one to that trip's count for the day. To tell a second visit from a new reader, we make a short code made from your address and browser, mixed with a random value that is thrown away at the end of the day. The random value is gone at the end of the day, so the code cannot be turned back into your address or linked to a later visit; the codes themselves are deleted when the next day's first reader arrives or the server restarts. Your address and the name of your browser are never stored. We count each reader once a day. Known bots, and the creator's own visits, are not counted. The creator sees only totals per trip and per day, and how many people forked a trip or tapped Plan this trip.")),
         ("Selling and ads",P("We do not sell your information. We do not show ads and we do not use anything you add for ads or to build a profile of you.")),
         ("Cookies",
-         P("Two cookies. One keeps you signed in, for up to 30 days. The other, ", Strong("ga_via"), ", is set only when you tap Plan this trip on a creator's page: it holds the public handle of the creator and nothing about you, lasts 30 days, and tells us which creator a flight you book supports. We use no tracking or advertising cookies of our own."),
+         P("Two cookies. One keeps you signed in, for up to 30 days. The other, ", Strong("ga_via"), ", is a 30-day affiliate attribution cookie: it is set only when you tap Plan this trip on a creator's page, holds the public handle of the creator and nothing about you, and tells us which creator a flight you book supports, so their marker goes on the booking link. It exists to credit the creator, not to build a profile of you. GitAway sets no analytics or advertising cookie."),
          P(Strong("Partner links. "), "When you press Book you go to Aviasales, Klook or another booking partner (through Travelpayouts), and their own sites may set their own tracking cookies to credit GitAway, or the creator, for the booking. Their policies cover those cookies.")),
         ("Getting your data deleted",
          P("Ask and we will delete your account and, if you ask, your family's trips and photos. Messages and photos you added to a family that keeps going stay with that family unless you ask us to remove them. We do this by hand and will tell you when it is done."), contact()),
@@ -78,9 +88,22 @@ def terms():
         ("What GitAway is",
          P("A place for a family to plan a trip together: flights, stays and days on one calendar. It is offered as-is, by a small team.")),
         ("No bookings or payments",
-         P("GitAway does not book anything and does not take payments. The booking screens are a preview with sample prices. Check every flight, stay and time with the airline, hotel or company before you rely on it.")),
+         P("GitAway does not book anything and does not take payments. A Book button takes you to a partner's own site, and you book and pay there, under their terms. Check every flight, stay and time with the airline, hotel or company before you rely on it.")),
         ("What you post",
          P("You are responsible for what you add: notes, messages, photos and phone numbers. Do not add anything unlawful, abusive or that belongs to someone else. We may remove content, or a person, that is abusive.")),
+        ("What creators publish",
+         P("When you publish a trip as a creator, you keep your rights in it. You give GitAway a worldwide, non-exclusive, royalty-free license to host, copy, reformat and show what you publish (your words, the days and stops you approved, your tips and the pictures you picked) on GitAway, so that people can read it, fork it into their own plans and share its link."),
+         P("Unpublish and we delete the page and its picture copies, and the license ends. Plans a family has already put into its own calendar stay in that family's calendar: they are that family's copy."),
+         P("You promise that you are the author, or have the right to publish what you add. Ticking \"This is my post\" says so. A draft GitAway makes from your link is only for you to review: nothing is public until you tick the box and publish.")),
+        ("Copyright takedown",
+         P("If something on GitAway copies your work without permission, press ", Strong("Report this trip"), " on the page and pick \"It uses someone else's words or photos\", or send a notice to our designated agent. A notice should hold: the web address of the copy on GitAway and what the original is (with its address), your name and contact details, a statement that you believe in good faith that the use is not allowed by the owner, its agent or the law, a statement, under penalty of perjury, that what you say is accurate and that you are the owner or may act for the owner, and your signature, typed is fine."),
+         P("We take a page down quickly when a notice is valid, and we tell the person who published it."),
+         dmca_agent(), contact(" with your notice.", "legal-takedown-contact")),
+        ("Counter-notice",
+         P("If your page was taken down and you believe that was a mistake, send a counter-notice to the same agent. It should hold: your name, address and phone number, the address of the page before it was taken down, a statement, under penalty of perjury, that you believe in good faith it was removed by mistake or misidentification, your consent to the jurisdiction of the federal court for the district where you live (or, outside the United States, where GitAway can be found), and that you will accept service from the person who sent the notice."),
+         P("We pass your counter-notice to that person. If they do not tell us within 10 business days that they have gone to court, we may put the page back.")),
+        ("Repeat infringers",
+         P("If valid copyright notices on two different pages are about the same person, we remove all of that person's pages and close their account. We do this by hand, and we may do it sooner for one clear case.")),
         ("Who can use it", P("Anyone with a Google account can sign in and gets their own family. Families invite others to join."),),
         ("Your family space", P("Keep your sign-in to yourself. The people in your family can see what you add, as the privacy policy says.")),
         ("The service can change",
