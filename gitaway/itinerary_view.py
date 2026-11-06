@@ -86,7 +86,7 @@ def _source_card(src):
     return Div(
         Span(cls="tape"),
         Div(Img(src=src.thumb, alt=src.thumb_alt) if src.thumb else "", Span(icon("play", 16), cls="play"), cls="src-thumb"),
-        Div(Span("From the vlog", cls="src-kicker"),
+        Div(Span(src.kicker, cls="src-kicker"),
             Span(src.title, cls="src-title"),
             Span(src.byline, cls="src-by"),
             A(src.link_label, href=href, rel="noopener noreferrer", target="_blank", cls="src-link") if href else "",
