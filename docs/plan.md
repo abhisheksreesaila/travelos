@@ -1111,3 +1111,18 @@ Needs: F-181
 Needs: F-181, F-184
 - [x] a creator sees per trip: readers (counted without cookies, no personal data), forks, "Plan this trip" taps; partner clicks from their trips are shown in total (the cookie holds the handle, not the trip: D-129)
 - [x] privacy page says how readers are counted
+
+# Launch-day blockers (critique 2026-11-06: Creator supply, Trust and legal, Execution; docs/research/critique-2026-11-06.md)
+
+## F-194 Things that would embarrass or endanger a creator on launch day [review]
+Brief: docs/briefs/creator-import.md · Needs: F-188, F-182 fixes
+- [x] places: `disney`, `california` and `hawaii` no longer put a trip at Los Angeles or Honolulu; Walt Disney World, Disneyland Paris, Tokyo Disneyland, Lake Tahoe, Yosemite, San Francisco, Napa, Maui, Kauai and the Big Island map to no place; San Diego, La Jolla and Coronado to `sd`; Anaheim and "Disneyland Resort" stay `la`; the model's pick of a place is kept only when the post names it; a trip at a place GitAway cannot plan says so on its page (no Plan this trip, no "flights support <name>")
+- [x] money wording: one sentence (`affiliate.pays_you`, `affiliate.STAYS`) on the For creators page, the claim page, the outreach message and the settings page: flights booked from their trips carry their marker; stays and things to do support GitAway for now
+- [x] the claim link shows a read-only preview before sign-in (noindex, no-store); sign-in is asked only to claim
+- [x] a claim by someone whose verified email is not at the post's site publishes unlisted (reachable by link, in no list, not indexable) until the captain approves it on /admin, which lists what waits; an open import's "<name> · Blog" byline shows the site until the domain is verified or the captain approves
+- [x] robots.txt is read before a pre-draft or an import; a site that turns away anthropic-ai, ClaudeBot, Claude-Web, GPTBot, GitAwayBot or all robots from that page is not drafted from (the person is told to paste the text); a pre-draft's fetch no longer says the author asked
+- [x] grounding: every meaningful word of a stop name is in the post as a whole word; a clock time not written in the post is dropped; a note or tip with a number or $ amount the post lacks is dropped; the "named in the post" label is gone
+- [x] publishing a family trip checks the trip's travellers (members, an imported trip's people with their children, names on boarding passes) and a name the public text says blocks publishing until the editor ticks that they are happy to be named
+- [x] the captain can open and edit an unclaimed pre-draft from /admin before sending its claim link
+- [x] `pixi run draft-creators` refuses (exit 2) unless GITAWAY_DATA_DIR is /data and points at /admin on gitaway.me; docs/morning.html step 4 and docs/setup.md say use /admin
+Tests: `tests/test_place_matching.py`, `test_money_wording.py`, `test_robots.py`, `test_grounding.py`, `test_kids_names.py`, `test_claim_preview.py`, `test_claim_ownership.py`, `test_predraft_edit.py`, `test_draft_creators_script.py`, `tests_browser/test_launch_blockers.py`.
