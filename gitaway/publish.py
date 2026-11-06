@@ -202,14 +202,31 @@ def preview(session) -> Itinerary | None:
     return build(session, d, private_src, c["handle"] if c else "")
 
 
+_PLACEHOLDER = re.compile(r"(?:adult|kid|child|traveler|traveller|guest)(?: \d+)?", re.I)      # the names an import makes for people it has not been told (Kid 1, Adult 2)
+
+
+def family_names(session) -> list:
+    """Everyone the family has named: its members, the open trip's travellers (an imported trip's, children included) and the names on its boarding passes. Full names, each once."""
+    from gitaway import passes  # here, not at the top: passes reads the open trip like this module
+    seen, out = set(), []
+    for n in [*passes.travellers(session), *(p["traveller"] for ps in passes.listing(session).values() for p in ps)]:
+        if n and n.casefold() not in seen:
+            seen.add(n.casefold())
+            out.append(n)
+    return out
+
+
 def mentions(session, trip: Itinerary) -> list:
-    """First names of the family's other members that the public text says ("Sam"), so the preview can ask the editor to check. Never blocks."""
+    """First names of the family (`family_names`) that the public text says ("Mira"): the title, tips, day notes, stops and the photos' captions and alt text. The publisher's own name,
+    the one shown as the author, is not one, and nor is a placeholder (Kid 1). Publishing waits until the editor ticks that they are happy to be named (F-194)."""
     me = ses.current_traveler(session)
-    text = " ".join([trip.title, trip.author, *trip.tips, *(d.note for d in trip.days), *(s.title for d in trip.days for s in d.stops)])
+    own = {w.casefold() for name in (trip.author, me.name if me else "") for w in re.findall(r"\w+", name)}
+    shots = [p for d in trip.days for p in d.photos] + list(trip.polaroids)
+    text = " ".join([trip.title, *trip.tips, *(d.note for d in trip.days), *(f"{s.title} {s.note} {s.meta}" for d in trip.days for s in d.stops), *(f"{p.caption} {p.alt}" for p in shots)])
     out = []
-    for m in members.members(session.get("tenant_id")):
-        first = (m["name"] or "").split()[0] if m.get("name") else ""
-        if first and m["user_id"] != (me.id if me else "") and len(first) > 1 and re.search(rf"\b{re.escape(first)}\b", text, re.I) and first not in out:
+    for full in family_names(session):
+        first = (full.split() or [""])[0]
+        if len(first) > 1 and first.casefold() not in own and not _PLACEHOLDER.fullmatch(full.strip()) and re.search(rf"\b{re.escape(first)}\b", text, re.I) and first not in out:
             out.append(first)
     return out
 
@@ -240,9 +257,9 @@ def live(session) -> dict | None:
     return community.get(d["slug"]) if d and d["slug"] and d["published_by"] else None
 
 
-def publish(session) -> dict:
-    """Publish (or update) the open trip. The person who publishes owns the page; another editor cannot replace or remove it (a family admin can remove it).
-    Raises HubError with a message fit to show."""
+def publish(session, names_ok=False) -> dict:
+    """Publish (or update) the open trip. The person who publishes owns the page; another editor cannot replace or remove it (a family admin can remove it). A page whose text names
+    someone in the family (`mentions`) waits for `names_ok`, the editor's tick that they are happy to be named. Raises HubError with a message fit to show."""
     me = ses.current_traveler(session)
     if not me:
         raise HubError("Sign in to publish a trip.")
@@ -254,6 +271,8 @@ def publish(session) -> dict:
     old = community.get(d["slug"])
     if old and old["owner_user"] != me.id:
         raise HubError("This trip is already published by someone else in your family.")
+    if (named := mentions(session, build(session, d, private_src))) and not names_ok:      # before anything is made: no files, no profile address
+        raise HubError(f"This page names {', '.join(named)} from your family. Tick the box to say they are happy to be on a public page, then publish.")
     creator = community.claim_creator(me.id, d["name"])
     mine = {p["id"]: p for p in photos.listing(session)}
     folder = root() / d["slug"]

@@ -127,7 +127,9 @@ def preview_page(session, live=None, error=""):
             P("Your photos here are your private copies; the published ones are rebuilt without where they were taken.", cls="pb-hint"),
             *([P(f"It mentions {', '.join(warn)} from your family. Check they're happy to be on a public page.", role="note", cls="pb-warn", id="pb-warn")] if warn else []),
             P(error, role="alert", cls="pb-error", id="pb-error") if error else "", cls="pb-pv-text"),
-        Div(Form(trip_field(), Button(icon("check", 20, 2.6), "Update the public page" if live else "Publish", type="submit", id="pb-publish", cls="btn btn-primary"), action=PATH, method="post"),
+        Div(Form(trip_field(),
+                 Label(Input(type="checkbox", name="names_ok", value="1", id="pb-names-ok", cls="pb-names-box"), Span(f"Yes, {', '.join(warn)} {'is' if len(warn) == 1 else 'are'} happy to be named", cls="pb-names-t"), cls="pb-names") if warn else "",
+                 Button(icon("check", 20, 2.6), "Update the public page" if live else "Publish", type="submit", id="pb-publish", cls="btn btn-primary"), action=PATH, method="post"),
             A(icon("chev-left", 18, 2.4), "Back to edit", href=PATH, cls="btn", id="pb-back"), cls="pb-pv-act"),
         cls="pb-pv", id="pb-pv", role="region", aria_label="Preview")
     return page(trip.title, bar, itinerary_body(trip), head=(*VIEW_HEAD, *HEAD), theme=trip.theme)
@@ -162,11 +164,11 @@ def register(app):
         return preview_page(session, publish.live(session))
 
     @app.post(PATH)
-    def go(session):
+    def go(session, names_ok: str = ""):
         if not ses.current_traveler(session):
             return _signin()
         try:
-            publish.publish(session)
+            publish.publish(session, names_ok == "1")
         except HubError as e:
             return FtResponse(preview_page(session, publish.live(session), str(e)), status_code=409)
         return RedirectResponse(PATH + "?live=1", status_code=303)
