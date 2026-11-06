@@ -3,11 +3,11 @@
 POST /trips/switch   open another of the family's trips for the signed-in person (trip=<id>), then back to the trip
 """
 
-from fasthtml.common import A, Div, H1, P, Section
+from fasthtml.common import A, Div, H1, P, Section, cookie
 from fasthtml.core import FtResponse
 from starlette.responses import RedirectResponse
 
-from gitaway import forks as forks_model, session as ses, showcase, stats
+from gitaway import affiliate, forks as forks_model, session as ses, showcase, stats
 from gitaway.pages import blogbutton
 from gitaway.itinerary_view import itinerary_page
 from gitaway.layout import page
@@ -43,8 +43,11 @@ def register(app):
             return not_found()
         if found.real:
             stats.count_view(request, session, slug)   # F-192: one reader once a day, no cookie, nothing personal kept (a plain def, so the write is off the event loop)
-        return itinerary_page(found, theme=theme, loading=(state == "loading"), saved=slug in ses.saved(session), forked=slug in ses.forks(session),
-                              blog=blogbutton.for_owner(session, slug) if found.real else "")
+        forked = slug in ses.forks(session)
+        body = itinerary_page(found, theme=theme, loading=(state == "loading"), saved=slug in ses.saved(session), forked=forked, blog=blogbutton.for_owner(session, slug) if found.real else "")
+        if forked and found.real and affiliate.valid_via(found.handle):    # F-195: a family that forked a creator's trip books for them (every fork path, signed in or through sign-in, ends on this page)
+            return body, cookie(affiliate.COOKIE, found.handle, **affiliate.cookie_args())
+        return body
 
     @app.post("/trips/switch")
     def switch(session, trip: str = "", next: str = ""):

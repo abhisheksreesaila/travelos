@@ -12,7 +12,7 @@ from starlette.responses import HTMLResponse
 
 from fasthtml.common import cookie, to_xml, A, Article, Button, Div, Figcaption, Figure, H2, H3, Img, Kbd, Li, Link, Main, NotStr, P, Script, Section, Span, Svg, Title, Ul
 
-from gitaway import access, affiliate, auth, catalog, context, itineraries, partners, session, showcase, stats
+from gitaway import access, affiliate, catalog, context, itineraries, partners, session, showcase, stats
 from gitaway import session as session_helpers
 from gitaway.icons import icon
 from gitaway.itinerary_view import fork_href
@@ -663,7 +663,7 @@ def register(app):
         creator = affiliate.valid_via(via)   # F-184: "Plan this trip" on a creator's page: remember whose trip this is for 30 days, so /go can use their marker
         if creator and affiliate.seen_on_own_page(request, creator):      # F-182: only a click on that creator's own page sets it
             stats.count_plan(request, session, creator)                   # F-192: and it is one "Plan this trip" tap on that trip
-            return body, cookie(affiliate.COOKIE, creator, max_age=affiliate.COOKIE_DAYS * 86400, path="/", httponly=True, samesite="lax", secure=auth.production())
+            return body, cookie(affiliate.COOKIE, creator, **affiliate.cookie_args())
         return body
 
     @app.get("/plan/quote")

@@ -355,3 +355,43 @@ def test_a_trip_is_a_disneyland_trip_only_when_it_says_so_and_is_in_california(t
     trip = Itinerary(slug="x", title=title, headline=title, accent="", place=place, lede="", days=[], plan_to="la", plan_days=3)
     assert hub.focus_of(trip) == focus
     assert hub.focus_of(Itinerary(slug="x", title=title, headline=title, accent="", place=place, lede="", days=[], plan_to="hi")) == ""
+
+
+# ---- F-195: forking a creator's trip remembers them too ---------------------------------------------------------------------
+
+def fork(client, slug):
+    return client.post("/fork", data={"next": f"/trips/{slug}"}, follow_redirects=True)
+
+
+def test_a_family_that_forks_a_creators_trip_books_for_them_not_only_one_that_tapped_plan_this_trip(client, keys, mode):
+    row, handle, owner = live_trip()
+    affiliate.set_marker(owner["user_id"], "555111")
+    sign_in(client, "ari")
+    assert "ga_via" not in client.cookies and "ga_via" not in client.get(f"/trips/{row['slug']}").headers.get("set-cookie", "")        # reading is not forking
+    fork(client, row["slug"])
+    assert client.cookies.get("ga_via") == handle
+    assert flight_marker(client).startswith("555111.")
+    assert affiliate.clicks_by_creator() == {handle: (1, 1)}
+
+
+def test_forking_from_signed_out_goes_through_sign_in_and_still_remembers_them(client, keys, mode):
+    row, handle, _ = live_trip()
+    r = client.get(f"/signin?next=/trips/{row['slug']}&intent=fork")
+    assert r.status_code == 200 and "ga_via" not in client.cookies
+    sign_in(client, "ari", next=f"/trips/{row['slug']}", intent="fork")
+    client.get(f"/trips/{row['slug']}")
+    assert client.cookies.get("ga_via") == handle
+
+
+def test_the_fork_cookie_is_the_same_cookie_30_days_http_only(client, keys, mode):
+    row, handle, _ = live_trip()
+    sign_in(client, "ari")
+    client.post("/fork", data={"next": f"/trips/{row['slug']}"}, follow_redirects=False)
+    cookie = client.get(f"/trips/{row['slug']}").headers["set-cookie"].lower()
+    assert f"ga_via={handle}" in cookie and "max-age=2592000" in cookie and "httponly" in cookie and "samesite=lax" in cookie and "path=/" in cookie
+
+
+def test_forking_a_sample_trip_remembers_nobody(client, keys):
+    sign_in(client, "ari")
+    r = client.post("/fork", data={"next": "/trips/sun-and-tacos"}, follow_redirects=True)
+    assert "ga_via" not in client.cookies
