@@ -27,6 +27,8 @@ from gitaway.hub import HubError
 log = logging.getLogger("gitaway.draftjobs")
 
 MAX_BATCH = 20
+SCAN_LIMIT = 30           # blogs one person may have read in a day: each is up to a dozen fetches, so it is counted like a picture fetch
+SCAN_LIMIT_HIT = f"You have looked up {SCAN_LIMIT} blogs today, which is the most for one day. Come back tomorrow, or paste a post's link instead."
 WORKERS = 2
 UNEXPECTED = "Something went wrong drafting this post. Try pasting its text instead."
 
@@ -59,6 +61,14 @@ def clear() -> None:
     with _db() as db:
         db.conn.execute(text("DELETE FROM creator_draft_jobs"))
         db.conn.commit()
+
+
+def may_scan(owner) -> bool:
+    """Count one blog read for `owner` today (SCAN_LIMIT): the scan is a fetcher, so it is limited like the picture fetches."""
+    with cd._db() as db:
+        ok = cd._take(db, f"scan:{owner}", cd._today(), SCAN_LIMIT)
+        db.conn.commit()
+        return ok
 
 
 # ---- queueing -------------------------------------------------------------------------------------------------------------------

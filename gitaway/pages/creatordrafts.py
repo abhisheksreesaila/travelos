@@ -157,6 +157,8 @@ def register(app):
         site = str((await request.form()).get("site") or "").strip()
         if cd.mode() == "manual":
             return scan_page(session, site, error=cd.NOT_ON, status=422)
+        if not await run_in_threadpool(dj.may_scan, me.id):
+            return scan_page(session, site, error=dj.SCAN_LIMIT_HIT, status=422)
         try:
             posts = await run_in_threadpool(blogscan.sample if cd.mode() == "sample" else blogscan.discover, site)     # fetches the sitemap and the feed: never on the event loop (F-182)
         except blogscan.ScanError as e:

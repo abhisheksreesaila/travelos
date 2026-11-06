@@ -182,3 +182,10 @@ def test_in_the_showcase_without_a_key_scanning_and_drafting_use_fixtures_and_fe
     start(me, urls[:2], site="https://anyblog.example.org")
     dj.run_pending()
     assert [r["status"] for r in dj.listing(tid())] == ["ready", "ready"]
+
+
+def test_reading_blogs_is_limited_per_person_per_day(me, model, web, monkeypatch):    # noqa: F811
+    monkeypatch.setattr(dj, "SCAN_LIMIT", 2)
+    assert [scan(me).status_code for _ in range(3)] == [200, 200, 422]
+    assert "most for one day" in text(scan(me))
+    assert web.calls.count(f"{SITE}/sitemap.xml") == 2          # the refused ones fetched nothing
