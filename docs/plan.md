@@ -1111,3 +1111,18 @@ Needs: F-181
 Needs: F-181, F-184
 - [x] a creator sees per trip: readers (counted without cookies, no personal data), forks, "Plan this trip" taps; partner clicks from their trips are shown in total (the cookie holds the handle, not the trip: D-129)
 - [x] privacy page says how readers are counted
+
+# First real money (captain 2026-11-06: "first real money this weekend"; commissions settle only after travel, so it has to be a direct sale)
+
+## F-193 Plan it for me: a family pays once, an agent builds their trip [doing]
+Brief: docs/briefs/plan-for-me.md (Status: draft, the captain approves price and delivery before deploy) · Needs: F-183 (ai.py), F-190 (worker pattern), partners · Risk: payments, personal data, an AI feature
+- [ ] a card on public creator trip pages and on the signed-out landing, and a line in the trip menu, lead to one short phone-first intake (where, dates, home airport, adults, kids with ages, budget, must-dos, pace); nothing shows when `STRIPE_SECRET_KEY` is unset in production
+- [ ] signing in comes before paying (a signed-out visitor's answers survive the sign-in); only a family editor or admin can buy
+- [ ] the price ($29, `PLAN_FOR_ME_PRICE_CENTS`) is read on the server; a price, amount or currency sent by the browser changes nothing
+- [ ] Stripe Checkout, mode payment, one line item; the webhook `checkout.session.completed` is verified with `STRIPE_WEBHOOK_SECRET`, must match the order's session and amount, and is idempotent by event id; a bad signature, or no secret, builds nothing
+- [ ] locally with no Stripe key a stand-in checkout completes the order (404 in production); the whole flow is clickable
+- [ ] job `plan-for-me` in `ai.py` (Claude Sonnet 5.5, per-job env override, structured output) run by a background worker writes a real day-by-day trip into the buyer's family database with the existing trip and plan functions; no invented prices or opening hours, unsure places have no name; Aviasales and Klook links carry the order id as SubID; AI tokens and cost are stored per order
+- [ ] `/plan-for-me/<order>` shows paid, building, ready (link to the trip) and failed ("we'll refund you"); only the buyer can open it (anyone else gets a 404); a paid order that was building when the process stopped resumes at boot without a second model call or a second trip
+- [ ] `/admin` lists every order with status, revenue and AI cost, and flags failed orders as refunds due
+- [ ] the privacy page names Stripe and what the intake keeps; `docs/setup.md` lists every new variable; `forget_person` removes a person's orders; one concise line in AGENTS.md; decisions in docs/decisions.md
+- [ ] tests: pricing never trusted from the client, webhook signature and idempotency, access, resume after restart, the AI result written as a trip; a browser test of the intake on phone and laptop in omxqua (no sideways scroll, targets of at least 40px)
