@@ -99,6 +99,26 @@ def test_pasting_the_text_of_that_post_still_works(client, monkeypatch):
     assert r.status_code == 303 and w.robots == [] and w.calls == []
 
 
+def test_a_link_and_the_text_on_a_site_that_turns_ai_away_drafts_from_the_text_and_keeps_the_link(client, monkeypatch):
+    model = Model()
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-not-a-real-key-0000")
+    monkeypatch.setattr(ai, "ANTHROPIC_TRANSPORT", model)
+    w = serve(monkeypatch, "User-agent: ClaudeBot\nDisallow: /\n")
+    sign_in(client)
+    r = client.post("/creators/import", data={"do": "draft", "link": POST, "text": "We spent three days in Santa Monica. " * 8}, follow_redirects=False)
+    assert r.status_code == 303 and w.calls == []                               # the page itself was never fetched
+    assert len(model.requests) == 1 and "We spent three days in Santa Monica." in str(model.requests[0])
+    m = importsource.gather(POST, "We spent three days in Santa Monica. " * 8)
+    assert (m.kind, m.url, m.by) == ("blog", POST, "") and m.text.startswith("We spent three days")
+
+
+def test_a_link_and_a_few_words_on_such_a_site_still_says_to_paste_the_post(monkeypatch):
+    serve(monkeypatch, "User-agent: ClaudeBot\nDisallow: /\n")
+    with pytest.raises(importsource.SourceError) as e:
+        importsource.gather(POST, "Great trip!")
+    assert str(e.value) == ASKS_NOT
+
+
 def test_the_captains_pre_draft_of_such_a_post_makes_no_draft_and_says_why(client, setup, monkeypatch):
     serve(monkeypatch, "User-agent: GPTBot\nDisallow: /\n")
     c = browser("cap@example.com")

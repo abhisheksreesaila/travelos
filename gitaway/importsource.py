@@ -25,6 +25,7 @@ MAX_TEXT_CHARS = 100_000        # about 30,000 tokens; a longer post is cut with
 MAX_PASTE = 120_000             # the most the paste box takes; the same cut applies
 MAX_IMAGES = 12
 MAX_LINK = 500
+MIN_PASTED_POST = 200          # pasted text this long stands in for a page its site turns AI away from (F-194)
 YOUTUBE = {"youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be"}
 INSTAGRAM = {"instagram.com", "www.instagram.com"}
 _STAMP = re.compile(r"^\s*\(?((?:\d{1,2}:)?\d{1,2}:\d{2})\)?\s*[-–—:.)]?\s*(.{2,120})$")
@@ -33,6 +34,10 @@ _SKIP_IMG = re.compile(r"(sprite|pixel|tracking|spacer|logo|avatar|icon|emoji|gr
 
 class SourceError(ValueError):
     """Something the creator can fix by pasting differently; the text is fit to show."""
+
+
+class Refused(SourceError):
+    """The site's robots.txt turned the page away (or could not be checked): the page is not read. A creator who pasted the post's text as well is drafted from that."""
 
 
 @dataclass
@@ -131,7 +136,7 @@ def _pictures(page, base):
 
 def _blog(url, notices, asked=True) -> Material:
     if (why := robots.check(url, asked)):      # the site's own file decides whether an AI tool may read this page (F-194)
-        raise SourceError(why)
+        raise Refused(why)
     try:
         got = safefetch.fetch(url, "html", asked=asked)
     except safefetch.FetchError as e:
@@ -189,7 +194,7 @@ def _youtube(url, notices, asked=True) -> Material:
         raise SourceError("That YouTube link goes to a page, not to one video. Paste the link to the video itself.")
     watch = f"https://www.youtube.com/watch?v={vid}"
     if (why := robots.check(watch, asked)):
-        raise SourceError(why)
+        raise Refused(why)
     title = by = thumb = description = ""
     try:
         data = json.loads(safefetch.fetch("https://www.youtube.com/oembed?format=json&url=" + quote(watch, safe=""), "json", asked=asked).text())
@@ -232,7 +237,12 @@ def gather(url="", text="", asked=True) -> Material:
         return Material("instagram", _cut(text, notices), link, "", "", "", [], notices)
     if kind == "text":
         return Material("text", _cut(text, notices), "", "", "", "", [], notices)
-    got = _blog(link, notices, asked) if kind == "blog" else _youtube(link, notices, asked)
+    try:
+        got = _blog(link, notices, asked) if kind == "blog" else _youtube(link, notices, asked)
+    except Refused:
+        if len(text) < MIN_PASTED_POST:     # nothing pasted to draft from: say to paste it
+            raise
+        return Material(kind, _cut(text, notices), link, "", "", "", [], notices)    # the pasted text is the post; the link stays as its source card, as for Instagram
     if text:     # a transcript or notes the creator added: the draft reads them after the page
         if kind == "youtube":
             notices[:] = [n for n in notices if "transcript" not in n]
