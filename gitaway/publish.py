@@ -216,6 +216,11 @@ def family_names(session) -> list:
     return out
 
 
+def join_names(names) -> str:
+    """"Mira", "Mira and Theo", "Mira, Theo and Sam"."""
+    return ", ".join(names[:-1]) + " and " + names[-1] if len(names) > 1 else "".join(names)
+
+
 def mentions(session, trip: Itinerary) -> list:
     """First names of the family (`family_names`) that the public text says ("Mira"): the title, tips, day notes, stops and the photos' captions and alt text. The publisher's own name,
     the one shown as the author, is not one, and nor is a placeholder (Kid 1). Publishing waits until the editor ticks that they are happy to be named (F-194)."""
@@ -272,7 +277,7 @@ def publish(session, names_ok=False) -> dict:
     if old and old["owner_user"] != me.id:
         raise HubError("This trip is already published by someone else in your family.")
     if (named := mentions(session, build(session, d, private_src))) and not names_ok:      # before anything is made: no files, no profile address
-        raise HubError(f"This page names {', '.join(named)} from your family. Tick the box to say they are happy to be on a public page, then publish.")
+        raise HubError(f"This page names {join_names(named)} from your family. Tick the box to say they are happy to be on a public page, then publish.")
     creator = community.claim_creator(me.id, d["name"])
     mine = {p["id"]: p for p in photos.listing(session)}
     folder = root() / d["slug"]

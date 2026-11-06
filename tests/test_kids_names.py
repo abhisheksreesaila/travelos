@@ -52,7 +52,7 @@ def test_a_childs_name_in_a_day_note_is_flagged_in_the_preview(family):
 
 @pytest.mark.parametrize("field, text, who", [
     ("tip", ["Theo needs a booster seat on Space Mountain."], "Theo"),
-    ("title", "Mira and Theo at Disneyland", "Mira, Theo"),
+    ("title", "Mira and Theo at Disneyland", "Mira and Theo"),
     ("note_1", "Dinner with Priya and the kids.", "Priya"),
 ])
 def test_a_name_anywhere_in_the_public_text_is_flagged(family, field, text, who):
@@ -130,3 +130,14 @@ def test_the_name_check_reads_a_photos_caption_and_alt_text(family):
     trip = Itinerary(slug="x", title="Our week", headline="Our week:", accent="Ari's", place="LA", lede="", author="Ari",
                      days=[Day(1, "DAY 1", "Day one", "", [Stop("", "Teacups")], photos=[Polaroid("/p.jpg", "Photo from day 1, Theo on the carousel", "Theo on the carousel")])])
     assert publish.mentions(person("ari"), trip) == ["Theo"]
+
+
+@pytest.mark.parametrize("names, said", [(["Mira"], "Mira"), (["Mira", "Theo"], "Mira and Theo"), (["Mira", "Theo", "Sam"], "Mira, Theo and Sam")])
+def test_names_are_listed_the_way_a_person_would_say_them(names, said):
+    assert publish.join_names(names) == said
+
+
+def test_two_names_make_the_tick_and_the_refusal_read_properly(family):
+    save(family, note_2="Mira loved it and Theo rode twice.")
+    assert "Yes, Mira and Theo are happy to be named" in preview(family)
+    assert "This page names Mira and Theo from your family." in unescape(publish_it(family).text)
