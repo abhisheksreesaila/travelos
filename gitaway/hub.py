@@ -77,7 +77,7 @@ def plan_href(trip) -> str:
     if not trip.plan_to:
         return ""
     depart, ret = publish.sample_dates(trip.plan_days)
-    return "/plan?" + urlencode({"to": trip.plan_to, "d": depart.isoformat(), "r": ret.isoformat(), "a": 2})
+    return "/plan?" + urlencode({"to": trip.plan_to, "d": depart.isoformat(), "r": ret.isoformat(), "a": 2, **({"via": trip.handle} if trip.handle else {})})   # via: whose trip this is (F-184)
 
 
 def cards(session, *, tags=(), creators=False, q="") -> list:

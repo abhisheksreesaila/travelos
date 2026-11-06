@@ -252,6 +252,16 @@ def _tips(trip):
     return Section(H2(f"{trip.author.split()[0]}'s tips"), Ul(*[Li(t) for t in trip.tips], cls="tips-list"), id="tips", cls="tips ga-wrap")
 
 
+# ---------- who earns, and report (F-184, F-185) ----------
+
+def _trust(trip):
+    """A real trip's plain statement of who earns from its Book links, and "Report this trip" (only once it is live: a draft's preview has nothing to report)."""
+    from gitaway import affiliate, community  # here, not at the top: both read the community database
+    line = affiliate.earning_line(trip.author, bool(affiliate.marker_for(trip.handle)) if trip.handle else False)
+    report = A(icon("flag", 18, 2.2), "Report this trip", href=f"/report?trip={trip.slug}", cls="btn btn-sm trust-report", id="report-this") if community.is_real(trip.slug) else ""
+    return Section(P(line, id="who-earns", cls="trust-line"), report, id="trust", cls="trust ga-wrap")
+
+
 # ---------- make it yours ----------
 
 def _yours(trip):
@@ -315,7 +325,7 @@ SCRIPT = Script("""
 def itinerary_body(trip: Itinerary, loading: bool = False, saved: bool = False, forked: bool = False):
     if loading:
         return skeleton(trip)
-    return Div(_hero(trip, saved, forked), _board(trip), _days(trip), _tips(trip), _yours(trip), SCRIPT, cls="itinerary")
+    return Div(_hero(trip, saved, forked), _board(trip), _days(trip), _tips(trip), _yours(trip), _trust(trip) if trip.real else "", SCRIPT, cls="itinerary")
 
 
 def itinerary_page(trip: Itinerary, theme=None, loading: bool = False, saved: bool = False, forked: bool = False):

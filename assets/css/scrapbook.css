@@ -93,3 +93,8 @@ a.by { text-decoration: underline; text-underline-offset: 0.2rem; }
   .pb-bar { position: static; margin-inline: 0; padding: 0; background: none; box-shadow: none; }
   .pb-photo img { transition-duration: var(--motion-desk); }
 }
+
+/* ---- who earns, and Report this trip (F-184, F-185) ---- */
+.trust { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem 1.5rem; padding-block: 1.25rem 2rem; border-top: 1px solid var(--line); }
+.trust-line { margin: 0; flex: 1 1 18rem; color: var(--ink-2); font-size: 0.9375rem; line-height: 1.45; text-wrap: pretty; }
+.trust-report { min-height: 2.75rem; }

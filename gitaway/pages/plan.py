@@ -10,9 +10,9 @@ from urllib.parse import parse_qsl, quote as urlquote, urlencode
 
 from starlette.responses import HTMLResponse
 
-from fasthtml.common import to_xml, A, Article, Button, Div, Figcaption, Figure, H2, H3, Img, Kbd, Li, Link, Main, NotStr, P, Script, Section, Span, Svg, Title, Ul
+from fasthtml.common import cookie, to_xml, A, Article, Button, Div, Figcaption, Figure, H2, H3, Img, Kbd, Li, Link, Main, NotStr, P, Script, Section, Span, Svg, Title, Ul
 
-from gitaway import access, catalog, context, itineraries, partners, session, showcase
+from gitaway import access, affiliate, auth, catalog, context, itineraries, partners, session, showcase
 from gitaway import session as session_helpers
 from gitaway.icons import icon
 from gitaway.itinerary_view import fork_href
@@ -644,13 +644,17 @@ def workspace(f, h, c, overlay=(), head=(), x="", v="", stay=None, trip=None, fl
 def register(app):
     @app.get("/plan")
     def plan(session, f: str = "", h: str = "", c: str = "", x: str = "", v: str = "", rooms: str = None, add: str = None,
-             fare: str = None, bags: str = None, d: str = "", r: str = "", a: str = "", k: str = "", to: str = ""):
+             fare: str = None, bags: str = None, d: str = "", r: str = "", a: str = "", k: str = "", to: str = "", via: str = ""):
         trip = resolve_trip(d, r, a, k, to)
         picks = resolve_pick(f, h, c, trip)
         stay, flight = resolve_stay(picks[1], rooms, add, trip), resolve_flight(picks[0], fare, bags, trip)
         if any((f, h, c, rooms, add, fare, bags, d, r, a, k, to)):  # a bare /plan is not "picks"; /start offers to continue the rest
             session_helpers.remember_plan(session, plan_path(*picks, stay, trip, flight)[len("/plan?"):])
-        return workspace(*picks, x=x, v=v, stay=stay, flight=flight, trip=trip)
+        body = workspace(*picks, x=x, v=v, stay=stay, flight=flight, trip=trip)
+        creator = affiliate.valid_via(via)   # F-184: "Plan this trip" on a creator's page: remember whose trip this is for 30 days, so /go can use their marker
+        if creator:
+            return body, cookie(affiliate.COOKIE, creator, max_age=affiliate.COOKIE_DAYS * 86400, path="/", httponly=True, samesite="lax", secure=auth.production())
+        return body
 
     @app.get("/plan/quote")
     def plan_quote(f: str = "", h: str = "", c: str = "", rooms: str = None, add: str = None, fare: str = None, bags: str = None,

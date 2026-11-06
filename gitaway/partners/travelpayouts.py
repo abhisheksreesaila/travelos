@@ -85,12 +85,12 @@ def klook_link(url: str, sub_id: str) -> str:
     return link
 
 
-def aviasales_link(url: str, sub_id: str) -> str:
-    """The Aviasales search link with `marker=<marker>.<sub_id>` (the way a Travelpayouts-made Aviasales link carries it)."""
-    return f"{url}{'&' if '?' in url else '?'}marker={quote(marker() + '.' + sub_id, safe='.-')}&sub_id={quote(sub_id, safe='-')}"
+def aviasales_link(url: str, sub_id: str, own: str = "") -> str:
+    """The Aviasales search link with `marker=<marker>.<sub_id>` (the way a Travelpayouts-made Aviasales link carries it). `own` is a creator's marker (F-184) in place of ours."""
+    return f"{url}{'&' if '?' in url else '?'}marker={quote((own or marker()) + '.' + sub_id, safe='.-')}&sub_id={quote(sub_id, safe='-')}"
 
 
-def link_for(partner, offer, trip, sub_id) -> str:
-    """The https link a traveler is sent to for `offer`."""
+def link_for(partner, offer, trip, sub_id, own: str = "") -> str:
+    """The https link a traveler is sent to for `offer`. `own` is the creator's marker (F-184): flights carry it; Klook always goes through our token and marker (D-101)."""
     url = partner.target_url(offer, trip)
-    return aviasales_link(url, sub_id) if partner.key == "aviasales" else klook_link(url, sub_id)
+    return aviasales_link(url, sub_id, own) if partner.key == "aviasales" else klook_link(url, sub_id)
