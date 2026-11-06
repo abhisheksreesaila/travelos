@@ -194,3 +194,4 @@ fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
 .cr-trips { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: 1rem; }
 .cr-trip { padding: 1rem; border: 0.125rem solid var(--line); border-radius: 1rem; background: var(--note); box-shadow: var(--shadow-sticker); display: grid; gap: 0.5rem; align-content: start; }
 .cr-cover { width: 100%; max-height: 14rem; object-fit: cover; border-radius: 1rem; }
+.cr-profile-links { display: flex; flex-wrap: wrap; gap: 0.625rem; }

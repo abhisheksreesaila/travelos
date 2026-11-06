@@ -34,6 +34,8 @@ OPEN_POSTS = (
     "/trip/map/around",   # Around you (F-073): looks up places near a point and writes only the place-lookup cache, so every member may ask (a viewer too); the position is in the request only
     "/trip/talk/message", "/trip/talk/photo", "/trip/talk/voice",   # talk on a plan (F-091): text, a photo or a voice note on a plan or part, from any member (viewers too: it changes no plan)
     "/trip/family/message", "/trip/family/quiet",   # a message in the family thread and my own Quiet switch (F-070): every member, viewers too (a viewer cannot change a plan, so never causes a change card)
+    "/report",   # reporting a public trip or creator (F-185): anyone, signed out too; it changes no plan
+    "/admin/takedown", "/admin/restore", "/creators/settings",   # the captain's take down and restore (the route answers 404 to anyone not in GITAWAY_ADMIN_EMAILS, F-185) and my own affiliate marker (F-184)
     "/trip/family/seen",   # I have read the chats up to now (F-143): my own read mark, every member, viewers too
 )
 OPEN_PREFIXES = ("/join/", "/creators/import/")                # using an invite link: the person is joining another family

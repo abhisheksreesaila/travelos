@@ -4,7 +4,7 @@ GET  /go/<offer id>?to=&d=&r=&a=&k=         log the click, then 302: with TRAVEL
 GET  /sandbox/<partner>/<click>?o=&...      a stand-in for the partner's checkout: the offer, its price, "Complete booking on <partner>"
 POST /sandbox/<partner>/<click>             the simulated conversion: recorded, and added to the family's trip as "Booked elsewhere · <partner>"
 GET  /sandbox/<partner>/<click>/done        says so
-GET  /partners                              the family's clicks and bookings with SubID, status and estimated commission (signed in)
+GET  /partners                              the family's clicks and bookings with SubID, status and price at the partner (signed in); commission is on /admin (F-185)
 
 Writes are the editor role's like every other POST (gitaway/access.py): a viewer cannot book. Without the showcase, /sandbox is 404, /go is 404
 without a marker and /partners is 404 without a token (gitaway/showcase.py).
@@ -16,7 +16,7 @@ from urllib.parse import parse_qsl, urlencode
 from fasthtml.common import A, Button, Div, Form, H1, H2, Input, Li, Link, Main, P, Span, Title, Ul
 from starlette.responses import RedirectResponse
 
-from gitaway import catalog, importer, partners, session as ses, showcase
+from gitaway import affiliate, catalog, importer, partners, session as ses, showcase
 from gitaway.icons import icon
 from gitaway.layout import page, styles
 from gitaway.partners import log, statistics, travelpayouts
@@ -84,7 +84,7 @@ def done_page(row, partner, offer_name):
         H1(f"Booked elsewhere · {partner.name}", cls="pt-title", id="pt-done"),
         P(f"{offer_name} is booked on {partner.name} (sandbox). It is in your trip now, marked as booked elsewhere. {partner.name} keeps the booking; GitAway keeps a note of it.", cls="pt-lead"),
         Div(Span("Confirmation", cls="pt-k"), Span(row["confirmation"], cls="pt-v"), Span("Paid at the partner", cls="pt-k"), Span(catalog.money(row["price_cents"]), cls="pt-v"),
-            Span("Estimated commission", cls="pt-k"), Span(catalog.money(row["commission_cents"]), cls="pt-v"), cls="pt-facts"),
+            cls="pt-facts"),
         Div(A("Open my trip", href="/trip", cls="btn btn-ink"), A("Partner bookings", href="/partners", cls="btn"),
             A("Keep planning", href="/plan?" + row["query"], cls="btn"), cls="pt-actions"),
         cls="pt-card"))
@@ -97,22 +97,20 @@ def _status(row):
 def _row(row):
     partner = partners.get(row["partner"])
     label, cls = _status(row)
-    commission = catalog.money(row["commission_cents"]) if row["state"] == "booked" else "–"
+    price = catalog.money(row["price_cents"]) if row["state"] == "booked" else "–"   # what the family paid the partner; what GitAway earns is on the admin page (F-185)
     return Li(Div(Span(partner.name if partner else row["partner"], cls="pt-who"), Span(label, cls=f"pt-status {cls}")),
               Span(row["offer_name"], cls="pt-what"),
-              Div(Span("SubID", cls="pt-k"), Span(row["sub_id"], cls="pt-code"), Span("Estimated commission", cls="pt-k"), Span(commission, cls="pt-v"),
+              Div(Span("SubID", cls="pt-k"), Span(row["sub_id"], cls="pt-code"), Span("Price at the partner", cls="pt-k"), Span(price, cls="pt-v"),
                 *([Span("Partner status", cls="pt-k"), Span(statistics.row(row)["state"], cls="pt-v")] if row["state"] == "booked" else []), cls="pt-meta"),
               cls="pt-row", data_state=row["state"])
 
 
 def partners_page(rows, *, live):
     booked = [r for r in rows if r["state"] == "booked"]
-    total = sum(r["commission_cents"] for r in booked)
-    note = ("Live statistics are not connected yet. These are estimates from your family's clicks." if live
-            else "Sample data: clicks and bookings made in the sandbox. Commission is an estimate (flights about 1.1%, stays and cars about 5%).")
+    note = "Live statistics are not connected yet." if live else "Sample data: clicks and bookings made in the sandbox."
     return page("Partners", Main(
         Div(H1("Partner bookings", cls="pt-title"),
-            P(f"{len(rows)} click{'s' if len(rows) != 1 else ''} · {len(booked)} booked · estimated commission {catalog.money(total)}", cls="pt-lead", id="pt-summary"),
+            P(f"{len(rows)} click{'s' if len(rows) != 1 else ''} · {len(booked)} booked", cls="pt-lead", id="pt-summary"),
             P(note, cls="pt-fine"), P(FINE, cls="pt-fine"),
             Ul(*[_row(r) for r in rows], cls="pt-list", aria_label="Clicks and bookings") if rows else
             Div(P("No clicks yet. Pick a flight, a stay or a car and press Book on a partner.", cls="pt-lead"), A("Plan a trip", href="/plan", cls="btn btn-ink"), cls="pt-empty"),
@@ -121,7 +119,7 @@ def partners_page(rows, *, live):
 
 def register(app):
     @app.get("/go/{offer_id}")
-    def go(session, offer_id: str, d: str = "", r: str = "", a: str = "", k: str = ""):
+    def go(request, session, offer_id: str, d: str = "", r: str = "", a: str = "", k: str = ""):
         found = _offer(offer_id, d, r, a, k)
         if not found:
             return showcase.not_found()
@@ -129,7 +127,11 @@ def register(app):
         partner, click = partners.for_offer(offer), log.new_click_id()
         sub = log.record_click(session, click, offer, trip, partner)
         if travelpayouts.marker():
-            return RedirectResponse(travelpayouts.link_for(partner, offer, trip, sub), status_code=302)
+            via = affiliate.valid_via(request.cookies.get(affiliate.COOKIE))   # F-184: the creator whose trip this family planned from, if any
+            own = affiliate.marker_for(via) if via else ""
+            if via:
+                affiliate.log_click(via, partner.key, offer.kind, own and partner.key == "aviasales")
+            return RedirectResponse(travelpayouts.link_for(partner, offer, trip, sub, own), status_code=302)
         return RedirectResponse(_sandbox_path(partner, click, offer, trip), status_code=302)
 
     @app.get("/sandbox/{partner}/{click}")

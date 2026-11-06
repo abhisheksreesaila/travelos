@@ -27,6 +27,9 @@ OPEN_FOR_VIEWERS = {
     "/trip/talk/message", "/trip/talk/photo", "/trip/talk/voice",   # a viewer may talk on a plan: text, photo, voice note (F-091)
     "/trip/family/message", "/trip/family/quiet",             # a viewer may talk in the family thread and silence their own pushes (F-070)
     "/trip/family/seen",                                      # and mark the chats read for themselves (F-143)
+    "/report",                                                # reporting a public trip or creator: anyone, signed out too (F-185)
+    "/admin/takedown", "/admin/restore",                      # the captain's two buttons: the route answers 404 unless the email is in GITAWAY_ADMIN_EMAILS (F-185)
+    "/creators/settings",                                     # a creator's own affiliate marker (F-184)
 }
 ADMIN_ONLY = {"/family/invite", "/family/invite/revoke", "/family/role", "/family/remove", "/trip/delete"}
 

@@ -107,3 +107,20 @@ def book(session, click_id, offer, trip, partner):
             familydb.run(fam.db, "UPDATE partner_clicks SET state = 'booked', booked_at = :at, commission_cents = :c, confirmation = :n, trip_id = :t WHERE id = :i",
                          at=familydb.now(), c=partner.estimate_cents(offer.price_cents), n=confirmation, t=trip_id, i=click_id)
     return get(session, click_id)
+
+
+def all_clicks() -> list:
+    """Every family's clicks and bookings, newest first: only for the admin page (F-185), which is where GitAway's commission is read. One short visit to each family's database."""
+    from fh_saas.db_tenant import get_or_create_tenant_db
+    from gitaway import members
+    out = []
+    for tenant_id in members.tenant_ids():
+        db = get_or_create_tenant_db(tenant_id)
+        try:
+            familydb.ensure_schema(db, tenant_id)
+            out += familydb.rows(db, "SELECT * FROM partner_clicks")
+        except Exception:   # one family's unreadable database must not blank the page
+            continue
+        finally:
+            db.conn.close()
+    return sorted(out, key=lambda r: r["clicked_at"], reverse=True)

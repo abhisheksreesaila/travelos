@@ -95,7 +95,7 @@ def real_profile(handle):
             Div(real_avatar(c["name"], "cr-avatar cr-avatar-lg"), H1(c["name"]), cls="cr-name-row"),
             P(f"{len(cards)} trip{'s' if len(cards) != 1 else ''} published on GitAway.", cls="cr-bio"), cls="cr-profile-head"),
         Section(H2(f"{c['name'].split()[0]}'s trips"), Div(*[hub_card(x, i) for i, x in enumerate(cards)], cls="hub-grid"), cls="cr-profile-trips"),
-        P(A("All creators", href="/creators")), cls="cr cr-profile ga-wrap")
+        Div(A("All creators", href="/creators", cls="btn btn-sm"), A(icon("flag", 18, 2.2), "Report this creator", href=f"/report?creator={handle}", cls="btn btn-sm", id="report-creator"), cls="cr-profile-links"), cls="cr cr-profile ga-wrap")
     return page(c["name"], body, current="/creators", head=(*HUB_HEAD, *HEAD))
 
 

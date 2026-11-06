@@ -266,34 +266,34 @@ def test_booking_signed_out_asks_to_sign_in_first(client, nokeys):
 
 # ---- the conversion and /partners -----------------------------------------------------------------------------------------
 
-def test_a_booking_records_the_conversion_with_the_estimated_commission(client, nokeys):
+def test_a_booking_records_the_conversion_and_the_family_sees_no_commission(client, nokeys):
     sign_in(client, "ari")
     r = complete(client, "hif1")
     assert r.status_code == 303 and re.fullmatch(r"/sandbox/aviasales/[0-9a-f]{10}/done", r.headers["location"])
     done = text(client.get(r.headers["location"]).text)
-    assert "Booked elsewhere · Aviasales" in done and "$1,064" in done and "$11.70" in done
+    assert "Booked elsewhere · Aviasales" in done and "$1,064" in done and "Estimated commission" not in done
     page = text(client.get("/partners").text)
-    assert "1 click · 1 booked · estimated commission $11.70" in page
+    assert "1 click · 1 booked" in page and "$11.70" not in page and "estimated commission" not in page.lower()
     assert "Aviasales Booked Aloha Pacific 12" in page
-    assert re.search(r"SubID [0-9a-f]{6}-hi-270305-flight Estimated commission \$11\.70 Partner status processing", page)
+    assert re.search(r"SubID [0-9a-f]{6}-hi-270305-flight Price at the partner \$1,064 Partner status processing", page)
 
 
-def test_commission_per_lane_on_the_partners_page(client, nokeys):
+def test_the_partners_page_lists_every_lane_without_commission(client, nokeys):
     sign_in(client, "ari")
     for offer in ("hif1", "hih1", "hic1"):
         assert complete(client, offer).status_code == 303
     page = text(client.get("/partners").text)
-    assert "3 clicks · 3 booked · estimated commission $180.90" in page     # $11.70 + $146.00 + $23.20
+    assert "3 clicks · 3 booked" in page and "$180.90" not in page
     for fragment in ("Klook Booked Waikiki Tide Resort", "Klook Booked Island Drive Rentals"):
         assert fragment in page
 
 
-def test_a_click_that_was_not_booked_is_listed_as_clicked_with_no_commission(client, nokeys):
+def test_a_click_that_was_not_booked_is_listed_as_clicked(client, nokeys):
     sign_in(client, "ari")
     sandbox_of(client, "hic1")
     page = text(client.get("/partners").text)
-    assert "1 click · 0 booked · estimated commission $0" in page
-    assert re.search(r"Klook Clicked Island Drive Rentals SubID [0-9a-f]{6}-hi-270305-car Estimated commission –", page)
+    assert "1 click · 0 booked" in page
+    assert re.search(r"Klook Clicked Island Drive Rentals SubID [0-9a-f]{6}-hi-270305-car Price at the partner –", page)
 
 
 def test_booking_twice_changes_nothing(client, nokeys):

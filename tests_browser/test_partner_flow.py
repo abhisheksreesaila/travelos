@@ -32,7 +32,7 @@ def test_book_on_a_partner_from_plan_to_the_partner_log(browser, base_url, viewp
     page.wait_for_url("**/done")
     expect(page.locator("#pt-done")).to_have_text("Booked elsewhere · Aviasales")
     page.goto(f"{base_url}/partners")
-    expect(page.locator("#pt-summary")).to_have_text("1 click · 1 booked · estimated commission $11.70")
+    expect(page.locator("#pt-summary")).to_have_text("1 click · 1 booked")
     expect(page.locator(".pt-row")).to_have_count(1)
     assert not page.evaluate("document.documentElement.scrollWidth > innerWidth")
     page.goto(f"{base_url}/trip/details")

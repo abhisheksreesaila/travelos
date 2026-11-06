@@ -36,6 +36,17 @@ _SCHEMA = """CREATE TABLE IF NOT EXISTS published (
     snapshot TEXT NOT NULL, meta TEXT NOT NULL DEFAULT '{}', created_at TEXT NOT NULL, updated_at TEXT NOT NULL)"""
 _CREATORS = """CREATE TABLE IF NOT EXISTS creators (
     handle TEXT PRIMARY KEY, owner_user TEXT NOT NULL UNIQUE, name TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)"""
+# F-184/F-185: a creator's own Travelpayouts marker (keyed by the person, so it can be saved before a first publish), a taken-down trip, a report, and one row
+# per /go click that came from a creator's trip. Plain CREATE IF NOT EXISTS: a live database gains them on first use, no migration.
+_MORE = ("""CREATE TABLE IF NOT EXISTS creator_markers (owner_user TEXT PRIMARY KEY, marker TEXT NOT NULL, updated_at TEXT NOT NULL)""",
+         """CREATE TABLE IF NOT EXISTS takedowns (slug TEXT PRIMARY KEY, taken_at TEXT NOT NULL)""",
+         """CREATE TABLE IF NOT EXISTS reports (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, kind TEXT NOT NULL, target TEXT NOT NULL, reason TEXT NOT NULL, note TEXT NOT NULL DEFAULT '', email TEXT NOT NULL DEFAULT '',
+    reporter TEXT NOT NULL DEFAULT '', ip_hash TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL)""",
+         """CREATE TABLE IF NOT EXISTS fork_counts (slug TEXT PRIMARY KEY, n INTEGER NOT NULL)""",
+         """CREATE TABLE IF NOT EXISTS via_clicks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, handle TEXT NOT NULL, partner TEXT NOT NULL, lane TEXT NOT NULL, own_marker INTEGER NOT NULL, clicked_at TEXT NOT NULL)""")
+UP = " AND slug NOT IN (SELECT slug FROM takedowns)"   # the live trips: everything not taken down (F-185)
 _ready: set = set()
 
 
@@ -61,6 +72,8 @@ def connect():
         if url not in _ready:
             conn.execute(text(_SCHEMA))
             conn.execute(text(_CREATORS))
+            for stmt in _MORE:
+                conn.execute(text(stmt))
             conn.commit()
             _ready.add(url)
         yield SimpleNamespace(conn=conn)  # what fh-saas's utils_sql helpers read
@@ -103,15 +116,16 @@ def trip_of(row) -> Itinerary:
 
 # ---- reads ---------------------------------------------------------------------------------------------------------
 
-def get(slug) -> dict | None:
+def get(slug, hidden=False) -> dict | None:
+    """A published trip, or None. A trip the captain took down (F-185) is not there for anyone unless `hidden=True` (the admin page)."""
     with connect() as db:
-        r = db.conn.execute(text("SELECT * FROM published WHERE slug = :s"), {"s": slug}).fetchone()
+        r = db.conn.execute(text("SELECT * FROM published WHERE slug = :s" + ("" if hidden else UP)), {"s": slug}).fetchone()
     return _row(r) if r else None
 
 
-def rows(kind="", owner="") -> list:
-    """Published trips, oldest first; `kind` and `owner` (a user id) narrow them."""
-    sql, args = "SELECT * FROM published WHERE 1=1", {}
+def rows(kind="", owner="", hidden=False) -> list:
+    """Published trips, oldest first; `kind` and `owner` (a user id) narrow them. Taken-down trips are left out unless `hidden=True`."""
+    sql, args = "SELECT * FROM published WHERE 1=1" + ("" if hidden else UP), {}
     if kind:
         sql, args["k"] = sql + " AND kind = :k", kind
     if owner:
@@ -127,7 +141,7 @@ def existing(slugs) -> int:
         return 0
     marks = ", ".join(f":s{i}" for i in range(len(slugs)))
     with connect() as db:
-        return db.conn.execute(text(f"SELECT COUNT(*) FROM published WHERE slug IN ({marks})"), {f"s{i}": s for i, s in enumerate(slugs)}).scalar()
+        return db.conn.execute(text(f"SELECT COUNT(*) FROM published WHERE slug IN ({marks})" + UP), {f"s{i}": s for i, s in enumerate(slugs)}).scalar()
 
 
 def find(slug, kind="") -> Itinerary | None:
@@ -151,6 +165,8 @@ def publish(session, trip: Itinerary, *, kind, tags=(), theme="sunset", meta=Non
         raise HubError("A shared trip needs a title and a place.")
     now = _now()
     with connect() as db:
+        if db.conn.execute(text("SELECT 1 FROM takedowns WHERE slug = :s"), {"s": trip.slug}).fetchone():
+            raise HubError("GitAway took this page down, so it cannot be published again. Write to the address on the Privacy page if you think that was a mistake.")
         old = db.conn.execute(text("SELECT owner_user, created_at FROM published WHERE slug = :s"), {"s": trip.slug}).fetchone()
         if old and old[0] != str(uid):
             raise HubError("That trip belongs to someone else.")
@@ -208,7 +224,7 @@ def claim_creator(owner_user, name) -> dict:
             db.conn.commit()
             return {"handle": mine[0], "owner_user": str(owner_user), "name": name}
         base = slugify(name, 24) or "traveler"
-        taken = {r[0] for r in db.conn.execute(text("SELECT handle FROM creators")).fetchall()} | {c.handle for c in creator_profiles.CREATORS} | {"draft", "finish", "done", "new"}
+        taken = {r[0] for r in db.conn.execute(text("SELECT handle FROM creators")).fetchall()} | {c.handle for c in creator_profiles.CREATORS} | {"draft", "finish", "done", "new", "import", "settings"}
         handle, n = base, 1
         while handle in taken:
             n += 1
@@ -237,7 +253,7 @@ def real_creators() -> list:
 def has_real() -> bool:
     """Is any real family trip published? The live site's community and creator pages exist only from then on."""
     with connect() as db:
-        return db.conn.execute(text("SELECT 1 FROM published WHERE kind = 'scrapbook' LIMIT 1")).fetchone() is not None
+        return db.conn.execute(text("SELECT 1 FROM published WHERE kind = 'scrapbook'" + UP + " LIMIT 1")).fetchone() is not None
 
 
 def is_real(slug) -> bool:
@@ -246,9 +262,57 @@ def is_real(slug) -> bool:
     return bool(row) and row["kind"] == "scrapbook"
 
 
+def bump_fork(slug) -> None:
+    """One more family forked this live real trip (kept only as a count, per slug: no family is named). Anything else is ignored."""
+    if not is_real(slug):
+        return
+    with connect() as db:
+        db.conn.execute(text("INSERT INTO fork_counts (slug, n) VALUES (:s, 1) ON CONFLICT(slug) DO UPDATE SET n = n + 1"), {"s": slug})
+        db.conn.commit()
+
+
+def fork_count(slug) -> int:
+    with connect() as db:
+        r = db.conn.execute(text("SELECT n FROM fork_counts WHERE slug = :s"), {"s": slug}).fetchone()
+    return r[0] if r else 0
+
+
+def most_forked() -> dict | None:
+    """The live real trip forked most often (the newest when none has been forked), or None while nothing real is published. One query."""
+    with connect() as db:
+        r = db.conn.execute(text("SELECT p.* FROM published p LEFT JOIN fork_counts f ON f.slug = p.slug WHERE p.kind = 'scrapbook'"
+                                 + UP.replace("slug NOT IN", "p.slug NOT IN") + " ORDER BY COALESCE(f.n, 0) DESC, p.created_at DESC LIMIT 1")).fetchone()
+    return _row(r) if r else None
+
+
+def take_down(slug) -> bool:
+    """Hide a published trip and its public photos (F-185). The row stays, and its owner cannot publish it again. False when there is no such trip."""
+    if get(slug, hidden=True) is None:
+        return False
+    with connect() as db:
+        db.conn.execute(text("INSERT OR IGNORE INTO takedowns (slug, taken_at) VALUES (:s, :t)"), {"s": slug, "t": _now()})
+        db.conn.commit()
+    return True
+
+
+def restore(slug) -> bool:
+    """Bring a taken-down trip back. False when it was not down."""
+    with connect() as db:
+        done = db.conn.execute(text("DELETE FROM takedowns WHERE slug = :s"), {"s": slug}).rowcount
+        db.conn.commit()
+    return bool(done)
+
+
+def is_down(slug) -> bool:
+    with connect() as db:
+        return db.conn.execute(text("SELECT 1 FROM takedowns WHERE slug = :s"), {"s": slug}).fetchone() is not None
+
+
 def clear() -> None:
     """Remove every published trip and creator. For tests."""
     with connect() as db:
         db.conn.execute(text("DELETE FROM published"))
         db.conn.execute(text("DELETE FROM creators"))
+        for table in ("creator_markers", "takedowns", "reports", "via_clicks", "fork_counts"):
+            db.conn.execute(text(f"DELETE FROM {table}"))
         db.conn.commit()
