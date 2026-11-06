@@ -3,11 +3,12 @@
 Anyone, signed in or not, may report a live trip or a creator who has one: a reason from a short list, an optional note and an optional email address for a reply.
 A report hides nothing; it reaches the captain's admin page (gitaway/pages/admin.py), where one click takes the trip down.
 
-Limits: 5 reports an hour from one network address (kept only as a salted hash) or one signed-in person, and 60 an hour in all, counted from the reports table itself, so
+Limits: 5 reports an hour from one network address (kept only as a salted hash) or one signed-in person, and 60 an hour in all from signed-out callers (a signed-in person is never held up by it, so a flood from many addresses cannot silence real reporters; reaching it logs a warning), counted from the reports table itself, so
 a restart or a second worker does not reset them. A filled-in honeypot field is dropped without a trace in the answer (the page says "thanks" like any other).
 """
 
 import hashlib
+import logging
 import re
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlsplit
@@ -19,6 +20,7 @@ from gitaway.community import _now, connect
 
 REASONS = {"copyright": "It uses someone else's words or photos", "misleading": "It is wrong or misleading", "private": "It shows private information",
            "offensive": "It is unsafe or offensive", "spam": "It is spam or an advertisement", "other": "Something else"}
+log = logging.getLogger("gitaway.reports")
 PER_WINDOW, ALL_PER_WINDOW, WINDOW = 5, 60, timedelta(hours=1)
 NOTE_MAX = 500
 _CONTROL = re.compile(r"[\x00-\x08\x0b-\x1f\x7f]")
@@ -76,8 +78,10 @@ def add(kind, target, reason, note="", email="", reporter="", ip="") -> None:
     who, where = str(reporter or ""), ip_hash(ip)
     with connect() as db:
         since = (datetime.now(timezone.utc) - WINDOW).isoformat(timespec="microseconds")
-        total = db.conn.execute(text("SELECT COUNT(*) FROM reports WHERE created_at > :s"), {"s": since}).scalar()
-        if _recent(db.conn, "ip_hash", where) >= PER_WINDOW or (who and _recent(db.conn, "reporter", who) >= PER_WINDOW) or total >= ALL_PER_WINDOW:
+        if _recent(db.conn, "ip_hash", where) >= PER_WINDOW or (who and _recent(db.conn, "reporter", who) >= PER_WINDOW):
+            raise ReportError("That is a lot of reports in an hour. Please try again later.", 429)
+        if not who and db.conn.execute(text("SELECT COUNT(*) FROM reports WHERE reporter = '' AND created_at > :s"), {"s": since}).scalar() >= ALL_PER_WINDOW:
+            log.warning("signed-out report ceiling reached (%s an hour): signed-out reports are refused until it passes", ALL_PER_WINDOW)
             raise ReportError("That is a lot of reports in an hour. Please try again later.", 429)
         db.conn.execute(text("INSERT INTO reports (kind, target, reason, note, email, reporter, ip_hash, created_at) VALUES (:k, :t, :r, :n, :e, :p, :i, :c)"),
                         {"k": kind, "t": target, "r": reason, "n": note, "e": auth.clean_email(email) or "", "p": who, "i": where, "c": _now()})

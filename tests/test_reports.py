@@ -155,6 +155,26 @@ def test_everyone_together_have_a_ceiling_too(client, trip, monkeypatch):
     assert [send(client, row["slug"], ip=f"192.0.2.{i}").status_code for i in range(5)] == [200] * 3 + [429] * 2
 
 
+def test_the_ceiling_for_signed_out_reports_does_not_block_a_signed_in_person_and_logs_a_warning(client, trip, monkeypatch, caplog):
+    """F-182 L3: twelve addresses could fill the site-wide 60 an hour and so stop every real reporter. The ceiling is for signed-out reports only; it says so in the log."""
+    row, _, _ = trip
+    monkeypatch.setattr(reports, "ALL_PER_WINDOW", 3)
+    with caplog.at_level("WARNING", logger="gitaway.reports"):
+        assert [send(client, row["slug"], ip=f"192.0.2.{i}").status_code for i in range(5)] == [200] * 3 + [429] * 2
+    assert any("signed-out report ceiling" in r.getMessage() for r in caplog.records) and not any("192.0.2" in r.getMessage() for r in caplog.records)
+    sign_in(client, "sam")
+    assert send(client, row["slug"], ip="198.51.100.77").status_code == 200       # a signed-in person still gets through
+
+
+def test_signed_in_reports_do_not_use_up_the_signed_out_ceiling(client, trip, monkeypatch):
+    row, _, _ = trip
+    monkeypatch.setattr(reports, "ALL_PER_WINDOW", 2)
+    sign_in(client, "sam")
+    assert [send(client, row["slug"]).status_code for _ in range(3)] == [200] * 3
+    out = stranger(client)
+    assert [send(out, row["slug"], ip=f"192.0.2.{i}").status_code for i in range(3)] == [200, 200, 429]
+
+
 def test_the_limit_is_counted_from_the_database_so_a_restart_does_not_reset_it(client, trip):
     row, _, _ = trip
     for _ in range(5):
