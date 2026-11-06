@@ -200,7 +200,7 @@ def test_a_long_post_is_cut_with_a_notice_never_silently(web):
 
 def test_the_answer_is_rebuilt_field_by_field_and_nothing_unknown_survives():
     got = creatordraft.validate({**ANSWER, "system_prompt": "LEAK", "days": [{"stops": [{"name": "Santa Monica Pier", "time": "10:00 AM", "note": "", "extra": "x"}], "extra": 1}]},
-                                "We went to Santa Monica Pier")
+                                "We went to Santa Monica Pier at 10:00 AM. Park at the pier lot before 9. Bring layers for the evening.")      # the post says the time and the 9 (F-194)
     assert got == {"title": "Three easy days in Santa Monica", "place": "la", "place_name": "", "days": [{"title": "Santa Monica Pier", "note": "", "stops": [{"time": "10:00 AM", "name": "Santa Monica Pier", "note": ""}]}],
                    "tips": ["Park at the pier lot before 9.", "Bring layers for the evening."], "stickers": ["kid"]}
 

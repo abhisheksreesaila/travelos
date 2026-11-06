@@ -9,8 +9,8 @@ A draft is the person's own, not a family's: it needs no trip, is stored in the 
 as the same "scrapbook" kind F-181 publishes, with a source card linking back to the post. Nothing is public until the creator ticks "this is my post" and presses Publish.
 
 What the model is trusted with: nothing. Its answer is a JSON schema (`SCHEMA`, structured outputs) and then `validate()` rebuilds a draft from it field by field: types, lengths and
-counts are forced, links and email addresses are removed, the place must be one of ours or "other" with a name, a time must look like a time, and a stop whose name has no word
-in common with the post becomes "Unnamed stop" (a wrong place name is worse than a missing one). The post is data inside <post> tags; the system prompt says it is untrusted.
+counts are forced, links and email addresses are removed, the place must be one of ours or "other" with a name, a time must look like a time and be written in the post, a note or tip with a number the post lacks is dropped, and a stop with a name word the post
+does not have becomes "Unnamed stop" (a wrong place name is worse than a missing one; F-194). The post is data inside <post> tags; the system prompt says it is untrusted.
 """
 
 import json
@@ -19,6 +19,7 @@ import os
 import re
 import secrets
 import shutil
+import unicodedata
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
@@ -53,7 +54,8 @@ EMPTY = "GitAway could not find a trip in that. Paste the text of your post (the
 
 _URL = re.compile(r"(?:https?://|www\.)\S+", re.I)
 _EMAIL = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
-_WORD = re.compile(r"[^\W\d_]{4,}", re.U)
+_TOKEN = re.compile(r"[^\W_]+", re.U)
+_NUMBER = re.compile(r"\$?\d+(?:\.\d+)?")
 _NO_NAME = {"", "?", "unknown", "unnamed", "unnamed stop", "tbd", "n/a", "na", "none", "unsure", "not stated", "not named"}
 _SLUG_FILE = re.compile(r"^[0-9a-f]{16}-(display|thumb)\.jpg$")
 _FILLER = {"the", "and", "with", "from", "that", "this", "your", "for", "our", "into", "near", "stop", "visit", "trip", "day", "lunch", "dinner", "breakfast", "morning", "afternoon", "evening",
@@ -115,10 +117,43 @@ def _time(value) -> str:
     return ""
 
 
-def _grounded(name, source_lower) -> bool:
-    """Does the post say anything like this stop's name? True when one of its meaningful words (four letters or more, not a filler word) is in the post."""
-    words = [w.lower() for w in _WORD.findall(name) if w.lower() not in _FILLER]
-    return not words or any(w in source_lower for w in words)
+def _fold(text) -> str:
+    """Text as the post-checks read it: lower case, no accents, and "1,200" as 1200 (so "Café" is "cafe" and a thousands comma does not split a number)."""
+    s = "".join(c for c in unicodedata.normalize("NFKD", str(text)).casefold() if not unicodedata.combining(c))
+    return re.sub(r"(?<=\d),(?=\d{3}(?!\d))", "", s)
+
+
+def _grounded(name, words) -> bool:
+    """Does the post say this stop's name? Every meaningful word of it (not a filler word, not a one or two letter word unless it is a number) must be a whole word of the post
+    (`words`: the post's words, folded), so "Cars Land" is not in a post that has only "Land of the Lost", and "Pier" is not in "Pierre's". "Sea World" is in a post that writes "SeaWorld"."""
+    need = [w for w in _TOKEN.findall(_fold(name)) if w not in _FILLER and (len(w) > 2 or w.isdigit())]
+    return not need or all(w in words for w in need) or "".join(need) in words
+
+
+def _time_said(clock, src) -> bool:
+    """Is the clock time "9:30 AM" written in the post (`src`, folded)? As 9:30 am / 9:30am / 9:30 a.m., as 9:30, as 21:30, or (on the hour) as 9am / 9 a.m.; a bare 9 is not a time."""
+    m = re.fullmatch(r"(\d{1,2}):(\d{2}) ([AP])M", clock)
+    if not m:
+        return False
+    h, mi, ap = int(m.group(1)), m.group(2), m.group(3).lower()
+    h24 = h % 12 + (12 if ap == "p" else 0)
+    forms = [rf"\b0?{h}:{mi}\s*{ap}\.?m(?![a-z])", rf"\b0?{h}:{mi}(?!\d)", rf"\b{h24:02d}:{mi}(?!\d)", rf"\b{h24}:{mi}(?!\d)"]
+    if mi == "00":
+        forms.append(rf"\b{h}\s*{ap}\.?m(?![a-z])")
+    return any(re.search(f, src) for f in forms)
+
+
+def _numbers_said(text, src) -> bool:
+    """Is every number in `text` also in the post (`src`, folded)? A dollar amount needs the post's own "$45" (or "45 dollars"): the same digits as "45 minutes" do not vouch for it."""
+    for n in _NUMBER.findall(_fold(text)):
+        digits = re.escape(n.lstrip("$"))
+        if n.startswith("$"):
+            found = re.search(rf"\$\s?{digits}(?!\.?\d)|(?<![\d.]){digits}(?!\.?\d)\s*(?:dollars|usd)\b", src)
+        else:
+            found = re.search(rf"(?<![\d.]){digits}(?!\.?\d)", src)
+        if not found:
+            return False
+    return True
 
 
 _OTHER_DISNEY = re.compile(r"disneyland(?: resort)? paris|paris disney|disney ?world|tokyo disney|disneyland tokyo|hong kong disney|disneyland hong kong|shanghai disney")
@@ -130,22 +165,25 @@ def _names_place(key, low) -> bool:
     return pub.names_place(key, low) or (key == "la" and "disneyland" in low and not _OTHER_DISNEY.search(low))
 
 
-def _stop(raw, source_lower) -> dict:
+def _stop(raw, src, words) -> dict:
     raw = raw if isinstance(raw, dict) else {}
     name = _line(raw.get("name"), MAX_STOP)
-    if name.lower() in _NO_NAME or not _grounded(name, source_lower):
+    if name.lower() in _NO_NAME or not _grounded(name, words):
         name = UNNAMED
-    return {"time": _time(raw.get("time")), "name": name, "note": _line(raw.get("note"), MAX_STOP_NOTE)}
+    clock = _time(raw.get("time"))
+    note = _line(raw.get("note"), MAX_STOP_NOTE)
+    return {"time": clock if clock and _time_said(clock, src) else "", "name": name, "note": note if _numbers_said(note, src) else ""}
 
 
 def validate(raw, source, fallback_title="") -> dict:
     """A draft's content rebuilt from the model's answer, or HubError (EMPTY) when there is no trip in it. `source` is the post's text (for the stop-name check).
     Nothing of `raw` is kept as it came: every field is re-typed, cut and cleaned, and unknown fields are dropped."""
     raw = raw if isinstance(raw, dict) else {}
-    low = str(source or "").lower()
+    low = _fold(source or "")
+    words = set(_TOKEN.findall(low))
     days = []
     for d in (raw.get("days") if isinstance(raw.get("days"), list) else [])[:MAX_DAYS]:
-        stops = [_stop(s, low) for s in (d.get("stops") if isinstance(d, dict) and isinstance(d.get("stops"), list) else [])[:MAX_STOPS]]
+        stops = [_stop(s, low, words) for s in (d.get("stops") if isinstance(d, dict) and isinstance(d.get("stops"), list) else [])[:MAX_STOPS]]
         if stops:
             first = next((s["name"] for s in stops if s["name"] != UNNAMED), "")
             days.append({"title": first[:MAX_DAY_TITLE] or "Out and about", "note": "", "stops": stops})
@@ -157,7 +195,7 @@ def validate(raw, source, fallback_title="") -> dict:
         place = "other"       # the post never names it: the creator is asked where the trip was
     if place == "other" and (key := pub.place_key(place_name)):
         place, place_name = key, ""     # "Disneyland, Anaheim" is la whatever the model called it
-    tips = [t for t in (_line(t, MAX_TIP) for t in (raw.get("tips") if isinstance(raw.get("tips"), list) else [])) if t][:MAX_TIPS]
+    tips = [t for t in (_line(t, MAX_TIP) for t in (raw.get("tips") if isinstance(raw.get("tips"), list) else [])) if t and _numbers_said(t, low)][:MAX_TIPS]
     stickers = [k for k in hub.TAGS if k in (raw.get("stickers") if isinstance(raw.get("stickers"), list) else [])]
     return {"title": _line(raw.get("title"), MAX_TITLE) or _line(fallback_title, MAX_TITLE) or "My trip", "place": place, "place_name": place_name,
             "days": days, "tips": tips, "stickers": stickers}
@@ -441,7 +479,7 @@ def build(d, src, handle="") -> Itinerary:
         slug=d["slug"], title=d["title"], headline=f"{d['title']}:", accent=f"{name.split()[0]}'s trip", place=place,
         lede=f"{len(days)} day{'s' if len(days) != 1 else ''} in {place}, from {name}'s own post.", days=days,
         tags=[Tag(hub.TAGS[k][0], hub.TAGS[k][1], hub.TAGS[k][2], (-3, 2, -1.5)[n % 3]) for n, k in enumerate(k for k in hub.TAGS if k in d["stickers"])],
-        stats=[(f"{len(days)} day{'s' if len(days) != 1 else ''}", "from the post"), (f"{count} stop{'s' if count != 1 else ''}", "named in the post")], source=source, polaroids=pols, route=place,
+        stats=[(f"{len(days)} day{'s' if len(days) != 1 else ''}", "from the post"), (f"{count} stop{'s' if count != 1 else ''}", "across the days")], source=source, polaroids=pols, route=place,
         author=name, real=True, handle=handle, plan_to=d["place"] if d["place"] in PLACES else "", plan_days=len(days), tips=list(d["tips"]))
 
 
