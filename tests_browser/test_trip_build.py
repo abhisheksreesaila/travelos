@@ -1,11 +1,18 @@
 """F-055: the guided trip builder in a real (headless) browser at phone width: walk every question, preview, save, see it on its days.
 Waits are on selectors and state, never on sleeps."""
 import re
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from playwright.sync_api import expect
 
+from gitaway import catalog
 from tests_browser.helpers import PHONE
+
+
+def day_label(d):
+    """How the date picker names a day for a screen reader: "Friday, October 16"."""
+    return f"{d:%A}, {d:%B} {d.day}"
 
 
 @pytest.fixture
@@ -52,6 +59,11 @@ def next_step(page, title):
 
 def test_walk_the_whole_builder_at_390_and_see_the_trip_on_its_days(phone, base_url):
     page = phone
+    # The trip's dates are relative to the app's "today" (conftest pins catalog.today), and the browser's clock is set to that same day, so the picker opens on the month the trip is in
+    # whatever the real date is. Sixteen days ahead and a four-night stay, as the test always did.
+    leave = catalog.today() + timedelta(days=16)
+    home = leave + timedelta(days=4)
+    page.clock.set_fixed_time(datetime.combine(catalog.today(), datetime.min.time(), tzinfo=timezone.utc) + timedelta(hours=12))
     page.goto(f"{base_url}/trips/build")
     expect(page.locator("#tb-count")).to_have_text("Step 1 of 7")
     expect(page.get_by_label("Trip name")).to_be_visible()
@@ -65,10 +77,14 @@ def test_walk_the_whole_builder_at_390_and_see_the_trip_on_its_days(phone, base_
     next_step(page, "When are you going?")
     # step 2: the range picker
     page.get_by_role("button", name=re.compile("^Leaving:")).click()
-    page.get_by_role("dialog").get_by_role("button", name=re.compile("^Friday, October 16")).click()
-    page.get_by_role("dialog").get_by_role("button", name=re.compile("^Tuesday, October 20")).click()
+    for _ in range(3):      # the picker opens on the month of "today"; the trip may be in the next one
+        if page.get_by_role("dialog").get_by_role("button", name=re.compile("^" + day_label(leave))).count():
+            break
+        page.get_by_role("dialog").get_by_role("button", name="Next month").click()
+    page.get_by_role("dialog").get_by_role("button", name=re.compile("^" + day_label(leave))).click()
+    page.get_by_role("dialog").get_by_role("button", name=re.compile("^" + day_label(home))).click()
     page.get_by_role("button", name="Done").click()
-    assert page.input_value("#tb-start") == "2026-10-16" and page.input_value("#tb-end") == "2026-10-20"
+    assert page.input_value("#tb-start") == leave.isoformat() and page.input_value("#tb-end") == home.isoformat()
     next_step(page, "Who’s going?")
     # step 3: the steppers show only the rows that apply
     expect(page.locator('[data-row="k1"]')).to_be_hidden()
@@ -79,7 +95,7 @@ def test_walk_the_whole_builder_at_390_and_see_the_trip_on_its_days(phone, base_
     fill_all(page, {"k1": "7", "k2": "4", "an1": "Abhi", "ae1": "you@gmail.com", "an2": "Priya"})
     next_step(page, "How are you getting there?")
     # step 4: dates are already the trip's; "I'm not flying" hides the legs
-    assert page.input_value('[name="leg0_depart_date"]') == "2026-10-16" and page.input_value('[name="leg1_depart_date"]') == "2026-10-20"
+    assert page.input_value('[name="leg0_depart_date"]') == leave.isoformat() and page.input_value('[name="leg1_depart_date"]') == home.isoformat()
     page.locator("#tb-flying-no").check()
     expect(page.locator('[data-when="flying"]')).to_be_hidden()
     page.locator("#tb-flying-yes").check()
@@ -88,7 +104,7 @@ def test_walk_the_whole_builder_at_390_and_see_the_trip_on_its_days(phone, base_
                     "leg1_airline": "Alaska Airlines", "leg1_number": "AS 1235", "leg1_from": "LAX", "leg1_to": "SFO", "leg1_depart_time": "14:10", "leg1_arrive_time": "15:37", "leg1_confirmation": "ABCDEF"})
     next_step(page, "Where are you staying?")
     # step 5: check-in and check-out come from the dates; go back and forward to see the answers stay
-    assert page.input_value('[name="hotel0_check_in_date"]') == "2026-10-16" and page.input_value('[name="hotel0_check_out_date"]') == "2026-10-20"
+    assert page.input_value('[name="hotel0_check_in_date"]') == leave.isoformat() and page.input_value('[name="hotel0_check_out_date"]') == home.isoformat()
     fill_all(page, {"hotel0_name": "The Example Hotel Santa Monica", "hotel0_address": "123 Ocean Ave, Santa Monica, CA 90401", "hotel0_confirmation": "987654321"})
     page.click("#tb-back")
     expect(page.locator("#tb-heading")).to_have_text("How are you getting there?")
