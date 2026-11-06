@@ -17,6 +17,7 @@ from gitaway.layout import page
 HEAD = (Link(rel="stylesheet", href="/assets/css/for_creators.css"), Script(src="/assets/js/for_creators.js", defer=True))
 IMPORT = "/creators/import"
 FREE = "Free. Terms shown on day one."
+LEDE = "Paste your blog link, YouTube video or Instagram caption. GitAway drafts the days, you fix what is off, and families can fork your trip into their own plans."
 
 PROMISES = (
     ("spark", "fc-p1", "Under a minute", "Paste your post, glance at the draft, publish. The days, stops and tips are drafted for you; you only fix what is off."),
@@ -35,6 +36,7 @@ FAQ = (
     ("And YouTube?", "We read the title, the description and the chapters. For a better draft, paste the transcript into the box: more of what you said means fewer unnamed stops."),
     ("What about my blog?", "Paste the link. We read the article and offer its pictures (up to two) to pick from, copied without where they were taken."),
     ("What if the draft gets something wrong?", "It happens. A place it is not sure of shows as an unnamed stop, and nothing goes public until you fix it, tick \"This is my post\" and press Publish."),
+    ("Will GitAway's copy compete with my post in Google?", "No. We tell Google not to index this copy, so your post keeps its ranking."),
     ("What does it cost?", "Nothing. Drafting, publishing and your page are free, and the terms are on this page before you start."),
     ("How do I get my marker?", "In Travelpayouts, under Profile. It is a number such as 801445. Save it on your creator settings and it goes on the flight links of your trips."),
 )
@@ -83,7 +85,7 @@ def page_body(signed_in):
         Section(
             Div(Span("For creators", cls="fc-eyebrow"),
                 H1("Turn your post into a trip, ", Span("in under a minute.", cls="fc-accent")),
-                P("Paste your blog link, YouTube video or Instagram caption. GitAway drafts the days, you fix what is off, and families can fork your trip into their own plans.", cls="fc-lede"),
+                P(LEDE, cls="fc-lede"),
                 _paste(signed_in),
                 P(FREE, " You tick \"This is my post\" before anything goes public.", cls="fc-fine", id="fc-free"),
                 cls="fc-copy"),
@@ -104,4 +106,4 @@ def page_body(signed_in):
 def register(app):
     @app.get("/for-creators")
     def for_creators(session):
-        return page("For creators", page_body(bool(ses.current_traveler(session))), current="/for-creators", head=HEAD)
+        return page("For creators", page_body(bool(ses.current_traveler(session))), current="/for-creators", head=HEAD, description=LEDE)

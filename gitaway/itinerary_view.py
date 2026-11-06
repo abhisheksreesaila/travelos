@@ -328,5 +328,7 @@ def itinerary_body(trip: Itinerary, loading: bool = False, saved: bool = False, 
     return Div(_hero(trip, saved, forked), _board(trip), _days(trip), _tips(trip), _yours(trip), blog, _trust(trip) if trip.real else "", SCRIPT, cls="itinerary")
 
 
-def itinerary_page(trip: Itinerary, theme=None, loading: bool = False, saved: bool = False, forked: bool = False, blog=""):
-    return page(trip.title, itinerary_body(trip, loading, saved, forked, blog), theme=resolve_theme(theme, trip), head=(*HEAD, Link(rel="stylesheet", href="/assets/css/scrapbook.css")) if trip.real else HEAD)
+def itinerary_page(trip: Itinerary, theme=None, loading: bool = False, saved: bool = False, forked: bool = False, blog="", noindex: bool = False):
+    """The public page of a trip: shared links preview with its lede and cover (F-196); `noindex` keeps a copy of a creator's post out of search."""
+    return page(trip.title, itinerary_body(trip, loading, saved, forked, blog), theme=resolve_theme(theme, trip), head=(*HEAD, Link(rel="stylesheet", href="/assets/css/scrapbook.css")) if trip.real else HEAD,
+                description=trip.lede, image=trip.polaroids[0].src if trip.polaroids else "", og_type="article", noindex=noindex)
