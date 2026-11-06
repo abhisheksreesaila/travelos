@@ -163,6 +163,20 @@ def test_a_busy_line_puts_the_post_back_in_the_queue_and_the_creator_loses_nothi
     assert (row["kind"], row["status"]) == ("draft", "ready") and jobs.remaining("p1") == left
 
 
+def test_a_post_the_worker_found_the_line_busy_for_is_fetched_once_however_often_it_waits(model, jobs, monkeypatch):
+    web = Web({POST: page()})
+    monkeypatch.setattr(safefetch, "TRANSPORT", web)
+    jobs.enqueue("p1", "Maya", [(POST, "A title")])
+    threads = in_flight("creator-import", 3, "hold", model.entered)
+    assert [jobs.run_one() for _ in range(3)] == [False, False, False]       # three polls while the creators' pool is full
+    model.gate.set()
+    for t in threads:
+        t.join(5)
+    assert jobs.run_one() is True
+    assert web.calls == [POST]                                                # the creator's blog was read once, not once a poll
+    assert [(r["kind"], r["status"]) for r in jobs.listing("p1")] == [("draft", "ready")]
+
+
 def test_a_real_failure_still_fails_the_post(model, jobs, monkeypatch):
     monkeypatch.setattr(safefetch, "TRANSPORT", Web({POST: page()}))
     model.stop, model.answer = "refusal", "x"

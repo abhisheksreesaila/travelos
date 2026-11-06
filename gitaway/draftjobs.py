@@ -134,11 +134,16 @@ def reset_running() -> None:
         db.conn.commit()
 
 
+_gathered: dict = {}      # job id -> the post's text, kept while a busy line sends the job back to the queue, so each poll does not fetch the creator's blog again
+
+
 def _draft(job):
     owner, url, name = job["owner"], job["url"], job["name"]
     if cd.mode() == "sample":     # the local showcase: a fixture draft, nothing fetched and no model asked
         return cd.sample(owner, importsource.offline(url, ""), name, job["id"])
-    return cd.make(owner, owner, importsource.gather(url, ""), name, job["id"])
+    if job["id"] not in _gathered:
+        _gathered[job["id"]] = importsource.gather(url, "")
+    return cd.make(owner, owner, _gathered[job["id"]], name, job["id"])
 
 
 def _drafted(job) -> bool:
@@ -148,6 +153,7 @@ def _drafted(job) -> bool:
 
 
 def _finish(job_id, error) -> None:
+    _gathered.pop(job_id, None)
     with _db() as db:
         if error:
             db.conn.execute(text("UPDATE creator_draft_jobs SET status = 'failed', error = :e WHERE id = :i"), {"e": error, "i": job_id})
