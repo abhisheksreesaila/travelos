@@ -119,6 +119,23 @@ def test_a_link_and_a_few_words_on_such_a_site_still_says_to_paste_the_post(monk
     assert str(e.value) == ASKS_NOT
 
 
+def test_a_link_that_redirects_to_another_host_is_checked_against_that_hosts_robots_txt(monkeypatch):
+    other = "https://elsewhere.example.org/santa-monica-with-kids"
+    w = Web({ROBOTS: (404, {"content-type": "text/html"}, b"no"), POST: (301, {"location": other}, b""), other: page(),
+             "https://elsewhere.example.org/robots.txt": (200, TEXT, b"User-agent: GPTBot\nDisallow: /\n")})
+    monkeypatch.setattr(safefetch, "TRANSPORT", w)
+    with pytest.raises(importsource.Refused) as e:
+        importsource.gather(POST, "")
+    assert str(e.value) == ASKS_NOT
+
+
+def test_a_redirect_to_a_host_that_allows_us_is_read(monkeypatch):
+    other = "https://elsewhere.example.org/santa-monica-with-kids"
+    w = Web({ROBOTS: (404, {"content-type": "text/html"}, b"no"), POST: (301, {"location": other}, b""), other: page()})
+    monkeypatch.setattr(safefetch, "TRANSPORT", w)
+    assert importsource.gather(POST, "").url == other
+
+
 def test_the_captains_pre_draft_of_such_a_post_makes_no_draft_and_says_why(client, setup, monkeypatch):
     serve(monkeypatch, "User-agent: GPTBot\nDisallow: /\n")
     c = browser("cap@example.com")

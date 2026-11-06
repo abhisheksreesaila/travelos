@@ -1126,3 +1126,4 @@ Brief: docs/briefs/creator-import.md · Needs: F-188, F-182 fixes
 - [x] the captain can open and edit an unclaimed pre-draft from /admin before sending its claim link
 - [x] `pixi run draft-creators` refuses (exit 2) unless GITAWAY_DATA_DIR is /data and points at /admin on gitaway.me; docs/morning.html step 4 and docs/setup.md say use /admin
 Tests: `tests/test_place_matching.py`, `test_money_wording.py`, `test_robots.py`, `test_grounding.py`, `test_kids_names.py`, `test_claim_preview.py`, `test_claim_ownership.py`, `test_predraft_edit.py`, `test_draft_creators_script.py`, `tests_browser/test_launch_blockers.py`.
+- [x] review fixes: Tokyo and Shanghai Disneyland Resort map to no place; a link plus pasted text on a site that turns AI away drafts from the text; no marker on flights from a creator whose only trips wait for the captain; robots.txt of a redirect's final host is checked (D-156 to D-159)

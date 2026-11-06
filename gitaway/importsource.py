@@ -141,6 +141,8 @@ def _blog(url, notices, asked=True) -> Material:
         got = safefetch.fetch(url, "html", asked=asked)
     except safefetch.FetchError as e:
         raise SourceError(f"{e} You can paste the text of your post instead.") from None
+    if urlsplit(got.url).netloc != urlsplit(url).netloc and (why := robots.check(got.url, asked)):
+        raise Refused(why)      # a redirect landed on another host: that host's own robots.txt decides too, and the page is not drafted from (F-194)
     page = got.text()
     try:
         import trafilatura
