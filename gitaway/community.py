@@ -48,7 +48,9 @@ _MORE = ("""CREATE TABLE IF NOT EXISTS creator_markers (owner_user TEXT PRIMARY 
     id INTEGER PRIMARY KEY AUTOINCREMENT, handle TEXT NOT NULL, partner TEXT NOT NULL, lane TEXT NOT NULL, own_marker INTEGER NOT NULL, clicked_at TEXT NOT NULL, who TEXT NOT NULL DEFAULT '')""",
          # F-192: a count per trip per day, and who-was-here-today (hashes of the current day only: gitaway/stats.py)
          """CREATE TABLE IF NOT EXISTS trip_days (slug TEXT NOT NULL, day TEXT NOT NULL, views INTEGER NOT NULL DEFAULT 0, forks INTEGER NOT NULL DEFAULT 0, plans INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (slug, day))""",
-         """CREATE TABLE IF NOT EXISTS view_seen (day TEXT NOT NULL, h TEXT NOT NULL, slug TEXT NOT NULL, kind TEXT NOT NULL, PRIMARY KEY (day, h, slug, kind))""")
+         """CREATE TABLE IF NOT EXISTS view_seen (day TEXT NOT NULL, h TEXT NOT NULL, slug TEXT NOT NULL, kind TEXT NOT NULL, PRIMARY KEY (day, h, slug, kind))""",
+         # F-195: Klook links the partner-links API could not make, per day and reason (gitaway/partners/failures.py): no person in it
+         """CREATE TABLE IF NOT EXISTS klook_failures (day TEXT NOT NULL, reason TEXT NOT NULL, n INTEGER NOT NULL DEFAULT 0, last_at TEXT NOT NULL, PRIMARY KEY (day, reason))""")
 # Words a handle cannot be: each is (or may become) a fixed page under /creators/, which would shadow the profile (tests/test_creator_profiles.py walks the app's routes against this set).
 RESERVED_HANDLES = frozenset({"draft", "finish", "done", "new", "import", "settings", "edit", "preview", "photo", "admin", "report", "go", "drafts", "stats"})
 UP = " AND slug NOT IN (SELECT slug FROM takedowns)"   # the live trips: everything not taken down (F-185)
@@ -323,6 +325,6 @@ def clear() -> None:
     with connect() as db:
         db.conn.execute(text("DELETE FROM published"))
         db.conn.execute(text("DELETE FROM creators"))
-        for table in ("creator_markers", "takedowns", "reports", "via_clicks", "fork_counts", "trip_days", "view_seen"):
+        for table in ("creator_markers", "takedowns", "reports", "via_clicks", "fork_counts", "trip_days", "view_seen", "klook_failures"):
             db.conn.execute(text(f"DELETE FROM {table}"))
         db.conn.commit()
