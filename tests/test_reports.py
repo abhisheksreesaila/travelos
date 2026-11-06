@@ -209,8 +209,18 @@ def test_the_captain_gets_in_whatever_the_case_or_spacing_of_the_list(client, tr
     assert client.get("/admin").status_code == 200
 
 
-def test_an_address_that_google_has_not_verified_is_not_the_captain():
-    assert admin.is_admin({"email": "cap@example.com", "note": "unverified"}) is False
+def test_an_address_that_google_has_not_verified_is_not_the_captain(client, monkeypatch):
+    """F-182 M1: the flag is session["verified"] (the "unverified" note exists only when an invitation is waiting), so an unverified address with no invitation was let in."""
+    monkeypatch.setenv("GITAWAY_ADMIN_EMAILS", "cap@example.com")
+    assert admin.is_admin({"email": "cap@example.com", "verified": 0}) is False
+    assert admin.is_admin({"email": "cap@example.com"}) is False
+    assert admin.is_admin({"email": "cap@example.com", "verified": 1}) is True
+    from gitaway import auth
+    real = auth.after_sign_in
+    monkeypatch.setattr(auth, "after_sign_in", lambda session, verified=True: real(session, verified=False))
+    sign_in(client, "cap@example.com")
+    assert client.get("/admin").status_code == 404
+    assert client.post("/admin/takedown", data={"slug": "x"}).status_code == 404
 
 
 def test_the_list_is_read_from_the_environment_never_from_code():

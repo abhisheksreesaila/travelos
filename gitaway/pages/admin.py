@@ -30,7 +30,7 @@ def admin_emails() -> set:
 
 def is_admin(session) -> bool:
     email = str((session or {}).get("email") or "").strip().lower()
-    return bool(email) and email in admin_emails() and (session or {}).get("note") != "unverified"   # a Google address Google has not verified is not proof of who you are
+    return bool(email) and email in admin_emails() and (session or {}).get("verified") == 1   # a Google address Google has not verified is not proof of who you are (members.after_sign_in sets the flag)
 
 
 def commission_summary(rows) -> list:
