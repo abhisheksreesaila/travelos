@@ -1,4 +1,4 @@
-/* F-191: "Put this on your blog" on a creator's own trip page and at /creators/settings. omxqua Coast surfaces (--oq-*), phone first; every control is at least 2.75rem tall
+/* F-191: "Put this on your blog" on a creator's own trip page and at /creators/settings. omxqua Coast surfaces (--oq-*), phone first; every control is at least 44px tall
    (44px at the phone's 16px root). Sizes are rem; no glass, no blur. */
 
 .bb { display: grid; gap: 1rem; padding: 1.125rem; margin-block: 1.5rem; max-width: 40rem; min-width: 0; box-sizing: border-box; border-radius: var(--oq-radius, 1rem); background: var(--oq-surface-1, #fffdf9); border: 1px solid var(--oq-line, #e7e0d4); }
@@ -10,7 +10,8 @@
 .bb-row { display: grid; gap: 0.5rem; }
 .bb-lab { font-weight: 600; font-size: 1rem; }
 .bb-text { width: 100%; box-sizing: border-box; padding: 0.625rem 0.875rem; border-radius: var(--oq-radius-in, 0.75rem); border: 1px solid var(--oq-line, #e7e0d4); background: var(--oq-surface-2, #fff); color: var(--oq-ink, #1d1a16);
-  font: 0.8125rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; resize: none; overflow-wrap: anywhere; }
+  font: 1rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; resize: none; overflow-wrap: anywhere; }
 .bb-text:focus-visible { outline: 0.1667rem solid var(--oq-accent, #c0401c); outline-offset: 0.0625rem; }
-.bb-copy { min-height: 2.75rem; justify-self: start; }
+:root .bb .bb-copy.btn { min-height: 2.75rem; min-width: 2.75rem; justify-self: start; }
 @media (min-width: 1020px) { .bb-row { grid-template-columns: 1fr auto; align-items: end; } .bb-lab { grid-column: 1 / -1; } }
+@media (min-width: 1020px) { :root .bb .bb-copy.btn { min-height: 3.6667rem; min-width: 3.6667rem; } }   /* the laptop root is 12px: the same 44px */
