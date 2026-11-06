@@ -72,7 +72,7 @@ def test_from_a_disneyland_trip_to_an_honest_flight_search_from_the_readers_airp
     expect(page.locator("#ps-lede")).to_contain_text("flying from JFK")
     tap(page.locator("a[data-lane=flight]"), viewport)
     page.wait_for_url("https://www.aviasales.com/**")
-    assert caught[-1].startswith("https://www.aviasales.com/search/JFK") and "LAX" in caught[-1] and f"-flight-{handle}" in caught[-1]
+    assert caught[-1].startswith("https://www.aviasales.com/search/JFK") and "LAX" in caught[-1] and f"_flight_{handle.replace('-', '_')}" in caught[-1]
     page.go_back()
     tap(page.locator("a[data-lane=todo]"), viewport)
     page.wait_for_url("https://klook.tpx.lv/**")
