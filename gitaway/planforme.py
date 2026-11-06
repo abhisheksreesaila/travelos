@@ -183,6 +183,21 @@ def _row(order_id) -> dict | None:
     return _order(r) if r else None
 
 
+def admin_rows() -> list:
+    """Every order of every family, newest first, for the captain's page."""
+    with _db() as db:
+        return [_order(r) for r in db.conn.execute(text("SELECT * FROM plan_orders ORDER BY created_at DESC, id DESC")).mappings()]
+
+
+def totals(rows) -> dict:
+    """What the orders add up to: `paid` and `revenue_cents` for the ones that are paid and kept (paid, building, ready), `refunds` and `refund_cents` for the failed ones that were paid
+    (a refund is due, the captain does it in Stripe), and `ai_cost_micros` (millionths of a dollar) for what the agent cost across all of them."""
+    kept = [r for r in rows if r["status"] in ("paid", "building", "ready")]
+    owed = [r for r in rows if r["status"] == "failed" and r["paid_at"]]
+    return {"paid": len(kept), "revenue_cents": sum(r["amount_cents"] for r in kept), "refunds": len(owed), "refund_cents": sum(r["amount_cents"] for r in owed),
+            "ai_cost_micros": sum(r["ai_cost_micros"] for r in rows)}
+
+
 def set_session(order_id, session_id) -> None:
     """Remember the Stripe Checkout session made for this order, so the webhook can be matched to it."""
     with _db() as db:

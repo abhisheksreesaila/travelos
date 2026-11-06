@@ -15,7 +15,7 @@ import re
 from fasthtml.common import A, Button, Div, Form, H1, H2, Input, Li, Link, Main, P, Section, Span, Ul
 from starlette.responses import RedirectResponse
 
-from gitaway import affiliate, catalog, community, partners, reports, session as ses, showcase, stats
+from gitaway import affiliate, catalog, community, partners, planforme as pfm, reports, session as ses, showcase, stats
 from gitaway.icons import icon
 from gitaway.layout import page
 from gitaway.pages import creatorclaim as claims
@@ -75,6 +75,25 @@ def _report(r):
               cls="ad-report", id=f"report-{r['id']}")
 
 
+STATUS_WORDS = {"awaiting_payment": "Waiting for payment", "paid": "Paid", "building": "Building", "ready": "Ready", "failed": "Failed"}
+
+
+def _dollars(micros) -> str:
+    return f"${micros / 1_000_000:.3f}"
+
+
+def _order(o):
+    """One Plan it for me order (F-193): who, where, status, what it brought in and what the agent cost; a failed one that was paid is a refund due."""
+    owed = o["status"] == "failed" and o["paid_at"]
+    i = o["intake"]
+    return Li(Div(Span(f"#{o['id'][:8]}", cls="ad-name"), Span(STATUS_WORDS[o["status"]], cls="ad-state " + ("is-down" if o["status"] == "failed" else "is-live" if o["status"] == "ready" else "")),
+                  Span("Refund due", cls="ad-state is-down", id=f"refund-{o['id'][:8]}") if owed else "", Span(o["email"], cls="ad-meta")),
+              P(f"{i['where']} · {i['start']} to {i['end']} · {i['adults']} adults, {len(i['kids'])} kids", cls="ad-meta"),
+              P(f"{catalog.money(o['amount_cents'])} · agent {_dollars(o['ai_cost_micros'])} · {o['ai_tokens_in']:,} in, {o['ai_tokens_out']:,} out" + (f" · {o['ai_model']}" if o["ai_model"] else "")
+                + (f" · {o['error']}" if o["error"] else ""), cls="ad-meta"),
+              cls="ad-report", id=f"pfm-{o['id'][:8]}")
+
+
 def admin_page(drafted=()):
     people = community.real_creators()
     every = community.creators_all()
@@ -84,12 +103,18 @@ def admin_page(drafted=()):
     summary = commission_summary(sheet)
     total = sum(s[3] for s in summary)
     rep = reports.all_reports()
-    cards = (("Creators", f"{len(people)} of {GOAL}", "ad-goal"), ("Live trips", str(live), "ad-live"), ("Reports", str(len(rep)), "ad-reports"), ("Estimated commission", catalog.money(total), "ad-commission"))
+    orders = pfm.admin_rows()
+    pt = pfm.totals(orders)
+    cards = (("Creators", f"{len(people)} of {GOAL}", "ad-goal"), ("Live trips", str(live), "ad-live"), ("Reports", str(len(rep)), "ad-reports"), ("Estimated commission", catalog.money(total), "ad-commission"),
+             ("Plan it for me", f"{pt['paid']} paid · {catalog.money(pt['revenue_cents'])}", "ad-pfm"), ("Refunds due", f"{pt['refunds']} · {catalog.money(pt['refund_cents'])}", "ad-refunds"),
+             ("Agent cost", _dollars(pt["ai_cost_micros"]), "ad-pfm-cost"))
     return page("Admin", Main(
         Div(H1("Admin", cls="ad-title"),
             Div(*[Div(Span(label, cls="ad-k"), Span(value, cls="ad-v", id=i)) for label, value, i in cards], cls="ad-cards"),
             P(f"{skipped} {'family' if skipped == 1 else 'families'} could not be read, so {'its' if skipped == 1 else 'their'} clicks are not in these totals.", role="alert", cls="ad-meta", id="ad-skipped") if skipped else "",
             Div(Span(cls="ad-bar-fill", style=f"width:{min(100, round(100 * len(people) / GOAL))}%"), cls="ad-bar", role="img", aria_label=f"{len(people)} of {GOAL} creators"),
+            Section(H2("Plan it for me orders"), P("Refunds are yours, by hand in Stripe: a failed order that was paid says Refund due.", cls="ad-meta"),
+                    Ul(*[_order(o) for o in orders], cls="ad-list", id="ad-orders") if orders else P("No orders yet.", cls="ad-meta", id="ad-no-orders"), cls="ad-sec"),
             claims.section(drafted),
             Section(H2("Reports"), Ul(*[_report(r) for r in rep], cls="ad-list", id="ad-report-list") if rep else P("No reports.", cls="ad-meta", id="ad-no-reports"), cls="ad-sec"),
             Section(H2("Creators and trips"),

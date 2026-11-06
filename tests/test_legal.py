@@ -7,7 +7,7 @@ import pytest
 PRIVACY_PHRASES = ["your email address and your Google account number", "we do not keep them", "trips, plans", "notes", "messages", "photos", "time and place", "phone numbers",
                    "push subscriptions", "passkeys", "Your family sees", "masked email", "not shown to the family", "can read the stored data", "Google sign-in", "Railway", "OpenStreetMap",
                    "place text only", "Nominatim", "router.project-osrm.org", "pairs of coordinates", "tile.openstreetmap.org", "Google Fonts", "encrypted", "confirmation numbers", "people you invite", "server logs, which can include your email address, for example when a sign-in fails", "Apple and Google push services", "Azure OpenAI", "When you tap Convert", "When you use Ask GitAway", "the plan for that day", "plan notes and booking titles", "the parts and steps with who is on each", "the first names of the family", "We never add emails, phone numbers, confirmation numbers, prices or photos", "never what was in it", "Sarvam AI (India)", "When you record your voice in the Ask box", "does not keep the recording or the words", "do not sell", "do not show ads", "deleted"]
-TERMS_PHRASES = ["as-is", "does not book anything", "does not take payments", "responsible for what you add", "remove content", "change GitAway or stop it",
+TERMS_PHRASES = ["as-is", "does not book anything", "responsible for what you add", "remove content", "change GitAway or stop it",
                  "without any warranty", "United States", "not legal advice"]
 
 
@@ -55,3 +55,21 @@ def test_the_privacy_page_names_both_cookies_the_partner_links_anthropic_and_the
                    "How readers of a creator's trip are counted", "Your address and the name of your browser are never stored"):
         assert phrase in text, phrase
     assert "One cookie keeps you signed in" not in text
+
+
+def test_plan_it_for_me_is_in_the_privacy_page_and_the_terms_and_the_terms_no_longer_say_gitaway_takes_no_payments(client):
+    """F-193: Stripe takes a payment, Claude Sonnet reads the intake, and an order keeps personal data until it is deleted. The old terms said GitAway "does not take payments": it now takes one."""
+    flat = lambda path: re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", client.get(path).text)).replace("&#x27;", "'")
+    privacy, terms = flat("/privacy"), flat("/terms")
+    for phrase in ("Plan it for me orders: where you asked to go, the dates, your home airport, how many adults and the ages of any kids, your budget and pace, what you typed under must-dos, your email address, the amount and Stripe's code for the payment, and the trip we built",
+                   "We do not keep your card number",
+                   "Stripe takes the payment for Plan it for me", "You type your card on Stripe's own page, so GitAway never sees or keeps your card number",
+                   "Stripe gets your email address (for the receipt) and the amount, and keeps its own record of the payment under its own rules",
+                   "Anthropic (Claude Sonnet) builds your trip when you order Plan it for me", "It never gets your name, your email address or anything from your family's other trips",
+                   "Your Plan it for me orders go too. Stripe keeps its own record of a payment."):
+        assert phrase in privacy, phrase
+    for phrase in ("does not book anything", "The one thing you can pay GitAway for is Plan it for me: a one-time fee, shown before you pay, taken on Stripe's page",
+                   "Not useful? Reply within 7 days for a full refund.", "If we cannot build your trip, we refund you in full",
+                   "it can be wrong, it never states prices or opening hours, and it is your job to check every place, time and booking before you rely on it"):
+        assert phrase in terms, phrase
+    assert "does not take payments" not in terms

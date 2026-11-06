@@ -16,7 +16,9 @@ Azure OpenAI is a stopgap for the October 2026 trip. Every call goes through `gi
 
 | `creator-import` | A creator pastes a blog link, a YouTube link, an Instagram caption or text; the model drafts the trip (title, place, days, stops with times where stated, tips, stickers) as strict JSON for the creator to review in the publish editor (F-183, `gitaway/creatordraft.py`). Claude Haiku 5.5 through the Anthropic provider (below). | Typing a trip in from a post by hand. The post is free text in any layout, so nothing rule-based can read it. The model's answer is never trusted: `creatordraft.validate()` rebuilds it, and unsure places become "Unnamed stop". | F-183 |
 
-`convert`, `speak`, `around-you`, `transcribe` and `creator-import` exist today; the others are named so the log and the report already have a place for them.
+| `plan-for-me` | Plan it for me (F-193, `gitaway/planforme.py`): a family has paid $29 and the model builds their whole trip, day by day, from the intake (where, dates, home airport, adults and kids' ages, budget, pace, must-dos, the title of a creator's trip if they started from one) as strict JSON. Claude Sonnet 5.5 through the Anthropic provider, effort `medium`, `max_tokens` 16000. | A person planning every day by hand. Free text in, a structured calendar out; nothing rule-based could do it. The answer is never trusted: `planforme.validate()` rebuilds it (no prices, no opening hours, an unsure place has no name, times that fit the calendar, links and emails removed, days past the trip dropped). | F-193 |
+
+`convert`, `speak`, `around-you`, `transcribe`, `creator-import` and `plan-for-me` exist today; the others are named so the log and the report already have a place for them.
 
 ## What is logged
 
@@ -43,6 +45,10 @@ Settings only (environment variables), no code change:
 | `GITAWAY_AI_ENDPOINT_<JOB>`, `GITAWAY_AI_KEY_<JOB>` | A different provider for one job: any OpenAI-compatible `/openai/v1` endpoint. |
 
 `<JOB>` is the job name in capitals with `-` as `_` (`AROUND_YOU`).
+
+### Claude Sonnet 5.5 (`plan-for-me`, F-193)
+
+Also the Anthropic provider and the same `ANTHROPIC_API_KEY`, with its own defaults: model `claude-sonnet-5-5` ($2.00 in / $10.00 out per million tokens, from the Claude API model table of 2026-10-06), effort `medium`, `max_tokens` 16000, a 240 second limit. `GITAWAY_AI_MODEL_PLAN_FOR_ME`, `GITAWAY_AI_EFFORT_PLAN_FOR_ME` and `GITAWAY_AI_PROVIDER_PLAN_FOR_ME` change them. It is a paid product, so the cost is kept on the order: `ai.call_json(..., usage={})` adds the model and the tokens of every call (a failed one too) and `planforme.save_result` stores tokens in and out and the cost in millionths of a dollar; `/admin` lists them per order. A 14-day family trip is about 6,000 tokens in and 5,000 out, roughly $0.06. The log row in `ga_ai_usage` is unchanged: never the prompt or the answer. No server-side refusal fallback is set: a refusal fails the order and the buyer is refunded.
 
 ### Claude Haiku 5.5 (`creator-import`, F-183)
 
