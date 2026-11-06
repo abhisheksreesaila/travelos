@@ -26,7 +26,7 @@ HIDDEN = ("/share",  # the old one-tap demo share (F-022); real trips are publis
           "/creators/draft", "/creators/finish", "/creators/done")  # the paste-a-link import is simulated (F-023)
 # These exist off the showcase only once a real trip is published (F-181); then they list and fork real content alone.
 REAL = ("/community", "/discover", "/creators", "/forks", "/save", "/unsave", "/fork")
-REAL_ALWAYS = ("/creators/import", "/creators/settings")   # a creator's import of their own post (F-183) exists off the showcase before anyone has published: it is how the first trip gets published
+REAL_ALWAYS = ("/creators/import", "/creators/settings", "/creators/drafts")   # (F-190: and their list of drafts and a batch of their posts) a creator's import of their own post (F-183) exists off the showcase before anyone has published: it is how the first trip gets published
 _NOT_ITINERARY = ("build", "import", "switch")  # /trips/<word> routes that are the family's own
 _ITINERARY = re.compile(r"/trips/([^/]+)/?")
 

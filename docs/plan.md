@@ -1095,10 +1095,11 @@ Needs: F-183
 - [x] the installed app is a share target (Web Share Target in the manifest): sharing a YouTube video, Instagram post or blog page to GitAway opens the import with the link filled in
 - [x] signed out: sign in, then land on the same filled-in import
 
-## F-190 All my posts at once [todo]
+## F-190 All my posts at once [review]
 Needs: F-183
-- [ ] paste a blog's address: GitAway reads its sitemap or feed (safe fetcher), lists trip-like posts, the creator ticks which to draft (max 20 at a time, counted against the daily limit)
-- [ ] drafts appear in a "My drafts" list to approve one by one
+- [x] paste a blog's address on the import page ("Import several posts"): GitAway reads its sitemap (index followed one level, at most 2,000 addresses) or its feed (found on the home page) through the safe fetcher in a thread, keeps the creator's own site only, ranks trip-like posts by words (no AI) and lists up to 50 with titles and dates; the creator ticks up to 20, each counted against the daily limit and the site ceiling, and is told how many drafts are left
+- [x] drafting runs in the background: one row per post in a job table, worker threads (one post at a time per person), queued again after a restart; the page polls every few seconds; drafts land in My drafts (`/creators/drafts`: drafting, ready, failed, published; open, delete), the one list every draft shows on, admin-made ones included once claimed (F-188)
+- [x] local showcase: fixtures, no network. Tests: `tests/test_blogscan.py` (parsing, malicious XML, same-site, ranking, limits), `tests/test_draftjobs.py`, `tests/test_creator_batch.py`, `tests/test_event_loop.py`, `tests_browser/test_creator_batch.py` (390 and 1440, shots `docs/report/f190-*.png`)
 
 ## F-191 A "Plan this trip on GitAway" button for their blog [review]
 Needs: F-181

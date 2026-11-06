@@ -18,9 +18,9 @@ from tests.creator_import_support import Model, page
 from tests.test_signin import EMAILS
 
 ROOT = Path(__file__).resolve().parent.parent / "gitaway"
-BLOCKING = re.compile(r"^(ai\.(call_json|transcribe)|safefetch\.fetch|importsource\.(gather|offline)|(cd|creatordraft)\.\w+|expedia\.pdf_text|geo\.\w+|photos\.\w+|time\.sleep|requests\.\w+|urllib\.\w+|httpx\.\w+|_read)$")
+BLOCKING = re.compile(r"^(ai\.(call_json|transcribe)|safefetch\.fetch|importsource\.(gather|offline)|blogscan\.(discover|sample)|(dj|draftjobs)\.\w+|(cd|creatordraft)\.\w+|expedia\.pdf_text|geo\.\w+|photos\.\w+|time\.sleep|requests\.\w+|urllib\.\w+|httpx\.\w+|_read)$")
 # One-row reads and writes in the local SQLite file are fine on the loop; these are the only listed calls that are.
-FINE = {("gitaway/pages/creatorimport.py", "cd.get")}
+FINE = {("gitaway/pages/creatorimport.py", "cd.get"), ("gitaway/pages/creatordrafts.py", "cd.mode"), ("gitaway/pages/creatordrafts.py", "dj.remaining")}
 
 
 def _own_calls(fn):
@@ -101,3 +101,28 @@ def test_healthz_answers_at_once_while_a_creators_slow_blog_is_being_fetched(liv
     t.join(15)
     assert ok.status_code == 200 and quick < 0.5, f"/healthz took {quick:.2f}s while a fetch was in flight"
     assert result["r"].status_code == 303      # and the draft still came out
+
+
+def test_healthz_answers_at_once_while_a_blogs_sitemap_is_being_fetched_for_the_batch_picker(live, monkeypatch):
+    """F-190: scanning a blog's sitemap goes through the thread pool too."""
+    from gitaway import ai, safefetch
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-not-a-real-key-0000")
+    monkeypatch.setattr(ai, "ANTHROPIC_TRANSPORT", Model())
+    monkeypatch.setattr(safefetch, "RESOLVER", lambda host: ["93.184.216.34"])
+
+    def slow(url, ip, timeout, kind):
+        time.sleep(2.0)
+        return 200, {"content-type": "application/xml"}, b'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://blog.example.com/a-trip-guide</loc></url></urlset>'
+    monkeypatch.setattr(safefetch, "TRANSPORT", slow)
+    creator = httpx.Client(base_url=live, timeout=20)
+    assert creator.post("/signin", data={"email": EMAILS["ari"], "next": "/", "intent": "save"}).status_code in (200, 303)
+    result = {}
+    t = threading.Thread(target=lambda: result.update(r=creator.post("/creators/drafts/scan", data={"site": "https://blog.example.com"})))
+    t.start()
+    time.sleep(0.5)
+    started = time.monotonic()
+    ok = httpx.get(live + "/healthz", timeout=10)
+    quick = time.monotonic() - started
+    t.join(15)
+    assert ok.status_code == 200 and quick < 0.5, f"/healthz took {quick:.2f}s while a sitemap fetch was in flight"
+    assert result["r"].status_code == 200 and "a-trip-guide" in result["r"].text
