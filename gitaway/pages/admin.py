@@ -68,7 +68,7 @@ def _report(r):
     trip = community.get(r["target"], hidden=True) if r["kind"] == "trip" else None
     name = trip["title"] if trip else r["target"]
     href = f"/trips/{r['target']}" if r["kind"] == "trip" else f"/creators/{r['target']}"
-    return Li(Div(Span(reports.REASONS.get(r["reason"], r["reason"]), cls="ad-reason"), Span(r["created_at"][:16].replace("T", " "), cls="ad-meta")),
+    return Li(Div(Span(reports.REASONS.get(r["reason"], r["reason"]), cls="ad-reason"), Span("New", cls="ad-new-chip") if not r["seen"] else "", Span(r["created_at"][:16].replace("T", " "), cls="ad-meta")),
               P(A(name, href=href, cls="ad-link"), f" ({'trip' if r['kind'] == 'trip' else 'creator'})", cls="ad-meta"),
               P(r["note"], cls="ad-note") if r["note"] else "", P(f"Reply to: {r['email']}", cls="ad-meta") if r["email"] else "",
               (_button("restore", r["target"], "Restore", "") if community.is_down(r["target"]) else _button("takedown", r["target"], "Take down", "ad-danger")) if trip else "",
@@ -84,6 +84,9 @@ def admin_page(drafted=()):
     summary = commission_summary(sheet)
     total = sum(s[3] for s in summary)
     rep = reports.all_reports()
+    fresh = sum(1 for r in rep if not r["seen"])
+    if fresh:
+        reports.mark_seen(rep)      # this response is what shows them as new: the next page load will not
     cards = (("Creators", f"{len(people)} of {GOAL}", "ad-goal"), ("Live trips", str(live), "ad-live"), ("Reports", str(len(rep)), "ad-reports"), ("Estimated commission", catalog.money(total), "ad-commission"))
     return page("Admin", Main(
         Div(H1("Admin", cls="ad-title"),
@@ -91,7 +94,7 @@ def admin_page(drafted=()):
             P(f"{skipped} {'family' if skipped == 1 else 'families'} could not be read, so {'its' if skipped == 1 else 'their'} clicks are not in these totals.", role="alert", cls="ad-meta", id="ad-skipped") if skipped else "",
             Div(Span(cls="ad-bar-fill", style=f"width:{min(100, round(100 * len(people) / GOAL))}%"), cls="ad-bar", role="img", aria_label=f"{len(people)} of {GOAL} creators"),
             claims.section(drafted),
-            Section(H2("Reports"), Ul(*[_report(r) for r in rep], cls="ad-list", id="ad-report-list") if rep else P("No reports.", cls="ad-meta", id="ad-no-reports"), cls="ad-sec"),
+            Section(H2("Reports", Span(f"{fresh} new", cls="ad-badge", id="ad-new") if fresh else ""), Ul(*[_report(r) for r in rep], cls="ad-list", id="ad-report-list") if rep else P("No reports.", cls="ad-meta", id="ad-no-reports"), cls="ad-sec"),
             Section(H2("Creators and trips"),
                     Ul(*[_creator(c, community.rows(kind="scrapbook", owner=c["owner_user"], hidden=True), clicks) for c in every], cls="ad-list", id="ad-creators") if every else P("Nobody has published yet.", cls="ad-meta"),
                     cls="ad-sec"),
