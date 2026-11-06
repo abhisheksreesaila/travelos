@@ -11,12 +11,14 @@ pypdf = ">=6.19.0,<7"
 pillow = ">=12.3.0,<13"
 pillow-heif = ">=1.8.0,<2"
 pypdfium2 = ">=5.13.0,<6"
+trafilatura = ">=2.0.0,<3"
 
 [pypi-dependencies]
 python-fasthtml = ">=0.14.13"
 fh-saas = ">=0.9.14"
 pywebpush = ">=2.5.0, <3"
 webauthn = ">=3.0.1, <4"
+anthropic = ">=2.6.0, <3"
 
 [feature.test.dependencies]  # tools for the tests only: the production image (environment "prod") leaves them out
 pytest = "*"
