@@ -2,7 +2,7 @@
 
 Anyone, signed in or not, may report a live trip or a creator who has one: a reason from a short list, an optional note and an optional email address for a reply.
 A report hides nothing; it reaches the captain's admin page (gitaway/pages/admin.py), where one click takes the trip down. It also tells the captain it is there (F-196): one WARNING line in the
-server log, a "new" badge on /admin until the captain has looked, and an email through fh-saas to every admin when SMTP is set (`notify`).
+server log, a "N new" count in the captain's account menu and header and on /admin until the captain presses "Mark all as read", and an email through fh-saas to every admin when SMTP is set (`notify`).
 
 Limits: 5 reports an hour from one network address (kept only as a salted hash) or one signed-in person, and 60 an hour in all from signed-out callers (a signed-in person is never held up by it, so a flood from many addresses cannot silence real reporters; reaching it logs a warning), counted from the reports table itself, so
 a restart or a second worker does not reset them. A filled-in honeypot field is dropped without a trace in the answer (the page says "thanks" like any other).
@@ -104,7 +104,7 @@ def _run(fn, *args):
 
 def notify(kind, target, reason) -> None:
     """Tell the captain a report arrived: one WARNING line (the kind, the page and the reason: never the reporter's note or address), and an email when SMTP is set.
-    The /admin badge needs nothing here: it counts the reports not yet seen. Never raises, so a mail problem cannot lose a report."""
+    The badges need nothing here: they count the reports not yet marked read. Never raises, so a mail problem cannot lose a report."""
     log.warning("new report: %s %s, reason %s (read it at /admin)", kind, target, reason)
     _run(_email, kind, target, reason)
 
@@ -136,9 +136,14 @@ def all_reports() -> list:
         return [dict(r._mapping) for r in db.conn.execute(text("SELECT id, kind, target, reason, note, email, created_at, seen FROM reports ORDER BY id DESC")).fetchall()]
 
 
-def mark_seen(rows) -> None:
-    """The reports in `rows` (what the captain is being shown) are seen; one that came in meanwhile is not, so the next visit still flags it."""
-    shown = max((r["id"] for r in rows), default=0)
+def unseen() -> int:
+    """How many reports the captain has not marked read (the number on /admin, the account menu and the header)."""
     with connect() as db:
-        db.conn.execute(text("UPDATE reports SET seen = 1 WHERE seen = 0 AND id <= :m"), {"m": shown})
+        return db.conn.execute(text("SELECT COUNT(*) FROM reports WHERE seen = 0")).scalar()
+
+
+def mark_seen(upto) -> None:
+    """The reports up to id `upto` (the newest the captain was shown when they pressed "Mark all as read") are read; one that came in meanwhile is not."""
+    with connect() as db:
+        db.conn.execute(text("UPDATE reports SET seen = 1 WHERE seen = 0 AND id <= :m"), {"m": upto})
         db.conn.commit()

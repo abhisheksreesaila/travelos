@@ -69,17 +69,75 @@ def badge(html):
     return m.group(1) if m else None
 
 
-def test_the_admin_page_shows_how_many_reports_are_new_and_marks_them_until_the_captain_has_looked(client, trip, sent, monkeypatch):
+def test_the_admin_page_shows_how_many_reports_are_new_until_the_captain_marks_them_read(client, trip, sent, monkeypatch):
     cap = captain(client, monkeypatch)
     assert badge(cap.get("/admin").text) is None                      # nothing to say
     report(client, trip["slug"], "copyright", note="First")
     report(client, trip["slug"], "spam", note="Second", ip="203.0.113.8")
     html = cap.get("/admin").text
     assert badge(html) == "2 new" and html.count('class="ad-new-chip"') == 2
-    assert badge(cap.get("/admin").text) is None                      # seen
+    assert badge(cap.get("/admin").text) == "2 new"                   # looking is not reading: only the button clears it
+    cap.post("/admin/seen", data={"upto": str(max(r["id"] for r in reports.all_reports()))}, follow_redirects=False)
+    assert badge(cap.get("/admin").text) is None
     report(client, trip["slug"], "other", note="Third", ip="203.0.113.9")
     html = cap.get("/admin").text
     assert badge(html) == "1 new" and html.count('class="ad-new-chip"') == 1 and html.index('class="ad-new-chip"') < html.index("Third") < html.index("Second")      # the chip is on Third only
+
+
+def test_a_report_that_came_in_after_the_page_was_drawn_stays_new_when_the_captain_marks_what_they_saw(client, trip, sent, monkeypatch):
+    cap = captain(client, monkeypatch)
+    report(client, trip["slug"], "copyright", note="First")
+    shown = cap.get("/admin").text
+    upto = re.search(r'name="upto" value="(\d+)"', shown).group(1)
+    report(client, trip["slug"], "spam", note="Second", ip="203.0.113.8")
+    r = cap.post("/admin/seen", data={"upto": upto}, follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"] == "/admin"
+    assert badge(cap.get("/admin").text) == "1 new"
+
+
+def test_nobody_but_the_captain_can_mark_reports_read(client, trip, sent, monkeypatch):
+    cap = captain(client, monkeypatch)
+    report(client, trip["slug"])
+    assert client.post("/admin/seen", data={"upto": "99"}, follow_redirects=False).status_code == 404
+    sign_in(client, "ari")
+    assert client.post("/admin/seen", data={"upto": "99"}, follow_redirects=False).status_code == 404
+    assert badge(cap.get("/admin").text) == "1 new"
+
+
+def test_the_captain_sees_the_new_count_in_the_account_menu_and_the_header_on_any_page_and_nobody_else_does(client, trip, sent, monkeypatch):
+    cap = captain(client, monkeypatch)
+    report(client, trip["slug"], "copyright")
+    report(client, trip["slug"], "spam", ip="203.0.113.8")
+    def link(html, ident):
+        m = re.search(rf'<a [^>]*id="{ident}"[^>]*>.*?</a>', html, re.S)
+        return re.sub(r"<[^>]+>", " ", m.group(0)).split() if m else None, m and 'href="/admin"' in m.group(0)
+
+    html = cap.get("/family").text
+    assert link(html, "ga-tb-admin") == (["Admin", "2", "new"], True) and link(html, "ga-admin-link") == (["Admin", "(2", "new)"], True)
+    assert "ga-tb-dot-new" in html                                     # the avatar carries a dot too, so the menu is worth opening
+    cap.post("/admin/seen", data={"upto": str(max(r["id"] for r in reports.all_reports()))})
+    html = cap.get("/family").text
+    assert link(html, "ga-tb-admin") == (["Admin"], True) and link(html, "ga-admin-link") == (["Admin"], True) and "ga-tb-dot-new" not in html     # still a way in, with nothing to count
+    other = client.__class__(client.app, client=("127.0.0.1", 50002))
+    sign_in(other, "ari")
+    html = other.get("/family").text
+    assert "ga-tb-admin" not in html and "ga-admin-link" not in html and "/admin" not in html
+
+
+def test_a_database_made_before_the_seen_column_gains_it_and_its_old_reports_read_as_unseen(tmp_path, monkeypatch):
+    import sqlite3
+    from gitaway import community
+    path = tmp_path / "old.db"
+    old = sqlite3.connect(path)
+    old.execute("CREATE TABLE reports (id INTEGER PRIMARY KEY AUTOINCREMENT, kind TEXT NOT NULL, target TEXT NOT NULL, reason TEXT NOT NULL, note TEXT NOT NULL DEFAULT '', "
+                "email TEXT NOT NULL DEFAULT '', reporter TEXT NOT NULL DEFAULT '', ip_hash TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL)")
+    old.execute("INSERT INTO reports (kind, target, reason, created_at) VALUES ('trip', 'old-one', 'spam', '2026-01-01T00:00:00')")
+    old.commit(); old.close()
+    monkeypatch.setattr(community, "_url", lambda: f"sqlite:///{path}")
+    (row,) = reports.all_reports()
+    assert row["target"] == "old-one" and row["seen"] == 0
+    reports.mark_seen(row["id"])
+    assert [r["seen"] for r in reports.all_reports()] == [1]
 
 
 # ---- the email -------------------------------------------------------------------------------------------------------------------------

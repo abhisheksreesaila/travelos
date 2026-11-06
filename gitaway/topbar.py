@@ -80,17 +80,26 @@ def trip_menu(*label, sum_cls=""):
     return _trip_pick(trips, b, phone=True, label=label, sum_cls=sum_cls) if trips and b is not None else ""
 
 
-def _me(who):
-    """The avatar and its menu: who is signed in, People and invites, (the community, only with the showcase on) and Sign out."""
+def _me(who, new=0, admin=False):
+    """The avatar and its menu: who is signed in, People and invites, (the community, only with the showcase on), for the captain Admin with the count of reports not yet read
+    (F-196: a dot on the avatar says there is one) and Sign out."""
     extra = ([A(icon("star", 16, 2.2), "Community trips", href="/community", cls="ga-tb-item")] if showcase.community_open() else []) + [A(icon("pencil", 16, 2.2), "For creators", href="/for-creators", cls="ga-tb-item")]   # F-186: the creators' page exists live from day one
     return Details(
-        Summary(Span(who.initials, cls=f"ga-tb-av fill-{who.color}"), cls="ga-tb-sum ga-tb-sum-me", aria_label=f"{who.name}: account menu"),
+        Summary(Span(who.initials, cls=f"ga-tb-av fill-{who.color}"), Span(cls="ga-tb-dot-new") if new else "", cls="ga-tb-sum ga-tb-sum-me",
+                aria_label=f"{who.name}: account menu" + (f", {new} new report{'s' if new != 1 else ''}" if new else "")),
         Div(Span(who.name, cls="ga-tb-who"), Span(who.blurb, cls="ga-tb-mail"),
             A(icon("users", 16, 2.2), "People and invites", href="/family", cls="ga-tb-item"),
             *extra,
+            A(icon("shield", 16, 2.2), "Admin", Span(f"{new} new", cls="ga-tb-new") if new else "", href="/admin", cls="ga-tb-item", id="ga-tb-admin") if admin else "",
             Form(Button(icon("lock", 16, 2.2), "Sign out", type="submit", cls="ga-tb-item ga-tb-out"), action="/signout", method="post"),
             cls="ga-tb-pop ga-tb-pop-me"),
         cls="ga-tb-menu ga-tb-account")
+
+
+def _admin_notice(session):
+    """(reports not yet read, is the captain): the count shows to an admin only, and (0, False) for everyone else."""
+    from gitaway.pages import admin  # here, not at the top: that module draws pages with the shell, which draws this bar
+    return (admin.new_reports(session), True) if admin.is_admin(session) else (0, False)
 
 
 def bar(path=None):
@@ -119,5 +128,5 @@ def bar(path=None):
         Span(cls="ga-tb-sp"),
         _trip_pick(trips, b) if has_trip else "",
         A(icon("life", 15, 2.4), Span("SOS"), href=tripcanvas.curl(sos=True), cls="ga-tb-sos", aria_label="Emergency: call 911 and your people") if has_trip else "",
-        _me(who),
+        _me(who, *_admin_notice(session)),
         cls="ga-topbar", data_topbar="1")

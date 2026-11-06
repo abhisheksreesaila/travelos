@@ -118,7 +118,10 @@ def account(traveler=None):
     traveler = traveler or session.request_traveler()
     if not traveler:
         return A("Sign in", href=session.signin_href(), cls="btn btn-sm")
+    from gitaway import topbar  # here, not at the top: topbar reads the family through gitaway.session
+    new, captain = topbar._admin_notice(session.request_session())
     return Div(
+        A(f"Admin ({new} new)" if new else "Admin", href="/admin", cls="ga-admin-link", id="ga-admin-link") if captain else "",     # F-196: the captain's way in, with the reports not yet read
         A(avatar(traveler), href="/family", cls="ga-me", aria_label="Your family and who is in it", title=traveler.name),  # F-043: the family page
         Form(Button("Sign out", type="submit", cls="ga-signout"), action="/signout", method="post"),
         cls="ga-account",

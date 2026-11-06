@@ -3,12 +3,14 @@
 GET  /admin                a summary, the reports, every creator with their trips (take down / restore), and the commission figures (moved here from /partners)
 POST /admin/takedown       hide a published trip and its public photos
 POST /admin/restore        bring it back
+POST /admin/seen           mark the reports up to an id read (F-196): the "N new" count shows on /admin, in the account menu and in the header until then
 
 Who is an admin: the sign-in emails listed in GITAWAY_ADMIN_EMAILS (comma or space separated, any case), never one written in code. For everyone else, signed in or
 not, every address here answers 404 as if there were no such page. Both POSTs also check the request came from our own page (reports.same_site), on top of the
 SameSite=Lax session cookie. They change no family plan, so gitaway/access.py lists them as open to every role: the check is here.
 """
 
+import logging
 import os
 import re
 
@@ -22,6 +24,7 @@ from gitaway.pages import creatorclaim as claims
 from gitaway.partners import log
 
 GOAL = 150
+logger = logging.getLogger(__name__)
 HEAD = (Link(rel="stylesheet", href="/assets/css/admin.css"), *claims.HEAD)
 
 
@@ -75,6 +78,17 @@ def _report(r):
               cls="ad-report", id=f"report-{r['id']}")
 
 
+def new_reports(session) -> int:
+    """How many reports the captain has not marked read: 0 for anyone who is not an admin, and when the count cannot be read (a page must not fail for a badge)."""
+    if not is_admin(session):
+        return 0
+    try:
+        return reports.unseen()
+    except Exception:  # noqa: BLE001
+        logger.exception("could not count the new reports")
+        return 0
+
+
 def admin_page(drafted=()):
     people = community.real_creators()
     every = community.creators_all()
@@ -85,8 +99,6 @@ def admin_page(drafted=()):
     total = sum(s[3] for s in summary)
     rep = reports.all_reports()
     fresh = sum(1 for r in rep if not r["seen"])
-    if fresh:
-        reports.mark_seen(rep)      # this response is what shows them as new: the next page load will not
     cards = (("Creators", f"{len(people)} of {GOAL}", "ad-goal"), ("Live trips", str(live), "ad-live"), ("Reports", str(len(rep)), "ad-reports"), ("Estimated commission", catalog.money(total), "ad-commission"))
     return page("Admin", Main(
         Div(H1("Admin", cls="ad-title"),
@@ -94,7 +106,8 @@ def admin_page(drafted=()):
             P(f"{skipped} {'family' if skipped == 1 else 'families'} could not be read, so {'its' if skipped == 1 else 'their'} clicks are not in these totals.", role="alert", cls="ad-meta", id="ad-skipped") if skipped else "",
             Div(Span(cls="ad-bar-fill", style=f"width:{min(100, round(100 * len(people) / GOAL))}%"), cls="ad-bar", role="img", aria_label=f"{len(people)} of {GOAL} creators"),
             claims.section(drafted),
-            Section(H2("Reports", Span(f"{fresh} new", cls="ad-badge", id="ad-new") if fresh else ""), Ul(*[_report(r) for r in rep], cls="ad-list", id="ad-report-list") if rep else P("No reports.", cls="ad-meta", id="ad-no-reports"), cls="ad-sec"),
+            Section(H2("Reports", Span(f"{fresh} new", cls="ad-badge", id="ad-new") if fresh else ""),
+                    Form(Input(type="hidden", name="upto", value=str(rep[0]["id"])), Button("Mark all as read", type="submit", cls="btn btn-sm"), action="/admin/seen", method="post", cls="ad-inline", id="ad-seen") if fresh else "", Ul(*[_report(r) for r in rep], cls="ad-list", id="ad-report-list") if rep else P("No reports.", cls="ad-meta", id="ad-no-reports"), cls="ad-sec"),
             Section(H2("Creators and trips"),
                     Ul(*[_creator(c, community.rows(kind="scrapbook", owner=c["owner_user"], hidden=True), clicks) for c in every], cls="ad-list", id="ad-creators") if every else P("Nobody has published yet.", cls="ad-meta"),
                     cls="ad-sec"),
@@ -120,6 +133,15 @@ def register(app):
             return RedirectResponse(f"/admin#{slug}" if fn(slug) else "/admin", status_code=303)   # only a slug that exists goes into the address
         handler.__name__ = f"admin_{name}"
         app.post(f"/admin/{name}")(handler)
+
+    @app.post("/admin/seen")
+    async def admin_seen(request, session):
+        if not is_admin(session) or not reports.same_site(request):
+            return showcase.not_found()
+        upto = str((await request.form()).get("upto") or "")
+        if upto.isdigit():
+            reports.mark_seen(int(upto))
+        return RedirectResponse("/admin", status_code=303)
 
     _act("takedown", community.take_down)
     _act("restore", community.restore)
