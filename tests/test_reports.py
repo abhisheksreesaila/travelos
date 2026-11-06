@@ -312,7 +312,7 @@ def test_a_taken_down_page_cannot_be_published_again_by_its_owner(captain, trip)
     captain.post("/admin/takedown", data={"slug": row["slug"]})
     with pytest.raises(HubError, match="GitAway took this page down"):
         community.publish(owner, community.trip_of(community.get(row["slug"], hidden=True)), kind="scrapbook")
-    assert community.unpublish(owner, row["slug"]) is False and community.get(row["slug"]) is None
+    assert community.unpublish(owner, row["slug"]) is True and community.get(row["slug"], hidden=True) is None and community.is_down(row["slug"])      # F-182: the owner can delete it; the takedown stays
 
 
 def test_the_admin_lists_a_down_trip_with_a_restore_button_and_a_live_one_with_take_down(captain, trip):

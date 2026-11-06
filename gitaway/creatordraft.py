@@ -18,6 +18,7 @@ import logging
 import os
 import re
 import secrets
+import shutil
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
@@ -465,13 +466,32 @@ def publish(session, d, own) -> dict:
     return row
 
 
+def _remove_copies(d) -> dict:
+    """Delete the draft's picture files and forget them (the creator picks again if they want): a private copy of someone's picture must not outlive what it was for."""
+    shutil.rmtree(pub.root() / d["slug"], ignore_errors=True)
+    return {**d, "copies": {}, "picks": [], "cover": ""}
+
+
 def unpublish(session, d) -> bool:
-    """Take the draft's public page down (its picture copies stay on disk, unserved: the public route only serves a published trip). The draft stays, so it can be published again.
+    """Take the draft's public page down, even one the captain took down (the takedown stays), and delete its picture copies. The draft stays, so it can be published again.
     False when it was not live."""
     me = ses.current_traveler(session)
     if not me or not community.unpublish({"user_id": me.id}, d["slug"]):
         return False
-    _store(me.id, d, "")
+    _store(me.id, _remove_copies(d), "")
+    return True
+
+
+def delete(session, d) -> bool:
+    """Delete the draft for good: its public page (even one taken down; the takedown row stays), its picture files and the draft itself. False for someone else's."""
+    me = ses.current_traveler(session)
+    if not me or not get(me.id, d["id"]):
+        return False
+    community.unpublish({"user_id": me.id}, d["slug"])
+    _remove_copies(d)
+    with _db() as db:
+        db.conn.execute(text("DELETE FROM creator_drafts WHERE id = :i AND owner_user = :o"), {"i": d["id"], "o": str(me.id)})
+        db.conn.commit()
     return True
 
 

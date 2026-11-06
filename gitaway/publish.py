@@ -283,7 +283,7 @@ def unpublish(session, role="") -> bool:
     """Take the open trip's public page and its photo copies down. The person who published may; so may an admin of the family. False when nothing is live."""
     me = ses.current_traveler(session)
     d = get(session)
-    row = community.get(d["slug"]) if me and d and d["slug"] else None
+    row = community.get(d["slug"], hidden=True) if me and d and d["slug"] else None      # hidden=True: a page the captain took down can still be deleted by its owner (F-182)
     if not row or row["kind"] != "scrapbook":
         return False
     if row["owner_user"] != me.id and not (role == "admin" and row["owner_family"] == str(session.get("tenant_id") or "")):
@@ -306,7 +306,7 @@ def take_down_trip(session, trip_id) -> None:
     with ses.family(session) as fam:
         row = familydb.row(fam.db, "SELECT slug FROM publications WHERE trip_id = :t", t=trip_id) if fam else None
     if row:
-        community.unpublish({"user_id": (community.get(row["slug"]) or {}).get("owner_user", "")}, row["slug"])
+        community.unpublish({"user_id": (community.get(row["slug"], hidden=True) or {}).get("owner_user", "")}, row["slug"])
         _remove_files(row["slug"])
 
 

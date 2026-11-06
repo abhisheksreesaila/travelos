@@ -163,9 +163,12 @@ def editor_page(d, error="", just=False):
             Button("Save draft", type="submit", name="do", value="save", cls="btn", id="pb-save"), cls="pb-bar"),
         action=f"{PATH}/{d['id']}", method="post", id="ci-edit", cls="pb-form")
     unpub = Details(Summary(icon("x", 18, 2.4), Span("Unpublish"), cls="pb-unpub", id="pb-unpublish"),
-                    Form(P("This takes the page off GitAway for everyone. Your draft stays here, so you can publish again."), Input(type="hidden", name="do", value="unpublish"),
+                    Form(P("This takes the page off GitAway for everyone. Your draft stays here, so you can publish again; its pictures are deleted and picked again then."), Input(type="hidden", name="do", value="unpublish"),
                          Button("Yes, take it down", type="submit", id="pb-unpublish-yes", cls="btn btn-sm pb-unpub-yes"), action=f"{PATH}/{d['id']}", method="post", cls="pb-unpub-form"), cls="pb-confirm") if d["live"] else ""
-    return page("Check your draft", Section(top, done, _source_card(d), paste, form, unpub, cls="pb ci-edit ga-wrap"), current="/creators", head=HEAD)
+    delete = Details(Summary(icon("x", 18, 2.4), Span("Delete this draft"), cls="pb-unpub", id="ci-delete"),
+                     Form(P("This deletes the draft, its pictures and, if it is live, the public page. It cannot be undone."), Input(type="hidden", name="do", value="delete"),
+                          Button("Yes, delete it", type="submit", id="ci-delete-yes", cls="btn btn-sm pb-unpub-yes"), action=f"{PATH}/{d['id']}", method="post", cls="pb-unpub-form"), cls="pb-confirm")
+    return page("Check your draft", Section(top, done, _source_card(d), paste, form, unpub, delete, cls="pb ci-edit ga-wrap"), current="/creators", head=HEAD)
 
 
 def preview_page(session, d, error=""):
@@ -227,6 +230,9 @@ def register(app):
         if do == "unpublish":
             await run_in_threadpool(cd.unpublish, session, d)
             return RedirectResponse(f"{PATH}/{token}", status_code=303)
+        if do == "delete":
+            await run_in_threadpool(cd.delete, session, d)
+            return RedirectResponse(PATH, status_code=303)
         if do == "publish":
             try:
                 await run_in_threadpool(cd.publish, session, d, f.get("own") == "1")

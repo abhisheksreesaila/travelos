@@ -178,8 +178,9 @@ def publish(session, trip: Itinerary, *, kind, tags=(), theme="sunset", meta=Non
 
 
 def unpublish(session, slug) -> bool:
-    """Take the signed-in person's trip out of the community. False when there was none of theirs."""
-    row = get(slug)
+    """Delete the signed-in person's published trip (its snapshot), even one the captain took down: the takedown row stays, so the address can never come back (F-182).
+    False when there was none of theirs."""
+    row = get(slug, hidden=True)
     if not row or row["owner_user"] != str((session or {}).get("user_id") or "\0"):
         return False
     with connect() as db:
