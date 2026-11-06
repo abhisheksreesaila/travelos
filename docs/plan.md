@@ -1106,7 +1106,7 @@ Needs: F-181
 - [x] each published trip offers a copy-paste button snippet (plain link + small image, no script) and a text link
 - [x] the button links to the trip with `via=<handle>` honoured (F-184)
 
-## F-192 Creator stats [todo]
+## F-192 Creator stats [review]
 Needs: F-181, F-184
-- [ ] a creator sees per trip: readers (counted without cookies, no personal data), forks, "Plan this trip" taps, partner clicks from their trips
-- [ ] privacy page says how readers are counted
+- [x] a creator sees per trip: readers (counted without cookies, no personal data), forks, "Plan this trip" taps; partner clicks from their trips are shown in total (the cookie holds the handle, not the trip: D-129)
+- [x] privacy page says how readers are counted

@@ -83,8 +83,8 @@ def real_index():
                                     Ul(*[_real_item(c) for c in people], cls="cr-roster"), cls="cr cr-real ga-wrap"), current="/creators", head=HEAD)
 
 
-def real_profile(handle):
-    """A real creator's page: their name and the trips they published; None when they have none live."""
+def real_profile(handle, mine=False):
+    """A real creator's page: their name and the trips they published; None when they have none live. `mine`: their own page, with a link to their stats."""
     c = next((c for c in community.real_creators() if c["handle"] == handle), None)
     if c is None:
         return None
@@ -95,7 +95,8 @@ def real_profile(handle):
             Div(real_avatar(c["name"], "cr-avatar cr-avatar-lg"), H1(c["name"]), cls="cr-name-row"),
             P(f"{len(cards)} trip{'s' if len(cards) != 1 else ''} published on GitAway.", cls="cr-bio"), cls="cr-profile-head"),
         Section(H2(f"{c['name'].split()[0]}'s trips"), Div(*[hub_card(x, i) for i, x in enumerate(cards)], cls="hub-grid"), cls="cr-profile-trips"),
-        Div(A("All creators", href="/creators", cls="btn btn-sm"), A(icon("flag", 18, 2.2), "Report this creator", href=f"/report?creator={handle}", cls="btn btn-sm", id="report-creator"), cls="cr-profile-links"), cls="cr cr-profile ga-wrap")
+        Div(A("All creators", href="/creators", cls="btn btn-sm"), A(icon("flag", 18, 2.2), "Report this creator", href=f"/report?creator={handle}", cls="btn btn-sm", id="report-creator"),
+          A(icon("ledger", 18, 2.2), "Your stats", href="/creators/stats", cls="btn btn-sm", id="cr-stats") if mine else "", cls="cr-profile-links"), cls="cr cr-profile ga-wrap")
     return page(c["name"], body, current="/creators", head=(*HUB_HEAD, *HEAD))
 
 
@@ -355,9 +356,10 @@ def register(app):
         return done_page(session, slugs[-1]) if slugs else RedirectResponse("/creators", status_code=303)
 
     @app.get("/creators/{handle}")
-    def profile(handle: str):
+    def profile(session, handle: str):
         c = creator_profiles.get(handle) if showcase.on() else None
-        if c is None and (found := real_profile(handle)) is not None:
+        me = ses.current_traveler(session)
+        if c is None and (found := real_profile(handle, mine=bool(me) and (community.creator_of(me.id) or {}).get("handle") == handle)) is not None:
             return found
         if c is None:
             return FtResponse(page("Not found", Section(H1("Nothing here"), A("All creators", href="/creators"), cls="ga-soon ga-wrap")), status_code=404)

@@ -15,7 +15,7 @@ import re
 from fasthtml.common import A, Button, Div, Form, H1, H2, Input, Li, Link, Main, P, Section, Span, Ul
 from starlette.responses import RedirectResponse
 
-from gitaway import affiliate, catalog, community, partners, reports, session as ses, showcase
+from gitaway import affiliate, catalog, community, partners, reports, session as ses, showcase, stats
 from gitaway.icons import icon
 from gitaway.layout import page
 from gitaway.pages import creatorclaim as claims
@@ -60,7 +60,7 @@ def _creator(c, trips, clicks):
     all_, own = clicks.get(c["handle"], (0, 0))
     return Li(Div(A(c["name"], href=f"/creators/{c['handle']}", cls="ad-link ad-name"),
                   Span(f"marker {marker}" if marker else "no marker: GitAway's", cls="ad-chip"),
-                  Span(f"{all_} click{'s' if all_ != 1 else ''} from their trips, {own} with their marker · bookings: not reported yet", cls="ad-meta")),
+                  Span(f"{(n := stats.readers_all_time(t['slug'] for t in trips))} reader{'s' if n != 1 else ''} · {all_} click{'s' if all_ != 1 else ''} from their trips, {own} with their marker · bookings: not reported yet", cls="ad-meta")),
               Ul(*[_trip_row(t) for t in trips], cls="ad-trips") if trips else P("No trips.", cls="ad-meta"), cls="ad-creator", id=f"c-{c['handle']}")
 
 
