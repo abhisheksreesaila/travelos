@@ -156,9 +156,11 @@ def test_a_made_up_or_malformed_token_is_a_404(client, setup):
         assert sam.get(f"/claim/{t}").status_code == 404
 
 
-def test_a_signed_out_visitor_is_sent_to_sign_in_and_back(client, setup):
+def test_a_signed_out_visitor_sees_the_post_as_a_trip_and_is_sent_to_sign_in_only_to_claim(client, setup):      # the preview itself: tests/test_claim_preview.py (F-194)
     link = claim_link(draft(browser(CAP)).text)
     r = browser().get(link, follow_redirects=False)
+    assert r.status_code == 200 and f'href="/signin?next={link}&amp;intent=publish"' in r.text
+    r = browser().post(link, data={"do": "publish", "confirm": "1"}, follow_redirects=False)
     assert r.status_code == 303 and r.headers["location"] == f"/signin?next={link}&intent=publish"
 
 

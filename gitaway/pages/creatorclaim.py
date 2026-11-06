@@ -1,6 +1,7 @@
 """Ready-made drafts (F-188): the captain's "Draft for a creator" section of /admin and the creator's claim page. Rules and storage: gitaway/creatorclaim.py.
 
-GET  /claim/<token>        signed out: sign in, then come back. Signed in: the creator's post as a trip, "This is my post: publish it" and "Edit first"; "already claimed" for a used link
+GET  /claim/<token>        the creator's post as a trip, read-only, signed in or not (F-194): signed out it asks to sign in only to claim; signed in, "This is my post: publish it" and "Edit first";
+                           "already claimed" and the like say so. Never indexed (noindex) or cached (no-store)
 POST /claim/<token>        do=publish (claim, then publish: the tap is the "this is my post" tick) or do=edit (claim, then the F-183 editor)
 POST /admin/draft          the captain drafts one post (`link`, `name`) or the ticked rows of docs/research/creators.csv (`url`, at most MAX_BATCH at a time) and sees each message to copy
 POST /admin/link           a fresh claim link and message for a draft (links are stored hashed, so an old one cannot be shown again); the old link stops working
@@ -12,7 +13,7 @@ Drafting fetches pages and calls the model, so it runs in run_in_threadpool (F-1
 
 from urllib.parse import quote
 
-from fasthtml.common import A, Button, Details, Div, Form, H1, H2, Input, Label, Li, Link, Main, P, Script, Section, Span, Summary, Textarea, Ul
+from fasthtml.common import A, Button, Details, Div, Form, H1, H2, Input, Label, Li, Link, Main, Meta, P, Script, Section, Span, Summary, Textarea, Ul
 from fasthtml.core import FtResponse
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import RedirectResponse
@@ -28,6 +29,8 @@ MAX_BATCH = 5
 GOAL = 150
 HEAD = (Link(rel="stylesheet", href="/assets/css/creatorclaim.css"), Script(src="/assets/js/blogbutton.js", defer=True))
 NO_STORE = {"Cache-Control": "private, no-store"}
+PRIVATE = {**NO_STORE, "X-Robots-Tag": "noindex, nofollow"}      # a claim link is a key: its pages are never cached and never indexed (F-194)
+NOINDEX = Meta(name="robots", content="noindex, nofollow")
 DEMO = (("https://demo.example.com/three-days-in-san-diego", "Maya Chen"), ("https://demo.example.com/maui-with-toddlers", "Leslie Harvey"), ("https://demo.example.com/disneyland-first-timers", "Katie Dillon"))
 STATE_WORDS = {"waiting": "Waiting", "claimed": "Claimed", "revoked": "Revoked", "expired": "Expired"}
 
@@ -115,27 +118,44 @@ def _draft_all(admin_id, captain, jobs):
 # ---- the claim page -----------------------------------------------------------------------------------------------------------
 
 def _message(title, body, status):
-    return FtResponse(page(title, Section(Div(H1(title), P(body), A("Turn your own post into a trip", href="/creators/import", cls="btn btn-primary"), cls="ga-wrap"), cls="ga-soon ga-wrap")), status_code=status, headers=NO_STORE)
+    return FtResponse(page(title, Section(Div(H1(title), P(body), A("Turn your own post into a trip", href="/creators/import", cls="btn btn-primary"), cls="ga-wrap"), cls="ga-soon ga-wrap"), head=(NOINDEX,)), status_code=status, headers=PRIVATE)
 
 
-def _claim_page(token, d, error=""):
+def _signin_href(token):
+    return f"/signin?next={quote(f'/claim/{token}', safe='/')}&intent=publish"
+
+
+def _bar(inside):
+    return Div(*inside, cls="cl-bar", id="cl-bar", role="region", aria_label="Claim this trip")
+
+
+def _signed_out_bar(token, name, domain):
+    """The preview's bar for someone who is not signed in: what this is, and the one button that asks to sign in (F-194)."""
+    return _bar((Div(H1(f"{name}, your post is ready as a trip"), P("GitAway read your post and drafted this. Nothing is public until you sign in and publish it, and looking at this page does not claim it.", cls="cl-lede"), cls="cl-text"),
+                 Div(A(icon("check", 24, 2.8), "Sign in to claim it", href=_signin_href(token), id="cl-signin", cls="btn btn-primary cl-publish"),
+                     P(f"You will be asked to confirm that {domain} is your site.", cls="cl-hint"), cls="cl-actions")))
+
+
+def _claim_bar(token, name, domain, error):
+    """The bar for a signed-in person: confirm the site, then publish or edit first."""
+    return _bar((Div(H1(f"{name}, your post is ready as a trip"), P("GitAway read your post and drafted this. Nothing is public until you publish, and you can take it down any time.", cls="cl-lede"), cls="cl-text"),
+                 Form(Label(Input(type="checkbox", name="confirm", value="1", required=True, id="cl-confirm", cls="cl-check"), Span("This is my site ", Span(domain, id="cl-domain", cls="cl-domain"), cls="cl-confirm-t"), cls="cl-confirm"),
+                      P(error, role="alert", cls="cl-error", id="cl-error") if error else "",
+                      Button(icon("check", 24, 2.8), "This is my post — publish it", type="submit", name="do", value="publish", id="cl-publish", cls="btn btn-primary cl-publish"),
+                      Button(icon("note", 20, 2.4), "Edit first", type="submit", name="do", value="edit", id="cl-edit", cls="btn cl-editbtn"),
+                      P(f"Publishing says this is your own post. {affiliate.pays_you()} The trip links back to your post.", cls="cl-hint"), action=f"/claim/{token}", method="post", cls="cl-actions")))
+
+
+def _claim_page(token, d, error="", signed_in=True):
     trip = cd.build(d, lambda n: "", "")
-    name = d["name"] or "there"
-    domain = cc.domain_of(d)
-    bar = Div(
-        Div(H1(f"{name}, your post is ready as a trip"), P("GitAway read your post and drafted this. Nothing is public until you publish, and you can take it down any time.", cls="cl-lede"), cls="cl-text"),
-        Form(Label(Input(type="checkbox", name="confirm", value="1", required=True, id="cl-confirm", cls="cl-check"), Span("This is my site ", Span(domain, id="cl-domain", cls="cl-domain"), cls="cl-confirm-t"), cls="cl-confirm"),
-             P(error, role="alert", cls="cl-error", id="cl-error") if error else "",
-             Button(icon("check", 24, 2.8), "This is my post — publish it", type="submit", name="do", value="publish", id="cl-publish", cls="btn btn-primary cl-publish"),
-             Button(icon("note", 20, 2.4), "Edit first", type="submit", name="do", value="edit", id="cl-edit", cls="btn cl-editbtn"),
-             P(f"Publishing says this is your own post. {affiliate.pays_you()} The trip links back to your post.", cls="cl-hint"), action=f"/claim/{token}", method="post", cls="cl-actions"),
-        cls="cl-bar", id="cl-bar", role="region", aria_label="Claim this trip")
-    return page(trip.title or "Your trip", bar, itinerary_body(trip), head=(*VIEW_HEAD, *HEAD), theme=trip.theme)
+    name, domain = d["name"] or "there", cc.domain_of(d)
+    bar = _claim_bar(token, name, domain, error) if signed_in else _signed_out_bar(token, name, domain)
+    return page(trip.title or "Your trip", bar, itinerary_body(trip), head=(*VIEW_HEAD, *HEAD, NOINDEX), theme=trip.theme)
 
 
 def _gate(token, me):
-    """What the person sees when the link cannot be claimed by them: a finished page, or None when it can."""
-    s = cc.state(token, me.id)
+    """What the person sees when the link cannot be claimed by them (me is None when signed out): a finished page, or None when it can."""
+    s = cc.state(token, me.id if me else "")
     if s == "ok":
         return None
     if s == "claimed":
@@ -151,14 +171,12 @@ def register(app):
     @app.get("/claim/{token}")
     def claim_page(session, token: str):
         me = ses.current_traveler(session)
-        if not me:
-            return RedirectResponse(f"/signin?next={quote(f'/claim/{token}', safe='/')}&intent=publish", status_code=303)
-        if cc.state(token, me.id) == "mine":
+        if me and cc.state(token, me.id) == "mine":
             return RedirectResponse(f"{creatorimport.PATH}/{cc.draft_id_of(token)}", status_code=303)
         if (gone := _gate(token, me)):
             return gone
         d = cd.get(cc.UNCLAIMED, cc.draft_id_of(token))      # a plain def route: it runs in the thread pool
-        return FtResponse(_claim_page(token, d), headers=NO_STORE) if d else _message("This link does not work", "That trip is gone.", 404)
+        return FtResponse(_claim_page(token, d, signed_in=bool(me)), headers=PRIVATE) if d else _message("This link does not work", "That trip is gone.", 404)      # signed out: a read-only preview, sign-in only to claim (F-194)
 
     @app.post("/claim/{token}")
     async def claim(request, session, token: str):
@@ -174,7 +192,7 @@ def register(app):
             d = await run_in_threadpool(cd.get, cc.UNCLAIMED, cc.draft_id_of(token))
             if not d:
                 return _message("This link does not work", "That trip is gone.", 404)
-            return FtResponse(_claim_page(token, d, f"Tick the box to say {cc.domain_of(d)} is your site, then press the button."), status_code=422, headers=NO_STORE)
+            return FtResponse(_claim_page(token, d, f"Tick the box to say {cc.domain_of(d)} is your site, then press the button."), status_code=422, headers=PRIVATE)
         did = cc.claim(token, me.id, session.get("email") or "")
         if not did:
             return _gate(token, me) or _message("This link does not work", "Ask the person who sent it for a new one.", 410)
@@ -184,7 +202,7 @@ def register(app):
         try:
             await run_in_threadpool(cd.publish, session, d, True)      # the tap on "This is my post" is the tick; copies pictures, so never on the loop
         except HubError as e:
-            return FtResponse(creatorimport.editor_page(d, error=str(e)), status_code=422, headers=NO_STORE)
+            return FtResponse(creatorimport.editor_page(d, error=str(e)), status_code=422, headers=PRIVATE)
         return RedirectResponse(f"{creatorimport.PATH}/{did}?live=1", status_code=303)
 
     def _captain(session):
