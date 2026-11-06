@@ -337,6 +337,13 @@ def _load(name):
     return m
 
 
+def _drafting_script():
+    """scripts/draft_creators.py as if it ran on the live data folder (it refuses anywhere else: tests/test_draft_creators_script.py): its production folder is this test's."""
+    m = _load("draft_creators")
+    m.PRODUCTION_DATA_DIR = os.environ["GITAWAY_DATA_DIR"]
+    return m
+
+
 def test_forgetting_a_person_removes_the_claim_they_used(client, setup):
     link = claim_link(draft(browser(CAP)).text)
     browser("sam").post(link, data={"do": "edit", "confirm": "1"})
@@ -348,7 +355,7 @@ def test_forgetting_a_person_removes_the_claim_they_used(client, setup):
 
 def test_the_script_without_a_key_explains_and_exits_1(capsys, monkeypatch):
     monkeypatch.setenv("ANTHROPIC_API_KEY", "")
-    assert _load("draft_creators").main([]) == 1
+    assert _drafting_script().main([]) == 1
     out = capsys.readouterr().out
     assert "ANTHROPIC_API_KEY must be set" in out and "pixi run dev" in out and rows() == []
 
@@ -362,7 +369,7 @@ def test_the_script_drafts_every_a_priority_creator_once_and_writes_the_links_to
     monkeypatch.setattr(safefetch, "TRANSPORT", Pages({u: page() for u in blogs}))
     out_file = Path(os.environ["GITAWAY_DATA_DIR"]) / "claim-links.csv"
     out_file.unlink(missing_ok=True)
-    script = _load("draft_creators")
+    script = _drafting_script()
     assert script.main([]) == 3                                                       # the one YouTube video in the list cannot be read here: reported, not hidden
     printed = capsys.readouterr().out
     assert f"{len(blogs)} drafted, 0 already had a draft, 1 failed." in printed and printed.count("https://gitaway.me/claim/") == len(blogs) and "FAILED" in printed
@@ -381,7 +388,7 @@ def test_the_script_stops_at_the_site_wide_ceiling(client, capsys, monkeypatch, 
     monkeypatch.setenv("GITAWAY_CREATOR_IMPORT_SITE_LIMIT", "2")
     out_file = Path(os.environ["GITAWAY_DATA_DIR"]) / "claim-links.csv"
     out_file.unlink(missing_ok=True)
-    assert _load("draft_creators").main([]) == 3
+    assert _drafting_script().main([]) == 3
     assert "2 drafted, 0 already had a draft, 1 failed." in capsys.readouterr().out and len(rows()) == 2
     out_file.unlink(missing_ok=True)
 

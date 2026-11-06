@@ -128,6 +128,12 @@ How it runs: one background thread in the app (one per process; Railway runs one
 
 Server logs on Railway age out on their own; say so when you confirm. After a real run, tell the person it is done.
 
+## Drafting for creators (F-188, F-194)
+
+The captain drafts a creator's post privately and sends them its claim link **on the live site**: open `https://gitaway.me/admin` (your email must be in `GITAWAY_ADMIN_EMAILS`) and use "Draft for a creator" (a post link, or tick rows of `docs/research/creators.csv`). Use /admin on gitaway.me; do not run the script for this. Each draft has "Review the draft": fix what the model got wrong, then copy the message with its claim link. A claim by someone whose email is not at the post's site, and an open import's byline, wait under "Waiting for your approval" on the same page until you approve them.
+
+`pixi run draft-creators` (`scripts/draft_creators.py`) refuses to run unless `GITAWAY_DATA_DIR` is `/data`, the live data folder: run anywhere else it would keep its drafts in a local folder, so its claim links would not work on gitaway.me, and `scripts/` is not in the image. The pre-draft fetch is honest about who asked (its User-Agent says the author has not), and reads the site's robots.txt first: a site that asks `anthropic-ai`, `ClaudeBot`, `Claude-Web`, `GPTBot` or all robots to stay away from that page is not drafted from.
+
 ## What needs sign-in
 
 Everything public stays browsable signed out: the landing page, hub (`/discover`), trips, creators, `/start`, the demo workspace (`/plan`). Saving, forking, booking and the calendar ask you to sign in and bring you back. `/family` (who you are and your family's id) is the one page that needs sign-in; it is the first page built on fh-saas's `create_auth_beforeware` + `require_tenant_access`.
