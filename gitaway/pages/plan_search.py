@@ -30,7 +30,7 @@ def ahead(trip):
 
 
 def _go_label(offer, trip):
-    return GO_LABELS.get(offer.kind) or ("See tickets on Klook" if trip.focus == "disney" else "See things to do on Klook")
+    return GO_LABELS.get(offer.kind) or trip.todo_cta
 
 
 def _airport(trip, via, raw, error):
@@ -39,8 +39,8 @@ def _airport(trip, via, raw, error):
             **({"k": ",".join(map(str, trip.kid_ages))} if trip.kid_ages else {}), **({"focus": trip.focus} if trip.focus else {}), **({"via": via} if via else {})}
     return Form(
         *[Input(type="hidden", name=n, value=str(v)) for n, v in keep.items()],
-        Label(Span("Flying from", cls="ps-label"),
-              Input(name="home", value=raw or trip.home, type="text", maxlength="3", placeholder="Any, Aviasales asks", autocomplete="off", autocapitalize="characters", spellcheck="false",
+        Label(Span("Flying from (optional)", cls="ps-label"),
+              Input(name="home", value=raw or trip.home, type="text", maxlength="3", placeholder="e.g. SFO", autocomplete="off", autocapitalize="characters", spellcheck="false",
                     **({"aria_invalid": "true", "aria_describedby": "ps-err"} if error else {})),
               cls="ps-field"),
         Button("Update", type="submit", cls="btn btn-sm"),
@@ -49,7 +49,7 @@ def _airport(trip, via, raw, error):
 
 
 def _card(offer, trip, live, *extra):
-    blurb = {"flight": f"Aviasales shows today's fares for {trip.date_label}, {trip.summary}.",
+    blurb = {"flight": f"Aviasales shows today's fares for {trip.date_label}, {trip.summary}. Leave the airport empty and it asks.",
              "stay": f"Klook lists hotels for {trip.date_label} and keeps your booking.",
              "todo": "Klook sells the tickets and keeps your booking."}[offer.kind]
     go = A(icon(ICONS[offer.kind], 20, 2.2), _go_label(offer, trip), href=partners.go_href(offer, trip), cls="btn btn-ink ps-go", rel="sponsored noopener", data_lane=offer.kind) if live else ""

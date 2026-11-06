@@ -534,13 +534,14 @@ def todo_cards(html):
 def test_plan_has_one_tickets_card_that_goes_to_klook(client, nokeys):
     html = client.get(f"/plan?{HI}").text
     ((href, label),) = todo_cards(html)
-    assert href == "/go/search-todo?to=hi&d=2027-03-05&r=2027-03-09&a=2" and "Klook" in text(label)
+    assert href == "/go/search-todo?to=hi&d=2027-03-05&r=2027-03-09&a=2" and text(label).strip() == "Things to do on Klook"
     assert "Tickets and things to do" in text(html) and "Honolulu attractions" in text(html)
 
 
 def test_a_disneyland_trip_offers_disneyland_tickets_and_keeps_its_focus_in_every_link(client, nokeys):
     html = client.get("/plan?to=la&d=2027-03-05&r=2027-03-09&a=2&k=4,7&home=JFK&focus=disney").text
-    ((href, _),) = todo_cards(html)
+    ((href, label),) = todo_cards(html)
+    assert text(label).strip() == "See tickets on Klook"
     assert href == "/go/search-todo?to=la&d=2027-03-05&r=2027-03-09&a=2&k=4%2C7&home=JFK&focus=disney"
     assert "Disneyland Resort tickets" in text(html)
     assert "/go/h1?to=la&d=2027-03-05&r=2027-03-09&a=2&k=4%2C7&home=JFK&focus=disney" in html.replace("&amp;", "&")      # so does a stay's: it will ask Klook for Anaheim

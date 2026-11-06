@@ -270,11 +270,12 @@ def _todo(trip):
     href = hub.todo_href(trip) if trip.real else ""
     if not href or not partners.available():
         return ""
-    offer = catalog.search_offer("todo", catalog.sample_trip(trip.plan_to, focus=hub.focus_of(trip)))
+    where = catalog.sample_trip(trip.plan_to, focus=hub.focus_of(trip))
+    offer = catalog.search_offer("todo", where)
     return Section(
         Div(H2(offer.name), P(offer.headline, cls="todo-what"),
             P(f"Klook sells the tickets and keeps your booking. This link supports GitAway, not {trip.author.split()[0]}.", cls="todo-fine")),
-        A(icon("link", 22, 2.2), "See tickets on Klook", href=href, rel="sponsored noopener", cls="btn btn-hero", id="todo-klook"),
+        A(icon("link", 22, 2.2), where.todo_cta, href=href, rel="sponsored noopener", cls="btn btn-hero", id="todo-klook"),
         id="todo", cls="todo ga-wrap")
 
 

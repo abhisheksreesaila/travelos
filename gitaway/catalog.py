@@ -47,6 +47,11 @@ class TripSearch:
         return "Anaheim" if self.focus == "disney" else self.destination_name
 
     @property
+    def todo_cta(self) -> str:
+        """The words on the Klook link of the Tickets and things to do card."""
+        return "See tickets on Klook" if self.focus == "disney" else "Things to do on Klook"
+
+    @property
     def nights_text(self) -> str:
         return f"{self.nights} night{'s' if self.nights != 1 else ''}"
 

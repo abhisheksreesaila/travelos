@@ -261,7 +261,7 @@ def todo_card(trip):
         return ""
     o = catalog.search_offer("todo", trip)
     return Div(Span(o.name, cls="ws-subhead"), Span(o.headline, cls="ws-name"), Span("Klook sells the tickets and keeps your booking.", cls="ws-detail"),
-               A(icon("link", 16, 2.2), "See tickets on Klook", href=go_href(o, trip), cls="ws-book-on ws-todo-link", rel="sponsored noopener", data_lane="todo"), cls="ws-todo")
+               A(icon("link", 16, 2.2), trip.todo_cta, href=go_href(o, trip), cls="ws-book-on ws-todo-link", rel="sponsored noopener", data_lane="todo"), cls="ws-todo")
 
 
 def commission_note():

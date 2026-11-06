@@ -63,7 +63,7 @@ def test_the_cards_say_where_they_lead_and_for_when(client, live):
     _, handle, _ = live
     text = words(client.get(f"/plan?to=hi&{TRIP}&k=4,7&via={handle}").text)
     assert "Mar 5 – 9" in text and "2 adults, 2 kids" in text
-    assert "Search on Aviasales" in text and "Find stays on Klook" in text and "See things to do on Klook" in text
+    assert "Search on Aviasales" in text and "Find stays on Klook" in text and "Things to do on Klook" in text
 
 
 def test_a_disneyland_trip_asks_for_anaheim_and_disneyland_tickets(client, live):

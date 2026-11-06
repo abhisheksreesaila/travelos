@@ -303,7 +303,7 @@ def test_a_creators_trip_page_has_an_honest_tickets_card(client, mode, monkeypat
     link = todo_link(page)
     assert link and link.startswith("/go/search-todo?to=la&d=") and link.endswith(f"&a=2&via={handle}") and "focus" not in link
     words = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", page))
-    assert "Tickets and things to do" in words and "Los Angeles attractions" in words
+    assert "Tickets and things to do" in words and "Los Angeles attractions" in words and "Things to do on Klook" in words
     assert "This link supports GitAway, not Maya" in words      # Klook does not carry a creator's marker (D-101)
 
 
@@ -311,7 +311,7 @@ def test_a_disneyland_trip_page_offers_disneyland_tickets(client, mode, monkeypa
     monkeypatch.setenv("TRAVELPAYOUTS_MARKER", "801445")
     row, handle, _ = live_trip(title="Three days at Disneyland with a toddler")
     page = without_bar(client.get(f"/trips/{row['slug']}").text)
-    assert "&focus=disney&via=" in todo_link(page) and "Disneyland Resort tickets" in page
+    assert "&focus=disney&via=" in todo_link(page) and "Disneyland Resort tickets" in page and "See tickets on Klook" in page
     plan = re.search(r'<a[^>]*id="plan-this"[^>]*href="([^"]+)"|<a[^>]*href="([^"]+)"[^>]*id="plan-this"', page)
     assert "focus=disney" in (plan.group(1) or plan.group(2))
 
