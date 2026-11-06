@@ -17,7 +17,7 @@ def test_page_open_signed_out_and_says_it(client, path, phrases):
     assert r.status_code == 200
     for p in phrases:
         assert p in r.text, p
-    assert "Effective October 3, 2026" in r.text
+    assert "Effective November 6, 2026" in r.text
     assert "not legal advice" in r.text
 
 
@@ -43,3 +43,14 @@ def test_footer_and_signin_link_to_both(client):
         t = client.get(path).text
         assert 'href="/privacy"' in t and 'href="/terms"' in t, path
     assert re.search(r'id="si-legal".*?href="/terms".*?href="/privacy"', client.get("/signin").text, re.S)
+
+
+def test_the_privacy_page_names_both_cookies_the_partner_links_anthropic_and_the_subid(client):
+    """F-182 (reviewer Must 2 and 3): ga_via, partner-site tracking, Anthropic for creator import, and the SubID the partners receive were all live and unmentioned."""
+    text = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", client.get("/privacy").text)).replace("&#x27;", "'")
+    for phrase in ("Two cookies", "ga_via", "the public handle of the creator", "30 days", "which creator a flight you book supports", "We use no tracking or advertising cookies of our own",
+                   "Partner links", "Aviasales, Klook", "their own sites may set their own tracking cookies",
+                   "Anthropic (Claude Haiku)", "Turn your post into a trip", "the text of the post, pasted or read from the link", "and nothing else",
+                   "Travelpayouts", "SubID", "no name, email address or other personal detail"):
+        assert phrase in text, phrase
+    assert "One cookie keeps you signed in" not in text
