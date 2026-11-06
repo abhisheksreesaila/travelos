@@ -219,3 +219,13 @@ def test_the_party_is_split_the_way_aviasales_counts_it(adults, ages, expected):
     t = catalog.TripSearch("SFO", "San Francisco", "Los Angeles", ("LAX",), date(2027, 3, 16), date(2027, 3, 20), adults, ages)
     assert t.passengers == expected
     assert sum(t.passengers) == t.travelers
+
+
+def test_an_imported_trip_keeps_its_name_and_zone_whatever_fields_the_search_has():
+    """TripSearch gained fields (home, focus) after the party, and ImportedTrip adds its own after them: built by position, the title and the time zone landed in the wrong fields."""
+    from datetime import datetime
+    from gitaway import tripimport as ti
+    plan = ti.Plan("Spring in Lisbon", "Lisbon", date(2027, 4, 2), date(2027, 4, 6), "Airline", "", (ti.Traveler("Ana"), ti.Traveler("Rui")),
+                   (ti.Leg("TAP", "TP 1", "SFO", "LIS", datetime(2027, 4, 2, 9), datetime(2027, 4, 3, 5), "ABC"), ti.Leg("TAP", "TP 2", "LIS", "SFO", datetime(2027, 4, 6, 9), datetime(2027, 4, 6, 15), "ABC")), (), None)
+    t = ti.trip_search(plan)
+    assert (t.title, t.home, t.focus, t.tz) == ("Spring in Lisbon", "", "", plan.timezone) and t.tz != ""

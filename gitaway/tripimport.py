@@ -658,7 +658,7 @@ class ImportedTrip(catalog.TripSearch):
 def trip_search(plan: Plan) -> ImportedTrip:
     arrive = plan.arrive_leg
     airports = (arrive.dest,) if arrive else ()
-    return ImportedTrip(plan.home, plan.home, plan.destination, airports, plan.start, plan.end, max(plan.adults, 1), plan.kid_ages, plan.title, plan.timezone)
+    return ImportedTrip(plan.home, plan.home, plan.destination, airports, plan.start, plan.end, max(plan.adults, 1), plan.kid_ages, name=plan.title, tz=plan.timezone)   # by name: TripSearch gained fields (F-195) and ImportedTrip's come after them
 
 
 @dataclass(frozen=True)

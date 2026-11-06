@@ -41,7 +41,7 @@ def warnings(caplog):
 
 
 def test_a_refusing_api_is_a_warning_that_says_why_and_never_the_token(keys, monkeypatch, caplog):
-    err = urllib.error.HTTPError(API := travelpayouts.API, 400, f"invalid trs, token {SECRET}", {}, None)
+    err = urllib.error.HTTPError(travelpayouts.API, 400, f"invalid trs, token {SECRET}", {}, None)
     monkeypatch.setattr(travelpayouts, "_post", FakeApi(error=err))
     with caplog.at_level(logging.INFO, logger="gitaway.partners.travelpayouts"):
         assert travelpayouts.klook_link(PAGE, "s") == "https://klook.tpx.lv/s1rIcwCA"
