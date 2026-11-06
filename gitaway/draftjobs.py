@@ -156,8 +156,15 @@ def _finish(job_id, error) -> None:
         db.conn.commit()
 
 
+def _requeue(job_id) -> None:
+    with _db() as db:
+        db.conn.execute(text("UPDATE creator_draft_jobs SET status = 'queued' WHERE id = :i"), {"i": job_id})
+        db.conn.commit()
+
+
 def run_one() -> bool:
-    """Draft one queued post: its row is deleted and the draft is on the list, or the row says why not. False when nothing was waiting."""
+    """Draft one queued post: its row is deleted and the draft is on the list, or the row says why not. False when nothing was waiting, or when the line was busy: the post goes
+    back to the head of the queue (it was counted once, when it was queued, and is not counted again) and the worker waits a while before trying again (F-196)."""
     job = claim()
     if not job:
         return False
@@ -165,7 +172,12 @@ def run_one() -> bool:
         if not _drafted(job):
             _draft(job)
         error = ""
-    except (importsource.SourceError, ai.AIError, HubError) as e:
+    except ai.AIError as e:
+        if e.code == "busy":
+            _requeue(job["id"])
+            return False
+        error = str(e)
+    except (importsource.SourceError, HubError) as e:
         error = str(e)
     except Exception:  # noqa: BLE001 - one bad post must not stop the worker; the log has the type, the person a fixed sentence
         log.exception("draft job failed")
