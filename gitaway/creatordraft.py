@@ -134,7 +134,7 @@ def validate(raw, source, fallback_title="", own="") -> dict:
     `own` is the creator's own blog's domain, whose links are allowed too (stoplinks.own_domain).
     Nothing of `raw` is kept as it came: every field is re-typed, cut and cleaned, and unknown fields are dropped."""
     raw = raw if isinstance(raw, dict) else {}
-    low = str(source or "").lower()
+    low = stoplinks.without_addresses(source).lower()      # names are matched against the creator's words, not against the addresses in their links
     days = []
     for d in (raw.get("days") if isinstance(raw.get("days"), list) else [])[:MAX_DAYS]:
         stops = [_stop(s, low, str(source or ""), own) for s in (d.get("stops") if isinstance(d, dict) and isinstance(d.get("stops"), list) else [])[:MAX_STOPS]]

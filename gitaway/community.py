@@ -26,7 +26,7 @@ from types import SimpleNamespace
 from fh_saas.utils_sql import delete_record, upsert
 from sqlalchemy import create_engine, text
 
-from gitaway import auth
+from gitaway import auth, stoplinks
 from gitaway.itineraries import Day, Itinerary, Polaroid, Source, Stop, Tag
 
 KINDS = ("shared", "creator", "scrapbook")
@@ -102,7 +102,8 @@ def dump(trip: Itinerary) -> str:
 
 def load(raw: str) -> Itinerary:
     d = json.loads(raw)
-    d["days"] = [Day(**{**x, "stops": [Stop(**s) for s in x["stops"]], "photos": [Polaroid(**p) for p in x.get("photos", [])]}) for x in d["days"]]
+    own = stoplinks.own_domain("blog", (d.get("source") or {}).get("url", ""))      # defence in depth: whatever a snapshot holds, only allowed links are ever drawn
+    d["days"] = [Day(**{**x, "stops": [Stop(**{**s, "link": stoplinks.clean(s.get("link", ""), own)}) for s in x["stops"]], "photos": [Polaroid(**p) for p in x.get("photos", [])]}) for x in d["days"]]
     d["tags"] = [Tag(**t) for t in d.get("tags", [])]
     d["polaroids"] = [Polaroid(**p) for p in d.get("polaroids", [])]
     d["source"] = Source(**d["source"]) if d.get("source") else None

@@ -57,6 +57,41 @@ def test_a_link_from_the_model_is_kept_only_when_it_is_listed_and_written_in_the
     assert stoplinks.keep(HOTEL.replace("aid=12345", "aid=99999"), post) == ""    # changed by the model
 
 
+@pytest.mark.parametrize("model_link", [HOTEL[:-2], HOTEL.split("?")[0], HOTEL + "5"], ids=["cut short", "query dropped", "longer"])
+def test_a_link_that_is_only_the_front_of_a_longer_address_in_the_post_is_not_kept(model_link):
+    post = f"Stay at [Surfjack]({HOTEL}) for two nights."
+    assert stoplinks.keep(model_link, post) == ""
+
+
+@pytest.mark.parametrize("post", [f"[Surfjack]({HOTEL})", f"stay at {HOTEL}", f"stay at {HOTEL}.", f"stay at {HOTEL}, then eat", f'<a href="{HOTEL}">x</a>', f"stay at {HOTEL}\nthen", f"(see {HOTEL}!)", f"'{HOTEL}'"],
+                         ids=["markdown", "bare", "full stop", "comma", "quote", "newline", "bang", "apostrophe"])
+def test_a_link_written_whole_in_the_post_is_kept(post):
+    assert stoplinks.keep(HOTEL, post) == HOTEL
+
+
+@pytest.mark.parametrize("url", ["https://medium.com/@maya/two-days-in-honolulu", "https://www.medium.com/@maya/x", "https://substack.com/@maya/p/x", "https://wordpress.com/post/x",
+                                 "https://github.io/x", "https://www.youtube.com/watch?v=abc123abc12", "https://youtu.be/abc123abc12", "https://www.instagram.com/p/abc/"])
+def test_a_shared_host_is_nobodys_own_site(url):
+    assert stoplinks.own_domain("blog", url) == ""                  # every link on medium.com would otherwise count as this creator's own
+
+
+def test_a_blog_on_its_own_corner_of_a_shared_host_keeps_that_corner_only():
+    own = stoplinks.own_domain("blog", "https://maya.blogspot.com/2026/01/post.html")
+    assert own == "maya.blogspot.com"
+    assert stoplinks.clean("https://maya.blogspot.com/x", own) == "https://maya.blogspot.com/x" and stoplinks.clean("https://other.blogspot.com/x", own) == ""
+
+
+def test_a_stored_trip_is_cleaned_again_when_it_is_read_back():
+    import json
+    from tests.live_trips import live_trip
+    row = live_trip(source_url="https://blog.example.com/post")[0]
+    d = json.loads(row["snapshot"])
+    stops = d["days"][0]["stops"]
+    stops[0]["link"], stops[1]["link"], stops[2]["link"] = "https://evil.example/phish", HOTEL, OWN
+    got = community.load(json.dumps(d)).days[0].stops
+    assert [s.link for s in got] == ["", HOTEL, OWN]               # a stranger's address that got into a snapshot is not drawn; the allowed ones are
+
+
 # ---- drafting keeps them ---------------------------------------------------------------------------------------------------------------
 
 def answer(**links):

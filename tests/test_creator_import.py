@@ -210,6 +210,13 @@ def test_a_stop_the_post_never_mentions_becomes_an_unnamed_stop():
     assert [s["name"] for d in got["days"] for s in d["stops"]] == ["Santa Monica Pier", "Third Street Promenade", "Venice Canals", "Unnamed stop"]      # "Eiffel Tower" is not in the post
 
 
+def test_a_name_that_is_only_inside_a_link_address_does_not_count_as_in_the_post():
+    answer = {**ANSWER, "days": [{"stops": [{"name": "Hanauma Bay", "time": "", "note": ""}, {"name": "Pearl Harbor", "time": "", "note": ""}]}]}
+    post = "We booked [the boat tour](https://www.viator.com/tours/Honolulu/hanauma-bay-snorkel/d672-1) and saw https://example.com/pearl-harbor-guide, then went to Pearl Harbor itself."
+    got = creatordraft.validate(answer, post)
+    assert [s["name"] for s in got["days"][0]["stops"]] == ["Unnamed stop", "Pearl Harbor"]      # the address mentions Hanauma, the words of the post do not
+
+
 @pytest.mark.parametrize("name", ["", "?", "Unknown", "TBD", "unnamed stop", "N/A"])
 def test_a_missing_or_unsure_name_is_an_unnamed_stop(name):
     got = creatordraft.validate({**ANSWER, "days": [{"stops": [{"name": name, "time": "", "note": ""}]}]}, "anything")
