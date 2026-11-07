@@ -31,7 +31,8 @@ def order(who="ari"):
 
 def event(order_id, session="cs_test_1", amount=2900, currency="usd", kind="checkout.session.completed", eid="evt_1", status="paid", **obj):
     return {"id": eid, "object": "event", "type": kind, "data": {"object": {"id": session, "object": "checkout.session", "mode": "payment", "client_reference_id": order_id, "payment_status": status,
-                                                                            "amount_total": amount, "currency": currency, **obj}}}
+                                                                            "amount_total": amount, "currency": currency,
+                                                                            "metadata": {"product": "plan-for-me", "order_id": order_id}, **obj}}}
 
 
 def signed(payload, secret=SECRET, ts=None):
@@ -58,7 +59,7 @@ def test_the_checkout_session_is_one_payment_line_at_the_orders_own_price(monkey
     assert p["mode"] == "payment" and p["client_reference_id"] == o["id"] and p["customer_email"] == "ari.rivera@example.com"
     assert p["line_items"] == [{"price_data": {"currency": "usd", "unit_amount": 2900, "product_data": {"name": "Plan it for me", "description": pfm.PROMISE}}, "quantity": 1}]
     assert p["success_url"] == f"{BASE}/plan-for-me/{o['id']}?paid=1" and p["cancel_url"] == f"{BASE}/plan-for-me/{o['id']}"
-    assert p["metadata"] == {"order_id": o["id"]} and p["expires_at"] > time.time() + 1700
+    assert p["metadata"] == {"product": "plan-for-me", "order_id": o["id"]} and p["payment_method_types"] == ["card"] and p["expires_at"] > time.time() + 1700
     assert "allow_promotion_codes" not in p and pfm.get(o["id"], o["owner_user"])["stripe_session"] == "cs_test_9"
 
 
@@ -333,3 +334,19 @@ def test_a_webhook_that_says_it_is_too_big_is_refused_before_a_byte_is_read(clie
              "scheme": "http", "server": ("testserver", 80), "client": ("1.2.3.4", 1), "headers": [(b"host", b"testserver"), (b"content-length", str(pfm.MAX_WEBHOOK + 1).encode())]}
     asyncio.run(client.app(scope, receive, send))
     assert sent[0]["status"] == 413 and asked == []
+
+
+def test_a_sale_on_the_same_stripe_account_that_is_not_ours_is_ignored_and_never_a_refund_due(client, caplog):
+    """The account may sell other things: a signed paid session with no plan-for-me marker (or someone else's metadata) leaves no row, no refund on /admin and no order touched."""
+    o = order()
+    for i, meta in enumerate(({}, {"product": "something-else"}, {"order_id": o["id"]}, {"product": "plan-for-me"}), 1):
+        with caplog.at_level("INFO"):
+            r = hook(client, event(o["id"], eid=f"evt_other{i}", session=f"cs_other{i}", metadata=meta))
+        assert (r.status_code, r.text) == (200, "ignored")
+    stranger = hook(client, event("", eid="evt_other9", session="cs_other9", metadata={}))
+    assert stranger.text == "ignored" and "ignored" in caplog.text
+    assert pfm.get(o["id"], o["owner_user"])["status"] == "awaiting_payment"
+    with pfm._db() as db:
+        from sqlalchemy import text
+        assert db.conn.execute(text("SELECT COUNT(*) FROM plan_order_events")).scalar() == 0
+    assert pfm.refunds_due() == []

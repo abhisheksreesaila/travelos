@@ -296,7 +296,7 @@ def register(app):
         if not found or not pfm.standin() or not reports.same_site(request):
             return _gone()
         paid = {"id": f"standin_{found['id']}", "type": "checkout.session.completed", "data": {"object": {"id": f"standin_{found['id']}", "mode": "payment", "payment_status": "paid",
-                                                                                                         "client_reference_id": found["id"], "amount_total": found["amount_cents"], "currency": "usd"}}}
+                                                                                                         "client_reference_id": found["id"], "metadata": {"product": pfm.PRODUCT, "order_id": found["id"]}, "amount_total": found["amount_cents"], "currency": "usd"}}}
         await run_in_threadpool(pfm.handle_event, paid)      # the same path a verified Stripe event takes
         return RedirectResponse(f"{PATH}/{order_id}", status_code=303)
 

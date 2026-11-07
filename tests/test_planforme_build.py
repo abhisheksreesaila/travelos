@@ -90,7 +90,7 @@ def test_the_answer_is_rebuilt_a_price_or_opening_hours_never_get_through_and_an
     d0, d1 = r["days"][0]["stops"], r["days"][1]["stops"]
     assert [(s["start"], s["end"], s["title"], s["kind"]) for s in d0] == [(900, 990, "Check in and rest", "travel"), (1080, 1140, "Dinner · Downtown Disney District", "food")]
     assert (d1[0]["title"], d1[0]["start"], d1[0]["end"]) == ("Disneyland Park", 540, 690)
-    assert d1[0]["note"] == "" and d1[1]["note"] == ""                                # "Tickets cost $120", "Opens at 11am daily"
+    assert d1[0]["note"] == "Rope drop is worth it with kids." and d1[1]["note"] == ""      # "Tickets cost $120 each." and "Opens at 11am daily." go, the sentence beside the first stays
     assert d1[1]["title"] == "Lunch near the castle"                                  # place_sure was false: no name
     assert r["days"][0]["stops"][0]["note"] == "Let the kids splash in the pool."
     assert r["tips"] == ["Bring a stroller for the seven year old.", "Go left at the castle."]       # the one with "($0)" is dropped
@@ -158,7 +158,7 @@ def test_the_model_is_asked_once_even_when_the_order_is_built_again(monkeypatch)
     pfm.run_pending()
     n, notes = len(calendar()), len(tripcal.notes(person()))
     pfm.write_trip(pfm.get(o["id"], o["owner_user"]), pfm.get(o["id"], o["owner_user"])["result"])
-    assert len(calendar()) == n and len(tripcal.notes(person())) == notes == 4 and len(m.requests) == 1      # the summary, two tips and the stop's own note, once
+    assert len(calendar()) == n and len(tripcal.notes(person())) == notes == 5 and len(m.requests) == 1      # the summary, two tips and the two stop notes, once
     assert len([t for t in ses.trips(person()) if t.title.startswith("Disneyland with")]) == 1
 
 
@@ -373,5 +373,22 @@ def test_a_build_that_stopped_after_the_days_before_their_notes_finishes_the_not
     monkeypatch.setattr(tripcal, "add_note", real)
     trip_id = pfm.write_trip(claimed, result)
     plans, notes = plans_of(trip_id)
-    assert len(plans) == 6 and len(notes) == 4      # the summary, the stop's note and two tips: each once
+    assert len(plans) == 6 and len(notes) == 5      # the summary, two stop notes and two tips: each once
     assert ("Let the kids splash in the pool.", "a1") in [(n.text, n.act) for n in tripcal.notes(person())]
+
+
+INVENTED = ["Kids under 3 are free.", "Opens at 8.", "Closes at 10pm.", "Tickets around 150.", "It costs about a hundred dollars.", "Free on Tuesdays.", "Open daily 9 to 5.",
+            "Entry is free for children.", "Adults pay twenty bucks.", "There is a family discount.", "Mondays closed.", "Opening hours are nine to five.", "Tickets are one fifty each.",
+            "The fee is about 12 euros.", "Half price after 4.", "Free admission on Sundays."]
+HARMLESS = ["Arrive early for shorter lines.", "Day 2 is a rest day.", "Bring a stroller for the seven year old.", "Free time before dinner.", "Tickets sell out, so book ahead.", "Wear comfortable shoes."]
+
+
+@pytest.mark.parametrize("sentence", INVENTED)
+def test_a_sentence_that_states_a_price_or_opening_hours_is_dropped_but_its_neighbours_stay(sentence):
+    assert pfm._claim(f"Arrive early for shorter lines. {sentence} Day 2 is a rest day.", 200) == "Arrive early for shorter lines. Day 2 is a rest day."
+    assert pfm._claim(sentence, 200) == ""
+
+
+@pytest.mark.parametrize("sentence", HARMLESS)
+def test_an_ordinary_tip_is_kept_whole(sentence):
+    assert pfm._claim(sentence, 200) == sentence

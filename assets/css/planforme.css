@@ -1,8 +1,8 @@
 /* Plan it for me (F-193): the intake and the order page at /plan-for-me, in omxqua Travel "Coast" with GitAway's orange (gitaway/omxqua.py, after omxqua.css): colours are the language's
    --oq-* tokens, opaque tonal surfaces, one soft shadow, no glass, no blur. Phone first (390), then the laptop (1440). Sizes are rem off the site's one root (16px phone, 12px laptop),
-   every control is at least --pf-tap tall (44px on the phone, 42px on the laptop), nothing scrolls sideways, and the only times are the --motion-* tokens (tests/test_motion_tokens.py). */
+   every control is at least --pf-tap tall (48px on the phone, 42px on the laptop), nothing scrolls sideways, and the only times are the --motion-* tokens (tests/test_motion_tokens.py). */
 
-.pf { --pf-tap: 2.75rem; display: grid; gap: 1.25rem; max-width: 46rem; margin: 0 auto; padding-block: 1rem 3rem; min-width: 0; }
+.pf { --pf-tap: 3rem; display: grid; gap: 1.25rem; max-width: 46rem; margin: 0 auto; padding-block: 1rem 3rem; min-width: 0; }
 @media (min-width: 45.0625rem) { .pf { --pf-tap: 3.5rem; } }
 .pf > * { min-width: 0; }
 .pf h1, .pf h2 { font-family: var(--oq-font); margin: 0; text-wrap: balance; }
@@ -72,9 +72,9 @@
 .pf-card { display: grid; gap: 0.75rem; padding: 1.25rem; border-radius: 1.25rem; background: var(--oq-surface-1, var(--card)); box-shadow: var(--oq-shadow-2, 0 0.5rem 1.5rem rgba(30, 26, 46, .12)); max-width: 46rem; margin: 1.5rem auto; }
 .pf-card h2 { margin: 0; font-size: clamp(1.375rem, 5vw, 1.875rem); font-weight: 650; letter-spacing: -0.03em; line-height: 1.1; }
 .pf-card p { margin: 0; color: var(--oq-ink-2, var(--ink-2)); line-height: 1.45; }
-.pf-card a.btn, :root:has(.ga-topbar) .pf-card .btn { min-height: 2.75rem; justify-self: start; }
+.pf-card a.btn, :root:has(.ga-topbar) .pf-card .btn { min-height: 3rem; justify-self: start; }
 @media (min-width: 45.0625rem) { .pf-card a.btn, :root:has(.ga-topbar) .pf-card .btn { min-height: 3.5rem; } }
 
-/* the pickers' own controls (pickers.css) are 2.75rem, which is 33px on the laptop's 12px root: here they follow the page's own tap size */
+/* the pickers' own controls (pickers.css) are 2.75rem, which is 44px on the phone and 33px on the laptop's 12px root: here they follow the page's own tap size */
 .pf .ga-pick-btn { min-height: var(--pf-tap); }
 .pf .ga-step-btn { width: var(--pf-tap); height: var(--pf-tap); }

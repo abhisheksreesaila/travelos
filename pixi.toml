@@ -28,7 +28,7 @@ playwright-python = ">=1.62.0,<2"
 pytest-randomly = ">=5.0.0,<6"
 pytest-reverse = ">=1.7.0,<2"
 pip-audit = ">=2.10.1,<3"
-filelock = ">=4.2.9,<5"
+filelock = ">=4.2.9,<5"  # pip-audit caches its lookups with cachecontrol's FileCache, which needs it and does not declare it: without this, `pixi run audit` dies with ImportError
 
 [environments]
 default = { features = ["test"], solve-group = "default" }

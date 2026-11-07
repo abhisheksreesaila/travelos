@@ -1,6 +1,6 @@
 """F-193 Plan it for me, in a real browser at phone (390) and laptop (1440) width: the whole thing a stranger does. They open the intake signed out, fill it in with the app's own pickers,
 meet sign-in (their answers survive it), pay at the local stand-in checkout, watch the order page go from paid to ready on its own while the worker builds the trip with a fake Claude,
-and open the trip on their calendar. No sideways scroll, controls at least 40px tall, the omxqua look. The app and its worker run in this process.
+and open the trip on their calendar. No sideways scroll, controls at least 48px on the phone and 40px on the laptop, the omxqua look. The app and its worker run in this process.
 Set F193_SHOTS=1 to save screenshots to docs/report/f193-*.png."""
 import os
 import re
@@ -31,9 +31,12 @@ def overflow(page):
 
 
 def too_small(page, selector):
-    """The visible controls matching `selector` that are shorter than 40px (a clipped native control behind a dressed picker is not one)."""
-    return page.evaluate("""sel => [...document.querySelectorAll(sel)].filter(e => { const r = e.getBoundingClientRect(), s = getComputedStyle(e);
-        return r.width > 4 && r.height > 4 && s.visibility !== 'hidden' && r.height < 40; }).map(e => (e.getAttribute('aria-label') || e.name || e.id || e.textContent.trim()).slice(0, 40) + ' ' + Math.round(e.getBoundingClientRect().height))""", selector)
+    """The visible controls matching `selector` that are under 48px in either direction on the phone (the designer's touch rule) and under 40px on the laptop, where a mouse points (a clipped
+    native control behind a dressed picker is not one)."""
+    return page.evaluate("""sel => { const min = window.innerWidth < 720 ? 48 : 40, box = e => e.getBoundingClientRect();
+        return [...document.querySelectorAll(sel)].filter(e => { const r = box(e), s = getComputedStyle(e);
+            return r.width > 4 && r.height > 4 && s.visibility !== 'hidden' && Math.min(r.width, r.height) < min - 0.5; })
+            .map(e => (e.getAttribute('aria-label') || e.name || e.id || e.textContent.trim()).slice(0, 40) + ' ' + Math.round(box(e).width) + 'x' + Math.round(box(e).height)); }""", selector)
 
 
 def day_label(d):

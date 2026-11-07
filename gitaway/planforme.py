@@ -266,6 +266,7 @@ CHECKOUT = None       # tests: a function (Checkout session params) -> {"id", "u
 RETRIEVE = None       # tests: a function (session id) -> {"status": "open" | "complete" | "expired", "url"}, used instead of the Stripe SDK
 SESSION_MINUTES = 60  # a Checkout session this long is open (Stripe allows 30 minutes to 24 hours); an unpaid order with a session older than two hours may be trimmed
 MAX_WEBHOOK = 256_000     # bytes: a Stripe event is a few thousand; anything bigger is refused before it is read or checked (main.py `BodyLimit`)
+PRODUCT = "plan-for-me"      # in every Checkout session's metadata: the Stripe account may sell other things, and only a session that says so is one of ours
 PAID_EVENTS = ("checkout.session.completed", "checkout.session.async_payment_succeeded")
 
 
@@ -309,7 +310,8 @@ def start_checkout(order, base_url) -> str:
             return old["url"]
         if old["status"] == "complete":
             return f"{base}/plan-for-me/{order['id']}?paid=1"
-    params = {"mode": "payment", "client_reference_id": order["id"], "customer_email": order["email"] or None, "metadata": {"order_id": order["id"]},
+    params = {"mode": "payment", "client_reference_id": order["id"], "customer_email": order["email"] or None, "metadata": {"product": PRODUCT, "order_id": order["id"]},
+              "payment_method_types": ["card"],      # no bank debit or other delayed method: a payment is settled in seconds, so an order is never trimmed while money is on its way
               "line_items": [{"price_data": {"currency": "usd", "unit_amount": order["amount_cents"], "product_data": {"name": "Plan it for me", "description": PROMISE}}, "quantity": 1}],
               "success_url": f"{base}/plan-for-me/{order['id']}?paid=1", "cancel_url": f"{base}/plan-for-me/{order['id']}", "expires_at": int(time.time()) + SESSION_MINUTES * 60}
     params = {k: v for k, v in params.items() if v is not None}
@@ -332,9 +334,13 @@ def verify_event(payload: bytes, signature: str) -> dict:
 
 
 def handle_event(event) -> str:
-    """What a verified event does: "paid", "duplicate", "double", "mismatch", "unknown" (see `mark_paid`), "waiting" (the session is not paid yet: a later async event settles it) or "ignored"."""
+    """What a verified event does: "paid", "duplicate", "double", "mismatch", "unknown" (see `mark_paid`), "waiting" (the session is not paid yet: a later async event settles it) or "ignored" (not a paid-session event, or a session with no plan-for-me marker in its metadata: another sale on the same Stripe account; nothing is recorded)."""
     obj = ((event.get("data") or {}).get("object") or {}) if isinstance(event, dict) else {}
     if event.get("type") not in PAID_EVENTS or obj.get("mode") != "payment":
+        return "ignored"
+    meta = obj.get("metadata") if isinstance(obj.get("metadata"), dict) else {}
+    if meta.get("product") != PRODUCT or not meta.get("order_id") or meta.get("order_id") != obj.get("client_reference_id"):
+        log.info("stripe event %s (session %s) is not a plan-for-me payment: ignored", event.get("id"), obj.get("id"))
         return "ignored"
     if obj.get("payment_status") != "paid":
         return "waiting"
@@ -421,9 +427,13 @@ def ask(intake, family, usage) -> dict:
 
 # ---- what is trusted of the answer: nothing ---------------------------------------------------------------------------
 
-_MONEY = re.compile(r"[$€£¥]\s?\d|\d\s?(?:usd|eur|gbp|dollars?|euros?|pounds?|bucks)\b|\b(?:free|complimentary)\s+(?:entry|admission|entrance)\b|\b(?:costs?|prices?|priced|admission)\b[^.]{0,20}\d", re.I)
-_HOURS = re.compile(r"\b(?:open(?:s|ing)?|clos(?:e|es|ed|ing))\b[^.]{0,40}?\d{1,2}(?::\d{2})?\s?(?:am|pm|a\.m\.|p\.m\.)|\b\d{1,2}(?::\d{2})?\s?(?:am|pm)\b[^.]{0,20}\b(?:open|clos)"
-                    r"|\bopen\s+(?:daily|24|all day|until|from|late|every)|\b24\s?(?:/7|hours)|\b(?:opening|closing)\s+(?:hours|times?)\b", re.I)
+_NUM = r"(?:\d|\b(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|fifteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand|noon|midnight|half)\b)"
+_MONEY = re.compile(r"[$€£¥]|\b(?:usd|eur|gbp|dollars?|euros?|pounds?|bucks|cents?|pesos?|yen)\b|\b(?:costs?|costing|prices?|priced|pricing|fees?|fares?|admission|discount\w*|donations?|complimentary|gratis)\b"
+                    r"|\bno (?:charge|fee|cost)\b|\bfor free\b|\bfree\s+(?:entry|entrance|parking|tickets?|of charge|on|for|with|to|when|if|after|before|until|at)\b|\b(?:is|are|be|stays?|goes|get|gets|go)\s+free\b"
+                    r"|\bhalf[- ]price\b|%\s?off\b|\bper\s+(?:person|adult|child|kid|head|night|ticket)\b|\b(?:tickets?|entry|entrance|pass(?:es)?|rooms?|rates?)\b[^.]*" + _NUM, re.I)
+_WHEN = re.compile(_NUM + r"|\b(?:mon|tues?|wed(?:nes)?|thu(?:rs)?|fri|sat(?:ur)?|sun)(?:day)?s?\b|\b(?:weekdays?|weekends?|daily|nightly|every|all day|around the clock|until|till|from|early|late|mornings?|evenings?|afternoons?|nights?"
+                   r"|dawn|dusk|sunrise|sunset|hours?|o'clock)\b|[ap]\.?m\b|24/7", re.I)
+_OPEN = re.compile(r"\bopen(?:s|ing|ed)?\b(?![- ]air)|\bclos(?:e|es|ed|ing)\b|\bhours\b", re.I)
 _PHONE = re.compile(r"\+?\d[\d\s().-]{6,}\d")
 _WORD = {"fun": "Activity", "food": "Meal", "outdoors": "Outdoors", "culture": "Sightseeing", "travel": "Travel"}
 
@@ -433,10 +443,14 @@ def _text(value, limit) -> str:
     return " ".join(_PHONE.sub("", cd._line(value, limit * 2)).split())[:limit].strip()
 
 
+def _states_price_or_hours(sentence) -> bool:
+    return bool(_MONEY.search(sentence) or (_OPEN.search(sentence) and _WHEN.search(sentence)))
+
+
 def _claim(value, limit) -> str:
-    """`_text`, or "" when it names a price or opening hours (the agent is told never to, and an answer that does is not believed)."""
-    s = _text(value, limit)
-    return "" if _MONEY.search(s) or _HOURS.search(s) else s
+    """`_text`, with every sentence dropped that names a price, a cost, free or discount terms, or opening or closing times or days, in digits or in words (the agent is told never to, and a
+    sentence that does is not believed). Harmless sentences next to it stay."""
+    return " ".join(x for x in re.split(r"(?<=[.!?])\s+", _text(value, limit)) if not _states_price_or_hours(x))
 
 
 def _cut(text, n) -> str:
