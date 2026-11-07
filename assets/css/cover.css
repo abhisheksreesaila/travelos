@@ -177,6 +177,8 @@
   .cv-end .cv-pin { align-items: flex-end; padding-bottom: max(var(--cv-gut), env(safe-area-inset-bottom)); }
   .cv-last { width: 100%; padding: calc(1.5 * var(--u)) calc(1.375 * var(--u)); }
   .cv-last h2 { font-size: calc(2.25 * var(--u)); }
+  .cv-last .cv-eyebrow { display: block; text-wrap: balance; }
+  .cv-last .cv-eyebrow i { display: inline-block; margin-right: calc(0.5 * var(--u)); vertical-align: 0.15em; }
   .cv-ctas { flex-direction: column; align-items: stretch; gap: calc(0.5 * var(--u)); margin-top: calc(1.25 * var(--u)); }
   .cv-ctas .cv-btn { min-height: calc(3.5 * var(--u)); font-size: calc(1.0625 * var(--u)); }
   .cv-ctas .cv-btn.text { min-height: calc(3 * var(--u)); }

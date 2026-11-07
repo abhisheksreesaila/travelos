@@ -47,8 +47,12 @@
   // The poster is chapter 0's still. The <picture> already chose day or night and phone or laptop without a script; from here this script owns it,
   // so the site's own day/night switch (which a media query cannot see) is followed too.
   const poster = stage.querySelector('.cv-poster img');
-  stage.querySelectorAll('.cv-poster source').forEach((s) => s.remove());
-  const setPoster = () => { const want = stillSrc(0); if (!poster.src.endsWith(want)) poster.src = want; };
+  const setPoster = () => {
+    const want = stillSrc(0);
+    if ((poster.currentSrc || poster.src).endsWith(want)) return;                // the <picture> already chose it: leave it, no second download
+    stage.querySelectorAll('.cv-poster source').forEach((s) => s.remove());
+    poster.src = want;
+  };
   setPoster();
 
   /* ---------- the conductor ---------- */
@@ -77,7 +81,7 @@
       active = i;
       chapters.forEach((c, k) => c.classList.toggle('is-on', k === i));
       railBtns.forEach((b, k) => (k === i ? b.setAttribute('aria-current', 'step') : b.removeAttribute('aria-current')));
-      root.dataset.chapter = i;
+      root.dataset.cvChapter = i;
       if (still || !worldReady) showStill(i);
     }
     // the closing screen covers the whole stage: nothing behind it needs drawing
