@@ -78,7 +78,7 @@ void main() {
   vec3 refl = skyColor(R);
   if (uReflAmt > 0.0) {
     vec4 rc = uReflMat * vec4(vW, 1.0);
-    vec2 ruv = rc.xy / rc.w + n.xz * vec2(0.06, 0.03) * clamp(30.0 / dist, 0.2, 1.0);
+    vec2 ruv = rc.xy / rc.w + n.xz * vec2(0.012, 0.035) * clamp(14.0 / dist, 0.03, 1.0);      // ripples smear the mirror into short vertical streaks, less with distance
     vec4 sc = texture2D(uRefl, ruv);
     refl = mix(refl, sc.rgb / max(sc.a, 1e-3), sc.a * uReflAmt);                   // the mirror pass is premultiplied where it is not opaque
   }
@@ -91,7 +91,7 @@ void main() {
   float edge = smoothstep(-7.0, -0.5, sd) * (1.0 - smoothstep(-0.5, 0.5, sd));
   col = mix(col, vec3(0.92, 0.95, 0.97) * (0.5 + 0.5 * uLightCol), edge * (0.25 + 0.55 * lace) * uFoam);
   col = hazed(col, vW, uCam);
-  float alpha = mix(0.9 - 0.62 * shallow, 1.0, F) * (1.0 - smoothstep(-0.2, 0.5, sd) * 0.6);
+  float alpha = mix(1.0 - 0.72 * shallow, 1.0, F) * (1.0 - smoothstep(-0.2, 0.5, sd) * 0.6);      // the floor shows through the shallows only: deep water hides the bottom
   gl_FragColor = vec4(col, alpha * uRise);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>

@@ -135,7 +135,7 @@ async function main() {
   const RIG = [
     { p: [X0, 430 * K, zc + 388 * K], t: [X0, 0, zc + 36 * K], fov: 30, shift: [0, -0.27], phone: { p: [X0, 1080 * K, zc + 0.1], t: [X0, 0, zc], fov: 30, up: [-1, 0, 0], shift: [0, -0.2] } },
     { p: [9500, 26000, 21000], t: [-7600, 0, -12800], fov: 38, shift: [0.13, 0], drift: [-600, -1200, -900], phone: { p: [-6200, 76000, 30000], t: [-7600, 0, -13200], fov: 40, shift: [0, 0.27] } },
-    { p: [C.x + DH.x * 46 + SD.x * 16, C.y + 9, C.z + DH.z * 46 + SD.z * 16], t: [C.x, C.y + 6.5, C.z], fov: 44, shift: [0.14, 0], phone: { p: [C.x + DH.x * 56 + SD.x * 8, C.y + 12, C.z + DH.z * 56 + SD.z * 8], t: [C.x, C.y + 7, C.z], fov: 56, shift: [0, 0.2] } },
+    { p: [C.x + DH.x * 36 + SD.x * 13, C.y + 7.5, C.z + DH.z * 36 + SD.z * 13], t: [C.x, C.y + 5.5, C.z], fov: 42, shift: [0.14, 0], phone: { p: [C.x + DH.x * 56 + SD.x * 8, C.y + 12, C.z + DH.z * 56 + SD.z * 8], t: [C.x, C.y + 7, C.z], fov: 56, shift: [0, 0.2] } },
     { p: [10500, 17000, 26000], t: [1600, 0, -5200], fov: 42, shift: [0.12, 0], phone: { p: [4200, 30000, 23000], t: [400, 0, -5600], fov: 46, shift: [0, 0.22] } },
     { p: [F.x + away.x * 8 + sideV.x * 3.2, 3.1, F.z + away.z * 8 + sideV.z * 3.2], t: [F.x + along.x * 60, 9, F.z + along.z * 60], fov: 46, shift: [0.12, 0.02], drift: [0.6, 0.04, 0.6],
       phone: { p: [F.x + away.x * 10 + sideV.x * 2, 3.8, F.z + away.z * 10 + sideV.z * 2], t: [F.x + along.x * 60, 7, F.z + along.z * 60], fov: 60, shift: [0, 0.2] } },
@@ -161,7 +161,13 @@ async function main() {
   anchors.add(make(`${dot(0x9a9aa4)}Lena &amp; Sam’s way`), theirs.clone().add(new Vector3(0, 30, 0)), { ax: -100, ay: -100, dx: -10, dy: -8, show: (st) => (st.chapter === 2 ? smooth(0.45, 0.55, st.local) * (1 - smooth(0.4, 0.9, st.travel)) : 0) });
   anchors.add(make('Your trail', 'cv-lbl ink'), (v) => car.getWorldPosition(v).add(new Vector3(0, 30, 0)), { ax: -50, ay: -100, show: (st) => (st.chapter === 2 ? smooth(0.32, 0.42, st.local) * (1 - smooth(0.4, 0.9, st.travel)) : 0) });
   anchors.add(make(`${dot(KIND.stay)}Ana &amp; Luis <small>followed your trail</small>`), v3(P.nextCabin).add(new Vector3(0, 16, 0)), { ax: -60, ay: -100, show: (st) => (st.chapter === 5 ? smooth(0.45, 0.55, st.local) * (1 - smooth(0.3, 0.8, st.travel)) : 0) });
-  branches.forEach((b) => { if (!b.text) return; const left = b.tip.x < treeRoot.x; anchors.add(make(`${dot(b.color)}${b.text}`), b.tip.clone().add(new Vector3(0, 420, 0)), { ax: left ? -100 : 0, ay: -50, dx: left ? -12 : 12, show: (st) => (phoneL() ? 0 : st.chapter === 6 ? smooth(0.5, 0.65, st.local) : 0) }); });
+  // each branch's name on its own side (the trunk's at its root, by the lake), so none sits on another
+  const SIDE = { 'Lena & Sam · five days': [0, -50, 16, 1], 'You · the sled hill': [-100, -50, -14, 0], 'The Kims · the north shore': [-100, -100, -14, -6], 'Mia’s ski week': [0, -100, 14, -6], 'Ana & Luis · from yours': [0, 0, 14, 8] };
+  branches.forEach((b) => {
+    if (!b.text) return;
+    const [ax, ay, dx, dy] = SIDE[b.text] || [0, -50, 12, 0], at = b.depth === 0 ? treeRoot.clone().add(new Vector3(0, SC * 2.4, 0)) : b.tip.clone();
+    anchors.add(make(`${dot(b.color)}${b.text}`), at, { ax, ay, dx, dy, show: (st) => (phoneL() ? 0 : st.chapter === 6 ? smooth(0.5, 0.65, st.local) : 0) });
+  });
   // the plan's widgets: laid out where they read best at the chapter's endpoint, then pinned to the world there, each with a dashed leader to its place
   const svgNS = 'http://www.w3.org/2000/svg', leaders = document.createElementNS(svgNS, 'svg'); leaders.setAttribute('class', 'leaders'); layer.prepend(leaders);
   const routeAt = (t) => route.userData.at(t, new Vector3());
@@ -399,7 +405,7 @@ async function main() {
   function render() {
     terrain.userData.select(camera, TU.uRise.value);
     if (lake.userData.U.uReflAmt.value > 0) {
-      reflection.render(scene, camera, [lake, fallen, sky, snow, sparkle, smoke, smoke2, cards]);     // translucent effects stay out of the mirror
+      reflection.render(scene, camera, [lake, fallen, sky, stars, snow, sparkle, smoke, smoke2, cards]);     // the sky and the translucent effects stay out of the mirror (the water reflects the sky itself)
       lake.userData.U.uReflMat.value.copy(reflection.texMat);
     }
     renderer.render(scene, camera);

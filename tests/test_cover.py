@@ -137,3 +137,9 @@ def test_the_first_paint_already_knows_day_or_night(client):
     assert boot and "cv-dark" in boot.group(1) and "prefers-color-scheme" in boot.group(1) and "prefers-reduced-motion" in boot.group(1)
     assert len(boot.group(1).encode()) < 2048
     assert html.index(boot.group(0)) < html.index(_tag(html, "cv-stage"))
+
+
+def test_the_real_map_data_is_credited_where_it_shows(client):
+    """The world's shorelines, roads and drives are OpenStreetMap data (ODbL): the page that shows them says so."""
+    footer = _text(re.search(r"<footer.*?</footer>", _cover(client), re.S).group(0))
+    assert "© OpenStreetMap contributors" in footer and "USGS 3DEP" in footer

@@ -96,8 +96,9 @@ function mergeGeos(list) {
 // a Lambert material taught to sway, to keep snow on upward faces, and to fade with distance
 function treeMaterial(U, key) {
   const m = new MeshLambertMaterial({ vertexColors: true });
+  m.userData.snowScale = 1;
   m.onBeforeCompile = (sh) => {
-    Object.assign(sh.uniforms, { uTime: U.uTime, uWind: U.uWind, uSnowCol: U.uSnowCol, uCamPos: U.uCam, uFar: U.uFar });
+    Object.assign(sh.uniforms, { uTime: U.uTime, uWind: U.uWind, uSnowCol: U.uSnowCol, uCamPos: U.uCam, uFar: U.uFar, uSnowScale: { value: m.userData.snowScale } });
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', `#include <common>
         attribute vec4 aVar; uniform float uTime, uFar; uniform vec2 uWind; uniform vec3 uCamPos; varying float vSnow; varying float vUp; varying float vH; varying float vTint;`)
@@ -113,10 +114,10 @@ function treeMaterial(U, key) {
         vUp = normalize(mat3(instanceMatrix) * objectNormal).y;`);
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', `#include <common>
-        uniform vec3 uSnowCol; varying float vSnow; varying float vUp; varying float vH; varying float vTint;`)
+        uniform vec3 uSnowCol; uniform float uSnowScale; varying float vSnow; varying float vUp; varying float vH; varying float vTint;`)
       .replace('#include <color_fragment>', `#include <color_fragment>
         diffuseColor.rgb *= 0.86 + vTint * 0.28;
-        float snow = clamp(smoothstep(0.05, 0.5, vUp) * vSnow * 1.15, 0.0, 1.0) * step(0.3, vH + 0.25);
+        float snow = clamp(smoothstep(0.05, 0.5, vUp) * vSnow * 1.15 * uSnowScale, 0.0, 1.0) * step(0.3, vH + 0.25);
         diffuseColor.rgb = mix(diffuseColor.rgb, uSnowCol, snow * 0.92);`);
   };
   m.customProgramCacheKey = () => key;
@@ -207,6 +208,7 @@ export function buildForest(T, q, U, keep) {
     }
   }
   const midMat = treeMaterial(U, 'cover-fir-mid');
+  midMat.userData.snowScale = 0.25;                                 // a tree a few pixels tall shows its dark needles, not the snow on its top
   const midMesh = place(new InstancedMesh(coneTree(2, 5, 5), midMat, Math.max(1, mid.length)), mid);
   midMesh.userData.mid = true;
   group.add(midMesh);

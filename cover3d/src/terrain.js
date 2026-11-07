@@ -22,6 +22,7 @@ const VS = /* glsl */ `
 #include <common>
 #include <logdepthbuf_pars_vertex>
 #include <shadowmap_pars_vertex>
+#include <clipping_planes_pars_vertex>
 uniform sampler2D uNoise;
 ${GROUND_GLSL}
 attribute vec4 aTile; attribute float aSkirt;
@@ -42,6 +43,7 @@ void main() {
   vec4 mvPosition = viewMatrix * worldPosition;
   gl_Position = projectionMatrix * mvPosition;
   #include <logdepthbuf_vertex>
+  #include <clipping_planes_vertex>
   #include <shadowmap_vertex>
 }`;
 
@@ -52,22 +54,25 @@ const FS = /* glsl */ `
 #include <lights_pars_begin>
 #include <shadowmap_pars_fragment>
 #include <shadowmask_pars_fragment>
+#include <clipping_planes_pars_fragment>
 ${SKY_GLSL}
 ${GROUND_GLSL}
 uniform vec3 uCam, uSnow, uHemiSky, uHemiGround, uLightDir, uLightCol, uRock, uCanopy, uSand, uPaper, uInk, uLakeInk;
 uniform float uLightI, uHemiI, uCell, uRise, uLit, uShadowSteps, uNight, uCanopyNear, uSparkle, uFallenY;
 uniform vec4 uBounds;
+uniform vec3 uHero[3];
 varying vec3 vW; varying float vSkirt;
 
 float forestAt(vec2 p, float hm, float slope, float sd) {
   // the same rule forest.js plants by (data.js forestAt): stands with edges, above the shore, denser low and thinning to the tree line, off cliffs
-  float stand = texture2D(uNoise, p / 3600.0).r * 0.7 + texture2D(uNoise, p / 900.0 + 0.37).g * 0.3;
+  float stand = texture2D(uNoise, p / 3600.0).r * 0.82 + texture2D(uNoise, p / 900.0 + 0.37).g * 0.18;
   float band = smoothstep(4.0, 50.0, sd) * (1.0 - smoothstep(600.0, 820.0, hm)) * smoothstep(-260.0, -150.0, hm);
   float alt = 1.0 - smoothstep(380.0, 760.0, hm) * 0.6;
-  return clamp(band * alt * (1.0 - smoothstep(0.45, 0.65, slope)) * smoothstep(0.36, 0.5, stand) * 1.25, 0.0, 1.0);
+  return clamp(band * alt * (1.0 - smoothstep(0.45, 0.65, slope)) * smoothstep(0.3, 0.4, stand) * 1.25, 0.0, 1.0);
 }
 
 void main() {
+  #include <clipping_planes_fragment>
   #include <logdepthbuf_fragment>
   vec2 p = vW.xz;
   float e = uCell;
@@ -93,7 +98,8 @@ void main() {
   rock = mix(rock, uSnow * 0.92, smoothstep(0.6, 0.85, texture2D(uNoise, p / 18.0).g) * 0.55);            // snow caught in the granite's ledges
   col = mix(col, rock, steep * 0.9);
   float forest = forestAt(p, hm, slope, sd);
-  float canopyFar = smoothstep(260.0, 2200.0, dist);                                                  // near the camera the real trees stand there instead
+  float canopyFar = 1.0;
+  for (int k = 0; k < 3; k++) canopyFar = min(canopyFar, smoothstep(uHero[k].z * 0.75, uHero[k].z * 1.15, distance(p, uHero[k].xy)));   // inside a close-up place the real trees stand instead
   float crowns = texture2D(uNoise, p / 7.0).a;                                                         // crown or gap, every few metres
   vec3 canopy = mix(uCanopy, uSnow * 0.9, crowns * (0.26 + 0.14 * texture2D(uNoise, p / 300.0).b));   // dark needles, snow on the branches
   col = mix(col, canopy, forest * 0.94 * canopyFar);
@@ -182,12 +188,13 @@ export function buildTerrain(T, SKYU, q) {
     uCam: { value: new Vector3() }, uMorph: { value: morph }, uGrid: { value: G }, uRise: { value: 1 }, uLit: { value: 1 },
     uCell: { value: (H.x1 - H.x0) / H.w }, uShadowSteps: { value: q.shadowSteps }, uNight: { value: 0 }, uCanopyNear: { value: q.treeFar },
     uSparkle: { value: q.sparkle }, uFallenY: { value: T.fallenY }, uBounds: { value: new Vector4(X0, Z0, X1, Z1) },
+    uHero: { value: [new Vector3(T.places.cabin[0], T.places.cabin[1], q.heroR), new Vector3(0, 0, q.heroR * 0.8), new Vector3(T.places.nextCabin[0], T.places.nextCabin[1], q.heroR * 0.55)] },
     uSnow: { value: new Color(0xeef2f7) }, uRock: { value: new Color(0x8e8a83) }, uCanopy: { value: new Color(0x142019) }, uSand: { value: new Color(0xc8b48c) },
     uHemiSky: { value: new Color(0xcfe0ff) }, uHemiGround: { value: new Color(0x8f9db4) }, uHemiI: { value: 1 }, uLightDir: { value: new Vector3(0, 1, 0) },
     uLightCol: { value: new Color(0xffffff) }, uLightI: { value: 1 },
     uPaper: { value: new Color(0xf2efe6) }, uInk: { value: new Color(0x5c5c66) }, uLakeInk: { value: new Color(0x7fa6d6) },
   };
-  const mat = new ShaderMaterial({ uniforms: U, vertexShader: VS, fragmentShader: FS, lights: true });
+  const mat = new ShaderMaterial({ uniforms: U, vertexShader: VS, fragmentShader: FS, lights: true, clipping: true });   // clipping: the lake's mirror pass leaves the lake floor out
   const mesh = new Mesh(geo, mat);
   mesh.frustumCulled = false; mesh.receiveShadow = true;
 

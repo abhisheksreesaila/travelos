@@ -1,0 +1,47 @@
+{
+  "laptop-1440-gpu": {
+    "fps": 58.1,
+    "p95_ms": 16.8,
+    "over_33ms": 0.6,
+    "frames": 1200,
+    "calls_max": 59,
+    "triangles_max": 1284154,
+    "scale": 1,
+    "tier": "high",
+    "still": false
+  },
+  "phone-390-cpu4x-gpu": {
+    "fps": 56,
+    "p95_ms": 16.8,
+    "over_33ms": 0.9,
+    "frames": 1200,
+    "calls_max": 72,
+    "triangles_max": 514566,
+    "scale": 1,
+    "tier": "mid",
+    "still": false
+  },
+  "phone-390-cpu4x-software-gl": {
+    "fps": 5,
+    "p95_ms": 683.3,
+    "over_33ms": 86.3,
+    "frames": 95,
+    "calls_max": 66,
+    "triangles_max": 514566,
+    "scale": 1,
+    "tier": "mid",
+    "still": false
+  },
+  "phone-390-cpu4x-software-gl-governor": {
+    "fps": 13.7,
+    "p95_ms": 149.9,
+    "over_33ms": 72.2,
+    "frames": 90,
+    "calls_max": 20,
+    "triangles_max": 51394,
+    "scale": 0.55,
+    "tier": "mid",
+    "still": true,
+    "still_after": true
+  }
+}

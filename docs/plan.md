@@ -1230,6 +1230,14 @@ Brief: docs/briefs/free-and-polished.md "The soul: sharing" · Design: docs/desi
 - [ ] four themes a creator or reader picks: Scrapbook, Structured, Magazine, Minimal list
 - [ ] Thank (a real count) and Fork with a fork tree; counts are never invented
 
-## F-206 The cover page: a 3D scroll world [todo]
-Brief: docs/briefs/free-and-polished.md "Later" · Design: docs/design/cover3d/ (in progress) · Needs: the founder's pick of a concept
-- [ ] "Forget the book. Go travel.": one real place, the story of sharing told as you scroll, ending in Start a trip / Share a trip / See trips
+## F-206 The cover page: a 3D scroll world [review]
+Brief: docs/briefs/free-and-polished.md "The soul: sharing", "The line" · Design: docs/design/cover3d/ (concept A with B's fork tree, the founder's pick) · Build: cover3d/README.md · Decisions: D-219 to D-227
+- [x] the signed-out landing is the cover: "Don't read about it. Go." … the fly-through over the real Lake Tahoe in December … B's fork tree ("Every trip here grew from another") … "Take a trip. Leave a trail." with the subhead and three doors: Start a trip (`/start`), Leave a trail (`/for-creators`), See trips people shared (`/community`, only while it exists); a signed-in person keeps the old landing; the Drive script rules unchanged
+- [x] text is real DOM (headings, the line, the doors) with a title, a description and Open Graph tags; the world is `aria-hidden` decoration
+- [x] three.js r187 self-hosted in `assets/vendor/three-0.187.0` (tree-shaken, version-pinned, licence kept), loaded only on the signed-out landing and only when the live world is wanted; landing JavaScript about 200 KB gzip of 250 (`tests/test_cover_budget.py`)
+- [x] a 10 KB poster at once; reduced motion, no WebGL and weak phones get the still chapters without downloading three.js; adaptive quality (tiers, then a lower pixel ratio, then the stills); the loop pauses under the closing screen and in a hidden tab
+- [x] day scene in light, night scene in dark, following the site's switch (F-200's, once it sets dark or light on `<html>`/`<body>`) and the system
+- [x] detail: the real elevation, shoreline, Emerald Bay, Fallen Leaf Lake, roads and drives; Tahoe's water with shallows and a mirror; crafted firs and pines with snow and wind; the chalet, the pier, the SUV and the family at true size; procedural timber; soft shadows; haze; falling snow; a winter sky with sunset rays and a starry night (credits: cover3d/CREDITS.md)
+- [x] phone: touch scroll (tested with real touch events), 16 px text and 48 px targets; no sideways scroll at six widths; durations only from `--motion-*`
+- [x] proof: `tests/test_cover.py`, `tests/test_cover_budget.py`, `tests_browser/test_cover.py` (390 and 1440, light and dark); frame rate measured (`cover3d/fps.json`: laptop 58 fps, phone-class CPU 56 fps, a weak GPU steps down and switches to the stills); screens, close-ups and a scroll-through in `docs/report/f206-*`
+- [ ] the founder opens it on their own phone (the frame-rate numbers come from this machine's GPU)

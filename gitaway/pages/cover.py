@@ -152,7 +152,8 @@ def _footer(links):
         Span("GitAway", cls="ga-brand-name"),
         P("Plan a trip together, share it, and follow trips other families shared. Booking always happens on the partner’s site, under their terms, never here."),
         Nav(*[A(label, href=href) for label, href in [*links, ("Privacy", "/privacy"), ("Terms", "/terms")]], aria_label="More"),
-        P("Early preview · the trip, the families and the bookings in this story are made up.", cls="cv-fine"),
+        P("Early preview · the trip, the families and the bookings in this story are made up. Lake Tahoe is real: map data © OpenStreetMap contributors, "
+          "elevation from USGS 3DEP via AWS Terrain Tiles.", cls="cv-fine"),
         cls="cv-foot",
     )
 

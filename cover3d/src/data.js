@@ -121,10 +121,10 @@ export async function loadTahoe(base, tier) {
     const hm = ground(x, z), sd = shore(x, z);
     const gx = (ground(x - cell, z) - ground(x + cell, z)) * EXAG, gz = (ground(x, z - cell) - ground(x, z + cell)) * EXAG;
     const ny = (2 * cell) / Math.hypot(gx, 2 * cell, gz), slope = 1 - ny;
-    const stand = noiseUV(x / 3600, z / 3600, 0) * 0.7 + noiseUV(x / 900 + 0.37, z / 900 + 0.37, 1) * 0.3;
+    const stand = noiseUV(x / 3600, z / 3600, 0) * 0.82 + noiseUV(x / 900 + 0.37, z / 900 + 0.37, 1) * 0.18;
     const band = sstep(4, 50, sd) * (1 - sstep(600, 820, hm)) * sstep(-260, -150, hm);
     const alt = 1 - sstep(380, 760, hm) * 0.6;
-    return clamp(band * alt * (1 - sstep(0.45, 0.65, slope)) * sstep(0.36, 0.5, stand) * 1.25, 0, 1);
+    return clamp(band * alt * (1 - sstep(0.45, 0.65, slope)) * sstep(0.3, 0.4, stand) * 1.25, 0, 1);
   };
   const slopeAt = (x, z) => { const gx = (ground(x - cell, z) - ground(x + cell, z)) * EXAG, gz = (ground(x, z - cell) - ground(x, z + cell)) * EXAG; return 1 - (2 * cell) / Math.hypot(gx, 2 * cell, gz); };
   const minmax = pyramid(f, H.w, H.h);

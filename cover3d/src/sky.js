@@ -111,7 +111,7 @@ export function buildStars(count, dpr) {
   const mat = new ShaderMaterial({
     uniforms: U, transparent: true, depthWrite: false, depthTest: false, blending: AdditiveBlending,
     vertexShader: 'attribute float aSize; attribute vec3 color; varying vec3 vC; varying float vT; uniform float uTime; void main(){ vC = color; vT = fract(sin(dot(position.xy, vec2(12.9898, 78.233))) * 43758.5453); vec4 p = projectionMatrix * modelViewMatrix * vec4(position, 1.0); gl_Position = p.xyww; gl_PointSize = aSize * (0.85 + 0.15 * sin(uTime * (1.0 + vT * 2.0) + vT * 40.0)); }',
-    fragmentShader: 'uniform float uOpacity; varying vec3 vC; varying float vT; void main(){ vec2 q = gl_PointCoord - 0.5; float a = smoothstep(0.5, 0.0, length(q)); gl_FragColor = vec4(vC * a * uOpacity, 1.0); }',
+    fragmentShader: 'uniform float uOpacity; varying vec3 vC; varying float vT; void main(){ vec2 q = gl_PointCoord - 0.5; float a = smoothstep(0.5, 0.0, length(q)) * uOpacity; if (a < 0.003) discard; gl_FragColor = vec4(vC * a, a); }',
   });
   const p = new Points(g, mat); p.renderOrder = -9; p.frustumCulled = false;
   p.userData = { U, set: (o) => { U.uOpacity.value = o; p.visible = o > 0.01; } };
