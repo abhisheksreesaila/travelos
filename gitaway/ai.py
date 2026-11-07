@@ -75,7 +75,7 @@ BUSY = "The assistant is busy with another request. Try again in a moment."
 MAX_AT_ONCE = 3     # calls to the service in flight at once, across every family: the interactive pool (Ask, speak, Convert, voice, Around you)
 _global = threading.BoundedSemaphore(MAX_AT_ONCE)
 # Background work has its own pool, so a batch of creator drafts can never leave a family's Ask or voice typing with "the assistant is busy" (F-196). A job named here is
-# drafted for later, not waited on by a person; F-193's "plan-for-me" is listed ahead of its job so it joins this pool the day it is added to JOBS.
+# drafted for later, not waited on by a person: creator drafts (F-183) and Plan it for me orders (F-193).
 BACKGROUND_JOBS = frozenset({"creator-import", "plan-for-me"})
 BACKGROUND_AT_ONCE = 3
 _background = threading.BoundedSemaphore(BACKGROUND_AT_ONCE)

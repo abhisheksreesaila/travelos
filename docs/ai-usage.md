@@ -52,7 +52,7 @@ Also the Anthropic provider and the same `ANTHROPIC_API_KEY`, with its own defau
 
 ### Claude Haiku 5.5 (`creator-import`, F-183)
 
-The only job on the Anthropic provider. It uses the official `anthropic` SDK with `ANTHROPIC_API_KEY` (set it in Railway, service web); with no key the job is off ("drafting is not switched on yet") and nothing is sent.
+One of two jobs on the Anthropic provider (the other is `plan-for-me`, F-193, Claude Sonnet). It uses the official `anthropic` SDK with `ANTHROPIC_API_KEY` (set it in Railway, service web); with no key the job is off ("drafting is not switched on yet") and nothing is sent.
 
 | Variable | Effect |
 |---|---|

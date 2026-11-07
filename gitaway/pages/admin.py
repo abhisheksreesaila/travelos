@@ -103,6 +103,8 @@ def new_reports(session) -> int:
     except Exception:  # noqa: BLE001
         logger.exception("could not count the new reports")
         return 0
+
+
 STATUS_WORDS = {"awaiting_payment": "Waiting for payment", "paid": "Paid", "building": "Building", "review": "Check it", "sending": "Sending", "ready": "Ready", "failed": "Failed"}
 
 

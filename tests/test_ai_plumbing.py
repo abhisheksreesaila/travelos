@@ -33,6 +33,20 @@ def test_creator_import_with_azure_set_and_no_anthropic_key_is_off_and_sends_not
     assert e.value.code == "off" and azure == []
 
 
+def test_plan_for_me_with_azure_set_and_no_anthropic_key_is_off_sends_nothing_and_is_not_for_sale(azure, monkeypatch):
+    from gitaway import planforme
+    monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
+    monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_x")
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", "whsec_x")
+    monkeypatch.setenv("GITAWAY_CONTACT_EMAIL", "hello@example.com")
+    assert ai.provider("plan-for-me") == "anthropic"
+    assert ai.configured("plan-for-me") is False
+    with pytest.raises(ai.AIError) as e:
+        ai.call_json("plan-for-me", "fam", "s", "u", {"type": "object", "properties": {}})
+    assert e.value.code == "off" and azure == []
+    assert planforme.offered() is False
+
+
 def test_in_production_with_only_azure_set_drafting_says_it_is_not_switched_on(azure, client, monkeypatch):
     from tests.test_signin import sign_in
     monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
@@ -132,7 +146,7 @@ def test_three_family_calls_in_flight_do_not_stop_a_creator_draft(model, family_
         t.join(5)
 
 
-def test_plan_for_me_has_a_hook_on_the_background_pool():
+def test_plan_for_me_runs_on_the_background_pool():
     assert {"creator-import", "plan-for-me"} <= ai.BACKGROUND_JOBS
 
 
