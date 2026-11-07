@@ -186,9 +186,11 @@ def terrain_tile(z, x, y) -> bytes:
     i = np.arange(256) + .5
     lon = (x + i / 256) / 2 ** z * 360 - 180
     lat = np.degrees(np.arctan(np.sinh(np.pi * (1 - 2 * (y + i / 256) / 2 ** z))))
-    gx = np.clip((lon - w) / (e - w) * wd - .5, 0, wd - 1)
-    gy = np.clip((n - lat) / (n - s) * h - .5, 0, h - 1)
-    zz = grid[np.round(gy).astype(int)][:, np.round(gx).astype(int)] + 32768
+    gx = np.clip((lon - w) / (e - w) * wd - .5, 0, wd - 1.001)
+    gy = np.clip((n - lat) / (n - s) * h - .5, 0, h - 1.001)
+    x0, y0 = gx.astype(int), gy.astype(int)
+    fx, fy = (gx - x0)[None, :], (gy - y0)[:, None]
+    zz = (grid[y0][:, x0] * (1 - fx) * (1 - fy) + grid[y0][:, x0 + 1] * fx * (1 - fy) + grid[y0 + 1][:, x0] * (1 - fx) * fy + grid[y0 + 1][:, x0 + 1] * fx * fy) + 32768      # bilinear: the grid is coarse
     rgb = np.stack([np.floor(zz / 256), np.floor(zz % 256), np.floor((zz % 1) * 256)], axis=-1).astype(np.uint8)
     buf = io.BytesIO()
     Image.fromarray(rgb, mode="RGB").save(buf, "PNG")

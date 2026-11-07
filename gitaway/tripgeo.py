@@ -5,6 +5,7 @@ fill. It runs after a trip is saved or edited (gitaway.importer.save) and, throt
 """
 
 import time
+from dataclasses import dataclass
 
 from gitaway import geo, session as ses, tripcal as cal, tripday as td
 
@@ -12,8 +13,22 @@ _KICKED = {}  # (family, trip) -> when Today last started a fill
 HOUR = 3600
 
 
-def day_places(session) -> list:
-    """[[place, ...] for each day] (a flight's airport is `(place, True)`: driven to from the stop before, never from): where you slept the night before (when the trip says), then every stop with a place, in time order."""
+@dataclass(frozen=True)
+class Stop:
+    """One place a day goes to, in order: `at` its minute (-1 for the stay the night before, which the day starts from), `place` the text looked up,
+    `flight` True for a flight's airport (driven to, never from), `title` what the stop is ("" for the stay), `icon` a booking's icon ("plane", "bed",
+    "car"; "" for a plan) and `act` a plan's id."""
+    at: int
+    place: str
+    flight: bool = False
+    title: str = ""
+    icon: str = ""
+    act: str = ""
+
+
+def day_stops(session) -> list:
+    """[[Stop, ...] for every day of the open trip] (a day with no place is an empty list): where you slept the night before (when the trip says and the
+    day does not start with a landing), then every stop with a place, in time order. The cockpit's map reads it (F-201); `day_places` is made from it."""
     b = ses.booking(session)
     if not b:
         return []
@@ -27,11 +42,20 @@ def day_places(session) -> list:
         stops = []
         for blk in blocks:
             if blk.day == i and (p := td._place_of(blk, td.hotel_place(b, dates, i))):
-                stops.append((blk.at, p, blk.icon == "plane"))
-        stops += [(a.start, f"{a.title}, {dest}", False) for a in acts if a.day == i]
+                stops.append(Stop(blk.at, geo.as_place(p), blk.icon == "plane", blk.title, blk.icon))
+        stops += [Stop(a.start, geo.as_place(f"{a.title}, {dest}"), False, a.title, "", a.id) for a in acts if a.day == i]
         flies = any(blk.day == i and blk.icon == "plane" and not td.is_departure(blk.id) for blk in blocks)  # the landing day starts at the airport, not at the stay; a day you fly out of starts at the stay (F-075)
         before = td.hotel_place(b, dates, i - 1) if i and not flies else ""
-        day = ([before] if before else []) + [(geo.as_place(p), True) if fl else geo.as_place(p) for _, p, fl in sorted(stops)]
+        out.append(([Stop(-1, before)] if before else []) + sorted(stops, key=lambda x: (x.at, x.place, x.flight)))
+    return out
+
+
+def day_places(session) -> list:
+    """[[place, ...] for each day] (a flight's airport is `(place, True)`: driven to from the stop before, never from): where you slept the night before (when the trip says), then every stop with a place, in time order."""
+    out = []
+    for stops in day_stops(session):
+        day = [(x.place, True) if x.flight else x.place for x in stops]
+        before = bool(stops) and stops[0].at < 0
         if len(day) > 1 or (day and not before):
             out.append(day)
     return out

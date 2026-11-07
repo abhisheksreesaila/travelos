@@ -169,20 +169,27 @@ def up_details(item):
     return Details(Summary("Details", Span(f" for {item.title}", cls="sr-only"), cls="tp-mini"), *body, cls="ph-details tp-confirm", **({"data_confirm": item.id} if item.confirm else {}), data_up_details=item.id)
 
 
-def leave_info(v, item):
-    """(leave-by minute, drive minutes, minutes left, margin) for reaching `item` from where the day puts you, or None when no drive time is known (gitaway.tripday.leave_by).
-    The Up next card here and the desktop panel (F-140) read the drive time through it."""
+def leave_from(v, item):
+    """(the place the drive to `item` starts from, minutes to be there early) the way the day puts you, or None when nobody drives to it (a landing).
+    The origin is "" straight after a flight. leave_info and the cockpit's next leg (F-201) read it."""
     before = [x for x in v["items"] if x.start < item.start and x.place and x.kind not in ("ride", "offer")]
     flew = any(x.kind == "flight" and x.start < item.start for x in v["items"])  # on a travel day nobody leaves from the stay
-    margin = 0
     if item.kind == "flight":  # F-075: a departure flight is driven to from the stop before (or the night's stay), with time to spare; a landing never is
         if not td.is_departure(item.id):
             return None
         leg = td._LEG.search(item.title)
         margin = td.flight_margin(*leg.groups()) if leg else td.DOMESTIC_EARLY
-        origin = "" if before and before[-1].kind == "flight" else before[-1].place if before else v["stay_before"]
-    else:
-        origin = "" if before and before[-1].kind == "flight" else before[-1].place if before else ("" if flew else v["stay_place"])  # straight after a flight there is no drive to time
+        return ("" if before and before[-1].kind == "flight" else before[-1].place if before else v["stay_before"]), margin
+    return ("" if before and before[-1].kind == "flight" else before[-1].place if before else ("" if flew else v["stay_place"])), 0  # straight after a flight there is no drive to time
+
+
+def leave_info(v, item):
+    """(leave-by minute, drive minutes, minutes left, margin) for reaching `item` from where the day puts you, or None when no drive time is known (gitaway.tripday.leave_by).
+    The Up next card here and the desktop panel (F-140) read the drive time through it."""
+    got = leave_from(v, item)
+    if not got:
+        return None
+    origin, margin = got
     got = td.leave_by(item, origin, v["clocks"][item.zone][1], margin)
     return (*got, margin) if got else None
 

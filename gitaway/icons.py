@@ -72,6 +72,13 @@ PATHS = {
     "ticket": '<path d="M3 9a2 2 0 0 0 0 6v3a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-3a2 2 0 0 1 0-6V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1z"/><path d="M13 5v2M13 11v2M13 17v2"/>',
     "file": '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>',
     "ext": '<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
+    # F-201: the cockpit's turn-by-turn steps and its paper map
+    "up": '<path d="M12 20V4M6 10l6-6 6 6"/>',
+    "turn-left": '<path d="M9 14 4 9l5-5"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/>',
+    "turn-right": '<path d="m15 14 5-5-5-5"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/>',
+    "bear-left": '<path d="M8 4H4v4"/><path d="m4 4 7.5 7.5A5 5 0 0 1 13 15v5"/>',
+    "bear-right": '<path d="M16 4h4v4"/><path d="m20 4-7.5 7.5A5 5 0 0 0 11 15v5"/>',
+    "layers": '<path d="m12 3 9 5-9 5-9-5 9-5z"/><path d="m3 13 9 5 9-5"/>',
 }
 
 
