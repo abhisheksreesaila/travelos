@@ -1,6 +1,6 @@
 # Feature brief: free, polished, and booking that works anywhere
 
-Status: draft (2026-11-07). The captain approves after seeing the reskin directions and the booking research.
+Status: approved (2026-11-07, the captain: "A with a mix here and there … lets prototype and then build").
 
 ## Why
 - People won't pay for plans on a new site with no network. Paid comes later, through creators (for example a premium plan with a creator's discount code). First, get families and creators in and excited. Target: 100 plans added.
@@ -26,6 +26,14 @@ Status: draft (2026-11-07). The captain approves after seeing the reskin directi
    - **Coming back:** a booking returns into the trip through a forwarded or pasted confirmation.
    - **The test:** the captain's Tahoe trip in December, end to end.
 5. **Go live with the reskin.** The captain's Disneyland trip publishes at the same time.
+
+## The soul: sharing
+- The heart of GitAway is sharing a trip the way a developer shares a repo. Someone shares their memories and plans, others look, enjoy, build on them (fork), and say thank you to the person who shared. That's the GitHub feeling and the Linux-kernel feeling, applied to travel. Nothing else does this well today.
+- A shared trip tells a story, like a short animated film: the route, the days, the moments. It's interactive and 3D (three.js) but light, around 100 to 200 KB, loaded only where the story is shown. It falls back to a calm still picture with reduced motion or on weak phones. Meng To's threeui (github.com/MengTo/threeui) is the starting point if its licence allows.
+- Gratitude is part of the product: a reader can thank the sharer, the way people star a repo, and forks show where a trip went next.
+- Widgets and booking are a convenience, not the pitch: colorful, complete, one screen.
+- Look: Direction A (gray canvas, Apple-bright colors, light and dark) is the base, with B's ticket stub where it fits. omxqua is the system. Web and phone are designed together, web first if one has to wait.
+- Order: prototype the 3D story, the captain picks one, then build.
 
 ## The model (the captain's call, 2026-11-07)
 - GitAway is "the GitHub of travel": the place to plan a trip together, share it, and fork other people's trips. GitAway does not sell travel.
