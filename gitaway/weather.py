@@ -3,6 +3,8 @@ before it opens. Nothing here is invented: a day GitAway knows nothing about sho
 
     forecast(lat, lon, altitude=None) -> Forecast | None   MET Norway Locationforecast 2.0 compact for a place, cached
     forecast_days(fc, tz, now) -> {date: Day}               its local days: high and low (deg F), condition, words, inches, mph, hours
+    station_near(lat, lon) / station_named(text)           the NOAA climate-normals station for a place (normals.json), or None
+    normal_day(station, date) -> Day                        that station's typical weather for the date, labelled "Typical late December · not a forecast yet"
 
 MET Norway's terms (https://api.met.no/doc/TermsOfService, the Locationforecast HowTo and FAQ) and how this module keeps them:
   - a person in charge must read and accept the terms before the service is used: nothing is asked until MET_NORWAY_TERMS_ACCEPTED=1;
@@ -29,6 +31,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta, timezone
 from email.utils import parsedate_to_datetime
+from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 from zoneinfo import ZoneInfo
@@ -458,3 +461,98 @@ def forecast_days(fc: Forecast | None, tz, now: datetime) -> dict:
         out[d] = Day(d, FORECAST, _f(max(a.temps)), _f(min(a.temps)), condition, word, _inches(sum(a.mm.values())),
                      round(max(a.winds) * 2.23694) if a.winds else None, tuple(sorted(a.hours, key=lambda h: h.at)), a.covered < 23)
     return out
+
+
+# ---- typical weather: NOAA's climate normals ------------------------------------------------------------------------------------
+# gitaway/normals.json is made by scripts/build_normals.py from NOAA NCEI's U.S. Climate Normals 1991-2020 (public domain): per station, for the
+# early, mid and late part of each month, the normal high and low (deg F), the chance of a wet day (at least 0.01 in) and, where the station
+# measures it, of a snowy one (at least 0.1 in). Nothing is fetched while the app runs.
+
+NORMALS = Path(__file__).with_name("normals.json")
+NEAR_KM = 25         # a place farther than this from every station has no normals
+NORMALS_CREDIT = "Typical weather: NOAA climate normals, 1991–2020"
+CATALOG = {"la": "USW00093134", "sd": "USW00023188", "hi": "USW00022521", "nyc": "USW00094728"}   # the catalog's four places
+_THIRDS = ("early", "mid", "late")
+
+
+@dataclass(frozen=True)
+class Station:
+    id: str
+    name: str
+    lat: float
+    lon: float
+    elev: int            # metres
+    tz: str
+    aliases: tuple       # destination names that mean this station, lower case
+    normals: tuple       # 36 x (high F, low F, wet-day %, snowy-day % or None)
+
+
+_STATIONS: tuple = ()
+
+
+def stations() -> tuple:
+    global _STATIONS
+    if not _STATIONS:
+        table = json.loads(NORMALS.read_text(encoding="utf-8"))["stations"]
+        _STATIONS = tuple(Station(sid, s["name"], s["lat"], s["lon"], s["elev"], s["tz"], tuple(s["aliases"]), tuple(tuple(n) for n in s["n"]))
+                          for sid, s in table.items())
+    return _STATIONS
+
+
+def station(sid: str) -> Station | None:
+    return next((s for s in stations() if s.id == sid), None)
+
+
+def _km(lat1, lon1, lat2, lon2) -> float:
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    h = math.sin((p2 - p1) / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(math.radians(lon2 - lon1) / 2) ** 2
+    return 6371 * 2 * math.asin(math.sqrt(h))
+
+
+def station_near(lat, lon, km=NEAR_KM) -> Station | None:
+    """The closest station within `km` of a place, or None."""
+    lat, lon = _number(lat, -90, 90), _number(lon, -180, 180)
+    if lat is None or lon is None:
+        return None
+    best = min(stations(), key=lambda s: _km(lat, lon, s.lat, s.lon))
+    return best if _km(lat, lon, best.lat, best.lon) <= km else None
+
+
+def _words(text) -> str:
+    return " ".join(re.sub(r"[^a-z0-9]+", " ", str(text or "").lower()).split())
+
+
+def station_named(text) -> Station | None:
+    """The station a destination's name means ("Lake Tahoe, California" is South Lake Tahoe), matched as whole words, the longest name winning; else None."""
+    words = f" {_words(text)} "
+    found = [(len(a), s) for s in stations() for a in s.aliases if f" {a} " in words]
+    return max(found, key=lambda f: f[0])[1] if found else None
+
+
+def period(d: date) -> str:
+    """"late December": the third of the month a date falls in."""
+    return f"{_THIRDS[0 if d.day <= 10 else 1 if d.day <= 20 else 2]} {d:%B}"
+
+
+def normals_label(d: date) -> str:
+    return f"Typical {period(d)} · not a forecast yet"
+
+
+def _typical(high, low, wet, snow):
+    """(condition, words) for a typical day: how often a day is wet, and whether that is mostly snow (the station says so, or its days average
+    below 35 F when it does not count snow)."""
+    snowy = snow >= 5 and snow * 2 >= wet if snow is not None else (high + low) / 2 < 35
+    if wet < 10:
+        return "sun", "Usually dry"
+    if snow is not None and snowy:
+        words = f"Snow about 1 day in {round(100 / snow)}"
+    else:
+        words = f"{'Snow or rain' if snowy else 'Rain'} about 1 day in {round(100 / wet)}"
+    return ("snow" if snowy else "sun" if wet < 20 else "cloud" if wet < 35 else "rain"), words
+
+
+def normal_day(st: Station, d: date) -> Day:
+    """The station's typical weather for a date, as a Day of kind NORMAL that says it is not a forecast."""
+    high, low, wet, snow = st.normals[(d.month - 1) * 3 + (0 if d.day <= 10 else 1 if d.day <= 20 else 2)]
+    condition, words = _typical(high, low, wet, snow)
+    return Day(d, NORMAL, high, low, condition, words, label=normals_label(d))
