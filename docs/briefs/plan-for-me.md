@@ -10,12 +10,13 @@ Status: draft, built in agent time (autopilot, 2026-11-06). The captain approves
 - A family that has picked a place (or been inspired by a creator's trip) and does not want to plan the days themselves. Phone first: this is bought on an iPhone in a couple of minutes.
 
 ## The offer, in plain words
-- **Price: $29, one time** (`PLAN_FOR_ME_PRICE_CENTS=2900`; the number lives in one setting, never on the client).
+- **Price: $29 for the first 10 families, then $49, one time** (F-197: `PLAN_FOR_ME_PRICE_CENTS`, `PLAN_FOR_ME_FOUNDING_LIMIT`, `PLAN_FOR_ME_FULL_PRICE_CENTS`; the server picks it, the offer shows the founding spots left, and no former or struck-through price is ever shown).
 - **Promise: "Not useful? Reply within 7 days for a full refund."** The captain refunds by hand in Stripe. The page says it before the button and again on the order page.
 - **What they get:** a trip in their family's GitAway calendar: day by day, with times, real named places where the agent is sure and a plain "pick a place" where it is not, kid-friendly pacing for the ages given, a note with a few tips, and links to book flights (Aviasales) and stays and things to do (Klook) carrying the order id as the SubID.
 - **What they never get:** an invented price or exact opening hours. A place the agent is unsure of shows without a name.
 
 ## The flow
+0. **The offer** (F-197) at `/plan-for-me`, phone first: a calm Disneyland trip with kids as the outcome, the founding price, what you get, a short founder note, the 7-day promise, four questions, three example plans (`/plan-for-me/example/<slug>`, with "What to book and when"), one button to the intake. **Founder check**: with `PLAN_FOR_ME_REVIEW` on (default) the captain sends each built plan to the family from /admin, after a quick look or edit, and the pages say "checked by a person, usually within a few hours", never "in minutes".
 1. **Entry points.** A card on every public creator trip page ("Want this trip built around your family?", the place and trip name carried over), a card on the signed-out landing, and a line in the signed-in trip menu. Nothing else.
 2. **Intake, one short phone screen:** where (free text; suggestions are the catalog's places plus "Disneyland, California"), dates, home airport, adults, kids with ages, budget band (Easy on the wallet, Comfortable, Treat ourselves), must-dos (free text), pace (Relaxed, Balanced, Packed).
 3. **Sign in before paying**, so the trip lands in the family's account. A signed-out visitor fills the form, the browser keeps their answers while they sign in, and the form comes back filled in.

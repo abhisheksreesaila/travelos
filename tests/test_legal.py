@@ -61,7 +61,7 @@ def test_plan_it_for_me_is_in_the_privacy_page_and_the_terms_and_the_terms_no_lo
     """F-193: Stripe takes a payment, Claude Sonnet reads the intake, and an order keeps personal data until it is deleted. The old terms said GitAway "does not take payments": it now takes one."""
     flat = lambda path: re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", client.get(path).text)).replace("&#x27;", "'")
     privacy, terms = flat("/privacy"), flat("/terms")
-    for phrase in ("Plan it for me orders: where you asked to go, the dates, your home airport, how many adults and the ages of any kids, your budget and pace, what you typed under must-dos, your email address, the amount and Stripe's code for the payment, and the trip we built",
+    for phrase in ("Plan it for me orders: where you asked to go, the dates, your home airport, how many adults and the ages (and, if you gave them, the heights) of any kids, your budget and pace, what you typed under must-dos, your email address, the amount and Stripe's code for the payment, and the trip we built",
                    "We do not keep your card number",
                    "Stripe takes the payment for Plan it for me", "You type your card on Stripe's own page, so GitAway never sees or keeps your card number",
                    "Stripe gets your email address (for the receipt) and the amount, and keeps its own record of the payment under its own rules",

@@ -1,4 +1,4 @@
-"""F-197 "What to book and when": a countdown checklist per destination, from facts checked against official sites (gitaway/planfacts.py, sources in docs/decisions.md D-170 to D-172),
+"""F-197 "What to book and when": a countdown checklist per destination, from facts checked against official sites (gitaway/planfacts.py, sources in docs/decisions.md D-173 and D-174),
 with the dates worked out from the trip's own first day. A place we have not checked gets an honest generic list that says so."""
 
 from datetime import date

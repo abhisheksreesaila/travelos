@@ -1,4 +1,4 @@
-"""What we know for sure about a few places (F-197): the facts checked against official sites (docs/research/plan-for-me-facts.md, decisions D-170 to D-173), used three ways.
+"""What we know for sure about a few places (F-197): the facts checked against official sites (docs/research/plan-for-me-facts.md, decisions D-173 and D-174), used three ways.
 
     place_for(where)                  the checked place a trip's "where" names (Disneyland Resort, New York City, Oahu), or None
     checklist(where, start, today)    "What to book and when": each thing to book, soonest first, with its date counted back from the trip's first day (a date already past is "Now");
