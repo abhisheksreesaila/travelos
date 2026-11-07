@@ -335,7 +335,8 @@
 .ws-lo { font-size: max(var(--text-min), 0.6875rem); font-weight: 700; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .ws-wcell.ws-typical { outline: 0.125rem dashed rgba(30, 26, 46, .28); outline-offset: -0.125rem; }   /* typical weather, not a forecast (F-203) */
 .ws-wnote { font-size: max(var(--text-min), 0.75rem); font-weight: 700; color: var(--ink-2); line-height: 1.35; }
-.ws-wnote a { color: inherit; text-decoration: underline; text-underline-offset: 0.125rem; }
+a.ws-wcredit { color: inherit; text-decoration: underline; text-underline-offset: 0.125rem; }   /* MET's credit: the whole line is the link */
+@media (max-width: 720px) { a.ws-wcredit { display: flex; align-items: center; min-height: 3rem; } }   /* a 48px tap target on the phone */
 .ws-map { position: relative; height: 8.125rem; flex-shrink: 0; border-radius: 1.125rem; background: var(--mint-tint); overflow: hidden; }
 .ws-map-art { position: absolute; inset: 0; width: 100%; height: 100%; }
 .ws-sea { fill: var(--sky-tint); }

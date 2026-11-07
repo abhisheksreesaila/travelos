@@ -86,7 +86,7 @@ def calendar_view(session, placements=(), author="", fresh=(), demo=""):
                 Button(icon("chev-right", 16, 2.6), type="button", data_dir="1", aria_label="Later days", cls="fk-navbtn"), cls="fk-nav", hidden=True) if len(cols) > 3 else "",
             A("Open the trip", href="/trip", cls="fk-link"), cls="fk-card-head"),
         Div(gutter, Div(*cols, cls="fk-scroll", id="fk-scroll", role="region", aria_label="Days", tabindex="0"), cls="fk-grid", style=f"--n:{len(cols)}"),
-        Div(*weather_ui.notes(tw, "fk-wx-note"), cls="fk-wx-notes") if tw and weather.notes(tw) else "",
+        Div(*weather_ui.notes(tw, "fk-wx-note", "fk-wcredit"), cls="fk-wx-notes") if tw and weather.notes(tw) else "",
         cls="fk-cal card", aria_label="Trip calendar")
 
 

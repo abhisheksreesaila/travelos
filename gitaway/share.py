@@ -130,8 +130,8 @@ def build(session, tags=(), theme="sunset"):
         items = sorted([*((x.start, 0, _stop(x, b, t)) for x in blocks if x.day == i), *((a.start, 1, _plan(a)) for a in acts if a.day == i)],
                        key=lambda r: r[:2])
         stops = [r[2] for r in items]
-        w = cal.weather_for(i)
-        days.append(Day(i + 1, f"DAY {i + 1}", _day_title(i, last, stops), f"{w.temp_f}°F, {w.sky}" if sample else "", stops, collapsed=i >= 3))
+        w = cal.weather_for(i) if sample else None
+        days.append(Day(i + 1, f"DAY {i + 1}", _day_title(i, last, stops), f"{w.temp_f}°F, {w.sky}" if w else "", stops, collapsed=i >= 3))
     plans = sum(len(d.stops) for d in days)
     name = title_for(t)
     keys = [k for k in hub.TAGS if k in tags]
@@ -143,7 +143,7 @@ def build(session, tags=(), theme="sunset"):
         days=days, tags=[Tag(hub.TAGS[k][0], hub.TAGS[k][1], hub.TAGS[k][2], (-3, 2, -1.5)[n % 3]) for n, k in enumerate(keys)],
         stats=[(f"{len(days)} days", "from landing to flight home"), (f"{plans} plans", "bookings and things to do"), ("0", "families forked it")],
         polaroids=[Polaroid(PIER, "Santa Monica Pier and beach", "the pier"), Polaroid(VENICE, "Venice Beach, Los Angeles", "Venice")] if la else [],
-        author="a traveler", theme=theme if theme in ("sunset", "pacific") else "sunset",
+        author="a traveler", theme=theme if theme in ("sunset", "pacific") else "sunset", weather=(),     # no weather badge: a shared trip has no dates (F-203)
         **({} if la else {"route": place}),
     )
 

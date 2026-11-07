@@ -18,7 +18,7 @@ from tests.creator_import_support import Model, page
 from tests.test_signin import EMAILS
 
 ROOT = Path(__file__).resolve().parent.parent / "gitaway"
-BLOCKING = re.compile(r"^(ai\.(call_json|transcribe)|safefetch\.fetch|importsource\.(gather|offline)|robots\.check|blogscan\.(discover|sample)|(dj|draftjobs)\.\w+|(pfm|planforme)\.\w+|intake_page|stripe\.[\w.]+|(cd|creatordraft)\.\w+|(cc|creatorclaim)\.draft|admin\.admin_page|expedia\.pdf_text|geo\.\w+|weather\.\w+|photos\.\w+|time\.sleep|requests\.\w+|urllib\.\w+|httpx\.\w+|_read)$")
+BLOCKING = re.compile(r"^(ai\.(call_json|transcribe)|safefetch\.fetch|importsource\.(gather|offline)|robots\.check|blogscan\.(discover|sample)|(dj|draftjobs)\.\w+|(pfm|planforme)\.\w+|intake_page|stripe\.[\w.]+|(cd|creatordraft)\.\w+|(cc|creatorclaim)\.draft|admin\.admin_page|expedia\.pdf_text|geo\.\w+|weather\.(forecast|trip_weather)|(plan\.)?(workspace|weather_pane)|calendar_view|forks_page|photos\.\w+|time\.sleep|requests\.\w+|urllib\.\w+|httpx\.\w+|_read)$")
 # One-row reads and writes in the local SQLite file are fine on the loop; these are the only listed calls that are.
 FINE = {("gitaway/pages/creatorimport.py", "cd.get"), ("gitaway/pages/creatordrafts.py", "cd.mode"), ("gitaway/pages/creatordrafts.py", "dj.remaining"), ("gitaway/pages/planforme.py", "pfm.standin"), ("gitaway/pages/planforme.py", "pfm.offered")}      # (standin, offered: environment checks, no database)
 
@@ -61,13 +61,16 @@ def test_the_checker_itself_catches_a_blocking_call(tmp_path, monkeypatch):
     assert _offenders() == ["gitaway/pages/x.py:2 h calls safefetch.fetch"]
 
 
-def test_the_checker_catches_a_weather_call_too(tmp_path, monkeypatch):
-    """F-203: asking MET Norway for a forecast is a network call; an async handler must hand it to run_in_threadpool."""
+def test_the_checker_flags_what_can_wait_on_met_and_only_that(tmp_path, monkeypatch):
+    """F-203: asking MET Norway is a network call, and so is drawing a page that shows a trip's weather; weather's pure helpers are not."""
     bad = tmp_path / "gitaway"
     (bad / "pages").mkdir(parents=True)
-    (bad / "pages" / "x.py").write_text("async def h(r):\n    return weather.for_trip(r)\n\nasync def ok(r):\n    return await run_in_threadpool(lambda: weather.for_trip(r))\n")
+    calls = ["weather.forecast(1, 2)", "weather.trip_weather(r)", "weather_pane(r)", "plan.weather_pane(r)", "calendar_view(r)", "forks_page(r)", "workspace(r)",
+             "plan.workspace(r)", "weather.sample(r)", "weather.notes(r)", "weather.normal_day(r, r)"]
+    src = "".join(f"async def h{i}(r):\n    return {c}\n\n" for i, c in enumerate(calls)) + "async def ok(r):\n    return await run_in_threadpool(lambda: weather.trip_weather(r))\n"
+    (bad / "pages" / "x.py").write_text(src)
     monkeypatch.setattr(sys.modules[__name__], "ROOT", bad)
-    assert _offenders() == ["gitaway/pages/x.py:2 h calls weather.for_trip"]
+    assert [o.split(" calls ")[1] for o in _offenders()] == [c.split("(")[0] for c in calls[:8]]
 
 
 @pytest.fixture

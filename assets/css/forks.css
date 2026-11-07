@@ -24,7 +24,8 @@
 .fk-wx { margin-left: auto; font-weight: 700; font-size: max(var(--text-min), 0.75rem); color: var(--ink-2); }
 .fk-wx-typ { font-style: italic; }   /* typical weather, not a forecast (F-203); the note under the calendar says so */
 .fk-wx-notes { display: flex; flex-wrap: wrap; gap: 0.125rem 0.875rem; font-size: max(var(--text-min), 0.75rem); font-weight: 700; color: var(--ink-2); }
-.fk-wx-notes a { color: inherit; text-decoration: underline; text-underline-offset: 0.125rem; }
+a.fk-wcredit { color: inherit; text-decoration: underline; text-underline-offset: 0.125rem; }   /* MET's credit: the whole line is the link */
+@media (max-width: 720px) { a.fk-wcredit { display: flex; align-items: center; min-height: 3rem; } }   /* a 48px tap target on the phone */
 .fk-hours { display: flex; flex-direction: column; }
 .fk-hour { height: var(--hh); flex: none; font-size: max(var(--text-min), 0.75rem); font-weight: 700; color: var(--ink-3); transform: translateY(-0.5rem); }
 .fk-body { position: relative; margin-top: 0.25rem; background-image: repeating-linear-gradient(to bottom, rgba(30, 26, 46, .07) 0, rgba(30, 26, 46, .07) 1px, transparent 1px, transparent var(--hh)); }

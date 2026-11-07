@@ -2,57 +2,67 @@
 before it opens. Nothing here is invented: a day GitAway knows nothing about shows nothing.
 
     forecast(lat, lon, altitude=None) -> Forecast | None   MET Norway Locationforecast 2.0 compact for a place, cached
-    forecast_days(fc, tz, now) -> {date: Day}               its local days: high and low (deg F), condition, words, inches, mph, hours
-    station_near(lat, lon) / station_named(text)           the NOAA climate-normals station for a place (normals.json), or None
+    forecast_days(fc, tz, now) -> {date: Day}               its local days: high and low (deg F), condition, words, inches, mph
+    station_named(text) / station_near(lat, lon)           the NOAA climate-normals station for a destination (normals.json), or None
     normal_day(station, date) -> Day                        that station's typical weather for the date, labelled "Typical late December · not a forecast yet"
-    trip_weather(trip, coords=None) -> TripWeather          one Day (or None) per day of a trip: the forecast where it reaches, else typical
-    notes(tw) -> [(text, link)]                             the lines a page shows under a trip's weather: the credit, the label, the source
+    trip_weather(trip) -> TripWeather                       one Day (or None) per day of a trip: the forecast where it reaches, else typical
+    notes(tw) -> [(text, link)]                             the lines a page shows under a trip's weather; a line with a link is a link as a whole
     sample(trip) -> bool                                    the showcase's own sample trip, the one trip whose weather is sample data
 
 MET Norway's terms (https://api.met.no/doc/TermsOfService, the Locationforecast HowTo and FAQ) and how this module keeps them:
   - a person in charge must read and accept the terms before the service is used: nothing is asked until MET_NORWAY_TERMS_ACCEPTED=1;
   - an identifying User-Agent: "GitAway/1.0 <the site's address> <GITAWAY_CONTACT_EMAIL, when set>" (the site's /privacy page names the contact);
-  - at most four decimals in a coordinate, https only, gzip accepted, redirects followed (urllib follows them);
-  - never ask again before the Expires header, and not within three hours (outside the Nordic area the forecast changes every six hours, and
-    the FAQ asks for at least half of that); then ask with If-Modified-Since set to exactly the Last-Modified we were given, and keep our copy on 304;
-  - far under 20 requests a second for the whole site: one gate for the process (`GATE`); a 429 or a 403 shuts it for a while;
+  - at most four decimals in a coordinate, https only, gzip accepted; GitAway never follows a redirect (MET's API does not send them; one is logged by host);
+  - never ask again before the Expires header (held to 12 hours at most), and not within three hours (outside the Nordic area the forecast changes every
+    six hours, and the FAQ asks for at least half of that); then ask with If-Modified-Since set to exactly the Last-Modified we were given, and keep
+    our copy on 304;
+  - far under 20 requests a second for the whole site: one gate for the process (`GATE`); a 429 shuts it for ten minutes, a 403 for an hour;
   - a 203 (the product is deprecated) is logged as a warning, so whoever reads the logs moves to the successor.
+Only a NOAA station's or a catalog place's coordinates are ever sent, never a family's address. Everything MET answers is untrusted: an answer that
+does not read cleanly (too big, too deep, absurd times) is a failed call, and the place is not asked again for FAIL_WAIT.
 The data are MET Norway's (CC BY 4.0 and NLOD 2.0) and GitAway's days are worked out from them: show `CREDIT` (linked to `CREDIT_URL`) wherever a
 forecast shows. Our server asks, never a browser, so MET Norway sees our server and a place, not a family.
 
 `TRANSPORT` is the one function that touches the network, (url, headers, timeout) -> (status, headers, body bytes); tests replace it.
 """
 
+import http.client
 import json
 import logging
 import math
 import os
 import re
+import socket
+import ssl
 import threading
+import time as clock
 import zlib
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from pathlib import Path
-from urllib.error import HTTPError
-from urllib.request import Request, urlopen
+from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
-from gitaway import auth, catalog, zones
+from gitaway import auth, catalog, geo, zones
 from gitaway.geo import Gate
 
 log = logging.getLogger("gitaway.weather")
 
-API = "https://api.met.no/weatherapi/locationforecast/2.0/compact"
-TIMEOUT = 3.0                       # seconds a page waits for MET at most
+HOST = "api.met.no"
+API = f"https://{HOST}/weatherapi/locationforecast/2.0/compact"
+TIMEOUT = 3.0                       # one deadline for all a page waits on MET: the place's lock, the gate, the lookup, the call and the answer
 MIN_REPEAT = timedelta(hours=3)     # Locationforecast FAQ: outside the Nordic area wait at least half of its six-hour update interval
+EXPIRES_MAX = timedelta(hours=12)   # an Expires further off than this is held to it: a far-off date must not freeze a place
 FAIL_WAIT = timedelta(minutes=5)    # after a failed call, before anyone asks for that place again
 KEEP = timedelta(hours=24)          # a forecast we hold is still shown, with its time, for this long when later calls fail
 REFUSED = {429: 600, 403: 3600}     # seconds the gate stays shut after MET says too many requests, or refuses us
 MAX_BYTES = 2 * 1024 * 1024
-CACHE_MAX = 512                     # places
-GATE = Gate(0.2)                    # at most five calls a second from the whole process
+MAX_STEPS = 200                     # MET's compact forecast has about 90 steps; more are not read
+STEPS_FROM, STEPS_TO = timedelta(days=1), timedelta(days=12)        # a step outside now - 1 day .. now + 12 days is dropped
+MADE_FROM, MADE_TO = timedelta(days=2), timedelta(hours=1)          # a forecast "made" outside now - 2 days .. now + 1 hour is refused
+GATE = Gate(0.2)                    # at most five calls a second from the whole process; a page waits for its turn only until its deadline
 
 FORECAST, NORMAL = "forecast", "normal"
 CREDIT = "Forecast based on data from MET Norway"
@@ -87,14 +97,6 @@ class Forecast:
 
 
 @dataclass(frozen=True)
-class Hour:
-    at: int                      # local hour, 0 to 23
-    temp_f: int | None
-    condition: str               # sun | cloud | rain | snow
-    precip_in: float
-
-
-@dataclass(frozen=True)
 class Day:
     """One day of a trip as GitAway shows it: MET's forecast, or the place's climate normals (kind NORMAL, with `label` saying so)."""
     date: date
@@ -105,8 +107,6 @@ class Day:
     word: str                    # "Light snow", "Partly cloudy, snow late"; for normals what the days are usually like
     precip_in: float | None = None   # forecast: the day's rain or melted snow
     wind_mph: int | None = None      # forecast: the strongest wind of the day
-    hours: tuple = ()                # forecast: Hour per hour where MET gives hourly steps (the first two or three days)
-    partial: bool = False            # forecast: part of the day had gone when it was read (today)
     label: str = ""                  # normals: "Typical late December · not a forecast yet"
 
 
@@ -125,13 +125,104 @@ def user_agent() -> str:
     return f"{ua} {mail}" if _EMAIL.fullmatch(mail) else ua
 
 
-def _http(url, headers, timeout):
-    """GET from MET Norway. 304, 403, 429 and the rest come back as a status, not an exception."""
+def _lookup(host, deadline) -> str:
+    """The host's address, looked up in a thread of its own so that a slow resolver cannot hold a page past its deadline (a clock.monotonic time)."""
+    found = {}
+
+    def look():
+        try:
+            found["ip"] = socket.getaddrinfo(host, 443, type=socket.SOCK_STREAM)[0][4][0]
+        except (OSError, IndexError) as e:
+            found["error"] = e
+
+    t = threading.Thread(target=look, daemon=True, name="met-lookup")
+    t.start()
+    t.join(max(0.0, deadline - clock.monotonic()))
+    if "ip" not in found:
+        raise TimeoutError("looking up api.met.no took too long") if t.is_alive() else OSError("api.met.no could not be found")
+    return found["ip"]
+
+
+class _MetTLS(http.client.HTTPSConnection):
+    """A TLS connection to the address already looked up; the certificate must be api.met.no's."""
+    ip = ""
+
+    def connect(self):
+        raw = socket.create_connection((self.ip, self.port), self.timeout)
+        self.sock = raw         # so the watchdog can cut a handshake that drips
+        self.sock = ssl.create_default_context().wrap_socket(raw, server_hostname=self.host)
+
+
+def _connection(ip, timeout):
+    conn = _MetTLS(HOST, 443, timeout=timeout)
+    conn.ip = ip
+    return conn
+
+
+CONNECTION = _connection        # tests: (ip, timeout) -> a connection to a local stand-in
+
+
+def _host(url) -> str:
     try:
-        with urlopen(Request(url, headers=headers), timeout=timeout) as r:    # noqa: S310 - the fixed https address above
-            return r.status, {k.lower(): v for k, v in r.headers.items()}, r.read(MAX_BYTES + 1)
-    except HTTPError as e:
-        return e.code, {k.lower(): v for k, v in (e.headers or {}).items()}, b""
+        return urlsplit(str(url)).hostname or "nowhere"
+    except ValueError:
+        return "nowhere"
+
+
+def _http(url, headers, timeout):
+    """One GET from https://api.met.no and nowhere else, all of it (lookup, connect, handshake, answer) within `timeout` seconds: (status, headers, body).
+    Any other address raises ValueError before anything is sent; a redirect is never followed (only its host is logged). A watchdog cuts the socket at
+    the deadline, because a socket timeout bounds only one wait and a server dripping a byte at a time would hold the page."""
+    try:
+        parts = urlsplit(url)
+        bad = parts.scheme != "https" or parts.hostname != HOST or parts.port is not None or parts.username is not None or parts.password is not None
+    except ValueError:
+        bad = True
+    if bad:
+        raise ValueError("GitAway asks only https://api.met.no")
+    deadline = clock.monotonic() + timeout
+    conn = CONNECTION(_lookup(HOST, deadline), max(0.1, deadline - clock.monotonic()))
+    timed_out, held = threading.Event(), {}
+
+    def cut():
+        timed_out.set()
+        for sock in (held.get("sock"), getattr(conn, "sock", None)):
+            for act in ("shutdown", "close"):
+                try:
+                    getattr(sock, act)(*((socket.SHUT_RDWR,) if act == "shutdown" else ()))
+                except (OSError, AttributeError):
+                    pass
+
+    watchdog = threading.Timer(max(0.0, deadline - clock.monotonic()), cut)
+    watchdog.daemon = True
+    watchdog.start()
+    try:
+        conn.connect()
+        held["sock"] = conn.sock      # http.client lets go of conn.sock once an answer says it will close the connection; the watchdog must still reach it
+        conn.request("GET", (parts.path or "/") + (f"?{parts.query}" if parts.query else ""), headers=headers)
+        resp = conn.getresponse()
+        got = {k.lower(): v for k, v in resp.getheaders()}
+        if 300 <= resp.status < 400:
+            log.warning("MET Norway answered %s towards %s; GitAway does not follow redirects", resp.status, _host(got.get("location", "")))
+            return resp.status, got, b""
+        body = bytearray()
+        while len(body) <= MAX_BYTES:
+            if clock.monotonic() > deadline:
+                raise TimeoutError("MET Norway took too long")
+            chunk = resp.read(min(65536, MAX_BYTES + 1 - len(body)))
+            if not chunk:
+                break
+            body += chunk
+        if timed_out.is_set():
+            raise TimeoutError("MET Norway took too long")
+        return resp.status, got, bytes(body)
+    except (OSError, http.client.HTTPException, ValueError):
+        if timed_out.is_set():
+            raise TimeoutError("MET Norway took too long") from None
+        raise
+    finally:
+        watchdog.cancel()
+        conn.close()
 
 
 TRANSPORT = _http
@@ -145,7 +236,7 @@ class _Entry:
     modified: str = ""           # its Last-Modified, sent back as If-Modified-Since
 
 
-_CACHE: dict = {}
+_CACHE: dict = {}                # url -> _Entry; a url is a station's or a catalog place's, so there are at most a few dozen
 _LOCK = threading.Lock()
 _ASKING: dict = {}               # url -> the lock one asker holds, so two pages never ask for the same place at once
 
@@ -173,28 +264,32 @@ def _query(lat, lon, altitude=None) -> str | None:
 
 def forecast(lat, lon, altitude=None, *, timeout=TIMEOUT) -> Forecast | None:
     """MET's forecast for a place (altitude in metres, when known, makes the temperatures more exact), or None: not switched on, a bad place,
-    or no answer. Answered from the cache until MET's Expires (and three hours) have passed."""
+    or no answer within `timeout` seconds in all. Answered from the cache until MET's Expires (and three hours) have passed."""
     q = _query(lat, lon, altitude)
     if q is None:
         return None
     url = f"{API}?{q}"
-    entry = _cached(url)
-    now = catalog.now_utc()
+    entry, now = _cached(url), catalog.now_utc()
     if (entry and now < entry.next_ask) or not live():
         return _held(entry, now)
+    deadline = geo._clock() + timeout            # the gate's own clock, so its wait and ours are counted the same way
     with _LOCK:
         lock = _ASKING.setdefault(url, threading.Lock())
-    if not lock.acquire(timeout=timeout):
+    if not lock.acquire(timeout=max(0.0, deadline - geo._clock())):
         return _held(entry, now)
     try:
         entry, now = _cached(url), catalog.now_utc()      # another page may have asked while we waited
         if entry and now < entry.next_ask:
             return _held(entry, now)
-        if not GATE.wait():
+        if not GATE.wait(deadline):
             return _held(entry, now)
-        return _ask(url, entry, now, timeout)
+        left = deadline - geo._clock()
+        return _ask(url, entry, now, left) if left > 0.05 else _held(entry, now)
     finally:
         lock.release()
+        with _LOCK:
+            if url not in _CACHE:
+                _ASKING.pop(url, None)       # nothing was asked or kept: leave no lock behind
 
 
 def _cached(url):
@@ -219,24 +314,23 @@ def _ask(url, entry, now, timeout):
     except Exception as e:  # offline, slow or refused: try again in a few minutes
         log.warning("MET Norway forecast failed: %s", type(e).__name__)
         return _failed(url, entry, now)
-    if status == 304 and entry and entry.forecast:
-        return _keep(url, entry.forecast, now, h, entry.modified)
-    if status in REFUSED:
-        GATE.back_off(REFUSED[status])
-        log.warning("MET Norway refused the forecast (%s): %s", status,
-                    "too many requests" if status == 429 else "check the User-Agent and that the terms are kept")
-        return _failed(url, entry, now)
-    if status not in (200, 203):
-        log.warning("MET Norway forecast answered %s", status)
-        return _failed(url, entry, now)
-    if status == 203:
-        log.warning("MET Norway answered 203: Locationforecast 2.0 is deprecated and will be switched off; move to its successor")
     try:
-        fc = parse(json.loads(_unzip(raw, h.get("content-encoding", ""))))
-    except (ValueError, TypeError, KeyError, zlib.error) as e:
+        if status == 304 and entry and entry.forecast:
+            return _keep(url, entry.forecast, now, h, entry.modified)
+        if status in REFUSED:
+            GATE.back_off(REFUSED[status])
+            log.warning("MET Norway refused the forecast (%s): %s", status,
+                        "too many requests" if status == 429 else "check the User-Agent and that the terms are kept")
+            return _failed(url, entry, now)
+        if status not in (200, 203):
+            log.warning("MET Norway forecast answered %s", status)
+            return _failed(url, entry, now)
+        if status == 203:
+            log.warning("MET Norway answered 203: Locationforecast 2.0 is deprecated and will be switched off; move to its successor")
+        return _keep(url, parse(json.loads(_unzip(raw, str(h.get("content-encoding", "")))), now), now, h, h.get("last-modified", ""))
+    except Exception as e:  # everything MET sends is untrusted: an answer that does not read cleanly (too deep, absurd numbers or times) is a failed call
         log.warning("MET Norway forecast could not be read: %s", type(e).__name__)
         return _failed(url, entry, now)
-    return _keep(url, fc, now, h, h.get("last-modified", ""))
 
 
 def _unzip(raw: bytes, encoding: str) -> bytes:
@@ -252,11 +346,13 @@ def _unzip(raw: bytes, encoding: str) -> bytes:
 
 
 def _expires(h, now) -> datetime:
+    """MET's Expires, held between now and now + 12 hours whatever it says; unreadable means now."""
     try:
         at = parsedate_to_datetime(h.get("expires", ""))
-    except (TypeError, ValueError, IndexError):
+        at = at if at.tzinfo else at.replace(tzinfo=timezone.utc)
+        return min(max(at, now), now + EXPIRES_MAX)
+    except Exception:  # absurd dates overflow in several ways
         return now
-    return at if at.tzinfo else at.replace(tzinfo=timezone.utc)
 
 
 def _keep(url, fc, now, h, modified):
@@ -272,10 +368,6 @@ def _failed(url, entry, now):
 
 def _store(url, entry):
     with _LOCK:
-        if url not in _CACHE and len(_CACHE) >= CACHE_MAX:     # forget the places whose wait ran out first
-            for old in sorted(_CACHE, key=lambda u: _CACHE[u].next_ask)[:CACHE_MAX // 8]:
-                del _CACHE[old]
-                _ASKING.pop(old, None)
         _CACHE[url] = entry
 
 
@@ -301,18 +393,24 @@ def _point(step) -> Point:
                  _number(details.get("air_temperature_max"), -90, 60) if six else None, _number(details.get("air_temperature_min"), -90, 60) if six else None)
 
 
-def parse(doc) -> Forecast:
-    """A Forecast from MET's compact GeoJSON. Raises ValueError when it holds no usable step."""
+def parse(doc, now: datetime) -> Forecast:
+    """A Forecast from MET's compact GeoJSON, read as untrusted: at most MAX_STEPS steps, only those between a day before `now` and twelve days after,
+    and the forecast must have been made between two days before `now` and an hour after. Raises ValueError when nothing usable is left."""
     props = doc["properties"]
+    made = _utc(props["meta"]["updated_at"])
+    if not now - MADE_FROM <= made <= now + MADE_TO:
+        raise ValueError("a forecast made far from now")
     points = []
-    for step in props["timeseries"]:
+    for step in props["timeseries"][:MAX_STEPS]:
         try:
-            points.append(_point(step))
-        except (KeyError, TypeError, ValueError, AttributeError):
+            p = _point(step)
+        except (KeyError, TypeError, ValueError, AttributeError, OverflowError):
             continue
+        if now - STEPS_FROM <= p.at <= now + STEPS_TO:
+            points.append(p)
     if not points:
         raise ValueError("no forecast steps")
-    return Forecast(_utc(props["meta"]["updated_at"]), tuple(sorted(points, key=lambda p: p.at)))
+    return Forecast(made, tuple(sorted(points, key=lambda p: p.at)))
 
 
 def updated_text(fc: Forecast, tz) -> str:
@@ -347,18 +445,12 @@ def _kind(symbol: str) -> str:
     return {"fog": "fog", "cloudy": "cloudy", "partlycloudy": "partly", "fair": "clear", "clearsky": "clear"}.get(s, "")
 
 
-def _hour_condition(symbol: str) -> str:
-    k = _kind(symbol)
-    return "snow" if k in ("snow", "sleet") else "rain" if k == "rain" else "sun" if k == "clear" else "cloud" if k else ""
-
-
 @dataclass
 class _Acc:
     temps: list = field(default_factory=list)
     winds: list = field(default_factory=list)
     day_winds: list = field(default_factory=list)
     clouds: list = field(default_factory=list)
-    hours: list = field(default_factory=list)
     covered: int = 0
     mm: dict = field(default_factory=lambda: defaultdict(float))                                 # part of the day -> mm
     kinds: dict = field(default_factory=lambda: defaultdict(lambda: defaultdict(int)))          # part -> symbol family -> hours
@@ -443,8 +535,6 @@ def forecast_days(fc: Forecast | None, tz, now: datetime) -> dict:
         if p.hours == 6:      # a six-hour period's high and low belong to the day its middle falls on
             middle = day((p.at + timedelta(hours=3)).astimezone(zone).date())
             middle.temps += [v for v in (p.tmax_c, p.tmin_c) if v is not None]
-        if p.hours == 1 and p.temp_c is not None:
-            a.hours.append(Hour(local.hour, _f(p.temp_c), _hour_condition(p.symbol), _inches(p.precip_mm)))
     for start, symbol, mm in _slices(fc.points):
         local = start.astimezone(zone)
         a, part = day(local.date()), _part(local.hour)
@@ -463,7 +553,7 @@ def forecast_days(fc: Forecast | None, tz, now: datetime) -> dict:
             continue
         condition, word = _condition(a)
         out[d] = Day(d, FORECAST, _f(max(a.temps)), _f(min(a.temps)), condition, word, _inches(sum(a.mm.values())),
-                     round(max(a.winds) * 2.23694) if a.winds else None, tuple(sorted(a.hours, key=lambda h: h.at)), a.covered < 23)
+                     round(max(a.winds) * 2.23694) if a.winds else None)
     return out
 
 
@@ -474,9 +564,17 @@ def forecast_days(fc: Forecast | None, tz, now: datetime) -> dict:
 
 NORMALS = Path(__file__).with_name("normals.json")
 NEAR_KM = 25         # a place farther than this from every station has no normals
-NORMALS_CREDIT = "From NOAA climate normals, 1991–2020"
-CATALOG = {"la": "USW00093134", "sd": "USW00023188", "hi": "USW00022521", "nyc": "USW00094728"}   # the catalog's four places
+CATALOG_STATIONS = {"la": "USW00093134", "sd": "USW00023188", "hi": "USW00022521", "nyc": "USW00094728"}   # the stations of the catalog's four places
 _THIRDS = ("early", "mid", "late")
+_STATES = {   # US state names and their postal codes, to read a destination's ", Florida" or ", FL"
+    "alabama": "AL", "alaska": "AK", "arizona": "AZ", "arkansas": "AR", "california": "CA", "colorado": "CO", "connecticut": "CT", "delaware": "DE",
+    "district of columbia": "DC", "florida": "FL", "georgia": "GA", "hawaii": "HI", "idaho": "ID", "illinois": "IL", "indiana": "IN", "iowa": "IA",
+    "kansas": "KS", "kentucky": "KY", "louisiana": "LA", "maine": "ME", "maryland": "MD", "massachusetts": "MA", "michigan": "MI", "minnesota": "MN",
+    "mississippi": "MS", "missouri": "MO", "montana": "MT", "nebraska": "NE", "nevada": "NV", "new hampshire": "NH", "new jersey": "NJ",
+    "new mexico": "NM", "new york": "NY", "north carolina": "NC", "north dakota": "ND", "ohio": "OH", "oklahoma": "OK", "oregon": "OR",
+    "pennsylvania": "PA", "rhode island": "RI", "south carolina": "SC", "south dakota": "SD", "tennessee": "TN", "texas": "TX", "utah": "UT",
+    "vermont": "VT", "virginia": "VA", "washington": "WA", "west virginia": "WV", "wisconsin": "WI", "wyoming": "WY"}
+_CODES = set(_STATES.values())
 
 
 @dataclass(frozen=True)
@@ -487,6 +585,7 @@ class Station:
     lon: float
     elev: int            # metres
     tz: str
+    states: tuple        # the postal codes of the states it stands for ("CA", "NV" for South Lake Tahoe)
     aliases: tuple       # destination names that mean this station, lower case
     normals: tuple       # 36 x (high F, low F, wet-day %, snowy-day % or None)
 
@@ -498,8 +597,8 @@ def stations() -> tuple:
     global _STATIONS
     if not _STATIONS:
         table = json.loads(NORMALS.read_text(encoding="utf-8"))["stations"]
-        _STATIONS = tuple(Station(sid, s["name"], s["lat"], s["lon"], s["elev"], s["tz"], tuple(s["aliases"]), tuple(tuple(n) for n in s["n"]))
-                          for sid, s in table.items())
+        _STATIONS = tuple(Station(sid, s["name"], s["lat"], s["lon"], s["elev"], s["tz"], tuple(s["states"]), tuple(s["aliases"]),
+                                  tuple(tuple(n) for n in s["n"])) for sid, s in table.items())
     return _STATIONS
 
 
@@ -526,11 +625,31 @@ def _words(text) -> str:
     return " ".join(re.sub(r"[^a-z0-9]+", " ", str(text or "").lower()).split())
 
 
+def _state(text: str) -> str | None:
+    """The postal code of a US state named after the destination's first comma ("Hollywood, Florida", "Austin, TX", "South Lake Tahoe, CA 96150"), else None."""
+    _place, comma, rest = text.partition(",")
+    if not comma:
+        return None
+    words = _words(rest)
+    for name, code in _STATES.items():
+        if words == name or words.startswith(name + " "):
+            return code
+    first = re.sub(r"[^A-Za-z]", "", (rest.split() or [""])[0])      # "D.C." -> "DC"; a code counts only written in capitals
+    return first if len(first) == 2 and first.isupper() and first in _CODES else None
+
+
 def station_named(text) -> Station | None:
-    """The station a destination's name means ("Lake Tahoe, California" is South Lake Tahoe), matched as whole words, the longest name winning; else None."""
-    words = f" {_words(text)} "
-    found = [(len(a), s) for s in stations() for a in s.aliases if f" {a} " in words]
-    return max(found, key=lambda f: f[0])[1] if found else None
+    """The station a destination's name means. One of its names must start the destination, as whole words ("Lake Tahoe, California" is South Lake
+    Tahoe; "Lake Placid, New York" is nobody), the longest winning; and a state named after a comma must be one it stands for ("Hollywood, Florida"
+    is not Los Angeles)."""
+    raw = str(text or "")
+    words = f"{_words(raw)} "
+    found = [(len(a), s) for s in stations() for a in s.aliases if words.startswith(f"{a} ")]
+    if not found:
+        return None
+    st = max(found, key=lambda f: f[0])[1]
+    state = _state(raw)
+    return st if state is None or state in st.states else None
 
 
 def period(d: date) -> str:
@@ -542,6 +661,11 @@ def normals_label(d: date) -> str:
     return f"Typical {period(d)} · not a forecast yet"
 
 
+def _every(count: int) -> str:
+    """"about 1 day in 3"; "most days" when that would be 1 in 1."""
+    return "most days" if count < 2 else f"about 1 day in {count}"
+
+
 def _typical(high, low, wet, snow):
     """(condition, words) for a typical day: how often a day is wet, and whether that is mostly snow (the station says so, or its days average
     below 35 F when it does not count snow)."""
@@ -549,9 +673,9 @@ def _typical(high, low, wet, snow):
     if wet < 10:
         return "sun", "Usually dry"
     if snow is not None and snowy:
-        words = f"Snow about 1 day in {round(100 / snow)}"
+        words = f"Snow {_every(round(100 / snow))}"
     else:
-        words = f"{'Snow or rain' if snowy else 'Rain'} about 1 day in {round(100 / wet)}"
+        words = f"{'Snow or rain' if snowy else 'Rain'} {_every(round(100 / wet))}"
     return ("snow" if snowy else "sun" if wet < 20 else "cloud" if wet < 35 else "rain"), words
 
 
@@ -570,77 +694,83 @@ OPENS = timedelta(days=9)    # what a page promises: "The forecast opens around 
 
 @dataclass(frozen=True)
 class Where:
-    """Where a trip's weather is read: a place's coordinates (MET), its time zone (the days) and its climate-normals station, if it has one."""
+    """Where a trip's weather is read: its NOAA station (the coordinates MET is asked for, the time zone of its days, its climate normals)."""
     name: str
     lat: float
     lon: float
-    altitude: int | None
+    altitude: int
     tz: str
-    station: Station | None
+    station: Station
 
 
 @dataclass(frozen=True)
 class TripWeather:
     days: tuple                  # a Day or None for each day of the trip, first to last
-    place: str = ""
+    place: str = ""              # the station's name: "South Lake Tahoe"
     updated: str = ""            # when MET made the forecast its forecast days come from, in the place's time ("6:10 AM")
     opens: date | None = None    # roughly when the forecast reaches the first day that is still typical (only while MET is switched on)
+    gone: bool = False           # every day of the trip has passed, in the place's own time
 
 
-def _at(st: Station, name=None) -> Where:
-    return Where(name or st.name, st.lat, st.lon, st.elev, st.tz, st)
-
-
-def where(trip, coords=None) -> Where | None:
-    """Where a trip's weather is: one of the catalog's places (Anaheim for a Disneyland trip), the station its destination names, or the coordinates a
-    caller knows (with the station near them, if any). None when GitAway has nothing real for the place."""
+def where(trip) -> Where | None:
+    """Where a trip's weather is: the station of one of the catalog's places (Anaheim for a Disneyland trip), or the station its destination's name
+    means. None when GitAway has nothing real for the place. Only a station's coordinates are ever sent to MET, never an address."""
     if getattr(trip, "focus", "") == "disney":
-        return _at(station_named("anaheim"))
-    if any(d.name == trip.destination_name for d in catalog.DESTINATIONS) and trip.key in CATALOG:
-        return _at(station(CATALOG[trip.key]))
-    if coords is not None and _query(*coords) is not None:
-        lat, lon = coords
-        st = station_near(lat, lon)
-        return Where(trip.destination_name, lat, lon, None, st.tz if st else getattr(trip, "tz", "") or zones.DEFAULT, st)
-    st = station_named(trip.destination_name)
-    return _at(st) if st else None
+        st = station_named("anaheim")
+    elif any(d.name == trip.destination_name for d in catalog.DESTINATIONS) and trip.key in CATALOG_STATIONS:
+        st = station(CATALOG_STATIONS[trip.key])
+    else:
+        st = station_named(trip.destination_name)
+    return Where(st.name, st.lat, st.lon, st.elev, st.tz, st) if st else None
 
 
-def trip_weather(trip, coords=None) -> TripWeather:
+def trip_weather(trip) -> TripWeather:
     """One entry per day of the trip: MET's forecast where it covers the day; else, for a day still to come, the place's typical weather (a NORMAL
-    Day, labelled so); else None (a day gone by, or a place with nothing real). MET is asked only when a day of the trip is within its reach.
-    This can wait on the network for up to TIMEOUT seconds: call it from a plain `def` handler or through run_in_threadpool."""
+    Day, labelled so); else None (a day gone by, or a place with nothing real). Days are the place's own: "today" is today where the trip is.
+    MET is asked only when a day of the trip is within its reach. This can wait on the network for up to TIMEOUT seconds: call it from a plain
+    `def` handler or through run_in_threadpool."""
     dates = [trip.depart + timedelta(days=i) for i in range((trip.return_ - trip.depart).days + 1)]
-    w = where(trip, coords)
+    w = where(trip)
+    today = catalog.today_in(w.tz if w else getattr(trip, "tz", "") or zones.DEFAULT)
     if w is None:
-        return TripWeather((None,) * len(dates))
-    today, now = catalog.today(), catalog.now_utc()
+        return TripWeather((None,) * len(dates), gone=trip.return_ < today)
     fc = forecast(w.lat, w.lon, w.altitude) if any(today <= d <= today + REACH for d in dates) else None
-    known = forecast_days(fc, w.tz, now)
-    days = tuple(None if d < today else known.get(d) or (normal_day(w.station, d) if w.station else None) for d in dates)
-    waiting = [d for d, day in zip(dates, days) if d >= today and (day is None or day.kind == NORMAL)]
-    opens = waiting[0] - OPENS if waiting and live() and waiting[0] - OPENS > today else None
+    try:
+        known = forecast_days(fc, w.tz, catalog.now_utc())
+    except Exception as e:  # a forecast that read cleanly but cannot be laid out in days: show typical weather rather than fail the page
+        log.warning("MET Norway forecast could not be laid out in days: %s", type(e).__name__)
+        fc, known = None, {}
+    days = tuple(None if d < today else known.get(d) or normal_day(w.station, d) for d in dates)
+    typical = [d for d in days if d and d.kind == NORMAL]
+    opens = typical[0].date - OPENS if typical and live() and typical[0].date - OPENS > today else None
     shown = fc is not None and any(d and d.kind == FORECAST for d in days)
-    return TripWeather(days, w.name, updated_text(fc, w.tz) if shown else "", opens)
+    return TripWeather(days, w.name, updated_text(fc, w.tz) if shown else "", opens, trip.return_ < today)
+
+
+def _span(typical) -> str:
+    """The thirds of a month a trip's typical days fall in: "late December", "mid to late December", "late December to early January"."""
+    first, last = period(typical[0].date), period(typical[-1].date)
+    if first == last:
+        return first
+    (a, month_a), (b, month_b) = first.split(" ", 1), last.split(" ", 1)
+    return f"{a} to {b} {month_a}" if month_a == month_b else f"{first} to {last}"
 
 
 def notes(tw: TripWeather) -> list:
-    """[(text, link or "")]: what a page says under a trip's weather. The forecast's credit to MET Norway (with when it was made) when a day is a forecast;
-    when a day is typical weather, the label most of those days carry, what those days are usually like and where that comes from; and when the
-    forecast opens, while MET is switched on."""
+    """[(text, link or "")]: what a page says under a trip's weather, a line with a link being a link as a whole. The forecast's credit to MET Norway
+    (with when it was made) when a day is a forecast; when a day is typical weather, the span it covers, what those days are usually like, the
+    station's normals they come from, and when the forecast opens while MET is switched on."""
     out = []
     if tw.updated:
         out.append((f"{CREDIT} · updated {tw.updated}", CREDIT_URL))
-    opens = f"The forecast opens around {tw.opens:%b} {tw.opens.day}." if tw.opens else ""
     typical = [d for d in tw.days if d and d.kind == NORMAL]
     if typical:
         periods = [period(d.date) for d in typical]
         most = max(periods, key=periods.count)
         usually = next(d.word for d in typical if period(d.date) == most)
-        out.append((f"Typical {most} · not a forecast yet", ""))
-        out.append((" ".join(filter(None, (f"{usually}. {NORMALS_CREDIT}.", opens))), ""))
-    elif opens:
-        out.append((opens, ""))
+        opens = f" The forecast opens around {tw.opens:%b} {tw.opens.day}." if tw.opens else ""
+        out.append((f"Typical {_span(typical)} · not a forecast yet", ""))
+        out.append((f"{usually}. From NOAA climate normals for {tw.place}, 1991–2020.{opens}", ""))
     return out
 
 

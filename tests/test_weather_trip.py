@@ -2,6 +2,9 @@
 weather; a day gone by, or a place GitAway has nothing real for, gets nothing. The founder's test: the Tahoe trip, Dec 19-26 2026 (normals now,
 the forecast later)."""
 
+import inspect
+import re
+from dataclasses import replace
 from datetime import date, datetime, timedelta, timezone
 
 import pytest
@@ -11,6 +14,8 @@ from tests import weather_support as ws
 
 NOV_7 = datetime(2026, 11, 7, 18, tzinfo=timezone.utc)      # 10 AM in Tahoe, six weeks before the trip
 TYPICAL_MID, TYPICAL_LATE = "Typical mid December · not a forecast yet", "Typical late December · not a forecast yet"
+TYPICAL_SPAN = "Typical mid to late December · not a forecast yet"         # the trip's typical days run from mid into late December
+NOAA_TAHOE = "Snow or rain about 1 day in 3. From NOAA climate normals for South Lake Tahoe, 1991–2020."
 
 
 def tahoe_trip(destination="South Lake Tahoe"):
@@ -46,7 +51,7 @@ def test_the_founders_tahoe_trip_shows_typical_december_six_weeks_out_and_asks_n
     assert [d.label for d in tw.days] == [TYPICAL_MID] * 2 + [TYPICAL_LATE] * 6
     assert (tw.days[-1].high_f, tw.days[-1].low_f) == (42, 17)
     assert met.calls == []                                          # MET reaches about nine days: nothing to ask yet
-    assert weather.notes(tw) == [(TYPICAL_LATE, ""), ("Snow or rain about 1 day in 3. From NOAA climate normals, 1991–2020. The forecast opens around Dec 10.", "")]
+    assert weather.notes(tw) == [(TYPICAL_SPAN, ""), (NOAA_TAHOE + " The forecast opens around Dec 10.", "")]
 
 
 def test_once_the_forecast_reaches_the_trip_its_days_are_metss_forecast(met, clock):
@@ -59,8 +64,7 @@ def test_once_the_forecast_reaches_the_trip_its_days_are_metss_forecast(met, clo
     (url, _), = met.calls
     st = weather.station("USW00093230")                             # asked for the station's place, at its altitude
     assert url == f"{weather.API}?lat={st.lat:.4f}&lon={st.lon:.4f}&altitude={st.elev}"
-    assert weather.notes(tw) == [(f"{weather.CREDIT} · updated 6:10 AM", weather.CREDIT_URL), (TYPICAL_LATE, ""),
-                                 ("Snow or rain about 1 day in 3. From NOAA climate normals, 1991–2020.", "")]
+    assert weather.notes(tw) == [(f"{weather.CREDIT} · updated 6:10 AM", weather.CREDIT_URL), (TYPICAL_LATE, ""), (NOAA_TAHOE, "")]
 
 
 def test_without_the_terms_accepted_the_trip_keeps_typical_weather_and_promises_no_forecast(monkeypatch, clock):
@@ -80,16 +84,11 @@ def test_days_gone_by_show_nothing(met, clock):
     assert [d.kind for d in tw.days[4:]] == [weather.NORMAL] * 4
 
 
-def test_a_place_with_no_normals_shows_nothing_before_the_forecast_and_the_forecast_once_it_reaches(met, clock):
+def test_a_place_with_no_station_shows_nothing_and_asks_nobody(met, clock):
     lisbon = tahoe_trip("Lisbon")
-    assert weather.trip_weather(lisbon).days == (None,) * 8           # no coordinates, no station: nothing real to show
-    far = weather.trip_weather(lisbon, coords=(38.7223, -9.1393))
-    assert far.days == (None,) * 8                                     # coordinates, but no normals abroad
-    assert weather.notes(far) == [("The forecast opens around Dec 10.", "")]
-    clock["now"] = ws.NOW
-    tw = weather.trip_weather(lisbon, coords=(38.7223, -9.1393))
-    assert [d.kind if d else None for d in tw.days] == [weather.FORECAST] * 7 + [None]
-    assert tw.place == "Lisbon" and met.calls[0][0].startswith(f"{weather.API}?lat=38.7223&lon=-9.1393")
+    assert weather.trip_weather(lisbon).days == (None,) * 8 and weather.notes(weather.trip_weather(lisbon)) == []
+    clock["now"] = ws.NOW                                              # even inside MET's reach: no station, no coordinates, nothing asked
+    assert weather.trip_weather(lisbon).days == (None,) * 8 and met.calls == []
 
 
 def test_the_catalogs_places_use_their_stations_and_a_disneyland_trip_anaheims(clock):
@@ -108,3 +107,49 @@ def test_a_real_trip_never_gets_sample_weather_even_on_the_showcase(monkeypatch)
     assert not weather.sample(catalog.parse_trip("", "la", "2026-12-19", "2026-12-23", "2", ""))
     monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
     assert not weather.sample(catalog.SAMPLE_TRIP)                      # the live site has no sample trip
+
+
+
+# ---- review: only a station's coordinates ever reach MET (security F4, reviewer 7) -----------------------------------------------------
+
+def test_a_trips_weather_takes_no_coordinates_from_a_caller():
+    assert "coords" not in inspect.signature(weather.trip_weather).parameters
+    assert "coords" not in inspect.signature(weather.where).parameters
+
+
+def test_only_a_stations_coordinates_ever_reach_met(met, clock):
+    clock["now"] = ws.NOW
+    trips = [catalog.parse_trip("", key, "2026-12-19", "2026-12-21", "2", "") for key in ("la", "sd", "hi", "nyc")]
+    trips += [catalog.parse_trip("", "la", "2026-12-19", "2026-12-21", "2", "", focus="disney"), tahoe_trip(), tahoe_trip("Orlando, FL")]
+    for t in trips:
+        weather.trip_weather(t)
+    stations = {(f"{s.lat:.4f}", f"{s.lon:.4f}") for s in weather.stations()}
+    asked = {re.search(r"lat=([-\d.]+)&lon=([-\d.]+)", url).groups() for url, _ in met.calls}
+    assert len(asked) == 7 and asked <= stations
+
+
+def test_trouble_reading_the_days_never_breaks_a_trips_weather(met, clock, monkeypatch):
+    clock["now"] = ws.NOW
+
+    def broken(*a, **k):
+        raise RuntimeError("an answer nobody expected")
+    monkeypatch.setattr(weather, "forecast_days", broken)
+    assert [d.kind for d in weather.trip_weather(tahoe_trip()).days] == [weather.NORMAL] * 8
+
+
+# ---- review: today is the place's own day (reviewer 4) --------------------------------------------------------------------------
+
+def test_just_after_midnight_in_new_york_yesterday_has_gone_there(met, clock):
+    clock["now"] = datetime(2026, 12, 19, 5, 30, tzinfo=timezone.utc)       # 12:30 AM Dec 19 in New York; still 9:30 PM Dec 18 in California
+    met.answers = [(OSError("down"), {}, b"")]
+    days = weather.trip_weather(catalog.parse_trip("", "nyc", "2026-12-18", "2026-12-20", "2", "")).days
+    assert days[0] is None and days[1].kind == weather.NORMAL and days[1].date == date(2026, 12, 19)
+
+
+def test_late_in_the_evening_in_honolulu_today_is_still_today_there(met, clock):
+    clock["now"] = datetime(2026, 12, 19, 9, 30, tzinfo=timezone.utc)       # 11:30 PM Dec 18 in Honolulu; already Dec 19 in California
+    met.answers = [(OSError("down"), {}, b"")]
+    hnl = replace(catalog.parse_trip("", "hi", "2026-12-19", "2026-12-20", "2", ""), depart=date(2026, 12, 18))
+    days = weather.trip_weather(hnl).days
+    assert days[0] is not None and days[0].date == date(2026, 12, 18)
+    assert weather.trip_weather(hnl).gone is False

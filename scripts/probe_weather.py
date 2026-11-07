@@ -18,7 +18,7 @@ TAHOE = "USW00093230"
 
 def main() -> int:
     st = weather.station(TAHOE)
-    print(f"Typical weather for {st.name} ({weather.NORMALS_CREDIT}):")
+    print(f"Typical weather for {st.name} (NOAA climate normals, 1991-2020):")
     for d in (date(2026, 12, 19), date(2026, 12, 24)):
         n = weather.normal_day(st, d)
         print(f"  {d:%a %b} {d.day}: high {n.high_f}°, low {n.low_f}°, {n.word} ({n.label})")
@@ -32,8 +32,7 @@ def main() -> int:
         return 2
     print(f"{weather.CREDIT} · updated {weather.updated_text(fc, st.tz)} ({len(fc.points)} steps)")
     for d, day in weather.forecast_days(fc, st.tz, catalog.now_utc()).items():
-        extra = f", {len(day.hours)} hourly steps" if day.hours else ""
-        print(f"  {d:%a %b} {d.day}: high {day.high_f}°, low {day.low_f}°, {day.word} [{day.condition}], {day.precip_in} in, wind {day.wind_mph} mph{extra}")
+        print(f"  {d:%a %b} {d.day}: high {day.high_f}°, low {day.low_f}°, {day.word} [{day.condition}], {day.precip_in} in, wind {day.wind_mph} mph")
     return 0
 
 

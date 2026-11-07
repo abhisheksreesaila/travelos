@@ -156,3 +156,72 @@ class Met:
 
 def tahoe_dates():
     return [date(2026, 12, d) for d in range(19, 27)]
+
+
+# ---- a local stand-in for api.met.no's socket (F-203 review): the transport is pointed at it through weather.CONNECTION ----------
+
+import http.server       # noqa: E402
+import socket            # noqa: E402
+import threading         # noqa: E402
+import time as _time     # noqa: E402
+
+
+class Server:
+    """A plain-HTTP server on 127.0.0.1 that answers every request one way (`mode`): "redirect" (302 to the cloud's metadata address), "slow" (headers,
+    then a byte every 0.3 s for 6 s) or "ok". `hits` counts the requests it got."""
+
+    def __init__(self, mode="ok"):
+        outer = self
+        self.mode, self.hits = mode, 0
+
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def log_message(self, *a):
+                pass
+
+            def do_GET(self):
+                outer.hits += 1
+                if outer.mode == "redirect":
+                    self.send_response(302)
+                    self.send_header("Location", "http://169.254.169.254/latest/meta-data/iam/credentials")
+                    self.send_header("Content-Length", "0")
+                    self.end_headers()
+                    return
+                raw = body()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(raw)))
+                self.end_headers()
+                if outer.mode == "slow":
+                    try:
+                        for b in raw[:20]:
+                            self.wfile.write(bytes([b]))
+                            self.wfile.flush()
+                            _time.sleep(0.3)
+                    except OSError:
+                        pass
+                    return
+                self.wfile.write(raw)
+
+        self.httpd = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        self.httpd.daemon_threads = True
+        self.port = self.httpd.server_address[1]
+        threading.Thread(target=self.httpd.serve_forever, daemon=True).start()
+
+    def connection(self, ip, timeout):
+        import http.client
+        return http.client.HTTPConnection("127.0.0.1", self.port, timeout=timeout)
+
+    def close(self):
+        self.httpd.shutdown()
+        self.httpd.server_close()
+
+
+def local_only(monkeypatch):
+    """No socket may leave this machine during the test: anything but 127.0.0.1 is refused before any lookup."""
+    real = socket.create_connection
+
+    def guarded(address, *a, **kw):
+        if address[0] != "127.0.0.1":
+            raise OSError(f"the network is off in tests ({address[0]})")
+        return real(address, *a, **kw)
+    monkeypatch.setattr(socket, "create_connection", guarded)

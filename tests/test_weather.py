@@ -2,12 +2,15 @@
 If-Modified-Since, a polite global gate, nothing until a person in charge has accepted the terms), read into GitAway's days. No test reaches
 the network: `weather.TRANSPORT` is replaced (tests/conftest.py refuses every call unless a test installs tests/weather_support.Met)."""
 
+import json
 import logging
+import time
+from dataclasses import fields
 from datetime import date, datetime, timedelta, timezone
 
 import pytest
 
-from gitaway import catalog, weather
+from gitaway import catalog, geo, weather
 from tests import weather_support as ws
 
 TAHOE = (38.9399, -119.9772)
@@ -173,20 +176,162 @@ def test_precipitation_and_wind_are_in_inches_and_miles_an_hour(met):
     assert days[date(2026, 12, 22)].wind_mph == 25
 
 
-def test_hourly_steps_come_along_where_met_gives_them(met):
-    days = _days()
-    snow_day = days[date(2026, 12, 19)].hours
-    assert [h.at for h in snow_day] == list(range(22))
-    assert snow_day[10].condition == "snow" and snow_day[10].temp_f == 24      # 10 AM: -4.3 C, in the heavy snow
-    assert len(days[date(2026, 12, 18)].hours) == 24 and days[date(2026, 12, 21)].hours == ()
-
-
-def test_today_is_marked_partial_because_its_morning_has_gone(met):
-    days = _days()
-    assert days[date(2026, 12, 17)].partial and not days[date(2026, 12, 18)].partial
-
-
 def test_the_forecast_says_when_met_made_it_in_the_places_time(met):
     fc = weather.forecast(*TAHOE)
     assert fc.updated == ws.UPDATED
     assert weather.updated_text(fc, "America/Los_Angeles") == "6:10 AM"
+
+
+
+# ---- review: everything MET sends is untrusted (security F1) --------------------------------------------------------------------
+
+def _doc(updated=None, steps=None):
+    doc = ws.compact()
+    if updated is not None:
+        doc["properties"]["meta"]["updated_at"] = updated
+    if steps is not None:
+        doc["properties"]["timeseries"] = steps
+    return doc
+
+
+@pytest.mark.parametrize("raw", [b"[" * 100000, b'{"properties": ' * 50000], ids=["nested-lists", "nested-objects"])
+def test_an_answer_that_breaks_the_reader_is_a_failed_call_and_is_not_asked_again_at_once(met, raw):
+    met.answers = [(200, ws.headers(), raw)]
+    assert weather.forecast(*TAHOE) is None
+    assert weather.forecast(*TAHOE) is None and len(met.calls) == 1
+    met.clock["now"] = ws.NOW + timedelta(minutes=6)
+    weather.forecast(*TAHOE)
+    assert len(met.calls) == 2
+
+
+@pytest.mark.parametrize("expires", ["Fri, 31 Dec 9999 23:59:59 GMT", "Fri, 31 Dec 9999 23:59:59 -2359", "Fri, 31 Dec 100000000000000000000 23:59:59 GMT"],
+                         ids=["year-9999", "past-year-9999", "overflow"])
+def test_an_expires_far_off_or_absurd_neither_crashes_nor_freezes_the_place(met, expires):
+    met.answers = [(200, {**ws.headers(), "expires": expires}, ws.body())]
+    assert weather.forecast(*TAHOE) is not None
+    met.clock["now"] = ws.NOW + timedelta(hours=12, minutes=1)
+    weather.forecast(*TAHOE)
+    assert len(met.calls) == 2       # at most twelve hours, whatever Expires says
+
+
+@pytest.mark.parametrize("updated", ["9999-12-31T23:59:59Z", "1970-01-01T00:00:00Z", "2026-12-17T16:00:00Z"], ids=["far-future", "far-past", "ahead-of-now"])
+def test_a_forecast_made_far_from_now_is_refused(met, updated):
+    met.answers = [(200, ws.headers(), ws.body(_doc(updated=updated)))]
+    assert weather.forecast(*TAHOE) is None
+    assert weather.forecast(*TAHOE) is None and len(met.calls) == 1
+
+
+def test_steps_at_absurd_or_far_off_times_are_dropped_and_the_days_still_read(met):
+    doc = ws.compact()
+    steps = doc["properties"]["timeseries"]
+    six = json.loads(json.dumps(steps[-2]))
+    for when in ("9999-12-31T18:00:00Z", "0001-01-01T00:00:00Z", "2026-12-13T12:00:00Z", "2027-01-05T00:00:00Z"):   # out of range, four days back, 19 days on
+        steps.append({**six, "time": when})
+    met.answers = [(200, ws.headers(), ws.body(doc))]
+    fc = weather.forecast(*TAHOE)
+    assert fc is not None and len(fc.points) == len(steps) - 4
+    assert weather.forecast_days(fc, "America/Los_Angeles", ws.NOW)[date(2026, 12, 19)].word == "Heavy snow"
+
+
+def test_a_huge_timeseries_is_cut_to_a_size_met_never_sends(met):
+    tiny = [{"time": (ws.FIRST + timedelta(minutes=m)).strftime("%Y-%m-%dT%H:%M:%SZ"), "data": {"instant": {"details": {"air_temperature": -1.0}}}}
+            for m in range(5000)]
+    met.answers = [(200, ws.headers(), ws.body(_doc(steps=tiny)))]
+    fc = weather.forecast(*TAHOE)
+    assert fc is not None and len(fc.points) == weather.MAX_STEPS <= 250
+
+
+# ---- review: the transport asks api.met.no and nothing else, within one deadline (security F2, F3) --------------------------------
+
+@pytest.fixture
+def stand_in(monkeypatch):
+    """The transport's socket goes to a local stand-in instead of api.met.no; nothing may leave this machine."""
+    ws.local_only(monkeypatch)
+    server = ws.Server()
+    monkeypatch.setattr(weather, "CONNECTION", server.connection, raising=False)
+    monkeypatch.setattr(weather, "_lookup", lambda host, deadline: "127.0.0.1", raising=False)
+    yield server
+    server.close()
+
+
+def test_a_redirect_is_never_followed_and_only_its_host_is_logged(stand_in, caplog):
+    stand_in.mode = "redirect"
+    with caplog.at_level(logging.WARNING, logger="gitaway.weather"):
+        status, _headers, raw = weather._http(URL, {"User-Agent": "GitAway test"}, 3)
+    assert (status, raw, stand_in.hits) == (302, b"", 1)
+    said = " ".join(r.getMessage() for r in caplog.records)
+    assert "169.254.169.254" in said and "credentials" not in said
+
+
+@pytest.mark.parametrize("url", ["http://api.met.no/weatherapi/locationforecast/2.0/compact?lat=1&lon=2", "https://169.254.169.254/latest/meta-data/",
+                                 "https://api.met.no.example.com/x", "https://user@api.met.no/x", "https://api.met.no:8443/x", "https://127.0.0.1:1/x"],
+                         ids=["plain-http", "metadata", "lookalike", "userinfo", "port", "local"])
+def test_only_https_api_met_no_is_ever_asked(stand_in, url):
+    with pytest.raises(ValueError):
+        weather._http(url, {}, 3)
+    assert stand_in.hits == 0
+
+
+def test_a_slow_answer_is_cut_at_the_deadline(stand_in):
+    stand_in.mode = "slow"
+    started = time.monotonic()
+    with pytest.raises(TimeoutError):
+        weather._http(URL, {}, 1.0)
+    assert time.monotonic() - started < 1.5
+
+
+def test_a_page_waits_its_turn_at_the_gate_only_until_its_own_deadline(met, monkeypatch):
+    monkeypatch.setattr(weather.GATE, "gap", 5.0)
+    monkeypatch.setattr(weather.GATE, "last", geo._clock())        # somebody has just asked
+    started = time.monotonic()
+    assert weather.forecast(*TAHOE, timeout=0.3) is None
+    assert time.monotonic() - started < 1.0 and met.calls == []
+
+
+def test_a_place_that_was_not_asked_leaves_no_lock_behind(met, monkeypatch):
+    monkeypatch.setattr(weather.GATE, "shut_until", geo._clock() + 60)
+    assert weather.forecast(*TAHOE) is None
+    assert weather._ASKING == {}
+
+
+# ---- review: what was there but untested (reviewer 5) ----------------------------------------------------------------------------
+
+@pytest.fixture
+def gate_clock(monkeypatch):
+    """The gate's clock and sleep, faked (tests/conftest.py zeroes the gap; these tests put it back)."""
+    t = {"now": 100.0, "slept": []}
+    monkeypatch.setattr(geo, "_clock", lambda: t["now"])
+
+    def sleep(s):
+        t["slept"].append(round(s, 3))
+        t["now"] += s
+    monkeypatch.setattr(geo, "_sleep", sleep)
+    monkeypatch.setattr(weather.GATE, "gap", 0.2)
+    monkeypatch.setattr(weather.GATE, "last", None)
+    return t
+
+
+def test_two_places_asked_at_once_are_spaced_by_the_gate(met, gate_clock):
+    weather.forecast(*TAHOE)
+    weather.forecast(40.0, -105.0)
+    assert len(met.calls) == 2 and gate_clock["slept"] == [0.2]
+
+
+@pytest.mark.parametrize("status, seconds", [(429, 600), (403, 3600)])
+def test_a_refusal_shuts_the_gate_for_ten_minutes_or_an_hour(met, gate_clock, status, seconds):
+    met.answers = [(status, {}, b""), (200, ws.headers(), ws.body())]
+    weather.forecast(*TAHOE)
+    gate_clock["now"] += seconds - 1
+    met.clock["now"] += timedelta(seconds=seconds - 1)
+    assert weather.forecast(40.0, -105.0) is None and len(met.calls) == 1      # still shut a second before
+    gate_clock["now"] += 2
+    met.clock["now"] += timedelta(seconds=2)
+    assert weather.forecast(40.0, -105.0) is not None and len(met.calls) == 2
+
+
+# ---- review: nothing that nothing reads (reviewer 8) -------------------------------------------------------------------------------
+
+def test_nothing_that_nothing_reads_is_left():
+    from gitaway.pages import weather_ui
+    assert not hasattr(weather, "Hour") and not hasattr(weather, "CACHE_MAX") and not hasattr(weather_ui, "_ICONS")
+    assert {f.name for f in fields(weather.Day)}.isdisjoint({"hours", "partial"})
