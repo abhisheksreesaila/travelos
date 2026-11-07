@@ -22,6 +22,7 @@ from starlette.responses import RedirectResponse, Response
 from gitaway import access, confirmations, expedia, importer, session as ses, showcase, tripcal as cal, tripimport as ti
 from gitaway.icons import icon
 from gitaway.layout import page, trip_field
+from gitaway.pages import bookedwhere
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/tripimport.css"), Script(src="/assets/js/tripimport.js", defer=True))
 TEMPLATE = Path(__file__).resolve().parent.parent.parent / "docs" / "trip-template.md"
@@ -87,8 +88,12 @@ def _row(label, value, **kw):
 def plan_sections(plan, manage=False):
     """Everything a plan holds, as cards. Used by the preview and by the trip details page (both show the confirmation numbers). `manage` (the details page) puts
     "Booked on <partner>" and "Change or cancel" under each booking (F-198)."""
-    from gitaway.pages import bookedwhere
-    where = (lambda kind, item: bookedwhere.line(kind, item, plan)) if manage else (lambda kind, item: Span(f"Booked on {item.booked_on}", cls="ti-sub") if item.booked_on else "")
+    def conf(kind, item, text):
+        """The confirmation line; on the details page it also says where the booking lives, with its Change or cancel, on the same row."""
+        plain = Span(text, cls="ti-sub ti-conf") if text else ""
+        if manage and not bookedwhere.same_as_trip(kind, item, plan):      # a booking on the trip's own partner is said once, in the page's header
+            return bookedwhere.line(kind, item, plan, lead=plain)
+        return Div(plain, Span(f"Booked on {item.booked_on}", cls="ti-sub")) if item.booked_on else plain
     cards = [Div(
         H3("Trip", cls="ti-h3"), _row("Title", plan.title), _row("Destination", plan.destination),
         _row("Dates", cal.range_label(plan.start, plan.end) + f" · {(plan.end - plan.start).days + 1} days"), _row("Booked on", plan.booked_on),
@@ -103,26 +108,25 @@ def plan_sections(plan, manage=False):
             note = " · arrival at your destination" if leg is arrive else " · flight home" if leg is depart else ""
             rows.append(Div(Span(icon("plane", 16, 2.2), Span(f"{leg.name} · {leg.origin} → {leg.dest}", cls="ti-strong"), cls="ti-line"),
                             Span(f"{_when(leg.depart)} → {_when(leg.arrive)}{note}", cls="ti-sub"),
-                            Span(f"Confirmation {leg.confirmation}" + (f" · seats {leg.seats}" if leg.seats else ""), cls="ti-sub ti-conf") if leg.confirmation or leg.seats else "",
-                            where("leg", leg), cls="ti-item"))
+                            conf("leg", leg, f"Confirmation {leg.confirmation}" + (f" · seats {leg.seats}" if leg.seats else "") if leg.confirmation or leg.seats else ""), cls="ti-item"))
         cards.append(Div(H3("Flights", cls="ti-h3"), *rows, cls="ti-sec", id="ti-flights"))
     if plan.hotels:
         items = [Div(Span(icon("bed", 16, 2.2), Span(h.name, cls="ti-strong"), cls="ti-line"), Span(h.address, cls="ti-sub"),
                      Span(f"Check in {_when(h.check_in)} · check out {_when(h.check_out)}", cls="ti-sub"),
                      Span(" · ".join(x for x in (h.room, f"{h.rooms} rooms" if h.rooms != 1 else "", h.phone) if x), cls="ti-sub") if (h.room or h.rooms != 1 or h.phone) else "",
-                     Span(f"Confirmation {h.confirmation}", cls="ti-sub ti-conf") if h.confirmation else "", where("checkin", h), cls="ti-item") for h in plan.hotels]
+                     conf("checkin", h, f"Confirmation {h.confirmation}" if h.confirmation else ""), cls="ti-item") for h in plan.hotels]
         cards.append(Div(H3("Hotels" if len(items) > 1 else "Hotel", cls="ti-h3"), *items, cls="ti-sec", id="ti-hotel"))
     if plan.rental:
         c = plan.rental
         cards.append(Div(H3("Car", cls="ti-h3"),
                          Div(Span(icon("car", 16, 2.2), Span(f"{c.company}" + (f" · {c.car}" if c.car else ""), cls="ti-strong"), cls="ti-line"),
                              Span(f"Pick up {c.pickup_place} · {_when(c.pickup)}", cls="ti-sub"), Span(f"Drop off {c.dropoff_place} · {_when(c.dropoff)}", cls="ti-sub"),
-                             Span(f"Confirmation {c.confirmation}", cls="ti-sub ti-conf") if c.confirmation else "", where("pickup", c), cls="ti-item"), cls="ti-sec", id="ti-car"))
+                             conf("pickup", c, f"Confirmation {c.confirmation}" if c.confirmation else ""), cls="ti-item"), cls="ti-sec", id="ti-car"))
     if plan.tickets:
         cards.append(Div(H3("Tickets and activities", cls="ti-h3"),
                          *[Div(Span(icon("ticket", 16, 2.2), Span(t.name, cls="ti-strong"), cls="ti-line"), Span(t.place, cls="ti-sub") if t.place else "",
-                               Span(f"{_when(t.start)} → {_when(t.end)}", cls="ti-sub"), Span(f"Confirmation {t.confirmation}", cls="ti-sub ti-conf") if t.confirmation else "",
-                               where("ticket", t), cls="ti-item") for t in plan.tickets], cls="ti-sec", id="ti-tickets"))
+                               Span(f"{_when(t.start)} → {_when(t.end)}", cls="ti-sub"),
+                               conf("ticket", t, f"Confirmation {t.confirmation}" if t.confirmation else ""), cls="ti-item") for t in plan.tickets], cls="ti-sec", id="ti-tickets"))
     if plan.notes:
         cards.append(Div(H3("Notes", cls="ti-h3"), P(plan.notes, cls="ti-notes"), cls="ti-sec", id="ti-notes"))
     return cards
@@ -187,6 +191,7 @@ def preview_page(text, parsed, match=None, moves=0, *, fields=None, save_action=
 def details_page(plan, trip_id="", admin=False, editor=False):
     return page(f"{plan.title}: details", Div(
         Div(H1(plan.title, cls="ti-title"), Span("Every detail, in one place.", cls="ga-h-two"), P(f"Booked elsewhere · {plan.booked_on}. Confirmation numbers are shown only to your family.", cls="ti-lede"),
+            bookedwhere.trip_line(plan),
             Div(A(icon("arrow-right", 16, 2.6), "Open the trip", href="/trip", cls="btn btn-sm", id="ti-cal"),
                 A(icon("pencil", 16, 2.4), "Edit trip", href=f"/trips/build/edit?trip={trip_id}", cls="btn btn-sm", id="ti-edit-trip") if editor and trip_id else "",
                 A("Correct it", href=PATH, cls="ti-link", id="ti-correct"),

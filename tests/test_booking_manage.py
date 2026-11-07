@@ -191,5 +191,7 @@ def test_each_bookings_sheet_has_change_or_cancel_at_the_partner(client, block, 
 def test_the_details_page_has_a_change_or_cancel_for_every_booking(client):
     imported(client)
     html = client.get("/trip/details").text
-    assert html.count('class="tp-btn tp-btn-white bk-manage"') == 5      # two flights, the cabin, the car, the snowmobile
+    assert html.count('class="tp-btn tp-btn-white bk-manage"') == 4      # the Aviasales flight (changed with Alaska), the cabin, the car, the snowmobile
+    head = re.search(r'<div[^>]*id="ti-where"[^>]*>(.*?)</div>', html, re.S).group(1)
+    assert "Booked on Expedia" in words(head) and 'href="https://www.expedia.com/trips"' in head      # the flight home was booked where the trip was: said once, at the top
     assert "Tickets and activities" in words(html) and "Snowmobile tour" in words(html)
