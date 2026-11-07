@@ -249,3 +249,29 @@ def test_a_file_with_more_rules_or_longer_rules_than_we_read_is_not_trusted(monk
     assert robots.check(POST) == CANNOT_CHECK
     serve(monkeypatch, "User-agent: *\n" + "Disallow: /x\n" * robots.MAX_RULES)
     assert robots.check(POST) == ""
+
+
+def test_two_thousand_long_rules_that_cannot_match_are_answered_at_once(monkeypatch):
+    import time
+    n = robots.MAX_RULES
+    rules = "".join(f"Disallow: /*{'a' * 900}b{'a' * (i % 90)}\n" for i in range(n))
+    serve(monkeypatch, "User-agent: *\n" + rules)
+    started = time.perf_counter()
+    result = robots.check("https://blog.example.com/" + "a" * 2020)
+    assert time.perf_counter() - started < 0.5
+    assert result == CANNOT_CHECK                   # 1.8 million characters of rules: more than we read
+    rules = "".join(f"Disallow: /*{'a' * 900}b{'a' * (i % 90)}\n" for i in range(robots.MAX_RULE_CHARS // 1000))      # as many as we do read
+    serve(monkeypatch, "User-agent: *\n" + rules)
+    started = time.perf_counter()
+    assert robots.check("https://blog.example.com/" + "a" * 2020) == ""
+    assert time.perf_counter() - started < 0.5
+
+
+def test_a_file_whose_rules_add_up_to_more_characters_than_we_read_is_not_trusted(monkeypatch):
+    rule = "Disallow: /" + "a" * (robots.MAX_RULE - 20) + "\n"
+    count = robots.MAX_RULE_CHARS // len(rule) + 2
+    assert count < robots.MAX_RULES
+    serve(monkeypatch, "User-agent: *\n" + rule * count)
+    assert robots.check(POST) == CANNOT_CHECK
+    serve(monkeypatch, "User-agent: *\n" + rule * (count - 4))
+    assert robots.check(POST) == ""

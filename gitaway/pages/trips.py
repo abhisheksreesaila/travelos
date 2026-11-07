@@ -48,7 +48,12 @@ def register(app):
         body = itinerary_page(found, theme=theme, loading=(state == "loading"), saved=slug in ses.saved(session), forked=forked,
                               blog=blogbutton.for_owner(session, slug) if found.real else "", noindex=found.real and seo.imported(slug), waiting=waiting)      # a copy of a creator's post is not for search (F-196)
         # F-195: a family that forked a creator's trip books for them (every fork path, signed in or through sign-in, ends on this page)
-        via = (cookie(affiliate.COOKIE, found.handle, **affiliate.cookie_args()),) if forked and found.real and not waiting and affiliate.valid_via(found.handle) else ()
+        unchecked = found.real and community.waits(slug)       # pending or unverified: nobody earns from it yet, so forking it sets no cookie and forgets an earlier one
+        via = ()
+        if forked and found.real and not unchecked and affiliate.valid_via(found.handle):
+            via = (cookie(affiliate.COOKIE, found.handle, **affiliate.cookie_args()),)
+        elif forked and unchecked and affiliate.COOKIE in request.cookies:
+            via = (cookie(affiliate.COOKIE, "", max_age=0, path="/"),)
         if waiting:
             return FtResponse((body, *via), headers={"X-Robots-Tag": "noindex, nofollow"})
         return (body, *via) if via else body

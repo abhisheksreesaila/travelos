@@ -174,6 +174,18 @@ def test_a_blogs_own_link_is_kept_for_a_blog_but_not_for_pasted_text(monkeypatch
     assert [s["link"] for day in d2["days"] for s in day["stops"]] == ["", "", ""] and ARTICLE_TEXT
 
 
+@pytest.mark.parametrize("state, shown", [("pending", False), ("unverified", False), ("approved", True), ("", True)])
+def test_an_old_snapshot_shows_a_link_to_the_posts_own_site_only_when_the_trip_is_checked(state, shown):
+    """F-194 re-audit: a snapshot made while a trip waited for the captain may hold an own-site link; it is not drawn until the trip is approved (or has nothing to check)."""
+    import json
+    from tests.live_trips import live_trip
+    row = live_trip(source_url="https://blog.example.com/post")[0]
+    d = json.loads(row["snapshot"])
+    d["days"][0]["stops"][0]["link"], d["days"][0]["stops"][1]["link"] = HOTEL, OWN
+    community.set_review(row["slug"], state)
+    assert [s.link for s in community.load(json.dumps(d)).days[0].stops] == [HOTEL, OWN if shown else "", ""]
+
+
 def test_links_in_notes_tips_and_titles_are_still_stripped(monkeypatch, web, client):
     a = answer(hotel=HOTEL)
     a["days"][0]["stops"][0]["note"] = f"book at {HOTEL}"

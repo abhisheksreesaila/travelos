@@ -21,12 +21,13 @@ CANNOT_CHECK = "GitAway could not check this site's robots.txt just now, so it d
 TIMEOUT = 4.0
 MAX_RULES = 2000      # a file with more Allow/Disallow lines, or a rule longer than MAX_RULE characters, is not trusted (CANNOT_CHECK): a hostile file cannot make us spend our time on it
 MAX_RULE = 1024
+MAX_RULE_CHARS = 32_000      # all the rules' characters together: str.find on a long rule costs its length times the path's, so this bounds what a file can make us do
 MAX_PATH = 2048       # the part of the page's path and query that is matched
 
 
 def _groups(text) -> list:
     """[(user-agent tokens, [(allow?, pattern)])] from the file's text."""
-    groups, agents, rules, in_rules, count = [], [], [], False, 0
+    groups, agents, rules, in_rules, count, chars = [], [], [], False, 0, 0
     for raw in text.splitlines():
         line = raw.split("#", 1)[0].strip()
         if ":" not in line:
@@ -41,7 +42,8 @@ def _groups(text) -> list:
         elif field in ("allow", "disallow"):
             in_rules = True
             count += 1
-            if count > MAX_RULES or len(value) > MAX_RULE:
+            chars += len(value)
+            if count > MAX_RULES or len(value) > MAX_RULE or chars > MAX_RULE_CHARS:
                 raise ValueError("robots.txt is larger than we read")
             rules.append((field == "allow", value))
     if agents:

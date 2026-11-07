@@ -109,6 +109,8 @@ def dump(trip: Itinerary) -> str:
 def load(raw: str) -> Itinerary:
     d = json.loads(raw)
     own = stoplinks.own_domain("blog", (d.get("source") or {}).get("url", ""))      # defence in depth: whatever a snapshot holds, only allowed links are ever drawn
+    if own and waits(d.get("slug", "")):
+        own = ""        # a link to "their own site" is drawn only once the site is theirs: an old snapshot made while the trip waited shows none (F-194)
     d["days"] = [Day(**{**x, "stops": [Stop(**{**s, "link": stoplinks.clean(s.get("link", ""), own)}) for s in x["stops"]], "photos": [Polaroid(**p) for p in x.get("photos", [])]}) for x in d["days"]]
     d["tags"] = [Tag(**t) for t in d.get("tags", [])]
     d["polaroids"] = [Polaroid(**p) for p in d.get("polaroids", [])]
@@ -326,6 +328,14 @@ def restore(slug) -> bool:
 
 
 # ---- the captain's check of who owns a trip (F-194) -----------------------------------------------------------------------------------
+
+WAITING = ("pending", "unverified")      # the review states in which nobody earns from a trip yet: its owner is not checked (F-194). Only "pending" is also kept out of the lists
+
+
+def waits(slug) -> bool:
+    """Is the trip still waiting for the captain's check of who owns it (pending or unverified)? Then no booking from it pays its creator, and a link to "their own site" is not drawn."""
+    return review_state(slug) in WAITING
+
 
 def review_state(slug) -> str:
     """"pending", "unverified", "approved", or "" when the trip has nothing to be checked."""
