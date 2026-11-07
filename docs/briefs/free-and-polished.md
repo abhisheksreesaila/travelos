@@ -20,7 +20,8 @@ Status: draft (2026-11-07). The captain approves after seeing the reskin directi
    - Orange is no longer required. The accent is chosen from the design directions.
 3. **Plan themes.** A creator or reader picks one of four: Scrapbook, Structured, Magazine, Minimal list.
 4. **Booking works for any destination, not just the four sample places.**
-   - **Lanes:** flights, stays, car, and tickets or activities, each through the best Travelpayouts partner.
+   - **Lanes:** flights, stays, car, and tickets or activities.
+   - **Partners:** today the captain has Aviasales and Klook only. Each lane uses a paying partner when one is connected. Otherwise it shows a plain link to the best site, such as Expedia, Airbnb or Vrbo, with the search already filled in. A plain link uses no data and needs no agreement, but earns nothing. It switches to an affiliate link the day a program is approved. Klook is tried first for stays and things to do. When Klook has nothing for a place, the plain link takes over.
    - **Prices:** real cached prices where a free API allows it, and honest "search on the partner" cards everywhere else.
    - **Coming back:** a booking returns into the trip through a forwarded or pasted confirmation.
    - **The test:** the captain's Tahoe trip in December, end to end.
