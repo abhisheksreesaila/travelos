@@ -55,16 +55,14 @@ def marker_of(owner_user) -> str:
     return r[0] if r else ""
 
 
-def marker_for(handle) -> str:
-    """The marker of the creator with this handle, or "" (an unknown handle, a creator without one, anything that is not a handle, or a creator whose only trips still wait for the
-    captain's approval: nobody earns from a post that has not been checked is theirs, F-194)."""
-    if not _HANDLE.fullmatch(str(handle or "")):
+def marker_for(handle, slug="") -> str:
+    """The marker of the creator with this handle, or "" (an unknown handle, a creator without one, anything that is not a handle, or a trip still waiting for the captain's approval:
+    nobody earns from a post that has not been checked is theirs, F-194). The check is per trip, so `slug` is the trip a booking is made from; a creator's other, approved trips do not
+    change that. Without a slug there is no trip to check (the `ga_via` cookie is only ever set from an approved trip: `seen_on_own_page`)."""
+    if not _HANDLE.fullmatch(str(handle or "")) or (slug and community.review_state(slug) == "pending"):
         return ""
-    waiting = "SELECT slug FROM trip_review WHERE state = 'pending'"
     with connect() as db:
-        r = db.conn.execute(text("SELECT m.marker FROM creators c JOIN creator_markers m ON m.owner_user = c.owner_user WHERE c.handle = :h "
-                                 f"AND (NOT EXISTS (SELECT 1 FROM published p WHERE p.owner_user = c.owner_user AND p.slug IN ({waiting})) "
-                                 f"OR EXISTS (SELECT 1 FROM published p WHERE p.owner_user = c.owner_user AND p.slug NOT IN ({waiting})))"), {"h": handle}).fetchone()
+        r = db.conn.execute(text("SELECT m.marker FROM creators c JOIN creator_markers m ON m.owner_user = c.owner_user WHERE c.handle = :h"), {"h": handle}).fetchone()
     return r[0] if r else ""
 
 
@@ -124,18 +122,35 @@ def earning_line(name, has_marker, plannable=True) -> str:
     return "Bookings from this trip support GitAway."
 
 
-def seen_on_own_page(request, handle) -> bool:
-    """Did this request come from the creator's own profile (/creators/<handle>) or one of their published trips (/trips/<slug>) on this site? By the Referer, which the browser
-    sends on a same-site click. The `ga_via` cookie is only set then (F-182): a link anywhere else to /plan?via=<handle> must not decide who a stranger's bookings pay."""
+def _referer_path(request) -> str:
+    """The path of the Referer when it is a page of this site (same host, https or http), else ""."""
     try:
         ref = urlsplit(request.headers.get("referer", ""))
     except ValueError:
-        return False
+        return ""
     if ref.scheme not in ("http", "https") or ref.netloc != request.headers.get("host", "") or not ref.netloc:
-        return False
-    path = ref.path.rstrip("/")
+        return ""
+    return ref.path.rstrip("/")
+
+
+def _trip_slug(path) -> str:
+    m = re.fullmatch(r"/trips/([a-z0-9-]{1,80})", path)
+    return m.group(1) if m else ""
+
+
+def seen_on_own_page(request, handle) -> bool:
+    """Did this request come from the creator's own profile (/creators/<handle>) or one of their published trips (/trips/<slug>) on this site? By the Referer, which the browser
+    sends on a same-site click. The `ga_via` cookie is only set then (F-182): a link anywhere else to /plan?via=<handle> must not decide who a stranger's bookings pay. A trip that
+    still waits for the captain's approval does not count (F-194): the creator's approved trips do, one by one."""
+    path = _referer_path(request)
     if path == f"/creators/{handle}":
         return True
-    m = re.fullmatch(r"/trips/([a-z0-9-]{1,80})", path)
-    row = community.get(m.group(1)) if m else None
-    return bool(row and (row["meta"] or {}).get("handle") == handle)
+    slug = _trip_slug(path)
+    row = community.get(slug) if slug else None
+    return bool(row and (row["meta"] or {}).get("handle") == handle and community.review_state(slug) != "pending")
+
+
+def on_waiting_trip(request) -> bool:
+    """Did this request come from a trip that still waits for the captain's approval? Then nothing booked from it is the creator's, whatever cookie the family already has."""
+    slug = _trip_slug(_referer_path(request))
+    return bool(slug and community.review_state(slug) == "pending")

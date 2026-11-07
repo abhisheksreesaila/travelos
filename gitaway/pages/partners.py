@@ -134,6 +134,8 @@ def register(app):
         partner, click = partners.for_offer(offer), log.new_click_id()
         clicked_on = affiliate.claimed_via(request, via)                                  # F-195: a click on a creator's own page names their trip (the Tickets card passes `via`)
         creator = clicked_on or affiliate.valid_via(request.cookies.get(affiliate.COOKIE))   # F-184: else the creator whose trip this family planned from, if any
+        waiting = affiliate.on_waiting_trip(request)        # F-194: a click on a trip the captain has not approved pays nobody and forgets the cookie
+        creator = "" if waiting else creator
         sub = log.record_click(session, click, offer, trip, partner, creator)
         if travelpayouts.marker():
             own = affiliate.marker_for(creator) if creator else ""
@@ -144,6 +146,8 @@ def register(app):
             go_to = RedirectResponse(travelpayouts.link_for(partner, offer, trip, sub, own), status_code=302)
             if clicked_on:
                 go_to.set_cookie(affiliate.COOKIE, clicked_on, **affiliate.cookie_args())
+            elif waiting and affiliate.COOKIE in request.cookies:
+                go_to.delete_cookie(affiliate.COOKIE, path="/")
             return go_to
         if offer.id.startswith("search-"):     # there is no stand-in checkout for a search: locally it goes straight to the partner's own page
             return RedirectResponse(partner.target_url(offer, trip), status_code=302)

@@ -232,9 +232,9 @@ def test_a_claimer_elsewhere_has_no_marker_on_flights_until_the_captain_approves
     _, row = claim_and_publish(STRANGER, link_of(setup))
     (creator,) = community.creators_all()
     affiliate.set_marker(creator["owner_user"], "555111")
-    assert affiliate.marker_for(creator["handle"]) == ""
+    assert affiliate.marker_for(creator["handle"], row["slug"]) == ""
     browser(CAP).post("/admin/approve", data={"slug": row["slug"]})
-    assert affiliate.marker_for(creator["handle"]) == "555111"
+    assert affiliate.marker_for(creator["handle"], row["slug"]) == "555111"
 
 
 def test_a_claimer_at_the_posts_own_site_has_their_marker_at_once(client, setup):

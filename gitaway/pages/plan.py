@@ -655,6 +655,8 @@ def register(app):
         trip = resolve_trip(d, r, a, k, to, home, focus)
         creator = affiliate.claimed_via(request, via)     # F-184, F-182: "Plan this trip" on a creator's own page: remember whose trip this is for 30 days, so /go can use their marker
         cookie_header = cookie(affiliate.COOKIE, creator, **affiliate.cookie_args()) if creator else None
+        if not creator and affiliate.COOKIE in request.cookies and affiliate.on_waiting_trip(request):
+            cookie_header = cookie(affiliate.COOKIE, "", max_age=0, path="/")      # F-194: planning from a trip that waits for the captain forgets an earlier trip's creator
         if creator:
             stats.count_plan(request, session, creator)    # F-192: and it is one "Plan this trip" tap on that trip
         if not showcase.on() and (affiliate.valid_via(via) or affiliate.valid_via(request.cookies.get(affiliate.COOKIE))):

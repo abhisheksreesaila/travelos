@@ -403,3 +403,58 @@ def test_forking_a_sample_trip_remembers_nobody(client, keys):
     sign_in(client, "ari")
     r = client.post("/fork", data={"next": "/trips/sun-and-tacos"}, follow_redirects=True)
     assert "ga_via" not in client.cookies
+
+
+# ---- F-194 audit: the captain's check is per trip, not per creator ----------------------------------------------------------------
+
+def two_trips():
+    """One creator with a marker, an approved trip and a trip still waiting for the captain."""
+    approved, handle, owner = live_trip()
+    waiting, _, _ = live_trip(title="Two days in Santa Barbara")
+    affiliate.set_marker(owner["user_id"], "555111")
+    community.set_review(waiting["slug"], "pending")
+    return approved, waiting, handle
+
+
+def test_a_booking_from_a_trip_waiting_for_approval_never_carries_the_creators_marker_even_with_an_approved_one(client, keys, mode):
+    approved, waiting, handle = two_trips()
+    url = f"/plan?to=hi&{TRIP}&via={handle}"
+    r = client.get(url, headers=seen_on(handle, waiting["slug"]))
+    assert "ga_via" not in r.headers.get("set-cookie", "")
+    assert flight_marker(client).startswith("801445.")                                    # ours: the trip it came from is not checked yet
+    client.get(url, headers=seen_on(handle, approved["slug"]))
+    assert flight_marker(client).startswith("555111.")                                    # the same creator's approved trip pays them
+
+
+def test_tapping_plan_on_a_waiting_trip_forgets_an_earlier_cookie_from_the_creators_approved_one(client, keys, mode):
+    approved, waiting, handle = two_trips()
+    url = f"/plan?to=hi&{TRIP}&via={handle}"
+    client.get(url, headers=seen_on(handle, approved["slug"]))
+    assert client.cookies.get("ga_via") == handle
+    client.get(url, headers=seen_on(handle, waiting["slug"]))
+    assert "ga_via" not in client.cookies
+    assert flight_marker(client).startswith("801445.")
+
+
+def test_a_tickets_click_on_a_waiting_trip_pays_nobody_and_is_not_counted_for_the_creator(client, keys, mode):
+    approved, waiting, handle = two_trips()
+    client.get(f"/plan?to=hi&{TRIP}&via={handle}", headers=seen_on(handle, approved["slug"]))
+    loc = client.get(f"/go/hif1?to=hi&{TRIP}&via={handle}", headers=seen_on(handle, waiting["slug"]), follow_redirects=False).headers["location"]
+    assert parse_qs(urlsplit(loc).query)["marker"][0].startswith("801445.")
+    assert "ga_via" not in client.cookies and affiliate.clicks_by_creator() == {}
+
+
+def test_forking_a_waiting_trip_remembers_nobody(client, keys, mode):
+    approved, waiting, handle = two_trips()
+    sign_in(client, "ari")
+    fork(client, waiting["slug"])
+    assert "ga_via" not in client.cookies
+    fork(client, approved["slug"])
+    assert client.cookies.get("ga_via") == handle
+
+
+def test_the_page_of_a_waiting_trip_says_bookings_support_gitaway_and_the_approved_ones_say_the_creator(client, mode):
+    approved, waiting, _ = two_trips()
+    says = lambda row: re.search(r'id="who-earns"[^>]*>([^<]*)<', without_bar(client.get(f"/trips/{row['slug']}").text)).group(1)      # noqa: E731
+    assert says(waiting) == "Bookings from this trip support GitAway."
+    assert says(approved) == "Flights booked from this trip support Maya Chen. Stays and things to do support GitAway for now."

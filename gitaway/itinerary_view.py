@@ -284,7 +284,7 @@ def _tips(trip):
 def _trust(trip):
     """A real trip's plain statement of who earns from its Book links, and "Report this trip" (only once it is live: a draft's preview has nothing to report)."""
     from gitaway import affiliate, community  # here, not at the top: both read the community database
-    line = affiliate.earning_line(trip.author, bool(affiliate.marker_for(trip.handle)) if trip.handle else False, bool(trip.plan_to))
+    line = affiliate.earning_line(trip.author, bool(affiliate.marker_for(trip.handle, trip.slug)) if trip.handle else False, bool(trip.plan_to))
     report = A(icon("flag", 18, 2.2), "Report this trip", href=f"/report?trip={trip.slug}", cls="btn btn-sm trust-report", id="report-this") if community.is_real(trip.slug) else ""
     own = P(f"Links on a stop are {trip.author}'s own. They may earn them a commission.", id="own-links", cls="trust-line") if any(s.link for d in trip.days for s in d.stops) else ""     # F-196
     return Section(P(line, id="who-earns", cls="trust-line"), own, report, id="trust", cls="trust ga-wrap")
