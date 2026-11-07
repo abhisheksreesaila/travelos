@@ -132,7 +132,9 @@ def test_the_today_tab_opens_the_day_and_a_week_row_zooms_in(canvas_page):
     expect(page.locator(".cz-view[data-level=day]")).to_have_attribute("data-day", "3")
     expect(page.locator("#ph-tab-ask")).to_have_attribute("href", "/trip/ask?day=3")     # the centre Ask follows the day shown
     page.locator("#ph-tab-today").click()
-    page.wait_for_url(re.compile(r"/trip/canvas\?day=0"))   # before the trip, Today is its first day
+    page.wait_for_url(re.compile(r"/trip/cockpit"))         # F-201: the first tab is the trip's home, open on its first day before the trip
+    page.locator('#ck-ticket .ck-tk[data-day="0"] [data-open-day="0"]').click()      # and that day's plan is one tap away
+    page.wait_for_url(re.compile(r"/trip/canvas\?day=0"))
     expect(page.locator(".cz-view[data-level=day]")).to_have_attribute("data-day", "0")
     page.locator(".cz-head .cz-back").click()                       # the Day | Week toggle, both ways
     expect(page.locator(".cz-view[data-level=week]")).to_be_visible()

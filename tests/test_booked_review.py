@@ -85,7 +85,7 @@ def test_a_refused_phone_or_pass_goes_back_to_the_sheet_with_the_reason(trip):
 
 def test_help_has_a_quiet_way_back_to_the_day(trip):
     html = trip.get("/trip/help").text
-    assert 'href="/trip"' in tag(html, "hp-back")
+    assert 'href="/trip/canvas?day=0' in tag(html, "hp-back")      # today's day view (before the trip, its first day): a bare /trip is the cockpit since F-201
 
 
 def test_sos_is_on_the_plan_the_family_tab_and_the_ask_page_and_not_the_map(client, azure):
