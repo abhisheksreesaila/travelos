@@ -46,7 +46,7 @@ def _open_plan(v, day, item):
     from gitaway.pages import tripcanvas as tc
     if item.id in v["plan"]:
         return A("Open the plan", href=tc.curl(block=item.id), cls="cz-dock-btn is-white", data_zoom="in", id="cz-up-open")
-    if item.kind in ("flight", "hotel", "car"):
+    if item.kind in ("flight", "hotel", "car", "ticket"):
         return A("Open the plan", href=tc.curl(day=day, booked=item.id), cls="cz-dock-btn is-white", data_zoom="in", id="cz-up-open")
     return A("Open the plan", href=tc.curl(day=day), cls="cz-dock-btn is-white", data_dock_open=item.id, id="cz-up-open")
 

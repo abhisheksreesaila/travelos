@@ -79,3 +79,6 @@
   .ti-detail-page .ti-chip { background: var(--paper-2); }
 }
 @media (min-width: 1020px) and (max-width: 1299px) { .ti-detail-page .ti-wide { columns: 2; } }
+/* F-198: "Booked on <partner>" and "Change or cancel" under each booking on the details page. */
+.ti-item .bk-where { display: flex; flex-wrap: wrap; align-items: center; gap: 0.375rem 0.625rem; margin-top: 0.25rem; color: var(--ink-2); font-weight: 700; }
+.ti-item .bk-manage { min-height: 2.75rem; }

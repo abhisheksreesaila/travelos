@@ -296,11 +296,11 @@ def imported_blocks(plan, t):
     A block never runs past 11:59 PM. A red-eye is two blocks, the leaving evening and the landing morning: the one the window reads keeps
     the id ("b-out" is the landing morning, "b-back" the leaving evening); the other gets "-d" (leaves) or "-a" (arrives).
     """
-    tag = f"Booked elsewhere · {plan.booked_on}"
     last = (t.return_ - t.depart).days
     out = []
 
-    def put(block_id, at_day, start, end, title, icon):
+    def put(block_id, at_day, start, end, title, icon, item=None):
+        tag = booked_tag(plan, item)
         if 0 <= at_day <= last:
             drawn = min(start, LAST_MIN - 30)  # a late block is drawn from 11:29 PM at the latest, so it is 30 minutes tall (readable); its label keeps the true time
             out.append(Block(block_id, at_day, drawn, min(max(end, drawn + 15), LAST_MIN), title, "booked", True, icon, label_start=start if start != drawn else None, tag=tag))
@@ -311,19 +311,37 @@ def imported_blocks(plan, t):
             title = f"{x.name} · {x.origin} → {x.dest}"
             d0, d1 = (x.depart.date() - t.depart).days, (x.arrive.date() - t.depart).days
             if d1 == d0:
-                put(spec.id, d0, _min(x.depart), _min(x.arrive), title, "plane")
+                put(spec.id, d0, _min(x.depart), _min(x.arrive), title, "plane", x)
             else:  # lands after midnight
                 landing_id, leaving_id = (spec.id, spec.id + "-d") if spec.id == "b-out" else (spec.id + "-a", spec.id)
-                put(leaving_id, d0, _min(x.depart), LAST_MIN, title, "plane")
-                put(landing_id, d1, 0, _min(x.arrive), title, "plane")
+                put(leaving_id, d0, _min(x.depart), LAST_MIN, title, "plane", x)
+                put(landing_id, d1, 0, _min(x.arrive), title, "plane", x)
         elif spec.kind in ("checkin", "checkout"):
             at = x.check_in if spec.kind == "checkin" else x.check_out
-            put(spec.id, (at.date() - t.depart).days, _min(at), _min(at) + STAY_LEN, f"{'Check in' if spec.kind == 'checkin' else 'Check out'} · {x.name}", "bed")
+            put(spec.id, (at.date() - t.depart).days, _min(at), _min(at) + STAY_LEN, f"{'Check in' if spec.kind == 'checkin' else 'Check out'} · {x.name}", "bed", x)
+        elif spec.kind == "ticket":       # F-198: a tour, activity or ticket, at its own time
+            day = (x.start.date() - t.depart).days
+            put(spec.id, day, _min(x.start), _min(x.end) if x.end.date() == x.start.date() else LAST_MIN, x.name, "ticket", x)
         else:
             at = x.pickup if spec.kind == "pickup" else x.dropoff
             where = x.pickup_place if spec.kind == "pickup" else x.dropoff_place
-            put(spec.id, (at.date() - t.depart).days, _min(at), _min(at) + CAR_LEN, f"{'Pick up' if spec.kind == 'pickup' else 'Drop off'} {x.company} car · {where}", "car")
+            put(spec.id, (at.date() - t.depart).days, _min(at), _min(at) + CAR_LEN, f"{'Pick up' if spec.kind == 'pickup' else 'Drop off'} {x.company} car · {where}", "car", x)
     return out
+
+
+def booked_on(plan, item=None) -> str:
+    """Where a booking was made (F-198): its own partner, else the trip's when it names one partner, else "" (somewhere we were not told)."""
+    own = (getattr(item, "booked_on", "") or "").strip()
+    if own:
+        return own
+    trip = (plan.booked_on or "").strip()
+    return "" if not trip or trip == "elsewhere" or "," in trip or trip.endswith(" partners") else trip
+
+
+def booked_tag(plan, item=None) -> str:
+    """The words on a booked block: "Booked on Expedia", or "Booked elsewhere · <the trip's partners>" when this booking's own partner is not known."""
+    where = booked_on(plan, item)
+    return f"Booked on {where}" if where else f"Booked elsewhere · {plan.booked_on}"
 
 
 def _min(at):

@@ -104,7 +104,8 @@ def plan_for(session, offer, trip, partner, confirmation) -> ti.Plan:
 
 def _merged(old: ti.Plan, new: ti.Plan) -> ti.Plan:
     """`old` with the lane `new` books swapped in (a second flight replaces the first), and the partner added to its label."""
-    return replace(old, legs=new.legs or old.legs, hotels=new.hotels or old.hotels, rental=new.rental or old.rental, booked_on=_origin(old.booked_on, new.booked_on))
+    return replace(old, legs=new.legs or old.legs, hotels=new.hotels or old.hotels, rental=new.rental or old.rental, tickets=old.tickets + new.tickets,
+                   booked_on=_origin(old.booked_on, new.booked_on))
 
 
 def book(session, click_id, offer, trip, partner):

@@ -38,7 +38,7 @@ _AIRPORT = re.compile(r"^[A-Za-z]{3}$")
 _EMAIL = re.compile(r"^[^@\s,;<>]+@[^@\s,;<>]+\.[^@\s,;<>]+$")
 _STAMP = re.compile(r"^(\d{4}-\d{2}-\d{2})[ T](\d{1,2}):(\d{2})(?::\d{2}(?:\.\d+)?)?\s*(?:Z|[+-]\d{2}(?::?\d{2})?)?$")  # a UTC offset is accepted and ignored: times are local
 _DAY = re.compile(r"^\d{4}-\d{2}-\d{2}$")
-KNOWN = ("trip", "travelers", "flights", "hotel", "hotels", "car", "notes")
+KNOWN = ("trip", "travelers", "flights", "hotel", "hotels", "car", "tickets", "notes")
 
 
 class ImportProblem(ValueError):
@@ -73,6 +73,7 @@ class Leg:
     arrive: datetime   # local time at the destination
     confirmation: str = ""
     seats: str = ""
+    booked_on: str = ""   # where this leg was booked (F-198), "" for the trip's own `booked_on`
 
     @property
     def name(self) -> str:
@@ -89,6 +90,7 @@ class Lodging:
     room: str = ""
     rooms: int = 1
     phone: str = ""
+    booked_on: str = ""   # where this stay was booked (F-198)
 
 
 @dataclass(frozen=True)
@@ -101,6 +103,18 @@ class Rental:
     confirmation: str = ""
     car: str = ""
     phone: str = ""
+    booked_on: str = ""   # where this car was booked (F-198): Expedia, or the rental company itself
+
+
+@dataclass(frozen=True)
+class Ticket:
+    """Something booked for a time at a place (F-198): a tour, an activity, a ticket, a lesson, bought on GetYourGuide, Klook or anywhere."""
+    name: str
+    place: str
+    start: datetime
+    end: datetime
+    confirmation: str = ""
+    booked_on: str = ""
 
 
 def _split(legs):
@@ -133,6 +147,7 @@ class Plan:
     rental: Rental | None = None
     notes: str = ""
     timezone: str = ""   # IANA name of the destination (F-057); left out, `zone_for` picks it from the arrival airport
+    tickets: tuple = ()  # tours, activities and tickets (F-198)
 
     def __post_init__(self):
         if not self.timezone:  # a Plan built without a zone (the guided builder, F-055) gets the arrival airport's
@@ -403,13 +418,14 @@ def _read_flights(r, doc):
                 r.bad(path, f"{label} has no “{key}”. Add a line like “{key}: 2026-10-16 08:05”.")
         confirmation = _text(r, item, "confirmation", path, f"{label}’s confirmation", limit=20)
         seats = _text(r, item, "seats", path, f"{label}’s seats", limit=60)
+        where = _text(r, item, "booked_on", path, f"{label}’s “booked_on”", limit=30)
         if depart and arrive and not (-1 <= (arrive.date() - depart.date()).days <= 2):
             r.bad(path + ("arrive",), f"{label} lands {abs((arrive.date() - depart.date()).days)} days from when it leaves. Check the dates.")
         if airline and number and origin and dest and depart and arrive:
             if origin == dest:
                 r.bad(path, f"{label} leaves from and lands at {origin}. Check the airports.")
             else:
-                out.append(Leg(airline, number, origin, dest, depart, arrive, confirmation, seats))
+                out.append(Leg(airline, number, origin, dest, depart, arrive, confirmation, seats, where))
     out.sort(key=lambda leg: leg.depart)
     return tuple(out)
 
@@ -438,9 +454,10 @@ def _one_hotel(r, item, path, label):
     confirmation = _text(r, item, "confirmation", path, f"{label}’s confirmation", limit=30)
     room = _text(r, item, "room", path, f"{label}’s room", limit=80)
     phone = _text(r, item, "phone", path, f"{label}’s phone", limit=30)
+    where = _text(r, item, "booked_on", path, f"{label}’s “booked_on”", limit=30)
     if not (name and address and check_in and check_out and check_out > check_in):
         return None
-    return Lodging(name, address, check_in, check_out, confirmation, room, rooms, phone)
+    return Lodging(name, address, check_in, check_out, confirmation, room, rooms, phone, where)
 
 
 MAX_HOTELS = 6
@@ -493,12 +510,50 @@ def _read_car(r, doc):
     confirmation = _text(r, item, "confirmation", path, "The car’s confirmation", limit=30)
     car = _text(r, item, "car", path, "The car’s type", limit=40)
     phone = _text(r, item, "phone", path, "The car’s phone", limit=30)
+    where = _text(r, item, "booked_on", path, "The car’s “booked_on”", limit=30)
     if not (company and pick and drop and drop > pick):
         return None
-    return Rental(company, where_p, pick, where_d, drop, confirmation, car, phone)
+    return Rental(company, where_p, pick, where_d, drop, confirmation, car, phone, where)
 
 
-def _check_inside(r, plan_start, plan_end, legs, hotels, rental):
+MAX_TICKETS = 12
+TICKET_LEN = timedelta(hours=2)   # a ticket with no end time runs this long on the calendar
+
+
+def _read_tickets(r, doc):
+    """Tours, activities and tickets (F-198): a list under `tickets:`, each with a name, a start and optionally an end, a place, a confirmation and where it was booked."""
+    raw = doc.get("tickets")
+    if raw is None:
+        return ()
+    if not isinstance(raw, list):
+        r.bad(("tickets",), "“tickets:” should be a list with one entry per ticket or activity.")
+        return ()
+    if len(raw) > MAX_TICKETS:
+        r.bad(("tickets",), f"That is more than {MAX_TICKETS} tickets.")
+    out = []
+    for i, item in enumerate(raw[:MAX_TICKETS]):
+        path, label = ("tickets", i), f"Ticket {i + 1}"
+        item = _mapping(r, item, path, label)
+        if item is None:
+            continue
+        name = _text(r, item, "name", path, f"{label}’s name", required=True, limit=80)
+        place = _text(r, item, "place", path, f"{label}’s place", limit=120)
+        if item.get("start") is None:
+            r.bad(path, f"{label} has no “start”. Add a line like “start: 2026-12-21 09:00”.")
+        start = _stamp(r, item.get("start"), path + ("start",), f"{label}’s “start”", datetime.min.time().replace(hour=9)) if item.get("start") is not None else None
+        end = _stamp(r, item.get("end"), path + ("end",), f"{label}’s “end”") if item.get("end") is not None else (start + TICKET_LEN if start else None)
+        if start and end and end <= start:
+            r.bad(path + ("end",), f"{label} has to end after it starts.")
+            end = None
+        confirmation = _text(r, item, "confirmation", path, f"{label}’s confirmation", limit=30)
+        where = _text(r, item, "booked_on", path, f"{label}’s “booked_on”", limit=30)
+        if name and start and end:
+            out.append(Ticket(name, place, start, end, confirmation, where))
+    out.sort(key=lambda t: t.start)
+    return tuple(out)
+
+
+def _check_inside(r, plan_start, plan_end, legs, hotels, rental, tickets=()):
     """Everything has to fall on a day of the trip, so it has somewhere to show on the calendar. A red-eye may leave the evening before
     the trip starts or land the morning after it ends."""
     def inside(day):
@@ -516,6 +571,9 @@ def _check_inside(r, plan_start, plan_end, legs, hotels, rental):
         for key, at in (("pickup", rental.pickup), ("dropoff", rental.dropoff)):
             if not inside(at.date()):
                 r.bad(("car", key), f"The car {key} is on {at:%b} {at.day}, which is outside your trip dates. Change “start” or “end”, or the car.")
+    for i, t in enumerate(tickets):
+        if not inside(t.start.date()):
+            r.bad(("tickets", i, "start"), f"{t.name} is on {t.start:%b} {t.start.day}, which is outside your trip dates. Change “start” or “end”, or the ticket.")
 
 
 def parse(text) -> Parsed:
@@ -573,6 +631,7 @@ def parse(text) -> Parsed:
     legs = _read_flights(r, doc)
     hotels = _read_hotels(r, doc)
     rental = _read_car(r, doc)
+    tickets = _read_tickets(r, doc)
     notes = doc.get("notes")
     if notes is not None and not isinstance(notes, str):
         r.bad(("notes",), "“notes:” should be text. Use “notes: |” and indent the lines below it.")
@@ -595,13 +654,13 @@ def parse(text) -> Parsed:
         zone, note = zone_for(legs, destination)
         if note:
             r.warn(tp, note)
-    if not (legs or hotels or rental) and not r.errors:
-        r.bad((), "Add at least one of flights, a hotel or a car, or there is nothing to put on the calendar.")
+    if not (legs or hotels or rental or tickets) and not r.errors:
+        r.bad((), "Add at least one of flights, a hotel, a car or a ticket, or there is nothing to put on the calendar.")
     if start and end and not r.errors:
-        _check_inside(r, start, end, legs, hotels, rental)
+        _check_inside(r, start, end, legs, hotels, rental, tickets)
     if r.errors:
         raise ImportProblem(r.errors, r.warnings)
-    return Parsed(Plan(title, destination, start, end, booked_on, itinerary, travelers, legs, hotels, rental, notes, zone), tuple(r.warnings))
+    return Parsed(Plan(title, destination, start, end, booked_on, itinerary, travelers, legs, hotels, rental, notes, zone, tickets), tuple(r.warnings))
 
 
 # ---- the family database's copy -------------------------------------------------------------------------------------
@@ -616,15 +675,17 @@ def to_doc(plan: Plan) -> dict:
                             "booked_on": plan.booked_on, "itinerary": plan.itinerary, "timezone": plan.timezone},
            "travelers": [{"name": t.name, "email": t.email, "age": t.age} for t in plan.travelers],
            "flights": [{"airline": f.airline, "number": f.number, "from": f.origin, "to": f.dest, "depart": _iso(f.depart), "arrive": _iso(f.arrive),
-                        "confirmation": f.confirmation, "seats": f.seats} for f in plan.legs],
+                        "confirmation": f.confirmation, "seats": f.seats, **({"booked_on": f.booked_on} if f.booked_on else {})} for f in plan.legs],
            "notes": plan.notes}
     if plan.hotels:
         doc["hotels"] = [{"name": h.name, "address": h.address, "check_in": _iso(h.check_in), "check_out": _iso(h.check_out),
-                          "confirmation": h.confirmation, "room": h.room, "rooms": h.rooms, "phone": h.phone} for h in plan.hotels]
+                          "confirmation": h.confirmation, "room": h.room, "rooms": h.rooms, "phone": h.phone, **({"booked_on": h.booked_on} if h.booked_on else {})} for h in plan.hotels]
     if plan.rental:
         c = plan.rental
         doc["car"] = {"company": c.company, "pickup_place": c.pickup_place, "pickup": _iso(c.pickup), "dropoff_place": c.dropoff_place,
-                      "dropoff": _iso(c.dropoff), "confirmation": c.confirmation, "car": c.car, "phone": c.phone}
+                      "dropoff": _iso(c.dropoff), "confirmation": c.confirmation, "car": c.car, "phone": c.phone, **({"booked_on": c.booked_on} if c.booked_on else {})}
+    if plan.tickets:
+        doc["tickets"] = [{"name": t.name, "place": t.place, "start": _iso(t.start), "end": _iso(t.end), "confirmation": t.confirmation, "booked_on": t.booked_on} for t in plan.tickets]
     return doc
 
 
@@ -636,10 +697,11 @@ def from_doc(doc: dict) -> Plan:
     return Plan(
         t["title"], t["destination"], date.fromisoformat(t["start"]), date.fromisoformat(t["end"]), t["booked_on"], t.get("itinerary", ""),
         tuple(Traveler(x["name"], x.get("email", ""), x.get("age")) for x in doc["travelers"]),
-        tuple(Leg(f["airline"], f["number"], f["from"], f["to"], at(f["depart"]), at(f["arrive"]), f.get("confirmation", ""), f.get("seats", "")) for f in doc.get("flights", [])),
-        tuple(Lodging(h["name"], h["address"], at(h["check_in"]), at(h["check_out"]), h.get("confirmation", ""), h.get("room", ""), h.get("rooms", 1), h.get("phone", "")) for h in hs),
-        Rental(c["company"], c["pickup_place"], at(c["pickup"]), c["dropoff_place"], at(c["dropoff"]), c.get("confirmation", ""), c.get("car", ""), c.get("phone", "")) if c else None,
-        doc.get("notes", ""), t.get("timezone", ""))
+        tuple(Leg(f["airline"], f["number"], f["from"], f["to"], at(f["depart"]), at(f["arrive"]), f.get("confirmation", ""), f.get("seats", ""), f.get("booked_on", "")) for f in doc.get("flights", [])),
+        tuple(Lodging(h["name"], h["address"], at(h["check_in"]), at(h["check_out"]), h.get("confirmation", ""), h.get("room", ""), h.get("rooms", 1), h.get("phone", ""), h.get("booked_on", "")) for h in hs),
+        Rental(c["company"], c["pickup_place"], at(c["pickup"]), c["dropoff_place"], at(c["dropoff"]), c.get("confirmation", ""), c.get("car", ""), c.get("phone", ""), c.get("booked_on", "")) if c else None,
+        doc.get("notes", ""), t.get("timezone", ""),
+        tuple(Ticket(x["name"], x.get("place", ""), at(x["start"]), at(x["end"]), x.get("confirmation", ""), x.get("booked_on", "")) for x in doc.get("tickets", [])))
 
 
 # ---- what the calendar and the rides read ---------------------------------------------------------------------------
@@ -748,6 +810,7 @@ def block_specs(plan: Plan) -> list:
         out += [Spec("b-in" if i == 0 else f"b-hin{i + 1}", "checkin", h), Spec("b-out2" if i == 0 else f"b-hout{i + 1}", "checkout", h)]
     if plan.rental:
         out += [Spec("b-car-pick", "pickup", plan.rental), Spec("b-car-drop", "dropoff", plan.rental)]
+    out += [Spec(f"b-tix{i + 1}", "ticket", t) for i, t in enumerate(plan.tickets)]
     return out
 
 
@@ -768,6 +831,9 @@ def detail_rows(spec: Spec, plan: Plan) -> tuple:
         rows += [("Room", x.room)] if x.room else []
         rows += [("Rooms", str(x.rooms))] if x.rooms != 1 else []
         rows += [("Phone", x.phone)] if x.phone else []
+        return x.name, rows + [("Confirmation", x.confirmation or "none given")]
+    if spec.kind == "ticket":
+        rows = [("Ticket", x.name)] + ([("Place", x.place)] if x.place else []) + [("Starts", when_text(x.start)), ("Ends", when_text(x.end))]
         return x.name, rows + [("Confirmation", x.confirmation or "none given")]
     which = "pickup" if spec.kind == "pickup" else "dropoff"
     rows = [("Company", x.company), ("Pick up", f"{x.pickup_place} · {when_text(x.pickup)}"), ("Drop off", f"{x.dropoff_place} · {when_text(x.dropoff)}")]

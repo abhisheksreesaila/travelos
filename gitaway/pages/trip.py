@@ -94,7 +94,7 @@ def _with_extras(items, b, notes, session, who, family, with_steps=()):
     out = []
     others = [x for x in items if x.kind != "offer" and x.id not in with_steps]  # a plan with parts and steps is the day's frame, not something to overlap
     for x in items:
-        if x.kind in ("flight", "hotel", "car"):
+        if x.kind in ("flight", "hotel", "car", "ticket"):
             detail = cal.booking_detail(b, x.id)
             conf = next((v for k, v in detail[1] if k == "Confirmation"), "") if detail else ""
             x = replace(x, confirm=conf)
@@ -138,7 +138,7 @@ def up_card(v, compact=False):
         # F-092 now card on the day view: it ends with Directions and Uber (the captain, 2026-10-06: "after those two buttons, it should end"). No Details row: a
         # booking's title opens its sheet (F-093: confirmation, phone, address), an overlap is a small tag by the time, notes fold above the buttons.
         title = item.title if item else "You are all caught up"
-        if item and item.kind in ("flight", "hotel", "car"):
+        if item and item.kind in ("flight", "hotel", "car", "ticket"):
             from gitaway.pages.tripcanvas import curl     # the canvas imports this module: a late import keeps the two from importing each other at load
             title = A(item.title, href=curl(day=v["sel"], booked=item.id), cls="tp-up-link", id="tp-up-open", data_zoom="in", data_zk=f"bkg-{item.id}")   # opens in place, as the booking line does
         when = Div(Span(up.detail, cls="tp-up-sub"), overlap_tag(item) if item and item.overlaps else "", cls="tp-up-when")
@@ -210,7 +210,7 @@ def row(item, today, ua=""):
     inner = (Span(item.label.upper(), cls="tp-label"), Span(item.title, cls="tp-what"), Span(item.sub, cls="tp-sub"))
     state = {"done": "Done", "now": "Now", "next": "Next"}.get(item.state, "") if today else ""
     badge = Span(icon("check", 14, 3) if item.state == "done" else "", state, cls=f"tp-state tp-state-{item.state}") if state else ""
-    booked = item.kind in ("flight", "hotel", "car")  # a booked item (F-059): tinted by kind, a solid edge in the kind's ink, and a quiet lock
+    booked = item.kind in ("flight", "hotel", "car", "ticket")  # a booked item (F-059): tinted by kind, a solid edge in the kind's ink, and a quiet lock
     lock = Span(icon("lock", 14, 2.4), Span("Booked, locked", cls="sr-only"), cls="tp-lock") if booked else ""
     card = (A if item.href else Div)(Div(Span(icon(item.icon, 18, 2.2), cls="tp-ico", aria_hidden="true") if item.icon else "", Div(*inner, cls="tp-card-text"), lock, badge, cls="tp-card-in"),
                                      cls=f"tp-card {tint} is-{item.state} tp-{item.kind}{' tp-bk' if booked else ''}", **({"href": item.href} if item.href else {}), data_item=item.id)
@@ -262,7 +262,7 @@ def today_panel(v):
         parts.append(Div(*[row(x, v["now"] is not None, v["ua"]) for x in v["items"] if not (rest and x.id == v["up"].item.id) and not (x.kind == "flight" and x.title in flight_titles)], cls="tp-list", id="tp-list"))
     else:
         parts.append(Div(Span("wide open!", cls="tp-hand"), A("Add something fun", href=trip_url(add="1", day=sel), data_open_sheet="", cls="tp-btn tp-btn-ink") if editor else Span("Nothing planned yet.", cls="tp-sub"), cls="tp-empty"))
-    if cal.is_imported(v["b"]) and any(x.kind in ("flight", "hotel", "car") for x in v["items"]):  # where it was booked is said once, quietly
+    if cal.is_imported(v["b"]) and any(x.kind in ("flight", "hotel", "car", "ticket") for x in v["items"]):  # where it was booked is said once, quietly
         parts.append(Div(icon("lock", 13, 2.4), Span(f"Booked elsewhere · {cal.plan_of(v['b']).booked_on}"), cls="tp-elsewhere"))
     parts.append(stay_card(v))
     parts.append(morning_ui.card(v["zone"]))  # F-066: the morning plan push, drawn by its own module
