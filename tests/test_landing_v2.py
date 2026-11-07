@@ -1,4 +1,7 @@
-"""F-060: Landing v2. One door (Plan a trip), forking as one quiet line, a header with only the brand and Sign in."""
+"""F-060: Landing v2. One door (Plan a trip), forking as one quiet line, a header with only the brand and Sign in.
+
+Since F-206 a signed-out visitor gets the cover story (tests/test_cover.py) and this landing is what a signed-in person sees at /, so its content is
+read signed in; the header and footer rules for a stranger are checked on the cover."""
 import re
 
 from gitaway import itineraries
@@ -6,6 +9,8 @@ from tests.test_signin import sign_in
 
 
 def _get(client, path="/"):
+    if path == "/":
+        sign_in(client)       # F-206: this landing is the signed-in one now
     r = client.get(path)
     assert r.status_code == 200
     return r.text
@@ -22,9 +27,9 @@ def _hrefs(fragment):
 
 
 def test_landing_header_has_only_the_brand_and_sign_in(client):
-    header = _tag(_get(client), "header", "ga-header")
+    header = _tag(client.get("/").text, "header", "cv-top")       # the signed-out landing is the cover (F-206)
     assert "ga-nav" not in header
-    assert _hrefs(header) == ["#main", "/", "/signin"]
+    assert _hrefs(header) == ["/", "/signin"]
     assert "Community trips" not in header and "For creators" not in header and "Plan a trip" not in header
 
 
@@ -35,8 +40,8 @@ def test_other_pages_keep_their_header_nav(client):
 
 
 def test_footer_carries_the_links_that_left_the_header(client):
-    footer = _tag(_get(client), "footer", "ga-footer")
-    assert _hrefs(footer) == ["/community", "/for-creators", "/signin", "/privacy", "/terms"]
+    footer = _tag(client.get("/").text, "footer", "cv-foot")      # the signed-out landing is the cover (F-206)
+    assert [h for h in _hrefs(footer) if h.startswith("/")] == ["/community", "/for-creators", "/signin", "/privacy", "/terms"]   # (and the map data's credit, tests/test_cover.py)
     other = _tag(_get(client, "/community"), "footer", "ga-footer")
     assert "/creators" not in other  # only the landing gets the extra links
 
@@ -62,7 +67,7 @@ def test_one_wide_primary_door_to_plan_a_trip(client):
     h = _get(client)
     assert "DOOR ONE" not in h and "DOOR TWO" not in h and "No plans yet?</h2>" not in h
     assert "Let’s book it." in h and "We’re going." in h
-    forms = re.findall(r"<form[^>]*>", h)
+    forms = re.findall(r"<form[^>]*>", re.search(r"<main.*?</main>", h, re.S).group(0))   # the header's sign-out form is not a door
     assert len(forms) == 1 and 'action="/start"' in forms[0] and 'method="get"' in forms[0]
     assert len(re.findall(r'<button[^>]*type="submit"[^>]*>[^<]*Plan a trip', h)) == 1
     assert h.count("btn-ink") == 1
