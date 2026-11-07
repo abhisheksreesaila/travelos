@@ -1,0 +1,1339 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GitAway cover v2 / E: The trail, a film with a voice</title>
+<style>
+@font-face { font-family: "Geist"; src: url("../../../assets/fonts/geist-variable.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+:root {
+  color-scheme: light dark;
+  --font: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --bg: #F3F1EE; --s1: #FFFFFF; --s2: #F4F1EC; --ink: #121014; --ink2: #5E5A63; --line: #E4E0DA;
+  --acc: #D2401C; --on-acc: #FFFFFF; --acc-hi: #B8330F;
+  --sh: 0 12px 36px rgba(40, 20, 10, .18), 0 0 0 1px rgba(40, 20, 10, .04);
+  --see: #087F7B; --stay: #A445D8; --tix: #F59A2E; --on-tix: #1B0B05; --food: #E0204E; --wx: #0068D9; --flight: #5250E0;
+  --r: 28px; --pill: 999px; --ease: cubic-bezier(.2, .8, .2, 1); --spring: cubic-bezier(.34, 1.56, .64, 1);
+  --wall: #FCE6D8; --wall2: #F6D2BD; --floor: #E9B892; --floor2: #DCA47D; --rug: #F3C9A6; --frame: #FFF8F2;
+  --sky-a: #FF8F66; --sky-b: #FFD3B4; --sun: #FFF4DA; --mtn: #6A62B6; --mtn2: #9284D6; --snow: #FFFFFF; --lake: #2E7FD9; --pine: #2B5C63;
+  --sofa: #17877F; --sofa2: #0F6C66; --sofa3: #22A094; --wood: #D69A6A; --wood2: #B07448;
+  --stage-a: #FFE1CC; --stage-b: #FFB994; --glow: rgba(255, 196, 120, .55); --mapbg-a: #FFE6D4; --mapbg-b: #FFBE9C;
+  --g-ocean-a: #5AA6F2; --g-ocean-b: #2766CC; --g-ocean-c: #163C8E; --g-dot: #FFF3E8; --g-halo: rgba(255, 255, 255, .55); --g-shade: rgba(8, 20, 60, .5);
+  --deck: #17151B; --on-deck: #FFFFFF; --deck2: rgba(255, 255, 255, .2);
+  --dim: 1;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #0B0B10; --s1: #1C1B21; --s2: #26252C; --ink: #F5F3F0; --ink2: #ABA6B0; --line: #34323A;
+    --acc: #FF8A5B; --on-acc: #1B0B05; --acc-hi: #FFA27C;
+    --sh: 0 12px 36px rgba(0, 0, 0, .55), 0 0 0 1px rgba(255, 255, 255, .06);
+    --see: #2BB5AD; --stay: #C17BEF; --tix: #FFB547; --food: #FF4D74; --wx: #4A9BFF; --flight: #8B89FF;
+    --wall: #2C2333; --wall2: #221A29; --floor: #3A2A2C; --floor2: #2C1F22; --rug: #46323A; --frame: #3A3040;
+    --sky-a: #171A46; --sky-b: #4E2E6E; --sun: #F3F0DE; --mtn: #2C2D62; --mtn2: #403C80; --snow: #C9D3F2; --lake: #1B3F80; --pine: #142636;
+    --sofa: #0F5E59; --sofa2: #0A4744; --sofa3: #157068; --wood: #7C5236; --wood2: #5E3C27;
+    --stage-a: #2A1F3D; --stage-b: #4D2846; --glow: rgba(255, 170, 90, .5); --mapbg-a: #1D1734; --mapbg-b: #0C0A18;
+    --g-ocean-a: #23407E; --g-ocean-b: #15295A; --g-ocean-c: #0B1636; --g-dot: #CFDBFF; --g-halo: rgba(140, 170, 255, .45); --g-shade: rgba(0, 0, 10, .6);
+    --deck: #050407; --on-deck: #FFFFFF; --deck2: rgba(255, 255, 255, .18);
+    --dim: .86; }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { font-family: var(--font); background: var(--bg); color: var(--ink); overflow: hidden; -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--acc); outline-offset: 3px; }
+
+/* ---------- header ---------- */
+.top { position: fixed; top: 0; left: 0; right: 0; z-index: 8; display: flex; justify-content: space-between; align-items: center; padding: 20px 32px; padding-top: max(20px, env(safe-area-inset-top)); pointer-events: none; }
+.top > * { pointer-events: auto; }
+.brand, .signin { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 18px 0 10px; border-radius: var(--pill); background: var(--s1); box-shadow: var(--sh); font-weight: 750; font-size: 18px; letter-spacing: -.02em; }
+.signin { padding: 0 20px; font-weight: 600; font-size: 16px; }
+.mark { width: 30px; height: 30px; border-radius: 9px; background: var(--acc); display: grid; place-items: center; }
+.mark svg { width: 20px; height: 20px; }
+
+/* ---------- the film ---------- */
+.film { position: fixed; z-index: 1; top: 88px; left: 24px; right: 24px; bottom: 24px; overflow: hidden; border-radius: var(--r); background: var(--stage-a); box-shadow: var(--sh); touch-action: pan-y; }
+.scene { position: absolute; inset: 0; opacity: 0; visibility: hidden; overflow: hidden; transition: opacity .6s var(--ease), visibility 0s .6s; }
+.scene.on { opacity: 1; visibility: visible; z-index: 1; transition: opacity .6s var(--ease); }
+.scene.out { z-index: 3; visibility: visible; transition: none; }
+body.rm .scene.out { opacity: 0; transition: opacity .6s var(--ease); }
+.cam { position: absolute; inset: 0; transform-origin: var(--ax) var(--ay); will-change: transform; }
+.art { position: absolute; left: var(--ax); top: var(--ay); width: 600px; height: 600px; translate: -50% -50%; scale: var(--zk); }
+.art > * { position: absolute; }
+svg.ill { left: 0; top: 0; width: 600px; height: 600px; overflow: visible; }
+.ppl { filter: brightness(var(--dim)); }
+.t-ui { font-family: var(--font); }
+canvas.gl { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; }
+.ov { position: absolute; inset: 0; pointer-events: none; }
+.trk { position: absolute; left: 0; top: 0; will-change: transform; }
+.bgfill { position: absolute; inset: 0; }
+
+/* the real renders: layered so the foreground moves faster than the far hills (a fake dolly) */
+.shot { position: absolute; inset: -4%; background: var(--w) center / cover no-repeat; filter: saturate(1.2) contrast(1.04); will-change: transform; }
+.shot.front { -webkit-mask-image: linear-gradient(180deg, transparent 0 58%, #000 80%); mask-image: linear-gradient(180deg, transparent 0 58%, #000 80%); }
+.tint { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: multiply;
+  background: linear-gradient(180deg, #FF9A76 0%, #FFB896 12%, rgba(255, 205, 180, .45) 28%, rgba(255, 230, 215, 0) 44%); }
+@media (prefers-color-scheme: dark) { .tint { mix-blend-mode: screen; opacity: .7; background: linear-gradient(180deg, #6A2C86 0%, #9C3A6E 14%, rgba(120, 40, 90, .3) 32%, rgba(0, 0, 0, 0) 50%); } }
+.w1 { --w: url(../../../assets/cover/stills/a-1-wide-light.webp); }
+.w2 { --w: url(../../../assets/cover/stills/a-2-wide-light.webp); }
+.w4 { --w: url(../../../assets/cover/stills/a-4-wide-light.webp); }
+.w3 { --w: url(../../../assets/cover/stills/a-3-wide-light.webp); }
+@media (prefers-color-scheme: dark) {
+  .w1 { --w: url(../../../assets/cover/stills/a-1-wide-dark.webp); } .w2 { --w: url(../../../assets/cover/stills/a-2-wide-dark.webp); }
+  .w4 { --w: url(../../../assets/cover/stills/a-4-wide-dark.webp); } .w3 { --w: url(../../../assets/cover/stills/a-3-wide-dark.webp); }
+}
+
+/* ---------- shared motion ---------- */
+.scene.on .pop { animation: pop .6s var(--spring) var(--d, 0s) both; }
+@keyframes pop { from { opacity: 0; transform: scale(.5); } }
+.scene.on .rise { animation: rise .8s var(--ease) var(--d, 0s) both; }
+@keyframes rise { from { opacity: 0; transform: translateY(60px); } }
+.scene.on .fade { animation: fade .6s var(--ease) var(--d, 0s) both; }
+@keyframes fade { from { opacity: 0; } }
+.scene.on .hop { animation: hop .7s var(--spring) var(--d, 0s) both; }
+@keyframes hop { from { opacity: 0; transform: translateY(26px) scale(.3); } }
+.tap { width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%; background: rgba(255, 255, 255, .6); box-shadow: 0 0 0 2px rgba(255, 255, 255, .95), 0 6px 16px rgba(0, 0, 0, .25); opacity: 0; }
+.scene.on .tap { animation: tap .9s var(--ease) var(--d) both; }
+@keyframes tap { 0% { opacity: 0; transform: scale(1.5); } 30% { opacity: 1; transform: scale(1); } 50% { transform: scale(.78); } 75% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.1); } }
+.ring { width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%; border: 3px solid #fff; opacity: 0; }
+.scene.on .ring { animation: ring .8s ease-out var(--d) both; }
+@keyframes ring { from { opacity: .95; transform: scale(.5); } to { opacity: 0; transform: scale(2.6); } }
+@keyframes press { 40% { transform: scale(.92); filter: brightness(1.12); } }
+.blink { transform-box: fill-box; transform-origin: center; }
+.scene.on .blink { animation: blink 3.1s linear var(--d, 1.2s) infinite; }
+@keyframes blink { 0%, 4%, 100% { transform: none; } 2% { transform: scaleY(.1); } }
+.flag { display: inline-flex; align-items: center; gap: 7px; padding: 9px 15px 9px 11px; border-radius: 999px; background: var(--k, var(--acc)); color: var(--on-k, #fff); font-size: 15px; font-weight: 700; letter-spacing: -.01em; white-space: nowrap; box-shadow: 0 8px 20px rgba(0, 0, 0, .22); }
+.flag svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.trk .flag { translate: -50% -100%; }
+.bub { width: 54px; height: 54px; border-radius: 50%; background: var(--s1); box-shadow: 0 8px 20px rgba(0, 0, 0, .2); display: grid; place-items: center; }
+.bub svg { width: 28px; height: 28px; fill: none; stroke: var(--k, var(--acc)); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.bub.fill svg { fill: var(--k); stroke: var(--k); }
+
+/* phone + widgets (from D) */
+.phone { width: 264px; height: 528px; border-radius: 46px; background: #141217; padding: 9px; box-shadow: 0 30px 60px rgba(60, 20, 10, .28), 0 0 0 1.5px #2A272F inset; }
+.screen { position: relative; height: 100%; border-radius: 37px; background: var(--s2); overflow: hidden; }
+.island { position: absolute; left: 50%; top: 11px; width: 84px; height: 24px; margin-left: -42px; border-radius: 12px; background: #141217; }
+.ph-h { position: absolute; left: 16px; top: 46px; }
+.ph-h b { display: block; font-size: 22px; font-weight: 800; letter-spacing: -.03em; }
+.ph-h span { font-size: 12px; color: var(--ink2); font-weight: 550; }
+.wg { position: absolute; width: 104px; height: 104px; border-radius: 22px; padding: 11px 12px; color: #fff; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 6px 14px rgba(0, 0, 0, .12); }
+.wg svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.wg small { font-size: 11px; font-weight: 650; opacity: .92; line-height: 1.15; }
+.wg b { white-space: nowrap; font-size: 30px; line-height: 1; font-weight: 760; letter-spacing: -.04em; }
+.wg em { white-space: nowrap; font-style: normal; font-size: 14px; font-weight: 750; letter-spacing: -.02em; line-height: 1.1; }
+.w-wx { background: linear-gradient(160deg, #3D90F2, #0068D9); }
+.w-fl { background: linear-gradient(160deg, #7472F2, #5250E0); }
+.w-st { background: linear-gradient(160deg, #BC6CEA, #A445D8); width: 218px; height: 80px; flex-direction: row; align-items: center; justify-content: flex-start; gap: 12px; }
+.w-st .ic { width: 46px; height: 46px; border-radius: 14px; background: rgba(255, 255, 255, .2); display: grid; place-items: center; flex: none; }
+.w-st .ic svg { width: 24px; height: 24px; }
+.w-st .chip { display: inline-block; margin-top: 5px; padding: 3px 8px; border-radius: 8px; background: rgba(255, 255, 255, .22); font-size: 11px; font-weight: 650; }
+.w-dr { background: linear-gradient(160deg, #17A9A2, #087F7B); }
+.w-tx { background: linear-gradient(160deg, #FFBE66, #F59A2E); color: #1B0B05; }
+.days { position: absolute; left: 14px; top: 414px; display: flex; gap: 6px; }
+.days span { padding: 6px 10px; border-radius: 999px; background: var(--s1); font-size: 11px; font-weight: 650; color: var(--ink2); box-shadow: 0 0 0 1px var(--line) inset; }
+.days span:first-child { background: var(--ink); color: var(--bg); box-shadow: none; }
+.lat { position: absolute; left: 14px; top: 452px; width: 218px; height: 46px; border-radius: 999px; background: var(--acc); color: var(--on-acc); display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 15px; font-weight: 700; }
+.lat svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------- 1: buried in a guidebook ---------- */
+.flip { transform-box: view-box; transform-origin: 300px 398px; }
+.scene.on .flip { animation: flip 1.15s var(--ease) .3s infinite; }
+@keyframes flip { 0%, 20% { transform: scaleX(1); } 70%, 100% { transform: scaleX(-1); } }
+.scene.on .steam { animation: steam 2.4s ease-in-out infinite; }
+@keyframes steam { 0% { opacity: 0; transform: translateY(6px); } 50% { opacity: .8; } 100% { opacity: 0; transform: translateY(-8px); } }
+.bookglow { opacity: 0; transform-box: fill-box; transform-origin: center; }
+.scene.on .bookglow { animation: bookglow 1.2s var(--ease) 3.4s both; }
+@keyframes bookglow { from { opacity: 0; transform: scale(.4); } to { opacity: 1; transform: scale(1); } }
+.slip { transform-box: fill-box; transform-origin: 50% 100%; }
+.scene.on .slip { animation: slip 1.6s ease-in-out var(--d) infinite alternate; }
+@keyframes slip { from { transform: rotate(-8deg); } to { transform: rotate(8deg) translateY(-3px); } }
+.sigh { transform-box: fill-box; transform-origin: 50% 100%; }
+.scene.on .sigh { animation: sigh 2.3s ease-in-out .6s infinite alternate; }
+@keyframes sigh { to { transform: translateY(2px) rotate(-2deg); } }
+
+/* ---------- 2: the book bursts into a trip ---------- */
+.bk { transform-box: view-box; transform-origin: 166px 480px; }
+.scene.on .bk { animation: wiggle .7s ease-in-out .05s both, settle .9s var(--ease) 1.1s both; }
+@keyframes wiggle { 20% { transform: rotate(-3deg) scale(1.03); } 45% { transform: rotate(3deg) scale(1.06); } 70% { transform: rotate(-2deg) scale(1.08); } 100% { transform: scale(1.1); } }
+@keyframes settle { from { transform: scale(1.1); } to { transform: scale(.92); opacity: .92; } }
+.bklines { opacity: 1; }
+.scene.on .bklines { animation: out .3s var(--ease) .75s both; }
+@keyframes out { to { opacity: 0; } }
+.burst { left: 166px; top: 476px; width: 0; height: 0; }
+.burst i { position: absolute; left: -3px; top: -30px; width: 6px; height: 22px; border-radius: 3px; background: #FFFFFF; transform-origin: 3px 30px; rotate: var(--a); opacity: 0; }
+.scene.on .burst i { animation: ray .7s var(--ease) .72s both; }
+@keyframes ray { 0% { opacity: 0; transform: translateY(10px) scaleY(.3); } 30% { opacity: 1; } 100% { opacity: 0; transform: translateY(-46px) scaleY(1); } }
+.burst b { position: absolute; left: -40px; top: -40px; width: 80px; height: 80px; border-radius: 50%; border: 4px solid #fff; opacity: 0; }
+.scene.on .burst b { animation: ring .8s ease-out .72s both; }
+.pg { width: 104px; height: 104px; border-radius: 6px; opacity: 0; background: #FFF9EE repeating-linear-gradient(180deg, transparent 0 13px, #E6DAC4 13px 15px) 0 14px / 100% calc(100% - 22px) no-repeat; box-shadow: 0 10px 24px rgba(60, 30, 10, .2); }
+.pg.wide { width: 218px; height: 80px; }
+.scene.on .pg { animation: pgfly 1s cubic-bezier(.4, 0, .2, 1) var(--d) both; }
+@keyframes pgfly {
+  0% { transform: translate(var(--dx), var(--dy)) rotate(var(--r)) scale(.35); opacity: 0; }
+  10% { opacity: 1; }
+  48% { transform: translate(calc(var(--dx) * .45), calc(var(--dy) * .45 - 170px)) rotate(calc(var(--r) * -1.3)) scale(1.15); }
+  78% { transform: none; opacity: 1; border-radius: 22px; }
+  100% { transform: none; opacity: 0; border-radius: 22px; }
+}
+.b2 .wg.pop::after { content: ""; position: absolute; inset: -3px; border-radius: 25px; border: 3px solid #fff; opacity: 0; }
+.scene.on.b2 .wg.pop::after { animation: snap .6s ease-out var(--d) both; }
+@keyframes snap { from { opacity: .9; transform: scale(.9); } to { opacity: 0; transform: scale(1.25); } }
+.ph2 { transform-origin: 50% 100%; }
+.scene.on .ph2 { animation: phup .9s var(--spring) .45s both, bob 3.2s ease-in-out 2.6s infinite alternate; }
+@keyframes phup { from { opacity: 0; transform: translateY(420px) rotate(8deg); } }
+@keyframes bob { from { transform: none; } to { transform: translateY(-8px) rotate(-1deg); } }
+.scene.on .shine { animation: shine 1.1s var(--ease) 3.2s both; }
+.shine { overflow: hidden; }
+.shine::after { content: ""; position: absolute; top: 0; bottom: 0; left: -60%; width: 40%; background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .55), transparent); transform: skewX(-20deg); opacity: 0; }
+.scene.on .shine::after { animation: sweep 1s var(--ease) 3.3s both; }
+@keyframes sweep { from { opacity: 1; left: -60%; } to { opacity: 1; left: 130%; } }
+.spark { width: 12px; height: 12px; margin: -6px; opacity: 0; }
+.spark::before, .spark::after { content: ""; position: absolute; left: 5px; top: 0; width: 2px; height: 12px; border-radius: 1px; background: #fff; }
+.spark::after { transform: rotate(90deg); }
+.scene.on .spark { animation: spark 1.2s var(--ease) var(--d) both; }
+@keyframes spark { 0% { opacity: 0; transform: scale(.2) rotate(0); } 40% { opacity: 1; transform: scale(1.2) rotate(45deg); } 100% { opacity: 0; transform: scale(.6) rotate(90deg); } }
+
+/* ---------- 3, 7: polaroids ---------- */
+.pol { width: 150px; padding: 8px 8px 0; border-radius: 6px; background: #FFFDF8; box-shadow: 0 18px 36px rgba(20, 10, 40, .38); rotate: var(--rot); }
+.pol svg { display: block; width: 134px; height: 112px; border-radius: 3px; }
+.pol span { display: block; padding: 9px 2px 11px; font-size: 15px; font-weight: 650; color: #3A3340; letter-spacing: -.01em; }
+.scene.on .pol { animation: memory 1.1s var(--spring) var(--d) both, drift 4s ease-in-out calc(var(--d) + 1.1s) infinite alternate; }
+@keyframes memory { from { opacity: 0; transform: translate(var(--fx, 0), 260px) rotate(-30deg) scale(.5); } }
+@keyframes drift { to { transform: translateY(-8px) rotate(2deg); } }
+
+/* ---------- 4: back home, leave a trail ---------- */
+.ph4 { left: -2px; top: -78px; transform: scale(.62); transform-origin: 50% 100%; }
+.scene.on .ph4 { animation: grow4 .7s var(--spring) .45s both; }
+@keyframes grow4 { from { opacity: 0; transform: translate(150px, 0) scale(.08); } }
+.scene.on .ph4 .lat { animation: press .45s var(--ease) 1.45s both; }
+.tcard { left: 0; top: 0; width: 150px; padding: 8px; border-radius: 16px; background: var(--s1); box-shadow: 0 14px 30px rgba(40, 10, 0, .3); offset-anchor: 50% 50%; offset-rotate: 0deg; offset-distance: 100%; opacity: 0; }
+.tcard svg { display: block; width: 134px; height: 62px; border-radius: 10px; }
+.tcard b { display: block; margin: 6px 2px 0; font-size: 13px; font-weight: 750; letter-spacing: -.02em; }
+.tcard .sw { display: flex; gap: 4px; margin: 5px 2px 2px; }
+.tcard .sw i { flex: 1; height: 6px; border-radius: 3px; }
+.scene.on .tcard { animation: fly 1.7s cubic-bezier(.45, 0, .25, 1) 1.65s both; }
+@keyframes fly {
+  0% { offset-distance: 0%; opacity: 0; scale: .4; }
+  12% { offset-distance: 0%; opacity: 1; scale: 1.1; rotate: -6deg; }
+  60% { rotate: 8deg; }
+  88% { offset-distance: 100%; opacity: 1; scale: .35; rotate: 0deg; }
+  100% { offset-distance: 100%; opacity: 0; scale: .1; }
+}
+.trail4 { fill: none; stroke: #FFFFFF; stroke-width: 3.5; stroke-dasharray: 2 10; stroke-linecap: round; }
+.trailmask { stroke-dasharray: 1; stroke-dashoffset: 1; }
+.scene.on .trailmask { animation: draw 1.5s cubic-bezier(.45, 0, .25, 1) 1.85s both; }
+@keyframes draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+
+/* ---------- 5: Lisbon ---------- */
+.loc { left: 24px; top: 24px; display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px 10px 12px; border-radius: 999px; background: var(--s1); box-shadow: var(--sh); font-size: 16px; font-weight: 700; }
+.loc svg { width: 18px; height: 18px; fill: none; stroke: var(--food); stroke-width: 2.2; }
+.loc span { color: var(--ink2); font-weight: 550; }
+.win { fill: #FFF5E6; opacity: .85; }
+@media (prefers-color-scheme: dark) { .win { fill: #FFD27A; } }
+.leanR, .leanL, .reach, .lsh { transform-box: view-box; }
+.leanR { transform-origin: 121px 350px; } .leanL { transform-origin: 221px 345px; }
+.scene.on .leanR { animation: leanR .7s var(--spring) 2.1s both; }
+.scene.on .leanL { animation: leanL .7s var(--spring) 2.2s both; }
+@keyframes leanR { to { transform: rotate(9deg) translate(4px, 3px); } }
+@keyframes leanL { to { transform: rotate(-9deg) translate(-4px, 3px); } }
+.scene.on .lsh { animation: lsh .7s var(--ease) 2.1s both; }
+@keyframes lsh { to { transform: translateX(5px); } }
+.tabglow { opacity: 0; }
+.scene.on .tabglow { animation: tg 3s linear 2.7s both; }
+@keyframes tg { 0%, 100% { opacity: 0; } 8%, 20% { opacity: .9; } 30% { opacity: .2; } 36%, 50% { opacity: .9; } 60% { opacity: .2; } 70%, 85% { opacity: .9; } }
+.card4 { left: 318px; top: 64px; width: 262px; padding: 12px; border-radius: 26px; background: var(--s1); box-shadow: 0 24px 50px rgba(50, 15, 5, .28); }
+.card4 .th { display: block; width: 238px; height: 112px; border-radius: 16px; }
+.card4 h3 { margin: 12px 4px 2px; font-size: 19px; line-height: 1.15; font-weight: 780; letter-spacing: -.025em; }
+.card4 .by { margin: 0 4px; font-size: 13px; color: var(--ink2); font-weight: 550; }
+.chips { display: flex; gap: 5px; margin: 10px 4px 12px; flex-wrap: wrap; }
+.chips span { padding: 5px 9px; border-radius: 999px; background: var(--k); color: var(--on-k, #fff); font-size: 12px; font-weight: 700; }
+.acts { display: flex; gap: 8px; }
+.act { position: relative; flex: 1; height: 44px; border-radius: 999px; background: var(--s2); box-shadow: 0 0 0 1px var(--line) inset; display: flex; align-items: center; justify-content: center; gap: 7px; font-size: 14px; font-weight: 700; }
+.act svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 2.1; stroke-linecap: round; stroke-linejoin: round; }
+.act.thumb .n2 { display: none; }
+.act .cnt { position: relative; display: inline-grid; overflow: hidden; height: 18px; }
+.act .cnt > span { grid-area: 1 / 1; }
+.act .cnt .n2 { display: block; opacity: 0; }
+.scene.on .act.thumb { animation: press .45s var(--ease) 2.85s both; }
+.scene.on .act.thumb svg { animation: thumbup .6s var(--spring) 2.9s both; }
+@keyframes thumbup { 40% { transform: rotate(-22deg) scale(1.35); } }
+.thumb .tint2 { position: absolute; inset: 0; border-radius: inherit; background: rgba(210, 64, 28, .12); box-shadow: 0 0 0 1.5px var(--acc) inset; opacity: 0; }
+.scene.on .thumb .tint2 { animation: fade .3s var(--ease) 2.95s reverse both; }
+.scene.on .act .cnt .n1 { animation: cntout .35s var(--ease) 3s both; }
+.scene.on .act .cnt .n2 { animation: cntin .35s var(--ease) 3s both; }
+@keyframes cntout { to { transform: translateY(-100%); opacity: 0; } }
+@keyframes cntin { from { transform: translateY(100%); opacity: 0; } to { transform: none; opacity: 1; } }
+.act.heart .hf { position: absolute; inset: 0; border-radius: inherit; background: var(--food); color: #fff; display: flex; align-items: center; justify-content: center; gap: 7px; opacity: 0; }
+.act.heart .hf svg { fill: #fff; }
+.scene.on .act.heart .hf { animation: fadein .3s var(--ease) 3.6s both; }
+@keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+.scene.on .act.heart { animation: press .45s var(--ease) 3.45s both; }
+.hearts { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
+.hearts i { position: absolute; left: -10px; top: -10px; width: 20px; height: 20px; opacity: 0; }
+.hearts svg { width: 100%; height: 100%; fill: var(--k); }
+.scene.on .hearts i { animation: burst 1.3s cubic-bezier(.2, .7, .3, 1) var(--d) both; }
+@keyframes burst { 0% { opacity: 0; transform: translate(0, 0) scale(.3) rotate(0); } 15% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--x), var(--y)) scale(1) rotate(var(--rr, 20deg)); } }
+.follow { position: relative; margin-top: 8px; height: 50px; border-radius: 999px; background: var(--acc); color: var(--on-acc); display: grid; place-items: center; font-size: 16px; font-weight: 720; overflow: hidden; }
+.follow > span { grid-area: 1 / 1; display: inline-flex; align-items: center; gap: 8px; }
+.follow svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.follow .f2 { opacity: 0; }
+.scene.on .follow { animation: press .45s var(--ease) 4.65s both; }
+.scene.on .follow .f1 { animation: out .25s var(--ease) 4.85s both; }
+.scene.on .follow .f2 { animation: hop .5s var(--spring) 4.9s both; }
+
+/* ---------- 6: make it theirs ---------- */
+.card5 { left: 100px; top: 70px; width: 400px; padding: 18px 18px 16px; border-radius: 28px; background: var(--s1); box-shadow: 0 24px 60px rgba(30, 10, 40, .32); }
+.c5h { display: flex; align-items: center; justify-content: space-between; margin: 0 2px 10px; }
+.c5h b { font-size: 22px; font-weight: 800; letter-spacing: -.03em; }
+.who { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 650; color: var(--ink2); }
+.who .av { width: 32px; height: 32px; }
+.who .av + .av { margin-left: -16px; }
+.row { position: relative; display: flex; align-items: center; gap: 12px; height: 66px; padding: 0 4px; border-top: 1px solid var(--line); }
+.row .ic { width: 44px; height: 44px; border-radius: 14px; background: var(--k); color: var(--on-k, #fff); display: grid; place-items: center; flex: none; }
+.row .ic svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.1; stroke-linecap: round; stroke-linejoin: round; }
+.row .tx { flex: 1; min-width: 0; }
+.row .tx b { position: relative; display: inline-block; font-size: 17px; font-weight: 700; letter-spacing: -.02em; }
+.row .tx span { display: block; font-size: 13px; color: var(--ink2); font-weight: 550; margin-top: 2px; }
+.row time { position: relative; display: inline-grid; overflow: hidden; font-size: 14px; font-weight: 650; color: var(--ink2); }
+.row time > span { grid-area: 1 / 1; text-align: right; }
+.row time .t2 { opacity: 0; color: var(--see); font-weight: 750; }
+.scene.on .row time .t1 { animation: cntout .4s var(--ease) 3.3s both; }
+.scene.on .row time .t2 { animation: cntin .45s var(--spring) 3.35s both; }
+.row.old { overflow: hidden; }
+.row.old .tx b::after { content: ""; position: absolute; left: -2px; right: -2px; top: 52%; height: 2.5px; border-radius: 2px; background: var(--food); transform-origin: left; transform: scaleX(0); }
+.scene.on .row.old .tx b::after { animation: strike .5s var(--ease) 1.25s both; }
+@keyframes strike { to { transform: none; } }
+.scene.on .row.old { animation: dim .3s var(--ease) 1.7s both, collapse .5s var(--ease) 2.05s both; }
+@keyframes dim { to { opacity: .45; } }
+@keyframes collapse { 0% { opacity: .45; } 100% { opacity: 0; height: 0; transform: translateX(-90px); border-top-width: 0; } }
+.row.new { height: 0; opacity: 0; overflow: hidden; background: linear-gradient(90deg, rgba(8, 127, 123, .14), rgba(8, 127, 123, 0)); border-radius: 14px; border-top: 0; }
+.scene.on .row.new { animation: swapin .7s var(--spring) 2.35s both; }
+@keyframes swapin { from { height: 0; opacity: 0; transform: translateX(90px); } to { height: 66px; opacity: 1; transform: none; } }
+.row.new .tag { padding: 4px 9px; border-radius: 999px; background: var(--see); color: #fff; font-size: 12px; font-weight: 700; }
+.swapbtn { width: 36px; height: 36px; border-radius: 50%; background: var(--s2); display: grid; place-items: center; color: var(--ink2); }
+.swapbtn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.scene.on .swapbtn { animation: press .4s var(--ease) 1s both; }
+.scene.on .swapbtn svg { animation: spin .6s var(--ease) 1.05s both; }
+@keyframes spin { to { transform: rotate(180deg); } }
+.forked { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding: 10px 12px; border-radius: 14px; background: var(--s2); font-size: 13px; font-weight: 600; color: var(--ink2); }
+.forked svg { width: 18px; height: 18px; fill: none; stroke: var(--acc); stroke-width: 2.2; stroke-linecap: round; flex: none; }
+
+/* ---------- 7, 8 ---------- */
+.lat7 { left: 170px; top: 466px; width: 260px; height: 60px; border-radius: 999px; background: var(--acc); color: var(--on-acc); display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 19px; font-weight: 750; box-shadow: 0 16px 34px rgba(80, 20, 0, .35); }
+.lat7 svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.3; stroke-linecap: round; stroke-linejoin: round; }
+.scene.on .lat7 { animation: hop .6s var(--spring) 1.3s both, press .45s var(--ease) 1.95s; }
+.photo7 { position: absolute; inset: 0; will-change: transform, opacity; }
+.av { width: 50px; height: 50px; border-radius: 50%; overflow: hidden; box-shadow: 0 0 0 3px var(--s1), 0 8px 18px rgba(30, 10, 0, .22); background: var(--s1); }
+.av svg { display: block; width: 100%; height: 100%; }
+.crowd .who8 { position: absolute; width: 0; height: 0; }
+.crowd .av { position: absolute; left: -25px; top: -25px; }
+.scene.on .crowd .av { animation: hop .7s var(--spring) var(--d) both, bob8 2.6s ease-in-out calc(var(--d) + .7s) infinite alternate; }
+@keyframes bob8 { to { transform: translateY(-6px); } }
+.crowd .rx { position: absolute; left: 8px; top: -58px; width: 36px; height: 36px; }
+.crowd .rx svg { width: 19px; height: 19px; }
+.scene.on .crowd .rx { animation: hop .6s var(--spring) var(--d2) both, bob8 2.2s ease-in-out calc(var(--d2) + .6s) infinite alternate; }
+.endcard { position: absolute; left: 56px; top: calc(var(--ay) - 150px); width: 520px; display: none; }
+.endcard h2 { margin: 0; font-size: 66px; line-height: 1.0; font-weight: 820; letter-spacing: -.045em; }
+.endcard h2 span { color: var(--acc); display: block; }
+.endcard p { margin: 16px 0 24px; font-size: 19px; line-height: 1.4; color: var(--ink2); max-width: 25em; }
+.scene.on .endcard { animation: endin .9s var(--ease) 5.4s both; }
+@keyframes endin { from { opacity: 0; transform: translateY(26px); } }
+.b8 .bgfill { background: radial-gradient(120% 90% at 65% 40%, var(--mapbg-a), var(--mapbg-b)); }
+
+/* ---------- the deck: caption + controls ---------- */
+.deck { position: fixed; z-index: 6; left: 48px; right: 48px; bottom: calc(48px + var(--barH, 84px) + 12px); height: 76px; display: flex; align-items: center; gap: 16px; padding: 0 12px 0 12px; border-radius: 22px; background: var(--deck); color: var(--on-deck); box-shadow: 0 14px 34px rgba(10, 5, 20, .3); transition: bottom .7s var(--ease); }
+.cap { flex: 1; min-width: 0; margin: 0; font-size: 22px; line-height: 1.25; font-weight: 640; letter-spacing: -.012em; text-wrap: balance; }
+.cap.swap { animation: capin .5s var(--ease) both; }
+@keyframes capin { from { opacity: 0; transform: translateY(8px); } }
+.sound { flex: none; display: inline-flex; align-items: center; gap: 9px; min-height: 52px; padding: 0 20px 0 16px; border-radius: var(--pill); border: 0; background: #FFFFFF; color: #121014; font-weight: 700; font-size: 16px; cursor: pointer; white-space: nowrap; }
+.sound svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.1; stroke-linecap: round; stroke-linejoin: round; }
+.sound .ico-off, .sound .ico-on { display: none; }
+body.voice .sound { background: var(--acc); color: var(--on-acc); }
+body.voice .sound .ico-play { display: none; } body.voice .sound .ico-on { display: block; }
+body.voice.muted .sound { background: var(--deck2); color: #fff; } body.voice.muted .sound .ico-on { display: none; } body.voice.muted .sound .ico-off { display: block; }
+.sound:hover { filter: brightness(.95); }
+.ctrl { flex: none; display: flex; align-items: center; }
+.steps { display: flex; align-items: center; }
+.seg { position: relative; width: 36px; height: 48px; border: 0; padding: 0; background: none; cursor: pointer; display: grid; place-items: center; }
+.seg i { position: relative; width: 26px; height: 6px; border-radius: 3px; background: var(--deck2); overflow: hidden; }
+.seg i::after { content: ""; position: absolute; inset: 0; background: var(--k); transform: scaleX(var(--p, 0)); transform-origin: left; }
+.pp { width: 48px; height: 48px; margin-left: 6px; border-radius: 50%; border: 0; background: var(--deck2); display: grid; place-items: center; cursor: pointer; }
+.pp svg { width: 18px; height: 18px; fill: #fff; }
+.pp .play, .pp .again { display: none; }
+body.held .pp .pause { display: none; } body.held .pp .play { display: block; }
+body.ended .pp .pause, body.ended .pp .play { display: none; } body.ended .pp .again { display: block; }
+
+/* ---------- the bar (from D) ---------- */
+.bar { position: fixed; z-index: 7; left: 48px; right: 48px; bottom: 48px; display: flex; align-items: center; gap: 24px; padding: 14px 14px 14px 28px; border-radius: var(--r); background: var(--s1); box-shadow: var(--sh); transition: transform .7s var(--ease), opacity .5s var(--ease); }
+.bar .say { flex: 1; min-width: 0; }
+.bar h1 { margin: 0; font-size: 28px; line-height: 1.1; font-weight: 820; letter-spacing: -.035em; }
+.bar h1 span { color: var(--acc); }
+.bar p { margin: 3px 0 0; font-size: 17px; color: var(--ink2); }
+.btns { display: flex; gap: 10px; flex: none; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; padding: 0 26px; border-radius: var(--pill); border: 0; font: 650 17px var(--font); white-space: nowrap; transition: background .2s; }
+.btn.primary { background: var(--acc); color: var(--on-acc); }
+.btn.primary:hover { background: var(--acc-hi); }
+.btn.second { background: var(--s1); color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--line); }
+.btn.second:hover { background: var(--s2); }
+@media (min-width: 1000px) {
+  .endcard { display: block; }
+  body.finale .bar { transform: translateY(160%); opacity: 0; pointer-events: none; }
+  body.finale .deck { bottom: 48px; }
+}
+
+/* ---------- phone ---------- */
+@media (max-width: 700px) {
+  .top { padding: 8px 12px; padding-top: max(8px, env(safe-area-inset-top)); }
+  .brand { min-height: 44px; font-size: 17px; } .signin { min-height: 44px; font-size: 15px; padding: 0 16px; }
+  .film { top: 64px; left: 0; right: 0; bottom: 0; border-radius: 0; box-shadow: none; }
+  .bar { left: 0; right: 0; bottom: 0; flex-direction: column; align-items: stretch; gap: 12px; border-radius: 24px 24px 0 0; padding: 16px 16px calc(14px + env(safe-area-inset-bottom)); }
+  .bar h1 { font-size: 26px; }
+  .bar p { font-size: 16px; margin-top: 4px; }
+  .btn { padding: 0 14px; font-size: 16px; min-height: 50px; }
+  .btn.primary { flex: 1; } .btn.second { flex: 1.25; }
+  .deck { left: 10px; right: 10px; bottom: calc(var(--barH, 190px) + 8px); height: auto; flex-wrap: wrap; gap: 4px 6px; padding: 12px 8px 8px 12px; border-radius: 20px; }
+  .cap { flex: 1 0 100%; order: -1; font-size: 18px; line-height: 1.3; height: 2.6em; display: flex; align-items: center; padding: 0 2px; }
+  .sound { min-height: 44px; padding: 0 14px 0 11px; font-size: 15px; gap: 7px; }
+  .sound .long { display: none; }
+  .ctrl { flex: 1; justify-content: flex-end; }
+  .seg { width: 22px; height: 44px; } .seg i { width: 16px; }
+  .pp { width: 44px; height: 44px; margin-left: 4px; }
+}
+@media (min-width: 701px) { .sound .short { display: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .cap.swap, .deck, .bar { animation: none; transition: none; }
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="gm-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FF9B72"/><stop offset="1" stop-color="#FFD9BC"/></linearGradient>
+    <linearGradient id="gm-lake" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3C8CE6"/><stop offset="1" stop-color="#1F5FC4"/></linearGradient>
+    <linearGradient id="gm-snow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#CFE3FA"/><stop offset="1" stop-color="#F6FAFF"/></linearGradient>
+    <linearGradient id="gm-spring" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7EC8E8"/><stop offset="1" stop-color="#2D9CC8"/></linearGradient>
+    <linearGradient id="gm-dusk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6E58C8"/><stop offset=".55" stop-color="#F08A7A"/><stop offset="1" stop-color="#FFC48E"/></linearGradient>
+    <linearGradient id="gm-cozy" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE0C2"/><stop offset="1" stop-color="#F7C8A0"/></linearGradient>
+    <linearGradient id="s1wall" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="460"><stop offset="0" style="stop-color:var(--wall)"/><stop offset="1" style="stop-color:var(--wall2)"/></linearGradient>
+    <linearGradient id="s1sky" gradientUnits="userSpaceOnUse" x1="0" y1="76" x2="0" y2="220"><stop offset="0" style="stop-color:var(--sky-a)"/><stop offset="1" style="stop-color:var(--sky-b)"/></linearGradient>
+    <radialGradient id="s1lamp"><stop offset="0" style="stop-color:var(--glow)"/><stop offset="1" stop-color="#FFB060" stop-opacity="0"/></radialGradient>
+    <radialGradient id="bkglow"><stop offset="0" stop-color="#FFF2C8" stop-opacity=".95"/><stop offset="1" stop-color="#FFD27A" stop-opacity="0"/></radialGradient>
+    <clipPath id="s1win"><rect x="90" y="76" width="208" height="172" rx="8"/></clipPath>
+    <!-- the living room, shared by beats 1 and 4 -->
+    <g id="room">
+      <rect x="-900" y="-700" width="2400" height="1160" fill="url(#s1wall)"/>
+      <rect x="-900" y="460" width="2400" height="900" style="fill:var(--floor)"/>
+      <rect x="-900" y="452" width="2400" height="8" style="fill:var(--frame)" opacity=".7"/>
+      <ellipse cx="300" cy="600" rx="330" ry="56" style="fill:var(--rug)"/>
+      <rect x="78" y="64" width="232" height="196" rx="16" style="fill:var(--frame)"/>
+      <g clip-path="url(#s1win)">
+        <rect x="90" y="76" width="208" height="172" fill="url(#s1sky)"/>
+        <circle cx="236" cy="166" r="20" style="fill:var(--sun)" opacity=".95"/>
+        <path d="M90 200l40-50 30 25 40-47 40 42 30-25 28 30v35H90z" style="fill:var(--mtn2)"/>
+        <path d="M200 128l-12 15 8-3 5 6 6-6 6 3zM130 150l-9 11 7-2 4 5 5-4zM270 145l-9 11 7-2 4 4 6-3z" style="fill:var(--snow)"/>
+        <path d="M90 214l30-34 30 25 35-37 40 42 35-25 38 27v8H90z" style="fill:var(--mtn)"/>
+        <rect x="90" y="216" width="208" height="32" style="fill:var(--lake)"/>
+        <rect x="222" y="222" width="28" height="3" rx="1.5" style="fill:var(--sun)" opacity=".7"/>
+        <path d="M96 220l7-18 7 18zM106 222l6-14 6 14zM280 220l7-18 7 18z" style="fill:var(--pine)"/>
+      </g>
+      <rect x="191" y="76" width="6" height="172" style="fill:var(--frame)"/>
+      <rect x="70" y="256" width="248" height="10" rx="5" style="fill:var(--frame)"/>
+      <circle cx="540" cy="232" r="150" fill="url(#s1lamp)"/>
+      <rect x="538" y="230" width="4" height="258" fill="#3A3340"/>
+      <ellipse cx="540" cy="489" rx="26" ry="6" fill="#3A3340"/>
+      <path d="M512 238h56l-12-42h-32z" fill="#F7B267"/><ellipse cx="540" cy="238" rx="28" ry="4" fill="#FFE2B0"/>
+      <path d="M0 360c-6-30 14-46 24-50-4 20 2 34-8 52zM22 390c-4-40 26-60 38-62-8 26-6 44-24 64zM8 410c-22-20-26-44-20-60 12 14 20 30 24 56zM34 420c4-34 30-48 44-48-12 20-16 34-36 50z" fill="#2F8F6B"/>
+      <path d="M14 370c4-22 18-34 30-40-6 18-10 30-24 44zM2 400c-12-24-8-40 0-50 6 16 8 30 4 50z" fill="#45AD7F"/>
+      <path d="M-4 430h52l-6 58h-40z" fill="#E07A4F"/><rect x="-6" y="426" width="56" height="10" rx="4" fill="#C8643B"/>
+      <ellipse cx="300" cy="490" rx="270" ry="12" fill="#3A2010" opacity=".14"/>
+      <rect x="62" y="282" width="476" height="150" rx="36" style="fill:var(--sofa2)"/>
+      <rect x="100" y="298" width="196" height="116" rx="28" style="fill:var(--sofa)"/>
+      <rect x="304" y="298" width="196" height="116" rx="28" style="fill:var(--sofa)"/>
+      <rect x="84" y="398" width="432" height="40" rx="16" style="fill:var(--sofa3)"/>
+      <rect x="80" y="428" width="440" height="44" rx="12" style="fill:var(--sofa2)"/>
+      <rect x="40" y="344" width="74" height="128" rx="30" style="fill:var(--sofa)"/>
+      <rect x="486" y="344" width="74" height="128" rx="30" style="fill:var(--sofa)"/>
+      <rect x="84" y="470" width="12" height="16" rx="3" style="fill:var(--wood2)"/><rect x="504" y="470" width="12" height="16" rx="3" style="fill:var(--wood2)"/>
+    </g>
+    <g id="table">
+      <rect x="116" y="560" width="12" height="80" style="fill:var(--wood2)"/><rect x="472" y="560" width="12" height="80" style="fill:var(--wood2)"/>
+      <path d="M124 520h352l24 28H100z" style="fill:var(--wood)"/>
+      <rect x="100" y="548" width="400" height="14" rx="2" style="fill:var(--wood2)"/>
+    </g>
+    <!-- bodies (legs, laps, torsos) shared by beats 1 and 4 -->
+    <g id="maya-legs"><rect x="226" y="430" width="22" height="50" rx="10" fill="#3D3466"/><rect x="256" y="430" width="22" height="50" rx="10" fill="#3D3466"/>
+      <ellipse cx="236" cy="482" rx="15" ry="6.5" fill="#2A2238"/><ellipse cx="268" cy="482" rx="15" ry="6.5" fill="#2A2238"/><rect x="212" y="398" width="82" height="42" rx="18" fill="#4A3F7C"/></g>
+    <g id="maya-torso"><path d="M229 286q-3-34 23-35 26 1 23 35l4 36q-27 9-54 0z" fill="#3B2622" transform="rotate(7 252 300)"/>
+      <path d="M210 348q0-28 24-31h36q24 3 24 31l4 62h-92z" fill="#F2A93B"/><path d="M232 317h40l-4 10q-16 6-32 0z" fill="#E39A2E"/></g>
+    <g id="maya-head"><rect x="245" y="296" width="14" height="22" rx="6" fill="#D99A76"/><circle cx="252" cy="283" r="21" fill="#E9B08D"/>
+      <circle cx="240.5" cy="293" r="3.6" fill="#F0806A" opacity=".42"/><circle cx="263.5" cy="293" r="3.6" fill="#F0806A" opacity=".42"/>
+      <path d="M231 284q-1-23 21-24 22 1 22 20-16-4-26-14-6 12-17 18z" fill="#3B2622"/></g>
+    <g id="sam-legs"><rect x="326" y="430" width="24" height="50" rx="10" fill="#2B2F45"/><rect x="356" y="430" width="24" height="50" rx="10" fill="#2B2F45"/>
+      <ellipse cx="337" cy="482" rx="16" ry="6.5" fill="#1E1F2B"/><ellipse cx="370" cy="482" rx="16" ry="6.5" fill="#1E1F2B"/><rect x="312" y="396" width="82" height="44" rx="18" fill="#353B58"/>
+      <path d="M306 342q0-30 28-33h32q28 3 28 33l4 68h-96z" fill="#2F6FD6"/></g>
+    <g id="sam-head"><rect x="343" y="288" width="15" height="24" rx="6" fill="#A86C4B"/><circle cx="350" cy="274" r="22" fill="#BC7E5A"/>
+      <circle cx="337.5" cy="283" r="3.4" fill="#E0704F" opacity=".35"/><circle cx="362.5" cy="283" r="3.4" fill="#E0704F" opacity=".35"/>
+      <path d="M328 272q-1-23 22-24 23 1 22 22-6-9-22-9-14 0-22 11z" fill="#24222B"/>
+      <path d="M330 279q1 24 20 26 19-2 20-26-3 14-20 14-17 0-20-14z" fill="#24222B"/>
+      <path d="M339 268.5h7M354 268.5h7" stroke="#24222B" stroke-width="2.4" stroke-linecap="round"/></g>
+  </defs>
+  <symbol id="mini-tahoe" viewBox="0 0 240 112" preserveAspectRatio="xMidYMid slice">
+    <rect width="240" height="112" fill="url(#gm-sky)"/>
+    <circle cx="176" cy="54" r="15" fill="#FFF1D6"/>
+    <path d="M0 70 40 36l24 20 34-34 36 36 24-18 30 22 52-24v74H0z" fill="#8E80D2"/>
+    <path d="M98 22l-11 11 6-1 5 5 6-5 6 1zM40 36l-9 8 5-1 4 4 5-4 4 1z" fill="#fff"/>
+    <path d="M0 78 30 60l28 16 40-22 46 26 34-18 62 20v30H0z" fill="#5E56AE"/>
+    <rect y="80" width="240" height="32" fill="url(#gm-lake)"/>
+    <rect x="166" y="86" width="22" height="3" rx="1.5" fill="#FFE7C2" opacity=".8"/>
+    <path d="M8 86l7-16 7 16zM20 88l6-13 6 13zM210 88l7-16 7 16zM222 90l6-12 6 12z" fill="#2B5C63"/>
+  </symbol>
+  <symbol id="ph-gondola" viewBox="0 0 122 104" preserveAspectRatio="xMidYMid slice">
+    <rect width="122" height="104" fill="#9CC8F2"/><circle cx="96" cy="24" r="10" fill="#FFF4D6"/>
+    <path d="M0 62 34 30l22 18 26-26 40 34v48H0z" fill="url(#gm-snow)"/>
+    <path d="M34 30l-8 8 5-1 3 3 4-3 4 1zM82 22l-9 9 5-1 4 4 4-4 5 1z" fill="#fff"/>
+    <path d="M0 18 122 52" stroke="#3A3340" stroke-width="1.4"/><path d="M58 34v8" stroke="#3A3340" stroke-width="1.4"/>
+    <rect x="48" y="42" width="20" height="17" rx="4" fill="#E0204E"/><rect x="52" y="45" width="12" height="6" rx="1.5" fill="#BFE3FF"/>
+    <path d="M0 92l12-22 12 22zM14 98l10-18 10 18zM96 98l10-20 10 20z" fill="#2B5C63"/>
+  </symbol>
+  <symbol id="ph-sled" viewBox="0 0 122 104" preserveAspectRatio="xMidYMid slice">
+    <rect width="122" height="104" fill="#A9D2F5"/><circle cx="24" cy="20" r="9" fill="#FFF4D6"/>
+    <path d="M0 40l30-18 26 14 30-20 36 22v66H0z" fill="#8E9FD8"/>
+    <path d="M0 60Q60 34 122 52v52H0z" fill="url(#gm-snow)"/>
+    <path d="M86 26l-7 7 4-1 3 3 4-3 4 1z" fill="#fff"/>
+    <g transform="rotate(-13 60 66)">
+      <rect x="40" y="66" width="44" height="8" rx="4" fill="#E0204E"/><path d="M84 70q8 0 8-8" stroke="#E0204E" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <rect x="47" y="52" width="13" height="16" rx="6" fill="#F2A93B"/><circle cx="53.5" cy="48" r="6" fill="#E9B08D"/><path d="M47.5 47a6 6 0 0 1 12 0z" fill="#087F7B"/><circle cx="53.5" cy="40.5" r="2" fill="#087F7B"/>
+      <rect x="62" y="52" width="14" height="16" rx="6" fill="#2F6FD6"/><circle cx="69" cy="47.5" r="6.4" fill="#BC7E5A"/><path d="M62.6 46.5a6.4 6.4 0 0 1 12.8 0z" fill="#E0204E"/>
+      <path d="M51 49.5q2.5 2 5 0M66.5 49q2.5 2 5 0" stroke="#5A2A1C" stroke-width="1" fill="none" stroke-linecap="round"/>
+    </g>
+    <path d="M6 96l10-20 10 20zM100 96l9-18 9 18z" fill="#2B5C63"/>
+  </symbol>
+  <symbol id="ph-springs" viewBox="0 0 122 104" preserveAspectRatio="xMidYMid slice">
+    <rect width="122" height="104" fill="#F3D9C8"/>
+    <path d="M0 40 30 22l28 14 30-18 34 20v66H0z" fill="#8E80D2"/>
+    <path d="M0 52l122-8v60H0z" fill="#E9E2DA"/>
+    <ellipse cx="62" cy="76" rx="48" ry="17" fill="url(#gm-spring)"/>
+    <circle cx="52" cy="70" r="6.5" fill="#EDBC9C"/><path d="M45.5 69a6.5 6.5 0 0 1 13 0q-6-3-13 0z" fill="#DCD8DE"/>
+    <circle cx="70" cy="70" r="6.8" fill="#DDA27E"/><path d="M64 72q1 5 6 5.5 5-.5 6-5.5" fill="#E4E1E6"/>
+    <path d="M49.5 71q2.5 2 5 0M67.5 70q2.5 1.6 5 0" stroke="#5A2A1C" stroke-width="1" fill="none" stroke-linecap="round"/>
+    <path d="M42 80q20 6 40 0" stroke="#BFE7F7" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <ellipse cx="22" cy="72" rx="12" ry="7" fill="#9A8C85"/><ellipse cx="102" cy="82" rx="12" ry="6" fill="#8A7C76"/>
+    <path d="M40 58c-6-8 6-12 0-20M62 54c-6-8 6-12 0-20M84 58c-6-8 6-12 0-20" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" opacity=".85"/>
+  </symbol>
+  <symbol id="ph-dinner" viewBox="0 0 122 104" preserveAspectRatio="xMidYMid slice">
+    <rect width="122" height="104" fill="url(#gm-dusk)"/><circle cx="60" cy="50" r="12" fill="#FFE3B0"/>
+    <path d="M0 52 28 40l24 8 30-14 40 18v8H0z" fill="#5C4A96"/>
+    <rect y="58" width="122" height="22" fill="#5B79D0"/><rect x="50" y="62" width="20" height="2.5" rx="1" fill="#FFE3B0" opacity=".7"/>
+    <rect y="80" width="122" height="24" fill="#7A4A3A"/>
+    <path d="M36 66h12l-2 10a4 4 0 0 1-8 0zM42 80v-4M74 66h12l-2 10a4 4 0 0 1-8 0zM80 80v-4" fill="#FFFFFF" fill-opacity=".85"/>
+    <path d="M37 68h10M75 68h10" stroke="#C2223A" stroke-width="4"/>
+    <rect x="58" y="70" width="5" height="10" rx="1" fill="#FFF4E0"/><path d="M60.5 64c-2 3 0 5 0 5s2-2 0-5z" fill="#FFC14D"/>
+  </symbol>
+  <symbol id="ph-coffee" viewBox="0 0 122 104" preserveAspectRatio="xMidYMid slice">
+    <rect width="122" height="104" fill="url(#gm-cozy)"/>
+    <rect x="14" y="10" width="94" height="54" rx="4" fill="#FFF6EC"/><rect x="18" y="14" width="86" height="46" rx="2" fill="#B9D9F4"/>
+    <path d="M18 44l20-14 16 10 22-16 28 20v16H18z" fill="#F4F8FF"/><path d="M24 58l6-12 6 12zM34 60l5-10 5 10zM88 58l6-13 6 13z" fill="#2B5C63"/>
+    <rect x="60" y="14" width="3" height="46" fill="#FFF6EC"/>
+    <rect y="72" width="122" height="32" fill="#C98A5E"/>
+    <rect x="34" y="70" width="18" height="18" rx="4" fill="#FFFFFF"/><path d="M52 74h3a4 4 0 0 1 0 8h-3" stroke="#fff" stroke-width="3" fill="none"/><rect x="34" y="74" width="18" height="4" fill="#E0204E"/>
+    <rect x="70" y="70" width="18" height="18" rx="4" fill="#FFFFFF"/><path d="M88 74h3a4 4 0 0 1 0 8h-3" stroke="#fff" stroke-width="3" fill="none"/><rect x="70" y="74" width="18" height="4" fill="#087F7B"/>
+    <path d="M40 66c-3-4 3-6 0-10M78 66c-3-4 3-6 0-10" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="i-snow" viewBox="0 0 24 24"><path d="M12 2v20M3.5 7l17 10M20.5 7l-17 10"/></symbol>
+  <symbol id="i-flight" viewBox="0 0 24 24"><path d="M3 13l18-7-5 15-3.5-6.5z"/></symbol>
+  <symbol id="i-stay" viewBox="0 0 24 24"><path d="M3 11 12 4l9 7v9H3zM10 20v-5h4v5"/></symbol>
+  <symbol id="i-car" viewBox="0 0 24 24"><path d="M4 16v-4l2.2-5.2A2 2 0 0 1 8 5.5h8a2 2 0 0 1 1.8 1.3L20 12v4zM4 16v3M20 16v3M4 12h16M7.5 14h.01M16.5 14h.01"/></symbol>
+  <symbol id="i-tix" viewBox="0 0 24 24"><path d="M3 7h18v3a2 2 0 0 0 0 4v3H3v-3a2 2 0 0 0 0-4zM14 7v10"/></symbol>
+  <symbol id="i-see" viewBox="0 0 24 24"><path d="M2 20 9 8l4 6 3-4 6 10z"/></symbol>
+  <symbol id="i-food" viewBox="0 0 24 24"><path d="M6 3v6a2 2 0 0 0 4 0V3M8 9v12M17 3c-2.5 2-2.5 7 0 9v9"/></symbol>
+  <symbol id="i-spring" viewBox="0 0 24 24"><path d="M3 17c3 2 6 2 9 0s6-2 9 0M3 21c3 2 6 2 9 0s6-2 9 0M8 13c-2-3 2-4 0-7M12 13c-2-3 2-4 0-7M16 13c-2-3 2-4 0-7"/></symbol>
+  <symbol id="i-trail" viewBox="0 0 24 24"><circle cx="5" cy="19" r="2"/><circle cx="19" cy="5" r="2"/><path d="M7 19c5 0 2-7 6-7s2-7 4-7"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.3a4.3 4.3 0 0 1 7.5 2.5C19.5 15.4 12 20 12 20z"/></symbol>
+  <symbol id="i-thumb" viewBox="0 0 24 24"><path d="M7 11v9H4v-9zM7 11l4-8c1.6 0 2.6 1.3 2.2 2.8L12.4 9H19a2 2 0 0 1 2 2.3l-1.2 6.9A2 2 0 0 1 17.8 20H7"/></symbol>
+  <symbol id="i-smile" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 14.2q4 3.6 8 0M9 9.6h.01M15 9.6h.01"/></symbol>
+  <symbol id="i-fork" viewBox="0 0 24 24"><circle cx="6" cy="5" r="2"/><circle cx="18" cy="5" r="2"/><circle cx="12" cy="19" r="2"/><path d="M6 7v2a3 3 0 0 0 3 3h6a3 3 0 0 0 3-3V7M12 12v5"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></symbol>
+  <symbol id="i-swap" viewBox="0 0 24 24"><path d="M4 8h14l-3-3M20 16H6l3 3"/></symbol>
+</svg>
+
+<header class="top">
+  <a class="brand" href="/"><span class="mark"><svg viewBox="0 0 20 20" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><circle cx="5" cy="15" r="2.2"/><circle cx="15" cy="5" r="2.2"/><path d="M6.8 13.4 13.2 6.6"/><circle cx="5" cy="5" r="2.2"/><path d="M5 7.4v5.4"/></svg></span>GitAway</a>
+  <a class="signin" href="/signin">Sign in</a>
+</header>
+
+<section class="film" id="film" role="img" aria-label="Maya and Sam wanted Lake Tahoe. All they had was a guidebook.">
+
+  <!-- 1 ─ Maya and Sam, buried in a guidebook -->
+  <div class="scene b1"><div class="cam"><div class="art">
+    <svg class="ill" viewBox="0 0 600 600" aria-hidden="true">
+      <use href="#room"/>
+      <rect x="402" y="92" width="116" height="146" rx="6" style="fill:var(--frame)"/>
+      <rect x="412" y="102" width="96" height="126" rx="2" fill="#FFF1DE"/>
+      <circle cx="470" cy="146" r="18" fill="#F59A2E"/>
+      <path d="M412 196c22-26 40-30 60-14s28 6 36-4v50h-96z" fill="#087F7B"/>
+      <path d="M412 212c26-14 50-10 70 0s20 2 26 0v16h-96z" fill="#A445D8"/>
+      <g class="ppl">
+        <use href="#maya-legs"/>
+        <g class="sigh"><use href="#maya-torso"/>
+          <g transform="rotate(7 252 300)"><use href="#maya-head"/>
+            <g class="blink" style="--d:1.4s"><circle cx="245" cy="288.5" r="2.3" fill="#2A1E1A"/><circle cx="259" cy="288.5" r="2.3" fill="#2A1E1A"/></g>
+            <path d="M241 282.6l6-1.6M257 281l6 1.6" stroke="#3B2622" stroke-width="1.9" stroke-linecap="round"/>
+            <path d="M248.5 296.5q3.5 1.4 7 0" stroke="#8A3B2E" stroke-width="1.9" fill="none" stroke-linecap="round"/>
+          </g></g>
+        <path d="M214 334q-18 38-8 60l34 16" stroke="#E39A2E" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <use href="#sam-legs"/>
+        <g transform="rotate(-7 350 296)"><use href="#sam-head"/>
+          <g class="blink" style="--d:2.3s"><circle cx="343" cy="276" r="2.4" fill="#1E1A1A"/><circle cx="357" cy="276" r="2.4" fill="#1E1A1A"/></g>
+          <path d="M345.5 288q4.5 1.6 9 0" stroke="#F3D2BE" stroke-width="2" fill="none" stroke-linecap="round"/>
+        </g>
+        <path d="M390 330q18 40 6 64l-34 16" stroke="#2A62C2" stroke-width="21" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <circle class="bookglow" cx="300" cy="396" r="70" fill="url(#bkglow)"/>
+        <path d="M228 426h144l-8-46H236z" fill="#23324F"/>
+        <rect class="slip" x="256" y="366" width="9" height="16" rx="2" fill="#E0204E" style="--d:.2s"/>
+        <rect class="slip" x="270" y="364" width="9" height="16" rx="2" fill="#087F7B" style="--d:.7s"/>
+        <rect class="slip" x="320" y="364" width="9" height="16" rx="2" fill="#F59A2E" style="--d:.4s"/>
+        <rect class="slip" x="336" y="366" width="9" height="16" rx="2" fill="#A445D8" style="--d:.9s"/>
+        <path d="M236 412q32-6 64 4 32-10 64-4l2 12q-34-4-66 6-32-10-66-6z" fill="#EFE3CC"/>
+        <path d="M240 412q30-6 60 4v-36q-28-8-56-2z" fill="#FFF9EE"/>
+        <path d="M360 412q-30-6-60 4v-36q28-8 56-2z" fill="#FFFDF6"/>
+        <path d="M300 380v36" stroke="#E2D5BE" stroke-width="2"/>
+        <rect x="252" y="383" width="30" height="3.5" rx="1.5" fill="#23324F"/>
+        <path d="M252 391h38M252 397h36M252 403h38" stroke="#CDBFA8" stroke-width="2" stroke-linecap="round"/>
+        <path d="M318 388q10-7 18 0 7 9-2 19-9 6-15-2-6-9-1-17z" fill="#5B9BE0"/><circle cx="334" cy="392" r="2.6" fill="#E0204E"/>
+        <path class="flip" d="M300 416q30-10 56-4l4-34q-28-8-60 2z" fill="#FFFDF6"/>
+        <circle cx="240" cy="412" r="8" fill="#E9B08D"/><circle cx="360" cy="412" r="8" fill="#BC7E5A"/>
+      </g>
+      <use href="#table"/>
+      <rect x="146" y="508" width="172" height="28" rx="3" fill="#23324F"/><rect x="150" y="512" width="4" height="20" fill="#F2C14E"/>
+      <text x="236" y="527" text-anchor="middle" class="t-ui" font-size="13" font-weight="800" letter-spacing="2" fill="#FFF4E0">LAKE TAHOE</text>
+      <rect x="156" y="485" width="152" height="23" rx="3" fill="#C2412D"/>
+      <text x="232" y="501" text-anchor="middle" class="t-ui" font-size="11.5" font-weight="750" letter-spacing="1.6" fill="#FFF4E0">SIERRA HIKES</text>
+      <rect x="168" y="466" width="128" height="19" rx="3" fill="#2F8F6B"/>
+      <text x="232" y="479.5" text-anchor="middle" class="t-ui" font-size="10" font-weight="750" letter-spacing="1.4" fill="#FFF4E0">RENO &amp; TAHOE</text>
+      <rect x="344" y="500" width="30" height="34" rx="6" fill="#FFFDF8"/><path d="M374 508h4a7 7 0 0 1 0 14h-4" stroke="#FFFDF8" stroke-width="4" fill="none"/>
+      <rect x="344" y="508" width="30" height="5" fill="#E0204E" opacity=".85"/>
+      <path class="steam" d="M352 494c-4-6 4-8 0-15M364 494c-4-6 4-8 0-15" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" fill="none" opacity=".75"/>
+    </svg>
+  </div></div></div>
+
+  <!-- 2 ─ the book bursts into a trip -->
+  <div class="scene b2"><div class="cam"><div class="art">
+    <svg class="ill" viewBox="0 0 600 600" aria-hidden="true">
+      <defs><radialGradient id="s2bg" gradientUnits="userSpaceOnUse" cx="420" cy="260" r="700"><stop offset="0" style="stop-color:var(--stage-a)"/><stop offset="1" style="stop-color:var(--stage-b)"/></radialGradient></defs>
+      <rect x="-900" y="-900" width="2400" height="2400" fill="url(#s2bg)"/>
+      <circle cx="430" cy="290" r="260" fill="#FFFFFF" opacity=".16"/>
+      <ellipse cx="166" cy="560" rx="170" ry="15" fill="#5A2A10" opacity=".14"/>
+      <g class="bk"><g transform="translate(-14 -128) scale(1.2)">
+        <path d="M24 566h252l-14-124H38z" fill="#23324F"/>
+        <path d="M36 544q58-14 114 4 56-18 114-4l2 18q-58-12-116 6-58-18-116-6z" fill="#EFE3CC"/>
+        <path d="M42 544q54-13 108 4V454q-50-16-100-4z" fill="#FFF9EE"/>
+        <path d="M258 544q-54-13-108 4V454q50-16 100-4z" fill="#FFFDF6"/>
+        <path d="M150 454v94" stroke="#E2D5BE" stroke-width="2.5"/>
+        <g class="bklines">
+          <text x="62" y="478" font-family="Georgia, serif" font-size="17" font-weight="700" fill="#23324F">Lake Tahoe</text>
+          <path d="M62 490h70M62 499h64M62 508h72M62 517h58M62 526h68" stroke="#CDBFA8" stroke-width="2.4" stroke-linecap="round"/>
+          <path d="M186 470q16-12 30 0 12 16-4 34-14 10-24-4-10-16-2-30z" fill="#5B9BE0"/><circle cx="210" cy="478" r="3.4" fill="#E0204E"/>
+          <path d="M176 520h56M176 529h44" stroke="#CDBFA8" stroke-width="2.4" stroke-linecap="round"/>
+        </g>
+      </g></g>
+    </svg>
+    <div class="burst"><b></b><i style="--a:0deg"></i><i style="--a:40deg"></i><i style="--a:80deg"></i><i style="--a:-40deg"></i><i style="--a:-80deg"></i><i style="--a:120deg"></i><i style="--a:-120deg"></i></div>
+    <div class="phone ph2" style="left:300px;top:36px"><div class="screen">
+      <span class="island"></span>
+      <div class="ph-h"><b>Lake Tahoe</b><span>Dec 12–16 · Maya &amp; Sam</span></div>
+      <div class="wg w-wx pop" style="left:14px;top:98px;--d:1.4s"><small>Sat, Tahoe</small><b>28°</b><small><svg><use href="#i-snow"/></svg> Snow</small></div>
+      <div class="wg w-fl pop" style="left:128px;top:98px;--d:1.55s"><svg><use href="#i-flight"/></svg><em>SFO → RNO</em><small>Fri 8:05 am</small></div>
+      <div class="wg w-st pop" style="left:14px;top:212px;--d:1.7s"><span class="ic"><svg><use href="#i-stay"/></svg></span><span><em>Cabin · 4 nights</em><br><span class="chip">Booked on Vrbo</span></span></div>
+      <div class="wg w-dr pop" style="left:14px;top:302px;--d:1.85s"><svg><use href="#i-car"/></svg><b style="font-size:27px">18 min</b><small style="white-space:nowrap">drive to the lake</small></div>
+      <div class="wg w-tx pop" style="left:128px;top:302px;--d:2s"><svg><use href="#i-tix"/></svg><em>Sled hill</em><small>Tickets · Klook</small></div>
+      <div class="days fade" style="--d:2.4s"><span>Day 1</span><span>Day 2</span><span>Day 3</span><span>Day 4</span></div>
+      <div class="lat fade shine" style="--d:2.6s"><svg><use href="#i-trail"/></svg>Leave a trail</div>
+    </div></div>
+    <i class="pg" style="left:323px;top:143px;--dx:-157px;--dy:283px;--r:-24deg;--d:.78s"></i>
+    <i class="pg" style="left:437px;top:143px;--dx:-271px;--dy:283px;--r:18deg;--d:.93s"></i>
+    <i class="pg wide" style="left:323px;top:257px;--dx:-214px;--dy:179px;--r:-12deg;--d:1.08s"></i>
+    <i class="pg" style="left:323px;top:347px;--dx:-157px;--dy:79px;--r:28deg;--d:1.23s"></i>
+    <i class="pg" style="left:437px;top:347px;--dx:-271px;--dy:79px;--r:-20deg;--d:1.38s"></i>
+    <i class="spark" style="left:292px;top:120px;--d:2.2s"></i><i class="spark" style="left:578px;top:250px;--d:2.45s"></i><i class="spark" style="left:560px;top:520px;--d:2.7s"></i>
+  </div></div></div>
+
+  <!-- 3 ─ they're there: Tahoe -->
+  <div class="scene b3">
+    <div class="cam">
+      <div class="shot w1" data-l="a0"></div><div class="shot front w1" data-l="a1"></div>
+      <div class="shot w4" data-l="b0"></div><div class="shot front w4" data-l="b1"></div>
+      <div class="tint" style="opacity:.55"></div>
+    </div>
+    <canvas class="gl" data-snow="1"></canvas>
+    <div class="cam"><div class="art">
+      <div class="pol" style="left:448px;top:206px;--rot:-7deg;--d:3s;--fx:120px"><svg><use href="#ph-sled"/></svg><span>Sled hill</span></div>
+      <div class="pol" style="left:318px;top:52px;--rot:5deg;--d:3.3s;--fx:60px"><svg><use href="#ph-gondola"/></svg><span>Gondola at nine</span></div>
+      <div class="pol" style="left:468px;top:14px;--rot:-3deg;--d:3.6s;--fx:-40px"><svg><use href="#ph-dinner"/></svg><span>Dinner by the lake</span></div>
+      <div class="bub fill pop" style="left:420px;top:180px;--d:4.2s;--k:var(--food)"><svg><use href="#i-heart"/></svg></div>
+      <div class="fade" style="left:24px;top:520px;--d:4.3s"><span class="flag" style="--k:var(--s1);--on-k:var(--ink)"><svg style="stroke:var(--food)"><use href="#i-heart"/></svg>Maya &amp; Sam · Day 2</span></div>
+    </div></div>
+  </div>
+
+  <!-- 4 ─ back home, they leave a trail -->
+  <div class="scene b4">
+    <div class="cam"><div class="art">
+      <svg class="ill" viewBox="0 0 600 600" aria-hidden="true">
+        <use href="#room"/>
+        <g transform="rotate(-6 434 150)"><rect x="398" y="96" width="74" height="86" rx="3" fill="#FFFDF8"/><use href="#ph-sled" x="403" y="101" width="64" height="58"/></g>
+        <g transform="rotate(5 500 168)"><rect x="466" y="120" width="74" height="86" rx="3" fill="#FFFDF8"/><use href="#ph-gondola" x="471" y="125" width="64" height="58"/></g>
+        <g transform="rotate(-2 460 236)"><rect x="428" y="200" width="66" height="76" rx="3" fill="#FFFDF8"/><use href="#ph-dinner" x="432" y="204" width="58" height="52"/></g>
+        <g class="ppl">
+          <use href="#maya-legs"/><use href="#maya-torso"/>
+          <g transform="rotate(4 252 300)"><use href="#maya-head"/>
+            <path d="M241.5 289q3.5-3.4 7 0M255.5 289q3.5-3.4 7 0" stroke="#2A1E1A" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+            <path d="M246 294.5q6 7 12 0z" fill="#8A3B2E"/>
+          </g>
+          <path d="M214 334q-16 34-4 54l46 4" stroke="#E39A2E" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <use href="#sam-legs"/>
+          <g transform="rotate(-12 350 296)"><use href="#sam-head"/>
+            <path d="M339.5 277q3.5-3.4 7 0M353.5 277q3.5-3.4 7 0" stroke="#1E1A1A" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+            <path d="M344 286q6 7.5 12 0z" fill="#F3D2BE"/>
+          </g>
+          <path d="M390 330q14 36-10 56l-62 6" stroke="#2A62C2" stroke-width="21" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <g transform="rotate(-6 285 380)"><rect x="268" y="352" width="34" height="58" rx="7" fill="#141217"/><rect x="271" y="356" width="28" height="50" rx="5" fill="#FFF8F0"/>
+            <rect x="274" y="362" width="10" height="10" rx="2.5" fill="#0068D9"/><rect x="286" y="362" width="10" height="10" rx="2.5" fill="#5250E0"/><rect x="274" y="375" width="22" height="8" rx="2.5" fill="#A445D8"/>
+            <rect x="274" y="394" width="22" height="7" rx="3.5" fill="#D2401C"/></g>
+          <circle cx="258" cy="392" r="8" fill="#E9B08D"/><circle cx="318" cy="392" r="8" fill="#BC7E5A"/>
+        </g>
+        <use href="#table"/>
+        <rect x="160" y="508" width="150" height="28" rx="3" fill="#23324F"/><rect x="164" y="512" width="4" height="20" fill="#F2C14E"/>
+        <text x="240" y="527" text-anchor="middle" class="t-ui" font-size="13" font-weight="800" letter-spacing="2" fill="#FFF4E0">LAKE TAHOE</text>
+        <rect x="344" y="500" width="30" height="34" rx="6" fill="#FFFDF8"/><path d="M374 508h4a7 7 0 0 1 0 14h-4" stroke="#FFFDF8" stroke-width="4" fill="none"/>
+        <rect x="344" y="508" width="30" height="5" fill="#087F7B" opacity=".85"/>
+      </svg>
+    </div></div>
+    <canvas class="gl"></canvas>
+    <div class="cam"><div class="art">
+      <svg class="ill" viewBox="0 0 600 600" aria-hidden="true" style="overflow:visible">
+        <defs><mask id="m4" maskUnits="userSpaceOnUse" x="-900" y="-900" width="2600" height="2400"><path class="trailmask" id="trailm4" d="" stroke="#fff" stroke-width="10" fill="none" pathLength="1"/></mask></defs>
+        <path class="trail4" id="trailp4" d="" mask="url(#m4)"/>
+      </svg>
+      <div class="phone ph4"><div class="screen">
+        <span class="island"></span>
+        <div class="ph-h"><b>Lake Tahoe</b><span>Dec 12–16 · Maya &amp; Sam</span></div>
+        <div class="wg w-wx" style="left:14px;top:98px"><small>Sat, Tahoe</small><b>28°</b><small><svg><use href="#i-snow"/></svg> Snow</small></div>
+        <div class="wg w-fl" style="left:128px;top:98px"><svg><use href="#i-flight"/></svg><em>SFO → RNO</em><small>Fri 8:05 am</small></div>
+        <div class="wg w-st" style="left:14px;top:212px"><span class="ic"><svg><use href="#i-stay"/></svg></span><span><em>Cabin · 4 nights</em><br><span class="chip">Booked on Vrbo</span></span></div>
+        <div class="wg w-dr" style="left:14px;top:302px"><svg><use href="#i-car"/></svg><b style="font-size:27px">18 min</b><small style="white-space:nowrap">drive to the lake</small></div>
+        <div class="wg w-tx" style="left:128px;top:302px"><svg><use href="#i-tix"/></svg><em>Sled hill</em><small>Tickets · Klook</small></div>
+        <div class="days"><span>Day 1</span><span>Day 2</span><span>Day 3</span><span>Day 4</span></div>
+        <div class="lat"><svg><use href="#i-trail"/></svg>Leave a trail</div>
+      </div></div>
+      <i class="tap" style="left:130px;top:423px;--d:1.2s"></i>
+      <i class="ring" style="left:130px;top:423px;--d:1.55s"></i>
+      <div class="tcard" id="tcard4"><svg><use href="#mini-tahoe"/></svg><b>Lake Tahoe · 4 days</b><span class="sw"><i style="background:var(--wx)"></i><i style="background:var(--stay)"></i><i style="background:var(--see)"></i><i style="background:var(--tix)"></i></span></div>
+    </div></div>
+    <div class="ov"><div class="trk" data-trk="tahoe"><div class="pop" style="--d:3.45s"><span class="flag" style="--on-k:var(--on-acc)"><svg><use href="#i-trail"/></svg>Maya &amp; Sam's trail</span></div></div></div>
+  </div>
+
+  <!-- 5 ─ Lisbon: Rosa and Tomás find it -->
+  <div class="scene b5">
+    <div class="cam"><div class="art">
+      <svg class="ill" viewBox="0 0 600 600" aria-hidden="true">
+        <defs><linearGradient id="s4sky" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="300"><stop offset="0" style="stop-color:var(--sky-a)"/><stop offset="1" style="stop-color:var(--sky-b)"/></linearGradient>
+          <radialGradient id="s4glow"><stop offset="0" stop-color="#D8ECFF" stop-opacity=".75"/><stop offset="1" stop-color="#D8ECFF" stop-opacity="0"/></radialGradient></defs>
+        <rect x="-900" y="-900" width="2400" height="1200" fill="url(#s4sky)"/>
+        <circle cx="250" cy="236" r="26" style="fill:var(--sun)" opacity=".9"/>
+        <path d="M-900 262h2400v60h-2400z" style="fill:var(--lake)" opacity=".8"/>
+        <path d="M-900 262c120-8 260-14 380-10s220 4 320-2 200-6 300 0 300 6 1400 4v8h-2400z" style="fill:var(--mtn2)" opacity=".7"/>
+        <path d="M296 276h28l-4 6h-20z" fill="#FFFFFF" opacity=".9"/><path d="M310 274v-22l12 20z" fill="#FFFFFF"/>
+        <g id="lisbon"></g>
+        <path d="M-400 300H1000" stroke="#3B3346" stroke-width="1.2" opacity=".5"/>
+        <path d="M8 346l40-46" stroke="#3B3346" stroke-width="2.5" stroke-linecap="round"/>
+        <rect x="-34" y="342" width="136" height="10" rx="5" fill="#EFE6D6"/>
+        <rect x="-40" y="350" width="150" height="66" rx="10" fill="#F6C445"/>
+        <rect x="-34" y="358" width="138" height="24" rx="5" fill="#FFF4D8"/>
+        <g fill="#3D4E6B"><rect x="-28" y="361" width="20" height="18" rx="3"/><rect x="-2" y="361" width="20" height="18" rx="3"/><rect x="24" y="361" width="20" height="18" rx="3"/><rect x="50" y="361" width="20" height="18" rx="3"/><rect x="76" y="361" width="22" height="18" rx="3"/></g>
+        <rect x="-40" y="404" width="150" height="5" fill="#C8452F"/>
+        <rect x="84" y="387" width="20" height="13" rx="2" fill="#3B3346"/><text x="94" y="397.5" text-anchor="middle" class="t-ui" font-size="10" font-weight="800" fill="#FFF4D8">28</text>
+        <rect x="-900" y="462" width="2400" height="900" fill="#E8C3A2"/>
+        <path d="M-900 462h2400" stroke="#D4A882" stroke-width="2"/>
+        <g id="rail"></g>
+        <rect x="54" y="386" width="232" height="14" rx="5" fill="#8A5A3C"/><rect x="54" y="406" width="232" height="14" rx="5" fill="#8A5A3C"/>
+        <rect x="66" y="476" width="10" height="44" rx="3" fill="#5E3C27"/><rect x="264" y="476" width="10" height="44" rx="3" fill="#5E3C27"/>
+        <rect x="48" y="464" width="244" height="16" rx="6" fill="#A06B47"/>
+        <path d="M8 468h44l-6 44h-32z" fill="#D2643C"/><circle cx="20" cy="452" r="12" fill="#2F8F6B"/><circle cx="40" cy="448" r="13" fill="#3FA57D"/><circle cx="18" cy="444" r="4.5" fill="#E0204E"/><circle cx="34" cy="438" r="4.5" fill="#E0204E"/><circle cx="46" cy="450" r="4" fill="#E0204E"/>
+        <g class="ppl">
+          <ellipse class="tabglow" cx="172" cy="380" rx="80" ry="58" fill="url(#s4glow)"/>
+          <!-- Rosa: grey bun, glasses, teal cardigan -->
+          <rect x="96" y="470" width="20" height="46" rx="9" fill="#5B4A6E"/><rect x="122" y="470" width="20" height="46" rx="9" fill="#5B4A6E"/>
+          <ellipse cx="104" cy="518" rx="14" ry="6" fill="#3A2E3A"/><ellipse cx="134" cy="518" rx="14" ry="6" fill="#3A2E3A"/>
+          <rect x="86" y="440" width="70" height="38" rx="16" fill="#66548A"/>
+          <g class="lsh"><path d="M86 384q0-26 22-29h26q22 3 22 29l4 60H82z" fill="#2F8F8A"/><path d="M121 357v87" stroke="#237873" stroke-width="2"/>
+          <g class="leanR"><g transform="rotate(8 120 340)">
+            <rect x="114" y="336" width="13" height="20" rx="5" fill="#D8A27F"/>
+            <circle cx="121" cy="324" r="20" fill="#EDBC9C"/>
+            <circle cx="110" cy="300" r="10" fill="#CFCAD2"/>
+            <path d="M101 326q-2-24 20-25 22 1 20 23-4-12-20-12-14 0-20 14z" fill="#DCD8DE"/>
+            <path d="M101 326q0 8 4 12" stroke="#DCD8DE" stroke-width="5" stroke-linecap="round"/>
+            <circle cx="116" cy="334" r="3.2" fill="#E98A78" opacity=".45"/><circle cx="139" cy="333" r="2.8" fill="#E98A78" opacity=".45"/>
+            <g class="blink" style="--d:1.9s"><circle cx="122.4" cy="327.4" r="1.9" fill="#2A1E1A"/><circle cx="134.4" cy="327.4" r="1.9" fill="#2A1E1A"/></g>
+            <g fill="none" stroke="#3B3346" stroke-width="1.8"><circle cx="122" cy="327" r="4.8"/><circle cx="134" cy="327" r="4.8"/><path d="M126.8 327h2.4"/></g>
+            <path d="M118 320.5l6-1M130.5 319.5l6 1" stroke="#B9B3BD" stroke-width="1.7" stroke-linecap="round"/>
+            <path d="M124 334.5q5 4.5 10 0" stroke="#8A3B2E" stroke-width="1.9" fill="none" stroke-linecap="round"/>
+          </g></g>
+          <path d="M92 372q-14 36-2 56l58-8" stroke="#287F7A" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
+          <!-- Tomás: grey beard, glasses, burgundy sweater -->
+          <rect x="196" y="470" width="22" height="46" rx="9" fill="#3C4258"/><rect x="224" y="470" width="22" height="46" rx="9" fill="#3C4258"/>
+          <ellipse cx="205" cy="518" rx="15" ry="6" fill="#2A2B36"/><ellipse cx="237" cy="518" rx="15" ry="6" fill="#2A2B36"/>
+          <rect x="184" y="438" width="76" height="40" rx="16" fill="#4A516C"/>
+          <path d="M180 380q0-28 26-31h30q26 3 26 31l4 64h-90z" fill="#A23B4F"/>
+          <path d="M206 350l15 14 15-14" stroke="#8E3044" stroke-width="5" fill="none" stroke-linejoin="round"/>
+          <g class="leanL"><g transform="rotate(-8 222 336)">
+            <rect x="214" y="330" width="14" height="22" rx="6" fill="#C98D69"/>
+            <circle cx="221" cy="316" r="22" fill="#DDA27E"/>
+            <path d="M213 296q8-4 16 0" stroke="#F0C4A4" stroke-width="3" stroke-linecap="round" fill="none" opacity=".7"/>
+            <path d="M199 318q0-10 4-14 0 10 4 16zM243 318q0-10-4-14 0 10-4 16z" fill="#D7D3D9"/>
+            <circle cx="203.5" cy="323" r="3" fill="#E07A60" opacity=".35"/><circle cx="231" cy="324" r="3" fill="#E07A60" opacity=".35"/>
+            <path d="M202 322q2 20 19 22 17-2 19-22-6 10-19 10-13 0-19-10z" fill="#E4E1E6"/>
+            <g class="blink" style="--d:2.6s"><circle cx="210.4" cy="317.4" r="2" fill="#2A1E1A"/><circle cx="222.4" cy="317.4" r="2" fill="#2A1E1A"/></g>
+            <g fill="none" stroke="#3B3346" stroke-width="1.8"><circle cx="210" cy="317" r="5"/><circle cx="222" cy="317" r="5"/><path d="M215 317h2"/></g>
+            <path d="M204.5 309.5l7-1M218.5 308.5l7 1" stroke="#CFCAD2" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M211 327.5q5.5 4.5 11 0" stroke="#8A4A3A" stroke-width="2" fill="none" stroke-linecap="round"/>
+          </g></g>
+          <path d="M256 368q16 36 4 58l-56-6" stroke="#8E3044" stroke-width="19" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <g transform="rotate(-6 172 404)"><rect x="138" y="378" width="70" height="52" rx="8" fill="#2D2A33"/><circle cx="173" cy="384" r="1.8" fill="#55505E"/></g>
+          <circle cx="146" cy="420" r="7.5" fill="#EDBC9C"/><circle cx="202" cy="418" r="8" fill="#DDA27E"/>
+        </g>
+      </svg>
+      <div class="loc fade" style="--d:1.5s"><svg><use href="#i-pin"/></svg>Lisbon <span>9:40 pm</span></div>
+      <div class="bub hop" style="left:146px;top:212px;--d:3.95s;--k:var(--tix)"><svg><use href="#i-smile"/></svg></div>
+      <div class="card4 rise" style="--d:1.9s">
+        <svg class="th"><use href="#mini-tahoe"/></svg>
+        <h3>Lake Tahoe in December</h3>
+        <p class="by">Maya &amp; Sam · 4 days</p>
+        <div class="chips"><span style="--k:var(--wx)">28° snow</span><span style="--k:var(--stay)">Cabin</span><span style="--k:var(--tix);--on-k:var(--on-tix)">Sled hill</span></div>
+        <div class="acts">
+          <span class="act thumb"><span class="tint2"></span><svg><use href="#i-thumb"/></svg><span class="cnt"><span class="n1">1,204</span><span class="n2">1,205</span></span></span>
+          <span class="act heart"><svg><use href="#i-heart"/></svg>Thank them<span class="hf"><svg><use href="#i-heart"/></svg>Thanked</span>
+            <span class="hearts">
+              <i style="--x:-70px;--y:-80px;--d:3.6s;--k:var(--food)"><svg><use href="#i-heart"/></svg></i>
+              <i style="--x:-20px;--y:-110px;--d:3.65s;--k:var(--acc);--rr:-20deg"><svg><use href="#i-heart"/></svg></i>
+              <i style="--x:30px;--y:-100px;--d:3.62s;--k:var(--tix)"><svg><use href="#i-heart"/></svg></i>
+              <i style="--x:72px;--y:-60px;--d:3.7s;--k:var(--food);--rr:-30deg"><svg><use href="#i-heart"/></svg></i>
+              <i style="--x:-90px;--y:-24px;--d:3.72s;--k:var(--stay)"><svg><use href="#i-heart"/></svg></i>
+              <i style="--x:90px;--y:-14px;--d:3.68s;--k:var(--see)"><svg><use href="#i-heart"/></svg></i>
+              <i style="--x:4px;--y:-70px;--d:3.75s;--k:var(--food)"><svg><use href="#i-heart"/></svg></i>
+            </span></span>
+        </div>
+        <div class="follow"><span class="f1"><svg><use href="#i-trail"/></svg>Follow this trail</span><span class="f2"><svg><use href="#i-check"/></svg>Following</span></div>
+      </div>
+      <i class="tap" style="left:385px;top:418px;--d:2.75s"></i>
+      <i class="tap" style="left:516px;top:418px;--d:3.35s"></i>
+      <i class="tap" style="left:449px;top:476px;--d:4.55s"></i>
+      <i class="spark" style="left:574px;top:458px;--d:4.95s"></i><i class="spark" style="left:330px;top:500px;--d:5.1s"></i>
+    </div></div>
+    <canvas class="gl"></canvas>
+  </div>
+
+  <!-- 6 ─ make it theirs -->
+  <div class="scene b6">
+    <div class="cam">
+      <div class="shot w2" data-l="a0"></div>
+      <div class="tint"></div>
+      <div class="art">
+        <div class="card5 rise" style="--d:.15s">
+          <div class="c5h"><b>Day 2 · Saturday</b><span class="who"><span class="av" data-av="rosa"></span><span class="av" data-av="tomas"></span>Rosa &amp; Tomás</span></div>
+          <div class="row" style="--k:var(--see)"><span class="ic"><svg><use href="#i-see"/></svg></span><span class="tx"><b>Emerald Bay overlook</b><span>Kept from Maya &amp; Sam</span></span><time><span class="t1">9:00</span><span class="t2">10:30</span></time></div>
+          <div class="row old" style="--k:var(--tix);--on-k:var(--on-tix)"><span class="ic"><svg><use href="#i-tix"/></svg></span><span class="tx"><b>Ski day at Heavenly</b><span>All day</span></span><span class="swapbtn"><svg><use href="#i-swap"/></svg></span></div>
+          <div class="row new" style="--k:var(--see)"><span class="ic"><svg><use href="#i-spring"/></svg></span><span class="tx"><b>Hot springs</b><span>A slower morning, a long soak</span></span><span class="tag">New</span></div>
+          <div class="row" style="--k:var(--food)"><span class="ic"><svg><use href="#i-food"/></svg></span><span class="tx"><b>Dinner by the water</b><span>Kept · table for two</span></span><time><span>7:30</span></time></div>
+          <div class="forked"><svg><use href="#i-fork"/></svg>Followed from Maya &amp; Sam's trail</div>
+        </div>
+        <i class="tap" style="left:462px;top:248px;--d:.85s"></i>
+        <i class="spark" style="left:110px;top:240px;--d:2.75s"></i><i class="spark" style="left:486px;top:226px;--d:2.9s"></i><i class="spark" style="left:470px;top:150px;--d:3.6s"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7 ─ they went, and left a trail too -->
+  <div class="scene b7">
+    <div class="photo7">
+      <div class="cam">
+        <div class="shot w3" data-l="a0"></div><div class="shot front w3" data-l="a1"></div>
+        <div class="tint" style="opacity:.5"></div>
+      </div>
+      <canvas class="gl snow7" data-snow="1"></canvas>
+      <div class="cam"><div class="art">
+        <div class="pol" style="left:40px;top:150px;--rot:-7deg;--d:.25s;--fx:-60px"><svg><use href="#ph-springs"/></svg><span>Hot springs</span></div>
+        <div class="pol" style="left:196px;top:70px;--rot:5deg;--d:.5s;--fx:40px"><svg><use href="#ph-coffee"/></svg><span>A slow breakfast</span></div>
+        <div class="fade" style="left:366px;top:120px;--d:.9s"><span class="flag" style="--k:var(--s1);--on-k:var(--ink)"><svg style="stroke:var(--food)"><use href="#i-heart"/></svg>Rosa &amp; Tomás · Day 2</span></div>
+        <div class="lat7"><svg><use href="#i-trail"/></svg>Leave a trail</div>
+        <i class="tap" style="left:300px;top:496px;--d:1.8s"></i><i class="ring" style="left:300px;top:496px;--d:2.1s"></i>
+      </div></div>
+    </div>
+    <canvas class="gl"></canvas>
+    <div class="ov">
+      <div class="trk" data-trk="tahoe"><div class="pop" style="--d:2.85s"><span class="flag" style="--on-k:var(--on-acc)">Maya &amp; Sam</span></div></div>
+      <div class="trk" data-trk="lisbon"><div class="pop" style="--d:4.05s"><span class="flag" style="--k:var(--food)"><svg><use href="#i-fork"/></svg>Rosa &amp; Tomás</span></div></div>
+    </div>
+  </div>
+
+  <!-- 8 ─ every trip here grew from another -->
+  <div class="scene b8">
+    <div class="bgfill"></div>
+    <canvas class="gl"></canvas>
+    <div class="ov">
+      <div class="trk" data-trk="tahoe"><div><span class="flag" style="--on-k:var(--on-acc)">Maya &amp; Sam</span></div></div>
+      <div class="trk" data-trk="lisbon"><div><span class="flag" style="--k:var(--food)"><svg><use href="#i-fork"/></svg>Rosa &amp; Tomás</span></div></div>
+      <div class="trk" data-trk="kyoto"><div class="pop" style="--d:3.3s"><span class="flag" style="--k:var(--see)">Kyoto in spring</span></div></div>
+      <div class="trk" data-trk="capetown"><div class="pop" style="--d:4.2s"><span class="flag" style="--k:var(--stay)">Cape Town with kids</span></div></div>
+    </div>
+    <div class="cam"><div class="art"><div class="crowd" id="crowd"></div></div></div>
+    <div class="endcard">
+      <h2>Take a trip. <span>Leave a trail.</span></h2>
+      <p>Share the whole trip, not just the photos, so the next family can follow it, make it theirs, and say thanks.</p>
+      <div class="btns"><a class="btn primary" href="/start">Start a trip</a><a class="btn second" href="/trail/tahoe">See a shared trail</a></div>
+    </div>
+  </div>
+</section>
+
+<div class="deck" id="deck">
+  <button class="sound" id="sound" aria-label="Play with sound" aria-pressed="false">
+    <svg class="ico-play" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/></svg>
+    <svg class="ico-on" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/></svg>
+    <svg class="ico-off" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg>
+    <span class="lbl"><span class="long">Play with sound</span><span class="short">Sound</span></span>
+  </button>
+  <p class="cap" id="cap" aria-live="polite">Maya and Sam wanted Lake Tahoe. All they had was a guidebook.</p>
+  <div class="ctrl">
+    <nav class="steps" aria-label="The story, beat by beat">
+      <button class="seg" style="--k:var(--wx)"><i></i></button>
+      <button class="seg" style="--k:var(--flight)"><i></i></button>
+      <button class="seg" style="--k:var(--see)"><i></i></button>
+      <button class="seg" style="--k:var(--acc)"><i></i></button>
+      <button class="seg" style="--k:var(--food)"><i></i></button>
+      <button class="seg" style="--k:var(--tix)"><i></i></button>
+      <button class="seg" style="--k:var(--stay)"><i></i></button>
+      <button class="seg" style="--k:var(--acc)"><i></i></button>
+    </nav>
+    <button class="pp" id="pp" aria-label="Pause the story"><svg class="pause" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1.5"/><rect x="14" y="5" width="4" height="14" rx="1.5"/></svg><svg class="play" viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 0 0 1.5.9l10-6.5a1 1 0 0 0 0-1.7l-10-6.5A1 1 0 0 0 8 5.5z"/></svg><svg class="again" viewBox="0 0 24 24" style="fill:none;stroke:#fff;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4.5h4.5"/></svg></button>
+  </div>
+</div>
+
+<footer class="bar" id="bar">
+  <div class="say">
+    <h1>Take a trip. <span>Leave a trail.</span></h1>
+    <p>Plan a family trip together, then share it for others to follow.</p>
+  </div>
+  <div class="btns">
+    <a class="btn primary" href="/start">Start a trip</a>
+    <a class="btn second" href="/trail/tahoe">See a shared trail</a>
+  </div>
+</footer>
+
+<script>
+(() => {
+  const NS = 'http://www.w3.org/2000/svg', D2R = Math.PI / 180;
+  const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+  const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+  const lerp = (a, b, k) => a + (b - a) * k;
+  const ez = k => { k = clamp(k); return k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2; };
+  const eo = k => 1 - Math.pow(1 - clamp(k), 3);
+  const seg = (t, a, b) => clamp((t - a) / (b - a));
+  const spring = u => u <= 0 ? 0 : 1 - Math.exp(-6 * u) * Math.cos(11 * u);
+
+  /* ---------- the narration ---------- */
+  const LINES = [
+    'Maya and Sam wanted Lake Tahoe. All they had was a guidebook.',
+    'So they turned it into a trip. Weather, drives, every booking, one screen.',
+    'Then they went. And it was everything.',
+    'Back home, they left a trail.',
+    'Half a world away, Rosa and Tomás found it. And said thank you.',
+    'They made it theirs. A slower morning, a little more soak.',
+    'They went. And they left a trail too.',
+    'Every trip here grew from another. Take a trip. Leave a trail.'];
+  const VO_LEN = [3.55, 4.30, 2.00, 1.59, 3.82, 3.09, 2.08, 3.63]; /* seconds, measured with ffprobe; replaced by the real metadata once loaded */
+
+  /* ---------- the land: Natural Earth 110 m land (public domain), baked to a 1.5° mask ---------- */
+  const MASK = { S: 1.5, LAT0: -58.5, ROWS: 96, COLS: 240, b64: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACABgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADABwAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAADADwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADABwAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAADADwAAAAAAAAAAAAAAAAAAAAAAAIADAAAAAAAAAACAHwAAAAAAAAAAAAAAAAAAAAAAAgAGAAAAAAAAAACAHwAAAAAAAAAAAAAAAAAAAAAABgAMAAAAAAAAAACAfwAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAAAAAAABwAAAAAAAAAACA/wMAAAAAAAAAAAAAAAAAAADgDwAQAAAAAAAAAAAA/wMAAAAAAAAAAAAAAAAAAADgDwAAAAAAAAAAAAAA/w0AAAAAACAAAAAAAAAA4AD0HwAAAAAAAAAAAAAA/x8AAAAAAPAHAAAAAAAA4Af8HwAAAAAAAAAAAAAA/z8AAAAAAPAPAAAAAAAA4H//PwAAAAAAAAAAAAAA/38AAAAAAPgfAAAAAAAA4P//PwAAAAAAAAAAAAAA/38AAAAAAPg/AAAAAAAA8P//PwAAAAAAAAAAAAAA/v8AAAAAAPw/AAAAAAAA8P//PwAAAAAAAAAAAAAA/v8AAAAAAPw/AAAAAAAA8P//PwAAAAAAAAAAAAAA/v8BAAAAAPz/4AAAAAAA8P//HwAAAAAAAAAAAAAA/v8PAAAAAPz/4AAAAAAA8P//DwAAAAAAAAAAAAAA/v8fAAAAAP5/4AAAAAAA4P//BwAAAAAAAAAAAAAA/v8/AAAAAP7/wAEAAAAAAP7/AwAAAAAAAAAAAAAA/v8/AAAAAP//4QEAAAAAAPz/AQBAAAAAAAAAAACA//8/AAAAAP//wwEAAAAAAPzPAQCAAAAAAAAAAADA//8/AAAAAP//hwMAAAAAAPjDAQAAAAAAAAAAAADg//8/AAAAAP//BwEAAAAAAIDHAAAAAAAAAAAAAADg//9/AAAAAP7/BwAAAAAAAAADAAAAAAAAAAAAAADw////AAAAAP7/BwAAAAAAAAAAAAAAAAAAAAAAAADw////AQAAAP7/AwAAAAAAAAjABAAAAAAAAAAAAAD4////AQAAAP7/AwAAAACABwDwAwAAAAAAAAAAAAD8////AQAAAP//AwAAAACAAADymwAAAAAAAAAAAAD8//9/AAAAAP//AwAAAABgAAL8IQAAAAAAAAAAAAD4//8fAAAAgP//BwAAAABwvGJ/AAAAAAAAAAAAAAD8//8DAAAAwP//DwAAAAA4PgMBAAAAAAAAAAAAAAD4/z8AAAAAwP//HwAAAAAcPgAAAAAAAAAAAAAAAAD4/38AAAAAwP//PwAAAAAMfiAAAAAAAAAAAAAAAADw/z8AAAAAgP//fwAAAAAWOAAAAAAAAAAAAAAAAADw/x8AAAAE0P///wAAAAAZcAAAAAAAAAAAAAAAAADw/wMAAAD++f///wEAAAAIIAgAAAAAAAAAAAAAAAD0/wEAAAD//////wEAYAAEAAoAAAAAAAAAAAAAAADvfwAAAID//////wMAKAAEQAAAAAAAAAAAAAAAAIDALwAAAMD/////3wMAGADAgAQAAAAAAAAAAAAAAMAAAQAAAOD/////HwAAHAD0AQgAAAAAAAAAAAAAAPAAAAAAAOD/////bwAAPAD+AQQAAAAAAAAAAAAAAPwBAAAAAOD/////5wMAHgD+AQEAAAAAAAAAAAAAwB8AAAAAAOD/////8wcAfoD+AAMAAAAAAAAAAAAA8B8QCQAAAOD/////8z8A/oB/AAEAAAAAAAABAAAA/DCAAQAAAOD/////+T8A/sF/AgAAAAAAAAAAAAAAfDAwAAAAAOD//////X+A/+N/AgAAAAAAAAAAAAAAfgAHAAAAAOD//////P/A/+//DwEAAAAAAAAAAABAfgAAAAAAAMD//////j/g////fwEAAAAAAAAAAACgfwAAAAAAAMD///9//qP//////wAAAAAAAAAAAACQfwAGAAAAAID///8//9n//////wAAAAAAAAAAAADw/wACAAAAAAD///////z//////wEAAAAAAAAAAADo/48DAAAAAAD8//////7//////wEAAAAAAAAAAAD0//8DAAAAAAD8/+OT/////////4EAAAAAAAAAAAD8//8HAAAAAAD8/wCA/////////8EBAAAAAAAAAAD///8PAAAAAADwfwAA/////////xAHAAAAAAAAAID///8fAAAAAAAAfwAA/////////zA4AAAAAAAAAMD///8/AAAAAAB8AMP8//H/////fzEwAAAAAAAAAMD///8/AAAAAAD8AED8//H/////fxggAAAAAAAAAOD///9/AAAAAAD8QOz6//n//////z4gAAAAAAAAAOD/////AQAAAAD8A+PH8Pj//////38gAAAAAAAAAOD/////AQAAAACcn/kH+Pz////////DAQAAAAAAAOD/////ZwAAAACA//zPfvz///////8HAAAAAAAAAOD/////vwAAAACA///v/vn///////+PAAAAAAAAAOD/////Hx4AAADg//////////////8fAAAAAAAAAPj/////JwYAAAAA//////////////+/AAAAAAAAAPj//////wUAAADg//////////////+/AAAAAAAAAPz////z/wcAAADs+f//////////////AAMAAAAAgP7////5/wMAAADMwP3///////////8XAAcAABAAAP///3/w/wAAAABgoMD///////////8HAA8AAMACgP///w/gfwAAAABwQMf///////////8fAB8AAIAB8P///wPwPwAAAAAgsAf///////////8/AAwAAPob/v///wHwAwAAAAAA8I/4////////////fzACAP7//////wPwAIAPAAAA+Mf//////////////+0PAPz//////wcAFsAPAAAA4M//////////////////EPj//////9/xD+AfAD4AgD9//v////////////8/fv7//////3+AN/D/ADsAAP9/+P//////////////B/z///9//9+jH/D/AwAAAPz/J////f//////////APj/7//zzJ7jB8D/fwAAAPD/AADO/P/////////9AOAHAADwB+f/A/D/fwAAAAAfAADg/P///////wMAAAAAAPD+4/A/APj//wAAAAAAABzA+P///z/gDwAAAAAAAOAHYmcNAPj//wMAAAAAADAAwP//fxzgAAAAAAAAAADgYf8HAP7//wMAAAAAAOAAAPz/BwDwDAAAAAAAAIDDYPcH/v///wMAAAAAAAA4AAB4BwAAAAAAAAAAAABggICP/////wcAAM4AAAAAAAAEAAAAAAAAAAAAAAAAAL9/8P///w8AgN8BAAAAAMAHAAAAAAAAAAAAAAAAAPb/5////38AAAAAAAAAAMABAAAAAAAAAAAAAAAAAID+fwD+/wEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' };
+  const bits = Uint8Array.from(atob(MASK.b64), c => c.charCodeAt(0));
+  const land = (r, c) => { const i = r * MASK.COLS + c; return (bits[i >> 3] >> (i & 7)) & 1; };
+  const vec = (lon, lat) => { const l = lon * D2R, p = lat * D2R; return [Math.cos(p) * Math.cos(l), Math.cos(p) * Math.sin(l), Math.sin(p)]; };
+  const DOTS = [];
+  for (let r = 0; r < MASK.ROWS; r++) {
+    const lat = MASK.LAT0 + r * MASK.S, st = MASK.S / Math.max(Math.cos(lat * D2R), .12);
+    for (let lon = -180 + st / 2; lon < 180; lon += st) if (land(r, Math.min(MASK.COLS - 1, Math.floor((lon + 180) / MASK.S)))) DOTS.push(vec(lon, lat));
+  }
+  const view = (v, lon0, lat0) => {
+    const cl = Math.cos(lon0 * D2R), sl = Math.sin(lon0 * D2R), cp = Math.cos(lat0 * D2R), sp = Math.sin(lat0 * D2R);
+    const x1 = v[0] * cl + v[1] * sl, y1 = -v[0] * sl + v[1] * cl, z1 = v[2];
+    return [y1, -x1 * sp + z1 * cp, x1 * cp + z1 * sp]; /* right, up, depth */
+  };
+
+  const P = { tahoe: [-120, 39], lisbon: [-9.1, 38.7], kyoto: [135.8, 35], banff: [-115.6, 51.2], oaxaca: [-96.7, 17], marrakech: [-8, 31.6], reykjavik: [-21.9, 64.1],
+    hanoi: [105.8, 21], bali: [115.2, -8.4], capetown: [18.4, -33.9], nyc: [-74, 40.7], cusco: [-72, -13.5], patagonia: [-73, -50], nairobi: [36.8, -1.3], oslo: [10.7, 59.9],
+    sydney: [151.2, -33.9], seoul: [127, 37.5], rio: [-43.2, -22.9], paris: [2.35, 48.85], rome: [12.5, 41.9], istanbul: [29, 41], cairo: [31.2, 30], dubai: [55.3, 25.2],
+    mumbai: [72.8, 19], bangkok: [100.5, 13.7], tokyo: [139.7, 35.7], mexico: [-99.1, 19.4], vancouver: [-123.1, 49.3], havana: [-82.4, 23.1], accra: [-0.2, 5.6],
+    queenstown: [168.7, -45], kathmandu: [85.3, 27.7], athens: [23.7, 38], edinburgh: [-3.2, 55.9], zanzibar: [39.2, -6.2], santiago: [-70.6, -33.4] };
+  const V = {}; for (const k in P) V[k] = vec(...P[k]);
+  const KIND = ['acc', 'see', 'stay', 'tix', 'food', 'wx', 'flight'];
+  let COL = {}, GC = {};
+  function readColors() { const cs = getComputedStyle(document.documentElement); KIND.forEach(k => COL[k] = cs.getPropertyValue('--' + k).trim());
+    ['g-ocean-a', 'g-ocean-b', 'g-ocean-c', 'g-dot', 'g-halo', 'g-shade', 's1'].forEach(k => GC[k] = cs.getPropertyValue('--' + k).trim()); }
+
+  /* arcs: great circles lifted off the ground */
+  const arcPts = (a, b) => { const va = V[a], vb = V[b], om = Math.acos(clamp(va[0] * vb[0] + va[1] * vb[1] + va[2] * vb[2], -1, 1)), so = Math.sin(om) || 1, pts = [], N = 44;
+    for (let i = 0; i <= N; i++) { const u = i / N, A = Math.sin((1 - u) * om) / so, B = Math.sin(u * om) / so, h = 1 + (.04 + .13 * om / Math.PI) * Math.sin(Math.PI * u);
+      pts.push([(A * va[0] + B * vb[0]) * h, (A * va[1] + B * vb[1]) * h, (A * va[2] + B * vb[2]) * h]); } return pts; };
+  const TREE = [ /* from, to, kind, start time in beat 8 */
+    ['tahoe', 'banff', 'stay', .5], ['tahoe', 'oaxaca', 'food', .8], ['lisbon', 'marrakech', 'tix', 1.0], ['lisbon', 'reykjavik', 'wx', 1.25], ['tahoe', 'nyc', 'flight', 1.4],
+    ['lisbon', 'paris', 'see', 1.6], ['oaxaca', 'cusco', 'tix', 1.8], ['nyc', 'havana', 'food', 1.9], ['lisbon', 'capetown', 'stay', 2.1], ['paris', 'rome', 'food', 2.3],
+    ['reykjavik', 'oslo', 'wx', 2.4], ['paris', 'edinburgh', 'see', 2.5], ['rome', 'athens', 'tix', 2.7], ['cusco', 'rio', 'food', 2.75], ['marrakech', 'accra', 'see', 2.85],
+    ['athens', 'istanbul', 'stay', 3.0], ['istanbul', 'cairo', 'tix', 3.15], ['capetown', 'zanzibar', 'see', 3.25], ['lisbon', 'kyoto', 'see', 2.6], ['cusco', 'santiago', 'stay', 3.3],
+    ['zanzibar', 'nairobi', 'stay', 3.45], ['cairo', 'dubai', 'flight', 3.6], ['dubai', 'mumbai', 'food', 3.8], ['santiago', 'patagonia', 'wx', 3.9], ['mumbai', 'kathmandu', 'see', 4.05],
+    ['kyoto', 'tokyo', 'tix', 4.1], ['kyoto', 'seoul', 'food', 4.2], ['mumbai', 'bangkok', 'food', 4.35], ['bangkok', 'hanoi', 'see', 4.5], ['bangkok', 'bali', 'stay', 4.7],
+    ['bali', 'sydney', 'flight', 4.9], ['sydney', 'queenstown', 'wx', 5.1], ['tahoe', 'vancouver', 'see', 5.2], ['oaxaca', 'mexico', 'tix', 5.3]]
+    .map(([a, b, k, t]) => ({ a, b, k, t, pts: arcPts(a, b) }));
+  const ROOT = { a: 'tahoe', b: 'lisbon', k: 'food', pts: arcPts('tahoe', 'lisbon') };
+  const ICON = { heart: new Path2D('M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.3a4.3 4.3 0 0 1 7.5 2.5C19.5 15.4 12 20 12 20z'),
+    thumb: new Path2D('M7 11v9H4v-9zM7 11l4-8c1.6 0 2.6 1.3 2.2 2.8L12.4 9H19a2 2 0 0 1 2 2.3l-1.2 6.9A2 2 0 0 1 17.8 20H7'),
+    smile: new Path2D('M12 3a9 9 0 1 1 0 18a9 9 0 1 1 0-18zM8 14.2q4 3.6 8 0M9 9.6h.01M15 9.6h.01') };
+
+  /* ---------- drawing the globe ---------- */
+  function drawGlobe(ctx, o) {
+    const { cx, cy, r, lon0, lat0 } = o, dpr = ctx.dpr;
+    ctx.save(); ctx.globalAlpha = o.alpha ?? 1;
+    const halo = ctx.createRadialGradient(cx, cy, r * .9, cx, cy, r * 1.22);
+    halo.addColorStop(0, GC['g-halo']); halo.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(cx, cy, r * 1.22, 0, 7); ctx.fill();
+    const oc = ctx.createRadialGradient(cx - r * .35, cy - r * .4, r * .1, cx, cy, r);
+    oc.addColorStop(0, GC['g-ocean-a']); oc.addColorStop(.6, GC['g-ocean-b']); oc.addColorStop(1, GC['g-ocean-c']);
+    ctx.fillStyle = oc; ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); ctx.fill();
+    /* land dots, brighter toward the middle */
+    const dr = Math.min(3.4 * dpr, Math.max(.9 * dpr, r * .0098)), W = ctx.canvas.width, H = ctx.canvas.height;
+    ctx.fillStyle = GC['g-dot'];
+    for (let b = 0; b < 3; b++) {
+      ctx.globalAlpha = (o.alpha ?? 1) * [.4, .7, .97][b]; ctx.beginPath();
+      for (const v of DOTS) { const p = view(v, lon0, lat0); if (p[2] <= .02) continue; const bk = p[2] < .35 ? 0 : p[2] < .7 ? 1 : 2; if (bk !== b) continue;
+        const x = cx + r * p[0], y = cy - r * p[1]; if (x < -9 || y < -9 || x > W + 9 || y > H + 9) continue; const rr = dr * (.55 + .45 * p[2]); ctx.moveTo(x + rr, y); ctx.arc(x, y, rr, 0, 6.3); }
+      ctx.fill();
+    }
+    ctx.globalAlpha = o.alpha ?? 1;
+    const sh = ctx.createRadialGradient(cx - r * .3, cy - r * .35, r * .5, cx, cy, r * 1.02);
+    sh.addColorStop(0, 'rgba(0,0,0,0)'); sh.addColorStop(1, GC['g-shade']);
+    ctx.fillStyle = sh; ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); ctx.fill();
+    const prj = q => { const p = view(q, lon0, lat0), h2 = q[0] * q[0] + q[1] * q[1] + q[2] * q[2]; return [cx + r * p[0], cy - r * p[1], p[2] > 0 || (p[0] * p[0] + p[1] * p[1]) > 1.0005 && h2 > 1.0001]; };
+    /* trails */
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    for (const a of (o.arcs || [])) {
+      if (a.p <= 0) continue; const n = a.pts.length - 1, upto = a.p * n;
+      ctx.strokeStyle = COL[a.k]; ctx.lineWidth = Math.max(1.6 * dpr, r * (a.w || .011)); if (a.dash) ctx.setLineDash([r * .012, r * .03]); else ctx.setLineDash([]);
+      ctx.beginPath(); let pen = false, tip = null;
+      for (let i = 0; i <= Math.ceil(upto); i++) {
+        let q = a.pts[Math.min(i, n)]; if (i > upto) { const f = upto - Math.floor(upto), q0 = a.pts[Math.floor(upto)]; q = q0.map((c, j) => lerp(c, a.pts[Math.min(n, Math.floor(upto) + 1)][j], f)); }
+        const [x, y, vis] = prj(q); if (vis) { pen ? ctx.lineTo(x, y) : ctx.moveTo(x, y); pen = true; tip = [x, y]; } else { pen = false; tip = null; }
+      }
+      ctx.stroke(); ctx.setLineDash([]);
+      if (a.p < 1 && tip) { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(tip[0], tip[1], ctx.lineWidth * 1.5, 0, 7); ctx.fill(); }
+    }
+    /* pins */
+    for (const p of (o.pins || [])) {
+      if (p.s <= 0) continue; const q = view(V[p.n], lon0, lat0); if (q[2] < .05) continue;
+      const x = cx + r * q[0], y = cy - r * q[1], R = Math.max(5 * dpr, r * (p.big ? .034 : .024)) * p.s, fade = clamp(q[2] * 4);
+      ctx.globalAlpha = (o.alpha ?? 1) * fade;
+      if (p.pulse != null) for (let k = 0; k < 2; k++) { const u = ((p.pulse + k * .9) % 1.8) / 1.8; ctx.strokeStyle = COL[p.k]; ctx.lineWidth = 2.5 * dpr; ctx.globalAlpha = (o.alpha ?? 1) * fade * (1 - u) * .9; ctx.beginPath(); ctx.arc(x, y, R * (1 + u * 2.6), 0, 7); ctx.stroke(); }
+      ctx.globalAlpha = (o.alpha ?? 1) * fade;
+      ctx.shadowColor = 'rgba(0,0,0,.3)'; ctx.shadowBlur = 6 * dpr; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x, y, R, 0, 7); ctx.fill(); ctx.shadowBlur = 0;
+      ctx.fillStyle = COL[p.k]; ctx.beginPath(); ctx.arc(x, y, R * .64, 0, 7); ctx.fill();
+    }
+    /* happy reactions floating up from pins */
+    for (const b of (o.bubbles || [])) {
+      const u = b.u; if (u <= 0 || u >= 1) continue; const q = view(V[b.n], lon0, lat0); if (q[2] < .15) continue;
+      const R = Math.max(13 * dpr, r * .062) * Math.min(1, spring(u * 2.2)), x = cx + r * q[0] + b.dx * r * .05, y = cy - r * q[1] - r * (.09 + .16 * eo(u));
+      ctx.globalAlpha = (o.alpha ?? 1) * clamp((1 - u) * 4) * clamp(q[2] * 3);
+      ctx.shadowColor = 'rgba(0,0,0,.25)'; ctx.shadowBlur = 8 * dpr; ctx.fillStyle = GC.s1; ctx.beginPath(); ctx.arc(x, y, R, 0, 7); ctx.fill(); ctx.shadowBlur = 0;
+      ctx.save(); ctx.translate(x - R * .62, y - R * .6); ctx.scale(R * 1.24 / 24, R * 1.24 / 24);
+      ctx.lineWidth = 2.3; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = COL[b.k];
+      if (b.icon === 'heart') { ctx.fillStyle = COL[b.k]; ctx.fill(ICON.heart); } ctx.stroke(ICON[b.icon]); ctx.restore();
+    }
+    ctx.restore();
+  }
+
+  /* falling snow at three depths; a pure function of time so any frame can be frozen */
+  const FLAKES = Array.from({ length: 170 }, (_, i) => { const r = (n => (Math.sin(i * 127.1 + n * 311.7) * 43758.5453) % 1)(1), a = Math.abs, d = i % 3;
+    return { x: a((Math.sin(i * 12.9898) * 43758.5453) % 1), y: a((Math.sin(i * 78.233) * 12345.678) % 1), d, ph: a(r) * 6.28, sz: [1.2, 2.1, 3.4][d], v: [.05, .09, .16][d], al: [.55, .75, .95][d] }; });
+  function drawSnow(ctx, t, amt = 1) {
+    const W = ctx.canvas.width, H = ctx.canvas.height, dpr = ctx.dpr; ctx.fillStyle = '#fff';
+    FLAKES.forEach((f, i) => { if (i / FLAKES.length > amt) return; const y = ((f.y + f.v * t) % 1.06) * H - .03 * H, x = ((f.x + .012 * f.d * t) % 1) * W + Math.sin(t * .9 + f.ph) * 14 * dpr * (f.d + 1);
+      ctx.globalAlpha = f.al; ctx.beginPath(); ctx.arc(x, y, f.sz * dpr * (W > 1200 ? 1.2 : 1), 0, 7); ctx.fill(); });
+    ctx.globalAlpha = 1;
+  }
+
+  /* ---------- Lisbon rooftops and the rail (as D) ---------- */
+  const lis = $('#lisbon'); const HC = ['#F6C445', '#F49A8E', '#9CC9EC', '#F7E8D4', '#E8A0BF', '#F2B880', '#B8D8A8'];
+  for (let hx = -420, hi = 0; hx < 1020; hi++) {
+    const w = 46 + (hi * 37) % 34, h = 66 + (hi * 53) % 70, y = 430 - h - ((hi * 29) % 3) * 14;
+    el('rect', { x: hx, y, width: w, height: 470 - y, fill: HC[hi % HC.length] }, lis);
+    el('path', { d: `M${hx - 4} ${y}l${w / 2 + 4} -${14 + (hi % 3) * 4} ${w / 2 + 4} ${14 + (hi % 3) * 4}z`, fill: '#D2643C' }, lis);
+    for (let r = 0; r < 3; r++) for (let c = 0; c < Math.floor(w / 20); c++) { const wy = y + 12 + r * 24; if (wy + 14 > 430) continue; el('rect', { x: hx + 8 + c * 20, y: wy, width: 9, height: 13, rx: 2, class: 'win' }, lis); }
+    hx += w + 2;
+  }
+  const rail = $('#rail'); for (let x = -420; x < 1020; x += 16) el('rect', { x, y: 420, width: 3, height: 44, fill: '#3B3346' }, rail);
+  el('rect', { x: -420, y: 414, width: 1440, height: 7, rx: 3, fill: '#3B3346' }, rail); el('rect', { x: -420, y: 446, width: 1440, height: 3, fill: '#3B3346' }, rail);
+
+  /* ---------- little travellers with friendly faces ---------- */
+  const SKIN = ['#F1C3A0', '#D99A76', '#BC7E5A', '#8D5A3D', '#EDBC9C', '#6E4630', '#E9B08D', '#C98D69'];
+  const HAIR = ['#3B2622', '#24222B', '#DCD8DE', '#8A4A2A', '#1E1A1A', '#C9893E', '#24222B', '#5A3A2A'];
+  const BGS = ['#FFE1CC', '#D9F0EC', '#EBDDF7', '#FFEBCF', '#FFDDE3', '#DCE9FB', '#E3E2FA'];
+  const SHIRT = ['#087F7B', '#A445D8', '#F59A2E', '#E0204E', '#0068D9', '#5250E0', '#D2401C', '#2F8F6B'];
+  function face(i, o = {}) {
+    const sk = o.skin || SKIN[i % 8], hr = o.hair || HAIR[(i * 3) % 8], bg = o.bg || BGS[i % 7], sh = o.shirt || SHIRT[(i * 5) % 8], st = o.style ?? i % 6;
+    const hair = [`<path d="M12 23q-1-11 12-12 13 1 12 12-5-6-12-6-7 0-12 6z" fill="${hr}"/>`,
+      `<circle cx="24" cy="9.5" r="5" fill="${hr}"/><path d="M12 24q-1-12 12-13 13 1 12 13-4-7-12-7-8 0-12 7z" fill="${hr}"/>`,
+      `<path d="M11 34q-3-23 13-23 16 0 13 23l-4-1q2-10-1-13-6 3-14 1-3 3-2 12z" fill="${hr}"/>`,
+      `<path d="M11.5 22a12.5 12.5 0 0 1 25 0z" fill="${sh}"/><rect x="11" y="20" width="26" height="4" rx="2" fill="#fff" opacity=".85"/><circle cx="24" cy="9" r="2.6" fill="#fff"/>`,
+      `<path d="M13 21q0-9 11-9 11 0 11 9-3-3-11-3-8 0-11 3z" fill="${hr}"/>`,
+      `<path d="M12 24q0-13 12-13t12 13q-2-5-6-6-3 4-12 4-4 0-6 2z" fill="${hr}"/>`][st];
+    const glasses = o.glasses ? `<g fill="none" stroke="#3B3346" stroke-width="1.3"><circle cx="20" cy="26" r="3.3"/><circle cx="28" cy="26" r="3.3"/><path d="M23.3 26h1.4"/></g>` : '';
+    const beard = o.beard ? `<path d="M14 27q1 10 10 10.5 9-.5 10-10.5-3 5-10 5-7 0-10-5z" fill="${o.beard}"/>` : '';
+    return `<svg viewBox="0 0 48 48"><rect width="48" height="48" fill="${bg}"/><path d="M6 50q2-13 18-13t18 13z" fill="${sh}"/><rect x="21" y="32" width="6" height="6" rx="2" fill="${sk}"/>`
+      + `<circle cx="24" cy="25" r="11" fill="${sk}"/>${beard}${hair}<circle cx="16.8" cy="29" r="2.2" fill="#F0806A" opacity=".38"/><circle cx="31.2" cy="29" r="2.2" fill="#F0806A" opacity=".38"/>`
+      + `<circle cx="20" cy="26" r="1.35" fill="#1E1A1A"/><circle cx="28" cy="26" r="1.35" fill="#1E1A1A"/>${glasses}<path d="M20.5 30.2q3.5 3.2 7 0" stroke="#7A3326" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>`;
+  }
+  const AV = { rosa: face(0, { skin: '#EDBC9C', hair: '#DCD8DE', style: 1, glasses: 1, shirt: '#2F8F8A', bg: '#D9F0EC' }), tomas: face(1, { skin: '#DDA27E', hair: '#D7D3D9', style: 4, glasses: 1, beard: '#E4E1E6', shirt: '#A23B4F', bg: '#FFDDE3' }) };
+  $$('[data-av]').forEach(a => a.innerHTML = AV[a.dataset.av]);
+  const crowd = $('#crowd'), RX = [['heart', 'food', 1], ['thumb', 'acc', 0], ['smile', 'tix', 0]];
+  for (let i = 0; i < 13; i++) {
+    const th = (14 + i * (152 / 12)) * D2R, x = 300 + 286 * Math.cos(th), y = 300 + 252 * Math.sin(th), d = 3.1 + Math.abs(i - 6) * .09 + (i % 2) * .05;
+    const w = document.createElement('div'); w.className = 'who8'; w.style.cssText = `left:${x.toFixed(1)}px;top:${y.toFixed(1)}px`;
+    let h = `<div class="av" style="--d:${d.toFixed(2)}s">${face(i + 2, { glasses: i % 5 === 3, beard: i % 6 === 4 ? HAIR[(i * 3 + 6) % 8] : 0 })}</div>`;
+    if (i % 3 === 1) { const [ic, k, fill] = RX[(i / 3 | 0) % 3]; h += `<div class="bub rx ${fill ? 'fill' : ''}" style="--k:var(--${k});--d2:${(d + .45).toFixed(2)}s"><svg><use href="#i-${ic}"/></svg></div>`; }
+    w.innerHTML = h; crowd.appendChild(w);
+  }
+
+  /* ---------- layout ---------- */
+  const film = $('#film'), deck = $('#deck'), bar = $('#bar'), cap = $('#cap'), body = document.body;
+  const scenes = $$('.scene'), segs = $$('.seg');
+  let L = { w: 1, h: 1, ax: 0, ay: 0, zk: 1, V: 600, dpr: 1 };
+  function fit() {
+    document.documentElement.style.setProperty('--barH', bar.offsetHeight + 'px');
+    const fr = film.getBoundingClientRect(), dk = deck.getBoundingClientRect();
+    const availH = Math.max(200, dk.top - fr.top - 14), w = fr.width;
+    const zk = Math.min(w, availH) / 600;
+    L = { w, h: fr.height, ax: w / 2, ay: availH / 2 + 4, zk, V: w / zk, dpr: Math.min(devicePixelRatio || 1, 2) };
+    film.style.setProperty('--ax', L.ax + 'px'); film.style.setProperty('--ay', L.ay + 'px'); film.style.setProperty('--zk', zk.toFixed(4));
+    scenes.forEach(s => s.classList.contains('on') || s.classList.contains('out') ? sizeCanvases(s) : null);
+    buildB4(); readColors();
+  }
+  function sizeCanvases(s, off) { $$('canvas', s).forEach(c => { const W = off ? 0 : Math.round(L.w * L.dpr), H = off ? 0 : Math.round(L.h * L.dpr); if (c.width !== W) c.width = W; if (c.height !== H) c.height = H;
+    c.ctx = c.ctx || c.getContext('2d'); c.ctx.dpr = L.dpr; }); }
+  const scr = (P, cam) => [L.ax + (P[0] - cam.x) * L.zk * cam.s, L.ay + (P[1] - cam.y) * L.zk * cam.s];
+
+  /* beat 4: the card's flight from the phone to Tahoe on the globe */
+  const G4 = { x: 1010, y: 250, r: 175, lon0: -104, lat0: 26 };
+  function g4at(t) { return { ...G4, lon0: G4.lon0 + t * 1.2 }; }
+  function buildB4() {
+    const g = g4at(3.3), q = view(V.tahoe, g.lon0, g.lat0), tx = g.x + g.r * q[0], ty = g.y - g.r * q[1];
+    const d = `M130 423 C 90 40, 640 -30, ${tx.toFixed(1)} ${ty.toFixed(1)}`;
+    $('#trailp4').setAttribute('d', d); $('#trailm4').setAttribute('d', d); $('#tcard4').style.offsetPath = `path('${d}')`;
+  }
+
+  /* ---------- the beats ---------- */
+  const desk = () => L.V > 1000;
+  const B = [
+    { dur: 4.6, vo: .25, exit: { x: 300, y: 400, s: 3.4 },
+      cam: t => ({ x: 300, y: lerp(300, 352, ez(t / 4.6)), s: lerp(1, 1.16, ez(t / 4.6)) }) },
+    { dur: 6.0, vo: .5, exit: { x: 432, y: 300, s: 2.6 },
+      cam: t => { const k = ez(seg(t, .55, 2.1)); return { x: lerp(166, 300, k), y: lerp(470, 300, k), s: lerp(2.0, 1, k) * (1 + .03 * Math.sin(t * .9)) }; } },
+    { dur: 5.6, vo: .7, exit: { back: 1 }, entry: 'grow',
+      cam: t => ({ x: 300, y: 300, s: 1 }),
+      draw(t, cam, s) {
+        const a = clamp(1 - seg(t, 2.25, 2.9)), b = 1 - a;
+        this.lay.a0.style.cssText = `transform:scale(${lerp(1.1, 1.28, eo(t / 3))}) translateY(${-lerp(0, 2.5, t / 3)}%);opacity:${a}`;
+        this.lay.a1.style.cssText = `transform:scale(${lerp(1.1, 1.44, ez(t / 3))}) translateY(${-lerp(0, 3, t / 3)}%);opacity:${a}`;
+        const u = seg(t, 2.2, 5.6);
+        this.lay.b0.style.cssText = `transform:scale(${lerp(1, 1.07, eo(u))}) translateY(${-lerp(0, 1, u)}%);opacity:${b}`;
+        this.lay.b1.style.cssText = `transform-origin:50% 100%;transform:scale(${lerp(1, 1.13, eo(u))});opacity:${b}`;
+        const c = $('canvas', s); c.ctx.clearRect(0, 0, c.width, c.height); drawSnow(c.ctx, t + 3);
+      } },
+    { dur: 5.8, vo: .35, entry: 'shrink',
+      cam: t => { const k = ez(seg(t, 1.75, 3.35)), s = lerp(1.05, .95, k), tgt = 1010 - Math.max(0, (L.V / s) / 2 - 250);
+        return { x: lerp(300, tgt, k), y: lerp(300, 270, k), s }; },
+      draw(t, cam, s) {
+        const c = $('canvas', s), ctx = c.ctx, g = g4at(t), [x, y] = scr([g.x, g.y], cam), d = L.dpr, r = g.r * L.zk * cam.s;
+        ctx.clearRect(0, 0, c.width, c.height);
+        const pinT = t - 3.3;
+        drawGlobe(ctx, { cx: x * d, cy: y * d, r: r * d, lon0: g.lon0, lat0: g.lat0, alpha: clamp(seg(t, .9, 1.9)), pins: [{ n: 'tahoe', k: 'acc', s: spring(pinT), big: 1, pulse: pinT > 0 ? pinT : null }] });
+        track(s, 'tahoe', g, x, y, r, 1);
+      } },
+    { dur: 6.6, vo: .2, exit: { x: 430, y: 330, s: 2.6 },
+      cam: t => { const k = eo(seg(t, 1.15, 2.5)), k2 = ez(seg(t, 3.8, 6.6)); return { x: lerp(lerp(172, 300, k), 360, k2), y: lerp(400, 300, k) , s: lerp(1.7, 1, k) * lerp(1, 1.06, k2) }; },
+      draw(t, cam, s) {
+        const c = $('canvas', s), ctx = c.ctx, d = L.dpr; ctx.clearRect(0, 0, c.width, c.height);
+        if (t > 1.9) return;
+        const k = ez(seg(t, 0, 1.15)), lon0 = lerp(-104, -9.1, k), lat0 = lerp(26, 38.7, k), z = Math.pow(seg(t, 1.0, 1.8), 2.2);
+        const r0 = 210 * L.zk, r = r0 * (1 + 9 * z), q = view(V.lisbon, lon0, lat0), lx = L.ax + r0 * q[0], ly = L.ay - r0 * q[1];
+        /* zoom about Lisbon: keep its screen point fixed while the radius grows, and ease it to the centre */
+        const px = lerp(lx, L.ax, eo(seg(t, 1.0, 1.7))), py = lerp(ly, L.ay, eo(seg(t, 1.0, 1.7)));
+        const gx = px - r * q[0], gy = py + r * q[1];
+        drawGlobe(ctx, { cx: gx * d, cy: gy * d, r: r * d, lon0, lat0, alpha: 1 - seg(t, 1.2, 1.7),
+          arcs: [{ ...ROOT, k: 'acc', p: ez(seg(t, .15, 1.0)), dash: 1 }],
+          pins: [{ n: 'tahoe', k: 'acc', s: 1, big: 1 }, { n: 'lisbon', k: 'food', s: spring(t - .9), big: 1, pulse: t > .9 ? t - .9 : null }] });
+        if (t < 1.35) { ctx.save(); ctx.globalCompositeOperation = 'destination-over'; ctx.fillStyle = getComputedStyle(film).backgroundColor; ctx.fillRect(0, 0, c.width, c.height); ctx.restore(); }
+        else if (t < 1.85) { ctx.save(); ctx.globalCompositeOperation = 'destination-over'; ctx.globalAlpha = 1 - seg(t, 1.35, 1.85); ctx.fillStyle = getComputedStyle(film).backgroundColor; ctx.fillRect(0, 0, c.width, c.height); ctx.restore(); }
+      } },
+    { dur: 5.6, vo: .45, exit: { x: 300, y: 270, s: 3 }, entry: 'grow',
+      cam: t => { const k = ez(seg(t, .7, 2.1)), k2 = ez(seg(t, 3.6, 5.2)); return { x: 300, y: lerp(lerp(300, 262, k), 290, k2), s: lerp(lerp(1, 1.14, k), 1.04, k2) }; },
+      draw(t) { this.lay.a0.style.transform = `scale(${lerp(1.06, 1.18, t / 5.6)})`; } },
+    { dur: 5.8, vo: .35, entry: 'grow',
+      cam: t => ({ x: 300, y: 300, s: 1 }),
+      draw(t, cam, s) {
+        const u = seg(t, 0, 2.9), out = ez(seg(t, 2.2, 3.0));
+        this.lay.a0.style.transform = `scale(${lerp(1.08, 1.22, eo(u))})`;
+        this.lay.a1.style.transform = `scale(${lerp(1.08, 1.36, eo(u))})`; this.lay.a1.style.transformOrigin = '50% 100%';
+        const ph = $('.photo7', s); ph.style.transform = `scale(${lerp(1, .55, out)})`; ph.style.opacity = 1 - out; ph.style.transformOrigin = `${L.ax}px ${L.ay}px`;
+        const sc = $('.snow7', s); if (out < 1) { sc.ctx.clearRect(0, 0, sc.width, sc.height); drawSnow(sc.ctx, t + 9, .55); }
+        const c = $('canvas.gl:not(.snow7)', s), ctx = c.ctx, d = L.dpr; ctx.clearRect(0, 0, c.width, c.height);
+        if (t < 2.15) return;
+        const g = g78(0), gr = 225 * L.zk * lerp(.55, 1, ez(seg(t, 2.2, 3.2)));
+        drawGlobe(ctx, { cx: L.ax * d, cy: g.y * d, r: gr * d, lon0: g.lon0 - (1 - ez(seg(t, 2.2, 3.2))) * 30, lat0: g.lat0, alpha: ez(seg(t, 2.2, 2.8)),
+          arcs: [{ ...ROOT, p: ez(seg(t, 3.0, 4.0)), w: .014 }], pins: [{ n: 'tahoe', k: 'acc', s: spring(t - 2.7), big: 1 }, { n: 'lisbon', k: 'food', s: spring(t - 3.95), big: 1, pulse: t > 3.95 ? t - 3.95 : null }] });
+        const gg = { ...g, lon0: g.lon0 - (1 - ez(seg(t, 2.2, 3.2))) * 30 };
+        track(s, 'tahoe', gg, L.ax, g.y, gr, t > 2.6 ? 1 : 0); track(s, 'lisbon', gg, L.ax, g.y, gr, t > 3.8 ? 1 : 0);
+      } },
+    { dur: 9.6, vo: .55, last: 1,
+      cam: t => { const k = ez(seg(t, 4.6, 6.2)), sh = desk() ? Math.min(330, L.V / 2 - 290) * k : 0; return { x: 300 - sh, y: 300, s: 1 }; },
+      draw(t, cam, s) {
+        const c = $('canvas', s), ctx = c.ctx, d = L.dpr, g = g78(t), [x] = scr([300, 300], cam), gr = 225 * L.zk;
+        ctx.clearRect(0, 0, c.width, c.height);
+        const arcs = [{ ...ROOT, p: 1, w: .014 }], pins = [{ n: 'tahoe', k: 'acc', s: 1, big: 1, pulse: t }, { n: 'lisbon', k: 'food', s: 1, big: 1, pulse: t + .7 }], bubbles = [];
+        TREE.forEach((a, i) => { const p = ez(seg(t, a.t, a.t + 1)); arcs.push({ ...a, p }); pins.push({ n: a.b, k: a.k, s: spring(t - a.t - .95) });
+          if (i % 2 === 0) bubbles.push({ n: a.b, k: ['food', 'acc', 'tix', 'see'][i % 4], icon: ['heart', 'thumb', 'smile'][i % 3], u: (t - a.t - 1.2) / 1.8, dx: (i % 3) - 1 }); });
+        if (t > 6) TREE.forEach((a, i) => { if (i % 3 === 1) bubbles.push({ n: a.b, k: ['acc', 'see', 'food'][i % 3], icon: ['smile', 'heart', 'thumb'][i % 3], u: ((t - 6 + i * .37) % 3.4) / 1.8, dx: 0 }); });
+        drawGlobe(ctx, { cx: x * d, cy: g.y * d, r: gr * d, lon0: g.lon0, lat0: g.lat0, arcs, pins, bubbles });
+        track(s, 'tahoe', g, x, g.y, gr, t < 1.6 ? 1 : 0); track(s, 'lisbon', g, x, g.y, gr, t < 1.8 ? 1 : 0);
+        track(s, 'kyoto', g, x, g.y, gr, t > 3.2 && t < 7.5 ? 1 : 0); track(s, 'capetown', g, x, g.y, gr, t > 4.1 && t < 8.2 ? 1 : 0);
+      } }];
+  const g78 = t => ({ y: L.ay - 6 * L.zk, lon0: -62 + 128 * ez(seg(t, .3, 9.6)) + 4 * Math.max(0, t - 9.6), lat0: 24 });
+
+  /* labels that ride on the globe */
+  function track(s, n, g, cx, cy, r, on) {
+    const e = $(`[data-trk="${n}"]`, s); if (!e) return; const q = view(V[n], g.lon0, g.lat0);
+    e.style.transform = `translate(${(cx + r * q[0]).toFixed(1)}px, ${(cy - r * q[1] - Math.max(14, r * .06)).toFixed(1)}px)`;
+    e.style.opacity = on && q[2] > .15 ? clamp(q[2] * 3) : 0; e.style.transition = 'opacity .35s';
+  }
+  scenes.forEach((s, i) => { B[i].el = s; B[i].lay = {}; $$('[data-l]', s).forEach(l => B[i].lay[l.dataset.l] = l); });
+
+  /* ---------- the player: one clock drives camera, globe, snow, CSS motion and voice ---------- */
+  const q = new URLSearchParams(location.search);
+  const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const RM_T = [3.9, 5.4, 5.0, 5.2, 6.0, 5.0, 5.6, 9.0];
+  const frozen = q.has('beat');
+  if (RM) body.classList.add('rm');
+  let n = 0, bt = 0, held = frozen, ended = false, voice = false, muted = false, prev = null, prevT = 0, last = performance.now(), audio = [], voStarted = false;
+  const EXT = (() => { const a = document.createElement('audio'); return a.canPlayType('audio/ogg; codecs=opus') ? 'ogg' : 'm4a'; })();
+  function loadVoice() { if (audio.length) return; for (let i = 0; i < 8; i++) { const a = new Audio(`e-assets/vo-${i + 1}.${EXT}`); a.preload = 'auto';
+    a.addEventListener('loadedmetadata', () => { if (isFinite(a.duration)) VO_LEN[i] = a.duration; }); a.addEventListener('error', () => a.failed = true); audio.push(a); } }
+  const dur = i => voice && !muted ? Math.max(B[i].dur, B[i].vo + VO_LEN[i] + .8) : B[i].dur;
+  function anims(s) { return s.getAnimations({ subtree: true }).filter(a => a instanceof CSSAnimation); }
+  function stopVoice() { audio.forEach(a => { a.pause(); }); if (window.speechSynthesis) speechSynthesis.cancel(); voStarted = false; }
+  function speak(i) {
+    if (!voice || muted) return; const a = audio[i];
+    if (a && !a.failed) { a.currentTime = 0; a.play().catch(() => fallbackSpeak(i)); }
+    else fallbackSpeak(i);
+  }
+  function fallbackSpeak(i) { if (!window.speechSynthesis) return; const u = new SpeechSynthesisUtterance(LINES[i]); u.lang = 'en-US'; u.rate = .95; speechSynthesis.speak(u); }
+
+  function go(k, opts = {}) {
+    stopVoice();
+    const old = n; n = clamp(k, 0, 7) | 0; bt = opts.t || 0; ended = false;
+    if (prev) { prev.el.classList.remove('out', 'on'); sizeCanvases(prev.el, 1); prev = null; }
+    const animate = !opts.instant && !RM && !frozen && old !== n;
+    scenes.forEach((s, i) => { if (i === n) return; if (s.classList.contains('on') && animate) { prev = B[i]; prevT = 0; s.classList.add('out'); } else { s.classList.remove('on'); if (!s.classList.contains('out')) sizeCanvases(s, 1); } });
+    const s = scenes[n]; s.classList.remove('on', 'out'); void s.offsetWidth; s.classList.add('on'); sizeCanvases(s);
+    syncAnims(); if (held || RM) anims(s).forEach(a => a.pause());
+    cap.textContent = LINES[n]; cap.classList.remove('swap'); void cap.offsetWidth; cap.classList.add('swap');
+    film.setAttribute('aria-label', LINES[n]);
+    segs.forEach((g, i) => g.setAttribute('aria-current', i === n ? 'step' : 'false'));
+    body.classList.toggle('finale', n === 7);
+    body.classList.toggle('held', held && !frozen); body.classList.remove('ended');
+    render();
+  }
+  function syncAnims() { const s = scenes[n], t = (RM ? RM_T[n] : bt) * 1000; anims(s).forEach(a => { a.currentTime = t; }); }
+  function setHeld(h) { held = h; body.classList.toggle('held', held); anims(scenes[n]).forEach(a => held || RM ? a.pause() : a.play());
+    if (held) { audio.forEach(a => a.pause()); if (window.speechSynthesis) speechSynthesis.pause(); }
+    else if (voice && !muted && voStarted) { const a = audio[n]; if (a && !a.failed && !a.ended) a.play().catch(() => {}); if (window.speechSynthesis) speechSynthesis.resume(); } }
+
+  function camOf(i, t) {
+    const b = B[i]; let c = RM ? { x: 300, y: 300, s: 1, ...(i === 7 ? b.cam(9) : {}) } : b.cam(t);
+    if (RM && i === 7) c = b.cam(9.6); else if (RM) c = { x: 300, y: 300, s: 1 };
+    if (!RM && b.entry && !frozen) { const k = ez(seg(t, 0, .9)); c = { ...c, s: c.s * (b.entry === 'grow' ? lerp(.8, 1, k) : lerp(1.22, 1, k)) }; }
+    return c;
+  }
+  function applyCam(s, c, op) { $$('.cam', s).forEach(e => e.style.transform = `translate(${((300 - c.x) * L.zk * c.s).toFixed(2)}px, ${((300 - c.y) * L.zk * c.s).toFixed(2)}px) scale(${c.s.toFixed(4)})`); if (op != null) s.style.opacity = op; }
+  function render() {
+    const t = RM ? RM_T[n] : bt, b = B[n], c = camOf(n, t);
+    applyCam(b.el, c, ''); if (b.draw) b.draw(t, c, b.el);
+    if (prev) { /* the outgoing beat: fly on through it */
+      const k = ez(prevT / .85), pb = prev, pt = pb.endT, pc = camOf(scenes.indexOf(pb.el), pt), ex = pb.exit || {};
+      const oc = ex.back ? { x: pc.x, y: pc.y, s: pc.s * lerp(1, .78, k) } : { x: lerp(pc.x, ex.x ?? pc.x, k), y: lerp(pc.y, ex.y ?? pc.y, k), s: pc.s * lerp(1, ex.s || 1.4, Math.pow(k, 1.4)) };
+      applyCam(pb.el, oc, String(1 - ez(seg(prevT, .15, .8)))); if (pb.draw) pb.draw(pt, oc, pb.el);
+      if (prevT > .85) { pb.el.classList.remove('out', 'on'); pb.el.style.opacity = ''; sizeCanvases(pb.el, 1); prev = null; }
+    }
+    const D = dur(n); segs.forEach((g, i) => g.firstElementChild.style.setProperty('--p', i < n ? 1 : i > n ? 0 : clamp(bt / D).toFixed(3)));
+  }
+  function tick(now) {
+    const dt = Math.min(.1, (now - last) / 1000); last = now;
+    if (!frozen) {
+      if (prev) prevT += dt;
+      if (!held) {
+        bt += dt;
+        if (voice && !muted && !voStarted && bt >= B[n].vo) { voStarted = true; speak(n); }
+        if (bt >= dur(n)) { if (n < 7) { B[n].endT = Math.min(bt, B[n].dur); go(n + 1); } else { bt = dur(n); ended = true; held = true; body.classList.add('ended'); } }
+      } else if (ended && n === 7) { idleT += dt; }
+      render();
+      if (ended && n === 7 && !RM) { B[7].draw(9.6 + idleT, camOf(7, 9.6), scenes[7]); }
+    }
+    requestAnimationFrame(tick);
+  }
+  let idleT = 0;
+
+  /* ---------- controls ---------- */
+  segs.forEach((g, i) => { g.setAttribute('aria-label', `${i + 1}: ${LINES[i]}`); g.addEventListener('click', () => { if (frozen) return; B[n].endT = Math.min(bt, B[n].dur); if (ended) { held = false; idleT = 0; } go(i); if (held) setHeld(true); }); });
+  $('#pp').addEventListener('click', e => {
+    if (ended) { held = false; ended = false; idleT = 0; body.classList.remove('ended'); go(0, { instant: 1 }); return; }
+    setHeld(!held); e.currentTarget.setAttribute('aria-label', held ? 'Play the story' : 'Pause the story');
+  });
+  const snd = $('#sound');
+  snd.addEventListener('pointerenter', loadVoice, { once: true });
+  snd.addEventListener('click', () => {
+    loadVoice();
+    if (!voice) { voice = true; muted = false; body.classList.add('voice'); snd.setAttribute('aria-label', 'Mute the voice'); snd.setAttribute('aria-pressed', 'true'); snd.querySelector('.long').textContent = 'Sound on'; snd.querySelector('.short').textContent = 'On';
+      if (ended) idleT = 0; held = false; ended = false; body.classList.remove('ended', 'held'); go(n, { instant: 1 }); return; }
+    muted = !muted; body.classList.toggle('muted', muted); snd.setAttribute('aria-label', muted ? 'Turn the voice on' : 'Mute the voice'); snd.setAttribute('aria-pressed', String(!muted));
+    snd.querySelector('.long').textContent = muted ? 'Muted' : 'Sound on'; snd.querySelector('.short').textContent = muted ? 'Off' : 'On';
+    audio.forEach(a => a.muted = muted); if (muted && window.speechSynthesis) speechSynthesis.cancel();
+    if (!muted && !voStarted) { /* speaks from the next beat */ }
+  });
+  addEventListener('keydown', e => {
+    if (frozen) return;
+    if (['ArrowRight', 'PageDown'].includes(e.key)) { e.preventDefault(); B[n].endT = Math.min(bt, B[n].dur); go(n + 1); }
+    if (['ArrowLeft', 'PageUp'].includes(e.key)) { e.preventDefault(); go(n - 1); }
+    if (e.key === ' ' && e.target === document.body) { e.preventDefault(); $('#pp').click(); }
+  });
+  let sx = null;
+  film.addEventListener('touchstart', e => { sx = e.touches[0].clientX; }, { passive: true });
+  film.addEventListener('touchend', e => { if (sx == null || frozen) return; const dx = e.changedTouches[0].clientX - sx; sx = null; if (Math.abs(dx) > 50) { B[n].endT = Math.min(bt, B[n].dur); go(n + (dx < 0 ? 1 : -1)); } });
+  addEventListener('resize', () => { fit(); render(); });
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readColors);
+
+  /* ---------- start: ?beat=N&t=0.6 freezes a frame (t up to 1 is a share of the beat, above 1 is seconds) ---------- */
+  fit();
+  const startBeat = clamp((+q.get('beat') || 1) - 1, 0, 7) | 0;
+  let tq = +(q.get('t') ?? .6); if (tq <= 1) tq *= B[startBeat].dur;
+  B.forEach(b => b.endT = b.dur);
+  go(startBeat, { t: frozen ? tq : 0, instant: 1 });
+  if (frozen) { syncAnims(); anims(scenes[n]).forEach(a => a.pause()); render(); }
+  document.fonts && document.fonts.ready.then(() => { fit(); if (frozen) render(); });
+  requestAnimationFrame(t => { last = t; tick(t); });
+})();
+</script>
+</body>
+</html>
