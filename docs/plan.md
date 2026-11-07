@@ -1052,3 +1052,12 @@ Brief: docs/briefs/creator-launch.md · Needs: none (builds on /share, F-071 pho
 Needs: F-179, F-180, F-181 · reviewer + security-auditor (public publishing, uploads)
 - [ ] shipping checklist (what could break, how we'd know, rollback = redeploy the previous Railway deployment)
 - [ ] `TRAVELPAYOUTS_MARKER=801445` (and the token, set by the captain) on Railway; deploy; check the live pages
+
+# Live-site fixes (each branches from master and ships on its own)
+
+## F-207 Stop loading unpinned CDN scripts on every page [review]
+Security audit 2026-11-07, confirmed on gitaway.me: FastHTML's default headers made every page load htmx.org@2.0.7, answerdotai/fasthtml-js@1.0.12, answerdotai/surreal@main and gnat/css-scope-inline@main from cdn.jsdelivr.net, with no integrity hashes (the last two follow a moving branch) and no script-src CSP, so a push to either @main repo would run on gitaway.me with the person's session; the four also held up first paint. GitAway uses none of them (no hx- attributes, no surreal me()/any(), no scoped `me {` CSS, no htmx global; idiomorph is self-hosted). Branch f-207-no-cdn-scripts. Needs: none
+- [x] main.py builds the app with `htmx=False, surreal=False`: the head keeps FastHTML's charset and viewport tags, once each, and loads nothing from jsDelivr
+- [x] no page has a `<script src>` on another origin, signed out or signed in; the one allowed is Travelpayouts Drive (tp-em.com), on the signed-out landing only, when TRAVELPAYOUTS_DRIVE_ID is set. tests/test_no_cdn_scripts.py checks /, /signin and /privacy signed out, four signed-in pages, and every GET page both ways (it fails without the fix)
+- [x] clicked through on a dev server at 1440 and 390 (sign-in, the trip day and week, Ask, a family message from the laptop panel and the phone, /calendar's redirect, Publish to GitAway, sign-out): no page errors, no htmx or surreal globals, no request to cdn.jsdelivr.net; the only other-origin requests are Google Fonts and the map's OpenStreetMap tiles
+- [ ] reviewer passes it; after the captain merges and it deploys, gitaway.me's page source has no cdn.jsdelivr.net
