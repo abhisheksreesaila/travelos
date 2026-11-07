@@ -73,7 +73,8 @@ class Gate:
 
 
 NOMINATIM_GATE = Gate(1.0)  # Nominatim's policy: an absolute maximum of one request per second
-OSRM_GATE = Gate(0.25)      # the public router has no stated limit; stay polite
+OSRM_GAP = 1.0              # the public demo router allows at most one request a second (its usage policy); F-204 moves off it
+OSRM_GATE = Gate(OSRM_GAP)
 
 
 def fetch(url, timeout=TIMEOUT):
