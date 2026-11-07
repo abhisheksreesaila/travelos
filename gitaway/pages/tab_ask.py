@@ -22,7 +22,7 @@ from fasthtml.common import A, Button, Div, Fieldset, Form, H2, H3, Input, Label
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import JSONResponse, PlainTextResponse, RedirectResponse, Response
 
-from gitaway import access, ai, canvas, familythread, pickers, say, session as ses, speak, tripcal as cal, voicenotes
+from gitaway import access, ai, canvas, confirmations, familythread, pickers, say, session as ses, speak, tripcal as cal, voicenotes
 from gitaway.icons import icon
 from gitaway.layout import trip_field
 
@@ -92,6 +92,18 @@ def _for_the_planner(text, heard) -> str:
 
 
 # ---- pieces --------------------------------------------------------------------------------------------------------------
+
+def handoff(request, partner, text):
+    """A pasted confirmation (F-198): one card that sends it to the import, which shows exactly what goes in the trip before anything is saved."""
+    card = Div(Span(icon("ticket", 26, 2.2), cls="ak-ico"), H2(f"This looks like a {partner} confirmation"),
+               P("Check it, then it goes in your trip as booked, with where you booked it."),
+               Form(Textarea(text, name="text", hidden=True, aria_hidden="true"), Button(icon("check", 18, 2.6), "Check and add it", type="submit", cls="tp-btn tp-btn-ink", id="ak-import"),
+                    action="/trips/import", method="post"), cls="ak-card ak-center", id="ak-handoff", role="status")
+    if wants_sheet(request):
+        return card
+    from gitaway.layout import page
+    return page("Add a booking", Div(card, cls="ga-wrap"))
+
 
 def _viewer_card():
     return Div(Span(icon("lock", 26, 2.2), cls="ak-ico"), H2("Only editors can change the plan"),
@@ -380,6 +392,8 @@ def register(app):
         text = (form.get("text") or "")[: say.LIMIT + 1]
         day = _day_of(request, session, form.get("day", ""))
         planner = _for_the_planner(text, _heard(form.get("heard")))     # English for what was said in another language; the box keeps the original
+        if (partner := confirmations.partner_of(text)):                  # F-198: a pasted booking confirmation goes to the import, which reads it without the model
+            return handoff(request, partner, text)
         try:
             step = await run_in_threadpool(say.start, session, planner, day)   # the model takes seconds: never on the event loop (context variables travel along)
         except (say.SayError, speak.SpeakError, canvas.CanvasError) as e:

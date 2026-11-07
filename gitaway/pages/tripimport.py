@@ -19,7 +19,7 @@ from starlette.concurrency import run_in_threadpool
 from starlette.datastructures import UploadFile
 from starlette.responses import RedirectResponse, Response
 
-from gitaway import access, expedia, importer, session as ses, showcase, tripcal as cal, tripimport as ti
+from gitaway import access, confirmations, expedia, importer, session as ses, showcase, tripcal as cal, tripimport as ti
 from gitaway.icons import icon
 from gitaway.layout import page, trip_field
 
@@ -245,6 +245,10 @@ def register(app):
             if not converted.yaml:
                 return paste_page(text, [*converted.warnings, "We couldn't read any booking in that itinerary."], status=422)
             text, extra, read = converted.yaml, converted.warnings, True
+        else:      # F-198: a Booking.com, Airbnb, Vrbo, GetYourGuide, Klook or car-rental confirmation; inside the open trip's dates it is added to that trip
+            got = confirmations.convert(text, importer.plan_of(session)) if confirmations.read(text) else None
+            if got:
+                text, extra = got.yaml, got.warnings
         try:
             parsed = ti.parse(text)
         except ti.ImportProblem as e:

@@ -18,6 +18,7 @@ THE DESTINATION. With connections the destination is where the longest wait is: 
 window's first arrival), the leg after it leaves ("b-back", the last departure). One leg alone has only an arrival.
 """
 
+import json
 import re
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
@@ -687,6 +688,48 @@ def to_doc(plan: Plan) -> dict:
     if plan.tickets:
         doc["tickets"] = [{"name": t.name, "place": t.place, "start": _iso(t.start), "end": _iso(t.end), "confirmation": t.confirmation, "booked_on": t.booked_on} for t in plan.tickets]
     return doc
+
+
+def _yq(value) -> str:
+    """A YAML string scalar, always quoted, so a confirmation like 0012 or yes stays exactly as written (lessons 2026-10-01)."""
+    return json.dumps(str(value), ensure_ascii=True)
+
+
+def to_yaml(plan: Plan, comment: str = "") -> str:
+    """`plan` written as the trip template (F-198: a pasted confirmation merged into a trip is shown and saved through the normal reader). `parse(to_yaml(p)).plan == p`."""
+    stamp = lambda at: _yq(at.strftime("%Y-%m-%d %H:%M"))
+    out = [f"# {comment}"] if comment else []
+    out += ["trip:", f"  title: {_yq(plan.title)}", f"  destination: {_yq(plan.destination)}", f"  start: {_yq(plan.start.isoformat())}", f"  end: {_yq(plan.end.isoformat())}",
+            f"  booked_on: {_yq(plan.booked_on)}"]
+    out += [f"  itinerary_number: {_yq(plan.itinerary)}"] if plan.itinerary else []
+    out += [f"  timezone: {_yq(plan.timezone)}"] if plan.timezone else []
+    out += ["", "travelers:"]
+    for t in plan.travelers:
+        out.append(f"  - name: {_yq(t.name)}" + (f"\n    email: {_yq(t.email)}" if t.email else "") + (f"\n    age: {t.age}" if t.age is not None else ""))
+    if plan.legs:
+        out += ["", "flights:"]
+        for f in plan.legs:
+            out += [f"  - airline: {_yq(f.airline)}", f"    number: {_yq(f.number)}", f"    from: {_yq(f.origin)}", f"    to: {_yq(f.dest)}", f"    depart: {stamp(f.depart)}", f"    arrive: {stamp(f.arrive)}"]
+            out += [f"    {k}: {_yq(v)}" for k, v in (("confirmation", f.confirmation), ("seats", f.seats), ("booked_on", f.booked_on)) if v]
+    if plan.hotels:
+        out += ["", "hotels:"]
+        for h in plan.hotels:
+            out += [f"  - name: {_yq(h.name)}", f"    address: {_yq(h.address)}", f"    check_in: {stamp(h.check_in)}", f"    check_out: {stamp(h.check_out)}"]
+            out += [f"    {k}: {_yq(v)}" for k, v in (("confirmation", h.confirmation), ("room", h.room), ("phone", h.phone), ("booked_on", h.booked_on)) if v]
+            out += [f"    rooms: {h.rooms}"] if h.rooms != 1 else []
+    if plan.rental:
+        c = plan.rental
+        out += ["", "car:", f"  company: {_yq(c.company)}", f"  pickup: {_yq(c.pickup_place + ', ' + c.pickup.strftime('%Y-%m-%d %H:%M'))}",
+                f"  dropoff: {_yq(c.dropoff_place + ', ' + c.dropoff.strftime('%Y-%m-%d %H:%M'))}"]
+        out += [f"  {k}: {_yq(v)}" for k, v in (("confirmation", c.confirmation), ("car", c.car), ("phone", c.phone), ("booked_on", c.booked_on)) if v]
+    if plan.tickets:
+        out += ["", "tickets:"]
+        for t in plan.tickets:
+            out += [f"  - name: {_yq(t.name)}", f"    start: {stamp(t.start)}", f"    end: {stamp(t.end)}"]
+            out += [f"    {k}: {_yq(v)}" for k, v in (("place", t.place), ("confirmation", t.confirmation), ("booked_on", t.booked_on)) if v]
+    if plan.notes:
+        out += ["", "notes: |", *[f"  {line}" for line in plan.notes.splitlines()]]
+    return "\n".join(out) + "\n"
 
 
 def from_doc(doc: dict) -> Plan:
