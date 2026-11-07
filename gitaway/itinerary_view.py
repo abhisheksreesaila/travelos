@@ -289,7 +289,7 @@ def plan_for_me_card(title, href, cls="pf-card ga-wrap", price=True):
     from gitaway import planforme as pfm, catalog  # here, not at the top: planforme reads the community database
     if not pfm.offered():
         return ""
-    return Section(H2(title), P("Tell us who is going and when. An agent builds your own day-by-day trip in your GitAway account, in a few minutes."),
+    return Section(H2(title), P(f"Tell us who is going and when. An agent builds your own day-by-day trip in your GitAway account, {pfm.when_ready()}."),
                    P(f"{catalog.money(pfm.price_cents())} once. {pfm.PROMISE}" if price else pfm.PROMISE), A(icon("star", 20, 2.4), "Plan it for me", href=href, cls="btn btn-primary", id="plan-for-me-go"), cls=cls, id="plan-for-me")
 
 

@@ -86,7 +86,7 @@ def test_a_stranger_fills_the_intake_signs_in_pays_and_opens_their_trip(setup, s
     w = viewport["width"]
     ctx = stranger(viewport)
     page = ctx.new_page()
-    page.goto(f"{base_url}/plan-for-me")
+    page.goto(f"{base_url}/plan-for-me/start")
     expect(page.locator("h1")).to_contain_text("Plan it for me")
     expect(page.locator("#pf-price")).to_have_text("$29 once")
     expect(page.locator("#pf-promise")).to_have_text("Not useful? Reply within 7 days for a full refund.")
@@ -114,10 +114,10 @@ def test_a_stranger_fills_the_intake_signs_in_pays_and_opens_their_trip(setup, s
     assert page.evaluate("localStorage.getItem('ga-plan-for-me')") is None      # never in the browser's long-lived storage: a shared device keeps nothing once the tab is closed
     assert "Space Mountain" in page.evaluate("sessionStorage.getItem('ga-plan-for-me')")
     page.click("#pf-go")      # signed out: sign-in first, the answers are kept in this tab
-    expect(page).to_have_url(re.compile(r"/signin\?next=%2Fplan-for-me|/signin\?next=/plan-for-me"))
+    expect(page).to_have_url(re.compile(r"/signin\?next=%2Fplan-for-me%2Fstart|/signin\?next=/plan-for-me/start"))
     page.fill("input[name=email]", "family.rivera@example.com")
     page.click("form button[type=submit]")
-    expect(page).to_have_url(re.compile(r"/plan-for-me$"))
+    expect(page).to_have_url(re.compile(r"/plan-for-me/start$"))
     expect(page.locator("#pf-where")).to_have_value("Disneyland, California")
     assert page.input_value("#pf-start") == leave.isoformat() and page.input_value("#pf-home") == "sfo"      # shown in capitals, sent as typed, the server makes it SFO
     expect(page.locator("#pf-must")).to_have_value("Space Mountain and a quiet beach morning")
@@ -152,7 +152,7 @@ def test_a_mistake_is_said_on_the_field_and_the_order_page_waits_without_a_payme
     ctx = stranger(viewport)
     ctx.request.post(f"{base_url}/signin", form={"email": "family.rivera@example.com", "next": "/", "intent": "save"}, max_redirects=0)
     page = ctx.new_page()
-    page.goto(f"{base_url}/plan-for-me")
+    page.goto(f"{base_url}/plan-for-me/start")
     expect(page.locator("#pf-go")).to_contain_text("Plan it for me · $29")
     page.click("#pf-go")
     expect(page.locator("#pf-err-where")).to_have_text("Where you are going is needed.")
@@ -182,6 +182,8 @@ def test_a_creators_trip_leads_to_the_intake_started_from_it(setup, stranger, ba
     shot(page, "card-390")
     assert overflow(page) <= 1 and not too_small(page, "#plan-for-me .btn")
     card.locator("#plan-for-me-go").click()
+    expect(page.locator("#pf-like")).to_have_text("Starting from “Three easy days in Santa Monica”.")      # the offer first (F-197), then its one button to the intake
+    page.click("#pf-cta")
     expect(page.locator("#pf-where")).to_have_value("Los Angeles, California")
     expect(page.locator("#pf-like")).to_have_text("Starting from “Three easy days in Santa Monica”.")
 

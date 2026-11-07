@@ -9,7 +9,7 @@
 .pf p { margin: 0; text-wrap: pretty; }
 
 .pf-top { display: grid; gap: 0.625rem; justify-items: start; }
-.pf-chip { display: inline-flex; align-items: center; min-height: 2rem; padding: 0 0.75rem; border-radius: var(--oq-radius-full); background: var(--oq-tonal); color: var(--oq-ink);
+.pf-chip { display: inline-flex; align-items: center; gap: 0.375rem; min-height: 2rem; padding: 0 0.75rem; border-radius: var(--oq-radius-full); background: var(--oq-tonal); color: var(--oq-ink);
   font: 500 max(var(--text-min), 0.8125rem) var(--oq-font-mono); letter-spacing: 0.02em; }
 .pf h1 { font-size: clamp(2.25rem, 9vw, 4rem); font-weight: 650; letter-spacing: -0.045em; line-height: 1; }
 .pf-accent { color: var(--oq-accent); }
@@ -78,3 +78,95 @@
 /* the pickers' own controls (pickers.css) are 2.75rem, which is 44px on the phone and 33px on the laptop's 12px root: here they follow the page's own tap size */
 .pf .ga-pick-btn { min-height: var(--pf-tap); }
 .pf .ga-step-btn { width: var(--pf-tap); height: var(--pf-tap); }
+
+/* ---- the offer (F-197): one column on the phone with the one button stuck to the bottom of the screen; on a laptop the price and the button sit in a sticky column on the right ---- */
+.pf.pfo { max-width: 46rem; }
+.pfo-hero h1 { font-size: clamp(2.125rem, 8.6vw, 3.75rem); line-height: 1.04; }
+.pfo-aside { display: contents; }
+.pfo-price { display: grid; gap: 0.5rem; justify-items: start; padding: 1rem; border-radius: 1.25rem; background: var(--oq-surface-1); box-shadow: var(--oq-shadow-2); }
+.pfo-num { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.25rem 0.625rem; }
+.pfo-amt { font: 650 3rem/1 var(--oq-font); letter-spacing: -0.04em; color: var(--oq-ink); font-variant-numeric: tabular-nums; }
+.pfo-per { font-weight: 500; color: var(--oq-ink-2); }
+.pfo-terms { font-weight: 600; color: var(--oq-ink); line-height: 1.4; }
+.pfo-spots { background: color-mix(in srgb, var(--oq-accent) 12%, var(--oq-surface-1)); color: var(--oq-accent); font-weight: 600; }
+.pfo-promise { display: flex; align-items: flex-start; gap: 0.5rem; padding: 0.75rem 0.875rem; border-radius: 1rem; background: var(--oq-tonal); font-weight: 600; line-height: 1.4; }
+.pfo-promise svg { flex: none; width: 1.25rem; height: 1.25rem; margin-top: 0.0625rem; color: var(--oq-ok); }
+.pfo-cta { order: 99; position: sticky; bottom: 0.75rem; z-index: 2; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; box-shadow: var(--oq-shadow-2); }
+.pfo-main { display: grid; gap: 1.25rem; min-width: 0; }
+.pfo-card { display: grid; gap: 0.875rem; padding: 1rem; border-radius: 1.25rem; background: var(--oq-surface-1); box-shadow: var(--oq-shadow-1); min-width: 0; }
+.pfo-card h2, .pfo-sec h2, .pfo-faq h2 { font-size: 1.375rem; font-weight: 650; letter-spacing: -0.02em; }
+.pfo-gets { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.875rem; }
+.pfo-gets li { display: flex; gap: 0.75rem; align-items: flex-start; }
+.pfo-ico { display: grid; place-items: center; flex: none; width: 2.5rem; height: 2.5rem; border-radius: 0.75rem; background: color-mix(in srgb, var(--oq-accent) 12%, var(--oq-surface-1)); color: var(--oq-accent); }
+.pfo-gt { font-weight: 650; line-height: 1.3; }
+.pfo-gd { color: var(--oq-ink-2); line-height: 1.4; margin-top: 0.125rem; }
+.pfo-sec { display: grid; gap: 0.625rem; min-width: 0; }
+.pfo-exs { display: grid; gap: 0.75rem; }
+.pfo-ex { display: grid; gap: 0.5rem; padding: 1rem; border-radius: 1.25rem; background: var(--oq-surface-1); box-shadow: var(--oq-shadow-1); color: var(--oq-ink); text-decoration: none; min-height: var(--pf-tap);
+  transition: box-shadow var(--motion-fade); }
+.pfo-ex:hover { box-shadow: var(--oq-shadow-2); }
+.pfo-ex:focus-visible { outline: 0.1667rem solid var(--oq-accent); outline-offset: 0.125rem; }
+.pfo-ex-t { font-weight: 650; font-size: 1.125rem; }
+.pfo-ex-b { color: var(--oq-ink-2); line-height: 1.4; }
+.pfo-ex-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.25rem; }
+.pfo-ex-rows li { display: flex; gap: 0.625rem; align-items: baseline; padding: 0.375rem 0.625rem; border-radius: 0.625rem; background: var(--tint); box-shadow: inset 0.1875rem 0 0 var(--accent); font-weight: 600; line-height: 1.3; min-width: 0; }
+.pfo-ex-rows .pv-time { flex: none; }
+.pfo-ex-go { display: inline-flex; align-items: center; gap: 0.375rem; color: var(--oq-accent); font-weight: 650; }
+.pfo-note blockquote { margin: 0; display: grid; gap: 0.5rem; }
+.pfo-note blockquote > p:first-child { font: 600 1.1875rem/1.45 var(--oq-font); letter-spacing: -0.01em; }
+.pfo-by { color: var(--oq-ink-2); font-weight: 500; }
+.pfo-faq { display: grid; gap: 0.5rem; }
+.pf-q { border-radius: 1rem; background: var(--oq-surface-1); box-shadow: inset 0 0 0 0.0625rem var(--oq-line); }
+.pf-q summary { display: flex; align-items: center; min-height: var(--pf-tap); padding: 0.5rem 1rem; font-weight: 650; cursor: pointer; list-style: none; }
+.pf-q summary::-webkit-details-marker { display: none; }
+.pf-q summary::after { content: "+"; margin-left: auto; padding-left: 0.75rem; font-size: 1.25rem; color: var(--oq-ink-2); }
+.pf-q[open] summary::after { content: "–"; }
+.pf-q summary:focus-visible { outline: 0.1667rem solid var(--oq-accent); outline-offset: -0.1667rem; border-radius: 1rem; }
+.pf-q p { padding: 0 1rem 1rem; color: var(--oq-ink-2); line-height: 1.5; }
+.pfo-more { display: flex; flex-wrap: wrap; gap: 0 1.25rem; }
+@media (min-width: 64rem) {
+  .pf.pfo { max-width: 78rem; grid-template-columns: minmax(0, 1fr) 24rem; column-gap: 2.5rem; align-items: start; }
+  .pfo-hero, .pfo-main { grid-column: 1; }
+  .pfo-aside { display: grid; gap: 0.875rem; grid-column: 2; grid-row: 1 / span 2; position: sticky; top: 5rem; }
+  .pfo-cta { order: 0; position: static; box-shadow: none; }
+  .pfo-exs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .pfo-ex { align-content: start; }
+}
+
+/* ---- a plan, read-only (gitaway/pages/planview.py): the delivered trip's phone week, one white card per day, a row per plan filled with its kind's tint (DESIGN-SYSTEM.md F-167) ---- */
+.k-bubble { --tint: var(--bubble-tint); --accent: var(--bubble-ink); --kink: var(--bubble-ink); }
+.k-sun { --tint: var(--sun-tint); --accent: var(--sun-ink); --kink: var(--sun-ink); }
+.k-mint { --tint: var(--mint-tint); --accent: var(--mint-ink); --kink: var(--mint-ink); }
+.k-grape { --tint: var(--grape-tint); --accent: var(--grape-ink); --kink: var(--grape-ink); }
+.k-sky { --tint: var(--sky-tint); --accent: var(--sky-ink); --kink: var(--sky-ink); }
+.pv-plan { display: grid; gap: 1rem; min-width: 0; }
+.pv-day { display: grid; gap: 0.75rem; padding: 1rem; border-radius: 1.25rem; background: var(--oq-surface-1); box-shadow: var(--oq-shadow-1); min-width: 0; }
+.pv-dhead { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.25rem 0.625rem; }
+.pv-dn { margin: 0; font: 650 1.25rem var(--oq-font); letter-spacing: -0.02em; }
+.pv-date { color: var(--oq-ink-2); font-weight: 500; }
+.pv-bar { position: relative; height: 0.5rem; border-radius: var(--oq-radius-full); background: var(--oq-tonal); overflow: hidden; }
+.pv-seg { position: absolute; top: 0; bottom: 0; background: var(--accent); border-radius: var(--oq-radius-full); }
+.pv-stops { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+.pv-stop { display: flex; gap: 0.75rem; align-items: flex-start; padding: 0.75rem; border-radius: 0.875rem; background: var(--tint); box-shadow: inset 0.1875rem 0 0 var(--accent), inset 0 0 0 0.0625rem var(--oq-line-2); min-width: 0; }
+.pv-tile { display: grid; place-items: center; flex: none; width: 2.5rem; height: 2.5rem; border-radius: 0.75rem; background: var(--oq-surface-1); color: var(--kink); }
+.pv-body { display: grid; gap: 0.125rem; min-width: 0; }
+.pv-when { display: flex; gap: 0.5rem; align-items: baseline; }
+.pv-time { font: 700 max(var(--text-min), 0.875rem) var(--oq-font); color: var(--oq-ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pv-len { font-size: max(var(--text-min), 0.8125rem); color: var(--oq-ink-2); }
+.pv-title { font: 650 1.0625rem/1.3 var(--oq-font); color: var(--oq-ink); overflow-wrap: anywhere; }
+.pv-note { color: var(--oq-ink-2); line-height: 1.45; }
+.pv-card { display: grid; gap: 0.75rem; padding: 1rem; border-radius: 1.25rem; background: var(--oq-surface-1); box-shadow: var(--oq-shadow-1); min-width: 0; }
+.pv-card h2 { font-size: 1.25rem; font-weight: 650; }
+.pv-hint { color: var(--oq-ink-2); line-height: 1.45; }
+.pv-tips { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.625rem; }
+.pv-tips li { display: flex; gap: 0.5rem; align-items: flex-start; line-height: 1.45; }
+.pv-tips svg { flex: none; margin-top: 0.1875rem; color: var(--oq-accent); }
+.pv-checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.pv-check { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); gap: 0.75rem; padding: 0.75rem 0; border-top: 0.0625rem solid var(--oq-line-2); align-items: start; }
+.pv-check:first-child { border-top: 0; }
+.pv-due { justify-self: start; padding: 0.25rem 0.5rem; border-radius: var(--oq-radius-xs); background: var(--oq-tonal); font: 600 max(var(--text-min), 0.8125rem)/1.3 var(--oq-font-mono); color: var(--oq-ink); }
+.pv-due.is-now { background: color-mix(in srgb, var(--oq-accent) 14%, var(--oq-surface-1)); color: var(--oq-accent); }
+.pv-ctitle { font-weight: 650; line-height: 1.3; }
+.pv-cdetail { color: var(--oq-ink-2); line-height: 1.45; }
+@media (min-width: 64rem) { .pv-plan { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.pf-sub { font-weight: 500; font-size: max(var(--text-min), 0.875rem); color: var(--oq-ink-2); }

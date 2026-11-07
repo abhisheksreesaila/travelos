@@ -1,6 +1,7 @@
 """Plan it for me (F-193): a family pays once and an agent builds their whole trip in their GitAway account. Rules and storage; the screens are gitaway/pages/planforme.py.
 
-    price_cents()                          what it costs, read on the server (PLAN_FOR_ME_PRICE_CENTS, default 2900); the browser never says
+    price_cents()                          what it costs now, picked on the server: the founding price (PLAN_FOR_ME_PRICE_CENTS, $29) while founding spots are left, else the full price
+                                           (PLAN_FOR_ME_FULL_PRICE_CENTS, $49); founding_left() of founding_limit() (PLAN_FOR_ME_FOUNDING_LIMIT, 10) spots. The browser never says (F-197)
     read_intake(form)                      (the intake, {field: message}) from the posted form; checked with the guided trip builder's own checks
     create_order(owner, tenant, email, intake)   an order awaiting payment, at today's price; get(order_id, owner) reads it back for its buyer only
     mark_paid(order_id, event_id, session_id, amount, currency)   what a verified Stripe event does: idempotent by event id, bound to the order's session and amount
@@ -28,12 +29,15 @@ from datetime import date, datetime, timedelta, timezone
 
 from sqlalchemy import text
 
-from gitaway import ai, auth, catalog, community, creatordraft as cd, importer, members, session as ses, showcase, tripbuild, tripcal, zones
+from gitaway import ai, auth, catalog, community, creatordraft as cd, importer, members, planfacts, session as ses, showcase, tripbuild, tripcal, zones
 from gitaway import tripimport as ti
 
 log = logging.getLogger("gitaway.planforme")
 
-DEFAULT_PRICE = 2900          # US cents: $29, one time
+DEFAULT_PRICE = 2900          # US cents: $29, one time, the founding price for the first families
+DEFAULT_FULL_PRICE = 4900     # US cents: $49, once the founding spots are taken (F-197)
+DEFAULT_FOUNDING = 10         # families who pay the founding price
+FOUNDING_RANGE = (0, 10_000)
 PRICE_RANGE = (100, 50_000)   # a setting outside this is a typo, and the default stands
 MAX_DAYS = 14                 # the longest trip an agent plans (a 14-day answer is about 6,000 tokens)
 MAX_MUST = 600                # characters of "must-dos"
@@ -50,19 +54,56 @@ SUGGESTIONS = ("Disneyland, California",)       # beside the catalog's places
 PROMISE = "Not useful? Reply within 7 days for a full refund."
 _ID = re.compile(r"[0-9a-f]{16}")
 _AIRPORT = re.compile(r"[A-Za-z]{3}")
+HEIGHTS = (28, 66)            # inches a kid's height may be, for the rides; anything else is "not sure"
 
 
 # ---- settings ---------------------------------------------------------------------------------------------------------
 
+def _setting(name, default, low, high) -> int:
+    raw = os.getenv(name, "").strip()
+    return int(raw) if raw.isascii() and raw.isdigit() and low <= int(raw) <= high else default
+
+
+def founding_price_cents() -> int:
+    """The founding families' price, in US cents: PLAN_FOR_ME_PRICE_CENTS when it is whole digits inside PRICE_RANGE, else 2900."""
+    return _setting("PLAN_FOR_ME_PRICE_CENTS", DEFAULT_PRICE, *PRICE_RANGE)
+
+
+def full_price_cents() -> int:
+    """The price once the founding spots are taken: PLAN_FOR_ME_FULL_PRICE_CENTS inside PRICE_RANGE, else 4900."""
+    return _setting("PLAN_FOR_ME_FULL_PRICE_CENTS", DEFAULT_FULL_PRICE, *PRICE_RANGE)
+
+
+def founding_limit() -> int:
+    """How many families pay the founding price: PLAN_FOR_ME_FOUNDING_LIMIT (whole digits, 0 to 10,000; 0 is no founding price), else 10."""
+    return _setting("PLAN_FOR_ME_FOUNDING_LIMIT", DEFAULT_FOUNDING, *FOUNDING_RANGE)
+
+
+def founding_left() -> int:
+    """Founding spots not yet taken. A spot is taken by an order that was paid and kept (KEPT: paid, building, review, ready), whatever it was paid; an unpaid order or a failed one (it is
+    refunded) takes none. Orders already made keep their own price, so a few checkouts open when the last spot goes may still pay the founding price (decisions D-174)."""
+    limit = founding_limit()
+    if not limit:
+        return 0
+    with _db() as db:
+        taken = db.conn.execute(text(f"SELECT COUNT(*) FROM plan_orders WHERE status IN ({', '.join(repr(k) for k in KEPT)})")).scalar()
+    return max(0, limit - taken)
+
+
 def price_cents() -> int:
-    """What Plan it for me costs, in US cents: PLAN_FOR_ME_PRICE_CENTS when it is whole digits inside PRICE_RANGE, else 2900. Read here on the server every time an order is made."""
-    raw = os.getenv("PLAN_FOR_ME_PRICE_CENTS", "").strip()
-    return int(raw) if raw.isascii() and raw.isdigit() and PRICE_RANGE[0] <= int(raw) <= PRICE_RANGE[1] else DEFAULT_PRICE
+    """What Plan it for me costs now, in US cents, picked here on the server every time an order is made and every time a page shows it: the founding price while a founding spot is left,
+    else the full price. The order keeps the amount it was made at, and the webhook holds the payment to it."""
+    return founding_price_cents() if founding_left() else full_price_cents()
 
 
 def review_on() -> bool:
     """Does a person check every built plan before the family sees it (F-197)? On unless PLAN_FOR_ME_REVIEW is 0: a built plan waits in `review` for the captain's "Send to family" on /admin."""
     return os.getenv("PLAN_FOR_ME_REVIEW", "1").strip() != "0"
+
+
+def when_ready() -> str:
+    """How soon a family gets their plan, in the words every page uses: never "in minutes" while a person checks each plan first."""
+    return "checked by a person, usually within a few hours" if review_on() else "in a few minutes"
 
 
 def stripe_key() -> str:
@@ -95,7 +136,7 @@ def _line(value, limit) -> str:
 
 
 def read_intake(form) -> tuple:
-    """(intake, errors) from a posted form (any mapping of strings). `errors` maps a form field (where, start, end, home, adults, nkids, k1.. ) to a sentence fit to show; the intake is
+    """(intake, errors) from a posted form (any mapping of strings). Each kid has an age (`k<i>`) and an optional height in inches (`h<i>`, None when not given or not believable). `errors` maps a form field (where, start, end, home, adults, nkids, k1.. ) to a sentence fit to show; the intake is
     only complete when it is empty. The checks are the guided trip builder's (`tripbuild.check_where`, `check_dates`, `check_who`), so a family hears the same words everywhere.
     Nothing about money is read: the form has no such field."""
     get = lambda k: str(form.get(k, "") or "").strip()
@@ -116,8 +157,10 @@ def read_intake(form) -> tuple:
         errors["home"] = "Use the three-letter code, like SFO, or leave it empty."
     slug = get("from")
     like = (community.get(slug) or {}).get("title", "")[:60] if slug and community.is_real(slug) else ""      # the title comes from our database, never from the form
+    height = lambda v: int(v) if v.isascii() and v.isdigit() and HEIGHTS[0] <= int(v) <= HEIGHTS[1] else None
+    ok = [i for i, a in enumerate(kids, 1) if a.isascii() and a.isdigit()][:tripbuild.MAX_KIDS]
     intake = {"where": where, "start": start, "end": end, "home": home.upper() if _AIRPORT.fullmatch(home) else "", "adults": tripbuild.adults_of(draft),
-              "kids": [int(a) for a in kids if a.isascii() and a.isdigit()][:tripbuild.MAX_KIDS],
+              "kids": [int(kids[i - 1]) for i in ok], "heights": [height(get(f"h{i}")) for i in ok],
               "budget": get("budget") if get("budget") in BUDGETS else "comfortable", "must": _line(form.get("must", ""), MAX_MUST),
               "pace": get("pace") if get("pace") in PACES else "balanced", "like": like}
     return intake, errors
@@ -575,6 +618,9 @@ def write_trip(order, result) -> str:
         for tip in result["tips"]:
             if (f"Tip: {tip}", None) not in have:
                 tripcal.add_note(session, f"Tip: {tip}")
+        for item in planfacts.checklist(order["intake"]["where"], date.fromisoformat(order["intake"]["start"]), catalog.today()):      # "What to book and when" (F-197)
+            if (note := planfacts.note_text(item, tripcal.MAX_NOTE)) and (note, None) not in have:
+                tripcal.add_note(session, note)
     return trip_id
 
 

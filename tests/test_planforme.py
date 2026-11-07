@@ -36,12 +36,12 @@ def test_a_good_form_becomes_an_intake_with_exactly_these_fields():
     intake, errors = pfm.read_intake(GOOD)
     assert errors == {}
     assert intake == {"where": "Disneyland, California", "start": "2027-03-12", "end": "2027-03-15", "home": "SFO", "adults": 2, "kids": [4, 7],
-                      "budget": "comfortable", "must": "Space Mountain and a quiet beach morning", "pace": "relaxed", "like": ""}
+                      "heights": [None, None], "budget": "comfortable", "must": "Space Mountain and a quiet beach morning", "pace": "relaxed", "like": ""}
 
 
 def test_a_price_or_an_amount_in_the_form_is_not_part_of_the_intake():
     intake, errors = pfm.read_intake({**GOOD, "price": "1", "amount": "1", "amount_cents": "1", "currency": "eur", "status": "paid"})
-    assert errors == {} and set(intake) == {"where", "start", "end", "home", "adults", "kids", "budget", "must", "pace", "like"}
+    assert errors == {} and set(intake) == {"where", "start", "end", "home", "adults", "kids", "heights", "budget", "must", "pace", "like"}
 
 
 def test_the_form_says_what_is_wrong_in_plain_words():

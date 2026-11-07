@@ -1,8 +1,10 @@
 """Plan it for me (F-193): the screens and the Stripe webhook. The rules, the order and the money are gitaway/planforme.py.
 
-GET  /plan-for-me                     the intake: where, dates, home airport, adults, kids with ages, budget, must-dos, pace (`?from=<a creator's trip>` carries its place and title)
+GET  /plan-for-me                     the offer (F-197): the outcome, the founding price, what you get, a founder note, the refund promise, four questions, the examples, one button to the intake
+GET  /plan-for-me/start               the intake: where, dates, home airport, adults, kids with ages and heights, budget, must-dos, pace (`?from=<a creator's trip>` carries its place and title)
+GET  /plan-for-me/example/<slug>      an example plan, read-only, drawn like a delivered trip, with "What to book and when" (gitaway/planexamples.py)
 POST /plan-for-me                     check it, make the order at the server's price, and go to Stripe Checkout (locally: the stand-in checkout); signed out goes to sign-in first
-GET  /plan-for-me/<order>             the order: awaiting payment, paid, building, ready (the link to the trip and booking links) or failed ("we'll refund you"); its buyer only, anyone else a 404
+GET  /plan-for-me/<order>             the order: awaiting payment, paid, building, being checked (F-197), ready (the link to the trip, what to book and when, booking links) or failed ("we'll refund you"); its buyer only, anyone else a 404
 GET  /plan-for-me/<order>/status      {"status": ...} for the page's own polling, buyer only
 POST /plan-for-me/<order>/pay         pay for an order that has not been paid (a new Checkout session)
 GET  /plan-for-me/<order>/go/<lane>   a booking link (flight, stay or activity) with the order id as the SubID, buyer only; nothing without TRAVELPAYOUTS_MARKER
@@ -20,19 +22,20 @@ from datetime import date
 from types import SimpleNamespace
 from urllib.parse import quote, urlencode
 
-from fasthtml.common import A, Button, Datalist, Div, Fieldset, Form, H1, H2, Input, Label, Legend, Li, Link, Main, Ol, Option, P, Script, Section, Select, Span, Textarea
+from fasthtml.common import A, Blockquote, Button, Datalist, Details, Div, Fieldset, Form, H1, H2, H3, Input, Label, Legend, Li, Link, Main, Ol, Option, P, Script, Section, Select, Span, Summary, Textarea, Ul
 from fasthtml.core import FtResponse
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import JSONResponse, PlainTextResponse, RedirectResponse
 
-from gitaway import access, auth, catalog, community, partners, pickers, planforme as pfm, publish, reports, session as ses, showcase, tripbuild
+from gitaway import access, auth, catalog, community, partners, pickers, planexamples as px, planfacts, planforme as pfm, publish, reports, session as ses, showcase, tripbuild
 from gitaway.icons import icon
 from gitaway.layout import page
-from gitaway.pages import legal
+from gitaway.pages import legal, planview
 from gitaway.partners import travelpayouts
 
 log = logging.getLogger("gitaway.planforme")
 PATH = "/plan-for-me"
+START = PATH + "/start"
 HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/planforme.css"), Script(src="/assets/js/planforme.js", defer=True))
 LANES = {"flight": ("plane", "Flights", "aviasales"), "stay": ("bed", "Stays", "klook"), "activity": ("star", "Things to do", "klook")}
 MAX_KIDS = tripbuild.MAX_KIDS
@@ -98,6 +101,8 @@ def intake_page(session, vals=None, errors=None, status=200, note=""):
     bad = lambda n: {"aria_invalid": "true", "aria_describedby": f"pf-err-{n}"} if n in errors else {}
     kid = lambda i: Div(Label(Span(f"Kid {i}", cls="pf-lab"), Select(*[Option("Under 1" if a == 0 else str(a), value=str(a), selected=str(a) == str(vals.get(f"k{i}", "5")) or None) for a in range(catalog.MAX_KID_AGE + 1)],
                                                                           name=f"k{i}", id=f"pf-k{i}", data_ga="chips", data_ga_label=f"Kid {i} age", cls="pf-input", **bad(f"k{i}")), cls="pf-field"), P(errors[f"k{i}"], role="alert", cls="pf-error") if f"k{i}" in errors else "",
+                        Label(Span("Height", cls="pf-lab pf-sub"), Select(Option("Not sure", value=""), *[Option(f"{h} in", value=str(h), selected=str(h) == str(vals.get(f"h{i}", "")) or None) for h in range(pfm.HEIGHTS[0], pfm.HEIGHTS[1] + 1)],
+                                                                          name=f"h{i}", id=f"pf-h{i}", aria_label=f"Kid {i} height", cls="pf-input"), cls="pf-field"),
                         cls="pf-kid", hidden=i > nkids or None)
     form = Form(
         Input(type="hidden", name="from", value=vals.get("from", "")),
@@ -116,7 +121,7 @@ def intake_page(session, vals=None, errors=None, status=200, note=""):
         _pills("budget", pfm.BUDGETS, vals.get("budget", "comfortable"), "Budget"),
         _pills("pace", pfm.PACES, vals.get("pace", "balanced"), "Pace"),
         _field("Anything you must do?", Textarea(vals.get("must", ""), name="must", id="pf-must", rows="4", maxlength=str(pfm.MAX_MUST), placeholder="Space Mountain, a quiet beach morning, a birthday dinner...", cls="pf-input pf-text"),
-               "Optional. Rides, places, a nap time, food the kids will eat.", errors.get("must", ""), "must"),
+               "Optional. Rides, places, a nap time, food the kids will eat. Heights help us pick the rides.", errors.get("must", ""), "must"),
         P(f"You will sign in first, so the trip lands in your family's account." if not me else f"The trip goes into your family's GitAway account ({me.blurb}).", cls="pf-hint", id="pf-who"),
         P(errors["_"], role="alert", cls="pf-error", id="pf-err-all") if "_" in errors else "",
         Button(icon("star", 20, 2.4), f"Plan it for me · {money()}" if me else "Continue", type="submit", cls="btn btn-primary pf-go", id="pf-go", disabled=viewer or None),
@@ -124,12 +129,88 @@ def intake_page(session, vals=None, errors=None, status=200, note=""):
         action=PATH, method="post", id="pf-form", cls="pf-form", data_signed_out="1" if not me else None)
     body = Section(
         Div(Span(f"{money()} once", cls="pf-chip", id="pf-price"), H1("Plan it for ", Span("me", cls="pf-accent")),
-            P("Tell us who is going and what you love. An agent builds your whole trip, day by day, in your GitAway account in a few minutes.", cls="pf-lede"),
+            P(f"Tell us who is going and what you love. An agent builds your whole trip, day by day, in your GitAway account, {pfm.when_ready()}.", cls="pf-lede"),
             P(f"Starting from “{like}”.", cls="pf-note", id="pf-like") if like else "",
             P("Only a family editor or admin can order, because the trip goes into the family's calendar.", role="status", cls="pf-note", id="pf-viewer") if viewer else "",
             P(note, role="alert", cls="pf-error", id="pf-note") if note else "", cls="pf-top"),
         form, cls="pf ga-wrap", id="pf")
     return FtResponse(page("Plan it for me", body, head=HEAD), status_code=status)
+
+
+# ---- the offer (F-197) ------------------------------------------------------------------------------------------------
+
+GETS = (("calendar", "Day-by-day plan in your family's shared planner", "Everyone in the family sees it, and anyone can move or change a plan."),
+        ("target", "Ride order and rest breaks matched to your kids' ages and heights", "Rope drop for the rides they can do, a midday rest, meals at kid times, a rain backup."),
+        ("clipboard", "What to book and when", "A countdown with real dates, from dining reservations to the day's ride passes."),
+        ("link", "Booking links", "For flights, stays and things to do. You book with the partner, who keeps your booking."))
+
+
+def price_block():
+    """The price as it is right now (the server's): "$29 for the first 10 families, then $49" and the founding spots left while any are, else the full price alone. Never a former price."""
+    left, limit = pfm.founding_left(), pfm.founding_limit()
+    now = catalog.money(pfm.price_cents())
+    rows = [Div(Span(now, cls="pfo-amt", id="pf-price-now"), Span("one time, per trip", cls="pfo-per"), cls="pfo-num")]
+    if left:
+        rows.append(P(f"{catalog.money(pfm.founding_price_cents())} for the first {limit} families, then {catalog.money(pfm.full_price_cents())}", cls="pfo-terms", id="pf-terms"))
+        rows.append(P(f"{left} of {limit} founding spots left", cls="pf-chip pfo-spots", id="pf-spots"))
+    return Div(*rows, cls="pfo-price")
+
+
+def _faq():
+    review = pfm.review_on()
+    qs = (("How soon do we get it?", "Our agent builds it as soon as you pay. Then a person checks it, usually within a few hours, and it appears in your family's planner." if review
+           else "A few minutes after you pay, it is in your family's planner."),
+          ("We're not going to Disneyland. Does it still work?", "Yes, tell us any place. For Disneyland, New York City and Oahu the booking dates come from the official sites; anywhere else you get an honest general list."),
+          ("Do you book anything for us?", "No. You get the plan, the dates to book by and the links. You book with the partner yourself, and they keep your booking."),
+          ("Can we change the plan?", "Yes. It is your trip in your planner: move, add or delete anything, or ask GitAway in plain words to change a day."))
+    return Section(H2("Questions parents ask"), *[Details(Summary(q), P(a), cls="pf-q") for q, a in qs], cls="pfo-faq", id="pf-faq")
+
+
+def _peek(e):
+    """An example's card: its name, one line, and the first stops of its second day in their kinds' colours."""
+    p = px.plan(e, catalog.today())
+    day = p["days"][1 if len(p["days"]) > 1 else 0]["stops"][:3]
+    return A(Span(e.label, cls="pfo-ex-t"), Span(e.blurb, cls="pfo-ex-b"),
+             Ul(*[Li(Span(planview.clock(s["start"]), cls="pv-time"), Span(s["title"]), cls=f"k-{planview.KIND_TINT.get(s['kind'], 'bubble')}") for s in day], cls="pfo-ex-rows", aria_hidden="true"),
+             Span("See this plan", icon("arrow-right", 16, 2.4), cls="pfo-ex-go"), href=f"{PATH}/example/{e.slug}", cls="pfo-ex", id=f"pf-ex-{e.slug}")
+
+
+def offer_page(slug=""):
+    review = pfm.review_on()
+    _, like = _from_trip(slug)
+    start = f"{START}?from={quote(slug)}" if like else START
+    head = Div(Span(icon("star", 14, 2.4), "Plan it for me", cls="pf-chip"),
+               H1("A calm Disneyland trip with your kids, ", Span("planned for you" if review else "planned in minutes", cls="pf-accent"), id="pf-title"),
+               P("Tell us who is going and what they love. Our agent builds every day around your kids, and every plan is checked by a person, usually within a few hours." if review
+                 else "Tell us who is going and what they love. Our agent builds every day around your kids, in minutes, right in your family's planner.", cls="pf-lede"),
+               P("Not Disneyland? New York, Oahu or anywhere else works too.", cls="pf-hint"),
+               P(f"Starting from “{like}”.", cls="pf-note", id="pf-like") if like else "", cls="pf-top pfo-hero")
+    aside = Div(price_block(), P(icon("shield", 18, 2.2), Span(pfm.PROMISE), cls="pfo-promise", id="pf-promise"),
+                A("Plan our trip", icon("arrow-right", 20, 2.4), href=start, cls="btn btn-primary pf-go pfo-cta", id="pf-cta"), cls="pfo-aside")
+    gets = Section(H2("What you get"), Ul(*[Li(Span(icon(ico, 20, 2.2), cls="pfo-ico"), Div(P(t, cls="pfo-gt"), P(d, cls="pfo-gd"))) for ico, t, d in GETS], cls="pfo-gets"), cls="pfo-card", id="pf-gets")
+    examples = Section(H2("See an example plan"), P("Three plans written the way yours will be, with every ride, height and booking rule checked on the official sites.", cls="pf-hint"),
+                       Div(*[_peek(e) for e in px.EXAMPLES.values()], cls="pfo-exs"), cls="pfo-sec", id="pf-examples")
+    note = Section(Blockquote(P("We just did Disneyland with our kids; I check every plan before it reaches you." if review
+                                 else "We just did Disneyland with our kids, and built this so the next family's planning takes minutes, not weekends."),
+                              P("The founder of GitAway", cls="pfo-by")), cls="pfo-card pfo-note", id="pf-founder")
+    body = Section(head, aside, Div(gets, examples, note, _faq(), cls="pfo-main"), cls="pf pfo ga-wrap", id="pf")
+    return page("Plan it for me", body, head=HEAD)
+
+
+def example_page(e):
+    intake = px.intake(e, catalog.today())
+    p = px.plan(e, catalog.today())
+    others = [x for x in px.EXAMPLES.values() if x.slug != e.slug]
+    return page(f"Example plan: {p['title']}", Section(
+        Div(Span("Example plan", cls="pf-chip"), H1(p["title"], id="pf-title"), P(planview.party(intake), cls="pf-sum", id="pv-party"), P(p["summary"], cls="pf-lede"),
+            P("This is what a family gets in their planner, day by day. Every ride, height and booking rule is checked on the official sites. The dates are an example.", cls="pf-hint"), cls="pf-top"),
+        Div(*planview.days(p, intake), cls="pv-plan", id="pv-plan"),
+        planview.tips(p),
+        planview.checklist(planfacts.checklist(intake["where"], date.fromisoformat(intake["start"]), catalog.today()), planfacts.intro(intake["where"])),
+        Div(A("Plan ours", icon("arrow-right", 20, 2.4), href=f"{START}?{urlencode({'where': e.where})}", cls="btn btn-primary pf-go", id="pf-cta"),
+            P(f"{catalog.money(pfm.price_cents())} once. {pfm.PROMISE}", cls="pf-hint"), cls="pf-act"),
+        Div(*[A(x.label, href=f"{PATH}/example/{x.slug}", cls="pf-back") for x in others], A("Back to Plan it for me", href=PATH, cls="pf-back"), cls="pfo-more"),
+        cls="pf ga-wrap", id="pf"), head=HEAD)
 
 
 # ---- the order --------------------------------------------------------------------------------------------------------
@@ -174,7 +255,7 @@ TROUBLE = {"1": "We could not open the payment page just now. Nothing was charge
 def order_page(order, paid_back=False, trouble=""):
     status, intake = order["status"], order["intake"]
     head = {"awaiting_payment": ("Almost there", "Pay to start building your trip."), "paid": ("Payment received", "An agent is about to start on your trip."),
-            "building": ("Building your trip", "This takes a few minutes. You can leave this page: your trip will be in your calendar."),
+            "building": ("Building your trip", "A person checks it next, usually within a few hours. You can leave this page." if pfm.review_on() else "This takes a few minutes. You can leave this page: your trip will be in your calendar."),
             "review": ("Your plan is built", CHECKING),
             "ready": ("Your trip is ready", "It is in your family's calendar now, day by day."),
             "failed": ("We couldn't finish your trip", "We'll refund you in full. There is nothing you need to do.")}[status]
@@ -192,6 +273,7 @@ def order_page(order, paid_back=False, trouble=""):
         if order["sample"]:
             body.append(P("This is a sample trip: this copy of GitAway has no AI key, so the days are placeholders.", role="status", cls="pf-note", id="pf-sample"))
         body.append(_links(order))
+        body.append(planview.checklist(planfacts.checklist(intake["where"], date.fromisoformat(intake["start"]), catalog.today()), planfacts.intro(intake["where"])))
     if status == "failed":
         body.append(P(f"Reference {order['id']}. ", legal.contact(), cls="pf-hint", id="pf-ref"))
     body.append(P(pfm.PROMISE, cls="pf-promise", id="pf-promise"))
@@ -212,9 +294,18 @@ def standin_page(order):
 
 def register(app):
     @app.get(PATH)
+    def offer(request):
+        return offer_page(request.query_params.get("from", ""))
+
+    @app.get(PATH + "/example/{slug}")
+    def example(slug: str):
+        e = px.get(slug)
+        return example_page(e) if e else _gone()
+
+    @app.get(START)
     def intake(session, request):
         q = request.query_params
-        return intake_page(session, {k: q.get(k, "") for k in ("from", "where", "start", "end", "home", "adults", "nkids", "budget", "pace", "must")} | {f"k{i}": q.get(f"k{i}", "") for i in range(1, MAX_KIDS + 1)})
+        return intake_page(session, {k: q.get(k, "") for k in ("from", "where", "start", "end", "home", "adults", "nkids", "budget", "pace", "must")} | {f"{c}{i}": q.get(f"{c}{i}", "") for c in "kh" for i in range(1, MAX_KIDS + 1)})
 
     async def _checkout(request, order):
         """Where an unpaid order goes to be paid: the stand-in locally, else Stripe. (url, the `err` code the order page says in words: "1" Stripe failed, "limit" too many tries, "off" not for sale)."""
@@ -237,7 +328,7 @@ def register(app):
         form = await request.form()
         me = ses.current_traveler(session)
         if me is None:
-            return _signin(PATH)
+            return _signin(START)
         intake_, errors = await run_in_threadpool(pfm.read_intake, form)
         vals = {k: str(v) for k, v in form.items() if isinstance(v, str)}
         if errors:

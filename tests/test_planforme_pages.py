@@ -36,7 +36,7 @@ def order(who="ari", status=None, **fields):
 # ---- for sale, or not --------------------------------------------------------------------------------------------
 
 def test_the_intake_is_there_signed_out_with_the_price_and_the_promise(client):
-    html = client.get("/plan-for-me").text
+    html = client.get("/plan-for-me/start").text
     t = text_of(html)
     assert re.search(r'id="pf-price"[^>]*>\s*\$29 once', html) and "Not useful? Reply within 7 days for a full refund." in t
     for name in ("where", "start", "end", "home", "adults", "nkids", "budget", "pace", "must"):
@@ -47,7 +47,7 @@ def test_the_intake_is_there_signed_out_with_the_price_and_the_promise(client):
 
 def test_the_price_on_the_page_is_the_settings(client, monkeypatch):
     monkeypatch.setenv("PLAN_FOR_ME_PRICE_CENTS", "4900")
-    assert re.search(r'id="pf-price"[^>]*>\s*\$49 once', client.get("/plan-for-me").text)
+    assert re.search(r'id="pf-price"[^>]*>\s*\$49 once', client.get("/plan-for-me/start").text)
 
 
 def test_in_production_without_a_stripe_key_nothing_is_for_sale(client, monkeypatch):
@@ -113,7 +113,7 @@ def test_with_a_stripe_key_there_is_no_stand_in_even_on_a_local_copy(client, mon
 
 def test_signed_out_goes_through_sign_in_and_nothing_is_ordered(client):
     r = client.post("/plan-for-me", data=FORM, follow_redirects=False)
-    assert r.status_code == 303 and r.headers["location"] == "/signin?next=/plan-for-me"
+    assert r.status_code == 303 and r.headers["location"] == "/signin?next=/plan-for-me/start"
     with pfm._db() as db:
         from sqlalchemy import text
         assert db.conn.execute(text("SELECT COUNT(*) FROM plan_orders")).scalar() == 0
@@ -175,8 +175,8 @@ def test_a_viewer_cannot_order_and_is_told_why(client):
     invite(client, viewer_email, "viewer")
     other = browser(client)
     sign_in(other, viewer_email)
-    t = text_of(other.get("/plan-for-me").text)
-    assert "Only a family editor or admin can order" in t and "disabled" in other.get("/plan-for-me").text
+    t = text_of(other.get("/plan-for-me/start").text)
+    assert "Only a family editor or admin can order" in t and "disabled" in other.get("/plan-for-me/start").text
     assert other.post("/plan-for-me", data=FORM, follow_redirects=False).status_code == 403
     with pfm._db() as db:
         from sqlalchemy import text
@@ -333,9 +333,10 @@ def test_a_creators_trip_offers_it_and_the_intake_starts_from_their_trip(client)
     html = client.get(f"/trips/{row['slug']}").text
     t = text_of(html)
     assert "Want this trip built around your family?" in t and f'href="/plan-for-me?from={row["slug"]}"' in html
-    intake = client.get(f"/plan-for-me?from={row['slug']}")
+    assert f'href="/plan-for-me/start?from={row["slug"]}"' in client.get(f"/plan-for-me?from={row['slug']}").text      # the offer carries it on to the intake (F-197)
+    intake = client.get(f"/plan-for-me/start?from={row['slug']}")
     assert 'value="Los Angeles, California"' in intake.text and "Starting from “Three easy days in Santa Monica”." in text_of(intake.text)
-    assert "Starting from" not in text_of(client.get("/plan-for-me?from=not-a-real-trip").text)
+    assert "Starting from" not in text_of(client.get("/plan-for-me/start?from=not-a-real-trip").text)
 
 
 def test_the_card_is_not_on_a_trip_page_when_the_offer_is_off(client, monkeypatch):
@@ -378,8 +379,8 @@ def test_from_the_card_to_a_trip_on_the_calendar(client, monkeypatch):
     row, _, _ = live_trip()
     card = client.get(f"/trips/{row['slug']}").text
     assert f'/plan-for-me?from={row["slug"]}' in card
-    assert client.post("/plan-for-me", data={**FORM, "from": row["slug"]}, follow_redirects=False).headers["location"] == "/signin?next=/plan-for-me"
-    sign_in(client, next=f"/plan-for-me?from={row['slug']}")
+    assert client.post("/plan-for-me", data={**FORM, "from": row["slug"]}, follow_redirects=False).headers["location"] == "/signin?next=/plan-for-me/start"
+    sign_in(client, next=f"/plan-for-me/start?from={row['slug']}")
     r = client.post("/plan-for-me", data={**FORM, "from": row["slug"]}, follow_redirects=False)
     oid = r.headers["location"].rsplit("/", 1)[1]
     assert client.post(r.headers["location"], follow_redirects=False).status_code == 303

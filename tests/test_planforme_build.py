@@ -52,6 +52,13 @@ def paid(who="ari", **intake):
     return o
 
 
+def booking_notes(order):
+    """How many "What to book and when" notes the trip gets (F-197, gitaway/planfacts.py)."""
+    from datetime import date
+    from gitaway import catalog, planfacts
+    return len(planfacts.checklist(order["intake"]["where"], date.fromisoformat(order["intake"]["start"]), catalog.today()))
+
+
 def calendar(who="ari"):
     return [(a.day, a.start, a.end, a.title, a.kind) for a in tripcal.activities(person(who))]
 
@@ -158,7 +165,7 @@ def test_the_model_is_asked_once_even_when_the_order_is_built_again(monkeypatch)
     pfm.run_pending()
     n, notes = len(calendar()), len(tripcal.notes(person()))
     pfm.write_trip(pfm.get(o["id"], o["owner_user"]), pfm.get(o["id"], o["owner_user"])["result"])
-    assert len(calendar()) == n and len(tripcal.notes(person())) == notes == 5 and len(m.requests) == 1      # the summary, two tips and the two stop notes, once
+    assert len(calendar()) == n and len(tripcal.notes(person())) == notes == 5 + booking_notes(o) and len(m.requests) == 1      # the summary, two tips, the two stop notes and what to book when (F-197), once
     assert len([t for t in ses.trips(person()) if t.title.startswith("Disneyland with")]) == 1
 
 
@@ -373,7 +380,7 @@ def test_a_build_that_stopped_after_the_days_before_their_notes_finishes_the_not
     monkeypatch.setattr(tripcal, "add_note", real)
     trip_id = pfm.write_trip(claimed, result)
     plans, notes = plans_of(trip_id)
-    assert len(plans) == 6 and len(notes) == 5      # the summary, two stop notes and two tips: each once
+    assert len(plans) == 6 and len(notes) == 5 + booking_notes(o)      # the summary, two stop notes, two tips and what to book when (F-197): each once
     assert ("Let the kids splash in the pool.", "a1") in [(n.text, n.act) for n in tripcal.notes(person())]
 
 
