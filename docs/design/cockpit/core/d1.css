@@ -1,0 +1,62 @@
+/* Direction 1 · Diorama: the stage, the rail, the bookings row, the phone sheet. */
+.d1c, .d1b { position: absolute; top: 80px; left: 32px; right: 32px; bottom: 28px; display: grid; gap: 14px 16px; }
+.d1c { grid-template-columns: minmax(0, 1fr) 392px; grid-template-rows: auto minmax(0, 1fr) 196px; }
+.d1-head { grid-column: 1 / -1; display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
+.d1-head .eyebrow { margin-bottom: 6px; }
+.d1-stage { position: relative; border-radius: 26px; background: var(--stage); overflow: hidden; min-height: 0; }
+.d1c .d1-stage { grid-column: 1; grid-row: 2; }
+.d1-dio { position: absolute; inset: 0; }
+.d1-tools { position: absolute; top: 12px; left: 12px; display: flex; gap: 6px; z-index: 3; pointer-events: none; }
+.d1-over { position: absolute; top: 12px; right: 12px; z-index: 3; background: var(--s1) !important; box-shadow: var(--sh1); }
+.d1-stage .d3-cap { z-index: 3; }
+.dl { will-change: transform; }
+.dl .mlabel { left: 0; top: 0; }
+.dl .mtime, .dl .mtown { left: 0; top: 0; }
+.dl .mwarn { left: 0; top: 0; }
+.dl .mlabel em.ok { color: var(--ok-ink); display: inline-flex; align-items: center; gap: 3px; }
+.d1-bw { grid-column: 1; grid-row: 3; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; min-height: 0; }
+.d1-rail { grid-column: 2; grid-row: 2 / 4; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+.d1-rail .d1-up { flex: none; }
+.d1-rail .d1-wx { flex: 1; min-height: 150px; }
+.d1-rail .d1-fam { flex: none; }
+.d1-up .up-acts { align-items: center; }
+
+/* book: the model and the checklist on the left, six compact lanes on the right */
+.d1b { grid-template-columns: 520px minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+.d1b-left { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+.book-stage { flex: 1; }
+.d1-ticket { flex: none; }
+.d1-ticket .crows { grid-template-columns: 1fr 1fr; }
+.d1-ticket .tk-foot { grid-template-columns: 1fr auto; align-items: center; }
+.d1b-lanes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 12px; min-height: 0; }
+
+/* phone */
+.d1p { position: relative; }
+.d1-ptop { display: flex; align-items: flex-end; gap: 10px; padding: 2px 16px 10px; }
+.d1-ptop .sp { flex: 1; }
+.ph-stage { height: 316px; border-radius: 0; }
+.ph-stage.sm { height: 272px; border-radius: 24px; margin: 0 16px; }
+.ph-stage.day { height: 300px; }
+.ph-stage .d1-tools { top: 10px; left: 10px; }
+.ph-stage .d3-cap { font-size: 11px; }
+.d1-pdays { overflow-x: auto; padding: 10px 16px 4px; scrollbar-width: none; }
+.d1-pdays .days { width: max-content; }
+.d1-sheet { position: absolute; left: 0; right: 0; top: 458px; min-height: 900px; background: var(--bg); border-radius: 28px 28px 0 0; box-shadow: var(--sh3); padding: 8px 16px 160px; display: grid; align-content: start; gap: 12px; z-index: 20; }
+.d1-sheet .grab { margin: 2px auto 2px; width: 44px; height: 5px; cursor: grab; position: relative; }
+.d1-sheet .grab::before { content: ""; position: absolute; inset: -14px -40px; }
+.d1-pbw { display: flex; gap: 10px; overflow-x: auto; margin: 0 -16px; padding: 2px 16px 6px; scrollbar-width: none; }
+.d1-pbw .bw { flex: none; width: 270px; min-height: 190px; }
+.d1pb { display: grid; gap: 14px; padding-bottom: 120px; }
+.d1pb .p-head { padding: 4px 18px 0; }
+.d1pb .d1-pticket, .d1pb .d1-plane, .d1pb .p-honest { margin: 0 16px; }
+.d1-plane { display: grid; gap: 12px; }
+.d1day { display: grid; gap: 12px; padding-bottom: 120px; }
+.d1day .p-top { padding: 0 16px; }
+.d1day .d1-wx, .d1day .p-sec, .d1day .rail { margin: 0 16px; }
+.d1day .rail { margin-left: 8px; }
+.d1day .d1-pdays { padding-top: 0; }
+
+/* callouts in Book: fixed labels with a leader line to their pin */
+.mlabel.call { transform: translate(0, -50%); }
+.mlabel.call.r { transform: translate(-100%, -50%); }
+.mlabel.call::after { display: none; }
