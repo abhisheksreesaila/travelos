@@ -18,7 +18,7 @@ from tests.creator_import_support import Model, page
 from tests.test_signin import EMAILS
 
 ROOT = Path(__file__).resolve().parent.parent / "gitaway"
-BLOCKING = re.compile(r"^(ai\.(call_json|transcribe)|safefetch\.fetch|importsource\.(gather|offline)|robots\.check|blogscan\.(discover|sample)|(dj|draftjobs)\.\w+|(pfm|planforme)\.\w+|intake_page|stripe\.[\w.]+|(cd|creatordraft)\.\w+|(cc|creatorclaim)\.draft|admin\.admin_page|expedia\.pdf_text|geo\.\w+|photos\.\w+|time\.sleep|requests\.\w+|urllib\.\w+|httpx\.\w+|_read)$")
+BLOCKING = re.compile(r"^(ai\.(call_json|transcribe)|safefetch\.fetch|importsource\.(gather|offline)|robots\.check|blogscan\.(discover|sample)|(dj|draftjobs)\.\w+|(pfm|planforme)\.\w+|intake_page|stripe\.[\w.]+|(cd|creatordraft)\.\w+|(cc|creatorclaim)\.draft|admin\.admin_page|expedia\.pdf_text|geo\.\w+|weather\.\w+|photos\.\w+|time\.sleep|requests\.\w+|urllib\.\w+|httpx\.\w+|_read)$")
 # One-row reads and writes in the local SQLite file are fine on the loop; these are the only listed calls that are.
 FINE = {("gitaway/pages/creatorimport.py", "cd.get"), ("gitaway/pages/creatordrafts.py", "cd.mode"), ("gitaway/pages/creatordrafts.py", "dj.remaining"), ("gitaway/pages/planforme.py", "pfm.standin"), ("gitaway/pages/planforme.py", "pfm.offered")}      # (standin, offered: environment checks, no database)
 
@@ -59,6 +59,15 @@ def test_the_checker_itself_catches_a_blocking_call(tmp_path, monkeypatch):
     (bad / "pages" / "x.py").write_text("async def h(r):\n    return safefetch.fetch('u')\n")
     monkeypatch.setattr(sys.modules[__name__], "ROOT", bad)
     assert _offenders() == ["gitaway/pages/x.py:2 h calls safefetch.fetch"]
+
+
+def test_the_checker_catches_a_weather_call_too(tmp_path, monkeypatch):
+    """F-203: asking MET Norway for a forecast is a network call; an async handler must hand it to run_in_threadpool."""
+    bad = tmp_path / "gitaway"
+    (bad / "pages").mkdir(parents=True)
+    (bad / "pages" / "x.py").write_text("async def h(r):\n    return weather.for_trip(r)\n\nasync def ok(r):\n    return await run_in_threadpool(lambda: weather.for_trip(r))\n")
+    monkeypatch.setattr(sys.modules[__name__], "ROOT", bad)
+    assert _offenders() == ["gitaway/pages/x.py:2 h calls weather.for_trip"]
 
 
 @pytest.fixture
