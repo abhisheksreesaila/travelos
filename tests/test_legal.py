@@ -74,3 +74,11 @@ def test_plan_it_for_me_is_in_the_privacy_page_and_the_terms_and_the_terms_no_lo
                    "it can be wrong, it never states prices or opening hours, and it is your job to check every place, time and booking before you rely on it"):
         assert phrase in terms, phrase
     assert "does not take payments" not in terms
+
+
+def test_every_outside_service_sits_inside_the_services_list(client):
+    page = client.get("/privacy").text
+    start = page.index("Google sign-in")
+    end = page.index("</ul>", start)
+    for name in ("Azure OpenAI", "Sarvam AI", "Claude Haiku", "Stripe", "Claude Sonnet", "Travelpayouts Drive"):
+        assert start < page.index(name, start) < end, name
