@@ -64,8 +64,8 @@ def test_the_section_you_are_in_is_marked(signed_in):
 def test_trip_opens_the_trips_day(signed_in):
     page = signed_in(DESKTOP, path="/family")
     page.click(f"{BAR} .ga-tb-trip")
-    page.wait_for_url("**/trip/canvas?day=0*")      # before the trip: its first day
-    expect(page.locator("#cz")).to_be_visible()
+    page.wait_for_url("**/trip/cockpit*")      # the trip's home (F-201), open on its first day before the trip
+    expect(page.locator("#ck-stub-0.is-open")).to_be_visible()
     expect(page.locator(f"{BAR} .ga-tb-nav a[aria-current='page']")).to_have_text(["Trip"])
 
 
@@ -128,7 +128,7 @@ def test_the_picker_switches_trips(signed_in):
     assert box["x"] >= 0 and box["x"] + box["width"] <= DESKTOP["width"]
     expect(pop.locator("[aria-current='true']")).to_have_count(1)
     page.click(f"{BAR} .ga-tb-sw:not([aria-current])")
-    page.wait_for_url("**/trip/canvas?day=0*")
+    page.wait_for_url("**/trip/cockpit*")      # the other trip's home (F-201)
     assert page.locator(f"{BAR} .ga-tb-pickdates").inner_text() != first      # the other trip is open now
 
 

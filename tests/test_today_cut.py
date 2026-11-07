@@ -24,17 +24,23 @@ def where(client, url):
     return bare(r.headers["location"])
 
 
-# ---- the Today tab opens today's day -------------------------------------------------------------------------------------------
+# ---- the trip's home opens today's day ----------------------------------------------------------------------------------------
+# F-201: a bare /trip (the first tab, the top bar's Trip, the installed app's start) is the cockpit now; it was this day view (F-092). The cockpit opens on today's
+# ticket, and today's day view stays one tap away (its "Today's plan") and at its old address, /calendar.
 
-def test_the_today_tab_opens_todays_day_during_the_trip(trip, monkeypatch):
+def test_the_trip_home_is_the_cockpit_open_on_todays_day_during_the_trip(trip, monkeypatch):
     at(monkeypatch, datetime(2026, 10, 19, 17, 0, tzinfo=timezone.utc))     # Monday 10:00 AM in Los Angeles: day 4
-    assert where(trip, "/trip") == "/trip/canvas?day=3"
+    assert where(trip, "/trip") == "/trip/cockpit"
+    page = bare(trip.get("/trip/cockpit").text)
+    assert 'data-open="3"' in page and 'data-today="3"' in page
+    assert 'href="/trip/canvas?day=3"' in page and 'data-open-day=' in page      # today's ticket opens today's day view, where the tab went before
+    assert where(trip, "/calendar") == "/trip/canvas?day=3"
 
 
 def test_before_the_trip_it_opens_the_first_day_and_after_it_the_last(trip, monkeypatch):
-    assert where(trip, "/trip") == "/trip/canvas?day=0"          # the tests' today is Sep 30
+    assert 'data-open="0"' in trip.get("/trip/cockpit").text and where(trip, "/calendar") == "/trip/canvas?day=0"          # the tests' today is Sep 30
     at(monkeypatch, datetime(2026, 10, 25, 17, 0, tzinfo=timezone.utc))
-    assert where(trip, "/trip") == "/trip/canvas?day=4"
+    assert 'data-open="4"' in trip.get("/trip/cockpit").text and where(trip, "/calendar") == "/trip/canvas?day=4"
 
 
 def test_the_old_today_page_is_still_there_for_its_tabs(trip):

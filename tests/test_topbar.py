@@ -111,16 +111,17 @@ def test_the_bar_is_in_rem_and_sized_by_its_own_stylesheet(client):
 
 
 def test_trip_opens_day_one_before_the_trip_and_today_during_it(client, monkeypatch):
-    """The bar's Trip link is /trip, which lands on the trip's day: the first before the trip, today's during it (F-092's rule, which the bar relies on)."""
+    """The bar's Trip link is /trip, the trip's home: the cockpit (F-201), open on the first day before the trip and on today's during it (F-092's rule, which the bar relies on)."""
     from datetime import date
 
     from gitaway import catalog
     from tests.test_family_storage import THREE_NIGHTS
     book(client, **THREE_NIGHTS)
     assert 'href="/trip"' in bar(client.get("/family").text)
-    assert client.get("/trip", follow_redirects=False).headers["location"].startswith("/trip/canvas?day=0")      # today is Sep 30
+    assert client.get("/trip", follow_redirects=False).headers["location"].startswith("/trip/cockpit")
+    assert 'data-open="0"' in client.get("/trip").text      # today is Sep 30
     monkeypatch.setattr(catalog, "today", lambda: date(2026, 10, 18), raising=False)
-    assert client.get("/trip", follow_redirects=False).headers["location"].startswith("/trip/canvas?day=2")      # Oct 18 is the trip's third day
+    assert 'data-open="2"' in client.get("/trip").text      # Oct 18 is the trip's third day
 
 
 # ---- the trip menu below 1020px (F-147 review) ----------------------------------------------------------------------------

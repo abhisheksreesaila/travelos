@@ -15,7 +15,7 @@ from tests_browser.test_phone_polish import OVERFLOW, SMALL_CONTROLS, SMALL_TEXT
 
 LAPTOP = {"width": 1280, "height": 800}
 NARROW = {"width": 320, "height": 640}
-TABS = [("trip", "Trip", "/trip/canvas"), ("plan", "Plan", "/trip"), ("ask", "Ask", "/trip/ask"), ("book", "Book", "/trip/book"), ("family", "Family", "/trip/family")]   # F-200: five tabs (F-093: Help left the bar)
+TABS = [("trip", "Trip", "/trip"), ("plan", "Plan", "/trip/today"), ("ask", "Ask", "/trip/ask"), ("book", "Book", "/trip/book"), ("family", "Family", "/trip/family")]   # F-200: five tabs (F-093: Help left the bar)
 
 
 @pytest.fixture
@@ -76,7 +76,7 @@ def test_every_tab_is_pressed_and_lands_in_the_shell(shell, base_url):
             continue
         else:
             page.locator(f"#ph-tab-{key}").click()
-        page.wait_for_url(re.compile(r"/trip/canvas\?day=") if key == "plan" else re.compile(re.escape(path) + "$") if key == "trip" else re.compile(re.escape(path)))    # F-092: Plan (Today until F-200) is the day view; Trip the week
+        page.wait_for_url(re.compile(r"/trip/canvas\?day=") if key == "plan" else re.compile(r"/trip/cockpit") if key == "trip" else re.compile(re.escape(path)))    # Plan is the day view (F-200); Trip the trip's home, the cockpit (F-201)
         expect(page.locator(f"#ph-tab-{key}")).to_have_attribute("aria-current", "page")
         expect(bar).to_be_visible()
         assert bar.locator("a").count() == 5
@@ -85,7 +85,7 @@ def test_every_tab_is_pressed_and_lands_in_the_shell(shell, base_url):
         if key == "plan":
             expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
         elif key == "trip":
-            expect(page.locator(".cz-view[data-level=week]")).to_be_visible()
+            expect(page.locator("#ck-week")).to_be_visible()
         elif key == "map":
             expect(page.locator("#tp-title-h")).to_have_text("Map")
             expect(page.locator("#mp-daychip")).to_be_visible()  # the real map (F-068), not a "coming" card
@@ -180,7 +180,7 @@ def test_the_laptop_keeps_its_layout(shell, base_url):
     expect(page.locator(".ph-tabs")).to_be_hidden()
     expect(page.locator("#mp-daychip")).to_be_visible()
     page.locator(".ph-back").click()
-    page.wait_for_url(re.compile(r"/trip/canvas\?day="))      # F-092: Back to Today is the day view
+    page.wait_for_url(re.compile(r"/trip/cockpit"))      # F-201: Back to Today is the trip's home
     assert page.evaluate(OVERFLOW) == 0
 
 

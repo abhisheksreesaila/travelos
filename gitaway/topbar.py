@@ -80,8 +80,8 @@ def _trip_pick(trips, b, phone=False, label=(), sum_cls=""):
             Ul(*mine, cls="ga-tb-list") if len(trips) > 1 else "",
             A(icon("plus", 16, 2.4), "Plan another trip", href="/start", cls="ga-tb-item"),
             A(icon("ledger", 16, 2.4), "Import a trip you booked", href="/trips/import", cls="ga-tb-item") if access.request_role() != "viewer" else "",
-            A(icon("share", 16, 2.4), "Publish this trip", href="/trip/publish", cls="ga-tb-item", id="ga-tb-publish") if access.request_role() != "viewer" else "",   # F-181: the trip as a creator page
-            A(icon("star", 16, 2.4), "Plan it for me", href="/plan-for-me", cls="ga-tb-item", id="ga-tb-planforme") if access.request_role() != "viewer" and pfm.offered() else "",   # F-193: an agent builds a whole trip
+            A(icon("share", 16, 2.4), "Publish this trip", href="/trip/publish", cls="ga-tb-item", id=None if phone else "ga-tb-publish") if access.request_role() != "viewer" else "",   # F-181: the trip as a creator page (ids on the bar's copy only: a phone's copy is on the same page)
+            A(icon("star", 16, 2.4), "Plan it for me", href="/plan-for-me", cls="ga-tb-item", id=None if phone else "ga-tb-planforme") if access.request_role() != "viewer" and pfm.offered() else "",   # F-193: an agent builds a whole trip
             cls="ga-tb-pop ga-tb-pop-trip"),
         cls="ga-tb-menu ga-tb-picker" + (" ga-tb-phonepick" if phone else "") + (" is-beacon" if now else ""))
 

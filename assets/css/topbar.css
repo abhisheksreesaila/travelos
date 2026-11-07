@@ -36,7 +36,7 @@
   .ga-topbar ~ .tp { min-height: calc(100vh - 4.8333rem); min-height: calc(100dvh - 4.8333rem); }   /* the phone shell is a full-height screen: the bar's height comes off it, so the page is no taller than the window */
   .ga-topbar ~ .tp .ph-back { margin-top: 0; }          /* the bar takes the top of the window: the help page (the tallest that fits) gets its own spacing back so it still fits */
   .ga-topbar ~ .tp .tp-head { padding-top: 0; }
-  .ga-topbar ~ .tp:not([data-canvas]):not(:has(.mp-stage, .ar)) { max-width: 36rem; padding-bottom: 2rem; }      /* F-200: the phone screens shown on a laptop (Help, Map, Notes) get a wider column (Geist and the 16px body wrap more in the old 30rem), and no room for a tab bar the laptop does not show; the map and Around you keep their own full-width layout */
+  .ga-topbar ~ .tp:not([data-canvas]):not([data-cockpit]):not(:has(.mp-stage, .ar)) { max-width: 36rem; padding-bottom: 2rem; }      /* F-200: (not the cockpit, F-201, which fills the window) the phone screens shown on a laptop (Help, Map, Notes) get a wider column (Geist and the 16px body wrap more in the old 30rem), and no room for a tab bar the laptop does not show; the map and Around you keep their own full-width layout */
   .ga-topbar ~ .tp > .ga-skip, .ga-skip:has(~ .ga-topbar) { display: none; }   /* one "Skip to content" at a time: the bar's own, here; the page's own below 1020px */
   .ga-topbar a { text-decoration: none; color: inherit; }
   .ga-tb-l { display: flex; align-items: center; gap: 0.5rem; min-width: 0; justify-self: start; }

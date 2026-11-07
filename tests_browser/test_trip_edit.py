@@ -46,7 +46,7 @@ def test_edit_a_flight_time_and_a_hotel_name_and_see_both_on_the_days(signed_in,
     page.fill("#ti-text", TEMPLATE)
     page.click("#ti-preview")
     page.click("#ti-save")
-    page.wait_for_url("**/trip/canvas*")
+    page.wait_for_url("**/trip/cockpit*")      # the trip's home (F-201)
     # a plan that must survive the edit
     added = page.request.post(f"{base_url}/trip/plans", form={"id": "a1", "day": "1", "start": "12:00", "title": "Tacos", "kind": "fun"}, max_redirects=0)
     assert added.status in (200, 303)
@@ -84,7 +84,7 @@ def test_edit_a_flight_time_and_a_hotel_name_and_see_both_on_the_days(signed_in,
     expect(page.locator(".ti-match")).to_contain_text("plans, notes and rides stay")
     no_sideways_scroll(page)
     page.click("#ti-save-changes")
-    page.wait_for_url("**/trip/canvas*")
+    page.wait_for_url("**/trip/cockpit*")
     page.goto(f"{base_url}/trip/canvas?day=0")
     expect(page.locator('a[href*="booked=b-out"]').first).to_contain_text("7:20")
     expect(page.locator('a[href*="booked=b-in"]').first).to_contain_text("The Corrected Inn")

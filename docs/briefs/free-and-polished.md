@@ -81,3 +81,11 @@ Status: approved (2026-11-07, the captain: "A with a mix here and there … lets
 - The captain plans and books the Tahoe trip through GitAway, and the bookings land in the trip.
 - The captain looks at every screen on their phone, in light and dark mode, and calls it polished.
 - The first creators publish, and families fork and free-plan trips. Track readers, forks and partner clicks.
+
+## Season and weather you can feel (the captain, 2026-11-07)
+- **The background shows the season** of the place on the trip's dates: winter snow, spring green, summer sun, autumn leaves. It applies to the cockpit, the shared trail, "Where to?" and the book of tickets.
+  - The season is worked out from the destination and its hemisphere. Tropical places show wet or dry season instead.
+- **Weather moves, gently:** a quiet animation of the real or typical weather, such as falling snow, rain, sun or wind. It's built on the cockpit's wx.js engine.
+  - Reduced motion gets a still frame.
+  - The animation is behind the text and keeps contrast.
+- **No invented weather:** before the forecast opens, the background shows the season only. Weather animation shows only for real forecast days, or labelled typical weather.

@@ -43,8 +43,8 @@ def test_paste_preview_save_and_see_it_on_its_days(signed_in, base_url, viewport
     expect(page.locator("#ti-hotel")).to_contain_text("123 Ocean Ave, Santa Monica")
     no_sideways_scroll(page)
     page.click("#ti-save")
-    page.wait_for_url("**/trip/canvas*")
-    expect(page.locator("#cz")).to_be_visible()
+    page.wait_for_url("**/trip/cockpit*")      # the trip's home (F-201)
+    expect(page.locator("#ck-week")).to_be_visible()
     page.goto(f"{base_url}/trip/canvas?day=0")
     expect(page.locator('a[href*="booked=b-out"]').first).to_contain_text("Alaska Airlines AS 1234")
     expect(page.locator('a[href*="booked=b-in"]').first).to_be_attached()
@@ -70,7 +70,7 @@ def test_late_events_fit_inside_the_grid(signed_in, base_url):
     page.fill("#ti-text", late)
     page.click("#ti-preview")
     page.click("#ti-save")
-    page.wait_for_url("**/trip/canvas*")
+    page.wait_for_url("**/trip/cockpit*")
     page.goto(f"{base_url}/trip/canvas?day=4")
     expect(page.locator('a[href*="booked=b-back"]').first).to_be_attached()     # the flight at 11:50 PM is a line on the last day
     no_sideways_scroll(page)
@@ -146,7 +146,7 @@ def test_import_a_booked_trip_is_a_visible_button_where_trips_start(signed_in, b
     page.fill("#ti-text", TEMPLATE)
     page.click("#ti-preview")
     page.click("#ti-save")
-    page.wait_for_url("**/trip/canvas*")
+    page.wait_for_url("**/trip/cockpit*")
     no_sideways_scroll(page)
     if viewport["width"] >= 1020:        # the top bar's trip menu offers the next import
         page.click(".ga-tb-picker summary")

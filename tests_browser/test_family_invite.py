@@ -62,7 +62,7 @@ def test_invite_then_join_as_a_second_dev_user_and_see_the_trip(contexts, base_u
     other.click("#join-signin")
     other.fill("#si-email", sam)
     other.click("#si-dev-form button[type=submit]")
-    other.wait_for_url("**/trip/canvas*")
+    other.wait_for_url("**/trip/cockpit*")      # the trip's home (F-201)
     other.goto(f"{base_url}/family")
     expect(other.locator("#fam-role")).to_contain_text("editor")
     expect(other.locator(".fam-member")).to_have_count(2)

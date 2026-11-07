@@ -98,6 +98,15 @@ def _offline_maps(monkeypatch):
     around.clear_cache()
     monkeypatch.setattr(around.GATE, "gap", 0.0)
     monkeypatch.setattr(around.GATE, "shut_until", None)
+    from gitaway import geopack   # F-201: nor the paper map's pack (Overpass, the terrain tiles); a pack builds in the test's own thread, its gates start open
+    def refuse_pack(url, data=None, timeout=0):
+        raise OSError("the network is off in tests")
+    monkeypatch.setattr(geopack, "TRANSPORT", refuse_pack)
+    monkeypatch.setattr(geopack, "ASYNC", False)
+    for gate in (geopack.OVERPASS_GATE, geopack.TILE_GATE):
+        monkeypatch.setattr(gate, "gap", 0.0)
+        monkeypatch.setattr(gate, "shut_until", None)
+    geopack.forget_failures()
 
 
 @pytest.fixture(autouse=True)

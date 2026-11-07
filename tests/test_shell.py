@@ -16,7 +16,7 @@ def test_every_page_links_tokens_then_base_exactly_once(client):
     from main import app
     paths = {r.path for r in app.routes
              if "GET" in (getattr(r, "methods", None) or ()) and "{" not in r.path}
-    paths -= {"/plan/explore", "/plan/quote", "/auth/callback", "/manifest.webmanifest", "/sw.js", "/healthz", "/badge/plan-this-trip.svg", "/badge/plan-this-trip-dark.svg", "/trips/import/template", "/trip/family/thread", "/trip/talk/items", "/trip/family/list", "/trip/family/panel", "/robots.txt", "/sitemap.xml"}  # a fragment, JSON, the OAuth return (needs a code), manifest, script and the template download: not pages
+    paths -= {"/plan/explore", "/plan/quote", "/auth/callback", "/manifest.webmanifest", "/sw.js", "/healthz", "/badge/plan-this-trip.svg", "/badge/plan-this-trip-dark.svg", "/trips/import/template", "/trip/family/thread", "/trip/talk/items", "/trip/family/list", "/trip/family/panel", "/trip/cockpit/map", "/robots.txt", "/sitemap.xml"}  # a fragment, JSON, the OAuth return (needs a code), manifest, script and the template download: not pages
     paths.add("/trips/sun-tacos-and-tide-pools")
     assert {"/", "/plan"} <= paths
     for path in sorted(paths):

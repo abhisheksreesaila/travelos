@@ -1,5 +1,5 @@
 """The phone shell (F-067): every trip screen sits in one frame with a bottom tab bar. Since F-200 (Direction A, the cockpit's chrome) it is one opaque floating bar of five:
-Trip (the week), Plan (the day), Ask in the true centre, Book (the trip's booking lanes, F-198) and Family. Map is a button in the day heading (F-096); Help left the bar in F-093 and is opened from a booking or the SOS button.
+Trip (the trip's home, the cockpit since F-201: its week of tickets), Plan (the day), Ask in the true centre, Book (the trip's booking lanes, F-198) and Family. Map is a button in the day heading (F-096); Help left the bar in F-093 and is opened from a booking or the SOS button.
 
     shell(active, *content, title="", head=(), scripts=(), **attrs)   the whole document: styles, the screen's content, the tab bar
     tabbar(active)                                                     the bar alone (`active` is one of TAB_KEYS)
@@ -23,7 +23,8 @@ from gitaway import access, session as ses, topbar
 from gitaway.icons import icon
 from gitaway.layout import preview, styles
 
-TABS = (("trip", "Trip", "home", "/trip/canvas"), ("plan", "Plan", "calendar", "/trip"), ("ask", "Ask", "mic", "/trip/ask"),
+TABS = (("trip", "Trip", "home", "/trip"), ("plan", "Plan", "calendar", "/trip/today"),      # Trip: the cockpit, the trip's home (F-201); Plan: the day (F-200)
+        ("ask", "Ask", "mic", "/trip/ask"),
         ("book", "Book", "ticket", "/trip/book"), ("family", "Family", "users", "/trip/family"))   # F-093: Help left the bar; /trip/help still works for old links, passes and phone numbers
 TAB_KEYS = tuple(t[0] for t in TABS)
 ALIASES = {"today": "plan"}   # the screens that said "today" before F-200 (the day, a plan's talk) are the Plan tab

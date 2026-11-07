@@ -18,7 +18,7 @@ from tests.creator_import_support import Model, page
 from tests.test_signin import EMAILS
 
 ROOT = Path(__file__).resolve().parent.parent / "gitaway"
-BLOCKING = re.compile(r"^(ai\.(call_json|transcribe)|safefetch\.fetch|importsource\.(gather|offline)|robots\.check|blogscan\.(discover|sample)|(dj|draftjobs)\.\w+|(pfm|planforme)\.\w+|intake_page|stripe\.[\w.]+|(cd|creatordraft)\.\w+|(cc|creatorclaim)\.draft|admin\.admin_page|expedia\.pdf_text|geo\.\w+|weather\.(forecast|trip_weather)|(plan\.)?(workspace|weather_pane)|calendar_view|forks_page|photos\.\w+|time\.sleep|requests\.\w+|urllib\.\w+|httpx\.\w+|_read)$")
+BLOCKING = re.compile(r"^(ai\.(call_json|transcribe)|safefetch\.fetch|importsource\.(gather|offline)|robots\.check|blogscan\.(discover|sample)|(dj|draftjobs)\.\w+|(pfm|planforme)\.\w+|intake_page|stripe\.[\w.]+|(cd|creatordraft)\.\w+|(cc|creatorclaim)\.draft|admin\.admin_page|expedia\.pdf_text|geo\.\w+|(gp|geopack)\.(build|fetch_shapes|fetch_dem|terrarium|transport|render|ensure|drain|trip_points|needed)|weather\.(forecast|trip_weather)|(plan\.)?(workspace|weather_pane)|calendar_view|forks_page|photos\.\w+|time\.sleep|requests\.\w+|urllib\.\w+|httpx\.\w+|_read)$")
 # One-row reads and writes in the local SQLite file are fine on the loop; these are the only listed calls that are.
 FINE = {("gitaway/pages/creatorimport.py", "cd.get"), ("gitaway/pages/creatordrafts.py", "cd.mode"), ("gitaway/pages/creatordrafts.py", "dj.remaining"), ("gitaway/pages/planforme.py", "pfm.standin"), ("gitaway/pages/planforme.py", "pfm.offered")}      # (standin, offered: environment checks, no database)
 

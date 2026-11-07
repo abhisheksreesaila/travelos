@@ -124,8 +124,8 @@ def test_walk_the_whole_builder_at_390_and_see_the_trip_on_its_days(phone, base_
     expect(page.locator("#ti-travelers")).to_contain_text("age 7")
     no_sideways_scroll(page)
     page.click("#ti-save")
-    page.wait_for_url("**/trip/canvas*")
-    expect(page.locator("#cz")).to_be_visible()
+    page.wait_for_url("**/trip/cockpit*")      # the trip's home (F-201)
+    expect(page.locator("#ck-week")).to_be_visible()
     assert not page.errors
 
 

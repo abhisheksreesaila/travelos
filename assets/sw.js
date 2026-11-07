@@ -21,6 +21,7 @@ function routeFor(req) {
   if (AUTH_PATH.test(url.pathname)) return "skip";
   if (url.pathname === "/sw.js" || url.pathname === "/manifest.webmanifest") return "skip";
   if (url.pathname.startsWith("/assets/")) return "asset";
+  if (url.pathname.startsWith("/trip/cockpit/pack/")) return "pack";   /* F-201: the paper map's relief and shapes, named by their build: kept for this person, so the map works offline */
   if (req.mode === "navigate") return "page";
   return "skip";
 }
@@ -62,8 +63,21 @@ async function assetFirst(req) {
 }
 
 async function trim(cache) {
-  const keys = await cache.keys();
+  const keys = (await cache.keys()).filter((k) => !k.url.includes(PACK_PATH));      /* the paper map's pack is not a page: it stays (F-201) */
   for (const k of keys.slice(0, Math.max(0, keys.length - MAX_PAGES))) await cache.delete(k);
+}
+
+/* F-201: the paper map's pack (the relief images and the shapes), named by its build, so a saved copy is never stale. Kept with this person's pages (another
+   person's sign-in drops it with them) and never trimmed: the cockpit's map then works offline once it has loaded. */
+const PACK_PATH = "/trip/cockpit/pack/";
+async function packFirst(req) {
+  const who = await getWho();
+  const cache = who ? await caches.open(pagesName(who)) : null;
+  const hit = cache ? await cache.match(req) : undefined;
+  if (hit) return hit;
+  const res = await fetch(req);
+  if (res.ok && cache) await cache.put(req, res.clone());
+  return res;
 }
 
 /* Reads whose pages these are from the HTML, forgets everyone else's, and saves this one under that person's key. */
@@ -80,10 +94,10 @@ async function remember(req, res) {
   const cache = await caches.open(pagesName(who));
   await cache.delete(req);
   await cache.put(req, res.clone());
-  /* F-092: the installed app starts at /trip, which redirects to the day view (the browser follows that redirect, so this worker never sees it).
-     The last day view opened is kept as /trip too, so an offline start opens the plan instead of the offline page. */
+  /* F-092, F-201: the installed app starts at /trip, which redirects to the trip's home, the cockpit (the browser follows that redirect, so this worker never sees it).
+     The last plain cockpit opened is kept as /trip too, so an offline start opens the trip instead of the offline page. */
   const url = new URL(req.url);
-  if (url.pathname === "/trip/canvas" && /^\?day=\d+(&trip=[0-9a-f]+)?$/.test(url.search)) {
+  if (url.pathname === "/trip/cockpit" && /^(\?trip=[0-9a-f]+)?$/.test(url.search)) {
     const start = new URL("/trip", url.origin).href;
     await cache.delete(start);
     await cache.put(start, res.clone());
@@ -188,6 +202,7 @@ self.addEventListener("fetch", (event) => {
   }
   const kind = routeFor(req);
   if (kind === "asset") event.respondWith(assetFirst(req));
+  else if (kind === "pack") event.respondWith(packFirst(req));
   else if (kind === "page") {
     const ready = held.get(req.url);      // F-116: a fresh copy the finger already brought wins; one still on its way does not hold up a tab screen that has a saved copy
     const first = ready && ready.ready ? fromPrefetch(req) : tabScreen(req) ? staleTab(event) : Promise.resolve(null);

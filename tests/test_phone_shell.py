@@ -15,8 +15,8 @@ from tests.test_signin import sign_in
 from tests.test_trip_import import imported
 from tests.test_trip_phone import plan, tag
 
-BAR = ("/trip/canvas", "/trip", "/trip/ask", "/trip/book", "/trip/family")   # F-200: five tabs (the week, the day, Ask in the middle, Book, Family); Map is a button in the day heading (F-096)
-PATHS = {"plan": "/trip", "map": "/trip/map", "ask": "/trip/ask", "family": "/trip/family", "help": "/trip/help"}
+BAR = ("/trip", "/trip/today", "/trip/ask", "/trip/book", "/trip/family")   # F-200: five tabs (the cockpit (D-285), the day, Ask in the middle, Book, Family); Map is a button in the day heading (F-096)
+PATHS = {"trip": "/trip", "plan": "/trip/today", "map": "/trip/map", "ask": "/trip/ask", "family": "/trip/family", "help": "/trip/help"}
 
 
 @pytest.fixture
