@@ -15,8 +15,8 @@ from tests_browser.test_topbar import LAPTOP, signed_in  # noqa: F401 - fixture
 BOTH = pytest.mark.parametrize("viewport", [DESKTOP, LAPTOP], ids=["1440", "1280"])
 NO_SCROLL = "document.documentElement.scrollWidth <= document.documentElement.clientWidth && document.documentElement.scrollHeight <= document.documentElement.clientHeight"
 CARD = "rgb(255, 255, 255)"
-KINDS = {"food": ("rgb(255, 201, 60)", "rgb(255, 241, 194)"), "outdoors": ("rgb(72, 209, 160)", "rgb(212, 247, 234)"), "culture": ("rgb(195, 178, 255)", "rgb(236, 228, 255)"),
-         "fun": ("rgb(255, 125, 190)", None), "travel": ("rgb(90, 176, 255)", "rgb(221, 238, 255)")}
+KINDS = {"food": ("rgb(255, 212, 59)", "rgb(255, 244, 194)"), "outdoors": ("rgb(15, 118, 110)", "rgb(217, 242, 239)"), "culture": ("rgb(139, 47, 201)", "rgb(241, 227, 250)"),
+         "fun": ("rgb(255, 125, 190)", None), "travel": ("rgb(67, 56, 202)", "rgb(228, 227, 251)")}
 RECTS = """() => {
   const r = n => { const b = n.getBoundingClientRect(); return { x: b.left, y: b.top, w: b.width, h: b.height, r: b.right, b: b.bottom }; };
   const labels = [...document.querySelectorAll('.cz-wax .cz-wax-h')].map(n => ({ ...r(n), hr: +n.dataset.h }));
@@ -129,7 +129,7 @@ def test_cards_are_kind_filled_with_the_kinds_edge_and_tile_and_a_grey_pill(sign
         assert card.locator(".cz-wi-ico").evaluate("n => getComputedStyle(n).backgroundColor") == CARD
         assert card.locator(".cz-wi-ico svg").count() == 1
     expect(lunch.locator(".cz-wi-tag")).to_have_text("Plan")
-    assert lunch.locator(".cz-wi-tag").evaluate("n => [getComputedStyle(n).backgroundColor, getComputedStyle(n).color]") == ["rgb(250, 247, 242)", "rgb(74, 68, 96)"]
+    assert lunch.locator(".cz-wi-tag").evaluate("n => [getComputedStyle(n).backgroundColor, getComputedStyle(n).color]") == ["rgb(237, 237, 241)", "rgb(92, 92, 102)"]
     flight = page.locator(".cz-wi.is-booked", has_text="· SFO → LAX")
     hotel = page.locator(".cz-wi.is-booked", has_text="Check in")
     for card, (edge, tint) in ((flight, KINDS["travel"]), (hotel, KINDS["culture"])):

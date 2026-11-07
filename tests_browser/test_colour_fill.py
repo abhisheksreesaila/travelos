@@ -13,11 +13,11 @@ from tests_browser.helpers import DESKTOP, PHONE
 from tests_browser.test_topbar import LAPTOP, TABLET, signed_in  # noqa: F401 - fixture
 
 WHITE = "rgb(255, 255, 255)"
-INK = "rgb(30, 26, 46)"
+INK = "rgb(11, 11, 13)"
 # kind -> (fill, edge), both from tokens.css
-KIND = {"food": ("rgb(255, 241, 194)", "rgb(255, 201, 60)"), "outdoors": ("rgb(212, 247, 234)", "rgb(72, 209, 160)"),
-        "culture": ("rgb(236, 228, 255)", "rgb(195, 178, 255)"), "travel": ("rgb(221, 238, 255)", "rgb(90, 176, 255)"),
-        "fun": ("rgb(255, 227, 241)", "rgb(255, 140, 198)")}
+KIND = {"food": ("rgb(255, 244, 194)", "rgb(255, 212, 59)"), "outdoors": ("rgb(217, 242, 239)", "rgb(15, 118, 110)"),
+        "culture": ("rgb(241, 227, 250)", "rgb(139, 47, 201)"), "travel": ("rgb(228, 227, 251)", "rgb(67, 56, 202)"),
+        "fun": ("rgb(251, 225, 234)", "rgb(201, 42, 94)")}
 ALL = pytest.mark.parametrize("viewport", [DESKTOP, LAPTOP, TABLET, PHONE], ids=["1440", "1280", "800", "390"])
 DESK = pytest.mark.parametrize("viewport", [DESKTOP, LAPTOP], ids=["1440", "1280"])
 SMALL = pytest.mark.parametrize("viewport", [TABLET, PHONE], ids=["800", "390"])
@@ -166,7 +166,7 @@ def test_a_stuck_title_covers_the_note_it_slides_over(signed_in, viewport):
 
 
 PANELS = """() => [...document.querySelectorAll('.cz-day-body, .cz-hchip, .cz-hchips, .cz-wcol, .cz-wh, .cz-wk, #cz-wk, .cz-dock, .cz-row')].filter(e => e.getClientRects().length).map(e => [e.className, getComputedStyle(e).backgroundColor])"""
-NEUTRAL = ("rgba(0, 0, 0, 0)", WHITE, INK, "rgb(250, 247, 242)")      # clear, white card, the open day's ink chip, paper
+NEUTRAL = ("rgba(0, 0, 0, 0)", WHITE, INK, "rgb(237, 237, 241)")      # clear, white card, the open day's ink chip, paper
 
 
 @pytest.mark.parametrize("viewport", [DESKTOP, PHONE], ids=["1440", "390"])

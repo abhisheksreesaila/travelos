@@ -17,8 +17,8 @@ from tests_browser.helpers import PHONE
 from tests_browser.test_phone_polish import OVERFLOW, SMALL_CONTROLS, SMALL_TEXT
 from tests_browser.test_trip_canvas import NARROW, canvas_page, model, settle  # noqa: F401 - fixtures and helpers
 
-TALL = {"width": 390, "height": 1900}          # a whole block fits on the screen, so a drag never needs the page to scroll
-TALL_NARROW = {"width": 320, "height": 1900}
+TALL = {"width": 390, "height": 2400}          # a whole block fits on the screen, so a drag never needs the page to scroll (F-200: 2400, the 16px words and 48px rows made a block taller than 1900)
+TALL_NARROW = {"width": 320, "height": 2400}
 
 
 def plan():

@@ -79,7 +79,7 @@ def test_each_page_has_the_top_bar_white_cards_and_the_trip_type_and_fits_1440_b
     card = {"/family": ".fam-sec", "/trip/details": ".ti-sec", "/start": ".st-card"}[path]
     style = page.locator(card).first.evaluate("e => { const s = getComputedStyle(e); return [s.backgroundColor, parseFloat(s.borderTopLeftRadius), s.borderTopWidth] }")
     assert style[0] == "rgb(255, 255, 255)" and 13 <= style[1] <= 15 and style[2] == "1px", style      # F-158: the calm skin's white card with a hairline edge, radius 14
-    assert "Bricolage" in page.locator("h1").first.evaluate("e => getComputedStyle(e).fontFamily")
+    assert "Geist" in page.locator("h1").first.evaluate("e => getComputedStyle(e).fontFamily")      # F-200: Geist for everything
     scroll_h, client_h = fits(page)
     assert scroll_h <= client_h, f"{path} scrolls: {scroll_h} > {client_h}"
 

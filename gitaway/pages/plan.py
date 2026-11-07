@@ -16,7 +16,7 @@ from gitaway import access, affiliate, catalog, context, itineraries, partners, 
 from gitaway import session as session_helpers
 from gitaway.icons import icon
 from gitaway.itinerary_view import fork_href
-from gitaway.layout import avatar, brand, styles
+from gitaway.layout import avatar, brand, preview, styles
 from gitaway.pages import flight_detail as flight_ui, plan_search, stay_detail as stay_ui
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/workspace.css"), Link(rel="stylesheet", href="/assets/css/partners.css"))
@@ -502,6 +502,7 @@ def top_bar(trip, ledger_el=None):
     who = session.request_traveler()
     return Div(
         brand(),
+        preview(),
         A(Span(f"{trip.origin} → {trip.destination_name}", cls="ws-bold"), Span(f"{fmt(trip.depart)} – {fmt(trip.return_)}"),
           Span(trip.summary), Span("Change", cls="ws-change"), href="/start" + (f"?{catalog.trip_query(trip)}" if trip != catalog.SAMPLE_TRIP else ""), cls="ws-pill"),
         ledger_el or "",

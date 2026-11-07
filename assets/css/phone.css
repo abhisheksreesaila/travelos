@@ -2,8 +2,8 @@
    Loaded after trip.css. Sizes are rem off the one root; text never goes under --text-min. The bar shows at phone width and in the
    installed Home Screen app; on a laptop the existing layout stays and the bar is hidden. */
 .ph-tabs, .ph-back { display: none; }
-.ph-sec { display: flex; justify-content: space-between; font-size: max(var(--text-min), 0.8125rem); font-weight: 800; letter-spacing: 0.1em; color: var(--ink-3); padding: 0.25rem 0.25rem 0; }
-.ph-back { align-items: center; justify-content: center; min-height: 2.75rem; font-weight: 800; text-decoration: underline; }
+.ph-sec { display: flex; justify-content: space-between; font-size: max(var(--label-min), 0.8125rem); font-weight: 800; letter-spacing: 0.1em; color: var(--ink-3); padding: 0.25rem 0.25rem 0; }
+.ph-back { align-items: center; justify-content: center; min-height: var(--target); font-weight: 800; text-decoration: underline; }
 @media (min-width: 721px) { .ph-back { display: flex; margin-top: 1rem; } }
 
 /* the "coming" card */
@@ -14,14 +14,14 @@
 .ph-main { display: flex; flex-direction: column; gap: 0.75rem; }
 
 /* countdown and Leave by, inside the dark Up next card */
-.ph-leave { display: flex; align-items: center; gap: 0.875rem; padding: 0.625rem 0.75rem; border-radius: 1.125rem; background: rgba(255, 255, 255, .08); }
+.ph-leave { display: flex; align-items: center; gap: 0.875rem; padding: 0.625rem 0.75rem; border-radius: 1.125rem; background: color-mix(in srgb, var(--on-ink) 8%, transparent); }
 .ph-ring { position: relative; flex-shrink: 0; width: 3.5rem; height: 3.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
 .ph-ring svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
 .ph-ring-bg, .ph-ring-fg { fill: none; stroke-width: 5; }
-.ph-ring-bg { stroke: rgba(255, 255, 255, .16); }
-.ph-ring-fg { stroke: var(--sun); stroke-linecap: round; }
+.ph-ring-bg { stroke: color-mix(in srgb, var(--on-ink) 16%, transparent); }
+.ph-ring-fg { stroke: var(--beacon-acc); stroke-linecap: round; }
 .ph-ring-n { position: relative; font-family: var(--font-display); font-weight: 800; font-size: 1.125rem; }
-.ph-ring-u { position: relative; font-size: max(var(--text-min), 0.8125rem); font-weight: 800; color: #DDD8EA; }
+.ph-ring-u { position: relative; font-size: max(var(--text-min), 0.8125rem); font-weight: 800; color: var(--up-fg2); }
 .ph-leave-text { display: flex; flex-direction: column; gap: 0.125rem; min-width: 0; }
 .ph-leave-by { font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; }
 .tp-up-actions .tp-btn { gap: 0.5rem; }
@@ -31,41 +31,38 @@
 .ph-route { position: relative; height: 4.625rem; border-radius: 1.25rem; background: var(--card); box-shadow: var(--shadow-sm); overflow: hidden; }
 .ph-route svg { position: absolute; inset: 0; width: 100%; height: 100%; }
 .ph-route-casing, .ph-route-line { fill: none; stroke-linecap: round; vector-effect: non-scaling-stroke; }
-.ph-route-casing { stroke: #FFFFFF; stroke-width: 8; }
+.ph-route-casing { stroke: var(--card); stroke-width: 8; }
 .ph-route-line { stroke: var(--coral); stroke-width: 4; }
-.ph-stop { position: absolute; width: 1.75rem; height: 1.75rem; margin: -0.875rem 0 0 -0.875rem; border-radius: var(--r-pill); background: var(--ink); color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: max(var(--text-min), 0.8125rem); }
-.ph-stop.is-next { background: var(--coral); color: var(--ink); box-shadow: 0 0 0 0.125rem #FFFFFF; }
-.ph-route-lab { position: absolute; right: 0.5rem; bottom: 0.25rem; padding: 0 0.5rem; border-radius: var(--r-pill); background: #FFFFFF; font-size: max(var(--text-min), 0.8125rem); font-weight: 800; color: var(--ink-2); }
+.ph-stop { position: absolute; width: 1.75rem; height: 1.75rem; margin: -0.875rem 0 0 -0.875rem; border-radius: var(--r-pill); background: var(--ink); color: var(--on-ink); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: max(var(--text-min), 0.8125rem); }
+.ph-stop.is-next { background: var(--coral); color: var(--on-accent); box-shadow: 0 0 0 0.125rem var(--card); }
+.ph-route-lab { position: absolute; right: 0.5rem; bottom: 0.25rem; padding: 0 0.5rem; border-radius: var(--r-pill); background: var(--card); font-size: max(var(--text-min), 0.8125rem); font-weight: 800; color: var(--ink-2); }
 
 /* done items are struck through */
 .tp-row.is-done .tp-what { text-decoration: line-through; }
 .tp-state svg { vertical-align: -0.1875rem; margin-right: 0.25rem; }
 
 @media (max-width: 720px), (display-mode: standalone) {
-  .tp { --tabs-h: 4.75rem; }
+  .tp { --tabs-h: 5.25rem; }
   .ph-back { display: none; }
-  /* F-133: Calendar's bar. Nothing spans the screen: Today is a pill on the left, Ask and Family one capsule on the right, both floating over the page (the nav itself
-     takes no taps, so the page between them can still be touched). */
-  .ph-tabs { position: fixed; z-index: 30; left: 0; right: 0; bottom: 0; max-width: 36rem; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; pointer-events: none;
-    padding: 0.5rem max(1rem, env(safe-area-inset-right)) calc(0.5rem + max(0.375rem, env(safe-area-inset-bottom))) max(1rem, env(safe-area-inset-left)); }
-  .ph-tabs > .ph-tab, .ph-tabs-r { pointer-events: auto; height: 3.25rem; border-radius: var(--r-pill); background: var(--card); box-shadow: 0 0 0 1px rgba(30, 26, 46, .08), 0 0.5rem 1.5rem -0.5rem rgba(30, 26, 46, .3); }
-  .ph-tabs-r { display: flex; align-items: center; gap: 0.25rem; padding: 0 0.25rem; }
-  .tp .ph-tab { position: relative; display: flex; align-items: center; justify-content: center; gap: 0.375rem; min-width: 2.75rem; min-height: 2.75rem; border-radius: var(--r-pill); font-weight: 800; font-size: 1.0625rem; color: var(--ink);
-    text-decoration: none; -webkit-tap-highlight-color: transparent; transition: transform var(--motion-dur) var(--motion-ease); }
+  /* F-200: the cockpit's tab bar. One opaque bar floating over the page (raised: white in light, near-black in dark, the strongest shadow; no glass or blur), five tabs
+     of 56px in a 68px bar, an icon over its label; Ask in the true centre is the ink button. The current tab sits on a quiet state tint. */
+  .ph-tabs { position: fixed; z-index: 30; left: max(0.875rem, env(safe-area-inset-left)); right: max(0.875rem, env(safe-area-inset-right)); bottom: calc(max(0.5rem, env(safe-area-inset-bottom)) + 0.375rem);
+    max-width: 34rem; margin: 0 auto; height: 4.25rem; padding: 0 0.375rem; box-sizing: border-box; border-radius: 2.125rem; background: var(--card-2); box-shadow: var(--sh3);
+    display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: center; }
+  .tp .ph-tab { position: relative; display: grid; place-items: center; align-content: center; gap: 0.1875rem; height: 3.5rem; min-width: 0; border-radius: 1.75rem; color: var(--ink-2);
+    font: 600 var(--t-label)/1 var(--font-body); letter-spacing: 0; text-decoration: none; -webkit-tap-highlight-color: transparent; transition: transform var(--motion-dur) var(--motion-ease), background-color var(--motion-quick) ease; }
   .tp .ph-tab:active { transform: scale(.92); transition-duration: 0s; }
-  .tp .ph-tab-today { padding: 0 1.375rem; }
-  .ph-tab-today .ph-ti { display: none; }
-  .ph-tabs-r .ph-tl { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }   /* icons only; the name stays the link's name */
-  .ph-ti { display: flex; align-items: center; justify-content: center; width: 2.75rem; height: 2.75rem; border-radius: var(--r-pill); }
-  .tp .ph-tab[aria-current="page"]:not(.ph-ask) .ph-ti { background: var(--accent-tint); }
-  .ph-ask .ph-ti { background: var(--coral); color: var(--ink); }
-  .tp .ph-ask { color: var(--ink); }
-  .ph-ask[aria-current="page"] .ph-ti { box-shadow: inset 0 0 0 0.1875rem var(--ink); }
+  .tp .ph-tab[aria-current="page"]:not(.ph-ask) { color: var(--ink); background: rgb(var(--state) / .07); }
+  .ph-ti { display: grid; place-items: center; }
+  .tp .ph-ask { color: var(--on-accent); }
+  .ph-ask .ph-ti { width: 3.25rem; height: 3.25rem; border-radius: 50%; background: var(--accent); color: var(--on-accent); }
+  .ph-ask .ph-tl { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }   /* the ink button alone; "Ask" stays its name */
+  .ph-ask[aria-current="page"] .ph-ti { box-shadow: 0 0 0 0.1875rem var(--card-2), 0 0 0 0.375rem var(--accent); }
 
   /* Today's own Today / All days / Notes switch moves from the bottom (laptop) to a segmented control under the heading */
   .tp-tabs { position: static; height: auto; max-width: none; margin: 0 0 0.75rem; padding: 0.25rem; gap: 0.25rem; border-radius: var(--r-pill); background: var(--card); box-shadow: var(--shadow-sm); }
-  .tp-tab { min-height: 2.75rem; border-radius: var(--r-pill); color: var(--ink-2); }
-  .tp-tab[aria-current="page"] { background: var(--ink); color: #FFFFFF; }
+  .tp-tab { min-height: var(--target); border-radius: var(--r-pill); color: var(--ink-2); }
+  .tp-tab[aria-current="page"] { background: var(--ink); color: var(--on-ink); }
   .tp-list { padding-right: 4.75rem; }  /* the floating + never sits over a card or its pills */
   .tp-stay { padding-right: 4.75rem; }  /* nor over the hotel card's chevron */
   .tp-panel > .tp-sharebar { order: 8; }
@@ -77,33 +74,44 @@
 
 /* Details inside the Up next card: who added it, the notes on it, the confirmation behind a tap */
 .tp-up .ph-details { display: flex; flex-direction: column; gap: 0.375rem; }
-.tp-up .ph-details summary { align-self: flex-start; background: rgba(255, 255, 255, .12); color: #FFFFFF; box-shadow: none; }
-.tp-up .ph-details .tp-sub, .tp-up .ph-details .tp-pnote, .tp-up .ph-details .tp-conf-num { color: #FFFFFF; }
-.tp-up .ph-details summary { min-height: 2.75rem; }
+.tp-up .ph-details summary { align-self: flex-start; background: color-mix(in srgb, var(--on-ink) 12%, transparent); color: var(--on-ink); box-shadow: none; }
+.tp-up .ph-details .tp-sub, .tp-up .ph-details .tp-pnote, .tp-up .ph-details .tp-conf-num { color: var(--on-ink); }
+.tp-up .ph-details summary { min-height: var(--target); }
 
 /* Add to the trip: the paste entry under Today's heading (F-080) */
 .tp-head-btns { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 0.375rem; }   /* Add to the trip and Ask GitAway side by side (F-072) */
 .tp-head-btns .tp-edit { margin-top: 0; }
-.tp-head-btns .ak-open-icon { width: 2.75rem; padding: 0; justify-content: center; }
-.tp-addtrip { align-self: flex-start; background: var(--coral); color: var(--ink); font-weight: 800; box-shadow: 0 0.1875rem 0 var(--coral-deep); }
-
-/* F-096, F-133: the pills are glass (they float over the page). Solid card by default; translucent with a strong blur only where the browser can blur; solid again when the
-   person asks for less transparency. 84% keeps the labels at 4.5:1 over the darkest thing that scrolls behind. */
-@media (max-width: 720px), (display-mode: standalone) {
-  @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) and (color: color-mix(in srgb, red 50%, transparent)) {   /* iOS 15.4–16.1 blur but lack color-mix: they keep the solid base */
-    .ph-tabs > .ph-tab, .ph-tabs-r { background: color-mix(in srgb, color-mix(in srgb, var(--card) 84%, var(--paper-2)) 84%, transparent); -webkit-backdrop-filter: blur(1.25rem) saturate(1.6); backdrop-filter: blur(1.25rem) saturate(1.6);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .6), 0 0 0 1px rgba(30, 26, 46, .08), 0 0.5rem 1.5rem -0.5rem rgba(30, 26, 46, .3); }
-  }
-  @media (prefers-reduced-transparency: reduce) {
-    .ph-tabs > .ph-tab, .ph-tabs-r { background: var(--card); -webkit-backdrop-filter: none; backdrop-filter: none; }
-  }
-}
+.tp-head-btns .ak-open-icon { width: var(--target); padding: 0; justify-content: center; }
+.tp-addtrip { align-self: flex-start; background: var(--coral); color: var(--on-accent); font-weight: 800; box-shadow: 0 0.1875rem 0 var(--coral-deep); }
 
 /* F-093: the small SOS button in the Ask and Family headings (opens the emergency sheet) */
-.tp .ph-sos { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; gap: 0.25rem; min-width: 2.75rem; min-height: 2.75rem; padding: 0 0.75rem; border-radius: var(--r-pill); background: var(--bubble-tint); color: var(--bubble-ink);
-  font-weight: 800; font-size: max(var(--text-min), 0.8125rem); letter-spacing: 0.04em; text-decoration: none; }
+.tp .ph-sos { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; gap: 0.25rem; min-width: var(--target); min-height: var(--target); padding: 0 0.75rem; border-radius: var(--r-pill); background: var(--bubble-tint); color: var(--bubble-ink);
+  font-weight: 800; font-size: max(var(--label-min), 0.8125rem); letter-spacing: 0.04em; text-decoration: none; }
 
 /* The day view's now card is compact (F-092, captain 2026-10-06): it ends with its two buttons. */
 .tp-up-compact .tp-up-when { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
-.tp-up-compact .tp-up-link { display: inline-block; min-height: 2.75rem; padding-block: 0.375rem; color: inherit; text-decoration: underline; text-decoration-thickness: 0.0625rem; text-underline-offset: 0.25rem; }
+.tp-up-compact .tp-up-link { display: inline-block; min-height: var(--target); padding-block: 0.375rem; color: inherit; text-decoration: underline; text-decoration-thickness: 0.0625rem; text-underline-offset: 0.25rem; }
 .tp-up-compact .ph-details { align-self: flex-start; }
+
+/* F-200: a phone on its side (480px tall or less): the bar is compact, icons only (each still a 48px target, its name the link's name), so the chat column keeps room for words */
+@media (max-width: 720px) and (max-height: 480px), (display-mode: standalone) and (max-height: 480px) {
+  .tp { --tabs-h: 4.375rem; }
+  .ph-tabs { height: 3.5rem; bottom: calc(env(safe-area-inset-bottom) + 0.375rem); border-radius: 1.75rem; }
+  .tp .ph-tab { height: 3rem; }
+  .tp .ph-tab .ph-tl { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .ph-ask .ph-ti { width: 2.75rem; height: 2.75rem; }
+}
+
+/* F-200: the "Early preview" label at the top of a phone's (and a tablet's) trip screens; from 1020px the top bar carries it beside the brand */
+.ph-preview { position: relative; display: flex; justify-content: center; margin: 0 0 0.25rem; }
+.ph-preview .ga-preview { position: static; }       /* the line centres under the row (no transform: GA.motion moves it) */
+.ph-preview .ga-preview-pop { left: 0; right: 0; margin-inline: auto; max-width: calc(100% - 1rem); }
+@media (min-width: 1020px) { .ph-preview, .tp-head .ga-preview { display: none; } }
+/* in a phone heading the label sits beside the title (the kicker above and the second phrase below span the row), so it costs no height: its 48px target overlaps the lines around it */
+@media (max-width: 1019px) {      /* from 1020px the top bar has the label and the heading keeps its own layout */
+  .tp-head-text:has(> .ga-preview) { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 0.625rem; align-items: center; }
+  .tp-head-text:has(> .ga-preview) > * { grid-column: 1 / -1; }
+  .tp-head-text:has(> .ga-preview) > h1 { grid-column: 1; grid-row: 2; }
+  .tp-head-text > .ga-preview { grid-column: 2; grid-row: 2; justify-self: start; }
+  .tp-head-text > .ga-preview .ga-preview-sum { margin-block: -0.75rem; }
+}

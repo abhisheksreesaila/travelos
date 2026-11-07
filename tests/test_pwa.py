@@ -77,8 +77,9 @@ def test_offline_page_is_a_gitaway_page(client):
 def test_theme_colour_follows_the_pages_ground(client):
     from fasthtml.common import to_xml
     from gitaway.layout import page
-    assert 'name="theme-color" content="#FFF8EE"' in client.get("/start").text
-    assert 'name="theme-color" content="#F4F9FF"' in to_xml(page("x", theme="pacific"))
+    html = client.get("/start").text      # F-200: Direction A's canvas, one colour per mode (both itinerary themes share it)
+    assert 'name="theme-color" content="#F2F2F5" media="(prefers-color-scheme: light)"' in html and 'name="theme-color" content="#000000" media="(prefers-color-scheme: dark)"' in html
+    assert 'name="theme-color" content="#F2F2F5"' in to_xml(page("x", theme="pacific"))
 
 
 def test_asset_links_carry_a_content_hash(client):

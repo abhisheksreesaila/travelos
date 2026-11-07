@@ -29,7 +29,7 @@ def test_landing_header_has_only_the_brand_and_sign_in(client):
 
 
 def test_other_pages_keep_their_header_nav(client):
-    for path in ["/community", "/creators", "/signin"]:
+    for path in ["/community", "/creators"]:      # F-200: sign-in is a full-screen page with the brand and Cancel only
         header = _tag(_get(client, path), "header", "ga-header")
         assert "/community" in header and "/for-creators" in header and "/start" in header, path
 

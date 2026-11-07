@@ -29,7 +29,7 @@ def test_every_page_links_tokens_then_base_exactly_once(client):
 def test_design_tokens_are_served(client):
     r = client.get("/assets/css/tokens.css")
     assert r.status_code == 200
-    assert "--coral: #FF7352" in r.text
+    assert "--paper: #F2F2F5" in r.text and "--coral: var(--accent)" in r.text      # F-200: Direction A; the old names point at its tokens
     assert '[data-theme="pacific"]' in r.text
 
 

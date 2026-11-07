@@ -72,7 +72,7 @@ def test_the_tab_bar_and_heading_are_held_still_and_the_page_never_flashes_white
     page.goto(f"{base_url}/trip/ask")
     assert page.evaluate("getComputedStyle(document.querySelector('.ph-tabs')).viewTransitionName") == "cz-tabs"
     assert page.evaluate("getComputedStyle(document.querySelector('.tp-head')).viewTransitionName") == "ph-head"
-    assert page.evaluate("getComputedStyle(document.documentElement).backgroundColor") == "rgb(255, 248, 238)"
+    assert page.evaluate("getComputedStyle(document.documentElement).backgroundColor") == "rgb(242, 242, 245)"
     page.goto(f"{base_url}/plan")  # a page on the other theme, too
     assert page.evaluate("getComputedStyle(document.documentElement).backgroundColor") != "rgba(0, 0, 0, 0)"
 
@@ -173,15 +173,15 @@ def test_a_tab_switch_on_a_warm_copy_reaches_the_new_page_within_150_ms_and_runs
 
 def test_switching_between_today_and_family_opens_the_saved_copy_at_once_and_it_brings_itself_up_to_date(ctxs, base_url):
     """F-116: the captain felt a second's lag between Today and Family. A tab screen seen before opens from the saved copy (marked stale) while a fresh one is fetched;
-    the Today tab goes straight back to the day last shown (no /trip redirect); the chat polls at once and the day revalidates, so a message sent meanwhile shows."""
+    the Plan tab (Today before F-200) goes straight back to the day last shown (no /trip redirect); the chat polls at once and the day revalidates, so a message sent meanwhile shows."""
     ctx = ctxs()
     signed_in(ctx, base_url)
     page = ctx.new_page()
     controlled(page, base_url, "/trip/canvas?day=0")
     page.goto(f"{base_url}/trip/family")
     page.wait_for_selector("#ft-compose")
-    assert page.locator("#ph-tab-today").get_attribute("href") == "/trip/canvas?day=0"
-    page.locator("#ph-tab-today").click()
+    assert page.locator("#ph-tab-plan").get_attribute("href") == "/trip/canvas?day=0"
+    page.locator("#ph-tab-plan").click()
     page.wait_for_url("**/trip/canvas?day=0")
     page.wait_for_selector(".cz-view")
     assert page.evaluate("document.documentElement.hasAttribute('data-ga-stale')")

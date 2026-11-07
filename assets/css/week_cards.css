@@ -8,7 +8,7 @@
   .cz .cz-view[data-level="week"] .cz-head h1 { margin: 0 0.3em 0 0; font-size: calc(var(--pu) * 1.5); line-height: 1.1; color: var(--ink); }
   .cz .cz-view[data-level="week"] .cz-head h1::after { content: "."; }
   /* F-164: the heading's controls hold the phone's rules on a tablet (13px text, 44px targets) like the day's: sizes from --pu / --tmin / --tap, the same values as 1rem / 13px / 2.75rem on a phone */
-  .cz .cz-view[data-level="week"] { --cz-small: max(var(--tmin), 0.8125rem); --cz-body: max(var(--tmin), 0.875rem); }
+  .cz .cz-view[data-level="week"] { --cz-small: max(var(--tmin), 0.8125rem); --cz-body: max(var(--tmin), var(--pu)); }
   .cz .cz-view[data-level="week"] .cz-head .cz-segs { height: calc(var(--pu) * 2); padding: 0 calc(var(--pu) * 0.125); }
   .cz .cz-view[data-level="week"] .cz-head .cz-seg { min-width: var(--tap); min-height: var(--tap); margin: calc(var(--pu) * -0.375) 0; padding: 0 calc(var(--pu) * 0.375); }
   .cz .cz-view[data-level="week"] .cz-head .cz-seg::before { inset: calc(var(--pu) * 0.5) 0; }
@@ -20,14 +20,14 @@
   .cz .cz-week { display: flex; flex-direction: column; gap: calc(var(--pu) * 0.75); }
 
   /* the kinds' tint, edge colour and ink: a plan carries cz-k-<kind>; a booking follows its data-kind (flight sky, hotel grape, a car ink) */
-  .cz .cz-week .cz-k-fun { --tint: var(--bubble-tint); --accent: var(--bubble); --kink: var(--bubble-ink); }
-  .cz .cz-week .cz-k-food { --tint: var(--sun-tint); --accent: var(--sun); --kink: var(--sun-ink); }
-  .cz .cz-week .cz-k-outdoors { --tint: var(--mint-tint); --accent: var(--mint); --kink: var(--mint-ink); }
-  .cz .cz-week .cz-k-culture { --tint: var(--grape-tint); --accent: var(--grape); --kink: var(--grape-ink); }
-  .cz .cz-week .cz-k-travel { --tint: var(--sky-tint); --accent: var(--sky); --kink: var(--sky-ink); }
+  .cz .cz-week .cz-k-fun { --tint: var(--bubble-tint); --accent: var(--k-food); --kink: var(--bubble-ink); }
+  .cz .cz-week .cz-k-food { --tint: var(--sun-tint); --accent: var(--k-ride); --kink: var(--sun-ink); }
+  .cz .cz-week .cz-k-outdoors { --tint: var(--mint-tint); --accent: var(--k-see); --kink: var(--mint-ink); }
+  .cz .cz-week .cz-k-culture { --tint: var(--grape-tint); --accent: var(--k-stay); --kink: var(--grape-ink); }
+  .cz .cz-week .cz-k-travel { --tint: var(--sky-tint); --accent: var(--k-flight); --kink: var(--sky-ink); }
   .cz .cz-week .is-booked { --tint: var(--paper-2); --accent: var(--ink-3); --kink: var(--ink); }
-  .cz .cz-week .is-booked[data-kind="flight"] { --tint: var(--sky-tint); --accent: var(--sky); --kink: var(--sky-ink); }
-  .cz .cz-week .is-booked[data-kind="hotel"] { --tint: var(--grape-tint); --accent: var(--grape); --kink: var(--grape-ink); }
+  .cz .cz-week .is-booked[data-kind="flight"] { --tint: var(--sky-tint); --accent: var(--k-flight); --kink: var(--sky-ink); }
+  .cz .cz-week .is-booked[data-kind="hotel"] { --tint: var(--grape-tint); --accent: var(--k-stay); --kink: var(--grape-ink); }
 
   /* the card */
   .cz .cz-row { position: relative; display: flex; flex-direction: column; gap: calc(var(--pu) * 0.625); padding: calc(var(--pu) * 0.5) calc(var(--pu) * 0.75) calc(var(--pu) * 0.75); background: var(--card); border: 1px solid var(--hairline);
@@ -41,7 +41,7 @@
   /* the mini hour bar */
   .cz .cz-mb { display: flex; flex-direction: column; gap: calc(var(--pu) * 0.125); padding: 0 calc(var(--pu) * 0.25); }
   .cz .cz-mb-track { position: relative; height: calc(var(--pu) * 1.25); border-radius: var(--r-pill); background: var(--paper-2); box-shadow: inset 0 0 0 1px var(--hairline); }
-  .cz .cz-mb-seg { position: absolute; top: calc(var(--pu) * 0.3125); bottom: calc(var(--pu) * 0.3125); left: calc(var(--s) / var(--span) * 100%); width: calc(var(--l) / var(--span) * 100%); border-radius: var(--r-pill); background: var(--accent); }
+  .cz .cz-mb-seg { position: absolute; top: calc(var(--pu) * 0.3125); bottom: calc(var(--pu) * 0.3125); left: calc(var(--s) / var(--span) * 100%); width: calc(var(--l) / var(--span) * 100%); border-radius: var(--r-pill); background: var(--accent); color: var(--on-accent); }
   .cz .cz-mb-hours { position: relative; height: calc(var(--pu) * 1.25); }
   .cz .cz-mb-h { position: absolute; top: 0; left: calc(var(--at) / var(--span) * 100%); transform: translateX(-50%); font-size: var(--tmin); font-weight: 600; line-height: 1.2; white-space: nowrap; color: var(--ink-3); }
   .cz .cz-mb-h.is-start { transform: none; }

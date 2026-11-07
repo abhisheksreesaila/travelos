@@ -1,26 +1,26 @@
-/* The one top bar of the signed-in web (F-139, gitaway/topbar.py): brand, a pill nav (Trip | Family | Ask with the coral mic dot and the "/" key hint), a spacer, the trip picker,
-   SOS and the avatar menu. Drawn from the design's frame A1 (docs/design/web-trip.md, "Top bar"; design pixels / 12 = rem). It shows from 1020px up only: below that the page's own
+/* The one top bar of the signed-in web (F-139, gitaway/topbar.py; Direction A's top islands since F-200): the brand island, the nav pill (Trip | Book | Family | Ask with the "/" key hint),
+   the Beacon (the trip picker), SOS and the avatar menu. Drawn from the design's frame A1 (docs/design/web-trip.md, "Top bar"; design pixels / 12 = rem). It shows from 1020px up only: below that the page's own
    header (laptop-narrow and tablet) or the phone's bottom tabs stay exactly as they were. Loaded by layout.styles() on every page, after base.css. Sizes are rem. */
 .ga-topbar { display: none; }
-.ga-topbar { --tb-sun-bg: var(--sun-tint); --tb-sun-ink: var(--sun-ink); --tb-sos-bg: var(--bubble-tint); --tb-sos-ink: var(--bubble-ink); --tb-line: rgba(30, 26, 46, .14); }
+.ga-topbar { --tb-sun-bg: var(--sun-tint); --tb-sun-ink: var(--sun-ink); --tb-sos-bg: var(--bubble-tint); --tb-sos-ink: var(--bubble-ink); --tb-line: color-mix(in srgb, var(--ink) 14%, transparent); }
 
 /* The trip menu on a phone or tablet screen (F-147): the heading's own eyebrow line is the button (a small chevron after it), so the heading is no taller. The 2.75rem target is
    padding taken back with a negative margin. It opens as a bottom sheet over a dimmed screen, like the date picker's (pickers.css .ga-scrim, .ga-pop). Hidden where the bar shows. */
 .ga-tb-phonepick { display: block; min-width: 0; }
-.ga-tb-psum { list-style: none; cursor: pointer; display: flex; width: fit-content; max-width: 100%; align-items: center; gap: 0.25rem; box-sizing: border-box; position: relative; padding: calc(var(--pu, 1rem) * 0.875) 0.5rem; margin: calc(var(--pu, 1rem) * -0.875) -0.5rem; }      /* F-164: --pu (day_phone.css) keeps the target 44px on a tablet, where 1rem is 12px */
+.ga-tb-psum { list-style: none; cursor: pointer; display: flex; width: fit-content; max-width: 100%; align-items: center; gap: 0.25rem; box-sizing: border-box; position: relative; padding: calc(var(--pu, 1rem) * 0.875) 0; margin: calc(var(--pu, 1rem) * -0.875) 0; }      /* F-200: no side padding, so the tap area never changes where a long eyebrow wraps (Geist is wider) */      /* F-164: --pu (day_phone.css) keeps the target 44px on a tablet, where 1rem is 12px */
 .ga-tb-psum::-webkit-details-marker { display: none; }
 .ga-tb-psum .ga-tb-chev { transform: rotate(90deg); flex-shrink: 0; opacity: .8; }
 .ga-tb-psum:focus-visible, .ga-tb-phonepick .ga-tb-sw:focus-visible, .ga-tb-phonepick .ga-tb-item:focus-visible { outline: 0.1875rem solid currentColor; outline-offset: 0.125rem; border-radius: 0.5rem; }
 .ga-tb-phonepick[open]::before { content: ""; position: fixed; inset: 0; z-index: 998; background: color-mix(in srgb, var(--ink) 45%, transparent); }
 .ga-tb-phonepick .ga-tb-pop { position: fixed; left: 0; right: 0; bottom: 0; z-index: 999; max-height: 88vh; overflow-y: auto; padding: 0.5rem 0.5rem calc(0.5rem + env(safe-area-inset-bottom, 0px)); border-radius: var(--r-lg) var(--r-lg) 0 0; background: var(--card); box-shadow: var(--shadow-lg); display: flex; flex-direction: column; gap: 0.25rem; color: var(--ink); font-weight: 400; letter-spacing: normal; text-transform: none; }
-.ga-tb-phonepick .ga-tb-k { padding: 0.5rem 0.75rem 0.25rem; font-size: max(var(--text-min), 0.75rem); font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+.ga-tb-phonepick .ga-tb-k { padding: 0.5rem 0.75rem 0.25rem; font-size: max(var(--label-min), 0.75rem); font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
 .ga-tb-phonepick .ga-tb-solo { margin: 0; padding: 0.5rem 0.75rem; color: var(--ink-2); }
 .ga-tb-phonepick .ga-tb-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.125rem; }
-.ga-tb-phonepick .ga-tb-sw { width: 100%; min-height: 2.75rem; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 0.125rem; padding: 0.5rem 0.75rem; border: 0; border-radius: 1rem; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.ga-tb-phonepick .ga-tb-sw { width: 100%; min-height: var(--target); display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 0.125rem; padding: 0.5rem 0.75rem; border: 0; border-radius: 1rem; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
 .ga-tb-phonepick .ga-tb-sw[aria-current="true"] { background: var(--sun-tint); }
 .ga-tb-phonepick .ga-tb-sw-name { font-weight: 800; }
 .ga-tb-phonepick .ga-tb-sw-dates { color: var(--ink-3); font-weight: 600; font-size: max(var(--text-min), 0.8125rem); }
-.ga-tb-phonepick .ga-tb-item { display: flex; align-items: center; gap: 0.625rem; width: 100%; min-height: 2.75rem; padding: 0 0.75rem; border: 0; border-radius: 1rem; background: none; color: var(--ink); font: 700 max(var(--text-min), 1rem) var(--font-body); text-align: left; text-decoration: none; cursor: pointer; }
+.ga-tb-phonepick .ga-tb-item { display: flex; align-items: center; gap: 0.625rem; width: 100%; min-height: var(--target); padding: 0 0.75rem; border: 0; border-radius: 1rem; background: none; color: var(--ink); font: 700 max(var(--text-min), 1rem) var(--font-body); text-align: left; text-decoration: none; cursor: pointer; }
 /* From 1020px the bar has the picker: the eyebrow stays as the plain line it was (no chevron, no sheet, nothing to press). topbar.js also takes it out of the tab order. */
 @media (min-width: 1020px) {
   .ga-tb-phonepick > .ga-tb-pop, .ga-tb-phonepick[open]::before, .ga-tb-psum .ga-tb-chev { display: none; }
@@ -28,62 +28,76 @@
 }
 
 @media (min-width: 1020px) {
-  .ga-topbar { position: relative; z-index: 50; display: flex; align-items: center; gap: 1.5rem; height: 4.8333rem; padding: 0 2.3333rem; box-sizing: border-box; font-family: var(--font-body); font-size: max(var(--text-min), 1.0833rem); font-weight: 600; color: var(--ink); }
+  /* F-200: Direction A's top islands (docs/design/cockpit, 3-ticket chrome): the brand and the "Early preview" label on the canvas at the left, the nav pill in the middle
+     (raised white, the current section an ink pill), and at the right the Beacon (the trip picker), SOS and the avatar. Opaque, no glass, no hairline: the islands float on the canvas. */
+  .ga-topbar { position: relative; z-index: 50; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 1.5rem; height: 4.8333rem; padding: 0 2.3333rem;
+    box-sizing: border-box; font-family: var(--font-body); font-size: max(var(--text-min), 1.25rem); font-weight: 600; color: var(--ink); }
   .ga-header[data-has-topbar] { display: none; }
   .ga-topbar ~ .tp { min-height: calc(100vh - 4.8333rem); min-height: calc(100dvh - 4.8333rem); }   /* the phone shell is a full-height screen: the bar's height comes off it, so the page is no taller than the window */
-  .ga-topbar ~ .tp .ph-back { margin-top: 0; }          /* the bar takes 4.8rem of the window: the help page (the tallest that fits) gets 1.5rem back from its own spacing so it still fits */
+  .ga-topbar ~ .tp .ph-back { margin-top: 0; }          /* the bar takes the top of the window: the help page (the tallest that fits) gets its own spacing back so it still fits */
   .ga-topbar ~ .tp .tp-head { padding-top: 0; }
+  .ga-topbar ~ .tp:not([data-canvas]) { max-width: 36rem; padding-bottom: 2rem; }      /* F-200: the phone screens shown on a laptop (Help, Map, Notes) get a wider column (Geist and the 16px body wrap more in the old 30rem), and no room for a tab bar the laptop does not show */
   .ga-topbar ~ .tp > .ga-skip, .ga-skip:has(~ .ga-topbar) { display: none; }   /* one "Skip to content" at a time: the bar's own, here; the page's own below 1020px */
   .ga-topbar a { text-decoration: none; color: inherit; }
-  .ga-topbar .ga-brand { gap: 0.75rem; flex-shrink: 0; }
+  .ga-tb-l { display: flex; align-items: center; gap: 0.5rem; min-width: 0; justify-self: start; }
+  .ga-tb-r { display: flex; align-items: center; justify-content: flex-end; gap: 0.8333rem; min-width: 0; justify-self: end; }
+  .ga-topbar .ga-brand { gap: 0.8333rem; flex-shrink: 0; }
 
-  .ga-tb-nav { display: flex; gap: 0.3333rem; margin-left: 1.5rem; padding: 0.3333rem; border-radius: var(--r-pill); background: var(--card); box-shadow: var(--shadow-sm); flex-shrink: 0; }
-  .ga-tb-link { display: flex; align-items: center; gap: 0.5833rem; min-height: 2.25rem; padding: 0 1.25rem; border-radius: var(--r-pill); font-weight: 700; color: var(--ink-2); white-space: nowrap; }
-  .ga-tb-link:hover { color: var(--ink); background: var(--paper-2); }
-  .ga-tb-link[aria-current="page"] { background: var(--ink); color: var(--card); }
-  .ga-tb-ask { color: var(--ink); padding-left: 0.5rem; }
-  .ga-tb-dot { width: 1.8333rem; height: 1.8333rem; border-radius: 50%; background: var(--coral); display: grid; place-items: center; box-shadow: 0 0.1667rem 0 var(--coral-deep); color: var(--ink); }
-  .ga-tb-kbd { font: 700 max(var(--text-min), 0.8333rem) var(--font-body); color: var(--ink-3); background: var(--paper-2); border-radius: 0.4167rem; padding: 0.0833rem 0.4167rem; box-shadow: inset 0 0 0 1px var(--tb-line); }
-  .ga-tb-link[aria-current="page"] .ga-tb-kbd { background: rgba(255, 255, 255, .14); color: rgba(255, 255, 255, .72); box-shadow: none; }
-  .ga-tb-sp { flex: 1; min-width: 0; }
+  .ga-tb-nav { display: flex; gap: 0.1667rem; padding: 0.3333rem; border-radius: var(--r-pill); background: var(--card-2); box-shadow: var(--sh2); }
+  .ga-tb-link { display: flex; align-items: center; gap: 0.5833rem; min-height: 3rem; padding: 0 1.3333rem; border-radius: var(--r-pill); font-weight: 600; color: var(--ink-2); white-space: nowrap; }
+  .ga-tb-link:hover { color: var(--ink); background: rgb(var(--state) / .07); }
+  .ga-tb-link[aria-current="page"], .ga-tb-link[aria-current="page"]:hover { background: var(--accent); color: var(--on-accent); }
+  .ga-tb-kbd { font: 600 max(var(--label-min), 0.9167rem) var(--font-mono); color: var(--ink-2); background: var(--paper-2); border-radius: 0.4167rem; padding: 0.0833rem 0.4167rem; }
+  .ga-tb-link[aria-current="page"] .ga-tb-kbd { background: color-mix(in srgb, var(--on-accent) 16%, transparent); color: var(--on-accent); }
 
   .ga-tb-menu { position: relative; }
-  .ga-tb-sum { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 0.6667rem; min-height: 2.5rem; padding: 0.5rem 0.6667rem 0.5rem 0.5rem; border-radius: var(--r-pill); font-weight: 700; white-space: nowrap; }
+  .ga-tb-sum { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 0.6667rem; min-height: 3.3333rem; padding: 0 1.1667rem 0 0.4167rem; border-radius: var(--r-pill);
+    background: var(--card-2); box-shadow: var(--sh1); font-weight: 600; white-space: nowrap; }
   .ga-tb-sum::-webkit-details-marker { display: none; }
-  .ga-tb-sum:hover { background: var(--card); box-shadow: var(--shadow-sm); }
-  .ga-tb-menu[open] > .ga-tb-sum { background: var(--card); box-shadow: var(--shadow-sm); }
+  .ga-tb-sum:hover, .ga-tb-menu[open] > .ga-tb-sum { box-shadow: var(--sh2); }
   .ga-tb-sum:focus-visible, .ga-tb-link:focus-visible, .ga-tb-sos:focus-visible, .ga-tb-item:focus-visible, .ga-tb-sw:focus-visible { outline: 0.1667rem solid var(--ink); outline-offset: 0.1667rem; }
-  .ga-tb-tdot { width: 2.1667rem; height: 2.1667rem; border-radius: 50%; background: var(--tb-sun-bg); color: var(--tb-sun-ink); display: grid; place-items: center; flex-shrink: 0; }
-  .ga-tb-pickdates { color: var(--ink-3); font-weight: 600; }
-  .ga-tb-chev { transform: rotate(90deg); color: var(--ink-3); flex-shrink: 0; }
-  .ga-tb-sum-me { padding: 0.25rem; }
-  .ga-tb-av { width: 2.6667rem; height: 2.6667rem; border-radius: 50%; display: grid; place-items: center; font: 800 max(var(--text-min), 1rem) var(--font-body); box-shadow: var(--shadow-sm); }
+  .ga-tb-tdot { width: 2.3333rem; height: 2.3333rem; border-radius: 50%; background: var(--paper-2); color: var(--ink); display: grid; place-items: center; flex-shrink: 0; }
+  .ga-tb-pickdates { color: var(--ink-2); font-weight: 500; }
+  .ga-tb-chev { transform: rotate(90deg); color: var(--ink-2); flex-shrink: 0; }
+  /* the Beacon: while the trip is coming or under way the picker is the one ink pill, its live line in the beacon yellow (12:1 on it) */
+  .ga-tb-picker.is-beacon > .ga-tb-sum { background: var(--beacon-bg); color: var(--beacon-fg); box-shadow: var(--sh2); }
+  .ga-tb-picker.is-beacon .ga-tb-tdot { background: color-mix(in srgb, var(--beacon-fg) 14%, var(--beacon-bg)); color: var(--beacon-acc); }
+  .ga-tb-picker.is-beacon .ga-tb-pickdates { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .ga-tb-picker.is-beacon .ga-tb-chev { color: var(--beacon-fg); }
+  .ga-tb-live { font-family: var(--font-mono); font-weight: 600; color: var(--beacon-acc); font-variant-numeric: tabular-nums; }
+  .ga-tb-sum-me { padding: 0; min-height: 0; background: none; box-shadow: none; }
+  .ga-tb-sum-me:hover, .ga-tb-menu[open] > .ga-tb-sum-me { box-shadow: none; }
+  .ga-tb-av { width: 3rem; height: 3rem; border-radius: 50%; display: grid; place-items: center; font: 650 max(var(--text-min), 1.25rem) var(--font-body); box-shadow: var(--sh1); }
 
-  .ga-tb-sos { display: flex; align-items: center; gap: 0.5rem; min-height: 2.25rem; padding: 0 1rem; border-radius: var(--r-pill); background: var(--tb-sos-bg); color: var(--tb-sos-ink) !important; font-weight: 800; letter-spacing: .04em; font-size: max(var(--text-min), 1rem); flex-shrink: 0; }
-  .ga-tb-sos:hover { box-shadow: var(--shadow-sm); }
+  .ga-tb-sos { display: flex; align-items: center; gap: 0.5rem; min-height: 3.3333rem; padding: 0 1.1667rem; border-radius: var(--r-pill); background: var(--tb-sos-bg); color: var(--tb-sos-ink) !important; font-weight: 700; letter-spacing: .04em; font-size: max(var(--label-min), 1.0833rem); flex-shrink: 0; }
+  .ga-tb-sos:hover { box-shadow: var(--sh1); }
 
-  .ga-tb-pop { position: absolute; top: calc(100% + 0.5rem); right: 0; z-index: 60; min-width: 17rem; max-width: 24rem; padding: 0.5rem; border-radius: 1.5rem; background: var(--card); box-shadow: var(--shadow-lg); display: flex; flex-direction: column; gap: 0.25rem; }
-  .ga-tb-k { padding: 0.5rem 0.75rem 0.25rem; font-size: max(var(--text-min), 0.9167rem); font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+  .ga-tb-pop { position: absolute; top: calc(100% + 0.5rem); right: 0; z-index: 60; min-width: 17rem; max-width: 24rem; padding: 0.5rem; border-radius: var(--r-md); background: var(--card-2); box-shadow: var(--sh2); display: flex; flex-direction: column; gap: 0.25rem; }
+  .ga-tb-k { padding: 0.5rem 0.75rem 0.25rem; font-size: max(var(--label-min), 0.9167rem); font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-2); }
   .ga-tb-solo { margin: 0; padding: 0.5rem 0.75rem; color: var(--ink-2); }
   .ga-tb-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.125rem; }
   .ga-tb-sw { width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 0.0833rem; padding: 0.5833rem 0.75rem; border: 0; border-radius: 1rem; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
   .ga-tb-sw:hover { background: var(--paper-2); }
-  .ga-tb-sw[aria-current="true"] { background: var(--tb-sun-bg); }
-  .ga-tb-sw-name { font-weight: 800; }
-  .ga-tb-sw-dates { color: var(--ink-3); font-weight: 600; font-size: max(var(--text-min), 0.9167rem); }
-  .ga-tb-item { display: flex; align-items: center; gap: 0.6667rem; width: 100%; min-height: 2.5rem; padding: 0 0.75rem; border: 0; border-radius: 1rem; background: none; color: var(--ink); font: 700 max(var(--text-min), 1.0833rem) var(--font-body); text-align: left; cursor: pointer; }
+  .ga-tb-sw[aria-current="true"] { background: var(--paper-2); }
+  .ga-tb-sw-name { font-weight: 700; }
+  .ga-tb-sw-dates { color: var(--ink-2); font-weight: 500; font-size: max(var(--text-min), 1.0833rem); }
+  .ga-tb-item { display: flex; align-items: center; gap: 0.6667rem; width: 100%; min-height: 2.5rem; padding: 0 0.75rem; border: 0; border-radius: 1rem; background: none; color: var(--ink); font: 600 max(var(--text-min), 1.1667rem) var(--font-body); text-align: left; cursor: pointer; }
   .ga-tb-item:hover { background: var(--paper-2); }
   .ga-tb-sum-me { position: relative; }
   .ga-tb-dot-new { position: absolute; top: 0; right: 0; width: 0.8333rem; height: 0.8333rem; border-radius: 50%; background: var(--tb-sos-ink); border: 0.125rem solid var(--card); }
-  .ga-tb-new { margin-left: auto; padding: 0.125rem 0.5rem; border-radius: var(--r-pill); background: var(--tb-sos-bg); color: var(--tb-sos-ink); font-size: max(var(--text-min), 0.9167rem); font-weight: 800; }
-  .ga-tb-who { padding: 0.5rem 0.75rem 0; font-weight: 800; }
-  .ga-tb-mail { padding: 0 0.75rem 0.5rem; color: var(--ink-3); font-weight: 600; font-size: max(var(--text-min), 0.9167rem); overflow-wrap: anywhere; }
-  .ga-tb-account .ga-tb-pop { min-width: 15rem; }
+  .ga-tb-new { margin-left: auto; padding: 0.125rem 0.5rem; border-radius: var(--r-pill); background: var(--tb-sos-bg); color: var(--tb-sos-ink); font-size: max(var(--text-min), 1rem); font-weight: 700; }
+  .ga-tb-who { padding: 0.5rem 0.75rem 0; font-weight: 700; }
+  .ga-tb-mail { padding: 0 0.75rem 0.5rem; color: var(--ink-2); font-weight: 500; font-size: max(var(--text-min), 1rem); overflow-wrap: anywhere; }
+  .ga-tb-account .ga-tb-pop { min-width: 20rem; }
+  .ga-tb-pop .ga-mode { margin: 0.25rem 0.5rem; align-self: flex-start; }
 }
 
 @media (min-width: 1020px) and (max-width: 1300px) {
-  .ga-topbar { gap: 1.1667rem; padding: 0 1.8333rem; }
-  .ga-tb-nav { margin-left: 0.8333rem; }
-  .ga-tb-link { padding: 0 1rem; }
+  .ga-topbar { gap: 1rem; padding: 0 1.8333rem; }
+  .ga-tb-link { padding: 0 1.1667rem; }
+  .ga-tb-picker .ga-tb-pickdates { display: none; }      /* the Beacon keeps the trip's name and its live line when the islands get tight */
+}
+@media (min-width: 1020px) and (max-width: 1180px) {
+  .ga-tb-l .ga-preview { display: none; }      /* the narrowest laptop: the label steps out of the brand island, the footer and the phone keep it */
 }
 .tp-head:has(.ga-tb-phonepick[open]) { view-transition-name: none; }   /* a view-transition name makes the heading a stacking context, which would keep the open sheet under the tab bar */

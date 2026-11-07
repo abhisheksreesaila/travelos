@@ -21,7 +21,7 @@ def test_no_fixed_pixel_sizes_left_except_hairlines():
     for path in CSS:
         css = re.sub(r"/\*.*?\*/", "", strip_queries(path.read_text()), flags=re.S)
         if path.name == "tokens.css":
-            css = css.replace("font-size: 12px", "").replace("font-size: 16px", "").replace("--r-pill: 999px", "").replace("--text-min: 11px", "").replace("--text-min: 13px", "")
+            css = css.replace("font-size: 12px", "").replace("font-size: 16px", "").replace("--r-pill: 999px", "").replace("--text-min: 12px", "").replace("--text-min: 16px", "").replace("--label-min: 12px", "").replace("--label-min: 13px", "")
         found = [m for m in re.findall(r"(?<![\w.])(-?[\d.]+)px", css) if m not in ("1", "-1", "0")]
         assert not found, f"{path.name}: unscaled px values {found[:5]}"
 
@@ -37,12 +37,13 @@ def test_icons_scale_with_the_root():
     assert ".btn-round svg { width:" in (CSS_DIR / "itinerary.css").read_text()
 
 
-def test_no_text_below_11px_on_desktop_and_tablet():
-    """Any font size under 11px at the 12px root (0.9167rem) must go through the --text-min floor."""
+def test_no_text_below_12px_on_desktop_and_tablet():
+    """Any font size under 12px at the 12px root (1rem) must go through a floor: --text-min for words (12px on desktop and tablet, 16px on phones) or --label-min for an
+    all-caps label (12px, 13px on phones). F-200's type scale: nothing is smaller than an all-caps label; it was 11px before."""
     for path in CSS:
         css = re.sub(r"/\*.*?\*/", "", path.read_text(), flags=re.S)
-        for m in re.finditer(r"font(?:-size)?:\s*(?:\w+\s+)*?(max\(var\(--text-min\), )?(\d*\.?\d+)rem", css):
-            if float(m.group(2)) * 12 < 11:
-                assert m.group(1), f"{path.name}: {m.group(0)} renders under 11px"
+        for m in re.finditer(r"font(?:-size)?:\s*(?:[\w-]+\s+)*?(max\(var\(--(?:text|label)-min\), )?(\d*\.?\d+)rem", css):
+            if float(m.group(2)) * 12 < 12:
+                assert m.group(1), f"{path.name}: {m.group(0)} renders under 12px"
     tokens = (CSS_DIR / "tokens.css").read_text()
-    assert "--text-min: 11px" in tokens and "--text-min: 13px" in tokens
+    assert "--text-min: 12px" in tokens and "--text-min: 16px" in tokens and "--label-min: 12px" in tokens and "--label-min: 13px" in tokens

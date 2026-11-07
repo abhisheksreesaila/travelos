@@ -58,7 +58,7 @@ def test_five_columns_under_the_ink_header_and_the_page_does_not_scroll(signed_i
     head = page.locator(".cz-view[data-level=week]").evaluate("""v => { const k = document.querySelector('.cz-kinds').getBoundingClientRect(), s = document.querySelector('#cz-z-week').getBoundingClientRect(),
         h = document.querySelector('#cz-title').getBoundingClientRect(), w = document.querySelector('#cz-wk').getBoundingClientRect();
         return { bg: getComputedStyle(v, '::before').backgroundColor, kinds: k.bottom <= w.top && k.top >= 0, sw: s.bottom <= w.top, title: h.bottom <= w.top, kindsAfterTitle: k.left > h.right } }""")
-    assert head["bg"] == "rgb(30, 26, 46)" and head["kinds"] and head["sw"] and head["title"] and head["kindsAfterTitle"]      # the ink header holds the title, the filters and Day | Week
+    assert head["bg"] == "rgb(11, 11, 13)" and head["kinds"] and head["sw"] and head["title"] and head["kindsAfterTitle"]      # the ink header holds the title, the filters and Day | Week
     expect(page.locator(".cz-kinds")).to_be_visible()
     expect(page.locator("#cz-z-week")).to_be_visible()
     shot(page, f"week-{viewport['width']}.png")
@@ -68,7 +68,7 @@ def test_no_day_has_a_colour_in_its_header(signed_in):
     """F-162: the day colours are gone from the week; every header is the same neutral (a grey Day N pill, ink text)."""
     page = signed_in(DESKTOP, path="/trip/canvas")
     got = page.evaluate("[...document.querySelectorAll('.cz-wcol .cz-wh')].map(h => [getComputedStyle(h).backgroundColor, getComputedStyle(h.querySelector('.cz-wh-no')).backgroundColor, getComputedStyle(h.querySelector('.cz-wh-day')).color])")
-    assert got == [["rgba(0, 0, 0, 0)", "rgb(250, 247, 242)", "rgb(30, 26, 46)"]] * 5
+    assert got == [["rgba(0, 0, 0, 0)", "rgb(237, 237, 241)", "rgb(11, 11, 13)"]] * 5
 
 
 @pytest.mark.parametrize("viewport", [DESKTOP, LAPTOP], ids=["1440", "1280"])
@@ -102,7 +102,7 @@ def test_today_is_marked_in_its_header(signed_in, monkeypatch):
     monkeypatch.setattr(catalog, "today", lambda: SAT_NOON.astimezone(catalog.TZ).date())
     page = signed_in(DESKTOP, path="/trip/canvas")
     sh = page.evaluate("[...document.querySelectorAll('.cz-wcol')].map(c => { const t = c.querySelector('.cz-wh-today'); return t ? getComputedStyle(t).backgroundColor : null; })")      # F-162: today's header has the ink "Today" pill where the others have a grey Day N
-    assert sh == [None, "rgb(30, 26, 46)", None, None, None], sh
+    assert sh == [None, "rgb(11, 11, 13)", None, None, None], sh
     expect(page.locator(".cz-wcol.is-today")).to_contain_text("Today")
 
 

@@ -18,10 +18,11 @@ from tests_browser.test_colour_day_phone import crowded
 from tests_browser.test_day_grid import fire, show, slide
 from tests_browser.test_topbar import TABLET, signed_in  # noqa: F401 - fixture
 
-CORAL, CORAL_DEEP, INK_2 = "rgb(255, 115, 82)", "rgb(201, 67, 31)", "rgb(74, 68, 96)"
+CORAL = CORAL_DEEP = "rgb(11, 11, 13)"      # F-200: the live time and the draft's edge are the accent, ink in Direction A (they were coral and coral-deep)
+INK_2 = "rgb(92, 92, 102)"
 HOW = pytest.mark.parametrize("viewport", [PHONE, TABLET, DESKTOP], ids=["390", "800", "1440"])
-KIND_COLOURS = {"fun": ["rgb(255, 227, 241)", "rgb(194, 59, 130)"], "food": ["rgb(255, 241, 194)", "rgb(138, 98, 0)"], "outdoors": ["rgb(212, 247, 234)", "rgb(22, 134, 95)"],
-                "culture": ["rgb(236, 228, 255)", "rgb(106, 79, 214)"], "travel": ["rgb(221, 238, 255)", "rgb(27, 111, 201)"]}
+KIND_COLOURS = {"fun": ["rgb(251, 225, 234)", "rgb(126, 21, 56)"], "food": ["rgb(255, 244, 194)", "rgb(92, 67, 0)"], "outdoors": ["rgb(217, 242, 239)", "rgb(11, 77, 72)"],
+                "culture": ["rgb(241, 227, 250)", "rgb(90, 23, 133)"], "travel": ["rgb(228, 227, 251)", "rgb(42, 33, 133)"]}
 
 GEO = """() => { const g = document.querySelector('#cz-grid'), z = g.querySelector('.cz-g-zoom'), lo = +g.dataset.lo, hi = +g.dataset.hi;
   return { top: z.getBoundingClientRect().top, ppm: z.offsetHeight / (hi - lo), lo }; }"""
@@ -144,7 +145,7 @@ def test_a_plan_in_the_air_leaves_a_ghost_shows_a_landing_slot_and_a_coral_rail_
     assert (m["ghosts"], m["lands"], m["lives"]) == (1, 1, 1)
     # the ghost stays at the old slot, faint and dashed
     assert abs(m["ghost"]["top"] - old_top) <= 1.5 and abs(m["ghost"]["height"] - old_h) <= 1.5, (m["ghost"], old_top, old_h)
-    assert m["ghost"]["css"][0] == "dashed" and m["ghost"]["css"][1] == "rgba(30, 26, 46, 0.16)", m["ghost"]["css"]      # --hairline-2: faint
+    assert m["ghost"]["css"][0] == "dashed" and m["ghost"]["css"][1] == "rgb(215, 215, 222)", m["ghost"]["css"]      # --hairline-2: faint
     # the landing slot is dashed and sits on the snapped minute, the size of the plan
     want = g["top"] + (snapped - g["lo"]) * g["ppm"]
     assert abs(m["land"]["top"] - want) <= 1.5, (m["land"]["top"], want)
