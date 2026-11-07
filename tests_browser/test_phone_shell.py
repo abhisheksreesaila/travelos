@@ -70,7 +70,7 @@ def test_every_tab_is_pressed_and_lands_in_the_shell(shell, base_url):
             page.goto(base_url + path)
         elif key == "book":     # F-200: Book this trip is its own page (F-198's lanes), outside the shell: it lands there and the way back is the browser's
             page.locator("#ph-tab-book").click()
-            page.wait_for_url(re.compile(re.escape(path)))
+            page.wait_for_url(re.compile(r"/plan\?"))      # F-198: /trip/book sends the family on to the lanes for their open trip
             page.go_back()
             expect(bar).to_be_visible()
             continue
