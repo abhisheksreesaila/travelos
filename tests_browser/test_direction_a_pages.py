@@ -10,9 +10,10 @@ from tests_browser.look import audit
 
 TRIP = "d=2027-03-05&r=2027-03-09&a=2"
 SIGNED_OUT = (("landing", "/"), ("sign-in", "/signin?next=%2Fstart"), ("creators", "/creators"), ("for creators", "/for-creators"), ("plan for me", "/plan-for-me"))
-SIGNED_IN = (("start", "/start"), ("plan", f"/plan?to=la&{TRIP}"), ("trip canvas", "/trip/canvas?day=1"), ("family chat", "/trip/family"), ("family", "/family"))
-OWNED_ELSEWHERE = {"landing": ("small", "tiny")}   # F-206 replaces the signed-out landing (gitaway/pages/home.py) with the cover story: here it only takes the tokens, so its contrast,
-                                                   # sideways scroll and glass are checked, and its type and targets are F-206's to meet with the same audit
+SIGNED_IN = (("start", "/start"), ("plan", f"/plan?to=la&{TRIP}"), ("trip canvas", "/trip/canvas?day=1"), ("family chat", "/trip/family"), ("family", "/family"),
+             ("ask", "/trip/ask"), ("book", "/trip/book"))
+TABLET = {"width": 900, "height": 1000}      # between the phone and the laptop layouts (the tablet keeps the old header; 12px root)
+OWNED_ELSEWHERE = {}      # (the signed-out landing was F-206's to finish; since the merge the cover meets the whole audit)
 
 
 def context(browser, viewport, mode):
@@ -38,7 +39,7 @@ def published(ctx, base_url):
 
 
 @pytest.mark.parametrize("mode", ["light", "dark"])
-@pytest.mark.parametrize("viewport", [PHONE, DESKTOP], ids=["390", "1440"])
+@pytest.mark.parametrize("viewport", [PHONE, TABLET, DESKTOP], ids=["390", "900", "1440"])
 def test_every_main_page_reads_fits_and_is_easy_to_tap(browser, base_url, viewport, mode):
     signed_in, signed_out = context(browser, viewport, mode), context(browser, viewport, mode)
     try:

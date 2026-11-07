@@ -1189,7 +1189,7 @@ Brief: docs/briefs/plan-for-me.md (draft; the captain approves the wording and t
 
 # Free and polished: booking anywhere, free plans (brief docs/briefs/free-and-polished.md, approved 2026-11-07)
 
-## F-198 Booking works for any destination, links only, no liability [review]
+## F-198 Booking works for any destination, links only, no liability [done]
 Brief: docs/briefs/free-and-polished.md (What 4, The model) · Research: docs/research/booking-any-trip.md · Decisions: D-287 to D-298 · Needs: F-195 · UI kept minimal (the reskin restyles it)
 - [x] 1. a partner registry per lane (flight, stay, car, todo, direct) in `gitaway/partners/registry.py`: a lane uses a paying partner when it is connected (Aviasales with `TRAVELPAYOUTS_MARKER`; Klook through the partner-links API with token, marker and project id), else a plain deep link with the search filled in (stays: Expedia, Airbnb, Vrbo; cars: Expedia cars, SUV with snow chains and a ski rack on a winter snow trip; things to do: GetYourGuide; lift tickets and ski school: "Buy direct" at the resort); a plain link has no affiliate parameter and says "No commission"; `PARTNER_<LANE>=<site>` picks a lane's site and `PARTNER_TRACKED=<site,...>` sends a newly approved program through the partner-links API, with no code change; Klook goes first for stays and things to do only where it has the place
 - [x] 2. any destination: a free-text place resolves to its nearest airport from a small static table of common US destinations (Lake Tahoe -> RNO), or a manual three-letter airport field (checked); dates, adults and kids with ages go wherever the site's documented URL takes them. Lake Tahoe, Dec 19 to 26 2026, from SFO, 2 adults and kids 8 and 11 builds exactly the links of docs/research/booking-any-trip.md section 3
@@ -1201,8 +1201,11 @@ Brief: docs/briefs/free-and-polished.md (What 4, The model) · Research: docs/re
 - [x] proof: tests/test_booking_links.py, test_booking_registry.py, test_flight_prices.py, test_booking_lanes.py, test_booking_manage.py, test_paste_back.py; tests_browser/test_booking_lanes.py (390, 320, 1440, 1280, 1000; every tap caught and compared with the researched link); screenshots docs/report/f198-tahoe-390.png and -1440.png (`F198_SHOTS=1`)
 - [ ] the captain sets `TRAVELPAYOUTS_TOKEN` (and `TRAVELPAYOUTS_TRS`) on Railway: the flight lane then shows real cached fares and Klook links are tracked; with no keys every lane still works as a plain link that says "No commission"
 - [ ] the captain opens one Vrbo, one Expedia stay and one Expedia car link from the Tahoe page on a phone (all three answer a bot wall to this machine, D-288), and the walled manage pages (D-296)
+Follow-ups after the merge (not in this ticket, 2026-11-07):
+- [ ] the paste cutter also drops "Last 4:" and "Security code" lines
+- [ ] body limits for /trip/ask/answer, /edit and /apply
 
-## F-199 Plan it for me is free [review]
+## F-199 Plan it for me is free [done]
 Brief: docs/briefs/free-and-polished.md (What 1) · Decisions: D-299 to D-303 · Needs: F-193, F-197
 - [x] no Stripe needed to offer it: `PLAN_FOR_ME_PAID=0` (the default) makes an order go straight to building; the Stripe code stays and comes back with `PLAN_FOR_ME_PAID=1`
 - [x] a daily cap per person (`PLAN_FOR_ME_DAILY`, 2) and for the whole site (`PLAN_FOR_ME_SITE_DAILY`, 100), counted on the server, with a plain sentence when reached
@@ -1212,7 +1215,7 @@ Brief: docs/briefs/free-and-polished.md (What 1) · Decisions: D-299 to D-303 ·
 - [x] tests: caps (person, site, a new day), free order flow, paid mode still works, copy has no price (tests/test_planforme_free.py; the F-193/F-197 tests run with `PLAN_FOR_ME_PAID=1`)
 - [ ] the captain reads two or three real plans built by Haiku before launch (quality was Sonnet's bar, D-301)
 
-## F-200 Direction A everywhere: tokens, type, light and dark, the shell, sign-in [review]
+## F-200 Direction A everywhere: tokens, type, light and dark, the shell, sign-in [done]
 Brief: docs/briefs/free-and-polished.md · Design: docs/design/reskin/README.md (Direction A, B's ticket stub), docs/design/cockpit/README.md "What all three share" · Needs: none · Decisions: D-219 to D-231 · Screenshots: docs/report/f200-before-*.png, f200-after-*.png
 - [x] Direction A tokens (canvas #F2F2F5 / black, Apple-bright kind colours, ink accent, sh1-sh3 shadows, radii) in one place, for light and dark; dark follows the system with a manual switch that's remembered
 - [x] type scale: phone body 17px, secondary 16px, all-caps labels 13px, fine print 14px; desktop body 16px; nothing else smaller
@@ -1222,7 +1225,7 @@ Brief: docs/briefs/free-and-polished.md · Design: docs/design/reskin/README.md 
 - [x] colour still means a kind, never a day; behaviour unchanged (existing tests pass)
 - [x] an honest "Early preview" label in the shell (desktop top islands, the phone chrome), small and calm, on signed-in and signed-out pages; it opens "GitAway is new. Things will change; tell us what breaks.", the last words a link to GITAWAY_CONTACT_EMAIL when it is set (the brief's "What" 1)
 
-## F-201 The trip cockpit: Ticket line [review]
+## F-201 The trip cockpit: Ticket line [done]
 Brief: docs/briefs/free-and-polished.md · Design: docs/design/cockpit/3-ticket.html and README.md (Direction 3) · Needs: F-200 tokens; F-198 booking lanes; F-203 weather; F-204 routes · Decisions: D-275 to D-284 (docs/decisions.md; expect renumbering on merge)
 - [x] the week as a line of day stubs, each with its own living sky (`assets/js/wx.js`, the design's engine; weather through `gitaway/dayweather.py`: a plain sky with no number on a real trip until F-203, the labelled sample weather on the showcase, D-278) and the day's times; today's stub open in ink as Up next with the next leg turn by turn (the router's own steps, cached with the drive, three shown then "+N more", D-277)
 - [x] bookings as wallet passes, "Booked on <partner>" only when the booking names one (F-198's hook `cockpit.partner_of`; "Booked" until then) and Details to the booking's sheet; "Change or cancel" appears for an https page on that partner's own site when F-198 gives it; reference numbers masked (`••821`, never whole on the page)
@@ -1234,6 +1237,12 @@ Brief: docs/briefs/free-and-polished.md · Design: docs/design/cockpit/3-ticket.
 - [x] proven on the running app at 390, 1440 and 1280x800, light and dark (screens in docs/report/f201-*.png), and once against the live services on a dev server with a copy of the local data (live Nominatim, OSRM, Overpass and AWS Terrain Tiles: docs/report/f201-real-services-*.png; that run found and fixed Lake Tahoe's ring cut by the box, 60 KB shapes, an old pack breaking the page, and stops at the box's edge); full suites in foreground shards: `pixi run test` 3803 passed; `tests_browser` 1477 passed, 14 skipped, 4 failed: `test_publish.py::test_publish_from_the_phone_then_a_stranger_reads_it_and_it_comes_down` ("Download is starting", fails on the base too) and three that pass when rerun alone on this shared machine (`test_liquid` 390 drop, `test_note_authors`, `test_day_chip_drop` long trip)
 Not yet seen (needs the founder or other tickets): real snow skies need F-203's weather; per-booking partners and Change or cancel need F-198; the founder's real trip needs its plans named after places that OpenStreetMap knows (a plan title like "Snowshoe at Taylor Creek" geocodes only if Nominatim finds it) for its stops and legs to appear.
 Follow-ups (from the review, not in this ticket): the design's fourth "Tickets" pass; traveller avatars on the head and the passes; press-squash polish beyond D-55's squash (per-element springs, the ticket's tear); a geocoding fallback that tries a stay's street address alone when "name, address" is not found.
+Follow-ups after the merge (not in this ticket, 2026-11-07):
+- [ ] `geopack.transport` reads 64 KB chunks, so a trickling server can pass the 180 s deadline: read with `read1` or put a deadline on the socket
+- [ ] `geo_regions` needs a retention rule (shared regions are never pruned)
+- [ ] `_take_global` counts a build before `put_nowait`, so a full queue still spends the budget
+- [ ] deleting a trip resets its build limit
+- [ ] flaky: tests_browser/test_topbar.py::test_family_from_a_page_with_no_day_goes_to_the_day_with_the_chats_open
 
 ## F-202 Book this trip: a book of tickets [todo]
 Brief: docs/briefs/free-and-polished.md · Design: docs/design/cockpit/3-ticket.html (Book) · Needs: F-198, F-201
@@ -1242,7 +1251,7 @@ Brief: docs/briefs/free-and-polished.md · Design: docs/design/cockpit/3-ticket.
 - [ ] the paste moment: read, fields pop, the card flies into its lane, the stamp lands (calm fade on desktop)
 - [ ] "Bring a booking home" and a ride estimate (borrowed from Direction 2)
 
-## F-203 Real weather: MET Norway forecast, climate normals before it [review]
+## F-203 Real weather: MET Norway forecast, climate normals before it [done]
 Brief: docs/briefs/free-and-polished.md · Design: docs/design/cockpit/README.md "Weather" · Needs: none · Decisions: D-250 to D-260
 - [x] MET Norway Locationforecast for real trips (identifying User-Agent, cache by Expires, credit shown), behind a test seam; no network in tests: `gitaway/weather.py` (compact endpoint, four decimals, Expires and three hours, If-Modified-Since, a process gate, 429/403/203 handled, `TRANSPORT` seam refused in tests/conftest.py and tests_browser/conftest.py); "Forecast based on data from MET Norway · updated 6:10 AM" linked to MET's licence page
 - [x] before the forecast window (about 10 days out): climate normals for the place and dates, labelled "Typical late December · not a forecast yet"; NOAA normals for the US: 60 destinations in `gitaway/normals.json` from NOAA's 1991-2020 normals (`pixi run build-normals`), with what the days are usually like and when the forecast opens; anywhere else shows nothing
@@ -1254,7 +1263,7 @@ Brief: docs/briefs/free-and-polished.md · Design: docs/design/cockpit/README.md
 - [x] last fixes (D-259): a 304 is not a redirect; names abroad never borrow a US station and the forecast names its station; forecast() takes only a table station; every address tried in turn; no call started with under a second left; a TLS handshake the watchdog can cut (tests/tls_support.py: a test CA, a TLS server, a dripping proxy); the credit a 48px target on touch tablets too
 - [ ] the captain reads and accepts MET Norway's terms (https://api.met.no/doc/TermsOfService), then sets `MET_NORWAY_TERMS_ACCEPTED=1` on Railway (with `GITAWAY_CONTACT_EMAIL` set) and runs `pixi run probe-weather` once; until then real trips show typical weather only
 
-## F-208 A creator's dripping blog cannot hold the fetch past its deadline [review]
+## F-208 A creator's dripping blog cannot hold the fetch past its deadline [done]
 Found by: the F-203 security review · Needs: F-203 (gitaway/deadline.py) · Risk: an outside server a creator names
 - [x] `gitaway/safefetch.py` fetches through `gitaway/deadline.py`, the GET-by-a-deadline the weather transport uses: the socket is held once connected, so the watchdog still reaches it after an answer says "Connection: close" (http.client then lets go of `conn.sock`, and `safefetch._http(timeout=1.0)` took 5.7 s against a dripping server); the TLS handshake runs on the TLS socket itself; the watchdog only shuts sockets down and the request closes them
 - [x] test: a server that says "Connection: close" and drips its body is cut within the deadline (tests/test_safefetch.py), beside the dripping body, headers and silence it already covered
@@ -1271,7 +1280,7 @@ Brief: docs/briefs/free-and-polished.md "The soul: sharing" · Design: docs/desi
 - [ ] four themes a creator or reader picks: Scrapbook, Structured, Magazine, Minimal list
 - [ ] Thank (a real count) and Fork with a fork tree; counts are never invented
 
-## F-206 The cover page: a 3D scroll world [review]
+## F-206 The cover page: a 3D scroll world [done]
 Brief: docs/briefs/free-and-polished.md "The soul: sharing", "The line" · Design: docs/design/cover3d/ (concept A with B's fork tree, the founder's pick) · Build: cover3d/README.md · Decisions: D-261 to D-274
 - [x] the signed-out landing is the cover: "Don't read about it. Go." … the fly-through over the real Lake Tahoe in December … B's fork tree ("Every trip here grew from another") … "Take a trip. Leave a trail." with the subhead and three doors: Start a trip (`/start`), Leave a trail (`/for-creators`), See trips people shared (`/community`, only while it exists); a signed-in person keeps the old landing; the Drive script rules unchanged
 - [x] text is real DOM (headings, the line, the doors) with a title, a description and Open Graph tags; the world is `aria-hidden` decoration
