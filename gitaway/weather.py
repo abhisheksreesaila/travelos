@@ -275,6 +275,7 @@ def _store(url, entry):
         if url not in _CACHE and len(_CACHE) >= CACHE_MAX:     # forget the places whose wait ran out first
             for old in sorted(_CACHE, key=lambda u: _CACHE[u].next_ask)[:CACHE_MAX // 8]:
                 del _CACHE[old]
+                _ASKING.pop(old, None)
         _CACHE[url] = entry
 
 

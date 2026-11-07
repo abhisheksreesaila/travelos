@@ -1212,12 +1212,14 @@ Brief: docs/briefs/free-and-polished.md · Design: docs/design/cockpit/3-ticket.
 - [ ] the paste moment: read, fields pop, the card flies into its lane, the stamp lands (calm fade on desktop)
 - [ ] "Bring a booking home" and a ride estimate (borrowed from Direction 2)
 
-## F-203 Real weather: MET Norway forecast, climate normals before it [todo]
-Brief: docs/briefs/free-and-polished.md · Design: docs/design/cockpit/README.md "Weather" · Needs: none
-- [ ] MET Norway Locationforecast for real trips (identifying User-Agent, cache by Expires, credit shown), behind a test seam; no network in tests
-- [ ] before the forecast window (about 10 days out): climate normals for the place and dates, labelled "Typical late December · not a forecast yet"; NOAA normals for the US
-- [ ] sample weather stays only for showcase/sample trips; a real trip never shows invented weather
-- [ ] privacy page names MET Norway; docs/setup.md updated
+## F-203 Real weather: MET Norway forecast, climate normals before it [review]
+Brief: docs/briefs/free-and-polished.md · Design: docs/design/cockpit/README.md "Weather" · Needs: none · Decisions: D-240 to D-247
+- [x] MET Norway Locationforecast for real trips (identifying User-Agent, cache by Expires, credit shown), behind a test seam; no network in tests: `gitaway/weather.py` (compact endpoint, four decimals, Expires and three hours, If-Modified-Since, a process gate, 429/403/203 handled, `TRANSPORT` seam refused in tests/conftest.py and tests_browser/conftest.py); "Forecast based on data from MET Norway · updated 6:10 AM" linked to MET's licence page
+- [x] before the forecast window (about 10 days out): climate normals for the place and dates, labelled "Typical late December · not a forecast yet"; NOAA normals for the US: 60 destinations in `gitaway/normals.json` from NOAA's 1991-2020 normals (`pixi run build-normals`), with what the days are usually like and when the forecast opens; anywhere else shows nothing
+- [x] sample weather stays only for showcase/sample trips; a real trip never shows invented weather: `weather.sample` (the showcase's own sample trip only); the /plan weather pane and the /forks day heads show the forecast, typical weather or nothing; a shared real trip carries none; context.py's invented weather is deleted
+- [x] privacy page names MET Norway; docs/setup.md updated (`MET_NORWAY_TERMS_ACCEPTED`, a Weather section)
+- [x] proof: tests/test_weather.py (the request, the cache, refusals, the Tahoe forecast read into days), test_weather_normals.py, test_weather_trip.py (the founder's Tahoe trip, Dec 19-26 2026: typical mid/late December 42/17-18 F now and nobody asked; MET's days from Dec 17), test_weather_pages.py, test_event_loop.py (a slow forecast never blocks /healthz); screenshots of /plan and /forks at 1440, 1280 and 390, no sideways scroll
+- [ ] the captain reads and accepts MET Norway's terms (https://api.met.no/doc/TermsOfService), then sets `MET_NORWAY_TERMS_ACCEPTED=1` on Railway (with `GITAWAY_CONTACT_EMAIL` set) and runs `pixi run probe-weather` once; until then real trips show typical weather only
 
 ## F-204 Routes and drive times that allow commercial use [todo]
 Brief: docs/briefs/free-and-polished.md · Needs: the founder's pick between the options researched

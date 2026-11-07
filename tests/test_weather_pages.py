@@ -122,3 +122,11 @@ def test_a_shared_real_trip_carries_no_weather(client):
 def test_the_privacy_page_names_met_norway_and_noaa(client):
     text = visible(client.get("/privacy").text)
     assert "MET Norway" in text and "api.met.no" in text and "NOAA" in text
+
+
+def test_a_trip_under_way_shows_only_the_days_still_to_come(client, monkeypatch):
+    monkeypatch.setattr(catalog, "today", lambda: catalog.SAMPLE_TRIP.depart + timedelta(days=2))      # Sun Oct 18, the trip's third day
+    monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
+    p = pane(client.get("/plan").text)
+    assert re.findall(r'class="ws-wday"[^>]*>([^<]+)<', p) == ["Sun 18", "Mon 19", "Tue 20"]
+    assert re.search(r'class="ws-meta"[^>]*>°F<', p)                                                    # no "first 3 of 5 days"

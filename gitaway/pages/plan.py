@@ -525,7 +525,7 @@ def weather_pane(trip=catalog.SAMPLE_TRIP):
     tw = weather.trip_weather(trip)
     known = [d for d in tw.days if d]
     shown = known[:context.WEATHER_DAYS_SHOWN]
-    meta = "°F" if len(shown) == len(tw.days) or not shown else f"°F · first {len(shown)} of {len(tw.days)} days"
+    meta = "°F" if len(shown) == len(known) else f"°F · first {len(shown)} of {len(known)} days"
     cells = [Div(Span(f"{d.date:%a} {d.date.day}", cls="ws-wday"), icon(weather_ui.icon_name(d), 22, 2), Span(f"{d.high_f}°", cls="ws-temp"),
                  Span(f"{d.low_f}°", cls="ws-lo"), Span("typical" if d.kind == weather.NORMAL else d.word, cls="ws-sky"),
                  cls=f"ws-wcell fill-{weather_ui.tint(d)}-tint" + (" ws-typical" if d.kind == weather.NORMAL else ""), role="group", aria_label=weather_ui.describe(d))
