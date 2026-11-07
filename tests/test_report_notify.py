@@ -155,6 +155,31 @@ def test_with_smtp_set_every_admin_gets_an_email_that_says_what_and_where_and_no
     assert "evil.example" not in repr(sent) and "rep@example.com" not in repr(sent)
 
 
+def test_the_real_send_email_renders_and_sends_the_notice_through_a_fake_mail_server(client, trip, monkeypatch):
+    """F-196 review: `fh_saas.utils_email.send_email` imports `markdown_merge`, which the environment lacked, so no email could ever go. Nothing is faked here but the SMTP server itself."""
+    import smtplib
+    smtp(monkeypatch)
+    monkeypatch.setenv("GITAWAY_ADMIN_EMAILS", CAP)
+    monkeypatch.setattr(reports, "_run", lambda fn, *a: fn(*a))
+    monkeypatch.setattr("time.sleep", lambda s: None)
+    seen = []
+
+    class Server:
+        def __init__(self, host, port): seen.append(("connect", host, port))
+        def starttls(self): seen.append(("starttls",))
+        def login(self, user, password): seen.append(("login", user))
+        def send_message(self, msg, from_addr=None): seen.append(("message", msg))
+        def quit(self): seen.append(("quit",))
+    monkeypatch.setattr(smtplib, "SMTP", Server)
+    report(client, trip["slug"], "private", note="<b>look</b> at https://evil.example", email="rep@example.com")
+    assert seen[:3] == [("connect", "smtp.example.org", 587), ("starttls",), ("login", "u")] and seen[-1] == ("quit",)
+    (msg,) = [m[1] for m in seen if m[0] == "message"]
+    assert (msg["To"], msg["From"], msg["Subject"]) == ("GitAway admin <cap@example.com>", "gitaway@example.org", "GitAway: new report: It shows private information")
+    body = "".join(part.get_payload(decode=True).decode() for part in msg.walk() if part.get_content_maintype() == "text")
+    assert f"Someone reported the trip {trip['slug']}. The reason they picked: It shows private information." in body and "https://gitaway.me/admin" in body
+    assert "evil.example" not in body and "rep@example.com" not in body and "<b>look</b>" not in body
+
+
 def test_without_smtp_no_email_is_tried_and_the_report_is_still_kept(client, trip, sent, monkeypatch):
     monkeypatch.setenv("GITAWAY_ADMIN_EMAILS", CAP)
     for k in ("SMTP_HOST", "SMTP_USER", "SMTP_PASSWORD", "SMTP_MAIL_FROM"):
