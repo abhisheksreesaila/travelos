@@ -20,8 +20,8 @@ Nothing is deployed and nothing is pushed. Each ticket lives on its own branch a
 - **Then:** merge master, which has F-207, into the branch.
 
 **Waiting on the founder:**
-1. Routes: is openrouteservice the pick? If so, set `ORS_API_KEY`.
-2. In Railway, set `TRAVELPAYOUTS_TOKEN`, `TRAVELPAYOUTS_TRS` and `ANTHROPIC_API_KEY`.
+1. Routes: openrouteservice; the founder will set `ORS_API_KEY` later.
+2. Done (founder, 2026-11-07): Railway variables are set.
 3. Accept MET Norway's terms, then set `MET_NORWAY_TERMS_ACCEPTED=1`.
 4. Approve deleting the test temp folders under `~/.cache/*-tmp` (several GB).
 5. Say "ship" for the whole release once it's merged and green.
