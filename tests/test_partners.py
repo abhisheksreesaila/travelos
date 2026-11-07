@@ -163,7 +163,7 @@ def test_plan_has_no_partner_links_in_production_without_a_marker(client, nokeys
 def test_plan_links_in_production_with_a_marker(client, nokeys, monkeypatch):
     monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
     monkeypatch.setenv("TRAVELPAYOUTS_MARKER", "123456")
-    assert "Book on Aviasales" in text(client.get(f"/plan?{HI}").text)
+    assert "Search on Aviasales" in text(client.get(f"/plan?{HI}").text) and "We may earn a commission" in text(client.get(f"/plan?{HI}").text)      # F-198: the honest lanes
 
 
 # ---- /go ------------------------------------------------------------------------------------------------------------
@@ -554,6 +554,5 @@ def test_an_ordinary_los_angeles_trip_is_not_a_disneyland_one(client, nokeys):
 
 def test_the_tickets_card_follows_the_same_rules_as_the_book_links_in_production(client, nokeys, monkeypatch):
     monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
-    assert todo_cards(client.get(f"/plan?{HI}").text) == []           # no marker: nowhere to send anyone, so no card and no /go/ link at all
-    monkeypatch.setenv("TRAVELPAYOUTS_MARKER", "123456")
-    assert len(todo_cards(client.get(f"/plan?{HI}").text)) == 1
+    html = client.get(f"/plan?{HI}").text           # F-198: production shows the honest lanes; with no keys the tickets lane is a plain GetYourGuide search that says so
+    assert 'data-lane="todo" data-site="getyourguide"' in html and "No commission" in text(html) and "/go/" not in html

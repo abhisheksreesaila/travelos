@@ -80,3 +80,10 @@
   .ti-detail-page .ti-v { font-size: var(--t-2); }      /* F-200: a data row's value is secondary text (14px), so the page still fits 1280x800 with the 16px body */
 }
 @media (min-width: 1020px) and (max-width: 1299px) { .ti-detail-page .ti-wide { columns: 2; } }
+/* F-198: "Booked on <partner>" and "Change or cancel" under each booking on the details page. */
+.ti-item .bk-where { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 0.375rem; color: var(--ink-2); font-size: max(var(--text-min), 0.8125rem); line-height: 1.3; }
+.ti-item .bk-where .bk-where-t { font-weight: 700; }
+.ti-item .bk-where .bk-manage { min-height: 0; padding: 0; gap: 0.25rem; background: none; box-shadow: none; color: var(--ink); font: inherit; text-decoration: underline; text-underline-offset: 0.2em; }
+@media (max-width: 1019px) { .ti-item .bk-where .bk-manage, .ti-where .bk-manage { min-height: 3rem; } }      /* a finger's target on a phone or tablet; on a laptop one quiet line so the page still fits 1280 by 800 */
+.ti-where { display: flex; flex-wrap: wrap; align-items: center; gap: 0.375rem 0.75rem; color: var(--ink-2); }
+.ti-where .bk-where-t { font-weight: 700; }

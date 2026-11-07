@@ -28,7 +28,8 @@ for _key in ("GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "AZURE_OPENAI_API_KEY",
 for _key in [k for k in os.environ if k.startswith("GITAWAY_AI_")]:
     os.environ[_key] = ""  # per-job AI settings from a shell or .env must not reach a test (F-079)
 os.environ["GITAWAY_SHOWCASE"] = ""  # empty: tests start in the default (local) mode whatever the shell says; a test sets 0 or 1 itself (F-064)
-os.environ["PLAN_FOR_ME_REVIEW"] = "0"  # Plan it for me delivers at once in the tests written before the founder check (F-197); a test of the check sets 1 or removes it (the default is on)
+os.environ["PLAN_FOR_ME_REVIEW"] = "0"  # Plan it for me delivers at once in the tests written before the founder check (F-197); a test of the check sets 1 (off by default since F-199)
+os.environ["PLAN_FOR_ME_PAID"] = "1"   # the browser tests written before F-199 sell Plan it for me; a free plan test sets 0
 for _key in ("GITAWAY_VAPID_PUBLIC", "GITAWAY_VAPID_PRIVATE", "GITAWAY_VAPID_SUBJECT"):
     os.environ[_key] = ""  # empty, not removed: a .env found above the folder must not switch the real push sender on in a test run (F-066)
 os.environ["MET_NORWAY_TERMS_ACCEPTED"] = ""  # the real forecast is off in tests whatever a .env says (F-203)

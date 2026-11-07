@@ -5,7 +5,6 @@
 .ps-title { margin: 0; font-size: 2rem; line-height: 1.1; letter-spacing: -0.03em; text-wrap: balance; }
 .ps-lede { margin: 0; font-size: 1.125rem; font-weight: 650; color: var(--ink); }
 .ps-fine { margin: 0; font-size: max(var(--text-min), 0.875rem); color: var(--ink-2); text-wrap: pretty; }
-.ps .ps-change { justify-self: start; min-height: var(--target); }
 .ps-cards { display: grid; gap: 0.75rem; margin-top: 0.5rem; }
 .ps-card { display: flex; gap: 0.875rem; align-items: flex-start; min-width: 0; padding: 1rem 1.125rem; border-radius: 1.125rem; background: var(--card); box-shadow: var(--shadow-sm); }
 .ps-tile { flex: none; display: grid; place-items: center; width: 3rem; height: 3rem; border-radius: 1rem; color: var(--ink); background: var(--paper-2); }
@@ -26,4 +25,20 @@
 .ps-field input[aria-invalid="true"] { box-shadow: 0 0 0 0.1875rem var(--coral-deep); }
 .ps .ps-from .btn { min-height: var(--target); }
 .ps-error { flex-basis: 100%; color: var(--coral-deep); font-size: max(var(--text-min), 0.875rem); font-weight: 650; }
+/* F-198: a car and a buy-direct lane, the honest note under each button, "also on" links, the resorts, and the where-when-who form. */
+.ps-k-car { background: var(--sky-tint, var(--paper-2)); }
+.ps-k-direct { background: var(--coral-tint, var(--paper-2)); }
+.ps-note { justify-self: start; font-size: max(var(--text-min), 0.8125rem); font-weight: 700; color: var(--ink-2); }
+.ps-note.is-paid { color: var(--ink); }
+.ps-alsos { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin: 0; }
+.ps-also, .ps-resort { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; min-height: 3rem; min-width: 3rem; padding-inline: 0.375rem; font-weight: 700; color: var(--ink); text-decoration: underline; text-underline-offset: 0.2em; }
+.ps-resorts { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0; padding: 0; list-style: none; }
+/* F-198 review: every target on the lanes is 3rem (48px on a phone) and links stand 0.5rem (8px) apart. */
+.ps .ps-card .ps-go, .ps .ps-from .btn, .ps .ps-field input, .ps .ps-field button, .ps .ps-field select { min-height: 3rem; }
+.ps .ps-trip .ps-age[hidden] { display: none; }
+.ps .ga-step-btn, .ps .ga-chip { min-width: 3rem; min-height: 3rem; }
+.ps .ps-trip input { text-transform: none; width: 9rem; }
+.ps .ps-trip .ps-field-wide { flex: 1 1 14rem; }
+.ps .ps-trip .ps-field-wide input { width: 100%; }
+.ps .ps-trip input[type="number"] { width: 5rem; }
 @media (min-width: 1020px) { .ps { padding-block: 2.5rem 4rem; } .ps-title { font-size: 2.5rem; } }

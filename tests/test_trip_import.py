@@ -174,14 +174,14 @@ def test_the_trip_limit_is_a_friendly_message(client, monkeypatch):
 
 # ---- the calendar ----------------------------------------------------------------------------------------------------
 
-def test_imported_flights_hotel_and_car_are_booked_blocks_marked_booked_elsewhere(client):
+def test_imported_flights_hotel_and_car_are_booked_blocks_marked_where_they_were_booked(client):
     imported(client)
     p = person()
     b = ses.booking(p)
     t = cal.trip("", b)
     blocks = {x.id: x for x in cal.booked_blocks(b, t)}
     assert set(blocks) == {"b-out", "b-back", "b-in", "b-out2", "b-car-pick", "b-car-drop"}
-    assert all(x.locked and x.tag == "Booked elsewhere · Expedia" and x.kind == "booked" for x in blocks.values())
+    assert all(x.locked and x.tag == "Booked on Expedia" and x.kind == "booked" for x in blocks.values())      # F-198: every booking says where it lives
     assert (blocks["b-out"].day, blocks["b-out"].start, blocks["b-out"].end) == (0, 8 * 60 + 5, 9 * 60 + 32)
     assert (blocks["b-back"].day, blocks["b-back"].start, blocks["b-back"].end) == (4, 14 * 60 + 10, 15 * 60 + 37)
     assert (blocks["b-in"].day, blocks["b-in"].start) == (0, 15 * 60) and (blocks["b-out2"].day, blocks["b-out2"].start) == (4, 11 * 60)

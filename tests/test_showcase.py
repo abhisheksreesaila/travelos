@@ -137,10 +137,12 @@ def test_footer_links_are_only_real_destinations(real, client):
     assert re.findall(r'href="([^"]*)"', footer) == ["/for-creators", "/privacy", "/terms"]  # the creators page (F-186) and the legal pages (F-076)
 
 
-def test_the_workspace_is_labelled_a_preview_with_sample_prices(real, client):
+def test_production_never_shows_the_invented_workspace(real, client):
+    """F-198 (6): the sample catalog (it was labelled "Preview: sample prices") is for the showcase and local copies; production asks where you are going and shows the honest lanes."""
     h = client.get("/plan").text
-    assert "Preview: sample prices, nothing is booked." in h
-    assert 'data-pane="community"' not in h and "Press 1–6" in h and 'id="ws-total"' in h and 'id="ws-book"' in h
+    assert "Where are you going?" in h and 'id="ws-total"' not in h and 'id="ws-book"' not in h and "Preview: sample prices" not in h
+    lanes = client.get("/plan?to=la&d=2027-03-05&r=2027-03-09&a=2").text
+    assert "Search flights to Los Angeles" in lanes and 'id="ws-total"' not in lanes
 
 
 def test_a_new_family_sees_two_ways_in_not_community(real, client):

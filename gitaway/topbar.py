@@ -79,6 +79,7 @@ def _trip_pick(trips, b, phone=False, label=(), sum_cls=""):
         Div(Span("Your trips", cls="ga-tb-k") if len(trips) > 1 else P("This is your only trip so far. Add another and switch between them here.", cls="ga-tb-solo"),
             Ul(*mine, cls="ga-tb-list") if len(trips) > 1 else "",
             A(icon("plus", 16, 2.4), "Plan another trip", href="/start", cls="ga-tb-item"),
+            A(icon("ticket", 16, 2.4), "Book this trip", href="/trip/book", cls="ga-tb-item", id=None if phone else "ga-tb-book") if t else "",   # F-198: the booking lanes for the open trip, any destination
             A(icon("ledger", 16, 2.4), "Import a trip you booked", href="/trips/import", cls="ga-tb-item") if access.request_role() != "viewer" else "",
             A(icon("share", 16, 2.4), "Publish this trip", href="/trip/publish", cls="ga-tb-item", id=None if phone else "ga-tb-publish") if access.request_role() != "viewer" else "",   # F-181: the trip as a creator page (ids on the bar's copy only: a phone's copy is on the same page)
             A(icon("star", 16, 2.4), "Plan it for me", href="/plan-for-me", cls="ga-tb-item", id=None if phone else "ga-tb-planforme") if access.request_role() != "viewer" and pfm.offered() else "",   # F-193: an agent builds a whole trip

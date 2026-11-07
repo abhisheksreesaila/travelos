@@ -173,7 +173,7 @@ def test_the_wallet_holds_the_next_flight_the_stay_and_the_car_with_masked_refer
     assert (flight.kind, flight.eyebrow, flight.title, flight.sub, flight.ref) == ("flight", "Flight home · Sat 26", "RNO → SFO · 1:30 PM", "United UA 5522", "••21")
     assert (stay.kind, stay.eyebrow, stay.title, stay.sub, stay.ref) == ("stay", "Stay · 5 nights left", "Cabin near Heavenly", "Check out Sat 26 · 10:00 AM", "••936")
     assert (car.kind, car.title, car.sub, car.ref) == ("car", "Mid-size SUV, AWD", "Hertz · return Sat 26 11:45 AM", "••215")
-    assert all(p.partner == "" and p.manage == "" for p in v.passes)            # the trip's one "booked on" is not each booking's partner; F-198 fills these per booking
+    assert all((p.partner, p.manage, p.site) == ("Expedia", "https://www.expedia.com/trips", "Expedia") for p in v.passes)      # F-198: the trip names one partner, so each booking was made there
     assert flight.href.startswith("/trip/canvas?day=7&booked=b-back") and stay.href.startswith("/trip/canvas?day=0&booked=b-in")
     text = repr(v)
     for whole in ("KQ7821", "VR4821936", "H77418215"):
@@ -231,6 +231,23 @@ def test_the_sample_trip_works_too(client):
 
 def test_a_short_reference_shows_two_characters_a_long_one_three():
     assert cockpit.mask("KQ7821") == "••21" and cockpit.mask("H77418215") == "••215" and cockpit.mask("ABC") == "•••"
+
+
+def test_each_pass_names_its_own_partner_and_that_sites_change_or_cancel(client, monkeypatch):
+    """F-198 merged into F-201's hook: a booking's own partner wins over the trip's; a flight booked on Aviasales is changed on the airline's site; a car
+    with no partner named is the rental company's; nothing named and no trip-wide partner is just "Booked"."""
+    t = tahoe.TEMPLATE.replace("  booked_on: Expedia\n", "  booked_on: elsewhere\n").replace("    confirmation: KQ7821\n    seats:", "    confirmation: KQ7821\n    booked_on: Aviasales\n    seats:")
+    t = t.replace('  confirmation: "VR4821936"\n', '  confirmation: "VR4821936"\n  booked_on: Vrbo\n')
+    monkeypatch.setattr(tahoe, "TEMPLATE", t)
+    monkeypatch.setattr(geopack, "TRANSPORT", tahoe.pack_transport)
+    monkeypatch.setattr(geopack, "LONG_SIDE", 512)
+    sign_in(client)
+    me = tahoe.seed(client, monkeypatch, maps=False)
+    at(monkeypatch, tahoe.NOW)
+    flight, stay, car = cockpit.view(me).passes
+    assert (flight.partner, flight.site, flight.manage) == ("", "United", "https://www.united.com/en/us/manageres/mytrips")       # the way home was not booked on Aviasales here
+    assert (stay.partner, stay.site, stay.manage) == ("Vrbo", "Vrbo", "https://www.vrbo.com/trips")
+    assert (car.partner, car.site) == ("Hertz", "Hertz") and car.manage.startswith("https://www.hertz.com/")
 
 
 @pytest.mark.parametrize("booked_on", ["elsewhere", "GitAway", "Elsewhere", ""])

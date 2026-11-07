@@ -39,7 +39,7 @@ def paths(plan_href=PLAN):
     """The three ways to begin: a plain list of links, so it works without JavaScript."""
     community = [_path(COMMUNITY, "fork", "bubble", "Browse community trips", "Real trips from travelers and creators. Fork one and make it yours.", "Take a look")] if showcase.on() else []
     return Div(
-        _path(plan_href, "plane", "sun", "Plan a trip", "Pick a place and dates. We line up flights, a stay and a car with one honest total.", "Start planning"),
+        _path(plan_href, "plane", "sun", "Plan a trip", "Pick a place and dates. We line up where to book flights, a stay and a car, with your dates filled in.", "Start planning"),
         _import_path(),
         *community,
         cls="fr-paths" + ("" if community else " fr-two"))

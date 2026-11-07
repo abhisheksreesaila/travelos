@@ -98,8 +98,8 @@ def test_the_wallet_shows_passes_with_masked_references_and_never_the_whole_numb
     assert "Flight home · Sat 26 RNO → SFO · 1:30 PM United UA 5522" in page and "Ref ••21" in page
     assert "Stay · 5 nights left Cabin near Heavenly" in page and "Ref ••936" in page
     assert "Mid-size SUV, AWD Hertz · return Sat 26 11:45 AM" in page and "Ref ••215" in page
-    assert "Booked on" not in page and page.count("Booked Ref") == 3          # no partner is known per booking yet (F-198): just "Booked"
-    assert 'href="/trip/canvas?day=7&amp;booked=b-back" class="ck-cxl"' in html        # Details: the booking's own sheet (the number behind a tap, phone, address)
+    assert page.count("Booked on Expedia Ref") == 3          # F-198: the trip was booked on Expedia, so each booking was; its Change or cancel is Expedia's own page
+    assert html.count('href="https://www.expedia.com/trips" target="_blank" rel="noopener" class="ck-cxl"') == 3
     for whole in ("KQ7821", "VR4821936", "H77418215"):
         assert whole not in html
 
@@ -234,9 +234,16 @@ def test_the_eyebrow_names_the_family_not_the_viewer(tahoe_trip):
     assert f"{label} · day 3 of 8" in page and label != "A family"
 
 
-def test_a_pass_says_booked_with_no_trip_wide_partner(tahoe_trip):
-    page = text(tahoe_trip.get("/trip/cockpit").text)
-    assert "Booked on" not in page and page.count("Booked ") >= 3       # the trip's one "booked on" is not the airline's or the car company's
+def test_a_pass_says_booked_with_no_partner_known(client, monkeypatch):
+    monkeypatch.setattr(tahoe, "TEMPLATE", tahoe.TEMPLATE.replace("  booked_on: Expedia\n", "  booked_on: elsewhere\n").replace("airline: United", "airline: Pan Coast"))
+    monkeypatch.setattr(geopack, "TRANSPORT", tahoe.pack_transport)
+    sign_in(client)
+    tahoe.seed(client, monkeypatch, maps=False)
+    at(monkeypatch, tahoe.NOW)
+    html = bare(client.get("/trip/cockpit").text)
+    page = text(html)
+    assert "Booked on" not in page.replace("Booked on Hertz", "") and "Booked Ref ••21" in page and "Booked Ref ••936" in page       # nobody named: just "Booked", and Details
+    assert 'href="/trip/canvas?day=7&amp;booked=b-back" class="ck-cxl"' in html        # Details: the booking's own sheet (the number behind a tap, phone, address)
 
 
 def test_open_map_is_not_offered_while_no_place_is_known(client, monkeypatch):

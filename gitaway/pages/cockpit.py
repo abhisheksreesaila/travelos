@@ -124,7 +124,7 @@ def ticket(v):
 
 def pass_card(p):
     partner = ck.partner_name(p.partner)
-    manage = ck.safe_manage(p.manage, partner)      # F-198: an https page on the partner's own site, or nothing; GitAway is never the support centre
+    manage = ck.safe_manage(p.manage, p.site or partner)      # F-198: an https page on that site's own domain, or nothing; GitAway is never the support centre
     foot = [Span(Span(icon("check", 12, 3.2), cls="ck-ck"), f"Booked on {partner}" if partner else "Booked", cls="ck-bo")]
     if p.ref:
         foot.append(Span("Ref ", B(p.ref), cls="ck-ref"))

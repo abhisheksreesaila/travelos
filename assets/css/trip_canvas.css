@@ -447,3 +447,7 @@ html { scroll-padding-top: calc(env(safe-area-inset-top) + 4.5rem); }      /* wh
 .cz .cz-view.cz-filled > :not(.cz-head):not(.cz-fold) { animation: cz-fill var(--motion-dur) var(--motion-ease) both; }
 @keyframes cz-fill { from { opacity: 0; transform: translateY(0.5rem); } }
 @media (prefers-reduced-motion: reduce) { .cz .cz-skel-row, .cz .cz-view.cz-filled > * { animation: none; } }
+/* F-198: where a booking lives: "Booked on <partner>" and its "Change or cancel" button, on a booking's sheet. */
+.bk-where { display: flex; flex-wrap: wrap; align-items: center; gap: 0.375rem 0.625rem; color: var(--ink-2); font-weight: 700; font-size: max(var(--text-min), 0.875rem); }
+.bk-where .bk-manage { margin-left: auto; }
+.cz .cz-sheet .bk-where .bk-manage { min-height: 3rem; }      /* 48px on a phone (F-198 review) */

@@ -185,7 +185,7 @@ def site_footer(links=()):
     """The footer. `links` is a list of (label, href) shown as a small nav; the landing puts the header's old links here."""
     return Footer(
         Span("GitAway", cls="ga-brand-name"),
-        Span("Trips shared by travelers and creators. Sample data only: no real bookings or payments." if showcase.on() else "Plan a trip together: flights, stays and days on one calendar. Booking prices are samples; nothing is booked.", cls="ga-fine"),
+        Span("Trips shared by travelers and creators. Sample data only: no real bookings or payments." if showcase.on() else _footer_line()),
         *((Nav(*[A(label, href=href) for label, href in links], cls="ga-footer-nav", aria_label="More"),) if links else ()),
         Nav(A("Privacy", href="/privacy"), A("Terms", href="/terms"), cls="ga-footer-nav", aria_label="Legal"),
         mode_switch(),
@@ -208,6 +208,13 @@ def seo_meta(title: str, description: str = "", image: str = "", og_type: str = 
     return (*tags, Meta(name="description", content=description), Meta(property="og:title", content=title), Meta(property="og:description", content=description),
             Meta(property="og:type", content=og_type), Meta(property="og:image", content=picture if picture.startswith("http") else base + picture),
             Meta(property="og:url", content=base + (session.request_path() or "/").split("?")[0]), Meta(property="og:site_name", content="GitAway"))
+
+
+def _footer_line() -> str:
+    """The production footer's one sentence: booking is on the partners' sites, and GitAway takes payment only while Plan it for me is sold (F-199)."""
+    from gitaway import planforme  # here: planforme reads the community database and imports much of the app
+    taken = "GitAway takes payment only for Plan it for me." if planforme.paid() else "GitAway never takes payment."
+    return f"Plan a trip together: flights, stays and days on one calendar. You book on the partners' own sites; {taken}"
 
 
 def page(title: str, *content, current: str = "", theme: str = "sunset", head=(), nav: bool = True, footer_links=(), description: str = "", image: str = "", og_type: str = "website", noindex: bool = False):

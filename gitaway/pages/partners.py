@@ -4,6 +4,7 @@ GET  /go/<offer id>?to=&d=&r=&a=&k=         log the click, then 302: with TRAVEL
 GET  /sandbox/<partner>/<click>?o=&...      a stand-in for the partner's checkout: the offer, its price, "Complete booking on <partner>"
 POST /sandbox/<partner>/<click>             the simulated conversion: recorded, and added to the family's trip as "Booked elsewhere · <partner>"
 GET  /sandbox/<partner>/<click>/done        says so
+GET  /book/<lane>?site=&place=&d=&r=&a=&k=  F-198: a booking lane's click, logged, then 302 to the partner (paying or plain); any destination, no keys needed
 GET  /partners                              the family's clicks and bookings with SubID, status and price at the partner (signed in); commission is on /admin (F-185)
 
 Writes are the editor role's like every other POST (gitaway/access.py): a viewer cannot book. Without the showcase, /sandbox is 404, /go is 404
@@ -19,7 +20,7 @@ from starlette.responses import RedirectResponse
 from gitaway import affiliate, catalog, importer, partners, reports, session as ses, showcase
 from gitaway.icons import icon
 from gitaway.layout import page, styles
-from gitaway.partners import log, statistics, travelpayouts
+from gitaway.partners import log, places, registry, statistics, travelpayouts
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/partners.css"),)
 _CLICK = re.compile(r"[0-9a-f]{10}")
@@ -105,7 +106,7 @@ def _row(row):
     partner = partners.get(row["partner"])
     label, cls = _status(row)
     price = catalog.money(row["price_cents"]) if row["state"] == "booked" else "–"   # what the family paid the partner; what GitAway earns is on the admin page (F-185)
-    return Li(Div(Span(partner.name if partner else row["partner"], cls="pt-who"), Span(label, cls=f"pt-status {cls}")),
+    return Li(Div(Span(partner.name if partner else registry.NAMES.get(row["partner"], row["partner"]), cls="pt-who"), Span(label, cls=f"pt-status {cls}")),
               Span(row["offer_name"], cls="pt-what"),
               Div(Span("SubID", cls="pt-k"), Span(row["sub_id"], cls="pt-code"), Span("Price at the partner", cls="pt-k"), Span(price, cls="pt-v"),
                 *([Span("Partner status", cls="pt-k"), Span(statistics.row(row)["state"], cls="pt-v")] if row["state"] == "booked" else []), cls="pt-meta"),
@@ -124,6 +125,38 @@ def partners_page(rows, *, live):
             cls="pt-card pt-wide"), cls="pt-stage", id="partners"), head=HEAD)
 
 
+class Creator:
+    """Whose trip a click on /go or /book came from (F-184, F-194, F-195), one set of rules for both routes:
+    the creator whose own page the click came from (`via`, then the cookie is set), else the one in the `ga_via` cookie; nobody when the click came from a trip that still waits for the
+    captain (and the cookie is then forgotten). Their own Aviasales marker goes on a paying Aviasales link only; every click from their trip is counted for them."""
+
+    def __init__(self, clicked_on, creator, waiting):
+        self.clicked_on, self.creator, self.waiting = clicked_on, creator, waiting
+
+    @classmethod
+    def of(cls, request, via=""):
+        clicked_on = affiliate.claimed_via(request, via)
+        waiting = affiliate.on_waiting_trip(request)
+        creator = "" if waiting else (clicked_on or affiliate.valid_via(request.cookies.get(affiliate.COOKIE)))
+        return cls(clicked_on, creator, waiting)
+
+    def own_marker(self, *, paid, site) -> str:
+        return affiliate.marker_for(self.creator) if self.creator and paid and site == "aviasales" else ""
+
+    def count(self, session, request, site, lane, own) -> None:
+        if self.creator:
+            me = ses.current_traveler(session)
+            who = f"u:{me.id}" if me else reports.ip_hash(reports.client_ip(request))      # F-182: counted per person or address, an hour at a time
+            affiliate.log_click(self.creator, site, lane, bool(own), who)
+
+    def finish(self, response, request):
+        if self.clicked_on:
+            response.set_cookie(affiliate.COOKIE, self.clicked_on, **affiliate.cookie_args())
+        elif self.waiting and affiliate.COOKIE in request.cookies:
+            response.delete_cookie(affiliate.COOKIE, path="/")
+        return response
+
+
 def register(app):
     @app.get("/go/{offer_id}")
     def go(request, session, offer_id: str, d: str = "", r: str = "", a: str = "", k: str = "", to: str = "", home: str = "", focus: str = "", via: str = ""):
@@ -132,26 +165,34 @@ def register(app):
             return showcase.not_found()
         offer, trip = found
         partner, click = partners.for_offer(offer), log.new_click_id()
-        clicked_on = affiliate.claimed_via(request, via)                                  # F-195: a click on a creator's own page names their trip (the Tickets card passes `via`)
-        creator = clicked_on or affiliate.valid_via(request.cookies.get(affiliate.COOKIE))   # F-184: else the creator whose trip this family planned from, if any
-        waiting = affiliate.on_waiting_trip(request)        # F-194: a click on a trip the captain has not approved pays nobody and forgets the cookie
-        creator = "" if waiting else creator
-        sub = log.record_click(session, click, offer, trip, partner, creator)
+        who = Creator.of(request, via)
+        sub = log.record_click(session, click, offer, trip, partner, who.creator)
         if travelpayouts.marker():
-            own = affiliate.marker_for(creator) if creator else ""
-            if creator:
-                me = ses.current_traveler(session)
-                who = f"u:{me.id}" if me else reports.ip_hash(reports.client_ip(request))      # F-182: counted per person or address, an hour at a time
-                affiliate.log_click(creator, partner.key, offer.kind, own and partner.key == "aviasales", who)
-            go_to = RedirectResponse(travelpayouts.link_for(partner, offer, trip, sub, own), status_code=302)
-            if clicked_on:
-                go_to.set_cookie(affiliate.COOKIE, clicked_on, **affiliate.cookie_args())
-            elif waiting and affiliate.COOKIE in request.cookies:
-                go_to.delete_cookie(affiliate.COOKIE, path="/")
-            return go_to
+            own = who.own_marker(paid=True, site=partner.key)
+            who.count(session, request, partner.key, offer.kind, own)
+            return who.finish(RedirectResponse(travelpayouts.link_for(partner, offer, trip, sub, own), status_code=302), request)
         if offer.id.startswith("search-"):     # there is no stand-in checkout for a search: locally it goes straight to the partner's own page
             return RedirectResponse(partner.target_url(offer, trip), status_code=302)
         return RedirectResponse(_sandbox_path(partner, click, offer, trip), status_code=302)
+
+    @app.get("/book/{lane}")
+    def book(request, session, lane: str, site: str = "", place: str = "", iata: str = "", d: str = "", r: str = "", a: str = "", k: str = "", home: str = "", via: str = ""):
+        """F-198: one click on a booking lane. The link is built again here from the trip's words (a click names a lane and a site, never a URL), logged for a signed-in family,
+        and the family is sent on: to the paying partner with our marker or a tracked link, or to the plain search. Works with no keys at all (plain links need none).
+        A click another site's page made (Sec-Fetch-Site: cross-site) is sent on but neither logged nor counted for a creator (F-198 review)."""
+        from gitaway.pages import plan_search
+        search, errors = plan_search.search_from(place, iata, d, r, a, k, home=home)
+        found = registry.find(lane, site, search) if search and not errors else None
+        if not found:
+            return showcase.not_found()
+        who = Creator.of(request, via)
+        q = urlencode(plan_search.query(search, iata=places.clean_iata(iata)))
+        ours = request.headers.get("sec-fetch-site", "same-origin") != "cross-site"
+        sub = log.record_lane_click(session, log.new_click_id(), found, search, q, who.creator, store=ours)
+        own = who.own_marker(paid=found.paid, site=found.site)
+        if ours:
+            who.count(session, request, found.site, lane, own)
+        return who.finish(RedirectResponse(registry.go_url(found, sub, own), status_code=302), request)
 
     @app.get("/sandbox/{partner}/{click}")
     def sandbox(session, partner: str, click: str, o: str = "", d: str = "", r: str = "", a: str = "", k: str = ""):

@@ -31,7 +31,7 @@ def find(v, block_id):
         for spec in ti.block_specs(plan):
             if spec.id != base:
                 continue
-            pool = plan.legs if spec.kind == "leg" else plan.hotels if spec.kind in ("checkin", "checkout") else [plan.rental]
+            pool = plan.legs if spec.kind == "leg" else plan.hotels if spec.kind in ("checkin", "checkout") else plan.tickets if spec.kind == "ticket" else [plan.rental]
             return spec.kind, spec.item, next(i for i, x in enumerate(pool) if x is spec.item)
         return None
     if base in ("b-out", "b-back") and cal.flight_of(b):
@@ -106,19 +106,28 @@ def problem(err):
     return Div(passes.ERRORS[err], role="alert", cls="hp-problem", id="bk-problem") if err in passes.ERRORS else ""
 
 
+def _ticket(v, t, ua):
+    """A tour, activity or ticket (F-198): when, where, the confirmation behind a tap, and Directions when it has a place."""
+    times = Div(_kv("STARTS", ti.when_text(t.start), "bk-starts"), _kv("ENDS", ti.when_text(t.end), "bk-ends"), cls="hp-times bk-stack")
+    go = Div(A(icon("nav", 18, 2.4), "Directions", href=td.maps_url(t.place, ua), cls="tp-btn tp-btn-white", id="bk-directions"), cls="hp-acts") if t.place else ""
+    return ["Ticket", ti.when_text(t.start).split(",")[0]], t.name, [Span(t.place, cls="hp-addr", id="bk-place") if t.place else "", times, tab_help._confirm(t.confirmation), go]
+
+
 def sheet(v, found, ua, back, gone=""):
-    """(pill words, title, body children) of a booking's sheet. `gone`: where to go when the booking itself is removed."""
+    """(pill words, title, body children) of a booking's sheet. `gone`: where to go when the booking itself is removed. An imported booking also says where it was booked and
+    opens the partner's own page to change or cancel it (F-198)."""
     kind, item, index = found
     can_edit = access.can_edit(v["role"])
     if kind == "added":
         return _added_flight(v, item, can_edit, back, gone)
-    if kind in ("checkin", "checkout"):
-        return _hotel(v, kind, item, index, ua, can_edit, back) if cal.is_imported(v["b"]) else _demo_stay(v, kind, item, ua)
-    if kind in ("pickup", "dropoff"):
-        return _car(v, kind, item, ua, can_edit, back)
-    if kind == "leg":
-        return _flight(v, index, item, can_edit, back)
-    return _demo_flight(v, item, can_edit)
+    if kind in ("checkin", "checkout") and not cal.is_imported(v["b"]):
+        return _demo_stay(v, kind, item, ua)
+    if kind in ("flight", "stay"):
+        return _demo_flight(v, item, can_edit)
+    pills, title, body = (_hotel(v, kind, item, index, ua, can_edit, back) if kind in ("checkin", "checkout") else _car(v, kind, item, ua, can_edit, back) if kind in ("pickup", "dropoff")
+                          else _ticket(v, item, ua) if kind == "ticket" else _flight(v, index, item, can_edit, back))
+    from gitaway.pages import bookedwhere
+    return pills, title, [bookedwhere.line(kind, item, cal.plan_of(v["b"]), "bk-where"), *body]
 
 
 def sos(v, ua, back=""):

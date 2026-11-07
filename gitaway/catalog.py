@@ -10,6 +10,15 @@ import re
 from itertools import product
 
 
+def passengers(adults, kid_ages) -> tuple:
+    """(adults, children, infants) in Aviasales' bands for a party: adults are 12 and over, children 2 to 11, infants under 2, at most one infant per adult."""
+    grown = adults + sum(a >= 12 for a in kid_ages)
+    children, infants = sum(2 <= a < 12 for a in kid_ages), sum(a < 2 for a in kid_ages)
+    if infants > grown:
+        children, infants = children + infants - grown, grown
+    return grown, children, infants
+
+
 @dataclass(frozen=True)
 class TripSearch:
     origin: str
@@ -35,11 +44,7 @@ class TripSearch:
     def passengers(self) -> tuple:
         """(adults, children, infants) the way Aviasales counts them: adults are 12 and over, children 2 to 11, infants under 2, and only one infant
         per adult (a second is booked as a child with a seat). A 15-year-old kid is an adult fare; the sum is always `travelers`."""
-        adults = self.adults + sum(a >= 12 for a in self.kid_ages)
-        children, infants = sum(2 <= a < 12 for a in self.kid_ages), sum(a < 2 for a in self.kid_ages)
-        if infants > adults:
-            children, infants = children + infants - adults, adults
-        return adults, children, infants
+        return passengers(self.adults, self.kid_ages)
 
     @property
     def stay_area(self) -> str:

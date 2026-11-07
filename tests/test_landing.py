@@ -36,7 +36,7 @@ def test_door_previews_the_sample_trip_and_opens_the_start_page(client):
 def test_four_feature_cards(client):
     h = _get(client)
     assert "Not just a booking site" in h
-    for title in ["Everything side by side", "One honest total", "Plan it together"]:
+    for title in ["Everything side by side", "Every part in one place", "Plan it together"]:
         assert title in h
     assert "Fork, don" in h and "start over" in h
 

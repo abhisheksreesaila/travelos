@@ -6,7 +6,6 @@ from gitaway.layout import page
 
 # path -> (nav path it lights up, title, promise, ticket that replaces it)
 PLACEHOLDERS = {
-    "/trip/book": ("/trip/book", "Book this trip", "One lane each for flights, a place to stay, a car and things to do, for any place you go. It opens here soon.", "F-198"),
 }
 
 

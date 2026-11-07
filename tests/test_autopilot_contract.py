@@ -153,4 +153,4 @@ def test_m6_showcase_off_hides_sample_partner_pages(client, monkeypatch):
     assert client.get("/creators").status_code == 404
     assert client.get("/sandbox/anything").status_code == 404
     r = client.get(f"/plan?to=sd&{TRIP}")
-    assert r.status_code == 200 and "sample prices" in r.text.lower()
+    assert r.status_code == 200 and "Search flights to San Diego" in r.text and "sample prices" not in r.text.lower()      # F-198: production shows the honest lanes, never the samples

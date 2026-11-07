@@ -39,6 +39,7 @@ def context(browser, base_url, viewport):
         route.fulfill(status=200, content_type="text/html", body="<html><body>the partner</body></html>")
     ctx.route("https://www.aviasales.com/**", partner)
     ctx.route("https://klook.tpx.lv/**", partner)
+    ctx.route("https://www.getyourguide.com/**", partner)
     return ctx, caught
 
 
@@ -61,21 +62,21 @@ def test_from_a_disneyland_trip_to_an_honest_flight_search_from_the_readers_airp
     tap(page.locator("#plan-this").first, viewport)
     page.wait_for_url("**/plan?**")
     cards = page.locator("h2.ps-name")
-    expect(cards).to_have_text(["Search flights to Los Angeles", "Find stays near Anaheim", "Tickets and things to do"])
+    expect(cards).to_have_text(["Search flights to Disneyland", "Find stays near Anaheim", "Rent a car at SNA", "Tickets and things to do"])      # F-198: any place by name; Disneyland is SNA
     assert "Skylark" not in page.content() and "Preview: sample prices" not in page.content()
     assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth"), "the page scrolls sideways"
-    sizes = page.locator("a.ps-go, .ps-from button, .ps-field input").evaluate_all("els => els.map(e => e.getBoundingClientRect().height)")
-    assert viewport is DESKTOP or min(sizes) >= 43, sizes
+    sizes = page.locator("a.ps-go, .ps-from button, .ps-field input, .ps-field button").evaluate_all("els => els.filter(e => e.getClientRects().length && e.getBoundingClientRect().height > 2).map(e => e.getBoundingClientRect().height)")      # a date field the pickers replaced is a 1px stand-in; its picker button is measured instead
+    assert viewport is DESKTOP or min(sizes) >= 47.5, sizes
     shot(page, f"{viewport['width']}-plan")
     page.fill("input[name=home]", "jfk")
     tap(page.get_by_role("button", name="Update"), viewport)
     expect(page.locator("#ps-lede")).to_contain_text("flying from JFK")
-    tap(page.locator("a[data-lane=flight]"), viewport)
+    tap(page.locator("a.ps-go[data-lane=flight]"), viewport)
     page.wait_for_url("https://www.aviasales.com/**")
-    assert caught[-1].startswith("https://www.aviasales.com/search/JFK") and "LAX" in caught[-1] and f"_flight_{handle.replace('-', '_')}" in caught[-1]
+    assert caught[-1].startswith("https://www.aviasales.com/search/JFK") and "SNA" in caught[-1] and f"_flight_{handle.replace('-', '_')}" in caught[-1]
     page.go_back()
-    tap(page.locator("a[data-lane=todo]"), viewport)
-    page.wait_for_url("https://klook.tpx.lv/**")
+    tap(page.locator("a.ps-go[data-lane=todo]"), viewport)      # no Klook token here: things to do are a plain GetYourGuide search (F-198)
+    page.wait_for_url("https://www.getyourguide.com/**")
     ctx.close()
 
 
@@ -95,24 +96,25 @@ def test_a_bad_airport_is_said_on_the_page_and_kept_in_its_box(browser, base_url
 
 
 @pytest.mark.parametrize("viewport", [PHONE, DESKTOP], ids=IDS)
-def test_kids_set_on_the_start_form_come_back_apart_in_the_flight_link(browser, base_url, viewport):
+def test_kids_set_on_the_trip_form_come_back_apart_in_the_flight_link(browser, base_url, viewport):
     row, handle, _ = live_trip()
     ctx, caught = context(browser, base_url, viewport)
     page = ctx.new_page()
     page.goto(f"{base_url}/trips/{row['slug']}")
     tap(page.locator("#plan-this").first, viewport)
     page.wait_for_url("**/plan?**")
-    tap(page.get_by_role("link", name="Change dates or who is coming"), viewport)
-    page.wait_for_url("**/start?**")
-    page.select_option("select[name=n]", "2")
-    page.select_option("select[name=k1]", "4")
-    page.select_option("select[name=k2]", "7")
-    page.fill("input[name=from]", "ord")
-    page.evaluate("document.querySelectorAll('input[type=date]').forEach(e => { e.value = e.name === 'd' ? '2027-03-05' : '2027-03-09'; })")
-    tap(page.get_by_role("button", name="Find my trip"), viewport)
-    page.wait_for_url("**/plan?**")
+    form = page.locator("#ps-trip")
+    form.locator("select[name=n]").select_option("2")
+    form.locator("select[name=k1]").select_option("4")
+    form.locator("select[name=k2]").select_option("7")
+    form.locator("input[name=d]").fill("2027-03-05")
+    form.locator("input[name=r]").fill("2027-03-09")
+    tap(form.get_by_role("button", name="Search"), viewport)
+    page.wait_for_url("**/plan?**k1=4**")
+    page.fill("#ps-flight input[name=home]", "ord")
+    tap(page.get_by_role("button", name="Update"), viewport)
     expect(page.locator("#ps-lede")).to_contain_text("2 adults, 2 kids · flying from ORD")
-    tap(page.locator("a[data-lane=flight]"), viewport)
+    tap(page.locator("a.ps-go[data-lane=flight]"), viewport)
     page.wait_for_url("https://www.aviasales.com/**")
     assert caught[-1].startswith("https://www.aviasales.com/search/ORD0503LAX090322?marker=801445.")      # 2 adults and 2 children, apart
     ctx.close()

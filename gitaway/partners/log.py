@@ -28,8 +28,12 @@ def sub_id(session, trip, offer, via="") -> str:
     """The Travelpayouts SubID of a click: a short family hash, the place, the first day and the lane, then the handle of the creator whose trip the family planned from
     (F-195, so Klook's report can be split by creator; at most 40 characters of a public handle, about 70 in all, far under Travelpayouts' 4096). Joined with `_` and the
     handle's hyphens made `_`: Travelpayouts' help allows only digits, Latin letters and `_` in a SubID (D-164). No name, email or address (D-24)."""
+    return _sub(session, trip.key, trip.depart, offer.kind, via)
+
+
+def _sub(session, place, day, lane, via="") -> str:
     family = hashlib.sha256(str((session or {}).get("tenant_id") or "").encode()).hexdigest()[:6] if (session or {}).get("tenant_id") else "anon"
-    return f"{family}_{trip.key}_{trip.depart:%y%m%d}_{offer.kind}" + (f"_{via.replace('-', '_')}" if via else "")
+    return f"{family}_{place}_{day:%y%m%d}_{lane}" + (f"_{via.replace('-', '_')}" if via else "")
 
 
 def record_click(session, click_id, offer, trip, partner, via="") -> str:
@@ -42,6 +46,21 @@ def record_click(session, click_id, offer, trip, partner, via="") -> str:
                     insert_only(fam.db, "partner_clicks", {"id": click_id, "user_id": fam.traveler.id, "offer_id": offer.id, "partner": partner.key, "lane": offer.kind,
                                                            "offer_name": offer.name, "place": trip.key, "query": catalog.trip_query(trip), "sub_id": sub,
                                                            "price_cents": offer.price_cents, "state": "clicked", "clicked_at": familydb.now()}, ["id"], auto_commit=False)
+    return sub
+
+
+def record_lane_click(session, click_id, link, search, query, via="", store=True) -> str:
+    """Log a click on a booking lane for the signed-in person's family (a signed-out click is not logged, D-23; nor one with `store` off: another site's page made it). Returns its SubID,
+    `sub_id`'s shape with the place's slug for the catalog key (F-198). No price: the partner shows today's."""
+    sub = _sub(session, search.place.slug, search.depart, link.lane, via)
+    if not store:
+        return sub
+    with ses.family(session) as fam:
+        if fam:
+            with familydb.transaction(fam.db):
+                insert_only(fam.db, "partner_clicks", {"id": click_id, "user_id": fam.traveler.id, "offer_id": f"{link.lane}-{link.site}"[:40], "partner": link.site, "lane": link.lane,
+                                                       "offer_name": f"{link.name} · {search.place.name}"[:120], "place": search.place.slug, "query": query, "sub_id": sub,
+                                                       "price_cents": 0, "state": "clicked", "clicked_at": familydb.now()}, ["id"], auto_commit=False)
     return sub
 
 
@@ -86,7 +105,8 @@ def plan_for(session, offer, trip, partner, confirmation) -> ti.Plan:
 
 def _merged(old: ti.Plan, new: ti.Plan) -> ti.Plan:
     """`old` with the lane `new` books swapped in (a second flight replaces the first), and the partner added to its label."""
-    return replace(old, legs=new.legs or old.legs, hotels=new.hotels or old.hotels, rental=new.rental or old.rental, booked_on=_origin(old.booked_on, new.booked_on))
+    return replace(old, legs=new.legs or old.legs, hotels=new.hotels or old.hotels, rental=new.rental or old.rental, tickets=old.tickets + new.tickets,
+                   booked_on=_origin(old.booked_on, new.booked_on))
 
 
 def book(session, click_id, offer, trip, partner):

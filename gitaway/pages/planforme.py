@@ -45,8 +45,16 @@ def money() -> str:
     return catalog.money(pfm.price_cents())
 
 
+def price_words() -> str:
+    """"$29 once" while plans are sold, "Free" while they are free (F-199)."""
+    return f"{money()} once" if pfm.paid() else "Free"
+
+
 def promise() -> tuple:
-    """The refund promise as page content: the sentence and, when GITAWAY_CONTACT_EMAIL is set (production needs it to sell), the address to write to."""
+    """The refund promise as page content: the sentence and, when GITAWAY_CONTACT_EMAIL is set (production needs it to sell), the address to write to. While plans are free (F-199)
+    there is nothing to refund: the page says it is free."""
+    if not pfm.paid():
+        return (pfm.FREE_NOTE,)
     addr = pfm.contact_email()
     return (pfm.PROMISE, " ", A(addr, href=f"mailto:{addr}")) if addr else (pfm.PROMISE,)
 
@@ -65,7 +73,7 @@ def _base(request) -> str:
 def _mine(session, order_id):
     me = ses.current_traveler(session)
     found = pfm.get(order_id, me.id) if me else None
-    return pfm.settle_price(found) if found else None      # an unpaid order shows the price it would be charged now
+    return pfm.settle(found) if found else None      # an unpaid order shows the price it would be charged now; while plans are free it is never charged (pfm.settle)
 
 
 def _summary(intake) -> str:
@@ -131,11 +139,11 @@ def intake_page(session, vals=None, errors=None, status=200, note=""):
                "Optional. Rides, places, a nap time, food the kids will eat. Heights help us pick the rides.", errors.get("must", ""), "must"),
         P(f"You will sign in first, so the trip lands in your family's account." if not me else f"The trip goes into your family's GitAway account ({me.blurb}).", cls="pf-hint", id="pf-who"),
         P(errors["_"], role="alert", cls="pf-error", id="pf-err-all") if "_" in errors else "",
-        Button(icon("star", 20, 2.4), f"Plan it for me · {money()}" if me else "Continue", type="submit", cls="btn btn-primary pf-go", id="pf-go", disabled=viewer or None),
+        Button(icon("star", 20, 2.4), (f"Plan it for me · {money()}" if pfm.paid() else "Plan it for me · free") if me else "Continue", type="submit", cls="btn btn-primary pf-go", id="pf-go", disabled=viewer or None),
         P(*promise(), cls="pf-promise", id="pf-promise"),
         action=PATH, method="post", id="pf-form", cls="pf-form", data_signed_out="1" if not me else None)
     body = Section(
-        Div(Span(f"{money()} once", cls="pf-chip", id="pf-price"), H1("Plan it for ", Span("me", cls="pf-accent")),
+        Div(Span(price_words(), cls="pf-chip", id="pf-price"), H1("Plan it for ", Span("me", cls="pf-accent")),
             P(f"Tell us who is going and what you love. An agent builds your whole trip, day by day, in your GitAway account, {pfm.when_ready()}.", cls="pf-lede"),
             P(f"Starting from “{like}”.", cls="pf-note", id="pf-like") if like else "",
             P("Only a family editor or admin can order, because the trip goes into the family's calendar.", role="status", cls="pf-note", id="pf-viewer") if viewer else "",
@@ -153,7 +161,11 @@ GETS = (("calendar", "Day-by-day plan in your family's shared planner", "Everyon
 
 
 def price_block():
-    """The price as it is right now (the server's): "$29 for the first 10 families, then $49" and the founding spots left while any are, else the full price alone. Never a former price."""
+    """The price as it is right now (the server's): "$29 for the first 10 families, then $49" and the founding spots left while any are, else the full price alone. Never a former price.
+    While plans are free (F-199): "Free", and how many a family may start in a day."""
+    if not pfm.paid():
+        return Div(Div(Span("Free", cls="pfo-amt", id="pf-price-now"), Span("while GitAway is in early preview", cls="pfo-per"), cls="pfo-num"),
+                   P(f"Up to {pfm.daily_cap()} plans a day for each person.", cls="pfo-terms", id="pf-terms"), cls="pfo-price")
     left, limit = pfm.founding_left(), pfm.founding_limit()
     now = catalog.money(pfm.price_cents())
     rows = [Div(Span(now, cls="pfo-amt", id="pf-price-now"), Span("one time, per trip", cls="pfo-per"), cls="pfo-num")]
@@ -165,8 +177,9 @@ def price_block():
 
 def _faq():
     review = pfm.review_on()
-    qs = (("How soon do we get it?", "Our agent builds it as soon as you pay. Then a person checks it, usually within a few hours, and it appears in your family's planner." if review
-           else "A few minutes after you pay, it is in your family's planner."),
+    asked = "pay" if pfm.paid() else "ask"
+    qs = (("How soon do we get it?", f"Our agent builds it as soon as you {asked}. Then a person checks it, usually within a few hours, and it appears in your family's planner." if review
+           else f"A few minutes after you {asked}, it is in your family's planner."),
           ("We're not going to Disneyland. Does it still work?", "Yes, tell us any place. For Disneyland, New York City and Oahu the booking dates come from the official sites; anywhere else you get an honest general list."),
           ("Do you book anything for us?", "No. You get the plan, the dates to book by and the links. You book with the partner yourself, and they keep your booking."),
           ("Can we change the plan?", "Yes. It is your trip in your planner: move, add or delete anything, or ask GitAway in plain words to change a day."))
@@ -215,7 +228,7 @@ def example_page(e):
         planview.tips(p),
         planview.checklist(planfacts.checklist(intake["where"], date.fromisoformat(intake["start"]), catalog.today()), planfacts.intro(intake["where"])),
         Div(A("Plan ours", icon("arrow-right", 20, 2.4), href=f"{START}?{urlencode({'where': e.where})}", cls="btn btn-primary pf-go", id="pf-cta"),
-            P(f"{catalog.money(pfm.price_cents())} once. {pfm.PROMISE}", cls="pf-hint"), cls="pf-act"),
+            P(f"{catalog.money(pfm.price_cents())} once. {pfm.PROMISE}" if pfm.paid() else pfm.FREE_NOTE, cls="pf-hint"), cls="pf-act"),
         Div(*[A(x.label, href=f"{PATH}/example/{x.slug}", cls="pf-back") for x in others], A("Back to Plan it for me", href=PATH, cls="pf-back"), cls="pfo-more"),
         cls="pf ga-wrap", id="pf"), head=HEAD)
 
@@ -228,7 +241,7 @@ CHECKING = "Your plan is built and being checked by a person, usually within a f
 def _steps(status):
     order = ["paid", "building", *(["review"] if status == "review" or pfm.review_on() else []), "ready"]
     at = order.index("paid" if status == "paid" else status) if status in order else 0
-    labels = {"paid": "Payment received", "building": "Building your days", "review": "Checked by a person", "ready": "Ready"}
+    labels = {"paid": "Payment received" if pfm.paid() else "Request received", "building": "Building your days", "review": "Checked by a person", "ready": "Ready"}
     return Ol(*[Li(Span(icon("check", 16, 3) if i < at else Span(cls="pf-dot"), cls="pf-mark"), Span(labels[k]), cls="pf-step" + (" is-done" if i < at else " is-now" if i == at else ""),
                    aria_current="step" if i == at else None) for i, k in enumerate(order)], cls="pf-steps")
 
@@ -262,17 +275,18 @@ TROUBLE = {"1": "We could not open the payment page just now. Nothing was charge
 
 def order_page(order, paid_back=False, trouble=""):
     status, intake = pfm.public_status(order["status"]), order["intake"]
-    head = {"awaiting_payment": ("Almost there", "Pay to start building your trip."), "paid": ("Payment received", "An agent is about to start on your trip."),
+    free = order["amount_cents"] == 0
+    head = {"awaiting_payment": ("Almost there", "Pay to start building your trip."), "paid": ("Request received" if free else "Payment received", "An agent is about to start on your trip."),
             "building": ("Building your trip", "A person checks it next, usually within a few hours. You can leave this page." if pfm.review_on() else "This takes a few minutes. You can leave this page: your trip will be in your calendar."),
             "review": ("Your plan is built", CHECKING),
             "ready": ("Your trip is ready", "It is in your family's calendar now, day by day."),
-            "failed": ("We couldn't finish your trip", "We'll refund you in full. There is nothing you need to do.")}[status]
+            "failed": ("We couldn't finish your trip", "Nothing was charged. Try again, or write to us with the reference below." if free else "We'll refund you in full. There is nothing you need to do.")}[status]
     if status == "awaiting_payment" and paid_back:
         head = ("Confirming your payment", "Stripe is telling us it went through. This takes a few seconds.")
     body = [Div(Span(f"Order {order['id'][:8]}", cls="pf-chip", id="pf-order"), H1(head[0], id="pf-title"), P(head[1], cls="pf-lede", id="pf-lede"), P(_summary(intake), cls="pf-sum", id="pf-sum"), cls="pf-top")]
     if status in ("paid", "building", "review") or (status == "awaiting_payment" and paid_back):
         body.append(_steps("paid" if status == "awaiting_payment" else status))
-    if status == "awaiting_payment" and not paid_back:
+    if status == "awaiting_payment" and not paid_back and pfm.paid():
         if trouble in TROUBLE:
             body.append(P(TROUBLE[trouble], role="alert", cls="pf-error", id="pf-trouble"))
         body.append(Form(Button(icon("lock", 18, 2.4), f"Pay {catalog.money(order['amount_cents'])}", type="submit", cls="btn btn-primary pf-go", id="pf-pay"), action=f"{PATH}/{order['id']}/pay", method="post", cls="pf-act"))
@@ -284,7 +298,7 @@ def order_page(order, paid_back=False, trouble=""):
         body.append(planview.checklist(planfacts.checklist(intake["where"], date.fromisoformat(intake["start"]), catalog.today()), planfacts.intro(intake["where"])))
     if status == "failed":
         body.append(P(f"Reference {order['id']}. ", legal.contact(), cls="pf-hint", id="pf-ref"))
-    body.append(P(*promise(), cls="pf-promise", id="pf-promise"))
+    body.append(P(*(promise() if not free else (pfm.FREE_NOTE,)), cls="pf-promise", id="pf-promise"))
     return page("Plan it for me", Section(*body, cls="pf ga-wrap", id="pf", data_pf_poll=f"{PATH}/{order['id']}/status" if status in ("paid", "building", "review") or (status == "awaiting_payment" and paid_back) else None,
                                           data_status=status), head=HEAD)
 
@@ -316,7 +330,10 @@ def register(app):
         return intake_page(session, {k: q.get(k, "") for k in ("from", "where", "start", "end", "home", "adults", "nkids", "budget", "pace", "must")} | {f"{c}{i}": q.get(f"{c}{i}", "") for c in "kh" for i in range(1, MAX_KIDS + 1)})
 
     async def _checkout(request, order):
-        """Where an unpaid order goes to be paid: the stand-in locally, else Stripe. (url, the `err` code the order page says in words: "1" Stripe failed, "limit" too many tries, "off" not for sale)."""
+        """Where an unpaid order goes to be paid: the stand-in locally, else Stripe. (url, the `err` code the order page says in words: "1" Stripe failed, "limit" too many tries, "off" not for sale).
+        A free order (F-199) is already building: it goes to its own page."""
+        if order["status"] != "awaiting_payment" or not pfm.paid():
+            return f"{PATH}/{order['id']}", ""
         if pfm.standin():
             return f"/sandbox/plan-for-me/{order['id']}", ""
         if not pfm.offered():      # a local copy with a Stripe key but no webhook secret: no payment page that could never be matched

@@ -10,7 +10,7 @@ Branch `autopilot/booking-creators` (worktree `../travelos-autopilot`). Never de
 - **M3 The loop closes.** Completing a sandbox checkout (POST its form) records a simulated conversion, Travelpayouts statistics-API shaped; `/partners` (signed in) lists the family's clicks and bookings with partner, offer, sub_id, status and estimated commission; the booked offer appears in the family's trip as "Booked elsewhere · <partner>".
 - **M4 Creators.** `/creators` shows at least four creators (one per place); `/creators/<handle>` is a profile: name, channel link, their trips, forks; each creator trip offers "Plan this trip" to `/plan?to=<its place>`.
 - **M5 omxqua look, touch first.** `/plan`, `/creators`, `/creators/<handle>`, `/sandbox/...` and `/partners` use the omxqua Travel · Coast tokens (`--oq-*`, root class `oq-family-travel`); no glass or blur; at 390px wide no sideways scroll, every button/link-button at least 40px tall, the plan lanes swipe sideways (scroll-snap); at 1440px the lanes sit side by side.
-- **M6 Production stays honest.** With `GITAWAY_SHOWCASE=0`: `/sandbox/...`, `/creators...` and `/partners` 404 unless real keys exist; `/plan` still labels sample prices; the whole existing suite still passes (`pixi run test`).
+- **M6 Production stays honest.** With `GITAWAY_SHOWCASE=0`: `/sandbox/...`, `/creators...` and `/partners` 404 unless real keys exist; `/plan` shows no invented offers or prices at all, only the honest booking lanes (amended 2026-11-07, D-304; it said "still labels sample prices"); the whole existing suite still passes (`pixi run test`).
 
 **Done means:** `scripts/check` prints PASS for M1 to M6, and `docs/report.md` has screenshots (phone + laptop) of plan, creator profile and partners.
 

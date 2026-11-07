@@ -6,7 +6,7 @@ gitaway/pages/cockpit.py; the design is docs/design/cockpit/3-ticket.html and RE
     step_lines(raw)                the drive told turn by turn from the router's own steps, cached with the leg by gitaway.geo ("Turn left on Lake Tahoe Boulevard
                                    (US 50)", 3.8 mi); nothing is guessed from the line
     mask(ref)                      "••821": a reference number is never drawn whole here
-    partner_of(...)                F-198's hook: "Booked on <partner>" and its Change or cancel page for one booking (today the trip's own "booked on", no page)
+    partner_of(...)                F-198's hook: "Booked on <partner>" and its Change or cancel page for one booking (tripcal.booked_on, partners.manage)
 
 Pure functions take data; `view` is the one that reads the family (gitaway.tripcal, gitaway.geo's cache only, gitaway.geopack's stored pack).
 """
@@ -19,6 +19,7 @@ from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
 from gitaway import catalog, dayweather, familydb, geo, geopack, members, session as ses, tripcal as cal, tripday as td, tripgeo, tripimport
+from gitaway.partners import manage
 
 KIND_OF_ICON = {"plane": "flight", "bed": "stay", "car": "car"}        # a booking's kind from its icon
 ICON_OF_KIND = {"flight": "plane", "stay": "bed", "car": "car", "fun": "spark", "food": "food", "outdoors": "tree", "culture": "sight", "travel": "car"}
@@ -162,8 +163,9 @@ class Pass:
     sub: str            # "United UA 5522 · 4 seats"
     ref: str = ""       # "••821"
     href: str = ""      # the booking's own sheet over its day (address, phone, the full number behind a tap)
-    partner: str = ""   # "Booked on <partner>" (F-198 fills it per booking; today the trip's own "booked on")
-    manage: str = ""    # the partner's Change or cancel page (F-198); "" until then
+    partner: str = ""   # "Booked on <partner>": where this booking was made (F-198, tripcal.booked_on), "" when we were not told
+    manage: str = ""    # the Change or cancel page (F-198, partners.manage): the partner's, or for a flight booked on Aviasales the airline's
+    site: str = ""      # whose page `manage` is ("United" for an Aviasales flight): the host it may open is that site's
 
 
 UNKNOWN_PARTNERS = {"", "elsewhere", "gitaway", "unknown", "none"}       # what a template says when it does not name the partner (tripimport's default is "elsewhere")
@@ -171,6 +173,8 @@ PARTNER_HOSTS = {"expedia": "expedia.com", "vrbo": "vrbo.com", "airbnb": "airbnb
                  "getyourguide": "getyourguide.com", "viator": "viator.com", "aviasales": "aviasales.com", "united": "united.com", "alaska airlines": "alaskaair.com",
                  "delta": "delta.com", "american airlines": "aa.com", "southwest": "southwest.com", "jetblue": "jetblue.com", "hertz": "hertz.com", "avis": "avis.com",
                  "enterprise": "enterprise.com", "national": "nationalcar.com", "budget": "budget.com"}      # a partner's own site: the only host its Change or cancel may open
+for _site in manage.SITES.values():       # and every manage page F-198 knows, by its own site's domain (secure.booking.com is booking.com's)
+    PARTNER_HOSTS.setdefault(_site.name.lower(), ".".join(urlsplit(_site.url).hostname.split(".")[-2:]))
 _HOST = re.compile(r"^[a-z0-9-]+(\.[a-z0-9-]+)+$")
 
 
@@ -195,10 +199,13 @@ def safe_manage(url, partner) -> str:
 
 
 def partner_of(b, kind, spec=None) -> tuple:
-    """F-198's hook: (partner name, its Change or cancel page) for one booking, through `partner_name` and `safe_manage`. A trip's one "booked on" is not each
-    booking's partner (it would put Expedia on a United flight), so until F-198 stores the partner of each booking there is none: the pass says "Booked" and
-    links Details (the booking's own sheet)."""
-    return ("", "")
+    """F-198's hook: (where it was booked, its Change or cancel page, whose page that is) for one booking of an imported trip: the booking's own
+    partner, else the trip's when it names one (`tripcal.booked_on`), and the manage page `partners.manage.for_booking` picks (the airline's for a flight
+    booked on Aviasales, the rental company's for a car). Nothing known: ("", "", "") and the pass says "Booked" and links Details."""
+    if spec is None or not cal.is_imported(b):
+        return ("", "", "")
+    where, site = manage.for_booking(spec.kind, spec.item, cal.booked_on(cal.plan_of(b), spec.item))
+    return (partner_name(where), site.url, site.name) if site else (partner_name(where), "", "")
 
 
 def _when(d) -> str:
@@ -219,28 +226,28 @@ def passes(b, t, today, now_min, curl) -> list:
             x = s.item
             home = s.id == "b-back" or x.dest == plan.legs[0].origin
             seats = len([p for p in (x.seats or "").split(",") if p.strip()])
-            name, page = partner_of(b, "flight", s)
+            name, page, site = partner_of(b, "flight", s)
             out.append(Pass("flight", f"Flight {'home' if home else 'in' if s.id == 'b-out' else ''} · {_when(x.depart.date())}".replace("Flight  ·", "Flight ·"),
                             f"{x.origin} → {x.dest} · {cal.fmt_time(x.depart.hour * 60 + x.depart.minute)}",
                             " · ".join(p for p in (x.name, f"{seats} seats" if seats else "") if p), mask(x.confirmation),
-                            curl(day=(x.depart.date() - t.depart).days, booked=s.id), name, page))
+                            curl(day=(x.depart.date() - t.depart).days, booked=s.id), name, page, site))
         stays = [s for s in specs.values() if s.kind == "checkin"]
         if stays:
             s = next((s for s in stays if s.item.check_out.date() > today), stays[-1])
             h = s.item
             left = (h.check_out.date() - max(today, h.check_in.date())).days
-            name, page = partner_of(b, "stay", s)
+            name, page, site = partner_of(b, "stay", s)
             eyebrow = f"Stay · {left} night{'s' if left != 1 else ''} left" if h.check_in.date() <= today < h.check_out.date() else f"Stay · {(h.check_out.date() - h.check_in.date()).days} nights"
             out.append(Pass("stay", eyebrow, h.name, f"Check out {_when(h.check_out.date())} · {cal.fmt_time(h.check_out.hour * 60 + h.check_out.minute)}",
-                            mask(h.confirmation), curl(day=max(0, (h.check_in.date() - t.depart).days), booked=s.id), name, page))
+                            mask(h.confirmation), curl(day=max(0, (h.check_in.date() - t.depart).days), booked=s.id), name, page, site))
         car = specs.get("b-car-pick")
         if car:
             r = car.item
-            name, page = partner_of(b, "car", car)
+            name, page, site = partner_of(b, "car", car)
             back = r.dropoff
             out.append(Pass("car", "Car" + (f" · {r.pickup_place} to {r.dropoff_place}" if r.pickup_place != r.dropoff_place else ""), r.car or f"{r.company} car",
                             f"{r.company} · return {_when(back.date())} {cal.fmt_time(back.hour * 60 + back.minute)}", mask(r.confirmation),
-                            curl(day=max(0, (r.pickup.date() - t.depart).days), booked="b-car-pick"), name, page))
+                            curl(day=max(0, (r.pickup.date() - t.depart).days), booked="b-car-pick"), name, page, site))
         return out
     flight, stay, car = cal.flight_of(b), cal.stay_of(b), cal.car_of(b)
     last = len(dates) - 1
