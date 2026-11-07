@@ -117,9 +117,9 @@ def _polaroid(p, cls):
 
 
 def _collage(trip):
-    temp, sky = trip.weather
-    weather = Div(icon("sun", 36, 2), Span(temp, cls="w-temp"), Span(sky, cls="w-sky"), cls="weather ga-bob",
-                  style="--r:8deg")
+    # the weather badge only where a trip carries weather (the showcase's samples); a real trip's page never shows any, whatever an old snapshot holds (F-203)
+    weather = (Div(icon("sun", 36, 2), Span(trip.weather[0], cls="w-temp"), Span(trip.weather[1], cls="w-sky"), cls="weather ga-bob", style="--r:8deg")
+               if len(trip.weather) == 2 and not trip.real else "")
     plane = Div(icon("plane", 28, 2), cls="plane-badge")
     route = NotStr('<svg class="squiggle" viewBox="0 0 220 250" fill="none" aria-hidden="true"><path d="M10 240 C 90 230, '
                    '60 150, 130 130 S 200 70, 170 10" stroke="currentColor" stroke-width="3" stroke-dasharray="2 10" '
@@ -127,8 +127,6 @@ def _collage(trip):
     stamp = Div(trip.route, cls="stamp")
     if trip.polaroids:
         shots = [_polaroid(p, f"polaroid-{i}") for i, p in enumerate(trip.polaroids[:2])]
-        if trip.real:  # a real trip's page has no made-up weather
-            return Div(*shots, route, plane, stamp, cls="collage")
         return Div(*shots, route, plane, weather, stamp, cls="collage")
     stickers = [
         Span(icon("pin", 40, 2), cls="sticker-big s1 fill-mint"),

@@ -18,7 +18,7 @@ from tests.creator_import_support import Model, page
 from tests.test_signin import EMAILS
 
 ROOT = Path(__file__).resolve().parent.parent / "gitaway"
-BLOCKING = re.compile(r"^(ai\.(call_json|transcribe)|safefetch\.fetch|importsource\.(gather|offline)|robots\.check|blogscan\.(discover|sample)|(dj|draftjobs)\.\w+|(pfm|planforme)\.\w+|intake_page|stripe\.[\w.]+|(cd|creatordraft)\.\w+|(cc|creatorclaim)\.draft|admin\.admin_page|expedia\.pdf_text|geo\.\w+|photos\.\w+|time\.sleep|requests\.\w+|urllib\.\w+|httpx\.\w+|_read)$")
+BLOCKING = re.compile(r"^(ai\.(call_json|transcribe)|safefetch\.fetch|importsource\.(gather|offline)|robots\.check|blogscan\.(discover|sample)|(dj|draftjobs)\.\w+|(pfm|planforme)\.\w+|intake_page|stripe\.[\w.]+|(cd|creatordraft)\.\w+|(cc|creatorclaim)\.draft|admin\.admin_page|expedia\.pdf_text|geo\.\w+|weather\.(forecast|trip_weather)|(plan\.)?(workspace|weather_pane)|calendar_view|forks_page|photos\.\w+|time\.sleep|requests\.\w+|urllib\.\w+|httpx\.\w+|_read)$")
 # One-row reads and writes in the local SQLite file are fine on the loop; these are the only listed calls that are.
 FINE = {("gitaway/pages/creatorimport.py", "cd.get"), ("gitaway/pages/creatordrafts.py", "cd.mode"), ("gitaway/pages/creatordrafts.py", "dj.remaining"), ("gitaway/pages/planforme.py", "pfm.standin"), ("gitaway/pages/planforme.py", "pfm.offered")}      # (standin, offered: environment checks, no database)
 
@@ -59,6 +59,18 @@ def test_the_checker_itself_catches_a_blocking_call(tmp_path, monkeypatch):
     (bad / "pages" / "x.py").write_text("async def h(r):\n    return safefetch.fetch('u')\n")
     monkeypatch.setattr(sys.modules[__name__], "ROOT", bad)
     assert _offenders() == ["gitaway/pages/x.py:2 h calls safefetch.fetch"]
+
+
+def test_the_checker_flags_what_can_wait_on_met_and_only_that(tmp_path, monkeypatch):
+    """F-203: asking MET Norway is a network call, and so is drawing a page that shows a trip's weather; weather's pure helpers are not."""
+    bad = tmp_path / "gitaway"
+    (bad / "pages").mkdir(parents=True)
+    calls = ["weather.forecast(1, 2)", "weather.trip_weather(r)", "weather_pane(r)", "plan.weather_pane(r)", "calendar_view(r)", "forks_page(r)", "workspace(r)",
+             "plan.workspace(r)", "weather.sample(r)", "weather.notes(r)", "weather.normal_day(r, r)"]
+    src = "".join(f"async def h{i}(r):\n    return {c}\n\n" for i, c in enumerate(calls)) + "async def ok(r):\n    return await run_in_threadpool(lambda: weather.trip_weather(r))\n"
+    (bad / "pages" / "x.py").write_text(src)
+    monkeypatch.setattr(sys.modules[__name__], "ROOT", bad)
+    assert [o.split(" calls ")[1] for o in _offenders()] == [c.split("(")[0] for c in calls[:8]]
 
 
 @pytest.fixture
@@ -126,3 +138,26 @@ def test_healthz_answers_at_once_while_a_blogs_sitemap_is_being_fetched_for_the_
     t.join(15)
     assert ok.status_code == 200 and quick < 0.5, f"/healthz took {quick:.2f}s while a sitemap fetch was in flight"
     assert result["r"].status_code == 200 and "a-trip-guide" in result["r"].text
+
+
+def test_healthz_answers_at_once_while_a_slow_forecast_is_asked_for_the_plan_page(live, monkeypatch):
+    """F-203: the /plan weather pane may wait on MET Norway (a plain def handler, so in the thread pool): the site answers meanwhile."""
+    from gitaway import weather
+    monkeypatch.setenv("MET_NORWAY_TERMS_ACCEPTED", "1")
+    asked = []
+
+    def slow(url, headers, timeout):
+        asked.append(url)
+        time.sleep(2.0)
+        raise OSError("slow, then down")
+    monkeypatch.setattr(weather, "TRANSPORT", slow)
+    result = {}
+    t = threading.Thread(target=lambda: result.update(r=httpx.get(live + "/plan?d=2026-10-02&r=2026-10-04&a=2", timeout=20)))   # two days after "today" (conftest)
+    t.start()
+    time.sleep(0.5)
+    started = time.monotonic()
+    ok = httpx.get(live + "/healthz", timeout=10)
+    quick = time.monotonic() - started
+    t.join(15)
+    assert asked and ok.status_code == 200 and quick < 0.5, f"/healthz took {quick:.2f}s while a forecast was being asked for"
+    assert result["r"].status_code == 200 and "Typical early October · not a forecast yet" in result["r"].text    # MET down: typical weather, labelled

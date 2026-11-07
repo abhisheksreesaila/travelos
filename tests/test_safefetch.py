@@ -1,9 +1,14 @@
 """F-183: fetching an address a creator typed must never reach our own network. Every case here is an address an attacker would try; the fake transport records whether a request was
 ever made (it must not be for any refused address, and for a redirect it must not be made for the hop that points inside)."""
 
+import socket
+import ssl
+import time
+
 import pytest
 
 from gitaway import safefetch
+from tests import tls_support, weather_support as ws
 
 PUBLIC = "93.184.216.34"
 
@@ -35,7 +40,8 @@ def html(body=b"<html>ok</html>", ctype="text/html; charset=utf-8"):
 
 
 @pytest.mark.parametrize("ip", ["127.0.0.1", "127.1.2.3", "10.0.0.5", "172.16.4.4", "192.168.1.20", "169.254.169.254", "0.0.0.0", "100.64.0.1", "224.0.0.1", "::1", "::", "fe80::1", "fd00::1", "::ffff:127.0.0.1",
-                                "::ffff:10.0.0.1", "64:ff9b::7f00:1", "2002:7f00:1::", "2002:a9fe:a9fe::"])
+                                "::ffff:10.0.0.1", "64:ff9b::7f00:1", "2002:7f00:1::", "2002:a9fe:a9fe::",
+                                "::127.0.0.1", "::169.254.169.254", "::ffff:0:127.0.0.1", "fec0::1"])        # IPv4-compatible, IPv4-translated, site-local: outside 2000::/3
 def test_no_address_inside_a_network_is_public(ip):
     assert safefetch.public(ip) is False
 
@@ -89,11 +95,11 @@ def test_the_connection_goes_to_the_address_that_was_checked(net):
 
 def test_a_redirect_to_a_private_address_is_refused_and_never_followed(net):
     net.names = {"blog.example.com": [PUBLIC], "169.254.169.254": ["169.254.169.254"]}
-    net.pages = {"https://blog.example.com/go": (302, {"location": "http://169.254.169.254/latest/meta-data/"}, b"")}
+    net.pages = {"http://blog.example.com/go": (302, {"location": "http://169.254.169.254/latest/meta-data/"}, b"")}     # http to http: the address is what refuses it
     with pytest.raises(safefetch.FetchError) as e:
-        safefetch.fetch("https://blog.example.com/go")
+        safefetch.fetch("http://blog.example.com/go")
     assert e.value.code == "private"
-    assert net.calls == [("https://blog.example.com/go", PUBLIC)]     # the first hop only: nothing was ever sent to the metadata address
+    assert net.calls == [("http://blog.example.com/go", PUBLIC)]     # the first hop only: nothing was ever sent to the metadata address
 
 
 def test_a_redirect_to_a_name_that_resolves_inside_is_refused(net):
@@ -215,7 +221,8 @@ def test_the_real_transport_asks_for_no_compression_and_the_checked_address(monk
 
 
 def _drip_server(stage):
-    """A local server that never finishes: stage "body" sends headers then one byte a 0.3 s forever; "headers" sends the status line then one header byte at a time; "silent" accepts and says nothing."""
+    """A local server that never finishes: stage "body" sends headers then one byte a 0.3 s forever; "headers" sends the status line then one header byte at a time; "silent" accepts and says nothing;
+    "close" says "Connection: close" (so http.client lets go of conn.sock), then drips the body for six seconds and hangs up (F-208)."""
     import socket
     import threading
     import time
@@ -237,6 +244,7 @@ def _drip_server(stage):
             threading.Thread(target=drip, args=(c,), daemon=True).start()
         for c in conns:
             c.close()
+        srv.close()
 
     def drip(c):
         try:
@@ -244,10 +252,14 @@ def _drip_server(stage):
             if stage == "silent":
                 stop.wait(30)
                 return
-            c.sendall(b"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n" + (b"Content-Length: 99999\r\n\r\n" if stage == "body" else b""))
-            while not stop.is_set():
-                c.sendall(b"x" if stage == "body" else b"X-A: ")
+            head = {"body": b"Content-Length: 99999\r\n\r\n", "close": b"Connection: close\r\nContent-Length: 99999\r\n\r\n"}.get(stage, b"")
+            c.sendall(b"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n" + head)
+            ends = time.monotonic() + 6
+            while not stop.is_set() and (stage != "close" or time.monotonic() < ends):
+                c.sendall(b"x" if stage in ("body", "close") else b"X-A: ")
                 time.sleep(0.3)
+            if stage == "close":
+                c.close()
         except OSError:
             pass
 
@@ -268,3 +280,162 @@ def test_a_server_that_drips_bytes_cannot_hold_the_fetch_past_the_deadline(stage
         assert time.monotonic() - started < 3.0
     finally:
         stop.set()
+
+
+
+def test_a_server_that_says_it_will_close_and_then_drips_is_still_cut_at_the_deadline():
+    """F-208: once an answer says "Connection: close", http.client lets go of conn.sock, so a watchdog that looks there reaches nothing and a creator's
+    dripping blog held the fetch for as long as it dripped. gitaway/deadline.py holds the socket itself."""
+    import time
+
+    port, stop = _drip_server("close")
+    try:
+        started = time.monotonic()
+        with pytest.raises(TimeoutError):
+            safefetch._http(f"http://127.0.0.1:{port}/", "127.0.0.1", 1.0, "html")
+        assert time.monotonic() - started < 1.5
+    finally:
+        stop.set()
+
+
+
+# ---- F-208 final fixes: redirects that cannot be followed, a lookup within the deadline --------------------------------------------------
+
+def test_a_redirect_from_https_to_http_is_refused(net):
+    net.pages = {"https://blog.example.com/go": (301, {"location": "http://blog.example.com/plain"}, b"")}
+    with pytest.raises(safefetch.FetchError) as e:
+        safefetch.fetch("https://blog.example.com/go")
+    assert e.value.code == "redirect" and net.calls == [("https://blog.example.com/go", PUBLIC)]
+
+
+def test_a_creator_may_still_paste_an_http_link_and_be_sent_on_to_https(net):
+    net.pages = {"http://blog.example.com/a": (301, {"location": "https://blog.example.com/a"}, b""), "https://blog.example.com/a": html(b"<p>a</p>")}
+    assert safefetch.fetch("http://blog.example.com/a").body == b"<p>a</p>"
+
+
+def test_a_redirect_to_a_name_that_cannot_be_encoded_is_a_failed_lookup(net):
+    def resolve(host):
+        host.encode("idna")         # what the system resolver does first: "a..b" has an empty label
+        return [PUBLIC]
+    net.resolve = resolve
+    safefetch.RESOLVER = resolve
+    net.pages = {"https://blog.example.com/go": (302, {"location": "https://a..b/x"}, b"")}
+    with pytest.raises(safefetch.FetchError) as e:
+        safefetch.fetch("https://blog.example.com/go")
+    assert e.value.code == "dns"
+
+
+def test_a_redirect_the_transport_cannot_send_is_a_network_failure(net, monkeypatch):
+    calls = []
+
+    def send(url, ip, timeout, kind):
+        calls.append(url)
+        if len(calls) == 1:
+            return 302, {"location": "/café"}, b""
+        raise UnicodeEncodeError("ascii", url, 30, 31, "ordinal not in range(128)")     # http.client cannot put /café on the request line
+    monkeypatch.setattr(safefetch, "TRANSPORT", send)
+    with pytest.raises(safefetch.FetchError) as e:
+        safefetch.fetch("https://blog.example.com/go")
+    assert e.value.code == "network" and len(calls) == 2
+
+
+def test_a_resolver_that_hangs_is_cut_at_the_fetchs_deadline(monkeypatch):
+    monkeypatch.setattr(safefetch, "RESOLVER", None)
+
+    def hangs(*a, **k):
+        time.sleep(2)
+        raise OSError("no answer")
+    monkeypatch.setattr(socket, "getaddrinfo", hangs)
+    started = time.monotonic()
+    with pytest.raises(safefetch.FetchError) as e:
+        safefetch.fetch("https://blog.example.com/p", timeout=1.0)
+    assert e.value.code == "timeout" and time.monotonic() - started < 1.3
+
+
+def test_the_time_a_lookup_took_counts_before_anything_is_sent(net):
+    def slow(host):
+        time.sleep(0.9)
+        return [PUBLIC]
+    safefetch.RESOLVER = slow
+    net.pages = {"https://blog.example.com/p": html()}
+    with pytest.raises(safefetch.FetchError) as e:
+        safefetch.fetch("https://blog.example.com/p", timeout=1.0)
+    assert e.value.code == "timeout" and net.calls == []
+
+
+# ---- F-208 final fixes: the real transport over TLS, through the pinned address -----------------------------------------------------------
+
+@pytest.fixture
+def blog(tmp_path, monkeypatch):
+    """A local TLS server with a certificate for blog.invalid (a name no resolver knows), from a test CA; the transport is pinned to 127.0.0.1.
+    Nothing may leave this machine, and every address dialled is kept."""
+    ws.local_only(monkeypatch)
+    dialled, real = [], socket.create_connection
+
+    def dial(address, *a, **kw):
+        dialled.append(address[0])
+        return real(address, *a, **kw)
+    monkeypatch.setattr(socket, "create_connection", dial)
+    ca, cert, key = tls_support.make_certs(tmp_path, "blog.invalid")
+    server = tls_support.TLSServer(cert, key, b"<html>ok</html>")
+    monkeypatch.setattr(safefetch, "_TLS", ssl.create_default_context(cafile=str(ca)), raising=False)
+    state = {"port": server.port, "dialled": dialled, "tmp": tmp_path}
+    yield state
+    server.close()
+
+
+def test_the_real_transport_reads_https_through_the_pinned_address_with_a_verified_certificate(blog):
+    status, _headers, body = safefetch._http(f"https://blog.invalid:{blog['port']}/p", "127.0.0.1", 3, "html")
+    assert (status, body) == (200, b"<html>ok</html>") and blog["dialled"] == ["127.0.0.1"]
+
+
+def test_the_real_transport_refuses_a_certificate_for_another_name(blog, monkeypatch):
+    folder = blog["tmp"] / "evil"
+    folder.mkdir()
+    ca, cert, key = tls_support.make_certs(folder, "evil.example")
+    other = tls_support.TLSServer(cert, key, b"<html>evil</html>")
+    monkeypatch.setattr(safefetch, "_TLS", ssl.create_default_context(cafile=str(ca)))      # a trusted CA, the wrong name
+    try:
+        with pytest.raises(ssl.SSLCertVerificationError):
+            safefetch._http(f"https://blog.invalid:{other.port}/p", "127.0.0.1", 3, "html")
+    finally:
+        other.close()
+
+
+def test_a_tls_handshake_that_drags_is_cut_at_the_deadline(blog):
+    proxy = tls_support.DripProxy(blog["port"], chunk=16, gap=0.1)
+    try:
+        started = time.monotonic()
+        with pytest.raises(TimeoutError):
+            safefetch._http(f"https://blog.invalid:{proxy.port}/p", "127.0.0.1", 1.0, "html")
+        assert time.monotonic() - started < 1.2
+    finally:
+        proxy.close()
+
+
+def test_a_connection_that_comes_up_just_as_the_deadline_passes_never_starts_a_slow_handshake(blog, monkeypatch):
+    """Security L1: the handshake gets only what is left of the deadline; the watchdog had fired while the socket was still connecting."""
+    proxy = tls_support.DripProxy(blog["port"], chunk=16, gap=0.1)
+    real, started = socket.create_connection, time.monotonic()
+
+    def late(address, *a, **kw):
+        time.sleep(max(0.0, started + 1.02 - time.monotonic()))        # the TCP connection is ready just after the deadline
+        return real(address, *a, **kw)
+    monkeypatch.setattr(socket, "create_connection", late)
+    try:
+        with pytest.raises(TimeoutError):
+            safefetch._http(f"https://blog.invalid:{proxy.port}/p", "127.0.0.1", 1.0, "html")
+        assert time.monotonic() - started < 1.25
+    finally:
+        proxy.close()
+
+
+def test_the_tls_context_is_built_once_not_between_connecting_and_shaking_hands(blog, monkeypatch):
+    made = []
+    monkeypatch.setattr(ssl, "create_default_context", lambda *a, **k: made.append(1) or ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT))
+    assert safefetch._http(f"https://blog.invalid:{blog['port']}/p", "127.0.0.1", 3, "html")[0] == 200
+    assert made == []
+
+
+def test_the_tls_context_checks_every_certificate_and_its_name():
+    assert safefetch._TLS.verify_mode == ssl.CERT_REQUIRED and safefetch._TLS.check_hostname

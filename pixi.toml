@@ -31,6 +31,9 @@ pytest-reverse = ">=1.7.0,<2"
 pip-audit = ">=2.10.1,<3"
 filelock = ">=4.2.9,<5"  # pip-audit caches its lookups with cachecontrol's FileCache, which needs it and does not declare it: without this, `pixi run audit` dies with ImportError
 
+[feature.test.pypi-dependencies]
+cryptography = ">=50.0.2, <51"
+
 [environments]
 default = { features = ["test"], solve-group = "default" }
 prod = { features = [], solve-group = "default" }
@@ -44,6 +47,8 @@ probe-tp = "python scripts/probe_travelpayouts.py"  # one real Travelpayouts par
 probe-import = "python scripts/probe_creator_import.py"  # one real creator-import draft with Claude Haiku 5.5: prints the draft JSON, tokens and cost; needs ANTHROPIC_API_KEY (F-183)
 draft-creators = "python scripts/draft_creators.py"  # draft every A-priority creator's example post from docs/research/creators.csv and print the claim links; needs ANTHROPIC_API_KEY (F-188)
 setup-money = "bash scripts/setup_money.sh"  # the captain's wizard: Railway (gitaway/web) ANTHROPIC_API_KEY and GITAWAY_ADMIN_EMAILS, then Stripe key, webhook secret and Plan for me price; never prints a secret
+build-normals = "python scripts/build_normals.py"  # rebuild gitaway/normals.json (typical weather) from NOAA's public 1991-2020 climate normals; downloads one file per station once (F-203)
+probe-weather = "python scripts/probe_weather.py"  # one real MET Norway forecast for South Lake Tahoe, printed as GitAway's days; needs MET_NORWAY_TERMS_ACCEPTED=1 (F-203)
 test = "pytest -q -p no:randomly"
 test-random = "pytest -q -p randomly"
 test-browser-install = "playwright install chromium"  # once per machine: downloads the browser the browser suite drives

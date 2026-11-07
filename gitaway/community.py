@@ -19,7 +19,7 @@ Forks and saves are not here: they are per family (gitaway.familydb_social).
 
 import json
 from contextlib import contextmanager
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from datetime import datetime, timezone
 from types import SimpleNamespace
 
@@ -128,8 +128,12 @@ def _row(r) -> dict:
 
 
 def trip_of(row) -> Itinerary:
-    """The scrapbook Itinerary frozen in a row."""
-    return load(row["snapshot"])
+    """The scrapbook Itinerary frozen in a row. A family's shared trip never shows weather: one shared before F-203 carries the old invented badge and
+    per-day weather in its snapshot, so they are blanked here."""
+    trip = load(row["snapshot"])
+    if row.get("kind") == "shared":
+        trip = replace(trip, weather=(), days=[replace(d, weather="") for d in trip.days])
+    return trip
 
 
 # ---- reads ---------------------------------------------------------------------------------------------------------
