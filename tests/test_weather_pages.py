@@ -17,7 +17,7 @@ from tests.test_trip_import import TEMPLATE, imported, no_car
 
 TYPICAL = "Typical late December · not a forecast yet"
 TYPICAL_SPAN = "Typical mid to late December · not a forecast yet"
-CREDIT_LINE = re.compile(r'<a [^>]*href="([^"]+)"[^>]*>Forecast based on data from MET Norway · updated 6:10 AM</a>')
+CREDIT_LINE = re.compile(r'<a [^>]*href="([^"]+)"[^>]*>Forecast for ([^<]+), based on data from MET Norway · updated 6:10 AM</a>')
 
 
 def pane(html, key="weather"):
@@ -72,8 +72,8 @@ def test_once_the_forecast_reaches_a_real_trip_the_pane_shows_it_with_met_norway
     p = pane(client.get("/plan?d=2026-12-19&r=2026-12-23&a=2").text)
     assert temps(p) == [ws.EXPECT[d][0] for d in range(19, 24)]
     assert "Heavy snow" in p and "ws-typical" not in p
-    link = CREDIT_LINE.search(p)                                      # the whole credit line is the link (review 9, 10)
-    assert link and link.group(1) == weather.CREDIT_URL
+    link = CREDIT_LINE.search(p)                                      # the whole credit line is the link (review 9, 10), naming the station (last review)
+    assert link and link.group(1) == weather.CREDIT_URL and link.group(2) == "Los Angeles"
     assert len(met.calls) == 1
 
 
@@ -179,4 +179,22 @@ def test_the_forks_calendar_credits_met_norway_when_its_days_are_the_forecast(cl
     cal = _calendar(client.get("/forks").text)
     assert re.findall(r'class="fk-wx"[^>]*>(\d+)°F<', cal) == [str(ws.EXPECT[d][0]) for d in range(19, 26)]
     link = CREDIT_LINE.search(cal)
-    assert link and link.group(1) == weather.CREDIT_URL
+    assert link and link.group(1) == weather.CREDIT_URL and link.group(2) == "South Lake Tahoe"
+
+
+
+# ---- last review: an old shared snapshot's day weather never reaches the page (reviewer 3); nor does the sample's (nit) ---------------------
+
+def test_an_old_shared_snapshots_day_weather_never_reaches_the_page():
+    old = itineraries.get("sun-tacos-and-tide-pools")
+    old = replace(old, polaroids=[], days=[replace(d, weather="75°F, clear skies") for d in old.days])        # as shared before F-203
+    page = _drawn(community.trip_of({"kind": "shared", "snapshot": community.dump(old)}))
+    assert "75°F" not in page and "clear skies" not in page and "74°F" not in page and 'class="rail-weather"' not in page
+
+
+def test_sharing_the_showcases_sample_trip_carries_no_day_weather_either(client):
+    from tests.test_signin import sign_in
+    sign_in(client)
+    client.post("/pay", data={"f": "f1", "h": "h1", "c": "none", "a": "2", "k": "4,7"}, follow_redirects=False)     # the sample trip, booked
+    built = share.build(person())
+    assert built.days and all(d.weather == "" for d in built.days)

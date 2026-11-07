@@ -10,9 +10,9 @@ third of a month (days 1-10, 11-20, 21 to the end: "early", "mid" and "late"), t
 
 The app reads only the JSON (gitaway/weather.py); nothing is fetched while it runs. Add a destination by adding a row: the station id is in
 https://www.ncei.noaa.gov/data/normals-daily/1991-2020/doc/inventory_30yr.txt. A name counts only at the start of a trip's destination, as whole
-words, and only when no other state is named after its comma (so "Lake Placid, New York" is not New York City and "Hollywood, Florida" is not Los
-Angeles); still never add a name that is also a different place on its own (a bare "portland", "charleston" or "mammoth"). The states are the
-postal codes a station stands for. Park City and Mammoth Lakes are left out on purpose: their own stations have no temperature or precipitation
+words, and only when every part after it is a state the station stands for, the United States, or another of its names (so "Lake Placid, New York"
+is not New York City, "Hollywood Florida" is not Los Angeles and "Disneyland Paris, France" is not Anaheim); still never add a name that is also a
+different place on its own (a bare "portland", "charleston", "mammoth" or "disneyland"). The states are the postal codes a station stands for. Park City and Mammoth Lakes are left out on purpose: their own stations have no temperature or precipitation
 normals and the nearest ones that do sit hundreds of metres lower.
 
 The downloads are kept in a folder only you can read (~/.cache/gitaway-normals, mode 0700, or one you name that no one else can write to), each
@@ -31,6 +31,8 @@ from pathlib import Path
 from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+from gitaway.weather import third     # noqa: E402 - the one rule for the thirds of a month, shared with the app that reads the table
 OUT = ROOT / "gitaway" / "normals.json"
 URL = "https://www.ncei.noaa.gov/data/normals-daily/1991-2020/access/{id}.csv"
 USER_AGENT = "GitAway normals builder (+https://gitaway.me)"
@@ -43,9 +45,9 @@ PT, MT, AZ, CT, ET, HT, AK = ("America/Los_Angeles", "America/Denver", "America/
 STATIONS = (
     ("USW00093134", "Los Angeles", PT, ("CA",), ("los angeles", "downtown los angeles", "hollywood")),
     ("USW00023174", "Los Angeles coast (LAX)", PT, ("CA",), ("santa monica", "venice beach", "marina del rey", "manhattan beach", "redondo beach")),
-    ("USC00040192", "Anaheim", PT, ("CA",), ("anaheim", "disneyland", "disneyland resort", "disney california adventure")),
+    ("USC00040192", "Anaheim", PT, ("CA",), ("anaheim", "disneyland resort", "disneyland california", "disneyland anaheim", "disney california adventure")),
     ("USW00023188", "San Diego", PT, ("CA",), ("san diego", "la jolla", "coronado", "mission beach")),
-    ("USW00022521", "Honolulu", HT, ("HI",), ("honolulu", "waikiki", "oahu", "ko olina")),
+    ("USW00022521", "Honolulu", HT, ("HI",), ("honolulu", "waikiki", "waikiki beach", "oahu", "ko olina")),
     ("USW00094728", "New York City", ET, ("NY",), ("new york", "new york city", "nyc", "manhattan", "brooklyn")),
     ("USW00093230", "South Lake Tahoe", PT, ("CA", "NV"), ("south lake tahoe", "lake tahoe", "tahoe", "stateline", "heavenly", "zephyr cove", "emerald bay")),
     ("USC00048758", "Tahoe City", PT, ("CA", "NV"), ("tahoe city", "north lake tahoe", "palisades tahoe", "squaw valley", "olympic valley", "kings beach",
@@ -61,7 +63,7 @@ STATIONS = (
     ("USW00024233", "Seattle", PT, ("WA",), ("seattle",)),
     ("USW00014739", "Boston", ET, ("MA",), ("boston",)),
     ("USW00003017", "Denver", MT, ("CO",), ("denver",)),
-    ("USC00023596", "Grand Canyon", AZ, ("AZ",), ("grand canyon", "grand canyon village", "south rim")),
+    ("USC00023596", "Grand Canyon", AZ, ("AZ",), ("grand canyon", "grand canyon village", "grand canyon national park", "south rim")),
     ("USC00049855", "Yosemite Valley", PT, ("CA",), ("yosemite", "yosemite valley", "yosemite national park")),
     ("USC00486845", "Old Faithful, Yellowstone", MT, ("WY", "MT", "ID"), ("yellowstone", "yellowstone national park", "old faithful")),
     ("USW00022516", "Maui (Kahului)", HT, ("HI",), ("maui", "kahului", "kihei", "wailea", "lahaina", "kaanapali")),
@@ -84,7 +86,7 @@ STATIONS = (
     ("USC00484910", "Jackson Hole", MT, ("WY",), ("jackson hole", "jackson wyoming", "jackson wy", "grand teton")),
     ("USC00248809", "West Glacier", MT, ("MT",), ("glacier national park", "west glacier")),
     ("USC00170100", "Acadia", ET, ("ME",), ("acadia", "acadia national park", "bar harbor")),
-    ("USC00403420", "Gatlinburg", ET, ("TN",), ("gatlinburg", "pigeon forge", "great smoky mountains", "smoky mountains")),
+    ("USC00403420", "Gatlinburg", ET, ("TN",), ("gatlinburg", "pigeon forge", "great smoky mountains", "great smoky mountains national park", "smoky mountains")),
     ("USW00093718", "North Myrtle Beach", ET, ("SC",), ("myrtle beach",)),
     ("USW00012836", "Key West", ET, ("FL",), ("key west",)),
     ("USW00012842", "Tampa", ET, ("FL",), ("tampa", "clearwater", "st petersburg", "st pete beach")),
@@ -105,10 +107,7 @@ STATIONS = (
 )
 
 MONTH_DAYS = (31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)   # the files have a row for Feb 29
-
-
-def third(day: int) -> int:
-    return 0 if day <= 10 else 1 if day <= 20 else 2
+COLUMNS = (("DLY-TMAX-NORMAL", -80, 140), ("DLY-TMIN-NORMAL", -80, 140), ("DLY-PRCP-PCTALL-GE001HI", 0, 100), ("DLY-SNOW-PCTALL-GE001TI", 0, 100))   # (column, lowest, highest)
 
 
 def number(text):
@@ -163,10 +162,14 @@ def summarise(text: str):
     sums = [[[], [], [], []] for _ in range(36)]
     for r in rows:
         month, day = int(r["month"]), int(r["day"])
+        if not 1 <= month <= 12 or not 1 <= day <= MONTH_DAYS[month - 1]:
+            raise ValueError(f"a row for a day that does not exist: {month}-{day}")
         p = (month - 1) * 3 + third(day)
-        for k, col in enumerate(("DLY-TMAX-NORMAL", "DLY-TMIN-NORMAL", "DLY-PRCP-PCTALL-GE001HI", "DLY-SNOW-PCTALL-GE001TI")):
+        for k, (col, lo, hi) in enumerate(COLUMNS):
             v = number(r.get(col))
             if v is not None:
+                if not lo <= v <= hi:
+                    raise ValueError(f"{col} {v} on {month}-{day} is outside {lo}..{hi}")
                 sums[p][k].append(v)
     out = []
     for p, (hi, lo, wet, snow) in enumerate(sums):

@@ -64,7 +64,8 @@ def test_once_the_forecast_reaches_the_trip_its_days_are_metss_forecast(met, clo
     (url, _), = met.calls
     st = weather.station("USW00093230")                             # asked for the station's place, at its altitude
     assert url == f"{weather.API}?lat={st.lat:.4f}&lon={st.lon:.4f}&altitude={st.elev}"
-    assert weather.notes(tw) == [(f"{weather.CREDIT} · updated 6:10 AM", weather.CREDIT_URL), (TYPICAL_LATE, ""), (NOAA_TAHOE, "")]
+    assert weather.notes(tw) == [("Forecast for South Lake Tahoe, based on data from MET Norway · updated 6:10 AM", weather.CREDIT_URL), (TYPICAL_LATE, ""),
+                                 (NOAA_TAHOE, "")]                                                           # the forecast names its station too (last review)
 
 
 def test_without_the_terms_accepted_the_trip_keeps_typical_weather_and_promises_no_forecast(monkeypatch, clock):

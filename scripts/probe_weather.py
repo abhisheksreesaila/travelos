@@ -26,11 +26,11 @@ def main() -> int:
         print("MET_NORWAY_TERMS_ACCEPTED is not 1, so nothing was asked. Read and accept MET Norway's terms first.")
         return 1
     print("User-Agent:", weather.user_agent())
-    fc = weather.forecast(st.lat, st.lon, st.elev, timeout=10)
+    fc = weather.forecast(st, timeout=10)
     if fc is None:
         print("No forecast came back (see the WARNING above, if any).")
         return 2
-    print(f"{weather.CREDIT} · updated {weather.updated_text(fc, st.tz)} ({len(fc.points)} steps)")
+    print(f"{weather.credit(st.name, weather.updated_text(fc, st.tz))} ({len(fc.points)} steps)")
     for d, day in weather.forecast_days(fc, st.tz, catalog.now_utc()).items():
         print(f"  {d:%a %b} {d.day}: high {day.high_f}°, low {day.low_f}°, {day.word} [{day.condition}], {day.precip_in} in, wind {day.wind_mph} mph")
     return 0

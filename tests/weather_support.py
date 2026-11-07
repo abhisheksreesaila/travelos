@@ -168,11 +168,12 @@ import time as _time     # noqa: E402
 
 class Server:
     """A plain-HTTP server on 127.0.0.1 that answers every request one way (`mode`): "redirect" (302 to the cloud's metadata address), "slow" (headers,
-    then a byte every 0.3 s for 6 s) or "ok". `hits` counts the requests it got."""
+    then a byte every 0.3 s for 6 s), "not-modified" (304, no body: what MET answers an If-Modified-Since when nothing changed) or "ok". `hits` counts
+    the requests it got, `asked` keeps each request's headers."""
 
     def __init__(self, mode="ok"):
         outer = self
-        self.mode, self.hits = mode, 0
+        self.mode, self.hits, self.asked = mode, 0, []
 
         class Handler(http.server.BaseHTTPRequestHandler):
             def log_message(self, *a):
@@ -180,6 +181,13 @@ class Server:
 
             def do_GET(self):
                 outer.hits += 1
+                outer.asked.append({k.lower(): v for k, v in self.headers.items()})
+                if outer.mode == "not-modified":
+                    self.send_response(304)
+                    self.send_header("Expires", http_date(NOW + timedelta(hours=9)))
+                    self.send_header("Last-Modified", http_date(UPDATED))
+                    self.end_headers()
+                    return
                 if outer.mode == "redirect":
                     self.send_response(302)
                     self.send_header("Location", "http://169.254.169.254/latest/meta-data/iam/credentials")
@@ -190,6 +198,8 @@ class Server:
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")
                 self.send_header("Content-Length", str(len(raw)))
+                self.send_header("Expires", http_date(UPDATED + timedelta(minutes=33)))
+                self.send_header("Last-Modified", http_date(UPDATED))
                 self.end_headers()
                 if outer.mode == "slow":
                     try:
@@ -207,9 +217,10 @@ class Server:
         self.port = self.httpd.server_address[1]
         threading.Thread(target=self.httpd.serve_forever, daemon=True).start()
 
-    def connection(self, ip, timeout):
+    def connection(self, ips, deadline):
+        """Stands in for weather.CONNECTION: a plain connection to this server, whatever addresses were looked up."""
         import http.client
-        return http.client.HTTPConnection("127.0.0.1", self.port, timeout=timeout)
+        return http.client.HTTPConnection("127.0.0.1", self.port, timeout=max(0.1, deadline - _time.monotonic()))
 
     def close(self):
         self.httpd.shutdown()

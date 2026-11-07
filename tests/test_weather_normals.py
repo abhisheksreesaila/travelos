@@ -13,12 +13,11 @@ import pytest
 from gitaway import weather
 
 ROOT = Path(__file__).resolve().parent.parent
-TAHOE = (38.9399, -119.9772)     # the founder's cabin in South Lake Tahoe
 
 
 def test_tahoe_in_late_december_is_noaas_typical_weather_labelled_as_such():
-    st = weather.station_near(*TAHOE)
-    assert (st.id, st.name) == ("USW00093230", "South Lake Tahoe")     # South Lake Tahoe airport, 5 km away
+    st = weather.station_named("South Lake Tahoe")
+    assert (st.id, st.name) == ("USW00093230", "South Lake Tahoe")     # South Lake Tahoe airport, 5 km from the founder's cabin
     d = weather.normal_day(st, date(2026, 12, 24))
     assert (d.kind, d.date, d.high_f, d.low_f) == (weather.NORMAL, date(2026, 12, 24), 42, 17)
     assert d.label == "Typical late December · not a forecast yet"
@@ -46,12 +45,6 @@ def test_the_words_say_how_often_it_is_wet_and_whether_that_is_snow(sid, day, wo
     assert (d.word, d.condition) == (word, condition)
 
 
-def test_a_place_far_from_every_station_has_no_normals():
-    assert weather.station_near(47.0, -100.0) is None      # the middle of North Dakota
-    assert weather.station_near(48.8566, 2.3522) is None   # Paris
-    assert weather.station_near(None, 2.0) is None
-
-
 def test_names_find_a_station_by_whole_words_and_the_longest_name_wins():
     assert weather.station_named("Lake Tahoe, California").name == "South Lake Tahoe"
     assert weather.station_named("South Lake Tahoe, CA").name == "South Lake Tahoe"
@@ -73,7 +66,7 @@ def test_the_table_is_whole_and_plausible():
     assert len(stations) >= 50
     for st in stations:
         assert len(st.normals) == 36, st.id
-        assert st.tz and weather.station_near(st.lat, st.lon) is not None
+        assert st.tz and st.states and -90 <= st.lat <= 90 and -180 <= st.lon <= 180
         for hi, lo, wet, snow in st.normals:
             assert -40 < lo <= hi < 125 and 0 <= wet <= 100 and (snow is None or 0 <= snow <= 100), st.id
 
@@ -174,3 +167,35 @@ def test_the_builder_reads_at_most_five_megabytes(tmp_path, monkeypatch):
     with pytest.raises(ValueError):
         build.download("USW00093230", tmp_path)
     assert not (tmp_path / "USW00093230.csv").exists()
+
+
+
+# ---- last review: a name abroad never means a US station (reviewer 2) ---------------------------------------------------------------
+
+@pytest.mark.parametrize("text", ["Disneyland Paris, France", "Hollywood Florida", "San Antonio, Ibiza, Spain", "Disneyland", "Austin Texas Mexico",
+                                  "Waikiki, Japan", "Lake Tahoe, Ontario"])
+def test_a_trailing_part_that_is_not_a_us_state_or_the_stations_own_place_refuses_the_station(text):
+    assert weather.station_named(text) is None, text
+
+
+@pytest.mark.parametrize("text, name", [("Disneyland, California", "Anaheim"), ("Disneyland Anaheim", "Anaheim"), ("Austin, Texas, USA", "Austin"),
+                                        ("Heavenly, Lake Tahoe, CA", "South Lake Tahoe"), ("Waikiki Beach", "Honolulu"),
+                                        ("South Lake Tahoe CA 96150-1234", "South Lake Tahoe"), ("New York, NY, United States", "New York City"),
+                                        ("Old Faithful, Yellowstone", "Old Faithful, Yellowstone")])
+def test_a_trailing_us_state_country_or_place_of_the_same_station_keeps_it(text, name):
+    assert weather.station_named(text).name == name
+
+
+# ---- last review: the builder refuses impossible rows (security 7) -------------------------------------------------------------------
+
+@pytest.mark.parametrize("month, day, high", [("13", "1", "42.0"), ("2", "30", "42.0"), ("1", "2", "242.0")], ids=["month", "day", "temperature"])
+def test_the_builder_refuses_a_row_no_station_could_have(month, day, high):
+    extra = f'"X","{month}-{day}","38.8983","-119.9947","1924.5","SOMEWHERE","{month}","{day}","0","{high}","17.0","33.0"\n'     # one more row; every period keeps its own
+    _builder().summarise(_csv())
+    with pytest.raises(ValueError):
+        _builder().summarise(_csv() + extra)
+
+
+def test_the_builder_refuses_a_chance_over_one_hundred_percent():
+    with pytest.raises(ValueError):
+        _builder().summarise(_csv().replace('"17.0","33.0"', '"17.0","133.0"', 1))
