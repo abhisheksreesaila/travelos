@@ -220,3 +220,32 @@ def test_the_real_transport_sends_the_agent_it_is_given(monkeypatch):
     monkeypatch.setattr(socket, "create_connection", lambda addr, timeout=None, **kw: Sock())
     safefetch._http("http://blog.example.com/p", "93.184.216.34", 5, "html", ua=safefetch.USER_AGENT_UNASKED)
     assert f"User-Agent: {safefetch.USER_AGENT_UNASKED}\r\n" in b"".join(sent).decode()
+
+
+# ---- a hostile robots.txt cannot freeze the server (F-194 audit) ----------------------------------------------------------------------
+
+def test_a_rule_made_to_make_a_regex_backtrack_is_answered_at_once(monkeypatch):
+    import time
+    serve(monkeypatch, "User-agent: *\nDisallow: /" + "*a" * 50 + "b\n")
+    started = time.perf_counter()
+    assert robots.check(POST.replace("/santa-monica-with-kids", "/" + "a" * 2000)) == ""
+    assert time.perf_counter() - started < 0.5
+
+
+@pytest.mark.parametrize("pattern, path, hit", [
+    ("/a*b", "/axxb", True), ("/a*b", "/axxbc", True), ("/a*b$", "/axxbc", False), ("/a*b$", "/axxb", True), ("/*.pdf$", "/x/y.pdf", True), ("/*.pdf$", "/x/y.pdf?v=1", False),
+    ("/a**b", "/ab", True), ("/*", "/anything", True), ("/a$", "/a", True), ("/a$", "/ab", False), ("/a/", "/a", False), ("/*a*b*c", "/xaxbxcx", True), ("/*a*b*c$", "/xaxcxb", False),
+    ("/a*a$", "/a", False),         # the last "a" must come after the first
+    ("/x$y", "/x$y", True),         # a "$" that is not last is just a character
+])
+def test_a_rule_matches_the_way_rfc_9309_says(pattern, path, hit):
+    assert robots._matches(pattern, path) is hit
+
+
+def test_a_file_with_more_rules_or_longer_rules_than_we_read_is_not_trusted(monkeypatch):
+    serve(monkeypatch, "User-agent: *\n" + "Disallow: /x\n" * (robots.MAX_RULES + 1))
+    assert robots.check(POST) == CANNOT_CHECK
+    serve(monkeypatch, "User-agent: *\nDisallow: /" + "a" * robots.MAX_RULE + "\n")
+    assert robots.check(POST) == CANNOT_CHECK
+    serve(monkeypatch, "User-agent: *\n" + "Disallow: /x\n" * robots.MAX_RULES)
+    assert robots.check(POST) == ""

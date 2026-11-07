@@ -11,7 +11,6 @@ timeout, no connection, a redirect loop) does not: the page is left unread and t
 The file is fetched through `safefetch`, so it passes the same guard as any address a person typed.
 """
 
-import re
 from urllib.parse import urlsplit
 
 from gitaway import safefetch
@@ -20,11 +19,14 @@ AGENTS = ("anthropic-ai", "claudebot", "claude-web", "gptbot", "gitawaybot")    
 ASKS_NOT = "This site's robots.txt asks AI tools not to read this page, so GitAway did not draft from it. Paste the text of the post instead."
 CANNOT_CHECK = "GitAway could not check this site's robots.txt just now, so it did not read the page. Try again in a minute, or paste the text of the post instead."
 TIMEOUT = 4.0
+MAX_RULES = 2000      # a file with more Allow/Disallow lines, or a rule longer than MAX_RULE characters, is not trusted (CANNOT_CHECK): a hostile file cannot make us spend our time on it
+MAX_RULE = 1024
+MAX_PATH = 2048       # the part of the page's path and query that is matched
 
 
 def _groups(text) -> list:
     """[(user-agent tokens, [(allow?, pattern)])] from the file's text."""
-    groups, agents, rules, in_rules = [], [], [], False
+    groups, agents, rules, in_rules, count = [], [], [], False, 0
     for raw in text.splitlines():
         line = raw.split("#", 1)[0].strip()
         if ":" not in line:
@@ -38,6 +40,9 @@ def _groups(text) -> list:
             agents.append(value.lower())
         elif field in ("allow", "disallow"):
             in_rules = True
+            count += 1
+            if count > MAX_RULES or len(value) > MAX_RULE:
+                raise ValueError("robots.txt is larger than we read")
             rules.append((field == "allow", value))
     if agents:
         groups.append((agents, rules))
@@ -45,8 +50,24 @@ def _groups(text) -> list:
 
 
 def _matches(pattern, path) -> bool:
-    regex = re.escape(pattern).replace(r"\*", ".*")
-    return re.match(regex[:-2] + "$" if regex.endswith(r"\$") else regex, path) is not None
+    """RFC 9309 matching without a regex: `*` is any run of characters, a final `$` anchors the end, anything else is literal. The pieces between the stars are found left to right with
+    str.find, so a rule written to make a regex backtrack costs no more than any other."""
+    anchored = pattern.endswith("$")
+    parts = (pattern[:-1] if anchored else pattern).split("*")
+    if not path.startswith(parts[0]):
+        return False
+    if len(parts) == 1:
+        return not anchored or path == parts[0]
+    at = len(parts[0])
+    for part in parts[1:-1]:
+        found = path.find(part, at)
+        if found < 0:
+            return False
+        at = found + len(part)
+    last = parts[-1]
+    if anchored:
+        return len(path) - len(last) >= at and path.endswith(last)
+    return path.find(last, at) >= 0
 
 
 def _allowed(groups, agent, path) -> bool:
@@ -68,6 +89,9 @@ def check(url, asked=True) -> str:
     except safefetch.FetchError as e:
         # only a file that may exist but cannot be had right now holds the page back; a 4xx, a file that is not text, a private or unknown address is the page fetch's own business (it says why itself)
         return CANNOT_CHECK if e.code in ("timeout", "network", "redirect", "redirects") or e.code.startswith("http_5") else ""
-    groups = _groups(got.text())
-    path = (parts.path or "/") + (f"?{parts.query}" if parts.query else "")
+    try:
+        groups = _groups(got.text())
+    except ValueError:
+        return CANNOT_CHECK
+    path = ((parts.path or "/") + (f"?{parts.query}" if parts.query else ""))[:MAX_PATH]
     return "" if all(_allowed(groups, agent, path) for agent in AGENTS) else ASKS_NOT
