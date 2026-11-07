@@ -280,6 +280,21 @@ def test_a_slow_answer_is_cut_at_the_deadline(stand_in):
     assert time.monotonic() - started < 1.5
 
 
+def test_a_slow_name_lookup_is_cut_at_the_deadline_too(monkeypatch):
+    """The address of api.met.no is looked up within the call's deadline: a resolver that hangs cannot hold the page."""
+    import socket
+    ws.local_only(monkeypatch)
+
+    def hangs(*a, **k):
+        time.sleep(3)
+        raise OSError("no answer")
+    monkeypatch.setattr(socket, "getaddrinfo", hangs)
+    started = time.monotonic()
+    with pytest.raises(TimeoutError):
+        weather._http(URL, {}, 0.5)
+    assert time.monotonic() - started < 1.0
+
+
 def test_a_page_waits_its_turn_at_the_gate_only_until_its_own_deadline(met, monkeypatch):
     monkeypatch.setattr(weather.GATE, "gap", 5.0)
     monkeypatch.setattr(weather.GATE, "last", geo._clock())        # somebody has just asked
