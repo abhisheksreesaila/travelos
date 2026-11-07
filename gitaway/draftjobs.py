@@ -134,16 +134,40 @@ def reset_running() -> None:
         db.conn.commit()
 
 
+MAX_GATHERED = 10
 _gathered: dict = {}      # job id -> the post's text, kept while a busy line sends the job back to the queue, so each poll does not fetch the creator's blog again
+_gathered_lock = threading.Lock()
+
+
+def _forget_gone() -> None:
+    """Drop the kept text of every job that is no longer queued or running, whatever took it away (finished, failed, removed, the queue cleared)."""
+    if not _gathered:
+        return
+    with _db() as db:
+        live = {r[0] for r in db.conn.execute(text("SELECT id FROM creator_draft_jobs WHERE status IN ('queued', 'running')")).fetchall()}
+    with _gathered_lock:
+        for jid in [j for j in _gathered if j not in live]:
+            del _gathered[jid]
+
+
+def _gather(job):
+    """The post's text for this job: fetched once, kept for the polls that follow (at most MAX_GATHERED posts at a time; the oldest is dropped, and fetched again if it comes back)."""
+    with _gathered_lock:
+        if job["id"] in _gathered:
+            return _gathered[job["id"]]
+    post = importsource.gather(job["url"], "")
+    with _gathered_lock:
+        while len(_gathered) >= MAX_GATHERED:
+            del _gathered[next(iter(_gathered))]
+        _gathered[job["id"]] = post
+    return post
 
 
 def _draft(job):
     owner, url, name = job["owner"], job["url"], job["name"]
     if cd.mode() == "sample":     # the local showcase: a fixture draft, nothing fetched and no model asked
         return cd.sample(owner, importsource.offline(url, ""), name, job["id"])
-    if job["id"] not in _gathered:
-        _gathered[job["id"]] = importsource.gather(url, "")
-    return cd.make(owner, owner, _gathered[job["id"]], name, job["id"])
+    return cd.make(owner, owner, _gather(job), name, job["id"])
 
 
 def _drafted(job) -> bool:
@@ -153,7 +177,8 @@ def _drafted(job) -> bool:
 
 
 def _finish(job_id, error) -> None:
-    _gathered.pop(job_id, None)
+    with _gathered_lock:
+        _gathered.pop(job_id, None)
     with _db() as db:
         if error:
             db.conn.execute(text("UPDATE creator_draft_jobs SET status = 'failed', error = :e WHERE id = :i"), {"e": error, "i": job_id})
@@ -171,6 +196,7 @@ def _requeue(job_id) -> None:
 def run_one() -> bool:
     """Draft one queued post: its row is deleted and the draft is on the list, or the row says why not. False when nothing was waiting, or when the line was busy: the post goes
     back to the head of the queue (it was counted once, when it was queued, and is not counted again) and the worker waits a while before trying again (F-196)."""
+    _forget_gone()
     job = claim()
     if not job:
         return False

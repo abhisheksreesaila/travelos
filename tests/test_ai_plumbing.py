@@ -200,3 +200,30 @@ def test_a_worker_that_finds_the_line_busy_waits_instead_of_spinning(model, jobs
     model.gate.set()
     for t in threads:
         t.join(5)
+
+
+def test_a_post_that_leaves_the_queue_another_way_is_not_kept_in_memory(model, jobs, monkeypatch):
+    """F-196 audit: the text kept for a post sent back by a busy line must go when its job does, whatever took the job away (a cleared queue here), not only when the worker finishes it."""
+    monkeypatch.setattr(safefetch, "TRANSPORT", Web({POST: page()}))
+    jobs.enqueue("p1", "Maya", [(POST, "A title")])
+    threads = in_flight("creator-import", 3, "hold", model.entered)
+    assert jobs.run_one() is False and len(jobs._gathered) == 1
+    jobs.clear()
+    assert jobs.run_one() is False and jobs._gathered == {}
+    model.gate.set()
+    for t in threads:
+        t.join(5)
+
+
+def test_the_text_kept_for_posts_waiting_on_a_busy_line_is_capped(model, jobs, monkeypatch):
+    monkeypatch.setattr(safefetch, "TRANSPORT", Web({POST: page()}))
+    for i in range(jobs.MAX_GATHERED + 5):
+        jobs.enqueue(f"p{i}", "Maya", [(POST, "A title")])
+    threads = in_flight("creator-import", 3, "hold", model.entered)
+    for _ in range(jobs.MAX_GATHERED + 5):
+        with pytest.raises(ai.AIError):
+            jobs._draft(jobs.claim())                       # each owner's post is tried once while the pool is full
+    assert len(jobs._gathered) == jobs.MAX_GATHERED
+    model.gate.set()
+    for t in threads:
+        t.join(5)
