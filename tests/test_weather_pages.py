@@ -61,9 +61,17 @@ def test_a_real_trip_weeks_away_shows_typical_weather_from_noaa_labelled_not_a_f
     assert "Sample data" not in text and "MET Norway" not in text
 
 
+def live_pane():
+    """The /plan weather pane for the sample trip's dates, drawn as the live site would (the showcase off); since F-198 the live /plan itself shows the lanes instead."""
+    from fasthtml.common import to_xml
+    from gitaway.pages import plan
+    return pane(to_xml(plan.weather_pane(catalog.SAMPLE_TRIP)))
+
+
 def test_the_live_site_shows_no_sample_weather_even_for_the_sample_trips_dates(client, monkeypatch):
     monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
-    text = visible(pane(client.get("/plan").text))
+    assert 'data-pane="weather"' not in client.get("/plan").text          # F-198: the live /plan is the booking lanes, with no workspace and so no weather pane
+    text = visible(live_pane())                                            # and the pane itself, wherever it shows, never shows the sample there
     assert "Sample data" not in text and "Typical mid October · not a forecast yet" in text
     assert "75°" not in text
 
@@ -80,7 +88,7 @@ def test_once_the_forecast_reaches_a_real_trip_the_pane_shows_it_with_met_norway
 def test_a_trip_whose_days_have_gone_by_says_so(client, monkeypatch):
     monkeypatch.setattr(catalog, "today", lambda: catalog.SAMPLE_TRIP.return_ + timedelta(days=3))
     monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
-    p = pane(client.get("/plan").text)
+    p = live_pane()
     assert temps(p) == [] and "These days have gone by." in visible(p)
 
 
@@ -130,7 +138,7 @@ def test_the_privacy_page_names_met_norway_and_noaa(client):
 def test_a_trip_under_way_shows_only_the_days_still_to_come(client, monkeypatch):
     monkeypatch.setattr(catalog, "today", lambda: catalog.SAMPLE_TRIP.depart + timedelta(days=2))      # Sun Oct 18, the trip's third day
     monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
-    p = pane(client.get("/plan").text)
+    p = live_pane()
     assert re.findall(r'class="ws-wday"[^>]*>([^<]+)<', p) == ["Sun 18", "Mon 19", "Tue 20"]
     assert re.search(r'class="ws-meta"[^>]*>°F<', p)                                                    # no "first 3 of 5 days"
 
