@@ -214,3 +214,8 @@ def test_cached_coords_and_place_name_drives_read_only_the_cache_inside_a_scope(
         assert geo.drive_minutes("Griffith Observatory", "Santa Monica Pier") == 25
         assert geo.drive_minutes("Griffith Observatory", "Nowhere Else") is None
         assert geo.cached_coords("LAX") is not None and len(fake.calls) == n  # a bare code is that airport; none of this called out
+
+
+def test_the_public_router_is_asked_at_most_once_a_second():
+    """router.project-osrm.org's usage policy: at most one request a second (F-204 research)."""
+    assert geo.OSRM_GAP >= 1.0 and geo.OSRM_GATE.__class__ is geo.Gate

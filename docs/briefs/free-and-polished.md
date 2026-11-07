@@ -42,6 +42,10 @@ Status: approved (2026-11-07, the captain: "A with a mix here and there … lets
 - **The buttons speak the same language:** "Leave a trail" to share or publish, "Follow this trail" to fork, "Thank them" to say thanks. The word "fork" stays in the fork tree and in places for developers. "Fork a getaway" is the line for developers.
 - **The cover page story** opens with "Don't read about it. Go." and closes with "Take a trip. Leave a trail."
 - **The cover page concept** is A, the fly-through over Lake Tahoe in December, with B's fork tree ("Every trip here grew from another") as its last chapter. C's chase camera becomes a "drive this trip" moment on shared trip pages later.
+- **The captain confirmed the fly-through and the recommendations: "the 3D needs to have good details."**
+  - **The place itself:** real Lake Tahoe topography and shoreline, realistic water, a winter sky with low sun, sunset on the pier and stars at night.
+  - **The props:** crafted models (cabin, pier, car, family), pines with snow on them, soft shadows, haze over distance, falling snow.
+  - **Weight:** the code stays at 250 KB or less. Detail data can reach about 2 MB, loaded after the poster and only at the quality the device can hold.
 
 ## The model (the captain's call, 2026-11-07)
 - GitAway is "the GitHub of travel": the place to plan a trip together, share it, and fork other people's trips. GitAway does not sell travel.
