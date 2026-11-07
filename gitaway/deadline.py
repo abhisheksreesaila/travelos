@@ -1,4 +1,5 @@
-"""One HTTP GET that ends at its deadline whatever the server does (F-203, F-208): gitaway/weather.py asks MET Norway with it.
+"""One HTTP GET that ends at its deadline whatever the server does (F-203, F-208): gitaway/weather.py asks MET Norway with it, and gitaway/safefetch.py
+reads a creator's blog with it.
 
 A socket timeout bounds only one wait, so a server that drips a byte at a time, or a TLS handshake that drags on, would hold a page for as long as it
 likes. A watchdog timer shuts the socket down at the deadline, from outside, and the request then fails with TimeoutError. Three things keep the

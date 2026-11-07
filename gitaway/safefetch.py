@@ -18,10 +18,11 @@ import http.client
 import ipaddress
 import socket
 import ssl
-import threading
 import time
 from dataclasses import dataclass
 from urllib.parse import urljoin, urlsplit
+
+from gitaway import deadline
 
 MAX_REDIRECTS = 5
 MAX_BYTES = 2 * 1024 * 1024
@@ -112,55 +113,19 @@ class _Pinned(http.client.HTTPConnection):
 class _PinnedTLS(http.client.HTTPSConnection):
     ip = ""
 
-    def connect(self):
-        raw = socket.create_connection((self.ip, self.port), self.timeout)
-        self.sock = raw      # so the watchdog can cut a handshake that drips too
-        self.sock = ssl.create_default_context().wrap_socket(raw, server_hostname=self.host)   # the certificate is checked against the NAME
+    def connect(self):      # the certificate is checked against the NAME; the handshake runs where the watchdog can cut it (gitaway/deadline.py)
+        deadline.handshake(self, socket.create_connection((self.ip, self.port), self.timeout), ssl.create_default_context())
 
 
 def _http(url, ip, timeout, kind, ua=USER_AGENT):
-    """One request, no redirect followed: (status, headers, body). Reads at most the limit for `kind` plus one byte, and stops at the deadline. `ua` is the User-Agent sent."""
+    """One request, no redirect followed: (status, headers, body). Reads at most the limit for `kind` plus one byte, and stops at the deadline: a socket timeout only bounds ONE
+    wait, so gitaway/deadline.py's watchdog cuts the socket from outside, also after an answer that says it will close the connection (F-208). `ua` is the User-Agent sent."""
     parts = urlsplit(url)
     cls = _PinnedTLS if parts.scheme == "https" else _Pinned
     conn = cls(parts.hostname, parts.port or (443 if parts.scheme == "https" else 80), timeout=timeout)
     conn.ip = ip
-    deadline = time.monotonic() + timeout
-    timed_out = threading.Event()
-
-    def cut():      # the hard deadline, from outside the socket: a socket timeout only bounds ONE wait, so a server dripping a byte at a time would hold us for ever
-        timed_out.set()
-        for act in ("shutdown", "close"):
-            try:
-                getattr(conn.sock, act)(*((socket.SHUT_RDWR,) if act == "shutdown" else ()))
-            except (OSError, AttributeError):
-                pass
-
-    watchdog = threading.Timer(timeout, cut)
-    watchdog.daemon = True
-    watchdog.start()
-    try:
-        path = (parts.path or "/") + (f"?{parts.query}" if parts.query else "")
-        conn.request("GET", path, headers={"User-Agent": ua, "Accept": ", ".join(ACCEPT[kind]), "Accept-Encoding": "identity"})
-        resp = conn.getresponse()
-        headers = {k.lower(): v for k, v in resp.getheaders()}
-        if resp.status in (301, 302, 303, 307, 308):
-            return resp.status, headers, b""
-        limit, body = LIMIT[kind] + 1, bytearray()
-        while len(body) < limit:
-            if time.monotonic() > deadline:
-                raise TimeoutError("the fetch took too long")
-            chunk = resp.read(min(65536, limit - len(body)))
-            if not chunk:
-                break
-            body += chunk
-        return resp.status, headers, bytes(body)
-    except (OSError, http.client.HTTPException, ValueError):
-        if timed_out.is_set():
-            raise TimeoutError("the fetch took too long") from None
-        raise
-    finally:
-        watchdog.cancel()
-        conn.close()
+    path = (parts.path or "/") + (f"?{parts.query}" if parts.query else "")
+    return deadline.get(conn, path, {"User-Agent": ua, "Accept": ", ".join(ACCEPT[kind]), "Accept-Encoding": "identity"}, time.monotonic() + timeout, LIMIT[kind] + 1)
 
 
 def fetch(url, kind="html", timeout=None, asked=True) -> Fetched:

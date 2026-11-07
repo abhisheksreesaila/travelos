@@ -1223,6 +1223,11 @@ Brief: docs/briefs/free-and-polished.md · Design: docs/design/cockpit/README.md
 - [x] last fixes (D-259): a 304 is not a redirect; names abroad never borrow a US station and the forecast names its station; forecast() takes only a table station; every address tried in turn; no call started with under a second left; a TLS handshake the watchdog can cut (tests/tls_support.py: a test CA, a TLS server, a dripping proxy); the credit a 48px target on touch tablets too
 - [ ] the captain reads and accepts MET Norway's terms (https://api.met.no/doc/TermsOfService), then sets `MET_NORWAY_TERMS_ACCEPTED=1` on Railway (with `GITAWAY_CONTACT_EMAIL` set) and runs `pixi run probe-weather` once; until then real trips show typical weather only
 
+## F-208 A creator's dripping blog cannot hold the fetch past its deadline [review]
+Found by: the F-203 security review · Needs: F-203 (gitaway/deadline.py) · Risk: an outside server a creator names
+- [x] `gitaway/safefetch.py` fetches through `gitaway/deadline.py`, the GET-by-a-deadline the weather transport uses: the socket is held once connected, so the watchdog still reaches it after an answer says "Connection: close" (http.client then lets go of `conn.sock`, and `safefetch._http(timeout=1.0)` took 5.7 s against a dripping server); the TLS handshake runs on the TLS socket itself; the watchdog only shuts sockets down and the request closes them
+- [x] test: a server that says "Connection: close" and drips its body is cut within the deadline (tests/test_safefetch.py), beside the dripping body, headers and silence it already covered
+
 ## F-204 Routes and drive times that allow commercial use [todo]
 Brief: docs/briefs/free-and-polished.md · Needs: the founder's pick between the options researched
 - [ ] research: self-hosted OSRM or Valhalla for the regions in use vs a routing service whose free tier allows commercial use; cost, limits, effort

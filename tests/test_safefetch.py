@@ -215,7 +215,8 @@ def test_the_real_transport_asks_for_no_compression_and_the_checked_address(monk
 
 
 def _drip_server(stage):
-    """A local server that never finishes: stage "body" sends headers then one byte a 0.3 s forever; "headers" sends the status line then one header byte at a time; "silent" accepts and says nothing."""
+    """A local server that never finishes: stage "body" sends headers then one byte a 0.3 s forever; "headers" sends the status line then one header byte at a time; "silent" accepts and says nothing;
+    "close" says "Connection: close" (so http.client lets go of conn.sock), then drips the body for six seconds and hangs up (F-208)."""
     import socket
     import threading
     import time
@@ -244,10 +245,14 @@ def _drip_server(stage):
             if stage == "silent":
                 stop.wait(30)
                 return
-            c.sendall(b"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n" + (b"Content-Length: 99999\r\n\r\n" if stage == "body" else b""))
-            while not stop.is_set():
-                c.sendall(b"x" if stage == "body" else b"X-A: ")
+            head = {"body": b"Content-Length: 99999\r\n\r\n", "close": b"Connection: close\r\nContent-Length: 99999\r\n\r\n"}.get(stage, b"")
+            c.sendall(b"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n" + head)
+            ends = time.monotonic() + 6
+            while not stop.is_set() and (stage != "close" or time.monotonic() < ends):
+                c.sendall(b"x" if stage in ("body", "close") else b"X-A: ")
                 time.sleep(0.3)
+            if stage == "close":
+                c.close()
         except OSError:
             pass
 
@@ -266,5 +271,21 @@ def test_a_server_that_drips_bytes_cannot_hold_the_fetch_past_the_deadline(stage
         with pytest.raises((TimeoutError, OSError, safefetch.http.client.HTTPException)):
             safefetch._http(f"http://127.0.0.1:{port}/", "127.0.0.1", 2, "html")
         assert time.monotonic() - started < 3.0
+    finally:
+        stop.set()
+
+
+
+def test_a_server_that_says_it_will_close_and_then_drips_is_still_cut_at_the_deadline():
+    """F-208: once an answer says "Connection: close", http.client lets go of conn.sock, so a watchdog that looks there reaches nothing and a creator's
+    dripping blog held the fetch for as long as it dripped. gitaway/deadline.py holds the socket itself."""
+    import time
+
+    port, stop = _drip_server("close")
+    try:
+        started = time.monotonic()
+        with pytest.raises(TimeoutError):
+            safefetch._http(f"http://127.0.0.1:{port}/", "127.0.0.1", 1.0, "html")
+        assert time.monotonic() - started < 1.5
     finally:
         stop.set()
