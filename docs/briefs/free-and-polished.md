@@ -89,3 +89,15 @@ Status: approved (2026-11-07, the captain: "A with a mix here and there … lets
   - Reduced motion gets a still frame.
   - The animation is behind the text and keeps contrast.
 - **No invented weather:** before the forecast opens, the background shows the season only. Weather animation shows only for real forecast days, or labelled typical weather.
+
+## The cover, take two (the captain, 2026-11-07)
+- **Why:** the first cover read like a wall of text over a gray world. People could not tell what GitAway is or what to do.
+- **The story is flat illustration with large motion and a voice.**
+  - A couple reads a guidebook, the book becomes a trip, and they go and love it.
+  - They come back and leave a trail.
+  - Someone else, far away, discovers it on GitAway, follows it, tweaks it a little, goes, and shares it back.
+  - The world keeps filling with trails and happy travellers.
+- **3D shows the beauty of the place:** the real Tahoe flyover while they are there, and a real globe lighting up with trails at the end.
+- **Every screen says what GitAway is and what to do.** A bar with "Take a trip. Leave a trail." and Start a trip is always visible.
+- **Voice:** a warm narrator reads short lines, in sync with the motion and with captions shown. The page starts silent (browsers block sound until a tap), and a clear "Play with sound" button turns the voice on.
+- Prototypes are in docs/design/cover-v2/ (A to D, then E with motion and voice).

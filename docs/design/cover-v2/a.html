@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GitAway cover v2 / A: Say it, then show it</title>
+<style>
+@font-face { font-family: "Geist"; src: url("../../../assets/fonts/geist-variable.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+:root {
+  color-scheme: light dark;
+  --font: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --bg: #F3F1EE; --s1: #FFFFFF; --s2: #F4F1EC; --ink: #121014; --ink2: #5E5A63; --line: #E4E0DA;
+  --acc: #D2401C; --on-acc: #FFFFFF; --acc-hi: #B8330F;
+  --sh: 0 12px 36px rgba(40, 20, 10, .16), 0 0 0 1px rgba(40, 20, 10, .04);
+  /* Apple-bright kinds: dot = bright accent, fill = same hue deep enough for white words */
+  --see: #30C5BE;   --see-f: #087F7B;
+  --stay: #BF5AF2;  --stay-f: #A445D8;
+  --tix: #FF9F0A;   --tix-f: #F59A2E;  --on-tix: #1B0B05;
+  --food: #FF375F;  --food-f: #E0204E;
+  --r: 28px; --pill: 999px;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #0B0B10; --s1: #1C1B21; --s2: #26252C; --ink: #F5F3F0; --ink2: #ABA6B0; --line: #34323A;
+    --acc: #FF8A5B; --on-acc: #1B0B05; --acc-hi: #FFA27C;
+    --sh: 0 12px 36px rgba(0, 0, 0, .55), 0 0 0 1px rgba(255, 255, 255, .06); }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { font-family: var(--font); background: var(--bg); color: var(--ink); overflow: hidden; -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+:focus-visible { outline: 3px solid var(--acc); outline-offset: 3px; }
+
+/* ---------- the world ---------- */
+.world { position: fixed; inset: 0; overflow: hidden; background: var(--bg); }
+.shot { position: absolute; inset: 0; opacity: 0; transition: opacity 1.4s var(--ease); }
+.shot.on { opacity: 1; }
+.img { position: absolute; inset: -3%; background: var(--w) center / cover no-repeat; filter: saturate(1.3) contrast(1.04); animation: kb 24s ease-in-out infinite alternate; }
+@keyframes kb { from { transform: scale(1.02) translate3d(0, 0, 0); } to { transform: scale(1.12) translate3d(-2.5%, -1.5%, 0); } }
+.tint { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: multiply;
+  background: linear-gradient(180deg, #FF8A66 0%, #FFAF8C 12%, rgba(255, 205, 180, .55) 24%, rgba(255, 230, 215, 0) 38%); }
+@media (prefers-color-scheme: dark) {
+  .tint { mix-blend-mode: screen; opacity: .85;
+    background: linear-gradient(180deg, #6A2C86 0%, #9C3A6E 12%, rgba(120, 40, 90, .35) 28%, rgba(0, 0, 0, 0) 48%),
+                linear-gradient(0deg, rgba(255, 120, 80, .18) 0%, rgba(0, 0, 0, 0) 30%); }
+}
+.s1 { --w: url(../../../assets/cover/stills/a-3-wide-light.webp); }
+.s2 { --w: url(../../../assets/cover/stills/a-2-wide-light.webp); }
+.s3 { --w: url(../../../assets/cover/stills/a-1-wide-light.webp); }
+.s4 { --w: url(../../../assets/cover/stills/a-4-wide-light.webp); }
+@media (prefers-color-scheme: dark) {
+  .s1 { --w: url(../../../assets/cover/stills/a-3-wide-dark.webp); }
+  .s2 { --w: url(../../../assets/cover/stills/a-2-wide-dark.webp); }
+  .s3 { --w: url(../../../assets/cover/stills/a-1-wide-dark.webp); }
+  .s4 { --w: url(../../../assets/cover/stills/a-4-wide-dark.webp); }
+}
+@media (max-width: 700px) {
+  .s1 { --w: url(../../../assets/cover/stills/a-1-phone-light.webp); }
+  .s2 { --w: url(../../../assets/cover/stills/a-2-phone-light.webp); }
+  .s3 { --w: url(../../../assets/cover/stills/a-1-phone-light.webp); }
+  .s4 { --w: url(../../../assets/cover/stills/a-4-phone-light.webp); }
+}
+@media (max-width: 700px) and (prefers-color-scheme: dark) {
+  .s1 { --w: url(../../../assets/cover/stills/a-1-phone-dark.webp); }
+  .s2 { --w: url(../../../assets/cover/stills/a-2-phone-dark.webp); }
+  .s3 { --w: url(../../../assets/cover/stills/a-1-phone-dark.webp); }
+  .s4 { --w: url(../../../assets/cover/stills/a-4-phone-dark.webp); }
+}
+
+/* ---------- top bar ---------- */
+.top { position: fixed; top: 0; left: 0; right: 0; z-index: 5; display: flex; justify-content: space-between; align-items: center; padding: 20px 32px; padding-top: max(20px, env(safe-area-inset-top)); }
+.brand, .signin { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 18px 0 10px; border-radius: var(--pill); background: var(--s1); box-shadow: var(--sh); font-weight: 750; font-size: 18px; letter-spacing: -.02em; }
+.signin { padding: 0 20px; font-weight: 600; font-size: 16px; }
+.mark { width: 30px; height: 30px; border-radius: 9px; background: var(--acc); display: grid; place-items: center; }
+.mark svg { width: 20px; height: 20px; }
+
+/* ---------- hero card ---------- */
+.hero { position: fixed; z-index: 4; left: 64px; top: calc(50% - 50px); transform: translateY(-50%); width: 440px; background: var(--s1); border-radius: var(--r); box-shadow: var(--sh); padding: 36px 36px 32px; }
+.hero h1 { font-size: 58px; line-height: .98; font-weight: 820; letter-spacing: -.045em; margin: 0 0 16px; }
+.hero h1 span { color: var(--acc); display: block; }
+.hero p { font-size: 19px; line-height: 1.4; color: var(--ink2); margin: 0 0 24px; }
+.where { display: flex; gap: 8px; padding: 6px; border-radius: var(--pill); background: var(--s2); }
+.where label { flex: 1; display: flex; align-items: center; gap: 8px; padding-left: 14px; min-width: 0; color: var(--ink2); }
+.where input { flex: 1; min-width: 0; height: 48px; border: 0; background: transparent; font: 500 17px var(--font); color: var(--ink); outline: none; }
+.where input::placeholder { color: var(--ink2); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 22px; border-radius: var(--pill); border: 0; font: 650 17px var(--font); cursor: pointer; white-space: nowrap; transition: transform .2s var(--ease), background .2s; }
+.btn.primary { background: var(--acc); color: var(--on-acc); }
+.btn.primary:hover { background: var(--acc-hi); }
+.btn.second { margin-top: 12px; width: 100%; background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--line); }
+.btn.second:hover { background: var(--s2); }
+.btn svg { width: 18px; height: 18px; }
+
+/* ---------- beat chips ---------- */
+.beats li { display: flex; }
+.beats { position: fixed; z-index: 4; left: 64px; right: 64px; bottom: 32px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; list-style: none; margin: 0; padding: 0; }
+.chip { position: relative; overflow: hidden; display: flex; align-items: center; gap: 14px; width: 100%; min-height: 72px; padding: 12px 18px 12px 12px; border: 0; border-radius: 22px; background: var(--s1); color: var(--ink); box-shadow: var(--sh); text-align: left; font: inherit; cursor: pointer; transition: background .5s var(--ease), color .5s var(--ease), transform .3s var(--ease); }
+.chip:hover { transform: translateY(-2px); }
+.chip .n { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 17px; background: var(--k); color: #fff; transition: background .5s, color .5s; }
+.chip b { display: block; font-size: 17px; font-weight: 720; letter-spacing: -.01em; }
+.chip small { display: block; font-size: 14px; line-height: 1.3; color: var(--ink2); margin-top: 2px; transition: color .5s; }
+.chip.on { background: var(--kf); color: var(--on-k, #fff); }
+.chip.on small { color: inherit; opacity: .92; }
+.chip.on .n { background: rgba(255, 255, 255, .95); color: var(--kf); }
+.chip .bar { position: absolute; left: 0; bottom: 0; height: 4px; width: 0; background: rgba(255, 255, 255, .7); }
+.chip.on .bar { animation: fill var(--dur, 5s) linear forwards; }
+.paused .chip.on .bar { animation: none; width: 0; }
+@keyframes fill { to { width: 100%; } }
+.k-see { --k: var(--see); --kf: var(--see-f); }
+.k-stay { --k: var(--stay); --kf: var(--stay-f); }
+.k-tix { --k: var(--tix); --kf: var(--tix-f); --on-k: var(--on-tix); }
+.k-tix .n { color: var(--on-tix); }
+.k-tix.on .bar { background: rgba(27, 11, 5, .45); }
+.k-food { --k: var(--food); --kf: var(--food-f); }
+
+/* ---------- phone ---------- */
+@media (max-width: 700px) {
+  .top { padding: 14px 16px; padding-top: max(14px, env(safe-area-inset-top)); }
+  .brand { min-height: 48px; font-size: 17px; }
+  .hero { left: 0; right: 0; top: auto; bottom: 0; transform: none; width: auto; border-radius: var(--r) var(--r) 0 0; padding: 24px 20px calc(20px + env(safe-area-inset-bottom)); }
+  .hero h1 { font-size: 40px; margin-bottom: 10px; }
+  .hero p { font-size: 17px; margin-bottom: 16px; }
+  .where input { font-size: 17px; }
+  .btn { padding: 0 18px; }
+  .btn.second { margin-top: 10px; }
+  .beats { left: 0; right: 0; bottom: var(--sheet, 330px); display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; gap: 8px; padding: 0 16px 14px; }
+  .beats::-webkit-scrollbar { display: none; }
+  .beats li { flex: none; width: 236px; scroll-snap-align: start; }
+  .chip { min-height: 64px; padding: 10px 14px 10px 10px; border-radius: 20px; }
+  .chip .n { width: 36px; height: 36px; font-size: 16px; }
+  .chip b { font-size: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .img { animation: none; }
+  .shot, .chip, .chip .n { transition: none; }
+  .chip.on .bar { animation: none; }
+}
+</style>
+</head>
+<body>
+<div class="world" aria-hidden="true">
+  <div class="shot s1 on"><div class="img"></div><div class="tint"></div></div>
+  <div class="shot s2"><div class="img"></div><div class="tint"></div></div>
+  <div class="shot s3"><div class="img"></div><div class="tint"></div></div>
+  <div class="shot s4"><div class="img"></div></div>
+</div>
+
+<header class="top">
+  <a class="brand" href="/"><span class="mark"><svg viewBox="0 0 20 20" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><circle cx="5" cy="15" r="2.2"/><circle cx="15" cy="5" r="2.2"/><path d="M6.8 13.4 13.2 6.6"/><circle cx="5" cy="5" r="2.2"/><path d="M5 7.4v5.4"/></svg></span>GitAway</a>
+  <a class="signin" href="/signin">Sign in</a>
+</header>
+
+<main class="hero" id="hero">
+  <h1>Take a trip. <span>Leave a trail.</span></h1>
+  <p>Plan a family trip together, then share it for others to follow.</p>
+  <form class="where" action="/start" method="get">
+    <label><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+      <input name="to" placeholder="Where to?" aria-label="Where to?" autocomplete="off"></label>
+    <button class="btn primary" type="submit">Start a trip</button>
+  </form>
+  <a class="btn second" href="/trail/tahoe">See a shared trail <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+</main>
+
+<ol class="beats" id="beats" aria-label="How it works">
+  <li><button class="chip k-see on" data-i="0"><span class="n">1</span><span><b>Find a trail</b><small>Start from a trip a family took</small></span><i class="bar"></i></button></li>
+  <li><button class="chip k-stay" data-i="1"><span class="n">2</span><span><b>Make it yours</b><small>Keep the cabin, swap the ski day</small></span><i class="bar"></i></button></li>
+  <li><button class="chip k-tix" data-i="2"><span class="n">3</span><span><b>Plan it together</b><small>Weather, route, bookings: one screen</small></span><i class="bar"></i></button></li>
+  <li><button class="chip k-food" data-i="3"><span class="n">4</span><span><b>Leave a trail</b><small>The next family says thanks</small></span><i class="bar"></i></button></li>
+</ol>
+
+<script>
+(() => {
+  const shots = [...document.querySelectorAll('.shot')], chips = [...document.querySelectorAll('.chip')];
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches, DUR = 5000;
+  let i = 0, t;
+  const sheet = () => document.documentElement.style.setProperty('--sheet', document.getElementById('hero').offsetHeight + 12 + 'px');
+  sheet(); addEventListener('resize', sheet);
+  function go(n, user) {
+    i = n;
+    shots.forEach((s, k) => s.classList.toggle('on', k === n));
+    chips.forEach((c, k) => { c.classList.toggle('on', k === n); c.setAttribute('aria-pressed', k === n); });
+    const c = chips[n], row = c.closest('.beats');
+    if (row.scrollWidth > row.clientWidth) row.scrollTo({ left: c.parentElement.offsetLeft - 16, behavior: still ? 'auto' : 'smooth' });
+    clearTimeout(t);
+    if (!still) t = setTimeout(() => go((i + 1) % 4), user ? DUR * 2 : DUR);
+    c.style.setProperty('--dur', (user ? DUR * 2 : DUR) + 'ms');
+    const bar = c.querySelector('.bar'); bar.style.animation = 'none'; bar.offsetWidth; bar.style.animation = '';
+  }
+  chips.forEach(c => c.addEventListener('click', () => go(+c.dataset.i, true)));
+  if (still) document.body.classList.add('paused');
+  go(0);
+})();
+</script>
+</body>
+</html>
