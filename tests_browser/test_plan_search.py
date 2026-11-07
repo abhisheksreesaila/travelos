@@ -65,7 +65,7 @@ def test_from_a_disneyland_trip_to_an_honest_flight_search_from_the_readers_airp
     expect(cards).to_have_text(["Search flights to Disneyland", "Find stays near Anaheim", "Rent a car at SNA", "Tickets and things to do"])      # F-198: any place by name; Disneyland is SNA
     assert "Skylark" not in page.content() and "Preview: sample prices" not in page.content()
     assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth"), "the page scrolls sideways"
-    sizes = page.locator("a.ps-go, .ps-from button, .ps-field input").evaluate_all("els => els.map(e => e.getBoundingClientRect().height)")
+    sizes = page.locator("a.ps-go, .ps-from button, .ps-field input, .ps-field button").evaluate_all("els => els.filter(e => e.getClientRects().length && e.getBoundingClientRect().height > 2).map(e => e.getBoundingClientRect().height)")      # a date field the pickers replaced is a 1px stand-in; its picker button is measured instead
     assert viewport is DESKTOP or min(sizes) >= 43, sizes
     shot(page, f"{viewport['width']}-plan")
     page.fill("input[name=home]", "jfk")

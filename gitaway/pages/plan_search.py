@@ -12,12 +12,12 @@ from urllib.parse import urlencode
 
 from fasthtml.common import A, Button, Div, Form, H1, H2, Input, Label, Li, Link, Main, P, Section, Span, Ul
 
-from gitaway import catalog
+from gitaway import catalog, pickers
 from gitaway.icons import icon
 from gitaway.layout import page
 from gitaway.partners import links, places, prices, registry
 
-HEAD = (Link(rel="stylesheet", href="/assets/css/plansearch.css"),)
+HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/plansearch.css"))
 ICONS = {"flight": "plane", "stay": "bed", "car": "car", "todo": "ticket", "direct": "star"}
 FINE = "Every booking happens on the partner's site, under their terms and their support. GitAway never takes payment and never handles a change or a refund."
 BAD_IATA = "Use a three-letter airport code, like RNO, or leave it empty."

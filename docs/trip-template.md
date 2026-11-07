@@ -75,6 +75,16 @@ car:                                 # optional; delete if not renting
   confirmation: "H1234567"
   car: Midsize SUV                    # optional
   phone: "+1 310 555 0199"            # optional: the rental counter, shown on Help
+  # booked_on: Hertz                  # optional on any flight, hotel, car or ticket: where that one was booked, if not the trip's booked_on
+
+# Booked a tour, an activity, a lesson or a ticket? Add "tickets:" (a list), one entry per booking; each goes on the calendar at its own time.
+# tickets:
+#   - name: Griffith Observatory tour
+#     place: 2800 E Observatory Rd, Los Angeles, CA 90027   # optional
+#     start: 2026-10-17 10:00
+#     end: 2026-10-17 12:00          # optional: two hours when left out
+#     confirmation: "GYG12345"       # optional
+#     booked_on: GetYourGuide        # optional
 
 notes: |
   Anything else: allergies, parking codes, who's picking up whom.
@@ -83,7 +93,11 @@ notes: |
 What GitAway does with it:
 - **Calendar:** flights, check-in and check-out go on the trip calendar as booked blocks, locked (with a lock). The trip header says where you booked, e.g. "Booked elsewhere: Expedia".
 - **Car:** if you included one, the car pickup and dropoff appear as small calendar notes.
+- **Tickets:** each one is a booked block at its own time.
+- **Where it lives:** every booking says "Booked on <partner>" and has a "Change or cancel" button that opens that partner's own page for it (Expedia, Booking.com, Airbnb, Vrbo, Klook, GetYourGuide, the airline, the car company). GitAway never changes or cancels a booking itself.
 - **Rides:** with no car, the rides card can schedule (simulated) Ubers timed to your landing and your flight home.
 - **Family:** travelers with an email address can be invited to the trip as editors or viewers.
 
 Booked on Expedia? Skip the template: on **Import a trip**, paste the text of your Expedia itinerary or upload its PDF. GitAway fills this template for you to review, lists anything it couldn't read, and makes placeholder travelers (Adult 2, Child 1) for you to rename. Prices, card digits and Expedia's support text are never kept.
+
+Booked on Booking.com, Airbnb, Vrbo, GetYourGuide, Klook or with a car-rental company (Enterprise, Hertz, Avis, Budget, National, Alamo, Sixt, Thrifty, Dollar)? Paste the confirmation email on **Import a trip** or into the Ask box. When its dates fall inside the trip you have open it is added to that trip (a new stay on the same nights replaces the old one, and the preview says so); otherwise it becomes a trip of its own. Prices, PINs and card digits are never kept.

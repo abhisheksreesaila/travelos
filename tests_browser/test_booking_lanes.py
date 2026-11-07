@@ -62,7 +62,7 @@ def test_the_tahoe_lanes_fit_and_every_tap_lands_on_the_researched_link(browser,
         assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth"), f"sideways scroll at {width}"
     page.set_viewport_size(viewport)
     if viewport is PHONE:
-        sizes = page.locator("a.ps-go, a.ps-also, a.ps-resort, .ps-from button, .ps-field input").evaluate_all("els => els.map(e => e.getBoundingClientRect().height)")
+        sizes = page.locator("a.ps-go, a.ps-also, a.ps-resort, .ps-from button, .ps-field input, .ps-field button").evaluate_all("els => els.filter(e => e.getClientRects().length && e.getBoundingClientRect().height > 2).map(e => e.getBoundingClientRect().height)")      # a date field the pickers replaced is a 1px stand-in; its picker button is measured instead
         assert min(sizes) >= 43, sizes
     if os.getenv("F198_SHOTS"):
         SHOTS.mkdir(parents=True, exist_ok=True)
