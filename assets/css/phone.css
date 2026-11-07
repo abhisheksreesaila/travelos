@@ -110,10 +110,16 @@
 /* in a phone heading the label sits beside the title (the kicker above and the second phrase below span the row), so it costs no height: its 48px target overlaps the lines around it */
 @media (max-width: 1019px) {      /* from 1020px the top bar has the label and the heading keeps its own layout */
   /* a wrapping row: the kicker, then the title with the label beside it (under it when a long title leaves no room, so it never reaches SOS), then the second phrase */
-  .tp-head-text:has(> .ga-preview) { position: relative; display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; column-gap: 0.625rem; }
+  .tp-head-text:has(> .ga-preview) { position: relative; display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; column-gap: 0.5rem; }
   .tp-head-text:has(> .ga-preview) > * { order: 3; flex-basis: 100%; min-width: 0; }
   .tp-head-text:has(> .ga-preview) > :first-child { order: 0; }
   .tp-head-text:has(> .ga-preview) > h1 { order: 1; flex-basis: auto; }
   .tp-head-text > .ga-preview { order: 2; flex-basis: auto; position: static; }      /* the line hangs from the heading's left edge, on the screen */
-  .tp-head-text > .ga-preview .ga-preview-sum { margin-block: -0.75rem; }
+  .tp-head-text > .ga-preview .ga-preview-sum { margin-block: -0.75rem; padding-inline: 0; }
+  .tp-head-text > .ga-preview .ga-preview-pill { padding: 0 0.375rem; letter-spacing: .04em; }      /* a little narrower, so it fits beside a short title like Family */
+  /* with the family's faces beside SOS the title has less room: the label sits in the heading's top right corner instead, above SOS and the faces (wider than it), at no height */
+  .tp-head:has(> .tp-faces) { position: relative; }
+  .tp-head:has(> .tp-faces) .tp-head-text { position: static; }      /* so the corner is the heading's, not the title column's */
+  .tp-head:has(> .tp-faces) .tp-head-text > .ga-preview { position: absolute; top: -0.25rem; right: 0; }
+  .tp-head:has(> .tp-faces) .tp-head-text > .ga-preview .ga-preview-pop { left: auto; right: 0; }
 }
