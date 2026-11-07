@@ -3,6 +3,9 @@
 GET  /admin                a summary, the reports, every creator with their trips (take down / restore), and the commission figures (moved here from /partners)
 POST /admin/takedown       hide a published trip and its public photos
 POST /admin/restore        bring it back
+GET  /admin/plan-for-me/<order>        a built plan waiting for the founder check (F-197): every stop's title and note, the summary and tips, editable, and "Send to family"
+POST /admin/plan-for-me/edit    (order, the fields) keep the quick edit (cleaned like the model's answer: no prices, no opening hours)
+POST /admin/plan-for-me/send    (order) write it into the buyer's family: only now does the buyer see it
 
 Who is an admin: the sign-in emails listed in GITAWAY_ADMIN_EMAILS (comma or space separated, any case), never one written in code. For everyone else, signed in or
 not, every address here answers 404 as if there were no such page. Both POSTs also check the request came from our own page (reports.same_site), on top of the
@@ -12,7 +15,8 @@ SameSite=Lax session cookie. They change no family plan, so gitaway/access.py li
 import os
 import re
 
-from fasthtml.common import A, Button, Div, Form, H1, H2, Input, Li, Link, Main, P, Section, Span, Ul
+from fasthtml.common import A, Button, Div, Form, H1, H2, H3, Input, Label, Li, Link, Main, P, Section, Span, Textarea, Ul
+from starlette.concurrency import run_in_threadpool
 from starlette.responses import RedirectResponse
 
 from gitaway import affiliate, catalog, community, partners, planforme as pfm, reports, session as ses, showcase, stats
@@ -75,7 +79,7 @@ def _report(r):
               cls="ad-report", id=f"report-{r['id']}")
 
 
-STATUS_WORDS = {"awaiting_payment": "Waiting for payment", "paid": "Paid", "building": "Building", "ready": "Ready", "failed": "Failed"}
+STATUS_WORDS = {"awaiting_payment": "Waiting for payment", "paid": "Paid", "building": "Building", "review": "Check it", "ready": "Ready", "failed": "Failed"}
 
 
 def _dollars(micros) -> str:
@@ -91,7 +95,34 @@ def _order(o):
               P(f"{i['where']} · {i['start']} to {i['end']} · {i['adults']} adults, {len(i['kids'])} kids", cls="ad-meta"),
               P(f"{catalog.money(o['amount_cents'])} · agent {_dollars(o['ai_cost_micros'])} · {o['ai_tokens_in']:,} in, {o['ai_tokens_out']:,} out" + (f" · {o['ai_model']}" if o["ai_model"] else "")
                 + (f" · {o['error']}" if o["error"] else ""), cls="ad-meta"),
+              _check(o) if o["status"] == "review" else "",
               cls="ad-report", id=f"pfm-{o['id'][:8]}")
+
+
+def _check(o):
+    """The founder check (F-197): one tap sends the built plan to the family; the edit link opens every stop first."""
+    return Div(Form(Button(icon("check", 18, 2.4), "Send to family", type="submit", cls="btn btn-primary", id=f"pfm-send-{o['id'][:8]}"), Input(type="hidden", name="order", value=o["id"]), action="/admin/plan-for-me/send", method="post", cls="ad-inline"),
+               A("Look and edit first", href=f"/admin/plan-for-me/{o['id']}", cls="ad-link", id=f"pfm-edit-{o['id'][:8]}"), cls="ad-actions")
+
+
+def check_page(o):
+    """A built plan waiting for the check: the family's words on top, then every day's stops with their title and note in fields, the summary and the tips. Save keeps the edit; Send to family
+    delivers it as it stands."""
+    from gitaway.pages import planview
+    i, r = o["intake"], o["result"]
+    field = lambda name, value, label, rows=None: Label(Span(label, cls="ad-k"), Textarea(value, name=name, rows=str(rows), cls="ad-field") if rows else Input(type="text", name=name, value=value, cls="ad-field"), cls="ad-fieldset")
+    days = [Section(H3(planview.day_label(i, d)), *[Div(Span(f"{planview.clock(st['start'])} · {st['kind']}", cls="ad-meta"), field(f"s{d}-{j}-title", st["title"], "Title"), field(f"s{d}-{j}-note", st["note"], "Note", 2), cls="ad-stop")
+                                                   for j, st in enumerate(day["stops"])], cls="ad-sec") for d, day in enumerate(r["days"])]
+    kids = ", ".join(planview.kid_words(i))
+    return page("Check a plan", Main(Div(
+        H1("Check a plan", cls="ad-title"), P(f"#{o['id'][:8]} · {o['email']} · {i['where']} · {i['start']} to {i['end']} · {i['adults']} adults" + (f" · kids {kids}" if kids else "")
+                                             + f" · {i['pace']} · {i['budget']}", cls="ad-meta"),
+        P(f"Must-dos: {i['must']}", cls="ad-note") if i["must"] else "",
+        Form(field("summary", r["summary"], "Summary", 2), *days, Section(H2("Tips"), *[field(f"tip{k}", r["tips"][k] if k < len(r["tips"]) else "", f"Tip {k + 1}") for k in range(pfm.MAX_TIPS)], cls="ad-sec"),
+             Div(Button("Save the edit", type="submit", cls="btn", id="pfm-save"), A("Back to admin", href=f"/admin#pfm-{o['id'][:8]}", cls="ad-link"), cls="ad-actions"),
+             Input(type="hidden", name="order", value=o["id"]), action="/admin/plan-for-me/edit", method="post", cls="ad-sec", id="pfm-check"),
+        Form(Button(icon("check", 18, 2.4), "Send to family", type="submit", cls="btn btn-primary", id="pfm-send"), Input(type="hidden", name="order", value=o["id"]), action="/admin/plan-for-me/send", method="post", cls="ad-inline"),
+        cls="ad-card"), id="admin", cls="ad-stage"), head=HEAD)
 
 
 PAID_TWICE = {"double": "Paid twice: the order was already paid", "unknown": "Paid for an order that no longer exists"}
@@ -152,6 +183,36 @@ def register(app):
             return RedirectResponse(f"/admin#{slug}" if fn(slug) else "/admin", status_code=303)   # only a slug that exists goes into the address
         handler.__name__ = f"admin_{name}"
         app.post(f"/admin/{name}")(handler)
+
+    def _waiting(session, order_id):
+        """The order behind a check address, for an admin only (None for anyone else, an unknown id or one that is not waiting for the check)."""
+        if not is_admin(session) or not isinstance(order_id, str) or not pfm._ID.fullmatch(order_id):
+            return None
+        o = pfm._row(order_id)
+        return o if o and o["status"] == "review" and o["result"] else None
+
+    @app.get("/admin/plan-for-me/{order_id}")
+    def plan_check(session, order_id: str):
+        o = _waiting(session, order_id)
+        return check_page(o) if o else showcase.not_found()
+
+    @app.post("/admin/plan-for-me/edit")
+    async def plan_edit(request, session):
+        if not is_admin(session) or not reports.same_site(request):
+            return showcase.not_found()
+        form = await request.form()
+        order_id = str(form.get("order") or "")
+        ok = await run_in_threadpool(pfm.edit, order_id, {k: v for k, v in form.items() if isinstance(v, str)}) if pfm._ID.fullmatch(order_id) else False
+        return RedirectResponse(f"/admin/plan-for-me/{order_id}" if ok else "/admin", status_code=303)
+
+    @app.post("/admin/plan-for-me/send")
+    async def plan_send(request, session):
+        if not is_admin(session) or not reports.same_site(request):
+            return showcase.not_found()
+        order_id = str((await request.form()).get("order") or "")
+        if pfm._ID.fullmatch(order_id):
+            await run_in_threadpool(pfm.send, order_id)
+        return RedirectResponse(f"/admin#pfm-{order_id[:8]}" if pfm._ID.fullmatch(order_id) else "/admin", status_code=303)
 
     _act("takedown", community.take_down)
     _act("restore", community.restore)

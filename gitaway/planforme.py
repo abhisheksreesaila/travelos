@@ -7,10 +7,11 @@
     ask(intake, family, usage)             the agent (job "plan-for-me", Claude Sonnet 5.5 through gitaway/ai.py): the validated plan, never the model's own words
     validate(raw, intake)                  rebuild the model's answer field by field (no prices, no opening hours, an unsure place has no name, times that fit the calendar)
     write_trip(order, result)              the trip and its days, in the buyer's family, with the app's own `importer.save` and `tripcal.apply_plans`
+    review_on() / send(order_id) / edit(order_id, form)   the founder check (F-197): a built plan waits in `review` until the captain sends it to the family, after a quick edit
     start() / stop() / run_pending()       the worker threads, started once at boot (a paid order left building by a stopped process is built again); tests call run_pending
     clear()                                tests: every order
 
-An order is a short state machine, moved only by guarded UPDATEs (`WHERE status = ...`): awaiting_payment -> paid -> building -> ready | failed (STATUSES). It lives in the community database
+An order is a short state machine, moved only by guarded UPDATEs (`WHERE status = ...`): awaiting_payment -> paid -> building -> [review ->] ready | failed (STATUSES; review only while PLAN_FOR_ME_REVIEW is on, F-197). It lives in the community database
 (`plan_orders`, made on first use) so it survives a restart, the admin lists every family's orders and `forget-person` covers it (tests/test_forget_covers_every_table.py).
 `plan_order_events` holds the Stripe event ids already handled: a repeated webhook finds its id there and does nothing.
 """
@@ -41,7 +42,8 @@ MAX_ATTEMPTS = 3              # times a worker may take one order before a resta
 MAX_STOPS, MAX_TIPS = 8, 3    # stops a day and tips kept
 MAX_UNPAID = 5                # unfinished orders one person can have at once; the oldest without a checkout goes when they start another, and one with a live checkout is never dropped (a sixth is refused)
 MAX_CHECKOUTS = 10            # times one person may ask Stripe about a payment page in an hour (making one or looking at the one already open)
-STATUSES = ("awaiting_payment", "paid", "building", "ready", "failed")
+STATUSES = ("awaiting_payment", "paid", "building", "review", "ready", "failed")
+KEPT = ("paid", "building", "review", "ready")      # paid for and not failed: revenue
 BUDGETS = {"easy": "Easy on the wallet", "comfortable": "Comfortable", "treat": "Treat ourselves"}
 PACES = {"relaxed": "Relaxed", "balanced": "Balanced", "packed": "Packed"}
 SUGGESTIONS = ("Disneyland, California",)       # beside the catalog's places
@@ -56,6 +58,11 @@ def price_cents() -> int:
     """What Plan it for me costs, in US cents: PLAN_FOR_ME_PRICE_CENTS when it is whole digits inside PRICE_RANGE, else 2900. Read here on the server every time an order is made."""
     raw = os.getenv("PLAN_FOR_ME_PRICE_CENTS", "").strip()
     return int(raw) if raw.isascii() and raw.isdigit() and PRICE_RANGE[0] <= int(raw) <= PRICE_RANGE[1] else DEFAULT_PRICE
+
+
+def review_on() -> bool:
+    """Does a person check every built plan before the family sees it (F-197)? On unless PLAN_FOR_ME_REVIEW is 0: a built plan waits in `review` for the captain's "Send to family" on /admin."""
+    return os.getenv("PLAN_FOR_ME_REVIEW", "1").strip() != "0"
 
 
 def stripe_key() -> str:
@@ -217,9 +224,9 @@ def refunds_due() -> list:
 
 
 def totals(rows, owed_payments=()) -> dict:
-    """What the orders add up to: `paid` and `revenue_cents` for the ones that are paid and kept (paid, building, ready), `refunds` and `refund_cents` for the failed ones that were paid and for
+    """What the orders add up to: `paid` and `revenue_cents` for the ones that are paid and kept (KEPT), `refunds` and `refund_cents` for the failed ones that were paid and for
     `owed_payments` (`refunds_due()`): a refund is due, the captain does it in Stripe; and `ai_cost_micros` (millionths of a dollar) for what the agent cost across all of them."""
-    kept = [r for r in rows if r["status"] in ("paid", "building", "ready")]
+    kept = [r for r in rows if r["status"] in KEPT]
     owed = [r for r in rows if r["status"] == "failed" and r["paid_at"]]
     return {"paid": len(kept), "revenue_cents": sum(r["amount_cents"] for r in kept), "refunds": len(owed) + len(owed_payments),
             "refund_cents": sum(r["amount_cents"] for r in owed) + sum(p["amount_cents"] for p in owed_payments), "ai_cost_micros": sum(r["ai_cost_micros"] for r in rows)}
@@ -598,7 +605,7 @@ def _requeue(order_id) -> None:
 
 def _fail(order_id, code) -> None:
     with _db() as db:
-        db.conn.execute(text("UPDATE plan_orders SET status = 'failed', error = :e, updated_at = :u WHERE id = :i AND status IN ('building', 'paid')"), {"e": code, "u": _now(), "i": order_id})
+        db.conn.execute(text("UPDATE plan_orders SET status = 'failed', error = :e, updated_at = :u WHERE id = :i AND status IN ('building', 'paid', 'review')"), {"e": code, "u": _now(), "i": order_id})
         db.conn.commit()
     log.warning("plan order %s failed (%s): refund due", order_id, code)
 
@@ -639,10 +646,12 @@ def run_one() -> bool:
         return False
     try:
         result = order["result"] or _make(order)
-        trip_id = write_trip(order, result)
-        with _db() as db:
-            db.conn.execute(text("UPDATE plan_orders SET status = 'ready', trip_id = :t, error = '', updated_at = :u WHERE id = :i AND status = 'building'"), {"t": trip_id, "u": _now(), "i": order["id"]})
-            db.conn.commit()
+        if review_on():
+            with _db() as db:      # the founder check: nothing reaches the family until the captain sends it (`send`)
+                db.conn.execute(text("UPDATE plan_orders SET status = 'review', error = '', updated_at = :u WHERE id = :i AND status = 'building'"), {"u": _now(), "i": order["id"]})
+                db.conn.commit()
+            return True
+        _deliver(order, result, "building")
     except Busy:
         _requeue(order["id"])
         return False
@@ -651,6 +660,53 @@ def run_one() -> bool:
     except Exception:  # noqa: BLE001 - one bad order must not stop the worker; the log has the type, the order a reason code
         log.exception("plan order %s could not be built", order["id"])
         _fail(order["id"], "error")
+    return True
+
+
+def _deliver(order, result, was) -> None:
+    """Write the trip into the family and mark the order ready, if it is still `was`."""
+    trip_id = write_trip(order, result)
+    with _db() as db:
+        db.conn.execute(text("UPDATE plan_orders SET status = 'ready', trip_id = :t, error = '', updated_at = :u WHERE id = :i AND status = :w"), {"t": trip_id, "u": _now(), "i": order["id"], "w": was})
+        db.conn.commit()
+
+
+def send(order_id) -> str:
+    """The captain's "Send to family" (F-197): a plan waiting in `review` is written into the buyer's family and the order is ready. Returns the order's status after it ("ready", "failed" when
+    the trip cannot be written, or whatever it was when it was not waiting: nothing happens then). Safe to tap twice: `write_trip` makes one trip per order. Blocking: run it in a thread."""
+    order = _row(order_id)
+    if not order or order["status"] != "review" or not order["result"]:
+        return order["status"] if order else ""
+    try:
+        _deliver(order, order["result"], "review")
+    except BuildFailed as e:
+        _fail(order["id"], e.code)
+    except Exception:  # noqa: BLE001 - the log has the type, the order a reason code, the captain a red row
+        log.exception("plan order %s could not be sent", order["id"])
+        _fail(order["id"], "error")
+    return _row(order_id)["status"]
+
+
+def edit(order_id, form) -> bool:
+    """The captain's quick edit of a plan waiting for the check: `summary`, `tip<i>` and each stop's `s<day>-<stop>-title` and `-note` (fields left out keep what they were). Every value is
+    cleaned the way the model's answer is (`_claim`: a price or opening hours is dropped; titles cut at a word to fit the calendar). False when the order is not waiting for the check."""
+    order = _row(order_id)
+    if not order or order["status"] != "review" or not order["result"]:
+        return False
+    result, get = order["result"], lambda k: form.get(k) if isinstance(form.get(k), str) else None
+    if get("summary") is not None:
+        result["summary"] = _claim(get("summary"), tripcal.MAX_NOTE)
+    for d, day in enumerate(result["days"]):
+        for j, stop in enumerate(day["stops"]):
+            if (t := get(f"s{d}-{j}-title")) is not None and (clean := _cut(_claim(t, tripcal.MAX_TITLE * 2), tripcal.MAX_TITLE)):
+                stop["title"] = clean
+            if (n := get(f"s{d}-{j}-note")) is not None:
+                stop["note"] = _claim(n, tripcal.MAX_NOTE)
+    tips = [_claim(get(f"tip{i}") if get(f"tip{i}") is not None else (result["tips"][i] if i < len(result["tips"]) else ""), 134) for i in range(MAX_TIPS)]
+    result["tips"] = [t for t in tips if t]
+    with _db() as db:
+        db.conn.execute(text("UPDATE plan_orders SET result = :r, updated_at = :u WHERE id = :i AND status = 'review'"), {"r": json.dumps(result, separators=(",", ":")), "u": _now(), "i": order_id})
+        db.conn.commit()
     return True
 
 

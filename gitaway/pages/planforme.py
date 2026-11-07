@@ -134,10 +134,13 @@ def intake_page(session, vals=None, errors=None, status=200, note=""):
 
 # ---- the order --------------------------------------------------------------------------------------------------------
 
+CHECKING = "Your plan is built and being checked by a person, usually within a few hours."
+
+
 def _steps(status):
-    order = ["paid", "building", "ready"]
+    order = ["paid", "building", *(["review"] if status == "review" or pfm.review_on() else []), "ready"]
     at = order.index("paid" if status == "paid" else status) if status in order else 0
-    labels = {"paid": "Payment received", "building": "Building your days", "ready": "Ready"}
+    labels = {"paid": "Payment received", "building": "Building your days", "review": "Checked by a person", "ready": "Ready"}
     return Ol(*[Li(Span(icon("check", 16, 3) if i < at else Span(cls="pf-dot"), cls="pf-mark"), Span(labels[k]), cls="pf-step" + (" is-done" if i < at else " is-now" if i == at else ""),
                    aria_current="step" if i == at else None) for i, k in enumerate(order)], cls="pf-steps")
 
@@ -172,12 +175,13 @@ def order_page(order, paid_back=False, trouble=""):
     status, intake = order["status"], order["intake"]
     head = {"awaiting_payment": ("Almost there", "Pay to start building your trip."), "paid": ("Payment received", "An agent is about to start on your trip."),
             "building": ("Building your trip", "This takes a few minutes. You can leave this page: your trip will be in your calendar."),
+            "review": ("Your plan is built", CHECKING),
             "ready": ("Your trip is ready", "It is in your family's calendar now, day by day."),
             "failed": ("We couldn't finish your trip", "We'll refund you in full. There is nothing you need to do.")}[status]
     if status == "awaiting_payment" and paid_back:
         head = ("Confirming your payment", "Stripe is telling us it went through. This takes a few seconds.")
     body = [Div(Span(f"Order {order['id'][:8]}", cls="pf-chip", id="pf-order"), H1(head[0], id="pf-title"), P(head[1], cls="pf-lede", id="pf-lede"), P(_summary(intake), cls="pf-sum", id="pf-sum"), cls="pf-top")]
-    if status in ("paid", "building") or (status == "awaiting_payment" and paid_back):
+    if status in ("paid", "building", "review") or (status == "awaiting_payment" and paid_back):
         body.append(_steps("paid" if status == "awaiting_payment" else status))
     if status == "awaiting_payment" and not paid_back:
         if trouble in TROUBLE:
@@ -191,7 +195,7 @@ def order_page(order, paid_back=False, trouble=""):
     if status == "failed":
         body.append(P(f"Reference {order['id']}. ", legal.contact(), cls="pf-hint", id="pf-ref"))
     body.append(P(pfm.PROMISE, cls="pf-promise", id="pf-promise"))
-    return page("Plan it for me", Section(*body, cls="pf ga-wrap", id="pf", data_pf_poll=f"{PATH}/{order['id']}/status" if status in ("paid", "building") or (status == "awaiting_payment" and paid_back) else None,
+    return page("Plan it for me", Section(*body, cls="pf ga-wrap", id="pf", data_pf_poll=f"{PATH}/{order['id']}/status" if status in ("paid", "building", "review") or (status == "awaiting_payment" and paid_back) else None,
                                           data_status=status), head=HEAD)
 
 
