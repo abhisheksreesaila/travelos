@@ -48,14 +48,15 @@ def test_landing_has_no_community_or_creators_and_no_sideways_scroll(visit, view
 
 
 @SIZES
-def test_workspace_is_labelled_a_preview_and_does_not_scroll_sideways(visit, viewport):
+def test_production_plan_asks_where_and_shows_no_invented_offers(visit, viewport):
+    """F-198 (6): off the showcase /plan never draws the sample workspace; it asks where you are going, and a place gets the honest lanes."""
     page = visit("/plan", viewport)
-    assert page.locator(".ws-preview").is_visible()
-    assert "sample prices" in page.locator(".ws-preview").inner_text()
-    assert page.locator('[data-pane="community"]').count() == 0
+    assert page.get_by_role("heading", name="Where are you going?").is_visible()
+    assert page.locator(".ws-preview").count() == 0 and page.locator("#ws-total").count() == 0
     assert no_sideways_scroll(page)
-    page.keyboard.press("7")                                                              # no pane 7: nothing breaks
-    assert page.locator("#ws-total").is_visible()
+    page = visit("/plan?place=San+Diego&d=2027-03-05&r=2027-03-09&a=2", viewport)
+    assert page.locator("h2.ps-name").first.inner_text() == "Search flights to San Diego"
+    assert page.locator(".ws-preview").count() == 0 and no_sideways_scroll(page)
 
 
 @SIZES
