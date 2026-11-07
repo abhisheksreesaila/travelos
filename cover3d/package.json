@@ -1,0 +1,12 @@
+{
+  "name": "gitaway-cover3d",
+  "private": true,
+  "description": "The cover's 3D world (F-206). node build.mjs writes assets/vendor/three-0.187.0/ and assets/js/cover/world.js.",
+  "type": "module",
+  "dependencies": {
+    "three": "0.187.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}
