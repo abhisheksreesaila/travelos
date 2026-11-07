@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GitAway · one product: creators and booking</title>
+<link rel="stylesheet" href="../cockpit/core/base.css"><link rel="stylesheet" href="../cockpit/core/viewer.css">
+<style>
+  .toc { position: sticky; top: 63px; z-index: 4; display: flex; flex-wrap: wrap; gap: 4px; padding: 10px 32px; background: var(--vbg); box-shadow: 0 1px 0 var(--vl); }
+  .toc a { padding: 6px 12px; border-radius: 999px; color: var(--vi2); text-decoration: none; font: 600 14px/1 "Geist", sans-serif; }
+  .toc a.on { background: var(--vi); color: var(--vbg); }
+  .grp { font: 600 13px/1 "Geist", sans-serif; letter-spacing: .07em; text-transform: uppercase; color: var(--vi2); margin: 8px 0 -36px; }
+  .themes .dk-scale { width: 576px; height: 360px; } .themes .dk-scale iframe { transform: scale(.4); }
+  .row { scroll-margin-top: 130px; }
+</style>
+</head>
+<body>
+<script>
+(function () {
+  const q = new URLSearchParams(location.search);
+  const mode = q.get('mode') || localStorage.getItem('oneproduct-mode') || 'light';
+  document.body.className = 'v-' + mode;
+  const SC = [
+    ['Creators'],
+    ['creators', '1 · For creators', 'The paste box comes first. Why share: thanks, follows, your links. How it works is a ticket line of four stubs.'],
+    ['pick', '2 · Paste a link, pick posts from a whole blog', 'Paste a blog and we sort its posts into trips and not-trips; tick the ones to draft. The picks ride in an ink ticket.'],
+    ['drafting', '3 · Drafting in progress', 'Your post on the left with the sentences being read; the trail builds as a ticket line, one stub at a time.'],
+    ['editor', '4 · The draft editor', 'Days on the left, one day open as a ticket in the middle, your links and the publish ticket on the right. Anything we guessed asks you, in place.'],
+    ['trail', '5 · The published trail', 'The shared trip as a story: the 3D story slot, Follow this trail, Thank them with a real count (tap it), the fork tree, the creator card, book-the-trail lanes. Switch the theme live.', 1],
+    ['profile', '6 · Creator profile', 'A cover, the creator card, real totals, and every trail as a ticket.'],
+    ['stats', '7 · Creator stats', 'One focal ink ticket (thanks) and four widgets. Clicks are counted; earnings are never guessed.'],
+    ['claim', '8 · The claim link', 'A creator opens the link we sent: the drafted trail as a ticket, and “Is this yours?”.'],
+    ['admin', '9 · The founder’s /admin creator list', 'Draft a trail for a creator, copy the claim link, watch who went live.'],
+    ['Booking'],
+    ['where', '10 · Where to?', 'Any destination: the place, the dates, who’s coming with kids’ ages, the home airport. Your trip collects in an ink ticket.'],
+    ['book', '11 · The book of tickets', 'The cockpit’s approved Ticket line Book screen, used as is: one ticket per lane with its honest state, the checklist stub ticket, the total from confirmations.'],
+    ['paste', '12 · Paste a confirmation', 'The cockpit’s approved paste moment. Press “Read it”.'],
+    ['detail', '13 · A booking’s detail', 'The booking as a pass: Booked on Vrbo, Change or cancel on Vrbo (it opens their page), the total from your confirmation, and where it sits on the trip.'],
+  ];
+  const src = (s, size, extra = '') => `screen.html?s=${s}&size=${size}&mode=${mode}${extra}`;
+  const frame = (s, size, extra = '', label = '') => size === 'ph'
+    ? `<div class="fr ph-fr"><iframe src="${src(s, 'ph', extra)}" loading="lazy" title="${s} phone"></iframe><span>Phone · 390 ${label}· <a href="${src(s, 'ph', extra)}" target="_blank">open</a></span></div>`
+    : `<div class="fr dk-fr"><div class="dk-scale"><iframe src="${src(s, 'dk', extra)}" loading="lazy" title="${s} desktop"></iframe></div><span>Desktop · 1440 ${label}· <a href="${src(s, 'dk', extra)}" target="_blank">open full size</a></span></div>`;
+  const rows = SC.map(([k, n, note, themes]) => {
+    if (!n) return `<div class="grp">${k}</div>`;
+    let h = `<section class="row" id="${k}"><h2>${n}</h2><p class="rn">${note}</p><div class="frames">${frame(k, 'dk')}${frame(k, 'ph')}</div></section>`;
+    if (themes) h += `<section class="row themes" id="themes"><h2>5 · The four themes</h2><p class="rn">The same trail, as a creator or reader picks it: Structured (the ticket line, default), Scrapbook, Magazine, Minimal list.</p><div class="frames">${['structured', 'scrapbook', 'magazine', 'minimal'].map((t) => `<div>${frame('trail', 'dk', '&theme=' + t + '#t', '· ' + t + ' ')}</div>`).join('')}</div><div class="frames mt24" style="margin-top:24px">${['scrapbook', 'magazine', 'minimal'].map((t) => frame('trail', 'ph', '&theme=' + t, '· ' + t + ' ')).join('')}</div></section>`;
+    return h;
+  }).join('');
+  document.body.innerHTML = `<header class="vbar"><b>GitAway · one product: creators and booking</b><nav><a href="../cockpit/3-ticket.html">Cockpit · Ticket line</a><a href="../cover3d/index.html">Cover</a><a href="README.md">README</a></nav><button class="vmode" id="mode">${mode === 'light' ? 'Dark' : 'Light'}</button></header>
+    <nav class="toc">${SC.filter((x) => x[1]).map(([k, n]) => `<a href="#${k}">${n.split(' · ')[0]} ${n.split(' · ')[1].split(',')[0]}</a>`).join('')}</nav>
+    <main class="vmain"><div class="notes"><h1>One product. <em>Creators and booking, built from the cockpit’s parts.</em></h1>
+    <p>Same grey canvas, Apple-bright kind colours, ink accent and ticket stubs as the approved <b>Ticket line</b> cockpit and the cover. Desktop: top islands. Phone: floating tab bar. Every screen at 1440 and 390, light and dark (switch top right). Juno Park is a <b>made-up sample creator</b>; booking uses the founder’s Tahoe trip, Dec 19–26 2026. Photos are the cover’s own 3D renders, standing in.</p></div>${rows}</main>`;
+  document.getElementById('mode').onclick = () => { localStorage.setItem('oneproduct-mode', mode === 'light' ? 'dark' : 'light'); location.search = ''; };
+})();
+</script>
+</body>
+</html>
