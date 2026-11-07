@@ -32,14 +32,22 @@ def _boot():
     return (ASSETS / "js" / "cover_boot.js").read_text(encoding="utf-8").strip()
 
 
-def world_version():
-    """A short hash of the built world and the three.js it imports, so a new build is never mixed with a cached old one (the service worker keeps ?v= files for good)."""
+def _world_files():
+    return sorted([*(ASSETS / "js" / "cover").glob("*.js"), *(ASSETS / "vendor").glob("three-*/*.js")])
+
+
+@lru_cache(maxsize=4)
+def _hash(stamp):
     h = hashlib.sha256()
-    for path in (ASSETS / "js" / "cover").glob("*.js"):
-        h.update(path.read_bytes())
-    for path in (ASSETS / "vendor").glob("three-*/*.js"):
+    for path in _world_files():
         h.update(path.read_bytes())
     return h.hexdigest()[:10]
+
+
+def world_version():
+    """A short hash of the built world and the three.js it imports, so a new build is never mixed with a cached old one (the service worker keeps ?v= files for good).
+    Hashed once per build: the files' sizes and times are the cache key, so a rebuild shows up without a restart."""
+    return _hash(tuple((p.name, p.stat().st_mtime_ns, p.stat().st_size) for p in _world_files()))
 
 
 def _ico(path, sw="1.8"):
