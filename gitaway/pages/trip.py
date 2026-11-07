@@ -263,7 +263,7 @@ def today_panel(v):
     else:
         parts.append(Div(Span("wide open!", cls="tp-hand"), A("Add something fun", href=trip_url(add="1", day=sel), data_open_sheet="", cls="tp-btn tp-btn-ink") if editor else Span("Nothing planned yet.", cls="tp-sub"), cls="tp-empty"))
     if cal.is_imported(v["b"]) and any(x.kind in ("flight", "hotel", "car", "ticket") for x in v["items"]):  # where it was booked is said once, quietly
-        parts.append(Div(icon("lock", 13, 2.4), Span(f"Booked elsewhere · {cal.plan_of(v['b']).booked_on}"), cls="tp-elsewhere"))
+        parts.append(Div(icon("lock", 13, 2.4), Span(cal.booked_tag(cal.plan_of(v['b']))), cls="tp-elsewhere"))      # "Booked on Expedia", as each booking says (F-198)
     parts.append(stay_card(v))
     parts.append(morning_ui.card(v["zone"]))  # F-066: the morning plan push, drawn by its own module
     parts.append(v.get("faceid", ""))  # F-074: "Use Face ID next time", hidden until passkeys.js says this is the Home Screen app

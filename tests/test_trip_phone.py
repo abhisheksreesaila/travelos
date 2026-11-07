@@ -176,7 +176,7 @@ def test_an_imported_trip_shows_its_hotel_with_a_link_to_the_details_but_no_conf
     for secret in SECRETS:
         assert secret not in html
     at(date(2026, 10, 16), "07:00")
-    assert "Booked elsewhere" in text(client.get("/trip?day=0").text) or "booked on Expedia" in text(client.get("/trip?day=0").text)
+    assert "Booked on Expedia" in text(client.get("/trip?day=0").text)      # F-198: where it was booked, in the words each booking uses
 
 
 # ---- the tabs ----------------------------------------------------------------------------------------------------------------

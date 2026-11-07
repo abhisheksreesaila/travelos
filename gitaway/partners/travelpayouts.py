@@ -53,10 +53,28 @@ def links_request(urls_and_subs, *, shorten=False) -> dict | None:
             "links": [{"url": url, "sub_id": sub} for url, sub in urls_and_subs]}
 
 
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    """A redirect is an error, never followed (F-198 review): urllib would carry our X-Access-Token header to wherever it points."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+_opener = urllib.request.build_opener(NoRedirect)
+
+
+def redacted(error: Exception, limit: int = 160) -> str:
+    """"<Type>: <message>" with the token taken out before the line is cut, so no part of it can be left at the cut."""
+    reason = f"{type(error).__name__}: {error}"
+    if token():
+        reason = reason.replace(token(), "***")
+    return reason[:limit]
+
+
 def _post(url: str, headers: dict, body: dict, timeout: float) -> dict:
-    """The one network call (the partner-links API). Raises on any failure."""
+    """The one network call (the partner-links API). Raises on any failure, a redirect included."""
     req = urllib.request.Request(url, json.dumps(body).encode(), {**headers, "Content-Type": "application/json"}, method="POST")
-    with urllib.request.urlopen(req, timeout=timeout) as r:   # noqa: S310 (a fixed https URL)
+    with _opener.open(req, timeout=timeout) as r:   # noqa: S310 (a fixed https URL)
         return json.load(r)
 
 
@@ -82,9 +100,7 @@ def connected() -> bool:
 
 def _failed(error: Exception, fallback_name: str) -> None:
     """Say why the partner-links API did not give a link: one WARNING line and one count for /admin. The token is never in either."""
-    reason = f"{type(error).__name__}: {error}"[:160]
-    if token():
-        reason = reason.replace(token(), "***")
+    reason = redacted(error)
     log.warning("partner-links API failed, the click goes to the %s (%s)", fallback_name, reason)
     try:
         from gitaway.partners import failures

@@ -154,15 +154,14 @@ def test_every_partner_lands_as_a_booked_block(client, name, block, tag):
 
 
 def test_the_ask_box_hands_a_pasted_confirmation_to_the_import(client):
+    """The structure the Ask scripts need (the real taps are tests_browser/test_paste_handoff.py): the page is the Ask tab with ask.css; a sheet fragment is #ak-sheet-body; the form navigates."""
     import_tahoe(client)
     r = client.post("/trip/ask/propose", data={"text": BOOKING})
-    assert r.status_code == 200
-    text = words(r.text)
-    assert "This looks like a Booking.com confirmation" in text
+    assert r.status_code == 200 and "/assets/css/ask.css" in r.text and "This looks like a Booking.com confirmation" in words(r.text)
     form = re.search(r'<form[^>]*action="/trips/import"[^>]*>(.*?)</form>', r.text, re.S)
-    assert form and "Lakeside Lodge Tahoe" in unescape(form.group(1))
+    assert form and 'data-navigate="1"' in form.group(0) and "Lakeside Lodge Tahoe" in unescape(form.group(1))
     sheet = client.post("/trip/ask/propose", data={"text": GETYOURGUIDE}, headers={"X-Ask": "1"})
-    assert sheet.status_code == 200 and "This looks like a GetYourGuide confirmation" in words(sheet.text) and 'action="/trips/import"' in sheet.text
+    assert sheet.status_code == 200 and sheet.text.startswith('<div id="ak-sheet-body">') and "This looks like a GetYourGuide confirmation" in words(sheet.text)
 
 
 def test_a_plan_written_as_the_template_reads_back_the_same():

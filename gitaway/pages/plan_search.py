@@ -10,14 +10,14 @@ Every button goes through /book/<lane> (gitaway/pages/partners.py), which logs t
 from dataclasses import replace
 from urllib.parse import urlencode
 
-from fasthtml.common import A, Button, Div, Form, H1, H2, Input, Label, Li, Link, Main, P, Section, Span, Ul
+from fasthtml.common import A, Button, Div, Form, H1, H2, Input, Label, Li, Link, Main, Option, P, Script, Section, Select, Span, Ul
 
 from gitaway import catalog, pickers
 from gitaway.icons import icon
 from gitaway.layout import page
 from gitaway.partners import links, places, prices, registry
 
-HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/plansearch.css"))
+HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/plansearch.css"), Script(src="/assets/js/plansearch.js", defer=True))
 ICONS = {"flight": "plane", "stay": "bed", "car": "car", "todo": "ticket", "direct": "star"}
 FINE = "Every booking happens on the partner's site, under their terms and their support. GitAway never takes payment and never handles a change or a refund."
 BAD_IATA = "Use a three-letter airport code, like RNO, or leave it empty."
@@ -134,7 +134,7 @@ def cards(search, q, raw=None, errors=None):
     found = registry.lanes(search)
     p, out = search.place, []
     flight = found["flight"]
-    price = prices.flight_from(search.home, p.iata, search.depart, search.return_) if flight and search.home else None
+    price = prices.flight_from(search.home, p.iata, search.depart, search.return_) if flight and search.home and p.known else None      # only a place of our table (F-198 review)
     out.append(_card("flight", f"Search flights to {p.name}", price.label() if price else (f"Into {p.iata}" if p.iata else ""),
                      f"{flight[0].name} shows today's fares for {date_label(search)}, {summary(search)}." + ("" if search.home else " Leave the airport empty and it asks.")
                      if flight else "Tell us the nearest airport to search flights.",
@@ -170,9 +170,33 @@ def _trip_form(search, q, place_raw, typed=None):
                                                             placeholder="Lake Tahoe", autocomplete="off", required=True, cls="ps-wide"), cls="ps-field ps-field-wide"),
                 Label(Span("From", cls="ps-label"), Input(name="d", type="date", value=v.get("d", "")), cls="ps-field"),
                 Label(Span("To", cls="ps-label"), Input(name="r", type="date", value=v.get("r", "")), cls="ps-field"),
-                Label(Span("Adults", cls="ps-label"), Input(name="a", type="number", min="1", max=str(catalog.MAX_TRAVELERS), value=str(v.get("a", 2))), cls="ps-field"),
-                Label(Span("Kids' ages", cls="ps-label"), Input(name="k", type="text", value=v.get("k", ""), placeholder="8, 11", inputmode="numeric", autocomplete="off"), cls="ps-field"),
+                Label(Span("Adults", cls="ps-label"), Select(*[Option(str(n), value=str(n), selected=str(n) == str(v.get("a", 2)) or None) for n in range(1, catalog.MAX_TRAVELERS + 1)],
+                                                             name="a", data_ga="stepper", data_ga_label="Adults", data_ga_hint="18 and over"), cls="ps-field"),
+                *_kids(v.get("k", "")),
                 Button("Search", type="submit", cls="btn btn-sm"), action="/plan", method="get", cls="ps-from ps-trip", id="ps-trip")
+
+
+MAX_KIDS = catalog.MAX_TRAVELERS - 1
+
+
+def kids_from(n, ages) -> str:
+    """The `k` words for a trip from the form's kid count and one age picker per kid (F-198 review: a phone's number pad has no comma). An age not picked is "?", which the trip's
+    own check refuses with its sentence; nothing typed, nothing given."""
+    count = int(n) if str(n).isascii() and str(n).isdigit() else 0
+    picked = [str(a).strip() for a in ages[:min(count, MAX_KIDS)]]
+    return ",".join(a if a else "?" for a in picked)
+
+
+def _kids(k):
+    """A kid count and one age picker per kid, like /start's (plansearch.js shows one per kid; without it the server reads only the first `n`)."""
+    ages = [a.strip() for a in str(k).split(",") if a.strip()]
+    n = len(ages)
+    pickers_ = [Label(Span(f"Kid {i + 1} age", cls="ps-label"),
+                      Select(Option("Pick age", value=""), *[Option("Under 1" if a == 0 else str(a), value=str(a), selected=i < n and ages[i] == str(a) or None) for a in range(catalog.MAX_KID_AGE + 1)],
+                             name=f"k{i + 1}", data_ga="chips", data_ga_label=f"Kid {i + 1} age", disabled=i >= n or None),
+                      cls="ps-field ps-age", data_age=str(i + 1), hidden=i >= n or None) for i in range(MAX_KIDS)]
+    return (Label(Span("Kids", cls="ps-label"), Select(*[Option(str(i), value=str(i), selected=i == n or None) for i in range(MAX_KIDS + 1)], name="n", data_ga="stepper",
+                                                       data_ga_label="Kids", data_ga_hint="under 18"), cls="ps-field"), *pickers_)
 
 
 def search_page(search, via="", raw=None, errors=None):

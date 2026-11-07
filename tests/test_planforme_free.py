@@ -39,7 +39,7 @@ def make(who="ari"):
 def backdate(order_id, hours):
     with pfm._db() as db:
         at = (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat(timespec="microseconds")
-        db.conn.execute(text("UPDATE plan_orders SET created_at = :a WHERE id = :i"), {"a": at, "i": order_id})
+        db.conn.execute(text("UPDATE plan_orders SET created_at = :a, paid_at = :a WHERE id = :i"), {"a": at, "i": order_id})
         db.conn.commit()
 
 
@@ -86,8 +86,9 @@ def test_a_person_may_start_two_a_day_and_a_new_day_starts_again():
     assert str(e.value) == "You have planned 2 trips today, the most for one day while plans are free. Come back tomorrow."
     for o in (first, second):
         backdate(o["id"], 30)       # yesterday's plans do not count today
-    assert make()["status"] == "paid"
-    assert pfm.free_left(person()["user_id"]) == 1
+    assert make()["status"] == "paid" and make()["status"] == "paid"
+    with pytest.raises(pfm.TooMany):
+        make()
 
 
 def test_a_failed_plan_still_counts_so_retries_cannot_run_up_the_bill():

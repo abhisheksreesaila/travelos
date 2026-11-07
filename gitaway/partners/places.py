@@ -27,6 +27,7 @@ class Place:
     klook: bool = False   # Klook sells stays and things to do here (D-221); elsewhere Klook is skipped
     focus: str = ""       # "disney": things to do go to Klook's Disneyland Resort page
     known: bool = False   # from the table (False: built from what the person typed)
+    states: tuple = ()    # other states a typed suffix may name for this place ("Lake Tahoe, NV")
 
     @property
     def town(self) -> str:
@@ -44,8 +45,8 @@ TAHOE_RESORTS = (("Heavenly", "https://www.skiheavenly.com/"), ("Northstar", "ht
 
 # (aliases, Place). The first alias is the name lanes use. Airports: the nearest one with year-round scheduled flights.
 _TABLE = (
-    (("lake tahoe", "tahoe", "south lake tahoe", "stateline"), Place("Lake Tahoe", "South Lake Tahoe", "California", "RNO", True, TAHOE_RESORTS)),
-    (("tahoe city", "truckee", "olympic valley", "north lake tahoe", "kings beach"), Place("Tahoe City", "Tahoe City", "California", "RNO", True, TAHOE_RESORTS)),
+    (("lake tahoe", "tahoe", "south lake tahoe", "stateline"), Place("Lake Tahoe", "South Lake Tahoe", "California", "RNO", True, TAHOE_RESORTS, states=("Nevada",))),
+    (("tahoe city", "truckee", "olympic valley", "north lake tahoe", "kings beach"), Place("Tahoe City", "Tahoe City", "California", "RNO", True, TAHOE_RESORTS, states=("Nevada",))),
     (("mammoth lakes", "mammoth"), Place("Mammoth Lakes", "Mammoth Lakes", "California", "RNO", True, (("Mammoth Mountain", "https://www.mammothmountain.com/"),))),
     (("big bear lake", "big bear"), Place("Big Bear Lake", "Big Bear Lake", "California", "ONT", True, (("Big Bear Mountain Resort", "https://www.bigbearmountainresort.com/"),))),
     (("park city",), Place("Park City", "Park City", "Utah", "SLC", True, (("Park City Mountain", "https://www.parkcitymountain.com/"), ("Deer Valley", "https://www.deervalley.com/")))),
@@ -91,8 +92,6 @@ _TABLE = (
     (("anchorage",), Place("Anchorage", "Anchorage", "Alaska", "ANC")),
 )
 _ALIASES = {alias: place for aliases, place in _TABLE for alias in aliases}
-_STATE = re.compile(r",\s*(?:[a-z]{2}|california|nevada|utah|colorado|wyoming|idaho|arizona|oregon|washington|florida|hawaii|new york|texas|tennessee|louisiana|illinois|"
-                    r"massachusetts|montana|alaska|usa|us|united states)\.?$")
 
 
 def clean_iata(text) -> str:
@@ -104,12 +103,38 @@ def _key(text) -> str:
     return " ".join(str(text or "").lower().replace("–", "-").split())
 
 
+STATES = {"al": "Alabama", "ak": "Alaska", "az": "Arizona", "ar": "Arkansas", "ca": "California", "co": "Colorado", "ct": "Connecticut", "de": "Delaware", "dc": "District of Columbia",
+          "fl": "Florida", "ga": "Georgia", "hi": "Hawaii", "id": "Idaho", "il": "Illinois", "in": "Indiana", "ia": "Iowa", "ks": "Kansas", "ky": "Kentucky", "la": "Louisiana",
+          "me": "Maine", "md": "Maryland", "ma": "Massachusetts", "mi": "Michigan", "mn": "Minnesota", "ms": "Mississippi", "mo": "Missouri", "mt": "Montana", "ne": "Nebraska",
+          "nv": "Nevada", "nh": "New Hampshire", "nj": "New Jersey", "nm": "New Mexico", "ny": "New York", "nc": "North Carolina", "nd": "North Dakota", "oh": "Ohio",
+          "ok": "Oklahoma", "or": "Oregon", "pa": "Pennsylvania", "ri": "Rhode Island", "sc": "South Carolina", "sd": "South Dakota", "tn": "Tennessee", "tx": "Texas",
+          "ut": "Utah", "vt": "Vermont", "va": "Virginia", "wa": "Washington", "wv": "West Virginia", "wi": "Wisconsin", "wy": "Wyoming"}
+_STATE_NAMES = {v.lower(): v for v in STATES.values()} | {"calif": "California"}
+_COUNTRY = {"usa", "us", "u s a", "united states", "united states of america"}
+
+
+def _state(suffix):
+    """The state a typed suffix names ("CA", "Calif.", "Nevada"), "" for the country alone, None for anything else."""
+    word = " ".join(suffix.replace(".", " ").split())
+    if word in _COUNTRY:
+        return ""
+    return STATES.get(word) or _STATE_NAMES.get(word)
+
+
 def _known(text):
+    """The table's place for what was typed, or None. A state typed after a comma must be the place's own (F-198 review: "Portland, ME" is not Portland, Oregon, and
+    "Jackson, NH" is not Jackson Hole); then the text is the person's own place."""
     key = _key(text)
     if key in _ALIASES:
         return _ALIASES[key]
-    bare = _STATE.sub("", key).strip()
-    return _ALIASES.get(bare)
+    head, _, suffix = key.rpartition(",")
+    place = _ALIASES.get(head.strip()) if head else None
+    if place is None:
+        return None
+    state = _state(suffix.strip())
+    if state is None:
+        return None
+    return place if state == "" or state in (place.region, *place.states) else None
 
 
 def resolve(text, iata="") -> Place | None:

@@ -690,9 +690,13 @@ def to_doc(plan: Plan) -> dict:
     return doc
 
 
+_BREAKS = re.compile(r"[\x00-\x1f\x7f-\x9f\u2028\u2029\ud800-\udfff]")
+
+
 def _yq(value) -> str:
-    """A YAML string scalar, always quoted, so a confirmation like 0012 or yes stays exactly as written (lessons 2026-10-01)."""
-    return json.dumps(str(value), ensure_ascii=True)
+    """A YAML string scalar, always quoted, so a confirmation like 0012 or yes stays exactly as written (lessons 2026-10-01). Control characters, YAML's own line breaks (U+0085, U+2028,
+    U+2029) and lone surrogates become spaces first; everything else is written as itself, so an emoji stays one character (an escaped surrogate pair made the reader fail, F-198 review)."""
+    return json.dumps(_BREAKS.sub(" ", str(value)), ensure_ascii=False)
 
 
 def to_yaml(plan: Plan, comment: str = "") -> str:

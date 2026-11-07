@@ -18,7 +18,7 @@ def line(kind, item, plan, ident="", lead=None):
     go = A(icon("arrow-right", 15, 2.6), "Change or cancel", href=site.url, target="_blank", rel="noopener", cls="tp-btn tp-btn-white bk-manage", data_site=site.name,
            aria_label=f"Change or cancel on {site.name} (opens {site.name})") if site else ""
     if lead is not None:
-        return Div(lead, Span(" · ", aria_hidden="true") if lead else "", words, go, cls="bk-where", **({"id": ident} if ident else {}))
+        return Div(lead, words, go, cls="bk-where", **({"id": ident} if ident else {}))      # the row's gap separates them: no "·" left dangling where it wraps
     return Div(icon("lock", 13, 2.4), words, go, cls="bk-where", **({"id": ident} if ident else {}))
 
 

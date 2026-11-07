@@ -28,8 +28,12 @@ def sub_id(session, trip, offer, via="") -> str:
     """The Travelpayouts SubID of a click: a short family hash, the place, the first day and the lane, then the handle of the creator whose trip the family planned from
     (F-195, so Klook's report can be split by creator; at most 40 characters of a public handle, about 70 in all, far under Travelpayouts' 4096). Joined with `_` and the
     handle's hyphens made `_`: Travelpayouts' help allows only digits, Latin letters and `_` in a SubID (D-164). No name, email or address (D-24)."""
+    return _sub(session, trip.key, trip.depart, offer.kind, via)
+
+
+def _sub(session, place, day, lane, via="") -> str:
     family = hashlib.sha256(str((session or {}).get("tenant_id") or "").encode()).hexdigest()[:6] if (session or {}).get("tenant_id") else "anon"
-    return f"{family}_{trip.key}_{trip.depart:%y%m%d}_{offer.kind}" + (f"_{via.replace('-', '_')}" if via else "")
+    return f"{family}_{place}_{day:%y%m%d}_{lane}" + (f"_{via.replace('-', '_')}" if via else "")
 
 
 def record_click(session, click_id, offer, trip, partner, via="") -> str:
@@ -45,15 +49,12 @@ def record_click(session, click_id, offer, trip, partner, via="") -> str:
     return sub
 
 
-def lane_sub_id(session, search, lane, via="") -> str:
-    """The SubID of a click on a booking lane (F-198): like `sub_id`, with the place's slug (letters and digits) for the catalog key, so any destination splits in the report."""
-    family = hashlib.sha256(str((session or {}).get("tenant_id") or "").encode()).hexdigest()[:6] if (session or {}).get("tenant_id") else "anon"
-    return f"{family}_{search.place.slug}_{search.depart:%y%m%d}_{lane}" + (f"_{via.replace('-', '_')}" if via else "")
-
-
-def record_lane_click(session, click_id, link, search, query, via="") -> str:
-    """Log a click on a booking lane for the signed-in person's family (a signed-out click is not logged, D-23). Returns its SubID. No price: the partner shows today's."""
-    sub = lane_sub_id(session, search, link.lane, via)
+def record_lane_click(session, click_id, link, search, query, via="", store=True) -> str:
+    """Log a click on a booking lane for the signed-in person's family (a signed-out click is not logged, D-23; nor one with `store` off: another site's page made it). Returns its SubID,
+    `sub_id`'s shape with the place's slug for the catalog key (F-198). No price: the partner shows today's."""
+    sub = _sub(session, search.place.slug, search.depart, link.lane, via)
+    if not store:
+        return sub
     with ses.family(session) as fam:
         if fam:
             with familydb.transaction(fam.db):

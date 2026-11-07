@@ -59,8 +59,22 @@ class Converted:
 
 # ---- small readers ------------------------------------------------------------------------------------------------------
 
+# Where money, a card or a PIN starts on a line (F-198 review): the line is cut there, and a line with nothing before it is dropped, so a table row copied onto one line
+# ("Booking number: 4021.889.317 PIN code: 7741", "Confirmation code HMAB12CD34 Total USD 3112.50") keeps only what comes first and "Paid with Visa ending 4242" is never read as a name.
+_SECRET = re.compile(r"[$€£]|\b(?:US\$|USD|EUR|GBP|CAD|pin|total|subtotal|prices?|paid|payments?|pay|charged?|cards?|visa|mastercard|amex|discover|ending|cvv|cvc|amount|balance|"
+                     r"deposit|taxe?s?|fees?|refund\w*)\b", re.I)
+
+
 def _lines(text):
-    return [" ".join(line.split()) for line in (text or "")[:MAX_TEXT].replace("\r", "\n").split("\n") if line.strip()]
+    """The text's lines, a tab starting a new one, each cut where money, a card or a PIN starts; empty ones gone."""
+    out = []
+    for raw in (text or "")[:MAX_TEXT].replace("\r", "\n").replace("\t", "\n").split("\n"):
+        line = " ".join(raw.split())
+        m = _SECRET.search(line)
+        line = line[:m.start()].strip(" :#-–,(") if m else line
+        if line.strip(" :#-–,()."):
+            out.append(line)
+    return out
 
 
 def _date(line):
@@ -146,7 +160,9 @@ def _party(text):
 
 
 def _conf(text):
-    return re.sub(r"[^A-Za-z0-9.\-]", "", text or "")[:30]
+    """The confirmation number: the first word of the value only, in letters, digits, dots and hyphens."""
+    first = (text or "").split()[:1]
+    return re.sub(r"[^A-Za-z0-9.\-]", "", first[0] if first else "")[:30]
 
 
 # ---- one reader per partner ----------------------------------------------------------------------------------------------

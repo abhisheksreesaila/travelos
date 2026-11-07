@@ -652,7 +652,9 @@ def register(app):
     @app.get("/plan")
     def plan(request, session, f: str = "", h: str = "", c: str = "", x: str = "", v: str = "", rooms: str = None, add: str = None,
              fare: str = None, bags: str = None, d: str = "", r: str = "", a: str = "", k: str = "", to: str = "", via: str = "", home: str = "", focus: str = "",
-             place: str = "", iata: str = ""):
+             place: str = "", iata: str = "", n: str = ""):
+        if n:      # the lanes' form: a kid count and one age picker per kid (F-198 review)
+            k = plan_search.kids_from(n, [request.query_params.get(f"k{i}", "") for i in range(1, plan_search.MAX_KIDS + 1)])
         trip = resolve_trip(d, r, a, k, to, home, focus)
         creator = affiliate.claimed_via(request, via)     # F-184, F-182: "Plan this trip" on a creator's own page: remember whose trip this is for 30 days, so /go can use their marker
         cookie_header = cookie(affiliate.COOKIE, creator, **affiliate.cookie_args()) if creator else None

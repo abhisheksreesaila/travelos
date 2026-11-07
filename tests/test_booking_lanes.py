@@ -158,7 +158,7 @@ def test_a_signed_in_click_is_logged_with_its_subid_and_no_price(client, monkeyp
     html = client.get(TAHOE).text
     client.get(next(h for h in book_links(html) if "site=airbnb" in h), follow_redirects=False)
     page = words(client.get("/partners").text)
-    assert "airbnb" in page and "Airbnb · Lake Tahoe" in page and re.search(r"[0-9a-f]{6}_laketahoe_261219_stay", page)
+    assert "Airbnb" in page and "Airbnb · Lake Tahoe" in page and re.search(r"[0-9a-f]{6}_laketahoe_261219_stay", page)
 
 
 def test_the_open_trip_books_through_the_lanes(client):
@@ -180,4 +180,4 @@ def test_a_typed_mistake_is_said_not_swapped_for_sample_dates(client):
     r = client.get("/plan?place=Lake+Tahoe&d=2026-12-26&r=2026-12-19&a=2&k=8,eleven")
     text = words(r.text)
     assert "Your return must be after you leave." in text and "Pick an age from 0 to 17" in text
-    assert book_links(r.text) == [] and 'value="8,eleven"' in r.text
+    assert book_links(r.text) == [] and re.search(r'<select[^>]*name="n".*?<option value="2" selected>', r.text, re.S)      # what was typed is kept: two kids

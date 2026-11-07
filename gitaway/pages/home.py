@@ -20,8 +20,8 @@ HEAD = (Link(rel="stylesheet", href="/assets/css/landing.css"), Script(src="/ass
 FEATURES = [
     ("a-panes", home_art.PANES, "Everything side by side",
      "Flights, stays and cars next to weather, news, events and a map. No more twelve tabs."),
-    ("a-total", home_art.TOTAL, "One honest total",
-     "A running cost ledger shows what the whole trip costs, and how far you are from the cheapest combo."),
+    ("a-total", home_art.TOTAL, "Every part in one place",
+     "Flights, a stay, a car and tickets for your dates, each one tap from the partner's own site. (The picture is an example.)"),
     ("a-together", home_art.TOGETHER, "Plan it together",
      "Invite family and friends to a shared calendar with notes, so everyone knows the plan."),
     ("a-fork", home_art.FORK, "Fork, don’t start over",
@@ -69,7 +69,7 @@ def _plan_panel():
         Span(cls="blob", aria_hidden="true"),
         Div(
             H2(NotStr("We’re going.<br>Let’s book it."), id="plan-h"),
-            P("Flights, stays, cars and the weather side by side, with one running total.", cls="promise"),
+            P("Flights, stays, cars and the weather side by side, each one tap from where you book it.", cls="promise"),
         ),
         Form(
             *([_field(*f) for f in _search_values()] if showcase.on() else [_field(*f, neutral=True) for f in NEUTRAL]),

@@ -93,16 +93,17 @@ def _for_the_planner(text, heard) -> str:
 
 # ---- pieces --------------------------------------------------------------------------------------------------------------
 
-def handoff(request, partner, text):
-    """A pasted confirmation (F-198): one card that sends it to the import, which shows exactly what goes in the trip before anything is saved."""
-    card = Div(Span(icon("ticket", 26, 2.2), cls="ak-ico"), H2(f"This looks like a {partner} confirmation"),
+def _a(word) -> str:
+    return f"an {word}" if word[:1].lower() in "aeiou" else f"a {word}"
+
+
+def _handoff(partner, text):
+    """A pasted confirmation (F-198): one card that sends it to the import, which shows exactly what goes in the trip before anything is saved. Its form navigates
+    (`data-navigate`: ask_flow.js leaves it alone), so the import's own page opens, in the sheet's and the panel's place as on the Ask page."""
+    return Div(Span(icon("ticket", 26, 2.2), cls="ak-ico"), H2(f"This looks like {_a(partner)} confirmation"),
                P("Check it, then it goes in your trip as booked, with where you booked it."),
                Form(Textarea(text, name="text", hidden=True, aria_hidden="true"), Button(icon("check", 18, 2.6), "Check and add it", type="submit", cls="tp-btn tp-btn-ink", id="ak-import"),
-                    action="/trips/import", method="post"), cls="ak-card ak-center", id="ak-handoff", role="status")
-    if wants_sheet(request):
-        return card
-    from gitaway.layout import page
-    return page("Add a booking", Div(card, cls="ga-wrap"))
+                    action="/trips/import", method="post", data_navigate="1", id="ak-import-form"), cls="ak-card ak-center", id="ak-handoff", role="status")
 
 
 def _viewer_card():
@@ -282,6 +283,8 @@ def content(request, session):
     st = _state(request)
     day = st["day"] if "day" in st else _day_of(request, session)
     t = cal.trip("", ses.booking(session))
+    if st.get("handoff"):
+        return Div(_handoff(*st["handoff"]), cls="ak")
     if st.get("preview"):
         return Div(_proposal(session, st["step"], st.get("text", ""), day, t, st.get("heard", ())), cls="ak")
     if st.get("step"):
@@ -306,7 +309,9 @@ def sheet_fragment(request, session, status=200):
     st = _state(request)
     day = st["day"] if "day" in st else _day_of(request, session)
     t = cal.trip("", ses.booking(session))
-    if st.get("preview"):
+    if st.get("handoff"):
+        body = _handoff(*st["handoff"])
+    elif st.get("preview"):
         body = _proposal(session, st["step"], st.get("text", ""), day, t, st.get("heard", ()), sheet=True)
     elif st.get("step"):
         body = _questions(session, st["step"], st.get("text", ""), day, st.get("error", ""), st.get("heard", ()), sheet=True)
@@ -392,8 +397,8 @@ def register(app):
         text = (form.get("text") or "")[: say.LIMIT + 1]
         day = _day_of(request, session, form.get("day", ""))
         planner = _for_the_planner(text, _heard(form.get("heard")))     # English for what was said in another language; the box keeps the original
-        if (partner := confirmations.partner_of(text)):                  # F-198: a pasted booking confirmation goes to the import, which reads it without the model
-            return handoff(request, partner, text)
+        if (partner := await run_in_threadpool(confirmations.partner_of, text)):      # F-198: a pasted booking confirmation goes to the import, which reads it without the model
+            return show(request, session, day=day, text=text, handoff=(partner, text))
         try:
             step = await run_in_threadpool(say.start, session, planner, day)   # the model takes seconds: never on the event loop (context variables travel along)
         except (say.SayError, speak.SpeakError, canvas.CanvasError) as e:

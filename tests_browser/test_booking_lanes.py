@@ -62,8 +62,16 @@ def test_the_tahoe_lanes_fit_and_every_tap_lands_on_the_researched_link(browser,
         assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth"), f"sideways scroll at {width}"
     page.set_viewport_size(viewport)
     if viewport is PHONE:
-        sizes = page.locator("a.ps-go, a.ps-also, a.ps-resort, .ps-from button, .ps-field input, .ps-field button").evaluate_all("els => els.filter(e => e.getClientRects().length && e.getBoundingClientRect().height > 2).map(e => e.getBoundingClientRect().height)")      # a date field the pickers replaced is a 1px stand-in; its picker button is measured instead
-        assert min(sizes) >= 43, sizes
+        boxes = page.locator("a.ps-go, a.ps-also, a.ps-resort, .ps-from button, .ps-field input, .ps-field button").evaluate_all(
+            "els => els.filter(e => e.getClientRects().length && e.getBoundingClientRect().height > 2).map(e => { const r = e.getBoundingClientRect(); return [r.width, r.height, r.left, r.top, e.className]; })")      # a date field the pickers replaced is a 1px stand-in; its picker button is measured instead
+        assert min(h for _, h, *_ in boxes) >= 47.5 and min(w for w, *_ in boxes) >= 47.5, boxes      # 48px targets on the phone (F-198 review)
+        links = [b for b in boxes if "ps-also" in b[4] or "ps-resort" in b[4]]
+        for a in links:
+            for b in links:
+                if a is not b and abs(a[3] - b[3]) < 1 and a[2] < b[2]:
+                    assert b[2] - (a[2] + a[0]) >= 7.5, (a, b)      # side by side, at least 8px apart
+                if a is not b and abs(a[2] - b[2]) < 1 and a[3] < b[3]:
+                    assert b[3] - (a[3] + a[1]) >= 7.5, (a, b)      # one under the other, at least 8px apart
     if os.getenv("F198_SHOTS"):
         SHOTS.mkdir(parents=True, exist_ok=True)
         page.screenshot(path=str(SHOTS / f"f198-tahoe-{viewport['width']}.png"), full_page=True)
@@ -88,7 +96,9 @@ def test_a_place_typed_in_the_form_gets_its_lanes(browser, base_url, viewport):
     form.locator("input[name=place]").fill("Lake Tahoe")
     form.locator("input[name=d]").fill("2026-12-19")
     form.locator("input[name=r]").fill("2026-12-26")
-    form.locator("input[name=k]").fill("8, 11")
+    form.locator("select[name=n]").select_option("2")
+    form.locator("select[name=k1]").select_option("8")
+    form.locator("select[name=k2]").select_option("11")
     tap(form.get_by_role("button", name="Search"), viewport)
     page.wait_for_url("**/plan?place=Lake+Tahoe**")
     expect(page.locator("#ps-lede")).to_have_text("Dec 19 – 26 · 2 adults, 2 kids")

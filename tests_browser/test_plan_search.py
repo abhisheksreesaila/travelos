@@ -66,7 +66,7 @@ def test_from_a_disneyland_trip_to_an_honest_flight_search_from_the_readers_airp
     assert "Skylark" not in page.content() and "Preview: sample prices" not in page.content()
     assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth"), "the page scrolls sideways"
     sizes = page.locator("a.ps-go, .ps-from button, .ps-field input, .ps-field button").evaluate_all("els => els.filter(e => e.getClientRects().length && e.getBoundingClientRect().height > 2).map(e => e.getBoundingClientRect().height)")      # a date field the pickers replaced is a 1px stand-in; its picker button is measured instead
-    assert viewport is DESKTOP or min(sizes) >= 43, sizes
+    assert viewport is DESKTOP or min(sizes) >= 47.5, sizes
     shot(page, f"{viewport['width']}-plan")
     page.fill("input[name=home]", "jfk")
     tap(page.get_by_role("button", name="Update"), viewport)
@@ -104,11 +104,13 @@ def test_kids_set_on_the_trip_form_come_back_apart_in_the_flight_link(browser, b
     tap(page.locator("#plan-this").first, viewport)
     page.wait_for_url("**/plan?**")
     form = page.locator("#ps-trip")
-    form.locator("input[name=k]").fill("4, 7")
+    form.locator("select[name=n]").select_option("2")
+    form.locator("select[name=k1]").select_option("4")
+    form.locator("select[name=k2]").select_option("7")
     form.locator("input[name=d]").fill("2027-03-05")
     form.locator("input[name=r]").fill("2027-03-09")
     tap(form.get_by_role("button", name="Search"), viewport)
-    page.wait_for_url("**/plan?**k=4**")
+    page.wait_for_url("**/plan?**k1=4**")
     page.fill("#ps-flight input[name=home]", "ord")
     tap(page.get_by_role("button", name="Update"), viewport)
     expect(page.locator("#ps-lede")).to_contain_text("2 adults, 2 kids · flying from ORD")

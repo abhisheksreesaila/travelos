@@ -45,21 +45,28 @@ SITES = {
     "alaska": Manage("Alaska Airlines", "https://www.alaskaair.com/booking/reservation-lookup", True),
     "frontier": Manage("Frontier", "https://www.flyfrontier.com/travel/my-trips/manage-trip/"),
 }
-# words that name a site in what people (and confirmation emails) write; matched as whole words, longest first
-_WORDS = {"expedia": "expedia", "booking": "booking", "airbnb": "airbnb", "vrbo": "vrbo", "homeaway": "vrbo", "klook": "klook",
-          "getyourguide": "getyourguide", "get your guide": "getyourguide", "aviasales": "aviasales", "hertz": "hertz", "avis": "avis", "budget": "budget",
-          "enterprise": "enterprise", "national car": "national", "national": "national", "alamo": "alamo", "sixt": "sixt", "thrifty": "thrifty", "dollar": "dollar",
-          "united": "united", "delta": "delta", "american airlines": "american", "american": "american", "southwest": "southwest", "jetblue": "jetblue", "jet blue": "jetblue",
-          "alaska": "alaska", "frontier": "frontier"}
-_ORDER = sorted(_WORDS, key=len, reverse=True)
+# A partner's own name and the ways it is written (F-198 review: only the name itself, never a name that merely contains a partner's word: "American Express Travel", "Budget Travel" and
+# "Tahoe Booking Co" get no button). Matched after lower-casing, ".com" and punctuation dropped, and a trailing company word ("rent a car", "airlines", "inc") taken off.
+_NAMES = {"expedia": "expedia", "booking": "booking", "airbnb": "airbnb", "vrbo": "vrbo", "homeaway": "vrbo", "klook": "klook", "getyourguide": "getyourguide",
+          "get your guide": "getyourguide", "aviasales": "aviasales", "hertz": "hertz", "avis": "avis", "budget": "budget", "enterprise": "enterprise", "national": "national",
+          "alamo": "alamo", "sixt": "sixt", "thrifty": "thrifty", "dollar": "dollar", "united": "united", "delta": "delta", "american": "american", "southwest": "southwest",
+          "jetblue": "jetblue", "jet blue": "jetblue", "alaska": "alaska", "frontier": "frontier"}
+_TAIL = re.compile(r"\s+(?:rent a car|car rental|car rentals|rental cars?|airlines|air lines|airways|air|inc|llc|co)$")
+
+
+def _name(text) -> str:
+    name = " ".join(re.sub(r"[^a-z0-9]+", " ", str(text or "").lower().replace(".com", " ")).split())
+    while True:
+        cut = _TAIL.sub("", name)
+        if cut == name or not cut:
+            return name
+        name = cut
 
 
 def find(name) -> Manage | None:
-    text = " " + re.sub(r"[^a-z0-9]+", " ", str(name or "").lower().replace(".com", " ").replace("booking ", "booking.com ")) + " "
-    for word in _ORDER:
-        if f" {word} " in text:
-            return SITES[_WORDS[word]]
-    return None
+    """The Manage page when `name` is a partner's own name ("Expedia", "expedia.com", "Enterprise Rent-A-Car", "Delta Air Lines"), else None."""
+    key = _NAMES.get(_name(name))
+    return SITES[key] if key else None
 
 
 def for_booking(kind, item, partner="") -> tuple:

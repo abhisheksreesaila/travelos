@@ -53,6 +53,19 @@ def commission_summary(rows) -> list:
     return out
 
 
+def plain_clicks(rows, days=7) -> dict:
+    """{lane: clicks} on plain links (no commission) in the last `days` days (F-198 review): what a program not yet connected loses, Klook's included where it was skipped."""
+    from datetime import datetime, timedelta, timezone
+    from gitaway.partners import registry
+    since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    paying = {"aviasales", "klook"} | registry.tracked_sites()
+    out = {}
+    for r in rows:
+        if r["clicked_at"] >= since and r["offer_id"].startswith(f"{r['lane']}-") and r["partner"] not in paying:
+            out[r["lane"]] = out.get(r["lane"], 0) + 1
+    return out
+
+
 def _button(action, slug, label, cls):
     return Form(Input(type="hidden", name="slug", value=slug), Button(label, type="submit", cls=f"btn btn-sm {cls}"), action=f"/admin/{action}", method="post", cls="ad-inline")
 
@@ -114,7 +127,7 @@ def _dollars(micros) -> str:
 
 def _order(o):
     """One Plan it for me order (F-193): who, where, status, what it brought in and what the agent cost; a failed one that was paid is a refund due."""
-    owed = o["status"] == "failed" and o["paid_at"]
+    owed = pfm.refund_due(o)
     i = o["intake"]
     return Li(Div(Span(f"#{o['id'][:8]}", cls="ad-name"), Span(STATUS_WORDS[o["status"]], cls="ad-state " + ("is-down" if o["status"] == "failed" else "is-live" if o["status"] == "ready" else "")),
                   Span("Refund due", cls="ad-state is-down", id=f"refund-{o['id'][:8]}") if owed else "", Span(o["email"], cls="ad-meta")),
@@ -171,11 +184,13 @@ def admin_page(drafted=()):
     total = sum(s[3] for s in summary)
     rep = reports.all_reports()
     broken, why = failures.recent(KLOOK_DAYS)
+    plain = plain_clicks(sheet)
     orders = pfm.admin_rows()
     owed = pfm.refunds_due()
     pt = pfm.totals(orders, owed)
     cards = (("Creators", f"{len(people)} of {GOAL}", "ad-goal"), ("Live trips", str(live), "ad-live"), ("Reports", str(len(rep)), "ad-reports"), ("Estimated commission", catalog.money(total), "ad-commission"),
              ("Klook links not tracked", str(broken), "ad-klook-failures"),
+             ("Plain links, no commission (7 days)", " · ".join(f"{lane} {n}" for lane, n in sorted(plain.items())) or "none", "ad-plain"),
              ("Plan it for me", f"{pt['paid']} paid · {catalog.money(pt['revenue_cents'])}", "ad-pfm"), ("Refunds due", f"{pt['refunds']} · {catalog.money(pt['refund_cents'])}", "ad-refunds"),
              ("Agent cost", _dollars(pt["ai_cost_micros"]), "ad-pfm-cost"))
     fresh = sum(1 for r in rep if not r["seen"])

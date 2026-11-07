@@ -190,7 +190,7 @@ def preview_page(text, parsed, match=None, moves=0, *, fields=None, save_action=
 
 def details_page(plan, trip_id="", admin=False, editor=False):
     return page(f"{plan.title}: details", Div(
-        Div(H1(plan.title, cls="ti-title"), Span("Every detail, in one place.", cls="ga-h-two"), P(f"Booked elsewhere · {plan.booked_on}. Confirmation numbers are shown only to your family.", cls="ti-lede"),
+        Div(H1(plan.title, cls="ti-title"), Span("Every detail, in one place.", cls="ga-h-two"), P(("" if bookedwhere.trip_line(plan) else f"Booked elsewhere · {plan.booked_on}. ") + "Confirmation numbers are shown only to your family.", cls="ti-lede"),
             bookedwhere.trip_line(plan),
             Div(A(icon("arrow-right", 16, 2.6), "Open the trip", href="/trip", cls="btn btn-sm", id="ti-cal"),
                 A(icon("pencil", 16, 2.4), "Edit trip", href=f"/trips/build/edit?trip={trip_id}", cls="btn btn-sm", id="ti-edit-trip") if editor and trip_id else "",
@@ -202,6 +202,25 @@ def details_page(plan, trip_id="", admin=False, editor=False):
 def _sorry(title, message, *links, status=200):
     out = page(title, Div(Div(H1(title, cls="ti-title"), P(message, cls="ti-lede"), Div(*links, cls="ti-actions"), cls="ti-head"), cls="ti-wrap ti-narrow"), head=HEAD)
     return FtResponse(out, status_code=status) if status != 200 else out
+
+
+def read_paste(session, text):
+    """What a paste on the import page is, read once: an Expedia itinerary, a partner's confirmation (F-198; added to the open trip when its dates fall inside it) or the template.
+    (text as the template, Parsed, read from Expedia, the trip it corrects or None), or the paste page saying what is wrong. Blocking: run it in a thread."""
+    read, extra = False, ()
+    if expedia.looks_like_expedia(text):
+        converted = expedia.convert(text)
+        if not converted.yaml:
+            return paste_page(text, [*converted.warnings, "We couldn't read any booking in that itinerary."], status=422)
+        text, extra, read = converted.yaml, converted.warnings, True
+    elif (got := confirmations.convert(text, importer.plan_of(session))):
+        text, extra = got.yaml, got.warnings
+    try:
+        parsed = ti.parse(text)
+    except ti.ImportProblem as e:
+        return paste_page(text, e.errors, (*extra, *e.warnings), status=422)
+    parsed = ti.Parsed(parsed.plan, (*extra, *parsed.warnings))
+    return text, parsed, read, importer.find_match(session, parsed.plan)
 
 
 # ---- routes --------------------------------------------------------------------------------------------------------
@@ -244,22 +263,10 @@ def register(app):
                 text = await run_in_threadpool(expedia.pdf_text, data)     # parsing a PDF is CPU work (F-182)
             except expedia.PdfProblem as e:
                 return paste_page(text, [str(e)], status=422)
-        read, extra = False, ()
-        if expedia.looks_like_expedia(text):
-            converted = expedia.convert(text)
-            if not converted.yaml:
-                return paste_page(text, [*converted.warnings, "We couldn't read any booking in that itinerary."], status=422)
-            text, extra, read = converted.yaml, converted.warnings, True
-        else:      # F-198: a Booking.com, Airbnb, Vrbo, GetYourGuide, Klook or car-rental confirmation; inside the open trip's dates it is added to that trip
-            got = confirmations.convert(text, importer.plan_of(session)) if confirmations.read(text) else None
-            if got:
-                text, extra = got.yaml, got.warnings
-        try:
-            parsed = ti.parse(text)
-        except ti.ImportProblem as e:
-            return paste_page(text, e.errors, (*extra, *e.warnings), status=422)
-        parsed = ti.Parsed(parsed.plan, (*extra, *parsed.warnings))
-        match = importer.find_match(session, parsed.plan)
+        got = await run_in_threadpool(read_paste, session, text)      # the readers and the parser are CPU work over up to 400 KB (F-198 review): never on the event loop
+        if isinstance(got, FtResponse):      # the paste page saying what is wrong
+            return got
+        text, parsed, read, match = got
         return preview_page(text, parsed, match, importer.rides_to_retime(session, match[0], parsed.plan) if match else 0, expedia_read=read)
 
     @app.post(f"{PATH}/edit")

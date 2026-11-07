@@ -132,15 +132,6 @@ def _day_start() -> str:
     return local.replace(hour=0, minute=0, second=0, microsecond=0).astimezone(timezone.utc).isoformat(timespec="microseconds")
 
 
-def free_left(owner) -> int:
-    """How many more free plans `owner` may start today: the smaller of what is left of their own cap and of the site's."""
-    since = _day_start()
-    with _db() as db:
-        mine = db.conn.execute(text("SELECT COUNT(*) FROM plan_orders WHERE owner_user = :o AND created_at >= :s"), {"o": str(owner), "s": since}).scalar()
-        everyone = db.conn.execute(text("SELECT COUNT(*) FROM plan_orders WHERE created_at >= :s"), {"s": since}).scalar()
-    return max(0, min(daily_cap() - mine, site_daily_cap() - everyone))
-
-
 MINE_FULL = "You have planned {n} trips today, the most for one day while plans are free. Come back tomorrow."
 SITE_FULL = "Today's free plans are all taken. Come back tomorrow: plans start again at midnight, Pacific time."
 
@@ -290,26 +281,62 @@ def create_order(owner, tenant, email, intake) -> dict:
     return get(oid, owner)
 
 
+_CAP_LOCK = threading.Lock()      # one free order is counted and made at a time in this process; the INSERT's own WHERE holds the caps even across processes
+_TODAY = "paid_at >= :s"           # a plan counts on the day it was started: free orders get paid_at when they are made (an unpaid or expired one has none)
+
+
+def _caps_full(db, owner, since) -> str:
+    """"" while `owner` and the site are both under today's caps, else the sentence to show."""
+    mine = db.conn.execute(text(f"SELECT COUNT(*) FROM plan_orders WHERE owner_user = :o AND {_TODAY}"), {"o": str(owner), "s": since}).scalar()
+    if mine >= daily_cap():
+        return MINE_FULL.format(n=mine)
+    if db.conn.execute(text(f"SELECT COUNT(*) FROM plan_orders WHERE {_TODAY}"), {"s": since}).scalar() >= site_daily_cap():
+        log.warning("plan-for-me: the site's daily cap of %d free plans is reached", site_daily_cap())
+        return SITE_FULL
+    return ""
+
+
+_UNDER_CAPS = (f"(SELECT COUNT(*) FROM plan_orders WHERE owner_user = :o AND {_TODAY}) < :mine AND (SELECT COUNT(*) FROM plan_orders WHERE {_TODAY}) < :site")
+
+
 def _create_free(oid, now, owner, tenant, email, intake) -> dict:
-    """A free order (F-199): checked against today's caps, made `paid` at no charge (amount 0) so the worker builds it at once. Two taps in the same instant could
-    both pass the count (one plan over the cap at worst); the cap is a cost guard, not a ledger."""
+    """A free order (F-199): made `paid` at no charge (amount 0) so the worker builds it at once, only while `owner` and the site are under today's caps. The count and the insert are one
+    statement (INSERT ... SELECT ... WHERE counts < caps) under a lock, so a burst of taps cannot slip past a cap (F-198 review: 20 at once made 14 against a cap of 2)."""
     since = _day_start()
-    with _db() as db:
-        mine = db.conn.execute(text("SELECT COUNT(*) FROM plan_orders WHERE owner_user = :o AND created_at >= :s"), {"o": str(owner), "s": since}).scalar()
-        everyone = db.conn.execute(text("SELECT COUNT(*) FROM plan_orders WHERE created_at >= :s"), {"s": since}).scalar()
-        if mine >= daily_cap():
-            db.conn.rollback()
-            raise TooMany(MINE_FULL.format(n=mine))
-        if everyone >= site_daily_cap():
-            db.conn.rollback()
-            log.warning("plan-for-me: the site's daily cap of %d free plans is reached", site_daily_cap())
-            raise TooMany(SITE_FULL)
-        db.conn.execute(text("INSERT INTO plan_orders (id, owner_user, tenant_id, email, status, intake, amount_cents, created_at, paid_at, updated_at) "
-                             "VALUES (:i, :o, :t, :e, 'paid', :n, 0, :c, :c, :c)"),
-                        {"i": oid, "o": str(owner), "t": str(tenant), "e": str(email)[:120], "n": json.dumps(intake, separators=(",", ":")), "c": now})
+    with _CAP_LOCK, _db() as db:
+        made = db.conn.execute(text("INSERT INTO plan_orders (id, owner_user, tenant_id, email, status, intake, amount_cents, created_at, paid_at, updated_at) "
+                                    f"SELECT :i, :o, :t, :e, 'paid', :n, 0, :c, :c, :c WHERE {_UNDER_CAPS}"),
+                               {"i": oid, "o": str(owner), "t": str(tenant), "e": str(email)[:120], "n": json.dumps(intake, separators=(",", ":")), "c": now, "s": since,
+                                "mine": daily_cap(), "site": site_daily_cap()}).rowcount
         db.conn.commit()
+        if not made:
+            raise TooMany(_caps_full(db, owner, since) or MINE_FULL.format(n=daily_cap()))
     wake()
     return get(oid, owner)
+
+
+def settle(order) -> dict:
+    """The order as its buyer's pages should see it. While plans are sold: `settle_price`. While they are free (F-198 review) an order left awaiting payment from before is never charged: it
+    becomes a free plan when the caps allow (and is built), else it expires (failed, `expired`, amount 0: nothing was charged)."""
+    if paid():
+        return settle_price(order)
+    if order["status"] != "awaiting_payment":
+        return order
+    now, since = _now(), _day_start()
+    with _CAP_LOCK, _db() as db:
+        freed = db.conn.execute(text(f"UPDATE plan_orders SET status = 'paid', amount_cents = 0, paid_at = :c, updated_at = :c WHERE id = :i AND status = 'awaiting_payment' AND {_UNDER_CAPS}"),
+                                {"c": now, "i": order["id"], "o": order["owner_user"], "s": since, "mine": daily_cap(), "site": site_daily_cap()}).rowcount
+        if not freed:
+            db.conn.execute(text("UPDATE plan_orders SET status = 'failed', error = 'expired', amount_cents = 0, updated_at = :c WHERE id = :i AND status = 'awaiting_payment'"),
+                            {"c": now, "i": order["id"]})
+        db.conn.commit()
+    if freed:
+        wake()
+    return _row(order["id"])
+
+
+class NotSold(RuntimeError):
+    """Plan it for me is free here (PLAN_FOR_ME_PAID is off): nothing may be sent to Stripe."""
 
 
 def get(order_id, owner) -> dict | None:
@@ -342,11 +369,16 @@ def refunds_due() -> list:
                 .mappings()]
 
 
+def refund_due(order) -> bool:
+    """A failed order that took money: paid, and for more than nothing (a free plan that failed is no refund, F-198 review)."""
+    return order["status"] == "failed" and bool(order["paid_at"]) and order["amount_cents"] > 0
+
+
 def totals(rows, owed_payments=()) -> dict:
     """What the orders add up to: `paid` and `revenue_cents` for the ones that are paid and kept (KEPT), `refunds` and `refund_cents` for the failed ones that were paid and for
     `owed_payments` (`refunds_due()`): a refund is due, the captain does it in Stripe; and `ai_cost_micros` (millionths of a dollar) for what the agent cost across all of them."""
     kept = [r for r in rows if r["status"] in KEPT]
-    owed = [r for r in rows if r["status"] == "failed" and r["paid_at"]]
+    owed = [r for r in rows if refund_due(r)]
     return {"paid": len(kept), "revenue_cents": sum(r["amount_cents"] for r in kept), "refunds": len(owed) + len(owed_payments),
             "refund_cents": sum(r["amount_cents"] for r in owed) + sum(p["amount_cents"] for p in owed_payments), "ai_cost_micros": sum(r["ai_cost_micros"] for r in rows)}
 
@@ -453,6 +485,8 @@ def start_checkout(order, base_url) -> str:
     """The address where `order` is paid. Blocking (it calls Stripe): run it in a thread. An order that has a Checkout session already gets that one back while it is still open (a second tab or
     the Back button never opens a second page that could be paid too), or its order page when it was completed (the payment is on its way); only an expired one gets a new session. One line item,
     mode payment, at the order's own `amount_cents`; `client_reference_id` is the order id, which is how the webhook finds it again. No promotion codes. Raises TooMany past MAX_CHECKOUTS an hour."""
+    if not paid():
+        raise NotSold("Plan it for me is free: no payment page")
     base = base_url.rstrip("/")
     _allow_checkout(order["owner_user"])
     if order["stripe_session"]:
@@ -777,7 +811,8 @@ def _fail(order_id, code) -> None:
     with _db() as db:
         db.conn.execute(text(f"UPDATE plan_orders SET status = 'failed', error = :e, {FORGET_HEIGHTS}, updated_at = :u WHERE id = :i AND status IN ('building', 'paid', 'review', 'sending')"), {"e": code, "u": _now(), "i": order_id})
         db.conn.commit()
-    log.warning("plan order %s failed (%s): refund due", order_id, code)
+        row = db.conn.execute(text("SELECT status, paid_at, amount_cents FROM plan_orders WHERE id = :i"), {"i": order_id}).mappings().fetchone()
+    log.warning("plan order %s failed (%s)%s", order_id, code, ": refund due" if row and refund_due(row) else "")
 
 
 def _make(order) -> dict:

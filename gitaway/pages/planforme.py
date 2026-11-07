@@ -73,7 +73,7 @@ def _base(request) -> str:
 def _mine(session, order_id):
     me = ses.current_traveler(session)
     found = pfm.get(order_id, me.id) if me else None
-    return pfm.settle_price(found) if found else None      # an unpaid order shows the price it would be charged now
+    return pfm.settle(found) if found else None      # an unpaid order shows the price it would be charged now; while plans are free it is never charged (pfm.settle)
 
 
 def _summary(intake) -> str:
@@ -286,7 +286,7 @@ def order_page(order, paid_back=False, trouble=""):
     body = [Div(Span(f"Order {order['id'][:8]}", cls="pf-chip", id="pf-order"), H1(head[0], id="pf-title"), P(head[1], cls="pf-lede", id="pf-lede"), P(_summary(intake), cls="pf-sum", id="pf-sum"), cls="pf-top")]
     if status in ("paid", "building", "review") or (status == "awaiting_payment" and paid_back):
         body.append(_steps("paid" if status == "awaiting_payment" else status))
-    if status == "awaiting_payment" and not paid_back:
+    if status == "awaiting_payment" and not paid_back and pfm.paid():
         if trouble in TROUBLE:
             body.append(P(TROUBLE[trouble], role="alert", cls="pf-error", id="pf-trouble"))
         body.append(Form(Button(icon("lock", 18, 2.4), f"Pay {catalog.money(order['amount_cents'])}", type="submit", cls="btn btn-primary pf-go", id="pf-pay"), action=f"{PATH}/{order['id']}/pay", method="post", cls="pf-act"))
@@ -332,7 +332,7 @@ def register(app):
     async def _checkout(request, order):
         """Where an unpaid order goes to be paid: the stand-in locally, else Stripe. (url, the `err` code the order page says in words: "1" Stripe failed, "limit" too many tries, "off" not for sale).
         A free order (F-199) is already building: it goes to its own page."""
-        if order["status"] != "awaiting_payment":
+        if order["status"] != "awaiting_payment" or not pfm.paid():
             return f"{PATH}/{order['id']}", ""
         if pfm.standin():
             return f"/sandbox/plan-for-me/{order['id']}", ""

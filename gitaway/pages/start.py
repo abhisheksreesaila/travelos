@@ -157,7 +157,7 @@ def start_page(session, vals, errors=None, status=200, phone=False):
         Div(
             Div(
                 Div(Span("PLAN A TRIP", cls="eyebrow"), H1("Where to?"), Span("Plan it together.", cls="ga-h-two"),
-                    P("Pick a place, your dates and who is coming. We line up flights, a stay and a car, side by side, with one honest total."),
+                    P("Pick a place, your dates and who is coming. We line up where to book flights, a stay and a car, with your dates and party filled in."),
                     A(icon("ledger", 16, 2.4), "Import a booked trip", href=firstrun.IMPORT, cls="btn btn-sm st-import", id="st-import"),
                     cls="st-hero"),
                 continue_card(session, phone),

@@ -59,7 +59,7 @@ JOBS = {
 }
 DEFAULT_PROVIDER = {"creator-import": "anthropic", "plan-for-me": "anthropic"}      # a job listed here uses that provider and no other: with its key missing it is OFF, never Azure (F-196); every other job is Azure unless GITAWAY_AI_PROVIDER_<JOB> says otherwise
 ANTHROPIC_MODEL = "claude-haiku-5-5"
-JOB_MODEL = {"plan-for-me": "claude-haiku-5-5"}          # a job's own default model (F-199: free plans use Haiku; GITAWAY_AI_MODEL_PLAN_FOR_ME=claude-sonnet-5-5 brings back Sonnet); GITAWAY_AI_MODEL_<JOB> still wins
+JOB_MODEL: dict = {}      # a job's own default model when it is not ANTHROPIC_MODEL; GITAWAY_AI_MODEL_<JOB> still wins (plan-for-me is Haiku since F-199: GITAWAY_AI_MODEL_PLAN_FOR_ME=claude-sonnet-5-5 brings back Sonnet)
 JOB_EFFORT = {"plan-for-me": "medium"}                    # a job's own default effort (the others are low); GITAWAY_AI_EFFORT_<JOB> still wins
 ANTHROPIC_PRICE = {"claude-haiku-5-5": (0.10, 0.50), "claude-sonnet-5-5": (2.00, 10.00)}      # US dollars per million tokens (input, output); Haiku for prompts up to 100K tokens
 ANTHROPIC_MAX_TOKENS = 8000                               # thinking counts toward it; a 14-day draft is about 3,000

@@ -12,7 +12,10 @@ Travelpayouts recommends caching for 24 hours; a price is kept that long, a fail
 import json
 import logging
 import re
+import threading
+import time
 import urllib.request
+from collections import deque
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from urllib.parse import urlencode
@@ -25,8 +28,11 @@ TIMEOUT = 2
 KEEP = timedelta(hours=24)
 FAIL_MINUTES = 30
 MAX_CENTS = 5_000_000         # a fare above $50,000 a person is a bad answer
-_CACHE: dict = {}             # (origin, dest, depart, return) -> (Price | None, when it was asked)
+_CACHE: dict = {}             # (origin, dest, depart, return) -> (Price | None, when it was asked), oldest first: the oldest goes when it is full
 _CACHE_MAX = 2048
+BUDGET_PER_MINUTE = 20        # uncached calls in any minute, for the whole site (F-198 review: anonymous pages must not spend our token); past it, no price
+_ASKED: deque = deque()       # monotonic times of the uncached calls in the last minute
+_LOCK = threading.Lock()
 _IATA = re.compile(r"[A-Z]{3}")
 log = logging.getLogger(__name__)
 
@@ -46,8 +52,9 @@ def when(at: datetime) -> str:
 
 
 def _get(url: str, headers: dict, timeout: float):
+    """GET with our token; a redirect is refused (it would carry the token elsewhere)."""
     req = urllib.request.Request(url, headers=headers)
-    with urllib.request.urlopen(req, timeout=timeout) as r:     # noqa: S310 (a fixed https URL)
+    with travelpayouts._opener.open(req, timeout=timeout) as r:     # noqa: S310 (a fixed https URL)
         return json.load(r)
 
 
@@ -55,7 +62,29 @@ TRANSPORT = _get
 
 
 def clear() -> None:
-    _CACHE.clear()
+    with _LOCK:
+        _CACHE.clear()
+        _ASKED.clear()
+
+
+def _spend() -> bool:
+    """May one more uncached call go out now? At most BUDGET_PER_MINUTE in any minute."""
+    now = time.monotonic()
+    with _LOCK:
+        while _ASKED and now - _ASKED[0] > 60:
+            _ASKED.popleft()
+        if len(_ASKED) >= BUDGET_PER_MINUTE:
+            return False
+        _ASKED.append(now)
+        return True
+
+
+def _keep(key, value) -> None:
+    with _LOCK:
+        _CACHE.pop(key, None)
+        while len(_CACHE) >= _CACHE_MAX:
+            _CACHE.pop(next(iter(_CACHE)))
+        _CACHE[key] = value
 
 
 def _read(answer) -> int | None:
@@ -76,19 +105,20 @@ def flight_from(origin, dest, depart: date, return_: date) -> Price | None:
     if not token or not (_IATA.fullmatch(origin) and _IATA.fullmatch(dest)) or origin == dest or depart < catalog.today() or return_ <= depart:
         return None
     key, now = (origin, dest, depart, return_), datetime.now(timezone.utc)
-    if key in _CACHE:
-        found, asked = _CACHE[key]
+    kept = _CACHE.get(key)
+    if kept:
+        found, asked = kept
         if now - asked < (KEEP if found else timedelta(minutes=FAIL_MINUTES)):
             return found
+    if not _spend():
+        return None
     query = {"origin": origin, "destination": dest, "departure_at": depart.isoformat(), "return_at": return_.isoformat(), "currency": "usd", "market": "us",
              "sorting": "price", "direct": "false", "one_way": "false", "limit": 1}
     try:
         cents = _read(TRANSPORT(f"{API}?{urlencode(query)}", {"X-Access-Token": token, "Accept": "application/json"}, TIMEOUT))
     except Exception as e:      # a timeout, a 401, a bad body: no price, and say so once
-        log.warning("flight price %s-%s not read (%s)", origin, dest, f"{type(e).__name__}: {e}"[:160].replace(token, "***"))
+        log.warning("flight price %s-%s not read (%s)", origin, dest, travelpayouts.redacted(e))
         cents = None
     found = Price(cents, now) if cents else None
-    if len(_CACHE) >= _CACHE_MAX:
-        _CACHE.clear()
-    _CACHE[key] = (found, now)
+    _keep(key, (found, now))
     return found
