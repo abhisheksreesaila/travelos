@@ -333,3 +333,16 @@ html.ck-sheet-open, html.ck-sheet-open body { overflow: hidden; }      /* the pa
   .pp-plane { transition: none; }
   .pp-route.draw { animation: none; }
 }
+
+/* F-198 merged: a half-width pass on the laptop with "Booked on <partner>" and Change or cancel wraps its foot onto two rows; its perforation gives that room back
+   so the wallet still fits 1440x900 and 1280x800 with every word whole (tests_browser/test_cockpit.py) */
+@media (min-width: 1020px) and (not (display-mode: standalone)) {
+  .ck-wallet .ck-pass:has(.ck-cxl[target]) .ck-perf { margin-block: 0.25rem; }
+  .ck-wallet .ck-pass:has(.ck-cxl[target]) .ck-pass-f { row-gap: 0.25rem; }
+}
+@media (min-width: 1020px) and (max-height: 860px) and (not (display-mode: standalone)) {      /* and on a short laptop (1280x800) a little more */
+  .ck-wallet .ck-pass:has(.ck-cxl[target]) .ck-perf { margin-block: 0; }
+  .ck-wallet .ck-pass:has(.ck-cxl[target]) .ck-pass-t { margin-top: 0; }
+  .ck-wallet .ck-pass:has(.ck-cxl[target]) .ck-pass-f { row-gap: 0; }
+  .ck-wallet .ck-pass:has(.ck-cxl[target]) { padding-block: 0.5rem; }
+}
