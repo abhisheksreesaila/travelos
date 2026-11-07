@@ -27,9 +27,28 @@ Status: draft (2026-11-07). The captain approves after seeing the reskin directi
    - **The test:** the captain's Tahoe trip in December, end to end.
 5. **Go live with the reskin.** The captain's Disneyland trip publishes at the same time.
 
+## The model (the captain's call, 2026-11-07)
+- GitAway is "the GitHub of travel": the place to plan a trip together, share it, and fork other people's trips. GitAway does not sell travel.
+- **Booking is links only, with almost no liability.** Every booking happens on the partner's site, under the partner's terms and the partner's support. GitAway never takes payment and never handles a cancellation.
+  - Each booking in a trip shows "Booked on <partner>". A "Change or cancel" button opens the partner's own manage-booking page.
+  - LiteAPI, Duffel and acting as the merchant are off the table. They would turn GitAway into a support center.
+- **What GitAway adds is one screen for the whole trip:**
+  - weather
+  - the plan
+  - every booking, wherever it was made
+  - the family's chat and calendar
+  - the creator's tips
+  - one tap to the partner for each lane
+- **Money comes from the network:**
+  - small affiliate cuts
+  - creator and influencer brand deals
+  - the content-creator market
+  - travel ads, later, which are fine on a travel site
+  - The worst case is the server bill.
+
 ## Not now
 - Paid plans and creator discount codes.
-- Checkout inside GitAway, which needs Expedia Rapid or Duffel.
+- Checkout inside GitAway of any kind (Expedia Rapid, LiteAPI, Duffel). GitAway stays a front door, not a seller.
 - Native app-store apps.
 
 ## How we'll know
