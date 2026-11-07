@@ -1,4 +1,4 @@
-"""Landing page (F-060, Landing v2): one clear door.
+"""Landing page (F-060, Landing v2): one clear door. Since F-206 this is what a signed-in person sees at /; a signed-out visitor gets the cover story (cover.py).
 
 Plan a trip leads; forking is one quiet line that scrolls to Community trips. Then the four features (each tile animates on hover and
 focus), the shared calendar that plays itself, three community trips, and the creators panel. Design: docs/design/landing-v2.md.
@@ -13,7 +13,7 @@ from gitaway import hub, itineraries, session, showcase
 from gitaway.catalog import SAMPLE_TRIP
 from gitaway.icons import icon
 from gitaway.layout import page
-from gitaway.pages import home_art
+from gitaway.pages import cover, home_art
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/landing.css"), Script(src="/assets/js/landing.js", defer=True))
 
@@ -241,7 +241,10 @@ def _drive():
 
 def register(app):
     @app.get("/")
-    def home():
+    def home(htmlkw):
+        if not session.request_traveler():      # F-206: a stranger gets the cover story (gitaway/pages/cover.py); a signed-in person keeps this landing
+            htmlkw["cls"] = "cv-root"
+            return cover.page(footer_links(), _drive())
         return page(
             "",
             _hero(),

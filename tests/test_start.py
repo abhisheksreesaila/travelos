@@ -143,8 +143,9 @@ def test_header_and_landing_doors_lead_to_start(client):
     for path in ["/community", "/start"]:  # the landing's header is only the brand and Sign in (F-060): its door is the form below
         h = client.get(path).text
         assert re.search(r'<nav[^>]*>.*?href="/start"[^>]*>Plan a trip', h, re.S), path
-    land = client.get("/").text
-    assert 'action="/start"' in land
+    assert re.search(r'<a [^>]*href="/start"[^>]*>Start a trip</a>', client.get("/").text)    # the cover's first door (F-206)
+    sign_in(client)
+    assert 'action="/start"' in client.get("/").text                                      # the signed-in landing keeps its form
 
 
 def test_start_is_open_to_signed_out_visitors(client):

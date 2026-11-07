@@ -78,7 +78,7 @@ def test_signed_out_pages_keep_their_own_header(client):
     for path in ("/", "/signin", "/community", "/privacy"):
         html = client.get(path).text
         assert "ga-topbar" not in html, path
-        assert "ga-header" in html, path
+        assert ('class="cv-top"' if path == "/" else "ga-header") in html, path      # the signed-out landing is the cover, with its own header (F-206)
 
 
 def test_the_landing_keeps_its_own_header_for_a_signed_in_visitor_too(client):
