@@ -1,4 +1,4 @@
-"""F-197 the founder check: with PLAN_FOR_ME_REVIEW on (the default) a built plan waits on /admin for the captain's "Send to family" before the buyer sees anything of it. The buyer's
+"""F-197 the founder check: with PLAN_FOR_ME_REVIEW=1 (off by default since F-199) a built plan waits on /admin for the captain's "Send to family" before the buyer sees anything of it. The buyer's
 order page says a person is checking it, their family has no trip yet, and nobody but an admin can look at, edit or send it. With 0 the trip is delivered at once, as F-193 did."""
 
 import re
@@ -39,10 +39,11 @@ def built(monkeypatch):
     return pfm._row(o["id"])
 
 
-def test_the_check_is_on_unless_the_setting_is_0(monkeypatch):
+def test_the_check_is_on_only_when_the_setting_is_1(monkeypatch):
+    """F-199: the check stays, but is off by default now that plans are free."""
     monkeypatch.delenv("PLAN_FOR_ME_REVIEW", raising=False)
-    assert pfm.review_on()
-    for value, on in (("1", True), ("0", False), (" 0 ", False), ("yes", True), ("", True)):
+    assert not pfm.review_on()
+    for value, on in (("1", True), (" 1 ", True), ("0", False), (" 0 ", False), ("yes", False), ("", False)):
         monkeypatch.setenv("PLAN_FOR_ME_REVIEW", value)
         assert pfm.review_on() is on, value
 

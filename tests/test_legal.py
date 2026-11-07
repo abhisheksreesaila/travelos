@@ -58,8 +58,11 @@ def test_the_privacy_page_names_both_cookies_the_partner_links_anthropic_and_the
     assert "no tracking or advertising cookies of our own" not in text      # F-196: ga_via is an attribution cookie, and the page says so
 
 
-def test_plan_it_for_me_is_in_the_privacy_page_and_the_terms_and_the_terms_no_longer_say_gitaway_takes_no_payments(client):
-    """F-193: Stripe takes a payment, Claude Sonnet reads the intake, and an order keeps personal data until it is deleted. The old terms said GitAway "does not take payments": it now takes one."""
+def test_plan_it_for_me_is_in_the_privacy_page_and_the_terms_and_the_terms_no_longer_say_gitaway_takes_no_payments(client, monkeypatch):
+    """F-193: Stripe takes a payment, Claude Sonnet reads the intake, and an order keeps personal data until it is deleted. The old terms said GitAway "does not take payments": it now takes one.
+    (Paid plans with Sonnet and the founder check, as F-193 and F-197 sold them; F-199's free pages are in tests/test_planforme_free.py.)"""
+    monkeypatch.setenv("PLAN_FOR_ME_REVIEW", "1")
+    monkeypatch.setenv("GITAWAY_AI_MODEL_PLAN_FOR_ME", "claude-sonnet-5-5")
     flat = lambda path: re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", client.get(path).text)).replace("&#x27;", "'")
     privacy, terms = flat("/privacy"), flat("/terms")
     for phrase in ("Plan it for me orders: where you asked to go, the dates, your home airport, how many adults and the ages of any kids (and, if you gave them, their heights, which we delete as soon as your plan is delivered), your budget and pace, what you typed under must-dos, your email address, the amount and Stripe's code for the payment, and the trip we built. Before we send a plan, the person who runs GitAway reads the order and the plan to check it",
@@ -76,7 +79,8 @@ def test_plan_it_for_me_is_in_the_privacy_page_and_the_terms_and_the_terms_no_lo
     assert "does not take payments" not in terms
 
 
-def test_every_outside_service_sits_inside_the_services_list(client):
+def test_every_outside_service_sits_inside_the_services_list(client, monkeypatch):
+    monkeypatch.setenv("GITAWAY_AI_MODEL_PLAN_FOR_ME", "claude-sonnet-5-5")      # Sonnet builds paid plans when the setting says so; free plans are Haiku's (F-199)
     page = client.get("/privacy").text
     start = page.index("Google sign-in")
     end = page.index("</ul>", start)

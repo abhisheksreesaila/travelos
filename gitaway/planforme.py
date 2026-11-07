@@ -52,6 +52,8 @@ BUDGETS = {"easy": "Easy on the wallet", "comfortable": "Comfortable", "treat": 
 PACES = {"relaxed": "Relaxed", "balanced": "Balanced", "packed": "Packed"}
 SUGGESTIONS = ("Disneyland, California",)       # beside the catalog's places
 PROMISE = "Not useful? Email us within 7 days for a full refund."
+FREE_NOTE = "Free while GitAway is in early preview."      # F-199: what a free plan's pages say where a paid one says its price and the refund promise
+DEFAULT_DAILY, DEFAULT_SITE_DAILY = 2, 100                # F-199: free plans a person, and the whole site, may start in a day (Pacific time)
 _ID = re.compile(r"[0-9a-f]{16}")
 _AIRPORT = re.compile(r"[A-Za-z]{3}")
 FORGET_HEIGHTS = "intake = json_set(intake, '$.heights', json('[]'))"      # in the UPDATE that ends an order: the kids' heights are only for building the plan
@@ -103,8 +105,44 @@ def public_status(status) -> str:
 
 
 def review_on() -> bool:
-    """Does a person check every built plan before the family sees it (F-197)? On unless PLAN_FOR_ME_REVIEW is 0: a built plan waits in `review` for the captain's "Send to family" on /admin."""
-    return os.getenv("PLAN_FOR_ME_REVIEW", "1").strip() != "0"
+    """Does a person check every built plan before the family sees it (F-197)? Only with PLAN_FOR_ME_REVIEW=1 (F-199: off by default now that plans are free): a built plan then waits in
+    `review` for the captain's "Send to family" on /admin."""
+    return os.getenv("PLAN_FOR_ME_REVIEW", "0").strip() == "1"
+
+
+def paid() -> bool:
+    """Is Plan it for me sold (F-193, F-197)? Only with PLAN_FOR_ME_PAID=1. By default it is free (F-199): no Stripe, no price, an order goes straight to building, and the daily caps
+    keep the model bill small. The Stripe code is all still here for the day it is switched back on."""
+    return os.getenv("PLAN_FOR_ME_PAID", "0").strip() == "1"
+
+
+def daily_cap() -> int:
+    """Free plans one person may start in a day: PLAN_FOR_ME_DAILY (whole digits, 0 to 1,000), else 2."""
+    return _setting("PLAN_FOR_ME_DAILY", DEFAULT_DAILY, 0, 1_000)
+
+
+def site_daily_cap() -> int:
+    """Free plans the whole site may start in a day: PLAN_FOR_ME_SITE_DAILY (whole digits, 0 to 100,000), else 100."""
+    return _setting("PLAN_FOR_ME_SITE_DAILY", DEFAULT_SITE_DAILY, 0, 100_000)
+
+
+def _day_start() -> str:
+    """The start of today in GitAway's zone (Pacific), as the UTC timestamp the orders are written with: the caps count from here."""
+    local = datetime.now(timezone.utc).astimezone(catalog.TZ)
+    return local.replace(hour=0, minute=0, second=0, microsecond=0).astimezone(timezone.utc).isoformat(timespec="microseconds")
+
+
+def free_left(owner) -> int:
+    """How many more free plans `owner` may start today: the smaller of what is left of their own cap and of the site's."""
+    since = _day_start()
+    with _db() as db:
+        mine = db.conn.execute(text("SELECT COUNT(*) FROM plan_orders WHERE owner_user = :o AND created_at >= :s"), {"o": str(owner), "s": since}).scalar()
+        everyone = db.conn.execute(text("SELECT COUNT(*) FROM plan_orders WHERE created_at >= :s"), {"s": since}).scalar()
+    return max(0, min(daily_cap() - mine, site_daily_cap() - everyone))
+
+
+MINE_FULL = "You have planned {n} trips today, the most for one day while plans are free. Come back tomorrow."
+SITE_FULL = "Today's free plans are all taken. Come back tomorrow: plans start again at midnight, Pacific time."
 
 
 def when_ready() -> str:
@@ -121,8 +159,8 @@ def webhook_secret() -> str:
 
 
 def standin() -> bool:
-    """Is the local stand-in checkout in use? Only on a local copy (the showcase is on, never production) with no Stripe key."""
-    return not stripe_key() and not auth.production() and showcase.on()
+    """Is the local stand-in checkout in use? Only while plans are sold, on a local copy (the showcase is on, never production) with no Stripe key."""
+    return paid() and not stripe_key() and not auth.production() and showcase.on()
 
 
 def contact_email() -> str:
@@ -133,7 +171,9 @@ def contact_email() -> str:
 def offered() -> bool:
     """Is Plan it for me for sale here? Only when everything a sale needs is set, so no card is ever charged that cannot be matched and built: the Stripe key and the webhook secret (without it
     no payment is ever believed), an AI key unless this is a local copy that builds a sample, and, in production, the contact address (a refund is promised: a buyer must have somewhere to ask).
-    Or, locally, the stand-in checkout. A half-configured deploy shows no cards and 404s."""
+    Or, locally, the stand-in checkout. A half-configured deploy shows no cards and 404s. While plans are free (F-199) only the model is needed: an AI key, or a local copy that builds a sample."""
+    if not paid():
+        return ai.configured(JOB) or showcase.on()
     if stripe_key():
         return bool(webhook_secret()) and (ai.configured(JOB) or showcase.on()) and (bool(contact_email()) or not auth.production())
     return standin()
@@ -233,6 +273,8 @@ def create_order(owner, tenant, email, intake) -> dict:
     person: starting another drops the oldest ones that have no live checkout (none made, or made over two hours ago: Stripe's session has expired by then). An order with a checkout that may still
     be paid is never dropped, so a payment always finds its order; when that many are live a new one is refused (TooMany)."""
     oid, now = secrets.token_hex(8), _now()
+    if not paid():
+        return _create_free(oid, now, owner, tenant, email, intake)
     stale = (datetime.now(timezone.utc) - timedelta(hours=2)).isoformat(timespec="microseconds")
     with _db() as db:
         live = "(stripe_session != '' AND updated_at >= :stale)"      # `updated_at` moves only when a checkout is made, while an order awaits payment
@@ -245,6 +287,28 @@ def create_order(owner, tenant, email, intake) -> dict:
         db.conn.execute(text("INSERT INTO plan_orders (id, owner_user, tenant_id, email, intake, amount_cents, created_at, updated_at) VALUES (:i, :o, :t, :e, :n, :a, :c, :c)"),
                         {"i": oid, "o": str(owner), "t": str(tenant), "e": str(email)[:120], "n": json.dumps(intake, separators=(",", ":")), "a": price_cents(), "c": now})
         db.conn.commit()
+    return get(oid, owner)
+
+
+def _create_free(oid, now, owner, tenant, email, intake) -> dict:
+    """A free order (F-199): checked against today's caps, made `paid` at no charge (amount 0) so the worker builds it at once. Two taps in the same instant could
+    both pass the count (one plan over the cap at worst); the cap is a cost guard, not a ledger."""
+    since = _day_start()
+    with _db() as db:
+        mine = db.conn.execute(text("SELECT COUNT(*) FROM plan_orders WHERE owner_user = :o AND created_at >= :s"), {"o": str(owner), "s": since}).scalar()
+        everyone = db.conn.execute(text("SELECT COUNT(*) FROM plan_orders WHERE created_at >= :s"), {"s": since}).scalar()
+        if mine >= daily_cap():
+            db.conn.rollback()
+            raise TooMany(MINE_FULL.format(n=mine))
+        if everyone >= site_daily_cap():
+            db.conn.rollback()
+            log.warning("plan-for-me: the site's daily cap of %d free plans is reached", site_daily_cap())
+            raise TooMany(SITE_FULL)
+        db.conn.execute(text("INSERT INTO plan_orders (id, owner_user, tenant_id, email, status, intake, amount_cents, created_at, paid_at, updated_at) "
+                             "VALUES (:i, :o, :t, :e, 'paid', :n, 0, :c, :c, :c)"),
+                        {"i": oid, "o": str(owner), "t": str(tenant), "e": str(email)[:120], "n": json.dumps(intake, separators=(",", ":")), "c": now})
+        db.conn.commit()
+    wake()
     return get(oid, owner)
 
 
@@ -628,6 +692,8 @@ def save_result(order_id, result, usage, sample=False) -> None:
                         {"r": json.dumps(result, separators=(",", ":")) if result is not None else "", "s": 1 if sample else 0, "m": usage.get("model", ""), "ti": tin, "to": tout,
                          "c": round(ai.cost_usd(usage.get("model", ""), tin, tout) * 1_000_000), "u": _now(), "i": order_id})
         db.conn.commit()
+    if usage:      # F-199: what each free plan costs, in the log the captain reads (no content: the model, the tokens and the dollars)
+        log.info("plan order %s cost $%.4f (%s, %d tokens in, %d out, all tries)", order_id, ai.cost_usd(usage.get("model", ""), tin, tout), usage.get("model", ""), tin, tout)
 
 
 def _plan(order, result, session) -> ti.Plan:
