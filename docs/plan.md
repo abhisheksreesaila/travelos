@@ -1186,3 +1186,24 @@ Brief: docs/briefs/plan-for-me.md (draft; the captain approves the wording and t
 - [x] founder check: with `PLAN_FOR_ME_REVIEW=1` (the default) a built plan waits on /admin for the captain's one-tap "Send to family" (with a quick edit link) and the buyer sees "Your plan is built and being checked by a person, usually within a few hours." and no trip; with 0 delivery is instant; in docs/setup.md
 - [x] the prompt asks for the examples' quality (ride order by the kids' heights and ages, rope drop, a midday rest, meal anchors, a rain backup) and is given the verified facts; `planforme.validate` keeps its filters; the intake takes an optional height per kid
 - [x] tests: the checklist dates, the review gate (the buyer cannot see an unsent plan), the example pages, access; a browser test of the offer page and an example at 390 and 1440 (no sideways scroll, tap targets of at least 48px on the phone)
+
+# Free and polished: booking anywhere, free plans (brief docs/briefs/free-and-polished.md, approved 2026-11-07)
+
+## F-198 Booking works for any destination, links only, no liability [doing]
+Brief: docs/briefs/free-and-polished.md (What 4, The model) · Research: docs/research/booking-any-trip.md · Decisions: D-219 to D-230 · Needs: F-195 · UI kept minimal (the reskin restyles it)
+- [ ] 1. a partner registry per lane (flight, stay, car, todo, direct) in `gitaway/partners/registry.py`: a lane uses a paying partner when it is connected (Aviasales with `TRAVELPAYOUTS_MARKER`; Klook through the partner-links API with token, marker and project id), else a plain deep link with the search filled in (stays: Expedia, Airbnb, Vrbo; cars: Expedia cars, SUV with snow chains and a ski rack on a winter snow trip; things to do: GetYourGuide; lift tickets and ski school: "Buy direct" at the resort); a plain link has no affiliate parameter and says "No commission"; `PARTNER_<LANE>=<site>` picks a lane's site and `PARTNER_TRACKED=<site,...>` sends a newly approved program through the partner-links API, with no code change; Klook goes first for stays and things to do only where it has the place
+- [ ] 2. any destination: a free-text place resolves to its nearest airport from a small static table of common US destinations (Lake Tahoe -> RNO), or a manual three-letter airport field (checked); dates, adults and kids with ages go wherever the site's documented URL takes them. Lake Tahoe, Dec 19 to 26 2026, from SFO, 2 adults and kids 8 and 11 builds exactly the links of docs/research/booking-any-trip.md section 3
+- [ ] 3. real flight prices where free: the Aviasales Data API (`TRAVELPAYOUTS_TOKEN`, market=us, currency=usd) behind a `TRANSPORT` seam, cached 24 hours, shown as "from $X, checked <time>"; no token or a failure shows no price, never an invented one; tests never reach the network
+- [ ] 4. every booking in a trip says "Booked on <partner>" and has a "Change or cancel" button to that partner's own manage-booking page (Expedia, Booking.com, Airbnb, Vrbo, Klook, GetYourGuide, Aviasales/airline, car brands); GitAway never handles a change
+- [ ] 5. paste-back: pasted confirmations from Booking.com, Airbnb, Vrbo, GetYourGuide, Klook and a car-rental company (synthetic samples) land as booked blocks with the partner recorded, from the import page and from the Ask box; Expedia keeps working
+- [ ] 6. in production `/plan` never shows the invented catalog or its prices: every visitor gets the honest lanes; the workspace, its checkout and quotes stay on the showcase and local copies
+- [ ] tests: registry, exact link URLs, price cache, manage links, paste parsers; a browser test of the booking lanes on a Tahoe trip at 390 and 1440 (no sideways scroll)
+
+## F-199 Plan it for me is free [todo]
+Brief: docs/briefs/free-and-polished.md (What 1) · Decisions: D-231 to D-235 · Needs: F-193, F-197
+- [ ] no Stripe needed to offer it: `PLAN_FOR_ME_PAID=0` (the default) makes an order go straight to building; the Stripe code stays and comes back with `PLAN_FOR_ME_PAID=1`
+- [ ] a daily cap per person (`PLAN_FOR_ME_DAILY`, 2) and for the whole site (`PLAN_FOR_ME_SITE_DAILY`, 100), counted on the server, with a plain sentence when reached
+- [ ] the model is configurable and defaults to claude-haiku-5-5 for free plans; each plan's tokens and cost are stored and logged
+- [ ] the founder check stays, off by default (`PLAN_FOR_ME_REVIEW=0`)
+- [ ] copy: free, no price or refund promise anywhere while free; /privacy and /terms say no payment is taken; docs/setup.md lists the variables
+- [ ] tests: caps (person, site, a new day), free order flow, paid mode still works, copy has no price
