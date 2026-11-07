@@ -3,6 +3,7 @@ picks the price when the order is made and the webhook holds the buyer to it; th
 families, then $49" and how many founding spots are left (FTC former-price rules: $49 has never been charged)."""
 
 import re
+from datetime import datetime, timedelta, timezone
 from html import unescape
 
 import pytest
@@ -58,13 +59,85 @@ def test_an_unpaid_or_a_failed_and_refunded_order_takes_no_spot():
     assert pfm.founding_left() == 10
 
 
-def test_an_order_keeps_the_price_it_was_made_at_even_when_the_spots_run_out_before_it_is_paid():
+def stripe(monkeypatch, status="open"):
+    """A fake Stripe: the Checkout sessions it made (id -> params) and the status it reports for every one of them."""
+    made, state = {}, {"status": status}
+
+    def create(params):
+        sid = f"cs_{len(made) + 1}"
+        made[sid] = params
+        return {"id": sid, "url": f"https://checkout.stripe.test/c/pay/{sid}"}
+    monkeypatch.setattr(pfm, "CHECKOUT", create)
+    monkeypatch.setattr(pfm, "RETRIEVE", lambda sid: {"status": state["status"], "url": f"https://checkout.stripe.test/c/pay/{sid}"})
+    return made, state
+
+
+def amounts(made):
+    return [p["line_items"][0]["price_data"]["unit_amount"] for p in made.values()]
+
+
+def make_stale(order_id, minutes=pfm.SESSION_MINUTES + 5):
+    """The order's checkout was opened `minutes` ago (so Stripe has expired it)."""
+    ago = (datetime.now(timezone.utc) - timedelta(minutes=minutes)).isoformat(timespec="microseconds")
+    with pfm._db() as db:
+        db.conn.execute(text("UPDATE plan_orders SET updated_at = :u WHERE id = :i"), {"u": ago, "i": order_id})
+        db.conn.commit()
+
+
+def test_a_checkout_that_is_still_open_keeps_the_founding_price_after_the_spots_run_out(monkeypatch):
+    made, _ = stripe(monkeypatch)
+    uid, tenant, email = buyer("sam")
+    early = pfm.create_order(uid, tenant, email, pfm.read_intake(GOOD)[0])
+    pfm.start_checkout(early, "http://x")
+    paid_orders(10)
+    assert pfm.price_cents() == 4900 and amounts(made) == [2900]
+    assert pfm.start_checkout(pfm.get(early["id"], uid), "http://x") == "https://checkout.stripe.test/c/pay/cs_1"      # the open page is given back, still $29
+    assert pfm.mark_paid(early["id"], "evt_early", "cs_1", 2900, "usd") == "paid"         # the webhook holds them to the order's own amount
+
+
+def test_a_founding_order_whose_checkout_expired_after_the_spots_ran_out_gets_a_full_price_session(monkeypatch):
+    made, state = stripe(monkeypatch)
+    uid, tenant, email = buyer("sam")
+    stale = pfm.create_order(uid, tenant, email, pfm.read_intake(GOOD)[0])
+    pfm.start_checkout(stale, "http://x")
+    paid_orders(10)
+    state["status"] = "expired"
+    make_stale(stale["id"])
+    pfm.start_checkout(pfm.get(stale["id"], uid), "http://x")
+    assert amounts(made) == [2900, 4900] and pfm.get(stale["id"], uid)["amount_cents"] == 4900
+    assert pfm.mark_paid(stale["id"], "evt_stale", "cs_2", 4900, "usd") == "paid"
+
+
+def test_an_order_with_no_checkout_yet_is_repriced_when_the_spots_are_gone_before_it_opens_one(monkeypatch):
+    made, _ = stripe(monkeypatch)
     uid, tenant, email = buyer("sam")
     early = pfm.create_order(uid, tenant, email, pfm.read_intake(GOOD)[0])
     paid_orders(10)
-    assert pfm.price_cents() == 4900
-    pfm.set_session(early["id"], "cs_1")
-    assert pfm.mark_paid(early["id"], "evt_early", "cs_1", 2900, "usd") == "paid"         # the webhook holds them to the order's own amount
+    pfm.start_checkout(early, "http://x")
+    assert amounts(made) == [4900]
+
+
+def test_the_order_page_and_pay_button_show_the_new_price_once_the_old_checkout_is_dead(client, monkeypatch):
+    from tests.test_signin import sign_in
+    stripe(monkeypatch)
+    sign_in(client)
+    uid, tenant, email = buyer()
+    stale = pfm.create_order(uid, tenant, email, pfm.read_intake(GOOD)[0])
+    pfm.start_checkout(stale, "http://x")
+    paid_orders(10, who="sam")
+    assert "Pay $29" in text_of(client.get(f"/plan-for-me/{stale['id']}").text)      # a checkout that may still be paid keeps its price
+    make_stale(stale["id"])
+    assert "Pay $49" in text_of(client.get(f"/plan-for-me/{stale['id']}").text)
+
+
+def test_live_founding_checkouts_hold_the_last_spots_so_the_limit_is_not_overshot(monkeypatch):
+    made, _ = stripe(monkeypatch)
+    paid_orders(9)                                      # one spot left
+    a, b = (pfm.create_order(*buyer(w), pfm.read_intake(GOOD)[0]) for w in ("ari", "sam"))
+    assert a["amount_cents"] == b["amount_cents"] == 2900
+    pfm.start_checkout(a, "http://x")                   # a holds the last spot with a live checkout
+    pfm.start_checkout(b, "http://x")
+    assert amounts(made) == [2900, 4900] and pfm.get(b["id"], b["owner_user"])["amount_cents"] == 4900
 
 
 def test_a_founding_price_payment_on_a_full_price_order_is_refused():
@@ -95,7 +168,7 @@ def test_a_limit_of_0_means_no_founding_price(monkeypatch, client):
     monkeypatch.setenv("PLAN_FOR_ME_FOUNDING_LIMIT", "0")
     assert (pfm.founding_left(), pfm.price_cents()) == (0, 4900)
     t = text_of(client.get("/plan-for-me").text)
-    assert "first" not in t.lower().split("founding")[0] or "founding" not in t.lower()
+    assert "founding" not in t.lower()
     assert "$49" in t and "$29" not in t
 
 

@@ -46,7 +46,7 @@ def privacy():
             Li("email addresses of people you invite;"),
             Li("push subscriptions, a code your phone gives us so it can get notifications;"),
             Li("passkeys (Face ID sign-in). We keep only the public half; your fingerprint or face never leaves your phone;"),
-            Li("Plan it for me orders: where you asked to go, the dates, your home airport, how many adults and the ages (and, if you gave them, the heights) of any kids, your budget and pace, what you typed under must-dos, your email address, the amount and Stripe's code for the payment, and the trip we built. We do not keep your card number. The family sees the trip, not the order; and"),
+            Li("Plan it for me orders: where you asked to go, the dates, your home airport, how many adults and the ages of any kids (and, if you gave them, their heights, which we delete as soon as your plan is delivered), your budget and pace, what you typed under must-dos, your email address, the amount and Stripe's code for the payment, and the trip we built. Before we send a plan, the person who runs GitAway reads the order and the plan to check it. We do not keep your card number. The family sees the trip, not the order; and"),
             Li("server logs, which can include your email address, for example when a sign-in fails."))),
         ("Who sees it",
          P("Your family sees the trips, plans, notes, messages, photos and phone numbers. Push subscriptions and passkeys are not shown to the family. What each person may change depends on their role."),

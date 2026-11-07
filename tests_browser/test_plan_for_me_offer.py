@@ -46,7 +46,7 @@ def test_the_offer_fits_every_tap_is_big_enough_and_the_one_button_is_always_in_
     expect(page.locator("h1")).to_contain_text("A calm Disneyland trip with your kids")
     expect(page.locator("#pf-terms")).to_have_text("$29 for the first 10 families, then $49")
     expect(page.locator("#pf-spots")).to_have_text("10 of 10 founding spots left")
-    expect(page.locator("#pf-promise")).to_contain_text("Not useful? Reply within 7 days for a full refund.")
+    expect(page.locator("#pf-promise")).to_contain_text("Not useful? Email us within 7 days for a full refund.")
     assert page.locator(".btn-primary").count() == 1
     assert overflow(page) <= 1
     assert not too_small(page, TARGETS), too_small(page, TARGETS)

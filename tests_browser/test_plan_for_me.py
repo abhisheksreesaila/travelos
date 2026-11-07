@@ -89,7 +89,7 @@ def test_a_stranger_fills_the_intake_signs_in_pays_and_opens_their_trip(setup, s
     page.goto(f"{base_url}/plan-for-me/start")
     expect(page.locator("h1")).to_contain_text("Plan it for me")
     expect(page.locator("#pf-price")).to_have_text("$29 once")
-    expect(page.locator("#pf-promise")).to_have_text("Not useful? Reply within 7 days for a full refund.")
+    expect(page.locator("#pf-promise")).to_have_text("Not useful? Email us within 7 days for a full refund.")
     expect(page.locator("#pf-go")).to_have_text("Continue")
     assert overflow(page) <= 1
     assert not too_small(page, CONTROLS), too_small(page, CONTROLS)
@@ -135,7 +135,7 @@ def test_a_stranger_fills_the_intake_signs_in_pays_and_opens_their_trip(setup, s
 
     expect(page.locator("#pf-title")).to_have_text("Your trip is ready", timeout=20000)      # the page reloads itself when the status changes
     expect(page.locator("#pf-open")).to_be_visible()
-    expect(page.locator("#pf-promise")).to_have_text("Not useful? Reply within 7 days for a full refund.")
+    expect(page.locator("#pf-promise")).to_have_text("Not useful? Email us within 7 days for a full refund.")
     expect(page.locator("#pf-go-flight")).to_be_visible()
     assert overflow(page) <= 1 and not too_small(page, CONTROLS), too_small(page, CONTROLS)
     shot(page, f"ready-{w}")

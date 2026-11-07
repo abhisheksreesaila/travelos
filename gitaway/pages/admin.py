@@ -79,7 +79,7 @@ def _report(r):
               cls="ad-report", id=f"report-{r['id']}")
 
 
-STATUS_WORDS = {"awaiting_payment": "Waiting for payment", "paid": "Paid", "building": "Building", "review": "Check it", "ready": "Ready", "failed": "Failed"}
+STATUS_WORDS = {"awaiting_payment": "Waiting for payment", "paid": "Paid", "building": "Building", "review": "Check it", "sending": "Sending", "ready": "Ready", "failed": "Failed"}
 
 
 def _dollars(micros) -> str:

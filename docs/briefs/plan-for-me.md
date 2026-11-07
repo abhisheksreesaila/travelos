@@ -3,7 +3,7 @@
 Status: draft, built in agent time (autopilot, 2026-11-06). The captain approves the price, the promise and the delivery before anything is deployed. Nothing here is live.
 
 ## Why
-- Booking commissions settle only after travel, so they cannot be the first money. A direct sale can: a family pays once and an agent builds their whole trip in their own GitAway account in minutes.
+- Booking commissions settle only after travel, so they cannot be the first money. A direct sale can: a family pays once and an agent builds their whole trip in their own GitAway account, checked by a person, usually within a few hours (with the founder check on; "in a few minutes" if it is off).
 - It also fills GitAway with real trips (the thing creators and families come for) and shows what the app does better than a blank calendar.
 
 ## Who and when
@@ -11,7 +11,7 @@ Status: draft, built in agent time (autopilot, 2026-11-06). The captain approves
 
 ## The offer, in plain words
 - **Price: $29 for the first 10 families, then $49, one time** (F-197: `PLAN_FOR_ME_PRICE_CENTS`, `PLAN_FOR_ME_FOUNDING_LIMIT`, `PLAN_FOR_ME_FULL_PRICE_CENTS`; the server picks it, the offer shows the founding spots left, and no former or struck-through price is ever shown).
-- **Promise: "Not useful? Reply within 7 days for a full refund."** The captain refunds by hand in Stripe. The page says it before the button and again on the order page.
+- **Promise: "Not useful? Email us within 7 days for a full refund." with the contact address beside it (GITAWAY_CONTACT_EMAIL, required to sell in production).** The captain refunds by hand in Stripe. The page says it before the button and again on the order page.
 - **What they get:** a trip in their family's GitAway calendar: day by day, with times, real named places where the agent is sure and a plain "pick a place" where it is not, kid-friendly pacing for the ages given, a note with a few tips, and links to book flights (Aviasales) and stays and things to do (Klook) carrying the order id as the SubID.
 - **What they never get:** an invented price or exact opening hours. A place the agent is unsure of shows without a name.
 

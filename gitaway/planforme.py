@@ -12,7 +12,7 @@
     start() / stop() / run_pending()       the worker threads, started once at boot (a paid order left building by a stopped process is built again); tests call run_pending
     clear()                                tests: every order
 
-An order is a short state machine, moved only by guarded UPDATEs (`WHERE status = ...`): awaiting_payment -> paid -> building -> [review ->] ready | failed (STATUSES; review only while PLAN_FOR_ME_REVIEW is on, F-197). It lives in the community database
+An order is a short state machine, moved only by guarded UPDATEs (`WHERE status = ...`): awaiting_payment -> paid -> building -> [review -> sending ->] ready | failed (STATUSES; review only while PLAN_FOR_ME_REVIEW is on, F-197). It lives in the community database
 (`plan_orders`, made on first use) so it survives a restart, the admin lists every family's orders and `forget-person` covers it (tests/test_forget_covers_every_table.py).
 `plan_order_events` holds the Stripe event ids already handled: a repeated webhook finds its id there and does nothing.
 """
@@ -46,14 +46,15 @@ MAX_ATTEMPTS = 3              # times a worker may take one order before a resta
 MAX_STOPS, MAX_TIPS = 8, 3    # stops a day and tips kept
 MAX_UNPAID = 5                # unfinished orders one person can have at once; the oldest without a checkout goes when they start another, and one with a live checkout is never dropped (a sixth is refused)
 MAX_CHECKOUTS = 10            # times one person may ask Stripe about a payment page in an hour (making one or looking at the one already open)
-STATUSES = ("awaiting_payment", "paid", "building", "review", "ready", "failed")
-KEPT = ("paid", "building", "review", "ready")      # paid for and not failed: revenue
+STATUSES = ("awaiting_payment", "paid", "building", "review", "sending", "ready", "failed")      # `sending`: the captain's send is writing the trip (one tap claims it)
+KEPT = ("paid", "building", "review", "sending", "ready")      # paid for and not failed: revenue
 BUDGETS = {"easy": "Easy on the wallet", "comfortable": "Comfortable", "treat": "Treat ourselves"}
 PACES = {"relaxed": "Relaxed", "balanced": "Balanced", "packed": "Packed"}
 SUGGESTIONS = ("Disneyland, California",)       # beside the catalog's places
-PROMISE = "Not useful? Reply within 7 days for a full refund."
+PROMISE = "Not useful? Email us within 7 days for a full refund."
 _ID = re.compile(r"[0-9a-f]{16}")
 _AIRPORT = re.compile(r"[A-Za-z]{3}")
+FORGET_HEIGHTS = "intake = json_set(intake, '$.heights', json('[]'))"      # in the UPDATE that ends an order: the kids' heights are only for building the plan
 HEIGHTS = (28, 66)            # inches a kid's height may be, for the rides; anything else is "not sure"
 
 
@@ -80,7 +81,7 @@ def founding_limit() -> int:
 
 
 def founding_left() -> int:
-    """Founding spots not yet taken. A spot is taken by an order that was paid and kept (KEPT: paid, building, review, ready), whatever it was paid; an unpaid order or a failed one (it is
+    """Founding spots not yet taken. A spot is taken by an order that was paid and kept (KEPT: paid, building, review, sending, ready), whatever it was paid; an unpaid order or a failed one (it is
     refunded) takes none. Orders already made keep their own price, so a few checkouts open when the last spot goes may still pay the founding price (decisions D-174)."""
     limit = founding_limit()
     if not limit:
@@ -94,6 +95,11 @@ def price_cents() -> int:
     """What Plan it for me costs now, in US cents, picked here on the server every time an order is made and every time a page shows it: the founding price while a founding spot is left,
     else the full price. The order keeps the amount it was made at, and the webhook holds the payment to it."""
     return founding_price_cents() if founding_left() else full_price_cents()
+
+
+def public_status(status) -> str:
+    """The status a buyer's page and its polling see: a plan being sent is still "review" to them, so the page never reloads for a state that lasts a moment."""
+    return "review" if status == "sending" else status
 
 
 def review_on() -> bool:
@@ -119,11 +125,17 @@ def standin() -> bool:
     return not stripe_key() and not auth.production() and showcase.on()
 
 
+def contact_email() -> str:
+    """The address a buyer writes to for the refund the page promises (GITAWAY_CONTACT_EMAIL, the same one /privacy shows), or ""."""
+    return os.getenv("GITAWAY_CONTACT_EMAIL", "").strip()
+
+
 def offered() -> bool:
     """Is Plan it for me for sale here? Only when everything a sale needs is set, so no card is ever charged that cannot be matched and built: the Stripe key and the webhook secret (without it
-    no payment is ever believed), and an AI key unless this is a local copy that builds a sample. Or, locally, the stand-in checkout. A half-configured deploy shows no cards and 404s."""
+    no payment is ever believed), an AI key unless this is a local copy that builds a sample, and, in production, the contact address (a refund is promised: a buyer must have somewhere to ask).
+    Or, locally, the stand-in checkout. A half-configured deploy shows no cards and 404s."""
     if stripe_key():
-        return bool(webhook_secret()) and (ai.configured(JOB) or showcase.on())
+        return bool(webhook_secret()) and (ai.configured(JOB) or showcase.on()) and (bool(contact_email()) or not auth.production())
     return standin()
 
 
@@ -298,7 +310,7 @@ def mark_paid(order_id, event_id, session_id, amount, currency) -> str:
             if outcome == "double":
                 log.warning("plan order %s paid again (session %s): refund one of the two payments in Stripe", order_id, session_id)
         elif int(amount or 0) != o["amount_cents"] or str(currency or "").lower() != "usd":
-            db.conn.execute(text("UPDATE plan_orders SET status = 'failed', error = 'amount_mismatch', stripe_session = :s, paid_at = :u, updated_at = :u WHERE id = :i AND status = 'awaiting_payment'"),
+            db.conn.execute(text(f"UPDATE plan_orders SET status = 'failed', error = 'amount_mismatch', stripe_session = :s, {FORGET_HEIGHTS}, paid_at = :u, updated_at = :u WHERE id = :i AND status = 'awaiting_payment'"),
                             {"s": session_id, "u": _now(), "i": order_id})
             outcome = "mismatch"
             log.warning("plan order %s: Stripe session %s carried %s %s, not the order's amount: refund due", order_id, session_id, amount, currency)
@@ -348,6 +360,31 @@ def _allow_checkout(owner) -> None:
         db.conn.commit()
 
 
+def settle_price(order, session_dead=False) -> dict:
+    """Make the founding limit real. An order made at the founding price keeps it only while a founding spot is still its to have: while its Checkout session may still be paid (it was
+    opened less than SESSION_MINUTES ago; `session_dead` says Stripe reported it expired or there is none), and, when it has to open a session, while the spots left (founding_left) are not all held
+    by other orders' live founding sessions. Otherwise it is repriced to the full price (a guarded UPDATE, only while it awaits payment) and the order returned carries the new amount, so the order
+    page, the Pay button and the session all say the same number. An order paid on a live session is never touched, so a payment always matches its order."""
+    founding = founding_price_cents()
+    if order["status"] != "awaiting_payment" or order["amount_cents"] != founding or founding == full_price_cents():
+        return order
+    left = founding_left()
+    ago = (datetime.now(timezone.utc) - timedelta(minutes=SESSION_MINUTES)).isoformat(timespec="microseconds")
+    with _db() as db:
+        o = db.conn.execute(text("SELECT status, amount_cents, stripe_session, updated_at FROM plan_orders WHERE id = :i"), {"i": order["id"]}).mappings().fetchone()
+        if not o or o["status"] != "awaiting_payment" or o["amount_cents"] != founding:
+            return order
+        if not session_dead and o["stripe_session"] and o["updated_at"] >= ago:      # its page may still be paid: it keeps its price
+            return order
+        held = db.conn.execute(text("SELECT COUNT(*) FROM plan_orders WHERE status = 'awaiting_payment' AND id != :i AND amount_cents = :a AND stripe_session != '' AND updated_at >= :ago"),
+                               {"i": order["id"], "a": founding, "ago": ago}).scalar()
+        if left - held > 0:
+            return order
+        db.conn.execute(text("UPDATE plan_orders SET amount_cents = :a WHERE id = :i AND status = 'awaiting_payment'"), {"a": full_price_cents(), "i": order["id"]})
+        db.conn.commit()
+    return {**order, "amount_cents": full_price_cents()}
+
+
 def start_checkout(order, base_url) -> str:
     """The address where `order` is paid. Blocking (it calls Stripe): run it in a thread. An order that has a Checkout session already gets that one back while it is still open (a second tab or
     the Back button never opens a second page that could be paid too), or its order page when it was completed (the payment is on its way); only an expired one gets a new session. One line item,
@@ -360,7 +397,8 @@ def start_checkout(order, base_url) -> str:
             return old["url"]
         if old["status"] == "complete":
             return f"{base}/plan-for-me/{order['id']}?paid=1"
-    params = {"mode": "payment", "client_reference_id": order["id"], "customer_email": order["email"] or None, "metadata": {"product": PRODUCT, "order_id": order["id"]},
+    order = settle_price(order, session_dead=True)      # no live page to honour: the founding price only if a spot is still free
+    params ={"mode": "payment", "client_reference_id": order["id"], "customer_email": order["email"] or None, "metadata": {"product": PRODUCT, "order_id": order["id"]},
               "payment_method_types": ["card"],      # no bank debit or other delayed method: a payment is settled in seconds, so an order is never trimmed while money is on its way
               "line_items": [{"price_data": {"currency": "usd", "unit_amount": order["amount_cents"], "product_data": {"name": "Plan it for me", "description": PROMISE}}, "quantity": 1}],
               "success_url": f"{base}/plan-for-me/{order['id']}?paid=1", "cancel_url": f"{base}/plan-for-me/{order['id']}", "expires_at": int(time.time()) + SESSION_MINUTES * 60}
@@ -445,8 +483,10 @@ def system_prompt(intake) -> str:
     """SYSTEM, plus (ours, never the buyer's) the facts checked for the destination (gitaway/planfacts.py) and one day of the Disneyland example as the bar to reach."""
     from gitaway import planexamples
     facts = planfacts.prompt_facts(intake["where"])
-    day = planexamples.DISNEYLAND.answer["days"][1]
-    sample = "\n\nExample of one good day (Disneyland, kids 3 and 7, heights 38 and 48 in), in your answer's shape:\n" + json.dumps(day, ensure_ascii=False)
+    sample = ""
+    if planfacts.place_for(intake["where"]) is planfacts.DISNEYLAND:      # a Disneyland day would only mislead a plan for anywhere else
+        day = planexamples.DISNEYLAND.answer["days"][1]
+        sample = "\n\nExample of one good day (Disneyland, kids 3 and 7, heights 38 and 48 in), in your answer's shape:\n" + json.dumps(day, ensure_ascii=False)
     return SYSTEM + ("\n\n<facts>\n" + "\n".join(f"- {f}" for f in facts) + "\n</facts>" if facts else "") + sample
 
 _STOP = {"type": "object", "additionalProperties": False, "required": ["time", "minutes", "kind", "what", "place", "place_sure", "note"],
@@ -482,8 +522,7 @@ def _user_message(intake) -> str:
         party["kids_heights_inches"] = intake["heights"]
     body = json.dumps({"where": intake["where"], "days": days, "home_airport": intake["home"], "party": party,
                        "budget": BUDGETS[intake["budget"]], "pace": intake["pace"], "must_dos": intake["must"], "inspired_by": intake["like"]}, ensure_ascii=False)
-    for tag in ("intake", "facts"):      # what they wrote cannot open or close a data block
-        body = body.replace(f"</{tag}", f"< /{tag}").replace(f"<{tag}", f"< {tag}")
+    body = body.replace("<", "\\u003c").replace(">", "\\u003e")      # JSON escapes: what they wrote cannot open or close a data block, in any case or spacing, and still reads the same
     return "<intake>\n" + body + "\n</intake>"
 
 
@@ -656,8 +695,9 @@ def claim() -> dict | None:
 def reset_running() -> None:
     """After a stop: every order left building is paid again, and built again by the worker, except one that has been taken MAX_ATTEMPTS times (a restart loop): that one fails."""
     with _db() as db:
-        db.conn.execute(text("UPDATE plan_orders SET status = 'failed', error = 'restart_loop', updated_at = :u WHERE status = 'building' AND attempts >= :n"), {"u": _now(), "n": MAX_ATTEMPTS})
+        db.conn.execute(text(f"UPDATE plan_orders SET status = 'failed', error = 'restart_loop', {FORGET_HEIGHTS}, updated_at = :u WHERE status = 'building' AND attempts >= :n"), {"u": _now(), "n": MAX_ATTEMPTS})
         db.conn.execute(text("UPDATE plan_orders SET status = 'paid', updated_at = :u WHERE status = 'building'"), {"u": _now()})
+        db.conn.execute(text("UPDATE plan_orders SET status = 'review', updated_at = :u WHERE status = 'sending'"), {"u": _now()})      # a send cut short: it waits for the captain again
         db.conn.commit()
 
 
@@ -669,7 +709,7 @@ def _requeue(order_id) -> None:
 
 def _fail(order_id, code) -> None:
     with _db() as db:
-        db.conn.execute(text("UPDATE plan_orders SET status = 'failed', error = :e, updated_at = :u WHERE id = :i AND status IN ('building', 'paid', 'review')"), {"e": code, "u": _now(), "i": order_id})
+        db.conn.execute(text(f"UPDATE plan_orders SET status = 'failed', error = :e, {FORGET_HEIGHTS}, updated_at = :u WHERE id = :i AND status IN ('building', 'paid', 'review', 'sending')"), {"e": code, "u": _now(), "i": order_id})
         db.conn.commit()
     log.warning("plan order %s failed (%s): refund due", order_id, code)
 
@@ -731,18 +771,21 @@ def _deliver(order, result, was) -> None:
     """Write the trip into the family and mark the order ready, if it is still `was`."""
     trip_id = write_trip(order, result)
     with _db() as db:
-        db.conn.execute(text("UPDATE plan_orders SET status = 'ready', trip_id = :t, error = '', updated_at = :u WHERE id = :i AND status = :w"), {"t": trip_id, "u": _now(), "i": order["id"], "w": was})
+        db.conn.execute(text(f"UPDATE plan_orders SET status = 'ready', trip_id = :t, error = '', {FORGET_HEIGHTS}, updated_at = :u WHERE id = :i AND status = :w"), {"t": trip_id, "u": _now(), "i": order["id"], "w": was})
         db.conn.commit()
 
 
 def send(order_id) -> str:
     """The captain's "Send to family" (F-197): a plan waiting in `review` is written into the buyer's family and the order is ready. Returns the order's status after it ("ready", "failed" when
-    the trip cannot be written, or whatever it was when it was not waiting: nothing happens then). Safe to tap twice: `write_trip` makes one trip per order. Blocking: run it in a thread."""
+    the trip cannot be written, or whatever it was when it was not waiting: nothing happens then). Safe to tap twice, even at once: one tap claims the order (`sending`) and the rest stop. Blocking: run it in a thread."""
+    with _db() as db:      # one tap claims it (one statement); any other that arrives meanwhile finds it `sending` and stops
+        won = db.conn.execute(text("UPDATE plan_orders SET status = 'sending', updated_at = :u WHERE id = :i AND status = 'review' AND result != '' RETURNING id"), {"u": _now(), "i": str(order_id)}).fetchone()
+        db.conn.commit()
     order = _row(order_id)
-    if not order or order["status"] != "review" or not order["result"]:
+    if not won or not order:
         return order["status"] if order else ""
     try:
-        _deliver(order, order["result"], "review")
+        _deliver(order, order["result"], "sending")
     except BuildFailed as e:
         _fail(order["id"], e.code)
     except Exception:  # noqa: BLE001 - the log has the type, the order a reason code, the captain a red row

@@ -38,7 +38,7 @@ def order(who="ari", status=None, **fields):
 def test_the_intake_is_there_signed_out_with_the_price_and_the_promise(client):
     html = client.get("/plan-for-me/start").text
     t = text_of(html)
-    assert re.search(r'id="pf-price"[^>]*>\s*\$29 once', html) and "Not useful? Reply within 7 days for a full refund." in t
+    assert re.search(r'id="pf-price"[^>]*>\s*\$29 once', html) and "Not useful? Email us within 7 days for a full refund." in t
     for name in ("where", "start", "end", "home", "adults", "nkids", "budget", "pace", "must"):
         assert f'name="{name}"' in html, name
     assert 'value="Disneyland, California"' in html and 'value="Los Angeles"' in html and "You will sign in first" in t
@@ -75,6 +75,9 @@ def test_in_production_it_is_for_sale_only_with_the_key_the_webhook_secret_and_a
     monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", "whsec_test_secret")
     assert (pfm.offered(), client.get("/plan-for-me").status_code, client.post("/plan-for-me", data=FORM).status_code, cards()) == (False, 404, 404, False)      # no AI key
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-not-a-real-key")
+    monkeypatch.setenv("GITAWAY_CONTACT_EMAIL", "")
+    assert (pfm.offered(), client.get("/plan-for-me").status_code) == (False, 404)      # a refund is promised: nowhere to write to
+    monkeypatch.setenv("GITAWAY_CONTACT_EMAIL", "hello@gitaway.me")
     assert (pfm.offered(), client.get("/plan-for-me").status_code) == (True, 200)
     assert cards()
     monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", "")
@@ -243,7 +246,7 @@ def test_a_ready_order_links_to_the_trip_and_a_failed_one_promises_the_refund(cl
     failed = client.get(f"/plan-for-me/{o['id']}")
     t = text_of(failed.text)
     assert "We couldn't finish your trip" in t and "We'll refund you in full." in t and o["id"] in t and "Pay $29" not in t and "Open your trip" not in t and "data-pf-poll" not in failed.text
-    assert "Not useful? Reply within 7 days for a full refund." in t
+    assert "Not useful? Email us within 7 days for a full refund." in t
 
 
 def test_the_status_route_is_what_the_page_polls(client):
@@ -406,3 +409,18 @@ def test_what_a_buyer_types_is_never_markup_on_their_order_page_or_the_captains(
     assert "<script>alert(1)" not in client.get("/admin").text
     bad = client.post("/plan-for-me", data={**FORM, "where": evil, "end": "2020-01-01"}, follow_redirects=False)
     assert bad.status_code == 422 and "<script>alert(1)" not in bad.text and "&lt;script&gt;" in bad.text
+
+
+# ---- the refund promise says how to ask -------------------------------------------------------------------------
+
+def test_the_promise_says_how_to_ask_and_the_offer_the_intake_and_a_ready_order_show_the_address(client, monkeypatch):
+    monkeypatch.setenv("GITAWAY_CONTACT_EMAIL", "hello@gitaway.me")
+    sign_in(client)
+    ready = order(status="ready", trip_id="abc123def456")
+    assert pfm.PROMISE == "Not useful? Email us within 7 days for a full refund."
+    for path in ("/plan-for-me", "/plan-for-me/start", f"/plan-for-me/{ready['id']}"):
+        html = client.get(path).text
+        m = re.search(r'<p[^>]*id="pf-promise".*?</p>', html, re.S)
+        assert m, path
+        assert re.sub(r"\s+", " ", text_of(m.group(0))).strip() == "Not useful? Email us within 7 days for a full refund. hello@gitaway.me", path
+        assert 'href="mailto:hello@gitaway.me"' in m.group(0), path

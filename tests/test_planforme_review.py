@@ -85,6 +85,92 @@ def test_sending_twice_makes_one_trip(captain, monkeypatch):
     assert len(calendar("ari")) == n and pfm._row(o["id"])["status"] == "ready"
 
 
+def set_status(order_id, status):
+    from sqlalchemy import text
+    with pfm._db() as db:
+        db.conn.execute(text("UPDATE plan_orders SET status = :s WHERE id = :i"), {"s": status, "i": order_id})
+        db.conn.commit()
+
+
+def test_several_taps_at_once_write_the_trip_once_and_one_send_wins(monkeypatch):
+    import threading
+    import time
+    o = built(monkeypatch)
+    real, writes = pfm.write_trip, []
+
+    def slow(order, result):
+        writes.append(order["id"])
+        time.sleep(0.3)      # long enough for every other tap to arrive while this one is writing
+        return real(order, result)
+    monkeypatch.setattr(pfm, "write_trip", slow)
+    gate, answers = threading.Barrier(4), []
+
+    def tap():
+        gate.wait()
+        answers.append(pfm.send(o["id"]))
+    taps = [threading.Thread(target=tap) for _ in range(4)]
+    for t in taps:
+        t.start()
+    for t in taps:
+        t.join()
+    assert writes == [o["id"]] and answers.count("ready") == 1
+    assert pfm._row(o["id"])["status"] == "ready" and len(calendar("ari")) == 6      # one trip, written once (a second write would double the days)
+
+
+def test_a_send_cut_short_by_a_restart_is_waiting_for_the_check_again(monkeypatch):
+    o = built(monkeypatch)
+    set_status(o["id"], "sending")
+    pfm.reset_running()
+    assert pfm._row(o["id"])["status"] == "review"
+    assert pfm.send(o["id"]) == "ready"
+
+
+def test_while_it_is_being_sent_the_buyer_still_sees_a_person_checking_it_and_it_still_counts_as_paid(client, monkeypatch):
+    o = built(monkeypatch)
+    set_status(o["id"], "sending")
+    sign_in(client, "ari")
+    assert CHECKING in text_of(client.get(f"/plan-for-me/{o['id']}").text)
+    assert client.get(f"/plan-for-me/{o['id']}/status").json() == {"status": "review"}      # the page polls this: it must not reload forever
+    assert pfm.totals([pfm._row(o["id"])])["paid"] == 1 and pfm.founding_left() == 9
+
+
+def heights_kept(order_id):
+    return pfm._row(order_id)["intake"]["heights"]
+
+
+def test_the_kids_heights_are_kept_while_the_plan_is_built_and_checked_and_deleted_once_it_is_delivered(monkeypatch):
+    model(monkeypatch)
+    o = paid("ari", heights=[38, 48])
+    assert heights_kept(o["id"]) == [38, 48]
+    assert pfm.run_pending() == 1 and pfm._row(o["id"])["status"] == "review"
+    assert heights_kept(o["id"]) == [38, 48]
+    assert pfm.send(o["id"]) == "ready"
+    assert heights_kept(o["id"]) == [] and pfm._row(o["id"])["intake"]["kids"] == [4, 7]      # the ages stay, the heights go
+
+
+def test_the_kids_heights_are_deleted_when_the_order_is_delivered_at_once_or_fails(monkeypatch):
+    monkeypatch.setenv("PLAN_FOR_ME_REVIEW", "0")
+    model(monkeypatch)
+    delivered = paid("ari", heights=[38, 48])
+    pfm.run_pending()
+    failed = paid("sam", heights=[40, 50])
+    pfm._fail(failed["id"], "empty")
+    mismatch = paid("lee", heights=[41, 51])
+    with pfm._db() as db:
+        from sqlalchemy import text
+        db.conn.execute(text("UPDATE plan_orders SET status = 'awaiting_payment' WHERE id = :i"), {"i": mismatch["id"]})
+        db.conn.commit()
+    assert pfm.mark_paid(mismatch["id"], "evt_x", "cs_1", 100, "usd") == "mismatch"
+    assert [pfm._row(x["id"])["status"] for x in (delivered, failed, mismatch)] == ["ready", "failed", "failed"]
+    assert [heights_kept(x["id"]) for x in (delivered, failed, mismatch)] == [[], [], []]
+
+
+def test_the_check_page_with_the_whole_plan_is_never_stored_by_a_browser_or_proxy(captain, monkeypatch):
+    o = built(monkeypatch)
+    r = captain.get(f"/admin/plan-for-me/{o['id']}")
+    assert r.status_code == 200 and r.headers["cache-control"] == "private, no-store"
+
+
 def test_the_quick_edit_changes_what_the_family_gets(captain, monkeypatch):
     o = built(monkeypatch)
     page = captain.get(f"/admin/plan-for-me/{o['id']}").text

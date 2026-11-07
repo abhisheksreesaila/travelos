@@ -1114,7 +1114,7 @@ Needs: F-181, F-184
 
 # First real money (captain 2026-11-06: "first real money this weekend"; commissions settle only after travel, so it has to be a direct sale)
 
-## F-193 Plan it for me: a family pays once, an agent builds their trip [review]
+## F-193 Plan it for me: a family pays once, an agent builds their trip [done]
 Brief: docs/briefs/plan-for-me.md (Status: draft, the captain approves price and delivery before deploy) · Needs: F-183 (ai.py), F-190 (worker pattern), partners · Risk: payments, personal data, an AI feature
 - [x] a card on public creator trip pages and on the signed-out landing, and a line in the trip menu, lead to one short phone-first intake (where, dates, home airport, adults, kids with ages, budget, must-dos, pace); nothing shows when `STRIPE_SECRET_KEY` is unset in production
 - [x] signing in comes before paying (a signed-out visitor's answers survive the sign-in); only a family editor or admin can buy
@@ -1127,7 +1127,7 @@ Brief: docs/briefs/plan-for-me.md (Status: draft, the captain approves price and
 - [x] the privacy page names Stripe and what the intake keeps; `docs/setup.md` lists every new variable; `forget_person` removes a person's orders; one concise line in AGENTS.md; decisions in docs/decisions.md
 - [x] tests: pricing never trusted from the client, webhook signature and idempotency, access, resume after restart, the AI result written as a trip; a browser test of the intake on phone and laptop in omxqua (no sideways scroll, targets of at least 40px)
 
-## F-197 An offer that sells: the Plan it for me page, three example plans, what to book and when, a founder check [review]
+## F-197 An offer that sells: the Plan it for me page, three example plans, what to book and when, a founder check [done]
 Brief: docs/briefs/plan-for-me.md (draft; the captain approves the wording and the founding price before deploy) · Needs: F-193 · Risk: payments, personal data, an AI feature
 - [x] `/plan-for-me` is the offer, phone first in omxqua: the parent's outcome as the headline, "$29 for the first 10 families, then $49" (a real limit on the server, `PLAN_FOR_ME_FOUNDING_LIMIT`, the spots left shown; never a former price), what you get, a short founder note, the 7-day refund promise, a 4-question FAQ, "See an example plan", one clear button to the intake (now `/plan-for-me/start`; `?from=` carries over)
 - [x] three hand-written example plans (Disneyland Resort 3 days, kids 3 and 7; New York City 4 days, kids 8 and 11; Oahu 5 days with a toddler) stored as data and shown read-only at `/plan-for-me/example/<slug>` in the delivered trip's look; every fact checked against official sites and cited in docs/decisions.md; no prices, no exact opening hours

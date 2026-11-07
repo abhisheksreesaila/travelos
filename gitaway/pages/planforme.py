@@ -45,6 +45,12 @@ def money() -> str:
     return catalog.money(pfm.price_cents())
 
 
+def promise() -> tuple:
+    """The refund promise as page content: the sentence and, when GITAWAY_CONTACT_EMAIL is set (production needs it to sell), the address to write to."""
+    addr = pfm.contact_email()
+    return (pfm.PROMISE, " ", A(addr, href=f"mailto:{addr}")) if addr else (pfm.PROMISE,)
+
+
 def _gone():
     return showcase.not_found()
 
@@ -58,7 +64,8 @@ def _base(request) -> str:
 
 def _mine(session, order_id):
     me = ses.current_traveler(session)
-    return pfm.get(order_id, me.id) if me else None
+    found = pfm.get(order_id, me.id) if me else None
+    return pfm.settle_price(found) if found else None      # an unpaid order shows the price it would be charged now
 
 
 def _summary(intake) -> str:
@@ -125,7 +132,7 @@ def intake_page(session, vals=None, errors=None, status=200, note=""):
         P(f"You will sign in first, so the trip lands in your family's account." if not me else f"The trip goes into your family's GitAway account ({me.blurb}).", cls="pf-hint", id="pf-who"),
         P(errors["_"], role="alert", cls="pf-error", id="pf-err-all") if "_" in errors else "",
         Button(icon("star", 20, 2.4), f"Plan it for me · {money()}" if me else "Continue", type="submit", cls="btn btn-primary pf-go", id="pf-go", disabled=viewer or None),
-        P(pfm.PROMISE, cls="pf-promise", id="pf-promise"),
+        P(*promise(), cls="pf-promise", id="pf-promise"),
         action=PATH, method="post", id="pf-form", cls="pf-form", data_signed_out="1" if not me else None)
     body = Section(
         Div(Span(f"{money()} once", cls="pf-chip", id="pf-price"), H1("Plan it for ", Span("me", cls="pf-accent")),
@@ -185,7 +192,7 @@ def offer_page(slug=""):
                  else "Tell us who is going and what they love. Our agent builds every day around your kids, in minutes, right in your family's planner.", cls="pf-lede"),
                P("Not Disneyland? New York, Oahu or anywhere else works too.", cls="pf-hint"),
                P(f"Starting from “{like}”.", cls="pf-note", id="pf-like") if like else "", cls="pf-top pfo-hero")
-    aside = Div(price_block(), P(icon("shield", 18, 2.2), Span(pfm.PROMISE), cls="pfo-promise", id="pf-promise"),
+    aside = Div(price_block(), P(icon("shield", 18, 2.2), Span(*promise()), cls="pfo-promise", id="pf-promise"),
                 A("Plan our trip", icon("arrow-right", 20, 2.4), href=start, cls="btn btn-primary pf-go pfo-cta", id="pf-cta"), cls="pfo-aside")
     gets = Section(H2("What you get"), Ul(*[Li(Span(icon(ico, 20, 2.2), cls="pfo-ico"), Div(P(t, cls="pfo-gt"), P(d, cls="pfo-gd"))) for ico, t, d in GETS], cls="pfo-gets"), cls="pfo-card", id="pf-gets")
     examples = Section(H2("See an example plan"), P("Three plans written the way yours will be, with every ride, height and booking rule checked on the official sites.", cls="pf-hint"),
@@ -253,7 +260,7 @@ TROUBLE = {"1": "We could not open the payment page just now. Nothing was charge
 
 
 def order_page(order, paid_back=False, trouble=""):
-    status, intake = order["status"], order["intake"]
+    status, intake = pfm.public_status(order["status"]), order["intake"]
     head = {"awaiting_payment": ("Almost there", "Pay to start building your trip."), "paid": ("Payment received", "An agent is about to start on your trip."),
             "building": ("Building your trip", "A person checks it next, usually within a few hours. You can leave this page." if pfm.review_on() else "This takes a few minutes. You can leave this page: your trip will be in your calendar."),
             "review": ("Your plan is built", CHECKING),
@@ -276,7 +283,7 @@ def order_page(order, paid_back=False, trouble=""):
         body.append(planview.checklist(planfacts.checklist(intake["where"], date.fromisoformat(intake["start"]), catalog.today()), planfacts.intro(intake["where"])))
     if status == "failed":
         body.append(P(f"Reference {order['id']}. ", legal.contact(), cls="pf-hint", id="pf-ref"))
-    body.append(P(pfm.PROMISE, cls="pf-promise", id="pf-promise"))
+    body.append(P(*promise(), cls="pf-promise", id="pf-promise"))
     return page("Plan it for me", Section(*body, cls="pf ga-wrap", id="pf", data_pf_poll=f"{PATH}/{order['id']}/status" if status in ("paid", "building", "review") or (status == "awaiting_payment" and paid_back) else None,
                                           data_status=status), head=HEAD)
 
@@ -332,11 +339,11 @@ def register(app):
         intake_, errors = await run_in_threadpool(pfm.read_intake, form)
         vals = {k: str(v) for k, v in form.items() if isinstance(v, str)}
         if errors:
-            return intake_page(session, vals, errors, 422)
+            return await run_in_threadpool(intake_page, session, vals, errors, 422)      # it reads the price from the database
         try:
             order = await run_in_threadpool(pfm.create_order, me.id, session.get("tenant_id") or "", session.get("email") or "", intake_)
         except pfm.TooMany as e:
-            return intake_page(session, vals, {"_": str(e)}, 429)
+            return await run_in_threadpool(intake_page, session, vals, {"_": str(e)}, 429)
         url, why = await _checkout(request, order)
         return RedirectResponse(url or f"{PATH}/{order['id']}?err={why}", status_code=303)
 
@@ -353,7 +360,7 @@ def register(app):
     @app.get(PATH + "/{order_id}/status")
     def status(session, order_id: str):
         found = _mine(session, order_id)
-        return JSONResponse({"status": found["status"]}, headers={"Cache-Control": "no-store"}) if found else _gone()
+        return JSONResponse({"status": pfm.public_status(found["status"])}, headers={"Cache-Control": "no-store"}) if found else _gone()
 
     @app.post(PATH + "/{order_id}/pay")
     async def pay(request, session, order_id: str):
