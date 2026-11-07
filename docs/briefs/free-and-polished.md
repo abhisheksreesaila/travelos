@@ -34,6 +34,7 @@ Status: approved (2026-11-07, the captain: "A with a mix here and there … lets
 - Widgets and booking are a convenience, not the pitch: colorful, complete, one screen.
 - Look: Direction A (gray canvas, Apple-bright colors, light and dark) is the base, with B's ticket stub where it fits. omxqua is the system. Web and phone are designed together, web first if one has to wait.
 - Order: prototype the 3D story, the captain picks one, then build.
+- **Picked (2026-11-07):** the trip cockpit is Direction 3, Ticket line ("I cannot take my eyes off the ticket line"). Direction 1's diorama is a candidate for the shared-trip story. Direction 2's real street map loads only when someone taps for it.
 
 ## The model (the captain's call, 2026-11-07)
 - GitAway is "the GitHub of travel": the place to plan a trip together, share it, and fork other people's trips. GitAway does not sell travel.

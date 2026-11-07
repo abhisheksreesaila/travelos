@@ -1186,3 +1186,50 @@ Brief: docs/briefs/plan-for-me.md (draft; the captain approves the wording and t
 - [x] founder check: with `PLAN_FOR_ME_REVIEW=1` (the default) a built plan waits on /admin for the captain's one-tap "Send to family" (with a quick edit link) and the buyer sees "Your plan is built and being checked by a person, usually within a few hours." and no trip; with 0 delivery is instant; in docs/setup.md
 - [x] the prompt asks for the examples' quality (ride order by the kids' heights and ages, rope drop, a midday rest, meal anchors, a rain backup) and is given the verified facts; `planforme.validate` keeps its filters; the intake takes an optional height per kid
 - [x] tests: the checklist dates, the review gate (the buyer cannot see an unsent plan), the example pages, access; a browser test of the offer page and an example at 390 and 1440 (no sideways scroll, tap targets of at least 48px on the phone)
+
+## F-200 Direction A everywhere: tokens, type, light and dark, the shell, sign-in [todo]
+Brief: docs/briefs/free-and-polished.md · Design: docs/design/reskin/README.md (Direction A, B's ticket stub), docs/design/cockpit/README.md "What all three share" · Needs: none
+- [ ] Direction A tokens (canvas #F2F2F5 / black, Apple-bright kind colours, ink accent, sh1-sh3 shadows, radii) in one place, for light and dark; dark follows the system with a manual switch that's remembered
+- [ ] type scale: phone body 17px, secondary 16px, all-caps labels 13px, fine print 14px; desktop body 16px; nothing else smaller
+- [ ] the shell: desktop top islands (brand · Trip, Book, Family, Ask · the Beacon); phone floating tab bar (Trip · Plan · Ask · Book · Family), opaque, no glass or blur anywhere
+- [ ] sign-in redesigned (the founder named it as too small)
+- [ ] every existing page renders in light and dark with contrast at least 4.5:1 and phone tap targets at least 48px (a browser test sweeps the main pages in both modes)
+- [ ] colour still means a kind, never a day; behaviour unchanged (existing tests pass)
+
+## F-201 The trip cockpit: Ticket line [todo]
+Brief: docs/briefs/free-and-polished.md · Design: docs/design/cockpit/3-ticket.html and README.md (Direction 3) · Needs: F-200 tokens; F-198 booking lanes; F-203 weather; F-204 routes
+- [ ] the week as a line of day stubs, each with its own living sky (core/wx.js engine) and the day's times; today's stub open in ink as Up next with the next leg turn by turn
+- [ ] bookings as wallet passes with "Booked on <partner>" and "Change or cancel" to the partner; reference numbers masked
+- [ ] the paper map tilted in CSS 3D with stand-up place labels, built once per trip region (relief image + shapes, about 120 KB, cached with the trip; tools/fetch_geo.py and gen_relief.py made part of the app); tapping a day re-flies it; works offline once loaded
+- [ ] "Open map" loads a real street map (MapLibre + OpenFreeMap) only when tapped
+- [ ] web at 1440 first, the phone at 390 alongside; Liquid motion on the phone, the calm fade on desktop; reduced motion is a fade
+- [ ] tested on the founder's Tahoe trip (Dec 19-26, SFO to Reno, 2 adults + kids 8 and 11)
+
+## F-202 Book this trip: a book of tickets [todo]
+Brief: docs/briefs/free-and-polished.md · Design: docs/design/cockpit/3-ticket.html (Book) · Needs: F-198, F-201
+- [ ] one ticket per lane with its honest state: real cached flight price, "Search on Klook", "No commission" plain links, "Buy direct"
+- [ ] the checklist ticket: "1 of 6", a total "booked so far, from your confirmations" (never an invented price), booked rows torn into stubs
+- [ ] the paste moment: read, fields pop, the card flies into its lane, the stamp lands (calm fade on desktop)
+- [ ] "Bring a booking home" and a ride estimate (borrowed from Direction 2)
+
+## F-203 Real weather: MET Norway forecast, climate normals before it [todo]
+Brief: docs/briefs/free-and-polished.md · Design: docs/design/cockpit/README.md "Weather" · Needs: none
+- [ ] MET Norway Locationforecast for real trips (identifying User-Agent, cache by Expires, credit shown), behind a test seam; no network in tests
+- [ ] before the forecast window (about 10 days out): climate normals for the place and dates, labelled "Typical late December · not a forecast yet"; NOAA normals for the US
+- [ ] sample weather stays only for showcase/sample trips; a real trip never shows invented weather
+- [ ] privacy page names MET Norway; docs/setup.md updated
+
+## F-204 Routes and drive times that allow commercial use [todo]
+Brief: docs/briefs/free-and-polished.md · Needs: the founder's pick between the options researched
+- [ ] research: self-hosted OSRM or Valhalla for the regions in use vs a routing service whose free tier allows commercial use; cost, limits, effort
+- [ ] gitaway/geo.py uses the chosen source; legs stay cached
+
+## F-205 The shared trip: 3D story, four plan themes, thank and fork [todo]
+Brief: docs/briefs/free-and-polished.md "The soul: sharing" · Design: docs/design/story3d/, docs/design/cockpit/1-diorama.html, docs/design/reskin/ (themes) · Needs: the founder's pick of the story (postcards + globe, or the diorama)
+- [ ] the story on creator trip pages, light (<= 200 KB with three.js), with a still fallback
+- [ ] four themes a creator or reader picks: Scrapbook, Structured, Magazine, Minimal list
+- [ ] Thank (a real count) and Fork with a fork tree; counts are never invented
+
+## F-206 The cover page: a 3D scroll world [todo]
+Brief: docs/briefs/free-and-polished.md "Later" · Design: docs/design/cover3d/ (in progress) · Needs: the founder's pick of a concept
+- [ ] "Forget the book. Go travel.": one real place, the story of sharing told as you scroll, ending in Start a trip / Share a trip / See trips
