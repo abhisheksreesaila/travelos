@@ -5,6 +5,9 @@ before it opens. Nothing here is invented: a day GitAway knows nothing about sho
     forecast_days(fc, tz, now) -> {date: Day}               its local days: high and low (deg F), condition, words, inches, mph, hours
     station_near(lat, lon) / station_named(text)           the NOAA climate-normals station for a place (normals.json), or None
     normal_day(station, date) -> Day                        that station's typical weather for the date, labelled "Typical late December · not a forecast yet"
+    trip_weather(trip, coords=None) -> TripWeather          one Day (or None) per day of a trip: the forecast where it reaches, else typical
+    notes(tw) -> [(text, link)]                             the lines a page shows under a trip's weather: the credit, the label, the source
+    sample(trip) -> bool                                    the showcase's own sample trip, the one trip whose weather is sample data
 
 MET Norway's terms (https://api.met.no/doc/TermsOfService, the Locationforecast HowTo and FAQ) and how this module keeps them:
   - a person in charge must read and accept the terms before the service is used: nothing is asked until MET_NORWAY_TERMS_ACCEPTED=1;
@@ -556,3 +559,87 @@ def normal_day(st: Station, d: date) -> Day:
     high, low, wet, snow = st.normals[(d.month - 1) * 3 + (0 if d.day <= 10 else 1 if d.day <= 20 else 2)]
     condition, words = _typical(high, low, wet, snow)
     return Day(d, NORMAL, high, low, condition, words, label=normals_label(d))
+
+
+# ---- a trip's weather -------------------------------------------------------------------------------------------------------------
+
+REACH = timedelta(days=10)   # MET forecasts about nine days ahead: only a trip with a day this close makes it ask
+OPENS = timedelta(days=9)    # what a page promises: "The forecast opens around <the first typical day less this>"
+
+
+@dataclass(frozen=True)
+class Where:
+    """Where a trip's weather is read: a place's coordinates (MET), its time zone (the days) and its climate-normals station, if it has one."""
+    name: str
+    lat: float
+    lon: float
+    altitude: int | None
+    tz: str
+    station: Station | None
+
+
+@dataclass(frozen=True)
+class TripWeather:
+    days: tuple                  # a Day or None for each day of the trip, first to last
+    place: str = ""
+    updated: str = ""            # when MET made the forecast its forecast days come from, in the place's time ("6:10 AM")
+    opens: date | None = None    # roughly when the forecast reaches the first day that is still typical (only while MET is switched on)
+
+
+def _at(st: Station, name=None) -> Where:
+    return Where(name or st.name, st.lat, st.lon, st.elev, st.tz, st)
+
+
+def where(trip, coords=None) -> Where | None:
+    """Where a trip's weather is: one of the catalog's places (Anaheim for a Disneyland trip), the station its destination names, or the coordinates a
+    caller knows (with the station near them, if any). None when GitAway has nothing real for the place."""
+    if getattr(trip, "focus", "") == "disney":
+        return _at(station_named("anaheim"))
+    if any(d.name == trip.destination_name for d in catalog.DESTINATIONS) and trip.key in CATALOG:
+        return _at(station(CATALOG[trip.key]))
+    if coords is not None and _query(*coords) is not None:
+        lat, lon = coords
+        st = station_near(lat, lon)
+        return Where(trip.destination_name, lat, lon, None, st.tz if st else getattr(trip, "tz", "") or zones.DEFAULT, st)
+    st = station_named(trip.destination_name)
+    return _at(st) if st else None
+
+
+def trip_weather(trip, coords=None) -> TripWeather:
+    """One entry per day of the trip: MET's forecast where it covers the day; else, for a day still to come, the place's typical weather (a NORMAL
+    Day, labelled so); else None (a day gone by, or a place with nothing real). MET is asked only when a day of the trip is within its reach.
+    This can wait on the network for up to TIMEOUT seconds: call it from a plain `def` handler or through run_in_threadpool."""
+    dates = [trip.depart + timedelta(days=i) for i in range((trip.return_ - trip.depart).days + 1)]
+    w = where(trip, coords)
+    if w is None:
+        return TripWeather((None,) * len(dates))
+    today, now = catalog.today(), catalog.now_utc()
+    fc = forecast(w.lat, w.lon, w.altitude) if any(today <= d <= today + REACH for d in dates) else None
+    known = forecast_days(fc, w.tz, now)
+    days = tuple(None if d < today else known.get(d) or (normal_day(w.station, d) if w.station else None) for d in dates)
+    typical = [d for d in days if d and d.kind == NORMAL]
+    opens = typical[0].date - OPENS if typical and live() and typical[0].date - OPENS > today else None
+    shown = fc is not None and any(d and d.kind == FORECAST for d in days)
+    return TripWeather(days, w.name, updated_text(fc, w.tz) if shown else "", opens)
+
+
+def notes(tw: TripWeather) -> list:
+    """[(text, link or "")]: what a page says under a trip's weather. The forecast's credit to MET Norway (with when it was made) when a day is a forecast;
+    when a day is typical weather, the label most of those days carry and where typical weather comes from (and when the forecast opens)."""
+    out = []
+    if tw.updated:
+        out.append((f"{CREDIT} · updated {tw.updated}", CREDIT_URL))
+    typical = [d for d in tw.days if d and d.kind == NORMAL]
+    if typical:
+        periods = [period(d.date) for d in typical]
+        out.append((f"Typical {max(periods, key=periods.count)} · not a forecast yet", ""))
+        out.append((NORMALS_CREDIT + "." + (f" The forecast opens around {tw.opens:%b} {tw.opens.day}." if tw.opens else ""), ""))
+    return out
+
+
+def sample(trip) -> bool:
+    """Is this the showcase's own sample trip (Los Angeles, Oct 16-20 2026), the one trip whose weather is sample data? Never on the live site and never
+    a family's imported trip, whatever its dates."""
+    from gitaway import context, showcase, tripimport
+    return (showcase.on() and not isinstance(trip, tripimport.ImportedTrip) and trip.destination_name == "Los Angeles"
+            and (trip.depart, trip.return_) == (context.SAMPLE_DEPART, context.SAMPLE_RETURN))
