@@ -1,29 +1,27 @@
-# Where to pick up (stopped 2026-11-07 to save tokens)
+# Where to pick up
 
-Run every subagent and delegated task at **medium effort** from now on; the founder asked.
+Subagents run at **medium effort** (the founder asked).
 
-Nothing is deployed and nothing is pushed. Each ticket lives on its own branch and work folder.
+**State (2026-11-07):**
+- The release branch `autopilot/booking-creators` has F-200, F-203/F-208, F-206, F-201 and F-198/F-199 merged and green: 4,350 unit tests pass, and the browser suite passes except the known `test_publish` failure.
+- **Live on gitaway.me:** F-207 only (no CDN scripts).
+- **The rest of the release is not deployed.**
 
-| Ticket | Branch · folder | State | Next step |
-|---|---|---|---|
-| F-207 stop unpinned CDN scripts (LIVE site) | `f-207-no-cdn-scripts` · `travelos-f207` (from master) | Built, tests green (stale-date tests fixed by cherry-picking 617fe16, cf2a383, 40fc4db) | Reviewer, then **ask the founder** to deploy it on its own: merge to master, `railway status` (gitaway / web), `railway up --service web`, check pages with `?q=<random>` |
-| F-206 cover page 3D world | `f-206-cover-world` · `travelos-f206` | Review fixes done (262eade, 07afe58); security already PASS | Re-review the delta, then merge |
-| F-203 real weather + F-208 blog fetch deadline | `f-203-real-weather` · `travelos-f203` | Reviewed and passed; a last small round was **in progress (uncommitted edits)** | Finish that round: deadline.get tests, safefetch TLS tests, handshake window, DNS in the deadline, IPv6 2000::/3, Unicode redirects, https-to-http refusal, alias recall. Commit, then merge |
-| F-198 booking anywhere + F-199 free Plan it for me | `f-198-booking-anywhere` · `travelos-f198` | Review fixes committed (408f987); it may be partial because it was cancelled mid-run | Check what's done against the review list in this thread, finish, then re-review |
-| F-201 Ticket line cockpit | `f-201-ticket-line` · `travelos-f201` | Review fix round **in progress (uncommitted edits)** | Finish: Overpass timeout remark, router steps (OSRM steps=true), no invented weather on real trips, 16px phone type, one-at-a-time pack builds with caps and budgets, the should-fixes. Then re-review |
-| F-200 Direction A everywhere | `f-200-direction-a` · `travelos-f200` | Built (last commit adds the Early preview label); not reviewed | Reviewer and security check, then merge **first**, since everything else picks up its tokens |
-| F-202 book of tickets, F-205 shared-trip story | — | Not started | After the merges |
-
-**Merge order:** F-200, then F-203, then F-206, then F-198, then F-201, each into `autopilot/booking-creators`.
-- **Before each merge commit:** renumber clashing D- numbers and check for unmerged files.
-- **After each merge:** run both test suites.
-- **Then:** merge master, which has F-207, into the branch.
+**Next:**
+1. **The founder says "ship":**
+   - Run the shipping checklist (`docs/launch/ship-checklist.md`).
+   - Merge the branch into master in the main checkout.
+   - Run `railway status` and confirm gitaway / web.
+   - Run `railway up --service web --ci`.
+   - Check `/`, `/signin`, `/trip`, `/for-creators` and `/plan-for-me` with `?q=<random>`.
+2. **Then build F-209 (creators) and F-210 (booking)** from `docs/design/oneproduct/`, plus F-211 (the season background and weather animation), and F-205 once the founder picks the story (postcards with globe, or the diorama).
+3. **Follow-ups logged** under F-198 and F-201 in `docs/plan.md`.
 
 **Waiting on the founder:**
-1. Routes: openrouteservice; the founder will set `ORS_API_KEY` later.
-2. Done (founder, 2026-11-07): Railway variables are set.
-3. Accept MET Norway's terms, then set `MET_NORWAY_TERMS_ACCEPTED=1`.
-4. Approve deleting the test temp folders under `~/.cache/*-tmp` (several GB).
-5. Say "ship" for the whole release once it's merged and green.
+- "ship".
+- Set `ORS_API_KEY`, later.
+- Accept MET Norway's terms, then set `MET_NORWAY_TERMS_ACCEPTED=1`.
+- Approve deleting `~/.cache/*-tmp`.
+- Confirm the design calls in `docs/design/oneproduct/README.md`: Structured is the default theme, and "Follow this trail" leads to Where to?.
 
-**Dev server for the founder:** `cd ~/Projects/travelos-autopilot && GITAWAY_DATA_DIR=$HOME/.cache/gitaway-dev-data/db GITAWAY_DEV_LOGIN=1 pixi run dev`, then open http://localhost:6001. Each work folder needs `ln -s ../travelos/.env .env` first.
+**Dev server:** `cd ~/Projects/travelos-autopilot && GITAWAY_DATA_DIR=$HOME/.cache/gitaway-dev-data/db GITAWAY_DEV_LOGIN=1 pixi run dev`, then open http://localhost:6001.
