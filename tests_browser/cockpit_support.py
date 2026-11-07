@@ -1,7 +1,7 @@
 """The Tahoe trip in a browser (F-201): the founder's trip seeded the way the app makes one (the import page's route, the plans, the map cache through gitaway.geo,
 the geo pack through gitaway.geopack), the clock at the design's "now", and a page opened on the cockpit at a viewport, light or dark."""
 
-from datetime import date
+import re
 
 from gitaway import catalog, familydb, geo, geopack, tripcal as cal, tripgeo
 from tests import tahoe
@@ -13,8 +13,11 @@ DIRECTION_A_DARK = """:root { --paper: #000000; --card: #1C1C1F; --ink: #F5F5F7;
   --hairline-2: rgba(255,255,255,.16); --paper-2: #2A2A2E; color-scheme: dark; } body { background: #000000; }"""
 
 
-def seed(base_url, ctx, monkeypatch, *, pack=True, now=tahoe.NOW, plans=True):
-    """Sign in as Ari, import the Tahoe trip, add its plans, fill the map cache and (with `pack`) build its geo pack; pin the clock to `now`."""
+def seed(base_url, ctx, monkeypatch, *, pack=True, now=tahoe.NOW, plans=True, full=False):
+    """Sign in as Ari, import the Tahoe trip, add its plans, fill the map cache and (with `pack`) build its geo pack (`full`: at its real size; else a quicker
+    1024px relief); pin the clock to `now`."""
+    if not full:
+        monkeypatch.setattr(geopack, "LONG_SIDE", 1024)
     ctx.request.post(f"{base_url}/signin", form={"email": "ari.rivera@example.com", "next": "/", "intent": "save"}, max_redirects=0)
     r = ctx.request.post(f"{base_url}/trips/import/save", form={"text": tahoe.TEMPLATE}, max_redirects=0)
     assert r.status in (302, 303), r.status
@@ -38,14 +41,16 @@ def seed(base_url, ctx, monkeypatch, *, pack=True, now=tahoe.NOW, plans=True):
     return me
 
 
-def open_cockpit(browser, base_url, monkeypatch, contexts, viewport=DESKTOP, dark=False, motion=False, path="/trip/cockpit", **kw):
+def open_cockpit(browser, base_url, monkeypatch, contexts, viewport=DESKTOP, dark=False, motion=False, path="/trip/cockpit", fonts=False, **kw):
     ctx = browser.new_context(viewport=viewport, reduced_motion="no-preference" if motion else "reduce", color_scheme="dark" if dark else "light")
-    ctx.set_default_timeout(8000)
+    ctx.set_default_timeout(15000)      # a shared machine: a page with eight skies and a relief can take a few seconds under load
+    keep = r"|fonts\.googleapis\.com|fonts\.gstatic\.com" if fonts else ""      # screenshots load the real fonts
+    ctx.route(re.compile(r"https://(?!127\.0\.0\.1" + keep + r").*"), lambda r: r.abort())      # nothing else leaves the machine (the street map's library and tiles)
     contexts.append(ctx)
     seed(base_url, ctx, monkeypatch, **kw)
     page = ctx.new_page()
     if dark:
         page.add_init_script("document.addEventListener('DOMContentLoaded', () => { const s = document.createElement('style'); s.id = 'f200-dark'; s.textContent = %r; document.head.appendChild(s); });" % DIRECTION_A_DARK)
-    page.goto(f"{base_url}{path}")
+    page.goto(f"{base_url}{path}", wait_until="domcontentloaded")
     page.wait_for_selector("#ck-paper[data-ready='1']")
     return page

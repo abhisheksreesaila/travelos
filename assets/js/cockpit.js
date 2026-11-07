@@ -14,10 +14,12 @@
   var data = JSON.parse(dataEl.textContent);
   var deskQ = window.matchMedia('(min-width: 1020px) and (not (display-mode: standalone))');
   var reducedQ = window.matchMedia('(prefers-reduced-motion: reduce)');
-  var LIBRE = 'https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/';
   var open = +root.dataset.open || 0;
   var state = { day: open };
-  var ck = window.GA.cockpit = { state: state };
+  // MapLibre GL JS 5.24.0 (BSD-3), pinned, with the integrity of those exact files: a changed copy on the CDN is refused by the browser
+  var libre = { base: 'https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/', js: 'sha384-5+cfbwT0iiub6VsQAdn6yz16nr6sDiQoHx6tm4O8OVYXHYOxcffFmCJBL0dgdvGp',
+    css: 'sha384-uTttxo/aOKbdE5RlD/SPzSDoDmNvGlUYPjONi2MN/b7c9HPSvW07OIuyP7uL6jxK' };
+  var ck = window.GA.cockpit = { state: state, libre: libre };
 
   // ---- the skies ----
   Array.prototype.forEach.call(document.querySelectorAll('.ck-sky[data-wx]'), function (el, k) {
@@ -141,10 +143,13 @@
     if (loading) return loading;
     loading = new Promise(function (ok, no) {
       var css = document.createElement('link');
-      css.rel = 'stylesheet'; css.href = LIBRE + 'maplibre-gl.css'; css.crossOrigin = 'anonymous';
+      css.rel = 'stylesheet'; css.href = libre.base + 'maplibre-gl.css'; css.crossOrigin = 'anonymous';
+      if (libre.css) css.integrity = libre.css;
       document.head.appendChild(css);
       var s = document.createElement('script');
-      s.src = LIBRE + 'maplibre-gl.js'; s.crossOrigin = 'anonymous'; s.onload = ok; s.onerror = function () { loading = null; no(new Error('offline')); };
+      s.src = libre.base + 'maplibre-gl.js'; s.crossOrigin = 'anonymous'; s.id = 'ck-libre';
+      if (libre.js) s.integrity = libre.js;
+      s.onload = ok; s.onerror = function () { loading = null; s.remove(); no(new Error('offline')); };
       document.head.appendChild(s);
     });
     return loading;

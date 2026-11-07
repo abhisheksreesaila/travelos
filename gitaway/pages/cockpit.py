@@ -52,7 +52,7 @@ def sky(w, cls="ck-sky", src=False):
 
 def closed_body(d):
     items = [x for x in d.lines]
-    foot = [Span(icon("check", 12, 3), on, cls="ck-on") for on in d.booked] or [Span("Nothing to book", cls="ck-free")]
+    foot = [Span(icon("check", 12, 3), " · ".join(d.booked), cls="ck-on")] if d.booked else [Span("Nothing to book", cls="ck-free")]      # one wrapping line: "United · Hertz · Stay"
     return Div(Div(B(f"{d.dow} {d.num}"), Span(d.name), cls="ck-d"),
                Ul(*[Li(I(cls=f"ck-dot ck-k-{x.kind}"), Span(x.time, cls="ck-t"), B(x.short or x.title), cls="ck-it") for x in items[:3]], cls="ck-items"),
                Div(*foot, cls="ck-foot"), cls="ck-closed")

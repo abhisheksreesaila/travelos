@@ -7,7 +7,7 @@
 
 .ck { --ck-wx: var(--sky-ink); --ck-stage: color-mix(in srgb, var(--ink) 7%, var(--paper)); --ck-card: var(--card); --ck-line: var(--hairline-2);
   --ck-up-bg: var(--ink); --ck-up-fg: var(--card); --ck-up-fg2: color-mix(in srgb, var(--card) 80%, var(--ink)); --ck-up-line: color-mix(in srgb, var(--card) 28%, var(--ink));
-  --ck-up-tile: color-mix(in srgb, var(--card) 16%, var(--ink)); --ck-ok: var(--mint-ink); --ck-ok-t: var(--mint-tint); --ck-notch: var(--paper);
+  --ck-up-tile: color-mix(in srgb, var(--card) 16%, var(--ink)); --ck-ok: color-mix(in srgb, var(--mint-ink) 70%, #000000); --ck-ok-t: var(--mint-tint); --ck-notch: var(--paper);      /* the booked green, darkened so it reads 4.5:1 on its tint */
   --ck-r: 1.125rem; color: var(--ink); }
 .ph-main.ck { gap: 0.875rem; }      /* (.ph-main is phone.css's, loaded after this file: the two classes win over its one) */
 .ck-k-flight, .ck-k-travel { --kf: var(--sky-ink); --kt: var(--sky-tint); }
@@ -23,6 +23,7 @@
 .ck-head { display: grid; gap: 0.5rem; padding: 0.25rem 0.125rem 0; }
 .ck-head-t { display: grid; gap: 0.125rem; min-width: 0; }
 .ck-head .ga-tb-phonepick, .ck-head .ga-tb-psum { color: var(--ink-2); }
+.ck-head .ga-tb-psum, .ck-head .ga-tb-item, .ck-head .ga-tb-sw { min-height: 3rem; }      /* the trip menu in the heading: 48px targets on this page */
 .ck-title { margin: 0; font: 760 2.125rem/1.04 var(--font-display); letter-spacing: -.035em; overflow-wrap: anywhere; }
 .ck-head-desk { display: none; }
 .ck-pday { margin: 0; font-size: 1.0625rem; color: var(--ink-2); }
@@ -114,7 +115,8 @@
 .ck-it:nth-child(3) { display: none; }
 .ck-dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--kf); transform: translateY(-0.0625rem); }
 .ck-foot { margin-top: auto; display: flex; flex-wrap: wrap; gap: 0.25rem; }
-.ck-on { display: inline-flex; align-items: center; gap: 0.25rem; font: 650 max(var(--text-min), 0.8125rem)/1 var(--font-body); background: var(--ck-ok-t); color: var(--ck-ok); padding: 0.3125rem 0.4375rem; border-radius: 0.375rem; }
+.ck-on { display: inline-block; font: 650 max(var(--text-min), 0.8125rem)/1.35 var(--font-body); background: var(--ck-ok-t); color: var(--ck-ok); padding: 0.25rem 0.4375rem; border-radius: 0.375rem; overflow-wrap: anywhere; }
+.ck-on svg { vertical-align: -0.0625rem; margin-right: 0.1875rem; }
 .ck-free { font-size: max(var(--text-min), 0.875rem); color: var(--ink-2); }
 
 /* ---------- the wallet: passes, solid kind fills with a perforation ---------- */
@@ -287,6 +289,10 @@
   .ck-up-t { font-size: 1.8333rem; }
   .ck-kv dd { font-size: 1.5rem; }
   .ck-pass .ck-perf { margin: 0.4167rem -1.25rem 0.4167rem; }
+  .ck-pass { padding: 0.75rem 1.25rem 0.6667rem; }
+  .ck-pass-t { font-size: 1.4167rem; } .ck-pass-s { font-size: 1.0833rem; }
+  .ck .ck-cxl { min-height: 2.25rem; }
+  .ck-d span { font-size: 1rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

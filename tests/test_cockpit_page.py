@@ -64,7 +64,7 @@ def test_every_day_is_a_stub_that_links_to_it_with_its_sky_and_times(tahoe_trip)
     assert 'href="/trip/cockpit?day=2"' in monday and 'data-day="2"' in monday
     first = stub(html, 0)
     assert "Fly SFO → RNO" in first and "Pick up car" in first and "Check in" in first
-    assert all(f'<span class="ck-on">{x}' in re.sub(r"<svg.*?</svg>", "", first) for x in ("United", "Hertz", "Stay"))
+    assert '<span class="ck-on">United · Hertz · Stay</span>' in re.sub(r"<svg.*?</svg>", "", first)
     assert "Nothing to book" in stub(html, 3)
     assert "data-wx='{\"kind\":\"cloud\"" in first and 'data-calm="1" class="ck-temp"' in first and "(sample weather)" in first
 
