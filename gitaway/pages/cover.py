@@ -18,7 +18,7 @@ from fasthtml.common import A, Article, B, Canvas, Div, Em, Footer, H1, H2, Head
 
 from gitaway import auth, session, showcase
 from gitaway.icons import icon
-from gitaway.layout import brand, seo_meta, styles
+from gitaway.layout import brand, preview, seo_meta, styles
 
 ASSETS = Path(__file__).resolve().parent.parent.parent / "assets"
 TITLE = "Take a trip. Leave a trail."
@@ -200,7 +200,7 @@ def page(footer_links, drive=()):
         *(h for h in head if not (h.tag == "meta" and h.attrs.get("name") == "theme-color")),        # the site's cream bar is not the cover's
         A("Skip to the story", href="#main", cls="ga-skip"),
         _stage(),
-        Header(brand(), Span("Early preview", cls="cv-tag"), A("Sign in", href=session.signin_href(), cls="cv-btn tonal"), cls="cv-top"),
+        Header(brand(), Div(preview(), cls="cv-tag"), A("Sign in", href=session.signin_href(), cls="cv-btn tonal"), cls="cv-top"),
         Nav(cls="cv-rail", aria_label="Chapters"),
         Main(*_chapters(), id="main", data_world=f"{WORLD}?v={world_version()}", data_three=three_url(), data_assets="/assets/cover/", data_stills=STILLS,
              data_phone=PHONE_Q, data_debug="1" if debug() else None),

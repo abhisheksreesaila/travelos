@@ -8,6 +8,7 @@
 .cv-root {
   --u: 1.3333rem;
   --cv-k-flight: #4338CA; --cv-k-stay: #8B2FC9; --cv-k-car: #15803D; --cv-k-tix: #C2410C; --cv-k-wx: #0369A1; --cv-k-food: #C92A5E; --cv-k-see: #0F766E;
+  --cv-on-k: #FFFFFF;      /* words on a kind's solid fill: the fills stay deep in both modes */
   --cv-gut: 1.6667rem; --cv-card-r: 2.3333rem; --cv-w-r: 1.8333rem;
   --cv-sl: max(var(--cv-gut), env(safe-area-inset-left)); --cv-sr: max(var(--cv-gut), env(safe-area-inset-right));
   --cv-bg: #F2F2F5; --cv-s1: #FFFFFF; --cv-ink: #0B0B0D; --cv-ink2: #5C5C66; --cv-line: #E3E3E8; --cv-acc: #0B0B0D; --cv-on-acc: #FFFFFF;
@@ -26,8 +27,8 @@
 }
 @media (max-width: 720px) { .cv-root { --u: 1rem; } }
 .cv-root body { margin: 0; background: var(--cv-bg); color: var(--cv-ink); font-family: var(--font-body); font-size: 1.4167rem; line-height: 1.5; overflow-x: hidden; overflow-x: clip; }
-.cv-root a { color: inherit; }
-.cv-root a:hover { color: inherit; }
+.cv-root :where(a:not(.btn)) { color: inherit; }      /* not the shared buttons (the Plan it for me card's), which bring their own colours */
+.cv-root :where(a:not(.btn)):hover { color: inherit; }
 .cv-root :focus-visible { outline: 0.1667rem solid var(--cv-acc); outline-offset: 0.1667rem; }
 .cv-root .ga-skip { z-index: 30; left: max(1rem, env(safe-area-inset-left)); }       /* over the fixed header when it is tabbed to */
 
@@ -47,7 +48,10 @@
 .cv-top > .cv-btn { margin-left: auto; }
 .cv-top .ga-brand { min-height: 4rem; padding: 0 1.3333rem 0 0.6667rem; border-radius: var(--r-pill); background: var(--cv-s1); box-shadow: var(--cv-sh1); }
 .cv-dark .cv-top .ga-brand-name, .cv-dark .cv-foot .ga-brand-name { color: var(--cv-ink); }      /* the wordmark's ink would vanish on the night scene's dark pill */
-.cv-tag { font: 600 1.0833rem/1 var(--font-body); letter-spacing: .02em; padding: 0.5833rem 0.8333rem; border-radius: var(--r-pill); background: var(--cv-s1); color: var(--cv-ink2); box-shadow: var(--cv-sh1); }
+.cv-tag { display: flex; align-items: center; }      /* the shared "Early preview" label (layout.preview(), F-200) in the cover's own pill */
+.cv-tag .ga-preview-sum { padding: 0; }
+.cv-tag .ga-preview-pill { font: 600 1.0833rem/1 var(--font-body); letter-spacing: .02em; text-transform: none; min-height: 0; padding: 0.5833rem 0.8333rem; border-radius: var(--r-pill); background: var(--cv-s1); color: var(--cv-ink2); box-shadow: var(--cv-sh1); }
+.cv-tag .ga-preview-sum:hover .ga-preview-pill, .cv-tag .ga-preview[open] .ga-preview-pill { color: var(--cv-ink); }
 
 /* buttons: pill, filled ink for the one loud action, tonal for the rest, a squash on press */
 .cv-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.6667rem; min-height: 4rem; padding: 0 1.6667rem; border-radius: var(--r-pill); border: 0; font: 650 1.3333rem/1 var(--font-body); text-decoration: none; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: transform var(--motion-quick) var(--motion-spring), box-shadow var(--motion-quick) var(--motion-ease); }
@@ -102,7 +106,7 @@
 /* ---------- the plan's widgets (Direction A: solid kind fills, white text, no shadow) ---------- */
 /* With the live world on a laptop the world stamps them into itself (aria-hidden copies): the card keeps the real ones for a screen reader, visually hidden. */
 .cv-wds { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.cv-wd { --kf: var(--cv-k-wx); position: relative; background: var(--kf); color: #FFFFFF; border-radius: var(--cv-w-r); padding: 1.1667rem 1.3333rem 1.25rem; width: 17.5rem; display: grid; gap: 0.25rem; transform-origin: 50% 50%; }
+.cv-wd { --kf: var(--cv-k-wx); position: relative; background: var(--kf); color: var(--cv-on-k); border-radius: var(--cv-w-r); padding: 1.1667rem 1.3333rem 1.25rem; width: 17.5rem; display: grid; gap: 0.25rem; transform-origin: 50% 50%; }
 .cv-wd.flight { --kf: var(--cv-k-flight); } .cv-wd.stay { --kf: var(--cv-k-stay); } .cv-wd.car { --kf: var(--cv-k-car); } .cv-wd.tix { --kf: var(--cv-k-tix); }
 .cv-wd .k { font: 700 1rem/1.2 var(--font-body); letter-spacing: .08em; text-transform: uppercase; display: flex; align-items: center; gap: 0.5rem; }
 .cv-wd .k svg { width: 1.25rem; height: 1.25rem; margin-left: auto; }
@@ -113,7 +117,7 @@
 .cv-wd .by { margin-top: 0.5rem; padding-top: 0.6667rem; border-top: 0.125rem dashed rgba(255, 255, 255, .45); font: 650 1.1667rem/1.2 var(--font-body); display: flex; align-items: center; gap: 0.5rem; }
 .cv-wd .by svg { width: 1.1667rem; height: 1.1667rem; }
 .cv-wd.up { --kf: var(--cv-up-bg); color: var(--cv-up-fg); }
-.cv-wd .stamp { position: absolute; right: 0.8333rem; top: 0.75rem; font: 800 0.9167rem/1 var(--font-body); letter-spacing: .14em; padding: 0.4167rem 0.5833rem; border: 0.1667rem solid rgba(255, 255, 255, .9); border-radius: 0.5rem; transform: rotate(-8deg); opacity: 0; font-style: normal; }
+.cv-wd .stamp { position: absolute; right: 0.8333rem; top: 0.75rem; font: 800 max(var(--label-min), 0.9167rem)/1 var(--font-body); letter-spacing: .14em; padding: 0.4167rem 0.5833rem; border: 0.1667rem solid rgba(255, 255, 255, .9); border-radius: 0.5rem; transform: rotate(-8deg); opacity: 0; font-style: normal; }
 .cv-wd.in .stamp { opacity: 1; transition: opacity var(--motion-fade) var(--motion-ease) var(--motion-quick); }
 .cv-wd.in .k svg { opacity: 0; }
 /* The calm stills at any width (and phones, below): the widgets sit in the card as one row you swipe, the next one peeking, never a stack that
@@ -165,7 +169,8 @@
   .cv-top { gap: calc(0.5 * var(--u)); padding: calc(0.75 * var(--u)) var(--cv-sr) calc(0.75 * var(--u)) var(--cv-sl); padding-top: max(calc(0.75 * var(--u)), env(safe-area-inset-top)); }
   .cv-top .ga-brand { min-height: calc(3 * var(--u)); padding: 0 calc(0.875 * var(--u)) 0 calc(0.375 * var(--u)); gap: calc(0.5 * var(--u)); }
   /* the honest label stays on a phone (the logo itself never changes, D-61): it wraps onto two lines before it would crowd the logo or Sign in */
-  .cv-tag { flex: 0 1 auto; min-width: 0; font-size: calc(0.8125 * var(--u)); line-height: 1.15; text-align: center; padding: calc(0.375 * var(--u)) calc(0.625 * var(--u)); border-radius: calc(0.75 * var(--u)); }
+  .cv-tag, .cv-tag .ga-preview, .cv-tag .ga-preview-sum { flex: 0 1 auto; min-width: 0; }
+  .cv-tag .ga-preview-pill { font-size: calc(0.8125 * var(--u)); line-height: 1.15; text-align: center; white-space: normal; padding: calc(0.375 * var(--u)) calc(0.625 * var(--u)); border-radius: calc(0.75 * var(--u)); }
   .cv-rail { display: none; }
   .cv-btn { min-height: calc(3 * var(--u)); padding: 0 calc(1.25 * var(--u)); font-size: calc(1 * var(--u)); gap: calc(0.5 * var(--u)); }
   .cv-top > .cv-btn { padding: 0 calc(1 * var(--u)); flex: none; }
@@ -220,11 +225,13 @@
   .cv-top { flex-wrap: wrap; row-gap: calc(0.25 * var(--u)); padding-bottom: calc(0.25 * var(--u)); }
   .cv-top > .cv-btn { order: 2; }
   .cv-tag { order: 3; margin-left: calc(0.25 * var(--u)); }
+  .cv-tag .ga-preview-sum { min-height: 0; }      /* the second row stays short, so every card still fits a 320x568 screen */
   .cv-pin { padding-top: calc(6 * var(--u)); }
   .cv-hero .cv-pin { padding-top: calc(6.5 * var(--u)); }
   .cv-card { padding: calc(1.125 * var(--u)); }
   .cv-card h2 { font-size: calc(1.875 * var(--u)); }
-  .cv-days li { min-height: calc(2.25 * var(--u)); padding: 0 calc(0.75 * var(--u)); }
+  .cv-days { gap: calc(0.375 * var(--u)); }
+  .cv-days li { min-height: calc(2.25 * var(--u)); padding: 0 calc(0.5 * var(--u)); gap: calc(0.375 * var(--u)); }      /* two days a row with Geist (F-200), so chapter 1 fits 320x568 */
 }
 /* a phone on its side, or any short window: a wide card that wraps less, a tighter frame, the three doors side by side */
 @media (max-height: 520px) {
