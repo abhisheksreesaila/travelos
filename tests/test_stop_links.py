@@ -253,6 +253,25 @@ def test_the_public_page_draws_the_link_sponsored_and_says_it_is_the_creators(dr
     assert [s.link for d in community.trip_of(row).days for s in d.stops] == [HOTEL, TOUR, ""]
 
 
+def test_a_link_to_the_posts_own_site_is_drawn_only_once_the_captain_has_said_yes(monkeypatch, web, client):
+    """F-194 audit: until the captain has checked the post is theirs, a creator's link to "their own" domain is not drawn (a stranger could name any blog as theirs)."""
+    model_says(monkeypatch, hotel=HOTEL, tour=TOUR)
+    sign_in(client, "kim.lee@gmail.com")                                    # not at blog.example.com
+    did = draft_id(client.post("/creators/import", data={"do": "draft", "link": POST}, follow_redirects=False))
+    save(client, did, name="Maya Chen", d1s0_link=OWN)
+    assert client.post(f"/creators/import/{did}", data={"do": "publish", "own": "1"}, follow_redirects=False).status_code == 303
+    slug = cd.get(tid("kim.lee@gmail.com"), did)["slug"]
+    assert community.review_state(slug) == "unverified"
+    page = lambda: client.__class__(client.app).get(f"/trips/{slug}").text      # noqa: E731
+    assert OWN not in unescape(page()) and HOTEL in unescape(page())        # the booking sites stay, the "own" site waits
+    assert [s.link for d in community.trip_of(community.get(slug)).days for s in d.stops] == [HOTEL, TOUR, ""]
+    assert cd.get(tid("kim.lee@gmail.com"), did)["days"][1]["stops"][0]["link"] == OWN         # the creator's own draft still has it
+    assert OWN not in unescape(client.get(f"/creators/import/{did}/preview").text)       # and the preview shows what will be drawn
+    assert cd.approve(slug) is True
+    assert OWN in unescape(page())
+    assert [s.link for d in community.trip_of(community.get(slug)).days for s in d.stops] == [HOTEL, TOUR, OWN]
+
+
 def test_a_page_without_links_has_no_such_line(client, monkeypatch, web):
     model_says(monkeypatch)
     sign_in(client)

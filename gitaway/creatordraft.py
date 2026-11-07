@@ -490,12 +490,13 @@ def problems(d) -> list:
 
 def build(d, src, handle="", verified=True) -> Itinerary:
     """The public page of a draft as an Itinerary. `src(name)` gives a picked picture's address (the private route for the preview, the public one once published). `verified`: the
-    person is at the post's site or the captain has said yes; without it the source card's byline names the site, not the person (F-194)."""
+    person is at the post's site or the captain has said yes; without it the source card's byline names the site, not the person, and a link to the post's own site is left out (only the
+    booking sites' links stay), since nobody has checked yet that the site is theirs (F-194)."""
     place = PLACES.get(d["place"]) or d["place_name"]
     name = d["name"] or "a traveler"
     days = []
     for n, day in enumerate(d["days"], start=1):
-        stops = [Stop(s["time"], s["name"], "star", "sun", note=s["note"], link=s.get("link", "")) for s in day["stops"] if s["name"]]
+        stops = [Stop(s["time"], s["name"], "star", "sun", note=s["note"], link=s.get("link", "") if verified else stoplinks.clean(s.get("link", ""))) for s in day["stops"] if s["name"]]
         days.append(Day(n, f"DAY {n}", day["title"] or (stops[0].title if stops else "Free day"), "", stops, collapsed=False, note=day["note"]))
     order = ([int(d["cover"])] if d["cover"] != "" else []) + [p for p in d["picks"] if str(p) != d["cover"]]
     shots = [d["copies"][str(n)] for n in order if str(n) in d["copies"]]
