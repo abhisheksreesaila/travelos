@@ -355,6 +355,7 @@ def test_nothing_that_nothing_reads_is_left():
     assert not hasattr(weather, "Hour") and not hasattr(weather, "CACHE_MAX") and not hasattr(weather_ui, "_ICONS")
     assert {f.name for f in fields(weather.Day)}.isdisjoint({"hours", "partial"})
     assert not any(hasattr(weather, n) for n in ("station_near", "_km", "NEAR_KM"))       # last review: only tests used them
+    assert [f.name for f in fields(weather.Where)] == ["name", "tz", "station"]             # final fixes: MET is asked at the station itself
 
 
 # ---- last review: a 304 is an answer, not a redirect (reviewer 1) -------------------------------------------------------------------
@@ -449,8 +450,8 @@ def test_the_watchdog_cuts_a_handshake_whose_socket_would_wait_far_past_the_dead
     proxy = tls_support.DripProxy(tls["port"], chunk=16, gap=0.1)
 
     class Patient(http.client.HTTPSConnection):
-        def connect(self):
-            deadline.handshake(self, socket.create_connection(("127.0.0.1", proxy.port), 10), tls["trust"])
+        def connect(self):      # the handshake itself would wait ten seconds: only the watchdog (one second) can end it in time
+            deadline.handshake(self, socket.create_connection(("127.0.0.1", proxy.port), 10), tls["trust"], time.monotonic() + 10)
     try:
         started = time.monotonic()
         with pytest.raises(TimeoutError):

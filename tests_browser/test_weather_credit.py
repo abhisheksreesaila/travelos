@@ -56,3 +56,21 @@ def test_on_a_touch_tablet_the_credit_line_is_a_48px_tap_target_too(forecast, op
     credit = page.locator('[data-pane="weather"] a.ws-wcredit')
     credit.scroll_into_view_if_needed()
     assert credit.bounding_box()["height"] >= 48
+
+
+def test_on_a_touch_tablet_the_forks_calendars_credit_line_is_a_48px_tap_target_too(forecast, browser, base_url):
+    """The founder's Tahoe trip on /forks, Dec 17 (its days are MET's forecast): the credit under the calendar is one link, a finger's size."""
+    from tests.test_weather_pages import TAHOE
+    ctx = browser.new_context(viewport={"width": 1024, "height": 768}, reduced_motion="reduce", has_touch=True)
+    ctx.set_default_timeout(5000)
+    try:
+        ctx.request.post(base_url + "/signin", form={"email": "tablet.weather@example.com", "next": "/", "intent": "save"})
+        assert ctx.request.post(base_url + "/trips/import/save", form={"text": TAHOE}, max_redirects=0).status == 303
+        page = ctx.new_page()
+        page.goto(base_url + "/forks")
+        credit = page.locator("a.fk-wcredit")
+        credit.scroll_into_view_if_needed()
+        assert credit.inner_text().strip() == "Forecast for South Lake Tahoe, based on data from MET Norway · updated 6:10 AM"
+        assert credit.get_attribute("href") == weather.CREDIT_URL and credit.bounding_box()["height"] >= 48
+    finally:
+        ctx.close()

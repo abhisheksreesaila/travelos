@@ -199,3 +199,20 @@ def test_the_builder_refuses_a_row_no_station_could_have(month, day, high):
 def test_the_builder_refuses_a_chance_over_one_hundred_percent():
     with pytest.raises(ValueError):
         _builder().summarise(_csv().replace('"17.0","33.0"', '"17.0","133.0"', 1))
+
+
+
+# ---- final fixes: recall (reviewer) ----------------------------------------------------------------------------------------------
+
+@pytest.mark.parametrize("text, name", [("Walt Disney World Resort, Florida", "Orlando"), ("Universal Orlando Resort", "Orlando"),
+                                        ("Grand Teton National Park, WY", "Jackson Hole"), ("Disneyland, CA", "Anaheim"), ("Disneyland Park", "Anaheim"),
+                                        ("Grand Canyon National Park", "Grand Canyon"), ("Great Smoky Mountains National Park", "Gatlinburg"),
+                                        ("Great Smoky Mountains National Park, NC", "Gatlinburg"), ("South Lake Tahoe, ca", "South Lake Tahoe"),
+                                        ("Lake Tahoe, nv", "South Lake Tahoe")])
+def test_common_ways_of_writing_a_destination_find_its_station(text, name):
+    assert weather.station_named(text).name == name
+
+
+@pytest.mark.parametrize("text", ["Disneyland Resort Paris", "Hollywood, fl", "Austin, mn"])
+def test_a_lowercase_code_that_is_not_the_stations_own_state_or_a_place_abroad_still_refuses_it(text):
+    assert weather.station_named(text) is None, text

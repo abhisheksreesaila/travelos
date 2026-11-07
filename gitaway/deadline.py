@@ -7,10 +7,11 @@ watchdog able to reach the socket:
   - the TLS handshake runs on the TLS socket itself, set on the connection first (`handshake`): wrapping takes the plain socket's file over, so a
     shutdown sent to the plain one no longer reaches anything;
   - the socket is held here once connected, because http.client lets go of `conn.sock` as soon as an answer says it will close the connection;
-  - the watchdog only shuts the socket down; it is closed by the request's own `finally`, so no thread ever reads from a file a second thread closed.
+  - the watchdog only shuts the socket down; it is closed by the request's own `finally`, after the watchdog is done, so no thread ever touches a file
+    another thread closed.
+The TLS handshake also gets only what is left of the deadline, and once the deadline has passed any error the request meets is a TimeoutError.
 """
 
-import http.client
 import socket
 import threading
 import time
@@ -18,23 +19,32 @@ import time
 REDIRECTS = (301, 302, 303, 307, 308)     # answers that send the caller elsewhere: returned at once, with no body, and never followed here
 
 
-def handshake(conn, raw, context):
+def handshake(conn, raw, context, deadline):
     """Wrap the connected socket `raw` in TLS for `conn.host` (the certificate is checked against that name) and shake hands on the TLS socket itself,
-    put on `conn` first, so that a watchdog can cut a handshake that drags past the deadline."""
+    put on `conn` first so that a watchdog can cut a handshake that drags, and given only what is left of `deadline` (a time.monotonic() time): none
+    left (the connection came up just as the deadline passed, after the watchdog had fired at nothing) is a TimeoutError before a byte is sent."""
     tls = context.wrap_socket(raw, server_hostname=conn.host, do_handshake_on_connect=False)
     conn.sock = tls
+    left = deadline - time.monotonic()
+    if left <= 0:
+        raise TimeoutError("past the deadline")
+    tls.settimeout(left)
     tls.do_handshake()
 
 
 def get(conn, path, headers, deadline, limit):
     """GET `path` on `conn` (an http.client connection, not yet connected) by `deadline` (a time.monotonic() time): (status, headers with lower-case
     names, body). The body is read up to `limit` bytes (ask for one more than you accept, to tell "too big"); a redirect comes back with no body. Raises
-    TimeoutError at the deadline, and what the connection raises before it (refused, a bad certificate)."""
+    TimeoutError at the deadline, and what the connection raises before it (refused, a bad certificate). The connection learns its deadline as
+    `conn.deadline` before it connects (`handshake` needs it)."""
     timed_out, held, resp = threading.Event(), {}, None
 
     def cut():
         timed_out.set()
-        for sock in (held.get("sock"), getattr(conn, "sock", None)):
+        socks = [held.get("sock")]
+        if getattr(conn, "sock", None) is not socks[0]:
+            socks.append(getattr(conn, "sock", None))
+        for sock in socks:
             try:
                 sock.shutdown(socket.SHUT_RDWR)
             except (OSError, AttributeError):
@@ -44,6 +54,7 @@ def get(conn, path, headers, deadline, limit):
     watchdog.daemon = True
     watchdog.start()
     try:
+        conn.deadline = deadline
         conn.connect()
         held["sock"] = conn.sock
         if timed_out.is_set():          # the deadline passed while connecting, even if the connection came up after all
@@ -64,12 +75,13 @@ def get(conn, path, headers, deadline, limit):
         if timed_out.is_set():
             raise TimeoutError("past the deadline")
         return resp.status, got, bytes(body)
-    except (OSError, http.client.HTTPException, ValueError):
-        if timed_out.is_set():
+    except Exception:
+        if timed_out.is_set():          # once cut, a socket can break in ways no list would name: it is the deadline either way
             raise TimeoutError("past the deadline") from None
         raise
     finally:
         watchdog.cancel()
+        watchdog.join()                 # a cut that has begun finishes before anything is closed
         for thing in (resp, conn, held.get("sock")):
             try:
                 if thing is not None:

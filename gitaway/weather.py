@@ -162,8 +162,7 @@ class _MetTLS(http.client.HTTPSConnection):
                 failed = e
         if raw is None:
             raise failed or TimeoutError("no address of api.met.no answered in time")
-        raw.settimeout(max(0.05, self.deadline - clock.monotonic()))
-        handshake(self, raw, self._context)
+        handshake(self, raw, self._context, self.deadline)
 
 
 def _connection(ips, deadline, port=443, context=None):
@@ -610,17 +609,17 @@ def _starts(tokens, alias) -> int:
 
 
 def _part_ok(part, st) -> bool:
-    """Does a trailing part of a destination keep it at this station? Only a US state it stands for (a name, or a code in capitals, maybe with a ZIP
-    code), the United States, or one of the station's own names: "CA 96150", "Nevada", "USA", "Lake Tahoe". "France", "Ibiza" or "Florida" (for Los
-    Angeles) do not."""
+    """Does a trailing part of a destination keep it at this station? Only a US state it stands for (a name, or a code: in capitals, or in lower case when
+    it is one of the station's own; maybe with a ZIP code), the United States, or one of the station's own names: "CA 96150", "ca", "Nevada", "USA",
+    "Lake Tahoe". "France", "Ibiza" or "Florida" (for Los Angeles) do not."""
     words = [t.lower() for t in part]
     if " ".join(words) in st.aliases:
         return True
     taken = next((n for n in (3, 2, 1) if n <= len(words) and " ".join(words[:n]) in _STATES), 0)
     if taken:
         state = _STATES[" ".join(words[:taken])]
-    elif part and len(part[0]) == 2 and part[0].isupper() and part[0] in _CODES:
-        state, taken = part[0], 1
+    elif part and len(part[0]) == 2 and part[0].upper() in _CODES and (part[0].isupper() or part[0].upper() in st.states):
+        state, taken = part[0].upper(), 1       # a code in capitals; or in lower case, only as one of the station's own states ("ca" for South Lake Tahoe)
     else:
         state = None
     if state is not None:
@@ -695,11 +694,8 @@ OPENS = timedelta(days=9)    # what a page promises: "The forecast opens around 
 
 @dataclass(frozen=True)
 class Where:
-    """Where a trip's weather is read: its NOAA station (the coordinates MET is asked for, the time zone of its days, its climate normals)."""
+    """Where a trip's weather is read: its NOAA station (MET is asked at the station; its time zone gives the days; its climate normals)."""
     name: str
-    lat: float
-    lon: float
-    altitude: int
     tz: str
     station: Station
 
@@ -722,7 +718,7 @@ def where(trip) -> Where | None:
         st = station(CATALOG_STATIONS[trip.key])
     else:
         st = station_named(trip.destination_name)
-    return Where(st.name, st.lat, st.lon, st.elev, st.tz, st) if st else None
+    return Where(st.name, st.tz, st) if st else None
 
 
 def trip_weather(trip) -> TripWeather:
