@@ -1233,3 +1233,12 @@ Brief: docs/briefs/free-and-polished.md "The soul: sharing" · Design: docs/desi
 ## F-206 The cover page: a 3D scroll world [todo]
 Brief: docs/briefs/free-and-polished.md "Later" · Design: docs/design/cover3d/ (in progress) · Needs: the founder's pick of a concept
 - [ ] "Forget the book. Go travel.": one real place, the story of sharing told as you scroll, ending in Start a trip / Share a trip / See trips
+
+## F-209 Creators redesigned as one product with the cockpit [todo]
+Brief: docs/briefs/free-and-polished.md · Design: docs/design/oneproduct/ (in progress) · Needs: the founder's pick; F-200 merged
+- [ ] For creators, paste/pick, drafting, editor, published trip (themes, Thank, Follow this trail, fork tree), profile, stats, claim and /admin relaid out in the Ticket line language, web first and phone alongside, light and dark
+- [ ] the founder says it feels like the same product as the cockpit and the cover
+
+## F-210 Booking redesigned as one product (absorbs F-202) [todo]
+Brief: docs/briefs/free-and-polished.md · Design: docs/design/oneproduct/ (in progress) · Needs: the founder's pick; F-198 merged
+- [ ] Where to? for any destination, the book of tickets, the paste moment and booking details ("Booked on X · Change or cancel") relaid out in the Ticket line language, web first and phone alongside, light and dark
