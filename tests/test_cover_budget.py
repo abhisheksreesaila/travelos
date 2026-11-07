@@ -37,13 +37,13 @@ def test_the_landing_javascript_fits_in_250_kb_gzipped(client, capsys):
 
 
 def test_every_script_on_the_landing_counts_wherever_it_comes_from(client):
-    """FastHTML's own scripts come from jsDelivr: they count too (measured once, pinned in scripts/cover_size.py), and a script from another site
-    that nobody has measured fails the budget instead of slipping past it."""
+    """Every script on the page counts. Since F-207 the landing loads none from another site (FastHTML's jsDelivr scripts are off), and a script
+    from another site that nobody has measured (scripts/cover_size.py EXTERNAL) fails the budget instead of slipping past it."""
     html = client.get("/").text
     rows, _ = measure(html)
     names = {w for w, _ in rows}
     srcs = re.findall(r'<script[^>]*\ssrc="([^"]+)"', html)
-    assert any(s.startswith("https://") for s in srcs)
+    assert srcs and not any(s.startswith(("https:", "http:", "//")) for s in srcs), srcs
     for src in srcs:
         assert src.split("?")[0] in names, src
     with pytest.raises(ValueError, match="https://example.com/new.js"):

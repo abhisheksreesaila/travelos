@@ -18,12 +18,7 @@ ASSETS = ROOT / "assets"
 BUDGET_JS = 250 * 1024
 # Scripts from other sites, gzip -9 as gz() counts them, downloaded and measured 2026-11-07. FastHTML adds these four from jsDelivr to every page
 # until F-207 switches them off (FastHTML(htmx=False, surreal=False)); surreal and css-scope-inline follow a branch (@main), so re-measure if they move.
-EXTERNAL = {
-    "https://cdn.jsdelivr.net/npm/htmx.org@2.0.7/dist/htmx.js": 37498,
-    "https://cdn.jsdelivr.net/gh/answerdotai/fasthtml-js@1.0.12/fasthtml.js": 865,
-    "https://cdn.jsdelivr.net/gh/answerdotai/surreal@main/surreal.js": 4128,
-    "https://cdn.jsdelivr.net/gh/gnat/css-scope-inline@main/script.js": 867,
-}
+EXTERNAL: dict[str, int] = {}      # F-207 took FastHTML's four jsDelivr scripts off every page; add a script from another site here, measured, before the landing loads it
 IMPORT = re.compile(r"""(?:import|export)\s*(?:[\w*{}\s,$]*?\s*from\s*)?["']([^"']+)["']|import\(\s*["']([^"']+)["']\s*\)""")
 
 
