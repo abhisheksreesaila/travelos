@@ -1189,21 +1189,25 @@ Brief: docs/briefs/plan-for-me.md (draft; the captain approves the wording and t
 
 # Free and polished: booking anywhere, free plans (brief docs/briefs/free-and-polished.md, approved 2026-11-07)
 
-## F-198 Booking works for any destination, links only, no liability [doing]
+## F-198 Booking works for any destination, links only, no liability [review]
 Brief: docs/briefs/free-and-polished.md (What 4, The model) · Research: docs/research/booking-any-trip.md · Decisions: D-219 to D-230 · Needs: F-195 · UI kept minimal (the reskin restyles it)
-- [ ] 1. a partner registry per lane (flight, stay, car, todo, direct) in `gitaway/partners/registry.py`: a lane uses a paying partner when it is connected (Aviasales with `TRAVELPAYOUTS_MARKER`; Klook through the partner-links API with token, marker and project id), else a plain deep link with the search filled in (stays: Expedia, Airbnb, Vrbo; cars: Expedia cars, SUV with snow chains and a ski rack on a winter snow trip; things to do: GetYourGuide; lift tickets and ski school: "Buy direct" at the resort); a plain link has no affiliate parameter and says "No commission"; `PARTNER_<LANE>=<site>` picks a lane's site and `PARTNER_TRACKED=<site,...>` sends a newly approved program through the partner-links API, with no code change; Klook goes first for stays and things to do only where it has the place
-- [ ] 2. any destination: a free-text place resolves to its nearest airport from a small static table of common US destinations (Lake Tahoe -> RNO), or a manual three-letter airport field (checked); dates, adults and kids with ages go wherever the site's documented URL takes them. Lake Tahoe, Dec 19 to 26 2026, from SFO, 2 adults and kids 8 and 11 builds exactly the links of docs/research/booking-any-trip.md section 3
-- [ ] 3. real flight prices where free: the Aviasales Data API (`TRAVELPAYOUTS_TOKEN`, market=us, currency=usd) behind a `TRANSPORT` seam, cached 24 hours, shown as "from $X, checked <time>"; no token or a failure shows no price, never an invented one; tests never reach the network
-- [ ] 4. every booking in a trip says "Booked on <partner>" and has a "Change or cancel" button to that partner's own manage-booking page (Expedia, Booking.com, Airbnb, Vrbo, Klook, GetYourGuide, Aviasales/airline, car brands); GitAway never handles a change
-- [ ] 5. paste-back: pasted confirmations from Booking.com, Airbnb, Vrbo, GetYourGuide, Klook and a car-rental company (synthetic samples) land as booked blocks with the partner recorded, from the import page and from the Ask box; Expedia keeps working
-- [ ] 6. in production `/plan` never shows the invented catalog or its prices: every visitor gets the honest lanes; the workspace, its checkout and quotes stay on the showcase and local copies
-- [ ] tests: registry, exact link URLs, price cache, manage links, paste parsers; a browser test of the booking lanes on a Tahoe trip at 390 and 1440 (no sideways scroll)
+- [x] 1. a partner registry per lane (flight, stay, car, todo, direct) in `gitaway/partners/registry.py`: a lane uses a paying partner when it is connected (Aviasales with `TRAVELPAYOUTS_MARKER`; Klook through the partner-links API with token, marker and project id), else a plain deep link with the search filled in (stays: Expedia, Airbnb, Vrbo; cars: Expedia cars, SUV with snow chains and a ski rack on a winter snow trip; things to do: GetYourGuide; lift tickets and ski school: "Buy direct" at the resort); a plain link has no affiliate parameter and says "No commission"; `PARTNER_<LANE>=<site>` picks a lane's site and `PARTNER_TRACKED=<site,...>` sends a newly approved program through the partner-links API, with no code change; Klook goes first for stays and things to do only where it has the place
+- [x] 2. any destination: a free-text place resolves to its nearest airport from a small static table of common US destinations (Lake Tahoe -> RNO), or a manual three-letter airport field (checked); dates, adults and kids with ages go wherever the site's documented URL takes them. Lake Tahoe, Dec 19 to 26 2026, from SFO, 2 adults and kids 8 and 11 builds exactly the links of docs/research/booking-any-trip.md section 3
+- [x] 3. real flight prices where free: the Aviasales Data API (`TRAVELPAYOUTS_TOKEN`, market=us, currency=usd) behind a `TRANSPORT` seam, cached 24 hours, shown as "from $X, checked <time>"; no token or a failure shows no price, never an invented one; tests never reach the network
+- [x] 4. every booking in a trip says "Booked on <partner>" and has a "Change or cancel" button to that partner's own manage-booking page (Expedia, Booking.com, Airbnb, Vrbo, Klook, GetYourGuide, Aviasales/airline, car brands); GitAway never handles a change
+- [x] 5. paste-back: pasted confirmations from Booking.com, Airbnb, Vrbo, GetYourGuide, Klook and a car-rental company (synthetic samples) land as booked blocks with the partner recorded, from the import page and from the Ask box; Expedia keeps working
+- [x] 6. in production `/plan` never shows the invented catalog or its prices: every visitor gets the honest lanes; the workspace, its checkout and quotes stay on the showcase and local copies
+- [x] tests: registry, exact link URLs, price cache, manage links, paste parsers; a browser test of the booking lanes on a Tahoe trip at 390 and 1440 (no sideways scroll)
+- [x] proof: tests/test_booking_links.py, test_booking_registry.py, test_flight_prices.py, test_booking_lanes.py, test_booking_manage.py, test_paste_back.py; tests_browser/test_booking_lanes.py (390, 320, 1440, 1280, 1000; every tap caught and compared with the researched link); screenshots docs/report/f198-tahoe-390.png and -1440.png (`F198_SHOTS=1`)
+- [ ] the captain sets `TRAVELPAYOUTS_TOKEN` (and `TRAVELPAYOUTS_TRS`) on Railway: the flight lane then shows real cached fares and Klook links are tracked; with no keys every lane still works as a plain link that says "No commission"
+- [ ] the captain opens one Vrbo, one Expedia stay and one Expedia car link from the Tahoe page on a phone (all three answer a bot wall to this machine, D-220), and the walled manage pages (D-228)
 
-## F-199 Plan it for me is free [todo]
+## F-199 Plan it for me is free [review]
 Brief: docs/briefs/free-and-polished.md (What 1) · Decisions: D-231 to D-235 · Needs: F-193, F-197
-- [ ] no Stripe needed to offer it: `PLAN_FOR_ME_PAID=0` (the default) makes an order go straight to building; the Stripe code stays and comes back with `PLAN_FOR_ME_PAID=1`
-- [ ] a daily cap per person (`PLAN_FOR_ME_DAILY`, 2) and for the whole site (`PLAN_FOR_ME_SITE_DAILY`, 100), counted on the server, with a plain sentence when reached
-- [ ] the model is configurable and defaults to claude-haiku-5-5 for free plans; each plan's tokens and cost are stored and logged
-- [ ] the founder check stays, off by default (`PLAN_FOR_ME_REVIEW=0`)
-- [ ] copy: free, no price or refund promise anywhere while free; /privacy and /terms say no payment is taken; docs/setup.md lists the variables
-- [ ] tests: caps (person, site, a new day), free order flow, paid mode still works, copy has no price
+- [x] no Stripe needed to offer it: `PLAN_FOR_ME_PAID=0` (the default) makes an order go straight to building; the Stripe code stays and comes back with `PLAN_FOR_ME_PAID=1`
+- [x] a daily cap per person (`PLAN_FOR_ME_DAILY`, 2) and for the whole site (`PLAN_FOR_ME_SITE_DAILY`, 100), counted on the server, with a plain sentence when reached
+- [x] the model is configurable and defaults to claude-haiku-5-5 for free plans; each plan's tokens and cost are stored and logged
+- [x] the founder check stays, off by default (`PLAN_FOR_ME_REVIEW=0`)
+- [x] copy: free, no price or refund promise anywhere while free; /privacy and /terms say no payment is taken; docs/setup.md lists the variables
+- [x] tests: caps (person, site, a new day), free order flow, paid mode still works, copy has no price (tests/test_planforme_free.py; the F-193/F-197 tests run with `PLAN_FOR_ME_PAID=1`)
+- [ ] the captain reads two or three real plans built by Haiku before launch (quality was Sonnet's bar, D-233)
