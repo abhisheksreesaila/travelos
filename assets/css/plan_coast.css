@@ -171,6 +171,7 @@
   .oq-family-travel .ws { padding-left: calc(1rem + env(safe-area-inset-left)); padding-right: calc(1rem + env(safe-area-inset-right)); gap: 0.5rem; }
   .oq-family-travel .ws-bar { height: auto; padding: 0.25rem 0 0; gap: 0.625rem; align-items: center; }
   .oq-family-travel .ws-bar .ga-brand { order: 1; }
+  .oq-family-travel .ws-bar .ga-preview { order: 1; }      /* F-200: the label right after the brand */
   .oq-family-travel .ws-avatar { order: 2; margin-left: auto; }
   .oq-family-travel .ws-pill { order: 3; flex: 1 1 100%; margin-left: 0; height: auto; min-height: 2.5rem; padding: 0.5rem 1rem; gap: 0.125rem 0.75rem; font-size: max(var(--text-min), 0.9375rem); }
   .oq-family-travel .ws-pill > .ws-change { margin-left: auto; }

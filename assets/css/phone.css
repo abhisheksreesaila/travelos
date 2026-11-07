@@ -109,9 +109,11 @@
 @media (min-width: 1020px) { .ph-preview, .tp-head .ga-preview { display: none; } }
 /* in a phone heading the label sits beside the title (the kicker above and the second phrase below span the row), so it costs no height: its 48px target overlaps the lines around it */
 @media (max-width: 1019px) {      /* from 1020px the top bar has the label and the heading keeps its own layout */
-  .tp-head-text:has(> .ga-preview) { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 0.625rem; align-items: center; }
-  .tp-head-text:has(> .ga-preview) > * { grid-column: 1 / -1; }
-  .tp-head-text:has(> .ga-preview) > h1 { grid-column: 1; grid-row: 2; }
-  .tp-head-text > .ga-preview { grid-column: 2; grid-row: 2; justify-self: start; }
+  /* a wrapping row: the kicker, then the title with the label beside it (under it when a long title leaves no room, so it never reaches SOS), then the second phrase */
+  .tp-head-text:has(> .ga-preview) { position: relative; display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; column-gap: 0.625rem; }
+  .tp-head-text:has(> .ga-preview) > * { order: 3; flex-basis: 100%; min-width: 0; }
+  .tp-head-text:has(> .ga-preview) > :first-child { order: 0; }
+  .tp-head-text:has(> .ga-preview) > h1 { order: 1; flex-basis: auto; }
+  .tp-head-text > .ga-preview { order: 2; flex-basis: auto; position: static; }      /* the line hangs from the heading's left edge, on the screen */
   .tp-head-text > .ga-preview .ga-preview-sum { margin-block: -0.75rem; }
 }

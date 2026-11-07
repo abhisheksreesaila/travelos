@@ -48,10 +48,10 @@ def test_a_tab_switch_runs_a_view_transition_forward_and_back_runs_the_other_way
     page.goto(f"{base_url}/trip/ask")
     page.click("#ph-tab-family")
     page.wait_for_url("**/trip/family")
-    assert vt(page) == "ga-fwd"
+    page.wait_for_function("() => sessionStorage.getItem('vt') === 'ga-fwd'", timeout=3000)      # RECORD writes after the reveal (a timer): wait for it rather than race it (F-200)
     page.go_back()
     page.wait_for_url("**/trip/ask")
-    assert vt(page) == "ga-back"
+    page.wait_for_function("() => sessionStorage.getItem('vt') === 'ga-back'", timeout=3000)
 
 
 def test_nothing_animates_under_reduced_motion(ctxs, base_url):
