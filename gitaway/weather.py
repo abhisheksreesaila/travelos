@@ -473,7 +473,7 @@ def forecast_days(fc: Forecast | None, tz, now: datetime) -> dict:
 
 NORMALS = Path(__file__).with_name("normals.json")
 NEAR_KM = 25         # a place farther than this from every station has no normals
-NORMALS_CREDIT = "Typical weather: NOAA climate normals, 1991–2020"
+NORMALS_CREDIT = "From NOAA climate normals, 1991–2020"
 CATALOG = {"la": "USW00093134", "sd": "USW00023188", "hi": "USW00022521", "nyc": "USW00094728"}   # the catalog's four places
 _THIRDS = ("early", "mid", "late")
 
@@ -617,23 +617,29 @@ def trip_weather(trip, coords=None) -> TripWeather:
     fc = forecast(w.lat, w.lon, w.altitude) if any(today <= d <= today + REACH for d in dates) else None
     known = forecast_days(fc, w.tz, now)
     days = tuple(None if d < today else known.get(d) or (normal_day(w.station, d) if w.station else None) for d in dates)
-    typical = [d for d in days if d and d.kind == NORMAL]
-    opens = typical[0].date - OPENS if typical and live() and typical[0].date - OPENS > today else None
+    waiting = [d for d, day in zip(dates, days) if d >= today and (day is None or day.kind == NORMAL)]
+    opens = waiting[0] - OPENS if waiting and live() and waiting[0] - OPENS > today else None
     shown = fc is not None and any(d and d.kind == FORECAST for d in days)
     return TripWeather(days, w.name, updated_text(fc, w.tz) if shown else "", opens)
 
 
 def notes(tw: TripWeather) -> list:
     """[(text, link or "")]: what a page says under a trip's weather. The forecast's credit to MET Norway (with when it was made) when a day is a forecast;
-    when a day is typical weather, the label most of those days carry and where typical weather comes from (and when the forecast opens)."""
+    when a day is typical weather, the label most of those days carry, what those days are usually like and where that comes from; and when the
+    forecast opens, while MET is switched on."""
     out = []
     if tw.updated:
         out.append((f"{CREDIT} · updated {tw.updated}", CREDIT_URL))
+    opens = f"The forecast opens around {tw.opens:%b} {tw.opens.day}." if tw.opens else ""
     typical = [d for d in tw.days if d and d.kind == NORMAL]
     if typical:
         periods = [period(d.date) for d in typical]
-        out.append((f"Typical {max(periods, key=periods.count)} · not a forecast yet", ""))
-        out.append((NORMALS_CREDIT + "." + (f" The forecast opens around {tw.opens:%b} {tw.opens.day}." if tw.opens else ""), ""))
+        most = max(periods, key=periods.count)
+        usually = next(d.word for d in typical if period(d.date) == most)
+        out.append((f"Typical {most} · not a forecast yet", ""))
+        out.append((" ".join(filter(None, (f"{usually}. {NORMALS_CREDIT}.", opens))), ""))
+    elif opens:
+        out.append((opens, ""))
     return out
 
 

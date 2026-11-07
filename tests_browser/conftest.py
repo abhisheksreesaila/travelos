@@ -31,6 +31,7 @@ os.environ["GITAWAY_SHOWCASE"] = ""  # empty: tests start in the default (local)
 os.environ["PLAN_FOR_ME_REVIEW"] = "0"  # Plan it for me delivers at once in the tests written before the founder check (F-197); a test of the check sets 1 or removes it (the default is on)
 for _key in ("GITAWAY_VAPID_PUBLIC", "GITAWAY_VAPID_PRIVATE", "GITAWAY_VAPID_SUBJECT"):
     os.environ[_key] = ""  # empty, not removed: a .env found above the folder must not switch the real push sender on in a test run (F-066)
+os.environ["MET_NORWAY_TERMS_ACCEPTED"] = ""  # the real forecast is off in tests whatever a .env says (F-203)
 
 
 @pytest.fixture(autouse=True)
@@ -70,6 +71,18 @@ def _offline_maps(monkeypatch):
     around.clear_cache()
     monkeypatch.setattr(around.GATE, "gap", 0.0)
     monkeypatch.setattr(around.GATE, "shut_until", None)
+
+
+@pytest.fixture(autouse=True)
+def _no_weather_network(monkeypatch):
+    """No test reaches MET Norway (F-203), as in tests/conftest.py."""
+    from gitaway import weather
+
+    def refuse(url, headers, timeout):
+        raise OSError("the network is off in tests")
+    monkeypatch.setattr(weather, "TRANSPORT", refuse)
+    monkeypatch.setattr(weather.GATE, "shut_until", None)
+    weather.clear()
 
 
 @pytest.fixture(autouse=True)

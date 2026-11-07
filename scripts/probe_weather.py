@@ -18,7 +18,7 @@ TAHOE = "USW00093230"
 
 def main() -> int:
     st = weather.station(TAHOE)
-    print(f"{weather.NORMALS_CREDIT}, {st.name}:")
+    print(f"Typical weather for {st.name} ({weather.NORMALS_CREDIT}):")
     for d in (date(2026, 12, 19), date(2026, 12, 24)):
         n = weather.normal_day(st, d)
         print(f"  {d:%a %b} {d.day}: high {n.high_f}°, low {n.low_f}°, {n.word} ({n.label})")

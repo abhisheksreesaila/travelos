@@ -99,6 +99,8 @@
 .oq-family-travel .ws-wcell { border-radius: 0.75rem; background: var(--oq-tonal); }
 .oq-family-travel .ws-wday, .oq-family-travel .ws-sky { font-weight: 500; }
 .oq-family-travel .ws-temp { font-weight: 600; }
+.oq-family-travel .ws-lo { font-weight: 500; }
+.oq-family-travel .ws-wnote { font: 500 max(var(--text-min), 0.75rem) var(--oq-font-mono); color: var(--oq-ink-2); }
 .oq-family-travel .ws-when { border-radius: var(--oq-radius-xs); background: var(--oq-k-food-tint); color: var(--oq-k-food); font: 500 max(var(--text-min), 0.75rem) var(--oq-font-mono); }
 .oq-family-travel .ws-news { background: var(--oq-tonal); border-radius: 0.75rem; }
 .oq-family-travel .ws-item-title { font-weight: 600; }

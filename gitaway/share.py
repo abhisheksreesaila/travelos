@@ -15,7 +15,7 @@ import hashlib
 import hmac
 import re
 
-from gitaway import community, hub, session as ses, tripcal as cal
+from gitaway import community, hub, session as ses, tripcal as cal, weather
 from gitaway.hub import HubError
 from gitaway.itineraries import PIER, VENICE, Day, Itinerary, Polaroid, Stop, Tag
 
@@ -124,13 +124,14 @@ def build(session, tags=(), theme="sunset"):
     t = cal.trip("", b)  # the booked trip's own dates and length (an imported trip's real ones too), not the sample's
     blocks, acts = cal.booked_blocks(b, t), cal.activities(session)
     last = (t.return_ - t.depart).days
+    sample = weather.sample(t)   # only the showcase's sample trip carries (sample) weather: a shared page has no dates, and a frozen forecast would go stale (F-203)
     days = []
     for i, d in enumerate(cal.days(t)):
         items = sorted([*((x.start, 0, _stop(x, b, t)) for x in blocks if x.day == i), *((a.start, 1, _plan(a)) for a in acts if a.day == i)],
                        key=lambda r: r[:2])
         stops = [r[2] for r in items]
         w = cal.weather_for(i)
-        days.append(Day(i + 1, f"DAY {i + 1}", _day_title(i, last, stops), f"{w.temp_f}°F, {w.sky}", stops, collapsed=i >= 3))
+        days.append(Day(i + 1, f"DAY {i + 1}", _day_title(i, last, stops), f"{w.temp_f}°F, {w.sky}" if sample else "", stops, collapsed=i >= 3))
     plans = sum(len(d.stops) for d in days)
     name = title_for(t)
     keys = [k for k in hub.TAGS if k in tags]

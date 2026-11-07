@@ -19,9 +19,10 @@ from fasthtml.common import A, Button, Div, Form, H1, H2, Img, Input, Label, Lin
 from fasthtml.core import FtResponse
 from starlette.responses import RedirectResponse
 
-from gitaway import firstrun, forks as forks_model, hub, importer, session as ses, tripcal as cal
+from gitaway import firstrun, forks as forks_model, hub, importer, session as ses, tripcal as cal, weather
 from gitaway.icons import icon
 from gitaway.layout import page, trip_field
+from gitaway.pages import weather_ui
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/forks.css"),)
 HH = 2.75  # rem per calendar hour (forks.css --hh): a little tighter than the calendar so a 6 AM start still fits 1280x800
@@ -64,6 +65,8 @@ def calendar_view(session, placements=(), author="", fresh=(), demo=""):
     gs, ge = cal.grid_start(blocks), cal.grid_end(blocks)
     acts = cal.activities(session, demo)
     drafts = [x for x in placements if not x.hard and x.state != "have"]
+    sample = weather.sample(t)        # only the showcase's sample trip shows sample weather; a real trip its forecast or typical weather (F-203)
+    tw = None if sample else weather.trip_weather(t)
     cols = []
     for i, d in enumerate(dates):
         tint = DAY_TINTS[i % 5]
@@ -71,9 +74,8 @@ def calendar_view(session, placements=(), author="", fresh=(), demo=""):
         body += [_event("fk-mine" if not a.by else "fk-friend", a.start, a.end, gs, a.title, a.by, fresh=a.id in fresh) for a in acts if a.day == i]
         body += [_event("fk-draft" + (" fk-half" if x.state == "clash" else ""), x.plan.start, x.plan.end, gs, x.plan.title, "from fork", x.plan.key, hidden=not x.checked)
                  for x in drafts if x.plan.day == i]
-        w = cal.weather_for(i)
         cols.append(Div(
-            Div(Span(str(d.day), cls="fk-num"), Span(d.strftime("%a").upper(), cls="fk-dow"), Span(f"{w.temp_f}°F", cls="fk-wx"), cls=f"fk-dayhead fill-{tint}-tint"),
+            Div(Span(str(d.day), cls="fk-num"), Span(d.strftime("%a").upper(), cls="fk-dow"), _day_weather(i, sample, tw), cls=f"fk-dayhead fill-{tint}-tint"),
             Div(*body, cls="fk-body", style=f"height:{_rem(ge - gs)}"),
             cls="fk-day", aria_label=d.strftime("%A %B ") + str(d.day), role="group"))
     hours = [Span(f"{h % 12 or 12} {'AM' if h < 12 else 'PM'}", cls="fk-hour") for h in range(gs // 60, ge // 60)]
@@ -84,7 +86,19 @@ def calendar_view(session, placements=(), author="", fresh=(), demo=""):
                 Button(icon("chev-right", 16, 2.6), type="button", data_dir="1", aria_label="Later days", cls="fk-navbtn"), cls="fk-nav", hidden=True) if len(cols) > 3 else "",
             A("Open the trip", href="/trip", cls="fk-link"), cls="fk-card-head"),
         Div(gutter, Div(*cols, cls="fk-scroll", id="fk-scroll", role="region", aria_label="Days", tabindex="0"), cls="fk-grid", style=f"--n:{len(cols)}"),
+        Div(*weather_ui.notes(tw, "fk-wx-note"), cls="fk-wx-notes") if tw and weather.notes(tw) else "",
         cls="fk-cal card", aria_label="Trip calendar")
+
+
+def _day_weather(i, sample, tw):
+    """A day head's temperature: the sample's on the sample trip; else the forecast's high, or the typical high marked as typical; else nothing."""
+    if sample:
+        return Span(f"{cal.weather_for(i).temp_f}°F", cls="fk-wx")
+    day = tw.days[i] if i < len(tw.days) else None
+    if day is None:
+        return ""
+    typical = day.kind == weather.NORMAL
+    return Span(f"{day.high_f}°F", cls="fk-wx fk-wx-typ" if typical else "fk-wx", title=weather_ui.describe(day))
 
 
 def calendar_start(entry):

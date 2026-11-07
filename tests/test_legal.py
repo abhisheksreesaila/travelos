@@ -6,7 +6,7 @@ import pytest
 
 PRIVACY_PHRASES = ["your email address and your Google account number", "we do not keep them", "trips, plans", "notes", "messages", "photos", "time and place", "phone numbers",
                    "push subscriptions", "passkeys", "Your family sees", "masked email", "not shown to the family", "can read the stored data", "Google sign-in", "Railway", "OpenStreetMap",
-                   "place text only", "Nominatim", "router.project-osrm.org", "pairs of coordinates", "tile.openstreetmap.org", "Google Fonts", "encrypted", "confirmation numbers", "people you invite", "server logs, which can include your email address, for example when a sign-in fails", "Apple and Google push services", "Azure OpenAI", "When you tap Convert", "When you use Ask GitAway", "the plan for that day", "plan notes and booking titles", "the parts and steps with who is on each", "the first names of the family", "We never add emails, phone numbers, confirmation numbers, prices or photos", "never what was in it", "Sarvam AI (India)", "When you record your voice in the Ask box", "does not keep the recording or the words", "do not sell", "do not show ads", "deleted"]
+                   "place text only", "Nominatim", "router.project-osrm.org", "pairs of coordinates", "MET Norway (api.met.no)", "never your address", "NOAA", "tile.openstreetmap.org", "Google Fonts", "encrypted", "confirmation numbers", "people you invite", "server logs, which can include your email address, for example when a sign-in fails", "Apple and Google push services", "Azure OpenAI", "When you tap Convert", "When you use Ask GitAway", "the plan for that day", "plan notes and booking titles", "the parts and steps with who is on each", "the first names of the family", "We never add emails, phone numbers, confirmation numbers, prices or photos", "never what was in it", "Sarvam AI (India)", "When you record your voice in the Ask box", "does not keep the recording or the words", "do not sell", "do not show ads", "deleted"]
 TERMS_PHRASES = ["as-is", "does not book anything", "responsible for what you add", "remove content", "change GitAway or stop it",
                  "without any warranty", "United States", "not legal advice"]
 
@@ -17,7 +17,7 @@ def test_page_open_signed_out_and_says_it(client, path, phrases):
     assert r.status_code == 200
     for p in phrases:
         assert p in r.text, p
-    assert "Effective November 6, 2026" in r.text
+    assert "Effective November 7, 2026" in r.text
     assert "not legal advice" in r.text
 
 

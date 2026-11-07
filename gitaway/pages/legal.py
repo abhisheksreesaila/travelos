@@ -1,7 +1,7 @@
 """Privacy and terms (F-076): GET /privacy and GET /terms, plain summaries, open to everyone signed out.
 
 What they say is checked against the code: docs/family-db.md (what a family stores), docs/photos.md, gitaway/geo.py (place lookup and
-routing), gitaway/around.py (nearby places), gitaway/morning.py (push), gitaway/passkeys.py. Change one of those and read these pages again.
+routing), gitaway/weather.py (forecasts), gitaway/around.py (nearby places), gitaway/morning.py (push), gitaway/passkeys.py. Change one of those and read these pages again.
 The contact address comes from GITAWAY_CONTACT_EMAIL; without it the pages say "Contact the person who runs this GitAway site." and show no address.
 """
 
@@ -12,7 +12,7 @@ from fasthtml.common import A, Div, H1, H2, Li, Link, P, Section, Strong, Ul
 from gitaway.layout import page
 from gitaway.planforme import PROMISE
 
-EFFECTIVE = "November 6, 2026"
+EFFECTIVE = "November 7, 2026"
 HEAD = (Link(rel="stylesheet", href="/assets/css/legal.css"),)
 NOT_LAWYER = "These are plain-language summaries written by the people who run GitAway, not legal advice prepared by a lawyer."
 
@@ -66,6 +66,7 @@ def privacy():
             Li(Strong("Railway"), " hosts the app and everything it stores."),
             Li(Strong("Nominatim (OpenStreetMap)"), " finds places. It gets place text only, such as a hotel name or a city."),
             Li(Strong("OSRM (router.project-osrm.org)"), " works out drives. It gets pairs of coordinates, not names."),
+            Li(Strong("MET Norway (api.met.no)"), " gives the weather forecast for the days of a trip, once the person who runs this site has switched it on. Our server asks it, never your phone, so it sees our server's address, not yours. It gets the coordinates of the trip's destination, rounded to four decimals (a town or a weather station, never your address), and nothing about you or your family. Forecasts are based on data from MET Norway (CC BY 4.0). Before the forecast reaches a trip, GitAway shows typical weather from NOAA's public climate normals, which are kept in the app, so nothing is sent for them."),
             Li(Strong("OpenStreetMap Overpass (overpass-api.de)"), " finds places near you when you tap a button on Around you. It gets your approximate location, rounded to within about 100 metres, and the kind of place you tapped (for example pharmacy). Your phone shares where it is only when you tap, and only while that page is open. GitAway does not store your location, and the family does not see it. Results for that rounded point are kept in the server's memory for up to 30 minutes, not linked to you."),
             Li(Strong("OpenStreetMap map tiles"), " (tile.openstreetmap.org) draw the map tab. They see your IP address and the area of the map you look at."),
             Li(Strong("Apple and Google push services"), " carry the morning plan and notices of family messages and plan changes to your phone. The messages are encrypted, so they cannot read them."),

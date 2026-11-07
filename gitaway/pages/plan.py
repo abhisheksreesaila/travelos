@@ -12,12 +12,12 @@ from starlette.responses import HTMLResponse
 
 from fasthtml.common import cookie, to_xml, A, Article, Button, Div, Figcaption, Figure, H2, H3, Img, Kbd, Li, Link, Main, NotStr, P, Script, Section, Span, Svg, Title, Ul
 
-from gitaway import access, affiliate, catalog, context, itineraries, partners, session, showcase, stats
+from gitaway import access, affiliate, catalog, context, itineraries, partners, session, showcase, stats, weather
 from gitaway import session as session_helpers
 from gitaway.icons import icon
 from gitaway.itinerary_view import fork_href
 from gitaway.layout import avatar, brand, styles
-from gitaway.pages import flight_detail as flight_ui, plan_search, stay_detail as stay_ui
+from gitaway.pages import flight_detail as flight_ui, plan_search, stay_detail as stay_ui, weather_ui
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/workspace.css"), Link(rel="stylesheet", href="/assets/css/partners.css"))
 DEFAULTS = {"flight": "f1", "stay": "h1", "car": "c1"}  # Los Angeles; see defaults() for the other places
@@ -516,15 +516,24 @@ def _pct(v, total):
 
 
 def weather_pane(trip=catalog.SAMPLE_TRIP):
-    all_days = context.weather_for(trip)
-    shown = all_days[:context.WEATHER_DAYS_SHOWN]
-    meta = "°F" if len(shown) == len(all_days) else f"°F · first {len(shown)} of {len(all_days)} days"
-    days = [
-        Div(Span(w.day, cls="ws-wday"), icon(w.icon, 22, 2), Span(f"{w.temp_f}°", cls="ws-temp"), Span(w.sky, cls="ws-sky"),
-            cls=f"ws-wcell fill-{w.fill}-tint")
-        for w in shown
-    ]
-    return pane("weather", 4, "Weather", meta, [Div(*days, cls="ws-weather"), Span(context.SAMPLE_NOTE, cls="ws-sample")], "fill-sun-tint")
+    """The trip's weather (F-203): MET Norway's forecast where it reaches the trip, typical weather (NOAA normals, labelled) before it, nothing for days
+    gone by. Only the showcase's own sample trip shows sample weather. May wait briefly on MET: the /plan handler is a plain def."""
+    if weather.sample(trip):
+        days = [Div(Span(w.day, cls="ws-wday"), icon(w.icon, 22, 2), Span(f"{w.temp_f}°", cls="ws-temp"), Span(w.sky, cls="ws-sky"), cls=f"ws-wcell fill-{w.fill}-tint")
+                for w in context.WEATHER]
+        return pane("weather", 4, "Weather", "°F", [Div(*days, cls="ws-weather"), Span(context.SAMPLE_NOTE, cls="ws-sample")], "fill-sun-tint")
+    tw = weather.trip_weather(trip)
+    known = [d for d in tw.days if d]
+    shown = known[:context.WEATHER_DAYS_SHOWN]
+    meta = "°F" if len(shown) == len(tw.days) or not shown else f"°F · first {len(shown)} of {len(tw.days)} days"
+    cells = [Div(Span(f"{d.date:%a} {d.date.day}", cls="ws-wday"), icon(weather_ui.icon_name(d), 22, 2), Span(f"{d.high_f}°", cls="ws-temp"),
+                 Span(f"{d.low_f}°", cls="ws-lo"), Span("typical" if d.kind == weather.NORMAL else d.word, cls="ws-sky"),
+                 cls=f"ws-wcell fill-{weather_ui.tint(d)}-tint" + (" ws-typical" if d.kind == weather.NORMAL else ""), role="group", aria_label=weather_ui.describe(d))
+             for d in shown]
+    lines = weather_ui.notes(tw, "ws-wnote")
+    if not cells and not lines:
+        lines = [Span("These days have gone by." if trip.return_ < catalog.today() else "No weather for this place yet.", cls="ws-wnote")]
+    return pane("weather", 4, "Weather", meta, [Div(*cells, cls="ws-weather") if cells else "", *lines], "fill-sun-tint")
 
 
 def _map_label(pt, cls, extra=None):

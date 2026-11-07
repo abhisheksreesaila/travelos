@@ -135,3 +135,26 @@ def test_healthz_answers_at_once_while_a_blogs_sitemap_is_being_fetched_for_the_
     t.join(15)
     assert ok.status_code == 200 and quick < 0.5, f"/healthz took {quick:.2f}s while a sitemap fetch was in flight"
     assert result["r"].status_code == 200 and "a-trip-guide" in result["r"].text
+
+
+def test_healthz_answers_at_once_while_a_slow_forecast_is_asked_for_the_plan_page(live, monkeypatch):
+    """F-203: the /plan weather pane may wait on MET Norway (a plain def handler, so in the thread pool): the site answers meanwhile."""
+    from gitaway import weather
+    monkeypatch.setenv("MET_NORWAY_TERMS_ACCEPTED", "1")
+    asked = []
+
+    def slow(url, headers, timeout):
+        asked.append(url)
+        time.sleep(2.0)
+        raise OSError("slow, then down")
+    monkeypatch.setattr(weather, "TRANSPORT", slow)
+    result = {}
+    t = threading.Thread(target=lambda: result.update(r=httpx.get(live + "/plan?d=2026-10-02&r=2026-10-04&a=2", timeout=20)))   # two days after "today" (conftest)
+    t.start()
+    time.sleep(0.5)
+    started = time.monotonic()
+    ok = httpx.get(live + "/healthz", timeout=10)
+    quick = time.monotonic() - started
+    t.join(15)
+    assert asked and ok.status_code == 200 and quick < 0.5, f"/healthz took {quick:.2f}s while a forecast was being asked for"
+    assert result["r"].status_code == 200 and "Typical early October · not a forecast yet" in result["r"].text    # MET down: typical weather, labelled

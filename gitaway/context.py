@@ -1,7 +1,7 @@
 """Sample context for the workspace panes (F-016): weather, events, news and the schematic map.
 
-Everything here is invented sample data for Los Angeles on the trip dates (Fri Oct 16 - Tue Oct 20, 2026).
-No real forecast, event or news source is used; the panes label it as sample data.
+Everything here is invented sample data for Los Angeles on the trip dates (Fri Oct 16 - Tue Oct 20, 2026); the panes label it as sample data.
+The sample weather (WEATHER) is shown only for the showcase's own sample trip: every other trip's weather is real (gitaway/weather.py, F-203).
 """
 
 from dataclasses import dataclass
@@ -103,22 +103,13 @@ def map_for_stay(stay):
 
 
 # ---- context that follows the trip (F-036) --------------------------------------------------------------------------
-# The constants above are the sample trip (Oct 16-20, 2026). Any other trip gets invented data made from its own dates:
-# the same date always gives the same weather, so a day does not change when the trip around it does.
+# The constants above are the sample trip (Oct 16-20, 2026). Any other trip gets events and news made from its own dates, the same date always
+# giving the same items. Weather is never invented for it: gitaway/weather.py gives real trips MET Norway's forecast or NOAA's typical weather (F-203).
 
 from datetime import date, timedelta
 
 SAMPLE_DEPART, SAMPLE_RETURN = date(2026, 10, 16), date(2026, 10, 20)
 WEATHER_DAYS_SHOWN = 10  # a long trip shows its first ten days; the pane says how many there are
-
-_HIGHS = {  # typical highs by month, deg F
-    "la": (68, 69, 70, 73, 74, 78, 84, 85, 83, 78, 73, 68),
-    "sd": (66, 66, 67, 69, 70, 72, 75, 77, 76, 73, 70, 66),
-    "hi": (80, 80, 81, 82, 84, 86, 87, 88, 88, 86, 83, 81),
-    "nyc": (39, 42, 50, 62, 72, 80, 85, 83, 76, 65, 54, 44),
-}
-_SKIES = (("sunny", "sun", "sun"), ("clear skies", "sun", "sun"), ("some clouds", "cloud", "sky"),
-          ("mostly sunny", "sun", "sun"), ("breezy", "cloud", "sky"))
 
 
 def _hash(d: date, salt: int = 0) -> int:
@@ -136,21 +127,6 @@ def trip_days(trip) -> list:
 
 def _label(d: date) -> str:
     return f"{d:%a} {d.day}"
-
-
-def weather_for(trip) -> list:
-    """One Weather per trip day: the sample's own for the sample trip, else invented from each date."""
-    if _is_sample(trip):
-        return WEATHER
-    out = []
-    for d in trip_days(trip):
-        h = _hash(d)
-        jitter = (h >> 8) % 9 - 4
-        sky, icon, fill = _SKIES[(h >> 16) % len(_SKIES)]
-        if d.month in (12, 1, 2, 3) and jitter <= -3:
-            sky, icon, fill = "light showers", "cloud", "sky"
-        out.append(Weather(_label(d), _HIGHS[trip.key][d.month - 1] + jitter, sky, icon, fill))
-    return out
 
 
 _EVENT_POOL = (

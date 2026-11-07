@@ -46,7 +46,7 @@ def test_the_founders_tahoe_trip_shows_typical_december_six_weeks_out_and_asks_n
     assert [d.label for d in tw.days] == [TYPICAL_MID] * 2 + [TYPICAL_LATE] * 6
     assert (tw.days[-1].high_f, tw.days[-1].low_f) == (42, 17)
     assert met.calls == []                                          # MET reaches about nine days: nothing to ask yet
-    assert weather.notes(tw) == [(TYPICAL_LATE, ""), ("Typical weather: NOAA climate normals, 1991–2020. The forecast opens around Dec 10.", "")]
+    assert weather.notes(tw) == [(TYPICAL_LATE, ""), ("Snow or rain about 1 day in 3. From NOAA climate normals, 1991–2020. The forecast opens around Dec 10.", "")]
 
 
 def test_once_the_forecast_reaches_the_trip_its_days_are_metss_forecast(met, clock):
@@ -60,7 +60,7 @@ def test_once_the_forecast_reaches_the_trip_its_days_are_metss_forecast(met, clo
     st = weather.station("USW00093230")                             # asked for the station's place, at its altitude
     assert url == f"{weather.API}?lat={st.lat:.4f}&lon={st.lon:.4f}&altitude={st.elev}"
     assert weather.notes(tw) == [(f"{weather.CREDIT} · updated 6:10 AM", weather.CREDIT_URL), (TYPICAL_LATE, ""),
-                                 ("Typical weather: NOAA climate normals, 1991–2020.", "")]
+                                 ("Snow or rain about 1 day in 3. From NOAA climate normals, 1991–2020.", "")]
 
 
 def test_without_the_terms_accepted_the_trip_keeps_typical_weather_and_promises_no_forecast(monkeypatch, clock):
@@ -83,7 +83,9 @@ def test_days_gone_by_show_nothing(met, clock):
 def test_a_place_with_no_normals_shows_nothing_before_the_forecast_and_the_forecast_once_it_reaches(met, clock):
     lisbon = tahoe_trip("Lisbon")
     assert weather.trip_weather(lisbon).days == (None,) * 8           # no coordinates, no station: nothing real to show
-    assert weather.trip_weather(lisbon, coords=(38.7223, -9.1393)).days == (None,) * 8    # coordinates, but no normals abroad
+    far = weather.trip_weather(lisbon, coords=(38.7223, -9.1393))
+    assert far.days == (None,) * 8                                     # coordinates, but no normals abroad
+    assert weather.notes(far) == [("The forecast opens around Dec 10.", "")]
     clock["now"] = ws.NOW
     tw = weather.trip_weather(lisbon, coords=(38.7223, -9.1393))
     assert [d.kind if d else None for d in tw.days] == [weather.FORECAST] * 7 + [None]
