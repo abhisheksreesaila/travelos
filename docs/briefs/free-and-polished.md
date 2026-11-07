@@ -36,6 +36,13 @@ Status: approved (2026-11-07, the captain: "A with a mix here and there … lets
 - Order: prototype the 3D story, the captain picks one, then build.
 - **Picked (2026-11-07):** the trip cockpit is Direction 3, Ticket line ("I cannot take my eyes off the ticket line"). Direction 1's diorama is a candidate for the shared-trip story. Direction 2's real street map loads only when someone taps for it.
 
+## The line (the captain's pick, 2026-11-07)
+- **Tagline:** "Take a trip. Leave a trail."
+- **Subhead:** "Share the whole trip, not just the photos, so the next family can follow it, make it theirs, and say thanks."
+- **The buttons speak the same language:** "Leave a trail" to share or publish, "Follow this trail" to fork, "Thank them" to say thanks. The word "fork" stays in the fork tree and in places for developers. "Fork a getaway" is the line for developers.
+- **The cover page story** opens with "Don't read about it. Go." and closes with "Take a trip. Leave a trail."
+- **The cover page concept** is A, the fly-through over Lake Tahoe in December, with B's fork tree ("Every trip here grew from another") as its last chapter. C's chase camera becomes a "drive this trip" moment on shared trip pages later.
+
 ## The model (the captain's call, 2026-11-07)
 - GitAway is "the GitHub of travel": the place to plan a trip together, share it, and fork other people's trips. GitAway does not sell travel.
 - **Booking is links only, with almost no liability.** Every booking happens on the partner's site, under the partner's terms and the partner's support. GitAway never takes payment and never handles a cancellation.
