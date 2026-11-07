@@ -79,8 +79,8 @@ def test_scrolling_moves_the_story_through_every_chapter(cover, size):
 
 
 CARD = """i => { const el = document.querySelector(i === 0 ? '.cv-hero-copy' : `[data-chapter="${i}"] .cv-card`), r = el.getBoundingClientRect();
-  return { top: r.top, bottom: r.bottom, left: r.left, right: r.right, head: document.querySelector('.cv-top').getBoundingClientRect().bottom,
-           vh: innerHeight, hidden: el.scrollHeight - el.clientHeight }; }"""
+  const head = Math.max(...[...document.querySelectorAll('.cv-top, .cv-top > *')].map((e) => e.getBoundingClientRect().bottom));
+  return { top: r.top, bottom: r.bottom, left: r.left, right: r.right, head, vh: innerHeight, hidden: el.scrollHeight - el.clientHeight }; }"""
 
 
 @pytest.mark.parametrize("how", ["live", "stills"])
@@ -293,15 +293,17 @@ def test_the_footer_links_sit_at_least_8px_apart(cover, size):
     assert gaps and min(gaps) >= 8, gaps
 
 
-@pytest.mark.parametrize("width", [390, 320])
-def test_a_phone_shows_the_early_preview_label_between_the_logo_and_sign_in(cover, width):
+@pytest.mark.parametrize("width", [390, 360, 320])
+def test_a_phone_shows_the_early_preview_label_beside_the_logo_and_sign_in(cover, width):
+    """The honest label stays on a phone, the logo whole (D-61); on the narrowest phones it takes a short second row under the logo."""
     page = cover({"width": width, "height": 700}, motion="reduce")
-    assert page.locator(".cv-tag").is_visible()
-    boxes = page.evaluate("() => [...document.querySelectorAll('.cv-top > *')].map(e => { const r = e.getBoundingClientRect(); return [e.className, r.left, r.right]; })")
-    assert [c.split()[0] for c, _, _ in boxes] == ["ga-brand", "cv-tag", "cv-btn"]
-    assert boxes[0][1] >= 0 and boxes[-1][2] <= width
-    for (_, _, r0), (_, l1, _) in zip(boxes, boxes[1:]):
-        assert r0 <= l1, boxes                                                          # side by side, never on top of one another
+    assert page.locator(".cv-tag").is_visible() and page.locator(".cv-top .ga-brand-name").is_visible()
+    boxes = page.evaluate("() => [...document.querySelectorAll('.cv-top > *')].map(e => { const r = e.getBoundingClientRect(); return [e.className.split(' ')[0], r.left, r.top, r.right, r.bottom]; })")
+    assert sorted(b[0] for b in boxes) == ["cv-btn", "cv-tag", "ga-brand"]
+    assert all(0 <= l and r <= width for _, l, _, r, _ in boxes), boxes
+    for i, (_, l0, t0, r0, b0) in enumerate(boxes):
+        for _, l1, t1, r1, b1 in boxes[i + 1:]:
+            assert r0 <= l1 or r1 <= l0 or b0 <= t1 or b1 <= t0, boxes                  # never on top of one another
 
 
 CONTRAST = """() => { const lin = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };

@@ -164,9 +164,7 @@
   .cv-root body { font-size: calc(1.0625 * var(--u)); }
   .cv-top { gap: calc(0.5 * var(--u)); padding: calc(0.75 * var(--u)) var(--cv-sr) calc(0.75 * var(--u)) var(--cv-sl); padding-top: max(calc(0.75 * var(--u)), env(safe-area-inset-top)); }
   .cv-top .ga-brand { min-height: calc(3 * var(--u)); padding: 0 calc(0.875 * var(--u)) 0 calc(0.375 * var(--u)); gap: calc(0.5 * var(--u)); }
-  .cv-top .ga-brand-mark { width: calc(2.125 * var(--u)); height: calc(2.125 * var(--u)); }
-  .cv-top .ga-brand-name { font-size: calc(1.25 * var(--u)); }
-  /* the honest label stays on a phone: it wraps onto two lines before it would crowd the logo or Sign in */
+  /* the honest label stays on a phone (the logo itself never changes, D-61): it wraps onto two lines before it would crowd the logo or Sign in */
   .cv-tag { flex: 0 1 auto; min-width: 0; font-size: calc(0.8125 * var(--u)); line-height: 1.15; text-align: center; padding: calc(0.375 * var(--u)) calc(0.625 * var(--u)); border-radius: calc(0.75 * var(--u)); }
   .cv-rail { display: none; }
   .cv-btn { min-height: calc(3 * var(--u)); padding: 0 calc(1.25 * var(--u)); font-size: calc(1 * var(--u)); gap: calc(0.5 * var(--u)); }
@@ -217,10 +215,13 @@
   .cv-foot nav a { min-height: calc(3 * var(--u)); font-size: calc(1 * var(--u)); padding: 0 calc(0.75 * var(--u)); }
   .cv-fine { font-size: calc(1 * var(--u)) !important; }
 }
-/* the narrowest phones: the logo's mark alone (the link still says "GitAway home"), so the label and Sign in keep their room; a tighter card */
+/* the narrowest phones: no room for the label between the logo and Sign in, so it takes a short second row under the logo; a tighter card */
 @media (max-width: 359px) {
-  .cv-top .ga-brand-name { display: none; }
-  .cv-top .ga-brand { padding-right: calc(0.375 * var(--u)); }
+  .cv-top { flex-wrap: wrap; row-gap: calc(0.25 * var(--u)); padding-bottom: calc(0.25 * var(--u)); }
+  .cv-top > .cv-btn { order: 2; }
+  .cv-tag { order: 3; margin-left: calc(0.25 * var(--u)); }
+  .cv-pin { padding-top: calc(6 * var(--u)); }
+  .cv-hero .cv-pin { padding-top: calc(6.5 * var(--u)); }
   .cv-card { padding: calc(1.125 * var(--u)); }
   .cv-card h2 { font-size: calc(1.875 * var(--u)); }
   .cv-days li { min-height: calc(2.25 * var(--u)); padding: 0 calc(0.75 * var(--u)); }
