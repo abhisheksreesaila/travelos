@@ -10,6 +10,7 @@ import os
 from fasthtml.common import A, Div, H1, H2, Li, Link, P, Section, Strong, Ul
 
 from gitaway.layout import page
+from gitaway.planforme import PROMISE
 
 EFFECTIVE = "November 6, 2026"
 HEAD = (Link(rel="stylesheet", href="/assets/css/legal.css"),)
@@ -53,7 +54,8 @@ def privacy():
             Li("booking confirmation numbers from trips you import;"),
             Li("email addresses of people you invite;"),
             Li("push subscriptions, a code your phone gives us so it can get notifications;"),
-            Li("passkeys (Face ID sign-in). We keep only the public half; your fingerprint or face never leaves your phone; and"),
+            Li("passkeys (Face ID sign-in). We keep only the public half; your fingerprint or face never leaves your phone;"),
+            Li("Plan it for me orders: where you asked to go, the dates, your home airport, how many adults and the ages of any kids (and, if you gave them, their heights, which we delete as soon as your plan is delivered), your budget and pace, what you typed under must-dos, your email address, the amount and Stripe's code for the payment, and the trip we built. Before we send a plan, the person who runs GitAway reads the order and the plan to check it. We do not keep your card number. The family sees the trip, not the order; and"),
             Li("server logs, which can include your email address, for example when a sign-in fails."))),
         ("Who sees it",
          P("Your family sees the trips, plans, notes, messages, photos and phone numbers. Push subscriptions and passkeys are not shown to the family. What each person may change depends on their role."),
@@ -70,6 +72,8 @@ def privacy():
             Li(Strong("Azure OpenAI (Microsoft)"), " does three jobs. When you tap Convert in Add to the trip, it reads the messages you paste and turns them into a plan; it gets only the text you pasted (so anything you wrote in it, such as a first name) and nothing we add. When you use Ask GitAway, it gets what you ask or say plus the plan for that day: the trip title, the date and time zone, the titles of the plans that day, plan notes and booking titles, the parts and steps with who is on each, and the first names of the family. We never add emails, phone numbers, confirmation numbers, prices or photos to what it gets (only what you or your family wrote in those titles and notes goes). We log that a call happened, which feature it was for, how many tokens it used and how long it took, never what was in it. When you use Around you and the assistant is on, it gets the kind of place you tapped, your family's food preference (vegetarian or not), and a list of the names of nearby places with how far they are and whether they are open. It never gets your location or the names of your family. Later assistant features send what you ask in the same way.")),
             Li(Strong("Sarvam AI (India)"), " turns your voice into words. When you record your voice in the Ask box (only on a phone whose browser cannot turn speech into text itself or when its own speech recognition fails, and only when you tap the microphone), the recording goes to it to be written out as words, and in English too when you spoke another language such as Hindi. It gets the audio and nothing else; GitAway does not keep the recording or the words once they are in your box, and the log only says that a call happened and how long it took."),
             Li(Strong("Anthropic (Claude Haiku)"), " drafts a trip from a creator's post. When a creator uses Turn your post into a trip, it gets the text of the post, pasted or read from the link the creator gave (a blog's article text, or a video's title, description and chapters), and nothing else: not the creator's name or email address, and nothing from any family's trips. Our server reads the page behind the link; the creator checks and fixes the draft before anything is public. We log that a call happened, how many tokens it used and how long it took, never what was in it."),
+            Li(Strong("Stripe"), " takes the payment for Plan it for me. You type your card on Stripe's own page, so GitAway never sees or keeps your card number. Stripe gets your email address (for the receipt) and the amount, and keeps its own record of the payment under its own rules."),
+            Li(Strong("Anthropic (Claude Sonnet)"), " builds your trip when you order Plan it for me. It gets where you want to go, your dates, your home airport, how many adults and the ages (and any heights you gave) of any kids, your budget and pace, what you typed under must-dos, and the title of a creator's trip if you started from one. It never gets your name, your email address or anything from your family's other trips. We log that a call happened, how many tokens it used and how long it took, never what was in it."),
             Li(Strong("Travelpayouts, Aviasales and Klook"), " are the partners behind the Book buttons. When you press Book they get a SubID, a short code that tells us which trip, place, day and kind of booking the click came from, with no name, email address or other personal detail. Once you are on their site they see you as any website does, including your IP address."),
             Li(Strong("Travelpayouts Drive"), " is a script from Travelpayouts (tp-em.com) that GitAway loads only on the landing page you see signed out, and only when it has been switched on, never on a page you see signed in. Travelpayouts uses it to confirm this site is ours and can turn travel links on that page into partner links that credit GitAway. It runs in your browser, so Travelpayouts sees your IP address and browser as any website does, and it may set its own cookies; their policy covers them.")),  # a new outside AI service gets a bullet here and a test phrase (F-079 logs every call: docs/ai-usage.md)
         ("How readers of a creator's trip are counted",
@@ -79,7 +83,7 @@ def privacy():
          P("Two cookies. One keeps you signed in, for up to 30 days. The other, ", Strong("ga_via"), ", is a 30-day affiliate attribution cookie: it is set only when you tap Plan this trip on a creator's page, holds the public handle of the creator and nothing about you, and tells us which creator a flight you book supports, so their marker goes on the booking link. It exists to credit the creator, not to build a profile of you. GitAway sets no analytics or advertising cookie."),
          P(Strong("Partner links. "), "When you press Book you go to Aviasales, Klook or another booking partner (through Travelpayouts), and their own sites may set their own tracking cookies to credit GitAway, or the creator, for the booking. Their policies cover those cookies.")),
         ("Getting your data deleted",
-         P("Ask and we will delete your account and, if you ask, your family's trips and photos. Messages and photos you added to a family that keeps going stay with that family unless you ask us to remove them. We do this by hand and will tell you when it is done."), contact()),
+         P("Ask and we will delete your account and, if you ask, your family's trips and photos. Messages and photos you added to a family that keeps going stay with that family unless you ask us to remove them. Your Plan it for me orders go too. Stripe keeps its own record of a payment. We do this by hand and will tell you when it is done."), contact()),
     ])
 
 
@@ -87,8 +91,10 @@ def terms():
     return _doc("Terms of use", "GitAway is a small family-planning app. By using it you agree to the plain rules below.", [
         ("What GitAway is",
          P("A place for a family to plan a trip together: flights, stays and days on one calendar. It is offered as-is, by a small team.")),
-        ("No bookings or payments",
-         P("GitAway does not book anything and does not take payments. A Book button takes you to a partner's own site, and you book and pay there, under their terms. Check every flight, stay and time with the airline, hotel or company before you rely on it.")),
+        ("Bookings and payments",
+         P("GitAway does not book anything. A Book button takes you to a partner's own site, and you book and pay there, under their terms. Check every flight, stay and time with the airline, hotel or company before you rely on it."),
+         P("The one thing you can pay GitAway for is Plan it for me: a one-time fee, shown before you pay, taken on Stripe's page, for an agent to build a trip in your family's account."),
+         P(PROMISE, " If we cannot build your trip, we refund you in full. The trip is a plan made by an AI agent: it can be wrong, it never states prices or opening hours, and it is your job to check every place, time and booking before you rely on it.")),
         ("What you post",
          P("You are responsible for what you add: notes, messages, photos and phone numbers. Do not add anything unlawful, abusive or that belongs to someone else. We may remove content, or a person, that is abusive.")),
         ("What creators publish",

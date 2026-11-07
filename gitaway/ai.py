@@ -55,11 +55,15 @@ JOBS = {
     "ocr": (30, "read a boarding pass or a booking from a photo"),
     "transcribe": (45, "turn a recorded voice (Ask, where the phone has no speech recognition) into text"),
     "creator-import": (60, "draft a trip from a creator's own post (F-183; Claude Haiku 5.5)"),
+    "plan-for-me": (240, "build a family's whole trip from their intake, the product they paid for (F-193; Claude Sonnet 5.5)"),
 }
-DEFAULT_PROVIDER = {"creator-import": "anthropic"}      # a job listed here uses that provider and no other: with its key missing it is OFF, never Azure (F-196); every other job is Azure unless GITAWAY_AI_PROVIDER_<JOB> says otherwise
+DEFAULT_PROVIDER = {"creator-import": "anthropic", "plan-for-me": "anthropic"}      # a job listed here uses that provider and no other: with its key missing it is OFF, never Azure (F-196); every other job is Azure unless GITAWAY_AI_PROVIDER_<JOB> says otherwise
 ANTHROPIC_MODEL = "claude-haiku-5-5"
-ANTHROPIC_PRICE = {"claude-haiku-5-5": (0.10, 0.50)}      # US dollars per million tokens (input, output), for prompts up to 100K tokens
+JOB_MODEL = {"plan-for-me": "claude-sonnet-5-5"}          # a job's own default model; GITAWAY_AI_MODEL_<JOB> still wins
+JOB_EFFORT = {"plan-for-me": "medium"}                    # a job's own default effort (the others are low); GITAWAY_AI_EFFORT_<JOB> still wins
+ANTHROPIC_PRICE = {"claude-haiku-5-5": (0.10, 0.50), "claude-sonnet-5-5": (2.00, 10.00)}      # US dollars per million tokens (input, output); Haiku for prompts up to 100K tokens
 ANTHROPIC_MAX_TOKENS = 8000                               # thinking counts toward it; a 14-day draft is about 3,000
+JOB_MAX_TOKENS = {"plan-for-me": 16000}                   # a planned trip is longer than a creator's draft, and the model thinks first (more would need streaming)
 ANTHROPIC_TRANSPORT = None   # tests: a function (request kwargs, timeout) -> a response with .content, .stop_reason and .usage, used instead of the Anthropic SDK
 DEFAULT_TIMEOUT = 20
 TRANSPORT = None   # tests: a function (url, headers, body, timeout) -> (status, text), used instead of the network
@@ -118,7 +122,7 @@ def provider(job=None) -> str:
 
 def deployment(job=None) -> str:
     if provider(job) == "anthropic":     # the log's "deployment" column holds the model
-        return (os.environ.get(f"GITAWAY_AI_MODEL_{_suffix(job)}") or "").strip() or ANTHROPIC_MODEL
+        return (os.environ.get(f"GITAWAY_AI_MODEL_{_suffix(job)}") or "").strip() or JOB_MODEL.get(job) or ANTHROPIC_MODEL
     if job == "transcribe":     # speech-to-text is its own deployment: the chat deployment cannot do it
         if transcribe_provider() == "sarvam":
             return _sarvam_model()      # the log's "deployment" column holds the model
@@ -176,9 +180,10 @@ def _refused_schema(status, body) -> bool:
     return status in (400, 422) and any(w in (body or "").lower() for w in ("json_schema", "response_format", "structured"))
 
 
-def call_json(job, family, system, user, schema, *, name="result", timeout=None) -> dict:
+def call_json(job, family, system, user, schema, *, name="result", timeout=None, usage=None) -> dict:
     """Ask the model for JSON that matches `schema` and return it parsed. `family` is the family's id (for the log only). Raises AIError with a
-    sentence fit to show; the call is logged either way. A model that refuses a strict schema is asked again for plain JSON."""
+    sentence fit to show; the call is logged either way. A model that refuses a strict schema is asked again for plain JSON.
+    `usage`, a dict the caller owns (the Anthropic provider only), gets the "model" and has this call's "tokens_in" and "tokens_out" added to what it holds, a failed call's too (F-193: what one order cost)."""
     if not configured(job):
         _log(job, family, deployment(job), 0, 0, 0, False, "off")
         raise AIError(NOT_ON, "off")
@@ -193,7 +198,7 @@ def call_json(job, family, system, user, schema, *, name="result", timeout=None)
         raise AIError(BUSY, "busy")
     try:
         if provider(job) == "anthropic":
-            return _call_anthropic(job, family, system, user, schema, timeout)
+            return _call_anthropic(job, family, system, user, schema, timeout, usage)
         return _call(job, family, system, user, schema, name, timeout)
     finally:
         with _guard:
@@ -277,18 +282,20 @@ def _anthropic_error(e) -> tuple:
     return "error", FAILED
 
 
-def _call_anthropic(job, family, system, user, schema, timeout) -> dict:
+def _call_anthropic(job, family, system, user, schema, timeout, usage=None) -> dict:
     """One Messages call that must answer as JSON matching `schema` (structured outputs: `output_config.format`, no prefill). The stop reason is read before the content:
-    a refusal and a cut-off answer are failures, logged by kind. Tokens in and out come from the response's own usage."""
+    a refusal and a cut-off answer are failures, logged by kind. Tokens in and out come from the response's own usage (and are added to `usage`, a dict the caller may pass)."""
     model = deployment(job)
     effort = (os.environ.get(f"GITAWAY_AI_EFFORT_{_suffix(job)}") or "").strip().lower()
-    kwargs = {"model": model, "max_tokens": ANTHROPIC_MAX_TOKENS, "system": system, "messages": [{"role": "user", "content": user}],
-              "output_config": {"effort": effort if effort in ("low", "medium", "high") else "low", "format": {"type": "json_schema", "schema": schema}}}
+    kwargs = {"model": model, "max_tokens": JOB_MAX_TOKENS.get(job, ANTHROPIC_MAX_TOKENS), "system": system, "messages": [{"role": "user", "content": user}],
+              "output_config": {"effort": effort if effort in ("low", "medium", "high") else JOB_EFFORT.get(job, "low"), "format": {"type": "json_schema", "schema": schema}}}
     start, tin, tout = time.monotonic(), 0, 0
     try:
         resp = (ANTHROPIC_TRANSPORT or _anthropic_send)(kwargs, timeout)
-        usage = getattr(resp, "usage", None)
-        tin, tout = int(getattr(usage, "input_tokens", 0) or 0), int(getattr(usage, "output_tokens", 0) or 0)
+        used = getattr(resp, "usage", None)
+        tin, tout = int(getattr(used, "input_tokens", 0) or 0), int(getattr(used, "output_tokens", 0) or 0)
+        if usage is not None:      # the caller's own tally (F-193): this call's tokens, a refusal's and a cut-off answer's too
+            usage.update(model=model, tokens_in=usage.get("tokens_in", 0) + tin, tokens_out=usage.get("tokens_out", 0) + tout)
         reason = getattr(resp, "stop_reason", None)
         if reason == "refusal":
             raise AIError(CANT_DRAFT, "refusal")

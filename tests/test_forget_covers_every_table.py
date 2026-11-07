@@ -9,7 +9,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 import forget_person as fp  # noqa: E402
 
-from gitaway import auth, community, creatordraft as cd, draftjobs as dj  # noqa: E402
+from gitaway import auth, community, creatordraft as cd, draftjobs as dj, planforme as pfm  # noqa: E402
 
 PERSON_COLUMNS = ("owner_user", "claimed_by", "published_by", "reporter", "who", "user_id", "author", "created_by", "invited_by", "accepted_by", "email")
 # Tables where the column is not a person who must be forgotten, and why.
@@ -22,6 +22,8 @@ def _community_tables():
     with cd._db():
         pass
     with dj._db():
+        pass
+    with pfm._db():
         pass
     c = sqlite3.connect(auth.data_dir() / "community.db")
     try:

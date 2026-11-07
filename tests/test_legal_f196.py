@@ -48,7 +48,7 @@ def test_terms_have_a_repeat_infringer_policy(terms):
 
 def test_the_sample_prices_sentence_is_gone_but_terms_still_say_nothing_is_booked_here(terms):
     assert "sample prices" not in terms
-    assert "does not book anything and does not take payments" in terms and "Check every flight, stay and time" in terms
+    assert "GitAway does not book anything. A Book button takes you to a partner's own site, and you book and pay there" in terms and "Check every flight, stay and time" in terms      # F-193: the one payment GitAway takes is Plan it for me, said in the next paragraph
 
 
 def test_the_dmca_agent_is_pending_until_the_environment_names_one(client, monkeypatch):

@@ -44,7 +44,7 @@ def _trip_pick(trips, b, phone=False, label=(), sum_cls=""):
     """The trip picker: the open trip's name and dates; its menu switches trips (POST /trips/switch, as the calendar's did) and plans or imports another.
     `phone` is the same menu on a phone or tablet screen (topbar.css makes it a bottom sheet below 1020px and hides it above); its button is the `label` line the heading
     already has (the eyebrow), with a small chevron, so the heading gets no extra row. A viewer cannot import."""
-    from gitaway import access, tripcal as cal
+    from gitaway import access, planforme as pfm, tripcal as cal
     t = cal.trip("", b) if b else None
     dates = cal.range_label(t.depart, t.return_) if t else ""
     mine = [Li(Form(Input(type="hidden", name="trip", value=x.id), Input(type="hidden", name="next", value="/trip"),
@@ -61,6 +61,7 @@ def _trip_pick(trips, b, phone=False, label=(), sum_cls=""):
             A(icon("plus", 16, 2.4), "Plan another trip", href="/start", cls="ga-tb-item"),
             A(icon("ledger", 16, 2.4), "Import a trip you booked", href="/trips/import", cls="ga-tb-item") if access.request_role() != "viewer" else "",
             A(icon("share", 16, 2.4), "Publish this trip", href="/trip/publish", cls="ga-tb-item", id="ga-tb-publish") if access.request_role() != "viewer" else "",   # F-181: the trip as a creator page
+            A(icon("star", 16, 2.4), "Plan it for me", href="/plan-for-me", cls="ga-tb-item", id="ga-tb-planforme") if access.request_role() != "viewer" and pfm.offered() else "",   # F-193: an agent builds a whole trip
             cls="ga-tb-pop ga-tb-pop-trip"),
         cls="ga-tb-menu ga-tb-picker" + (" ga-tb-phonepick" if phone else ""))
 

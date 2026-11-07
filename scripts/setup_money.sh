@@ -202,17 +202,19 @@ finish() {
 #   1. Railway: confirm this folder is linked to project gitaway, service web
 #   2. ANTHROPIC_API_KEY      (creator import, Claude Haiku)          secret
 #   3. GITAWAY_ADMIN_EMAILS   (who may open /admin)                   public
-#   4. Stripe account, test mode first
-#   5. STRIPE_SECRET_KEY                                              secret
-#   6. Stripe webhook for checkout.session.completed -> STRIPE_WEBHOOK_SECRET (secret)
-#   7. PLAN_FOR_ME_PRICE_CENTS (optional)                             public
-#   8. Redeploy web so the running site reads them (asks first)
+#   4. GITAWAY_CONTACT_EMAIL  (the address /privacy, /terms and Plan it for me show) public
+#   5. Stripe account, test mode first
+#   6. STRIPE_SECRET_KEY                                              secret
+#   7. Stripe webhook /stripe/webhook (checkout.session.completed and checkout.session.async_payment_succeeded) -> STRIPE_WEBHOOK_SECRET (secret)
+#   8. PLAN_FOR_ME_PRICE_CENTS (optional)                             public
+#   9. PLAN_FOR_ME_REVIEW (optional: the founder check, 1 or 0)       public
+#  10. Redeploy web so the running site reads them (asks first)
 # Every value goes to Railway (service web) and nowhere else: no .env, no screen, no shell history.
 # Secrets are read hidden and handed to `railway variable set NAME --stdin` (the stdin form of
 # `railway variables --set`), so they are never on a command line either; public values use
 # `railway variables --set`. Each set uses --skip-deploys; stage 8 offers one redeploy.
-# The webhook path is the planned one until F-193 (branch f-193-plan-for-me) lands: the wizard
-# looks for it in the code and on the live site, and WEBHOOK_PATH=/other/path overrides it.
+# The webhook path is /stripe/webhook (F-193): the wizard looks for it in the code and on the live site,
+# and WEBHOOK_PATH=/other/path overrides it.
 
 PROJECT=gitaway
 ENVIRONMENT=production
@@ -293,15 +295,15 @@ WEBHOOK_IN_CODE=0
 if [[ -n "${WEBHOOK_PATH:-}" ]]; then
   if grep -rqF -- "$WEBHOOK_PATH" "$ROOT/gitaway" "$ROOT/main.py" 2>/dev/null; then WEBHOOK_IN_CODE=1; fi
 else
-  WEBHOOK_PATH=/plan-for-me/webhook   # planned: F-193 had no code yet when this was written (fh-saas's own default is /stripe/webhook)
-  for p in /plan-for-me/webhook /stripe/webhook; do
+  WEBHOOK_PATH=/stripe/webhook   # F-193's route (fh-saas's own default path)
+  for p in /stripe/webhook; do
     if grep -rqF -- "\"$p\"" "$ROOT/gitaway" "$ROOT/main.py" 2>/dev/null; then WEBHOOK_PATH=$p; WEBHOOK_IN_CODE=1; break; fi
   done
 fi
 
 run_wizard() {
 
-TOTAL_STAGES=8
+TOTAL_STAGES=10
 ENV_FILE=/dev/null   # values live on Railway only: the library never reads or writes a local .env here
 
 banner "GitAway money setup: Anthropic, admin, Stripe"
@@ -377,9 +379,26 @@ if wanted GITAWAY_ADMIN_EMAILS; then
   if [[ -n "$admin_emails" ]]; then put_public GITAWAY_ADMIN_EMAILS "$admin_emails"
   else SKIPPED+=("GITAWAY_ADMIN_EMAILS (nobody can open /admin until it is set)"); fi
 fi
-pause "Press Enter for Stripe"
+pause "Press Enter for the contact email"
 
 # ── 4 ─────────────────────────────────────────────────────────────────────
+stage "Contact email: the address people write to"
+say "GITAWAY_CONTACT_EMAIL is the address /privacy, /terms and the Plan it for me pages show for questions, refunds and deleting data."
+note "A mailbox you read: the promise says \"Email us within 7 days for a full refund\"."
+if wanted GITAWAY_CONTACT_EMAIL; then
+  contact_email=""
+  while :; do
+    ask contact_email "Contact email address (Enter alone skips):" || contact_email=""
+    contact_email=$(printf '%s' "$contact_email" | tr -d '[:space:]')
+    if [[ -z "$contact_email" || "$contact_email" =~ ^[^@,]+@[^@,]+\.[^@,]+$ ]]; then break; fi
+    warn "\"$contact_email\" does not look like one email address. Try again."
+  done
+  if [[ -n "$contact_email" ]]; then put_public GITAWAY_CONTACT_EMAIL "$contact_email"
+  else SKIPPED+=("GITAWAY_CONTACT_EMAIL (the legal pages and Plan it for me have no address to show)"); fi
+fi
+pause "Press Enter for Stripe"
+
+# ── 5 ─────────────────────────────────────────────────────────────────────
 stage "Stripe: an account, test mode first"
 say "Plan for me takes a one-time payment through Stripe Checkout. Start in test mode: no real money moves,"
 say "and test cards (4242 4242 4242 4242) go through."
@@ -400,7 +419,7 @@ if [[ "$stripe_mode" == test ]]; then mode_path=/test; fi
 ok "Stripe $stripe_mode mode"
 pause "Press Enter for the secret key"
 
-# ── 5 ─────────────────────────────────────────────────────────────────────
+# ── 6 ─────────────────────────────────────────────────────────────────────
 stage "Stripe: the secret key ($stripe_mode mode)"
 say "STRIPE_SECRET_KEY lets GitAway open a Checkout page for Plan for me."
 if wanted STRIPE_SECRET_KEY; then
@@ -420,19 +439,19 @@ if wanted STRIPE_SECRET_KEY; then
 fi
 pause "Press Enter for the webhook"
 
-# ── 6 ─────────────────────────────────────────────────────────────────────
+# ── 7 ─────────────────────────────────────────────────────────────────────
 webhook_url="$SITE$WEBHOOK_PATH"
 stage "Stripe: the webhook for paid checkouts ($stripe_mode mode)"
 say "Stripe tells GitAway a payment went through by calling:"
-say "  $webhook_url   (event: checkout.session.completed)"
+say "  $webhook_url   (events: checkout.session.completed and checkout.session.async_payment_succeeded)"
 if (( WEBHOOK_IN_CODE == 0 )); then
-  warn "$WEBHOOK_PATH is not in this checkout's code yet: it is the planned path for F-193 (branch f-193-plan-for-me)."
+  warn "$WEBHOOK_PATH is not in this checkout's code (F-193's route is /stripe/webhook)."
   note "Check the real route there before saving. If it differs, Ctrl-C and rerun: WEBHOOK_PATH=/the/path pixi run setup-money"
 fi
 if wanted STRIPE_WEBHOOK_SECRET; then
   open_url "https://dashboard.stripe.com${mode_path}/webhooks"
   step "Developers → Webhooks → Add destination (older dashboards: Add endpoint)."
-  step "Events from: Your account. Select events: checkout.session.completed only → Continue."
+  step "Events from: Your account. Select events: checkout.session.completed and checkout.session.async_payment_succeeded → Continue."
   step "Destination type: Webhook endpoint → Continue."
   step "Endpoint URL: $webhook_url → Create destination (or Add endpoint)."
   step "On the new endpoint: Signing secret → Reveal → copy it (starts whsec_)."
@@ -460,7 +479,7 @@ case "$code" in
 esac
 pause "Press Enter for the price"
 
-# ── 7 ─────────────────────────────────────────────────────────────────────
+# ── 8 ─────────────────────────────────────────────────────────────────────
 stage "Plan for me: the price (optional)"
 say "PLAN_FOR_ME_PRICE_CENTS is the one-time price in whole cents: 1900 is \$19.00."
 say "Leave it empty to keep the price built into the app."
@@ -478,9 +497,24 @@ if wanted PLAN_FOR_ME_PRICE_CENTS; then
     else note "price not set"; fi
   fi
 fi
+pause "Press Enter for the founder check"
+
+# ── 9 ─────────────────────────────────────────────────────────────────────
+stage "Plan it for me: the founder check (optional)"
+say "PLAN_FOR_ME_REVIEW is on unless it is 0: a built plan waits on $SITE/admin for your \"Send to family\" before the family sees it."
+say "0 delivers at once (the pages then say \"in a few minutes\"). Leave it empty to keep the check on."
+if wanted PLAN_FOR_ME_REVIEW; then
+  review=""
+  while :; do
+    ask review "Founder check, 1 (on) or 0 (off) (Enter alone skips):" || review=""
+    if [[ -z "$review" || "$review" == 0 || "$review" == 1 ]]; then break; fi
+    warn "Type 1 or 0."
+  done
+  if [[ -n "$review" ]]; then put_public PLAN_FOR_ME_REVIEW "$review"; fi
+fi
 pause "Press Enter to finish"
 
-# ── 8 ─────────────────────────────────────────────────────────────────────
+# ── 10 ────────────────────────────────────────────────────────────────────
 stage "Load the new values on gitaway.me"
 if (( ${#SET_ON_RAILWAY[@]} == 0 )); then
   say "Nothing changed on Railway, so there is nothing to reload."

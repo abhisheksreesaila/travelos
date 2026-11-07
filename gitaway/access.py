@@ -37,6 +37,7 @@ OPEN_POSTS = (
     "/report",   # reporting a public trip or creator (F-185): anyone, signed out too; it changes no plan
     "/admin/takedown", "/admin/restore", "/admin/approve", "/admin/seen", "/admin/draft", "/admin/link", "/admin/revoke", "/creators/settings",   # the captain's take down and restore, and F-188's drafts for creators (/claim/ is a creator claiming their own post; the route answers 404 to anyone not in GITAWAY_ADMIN_EMAILS, F-185) and my own affiliate marker (F-184)
     "/creators/drafts/scan", "/creators/drafts/start",   # my own batch of posts (F-190): find a blog's posts, queue the ticked ones; the drafts are mine, not a family's
+    "/admin/plan-for-me/edit", "/admin/plan-for-me/send",   # the captain's founder check of a built plan (F-197): the route answers 404 to anyone not in GITAWAY_ADMIN_EMAILS
     "/trip/family/seen",   # I have read the chats up to now (F-143): my own read mark, every member, viewers too
 )
 OPEN_PREFIXES = ("/join/", "/creators/import/", "/claim/", "/creators/drafts/", "/admin/drafts/")                # using an invite link: the person is joining another family

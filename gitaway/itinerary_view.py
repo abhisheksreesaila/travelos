@@ -329,6 +329,15 @@ def _yours(trip):
     )
 
 
+def plan_for_me_card(title, href, cls="pf-card ga-wrap", price=True):
+    """"Want this built around your family?": the card that leads to Plan it for me (F-193). "" when it is not for sale here (no Stripe key in production)."""
+    from gitaway import planforme as pfm, catalog  # here, not at the top: planforme reads the community database
+    if not pfm.offered():
+        return ""
+    return Section(H2(title), P(f"Tell us who is going and when. An agent builds your own day-by-day trip in your GitAway account, {pfm.when_ready()}."),
+                   P(f"{catalog.money(pfm.price_cents())} once. {pfm.PROMISE}" if price else pfm.PROMISE), A(icon("star", 20, 2.4), "Plan it for me", href=href, cls="btn btn-primary", id="plan-for-me-go"), cls=cls, id="plan-for-me")
+
+
 # ---------- skeleton ----------
 
 def skeleton(trip: Itinerary):
@@ -370,12 +379,12 @@ SCRIPT = Script("""
 def itinerary_body(trip: Itinerary, loading: bool = False, saved: bool = False, forked: bool = False, blog=""):
     if loading:
         return skeleton(trip)
-    return Div(_hero(trip, saved, forked), _board(trip), _days(trip), _tips(trip), _yours(trip), _todo(trip) if trip.real else "", blog, _trust(trip) if trip.real else "", SCRIPT, cls="itinerary")
+    return Div(_hero(trip, saved, forked), _board(trip), _days(trip), _tips(trip), _yours(trip), _todo(trip) if trip.real else "", plan_for_me_card("Want this trip built around your family?", f"/plan-for-me?from={trip.slug}", price=False) if trip.real else "", blog, _trust(trip) if trip.real else "", SCRIPT, cls="itinerary")
 
 
 def itinerary_page(trip: Itinerary, theme=None, loading: bool = False, saved: bool = False, forked: bool = False, blog="", noindex: bool = False, waiting: bool = False):
     """The public page of a trip: shared links preview with its lede and cover (F-196); `noindex` keeps a copy of a creator's post out of search, and a trip `waiting` for the captain's
     yes (F-194) is "noindex, nofollow" (one robots tag, which covers the noindex)."""
-    head = (*HEAD, Link(rel="stylesheet", href="/assets/css/scrapbook.css")) if trip.real else HEAD
+    head = (*HEAD, Link(rel="stylesheet", href="/assets/css/scrapbook.css"), Link(rel="stylesheet", href="/assets/css/planforme.css")) if trip.real else HEAD
     return page(trip.title, itinerary_body(trip, loading, saved, forked, blog), theme=resolve_theme(theme, trip), head=(*head, Meta(name="robots", content="noindex, nofollow")) if waiting else head,
                 description=trip.lede, image=trip.polaroids[0].src if trip.polaroids else "", og_type="article", noindex=noindex and not waiting)

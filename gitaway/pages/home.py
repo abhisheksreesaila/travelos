@@ -218,6 +218,12 @@ def _creators():
     )
 
 
+def _plan_for_me():
+    """The signed-out landing's card for Plan it for me (F-193); () when it is not for sale here."""
+    from gitaway.itinerary_view import plan_for_me_card
+    return (plan_for_me_card("Rather not plan it yourself?", "/plan-for-me", "pf-card ga-wrap pf-landing"),) if not session.request_traveler() else ()
+
+
 def footer_links():
     """The links that left the landing's header. Sign in only while signed out."""
     links = ([("Community trips", "/community")] if showcase.on() else []) + [("For creators", "/for-creators")]
@@ -241,7 +247,8 @@ def register(app):
             _hero(),
             Div(_plan_panel(), _fork_line() if showcase.on() else "", cls="ga-wrap"),
             _features(),
+            *_plan_for_me(),
             _calendar(),
             *([_community(), _creators()] if showcase.on() else []),
-            head=(*HEAD, *_drive()), nav=False, footer_links=footer_links(),
+            head=(*HEAD, Link(rel="stylesheet", href="/assets/css/planforme.css"), *_drive()), nav=False, footer_links=footer_links(),
         )

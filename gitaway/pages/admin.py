@@ -4,6 +4,9 @@ GET  /admin                a summary, the reports, every creator with their trip
 POST /admin/takedown       hide a published trip and its public photos
 POST /admin/restore        bring it back
 POST /admin/seen           mark the reports up to an id read (F-196): the "N new" count shows on /admin, in the account menu and in the header until then
+GET  /admin/plan-for-me/<order>        a built plan waiting for the founder check (F-197): every stop's title and note, the summary and tips, editable, and "Send to family"
+POST /admin/plan-for-me/edit    (order, the fields) keep the quick edit (cleaned like the model's answer: no prices, no opening hours)
+POST /admin/plan-for-me/send    (order) write it into the buyer's family: only now does the buyer see it
 
 Who is an admin: the sign-in emails listed in GITAWAY_ADMIN_EMAILS (comma or space separated, any case), never one written in code. For everyone else, signed in or
 not, every address here answers 404 as if there were no such page. Both POSTs also check the request came from our own page (reports.same_site), on top of the
@@ -14,11 +17,11 @@ import logging
 import os
 import re
 
-from fasthtml.common import A, Button, Div, Form, H1, H2, Input, Li, Link, Main, P, Section, Span, Ul
+from fasthtml.common import A, Button, Div, Form, H1, H2, H3, Input, Label, Li, Link, Main, P, Section, Span, Textarea, Ul
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import RedirectResponse
 
-from gitaway import affiliate, catalog, community, creatordraft as cd, members, partners, reports, session as ses, showcase, stats
+from gitaway import affiliate, catalog, community, creatordraft as cd, members, partners, planforme as pfm, reports, session as ses, showcase, stats
 from gitaway.icons import icon
 from gitaway.layout import page
 from gitaway.pages import creatorclaim as claims
@@ -100,6 +103,59 @@ def new_reports(session) -> int:
     except Exception:  # noqa: BLE001
         logger.exception("could not count the new reports")
         return 0
+STATUS_WORDS = {"awaiting_payment": "Waiting for payment", "paid": "Paid", "building": "Building", "review": "Check it", "sending": "Sending", "ready": "Ready", "failed": "Failed"}
+
+
+def _dollars(micros) -> str:
+    return f"${micros / 1_000_000:.3f}"
+
+
+def _order(o):
+    """One Plan it for me order (F-193): who, where, status, what it brought in and what the agent cost; a failed one that was paid is a refund due."""
+    owed = o["status"] == "failed" and o["paid_at"]
+    i = o["intake"]
+    return Li(Div(Span(f"#{o['id'][:8]}", cls="ad-name"), Span(STATUS_WORDS[o["status"]], cls="ad-state " + ("is-down" if o["status"] == "failed" else "is-live" if o["status"] == "ready" else "")),
+                  Span("Refund due", cls="ad-state is-down", id=f"refund-{o['id'][:8]}") if owed else "", Span(o["email"], cls="ad-meta")),
+              P(f"{i['where']} · {i['start']} to {i['end']} · {i['adults']} adults, {len(i['kids'])} kids", cls="ad-meta"),
+              P(f"{catalog.money(o['amount_cents'])} · agent {_dollars(o['ai_cost_micros'])} · {o['ai_tokens_in']:,} in, {o['ai_tokens_out']:,} out" + (f" · {o['ai_model']}" if o["ai_model"] else "")
+                + (f" · {o['error']}" if o["error"] else ""), cls="ad-meta"),
+              _check(o) if o["status"] == "review" else "",
+              cls="ad-report", id=f"pfm-{o['id'][:8]}")
+
+
+def _check(o):
+    """The founder check (F-197): one tap sends the built plan to the family; the edit link opens every stop first."""
+    return Div(Form(Button(icon("check", 18, 2.4), "Send to family", type="submit", cls="btn btn-primary", id=f"pfm-send-{o['id'][:8]}"), Input(type="hidden", name="order", value=o["id"]), action="/admin/plan-for-me/send", method="post", cls="ad-inline"),
+               A("Look and edit first", href=f"/admin/plan-for-me/{o['id']}", cls="ad-link", id=f"pfm-edit-{o['id'][:8]}"), cls="ad-actions")
+
+
+def check_page(o):
+    """A built plan waiting for the check: the family's words on top, then every day's stops with their title and note in fields, the summary and the tips. Save keeps the edit; Send to family
+    delivers it as it stands."""
+    from gitaway.pages import planview
+    i, r = o["intake"], o["result"]
+    field = lambda name, value, label, rows=None: Label(Span(label, cls="ad-k"), Textarea(value, name=name, rows=str(rows), cls="ad-field") if rows else Input(type="text", name=name, value=value, cls="ad-field"), cls="ad-fieldset")
+    days = [Section(H3(planview.day_label(i, d)), *[Div(Span(f"{planview.clock(st['start'])} · {st['kind']}", cls="ad-meta"), field(f"s{d}-{j}-title", st["title"], "Title"), field(f"s{d}-{j}-note", st["note"], "Note", 2), cls="ad-stop")
+                                                   for j, st in enumerate(day["stops"])], cls="ad-sec") for d, day in enumerate(r["days"])]
+    kids = ", ".join(planview.kid_words(i))
+    return page("Check a plan", Main(Div(
+        H1("Check a plan", cls="ad-title"), P(f"#{o['id'][:8]} · {o['email']} · {i['where']} · {i['start']} to {i['end']} · {i['adults']} adults" + (f" · kids {kids}" if kids else "")
+                                             + f" · {i['pace']} · {i['budget']}", cls="ad-meta"),
+        P(f"Must-dos: {i['must']}", cls="ad-note") if i["must"] else "",
+        Form(field("summary", r["summary"], "Summary", 2), *days, Section(H2("Tips"), *[field(f"tip{k}", r["tips"][k] if k < len(r["tips"]) else "", f"Tip {k + 1}") for k in range(pfm.MAX_TIPS)], cls="ad-sec"),
+             Div(Button("Save the edit", type="submit", cls="btn", id="pfm-save"), A("Back to admin", href=f"/admin#pfm-{o['id'][:8]}", cls="ad-link"), cls="ad-actions"),
+             Input(type="hidden", name="order", value=o["id"]), action="/admin/plan-for-me/edit", method="post", cls="ad-sec", id="pfm-check"),
+        Form(Button(icon("check", 18, 2.4), "Send to family", type="submit", cls="btn btn-primary", id="pfm-send"), Input(type="hidden", name="order", value=o["id"]), action="/admin/plan-for-me/send", method="post", cls="ad-inline"),
+        cls="ad-card"), id="admin", cls="ad-stage"), head=HEAD)
+
+
+PAID_TWICE = {"double": "Paid twice: the order was already paid", "unknown": "Paid for an order that no longer exists"}
+
+
+def _owed(p):
+    """A payment no order can be built from (F-193): the captain refunds it in Stripe, found by the Checkout session."""
+    return Li(Div(Span(f"#{p['order_id'][:8] or 'none'}", cls="ad-name"), Span("Refund due", cls="ad-state is-down", id=f"refund-evt-{p['event_id'][-12:]}"), Span(PAID_TWICE[p["outcome"]], cls="ad-meta")),
+              P(f"{catalog.money(p['amount_cents'])} · Checkout session {p['session_id']} · {p['at'][:10]}", cls="ad-meta"), cls="ad-report", id=f"owed-{p['event_id'][-12:]}")
 
 
 def admin_page(drafted=()):
@@ -113,8 +169,13 @@ def admin_page(drafted=()):
     total = sum(s[3] for s in summary)
     rep = reports.all_reports()
     broken, why = failures.recent(KLOOK_DAYS)
+    orders = pfm.admin_rows()
+    owed = pfm.refunds_due()
+    pt = pfm.totals(orders, owed)
     cards = (("Creators", f"{len(people)} of {GOAL}", "ad-goal"), ("Live trips", str(live), "ad-live"), ("Reports", str(len(rep)), "ad-reports"), ("Estimated commission", catalog.money(total), "ad-commission"),
-             ("Klook links not tracked", str(broken), "ad-klook-failures"))
+             ("Klook links not tracked", str(broken), "ad-klook-failures"),
+             ("Plan it for me", f"{pt['paid']} paid · {catalog.money(pt['revenue_cents'])}", "ad-pfm"), ("Refunds due", f"{pt['refunds']} · {catalog.money(pt['refund_cents'])}", "ad-refunds"),
+             ("Agent cost", _dollars(pt["ai_cost_micros"]), "ad-pfm-cost"))
     fresh = sum(1 for r in rep if not r["seen"])
     return page("Admin", Main(
         Div(H1("Admin", cls="ad-title"),
@@ -123,6 +184,8 @@ def admin_page(drafted=()):
             P(f"{broken} Klook link{'s' if broken != 1 else ''} could not be tracked in the last {KLOOK_DAYS} days (latest: {why}). Those clicks went to the plain Klook link and lost their SubID: check TRAVELPAYOUTS_TRS "
               "and the token on Railway.", role="alert", cls="ad-meta", id="ad-klook-last") if broken else "",
             Div(Span(cls="ad-bar-fill", style=f"width:{min(100, round(100 * len(people) / GOAL))}%"), cls="ad-bar", role="img", aria_label=f"{len(people)} of {GOAL} creators"),
+            Section(H2("Plan it for me orders"), P("Refunds are yours, by hand in Stripe: a failed order that was paid, and a payment that paid an order twice or one that is gone, say Refund due.", cls="ad-meta"),
+                    Ul(*[_owed(p) for p in owed], *[_order(o) for o in orders], cls="ad-list", id="ad-orders") if orders or owed else P("No orders yet.", cls="ad-meta", id="ad-no-orders"), cls="ad-sec"),
             claims.section(drafted),
             Section(H2("Waiting for your approval"), P("A trip claimed or published by someone whose email is not at the post's own site. Check it is theirs, then approve it.", cls="ad-meta"),
                     Ul(*[_waiting(w) for w in waiting], cls="ad-list", id="ad-waiting"), cls="ad-sec", id="ad-waiting-sec") if waiting else "",
@@ -162,6 +225,35 @@ def register(app):
         if upto.isdigit():
             reports.mark_seen(int(upto))
         return RedirectResponse("/admin", status_code=303)
+    def _in_review(session, order_id):
+        """The order behind a check address, for an admin only (None for anyone else, an unknown id or one that is not waiting for the check)."""
+        if not is_admin(session) or not isinstance(order_id, str) or not pfm._ID.fullmatch(order_id):
+            return None
+        o = pfm._row(order_id)
+        return o if o and o["status"] == "review" and o["result"] else None
+
+    @app.get("/admin/plan-for-me/{order_id}")
+    def plan_check(session, order_id: str):
+        o = _in_review(session, order_id)
+        return check_page(o) if o else showcase.not_found()
+
+    @app.post("/admin/plan-for-me/edit")
+    async def plan_edit(request, session):
+        if not is_admin(session) or not reports.same_site(request):
+            return showcase.not_found()
+        form = await request.form()
+        order_id = str(form.get("order") or "")
+        ok = await run_in_threadpool(pfm.edit, order_id, {k: v for k, v in form.items() if isinstance(v, str)}) if pfm._ID.fullmatch(order_id) else False
+        return RedirectResponse(f"/admin/plan-for-me/{order_id}" if ok else "/admin", status_code=303)
+
+    @app.post("/admin/plan-for-me/send")
+    async def plan_send(request, session):
+        if not is_admin(session) or not reports.same_site(request):
+            return showcase.not_found()
+        order_id = str((await request.form()).get("order") or "")
+        if pfm._ID.fullmatch(order_id):
+            await run_in_threadpool(pfm.send, order_id)
+        return RedirectResponse(f"/admin#pfm-{order_id[:8]}" if pfm._ID.fullmatch(order_id) else "/admin", status_code=303)
 
     _act("takedown", community.take_down)
     _act("restore", community.restore)

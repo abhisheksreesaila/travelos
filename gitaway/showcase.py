@@ -47,10 +47,13 @@ def community_open() -> bool:
 
 
 def _needs_keys(path: str) -> bool:
-    """Pages that exist off the showcase only with real partner keys: /partners reads real statistics (TRAVELPAYOUTS_TOKEN) and /go/... sends a
-    traveler to a real tracked link (TRAVELPAYOUTS_MARKER); without them there is nothing real to show or send anyone to."""
+    """Pages that exist off the showcase only with real partner keys: /partners reads real statistics (TRAVELPAYOUTS_TOKEN), /go/... sends a
+    traveler to a real tracked link (TRAVELPAYOUTS_MARKER) and /plan-for-me sells only with STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET and an AI key (`planforme.offered`); without them there is nothing real to show or send anyone to."""
     if path == "/partners" or path.startswith("/partners/"):
         return not os.getenv("TRAVELPAYOUTS_TOKEN", "").strip()
+    if path == "/plan-for-me" or path.startswith("/plan-for-me/"):      # Plan it for me (F-193) is for sale only when `planforme.offered()`; the webhook is not here, it answers 503 without its own secret
+        from gitaway import planforme
+        return not planforme.offered()
     return path.startswith("/go/") and not os.getenv("TRAVELPAYOUTS_MARKER", "").strip()
 
 
