@@ -40,6 +40,26 @@ def test_anything_else_is_refused(url):
     assert stoplinks.clean(url) == ""
 
 
+@pytest.mark.parametrize("url", ["https://evil.com\\.booking.com/", "https://booking.com\\.evil.com/", "https://www.booking.com/a\\b", "https://evil.com%5c.booking.com/", "https://evil.com%2f.booking.com/",
+                                 "https://a\x00.booking.com/", "https://booking.com/\x7f", "https://user:pw@booking.com/", "https://booking.com:pw@evil.example/", "HTTPS://evil.example\\@booking.com/",
+                                 "https://booking.com./..", "https://.booking.com/", "https://www..booking.com/", "https://-booking.com/", "https://evil_.booking.com/", "https://evil.com#.booking.com/",
+                                 "https://evil.com?.booking.com/", "http:booking.com", "https:///booking.com", "https://evil.com\t.booking.com/", "data:text/html,booking.com", "file://booking.com/x"],
+                         ids=lambda u: repr(u)[:24])
+def test_a_trick_that_makes_a_browser_read_another_host_is_refused(url):
+    assert stoplinks.clean(url) == ""
+
+
+@pytest.mark.parametrize("url", ["https://notbooking.com/", "https://booking.com.evil.example/", "https://xn--booking-9qa.com/", "https://evil.example/booking.com", "https://booking-com.evil.example/",
+                                 "https://evilviator.com/", "https://sub.evilviator.com/", "https://booking.co/", "https://com/"], ids=lambda u: u[8:28])
+def test_a_lookalike_host_is_not_a_listed_one(url):
+    assert stoplinks.clean(url) == ""
+
+
+@pytest.mark.parametrize("url", ["https://BOOKING.com/x", "https://www.Booking.COM/x", "https://a.b.booking.com/x", "http://booking.com:80/x", "https://booking.com:443/x", "https://xn--bcher-kva.booking.com/x"])
+def test_the_listed_host_and_its_subdomains_are_allowed_in_any_case(url):
+    assert stoplinks.clean(url) == url
+
+
 def test_a_blogs_own_domain_is_allowed_for_that_creator_only():
     own = stoplinks.own_domain("blog", "https://www.blog.example.com/post")
     assert own == "blog.example.com"

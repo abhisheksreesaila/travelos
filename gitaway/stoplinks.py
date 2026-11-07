@@ -19,6 +19,7 @@ MAX = 400
 # their site. A blog on its own corner of such a host (maya.blogspot.com) is still its own: only the bare host is refused.
 NOT_OWN = ("medium.com", "substack.com", "wordpress.com", "blogspot.com", "blogger.com", "wixsite.com", "tumblr.com", "github.io", "notion.site", "ghost.io", "weebly.com",
            "youtube.com", "youtu.be", "instagram.com", "facebook.com", "tiktok.com")
+_HOST = re.compile(r"[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+")      # dotted letters, digits and hyphens: nothing a browser would read as another host
 _END = r"""(?=$|[\s)\]>"'<]|[.,;:!?]+(?:$|[\s)\]>"'<]))"""      # an address ends at the end of the text, a space, a closing bracket or quote, or punctuation that closes a sentence
 LIST_TEXT = ", ".join(ALLOWED[:-1]) + " or " + ALLOWED[-1]
 
@@ -38,19 +39,20 @@ def own_domain(kind, url) -> str:
 
 
 def clean(url, own="") -> str:
-    """The address, trimmed, when it is an http(s) link to a listed site (or its subdomain) or to `own`; else "". No name or email in it ("@"), no port but the default, ASCII only, no spaces."""
+    """The address, trimmed, when it is an http(s) link to a listed site (or its subdomain) or to `own`; else "". Refused outright: a backslash (a browser reads it as "/"), a control or
+    non-ASCII character, a space, a name or an email ("@"), a port but the default, and any host that is not plain dotted letters, digits and hyphens. A host is compared whole, or by a "." boundary."""
     if not isinstance(url, str):
         return ""
     url = url.strip()
-    if not url or len(url) > MAX or any(c.isspace() or ord(c) < 32 or ord(c) > 126 for c in url) or "@" in url:
+    if not url or len(url) > MAX or any(c.isspace() or ord(c) < 32 or ord(c) > 126 for c in url) or "@" in url or "\\" in url:
         return ""
     try:
         parts = urlsplit(url)
         port = parts.port
-    except ValueError:
+        host = (parts.hostname or "").encode("idna").decode("ascii").lower()
+    except (ValueError, UnicodeError):
         return ""
-    host = (parts.hostname or "").lower()
-    if parts.scheme not in ("http", "https") or not host or port not in (None, 80, 443):
+    if parts.scheme not in ("http", "https") or not _HOST.fullmatch(host) or port not in (None, 80, 443):
         return ""
     return url if any(host == d or host.endswith("." + d) for d in (*ALLOWED, *([own] if own else []))) else ""
 
