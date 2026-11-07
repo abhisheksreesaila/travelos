@@ -29,14 +29,10 @@ def tahoe_trip(client, monkeypatch):
     return me
 
 
-def _roads():
-    return geopack.roads_lonlat(geopack.shapes(tahoe.overpass_answer(), geopack.region([tahoe.place(k) for k in ("cabin", "rno", "emerald")], tahoe.place("cabin"))))
-
-
 # ---- small pieces ------------------------------------------------------------------------------------------------------
 
 def test_a_reference_is_never_drawn_whole():
-    assert cockpit.mask("KQ7821") == "••821"
+    assert cockpit.mask("KQ7821") == "••21"           # six characters or fewer: two shown
     assert cockpit.mask(" VR 4821 936 ") == "••936"
     assert cockpit.mask("AB") == "•••"
     assert cockpit.mask("") == "" and cockpit.mask("none given") == ""
@@ -52,31 +48,64 @@ def test_the_party_reads_like_a_person_would_say_it():
     assert cockpit.party_text(T) == "2 adults · kid 5"
 
 
-# ---- turn by turn from the line and the named roads ------------------------------------------------------------------------
+# ---- turn by turn: the router's own steps (F-201 review: no more guessing from the line) -----------------------------------------------
 
-def test_the_drive_to_taylor_creek_is_told_turn_by_turn():
-    line, _ = tahoe._leg_line("d3", 0)
-    steps = cockpit.turns(line, _roads())
-    assert [(s.verb, s.road) for s in steps] == [("Head northwest", ""), ("Turn left on", "Lake Tahoe Boulevard (US 50)"), ("Turn right on", "Emerald Bay Road (CA 89)")]
-    assert [s.icon for s in steps] == ["up", "turn-left", "turn-right"]
-    assert steps[1].mi == pytest.approx(3.9, abs=0.3) and steps[2].mi == pytest.approx(3.4, abs=0.3)      # OSRM says 6.1 km and 5.1 km
-    assert sum(s.mi for s in steps) == pytest.approx(cockpit.miles(cockpit.distance_km(line)), abs=0.15)
+def _step(k, d="", n="", r="", m=0, b=None):
+    s = {"k": k, "d": d, "n": n, "r": r, "m": m}
+    if b is not None:
+        s["b"] = b
+    return s
 
 
-def test_a_road_the_pack_cannot_name_is_one_honest_step():
-    line, _ = tahoe._leg_line("d3", 0)
-    steps = cockpit.turns(line, [])
-    assert len(steps) == 1 and steps[0].verb == "Head northwest" and steps[0].road == ""
-    assert steps[0].mi == pytest.approx(8.2, abs=0.2)
+def test_the_router_gives_the_steps_and_they_are_kept_with_the_leg(client, monkeypatch):
+    """geo asks OSRM for its steps in the same call (steps=true) and keeps them with the cached leg, in a form any router can fill (F-204 may change it)."""
+    from gitaway import familydb, geo
+    asked = []
+
+    def osrm(url, timeout=0):
+        asked.append(url)
+        return {"code": "Ok", "routes": [{"duration": 1080, "geometry": {"type": "LineString", "coordinates": [[-119.948, 38.936], [-120.054, 38.936]]},
+                                          "legs": [{"steps": [{"maneuver": {"type": "depart", "bearing_after": 352}, "name": "Ski Run Boulevard", "ref": "", "distance": 1609.0},
+                                                              {"maneuver": {"type": "turn", "modifier": "left"}, "name": "Lake Tahoe Boulevard", "ref": "US 50", "distance": 6100.4},
+                                                              {"maneuver": {"type": "end of road", "modifier": "right"}, "name": "", "ref": "", "distance": 120.0},
+                                                              {"maneuver": {"type": "arrive"}, "name": "", "ref": "", "distance": 0}]}]}]}
+    monkeypatch.setattr(geo, "fetch", osrm)
+    sign_in(client)
+    me = person("ari")
+    a, b = (38.936, -119.948), (38.936, -120.054)
+    with familydb.using(me) as db:
+        assert geo.drive_minutes(a, b, db) == 18
+        assert "steps=true" in asked[0]
+        assert geo.steps(a, b, db) == [_step("depart", n="Ski Run Boulevard", m=1609, b=352), _step("turn", "left", "Lake Tahoe Boulevard", "US 50", 6100),
+                                       _step("turn", "right", m=120), _step("arrive")]
 
 
-def test_the_long_drive_from_reno_keeps_only_its_longest_steps_in_order():
-    line, _ = tahoe._leg_line("alt", 0)
-    steps = cockpit.turns(line, _roads())
-    assert 2 <= len(steps) <= cockpit.MAX_STEPS
-    roads = [s.road for s in steps]
-    assert any("US 50" in r for r in roads) and any("580" in r or "395" in r for r in roads)
-    assert cockpit.turns([], _roads()) == [] and cockpit.turns([(0, 0)], _roads()) == []
+def test_mixed_named_and_unnamed_roads_are_told_as_the_router_gives_them():
+    lines = cockpit.step_lines([_step("depart", m=300, b=4), _step("turn", "left", "Main Street", m=1609), _step("turn", "right", m=800),
+                                _step("continue", "straight", "Lake Tahoe Boulevard", "US 50", 3219), _step("arrive")])
+    assert [(s.verb, s.road) for s in lines] == [("Head north", ""), ("Turn left on", "Main Street"), ("Turn right", ""), ("Continue on", "Lake Tahoe Boulevard (US 50)")]
+    assert [s.mi for s in lines] == [0.2, 1.0, 0.5, 2.0] and [s.icon for s in lines] == ["up", "turn-left", "turn-right", "up"]
+
+
+def test_a_road_that_only_changes_its_name_continues_one_step():
+    lines = cockpit.step_lines([_step("merge", "slight left", r="I 580; US 395", m=12600), _step("continue", "straight", r="I 580; US 395", m=23000),
+                                _step("continue", "straight", r="I 580;US 395", m=10600), _step("turn", "slight right", "Pioneer Trail", m=1500)])
+    assert [(s.verb, s.road, s.mi) for s in lines] == [("Merge onto", "I 580 / US 395", 28.7), ("Bear right onto", "Pioneer Trail", 0.9)]
+
+
+def test_the_drive_to_taylor_creek_is_the_routers_own_steps(tahoe_trip):
+    t = cockpit.view(tahoe_trip).ticket
+    assert [(s.verb, s.road, s.mi) for s in t.steps] == [("Head northwest on", "Ski Run Boulevard", 1.0), ("Turn left on", "Lake Tahoe Boulevard (US 50)", 3.8),
+                                                         ("Turn right on", "Emerald Bay Road (CA 89)", 3.2)]
+
+
+def test_the_fixtures_reno_line_is_told_step_by_step(tahoe_trip, monkeypatch):
+    from datetime import datetime, timezone
+    at(monkeypatch, datetime(2026, 12, 19, 23, 0, tzinfo=timezone.utc))       # Saturday 3:00 PM: the car is picked up, the cabin is next
+    t = cockpit.view(tahoe_trip).ticket
+    assert t.title == "Check in · Cabin near Heavenly"
+    assert [(s.verb, s.road) for s in t.steps] == [("Head west", ""), ("Merge onto", "I 580 / US 395"), ("Continue on", "I 580 / US 50 / US 395"), ("Continue on", "US 50"),
+                                                   ("Turn left on", "Pioneer Trail")]
 
 
 # ---- the whole cockpit ----------------------------------------------------------------------------------------------------
@@ -84,7 +113,7 @@ def test_the_long_drive_from_reno_keeps_only_its_longest_steps_in_order():
 def test_the_heading_says_whose_trip_which_day_and_the_time(tahoe_trip):
     v = cockpit.view(tahoe_trip)
     assert v.title == "Tahoe at Christmas"
-    assert v.eyebrow == "Ari’s family · day 3 of 8 · Mon Dec 21, 9:12 AM"
+    assert v.eyebrow == "Ari Rivera's family · day 3 of 8 · Mon Dec 21, 9:12 AM"      # the family's own name (members.family_label), not the viewer's
     assert v.dates == "Sat Dec 19 – Sat Dec 26" and v.party == "2 adults · kids 8 and 11"
     assert (v.phase, v.today, v.open_day, v.head_day, v.head_sub) == ("during", 2, 2, "Monday", "Dec 21 · 9:12 AM")
 
@@ -117,17 +146,17 @@ def test_todays_ticket_is_up_next_with_when_to_leave_and_the_leg_turn_by_turn(ta
     assert t.kicker == "Today · up next · leave in 30 min"
     assert (t.title, t.starts, t.leave, t.drive) == ("Snowshoe at Taylor Creek", "10:00", "9:42", 18)
     assert t.mi == pytest.approx(8.2, abs=0.2)
-    assert [s.road for s in t.steps] == ["", "Lake Tahoe Boulevard (US 50)", "Emerald Bay Road (CA 89)"]
+    assert [s.road for s in t.steps] == ["Ski Run Boulevard", "Lake Tahoe Boulevard (US 50)", "Emerald Bay Road (CA 89)"]
     assert t.directions.startswith("https://www.google.com/maps/search/?api=1&query=Snowshoe+at+Taylor+Creek")
 
 
-def test_with_no_pack_yet_the_leg_is_still_there_without_road_names(client, monkeypatch):
+def test_with_no_pack_yet_the_leg_and_its_steps_are_still_there(client, monkeypatch):
     sign_in(client)
     me = tahoe.seed(client, monkeypatch)
     at(monkeypatch, tahoe.NOW)
     v = cockpit.view(me)
     assert v.map["state"] == "building" and v.map["pack"] is None and v.map["box"]
-    assert v.ticket.drive == 18 and [s.road for s in v.ticket.steps] == [""]
+    assert v.ticket.drive == 18 and [s.road for s in v.ticket.steps][-1] == "Emerald Bay Road (CA 89)"      # the steps are the router's: they need no pack
 
 
 def test_while_something_is_on_the_ticket_says_so(tahoe_trip, monkeypatch):
@@ -140,10 +169,10 @@ def test_the_wallet_holds_the_next_flight_the_stay_and_the_car_with_masked_refer
     from gitaway.pages import tripcanvas
     v = cockpit.view(tahoe_trip, curl=tripcanvas.curl)
     flight, stay, car = v.passes
-    assert (flight.kind, flight.eyebrow, flight.title, flight.sub, flight.ref) == ("flight", "Flight home · Sat 26", "RNO → SFO · 1:30 PM", "United UA 5522", "••821")
+    assert (flight.kind, flight.eyebrow, flight.title, flight.sub, flight.ref) == ("flight", "Flight home · Sat 26", "RNO → SFO · 1:30 PM", "United UA 5522", "••21")
     assert (stay.kind, stay.eyebrow, stay.title, stay.sub, stay.ref) == ("stay", "Stay · 5 nights left", "Cabin near Heavenly", "Check out Sat 26 · 10:00 AM", "••936")
     assert (car.kind, car.title, car.sub, car.ref) == ("car", "Mid-size SUV, AWD", "Hertz · return Sat 26 11:45 AM", "••215")
-    assert all(p.partner == "Expedia" and p.manage == "" for p in v.passes)            # F-198 puts the partner of each booking and its page here
+    assert all(p.partner == "" and p.manage == "" for p in v.passes)            # the trip's one "booked on" is not each booking's partner; F-198 fills these per booking
     assert flight.href.startswith("/trip/canvas?day=7&booked=b-back") and stay.href.startswith("/trip/canvas?day=0&booked=b-in")
     text = repr(v)
     for whole in ("KQ7821", "VR4821936", "H77418215"):
@@ -174,14 +203,14 @@ def test_before_the_trip_the_first_day_is_open_and_there_is_no_ticket(tahoe_trip
     at(monkeypatch, datetime(2026, 11, 7, 18, 0, tzinfo=timezone.utc))
     v = cockpit.view(tahoe_trip)
     assert v.phase == "before" and v.open_day == 0 and v.ticket is None and v.today is None
-    assert v.eyebrow == "Ari’s family · starts in 42 days"
+    assert v.eyebrow == "Ari Rivera's family · starts in 42 days"
     assert v.passes[0].eyebrow == "Flight in · Sat 19"
 
 
 def test_after_the_trip_the_last_day_is_open(tahoe_trip, monkeypatch):
     at(monkeypatch, datetime(2027, 1, 3, 18, 0, tzinfo=timezone.utc))
     v = cockpit.view(tahoe_trip)
-    assert v.phase == "after" and v.open_day == 7 and v.eyebrow == "Ari’s family · back home"
+    assert v.phase == "after" and v.open_day == 7 and v.eyebrow == "Ari Rivera's family · back home"
 
 
 def test_a_day_asked_for_is_the_open_one(tahoe_trip):
@@ -195,3 +224,22 @@ def test_the_sample_trip_works_too(client):
     assert v.title and len(v.days) == 5 and v.phase == "before" and v.ticket is None
     assert [p.kind for p in v.passes] == ["flight", "stay", "car"] and all(p.ref == "" for p in v.passes)
     assert v.map["state"] in ("none", "building")
+
+
+# ---- review fixes (F-201 review) ----------------------------------------------------------------------------------------
+
+def test_a_short_reference_shows_two_characters_a_long_one_three():
+    assert cockpit.mask("KQ7821") == "••21" and cockpit.mask("H77418215") == "••215" and cockpit.mask("ABC") == "•••"
+
+
+@pytest.mark.parametrize("booked_on", ["elsewhere", "GitAway", "Elsewhere", ""])
+def test_a_booking_with_no_known_partner_is_just_booked(booked_on):
+    assert cockpit.partner_name(booked_on) == ""
+    assert cockpit.partner_name("Vrbo") == "Vrbo"
+
+
+@pytest.mark.parametrize("url,ok", [("https://www.expedia.com/trips/123", True), ("https://expedia.com/x", True), ("http://www.expedia.com/x", False),
+                                    ("https://evil.com/expedia.com", False), ("https://expedia.com.evil.com/x", False), ("https://evil.com\\.expedia.com/x", False),
+                                    ("javascript:alert(1)", False), ("https://www.vrbo.com/x", False)])
+def test_change_or_cancel_goes_only_to_the_partners_own_https_site(url, ok):
+    assert (cockpit.safe_manage(url, "Expedia") == url) is ok

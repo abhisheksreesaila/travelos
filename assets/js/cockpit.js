@@ -16,8 +16,8 @@
   var reducedQ = window.matchMedia('(prefers-reduced-motion: reduce)');
   var open = +root.dataset.open || 0;
   var state = { day: open };
-  // MapLibre GL JS 5.24.0 (BSD-3), pinned, with the integrity of those exact files: a changed copy on the CDN is refused by the browser
-  var libre = { base: 'https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/', js: 'sha384-5+cfbwT0iiub6VsQAdn6yz16nr6sDiQoHx6tm4O8OVYXHYOxcffFmCJBL0dgdvGp',
+  // MapLibre GL JS 5.24.0 (BSD-3), this site's own copy (no CDN sees anyone), pinned by the hash of those exact files: a changed copy is refused by the browser
+  var libre = { base: '/assets/vendor/maplibre-gl-5.24.0/', js: 'sha384-5+cfbwT0iiub6VsQAdn6yz16nr6sDiQoHx6tm4O8OVYXHYOxcffFmCJBL0dgdvGp',
     css: 'sha384-uTttxo/aOKbdE5RlD/SPzSDoDmNvGlUYPjONi2MN/b7c9HPSvW07OIuyP7uL6jxK' };
   var ck = window.GA.cockpit = { state: state, libre: libre };
 
@@ -64,22 +64,30 @@
   if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', followTheme);
   new MutationObserver(followTheme).observe(document.documentElement, { attributes: true });
 
-  // while the pack is being built, ask again now and then; the relief and the shapes come in without a reload
-  var asked = 0;
+  // while the map waits for a pack or for its first place, ask again now and then: the relief, the shapes and each day's stops and drive come in without a reload
+  var asked = 0, every = window.__ckPollMs || 5000;      // (a test asks quicker)
+  function showOpenMap() { var b = document.getElementById('ck-open-map'); if (b && data.box) b.hidden = false; }
   function poll() {
-    if (data.state !== 'building' || asked > 24) return;
+    if ((data.state !== 'building' && data.state !== 'none') || asked > 36) return;
     asked++;
     setTimeout(function () {
       fetch('/trip/cockpit/map', { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (m) {
-        if (m.state === 'ready' && m.pack) {
-          data.state = 'ready'; data.pack = m.pack; data.box = m.box; data.km = m.km;
+        if (!m || !m.state) return poll();
+        var placed = !data.box && m.box, packed = m.state === 'ready' && m.pack && (!data.pack || data.pack.key !== m.pack.key);
+        if (m.days) data.days = m.days;
+        if (m.box) { data.box = m.box; data.km = m.km; }
+        data.state = m.state;
+        if (m.pack) data.pack = m.pack;
+        if (packed || placed) {
           var note = document.getElementById('ck-map-note');
-          if (note) note.remove();
+          if (note && packed) note.remove();
           loadShapes().then(function (shapes) { data.shapes = shapes; if (map) { map.setPack(data); map.setDark(isDark()); } else startMap(shapes); });
-          if (paperEl) paperEl.dataset.state = 'ready';
-        } else if (m.state === 'building') poll();
+          if (paperEl) paperEl.dataset.state = m.state;
+        } else if (map && m.days) map.setPack(data);
+        showOpenMap();
+        if (m.state === 'building' || m.state === 'none') poll();
       }).catch(poll);
-    }, 5000);
+    }, every);
   }
   poll();
 
@@ -116,8 +124,11 @@
     tk.classList.toggle('is-today', root.dataset.today === String(i));
     var sky = tk.querySelector('.ck-sky');
     if (sky) {
-      sky.querySelector('.ck-temp').textContent = panel.dataset.temp;
-      sky.querySelector('.ck-word').textContent = panel.dataset.word;
+      ['.ck-temp', '.ck-word'].forEach(function (sel, k) {      // the numbers cross-fade in place (a short fade on the --motion-desk token); they never bounce
+        var el = sky.querySelector(sel);
+        el.textContent = k ? panel.dataset.word : panel.dataset.temp;
+        if (!reducedQ.matches) MO.run(el, [{ opacity: 0 }, { opacity: 1 }], { t: 'desk' });
+      });
       var src = sky.querySelector('.ck-src');
       if (src) src.textContent = panel.dataset.src;
       sky.dataset.wx = panel.dataset.wx;
@@ -143,11 +154,11 @@
     if (loading) return loading;
     loading = new Promise(function (ok, no) {
       var css = document.createElement('link');
-      css.rel = 'stylesheet'; css.href = libre.base + 'maplibre-gl.css'; css.crossOrigin = 'anonymous';
+      css.rel = 'stylesheet'; css.href = libre.base + 'maplibre-gl.css';
       if (libre.css) css.integrity = libre.css;
       document.head.appendChild(css);
       var s = document.createElement('script');
-      s.src = libre.base + 'maplibre-gl.js'; s.crossOrigin = 'anonymous'; s.id = 'ck-libre';
+      s.src = libre.base + 'maplibre-gl.js'; s.id = 'ck-libre';
       if (libre.js) s.integrity = libre.js;
       s.onload = ok; s.onerror = function () { loading = null; s.remove(); no(new Error('offline')); };
       document.head.appendChild(s);
@@ -199,6 +210,7 @@
       if (msg) msg.textContent = 'The street map could not start on this device. The paper map is above.';
       return;
     }
+    if (window.maplibregl.NavigationControl) street.addControl(new window.maplibregl.NavigationControl({ showCompass: false }), 'top-right');      // + and - for a finger or a mouse
     street.on('load', function () {
       if (msg) msg.hidden = true;
       if (d.route) {
@@ -219,6 +231,15 @@
   }
   var openBtn = document.getElementById('ck-open-map');
   if (openBtn) openBtn.addEventListener('click', function () { openSheet(openBtn); });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && sheet && !sheet.hidden) { e.preventDefault(); closeSheet(); } });
+  document.addEventListener('keydown', function (e) {
+    if (!sheet || sheet.hidden) return;
+    if (e.key === 'Escape') { e.preventDefault(); closeSheet(); return; }
+    if (e.key !== 'Tab') return;      // the focus stays inside the dialog (aria-modal): Tab and Shift+Tab go round it
+    var stops = Array.prototype.filter.call(sheet.querySelectorAll('button, a[href], [tabindex]:not([tabindex="-1"])'), function (n) { return n.getClientRects().length; });
+    if (!stops.length) return;
+    var first = stops[0], last = stops[stops.length - 1], at = document.activeElement;
+    if (e.shiftKey && (at === first || !sheet.contains(at))) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && (at === last || !sheet.contains(at))) { e.preventDefault(); first.focus(); }
+  });
   ck.select = select;
 })();

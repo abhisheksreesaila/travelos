@@ -10,7 +10,7 @@ from fh_saas.db_host import HostDatabase
 from fh_saas.db_tenant import get_or_create_tenant_db
 from sqlalchemy import text
 
-from gitaway import community, creatordraft, draftjobs, familydb, hostdb, passes, photos, planforme, publish, voicenotes
+from gitaway import community, creatordraft, draftjobs, familydb, hostdb, passes, photos, planforme, publish, voicenotes, geopack
 
 
 def wipe_invites_and_extra_members():
@@ -38,6 +38,7 @@ def wipe_everything():
     creatordraft.clear()  # F-183: and every creator import draft
     draftjobs.clear()  # F-190: and every queued or failed batch post
     planforme.clear()  # F-193: and every Plan it for me order
+    geopack.clear()  # F-201: and every shared map pack and the day's build count
     shutil.rmtree(photos.root(), ignore_errors=True)  # F-071: the files of every photo a test added
     shutil.rmtree(passes.root(), ignore_errors=True)  # F-083: and of every boarding pass
     shutil.rmtree(publish.root(), ignore_errors=True)  # F-181: and every published photo copy

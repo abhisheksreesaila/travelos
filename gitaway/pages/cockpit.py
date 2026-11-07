@@ -16,7 +16,7 @@ bar and the top bar keep Ask and Family, and the passes open their booking's she
 import json
 import logging
 
-from fasthtml.common import A, Article, B, Button, Dd, Div, Dl, Dt, Em, H1, H2, Header, I, Li, Link, Main, NotStr, Ol, P, Script, Section, Span, Ul
+from fasthtml.common import A, Article, B, Button, Dd, Details, Div, Dl, Dt, Em, H1, H2, Header, I, Li, Link, Main, NotStr, Ol, P, Script, Section, Span, Summary, Ul
 from starlette.responses import Response
 
 from gitaway import cockpit as ck, geopack, phone, session as ses, topbar
@@ -44,17 +44,27 @@ def _wx(w):
     return json.dumps({"kind": w.kind, "gust": w.gust, "ground": w.ground}, separators=(",", ":"))
 
 
+def temp(w) -> str:
+    return f"{w.hi}°" if w.hi is not None else ""
+
+
 def sky(w, cls="ck-sky", src=False):
-    """A day's living sky: the canvas wx.js draws on, the temperature and the words (the flakes fade behind every [data-calm] box)."""
-    return Div(NotStr('<canvas aria-hidden="true"></canvas>'), B(f"{w.hi}°", cls="ck-temp", data_calm="1"), Span(w.word, cls="ck-word", data_calm="1"),
-               Span(w.source, cls="ck-src", data_calm="1") if src else "", cls=cls, data_wx=_wx(w), role="img", aria_label=f"{w.word}, high {w.hi}°" + (f" ({w.source.lower()})" if w.sample else ""))
+    """A day's living sky: the canvas wx.js draws on, the temperature and the words (the flakes fade behind every [data-calm] box). With no weather known (a real
+    trip before F-203's forecasts) it is a plain sky that says nothing: no number, no words, no weather drawn, hidden from screen readers."""
+    known = w.hi is not None
+    label = {"role": "img", "aria_label": f"{w.word}, high {w.hi}°" + (f" ({w.source.lower()})" if w.sample else "")} if known else {"aria_hidden": "true"}
+    return Div(NotStr('<canvas aria-hidden="true"></canvas>'), B(temp(w), cls="ck-temp", data_calm="1"), Span(w.word, cls="ck-word", data_calm="1"),
+               Span(w.source, cls="ck-src", data_calm="1") if src else "", cls=cls, data_wx=_wx(w), **label)
 
 
 def closed_body(d):
-    items = [x for x in d.lines]
+    """A closed stub: the day, its first items, and "+N more" for the rest (three show on a laptop, two on a phone or a short laptop, so both counts are drawn and
+    CSS shows the one that is true; a tap on the stub opens the day's whole ticket)."""
+    items = list(d.lines)
     foot = [Span(icon("check", 12, 3), " · ".join(d.booked), cls="ck-on")] if d.booked else [Span("Nothing to book", cls="ck-free")]      # one wrapping line: "United · Hertz · Stay"
+    more = [Li(f"+{len(items) - n} more", cls=f"ck-more ck-more{n}") for n in (3, 2) if len(items) > n]
     return Div(Div(B(f"{d.dow} {d.num}"), Span(d.name), cls="ck-d"),
-               Ul(*[Li(I(cls=f"ck-dot ck-k-{x.kind}"), Span(x.time, cls="ck-t"), B(x.short or x.title), cls="ck-it") for x in items[:3]], cls="ck-items"),
+               Ul(*[Li(I(cls=f"ck-dot ck-k-{x.kind}"), Span(x.time, cls="ck-t"), B(x.short or x.title), cls="ck-it") for x in items[:3]], *more, cls="ck-items"),
                Div(*foot, cls="ck-foot"), cls="ck-closed")
 
 
@@ -76,14 +86,17 @@ def up_body(t, day_href):
     kv = [(label, value) for label, value in (("Leave", t.leave), ("Drive", f"{t.drive} min" if t.drive else ""), ("Starts", t.starts), ("Distance", f"{t.mi:g} mi" if t.mi else "")) if value]
     legs = [Li(Span(icon(s.icon, 15, 2.6), cls="ck-lg-i"), Span(s.verb, " ", B(s.road) if s.road else "", cls="ck-lg-t"), Span(f"{s.mi:g} mi", cls="ck-lg-d"), cls="ck-lg")
             for s in t.steps]
-    acts = [A(icon("nav", 16, 2.4), "Start directions", href=t.directions, target="_blank", rel="noopener", cls="ck-btn ck-btn-fill", id="ck-go")] if t.directions else []
+    shown, rest = legs[:ck.SHOWN_STEPS], legs[ck.SHOWN_STEPS:]      # the rest of the drive opens in place: nothing is cut without saying so
+    acts = [A(icon("nav", 16, 2.4), "Start directions", href=t.directions, target="_blank", rel="noopener", cls="ck-btn ck-btn-fill", data_go="1")] if t.directions else []      # (drawn twice: the desktop's stub and the phone's ticket, so no ids)
     if t.kind == "flight" and t.passes:      # a flight day: everyone's boarding passes are in the flight's own sheet, one tap from home
-        acts.append(A(icon("ticket", 16, 2.4), "Boarding passes", href=t.passes, cls="ck-btn ck-btn-tonal", id="ck-passes"))
+        acts.append(A(icon("ticket", 16, 2.4), "Boarding passes", href=t.passes, cls="ck-btn ck-btn-tonal", data_passes="1"))
     acts.append(A(icon("calendar", 16, 2.4), "Today’s plan", href=day_href, cls="ck-btn ck-btn-tonal", data_open_day="today"))
-    return Div(Span(t.kicker, cls="ck-eyebrow", id="ck-kicker"), H2(t.title, cls="ck-up-t"),
+    return Div(Span(t.kicker, cls="ck-eyebrow ck-kicker"), H2(t.title, cls="ck-up-t"),
                Dl(*[Div(Dt(label), Dd(value), cls="ck-kv-i") for label, value in kv], cls="ck-kv") if kv else "",
                Div(cls="ck-perf", aria_hidden="true") if legs else "",
-               Ol(*legs, cls="ck-legs", aria_label="The drive, turn by turn") if legs else "",
+               Ol(*shown, cls="ck-legs", aria_label="The drive, turn by turn") if legs else "",
+               Details(Summary(f"+{len(rest)} more", Span(f" step{'s' if len(rest) != 1 else ''} of the drive", cls="sr-only"), cls="ck-more-s"), Ol(*rest, cls="ck-legs", start=str(len(shown) + 1)),
+                       cls="ck-more") if rest else "",
                Div(*acts, cls="ck-acts"), cls="ck-open ck-up")
 
 
@@ -103,18 +116,20 @@ def stub(v, d):
 def ticket(v):
     """The phone's ticket at the top: the open day's sky and its open body (every day's is here, the open one shown)."""
     d = v.days[v.open_day]
-    panels = [Div(open_body(v, x), cls="ck-tk", data_day=str(x.i), data_wx=_wx(x.wx), data_temp=f"{x.wx.hi}°", data_word=x.wx.word, data_src=x.wx.source,
+    panels = [Div(open_body(v, x), cls="ck-tk", data_day=str(x.i), data_wx=_wx(x.wx), data_temp=temp(x.wx), data_word=x.wx.word, data_src=x.wx.source,
                   hidden=x.i != v.open_day) for x in v.days]
     return Section(sky(d.wx, "ck-sky ck-sky-wide", src=True), *panels, cls="ck-ticket" + (" is-today" if v.open_day == v.today else ""), id="ck-ticket",
                    aria_label="The open day", data_day=str(v.open_day))
 
 
 def pass_card(p):
-    foot = [Span(Span(icon("check", 12, 3.2), cls="ck-ck"), f"Booked on {p.partner}" if p.partner else "Booked", cls="ck-bo")]
+    partner = ck.partner_name(p.partner)
+    manage = ck.safe_manage(p.manage, partner)      # F-198: an https page on the partner's own site, or nothing; GitAway is never the support centre
+    foot = [Span(Span(icon("check", 12, 3.2), cls="ck-ck"), f"Booked on {partner}" if partner else "Booked", cls="ck-bo")]
     if p.ref:
         foot.append(Span("Ref ", B(p.ref), cls="ck-ref"))
-    if p.manage:      # F-198: the partner's own page; GitAway is never the support centre
-        foot.append(A("Change or cancel", icon("ext", 13, 2.4), href=p.manage, target="_blank", rel="noopener", cls="ck-cxl"))
+    if manage:
+        foot.append(A("Change or cancel", icon("ext", 13, 2.4), href=manage, target="_blank", rel="noopener", cls="ck-cxl"))
     elif p.href:
         foot.append(A("Details", icon("chev-right", 13, 2.6), href=p.href, cls="ck-cxl"))
     return Article(Div(Span(p.eyebrow, cls="ck-eyebrow"), icon(KIND_ICON[p.kind], 18, 2.2), cls="ck-pass-h"),
@@ -126,41 +141,50 @@ MAP_NOTE = {"building": "Drawing your map: the relief appears in a moment.", "no
             "waiting": "The map's relief could not be drawn just now. It will try again."}
 
 
+OSM_COPYRIGHT = "https://www.openstreetmap.org/copyright"
+TERRAIN_CREDITS = "https://github.com/tilezen/joerd/blob/master/docs/attribution.md"      # the terrain tiles' sources: USGS 3DEP for the US, SRTM, GMTED and others
+
+
+def credits():
+    return (A("© OpenStreetMap contributors", href=OSM_COPYRIGHT, target="_blank", rel="noopener"), Span(" · ", aria_hidden="true"),
+            A("Terrain: USGS and others", href=TERRAIN_CREDITS, target="_blank", rel="noopener"))
+
+
 def map_card(v):
     m = v.map
     return Section(Div(cls="ck-paper", id="ck-paper", data_state=m["state"]),
                    Div(Span(icon("layers", 14, 2.4), "Paper map · real relief", cls="ck-tag"), Span("Tap a day: the map flies there", cls="ck-tag ck-soft"), cls="ck-map-tools"),
-                   Button(icon("map", 16, 2.4), "Open map", type="button", cls="ck-btn ck-btn-map", id="ck-open-map", aria_haspopup="dialog"),
+                   Button(icon("map", 16, 2.4), "Open map", type="button", cls="ck-btn ck-btn-map", id="ck-open-map", aria_haspopup="dialog", hidden=m["state"] == "none"),      # (shown when a place arrives)
                    P(MAP_NOTE[m["state"]], cls="ck-map-note", id="ck-map-note") if m["state"] != "ready" else "",
-                   P("© OpenStreetMap · relief: AWS Terrain Tiles", cls="ck-cap"),
-                   cls="ck-map", aria_label="Map of the trip")
+                   P(*credits(), cls="ck-cap"),
+                   cls="ck-map", aria_label="Map of the trip"), P(*credits(), cls="ck-credits")      # the laptop's caption over the map; a phone's line under it (48px links)
 
 
 def page_body(v):
     phone_kicker = Span(v.phone_eyebrow, cls="ck-eyebrow")
     head = Header(Div(Span(v.eyebrow, cls="ck-eyebrow"), H1(v.title, cls="ck-title"), cls="ck-head-t ck-head-desk"),
                   Div(topbar.trip_menu(phone_kicker) or phone_kicker, H1(v.head_day, cls="ck-title"), P(v.head_sub, cls="ck-pday"), cls="ck-head-t ck-head-phone"),   # the phone's eyebrow is the trip menu (switch trips)
-                  Div(Span(icon("calendar", 15, 2.2), v.dates, cls="ck-chip"), Span(icon("users", 15, 2.2), v.party, cls="ck-chip"), cls="ck-chips"), cls="ck-head")
+                  Div(Span(icon("sun", 15, 2.2), "Sample weather", cls="ck-chip ck-chip-sample") if any(d.wx.sample for d in v.days) else "",      # said where every sky can see it
+                      Span(icon("calendar", 15, 2.2), v.dates, cls="ck-chip"), Span(icon("users", 15, 2.2), v.party, cls="ck-chip"), cls="ck-chips"), cls="ck-head")
     week = Section(*[stub(v, d) for d in v.days], cls="ck-week" + (" is-long" if len(v.days) > 9 else ""), id="ck-week", aria_label="The week")
     wallet = Section(*[pass_card(p) for p in v.passes], cls=f"ck-wallet ck-n{len(v.passes)}", id="ck-wallet", aria_label="Bookings") if v.passes else ""
     icons = {name: str(icon(name, 14, 2.4)) for name in MAP_ICONS}
-    data = json.dumps({**v.map, "icons": icons}, separators=(",", ":")).replace("</", "<\\/")
-    return (head, ticket(v), map_card(v),
+    data = safe_json({**v.map, "icons": icons})
+    return (head, ticket(v), *map_card(v),
             Div(B("The week"), Span("Tap a day to open its ticket"), cls="ck-sec", id="ck-sec-week"), week,
             Div(B("Wallet"), Span(f"{len(v.passes)} booking{'s' if len(v.passes) != 1 else ''}, each with its own sheet"), cls="ck-sec") if v.passes else "", wallet,
             Script(NotStr(data), type="application/json", id="ck-data"))
 
 
+def safe_json(obj) -> str:
+    """JSON that can sit inside <script type="application/json">: every less-than, greater-than and ampersand is written as a JSON unicode escape (backslash u003c,
+    u003e, u0026), so a plan called "Lunch <!--<script> in town" can neither end the script nor open a comment."""
+    return json.dumps(obj, separators=(",", ":")).replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
+
+
 def map_state(session):
-    """The paper map's state for the open trip: {state, box, km, pack}."""
-    state = geopack.ensure(session)
-    row = geopack.stored(session)
-    if not row:
-        return {"state": state, "pack": None}
-    k = row["key"]
-    box = geopack.parse_box(row["box"])
-    return {"state": "ready", "box": list(box), "km": [round(x, 2) for x in geopack.box_km(box)],
-            "pack": {"key": k, "shapes": f"/trip/cockpit/pack/{k}.json", "light": f"/trip/cockpit/pack/{k}-light.webp", "dark": f"/trip/cockpit/pack/{k}-dark.webp"}}
+    """The paper map's data for the open trip ({state, box, km, pack, days}), asked again by the page while it waits for a pack or a first place."""
+    return ck.map_data(session, geopack.ensure(session))
 
 
 def _guard(session):

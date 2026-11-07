@@ -103,8 +103,8 @@ def test_a_line_comes_back_from_its_steps_within_a_few_metres():
     line = [(-119.94831, 38.93586), (-119.9524, 38.9411), (-120.05384, 38.93572)]
     back = geopack.decode(geopack.encode(line, box), box)
     assert len(back) == 3 and all(geopack.km_between((a[1], a[0]), (b[1], b[0])) < 0.005 for a, b in zip(line, back))
-    roads = geopack.roads_lonlat(geopack.shapes(tahoe.overpass_answer(), box))
-    assert any(r["ref"] == "US 50" and len(r["pts"]) > 2 and isinstance(r["pts"][0][0], float) for r in roads)
+    roads = geopack.shapes(tahoe.overpass_answer(), box)["roads"]
+    assert any(r.get("ref") == "US 50" and len(geopack.decode(r["d"], box)) > 2 for r in roads)
 
 
 def test_the_overpass_query_asks_for_the_box_and_nothing_personal():
@@ -131,9 +131,9 @@ def test_the_relief_is_drawn_light_and_dark_true_to_the_ground_and_small(real_da
     z = geopack.pick_zoom(box)
     mos, tx0, ty0 = geopack.fetch_dem(box, z)
     out = geopack.render(mos, z, tx0, ty0, box, month=12)
-    w, h = geopack.relief_size(box)
+    w, h = geopack.relief_size(box, z)
     kw, kh = geopack.box_km(box)
-    assert max(w, h) == geopack.LONG_SIDE and abs(w / h - kw / kh) < 0.01
+    assert geopack.MIN_SIDE <= max(w, h) <= geopack.LONG_SIDE and abs(w / h - kw / kh) < 0.01
     for mode in ("light", "dark"):
         img = Image.open(io.BytesIO(out[mode]))
         assert img.format == "WEBP" and img.size == (w, h)
@@ -249,6 +249,13 @@ def test_a_trip_with_no_known_place_has_no_pack_and_asks_nothing(client, monkeyp
     assert geopack.ensure(person("ari")) == "none" and real_data == []
 
 
+def later(monkeypatch, seconds):
+    """Move geopack's clock (its UTC now) forward."""
+    from datetime import datetime, timedelta, timezone
+    then = datetime.now(timezone.utc) + timedelta(seconds=seconds)
+    monkeypatch.setattr(geopack, "_now", lambda: then)
+
+
 def test_a_failed_build_stores_nothing_and_waits_before_trying_again(trip, monkeypatch):
     calls = []
 
@@ -259,7 +266,9 @@ def test_a_failed_build_stores_nothing_and_waits_before_trying_again(trip, monke
     me = person("ari")
     assert geopack.ensure(me) == "waiting" and geopack.stored(me) is None
     assert geopack.ensure(me) == "waiting" and len(calls) == 1         # not tried again at once
-    geopack.forget_failures()
+    geopack.forget_failures()                                           # (a restart: nothing in memory)
+    assert geopack.ensure(me) == "waiting" and len(calls) == 1         # the failure is kept in the database
+    later(monkeypatch, geopack.RETRY + 5)
     monkeypatch.setattr(geopack, "TRANSPORT", tahoe.pack_transport)
     assert geopack.ensure(me) == "ready"
 
@@ -277,8 +286,7 @@ def test_a_build_in_the_background_never_holds_up_the_caller(trip, monkeypatch):
     assert geopack.ensure(me) == "building"
     assert geopack.ensure(me) == "building"                 # one build per trip at a time
     gate.set()
-    for t in [t for t in threading.enumerate() if t.name == "geo-pack"]:
-        t.join(10)
+    assert geopack.drain(20)
     assert geopack.stored(me) is not None
 
 
@@ -296,3 +304,251 @@ def test_deleting_the_trip_takes_its_pack(trip, real_data):
     assert importer.delete(me, trip_id)
     with familydb.using(me) as db:
         assert geopack.load(db, trip_id) is None
+
+
+# ---- review fixes (F-201 review): a failure is never a pack; budgets, one build at a time, caps, shared packs -------------------------------
+
+def overpass_says(answer):
+    """A transport whose Overpass answer is `answer` (a dict or a callable taking the query), tiles from the Tahoe data."""
+    asked = []
+
+    def fake(url, data=None, timeout=0):
+        if "overpass" in url:
+            from urllib.parse import parse_qs
+            query = parse_qs(data.decode())["data"][0]
+            asked.append(query)
+            got = answer(query) if callable(answer) else answer
+            return json.dumps(got).encode()
+        return tahoe.pack_transport(url, data, timeout)
+    return fake, asked
+
+
+TIMED_OUT = {"elements": [{"type": "node", "id": 1, "lat": 39.0, "lon": -120.0, "tags": {"place": "town", "name": "Half"}}],
+             "remark": "runtime error: Query timed out in \"query\" at line 1 after 61 seconds."}
+
+
+def test_an_overpass_answer_that_timed_out_is_a_failure_not_a_pack(trip, monkeypatch):
+    fake, asked = overpass_says(TIMED_OUT)
+    monkeypatch.setattr(geopack, "TRANSPORT", fake)
+    me = person("ari")
+    assert geopack.ensure(me) == "waiting" and geopack.stored(me) is None
+    assert len(asked) == 2 and "motorway|trunk)$" in asked[1] and "primary" not in asked[1]       # asked once more with the main roads only
+    with familydb.using(me) as db:
+        row = geopack.load(db, ses_trip(me))
+    assert row["failed_at"] and row["error"] == "remark" and row["attempts"] == 1
+    assert geopack.ensure(me) == "waiting" and len(asked) == 2                                    # not again until RETRY
+    later(monkeypatch, geopack.RETRY + 5)
+    monkeypatch.setattr(geopack, "TRANSPORT", tahoe.pack_transport)
+    assert geopack.ensure(me) == "ready" and geopack.stored(me)["shapes"]
+
+
+def test_an_empty_overpass_answer_is_a_failure(trip, monkeypatch):
+    fake, asked = overpass_says({"elements": []})
+    monkeypatch.setattr(geopack, "TRANSPORT", fake)
+    with pytest.raises(geopack.PackError) as e:
+        geopack.build(geopack.region([TAHOE["cabin"]]), month=12)
+    assert e.value.why == "empty"
+
+
+def test_a_busy_box_falls_back_to_the_main_roads(trip, monkeypatch):
+    fake, asked = overpass_says(lambda q: TIMED_OUT if "secondary" in q or "primary" in q else tahoe.overpass_answer())
+    monkeypatch.setattr(geopack, "TRANSPORT", fake)
+    pack = geopack.build(geopack.region(TAHOE.values(), anchor=TAHOE["cabin"]), month=12)
+    assert pack.shapes["roads"] and len(asked) == 2 and "[maxsize:67108864]" in asked[0] and "[timeout:" in asked[0]
+
+
+def test_reads_are_capped_and_a_too_big_answer_fails_cleanly(monkeypatch):
+    class Resp:
+        def __init__(self, length, body):
+            self.headers, self.body = {"Content-Length": length} if length else {}, body
+        def read(self, n=-1):
+            chunk, self.body = self.body[:n], self.body[n:]
+            return chunk
+        def __enter__(self):
+            return self
+        def __exit__(self, *a):
+            return False
+
+    class Opener:
+        def __init__(self, resp):
+            self.resp = resp
+        def open(self, req, timeout=0):
+            return self.resp
+    monkeypatch.setattr(geopack, "_OPENER", Opener(Resp(str(geopack.OVERPASS_CAP + 1), b"")))
+    with pytest.raises(geopack.PackError) as e:
+        geopack.transport(geopack.OVERPASS, data=b"x")
+    assert e.value.why == "size"
+    monkeypatch.setattr(geopack, "_OPENER", Opener(Resp("", b"x" * (geopack.TILE_CAP + 10))))      # no length given: read stops past the cap
+    with pytest.raises(geopack.PackError):
+        geopack.transport(geopack.TILES.format(z=11, x=1, y=1))
+    monkeypatch.setattr(geopack, "_OPENER", Opener(Resp("3", b"abc")))
+    assert geopack.transport(geopack.TILES.format(z=11, x=1, y=1)) == b"abc"
+
+
+def test_the_transport_refuses_a_redirect():
+    import http.server
+    import threading
+
+    class Redirect(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(302)
+            self.send_header("Location", "http://127.0.0.1:1/elsewhere")
+            self.end_headers()
+
+        def log_message(self, *a):
+            pass
+    srv = http.server.HTTPServer(("127.0.0.1", 0), Redirect)
+    t = threading.Thread(target=srv.serve_forever, daemon=True)
+    t.start()
+    try:
+        with pytest.raises(geopack.PackError) as e:
+            geopack.transport(f"http://127.0.0.1:{srv.server_port}/terrarium/1/1/1.png", timeout=5)
+        assert e.value.why == "redirect"
+    finally:
+        srv.shutdown()
+
+
+def test_a_build_has_one_deadline_for_all_its_calls(trip, monkeypatch):
+    import time
+    def slow(url, data=None, timeout=0):
+        time.sleep(0.3)
+        return tahoe.pack_transport(url, data, timeout)
+    monkeypatch.setattr(geopack, "TRANSPORT", slow)
+    monkeypatch.setattr(geopack, "DEADLINE", 1.0)
+    with pytest.raises(geopack.PackError) as e:
+        geopack.build(geopack.region(TAHOE.values(), anchor=TAHOE["cabin"]), month=12)
+    assert e.value.why == "time"
+
+
+def test_a_tile_must_be_a_small_png_before_it_is_decoded():
+    import io as _io
+    from PIL import Image as _Image
+    jpeg = _io.BytesIO()
+    _Image.new("RGB", (256, 256)).save(jpeg, "JPEG")
+    big = _io.BytesIO()
+    _Image.new("RGB", (512, 512)).save(big, "PNG")
+    for bad in (jpeg.getvalue(), big.getvalue(), b"not an image"):
+        with pytest.raises(geopack.PackError) as e:
+            geopack.terrarium(bad)
+        assert e.value.why == "tile"
+
+
+def ses_trip(me):
+    from gitaway import session as ses
+    ses.booking(me)
+    return ses.open_trip_id()
+
+
+def test_each_trip_has_a_daily_budget_of_builds(trip, monkeypatch):
+    monkeypatch.setattr(geopack, "TRIP_BUDGET", 2)
+    monkeypatch.setattr(geopack, "TRANSPORT", lambda url, data=None, timeout=0: (_ for _ in ()).throw(OSError("offline")))
+    me = person("ari")
+    for n in range(2):
+        assert geopack.ensure(me) == "waiting"
+        later(monkeypatch, (n + 1) * (geopack.RETRY + 5))
+    calls = []
+    monkeypatch.setattr(geopack, "TRANSPORT", lambda url, data=None, timeout=0: calls.append(url) or tahoe.pack_transport(url, data, timeout))
+    assert geopack.ensure(me) == "waiting" and calls == []                # the trip has used today's builds
+    later(monkeypatch, 2 * 24 * 3600)
+    assert geopack.ensure(me) == "ready"                                  # a new day
+
+
+def test_a_family_and_the_whole_server_have_daily_budgets_too(trip, monkeypatch, client):
+    monkeypatch.setattr(geopack, "FAMILY_BUDGET", 1)
+    monkeypatch.setattr(geopack, "TRANSPORT", lambda url, data=None, timeout=0: (_ for _ in ()).throw(OSError("offline")))
+    me = person("ari")
+    assert geopack.ensure(me) == "waiting"                  # one build tried and failed
+    later(monkeypatch, geopack.RETRY + 5)
+    assert geopack.ensure(me) == "waiting"                  # the family's builds for today are used
+    with familydb.using(me) as db:
+        assert geopack.load(db, ses_trip(me))["attempts"] == 1
+    monkeypatch.setattr(geopack, "FAMILY_BUDGET", 30)
+    monkeypatch.setattr(geopack, "DAILY_CAP", 1)
+    assert geopack.ensure(me) == "waiting"                  # and the server's (one build already counted today)
+    with familydb.using(me) as db:
+        assert geopack.load(db, ses_trip(me))["attempts"] == 1
+
+
+def test_one_build_runs_at_a_time_and_the_queue_is_bounded(trip, monkeypatch):
+    import threading
+    import time
+    active, most, release = [0], [0], threading.Event()
+    real = geopack.build
+
+    def counted(box, month=1, deadline=None):
+        active[0] += 1
+        most[0] = max(most[0], active[0])
+        release.wait(5)
+        time.sleep(0.05)
+        try:
+            return real(box, month, deadline)
+        finally:
+            active[0] -= 1
+    monkeypatch.setattr(geopack, "build", counted)
+    monkeypatch.setattr(geopack, "TRANSPORT", tahoe.pack_transport)
+    monkeypatch.setattr(geopack, "ASYNC", True)
+    monkeypatch.setattr(geopack, "QUEUE_MAX", 1)
+    me = person("ari")
+    assert geopack.ensure(me) == "building"
+    time.sleep(0.2)                                          # the worker has taken it: the queue is empty again
+    other = dict(me, tenant_id="other-family")              # a second family's build waits in the queue (its db is never opened: the build is what is counted)
+    monkeypatch.setattr(geopack, "needed", lambda session: ("build", geopack.region([TAHOE["rno"]]), 12))
+    monkeypatch.setattr(geopack, "_within_budget", lambda db, trip_id: True)
+    monkeypatch.setattr(geopack, "_count_attempt", lambda db, trip_id, box: None)
+    assert geopack.ensure(other) == "building"
+    third = dict(me, tenant_id="third-family")
+    assert geopack.ensure(third) == "waiting"               # the queue is full: try later
+    release.set()
+    assert geopack.drain(30) and most[0] == 1
+
+
+def test_a_region_built_once_is_shared_by_every_trip_in_it(trip, monkeypatch, real_data, client):
+    """Forks of one trip do not ask Overpass again: a pack is kept by region (the box, the season, the version) in the shared store; nothing personal is in it."""
+    me = person("ari")
+    assert geopack.ensure(me) == "ready"
+    first = len(real_data)
+    other = TestClient_for("sam")
+    tahoe.seed(other, monkeypatch, who="sam")
+    sam = person("sam")
+    assert geopack.ensure(sam) == "ready" and len(real_data) == first          # linked, not built again
+    assert geopack.stored(sam)["key"] == geopack.stored(me)["key"]
+
+
+def TestClient_for(who):
+    from starlette.testclient import TestClient
+    from main import app
+    c = TestClient(app, client=("127.0.0.1", 50000))
+    sign_in(c, who)
+    return c
+
+
+def test_a_deleted_trips_pack_row_is_never_written_back(trip, real_data):
+    from gitaway import importer
+    me = person("ari")
+    trip_id = ses_trip(me)
+    box = geopack.region(TAHOE.values(), anchor=TAHOE["cabin"])
+    assert importer.delete(me, trip_id)
+    with familydb.using(me) as db:
+        assert geopack.link(db, trip_id, "v|box|season", "0123456789abcdef", box) is False      # a build that finishes after the trip is gone writes nothing
+        assert geopack.load(db, trip_id) is None
+
+
+def test_a_trip_across_the_date_line_gets_a_sane_box():
+    fiji = [(-17.80, 179.95), (-17.86, -179.97), (-17.70, 179.80)]
+    w, s, e, n = geopack.region(fiji, anchor=fiji[0])
+    assert -180 <= w < e <= 180 and e - w < 2 and n - s < 2
+
+
+def test_the_relief_is_as_big_as_its_elevation_needs_and_light_on_memory(real_data, monkeypatch):
+    import tracemalloc
+    monkeypatch.setattr(geopack, "LONG_SIDE", 2048)
+    small = geopack.region([TAHOE["cabin"]])
+    big = geopack.region(TAHOE.values(), anchor=TAHOE["cabin"])
+    assert max(geopack.relief_size(small, geopack.pick_zoom(small))) < max(geopack.relief_size(big, geopack.pick_zoom(big))) <= 2048
+    z = geopack.pick_zoom(big)
+    mos, tx0, ty0 = geopack.fetch_dem(big, z)
+    tracemalloc.start()
+    geopack.render(mos, z, tx0, ty0, big, 12)
+    peak = tracemalloc.get_traced_memory()[1]
+    tracemalloc.stop()
+    assert peak < 260 * 1024 * 1024, peak / 1e6

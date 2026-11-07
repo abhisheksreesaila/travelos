@@ -13,7 +13,7 @@ DIRECTION_A_DARK = """:root { --paper: #000000; --card: #1C1C1F; --ink: #F5F5F7;
   --hairline-2: rgba(255,255,255,.16); --paper-2: #2A2A2E; color-scheme: dark; } body { background: #000000; }"""
 
 
-def seed(base_url, ctx, monkeypatch, *, pack=True, now=tahoe.NOW, plans=True, full=False):
+def seed(base_url, ctx, monkeypatch, *, pack=True, now=tahoe.NOW, plans=True, full=False, maps=True):
     """Sign in as Ari, import the Tahoe trip, add its plans, fill the map cache and (with `pack`) build its geo pack (`full`: at its real size; else a quicker
     1024px relief); pin the clock to `now`."""
     if not full:
@@ -28,9 +28,10 @@ def seed(base_url, ctx, monkeypatch, *, pack=True, now=tahoe.NOW, plans=True, fu
             h2, m2 = map(int, e.split(":"))
             cal.add_activity(me, day=day, start=h1 * 60 + m1, end=h2 * 60 + m2, title=title, kind=kind)
     monkeypatch.setattr(geo, "fetch", tahoe.geo_fetch)
-    with familydb.using(me) as db:
-        for group in tripgeo.day_places(me):
-            geo.warm(db, group, budget=30)
+    if maps:      # (without: no place is known yet, the way a trip starts)
+        with familydb.using(me) as db:
+            for group in tripgeo.day_places(me):
+                geo.warm(db, group, budget=30)
     monkeypatch.setattr(geopack, "TRANSPORT", tahoe.pack_transport)
     if pack:
         assert geopack.ensure(me) == "ready"
@@ -41,8 +42,9 @@ def seed(base_url, ctx, monkeypatch, *, pack=True, now=tahoe.NOW, plans=True, fu
     return me
 
 
-def open_cockpit(browser, base_url, monkeypatch, contexts, viewport=DESKTOP, dark=False, motion=False, path="/trip/cockpit", fonts=False, **kw):
-    ctx = browser.new_context(viewport=viewport, reduced_motion="no-preference" if motion else "reduce", color_scheme="dark" if dark else "light")
+def open_cockpit(browser, base_url, monkeypatch, contexts, viewport=DESKTOP, dark=False, motion=False, path="/trip/cockpit", fonts=False, sw="allow", **kw):
+    """`sw="block"` keeps the service worker out: a request it answers (anything under /assets/) never reaches a test's page.route."""
+    ctx = browser.new_context(viewport=viewport, reduced_motion="no-preference" if motion else "reduce", color_scheme="dark" if dark else "light", service_workers=sw)
     ctx.set_default_timeout(15000)      # a shared machine: a page with eight skies and a relief can take a few seconds under load
     keep = r"|fonts\.googleapis\.com|fonts\.gstatic\.com" if fonts else ""      # screenshots load the real fonts
     ctx.route(re.compile(r"https://(?!127\.0\.0\.1" + keep + r").*"), lambda r: r.abort())      # nothing else leaves the machine (the street map's library and tiles)

@@ -3,8 +3,8 @@ gitaway/pages/cockpit.py; the design is docs/design/cockpit/3-ticket.html and RE
 
     view(session, day="", ua="")   the trip as a line of days (each with its weather and its times), the open day's ticket (on today: Up next with the next
                                    leg turn by turn), the wallet's passes and the paper map's data (the pack's state and each day's stops and drive line)
-    turns(line, roads)             the steps of a drive ("Turn left on Lake Tahoe Boulevard (US 50)", 3.8 mi), worked out from its line (gitaway.geo's cached
-                                   route) and the geo pack's named roads: the router gives no steps (F-204 may), so the line is matched to the roads it runs along
+    step_lines(raw)                the drive told turn by turn from the router's own steps, cached with the leg by gitaway.geo ("Turn left on Lake Tahoe Boulevard
+                                   (US 50)", 3.8 mi); nothing is guessed from the line
     mask(ref)                      "••821": a reference number is never drawn whole here
     partner_of(...)                F-198's hook: "Booked on <partner>" and its Change or cancel page for one booking (today the trip's own "booked on", no page)
 
@@ -13,28 +13,28 @@ Pure functions take data; `view` is the one that reads the family (gitaway.tripc
 
 import json
 import math
+import re
 from dataclasses import dataclass, field
+from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
-from gitaway import catalog, dayweather, familydb, geo, geopack, session as ses, tripcal as cal, tripday as td, tripgeo, tripimport
+from gitaway import catalog, dayweather, familydb, geo, geopack, members, session as ses, tripcal as cal, tripday as td, tripgeo, tripimport
 
 KIND_OF_ICON = {"plane": "flight", "bed": "stay", "car": "car"}        # a booking's kind from its icon
 ICON_OF_KIND = {"flight": "plane", "stay": "bed", "car": "car", "fun": "spark", "food": "food", "outdoors": "tree", "culture": "sight", "travel": "car"}
-NEAR_M = 70             # a point of a drive this close to a named road is on it
-MIN_STEP_KM = 0.45      # a stretch shorter than this between two others is a junction, not a step
-MAX_STEPS = 4           # on the ticket
-HEAD_PTS = 8            # resampled points (40 m apart) a heading is measured over
+SHOWN_STEPS = 3         # steps on the ticket before "+N more"
 ROUTE_POINTS = 260      # a day's drive line on the page, at most (the paper map is 1000 units across)
 
 
 # ---- small pure helpers ------------------------------------------------------------------------------------------------
 
 def mask(ref) -> str:
-    """'••821' for 'KQ7821'; '' for nothing. A reference is never drawn whole on the cockpit (the booking's own sheet shows it behind a tap)."""
+    """'••21' for 'KQ7821', '••215' for 'H77418215', '•••' for three characters or fewer, '' for nothing: a reference is never drawn whole on the cockpit (the booking's
+    own sheet shows it behind a tap), and a short one shows less of itself."""
     if str(ref or "").strip().lower() in ("", "none given"):
         return ""
     ref = "".join(str(ref).split())
-    return "••" + ref[-3:] if len(ref) > 3 else "•••"
+    return "•••" if len(ref) <= 3 else "••" + ref[-2:] if len(ref) <= 6 else "••" + ref[-3:]
 
 
 def clock(m) -> str:
@@ -48,11 +48,6 @@ def short_time(m) -> str:
     return cal.fmt_time(int(m))
 
 
-def _xy(lon, lat, lat0):
-    """Metres east and north of (0, lat0): a flat projection, exact enough inside one trip's region."""
-    return lon * 111_320 * math.cos(math.radians(lat0)), lat * 110_574
-
-
 def distance_km(line) -> float:
     """Length of a [(lon, lat)] line in kilometres."""
     return sum(geopack.km_between((a[1], a[0]), (b[1], b[0])) for a, b in zip(line, line[1:]))
@@ -62,146 +57,57 @@ def miles(km) -> float:
     return round(km / 1.609344, 1)
 
 
-def _bearing(a, b, lat0):
-    (x1, y1), (x2, y2) = _xy(a[0], a[1], lat0), _xy(b[0], b[1], lat0)
-    return math.degrees(math.atan2(x2 - x1, y2 - y1)) % 360
-
-
 COMPASS = ("north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest")
 
 
 @dataclass(frozen=True)
 class Step:
-    verb: str           # "Head north on", "Turn left on", "Continue on", "Bear right onto", "Head north"
-    road: str           # "Lake Tahoe Boulevard (US 50)", or "" for a road the pack has no name for
+    verb: str           # "Head northwest on", "Turn left on", "Continue on", "Merge onto", "Turn right" (on a road with no name)
+    road: str           # "Lake Tahoe Boulevard (US 50)", "I 580 / US 395", or "" for a road the router gives no name
     mi: float
     icon: str           # "up", "turn-left", "turn-right", "bear-left", "bear-right"
 
 
 def road_label(ref, name) -> str:
+    """'Lake Tahoe Boulevard (US 50)', 'I 580 / US 395' (a road with several numbers), 'Pioneer Trail', or ''."""
+    ref = " / ".join(x.strip() for x in str(ref or "").split(";") if x.strip())
     return f"{name} ({ref})" if ref and name else ref or name
 
 
-def _resample(line, lat0, every=40.0):
-    """Points every `every` metres along the line (the ends kept), as (lon, lat)."""
-    out = [tuple(line[0])]
-    left = every
-    for a, b in zip(line, line[1:]):
-        (x1, y1), (x2, y2) = _xy(a[0], a[1], lat0), _xy(b[0], b[1], lat0)
-        seg = math.hypot(x2 - x1, y2 - y1)
-        pos = 0.0
-        while seg - pos >= left:
-            pos += left
-            t = pos / seg
-            out.append((a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t))
-            left = every
-        left -= seg - pos
-    if out[-1] != tuple(line[-1]):
-        out.append(tuple(line[-1]))
-    return out
+# a router step's kind and direction -> the words and the arrow (gitaway.geo keeps the steps in one shape whatever router answers)
+_TURN = {"left": ("Turn left", "turn-left", "on"), "right": ("Turn right", "turn-right", "on"), "slight left": ("Bear left", "bear-left", "onto"),
+         "slight right": ("Bear right", "bear-right", "onto"), "sharp left": ("Turn sharp left", "turn-left", "on"), "sharp right": ("Turn sharp right", "turn-right", "on"),
+         "straight": ("Continue", "up", "on"), "": ("Turn", "up", "on")}
+_KIND = {"continue": ("Continue", "up", "on"), "merge": ("Merge", "up", "onto"), "ramp": ("Take the ramp", "bear-right", "onto"), "exit": ("Take the exit", "bear-right", "onto"),
+         "roundabout": ("At the roundabout, exit", "up", "onto"), "uturn": ("Make a U-turn", "turn-left", "on")}
 
 
-def _segments(roads, bbox, lat0):
-    """(x1, y1, x2, y2, label) arrays of every road segment near a box, in metres."""
-    w, s, e, n = bbox
-    rows, labels = [], []
-    for r in roads or []:
-        label = road_label(r.get("ref", ""), r.get("name", ""))
-        pts = r.get("pts") or []
-        for a, b in zip(pts, pts[1:]):
-            if max(a[0], b[0]) < w or min(a[0], b[0]) > e or max(a[1], b[1]) < s or min(a[1], b[1]) > n:
-                continue
-            rows.append((*_xy(a[0], a[1], lat0), *_xy(b[0], b[1], lat0)))
-            labels.append(label)
-    return rows, labels
-
-
-def turns(line, roads, max_steps=MAX_STEPS) -> list:
-    """The steps of a drive along `line` [(lon, lat), ...]: each stretch of it that runs along one named road of `roads` (the geo pack's
-    [{"ref", "name", "pts"}]) is a step, its verb from the angle between the stretch before and this one; a stretch on no named road is
-    "Head <compass>" at the start and joins the step before anywhere else. The longest steps are kept, in order, at most `max_steps`."""
-    import numpy as np
-    if not line or len(line) < 2:
-        return []
-    lat0 = sum(p[1] for p in line) / len(line)
-    pts = _resample(line, lat0)
-    pad = NEAR_M / 100_000 * 2
-    bbox = (min(p[0] for p in pts) - pad, min(p[1] for p in pts) - pad, max(p[0] for p in pts) + pad, max(p[1] for p in pts) + pad)
-    rows, labels = _segments(roads, bbox, lat0)
-    names = []
-    if rows:
-        seg = np.asarray(rows, dtype=float)
-        x1, y1, x2, y2 = seg[:, 0], seg[:, 1], seg[:, 2], seg[:, 3]
-        dx, dy = x2 - x1, y2 - y1
-        ll = np.maximum(dx * dx + dy * dy, 1e-9)
-        for p in pts:
-            px, py = _xy(p[0], p[1], lat0)
-            t = np.clip(((px - x1) * dx + (py - y1) * dy) / ll, 0, 1)
-            d = np.hypot(x1 + t * dx - px, y1 + t * dy - py)
-            k = int(np.argmin(d))
-            names.append(labels[k] if d[k] <= NEAR_M else "")
-    else:
-        names = [""] * len(pts)
-    # runs of one label, with their length
-    runs = []
-    for i in range(1, len(pts)):
-        km = geopack.km_between((pts[i - 1][1], pts[i - 1][0]), (pts[i][1], pts[i][0]))
-        label = names[i]
-        if runs and runs[-1]["road"] == label:
-            runs[-1]["km"] += km
-            runs[-1]["end"] = i
-        else:
-            runs.append({"road": label, "km": km, "start": i - 1, "end": i})
-    # a short stretch between two others is a junction: it joins the longer neighbour
-    changed = True
-    while changed and len(runs) > 1:
-        changed = False
-        for j, r in enumerate(runs):
-            if r["km"] < MIN_STEP_KM and 0 < j < len(runs) - 1:
-                into = j - 1 if runs[j - 1]["km"] >= runs[j + 1]["km"] else j + 1
-                runs[into]["km"] += r["km"]
-                runs[into]["start"], runs[into]["end"] = min(runs[into]["start"], r["start"]), max(runs[into]["end"], r["end"])
-                del runs[j]
-                changed = True
-                break
-        merged = []
-        for r in runs:   # neighbours with the same road, after a junction left
-            if merged and merged[-1]["road"] == r["road"]:
-                merged[-1]["km"] += r["km"]
-                merged[-1]["end"] = r["end"]
-            else:
-                merged.append(r)
-        runs = merged
-    # an unnamed stretch after the first joins the step before it (we cannot name it, so we do not tell it as a turn); a short unnamed end is the arrival
-    kept = []
-    for j, r in enumerate(runs):
-        if j and not r["road"] and kept:
-            kept[-1]["km"] += r["km"]
-            kept[-1]["end"] = r["end"]
-        else:
-            kept.append(r)
-    steps = []
-    for j, r in enumerate(kept):      # headings over about 300 m each side of a junction: a simplified line cuts its corners
-        a, b = pts[r["start"]], pts[min(r["start"] + HEAD_PTS, r["end"])]
-        if j == 0:
-            heading = COMPASS[int(((_bearing(a, b, lat0) + 22.5) % 360) // 45)]
-            steps.append(Step(f"Head {heading}" + (" on" if r["road"] else ""), r["road"], miles(r["km"]), "up"))
+def step_lines(raw) -> list:
+    """The drive told turn by turn: one Step for each of the router's own steps (gitaway.geo's shape: kind k, direction d, name n, number r, metres m, departure
+    heading b), the arrival left out, and a step that only goes on along the same road (the road changes its name or number, not its course) added to the one
+    before. Nothing is guessed: a road the router gives no name is told without one."""
+    out = []
+    for st in raw or []:
+        kind, side = str(st.get("k") or ""), str(st.get("d") or "")
+        road, km = road_label(st.get("r", ""), st.get("n", "")), float(st.get("m") or 0) / 1000
+        if kind == "arrive":
             continue
-        prev = kept[j - 1]
-        p1, p2 = pts[max(prev["end"] - HEAD_PTS, prev["start"])], pts[prev["end"]]
-        turn = (_bearing(a, b, lat0) - _bearing(p1, p2, lat0) + 540) % 360 - 180
-        side = "right" if turn > 0 else "left"
-        if abs(turn) < 25:
-            verb, ico = "Continue on", "up"
-        elif abs(turn) < 60:
-            verb, ico = f"Bear {side} onto", f"bear-{side}"
+        if kind == "continue" and out and (not road or road == out[-1][1]):
+            out[-1][2] += km
+            continue
+        if kind == "depart":
+            words = f"Head {COMPASS[int(((st['b'] + 22.5) % 360) // 45)]}" if isinstance(st.get("b"), (int, float)) else "Start"
+            icon, prep = "up", "on"
+        elif kind == "turn":
+            words, icon, prep = _TURN.get(side, _TURN[""])
+        elif kind == "keep":
+            words, icon, prep = (f"Keep {'left' if 'left' in side else 'right'}", "bear-left" if "left" in side else "bear-right", "on")
         else:
-            verb, ico = f"Turn {side} on", f"turn-{side}"
-        steps.append(Step(verb, r["road"], miles(r["km"]), ico))
-    if len(steps) > max_steps:
-        keep = sorted(sorted(range(1, len(steps)), key=lambda k: -steps[k].mi)[:max_steps - 1])
-        steps = [steps[0]] + [steps[k] for k in keep]
-    return steps
+            words, icon, prep = _KIND.get(kind, _KIND["continue"])
+            if kind in ("merge", "ramp", "exit") and "left" in side:
+                icon = "bear-left"
+        out.append([f"{words} {prep}" if road else words, road, km, icon])
+    return [Step(v, r, miles(k), i) for v, r, k, i in out]
 
 
 # ---- what the page draws -----------------------------------------------------------------------------------------------
@@ -244,7 +150,6 @@ class Next:
     steps: tuple = ()
     directions: str = ""
     sub: str = ""       # "Tomorrow starts with Ski school at 8:45 AM." on a day that is done
-    item_id: str = ""
     kind: str = ""      # the item's kind
     passes: str = ""    # on a flight: its sheet over the day, with everyone's boarding passes
 
@@ -261,16 +166,42 @@ class Pass:
     manage: str = ""    # the partner's Change or cancel page (F-198); "" until then
 
 
+UNKNOWN_PARTNERS = {"", "elsewhere", "gitaway", "unknown", "none"}       # what a template says when it does not name the partner (tripimport's default is "elsewhere")
+PARTNER_HOSTS = {"expedia": "expedia.com", "vrbo": "vrbo.com", "airbnb": "airbnb.com", "booking.com": "booking.com", "hotels.com": "hotels.com", "klook": "klook.com",
+                 "getyourguide": "getyourguide.com", "viator": "viator.com", "aviasales": "aviasales.com", "united": "united.com", "alaska airlines": "alaskaair.com",
+                 "delta": "delta.com", "american airlines": "aa.com", "southwest": "southwest.com", "jetblue": "jetblue.com", "hertz": "hertz.com", "avis": "avis.com",
+                 "enterprise": "enterprise.com", "national": "nationalcar.com", "budget": "budget.com"}      # a partner's own site: the only host its Change or cancel may open
+_HOST = re.compile(r"^[a-z0-9-]+(\.[a-z0-9-]+)+$")
+
+
+def partner_name(name) -> str:
+    """A booking's partner as the page names it, or "" when it is not known ("elsewhere", "GitAway", nothing): the pass then just says "Booked"."""
+    name = " ".join(str(name or "").split())[:40]
+    return "" if name.lower() in UNKNOWN_PARTNERS else name
+
+
+def safe_manage(url, partner) -> str:
+    """`url` when it is an https page on the partner's own site (the host is that site or a subdomain of it, plain letters, digits, dots and hyphens), else "".
+    GitAway is never the support centre, and a pass never links anywhere else."""
+    domain = PARTNER_HOSTS.get(partner_name(partner).lower())
+    try:
+        u = urlsplit(str(url or ""))
+    except ValueError:
+        return ""
+    host = (u.hostname or "").lower()
+    if not domain or u.scheme != "https" or not _HOST.match(host) or u.username or u.password or "\\" in str(url):
+        return ""
+    return str(url) if host == domain or host.endswith("." + domain) else ""
+
+
 def partner_of(b, kind, spec=None) -> tuple:
-    """F-198's hook: (partner name, its Change or cancel page) for one booking. Until F-198 stores the partner per booking it is the trip's own
-    "booked on" (an imported trip's template says where it was booked) and no page: the cockpit then shows "Booked on <partner>" with Details."""
-    if cal.is_imported(b):
-        plan = cal.plan_of(b)
-        return (plan.booked_on or "", "")
+    """F-198's hook: (partner name, its Change or cancel page) for one booking, through `partner_name` and `safe_manage`. A trip's one "booked on" is not each
+    booking's partner (it would put Expedia on a United flight), so until F-198 stores the partner of each booking there is none: the pass says "Booked" and
+    links Details (the booking's own sheet)."""
     return ("", "")
 
 
-def _when(d, today) -> str:
+def _when(d) -> str:
     return d.strftime("%a ") + str(d.day)
 
 
@@ -289,7 +220,7 @@ def passes(b, t, today, now_min, curl) -> list:
             home = s.id == "b-back" or x.dest == plan.legs[0].origin
             seats = len([p for p in (x.seats or "").split(",") if p.strip()])
             name, page = partner_of(b, "flight", s)
-            out.append(Pass("flight", f"Flight {'home' if home else 'in' if s.id == 'b-out' else ''} · {_when(x.depart.date(), today)}".replace("Flight  ·", "Flight ·"),
+            out.append(Pass("flight", f"Flight {'home' if home else 'in' if s.id == 'b-out' else ''} · {_when(x.depart.date())}".replace("Flight  ·", "Flight ·"),
                             f"{x.origin} → {x.dest} · {cal.fmt_time(x.depart.hour * 60 + x.depart.minute)}",
                             " · ".join(p for p in (x.name, f"{seats} seats" if seats else "") if p), mask(x.confirmation),
                             curl(day=(x.depart.date() - t.depart).days, booked=s.id), name, page))
@@ -300,7 +231,7 @@ def passes(b, t, today, now_min, curl) -> list:
             left = (h.check_out.date() - max(today, h.check_in.date())).days
             name, page = partner_of(b, "stay", s)
             eyebrow = f"Stay · {left} night{'s' if left != 1 else ''} left" if h.check_in.date() <= today < h.check_out.date() else f"Stay · {(h.check_out.date() - h.check_in.date()).days} nights"
-            out.append(Pass("stay", eyebrow, h.name, f"Check out {_when(h.check_out.date(), today)} · {cal.fmt_time(h.check_out.hour * 60 + h.check_out.minute)}",
+            out.append(Pass("stay", eyebrow, h.name, f"Check out {_when(h.check_out.date())} · {cal.fmt_time(h.check_out.hour * 60 + h.check_out.minute)}",
                             mask(h.confirmation), curl(day=max(0, (h.check_in.date() - t.depart).days), booked=s.id), name, page))
         car = specs.get("b-car-pick")
         if car:
@@ -308,20 +239,20 @@ def passes(b, t, today, now_min, curl) -> list:
             name, page = partner_of(b, "car", car)
             back = r.dropoff
             out.append(Pass("car", "Car" + (f" · {r.pickup_place} to {r.dropoff_place}" if r.pickup_place != r.dropoff_place else ""), r.car or f"{r.company} car",
-                            f"{r.company} · return {_when(back.date(), today)} {cal.fmt_time(back.hour * 60 + back.minute)}", mask(r.confirmation),
+                            f"{r.company} · return {_when(back.date())} {cal.fmt_time(back.hour * 60 + back.minute)}", mask(r.confirmation),
                             curl(day=max(0, (r.pickup.date() - t.depart).days), booked="b-car-pick"), name, page))
         return out
     flight, stay, car = cal.flight_of(b), cal.stay_of(b), cal.car_of(b)
     last = len(dates) - 1
     if flight:
         back = (dates[last], flight.back_depart_min) >= (today, now_min) and (dates[0], flight.depart_min) < (today, now_min)
-        out.append(Pass("flight", f"Flight {'home' if back else 'in'} · {_when(dates[last] if back else dates[0], today)}",
+        out.append(Pass("flight", f"Flight {'home' if back else 'in'} · {_when(dates[last] if back else dates[0])}",
                         f"{flight.airport} → {t.origin} · {cal.fmt_time(flight.back_depart_min)}" if back else f"{t.origin} → {flight.airport} · {cal.fmt_time(flight.depart_min)}",
                         flight.name, "", curl(day=last if back else 0, booked="b-back" if back else "b-out")))
     if stay:
-        out.append(Pass("stay", f"Stay · {last} night{'s' if last != 1 else ''}", stay.name, f"Check out {_when(dates[last], today)} · {cal.fmt_time(cal.CHECK_OUT)}", "", curl(day=0, booked="b-in")))
+        out.append(Pass("stay", f"Stay · {last} night{'s' if last != 1 else ''}", stay.name, f"Check out {_when(dates[last])} · {cal.fmt_time(cal.CHECK_OUT)}", "", curl(day=0, booked="b-in")))
     if car:
-        out.append(Pass("car", "Car", car.name, f"Return {_when(dates[last], today)}", "", curl(day=0, booked="b-car-pick") if any(x.id == "b-car-pick" for x in cal.booked_blocks(b, t)) else ""))
+        out.append(Pass("car", "Car", car.name, f"Return {_when(dates[last])}", "", curl(day=0, booked="b-car-pick") if any(x.id == "b-car-pick" for x in cal.booked_blocks(b, t)) else ""))
     return out
 
 
@@ -363,9 +294,9 @@ def _now_kicker(up, left, now_min, item) -> str:
     return f"Today · up next · {td.until(item.start - now_min)}"
 
 
-def next_leg(session, tv, item, pack_roads, ua=""):
+def next_leg(session, tv, item, ua=""):
     """(drive minutes, miles, steps, leave minute or None, minutes left or None) for driving to today's up-next `item` (from where the day puts you), read
-    from gitaway.geo's cache only. Unknown parts are 0, () or None."""
+    from gitaway.geo's cache only: the steps are the router's own (cached with the leg). Unknown parts are 0, () or None."""
     from gitaway.pages import trip as trippage
     got = trippage.leave_info(tv, item)
     at, drive, left = (got[0], got[1], got[2]) if got else (None, 0, None)
@@ -375,14 +306,14 @@ def next_leg(session, tv, item, pack_roads, ua=""):
         a = geo.coords(geo.as_place(origin), db, lookup=False) if origin else None
         b = geo.coords(geo.as_place(item.place), db, lookup=False) if item.place else None
         line = geo.route([(a[0], a[1]), (b[0], b[1])], db, lookup=False) if a and b else None
+        raw = geo.steps((a[0], a[1]), (b[0], b[1]), db) if a and b else None
     if line:
-        coords = line["coordinates"]
-        mi = miles(distance_km(coords))
-        steps = tuple(turns(coords, pack_roads))
+        mi = miles(distance_km(line["coordinates"]))
+        steps = tuple(step_lines(raw))
     return drive or 0, mi, steps, at, left
 
 
-def today_ticket(session, today, ua, pack_roads, curl=None) -> Next | None:
+def today_ticket(session, today, ua, curl=None) -> Next | None:
     """Up next on today (drawn by the trip page's own model, gitaway.pages.trip.load), with the next leg; None when the day is not today."""
     from gitaway.pages import trip as trippage
     with geo.cache_scope(session):
@@ -393,10 +324,10 @@ def today_ticket(session, today, ua, pack_roads, curl=None) -> Next | None:
         item = up.item
         if item is None:
             return Next("Today · all done", "You are all caught up", sub=up.detail)
-        drive, mi, steps, at, left = next_leg(session, tv, item, pack_roads, ua) if up.kicker.startswith("UP NEXT") else (0, 0.0, (), None, None)
+        drive, mi, steps, at, left = next_leg(session, tv, item, ua) if up.kicker.startswith("UP NEXT") else (0, 0.0, (), None, None)
         now_min = tv["clocks"][item.zone][1] if item.zone in tv["clocks"] else tv["now"]
         return Next(_now_kicker(up, left, now_min, item), item.title, clock(item.start), clock(at) if at is not None else "", drive, mi, steps,
-                    td.maps_url(item.place, ua) if item.place else "", item_id=item.id, kind=item.kind,
+                    td.maps_url(item.place, ua) if item.place else "", kind=item.kind,
                     passes=curl(day=today, booked=item.id) if curl and item.kind == "flight" else "")
 
 
@@ -432,6 +363,25 @@ def map_days(session, days_stops, kinds, box=None) -> list:
             out.append({"stops": [{k: v for k, v in p.items() if k != "flight"} for p in _unique(pts)], "route": [[round(x, 5), round(y, 5)] for x, y in line] or None,
                         "min": minutes})
     return out
+
+
+def map_data(session, pack_state="building", acts=None, n_days=None) -> dict:
+    """The paper map's data for the open trip: {state, box, km, pack, days}. The page draws it, and /trip/cockpit/map answers it again while the map waits for a
+    pack or for its first place, so places that arrive later show up without a reload. `pack_state` is what geopack.ensure said when there is no pack."""
+    if acts is None:
+        acts = cal.activities(session)
+    if n_days is None:
+        n_days = len(cal.days(cal.trip("", ses.booking(session))))
+    row = geopack.stored(session)
+    kinds = {a.id: (a.kind if a.kind in cal.KINDS else "fun") for a in acts}
+    stops = tripgeo.day_stops(session)
+    pts, anchor = geopack.trip_points(session)
+    box = geopack.parse_box(row["box"]) if row else geopack.region(pts, anchor)
+    state = "ready" if row else ("none" if box is None else pack_state if pack_state in ("building", "waiting") else "building")
+    return {"state": state, "box": list(box) if box else None, "km": [round(v, 2) for v in geopack.box_km(box)] if box else None,
+            "pack": {"key": row["key"], "shapes": f"/trip/cockpit/pack/{row['key']}.json", "light": f"/trip/cockpit/pack/{row['key']}-light.webp",
+                     "dark": f"/trip/cockpit/pack/{row['key']}-dark.webp"} if row else None,
+            "days": map_days(session, stops, kinds, box) if stops else [{"stops": [], "route": None, "min": 0} for _ in range(n_days)]}
 
 
 def _unique(pts):
@@ -504,7 +454,7 @@ def view(session, day="", ua="", curl=None, pack_state="building") -> View:
     ph, n = td.phase(t, today)
     today_idx = n if ph == "during" else None
     last = len(dates) - 1
-    open_day = int(day) if str(day).isdigit() and int(day) <= last else (n if ph == "during" else 0 if ph == "before" else last)
+    open_day = int(day) if str(day).isascii() and str(day).isdigit() and int(day) <= last else (n if ph == "during" else 0 if ph == "before" else last)
     summaries = td.day_summaries(dates, blocks, acts, today_idx)
     weather = dayweather.days(t)
     canvas_url = curl or (lambda **q: "")
@@ -514,20 +464,9 @@ def view(session, day="", ua="", curl=None, pack_state="building") -> View:
         booked = tuple(dict.fromkeys(x.on for x in lines if x.booked and x.on))
         out_days.append(Day(i, d.strftime("%a"), d.day, f"{d.strftime('%b')} {d.day}", summaries[i].head, tuple(lines), weather[i], summaries[i].state, booked,
                             canvas_url(day=i)))
-    row = geopack.stored(session)
-    pack_roads = geopack.roads_lonlat(json.loads(row["shapes"])) if row else []
-    ticket = today_ticket(session, today_idx, ua, pack_roads, curl) if today_idx is not None else None
-    kinds = {a.id: (a.kind if a.kind in cal.KINDS else "fun") for a in acts}
-    stops = tripgeo.day_stops(session)
-    pts, anchor = geopack.trip_points(session)
-    box = geopack.parse_box(row["box"]) if row else geopack.region(pts, anchor)
-    state = "ready" if row else ("none" if box is None else pack_state if pack_state in ("building", "waiting") else "building")
-    mapdata = {"state": state, "box": list(box) if box else None, "km": [round(v, 2) for v in geopack.box_km(box)] if box else None,
-               "pack": {"key": row["key"], "shapes": f"/trip/cockpit/pack/{row['key']}.json", "light": f"/trip/cockpit/pack/{row['key']}-light.webp",
-                        "dark": f"/trip/cockpit/pack/{row['key']}-dark.webp"} if row else None,
-               "days": map_days(session, stops, kinds, box) if stops else [{"stops": [], "route": None, "min": 0} for _ in dates], "open": open_day}
-    who = ses.current_traveler(session)
-    family = (who.name.split()[0] + "’s family") if who and who.name else "Your family"
+    ticket = today_ticket(session, today_idx, ua, curl) if today_idx is not None else None
+    mapdata = {**map_data(session, pack_state, acts, len(dates)), "open": open_day}
+    family = members.family_label(session.get("tenant_id"))      # the family's own name (its maker's), not the viewer's
     if ph == "during":
         eyebrow = f"{family} · day {n + 1} of {len(dates)} · {now.strftime('%a %b')} {now.day}, {cal.fmt_time(now_min)}"
     elif ph == "before":

@@ -42,8 +42,9 @@
   justify-content: flex-end; gap: 0.125rem; overflow: hidden; }
 .ck-sky canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .ck-temp { position: relative; z-index: 1; font: 720 1.875rem/1 var(--font-display); letter-spacing: -.04em; width: max-content; font-variant-numeric: tabular-nums; }
-.ck-word { position: relative; z-index: 1; font: 600 max(var(--text-min), 0.8125rem)/1.2 var(--font-body); max-width: 100%; width: max-content; overflow-wrap: anywhere; }
-.ck-src { position: relative; z-index: 1; font: 500 max(var(--text-min), 0.8125rem)/1.2 var(--font-body); opacity: .92; width: max-content; max-width: 100%; }
+.ck-word { position: relative; z-index: 1; font: 600 max(var(--text-min), 0.875rem)/1.2 var(--font-body); max-width: 100%; width: max-content; overflow-wrap: anywhere; }
+.ck-src { position: relative; z-index: 1; font: 500 max(var(--text-min), 0.875rem)/1.2 var(--font-body); opacity: .92; width: max-content; max-width: 100%; }
+.ck-temp:empty, .ck-word:empty, .ck-src:empty { display: none; }      /* a sky with no weather known says nothing */
 .ck-sky-wide { height: 6rem; flex-direction: row; justify-content: flex-start; align-items: flex-end; align-content: space-between; flex-wrap: wrap; column-gap: 0.75rem; }
 .ck-sky-wide .ck-temp { font-size: 2.25rem; }
 .ck-sky-wide .ck-word { padding-bottom: 0.25rem; font-size: 1rem; }
@@ -76,12 +77,15 @@
 .ck-lg-t { color: var(--ck-up-fg2); overflow-wrap: anywhere; } .ck-lg-t b { color: var(--ck-up-fg); font-weight: 650; }
 .ck-lg-d { color: var(--ck-up-fg2); font-size: max(var(--text-min), 0.875rem); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ck-acts { display: flex; align-items: center; flex-wrap: wrap; gap: 0.625rem; margin-top: auto; padding-top: 0.375rem; }
+.ck-more-s { display: flex; align-items: center; min-height: 3rem; padding-left: 2.5rem; cursor: pointer; list-style: none; font: 650 1rem/1.2 var(--font-body); color: var(--ck-up-fg2); }      /* the rest of the drive opens in place */
+.ck-more-s::-webkit-details-marker { display: none; }
+details.ck-more[open] > .ck-more-s { display: none; }
 .ck-plan { list-style: none; margin: 0.25rem 0 0; padding: 0; display: grid; gap: 0.375rem; }
 .ck-p { display: grid; grid-template-columns: 2.75rem minmax(0, 1fr); gap: 0.5rem; align-items: center; }
 .ck-p-t { font: 650 max(var(--text-min), 0.875rem)/1 var(--font-body); color: var(--ck-up-fg2); text-align: right; font-variant-numeric: tabular-nums; }
 .ck-p-b { display: flex; align-items: center; gap: 0.5rem; background: var(--kf); color: #FFFFFF; border-radius: 0.75rem; padding: 0.375rem 0.5rem; min-width: 0; }
-.ck-p-b b { font: 650 0.9375rem/1.2 var(--font-body); overflow-wrap: anywhere; min-width: 0; }
-.ck-p-b em { margin-left: auto; font: 650 max(var(--text-min), 0.8125rem)/1 var(--font-body); font-style: normal; background: rgb(255 255 255 / .22); padding: 0.25rem 0.375rem; border-radius: 0.375rem; flex: none; }
+.ck-p-b b { font: 650 1rem/1.2 var(--font-body); overflow-wrap: anywhere; min-width: 0; }
+.ck-p-b em { margin-left: auto; font: 650 max(var(--text-min), 0.875rem)/1 var(--font-body); font-style: normal; background: #FFFFFF; color: var(--kf); padding: 0.25rem 0.4375rem; border-radius: 0.375rem; flex: none; }      /* solid: 4.5:1 and more on every kind */
 .ck-tile { width: 1.625rem; height: 1.625rem; border-radius: 0.5rem; display: grid; place-items: center; background: rgb(255 255 255 / .22); flex: none; font-style: normal; }
 .ck-none { margin: 0; color: var(--ck-up-fg2); font-size: 1rem; }
 
@@ -107,15 +111,16 @@
 .ck-stub .ck-open { display: none; }
 .ck-d { display: grid; gap: 0.0625rem; }
 .ck-d b { font: 690 1.125rem/1.15 var(--font-display); letter-spacing: -.015em; }
-.ck-d span { font-size: 0.9375rem; color: var(--ink-2); overflow-wrap: anywhere; }
+.ck-d span { font-size: 1rem; color: var(--ink-2); overflow-wrap: anywhere; }
 .ck-items { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.375rem; }
-.ck-it { display: grid; grid-template-columns: 0.5rem minmax(0, 1fr); column-gap: 0.375rem; align-items: baseline; font-size: 0.9375rem; line-height: 1.25; }
+.ck-it { display: grid; grid-template-columns: 0.5rem minmax(0, 1fr); column-gap: 0.375rem; align-items: baseline; font-size: 1rem; line-height: 1.25; }
 .ck-it b { grid-column: 2; font-weight: 600; overflow-wrap: anywhere; }
 .ck-t { font-weight: 650; color: var(--ink-2); font-size: max(var(--text-min), 0.875rem); font-variant-numeric: tabular-nums; }
-.ck-it:nth-child(3) { display: none; }
+.ck-it:nth-child(3), .ck-more3 { display: none; }      /* a phone shows two items and says how many more */
+.ck-more { list-style: none; font-size: max(var(--text-min), 0.875rem); font-weight: 650; color: var(--ink-2); padding-left: 0.875rem; }
 .ck-dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--kf); transform: translateY(-0.0625rem); }
 .ck-foot { margin-top: auto; display: flex; flex-wrap: wrap; gap: 0.25rem; }
-.ck-on { display: inline-block; font: 650 max(var(--text-min), 0.8125rem)/1.35 var(--font-body); background: var(--ck-ok-t); color: var(--ck-ok); padding: 0.25rem 0.4375rem; border-radius: 0.375rem; overflow-wrap: anywhere; }
+.ck-on { display: inline-block; font: 650 max(var(--text-min), 0.875rem)/1.35 var(--font-body); background: var(--ck-ok-t); color: var(--ck-ok); padding: 0.25rem 0.4375rem; border-radius: 0.375rem; overflow-wrap: anywhere; }
 .ck-on svg { vertical-align: -0.0625rem; margin-right: 0.1875rem; }
 .ck-free { font-size: max(var(--text-min), 0.875rem); color: var(--ink-2); }
 
@@ -129,25 +134,28 @@
 .ck-pass-s { font-size: 1rem; overflow-wrap: anywhere; }
 .ck-pass .ck-perf { --perf: rgb(255 255 255 / .42); margin: 0.5625rem -0.9375rem 0.5rem; }
 .ck-pass-f { display: flex; align-items: center; flex-wrap: wrap; gap: 0.375rem 0.75rem; }
-.ck-bo { display: inline-flex; align-items: center; gap: 0.375rem; font: 650 0.9375rem/1.2 var(--font-body); }
+.ck-bo { display: inline-flex; align-items: center; gap: 0.375rem; font: 650 1rem/1.2 var(--font-body); }
 .ck-ck { width: 1.125rem; height: 1.125rem; border-radius: 50%; display: grid; place-items: center; background: #FFFFFF; color: var(--kf); flex: none; }
-.ck-ref { font-size: 0.9375rem; font-variant-numeric: tabular-nums; } .ck-ref b { font-weight: 700; letter-spacing: .04em; }
-.ck .ck-cxl { margin-left: auto; display: inline-flex; align-items: center; gap: 0.3125rem; min-height: 3rem; padding: 0 0.875rem; border-radius: var(--r-pill); background: rgb(255 255 255 / .2);
-  color: #FFFFFF; font: 650 0.9375rem/1 var(--font-body); text-decoration: none; }
-.ck .ck-cxl svg { color: #FFFFFF; }
+.ck-ref { font-size: 1rem; font-variant-numeric: tabular-nums; } .ck-ref b { font-weight: 700; letter-spacing: .04em; }
+.ck .ck-cxl { margin-left: auto; display: inline-flex; align-items: center; gap: 0.3125rem; min-height: 3rem; padding: 0 0.875rem; border-radius: var(--r-pill); background: #FFFFFF;
+  color: var(--kf); font: 650 1rem/1 var(--font-body); text-decoration: none; }      /* a solid white pill in the kind's ink: 4.5:1 and more on every kind */
+.ck .ck-cxl svg { color: var(--kf); }
 
 /* ---------- the paper map ---------- */
 .ck-map { position: relative; height: 16.875rem; border-radius: 1.375rem; background: var(--ck-stage); box-shadow: var(--shadow-sm); overflow: hidden; isolation: isolate; }
 .ck-paper { position: absolute; inset: 0; }
 .ck-map-tools { position: absolute; top: 0.625rem; left: 0.625rem; right: 8.5rem; display: flex; flex-wrap: wrap; gap: 0.375rem; z-index: 4; pointer-events: none; }
 .ck-tag { display: inline-flex; align-items: center; gap: 0.375rem; min-height: 1.875rem; padding: 0.25rem 0.6875rem; border-radius: var(--r-pill); background: var(--ck-card); box-shadow: var(--shadow-sm);
-  font: 650 max(var(--text-min), 0.8125rem)/1.2 var(--font-body); color: var(--ink); }
+  font: 650 max(var(--text-min), 0.875rem)/1.2 var(--font-body); color: var(--ink); }
 .ck-tag.ck-soft { display: none; color: var(--ink-2); font-weight: 550; }
 .ck .ck-btn-map { position: absolute; z-index: 4; right: 0.625rem; top: 0.625rem; min-height: 3rem; background: var(--ck-card); color: var(--ink); box-shadow: var(--shadow-md); }
 .ck .ck-btn-map svg { color: var(--ink); }
-.ck-cap { position: absolute; right: 0.625rem; bottom: 0.5rem; z-index: 4; margin: 0; font: 500 max(var(--text-min), 0.8125rem)/1 var(--font-body); color: var(--ink-2); background: var(--ck-card);
+.ck-cap { display: none; position: absolute; right: 0.625rem; bottom: 0.5rem; z-index: 4; margin: 0; font: 500 max(var(--text-min), 0.875rem)/1 var(--font-body); color: var(--ink-2); background: var(--ck-card);
   padding: 0.3125rem 0.5rem; border-radius: 0.4375rem; max-width: calc(100% - 1.25rem); }
-.ck-map-note { position: absolute; left: 0.625rem; bottom: 2.5rem; z-index: 4; margin: 0; max-width: 55%; font-size: max(var(--text-min), 0.875rem); line-height: 1.3; color: var(--ink);
+.ck-credits { margin: -0.375rem 0 0; display: flex; flex-wrap: wrap; align-items: center; column-gap: 0.25rem; font-size: max(var(--text-min), 0.875rem); color: var(--ink-2); }
+.ck-credits a, .ck-cap a { color: var(--ink-2); text-decoration: underline; text-underline-offset: 0.15em; }
+.ck-credits a { display: inline-flex; align-items: center; min-height: 3rem; }      /* 48px targets on a phone */
+.ck-map-note { position: absolute; left: 0.625rem; bottom: 0.625rem; z-index: 4; margin: 0; max-width: 70%; font-size: 1rem; line-height: 1.3; color: var(--ink);
   background: var(--ck-card); padding: 0.5rem 0.625rem; border-radius: 0.75rem; box-shadow: var(--shadow-sm); }
 
 @property --inv { syntax: '<number>'; inherits: true; initial-value: 1; }
@@ -181,9 +189,9 @@
 .pp-lbl.below::after { bottom: auto; top: -0.375rem; border-radius: 0.1875rem 0 0 0; }
 .pp-lbl .pp-ic { width: 1.625rem; height: 1.625rem; border-radius: 50%; display: grid; place-items: center; background: var(--kf); color: #FFFFFF; flex: none; }
 .pp-lbl em { font-style: normal; color: var(--ink-2); font-weight: 550; font-variant-numeric: tabular-nums; }
-.pp-lbl.minor { height: 1.875rem; padding: 0 0.625rem 0 0.1875rem; font-size: max(var(--text-min), 0.8125rem); } .pp-lbl.minor .pp-ic { width: 1.5rem; height: 1.5rem; }
+.pp-lbl.minor { height: 1.875rem; padding: 0 0.625rem 0 0.1875rem; font-size: max(var(--text-min), 0.875rem); } .pp-lbl.minor .pp-ic { width: 1.5rem; height: 1.5rem; }
 .pp-time { position: absolute; left: 0; top: 0; transform: translate(-50%, calc(-100% - 0.25rem)); display: inline-flex; align-items: center; gap: 0.3125rem; height: 1.75rem; padding: 0 0.625rem;
-  border-radius: var(--r-pill); background: var(--ink); color: var(--card); font: 650 max(var(--text-min), 0.8125rem)/1 var(--font-body); white-space: nowrap; box-shadow: var(--shadow-md); }
+  border-radius: var(--r-pill); background: var(--ink); color: var(--card); font: 650 max(var(--text-min), 0.875rem)/1 var(--font-body); white-space: nowrap; box-shadow: var(--shadow-md); }
 .pp-empty { position: absolute; inset: 0; display: grid; place-items: center; color: var(--ink-2); font-size: 1rem; }
 
 /* ---------- Open map: the street map, loaded only when tapped ---------- */
@@ -191,13 +199,36 @@
 .ck-sheet[hidden] { display: none; }
 .ck-scrim { position: absolute; inset: 0; background: rgb(0 0 0 / .32); }
 .ck-sheet-box { position: relative; width: 100%; max-width: 64rem; height: min(88dvh, 52rem); display: flex; flex-direction: column; background: var(--card); color: var(--ink);
-  border-radius: var(--r-lg) var(--r-lg) 0 0; box-shadow: var(--shadow-lg); overflow: hidden; }
+  border-radius: var(--r-lg) var(--r-lg) 0 0; box-shadow: var(--shadow-lg); overflow: hidden; padding-bottom: env(safe-area-inset-bottom, 0px); }
+html.ck-sheet-open, html.ck-sheet-open body { overflow: hidden; }      /* the page behind the street map does not scroll */
 .ck-sheet-h { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 0.75rem 0.75rem 1.125rem; }
 .ck-sheet-h b { flex: 1; font: 700 1.125rem/1.2 var(--font-display); }
 .ck-x { width: 3rem; height: 3rem; border: 0; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, var(--ink) 8%, transparent); color: var(--ink); cursor: pointer; }
 .ck-street { position: relative; flex: 1; min-height: 0; background: var(--ck-stage); }
 .ck-street-msg { position: absolute; inset: 0; display: grid; place-items: center; padding: 1.5rem; text-align: center; color: var(--ink-2); font-size: 1rem; line-height: 1.4; }
 .ck-street .maplibregl-ctrl-attrib { font-size: max(var(--text-min), 0.75rem); }
+
+/* ---------- a press (D-55): on touch what is tapped squashes to 0.96 (a card a third of that) on the spring; a mouse gets a short tint instead, no squash ---------- */
+@media (pointer: coarse) {
+  .ck-btn, .ck .ck-cxl, .ck-more-s, .ck-stub, .ck-pass { transition: transform var(--motion-quick) var(--motion-spring); }
+  .ck-btn:active, .ck .ck-cxl:active, .ck-more-s:active { transform: scale(0.96); }
+  .ck-stub:has(> .ck-hit:active), .ck-pass:active { transform: scale(0.987); }
+}
+@media (hover: hover) and (pointer: fine) {
+  .ck-btn, .ck .ck-cxl { transition: background-color var(--motion-quick) var(--motion-ease); }
+  .ck-btn-tonal:hover { background: color-mix(in srgb, var(--ink) 13%, transparent); }
+  .ck-btn-fill:hover { background: color-mix(in srgb, var(--ink) 86%, var(--card)); }
+  .ck .ck-cxl:hover { background: color-mix(in srgb, #FFFFFF 88%, var(--kf)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ck-btn, .ck .ck-cxl, .ck-more-s, .ck-stub, .ck-pass { transition: none; }
+}
+
+/* ---------- a tablet (721px up) runs the phone's layout at the 12px root: its targets stay 48px (the desktop below sets its own) ---------- */
+@media (min-width: 721px) {
+  .ck-btn, .ck .ck-cxl, .ck .ck-btn-map, .ck-more-s, .ck-credits a, .ck-head .ga-tb-psum, .ck-head .ga-tb-item, .ck-head .ga-tb-sw { min-height: 4rem; }
+  .ck-ticket .ck-btn-fill { min-height: 4.6667rem; }
+}
 
 /* ---------- the desktop: 1020px up, not the installed app. The page is the window under the top bar and never scrolls at 1440x900 and 1280x800. ---------- */
 @media (min-width: 1020px) and (not (display-mode: standalone)) {
@@ -255,7 +286,11 @@
   .ck-body { padding: 0.9167rem 1rem 1rem; }
   .ck-d b { font-size: 1.4167rem; } .ck-d span { font-size: 1.0833rem; }
   .ck-it { font-size: 1.0833rem; } .ck-t { font-size: 1rem; }
-  .ck-it:nth-child(3) { display: grid; }
+  .ck-it:nth-child(3) { display: grid; } .ck-more3 { display: block; } .ck-more2 { display: none; }
+  .ck-more { font-size: 1rem; }
+  .ck-more-s { min-height: 2.6667rem; padding-left: 3.3333rem; font-size: 1.1667rem; }
+  .ck-stub.is-open .ck-body { overflow-y: auto; }      /* the rest of the drive, opened, scrolls inside the ticket */
+  .ck-cap { display: block; } .ck-credits { display: none; }
   .ck-on { font-size: 1rem; padding: 0.3333rem 0.5rem; } .ck-free { font-size: 1rem; }
   .ck-up-t { font-size: 2.0833rem; }
   .ck-kv { gap: 0.5rem 1.5rem; } .ck-kv dt { font-size: 1rem; } .ck-kv dd { font-size: 1.6667rem; }
@@ -284,8 +319,7 @@
   .ck-sky { height: 6rem; padding-bottom: 0.8333rem; }
   .ck-temp { font-size: 2.1667rem; }
   .ck-title { font-size: 2.8333rem; }
-  .ck-lg:nth-child(n+3) { display: none; }
-  .ck-it:nth-child(3) { display: none; }
+  .ck-it:nth-child(3), .ck-more3 { display: none; } .ck-more2 { display: block; }      /* two items and the count of the rest, as on a phone; every step of the drive stays (the rest behind +N more) */
   .ck-up-t { font-size: 1.8333rem; }
   .ck-kv dd { font-size: 1.5rem; }
   .ck-pass .ck-perf { margin: 0.4167rem -1.25rem 0.4167rem; }

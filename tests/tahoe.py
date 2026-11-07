@@ -153,8 +153,34 @@ def geo_fetch(url, timeout=0):
         if (a, b) not in LEGS:
             raise OSError("no such drive in the fixture")
         line, minutes = _leg_line(*LEGS[(a, b)])
-        return {"code": "Ok", "routes": [{"duration": minutes * 60, "geometry": {"type": "LineString", "coordinates": line}}]}
+        return {"code": "Ok", "routes": [{"duration": minutes * 60, "geometry": {"type": "LineString", "coordinates": line}, "legs": [{"steps": osrm_steps(*LEGS[(a, b)], line)}]}]}
     raise OSError("the network is off in tests")
+
+
+IN_TOWN = {"d2", "d3", "d4", "d5", "d6"}      # the drives inside South Lake Tahoe, where OpenStreetMap names US 50 and CA 89
+
+
+def bearing(a, b) -> int:
+    """Degrees east of north from (lon, lat) a to b."""
+    x = (b[0] - a[0]) * math.cos(math.radians((a[1] + b[1]) / 2))
+    return int(math.degrees(math.atan2(x, b[1] - a[1]))) % 360
+
+
+def osrm_steps(route, i, line) -> list:
+    """The design's OSRM steps of one leg (docs/design/cockpit/data/geo.js keeps the steps over 800 m), in OSRM's own JSON: a departure first (heading from
+    the line), an arrival last, road numbers as `ref` and names as `name`."""
+    def name_ref(road):
+        if route in IN_TOWN and road in ROAD_NAMES:
+            return ROAD_NAMES[road], road
+        return ("", road) if re.match(r"^(I|US|CA|SR|NV) ?\d", road) else (road, "")
+    head = bearing(line[0], line[1])
+    design = geo_data()["routes"][route]["alts"][0]["legs"][i]["steps"]
+    out = [] if design and design[0]["type"] == "depart" else [{"maneuver": {"type": "depart", "bearing_after": head}, "name": "", "ref": "", "distance": 400.0}]
+    for st in design:
+        n, r = name_ref(st["road"])
+        man = {"type": st["type"], **({"modifier": st["mod"]} if st["mod"] else {}), **({"bearing_after": head} if st["type"] == "depart" else {})}
+        out.append({"maneuver": man, "name": n, "ref": r, "distance": st["km"] * 1000})
+    return out + [{"maneuver": {"type": "arrive"}, "name": "", "ref": "", "distance": 0}]
 
 
 def overpass_answer() -> dict:
@@ -211,14 +237,15 @@ def pack_transport(url, data=None, timeout=0):
     raise OSError("the network is off in tests")
 
 
-def seed(client, monkeypatch, *, plans=True, maps=True):
-    """Import the trip for the person `client` is signed in as, add the plans and fill the map cache (Nominatim and OSRM answered by `geo_fetch`)."""
+def seed(client, monkeypatch, *, plans=True, maps=True, who="ari"):
+    """Import the trip for the person `client` is signed in as (`who`: "ari", "sam" or an email), add the plans and fill the map cache (Nominatim and OSRM
+    answered by `geo_fetch`)."""
     from gitaway import geo, tripcal as cal, tripgeo
     from gitaway import familydb
     from tests.test_signin import person
     r = client.post("/trips/import/save", data={"text": TEMPLATE}, follow_redirects=False)
     assert r.status_code in (302, 303), r.text[:300]
-    me = person("ari")
+    me = person(who)
     if plans:
         for day, s, e, title, kind in PLANS:
             h1, m1 = map(int, s.split(":"))

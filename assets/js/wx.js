@@ -18,7 +18,8 @@
     cloud: { snow: 0.04, wind: 0.22, sun: 0.22, cloud: 0.9 },
     snow: { snow: 1, wind: 0.42, sun: 0, cloud: 1 },
     flurry: { snow: 0.34, wind: 0.22, sun: 0.35, cloud: 0.6 },
-    wind: { snow: 0, wind: 1, sun: 0.6, cloud: 0.35 }
+    wind: { snow: 0, wind: 1, sun: 0.6, cloud: 0.35 },
+    plain: { snow: 0, wind: 0, sun: 0, cloud: 0 }       // no weather known: a plain sky that claims nothing
   };
   function rng(seed) { var s = seed >>> 0; return function () { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
   function reduced() { return reducedQ.matches; }
