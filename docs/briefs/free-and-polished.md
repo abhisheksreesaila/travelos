@@ -54,6 +54,12 @@ Status: approved (2026-11-07, the captain: "A with a mix here and there … lets
   - travel ads, later, which are fine on a travel site
   - The worst case is the server bill.
 
+## Later (ideas the captain named, 2026-11-07)
+- **Cover page** as a 3D scroll world that tells the story ("Forget the book. Go travel.") in one real place. Prototypes are in docs/design/cover3d/.
+- **Outreach** after the redesign: email about 50 people and ask them to contribute. The captain publishes first: their own real trips, posted anonymously.
+- **Fin Explorer:** "connect your Fin Explorer account and see how much you can travel". A budget link to the captain's other product.
+- **Money from the network:** ads on a travel site (no privacy cost), creator brand deals, the creator economy. Figure it out the way GitHub did, after the foundation is in.
+
 ## Not now
 - Paid plans and creator discount codes.
 - Checkout inside GitAway of any kind (Expedia Rapid, LiteAPI, Duffel). GitAway stays a front door, not a seller.
