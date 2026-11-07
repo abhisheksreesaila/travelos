@@ -68,7 +68,7 @@ def test_the_early_preview_label_opens_its_line_and_esc_closes_it(browser, base_
     signed_in, signed_out = context(browser, viewport, "light"), context(browser, viewport, "light")
     try:
         published(signed_in, base_url)
-        for ctx, path in ((signed_out, "/creators"), (signed_in, "/trip/canvas?day=1")):
+        for ctx, path in ((signed_out, "/creators"), (signed_out, "/signin?next=%2Fstart"), (signed_out, f"/plan?to=la&{TRIP}"), (signed_in, "/trip/canvas?day=1"), (signed_in, "/trip/family")):
             page = ctx.new_page()
             page.goto(base_url + path, wait_until="networkidle")
             label = page.locator(".ga-preview-sum:visible")
