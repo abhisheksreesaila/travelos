@@ -245,6 +245,8 @@ class Next:
     directions: str = ""
     sub: str = ""       # "Tomorrow starts with Ski school at 8:45 AM." on a day that is done
     item_id: str = ""
+    kind: str = ""      # the item's kind
+    passes: str = ""    # on a flight: its sheet over the day, with everyone's boarding passes
 
 
 @dataclass(frozen=True)
@@ -380,7 +382,7 @@ def next_leg(session, tv, item, pack_roads, ua=""):
     return drive or 0, mi, steps, at, left
 
 
-def today_ticket(session, today, ua, pack_roads) -> Next | None:
+def today_ticket(session, today, ua, pack_roads, curl=None) -> Next | None:
     """Up next on today (drawn by the trip page's own model, gitaway.pages.trip.load), with the next leg; None when the day is not today."""
     from gitaway.pages import trip as trippage
     with geo.cache_scope(session):
@@ -394,7 +396,8 @@ def today_ticket(session, today, ua, pack_roads) -> Next | None:
         drive, mi, steps, at, left = next_leg(session, tv, item, pack_roads, ua) if up.kicker.startswith("UP NEXT") else (0, 0.0, (), None, None)
         now_min = tv["clocks"][item.zone][1] if item.zone in tv["clocks"] else tv["now"]
         return Next(_now_kicker(up, left, now_min, item), item.title, clock(item.start), clock(at) if at is not None else "", drive, mi, steps,
-                    td.maps_url(item.place, ua) if item.place else "", item_id=item.id)
+                    td.maps_url(item.place, ua) if item.place else "", item_id=item.id, kind=item.kind,
+                    passes=curl(day=today, booked=item.id) if curl and item.kind == "flight" else "")
 
 
 def map_days(session, days_stops, kinds, box=None) -> list:
@@ -513,7 +516,7 @@ def view(session, day="", ua="", curl=None, pack_state="building") -> View:
                             canvas_url(day=i)))
     row = geopack.stored(session)
     pack_roads = geopack.roads_lonlat(json.loads(row["shapes"])) if row else []
-    ticket = today_ticket(session, today_idx, ua, pack_roads) if today_idx is not None else None
+    ticket = today_ticket(session, today_idx, ua, pack_roads, curl) if today_idx is not None else None
     kinds = {a.id: (a.kind if a.kind in cal.KINDS else "fun") for a in acts}
     stops = tripgeo.day_stops(session)
     pts, anchor = geopack.trip_points(session)

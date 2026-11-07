@@ -54,8 +54,9 @@ def test_the_menu_fits_the_screen_and_switching_opens_the_other_trip(family_with
     assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth")
     expect(page.locator(f'{MENU} .ga-tb-sw[aria-current="true"]')).to_have_count(1)
     page.click(f"{MENU} .ga-tb-sw:not([aria-current])")
-    page.wait_for_url(re.compile(r"/trip/canvas"))
-    page.goto(page.url.split("?")[0] + "?day=1")
+    page.wait_for_url(re.compile(r"/trip/cockpit"))                                           # the trip's home (F-201; it was the day view)
+    expect(page.locator("#ck-stub-1")).to_contain_text("Venice Canals stroll")                 # the other trip, its plan on its day
+    page.goto(page.url.split("/trip/cockpit")[0] + "/trip/canvas?day=1")
     expect(page.locator(".cz-gb", has_text="Venice Canals stroll").first).to_be_visible()
 
 

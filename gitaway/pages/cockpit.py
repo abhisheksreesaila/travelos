@@ -77,6 +77,8 @@ def up_body(t, day_href):
     legs = [Li(Span(icon(s.icon, 15, 2.6), cls="ck-lg-i"), Span(s.verb, " ", B(s.road) if s.road else "", cls="ck-lg-t"), Span(f"{s.mi:g} mi", cls="ck-lg-d"), cls="ck-lg")
             for s in t.steps]
     acts = [A(icon("nav", 16, 2.4), "Start directions", href=t.directions, target="_blank", rel="noopener", cls="ck-btn ck-btn-fill", id="ck-go")] if t.directions else []
+    if t.kind == "flight" and t.passes:      # a flight day: everyone's boarding passes are in the flight's own sheet, one tap from home
+        acts.append(A(icon("ticket", 16, 2.4), "Boarding passes", href=t.passes, cls="ck-btn ck-btn-tonal", id="ck-passes"))
     acts.append(A(icon("calendar", 16, 2.4), "Today’s plan", href=day_href, cls="ck-btn ck-btn-tonal", data_open_day="today"))
     return Div(Span(t.kicker, cls="ck-eyebrow", id="ck-kicker"), H2(t.title, cls="ck-up-t"),
                Dl(*[Div(Dt(label), Dd(value), cls="ck-kv-i") for label, value in kv], cls="ck-kv") if kv else "",

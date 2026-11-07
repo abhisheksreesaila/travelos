@@ -271,12 +271,18 @@ def _slide(p, f, i, n):
         cls="gp-slide", id=f"gp-{p['id']}", data_pass=p["id"], data_name=name, role="group", aria_label=f"{name}, {i + 1} of {n}")
 
 
+def _today(session):
+    """Where Close goes: today's day view, where the flight card with everyone's passes is (F-201: a bare /trip is the cockpit now). A late import: the canvas imports this module."""
+    from gitaway.pages import tripcanvas
+    return tripcanvas.today_url(session)
+
+
 def gate_page(session, f, ps):
     n = len(ps)
     dots = [Button(type="button", aria_label=p["traveller"], aria_current="true" if i == 0 else "false", data_dot=str(i), cls="gp-dot") for i, p in enumerate(ps)]
     return (Title("GitAway · Boarding passes"),
             *styles(*HEAD),
-            Div(Div(Span(icon("sun", 18, 2.4), "Brightness up", cls="gp-bright"), A(icon("x", 22, 2.6), href="/trip", cls="gp-close", id="gp-close", aria_label="Close"), cls="gp-top"),
+            Div(Div(Span(icon("sun", 18, 2.4), "Brightness up", cls="gp-bright"), A(icon("x", 22, 2.6), href=_today(session), cls="gp-close", id="gp-close", aria_label="Close"), cls="gp-top"),
                 Div(*[_slide(p, f, i, n) for i, p in enumerate(ps)], cls="gp-track", id="gp-track", tabindex="0", aria_label="Boarding passes, swipe for the next person"),
                 Div(Button(icon("chev-left", 22, 2.6), type="button", id="gp-prev", cls="gp-round", aria_label="Previous person"), Div(*dots, cls="gp-dots", id="gp-dots") if n > 1 else "",
                     Button(icon("chev-right", 22, 2.6), type="button", id="gp-next", cls="gp-round", aria_label="Next person"), cls="gp-pager", hidden=n < 2),

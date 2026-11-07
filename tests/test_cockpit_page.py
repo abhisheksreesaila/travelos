@@ -184,3 +184,14 @@ def test_a_pack_of_an_older_form_waits_for_its_rebuild_instead_of_breaking_the_p
     geopack.forget_failures()
     monkeypatch.setattr(geopack, "TRANSPORT", tahoe.pack_transport)
     assert data_of(tahoe_trip.get("/trip/cockpit").text)["state"] == "ready" and geopack.stored(me)["version"] == geopack.VERSION
+
+
+def test_on_a_flight_day_todays_ticket_opens_everyones_boarding_passes(tahoe_trip, monkeypatch):
+    from datetime import datetime, timezone
+    at(monkeypatch, datetime(2026, 12, 26, 20, 20, tzinfo=timezone.utc))       # Saturday 12:20 PM: the car is back, the flight home is up next
+    html = bare(tahoe_trip.get("/trip/cockpit").text)
+    passes = tag(html, "id", "ck-passes")
+    assert passes and passes["href"] == "/trip/canvas?day=7&amp;booked=b-back"     # the flight's sheet: every traveller's pass, the gate view
+    assert "Boarding passes" in html
+    at(monkeypatch, tahoe.NOW)
+    assert 'id="ck-passes"' not in tahoe_trip.get("/trip/cockpit").text           # not on a day without a flight
