@@ -34,6 +34,7 @@ from sqlalchemy import text
 
 from gitaway import familydb_import, hostdb
 from gitaway.familydb_canvas import CANVAS_INDEXES, CANVAS_TABLES
+from gitaway.familydb_geopack import GEOPACK_TABLES
 from gitaway.familydb_import import IMPORT_TABLES
 from gitaway.familydb_passes import PASS_INDEXES, PASS_TABLES
 from gitaway.familydb_prefs import PREF_TABLES
@@ -194,6 +195,7 @@ FAMILY_TABLES.extend(PREF_TABLES)  # the family's own settings, e.g. vegetarian 
 FAMILY_TABLES.extend(PARTNER_TABLES)  # clicks on partner links and the bookings made on them (see familydb_partners)
 FAMILY_TABLES.extend(PUBLISH_TABLES)  # what a trip's public creator page is made of (F-181, see familydb_publish)
 FAMILY_TABLES.extend(CANVAS_TABLES)  # parts, steps and lists of the trip canvas (F-080, see familydb_canvas)
+FAMILY_TABLES.extend(GEOPACK_TABLES)  # the paper map's relief and shapes for each trip (F-201, see familydb_geopack)
 
 FAMILY_INDEXES = [  # (table, columns, unique, name)
     ("bookings", ["trip_id"], True, "ux_bookings_trip"),
