@@ -1196,14 +1196,17 @@ Brief: docs/briefs/free-and-polished.md · Design: docs/design/reskin/README.md 
 - [ ] every existing page renders in light and dark with contrast at least 4.5:1 and phone tap targets at least 48px (a browser test sweeps the main pages in both modes)
 - [ ] colour still means a kind, never a day; behaviour unchanged (existing tests pass)
 
-## F-201 The trip cockpit: Ticket line [todo]
-Brief: docs/briefs/free-and-polished.md · Design: docs/design/cockpit/3-ticket.html and README.md (Direction 3) · Needs: F-200 tokens; F-198 booking lanes; F-203 weather; F-204 routes
-- [ ] the week as a line of day stubs, each with its own living sky (core/wx.js engine) and the day's times; today's stub open in ink as Up next with the next leg turn by turn
-- [ ] bookings as wallet passes with "Booked on <partner>" and "Change or cancel" to the partner; reference numbers masked
-- [ ] the paper map tilted in CSS 3D with stand-up place labels, built once per trip region (relief image + shapes, about 120 KB, cached with the trip; tools/fetch_geo.py and gen_relief.py made part of the app); tapping a day re-flies it; works offline once loaded
-- [ ] "Open map" loads a real street map (MapLibre + OpenFreeMap) only when tapped
-- [ ] web at 1440 first, the phone at 390 alongside; Liquid motion on the phone, the calm fade on desktop; reduced motion is a fade
-- [ ] tested on the founder's Tahoe trip (Dec 19-26, SFO to Reno, 2 adults + kids 8 and 11)
+## F-201 The trip cockpit: Ticket line [review]
+Brief: docs/briefs/free-and-polished.md · Design: docs/design/cockpit/3-ticket.html and README.md (Direction 3) · Needs: F-200 tokens; F-198 booking lanes; F-203 weather; F-204 routes · Decisions: D-219 to D-228 (docs/decisions.md; expect renumbering on merge)
+- [x] the week as a line of day stubs, each with its own living sky (`assets/js/wx.js`, the design's engine; weather through `gitaway/dayweather.py`, today's sample weather until F-203) and the day's times; today's stub open in ink as Up next with the next leg turn by turn (`cockpit.turns`: gitaway.geo's cached line matched to the pack's named roads, D-221)
+- [x] bookings as wallet passes with "Booked on <partner>" (F-198's hook `cockpit.partner_of`: the trip's own "booked on" until then) and Details to the booking's sheet; "Change or cancel" to the partner appears when F-198 gives its page; reference numbers masked (`••821`, never whole on the page)
+- [x] the paper map tilted in CSS 3D with stand-up place labels (screen-space, D-224), built once per trip region (`gitaway/geopack.py` from tools/fetch_geo.py and gen_relief.py: relief WebP light and dark plus shapes, 50-110 KB a mode, table `geo_packs`, background thread, TRANSPORT seam and polite gates); tapping a day re-flies it; works offline once loaded (the service worker keeps the pack)
+- [x] "Open map" loads a real street map (MapLibre 5.24.0 with SRI + OpenFreeMap) only when tapped
+- [x] web at 1440 first, the phone at 390 alongside; Liquid motion on the phone (the ticket grows out of the stub), the calm fade on desktop (the map's camera eases on --motion-zoom, nothing else moves); reduced motion is a fade
+- [x] tested on the founder's Tahoe trip (Dec 19-26, SFO to Reno, 2 adults + kids 8 and 11): `tests/tahoe.py` with real places, OSRM lines and elevation from the design's data, no network
+- [x] the trip's home: a bare `/trip` opens the cockpit; every function stays one tap away (Open the day / Today's plan for plans, notes and chat; Ask and Family in the tab bar and the top bar; the trip menu) (D-219)
+- [x] proven on the running app at 390, 1440 and 1280x800, light and dark (screens in docs/report/f201-*.png)
+Not yet seen (needs the founder or other tickets): real snow skies need F-203's weather; per-booking partners and Change or cancel need F-198; the founder's real trip needs its plans named after places that OpenStreetMap knows (a plan title like "Snowshoe at Taylor Creek" geocodes only if Nominatim finds it) for its stops and legs to appear.
 
 ## F-202 Book this trip: a book of tickets [todo]
 Brief: docs/briefs/free-and-polished.md · Design: docs/design/cockpit/3-ticket.html (Book) · Needs: F-198, F-201

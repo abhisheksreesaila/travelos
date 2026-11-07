@@ -451,13 +451,13 @@ def register(app):
     def trip(session, request, tab: str = "", day: str = "", add: str = "", new: str = "", title: str = "", kind: str = "", at: str = ""):
         if (r := _guard(session)):
             return r
-        if not request.url.query:      # F-092: Today is the day view; this page stays (with a query) for its tabs, its days and the add sheet
+        if not request.url.query:      # F-201: the trip's home is the cockpit (it was the day view, F-092); this page stays (with a query) for its tabs, its days and the add sheet
             try:
-                tripgeo.warm(session)  # the app opens here: fill the map cache for Leave by, at most once an hour (F-068)
+                tripgeo.warm(session)  # the app opens here: fill the map cache for Leave by and the paper map, at most once an hour (F-068)
             except Exception:
                 log.exception("could not start the map fill")
-            from gitaway.pages import tripcanvas
-            return RedirectResponse(tripcanvas.today_url(session), status_code=303)
+            from gitaway.pages import cockpit
+            return RedirectResponse(cockpit.cockpit_url(), status_code=303)
         ua = request.headers.get("user-agent", "")
         sheet = {} if add == "1" else None
         if sheet is not None and (title or kind or at):      # Around you's "Add to plan": the sheet opens with the place's name, its kind and the next free hour
