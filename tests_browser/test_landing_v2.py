@@ -1,4 +1,5 @@
-"""F-060: Landing v2 in a real browser: no sideways scroll, tiles that animate on hover and focus, a calendar that plays and rests complete."""
+"""F-060: Landing v2 in a real browser: no sideways scroll, tiles that animate on hover and focus, a calendar that plays and rests complete.
+Since F-206 this landing is what a signed-in person sees at / (a stranger gets the cover, tests_browser/test_cover.py), so the page is opened signed in."""
 import pytest
 
 from tests_browser.helpers import PHONE
@@ -16,6 +17,7 @@ def landing(browser, base_url):
         ctx = browser.new_context(viewport=viewport, reduced_motion=motion)
         ctx.set_default_timeout(8000)
         made.append(ctx)
+        ctx.request.post(f"{base_url}/signin", form={"email": "ari.rivera@example.com", "next": "/", "intent": "save"}, max_redirects=0)
         page = ctx.new_page()
         page.goto(f"{base_url}/")
         return page
