@@ -149,7 +149,7 @@ def site_footer(links=()):
     """The footer. `links` is a list of (label, href) shown as a small nav; the landing puts the header's old links here."""
     return Footer(
         Span("GitAway", cls="ga-brand-name"),
-        Span("Trips shared by travelers and creators. Sample data only: no real bookings or payments." if showcase.on() else "Plan a trip together: flights, stays and days on one calendar. Booking prices are samples; nothing is booked."),
+        Span("Trips shared by travelers and creators. Sample data only: no real bookings or payments." if showcase.on() else "Plan a trip together: flights, stays and days on one calendar. You book on the partners' own sites; GitAway never takes payment."),
         *((Nav(*[A(label, href=href) for label, href in links], cls="ga-footer-nav", aria_label="More"),) if links else ()),
         Nav(A("Privacy", href="/privacy"), A("Terms", href="/terms"), cls="ga-footer-nav", aria_label="Legal"),
         cls="ga-footer ga-wrap",

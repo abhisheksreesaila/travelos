@@ -651,7 +651,8 @@ def workspace(f, h, c, overlay=(), head=(), x="", v="", stay=None, trip=None, fl
 def register(app):
     @app.get("/plan")
     def plan(request, session, f: str = "", h: str = "", c: str = "", x: str = "", v: str = "", rooms: str = None, add: str = None,
-             fare: str = None, bags: str = None, d: str = "", r: str = "", a: str = "", k: str = "", to: str = "", via: str = "", home: str = "", focus: str = ""):
+             fare: str = None, bags: str = None, d: str = "", r: str = "", a: str = "", k: str = "", to: str = "", via: str = "", home: str = "", focus: str = "",
+             place: str = "", iata: str = ""):
         trip = resolve_trip(d, r, a, k, to, home, focus)
         creator = affiliate.claimed_via(request, via)     # F-184, F-182: "Plan this trip" on a creator's own page: remember whose trip this is for 30 days, so /go can use their marker
         cookie_header = cookie(affiliate.COOKIE, creator, **affiliate.cookie_args()) if creator else None
@@ -659,10 +660,11 @@ def register(app):
             cookie_header = cookie(affiliate.COOKIE, "", max_age=0, path="/")      # F-194: planning from a trip that waits for the captain forgets an earlier trip's creator
         if creator:
             stats.count_plan(request, session, creator)    # F-192: and it is one "Plan this trip" tap on that trip
-        if not showcase.on() and (affiliate.valid_via(via) or affiliate.valid_via(request.cookies.get(affiliate.COOKIE))):
-            # F-195: a reader who came from a creator's trip, off the showcase, is not shown the invented catalog: one honest card per lane
-            bad = home.strip() and not catalog.clean_home(home)
-            body = plan_search.search_page(trip, via=affiliate.valid_via(via), home_raw=home.strip().upper() if bad else "", error=catalog.BAD_HOME if bad else "")
+        if place.strip() or not showcase.on():
+            # F-198: off the showcase nobody is shown the invented catalog (F-195 did it for a creator's readers), and a typed place is any destination: one honest card per lane
+            search, errors = plan_search.search_from(place, iata, d, r, a, k, to, home, focus)
+            raw = {n: v.strip().upper() for n, v in (("home", home), ("iata", iata)) if v.strip()} | ({"place": place} if place else {}) | {n: v for n, v in (("d", d), ("r", r), ("a", a), ("k", k)) if v}
+            body = plan_search.search_page(search, via=affiliate.valid_via(via), raw=raw, errors=errors)
             return (body, cookie_header) if cookie_header else body
         picks = resolve_pick(f, h, c, trip)
         stay, flight = resolve_stay(picks[1], rooms, add, trip), resolve_flight(picks[0], fare, bags, trip)

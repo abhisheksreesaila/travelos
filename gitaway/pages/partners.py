@@ -4,6 +4,7 @@ GET  /go/<offer id>?to=&d=&r=&a=&k=         log the click, then 302: with TRAVEL
 GET  /sandbox/<partner>/<click>?o=&...      a stand-in for the partner's checkout: the offer, its price, "Complete booking on <partner>"
 POST /sandbox/<partner>/<click>             the simulated conversion: recorded, and added to the family's trip as "Booked elsewhere · <partner>"
 GET  /sandbox/<partner>/<click>/done        says so
+GET  /book/<lane>?site=&place=&d=&r=&a=&k=  F-198: a booking lane's click, logged, then 302 to the partner (paying or plain); any destination, no keys needed
 GET  /partners                              the family's clicks and bookings with SubID, status and price at the partner (signed in); commission is on /admin (F-185)
 
 Writes are the editor role's like every other POST (gitaway/access.py): a viewer cannot book. Without the showcase, /sandbox is 404, /go is 404
@@ -19,7 +20,7 @@ from starlette.responses import RedirectResponse
 from gitaway import affiliate, catalog, importer, partners, reports, session as ses, showcase
 from gitaway.icons import icon
 from gitaway.layout import page, styles
-from gitaway.partners import log, statistics, travelpayouts
+from gitaway.partners import log, places, registry, statistics, travelpayouts
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/partners.css"),)
 _CLICK = re.compile(r"[0-9a-f]{10}")
@@ -152,6 +153,33 @@ def register(app):
         if offer.id.startswith("search-"):     # there is no stand-in checkout for a search: locally it goes straight to the partner's own page
             return RedirectResponse(partner.target_url(offer, trip), status_code=302)
         return RedirectResponse(_sandbox_path(partner, click, offer, trip), status_code=302)
+
+    @app.get("/book/{lane}")
+    def book(request, session, lane: str, site: str = "", place: str = "", iata: str = "", d: str = "", r: str = "", a: str = "", k: str = "", home: str = "", via: str = ""):
+        """F-198: one click on a booking lane. The link is built again here from the trip's words (a click names a lane and a site, never a URL), logged for a signed-in family,
+        and the family is sent on: to the paying partner with our marker or a tracked link, or to the plain search. Works with no keys at all (plain links need none)."""
+        from gitaway.pages import plan_search
+        search, errors = plan_search.search_from(place, iata, d, r, a, k, home=home)
+        found = registry.find(lane, site, search) if search and not errors else None
+        if not found:
+            return showcase.not_found()
+        clicked_on = affiliate.claimed_via(request, via)
+        creator = clicked_on or affiliate.valid_via(request.cookies.get(affiliate.COOKIE))
+        waiting = affiliate.on_waiting_trip(request)
+        creator = "" if waiting else creator
+        q = urlencode(plan_search.query(search, iata=places.clean_iata(iata)))
+        sub = log.record_lane_click(session, log.new_click_id(), found, search, q, creator)
+        own = affiliate.marker_for(creator) if creator and found.paid and found.site == "aviasales" else ""
+        if creator:
+            me = ses.current_traveler(session)
+            who = f"u:{me.id}" if me else reports.ip_hash(reports.client_ip(request))
+            affiliate.log_click(creator, found.site, lane, bool(own), who)
+        go_to = RedirectResponse(registry.go_url(found, sub, own), status_code=302)
+        if clicked_on:
+            go_to.set_cookie(affiliate.COOKIE, clicked_on, **affiliate.cookie_args())
+        elif waiting and affiliate.COOKIE in request.cookies:
+            go_to.delete_cookie(affiliate.COOKIE, path="/")
+        return go_to
 
     @app.get("/sandbox/{partner}/{click}")
     def sandbox(session, partner: str, click: str, o: str = "", d: str = "", r: str = "", a: str = "", k: str = ""):

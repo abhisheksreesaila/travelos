@@ -45,6 +45,24 @@ def record_click(session, click_id, offer, trip, partner, via="") -> str:
     return sub
 
 
+def lane_sub_id(session, search, lane, via="") -> str:
+    """The SubID of a click on a booking lane (F-198): like `sub_id`, with the place's slug (letters and digits) for the catalog key, so any destination splits in the report."""
+    family = hashlib.sha256(str((session or {}).get("tenant_id") or "").encode()).hexdigest()[:6] if (session or {}).get("tenant_id") else "anon"
+    return f"{family}_{search.place.slug}_{search.depart:%y%m%d}_{lane}" + (f"_{via.replace('-', '_')}" if via else "")
+
+
+def record_lane_click(session, click_id, link, search, query, via="") -> str:
+    """Log a click on a booking lane for the signed-in person's family (a signed-out click is not logged, D-23). Returns its SubID. No price: the partner shows today's."""
+    sub = lane_sub_id(session, search, link.lane, via)
+    with ses.family(session) as fam:
+        if fam:
+            with familydb.transaction(fam.db):
+                insert_only(fam.db, "partner_clicks", {"id": click_id, "user_id": fam.traveler.id, "offer_id": f"{link.lane}-{link.site}"[:40], "partner": link.site, "lane": link.lane,
+                                                       "offer_name": f"{link.name} · {search.place.name}"[:120], "place": search.place.slug, "query": query, "sub_id": sub,
+                                                       "price_cents": 0, "state": "clicked", "clicked_at": familydb.now()}, ["id"], auto_commit=False)
+    return sub
+
+
 def clicks(session) -> list:
     """The family's clicks and bookings, newest first. Empty when signed out."""
     with ses.family(session) as fam:

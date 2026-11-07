@@ -26,4 +26,16 @@
 .ps-field input[aria-invalid="true"] { box-shadow: 0 0 0 0.1875rem var(--coral-deep); }
 .ps .ps-from .btn { min-height: 2.75rem; }
 .ps-error { flex-basis: 100%; color: var(--coral-deep); font-size: max(var(--text-min), 0.875rem); font-weight: 650; }
+/* F-198: a car and a buy-direct lane, the honest note under each button, "also on" links, the resorts, and the where-when-who form. */
+.ps-k-car { background: var(--sky-tint, var(--paper-2)); }
+.ps-k-direct { background: var(--coral-tint, var(--paper-2)); }
+.ps-note { justify-self: start; font-size: max(var(--text-min), 0.8125rem); font-weight: 700; color: var(--ink-2); }
+.ps-note.is-paid { color: var(--ink); }
+.ps-alsos { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.75rem; margin: 0; }
+.ps-also, .ps-resort { display: inline-flex; align-items: center; min-height: 2.75rem; font-weight: 700; color: var(--ink); text-decoration: underline; text-underline-offset: 0.2em; }
+.ps-resorts { display: flex; flex-wrap: wrap; gap: 0 1rem; margin: 0; padding: 0; list-style: none; }
+.ps .ps-trip input { text-transform: none; width: 9rem; }
+.ps .ps-trip .ps-field-wide { flex: 1 1 14rem; }
+.ps .ps-trip .ps-field-wide input { width: 100%; }
+.ps .ps-trip input[type="number"] { width: 5rem; }
 @media (min-width: 1020px) { .ps { padding-block: 2.5rem 4rem; } .ps-title { font-size: 2.5rem; } }
