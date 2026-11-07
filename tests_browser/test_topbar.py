@@ -47,7 +47,7 @@ def test_every_signed_in_page_shows_the_same_bar(signed_in, viewport, path):
     bar = page.locator(BAR)
     expect(bar).to_be_visible()
     nav = bar.locator(".ga-tb-nav")
-    expect(nav.locator("a")).to_have_text(["Trip", "Family", "Ask/"])
+    expect(nav.locator("a")).to_have_text(["Trip", "Book", "Family", "Ask/"])      # F-200: Book joined the islands' nav
     expect(bar.locator(".ga-tb-picker")).to_be_visible()
     expect(bar.locator(".ga-tb-sos")).to_be_visible()
     expect(bar.locator(".ga-tb-account")).to_be_visible()

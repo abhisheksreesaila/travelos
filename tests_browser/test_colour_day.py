@@ -11,15 +11,30 @@ from tests_browser.helpers import DESKTOP, PHONE
 from tests_browser.test_colour_fill import is_quiet
 from tests_browser.test_topbar import LAPTOP, TABLET, signed_in  # noqa: F401 - fixture
 
-INK = "rgb(30, 26, 46)"
+INK = "rgb(11, 11, 13)"
 CARD = "rgb(255, 255, 255)"
-PAPER_2 = "rgb(250, 247, 242)"
-INK_2 = "rgb(74, 68, 96)"
-CORALS = ("rgb(255, 115, 82)", "rgb(201, 67, 31)")
-SUN, SUN_TINT, SUN_INK = "rgb(255, 201, 60)", "rgb(255, 241, 194)", "rgb(138, 98, 0)"
-MINT = "rgb(72, 209, 160)"
-SKY = "rgb(90, 176, 255)"
-GRAPE = "rgb(195, 178, 255)"
+PAPER_2 = "rgb(237, 237, 241)"
+INK_2 = "rgb(92, 92, 102)"
+KIND_HUES = """() => ['#4338CA', '#8B2FC9', '#15803D', '#C2410C', '#0369A1', '#C92A5E', '#0F766E', '#FFD43B'].map(h => {      // the eight kinds' fills (tokens.css)
+    const [r, g, b] = [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+    return ((mx === r ? (g - b) / d + 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4) * 60) % 360; })"""
+NOT_A_KIND = """([scope, hues]) => [...document.querySelectorAll(scope)].filter(e => {      // every colour painted here (not a grey) is in a kind's hue family
+    const r = e.getBoundingClientRect(), s = getComputedStyle(e);
+    if (!r.width || !r.height || s.visibility === 'hidden' || s.display === 'none') return false;
+    return [s.color, s.backgroundColor, s.borderTopColor, s.borderLeftColor].some(c => {
+      const m = c.match(/rgba?\(([\d.]+), ([\d.]+), ([\d.]+)(?:, ([\d.]+))?/);
+      if (!m || (m[4] !== undefined && +m[4] < 0.2)) return false;
+      const [R, G, B] = [+m[1], +m[2], +m[3]], mx = Math.max(R, G, B), mn = Math.min(R, G, B), d = mx - mn;
+      if (d < 24) return false;
+      const h = ((mx === R ? (G - B) / d + 6 : mx === G ? (B - R) / d + 2 : (R - G) / d + 4) * 60) % 360;
+      return !hues.some(k => Math.min(Math.abs(h - k), 360 - Math.abs(h - k)) <= 12);
+    });
+  }).map(e => e.className.toString() + ' ' + (e.textContent || '').trim().slice(0, 20))"""
+SUN, SUN_TINT, SUN_INK = "rgb(255, 212, 59)", "rgb(255, 244, 194)", "rgb(92, 67, 0)"
+MINT = "rgb(15, 118, 110)"
+SKY = "rgb(67, 56, 202)"
+GRAPE = "rgb(139, 47, 201)"
 NO_SCROLL = "document.documentElement.scrollWidth <= document.documentElement.clientWidth && document.documentElement.scrollHeight <= document.documentElement.clientHeight"
 BOTH = pytest.mark.parametrize("viewport", [DESKTOP, LAPTOP], ids=["1440", "1280"])
 
@@ -56,7 +71,7 @@ def test_plans_and_bookings_are_kind_filled_cards_with_a_tile_and_edge(signed_in
     page = day(signed_in, viewport)
     lunch = page.locator(".cz-gb", has_text="Lunch at Grand Central Market")
     sunset = page.locator(".cz-gb", has_text="Santa Monica Pier sunset")
-    for card, accent, tint, ink in ((lunch, SUN, SUN_TINT, SUN_INK), (sunset, MINT, "rgb(212, 247, 234)", "rgb(22, 134, 95)")):
+    for card, accent, tint, ink in ((lunch, SUN, SUN_TINT, SUN_INK), (sunset, MINT, "rgb(217, 242, 239)", "rgb(11, 77, 72)")):
         assert card.evaluate("e => getComputedStyle(e).backgroundColor") == tint      # F-167: filled with its kind's tint
         assert card.evaluate("e => getComputedStyle(e).borderTopWidth") == "1px"
         shadow = card.evaluate("e => getComputedStyle(e).boxShadow")
@@ -67,7 +82,7 @@ def test_plans_and_bookings_are_kind_filled_cards_with_a_tile_and_edge(signed_in
         assert tile.locator("svg").count() == 1
     flight = page.locator(".cz-gbk", has_text="Skylark")
     hotel = page.locator(".cz-gbk", has_text="Check in")
-    for card, accent, tint in ((flight, SKY, "rgb(221, 238, 255)"), (hotel, GRAPE, "rgb(236, 228, 255)")):
+    for card, accent, tint in ((flight, SKY, "rgb(228, 227, 251)"), (hotel, GRAPE, "rgb(241, 227, 250)")):
         assert is_quiet(card.evaluate("e => getComputedStyle(e).backgroundColor"), tint)      # F-167: the kind's tint at 45% over white, exactly
         assert f"{accent} 3px 0px 0px 0px inset" in card.evaluate("e => getComputedStyle(e).boxShadow")
         assert card.locator(".cz-gbk-tile").evaluate("e => getComputedStyle(e).backgroundColor") == CARD
@@ -78,7 +93,7 @@ def test_plans_and_bookings_are_kind_filled_cards_with_a_tile_and_edge(signed_in
     expect(plan_pill).to_have_text("Plan")
     assert plan_pill.evaluate("e => [getComputedStyle(e).backgroundColor, getComputedStyle(e).color]") == [PAPER_2, INK_2]
     panel = style(page, ".cz-day-body", "backgroundColor", "borderTopColor", "borderTopWidth")
-    assert panel == [CARD, "rgba(30, 26, 46, 0.1)", "1px"]      # the day panel: white with a hairline, no day tint
+    assert panel == [CARD, "rgb(227, 227, 232)", "1px"]      # the day panel: white with a hairline, no day tint
     shot(page, f"day-{viewport['width']}.png")
     assert page.evaluate(NO_SCROLL)
 
@@ -128,15 +143,11 @@ def test_day_tabs_are_neutral_pills_and_the_open_one_is_ink(signed_in, viewport)
 
 
 @BOTH
-def test_coral_is_only_the_primary_buttons_and_the_now_line(signed_in, viewport):
+def test_colour_on_the_day_is_only_the_kinds(signed_in, viewport):
+    """F-159's rule was "coral only for primary buttons and the now line"; Direction A (F-200) has no coral, the accent and the now line are ink: what is left of the rule is
+    that colour on the day means a kind, never a day."""
     page = day(signed_in, viewport)
-    bad = page.evaluate("""corals => [...document.querySelectorAll('.cz-view[data-day] *, #cz-dock *')].filter(e => {
-        const r = e.getBoundingClientRect(), s = getComputedStyle(e);
-        if (!r.width || !r.height || s.visibility === 'hidden' || s.display === 'none') return false;
-        const paints = [s.color, s.backgroundColor, s.borderTopColor, s.borderLeftColor].filter(c => corals.includes(c));
-        const owns = e.closest('.cz-desk-btn, .cz-dock-btn, .tp-btn, .cz-nowline, .cz-ask-mic, .cz-compose-go, .cz-dock-un, .cz-fam-un, .cz-ask-send');
-        return paints.length && !owns;
-      }).map(e => e.className.toString() + ' ' + (e.textContent || '').trim().slice(0, 20))""", list(CORALS))
+    bad = page.evaluate(NOT_A_KIND, [".cz-view[data-day] *, #cz-dock *", page.evaluate(KIND_HUES)])
     assert bad == [], bad
     up = page.locator("#cz-up")
     assert up.evaluate("e => getComputedStyle(e).backgroundColor") == INK      # Up next stays the one ink card

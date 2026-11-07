@@ -2,19 +2,19 @@
    The card is placed by day_card.js (left, top, width, height in pixels, inside what can be seen) and grows with a transform; the rest of the day dims under .cz-card-scrim. */
 
 .cz .cz-card-wrap { position: fixed; z-index: 31; inset: 0; padding-top: env(safe-area-inset-top); pointer-events: none; }      /* over the tab bar too (it is inert while the card is open: a tap there folds the card) */
-.cz .cz-card-scrim { position: absolute; inset: 0; background: rgba(30, 26, 46, .3); pointer-events: auto; touch-action: none; }
-.cz .cz-card { --accent: var(--bubble); position: absolute; display: flex; flex-direction: column; box-sizing: border-box; min-width: 0; border-radius: 1.75rem; background: var(--card); color: var(--ink); overflow: hidden; pointer-events: auto;
+.cz .cz-card-scrim { position: absolute; inset: 0; background: var(--scrim); pointer-events: auto; touch-action: none; }
+.cz .cz-card { --accent: var(--k-food); position: absolute; display: flex; flex-direction: column; box-sizing: border-box; min-width: 0; border-radius: 1.75rem; background: var(--card); color: var(--ink); overflow: hidden; pointer-events: auto;
   box-shadow: inset 0.25rem 0 0 var(--accent), var(--shadow-lg); transform-origin: 0 0; will-change: transform; outline: none; }
 .cz .cz-card-content { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
 
 /* the top: a handle to pull down, the plan's name and time, the close button */
 .cz .cz-card-grab { flex-shrink: 0; display: flex; justify-content: center; padding: 0.5rem 0 0; touch-action: none; cursor: grab; }
-.cz .cz-card-grab span { width: 2.5rem; height: 0.25rem; border-radius: var(--r-pill); background: rgba(30, 26, 46, .22); }
+.cz .cz-card-grab span { width: 2.5rem; height: 0.25rem; border-radius: var(--r-pill); background: color-mix(in srgb, var(--ink) 22%, transparent); }
 .cz .cz-card-head { flex-shrink: 0; display: flex; align-items: flex-start; gap: 0.5rem; padding: 0.25rem 0.5rem 0.25rem 1.125rem; touch-action: none; }
 .cz .cz-card-ti { flex: 1 1 0; min-width: 0; padding-top: 0.25rem; }
 .cz .cz-card-t { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; line-height: 1.15; letter-spacing: -0.02em; overflow-wrap: anywhere; }
 .cz .cz-card-when { margin: 0.125rem 0 0; font-size: var(--cz-small); font-weight: 700; color: var(--ink-2); font-variant-numeric: tabular-nums; }
-.cz .cz-card-x { flex-shrink: 0; width: 2.75rem; height: 2.75rem; padding: 0; border: 0; border-radius: var(--r-pill); background: var(--paper-2); color: var(--ink); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.cz .cz-card-x { flex-shrink: 0; width: var(--target); height: var(--target); padding: 0; border: 0; border-radius: var(--r-pill); background: var(--paper-2); color: var(--ink); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
 .cz .cz-card-x svg { width: 1.25rem; height: 1.25rem; }
 .cz .cz-card-x:focus-visible, .cz .cz-card-link:focus-visible, .cz .cz-card-note:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.125rem; }
 
@@ -23,7 +23,7 @@
 .cz .cz-card-loading { margin: 0; padding: 1rem 1.125rem; font-weight: 700; color: var(--ink-2); }
 .cz .cz-card-inner { flex: 0 0 auto; display: flex; flex-direction: column; gap: 0.5rem; padding: 0 0.75rem 0.75rem 1rem; }
 .cz .cz-card-links { flex-shrink: 0; display: flex; flex-wrap: wrap; gap: 0.375rem; }
-.cz .cz-card-link { display: inline-flex; align-items: center; gap: 0.375rem; min-height: 2.75rem; padding: 0 0.875rem; border-radius: var(--r-pill); background: var(--paper-2); color: var(--ink); font-weight: 800; font-size: max(var(--text-min), 0.875rem); text-decoration: none; cursor: pointer; }
+.cz .cz-card-link { display: inline-flex; align-items: center; gap: 0.375rem; min-height: var(--target); padding: 0 0.875rem; border-radius: var(--r-pill); background: var(--paper-2); color: var(--ink); font-weight: 800; font-size: max(var(--text-min), 0.875rem); text-decoration: none; cursor: pointer; }
 .cz .cz-card-link:hover { background: var(--bubble-tint); }
 .cz .cz-card-link svg { width: 1rem; height: 1rem; flex-shrink: 0; }
 
@@ -35,28 +35,22 @@
 .cz .cz-card-note.is-mine { cursor: text; }
 .cz .cz-card-by { margin-top: 0.125rem; font-family: var(--font-body); font-size: var(--cz-small); font-weight: 800; color: var(--ink-2); }
 .cz .cz-card-text { white-space: pre-wrap; }
-.cz .cz-card-add { flex-direction: row; align-items: center; gap: 0.375rem; min-height: 2.75rem; background: transparent; box-shadow: none; transform: none; color: var(--ink-2); font-family: var(--font-body); font-weight: 800; font-size: max(var(--text-min), 0.875rem); cursor: pointer; }
+.cz .cz-card-add { flex-direction: row; align-items: center; gap: 0.375rem; min-height: var(--target); background: transparent; box-shadow: none; transform: none; color: var(--ink-2); font-family: var(--font-body); font-weight: 800; font-size: max(var(--text-min), 0.875rem); cursor: pointer; }
 .cz .cz-card-add svg { width: 1rem; height: 1rem; }
 .cz .cz-card-add.is-empty { background: var(--note); box-shadow: var(--shadow-sticker); transform: rotate(-0.8deg); font-family: var(--font-hand); font-size: 1.5rem; color: color-mix(in srgb, var(--ink) 62%, var(--note)); min-width: 11rem; }
 .cz .cz-card-note.is-editing { align-self: stretch; transform: none; padding: 0.25rem 0.5rem 0.375rem; }
-.cz .cz-card-edit { width: 100%; box-sizing: border-box; min-height: 3rem; margin: 0; padding: 0.125rem 0.375rem; border: 0; border-radius: 0.25rem; background: rgba(255, 255, 255, .45); color: var(--ink); resize: none; outline: 0.125rem solid var(--ink);
+.cz .cz-card-edit { width: 100%; box-sizing: border-box; min-height: 3rem; margin: 0; padding: 0.125rem 0.375rem; border: 0; border-radius: 0.25rem; background: color-mix(in srgb, var(--card) 45%, transparent); color: var(--ink); resize: none; outline: 0.125rem solid var(--ink);
   font-family: var(--font-hand); font-weight: 700; font-size: 1.5rem; line-height: 1.1; }
 .cz .cz-title-btn { display: block; width: 100%; min-height: 3rem; margin: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; letter-spacing: inherit; text-align: left; cursor: text; overflow-wrap: anywhere; -webkit-tap-highlight-color: transparent; }
 .cz .cz-title-btn:focus-visible { outline: 0.125rem solid var(--ink); outline-offset: 0.125rem; border-radius: 0.25rem; }
-.cz .cz-card-name { width: 100%; box-sizing: border-box; min-height: 3rem; margin: 0; padding: 0.25rem 0.5rem; border: 0.125rem solid var(--ink); border-radius: 0.75rem; background: #FFFFFF; color: var(--ink); font-family: var(--font-display); font-weight: 800; font-size: 1rem; line-height: 1.2; }
+.cz .cz-card-name { width: 100%; box-sizing: border-box; min-height: 3rem; margin: 0; padding: 0.25rem 0.5rem; border: 0.125rem solid var(--ink); border-radius: 0.75rem; background: var(--card); color: var(--ink); font-family: var(--font-display); font-weight: 800; font-size: 1rem; line-height: 1.2; }
 .cz .cz-card-name:focus { outline: none; border-color: var(--coral); }
 .cz .cz-card-name[aria-invalid="true"] { border-color: var(--coral-deep); }
 .cz .cz-card-err { color: var(--coral-deep); font-family: var(--font-body); font-weight: 800; font-size: var(--cz-small); }
 .cz .cz-card-err:empty { display: none; }
 
-/* a touch of glass (F-096): the card floats, so it is translucent where the browser can blur, and solid for people who ask for less transparency */
-@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) and (color: color-mix(in srgb, red 50%, transparent)) {
-  .cz .cz-card { background: color-mix(in srgb, var(--card) 90%, var(--paper-2)); background: color-mix(in srgb, color-mix(in srgb, var(--card) 90%, var(--paper-2)) 90%, transparent);
-    -webkit-backdrop-filter: blur(1.25rem) saturate(1.6); backdrop-filter: blur(1.25rem) saturate(1.6); box-shadow: inset 0.25rem 0 0 var(--accent), inset 0 0 0 1px rgba(255, 255, 255, .55), var(--shadow-lg); }
-}
-@media (prefers-reduced-transparency: reduce) {
-  .cz .cz-card { background: var(--card); -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: inset 0.25rem 0 0 var(--accent), var(--shadow-lg); }
-}
+/* the card floats: opaque with the strongest shadow (F-200: no glass or blur anywhere; it was glass where the browser could blur, F-096) */
+.cz .cz-card { background: var(--card-2); box-shadow: inset 0.25rem 0 0 var(--accent), var(--sh3); }
 @media (prefers-reduced-motion: reduce) {
   .cz .cz-card, .cz .cz-card-scrim { animation: none; transition: none; }
 }

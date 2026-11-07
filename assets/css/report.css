@@ -10,15 +10,15 @@
 .rp-form { display: grid; gap: 1rem; padding: 1.125rem; }
 .rp-form label { display: grid; gap: 0.25rem; }
 .rp-lab { font-weight: 600; font-size: 1rem; }
-.rp-hint { font-size: 0.9375rem; line-height: 1.4; color: var(--oq-ink-2); }
-.rp-input { width: 100%; box-sizing: border-box; min-height: 2.75rem; padding: 0.625rem 0.875rem; border-radius: var(--oq-radius-in); border: 1px solid var(--oq-line); background: var(--oq-surface-2); color: var(--oq-ink); font: inherit; font-size: 1rem; line-height: 1.4; }
+.rp-hint { font-size: max(var(--text-min), 0.9375rem); line-height: 1.4; color: var(--oq-ink-2); }
+.rp-input { width: 100%; box-sizing: border-box; min-height: var(--target); padding: 0.625rem 0.875rem; border-radius: var(--oq-radius-in); border: 1px solid var(--oq-line); background: var(--oq-surface-2); color: var(--oq-ink); font: inherit; font-size: 1rem; line-height: 1.4; }
 .rp-text { min-height: 6.5rem; resize: vertical; }
 .rp-input:focus-visible { outline: 0.1667rem solid var(--oq-accent); outline-offset: 0.0625rem; }
 .rp-actions { display: flex; flex-wrap: wrap; gap: 0.625rem; }
-.rp-actions .btn { min-height: 2.75rem; }
+.rp-actions .btn { min-height: var(--target); }
 .rp-error { margin: 0; padding: 0.625rem 0.875rem; border-radius: var(--oq-radius-in); background: color-mix(in srgb, var(--oq-bad) 10%, var(--oq-surface-1)); color: var(--oq-bad); font-weight: 600; }
 .rp-ok { margin: 0; padding: 0.625rem 0.875rem; border-radius: var(--oq-radius-in); background: var(--oq-k-see-tint); color: var(--oq-ok); font-weight: 600; }
 .rp-more { margin: 0; color: var(--oq-ink-2); }
-.rp-more a { display: inline-flex; align-items: center; min-height: 2.75rem; color: var(--oq-accent); font-weight: 600; text-underline-offset: 0.2rem; }
+.rp-more a { display: inline-flex; align-items: center; min-height: var(--target); color: var(--oq-accent); font-weight: 600; text-underline-offset: 0.2rem; }
 .rp-badge { display: inline-grid; place-items: center; width: 3.5rem; height: 3.5rem; border-radius: 1rem; background: var(--oq-k-see-tint); color: var(--oq-k-see); }
 .rp-bee { position: absolute; left: -62rem; top: auto; width: 0.0625rem; height: 0.0625rem; overflow: hidden; }   /* the honeypot sits off-screen; a person never reaches it (tabindex -1, aria-hidden) */

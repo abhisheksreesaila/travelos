@@ -1,4 +1,4 @@
-"""F-052: the sign-in boarding pass fills from where the traveler came from."""
+"""F-052, F-200: the sign-in trip card (the boarding pass before Direction A) fills from where the traveler came from."""
 import re
 from html import unescape as html_unescape
 from urllib.parse import quote
@@ -89,9 +89,9 @@ def test_cancel_and_round_trip_stay(client):
     assert 'href="/plan?f=f1&amp;h=h1&amp;c=none"' in html and 'name="next" value="/plan/pay?f=f1&amp;h=h1&amp;c=none"' in html
 
 
-def test_the_sky_is_decorative_and_has_the_route_codes(client):
-    html = get(client, FORK, "fork")
-    assert 'class="si-sky"' in html and 'aria-hidden="true"' in html and html.count('class="si-code"') == 4  # two stages, two codes each
+def test_the_half_beside_the_card_is_decorative_and_has_the_route_codes(client):
+    html = get(client, FORK, "fork")      # F-200: one route widget on the laptop's left half (the old sky drew two stages)
+    assert 'class="si-sky"' in html and 'aria-hidden="true"' in html and html.count('class="si-code"') == 2
 
 
 def test_the_google_letter_is_hidden_from_the_accessible_name(client, monkeypatch):

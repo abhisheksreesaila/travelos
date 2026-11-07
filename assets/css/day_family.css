@@ -5,7 +5,7 @@
   .cz .cz-dock[data-mode="family"] [data-pane="idle"], .cz .cz-dock[data-mode="family"] .cz-compose { display: none; }
   .cz .cz-dock:not([data-mode="family"]) .cz-fam, .cz .cz-dock:not([data-mode="family"]) .cz-fam-foot { display: none; }
 
-  .cz .cz-dock-un { display: inline-block; min-width: 1.25rem; padding: 0 0.4375rem; border-radius: var(--r-pill); background: var(--coral); color: var(--ink); font-size: var(--cz-small); font-weight: 800; line-height: 1.375rem; text-align: center; font-variant-numeric: tabular-nums; }
+  .cz .cz-dock-un { display: inline-block; min-width: 1.25rem; padding: 0 0.4375rem; border-radius: var(--r-pill); background: var(--coral); color: var(--on-accent); font-size: var(--cz-small); font-weight: 800; line-height: 1.375rem; text-align: center; font-variant-numeric: tabular-nums; }
 
   .cz .cz-fam { overflow: hidden; gap: 0.5rem; padding-bottom: 0.5rem; }
   .cz .cz-fam:focus { outline: none; }
@@ -19,7 +19,7 @@
   .cz .cz-fam-tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.0833rem; }
   .cz .cz-fam-tt { font-weight: 800; font-size: var(--cz-body); line-height: 1.2; overflow-wrap: anywhere; }
   .cz .cz-fam-ls { font-size: var(--cz-small); font-weight: 600; line-height: 1.25; color: var(--ink-3); overflow-wrap: anywhere; }
-  .cz .cz-fam-un { flex: 0 0 auto; min-width: 1.25rem; padding: 0 0.4375rem; border-radius: var(--r-pill); background: var(--coral); color: var(--ink); font-size: var(--cz-small); font-weight: 800; line-height: 1.375rem; text-align: center; font-variant-numeric: tabular-nums; }
+  .cz .cz-fam-un { flex: 0 0 auto; min-width: 1.25rem; padding: 0 0.4375rem; border-radius: var(--r-pill); background: var(--coral); color: var(--on-accent); font-size: var(--cz-small); font-weight: 800; line-height: 1.375rem; text-align: center; font-variant-numeric: tabular-nums; }
 
   .cz .cz-fam-people { flex-shrink: 0; align-self: flex-start; display: inline-flex; align-items: center; gap: 0.5rem; min-height: 2.25rem; padding: 0 0.75rem; border-radius: var(--r-pill); font-size: var(--cz-small); font-weight: 800; color: var(--ink-2); }
   .cz .cz-fam-people:hover { background: var(--paper); color: var(--ink); }

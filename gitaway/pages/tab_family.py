@@ -151,7 +151,7 @@ def content(request, session):
     quiet = familythread.quiet(session)
     chat = Div(
         Div(Span(icon("bell", 18, 2.2), cls="ft-bell", aria_hidden="true"),
-            Span(QUIET_ON if quiet else QUIET_OFF, id="ft-quiet-text", cls="ft-quiet-text", data_on=QUIET_ON, data_off=QUIET_OFF),
+            Span(QUIET_ON if quiet else QUIET_OFF, id="ft-quiet-text", cls="ft-quiet-text ga-fine", data_on=QUIET_ON, data_off=QUIET_OFF),      # F-200: the switch's footnote is fine print
             Form(Input(type="hidden", name="quiet", value="0" if quiet else "1", id="ft-quiet-value"),
                  Button(Span(cls="mp-knob"), Span("Quiet", cls="ft-quiet-label"), type="submit", role="switch", aria_checked="true" if quiet else "false", id="ft-quiet", cls=f"mp-switch ft-switch{' is-on' if quiet else ''}"),
                  method="post", action="/trip/family/quiet", cls="ft-quiet-form"),

@@ -1079,7 +1079,7 @@ def register(app):
             return fragment(vw)
         edit = access.can_edit(v["role"])
         stage = Div(vw, id="cz", cls="cz-stage", data_trip=ses.open_trip_id(), data_me=session.get("user_id") or "", **({"data_edit": "1"} if edit else {}))
-        return phone.shell("today", join_note(), Main(stage, id="main", cls="ph-main cz"), title="The trip", head=HEAD, scripts=SCRIPTS, id="cz-app", data_canvas="1")
+        return phone.shell("trip" if level == "week" else "plan", join_note(), Main(stage, id="main", cls="ph-main cz"), title="The trip", head=HEAD, scripts=SCRIPTS, id="cz-app", data_canvas="1")
 
     @app.post("/trip/canvas/step")
     async def canvas_step(request, session):

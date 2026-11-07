@@ -52,7 +52,7 @@ def test_no_old_brand_name(client):
 def test_page_loads_its_own_stylesheet_and_new_tokens(client):
     assert "/assets/css/landing.css" in _get(client)
     tokens = client.get("/assets/css/tokens.css").text
-    assert "--block-sunset: #FF8A63" in tokens and "--block-pacific: #6DB8FF" in tokens
+    assert "--block-sunset: var(--k-tix-t)" in tokens and "--block-pacific: var(--k-wx-t)" in tokens      # F-200: the doors' panels are Direction A tints (ink reads on them in both modes)
 
 
 def _order(h, *names):

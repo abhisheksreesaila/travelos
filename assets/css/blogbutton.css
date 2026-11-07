@@ -12,6 +12,6 @@
 .bb-text { width: 100%; box-sizing: border-box; padding: 0.625rem 0.875rem; border-radius: var(--oq-radius-in, 0.75rem); border: 1px solid var(--oq-line, #e7e0d4); background: var(--oq-surface-2, #fff); color: var(--oq-ink, #1d1a16);
   font: 1rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; resize: none; overflow-wrap: anywhere; }
 .bb-text:focus-visible { outline: 0.1667rem solid var(--oq-accent, #c0401c); outline-offset: 0.0625rem; }
-:root .bb .bb-copy.btn { min-height: 2.75rem; min-width: 2.75rem; justify-self: start; }
+:root .bb .bb-copy.btn { min-height: var(--target); min-width: var(--target); justify-self: start; }
 @media (min-width: 1020px) { .bb-row { grid-template-columns: 1fr auto; align-items: end; } .bb-lab { grid-column: 1 / -1; } }
 @media (min-width: 1020px) { :root .bb .bb-copy.btn { min-height: 3.6667rem; min-width: 3.6667rem; } }   /* the laptop root is 12px: the same 44px */

@@ -195,6 +195,7 @@
     CZ.onSwap.forEach(function (fn) { fn(); });
     if (!quietSwap) centreDay();      // (a refresh in place keeps the dates where they were: no layout to read)
     askHere();
+    tabsHere();
     prefetch();
     rememberToday();
   }
@@ -243,6 +244,15 @@
     var u = here();
     if (!/^\/trip\/canvas(\?(day=\d+(&trip=[0-9a-f]+)?|trip=[0-9a-f]+))?$/.test(u)) return;
     try { sessionStorage.setItem('ga-today', u); } catch (e) { /* not stored */ }
+  }
+  // F-200: the phone's Trip tab is the week, Plan the day (and what is on it): the one on the screen is marked, as the level changes without a page load.
+  function tabsHere() {
+    var v = view(), week = !!v && v.dataset.level === 'week';
+    [['ph-tab-trip', week], ['ph-tab-plan', !!v && !week]].forEach(function (t) {
+      var a = document.getElementById(t[0]);
+      if (!a) return;
+      if (t[1]) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    });
   }
   // F-092: the centre Ask is the one way to change the plan, so it opens on the day being looked at (a day, a block or a step on it).
   function askHere() {
@@ -498,6 +508,7 @@
   // The level the page opened with. (Each module applies its own part of it when it loads, right after this one: the filters, say.)
   centreDay();
   askHere();
+  tabsHere();
   prefetch();
   rememberToday();
   if (root.hasAttribute('data-ga-stale')) revalidate(here(), '');      // F-116: opened at once from the saved copy (sw.js): bring it up to date quietly

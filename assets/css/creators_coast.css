@@ -14,8 +14,8 @@
 .oq-family-travel .cr-paste-copy > p { font-size: 1.0625rem; font-weight: 400; color: var(--oq-ink-2); line-height: 1.5; }
 .oq-family-travel .cr-paste-form { background: var(--oq-surface-2); box-shadow: var(--oq-shadow-2); padding: 0.375rem; }
 .oq-family-travel .cr-paste-form:focus-within { box-shadow: var(--oq-shadow-2), 0 0 0 0.125rem var(--oq-accent); }
-.oq-family-travel .cr-link { font: 500 1rem var(--oq-font); color: var(--oq-ink); min-height: 2.5rem; }
-.oq-family-travel .cr-go { min-height: 2.75rem; flex: none; }
+.oq-family-travel .cr-link { font: 500 var(--t-body) var(--oq-font); color: var(--oq-ink); min-height: var(--target); }
+.oq-family-travel .cr-go { min-height: var(--target); flex: none; }
 .oq-family-travel .cr-hint { font-weight: 500; color: var(--oq-ink-2); }
 .oq-family-travel .cr-hint a { color: var(--oq-accent); font-weight: 600; text-underline-offset: 0.2rem; }
 .oq-family-travel .cr-fine { font: 400 max(var(--text-min), 0.8125rem) var(--oq-font-mono); color: var(--oq-ink-2); }

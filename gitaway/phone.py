@@ -1,4 +1,5 @@
-"""The phone shell (F-067): every trip screen sits in one frame with a bottom tab bar (Today, Ask, Family: three, so Ask is the true centre; Map is a button in the day heading (F-096); Help left the bar in F-093 and is opened from a booking or the SOS button).
+"""The phone shell (F-067): every trip screen sits in one frame with a bottom tab bar. Since F-200 (Direction A, the cockpit's chrome) it is one opaque floating bar of five:
+Trip (the week), Plan (the day), Ask in the true centre, Book (the trip's booking lanes, F-198) and Family. Map is a button in the day heading (F-096); Help left the bar in F-093 and is opened from a booking or the SOS button.
 
     shell(active, *content, title="", head=(), scripts=(), **attrs)   the whole document: styles, the screen's content, the tab bar
     tabbar(active)                                                     the bar alone (`active` is one of TAB_KEYS)
@@ -20,11 +21,12 @@ from starlette.responses import RedirectResponse
 
 from gitaway import access, session as ses, topbar
 from gitaway.icons import icon
-from gitaway.layout import styles
+from gitaway.layout import preview, styles
 
-TABS = (("today", "Today", "calendar", "/trip"), ("ask", "Ask", "mic", "/trip/ask"),
-        ("family", "Family", "users", "/trip/family"))   # F-093: Help left the bar; /trip/help still works for old links, passes and phone numbers
+TABS = (("trip", "Trip", "home", "/trip/canvas"), ("plan", "Plan", "calendar", "/trip"), ("ask", "Ask", "mic", "/trip/ask"),
+        ("book", "Book", "ticket", "/trip/book"), ("family", "Family", "users", "/trip/family"))   # F-093: Help left the bar; /trip/help still works for old links, passes and phone numbers
 TAB_KEYS = tuple(t[0] for t in TABS)
+ALIASES = {"today": "plan"}   # the screens that said "today" before F-200 (the day, a plan's talk) are the Plan tab
 HEAD = (Link(rel="stylesheet", href="/assets/css/trip.css"), Link(rel="stylesheet", href="/assets/css/phone.css"))  # the shared phone look, then the shell
 
 
@@ -38,17 +40,19 @@ SHEET_SCRIPTS = ("/assets/js/ask.js", "/assets/js/ask_flow.js", "/assets/js/ask_
 
 
 def tabbar(active):
+    active = ALIASES.get(active, active)
     sheet = ask_sheet(active)
-    links = [A(Span(icon(ico, 22, 2.2), cls="ph-ti"), Span(name, cls="ph-tl"), href=href, id=f"ph-tab-{key}", cls=f"ph-tab ph-tab-{key}{' ph-ask' if key == 'ask' else ''}",
+    links = [A(Span(icon(ico, 24 if key == "ask" else 22, 2.2), cls="ph-ti"), Span(name, cls="ph-tl"), href=href, id=f"ph-tab-{key}", cls=f"ph-tab ph-tab-{key}{' ph-ask' if key == 'ask' else ''}",
                aria_current="page" if key == active else None, **({"data_ask": "sheet", "aria_haspopup": "dialog"} if sheet and key == "ask" else {})) for key, name, ico, href in TABS]
-    # F-133: Calendar's bar: Today a pill on the left, Ask and Family one capsule on the right, both floating over the page.
-    return Nav(links[0], Div(*links[1:], cls="ph-tabs-r"), cls="ph-tabs", aria_label="Trip")
+    # F-200: one opaque bar floating over the page, five tabs, Ask the ink button in the middle (phone.css)
+    return Nav(*links, cls="ph-tabs", aria_label="Trip")
 
 
 def header(kicker, title, faces=(), sos=False, two=""):
     """`sos`: a small SOS button (F-093) that opens the emergency sheet on the trip canvas; the Ask and Family tabs have it, the canvas has its own."""
     button = A(icon("life", 18, 2.4), Span("SOS"), href="/trip/canvas?sos=1", id="ph-sos", cls="ph-sos", aria_label="Emergency: call 911 and your people") if sos else ""
-    return Header(Div(Span(kicker, cls="tp-head-k"), H1(title, id="tp-title-h"), Span(two, cls="ga-h-two") if two else "", cls="tp-head-text"), button, Div(*faces, cls="tp-faces") if faces else "", cls="tp-head")
+    return Header(Div(Span(kicker, cls="tp-head-k"), H1(title, id="tp-title-h"), Span(two, cls="ga-h-two") if two else "", preview(), cls="tp-head-text"), button, Div(*faces, cls="tp-faces") if faces else "",
+                  cls="tp-head", data_preview="1")      # F-200: the "Early preview" label sits beside the title (phone.css), so the screen gets no extra row
 
 
 def coming(name, line, ico):
@@ -58,13 +62,15 @@ def coming(name, line, ico):
 
 def shell(active, *content, title="", head=(), scripts=(), **attrs):
     attrs.setdefault("id", "ph-app")
+    active = ALIASES.get(active, active)
+    headed = any(getattr(c, "attrs", {}).get("data-preview") == "1" for c in content)      # header() carries the label; a screen without it gets a small row at the top
     if ask_sheet(active):
         head, scripts = (*head, *SHEET_HEAD), (*scripts, *SHEET_SCRIPTS)
     return (
         Title(f"GitAway · {title}" if title else "GitAway"),
         *styles(*head, *HEAD),
         topbar.bar(),   # F-139: the signed-in laptop's one top bar; topbar.css shows it from 1020px up, so the phone and the tablet are as they were
-        Div(A("Skip to content", href="#main", cls="ga-skip"), *content, A("Back to Today", href="/trip", cls="ph-back") if active != "today" else "", tabbar(active),
+        Div(A("Skip to content", href="#main", cls="ga-skip"), "" if headed else Div(preview(), cls="ph-preview"), *content, A("Back to Today", href="/trip", cls="ph-back") if active not in ("trip", "plan") else "", tabbar(active),
             data_theme="sunset", data_screen=active, cls="tp ph", **attrs),
         *[Script(src=s, defer=True) for s in scripts],
     )

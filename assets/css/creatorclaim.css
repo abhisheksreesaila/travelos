@@ -8,17 +8,17 @@
 .cc-form { display: grid; gap: 0.625rem; padding: 1rem; border-radius: 1rem; background: var(--oq-surface-1); box-shadow: inset 0 0 0 1px var(--oq-line); }
 .cc-form label { display: grid; gap: 0.25rem; }
 .cc-lab { font-weight: 600; }
-.cc-form .btn, .cc-copy { min-height: 2.75rem; justify-self: start; }
+.cc-form .btn, .cc-copy { min-height: var(--target); justify-self: start; }
 .cc-name { font-weight: 650; overflow-wrap: anywhere; }
-.cc-meta { color: var(--oq-ink-2); font-size: 0.9375rem; overflow-wrap: anywhere; }
+.cc-meta { color: var(--oq-ink-2); font-size: max(var(--text-min), 0.9375rem); overflow-wrap: anywhere; }
 .cc-results, .cc-picks, .cc-drafts { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.625rem; }
 .cc-result { display: grid; gap: 0.5rem; padding: 0.875rem 1rem; border-radius: 1rem; background: var(--oq-tonal); animation: cc-in var(--motion-dur) var(--motion-ease) both; }
 .cc-result.is-error { background: color-mix(in srgb, var(--oq-bad) 10%, var(--oq-surface-1)); }
 .cc-error { margin: 0; color: var(--oq-bad); font-weight: 600; }
 .cc-msg { width: 100%; box-sizing: border-box; padding: 0.75rem 0.875rem; border-radius: 0.75rem; border: 0.0625rem solid var(--oq-line); background: var(--oq-surface-1); color: var(--oq-ink); font: inherit; font-size: 1rem; line-height: 1.45; resize: vertical; }
 .cc-copy { width: 100%; justify-content: center; min-height: 3rem; }
-.cc-list > summary { min-height: 2.75rem; display: flex; align-items: center; font-weight: 650; cursor: pointer; }
-.cc-form .cc-pick, .cc-pick { display: flex; align-items: center; gap: 0.75rem; min-height: 2.75rem; padding: 0.375rem 0; border-top: 1px solid var(--oq-line-2); }
+.cc-list > summary { min-height: var(--target); display: flex; align-items: center; font-weight: 650; cursor: pointer; }
+.cc-form .cc-pick, .cc-pick { display: flex; align-items: center; gap: 0.75rem; min-height: var(--target); padding: 0.375rem 0; border-top: 1px solid var(--oq-line-2); }
 .cc-pick-t { display: grid; flex: 1; min-width: 0; }
 .cc-check { width: 1.5rem; height: 1.5rem; flex: none; accent-color: var(--oq-accent); }
 .cc-draft { display: grid; gap: 0.5rem; padding: 0.75rem 1rem; border-radius: 1rem; background: var(--oq-surface-1); box-shadow: inset 0 0 0 1px var(--oq-line); }
@@ -36,12 +36,12 @@
 .cl-actions { display: grid; gap: 0.625rem; }
 .cl-actions .btn { min-height: 3.25rem; justify-content: center; font-size: 1.0625rem; }
 .cl-publish { min-height: 3.75rem; font-size: 1.1875rem; font-weight: 650; }
-.cl-hint { margin: 0; color: var(--oq-ink-2); font-size: 0.9375rem; line-height: 1.4; }
+.cl-hint { margin: 0; color: var(--oq-ink-2); font-size: max(var(--text-min), 0.9375rem); line-height: 1.4; }
 @media (min-width: 40rem) { .cl-actions { grid-template-columns: 1fr auto; align-items: start; } .cl-hint, .cl-confirm, .cl-error { grid-column: 1 / -1; } }
-.cl-confirm { display: flex; align-items: center; gap: 0.625rem; min-height: 2.75rem; font-weight: 600; cursor: pointer; }
+.cl-confirm { display: flex; align-items: center; gap: 0.625rem; min-height: var(--target); font-weight: 600; cursor: pointer; }
 .cl-check { inline-size: 1.5rem; block-size: 1.5rem; flex: none; accent-color: var(--oq-accent); }
 .cl-domain { word-break: break-all; }
 .cl-error { margin: 0; color: var(--oq-danger, #b3261e); font-weight: 600; }
 @media (prefers-reduced-motion: reduce) { .cc-result { animation-duration: var(--motion-fade); } }
-.cc-input { width: 100%; box-sizing: border-box; min-height: 2.75rem; padding: 0.625rem 0.875rem; border-radius: 0.75rem; border: 0.0625rem solid var(--oq-line); background: var(--oq-surface-1); color: var(--oq-ink); font: inherit; font-size: 1rem; line-height: 1.4; }
+.cc-input { width: 100%; box-sizing: border-box; min-height: var(--target); padding: 0.625rem 0.875rem; border-radius: 0.75rem; border: 0.0625rem solid var(--oq-line); background: var(--oq-surface-1); color: var(--oq-ink); font: inherit; font-size: 1rem; line-height: 1.4; }
 .cc-input:focus-visible { outline: 0.1667rem solid var(--oq-accent); outline-offset: 0.0625rem; }

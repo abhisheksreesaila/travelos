@@ -12,7 +12,7 @@ from tests.test_calendar import book
 from tests.test_signin import sign_in
 
 SLUGS = list(itineraries.ITINERARIES)
-SAMPLE_WORDS = ["Community trips", "Your forks", "Trips others loved", "Fork a trip a real family took", "Leave a trail",
+SAMPLE_WORDS = ["Community trips", "Your forks", "Trips others loved", "Fork a trip a real family took", "Been somewhere wonderful? Leave a trail.",      # F-200: "Leave a trail" alone is the product's line now; this heading is the landing's community section
                 "Our LA family week", "Forked by", "312 families", "No plans yet?"] + [t.title for t in itineraries.ITINERARIES.values()]
 GONE_HREF = re.compile(r'href="(/community|/discover|/creators|/forks|/share|/rides|/trips/(?!build|import|switch)[^"/?#]+)')
 

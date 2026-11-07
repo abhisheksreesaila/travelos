@@ -74,7 +74,7 @@ def test_a_lifted_plan_shows_which_column_takes_it_and_its_own_column_does_not(d
     desk.mouse.move(*mid(col(desk, SATURDAY)), steps=6)
     expect(col(desk, SATURDAY)).to_have_class(DROP)
     assert desk.locator(".cz-wcol.is-drop-target").count() == 1
-    assert "rgb(255, 115, 82)" in col(desk, SATURDAY).evaluate("n => getComputedStyle(n).boxShadow")      # the coral ring
+    assert "rgb(11, 11, 13)" in col(desk, SATURDAY).evaluate("n => getComputedStyle(n).boxShadow")      # the ring in the accent (ink since F-200; it was coral)
     shot(desk, "dragging.png")
     desk.mouse.move(*mid(col(desk, SUNDAY)), steps=6)                                         # back over its own column: no ring
     assert desk.locator(".cz-wcol.is-drop-target").count() == 0

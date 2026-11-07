@@ -10,7 +10,7 @@
   /* hover: the menu button at the top right (left of the chat count when there is one) and the knob straddling the foot, in the middle */
   .cz .cz-g-tools { position: absolute; z-index: 9; pointer-events: none; }
   .cz .cz-g-tmenu { position: absolute; top: 0.375rem; right: 0.375rem; display: flex; align-items: center; justify-content: center; width: 1.75rem; height: 1.75rem; padding: 0; border: 0; border-radius: var(--r-pill);
-    background: #FFFFFF; color: var(--ink); box-shadow: var(--shadow-sm); pointer-events: auto; cursor: pointer; transition: background var(--motion-quick) ease; }
+    background: var(--card); color: var(--ink); box-shadow: var(--shadow-sm); pointer-events: auto; cursor: pointer; transition: background var(--motion-quick) ease; }
   .cz .cz-g-tmenu svg { width: 1.125rem; height: 1.125rem; }
   .cz .cz-g-tmenu:hover { background: var(--paper-2); }
   .cz .cz-gb.has-chat + .cz-g-tools .cz-g-tmenu { right: 3.25rem; }
@@ -26,7 +26,7 @@
   .cz .cz-grid.is-editing-time:has(.is-resizing), .cz .cz-grid.is-editing-time:has(.is-resizing) * { cursor: ns-resize !important; }
 
   /* drawing a new plan: a dashed outline with its times, in the day's colour (it becomes a solid plan once it has a name) */
-  .cz .cz-gb.is-new.is-drawing { box-sizing: border-box; border: 0.125rem dashed var(--coral-deep); background: color-mix(in srgb, var(--coral) 14%, #FFFFFF); box-shadow: none; animation: none; }
+  .cz .cz-gb.is-new.is-drawing { box-sizing: border-box; border: 0.125rem dashed var(--coral-deep); background: color-mix(in srgb, var(--coral) 14%, var(--card)); box-shadow: none; animation: none; }
   .cz .cz-gb.is-new.is-drawing .cz-gb-in { padding-left: 0.625rem; }
   .cz .cz-gb.is-new.is-drawing .cz-gb-in { align-items: center; justify-content: center; text-align: center; gap: 0.0625rem; }
   .cz .cz-gb.is-new.is-drawing .cz-gb-t { display: none; }
@@ -37,7 +37,7 @@
   /* a plan with its menu open grows only a little, and only taller: a wide block must not spill over the hour labels */
   .cz .cz-gb.is-menu { scale: 1 1.03; }
   /* F-151: a plan held with the mouse can be dropped on a day chip in the ink header: the row shows where it can go, the chip under the pointer takes it (coral ring), the day it is on does not */
-  .cz .cz-hchips.is-dropping .cz-hchip { outline: 0.125rem dashed rgba(255, 255, 255, .55); outline-offset: -0.125rem; transition: background var(--motion-quick) ease, box-shadow var(--motion-quick) ease; }
+  .cz .cz-hchips.is-dropping .cz-hchip { outline: 0.125rem dashed color-mix(in srgb, var(--on-ink) 55%, transparent); outline-offset: -0.125rem; transition: background var(--motion-quick) ease, box-shadow var(--motion-quick) ease; }
   .cz .cz-hchips.is-dropping .cz-hchip.is-open { outline: 0; opacity: 0.55; cursor: not-allowed; }
   .cz .cz-hchips.is-dropping .cz-hchip.is-drop-target { outline: 0; background: var(--card); color: var(--ink); box-shadow: 0 0 0 0.1875rem var(--coral); }
   .cz .cz-hchips.is-dropping .cz-hchip.is-drop-target .cz-hc-dow, .cz .cz-hchips.is-dropping .cz-hchip.is-drop-target .cz-hc-head { color: var(--ink-2); }

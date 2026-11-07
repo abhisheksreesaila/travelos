@@ -5,7 +5,7 @@
 
 .ft-notify { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; border-radius: 0.875rem; background: var(--card); box-shadow: var(--shadow-sm); font-weight: 700; font-size: max(var(--text-min), 0.8125rem); color: var(--ink-2); }
 .ft-bell { width: 1.75rem; height: 1.75rem; border-radius: var(--r-pill); background: var(--sun); color: var(--ink); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.ft-quiet-text { flex: 1; min-width: 0; }
+.ft-quiet-text { flex: 1; min-width: 0; line-height: 1.35; }
 .ft-quiet-form { margin: 0; display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
 .ft-switch { display: flex; align-items: center; width: auto; min-width: 6rem; padding: 0 0 0 4rem; font-weight: 800; font-size: max(var(--text-min), 0.9375rem); color: var(--ink); text-align: left; }
 .ft-quiet-label { position: relative; }
@@ -34,25 +34,25 @@
 .ft-av { width: 1.875rem; height: 1.875rem; border-radius: var(--r-pill); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: 800; font-size: max(var(--text-min), 0.8125rem); color: var(--ink); }
 .ft-msg:not(.ft-last) .ft-av { visibility: hidden; }
 .ft-bub { min-width: 0; max-width: 100%; box-sizing: border-box; padding: 0.5rem 0.875rem; border-radius: 1.125rem; background: var(--bubble-grey); color: var(--ink); font-size: max(var(--text-min), 0.9375rem); line-height: 1.35; overflow-wrap: anywhere; }
-.ft-me .ft-bub { background: var(--coral-deep); color: #FFFFFF; }
+.ft-me .ft-bub { background: var(--coral-deep); color: var(--on-ink); }
 .ft-photo-bub { min-width: 0; max-width: 100%; box-sizing: border-box; padding: 0.25rem; border-radius: 1.125rem; background: var(--bubble-grey); color: var(--ink); }
-.ft-me .ft-photo-bub { background: var(--coral-deep); color: #FFFFFF; }
+.ft-me .ft-photo-bub { background: var(--coral-deep); color: var(--on-ink); }
 .ft-msg:not(.ft-me).ft-last :is(.ft-bub, .ft-photo-bub) { border-bottom-left-radius: 0.1875rem; }      /* the tail: the corner by the avatar (or the edge) comes to a point */
 .ft-me.ft-last :is(.ft-bub, .ft-photo-bub) { border-bottom-right-radius: 0.1875rem; }
-.ft-nm { display: block; padding: 0 0.875rem 0.125rem; font-size: max(var(--text-min), 0.8125rem); font-weight: 800; color: var(--ink-3); }
+.ft-nm { display: block; padding: 0 0.875rem 0.125rem; font-size: max(var(--label-min), 0.8125rem); font-weight: 800; color: var(--ink-3); }
 .ft-msg:not(.ft-first) :is(.ft-nm, .ft-on) { display: none; }
-.ft-time { display: block; padding: 0.125rem 0.875rem 0; font-size: max(var(--text-min), 0.75rem); font-weight: 600; color: var(--ink-3); }      /* quiet: small, under the run's last bubble; the others show it as a tooltip (title) */
+.ft-time { display: block; padding: 0.125rem 0.875rem 0; font-size: max(var(--label-min), 0.75rem); font-weight: 600; color: var(--ink-3); }      /* quiet: small, under the run's last bubble; the others show it as a tooltip (title) */
 .ft-msg:not(.ft-last):not(.is-sending):not(.is-failed) .ft-time { display: none; }
 .ft-photo { display: block; width: 100%; max-width: 12rem; border-radius: 0.875rem; }
 .ft-cap { display: block; padding: 0.25rem 0.5rem 0.25rem; font-weight: 700; font-size: max(var(--text-min), 0.875rem); }
 
 .ft-compose { position: sticky; z-index: 5; bottom: 0; display: flex; gap: 0.5rem; align-items: center; padding: 0.5rem 0; background: var(--paper); margin: 0; }
-.ft-input { flex: 1; min-width: 0; min-height: 2.75rem; padding: 0 1rem; border: 0; border-radius: var(--r-pill); background: var(--card); box-shadow: var(--shadow-sm); font: inherit; font-weight: 600; font-size: max(var(--text-min), 1rem); color: var(--ink); }
-.ft-send { width: 2.75rem; height: 2.75rem; flex-shrink: 0; border: 0; border-radius: var(--r-pill); background: var(--coral); color: var(--ink); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.ft-input { flex: 1; min-width: 0; min-height: var(--target); padding: 0 1rem; border: 0; border-radius: var(--r-pill); background: var(--card); box-shadow: var(--shadow-sm); font: inherit; font-weight: 600; font-size: max(var(--text-min), 1rem); color: var(--ink); }
+.ft-send { width: var(--target); height: var(--target); flex-shrink: 0; border: 0; border-radius: var(--r-pill); background: var(--coral); color: var(--on-accent); display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .ft-msg.is-sending .ft-bub { opacity: 0.7; }
 .ft-state { display: block; }      /* (the same line as the server's time below the words: confirming the bubble does not change its height, F-113) */
 .ft-msg.is-failed .ft-state { color: var(--coral-deep); font-weight: 800; }
-.ft-retry { min-height: 2.75rem; min-width: 2.75rem; margin-left: 0.5rem; padding: 0 0.75rem; border: 0; border-radius: var(--r-pill); background: var(--card); color: var(--ink); font: inherit; font-weight: 800; font-size: max(var(--text-min), 0.875rem); cursor: pointer; }
+.ft-retry { min-height: var(--target); min-width: var(--target); margin-left: 0.5rem; padding: 0 0.75rem; border: 0; border-radius: var(--r-pill); background: var(--card); color: var(--ink); font: inherit; font-weight: 800; font-size: max(var(--text-min), 0.875rem); cursor: pointer; }
 .ft-error { margin: 0; color: var(--coral-deep); font-weight: 800; font-size: max(var(--text-min), 0.875rem); }
 
 @media (max-width: 720px), (display-mode: standalone) {
@@ -61,7 +61,7 @@
 
 
 /* F-084, F-094: the invite link (admin) or the family link (everyone else) at the end of the header line: small, quiet, still a 2.75rem target. */
-.ft-people-btn { display: inline-flex; align-items: center; gap: 0.375rem; min-height: 2.75rem; min-width: 2.75rem; padding: 0 0.5rem; justify-content: center; font-weight: 700; font-size: max(var(--text-min), 0.875rem); color: var(--ink-2); text-decoration: none; background: none; }
+.ft-people-btn { display: inline-flex; align-items: center; gap: 0.375rem; min-height: var(--target); min-width: var(--target); padding: 0 0.5rem; justify-content: center; font-weight: 700; font-size: max(var(--text-min), 0.875rem); color: var(--ink-2); text-decoration: none; background: none; }
 .ft-people-btn:hover, .ft-people-btn:focus-visible { color: var(--ink); }
 
 /* F-100: the chat box stays at the bottom, like WhatsApp. On the phone (and the Home Screen app) the Family chat and a plan chat become a full-height column
@@ -75,6 +75,7 @@
   }
   .tp.kb-open:is(:has(#ft-chat:not([hidden])), :has(#ft.pt)) { padding-bottom: 0.25rem; }
   .tp.kb-open .ph-tabs { display: none; }
+  .tp.kb-open .ft-notify { display: none; }      /* F-200: while typing, the Quiet card steps aside too (it is back when the keyboard goes): the 48px targets left a small phone no room for the box */
   .tp:is(:has(#ft-chat:not([hidden])), :has(#ft.pt)) > * { flex-shrink: 0; }
   .tp:is(:has(#ft-chat:not([hidden])), :has(#ft.pt)) > .ph-main { flex: 1 1 auto; min-height: 0; }
   .tp:is(:has(#ft-chat:not([hidden])), :has(#ft.pt)) > .ph-main > .ft { flex: 1 1 auto; min-height: 0; }

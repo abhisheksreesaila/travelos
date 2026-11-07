@@ -65,7 +65,7 @@
   function geometry(wrap, r) {
     var vv = window.visualViewport, u = rem();
     var kb = !!vv && vv.height < window.innerHeight - 80;          // the keyboard is up: every bit of height is needed; otherwise a strip of the day stays above the card to tap
-    var tabs = document.querySelector('.ph-tabs'), reserve = !kb && tabs && getComputedStyle(tabs).display !== 'none' ? tabs.offsetHeight : 0;      // the tab bar steps aside for the keyboard
+    var tabs = document.querySelector('.ph-tabs'), reserve = !kb && tabs && getComputedStyle(tabs).display !== 'none' ? Math.max(tabs.offsetHeight, window.innerHeight - tabs.getBoundingClientRect().top) : 0;      // the tab bar steps aside for the keyboard; F-200: it floats a little above the bottom edge, so its top is what to keep clear of
     var vw = wrap.clientWidth, floor = wrap.clientHeight - reserve, top0 = parseFloat(getComputedStyle(wrap).paddingTop) || 0;
     var topMin = top0 + u * (kb ? 0.5 : 4);
     if (vv) { topMin = Math.max(topMin, vv.offsetTop + u * 0.5); floor = Math.min(floor, vv.offsetTop + vv.height); }

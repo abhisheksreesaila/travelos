@@ -1,13 +1,10 @@
-/* omxqua v0.1.6 · Travel "Coast" with GitAway's orange (autopilot M5, decisions D-50, D-60 to D-66). The design language is ~/Projects/omxqua (LANGUAGE.md, src/tokens.css,
-   src/components.css): Material texture (opaque tonal surfaces, state layers, one soft shadow scale; no glass, blur or gradients on chrome) with Liquid motion (springs only for small
-   things under the finger). Used by /plan, /creators, /sandbox and /partners: gitaway/omxqua.py puts `oq-root oq-light oq-family-travel` on <html> for those paths and links this file.
-   Vendored by hand, not copied: the --oq-* names and values are the language's; sizes are rem (the site scales off one root, F-030: 0.75rem laptop, 1rem phone), the motion durations
-   are the --motion-* tokens (tests/test_motion_tokens.py), and only the parts GitAway uses are here: tokens, focus ring, type, buttons, chips, .ic-tile, .oq-flat.
-   The one app-layer change: the Travel accent is GitAway's coral, not sea teal (the language lets an app pick its accent). Sections: tokens, legacy remap (the old --ink/--card/...
-   names follow Coast on these pages), type, chrome, buttons, press, focus, chips, coloured icons. The logo is not here: it looks the same on every page (base.css, D-61). */
-
-@font-face { font-family: "Geist"; src: url("/assets/fonts/geist-variable.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
-@font-face { font-family: "Geist Mono"; src: url("/assets/fonts/geist-mono-variable.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+/* omxqua v0.1.6 on Direction A (F-200; earlier: Travel "Coast" with GitAway's orange, autopilot M5, D-50, D-60 to D-66). The design language is ~/Projects/omxqua (LANGUAGE.md,
+   src/tokens.css, src/components.css): Material texture (opaque tonal surfaces, state layers, one soft shadow scale; no glass, blur or gradients anywhere, the brief's rule) with
+   Liquid motion (springs only for small things under the finger). Used by /plan, /creators, /sandbox, /partners and the other Coast pages: gitaway/omxqua.py puts
+   `oq-root oq-light oq-family-travel` on <html> for those paths and links this file. The --oq-* names are the language's; since F-200 every value is a Direction A token from
+   tokens.css (canvas, cards, ink, the ink accent, the kinds' tints and inks, sh1-sh3), so these pages are light or dark with the rest of the site and the old sand and orange are gone.
+   Sizes are rem (the site scales off one root, F-030), the motion durations are the --motion-* tokens (tests/test_motion_tokens.py). Sections: tokens, type, chrome, buttons, press,
+   focus, chips, coloured icons. The logo is not here: it looks the same on every page (base.css). */
 
 /* ---------- tokens (src/tokens.css, in rem) ---------- */
 .oq-root {
@@ -15,7 +12,7 @@
   --oq-font-mono: "Geist Mono", ui-monospace, monospace;
   --oq-radius-xs: 0.25rem; --oq-radius-in: 0.625rem; --oq-radius-card: 1rem; --oq-radius-menu: 0.875rem; --oq-radius-full: 62rem;
   --oq-space-1: 0.25rem; --oq-space-2: 0.5rem; --oq-space-3: 0.75rem; --oq-space-4: 1rem; --oq-space-5: 1.5rem; --oq-space-6: 2rem; --oq-space-7: 3rem;
-  --oq-target: 2.5rem;
+  --oq-target: var(--target);
   --oq-spring-fast: linear(0, 0.02, 0.071, 0.142, 0.226, 0.316, 0.407, 0.494, 0.577, 0.653, 0.72, 0.78, 0.831, 0.875, 0.911, 0.94, 0.964, 0.983, 0.997, 1.007, 1.014, 1.019, 1.021, 1.023, 1.023, 1.022, 1.02, 1.018, 1.017, 1.014, 1.012, 1.01, 1.009, 1.007, 1.006, 1.004, 1.003, 1.002, 1.002, 1.001, 1);
   --oq-spring: linear(0, 0.023, 0.079, 0.154, 0.237, 0.322, 0.405, 0.482, 0.553, 0.617, 0.674, 0.723, 0.766, 0.803, 0.835, 0.862, 0.885, 0.905, 0.921, 0.935, 0.946, 0.955, 0.963, 0.97, 0.975, 0.98, 0.983, 0.986, 0.989, 0.991, 0.993, 0.994, 0.995, 0.996, 0.997, 0.997, 0.998, 0.998, 0.999, 0.999, 1);
   --oq-spring-fast-dur: var(--motion-spring-dur);   /* phone: the squash and its spring back */
@@ -32,49 +29,27 @@
   .oq-root { --oq-spring-fast-dur: var(--motion-desk); --oq-spring-dur: var(--motion-desk); --oq-press-scale: 1; }
 }
 
-.oq-root.oq-light { color-scheme: light;   /* native scrollbars and form controls match the theme */
-  --oq-shadow-1: 0 1px 0.125rem rgba(20,16,10,.06), 0 0 0 1px rgba(20,16,10,.045); --oq-shadow-2: 0 0.375rem 1.125rem rgba(20,16,10,.10), 0 0 0 1px rgba(20,16,10,.05);
-  --oq-shadow-3: 0 1.125rem 3rem rgba(20,16,10,.18), 0 0 0 1px rgba(20,16,10,.06);
-  --oq-icon-mix: 88%; }   /* a coloured icon is this much data colour, the rest ink, so every glyph clears 3:1 on its tile */
-
-/* Travel · Coast, light. Surfaces, ink, lines and states are the language's; the accent and the one data colour it collides with are GitAway's (D-60, D-62):
-   --oq-accent #c0401c is the brand coral #ff7352 pulled darker until white on it is 5.26:1 and it reads as text on the sand (4.63:1), see tests/test_orange.py.
-   --oq-data-2 (food) was Coast's rust #c2462b, nearly the accent: the accent never doubles as a data colour (LANGUAGE.md), so food is the colour timeline's rose. */
-.oq-family-travel.oq-light { --oq-surface-0:#f4f0e9; --oq-surface-1:#fffdf9; --oq-surface-2:#ffffff; --oq-surface-3:#ffffff; --oq-ink:#1d1a16; --oq-ink-2:#5f584e; --oq-ink-faint:#d6cebf; --oq-line:#e7e0d4; --oq-line-2:#f0eadf; --oq-state:29 26 22;
-  --oq-accent:#c0401c; --oq-on-accent:#ffffff; --oq-ok:#137036; --oq-warn:#8f5400; --oq-bad:#c01f25; --oq-info:#0960b5;
-  --oq-data-1:#3f7a46; --oq-data-2:#b0306f; --oq-data-3:#2f6fbf; --oq-data-4:#9a6700; --oq-data-5:#8a4fa8; --oq-data-6:#7a6a58; }
-.oq-family-travel { --oq-radius-card: 1rem; --oq-target: 2.5rem; --oq-text: 0.9375rem; }
+/* Direction A in omxqua's names: one set for light and dark, because every value is a tokens.css token that changes with the mode */
+.oq-family-travel {
+  --oq-surface-0: var(--paper); --oq-surface-1: var(--card); --oq-surface-2: var(--card-2); --oq-surface-3: var(--card-2);
+  --oq-ink: var(--ink); --oq-ink-2: var(--ink-2); --oq-ink-faint: var(--hairline-2); --oq-line: var(--line); --oq-line-2: var(--hairline); --oq-state: var(--state);
+  --oq-accent: var(--accent); --oq-on-accent: var(--on-accent); --oq-ok: var(--ok-ink); --oq-warn: var(--warn-ink); --oq-bad: var(--danger-ink); --oq-info: var(--k-flight-i);
+  /* a data colour is the kind's ink (8:1 or more on its tint, in both modes): sage = see and do, rose = food, blue = flight, green = car, violet = stay, a neutral */
+  --oq-data-1: var(--k-see-i); --oq-data-2: var(--k-food-i); --oq-data-3: var(--k-flight-i); --oq-data-4: var(--k-car-i); --oq-data-5: var(--k-stay-i); --oq-data-6: var(--ink-2);
+  --oq-shadow-1: var(--sh1); --oq-shadow-2: var(--sh2); --oq-shadow-3: var(--sh3);
+  --oq-icon-mix: 100%;   /* a coloured icon is its kind's ink, which already clears 8:1 on its tile */
+}
+.oq-family-travel { --oq-radius-card: var(--r-md); --oq-target: var(--target); --oq-text: var(--t-body); }
 
 /* Kinds carry colour, days never do (the family's rule). One name per kind, used by every Coast page. */
 .oq-family-travel {
   --oq-k-flight: var(--oq-data-3); --oq-k-stay: var(--oq-data-5); --oq-k-car: var(--oq-data-4); --oq-k-food: var(--oq-data-2); --oq-k-see: var(--oq-data-1);
-  --oq-k-flight-tint: color-mix(in srgb, var(--oq-data-3) 13%, var(--oq-surface-1)); --oq-k-stay-tint: color-mix(in srgb, var(--oq-data-5) 13%, var(--oq-surface-1));
-  --oq-k-car-tint: color-mix(in srgb, var(--oq-data-4) 13%, var(--oq-surface-1)); --oq-k-food-tint: color-mix(in srgb, var(--oq-data-2) 13%, var(--oq-surface-1));
-  --oq-k-see-tint: color-mix(in srgb, var(--oq-data-1) 13%, var(--oq-surface-1));
-  --oq-tonal: color-mix(in srgb, var(--oq-ink) 5%, var(--oq-surface-1));    /* a quiet inset fill on a card */
+  --oq-k-flight-tint: var(--k-flight-t); --oq-k-stay-tint: var(--k-stay-t); --oq-k-car-tint: var(--k-car-t); --oq-k-food-tint: var(--k-food-t); --oq-k-see-tint: var(--k-see-t);
+  --oq-tonal: var(--paper-2);    /* a quiet inset fill on a card */
 }
 
-/* ---------- legacy remap: the site's old names follow Coast on these pages, so shared parts (header, top bar, cards, chips) change with no per-class rule ---------- */
-.oq-family-travel {
-  --font-display: var(--oq-font); --font-body: var(--oq-font);
-  --ink: var(--oq-ink); --ink-2: var(--oq-ink-2); --ink-3: var(--oq-ink-2); --ink-ledge: transparent;
-  --ground: var(--oq-surface-0); --paper: var(--oq-surface-0); --paper-2: var(--oq-tonal); --card: var(--oq-surface-1);
-  --line: var(--oq-line); --hairline: var(--oq-line); --hairline-2: color-mix(in srgb, var(--oq-ink) 18%, var(--oq-surface-1));
-  --skeleton: var(--oq-line); --skeleton-band: var(--oq-line-2);
-  --accent: var(--oq-accent); --accent-deep: var(--oq-accent); --coral: var(--oq-accent); --coral-deep: var(--oq-accent); --coral-tint: color-mix(in srgb, var(--oq-accent) 12%, var(--oq-surface-1));
-  --accent-2: var(--oq-k-car-tint);
-  --sun: var(--oq-k-car-tint);   --sun-tint: var(--oq-k-car-tint);   --sun-ink: var(--oq-data-4);
-  --mint: var(--oq-k-see-tint);  --mint-tint: var(--oq-k-see-tint);  --mint-ink: var(--oq-data-1);
-  --sky: var(--oq-k-flight-tint); --sky-tint: var(--oq-k-flight-tint); --sky-ink: var(--oq-data-3);
-  --grape: var(--oq-k-stay-tint); --grape-tint: var(--oq-k-stay-tint); --grape-ink: var(--oq-data-5);
-  --bubble: var(--oq-k-food-tint); --bubble-tint: var(--oq-k-food-tint); --bubble-ink: var(--oq-data-2);
-  --r-sm: 0.625rem; --r-md: 1rem; --r-lg: 1rem; --r-card: 1rem;
-  --shadow-sm: var(--oq-shadow-1); --shadow-md: var(--oq-shadow-1); --shadow-lg: var(--oq-shadow-3); --shadow-sticker: var(--oq-shadow-1);
-  --ease-spring: var(--oq-ease-in);
-  accent-color: var(--oq-accent);
-}
 .oq-family-travel body { font-family: var(--oq-font); font-size: var(--oq-text); color: var(--oq-ink); background: var(--oq-surface-0); }
-.oq-family-travel :is(h1, h2, h3, h4) { font-family: var(--oq-font); font-weight: 600; letter-spacing: -0.02em; }
+.oq-family-travel { accent-color: var(--oq-accent); }
 .oq-family-travel :is(.ga-page, .ws) { background: var(--oq-surface-0); }
 .oq-family-travel ::selection { background: color-mix(in srgb, var(--oq-accent) 22%, transparent); }
 

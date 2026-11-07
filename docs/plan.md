@@ -1187,14 +1187,15 @@ Brief: docs/briefs/plan-for-me.md (draft; the captain approves the wording and t
 - [x] the prompt asks for the examples' quality (ride order by the kids' heights and ages, rope drop, a midday rest, meal anchors, a rain backup) and is given the verified facts; `planforme.validate` keeps its filters; the intake takes an optional height per kid
 - [x] tests: the checklist dates, the review gate (the buyer cannot see an unsent plan), the example pages, access; a browser test of the offer page and an example at 390 and 1440 (no sideways scroll, tap targets of at least 48px on the phone)
 
-## F-200 Direction A everywhere: tokens, type, light and dark, the shell, sign-in [todo]
-Brief: docs/briefs/free-and-polished.md · Design: docs/design/reskin/README.md (Direction A, B's ticket stub), docs/design/cockpit/README.md "What all three share" · Needs: none
-- [ ] Direction A tokens (canvas #F2F2F5 / black, Apple-bright kind colours, ink accent, sh1-sh3 shadows, radii) in one place, for light and dark; dark follows the system with a manual switch that's remembered
-- [ ] type scale: phone body 17px, secondary 16px, all-caps labels 13px, fine print 14px; desktop body 16px; nothing else smaller
-- [ ] the shell: desktop top islands (brand · Trip, Book, Family, Ask · the Beacon); phone floating tab bar (Trip · Plan · Ask · Book · Family), opaque, no glass or blur anywhere
-- [ ] sign-in redesigned (the founder named it as too small)
-- [ ] every existing page renders in light and dark with contrast at least 4.5:1 and phone tap targets at least 48px (a browser test sweeps the main pages in both modes)
-- [ ] colour still means a kind, never a day; behaviour unchanged (existing tests pass)
+## F-200 Direction A everywhere: tokens, type, light and dark, the shell, sign-in [review]
+Brief: docs/briefs/free-and-polished.md · Design: docs/design/reskin/README.md (Direction A, B's ticket stub), docs/design/cockpit/README.md "What all three share" · Needs: none · Decisions: D-219 to D-231 · Screenshots: docs/report/f200-before-*.png, f200-after-*.png
+- [x] Direction A tokens (canvas #F2F2F5 / black, Apple-bright kind colours, ink accent, sh1-sh3 shadows, radii) in one place, for light and dark; dark follows the system with a manual switch that's remembered
+- [x] type scale: phone body 17px, secondary 16px, all-caps labels 13px, fine print 14px; desktop body 16px; nothing else smaller
+- [x] the shell: desktop top islands (brand · Trip, Book, Family, Ask · the Beacon); phone floating tab bar (Trip · Plan · Ask · Book · Family), opaque, no glass or blur anywhere
+- [x] sign-in redesigned (the founder named it as too small)
+- [x] every existing page renders in light and dark with contrast at least 4.5:1 and phone tap targets at least 48px (a browser test sweeps the main pages in both modes)
+- [x] colour still means a kind, never a day; behaviour unchanged (existing tests pass)
+- [x] an honest "Early preview" label in the shell (desktop top islands, the phone chrome), small and calm, on signed-in and signed-out pages; it opens "GitAway is new. Things will change; tell us what breaks.", the last words a link to GITAWAY_CONTACT_EMAIL when it is set (the brief's "What" 1)
 
 ## F-201 The trip cockpit: Ticket line [todo]
 Brief: docs/briefs/free-and-polished.md · Design: docs/design/cockpit/3-ticket.html and README.md (Direction 3) · Needs: F-200 tokens; F-198 booking lanes; F-203 weather; F-204 routes
