@@ -1,3 +1,27 @@
+/*! Parts of this file are adapted from Meng To's agent skills (build-threejs-scroll-worlds), used under the MIT License:
+
+MIT License
+
+Copyright (c) 2026 Meng To
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
 // The cover's page side (F-206): day or night, phone or laptop, the live 3D world or the calm stills, and the scroll conductor. Adapted from the
 // prototype (docs/design/cover3d/src/page.js), after Meng To's scroll conductor (build-threejs-scroll-worlds, MIT).
 // It is the only script that ever fetches the world: three.js, assets/js/cover/world.js and the terrain, and only when the live world is wanted.
@@ -5,7 +29,11 @@
 (function () {
   const root = document.documentElement, main = document.getElementById('main');
   if (!main || !root.classList.contains('cv-root')) return;
+  // The capture and measuring tools' switches (?measure skips the weak-device check and the governor, ?capture, ?q picks the tier, ?cam frames a
+  // view) work only where the page says data-debug, which production never renders (gitaway/pages/cover.py debug()).
+  const DEBUG = main.dataset.debug === '1';
   const Q = new URLSearchParams(location.search);
+  if (!DEBUG) ['measure', 'capture', 'q', 'cam'].forEach((k) => Q.delete(k));
   const REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const PHONE = matchMedia(main.dataset.phone);
   const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -59,10 +87,13 @@
   // Each chapter has a dwell (its card is pinned while its action plays: local 0 → 1) and then a travel to the next one (the cards swap,
   // the camera flies). One number T = 2i + local during a dwell, 2i + 1 + travel after it.
   let anchors = [], exact = 0, smooth = 0, widthAt = 0, active = -1;
+  const row = main.querySelector('.cv-wds');
   function measure() {
     const vh = innerHeight; widthAt = innerWidth;
     anchors = chapters.map((el) => { const top = el.getBoundingClientRect().top + scrollY, h = el.offsetHeight; return { s: top, e: top + Math.max(1, h - vh) }; });
     anchors.forEach((a, i) => { a.t = i < N - 1 ? Math.max(a.e + 1, anchors[i + 1].s) : a.e; });
+    // the plan's row of widgets takes a keyboard stop only while it is on screen and scrolls (never while it is the screen reader's hidden copy)
+    if (row) { if (row.clientWidth > 1 && row.scrollWidth > row.clientWidth + 1) row.tabIndex = 0; else row.removeAttribute('tabindex'); }
   }
   function tAt(y) {
     for (let i = 0; i < N; i++) {
@@ -79,7 +110,6 @@
     const i = clamp(Math.floor(exact / 2 + 0.25), 0, N - 1);      // the card you are reading
     if (i !== active) {
       active = i;
-      chapters.forEach((c, k) => c.classList.toggle('is-on', k === i));
       railBtns.forEach((b, k) => (k === i ? b.setAttribute('aria-current', 'step') : b.removeAttribute('aria-current')));
       root.dataset.cvChapter = i;
       if (still || !worldReady) showStill(i);
@@ -146,7 +176,7 @@
   const listeners = {};
   let worldReady = false;
   const api = window.GA_COVER = {
-    Q, REDUCE, mode, layout, still, tier, visible: true, N, assets: main.dataset.assets,
+    Q, debug: DEBUG, REDUCE, mode, layout, still, tier, visible: true, N, assets: main.dataset.assets,
     on(ev, fn) { (listeners[ev] = listeners[ev] || []).push(fn); },
     emit(ev, v) { (listeners[ev] || []).forEach((f) => f(v)); },
     tick(dt) { smooth = REDUCE ? exact : smooth + (exact - smooth) * (1 - Math.exp(-5.2 * dt)); if (Math.abs(smooth - exact) < 1e-4) smooth = exact; return state(); },
@@ -166,7 +196,7 @@
       still = api.still = true; worldReady = false;
       root.classList.remove('cv-live', 'cv-ready'); root.classList.add('cv-still');
       canvas.classList.remove('on'); poster.classList.remove('off');
-      active = -1; read();
+      measure(); active = -1; read();
       api.emit('weak');
     },
   };

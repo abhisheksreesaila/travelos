@@ -15,7 +15,8 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 
 REPO = Path(__file__).resolve().parents[2]
-EXE = os.path.expanduser("~/.cache/ms-playwright/chromium-1248/chrome-linux64/chrome")
+# Playwright's own full Chromium (channel "chromium": its headless shell has no GPU path), or COVER3D_CHROME=<path to a chrome binary>
+CHROME = os.environ.get("COVER3D_CHROME")
 GPU = ["--use-angle=vulkan", "--enable-features=Vulkan", "--ignore-gpu-blocklist"]
 SOFT = ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"]
 RUN = """async (dur) => {
@@ -31,8 +32,12 @@ RUN = """async (dur) => {
 }"""
 
 
+def launch(p, args):
+    return p.chromium.launch(executable_path=CHROME, args=args) if CHROME else p.chromium.launch(channel="chromium", args=args)
+
+
 def run(p, name, args, viewport, dpr, phone, cpu, governor, base):
-    b = p.chromium.launch(executable_path=EXE, args=args)
+    b = launch(p, args)
     ctx = b.new_context(viewport=viewport, device_scale_factor=dpr, has_touch=phone, is_mobile=phone, reduced_motion="no-preference")
     page = ctx.new_page()
     if cpu > 1:

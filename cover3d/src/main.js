@@ -23,6 +23,9 @@ async function main() {
   const T = await loadTahoe(G.assets, G.tier === 'high' ? 'hi' : 'lo');
   const S = createScene(G);
   const { renderer, scene, camera, q } = S;
+  let loop = null;
+  // the calm stills took over for good (too slow, or the world failed): stop, and give the GPU's memory and the context back
+  G.on('weak', () => { if (loop) loop.stop(); renderer.dispose(); renderer.forceContextLoss(); });
   const P = T.places, dark = () => G.mode === 'dark', phoneL = () => G.layout === 'phone';
   const v3 = (p, y) => new Vector3(p[0], y ?? T.landH(p[0], p[1]), p[1]);
 
@@ -411,18 +414,32 @@ async function main() {
     renderer.render(scene, camera);
   }
 
-  G.on('mode', (m) => { scene.remove(book); book = buildBook(m === 'dark'); scene.add(book); cardsDone = ''; cardsNext = 0; });
-  const loop = makeLoop(G, S, (dt) => update(G.tick(dt), dt), render);
+  // day or night: the guidebook is built again for the new light, and the old one's geometry, materials and page textures are freed
+  G.on('mode', (m) => { scene.remove(book); dispose(book); book = buildBook(m === 'dark'); scene.add(book); cardsDone = ''; cardsNext = 0; });
+  loop = makeLoop(G, S, (dt) => update(G.tick(dt), dt), render);
   loop.resize();
   // compile every program now (in parallel where the browser can), so a material seen for the first time mid-story never stalls a frame
   const hidden = []; scene.traverse((o) => { if (!o.visible) { hidden.push(o); o.visible = true; } });
   try { await renderer.compileAsync(scene, camera); } catch (e) { /* older drivers: they compile on first use */ }
   hidden.forEach((o) => (o.visible = false));
   const first = G.tick(1 / 60); update(first, 1 / 60); render();
+  // the capture and measuring tools (and the browser tests) read the world's insides on window.__cover: off production only (G.debug)
   if (S.capture) {
-    window.__cover = { G, S, T, step: (dt = 1 / 30) => { update(G.tick(dt), dt); render(); } };
+    if (G.debug) window.__cover = { G, S, T, step: (dt = 1 / 30) => { update(G.tick(dt), dt); render(); } };
     G.ready(); return;
   }
   G.ready(); loop.start();
-  window.__cover = { G, S, T, loop, terrain, get running() { return loop.running; }, info: () => ({ ...renderer.info.render, tiles: terrain.geometry.instanceCount, trees: forest.userData, houses: towns.userData.count, scale: loop.scale, programs: renderer.info.programs?.length }) };
+  if (G.debug) window.__cover = { G, S, T, loop, terrain, get running() { return loop.running; }, info: () => ({ ...renderer.info.render, tiles: terrain.geometry.instanceCount, trees: forest.userData, houses: towns.userData.count, scale: loop.scale, programs: renderer.info.programs?.length }) };
+}
+
+// frees what a group of meshes holds on the GPU: geometry, materials and every texture they sample
+function dispose(group) {
+  group.traverse((o) => {
+    if (o.geometry) o.geometry.dispose();
+    for (const m of [].concat(o.material || [])) {
+      for (const v of Object.values(m)) if (v && v.isTexture) v.dispose();
+      for (const u of Object.values(m.uniforms || {})) if (u.value && u.value.isTexture) u.value.dispose();
+      m.dispose();
+    }
+  });
 }

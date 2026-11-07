@@ -18,12 +18,17 @@ from playwright.sync_api import sync_playwright
 REPO = Path(__file__).resolve().parents[2]
 STILLS = REPO / "assets" / "cover" / "stills"
 REPORT = REPO / "docs" / "report"
-EXE = os.path.expanduser("~/.cache/ms-playwright/chromium-1248/chrome-linux64/chrome")
+# Playwright's own full Chromium (channel "chromium": its headless shell has no GPU path), or COVER3D_CHROME=<path to a chrome binary>
+CHROME = os.environ.get("COVER3D_CHROME")
 GPU = ["--use-angle=vulkan", "--enable-features=Vulkan", "--ignore-gpu-blocklist", "--enable-unsafe-swiftshader"]
 # each chapter at its most telling moment: chapter 0 at rest is the poster, the first frame the live world draws
 MOMENTS = {0: 0.0, 1: 0.95, 2: 0.95, 3: 0.92, 4: 0.72, 5: 0.42, 6: 0.97}
 HIDE = ".cv-top, .cv-rail, main, .cv-close, .ga-skip { visibility: hidden !important; } .cv-anchors { display: none !important; }"
 WIDE, PHONE = {"width": 1440, "height": 900}, {"width": 390, "height": 844}
+
+
+def launch(p, args):
+    return p.chromium.launch(executable_path=CHROME, args=args) if CHROME else p.chromium.launch(channel="chromium", args=args)
 
 
 def open_page(browser, base, viewport, scheme, query, dpr=1, hide=True):
@@ -150,7 +155,7 @@ def main():
     ap.add_argument("--base", default="http://127.0.0.1:6206")
     a = ap.parse_args()
     with sync_playwright() as p:
-        browser = p.chromium.launch(executable_path=EXE, args=GPU)
+        browser = launch(p, GPU)
         for w in a.what:
             {"stills": stills, "og": og, "report": report, "closeups": closeups, "video": video}[w](browser, a.base)
         browser.close()

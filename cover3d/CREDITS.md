@@ -6,6 +6,8 @@
 - **CDLOD** (continuous distance-dependent level of detail) is Filip Strugar's published method (2010); `terrain.js` is our own implementation of the idea.
 
 ## Meng To's agent skills (MIT, © Meng To; read from `~/.cache/mengto-skills-src`, nothing copied wholesale)
+His MIT notice ships with the code adapted from them: `LICENSE-mengto` here, and in full at the top of `assets/js/cover/world.js` (written in by `build.mjs`) and `assets/js/cover.js`.
+
 | Skill | What it gave the world, and where |
 |---|---|
 | `3d/3d-ultra-realistic-water` | the lake: per-pixel ripple normals from analytic derivatives, each wave faded at its own pixel footprint; Schlick Fresnel with F0 0.02; the reflection clamped above the horizon; glitter terms; haze into the sky's own horizon colour; a planar reflection of what stands in the water (`water.js`) |
@@ -20,7 +22,7 @@
 
 ## Data
 - **Elevation:** AWS Terrain Tiles (Mapzen terrarium encoding; sources include USGS 3DEP/NED and SRTM), fetched once by the trip cockpit's `docs/design/cockpit/tools/fetch_geo.py`.
-- **Lakes, roads and places:** © OpenStreetMap contributors, available under the Open Database License (ODbL), via Nominatim and the Overpass API (same fetch). The cover's footer credits them.
+- **Lakes, roads and places:** © OpenStreetMap contributors, available under the Open Database License (ODbL), via Nominatim and the Overpass API (same fetch). The cover's footer credits them, linked to https://www.openstreetmap.org/copyright as OSM's attribution guidelines ask; `tahoe-geo.json.gz` carries the same credit (docs/decisions.md).
 - **Drives:** the OSRM demo router on OpenStreetMap data (same fetch).
 
 ## Everything else

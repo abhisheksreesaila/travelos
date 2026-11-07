@@ -8,8 +8,12 @@ Writes assets/cover/:
   tahoe-geo.json.gz                  world-space vectors: places, the story's trails (real roads and routes), roads, towns, lake outlines
 
 World space: metres, x east and z south of the pier at the end of Ski Run Boulevard, y up from the surface of Lake Tahoe (1897 m).
+The gzip files carry no timestamp (mtime=0), so the same data always bakes to the same bytes, and the same content hash in the world's URLs.
 
     pixi run python -I cover3d/tools/bake_tahoe.py
+
+Needs Pillow (in pixi.toml) and numpy, which the pixi environment has only because another package pulls it in: pixi.toml does not list it by
+name, so if a dependency change ever drops it, `pixi add numpy` before baking.
 """
 import gzip
 import heapq
@@ -160,7 +164,7 @@ def encode_sdf(d, unit):
 def pack(header, blobs):
     head = json.dumps(header, separators=(",", ":")).encode()
     body = b"GAT1" + struct.pack("<I", len(head)) + head + b"".join(blobs)
-    return gzip.compress(body, 9)
+    return gzip.compress(body, 9, mtime=0)
 
 
 # ---------------------------------------------------------------- roads as a graph, for the story's trails
@@ -415,19 +419,10 @@ def main():
         "drive": {"fork": {"min": round(raw("osrm-d3.json")["routes"][0]["duration"] / 60), "km": round(raw("osrm-d3.json")["routes"][0]["distance"] / 1000, 1)}},
         "credit": "Elevation: AWS Terrain Tiles (USGS 3DEP and others). Lakes, roads and places: © OpenStreetMap contributors (ODbL). Drives: OSRM.",
     }
-    blob = gzip.compress(json.dumps(geo, separators=(",", ":")).encode(), 9)
+    blob = gzip.compress(json.dumps(geo, separators=(",", ":")).encode(), 9, mtime=0)
     (OUT / "tahoe-geo.json.gz").write_bytes(blob)
     sizes["geo"] = len(blob)
     print(f"tahoe-geo: {len(blob) / 1024:.1f} KB; trails orig {len(orig)} pts, fork {len(fork)}, route {len(route_in)}, roads {len(roads)}")
-
-    # a hillshade to check the bake by eye (not shipped)
-    gy, gx = np.gradient(hi_h, 60, 60)
-    L = np.array([-0.6, 0.6, -0.5]) / np.linalg.norm([-0.6, 0.6, -0.5])
-    nrm = np.dstack([-gx * 1.5, np.ones_like(gx), -gy * 1.5])
-    nrm /= np.linalg.norm(nrm, axis=2, keepdims=True)
-    img = (np.clip(nrm @ L, 0, 1) * 200 + 40).astype(np.uint8)
-    img[hi_h < 0] = 70
-    Image.fromarray(img).save(Path.home() / ".cache" / "f206-tmp" / "bake-hillshade.png")
     print("sizes", {k: f"{v / 1024:.1f} KB" for k, v in sizes.items()})
 
 

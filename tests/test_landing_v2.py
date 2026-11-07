@@ -41,7 +41,7 @@ def test_other_pages_keep_their_header_nav(client):
 
 def test_footer_carries_the_links_that_left_the_header(client):
     footer = _tag(client.get("/").text, "footer", "cv-foot")      # the signed-out landing is the cover (F-206)
-    assert _hrefs(footer) == ["/community", "/for-creators", "/signin", "/privacy", "/terms"]
+    assert [h for h in _hrefs(footer) if h.startswith("/")] == ["/community", "/for-creators", "/signin", "/privacy", "/terms"]   # (and the map data's credit, tests/test_cover.py)
     other = _tag(_get(client, "/community"), "footer", "ga-footer")
     assert "/creators" not in other  # only the landing gets the extra links
 

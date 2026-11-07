@@ -76,8 +76,12 @@ function detailNoise() {
   return out;
 }
 
+// each data file's content hash, written in by cover3d/build.mjs: the service worker keeps /assets/ files with ?v= for good, so a new bake is a new URL
+const DATA_V = __COVER_DATA__;
+const dataUrl = (base, name) => `${base}${name}?v=${DATA_V[name]}`;
+
 export async function loadTahoe(base, tier) {
-  const [bin, geoBytes] = await Promise.all([gunzip(`${base}tahoe-${tier}.bin.gz`), gunzip(`${base}tahoe-geo.json.gz`)]);
+  const [bin, geoBytes] = await Promise.all([gunzip(dataUrl(base, `tahoe-${tier}.bin.gz`)), gunzip(dataUrl(base, 'tahoe-geo.json.gz'))]);
   if (String.fromCharCode(...bin.subarray(0, 4)) !== 'GAT1') throw new Error('not a GitAway terrain file');
   const hl = new DataView(bin.buffer, bin.byteOffset + 4, 4).getUint32(0, true);
   const head = JSON.parse(new TextDecoder().decode(bin.subarray(8, 8 + hl)));

@@ -9,6 +9,9 @@ The signed-out landing at `/` is a scroll story through the real Lake Tahoe in D
 - **Quality tiers:** a laptop gets `high` (the 60 m ground, the planar mirror on the lake, 2048 soft shadows, up to 2x pixels on a retina screen), a strong phone `mid` (the 120 m ground, 1024 shadows, 1.5x), any other phone `low` (no shadows, fewer trees, 1.25x). The governor (`src/core.js` `Governor`) then lowers the pixel ratio while frames take longer than 23 ms, to 0.55 at worst, and gives up for the stills after three windows over 45 ms at that floor.
 - **Pausing:** the render loop stops when the closing screen covers the stage and when the tab is hidden.
 - **Day and night** follow the site: an explicit `data-theme`, `data-mode` or `data-color-scheme` of `dark` or `light` (or a `dark`/`light` class) on `<html>` or `<body>`, else the system setting. F-200's switch only has to set one of those (`cvMode()` in `cover_boot.js`).
+- **Layouts:** a laptop puts the card beside the world; phones, portrait tablets and short screens (a phone on its side, any window under 520 px tall) put the world on top and the card below (`cover.py` `PHONE_Q`, used verbatim by `cover.css`, `cover.js` and the poster's `<picture>`). A card never runs under the header or off the screen; only on a screen shorter than any of these does it scroll inside itself. Sides keep clear of a notch (`env(safe-area-inset-*)`).
+- **A screen reader** reads the plan's widgets from the card even when the world draws them (the card's copy is visually hidden then; the world's copies are `aria-hidden`).
+- **Production** ignores the tools' URL switches (`?measure`, `?capture`, `?q`, `?cam`) and the world keeps `window.__cover`, `__frames` and `__work` to itself: both need `data-debug="1"` on `<main>`, which `cover.py` renders only off production.
 
 ## The place is real
 `tools/bake_tahoe.py` turns what the trip cockpit fetched once (`docs/design/cockpit/tools/fetch_geo.py`, raw responses in `~/.cache/cockpit-geo-raw`) into `assets/cover/`:
@@ -34,17 +37,18 @@ World space is metres, x east and z south of the pier at the end of Ski Run Boul
 Everything runs from the repo root against the dev server (any port; the tools default to 6206):
 
 ```
-node cover3d/build.mjs                                  # three.js tree-shaken + the world; writes cover3d/sizes.json (npm ci in cover3d/ first, or COVER3D_MODULES=...)
-pixi run python -I cover3d/tools/bake_tahoe.py          # the terrain and vectors (needs ~/.cache/cockpit-geo-raw; ~3 min)
+(cd cover3d && npm ci --ignore-scripts)                 # once: exactly three@0.187.0 and esbuild@0.28.2 from the lock, no install scripts (.npmrc says so too)
+node cover3d/build.mjs                                  # three.js tree-shaken + the world; writes cover3d/sizes.json (or COVER3D_MODULES=<a node_modules with the pinned two>)
+pixi run python -I cover3d/tools/bake_tahoe.py          # the terrain and vectors (needs ~/.cache/cockpit-geo-raw; ~3 min); then build again, the world carries the data's hashes
 pixi run python -I cover3d/tools/capture.py stills og   # the stills, the poster and the share image, from the live world on this machine's GPU
 pixi run python -I cover3d/tools/capture.py report closeups video   # docs/report/f206-*
 pixi run python -I cover3d/tools/measure.py             # frame rate, cover3d/fps.json
 pixi run python scripts/cover_size.py                   # what the landing downloads
 ```
-`COVER3D_DEV=1 node cover3d/build.mjs` builds an unminified world with a source map for debugging; `tests/test_cover_budget.py` refuses it, and refuses a world older than its sources (the bundle's banner carries a hash of `src/`).
+`COVER3D_DEV=1 node cover3d/build.mjs` builds an unminified world with a source map for debugging; `tests/test_cover_budget.py` refuses it, and refuses a world older than its sources (the bundle's banner carries a hash of `src/`). The build refuses any esbuild but the pinned one and looks for its tools nowhere but `cover3d/node_modules` (or `COVER3D_MODULES`). Every URL the world fetches carries its file's content hash (three.js's import specifier, the terrain files), since the service worker keeps `?v=` files for good; `cover.py` preloads the same three.js URL. The bake writes gzip with no timestamp, so the same data bakes to the same bytes (and the same hashes). Capture and measure use Playwright's own full Chromium (`channel="chromium"`) on this machine's GPU, or `COVER3D_CHROME=<path>`. The bake needs numpy, which the pixi environment has only through another package; `pixi add numpy` if that ever changes.
 
 ## Measured (2026-11-07)
-**JavaScript the landing downloads, gzip -9** (Cloudflare compresses in front of gitaway.me): three.js 139.3 KB, the world 40.7 KB, `cover.js` 4.4 KB, the inline boot 0.7 KB, the site's own scripts 15.8 KB: **about 200 KB of the 250 KB budget** (`tests/test_cover_budget.py` prints the exact figure). The world downloads 361 KB of data on a laptop and 144 KB on a phone, far under the 2 MB allowed: the detail is generated on the device (a GPU-baked noise field, a GPU-baked wood field, crafted geometry in code), not downloaded.
+**JavaScript the landing downloads, gzip -9** (Cloudflare compresses in front of gitaway.me): three.js 139.3 KB, the world 41.7 KB, `cover.js` 5.4 KB, the inline boot 0.7 KB, the site's own scripts 15.8 KB, and FastHTML's four jsDelivr scripts 42.3 KB (htmx, fasthtml-js, surreal, css-scope-inline; F-207 switches them off site-wide): **245.1 KB of the 250 KB budget**, about 203 KB once F-207 lands (`tests/test_cover_budget.py` prints the exact figure; a script from another site that nobody has measured fails it). The world downloads 361 KB of data on a laptop and 144 KB on a phone, far under the 2 MB allowed: the detail is generated on the device (a GPU-baked noise field, a GPU-baked wood field, crafted geometry in code), not downloaded.
 
 **Frame rate** (`tools/measure.py`, one scripted 24 s scroll through the story, governor off unless noted; numbers from `fps.json`):
 
@@ -62,9 +66,10 @@ What this does and does not prove: the laptop holds 60 fps through the whole sto
 - The ground is the 60 m elevation: right for the bowl and the far mountains, smooth at the cabin's feet (snow covers it, and the crust detail helps).
 - The family are figures, not people: true size and crafted, but their faces are a sphere.
 - The fork tree is a diagram drawn over the lake, on purpose: the story's last word, not a place.
-- Phone views compose the world in the top part of the screen; on very short or very wide windows a label can sit near an edge.
+- Phone views compose the world in the top part of the screen; on a phone on its side that part is a strip above the card, and on very wide windows a label can sit near an edge.
+- A 320 px tall screen (the first iPhone SE on its side) is shorter than any layout plans for: four of its cards scroll inside themselves. Every other size measured fits whole (`tests_browser/test_cover.py` checks 844x390, 1366x768 and 320x568, live and still).
 
 ## Report
-Screens of the real page, 1440 and 390, day and night: `docs/report/f206-<width>-<light|dark>-<chapter>.jpg`. Close-ups for judging the detail: `f206-closeup-cabin.jpg`, `-cabin-night`, `-trees-snow`, `-pier-sunset`, `-pier-night`, `-family-and-deck`, `-water`, `-emerald-bay`. A scroll-through: `f206-scroll-1280.mp4`.
+Screens of the real page, 1440 and 390, day and night: `docs/report/f206-<width>-<light|dark>-<chapter>.jpg`. Close-ups for judging the detail: `f206-closeup-cabin.jpg`, `-cabin-night`, `-trees-snow`, `-pier-sunset`, `-pier-night`, `-family-and-deck`, `-water`, `-emerald-bay`. A scroll-through: `f206-scroll-1280.mp4` (recorded before the review fixes: chapter 1's card has since gained the line that the families are made up).
 
 Credits: [CREDITS.md](CREDITS.md).

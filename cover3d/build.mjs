@@ -1,28 +1,32 @@
 // Builds the cover's world (F-206). Two outputs, both under assets/ and loaded only by assets/js/cover.js on the signed-out landing:
 //   assets/vendor/three-0.187.0/three.cover.min.js  three.js r187, tree-shaken to exactly the names src/ imports, with three's licence (LICENSE beside it)
-//   assets/js/cover/world.js                         src/main.js and everything it imports, minified, importing three by the path above
-// Then it prints the gzip and brotli sizes and writes them to sizes.json (tests/test_cover_budget.py checks the budget itself).
-// Needs three@0.187.0 and esbuild@0.28.2 (package.json): `npm ci` here, or COVER3D_MODULES=<a node_modules with both>.
+//   assets/js/cover/world.js                         src/main.js and everything it imports, minified, importing three by the path above and its content hash
+// Every URL the world fetches carries its file's content hash (three.js and the terrain), because the service worker keeps /assets/ files with ?v=
+// for good; gitaway/pages/cover.py preloads the same three.js URL. The world carries Meng To's MIT notice (LICENSE-mengto) for the code adapted
+// from his skills. Then it prints the gzip and brotli sizes and writes them to sizes.json (tests/test_cover_budget.py checks the budget itself).
+// Needs exactly three@0.187.0 and esbuild@0.28.2 (package.json and its lock): `npm ci --ignore-scripts` here (.npmrc refuses install scripts),
+// or COVER3D_MODULES=<a node_modules with both>. Nothing else is looked for.
 import { createRequire } from 'node:module';
 import { existsSync, readFileSync, readdirSync, writeFileSync, mkdirSync, copyFileSync } from 'node:fs';
 import { gzipSync, brotliCompressSync, constants } from 'node:zlib';
 import { createHash } from 'node:crypto';
-import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = join(here, '..');
-const mods = process.env.COVER3D_MODULES || [join(here, 'node_modules'), join(homedir(), '.cache/story3d-build/node_modules')].find((p) => existsSync(join(p, 'three')));
-if (!mods) throw new Error('three and esbuild not found: run `npm ci` in cover3d/ or set COVER3D_MODULES');
+const mods = process.env.COVER3D_MODULES || join(here, 'node_modules');
+if (!existsSync(join(mods, 'three')) || !existsSync(join(mods, 'esbuild'))) throw new Error('three and esbuild not found: run `npm ci --ignore-scripts` in cover3d/ (or set COVER3D_MODULES to a node_modules with the pinned versions)');
 const req = createRequire(join(mods, 'x.js'));
-const esbuild = req('esbuild');
 const pin = JSON.parse(readFileSync(join(here, 'package.json'), 'utf8'));
 const threeVersion = JSON.parse(readFileSync(join(mods, 'three/package.json'), 'utf8')).version;
 if (threeVersion !== pin.dependencies.three) throw new Error(`three ${threeVersion} found, ${pin.dependencies.three} pinned`);
+const esbuild = req('esbuild');
+if (esbuild.version !== pin.devDependencies.esbuild) throw new Error(`esbuild ${esbuild.version} found, ${pin.devDependencies.esbuild} pinned`);
 const THREE_DIR = `assets/vendor/three-${threeVersion}`;
 const THREE_URL = `/${THREE_DIR}/three.cover.min.js`;
 const DEV = process.env.COVER3D_DEV === '1';     // unminified world with an inline source map, for debugging only; never commit a DEV build
+const hash = (p) => createHash('sha256').update(readFileSync(p)).digest('hex').slice(0, 10);    // the same short hash gitaway/pages/cover.py works out
 
 // 1. every name src/ imports from 'three'
 const names = new Set();
@@ -49,12 +53,16 @@ const srcHash = createHash('sha256');
 for (const f of readdirSync(join(here, 'src')).filter((f) => f.endsWith('.js')).sort()) srcHash.update(f + '\n' + readFileSync(join(here, 'src', f), 'utf8').replace(/\r\n/g, '\n'));
 const SRC = srcHash.digest('hex').slice(0, 16);
 
-// 3. the world, with three left as an import of the vendored file
-const external = { name: 'three-vendored', setup(b) { b.onResolve({ filter: /^three$/ }, () => ({ path: THREE_URL, external: true })); } };
+// 3. the world, with three left as an import of the vendored file by its content hash, and the terrain files' hashes written in (src/data.js)
+const threeSpec = `${THREE_URL}?v=${hash(join(repo, THREE_DIR, 'three.cover.min.js'))}`;
+const data = Object.fromEntries(['tahoe-hi.bin.gz', 'tahoe-lo.bin.gz', 'tahoe-geo.json.gz'].map((f) => [f, hash(join(repo, 'assets/cover', f))]));
+const external = { name: 'three-vendored', setup(b) { b.onResolve({ filter: /^three$/ }, () => ({ path: threeSpec, external: true })); } };
+const mengTo = readFileSync(join(here, 'LICENSE-mengto'), 'utf8').trim();
 await esbuild.build({
   entryPoints: [join(here, 'src/main.js')], outfile: join(repo, 'assets/js/cover/world.js'), bundle: true, minify: !DEV, sourcemap: DEV ? 'inline' : false, format: 'esm',
-  target: 'es2020', legalComments: 'inline', plugins: [external], logLevel: 'warning',
-  banner: { js: `/* GitAway cover world (F-206), built by cover3d/build.mjs from cover3d/src (src:${SRC}${DEV ? ' DEV' : ''}). Credits: cover3d/CREDITS.md */` },
+  target: 'es2020', legalComments: 'inline', plugins: [external], logLevel: 'warning', define: { __COVER_DATA__: JSON.stringify(data) },
+  banner: { js: `/* GitAway cover world (F-206), built by cover3d/build.mjs from cover3d/src (src:${SRC}${DEV ? ' DEV' : ''}). Credits: cover3d/CREDITS.md */\n` +
+    `/*! Parts of this world are adapted from Meng To's agent skills (see cover3d/CREDITS.md), used under the MIT License:\n\n${mengTo}\n*/` },
 });
 
 // 4. sizes

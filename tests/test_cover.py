@@ -7,12 +7,14 @@ from pathlib import Path
 
 import pytest
 
-from gitaway import community
+from gitaway import auth, icons
 from gitaway.pages import cover
+from tests.live_trips import live_trip
 from tests.test_signin import sign_in
 
 ROOT = Path(__file__).resolve().parent.parent
 TAGLINE = "Take a trip. Leave a trail."
+SHARED = r'<a [^>]*href="/community"[^>]*>See trips people shared'
 SUBHEAD = "Share the whole trip, not just the photos, so the next family can follow it, make it theirs, and say thanks."
 
 
@@ -68,10 +70,17 @@ def test_the_three_calls_to_action_go_to_pages_that_exist(client, monkeypatch, m
     row = _cta_row(_cover(client))
     assert re.search(r'<a [^>]*href="/start"[^>]*>Start a trip</a>', row)
     assert re.search(r'<a [^>]*href="/for-creators"[^>]*>Leave a trail</a>', row)
-    shared = re.search(r'<a [^>]*href="/community"[^>]*>See trips people shared', row)
-    assert bool(shared) == (mode == "1" or community.has_real())          # off the showcase Community trips exist only once someone has published
+    assert bool(re.search(SHARED, row)) == (mode == "1")                   # nobody has published here: off the showcase there are no shared trips to see
     for href in _links(row):
         assert client.get(href).status_code == 200, href
+
+
+def test_the_live_site_opens_the_door_to_shared_trips_once_a_real_one_is_published(client, monkeypatch):
+    monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
+    assert not re.search(SHARED, _cta_row(_cover(client)))
+    live_trip()
+    assert re.search(SHARED, _cta_row(_cover(client)))
+    assert client.get("/community").status_code == 200
 
 
 @pytest.mark.parametrize("mode", ["1", "0"], ids=["showcase", "production"])
@@ -140,6 +149,58 @@ def test_the_first_paint_already_knows_day_or_night(client):
 
 
 def test_the_real_map_data_is_credited_where_it_shows(client):
-    """The world's shorelines, roads and drives are OpenStreetMap data (ODbL): the page that shows them says so."""
-    footer = _text(re.search(r"<footer.*?</footer>", _cover(client), re.S).group(0))
-    assert "© OpenStreetMap contributors" in footer and "USGS 3DEP" in footer
+    """The world's shorelines, roads and drives are OpenStreetMap data (ODbL): the page that shows them says so, and links to OpenStreetMap's
+    copyright page as its attribution guidelines ask."""
+    footer = re.search(r"<footer.*?</footer>", _cover(client), re.S).group(0)
+    assert "© OpenStreetMap contributors" in _text(footer) and "USGS 3DEP" in _text(footer)
+    assert re.search(r'<a [^>]*href="https://www\.openstreetmap\.org/copyright"[^>]*>OpenStreetMap contributors</a>', footer)
+
+
+def test_the_decisions_record_the_covers_two_exceptions():
+    """The cover shows a made-up family in production (an illustration, never presented as real activity), and bakes OpenStreetMap data (ODbL)."""
+    decisions = (ROOT / "docs/decisions.md").read_text(encoding="utf-8")
+    assert re.search(r"^- D-\d+ · F-206.*showcase\.on\(\).*illustration", decisions, re.M)
+    assert re.search(r"^- D-\d+ · F-206.*ODbL.*openstreetmap\.org/copyright", decisions, re.M)
+
+
+def test_the_story_says_its_family_is_made_up_where_the_family_appears(client):
+    """Lena, Sam, their bookings and the thanks from Ana & Luis show in production too: the story says they are an example right where the family
+    first appears, not only in the footer."""
+    first = _text(re.search(r'<section[^>]*data-chapter="1".*?</section>', _cover(client), re.S).group(0))
+    assert "Lena and Sam" in first and "made up" in first
+
+
+def test_short_screens_get_the_phone_layout_and_the_stylesheet_agrees():
+    """A landscape phone (844 x 390) has no room for a card beside the world, so short screens get the phone layout: the world on top, a wide card
+    below. cover.js reads the query from the page (data-phone) and the poster's <picture> is built from it; cover.css must use the very same one."""
+    assert "(max-height: 520px)" in cover.PHONE_Q
+    css = (ROOT / "assets/css/cover.css").read_text(encoding="utf-8")
+    assert cover.PHONE_Q in [q.strip() for q in re.findall(r"@media ([^{]+)\{", css)]
+
+
+def test_the_plans_widgets_are_a_named_group(client):
+    tag = _tag(_cover(client), "cv-wds")
+    assert 'role="group"' in tag and 'aria-label="The trip, planned"' in tag
+
+
+def test_the_cover_uses_the_sites_own_icons(client):
+    """No hand-drawn copy of an icon gitaway/icons.py already has; the cover's own are the ones it lacks (snow, a route, a chevron down)."""
+    assert not set(cover.ICONS.values()) & set(icons.PATHS.values())
+    html = _cover(client)
+    for name in ("plane", "bed", "car", "ticket", "star", "ext", "arrow-right"):
+        assert icons.PATHS[name] in html, name
+
+
+def test_the_browser_bar_takes_the_covers_grey_by_day_and_black_by_night(client):
+    metas = re.findall(r'<meta name="theme-color"[^>]*>', _cover(client))
+    assert len(metas) == 2, metas
+    assert any('content="#F2F2F5"' in m and 'media="(prefers-color-scheme: light)"' in m for m in metas)
+    assert any('content="#000000"' in m and 'media="(prefers-color-scheme: dark)"' in m for m in metas)
+
+
+def test_only_off_production_does_the_page_turn_on_the_tools_switches(client, monkeypatch):
+    """?measure, ?capture, ?q and ?cam (the capture and measuring tools' switches) skip the weak-device check and the governor, and the world shows
+    its insides on window.__cover: cover.js and the world honour them only when <main> says data-debug="1", which production never renders."""
+    assert 'data-debug="1"' in re.search(r"<main\b[^>]*>", _cover(client)).group(0)
+    monkeypatch.setattr(auth, "production", lambda: True)
+    assert "data-debug" not in re.search(r"<main\b[^>]*>", _cover(client)).group(0)

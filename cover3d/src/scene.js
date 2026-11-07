@@ -120,7 +120,8 @@ export function makeAnchors(camera, size) {
 
 /* ---------------------------------------------------------------- the loop */
 export function makeLoop(G, S, step, render) {
-  const frames = [], work = []; window.__frames = frames; window.__work = work;
+  const frames = [], work = [];
+  if (G.debug) { window.__frames = frames; window.__work = work; }        // the measuring tool reads them; off production only
   let raf = 0, prev = 0, running = false, scale = 1;
   const resize = () => {
     const r = S.canvas.parentElement.getBoundingClientRect(), vw = Math.max(1, Math.round(r.width)), vh = Math.max(1, Math.round(r.height));
