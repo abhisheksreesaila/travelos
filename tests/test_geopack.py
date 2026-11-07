@@ -43,7 +43,9 @@ def test_the_region_holds_every_stop_near_the_stay_and_leaves_the_home_airport_o
         assert w < lon < e and s < lat < n, name
     assert not (w < SFO[1] < e and s < SFO[0] < n)
     kw, kh = geopack.box_km(box)
-    assert 30 < kw < 80 and 70 < kh < 110          # Reno airport to Emerald Bay: about 30 by 63 km of places, padded
+    assert 45 < kw < 60 and 75 < kh < 95           # Reno airport to Emerald Bay: about 29 by 63 km of places, padded (the design's box was 50 by 77)
+    for lat, lon in TAHOE.values():                 # every place well inside, so a day's camera on one stop still shows map
+        assert min(geopack.km_between((lat, lon), (lat, w)), geopack.km_between((lat, lon), (lat, e)), geopack.km_between((lat, lon), (s, lon)), geopack.km_between((lat, lon), (n, lon))) >= geopack.EDGE_KM
     assert all(round(v * 100) == pytest.approx(v * 100) for v in box)   # rounded out to 0.01 degree, so the same places give the same box
 
 
@@ -83,22 +85,34 @@ def test_chain_joins_ways_that_meet_in_either_direction():
 def test_shapes_keep_named_roads_the_big_lakes_the_towns_and_the_state_line():
     box = geopack.region(TAHOE.values(), anchor=TAHOE["cabin"])
     got = geopack.shapes(tahoe.overpass_answer(), box)
-    refs = {r["ref"] for r in got["roads"]}
+    refs = {r.get("ref") for r in got["roads"]}
     assert {"US 50", "CA 89", "I 580"} <= refs
-    us50 = [r for r in got["roads"] if r["ref"] == "US 50"]
+    us50 = [r for r in got["roads"] if r.get("ref") == "US 50"]
     assert us50 and all(r["name"] == "Lake Tahoe Boulevard" for r in us50)
     lakes = [l["name"] for l in got["lakes"]]
     assert lakes[0] == "Lake Tahoe" and "Fallen Leaf Lake" in lakes          # largest first
     towns = [t["name"] for t in got["towns"]]
     assert towns[0] in ("Reno", "Carson City") and "South Lake Tahoe" in towns and len(towns) <= geopack.MAX_TOWNS
     assert got["borders"] and len(got["borders"][0]) >= 2
-    assert got["box"] == list(box) and got["v"] == geopack.VERSION
-    assert len(json.dumps(got, separators=(",", ":"))) < 60_000
+    assert got["box"] == list(box) and got["v"] == geopack.VERSION and got["grid"] == geopack.GRID
+    assert len(json.dumps(got, separators=(",", ":"))) < 30_000         # the app sends JSON uncompressed: the shapes are steps on a grid
+
+
+def test_a_line_comes_back_from_its_steps_within_a_few_metres():
+    box = (-120.16, 38.84, -119.71, 39.59)
+    line = [(-119.94831, 38.93586), (-119.9524, 38.9411), (-120.05384, 38.93572)]
+    back = geopack.decode(geopack.encode(line, box), box)
+    assert len(back) == 3 and all(geopack.km_between((a[1], a[0]), (b[1], b[0])) < 0.005 for a, b in zip(line, back))
+    roads = geopack.roads_lonlat(geopack.shapes(tahoe.overpass_answer(), box))
+    assert any(r["ref"] == "US 50" and len(r["pts"]) > 2 and isinstance(r["pts"][0][0], float) for r in roads)
 
 
 def test_the_overpass_query_asks_for_the_box_and_nothing_personal():
     q = geopack.overpass_query((-120.2, 38.84, -119.62, 39.54))
-    assert "38.8400,-120.2000,39.5400,-119.6200" in q and "out geom(" in q
+    assert "38.8400,-120.2000,39.5400,-119.6200" in q
+    import re
+    assert re.search(r'way\["highway"[^;]*;way\["boundary"[^;]*;\);out geom\(38\.8400,-120\.2000,39\.5400,-119\.6200\) qt;', q)     # roads and borders cut to the box
+    assert re.search(r'relation\["natural"="water"\]\["name"\]\([^)]*\);\);out geom qt;', q)        # lakes whole: a lake cut by the box is a broken ring (Lake Tahoe went missing)
     assert "secondary" not in geopack.overpass_query((-122.0, 37.0, -118.0, 39.0))       # a big box keeps to the main roads
 
 
@@ -222,9 +236,9 @@ def test_a_new_place_outside_the_box_builds_it_again(trip, real_data, monkeypatc
     geopack.ensure(me)
     old = geopack.stored(me)["key"]
     from gitaway import tripcal as cal
-    cal.add_activity(me, day=3, start=15 * 60, end=16 * 60, title="Truckee day trip", kind="outdoors")
-    with familydb.using(me) as db:      # Truckee: 46 km from the cabin, west of the box the first stops made
-        geo._put(db, "place", "truckee day trip, south lake tahoe", lat=39.3280, lon=-120.1833, data="Truckee")
+    cal.add_activity(me, day=3, start=15 * 60, end=16 * 60, title="Kirkwood day trip", kind="outdoors")
+    with familydb.using(me) as db:      # Kirkwood: 28 km south of the cabin, south of the box the first stops made
+        geo._put(db, "place", "kirkwood day trip, south lake tahoe", lat=38.6850, lon=-120.0652, data="Kirkwood")
     assert geopack.needed(me)[0] == "build"
     assert geopack.ensure(me) == "ready" and geopack.stored(me)["key"] != old
 

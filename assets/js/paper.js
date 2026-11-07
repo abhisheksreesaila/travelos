@@ -31,20 +31,27 @@
       for (var i = 0; i < pts.length; i++) out += (i ? 'L' : 'M') + X(pts[i][0]).toFixed(1) + ',' + Y(pts[i][1]).toFixed(1);
       return out + (close ? 'Z' : '');
     }
-    function centroid(ring) { var x = 0, y = 0; ring.forEach(function (p) { x += p[0]; y += p[1]; }); return [x / ring.length, y / ring.length]; }
-    function area(ring) { var s = 0; for (var i = 0; i < ring.length; i++) { var a = ring[i], b = ring[(i + 1) % ring.length]; s += X(a[0]) * Y(b[1]) - X(b[0]) * Y(a[1]); } return Math.abs(s) / 2; }
+    // the pack's lines are whole steps on a grid over the box (gitaway/geopack.py encode): [x0, y0, dx1, dy1, ...]
+    function gd(d, close) {
+      var g = shapes.grid || 20000, x = 0, y = 0, out = '';
+      for (var i = 0; i + 1 < d.length; i += 2) { x += d[i]; y += d[i + 1]; out += (i ? 'L' : 'M') + (x / g * PW).toFixed(1) + ',' + (y / g * PH).toFixed(1); }
+      return out + (close ? 'Z' : '');
+    }
+    function gpts(d) { var g = shapes.grid || 20000, x = 0, y = 0, out = []; for (var i = 0; i + 1 < d.length; i += 2) { x += d[i]; y += d[i + 1]; out.push([x / g * PW, y / g * PH]); } return out; }
+    function centroid(ring) { var x = 0, y = 0; ring.forEach(function (p) { x += p[0]; y += p[1]; }); return [x / ring.length, y / ring.length]; }      // (plane units)
+    function area(ring) { var s = 0; for (var i = 0; i < ring.length; i++) { var a = ring[i], b = ring[(i + 1) % ring.length]; s += a[0] * b[1] - b[0] * a[1]; } return Math.abs(s) / 2; }
 
     function svg() {
       var parts = [];
       if (data.pack) parts.push('<image class="pp-relief" href="' + esc(dark ? data.pack.dark : data.pack.light) + '" x="0" y="0" width="' + PW + '" height="' + PH + '" preserveAspectRatio="none"/>');
       if (shapes) {
-        shapes.lakes.forEach(function (l) { parts.push('<path class="pp-lake" d="' + pd(l.ring, true) + '"/>'); });
-        if (shapes.borders.length) parts.push('<path class="pp-border" d="' + shapes.borders.map(function (b) { return pd(b); }).join('') + '"/>');
-        var roads = shapes.roads.map(function (r) { return pd(r.pts); }).join('');
+        shapes.lakes.forEach(function (l) { parts.push('<path class="pp-lake" d="' + gd(l.d, true) + '"/>'); });
+        if (shapes.borders.length) parts.push('<path class="pp-border" d="' + shapes.borders.map(function (b) { return gd(b); }).join('') + '"/>');
+        var roads = shapes.roads.map(function (r) { return gd(r.d); }).join('');
         parts.push('<path class="pp-road-c" d="' + roads + '"/><path class="pp-road" d="' + roads + '"/>');
-        shapes.lakes.filter(function (l) { return l.name && area(l.ring) > PW * PH * 0.02; }).slice(0, 2).forEach(function (l) {
-          var c = centroid(l.ring);
-          parts.push('<text class="pp-lakename" font-size="22" x="' + X(c[0]).toFixed(1) + '" y="' + Y(c[1]).toFixed(1) + '">' + esc(l.name) + '</text>');
+        shapes.lakes.filter(function (l) { return l.name && area(gpts(l.d)) > PW * PH * 0.02; }).slice(0, 2).forEach(function (l) {
+          var c = centroid(gpts(l.d));
+          parts.push('<text class="pp-lakename" font-size="22" x="' + c[0].toFixed(1) + '" y="' + c[1].toFixed(1) + '">' + esc(l.name) + '</text>');
         });
         shapes.towns.forEach(function (t) { parts.push('<text class="pp-town" font-size="' + (t.city ? 14 : 12) + '" x="' + X(t.lon).toFixed(1) + '" y="' + Y(t.lat).toFixed(1) + '">' + esc(t.name) + '</text>'); });
       }
@@ -143,8 +150,13 @@
         html += label(st, minor, hit);
         anchors.push({ x: X(st.lon), y: Y(st.lat) });
       });
-      if (d.route && d.min) {
-        var mid = d.route[Math.floor(d.route.length * (opts.pillAt || 0.3))];
+      if (d.route && d.min) {      // the drive's time sits on the line, at the first of a few places along it that no label covers
+        var tries = [opts.pillAt || 0.3, 0.5, 0.7, 0.15, 0.85], mid = null;
+        for (var k = 0; k < tries.length && !mid; k++) {
+          var cand = d.route[Math.min(d.route.length - 1, Math.floor(d.route.length * tries[k]))], at = dest(X(cand[0]), Y(cand[1])) || [0, 0];
+          var free = !placed.some(function (q) { return Math.abs(q[0] - at[0]) < (q[2] + 90) / 2 && at[1] - q[1] > -24 && at[1] - q[1] < 64; });
+          if (free || k === tries.length - 1) mid = cand;
+        }
         html += '<div class="pp-a"><span class="pp-time">' + ((data.icons || {}).car || '') + esc(mins(d.min)) + '</span></div>';
         anchors.push({ x: X(mid[0]), y: Y(mid[1]) });
       }

@@ -267,7 +267,12 @@ def test_screenshots(cockpit, viewport, dark):
     page = cockpit(viewport, dark=dark, motion=True, full=True, fonts=True)
     page.wait_for_function("() => document.fonts.status === 'loaded'")
     page.wait_for_timeout(1200)
-    page.screenshot(path=f"{out}/f201-cockpit-{name}.png", full_page=viewport["width"] < 1020)
+    page.screenshot(path=f"{out}/f201-cockpit-{name}.png")
+    if viewport["width"] < 1020:          # the phone's second screen: the week and the wallet (a full-page capture would draw the floating tab bar mid-page)
+        page.locator("#ck-sec-week").scroll_into_view_if_needed()
+        page.evaluate("() => window.scrollBy(0, -12)")
+        page.wait_for_timeout(500)
+        page.screenshot(path=f"{out}/f201-cockpit-{name}-2.png")
     if viewport is DESKTOP and not dark:
         page.locator("#ck-stub-4 .ck-hit").click()
         page.wait_for_timeout(1400)

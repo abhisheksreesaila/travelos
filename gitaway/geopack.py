@@ -33,13 +33,14 @@ from gitaway import familydb, geo, session as ses
 
 log = logging.getLogger(__name__)
 
-VERSION = 1                 # what a pack holds and how it is drawn: a pack of an older version is built again
+VERSION = 2                 # what a pack holds and how it is drawn: a pack of an older version is built again
 OVERPASS = "https://overpass-api.de/api/interpreter"
 TILES = "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"
-TIMEOUT = 60                # seconds one call may take (Overpass is slow on a big box)
+TIMEOUT = 90                # seconds one call may take: Overpass took 30 s for the Tahoe box (6.5 MB) when tried live; the build is in the background
 REACH_KM = 160              # a place further than this from the stay is another region: the home airport, a far day trip
 MIN_KM = 24                 # the box is at least this wide and this tall
 PAD = 0.16                  # of the places' own span, on every side
+EDGE_KM = 10                # and every place at least this far inside the edge: a day's camera on one stop near the edge still shows map, not the sheet's edge
 MAX_TILES = 30              # elevation tiles per pack: the zoom is the highest that needs no more
 LONG_SIDE = 2048            # pixels on the relief's long side (the paper map is 1000 units across: about 1 to 2 pixels a unit)
 QUALITY = 78                # WebP quality (method 4: about as small as 6 at half the time): 50-110 KB a mode for the Tahoe basin
@@ -96,7 +97,8 @@ def box_km(box) -> tuple:
 
 def region(points, anchor=None):
     """The (west, south, east, north) box the paper map covers, or None with no points. `points` are (lat, lon); `anchor` (the stay) decides what is near:
-    anything over REACH_KM from it is left out. The places' span is padded by PAD on each side, made at least MIN_KM a side, and rounded out to 0.01 degree."""
+    anything over REACH_KM from it is left out. The places' span is padded by PAD on each side (at least EDGE_KM), made at least MIN_KM a side, and rounded
+    out to 0.01 degree."""
     pts = [(float(a), float(b)) for a, b in points if a is not None and b is not None and -85 < a < 85 and -180 <= b <= 180]
     if not pts:
         return None
@@ -106,8 +108,8 @@ def region(points, anchor=None):
     w, e = min(p[1] for p in near), max(p[1] for p in near)
     mid = (s + n) / 2
     kx, ky = 111.32 * math.cos(math.radians(mid)), 110.57
-    half_w = max((e - w) * kx * (1 + 2 * PAD), MIN_KM) / 2 / kx
-    half_h = max((n - s) * ky * (1 + 2 * PAD), MIN_KM) / 2 / ky
+    half_w = max((e - w) * kx * (1 + 2 * PAD), (e - w) * kx + 2 * EDGE_KM, MIN_KM) / 2 / kx
+    half_h = max((n - s) * ky * (1 + 2 * PAD), (n - s) * ky + 2 * EDGE_KM, MIN_KM) / 2 / ky
     cx, cy = (w + e) / 2, mid
     return (math.floor((cx - half_w) * 100) / 100, math.floor((cy - half_h) * 100) / 100,
             math.ceil((cx + half_w) * 100) / 100, math.ceil((cy + half_h) * 100) / 100)
@@ -196,20 +198,50 @@ def _area(ring) -> float:
     return abs(s) / 2
 
 
-def _r(pts):
-    return [[round(x, 4), round(y, 4)] for x, y in pts]
+GRID = 20000                # the shapes' points are whole numbers on a GRID x GRID lattice over the box (2 to 5 m at a trip's scale), stored as steps from
+                            # the point before: about a third of the bytes of plain coordinates, and the app sends JSON uncompressed
+
+
+def encode(pts, box):
+    """[x0, y0, dx1, dy1, ...] for a line of (lon, lat): x east from the box's west edge, y south from its north edge, in GRID steps."""
+    w, s, e, n = box
+    out, px, py = [], 0, 0
+    for lon, lat in pts:
+        x, y = round((lon - w) / (e - w) * GRID), round((n - lat) / (n - s) * GRID)
+        out += [x - px, y - py]
+        px, py = x, y
+    return out
+
+
+def decode(d, box):
+    """The (lon, lat) points of an encoded line."""
+    w, s, e, n = box
+    out, x, y = [], 0, 0
+    for i in range(0, len(d) - 1, 2):
+        x, y = x + d[i], y + d[i + 1]
+        out.append((w + x / GRID * (e - w), n - y / GRID * (n - s)))
+    return out
+
+
+def roads_lonlat(shapes) -> list:
+    """The pack's roads as [{"ref", "name", "pts": [(lon, lat), ...]}] (for working out a drive's turns)."""
+    if not shapes:
+        return []
+    box = tuple(shapes["box"])
+    return [{"ref": r.get("ref", ""), "name": r.get("name", ""), "pts": decode(r["d"], box)} for r in shapes["roads"]]
 
 
 # ---- shapes: one Overpass call ---------------------------------------------------------------------------------------
 
 def overpass_query(box) -> str:
-    """Main roads (secondary ones too when the box is small), named lakes and reservoirs, cities and towns, and state and country lines, cut to the box."""
+    """Main roads (secondary ones too when the box is small) and state and country lines, cut to the box; named lakes and reservoirs whole (a lake cut by the
+    box is a broken ring: Lake Tahoe went missing when it was cut); cities and towns."""
     w, s, e, n = box
     bb = f"{s:.4f},{w:.4f},{n:.4f},{e:.4f}"
     roads = "motorway|trunk|primary" if max(box_km(box)) > 120 else "motorway|trunk|primary|secondary"
-    return (f'[out:json][timeout:50];(way["highway"~"^({roads})$"]({bb});way["natural"="water"]["name"]({bb});'
-            f'relation["natural"="water"]["name"]({bb});node["place"~"^(city|town)$"]["name"]({bb});'
-            f'way["boundary"="administrative"]["admin_level"~"^(2|4)$"]({bb}););out geom({bb}) qt;')
+    return (f'[out:json][timeout:80];(way["highway"~"^({roads})$"]({bb});way["boundary"="administrative"]["admin_level"~"^(2|4)$"]({bb}););out geom({bb}) qt;'
+            f'(way["natural"="water"]["name"]({bb});relation["natural"="water"]["name"]({bb}););out geom qt;'
+            f'node["place"~"^(city|town)$"]["name"]({bb});out qt;')
 
 
 def _lines(geometry):
@@ -232,7 +264,7 @@ ROAD_RANK = {"motorway": 0, "trunk": 1, "primary": 2, "secondary": 3}
 
 def shapes(data, box) -> dict:
     """What the paper map draws, from Overpass's JSON: roads (chained per ref and name, simplified), the largest named lakes as rings, up to MAX_TOWNS towns
-    (cities first, then by population, none crowding another) and the state and country lines. Coordinates are (lon, lat) to 4 decimals (about 10 m)."""
+    (cities first, then by population, none crowding another) and the state and country lines. Lines are `encode`d ("d"); towns keep (lat, lon)."""
     w, s, e, n = box
     span = max(e - w, n - s)
     tol = span / 1600
@@ -270,13 +302,13 @@ def shapes(data, box) -> dict:
             for c in chain(lines):
                 c = simplify(c, tol * factor)
                 if len(c) >= 2 and math.hypot(c[0][0] - c[-1][0], c[0][1] - c[-1][1]) > span * 0.012:
-                    out_roads.append({"ref": ref, "name": name, "cls": cls, "pts": _r(c)})
-        if sum(len(r["pts"]) for r in out_roads) <= MAX_ROAD_POINTS:
+                    out_roads.append({**({"ref": ref} if ref else {}), **({"name": name} if name else {}), "d": encode(c, box)})      # (no empty keys: many short roads)
+        if sum(len(r["d"]) for r in out_roads) <= MAX_ROAD_POINTS * 2:
             break
 
-    least = (e - w) * (n - s) * 0.0015
+    least = (e - w) * (n - s) * 0.0008       # a lake of a few km² in a 50 by 80 km box (Fallen Leaf Lake) is kept
     lakes = sorted(((_area(r), nm, r) for nm, r in waters), key=lambda x: -x[0])
-    out_lakes = [{"name": nm, "ring": _r(simplify(r, tol * 0.8))} for a, nm, r in lakes if a >= least][:MAX_LAKES]
+    out_lakes = [{"name": nm, "d": encode(simplify(r, tol * 0.8), box)} for a, nm, r in lakes if a >= least][:MAX_LAKES]
 
     kept = []
     for t in sorted(towns, key=lambda t: (not t["city"], -t["pop"], t["name"])):
@@ -284,9 +316,9 @@ def shapes(data, box) -> dict:
             kept.append(t)
         if len(kept) == MAX_TOWNS:
             break
-    out_borders = [_r(simplify(c, tol * 1.5)) for c in chain(borders)]
-    return {"v": VERSION, "box": list(box), "km": [round(x, 2) for x in box_km(box)], "roads": out_roads, "lakes": out_lakes,
-            "towns": [{k: t[k] for k in ("name", "lat", "lon", "city")} for t in kept], "borders": [b for b in out_borders if len(b) >= 2]}
+    out_borders = [encode(simplify(c, tol * 1.5), box) for c in chain(borders)]
+    return {"v": VERSION, "box": list(box), "km": [round(x, 2) for x in box_km(box)], "grid": GRID, "roads": out_roads, "lakes": out_lakes,
+            "towns": [{k: t[k] for k in ("name", "lat", "lon", "city")} for t in kept], "borders": [b for b in out_borders if len(b) >= 4]}
 
 
 def fetch_shapes(box) -> dict:
@@ -469,10 +501,12 @@ def meta(db, trip_id):
 
 
 def stored(session):
-    """The open trip's pack row (key, box, shapes JSON, light and dark WebP bytes), or None while there is none."""
+    """The open trip's pack row (key, box, shapes JSON, light and dark WebP bytes), or None while there is none. A pack of another VERSION is no pack: its
+    shapes are in an older form (the page would break on them), so it waits for its rebuild like a trip with none."""
     trip_id = ses.open_trip_id() or _trip_id(session)
     with familydb.using(session) as db:
-        return load(db, trip_id)
+        row = load(db, trip_id)
+    return row if row and row["version"] == VERSION else None
 
 
 def _trip_id(session):
@@ -554,7 +588,9 @@ def ensure(session) -> str:
                     save(db, trip_id, pack)
                     ok = True
         except Exception as e:  # a pack never matters enough to raise: the map shows its quiet empty state and the next visit tries again
-            log.warning("geo pack for a trip could not be built: %s", type(e).__name__)
+            cause = e.__cause__
+            why = f" ({type(cause).__name__} {getattr(cause, 'code', '') or ''}".rstrip() + ")" if cause else ""
+            log.warning("geo pack for a trip could not be built: %s%s", type(e).__name__, why)      # content-free: what failed (PackError (HTTPError 502)), never where
         finally:
             with _LOCK:
                 _BUSY.discard(key)

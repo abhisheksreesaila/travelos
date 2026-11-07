@@ -512,8 +512,7 @@ def view(session, day="", ua="", curl=None, pack_state="building") -> View:
         out_days.append(Day(i, d.strftime("%a"), d.day, f"{d.strftime('%b')} {d.day}", summaries[i].head, tuple(lines), weather[i], summaries[i].state, booked,
                             canvas_url(day=i)))
     row = geopack.stored(session)
-    shapes = json.loads(row["shapes"]) if row else None
-    pack_roads = shapes["roads"] if shapes else []
+    pack_roads = geopack.roads_lonlat(json.loads(row["shapes"])) if row else []
     ticket = today_ticket(session, today_idx, ua, pack_roads) if today_idx is not None else None
     kinds = {a.id: (a.kind if a.kind in cal.KINDS else "fun") for a in acts}
     stops = tripgeo.day_stops(session)

@@ -30,7 +30,7 @@ def tahoe_trip(client, monkeypatch):
 
 
 def _roads():
-    return geopack.shapes(tahoe.overpass_answer(), geopack.region([tahoe.place(k) for k in ("cabin", "rno", "emerald")], tahoe.place("cabin")))["roads"]
+    return geopack.roads_lonlat(geopack.shapes(tahoe.overpass_answer(), geopack.region([tahoe.place(k) for k in ("cabin", "rno", "emerald")], tahoe.place("cabin"))))
 
 
 # ---- small pieces ------------------------------------------------------------------------------------------------------

@@ -166,3 +166,21 @@ def test_the_sample_trip_has_a_cockpit_too(client):
     html = client.get("/trip/cockpit").text
     assert html.count('class="ck-stub') == 5 and 'id="ck-wallet"' in html and "Ref " not in text(html)
     assert data_of(html)["state"] in ("none", "waiting", "building")
+
+
+def test_a_pack_of_an_older_form_waits_for_its_rebuild_instead_of_breaking_the_page(tahoe_trip, monkeypatch):
+    """A pack built by an older version (its shapes in another form) is no pack: the page shows the map being drawn, its key no longer answers, and the next
+    build replaces it (found on a live dev server: the page read the old form and failed)."""
+    from gitaway import familydb
+    me = person("ari")
+    old = geopack.stored(me)["key"]
+    with familydb.using(me) as db, familydb.transaction(db):
+        familydb.run(db, "UPDATE geo_packs SET version = 1, shapes = :s", s='{"roads": [{"ref": "US 50", "name": "", "pts": [[-120.0, 39.0], [-119.9, 39.1]]}], "lakes": [], "towns": [], "borders": []}')
+    monkeypatch.setattr(geopack, "TRANSPORT", lambda url, data=None, timeout=0: (_ for _ in ()).throw(OSError("offline")))
+    r = tahoe_trip.get("/trip/cockpit")
+    assert r.status_code == 200 and data_of(r.text)["state"] == "waiting" and data_of(r.text)["pack"] is None
+    assert "Today · up next" in text(r.text)                       # the ticket does not need the pack
+    assert tahoe_trip.get(f"/trip/cockpit/pack/{old}.json").status_code == 404
+    geopack.forget_failures()
+    monkeypatch.setattr(geopack, "TRANSPORT", tahoe.pack_transport)
+    assert data_of(tahoe_trip.get("/trip/cockpit").text)["state"] == "ready" and geopack.stored(me)["version"] == geopack.VERSION
