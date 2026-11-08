@@ -1291,6 +1291,8 @@ Brief: docs/briefs/free-and-polished.md "The soul: sharing", "The line" · Desig
 - [x] phone: touch scroll (tested with real touch events), 16 px text and 48 px targets; no sideways scroll at six widths; durations only from `--motion-*`
 - [x] proof: `tests/test_cover.py`, `tests/test_cover_budget.py`, `tests_browser/test_cover.py` (390 and 1440, light and dark); frame rate measured (`cover3d/fps.json`: laptop 58 fps, phone-class CPU 56 fps, a weak GPU steps down and switches to the stills); screens, close-ups and a scroll-through in `docs/report/f206-*`
 - [ ] the founder opens it on their own phone (the frame-rate numbers come from this machine's GPU)
+- [x] rebuilt on the agreed story (D-354 to D-363): why → book with everything in view → plan together (cockpit, day, Ask, family) → leave a trail, eleven scenes with one plain headline each, Lena and Sam's Tahoe trip, real screenshots of the new look per feature (`scripts/cover_shots.py`, phone and laptop, light and dark, lazy), the world unchanged behind four windows and resting under the paper scenes; scroll-through in `docs/report/cover-story-*.png`
+- [ ] the founder reads the new story on their phone and laptop and approves the headlines
 
 ## F-209 Creators redesigned as one product with the cockpit [todo]
 Brief: docs/briefs/free-and-polished.md · Design: docs/design/oneproduct/ (in progress) · Needs: the founder's pick; F-200 merged

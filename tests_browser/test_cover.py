@@ -1,9 +1,11 @@
-"""F-206: the cover in a real browser. The poster shows at once, scrolling (and a finger on a phone) moves the story through its chapters, every
-card fits between the header and the bottom of the screen (a landscape phone and a 768-tall laptop too), reduced motion, no WebGL and a weak phone
-get the calm stills without ever asking for three.js, the live world loads and stops drawing when it is covered or the tab is hidden, it gives up
-for the stills (and gives the GPU back) when even its lowest resolution is too slow, day and night follow the site, nothing scrolls sideways, a
-phone gets 16 px text and 48 px targets, a notch never covers anything, a screen reader gets the plan's details, and production ignores the tools'
-switches. 390 and 1440 wide, light and dark."""
+"""F-206, the agreed story (D-354): the cover in a real browser. The poster shows at once, scrolling (and a finger on a phone) moves the story
+through its eleven scenes, every window's card fits between the header and the bottom of the screen (a landscape phone and a 768-tall laptop
+too) and every paper scene's headline starts below the header, each feature's real screenshot loads only as it nears the screen and in the
+visitor's layout and mode (the site's own switch too), the world plays the right stretch of its timeline in each window and rests under a paper
+scene, reduced motion, no WebGL and a weak phone get the calm stills without ever asking for three.js, the live world loads and stops drawing when
+it is covered or the tab is hidden, it gives up for the stills (and gives the GPU back) when even its lowest resolution is too slow, day and night
+follow the site, nothing scrolls sideways, a phone gets 16 px text and 48 px targets, a notch never covers anything, the words read at full
+strength in both modes, and production ignores the tools' switches. 390 and 1440 wide, light and dark."""
 import hashlib
 import re
 from pathlib import Path
@@ -15,9 +17,14 @@ from tests_browser.helpers import DESKTOP, PHONE
 
 ROOT = Path(__file__).resolve().parent.parent
 HEAVY = re.compile(r"/assets/vendor/three|/assets/js/cover/world\.js|/assets/cover/tahoe-")
+SHOT = re.compile(r"/assets/cover/shots/")
 SIZES = {"390": PHONE, "1440": DESKTOP}
+N = 11                                         # the story's scenes (tests/test_cover.py STORY)
+WINDOWS = (0, 1, 7, 10)                        # the scenes where the world shows through
+PAPERS = (2, 3, 4, 5, 6, 8, 9)                 # the scenes with a screenshot
 # a phone with enough memory for the live world but too few cores to count as strong: it gets the lightest tier without ?q
 MODEST_PHONE = "Object.defineProperty(navigator, 'hardwareConcurrency', { get: () => 4 });"
+READY = f"window.GA_COVER && window.GA_COVER.scenes().length === {N}"
 
 
 @pytest.fixture
@@ -50,9 +57,9 @@ def _heavy(page):
     return [u for u in page.requests if HEAVY.search(u)]
 
 
-def _scroll_to_chapter(page, i):
-    page.evaluate("i => { const a = window.GA_COVER.anchors()[i]; window.scrollTo(0, a.s + (a.e - a.s) * 0.5); }", i)
-    page.wait_for_function(f"document.documentElement.dataset.cvChapter === '{i}'")
+def _scroll_to_scene(page, i, at=0.5):
+    page.evaluate("([i, at]) => { const t = window.GA_COVER.scenes()[i]; window.scrollTo(0, t.s + (t.e - t.s) * at); }", [i, at])
+    page.wait_for_function(f"document.documentElement.dataset.cvScene === '{i}'")
 
 
 @pytest.mark.parametrize("scheme", ["light", "dark"])
@@ -64,54 +71,76 @@ def test_the_poster_shows_at_once_for_day_or_night(cover, size, scheme):
     page.wait_for_function(f"(() => {{ const im = document.querySelector('.cv-poster img'); return (im.currentSrc || im.src).endsWith('{want}') && im.complete && im.naturalWidth > 0; }})()", timeout=30000)
     assert page.evaluate(f"document.documentElement.classList.contains('cv-{scheme}')")
     assert page.eval_on_selector(".cv-poster img", "e => getComputedStyle(e).opacity") == "1"
-    assert page.locator("h1").inner_text().replace("\n", " ").strip() == "Don’t read about it. Go."
+    assert page.locator("h1").inner_text().replace("\n", " ").strip() == "Planning a trip shouldn’t feel like homework."
 
 
 @pytest.mark.parametrize("size", ["390", "1440"])
-def test_scrolling_moves_the_story_through_every_chapter(cover, size):
+def test_scrolling_moves_the_story_through_every_scene(cover, size):
     page = cover(SIZES[size], motion="reduce")
-    page.wait_for_function("window.GA_COVER && window.GA_COVER.anchors().length === 7")
-    for i in range(7):
-        _scroll_to_chapter(page, i)
+    page.wait_for_function(READY)
+    for i in range(N):
+        _scroll_to_scene(page, i)
         if size == "1440":
             assert page.locator(".cv-rail button").nth(i).get_attribute("aria-current") == "step"
     assert page.locator(".cv-last h2").inner_text().replace("\n", " ").strip() == "Take a trip. Leave a trail."
 
 
-CARD = """i => { const el = document.querySelector(i === 0 ? '.cv-hero-copy' : `[data-chapter="${i}"] .cv-card`), r = el.getBoundingClientRect();
+def test_each_window_plays_its_stretch_of_the_world_and_a_paper_scene_covers_it(cover):
+    """The why is the guidebook (the world's chapter 0), Lena and Sam's lake its chapter 1, the pier at sunset chapter 4 and the fork tree chapter
+    6; while a paper scene fills the screen the world is covered and told to rest."""
+    page = cover(DESKTOP, motion="reduce")
+    page.wait_for_function(READY)
+    for i, chapter in zip(WINDOWS, (0, 1, 4, 6)):
+        _scroll_to_scene(page, i, 0.7)
+        st = page.evaluate("GA_COVER.state()")
+        assert int(st["exact"] // 2) == chapter and page.evaluate("GA_COVER.visible"), (i, st)      # where the scroll puts the world (its camera eases after it)
+    for i in PAPERS:
+        _scroll_to_scene(page, i, 0)
+        page.evaluate("window.scrollBy(0, 2)")
+        page.wait_for_function("!GA_COVER.visible")
+
+
+CARD = """i => { const el = document.querySelector(i === 0 ? '.cv-hero-copy' : `[data-scene="${i}"] .cv-card`), r = el.getBoundingClientRect();
   const head = Math.max(...[...document.querySelectorAll('.cv-top, .cv-top > *')].map((e) => e.getBoundingClientRect().bottom));
   return { top: r.top, bottom: r.bottom, left: r.left, right: r.right, head, vh: innerHeight, hidden: el.scrollHeight - el.clientHeight }; }"""
+WORDS = """i => { const el = document.querySelector(`[data-scene="${i}"] .cv-words`), r = el.getBoundingClientRect(), s = el.closest('section').getBoundingClientRect();
+  const head = Math.max(...[...document.querySelectorAll('.cv-top, .cv-top > *')].map((e) => e.getBoundingClientRect().bottom));
+  return { top: r.top - s.top, left: r.left, right: r.right, head }; }"""
 
 
 @pytest.mark.parametrize("how", ["live", "stills"])
 @pytest.mark.parametrize("size", [(844, 390), (1366, 768), (320, 568)], ids=["844x390", "1366x768", "320x568"])
 def test_every_card_fits_between_the_header_and_the_bottom_of_the_screen(cover, size, how):
-    """A landscape phone and a 768-tall laptop read every chapter whole: no card runs under the header or off the bottom, and none hides words
-    behind its own scroll (the card scrolls only on screens shorter still)."""
+    """A landscape phone and a 768-tall laptop read every window whole: no card runs under the header or off the bottom, and none hides words
+    behind its own scroll; a paper scene's words start below the header."""
     w, h = size
     page = cover({"width": w, "height": h}, motion="reduce" if how == "stills" else "no-preference", stub_world=how == "live")
-    page.wait_for_function("window.GA_COVER && window.GA_COVER.anchors().length === 7")
+    page.wait_for_function(READY)
     assert page.evaluate("document.documentElement.classList.contains('cv-live')") == (how == "live")
-    for i in range(7):
-        _scroll_to_chapter(page, i)
+    for i in WINDOWS:
+        _scroll_to_scene(page, i)
         box = page.evaluate(CARD, i)
         assert box["head"] - 0.5 <= box["top"] and box["bottom"] <= box["vh"] + 0.5, (i, box)
         assert box["hidden"] <= 1, (i, box)
+    page.evaluate("window.scrollTo(0, 0)")
+    for i in PAPERS:
+        box = page.evaluate(WORDS, i)
+        assert box["top"] >= box["head"] - 0.5, (i, box)
 
 
 def test_a_notch_never_covers_the_header_a_card_or_the_closing_screen(cover):
     """An iPhone on its side: the notch and the rounded corners take 47 px each side (viewport-fit=cover hands that space to the page)."""
     page = cover({"width": 844, "height": 390}, motion="reduce", insets={"left": 47, "right": 47, "top": 0, "bottom": 21})
-    page.wait_for_function("window.GA_COVER && window.GA_COVER.anchors().length === 7")
+    page.wait_for_function(READY)
     clear = "sel => [...document.querySelectorAll(sel)].filter(e => e.getClientRects().length).map(e => { const r = e.getBoundingClientRect(); return [e.className || e.tagName, Math.round(r.left), Math.round(r.right)]; })"
-    for i in range(7):
-        _scroll_to_chapter(page, i)
+    for i in WINDOWS:
+        _scroll_to_scene(page, i)
         box = page.evaluate(CARD, i)
         assert box["left"] >= 47 and box["right"] <= 844 - 47, (i, box)
-    boxes = page.evaluate(clear, ".cv-top > *")
+    boxes = page.evaluate(clear, ".cv-top > *, .cv-words, .cv-frame")
     page.evaluate("document.querySelector('.cv-close').scrollIntoView({ block: 'end' })")
     boxes += page.evaluate(clear, ".cv-close .pf-card, .cv-foot > *, .cv-foot nav a")
-    assert len(boxes) >= 6 and all(l >= 47 and r <= 844 - 47 for _, l, r in boxes), boxes
+    assert len(boxes) >= 20 and all(l >= 47 and r <= 844 - 47 for _, l, r in boxes), boxes
 
 
 @pytest.mark.parametrize("size", ["390", "1440"])
@@ -135,25 +164,46 @@ def _swipe(page, cdp, x0, y0, x1, y1, steps=12):
 
 def test_a_finger_scrolls_the_story_on_a_phone(cover):
     page = cover(PHONE, motion="reduce")
-    page.wait_for_function("window.GA_COVER && window.GA_COVER.anchors().length === 7")
+    page.wait_for_function(READY)
     cdp = page.context.new_cdp_session(page)
     for _ in range(4):
         _swipe(page, cdp, 195, 720, 195, 180)
     assert page.evaluate("scrollY") > 1500
-    assert int(page.evaluate("document.documentElement.dataset.cvChapter")) >= 1
-    # a swipe up that starts on the plan's widget row still scrolls the page; a swipe sideways scrolls the row
-    _scroll_to_chapter(page, 3)
-    box = page.locator('[data-chapter="3"] .cv-wds').bounding_box()
-    cx, cy = box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
+    assert int(page.evaluate("document.documentElement.dataset.cvScene")) >= 1
+    # a swipe that starts on a screenshot scrolls the page too
+    _scroll_to_scene(page, 3, 0)
+    box = page.locator('[data-scene="3"] .cv-shot').bounding_box()
     before = page.evaluate("scrollY")
+    cx, cy = box["x"] + box["width"] / 2, min(box["y"] + 60, 760)
     _swipe(page, cdp, cx, cy, cx, cy - 300)
     assert page.evaluate("scrollY") > before + 150
-    _scroll_to_chapter(page, 3)
-    box = page.locator('[data-chapter="3"] .cv-wds').bounding_box()
-    cx, cy = box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
-    row = page.locator('[data-chapter="3"] .cv-wds')
-    _swipe(page, cdp, cx + 120, cy, cx - 160, cy)
-    assert row.evaluate("e => e.scrollLeft") > 60
+
+
+@pytest.mark.parametrize("scheme", ["light", "dark"])
+@pytest.mark.parametrize("size", ["390", "1440"])
+def test_each_screenshot_loads_as_it_nears_in_the_visitors_layout_and_mode(cover, size, scheme):
+    page = cover(SIZES[size], scheme, motion="reduce")
+    page.wait_for_function(READY)
+    page.wait_for_timeout(400)
+    assert not [u for u in page.requests if SHOT.search(u) and "-trail-" in u]          # far below the fold: not yet
+    layout = "phone" if size == "390" else "wide"
+    want = "600" if layout == "phone" else "1440|960"
+    for i, name in zip(PAPERS, ("plan", "cockpit", "day", "ask", "family", "trail", "creators")):
+        _scroll_to_scene(page, i, 0)
+        page.wait_for_function(f"""(() => {{ const im = document.querySelector('[data-scene="{i}"] .cv-shot img');
+          return im.complete && im.naturalWidth > 0 && /\\/{name}-{layout}-{scheme}-({want})\\.webp$/.test(im.currentSrc); }})()""")
+    got = [u for u in page.requests if SHOT.search(u)]
+    assert all(f"-{layout}-{scheme}-" in u for u in got), got
+
+
+def test_the_screenshots_follow_the_sites_own_switch(cover):
+    page = cover(PHONE, "light", motion="reduce")
+    page.wait_for_function(READY)
+    page.evaluate("document.documentElement.dataset.theme = 'dark'")
+    page.wait_for_function("document.documentElement.classList.contains('cv-dark')")
+    _scroll_to_scene(page, 5, 0)
+    page.wait_for_function("""(() => { const im = document.querySelector('[data-scene="5"] .cv-shot img');
+      return im.complete && im.naturalWidth > 0 && im.currentSrc.endsWith('/ask-phone-dark-600.webp'); })()""")
 
 
 @pytest.mark.parametrize("size", ["390", "1440"])
@@ -161,15 +211,13 @@ def test_reduced_motion_gets_the_stills_and_never_asks_for_three(cover, size):
     page = cover(SIZES[size], motion="reduce")
     assert page.evaluate("document.documentElement.classList.contains('cv-still')")
     layout = "phone" if size == "390" else "wide"
-    page.wait_for_function("window.GA_COVER && window.GA_COVER.anchors().length === 7")
-    for i in (1, 3, 6):
-        _scroll_to_chapter(page, i)
-        page.wait_for_function(f"(() => {{ const im = document.querySelector('.cv-stills img.on'); return im && im.src.endsWith('/a-{i}-{layout}-light.webp') && im.complete && im.naturalWidth > 0; }})()")
+    page.wait_for_function(READY)
+    for i, still in ((1, 1), (7, 4), (10, 6)):
+        _scroll_to_scene(page, i, 0.7)
+        page.wait_for_function(f"(() => {{ const im = document.querySelector('.cv-stills img.on'); return im && im.src.endsWith('/a-{still}-{layout}-light.webp') && im.complete && im.naturalWidth > 0; }})()")
     page.wait_for_timeout(300)
     assert _heavy(page) == []
     assert page.locator(".cv-stage canvas.on").count() == 0
-    _scroll_to_chapter(page, 3)
-    assert page.locator('[data-chapter="3"] .cv-wds').is_visible()                    # the plan's widgets sit in the card
 
 
 def test_without_webgl_the_stills_show_and_three_never_loads(cover):
@@ -195,14 +243,19 @@ def test_the_live_world_loads_draws_and_rests_when_covered_or_hidden(cover):
     page.wait_for_function("window.__cover && window.__cover.running")
     frame = page.evaluate("window.__cover.S.renderer.info.render.frame")
     page.wait_for_function(f"window.__cover.S.renderer.info.render.frame > {frame + 2}")
-    # the closing screen covers the whole stage: the loop stops
-    page.evaluate("document.querySelector('.cv-close').scrollIntoView({ block: 'start' })")
+    # a paper scene covers the whole stage: the loop stops
+    _scroll_to_scene(page, 3, 0)
+    page.evaluate("window.scrollBy(0, 2)")
     page.wait_for_function("!window.__cover.running")
     frame = page.evaluate("window.__cover.S.renderer.info.render.frame")
     page.wait_for_timeout(400)
     assert page.evaluate("window.__cover.S.renderer.info.render.frame") == frame
-    # back into the story it draws again; a hidden tab stops it
-    _scroll_to_chapter(page, 6)
+    # the next window draws again; the closing screen stops it; a hidden tab stops it
+    _scroll_to_scene(page, 7, 0.6)
+    page.wait_for_function("window.__cover.running")
+    page.evaluate("document.querySelector('.cv-close').scrollIntoView({ block: 'start' })")
+    page.wait_for_function("!window.__cover.running")
+    _scroll_to_scene(page, 10)
     page.wait_for_function("window.__cover.running")
     page.evaluate("() => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => true }); document.dispatchEvent(new Event('visibilitychange')); }")
     page.wait_for_function("!window.__cover.running")
@@ -257,31 +310,38 @@ def test_day_or_night_follows_the_sites_own_switch(cover):
 @pytest.mark.parametrize("width", [1440, 1280, 1000, 800, 390, 320])
 def test_nothing_scrolls_sideways(cover, width, scheme):
     page = cover({"width": width, "height": 844 if width < 760 else 900}, scheme, motion="reduce")
-    page.wait_for_function("window.GA_COVER && window.GA_COVER.anchors().length === 7")
-    for i in (0, 3, 6):
-        _scroll_to_chapter(page, i)
+    page.wait_for_function(READY)
+    for i in (0, 2, 5, 9, 10):
+        _scroll_to_scene(page, i)
         assert page.evaluate("document.documentElement.scrollWidth") <= page.evaluate("document.documentElement.clientWidth"), (width, i)
 
 
 def test_a_phone_reads_16px_text_and_taps_48px_targets(cover):
     page = cover(PHONE, motion="reduce")
-    page.wait_for_function("window.GA_COVER && window.GA_COVER.anchors().length === 7")
-    small = page.evaluate("""() => [...document.querySelectorAll('.cv-card p, .cv-card li, .cv-lede, .cv-foot p, .cv-btn, .cv-foot nav a, .cv-wd span:not(.k), .cv-wd b')]
+    page.wait_for_function(READY)
+    small = page.evaluate("""() => [...document.querySelectorAll('.cv-card p, .cv-lede, .cv-say, .cv-tabs li, .cv-foot p, .cv-btn, .cv-foot nav a')]
       .filter(e => e.getClientRects().length && !e.closest('.cv-anchors'))
       .map(e => [e.textContent.trim().slice(0, 30), parseFloat(getComputedStyle(e).fontSize)]).filter(([, s]) => s < 16)""")
     assert small == []
-    eyebrows = page.evaluate("() => [...document.querySelectorAll('.cv-eyebrow, .cv-wd .k')].map(e => parseFloat(getComputedStyle(e).fontSize))")
-    assert min(eyebrows) >= 13                                                        # all-caps labels only
+    eyebrows = page.evaluate("() => [...document.querySelectorAll('.cv-eyebrow')].map(e => parseFloat(getComputedStyle(e).fontSize))")
+    assert len(eyebrows) == N and min(eyebrows) >= 13                                # all-caps labels only
     targets = page.evaluate("""() => [...document.querySelectorAll('.cv-top a, .cv-ctas a, .cv-foot nav a, .cv-close .pf-card a')]
       .filter(e => e.getClientRects().length).map(e => [e.textContent.trim(), e.getBoundingClientRect().height])""")
     assert len(targets) >= 6 and all(h >= 48 for _, h in targets), targets
 
 
-def test_a_landscape_tablet_taps_48px_chapter_buttons(cover):
+def test_a_landscape_tablet_taps_48px_scene_buttons(cover):
     page = cover({"width": 1024, "height": 768}, motion="reduce")
-    page.wait_for_function("window.GA_COVER && window.GA_COVER.anchors().length === 7")
+    page.wait_for_function(READY)
     sizes = page.evaluate("() => [...document.querySelectorAll('.cv-rail button')].map(b => { const r = b.getBoundingClientRect(); return [r.width, r.height]; })")
-    assert len(sizes) == 7 and all(w >= 48 and h >= 48 for w, h in sizes), sizes
+    assert len(sizes) == N and all(w >= 48 and h >= 48 for w, h in sizes), sizes
+
+
+def test_a_scene_button_takes_you_to_its_scene(cover):
+    page = cover(DESKTOP, motion="reduce")
+    page.wait_for_function(READY)
+    page.locator(".cv-rail button").nth(6).click()
+    page.wait_for_function("document.documentElement.dataset.cvScene === '6'")
 
 
 @pytest.mark.parametrize("size", ["390", "1440"])
@@ -306,76 +366,46 @@ def test_a_phone_shows_the_early_preview_label_beside_the_logo_and_sign_in(cover
             assert r0 <= l1 or r1 <= l0 or b0 <= t1 or b1 <= t0, boxes                  # never on top of one another
 
 
-CONTRAST = """() => { const lin = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
+CONTRAST = """sel => { const lin = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
   const rgb = (s) => s.match(/[\\d.]+/g).map(Number), L = ([r, g, b]) => 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b), out = [];
-  for (const w of document.querySelectorAll('[data-chapter="3"] .cv-wd')) {
-    const bg = rgb(getComputedStyle(w).backgroundColor);
-    for (const el of w.querySelectorAll('.k, b, span, .by')) {
-      if (!el.textContent.trim() || !el.getClientRects().length) continue;
-      const fg = rgb(getComputedStyle(el).color);
-      let a = fg.length > 3 ? fg[3] : 1;
-      for (let e = el; e !== w.parentElement; e = e.parentElement) a *= parseFloat(getComputedStyle(e).opacity);
-      const f = fg.slice(0, 3).map((c, i) => c * a + bg[i] * (1 - a)), l1 = L(f), l2 = L(bg);
-      out.push([el.textContent.trim().slice(0, 24), (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05)]);
-    }
+  const bgOf = (e) => { for (; e; e = e.parentElement) { const c = rgb(getComputedStyle(e).backgroundColor); if (c.length < 4 || c[3] > 0.99) { if (c.length < 4 || c[3] > 0) return c.slice(0, 3); } } return [255, 255, 255]; };
+  for (const el of document.querySelectorAll(sel)) {
+    if (!el.textContent.trim() || !el.getClientRects().length) continue;
+    const fg = rgb(getComputedStyle(el).color).slice(0, 3), bg = bgOf(el), l1 = L(fg), l2 = L(bg);
+    out.push([el.textContent.trim().slice(0, 24), (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05)]);
   }
   return out; }"""
 
 
 @pytest.mark.parametrize("scheme", ["light", "dark"])
-def test_the_widgets_words_read_at_full_strength(cover, scheme):
+def test_every_headline_and_its_words_read_at_full_strength(cover, scheme):
+    """Each scene's headline sits on an opaque surface, never on the world itself: the cards over the world and the paper scenes, in both modes."""
     page = cover(DESKTOP, scheme, motion="reduce")
-    page.wait_for_function("window.GA_COVER && window.GA_COVER.anchors().length === 7")
-    _scroll_to_chapter(page, 3)
-    ratios = page.evaluate(CONTRAST)
-    assert len(ratios) >= 18 and min(r for _, r in ratios) >= 4.5, sorted(ratios, key=lambda x: x[1])[:4]
+    page.wait_for_function(READY)
+    ratios = page.evaluate(CONTRAST, ".cv-card h2, .cv-card p, .cv-paper h2, .cv-say, .cv-lede, .cv-eyebrow, .cv-hero h1")
+    assert len(ratios) >= 30 and min(r for _, r in ratios) >= 4.5, sorted(ratios, key=lambda x: x[1])[:4]
+    for i in WINDOWS[1:]:
+        assert page.evaluate(f"""(() => {{ const c = getComputedStyle(document.querySelector('[data-scene="{i}"] .cv-card')).backgroundColor; return !/rgba\\(.*, 0(\\.\\d+)?\\)$/.test(c); }})()""")
 
 
-def test_with_the_live_world_a_screen_reader_still_gets_the_plans_details(cover):
-    """On a laptop the world stamps the plan's widgets into itself (aria-hidden copies); the card keeps the real ones, visually hidden, and they
-    take no keyboard stop. In the stills the same row is visible and, when it scrolls, can be scrolled from the keyboard."""
+def test_the_worlds_labels_pass_under_the_cards(cover):
     page = cover(DESKTOP, stub_world=True)
-    page.wait_for_function("window.GA_COVER && window.GA_COVER.anchors().length === 7")
-    assert page.evaluate("document.documentElement.classList.contains('cv-live')")
-    _scroll_to_chapter(page, 3)
-    group = page.get_by_role("group", name="The trip, planned")
-    assert group.count() == 1
-    for words in ("28°", "Cabin → Taylor Creek sled hill", "SFO → RNO", "Booked on Vrbo", "Booked on Klook"):
-        assert group.get_by_text(words).count() == 1, words
-    box = group.bounding_box()
-    assert box["width"] <= 1 and box["height"] <= 1 and group.get_attribute("tabindex") is None
-
-
-def test_in_the_stills_a_keyboard_scrolls_the_plans_row(cover):
-    page = cover({"width": 1366, "height": 768}, motion="reduce")
-    page.wait_for_function("window.GA_COVER && window.GA_COVER.anchors().length === 7")
-    _scroll_to_chapter(page, 3)
-    row = page.locator('[data-chapter="3"] .cv-wds')
-    assert row.is_visible() and row.evaluate("e => e.scrollWidth > e.clientWidth + 1")
-    assert row.get_attribute("tabindex") == "0"
-    row.focus()
-    page.keyboard.press("ArrowRight")
-    page.wait_for_function("document.querySelector('[data-chapter=\"3\"] .cv-wds').scrollLeft > 20")
-
-
-def test_the_worlds_labels_and_leader_lines_pass_under_the_cards(cover):
-    page = cover(DESKTOP, stub_world=True)
-    page.wait_for_function("window.GA_COVER && window.GA_COVER.anchors().length === 7")
-    _scroll_to_chapter(page, 3)
-    assert page.evaluate("""() => { const probe = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      probe.setAttribute('class', 'leaders'); probe.style.pointerEvents = 'auto'; document.querySelector('.cv-anchors').appendChild(probe);
-      const r = document.querySelector('[data-chapter="3"] .cv-card h2').getBoundingClientRect(), e = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    page.wait_for_function(READY)
+    _scroll_to_scene(page, 1)
+    assert page.evaluate("""() => { const probe = document.createElement('div'); probe.className = 'cv-lbl'; probe.style.cssText = 'opacity:1;visibility:visible;pointer-events:auto;width:2000px;height:2000px';
+      document.querySelector('.cv-anchors').appendChild(probe);
+      const r = document.querySelector('[data-scene="1"] .cv-card h2').getBoundingClientRect(), e = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
       return !!(e && e.closest('.cv-card')); }""")
 
 
 def test_production_ignores_the_tools_switches(cover, monkeypatch):
     """Without data-debug (production), ?measure no longer lets a weak phone download the world and ?q no longer picks the tier."""
     monkeypatch.setattr(cover_page, "debug", lambda: False)
-    page = cover(PHONE, init="Object.defineProperty(navigator, 'deviceMemory', { get: () => 1 });", query="?measure&q=high&cam=0,0,0,1,1,1,40")
+    page = cover(PHONE, init="Object.defineProperty(navigator, 'deviceMemory', { get: () => 1 });", query="?measure&q=high&cam=0,0,0,1,1,1,40&shot=4")
     page.wait_for_function("document.documentElement.classList.contains('cv-still')")
     page.wait_for_timeout(500)
     assert _heavy(page) == []
-    assert page.evaluate("[GA_COVER.tier, ['measure', 'capture', 'q', 'cam'].some((k) => GA_COVER.Q.has(k))]") == ["low", False]
+    assert page.evaluate("[GA_COVER.tier, ['measure', 'capture', 'q', 'cam', 'shot'].some((k) => GA_COVER.Q.has(k))]") == ["low", False]
 
 
 def test_in_production_the_world_keeps_its_insides_to_itself(cover, monkeypatch):
@@ -389,8 +419,8 @@ def test_in_production_the_world_keeps_its_insides_to_itself(cover, monkeypatch)
 @pytest.mark.parametrize("label,path", [("Start a trip", "/start"), ("Leave a trail", "/for-creators"), ("See trips people shared", "/community")])
 def test_each_door_at_the_end_opens_its_page(cover, base_url, label, path):
     page = cover(DESKTOP, motion="reduce")
-    page.wait_for_function("window.GA_COVER && window.GA_COVER.anchors().length === 7")
-    _scroll_to_chapter(page, 6)
+    page.wait_for_function(READY)
+    _scroll_to_scene(page, 10)
     page.locator(".cv-ctas a", has_text=label).click()
     page.wait_for_url(f"{base_url}{path}")
     assert page.locator("main").count() >= 1

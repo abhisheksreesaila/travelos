@@ -1,28 +1,27 @@
-/* The cover (F-206, gitaway/pages/cover.py): the signed-out landing as a scroll story through Lake Tahoe. Direction A on omxqua's rules: a grey canvas
-   (black at night), Apple-bright kind colours, ink accent, opaque tonal surfaces, one shadow scale, no glass or blur. The 3D world sits in a fixed stage
-   behind real DOM text. Sizes are rem (12px root on a laptop, 16px on a phone); the phone layout's are written in --u, one 16px step at either root,
-   so a portrait tablet (12px root) still gets phone-sized type. Every duration is a --motion-* token. Colours are the cover's own until F-200's
-   Direction A tokens land (docs/design/reskin/README.md). Phones, portrait tablets and short screens share one layout (the world on top, the card
-   below): its query is cover.py PHONE_Q, used verbatim below. Sides keep clear of a notch: --cv-sl and --cv-sr (viewport-fit=cover). */
+/* The cover (F-206, the agreed story since D-354; gitaway/pages/cover.py): the signed-out landing as one travel story. Direction A on omxqua's rules: a
+   grey canvas (black at night), Apple-bright kind colours, ink accent, opaque tonal surfaces, one shadow scale, no glass or blur. Two kinds of scene:
+   windows, where the 3D world in the fixed stage shows through behind a pinned card, and paper scenes, opaque, the words beside a real screenshot.
+   Sizes are rem (12px root on a laptop, 16px on a phone); the phone layout's are written in --u, one 16px step at either root, so a portrait tablet
+   (12px root) still gets phone-sized type. Every duration is a --motion-* token. Phones, portrait tablets and short screens share one layout (the
+   world on top, the card below, the screenshot under the words): its query is cover.py PHONE_Q, used verbatim below. Sides keep clear of a notch:
+   --cv-sl and --cv-sr (viewport-fit=cover). */
 
 .cv-root {
   --u: 1.3333rem;
   --cv-k-flight: #4338CA; --cv-k-stay: #8B2FC9; --cv-k-car: #15803D; --cv-k-tix: #C2410C; --cv-k-wx: #0369A1; --cv-k-food: #C92A5E; --cv-k-see: #0F766E;
   --cv-on-k: #FFFFFF;      /* words on a kind's solid fill: the fills stay deep in both modes */
-  --cv-gut: 1.6667rem; --cv-card-r: 2.3333rem; --cv-w-r: 1.8333rem;
+  --cv-gut: 1.6667rem; --cv-card-r: 2.3333rem; --cv-shot-r: 1.5rem;
   --cv-sl: max(var(--cv-gut), env(safe-area-inset-left)); --cv-sr: max(var(--cv-gut), env(safe-area-inset-right));
-  --cv-bg: #F2F2F5; --cv-s1: #FFFFFF; --cv-ink: #0B0B0D; --cv-ink2: #5C5C66; --cv-line: #E3E3E8; --cv-acc: #0B0B0D; --cv-on-acc: #FFFFFF;
+  --cv-bg: #F2F2F5; --cv-s1: #FFFFFF; --cv-s2: #E9E9EE; --cv-ink: #0B0B0D; --cv-ink2: #5C5C66; --cv-line: #E3E3E8; --cv-acc: #0B0B0D; --cv-on-acc: #FFFFFF;
   --cv-sh1: 0 0.0833rem 0.1667rem rgba(10, 10, 20, .06), 0 0 0 1px rgba(10, 10, 20, .04);
   --cv-sh2: 0 0.6667rem 2rem rgba(10, 10, 20, .10), 0 0 0 1px rgba(10, 10, 20, .05);
-  --cv-up-bg: #0B0B0D; --cv-up-fg: #FFFFFF;
   color-scheme: light;
   background: var(--cv-bg);
 }
 .cv-root.cv-dark {
-  --cv-bg: #000000; --cv-s1: #1C1C1F; --cv-ink: #F5F5F7; --cv-ink2: #A1A1AA; --cv-line: #2E2E33; --cv-acc: #F5F5F7; --cv-on-acc: #0B0B0D;
+  --cv-bg: #000000; --cv-s1: #1C1C1F; --cv-s2: #2A2A2E; --cv-ink: #F5F5F7; --cv-ink2: #A1A1AA; --cv-line: #2E2E33; --cv-acc: #F5F5F7; --cv-on-acc: #0B0B0D;
   --cv-sh1: 0 1px 0 rgba(255, 255, 255, .05) inset, 0 0.0833rem 0.1667rem rgba(0, 0, 0, .6);
   --cv-sh2: 0 1px 0 rgba(255, 255, 255, .06) inset, 0 0.6667rem 2rem rgba(0, 0, 0, .6);
-  --cv-up-bg: #F5F5F7; --cv-up-fg: #0B0B0D;
   color-scheme: dark;
 }
 @media (max-width: 720px) { .cv-root { --u: 1rem; } }
@@ -63,34 +62,33 @@
 .cv-root .cv-btn.fill:hover { color: var(--cv-on-acc); }
 @media (hover: hover) and (pointer: fine) { .cv-btn.fill:hover, .cv-btn.tonal:hover { box-shadow: var(--cv-sh2); transform: translateY(-1px); } }
 
-/* ---------- chapters: each card is pinned while its chapter plays in the world behind it ---------- */
+/* ---------- windows: each card is pinned while its stretch of the world plays behind it ---------- */
 .cv-root main { position: relative; z-index: 2; }
-.cv-ch { position: relative; height: calc(var(--h, 2) * 100svh); }
-.cv-gap { height: calc(var(--h, .6) * 100svh); }
+.cv-win { position: relative; height: calc(var(--h, 2) * 100svh); }
 .cv-pin { position: sticky; top: 0; height: 100svh; display: flex; align-items: center; padding: 8rem var(--cv-sr) 2.6667rem var(--cv-sl); pointer-events: none; }
 .cv-pin > * { pointer-events: auto; }
 /* a card never runs under the header or off the screen: on a screen shorter than any layout here plans for, it scrolls inside itself instead */
 .cv-card { width: min(38.3333rem, 38vw); max-height: 100%; overflow-y: auto; scrollbar-width: thin; margin-left: clamp(1.3333rem, 4vw, 6rem); background: var(--cv-s1); color: var(--cv-ink); border-radius: var(--cv-card-r); box-shadow: var(--cv-sh2); padding: 2.5rem 2.6667rem; }
-.cv-eyebrow { font: 700 1.0833rem/1.2 var(--font-body); letter-spacing: .08em; text-transform: uppercase; color: var(--cv-ink2); margin: 0 0 1rem; display: flex; align-items: center; gap: 0.6667rem; }
+.cv-eyebrow { font: 700 max(var(--label-min), 1.0833rem)/1.2 var(--font-body); letter-spacing: .08em; text-transform: uppercase; color: var(--cv-ink2); margin: 0 0 1rem; display: flex; align-items: center; gap: 0.6667rem; }
 .cv-eyebrow i { width: 0.6667rem; height: 0.6667rem; border-radius: 50%; background: var(--cv-acc); display: inline-block; flex: none; }
 .cv-card h2 { font: 800 3.6667rem/1.02 var(--font-display); letter-spacing: -.04em; margin: 0 0 1.1667rem; text-wrap: balance; color: var(--cv-ink); }
-.cv-card h2 em, .cv-hero h1 em { font-style: normal; color: var(--cv-ink2); }
+.cv-card h2 em, .cv-hero h1 em, .cv-paper h2 em { font-style: normal; color: var(--cv-ink2); }
 .cv-card p { margin: 0; font-size: 1.5rem; line-height: 1.5; color: var(--cv-ink2); text-wrap: pretty; }
 .cv-card p b { color: var(--cv-ink); font-weight: 650; }
-.cv-disc { color: var(--cv-ink); }                       /* the story is an example: said where the family first appears (docs/decisions.md D-270) */
-.cv-days { display: flex; flex-wrap: wrap; gap: 0.6667rem; margin: 1.5rem 0 0; padding: 0; list-style: none; }
-.cv-days li { display: inline-flex; align-items: center; gap: 0.6667rem; min-height: 3.3333rem; padding: 0 1.1667rem; border-radius: var(--r-pill); background: color-mix(in srgb, var(--cv-ink) 6%, transparent); color: var(--cv-ink); font: 650 1.25rem/1 var(--font-body); }
-.cv-days i { width: 0.8333rem; height: 0.8333rem; border-radius: 50%; flex: none; }
-.cv-thanks { display: inline-flex !important; align-items: center; gap: 0.6667rem; margin-top: 1.5rem !important; min-height: 3.3333rem; padding: 0 1.1667rem; border-radius: var(--r-pill); background: var(--cv-acc); color: var(--cv-on-acc) !important; font: 650 1.25rem/1 var(--font-body) !important; }
-.cv-thanks svg { width: 1.3333rem; height: 1.3333rem; fill: currentColor; }
-.cv-note { margin-top: 1.3333rem !important; font-size: 1.25rem !important; }
+.cv-disc { display: block; margin-top: 1rem; color: var(--cv-ink); }      /* the story is an example: said where the family first appears (docs/decisions.md D-270) */
 
-/* the hook */
-.cv-hero .cv-pin { align-items: flex-start; justify-content: center; text-align: center; padding-top: clamp(8rem, 13vh, 12.5rem); }
-.cv-hero-copy { max-width: 91.6667rem; }
-.cv-hero h1 { font: 800 clamp(5.3333rem, 9.4vw, 11.3333rem)/0.92 var(--font-display); letter-spacing: -.05em; margin: 0 0 1.8333rem; text-wrap: balance; color: var(--cv-ink); }
-.cv-lede { font-size: clamp(1.5rem, 1.5vw, 1.75rem); color: var(--cv-ink2); max-width: 36em; margin: 0 auto; text-wrap: balance; }
-.cv-lede b { color: var(--cv-ink); font-weight: 650; }
+/* the why: the headline over the guidebook, and the tabs it took */
+.cv-hero .cv-pin { align-items: flex-start; justify-content: center; text-align: center; padding-top: clamp(8rem, 12vh, 11rem); }
+.cv-hero-copy { max-width: 80rem; display: grid; justify-items: center; }
+.cv-hero .cv-eyebrow { justify-content: center; }
+.cv-hero h1 { font: 800 clamp(4.6667rem, 6.4vw, 8.6667rem)/0.98 var(--font-display); letter-spacing: -.045em; margin: 0 0 1.5rem; text-wrap: balance; color: var(--cv-ink); }
+.cv-why { width: min(56rem, 100%); margin-top: 0.5rem; background: var(--cv-s1); border-radius: 1.5rem; box-shadow: var(--cv-sh2); overflow: hidden; text-align: left; }
+/* a browser with fourteen tabs, squeezed until their names are cut off: the problem, drawn (decoration; the lede says it in words) */
+.cv-tabs { display: flex; gap: 0.25rem; margin: 0; padding: 0.6667rem 0.6667rem 0; list-style: none; background: var(--cv-s2); overflow: hidden; }
+.cv-tabs li { flex: 1 1 0; min-width: 0; min-height: 2.6667rem; display: flex; align-items: center; padding: 0 0.6667rem; border-radius: 0.6667rem 0.6667rem 0 0; color: var(--cv-ink2); font: 600 max(var(--text-min), 1.0833rem)/1 var(--font-body); white-space: nowrap; overflow: hidden; }      /* clipped, never an ellipsis (F-034): the cut-off names are the point */
+.cv-tabs li:first-child { flex: 2.4 1 0; background: var(--cv-s1); color: var(--cv-ink); }
+.cv-tabs li + li:not(:nth-child(2)) { box-shadow: -1px 0 0 var(--cv-line); }
+.cv-lede { font-size: clamp(1.5rem, 1.5vw, 1.8333rem); color: var(--cv-ink2); margin: 0; padding: 1.5rem 2rem 1.6667rem; text-wrap: pretty; }
 .cv-hint { position: absolute; left: 0; right: 0; bottom: max(2.1667rem, env(safe-area-inset-bottom)); display: flex; flex-direction: column; align-items: center; gap: 0.5rem; font: 650 1.1667rem/1 var(--font-body); color: var(--cv-ink2); pointer-events: none; }
 .cv-hint svg { width: 1.8333rem; height: 1.8333rem; animation: cv-nudge calc(var(--motion-wiggle) * 5) var(--motion-ease) infinite; }
 @keyframes cv-nudge { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(0.5rem); } }
@@ -103,46 +101,30 @@
 .cv-ctas { display: flex; flex-wrap: wrap; gap: 0.6667rem; justify-content: center; margin-top: 2rem; }
 .cv-ctas .cv-btn { min-height: 4.3333rem; }
 
-/* ---------- the plan's widgets (Direction A: solid kind fills, white text, no shadow) ---------- */
-/* With the live world on a laptop the world stamps them into itself (aria-hidden copies): the card keeps the real ones for a screen reader, visually hidden. */
-.cv-wds { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.cv-wd { --kf: var(--cv-k-wx); position: relative; background: var(--kf); color: var(--cv-on-k); border-radius: var(--cv-w-r); padding: 1.1667rem 1.3333rem 1.25rem; width: 17.5rem; display: grid; gap: 0.25rem; transform-origin: 50% 50%; }
-.cv-wd.flight { --kf: var(--cv-k-flight); } .cv-wd.stay { --kf: var(--cv-k-stay); } .cv-wd.car { --kf: var(--cv-k-car); } .cv-wd.tix { --kf: var(--cv-k-tix); }
-.cv-wd .k { font: 700 1rem/1.2 var(--font-body); letter-spacing: .08em; text-transform: uppercase; display: flex; align-items: center; gap: 0.5rem; }
-.cv-wd .k svg { width: 1.25rem; height: 1.25rem; margin-left: auto; }
-.cv-wd b { font: 750 2rem/1.1 var(--font-display); letter-spacing: -.03em; }
-.cv-wx { display: flex; align-items: baseline; gap: 0.8333rem; flex-wrap: wrap; }
-.cv-wd .big { font: 750 3.6667rem/1 var(--font-display); letter-spacing: -.05em; }
-.cv-wd span { font-size: 1.25rem; line-height: 1.3; }
-.cv-wd .by { margin-top: 0.5rem; padding-top: 0.6667rem; border-top: 0.125rem dashed rgba(255, 255, 255, .45); font: 650 1.1667rem/1.2 var(--font-body); display: flex; align-items: center; gap: 0.5rem; }
-.cv-wd .by svg { width: 1.1667rem; height: 1.1667rem; }
-.cv-wd.up { --kf: var(--cv-up-bg); color: var(--cv-up-fg); }
-.cv-wd .stamp { position: absolute; right: 0.8333rem; top: 0.75rem; font: 800 max(var(--label-min), 0.9167rem)/1 var(--font-body); letter-spacing: .14em; padding: 0.4167rem 0.5833rem; border: 0.1667rem solid rgba(255, 255, 255, .9); border-radius: 0.5rem; transform: rotate(-8deg); opacity: 0; font-style: normal; }
-.cv-wd.in .stamp { opacity: 1; transition: opacity var(--motion-fade) var(--motion-ease) var(--motion-quick); }
-.cv-wd.in .k svg { opacity: 0; }
-/* The calm stills at any width (and phones, below): the widgets sit in the card as one row you swipe, the next one peeking, never a stack that
-   outgrows a short screen. When the row scrolls, cover.js gives it a keyboard stop. */
-.cv-still .cv-wds { position: static; width: auto; height: auto; clip-path: none; white-space: normal; display: flex; gap: 0.6667rem; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: 2.6667rem; margin: 1.3333rem -2.6667rem 0; padding: 0 2.6667rem 0.3333rem; scrollbar-width: none; overscroll-behavior-x: contain; touch-action: pan-x pan-y; }
-.cv-still .cv-wds::-webkit-scrollbar { display: none; }
-.cv-root .cv-wds:focus-visible { outline-offset: -0.1667rem; border-radius: var(--cv-w-r); }
-.cv-still .cv-wds .cv-wd { flex: 0 0 14.5rem; width: auto; scroll-snap-align: start; padding: 1rem 1.0833rem 1.0833rem; border-radius: 1.6667rem; }
-.cv-still .cv-wds .cv-wd b { font-size: 1.5833rem; } .cv-still .cv-wds .cv-wd .big { font-size: 2.8333rem; }
-.cv-still .cv-wds .stamp { display: none; }
+/* ---------- paper scenes: the page itself, a plain headline and a few words beside the feature's real screenshot ---------- */
+.cv-paper { position: relative; background: var(--cv-bg); min-height: 100svh; box-sizing: border-box; display: grid; grid-template-columns: minmax(0, 32rem) minmax(0, 1fr);
+  gap: clamp(2.6667rem, 5vw, 6.6667rem); align-items: center; padding: 8.3333rem calc(var(--cv-sr) + 5rem) 4rem calc(var(--cv-sl) + clamp(1.3333rem, 4vw, 6rem)); }
+.cv-paper + .cv-paper { border-top: 1px solid var(--cv-line); }
+.cv-words { max-width: 32rem; }
+.cv-paper h2 { font: 800 clamp(3.6667rem, 3.9vw, 5.3333rem)/1.02 var(--font-display); letter-spacing: -.04em; margin: 0 0 1.3333rem; text-wrap: balance; color: var(--cv-ink); }
+.cv-say { margin: 0; font-size: 1.6667rem; line-height: 1.5; color: var(--cv-ink2); text-wrap: pretty; }
+.cv-say b { color: var(--cv-ink); font-weight: 650; }
+.cv-frame { justify-self: start; width: 100%; max-width: 75rem; }
+.cv-shot { display: block; border-radius: var(--cv-shot-r); overflow: hidden; background: var(--cv-s1); box-shadow: var(--cv-sh2); outline: 1px solid var(--cv-line); }      /* the outline keeps a dark screenshot apart from the night canvas */
+.cv-shot img { display: block; width: 100%; height: auto; aspect-ratio: 1440 / 900; }
 
-/* in-world anchors: labels and widgets the world places over itself (aria-hidden copies of the card's words); under the cards, so a label or a
-   leader line never crosses what you are reading */
+/* in-world anchors: labels the world places over itself (aria-hidden); under the cards, so a label never crosses what you are reading */
 .cv-anchors { position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
 .cv-anchors > * { position: absolute !important; left: 0; top: 0; will-change: transform, opacity; opacity: 0; visibility: hidden; }
 .cv-lbl { display: inline-flex; align-items: center; gap: 0.5833rem; padding: 0.5833rem 0.9167rem 0.5833rem 0.75rem; border-radius: var(--r-pill); background: var(--cv-s1); color: var(--cv-ink); box-shadow: var(--cv-sh1); font: 650 1.25rem/1.1 var(--font-body); white-space: nowrap; transform-origin: 0 50%; }
 .cv-lbl i { width: 0.8333rem; height: 0.8333rem; border-radius: 50%; flex: none; }
 .cv-lbl.ink { background: var(--cv-acc); color: var(--cv-on-acc); }
 .cv-lbl small { font: 500 1.1667rem/1 var(--font-body); color: var(--cv-ink2); }
-.cv-anchors .cv-wd { width: 18.3333rem; }
 .cv-anchors > svg.leaders { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 1; visibility: visible; overflow: visible; }
 .leaders path { stroke: var(--cv-ink); stroke-width: 1.6; stroke-dasharray: 2 5; stroke-linecap: round; fill: none; }
 .cv-still .cv-anchors { display: none; }
 
-/* ---------- the chapter rail (laptop) ---------- */
+/* ---------- the scene rail (laptop) ---------- */
 .cv-rail { position: fixed; right: max(1.1667rem, env(safe-area-inset-right)); top: 50%; transform: translateY(-50%); z-index: 15; display: grid; }
 .cv-rail button { width: 4rem; height: 4rem; border: 0; background: transparent; cursor: pointer; display: grid; place-items: center; position: relative; color: inherit; font: inherit; }
 .cv-rail button i { width: 0.6667rem; height: 0.6667rem; border-radius: 50%; background: var(--cv-ink2); opacity: .45; transition: transform var(--motion-quick) var(--motion-spring), opacity var(--motion-quick) var(--motion-ease); }
@@ -162,7 +144,7 @@
 .cv-fine { font-size: 1.1667rem !important; }
 .cv-fine a { text-decoration: underline; text-underline-offset: 0.1667rem; }
 
-/* ---------- phones, tall screens and short ones: the world on top, the card in the thumb zone ---------- */
+/* ---------- phones, tall screens and short ones: the world on top, the card in the thumb zone; the words, then the phone's screenshot ---------- */
 @media (max-width: 720px), (max-aspect-ratio: 85/100), (max-height: 520px) {
   .cv-root { --cv-gut: calc(0.75 * var(--u)); }
   .cv-root body { font-size: calc(1.0625 * var(--u)); }
@@ -181,15 +163,15 @@
   .cv-eyebrow i { width: calc(0.5 * var(--u)); height: calc(0.5 * var(--u)); }
   .cv-card h2 { font-size: calc(2 * var(--u)); margin-bottom: calc(0.625 * var(--u)); }
   .cv-card p { font-size: calc(1.0625 * var(--u)); }
-  .cv-days { gap: calc(0.5 * var(--u)); margin-top: calc(1 * var(--u)); }
-  .cv-days li, .cv-thanks { min-height: calc(2.5 * var(--u)); padding: 0 calc(0.875 * var(--u)); font-size: calc(1 * var(--u)) !important; gap: calc(0.5 * var(--u)); }
-  .cv-days i { width: calc(0.625 * var(--u)); height: calc(0.625 * var(--u)); }
-  .cv-thanks { margin-top: calc(1 * var(--u)) !important; }
-  .cv-thanks svg { width: calc(1 * var(--u)); height: calc(1 * var(--u)); }
-  .cv-note { font-size: calc(1 * var(--u)) !important; margin-top: calc(0.75 * var(--u)) !important; }
-  .cv-hero .cv-pin { padding-top: calc(5.75 * var(--u)); align-items: flex-start; }
-  .cv-hero h1 { font-size: clamp(calc(3.125 * var(--u)), 14.5vw, calc(4 * var(--u))); margin-bottom: calc(0.875 * var(--u)); }
+  .cv-disc { margin-top: calc(0.625 * var(--u)); }
+  .cv-hero .cv-pin { padding-top: calc(5.5 * var(--u)); align-items: flex-start; }
+  .cv-hero h1 { font-size: clamp(calc(2.375 * var(--u)), 10.6vw, calc(3.25 * var(--u))); margin-bottom: calc(0.75 * var(--u)); }
   .cv-lede { font-size: calc(1.0625 * var(--u)); }
+  .cv-why { border-radius: calc(1.25 * var(--u)); margin-top: 0; }
+  .cv-tabs { padding: calc(0.375 * var(--u)) calc(0.375 * var(--u)) 0; gap: calc(0.125 * var(--u)); }
+  .cv-tabs li { min-height: calc(2.25 * var(--u)); padding: 0 calc(0.5 * var(--u)); font-size: calc(1 * var(--u)); }
+  .cv-tabs li:nth-child(n + 9) { display: none; }      /* eight squeezed tabs make the point on a phone */
+  .cv-lede { padding: calc(0.875 * var(--u)) calc(1 * var(--u)) calc(1 * var(--u)); }
   .cv-hint { font-size: calc(1 * var(--u)); bottom: max(calc(1.5 * var(--u)), env(safe-area-inset-bottom)); }
   .cv-hint svg { width: calc(1.375 * var(--u)); height: calc(1.375 * var(--u)); }
   .cv-end .cv-pin { align-items: flex-end; padding-bottom: max(var(--cv-gut), env(safe-area-inset-bottom)); }
@@ -203,17 +185,14 @@
   .cv-lbl { font-size: calc(1 * var(--u)); gap: calc(0.4375 * var(--u)); padding: calc(0.4375 * var(--u)) calc(0.6875 * var(--u)) calc(0.4375 * var(--u)) calc(0.5625 * var(--u)); }
   .cv-lbl i { width: calc(0.625 * var(--u)); height: calc(0.625 * var(--u)); }
   .cv-lbl small { font-size: calc(0.9375 * var(--u)); }
-  /* the plan's widgets are the same row you swipe, live or still (the phone's world has no room to stamp them beside the card) */
-  .cv-root .cv-wds { position: static; width: auto; height: auto; clip-path: none; white-space: normal; display: flex; gap: calc(0.5 * var(--u)); overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: calc(1.375 * var(--u)); margin: calc(0.875 * var(--u)) calc(-1.375 * var(--u)) 0; padding: 0 calc(1.375 * var(--u)) calc(0.25 * var(--u)); scrollbar-width: none; overscroll-behavior-x: contain; touch-action: pan-x pan-y; }
-  .cv-root .cv-wds::-webkit-scrollbar { display: none; }
-  .cv-root .cv-wds .cv-wd { flex: 0 0 74%; width: auto; scroll-snap-align: center; padding: calc(0.875 * var(--u)) calc(0.9375 * var(--u)) calc(0.9375 * var(--u)); border-radius: calc(1.375 * var(--u)); }
-  .cv-wd .k { font-size: calc(0.8125 * var(--u)); }
-  .cv-wd .k svg { width: calc(1 * var(--u)); height: calc(1 * var(--u)); }
-  .cv-root .cv-wds .cv-wd b { font-size: calc(1.3125 * var(--u)); }
-  .cv-root .cv-wds .cv-wd .big { font-size: calc(2.375 * var(--u)); }
-  .cv-wd span, .cv-wd .by { font-size: calc(1 * var(--u)); }
-  .cv-root .cv-wds .stamp { display: block; font-size: calc(0.6875 * var(--u)); }
-  .cv-plan-lede { display: none; }
+  .cv-paper { grid-template-columns: minmax(0, 1fr); gap: calc(1.75 * var(--u)); align-content: center; justify-items: center; min-height: 0;
+    padding: calc(5.5 * var(--u)) var(--cv-sr) calc(3 * var(--u)) var(--cv-sl); }
+  .cv-words { max-width: calc(34 * var(--u)); width: 100%; }
+  .cv-paper h2 { font-size: calc(2 * var(--u)); margin-bottom: calc(0.625 * var(--u)); }
+  .cv-say { font-size: calc(1.0625 * var(--u)); }
+  .cv-frame { justify-self: center; width: min(calc(18.75 * var(--u)), 78vw); }
+  .cv-shot { border-radius: calc(1.75 * var(--u)); }
+  .cv-shot img { aspect-ratio: 390 / 844; }
   .cv-close { gap: calc(1 * var(--u)); padding: calc(3 * var(--u)) var(--cv-sr) max(calc(2.5 * var(--u)), env(safe-area-inset-bottom)) var(--cv-sl); }
   .cv-foot p { font-size: calc(1 * var(--u)); }
   .cv-foot nav { gap: calc(0.5 * var(--u)); }
@@ -227,21 +206,23 @@
   .cv-tag { order: 3; margin-left: calc(0.25 * var(--u)); }
   .cv-tag .ga-preview-sum { min-height: 0; }      /* the second row stays short, so every card still fits a 320x568 screen */
   .cv-pin { padding-top: calc(6 * var(--u)); }
-  .cv-hero .cv-pin { padding-top: calc(6.5 * var(--u)); }
+  .cv-hero .cv-pin { padding-top: calc(6.25 * var(--u)); }
+  .cv-tabs li:nth-child(n + 7) { display: none; }
   .cv-card { padding: calc(1.125 * var(--u)); }
-  .cv-card h2 { font-size: calc(1.875 * var(--u)); }
-  .cv-days { gap: calc(0.375 * var(--u)); }
-  .cv-days li { min-height: calc(2.25 * var(--u)); padding: 0 calc(0.5 * var(--u)); gap: calc(0.375 * var(--u)); }      /* two days a row with Geist (F-200), so chapter 1 fits 320x568 */
+  .cv-card h2, .cv-paper h2 { font-size: calc(1.75 * var(--u)); }
+  .cv-paper { padding-top: calc(6.25 * var(--u)); }
 }
-/* a phone on its side, or any short window: a wide card that wraps less, a tighter frame, the three doors side by side */
+/* a phone on its side, or any short window: a wide card that wraps less, a tighter frame, the three doors side by side; the screenshot beside the words */
 @media (max-height: 520px) {
   .cv-top { padding-block: calc(0.5 * var(--u)); padding-top: max(calc(0.5 * var(--u)), env(safe-area-inset-top)); }
   .cv-pin { padding-top: calc(4.5 * var(--u)); }
-  .cv-hero .cv-pin { padding-top: calc(5 * var(--u)); }
+  .cv-hero .cv-pin { padding-top: calc(4.5 * var(--u)); }
+  .cv-hero h1 { font-size: calc(2 * var(--u)); }
+  .cv-tabs { display: none; }
   .cv-card { max-width: calc(48 * var(--u)); padding-block: calc(1.125 * var(--u)); }
-  .cv-root .cv-wds .cv-wd { flex-basis: calc(15 * var(--u)); padding: calc(0.75 * var(--u)) calc(0.875 * var(--u)); }
-  .cv-days li { min-height: calc(2.25 * var(--u)); }
   .cv-ctas { flex-direction: row; flex-wrap: wrap; justify-content: center; }
   .cv-ctas .cv-btn, .cv-ctas .cv-btn.text { min-height: calc(3 * var(--u)); }
+  .cv-paper { grid-template-columns: minmax(0, 1fr) auto; padding-top: calc(4.5 * var(--u)); }
+  .cv-frame { width: calc(11 * var(--u)); }
 }
 .cv-still .cv-hint svg { animation: none; }
