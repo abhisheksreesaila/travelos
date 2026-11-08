@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Autopilot checker: PASS/FAIL per GOAL.md milestone.
+cd "$(dirname "$0")/.." || exit 1
+fail=0
+run() { # name, pytest args...
+  local name=$1; shift
+  if pixi run pytest -q -p no:randomly "$@" >/tmp/ga-check-$name.log 2>&1; then echo "$name PASS"; else echo "$name FAIL (see /tmp/ga-check-$name.log)"; fail=1; fi
+}
+run M1 tests/test_autopilot_contract.py -k m1_
+run M2 tests/test_autopilot_contract.py -k m2_
+run M3 tests/test_autopilot_contract.py -k m3_
+run M4 tests/test_autopilot_contract.py -k m4_
+run M5 tests_browser/test_autopilot_look.py tests/test_autopilot_contract.py -k "m5_"
+run M6 tests/ -k "not m1_ and not m2_ and not m3_ and not m4_ and not m5_ or m6_"
+exit $fail

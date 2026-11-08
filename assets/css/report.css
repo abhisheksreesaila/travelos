@@ -1,0 +1,24 @@
+/* Report this trip (F-185) at /report and a creator's marker (F-184) at /creators/settings: one small form page in omxqua Coast. After omxqua.css (the colours are --oq-*).
+   Phone first; every control is at least 2.75rem tall (44px on the phone's 16px root). Sizes are rem; no glass, no blur. */
+
+.rp { display: grid; gap: 1.25rem; max-width: 40rem; margin: 0 auto; padding-block: 1.25rem 3rem; min-width: 0; }
+.rp > * { min-width: 0; }
+.rp-top { display: grid; gap: 0.5rem; justify-items: start; }
+.rp-top h1 { margin: 0; font-size: clamp(1.75rem, 6.5vw, 2.5rem); font-weight: 650; letter-spacing: -0.04em; line-height: 1.05; }
+.rp-what { margin: 0; font-weight: 600; font-size: 1.125rem; overflow-wrap: anywhere; }
+.rp-lede { margin: 0; font-size: 1.0625rem; line-height: 1.5; color: var(--oq-ink-2); text-wrap: pretty; }
+.rp-form { display: grid; gap: 1rem; padding: 1.125rem; }
+.rp-form label { display: grid; gap: 0.25rem; }
+.rp-lab { font-weight: 600; font-size: 1rem; }
+.rp-hint { font-size: max(var(--text-min), 0.9375rem); line-height: 1.4; color: var(--oq-ink-2); }
+.rp-input { width: 100%; box-sizing: border-box; min-height: var(--target); padding: 0.625rem 0.875rem; border-radius: var(--oq-radius-in); border: 1px solid var(--oq-line); background: var(--oq-surface-2); color: var(--oq-ink); font: inherit; font-size: 1rem; line-height: 1.4; }
+.rp-text { min-height: 6.5rem; resize: vertical; }
+.rp-input:focus-visible { outline: 0.1667rem solid var(--oq-accent); outline-offset: 0.0625rem; }
+.rp-actions { display: flex; flex-wrap: wrap; gap: 0.625rem; }
+.rp-actions .btn { min-height: var(--target); }
+.rp-error { margin: 0; padding: 0.625rem 0.875rem; border-radius: var(--oq-radius-in); background: color-mix(in srgb, var(--oq-bad) 10%, var(--oq-surface-1)); color: var(--oq-bad); font-weight: 600; }
+.rp-ok { margin: 0; padding: 0.625rem 0.875rem; border-radius: var(--oq-radius-in); background: var(--oq-k-see-tint); color: var(--oq-ok); font-weight: 600; }
+.rp-more { margin: 0; color: var(--oq-ink-2); }
+.rp-more a { display: inline-flex; align-items: center; min-height: var(--target); color: var(--oq-accent); font-weight: 600; text-underline-offset: 0.2rem; }
+.rp-badge { display: inline-grid; place-items: center; width: 3.5rem; height: 3.5rem; border-radius: 1rem; background: var(--oq-k-see-tint); color: var(--oq-k-see); }
+.rp-bee { position: absolute; left: -62rem; top: auto; width: 0.0625rem; height: 0.0625rem; overflow: hidden; }   /* the honeypot sits off-screen; a person never reaches it (tabindex -1, aria-hidden) */

@@ -24,7 +24,7 @@ def test_the_other_toasts_are_gone_from_the_styles_and_scripts():
 def test_the_one_toast_has_the_calm_look_and_motion():
     css = (ASSETS / "css" / "toast.css").read_text(encoding="utf-8")
     assert "var(--motion-spring)" in css and "max-width: min(22rem" in css and "transition: opacity var(--motion-dur)" not in css
-    assert "backdrop-filter" in css and "linear-gradient(180deg" in css and "prefers-reduced-motion: reduce" in css
+    assert "backdrop-filter" not in css and "background: var(--card-2)" in css and "prefers-reduced-motion: reduce" in css      # F-200: opaque, no glass (it was frosted, F-108)
     js = (ASSETS / "js" / "toast.js").read_text(encoding="utf-8")
     assert "4500" in js and "9000" in js and "aria-live" in js and "'status'" in js
 

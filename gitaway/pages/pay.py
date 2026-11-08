@@ -194,10 +194,11 @@ def celebration(b, session=None):
 def register(app):
     @app.get("/plan/pay")
     def pay_sheet(session, f: str = "", h: str = "", c: str = "", rooms: str = None, add: str = None, fare: str = None, bags: str = None,
-                  d: str = "", r: str = "", a: str = "", k: str = ""):
+                  d: str = "", r: str = "", a: str = "", k: str = "", to: str = "", home: str = "", focus: str = ""):
         if not showcase.on():
             return preview_only()
-        picks, trip = plan.resolve_pick(f, h, c), plan.resolve_trip(d, r, a, k)
+        trip = plan.resolve_trip(d, r, a, k, to, home, focus)
+        picks = plan.resolve_pick(f, h, c, trip)
         stay, flight = plan.resolve_stay(picks[1], rooms, add, trip), plan.resolve_flight(picks[0], fare, bags, trip)
         who = ses.current_traveler(session)
         if not who:
@@ -210,14 +211,15 @@ def register(app):
 
     @app.post("/pay")
     def pay(session, f: str = "", h: str = "", c: str = "", rooms: str = None, add: str = None, fare: str = None, bags: str = None,
-            d: str = "", r: str = "", a: str = "", k: str = ""):
+            d: str = "", r: str = "", a: str = "", k: str = "", to: str = "", home: str = "", focus: str = ""):
         """Books the picks. The total is always recomputed here; rooms that sleep too few become the default room, a bad fare Basic and bad bags none."""
         if not showcase.on():
             return preview_only()
-        picks, trip = plan.resolve_pick(f, h, c), plan.resolve_trip(d, r, a, k)
+        trip = plan.resolve_trip(d, r, a, k, to, home, focus)
+        picks = plan.resolve_pick(f, h, c, trip)
         stay, flight = plan.resolve_stay(picks[1], rooms, add, trip), plan.resolve_flight(picks[0], fare, bags, trip)
         if catalog.is_past(trip.depart, trip.return_):  # a stale link must not book the past: back to the form, which says why
-            return RedirectResponse(f"/start?go=1&to=la&{catalog.trip_query(trip)}&n={len(trip.kid_ages)}" + "".join(f"&k{i}={a}" for i, a in enumerate(trip.kid_ages, 1)), status_code=303)
+            return RedirectResponse(f"/start?go=1&to={trip.key}&{catalog.trip_query(trip).removeprefix(f'to={trip.key}&')}&n={len(trip.kid_ages)}" + "".join(f"&k{i}={a}" for i, a in enumerate(trip.kid_ages, 1)), status_code=303)
         try:
             booked = ses.book(session, catalog.quote(*picks, stay, trip, flight))
         except ses.BookingError as e:

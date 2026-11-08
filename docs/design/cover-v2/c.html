@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GitAway cover v2 / C: Split screen</title>
+<style>
+@font-face { font-family: "Geist"; src: url("../../../assets/fonts/geist-variable.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+:root {
+  color-scheme: light dark;
+  --font: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --bg: #F3F1EE; --s1: #FFFFFF; --s2: #F4F1EC; --ink: #121014; --ink2: #5E5A63; --line: #E4E0DA;
+  --acc: #D2401C; --on-acc: #FFFFFF; --acc-hi: #B8330F;
+  --sh: 0 12px 36px rgba(40, 20, 10, .18), 0 0 0 1px rgba(40, 20, 10, .04);
+  --see: #30C5BE;   --see-f: #087F7B;
+  --stay: #BF5AF2;  --stay-f: #A445D8;
+  --tix: #FF9F0A;   --tix-f: #F59A2E;  --on-tix: #1B0B05;
+  --food: #FF375F;  --food-f: #E0204E;
+  --wx: #0A84FF;    --wx-f: #0068D9;
+  --r: 28px; --pill: 999px; --ease: cubic-bezier(.2, .8, .2, 1); --spring: cubic-bezier(.34, 1.56, .64, 1);
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #0B0B10; --s1: #1C1B21; --s2: #26252C; --ink: #F5F3F0; --ink2: #ABA6B0; --line: #34323A;
+    --acc: #FF8A5B; --on-acc: #1B0B05; --acc-hi: #FFA27C;
+    --sh: 0 12px 36px rgba(0, 0, 0, .55), 0 0 0 1px rgba(255, 255, 255, .06); }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { font-family: var(--font); background: var(--s1); color: var(--ink); overflow: hidden; -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+:focus-visible { outline: 3px solid var(--acc); outline-offset: 3px; }
+.page { display: grid; grid-template-columns: minmax(440px, 1fr) 2fr; height: 100vh; }
+
+/* ---------- left column: calm and fixed ---------- */
+.side { display: flex; flex-direction: column; padding: 28px 48px 32px; background: var(--s1); overflow-y: auto; }
+.brand { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; font-weight: 750; font-size: 19px; letter-spacing: -.02em; align-self: flex-start; }
+.mark { width: 32px; height: 32px; border-radius: 10px; background: var(--acc); display: grid; place-items: center; }
+.mark svg { width: 21px; height: 21px; }
+.say { margin: auto 0; padding: 32px 0 8px; }
+h1 { font-size: 60px; line-height: .98; font-weight: 820; letter-spacing: -.045em; margin: 0 0 16px; }
+h1 span { color: var(--acc); display: block; }
+.say > p { font-size: 19px; line-height: 1.4; color: var(--ink2); margin: 0 0 26px; max-width: 22em; }
+.btns { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; padding: 0 24px; border-radius: var(--pill); border: 0; font: 650 17px var(--font); white-space: nowrap; transition: background .2s; }
+.btn.primary { background: var(--acc); color: var(--on-acc); }
+.btn.primary:hover { background: var(--acc-hi); }
+.btn.second { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--line); }
+.btn.second:hover { background: var(--s2); }
+.beats { list-style: none; margin: 36px 0 0; padding: 0; display: grid; gap: 4px; }
+.beat { position: relative; display: flex; align-items: center; gap: 14px; width: 100%; min-height: 56px; padding: 8px 14px 8px 8px; border: 0; border-radius: 18px; background: transparent; color: var(--ink); font: inherit; text-align: left; cursor: pointer; overflow: hidden; transition: background .5s var(--ease); }
+.beat:hover { background: var(--s2); }
+.beat .n { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 15px; color: var(--kf); box-shadow: inset 0 0 0 2px var(--k); transition: background .5s, color .5s, box-shadow .5s; }
+.beat b { font-size: 17px; font-weight: 700; display: block; color: var(--ink2); transition: color .5s; }
+.beat small { font-size: 15px; color: var(--ink2); display: block; margin-top: 1px; }
+.beat.on { background: color-mix(in srgb, var(--k) 14%, var(--s1)); }
+.beat.on b { color: var(--ink); }
+.beat.on .n { background: var(--kf); color: var(--on-k, #fff); box-shadow: none; }
+.beat .bar { position: absolute; left: 0; bottom: 0; height: 3px; width: 0; background: var(--kf); }
+.beat.on .bar { animation: fill var(--dur, 5s) linear forwards; }
+@keyframes fill { to { width: 100%; } }
+.k-see { --k: var(--see); --kf: var(--see-f); }
+.k-stay { --k: var(--stay); --kf: var(--stay-f); }
+.k-tix { --k: var(--tix); --kf: var(--tix-f); --on-k: var(--on-tix); }
+.k-food { --k: var(--food); --kf: var(--food-f); }
+
+/* ---------- right: the world plays ---------- */
+.world { position: relative; overflow: hidden; background: var(--bg); }
+.shot { position: absolute; inset: 0; opacity: 0; transition: opacity 1.4s var(--ease); }
+.shot.on { opacity: 1; z-index: 1; }
+.img { position: absolute; inset: -3%; background: var(--w) center / cover no-repeat; filter: saturate(1.3) contrast(1.04); animation: kb 24s ease-in-out infinite alternate; }
+@keyframes kb { from { transform: scale(1.04) translate3d(0, 0, 0); } to { transform: scale(1.14) translate3d(-2.5%, -1.5%, 0); } }
+.tint { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: multiply;
+  background: linear-gradient(180deg, #FF8A66 0%, #FFAF8C 12%, rgba(255, 205, 180, .55) 24%, rgba(255, 230, 215, 0) 38%); }
+@media (prefers-color-scheme: dark) {
+  .tint { mix-blend-mode: screen; opacity: .85;
+    background: linear-gradient(180deg, #6A2C86 0%, #9C3A6E 12%, rgba(120, 40, 90, .35) 28%, rgba(0, 0, 0, 0) 48%); }
+}
+.s1 { --w: url(../../../assets/cover/stills/a-3-wide-light.webp); }
+.s2 { --w: url(../../../assets/cover/stills/a-2-wide-light.webp); }
+.s3 { --w: url(../../../assets/cover/stills/a-1-wide-light.webp); }
+.s4 { --w: url(../../../assets/cover/stills/a-4-wide-light.webp); }
+@media (prefers-color-scheme: dark) {
+  .s1 { --w: url(../../../assets/cover/stills/a-3-wide-dark.webp); }
+  .s2 { --w: url(../../../assets/cover/stills/a-2-wide-dark.webp); }
+  .s3 { --w: url(../../../assets/cover/stills/a-1-wide-dark.webp); }
+  .s4 { --w: url(../../../assets/cover/stills/a-4-wide-dark.webp); }
+}
+.signin { position: absolute; z-index: 3; top: 28px; right: 32px; display: inline-flex; align-items: center; min-height: 48px; padding: 0 20px; border-radius: var(--pill); background: var(--s1); box-shadow: var(--sh); font-weight: 600; font-size: 16px; }
+
+/* a glimpse of the product for each beat: an opaque card that grows out of its corner */
+.glimpse { position: absolute; z-index: 2; left: 40px; bottom: 40px; display: flex; align-items: center; gap: 14px; padding: 14px 20px 14px 14px; border-radius: 24px; background: var(--s1); box-shadow: var(--sh); transform-origin: 0 100%; scale: .85; opacity: 0; transition: scale .7s var(--spring), opacity .35s var(--ease); }
+.shot.on .glimpse { scale: 1; opacity: 1; transition-delay: .5s; }
+.glimpse .ic { flex: none; width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; background: var(--kf); color: var(--on-k, #fff); }
+.glimpse .ic svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.glimpse b { display: block; font-size: 18px; font-weight: 720; letter-spacing: -.01em; }
+.glimpse small { display: block; font-size: 15px; color: var(--ink2); margin-top: 2px; }
+.glimpse .tags { display: flex; gap: 8px; }
+.tag { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px 0 10px; border-radius: var(--pill); background: var(--kf); color: var(--on-k, #fff); font-weight: 700; font-size: 16px; white-space: nowrap; }
+.tag svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.k-wx { --k: var(--wx); --kf: var(--wx-f); }
+.glimpse.multi { padding: 12px; }
+
+/* ---------- phone: world on top, copy below ---------- */
+@media (max-width: 760px) {
+  body { overflow: auto; }
+  .page { display: flex; flex-direction: column-reverse; height: auto; }
+  .world { height: 46vh; min-height: 340px; flex: none; }
+  .s1 { --w: url(../../../assets/cover/stills/a-1-phone-light.webp); }
+  .s2 { --w: url(../../../assets/cover/stills/a-2-phone-light.webp); }
+  .s3 { --w: url(../../../assets/cover/stills/a-1-phone-light.webp); }
+  .s4 { --w: url(../../../assets/cover/stills/a-4-phone-light.webp); }
+  .img { background-position: center 22%; }
+  .side { padding: 0 20px 32px; overflow: visible; }
+  .brand { position: absolute; z-index: 4; top: max(14px, env(safe-area-inset-top)); left: 16px; padding: 0 16px 0 8px; border-radius: var(--pill); background: var(--s1); box-shadow: var(--sh); font-size: 17px; }
+  .mark { width: 30px; height: 30px; }
+  .signin { top: max(14px, env(safe-area-inset-top)); right: 16px; }
+  .say { margin: 0; padding: 22px 0 0; }
+  h1 { font-size: 40px; margin-bottom: 10px; }
+  .say > p { font-size: 17px; margin-bottom: 18px; }
+  .btns { flex-direction: column; }
+  .btn { width: 100%; }
+  .beats { margin-top: 24px; }
+  .world { height: 48vh; }
+  .glimpse { left: 16px; right: auto; bottom: 14px; max-width: calc(100% - 32px); padding: 6px 16px 6px 6px; border-radius: var(--pill); gap: 10px; }
+  .glimpse small { display: none; }
+  .glimpse .ic { border-radius: 50%; }
+  .glimpse .tag.k-see { display: none; }
+  .glimpse.multi { padding: 6px; }
+  .glimpse .ic { width: 44px; height: 44px; }
+  .glimpse b { font-size: 16px; } .glimpse small { font-size: 14px; }
+  .glimpse .tags { gap: 6px; }
+  .tag { min-height: 40px; font-size: 15px; padding: 0 14px 0 10px; }
+}
+@media (max-width: 760px) and (prefers-color-scheme: dark) {
+  .s1 { --w: url(../../../assets/cover/stills/a-1-phone-dark.webp); }
+  .s2 { --w: url(../../../assets/cover/stills/a-2-phone-dark.webp); }
+  .s3 { --w: url(../../../assets/cover/stills/a-1-phone-dark.webp); }
+  .s4 { --w: url(../../../assets/cover/stills/a-4-phone-dark.webp); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .img { animation: none; }
+  .shot, .glimpse, .beat, .beat .n { transition: none; }
+  .beat.on .bar { animation: none; }
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-trail" viewBox="0 0 24 24"><circle cx="5" cy="19" r="2"/><circle cx="19" cy="5" r="2"/><path d="M7 19c5 0 2-7 6-7s2-7 4-7"/></symbol>
+  <symbol id="i-fork" viewBox="0 0 24 24"><circle cx="6" cy="5" r="2"/><circle cx="18" cy="5" r="2"/><circle cx="12" cy="19" r="2"/><path d="M6 7v2a3 3 0 0 0 3 3h6a3 3 0 0 0 3-3V7M12 12v5"/></symbol>
+  <symbol id="i-wx" viewBox="0 0 24 24"><path d="M12 2v20M3.5 7l17 10M20.5 7l-17 10"/></symbol>
+  <symbol id="i-stay" viewBox="0 0 24 24"><path d="M3 11 12 4l9 7v9H3zM10 20v-5h4v5"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.3a4.3 4.3 0 0 1 7.5 2.5C19.5 15.4 12 20 12 20z"/></symbol>
+</svg>
+<div class="page">
+  <aside class="side">
+    <a class="brand" href="/"><span class="mark"><svg viewBox="0 0 20 20" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><circle cx="5" cy="15" r="2.2"/><circle cx="15" cy="5" r="2.2"/><path d="M6.8 13.4 13.2 6.6"/><circle cx="5" cy="5" r="2.2"/><path d="M5 7.4v5.4"/></svg></span>GitAway</a>
+    <div class="say">
+      <h1>Take a trip. <span>Leave a trail.</span></h1>
+      <p>Plan a family trip together, then share it for others to follow.</p>
+      <div class="btns">
+        <a class="btn primary" href="/start">Start a trip</a>
+        <a class="btn second" href="/trail/tahoe">See a shared trail</a>
+      </div>
+      <ol class="beats" aria-label="How it works">
+        <li><button class="beat k-see on"><span class="n">1</span><span><b>Find a trail</b><small>Start from a trip a family took</small></span><i class="bar"></i></button></li>
+        <li><button class="beat k-stay"><span class="n">2</span><span><b>Make it yours</b><small>Keep the cabin, swap the ski day</small></span><i class="bar"></i></button></li>
+        <li><button class="beat k-tix"><span class="n">3</span><span><b>Plan it together</b><small>Weather, route, bookings on one screen</small></span><i class="bar"></i></button></li>
+        <li><button class="beat k-food"><span class="n">4</span><span><b>Leave a trail</b><small>The next family says thanks</small></span><i class="bar"></i></button></li>
+      </ol>
+    </div>
+  </aside>
+
+  <section class="world" aria-label="Lake Tahoe in December, a family's trail">
+    <a class="signin" href="/signin">Sign in</a>
+    <div class="shot s1 on"><div class="img"></div><div class="tint"></div>
+      <div class="glimpse k-see"><span class="ic"><svg><use href="#i-trail"/></svg></span><span><b>Lena &amp; Sam's Tahoe trail</b><small>5 days · December · 2 kids</small></span></div></div>
+    <div class="shot s2"><div class="img"></div><div class="tint"></div>
+      <div class="glimpse k-stay"><span class="ic"><svg><use href="#i-fork"/></svg></span><span><b>Your copy: ski day → sled hill</b><small>Same cabin, your dates</small></span></div></div>
+    <div class="shot s3"><div class="img"></div><div class="tint"></div>
+      <div class="glimpse multi"><span class="tags">
+        <span class="tag k-wx"><svg><use href="#i-wx"/></svg>Sat · Snow 28°F</span>
+        <span class="tag k-see"><svg><use href="#i-trail"/></svg>42 min</span>
+        <span class="tag k-stay"><svg><use href="#i-stay"/></svg>Booked on Vrbo</span></span></div></div>
+    <div class="shot s4"><div class="img"></div>
+      <div class="glimpse k-food"><span class="ic"><svg><use href="#i-heart"/></svg></span><span><b>Ana &amp; Luis said thanks</b><small>They followed your trail</small></span></div></div>
+  </section>
+</div>
+<script>
+(() => {
+  const shots = [...document.querySelectorAll('.shot')], beats = [...document.querySelectorAll('.beat')];
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches, DUR = 5000;
+  let t;
+  function go(n, user) {
+    const d = user ? DUR * 2 : DUR;
+    shots.forEach((s, k) => s.classList.toggle('on', k === n));
+    beats.forEach((b, k) => { b.classList.toggle('on', k === n); b.setAttribute('aria-pressed', k === n); });
+    const bar = beats[n].querySelector('.bar'); beats[n].style.setProperty('--dur', d + 'ms');
+    bar.style.animation = 'none'; bar.offsetWidth; bar.style.animation = '';
+    clearTimeout(t);
+    if (!still) t = setTimeout(() => go((n + 1) % 4), d);
+  }
+  beats.forEach((b, k) => b.addEventListener('click', () => go(k, true)));
+  go(+(new URLSearchParams(location.search).get('beat') || 1) - 1);
+})();
+</script>
+</body>
+</html>

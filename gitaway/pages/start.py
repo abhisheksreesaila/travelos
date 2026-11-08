@@ -14,14 +14,15 @@ from fasthtml.common import A, Button, Div, Fieldset, Form, H1, Input, Label, Le
 from fasthtml.core import FtResponse
 from starlette.responses import RedirectResponse
 
-from gitaway import catalog, firstrun, pickers, session as ses, showcase, tripcal, tripday
+from gitaway import affiliate, catalog, firstrun, pickers, session as ses, showcase, tripcal, tripday
 from gitaway.icons import icon
 from gitaway.layout import page
 from gitaway.pages import plan
 
 HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/start.css"), Script(src="/assets/js/start.js", defer=True))
 MAX_KIDS = catalog.MAX_TRAVELERS - 1
-CHIP_FILLS = {"la": "fill-sun", "sd": "fill-sky-tint", "hi": "fill-mint-tint"}
+CHIP_FILLS = {"la": "fill-sun", "sd": "fill-sky-tint", "hi": "fill-mint-tint", "nyc": "fill-grape-tint"}
+TILTS = (-2, 1.5, -1, 2)
 
 
 def _options(values, current):
@@ -48,11 +49,10 @@ def _control(tag, name, errors, *content, **attrs):
 def _chips(vals, errors):
     chips = []
     for d in catalog.DESTINATIONS:
-        on = d.live and vals["to"] == d.key
         chips.append(Label(
-            Input(type="radio", name="to", value=d.key, **({"checked": True} if on else {}), **({} if d.live else {"disabled": True})),
-            Span(icon("pin", 18, 2.4), Span(d.name), Span("coming soon", cls="st-soon") if not d.live else "", cls=f"st-face {CHIP_FILLS[d.key]}"),
-            cls=f"st-chip{'' if d.live else ' is-soon'}", style=f"--tilt:{(-2, 1.5, -1)[catalog.DESTINATIONS.index(d)]}deg",
+            Input(type="radio", name="to", value=d.key, **({"checked": True} if vals["to"] == d.key else {})),
+            Span(icon("pin", 18, 2.4), Span(d.name), cls=f"st-face {CHIP_FILLS[d.key]}"),
+            cls="st-chip", style=f"--tilt:{TILTS[catalog.DESTINATIONS.index(d)]}deg",
         ))
     err = errors.get("to")
     return Fieldset(
@@ -82,7 +82,8 @@ def _form(vals, errors):
         summary,
         _chips(vals, errors),
         Div(
-            _field("From", "from", _control(Select, "from", errors, Option(f"{catalog.ORIGIN[1]} ({catalog.ORIGIN[0]})", value=catalog.ORIGIN[0], selected=True)), error=errors.get("from", "")),
+            _field("From", "from", _control(Input, "from", errors, type="text", value=vals["from"], maxlength="3", placeholder="Any, we'll ask", autocomplete="off", autocapitalize="characters", spellcheck="false",
+                                            aria_label="Flying from (airport code, optional)"), error=errors.get("from", "")),
             _field("Leaving", "d", _control(Input, "d", errors, type="date", value=vals["d"], required=True, min=catalog.today().isoformat(), data_ga_range="trip", data_ga_label="Leaving"), error=errors.get("d", "")),
             _field("Back", "r", _control(Input, "r", errors, type="date", value=vals["r"], required=True, min=catalog.today().isoformat(), data_ga_range="trip", data_ga_end="", data_ga_label="Back"), error=errors.get("r", "")),
             _field("Adults", "a", _control(Select, "a", errors, *_options([(i, str(i)) for i in range(1, catalog.MAX_TRAVELERS + 1)], vals["a"]), data_ga="stepper", data_ga_label="Adults", data_ga_hint="18 and over"), error=errors.get("a", "")),
@@ -91,6 +92,8 @@ def _form(vals, errors):
         ),
         ages,
         Input(type="hidden", name="go", value="1"),
+        Input(type="hidden", name="focus", value=vals["focus"]) if vals["focus"] else "",      # a Disneyland trip stays one (F-195)
+        Input(type="hidden", name="via", value=vals["via"]) if vals["via"] else "",            # and a reader from a creator's trip stays on the honest page (F-195)
         Button("Find my trip", icon("arrow-right", 22, 2.6), type="submit", cls="btn btn-ink st-go"),
         P("Sample prices for Los Angeles. More places are on the way.", cls="st-note"),
         action="/start", method="get", cls="st-card", id="st-form", novalidate=True, aria_label="Plan a trip",
@@ -107,7 +110,7 @@ def continue_card(session, phone=False):
         t, href, tail = tripcal.trip_of(b), "/trip", ("booked elsewhere" if tripcal.is_imported(b) else f"booked, {catalog.money(b['total_cents'])}")
     elif (saved := ses.remembered_plan(session)):
         p = {k: v[0] for k, v in parse_qs(saved).items()}
-        t, href, tail = catalog.trip_from_url(p.get("d"), p.get("r"), p.get("a"), p.get("k")), f"/plan?{saved}", "your picks are saved"
+        t, href, tail = catalog.trip_from_url(p.get("d"), p.get("r"), p.get("a"), p.get("k"), p.get("to")), f"/plan?{saved}", "your picks are saved"
     else:
         return ""
     return A(
@@ -118,8 +121,9 @@ def continue_card(session, phone=False):
     )
 
 
-def values_of(trip):
-    return {"to": "la", "d": trip.depart.isoformat(), "r": trip.return_.isoformat(), "a": trip.adults, "n": len(trip.kid_ages), "ages": list(trip.kid_ages)}
+def values_of(trip, via=""):
+    return {"to": trip.key, "from": trip.home, "d": trip.depart.isoformat(), "r": trip.return_.isoformat(), "a": trip.adults, "n": len(trip.kid_ages), "ages": list(trip.kid_ages),
+            "focus": trip.focus, "via": via}
 
 
 def _submitted(q):
@@ -129,14 +133,14 @@ def _submitted(q):
 
     n = min(whole(q.get("n", "0")), MAX_KIDS)
     raw_ages = [q.get(f"k{i}", "") for i in range(1, n + 1)]
-    vals = {"to": q.get("to", "la"), "d": q.get("d", ""), "r": q.get("r", ""), "a": q.get("a", "2"), "n": n,
+    vals = {"to": q.get("to", "la"), "from": (q.get("from") or q.get("home") or "").strip().upper(), "focus": q.get("focus", ""), "via": affiliate.valid_via(q.get("via")), "d": q.get("d", ""), "r": q.get("r", ""), "a": q.get("a", "2"), "n": n,
             "ages": [whole(a, "") if a.isascii() and a.isdigit() else "" for a in raw_ages]}
     errors = {}
     for i, a in enumerate(raw_ages, 1):
         if not (a.isascii() and a.isdigit() and int(a) <= catalog.MAX_KID_AGE):
             errors[f"k{i}"] = f"Pick an age from 0 to {catalog.MAX_KID_AGE} for kid {i}."
     try:
-        trip = catalog.parse_trip(q.get("from", catalog.ORIGIN[0]), vals["to"], vals["d"], vals["r"], vals["a"], ",".join(map(str, vals["ages"])), check_past=True)
+        trip = catalog.parse_trip(vals["from"], vals["to"], vals["d"], vals["r"], vals["a"], ",".join(map(str, vals["ages"])), check_past=True, focus=vals["focus"])
     except catalog.TripError as e:
         trip = None
         for field, msg in e.errors:
@@ -153,7 +157,7 @@ def start_page(session, vals, errors=None, status=200, phone=False):
         Div(
             Div(
                 Div(Span("PLAN A TRIP", cls="eyebrow"), H1("Where to?"), Span("Plan it together.", cls="ga-h-two"),
-                    P("Pick a place, your dates and who is coming. We line up flights, a stay and a car, side by side, with one honest total."),
+                    P("Pick a place, your dates and who is coming. We line up where to book flights, a stay and a car, with your dates and party filled in."),
                     A(icon("ledger", 16, 2.4), "Import a booked trip", href=firstrun.IMPORT, cls="btn btn-sm st-import", id="st-import"),
                     cls="st-hero"),
                 continue_card(session, phone),
@@ -178,8 +182,8 @@ def register(app):
         if q.get("go"):
             vals, trip, errors = _submitted(q)
             if trip:
-                query = catalog.trip_query(trip)
+                query = "&".join(filter(None, (catalog.trip_query(trip), f"via={vals['via']}" if vals["via"] else "")))     # via is not a cookie: D-125 stands
                 return RedirectResponse("/plan" + (f"?{query}" if query else ""), status_code=303)
             return start_page(session, vals, errors, status=422)
-        trip = catalog.trip_from_url(q.get("d"), q.get("r"), q.get("a"), q.get("k"))
-        return start_page(session, values_of(trip), phone=tripday.is_phone(request.headers.get("user-agent")))
+        trip = catalog.trip_from_url(q.get("d"), q.get("r"), q.get("a"), q.get("k"), q.get("to"), q.get("home"), q.get("focus"))
+        return start_page(session, values_of(trip, affiliate.valid_via(q.get("via"))), phone=tripday.is_phone(request.headers.get("user-agent")))

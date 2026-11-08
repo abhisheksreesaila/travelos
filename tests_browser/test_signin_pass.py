@@ -1,5 +1,6 @@
-"""F-052: the sign-in boarding pass in a real browser: reduced motion parks the plane at its destination and stills the sky;
-on a phone the sky is a short banner above the pass, with no sideways scroll, the 13px text floor and 44px targets."""
+"""F-052, F-200: sign-in in a real browser. Direction A (the founder found the old boarding pass too small): a 34px title on a phone, 17px words, 56px buttons,
+every target at least 48px, the trip card with its stub; on a laptop the left half carries the line "Take a trip. Leave a trail." and the trip's widgets, and the
+whole page fits 1440x900. Same in light and dark (tests_browser/test_direction_a_pages.py measures contrast)."""
 import pytest
 
 from tests_browser.helpers import DESKTOP, PHONE
@@ -29,66 +30,36 @@ def open_signin(browser, base_url):
         c.close()
 
 
-def visible_plane(page):
-    return page.evaluate("""() => {
-        const el = [...document.querySelectorAll('.si-plane')].find(e => e.closest('.si-stage').offsetParent !== null);
-        const s = getComputedStyle(el);
-        return {distance: s.offsetDistance, animation: s.animationName, path: s.offsetPath};
-    }""")
-
-
-@pytest.mark.parametrize("viewport", [DESKTOP, PHONE])
 @pytest.mark.parametrize("name", CONTEXTS)
-def test_reduced_motion_is_calm_and_the_plane_is_parked_at_its_destination(open_signin, name, viewport):
-    page = open_signin(CONTEXTS[name], viewport)
-    plane = visible_plane(page)
-    assert plane["distance"] == "100%" and plane["animation"] == "none" and plane["path"].startswith("path(")
-    still = page.evaluate("""() => [...document.querySelectorAll('.si-sun, .si-cloud, .si-stick, .si-route, .si-card')]
-        .filter(e => e.offsetParent !== null || e.closest('svg')).map(e => getComputedStyle(e).animationName).filter(n => n !== 'none')""")
-    assert still == []
-
-
-def test_with_motion_the_plane_flies(open_signin):
-    page = open_signin(CONTEXTS["search"], motion="no-preference")
-    assert visible_plane(page)["animation"] == "si-fly"
-    first = page.evaluate("getComputedStyle(document.querySelector('.si-stage-d .si-plane')).offsetDistance")
-    page.wait_for_timeout(700)
-    assert page.evaluate("getComputedStyle(document.querySelector('.si-stage-d .si-plane')).offsetDistance") != first
-
-
-@pytest.mark.parametrize("name", CONTEXTS)
-def test_the_phone_gets_a_short_banner_above_the_pass(open_signin, name):
+def test_the_phone_is_one_column_big_and_easy_to_tap(open_signin, name):
     page = open_signin(CONTEXTS[name], PHONE)
-    box = page.evaluate("""() => {
-        const r = s => document.querySelector(s).getBoundingClientRect();
-        return {sky: r('.si-sky'), card: r('.si-card'), w: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth};
+    look = page.evaluate("""() => {
+        const size = s => parseFloat(getComputedStyle(document.querySelector(s)).fontSize), r = s => document.querySelector(s).getBoundingClientRect();
+        return {title: size('#si-title'), desc: size('#si-desc'), dest: size('#si-dest'), dev: r('.si-dev').height, sky: getComputedStyle(document.querySelector('.si-sky')).display,
+                w: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth};
     }""")
-    assert box["sky"]["bottom"] > box["card"]["top"] - 1 and box["sky"]["top"] < box["card"]["top"]   # above, the pass tucks over its edge
-    assert box["sky"]["height"] < 260 and box["sky"]["width"] == PHONE["width"]
-    assert box["w"] == box["cw"]   # no sideways scroll
-    assert page.is_visible(".si-stage-m") and not page.is_visible(".si-stage-d")
+    assert (look["title"], look["desc"], look["dest"]) == (34, 17, 17), look
+    assert look["dev"] >= 56 and look["sky"] == "none" and look["w"] == look["cw"], look      # the 56px button, no half beside it, no sideways scroll
+    targets = page.evaluate("""() => [...document.querySelectorAll('.si-card a, .si-card button, .si-card summary, .si-card input, #si-cancel')].filter(e => e.offsetParent && getComputedStyle(e).display !== 'inline')
+        .map(e => [e.id || e.textContent.trim(), Math.round(Math.min(e.getBoundingClientRect().width, e.getBoundingClientRect().height))])""")
+    assert targets and all(m >= 48 for _, m in targets), targets
+    links = page.evaluate("[...document.querySelectorAll('.si-legal a')].map(e => Math.round(e.getBoundingClientRect().height))")
+    assert links and all(h >= 48 for h in links), links      # Terms and Privacy are words in the sentence, each with a 48px tall hit area
 
 
 @pytest.mark.parametrize("name", CONTEXTS)
-def test_phone_targets_and_text_floor(open_signin, name):
-    page = open_signin(CONTEXTS[name], PHONE)
-    page.click(".si-sum")  # the dev sign-in box is tucked away when Google is on; here it is open already, so this closes it
-    page.click(".si-sum")
-    small = page.evaluate("""() => [...document.querySelectorAll('.si-card *, .si-sky *')].filter(e => e.offsetParent && !e.closest('svg') && !e.children.length
-        && e.textContent.trim() && parseFloat(getComputedStyle(e).fontSize) < 13).map(e => e.textContent.trim())""")
-    assert small == []
-    targets = page.evaluate("""() => [...document.querySelectorAll('.si-card a, .si-card button, .si-card summary')].filter(e => e.offsetParent)
-        .map(e => [e.textContent.trim(), e.getBoundingClientRect().height])""")
-    assert targets and all(h >= 44 for _, h in targets), targets
-
-
-@pytest.mark.parametrize("name", CONTEXTS)
-def test_desktop_fits_without_sideways_scroll_and_shows_the_pass(open_signin, name):
+def test_the_laptop_has_the_line_and_the_trips_widgets_beside_the_card_and_fits(open_signin, name):
     page = open_signin(CONTEXTS[name], DESKTOP)
     assert page.evaluate("document.documentElement.scrollWidth === document.documentElement.clientWidth")
-    card = page.evaluate("(() => { const r = document.querySelector('.si-card').getBoundingClientRect(); return [r.top, r.bottom]; })()")
-    assert card[0] >= 0 and card[1] <= DESKTOP["height"]   # the whole pass is on screen at 1440x900
+    assert page.locator(".si-line").inner_text().replace("\n", " ") == "Take a trip. Leave a trail."
+    assert page.locator(".si-line-sub").inner_text() == "Share the whole trip, not just the photos, so the next family can follow it, make it theirs, and say thanks."
+    box = lambda sel: page.evaluate("s => [...document.querySelectorAll(s)].map(e => { const r = e.getBoundingClientRect(); return [e.className, r.left, r.top, r.right, r.bottom]; })", sel)
+    (card,), (sky,), widgets = box(".si-card"), box(".si-sky"), box(".si-w")
+    boxes = [card, sky, *widgets]
+    assert len(widgets) == 3 and sky[3] <= card[1]                                  # the line and the widgets on the left, the card on the right
+    assert all(b[2] >= 0 and b[4] <= DESKTOP["height"] for b in boxes), boxes      # everything on screen at 1440x900, no scrolling
     assert page.locator("#si-email").evaluate("e => document.activeElement === e")   # focus starts in the dialog
+    assert round(page.evaluate("parseFloat(getComputedStyle(document.querySelector('#si-desc')).fontSize)")) == 16
 
 
 @pytest.fixture
@@ -102,43 +73,7 @@ def test_the_google_button_is_named_continue_with_google(open_signin, with_googl
     assert page.get_by_role("link", name="Continue with Google", exact=True).count() == 1
 
 
-GEOMETRY = """() => {
-    const vis = e => e.closest('.si-stage').offsetParent !== null;
-    const rect = e => { const r = e.getBoundingClientRect(); return {l: r.left, t: r.top, r: r.right, b: r.bottom, w: r.width, text: e.textContent.trim()}; };
-    const q = s => [...document.querySelectorAll(s)].filter(vis);
-    const sky = document.querySelector('.si-sky').getBoundingClientRect(), card = document.querySelector('.si-card').getBoundingClientRect();
-    return {sticks: q('.si-stick').map(rect), codes: q('.si-code').map(rect), sun: q('.si-sun').map(rect)[0], plane: q('.si-plane').map(rect)[0],
-            sky: {l: sky.left, t: sky.top, r: sky.right, b: sky.bottom}, cardTop: card.top, scroll: [document.documentElement.scrollWidth, document.documentElement.clientWidth]};
-}"""
-
-
-def hit(a, b):
-    return a["l"] < b["r"] and b["l"] < a["r"] and a["t"] < b["b"] and b["t"] < a["b"]
-
-
-WIDTHS = [(1440, 900), (1001, 800), (1000, 800), (900, 800), (800, 800), (721, 800), (390, 844), (320, 640)]
-
-
-@pytest.mark.parametrize("w,h", WIDTHS)
-@pytest.mark.parametrize("name", CONTEXTS)
-def test_stickers_and_labels_never_overlap_at_any_width(open_signin, name, w, h):
-    g = open_signin(CONTEXTS[name], {"width": w, "height": h}).evaluate(GEOMETRY)
-    things = g["sticks"] + g["codes"]
-    for i, a in enumerate(things):
-        for b in things[i + 1:]:
-            assert not hit(a, b), (a["text"], b["text"])
-        assert a["l"] >= g["sky"]["l"] and a["r"] <= g["sky"]["r"], a["text"]
-        if w <= 1000:  # stacked: the pass tucks over the sky's lower edge, so nothing may hide under it
-            assert a["b"] <= g["cardTop"] and a["t"] >= g["sky"]["t"], a["text"]
-    if w <= 1000:
-        assert not any(hit(s, g["sun"]) for s in g["sticks"])
-    assert g["scroll"][0] == g["scroll"][1]
-
-
-@pytest.mark.parametrize("w,h", WIDTHS)
-def test_the_parked_plane_stays_off_the_destination_label(open_signin, w, h):
-    g = open_signin(CONTEXTS["search"], {"width": w, "height": h}).evaluate(GEOMETRY)
-    assert not hit(g["plane"], g["codes"][1]) and not hit(g["plane"], g["codes"][0])
+WIDTHS = [(1440, 900), (1280, 800), (1020, 800), (1019, 800), (800, 800), (721, 800), (390, 844), (320, 640)]
 
 
 @pytest.mark.parametrize("w,h", WIDTHS)

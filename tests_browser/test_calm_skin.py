@@ -1,7 +1,8 @@
 """F-158: the calm laptop skin, pinned in a real browser so it cannot drift back. At 1440 and 1280 (the laptop) the day, the week, the panel and the family, import and start pages are flat hairline surfaces
 (no layered shadow on a card, a 1px hairline edge), the buttons are flat pills (no ledge, no lift), the day and the week carry the two-tone heading (the title, then its second phrase in grey), the data rows
-have their tiles, and Up next is the one solid accent block. At 390 (phone) and 800 (tablet) none of that shows: the buttons keep their ledge, the day keeps its ink header and the second phrase is not drawn.
-Assets: assets/css/desk_skin.css (loaded last by layout.styles()). Screenshots on request: F158_SHOTS=<folder>."""
+have their tiles, and Up next is the one solid accent block. F-200 (Direction A) kept those rules with its own values (the ink accent, A's hairline and greys) and changed two:
+the top bar is the top islands (a raised nav pill, the current section an ink pill), and the phone's buttons are flat pills with one soft shadow too (no ledge anywhere).
+Assets: assets/css/desk_skin.css (loaded last by layout.styles()) and assets/css/topbar.css. Screenshots on request: F158_SHOTS=<folder>."""
 import os
 import re
 
@@ -10,14 +11,8 @@ from playwright.sync_api import expect
 
 from gitaway import tripcal as cal
 from tests.test_signin import person
-from tests_browser.helpers import DESKTOP, PHONE
+from tests_browser.helpers import ACCENT, CARD, DESKTOP, HAIRLINE, INK, INK_3, ON_INK, PHONE
 from tests_browser.test_topbar import LAPTOP, TABLET, signed_in  # noqa: F401 - fixture
-
-INK = "rgb(30, 26, 46)"
-CORAL = "rgb(255, 115, 82)"
-CORAL_DEEP = "rgb(201, 67, 31)"
-INK_3 = "rgb(90, 84, 112)"
-HAIRLINE = "rgba(30, 26, 46, 0.1)"
 NO_SCROLL = "document.documentElement.scrollWidth <= document.documentElement.clientWidth && document.documentElement.scrollHeight <= document.documentElement.clientHeight"
 BOTH = pytest.mark.parametrize("viewport", [DESKTOP, LAPTOP], ids=["1440", "1280"])
 
@@ -65,7 +60,7 @@ def test_buttons_are_flat_pills_with_no_ledge_and_no_lift(signed_in, viewport):
         shadow, transform, radius = style(page, sel, "boxShadow", "transform", "borderTopLeftRadius")
         assert is_flat(shadow) and transform == "none", f"{sel}: {shadow} {transform}"
         assert float(radius[:-2]) > 10, f"{sel} is not a pill"
-    assert style(page, "#cz-desk-talk", "backgroundColor")[0] == CORAL      # primary: coral
+    assert style(page, "#cz-desk-talk", "backgroundColor")[0] == ACCENT     # primary: the ink accent (F-200; it was coral)
     assert style(page, "#cz-desk-paste", "borderTopWidth")[0] == "1px"       # secondary: a hairline
     page.goto(page.url.split("/trip")[0] + "/family")
     for button in page.locator(".fam .btn").all()[:4]:
@@ -80,13 +75,13 @@ def test_the_day_and_the_week_have_the_two_tone_heading(signed_in, viewport):
     two = page.locator(".cz-view[data-day] .ga-h-two")
     expect(two).to_be_visible()
     assert two.inner_text().strip() == "Fly in, check in."
-    assert style(page, ".cz-view[data-day] .ga-h-two", "color")[0] == INK_3      # F-159: grey, coral is for primary buttons and the now line
+    assert style(page, ".cz-view[data-day] .ga-h-two", "color")[0] == INK_3      # F-159: grey; colour is for the kinds
     assert style(page, "#cz-title", "color")[0] == INK
     page.goto(page.url.split("?")[0])
     two = page.locator(".cz-view[data-level=week] .ga-h-two")
     expect(two).to_be_visible()
     assert two.inner_text().strip() == "Five days in LA."          # the trip's real length and place
-    assert style(page, ".cz-view[data-level=week] .ga-h-two", "color")[0] == INK_3      # F-159: grey, coral is for primary buttons and the now line
+    assert style(page, ".cz-view[data-level=week] .ga-h-two", "color")[0] == INK_3      # F-159: grey; colour is for the kinds
     assert page.evaluate(NO_SCROLL)
     shot(page, f"week-{viewport['width']}.png")
 
@@ -113,7 +108,7 @@ def test_up_next_is_the_only_accent_block(signed_in):
     expect(page.locator("#cz-up")).to_be_visible()
     got = page.evaluate("""() => [...document.querySelectorAll('body *')].filter(e => {
         const r = e.getBoundingClientRect(), bg = getComputedStyle(e).backgroundColor;
-        return r.width >= 160 && r.height >= 60 && r.width * r.height < 1e6 && (bg === 'rgb(30, 26, 46)' || bg === 'rgb(255, 115, 82)');
+        return r.width >= 160 && r.height >= 60 && r.width * r.height < 1e6 && bg === 'rgb(11, 11, 13)';      // F-200: the ink accent (it was ink or coral)
       }).map(e => e.id || e.className)""")
     assert got == ["cz-up"], got
     tiles = page.locator("#cz-later .cz-later-tile")
@@ -145,15 +140,19 @@ def test_the_other_pages_use_the_same_surfaces_and_headings(signed_in, viewport)
     assert is_flat(style(page, ".ti-card", "boxShadow")[0])
 
 
-def test_the_top_bar_is_flat_text_links_with_a_coral_underline(signed_in):
+def test_the_top_bar_is_three_islands_with_the_current_section_an_ink_pill(signed_in):
+    """F-200 replaced F-158's flat bar (text links with a coral underline) with Direction A's top islands."""
     page = signed_in(DESKTOP, path="/trip/canvas?day=0")
     bar = ".ga-topbar"
-    width, color = style(page, bar, "borderBottomWidth", "borderBottomColor")
-    assert (width, color) == ("1px", HAIRLINE)
+    assert style(page, bar, "borderBottomWidth")[0] == "0px"                         # the islands float on the canvas: no hairline under them
     nav = style(page, f"{bar} .ga-tb-nav", "backgroundColor", "boxShadow")
-    assert nav[0] in ("rgba(0, 0, 0, 0)", "transparent") and is_flat(nav[1])
-    cur = style(page, f"{bar} .ga-tb-link[aria-current=page]", "borderBottomColor", "borderBottomWidth", "backgroundColor")
-    assert cur[0] == CORAL and cur[1] != "0px" and cur[2] in ("rgba(0, 0, 0, 0)", "transparent")      # the current link: ink text with a coral underline, no pill
+    assert nav[0] == CARD and not is_flat(nav[1])                                    # a raised white pill
+    cur = style(page, f"{bar} .ga-tb-link[aria-current=page]", "backgroundColor", "color", "borderTopLeftRadius")
+    assert cur[0] == ACCENT and cur[1] == ON_INK and float(cur[2][:-2]) > 10       # the current section: the ink pill
+    boxes = page.evaluate("() => ['.ga-tb-l', '.ga-tb-nav', '.ga-tb-r'].map(s => { const r = document.querySelector(s).getBoundingClientRect(); return [r.left, r.right]; })")
+    assert boxes[0][1] < boxes[1][0] < boxes[1][1] < boxes[2][0]                    # brand left, nav in the middle, the Beacon and you on the right
+    middle = (boxes[1][0] + boxes[1][1]) / 2
+    assert abs(middle - DESKTOP["width"] / 2) < 2                                    # the nav pill is centred
 
 
 @pytest.mark.parametrize("viewport", [PHONE, TABLET], ids=["390", "800"])
@@ -165,5 +164,5 @@ def test_the_phone_and_the_tablet_keep_their_look(signed_in, viewport):
     page.goto(page.url.split("/trip")[0] + "/family")
     buttons = page.locator(".fam .btn")
     shadow = buttons.first.evaluate("e => getComputedStyle(e).boxShadow")
-    assert re.search(r"0px (3|4)px 0px", shadow), f"the tactile ledge is gone: {shadow}"      # the phone keeps its tactile buttons
+    assert not re.search(r"0px (3|4)px 0px", shadow) and "0px 1px" in shadow, f"a ledge: {shadow}"      # F-200: a flat pill with Direction A's one soft shadow (the ledge is gone everywhere)
     assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth")

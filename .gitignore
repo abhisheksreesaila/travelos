@@ -5,6 +5,8 @@ __pycache__/
 data/*.db
 data/db/
 data/.sesskey
+claim-links.csv
+data/claim-links.csv
 .pytest_cache/
 tests/.runtime/
 .lavish/
@@ -18,3 +20,4 @@ travelos.egg-info/
 .sesskey
 /app_host.db
 /*.db
+.dream-loop/

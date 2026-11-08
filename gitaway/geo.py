@@ -26,7 +26,7 @@ from gitaway.airport_coords import AIRPORT_COORDS
 
 USER_AGENT = "GitAway/1.0 (+https://web-production-2d117.up.railway.app)"
 NOMINATIM = "https://nominatim.openstreetmap.org/search?format=json&q={q}&limit=1"
-OSRM = "https://router.project-osrm.org/route/v1/driving/{lon1},{lat1};{lon2},{lat2}?overview=full&geometries=geojson"
+OSRM = "https://router.project-osrm.org/route/v1/driving/{lon1},{lat1};{lon2},{lat2}?overview=full&geometries=geojson&steps=true"      # steps: the drive told turn by turn (F-201)
 TIMEOUT = 4  # seconds a single call may take
 BACKOFF = 600  # seconds to leave a service alone after it answers 429 or 403
 MISSING = "missing"  # state(): the service has no such place
@@ -73,7 +73,8 @@ class Gate:
 
 
 NOMINATIM_GATE = Gate(1.0)  # Nominatim's policy: an absolute maximum of one request per second
-OSRM_GATE = Gate(0.25)      # the public router has no stated limit; stay polite
+OSRM_GAP = 1.0              # the public demo router allows at most one request a second (its usage policy); F-204 moves off it
+OSRM_GATE = Gate(OSRM_GAP)
 
 
 def fetch(url, timeout=TIMEOUT):
@@ -176,17 +177,57 @@ def _pair_key(a, b):
     return f"{a[0]:.4f},{a[1]:.4f};{b[0]:.4f},{b[1]:.4f}"
 
 
-def _leg(a, b, db=None, *, fetch_it=True, deadline=None):
-    """{"m": minutes, "g": GeoJSON line} for a drive from `a` to `b` (lat, lon pairs), cached; None when unknown or the router fails."""
+# A drive's steps, the same shape whatever router answers (F-201; F-204 may move to a router like openrouteservice, which gives steps too):
+#   {"k": kind, "d": direction, "n": road name, "r": road number, "m": metres on it, "b": heading after a departure, in degrees}
+#   kind: depart, turn, continue, merge, ramp, exit, keep, roundabout, uturn, arrive; direction: left, right, slight left, slight right, sharp left, sharp right, straight or ""
+_OSRM_KIND = {"depart": "depart", "arrive": "arrive", "turn": "turn", "end of road": "turn", "new name": "continue", "continue": "continue", "notification": "continue",
+              "use lane": "continue", "merge": "merge", "on ramp": "ramp", "off ramp": "exit", "fork": "keep", "roundabout": "roundabout", "rotary": "roundabout",
+              "roundabout turn": "turn", "exit roundabout": "continue", "exit rotary": "continue"}
+MAX_STEPS = 80
+
+
+def _osrm_steps(route) -> list:
+    """OSRM's steps of a route in the shape above."""
+    out = []
+    for leg in route.get("legs") or []:
+        for st in leg.get("steps") or []:
+            man = st.get("maneuver") or {}
+            kind, side = _OSRM_KIND.get(str(man.get("type") or ""), "continue"), str(man.get("modifier") or "")
+            if side == "uturn":
+                kind, side = "uturn", ""
+            step = {"k": kind, "d": side, "n": str(st.get("name") or "")[:60], "r": str(st.get("ref") or "")[:40], "m": round(float(st.get("distance") or 0))}
+            if kind == "depart" and isinstance(man.get("bearing_after"), (int, float)):
+                step["b"] = int(man["bearing_after"]) % 360
+            out.append(step)
+    return out[:MAX_STEPS]
+
+
+def steps(a, b, db=None):
+    """The router's steps of the cached drive from `a` to `b`, or None when it is not cached (or was cached before steps were kept). Cache only."""
+    hit = _get(db, "drive", _pair_key(a, b))
+    if hit is None:
+        return None
+    try:
+        return json.loads(hit["data"]).get("s")
+    except (ValueError, AttributeError):
+        return None
+
+
+def _leg(a, b, db=None, *, fetch_it=True, deadline=None, need_steps=False):
+    """{"m": minutes, "g": GeoJSON line, "s": steps} for a drive from `a` to `b` (lat, lon pairs), cached; None when unknown or the router fails. With `need_steps`
+    a drive cached before steps were kept is asked again (the fill does that once)."""
     key = _pair_key(a, b)
     hit = _get(db, "drive", key)
+    cached = None
     if hit is not None:
         try:
-            return json.loads(hit["data"])
+            cached = json.loads(hit["data"])
         except ValueError:
-            pass
+            cached = None
+        if cached is not None and (not need_steps or "s" in cached):
+            return cached
     if not fetch_it:
-        return None
+        return cached
     if not OSRM_GATE.wait(deadline):
         return None
     try:
@@ -194,11 +235,11 @@ def _leg(a, b, db=None, *, fetch_it=True, deadline=None):
         top = r["routes"][0]
         if r.get("code") != "Ok":
             raise ValueError("no route")
-        leg = {"m": max(1, round(float(top["duration"]) / 60)), "g": top["geometry"]}
+        leg = {"m": max(1, round(float(top["duration"]) / 60)), "g": top["geometry"], "s": _osrm_steps(top)}
         if leg["g"].get("type") != "LineString":
             raise ValueError("no line")
     except Exception:
-        return None
+        return cached
     _put(db, "drive", key, data=json.dumps(leg))
     return leg
 
@@ -272,9 +313,11 @@ def warm(db, places, budget=2.0) -> int:
     left = sum(1 for p in places if state(_name(p), db)[0] is None and _norm(_name(p)))
     pts = [(c, _flight(p)) for p in places if isinstance(c := state(_name(p), db)[0], tuple)]
     for (a, fa), (b, fb) in zip(pts, pts[1:]):
-        if fa or a == b or _get(db, "drive", _pair_key(a, b)) is not None:
+        hit = None if fa or a == b else _get(db, "drive", _pair_key(a, b))
+        if fa or a == b or (hit is not None and '"s"' in (hit["data"] or "")):
             continue
-        if _leg(a, b, db, deadline=deadline) is None:
+        got = _leg(a, b, db, deadline=deadline, need_steps=True)      # a drive cached before steps were kept is asked once more (F-201)
+        if got is None or "s" not in got:
             left += 1
     return left
 

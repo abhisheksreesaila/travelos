@@ -13,7 +13,7 @@ from fasthtml.common import Beforeware, FastHTML, Response, serve
 from fh_saas.utils_auth import create_auth_beforeware
 from fh_saas.utils_log import configure_logging
 
-from gitaway import access, auth, familydb, hostdb, morning, passkeys, session, showcase
+from gitaway import access, accesslog, auth, draftjobs, expedia, familydb, hostdb, morning, omxqua, passkeys, planforme, say, session, showcase
 from gitaway.layout import HEAD
 from gitaway.pages import register_all
 from gitaway.pages.family import PRIVATE
@@ -36,6 +36,7 @@ def configure_gitaway_logging():
 
 
 configure_gitaway_logging()
+accesslog.install()      # a claim link's token never reaches the access log
 auth.configure_storage()  # SQLite under GITAWAY_DATA_DIR; this also makes it the working directory, so nothing below may use relative paths
 
 # fh-saas hydrates request.state.user only on the private paths; every other page is public and reads the session itself.
@@ -54,7 +55,52 @@ def _locked_auth(req, sess):
 
 auth_before = Beforeware(_locked_auth, skip=auth_before.skip)
 
-_OPEN = [r"/assets/.*", r"/healthz"]
+_OPEN = [r"/assets/.*", r"/healthz", r"/badge/.*"]
+
+
+class BodyLimit:
+    """F-193: a request body past a path's limit is refused with a 413 before the app has read it: at once when Content-Length already says so, and as soon as the pieces of a chunked body (no
+    Content-Length) add up past it. FastHTML and our own beforeware read every POST body whole before a route runs, so a limit inside the route would come too late. Only the paths in LIMITS."""
+
+    LIMITS = {"/stripe/webhook": planforme.MAX_WEBHOOK,
+              "/trips/import": expedia.MAX_PDF_BYTES + 100_000,        # F-198 review: a PDF or a pasted itinerary; the import's own check answers a declared size with its page first
+              "/trip/ask/propose": 12 * say.LIMIT + 100_000}           # the box's text (a character is at most 4 bytes, 3 times that form-encoded) and its few fields
+
+    class TooLarge(Exception):
+        pass
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        limit = self.LIMITS.get(scope.get("path")) if scope["type"] == "http" else None
+        if limit is None:
+            await self.app(scope, receive, send)
+            return
+        declared = next((v for k, v in scope.get("headers", []) if k == b"content-length"), b"0")
+        if declared.isdigit() and int(declared) > limit:
+            await Response("too large", status_code=413)(scope, receive, send)
+            return
+        got, started = 0, False
+
+        async def counted():
+            nonlocal got
+            message = await receive()
+            got += len(message.get("body", b"")) if message["type"] == "http.request" else 0
+            if got > limit:
+                raise self.TooLarge
+            return message
+
+        async def tracked(message):
+            nonlocal started
+            started = started or message["type"] == "http.response.start"
+            await send(message)
+
+        try:
+            await self.app(scope, counted, tracked)
+        except self.TooLarge:
+            if not started:
+                await Response("too large", status_code=413)(scope, receive, send)
 
 
 class NoStoreWhenSignedIn:
@@ -102,12 +148,37 @@ class OneAddress:
         await self.app(scope, receive, send)
 
 
+class SecurityHeaders:
+    """F-182: the standard headers on every response: nobody can frame GitAway (`frame-ancestors 'none'`: no clickjacking), the Referer leaves only for our own pages, a browser never
+    guesses a content type, and in production HSTS pins https for a year. No script-src: the pages use inline scripts and a policy would break them. A response that sets one of
+    these itself (the badge's own CSP) keeps its own."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        async def send_with(message):
+            if message["type"] == "http.response.start":
+                headers = list(message.get("headers", []))
+                have = {k.lower() for k, _ in headers}
+                add = [(b"content-security-policy", b"frame-ancestors 'none'"), (b"referrer-policy", b"same-origin"), (b"x-content-type-options", b"nosniff")]
+                if auth.production():
+                    add.append((b"strict-transport-security", b"max-age=31536000; includeSubDomains"))
+                message = {**message, "headers": headers + [(k, v) for k, v in add if k not in have]}
+            await send(message)
+        await self.app(scope, receive, send_with)
+
+
 def make_app():
     auth.check_production_settings()
     # F-207: htmx=False, surreal=False keep only FastHTML's charset and viewport tags. Its defaults loaded htmx, fasthtml-js, surreal and
     # css-scope-inline from jsDelivr (two from a moving @main branch, no integrity hash) on every page, and GitAway uses none of them.
-    app = FastHTML(before=[Beforeware(access.guard, skip=_OPEN), auth_before, Beforeware(session.bind, skip=_OPEN), Beforeware(showcase.guard, skip=_OPEN)], hdrs=HEAD, title="GitAway", middleware=[Middleware(OneAddress), Middleware(NoStoreWhenSignedIn), Middleware(familydb.RequestScope)],
-                   htmx=False, surreal=False, htmlkw={"lang": "en"}, on_startup=[morning.start], secret_key=os.getenv("GITAWAY_SECRET_KEY") or None, key_fname=str(ROOT / ".sesskey"),
+    app = FastHTML(before=[Beforeware(access.guard, skip=_OPEN), auth_before, Beforeware(session.bind, skip=_OPEN), Beforeware(showcase.guard, skip=_OPEN), omxqua.before], hdrs=HEAD, title="GitAway", middleware=[Middleware(BodyLimit), Middleware(SecurityHeaders), Middleware(OneAddress),Middleware(NoStoreWhenSignedIn), Middleware(familydb.RequestScope)],
+                   htmx=False, surreal=False, htmlkw={"lang": "en"}, on_startup=[morning.start, draftjobs.start, planforme.start], secret_key=os.getenv("GITAWAY_SECRET_KEY") or None, key_fname=str(ROOT / ".sesskey"),
                    **auth.session_options())
     app.static_route_exts(prefix="/assets/", static_path=str(ROOT / "assets"))
 

@@ -151,9 +151,11 @@ def delete(session, trip_id) -> bool:
             old = familydb.row(db, "SELECT i.doc FROM trips t JOIN trip_imports i ON i.trip_id = t.id WHERE t.id = :t AND t.source = 'imported'", t=trip_id)
             if not old:
                 return False
+            from gitaway import publish
+            publish.take_down_trip(session, trip_id)   # its public creator page and photo copies go with it (F-181); the draft row is deleted below
             key = _ride_key(trip_id, tripimport.from_doc(json.loads(old["doc"])))
             booking = familydb.booking_for_trip(db, trip_id)
-            for table in ("activities", "notes", "cal_state", "friends", "thread", "photos", "passes", "pass_flights", "block_parts", "block_steps", "trip_lists", "trip_list_items"):   # the thread (F-070), passes (F-083) and the canvas parts, steps and lists (F-080) go too
+            for table in ("activities", "notes", "cal_state", "friends", "thread", "photos", "passes", "pass_flights", "block_parts", "block_steps", "trip_lists", "trip_list_items", "publications", "geo_packs"):   # the thread (F-070), passes (F-083) and the canvas parts, steps and lists (F-080) go too
                 familydb.run(db, f"DELETE FROM {table} WHERE trip_id = :t", t=trip_id)
             familydb.run(db, "DELETE FROM rides WHERE trip_id = :t OR key = :k", t=trip_id, k=key)
             familydb.run(db, "DELETE FROM trip_imports WHERE trip_id = :t", t=trip_id)

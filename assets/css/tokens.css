@@ -1,56 +1,42 @@
-/* GitAway design tokens. Source of truth: design-system/DESIGN-SYSTEM.md */
+/* GitAway design tokens: Direction A, "Gallery" (F-200; design docs/design/reskin/README.md, rules design-system/DESIGN-SYSTEM.md "Direction A").
+   A neutral grey canvas; everything placed on it is a solid, high-contrast widget. The accent is ink (a black pill in light, a white pill in dark),
+   so the only colour on a screen belongs to the trip's kinds, never to a day. Light and dark live here and nowhere else: dark follows the system
+   unless the person picked one (html[data-mode], assets/js/mode.js, remembered per device). The old token names (--paper, --card, --coral, --sun ...)
+   are kept and point at Direction A's values, so every page takes the new look without renaming anything. */
+@font-face { font-family: "Geist"; src: url("/assets/fonts/geist-variable.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: "Geist Mono"; src: url("/assets/fonts/geist-mono-variable.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+
 :root {
   /* THE SCALE. Every size in the CSS is rem, so this one number sizes the whole site.
      12px = 75% of the browser default (F-030). Phones go back to 16px below, so type stays readable. */
   font-size: 12px;
-  --text-min: 11px;  /* no text renders smaller than this on desktop and tablet; phones raise it to 13px (F-034) */
+  --text-min: 12px;  /* F-200: the floor for words you read: 12px on desktop and tablet; 16px on a phone (below), where only labels and fine print are smaller */
+  --label-min: 12px; /* F-200: the floor for an all-caps label: 12px on desktop and tablet, 13px on a phone */
+  --target: 2.75rem; /* F-200: the smallest target: 33px for a mouse, 48px on a phone (below) */
 
-  --font-display: 'Bricolage Grotesque', 'Figtree', 'Segoe UI', system-ui, sans-serif;
-  --font-body: 'Figtree', 'Segoe UI', system-ui, sans-serif;
+  --font-display: 'Geist', system-ui, sans-serif;
+  --font-body: 'Geist', system-ui, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, monospace;
   --font-hand: 'Caveat', cursive;
+  --font-brand: 'Geist', system-ui, sans-serif;
 
-  --ink: #1E1A2E;
-  --ink-2: #4A4460;
-  --ink-3: #5A5470;
-  --ink-ledge: #000000;
-  --paper: #FFF8EE;
-  --card: #FFFFFF;
-  --line: rgba(30, 26, 46, 0.08);
-  --hairline: rgba(30, 26, 46, 0.10);      /* F-158: the laptop skin's card edge, and the lines between its rows */
-  --hairline-2: rgba(30, 26, 46, 0.16);    /* F-158: a control's edge (an outlined pill, a field) */
-  --coral-tint: #FFE6DA;                   /* F-158: a quiet coral fill (your own chat message) */
-  --r-card: 1.1667rem;                     /* F-158: the laptop's card radius (design 14px) */
+  /* the type scale (F-200), desktop: body 16, secondary 14, fine print 13, all-caps labels 12; titles 42 / 22 / 18, a widget's big number 40 */
+  --t-body: 1.3334rem; --t-2: 1.1667rem; --t-fine: 1.0834rem; --t-label: 1rem;      /* 1.3334 x 12px is 16.0008px; 1.3333 gave 15.9996 (as day_phone.css found) */
+  --t-h1: 3.5rem; --t-h2: 1.8334rem; --t-h3: 1.5rem; --t-big: 3.3334rem;
 
-  --coral: #FF7352;
-  --coral-deep: #C9431F;
-  --sun: #FFC93C;   --sun-tint: #FFF1C2;   --sun-ink: #8A6200;
-  --mint: #48D1A0;  --mint-tint: #D4F7EA;  --mint-ink: #16865F;
-  --sky: #5AB0FF;   --sky-tint: #DDEEFF;   --sky-ink: #1B6FC9;
-  --grape: #C3B2FF; --grape-tint: #ECE4FF; --grape-ink: #6A4FD6;
-  --bubble: #FF8CC6; --bubble-tint: #FFE3F1; --bubble-ink: #C23B82;
+  /* kinds: one solid fill each, the same in light and dark; white text clears 5:1 on every fill (ride: dark text). Colour means a kind, never a day. */
+  --k-flight: #4338CA; --k-stay: #8B2FC9; --k-car: #15803D; --k-tix: #C2410C; --k-wx: #0369A1; --k-food: #C92A5E; --k-see: #0F766E; --k-ride: #FFD43B;
+  --k-on: #FFFFFF; --k-ride-on: #17140A; --k-neutral: #5C5C66;   /* a fill for no kind in particular, white text 6.6:1 */
 
-  --block-sunset: #FF8A63;   /* landing hero blocks */
-  --block-pacific: #6DB8FF;
-
-  --skeleton: #F2ECE3;
-  --skeleton-band: #FBF7F1;
-  --peach: #FFC9B2;     /* sign-in sky: the warm band */
-  --sand: #FFE3A3;      /* sign-in sky: the beach */
-  --bubble-grey: #E9E6EE;   /* F-178: their chat bubble (ink on it is 13:1); mine is --coral-deep with white (4.88:1) */
-  --paper-2: #FAF7F2;   /* a step darker than paper: the boarding-pass stub */
-
-  --r-sm: 0.75rem;
-  --r-md: 1.25rem;
-  --r-lg: 1.75rem;
-  --r-xl: 2.5rem;
+  --r-sm: 0.875rem;     /* a field */
+  --r-md: 1.25rem;      /* a card */
+  --r-lg: 1.625rem;     /* a widget, a panel */
+  --r-xl: 2rem;         /* a landing door */
   --r-pill: 999px;
+  --r-card: 1.25rem;
+  --r-tile: 0.6875rem;  /* a kind tile */
 
-  --shadow-sm: 0 0.125rem 0.1875rem -1px rgba(0,0,0,.1), 0 0 0 1px rgba(25,28,33,.08);
-  --shadow-md: 0 0 0 1px rgba(0,0,0,.06), 0 0.1875rem 0.1875rem -0.0938rem rgba(0,0,0,.06), 0 0.75rem 0.75rem -0.375rem rgba(0,0,0,.06);
-  --shadow-lg: 0 0.4188rem 0.3312rem rgba(0,0,0,.048), 0 1.3938rem 1.1187rem rgba(0,0,0,.072), 0 2.6125rem 2.0875rem rgba(0,0,0,.086);
-  --shadow-sticker: 0 0.375rem 0.875rem -0.375rem rgba(30,26,46,.35);
-
-  --ease-spring: cubic-bezier(.2, .9, .3, 1.3);
+  --ease-spring: cubic-bezier(.2, 0, 0, 1);
   --ease-out: cubic-bezier(.2, .8, .2, 1);
 
   /* F-099: one calm motion for moving between screens (page changes in base.css, the trip canvas's levels use the same) */
@@ -71,28 +57,160 @@
   --motion-wiggle: 420ms;          /* the held block's little wiggle while its menu is open, and its knobs' (F-098, F-110): a loop, not a move */
 }
 
-@media (max-width: 720px) { :root { font-size: 16px; --text-min: 13px; } }
+/* the phone: the 16px root, labels 13, fine print 14, secondary 16, body 17, titles 34 / 24 / 20, a widget's big number 44, every target 48 */
+@media (max-width: 720px) { :root { font-size: 16px; --text-min: 16px; --label-min: 13px; --target: 3rem;
+  --t-body: 1.0625rem; --t-2: 1rem; --t-fine: 0.875rem; --t-label: 0.8125rem; --t-h1: 2.125rem; --t-h2: 1.5rem; --t-h3: 1.25rem; --t-big: 2.75rem; } }
 
-/* Itinerary themes: one layout, the contributor picks a theme. */
+/* ---------- light (the default) ---------- */
+:root {
+  color-scheme: light;
+  --paper: #F2F2F5;                 /* the canvas */
+  --card: #FFFFFF;                  /* a card, a widget's white */
+  --card-2: #FFFFFF;                /* raised: menus, sheets, the tab bar */
+  --paper-2: #EDEDF1;               /* a quiet fill on a card: pills, the stub, a hover */
+  --ink: #0B0B0D;                   /* 17.6:1 on the canvas */
+  --ink-2: #5C5C66;                 /* secondary, 5.7:1 on the quiet fill */
+  --ink-3: #62626B;                 /* captions and labels, 5:1 on every fill */
+  --line: #E3E3E8;
+  --hairline: #E3E3E8;
+  --hairline-2: #D7D7DE;
+  --accent: #0B0B0D;                /* ink: a black pill */
+  --on-accent: #FFFFFF;
+  --on-ink: #FFFFFF;                /* text on an ink fill */
+  --state: 11 11 13;                /* the state layer's colour (hover and press tints: rgb(var(--state) / .07)) */
+  --ok: #1F9D50; --ok-ink: #116A33; --ok-tint: #DDF3E4;
+  --warn-tint: #FFF1C9; --warn-ink: #6B4A00; --warn-line: #E8B931;
+  --danger: #B42318; --danger-tint: #FDE7E5; --danger-ink: #8A1A12;
+  --shade: rgba(10, 10, 20, .16);   /* a scrim's or a lifted thing's shadow colour */
+  --shadow-c: 10 10 20;             /* a shadow's colour, for rgb(var(--shadow-c) / a) */
+  --scrim: rgba(10, 10, 20, .4);
+  --sh1: 0 1px 0.125rem rgba(10, 10, 20, .06), 0 0 0 1px rgba(10, 10, 20, .04);
+  --sh2: 0 0.5rem 1.5rem rgba(10, 10, 20, .08), 0 0 0 1px rgba(10, 10, 20, .04);
+  --sh3: 0 1.125rem 3rem rgba(10, 10, 20, .16), 0 0 0 1px rgba(10, 10, 20, .05);
+  /* the kinds' tints (a calm fill) and the ink that reads on them (8:1 or more) */
+  --k-flight-t: #E4E3FB; --k-flight-i: #2A2185; --k-stay-t: #F1E3FA; --k-stay-i: #5A1785; --k-car-t: #DDF3E4; --k-car-i: #0F5128;
+  --k-tix-t: #FCE6DA; --k-tix-i: #7A2906; --k-wx-t: #DBEFFA; --k-wx-i: #034769; --k-food-t: #FBE1EA; --k-food-i: #7E1538;
+  --k-see-t: #D9F2EF; --k-see-i: #0B4D48; --k-ride-t: #FFF4C2; --k-ride-i: #5C4300;
+  /* Up next, the one inverse card: ink in light */
+  --up-bg: #0B0B0D; --up-fg: #FFFFFF; --up-fg2: #C9C9D1; --up-line: #3A3A41; --up-tile: #26262B; --up-btn: #FFFFFF; --up-btn-fg: #0B0B0D;
+  --beacon-bg: #0B0B0D; --beacon-fg: #FFFFFF; --beacon-acc: #FFD43B;
+  /* the mark: an ink tile, the fork's three nodes in kind colours */
+  --mark-bg: #0B0B0D; --mark-line: #FFFFFF; --mark-a: #8C8CFF; --mark-b: #D38CFF; --mark-c: #FF9A5C;
+  --theme-color: #F2F2F5;
+}
+
+/* ---------- dark: the system's choice unless the person picked light, or the person picked dark. The two blocks are the same (tests/test_direction_a.py) ---------- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-mode="light"]) {
+    color-scheme: dark;
+    --paper: #000000;
+    --card: #1C1C1F;
+    --card-2: #2A2A2E;
+    --paper-2: #2A2A2E;
+    --ink: #F5F5F7;
+    --ink-2: #A1A1AA;
+    --ink-3: #98989F;
+    --line: #2E2E33;
+    --hairline: #2E2E33;
+    --hairline-2: #3A3A40;
+    --accent: #F5F5F7;
+    --on-accent: #0B0B0D;
+    --on-ink: #0B0B0D;
+    --state: 245 245 247;
+    --ok: #30C060; --ok-ink: #6EE7A0; --ok-tint: #123222;
+    --warn-tint: #3A2E08; --warn-ink: #FFE08A; --warn-line: #B8901E;
+    --danger: #FF6B5E; --danger-tint: #3A1412; --danger-ink: #FFB4AB;
+    --shade: rgba(0, 0, 0, .6);
+    --shadow-c: 0 0 0;
+    --scrim: rgba(0, 0, 0, .6);
+    --sh1: 0 1px 0 rgba(255, 255, 255, .05) inset, 0 1px 0.125rem rgba(0, 0, 0, .6);
+    --sh2: 0 1px 0 rgba(255, 255, 255, .05) inset, 0 0.5rem 1.5rem rgba(0, 0, 0, .6);
+    --sh3: 0 1px 0 rgba(255, 255, 255, .06) inset, 0 1.125rem 3rem rgba(0, 0, 0, .75);
+    --k-flight-t: #1F1C4A; --k-flight-i: #CBC8FF; --k-stay-t: #2C1740; --k-stay-i: #E7CCFA; --k-car-t: #10301C; --k-car-i: #BFEBCD;
+    --k-tix-t: #3A1D10; --k-tix-i: #FFD3BD; --k-wx-t: #0C2A3B; --k-wx-i: #C3E6FA; --k-food-t: #3A1322; --k-food-i: #FFCCDC;
+    --k-see-t: #0E2E2B; --k-see-i: #BCEBE5; --k-ride-t: #352B0B; --k-ride-i: #FFE89A;
+    --up-bg: #F5F5F7; --up-fg: #0B0B0D; --up-fg2: #45454D; --up-line: #CFCFD6; --up-tile: #E2E2E8; --up-btn: #0B0B0D; --up-btn-fg: #FFFFFF;
+    --beacon-bg: #1C1C1F; --beacon-fg: #F5F5F7; --beacon-acc: #FFD43B;
+    --mark-bg: #F5F5F7; --mark-line: #0B0B0D; --mark-a: #4338CA; --mark-b: #8B2FC9; --mark-c: #C2410C;
+    --theme-color: #000000;
+  }
+}
+:root[data-mode="dark"] {
+    color-scheme: dark;
+    --paper: #000000;
+    --card: #1C1C1F;
+    --card-2: #2A2A2E;
+    --paper-2: #2A2A2E;
+    --ink: #F5F5F7;
+    --ink-2: #A1A1AA;
+    --ink-3: #98989F;
+    --line: #2E2E33;
+    --hairline: #2E2E33;
+    --hairline-2: #3A3A40;
+    --accent: #F5F5F7;
+    --on-accent: #0B0B0D;
+    --on-ink: #0B0B0D;
+    --state: 245 245 247;
+    --ok: #30C060; --ok-ink: #6EE7A0; --ok-tint: #123222;
+    --warn-tint: #3A2E08; --warn-ink: #FFE08A; --warn-line: #B8901E;
+    --danger: #FF6B5E; --danger-tint: #3A1412; --danger-ink: #FFB4AB;
+    --shade: rgba(0, 0, 0, .6);
+    --shadow-c: 0 0 0;
+    --scrim: rgba(0, 0, 0, .6);
+    --sh1: 0 1px 0 rgba(255, 255, 255, .05) inset, 0 1px 0.125rem rgba(0, 0, 0, .6);
+    --sh2: 0 1px 0 rgba(255, 255, 255, .05) inset, 0 0.5rem 1.5rem rgba(0, 0, 0, .6);
+    --sh3: 0 1px 0 rgba(255, 255, 255, .06) inset, 0 1.125rem 3rem rgba(0, 0, 0, .75);
+    --k-flight-t: #1F1C4A; --k-flight-i: #CBC8FF; --k-stay-t: #2C1740; --k-stay-i: #E7CCFA; --k-car-t: #10301C; --k-car-i: #BFEBCD;
+    --k-tix-t: #3A1D10; --k-tix-i: #FFD3BD; --k-wx-t: #0C2A3B; --k-wx-i: #C3E6FA; --k-food-t: #3A1322; --k-food-i: #FFCCDC;
+    --k-see-t: #0E2E2B; --k-see-i: #BCEBE5; --k-ride-t: #352B0B; --k-ride-i: #FFE89A;
+    --up-bg: #F5F5F7; --up-fg: #0B0B0D; --up-fg2: #45454D; --up-line: #CFCFD6; --up-tile: #E2E2E8; --up-btn: #0B0B0D; --up-btn-fg: #FFFFFF;
+    --beacon-bg: #1C1C1F; --beacon-fg: #F5F5F7; --beacon-acc: #FFD43B;
+    --mark-bg: #F5F5F7; --mark-line: #0B0B0D; --mark-a: #4338CA; --mark-b: #8B2FC9; --mark-c: #C2410C;
+    --theme-color: #000000;
+}
+
+/* ---------- the old names, on Direction A's values (one place, so no page needs a rule of its own) ---------- */
+:root {
+  --ink-ledge: transparent;                  /* the old tactile ledge is gone: a flat pill and one soft shadow (base.css .btn) */
+  --coral: var(--accent); --coral-deep: var(--accent); --coral-tint: var(--paper-2);
+  --brand-orange: var(--mark-bg); --brand-ink: var(--mark-line);
+  /* the five palette names are the kinds (food, outdoors, culture and stays, travel and flights, fun): the full-strength name is the kind's tint, so ink reads on it in both modes */
+  --sun: var(--k-ride-t);      --sun-tint: var(--k-ride-t);      --sun-ink: var(--k-ride-i);
+  --mint: var(--k-see-t);      --mint-tint: var(--k-see-t);      --mint-ink: var(--k-see-i);
+  --sky: var(--k-flight-t);    --sky-tint: var(--k-flight-t);    --sky-ink: var(--k-flight-i);
+  --grape: var(--k-stay-t);    --grape-tint: var(--k-stay-t);    --grape-ink: var(--k-stay-i);
+  --bubble: var(--k-food-t);   --bubble-tint: var(--k-food-t);   --bubble-ink: var(--k-food-i);
+  --block-sunset: var(--k-tix-t);    /* landing door panels */
+  --block-pacific: var(--k-wx-t);
+  --skeleton: var(--paper-2);
+  --skeleton-band: var(--card);
+  --peach: var(--k-tix-t);
+  --sand: var(--k-ride-t);
+  --bubble-grey: var(--paper-2);   /* their chat bubble (ink on it is 13:1 or more); mine is the accent with --on-accent */
+  --shadow-sm: var(--sh1);
+  --shadow-md: var(--sh1);
+  --shadow-lg: var(--sh2);
+  --shadow-sticker: var(--sh1);
+}
+
+/* Itinerary themes: one layout, the contributor picks a theme. Direction A keeps the canvas and the ink accent for both; a theme only changes the tape and the note slip. */
 [data-theme="sunset"], :root {
-  --ground: #FFF8EE;
-  --accent: #FF7352;
-  --accent-deep: #C9431F;
-  --accent-2: #FFC93C;
-  --accent-tint: #FFE6DA;
-  --tape: rgba(255, 201, 60, .75);
-  --tape-2: rgba(255, 115, 82, .55);
-  --note: #FFF1C2;
-  --timeline: #FFB59F;
+  --ground: var(--paper);
+  --accent-deep: var(--accent);
+  --accent-2: var(--k-ride);
+  --accent-tint: var(--paper-2);
+  --tape: rgba(255, 212, 59, .75);
+  --tape-2: rgba(201, 42, 94, .45);
+  --note: var(--k-ride-t);
+  --timeline: var(--hairline-2);
 }
 [data-theme="pacific"] {
-  --ground: #F4F9FF;
-  --accent: #3B9BFF;
-  --accent-deep: #1B5FB8;
-  --accent-2: #48D1A0;
-  --accent-tint: #DDEEFF;
-  --tape: rgba(72, 209, 160, .60);
-  --tape-2: rgba(59, 155, 255, .45);
-  --note: #D8F6EA;
-  --timeline: #9CCBFF;
+  --ground: var(--paper);
+  --accent-deep: var(--accent);
+  --accent-2: var(--k-see);
+  --accent-tint: var(--paper-2);
+  --tape: rgba(15, 118, 110, .5);
+  --tape-2: rgba(67, 56, 202, .4);
+  --note: var(--k-see-t);
+  --timeline: var(--hairline-2);
 }

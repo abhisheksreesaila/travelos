@@ -1,8 +1,9 @@
-"""F-036: the weather, events and news panes follow the trip's dates and length (fake data, deterministic per date)."""
+"""F-036: the weather, events and news panes follow the trip's dates and length. Events and news are fake data, deterministic per date; since F-203
+the weather is real (here NOAA's typical weather, the dates being weeks away; tests/test_weather_pages.py has the forecast)."""
 
 import re
 
-from gitaway import catalog, context
+from gitaway import catalog, context, weather
 
 WINTER = "/plan?d=2026-12-03&r=2026-12-06&a=2&k=4"  # Thu Dec 3 - Sun Dec 6, 2026: 3 nights, 4 days
 
@@ -18,7 +19,7 @@ def labels(html, cls):
 
 def test_sample_trip_keeps_the_sample_context():
     trip = catalog.SAMPLE_TRIP
-    assert context.weather_for(trip) == context.WEATHER
+    assert weather.sample(trip)          # its weather pane shows context.WEATHER (tests/test_workspace.py)
     assert context.events_for(trip) == context.EVENTS
     assert context.news_for(trip) == context.NEWS
 
@@ -46,21 +47,22 @@ def test_events_fall_on_the_trips_days(client):
     assert len(set(when)) == len(when)
 
 
-def test_the_same_dates_always_give_the_same_fake_data(client):
+def test_the_same_dates_always_give_the_same_context(client):
     a, b = client.get(WINTER).text, client.get(WINTER).text
     assert pane(a, "weather") == pane(b, "weather") and pane(a, "news") == pane(b, "news")
     # the weather for a date does not depend on which trip it is part of
     t1 = catalog.trip_from_url("2026-12-03", "2026-12-06", "2", "")
     t2 = catalog.trip_from_url("2026-12-04", "2026-12-08", "2", "")
-    w1 = {w.day: w for w in context.weather_for(t1)}
-    w2 = {w.day: w for w in context.weather_for(t2)}
-    assert w1["Fri 4"] == w2["Fri 4"] and w1["Sat 5"] == w2["Sat 5"]
+    w1 = {d.date: d for d in weather.trip_weather(t1).days}
+    w2 = {d.date: d for d in weather.trip_weather(t2).days}
+    for day in (t2.depart, t2.depart.replace(day=5)):
+        assert w1[day] == w2[day] and w1[day].kind == weather.NORMAL
 
 
 def test_temperatures_are_plausible_for_la_in_each_month():
     for month, (lo, hi) in {1: (55, 78), 7: (70, 92), 10: (65, 90), 12: (55, 80)}.items():
         trip = catalog.trip_from_url(f"2027-{month:02d}-10", f"2027-{month:02d}-14", "2", "")
-        assert all(lo <= w.temp_f <= hi for w in context.weather_for(trip)), month
+        assert all(lo <= d.high_f <= hi and d.low_f < d.high_f for d in weather.trip_weather(trip).days), month
 
 
 def test_news_sub_names_the_trips_month(client):

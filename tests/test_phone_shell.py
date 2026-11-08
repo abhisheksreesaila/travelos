@@ -15,8 +15,8 @@ from tests.test_signin import sign_in
 from tests.test_trip_import import imported
 from tests.test_trip_phone import plan, tag
 
-BAR = ("/trip", "/trip/ask", "/trip/family")   # F-096: three tabs, Ask in the middle; Map is a button in the day heading
-PATHS = {"today": "/trip", "map": "/trip/map", "ask": "/trip/ask", "family": "/trip/family", "help": "/trip/help"}
+BAR = ("/trip", "/trip/today", "/trip/ask", "/trip/book", "/trip/family")   # F-200: five tabs (the cockpit (D-285), the day, Ask in the middle, Book, Family); Map is a button in the day heading (F-096)
+PATHS = {"trip": "/trip", "plan": "/trip/today", "map": "/trip/map", "ask": "/trip/ask", "family": "/trip/family", "help": "/trip/help"}
 
 
 @pytest.fixture
@@ -45,10 +45,10 @@ def bar(html):
 
 # ---- the bar ------------------------------------------------------------------------------------------------------------
 
-def test_the_tab_bar_has_three_tabs_in_order_and_ask_is_raised():
+def test_the_tab_bar_has_five_tabs_in_order_and_ask_is_the_centre():
     nav = str(phone.tabbar("family"))
     labels = re.findall(r"<span class=\"ph-tl\">([A-Za-z]+)</span>", nav)
-    assert labels == ["Today", "Ask", "Family"]
+    assert labels == ["Trip", "Plan", "Ask", "Book", "Family"]
     assert re.findall(r'href="([^"]+)"', nav) == list(BAR)
     assert nav.count('aria-current="page"') == 1 and re.search(r'id="ph-tab-family"[^>]*aria-current="page"|aria-current="page"[^>]*id="ph-tab-family"', nav)
     assert "ph-tab-map" not in nav
@@ -88,7 +88,7 @@ def test_every_role_gets_the_same_tabs_with_no_edit_controls_on_the_placeholders
     for key, path in PATHS.items():
         r = other.get(path)
         assert r.status_code == 200 and bar(r.text)[0] == list(BAR), path
-        if key not in ("today", "family") and not (key == "help" and role == "editor") and not (key == "ask" and role == "editor"):   # the Family thread has its compose bar and Quiet switch for every role (F-070); an editor adds flights and passes on Help (F-083) and asks for a change on Ask (F-072); a viewer sees the read-only note
+        if key not in ("plan", "family") and not (key == "help" and role == "editor") and not (key == "ask" and role == "editor"):   # the Family thread has its compose bar and Quiet switch for every role (F-070); an editor adds flights and passes on Help (F-083) and asks for a change on Ask (F-072); a viewer sees the read-only note
             main = re.search(r"<main.*?</main>", r.text, re.S).group(0)
             assert "<form" not in main and "<input" not in main, path
 
@@ -104,7 +104,7 @@ def test_the_map_tab_is_the_real_map_in_the_shell(client):
     html = client.get("/trip/map").text
     assert "is coming" not in html and 'id="mp-daychip"' in html and ">Map</h1>" in html
     assert "/assets/vendor/leaflet/leaflet.js" in html and "/assets/js/map.js" in html and "/assets/css/map.css" in html
-    assert 'id="ph-tab-map"' not in html and 'id="ph-tab-today"' in html      # F-096: Map left the bar; the page still works
+    assert 'id="ph-tab-map"' not in html and 'id="ph-tab-plan"' in html      # F-096: Map left the bar; the page still works
 
 
 def test_a_tab_module_can_be_swapped_without_touching_the_shell(client, monkeypatch):
@@ -122,7 +122,7 @@ def test_today_sits_in_the_same_shell_and_keeps_its_own_switch(client):
     book(client)
     html = client.get("/trip?tab=today").text
     hrefs, nav = bar(html)
-    assert hrefs == list(BAR) and 'id="ph-tab-today"' in nav
+    assert hrefs == list(BAR) and re.search(r'<a [^>]*aria-current="page"[^>]*id="ph-tab-plan"|<a [^>]*id="ph-tab-plan"[^>]*aria-current="page"', nav)      # the old Today page is the Plan tab (F-200)
     for name in ("Today", "All days", "Notes"):
         assert f">{name}</a>" in html
 

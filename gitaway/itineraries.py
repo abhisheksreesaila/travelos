@@ -24,6 +24,7 @@ class Stop:
     note: str = ""
     photo: str = ""
     photo_alt: str = ""
+    link: str = ""              # a creator's own booking or ticket link for this stop (F-196: gitaway/stoplinks.py lists where it may go)
 
 
 @dataclass(frozen=True)
@@ -34,6 +35,8 @@ class Day:
     weather: str = ""
     stops: list = field(default_factory=list)
     collapsed: bool = False
+    note: str = ""              # a creator's own words about the day (F-181)
+    photos: list = field(default_factory=list)   # Polaroids a creator picked for the day (F-181)
 
 
 @dataclass(frozen=True)
@@ -44,6 +47,7 @@ class Source:
     thumb_alt: str
     url: str = ""
     link_label: str = "Watch the original"
+    kicker: str = "From the vlog"   # the small line above the title: a blog post says "From the blog" (F-183)
 
 
 @dataclass(frozen=True)
@@ -75,10 +79,18 @@ class Itinerary:
     forks: int = 0                               # how many families forked this trip
     source: Source | None = None
     polaroids: list = field(default_factory=list)
-    weather: tuple = ("74°F", "mostly sunny")
+    weather: tuple = ()                          # (temperature, sky) on the collage's badge: sample trips only; a real trip never shows weather (F-203)
     route: str = "SFO → LAX · 1h 27m"
     author: str = "the author"
     theme: str = "sunset"
+    tips: list = field(default_factory=list)   # a creator's few tips (F-181)
+    real: bool = False          # a real family's trip, published by a person (F-181): no sample weather or route, a creator byline, "Plan this trip"
+    handle: str = ""            # the creator's profile handle: set only on a real published trip (F-181)
+    plan_to: str = ""           # the catalog place "Plan this trip" goes to ("la"), "" when there is none
+    plan_days: int = 0          # how many days "Plan this trip" plans
+
+
+SAMPLE_BADGE = ("74°F", "mostly sunny")   # the sample trips' weather badge (showcase only)
 
 
 def safe_href(url) -> str:
@@ -167,13 +179,14 @@ def _sun_tacos() -> Itinerary:
                    Polaroid(VENICE, "Venice Beach, Los Angeles", "Venice, day two")],
         author="Maya & Theo",
         forks=forks,
+        weather=SAMPLE_BADGE,
     )
 
 
 def _short(slug, title, headline, accent, place, lede, days, tags, author, forks, stats, route, source=None):
     """A compact community trip: a few days, a few stops each, sticker collage instead of photos."""
     return Itinerary(slug=slug, title=title, headline=headline, accent=accent, place=place, lede=lede, days=days,
-                     tags=tags, stats=[*stats, (str(forks), "families forked it")], forks=forks, source=source, author=author, route=route)
+                     tags=tags, stats=[*stats, (str(forks), "families forked it")], forks=forks, source=source, author=author, route=route, weather=SAMPLE_BADGE)
 
 
 def _la_for_two() -> Itinerary:

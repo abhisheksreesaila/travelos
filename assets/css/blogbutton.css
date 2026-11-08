@@ -1,0 +1,17 @@
+/* F-191: "Put this on your blog" on a creator's own trip page and at /creators/settings. omxqua Coast surfaces (--oq-*), phone first; every control is at least 44px tall
+   (44px at the phone's 16px root). Sizes are rem; no glass, no blur. */
+
+.bb { display: grid; gap: 1rem; padding: 1.125rem; margin-block: 1.5rem; max-width: 40rem; min-width: 0; box-sizing: border-box; border-radius: var(--oq-radius, 1rem); background: var(--oq-surface-1, #fffdf9); border: 1px solid var(--oq-line, #e7e0d4); }
+.bb > * { min-width: 0; }
+.bb h2 { margin: 0; font-size: 1.375rem; font-weight: 650; letter-spacing: -0.03em; }
+.bb-lede { margin: 0; font-size: 1rem; line-height: 1.5; color: var(--oq-ink-2, #5f584e); text-wrap: pretty; }
+.bb-badges { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
+.bb-badge { display: block; max-width: 100%; height: auto; border-radius: 0.875rem; }
+.bb-row { display: grid; gap: 0.5rem; }
+.bb-lab { font-weight: 600; font-size: 1rem; }
+.bb-text { width: 100%; box-sizing: border-box; padding: 0.625rem 0.875rem; border-radius: var(--oq-radius-in, 0.75rem); border: 1px solid var(--oq-line, #e7e0d4); background: var(--oq-surface-2, #fff); color: var(--oq-ink, #1d1a16);
+  font: 1rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; resize: none; overflow-wrap: anywhere; }
+.bb-text:focus-visible { outline: 0.1667rem solid var(--oq-accent, #c0401c); outline-offset: 0.0625rem; }
+:root .bb .bb-copy.btn { min-height: var(--target); min-width: var(--target); justify-self: start; }
+@media (min-width: 1020px) { .bb-row { grid-template-columns: 1fr auto; align-items: end; } .bb-lab { grid-column: 1 / -1; } }
+@media (min-width: 1020px) { :root .bb .bb-copy.btn { min-height: 3.6667rem; min-width: 3.6667rem; } }   /* the laptop root is 12px: the same 44px */

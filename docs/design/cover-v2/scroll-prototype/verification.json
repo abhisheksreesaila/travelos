@@ -1,0 +1,150 @@
+[
+  {
+    "viewport": "1440x900",
+    "route": "Los Angeles \u2192 Tahoe",
+    "fonts": [
+      {
+        "name": "Geist",
+        "status": "loaded"
+      },
+      {
+        "name": "Fraunces",
+        "status": "loaded"
+      }
+    ],
+    "camera": [
+      {
+        "scene": "go",
+        "peak_dolly": -1.727223212210618,
+        "full_pullback": true,
+        "reversible": true,
+        "stable_buffer": true
+      },
+      {
+        "scene": "summer",
+        "peak_dolly": -1.8379991042771793,
+        "full_pullback": true,
+        "reversible": true,
+        "stable_buffer": true
+      }
+    ],
+    "demos_and_manual_override": "passed",
+    "idle_rendering": "stopped",
+    "calm_view": "passed",
+    "horizontal_overflow": false,
+    "page_errors": []
+  },
+  {
+    "viewport": "1024x768",
+    "route": "Los Angeles \u2192 Tahoe",
+    "fonts": [
+      {
+        "name": "Geist",
+        "status": "loaded"
+      },
+      {
+        "name": "Fraunces",
+        "status": "loaded"
+      }
+    ],
+    "camera": [
+      {
+        "scene": "go",
+        "peak_dolly": -1.72628886412891,
+        "full_pullback": true,
+        "reversible": true,
+        "stable_buffer": true
+      },
+      {
+        "scene": "summer",
+        "peak_dolly": -1.8379790603925277,
+        "full_pullback": true,
+        "reversible": true,
+        "stable_buffer": true
+      }
+    ],
+    "demos_and_manual_override": "passed",
+    "idle_rendering": "stopped",
+    "calm_view": "passed",
+    "horizontal_overflow": false,
+    "page_errors": []
+  },
+  {
+    "viewport": "390x844",
+    "route": "Los Angeles \u2192 Tahoe",
+    "fonts": [
+      {
+        "name": "Geist",
+        "status": "loaded"
+      },
+      {
+        "name": "Fraunces",
+        "status": "loaded"
+      }
+    ],
+    "camera": [
+      {
+        "scene": "go",
+        "peak_dolly": -1.7264756135636188,
+        "full_pullback": true,
+        "reversible": true,
+        "stable_buffer": true
+      },
+      {
+        "scene": "summer",
+        "peak_dolly": -1.8374572533160887,
+        "full_pullback": true,
+        "reversible": true,
+        "stable_buffer": true
+      }
+    ],
+    "demos_and_manual_override": "passed",
+    "idle_rendering": "stopped",
+    "calm_view": "passed",
+    "horizontal_overflow": false,
+    "page_errors": []
+  },
+  {
+    "viewport": "320x740",
+    "route": "Los Angeles \u2192 Tahoe",
+    "fonts": [
+      {
+        "name": "Geist",
+        "status": "loaded"
+      },
+      {
+        "name": "Fraunces",
+        "status": "loaded"
+      }
+    ],
+    "camera": [
+      {
+        "scene": "go",
+        "peak_dolly": -1.7267013196862608,
+        "full_pullback": true,
+        "reversible": true,
+        "stable_buffer": true
+      },
+      {
+        "scene": "summer",
+        "peak_dolly": -1.8382212934922328,
+        "full_pullback": true,
+        "reversible": true,
+        "stable_buffer": true
+      }
+    ],
+    "demos_and_manual_override": "passed",
+    "idle_rendering": "stopped",
+    "calm_view": "passed",
+    "horizontal_overflow": false,
+    "page_errors": []
+  },
+  {
+    "mode": "reduced",
+    "readable_poster_fallback": "passed"
+  },
+  {
+    "mode": "no-webgl",
+    "readable_poster_fallback": "passed"
+  }
+]

@@ -17,7 +17,7 @@ MEASURE = """(sel) => { const el = document.querySelector(sel); const cs = getCo
   const texts = [...el.querySelectorAll('.tp-what, .tp-sub, .tp-label')].map(t => rgb(getComputedStyle(t).color));
   return { bg: cs.backgroundColor, edge: cs.borderLeftColor, edgeW: parseFloat(cs.borderLeftWidth), min: Math.min(...texts.map(ratio)), n: texts.length }; }"""
 
-INK = "rgb(30, 26, 46)"
+INK = "rgb(11, 11, 13)"
 
 
 def tint(page, name):

@@ -13,7 +13,7 @@ from tests_browser.test_family_panel import SATURDAY, dock, mates, open_family, 
 from tests_browser.test_thread import pair  # noqa: F401 - fixture
 from tests_browser.test_trip_canvas import canvas_page, model  # noqa: F401 - fixtures
 
-CORAL_DEEP, WHITE, BUBBLE_GREY, INK = [201, 67, 31], [255, 255, 255], [233, 230, 238], [30, 26, 46]
+CORAL_DEEP, WHITE, BUBBLE_GREY, INK = [11, 11, 13], [255, 255, 255], [237, 237, 241], [11, 11, 13]      # F-200: mine is the accent (ink, white words), theirs the quiet grey
 
 
 def shot(page, name):

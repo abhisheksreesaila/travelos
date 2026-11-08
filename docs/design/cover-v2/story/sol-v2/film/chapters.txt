@@ -1,0 +1,94 @@
+;FFMETADATA1
+title=GitAway — Take a trip. Leave a trail.
+artist=GitAway
+comment=Watercolor film with depth-projected 3D camera scenes. Kokoro af_heart narration and original procedural score.
+[CHAPTER]
+TIMEBASE=1/1000
+START=0
+END=5000
+title=01. Fourteen tabs
+[CHAPTER]
+TIMEBASE=1/1000
+START=5000
+END=9000
+title=02. Too much information
+[CHAPTER]
+TIMEBASE=1/1000
+START=9000
+END=13000
+title=03. The first tap
+[CHAPTER]
+TIMEBASE=1/1000
+START=13000
+END=19000
+title=04. Everything in view
+[CHAPTER]
+TIMEBASE=1/1000
+START=19000
+END=24000
+title=05. Book with a partner
+[CHAPTER]
+TIMEBASE=1/1000
+START=24000
+END=28000
+title=06. The page gains depth
+[CHAPTER]
+TIMEBASE=1/1000
+START=28000
+END=34000
+title=07. Fly into Tahoe
+[CHAPTER]
+TIMEBASE=1/1000
+START=34000
+END=39000
+title=08. Arrive at human height
+[CHAPTER]
+TIMEBASE=1/1000
+START=39000
+END=44000
+title=09. The little moments
+[CHAPTER]
+TIMEBASE=1/1000
+START=44000
+END=48000
+title=10. Bring it home
+[CHAPTER]
+TIMEBASE=1/1000
+START=48000
+END=53000
+title=11. Leave a trail
+[CHAPTER]
+TIMEBASE=1/1000
+START=53000
+END=57000
+title=12. A trail crosses the world
+[CHAPTER]
+TIMEBASE=1/1000
+START=57000
+END=61000
+title=13. A nudge in Lisbon
+[CHAPTER]
+TIMEBASE=1/1000
+START=61000
+END=67000
+title=14. Make it their summer
+[CHAPTER]
+TIMEBASE=1/1000
+START=67000
+END=72000
+title=15. Couch to beach
+[CHAPTER]
+TIMEBASE=1/1000
+START=72000
+END=78000
+title=16. Summer, from inside it
+[CHAPTER]
+TIMEBASE=1/1000
+START=78000
+END=83000
+title=17. The world keeps sharing
+[CHAPTER]
+TIMEBASE=1/1000
+START=83000
+END=87000
+title=18. An invitation

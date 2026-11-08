@@ -19,5 +19,5 @@ def test_the_phone_today_view_tints_by_kind_and_says_booked_elsewhere_once(clien
     at(date(2026, 10, 17), "07:00")  # the arrival day from the next morning: its whole list shows (today's up-next item moves into the card)
     html = client.get("/trip?day=0").text
     assert "tp-k-sky" in html and "tp-k-grape" in html and "tp-k-sun" in html  # flight, hotel, car
-    assert shown(html).lower().count("booked elsewhere") == 1
+    assert shown(html).lower().count("booked on expedia") == 1 and "booked elsewhere" not in shown(html).lower()      # said once, in the words each booking uses (F-198)
     assert "booked on Expedia" not in shown(html)

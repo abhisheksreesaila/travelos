@@ -37,10 +37,25 @@ def no_sideways_scroll(page):
 
 @SIZES
 def test_landing_has_no_community_or_creators_and_no_sideways_scroll(visit, viewport):
+    """A stranger's landing is the cover (F-206): off the showcase it has no sample community part, no link to Community trips while nobody has
+    published, and its first door opens the start page."""
     page = visit("/", viewport)
     assert no_sideways_scroll(page)
     assert page.locator("#community-trips, .forkline, .creators, .trip-row").count() == 0
-    assert page.get_by_text("Community trips").count() == 0 and page.get_by_text("Leave a trail").count() == 0
+    assert page.get_by_text("Community trips").count() == 0 and page.get_by_text("Been somewhere wonderful?").count() == 0
+    assert page.locator('a[href="/community"]').count() == 0                             # See trips people shared waits until someone has
+    page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
+    page.locator(".cv-ctas a", has_text="Start a trip").click()
+    page.wait_for_url("**/start**")
+
+
+@SIZES
+def test_the_signed_in_landing_keeps_its_illustrations_and_a_neutral_door(visit, viewport, base_url):
+    page = visit("/start", viewport)
+    page.context.request.post(f"{base_url}/signin", form={"email": "ari.rivera@example.com", "next": "/", "intent": "save"}, max_redirects=0)
+    page.goto(f"{base_url}/")
+    assert no_sideways_scroll(page)
+    assert page.locator("#community-trips, .forkline, .creators, .trip-row").count() == 0
     assert page.locator("#cal").count() == 1 and page.locator(".feature").count() == 4   # the illustrations stay
     assert page.locator(".search .field-value.is-hint").count() == 4
     page.get_by_role("button", name="Plan a trip").click()                                # the one door still opens the start page
@@ -48,14 +63,15 @@ def test_landing_has_no_community_or_creators_and_no_sideways_scroll(visit, view
 
 
 @SIZES
-def test_workspace_is_labelled_a_preview_and_does_not_scroll_sideways(visit, viewport):
+def test_production_plan_asks_where_and_shows_no_invented_offers(visit, viewport):
+    """F-198 (6): off the showcase /plan never draws the sample workspace; it asks where you are going, and a place gets the honest lanes."""
     page = visit("/plan", viewport)
-    assert page.locator(".ws-preview").is_visible()
-    assert "sample prices" in page.locator(".ws-preview").inner_text()
-    assert page.locator('[data-pane="community"]').count() == 0
+    assert page.get_by_role("heading", name="Where are you going?").is_visible()
+    assert page.locator(".ws-preview").count() == 0 and page.locator("#ws-total").count() == 0
     assert no_sideways_scroll(page)
-    page.keyboard.press("7")                                                              # no pane 7: nothing breaks
-    assert page.locator("#ws-total").is_visible()
+    page = visit("/plan?place=San+Diego&d=2027-03-05&r=2027-03-09&a=2", viewport)
+    assert page.locator("h2.ps-name").first.inner_text() == "Search flights to San Diego"
+    assert page.locator(".ws-preview").count() == 0 and no_sideways_scroll(page)
 
 
 @SIZES

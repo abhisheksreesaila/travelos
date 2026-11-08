@@ -19,9 +19,10 @@ from fasthtml.common import A, Button, Div, Form, H1, H2, Img, Input, Label, Lin
 from fasthtml.core import FtResponse
 from starlette.responses import RedirectResponse
 
-from gitaway import firstrun, forks as forks_model, hub, session as ses, tripcal as cal
+from gitaway import firstrun, forks as forks_model, hub, importer, session as ses, tripcal as cal, weather
 from gitaway.icons import icon
 from gitaway.layout import page, trip_field
+from gitaway.pages import weather_ui
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/forks.css"),)
 HH = 2.75  # rem per calendar hour (forks.css --hh): a little tighter than the calendar so a 6 AM start still fits 1280x800
@@ -64,6 +65,8 @@ def calendar_view(session, placements=(), author="", fresh=(), demo=""):
     gs, ge = cal.grid_start(blocks), cal.grid_end(blocks)
     acts = cal.activities(session, demo)
     drafts = [x for x in placements if not x.hard and x.state != "have"]
+    sample = weather.sample(t)        # only the showcase's sample trip shows sample weather; a real trip its forecast or typical weather (F-203)
+    tw = None if sample else weather.trip_weather(t)
     cols = []
     for i, d in enumerate(dates):
         tint = DAY_TINTS[i % 5]
@@ -71,9 +74,8 @@ def calendar_view(session, placements=(), author="", fresh=(), demo=""):
         body += [_event("fk-mine" if not a.by else "fk-friend", a.start, a.end, gs, a.title, a.by, fresh=a.id in fresh) for a in acts if a.day == i]
         body += [_event("fk-draft" + (" fk-half" if x.state == "clash" else ""), x.plan.start, x.plan.end, gs, x.plan.title, "from fork", x.plan.key, hidden=not x.checked)
                  for x in drafts if x.plan.day == i]
-        w = cal.weather_for(i)
         cols.append(Div(
-            Div(Span(str(d.day), cls="fk-num"), Span(d.strftime("%a").upper(), cls="fk-dow"), Span(f"{w.temp_f}°F", cls="fk-wx"), cls=f"fk-dayhead fill-{tint}-tint"),
+            Div(Span(str(d.day), cls="fk-num"), Span(d.strftime("%a").upper(), cls="fk-dow"), _day_weather(i, sample, tw), cls=f"fk-dayhead fill-{tint}-tint"),
             Div(*body, cls="fk-body", style=f"height:{_rem(ge - gs)}"),
             cls="fk-day", aria_label=d.strftime("%A %B ") + str(d.day), role="group"))
     hours = [Span(f"{h % 12 or 12} {'AM' if h < 12 else 'PM'}", cls="fk-hour") for h in range(gs // 60, ge // 60)]
@@ -84,7 +86,28 @@ def calendar_view(session, placements=(), author="", fresh=(), demo=""):
                 Button(icon("chev-right", 16, 2.6), type="button", data_dir="1", aria_label="Later days", cls="fk-navbtn"), cls="fk-nav", hidden=True) if len(cols) > 3 else "",
             A("Open the trip", href="/trip", cls="fk-link"), cls="fk-card-head"),
         Div(gutter, Div(*cols, cls="fk-scroll", id="fk-scroll", role="region", aria_label="Days", tabindex="0"), cls="fk-grid", style=f"--n:{len(cols)}"),
+        Div(*weather_ui.notes(tw, "fk-wx-note", "fk-wcredit"), cls="fk-wx-notes") if tw and weather.notes(tw) else "",
         cls="fk-cal card", aria_label="Trip calendar")
+
+
+def _day_weather(i, sample, tw):
+    """A day head's temperature: the sample's on the sample trip; else the forecast's high, or the typical high marked as typical; else nothing."""
+    if sample:
+        return Span(f"{cal.weather_for(i).temp_f}°F", cls="fk-wx")
+    day = tw.days[i] if i < len(tw.days) else None
+    if day is None:
+        return ""
+    typical = day.kind == weather.NORMAL
+    return Span(f"{day.high_f}°F", cls="fk-wx fk-wx-typ" if typical else "fk-wx", title=weather_ui.describe(day))
+
+
+def calendar_start(entry):
+    """The left side when the family has no trip and a fork is open: what applying it will make (F-196)."""
+    n = len(entry.trip.days)
+    return Section(
+        Span(icon("plane", 36, 2), cls="fk-bigicon"), H2("Applying this starts your trip", id="fk-start"),
+        P(f"{n} day{'s' if n != 1 else ''} in {entry.trip.place}, with the plans on the right. Set your real dates and add flights or a stay from Trip details."),
+        cls="fk-cal fk-empty card", id="fk-start-card")
 
 
 def calendar_empty():
@@ -104,9 +127,8 @@ def _card(e, tag, booked, current=""):
     meta = f"{e.days} days · {e.author}"
     main = [Img(src=e.photo, alt=e.alt, cls="fk-thumb"),
             Span(Span(e.title, cls="fk-name"), Span(meta, cls="fk-meta"), _tags(e), cls="fk-text")]
-    href = forks_url(open=e.slug) if booked else "/plan"
-    head = A(*main, href=href, cls="fk-pick" + (" is-open" if e.slug == current else ""), aria_current="true" if e.slug == current else None,
-             aria_label=f"Preview {e.title} in your calendar" if booked else f"{e.title}. Book a trip to apply it")
+    head = A(*main, href=forks_url(open=e.slug), cls="fk-pick" + (" is-open" if e.slug == current else ""), aria_current="true" if e.slug == current else None,
+             aria_label=f"Preview {e.title} in your calendar" if booked else f"Preview {e.title}. Applying it starts your trip")
     return Div(head, A("View trip page", href=f"/trips/{e.slug}", cls="fk-link"), cls=f"fk-item fk-item-{tag}")
 
 
@@ -116,7 +138,7 @@ def list_panel(session, booked, current=""):
     if mine:
         blocks += [_card(e, "fork", booked, current) for e in mine]
         blocks.append(P("Pick one to preview its plans in your empty slots. Nothing changes until you apply." if booked
-                        else "Book a trip and you can drop a fork's plans into your calendar.", cls="fk-hint"))
+                        else "Pick one to see its plans. Applying it starts a trip for you; you can book flights and a stay after.", cls="fk-hint"))
     else:
         blocks.append(Div(Span(icon("fork", 28, 2.2), cls="fk-bigicon"), P("Nothing forked or saved yet. Fork a community trip and its plans wait here, ready for your calendar."),
                           A("Browse community trips", href="/community", cls="btn btn-primary btn-sm"), cls="fk-none"))
@@ -150,17 +172,21 @@ def _row(x, dates):
         cls=f"fk-row{' is-clash' if x.state == 'clash' else ''}{' is-have' if x.state == 'have' else ''}")
 
 
-def preview_panel(entry, placements, dates):
+def preview_panel(entry, placements, dates, other="", mine="", starts=False):
+    """The fork's plans as a form. `other` is the fork's place when it is not the open trip's, `mine` the open trip's (F-196: said before anything is applied, and the button says "anyway");
+    `starts` is a family with no trip, whose apply makes one."""
     free = sum(1 for x in placements if x.checked)
+    pre, post = ("Start my trip with", "") if starts else ("Apply", " anyway" if other else "")
+    warn = Div(icon("flag", 18, 2.4), Span(f"This trip is for {other}, but your trip is to {mine}. Its plans would land on days in the wrong place."), id="fk-place", role="alert", cls="fk-warn") if other else ""
     if not placements:
-        body = [P("This trip has no timed plans to add.", cls="fk-hint")]
+        body = [P("This trip has no stops to add.", cls="fk-hint")]
     else:
         body = [Form(
-            Span(f"FROM {entry.title.upper()}", cls="fk-from"),
+            Span(f"FROM {entry.title.upper()}", cls="fk-from"), warn,
             Div(*[_row(x, dates) for x in placements], cls="fk-rows", role="group", aria_label="Plans in this fork", tabindex="0"),
             Input(type="hidden", name="slug", value=entry.slug), trip_field(),
-            Button(f"Apply {free} plan{'s' if free != 1 else ''}", type="submit", id="fk-apply", cls="btn btn-ink fk-applybtn", disabled=(free == 0) or None, data_count=str(free)),
-            Span("Your bookings and your crew's plans stay exactly where they are.", cls="fk-hint"),
+            Button(f"{pre} {free} plan{'s' if free != 1 else ''}{post}", type="submit", id="fk-apply", cls="btn btn-ink fk-applybtn", disabled=(free == 0) or None, data_count=str(free), data_pre=pre, data_post=post),
+            Span("Your bookings and your crew's plans stay exactly where they are." if not starts else "Nothing is booked. You can change the dates and add flights later.", cls="fk-hint"),
             action="/forks/apply", method="post", id="fk-form", cls="fk-preview")]
     return [A(icon("chev-left", 16, 2.6), "All forks", href="/forks", cls="fk-back"), H2(entry.title, id="fk-title"), *body]
 
@@ -193,18 +219,22 @@ def forks_page(session, open_slug="", applied="", source="", error="", status=20
     entry = forks_model.entry(session, open_slug) if open_slug else None
     if entry and entry.slug not in ses.forks(session) + ses.saved(session):
         entry = None  # preview only what is in the traveler's list
-    placements, dates = [], []
+    placements, dates, other, mine = [], [], "", ""
     if entry and booked:
-        dates = cal.days(cal.trip("", ses.booking(session)))
+        t = cal.trip("", ses.booking(session))
+        dates, mine = cal.days(t), t.destination_name
         placements = cal.preview_fork(session, entry.trip)
+        other = forks_model.other_place(entry.trip, mine, t.airports)
+    elif entry:     # no trip yet: the fork's plans on an empty calendar, and applying makes the trip (F-196)
+        placements = cal.place_plans(cal.fork_plans(entry.trip), [], [], len(entry.trip.days), cal.grid_start([]))
     ids = _ids(applied)
     src = forks_model.entry(session, source) if source else None
     done = applied_panel(session, ids, src) if ids and booked else None
-    side = preview_panel(entry, placements, dates) if entry and booked else list_panel(session, booked, entry.slug if entry else "")
+    side = preview_panel(entry, placements, dates, other, mine, starts=not booked) if entry else list_panel(session, booked, "")
     notice = Div(error, role="alert", cls="fk-error") if error else ""
-    left = calendar_view(session, placements, fresh=set(ids)) if booked else calendar_empty()
+    left = calendar_view(session, placements, fresh=set(ids)) if booked else calendar_start(entry) if entry else calendar_empty()
     body = Section(
-        Div(left, Div(done or "", notice, *side, id="fk-side", cls="fk-side card", aria_labelledby="fk-title"), cls="fk-layout", data_state="preview" if entry and booked else "list"),
+        Div(left, Div(done or "", notice, *side, id="fk-side", cls="fk-side card", aria_labelledby="fk-title"), cls="fk-layout", data_state="preview" if entry else "list"),
         Script(src="/assets/js/forks.js", defer=True), cls="fk ga-wrap")
     out = page("Your forks", body, head=HEAD)
     return FtResponse(out, status_code=status) if status != 200 else out
@@ -224,9 +254,14 @@ def register(app):
         trip = forks_model.resolve(slug)
         if not trip or slug not in ses.forks(session) + ses.saved(session):
             return forks_page(session, error="That trip is not in your list any more.", status=409)
+        picks = [k for k in (pick or []) if _KEY.match(k)]
+        if not picks:
+            return RedirectResponse(forks_url(open=slug), status_code=303)
         try:
-            added = cal.apply_fork(session, trip, [k for k in (pick or []) if _KEY.match(k)], by=trip.author)
-        except cal.CalendarError as e:
+            if not ses.booking(session):      # no trip yet: applying a fork makes one, with its place and length (F-196)
+                forks_model.start_trip(session, trip)
+            added = cal.apply_fork(session, trip, picks, by=trip.author)
+        except (cal.CalendarError, importer.SaveError) as e:
             return forks_page(session, open_slug=slug, error=str(e), status=409)
         if not added:
             return RedirectResponse(forks_url(open=slug), status_code=303)

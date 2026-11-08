@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GitAway cover v2: five directions</title>
+<style>
+@font-face { font-family: "Geist"; src: url("../../../assets/fonts/geist-variable.woff2") format("woff2"); font-weight: 100 900; }
+:root { color-scheme: light dark; --bg: #F3F1EE; --s1: #FFFFFF; --ink: #121014; --ink2: #5E5A63; --acc: #D2401C; --on-acc: #fff; --sh: 0 12px 36px rgba(40, 20, 10, .14), 0 0 0 1px rgba(40, 20, 10, .05); }
+@media (prefers-color-scheme: dark) { :root { --bg: #0B0B10; --s1: #1C1B21; --ink: #F5F3F0; --ink2: #ABA6B0; --acc: #FF8A5B; --on-acc: #1B0B05; --sh: 0 12px 36px rgba(0, 0, 0, .5), 0 0 0 1px rgba(255, 255, 255, .06); } }
+* { box-sizing: border-box; }
+body { margin: 0; padding: 40px 32px 64px; font-family: "Geist", system-ui, sans-serif; background: var(--bg); color: var(--ink); }
+h1 { font-size: 36px; letter-spacing: -.03em; margin: 0 0 6px; }
+.lede { color: var(--ink2); font-size: 17px; margin: 0 0 32px; }
+.dir { background: var(--s1); border-radius: 28px; box-shadow: var(--sh); padding: 24px 28px 28px; margin-bottom: 28px; }
+.head { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; margin-bottom: 4px; }
+.head h2 { font-size: 24px; margin: 0; letter-spacing: -.02em; }
+.head a { margin-left: auto; display: inline-flex; align-items: center; min-height: 48px; padding: 0 22px; border-radius: 999px; background: var(--acc); color: var(--on-acc); font-weight: 650; text-decoration: none; }
+.dir p { color: var(--ink2); margin: 0 0 18px; font-size: 16px; max-width: 60em; }
+.frames { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
+.f { position: relative; overflow: hidden; border-radius: 16px; box-shadow: var(--sh); flex: none; }
+.f iframe { border: 0; transform-origin: 0 0; position: absolute; left: 0; top: 0; }
+.wide { width: 720px; height: 450px; } .wide iframe { width: 1440px; height: 900px; transform: scale(.5); }
+.phone { width: 234px; height: 506px; border-radius: 24px; } .phone iframe { width: 390px; height: 844px; transform: scale(.6); }
+.cap { font-size: 13px; color: var(--ink2); margin-top: 6px; }
+</style>
+</head>
+<body>
+<h1>Cover v2: five directions</h1>
+<p class="lede">Same world (Lake Tahoe in December), same tagline, one coloured "Start a trip". Each frame is live: the beats auto-play, and you can tap them. Switch your OS to dark mode to see night.</p>
+
+<section class="dir">
+  <div class="head"><h2>A: Say it, then show it</h2><a href="a.html">Open A</a></div>
+  <p>A compact card on the left (tagline, one line, a "Where to?" box that leads into Start a trip) over a full-bleed world. The four beats are coloured chips along the bottom; tapping one changes the scene.</p>
+  <div class="frames"><div><div class="f wide"><iframe src="a.html" title="A desktop" loading="lazy"></iframe></div><div class="cap">1440 × 900</div></div>
+    <div><div class="f phone"><iframe src="a.html" title="A phone" loading="lazy"></iframe></div><div class="cap">390 × 844</div></div></div>
+</section>
+
+<section class="dir">
+  <div class="head"><h2>B: The map tells it</h2><a href="b.html">Open B</a></div>
+  <p>Almost no panel. The story is told by coloured labels pinned to the world ("Day 2 · Emerald Bay", "Booked on Vrbo", "Thanks from Ana &amp; Luis"); a slim bottom bar holds the tagline and both buttons the whole time.</p>
+  <div class="frames"><div><div class="f wide"><iframe src="b.html" title="B desktop" loading="lazy"></iframe></div><div class="cap">1440 × 900</div></div>
+    <div><div class="f phone"><iframe src="b.html" title="B phone" loading="lazy"></iframe></div><div class="cap">390 × 844</div></div></div>
+</section>
+
+<section class="dir">
+  <div class="head"><h2>C: Split screen</h2><a href="c.html">Open C</a></div>
+  <p>A calm, still left column (tagline, one line, buttons, the four numbered beats); the world on the right plays through them with one small product card per beat. On a phone the world sits on top and the words below.</p>
+  <div class="frames"><div><div class="f wide"><iframe src="c.html" title="C desktop" loading="lazy"></iframe></div><div class="cap">1440 × 900</div></div>
+    <div><div class="f phone"><iframe src="c.html" title="C phone" loading="lazy"></iframe></div><div class="cap">390 × 844</div></div></div>
+</section>
+<section class="dir">
+  <div class="head"><h2>D: The story of a trail</h2><a href="d.html">Open D</a></div>
+  <p>Seven short scenes that tell the whole loop in pictures: a couple buried in a Tahoe guidebook, the book's pages flying into a phone as widgets, "Leave a trail" sending it onto a globe, an older couple in Lisbon thanking them and following it, swapping the ski day for hot springs, being there, then trails branching across a world map. A caption of a few words per scene, steps you can tap, arrow keys and scroll; the slim bar from B holds the tagline until the last scene makes it big.</p>
+  <div class="frames"><div><div class="f wide"><iframe src="d.html" title="D desktop" loading="lazy"></iframe></div><div class="cap">1440 × 900</div></div>
+    <div><div class="f phone"><iframe src="d.html" title="D phone" loading="lazy"></iframe></div><div class="cap">390 × 844</div></div></div>
+</section>
+<section class="dir">
+  <div class="head"><h2>E: The trail, a film with a voice</h2><a href="e.html">Open E</a></div>
+  <p>D grown into one continuous 49-second film. The camera flies from the sofa into the guidebook, pulls back as the book bursts into a phone, dives through the screen into the real Tahoe renders (layered for a slow dolly, with falling snow), pans with the trip card as it arcs onto a dotted globe, spins half a world to Lisbon, and ends on a rotating globe filling with trails, reactions and a crowd of little travellers. Friendlier faces than D. A warm narrator (Kokoro, af_heart) reads one short line per beat when you tap "Play with sound"; captions are always on.</p>
+  <div class="frames"><div><div class="f wide"><iframe src="e.html" title="E desktop" loading="lazy"></iframe></div><div class="cap">1440 × 900</div></div>
+    <div><div class="f phone"><iframe src="e.html" title="E phone" loading="lazy"></iframe></div><div class="cap">390 × 844</div></div></div>
+</section>
+</body>
+</html>

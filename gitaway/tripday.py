@@ -197,7 +197,7 @@ def starts_in(n) -> str:
 
 # ---- one day's timeline ------------------------------------------------------------------------------------------------
 
-_ICON_KIND = {"plane": ("flight", "Flight", "sky"), "bed": ("hotel", "Hotel", "grape"), "car": ("car", "Car", "sun")}  # F-059: the booked palette; a simulated Uber stays mint
+_ICON_KIND = {"plane": ("flight", "Flight", "sky"), "bed": ("hotel", "Hotel", "grape"), "car": ("car", "Car", "sun"), "ticket": ("ticket", "Ticket", "bubble")}  # F-059: the booked palette; a simulated Uber stays mint
 
 
 def _place_of(block, hotel_place):

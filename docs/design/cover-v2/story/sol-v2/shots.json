@@ -1,0 +1,200 @@
+[
+  {
+    "id": "01",
+    "title": "Fourteen tabs",
+    "duration": 5,
+    "medium": "Watercolor",
+    "narration": "Planning a trip shouldn’t feel like homework.",
+    "dialogue": "Maya: Fourteen tabs. Still no plan. | Sam: Where do we even start?",
+    "camera": "Slow dolly toward the sofa; browser tabs accumulate with quiet paper ticks.",
+    "scene": "Maya and Sam in home outfits slumped on a light sofa at night; Maya holds a fat guidebook with colorful sticky notes, Sam has a laptop showing many blank browser tab shapes. Coffee mugs and map on table. Muted slate-blue room with a warm floor lamp. Their faces weary but affectionate. Open cream sketchbook spread, top-down framing, generous calm paper above.",
+    "image": "frames/01.png"
+  },
+  {
+    "id": "02",
+    "title": "Too much information",
+    "duration": 4,
+    "medium": "Watercolor",
+    "narration": "All the information. None of the clarity.",
+    "dialogue": "Maya: Is this even up to date?",
+    "camera": "Push into the guidebook; the type becomes a maze of ink lines.",
+    "scene": "Close-up open travel guidebook with dense illegible gray ink squiggles, tiny maps and notes, never readable words. Maya and Sam peek over opposite top edges looking at each other in puzzled amusement. Fingers clearly separated from book edges. Faint warm lamp wash, otherwise almost monochrome. A drawing spanning an open cream sketchbook.",
+    "image": "frames/02.png"
+  },
+  {
+    "id": "03",
+    "title": "The first tap",
+    "duration": 4,
+    "medium": "Watercolor",
+    "narration": "Start with somewhere you want to go.",
+    "dialogue": "Sam: Tahoe? | Maya: Let’s do it.",
+    "camera": "Follow Sam’s finger; ink from the book lifts toward the phone.",
+    "scene": "Maya and Sam sitting together on their sofa in home outfits, Sam holds a large clearly visible smartphone in his left hand and taps it with the index finger of his right; Maya leans in hopefully. A delicate blue-green ink ribbon rises from an open guidebook on table and becomes a tiny lake, pine trees and mountains. Natural untangled arms. Airy cream sketchbook spread.",
+    "image": "frames/03.png"
+  },
+  {
+    "id": "04",
+    "title": "Everything in view",
+    "duration": 6,
+    "medium": "Watercolor + product",
+    "narration": "The whole decision, in one place.",
+    "dialogue": "Maya: Snow chains. Good to know. | Sam: And the whole trip cost.",
+    "camera": "Cards unfold from the tap, then settle; the map keeps its place.",
+    "scene": "Large central tablet showing an icon-only snowy cabin booking card. Six distinct floating watercolor widget cards around it: blue snowflake/cloud; ochre coin stack with tiny bar chart; green route map with car; forest hiking boot/trail; coral airplane; amber tire with chains. Maya and Sam seen at bottom edge smiling at this clear arrangement. No passports, currency or visas for this domestic trip. Cream paper, fine loose ink, vivid but transparent watercolor. No readable words or numbers.",
+    "image": "frames/04.png"
+  },
+  {
+    "id": "05",
+    "title": "Book with a partner",
+    "duration": 5,
+    "medium": "Watercolor + product",
+    "narration": "Book with the partner. Keep the plan together.",
+    "dialogue": "Maya: Booked. | Sam: Now the fun part.",
+    "camera": "Partner handoff, then a confirmation returns to the shared trip.",
+    "scene": "Maya and Sam smiling over a phone, a flight card and a cabin card each on its own sheet beside an organized trip timeline. Two simple green confirmation checkmarks on papers, a small paper airplane doodle, tiny calendar strips of abstract shapes. Booking happens on a partner site, not a payment inside GitAway; no credit cards, no checkout or payment UI. No words. Warm cream paper and watercolor, tasteful roomy sketchbook composition.",
+    "image": "frames/05.png"
+  },
+  {
+    "id": "06",
+    "title": "The page gains depth",
+    "duration": 4,
+    "medium": "3D transition target",
+    "narration": "And then… step inside.",
+    "dialogue": "",
+    "camera": "Camera lowers from overhead to grazing the page; contours lift into actual terrain.",
+    "scene": "A cinematic transition KEYFRAME for a future real 3D shot. A cream sketchbook lies on a table viewed from a very low oblique angle. Its ink map of Lake Tahoe is rising from the paper into sculpted mountain ridges and a deep luminous blue lake basin; fine ink contour lines remain at the foreground page edge, snowy pines gain depth farther away. Camera is about to pass the page edge into the landscape. Physically dimensional, believable terrain and atmospheric depth, art-directed with watercolor colors and ink accents. NOT an isometric toy island. No people or text.",
+    "image": "frames/06.png"
+  },
+  {
+    "id": "07",
+    "title": "Fly into Tahoe",
+    "duration": 6,
+    "medium": "3D flythrough target",
+    "narration": "Then go.",
+    "dialogue": "",
+    "camera": "One unbroken glide over Emerald Bay; descend toward the south shore. Hold the view without UI.",
+    "scene": "Full-bleed cinematic eye-level aerial KEYFRAME for a future real-time 3D camera flythrough at Lake Tahoe in winter, looking over Emerald Bay and Fannette Island toward the surrounding snowy Sierra slopes. A nearby pine branch at left foreground, detailed granite ridges in middle distance, luminous cobalt-to-turquoise lake and distant mountains in haze. Strong foreground/middle/background parallax, convincing scale and sun-lit snow, calm wide lens. Warm editorial watercolor-pigment palette, delicate ink accents, but this is an immersive volumetric environment not a flat sketchbook photograph, no book border or UI. No people or text.",
+    "image": "frames/07.png"
+  },
+  {
+    "id": "08",
+    "title": "Arrive at human height",
+    "duration": 5,
+    "medium": "3D arrival target",
+    "narration": "A place you can almost feel.",
+    "dialogue": "",
+    "camera": "Pass between foreground pines; ease to eye height beside the cabin. Snow drifts across the lens.",
+    "scene": "Full-bleed immersive dimensional cinematic KEYFRAME at human eye height on a winter Lake Tahoe cabin deck. Foreground snow-covered fir branches framing view, warm cedar cabin and amber window glow on right, Sam in forest-green parka and charcoal beanie opening the door, Maya in rust puffer and cream beanie turning toward the turquoise lake through trees. Keep faces from cast reference. Wood grain, stone, breath of chimney smoke, soft sparse falling snow. Natural real scale, deep parallax layers. Watercolor-pigment colors and fine ink accents with convincingly volumetric lighting, not flat illustration or toy diorama. No text or UI.",
+    "image": "frames/08.png"
+  },
+  {
+    "id": "09",
+    "title": "The little moments",
+    "duration": 5,
+    "medium": "Watercolor",
+    "narration": "The moments are yours.",
+    "dialogue": "Maya: Faster, Sam!",
+    "camera": "A sled passes close; match-cut to the same two silhouettes at a sunset pier.",
+    "scene": "Joyful dynamic winter scene Maya and Sam on a small sled gliding gently down a safe snowy Tahoe hill: Maya in rust puffer cream beanie seated front laughing, Sam in green parka behind smiling, their limbs natural and clearly distinct. Snow spray arcs in foreground; blue lake and pines behind. A small softly edged secondary watercolor vignette on the far right shows the same couple standing on a wooden pier at sunset. Adult editorial ink and transparent watercolor on cream paper. No text.",
+    "image": "frames/09.png"
+  },
+  {
+    "id": "10",
+    "title": "Bring it home",
+    "duration": 4,
+    "medium": "Watercolor",
+    "narration": "Bring home more than photos.",
+    "dialogue": "Maya: Look at this one. | Sam: Best trip ever.",
+    "camera": "Match-cut the sunset photo to the phone back on the sofa.",
+    "scene": "Back at the original apartment sofa in warm daytime, Maya in mustard sweater and Sam in gray hoodie curled comfortably together, smiling over photos on a phone. Three printed photos on coffee table depict snowy cabin, sledding and sunset pier. Subtle blue watercolor wisp flows out of phone. Same faces as cast sheet, lively posture. Open cream sketchbook spread with warm ochre washes and airy white space.",
+    "image": "frames/10.png"
+  },
+  {
+    "id": "11",
+    "title": "Leave a trail",
+    "duration": 5,
+    "medium": "Watercolor + product",
+    "narration": "Share the plan. Choose what stays private.",
+    "dialogue": "Maya: Someone should have this. | Sam: Leave a trail.",
+    "camera": "Route stays crisp; personal details dissolve; the plan folds into a paper plane.",
+    "scene": "Maya and Sam in home clothes holding a phone, a large floating shared-trip card over it with a clear dotted route round a lake and small day rows made of shapes. Private name/avatar placeholders fade into soft watercolor smudges while the route remains legible. At right edge the card begins folding into a white paper airplane. Soft green and blue accents, warm cream sketchbook, tasteful loose ink and transparent watercolor. No readable writing, no actual faces on public card.",
+    "image": "frames/11.png"
+  },
+  {
+    "id": "12",
+    "title": "A trail crosses the world",
+    "duration": 4,
+    "medium": "Globe transition",
+    "narration": "A good trip can start another.",
+    "dialogue": "",
+    "camera": "Follow the paper plane; the globe rotates from the US west coast toward Portugal.",
+    "scene": "A white folded paper airplane flies from left to a large dimensional watercolor globe at right with Atlantic-facing view showing North America left and Europe including Portugal right. One ochre dotted arc begins on west coast of USA and curves over to Lisbon. Luminous turquoise oceans, sage and ochre continents, soft globe shadow, fine loose ink coastlines. Warm cream textured sketchbook spread, airy dynamic composition. No names, text, labels, people or geographic distortions.",
+    "image": "frames/12.png"
+  },
+  {
+    "id": "13",
+    "title": "A nudge in Lisbon",
+    "duration": 4,
+    "medium": "Watercolor",
+    "narration": "Half a world away…",
+    "dialogue": "Rosa: Tomás, look at this. | Tomás: A trail?",
+    "camera": "Globe lands on Lisbon; a quiet phone vibration answers the paper-plane sound.",
+    "scene": "Rosa and Tomas in their Lisbon living room at evening, Rosa terracotta cardigan cream blouse on a light sofa, Tomas navy cardigan collared shirt and round tortoiseshell glasses reading a newspaper of abstract ink lines. A phone on side table lights up with icon-only trail notification. Tall window with wrought iron balcony, terracotta rooftops beyond, azulejo tiles, pot of tea and books. Their faces and ages exactly match cast reference. Warm watercolor and loose fine ink on cream sketchbook.",
+    "image": "frames/13.png"
+  },
+  {
+    "id": "14",
+    "title": "Make it their summer",
+    "duration": 6,
+    "medium": "Watercolor + product",
+    "narration": "Follow the trail. Make it yours.",
+    "dialogue": "Rosa: Summer at the lake? | Tomás: This is perfect.",
+    "camera": "Winter trip changes to summer; contextual cards appear around their phone.",
+    "scene": "Close view Rosa and Tomas sitting together on sofa smiling over a phone, Rosa tapping. Around phone float five distinct icon-only watercolor widgets: blue passport/checklist, ochre two coins linked by exchange arrows, coral airplane with dotted route, warm yellow sun, turquoise lake map. A small snowy landscape thumbnail visibly transitions to summer turquoise lake thumbnail. No official visa approval stamp or guaranteed eligibility, only checklist icon. Keep characters' silver bob/white beard/glasses matching reference. Cream watercolor sketchbook, no readable text.",
+    "image": "frames/14.png"
+  },
+  {
+    "id": "15",
+    "title": "Couch to beach",
+    "duration": 5,
+    "medium": "Approved watercolor",
+    "narration": "Same trail. Their summer.",
+    "dialogue": "Rosa: Your shoes, Tomás! | Tomás: Cold! Perfect.",
+    "camera": "The room washes into Sand Harbor, keeping their eyeline continuous.",
+    "scene": "APPROVED_IMAGE",
+    "image": "frames/15.png"
+  },
+  {
+    "id": "16",
+    "title": "Summer, from inside it",
+    "duration": 6,
+    "medium": "3D summer target",
+    "narration": "The same place. A whole new feeling.",
+    "dialogue": "",
+    "camera": "Match the winter camera line, now glide low past Sand Harbor boulders; land at water height.",
+    "scene": "Full-bleed immersive cinematic KEYFRAME at water height in Sand Harbor Lake Tahoe in SUMMER. Transparent turquoise shallows with sun caustics in foreground; large smooth rounded granite boulders to either side create strong depth and parallax; sandy beach and tall pines behind. Rosa in coral sundress straw hat and Tomas light blue linen shirt rolled cream chinos panama hat glasses stand barefoot at right mid-distance holding hands and laughing. Match cast faces and proportions. Camera could glide between boulders then slow beside them. Real-scale volumetric environment with luminous watercolor-pigment palette and fine ink touches, clear summer light, no snow on near shore, no flat book border. No text or UI.",
+    "image": "frames/16.png"
+  },
+  {
+    "id": "17",
+    "title": "The world keeps sharing",
+    "duration": 5,
+    "medium": "Watercolor + globe",
+    "narration": "Every trail starts with someone.",
+    "dialogue": "Rosa: Obrigada.",
+    "camera": "Pull back from their lake to the globe; trails draw outward and continue beyond the frame.",
+    "scene": "Large luminous watercolor globe centered across cream sketchbook spread with many thin colored dotted travel arcs and tiny paper airplanes, land shapes sensible. Around edges small warm ink-watercolor vignettes: Maya and Sam in winter outfits, Rosa and Tomas in summer outfits, a family with two kids at beach, friends hiking, grandmother and grandchild exploring a city. Diverse ages and cultures, each natural and graceful. Generous empty cream paper at top; globe is joyful but not cluttered. No words, flags, labels or captions.",
+    "image": "frames/17.png"
+  },
+  {
+    "id": "18",
+    "title": "An invitation",
+    "duration": 4,
+    "medium": "Typography + globe",
+    "narration": "Take a trip. Leave a trail.",
+    "dialogue": "",
+    "camera": "The world settles; the tagline and one clear invitation remain.",
+    "scene": "REUSE_17",
+    "image": "frames/18.png"
+  }
+]

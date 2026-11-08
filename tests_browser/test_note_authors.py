@@ -38,7 +38,7 @@ def test_each_note_shows_who_wrote_it_on_both_screens(contexts, base_url):  # no
     sam.click("#join-signin")
     sam.fill("#si-email", sam_mail)
     sam.click("#si-dev-form button[type=submit]")
-    sam.wait_for_url("**/trip/canvas*")
+    sam.wait_for_url("**/trip/cockpit*")      # the trip's home (F-201)
 
     write_note(ari, base_url, "Ari remembers the sunscreen")
     write_note(sam, base_url, "Sam packs the snacks")

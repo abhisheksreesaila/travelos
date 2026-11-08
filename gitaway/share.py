@@ -124,13 +124,12 @@ def build(session, tags=(), theme="sunset"):
     t = cal.trip("", b)  # the booked trip's own dates and length (an imported trip's real ones too), not the sample's
     blocks, acts = cal.booked_blocks(b, t), cal.activities(session)
     last = (t.return_ - t.depart).days
-    days = []
+    days = []          # no weather on a shared trip, not even the sample's: a shared page has no dates, and a frozen forecast would go stale (F-203)
     for i, d in enumerate(cal.days(t)):
         items = sorted([*((x.start, 0, _stop(x, b, t)) for x in blocks if x.day == i), *((a.start, 1, _plan(a)) for a in acts if a.day == i)],
                        key=lambda r: r[:2])
         stops = [r[2] for r in items]
-        w = cal.weather_for(i)
-        days.append(Day(i + 1, f"DAY {i + 1}", _day_title(i, last, stops), f"{w.temp_f}°F, {w.sky}", stops, collapsed=i >= 3))
+        days.append(Day(i + 1, f"DAY {i + 1}", _day_title(i, last, stops), "", stops, collapsed=i >= 3))
     plans = sum(len(d.stops) for d in days)
     name = title_for(t)
     keys = [k for k in hub.TAGS if k in tags]
@@ -142,7 +141,7 @@ def build(session, tags=(), theme="sunset"):
         days=days, tags=[Tag(hub.TAGS[k][0], hub.TAGS[k][1], hub.TAGS[k][2], (-3, 2, -1.5)[n % 3]) for n, k in enumerate(keys)],
         stats=[(f"{len(days)} days", "from landing to flight home"), (f"{plans} plans", "bookings and things to do"), ("0", "families forked it")],
         polaroids=[Polaroid(PIER, "Santa Monica Pier and beach", "the pier"), Polaroid(VENICE, "Venice Beach, Los Angeles", "Venice")] if la else [],
-        author="a traveler", theme=theme if theme in ("sunset", "pacific") else "sunset",
+        author="a traveler", theme=theme if theme in ("sunset", "pacific") else "sunset", weather=(),     # no weather badge: a shared trip has no dates (F-203)
         **({} if la else {"route": place}),
     )
 

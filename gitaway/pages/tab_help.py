@@ -123,7 +123,7 @@ def content(request, session):
             cls="hp-sos-b"),
         cls="hp-sos", id="hp-sos")
     problem = Div("That number did not look right. Try something like +1 310 555 0100.", role="alert", cls="hp-problem", id="hp-problem") if request.query_params.get("problem") == "phone" else ""
-    back = A(icon("chev-left", 16, 2.6), "Back to the day", href="/trip", id="hp-back", cls="hp-back")
+    back = A(icon("chev-left", 16, 2.6), "Back to the day", href=passes_ui._today(session), id="hp-back", cls="hp-back")      # today's day view (F-201: a bare /trip is the cockpit now)
     return Div(back, problem, *cards, sos, passes_ui.section(request, session, can_edit), cls="hp")   # F-093: the morning plan and Face ID live on /family ("This phone")
 
 

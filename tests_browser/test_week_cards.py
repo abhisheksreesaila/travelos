@@ -8,20 +8,12 @@ from playwright.sync_api import expect
 
 from gitaway import catalog, tripcal as cal
 from tests.test_signin import person
-from tests_browser.helpers import PHONE
+from tests_browser.helpers import CARD, GRAPE_FILL, GRAPE_TINT, HAIRLINE, INK, INK_2, INK_3, MINT_FILL, MINT_TINT, PAPER_2, PHONE, SKY_FILL, SKY_TINT, SUN_FILL, SUN_TINT
 from tests_browser.test_day_dock import SAT_NOON
 from tests_browser.test_topbar import TABLET, signed_in  # noqa: F401 - fixture
 
 BOTH = pytest.mark.parametrize("viewport", [PHONE, TABLET], ids=["390", "800"])
-CARD = "rgb(255, 255, 255)"
-INK = "rgb(30, 26, 46)"
-INK_2 = "rgb(74, 68, 96)"
-PAPER_2 = "rgb(250, 247, 242)"
-HAIRLINE = "rgba(30, 26, 46, 0.1)"
-SUN, SUN_TINT = "rgb(255, 201, 60)", "rgb(255, 241, 194)"
-MINT, MINT_TINT = "rgb(72, 209, 160)", "rgb(212, 247, 234)"
-SKY, SKY_TINT = "rgb(90, 176, 255)", "rgb(221, 238, 255)"
-GRAPE, GRAPE_TINT = "rgb(195, 178, 255)", "rgb(236, 228, 255)"
+SUN, MINT, SKY, GRAPE = SUN_FILL, MINT_FILL, SKY_FILL, GRAPE_FILL      # F-200: a segment is its kind's solid fill (Direction A); the old pastel names are the kinds' tints
 LONG = "Extraordinary multicultural celebrations"
 
 
@@ -61,8 +53,9 @@ CARDS = """() => [...document.querySelectorAll('#cz-week .cz-row')].map(row => {
 
 
 def tap(page, loc):
-    """A finger on the middle of `loc`, wherever it lands (the card's link is stretched over the rows, so Playwright's own click, which refuses a covered element, would not be a tap)."""
-    loc.scroll_into_view_if_needed()
+    """A finger on the middle of `loc`, wherever it lands (the card's link is stretched over the rows, so Playwright's own click, which refuses a covered element, would not be a tap).
+    F-200: the tab bar floats across the bottom of the screen, so `loc` is brought to the middle of it first, where a finger taps."""
+    loc.evaluate("e => e.scrollIntoView({block: 'center'})")
     box = loc.bounding_box()
     page.mouse.click(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
 
@@ -97,7 +90,7 @@ def test_a_card_says_weekday_date_and_title_and_today_is_an_ink_pill(signed_in, 
     assert [c["headText"] for c in got] == ["Fri 16Fly in, check in", "Sat 17" + LONG, "Sun 18Wide open", "Mon 19Wide open", "Tue 20Fly home"]
     head = page.locator("#cz-week .cz-row").first.locator(".cz-row-link")
     day = head.locator(".cz-wd-day")
-    assert day.evaluate("e => [getComputedStyle(e).fontFamily.split(',')[0].replaceAll(String.fromCharCode(34), ''), getComputedStyle(e).fontWeight, getComputedStyle(e).color]") == ["Bricolage Grotesque", "800", INK]
+    assert day.evaluate("e => [getComputedStyle(e).fontFamily.split(',')[0].replaceAll(String.fromCharCode(34), ''), getComputedStyle(e).fontWeight, getComputedStyle(e).color]") == ["Geist", "800", INK]      # F-200: Geist for everything
     assert head.locator(".cz-wd-head").evaluate("e => getComputedStyle(e).color") == INK_2
 
 
@@ -252,7 +245,7 @@ def test_the_week_heading_is_two_tone_like_the_day(signed_in, viewport):
     two = page.locator(".cz-view[data-level=week] .ga-h-two")
     expect(two).to_be_visible()
     assert two.inner_text() == "Five days in LA."
-    assert two.evaluate("e => getComputedStyle(e).color") == "rgb(90, 84, 112)"
+    assert two.evaluate("e => getComputedStyle(e).color") == INK_3
     h1 = page.locator(".cz-view[data-level=week] .cz-head h1")
     assert h1.evaluate("e => getComputedStyle(e).color") == INK and h1.inner_text() == "The trip"
     a, b = h1.bounding_box(), two.bounding_box()

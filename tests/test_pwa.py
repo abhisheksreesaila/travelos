@@ -43,7 +43,7 @@ def test_apple_touch_icon_is_180():
 def test_every_page_carries_the_install_tags(client):
     from main import app
     paths = {r.path for r in app.routes if "GET" in (getattr(r, "methods", None) or ()) and "{" not in r.path}
-    paths -= {"/plan/explore", "/plan/quote", "/manifest.webmanifest", "/sw.js", "/healthz", "/auth/callback", "/trips/import/template", "/trip/family/thread", "/trip/talk/items", "/trip/family/list", "/trip/family/panel"}  # the template is a file download and the thread poll is an HTML fragment, not pages
+    paths -= {"/plan/explore", "/plan/quote", "/manifest.webmanifest", "/sw.js", "/healthz", "/badge/plan-this-trip.svg", "/badge/plan-this-trip-dark.svg", "/auth/callback", "/trips/import/template", "/trip/family/thread", "/trip/talk/items", "/trip/family/list", "/trip/family/panel", "/trip/cockpit/map", "/robots.txt", "/sitemap.xml"}  # the template is a file download and the thread poll is an HTML fragment, robots.txt and the sitemap are files, not pages
     paths |= {"/trips/sun-tacos-and-tide-pools", "/trips/no-such-trip"}
     assert {"/", "/start", "/offline"} <= paths
     for path in sorted(paths):
@@ -77,8 +77,9 @@ def test_offline_page_is_a_gitaway_page(client):
 def test_theme_colour_follows_the_pages_ground(client):
     from fasthtml.common import to_xml
     from gitaway.layout import page
-    assert 'name="theme-color" content="#FFF8EE"' in client.get("/start").text
-    assert 'name="theme-color" content="#F4F9FF"' in to_xml(page("x", theme="pacific"))
+    html = client.get("/start").text      # F-200: Direction A's canvas, one colour per mode (both itinerary themes share it)
+    assert 'name="theme-color" content="#F2F2F5" media="(prefers-color-scheme: light)"' in html and 'name="theme-color" content="#000000" media="(prefers-color-scheme: dark)"' in html
+    assert 'name="theme-color" content="#F2F2F5"' in to_xml(page("x", theme="pacific"))
 
 
 def test_asset_links_carry_a_content_hash(client):

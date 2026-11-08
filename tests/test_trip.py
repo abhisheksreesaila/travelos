@@ -113,7 +113,7 @@ def fields(**kw):
 
 
 def test_a_good_trip_parses():
-    assert catalog.parse_trip("SFO", "la", "2026-10-16", "2026-10-20", "2", "4,7") == SAMPLE
+    assert catalog.parse_trip("", "la", "2026-10-16", "2026-10-20", "2", "4,7") == SAMPLE
 
 
 @pytest.mark.parametrize("kw,field,words", [
@@ -129,10 +129,11 @@ def test_a_good_trip_parses():
     (dict(adults="two"), "a", "adult"),
     (dict(kids="4,x"), "k", "age"),
     (dict(kids="4,18"), "k", "age"),
-    (dict(to="sd"), "to", "coming soon"),
-    (dict(to="hi"), "to", "coming soon"),
     (dict(to="mars"), "to", "where"),
-    (dict(origin="JFK"), "from", "sfo"),
+    (dict(origin="J1K"), "from", "three-letter"),
+    (dict(origin="JF"), "from", "three-letter"),
+    (dict(origin="JFKX"), "from", "three-letter"),
+    (dict(origin="<b>"), "from", "three-letter"),
 ])
 def test_bad_input_gives_a_friendly_message_on_the_field(kw, field, words):
     errs = fields(**kw)
@@ -168,3 +169,63 @@ def test_bad_url_params_fall_back_to_the_sample_trip():
     assert catalog.trip_from_url("2026-10-16", "2026-10-20", "0", "") == SAMPLE
     assert catalog.trip_from_url("2026-10-16", "2026-12-20", "2", "") == SAMPLE
     assert catalog.trip_from_url("2026-10-16", None, "2", "") == SAMPLE
+
+
+# ---- F-195: the reader's own airport, the party as an airline counts it, a Disneyland trip ---------------------------
+
+def test_any_home_airport_is_accepted_and_names_the_trip():
+    t = catalog.parse_trip(" jfk ", "la", "2026-10-16", "2026-10-20", "2", "4,7")
+    assert (t.home, t.origin, t.origin_name) == ("JFK", "JFK", "JFK")
+    sfo = catalog.parse_trip("SFO", "la", "2026-10-16", "2026-10-20", "2", "4,7")
+    assert (sfo.home, sfo.origin, sfo.origin_name) == ("SFO", "SFO", "San Francisco")
+
+
+def test_no_home_airport_means_the_reader_has_not_said():
+    t = catalog.parse_trip("", "la", "2026-10-16", "2026-10-20", "2", "4,7")
+    assert t.home == "" and t.origin == "SFO"      # the sample catalog still flies from SFO; the real link must not
+
+
+def test_the_home_airport_and_the_focus_travel_in_the_url():
+    from urllib.parse import parse_qs
+
+    t = catalog.parse_trip("jfk", "la", "2027-03-16", "2027-03-20", "2", "4,7", focus="disney")
+    q = catalog.trip_query(t)
+    assert q == "d=2027-03-16&r=2027-03-20&a=2&k=4,7&home=JFK&focus=disney"
+    p = {k: v[0] for k, v in parse_qs(q).items()}
+    assert catalog.trip_from_url(p["d"], p["r"], p["a"], p["k"], "la", p["home"], p["focus"]) == t
+    assert catalog.trip_query(catalog.parse_trip("", "la", "2027-03-16", "2027-03-20", "2", "")) == "d=2027-03-16&r=2027-03-20&a=2"
+
+
+def test_a_bad_home_or_focus_in_a_url_is_dropped_but_the_trip_stays():
+    t = catalog.trip_from_url("2027-03-16", "2027-03-20", "2", "", "la", "J1K", "tiki")
+    assert (t.home, t.focus, t.depart) == ("", "", date(2027, 3, 16))
+    assert catalog.trip_from_url("2027-03-16", "2027-03-20", "2", "", "hi", "", "disney").focus == ""     # Disneyland is only in the Los Angeles place
+
+
+def test_the_sample_trip_in_another_place_keeps_what_the_reader_said():
+    t = catalog.trip_from_url("", "", "", "", "la", "ord", "disney")
+    assert (t.home, t.focus, t.depart) == ("ORD", "disney", SAMPLE.depart)
+
+
+@pytest.mark.parametrize("adults,ages,expected", [
+    (2, (), (2, 0, 0)),
+    (2, (4, 7), (2, 2, 0)),
+    (2, (1,), (2, 0, 1)),
+    (2, (0, 3, 11), (2, 2, 1)),
+    (2, (12, 17), (4, 0, 0)),              # Aviasales: adults are 12 and over, children 2 to 11, infants under 2
+    (1, (0, 1), (1, 1, 1)),                # one lap infant per adult; the second is booked as a child with a seat
+])
+def test_the_party_is_split_the_way_aviasales_counts_it(adults, ages, expected):
+    t = catalog.TripSearch("SFO", "San Francisco", "Los Angeles", ("LAX",), date(2027, 3, 16), date(2027, 3, 20), adults, ages)
+    assert t.passengers == expected
+    assert sum(t.passengers) == t.travelers
+
+
+def test_an_imported_trip_keeps_its_name_and_zone_whatever_fields_the_search_has():
+    """TripSearch gained fields (home, focus) after the party, and ImportedTrip adds its own after them: built by position, the title and the time zone landed in the wrong fields."""
+    from datetime import datetime
+    from gitaway import tripimport as ti
+    plan = ti.Plan("Spring in Lisbon", "Lisbon", date(2027, 4, 2), date(2027, 4, 6), "Airline", "", (ti.Traveler("Ana"), ti.Traveler("Rui")),
+                   (ti.Leg("TAP", "TP 1", "SFO", "LIS", datetime(2027, 4, 2, 9), datetime(2027, 4, 3, 5), "ABC"), ti.Leg("TAP", "TP 2", "LIS", "SFO", datetime(2027, 4, 6, 9), datetime(2027, 4, 6, 15), "ABC")), (), None)
+    t = ti.trip_search(plan)
+    assert (t.title, t.home, t.focus, t.tz) == ("Spring in Lisbon", "", "", plan.timezone) and t.tz != ""

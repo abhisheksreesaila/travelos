@@ -1,4 +1,4 @@
-"""Landing page (F-060, Landing v2): one clear door.
+"""Landing page (F-060, Landing v2): one clear door. Since F-206 this is what a signed-in person sees at /; a signed-out visitor gets the cover story (cover.py).
 
 Plan a trip leads; forking is one quiet line that scrolls to Community trips. Then the four features (each tile animates on hover and
 focus), the shared calendar that plays itself, three community trips, and the creators panel. Design: docs/design/landing-v2.md.
@@ -13,15 +13,15 @@ from gitaway import hub, itineraries, session, showcase
 from gitaway.catalog import SAMPLE_TRIP
 from gitaway.icons import icon
 from gitaway.layout import page
-from gitaway.pages import home_art
+from gitaway.pages import cover, home_art
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/landing.css"), Script(src="/assets/js/landing.js", defer=True))
 
 FEATURES = [
     ("a-panes", home_art.PANES, "Everything side by side",
      "Flights, stays and cars next to weather, news, events and a map. No more twelve tabs."),
-    ("a-total", home_art.TOTAL, "One honest total",
-     "A running cost ledger shows what the whole trip costs, and how far you are from the cheapest combo."),
+    ("a-total", home_art.TOTAL, "Every part in one place",
+     "Flights, a stay, a car and tickets for your dates, each one tap from the partner's own site. (The picture is an example.)"),
     ("a-together", home_art.TOGETHER, "Plan it together",
      "Invite family and friends to a shared calendar with notes, so everyone knows the plan."),
     ("a-fork", home_art.FORK, "Fork, don’t start over",
@@ -69,7 +69,7 @@ def _plan_panel():
         Span(cls="blob", aria_hidden="true"),
         Div(
             H2(NotStr("We’re going.<br>Let’s book it."), id="plan-h"),
-            P("Flights, stays, cars and the weather side by side, with one running total.", cls="promise"),
+            P("Flights, stays, cars and the weather side by side, each one tap from where you book it.", cls="promise"),
         ),
         Form(
             *([_field(*f) for f in _search_values()] if showcase.on() else [_field(*f, neutral=True) for f in NEUTRAL]),
@@ -203,7 +203,7 @@ def _creators():
                   "and make someone’s first time there a little easier."),
                 P("“The world is a book, and those who do not travel read only one page.”",
                   NotStr("<cite>Attributed to Saint Augustine</cite>"), cls="quote"),
-                A("Share a trip you loved →", href="/creators", cls="btn-sun"),
+                A("Share a trip you loved →", href="/for-creators", cls="btn-sun"),
                 cls="left",
             ),
             Div(
@@ -218,9 +218,15 @@ def _creators():
     )
 
 
+def _plan_for_me():
+    """The signed-out landing's card for Plan it for me (F-193); () when it is not for sale here."""
+    from gitaway.itinerary_view import plan_for_me_card
+    return (plan_for_me_card("Rather not plan it yourself?", "/plan-for-me", "pf-card ga-wrap pf-landing"),) if not session.request_traveler() else ()
+
+
 def footer_links():
     """The links that left the landing's header. Sign in only while signed out."""
-    links = [("Community trips", "/community"), ("For creators", "/creators")] if showcase.on() else []
+    links = ([("Community trips", "/community")] if showcase.on() else []) + [("For creators", "/for-creators")]
     return links if session.request_traveler() else [*links, ("Sign in", session.signin_href())]
 
 
@@ -235,13 +241,17 @@ def _drive():
 
 def register(app):
     @app.get("/")
-    def home():
+    def home(htmlkw):
+        if not session.request_traveler():      # F-206: a stranger gets the cover story (gitaway/pages/cover.py); a signed-in person keeps this landing
+            htmlkw["cls"] = "cv-root"
+            return cover.page(footer_links(), _drive())
         return page(
             "",
             _hero(),
             Div(_plan_panel(), _fork_line() if showcase.on() else "", cls="ga-wrap"),
             _features(),
+            *_plan_for_me(),
             _calendar(),
             *([_community(), _creators()] if showcase.on() else []),
-            head=(*HEAD, *_drive()), nav=False, footer_links=footer_links(),
+            head=(*HEAD, Link(rel="stylesheet", href="/assets/css/planforme.css"), *_drive()), nav=False, footer_links=footer_links(),
         )

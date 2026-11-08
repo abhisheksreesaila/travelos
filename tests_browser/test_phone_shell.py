@@ -15,7 +15,7 @@ from tests_browser.test_phone_polish import OVERFLOW, SMALL_CONTROLS, SMALL_TEXT
 
 LAPTOP = {"width": 1280, "height": 800}
 NARROW = {"width": 320, "height": 640}
-TABS = [("today", "Today", "/trip"), ("ask", "Ask", "/trip/ask"), ("family", "Family", "/trip/family")]   # F-093: Help left the bar
+TABS = [("trip", "Trip", "/trip"), ("plan", "Plan", "/trip/today"), ("ask", "Ask", "/trip/ask"), ("book", "Book", "/trip/book"), ("family", "Family", "/trip/family")]   # F-200: five tabs (F-093: Help left the bar)
 
 
 @pytest.fixture
@@ -68,16 +68,24 @@ def test_every_tab_is_pressed_and_lands_in_the_shell(shell, base_url):
             page.keyboard.press("Escape")
             expect(page.locator("#ak-sheet")).to_have_count(0)
             page.goto(base_url + path)
+        elif key == "book":     # F-200: Book this trip is its own page (F-198's lanes), outside the shell: it lands there and the way back is the browser's
+            page.locator("#ph-tab-book").click()
+            page.wait_for_url(re.compile(r"/plan\?"))      # F-198: /trip/book sends the family on to the lanes for their open trip
+            page.go_back()
+            expect(bar).to_be_visible()
+            continue
         else:
             page.locator(f"#ph-tab-{key}").click()
-        page.wait_for_url(re.compile(r"/trip/canvas\?day=") if key == "today" else re.compile(re.escape(path)))    # F-092: Today is the day view
+        page.wait_for_url(re.compile(r"/trip/canvas\?day=") if key == "plan" else re.compile(r"/trip/cockpit") if key == "trip" else re.compile(re.escape(path)))    # Plan is the day view (F-200); Trip the trip's home, the cockpit (F-201)
         expect(page.locator(f"#ph-tab-{key}")).to_have_attribute("aria-current", "page")
         expect(bar).to_be_visible()
-        assert bar.locator("a").count() == 3
+        assert bar.locator("a").count() == 5
         box = bar.bounding_box()
         assert box["y"] + box["height"] <= PHONE["height"] + 0.5 and box["x"] >= 0 and box["x"] + box["width"] <= PHONE["width"] + 0.5
-        if key == "today":
+        if key == "plan":
             expect(page.locator(".cz-view[data-level=day]")).to_be_visible()
+        elif key == "trip":
+            expect(page.locator("#ck-week")).to_be_visible()
         elif key == "map":
             expect(page.locator("#tp-title-h")).to_have_text("Map")
             expect(page.locator("#mp-daychip")).to_be_visible()  # the real map (F-068), not a "coming" card
@@ -92,12 +100,12 @@ def test_every_tab_is_pressed_and_lands_in_the_shell(shell, base_url):
         checks(page)
 
 
-def test_ask_is_the_coral_button_in_the_capsule_on_the_right(shell, base_url):
+def test_ask_is_the_ink_button_in_the_middle_of_the_bar(shell, base_url):      # F-200: it was the coral button in a capsule on the right (F-133)
     page = shell()
     page.goto(base_url + "/trip?tab=today")
     ask = page.locator("#ph-tab-ask .ph-ti").bounding_box()
-    today = page.locator("#ph-tab-today").bounding_box()
-    assert ask["x"] > today["x"] + today["width"] and ask["height"] >= 43.5
+    plan, book = page.locator("#ph-tab-plan").bounding_box(), page.locator("#ph-tab-book").bounding_box()
+    assert plan["x"] + plan["width"] <= ask["x"] and ask["x"] + ask["width"] <= book["x"] and ask["height"] >= 47.5
     assert page.evaluate("getComputedStyle(document.querySelector('#ph-tab-ask .ph-ti')).backgroundColor") != "rgba(0, 0, 0, 0)"
 
 
@@ -172,7 +180,7 @@ def test_the_laptop_keeps_its_layout(shell, base_url):
     expect(page.locator(".ph-tabs")).to_be_hidden()
     expect(page.locator("#mp-daychip")).to_be_visible()
     page.locator(".ph-back").click()
-    page.wait_for_url(re.compile(r"/trip/canvas\?day="))      # F-092: Back to Today is the day view
+    page.wait_for_url(re.compile(r"/trip/cockpit"))      # F-201: Back to Today is the trip's home
     assert page.evaluate(OVERFLOW) == 0
 
 

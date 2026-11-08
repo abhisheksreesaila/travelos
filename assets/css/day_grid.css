@@ -29,14 +29,14 @@
 
 /* bookings: quiet lines behind the plans (F-090, F-093). A line a plan overlaps is a slim pill instead (F-106, below), so no booking is ever hidden under a block. */
 .cz .cz-gbk { position: absolute; z-index: 1; left: 0; right: 0; top: calc(var(--s) * var(--mm)); display: block; min-height: 2.75rem; padding: 0 0.5rem; border-radius: 0.875rem;
-  background: color-mix(in srgb, var(--paper-2) 82%, transparent); border: 0.0625rem dashed rgba(30, 26, 46, .2); color: var(--ink-3); font-size: var(--cz-small); }
+  background: color-mix(in srgb, var(--paper-2) 82%, transparent); border: 0.0625rem dashed color-mix(in srgb, var(--ink) 20%, transparent); color: var(--ink-3); font-size: var(--cz-small); }
 .cz .cz-gbk-in { display: flex; align-items: center; gap: 0.5rem; min-height: 2.625rem; min-width: 0; transform-origin: 0 50%; }
 .cz .cz-gbk .cz-bk-time { flex-shrink: 0; }
 .cz .cz-gbk .cz-bk-t { min-width: 0; flex: 1; font-size: var(--cz-small); }
 .cz .cz-gbk .cz-bk-tag { flex-shrink: 0; }
 
 /* a plan: a block whose place and height are its time */
-.cz .cz-gb { --tint: var(--bubble-tint); --accent: var(--bubble); position: absolute; z-index: 2; top: calc(var(--s) * var(--mm)); height: calc(var(--l) * var(--mm));
+.cz .cz-gb { --tint: var(--bubble-tint); --accent: var(--k-food); position: absolute; z-index: 2; top: calc(var(--s) * var(--mm)); height: calc(var(--l) * var(--mm));
   left: calc(var(--bkw, 0rem) + (100% - var(--bkw, 0rem)) * var(--lane) / var(--lanes)); width: calc((100% - var(--bkw, 0rem)) / var(--lanes) - 0.25rem);
   border-radius: 0.875rem; background: var(--tint); color: var(--ink); overflow: clip; contain: layout paint; box-shadow: inset 0.25rem 0 0 var(--accent), var(--shadow-sm); text-decoration: none;
   touch-action: pan-y pinch-zoom; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; cursor: default; transition: box-shadow var(--motion-quick) ease, opacity var(--motion-quick) ease, scale var(--motion-quick) var(--cz-ease); }
@@ -46,10 +46,10 @@
 .cz .cz-gb.is-short:focus-within, .cz .cz-gb.is-short.is-menu, .cz .cz-gb.is-short.is-held { height: auto; overflow: visible; contain: layout style; z-index: 6; }      /* held, focused or with its menu, a short block shows all of itself (the calendar-block exception) */
 .cz .cz-gb.is-short:focus-within .cz-gb-in, .cz .cz-gb.is-short.is-menu .cz-gb-in, .cz .cz-gb.is-short.is-held .cz-gb-in { -webkit-mask-image: none; mask-image: none; }
 .cz .cz-gb:focus-visible, .cz .cz-gb:has(.cz-gb-menubtn:focus-visible), .cz .cz-gb:has(.cz-gb-open:focus-visible) { outline: 0.1875rem solid var(--ink); outline-offset: 0.125rem; }      /* the keyboard sees which block it is on */
-.cz .cz-k-food { --tint: var(--sun-tint); --accent: var(--sun); }
-.cz .cz-k-outdoors { --tint: var(--mint-tint); --accent: var(--mint); }
-.cz .cz-k-culture { --tint: var(--grape-tint); --accent: var(--grape); }
-.cz .cz-k-travel { --tint: var(--sky-tint); --accent: var(--sky); }
+.cz .cz-k-food { --tint: var(--sun-tint); --accent: var(--k-ride); }
+.cz .cz-k-outdoors { --tint: var(--mint-tint); --accent: var(--k-see); }
+.cz .cz-k-culture { --tint: var(--grape-tint); --accent: var(--k-stay); }
+.cz .cz-k-travel { --tint: var(--sky-tint); --accent: var(--k-flight); }
 .cz .cz-gb-in { position: relative; display: flex; flex-direction: column; gap: 0.0625rem; padding: 0.5rem 0.5rem 0.25rem 0.75rem; min-width: 0; }      /* the top padding leaves room for the top knob (F-110) */
 .cz .cz-gb.is-park .cz-gb-in { padding-top: 0.5rem; }
 /* F-110: the block fills its own height (so the head has room to travel) and its title and time are one sticky head: on a block taller than the screen they stay at the top of what is
@@ -62,7 +62,7 @@
 .cz .cz-gb.is-short .cz-gb-in { flex-direction: row; flex-wrap: wrap; gap: 0 0.5rem; align-items: baseline; padding-top: 0.0625rem; padding-bottom: 0; }
 .cz .cz-gb.is-short .cz-gb-t { line-height: 1.1; }
 .cz .cz-gb-parts { display: flex; flex-wrap: wrap; gap: 0.1875rem 0.25rem; margin-top: 0.125rem; }
-.cz .cz-gb-part { padding: 0 0.4375rem; border-radius: var(--r-pill); background: rgba(255, 255, 255, .72); font-size: var(--cz-small); font-weight: 700; line-height: 1.35; color: var(--ink-2); }
+.cz .cz-gb-part { padding: 0 0.4375rem; border-radius: var(--r-pill); background: color-mix(in srgb, var(--card) 72%, transparent); font-size: var(--cz-small); font-weight: 700; line-height: 1.35; color: var(--ink-2); }
 .cz .cz-gb-chat { position: absolute; z-index: 2; top: 0.25rem; right: 0.375rem; display: inline-flex; align-items: center; gap: 0.1875rem; font-size: var(--cz-small); font-weight: 800; color: var(--ink-2); }
 .cz .cz-gb.has-chat .cz-gb-t { padding-right: 2.75rem; }
 /* F-106: a block carries one line of its note, in the sticky's hand, which fades out at its end instead of being cut; the whole note is in the card a tap opens. */
@@ -75,7 +75,7 @@
 .cz .cz-gb.is-tight .cz-gb-note { margin-top: 0; align-self: center; }
 /* F-106: a booking under a plan: a slim pill at the left edge, in the lane the plan leaves free (the plan is .is-inset). Time on top, the icon beside it, the short name under. */
 .cz .cz-gb.is-inset { --bkw: 6rem; }
-.cz .cz-gbk.is-pill { right: auto; width: 5.75rem; z-index: 3; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 0.0625rem; text-align: left; min-height: 2.75rem; padding: 0.25rem 0.4375rem; border-radius: 0.875rem; text-decoration: none; contain: layout style; }
+.cz .cz-gbk.is-pill { right: auto; width: 5.75rem; z-index: 3; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 0.0625rem; text-align: left; min-height: var(--target); padding: 0.25rem 0.4375rem; border-radius: 0.875rem; text-decoration: none; contain: layout style; }
 .cz .cz-gbk.is-pill .cz-bk-row { display: flex; align-items: center; justify-content: space-between; gap: 0.25rem; min-width: 0; color: var(--ink-3); }
 .cz .cz-gbk.is-pill .cz-bk-time { font-size: var(--cz-small); line-height: 1.15; font-weight: 800; white-space: nowrap; color: var(--ink-2); }
 .cz .cz-gbk.is-pill .cz-bk-row svg { flex-shrink: 0; width: 0.875rem; height: 0.875rem; }
@@ -86,8 +86,8 @@
 .cz .cz-gb.is-hit { box-shadow: inset 0.25rem 0 0 var(--accent), 0 0 0 0.1875rem var(--coral); }
 
 /* now */
-.cz .cz-nowline { position: absolute; z-index: 5; left: -0.375rem; right: 0; top: calc(var(--s) * var(--mm)); height: 0.125rem; margin-top: -0.0625rem; border-radius: var(--r-pill); background: var(--coral); pointer-events: none; transform-origin: 0 50%; transform: scaleY(calc(1 / var(--zk))); }
-.cz .cz-now-dot { position: absolute; left: 0; top: 50%; width: 0.625rem; height: 0.625rem; margin-top: -0.3125rem; border-radius: var(--r-pill); background: var(--coral); }
+.cz .cz-nowline { position: absolute; z-index: 5; left: -0.375rem; right: 0; top: calc(var(--s) * var(--mm)); height: 0.125rem; margin-top: -0.0625rem; border-radius: var(--r-pill); background: var(--coral); pointer-events: none; transform-origin: 0 50%; transform: scaleY(calc(1 / var(--zk))); color: var(--on-accent); }
+.cz .cz-now-dot { position: absolute; left: 0; top: 50%; width: 0.625rem; height: 0.625rem; margin-top: -0.3125rem; border-radius: var(--r-pill); background: var(--coral); color: var(--on-accent); }
 
 /* held: a block lifted off the grid follows the finger; a dashed ghost shows the 15-minute slot it will land in */
 .cz .cz-gb.is-held { z-index: 7; scale: 1.03; box-shadow: inset 0.25rem 0 0 var(--accent), var(--shadow-lg), 0 0 0 0.125rem var(--ink); transition: box-shadow var(--motion-quick) ease, scale var(--motion-quick) var(--cz-ease); }
@@ -96,15 +96,15 @@
 .cz .cz-gb.is-landing { transition: box-shadow var(--motion-quick) ease, opacity var(--motion-quick) ease; }      /* F-112: GA.motion.land moves it (one spring, a transform); its lift (the scale) is folded into that move */
 /* F-161: a plan in the air leaves a faint dashed ghost at its old slot (the plan's own box); inside it the dashed landing slot (.cz-g-land) travels to where the plan will drop, snapped to 15 minutes. Cards are
    above both, so a slot is never drawn over a plan or a "+N more" card. The rail's start time for the plan is drawn again in coral at the snapped time (.is-live) while the old one is dimmed (.is-was). */
-.cz .cz-g-ghost { position: absolute; z-index: 1; left: 0; top: 0; border-radius: var(--r-sm, 0.875rem); border: 0.125rem dashed var(--hairline-2); background: rgba(255, 255, 255, .45); pointer-events: none; }
+.cz .cz-g-ghost { position: absolute; z-index: 1; left: 0; top: 0; border-radius: var(--r-sm, 0.875rem); border: 0.125rem dashed var(--hairline-2); background: color-mix(in srgb, var(--card) 45%, transparent); pointer-events: none; }
 .cz .cz-g-land { position: absolute; inset: calc(-0.125rem - var(--halo, 1rem)); border-radius: inherit; border: 0.125rem dashed var(--ink-2); background: var(--paper-2); will-change: transform; }
 .cz .cz-grid .cz-g-zoom .cz-g-start.is-live { z-index: 5; color: var(--coral-deep); }
 .cz .cz-grid .cz-g-zoom .cz-g-start.is-live .cz-g-st-m { color: var(--coral-deep); }
-.cz .cz-grid .cz-g-zoom .cz-g-start.is-live .cz-g-st-dot { background: var(--coral); }
+.cz .cz-grid .cz-g-zoom .cz-g-start.is-live .cz-g-st-dot { background: var(--coral); color: var(--on-accent); }
 .cz .cz-grid .cz-g-start.is-was { opacity: 0.45; }
 .cz .cz-grid .cz-g-start.is-was .cz-g-st-t { text-decoration: line-through; }
 .cz .cz-grid .cz-g-hour.is-under, .cz .cz-grid .cz-g-start.is-under { visibility: hidden; }
-.cz .cz-g-dropnote { position: fixed; z-index: 75; left: 0; top: 0; padding: 0.25rem 0.75rem; border-radius: var(--r-pill); background: var(--ink); color: #FFFFFF; font-size: max(var(--tmin, 0.8125rem), 0.8125rem); font-weight: 700; line-height: 1.3; white-space: nowrap; pointer-events: none; }
+.cz .cz-g-dropnote { position: fixed; z-index: 75; left: 0; top: 0; padding: 0.25rem 0.75rem; border-radius: var(--r-pill); background: var(--ink); color: var(--on-ink); font-size: max(var(--tmin, 0.8125rem), 0.8125rem); font-weight: 700; line-height: 1.3; white-space: nowrap; pointer-events: none; }
 .cz .cz-grid.is-editing-time .cz-gb:not(.is-held):not(.is-resizing) { opacity: 0.72; }
 
 /* F-110: a held block stays selected after the hold: it keeps its lift and shows two small round knobs, as Apple Calendar does while an event is being edited. The top one (at the top
@@ -114,7 +114,7 @@
 .cz .cz-gb.is-selected { z-index: 7; box-shadow: inset 0.25rem 0 0 var(--accent), var(--shadow-lg), 0 0 0 0.125rem var(--accent); }
 .cz .cz-gb.is-selected.is-short .cz-gb-in, .cz .cz-gb.is-selected.is-tight .cz-gb-in { padding-right: 2.5rem; }      /* a block with no room above its words keeps them clear of the top knob on the right */
 .cz .cz-gb.is-selected:not(.is-tall) { touch-action: none; }      /* a block taller than most of the screen keeps pan-y: a flick on it scrolls the day, only its knobs grab at once */
-.cz .cz-g-knobs { --accent: var(--bubble); position: absolute; z-index: 9; pointer-events: none; }
+.cz .cz-g-knobs { --accent: var(--k-food); position: absolute; z-index: 9; pointer-events: none; }
 .cz .cz-g-knobs.is-away { opacity: 0; transition: opacity var(--motion-quick) ease; }
 .cz .cz-gb.is-menu + .cz-g-knobs { scale: 1.02; }
 .cz .cz-gb.is-wiggle + .cz-g-knobs { animation: cz-wiggle var(--motion-wiggle) ease-in-out infinite alternate; transform-origin: 50% 50%; }
@@ -126,9 +126,9 @@
 .cz .cz-g-knob.is-on i::after { box-shadow: 0 0 0 0.25rem var(--ink), var(--shadow-lg); }
 
 /* the time under the finger */
-.cz .cz-g-label { position: fixed; z-index: 75; left: 0; top: 0; min-width: 11rem; display: flex; flex-direction: column; align-items: flex-start; padding: 0.375rem 0.875rem; border-radius: 1.25rem; background: var(--ink); color: #FFFFFF; font-weight: 800;
+.cz .cz-g-label { position: fixed; z-index: 75; left: 0; top: 0; min-width: 11rem; display: flex; flex-direction: column; align-items: flex-start; padding: 0.375rem 0.875rem; border-radius: 1.25rem; background: var(--ink); color: var(--on-ink); font-weight: 800;
   font-size: var(--cz-body); line-height: 1.15; font-variant-numeric: tabular-nums; box-shadow: var(--shadow-lg); pointer-events: none; will-change: transform; white-space: nowrap; }
-.cz .cz-g-label small { font-size: var(--cz-small); font-weight: 700; color: var(--sun); }
+.cz .cz-g-label small { font-size: var(--cz-small); font-weight: 700; color: var(--up-fg2); }
 
 @media (prefers-reduced-motion: reduce) {
   .cz .cz-gb, .cz .cz-gb.is-held, .cz .cz-gb.is-landing { transition: none; }
@@ -139,7 +139,7 @@
 .cz .cz-gb.is-wiggle { animation: cz-wiggle var(--motion-wiggle) ease-in-out infinite alternate; transform-origin: 50% 50%; }
 @keyframes cz-wiggle { from { rotate: -0.6deg; } to { rotate: 0.6deg; } }
 .cz .cz-gb.is-leaving { opacity: 0; scale: 0.96; transition: opacity var(--motion-quick) ease, scale var(--motion-quick) ease; pointer-events: none; }
-.cz .cz-menu { position: absolute; z-index: 60; display: flex; flex-direction: column; gap: 0.375rem; width: min(20rem, calc(100vw - 1rem)); padding: 0.625rem; border-radius: 1.5rem; background: var(--card); box-shadow: var(--shadow-lg), 0 0 0 1px rgba(30, 26, 46, .08);
+.cz .cz-menu { position: absolute; z-index: 60; display: flex; flex-direction: column; gap: 0.25rem; width: min(20rem, calc(100vw - 1rem)); padding: 0.5rem; border-radius: 1.5rem; background: var(--card); box-shadow: var(--shadow-lg), 0 0 0 1px rgb(var(--shadow-c) / .08);
   }
 @keyframes cz-pop { from { opacity: 0; scale: 0.94; } }
 .cz .cz-menu:focus { outline: none; }
@@ -147,31 +147,31 @@
 .cz .cz-menu-sub { margin: 0; padding: 0 0.375rem; font-size: var(--cz-small); color: var(--ink-2); line-height: 1.3; }
 .cz .cz-menu-main, .cz .cz-menu-ask { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.375rem; }
 .cz .cz-menu-ask { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.cz .cz-menu-nudge { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.375rem; padding-top: 0.5rem; border-top: 1px solid var(--line); }
-.cz .cz-mi { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.125rem; min-height: 3.25rem; padding: 0.375rem 0.25rem; border: 0; border-radius: 1.125rem; background: var(--paper-2); color: var(--ink); font-family: var(--font-body);
+.cz .cz-menu-nudge { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.25rem; padding-top: 0.375rem; border-top: 1px solid var(--line); }
+.cz .cz-mi { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.125rem; min-height: var(--target); padding: 0.375rem 0.25rem; border: 0; border-radius: 1.125rem; background: var(--paper-2); color: var(--ink); font-family: var(--font-body);
   font-weight: 800; font-size: var(--cz-small); line-height: 1.1; text-decoration: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-.cz .cz-menu-nudge .cz-mi { min-height: 2.75rem; background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
-.cz .cz-mi-fine { flex-direction: row; gap: 0.5rem; min-height: 2.75rem; background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
-.cz .cz-mi-fine.is-on { background: var(--ink); color: #FFFFFF; }
+.cz .cz-menu-nudge .cz-mi { min-height: var(--target); background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
+.cz .cz-mi-fine { flex-direction: row; gap: 0.5rem; min-height: var(--target); background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
+.cz .cz-mi-fine.is-on { background: var(--ink); color: var(--on-ink); }
 .cz .cz-mi:hover { background: var(--sun-tint); }
 .cz .cz-mi:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.0625rem; }
 .cz .cz-mi:disabled { opacity: 0.4; cursor: default; }
-.cz .cz-mi.is-danger { background: var(--coral); color: #FFFFFF; }
+.cz .cz-mi.is-danger { background: var(--coral); color: var(--on-ink); }
 .cz .cz-mi-ico { width: 1.25rem; height: 1.25rem; flex-shrink: 0; }
 .cz .cz-mi-t { min-width: 0; text-align: center; }
 .cz .cz-mi-chat { background: var(--bubble-tint); } .cz .cz-mi-delete { color: var(--coral-deep); }
 
 /* rename in place: the title becomes a field right there (16px so a phone does not zoom in to it) */
 .cz .cz-gb.is-editing { box-shadow: inset 0.25rem 0 0 var(--accent), var(--shadow-lg), 0 0 0 0.125rem var(--coral); z-index: 8; contain: layout style; overflow: visible; height: auto; min-height: calc(var(--l) * var(--mm)); scale: 1; }   /* a short block grows while its title is edited */
-.cz .cz-gb-edit { width: 100%; min-height: 2.75rem; margin: 0.125rem 0; padding: 0.25rem 0.5rem; border: 0.125rem solid var(--ink); border-radius: 0.75rem; background: #FFFFFF; color: var(--ink); font-family: var(--font-body); font-weight: 800; font-size: 1rem; line-height: 1.2; box-sizing: border-box; }
+.cz .cz-gb-edit { width: 100%; min-height: var(--target); margin: 0.125rem 0; padding: 0.25rem 0.5rem; border: 0.125rem solid var(--ink); border-radius: 0.75rem; background: var(--card); color: var(--ink); font-family: var(--font-body); font-weight: 800; font-size: 1rem; line-height: 1.2; box-sizing: border-box; }
 .cz .cz-gb-edit:focus { outline: none; border-color: var(--coral); }
 .cz .cz-gb-edit[aria-invalid="true"] { border-color: var(--coral-deep); }
 .cz .cz-gb-err { color: var(--coral-deep); font-weight: 800; font-size: var(--cz-small); line-height: 1.2; }
 .cz .cz-gb-err:empty { display: none; }
 /* a blank day for an editor: Talk / Paste are one small row above the grid, which is there to hold */
 .cz .cz-empty.cz-say-compact { flex-direction: row; gap: 0.5rem; padding: 0.5rem; border-radius: 1.125rem; }
-.cz .cz-say-compact .cz-say-go { flex: 1 1 0; min-width: 0; min-height: 2.75rem; }
-.cz .cz-gadd:focus-visible { position: static; width: auto; height: auto; margin: 0.25rem; padding: 0.5rem 0.875rem; clip: auto; clip-path: none; overflow: visible; white-space: normal; display: inline-flex; min-height: 2.75rem; align-items: center; border-radius: var(--r-pill); background: var(--ink); color: #FFFFFF; font-weight: 800; position: relative; z-index: 9; }
+.cz .cz-say-compact .cz-say-go { flex: 1 1 0; min-width: 0; min-height: var(--target); }
+.cz .cz-gadd:focus-visible { position: static; width: auto; height: auto; margin: 0.25rem; padding: 0.5rem 0.875rem; clip: auto; clip-path: none; overflow: visible; white-space: normal; display: inline-flex; min-height: var(--target); align-items: center; border-radius: var(--r-pill); background: var(--ink); color: var(--on-ink); font-weight: 800; position: relative; z-index: 9; }
 /* a new plan (F-101): hold empty time, or tap it and tap the "+". The block pops in, follows the finger, then its title field opens; the rest of the grid is calm meanwhile. */
 .cz .cz-gb.is-new { z-index: 8; box-shadow: inset 0.25rem 0 0 var(--accent), var(--shadow-lg), 0 0 0 0.125rem var(--coral); animation: cz-pop var(--motion-settle-dur) var(--motion-spring); }
 /* F-161: the draft on the colour timeline: a flat white card with a dashed coral edge (lifted, with the big shadow, only while a finger or the mouse still has it), its title field, then the kinds' chips,
@@ -190,8 +190,8 @@
 .cz .cz-gb-kinds .cz-k-culture { --ck: var(--grape-ink); }
 .cz .cz-gb-kinds .cz-k-travel { --ck: var(--sky-ink); }
 .cz .cz-grid.is-making .cz-gb:not(.is-new), .cz .cz-grid.is-making .cz-gbk { opacity: 0.55; pointer-events: none; transition: opacity var(--motion-quick) ease; }
-.cz .cz-gnew-ghost { position: absolute; z-index: 1; left: 0; right: 0; top: calc(var(--s) * var(--mm)); height: calc(var(--l) * var(--mm)); border-radius: 0.875rem; border: 0.125rem dashed var(--ink-3); background: rgba(255, 255, 255, .45); pointer-events: none; animation: cz-pop var(--motion-quick) var(--cz-ease); }
-.cz .cz-gnew { position: absolute; z-index: 9; top: calc(var(--s) * var(--mm) + var(--l, 60) * var(--mm) / 2 - 1.375rem); width: 2.75rem; height: 2.75rem; padding: 0; border: 0; border-radius: var(--r-pill); background: var(--ink); color: #FFFFFF; box-shadow: var(--shadow-lg); display: inline-flex; align-items: center; justify-content: center; touch-action: manipulation; cursor: pointer; animation: cz-pop var(--motion-quick) var(--cz-ease); }
+.cz .cz-gnew-ghost { position: absolute; z-index: 1; left: 0; right: 0; top: calc(var(--s) * var(--mm)); height: calc(var(--l) * var(--mm)); border-radius: 0.875rem; border: 0.125rem dashed var(--ink-3); background: color-mix(in srgb, var(--card) 45%, transparent); pointer-events: none; animation: cz-pop var(--motion-quick) var(--cz-ease); }
+.cz .cz-gnew { position: absolute; z-index: 9; top: calc(var(--s) * var(--mm) + var(--l, 60) * var(--mm) / 2 - 1.375rem); width: var(--target); height: var(--target); padding: 0; border: 0; border-radius: var(--r-pill); background: var(--ink); color: var(--on-ink); box-shadow: var(--shadow-lg); display: inline-flex; align-items: center; justify-content: center; touch-action: manipulation; cursor: pointer; animation: cz-pop var(--motion-quick) var(--cz-ease); }
 .cz .cz-gnew svg { width: 1.25rem; height: 1.25rem; }
 .cz .cz-gnew:focus-visible { outline: 0.1875rem solid var(--coral); outline-offset: 0.125rem; }
 @media (prefers-reduced-motion: reduce) {
@@ -210,23 +210,23 @@
 
 /* F-152: Change type and Move to day, a second step in the same menu. Large choices (3.5rem), the kinds in their colours, the trip's days as chips like the header's; the plan's
    current kind and day are marked. */
-.cz .cz-menu-more { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.375rem; }
+.cz .cz-menu-more { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.25rem; }      /* F-200: tighter gaps keep the menu beside a block on the smallest phone with 48px rows */
 .cz .cz-menu-step { display: flex; flex-direction: column; gap: 0.5rem; }
 .cz .cz-menu-kinds { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.375rem; }
 .cz .cz-menu-days { display: grid; grid-template-columns: repeat(auto-fill, minmax(4rem, 1fr)); gap: 0.375rem; max-height: 14rem; overflow-y: auto; overscroll-behavior: contain; }
-.cz .cz-kc { --tint: var(--bubble-tint); --accent: var(--bubble); background: var(--tint); }
-.cz .cz-kc.cz-k-food { --tint: var(--sun-tint); --accent: var(--sun); }
-.cz .cz-kc.cz-k-outdoors { --tint: var(--mint-tint); --accent: var(--mint); }
-.cz .cz-kc.cz-k-culture { --tint: var(--grape-tint); --accent: var(--grape); }
-.cz .cz-kc.cz-k-travel { --tint: var(--sky-tint); --accent: var(--sky); }
+.cz .cz-kc { --tint: var(--bubble-tint); --accent: var(--k-food); background: var(--tint); }
+.cz .cz-kc.cz-k-food { --tint: var(--sun-tint); --accent: var(--k-ride); }
+.cz .cz-kc.cz-k-outdoors { --tint: var(--mint-tint); --accent: var(--k-see); }
+.cz .cz-kc.cz-k-culture { --tint: var(--grape-tint); --accent: var(--k-stay); }
+.cz .cz-kc.cz-k-travel { --tint: var(--sky-tint); --accent: var(--k-flight); }
 .cz .cz-kc .cz-mi-ico { color: var(--ink); }
 .cz .cz-kc.is-here { box-shadow: inset 0 0 0 0.1875rem var(--ink); }
 .cz .cz-dc { min-height: 3.25rem; }
 .cz .cz-dc-dow { font-size: var(--cz-small); font-weight: 800; color: var(--ink-2); text-transform: uppercase; }
 .cz .cz-dc-num { font-size: var(--cz-body); font-weight: 800; line-height: 1; }
-.cz span.cz-dc.is-here { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.125rem; min-height: 3.5rem; border-radius: 1.125rem; background: var(--ink); color: #FFFFFF; }
-.cz span.cz-dc.is-here .cz-dc-dow { color: #FFFFFF; }
-.cz .cz-mi-back { flex-direction: row; gap: 0.5rem; min-height: 2.75rem; background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
-.cz .cz-menu-more .cz-mi { flex-direction: row; gap: 0.5rem; min-height: 2.75rem; }      /* one slim row, so the menu still fits beside a block on the smallest phone */
+.cz span.cz-dc.is-here { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.125rem; min-height: 3.5rem; border-radius: 1.125rem; background: var(--ink); color: var(--on-ink); }
+.cz span.cz-dc.is-here .cz-dc-dow { color: var(--on-ink); }
+.cz .cz-mi-back { flex-direction: row; gap: 0.5rem; min-height: var(--target); background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
+.cz .cz-menu-more .cz-mi { flex-direction: row; gap: 0.5rem; min-height: var(--target); }      /* one slim row, so the menu still fits beside a block on the smallest phone */
 .cz .cz-kc:hover { background: var(--tint); box-shadow: inset 0 0 0 0.125rem var(--accent); }      /* a hovered type keeps its own colour (the shared hover is Food's) */
 .cz .cz-kc.is-here:hover { box-shadow: inset 0 0 0 0.1875rem var(--ink); }

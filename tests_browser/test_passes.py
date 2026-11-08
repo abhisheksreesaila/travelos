@@ -137,7 +137,7 @@ def test_an_editor_adds_a_flight_and_passes_fixes_one_opens_it_full_screen_and_r
     expect(page.locator(".gp-slide").nth(1)).to_be_in_viewport(ratio=0.9)
     expect(page.locator("#gp-count")).to_contain_text("2 of 2")
     page.locator("#gp-close").click()
-    expect(page).to_have_url(re.compile(r"/trip/canvas\?day=\d"))      # F-092: Close lands on Today, which is the day view
+    expect(page).to_have_url(re.compile(r"/trip/canvas\?day=\d"))      # Close lands on today's day view, where the flight card is (F-092; F-201 kept it there)
     # remove a pass: two taps
     page.goto(re.sub(r"^(https?://[^/]+).*", r"\1/trip/help", page.url))
     last = page.locator(".pz-pass").nth(1)
@@ -189,7 +189,7 @@ def travel_day(trip, monkeypatch):
 
 def test_on_the_travel_day_the_flight_card_opens_the_gate_and_a_swipe_moves_to_the_next_person(travel_day):
     page = travel_day()
-    page.goto(page.url.replace("/trip/help", "/trip"))
+    page.goto(page.url.replace("/trip/help", "/calendar"))      # today's day view (F-201: a bare /trip is the cockpit now)
     card = page.locator("#tp-up.pz-up")
     expect(card).to_be_visible()
     expect(card).to_contain_text("BOARDING IN 42 MIN")
@@ -230,7 +230,7 @@ def test_on_the_travel_day_the_flight_card_opens_the_gate_and_a_swipe_moves_to_t
 
 def test_the_card_and_the_gate_fit_a_320_wide_phone(travel_day):
     page = travel_day(NARROW)
-    page.goto(page.url.replace("/trip/help", "/trip"))
+    page.goto(page.url.replace("/trip/help", "/calendar"))      # today's day view (F-201: a bare /trip is the cockpit now)
     expect(page.locator("#tp-up.pz-up")).to_be_visible()
     assert overflow(page) <= 0
     page.get_by_role("link", name="Show everyone's passes").click()
@@ -246,7 +246,7 @@ def test_todays_add_the_boarding_passes_link_lands_on_the_form_and_the_pdf_link_
     utc = datetime(2026, 10, 17, 19, 58, tzinfo=timezone.utc)
     monkeypatch.setattr(catalog, "now_utc", lambda: utc)
     monkeypatch.setattr(catalog, "today", lambda: utc.astimezone(catalog.TZ).date())
-    page.goto(page.url.replace("/trip/help", "/trip"))
+    page.goto(page.url.replace("/trip/help", "/calendar"))      # today's day view (F-201: a bare /trip is the cockpit now)
     page.get_by_role("link", name="Add the boarding passes").click()
     expect(page).to_have_url(re.compile(r"/trip/help#hp-passes$"))
     expect(page.locator("#hp-passes")).to_be_in_viewport()
@@ -255,7 +255,7 @@ def test_todays_add_the_boarding_passes_link_lands_on_the_form_and_the_pdf_link_
     monkeypatch.setattr(passes, "render_pdf", lambda data: None)
     add_pass(page, "Abhi", "21A", f["a.pdf"])
     expect(page.locator(".pz-pass")).to_have_count(1)
-    page.goto(page.url.replace("/trip/help", "/trip"))
+    page.goto(page.url.replace("/trip/help", "/calendar"))      # today's day view (F-201: a bare /trip is the cockpit now)
     page.get_by_role("link", name="Show everyone's passes").click()
     link = page.get_by_role("link", name="Open the PDF")
     expect(link).to_be_visible()

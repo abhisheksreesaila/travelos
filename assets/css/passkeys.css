@@ -10,7 +10,7 @@
 .pk-ico { width: 3rem; height: 3rem; border-radius: 0.875rem; background: var(--sky-tint); color: var(--ink); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .pk-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .pk-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-.pk-go, .pk-later { min-height: 2.75rem; }
+.pk-go, .pk-later { min-height: var(--target); }
 .pk-error { margin: 0; color: var(--coral-deep); font-weight: 800; font-size: max(var(--text-min), 0.875rem); }
 .pk-done { margin: 0; font-weight: 800; font-size: max(var(--text-min), 0.9375rem); }
 .pk-more { display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-start; }

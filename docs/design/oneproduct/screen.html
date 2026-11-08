@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GitAway · one product · artboard</title>
+<!-- One artboard at real size. Reuses the cockpit's tokens, chrome and parts (../cockpit/core/base.css, icons.js). -->
+<link rel="stylesheet" href="../cockpit/core/base.css"><link rel="stylesheet" href="op.css">
+<script>
+  // Book and Paste are the cockpit's approved Ticket line screens: hand those straight to it.
+  (function () {
+    const q = new URLSearchParams(location.search), s = q.get('s');
+    const map = { book: 'book', paste: 'paste' };
+    if (map[s]) location.replace(`../cockpit/3-ticket.html?bare=1&screen=${map[s]}&size=${q.get('size') || 'dk'}&mode=${q.get('mode') || 'light'}${q.get('phase') ? '&phase=' + q.get('phase') : ''}`);
+  })();
+</script>
+</head>
+<body>
+<script src="../cockpit/core/icons.js"></script><script src="op.js"></script>
+</body>
+</html>

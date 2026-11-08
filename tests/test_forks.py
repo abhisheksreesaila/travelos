@@ -223,21 +223,20 @@ def test_undo_takes_the_applied_plans_back_out(client):
     assert titles(client) == ["Mine"]
 
 
-def test_apply_is_refused_for_a_trip_not_in_the_list_and_without_a_booking(client):
+def test_apply_is_refused_for_a_trip_not_in_the_list(client):
     sign_in(client)
     r = apply(client, "d1s2")
     assert r.status_code == 409 and "not in your list" in r.text
-    fork(client)
-    r = apply(client, "d1s2")
-    assert r.status_code == 409 and "Book a trip first" in r.text
     assert not stored_calendar()["a"]
 
 
-def test_forks_list_without_a_booking_explains_and_does_not_preview(client):
+def test_forks_list_without_a_trip_previews_the_plans_and_says_applying_starts_one(client):
+    """F-196 reversed the old "Book a trip first": a family with no trip sees the fork's plans, and applying them makes the trip (tests/test_fork_lands.py)."""
     sign_in(client)
     fork(client)
+    assert "Applying it starts a trip for you" in client.get("/forks").text
     html = client.get(f"/forks?open={TRIP}").text
-    assert "Your calendar fills in once you have a trip" in html and "fk-check" not in html and 'href="/plan"' in html
+    assert "Applying this starts your trip" in html and "fk-check" in html and "Your calendar fills in once you have a trip" not in html
 
 
 def test_a_full_calendar_refuses_the_apply_and_changes_nothing(client, monkeypatch):

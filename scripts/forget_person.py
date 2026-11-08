@@ -7,6 +7,7 @@ would delete (a dry run). Tables that do not exist yet are skipped.
                 their families: their member row, push subscriptions, thread settings and their own boarding pass (F-083, a pass whose traveller is them: rows and files).
                 Messages and photos they added stay with the family.
 * --content     also the messages and photos they added in their families (and the photo files), and the boarding passes they added for anyone.
+* always        what they published or sent to the community (F-182): published trips, creator record, drafts and queued blog posts, affiliate marker, reports they sent, try and scan counts, and public/<slug>/ pictures.
 * --family      the whole family of each family they belong to: its database (and -wal/-shm), photos and passes folders, memberships, invites and its
                 rows in the host. Other members' sign-ins stay. Implies --content.
 """
@@ -34,6 +35,37 @@ def _family_file(folder: Path, db_url: str) -> Path:
     return folder / db_url.replace("sqlite:///", "", 1)
 
 
+def community_plan(folder: Path, uid, email):
+    """(rows, paths) for what the person put in the community database (community.db) and public/: published trips, their creator record and handle's click counts, drafts, affiliate
+    marker, the reports they sent (by id or by reply address), their try counts, fork counts of their slugs, and public/<slug>/ of every slug that was theirs.
+    A takedown stays: it is about the address, so the page can never come back."""
+    db = folder / "community.db"
+    if not db.exists():
+        return [], []
+    c = sqlite3.connect(db)
+    slugs = {r[0] for r in c.execute("SELECT slug FROM published WHERE owner_user = ?", (uid,))} if _has(c, "published") else set()
+    slugs |= {r[0] for r in c.execute("SELECT slug FROM creator_drafts WHERE owner_user = ?", (uid,))} if _has(c, "creator_drafts") else set()
+    handles = [r[0] for r in c.execute("SELECT handle FROM creators WHERE owner_user = ?", (uid,))] if _has(c, "creators") else []
+    c.close()
+    marks = ", ".join("?" for _ in slugs)
+    # Queued blog posts first (F-182): the worker re-drafts a queued job after a restart (draftjobs.reset_running), so the job goes before the drafts, in the same connection and commit.
+    rows = [("queued draft jobs", db, "creator_draft_jobs", "owner_user = ?", (uid,)),
+            ("published trips", db, "published", "owner_user = ?", (uid,)), ("creator record", db, "creators", "owner_user = ?", (uid,)),
+            ("creator drafts", db, "creator_drafts", "owner_user = ?", (uid,)), ("claim links they used", db, "creator_claims", "claimed_by = ?", (uid,)), ("affiliate marker", db, "creator_markers", "owner_user = ?", (uid,)),
+            ("reports they sent", db, "reports", "reporter = ? OR (email != '' AND lower(email) = lower(?))", (uid, email)),
+            ("daily try, picture and blog-scan counts", db, "creator_import_hits", "owner_user = ? OR owner_user = ? OR owner_user = ?", (uid, f"pic:{uid}", f"scan:{uid}")),
+            ("their own clicks on a creator's trip", db, "via_clicks", "who = ?", (f"u:{uid}",)),
+            ("Plan it for me Stripe event ids of their orders", db, "plan_order_events", "order_id IN (SELECT id FROM plan_orders WHERE owner_user = ? OR (email != '' AND lower(email) = lower(?)))", (uid, email)),      # F-193 (D-208): before the orders, which it reads
+            ("Plan it for me payment-page counts", db, "plan_checkouts", "owner_user = ?", (uid,)),
+            ("Plan it for me orders (the intake is personal; Stripe keeps the payment)", db, "plan_orders", "owner_user = ? OR (email != '' AND lower(email) = lower(?))", (uid, email))]
+    if slugs:
+        rows.append(("fork counts of their trips", db, "fork_counts", f"slug IN ({marks})", tuple(slugs)))
+        rows.append(("the captain's approval of their trips", db, "trip_review", f"slug IN ({marks})", tuple(slugs)))      # F-194
+    if handles:
+        rows.append(("clicks that came from their trips", db, "via_clicks", f"handle IN ({', '.join('?' for _ in handles)})", tuple(handles)))
+    return rows, [(f"public pictures of {slug}", folder / "public" / slug) for slug in sorted(slugs)]
+
+
 def plan(folder: Path, email: str, family=False, content=False):
     """The steps: [(label, file, table, where, params)] for rows, and [(label, path)] for files and folders. Reads only."""
     host = folder / "app_host.db"
@@ -48,6 +80,9 @@ def plan(folder: Path, email: str, family=False, content=False):
     families = h.execute("SELECT t.id, t.db_url FROM core_memberships m JOIN core_tenants t ON t.id = m.tenant_id WHERE m.user_id = ?", (uid,)).fetchall() \
         if _has(h, "core_memberships") and _has(h, "core_tenants") else []
     content = content or family
+    rows_c, paths_c = community_plan(folder, uid, email)       # F-182: what they published or reported, whichever mode (it is theirs, not the family's)
+    rows += rows_c
+    paths += paths_c
     for tid, db_url in families:
         fdb = _family_file(folder, db_url)
         if family:

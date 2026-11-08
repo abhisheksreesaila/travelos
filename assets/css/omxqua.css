@@ -1,0 +1,117 @@
+/* omxqua v0.1.6 on Direction A (F-200; earlier: Travel "Coast" with GitAway's orange, autopilot M5, D-50, D-60 to D-66). The design language is ~/Projects/omxqua (LANGUAGE.md,
+   src/tokens.css, src/components.css): Material texture (opaque tonal surfaces, state layers, one soft shadow scale; no glass, blur or gradients anywhere, the brief's rule) with
+   Liquid motion (springs only for small things under the finger). Used by /plan, /creators, /sandbox, /partners and the other Coast pages: gitaway/omxqua.py puts
+   `oq-root oq-light oq-family-travel` on <html> for those paths and links this file. The --oq-* names are the language's; since F-200 every value is a Direction A token from
+   tokens.css (canvas, cards, ink, the ink accent, the kinds' tints and inks, sh1-sh3), so these pages are light or dark with the rest of the site and the old sand and orange are gone.
+   Sizes are rem (the site scales off one root, F-030), the motion durations are the --motion-* tokens (tests/test_motion_tokens.py). Sections: tokens, type, chrome, buttons, press,
+   focus, chips, coloured icons. The logo is not here: it looks the same on every page (base.css). */
+
+/* ---------- tokens (src/tokens.css, in rem) ---------- */
+.oq-root {
+  --oq-font: "Geist", system-ui, sans-serif;
+  --oq-font-mono: "Geist Mono", ui-monospace, monospace;
+  --oq-radius-xs: 0.25rem; --oq-radius-in: 0.625rem; --oq-radius-card: 1rem; --oq-radius-menu: 0.875rem; --oq-radius-full: 62rem;
+  --oq-space-1: 0.25rem; --oq-space-2: 0.5rem; --oq-space-3: 0.75rem; --oq-space-4: 1rem; --oq-space-5: 1.5rem; --oq-space-6: 2rem; --oq-space-7: 3rem;
+  --oq-target: var(--target);
+  --oq-spring-fast: linear(0, 0.02, 0.071, 0.142, 0.226, 0.316, 0.407, 0.494, 0.577, 0.653, 0.72, 0.78, 0.831, 0.875, 0.911, 0.94, 0.964, 0.983, 0.997, 1.007, 1.014, 1.019, 1.021, 1.023, 1.023, 1.022, 1.02, 1.018, 1.017, 1.014, 1.012, 1.01, 1.009, 1.007, 1.006, 1.004, 1.003, 1.002, 1.002, 1.001, 1);
+  --oq-spring: linear(0, 0.023, 0.079, 0.154, 0.237, 0.322, 0.405, 0.482, 0.553, 0.617, 0.674, 0.723, 0.766, 0.803, 0.835, 0.862, 0.885, 0.905, 0.921, 0.935, 0.946, 0.955, 0.963, 0.97, 0.975, 0.98, 0.983, 0.986, 0.989, 0.991, 0.993, 0.994, 0.995, 0.996, 0.997, 0.997, 0.998, 0.998, 0.999, 0.999, 1);
+  --oq-spring-fast-dur: var(--motion-spring-dur);   /* phone: the squash and its spring back */
+  --oq-spring-dur: var(--motion-screen-dur);
+  --oq-gentle-in: var(--motion-dur); --oq-gentle-out: var(--motion-quick);
+  --oq-ease-in: var(--motion-ease); --oq-ease-out: var(--motion-out);
+  --oq-press-scale: 0.96;
+  -webkit-font-smoothing: antialiased;
+  font-family: var(--oq-font);
+  color: var(--oq-ink);
+  background: var(--oq-surface-0);
+}
+@media (pointer: fine) {  /* the laptop is calm: a short fade, no squash (AGENTS.md, F-156) */
+  .oq-root { --oq-spring-fast-dur: var(--motion-desk); --oq-spring-dur: var(--motion-desk); --oq-press-scale: 1; }
+}
+
+/* Direction A in omxqua's names: one set for light and dark, because every value is a tokens.css token that changes with the mode */
+.oq-family-travel {
+  --oq-surface-0: var(--paper); --oq-surface-1: var(--card); --oq-surface-2: var(--card-2); --oq-surface-3: var(--card-2);
+  --oq-ink: var(--ink); --oq-ink-2: var(--ink-2); --oq-ink-faint: var(--hairline-2); --oq-line: var(--line); --oq-line-2: var(--hairline); --oq-state: var(--state);
+  --oq-accent: var(--accent); --oq-on-accent: var(--on-accent); --oq-ok: var(--ok-ink); --oq-warn: var(--warn-ink); --oq-bad: var(--danger-ink); --oq-info: var(--k-flight-i);
+  /* a data colour is the kind's ink (8:1 or more on its tint, in both modes): sage = see and do, rose = food, blue = flight, green = car, violet = stay, a neutral */
+  --oq-data-1: var(--k-see-i); --oq-data-2: var(--k-food-i); --oq-data-3: var(--k-flight-i); --oq-data-4: var(--k-car-i); --oq-data-5: var(--k-stay-i); --oq-data-6: var(--ink-2);
+  --oq-shadow-1: var(--sh1); --oq-shadow-2: var(--sh2); --oq-shadow-3: var(--sh3);
+  --oq-icon-mix: 100%;   /* a coloured icon is its kind's ink, which already clears 8:1 on its tile */
+}
+.oq-family-travel { --oq-radius-card: var(--r-md); --oq-target: var(--target); --oq-text: var(--t-body); }
+
+/* Kinds carry colour, days never do (the family's rule). One name per kind, used by every Coast page. */
+.oq-family-travel {
+  --oq-k-flight: var(--oq-data-3); --oq-k-stay: var(--oq-data-5); --oq-k-car: var(--oq-data-4); --oq-k-food: var(--oq-data-2); --oq-k-see: var(--oq-data-1);
+  --oq-k-flight-tint: var(--k-flight-t); --oq-k-stay-tint: var(--k-stay-t); --oq-k-car-tint: var(--k-car-t); --oq-k-food-tint: var(--k-food-t); --oq-k-see-tint: var(--k-see-t);
+  --oq-tonal: var(--paper-2);    /* a quiet inset fill on a card */
+}
+
+.oq-family-travel body { font-family: var(--oq-font); font-size: var(--oq-text); color: var(--oq-ink); background: var(--oq-surface-0); }
+.oq-family-travel { accent-color: var(--oq-accent); }
+.oq-family-travel :is(.ga-page, .ws) { background: var(--oq-surface-0); }
+.oq-family-travel ::selection { background: color-mix(in srgb, var(--oq-accent) 22%, transparent); }
+
+/* money and times are Geist with tabular figures (Geist Mono's wide comma reads badly at size); ids, codes and status badges are Geist Mono */
+.oq-family-travel :is(.ws-price, .ws-price-big, .ws-total, .ws-times, .ws-leg-time, .ws-cb-price, .ws-slot-price, .ws-line-item, .ws-ride-price, .ws-ride-total, .ws-fare-price, .ws-room-price, .pt-price, .pt-v, .ws-temp, .ws-wday) {
+  font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.oq-family-travel :is(.pt-code) { font-family: var(--oq-font-mono); }
+.oq-family-travel :is(h1, h2, h3, h4) { text-wrap: balance; }   /* v0.1.6: headings balance their lines, prose avoids a lone last word */
+.oq-family-travel :is(p, .ws-total-note, .ws-slot-sub) { text-wrap: pretty; }
+.oq-family-travel :is(.ws-badge, .ws-pickpill, .pt-state, .ws-key) { font-variant-numeric: tabular-nums; }
+
+/* ---------- chrome: the header and the footer (the logo is base.css's, the same everywhere) ---------- */
+.oq-family-travel .ga-header { height: auto; min-height: 4.5rem; }
+.oq-family-travel .ga-footer { color: var(--oq-ink-2); font-size: max(var(--text-min), 0.8125rem); font-weight: 500; }
+.oq-family-travel .ga-footer-nav a, .oq-family-travel .ga-nav a { font-weight: 500; }
+.oq-family-travel .ga-avatar { box-shadow: var(--oq-shadow-1); border-color: var(--oq-surface-1); }
+
+/* ---------- buttons: pill = tappable. Filled = accent + shadow-1 (lifts to shadow-2 on hover); tonal = surface-2 + shadow-1; text = no fill ---------- */
+.oq-family-travel :is(.btn, .ws-book-on, .ws-undo, .ws-choose, .ws-skip, .ws-back, .ws-forklist, .ws-fork, .ws-ride-go, .cr-pill, .cr-update) {
+  --oq-bg: var(--oq-surface-2); --oq-fg: var(--oq-ink);
+  background: var(--oq-bg); color: var(--oq-fg); border: 0; border-radius: var(--oq-radius-full); box-shadow: var(--oq-shadow-1);
+  font-family: var(--oq-font); font-weight: 600; letter-spacing: -0.01em; text-decoration: none; cursor: pointer;
+  transition: transform var(--oq-spring-fast-dur) var(--oq-spring-fast), background-color var(--motion-desk), box-shadow var(--motion-desk);
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+}
+.oq-family-travel .btn { min-height: var(--oq-target); padding: 0 1.25rem; font-size: 1rem; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; }
+.oq-family-travel .btn-sm { min-height: var(--oq-target); padding: 0 1rem; font-size: max(var(--text-min), 0.9375rem); }
+.oq-family-travel :is(.btn-primary, .btn-ink, .ws-book, .ws-choose) { --oq-bg: var(--oq-accent); --oq-fg: var(--oq-on-accent); }
+.oq-family-travel :is(.btn:hover, .ws-book-on:hover, .ws-undo:hover, .ws-skip:hover, .ws-back:hover, .ws-fork:hover, .ws-forklist:hover, .ws-ride-go:hover) {
+  background: color-mix(in srgb, var(--oq-bg) 92%, rgb(var(--oq-state))); color: var(--oq-fg); transform: none; box-shadow: var(--oq-shadow-1); }
+.oq-family-travel :is(.btn-primary, .btn-ink, .ws-book, .ws-choose):hover { box-shadow: var(--oq-shadow-2); transform: translateY(-0.0625rem); }
+.oq-family-travel :is(.btn, .ws-book-on, .ws-undo, .ws-choose, .ws-skip, .ws-back, .ws-fork, .ws-forklist, .ws-ride-go, .cr-pill, .cr-update):active {
+  background: color-mix(in srgb, var(--oq-bg) 88%, rgb(var(--oq-state))); transform: scale(var(--oq-press-scale)); box-shadow: var(--oq-shadow-1); }
+/* focus ring (v0.1.6): the accent, 2px, 2px clear of the part, keyboard only; it follows the part's own radius. Written once for every control, so none can forget it. */
+.oq-family-travel :is(button, a, [tabindex]:not([tabindex="-1"]), input[type="range"], summary):focus-visible { outline: 0.1667rem solid var(--oq-accent); outline-offset: 0.1667rem; }
+.oq-family-travel :is(.btn, .ws-book, .ws-choose)[aria-disabled="true"], .oq-family-travel .btn:disabled { opacity: .5; box-shadow: none; pointer-events: none; }
+
+/* a card on Coast: surface-1 + shadow-1, radius 16 */
+.oq-family-travel .card { background: var(--oq-surface-1); border-radius: var(--oq-radius-card); box-shadow: var(--oq-shadow-1); }
+.oq-family-travel .tag, .oq-family-travel .sticker { background: var(--oq-tonal); color: var(--oq-ink); border: 0; box-shadow: none; transform: none; font-weight: 600; }
+
+/* status = a mono badge */
+.oq-badge { font: 500 max(var(--text-min), 0.75rem)/1 var(--oq-font-mono); padding: 0.3125rem 0.4375rem; border-radius: var(--oq-radius-xs); border: 1px solid var(--oq-line); color: var(--oq-ink-2); }
+.oq-source { font: max(var(--text-min), 0.75rem) var(--oq-font-mono); color: var(--oq-ink-2); border-top: 1px solid var(--oq-line-2); padding-top: 0.625rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  .oq-root *, .oq-root *::before, .oq-root *::after { scroll-behavior: auto !important; }
+  .oq-family-travel :is(.btn, .ws-book-on, .ws-choose, .ws-skip, .ws-back, .ws-fork, .ws-forklist, .ws-ride-go, .cr-pill, .cr-update):active { transform: none; }
+}
+
+/* the one loud button keeps its text colour whatever a page or the laptop skin says */
+.oq-family-travel :is(.btn-primary, .btn-ink, .ws-book, .ws-choose, .cr-go) { color: var(--oq-on-accent) !important; }
+.oq-family-travel .ga-nav a[aria-current="page"] { text-decoration-color: var(--oq-accent); }
+
+/* ---------- flat panels (v0.1.6 .oq-flat): a button inside a panel sits on the surface, no shadow, no hover lift; tonal gets a state tint ---------- */
+.oq-family-travel :is(.oq-flat, .ws-pane, .pt-card) :is(.btn, .ws-book, .ws-choose, .ws-book-on, .ws-skip, .ws-back, .ws-undo, .ws-fork, .ws-forklist, .ws-ride-go) { box-shadow: none; }
+.oq-family-travel :is(.oq-flat, .ws-pane, .pt-card) :is(.btn-primary, .btn-ink, .ws-book, .ws-choose):hover { box-shadow: none; transform: none; }
+.oq-family-travel :is(.oq-flat, .ws-pane, .pt-card) :is(.btn:not(.btn-primary):not(.btn-ink), .ws-book-on, .ws-skip, .ws-back, .ws-undo) { --oq-bg: rgb(var(--oq-state) / .06); }
+
+/* ---------- chips: no outline (v0.1.6, owner 2026-10-24): a state chip is its kind's light tint with ink text, never an outlined box ---------- */
+
+/* ---------- coloured icons (v0.1.6): set --c to a data colour. .ic-tile = the icon on a 15% tint of its colour; .ico-c = a bare coloured icon ---------- */
+.oq-family-travel :is(.ic-tile, .ws-tile) { --s: 2.5rem; width: var(--s); height: var(--s); border-radius: calc(var(--s) * .32); display: inline-grid; place-items: center; flex: none; background: color-mix(in srgb, var(--c, var(--oq-ink-2)) 15%, transparent); }
+.oq-family-travel :is(.ic-tile, .ws-tile) svg, .oq-family-travel .ico-c { color: color-mix(in srgb, var(--c, var(--oq-ink-2)) var(--oq-icon-mix), var(--oq-ink)); }
+.oq-family-travel :is(.ic-tile, .ws-tile) svg { width: calc(var(--s) * .54); height: calc(var(--s) * .54); }

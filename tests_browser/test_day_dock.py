@@ -191,8 +191,8 @@ def test_the_desktop_now_line_is_a_thin_coral_line_with_a_coral_deep_time_pill(s
     expect(pill).to_have_text("12:40")
     look = page.evaluate("""() => { const l = document.querySelector('#cz-nowline'), p = l.querySelector('.cz-now-t'), lb = l.getBoundingClientRect(), pb = p.getBoundingClientRect();
         return { h: lb.height, line: getComputedStyle(l).backgroundColor, pill: getComputedStyle(p).backgroundColor, ink: getComputedStyle(p).color, atRight: lb.right - pb.right, centred: Math.abs((pb.top + pb.bottom) / 2 - (lb.top + lb.bottom) / 2) } }""")
-    assert abs(look["h"] - 2) < 0.6 and look["line"] == "rgb(255, 115, 82)"          # 0.1667rem at the 12px root, the coral
-    assert look["ink"] == "rgb(201, 67, 31)" and look["pill"] != "rgb(201, 67, 31)"      # F-158: the time in coral-deep ink on the card, no pill
+    assert abs(look["h"] - 2) < 0.6 and look["line"] == "rgb(11, 11, 13)"          # 0.1667rem at the 12px root, the accent (ink since F-200; it was coral)
+    assert look["ink"] == "rgb(11, 11, 13)" and look["pill"] != "rgb(11, 11, 13)"      # F-158: the time in the accent's ink on the card, no pill
     assert look["atRight"] < 4 and look["centred"] < 2
 
 

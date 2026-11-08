@@ -27,16 +27,20 @@ OPEN_POSTS = (
     "/trips/switch",                       # which trip I am looking at (my own `members.trip_id`)
     "/family/phone",                       # my own phone number on the Help tab (F-069): every member, viewers too
     "/family/switch", "/family/stay",      # which of my families I am working in; dismissing the "you joined" notice
-    "/creators", "/creators/draft", "/creators/finish",   # a creator draft is a person's own, published to the community, not a family's
+    "/creators", "/creators/draft", "/creators/finish", "/creators/import",   # a creator draft (the old paste-a-link one, and F-183 import drafts under /creators/import/) is a person's own, published to the community, not a family's
     "/trip/morning", "/trip/morning/time", "/trip/morning/off", "/trip/morning/status",   # my own phone's morning plan reminder (F-066): every member, viewers too
     "/trip/photos", "/trip/photos/remove",   # adding a photo (a viewer too: it changes no plan) and removing one (the route checks author-or-admin) (F-071)
     "/passkeys/register/options", "/passkeys/register", "/passkeys/auth/options", "/passkeys/auth", "/passkeys/remove",   # my own Face ID sign-in (F-074): every member, viewers too; the two auth routes are for someone signed out
     "/trip/map/around",   # Around you (F-073): looks up places near a point and writes only the place-lookup cache, so every member may ask (a viewer too); the position is in the request only
     "/trip/talk/message", "/trip/talk/photo", "/trip/talk/voice",   # talk on a plan (F-091): text, a photo or a voice note on a plan or part, from any member (viewers too: it changes no plan)
     "/trip/family/message", "/trip/family/quiet",   # a message in the family thread and my own Quiet switch (F-070): every member, viewers too (a viewer cannot change a plan, so never causes a change card)
+    "/report",   # reporting a public trip or creator (F-185): anyone, signed out too; it changes no plan
+    "/admin/takedown", "/admin/restore", "/admin/approve", "/admin/seen", "/admin/draft", "/admin/link", "/admin/revoke", "/creators/settings",   # the captain's take down and restore, and F-188's drafts for creators (/claim/ is a creator claiming their own post; the route answers 404 to anyone not in GITAWAY_ADMIN_EMAILS, F-185) and my own affiliate marker (F-184)
+    "/creators/drafts/scan", "/creators/drafts/start",   # my own batch of posts (F-190): find a blog's posts, queue the ticked ones; the drafts are mine, not a family's
+    "/admin/plan-for-me/edit", "/admin/plan-for-me/send",   # the captain's founder check of a built plan (F-197): the route answers 404 to anyone not in GITAWAY_ADMIN_EMAILS
     "/trip/family/seen",   # I have read the chats up to now (F-143): my own read mark, every member, viewers too
 )
-OPEN_PREFIXES = ("/join/",)                # using an invite link: the person is joining another family
+OPEN_PREFIXES = ("/join/", "/creators/import/", "/claim/", "/creators/drafts/", "/admin/drafts/")                # using an invite link: the person is joining another family
 ADMIN_POSTS = ("/family/invite", "/family/invite/revoke", "/family/role", "/family/remove", "/trip/delete")  # deleting an imported trip (F-042) is an admin's
 
 _role = ContextVar("gitaway_family_role", default=None)

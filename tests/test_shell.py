@@ -7,7 +7,7 @@ def test_pages_are_gitaway_pages_with_the_main_navigation(client):
     assert r.status_code == 200
     assert "<title>GitAway" in r.text and "TravelOS" not in r.text
     html = client.get("/community").text
-    for label, href in [("Community trips", "/community"), ("Plan a trip", "/start"), ("For creators", "/creators")]:
+    for label, href in [("Community trips", "/community"), ("Plan a trip", "/start"), ("For creators", "/for-creators")]:
         assert f'href="{href}"' in html and label in html
     assert "/assets/css/tokens.css" in html and "/assets/css/base.css" in html
 
@@ -16,7 +16,7 @@ def test_every_page_links_tokens_then_base_exactly_once(client):
     from main import app
     paths = {r.path for r in app.routes
              if "GET" in (getattr(r, "methods", None) or ()) and "{" not in r.path}
-    paths -= {"/plan/explore", "/plan/quote", "/auth/callback", "/manifest.webmanifest", "/sw.js", "/healthz", "/trips/import/template", "/trip/family/thread", "/trip/talk/items", "/trip/family/list", "/trip/family/panel"}  # a fragment, JSON, the OAuth return (needs a code), manifest, script and the template download: not pages
+    paths -= {"/plan/explore", "/plan/quote", "/auth/callback", "/manifest.webmanifest", "/sw.js", "/healthz", "/badge/plan-this-trip.svg", "/badge/plan-this-trip-dark.svg", "/trips/import/template", "/trip/family/thread", "/trip/talk/items", "/trip/family/list", "/trip/family/panel", "/trip/cockpit/map", "/robots.txt", "/sitemap.xml"}  # a fragment, JSON, the OAuth return (needs a code), manifest, script and the template download: not pages
     paths.add("/trips/sun-tacos-and-tide-pools")
     assert {"/", "/plan"} <= paths
     for path in sorted(paths):
@@ -29,7 +29,7 @@ def test_every_page_links_tokens_then_base_exactly_once(client):
 def test_design_tokens_are_served(client):
     r = client.get("/assets/css/tokens.css")
     assert r.status_code == 200
-    assert "--coral: #FF7352" in r.text
+    assert "--paper: #F2F2F5" in r.text and "--coral: var(--accent)" in r.text      # F-200: Direction A; the old names point at its tokens
     assert '[data-theme="pacific"]' in r.text
 
 

@@ -1061,6 +1061,14 @@ def plan_write(session, op, act, form):
 
 
 def register(app):
+    @app.get("/trip/today")
+    def today_page(session, day: str = ""):
+        """The phone's Plan tab (F-200, merged with F-201): today's day view (today during the trip, the first day before it, the last after).
+        A bare /trip, which went there (F-092), is the cockpit now; pwa.js still points the tab at the day last shown."""
+        if (r := _guard(session)):
+            return r
+        return RedirectResponse(today_url(session, day[:3]), status_code=303)
+
     @app.get("/trip/canvas")
     def canvas_page(request, session, day: str = "", block: str = "", step: str = "", frag: str = "", add: str = "", part: str = "", title: str = "", note: str = "", err: str = "", booked: str = "", sos: str = "", plan: str = "", panel: str = "", thread: str = ""):
         if (r := _guard(session)):
@@ -1079,7 +1087,7 @@ def register(app):
             return fragment(vw)
         edit = access.can_edit(v["role"])
         stage = Div(vw, id="cz", cls="cz-stage", data_trip=ses.open_trip_id(), data_me=session.get("user_id") or "", **({"data_edit": "1"} if edit else {}))
-        return phone.shell("today", join_note(), Main(stage, id="main", cls="ph-main cz"), title="The trip", head=HEAD, scripts=SCRIPTS, id="cz-app", data_canvas="1")
+        return phone.shell("trip" if level == "week" else "plan", join_note(), Main(stage, id="main", cls="ph-main cz"), title="The trip", head=HEAD, scripts=SCRIPTS, id="cz-app", data_canvas="1")
 
     @app.post("/trip/canvas/step")
     async def canvas_step(request, session):

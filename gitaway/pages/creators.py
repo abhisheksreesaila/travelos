@@ -12,11 +12,11 @@ All the rules (link checks, the fixtures, the five fields, publishing) live in g
 
 from urllib.parse import quote
 
-from fasthtml.common import A, Button, Div, Fieldset, Form, H1, H2, Img, Input, Label, Legend, Li, Link, Ol, P, Script, Section, Span, Textarea, Ul
+from fasthtml.common import A, Article, Button, Div, Fieldset, Form, H1, H2, H3, Img, Input, Label, Legend, Li, Link, Ol, P, Script, Section, Span, Textarea, Ul
 from fasthtml.core import FtResponse
 from starlette.responses import RedirectResponse
 
-from gitaway import creators, hub, session as ses
+from gitaway import community, creator_profiles, creators, hub, session as ses, showcase
 from gitaway.creators import MAX, SEASONS
 from gitaway.icons import icon
 from gitaway.itinerary_view import _icon
@@ -49,6 +49,84 @@ def alert(message):
     return P(message, role="alert", cls="cr-alert", id="cr-alert") if message else ""
 
 
+# ---------- pitch and profiles (M4, showcase only) ----------
+
+def pitch():
+    return Section(H2("Paste a link, approve a draft, every stop sends viewers back to your video"),
+                   P("Creators see the terms on day one, and it is free. Your channel link sits on every trip and every stop."),
+                   id="cr-pitch", cls="cr-pitch")
+
+
+PLACE_KINDS = ("flight", "stay", "car", "food", "see")   # a place keeps one Coast kind colour on every creator card (omxqua.css --oq-k-*)
+
+
+def avatar(c, cls="cr-avatar"):
+    i = list(creator_profiles.PLACE_NAMES).index(c.place) if c.place in creator_profiles.PLACE_NAMES else 0
+    return Span("".join(w[0] for w in c.name.split()[:2]), cls=f"{cls} cr-k-{PLACE_KINDS[i % len(PLACE_KINDS)]}", aria_hidden="true")
+
+
+def real_avatar(name, cls="cr-avatar"):
+    return Span("".join(w[0] for w in name.split()[:2]).upper(), cls=f"{cls} cr-k-{PLACE_KINDS[sum(map(ord, name)) % len(PLACE_KINDS)]}", aria_hidden="true")
+
+
+def _real_item(c):
+    n = len(c["trips"])
+    return Li(A(real_avatar(c["name"]), Span(Span(c["name"], cls="cr-who-name"), Span(f"{n} trip{'s' if n != 1 else ''}", cls="cr-who-place"), cls="cr-who-text"),
+                Span(icon("chev-right", 18, 2.2), cls="cr-who-go", aria_hidden="true"), href=f"/creators/{c['handle']}", cls="cr-who"))
+
+
+def real_index():
+    """/creators off the showcase: only the people who published a real trip, no paste box (the link import is simulated)."""
+    people = community.real_creators()
+    return page("Creators", Section(H1("Creators on GitAway"), P("Families who published a trip they really took. Read it, fork it, plan your own."),
+                                    P(A(icon("note", 18, 2.2), "Turn your own post into a trip", href="/creators/import", cls="btn btn-primary", id="cr-import")),
+                                    Ul(*[_real_item(c) for c in people], cls="cr-roster"), cls="cr cr-real ga-wrap"), current="/creators", head=HEAD)
+
+
+def real_profile(handle, mine=False):
+    """A real creator's page: their name and the trips they published; None when they have none live. `mine`: their own page, with a link to their stats."""
+    c = next((c for c in community.real_creators() if c["handle"] == handle), None)
+    if c is None:
+        return None
+    cards = [x for x in hub.all_cards(None) if x.real and x.handle == handle]
+    cover = next(((x.photo, x.alt) for x in cards if x.photo), None)
+    body = Section(
+        Div(Img(src=cover[0], alt=cover[1], loading="lazy", cls="cr-cover") if cover else "",
+            Div(real_avatar(c["name"], "cr-avatar cr-avatar-lg"), H1(c["name"]), cls="cr-name-row"),
+            P(f"{len(cards)} trip{'s' if len(cards) != 1 else ''} published on GitAway.", cls="cr-bio"), cls="cr-profile-head"),
+        Section(H2(f"{c['name'].split()[0]}'s trips"), Div(*[hub_card(x, i) for i, x in enumerate(cards)], cls="hub-grid"), cls="cr-profile-trips"),
+        Div(A("All creators", href="/creators", cls="btn btn-sm"), A(icon("flag", 18, 2.2), "Report this creator", href=f"/report?creator={handle}", cls="btn btn-sm", id="report-creator"),
+          A(icon("ledger", 18, 2.2), "Your stats", href="/creators/stats", cls="btn btn-sm", id="cr-stats") if mine else "", cls="cr-profile-links"), cls="cr cr-profile ga-wrap")
+    return page(c["name"], body, current="/creators", head=(*HUB_HEAD, *HEAD))
+
+
+def roster():
+    return Section(H2("Creators on GitAway"),
+                   Ul(*[_real_item(c) for c in community.real_creators()],
+                      *[Li(A(avatar(c),Span(Span(c.name, cls="cr-who-name"), Span(f"{c.place_name} · {len(c.trips)} trip{'s' if len(c.trips) != 1 else ''}", cls="cr-who-place"), cls="cr-who-text"),
+                             Span(icon("chev-right", 18, 2.2), cls="cr-who-go", aria_hidden="true"), href=f"/creators/{c.handle}", cls="cr-who")) for c in creator_profiles.CREATORS], cls="cr-roster"),
+                   id="cr-roster", cls="cr-roster-sec")
+
+
+def trip_card(t):
+    return Article(H3(t.title, cls="cr-trip-title"),
+                   P(f"{creator_profiles.PLACE_NAMES[t.place]} · {t.days} days · {t.forks} forks", cls="cr-trip-meta"),
+                   Ul(*[Li(creator_profiles.STICKERS[k], cls="tag cr-sticker") for k in t.stickers], cls="cr-stickers"),
+                   A("Plan this trip", href=t.plan_href(), cls="btn btn-primary btn-sm"), cls="cr-trip")
+
+
+def profile_page(c):
+    photo = creator_profiles.PHOTOS.get(c.place)
+    body = Section(
+        Div(Img(src=photo[0], alt=photo[1], loading="lazy", cls="cr-cover") if photo else "",
+            Div(avatar(c, "cr-avatar cr-avatar-lg"), H1(c.name), cls="cr-name-row"), P(c.bio, cls="cr-bio"),
+            A(f"{c.channel_label} channel", href=c.channel, rel="noopener", target="_blank", cls="btn cr-channel"),
+            cls="cr-profile-head"),
+        Section(H2(f"{c.name.split()[0]}'s trips"), Div(*[trip_card(t) for t in c.trips], cls="cr-trips"), cls="cr-profile-trips"),
+        P(A("All creators", href="/creators")), cls="cr cr-profile ga-wrap")
+    return page(c.name, body, current="/creators", head=HEAD)
+
+
 # ---------- paste ----------
 
 def paste_page(session, link="", error="", status=200):
@@ -74,7 +152,7 @@ def paste_page(session, link="", error="", status=200):
             P("Demo: nothing is fetched. The draft is a made-up transcript, picked from your link.", cls="cr-fine"),
             A(icon("note", 18, 2.2), "Pick up your draft", href="/creators/draft", cls="btn btn-sm cr-resume") if rec else "",
             cls="cr-paste-copy"),
-        steps, cls="cr cr-paste ga-wrap")
+        steps, pitch(), roster(), cls="cr cr-paste ga-wrap")
     return FtResponse(page("For creators", body, current="/creators", head=HEAD), status_code=status)
 
 
@@ -197,6 +275,8 @@ def _signin(next_path):
 def register(app):
     @app.get("/creators")
     def paste_get(session, link: str = ""):
+        if not showcase.on():
+            return real_index()
         return paste_page(session, link[:creators.MAX_LINK + 100])
 
     @app.post("/creators")
@@ -274,3 +354,13 @@ def register(app):
         mine = creators.published(session, t.id) if t else {}
         slugs = list(mine)
         return done_page(session, slugs[-1]) if slugs else RedirectResponse("/creators", status_code=303)
+
+    @app.get("/creators/{handle}")
+    def profile(session, handle: str):
+        c = creator_profiles.get(handle) if showcase.on() else None
+        me = ses.current_traveler(session)
+        if c is None and (found := real_profile(handle, mine=bool(me) and (community.creator_of(me.id) or {}).get("handle") == handle)) is not None:
+            return found
+        if c is None:
+            return FtResponse(page("Not found", Section(H1("Nothing here"), A("All creators", href="/creators"), cls="ga-soon ga-wrap")), status_code=404)
+        return profile_page(c)

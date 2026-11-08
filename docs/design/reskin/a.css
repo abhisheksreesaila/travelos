@@ -1,0 +1,56 @@
+/* Direction A · "Gallery": an Apple-style neutral grey canvas; everything placed on it is a solid, saturated widget.
+   Accent: ink (black in light, white in dark). Colour is kept for the kinds (flight, stay, car, tickets, weather, food, see, ride),
+   so no button ever competes with them. Geist for words and numbers; Fraunces only inside the Magazine plan theme. */
+.dir-a {
+  --font: "Geist", system-ui, sans-serif; --font-d: "Geist", system-ui, sans-serif; --font-m: "Geist Mono", ui-monospace, monospace;
+  --font-h: "Caveat", cursive; --font-serif: "Fraunces", Georgia, serif;
+  --wm-weight: 750; --wm-track: -.03em;
+  --hero-weight: 760; --hero-track: -.058em; --hero-em-style: normal; --sec-weight: 720;
+  --rw: 26px; --rc: 20px; --ri: 14px; --rdoor: 32px;
+  --spring-fast: linear(0, 0.071, 0.226, 0.407, 0.577, 0.72, 0.831, 0.911, 0.964, 0.997, 1.014, 1.021, 1.023, 1.02, 1.014, 1.009, 1.004, 1.002, 1);
+  /* kinds: one solid fill each, the same in light and dark; white text clears 5:1 on every fill (ride: dark text) */
+  --k-flight: #4338CA; --k-flight-on: #fff; --k-stay: #8B2FC9; --k-stay-on: #fff; --k-car: #15803D; --k-car-on: #fff;
+  --k-tix: #C2410C; --k-tix-on: #fff; --k-wx: #0369A1; --k-wx-on: #fff; --k-food: #C92A5E; --k-food-on: #fff;
+  --k-see: #0F766E; --k-see-on: #fff; --k-ride: #FFD43B; --k-ride-on: #17140A;
+}
+.dk.dir-a, .dir-a .dk { --rw: 22px; }
+.dir-a.light {
+  --bg: #F2F2F5; --s1: #FFFFFF; --s2: #FFFFFF; --ink: #0B0B0D; --ink2: #5C5C66; --line: #E3E3E8; --line2: #EDEDF1; --state: 11 11 13;
+  --acc: #0B0B0D; --on-acc: #FFFFFF; --acc-strong: #0B0B0D; --ok: #1F9D50; --ok-ink: #137036;
+  --sh1: 0 1px 2px rgba(10,10,20,.06), 0 0 0 1px rgba(10,10,20,.04); --sh2: 0 8px 24px rgba(10,10,20,.08), 0 0 0 1px rgba(10,10,20,.04); --sh3: 0 18px 48px rgba(10,10,20,.16), 0 0 0 1px rgba(10,10,20,.05);
+  --k-flight-t: #E4E3FB; --k-flight-i: #2A2185; --k-stay-t: #F1E3FA; --k-stay-i: #5A1785; --k-car-t: #DDF3E4; --k-car-i: #0F5128;
+  --k-tix-t: #FCE6DA; --k-tix-i: #7A2906; --k-wx-t: #DBEFFA; --k-wx-i: #034769; --k-food-t: #FBE1EA; --k-food-i: #7E1538;
+  --k-see-t: #D9F2EF; --k-see-i: #0B4D48; --k-ride-t: #FFF4C2; --k-ride-i: #5C4300;
+  --up-bg: #0B0B0D; --up-fg: #FFFFFF; --up-fg2: rgba(255,255,255,.72); --up-line: rgba(255,255,255,.22); --up-tile: rgba(255,255,255,.14); --up-row: rgba(255,255,255,.08); --up-btn: #FFFFFF; --up-btn-fg: #0B0B0D;
+  --tab-bg: rgba(255,255,255,.78); --beacon-bg: #0B0B0D; --beacon-acc: #FFD43B;
+  --mark-bg: #0B0B0D; --mark-line: #FFFFFF; --mark-a: #8C8CFF; --mark-b: #D38CFF; --mark-c: #FF9A5C;
+  --door-go-bg: #0B0B0D; --door-go-fg: #FFFFFF; --door-go-fg2: rgba(255,255,255,.72); --door-btn: #FFFFFF; --door-btn-fg: #0B0B0D; --fld-bg: rgba(255,255,255,.1); --fld-lbl: rgba(255,255,255,.65); --fld-fg: #FFFFFF;
+  --si-art-bg: #E6E6EB; --si-art-fg: #0B0B0D; --si-art-fg2: #5C5C66;
+  --scrap-paper: #F4EEE3; --scrap-ink: #2B2520; --scrap-ink2: #6B5F52; --scrap-accent: #C2410C; --scrap-card: #FFFCF6; --tape: rgba(255,212,59,.8);
+  --mag-paper: #F7F5F0; --mag-card: #FFFFFF; --mag-ink: #121212; --mag-ink2: #55524C; --mag-accent: #B4361F; --mag-line: #E2DED6;
+}
+.dir-a.dark {
+  --bg: #000000; --s1: #1C1C1F; --s2: #2A2A2E; --ink: #F5F5F7; --ink2: #A1A1AA; --line: #2E2E33; --line2: #232327; --state: 245 245 247;
+  --acc: #F5F5F7; --on-acc: #0B0B0D; --acc-strong: #F5F5F7; --ok: #30C060; --ok-ink: #4ADE80;
+  --sh1: 0 1px 0 rgba(255,255,255,.05) inset, 0 1px 2px rgba(0,0,0,.6); --sh2: 0 1px 0 rgba(255,255,255,.05) inset, 0 8px 24px rgba(0,0,0,.6); --sh3: 0 1px 0 rgba(255,255,255,.06) inset, 0 18px 48px rgba(0,0,0,.75);
+  --k-flight-t: #1F1C4A; --k-flight-i: #CBC8FF; --k-stay-t: #2C1740; --k-stay-i: #E7CCFA; --k-car-t: #10301C; --k-car-i: #BFEBCD;
+  --k-tix-t: #3A1D10; --k-tix-i: #FFD3BD; --k-wx-t: #0C2A3B; --k-wx-i: #C3E6FA; --k-food-t: #3A1322; --k-food-i: #FFCCDC;
+  --k-see-t: #0E2E2B; --k-see-i: #BCEBE5; --k-ride-t: #352B0B; --k-ride-i: #FFE89A;
+  --up-bg: #F5F5F7; --up-fg: #0B0B0D; --up-fg2: #4A4A52; --up-line: rgba(0,0,0,.18); --up-tile: rgba(0,0,0,.08); --up-row: rgba(0,0,0,.05); --up-btn: #0B0B0D; --up-btn-fg: #FFFFFF;
+  --tab-bg: rgba(34,34,38,.78); --beacon-bg: #1C1C1F; --beacon-acc: #FFD43B;
+  --mark-bg: #F5F5F7; --mark-line: #0B0B0D; --mark-a: #4338CA; --mark-b: #8B2FC9; --mark-c: #C2410C;
+  --door-go-bg: #F5F5F7; --door-go-fg: #0B0B0D; --door-go-fg2: #4A4A52; --door-btn: #0B0B0D; --door-btn-fg: #FFFFFF; --fld-bg: rgba(0,0,0,.06); --fld-lbl: #5C5C66; --fld-fg: #0B0B0D;
+  --si-art-bg: #121214; --si-art-fg: #F5F5F7; --si-art-fg2: #A1A1AA;
+  --scrap-paper: #1E1A16; --scrap-ink: #F3ECE2; --scrap-ink2: #BDAF9E; --scrap-accent: #FF9466; --scrap-card: #2A241E; --tape: rgba(255,212,59,.55);
+  --mag-paper: #121110; --mag-card: #1C1A18; --mag-ink: #F2EEE8; --mag-ink2: #ADA79E; --mag-accent: #FF8A6B; --mag-line: #2E2B27;
+}
+/* widgets and plan blocks are solid kind fills */
+.dir-a .w-k { --w-bg: var(--kf); --w-fg: var(--kon); --w-fg2: color-mix(in srgb, var(--kon) 94%, var(--kf)); --w-chip: color-mix(in srgb, var(--kon) 15%, transparent); box-shadow: none; }
+.dir-a .blk, .dir-a .gb, .dir-a .cd-row, .dir-a .tm-row i { --blk-bg: var(--kf); --blk-fg: var(--kon); --blk-fg2: color-mix(in srgb, var(--kon) 94%, var(--kf)); --blk-tag: color-mix(in srgb, var(--kon) 20%, transparent); }
+.dir-a .blk .kt, .dir-a .gb .kt, .dir-a .cd-row .kt { background: color-mix(in srgb, var(--kon) 20%, transparent); color: var(--kon); }
+.dir-a .fares li.on { --fare-on-bg: var(--kt); --fare-on-line: var(--kf); }
+.dir-a .w-up { box-shadow: var(--sh2); }
+/* nav islands are the one glass exception omxqua allows (2026-10-21) */
+.dir-a .tabbar, .dir-a .navpill { backdrop-filter: blur(20px) saturate(170%); -webkit-backdrop-filter: blur(20px) saturate(170%); }
+.dir-a .h-hero em { color: var(--ink2); }
+.dir-a .w .big { font-weight: 700; letter-spacing: -.045em; }

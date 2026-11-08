@@ -1,6 +1,6 @@
 """F-164: at 721 to 1019px the day and week heading controls (Day | Week switch, SOS, map, filter chips, the Trip menu, the way back) have text of at least 13px and a hit
-target of at least 44px, and the heading does not wrap onto extra rows. The phone (390) and laptop (1440, 1280) headings keep the sizes they had on master (recorded
-before the change). Screenshots on request: F164_SHOTS=<folder>."""
+target of at least 44px, and the heading does not wrap onto extra rows. The phone (390) and laptop (1440, 1280) headings keep their recorded sizes (master's before F-164,
+F-200's since Direction A). Screenshots on request: F164_SHOTS=<folder>."""
 import os
 
 import pytest
@@ -21,17 +21,19 @@ HEAD = """() => { const h = document.querySelector('.cz-view .cz-head'), t = h.q
 LEVELS = {"day": "/trip/canvas?day=0", "week": "/trip/canvas"}
 ALL = pytest.mark.parametrize("level", LEVELS)
 
-# master's sizes before F-164, from the same measure: [text, text size, width, height] per control (the Trip menu's text and width follow the trip's dates and name, so only its [size, height] count)
-SW = {12: [["Day", 12, 33, 33], ["Week", 12, 40, 33]], 13: [["Day", 13, 44, 44], ["Week", 13, 45, 44]]}
-LAP_FILTERS = [["All", 12, 38, 28], ["Plans", 12, 53, 28], ["Hotels", 12, 61, 28], ["Flights", 12, 62, 28], ["Car", 12, 43, 28], ["Chats", 12, 57, 28]]
-PHONE_FILTERS = [["All", 14, 44, 44], ["Plans", 14, 50, 44], ["Hotels", 14, 57, 44], ["Flights", 14, 60, 44], ["Car", 14, 44, 44], ["Chats", 14, 53, 44]]
+# the phone's and the laptop's sizes, from the same measure: [text, text size, width, height] per control (the Trip menu's text and width follow the trip's dates and name, so only its
+# [size, height] count). Recorded on master before F-164; recorded again after F-200, which changed them on purpose: 48px phone targets, 16px chips on the phone, nothing under 12px on a
+# laptop, and Geist, a little wider than Figtree ("Week" is 42px wide, not 40)
+SW = {12: [["Day", 12, 33, 33], ["Week", 12, 42, 33]], 13: [["Day", 13, 48, 48], ["Week", 13, 50, 48]]}
+LAP_FILTERS = [["All", 12, 41, 28], ["Plans", 12, 57, 28], ["Hotels", 12, 63, 28], ["Flights", 12, 64, 28], ["Car", 12, 45, 28], ["Chats", 12, 59, 28]]
+PHONE_FILTERS = [["All", 16, 48, 48], ["Plans", 16, 59, 48], ["Hotels", 16, 67, 48], ["Flights", 16, 69, 48], ["Car", 16, 48, 48], ["Chats", 16, 61, 48]]
 BEFORE = {
-    (1440, "day"): {"switch": SW[12], "map": [["", 0, 32, 32]], "filters": LAP_FILTERS, "trip": [11.4996, 17.3]},
-    (1440, "week"): {"switch": SW[12], "filters": LAP_FILTERS, "trip": [11.4996, 17.3]},
-    (1280, "day"): {"switch": SW[12], "map": [["", 0, 32, 32]], "filters": LAP_FILTERS, "trip": [11.4996, 17.3]},
-    (1280, "week"): {"switch": SW[12], "filters": LAP_FILTERS, "trip": [11.4996, 17.3]},
-    (390, "day"): {"sos": [["SOS", 13, 44, 44]], "map": [["", 0, 44, 44]], "filters": PHONE_FILTERS, "trip": [13, 47.5], "back": [["Trip", 17, 75.3, 44]]},
-    (390, "week"): {"switch": SW[13], "sos": [["SOS", 13, 44, 44]], "filters": PHONE_FILTERS, "trip": [13, 67]},
+    (1440, "day"): {"switch": SW[12], "map": [["", 0, 32, 32]], "filters": LAP_FILTERS, "trip": [12, 18]},
+    (1440, "week"): {"switch": SW[12], "filters": LAP_FILTERS, "trip": [12, 18]},
+    (1280, "day"): {"switch": SW[12], "map": [["", 0, 32, 32]], "filters": LAP_FILTERS, "trip": [12, 18]},
+    (1280, "week"): {"switch": SW[12], "filters": LAP_FILTERS, "trip": [12, 18]},
+    (390, "day"): {"sos": [["SOS", 13, 48, 48]], "map": [["", 0, 48, 48]], "filters": PHONE_FILTERS, "trip": [13, 47.5], "back": [["Trip", 17, 76.3, 48]]},
+    (390, "week"): {"switch": SW[13], "sos": [["SOS", 13, 48, 48]], "filters": PHONE_FILTERS, "trip": [13, 67]},
 }
 
 

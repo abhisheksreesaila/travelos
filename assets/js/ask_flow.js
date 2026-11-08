@@ -49,7 +49,7 @@
 
   function submit(e, o) {
     var f = e.target;
-    if (e.defaultPrevented || !f.matches || !f.closest('#ak-sheet-body')) return;
+    if (e.defaultPrevented || !f.matches || !f.closest('#ak-sheet-body') || f.hasAttribute('data-navigate')) return;      // F-198: the hand-off to the import is a real page
     e.preventDefault();
     var action = (e.submitter && e.submitter.getAttribute('formaction')) || f.getAttribute('action');
     var labels = Array.prototype.map.call(f.querySelectorAll('button'), function (b) { return b.textContent; });

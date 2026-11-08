@@ -40,7 +40,7 @@
       if (box.checked && !box.disabled) n++;
     });
     if (btn) {
-      btn.textContent = 'Apply ' + n + ' plan' + (n === 1 ? '' : 's');
+      btn.textContent = (btn.getAttribute('data-pre') || 'Apply') + ' ' + n + ' plan' + (n === 1 ? '' : 's') + (btn.getAttribute('data-post') || '');
       btn.disabled = n === 0;
     }
   }

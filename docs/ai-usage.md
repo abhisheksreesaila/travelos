@@ -14,7 +14,11 @@ Azure OpenAI is a stopgap for the October 2026 trip. Every call goes through `gi
 
 | `transcribe` | Ask's microphone where the phone has no working speech recognition (the iPhone Home Screen app; F-102): the page records up to 3 minutes (MediaRecorder), `POST /trip/ask/transcribe` sends the audio (at most 4 MB, checked by its first bytes) to a speech-to-text deployment and the words are added to the Ask box for review. | Typing, or the keyboard's own dictation (which still works and costs nothing). A speech model, not a chat model: nothing else here can turn audio into text. Candidate to drop if the keyboard's dictation is enough, or to swap to a provider that handles Hindi and other Indian languages (see below). The audio is only the request's own upload (over 1 MB the server spools it to a temp file that is deleted when the request ends) and is never written to the data folder; neither it nor the words are kept or logged (the log row has no tokens). Editors only, like the rest of Ask. | F-102 |
 
-`convert`, `speak`, `around-you` and `transcribe` exist today; the others are named so the log and the report already have a place for them.
+| `creator-import` | A creator pastes a blog link, a YouTube link, an Instagram caption or text; the model drafts the trip (title, place, days, stops with times where stated, tips, stickers) as strict JSON for the creator to review in the publish editor (F-183, `gitaway/creatordraft.py`). Claude Haiku 5.5 through the Anthropic provider (below). | Typing a trip in from a post by hand. The post is free text in any layout, so nothing rule-based can read it. The model's answer is never trusted: `creatordraft.validate()` rebuilds it, and unsure places become "Unnamed stop". | F-183 |
+
+| `plan-for-me` | Plan it for me (F-193, `gitaway/planforme.py`): a family asks (free since F-199; $29 with `PLAN_FOR_ME_PAID=1`) and the model builds their whole trip, day by day, from the intake (where, dates, home airport, adults and kids' ages, budget, pace, must-dos, the title of a creator's trip if they started from one) as strict JSON. Claude Haiku 5.5 (F-199; Sonnet 5.5 before) through the Anthropic provider, effort `medium`, `max_tokens` 16000. | A person planning every day by hand. Free text in, a structured calendar out; nothing rule-based could do it. The answer is never trusted: `planforme.validate()` rebuilds it (no prices, no opening hours, an unsure place has no name, times that fit the calendar, links and emails removed, days past the trip dropped). | F-193 |
+
+`convert`, `speak`, `around-you`, `transcribe`, `creator-import` and `plan-for-me` exist today; the others are named so the log and the report already have a place for them.
 
 ## What is logged
 
@@ -41,6 +45,27 @@ Settings only (environment variables), no code change:
 | `GITAWAY_AI_ENDPOINT_<JOB>`, `GITAWAY_AI_KEY_<JOB>` | A different provider for one job: any OpenAI-compatible `/openai/v1` endpoint. |
 
 `<JOB>` is the job name in capitals with `-` as `_` (`AROUND_YOU`).
+
+### Claude Haiku 5.5 (`plan-for-me`, F-193, F-199)
+
+Also the Anthropic provider and the same `ANTHROPIC_API_KEY`, with its own defaults: model `claude-haiku-5-5` since F-199 made plans free ($0.10 in / $0.50 out per million tokens for prompts up to 100K, from the Claude API model table of 2026-10-06; it was `claude-sonnet-5-5`, $2.00 / $10.00, while plans were sold), effort `medium`, `max_tokens` 16000, a 240 second limit. `GITAWAY_AI_MODEL_PLAN_FOR_ME`, `GITAWAY_AI_EFFORT_PLAN_FOR_ME` and `GITAWAY_AI_PROVIDER_PLAN_FOR_ME` change them. The cost is kept on the order: `ai.call_json(..., usage={})` adds the model and the tokens of every call (a failed one too) and `planforme.save_result` stores tokens in and out and the cost in millionths of a dollar; `/admin` lists them per order. A 14-day family trip is about 6,000 tokens in and 5,000 out: about $0.003 on Haiku (it was about $0.06 on Sonnet). Each plan's cost is also one log line (`plan order <id> cost $...`), no content. The log row in `ga_ai_usage` is unchanged: never the prompt or the answer. No server-side refusal fallback is set (Haiku 5.5 has none): a refusal fails the order (a paid buyer is refunded).
+
+### Claude Haiku 5.5 (`creator-import`, F-183)
+
+One of two jobs on the Anthropic provider (the other is `plan-for-me`, F-193, also Claude Haiku since F-199). It uses the official `anthropic` SDK with `ANTHROPIC_API_KEY` (set it in Railway, service web); with no key the job is off ("drafting is not switched on yet") and nothing is sent.
+
+| Variable | Effect |
+|---|---|
+| `ANTHROPIC_API_KEY` | Switches `creator-import` on (this job is Anthropic only: with the key missing it is off, and Railway's `AZURE_OPENAI_*` settings never draft a creator's post, F-196). Only `GITAWAY_AI_PROVIDER_CREATOR_IMPORT=azure` moves it, on purpose. |
+| `GITAWAY_AI_PROVIDER_<JOB>` | `anthropic` or `azure`: which service answers any job. |
+| `GITAWAY_AI_MODEL_<JOB>` | Another Anthropic model for the job (default `claude-haiku-5-5`). The cost estimate only knows Haiku 5.5's price. |
+| `GITAWAY_AI_EFFORT_<JOB>` | `low` (default), `medium` or `high`. |
+
+The request: one message per draft, the post inside `<post>` tags and a system prompt that says it is untrusted data; structured output (`output_config.format`, a strict JSON schema, no prefill), effort `low`, `max_tokens` 8000, adaptive thinking left to the model. `stop_reason` is checked before the content: `refusal` and `max_tokens` are logged failures (`error` = `refusal`, `max_tokens`) that show the creator a fixed sentence. The log row holds the model, tokens in and out from the response's own usage, milliseconds and ok or the kind of error, never the post or the draft; a failure is also one content-free line in `railway logs`.
+
+Cost at $0.10 in / $0.50 out per million tokens (prompts up to 100K tokens): a 6,000 token post with a 1,500 token draft is about $0.0014; the 30,000 token ceiling (longer posts are cut, with a notice) about $0.005. `ai.cost_usd(model, tokens_in, tokens_out)` computes it. Each person can try 20 drafts a day.
+
+`pixi run probe-import <url>` (or `--text "..."`) makes one real call with `ANTHROPIC_API_KEY` set and prints the validated draft JSON, the tokens, the seconds and the estimate (never the key; its log goes to a throwaway folder). Per the F-175 lesson, when the feature misbehaves live, run it first with production's settings before reading code.
 
 ### Voice typing (`transcribe`)
 
@@ -70,4 +95,4 @@ Then set `GITAWAY_AI_TRANSCRIBE_PROVIDER=<name>` and its own settings. `tests/te
 
 ## Tests
 
-The suite never calls the network: `ai.TRANSPORT` is replaced by a fake, and the conftests pin the `AZURE_*` keys to empty. `python -m gitaway.ai_smoke` (Convert) and `python -m gitaway.speak_smoke` (Ask GitAway, on a canned day) are the real calls, run by hand: they print counts and the time taken only. `python -m gitaway.around_smoke [lat lon]` asks the real Overpass API for vegetarian food and restrooms near a point (default Disneyland) and has the model rank the candidates; it prints counts and seconds, no place names.
+The suite never calls the network: `ai.TRANSPORT`, `ai.ANTHROPIC_TRANSPORT` and `safefetch.TRANSPORT` are replaced by fakes, and the conftests pin the `AZURE_*` and `ANTHROPIC_API_KEY` keys to empty (`tests/test_probe_import.py` runs the real Anthropic SDK against a fake Messages API on localhost). `python -m gitaway.ai_smoke` (Convert) and `python -m gitaway.speak_smoke` (Ask GitAway, on a canned day) are the real calls, run by hand: they print counts and the time taken only. `python -m gitaway.around_smoke [lat lon]` asks the real Overpass API for vegetarian food and restrooms near a point (default Disneyland) and has the model rank the candidates; it prints counts and seconds, no place names.

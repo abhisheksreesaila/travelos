@@ -1,0 +1,73 @@
+/* Direction B · "Ticket": warm paper and ink, the kinds as tonal containers, and the trip printed like a ticket.
+   Accent: git vermilion (#C93A1D light, #FF7A59 dark): GitAway's own heritage (git's orange-red), already the brand's family,
+   and nowhere near the blues and yellows every booking site wears. Fraunces for headings and big numbers, Geist for reading. */
+.dir-b {
+  --font: "Geist", system-ui, sans-serif; --font-d: "Fraunces", Georgia, serif; --font-m: "Geist Mono", ui-monospace, monospace;
+  --font-h: "Caveat", cursive; --font-serif: "Fraunces", Georgia, serif;
+  --wm-weight: 640; --wm-track: -.02em;
+  --hero-weight: 560; --hero-track: -.045em; --hero-em-style: italic; --sec-weight: 560;
+  --rw: 22px; --rc: 18px; --ri: 12px; --rdoor: 28px;
+  --spring-fast: linear(0, 0.071, 0.226, 0.407, 0.577, 0.72, 0.831, 0.911, 0.964, 0.997, 1.014, 1.021, 1.023, 1.02, 1.014, 1.009, 1.004, 1.002, 1);
+  /* kinds: a solid fill for icon tiles, dots and stickers; a tonal container and its ink for widgets and plan blocks */
+  --k-flight: #2F5FE0; --k-flight-on: #fff; --k-stay: #7B3FD0; --k-stay-on: #fff; --k-car: #1E8A4C; --k-car-on: #fff;
+  --k-tix: #D2541B; --k-tix-on: #fff; --k-wx: #0B7FC0; --k-wx-on: #fff; --k-food: #D13A6A; --k-food-on: #fff;
+  --k-see: #0F8A80; --k-see-on: #fff; --k-ride: #F2B705; --k-ride-on: #241A00;
+}
+.dir-b.light {
+  --bg: #F3F1EC; --s1: #FFFDF9; --s2: #FFFFFF; --ink: #1C1A17; --ink2: #625B52; --line: #E6E0D6; --line2: #EEE9E1; --state: 28 26 23;
+  --acc: #C93A1D; --on-acc: #FFFFFF; --acc-strong: #C93A1D; --ok: #1F8F4E; --ok-ink: #146B39;
+  --sh1: 0 1px 2px rgba(40,30,20,.06), 0 0 0 1px rgba(40,30,20,.05); --sh2: 0 8px 22px rgba(40,30,20,.10), 0 0 0 1px rgba(40,30,20,.05); --sh3: 0 18px 44px rgba(40,30,20,.18), 0 0 0 1px rgba(40,30,20,.06);
+  --k-flight-t: #DCE6FF; --k-flight-i: #0B2E7A; --k-stay-t: #EDE0FF; --k-stay-i: #3F1784; --k-car-t: #D8F5DF; --k-car-i: #0F4D26;
+  --k-tix-t: #FFE4D2; --k-tix-i: #7A2E06; --k-wx-t: #D7F0FF; --k-wx-i: #063F63; --k-food-t: #FFDDE6; --k-food-i: #7D1236;
+  --k-see-t: #D5F2EE; --k-see-i: #0B4A45; --k-ride-t: #FFF1B8; --k-ride-i: #5C4300;
+  --up-bg: #1F1B17; --up-fg: #FBF7F0; --up-fg2: rgba(251,247,240,.7); --up-line: rgba(251,247,240,.28); --up-tile: rgba(251,247,240,.12); --up-row: rgba(251,247,240,.07); --up-btn: #FF7A59; --up-btn-fg: #2A0E05;
+  --tab-bg: #FFFDF9; --beacon-bg: #1F1B17; --beacon-acc: #FF9A7A;
+  --mark-bg: #C93A1D; --mark-line: #FFFFFF; --mark-a: #FFFFFF; --mark-b: #FFFFFF; --mark-c: #FFFFFF;
+  --door-go-bg: #C93A1D; --door-go-fg: #FFFFFF; --door-go-fg2: rgba(255,255,255,.86); --door-btn: #1C1A17; --door-btn-fg: #FFFFFF; --fld-bg: rgba(255,255,255,.14); --fld-lbl: rgba(255,255,255,.8); --fld-fg: #FFFFFF;
+  --si-art-bg: #EAE3D6; --si-art-fg: #1C1A17; --si-art-fg2: #625B52;
+  --scrap-paper: #F1E9DA; --scrap-ink: #2B2520; --scrap-ink2: #6B5F52; --scrap-accent: #C93A1D; --scrap-card: #FFFCF6; --tape: rgba(242,183,5,.7);
+  --mag-paper: #F7F4EE; --mag-card: #FFFDF9; --mag-ink: #1C1A17; --mag-ink2: #5A544B; --mag-accent: #C93A1D; --mag-line: #E3DCD0;
+}
+.dir-b.dark {
+  --bg: #121110; --s1: #1C1A18; --s2: #26231F; --ink: #F2EEE8; --ink2: #ABA398; --line: #322E29; --line2: #26231F; --state: 242 238 232;
+  --acc: #FF7A59; --on-acc: #2A0E05; --acc-strong: #FF7A59; --ok: #34C26A; --ok-ink: #5EDB8D;
+  --sh1: 0 1px 0 rgba(255,240,220,.04) inset, 0 1px 2px rgba(0,0,0,.55); --sh2: 0 1px 0 rgba(255,240,220,.05) inset, 0 8px 22px rgba(0,0,0,.55); --sh3: 0 1px 0 rgba(255,240,220,.06) inset, 0 18px 44px rgba(0,0,0,.7);
+  --k-flight-t: #172447; --k-flight-i: #CFE0FF; --k-stay-t: #2A1A47; --k-stay-i: #E4D4FF; --k-car-t: #12301C; --k-car-i: #C4EED0;
+  --k-tix-t: #3A2012; --k-tix-i: #FFD6BC; --k-wx-t: #0F2C3E; --k-wx-i: #C6E9FF; --k-food-t: #3A1420; --k-food-i: #FFD0DC;
+  --k-see-t: #0F2D2A; --k-see-i: #BDEDE6; --k-ride-t: #352B0B; --k-ride-i: #FFE89A;
+  --up-bg: #F2EEE8; --up-fg: #1C1A17; --up-fg2: #5A544B; --up-line: rgba(28,26,23,.3); --up-tile: rgba(28,26,23,.08); --up-row: rgba(28,26,23,.05); --up-btn: #C93A1D; --up-btn-fg: #FFFFFF;
+  --tab-bg: #1C1A18; --beacon-bg: #26231F; --beacon-acc: #FF9A7A;
+  --mark-bg: #FF7A59; --mark-line: #2A0E05; --mark-a: #2A0E05; --mark-b: #2A0E05; --mark-c: #2A0E05;
+  --door-go-bg: #FF7A59; --door-go-fg: #2A0E05; --door-go-fg2: rgba(42,14,5,.82); --door-btn: #1C1A17; --door-btn-fg: #FBF7F0; --fld-bg: rgba(42,14,5,.1); --fld-lbl: rgba(42,14,5,.75); --fld-fg: #2A0E05;
+  --si-art-bg: #1A1714; --si-art-fg: #F2EEE8; --si-art-fg2: #ABA398;
+  --scrap-paper: #1F1B16; --scrap-ink: #F3ECE2; --scrap-ink2: #BDAF9E; --scrap-accent: #FF9466; --scrap-card: #2A241E; --tape: rgba(242,183,5,.5);
+  --mag-paper: #121110; --mag-card: #1C1A18; --mag-ink: #F2EEE8; --mag-ink2: #ADA79E; --mag-accent: #FF8A6B; --mag-line: #2E2B27;
+}
+/* widgets and plan blocks are tonal containers; the icon tile carries the solid kind colour */
+.dir-b .w-k { --w-bg: var(--kt); --w-fg: var(--ki); --w-fg2: color-mix(in srgb, var(--ki) 82%, var(--kt)); --w-chip: color-mix(in srgb, var(--ki) 8%, transparent); }
+.dir-b .w-k .wi { width: 34px; height: 34px; padding: 7px; border-radius: 10px; background: var(--kf); color: var(--kon); box-sizing: border-box; }
+.dir-b .blk, .dir-b .gb, .dir-b .cd-row, .dir-b .tm-row i { --blk-bg: var(--kt); --blk-fg: var(--ki); --blk-fg2: color-mix(in srgb, var(--ki) 82%, var(--kt)); --blk-tag: color-mix(in srgb, var(--ki) 10%, transparent); }
+.dir-b .gb { box-shadow: inset 3px 0 0 var(--kf); }
+.dir-b .fares li.on { --fare-on-bg: var(--kt); --fare-on-line: var(--kf); }
+.dir-b .w .big, .dir-b .route, .dir-b .ticket-row b, .dir-b .rail time b, .dir-b .ck-total b, .dir-b .totalbar b, .dir-b .f-l b, .dir-b .f-r b, .dir-b .stats b { font-weight: 560; }
+.dir-b .w-name, .dir-b .w-up .w-title, .dir-b .bw-head h3, .dir-b .h-day, .dir-b .h-app, .dir-b .h-si, .dir-b .h-trip, .dir-b .h-door, .dir-b .ah-t b { font-weight: 560; }
+/* the signature: a ticket. Up next, the total and the checklist are printed stubs with a torn perforation */
+.dir-b .ticket-row { position: relative; border-top: 2px dotted var(--up-line); }
+.dir-b .ticket-row::before, .dir-b .ticket-row::after { content: ""; position: absolute; top: -12px; width: 22px; height: 22px; border-radius: 50%; background: var(--bg); }
+.dir-b .ticket-row::before { left: -28px; } .dir-b .ticket-row::after { right: -28px; }
+.dir-b .dk .ticket-row::before { left: -30px; } .dir-b .dk .ticket-row::after { right: -30px; }
+.dir-b .ck-total { position: relative; padding-bottom: 14px; border-bottom: 2px dotted var(--up-line); }
+.dir-b .ck-total::before, .dir-b .ck-total::after { content: ""; position: absolute; bottom: -12px; width: 22px; height: 22px; border-radius: 50%; background: var(--bg); }
+.dir-b .ck-total::before { left: -30px; } .dir-b .ck-total::after { right: -30px; }
+.dir-b .bw-check { overflow: hidden; }
+/* Material navigation bar: flush to the bottom edge, solid, a tonal pill behind the active icon */
+.dir-b .tabbar { left: 0; right: 0; bottom: 0; height: 88px; border-radius: 24px 24px 0 0; padding: 0 8px 18px; box-shadow: 0 -1px 0 var(--line), 0 -8px 24px rgba(40,30,20,.06); }
+.dir-b .tab.on { background: none; }
+.dir-b .tab.on .i { background: color-mix(in srgb, var(--acc) 16%, transparent); color: var(--ink); padding: 4px 18px; border-radius: 999px; box-sizing: content-box; }
+.dir-b .tab.ask .i { margin-top: -4px; border-radius: 18px; }
+.dir-b .navpill { box-shadow: var(--sh1); }
+.dir-b .navpill a.on, .dir-b .sitenav a.on, .dir-b .tpicker button.on { background: color-mix(in srgb, var(--acc) 15%, var(--s1)); color: var(--ink); }
+.dir-b .dchip.on { background: var(--ink); }
+.dir-b .h-hero { font-variation-settings: "SOFT" 50, "WONK" 1; }
+.dir-b .h-hero em { font-weight: 480; }
+.dir-b .bstack, .dir-b .dayplan { margin-bottom: 130px; }

@@ -15,7 +15,7 @@
 
 .ti-form { display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; }
 .ti-label { display: block; margin-bottom: 0.375rem; font-weight: 800; }
-.ti-box { display: block; width: 100%; box-sizing: border-box; min-height: 16rem; padding: 0.75rem 0.875rem; border-radius: var(--r-sm); border: 0.125rem solid rgba(30, 26, 46, .2); background: #fff; color: var(--ink);
+.ti-box { display: block; width: 100%; box-sizing: border-box; min-height: 16rem; padding: 0.75rem 0.875rem; border-radius: var(--r-sm); border: 0.125rem solid color-mix(in srgb, var(--ink) 20%, transparent); background: var(--card); color: var(--ink);
   font: 600 max(var(--text-min), 0.875rem)/1.45 ui-monospace, "SF Mono", Menlo, monospace; resize: vertical; }
 .ti-box:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.125rem; }
 .ti-box[aria-invalid="true"] { border-color: var(--coral-deep); }
@@ -29,7 +29,7 @@
 .ti-linkbtn { background: none; border: 0; padding: 0; font: 800 max(var(--text-min), 0.9375rem) var(--font-body); cursor: pointer; }
 .ti-linkbtn:hover { color: var(--ink); }
 .ti-edit { display: flex; flex-direction: column; align-items: stretch; }
-.ti-errors { margin: 0; padding: 0.75rem 1rem 0.75rem 2rem; border-radius: var(--r-sm); background: #FFE1DA; color: var(--coral-deep); font-weight: 800; font-size: max(var(--text-min), 0.9375rem); display: flex; flex-direction: column; gap: 0.375rem; }
+.ti-errors { margin: 0; padding: 0.75rem 1rem 0.75rem 2rem; border-radius: var(--r-sm); background: var(--danger-tint); color: var(--danger-ink); font-weight: 800; font-size: max(var(--text-min), 0.9375rem); display: flex; flex-direction: column; gap: 0.375rem; }
 .ti-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
 .ti-warns { display: flex; flex-direction: column; gap: 0.375rem; }
 .ti-warn { padding: 0.625rem 0.875rem; border-radius: var(--r-sm); background: var(--sun-tint); font-weight: 700; font-size: max(var(--text-min), 0.875rem); }
@@ -40,14 +40,14 @@
 .ti-kv { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
 .ti-k { font-size: max(var(--text-min), 0.875rem); font-weight: 700; color: var(--ink-3); }
 .ti-v { font-weight: 800; text-align: right; overflow-wrap: anywhere; min-width: 0; }
-.ti-item { display: flex; flex-direction: column; gap: 0.125rem; padding: 0.5rem 0.75rem; border-radius: var(--r-sm); background: #FAF7F2; min-width: 0; }
+.ti-item { display: flex; flex-direction: column; gap: 0.125rem; padding: 0.5rem 0.75rem; border-radius: var(--r-sm); background: var(--paper-2); min-width: 0; }
 .ti-line { display: flex; align-items: center; gap: 0.5rem; }
 .ti-line > svg { flex-shrink: 0; }
 .ti-strong { font-weight: 800; overflow-wrap: anywhere; }
 .ti-sub { font-size: max(var(--text-min), 0.875rem); font-weight: 600; color: var(--ink-2); overflow-wrap: anywhere; }
 .ti-conf { font-weight: 800; color: var(--ink); }
 .ti-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.ti-chip { display: flex; flex-direction: column; padding: 0.375rem 0.875rem; border-radius: var(--r-md); background: #FAF7F2; min-width: 0; }
+.ti-chip { display: flex; flex-direction: column; padding: 0.375rem 0.875rem; border-radius: var(--r-md); background: var(--paper-2); min-width: 0; }
 .ti-chip-name { font-weight: 800; }
 .ti-chip-sub { font-size: max(var(--text-min), 0.8125rem); font-weight: 600; color: var(--ink-2); overflow-wrap: anywhere; }
 .ti-notes { margin: 0; white-space: pre-wrap; font-weight: 600; line-height: 1.45; overflow-wrap: anywhere; }
@@ -61,7 +61,7 @@
   .ti-title { font-size: 1.75rem; }
   .ti-actions .btn { width: 100%; }
 }
-.ti-link { display: inline-flex; align-items: center; min-height: 2.75rem; font-weight: 800; color: var(--ink-2); text-decoration: underline; text-underline-offset: 0.25rem; }
+.ti-link { display: inline-flex; align-items: center; min-height: var(--target); font-weight: 800; color: var(--ink-2); text-decoration: underline; text-underline-offset: 0.25rem; }
 .ti-danger { color: var(--coral-deep); }
 .ti-match { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.75rem; border-radius: var(--r-md); background: var(--sun-tint); }
 
@@ -77,5 +77,13 @@
   .ti-detail-page .ti-sec { break-inside: avoid; margin-bottom: 1rem; padding: 1.25rem 1.5rem; }
   .ti-detail-page .ti-item { background: var(--paper-2); }
   .ti-detail-page .ti-chip { background: var(--paper-2); }
+  .ti-detail-page .ti-v { font-size: var(--t-2); }      /* F-200: a data row's value is secondary text (14px), so the page still fits 1280x800 with the 16px body */
 }
 @media (min-width: 1020px) and (max-width: 1299px) { .ti-detail-page .ti-wide { columns: 2; } }
+/* F-198: "Booked on <partner>" and "Change or cancel" under each booking on the details page. */
+.ti-item .bk-where { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 0.375rem; color: var(--ink-2); font-size: max(var(--text-min), 0.8125rem); line-height: 1.3; }
+.ti-item .bk-where .bk-where-t { font-weight: 700; }
+.ti-item .bk-where .bk-manage { min-height: 0; padding: 0; gap: 0.25rem; background: none; box-shadow: none; color: var(--ink); font: inherit; text-decoration: underline; text-underline-offset: 0.2em; }
+@media (max-width: 1019px) { .ti-item .bk-where .bk-manage, .ti-where .bk-manage { min-height: 3rem; } }      /* a finger's target on a phone or tablet; on a laptop one quiet line so the page still fits 1280 by 800 */
+.ti-where { display: flex; flex-wrap: wrap; align-items: center; gap: 0.375rem 0.75rem; color: var(--ink-2); }
+.ti-where .bk-where-t { font-weight: 700; }

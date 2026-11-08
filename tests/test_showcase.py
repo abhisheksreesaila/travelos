@@ -12,7 +12,7 @@ from tests.test_calendar import book
 from tests.test_signin import sign_in
 
 SLUGS = list(itineraries.ITINERARIES)
-SAMPLE_WORDS = ["Community trips", "For creators", "Your forks", "Trips others loved", "Fork a trip a real family took", "Leave a trail",
+SAMPLE_WORDS = ["Community trips", "Your forks", "Trips others loved", "Fork a trip a real family took", "Been somewhere wonderful?",   # the old landing's sample creators panel (F-206 made "Leave a trail" the product's line)
                 "Our LA family week", "Forked by", "312 families", "No plans yet?"] + [t.title for t in itineraries.ITINERARIES.values()]
 GONE_HREF = re.compile(r'href="(/community|/discover|/creators|/forks|/share|/rides|/trips/(?!build|import|switch)[^"/?#]+)')
 
@@ -109,6 +109,7 @@ def test_signed_out_pages_have_no_sample_data_or_links_to_hidden_pages(real, cli
 
 
 def test_the_landing_keeps_its_story_without_community_and_creators(real, client):
+    sign_in(client)                                                                # F-206: a stranger gets the cover; this landing is the signed-in one
     h = client.get("/").text
     assert "Fork a" in h and "getaway." in h and "verb" in h                       # the hero and its gloss
     assert "Everything side by side" in h and "Plan the fun part together" in h    # features and the animated calendar
@@ -121,6 +122,7 @@ def _search_form(html):
 
 
 def test_the_landing_search_fields_are_neutral_in_production_and_the_sample_trip_locally(real, client, monkeypatch):
+    sign_in(client)                                                                # F-206: the search form is on the signed-in landing
     form = _search_form(client.get("/").text)
     assert "Los Angeles" not in form and "Where to?" in form
     monkeypatch.setenv("GITAWAY_SHOWCASE", "1")
@@ -129,16 +131,18 @@ def test_the_landing_search_fields_are_neutral_in_production_and_the_sample_trip
 
 def test_footer_links_are_only_real_destinations(real, client):
     footer = re.search(r"<footer.*?</footer>", client.get("/").text, re.S).group(0)
-    assert re.findall(r'href="([^"]*)"', footer) == ["/signin", "/privacy", "/terms"]
+    assert re.findall(r'href="([^"]*)"', footer) == ["/for-creators", "/signin", "/privacy", "/terms", "https://www.openstreetmap.org/copyright"]  # the cover credits its map data (F-206)
     sign_in(client)
     footer = re.search(r"<footer.*?</footer>", client.get("/").text, re.S).group(0)
-    assert re.findall(r'href="([^"]*)"', footer) == ["/privacy", "/terms"]  # only the legal pages (F-076)
+    assert re.findall(r'href="([^"]*)"', footer) == ["/for-creators", "/privacy", "/terms"]  # the creators page (F-186) and the legal pages (F-076)
 
 
-def test_the_workspace_is_labelled_a_preview_with_sample_prices(real, client):
+def test_production_never_shows_the_invented_workspace(real, client):
+    """F-198 (6): the sample catalog (it was labelled "Preview: sample prices") is for the showcase and local copies; production asks where you are going and shows the honest lanes."""
     h = client.get("/plan").text
-    assert "Preview: sample prices, nothing is booked." in h
-    assert 'data-pane="community"' not in h and "Press 1–6" in h and 'id="ws-total"' in h and 'id="ws-book"' in h
+    assert "Where are you going?" in h and 'id="ws-total"' not in h and 'id="ws-book"' not in h and "Preview: sample prices" not in h
+    lanes = client.get("/plan?to=la&d=2027-03-05&r=2027-03-09&a=2").text
+    assert "Search flights to Los Angeles" in lanes and 'id="ws-total"' not in lanes
 
 
 def test_a_new_family_sees_two_ways_in_not_community(real, client):
@@ -178,8 +182,11 @@ def test_the_service_worker_version_changes_with_the_mode(client, monkeypatch):
 
 def test_the_local_copy_still_shows_all_sample_data(client):
     assert showcase.on()
+    cover = client.get("/").text                                                    # F-206: a stranger's landing is the cover
+    assert "Community trips" in cover and 'href="/community"' in cover and "For creators" in cover
+    sign_in(client)
     h = client.get("/").text
-    for word in ["Community trips", "For creators", "No plans yet?", "Leave a trail"]:
+    for word in ["Community trips", "For creators", "No plans yet?", "Been somewhere wonderful?", "Leave a trail"]:
         assert word in h
     assert "forks" in h
     for path in ["/community", "/creators", "/forks", f"/trips/{SLUGS[0]}", "/discover"]:

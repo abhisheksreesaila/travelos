@@ -22,9 +22,11 @@ MAX_DRAFT = 40_000
 AIRPORTS = ("SFO", "OAK", "SJC", "LAX", "BUR", "SNA", "LGB")
 DESTINATION_AIRPORT = {"los angeles": "LAX", "la": "LAX", "burbank": "BUR", "long beach": "LGB", "orange county": "SNA"}
 
-LEG = ("airline", "number", "from", "to", "depart_date", "depart_time", "arrive_date", "arrive_time", "confirmation", "seats")
-HOTEL = ("name", "address", "check_in_date", "check_in_time", "check_out_date", "check_out_time", "confirmation", "room", "phone", "rooms")  # `rooms` has no question: it rides along from an import
-CAR = ("company", "pickup_place", "pickup_date", "pickup_time", "dropoff_place", "dropoff_date", "dropoff_time", "confirmation", "car", "phone")
+LEG = ("airline", "number", "from", "to", "depart_date", "depart_time", "arrive_date", "arrive_time", "confirmation", "seats", "booked_on")
+HOTEL = ("name", "address", "check_in_date", "check_in_time", "check_out_date", "check_out_time", "confirmation", "room", "phone", "rooms", "booked_on")  # `rooms` has no question: it rides along from an import
+CAR = ("company", "pickup_place", "pickup_date", "pickup_time", "dropoff_place", "dropoff_date", "dropoff_time", "confirmation", "car", "phone", "booked_on")
+TICKET = ("name", "place", "start", "end", "confirmation", "booked_on")   # F-198: tickets and each booking's partner have no question: they ride along from an import
+ASKED = {"booked_on"}       # fields of a row that no step's form has: kept from the row before
 SCALARS = ("title", "destination", "start", "end", "adults", "flying", "stay", "rent", "notes", "booked_on", "itinerary", "timezone")
 CARRIED = ("knames", "aages")  # kids' names and adults' ages: no question for them, they ride along from an import
 
@@ -69,6 +71,8 @@ def load(text) -> dict:
         d["hotels"] = _rows(raw["hotels"], HOTEL, ti.MAX_HOTELS)
     if isinstance(raw.get("car"), dict):
         d["car"] = _rows([raw["car"]], CAR, 1)[0]
+    if isinstance(raw.get("tickets"), list):
+        d["tickets"] = _rows(raw["tickets"], TICKET, ti.MAX_TICKETS)
     return d
 
 
@@ -103,14 +107,16 @@ def read(step, form, draft):
         draft["emails"] = [get(f"ae{i}") for i in range(1, n + 1)]
     elif step == 4:
         draft["flying"] = "no" if get("flying") == "no" else "yes"
-        draft["legs"] = [{f: get(f"leg{i}_{f}") for f in LEG} for i in range(ti.MAX_LEGS) if f"leg{i}_airline" in form]
+        old = draft.get("legs", [])
+        draft["legs"] = [{**{f: get(f"leg{i}_{f}") for f in LEG if f not in ASKED}, "booked_on": old[i].get("booked_on", "") if i < len(old) else ""} for i in range(ti.MAX_LEGS) if f"leg{i}_airline" in form]
     elif step == 5:
         draft["stay"] = "no" if get("stay") == "no" else "yes"
         old = draft.get("hotels", [])
-        draft["hotels"] = [{**{f: get(f"hotel{i}_{f}") for f in HOTEL if f != "rooms"}, "rooms": old[i]["rooms"] if i < len(old) else ""} for i in range(ti.MAX_HOTELS) if f"hotel{i}_name" in form]
+        draft["hotels"] = [{**{f: get(f"hotel{i}_{f}") for f in HOTEL if f not in ("rooms", *ASKED)}, "rooms": old[i]["rooms"] if i < len(old) else "",
+                            "booked_on": old[i].get("booked_on", "") if i < len(old) else ""} for i in range(ti.MAX_HOTELS) if f"hotel{i}_name" in form]
     elif step == 6:
         draft["rent"] = "yes" if get("rent") == "yes" else "no"
-        draft["car"] = {f: get(f"car_{f}") for f in CAR}
+        draft["car"] = {**{f: get(f"car_{f}") for f in CAR if f not in ASKED}, "booked_on": (draft.get("car") or {}).get("booked_on", "")}
     elif step == 7:
         draft["notes"], draft["booked_on"], draft["itinerary"] = str(form.get("notes", "") or "").strip(), get("booked_on"), get("itinerary")
     return draft
@@ -406,16 +412,33 @@ def from_plan(plan) -> dict:
          "timezone": plan.timezone if plan.timezone != ti.zone_for(plan.legs, plan.destination)[0] else ""}
     if plan.legs:
         d["legs"] = [{"airline": l.airline, "number": l.number, "from": l.origin, "to": l.dest, "depart_date": _stamp(l.depart)[0], "depart_time": _stamp(l.depart)[1],
-                      "arrive_date": _stamp(l.arrive)[0], "arrive_time": _stamp(l.arrive)[1], "confirmation": l.confirmation, "seats": l.seats} for l in plan.legs]
+                      "arrive_date": _stamp(l.arrive)[0], "arrive_time": _stamp(l.arrive)[1], "confirmation": l.confirmation, "seats": l.seats, "booked_on": l.booked_on} for l in plan.legs]
     if plan.hotels:
         d["hotels"] = [{"name": h.name, "address": h.address, "check_in_date": _stamp(h.check_in)[0], "check_in_time": _stamp(h.check_in)[1],
                         "check_out_date": _stamp(h.check_out)[0], "check_out_time": _stamp(h.check_out)[1], "confirmation": h.confirmation, "room": h.room, "phone": h.phone,
-                        "rooms": str(h.rooms)} for h in plan.hotels]
+                        "rooms": str(h.rooms), "booked_on": h.booked_on} for h in plan.hotels]
     if plan.rental:
         c = plan.rental
         d["car"] = {"company": c.company, "pickup_place": c.pickup_place, "pickup_date": _stamp(c.pickup)[0], "pickup_time": _stamp(c.pickup)[1],
-                    "dropoff_place": c.dropoff_place, "dropoff_date": _stamp(c.dropoff)[0], "dropoff_time": _stamp(c.dropoff)[1], "confirmation": c.confirmation, "car": c.car, "phone": c.phone}
+                    "dropoff_place": c.dropoff_place, "dropoff_date": _stamp(c.dropoff)[0], "dropoff_time": _stamp(c.dropoff)[1], "confirmation": c.confirmation, "car": c.car, "phone": c.phone,
+                    "booked_on": c.booked_on}
+    if plan.tickets:
+        d["tickets"] = [{"name": t.name, "place": t.place, "start": t.start.isoformat(timespec="minutes"), "end": t.end.isoformat(timespec="minutes"), "confirmation": t.confirmation,
+                         "booked_on": t.booked_on} for t in plan.tickets]
     return d
+
+
+def _tickets(draft) -> tuple:
+    """The tickets that rode along in a draft, each checked again (a posted draft is never trusted): a name, a start and end that read as times, the end after the start, on a day of the trip."""
+    out, start, end = [], _day(draft.get("start", "")), _day(draft.get("end", ""))
+    for t in draft.get("tickets", []):
+        try:
+            a, b = datetime.fromisoformat(t["start"]), datetime.fromisoformat(t["end"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if t.get("name", "").strip() and b > a and start and end and start <= a.date() <= end:
+            out.append(ti.Ticket(t["name"].strip()[:80], t.get("place", "").strip()[:120], a, b, t.get("confirmation", "").strip()[:30], t.get("booked_on", "").strip()[:30]))
+    return tuple(sorted(out, key=lambda t: t.start))
 
 
 def build(draft) -> ti.Plan:
@@ -430,17 +453,18 @@ def build(draft) -> ti.Plan:
     people += [ti.Traveler((knames[i] if i < len(knames) else "") or f"Kid {i + 1}", "", int(age)) for i, age in enumerate(draft.get("kids", []))]
     legs = hotels = ()
     if draft.get("flying") != "no":
-        legs = tuple(sorted((ti.Leg(l["airline"], l["number"], l["from"].upper(), l["to"].upper(), _at(l["depart_date"], l["depart_time"]), _at(l["arrive_date"], l["arrive_time"]), l["confirmation"], l["seats"])
+        legs = tuple(sorted((ti.Leg(l["airline"], l["number"], l["from"].upper(), l["to"].upper(), _at(l["depart_date"], l["depart_time"]), _at(l["arrive_date"], l["arrive_time"]), l["confirmation"], l["seats"], l.get("booked_on", "")[:30])
                              for l in draft["legs"]), key=lambda leg: leg.depart))
     if draft.get("stay") != "no":
-        hotels = tuple(sorted((ti.Lodging(h["name"], h["address"], _at(h["check_in_date"], h["check_in_time"]), _at(h["check_out_date"], h["check_out_time"]), h["confirmation"], h["room"], _rooms(h["rooms"]), h["phone"])
+        hotels = tuple(sorted((ti.Lodging(h["name"], h["address"], _at(h["check_in_date"], h["check_in_time"]), _at(h["check_out_date"], h["check_out_time"]), h["confirmation"], h["room"], _rooms(h["rooms"]), h["phone"], h.get("booked_on", "")[:30])
                                for h in draft["hotels"]), key=lambda h: h.check_in))
     rental = None
     if draft.get("rent") == "yes":
         c = draft["car"]
-        rental = ti.Rental(c["company"], c["pickup_place"], _at(c["pickup_date"], c["pickup_time"]), c["dropoff_place"], _at(c["dropoff_date"], c["dropoff_time"]), c["confirmation"], c["car"], c["phone"])
+        rental = ti.Rental(c["company"], c["pickup_place"], _at(c["pickup_date"], c["pickup_time"]), c["dropoff_place"], _at(c["dropoff_date"], c["dropoff_time"]), c["confirmation"], c["car"], c["phone"], c.get("booked_on", "")[:30])
     return ti.Plan(title=draft["title"], destination=draft["destination"], start=_day(draft["start"]), end=_day(draft["end"]), booked_on=draft.get("booked_on") or "elsewhere",
-                   itinerary=draft.get("itinerary", ""), travelers=tuple(people), legs=legs, hotels=hotels, rental=rental, notes=draft.get("notes", "").strip(), timezone=zones.valid(draft.get("timezone", "")) or "")
+                   itinerary=draft.get("itinerary", ""), travelers=tuple(people), legs=legs, hotels=hotels, rental=rental, notes=draft.get("notes", "").strip(), timezone=zones.valid(draft.get("timezone", "")) or "",
+                   tickets=_tickets(draft))
 
 
 class BuildProblem(ValueError):

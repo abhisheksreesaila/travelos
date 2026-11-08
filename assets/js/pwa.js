@@ -1,10 +1,10 @@
 /* Registers the service worker (F-044) and forgets the saved pages when a traveler signs out. */
 (function () {
-  /* F-116: the Today tab goes straight back to the day (or week) last shown in this visit, not through /trip's redirect: one trip to the server less, and the
-     service worker can open it at once from its saved copy. A new visit (the app started again) still asks /trip for today. */
+  /* F-116: the Plan tab (Today until F-200) goes straight back to the day last shown in this visit, not through /trip's redirect: one trip to the server less, and the
+     service worker can open it at once from its saved copy. A new visit (the app started again) still asks /trip for today. The week is the Trip tab's own. */
   try {
     var today = sessionStorage.getItem("ga-today");
-    if (today && /^\/trip\/canvas(\?[^#]*)?$/.test(today)) document.querySelectorAll('#ph-tab-today, a.ph-back[href="/trip"]').forEach(function (a) { a.setAttribute("href", today); });
+    if (today && /^\/trip\/canvas\?(?:[^#]*&)?day=\d/.test(today)) document.querySelectorAll('#ph-tab-plan, a.ph-back[href="/trip"]').forEach(function (a) { a.setAttribute("href", today); });
   } catch (e) { /* no storage: the tab keeps /trip */ }
   /* F-120: iOS (the Home Screen app) can leave the fixed tab bar where the keyboard pushed it, a keyboard's height up the screen and scrolling with the page. When the
      keyboard goes (the visible area grows back), the page is nudged so the bar is laid out again at the bottom. */

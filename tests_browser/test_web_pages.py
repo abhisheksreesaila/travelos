@@ -64,7 +64,7 @@ def join_as(contexts, base_url, owner_page, email, role="editor"):
     other.click("#join-signin")
     other.fill("#si-email", email)
     other.click("#si-dev-form button[type=submit]")
-    other.wait_for_url("**/trip/canvas*")
+    other.wait_for_url("**/trip/cockpit*")      # the trip's home (F-201)
     return other
 
 
@@ -79,7 +79,7 @@ def test_each_page_has_the_top_bar_white_cards_and_the_trip_type_and_fits_1440_b
     card = {"/family": ".fam-sec", "/trip/details": ".ti-sec", "/start": ".st-card"}[path]
     style = page.locator(card).first.evaluate("e => { const s = getComputedStyle(e); return [s.backgroundColor, parseFloat(s.borderTopLeftRadius), s.borderTopWidth] }")
     assert style[0] == "rgb(255, 255, 255)" and 13 <= style[1] <= 15 and style[2] == "1px", style      # F-158: the calm skin's white card with a hairline edge, radius 14
-    assert "Bricolage" in page.locator("h1").first.evaluate("e => getComputedStyle(e).fontFamily")
+    assert "Geist" in page.locator("h1").first.evaluate("e => getComputedStyle(e).fontFamily")      # F-200: Geist for everything
     scroll_h, client_h = fits(page)
     assert scroll_h <= client_h, f"{path} scrolls: {scroll_h} > {client_h}"
 
@@ -187,7 +187,7 @@ def test_change_role_remove_leave_and_switch_family(ari, contexts, base_url):
 
 # ---- /trip/details: every button ---------------------------------------------------------------------------------------
 
-@pytest.mark.parametrize("button,url", [("#ti-cal", "**/trip/canvas*"), ("#ti-edit-trip", "**/trips/build/edit?trip=*"), ("#ti-correct", "**/trips/import"), ("#ti-delete", "**/trip/delete?trip=*")])
+@pytest.mark.parametrize("button,url", [("#ti-cal", "**/trip/cockpit*"), ("#ti-edit-trip", "**/trips/build/edit?trip=*"), ("#ti-correct", "**/trips/import"), ("#ti-delete", "**/trip/delete?trip=*")])
 def test_every_trip_details_button_lands_where_it_says(ari, base_url, button, url):
     ctx, page = ari
     page.goto(f"{base_url}/trip/details")
@@ -204,7 +204,7 @@ def test_start_import_continue_steppers_and_find_my_trip(ari, base_url):
     page.wait_for_url("**/trips/import")
     page.goto(f"{base_url}/start")
     page.click(".st-continue")
-    page.wait_for_url("**/trip/canvas*")
+    page.wait_for_url("**/trip/cockpit*")      # the trip's home (F-201)
     page.goto(f"{base_url}/start")
     expect(page.locator("#st-form input[name=to][value=la]")).to_be_checked()
     adults = page.locator("[data-field=a] .ga-step-btn.is-more")  # the plus of the Adults stepper

@@ -368,16 +368,16 @@ def test_sos_opens_with_no_connection_and_closes_three_ways(imported_page, base_
     page.context.set_offline(False)
 
 
-def test_the_tab_bar_is_today_on_the_left_and_ask_and_family_on_the_right(imported_page):
+def test_the_tab_bar_is_trip_plan_ask_book_family_with_ask_in_the_middle(imported_page):      # F-200: one bar of five (it was Today on the left, Ask and Family on the right, F-133)
     page = imported_page()
-    labels = [page.locator(f"#ph-tab-{k}").text_content().strip() for k in ("today", "ask", "family")]
-    assert labels == ["Today", "Ask", "Family"]      # F-133: Ask and Family show icons; their names are still their names
-    today, ask, fam = (page.locator(f"#ph-tab-{k}").bounding_box() for k in ("today", "ask", "family"))
-    assert today["x"] + today["width"] < PHONE["width"] / 2 < ask["x"] < fam["x"]
+    labels = [page.locator(f"#ph-tab-{k}").text_content().strip() for k in ("trip", "plan", "ask", "book", "family")]
+    assert labels == ["Trip", "Plan", "Ask", "Book", "Family"]      # Ask shows its ink button; its name is still its name
+    boxes = [page.locator(f"#ph-tab-{k}").bounding_box() for k in ("trip", "plan", "ask", "book", "family")]
+    assert boxes[1]["x"] + boxes[1]["width"] <= boxes[2]["x"] and abs(boxes[2]["x"] + boxes[2]["width"] / 2 - PHONE["width"] / 2) < 2 and boxes[2]["x"] + boxes[2]["width"] <= boxes[3]["x"]
     bar = page.locator(".ph-tabs").bounding_box()
     for tab in page.locator(".ph-tab").all():
         box = tab.bounding_box()
-        assert box["x"] >= bar["x"] and box["x"] + box["width"] <= bar["x"] + bar["width"] + 1 and box["height"] >= 43.5
+        assert box["x"] >= bar["x"] and box["x"] + box["width"] <= bar["x"] + bar["width"] + 1 and box["height"] >= 47.5
     page.locator("#ph-tab-family").click()
     page.wait_for_url(re.compile(r"/trip/family"))
 

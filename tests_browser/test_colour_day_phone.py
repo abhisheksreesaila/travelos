@@ -10,7 +10,7 @@ from gitaway import tripcal as cal
 from tests.test_signin import person
 from tests_browser.helpers import PHONE
 from tests_browser.test_day_dock import SAT_NOON, at
-from tests_browser.test_colour_day import CARD, CORALS, GEOMETRY, GRAPE, INK, INK_2, MINT, NO_SCROLL, PAPER_2, SKY, SUN, SUN_INK, SUN_TINT, crowd, day, hits, style
+from tests_browser.test_colour_day import CARD, GEOMETRY, KIND_HUES, NOT_A_KIND, GRAPE, INK, INK_2, MINT, NO_SCROLL, PAPER_2, SKY, SUN, SUN_INK, SUN_TINT, crowd, day, hits, style
 from tests_browser.test_colour_fill import is_quiet
 from tests_browser.test_topbar import TABLET, signed_in  # noqa: F401 - fixture
 
@@ -33,7 +33,7 @@ def test_plans_and_bookings_are_kind_filled_cards_with_a_tile_and_edge(signed_in
     page = day(signed_in, viewport)
     lunch = page.locator(".cz-gb", has_text="Lunch at Grand Central Market")
     sunset = page.locator(".cz-gb", has_text="Santa Monica Pier sunset")
-    for card, accent, tint, ink in ((lunch, SUN, SUN_TINT, SUN_INK), (sunset, MINT, "rgb(212, 247, 234)", "rgb(22, 134, 95)")):
+    for card, accent, tint, ink in ((lunch, SUN, SUN_TINT, SUN_INK), (sunset, MINT, "rgb(217, 242, 239)", "rgb(11, 77, 72)")):
         assert card.evaluate("e => getComputedStyle(e).backgroundColor") == tint      # F-167: filled with its kind's tint
         assert card.evaluate("e => getComputedStyle(e).borderTopWidth") == "1px"
         assert edge(card, accent), card.evaluate("e => getComputedStyle(e).boxShadow")      # the kind's left edge
@@ -44,7 +44,7 @@ def test_plans_and_bookings_are_kind_filled_cards_with_a_tile_and_edge(signed_in
         assert tile.locator("svg").count() == 1
     flight = page.locator(".cz-gbk", has_text="Skylark")
     hotel = page.locator(".cz-gbk", has_text="Check in")
-    for card, accent, tint in ((flight, SKY, "rgb(221, 238, 255)"), (hotel, GRAPE, "rgb(236, 228, 255)")):
+    for card, accent, tint in ((flight, SKY, "rgb(228, 227, 251)"), (hotel, GRAPE, "rgb(241, 227, 250)")):
         assert is_quiet(card.evaluate("e => getComputedStyle(e).backgroundColor"), tint)      # F-167: the kind's tint at 45% over white, exactly
         assert edge(card, accent), card.evaluate("e => getComputedStyle(e).boxShadow")
         assert card.locator(".cz-gbk-tile").evaluate("e => getComputedStyle(e).backgroundColor") == CARD
@@ -54,7 +54,7 @@ def test_plans_and_bookings_are_kind_filled_cards_with_a_tile_and_edge(signed_in
     plan_pill = lunch.locator(".cz-gb-tag")
     expect(plan_pill).to_have_text("Plan")
     assert plan_pill.evaluate("e => [getComputedStyle(e).backgroundColor, getComputedStyle(e).color]") == [PAPER_2, INK_2]
-    assert style(page, ".cz-day-body", "backgroundColor", "borderTopColor", "borderTopWidth") == [CARD, "rgba(30, 26, 46, 0.1)", "1px"]      # the day panel: white with a hairline
+    assert style(page, ".cz-day-body", "backgroundColor", "borderTopColor", "borderTopWidth") == [CARD, "rgb(227, 227, 232)", "1px"]      # the day panel: white with a hairline
     shot(page, f"day-{viewport['width']}.png")
     assert page.evaluate(NO_SCROLL.split(" && ")[0])
 
@@ -85,7 +85,7 @@ def test_every_item_prints_its_start_on_the_rail_and_no_label_overlaps(signed_in
 def test_the_rail_is_a_hairline_and_a_start_has_a_dot_in_its_kinds_colour(signed_in, viewport):
     page = day(signed_in, viewport)
     rail = page.locator(".cz-g-zoom").evaluate("e => { const s = getComputedStyle(e, '::before'); return [s.content, s.width, s.backgroundColor]; }")
-    assert rail == ['""', "1px", "rgba(30, 26, 46, 0.1)"], rail
+    assert rail == ['""', "1px", "rgb(227, 227, 232)"], rail
     dot = page.locator(".cz-g-start", has_text="12:30").locator(".cz-g-st-dot")
     assert dot.evaluate("e => getComputedStyle(e).backgroundColor") == SUN
 
@@ -150,14 +150,9 @@ def test_the_day_is_one_column_under_the_heading(signed_in, viewport):
 
 
 @BOTH
-def test_coral_is_only_the_primary_buttons_and_the_now_line(signed_in, viewport):
+def test_colour_on_the_day_is_only_the_kinds(signed_in, viewport):      # F-200: was "coral only for the primary buttons and the now line" (test_colour_day.py says why)
     page = day(signed_in, viewport)
-    bad = page.evaluate("""corals => [...document.querySelectorAll('.cz-view[data-day] *')].filter(e => {
-        const r = e.getBoundingClientRect(), s = getComputedStyle(e);
-        if (!r.width || !r.height || s.visibility === 'hidden' || s.display === 'none') return false;
-        const paints = [s.color, s.backgroundColor, s.borderTopColor, s.borderLeftColor].filter(c => corals.includes(c));
-        return paints.length && !e.closest('.cz-desk-btn, .cz-dock-btn, .tp-btn, .cz-nowline, .cz-ask-mic, .cz-compose-go, .cz-sos');
-      }).map(e => e.className.toString() + ' ' + (e.textContent || '').trim().slice(0, 20))""", list(CORALS))
+    bad = page.evaluate(NOT_A_KIND, [".cz-view[data-day] *", page.evaluate(KIND_HUES)])
     assert bad == [], bad
 
 

@@ -1,0 +1,29 @@
+/* The overview page around the artboards (not part of the design). */
+body.v-light { --vbg: #F2F2F5; --vs: #FFFFFF; --vi: #0B0B0D; --vi2: #5C5C66; --vl: #E3E3E8; --vsh: 0 18px 48px rgba(10,10,20,.16), 0 0 0 1px rgba(10,10,20,.05); }
+body.v-dark { --vbg: #000000; --vs: #1C1C1F; --vi: #F5F5F7; --vi2: #A1A1AA; --vl: #2E2E33; --vsh: 0 1px 0 rgba(255,255,255,.06) inset, 0 18px 48px rgba(0,0,0,.75), 0 0 0 1px #2E2E33; }
+body[class^="v-"] { background: var(--vbg); color: var(--vi); font: 16px/1.5 "Geist", system-ui, sans-serif; margin: 0; }
+.vbar { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 20px; padding: 12px 32px; background: var(--vs); box-shadow: 0 1px 0 var(--vl); font-weight: 600; }
+.vbar b { font-size: 16px; }
+.vbar nav { display: flex; gap: 4px; flex: 1; justify-content: center; }
+.vbar nav a, .vback { padding: 8px 14px; border-radius: 999px; color: var(--vi2); text-decoration: none; font-size: 15px; }
+.vbar nav a.on { background: var(--vi); color: var(--vbg); }
+.vback { box-shadow: inset 0 0 0 1.5px var(--vl); color: var(--vi); }
+.vmode { height: 38px; padding: 0 16px; border-radius: 999px; border: 0; background: var(--vi); color: var(--vbg); font: 600 15px/1 inherit; cursor: pointer; }
+.vmain { padding: 32px; display: grid; gap: 56px; max-width: 1560px; margin: 0 auto; }
+.notes { display: grid; gap: 12px; max-width: 1000px; }
+.notes h1 { font: 760 48px/1.02 "Geist", sans-serif; letter-spacing: -.045em; margin: 0; }
+.notes h1 em { font-style: normal; color: var(--vi2); }
+.notes p, .notes li { color: var(--vi2); font-size: 17px; margin: 0; }
+.notes b { color: var(--vi); }
+.notes ul { padding-left: 20px; display: grid; gap: 6px; margin: 0; }
+.notes code { font: 14px "Geist Mono", monospace; }
+.row h2 { font: 720 28px/1.1 "Geist", sans-serif; letter-spacing: -.025em; margin: 0 0 8px; }
+.row .rn { color: var(--vi2); max-width: 980px; margin: 0 0 16px; }
+.frames { display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap; }
+.fr { display: grid; gap: 8px; }
+.fr > span { font: 500 13px/1 "Geist", sans-serif; color: var(--vi2); }
+.fr a { color: var(--vi); }
+.fr iframe { border: 0; display: block; background: var(--vbg); }
+.ph-fr iframe { width: 390px; height: 844px; border-radius: 44px; box-shadow: var(--vsh), 0 0 0 10px var(--vs); }
+.dk-scale { width: 864px; height: 540px; overflow: hidden; border-radius: 14px; box-shadow: var(--vsh); }
+.dk-scale iframe { width: 1440px; height: 900px; transform: scale(.6); transform-origin: 0 0; }

@@ -94,7 +94,7 @@ def _with_extras(items, b, notes, session, who, family, with_steps=()):
     out = []
     others = [x for x in items if x.kind != "offer" and x.id not in with_steps]  # a plan with parts and steps is the day's frame, not something to overlap
     for x in items:
-        if x.kind in ("flight", "hotel", "car"):
+        if x.kind in ("flight", "hotel", "car", "ticket"):
             detail = cal.booking_detail(b, x.id)
             conf = next((v for k, v in detail[1] if k == "Confirmation"), "") if detail else ""
             x = replace(x, confirm=conf)
@@ -138,7 +138,7 @@ def up_card(v, compact=False):
         # F-092 now card on the day view: it ends with Directions and Uber (the captain, 2026-10-06: "after those two buttons, it should end"). No Details row: a
         # booking's title opens its sheet (F-093: confirmation, phone, address), an overlap is a small tag by the time, notes fold above the buttons.
         title = item.title if item else "You are all caught up"
-        if item and item.kind in ("flight", "hotel", "car"):
+        if item and item.kind in ("flight", "hotel", "car", "ticket"):
             from gitaway.pages.tripcanvas import curl     # the canvas imports this module: a late import keeps the two from importing each other at load
             title = A(item.title, href=curl(day=v["sel"], booked=item.id), cls="tp-up-link", id="tp-up-open", data_zoom="in", data_zk=f"bkg-{item.id}")   # opens in place, as the booking line does
         when = Div(Span(up.detail, cls="tp-up-sub"), overlap_tag(item) if item and item.overlaps else "", cls="tp-up-when")
@@ -169,20 +169,27 @@ def up_details(item):
     return Details(Summary("Details", Span(f" for {item.title}", cls="sr-only"), cls="tp-mini"), *body, cls="ph-details tp-confirm", **({"data_confirm": item.id} if item.confirm else {}), data_up_details=item.id)
 
 
-def leave_info(v, item):
-    """(leave-by minute, drive minutes, minutes left, margin) for reaching `item` from where the day puts you, or None when no drive time is known (gitaway.tripday.leave_by).
-    The Up next card here and the desktop panel (F-140) read the drive time through it."""
+def leave_from(v, item):
+    """(the place the drive to `item` starts from, minutes to be there early) the way the day puts you, or None when nobody drives to it (a landing).
+    The origin is "" straight after a flight. leave_info and the cockpit's next leg (F-201) read it."""
     before = [x for x in v["items"] if x.start < item.start and x.place and x.kind not in ("ride", "offer")]
     flew = any(x.kind == "flight" and x.start < item.start for x in v["items"])  # on a travel day nobody leaves from the stay
-    margin = 0
     if item.kind == "flight":  # F-075: a departure flight is driven to from the stop before (or the night's stay), with time to spare; a landing never is
         if not td.is_departure(item.id):
             return None
         leg = td._LEG.search(item.title)
         margin = td.flight_margin(*leg.groups()) if leg else td.DOMESTIC_EARLY
-        origin = "" if before and before[-1].kind == "flight" else before[-1].place if before else v["stay_before"]
-    else:
-        origin = "" if before and before[-1].kind == "flight" else before[-1].place if before else ("" if flew else v["stay_place"])  # straight after a flight there is no drive to time
+        return ("" if before and before[-1].kind == "flight" else before[-1].place if before else v["stay_before"]), margin
+    return ("" if before and before[-1].kind == "flight" else before[-1].place if before else ("" if flew else v["stay_place"])), 0  # straight after a flight there is no drive to time
+
+
+def leave_info(v, item):
+    """(leave-by minute, drive minutes, minutes left, margin) for reaching `item` from where the day puts you, or None when no drive time is known (gitaway.tripday.leave_by).
+    The Up next card here and the desktop panel (F-140) read the drive time through it."""
+    got = leave_from(v, item)
+    if not got:
+        return None
+    origin, margin = got
     got = td.leave_by(item, origin, v["clocks"][item.zone][1], margin)
     return (*got, margin) if got else None
 
@@ -210,7 +217,7 @@ def row(item, today, ua=""):
     inner = (Span(item.label.upper(), cls="tp-label"), Span(item.title, cls="tp-what"), Span(item.sub, cls="tp-sub"))
     state = {"done": "Done", "now": "Now", "next": "Next"}.get(item.state, "") if today else ""
     badge = Span(icon("check", 14, 3) if item.state == "done" else "", state, cls=f"tp-state tp-state-{item.state}") if state else ""
-    booked = item.kind in ("flight", "hotel", "car")  # a booked item (F-059): tinted by kind, a solid edge in the kind's ink, and a quiet lock
+    booked = item.kind in ("flight", "hotel", "car", "ticket")  # a booked item (F-059): tinted by kind, a solid edge in the kind's ink, and a quiet lock
     lock = Span(icon("lock", 14, 2.4), Span("Booked, locked", cls="sr-only"), cls="tp-lock") if booked else ""
     card = (A if item.href else Div)(Div(Span(icon(item.icon, 18, 2.2), cls="tp-ico", aria_hidden="true") if item.icon else "", Div(*inner, cls="tp-card-text"), lock, badge, cls="tp-card-in"),
                                      cls=f"tp-card {tint} is-{item.state} tp-{item.kind}{' tp-bk' if booked else ''}", **({"href": item.href} if item.href else {}), data_item=item.id)
@@ -262,8 +269,8 @@ def today_panel(v):
         parts.append(Div(*[row(x, v["now"] is not None, v["ua"]) for x in v["items"] if not (rest and x.id == v["up"].item.id) and not (x.kind == "flight" and x.title in flight_titles)], cls="tp-list", id="tp-list"))
     else:
         parts.append(Div(Span("wide open!", cls="tp-hand"), A("Add something fun", href=trip_url(add="1", day=sel), data_open_sheet="", cls="tp-btn tp-btn-ink") if editor else Span("Nothing planned yet.", cls="tp-sub"), cls="tp-empty"))
-    if cal.is_imported(v["b"]) and any(x.kind in ("flight", "hotel", "car") for x in v["items"]):  # where it was booked is said once, quietly
-        parts.append(Div(icon("lock", 13, 2.4), Span(f"Booked elsewhere · {cal.plan_of(v['b']).booked_on}"), cls="tp-elsewhere"))
+    if cal.is_imported(v["b"]) and any(x.kind in ("flight", "hotel", "car", "ticket") for x in v["items"]):  # where it was booked is said once, quietly
+        parts.append(Div(icon("lock", 13, 2.4), Span(cal.booked_tag(cal.plan_of(v['b']))), cls="tp-elsewhere"))      # "Booked on Expedia", as each booking says (F-198)
     parts.append(stay_card(v))
     parts.append(morning_ui.card(v["zone"]))  # F-066: the morning plan push, drawn by its own module
     parts.append(v.get("faceid", ""))  # F-074: "Use Face ID next time", hidden until passkeys.js says this is the Home Screen app
@@ -444,13 +451,13 @@ def register(app):
     def trip(session, request, tab: str = "", day: str = "", add: str = "", new: str = "", title: str = "", kind: str = "", at: str = ""):
         if (r := _guard(session)):
             return r
-        if not request.url.query:      # F-092: Today is the day view; this page stays (with a query) for its tabs, its days and the add sheet
+        if not request.url.query:      # F-201: the trip's home is the cockpit (it was the day view, F-092); this page stays (with a query) for its tabs, its days and the add sheet
             try:
-                tripgeo.warm(session)  # the app opens here: fill the map cache for Leave by, at most once an hour (F-068)
+                tripgeo.warm(session)  # the app opens here: fill the map cache for Leave by and the paper map, at most once an hour (F-068)
             except Exception:
                 log.exception("could not start the map fill")
-            from gitaway.pages import tripcanvas
-            return RedirectResponse(tripcanvas.today_url(session), status_code=303)
+            from gitaway.pages import cockpit
+            return RedirectResponse(cockpit.cockpit_url(), status_code=303)
         ua = request.headers.get("user-agent", "")
         sheet = {} if add == "1" else None
         if sheet is not None and (title or kind or at):      # Around you's "Add to plan": the sheet opens with the place's name, its kind and the next free hour

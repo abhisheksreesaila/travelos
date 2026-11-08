@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en" data-dir="a">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GitAway reskin · Direction A · Gallery</title>
+<link rel="stylesheet" href="base.css"><link rel="stylesheet" href="a.css"><link rel="stylesheet" href="viewer.css">
+</head>
+<body>
+<template id="notes"><div class="notes">
+  <h1>Direction A · Gallery</h1>
+  <p><b>A neutral grey canvas; everything placed on it is a solid, saturated widget.</b> The accent is ink (a black pill in light, a white pill in dark), so the only colour on screen belongs to the trip: indigo flights, violet stays, green cars, rust tickets, cerulean weather, yellow rides. Geist for words and numbers. The nav islands are the one glass surface (omxqua’s 2026-10-21 exception); every card, sheet and widget is opaque.</p>
+  <ul>
+    <li><b>Up next</b> is the one inverse card (ink in light, white in dark): the focal card on the phone day and the booking checklist.</li>
+    <li><b>Motion (Liquid, phone):</b> a widget tapped grows into its sheet from where it sits (settle tier: 12 px rise, 280 ms, no bounce) and folds back into it; the day chips’ ink thumb slides on <code>--oq-spring-fast</code>; the tab bar shrinks to icons while you scroll down; press is a 0.96 squash on everything. Live numbers (boarding countdown, the total) update in place, never bounce.</li>
+    <li><b>Motion (laptop):</b> the same calls become a calm 180 ms fade, no zoom. The Beacon (top right) morphs open into the flight card on a no-overshoot spring.</li>
+    <li><b>Landing:</b> the hero words rise in once, the bento widgets rise 28 px as they enter, the theme cards flip between themes on scroll. Reduced motion: everything static.</li>
+  </ul>
+</div></template>
+<script src="screens.js"></script><script src="viewer.js"></script>
+</body>
+</html>

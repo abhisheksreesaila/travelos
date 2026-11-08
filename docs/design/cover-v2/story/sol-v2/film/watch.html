@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>GitAway — Take a trip. Leave a trail.</title>
+<style>*{box-sizing:border-box}body{margin:0;background:#f5efe3;color:#302b26;font:17px/1.5 Georgia,serif}main{max-width:1200px;margin:auto;padding:30px 20px}video{width:100%;aspect-ratio:16/9;display:block;background:#f5efe3;border-radius:12px}nav{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}button,a{color:inherit}button{cursor:pointer;min-height:44px;padding:9px 14px;border:1px solid #d9cdb8;background:#fffbf2;border-radius:8px;font:13px system-ui,sans-serif}small{color:#74685b;font:13px system-ui,sans-serif}p{margin:12px 0}a{color:#266b80}h1{font-size:32px;font-weight:400;margin:0 0 20px}</style></head>
+<body><main><h1>Take a trip. Leave a trail.</h1>
+<video id="film" controls playsinline preload="metadata" poster="../frames/15-preview.webp"><source src="gitaway-take-a-trip-720p.mp4" type="video/mp4"><p><a href="gitaway-take-a-trip-1080p.mp4">Open the video</a></p></video>
+<nav aria-label="Jump to a scene"><button data-at="0">From the beginning</button><button data-at="24">Step inside Tahoe</button><button data-at="48">Leave a trail</button><button data-at="67">Couch to beach</button><button data-at="72">Summer at the lake</button></nav>
+<p><a href="gitaway-take-a-trip-1080p.mp4" download>Download 1080p</a> · <a href="gitaway-take-a-trip-720p.mp4" download>Download 720p</a> · <a href="gitaway-story.srt" download>Narration subtitles</a></p>
+<small>87 seconds · 18 scenes · Narration, music and watercolor depth/parallax animation.</small>
+</main><script>const v=document.getElementById('film');document.querySelectorAll('[data-at]').forEach(b=>b.onclick=()=>{v.currentTime=Number(b.dataset.at);v.play().catch(()=>{})})</script></body></html>

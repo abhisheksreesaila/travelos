@@ -1028,12 +1028,12 @@ Built: mine is --coral-deep #C9431F with white (4.88:1; --coral #FF7352 is 2.8:1
 
 Work happens on branch `autopilot/booking-creators` (M1-M5 of GOAL.md, plus the orange accent), which merges to master and deploys as one release after review.
 
-## F-179 Real booking links: Aviasales and Klook [todo]
+## F-179 Real booking links: Aviasales and Klook [done]
 Brief: docs/briefs/creator-launch.md · Needs: autopilot branch M2
-- [ ] flights link to an Aviasales search for the trip's route and dates with `marker=801445.<subid>`; no program id needed
-- [ ] stays, cars and things to do link to Klook through the Travelpayouts partner-links API (`TRAVELPAYOUTS_TOKEN`), with a timeout and a cached result; without a token or on an API failure, the plain Klook partner link (`KLOOK_FALLBACK_URL`)
-- [ ] placeholder program ids, Hotellook and DiscoverCars are gone; the partner names on screen are Aviasales and Klook
-- [ ] tests never reach the network; a live probe script checks one real link when the token is set
+- [x] flights link to an Aviasales search for the trip's route and dates with `marker=801445.<subid>`; no program id needed
+- [x] stays, cars and things to do link to Klook through the Travelpayouts partner-links API (`TRAVELPAYOUTS_TOKEN`), with a timeout and a cached result; without a token or on an API failure, the plain Klook partner link (`KLOOK_FALLBACK_URL`)
+- [x] placeholder program ids, Hotellook and DiscoverCars are gone; the partner names on screen are Aviasales and Klook
+- [x] tests never reach the network; a live probe script checks one real link when the token is set
 
 ## F-180 The booking journey [todo]
 Design: docs/design/booking-journey.html · Needs: F-179
@@ -1041,17 +1041,265 @@ Design: docs/design/booking-journey.html · Needs: F-179
 - [ ] a hand-off screen before leaving for the partner; "Did you book it?" when the person comes back (visibilitychange), Yes puts it on the trip as "Booked elsewhere · <partner>"
 - [ ] the sandbox no longer jumps back by itself; commission figures move to an admin-only page
 
-## F-181 Publish a trip as a creator, live [todo]
+## F-181 Publish a trip as a creator, live [done]
 Brief: docs/briefs/creator-launch.md · Needs: none (builds on /share, F-071 photos, M4 profiles)
-- [ ] from a family trip: pick photos, a note per day, tips, preview, publish under the person's name; unpublish any time
-- [ ] never published: confirmation numbers, other members' names, chat, exact stay addresses, photo EXIF/GPS (re-encoded)
-- [ ] published trips and their creator profile show on gitaway.me (showcase off); sample creators and trips stay local-only
-- [ ] a signed-out stranger can read it; signed in, fork it; "Plan this trip" goes to the trip's place
+- [x] from a family trip: pick photos, a note per day, tips, preview, publish under the person's name; unpublish any time
+- [x] never published: confirmation numbers, other members' names, chat, exact stay addresses, photo EXIF/GPS (re-encoded)
+- [x] published trips and their creator profile show on gitaway.me (showcase off); sample creators and trips stay local-only
+- [x] a signed-out stranger can read it; signed in, fork it; "Plan this trip" goes to the trip's place
 
-## F-182 Release: the booking branch to gitaway.me [todo]
+## F-182 Release: the booking branch to gitaway.me [blocked]
+Blocked: say "ship" to deploy this branch to gitaway.me; set ANTHROPIC_API_KEY and GITAWAY_ADMIN_EMAILS in Railway (service web).
 Needs: F-179, F-180, F-181 · reviewer + security-auditor (public publishing, uploads)
 - [ ] shipping checklist (what could break, how we'd know, rollback = redeploy the previous Railway deployment)
 - [ ] `TRAVELPAYOUTS_MARKER=801445` (and the token, set by the captain) on Railway; deploy; check the live pages
+
+# Creators turn a post into a trip (brief docs/briefs/creator-import.md, approved 2026-11-05)
+
+## F-183 Paste a link or text, get a draft trip (Claude Haiku 5.5) [done]
+Brief: docs/briefs/creator-import.md · Needs: F-181
+- [x] blog link → article text and photos; YouTube link → title, description, chapters; Instagram link → asks for the caption; pasted text always
+- [x] Haiku 5.5 drafts title, place, days, stops, tips, stickers as validated JSON through `gitaway/ai.py` (new job, Anthropic provider, `ANTHROPIC_API_KEY`), logged like every AI call; unsure places become "unnamed stop"
+- [x] the draft opens in the publish editor with a source card linking back; nothing publishes without "this is my post"
+- [x] fetching is safe: http(s) only, no private or internal addresses, size and time limits; tests never reach the network
+Blocked (for live use only): set ANTHROPIC_API_KEY in Railway, service web.
+
+## F-184 Creators keep their affiliate links [done]
+Needs: F-179, F-181
+- [x] a creator can save their Travelpayouts marker (digits only) on their profile; Book buttons from their trips use it with their SubID
+- [x] no marker: GitAway's; the trip page says plainly who earns
+
+## F-185 Report a trip, take it down [done]
+Needs: F-181
+- [x] "Report this trip" on every public trip (reason, optional email); rate limited
+- [x] an admin-only page lists reports and creators (count toward 150) with one-click take down and restore
+
+## F-186 The For creators page [done]
+Design: omxqua Coast, orange · Needs: F-183
+- [x] paste box first, a live example trip, the three promises (under a minute, your links keep paying you, links back to your post), free and terms on day one
+- [x] phone and laptop, 44px targets, no sideways scroll
+
+## F-187 A list of bloggers to invite [done]
+- [ ] 50 family-travel bloggers and creators (Disneyland, LA, Hawaii, Tahoe, San Diego, New York) with their site, channel, contact page and why they fit, public information only, in docs/research/creators.csv
+
+# Extremely creator-friendly (captain 2026-11-06: "it has to be extremely creator friendly"; autopilot overnight)
+
+## F-188 Ready-made drafts: a creator claims a trip in ten seconds [done]
+Brief: docs/briefs/creator-import.md · Needs: F-183, F-182 fixes
+- [x] an admin pastes a creator's post link (or many, from docs/research/creators.csv) and GitAway drafts it privately; nothing is public
+- [x] each draft gets a private claim link (long random token, expires in 30 days, single owner); the creator signs in, sees their post as a trip, ticks "this is my post", publishes
+- [x] the admin page lists drafts made, claimed, published, toward 150; an outreach message to copy per creator (never sent by GitAway)
+- [x] `pixi run draft-creators` drafts every A-priority creator from the CSV when ANTHROPIC_API_KEY is set; without it, says so
+
+## F-189 Share from the phone [done]
+Needs: F-183
+- [x] the installed app is a share target (Web Share Target in the manifest): sharing a YouTube video, Instagram post or blog page to GitAway opens the import with the link filled in
+- [x] signed out: sign in, then land on the same filled-in import
+
+## F-190 All my posts at once [done]
+Needs: F-183
+- [x] paste a blog's address on the import page ("Import several posts"): GitAway reads its sitemap (index followed one level, at most 2,000 addresses) or its feed (found on the home page) through the safe fetcher in a thread, keeps the creator's own site only, ranks trip-like posts by words (no AI) and lists up to 50 with titles and dates; the creator ticks up to 20, each counted against the daily limit and the site ceiling, and is told how many drafts are left
+- [x] drafting runs in the background: one row per post in a job table, worker threads (one post at a time per person), queued again after a restart; the page polls every few seconds; drafts land in My drafts (`/creators/drafts`: drafting, ready, failed, published; open, delete), the one list every draft shows on, admin-made ones included once claimed (F-188)
+- [x] local showcase: fixtures, no network. Tests: `tests/test_blogscan.py` (parsing, malicious XML, same-site, ranking, limits), `tests/test_draftjobs.py`, `tests/test_creator_batch.py`, `tests/test_event_loop.py`, `tests_browser/test_creator_batch.py` (390 and 1440, shots `docs/report/f190-*.png`)
+
+## F-191 A "Plan this trip on GitAway" button for their blog [done]
+Needs: F-181
+- [x] each published trip offers a copy-paste button snippet (plain link + small image, no script) and a text link
+- [x] the button links to the trip with `via=<handle>` honoured (F-184)
+
+## F-192 Creator stats [done]
+Needs: F-181, F-184
+- [x] a creator sees per trip: readers (counted without cookies, no personal data), forks, "Plan this trip" taps; partner clicks from their trips are shown in total (the cookie holds the handle, not the trip: D-129)
+- [x] privacy page says how readers are counted
+
+# Launch-day blockers (critique 2026-11-06: Creator supply, Trust and legal, Execution; docs/research/critique-2026-11-06.md)
+
+## F-194 Things that would embarrass or endanger a creator on launch day [done]
+Brief: docs/briefs/creator-import.md · Needs: F-188, F-182 fixes
+- [x] places: `disney`, `california` and `hawaii` no longer put a trip at Los Angeles or Honolulu; Walt Disney World, Disneyland Paris, Tokyo Disneyland, Lake Tahoe, Yosemite, San Francisco, Napa, Maui, Kauai and the Big Island map to no place; San Diego, La Jolla and Coronado to `sd`; Anaheim and "Disneyland Resort" stay `la`; the model's pick of a place is kept only when the post names it; a trip at a place GitAway cannot plan says so on its page (no Plan this trip, no "flights support <name>")
+- [x] money wording: one sentence (`affiliate.pays_you`, `affiliate.STAYS`) on the For creators page, the claim page, the outreach message and the settings page: flights booked from their trips carry their marker; stays and things to do support GitAway for now
+- [x] the claim link shows a read-only preview before sign-in (noindex, no-store); sign-in is asked only to claim
+- [x] a claim by someone whose verified email is not at the post's site publishes unlisted (reachable by link, in no list, not indexable) until the captain approves it on /admin, which lists what waits; an open import's "<name> · Blog" byline shows the site until the domain is verified or the captain approves
+- [x] robots.txt is read before a pre-draft or an import; a site that turns away anthropic-ai, ClaudeBot, Claude-Web, GPTBot, GitAwayBot or all robots from that page is not drafted from (the person is told to paste the text); a pre-draft's fetch no longer says the author asked
+- [x] grounding: every meaningful word of a stop name is in the post as a whole word; a clock time not written in the post is dropped; a note or tip with a number or $ amount the post lacks is dropped; the "named in the post" label is gone
+- [x] publishing a family trip checks the trip's travellers (members, an imported trip's people with their children, names on boarding passes) and a name the public text says blocks publishing until the editor ticks that they are happy to be named
+- [x] the captain can open and edit an unclaimed pre-draft from /admin before sending its claim link
+- [x] `pixi run draft-creators` refuses (exit 2) unless GITAWAY_DATA_DIR is /data and points at /admin on gitaway.me; docs/morning.html step 4 and docs/setup.md say use /admin
+Tests: `tests/test_place_matching.py`, `test_money_wording.py`, `test_robots.py`, `test_grounding.py`, `test_kids_names.py`, `test_claim_preview.py`, `test_claim_ownership.py`, `test_predraft_edit.py`, `test_draft_creators_script.py`, `tests_browser/test_launch_blockers.py`.
+- [x] review fixes: Tokyo and Shanghai Disneyland Resort map to no place; a link plus pasted text on a site that turns AI away drafts from the text; no marker on flights from a creator whose only trips wait for the captain; robots.txt of a redirect's final host is checked (D-156 to D-159)
+
+# The booking path is the reader's real trip (critique docs/research/critique-2026-11-06.md: Economics, Reader demand)
+
+## F-195 The booking path points at the reader's real trip, and the lane that earns [done]
+Needs: F-184, F-181 · Decisions: D-160 to D-167 · Not touched (another group's): `gitaway/creatordraft.py`, `gitaway/publish.py`
+- [x] Klook "Tickets and things to do": a `todo` target in `gitaway/partners` through the existing partner-links API with a SubID and today's fallback; a Disneyland trip goes to Klook's Disneyland Resort page, any other place to `<place> attractions`; shown as one honest card on the plan workspace (under Getting around), on a creator's trip page and on the honest page; the URLs and what could not be verified are in D-160
+- [x] a Disneyland trip's stay link asks Klook for Anaheim, not "Los Angeles hotels"; a trip is a Disneyland trip only when a creator's trip says so (`focus=disney`, D-161), so a Santa Monica trip is not sent to Anaheim
+- [x] the origin of the outbound Aviasales link is never hard-coded: the reader says a home airport (three letters, checked; on /start and on the honest page) or the link leaves the origin out and Aviasales asks (probed, D-162); `parse_trip` accepts any airport
+- [x] adults, children and infants go to Aviasales apart in its own age bands (probed, D-163); `plan_href` carries the place, the focus and the creator, and the reader sets the party and airport on the honest page and /start (D-168)
+- [x] attribution: a creator's handle is in the SubID (D-164) and a family that forks a creator's trip gets `ga_via`, not only a tap on "Plan this trip" (D-165); a Tickets click on a creator's own page counts for them
+- [x] in production a reader from a creator's trip gets one honest card per lane ("Search flights to <place>", "Find stays near <place>", "Tickets and things to do") and no invented offers (D-166)
+- [x] a Klook link the partner-links API cannot make is a WARNING with its reason (no secret) and a count on /admin for the last 7 days (D-167)
+- [x] proof: tests/test_trip.py, test_partners.py, test_affiliate.py, test_plan_search.py, test_klook_failures.py, test_start.py; tests_browser/test_plan_search.py (390 and 1440); the running app driven at both widths in production mode (screenshots with `F195_SHOTS=1` to docs/report/f195-*.png); `pixi run probe-tp` now checks the Klook pages with the captain's token
+- [ ] the captain runs `pixi run probe-tp` once with the token: the Disneyland, Anaheim and attractions links must each print a tracked link (D-160)
+- [x] review fixes (D-168 to D-170): `via` rides through "Change dates or who is coming", the /start form and its redirect to /plan with no cookie, so a reader with a pasted link stays on the honest page (D-125 stands); the SubID uses `_` only; a Disneyland trip needs "Disneyland" (or "Disney Land", "Anaheim"), not "Disney"; unused party parameters of `plan_href` removed
+- [ ] the captain also opens `https://www.klook.com/en-US/destination/p50042790-disneyland-resort/` in a normal browser (it answers 403 to curl); if it is a 404, switch `KLOOK_DISNEYLAND` to the product page or a search for `Disneyland Resort tickets`. After the first real flight click, check in the Travelpayouts report that the SubID (now `<family>_<place>_<day>_<lane>_<handle>`) arrives whole (D-164)
+
+# Release review fixes (critique docs/research/critique-2026-11-06.md)
+
+## F-196 Plumbing that breaks readers, families or the law [done]
+Brief: docs/briefs/creator-import.md · Needs: F-183, F-188 · Decisions: D-171 to D-180 (docs/decisions.md; expect renumbering on merge)
+- [x] 1. creator-import never falls back to Azure: with `ANTHROPIC_API_KEY` missing it is off and the paste page says drafting "is not switched on yet", even with `AZURE_OPENAI_*` set; the other jobs keep their Azure default (`tests/test_ai_plumbing.py`)
+- [x] 2. background drafts have their own AI pool (`ai.BACKGROUND_JOBS`: creator-import, plan-for-me listed ahead of F-193) so Ask, speak, voice and Convert always have their three slots; a `busy` answer in `draftjobs.run_one` puts the post back in the queue (not failed, not counted again) and the worker waits instead of spinning
+- [x] 3. `layout.page()` takes a description and Open Graph tags; every `/trips/<slug>` shares its lede, cover (else the app mark) and `og:type=article`, For creators shares its lede; a creator-imported trip says `robots noindex` and the founder's own published family trips stay indexable; For creators says "We tell Google not to index this copy, so your post keeps its ranking."; `/robots.txt` and `/sitemap.xml` list the indexable pages (`tests/test_seo.py`)
+- [x] 4. a stop can carry one link of the creator's own: booking.com, viator.com, getyourguide.com, amazon.com, amzn.to, getawaytoday.com, stay22.com, expedia.com, tripadvisor.com, klook.com or the blog's own domain; the model's links are kept only if listed and written in the post (blog text now keeps `[text](address)`); drawn `rel="sponsored noopener"`; editable in the editor, refused with a sentence when not allowed; the trip page says the links are the creator's own (`tests/test_stop_links.py`)
+- [x] 5. a fork lands something: untimed stops take morning, afternoon and evening slots in order; applying a fork with no trip makes one (the creator's place and length); a fork for another place than the open trip's says so and the button reads "Apply anyway" (`tests/test_fork_lands.py`)
+- [x] 6a. a new report is a WARNING line and an "N new" count where the captain already looks (the account menu with a dot on the avatar, the header, /admin), cleared only by a "Mark all as read" button, not by looking (`tests/test_report_notify.py`)
+- [x] 6b. when SMTP is set a new report emails every admin (page and reason only, never the reporter's words) through fh-saas `send_email`; its `markdown_merge` dependency is now in `pixi.toml` and the lock (D-187), and `tests/test_report_notify.py` runs the real `send_email` against a fake SMTP server (nothing faked but the server). Not yet seen: one send through a real mail server, when the captain sets the `SMTP_*` variables
+- [x] 7. /terms: creator license, copyright takedown, counter-notice, repeat-infringer policy, DMCA agent from `DMCA_AGENT` ("pending registration" until set), no "sample prices" sentence; /privacy: `ga_via` named as a 30-day affiliate attribution cookie, the Travelpayouts Drive script named (`tests/test_legal_f196.py`; `docs/setup.md`)
+- [x] 8. the source card's link to the creator's post sends the origin (`referrerpolicy="origin"`, no `noreferrer`) and carries `utm_source=gitaway` (`tests/test_source_link.py`)
+- [x] proven on the running app at phone and desktop width (screens in docs/report/f196-*.png), full suites green (after the audit fixes: `pixi run test` 3491 passed; `tests_browser` 1446 passed, 9 skipped, 1 failed: `test_publish.py::test_publish_from_the_phone_then_a_stranger_reads_it_and_it_comes_down`, "Download is starting", which fails on the base too)
+Blocked (for the captain, not for review): register a DMCA agent at copyright.gov and set `DMCA_AGENT`; for report email set the `SMTP_*` variables (the library is installed now); have a lawyer read /terms.
+Review fixes (second pass, merged with F-194 and F-195, D-185) and the security audit's, all done in "F-194..196: audit fixes" (D-187 to D-192):
+- [x] medium, report email: `markdown-merge` added with `pixi add --pypi`, real `send_email` proven over a fake SMTP server (D-187)
+- [x] low, `draftjobs._gathered`: a job's kept text goes when the job leaves the queue for any reason and at most 10 are kept (D-192)
+Accepted limits after the audit (known, not fixed): robots.txt is checked for the page a draft reads, not for the pictures it copies, oEmbed lookups or sitemaps it reads; the Klook links (D-160) are unverified live because Klook answers 403 from this machine (the captain's `probe-tp` and browser checks above); `ga_via` is a handle, so a reader who planned from an approved trip and later books from the same creator's waiting trip with no tap on "Plan this trip" in between is still credited to the creator (a tap or a Tickets click from the waiting trip forgets the cookie).
+# First real money (captain 2026-11-06: "first real money this weekend"; commissions settle only after travel, so it has to be a direct sale)
+
+## F-193 Plan it for me: a family pays once, an agent builds their trip [done]
+Brief: docs/briefs/plan-for-me.md (Status: draft, the captain approves price and delivery before deploy) · Needs: F-183 (ai.py), F-190 (worker pattern), partners · Risk: payments, personal data, an AI feature
+- [x] a card on public creator trip pages and on the signed-out landing, and a line in the trip menu, lead to one short phone-first intake (where, dates, home airport, adults, kids with ages, budget, must-dos, pace); nothing shows when `STRIPE_SECRET_KEY` is unset in production
+- [x] signing in comes before paying (a signed-out visitor's answers survive the sign-in); only a family editor or admin can buy
+- [x] the price ($29, `PLAN_FOR_ME_PRICE_CENTS`) is read on the server; a price, amount or currency sent by the browser changes nothing
+- [x] Stripe Checkout, mode payment, one line item; the webhook `checkout.session.completed` is verified with `STRIPE_WEBHOOK_SECRET`, carries the plan-for-me marker in the session metadata (an unmarked sale on the same Stripe account is ignored), must carry the order's amount and currency (any Checkout session of the order is accepted: D-154; a second paid session is a refund due), and is idempotent by event id; cards only, so no payment is in flight for days; a bad signature, or no secret, builds nothing
+- [x] locally with no Stripe key a stand-in checkout completes the order (404 in production); the whole flow is clickable
+- [x] job `plan-for-me` in `ai.py` (Claude Sonnet 5.5, per-job env override, structured output) run by a background worker writes a real day-by-day trip into the buyer's family database with the existing trip and plan functions; no invented prices or opening hours, unsure places have no name; Aviasales and Klook links carry the order id as SubID; AI tokens and cost are stored per order
+- [x] `/plan-for-me/<order>` shows paid, building, ready (link to the trip) and failed ("we'll refund you"); only the buyer can open it (anyone else gets a 404); a paid order that was building when the process stopped resumes at boot without a second model call or a second trip
+- [x] `/admin` lists every order with status, revenue and AI cost, and flags failed orders as refunds due
+- [x] the privacy page names Stripe and what the intake keeps; `docs/setup.md` lists every new variable; `forget_person` removes a person's orders; one concise line in AGENTS.md; decisions in docs/decisions.md
+- [x] tests: pricing never trusted from the client, webhook signature and idempotency, access, resume after restart, the AI result written as a trip; a browser test of the intake on phone and laptop in omxqua (no sideways scroll, targets of at least 40px)
+
+## F-197 An offer that sells: the Plan it for me page, three example plans, what to book and when, a founder check [done]
+Brief: docs/briefs/plan-for-me.md (draft; the captain approves the wording and the founding price before deploy) · Needs: F-193 · Risk: payments, personal data, an AI feature
+- [x] `/plan-for-me` is the offer, phone first in omxqua: the parent's outcome as the headline, "$29 for the first 10 families, then $49" (a real limit on the server, `PLAN_FOR_ME_FOUNDING_LIMIT`, the spots left shown; never a former price), what you get, a short founder note, the 7-day refund promise, a 4-question FAQ, "See an example plan", one clear button to the intake (now `/plan-for-me/start`; `?from=` carries over)
+- [x] three hand-written example plans (Disneyland Resort 3 days, kids 3 and 7; New York City 4 days, kids 8 and 11; Oahu 5 days with a toddler) stored as data and shown read-only at `/plan-for-me/example/<slug>` in the delivered trip's look; every fact checked against official sites and cited in docs/decisions.md; no prices, no exact opening hours
+- [x] "What to book and when": a countdown checklist with dates computed from the trip dates, from verified facts per destination (Disneyland, New York City, Oahu) and an honest generic list elsewhere; on every example, on a ready order page, and written into every delivered trip as notes
+- [x] founder check: with `PLAN_FOR_ME_REVIEW=1` (the default) a built plan waits on /admin for the captain's one-tap "Send to family" (with a quick edit link) and the buyer sees "Your plan is built and being checked by a person, usually within a few hours." and no trip; with 0 delivery is instant; in docs/setup.md
+- [x] the prompt asks for the examples' quality (ride order by the kids' heights and ages, rope drop, a midday rest, meal anchors, a rain backup) and is given the verified facts; `planforme.validate` keeps its filters; the intake takes an optional height per kid
+- [x] tests: the checklist dates, the review gate (the buyer cannot see an unsent plan), the example pages, access; a browser test of the offer page and an example at 390 and 1440 (no sideways scroll, tap targets of at least 48px on the phone)
+
+# Free and polished: booking anywhere, free plans (brief docs/briefs/free-and-polished.md, approved 2026-11-07)
+
+## F-198 Booking works for any destination, links only, no liability [done]
+Brief: docs/briefs/free-and-polished.md (What 4, The model) · Research: docs/research/booking-any-trip.md · Decisions: D-287 to D-298 · Needs: F-195 · UI kept minimal (the reskin restyles it)
+- [x] 1. a partner registry per lane (flight, stay, car, todo, direct) in `gitaway/partners/registry.py`: a lane uses a paying partner when it is connected (Aviasales with `TRAVELPAYOUTS_MARKER`; Klook through the partner-links API with token, marker and project id), else a plain deep link with the search filled in (stays: Expedia, Airbnb, Vrbo; cars: Expedia cars, SUV with snow chains and a ski rack on a winter snow trip; things to do: GetYourGuide; lift tickets and ski school: "Buy direct" at the resort); a plain link has no affiliate parameter and says "No commission"; `PARTNER_<LANE>=<site>` picks a lane's site and `PARTNER_TRACKED=<site,...>` sends a newly approved program through the partner-links API, with no code change; Klook goes first for stays and things to do only where it has the place
+- [x] 2. any destination: a free-text place resolves to its nearest airport from a small static table of common US destinations (Lake Tahoe -> RNO), or a manual three-letter airport field (checked); dates, adults and kids with ages go wherever the site's documented URL takes them. Lake Tahoe, Dec 19 to 26 2026, from SFO, 2 adults and kids 8 and 11 builds exactly the links of docs/research/booking-any-trip.md section 3
+- [x] 3. real flight prices where free: the Aviasales Data API (`TRAVELPAYOUTS_TOKEN`, market=us, currency=usd) behind a `TRANSPORT` seam, cached 24 hours, shown as "from $X, checked <time>"; no token or a failure shows no price, never an invented one; tests never reach the network
+- [x] 4. every booking in a trip says "Booked on <partner>" and has a "Change or cancel" button to that partner's own manage-booking page (Expedia, Booking.com, Airbnb, Vrbo, Klook, GetYourGuide, Aviasales/airline, car brands); GitAway never handles a change
+- [x] 5. paste-back: pasted confirmations from Booking.com, Airbnb, Vrbo, GetYourGuide, Klook and a car-rental company (synthetic samples) land as booked blocks with the partner recorded, from the import page and from the Ask box; Expedia keeps working
+- [x] 6. in production `/plan` never shows the invented catalog or its prices: every visitor gets the honest lanes; the workspace, its checkout and quotes stay on the showcase and local copies
+- [x] tests: registry, exact link URLs, price cache, manage links, paste parsers; a browser test of the booking lanes on a Tahoe trip at 390 and 1440 (no sideways scroll)
+- [x] proof: tests/test_booking_links.py, test_booking_registry.py, test_flight_prices.py, test_booking_lanes.py, test_booking_manage.py, test_paste_back.py; tests_browser/test_booking_lanes.py (390, 320, 1440, 1280, 1000; every tap caught and compared with the researched link); screenshots docs/report/f198-tahoe-390.png and -1440.png (`F198_SHOTS=1`)
+- [ ] the captain sets `TRAVELPAYOUTS_TOKEN` (and `TRAVELPAYOUTS_TRS`) on Railway: the flight lane then shows real cached fares and Klook links are tracked; with no keys every lane still works as a plain link that says "No commission"
+- [ ] the captain opens one Vrbo, one Expedia stay and one Expedia car link from the Tahoe page on a phone (all three answer a bot wall to this machine, D-288), and the walled manage pages (D-296)
+Follow-ups after the merge (not in this ticket, 2026-11-07):
+- [ ] the paste cutter also drops "Last 4:" and "Security code" lines
+- [ ] body limits for /trip/ask/answer, /edit and /apply
+
+## F-199 Plan it for me is free [done]
+Brief: docs/briefs/free-and-polished.md (What 1) · Decisions: D-299 to D-303 · Needs: F-193, F-197
+- [x] no Stripe needed to offer it: `PLAN_FOR_ME_PAID=0` (the default) makes an order go straight to building; the Stripe code stays and comes back with `PLAN_FOR_ME_PAID=1`
+- [x] a daily cap per person (`PLAN_FOR_ME_DAILY`, 2) and for the whole site (`PLAN_FOR_ME_SITE_DAILY`, 100), counted on the server, with a plain sentence when reached
+- [x] the model is configurable and defaults to claude-haiku-5-5 for free plans; each plan's tokens and cost are stored and logged
+- [x] the founder check stays, off by default (`PLAN_FOR_ME_REVIEW=0`)
+- [x] copy: free, no price or refund promise anywhere while free; /privacy and /terms say no payment is taken; docs/setup.md lists the variables
+- [x] tests: caps (person, site, a new day), free order flow, paid mode still works, copy has no price (tests/test_planforme_free.py; the F-193/F-197 tests run with `PLAN_FOR_ME_PAID=1`)
+- [ ] the captain reads two or three real plans built by Haiku before launch (quality was Sonnet's bar, D-301)
+
+## F-200 Direction A everywhere: tokens, type, light and dark, the shell, sign-in [done]
+Brief: docs/briefs/free-and-polished.md · Design: docs/design/reskin/README.md (Direction A, B's ticket stub), docs/design/cockpit/README.md "What all three share" · Needs: none · Decisions: D-219 to D-231 · Screenshots: docs/report/f200-before-*.png, f200-after-*.png
+- [x] Direction A tokens (canvas #F2F2F5 / black, Apple-bright kind colours, ink accent, sh1-sh3 shadows, radii) in one place, for light and dark; dark follows the system with a manual switch that's remembered
+- [x] type scale: phone body 17px, secondary 16px, all-caps labels 13px, fine print 14px; desktop body 16px; nothing else smaller
+- [x] the shell: desktop top islands (brand · Trip, Book, Family, Ask · the Beacon); phone floating tab bar (Trip · Plan · Ask · Book · Family), opaque, no glass or blur anywhere
+- [x] sign-in redesigned (the founder named it as too small)
+- [x] every existing page renders in light and dark with contrast at least 4.5:1 and phone tap targets at least 48px (a browser test sweeps the main pages in both modes)
+- [x] colour still means a kind, never a day; behaviour unchanged (existing tests pass)
+- [x] an honest "Early preview" label in the shell (desktop top islands, the phone chrome), small and calm, on signed-in and signed-out pages; it opens "GitAway is new. Things will change; tell us what breaks.", the last words a link to GITAWAY_CONTACT_EMAIL when it is set (the brief's "What" 1)
+
+## F-201 The trip cockpit: Ticket line [done]
+Brief: docs/briefs/free-and-polished.md · Design: docs/design/cockpit/3-ticket.html and README.md (Direction 3) · Needs: F-200 tokens; F-198 booking lanes; F-203 weather; F-204 routes · Decisions: D-275 to D-284 (docs/decisions.md; expect renumbering on merge)
+- [x] the week as a line of day stubs, each with its own living sky (`assets/js/wx.js`, the design's engine; weather through `gitaway/dayweather.py`: a plain sky with no number on a real trip until F-203, the labelled sample weather on the showcase, D-278) and the day's times; today's stub open in ink as Up next with the next leg turn by turn (the router's own steps, cached with the drive, three shown then "+N more", D-277)
+- [x] bookings as wallet passes, "Booked on <partner>" only when the booking names one (F-198's hook `cockpit.partner_of`; "Booked" until then) and Details to the booking's sheet; "Change or cancel" appears for an https page on that partner's own site when F-198 gives it; reference numbers masked (`••821`, never whole on the page)
+- [x] the paper map tilted in CSS 3D with stand-up place labels (screen-space, D-280), built once per region and shared (`gitaway/geopack.py` from tools/fetch_geo.py and gen_relief.py: relief WebP light and dark plus shapes, 50-110 KB a mode, community table `geo_regions`, the trip's link and attempts in `geo_packs`; one worker thread, daily budgets, capped reads, TRANSPORT seam and polite gates, D-276); tapping a day re-flies it; works offline once loaded (the service worker keeps the pack)
+- [x] "Open map" loads a real street map (MapLibre 5.24.0 served from this site with SRI + OpenFreeMap) only when tapped (D-283)
+- [x] web at 1440 first, the phone at 390 alongside; Liquid motion on the phone (the ticket grows out of the stub), the calm fade on desktop (the map's camera eases on --motion-zoom, nothing else moves); reduced motion is a fade
+- [x] tested on the founder's Tahoe trip (Dec 19-26, SFO to Reno, 2 adults + kids 8 and 11): `tests/tahoe.py` with real places, OSRM lines and elevation from the design's data, no network
+- [x] the trip's home: a bare `/trip` opens the cockpit; every function stays one tap away (Open the day / Today's plan for plans, notes and chat; Ask and Family in the tab bar and the top bar; the trip menu) (D-275)
+- [x] proven on the running app at 390, 1440 and 1280x800, light and dark (screens in docs/report/f201-*.png), and once against the live services on a dev server with a copy of the local data (live Nominatim, OSRM, Overpass and AWS Terrain Tiles: docs/report/f201-real-services-*.png; that run found and fixed Lake Tahoe's ring cut by the box, 60 KB shapes, an old pack breaking the page, and stops at the box's edge); full suites in foreground shards: `pixi run test` 3803 passed; `tests_browser` 1477 passed, 14 skipped, 4 failed: `test_publish.py::test_publish_from_the_phone_then_a_stranger_reads_it_and_it_comes_down` ("Download is starting", fails on the base too) and three that pass when rerun alone on this shared machine (`test_liquid` 390 drop, `test_note_authors`, `test_day_chip_drop` long trip)
+Not yet seen (needs the founder or other tickets): real snow skies need F-203's weather; per-booking partners and Change or cancel need F-198; the founder's real trip needs its plans named after places that OpenStreetMap knows (a plan title like "Snowshoe at Taylor Creek" geocodes only if Nominatim finds it) for its stops and legs to appear.
+Follow-ups (from the review, not in this ticket): the design's fourth "Tickets" pass; traveller avatars on the head and the passes; press-squash polish beyond D-55's squash (per-element springs, the ticket's tear); a geocoding fallback that tries a stay's street address alone when "name, address" is not found.
+Follow-ups after the merge (not in this ticket, 2026-11-07):
+- [ ] `geopack.transport` reads 64 KB chunks, so a trickling server can pass the 180 s deadline: read with `read1` or put a deadline on the socket
+- [ ] `geo_regions` needs a retention rule (shared regions are never pruned)
+- [ ] `_take_global` counts a build before `put_nowait`, so a full queue still spends the budget
+- [ ] deleting a trip resets its build limit
+- [ ] flaky: tests_browser/test_topbar.py::test_family_from_a_page_with_no_day_goes_to_the_day_with_the_chats_open
+
+## F-202 Book this trip: a book of tickets [todo]
+Brief: docs/briefs/free-and-polished.md · Design: docs/design/cockpit/3-ticket.html (Book) · Needs: F-198, F-201
+- [ ] one ticket per lane with its honest state: real cached flight price, "Search on Klook", "No commission" plain links, "Buy direct"
+- [ ] the checklist ticket: "1 of 6", a total "booked so far, from your confirmations" (never an invented price), booked rows torn into stubs
+- [ ] the paste moment: read, fields pop, the card flies into its lane, the stamp lands (calm fade on desktop)
+- [ ] "Bring a booking home" and a ride estimate (borrowed from Direction 2)
+
+## F-203 Real weather: MET Norway forecast, climate normals before it [done]
+Brief: docs/briefs/free-and-polished.md · Design: docs/design/cockpit/README.md "Weather" · Needs: none · Decisions: D-250 to D-260
+- [x] MET Norway Locationforecast for real trips (identifying User-Agent, cache by Expires, credit shown), behind a test seam; no network in tests: `gitaway/weather.py` (compact endpoint, four decimals, Expires and three hours, If-Modified-Since, a process gate, 429/403/203 handled, `TRANSPORT` seam refused in tests/conftest.py and tests_browser/conftest.py); "Forecast based on data from MET Norway · updated 6:10 AM" linked to MET's licence page
+- [x] before the forecast window (about 10 days out): climate normals for the place and dates, labelled "Typical late December · not a forecast yet"; NOAA normals for the US: 60 destinations in `gitaway/normals.json` from NOAA's 1991-2020 normals (`pixi run build-normals`), with what the days are usually like and when the forecast opens; anywhere else shows nothing
+- [x] sample weather stays only for showcase/sample trips; a real trip never shows invented weather: `weather.sample` (the showcase's own sample trip only); the /plan weather pane and the /forks day heads show the forecast, typical weather or nothing; a shared real trip carries none; context.py's invented weather is deleted
+- [x] privacy page names MET Norway; docs/setup.md updated (`MET_NORWAY_TERMS_ACCEPTED`, a Weather section)
+- [x] proof: tests/test_weather.py (the request, the cache, refusals, the Tahoe forecast read into days), test_weather_normals.py, test_weather_trip.py (the founder's Tahoe trip, Dec 19-26 2026: typical mid/late December 42/17-18 F now and nobody asked; MET's days from Dec 17), test_weather_pages.py, test_event_loop.py (a slow forecast never blocks /healthz); screenshots of /plan and /forks at 1440, 1280 and 390, no sideways scroll
+- [x] review fixes (D-258): no invented badge on shared or published pages; MET's answer untrusted; https://api.met.no only, no redirects, one deadline; only station coordinates; names matched at the start and in their own state; "most days"; the place's own today; the whole credit line a 48px link on the phone; the builder's downloads private (tests_browser/test_weather_credit.py and the review sections of the weather tests)
+- [x] final fixes (D-260): more ways of writing a destination find their station (Walt Disney World Resort, Universal Orlando Resort, Grand Teton National Park, Disneyland, CA, Disneyland Park, a lowercase "ca" for a California station, the Smokies in NC); the handshake gets only what is left of the deadline; gitaway/deadline.py tested on its own (tests/test_deadline.py)
+- [x] last fixes (D-259): a 304 is not a redirect; names abroad never borrow a US station and the forecast names its station; forecast() takes only a table station; every address tried in turn; no call started with under a second left; a TLS handshake the watchdog can cut (tests/tls_support.py: a test CA, a TLS server, a dripping proxy); the credit a 48px target on touch tablets too
+- [ ] the captain reads and accepts MET Norway's terms (https://api.met.no/doc/TermsOfService), then sets `MET_NORWAY_TERMS_ACCEPTED=1` on Railway (with `GITAWAY_CONTACT_EMAIL` set) and runs `pixi run probe-weather` once; until then real trips show typical weather only
+
+## F-208 A creator's dripping blog cannot hold the fetch past its deadline [done]
+Found by: the F-203 security review · Needs: F-203 (gitaway/deadline.py) · Risk: an outside server a creator names
+- [x] `gitaway/safefetch.py` fetches through `gitaway/deadline.py`, the GET-by-a-deadline the weather transport uses: the socket is held once connected, so the watchdog still reaches it after an answer says "Connection: close" (http.client then lets go of `conn.sock`, and `safefetch._http(timeout=1.0)` took 5.7 s against a dripping server); the TLS handshake runs on the TLS socket itself; the watchdog only shuts sockets down and the request closes them
+- [x] test: a server that says "Connection: close" and drips its body is cut within the deadline (tests/test_safefetch.py), beside the dripping body, headers and silence it already covered
+- [x] final fixes (D-260): the real transport tested over TLS through the pinned address with a test CA (a good certificate, the wrong name, a dragging handshake, a connection that comes up as the deadline passes); the TLS context built once; the name looked up within the deadline and that time counted; IPv6 public only inside 2000::/3; an unencodable redirect is "dns", an unsendable one "network"; no redirect from https to http
+
+## F-204 Routes and drive times that allow commercial use [todo]
+Brief: docs/briefs/free-and-polished.md · Needs: the founder's pick between the options researched
+- [ ] research: self-hosted OSRM or Valhalla for the regions in use vs a routing service whose free tier allows commercial use; cost, limits, effort
+- [ ] gitaway/geo.py uses the chosen source; legs stay cached
+
+## F-205 The shared trip: 3D story, four plan themes, thank and fork [todo]
+Brief: docs/briefs/free-and-polished.md "The soul: sharing" · Design: docs/design/story3d/, docs/design/cockpit/1-diorama.html, docs/design/reskin/ (themes) · Needs: the founder's pick of the story (postcards + globe, or the diorama)
+- [ ] the story on creator trip pages, light (<= 200 KB with three.js), with a still fallback
+- [ ] four themes a creator or reader picks: Scrapbook, Structured, Magazine, Minimal list
+- [ ] Thank (a real count) and Fork with a fork tree; counts are never invented
+
+## F-206 The cover page: a 3D scroll world [done]
+Brief: docs/briefs/free-and-polished.md "The soul: sharing", "The line" · Design: docs/design/cover3d/ (concept A with B's fork tree, the founder's pick) · Build: cover3d/README.md · Decisions: D-261 to D-274
+- [x] the signed-out landing is the cover: "Don't read about it. Go." … the fly-through over the real Lake Tahoe in December … B's fork tree ("Every trip here grew from another") … "Take a trip. Leave a trail." with the subhead and three doors: Start a trip (`/start`), Leave a trail (`/for-creators`), See trips people shared (`/community`, only while it exists); a signed-in person keeps the old landing; the Drive script rules unchanged
+- [x] text is real DOM (headings, the line, the doors) with a title, a description and Open Graph tags; the world is `aria-hidden` decoration
+- [x] three.js r187 self-hosted in `assets/vendor/three-0.187.0` (tree-shaken, version-pinned, licence kept), loaded only on the signed-out landing and only when the live world is wanted; landing JavaScript about 200 KB gzip of 250 (`tests/test_cover_budget.py`)
+- [x] a 10 KB poster at once; reduced motion, no WebGL and weak phones get the still chapters without downloading three.js; adaptive quality (tiers, then a lower pixel ratio, then the stills); the loop pauses under the closing screen and in a hidden tab
+- [x] day scene in light, night scene in dark, following the site's switch (F-200's, once it sets dark or light on `<html>`/`<body>`) and the system
+- [x] detail: the real elevation, shoreline, Emerald Bay, Fallen Leaf Lake, roads and drives; Tahoe's water with shallows and a mirror; crafted firs and pines with snow and wind; the chalet, the pier, the SUV and the family at true size; procedural timber; soft shadows; haze; falling snow; a winter sky with sunset rays and a starry night (credits: cover3d/CREDITS.md)
+- [x] phone: touch scroll (tested with real touch events), 16 px text and 48 px targets; no sideways scroll at six widths; durations only from `--motion-*`
+- [x] proof: `tests/test_cover.py`, `tests/test_cover_budget.py`, `tests_browser/test_cover.py` (390 and 1440, light and dark); frame rate measured (`cover3d/fps.json`: laptop 58 fps, phone-class CPU 56 fps, a weak GPU steps down and switches to the stills); screens, close-ups and a scroll-through in `docs/report/f206-*`
+- [ ] the founder opens it on their own phone (the frame-rate numbers come from this machine's GPU)
+
+## F-209 Creators redesigned as one product with the cockpit [todo]
+Brief: docs/briefs/free-and-polished.md · Design: docs/design/oneproduct/ (in progress) · Needs: the founder's pick; F-200 merged
+- [ ] For creators, paste/pick, drafting, editor, published trip (themes, Thank, Follow this trail, fork tree), profile, stats, claim and /admin relaid out in the Ticket line language, web first and phone alongside, light and dark
+- [ ] the founder says it feels like the same product as the cockpit and the cover
+
+## F-210 Booking redesigned as one product (absorbs F-202) [todo]
+Brief: docs/briefs/free-and-polished.md · Design: docs/design/oneproduct/ (in progress) · Needs: the founder's pick; F-198 merged
+- [ ] Where to? for any destination, the book of tickets, the paste moment and booking details ("Booked on X · Change or cancel") relaid out in the Ticket line language, web first and phone alongside, light and dark
 
 # Live-site fixes (each branches from master and ships on its own)
 
@@ -1061,3 +1309,9 @@ Security audit 2026-11-07, confirmed on gitaway.me: FastHTML's default headers m
 - [x] no page has a `<script src>` on another origin, signed out or signed in; the one allowed is Travelpayouts Drive (tp-em.com), on the signed-out landing only, when TRAVELPAYOUTS_DRIVE_ID is set. tests/test_no_cdn_scripts.py checks /, /signin and /privacy signed out, four signed-in pages, and every GET page both ways (it fails without the fix)
 - [x] clicked through on a dev server at 1440 and 390 (sign-in, the trip day and week, Ask, a family message from the laptop panel and the phone, /calendar's redirect, Publish to GitAway, sign-out): no page errors, no htmx or surreal globals, no request to cdn.jsdelivr.net; the only other-origin requests are Google Fonts and the map's OpenStreetMap tiles
 - [x] reviewer passes it; after the captain merges and it deploys, gitaway.me's page source has no cdn.jsdelivr.net
+
+
+## F-211 Season and weather you can feel [todo]
+Brief: docs/briefs/free-and-polished.md "Season and weather you can feel" · Needs: F-203 weather, F-209/F-210 designs
+- [ ] a seasonal background from the destination and dates (hemisphere aware; wet or dry season in the tropics) on the cockpit, the shared trail, Where to? and the book of tickets, light and dark
+- [ ] gentle animated weather from the real forecast or labelled typical weather (wx.js), never invented; reduced motion is a still; text contrast holds

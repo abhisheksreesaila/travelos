@@ -11,7 +11,7 @@ from urllib.parse import urlencode
 from starlette.responses import RedirectResponse
 from fasthtml.common import A, Button, Div, Form, H1, H2, Img, Input, Label, Link, P, Section, Span
 
-from gitaway import hub, session as ses
+from gitaway import hub, session as ses, showcase
 from gitaway.icons import icon
 from gitaway.layout import page
 from gitaway.itinerary_view import _icon
@@ -34,7 +34,7 @@ def card(c, i=0):
     tint = hub.TAGS[c.tags[0]][1] if c.tags else "sun"
     photo = Img(src=c.photo, alt=c.alt, loading="lazy") if c.photo else Span(icon("pin", 44, 2), cls="hub-pin")
     badges = [Span(c.source, cls="hub-badge hub-badge-src")] if c.source else []
-    count = Span("Your trip", cls="hub-badge hub-badge-forks") if c.mine else Span(f"{c.forks} forks", cls="hub-badge hub-badge-forks")
+    count = Span("Your trip", cls="hub-badge hub-badge-forks") if c.mine else "" if c.real else Span(f"{c.forks} forks", cls="hub-badge hub-badge-forks")   # a real trip has no sample fork count
     return A(
         Div(photo, *badges, count, cls=f"hub-photo tint-{tint}"),
         Div(Span(c.title, cls="hub-title"),
@@ -48,7 +48,8 @@ def hub_page(session, tags=(), creators=False, q=""):
     shown = hub.cards(session, tags=tags, creators=creators, q=q)
     on = set(tags)
     chips = [chip(label, hub_href(on ^ {k}, creators, q), k in on, fill, hub.TAGS[k][2]) for k, label, fill in FILTERS]
-    chips.append(chip("From creators", hub_href(on, not creators, q), creators, "", "play"))
+    if showcase.on():  # the "from a vlog" filter is for the sample creator trips; every real trip is a family's own
+        chips.append(chip("From creators", hub_href(on, not creators, q), creators, "", "play"))
     search = Form(
         Label(icon("target", 20, 2.2), Span("Where to", cls="sr-only"),
               Input(type="search", name="q", value=q, placeholder="Where to?", autocomplete="off", maxlength="40"), cls="hub-search"),
@@ -60,16 +61,16 @@ def hub_page(session, tags=(), creators=False, q=""):
     body = (Div(*[card(c, i) for i, c in enumerate(shown)], cls="hub-grid") if shown else
             Div(H2("No trips match those filters"), P("Try fewer filters, or start again."),
                 A("Show every trip", href="/community", cls="btn btn-primary btn-sm"), cls="hub-empty card", role="status"))
-    share_href = "/share" if ses.booking(session) else "/start"  # a trip to share, or the way to start one
-    first = ("" if filtered or hub.has_shared() else
+    share_href = ("/share" if showcase.on() else "/trip/publish") if ses.booking(session) else "/start"  # a trip to share, or the way to start one
+    first = ("" if filtered or hub.has_shared() or not showcase.on() else
              Div(icon("fork", 28, 2.2), Div(H2("Be the first to share one"),
                  P("These are sample trips. Share yours and it shows up here for every traveler, ready to fork."),
                  A("Share yours", href=share_href, cls="btn btn-primary btn-sm")), cls="hub-first card", role="status"))
     return page("Community trips", Section(
         Div(H1("Community trips"),
             P("Trips shared by travelers and creators. Fork one into your calendar."),
-            Div(A(icon("plus", 20, 2.4), "Share yours", href=share_href, cls="btn btn-primary"),
-                A(icon("play", 20, 2.2), "Turn a link into a trip", href="/creators", cls="btn"), cls="hub-cta"),
+            Div(A(icon("plus", 20, 2.4), "Share yours" if showcase.on() else "Publish yours", href=share_href, cls="btn btn-primary"),
+                *([A(icon("play", 20, 2.2), "Turn a link into a trip", href="/creators", cls="btn")] if showcase.on() else []), cls="hub-cta"),
             Div(search, Div(*chips, cls="hub-chips", role="group", aria_label="Filter trips"), cls="hub-controls"),
             P(f"{len(shown)} trip{'s' if len(shown) != 1 else ''}" + (" match" if filtered else ""), cls="hub-count", role="status") if shown else "",
             cls="hub-head"),

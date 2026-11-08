@@ -36,11 +36,13 @@ def test_phone_expanded_cars_hides_the_context_column():
 
 
 def test_phone_text_floor_is_13px():
-    """F-034: every small size goes through --text-min, which is 13px on phones and 11px elsewhere."""
+    """F-034, F-200: every small size goes through a floor: --text-min for words (16px on phones since F-200, 12px elsewhere) or --label-min for an all-caps label (13px on
+    phones, 12px elsewhere), so nothing on a phone is under 13px."""
     tokens = css("tokens.css")
-    assert re.search(r"@media \(max-width: 720px\)\s*\{\s*:root\s*\{[^}]*--text-min: 13px", tokens)
+    phone = re.search(r"@media \(max-width: 720px\)\s*\{\s*:root\s*\{([^}]*)", tokens).group(1)
+    assert "--text-min: 16px" in phone and "--label-min: 13px" in phone
     for path in CSS_DIR.glob("*.css"):
-        for m in re.finditer(r"font(?:-size)?:\s*(?:\w+\s+)*?(max\(var\(--text-min\), )?(\d*\.?\d+)rem", css(path.name)):
+        for m in re.finditer(r"font(?:-size)?:\s*(?:[\w-]+\s+)*?(max\(var\(--(?:text|label)-min\), )?(\d*\.?\d+)rem", css(path.name)):
             assert m.group(1) or float(m.group(2)) * 16 >= 13, f"{path.name}: {m.group(0)} is under 13px on a phone"
 
 
@@ -61,13 +63,15 @@ TAP_TARGETS = {  # file -> selectors that must be at least 2.75rem (44px at the 
 }
 
 
-def test_phone_touch_targets_are_44px():
-    """F-034: links, buttons and inputs get 2.75rem (44px) of height on a phone."""
+def test_phone_touch_targets_are_48px():
+    """F-034, F-200: links, buttons and inputs get the phone's target height, var(--target): 48px on a phone (44px before F-200's type and touch rules)."""
+    tokens = css("tokens.css")
+    assert "--target: 3rem" in tokens.split("@media (max-width: 720px)")[1].split("}")[0]
     for name, selectors in TAP_TARGETS.items():
         phone = phone_blocks(css(name))
         for sel in selectors:
             rules = re.findall(r"(?:^|[},\s])" + re.escape(sel) + r"(?:\s*,[^{}]*)?\s*\{([^}]*)\}", phone)
-            assert any(re.search(r"(?<![\w-])(?:min-)?height:\s*2\.75rem", r) for r in rules), f"{name}: {sel} lacks a 44px phone target"
+            assert any(re.search(r"(?<![\w-])(?:min-)?height:\s*var\(--target\)", r) or any(float(x) >= 3 for x in re.findall(r"(?<![\w-])(?:min-)?height:\s*([\d.]+)rem", r)) for r in rules), f"{name}: {sel} lacks a 48px phone target"
 
 
 def test_stay_card_tags_wrap_instead_of_clipping():

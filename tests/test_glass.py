@@ -1,5 +1,5 @@
-"""F-096: three tabs and a touch of glass. The tab bar is Today, Ask, Family (Ask in the true centre); Map is a small button in the day heading that opens that day's map;
-the tab bar and the sheets are glass only where the browser can blur, solid under prefers-reduced-transparency; cards and text stay solid."""
+"""F-096, F-200: the tab bar and the map button. Map is a small button in the day heading that opens that day's map, not a tab. F-200 (the free-and-polished brief) replaced
+F-096's glass: the tab bar (now five tabs: Trip, Plan, Ask in the true centre, Book, Family) and the sheets are opaque, with no glass or blur anywhere; cards and text stay solid."""
 
 import re
 from pathlib import Path
@@ -24,36 +24,15 @@ def test_the_bar_has_no_map_tab_on_any_trip_screen(trip):
     for url in ("/trip/canvas", "/trip/canvas?day=1", "/trip/ask", "/trip/family", "/trip/map"):
         html = trip.get(url).text
         nav = re.search(r'<nav[^>]*class="ph-tabs".*?</nav>', html, re.S).group(0)
-        assert len(re.findall(r"<a ", nav)) == 3 and "ph-tab-map" not in nav
+        assert len(re.findall(r"<a ", nav)) == 5 and "ph-tab-map" not in nav
 
 
-def blocks(css, opener):
-    """The text of every top-level rule or at-rule block that starts with `opener`."""
-    out, i = [], 0
-    while (i := css.find(opener, i)) != -1:
-        depth, j = 0, css.index("{", i)
-        k = j
-        while True:
-            depth += (css[k] == "{") - (css[k] == "}")
-            if depth == 0:
-                break
-            k += 1
-        out.append(css[j + 1:k])
-        i = k
-    return out
-
-
-def test_glass_only_where_the_browser_can_blur_and_solid_when_asked(  ):
-    for name, sel in (("phone.css", ".ph-tabs"), ("trip_canvas.css", ".cz .cz-sheet")):
+def test_the_bar_and_the_sheets_are_opaque_with_no_glass_or_blur():
+    for name, sel in (("phone.css", ".ph-tabs"), ("trip_canvas.css", ".cz .cz-sheet"), ("ask_sheet.css", ".ak-sheet")):
         css = (CSS / name).read_text(encoding="utf-8")
-        glass = " ".join(blocks(css, SUPPORTS))
-        assert sel in glass and "backdrop-filter: blur(1.25rem)" in glass and "color-mix" in glass
-        outside = css
-        for b in blocks(css, SUPPORTS):
-            outside = outside.replace(b, "")
-        assert not re.search(re.escape(sel) + r"[^{]*\{[^}]*backdrop-filter: blur", outside)      # no blur on the base rule
-        reduced = " ".join(blocks(css, "@media (prefers-reduced-transparency: reduce)"))
-        assert sel in reduced and "backdrop-filter: none" in reduced and "var(--card)" in reduced
+        assert "backdrop-filter" not in css and SUPPORTS not in css, name
+        rules = re.findall(r"(?:^|[},\s])" + re.escape(sel) + r" \{([^}]*)\}", css)
+        assert any("background: var(--card-2)" in r and "var(--sh3)" in r for r in rules), name      # raised and opaque, the strongest shadow
 
 
 def test_cards_and_text_stay_solid():

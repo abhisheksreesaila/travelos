@@ -102,7 +102,7 @@ def trip_of(booking=None):
     if not booking or not booking.get("trip"):
         return catalog.SAMPLE_TRIP
     p = {k: v[0] for k, v in parse_qs(booking["trip"]).items()}
-    return catalog.trip_from_url(p.get("d"), p.get("r"), p.get("a"), p.get("k"))
+    return catalog.trip_from_url(p.get("d"), p.get("r"), p.get("a"), p.get("k"), p.get("to"))
 
 
 def trip(demo="", booking=None):
@@ -160,7 +160,7 @@ def _lane(b, key, kind):
     if b.get("imported"):  # booked elsewhere (F-042): stand-ins for the offers, built from the stored template
         build = {"flight": tripimport.flight_offer, "stay": tripimport.stay_offer, "car": tripimport.car_offer}[kind]
         return build(_plan(b), given) if given else None
-    return catalog.offer(given) if given and given in {o.id for o in catalog.offers(kind)} else None  # the retired "c3" no car reads as skipped
+    return catalog.offer(given) if given and given in {o.id for o in catalog.offers(kind, trip_of(b))} else None  # the retired "c3" no car reads as skipped
 
 
 def flight_of(b):
@@ -296,11 +296,11 @@ def imported_blocks(plan, t):
     A block never runs past 11:59 PM. A red-eye is two blocks, the leaving evening and the landing morning: the one the window reads keeps
     the id ("b-out" is the landing morning, "b-back" the leaving evening); the other gets "-d" (leaves) or "-a" (arrives).
     """
-    tag = f"Booked elsewhere · {plan.booked_on}"
     last = (t.return_ - t.depart).days
     out = []
 
-    def put(block_id, at_day, start, end, title, icon):
+    def put(block_id, at_day, start, end, title, icon, item=None):
+        tag = booked_tag(plan, item)
         if 0 <= at_day <= last:
             drawn = min(start, LAST_MIN - 30)  # a late block is drawn from 11:29 PM at the latest, so it is 30 minutes tall (readable); its label keeps the true time
             out.append(Block(block_id, at_day, drawn, min(max(end, drawn + 15), LAST_MIN), title, "booked", True, icon, label_start=start if start != drawn else None, tag=tag))
@@ -311,19 +311,37 @@ def imported_blocks(plan, t):
             title = f"{x.name} · {x.origin} → {x.dest}"
             d0, d1 = (x.depart.date() - t.depart).days, (x.arrive.date() - t.depart).days
             if d1 == d0:
-                put(spec.id, d0, _min(x.depart), _min(x.arrive), title, "plane")
+                put(spec.id, d0, _min(x.depart), _min(x.arrive), title, "plane", x)
             else:  # lands after midnight
                 landing_id, leaving_id = (spec.id, spec.id + "-d") if spec.id == "b-out" else (spec.id + "-a", spec.id)
-                put(leaving_id, d0, _min(x.depart), LAST_MIN, title, "plane")
-                put(landing_id, d1, 0, _min(x.arrive), title, "plane")
+                put(leaving_id, d0, _min(x.depart), LAST_MIN, title, "plane", x)
+                put(landing_id, d1, 0, _min(x.arrive), title, "plane", x)
         elif spec.kind in ("checkin", "checkout"):
             at = x.check_in if spec.kind == "checkin" else x.check_out
-            put(spec.id, (at.date() - t.depart).days, _min(at), _min(at) + STAY_LEN, f"{'Check in' if spec.kind == 'checkin' else 'Check out'} · {x.name}", "bed")
+            put(spec.id, (at.date() - t.depart).days, _min(at), _min(at) + STAY_LEN, f"{'Check in' if spec.kind == 'checkin' else 'Check out'} · {x.name}", "bed", x)
+        elif spec.kind == "ticket":       # F-198: a tour, activity or ticket, at its own time
+            day = (x.start.date() - t.depart).days
+            put(spec.id, day, _min(x.start), _min(x.end) if x.end.date() == x.start.date() else LAST_MIN, x.name, "ticket", x)
         else:
             at = x.pickup if spec.kind == "pickup" else x.dropoff
             where = x.pickup_place if spec.kind == "pickup" else x.dropoff_place
-            put(spec.id, (at.date() - t.depart).days, _min(at), _min(at) + CAR_LEN, f"{'Pick up' if spec.kind == 'pickup' else 'Drop off'} {x.company} car · {where}", "car")
+            put(spec.id, (at.date() - t.depart).days, _min(at), _min(at) + CAR_LEN, f"{'Pick up' if spec.kind == 'pickup' else 'Drop off'} {x.company} car · {where}", "car", x)
     return out
+
+
+def booked_on(plan, item=None) -> str:
+    """Where a booking was made (F-198): its own partner, else the trip's when it names one partner, else "" (somewhere we were not told)."""
+    own = (getattr(item, "booked_on", "") or "").strip()
+    if own:
+        return own
+    trip = (plan.booked_on or "").strip()
+    return "" if not trip or trip == "elsewhere" or "," in trip or trip.endswith(" partners") else trip
+
+
+def booked_tag(plan, item=None) -> str:
+    """The words on a booked block: "Booked on Expedia", or "Booked elsewhere · <the trip's partners>" when this booking's own partner is not known."""
+    where = booked_on(plan, item)
+    return f"Booked on {where}" if where else f"Booked elsewhere · {plan.booked_on}"
 
 
 def _min(at):
@@ -826,17 +844,35 @@ def stop_start(text):
     return int(m.group(1)) % 12 * 60 + int(m.group(2)) + (720 if m.group(3).upper() == "PM" else 0)
 
 
-def fork_plans(itinerary):
-    """The Plans in a fork's itinerary: every stop with a clock time that is not one of the author's own bookings.
+FORK_SLOTS = (9 * 60, 13 * 60, 18 * 60)   # morning, afternoon, evening: where a stop with no clock time lands (F-196)
 
-    Day n of the fork lands on day n of the traveler's trip. A stop has only a start, so it gets a typical length.
+
+def _loose_starts(n):
+    """The start of each of `n` stops with no clock time on one day, in order: spread over the morning, the afternoon and the evening (one stop is the morning, two are the morning and the
+    afternoon, three take all three); a slot that gets more than one stop stacks them a typical stop apart. No start leaves a stop running past the end of the grid."""
+    used, out = {}, []
+    for k in range(n):
+        slot = k * len(FORK_SLOTS) // n
+        out.append(min(FORK_SLOTS[slot] + used.get(slot, 0) * FORK_LEN, GRID_END - FORK_LEN))
+        used[slot] = used.get(slot, 0) + 1
+    return out
+
+
+def fork_plans(itinerary):
+    """The Plans in a fork's itinerary: every stop that is not one of the author's own bookings.
+
+    Day n of the fork lands on day n of the traveler's trip. A stop has only a start, so it gets a typical length. A stop with no clock time (most posts give none) takes a morning,
+    afternoon or evening slot in the order it comes, so a fork always lands something (F-196).
     """
     out = []
     for d in itinerary.days:
+        loose = iter(_loose_starts(sum(1 for s in d.stops if not s.booked and stop_start(s.time) is None)))
         for i, s in enumerate(d.stops):
-            start = stop_start(s.time)
-            if s.booked or start is None:
+            if s.booked:
                 continue
+            start = stop_start(s.time)
+            if start is None:
+                start = next(loose)
             length = FORK_MEAL_LEN if s.kind == "food" else FORK_LEN
             out.append(Plan(f"d{d.n}s{i}", d.n - 1, start, start + length, _short(s.title), _FORK_KIND.get(s.kind, "fun")))
     return out

@@ -7,7 +7,7 @@
 
 /* The field that opens a picker */
 .ga-pick-btn {
-  display: flex; align-items: center; gap: 0.5rem; width: 100%; min-width: 0; min-height: 2.75rem; padding: 0 0.875rem;
+  display: flex; align-items: center; gap: 0.5rem; width: 100%; min-width: 0; min-height: var(--target); padding: 0 0.875rem;
   border: 0; border-radius: var(--r-sm); background: var(--card); box-shadow: var(--shadow-sm); color: var(--ink);
   font: 800 1rem var(--font-body); text-align: left; cursor: pointer;
 }
@@ -21,10 +21,10 @@
 /* Steppers: adults, kids */
 .ga-step { display: flex; align-items: center; gap: 0.5rem; }
 .ga-step-btn {
-  flex: none; width: 2.75rem; height: 2.75rem; padding: 0; border: 0; border-radius: var(--r-pill); background: var(--skeleton); color: var(--ink);
+  flex: none; width: var(--target); height: var(--target); padding: 0; border: 0; border-radius: var(--r-pill); background: var(--skeleton); color: var(--ink);
   font: 800 1.375rem/1 var(--font-body); cursor: pointer; display: grid; place-items: center;
 }
-.ga-step-btn.is-more { background: var(--coral); }
+.ga-step-btn.is-more { background: var(--coral); color: var(--on-accent); }
 .ga-step-btn[aria-disabled="true"] { opacity: .4; cursor: default; }
 .ga-step-n { min-width: 1.5rem; text-align: center; font: 800 1.375rem var(--font-display); }
 
@@ -39,7 +39,7 @@
 .ga-pop-list { padding: 0.5rem; max-height: min(20rem, 60vh); overflow: auto; }
 .ga-listbox { display: flex; flex-direction: column; gap: 0.125rem; outline: none; }
 .ga-listbox:focus-visible { outline: none; }
-.ga-opt { min-height: 2.75rem; padding: 0.5rem 0.875rem; border-radius: var(--r-sm); display: flex; align-items: center; font-weight: 800; font-size: 1rem; cursor: pointer; }
+.ga-opt { min-height: var(--target); padding: 0.5rem 0.875rem; border-radius: var(--r-sm); display: flex; align-items: center; font-weight: 800; font-size: 1rem; cursor: pointer; }
 .ga-opt:hover { background: var(--skeleton-band); }
 .ga-opt[aria-selected="true"] { background: var(--accent-tint); }
 .ga-opt.is-active { box-shadow: inset 0 0 0 0.1875rem var(--ink); }
@@ -54,25 +54,25 @@
 .ga-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.625rem; }
 .ga-tile { height: 4rem; padding: 0 1rem; border: 0; border-radius: 1.125rem; background: var(--card); box-shadow: 0 0 0 1px var(--line); text-align: left; display: flex; flex-direction: column; justify-content: center; cursor: pointer; font-family: var(--font-body); color: var(--ink); }
 .ga-tile.is-on { box-shadow: 0 0 0 0.1875rem var(--coral); }
-.ga-tile-k { text-transform: uppercase; font-size: max(var(--text-min), 0.75rem); font-weight: 800; color: var(--ink-3); }
+.ga-tile-k { text-transform: uppercase; font-size: max(var(--label-min), 0.75rem); font-weight: 800; color: var(--ink-3); }
 .ga-tile-v { font: 800 1.25rem var(--font-display); }
 .ga-cal-head { display: flex; align-items: center; gap: 0.5rem; }
 .ga-month { flex: 1; text-align: center; font: 800 1.25rem var(--font-display); }
-.ga-cal-nav { width: 2.75rem; height: 2.75rem; padding: 0; border: 0; border-radius: var(--r-pill); background: var(--skeleton-band); color: var(--ink); font: 800 1.375rem/1 var(--font-body); cursor: pointer; }
+.ga-cal-nav { width: var(--target); height: var(--target); padding: 0; border: 0; border-radius: var(--r-pill); background: var(--skeleton-band); color: var(--ink); font: 800 1.375rem/1 var(--font-body); cursor: pointer; }
 .ga-cal-nav:disabled { opacity: .35; cursor: default; }
 .ga-grid { display: flex; flex-direction: column; gap: 0.25rem; }
 .ga-row { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0.25rem; }
 .ga-row [role="gridcell"] { display: flex; min-width: 0; }
 .ga-dow { height: 1.75rem; display: flex; align-items: center; justify-content: center; font-size: max(var(--text-min), 0.75rem); font-weight: 800; color: var(--ink-3); }
-.ga-day { width: 100%; height: 3rem; padding: 0; border: 0; border-radius: 0.875rem; background: var(--card); color: var(--ink); font: 800 0.9375rem var(--font-body); cursor: pointer; transition: transform var(--motion-quick) var(--ease-spring); }
+.ga-day { width: 100%; height: 3rem; padding: 0; border: 0; border-radius: 0.875rem; background: var(--card); color: var(--ink); font: 800 max(var(--text-min), 0.9375rem) var(--font-body); cursor: pointer; transition: transform var(--motion-quick) var(--ease-spring); }
 .ga-day:hover:not(:disabled) { transform: scale(1.08); }
 .ga-day.is-in { background: var(--accent-tint); border-radius: 0.625rem; }
-.ga-day.is-end { background: var(--coral); border-radius: var(--r-pill); }
+.ga-day.is-end { background: var(--coral); border-radius: var(--r-pill); color: var(--on-accent); }
 .ga-day:disabled { color: var(--ink-3); opacity: .45; cursor: not-allowed; }
 .ga-cal-foot { display: flex; align-items: center; gap: 0.625rem; flex-wrap: wrap; }
 .ga-nights { min-height: 1.875rem; padding: 0 0.75rem; border-radius: var(--r-pill); background: var(--sun-tint); font-size: max(var(--text-min), 0.8125rem); font-weight: 800; display: flex; align-items: center; }
 .ga-tip { font-size: max(var(--text-min), 0.8125rem); font-weight: 700; color: var(--ink-2); flex: 1 1 8rem; }
-.ga-done { margin-left: auto; min-height: 2.75rem; }
+.ga-done { margin-left: auto; min-height: var(--target); }
 
 /* Phones: a bottom sheet, 44px targets */
 @media (max-width: 720px) {
@@ -81,12 +81,12 @@
   .ga-pop.ga-pop-cal { width: auto; }
   .ga-pop-list { max-height: 70vh; }
   .ga-pop-list.is-chips-box { min-width: 0; }
-  .ga-step-btn, .ga-cal-nav { width: 2.75rem; height: 2.75rem; }
+  .ga-step-btn, .ga-cal-nav { width: var(--target); height: var(--target); }
 }
 /* Sheet title: only on phones, where the sheet covers the field it belongs to */
 .ga-pop-title { display: none; }
 @media (max-width: 720px) {
-  .ga-pop-title { display: block; position: sticky; top: -0.5rem; z-index: 1; background: var(--card); padding: 0.75rem 0.875rem 0.5rem; font-size: max(var(--text-min), 0.8125rem); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+  .ga-pop-title { display: block; position: sticky; top: -0.5rem; z-index: 1; background: var(--card); padding: 0.75rem 0.875rem 0.5rem; font-size: max(var(--label-min), 0.8125rem); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
 }
 /* Narrow phones: seven day columns need the width, so the sheet gives up its side padding to the days */
 @media (max-width: 400px) {

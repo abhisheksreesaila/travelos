@@ -1,10 +1,12 @@
-"""The landing page at /: two doors, prefilled search, feature cards, creators link."""
+"""The landing page at /: two doors, prefilled search, feature cards, creators link. Since F-206 it is what a signed-in person sees (a stranger gets the cover)."""
 import re
 
 from gitaway.catalog import SAMPLE_TRIP
+from tests.test_signin import sign_in
 
 
 def _get(client):
+    sign_in(client)
     r = client.get("/")
     assert r.status_code == 200
     return r.text
@@ -21,7 +23,7 @@ def test_the_door_and_the_sample_trip_link_to_plan_and_the_trip(client):
 
 
 def test_door_previews_the_sample_trip_and_opens_the_start_page(client):
-    h = _get(client)
+    h = re.search(r'<main.*?</main>', _get(client), re.S).group(0)   # the header's sign-out form is not a door
     form = re.search(r'<form[^>]*>', h).group(0)
     assert 'method="get"' in form and 'action="/start"' in form
     assert not re.search(r'<input[^>]*name="(from|to|when|who)"', h)  # nothing to type: /start is the real form
@@ -34,7 +36,7 @@ def test_door_previews_the_sample_trip_and_opens_the_start_page(client):
 def test_four_feature_cards(client):
     h = _get(client)
     assert "Not just a booking site" in h
-    for title in ["Everything side by side", "One honest total", "Plan it together"]:
+    for title in ["Everything side by side", "Every part in one place", "Plan it together"]:
         assert title in h
     assert "Fork, don" in h and "start over" in h
 
@@ -42,7 +44,7 @@ def test_four_feature_cards(client):
 def test_after_you_book_and_creators_sections(client):
     h = _get(client)
     assert "AFTER YOU BOOK" in h.upper()
-    assert 'href="/creators"' in h and "Share a trip you loved" in h  # v2 copy: inspiring others, not "turn a link into a trip"
+    assert 'href="/for-creators"' in h and "Share a trip you loved" in h  # v2 copy: inspiring others, not "turn a link into a trip"
 
 
 def test_no_old_brand_name(client):
@@ -52,7 +54,7 @@ def test_no_old_brand_name(client):
 def test_page_loads_its_own_stylesheet_and_new_tokens(client):
     assert "/assets/css/landing.css" in _get(client)
     tokens = client.get("/assets/css/tokens.css").text
-    assert "--block-sunset: #FF8A63" in tokens and "--block-pacific: #6DB8FF" in tokens
+    assert "--block-sunset: var(--k-tix-t)" in tokens and "--block-pacific: var(--k-wx-t)" in tokens      # F-200: the doors' panels are Direction A tints (ink reads on them in both modes)
 
 
 def _order(h, *names):

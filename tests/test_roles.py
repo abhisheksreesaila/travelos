@@ -18,6 +18,7 @@ OPEN_FOR_VIEWERS = {
     "/family/phone",                                         # my own phone number (F-069)
     "/trips/switch", "/family/switch", "/family/stay",       # which trip I look at, which family I work in, dismissing the joined notice
     "/creators", "/creators/draft", "/creators/finish",       # a creator draft is the person's own, published to the community
+    "/creators/import", "/creators/import/{token}",           # a creator's import of their own post (F-183): their own draft and their own page, not a family's plan
     "/join/{token}",                                          # using an invite link: joining another family
     "/trip/morning", "/trip/morning/time", "/trip/morning/off", "/trip/morning/status",   # a person's own phone reminder (F-066)
     "/trip/photos", "/trip/photos/remove",                     # a viewer may add photos; removing is author-or-admin, checked by the route (F-071)
@@ -26,6 +27,12 @@ OPEN_FOR_VIEWERS = {
     "/trip/talk/message", "/trip/talk/photo", "/trip/talk/voice",   # a viewer may talk on a plan: text, photo, voice note (F-091)
     "/trip/family/message", "/trip/family/quiet",             # a viewer may talk in the family thread and silence their own pushes (F-070)
     "/trip/family/seen",                                      # and mark the chats read for themselves (F-143)
+    "/report",                                                # reporting a public trip or creator: anyone, signed out too (F-185)
+    "/admin/draft", "/admin/link", "/admin/revoke", "/admin/drafts/{token}", "/claim/{token}",   # F-188: the captain's drafts for creators (404 unless GITAWAY_ADMIN_EMAILS) and a creator claiming their own post
+    "/admin/takedown", "/admin/restore", "/admin/approve", "/admin/seen",    # the captain's buttons (F-194: approve a trip that waits for him): the route answers 404 unless the email is in GITAWAY_ADMIN_EMAILS (F-185)
+    "/creators/settings",                                     # a creator's own affiliate marker (F-184)
+    "/admin/plan-for-me/edit", "/admin/plan-for-me/send",     # the captain's founder check of a built plan (F-197): 404 unless GITAWAY_ADMIN_EMAILS
+    "/creators/drafts/scan", "/creators/drafts/start", "/creators/drafts/{token}",   # a creator's own batch of posts and drafts list (F-190): their drafts, not a family's plan
 }
 ADMIN_ONLY = {"/family/invite", "/family/invite/revoke", "/family/role", "/family/remove", "/trip/delete"}
 
