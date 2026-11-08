@@ -164,3 +164,17 @@ def test_a_viewer_cannot_make_a_trip(real, crew):  # noqa: F811
     assert r.status_code == 403
     page = viewer.get("/trip/new", params={"place": "Lisbon", **WHEN})
     assert page.status_code == 200 and 'id="tn-make"' not in page.text and "look at this family" in page.text
+
+
+@pytest.mark.parametrize("typed, zone", [("Paris, Texas", "America/Chicago"), ("Athens, Georgia", "America/New_York"), ("Lisbon", "Europe/Lisbon")])
+def test_a_us_town_named_after_a_foreign_city_keeps_its_states_clock(typed, zone):
+    """Review fix: the state the person typed outranks a zone named after the town."""
+    from gitaway import tripstart
+    from gitaway.partners import places
+    assert tripstart.zone(places.resolve(typed)) == zone
+
+
+@pytest.mark.parametrize("junk", [",,", "\x01"])
+def test_where_to_with_nothing_to_look_up_asks_again_instead_of_failing(real, client, junk):
+    r = client.get("/start", params={"go": "1", "place": junk, **WHEN, "n": "0"}, follow_redirects=False)
+    assert r.status_code == 422 and "Type where you want to go" in r.text

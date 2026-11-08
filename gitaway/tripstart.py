@@ -62,7 +62,7 @@ def destination(place) -> str:
 def zone(place) -> str:
     if place.iata in zones.AIRPORTS:
         return zones.AIRPORTS[place.iata]
-    return zones.from_city(place.city) or zones.from_city(place.name) or zones.resolve("", destination(place))[0]
+    return zones.from_state(destination(place)) or zones.from_city(place.city) or zones.from_city(place.name) or zones.resolve("", destination(place))[0]     # the state first: Paris, Texas is not Europe/Paris
 
 
 def token(user_id, search) -> str:

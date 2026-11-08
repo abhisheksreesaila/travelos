@@ -97,7 +97,8 @@ def drive(iata, town) -> Drive | None:
         b = geo.find(town, None, deadline=deadline)[0]
         minutes = geo.drive_minutes(a, b, None, deadline=deadline) if isinstance(b, tuple) else None
     except Exception:      # a drive is never worth failing the page
-        minutes = None
+        b, minutes = None, None
     found = Drive(iata, town, int(minutes)) if isinstance(minutes, int) and 0 < minutes <= MAX_MINUTES else None
-    _keep(key, found)
+    if found or b == geo.MISSING or isinstance(minutes, int):      # keep only what a service answered; a busy gate or a spent deadline is asked again next time
+        _keep(key, found)
     return found

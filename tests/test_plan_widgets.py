@@ -13,6 +13,8 @@ from gitaway.partners import prices, travelpayouts
 from tests import weather_support as ws
 from tests.pagebody import without_bar
 
+_real_find = geo.find
+
 TAHOE = "/plan?place=Lake+Tahoe&d=2026-12-19&r=2026-12-26&a=2&k=8,11&home=SFO"
 LISBON = "/plan?place=Lisbon&d=2026-10-10&r=2026-10-17&a=2"
 KEYS = ("TRAVELPAYOUTS_MARKER", "TRAVELPAYOUTS_TOKEN", "TRAVELPAYOUTS_TRS", "KLOOK_FALLBACK_URL", "PARTNER_TRACKED", "PARTNER_FLIGHT", "PARTNER_STAY", "PARTNER_CAR",
@@ -169,3 +171,12 @@ def test_no_panel_before_a_place_is_named(client):
 def test_every_lane_place_with_an_airport_has_its_coordinates():
     from gitaway.partners import places
     assert {p.iata for _, p in places._TABLE if p.iata} <= set(airportdrive.AIRPORTS)
+
+
+def test_a_busy_router_is_asked_again_next_time_not_remembered_as_no_drive(client, monkeypatch):
+    """Review fix: only a service's own answer is kept; a missed gate or deadline is not a failure to remember."""
+    monkeypatch.setattr(geo, "find", lambda *a, **k: (None, None))       # the shared gate was busy
+    assert widget(client.get(TAHOE).text, "drive") == ""
+    monkeypatch.setattr(geo, "fetch", Router(3900))
+    monkeypatch.setattr(geo, "find", _real_find)
+    assert "Drive from RNO" in words(widget(client.get(TAHOE).text, "drive"))

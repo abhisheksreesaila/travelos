@@ -206,6 +206,8 @@ def register(app):
             vals, trip, errors = _submitted(q)
             if trip and vals["place"] is not None:      # any place: the booking lanes for it (F-210)
                 search, _ = plan_search.search_from(vals["place"], "", trip.depart.isoformat(), trip.return_.isoformat(), str(trip.adults), ",".join(map(str, trip.kid_ages)), "", trip.home)
+                if search is None:      # text with nothing to look up (",,", control characters)
+                    return start_page(session, vals, {"place": tripstart.PLACE_MISSING}, status=422)
                 return RedirectResponse("/plan?" + urlencode(plan_search.query(search, vals["via"])), status_code=303)
             if trip:
                 query = "&".join(filter(None, (catalog.trip_query(trip), f"via={vals['via']}" if vals["via"] else "")))     # via is not a cookie: D-125 stands
