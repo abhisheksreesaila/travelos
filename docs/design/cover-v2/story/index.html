@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GitAway cover, take two: the storyboard</title>
+<style>
+  :root {
+    --paper: #f3ecdf; --paper-2: #fbf7ef; --ink: #2b2620; --ink-soft: #6b6157; --rule: #d9cdb8;
+    --ochre: #c98b3a; --slate: #5d6f8f; --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    --hand: "Bradley Hand", "Segoe Print", "Comic Neue", "Chalkboard SE", var(--serif);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--serif); line-height: 1.5;
+    background-image: radial-gradient(rgba(120,90,50,.05) 1px, transparent 1px); background-size: 6px 6px; }
+  main { max-width: 1240px; margin: 0 auto; padding: 56px 32px 96px; }
+  header.top { text-align: center; margin-bottom: 48px; }
+  header.top h1 { font-weight: 400; font-size: 44px; margin: 0 0 6px; letter-spacing: .01em; }
+  .kicker { letter-spacing: .32em; text-transform: uppercase; font-size: 13px; color: var(--ink-soft); }
+  header.top p.lede { max-width: 640px; margin: 18px auto 0; color: var(--ink-soft); font-size: 17px; }
+  h2.section { font-weight: 400; font-size: 26px; text-align: center; margin: 72px 0 8px; }
+  h2.section + .kicker { display: block; text-align: center; margin-bottom: 32px; }
+
+  .sheets { display: grid; grid-template-columns: 1fr; gap: 40px; }
+  figure { margin: 0; }
+  .frame { position: relative; aspect-ratio: 16 / 9; background: var(--paper-2); border-radius: 6px;
+    box-shadow: 0 18px 40px -22px rgba(60,40,20,.45); overflow: hidden; }
+  .frame > svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  figcaption.sheet { text-align: center; margin-top: 10px; font-size: 15px; color: var(--ink-soft); }
+  figcaption.sheet strong { color: var(--ink); font-weight: 400; font-size: 18px; display: block; }
+
+  .panel { margin: 0 0 64px; }
+  .panel-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 12px; }
+  .num { font-size: 13px; letter-spacing: .25em; color: var(--ochre); }
+  .panel-head h3 { margin: 0; font-weight: 400; font-size: 24px; }
+
+  /* a bubble's (left, top) is the tip of its tail; script.place() puts it just above the speaker's face */
+  .bubble { position: absolute; transform: translate(-50%, calc(-100% - 11px)); background: #fffdf8; color: var(--ink);
+    border: 1.6px solid var(--ink); border-radius: 18px; padding: 7px 14px 8px; font-family: var(--hand);
+    font-size: clamp(13px, 1.45vw, 19px); line-height: 1.2; white-space: nowrap; box-shadow: 2px 3px 0 rgba(43,38,32,.12); }
+  .bubble small { display: block; font-family: var(--serif); font-size: 10px; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--ink-soft); margin-bottom: 1px; }
+  .bubble::after { content: ""; position: absolute; width: 14px; height: 14px; background: #fffdf8;
+    border-right: 1.6px solid var(--ink); border-bottom: 1.6px solid var(--ink); bottom: -8px; }
+  .bubble.tl { transform: translate(-25px, calc(-100% - 11px)); }
+  .bubble.tr { transform: translate(calc(-100% + 25px), calc(-100% - 11px)); }
+  .bubble.tl::after { left: 18px; transform: rotate(45deg) skew(12deg, 12deg); }
+  .bubble.tr::after { right: 18px; transform: rotate(45deg) skew(12deg, 12deg); }
+  .lines { display: none; margin: 10px 0 0; padding: 0; list-style: none; font-family: var(--hand); font-size: 15px; }
+  .lines li { margin: 2px 0; }
+  .lines b { font-family: var(--serif); font-weight: 400; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-soft); margin-right: 6px; }
+  .bubble.tc::after { left: calc(50% - 7px); transform: rotate(45deg); }
+
+
+  .caption { margin: 14px 0 4px; font-size: 21px; font-style: italic; text-align: center; }
+  .caption.silent { color: var(--ink-soft); font-size: 16px; }
+  .motion { text-align: center; font-size: 13px; letter-spacing: .04em; color: var(--ink-soft); }
+  .motion::before { content: "Motion: "; letter-spacing: .2em; text-transform: uppercase; font-size: 11px; color: var(--slate); }
+
+  ol.summary { list-style: none; padding: 0; margin: 0 auto; max-width: 980px; display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; counter-reset: s; }
+  ol.summary li { background: var(--paper-2); border-radius: 6px; padding: 22px 24px; counter-increment: s;
+    box-shadow: 0 14px 30px -24px rgba(60,40,20,.5); }
+  ol.summary li::before { content: counter(s, decimal-leading-zero); display: block; color: var(--ochre);
+    letter-spacing: .25em; font-size: 12px; margin-bottom: 6px; }
+  ol.summary strong { font-weight: 400; font-size: 19px; display: block; margin-bottom: 4px; }
+  ol.summary span { color: var(--ink-soft); font-size: 15px; }
+  .cta { text-align: center; margin-top: 30px; font-size: 18px; }
+  .cta b { font-weight: 400; display: inline-block; border: 1.5px solid var(--ink); border-radius: 999px; padding: 8px 20px; margin: 0 6px; }
+  .cta b.primary { background: var(--ink); color: var(--paper-2); }
+  footer { margin-top: 72px; text-align: center; color: var(--ink-soft); font-size: 13px; }
+
+  @media (max-width: 760px) {
+    main { padding: 32px 14px 64px; } header.top h1 { font-size: 32px; }
+    .frame .bubble { display: none; } .lines { display: block; }
+    .caption { font-size: 18px; } .panel { margin-bottom: 44px; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header class="top">
+    <div class="kicker">GitAway &middot; the cover, take two</div>
+    <h1>Take a trip. Leave a trail.</h1>
+    <p class="lede">Thirteen pages of one sketchbook. Maya and Sam book Tahoe in winter, go, and leave a trail.
+      Half a world away, Rosa and Tom&aacute;s follow it into their summer.</p>
+  </header>
+
+  <h2 class="section">The cast</h2><span class="kicker">character sheets</span>
+  <div class="sheets">
+    <figure>
+      <div class="frame" data-sheet="maya-sam"></div>
+      <figcaption class="sheet"><strong>Maya &amp; Sam</strong>early 30s &middot; home and Tahoe in winter</figcaption>
+    </figure>
+    <figure>
+      <div class="frame" data-sheet="rosa-tomas"></div>
+      <figcaption class="sheet"><strong>Rosa &amp; Tom&aacute;s</strong>late 60s, Lisbon &middot; home and Sand Harbor in summer</figcaption>
+    </figure>
+  </div>
+
+  <h2 class="section">The story</h2><span class="kicker">13 pages &middot; bubbles, captions and labels are live text</span>
+  <div id="panels"></div>
+
+  <h2 class="section">After the story: the summary</h2><span class="kicker">the scroll keeps going</span>
+  <ol class="summary">
+    <li><strong>Book with everything in view</strong><span>Weather, money, currency, visas, maps and trails, beside every booking.</span></li>
+    <li><strong>One screen for the whole trip</strong><span>The plan, every booking, directions, and family chat.</span></li>
+    <li><strong>Follow a trail</strong><span>Start from a trip a real family took, and make it yours.</span></li>
+    <li><strong>Leave a trail</strong><span>Share it anonymously; the next family says thanks.</span></li>
+    <li><strong>Free</strong><span>Booking happens on the partner's site.</span></li>
+  </ol>
+  <p class="cta"><b class="primary">Start a trip</b><b>Sign in</b></p>
+
+  <footer>Hand-drawn SVG in prototype E's style (art/cast.svg holds the shared character symbols; tools/build_art.py draws every page). Bubbles and captions are HTML; product labels are SVG text.</footer>
+</main>
+
+<script src="art/art.js"></script>
+<script>
+// Each bubble's tail points at its speaker: `at` names a [data-face] box in the panel's SVG (defaults to who).
+// tail: tl (bubble runs right of the tail) | tr (runs left) | tc (centred).
+const PANELS = [
+  { title: "The couch", see: "Maya and Sam at night: a fat guidebook, sticky notes, a laptop with 14 tabs.",
+    bubbles: [{ who: "Maya", text: "Fourteen tabs. Still no plan.", tail: "tr" },
+              { who: "Sam", text: "Is it cold in December?", tail: "tl" }],
+    caption: "Planning a trip shouldn't feel like homework.", motion: "Page turns in; the tabs multiply." },
+  { title: "The book", see: "Close-up of tiny guidebook text. They look at each other, lost.",
+    bubbles: [{ who: "Maya", text: "Where do we even start?", tail: "tl" },
+              { who: "Sam", text: "No idea.", tail: "tr" }],
+    caption: "A thousand pages, and still no plan.", motion: "Slow push into the page." },
+  { title: "“Let's book it”", see: "Sam taps GitAway. The guidebook page comes alive.",
+    bubbles: [{ who: "Sam", text: "Let's just book it.", tail: "tl" },
+              { who: "Maya", text: "Wait, really?", tail: "tr" }],
+    caption: "So they just booked it.", motion: "The ink lines lift off the page." },
+  { title: "Everything pops", see: "Widgets pop up around the booking: weather, money, map and drive time, trails, flight and cabin prices, a road note.",
+    bubbles: [{ who: "Maya", text: "Chains required? Good to know.", tail: "tl" },
+              { who: "Sam", text: "And it fits our budget.", tail: "tr" }],
+    caption: "Weather, money, maps, trails, prices. Everything you need to decide, before you pay.",
+    motion: "Each widget pops in with a spring and snaps into a grid." },
+  { title: "Booked", see: "They tap Book. Stamps land: “Booked on Aviasales”, “Booked on Klook”.",
+    bubbles: [{ who: "Maya", text: "Booked!", tail: "tr" },
+              { who: "Sam", text: "That was easy.", tail: "tl" }],
+    caption: "Book on the sites you trust. It all lands in one trip.", motion: "The stamps thump down." },
+  { title: "Go", see: "The beauty shot: Lake Tahoe in winter from above, the sled hill, the pier at sunset.",
+    bubbles: [{ who: "Maya", text: "Faster, Sam!", tail: "tr" }],
+    caption: "Then go.", motion: "Dive into the page (the 3D flyover), then a fast montage of the snapshots." },
+  { title: "Home, happy", see: "Back on the couch, glowing, flipping through their photos.",
+    bubbles: [{ who: "Maya", text: "Look at this one!", tail: "tr" },
+              { who: "Sam", text: "Best trip ever.", tail: "tl" }],
+    caption: "Best trip ever.", motion: "Pull back out of the world into the book." },
+  { title: "Leave a trail", see: "Sam presses “Leave a trail”. Their names and faces in the shared plan blur.",
+    bubbles: [{ who: "Maya", text: "Someone should have this.", tail: "tr" },
+              { who: "Sam", text: "Leave a trail.", tail: "tl" }],
+    caption: "Share the plan, not your name.", motion: "The blur sweeps across; the trip folds into a paper plane." },
+  { title: "The world spins", see: "The paper plane flies off the page onto a globe.",
+    caption: "(no words)", silent: true, motion: "The globe spins half a turn." },
+  { title: "The nudge", see: "In Lisbon, Rosa and Tomás on their couch. A phone buzzes.",
+    bubbles: [{ who: "Rosa", text: "Tomás, look at this.", tail: "tl" },
+              { who: "Tomás", at: "tomas", text: "Hm? A trail?", tail: "tr" }],
+    caption: "Half a world away…", motion: "The phone buzzes; a card slides up." },
+  { title: "“Perfect”", see: "They read it, look at each other, smile, and tap Follow this trail. The widgets know they fly from Lisbon.",
+    bubbles: [{ who: "Rosa", text: "Summer at the lake?", tail: "tc" },
+              { who: "Tomás", at: "tomas", text: "This is perfect.", tail: "tc" }],
+    caption: "It already knows they'll fly from Lisbon.", motion: "Their eyes meet; the tap ripples." },
+  { title: "Couch to beach", see: "Their living room dissolves into Sand Harbor at Lake Tahoe in summer: turquoise water, granite boulders, pines.",
+    bubbles: [{ who: "Rosa", text: "Your shoes, Tomás!", tail: "tr" },
+              { who: "Tomás", at: "tomas", text: "Cold! Perfect.", tail: "tl" }],
+    caption: "Same trail. Their summer.", motion: "The background washes from couch to beach like wet watercolor." },
+  { title: "The world keeps sharing", see: "The globe fills: trails, pins, thank-yous, many happy couples and families.",
+    bubbles: [{ who: "Grandma Ada", at: "gma", text: "Thank you!", tail: "tl" }, { who: "Rosa", text: "Obrigada!", tail: "tr" }],
+    caption: "Every trip here grew from another. Take a trip. Leave a trail.",
+    motion: "Trails draw themselves and pins pop, faster and faster." },
+];
+
+document.body.insertAdjacentHTML("afterbegin", ART.sprite);
+document.querySelectorAll("[data-sheet]").forEach(f => { f.innerHTML = ART.sheets[f.dataset.sheet]; });
+
+const root = document.getElementById("panels");
+PANELS.forEach((p, i) => {
+  const n = String(i + 1).padStart(2, "0");
+  const fig = document.createElement("figure");
+  fig.className = "panel"; fig.id = "p" + n;
+  const bs = p.bubbles || [];
+  const bubbles = bs.map((b, j) =>
+    `<div class="bubble ${b.tail}" data-at="${b.at || b.who.toLowerCase()}" data-i="${j}">${b.who ? `<small>${b.who}</small>` : ""}${b.text}</div>`).join("");
+  const lines = bs.length ? `<ul class="lines">${bs.map(b => `<li><b>${b.who}</b>${b.text}</li>`).join("")}</ul>` : "";
+  fig.innerHTML = `<div class="panel-head"><span class="num">${n}</span><h3>${p.title}</h3></div>` +
+    `<div class="frame">${ART.panels[n]}${bubbles}</div>${lines}` +
+    `<p class="caption${p.silent ? " silent" : ""}">${p.caption}</p><p class="motion">${p.motion}</p>`;
+  root.appendChild(fig);
+});
+
+// Put each bubble's tail just above its speaker's face; nudge a bubble up if it would hit another.
+const overlap = (a, b) => !(a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top);
+function place() {
+  window.BUBBLE_QA = [];
+  document.querySelectorAll(".panel .frame").forEach(frame => {
+    const fr = frame.getBoundingClientRect();
+    const placed = [];
+    frame.querySelectorAll(".bubble").forEach(b => {
+      const face = frame.querySelector(`[data-face="${b.dataset.at}"]`);
+      if (!face) return;
+      const r = face.getBoundingClientRect();
+      b.style.left = (r.left + r.width / 2 - fr.left) + "px";
+      let top = r.top - fr.top - 2;
+      b.style.top = top + "px";
+      for (let k = 0; k < 6; k++) {
+        const br = b.getBoundingClientRect();
+        const hit = placed.find(o => overlap(br, o));
+        if (!hit) break;
+        top -= (br.bottom - hit.top) + 6; b.style.top = top + "px";
+      }
+      const br = b.getBoundingClientRect();
+      placed.push(br);
+      const faces = [...frame.querySelectorAll("[data-face]")].filter(f => overlap(br, f.getBoundingClientRect())).map(f => f.dataset.face);
+      const out = br.left < fr.left || br.right > fr.right || br.top < fr.top;
+      window.BUBBLE_QA.push({ panel: frame.parentElement.id, text: b.textContent, faces, outside: out });
+    });
+  });
+}
+place();
+addEventListener("resize", place);
+</script>
+</body>
+</html>

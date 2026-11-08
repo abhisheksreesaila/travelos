@@ -20,3 +20,4 @@ travelos.egg-info/
 .sesskey
 /app_host.db
 /*.db
+.dream-loop/
