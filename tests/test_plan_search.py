@@ -186,3 +186,12 @@ def test_a_made_up_via_is_not_carried_through_start(client, live):
     r = client.get("/start", params={"go": "1", "to": "la", "d": "2027-04-02", "r": "2027-04-06", "a": "3", "n": "0", "via": "nobody-here"}, follow_redirects=False)
     assert r.headers["location"] == "/plan?place=Los+Angeles&d=2027-04-02&r=2027-04-06&a=3"      # F-210: off the showcase an old link's sample city is just its name
     assert 'name="via"' not in client.get("/start?via=nobody-here").text
+
+
+def test_off_the_showcase_a_place_alone_brings_no_sample_kids(live):
+    """F-210: /plan?place=Lisbon with no party must not carry the sample family's kids into the page or a trip made from it."""
+    from gitaway.pages import plan_search
+    search, _ = plan_search.search_from(place="Lisbon", iata="LIS")
+    assert search.kid_ages == ()
+    search, _ = plan_search.search_from(place="Lisbon", iata="LIS", d="2027-05-01", r="2027-05-06", a="2", k="6")
+    assert search.kid_ages == (6,)

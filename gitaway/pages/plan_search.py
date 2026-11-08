@@ -12,7 +12,7 @@ from urllib.parse import urlencode
 
 from fasthtml.common import A, Button, Div, Form, H1, H2, Input, Label, Li, Link, Main, Option, P, Script, Section, Select, Span, Ul
 
-from gitaway import catalog, pickers
+from gitaway import catalog, pickers, showcase
 from gitaway.icons import icon
 from gitaway.layout import page
 from gitaway.pages import plan_widgets
@@ -57,6 +57,8 @@ def search_from(place="", iata="", d="", r="", a="", k="", to="", home="", focus
         except catalog.TripError as e:
             errors["trip"] = " ".join(dict.fromkeys(m for _, m in e.errors))
     trip = ahead(catalog.trip_from_url(d, r, a, k, to or "la", home, focus))
+    if not (k or "").strip() and not showcase.on():      # F-210: off the showcase the sample family's kids never fill in a party nobody typed
+        trip = replace(trip, kid_ages=())
     spot = places.resolve(place_text(to, focus, place), iata)
     return (links.Search(spot, trip.depart, trip.return_, trip.adults, trip.kid_ages, trip.home) if spot else None), errors
 
