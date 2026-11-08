@@ -1,3 +1,16 @@
+# Overnight 2026-11-08 (on master, NOT pushed, NOT deployed)
+
+Built, reviewed and merged on local master:
+- **Where to? takes any place** (off the showcase: one box, no sample cities, no sample prices or sample kids).
+- **Make this a trip**: on /plan and Where to?, a search becomes the family's trip and opens the cockpit (POST /trip/new; signed out goes through sign-in).
+- **Widgets beside the booking lanes**: weather (NOAA typical or MET forecast, labelled), cost so far (only Aviasales' real fare, else "No price yet"), drive from the airport (OSRM; hidden when unknown). Nothing invented.
+- **The cover rebuilt on the agreed story**: 11 scenes with real screenshots (book, cockpit, day, Ask, family, published trip, creators), 3D Tahoe behind the opening and closing scenes. Screenshots: `scripts/cover_shots.py`.
+- Reviewer: two bugs fixed (US towns named after foreign cities got a foreign clock; junk place text gave a 500), plus a busy-router cache fix. Known gap: `geo.fetch` is not yet behind `deadline.py`.
+- Tests: full suite green; 72 browser tests for the touched pages green.
+
+To ship: `git push origin master`, then deploy as before (`railway status` first: Project gitaway, service web).
+Founder to check: the cover's headlines on your phone (`docs/report/cover-story-*.png`); the 3D world's labels still say "five days" while the copy says a week.
+
 # Where to pick up
 
 Subagents run at **medium effort** (the founder asked).
