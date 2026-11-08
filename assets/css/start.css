@@ -127,3 +127,11 @@
   .st .fr-h { font-size: 2.25rem; }
   .st .fr-lede { font-size: 1.0625rem; }
 }
+
+/* F-210: any place. The "Where" box takes the sample cities' place; "Make this a trip" (a secondary pill, ringed so it shows on the white card) stands beside
+   "Find my trip", stacked on a phone. */
+.st-place .st-field input { cursor: text; }
+.st-place .st-field input::placeholder { color: var(--ink-3); font-weight: 600; }
+.st-actions { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.625rem; }
+.st-make { box-shadow: inset 0 0 0 1px var(--line), var(--sh1); }
+@media (max-width: 720px) { .st-actions { grid-template-columns: minmax(0, 1fr); } }

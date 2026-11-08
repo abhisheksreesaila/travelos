@@ -118,6 +118,19 @@ def from_state(destination) -> str | None:
     return None
 
 
+_CITY_ZONES = None
+
+
+def from_city(city) -> str | None:
+    """The zone named after a city ("Lisbon" -> Europe/Lisbon, "Mexico City" -> America/Mexico_City), from zoneinfo's own names; None for any other text (F-210)."""
+    global _CITY_ZONES
+    if _CITY_ZONES is None:
+        from zoneinfo import available_timezones
+        _CITY_ZONES = {z.rsplit("/", 1)[1].replace("_", " ").lower(): z for z in sorted(available_timezones())
+                       if "/" in z and z.split("/", 1)[0] in ("Africa", "America", "Asia", "Atlantic", "Australia", "Europe", "Indian", "Pacific")}
+    return _CITY_ZONES.get(" ".join(str(city or "").lower().split()))
+
+
 def resolve(airport="", destination="") -> tuple:
     """(zone name, note): the zone of the arrival airport, else of the destination's state, else Los Angeles. `note` is "" when the zone was
     found, and says what was assumed when it was not."""

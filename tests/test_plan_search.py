@@ -184,5 +184,5 @@ def test_changing_dates_keeps_a_reader_with_no_cookie_on_the_honest_page(client,
 
 def test_a_made_up_via_is_not_carried_through_start(client, live):
     r = client.get("/start", params={"go": "1", "to": "la", "d": "2027-04-02", "r": "2027-04-06", "a": "3", "n": "0", "via": "nobody-here"}, follow_redirects=False)
-    assert r.headers["location"] == "/plan?d=2027-04-02&r=2027-04-06&a=3"
+    assert r.headers["location"] == "/plan?place=Los+Angeles&d=2027-04-02&r=2027-04-06&a=3"      # F-210: off the showcase an old link's sample city is just its name
     assert 'name="via"' not in client.get("/start?via=nobody-here").text

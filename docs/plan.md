@@ -1299,6 +1299,7 @@ Brief: docs/briefs/free-and-polished.md · Design: docs/design/oneproduct/ (in p
 
 ## F-210 Booking redesigned as one product (absorbs F-202) [todo]
 Brief: docs/briefs/free-and-polished.md · Design: docs/design/oneproduct/ (in progress) · Needs: the founder's pick; F-198 merged
+- [x] Part A (D-315 to D-317): Where to? takes any place off the showcase (no sample cities or prices), and "Make this a trip" on Where to? and /plan's lanes makes the family's trip (POST /trip/new) and lands on the cockpit; signed out goes through sign-in and back; viewers refused. tests/test_trip_from_search.py, tests_browser/test_trip_from_search.py; proved on a dev server with sample data off (docs/report/f210a-*.png)
 - [ ] Where to? for any destination, the book of tickets, the paste moment and booking details ("Booked on X · Change or cancel") relaid out in the Ticket line language, web first and phone alongside, light and dark
 
 # Live-site fixes (each branches from master and ships on its own)

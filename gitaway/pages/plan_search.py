@@ -218,6 +218,14 @@ def search_page(search, via="", raw=None, errors=None):
             P(f"{date_label(search)} · {summary(search)}" + (f" · flying from {search.home}" if search.home else ""), cls="ps-lede", id="ps-lede"),
             P("The dates are a starting guess. We show no prices of our own: the partners show today's.", cls="ps-fine"),
             _trip_form(search, q, ""),
+            make_form(q),
             Div(*found, cls="ps-cards"),
             P(FINE + (" We may earn a commission where a link says so." if paid else ""), cls="ps-fine", id="ps-fine"),
             cls="ps ga-wrap"), id="plan-search"), head=HEAD)
+
+
+def make_form(q):
+    """Make this a trip (F-210): the search becomes the family's trip and opens on the cockpit (POST /trip/new, gitaway/pages/tripnew.py). Signed out, it goes through sign-in."""
+    return Form(*_hidden(q, "via"), Button(icon("arrow-right", 20, 2.4), "Make this a trip", type="submit", cls="btn btn-ink"),
+                Span("Keep these dates and who is coming as your family's trip, with a plan for each day.", cls="ps-fine"),
+                action="/trip/new", method="post", cls="ps-from ps-make", id="ps-make")
