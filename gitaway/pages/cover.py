@@ -1,26 +1,28 @@
-"""The cover (F-206; cover v3, docs/decisions.md D-380 to D-392): what a signed-out visitor sees at /.
+"""The cover (F-206; cover v4, docs/decisions.md D-400 on, over v3's D-380 to D-392): what a signed-out visitor sees at /.
 
-One centred story that sells first: "Take a trip. Leave a trail." and one button, then GitAway's three promises, each painted with the app's real
-screens (assets/cover/shots/, made by scripts/cover_shots.py) in the visitor's layout and mode:
+v3's story, copy and honesty, filmed as a camera over the app's real screens (assets/cover/shots/, made by scripts/cover_shots.py). Each chapter is a
+stage: a tall <section> whose screen stays (position: sticky) while the scroll moves the camera inside it, and each stage has its own colour:
 
-    1  Book with everything in view: /plan's booking lanes and the panel beside them, one screenshot, three beats that ring (on a phone, zoom into)
-       the part they speak of while the screen stays put
-    2  A head start, then it comes with you: other families' Tahoe trips (illustrated: that feature is not built yet), the trip to take, then the
-       cockpit, the day, Ask and the family chat, then the local tips a search won't tell you (illustrated)
-    3  Leave a trail: travellers publish, creators give their post one more audience
+    0  Top          the line over a laptop and a phone showing the cockpit, tilted; the scroll sets them down and the story starts
+    1  Book         the booking screen in a frame: zoom to the flight beside the stay, pan to the weather and the drive (their numbers pop),
+                    pull back to the whole page, then its booking buttons fly out as the partners' chips
+    2  Head start   other families' Tahoe trips deal in, one is imported (a stamp, a burst) and turns into Lena and Sam's trip
+    3  With you     the cockpit zooms into a day, the day becomes Ask (a request types itself), then the family chat (bubbles pop in)
+    4  Tips         a drawn Tahoe: the roads draw themselves, pins drop, each with its tip
+    5  Trail        the published trail: thanks tick up, hearts rise
+    6  Creators     a blog post turns into a GitAway trip
+    and the close: a beach that opens out behind "Take a trip. Leave a trail." and the doors, then the footer.
 
-and the close: the line again, the doors, Plan it for me when it is offered (D-262), the footer.
-
-The families, trips, tips and thanks are an illustration shown in production too (D-270, extended by D-383), and the story says so where they first
-appear and in the footer. No 3D world any more (D-380): the page loads no three.js and no world.js (cover3d/ and assets/js/cover/ stay in the repo,
-unused). assets/js/cover.js does the calm reveals, the booking tour and the screenshots' mode; without it every word and picture still shows.
-Off production <main> carries data-debug="1" (the review tools' ?beat= switch); production never renders it.
+assets/js/cover.js is the conductor (one rAF read of the scroll, each stage's progress 0..1, transforms and opacity only); without it, under reduced
+motion, or on a screen under 560 px tall every stage is a still, readable block. The made-up families, trips, tips and thanks are an illustration
+shown in production too (D-270, D-383) and the story says so where they first appear and in the footer. No 3D world (D-380).
+Off production <main> carries data-debug="1" (the review tools' ?beat= and ?p= switches); production never renders it.
 """
 
 from functools import lru_cache
 from pathlib import Path
 
-from fasthtml.common import A, Article, B, Div, Em, Figure, Footer, H1, H2, H3, Header, I, Img, Li, Link, Main, Meta, Nav, NotStr, P, Picture, Script, Section, Source, Span, Title, Ul
+from fasthtml.common import A, Article, B, Div, Em, Figure, Footer, H1, H2, H3, Header, I, Img, Li, Link, Main, Meta, Nav, NotStr, Ol, P, Picture, Script, Section, Source, Span, Title, Ul
 
 from gitaway import auth, session, showcase
 from gitaway.icons import icon
@@ -35,8 +37,9 @@ SHOTS = "/assets/cover/shots"
 # the phone's screenshots and the phone layout: cover.css uses this same query
 PHONE_Q = "(max-width: 720px)"
 DARK = "(prefers-color-scheme: dark)"
-THEME = (("#F2F2F5", "light"), ("#000000", "dark"))            # the browser bar: the cover's grey by day, black by night (cover.css --cv-bg)
+THEME = (("#E6EEF9", "light"), ("#070B14", "dark"))            # the browser bar: the opening's winter sky by day, its night by night (cover.css)
 DISCLOSURE = "This trip is an example: the families, trips and tips in this story are made up. The places are real."
+CLOSE_PHOTO = ("/assets/photos/venice-beach-los-angeles-hero.jpg", 1200, 798, "Venice Beach, Los Angeles")      # CC0 (assets/photos/CREDITS.md)
 
 # each screenshot's encoded widths (scripts/cover_shots.py WIDTHS, CROP_W), its size in css px, and what it shows, for a screen reader
 SHOT_W = {"phone": (600,), "wide": (960, 1440)}
@@ -54,16 +57,38 @@ ALT = {
     "creators": "GitAway for creators: paste a blog post, a YouTube link or an Instagram caption and it becomes a trip families can take.",
 }
 
-# the booking tour: each beat's words, the parts of the screenshot it rings (x, y, w, h as fractions of BOOK_SIZE, read off the crop), and on a
-# phone the part it zooms to
+# the booking stage: each beat's words and the parts of the screenshot it speaks of (x, y, w, h as fractions of BOOK_SIZE, read off the crop).
+# Between the second and the third the camera pulls back to the whole page: PULLBACK.
 BEATS = (
     ("A cheaper flight, a pricier cabin? See both at once and decide.",
-     ((0.0167, 0.011, 0.6365, 0.2766), (0.0167, 0.2999, 0.6365, 0.2093)), (0.0167, 0.011, 0.47, 0.4982)),
+     ((0.0167, 0.011, 0.6365, 0.2766), (0.0167, 0.2999, 0.6365, 0.2093))),
     ("The weather for your dates and the drive from the airport, right where you book.",
-     ((0.6698, 0.011, 0.3125, 0.4798), (0.6698, 0.8409, 0.3125, 0.1432)), (0.6698, 0.011, 0.3125, 0.9731)),
+     ((0.6698, 0.011, 0.3125, 0.4798), (0.6698, 0.8409, 0.3125, 0.1432))),
     ("Book on the sites you trust. Your bookings stay yours.",
-     ((0.078, 0.116, 0.201, 0.051), (0.078, 0.368, 0.213, 0.051), (0.078, 0.450, 0.188, 0.042), (0.078, 0.614, 0.204, 0.051)), (0.0625, 0.104, 0.36, 0.57)),
+     ((0.078, 0.116, 0.201, 0.051), (0.078, 0.368, 0.213, 0.051), (0.078, 0.450, 0.188, 0.042), (0.078, 0.614, 0.204, 0.051))),
 )
+PULLBACK = "Everything in one view."
+# where the camera goes, in order (cover.js keys them to the scroll): the flight beside the stay, the weather, the drive
+CAMERA = {"fs": (0.0167, 0.011, 0.6365, 0.5), "wx": (0.6698, 0.011, 0.3125, 0.4798), "drive": (0.6698, 0.8409, 0.3125, 0.1432),
+          "fs-phone": (0.0167, 0.011, 0.47, 0.4982)}      # a phone's narrow window: the flight and the stay's left half, bigger
+# the spotlights: the flight with the stay, the weather, the drive (the rest of the page dims); beat 3 rings the four booking buttons instead
+SPOTS = {"fs": (0.0167, 0.011, 0.6365, 0.4982), "wx": BEATS[1][1][0], "drive": BEATS[1][1][1]}
+# the numbers that pop beside the camera: what the screenshot says, said again bigger (the same values, never new ones)
+CALLOUTS = (("wx", "snow", "Highs", 43, "°F", "lows 19°F · typical early February"), ("car", "car", "Drive from RNO", 83, " min", "1 h 23 min to South Lake Tahoe"))
+# the partners the booking screen's buttons and links name, and where each sits on the crop: they fly out of it as chips
+PARTNERS = (
+    ("Aviasales", "flight", "plane", (0.0825, 0.122, 0.1925, 0.041)),
+    ("Expedia", "stay", "bed", (0.0825, 0.374, 0.203, 0.041)),
+    ("Airbnb", "stay", "home", (0.142, 0.459, 0.059, 0.026)),
+    ("Vrbo", "stay", "home", (0.217, 0.459, 0.041, 0.026)),
+    ("Expedia", "car", "car", (0.0825, 0.619, 0.196, 0.040)),
+    ("GetYourGuide", "tix", "ticket", (0.0825, 0.827, 0.259, 0.041)),
+)
+# the cockpit's open day, where the camera dives in to reach the day (x, y, w, h of the wide and the phone screenshot)
+TODAY = {"wide": (0.2056, 0.528, 0.3139, 0.45), "phone": (0.04, 0.197, 0.92, 0.42)}
+ASK_SAYS = "Move snowshoeing after lunch."
+# the family chat's own lines (the family screenshot's), drawn as bubbles beside it: who (None is you), what
+CHAT = (("Sam", "Booked the sled hill for Christmas Day, 1 pm."), (None, "Perfect. Theo is asking if it snows tonight."), ("Sam", "After 6, they say. Pizza night at the cabin then."))
 
 # the made-up families' Tahoe trips (D-381: the recommendation is not built yet, so it is drawn, in the app's own look): title, by, days, stops
 # (name, kind), thanks
@@ -72,14 +97,22 @@ TRIPS = (
     ("Tahoe in three days, kids in tow", "the Okafors", 3, (("Emerald Bay", "see"), ("Sand Harbor", "see"), ("Spooner Lake", "fun")), 148),
     ("A slow long weekend on the lake", "Priya & Dev", 3, (("Kings Beach", "see"), ("Tahoe City", "food"), ("Cabin", "stay")), 67),
 )
-# what a search won't tell you (D-382: made up, plausible, local): icon, tip, who and when, how many found it useful
+# what a search won't tell you (D-382: made up, plausible, local): icon, tip, who and when, how many found it useful, where its pin drops on the
+# drawn lake (cover.css draws the lake in a 400 x 500 box), in the order the roads reach them
 TIPS = (
-    ("snow", "Chain controls on US-50 at Echo Summit this morning. Chains on before Meyers.", "the Okafors · 2 h ago", 31),
-    ("map", "Emerald Bay Rd closes in heavy snow; take 89 the other way, through Tahoe City.", "Priya · yesterday", 24),
-    ("car", "Heavenly’s Stagecoach lot fills by 8:30. After that, the shuttle from Stateline.", "Sam · this week", 19),
-    ("tree", "Locals’ sledding at Spooner, free. Bring your own sled.", "a Tahoe local · this week", 42),
+    ("snow", "Chain controls on US-50 at Echo Summit this morning. Chains on before Meyers.", "the Okafors · 2 h ago", 31, (92, 452)),
+    ("car", "Heavenly’s Stagecoach lot fills by 8:30. After that, the shuttle from Stateline.", "Sam · this week", 19, (268, 402)),
+    ("tree", "Locals’ sledding at Spooner, free. Bring your own sled.", "a Tahoe local · this week", 42, (318, 236)),
+    ("map", "Emerald Bay Rd closes in heavy snow; take 89 the other way, through Tahoe City.", "Priya · yesterday", 24, (118, 342)),
 )
+# the drawn lake (a 400 x 500 box): its shore, US-50 from Echo Summit through South Lake Tahoe and Stateline to Spooner, and 89 up the west shore
+LAKE = "M200 40 C 262 40 300 92 306 160 C 312 228 300 300 292 352 C 284 398 254 416 214 418 C 170 420 150 398 142 368 C 128 318 114 260 118 190 C 122 110 146 40 200 40 Z"
+ROAD_50 = "M60 470 C 92 452 120 440 150 436 C 190 430 220 424 262 404 C 292 390 304 360 312 330 C 318 300 320 268 318 236"
+ROAD_89 = "M150 436 C 132 412 118 380 118 342 C 116 300 108 250 110 200 C 112 160 120 128 140 104"
+TOWNS = (("Echo Summit", 30, 488), ("South Lake Tahoe", 160, 462), ("Stateline", 280, 432), ("Tahoe City", 70, 92), ("Spooner", 330, 222))
 KIND_ICON = {"tix": "ticket", "see": "sight", "food": "food", "fun": "star", "stay": "bed"}
+# the stickers that float round the opening and the close: a kind and its icon (Direction A's kind colours)
+STICKERS = (("flight", "plane"), ("stay", "bed"), ("car", "car"), ("food", "food"), ("wx", "snow"), ("tix", "ticket"))
 
 
 @lru_cache(maxsize=1)
@@ -88,7 +121,7 @@ def _boot():
 
 
 def debug():
-    """Off production the page turns on the review tools' switch (?beat=); production never does."""
+    """Off production the page turns on the review tools' switches (?beat=, ?p=); production never does."""
     return not auth.production()
 
 
@@ -104,68 +137,128 @@ def _srcset(name, layout, mode):
     return ", ".join(f"{src} {w}w" for src, w in zip(shot_srcs(name, layout, mode), widths))
 
 
-SIZES = {"phone": "18.75rem", "wide": "min(75rem, 88vw)", "book": "(max-width: 720px) 250vw, min(75rem, 88vw)"}
+SIZES = {"phone": "18.75rem", "wide": "min(75rem, 88vw)", "book": "(max-width: 720px) 250vw, 120vw", "laptop": "(max-width: 720px) 1px, 60vw",
+         "pocket": "(max-width: 720px) 80vw, 16rem"}
 
 
-def _shot(name):
-    """A real screenshot: the phone's on a phone and the laptop's elsewhere (the booking crop serves both), light or dark by the system; cover.js
-    follows the site's own switch too (from the data-* srcsets). Loaded only as it nears the screen."""
+def _img(name, layout, alt, eager=False):
+    w, h = BOOK_SIZE if name == "book" else SHOT_SIZE[layout]
+    lay = "wide" if name == "book" else layout
+    return Img(src=shot_srcs(name, lay, "light")[0], srcset=_srcset(name, lay, "light"), alt=alt, width=str(w), height=str(h),
+               loading="eager" if eager else "lazy", decoding="async", **({"fetchpriority": "high"} if eager else {}))
+
+
+def _shot(name, alt=None, eager=False):
+    """A real screenshot in the visitor's layout (the phone's on a phone, the laptop's elsewhere; the booking crop serves both), light or dark by the
+    system; cover.js follows the site's own switch too (from the data-* srcsets). Loaded only as it nears the screen."""
+    alt = ALT[name] if alt is None else alt
     if name == "book":
-        w, h = BOOK_SIZE
         sets = {f"data-{m}-{lay}": _srcset(name, "wide", m) for m in ("light", "dark") for lay in ("phone", "wide")}
-        return Picture(Source(media=DARK, srcset=_srcset(name, "wide", "dark"), sizes=SIZES["book"]),
-                       Img(src=shot_srcs(name, "wide", "light")[0], srcset=_srcset(name, "wide", "light"), sizes=SIZES["book"], alt=ALT[name],
-                           width=str(w), height=str(h), loading="lazy", decoding="async"),
+        im = _img(name, "wide", alt, eager)
+        im.attrs["sizes"] = SIZES["book"]
+        return Picture(Source(media=DARK, srcset=_srcset(name, "wide", "dark"), sizes=SIZES["book"]), im,
                        cls="cv-shot", data_shot=name, data_sizes_phone=SIZES["book"], data_sizes_wide=SIZES["book"], **sets)
-    w, h = SHOT_SIZE["wide"]
     phone_dark = f"{DARK} and {PHONE_Q}"
     sets = {f"data-{m}-{lay}": _srcset(name, lay, m) for m in ("light", "dark") for lay in ("phone", "wide")}
+    im = _img(name, "wide", alt, eager)
+    im.attrs["sizes"] = SIZES["wide"]
     return Picture(
         Source(media=phone_dark, srcset=_srcset(name, "phone", "dark"), sizes=SIZES["phone"]),
         Source(media=DARK, srcset=_srcset(name, "wide", "dark"), sizes=SIZES["wide"]),
         Source(media=PHONE_Q, srcset=_srcset(name, "phone", "light"), sizes=SIZES["phone"]),
-        Img(src=shot_srcs(name, "wide", "light")[0], srcset=_srcset(name, "wide", "light"), sizes=SIZES["wide"], alt=ALT[name], width=str(w), height=str(h),
-            loading="lazy", decoding="async"),
-        cls="cv-shot", data_shot=name, data_sizes_phone=SIZES["phone"], data_sizes_wide=SIZES["wide"], **sets,
+        im, cls="cv-shot", data_shot=name, data_sizes_phone=SIZES["phone"], data_sizes_wide=SIZES["wide"], **sets,
     )
+
+
+def _device_shot(name, layout, alt="", eager=False):
+    """A screenshot that always shows one layout, whatever the window (the laptop in a laptop, the phone in a phone): the laptop's is never
+    downloaded on a phone (its frame is not drawn there)."""
+    sizes = SIZES["laptop" if layout == "wide" else "pocket"]
+    sets = {f"data-{m}-{lay}": _srcset(name, layout, m) for m in ("light", "dark") for lay in ("phone", "wide")}
+    im = _img(name, layout, alt, eager)
+    im.attrs["sizes"] = sizes
+    if not alt:
+        im.attrs["aria-hidden"] = "true"
+    return Picture(Source(media=DARK, srcset=_srcset(name, layout, "dark"), sizes=sizes), im,
+                   cls="cv-shot", data_shot=name, data_layout=layout, data_sizes_phone=sizes, data_sizes_wide=sizes, **sets)
 
 
 def _eyebrow(text):
     return P(I(), text, cls="cv-eyebrow")
 
 
-def _scene(i, name, *content, cls=""):
-    return Section(*content, cls=f"cv-sc {cls}".strip(), data_scene=str(i), data_name=name, id=name.lower().replace(" ", "-"))
+def _stage(i, name, key, length, stick, *after, cls=""):
+    """One chapter: a tall section whose screen (the stick) stays while `length` screens of scroll pass under it."""
+    return Section(Div(*stick, cls="cv-stick"), *after, cls=f"cv-stage cv-{key} {cls}".strip(), data_stage=key, data_scene=str(i), data_name=name,
+                   id=name.lower().replace(" ", "-"), style=f"--len:{length}")
 
 
-def _rv(*content, cls="", tag=Div, **kw):
-    """Something that fades in as it reaches the screen (cover.js; shown at once without it, or with reduced motion)."""
-    return tag(*content, cls=f"cv-rv {cls}".strip(), **kw)
-
-
-def _box(b):
+def _pct(b):
     x, y, w, h = b
     return f"left:{x * 100:.2f}%;top:{y * 100:.2f}%;width:{w * 100:.2f}%;height:{h * 100:.2f}%"
 
 
-def _tour():
-    """Beat by beat over one screenshot: the words change, the screen stays, a ring (on a phone, a zoom) shows the part they speak of."""
-    beats = [P(text, cls="cv-beat" + (" on" if k == 0 else ""), data_beat=str(k)) for k, (text, _, _) in enumerate(BEATS)]
-    rings = [Span(cls="cv-ring" + (" on" if k == 0 else ""), data_beat=str(k), style=_box(b)) for k, (_, boxes, _) in enumerate(BEATS) for b in boxes]
-    zooms = {f"data-zoom-{k}": ",".join(f"{v:g}" for v in z) for k, (_, _, z) in enumerate(BEATS)}
-    return Div(
-        Div(Div(*beats, cls="cv-beats", aria_live="polite"),
-            Div(Div(_shot("book"), *rings, cls="cv-lens-in"), cls="cv-lens", **zooms),
-            Ul(*[Li(Span(str(k + 1)), cls="on" if k == 0 else None, data_beat=str(k)) for k in range(len(BEATS))], cls="cv-steps", aria_hidden="true"),
-            cls="cv-tour-pin"),
-        cls="cv-tour", style=f"--beats:{len(BEATS)}",
-    )
+def _spot(key):
+    """A spotlight on one part of the booking screenshot: a ring round it and the rest of the page dimmed (one solid shadow: cheap to draw at any
+    zoom, D-403)."""
+    return Span(cls="cv-spot", data_spot=key, style=_pct(SPOTS[key]))
 
 
-def _feature(name, h3, text):
-    """One of the tools that come with you: a short headline, a line, the real screen."""
-    return _rv(H3(*h3), P(*text, cls="cv-say"), Div(_shot(name), cls="cv-frame"), cls="cv-feat", tag=Article)
+def _ring(b):
+    return Span(cls="cv-ring", style=_pct(b))
 
+
+def _num(n, unit=""):
+    return Span(Span(str(n), cls="cv-count", data_to=str(n)), unit, cls="cv-num")
+
+
+def _sticker(kind, ico, k):
+    return Span(icon(ico, 22, 2.2), cls=f"cv-stk k-{kind}", data_k=str(k), aria_hidden="true")
+
+
+def _two(ink, hue):
+    """A two-tone headline: the ink part and the chapter's colour."""
+    return (ink, Em(hue))
+
+
+# ---------- 0. the opening ----------
+
+def _hero():
+    return _stage(0, "Top", "hero", 1.3, (
+        Div(H1(*_two("Take a trip. ", "Leave a trail.")), P(LEDE, cls="cv-lede"),
+            Div(A("Plan a trip", icon("arrow-right", stroke=2), href="/start", cls="cv-btn fill big"), cls="cv-ctas"), cls="cv-hero-copy"),
+        Div(Div(Div(Div(_device_shot("cockpit", "wide", ALT["cockpit"]), cls="cv-screen"), Span(cls="cv-base"), cls="cv-laptop"),
+                Div(Div(_device_shot("cockpit", "phone", "", eager=True), cls="cv-screen"), cls="cv-phone"),
+                cls="cv-sway"),
+            *[_sticker(kind, ico, k) for k, (kind, ico) in enumerate(STICKERS)],
+            cls="cv-devices"),
+        P("Scroll", NotStr('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+                           '<path d="m6 9 6 6 6-6"/></svg>'), cls="cv-hint", aria_hidden="true"),
+    ))
+
+
+# ---------- 1. book with everything in view ----------
+
+def _book():
+    words = [P(text, cls="cv-beat", data_beat=str(k)) for k, (text, _) in enumerate(BEATS)]
+    words.insert(2, P(PULLBACK, cls="cv-beat cv-beat-all", data_beat="all"))
+    marks = [*[_spot(k) for k in SPOTS], *[_ring(b) for b in BEATS[2][1]]]
+    calls = [Div(Span(icon(ico, 22, 2.2), cls="cv-call-ico"), Div(Span(label, cls="cv-call-l"), _num(n, unit), Span(sub, cls="cv-call-s")),
+                 cls=f"cv-call k-{kind}", data_call=str(k)) for k, (kind, ico, label, n, unit, sub) in enumerate(CALLOUTS)]
+    chips = [Li(icon(ico, 18, 2.2), name, cls=f"cv-chip k-{kind}", data_from=",".join(f"{v:g}" for v in at)) for name, kind, ico, at in PARTNERS]
+    cam = {f"data-cam-{k}": ",".join(f"{v:g}" for v in r) for k, r in CAMERA.items()}
+    return _stage(1, "Book", "book", 5, (
+        Div(cls="cv-field", aria_hidden="true"),
+        Div(_eyebrow("1 · Book with everything in view"), H2(*_two("See the whole trip before you pay for ", "any of it.")),
+            Div(*words, cls="cv-beats", aria_live="polite"),
+            Ul(*chips, cls="cv-partners", aria_label="The partners you book on"), cls="cv-copy"),
+        Div(Div(_shot("book"), *marks, cls="cv-cam"), cls="cv-lens", **cam),
+        Div(*calls, cls="cv-calls", aria_hidden="true"),
+        Ul(*[Li(cls="on" if k == 0 else None, data_step=str(k)) for k in range(4)], cls="cv-steps", aria_hidden="true"),
+    ))
+
+
+# ---------- 2. a head start ----------
 
 def _trips_card():
     """Trips others took to Lake Tahoe: drawn in GitAway's own look, made up (the recommendation is not built yet, D-381)."""
@@ -176,87 +269,138 @@ def _trips_card():
                 Ul(*[Li(icon(KIND_ICON[kind], 16, 2), name, cls=f"k-{kind}") for name, kind in stops], cls="cv-stops"),
                 cls="cv-trip-t"),
             Div(Span(icon("heart", 16, 2.2), f"{thanks} thanks", cls="cv-mute cv-thx"),
-                Span(icon("fork", 18, 2.2), "Import", cls="cv-fake-btn" + (" ink" if k == 0 else "")), cls="cv-trip-a"),
-            cls="cv-trip" + (" pick" if k == 0 else "")))
+                Span(Span(icon("fork", 18, 2.2), "Import", cls="cv-fb-a"),
+                     *((Span(icon("check", 18, 2.4), "Imported", cls="cv-fb-b", aria_hidden="true"), Span(*[I() for _ in range(12)], cls="cv-burst", aria_hidden="true")) if k == 0 else ()),
+                     cls="cv-fake-btn" + (" ink" if k == 0 else "")),
+                cls="cv-trip-a"),
+            cls="cv-trip" + (" pick" if k == 0 else ""), data_k=str(k)))
     return Figure(
         Div(Span(icon("users", 18, 2), cls="cv-ill-ico"), Div(B("Trips others took to Lake Tahoe"), Span("Families who went in winter", cls="cv-mute")), cls="cv-ill-head"),
         Ul(*rows, cls="cv-trips"),
-        cls="cv-ill", aria_label="An illustration: three made-up families' Lake Tahoe trips, each with an Import button.",
+        Span("Imported", cls="cv-stamp", aria_hidden="true"),
+        cls="cv-ill cv-tripsfig", aria_label="An illustration: three made-up families' Lake Tahoe trips, each with an Import button.",
     )
 
 
-def _tips_card():
-    """Local, fresh, from people who were just there: drawn and made up (D-382)."""
-    return Figure(
-        Div(Span(icon("spark", 18, 2), cls="cv-ill-ico"), Div(B("Tips for your Tahoe trip"), Span("From families there this week", cls="cv-mute")), cls="cv-ill-head"),
-        Ul(*[Li(Span(icon(ico, 20, 2), cls="cv-tip-ico"), Div(P(text), Span(who, cls="cv-mute")), Span(icon("up", 16, 2.2), str(n), cls="cv-mute cv-up"), cls="cv-tip")
-             for ico, text, who, n in TIPS], cls="cv-tips"),
-        cls="cv-ill", aria_label="An illustration: made-up tips from families at Lake Tahoe this week.",
-    )
+def _head():
+    return _stage(2, "Head start", "head", 3, (
+        Div(_eyebrow("2 · A head start, then it comes with you"), H2(*_two("Don’t start from a ", "blank page.")),
+            P("Families already did Tahoe in three days. Take their trip, make it yours.", cls="cv-say"),
+            P(DISCLOSURE, cls="cv-disc"), cls="cv-copy"),
+        Div(_trips_card(), cls="cv-deal"),
+        Div(Div(_shot("trail"), cls="cv-frame"), P("Lena and Sam’s trip, ready to make yours.", cls="cv-cap"), cls="cv-morph"),
+    ))
 
 
-def _thanks_card():
-    """Home again: your trail and the thanks it brings (made up)."""
-    return Figure(
+# ---------- 3. then it comes with you ----------
+
+FEATURES = (
+    ("cockpit", "Every day on one line.", ("When to leave, the drive and the weather, for each day of the trip.",)),
+    ("day", "Each day, to the hour.", ("What’s now, what’s next, and how far it is.",)),
+    ("ask", "Change it by asking.", ("“Move snowshoeing after lunch.” You see the new day first; ", B("nothing changes until you tap Apply."))),
+    ("family", "Everyone on the same page.", ("One chat for the trip. Sam books the sled hill and everyone sees it.",)),
+)
+
+
+def _with():
+    feats = [Article(H3(h3), P(*text, cls="cv-say"), cls="cv-feat", data_feat=name) for name, h3, text in FEATURES]
+    laptop = [Div(_device_shot(name, "wide", ALT[name]), cls="cv-layer", data_layer=name) for name, *_ in FEATURES]
+    phone = [Div(_device_shot(name, "phone", ALT[name]), cls="cv-layer", data_layer=name) for name, *_ in FEATURES]
+    today = {f"data-today-{k}": ",".join(f"{v:g}" for v in r) for k, r in TODAY.items()}
+    return _stage(3, "With you", "with", 5, (
+        Div(H2(*_two("Then the plan ", "comes with you.")), Div(*feats, cls="cv-feats"), cls="cv-copy"),
+        Div(Div(Div(*laptop, cls="cv-screen"), Span(cls="cv-base"), cls="cv-laptop"),
+            Div(Div(*phone, cls="cv-screen"), cls="cv-phone"),
+            Div(Span(icon("mic", 18, 2.2), cls="cv-ask-ico"), P(Span(ASK_SAYS, cls="cv-typed", data_text=ASK_SAYS), I(cls="cv-caret")), cls="cv-ask", aria_hidden="true"),
+            Ol(*[Li(*((Span(who, cls="cv-who"),) if who else ()), text, cls="cv-bub" + ("" if who else " me")) for who, text in CHAT], cls="cv-bubs", aria_hidden="true"),
+            cls="cv-devices", **today),
+    ))
+
+
+# ---------- 4. things a search won't tell you ----------
+
+def _map():
+    """A drawn Lake Tahoe (not a map: a picture of the idea), its two roads and a numbered pin for each tip."""
+    towns = "".join(f'<text x="{x}" y="{y}" font-size="15">{n}</text>' for n, x, y in TOWNS)
+    pins = "".join(f'<g class="cv-mpin" data-k="{k}" transform="translate({x} {y})"><g class="cv-mpin-in"><path d="M0 0 C -4 -10 -16 -16 -16 -28 A 16 16 0 1 1 16 -28 C 16 -16 4 -10 0 0 Z"/>'
+                   f'<text x="0" y="-27" font-size="16">{k + 1}</text></g></g>' for k, (*_, (x, y)) in enumerate(TIPS))
+    return NotStr(
+        '<svg class="cv-lake" viewBox="0 0 400 500" role="presentation" aria-hidden="true">'
+        f'<path class="cv-lake-water" d="{LAKE}"/><text class="cv-lake-name" x="212" y="236" font-size="24">Lake Tahoe</text>'
+        f'<path class="cv-road cv-road-bed" d="{ROAD_50}"/><path class="cv-road cv-road-bed" d="{ROAD_89}"/>'
+        f'<path class="cv-road cv-draw" data-road="50" pathLength="1" d="{ROAD_50}"/><path class="cv-road cv-draw" data-road="89" pathLength="1" d="{ROAD_89}"/>'
+        f'<g class="cv-towns">{towns}</g>{pins}</svg>')
+
+
+def _tips():
+    cards = Ol(*[Li(Span(str(k + 1), cls="cv-tip-n"), Span(icon(ico, 20, 2), cls="cv-tip-ico"), Div(P(text), Span(who, cls="cv-mute")),
+                    Span(icon("up", 16, 2.2), str(n), cls="cv-mute cv-up"), cls="cv-tip", data_k=str(k))
+                 for k, (ico, text, who, n, _) in enumerate(TIPS)], cls="cv-tips")
+    return _stage(4, "Tips", "tips", 3, (
+        Div(H2(*_two("Things a search ", "won’t tell you.")), P("Fresh, local, from families who were just there.", cls="cv-say"), cls="cv-copy"),
+        Figure(Div(_map(), cls="cv-mapbox"),
+               Div(Div(Span(icon("spark", 18, 2), cls="cv-ill-ico"), Div(B("Tips for your Tahoe trip"), Span("From families there this week", cls="cv-mute")), cls="cv-ill-head"),
+                   cards, cls="cv-ill cv-tipsfig"),
+               cls="cv-tipsmap", aria_label="An illustration: made-up tips from families at Lake Tahoe this week, pinned on a drawing of the lake."),
+    ))
+
+
+# ---------- 5. leave a trail ----------
+
+def _trail():
+    hearts = Span(*[I(icon("heart", 18, 2.4)) for _ in range(7)], cls="cv-hearts", aria_hidden="true")
+    card = Figure(
         Div(Span(icon("flag", 18, 2), cls="cv-ill-ico"), Div(B("Your trail: Tahoe, our way"), Span("Published · 4 days · public", cls="cv-mute")), cls="cv-ill-head"),
-        Ul(Li(Span(icon("fork", 18, 2), cls="cv-tip-ico"), Div(P(B("12 families"), " took your trip this winter")), cls="cv-tip"),
-           Li(Span(icon("heart", 18, 2), cls="cv-tip-ico"), Div(P("“Spooner was the best afternoon of our trip. Thank you!”"), Span("the Garcías", cls="cv-mute")), cls="cv-tip"),
+        Div(Div(_num(12), Span("families took your trip this winter", cls="cv-big-l"), cls="cv-big"), hearts, cls="cv-bigwrap"),
+        Ul(Li(Span(icon("heart", 18, 2), cls="cv-tip-ico"), Div(P("“Spooner was the best afternoon of our trip. Thank you!”"), Span("the Garcías", cls="cv-mute")), cls="cv-tip cv-quote"),
            cls="cv-tips"),
-        cls="cv-ill cv-ill-small", aria_label="An illustration: a made-up published trip and the thanks it got.",
+        Span("Published", cls="cv-stamp", aria_hidden="true"),
+        cls="cv-ill cv-trailfig", aria_label="An illustration: a made-up published trip and the thanks it got.",
     )
+    return _stage(5, "Leave a trail", "trail", 2, (
+        Div(_eyebrow("3 · Leave a trail"), H2(*_two("Home again? ", "Leave a trail.")),
+            P("Publish your trip and the next family starts where you finished.", cls="cv-say"), cls="cv-copy"),
+        Div(card, cls="cv-deal"),
+    ))
+
+
+# ---------- 6. for creators ----------
+
+def _creators():
+    post = Figure(
+        Div(I(), I(), I(), Span("lenaandsam.blog", cls="cv-url"), cls="cv-post-bar"),
+        Div(Span(icon("snow", 28, 2), cls="cv-post-pic-ico"), cls="cv-post-pic"),
+        Div(B("Five snowy days at Lake Tahoe"), Span("A travel blog · 9 min read", cls="cv-mute"),
+            *[I(cls="cv-line") for _ in range(4)], cls="cv-post-t"),
+        cls="cv-post", aria_label="An illustration: a made-up travel blog post about Lake Tahoe.",
+    )
+    return _stage(6, "Creators", "creators", 2.5, (
+        Div(_eyebrow("For travel writers"), H2(*_two("You already wrote ", "the post.")),
+            P("Give it one more audience: travel only, five minutes, good karma.", cls="cv-say"),
+            Div(A("Bring your post", icon("arrow-right", stroke=2), href="/for-creators", cls="cv-btn fill"), cls="cv-ctas"), cls="cv-copy"),
+        Div(post, cls="cv-deal"),
+        Div(Div(_shot("creators"), cls="cv-frame"), Span("Now a trip", cls="cv-stamp", aria_hidden="true"), cls="cv-morph"),
+    ))
 
 
 def scenes():
-    return (
-        _scene(0, "Top",
-               Div(H1("Take a trip. ", Em("Leave a trail.")), P(LEDE, cls="cv-lede"),
-                   Div(A("Plan a trip", icon("arrow-right", stroke=2), href="/start", cls="cv-btn fill big"), cls="cv-ctas"),
-                   cls="cv-open-in"),
-               P("Scroll", NotStr('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
-                                  '<path d="m6 9 6 6 6-6"/></svg>'), cls="cv-hint", aria_hidden="true"),
-               cls="cv-open"),
-        # 1. Book with everything in view
-        _scene(1, "Book",
-               _rv(_eyebrow("1 · Book with everything in view"), H2("See the whole trip before you pay for ", Em("any of it.")), cls="cv-head"),
-               _tour()),
-        # 2. A head start, then it comes with you
-        _scene(2, "Head start",
-               _rv(_eyebrow("2 · A head start, then it comes with you"), H2("Don’t start from a ", Em("blank page.")),
-                   P("Families already did Tahoe in three days. Take their trip, make it yours.", cls="cv-say"), cls="cv-head"),
-               _rv(_trips_card(), P(DISCLOSURE, cls="cv-disc"), cls="cv-ill-wrap"),
-               _rv(Div(_shot("trail"), cls="cv-frame"), P("Lena and Sam’s trip, ready to make yours.", cls="cv-cap"), cls="cv-shotwrap")),
-        _scene(3, "With you",
-               _rv(H2("Then the plan ", Em("comes with you.")), cls="cv-head"),
-               _feature("cockpit", ("Every day on one line.",), ("When to leave, the drive and the weather, for each day of the trip.",)),
-               _feature("day", ("Each day, to the hour.",), ("What’s now, what’s next, and how far it is.",)),
-               _feature("ask", ("Change it by asking.",), ("“Move snowshoeing after lunch.” You see the new day first; ", B("nothing changes until you tap Apply."))),
-               _feature("family", ("Everyone on the same page.",), ("One chat for the trip. Sam books the sled hill and everyone sees it.",))),
-        _scene(4, "Tips",
-               _rv(H2("Things a search ", Em("won’t tell you.")), P("Fresh, local, from families who were just there.", cls="cv-say"), cls="cv-head"),
-               _rv(_tips_card(), cls="cv-ill-wrap")),
-        # 3. Leave a trail
-        _scene(5, "Leave a trail",
-               _rv(_eyebrow("3 · Leave a trail"), H2("Home again? ", Em("Leave a trail.")),
-                   P("Publish your trip and the next family starts where you finished.", cls="cv-say"), cls="cv-head"),
-               _rv(_thanks_card(), cls="cv-ill-wrap")),
-        _scene(6, "Creators",
-               _rv(_eyebrow("For travel writers"), H2("You already wrote ", Em("the post.")),
-                   P("Give it one more audience: travel only, five minutes, good karma.", cls="cv-say"),
-                   Div(A("Bring your post", icon("arrow-right", stroke=2), href="/for-creators", cls="cv-btn tonal"), cls="cv-ctas"), cls="cv-head"),
-               _rv(Div(_shot("creators"), cls="cv-frame"), cls="cv-shotwrap")),
-    )
+    return (_hero(), _book(), _head(), _with(), _tips(), _trail(), _creators())
 
 
 def _close(card, links):
-    return Div(
-        _rv(H2("Take a trip. ", Em("Leave a trail.")),
-            Div(A("Plan a trip", icon("arrow-right", stroke=2), href="/start", cls="cv-btn fill big"),
-                *((A("See trips people shared", href="/community", cls="cv-btn tonal"),) if showcase.community_open() else ()),
-                cls="cv-ctas"), cls="cv-last"),
-        card,
-        _footer(links),
-        cls="cv-close", data_scene="7", data_name="Your turn", id="your-turn",
+    src, w, h, place = CLOSE_PHOTO
+    end = Section(
+        Div(Div(Img(src=src, alt="", width=str(w), height=str(h), loading="lazy", decoding="async"), cls="cv-photo"),
+            *[_sticker(kind, ico, k) for k, (kind, ico) in enumerate(STICKERS)],
+            Div(H2(*_two("Take a trip. ", "Leave a trail.")),
+                Div(A("Plan a trip", icon("arrow-right", stroke=2), href="/start", cls="cv-btn fill big"),
+                    *((A("See trips people shared", href="/community", cls="cv-btn tonal"),) if showcase.community_open() else ()),
+                    cls="cv-ctas"), cls="cv-last"),
+            P(f"{place} · photo CC0", cls="cv-credit"),
+            cls="cv-stick"),
+        cls="cv-stage cv-end", data_stage="end", style="--len:1",
     )
+    return Div(end, Div(card, _footer(links), cls="cv-after"), cls="cv-close", data_scene="7", data_name="Your turn", id="your-turn")
 
 
 def _footer(links):
@@ -265,7 +409,8 @@ def _footer(links):
         P("Plan a trip together, share it, and follow trips other families shared. Booking always happens on the partner’s site, under their terms, never here."),
         Nav(*[A(label, href=href) for label, href in [*links, ("Privacy", "/privacy"), ("Terms", "/terms")]], aria_label="More"),
         P("Early preview · the families, trips, tips and thanks in this story are made up; the screens are GitAway’s own. Lake Tahoe is real: map data © ",
-          A("OpenStreetMap contributors", href="https://www.openstreetmap.org/copyright"), ", elevation from USGS 3DEP via AWS Terrain Tiles.", cls="cv-fine"),
+          A("OpenStreetMap contributors", href="https://www.openstreetmap.org/copyright"), ", elevation from USGS 3DEP via AWS Terrain Tiles. "
+          "The beach is Venice Beach, Los Angeles (a CC0 photo by Blake Everett).", cls="cv-fine"),
         cls="cv-foot",
     )
 
@@ -283,6 +428,7 @@ def page(footer_links, drive=()):
         *(h for h in head if not (h.tag == "meta" and h.attrs.get("name") == "theme-color")),        # the site's cream bar is not the cover's
         A("Skip to the story", href="#main", cls="ga-skip"),
         Header(brand(), Div(preview(), cls="cv-tag"), A("Sign in", href=session.signin_href(), cls="cv-btn tonal"), cls="cv-top"),
+        Div(Span(cls="cv-rail-fill"), cls="cv-rail", aria_hidden="true"),
         Main(*scenes(), id="main", data_phone=PHONE_Q, data_debug="1" if debug() else None),
         _close(card, footer_links),
     )

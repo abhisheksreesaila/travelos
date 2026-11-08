@@ -1,10 +1,11 @@
-"""F-206, cover v3 (D-380 to D-392): the signed-out landing is one centred sales story: "Take a trip. Leave a trail." and one button, then the
-three promises (book with everything in view; a head start, then it comes with you; leave a trail), each painted with the app's real screens and,
-where the feature is not built yet, a drawn card that says it is made up; then the line again, the doors and the footer.
+"""F-206, cover v4 (D-400 on, over v3's D-380 to D-392): the signed-out landing is v3's sales story filmed as a camera over the app: "Take a trip.
+Leave a trail." and one button, then the three promises (book with everything in view; a head start, then it comes with you; leave a trail), each
+a stage painted with the app's real screens and, where the feature is not built yet, a drawn card that says it is made up; then the line again over
+a beach, the doors and the footer.
 
-What a stranger reads and in what order, where its buttons go, the screenshots behind each part, the booking tour's beats and rings, the
-disclosure, what a search engine or a shared link sees, and that a signed-in person keeps the landing they had. The scroll, the reveals, the
-tour and the layouts are tested in a real browser: tests_browser/test_cover.py."""
+What a stranger reads and in what order, where its buttons go, the screenshots behind each part, the booking stage's beats, spotlights, numbers
+and partners, the disclosure, what a search engine or a shared link sees, and that a signed-in person keeps the landing they had. The film itself
+(the pinned stages, the camera, the moments, touch scroll, the stills) is tested in a real browser: tests_browser/test_cover.py."""
 import re
 from pathlib import Path
 
@@ -33,7 +34,8 @@ BEATS = ("A cheaper flight, a pricier cabin? See both at once and decide.",
          "The weather for your dates and the drive from the airport, right where you book.",
          "Book on the sites you trust. Your bookings stay yours.")
 FEATURES = {"cockpit": "Every day on one line.", "day": "Each day, to the hour.", "ask": "Change it by asking.", "family": "Everyone on the same page."}
-SHOTS = {1: ["book"], 2: ["trail"], 3: ["cockpit", "day", "ask", "family"], 6: ["creators"]}      # scene -> its screenshots, in order
+# scene -> its screenshots, in order (the opening and the tools that come with you draw a laptop and a phone: each shows its own layout)
+SHOTS = {0: ["cockpit", "cockpit"], 1: ["book"], 2: ["trail"], 3: ["cockpit", "day", "ask", "family"] * 2, 6: ["creators"]}
 SHARED = r'<a [^>]*href="/community"[^>]*>See trips people shared'
 DISCLOSURE = "This trip is an example: the families, trips and tips in this story are made up. The places are real."
 
@@ -87,20 +89,27 @@ def test_the_opening_has_one_door_plan_a_trip(client):
     assert "cv-tabs" not in opening and "Fourteen tabs" not in opening and "homework" not in _text(opening)    # the fourteen tabs are gone (D-381)
 
 
-def test_the_booking_scene_is_three_beats_over_one_screenshot(client):
+def test_the_booking_scene_is_three_beats_and_a_pullback_over_one_screenshot(client):
+    """One screen; the camera keys (flight beside stay, weather, drive) and the spotlights sit on the crop; the numbers that pop are the screen's own
+    (43°F highs, the 83 min drive: "1 h 23 min"); the partners' chips are the sites the booking buttons and links name."""
     scene = _scenes(_cover(client))[1]
-    beats = re.findall(r'<p data-beat="(\d)" class="cv-beat[^"]*">(.*?)</p>', scene, re.S)
-    assert [b for b, _ in beats] == ["0", "1", "2"] and [_text(t).strip() for _, t in beats] == list(BEATS)
-    assert len(re.findall(r'<picture\b', scene)) == 1                     # one screen; the beats ring parts of it
-    rings = re.findall(r'<span data-beat="(\d)" class="cv-ring[^"]*" style="left:([\d.]+)%;top:([\d.]+)%;width:([\d.]+)%;height:([\d.]+)%"', scene)
-    assert sorted({b for b, *_ in rings}) == ["0", "1", "2"]
-    assert len([r for r in rings if r[0] == "0"]) == 2 and len([r for r in rings if r[0] == "1"]) == 2     # the flight beside the stay; the weather and the drive
-    for _, x, y, w, h in rings:
+    beats = re.findall(r'<p data-beat="(\w+)" class="cv-beat[^"]*">(.*?)</p>', scene, re.S)
+    assert [b for b, _ in beats] == ["0", "1", "all", "2"]
+    assert [_text(t).strip() for b, t in beats if b != "all"] == list(BEATS) and _text(beats[2][1]).strip() == "Everything in one view."
+    assert len(re.findall(r'<picture\b', scene)) == 1                     # one screen; the camera moves over it
+    spots = re.findall(r'<span data-spot="(\w+)" class="cv-spot" style="left:([\d.]+)%;top:([\d.]+)%;width:([\d.]+)%;height:([\d.]+)%"', scene)
+    rings = re.findall(r'<span class="cv-ring" style="left:([\d.]+)%;top:([\d.]+)%;width:([\d.]+)%;height:([\d.]+)%"', scene)
+    assert [k for k, *_ in spots] == ["fs", "wx", "drive"] and len(rings) == 4         # the four booking buttons glow
+    for x, y, w, h in [b for _, *b in spots] + rings:
         assert 0 <= float(x) and float(x) + float(w) <= 100.01 and 0 <= float(y) and float(y) + float(h) <= 100.01
     lens = re.search(r'<div[^>]*class="cv-lens"[^>]*>', scene).group(0)
-    for k in range(3):
-        z = [float(v) for v in re.search(rf'data-zoom-{k}="([^"]+)"', lens).group(1).split(",")]
-        assert len(z) == 4 and z[0] + z[2] <= 1.001 and z[1] + z[3] <= 1.001
+    for k in ("fs", "fs-phone", "wx", "drive"):
+        z = [float(v) for v in re.search(rf'data-cam-{k}="([^"]+)"', lens).group(1).split(",")]
+        assert len(z) == 4 and z[0] + z[2] <= 1.001 and z[1] + z[3] <= 1.001, k
+    nums = re.findall(r'<span data-to="(\d+)" class="cv-count">', scene)
+    assert nums == ["43", "83"] and "Highs 43°F" in cover.ALT["book"].replace("typical weather", "Highs 43°F") and "1 h 23 min" in cover.ALT["book"]
+    chips = [_text(c).strip() for c in re.findall(r'<li data-from="[^"]+" class="cv-chip[^"]*">(.*?)</li>', scene, re.S)]
+    assert chips == ["Aviasales", "Expedia", "Airbnb", "Vrbo", "Expedia", "GetYourGuide"]
 
 
 def test_every_screenshot_is_real_on_disk_for_its_layout_and_mode(client):
@@ -108,36 +117,44 @@ def test_every_screenshot_is_real_on_disk_for_its_layout_and_mode(client):
     for k, names in SHOTS.items():
         assert re.findall(r'<picture data-shot="([a-z]+)"', scenes[k]) == names, k
     for k in set(range(len(scenes))) - set(SHOTS):
-        assert "<picture" not in scenes[k], k                              # the drawn cards and the opening carry no screenshot
+        assert "<picture" not in scenes[k], k                              # the drawn cards carry no screenshot
     for pic in re.findall(r'<picture data-shot="[a-z]+".*?</picture>', _cover(client), re.S):
         name = re.search(r'data-shot="([a-z]+)"', pic).group(1)
         files = set(re.findall(r'(/assets/cover/shots/[^" ,]+\.webp)', pic))
-        layouts = ("wide",) if name == "book" else ("phone", "wide")
+        fixed = re.search(r'data-layout="(\w+)"', pic)                     # a device's screen shows its own layout whatever the window
+        layouts = ("wide",) if name == "book" else (fixed.group(1),) if fixed else ("phone", "wide")
         for layout in layouts:
             for mode in ("light", "dark"):
                 for src in cover.shot_srcs(name, layout, mode):
                     assert src in files, src
                     assert (ROOT / src.lstrip("/")).is_file(), src
+        assert not fixed or all(f"-{fixed.group(1)}-" in f for f in files), files
         for attr in ("data-light-phone", "data-dark-phone", "data-light-wide", "data-dark-wide"):      # what cover.js swaps in when the site's own switch differs
             assert re.search(rf'{attr}="/assets/cover/shots/{name}-', pic), (name, attr)
         img = re.search(r"<img [^>]*>", pic).group(0)
-        assert 'loading="lazy"' in img and re.search(r'width="\d+"', img) and re.search(r'height="\d+"', img)      # below the fold, no jump when it loads
-        assert re.search(r'alt="[^"]{40,}"', img), name                                                       # a screenshot says what it shows
-        if name != "book":
+        assert re.search(r'width="\d+"', img) and re.search(r'height="\d+"', img)                                # no jump when it loads
+        assert 'loading="lazy"' in img or ('fetchpriority="high"' in img and name == "cockpit"), name           # only the opening's phone loads at once
+        assert re.search(r'alt="[^"]{40,}"', img) or 'aria-hidden="true"' in img, name                       # a screenshot says what it shows (the twin is hidden)
+        if name != "book" and not fixed:
             sources = re.findall(r"<source [^>]*>", pic)
             assert any("prefers-color-scheme: dark" in t and cover.PHONE_Q in t and "-phone-dark-" in t for t in sources)
             assert any(f'media="{cover.PHONE_Q}"' in t and "-phone-light-" in t for t in sources)
 
 
 def test_the_screenshots_stay_light():
-    """One visitor downloads one layout in one mode: the booking crop and five phone screenshots, or the crop and five laptop ones."""
+    """One visitor downloads one layout in one mode: on a phone the booking crop and six phone screenshots; on a laptop the crop, the laptop's
+    screens (at 1440 on a sharp screen), the phone beside it and the close's beach."""
     shots = ROOT / "assets/cover/shots"
-    used = [n for names in SHOTS.values() for n in names if n != "book"]
+    phone_set = ("cockpit", "trail", "day", "ask", "family", "creators")
+    wide_set = ("cockpit", "trail", "day", "ask", "family", "creators")
+    beach = (ROOT / cover.CLOSE_PHOTO[0].lstrip("/")).stat().st_size
     for mode in ("light", "dark"):
         book = (shots / f"book-wide-{mode}-1600.webp").stat().st_size
-        for layout, w, cap in (("phone", 600, 400_000), ("wide", 960, 350_000), ("wide", 1440, 550_000)):
-            one = book + sum((shots / f"{n}-{layout}-{mode}-{w}.webp").stat().st_size for n in used)
-            assert one <= cap, (layout, w, mode, one)
+        phone = book + sum((shots / f"{n}-phone-{mode}-600.webp").stat().st_size for n in phone_set) + beach
+        assert phone <= 650_000, (mode, phone)
+        for w, cap in ((960, 700_000), (1440, 1_000_000)):
+            wide = phone + sum((shots / f"{n}-wide-{mode}-{w}.webp").stat().st_size for n in wide_set) - (shots / f"trail-phone-{mode}-600.webp").stat().st_size - (shots / f"creators-phone-{mode}-600.webp").stat().st_size
+            assert wide <= cap, (w, mode, wide)
 
 
 def test_the_screenshots_show_only_the_made_up_family():
@@ -157,14 +174,14 @@ def test_the_made_up_parts_are_drawn_in_the_apps_look_and_say_so(client):
     html = _cover(client)
     scenes = _scenes(html)
     head = scenes[2]
-    assert "Trips others took to Lake Tahoe" in _text(head) and _text(head).count("Import") == 3
+    assert "Trips others took to Lake Tahoe" in _text(head) and len(re.findall(r'<span class="cv-fb-a">', head)) == 3
     assert DISCLOSURE in _text(head)
     assert _text(html).index(DISCLOSURE) < _text(html).index("Tips for your Tahoe trip")
     assert all(n not in _text(s) for s in scenes[:2] for n in ("Okafor", "Lena", "Priya", "Garcí"))     # no made-up family before the head start
     tips = _text(scenes[4])
     for tip in ("Echo Summit", "Emerald Bay Rd closes in heavy snow", "Stagecoach lot fills by 8:30", "sledding at Spooner, free"):
         assert tip in tips, tip
-    for s in (scenes[2], scenes[4], scenes[5]):
+    for s in (scenes[2], scenes[4], scenes[5], scenes[6]):
         for fig in re.findall(r"<figure.*?</figure>", s, re.S):
             assert "<a " not in fig and "<button" not in fig                    # a drawing: nothing in it can be pressed
             assert re.search(r'aria-label="An illustration: [^"]*made-up', fig)
@@ -172,8 +189,13 @@ def test_the_made_up_parts_are_drawn_in_the_apps_look_and_say_so(client):
 
 def test_the_tools_that_come_with_you_each_have_a_headline_and_a_screen(client):
     scene = _scenes(_cover(client))[3]
-    arts = re.findall(r'<article class="cv-rv cv-feat">\s*<h3>(.*?)</h3>.*?data-shot="([a-z]+)".*?</article>', scene, re.S)
-    assert [(n, _text(h).strip()) for h, n in arts] == list(FEATURES.items())
+    arts = re.findall(r'<article data-feat="([a-z]+)" class="cv-feat">\s*<h3>(.*?)</h3>', scene, re.S)
+    assert [(n, _text(h).strip()) for n, h in arts] == list(FEATURES.items())
+    for name in FEATURES:                                                  # each on the laptop's screen and the phone's
+        assert len(re.findall(rf'<div data-layer="{name}" class="cv-layer">', scene)) == 2, name
+    assert cover.ASK_SAYS in _text(scene)                                  # the request Ask types, whole without the film
+    for who, line in cover.CHAT:
+        assert line in _text(scene)
 
 
 @pytest.mark.parametrize("mode", ["1", "0"], ids=["showcase", "production"])
@@ -238,8 +260,9 @@ def test_a_search_result_and_a_shared_link_show_the_line(client):
 def test_the_words_are_real_text_and_the_story_is_skippable_to(client):
     html = _cover(client)
     assert 'href="#main"' in html and 'id="main"' in html                 # skip to the story
-    assert "cv-stage" not in html and "cv-rail" not in html and "cv-anchors" not in html      # no world, no world's labels, no rail (D-380)
+    assert "data-world" not in html and "cv-anchors" not in html          # no world, no world's labels (D-380)
     assert 'aria-live="polite"' in _tag(html, "cv-beats")                 # a screen reader hears the beat change
+    assert re.search(r'<div aria-hidden="true" class="cv-rail">', html)    # the progress rail is a drawing, not a control
 
 
 def test_only_the_cover_loads_the_cover(client):
@@ -274,6 +297,7 @@ def test_the_decisions_record_the_covers_exceptions():
     assert re.search(r"^- D-\d+ · F-206.*ODbL.*openstreetmap\.org/copyright", decisions, re.M)
     assert re.search(r"^- D-383 · .*D-270.*tips", decisions, re.M)
     assert re.search(r"^- D-380 · .*three\.js", decisions, re.M)
+    assert re.search(r"^- D-40\d · .*calm desktop", decisions, re.M)      # the cover's laptop zooms: an exception to the calm laptop, for this page only
 
 
 def test_the_phone_query_is_the_stylesheets(client):
@@ -289,15 +313,17 @@ def test_the_cover_uses_the_sites_own_icons(client):
         assert icons.PATHS[name] in html, name
 
 
-def test_the_browser_bar_takes_the_covers_grey_by_day_and_black_by_night(client):
+def test_the_browser_bar_takes_the_openings_sky_by_day_and_night_by_night(client):
     metas = re.findall(r'<meta name="theme-color"[^>]*>', _cover(client))
     assert len(metas) == 2, metas
-    assert any('content="#F2F2F5"' in m and 'media="(prefers-color-scheme: light)"' in m for m in metas)
-    assert any('content="#000000"' in m and 'media="(prefers-color-scheme: dark)"' in m for m in metas)
+    assert any('content="#E6EEF9"' in m and 'media="(prefers-color-scheme: light)"' in m for m in metas)
+    assert any('content="#070B14"' in m and 'media="(prefers-color-scheme: dark)"' in m for m in metas)
+    css = (ROOT / "assets/css/cover.css").read_text(encoding="utf-8")
+    assert "--t-hero: #E6EEF9" in css and "--t-hero: #070B14" in css      # the same colours as the opening's tint
 
 
 def test_only_off_production_does_the_page_turn_on_the_review_switch(client, monkeypatch):
-    """?beat=N holds the booking tour on a beat for the review tools; cover.js honours it only when <main> says data-debug="1"."""
+    """?scene=N&p=0.5 holds a stage at a point for the review tools; cover.js honours ?p only when <main> says data-debug="1"."""
     assert 'data-debug="1"' in re.search(r"<main\b[^>]*>", _cover(client)).group(0)
     monkeypatch.setattr(auth, "production", lambda: True)
     assert "data-debug" not in re.search(r"<main\b[^>]*>", _cover(client)).group(0)
