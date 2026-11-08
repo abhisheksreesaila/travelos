@@ -19,5 +19,6 @@ tests
 tests_browser
 docs/*
 !docs/trip-template.md
+!docs/research/creators.csv
 design-system
 tmp
