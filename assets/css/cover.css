@@ -1,20 +1,19 @@
-/* The cover (F-206, the agreed story since D-354; gitaway/pages/cover.py): the signed-out landing as one travel story. Direction A on omxqua's rules: a
-   grey canvas (black at night), Apple-bright kind colours, ink accent, opaque tonal surfaces, one shadow scale, no glass or blur. Two kinds of scene:
-   windows, where the 3D world in the fixed stage shows through behind a pinned card, and paper scenes, opaque, the words beside a real screenshot.
-   Sizes are rem (12px root on a laptop, 16px on a phone); the phone layout's are written in --u, one 16px step at either root, so a portrait tablet
-   (12px root) still gets phone-sized type. Every duration is a --motion-* token. Phones, portrait tablets and short screens share one layout (the
-   world on top, the card below, the screenshot under the words): its query is cover.py PHONE_Q, used verbatim below. Sides keep clear of a notch:
-   --cv-sl and --cv-sr (viewport-fit=cover). */
+/* The cover (F-206, cover v3: docs/decisions.md D-380..; gitaway/pages/cover.py): the signed-out landing as one centred sales story. Direction A on
+   omxqua's rules: a grey canvas (black at night), Apple-bright kind colours, ink accent, opaque tonal surfaces, one shadow scale, no glass or blur.
+   Everything is centred, phone and laptop. Sizes are rem (12px root on a laptop, 16px on a phone); the phone layout's are written in --u, one
+   16px step at either root. Every duration is a --motion-* token: on a laptop the reveals are a calm fade, on a phone a fade with a short rise, and
+   under reduced motion (html.cv-calm) nothing moves. The phone layout's query is cover.py PHONE_Q, used verbatim below. Sides keep clear of a
+   notch: --cv-sl and --cv-sr (viewport-fit=cover). */
 
 .cv-root {
   --u: 1.3333rem;
-  --cv-k-flight: #4338CA; --cv-k-stay: #8B2FC9; --cv-k-car: #15803D; --cv-k-tix: #C2410C; --cv-k-wx: #0369A1; --cv-k-food: #C92A5E; --cv-k-see: #0F766E;
-  --cv-on-k: #FFFFFF;      /* words on a kind's solid fill: the fills stay deep in both modes */
-  --cv-gut: 1.6667rem; --cv-card-r: 2.3333rem; --cv-shot-r: 1.5rem;
+  --cv-k-flight: #4338CA; --cv-k-stay: #8B2FC9; --cv-k-car: #15803D; --cv-k-tix: #C2410C; --cv-k-wx: #0369A1; --cv-k-food: #C92A5E; --cv-k-see: #0F766E; --cv-k-fun: #B45309;
+  --cv-gut: 2rem; --cv-card-r: 2rem; --cv-shot-r: 1.5rem; --cv-col: 60rem;
   --cv-sl: max(var(--cv-gut), env(safe-area-inset-left)); --cv-sr: max(var(--cv-gut), env(safe-area-inset-right));
   --cv-bg: #F2F2F5; --cv-s1: #FFFFFF; --cv-s2: #E9E9EE; --cv-ink: #0B0B0D; --cv-ink2: #5C5C66; --cv-line: #E3E3E8; --cv-acc: #0B0B0D; --cv-on-acc: #FFFFFF;
   --cv-sh1: 0 0.0833rem 0.1667rem rgba(10, 10, 20, .06), 0 0 0 1px rgba(10, 10, 20, .04);
   --cv-sh2: 0 0.6667rem 2rem rgba(10, 10, 20, .10), 0 0 0 1px rgba(10, 10, 20, .05);
+  --cv-ring: #0B0B0D; --cv-ring-glow: rgba(10, 10, 20, .16);
   color-scheme: light;
   background: var(--cv-bg);
 }
@@ -22,6 +21,7 @@
   --cv-bg: #000000; --cv-s1: #1C1C1F; --cv-s2: #2A2A2E; --cv-ink: #F5F5F7; --cv-ink2: #A1A1AA; --cv-line: #2E2E33; --cv-acc: #F5F5F7; --cv-on-acc: #0B0B0D;
   --cv-sh1: 0 1px 0 rgba(255, 255, 255, .05) inset, 0 0.0833rem 0.1667rem rgba(0, 0, 0, .6);
   --cv-sh2: 0 1px 0 rgba(255, 255, 255, .06) inset, 0 0.6667rem 2rem rgba(0, 0, 0, .6);
+  --cv-ring: #F5F5F7; --cv-ring-glow: rgba(245, 245, 247, .22);
   color-scheme: dark;
 }
 @media (max-width: 720px) { .cv-root { --u: 1rem; } }
@@ -31,22 +31,12 @@
 .cv-root :focus-visible { outline: 0.1667rem solid var(--cv-acc); outline-offset: 0.1667rem; }
 .cv-root .ga-skip { z-index: 30; left: max(1rem, env(safe-area-inset-left)); }       /* over the fixed header when it is tabbed to */
 
-/* ---------- the stage: the poster at once, then the live canvas (or the stills) over it ---------- */
-.cv-stage { position: fixed; inset: 0; height: 100lvh; z-index: 0; background: var(--cv-bg); overflow: hidden; }
-.cv-stage img, .cv-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: cover; max-width: none; }
-.cv-stage canvas { opacity: 0; transition: opacity var(--motion-screen-dur) var(--motion-ease); }
-.cv-live .cv-stage canvas.on { opacity: 1; }
-.cv-poster img { transition: opacity var(--motion-dur) var(--motion-ease); }
-.cv-poster img.off { opacity: 0; }
-.cv-stills img { opacity: 0; transition: opacity var(--motion-quick) var(--motion-ease); }
-.cv-stills img.on { opacity: 1; }
-
-/* ---------- header: the logo, the honest label, sign in ---------- */
+/* ---------- header: the logo, the honest label, sign in (opaque pills over the page) ---------- */
 .cv-top { position: fixed; top: 0; left: 0; right: 0; z-index: 20; display: flex; align-items: center; gap: 1rem; padding: 1.1667rem var(--cv-sr) 1.1667rem var(--cv-sl); padding-top: max(1.1667rem, env(safe-area-inset-top)); pointer-events: none; }
 .cv-top > * { pointer-events: auto; }
 .cv-top > .cv-btn { margin-left: auto; }
 .cv-top .ga-brand { min-height: 4rem; padding: 0 1.3333rem 0 0.6667rem; border-radius: var(--r-pill); background: var(--cv-s1); box-shadow: var(--cv-sh1); }
-.cv-dark .cv-top .ga-brand-name, .cv-dark .cv-foot .ga-brand-name { color: var(--cv-ink); }      /* the wordmark's ink would vanish on the night scene's dark pill */
+.cv-dark .cv-top .ga-brand-name, .cv-dark .cv-foot .ga-brand-name { color: var(--cv-ink); }      /* the wordmark's ink would vanish on the night's dark pill */
 .cv-tag { display: flex; align-items: center; }      /* the shared "Early preview" label (layout.preview(), F-200) in the cover's own pill */
 .cv-tag .ga-preview-sum { padding: 0; }
 .cv-tag .ga-preview-pill { font: 600 1.0833rem/1 var(--font-body); letter-spacing: .02em; text-transform: none; min-height: 0; padding: 0.5833rem 0.8333rem; border-radius: var(--r-pill); background: var(--cv-s1); color: var(--cv-ink2); box-shadow: var(--cv-sh1); }
@@ -56,85 +46,121 @@
 .cv-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.6667rem; min-height: 4rem; padding: 0 1.6667rem; border-radius: var(--r-pill); border: 0; font: 650 1.3333rem/1 var(--font-body); text-decoration: none; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: transform var(--motion-quick) var(--motion-spring), box-shadow var(--motion-quick) var(--motion-ease); }
 .cv-btn.fill { background: var(--cv-acc); color: var(--cv-on-acc); box-shadow: var(--cv-sh1); }
 .cv-btn.tonal { background: var(--cv-s1); color: var(--cv-ink); box-shadow: var(--cv-sh1); }
-.cv-btn.text { background: transparent; color: var(--cv-ink); padding: 0 1rem; }
+.cv-btn.big { min-height: 4.6667rem; padding: 0 2.3333rem; font-size: 1.5rem; }
 .cv-btn svg { width: 1.6667rem; height: 1.6667rem; flex: none; }
 .cv-btn.pressed { transform: scale(.96); }
 .cv-root .cv-btn.fill:hover { color: var(--cv-on-acc); }
 @media (hover: hover) and (pointer: fine) { .cv-btn.fill:hover, .cv-btn.tonal:hover { box-shadow: var(--cv-sh2); transform: translateY(-1px); } }
+.cv-ctas { display: flex; flex-wrap: wrap; gap: 0.8333rem; justify-content: center; margin-top: 2rem; }
 
-/* ---------- windows: each card is pinned while its stretch of the world plays behind it ---------- */
-.cv-root main { position: relative; z-index: 2; }
-.cv-win { position: relative; height: calc(var(--h, 2) * 100svh); }
-.cv-pin { position: sticky; top: 0; height: 100svh; display: flex; align-items: center; padding: 8rem var(--cv-sr) 2.6667rem var(--cv-sl); pointer-events: none; }
-.cv-pin > * { pointer-events: auto; }
-/* a card never runs under the header or off the screen: on a screen shorter than any layout here plans for, it scrolls inside itself instead */
-.cv-card { width: min(38.3333rem, 38vw); max-height: 100%; overflow-y: auto; scrollbar-width: thin; margin-left: clamp(1.3333rem, 4vw, 6rem); background: var(--cv-s1); color: var(--cv-ink); border-radius: var(--cv-card-r); box-shadow: var(--cv-sh2); padding: 2.5rem 2.6667rem; }
-.cv-eyebrow { font: 700 max(var(--label-min), 1.0833rem)/1.2 var(--font-body); letter-spacing: .08em; text-transform: uppercase; color: var(--cv-ink2); margin: 0 0 1rem; display: flex; align-items: center; gap: 0.6667rem; }
+/* ---------- the story: one centred column, scene after scene ---------- */
+.cv-root main { position: relative; }
+.cv-sc { position: relative; padding: 7rem var(--cv-sr) 4rem var(--cv-sl); display: grid; justify-items: center; text-align: center; gap: 2.6667rem; }
+.cv-sc + .cv-sc { border-top: 1px solid var(--cv-line); }
+.cv-head { max-width: var(--cv-col); display: grid; justify-items: center; }
+.cv-eyebrow { font: 700 max(var(--label-min), 1.0833rem)/1.2 var(--font-body); letter-spacing: .08em; text-transform: uppercase; color: var(--cv-ink2); margin: 0 0 1.1667rem; display: flex; align-items: center; justify-content: center; gap: 0.6667rem; text-wrap: balance; }
 .cv-eyebrow i { width: 0.6667rem; height: 0.6667rem; border-radius: 50%; background: var(--cv-acc); display: inline-block; flex: none; }
-.cv-card h2 { font: 800 3.6667rem/1.02 var(--font-display); letter-spacing: -.04em; margin: 0 0 1.1667rem; text-wrap: balance; color: var(--cv-ink); }
-.cv-card h2 em, .cv-hero h1 em, .cv-paper h2 em { font-style: normal; color: var(--cv-ink2); }
-.cv-card p { margin: 0; font-size: 1.5rem; line-height: 1.5; color: var(--cv-ink2); text-wrap: pretty; }
-.cv-card p b { color: var(--cv-ink); font-weight: 650; }
-.cv-disc { display: block; margin-top: 1rem; color: var(--cv-ink); }      /* the story is an example: said where the family first appears (docs/decisions.md D-270) */
+.cv-sc h2, .cv-last h2 { font: 800 clamp(3.6667rem, 4.4vw, 5.6667rem)/1.03 var(--font-display); letter-spacing: -.04em; margin: 0; text-wrap: balance; color: var(--cv-ink); max-width: 18em; }
+.cv-root h1 em, .cv-root h2 em, .cv-root h3 em { font-style: normal; color: var(--cv-ink2); }
+.cv-say { margin: 1.3333rem 0 0; font-size: 1.6667rem; line-height: 1.5; color: var(--cv-ink2); text-wrap: pretty; max-width: 36em; }
+.cv-say b { color: var(--cv-ink); font-weight: 650; }
+.cv-disc { margin: 1.3333rem auto 0; max-width: 40em; font-size: 1.3333rem; color: var(--cv-ink); text-wrap: pretty; }      /* the story is an example: said where the families first appear (D-270, D-383) */
+.cv-cap { margin: 1.1667rem 0 0; color: var(--cv-ink2); font-size: 1.3333rem; }
 
-/* the why: the headline over the guidebook, and the tabs it took */
-.cv-hero .cv-pin { align-items: flex-start; justify-content: center; text-align: center; padding-top: clamp(8rem, 12vh, 11rem); }
-.cv-hero-copy { max-width: 80rem; display: grid; justify-items: center; }
-.cv-hero .cv-eyebrow { justify-content: center; }
-.cv-hero h1 { font: 800 clamp(4.6667rem, 6.4vw, 8.6667rem)/0.98 var(--font-display); letter-spacing: -.045em; margin: 0 0 1.5rem; text-wrap: balance; color: var(--cv-ink); }
-.cv-why { width: min(56rem, 100%); margin-top: 0.5rem; background: var(--cv-s1); border-radius: 1.5rem; box-shadow: var(--cv-sh2); overflow: hidden; text-align: left; }
-/* a browser with fourteen tabs, squeezed until their names are cut off: the problem, drawn (decoration; the lede says it in words) */
-.cv-tabs { display: flex; gap: 0.25rem; margin: 0; padding: 0.6667rem 0.6667rem 0; list-style: none; background: var(--cv-s2); overflow: hidden; }
-.cv-tabs li { flex: 1 1 0; min-width: 0; min-height: 2.6667rem; display: flex; align-items: center; padding: 0 0.6667rem; border-radius: 0.6667rem 0.6667rem 0 0; color: var(--cv-ink2); font: 600 max(var(--text-min), 1.0833rem)/1 var(--font-body); white-space: nowrap; overflow: hidden; }      /* clipped, never an ellipsis (F-034): the cut-off names are the point */
-.cv-tabs li:first-child { flex: 2.4 1 0; background: var(--cv-s1); color: var(--cv-ink); }
-.cv-tabs li + li:not(:nth-child(2)) { box-shadow: -1px 0 0 var(--cv-line); }
-.cv-lede { font-size: clamp(1.5rem, 1.5vw, 1.8333rem); color: var(--cv-ink2); margin: 0; padding: 1.5rem 2rem 1.6667rem; text-wrap: pretty; }
-.cv-hint { position: absolute; left: 0; right: 0; bottom: max(2.1667rem, env(safe-area-inset-bottom)); display: flex; flex-direction: column; align-items: center; gap: 0.5rem; font: 650 1.1667rem/1 var(--font-body); color: var(--cv-ink2); pointer-events: none; }
+/* the opening: the line, what you get, one door */
+.cv-open { min-height: 100svh; box-sizing: border-box; align-content: center; padding-top: 8rem; padding-bottom: 8rem; }
+.cv-open-in { max-width: 72rem; display: grid; justify-items: center; }
+.cv-open h1 { font: 800 clamp(5rem, 7.2vw, 9.3333rem)/0.98 var(--font-display); letter-spacing: -.045em; margin: 0; text-wrap: balance; color: var(--cv-ink); }
+.cv-lede { margin: 2rem 0 0; font-size: clamp(1.6667rem, 1.7vw, 2.1667rem); line-height: 1.45; color: var(--cv-ink2); max-width: 30em; text-wrap: balance; }
+.cv-ctas .cv-btn.big { min-width: 16rem; }
+.cv-hint { position: absolute; left: 0; right: 0; bottom: max(2.1667rem, env(safe-area-inset-bottom)); margin: 0; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; font: 650 1.1667rem/1 var(--font-body); color: var(--cv-ink2); pointer-events: none; }
 .cv-hint svg { width: 1.8333rem; height: 1.8333rem; animation: cv-nudge calc(var(--motion-wiggle) * 5) var(--motion-ease) infinite; }
 @keyframes cv-nudge { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(0.5rem); } }
+.cv-calm .cv-hint svg { animation: none; }
 
-/* the line and the three doors */
-.cv-end .cv-pin { justify-content: center; align-items: flex-end; padding-bottom: 9vh; }
-.cv-last { width: min(53.3333rem, 92vw); margin: 0; text-align: center; padding: 3rem 3rem 2.6667rem; }
-.cv-last .cv-eyebrow { justify-content: center; }
-.cv-last h2 { font-size: 4.6667rem; }
-.cv-ctas { display: flex; flex-wrap: wrap; gap: 0.6667rem; justify-content: center; margin-top: 2rem; }
-.cv-ctas .cv-btn { min-height: 4.3333rem; }
-
-/* ---------- paper scenes: the page itself, a plain headline and a few words beside the feature's real screenshot ---------- */
-.cv-paper { position: relative; background: var(--cv-bg); min-height: 100svh; box-sizing: border-box; display: grid; grid-template-columns: minmax(0, 32rem) minmax(0, 1fr);
-  gap: clamp(2.6667rem, 5vw, 6.6667rem); align-items: center; padding: 8.3333rem calc(var(--cv-sr) + 5rem) 4rem calc(var(--cv-sl) + clamp(1.3333rem, 4vw, 6rem)); }
-.cv-paper + .cv-paper { border-top: 1px solid var(--cv-line); }
-.cv-words { max-width: 32rem; }
-.cv-paper h2 { font: 800 clamp(3.6667rem, 3.9vw, 5.3333rem)/1.02 var(--font-display); letter-spacing: -.04em; margin: 0 0 1.3333rem; text-wrap: balance; color: var(--cv-ink); }
-.cv-say { margin: 0; font-size: 1.6667rem; line-height: 1.5; color: var(--cv-ink2); text-wrap: pretty; }
-.cv-say b { color: var(--cv-ink); font-weight: 650; }
-.cv-frame { justify-self: start; width: 100%; max-width: 75rem; }
+/* ---------- screenshots ---------- */
+.cv-frame { width: min(75rem, 100%); margin: 0 auto; }
 .cv-shot { display: block; border-radius: var(--cv-shot-r); overflow: hidden; background: var(--cv-s1); box-shadow: var(--cv-sh2); outline: 1px solid var(--cv-line); }      /* the outline keeps a dark screenshot apart from the night canvas */
 .cv-shot img { display: block; width: 100%; height: auto; aspect-ratio: 1440 / 900; }
+.cv-shotwrap { width: 100%; display: grid; justify-items: center; }
 
-/* in-world anchors: labels the world places over itself (aria-hidden); under the cards, so a label never crosses what you are reading */
-.cv-anchors { position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
-.cv-anchors > * { position: absolute !important; left: 0; top: 0; will-change: transform, opacity; opacity: 0; visibility: hidden; }
-.cv-lbl { display: inline-flex; align-items: center; gap: 0.5833rem; padding: 0.5833rem 0.9167rem 0.5833rem 0.75rem; border-radius: var(--r-pill); background: var(--cv-s1); color: var(--cv-ink); box-shadow: var(--cv-sh1); font: 650 1.25rem/1.1 var(--font-body); white-space: nowrap; transform-origin: 0 50%; }
-.cv-lbl i { width: 0.8333rem; height: 0.8333rem; border-radius: 50%; flex: none; }
-.cv-lbl.ink { background: var(--cv-acc); color: var(--cv-on-acc); }
-.cv-lbl small { font: 500 1.1667rem/1 var(--font-body); color: var(--cv-ink2); }
-.cv-anchors > svg.leaders { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 1; visibility: visible; overflow: visible; }
-.leaders path { stroke: var(--cv-ink); stroke-width: 1.6; stroke-dasharray: 2 5; stroke-linecap: round; fill: none; }
-.cv-still .cv-anchors { display: none; }
+/* ---------- 1. the booking tour: words above one screenshot; each beat rings its part (on a phone, zooms to it) ---------- */
+.cv-tour { width: 100%; }
+.cv-tour-pin { box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 1.6667rem; padding: 0 0 1rem; }
+.cv-beats { display: grid; gap: 0.8333rem; width: min(56rem, 100%); }      /* no script, or too short to pin: the three beats are a plain list over the whole screenshot */
+.cv-beat { margin: 0; font: 650 clamp(1.8333rem, 1.9vw, 2.3333rem)/1.3 var(--font-display); letter-spacing: -.015em; color: var(--cv-ink); text-wrap: balance; }
+.cv-lens { position: relative; width: min(75rem, 100%); max-width: 100%; border-radius: var(--cv-shot-r); overflow: hidden; background: var(--cv-s1); box-shadow: var(--cv-sh2); outline: 1px solid var(--cv-line); }
+.cv-lens-in { position: relative; transform-origin: 0 0; --k: 1; }
+.cv-lens .cv-shot { border-radius: 0; box-shadow: none; outline: 0; }
+.cv-lens .cv-shot img { aspect-ratio: 960 / 817; }
+.cv-ring { position: absolute; box-sizing: border-box; border-radius: calc(1rem / var(--k)); border: calc(0.25rem / var(--k)) solid var(--cv-ring); box-shadow: 0 0 0 calc(0.5rem / var(--k)) var(--cv-ring-glow); pointer-events: none; display: none; }
+.cv-steps { display: none; }
+/* with the script (html.cv-run) and room to pin: the screen stays while the beats pass, one at a time */
+@media (min-height: 560px) {
+  .cv-run .cv-tour { height: calc(var(--beats) * 75svh + 100svh); }
+  .cv-run .cv-tour-pin { position: sticky; top: 0; height: 100svh; padding-top: 7.3333rem; padding-bottom: 2rem; justify-content: flex-start; }
+  .cv-run .cv-beat { grid-area: 1 / 1; opacity: 0; transition: opacity var(--motion-screen-dur) var(--motion-ease); }
+  .cv-run .cv-beat.on { opacity: 1; }
+  .cv-run .cv-lens { flex: none; }
+  .cv-run .cv-lens-in { transition: transform var(--motion-screen-dur) var(--motion-zoom); }
+  .cv-run .cv-ring { display: block; opacity: 0; transition: opacity var(--motion-screen-dur) var(--motion-ease); }
+  .cv-run .cv-ring.on { opacity: 1; }
+  .cv-run .cv-steps { display: flex; gap: 0.6667rem; margin: 0; padding: 0; list-style: none; }
+  .cv-steps li { width: 0.6667rem; height: 0.6667rem; border-radius: 50%; background: var(--cv-line); transition: background-color var(--motion-dur) var(--motion-ease); }
+  .cv-steps li.on { background: var(--cv-acc); }
+  .cv-steps li span { display: none; }
+  .cv-calm .cv-beat, .cv-calm .cv-ring, .cv-calm .cv-lens-in, .cv-calm .cv-steps li { transition: none; }
+}
 
-/* ---------- the scene rail (laptop) ---------- */
-.cv-rail { position: fixed; right: max(1.1667rem, env(safe-area-inset-right)); top: 50%; transform: translateY(-50%); z-index: 15; display: grid; }
-.cv-rail button { width: 4rem; height: 4rem; border: 0; background: transparent; cursor: pointer; display: grid; place-items: center; position: relative; color: inherit; font: inherit; }
-.cv-rail button i { width: 0.6667rem; height: 0.6667rem; border-radius: 50%; background: var(--cv-ink2); opacity: .45; transition: transform var(--motion-quick) var(--motion-spring), opacity var(--motion-quick) var(--motion-ease); }
-.cv-rail button[aria-current="step"] i { background: var(--cv-acc); opacity: 1; transform: scale(1.4); }
-.cv-rail button span { position: absolute; right: 3.6667rem; top: 50%; transform: translateY(-50%); white-space: nowrap; font: 650 1.1667rem/1 var(--font-body); padding: 0.6667rem 0.8333rem; border-radius: var(--r-pill); background: var(--cv-s1); color: var(--cv-ink); box-shadow: var(--cv-sh1); opacity: 0; pointer-events: none; transition: opacity var(--motion-fade) var(--motion-ease); }
-.cv-rail button:hover span, .cv-rail button:focus-visible span { opacity: 1; }
+/* ---------- 2. a head start: drawn cards in the app's own look (made up, said so) ---------- */
+.cv-ill-wrap { width: min(46rem, 100%); }
+.cv-ill { margin: 0; text-align: left; background: var(--cv-s1); color: var(--cv-ink); border-radius: var(--cv-card-r); box-shadow: var(--cv-sh2); padding: 1.6667rem; }
+.cv-ill-head { display: flex; align-items: center; gap: 1rem; padding: 0 0.3333rem 1.3333rem; }
+.cv-ill-head b { display: block; font: 700 1.6667rem/1.2 var(--font-display); letter-spacing: -.01em; }
+.cv-ill-ico { width: 3.3333rem; height: 3.3333rem; border-radius: 1rem; background: var(--cv-s2); display: grid; place-items: center; flex: none; color: var(--cv-ink); }
+.cv-mute { color: var(--cv-ink2); font-size: 1.25rem; }
+.cv-trips, .cv-tips, .cv-stops { list-style: none; margin: 0; padding: 0; }
+.cv-trips { display: grid; gap: 0.6667rem; }
+.cv-trip { display: flex; gap: 1rem; align-items: center; justify-content: space-between; padding: 1.1667rem 1.3333rem; border-radius: 1.3333rem; background: var(--cv-bg); }
+.cv-trip.pick { box-shadow: inset 0 0 0 0.1667rem var(--cv-acc); }
+.cv-trip-t { min-width: 0; display: grid; gap: 0.25rem; }
+.cv-trip-t b { font: 650 1.4167rem/1.25 var(--font-body); }
+.cv-stops { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+.cv-stops li { display: inline-flex; align-items: center; gap: 0.4167rem; padding: 0.3333rem 0.75rem 0.3333rem 0.5833rem; border-radius: var(--r-pill); background: var(--cv-s1); font: 600 max(var(--text-min), 1.1667rem)/1.2 var(--font-body); color: var(--cv-ink); }
+.cv-stops svg { width: 1.3333rem; height: 1.3333rem; }
+.cv-stops .k-tix svg { color: color-mix(in srgb, var(--cv-k-tix) 75%, var(--cv-ink)); }
+.cv-stops .k-see svg { color: color-mix(in srgb, var(--cv-k-see) 75%, var(--cv-ink)); }
+.cv-stops .k-food svg { color: color-mix(in srgb, var(--cv-k-food) 75%, var(--cv-ink)); }
+.cv-stops .k-fun svg { color: color-mix(in srgb, var(--cv-k-fun) 75%, var(--cv-ink)); }
+.cv-stops .k-stay svg { color: color-mix(in srgb, var(--cv-k-stay) 75%, var(--cv-ink)); }
+.cv-trip-a { display: grid; justify-items: end; gap: 0.6667rem; flex: none; }
+.cv-thx, .cv-up { display: inline-flex; align-items: center; gap: 0.3333rem; white-space: nowrap; }
+.cv-thx svg, .cv-up svg { width: 1.25rem; height: 1.25rem; }
+.cv-fake-btn { display: inline-flex; align-items: center; gap: 0.5rem; min-height: 3.3333rem; padding: 0 1.25rem; border-radius: var(--r-pill); background: var(--cv-s1); color: var(--cv-ink); font: 650 1.25rem/1 var(--font-body); box-shadow: var(--cv-sh1); }
+.cv-fake-btn.ink { background: var(--cv-acc); color: var(--cv-on-acc); }
+.cv-fake-btn svg { width: 1.3333rem; height: 1.3333rem; }
+.cv-tips { display: grid; gap: 0.5rem; }
+.cv-tip { display: flex; gap: 1rem; align-items: flex-start; padding: 1rem 1.1667rem; border-radius: 1.3333rem; background: var(--cv-bg); }
+.cv-tip > div { flex: 1; min-width: 0; }
+.cv-tip p { margin: 0 0 0.25rem; font-size: 1.4167rem; line-height: 1.4; color: var(--cv-ink); }
+.cv-tip-ico { width: 2.6667rem; height: 2.6667rem; border-radius: 0.8333rem; background: var(--cv-s1); display: grid; place-items: center; flex: none; color: var(--cv-ink); }
+.cv-tip-ico svg { width: 1.5rem; height: 1.5rem; }
+.cv-up { padding-top: 0.25rem; }
+.cv-ill-small { max-width: 40rem; margin: 0 auto; }
 
-/* ---------- the closing screen: once it covers the stage, the world stops drawing ---------- */
-.cv-close { position: relative; z-index: 2; background: var(--cv-bg); min-height: 100svh; display: grid; align-content: center; gap: 1.5rem; padding: 4.6667rem var(--cv-sr) max(4rem, env(safe-area-inset-bottom)) var(--cv-sl); border-top: 1px solid var(--cv-line); }
-.cv-close .pf-card { width: min(46rem, 100%); margin: 0 auto; background: var(--cv-s1); color: var(--cv-ink); box-shadow: var(--cv-sh1); }
+/* ---------- the tools that come with you: a short headline, a line, the screen ---------- */
+.cv-feat { width: 100%; display: grid; justify-items: center; padding-top: 2rem; }
+.cv-feat h3 { font: 750 clamp(2.3333rem, 2.4vw, 3rem)/1.1 var(--font-display); letter-spacing: -.03em; margin: 0; color: var(--cv-ink); text-wrap: balance; }
+.cv-feat .cv-say { margin: 0.8333rem 0 2rem; }
+
+/* ---------- calm reveals (only once cover.js runs: html.cv-run); a laptop fades, a phone fades and rises a little; reduced motion: none ---------- */
+.cv-run:not(.cv-calm) .cv-rv { opacity: 0; transition: opacity var(--motion-screen-dur) var(--motion-ease), transform var(--motion-screen-dur) var(--motion-ease); }
+.cv-run:not(.cv-calm) .cv-rv.in { opacity: 1; transform: none; }
+
+/* ---------- the close: the line again, the doors, Plan it for me, the footer ---------- */
+.cv-close { position: relative; background: var(--cv-bg); display: grid; justify-items: center; gap: 2.6667rem; padding: 7rem var(--cv-sr) max(4rem, env(safe-area-inset-bottom)) var(--cv-sl); border-top: 1px solid var(--cv-line); text-align: center; }
+.cv-last { display: grid; justify-items: center; }
+.cv-close .pf-card { width: min(46rem, 100%); margin: 0 auto; background: var(--cv-s1); color: var(--cv-ink); box-shadow: var(--cv-sh1); text-align: left; }
 .cv-close .pf-card p { color: var(--cv-ink2); }
 .cv-foot { display: grid; gap: 1.5rem; justify-items: center; text-align: center; }
 .cv-foot p { margin: 0; color: var(--cv-ink2); font-size: 1.3333rem; max-width: 44em; }
@@ -144,85 +170,72 @@
 .cv-fine { font-size: 1.1667rem !important; }
 .cv-fine a { text-decoration: underline; text-underline-offset: 0.1667rem; }
 
-/* ---------- phones, tall screens and short ones: the world on top, the card in the thumb zone; the words, then the phone's screenshot ---------- */
-@media (max-width: 720px), (max-aspect-ratio: 85/100), (max-height: 520px) {
-  .cv-root { --cv-gut: calc(0.75 * var(--u)); }
+/* ---------- phones: the same centred column, phone type (16px), 48px targets; the phone's own screenshots ---------- */
+@media (max-width: 720px) {
+  .cv-root { --cv-gut: calc(1 * var(--u)); --cv-card-r: calc(1.5 * var(--u)); --cv-shot-r: calc(1.5 * var(--u)); }
   .cv-root body { font-size: calc(1.0625 * var(--u)); }
   .cv-top { gap: calc(0.5 * var(--u)); padding: calc(0.75 * var(--u)) var(--cv-sr) calc(0.75 * var(--u)) var(--cv-sl); padding-top: max(calc(0.75 * var(--u)), env(safe-area-inset-top)); }
   .cv-top .ga-brand { min-height: calc(3 * var(--u)); padding: 0 calc(0.875 * var(--u)) 0 calc(0.375 * var(--u)); gap: calc(0.5 * var(--u)); }
   /* the honest label stays on a phone (the logo itself never changes, D-61): it wraps onto two lines before it would crowd the logo or Sign in */
   .cv-tag, .cv-tag .ga-preview, .cv-tag .ga-preview-sum { flex: 0 1 auto; min-width: 0; }
   .cv-tag .ga-preview-pill { font-size: calc(0.8125 * var(--u)); line-height: 1.15; text-align: center; white-space: normal; padding: calc(0.375 * var(--u)) calc(0.625 * var(--u)); border-radius: calc(0.75 * var(--u)); }
-  .cv-rail { display: none; }
   .cv-btn { min-height: calc(3 * var(--u)); padding: 0 calc(1.25 * var(--u)); font-size: calc(1 * var(--u)); gap: calc(0.5 * var(--u)); }
+  .cv-btn.big { min-height: calc(3.5 * var(--u)); font-size: calc(1.125 * var(--u)); padding: 0 calc(1.75 * var(--u)); }
+  .cv-ctas .cv-btn.big { min-width: min(calc(16 * var(--u)), 100%); }
   .cv-top > .cv-btn { padding: 0 calc(1 * var(--u)); flex: none; }
   .cv-btn svg { width: calc(1.25 * var(--u)); height: calc(1.25 * var(--u)); }
-  .cv-pin { align-items: flex-end; padding: calc(5 * var(--u)) var(--cv-sr) max(var(--cv-gut), env(safe-area-inset-bottom)) var(--cv-sl); }
-  .cv-card { width: 100%; max-width: calc(35 * var(--u)); margin: 0 auto; padding: calc(1.375 * var(--u)) calc(1.375 * var(--u)) calc(1.5 * var(--u)); border-radius: calc(1.75 * var(--u)); }
-  .cv-eyebrow { font-size: calc(0.8125 * var(--u)); margin-bottom: calc(0.625 * var(--u)); gap: calc(0.5 * var(--u)); }
+  .cv-ctas { gap: calc(0.5 * var(--u)); margin-top: calc(1.5 * var(--u)); }
+  .cv-sc { padding: calc(4.5 * var(--u)) var(--cv-sr) calc(2.5 * var(--u)) var(--cv-sl); gap: calc(1.75 * var(--u)); }
+  .cv-eyebrow { font-size: calc(0.8125 * var(--u)); margin-bottom: calc(0.75 * var(--u)); gap: calc(0.5 * var(--u)); }
   .cv-eyebrow i { width: calc(0.5 * var(--u)); height: calc(0.5 * var(--u)); }
-  .cv-card h2 { font-size: calc(2 * var(--u)); margin-bottom: calc(0.625 * var(--u)); }
-  .cv-card p { font-size: calc(1.0625 * var(--u)); }
-  .cv-disc { margin-top: calc(0.625 * var(--u)); }
-  .cv-hero .cv-pin { padding-top: calc(5.5 * var(--u)); align-items: flex-start; }
-  .cv-hero h1 { font-size: clamp(calc(2.375 * var(--u)), 10.6vw, calc(3.25 * var(--u))); margin-bottom: calc(0.75 * var(--u)); }
-  .cv-lede { font-size: calc(1.0625 * var(--u)); }
-  .cv-why { border-radius: calc(1.25 * var(--u)); margin-top: 0; }
-  .cv-tabs { padding: calc(0.375 * var(--u)) calc(0.375 * var(--u)) 0; gap: calc(0.125 * var(--u)); }
-  .cv-tabs li { min-height: calc(2.25 * var(--u)); padding: 0 calc(0.5 * var(--u)); font-size: calc(1 * var(--u)); }
-  .cv-tabs li:nth-child(n + 9) { display: none; }      /* eight squeezed tabs make the point on a phone */
-  .cv-lede { padding: calc(0.875 * var(--u)) calc(1 * var(--u)) calc(1 * var(--u)); }
+  .cv-sc h2, .cv-last h2 { font-size: clamp(calc(1.875 * var(--u)), 8.6vw, calc(2.5 * var(--u))); }
+  .cv-say { font-size: calc(1.0625 * var(--u)); margin-top: calc(0.875 * var(--u)); }
+  .cv-disc, .cv-cap { font-size: calc(1 * var(--u)); margin-top: calc(1 * var(--u)); }
+  .cv-open { padding-top: calc(5.5 * var(--u)); padding-bottom: calc(5 * var(--u)); }
+  .cv-open h1 { font-size: clamp(calc(2.75 * var(--u)), 13.4vw, calc(4 * var(--u))); }
+  .cv-lede { font-size: calc(1.125 * var(--u)); margin-top: calc(1.25 * var(--u)); }
   .cv-hint { font-size: calc(1 * var(--u)); bottom: max(calc(1.5 * var(--u)), env(safe-area-inset-bottom)); }
   .cv-hint svg { width: calc(1.375 * var(--u)); height: calc(1.375 * var(--u)); }
-  .cv-end .cv-pin { align-items: flex-end; padding-bottom: max(var(--cv-gut), env(safe-area-inset-bottom)); }
-  .cv-last { width: 100%; padding: calc(1.5 * var(--u)) calc(1.375 * var(--u)); }
-  .cv-last h2 { font-size: calc(2.25 * var(--u)); }
-  .cv-last .cv-eyebrow { display: block; text-wrap: balance; }
-  .cv-last .cv-eyebrow i { display: inline-block; margin-right: calc(0.5 * var(--u)); vertical-align: 0.15em; }
-  .cv-ctas { flex-direction: column; align-items: stretch; gap: calc(0.5 * var(--u)); margin-top: calc(1.25 * var(--u)); }
-  .cv-ctas .cv-btn { min-height: calc(3.5 * var(--u)); font-size: calc(1.0625 * var(--u)); }
-  .cv-ctas .cv-btn.text { min-height: calc(3 * var(--u)); }
-  .cv-lbl { font-size: calc(1 * var(--u)); gap: calc(0.4375 * var(--u)); padding: calc(0.4375 * var(--u)) calc(0.6875 * var(--u)) calc(0.4375 * var(--u)) calc(0.5625 * var(--u)); }
-  .cv-lbl i { width: calc(0.625 * var(--u)); height: calc(0.625 * var(--u)); }
-  .cv-lbl small { font-size: calc(0.9375 * var(--u)); }
-  .cv-paper { grid-template-columns: minmax(0, 1fr); gap: calc(1.75 * var(--u)); align-content: center; justify-items: center; min-height: 0;
-    padding: calc(5.5 * var(--u)) var(--cv-sr) calc(3 * var(--u)) var(--cv-sl); }
-  .cv-words { max-width: calc(34 * var(--u)); width: 100%; }
-  .cv-paper h2 { font-size: calc(2 * var(--u)); margin-bottom: calc(0.625 * var(--u)); }
-  .cv-say { font-size: calc(1.0625 * var(--u)); }
-  .cv-frame { justify-self: center; width: min(calc(18.75 * var(--u)), 78vw); }
-  .cv-shot { border-radius: calc(1.75 * var(--u)); }
+  .cv-frame { width: min(calc(18.75 * var(--u)), 82vw); }
   .cv-shot img { aspect-ratio: 390 / 844; }
-  .cv-close { gap: calc(1 * var(--u)); padding: calc(3 * var(--u)) var(--cv-sr) max(calc(2.5 * var(--u)), env(safe-area-inset-bottom)) var(--cv-sl); }
+  .cv-beats { width: 100%; }
+  .cv-beat { font-size: calc(1.1875 * var(--u)); }
+  .cv-lens { width: 100%; }
+  .cv-ill { padding: calc(0.875 * var(--u)); }
+  .cv-ill-head { gap: calc(0.75 * var(--u)); padding: 0 calc(0.25 * var(--u)) calc(0.875 * var(--u)); }
+  .cv-ill-head b { font-size: calc(1.125 * var(--u)); }
+  .cv-ill-ico { width: calc(2.5 * var(--u)); height: calc(2.5 * var(--u)); border-radius: calc(0.75 * var(--u)); }
+  .cv-mute { font-size: calc(1 * var(--u)); }
+  .cv-trip { flex-direction: column; align-items: stretch; gap: calc(0.75 * var(--u)); padding: calc(0.875 * var(--u)); border-radius: calc(1 * var(--u)); }
+  .cv-trip-t b { font-size: calc(1.0625 * var(--u)); }
+  .cv-trip-a { display: flex; justify-content: space-between; align-items: center; }
+  .cv-stops { gap: calc(0.375 * var(--u)); }
+  .cv-stops li { font-size: calc(1 * var(--u)); padding: calc(0.25 * var(--u)) calc(0.625 * var(--u)) calc(0.25 * var(--u)) calc(0.5 * var(--u)); }
+  .cv-stops svg, .cv-thx svg, .cv-up svg, .cv-fake-btn svg { width: calc(1 * var(--u)); height: calc(1 * var(--u)); }
+  .cv-fake-btn { min-height: calc(2.5 * var(--u)); font-size: calc(1 * var(--u)); padding: 0 calc(1 * var(--u)); }
+  .cv-tip { gap: calc(0.75 * var(--u)); padding: calc(0.75 * var(--u)); border-radius: calc(1 * var(--u)); }
+  .cv-tip p { font-size: calc(1 * var(--u)); }
+  .cv-tip-ico { width: calc(2.25 * var(--u)); height: calc(2.25 * var(--u)); border-radius: calc(0.625 * var(--u)); }
+  .cv-tip-ico svg { width: calc(1.25 * var(--u)); height: calc(1.25 * var(--u)); }
+  .cv-feat { padding-top: calc(1.5 * var(--u)); }
+  .cv-feat h3 { font-size: calc(1.5 * var(--u)); }
+  .cv-feat .cv-say { margin: calc(0.5 * var(--u)) 0 calc(1.25 * var(--u)); }
+  .cv-run:not(.cv-calm) .cv-rv { transform: translateY(var(--motion-shift)); }
+  .cv-close { gap: calc(1.75 * var(--u)); padding: calc(4 * var(--u)) var(--cv-sr) max(calc(2.5 * var(--u)), env(safe-area-inset-bottom)) var(--cv-sl); }
   .cv-foot p { font-size: calc(1 * var(--u)); }
   .cv-foot nav { gap: calc(0.5 * var(--u)); }
   .cv-foot nav a { min-height: calc(3 * var(--u)); font-size: calc(1 * var(--u)); padding: 0 calc(0.75 * var(--u)); }
   .cv-fine { font-size: calc(1 * var(--u)) !important; }
 }
-/* the narrowest phones: no room for the label between the logo and Sign in, so it takes a short second row under the logo; a tighter card */
+@media (max-width: 720px) and (min-height: 560px) {
+  .cv-run .cv-tour-pin { padding-top: calc(4.75 * var(--u)); padding-bottom: calc(1 * var(--u)); gap: calc(1 * var(--u)); }
+}
+/* the narrowest phones: no room for the label between the logo and Sign in, so it takes a short second row under the logo */
 @media (max-width: 359px) {
   .cv-top { flex-wrap: wrap; row-gap: calc(0.25 * var(--u)); padding-bottom: calc(0.25 * var(--u)); }
   .cv-top > .cv-btn { order: 2; }
   .cv-tag { order: 3; margin-left: calc(0.25 * var(--u)); }
-  .cv-tag .ga-preview-sum { min-height: 0; }      /* the second row stays short, so every card still fits a 320x568 screen */
-  .cv-pin { padding-top: calc(6 * var(--u)); }
-  .cv-hero .cv-pin { padding-top: calc(6.25 * var(--u)); }
-  .cv-tabs li:nth-child(n + 7) { display: none; }
-  .cv-card { padding: calc(1.125 * var(--u)); }
-  .cv-card h2, .cv-paper h2 { font-size: calc(1.75 * var(--u)); }
-  .cv-paper { padding-top: calc(6.25 * var(--u)); }
+  .cv-tag .ga-preview-sum { min-height: 0; }
+  .cv-sc, .cv-open { padding-top: calc(6.25 * var(--u)); }
+  .cv-run .cv-tour-pin { padding-top: calc(6.25 * var(--u)); }
 }
-/* a phone on its side, or any short window: a wide card that wraps less, a tighter frame, the three doors side by side; the screenshot beside the words */
-@media (max-height: 520px) {
-  .cv-top { padding-block: calc(0.5 * var(--u)); padding-top: max(calc(0.5 * var(--u)), env(safe-area-inset-top)); }
-  .cv-pin { padding-top: calc(4.5 * var(--u)); }
-  .cv-hero .cv-pin { padding-top: calc(4.5 * var(--u)); }
-  .cv-hero h1 { font-size: calc(2 * var(--u)); }
-  .cv-tabs { display: none; }
-  .cv-card { max-width: calc(48 * var(--u)); padding-block: calc(1.125 * var(--u)); }
-  .cv-ctas { flex-direction: row; flex-wrap: wrap; justify-content: center; }
-  .cv-ctas .cv-btn, .cv-ctas .cv-btn.text { min-height: calc(3 * var(--u)); }
-  .cv-paper { grid-template-columns: minmax(0, 1fr) auto; padding-top: calc(4.5 * var(--u)); }
-  .cv-frame { width: calc(11 * var(--u)); }
-}
-.cv-still .cv-hint svg { animation: none; }

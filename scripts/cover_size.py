@@ -1,12 +1,12 @@
-"""How much JavaScript and data the signed-out landing (the cover, F-206) downloads, gzip -9 (what Cloudflare sends in front of gitaway.me).
+"""How much JavaScript the signed-out landing (the cover, F-206; cover v3) downloads, gzip -9 (what Cloudflare sends in front of gitaway.me).
 
     pixi run python scripts/cover_size.py
 
-Counts every <script src> on the page wherever it comes from, every inline script, and the world cover.js loads when the live world is wanted
-(world.js and everything it imports: the vendored three.js). A script from another site is counted from EXTERNAL, measured once; one that is
-not there stops the count (ValueError), so the budget never skips a script silently. The Travelpayouts Drive script is off in the tests'
-settings; switched on (TRAVELPAYOUTS_DRIVE_ID) it is one more external script to measure and add. tests/test_cover_budget.py holds the budget;
-this prints the table.
+Counts every <script src> on the page wherever it comes from and every inline script. Since cover v3 (D-380) the page loads no 3D world, so there
+is nothing else: a page that names a world again (data-world) has it counted with everything it imports. A script from another site is counted
+from EXTERNAL, measured once; one that is not there stops the count (ValueError), so the budget never skips a script silently. The Travelpayouts
+Drive script is off in the tests' settings; switched on (TRAVELPAYOUTS_DRIVE_ID) it is one more external script to measure and add.
+tests/test_cover_budget.py holds the budget; this prints the table.
 """
 import gzip
 import re
@@ -15,7 +15,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 ASSETS = ROOT / "assets"
-BUDGET_JS = 250 * 1024
+BUDGET_JS = 28 * 1024          # D-384: was 250 KB with three.js and the world; the landing measures 21.3 KB without them
 # Scripts from other sites, gzip -9 as gz() counts them, downloaded and measured 2026-11-07. FastHTML adds these four from jsDelivr to every page
 # until F-207 switches them off (FastHTML(htmx=False, surreal=False)); surreal and css-scope-inline follow a branch (@main), so re-measure if they move.
 EXTERNAL: dict[str, int] = {}      # F-207 took FastHTML's four jsDelivr scripts off every page; add a script from another site here, measured, before the landing loads it
@@ -51,7 +51,7 @@ def module_graph(entry: str):
 
 
 def measure(html: str):
-    """[(what, bytes gzip)] for the landing's JavaScript, and the world's data files [(file, bytes as sent)]."""
+    """[(what, bytes gzip)] for the landing's JavaScript."""
     rows = []
     for src in re.findall(r'<script[^>]*\ssrc="([^"]+)"', html):
         url = src.split("?")[0]
@@ -64,11 +64,10 @@ def measure(html: str):
     for i, body in enumerate(re.findall(r"<script(?:\s[^>]*)?>(.*?)</script>", html, re.S)):
         if body.strip():
             rows.append((f"inline script {i + 1}", gz(body.encode())))
-    world = re.search(r'data-world="([^"]+)"', html).group(1)
-    for url in module_graph(world):
-        rows.append((url, gz(asset(url).read_bytes())))
-    data = [(p.name, p.stat().st_size) for p in sorted((ASSETS / "cover").glob("tahoe-*.gz"))]
-    return rows, data
+    for world in re.findall(r'data-world="(/assets/[^"]+\.js[^"]*)"', html):      # a world the page would load (none since D-380)
+        for url in module_graph(world):
+            rows.append((url, gz(asset(url).read_bytes())))
+    return rows
 
 
 def main():
@@ -76,13 +75,11 @@ def main():
     import tests.conftest  # noqa: F401  (the test settings: a throwaway data folder, the local sign-in)
     from starlette.testclient import TestClient
     from main import app
-    rows, data = measure(TestClient(app).get("/").text)
+    rows = measure(TestClient(app).get("/").text)
     total = sum(n for _, n in rows)
     for what, n in rows:
         print(f"{n / 1024:8.1f} KB  {what}")
     print(f"{total / 1024:8.1f} KB  landing JavaScript, gzip (budget {BUDGET_JS / 1024:.0f} KB)")
-    for name, n in data:
-        print(f"{n / 1024:8.1f} KB  {name} (already gzip)")
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
-// The cover's first paint (F-206): day or night, and the calm stills under reduced motion, decided before anything is drawn.
-// gitaway/pages/cover.py inlines this file at the top of <body>; assets/js/cover.js does the rest and reuses cvMode().
+// The cover's first paint (F-206, cover v3): day or night, and calm under reduced motion, decided before anything is drawn.
+// gitaway/pages/cover.py inlines this file in <head>; assets/js/cover.js does the rest and reuses cvMode().
 (function () {
   var d = document.documentElement, q = new URLSearchParams(location.search);
   // Day or night follows the site's own switch when it sets one (dark or light on <html> or <body>), else the system setting.
@@ -16,6 +16,10 @@
     }
     return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   };
-  var still = q.has('still') || matchMedia('(prefers-reduced-motion: reduce)').matches;
-  d.classList.add(window.cvMode() === 'dark' ? 'cv-dark' : 'cv-light', still ? 'cv-still' : 'cv-live');
+  var calm = q.has('still') || matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // cv-run: the reveals start hidden and the booking tour pins, from the first paint (no flash of the story fading out); should cover.js not
+  // have run by the time the page has loaded, everything simply shows
+  d.classList.add(window.cvMode() === 'dark' ? 'cv-dark' : 'cv-light', 'cv-run');
+  if (calm) d.classList.add('cv-calm');
+  addEventListener('load', function () { if (!window.GA_COVER) d.classList.remove('cv-run'); });
 })();

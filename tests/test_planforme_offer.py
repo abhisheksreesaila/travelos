@@ -55,7 +55,10 @@ def test_a_creators_trip_carries_through_the_offer_to_the_intake(client):
 def test_with_the_founder_check_on_nothing_promises_minutes(client, monkeypatch):
     monkeypatch.setenv("PLAN_FOR_ME_REVIEW", "1")
     row, _, _ = live_trip()
-    pages = [client.get(OFFER).text, client.get(f"{OFFER}/start").text, client.get(f"/trips/{row['slug']}").text, client.get("/").text,
+    # the cover's creators scene says what publishing costs a writer ("five minutes", D-391), not how long a plan takes: every other word on / is checked
+    cover = re.sub(r'<section[^>]*id="creators".*?</section>', "", client.get("/").text, flags=re.S)
+    assert "Plan a trip" in cover and "good karma" not in cover
+    pages = [client.get(OFFER).text, client.get(f"{OFFER}/start").text, client.get(f"/trips/{row['slug']}").text, cover,
              *[client.get(f"{OFFER}/example/{s}").text for s in px.EXAMPLES]]
     sign_in(client)
     uid, tenant, email = buyer()

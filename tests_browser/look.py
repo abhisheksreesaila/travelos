@@ -10,7 +10,7 @@ audit(page) returns, for the page as drawn:
 
 Contrast reads the text's own colour (with its alpha and the opacity of the element and its ancestors) over what is painted behind the text: the
 page is scrolled through and `elementsFromPoint` at the text gives the layers under it (a sliding thumb, a card, the page), composited down to the
-first opaque one. Text never seen in the window (inside a box that scrolls by itself) falls back to its ancestors' backgrounds. Text over a picture
+first opaque one, with the text's fade as it was there (a part that changes as the page scrolls is read where it shows). Text never seen in the window (inside a box that scrolls by itself) falls back to its ancestors' backgrounds. Text over a picture
 or a gradient is skipped (there is no one colour to measure), as is the text of a disabled control. An inline link inside a sentence is not a tap
 target of its own (WCAG 2.5.8's inline exception). The audit scrolls the window back to the top and leaves the page as it found it.
 """
@@ -130,7 +130,7 @@ AUDIT = r"""async () => {
     for (const it of items) {
       if (done.has(it)) continue;
       const bg = look(it);
-      if (bg !== undefined) done.set(it, bg);
+      if (bg !== undefined) done.set(it, [bg, fade(it.el)]);
     }
     if (y >= span) break;
   }
@@ -138,17 +138,17 @@ AUDIT = r"""async () => {
     if (done.has(it)) continue;
     it.el.scrollIntoView({block: 'center', inline: 'center', behavior: 'instant'});
     const bg = look(it);
-    if (bg !== undefined) done.set(it, bg);
+    if (bg !== undefined) done.set(it, [bg, fade(it.el)]);
   }
   for (const [e, x, y] of scrolled) { e.scrollLeft = x; e.scrollTop = y; }
   scrollTo(left0, top0);
   free.remove();
   for (const it of items) {
-    const bg = done.has(it) ? done.get(it) : flatten(ancestors(it.el));
+    // the text's own fade as it was where it was seen: a part that changes with the scroll (the cover's tour beats) is read in its place
+    const [bg, o] = done.has(it) ? done.get(it) : [flatten(ancestors(it.el)), fade(it.el)];
     if (!bg) continue;
     const s = getComputedStyle(it.el);
     let fg = over(parse(s.color), bg);
-    const o = fade(it.el);
     if (o < 1) fg = over([fg[0], fg[1], fg[2], o], bg);
     const k = ratio(fg, bg);
     if (k < 4.5) out.low.push(`${it.text.slice(0, 40)} (${k.toFixed(2)}, ${hex(fg)} on ${hex(bg)})`);

@@ -1,7 +1,10 @@
-"""F-206: the cover's budget and its build. The landing's JavaScript stays within 250 KB gzipped with three.js inside it, counting every script
-on the page wherever it comes from; three.js is self-hosted, version-pinned and keeps its licence, and so does the code adapted from Meng To's
-skills; the world shipped was built from the sources in cover3d/src, by the pinned tools only; every file the world fetches is addressed by its
-content, so a new build never mixes with a cached old one; the terrain data stays small and bakes to the same bytes every time."""
+"""F-206, cover v3 (D-380, D-384): the cover's budget. The landing's JavaScript stays within 28 KB gzipped, counting every script on the page
+wherever it comes from, and it loads no 3D world: no three.js, no world.js, no terrain.
+
+The world itself is parked, not deleted (cover3d/, assets/js/cover/, the vendored three.js and the terrain stay in the repo for later): the rest
+of this file keeps it whole, so it can come back as it was: three.js self-hosted, version-pinned and licensed, the code adapted from Meng To's
+skills with its notice, the world built from cover3d/src by the pinned tools only, every file it fetches addressed by its content, the terrain
+small and baked to the same bytes every time."""
 import gzip
 import hashlib
 import json
@@ -26,21 +29,39 @@ def _h(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()[:10]
 
 
-def test_the_landing_javascript_fits_in_250_kb_gzipped(client, capsys):
-    rows, _ = measure(client.get("/").text)
+def test_the_landing_javascript_fits_in_28_kb_gzipped(client, capsys):
+    rows = measure(client.get("/").text)
     names = [w for w, _ in rows]
-    assert "/assets/vendor/three-0.187.0/three.cover.min.js" in names and "/assets/js/cover/world.js" in names and "/assets/js/cover.js" in names
+    assert "/assets/js/cover.js" in names
     total = sum(n for _, n in rows)
     with capsys.disabled():
         print(f"\nlanding JavaScript {total / 1024:.1f} KB gzip of {BUDGET_JS / 1024:.0f} KB: " + ", ".join(f"{Path(w).name} {n / 1024:.1f}" for w, n in rows))
+    assert BUDGET_JS == 28 * 1024
     assert total <= BUDGET_JS, f"{total / 1024:.1f} KB"
+
+
+def test_the_landing_loads_no_3d_world(client):
+    """No three.js, no world, no terrain, no stills: not as a script, a preload, a data-* address for a script to fetch later, or a picture."""
+    html = client.get("/").text
+    for heavy in ("/assets/vendor/three", "/assets/js/cover/", "tahoe-", "/assets/cover/stills", "data-world", "data-three", "<canvas"):
+        assert heavy not in html, heavy
+    cover_js = (ROOT / "assets/js/cover.js").read_text(encoding="utf-8")
+    assert not re.search(r"three\.|/vendor/|three-0", cover_js) and "world.js" not in cover_js and "import(" not in cover_js and "modulepreload" not in cover_js
+    assert all(not w.startswith("/assets/js/cover/") and "three" not in w for w, _ in measure(html))
+
+
+def test_a_world_named_on_the_page_would_count(client):
+    """Should a world come back, the budget counts it and everything it imports, so it cannot slip in under the 28 KB."""
+    html = client.get("/").text.replace('<main ', '<main data-world="/assets/js/cover/world.js?v=1" ', 1)
+    names = [w for w, _ in measure(html)]
+    assert "/assets/js/cover/world.js" in names and "/assets/vendor/three-0.187.0/three.cover.min.js" in names
 
 
 def test_every_script_on_the_landing_counts_wherever_it_comes_from(client):
     """Every script on the page counts. Since F-207 the landing loads none from another site (FastHTML's jsDelivr scripts are off), and a script
     from another site that nobody has measured (scripts/cover_size.py EXTERNAL) fails the budget instead of slipping past it."""
     html = client.get("/").text
-    rows, _ = measure(html)
+    rows = measure(html)
     names = {w for w, _ in rows}
     srcs = re.findall(r'<script[^>]*\ssrc="([^"]+)"', html)
     assert srcs and not any(s.startswith(("https:", "http:", "//")) for s in srcs), srcs
@@ -94,24 +115,22 @@ def test_the_terrain_data_is_small_and_well_formed():
     assert "OpenStreetMap" in geo["credit"]
 
 
-def test_every_file_the_world_fetches_is_addressed_by_its_content(client):
+def test_every_file_the_parked_world_fetches_is_addressed_by_its_content():
     """The service worker keeps /assets/ files with ?v= for good, so the world imports three.js and fetches the terrain by URLs that carry each file's
-    own hash (written in by build.mjs), and the page preloads the very URL the world imports."""
+    own hash (written in by build.mjs)."""
     world = WORLD.read_text(encoding="utf-8")
     three = f"/assets/vendor/three-0.187.0/three.cover.min.js?v={_h(THREE / 'three.cover.min.js')}"
     assert set(re.findall(r'from"(/assets/vendor/[^"]+)"', world)) == {three}
     for name in ("tahoe-hi.bin.gz", "tahoe-lo.bin.gz", "tahoe-geo.json.gz"):
         assert f'"{name}":"{_h(ROOT / "assets/cover" / name)}"' in world, name
-    main = re.search(r"<main\b[^>]*>", client.get("/").text).group(0)
-    assert f'data-three="{three}"' in main
 
 
 def test_the_code_adapted_from_meng_tos_skills_ships_with_its_mit_notice():
+    """The parked world carries the notice; cover.js was rewritten for cover v3 and carries none of that code any more."""
     notice = (ROOT / "cover3d/LICENSE-mengto").read_text(encoding="utf-8")
     assert "Copyright (c) 2026 Meng To" in notice and MIT in notice
-    for shipped in (WORLD, ROOT / "assets/js/cover.js"):
-        text = shipped.read_text(encoding="utf-8")
-        assert "Copyright (c) 2026 Meng To" in text and MIT in text, shipped.name
+    text = WORLD.read_text(encoding="utf-8")
+    assert "Copyright (c) 2026 Meng To" in text and MIT in text
 
 
 def _fake_modules(mods, esbuild):

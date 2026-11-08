@@ -30,6 +30,13 @@ DPR = {"phone": 2, "wide": 1}
 # encoded widths: a phone shot is shown about 300 css px wide (about 2x), a laptop shot up to about 900 css px wide (1x and 1.6x)
 WIDTHS = {"phone": (600,), "wide": (960, 1440)}
 QUALITY = {"phone": 72, "wide": 70}
+# the booking scene (cover v3, D-380..): only the booking lanes and the side panel beside them (weather, cost, the airport drive), cut out of /plan at
+# 1440 wide and 2x, down to the bottom of the panel, so the cover can ring each part (and a phone zoom into it); one picture for phone and laptop
+CROP = {"book": "#pw"}
+CROP_W = {"wide": (960, 1600)}
+CROP_DPR = 2
+# the drive from Reno to South Lake Tahoe as OSRM's public router answered it on 2026-11-08 (gitaway/airportdrive.py, 83 min): the shots ask no service
+DRIVE = ("RNO", "South Lake Tahoe, California", 83)
 
 TEMPLATE_NAMES = (("- name: Abhi", "- name: Lena"), ("- name: Maya", "- name: Sam"), ("- name: Kid 1", "- name: Noa"), ("- name: Kid 2", "- name: Theo"))
 CHAT = (   # (who, text, when in UTC on Mon Dec 21): the family's chat on the trip, made up
@@ -68,6 +75,9 @@ def _patch():
     def refuse(*a, **k):
         raise OSError("the network is off for the cover's screenshots")
     weather.TRANSPORT = safefetch.TRANSPORT = ai.ANTHROPIC_TRANSPORT = refuse
+    from gitaway import airportdrive
+    iata, town, minutes = DRIVE
+    airportdrive._keep((iata, town.lower()), airportdrive.Drive(iata, town, minutes))
     catalog.now_utc = lambda: tahoe.NOW
     catalog.today = lambda: tahoe.NOW.astimezone(catalog.TZ).date()
     ai.TRANSPORT = _ask_reply
@@ -175,6 +185,7 @@ def _top(page, layout):
 
 SHOTS = {
     "plan": (PLAN, PLAN, True, None),
+    "book": (None, PLAN, True, None),            # laptop only, cut to CROP
     "cockpit": ("/trip/cockpit", "/trip/cockpit", True, _cockpit),
     "day": ("/trip/today", "/trip/canvas?day=2", True, _top),
     "ask": ("/trip/ask?day=2", "/trip/canvas?day=2", True, _ask),
@@ -187,7 +198,7 @@ SHOTS = {
 def shoot(browser, base, name, layout, scheme, trail):
     phone_path, wide_path, signed, act = SHOTS[name]
     vp, phone = SIZES[layout], layout == "phone"
-    ctx = browser.new_context(viewport=vp, device_scale_factor=DPR[layout], color_scheme=scheme, reduced_motion="reduce", is_mobile=phone, has_touch=phone,
+    ctx = browser.new_context(viewport=vp, device_scale_factor=CROP_DPR if name in CROP else DPR[layout], color_scheme=scheme, reduced_motion="reduce", is_mobile=phone, has_touch=phone,
                               service_workers="block")
     ctx.route("**/*", lambda r: r.abort() if not r.request.url.startswith((base, "https://fonts.googleapis.com", "https://fonts.gstatic.com")) else r.continue_())
     if signed:
@@ -200,7 +211,12 @@ def shoot(browser, base, name, layout, scheme, trail):
     if act:
         act(page, layout)
     page.evaluate("document.fonts.ready")
-    png = page.screenshot()
+    if name in CROP:      # the lanes and the panel beside them, a little margin round them
+        box = page.evaluate("""sel => { const p = document.querySelector(sel), r = p.parentElement.getBoundingClientRect(), x = r.left - 16, y = r.top + scrollY - 8;
+          return { x, y, width: r.width + 32, height: p.getBoundingClientRect().bottom + scrollY + 12 - y }; }""", CROP[name])
+        png = page.screenshot(full_page=True, clip=box)
+    else:
+        png = page.screenshot()
     ctx.close()
     if errors:
         print(f"  {name} {layout} {scheme}: page errors {errors}", flush=True)
@@ -210,7 +226,7 @@ def shoot(browser, base, name, layout, scheme, trail):
 def save(png, name, layout, scheme):
     from PIL import Image
     im = Image.open(io.BytesIO(png)).convert("RGB")
-    for w in WIDTHS[layout]:
+    for w in (CROP_W[layout] if name in CROP else WIDTHS[layout]):
         out = im if im.width == w else im.resize((w, round(im.height * w / im.width)), Image.LANCZOS)
         path = OUT / f"{name}-{layout}-{scheme}-{w}.webp"
         out.save(path, "WEBP", quality=QUALITY[layout], method=6)
@@ -249,7 +265,7 @@ def main():
             for name in SHOTS:
                 if only and name not in only:
                     continue
-                for layout in SIZES:
+                for layout in [x for x in SIZES if SHOTS[name][0 if x == "phone" else 1]]:
                     for scheme in ("light", "dark"):
                         save(shoot(browser, base, name, layout, scheme, trail), name, layout, scheme)
             browser.close()
