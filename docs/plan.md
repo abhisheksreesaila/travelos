@@ -1305,6 +1305,36 @@ Brief: docs/briefs/free-and-polished.md · Design: docs/design/oneproduct/ (in p
 - [ ] Where to? for any destination, the book of tickets, the paste moment and booking details ("Booked on X · Change or cancel") relaid out in the Ticket line language, web first and phone alongside, light and dark
 - [x] part B: the trip's context beside the booking lanes (`/plan`, D-334): weather (MET forecast or NOAA typical, labelled, with `weather.notes`), the cost so far (the Aviasales Data API's fare a person, else "No price yet — check on <site>"), and the drive from the airport (OSRM, credited, hidden on any failure); a strip above the lanes on a phone, a column beside them from 1020px, light and dark (tests/test_plan_widgets.py both showcase modes, tests_browser/test_plan_widgets.py, docs/report/f210b-*.png). Dev server, sample data off: Lake Tahoe Dec 19–26 showed NOAA typical highs 42°F, lows 17–18°F and a real 1 h 23 min RNO → South Lake Tahoe; Lisbon showed money only. Waiting on the reviewer
 
+# Sell first, dev next (captain 2026-11-08: the cover sells three promises; build what it shows, cheapest first)
+
+The cover v3 (D-380 to D-392) illustrates two things the app does not do yet with made-up content: "Trips others took" and "Things a search won't tell you". These tickets make them real, cheapest first. When a ticket ships, the cover shows the real screen instead of the drawn card.
+
+## F-212 Trips others took, while you book [todo]
+Brief: this section · Needs: none (community trips and Import exist, F-181)
+- [ ] /plan and Where to? show "Trips others took to <place>": published community trips whose place matches the search (same region, roughly the same length first), most thanked first, at most three, each with days, a thanks count and Import (the existing fork into the family's trip, landing on the cockpit)
+- [ ] nothing shows until a real trip matches (no sample trips off the showcase; tested in both modes)
+- [ ] phone and laptop, light and dark; reviewer passes it
+- [ ] the cover's drawn "Trips others took" card is replaced by a screenshot once a real trip shows
+
+## F-213 Tips from people who have been there [todo]
+Cheapest source of "things a search won't tell you": the posts and trips we already hold. Needs: none (creator import already reads posts with Haiku 5.5)
+- [ ] creator import and Publish ask for up to five local tips per trip (a place, one sentence, from the post or the traveller's own words, never invented by the model: each tip must quote or closely follow text in the post), stored with the trip in community.db
+- [ ] a traveller can add a one-line tip to a stop or a day when they publish
+- [ ] /plan and the day view show "Things a search won't tell you" for the place, each tip credited to its trip (and creator link via stoplinks), nothing when there are none
+- [ ] AI cost per import logged (docs/ai-usage.md); reviewer and security auditor (AI feature, user content)
+
+## F-214 Live local alerts, US first [todo]
+Free sources, no key: the National Weather Service alerts API (api.weather.gov, public domain, asks for a User-Agent) for winter storm, flood, fire and heat warnings over the trip's area; then the state road feeds, starting with Caltrans' chain controls and closures for the Tahoe roads (its public CWWP2 data). Needs: check each feed's terms before the first call (docs/research/local-alerts.md)
+- [ ] the cockpit, the day view and /plan show an active alert for the trip's area and dates, with its source and time, and nothing when there is none (no stale alert: an alert past its end is gone)
+- [ ] one worker, a cache, daily budgets and a TRANSPORT seam the tests refuse (lessons 2026-11-07); every answer untrusted and capped
+- [ ] Caltrans chain controls on US-50, I-80 and SR-89 for a Tahoe trip in winter; other states later
+- [ ] proved with one polite real call on a dev server, then a test from what it showed
+
+## F-215 Personal heads-ups on the trip [todo]
+Proactive, from what the trip already knows (weather, drive, alerts, tips). Needs: F-213, F-214
+- [ ] the morning of a drive day: "Leave by 8:10 for Heavenly; chains are up on US-50" from the router's time, the alert and the booking's time
+- [ ] each heads-up says where it came from; none invented; quiet when there is nothing to say
+
 # Live-site fixes (each branches from master and ships on its own)
 
 ## F-207 Stop loading unpinned CDN scripts on every page [done]
