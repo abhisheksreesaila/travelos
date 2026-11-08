@@ -1300,6 +1300,7 @@ Brief: docs/briefs/free-and-polished.md · Design: docs/design/oneproduct/ (in p
 ## F-210 Booking redesigned as one product (absorbs F-202) [todo]
 Brief: docs/briefs/free-and-polished.md · Design: docs/design/oneproduct/ (in progress) · Needs: the founder's pick; F-198 merged
 - [ ] Where to? for any destination, the book of tickets, the paste moment and booking details ("Booked on X · Change or cancel") relaid out in the Ticket line language, web first and phone alongside, light and dark
+- [x] part B: the trip's context beside the booking lanes (`/plan`, D-334): weather (MET forecast or NOAA typical, labelled, with `weather.notes`), the cost so far (the Aviasales Data API's fare a person, else "No price yet — check on <site>"), and the drive from the airport (OSRM, credited, hidden on any failure); a strip above the lanes on a phone, a column beside them from 1020px, light and dark (tests/test_plan_widgets.py both showcase modes, tests_browser/test_plan_widgets.py, docs/report/f210b-*.png). Dev server, sample data off: Lake Tahoe Dec 19–26 showed NOAA typical highs 42°F, lows 17–18°F and a real 1 h 23 min RNO → South Lake Tahoe; Lisbon showed money only. Waiting on the reviewer
 
 # Live-site fixes (each branches from master and ships on its own)
 

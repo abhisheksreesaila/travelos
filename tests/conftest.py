@@ -108,6 +108,8 @@ def _offline_maps(monkeypatch):
         monkeypatch.setattr(gate, "gap", 0.0)
         monkeypatch.setattr(gate, "shut_until", None)
     geopack.forget_failures()
+    from gitaway import airportdrive   # F-210: the booking panel's airport drive is kept in the process; every test starts with none kept
+    airportdrive.clear()
 
 
 @pytest.fixture(autouse=True)

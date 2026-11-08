@@ -15,9 +15,10 @@ from fasthtml.common import A, Button, Div, Form, H1, H2, Input, Label, Li, Link
 from gitaway import catalog, pickers
 from gitaway.icons import icon
 from gitaway.layout import page
+from gitaway.pages import plan_widgets
 from gitaway.partners import links, places, prices, registry
 
-HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/plansearch.css"), Script(src="/assets/js/plansearch.js", defer=True))
+HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/plansearch.css"), plan_widgets.CSS, Script(src="/assets/js/plansearch.js", defer=True))
 ICONS = {"flight": "plane", "stay": "bed", "car": "car", "todo": "ticket", "direct": "star"}
 FINE = "Every booking happens on the partner's site, under their terms and their support. GitAway never takes payment and never handles a change or a refund."
 BAD_IATA = "Use a three-letter airport code, like RNO, or leave it empty."
@@ -218,6 +219,6 @@ def search_page(search, via="", raw=None, errors=None):
             P(f"{date_label(search)} · {summary(search)}" + (f" · flying from {search.home}" if search.home else ""), cls="ps-lede", id="ps-lede"),
             P("The dates are a starting guess. We show no prices of our own: the partners show today's.", cls="ps-fine"),
             _trip_form(search, q, ""),
-            Div(*found, cls="ps-cards"),
+            plan_widgets.beside(search, Div(*found, cls="ps-cards")),      # F-210: weather, money and the drive beside the lanes
             P(FINE + (" We may earn a commission where a link says so." if paid else ""), cls="ps-fine", id="ps-fine"),
             cls="ps ga-wrap"), id="plan-search"), head=HEAD)

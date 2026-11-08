@@ -264,12 +264,12 @@ def cached_coords(place):
     return coords(as_place(place), db, lookup=False) if db is not None else None
 
 
-def drive_minutes(a, b, db=None, *, lookup=True):
+def drive_minutes(a, b, db=None, *, lookup=True, deadline=None):
     """Minutes by car from `a` to `b`, or None on any failure. `a` and `b` are (lat, lon) pairs; or place names, which are read from the cache only
-    (inside `cache_scope`), the way Today asks."""
+    (inside `cache_scope`), the way Today asks. With a `deadline` (a _clock() time) the router is not asked past it."""
     if isinstance(a, str) or isinstance(b, str):
         return cached_minutes(a, b, db or _SCOPE.get())
-    leg = _leg(a, b, db, fetch_it=lookup)
+    leg = _leg(a, b, db, fetch_it=lookup, deadline=deadline)
     return leg["m"] if leg else None
 
 
