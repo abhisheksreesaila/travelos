@@ -21,3 +21,4 @@ travelos.egg-info/
 /app_host.db
 /*.db
 .dream-loop/
+docs/design/cover-v2/story/sol-v2/film/*.mp4
