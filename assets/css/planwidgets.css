@@ -1,0 +1,41 @@
+/* F-210: the trip's context beside the booking lanes (gitaway/pages/plan_widgets.py): weather, the cost so far, the drive from the airport.
+   Direction A: opaque cards, one shadow, tokens only (light and dark); weather and the car take their kind's tint and ink, colour for kinds only.
+   Phone and tablet: a compact strip above the lanes that scrolls sideways; from 1020px a column beside the lanes that stays in view. */
+.pw-with { display: grid; gap: 0.75rem; margin-top: 0.5rem; min-width: 0; }
+.pw-with > .ps-cards { margin-top: 0; }
+.pw { display: flex; gap: 0.75rem; min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scroll-padding-inline: 0.25rem;
+      margin-inline: -0.25rem; padding: 0.25rem 0.25rem 0.75rem; scrollbar-width: none; }
+.pw::-webkit-scrollbar { display: none; }
+.pw-card { flex: 0 0 min(19rem, 82%); scroll-snap-align: start; display: flex; gap: 0.75rem; align-items: flex-start; box-sizing: border-box; min-width: 0;
+           padding: 1rem; border-radius: 1.25rem; background: var(--card); box-shadow: var(--shadow-sm); }
+.pw-tile { flex: none; display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: 0.875rem; color: var(--ink); background: var(--paper-2); }
+.pw-k-weather { background: var(--k-wx-t); color: var(--k-wx-i); }
+.pw-k-drive { background: var(--k-car-t); color: var(--k-car-i); }
+.pw-text { display: grid; gap: 0.375rem; min-width: 0; flex: 1; }
+.pw-title { margin: 0; font-size: max(var(--text-min), 0.9375rem); font-weight: 700; line-height: 1.25; color: var(--ink-2); }
+.pw-value { margin: 0; font-size: 1.125rem; font-weight: 750; line-height: 1.25; letter-spacing: -0.01em; color: var(--ink); text-wrap: balance; }
+.pw-note { display: block; margin: 0; font-size: max(var(--text-min), 0.8125rem); line-height: 1.35; color: var(--ink-2); text-wrap: pretty; }
+.pw-link { color: var(--ink-2); text-decoration: underline; text-underline-offset: 0.2em; min-height: var(--target); display: flex; align-items: center; }
+.pw-link:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.125rem; border-radius: 0.25rem; }
+/* the days: on the laptop only (the phone's strip keeps to the range and the notes) */
+.pw-days { display: none; }
+.pw-wcell { display: grid; justify-items: center; gap: 0.125rem; padding: 0.5rem 0.25rem; border-radius: 0.75rem; background: var(--k-wx-t); color: var(--k-wx-i); min-width: 0; }
+.pw-wday { font-size: max(var(--label-min), 0.75rem); font-weight: 700; white-space: nowrap; }
+.pw-hi { font-weight: 750; }
+.pw-lo { font-size: max(var(--text-min), 0.8125rem); }
+.pw-sky { font-size: max(var(--text-min), 0.75rem); text-align: center; line-height: 1.2; overflow-wrap: anywhere; }
+/* money: one line a lane */
+.pw-mrows { display: grid; gap: 0.25rem; }
+.pw-mrow { display: grid; gap: 0; }
+.pw-mlane { font-size: max(var(--text-min), 0.8125rem); font-weight: 700; color: var(--ink); }
+.pw-msaid { font-size: max(var(--text-min), 0.8125rem); color: var(--ink-2); }
+.pw-msaid.is-real { color: var(--ink); font-weight: 650; }
+@media (max-width: 719px) { .pw-mrows, .pw-tile { display: none; } .pw-card { padding: 0.875rem 1rem; } }
+@media (min-width: 1020px) {
+  .ps:has(.pw-with) { max-width: 74rem; }
+  .pw-with { grid-template-columns: minmax(0, 1fr) 24rem; align-items: start; gap: 1.25rem; }
+  .pw-with > .ps-cards { grid-column: 1; grid-row: 1; }
+  .pw { grid-column: 2; grid-row: 1; flex-direction: column; overflow: visible; margin: 0; padding: 0; position: sticky; top: 5rem; }
+  .pw-card { flex: none; width: 100%; }
+  .pw-days { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.375rem; margin-block: 0.25rem; }
+}
