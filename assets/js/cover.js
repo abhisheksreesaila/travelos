@@ -22,18 +22,20 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-// The cover's page side (F-206): day or night, phone or laptop, the live 3D world or the calm stills, and the scroll conductor. Adapted from the
-// prototype (docs/design/cover3d/src/page.js), after Meng To's scroll conductor (build-threejs-scroll-worlds, MIT).
-// It is the only script that ever fetches the world: three.js, assets/js/cover/world.js and the terrain, and only when the live world is wanted.
-// Native scroll is the source of truth; the world reads an exact value for the DOM and a damped one for its camera.
+// The cover's page side (F-206, the agreed story since D-354): day or night, phone or laptop, the live 3D world or the calm stills, the screenshots
+// in the right mode, and the scroll conductor. Adapted from the prototype (docs/design/cover3d/src/page.js), after Meng To's scroll conductor
+// (build-threejs-scroll-worlds, MIT). It is the only script that ever fetches the world: three.js, assets/js/cover/world.js and the terrain, and
+// only when the live world is wanted. Native scroll is the source of truth. The story's scenes are DOM sections; the windows among them
+// (data-world="from,dwell,to") say which stretch of the world's own timeline T (chapter c at rest is 2c, 0..13) plays while they are on screen:
+// from -> dwell while the window slides in, dwell -> to while its card is pinned. Under a paper scene the world is covered and rests.
 (function () {
   const root = document.documentElement, main = document.getElementById('main');
   if (!main || !root.classList.contains('cv-root')) return;
   // The capture and measuring tools' switches (?measure skips the weak-device check and the governor, ?capture, ?q picks the tier, ?cam frames a
-  // view) work only where the page says data-debug, which production never renders (gitaway/pages/cover.py debug()).
+  // view, ?shot=<world chapter>&local= holds the world there) work only where the page says data-debug, which production never renders.
   const DEBUG = main.dataset.debug === '1';
   const Q = new URLSearchParams(location.search);
-  if (!DEBUG) ['measure', 'capture', 'q', 'cam'].forEach((k) => Q.delete(k));
+  if (!DEBUG) ['measure', 'capture', 'q', 'cam', 'shot'].forEach((k) => Q.delete(k));
   const REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const PHONE = matchMedia(main.dataset.phone);
   const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -60,20 +62,22 @@ SOFTWARE.
   let still = root.classList.contains('cv-still') || !glOK || !able || (!Q.has('measure') && (weakDevice || thrifty));
   root.classList.toggle('cv-still', still); root.classList.toggle('cv-live', !still);
   // How much world this device gets: a laptop the full set, a strong phone the lighter terrain and fewer trees, any other phone less again.
-  // The world's governor then trades resolution for frame rate, and gives up for the stills if even that is not enough.
   const coarse = matchMedia('(pointer: coarse)').matches;
   const strong = (nav.deviceMemory || 4) >= 4 && (nav.hardwareConcurrency || 4) >= 6;
   const tier = Q.get('q') || (!coarse && !PHONE.matches ? 'high' : strong ? 'mid' : 'low');
 
-  const chapters = [...document.querySelectorAll('[data-chapter]')];
-  const N = chapters.length;
+  const WN = 7;                                                     // the world's own chapters (cover3d/src/main.js RIG)
+  const scenes = [...document.querySelectorAll('[data-scene]')];
+  const wins = scenes.filter((s) => s.dataset.world).map((el) => { const [a, m, b] = el.dataset.world.split(',').map(Number); return { el, a, m, b }; });
+  const close = document.querySelector('.cv-close');
+  const covers = [...scenes.filter((s) => !s.dataset.world), close].filter(Boolean);    // opaque: the world rests while one fills the screen
   const stage = document.querySelector('.cv-stage');
   const canvas = stage.querySelector('canvas');
-  const STILLS = main.dataset.stills;
+  const STILLS = main.dataset.stills, SHOTS = main.dataset.shots;
   const stillSrc = (i) => `${STILLS}/a-${i}-${layout}-${mode}.webp`;
 
-  // The poster is chapter 0's still. The <picture> already chose day or night and phone or laptop without a script; from here this script owns it,
-  // so the site's own day/night switch (which a media query cannot see) is followed too.
+  // The poster is the world's first still. The <picture> already chose day or night and phone or laptop without a script; from here this script
+  // owns it, so the site's own day/night switch (which a media query cannot see) is followed too.
   const poster = stage.querySelector('.cv-poster img');
   const setPoster = () => {
     const want = stillSrc(0);
@@ -83,69 +87,88 @@ SOFTWARE.
   };
   setPoster();
 
+  // The screenshots: their <picture>s choose by the system's mode; when the site's own switch says otherwise, this picks the other mode's files
+  // (the widths are cover.py SHOT_W).
+  const SHOT_W = { phone: [600], wide: [960, 1440] };
+  let shotsOwned = false;
+  function setShots() {
+    if (!shotsOwned && mode === (sysDark.matches ? 'dark' : 'light')) return;
+    shotsOwned = true;
+    document.querySelectorAll('picture.cv-shot').forEach((pic) => {
+      const name = pic.dataset.shot, img = pic.querySelector('img');
+      pic.querySelectorAll('source').forEach((s) => s.remove());
+      img.sizes = layout === 'phone' ? '300px' : '(min-width: 1600px) 900px, 58vw';      // cover.py SIZES
+      img.srcset = SHOT_W[layout].map((w) => `${SHOTS}/${name}-${layout}-${mode}-${w}.webp ${w}w`).join(', ');
+    });
+  }
+  setShots();
+
   /* ---------- the conductor ---------- */
-  // Each chapter has a dwell (its card is pinned while its action plays: local 0 → 1) and then a travel to the next one (the cards swap,
-  // the camera flies). One number T = 2i + local during a dwell, 2i + 1 + travel after it.
-  let anchors = [], exact = 0, smooth = 0, widthAt = 0, active = -1;
-  const row = main.querySelector('.cv-wds');
+  let segs = [], tops = [], exact = 0, smooth = 0, widthAt = 0, active = -1, shown = -1, forced = null;
   function measure() {
     const vh = innerHeight; widthAt = innerWidth;
-    anchors = chapters.map((el) => { const top = el.getBoundingClientRect().top + scrollY, h = el.offsetHeight; return { s: top, e: top + Math.max(1, h - vh) }; });
-    anchors.forEach((a, i) => { a.t = i < N - 1 ? Math.max(a.e + 1, anchors[i + 1].s) : a.e; });
-    // the plan's row of widgets takes a keyboard stop only while it is on screen and scrolls (never while it is the screen reader's hidden copy)
-    if (row) { if (row.clientWidth > 1 && row.scrollWidth > row.clientWidth + 1) row.tabIndex = 0; else row.removeAttribute('tabindex'); }
+    tops = scenes.map((el) => { const s = el.getBoundingClientRect().top + scrollY; return { s, e: el.dataset.world ? s + Math.max(1, el.offsetHeight - vh) : s }; });
+    segs = wins.map((w) => { const top = w.el.getBoundingClientRect().top + scrollY; return { ...w, s0: Math.max(0, top - vh), s1: top, s2: top + Math.max(1, w.el.offsetHeight - vh) }; });
   }
   function tAt(y) {
-    for (let i = 0; i < N; i++) {
-      const a = anchors[i];
-      if (y <= a.e || i === N - 1) return 2 * i + clamp((y - a.s) / (a.e - a.s), 0, 1);
-      if (y < a.t) return 2 * i + 1 + (y - a.e) / (a.t - a.e);
+    let T = segs.length ? segs[0].a : 0;
+    for (const g of segs) {
+      if (y < g.s0) break;
+      if (y < g.s1) { T = g.a + ((g.m - g.a) * (y - g.s0)) / Math.max(1, g.s1 - g.s0); break; }
+      if (y <= g.s2) { T = g.m + ((g.b - g.m) * (y - g.s1)) / (g.s2 - g.s1); break; }
+      T = g.b;
     }
-    return 2 * (N - 1) + 1;
+    return clamp(T, 0, 2 * (WN - 1) + 1);
   }
-  const yFor = (T) => { const i = Math.floor(T / 2), f = T - 2 * i, a = anchors[clamp(i, 0, N - 1)]; return f <= 1 ? a.s + (a.e - a.s) * f : a.e + (a.t - a.e) * (f - 1); };
-  const close = document.querySelector('.cv-close');
   function read() {
-    exact = Math.min(tAt(scrollY), 2 * (N - 1) + 1);
-    const i = clamp(Math.floor(exact / 2 + 0.25), 0, N - 1);      // the card you are reading
+    exact = forced !== null ? forced : tAt(scrollY);
+    const y = scrollY + innerHeight * 0.45;
+    let i = 0;
+    tops.forEach((t, k) => { if (t.s <= y) i = k; });
     if (i !== active) {
       active = i;
       railBtns.forEach((b, k) => (k === i ? b.setAttribute('aria-current', 'step') : b.removeAttribute('aria-current')));
-      root.dataset.cvChapter = i;
-      if (still || !worldReady) showStill(i);
+      root.dataset.cvScene = i;
     }
-    // the closing screen covers the whole stage: nothing behind it needs drawing
-    const vis = !close || close.getBoundingClientRect().top > 2;
-    if (vis !== api.visible) { api.visible = vis; api.emit('visible', vis); }
+    if (still || !worldReady) { const k = clamp(Math.round(exact / 2), 0, WN - 1); if (k !== shown) { shown = k; showStill(k); } }
+    // a paper scene or the closing screen fills the screen: nothing behind it needs drawing
+    // (two paper scenes meeting mid-screen cover it together)
+    const h = innerHeight;
+    let reach = 0;
+    covers.map((el) => el.getBoundingClientRect()).filter((r) => r.bottom > 0 && r.top < h).sort((a, b) => a.top - b.top)
+      .forEach((r) => { if (r.top <= reach + 1) reach = Math.max(reach, r.bottom); });
+    const vis = reach < h - 1;
+    if (vis !== api.visible) { if (vis) smooth = exact; api.visible = vis; api.emit('visible', vis); }
   }
   const state = () => {
-    const i = Math.min(N - 1, Math.floor(smooth / 2)), f = smooth - 2 * i;
-    return { exact, smooth, chapter: i, local: f <= 1 ? f : 1, travel: f > 1 ? f - 1 : 0, cam: f <= 1 ? i : i + (f - 1), N, active };
+    const i = Math.min(WN - 1, Math.floor(smooth / 2)), f = smooth - 2 * i;
+    return { exact, smooth, chapter: i, local: f <= 1 ? f : 1, travel: f > 1 ? f - 1 : 0, cam: f <= 1 ? i : i + (f - 1), N: WN, active };
   };
 
   /* ---------- stills: the calm version, and what shows while the world is still loading ---------- */
   const stills = stage.querySelector('.cv-stills');
   const loaded = {};
   function showStill(i) {
-    if (!still && i === 0) return;                                  // the poster is chapter 0
+    if (!still && i === 0) return;                                  // the poster is the first one
     const add = (k) => {
-      if (k < 0 || k >= N) return null;
+      if (k < 0 || k >= WN) return null;
       const src = stillSrc(k);
       if (!loaded[src]) { const im = new Image(); im.alt = ''; im.decoding = 'async'; im.src = src; stills.appendChild(im); loaded[src] = im; }
       return loaded[src];
     };
-    const im = add(i); if (still) add(i + 1);                       // the next one ahead, so a scroll never waits
+    const im = i === 0 ? null : add(i);
     [...stills.children].forEach((c) => c.classList.toggle('on', c === im));
     poster.classList.toggle('off', i !== 0);
   }
-  const resetStills = () => { stills.textContent = ''; for (const k in loaded) delete loaded[k]; };
+  const resetStills = () => { stills.textContent = ''; for (const k in loaded) delete loaded[k]; shown = -1; };
 
-  /* ---------- the chapter rail (laptop) ---------- */
+  /* ---------- the scene rail (laptop) ---------- */
   const rail = document.querySelector('.cv-rail');
-  const railBtns = chapters.map((c, i) => {
+  const go = (i) => { measure(); const t = tops[i]; scrollTo({ top: t.s + (t.e - t.s) * (i === 0 ? 0 : 0.6), behavior: REDUCE ? 'auto' : 'smooth' }); };
+  const railBtns = scenes.map((c, i) => {
     const b = document.createElement('button'); b.type = 'button';
     b.innerHTML = '<i></i><span></span>'; b.lastChild.textContent = c.dataset.name; b.setAttribute('aria-label', c.dataset.name);
-    b.addEventListener('click', () => scrollTo({ top: anchors[i].s + (anchors[i].e - anchors[i].s) * (i === 0 ? 0 : 0.8), behavior: REDUCE ? 'auto' : 'smooth' }));
+    b.addEventListener('click', () => go(i));
     rail.appendChild(b);
     return b;
   });
@@ -163,8 +186,8 @@ SOFTWARE.
   function followMode() {
     const m = modeNow();
     if (m === mode) return;
-    mode = m; api.mode = m; setMode(); setPoster();
-    resetStills(); if (still || !worldReady) showStill(Math.max(0, active));
+    mode = m; api.mode = m; setMode(); setPoster(); setShots();
+    resetStills(); read();
     api.emit('mode', m);
   }
   sysDark.addEventListener('change', followMode);
@@ -176,12 +199,14 @@ SOFTWARE.
   const listeners = {};
   let worldReady = false;
   const api = window.GA_COVER = {
-    Q, debug: DEBUG, REDUCE, mode, layout, still, tier, visible: true, N, assets: main.dataset.assets,
+    Q, debug: DEBUG, REDUCE, mode, layout, still, tier, visible: true, N: WN, assets: main.dataset.assets,
     on(ev, fn) { (listeners[ev] = listeners[ev] || []).push(fn); },
     emit(ev, v) { (listeners[ev] || []).forEach((f) => f(v)); },
     tick(dt) { smooth = REDUCE ? exact : smooth + (exact - smooth) * (1 - Math.exp(-5.2 * dt)); if (Math.abs(smooth - exact) < 1e-4) smooth = exact; return state(); },
-    state, measure, read, yFor, anchors: () => anchors,
-    jump(T) { measure(); scrollTo(0, yFor(T)); read(); smooth = exact; },
+    state, measure, read,
+    scenes: () => tops,                                              // each scene's scroll span: s (its top), e (where its pinned card lets go)
+    // hold the world at T whatever the scroll (the capture tools' ?shot); null hands it back to the scroll
+    jump(T) { forced = T; measure(); read(); smooth = exact; },
     // the first frame is drawn: the canvas fades in over the poster (and any still), which then step aside
     ready() {
       worldReady = true; root.classList.add('cv-ready');
@@ -196,7 +221,7 @@ SOFTWARE.
       still = api.still = true; worldReady = false;
       root.classList.remove('cv-live', 'cv-ready'); root.classList.add('cv-still');
       canvas.classList.remove('on'); poster.classList.remove('off');
-      measure(); active = -1; read();
+      measure(); shown = -1; read();
       api.emit('weak');
     },
   };
@@ -206,7 +231,7 @@ SOFTWARE.
   addEventListener('scroll', read, { passive: true });
   addEventListener('resize', () => {
     const L = PHONE.matches ? 'phone' : 'wide';
-    if (L !== layout) { layout = L; api.layout = L; setPoster(); resetStills(); api.emit('layout', L); measure(); active = -1; read(); return; }
+    if (L !== layout) { layout = L; api.layout = L; setPoster(); if (shotsOwned) setShots(); resetStills(); api.emit('layout', L); measure(); active = -1; read(); return; }
     if (coarse && innerWidth === widthAt) return;                   // the phone's address bar showing and hiding: keep the story where it is
     measure(); read();
   }, { passive: true });
@@ -214,10 +239,14 @@ SOFTWARE.
   addEventListener('load', () => { measure(); read(); });
   document.addEventListener('visibilitychange', () => api.emit('hidden', document.hidden));
 
-  // ?shot=<chapter>&local=<0..1> lands on a chapter exactly (captures, review links and tests)
-  if (Q.has('shot')) { const i = clamp(+Q.get('shot') || 0, 0, N - 1), l = Q.has('local') ? +Q.get('local') : 0.92; requestAnimationFrame(() => api.jump(2 * i + l)); }
+  // ?scene=<n>&local=<0..1> lands on a scene of the story (review links and the report); ?shot=<world chapter>&local= holds the world (the capture tools)
+  if (Q.has('scene')) {
+    const i = clamp(+Q.get('scene') || 0, 0, scenes.length - 1), l = Q.has('local') ? +Q.get('local') : 0.6;
+    requestAnimationFrame(() => { measure(); const t = tops[i]; scrollTo(0, t.s + (t.e - t.s) * l); read(); smooth = exact; });
+  }
+  if (Q.has('shot')) { const i = clamp(+Q.get('shot') || 0, 0, WN - 1), l = Q.has('local') ? +Q.get('local') : 0.92; requestAnimationFrame(() => api.jump(2 * i + l)); }
 
-  if (still) { showStill(Math.max(0, active)); return; }
+  if (still) return;
   // The live world: preload three.js beside the world so neither waits on the other, then run the world as a module. Until its first frame the
   // poster and (if you scroll before then) the stills keep the page full.
   for (const href of [main.dataset.three, main.dataset.world]) {

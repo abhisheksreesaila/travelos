@@ -1,7 +1,9 @@
-"""F-206: the signed-out landing is the cover story, a scroll through Lake Tahoe in December told in real DOM text over a 3D world.
+"""F-206: the signed-out landing is the cover story, rebuilt on the agreed story (D-354): why GitAway exists, booking with everything in view, the
+planning tools, leave a trail; one made-up family's real Lake Tahoe trip, a plain headline per scene and a real screenshot of each feature, told
+in real DOM text with the 3D Tahoe world showing through its windows.
 
-What a stranger reads, where its buttons go, what a search engine or a shared link sees, and that a signed-in person keeps the landing they had.
-The world itself is tested in a real browser: tests_browser/test_cover.py."""
+What a stranger reads and in what order, where its buttons go, the screenshots behind each feature, what a search engine or a shared link sees,
+and that a signed-in person keeps the landing they had. The world and the scroll are tested in a real browser: tests_browser/test_cover.py."""
 import re
 from pathlib import Path
 
@@ -10,10 +12,26 @@ import pytest
 from gitaway import auth, icons
 from gitaway.pages import cover
 from tests.live_trips import live_trip
+from tests import tahoe
 from tests.test_signin import sign_in
 
 ROOT = Path(__file__).resolve().parent.parent
 TAGLINE = "Take a trip. Leave a trail."
+# the story, scene by scene: (its eyebrow, its one headline)
+STORY = (
+    ("Why GitAway", "Planning a trip shouldn’t feel like homework."),
+    ("One trip, start to finish", "Lena and Sam are taking the kids to Lake Tahoe."),
+    ("1 · Book", "Book with everything in view."),
+    ("2 · Plan together", "The whole trip on one line."),
+    ("2 · Plan together", "Each day, to the hour."),
+    ("2 · Plan together", "Change it by asking."),
+    ("2 · Plan together", "The whole family, on the same page."),
+    ("And then", "Then go. Be there."),
+    ("3 · Leave a trail", "Home again, leave a trail."),
+    ("3 · Leave a trail", "Someone follows it and makes it theirs."),
+    ("Every trip here grew from another", "Take a trip. Leave a trail."),
+)
+FEATURES = {2: "plan", 3: "cockpit", 4: "day", 5: "ask", 6: "family", 8: "trail", 9: "creators"}      # scene -> its screenshot
 SHARED = r'<a [^>]*href="/community"[^>]*>See trips people shared'
 SUBHEAD = "Share the whole trip, not just the photos, so the next family can follow it, make it theirs, and say thanks."
 
@@ -40,19 +58,71 @@ def _links(html):
     return re.findall(r'<a [^>]*href="([^"]+)"', html)
 
 
-def test_the_signed_out_landing_opens_on_the_hook_and_closes_on_the_line(client):
+def _scenes(html):
+    return re.findall(r'(<section[^>]*data-scene="\d+".*?</section>)', html, re.S)
+
+
+def test_the_story_runs_why_book_plan_trail_with_one_plain_headline_a_scene(client):
     html = _cover(client)
     assert 'class="cv-root' in re.search(r"<html[^>]*>", html).group(0)
-    h1 = re.search(r"<h1[^>]*>(.*?)</h1>", html, re.S).group(1)
-    assert _text(h1).strip() == "Don’t read about it. Go."
-    last = re.search(r'<section[^>]*data-chapter="6".*?</section>', html, re.S).group(0)
-    assert _text(re.search(r"<h2[^>]*>(.*?)</h2>", last, re.S).group(1)).strip() == TAGLINE
-    assert "Every trip here grew from another" in _text(last) and SUBHEAD in _text(last)
-    assert SUBHEAD in _text(html)
-    chapters = re.findall(r'data-chapter="(\d)"', html)
-    assert chapters == [str(i) for i in range(7)]                       # the hook, five beats of the story, the line
-    for beat in ("A family shared their five days here.", "Make it yours.", "The whole trip on one screen.", "Then go.", "Someone’s next trip starts with yours."):
-        assert beat in _text(html), beat
+    assert re.findall(r'data-scene="(\d+)"', html) == [str(i) for i in range(len(STORY))]
+    scenes = _scenes(html)
+    for k, ((act, headline), scene) in enumerate(zip(STORY, scenes)):
+        heading = re.search(r"<h([12])[^>]*>(.*?)</h\1>", scene, re.S)
+        assert _text(heading.group(2)).strip() == headline, k
+        assert _text(re.search(r'<p class="cv-eyebrow">.*?</p>', scene, re.S).group(0)).strip() == act, k
+        assert len(re.findall(r"<h[12]\b", scene)) == 1, k                   # one headline a scene
+    assert re.search(r"<h1[^>]*>", scenes[0]) and "Fourteen tabs" in _text(scenes[0]) and "Too much information" in _text(scenes[0])
+    assert STORY[-1][1] == TAGLINE and "Every trip here grew from another" in _text(scenes[-1]) and SUBHEAD in _text(scenes[-1])
+
+
+def test_every_feature_is_shown_by_its_real_screenshot_for_phone_and_laptop_day_and_night(client):
+    scenes = _scenes(_cover(client))
+    assert [k for k, sc in enumerate(scenes) if "cv-shot" in sc] == sorted(FEATURES)
+    for k, name in FEATURES.items():
+        pic = re.search(r'<picture data-shot="([a-z]+)" class="cv-shot">(.*?)</picture>', scenes[k], re.S)
+        assert pic and pic.group(1) == name, k
+        files = re.findall(r'(/assets/cover/shots/[^" ,]+\.webp)', pic.group(2))
+        for layout, widths in cover.SHOT_W.items():
+            for mode in ("light", "dark"):
+                for w in widths:
+                    want = f"/assets/cover/shots/{name}-{layout}-{mode}-{w}.webp"
+                    assert want in files, want
+                    assert (ROOT / want.lstrip("/")).is_file(), want
+        img = re.search(r"<img [^>]*>", pic.group(2)).group(0)
+        assert 'loading="lazy"' in img and 'width="1440"' in img and 'height="900"' in img       # below the fold, and no jump when it loads
+        assert re.search(r'alt="[^"]{40,}"', img), name                                          # a screenshot says what it shows
+        sources = re.findall(r"<source [^>]*>", pic.group(2))
+        assert any("prefers-color-scheme: dark" in t and "max-width: 720px" in t and "-phone-dark-" in t for t in sources)
+        assert any(cover.PHONE_Q in t and "-phone-light-" in t for t in sources)
+
+
+def test_the_screenshots_stay_light():
+    """One visitor downloads one layout in one mode: seven phone screenshots, or seven laptop ones at the width their screen needs."""
+    shots = ROOT / "assets/cover/shots"
+    total = sum(f.stat().st_size for f in shots.glob("*.webp"))
+    assert total <= 2_000_000, f"{total / 1024:.0f} KB"
+    for layout, w, cap in (("phone", 600, 300_000), ("wide", 960, 250_000), ("wide", 1440, 450_000)):
+        for mode in ("light", "dark"):
+            one = sum((shots / f"{n}-{layout}-{mode}-{w}.webp").stat().st_size for n in FEATURES.values())
+            assert one <= cap, (layout, w, mode, one)
+
+
+def test_the_screenshots_show_only_the_made_up_family():
+    """scripts/cover_shots.py renames every traveler of the founder's Tahoe trip to the story's made-up family and signs in with a made-up address."""
+    from scripts import cover_shots
+    names = re.findall(r"- name: (.+)", tahoe.TEMPLATE)
+    renamed = {a.removeprefix("- name: "): b.removeprefix("- name: ") for a, b in cover_shots.TEMPLATE_NAMES}
+    assert sorted(renamed) == sorted(names) and set(renamed.values()) == {"Lena", "Sam", "Noa", "Theo"}
+    assert cover_shots.EMAIL.endswith("@example.com")
+
+
+def test_each_window_plays_a_stretch_of_the_worlds_own_timeline(client):
+    """The world (cover3d/src) keeps its seven chapters (chapter c at rest is 2c); a window names the stretch it plays (from, dwell, to), in order."""
+    worlds = [tuple(map(float, w.split(","))) for w in re.findall(r'data-world="([\d.,]+)"', _cover(client))]
+    assert len(worlds) == 4 and worlds[0] == (0, 0, 1) and worlds[-1][-1] == 13
+    flat = [x for w in worlds for x in w]
+    assert flat == sorted(flat) and all(0 <= x <= 13 for x in flat)
 
 
 def test_the_world_is_decoration_and_the_words_are_real_text(client):
@@ -61,7 +131,7 @@ def test_the_world_is_decoration_and_the_words_are_real_text(client):
     assert 'aria-hidden="true"' in _tag(html, "cv-anchors")
     assert re.search(r"<canvas[^>]*>", html)
     assert 'href="#main"' in html and 'id="main"' in html                 # skip to the story
-    assert 'aria-label="Chapters"' in _tag(html, "cv-rail", "nav")
+    assert 'aria-label="Scenes"' in _tag(html, "cv-rail", "nav")
 
 
 @pytest.mark.parametrize("mode", ["1", "0"], ids=["showcase", "production"])
@@ -166,8 +236,10 @@ def test_the_decisions_record_the_covers_two_exceptions():
 def test_the_story_says_its_family_is_made_up_where_the_family_appears(client):
     """Lena, Sam, their bookings and the thanks from Ana & Luis show in production too: the story says they are an example right where the family
     first appears, not only in the footer."""
-    first = _text(re.search(r'<section[^>]*data-chapter="1".*?</section>', _cover(client), re.S).group(0))
-    assert "Lena and Sam" in first and "made up" in first
+    scenes = _scenes(_cover(client))
+    assert "Lena" not in _text(scenes[0])
+    first = _text(scenes[1])
+    assert "Lena and Sam" in first and "made up" in first and "The places are real" in first
 
 
 def test_short_screens_get_the_phone_layout_and_the_stylesheet_agrees():
@@ -178,17 +250,10 @@ def test_short_screens_get_the_phone_layout_and_the_stylesheet_agrees():
     assert cover.PHONE_Q in [q.strip() for q in re.findall(r"@media ([^{]+)\{", css)]
 
 
-def test_the_plans_widgets_are_a_named_group(client):
-    tag = _tag(_cover(client), "cv-wds")
-    assert 'role="group"' in tag and 'aria-label="The trip, planned"' in tag
-
-
 def test_the_cover_uses_the_sites_own_icons(client):
-    """No hand-drawn copy of an icon gitaway/icons.py already has; the cover's own are the ones it lacks (snow, a route, a chevron down)."""
+    """No hand-drawn copy of an icon gitaway/icons.py already has; the cover's own are the ones it lacks (a chevron down)."""
     assert not set(cover.ICONS.values()) & set(icons.PATHS.values())
-    html = _cover(client)
-    for name in ("plane", "bed", "car", "ticket", "star", "ext", "arrow-right"):
-        assert icons.PATHS[name] in html, name
+    assert icons.PATHS["arrow-right"] in _cover(client)
 
 
 def test_the_browser_bar_takes_the_covers_grey_by_day_and_black_by_night(client):
