@@ -1,9 +1,11 @@
-"""F-206, cover v3 (D-380 to D-392): the cover in a real browser. The opening shows at once in the visitor's day or night, scrolling (and a finger
-on a phone) moves the story through every scene, every heading sits on the page's centre line, the booking tour holds its screen while three
-beats pass and rings (on a phone, zooms to) the part each speaks of, the reveals fade in on the motion tokens and reduced motion shows everything
-at once, without the script everything still shows, each screenshot loads only as it nears the screen and in the visitor's layout and mode (the
-site's own switch too), the page never asks for three.js or the world, nothing scrolls sideways from 320 to 1440, a phone gets 16 px text and
-48 px targets, a notch never covers anything, the words read at full strength in both modes, and production ignores the review switch."""
+"""F-206, cover v4 (D-400 to D-406): the cover in a real browser. The opening shows at once in the visitor's day or night; each chapter is a stage
+whose screen stays while the scroll moves a camera over the app (the booking screen zooms to the flight beside the stay, the weather, the drive,
+pulls back, and its buttons fly out as partner chips; the trips deal in and one becomes Lena and Sam's; the cockpit dives into the day; the pins
+drop; the thanks tick up), on a laptop as on a phone (the calm desktop's exception, D-401); the moments that play on their own run on the motion
+tokens; a finger scrolls the whole story on a phone, starting on any screen; reduced motion, a short screen or no script give a still, readable
+page; each screenshot loads only as it nears, in the visitor's layout and mode; the page never asks for three.js; nothing scrolls sideways from
+320 to 1440; a phone gets 16 px text and 48 px targets; a notch never covers anything; the words read at full strength in both modes; scrolling
+the booking stage on a CPU four times slower makes no long task; and production ignores the review switch."""
 import re
 
 import pytest
@@ -49,36 +51,59 @@ def _scroll_to_scene(page, i):
     page.wait_for_function(f"document.documentElement.dataset.cvScene === '{i}'")
 
 
-def _to_beat(page, i):
-    page.evaluate("i => window.scrollTo(0, GA_COVER.beatY(i))", i)
-    page.wait_for_function(f"GA_COVER.beat() === {i}")
+def _at(page, key, p):
+    """Scroll the real page to a point of a stage and wait for the conductor to play it."""
+    page.evaluate("([k, p]) => window.scrollTo(0, GA_COVER.yAt(k, p))", [key, p])
+    page.wait_for_function(f"Math.abs(GA_COVER.progress('{key}') - {p}) < 0.01")
+
+
+def _box(page, sel):
+    return page.evaluate(f"(() => {{ const r = document.querySelector('{sel}').getBoundingClientRect(); return [r.left, r.top, r.width, r.height]; }})()")
+
+
+def _scale(page, sel):
+    return page.evaluate(f"new DOMMatrix(getComputedStyle(document.querySelector('{sel}')).transform).a")
 
 
 @pytest.mark.parametrize("scheme", ["light", "dark"])
 @pytest.mark.parametrize("size", ["390", "1440"])
-def test_the_opening_shows_at_once_centred_in_day_or_night(cover, size, scheme):
+def test_the_opening_shows_at_once_in_day_or_night_over_a_laptop_and_a_phone(cover, size, scheme):
     page = cover(SIZES[size], scheme)
     assert page.evaluate(f"document.documentElement.classList.contains('cv-{scheme}')")
     assert page.locator("h1").inner_text().replace("\n", " ").strip() == "Take a trip. Leave a trail."
-    assert page.locator(".cv-open .cv-btn").inner_text().strip() == "Plan a trip"
-    vw = SIZES[size]["width"]
-    for sel in (".cv-open h1", ".cv-lede", ".cv-open .cv-btn"):
-        box = page.locator(sel).bounding_box()
-        assert box["y"] + box["height"] <= SIZES[size]["height"], sel            # the whole opening is on the first screen
-        assert abs(box["x"] + box["width"] / 2 - vw / 2) <= 2, (sel, box)
-    bg = page.evaluate("getComputedStyle(document.body).backgroundColor")
-    assert bg == ("rgb(0, 0, 0)" if scheme == "dark" else "rgb(242, 242, 245)")
+    assert page.locator(".cv-hero .cv-btn").inner_text().strip() == "Plan a trip"
+    vw, vh = SIZES[size]["width"], SIZES[size]["height"]
+    for sel in (".cv-hero h1", ".cv-lede", ".cv-hero .cv-btn"):
+        x, y, w, h = _box(page, sel)
+        assert y + h <= vh and abs(x + w / 2 - vw / 2) <= 2, (sel, x, y, w, h)        # the whole line on the first screen, centred
+    screens = page.evaluate("[...document.querySelectorAll('.cv-hero .cv-screen')].filter((e) => e.getClientRects().length).map((e) => e.getBoundingClientRect().top)")
+    assert screens and min(screens) < vh                                             # the app is already on the first screen
+    assert page.evaluate("getComputedStyle(document.querySelector('.cv-hero .cv-devices')).transform").startswith("matrix3d")   # tilted
+    _at(page, "hero", 1)
+    assert page.evaluate("getComputedStyle(document.querySelector('.cv-hero-copy')).opacity") == "0"
+    assert abs(_scale(page, ".cv-hero .cv-devices") - 1) < 0.01                     # set down flat
+    bg = page.evaluate("getComputedStyle(document.querySelector('.cv-hero')).backgroundColor")
+    assert bg == ("rgb(7, 11, 20)" if scheme == "dark" else "rgb(230, 238, 249)")
 
 
-@pytest.mark.parametrize("size", ["390", "1440"])
-def test_every_heading_and_screen_sits_on_the_centre_line(cover, size):
-    page = cover(SIZES[size], motion="reduce")
-    off = page.evaluate("""() => [...document.querySelectorAll('main h1, main h2, main h3, .cv-say, .cv-eyebrow, .cv-beats, .cv-lens, .cv-frame, .cv-ill, .cv-last h2, .cv-ctas, .cv-foot p')]
-      .filter((e) => e.getClientRects().length).map((e) => { const r = e.getBoundingClientRect(), c = r.left + r.width / 2;
-        return [e.className || e.tagName, e.textContent.trim().slice(0, 24), Math.round(c - document.documentElement.clientWidth / 2)]; })""")
-    assert len(off) >= 30 and all(abs(d) <= 2 for *_, d in off), [o for o in off if abs(o[2]) > 2]
-    aligned = page.evaluate("() => [...document.querySelectorAll('main h1, main h2, main h3, .cv-say, .cv-beat, .cv-lede')].map((e) => getComputedStyle(e).textAlign)")
-    assert set(aligned) == {"center"}
+@pytest.mark.parametrize("scheme", ["light", "dark"])
+def test_each_chapter_has_its_own_colour(cover, scheme):
+    page = cover(DESKTOP, scheme, motion="reduce")
+    tints = page.evaluate("[...document.querySelectorAll('.cv-stage')].map((s) => getComputedStyle(s).backgroundColor)")
+    assert len(tints) == 8 and len(set(tints)) == 8, tints
+    em = page.evaluate("[...document.querySelectorAll('.cv-stage h2 em')].map((e) => getComputedStyle(e).color)")
+    assert len(set(em)) >= 5, em                                                    # the second tone is the chapter's kind colour
+
+
+def test_the_stages_alternate_sides_on_a_laptop(cover):
+    """Not everything centred (D-405): the words sit beside the camera, left in Book and Creators, right in Head start, With you and Trail."""
+    page = cover(DESKTOP)
+    for key, words_left in (("book", True), ("head", False), ("with", False), ("trail", False), ("creators", True)):
+        _at(page, key, 0.5)
+        copy = _box(page, f".cv-{key} .cv-copy")
+        other = _box(page, {"book": ".cv-lens", "head": ".cv-deal", "with": ".cv-with .cv-devices", "trail": ".cv-trail .cv-deal", "creators": ".cv-creators .cv-deal"}[key])
+        mid_c, mid_o = copy[0] + copy[2] / 2, other[0] + other[2] / 2
+        assert (mid_c < mid_o) == words_left, (key, copy, other)
 
 
 @pytest.mark.parametrize("size", ["390", "1440"])
@@ -90,88 +115,154 @@ def test_scrolling_moves_the_story_through_every_scene(cover, size):
 
 
 @pytest.mark.parametrize("size", ["390", "1440"])
-def test_the_booking_tour_holds_the_screen_while_each_beat_rings_its_part(cover, size):
+def test_the_booking_stage_holds_its_screen_while_the_camera_zooms_pans_and_pulls_back(cover, size):
+    """On the phone and the laptop alike (D-401): zoom to the flight beside the stay, the weather (its number pops), the drive, the whole page,
+    then the four booking buttons glow and the partners' chips land."""
     page = cover(SIZES[size])
-    rects = []
-    for i in range(3):
-        _to_beat(page, i)
+    lenses, ks = [], {}
+    for p, word, spot in ((0.28, "0", "fs"), (0.49, "1", "wx"), (0.63, "1", "drive"), (0.74, "all", None), (0.95, "2", None)):
+        _at(page, "book", p)
         page.wait_for_timeout(450)
-        on = page.evaluate("() => [...document.querySelectorAll('.cv-beat')].map((b) => getComputedStyle(b).opacity)")
-        assert on[i] == "1" and all(o == "0" for k, o in enumerate(on) if k != i), on
-        rings = page.evaluate(f"() => [...document.querySelectorAll('.cv-ring')].map((r) => [r.dataset.beat, getComputedStyle(r).opacity])")
-        assert {b for b, o in rings if o == "1"} == {str(i)}, rings
-        assert page.locator(".cv-steps li.on").get_attribute("data-beat") == str(i)
-        lens = page.locator(".cv-lens").bounding_box()
-        beat = page.locator(f'.cv-beat[data-beat="{i}"]').bounding_box()
-        assert beat["y"] + beat["height"] <= lens["y"] + 1 and lens["y"] + lens["height"] <= SIZES[size]["height"] + 1, (beat, lens)   # words above, the screen whole
-        assert page.evaluate(f"""(() => {{ const r = document.querySelector('.cv-ring[data-beat="{i}"]').getBoundingClientRect(), l = document.querySelector('.cv-lens').getBoundingClientRect();
-          const cx = r.left + r.width / 2, cy = r.top + r.height / 2; return cx > l.left && cx < l.right && cy > l.top && cy < l.bottom; }})()"""), i   # its part is in view
-        rects.append(lens)
-    assert max(r["y"] for r in rects) - min(r["y"] for r in rects) <= 2                # the screen stayed put
-    transform = page.evaluate("getComputedStyle(document.querySelector('.cv-lens-in')).transform")
-    if size == "390":
-        assert transform != "none" and float(page.evaluate("getComputedStyle(document.querySelector('.cv-lens-in')).getPropertyValue('--k')")) > 1.5
-    else:
-        assert transform == "none"                                                      # a laptop does not zoom (calm desktop)
+        assert page.evaluate("GA_COVER.beat()") == word, p
+        assert page.evaluate(f"getComputedStyle(document.querySelector('.cv-beat[data-beat=\"{word}\"]')).opacity") == "1"
+        on = page.evaluate("[...document.querySelectorAll('.cv-spot')].filter((s) => getComputedStyle(s).opacity === '1').map((s) => s.dataset.spot)")
+        assert on == ([spot] if spot else []), (p, on)
+        ks[p] = _scale(page, ".cv-cam")
+        lenses.append(_box(page, ".cv-lens"))
+    assert ks[0.28] > 1.3 and ks[0.49] > 1.6 and ks[0.63] > 1.6 and ks[0.74] <= 1.01, ks
+    assert max(b[1] for b in lenses) - min(b[1] for b in lenses) <= 2 and max(b[0] for b in lenses) - min(b[0] for b in lenses) <= 2    # the screen stayed put
+    _at(page, "book", 0.49)
+    page.wait_for_function("document.querySelector('.cv-call[data-call=\"0\"] .cv-count').textContent === '43'")       # the number counts up to the screen's own
+    _at(page, "book", 0.97)
+    page.wait_for_timeout(450)
+    assert page.evaluate("[...document.querySelectorAll('.cv-ring')].every((r) => getComputedStyle(r).opacity === '1')")
+    chips = page.evaluate("[...document.querySelectorAll('.cv-chip')].map((c) => { const m = new DOMMatrix(getComputedStyle(c).transform); return [getComputedStyle(c).opacity, m.e, m.f, m.a]; })")
+    assert all(o == "1" and abs(x) < 0.5 and abs(y) < 0.5 and abs(a - 1) < 0.01 for o, x, y, a in chips), chips      # landed
 
 
-def test_the_tour_moves_only_on_the_motion_tokens(cover):
-    page = cover(PHONE)
-    tok = page.evaluate("""() => { const s = getComputedStyle(document.documentElement); return ['--motion-screen-dur', '--motion-zoom'].map((k) => s.getPropertyValue(k).trim()); }""")
-    inner = page.evaluate("(() => { const s = getComputedStyle(document.querySelector('.cv-lens-in')); return [s.transitionDuration, s.transitionTimingFunction]; })()")
-    nums = lambda s: [float(x) for x in re.findall(r"[\d.]+", s)]      # noqa: E731  (0.22 and .22 are the same ease)
-    assert inner[0] == f"{float(tok[0].rstrip('ms')) / 1000:g}s" and nums(inner[1]) == nums(tok[1])
+def test_the_trips_deal_in_and_one_becomes_lena_and_sams(cover):
+    page = cover(DESKTOP)
+    _at(page, "head", 0.01)
+    assert page.evaluate("getComputedStyle(document.querySelector('.cv-trip[data-k=\"2\"]')).opacity") == "0"
+    _at(page, "head", 0.36)
+    assert page.evaluate("[...document.querySelectorAll('.cv-trip')].every((c) => getComputedStyle(c).opacity === '1')")
+    _at(page, "head", 0.52)
+    page.wait_for_timeout(500)
+    assert page.evaluate("document.querySelector('.cv-trip.pick').classList.contains('done') && getComputedStyle(document.querySelector('.cv-tripsfig .cv-stamp')).opacity === '1'")
+    assert page.locator(".cv-trip.pick .cv-fb-b").is_visible()                      # Imported
+    _at(page, "head", 0.95)
+    assert page.evaluate("getComputedStyle(document.querySelector('.cv-head .cv-morph')).opacity") == "1"
+    assert page.evaluate("getComputedStyle(document.querySelector('.cv-head .cv-deal')).opacity") == "0"
+    assert abs(_scale(page, ".cv-head .cv-morph") - 1) < 0.01
 
 
 @pytest.mark.parametrize("size", ["390", "1440"])
-def test_reveals_fade_in_as_the_story_reaches_them_and_reduced_motion_shows_all(cover, size):
+def test_the_plan_comes_with_you_cockpit_day_ask_family(cover, size):
     page = cover(SIZES[size])
-    assert page.evaluate("document.documentElement.classList.contains('cv-run')")
-    far = page.locator(".cv-close .cv-rv")
-    assert far.evaluate("e => getComputedStyle(e).opacity") == "0"                      # not yet reached
-    page.evaluate("document.querySelector('.cv-close').scrollIntoView()")
-    page.wait_for_function("getComputedStyle(document.querySelector('.cv-close .cv-rv')).opacity === '1'")
-    calm = cover(SIZES[size], motion="reduce")
-    assert calm.evaluate("document.documentElement.classList.contains('cv-calm')")
-    assert calm.evaluate("[...document.querySelectorAll('.cv-rv')].every((e) => getComputedStyle(e).opacity === '1' && getComputedStyle(e).transform === 'none')")
-    assert calm.evaluate("getComputedStyle(document.querySelector('.cv-beat')).transitionDuration") == "0s"
+    scr = ".cv-phone" if size == "390" else ".cv-laptop"
+    for p, feat, layer in ((0.1, 0, "cockpit"), (0.38, 1, "day"), (0.66, 2, "ask"), (0.95, 3, "family")):
+        _at(page, "with", p)
+        page.wait_for_timeout(450)
+        assert page.evaluate(f"getComputedStyle(document.querySelectorAll('.cv-feat')[{feat}]).opacity") == "1", p
+        assert page.evaluate(f"getComputedStyle(document.querySelector('{scr} [data-layer=\"{layer}\"]')).opacity") == "1", (p, layer)
+    _at(page, "with", 0.66)
+    assert page.locator(".cv-typed").inner_text() == cover_page.ASK_SAYS          # typed by the scroll, whole by now
+    _at(page, "with", 0.58)
+    typed = page.locator(".cv-typed").inner_text()
+    assert 0 < len(typed) < len(cover_page.ASK_SAYS) and cover_page.ASK_SAYS.startswith(typed)
+    _at(page, "with", 0.95)
+    page.wait_for_timeout(450)
+    assert page.evaluate("[...document.querySelectorAll('.cv-bub')].every((b) => getComputedStyle(b).opacity === '1')")
 
 
-def test_without_the_script_every_word_and_picture_shows(cover, base_url):
+def test_the_pins_drop_with_their_tips_and_the_thanks_tick_up(cover):
+    page = cover(PHONE)
+    _at(page, "tips", 0.2)
+    page.wait_for_timeout(450)
+    assert page.evaluate("[...document.querySelectorAll('.cv-mpin')].map((p) => p.classList.contains('on'))") == [True, False, False, False]
+    assert float(page.evaluate("document.querySelector('.cv-draw[data-road=\"50\"]').style.strokeDashoffset")) < 1
+    _at(page, "tips", 0.95)
+    page.wait_for_timeout(450)
+    assert page.evaluate("[...document.querySelectorAll('.cv-mpin')].every((p) => p.classList.contains('on'))")
+    assert page.evaluate("getComputedStyle(document.querySelector('.cv-tip[data-k=\"3\"]')).opacity") == "1"
+    _at(page, "trail", 0.1)
+    assert page.locator(".cv-trail .cv-count").inner_text() == "0"
+    _at(page, "trail", 0.6)
+    page.wait_for_function("document.querySelector('.cv-trail .cv-count').textContent === '12'")
+
+
+def test_the_moments_move_only_on_the_motion_tokens(cover):
+    page = cover(PHONE)
+    tok = page.evaluate("""() => { const s = getComputedStyle(document.documentElement); return ['--motion-spring-dur', '--motion-spring', '--motion-screen-dur'].map((k) => s.getPropertyValue(k).trim()); }""")
+    secs = lambda v: f"{float(v.rstrip('ms')) / 1000:g}s"      # noqa: E731
+    for sel in (".cv-stamp", ".cv-mpin-in", ".cv-bub", ".cv-call"):
+        d, f = page.evaluate(f"(() => {{ const s = getComputedStyle(document.querySelector('{sel}')); return [s.transitionDuration, s.transitionTimingFunction]; }})()")
+        assert d.split(", ")[0] == secs(tok[0]), (sel, d)
+        nums = lambda s: [float(x) for x in re.findall(r"[\d.]+", s)]      # noqa: E731
+        assert nums(f.split("),")[0]) == nums(tok[1]), (sel, f)
+    assert page.evaluate("getComputedStyle(document.querySelector('.cv-beat')).transitionDuration").split(", ")[0] == secs(tok[2])
+
+
+@pytest.mark.parametrize("size", ["390", "1440"])
+def test_reduced_motion_is_a_still_readable_page(cover, size):
+    page = cover(SIZES[size], motion="reduce")
+    assert page.evaluate("document.documentElement.classList.contains('cv-calm') && !document.documentElement.classList.contains('cv-film')")
+    assert page.evaluate("[...document.querySelectorAll('.cv-stick')].every((s) => getComputedStyle(s).position !== 'sticky')")
+    hidden = page.evaluate("""() => [...document.querySelectorAll('.cv-beat, .cv-trip, .cv-tip, .cv-feat, .cv-bub, .cv-chip, .cv-quote, .cv-morph, .cv-last')]
+      .filter((e) => getComputedStyle(e).opacity !== '1' || !e.getClientRects().length).map((e) => e.className)""")
+    assert hidden == []
+    assert page.evaluate("[...document.querySelectorAll('.cv-stage, .cv-stage *')].every((e) => !e.style.transform)")       # nothing moved
+    page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
+    page.wait_for_timeout(200)
+    assert page.evaluate("[...document.querySelectorAll('.cv-stage *')].every((e) => !e.style.transform)")
+
+
+def test_a_short_screen_gets_the_still_too(cover):
+    page = cover({"width": 844, "height": 390})
+    assert page.evaluate("GA_COVER.film") is False
+    assert page.evaluate("[...document.querySelectorAll('.cv-stick')].every((s) => getComputedStyle(s).position !== 'sticky')")
+    assert page.evaluate("[...document.querySelectorAll('.cv-beat')].every((e) => getComputedStyle(e).opacity === '1')")
+
+
+def test_without_the_script_every_word_and_picture_shows(cover):
     page = cover(PHONE, js=False)
-    assert page.locator(".cv-rv").count() > 8
-    assert page.evaluate("[...document.querySelectorAll('.cv-rv, .cv-beat')].every((e) => getComputedStyle(e).opacity === '1')")
-    assert page.locator(".cv-beat").count() == 3 and all(page.locator(".cv-beat").nth(k).is_visible() for k in range(3))
+    assert page.evaluate("[...document.querySelectorAll('.cv-beat, .cv-trip, .cv-tip, .cv-feat, .cv-bub, .cv-chip, .cv-quote, .cv-morph')].every((e) => getComputedStyle(e).opacity === '1')")
+    assert page.locator(".cv-beat").count() == 4 and all(page.locator(".cv-beat").nth(k).is_visible() for k in range(4))
+    assert page.locator(".cv-typed").inner_text() == cover_page.ASK_SAYS
 
 
 @pytest.mark.parametrize("scheme", ["light", "dark"])
 @pytest.mark.parametrize("size", ["390", "1440"])
 def test_each_screenshot_loads_as_it_nears_in_the_visitors_layout_and_mode(cover, size, scheme):
-    page = cover(SIZES[size], scheme, motion="reduce")
+    page = cover(SIZES[size], scheme)
     page.wait_for_timeout(400)
-    assert not [u for u in page.requests if SHOT.search(u) and "-creators-" in u]       # far below the fold: not yet
+    assert not [u for u in page.requests if SHOT.search(u) and ("-creators-" in u or "-family-" in u)]       # far below the fold: not yet
     layout = "phone" if size == "390" else "wide"
-    for name in ("book", "trail", "cockpit", "day", "ask", "family", "creators"):
-        page.evaluate(f"document.querySelector('[data-shot=\"{name}\"]').scrollIntoView({{ block: 'center' }})")
+    for key, p, name, sel in (("book", 0.3, "book", '[data-shot="book"]'), ("head", 0.9, "trail", '[data-shot="trail"]'),
+                              ("with", 0.95, "family", f'.cv-{"phone" if layout == "phone" else "laptop"} [data-shot="family"]'),
+                              ("creators", 0.9, "creators", '.cv-creators [data-shot="creators"]')):
+        _at(page, key, p)
         want = rf"/book-wide-{scheme}-(960|1600)\.webp$" if name == "book" else rf"/{name}-{layout}-{scheme}-({'600' if layout == 'phone' else '960|1440'})\.webp$"
-        page.wait_for_function(f"""(() => {{ const im = document.querySelector('[data-shot="{name}"] img');
+        page.wait_for_function(f"""(() => {{ const im = document.querySelector('{sel} img');
           return im.complete && im.naturalWidth > 0 && new RegExp({want!r}).test(im.currentSrc); }})()""")
     got = [u for u in page.requests if SHOT.search(u)]
-    assert all(f"-{scheme}-" in u for u in got) and all("-book-" in u or "book-" in u.rsplit("/", 1)[-1] or f"-{layout}-" in u for u in got), got
+    assert all(f"-{scheme}-" in u for u in got), got
+    if layout == "phone":
+        assert not [u for u in got if "-wide-" in u and "book-" not in u], got          # a phone never downloads the laptop's screens
 
 
 def test_the_screenshots_follow_the_sites_own_switch(cover):
     page = cover(PHONE, "light", motion="reduce")
     page.evaluate("document.documentElement.dataset.theme = 'dark'")
     page.wait_for_function("document.documentElement.classList.contains('cv-dark')")
-    page.evaluate("document.querySelector('[data-shot=\"ask\"]').scrollIntoView({ block: 'center' })")
-    page.wait_for_function("""(() => { const im = document.querySelector('[data-shot="ask"] img');
-      return im.complete && im.naturalWidth > 0 && im.currentSrc.endsWith('/ask-phone-dark-600.webp'); })()""")
+    page.evaluate("document.querySelector('.cv-creators [data-shot=\"creators\"]').scrollIntoView({ block: 'center' })")
+    page.wait_for_function("""(() => { const im = document.querySelector('.cv-creators [data-shot="creators"] img');
+      return im.complete && im.naturalWidth > 0 && im.currentSrc.endsWith('/creators-phone-dark-600.webp'); })()""")
     page.evaluate("delete document.documentElement.dataset.theme")
     page.wait_for_function("document.documentElement.classList.contains('cv-light')")
     page.emulate_media(color_scheme="dark")
     page.wait_for_function("document.documentElement.classList.contains('cv-dark')")
-    assert page.evaluate("getComputedStyle(document.body).backgroundColor") == "rgb(0, 0, 0)"
+    assert page.evaluate("getComputedStyle(document.body).backgroundColor") == "rgb(7, 11, 20)"
 
 
 @pytest.mark.parametrize("size", ["390", "1440"])
@@ -202,40 +293,44 @@ def _swipe(page, cdp, x0, y0, x1, y1, steps=12):
     page.wait_for_timeout(500)
 
 
-def test_a_finger_scrolls_the_story_on_a_phone(cover):
-    page = cover(PHONE, motion="reduce")
+def test_a_finger_scrolls_the_film_on_a_phone(cover):
+    """The film never holds the page: a finger moves it from anywhere, the pinned booking screen and a device's screen included, and the camera follows."""
+    page = cover(PHONE)
     cdp = page.context.new_cdp_session(page)
     for _ in range(4):
         _swipe(page, cdp, 195, 720, 195, 180)
     assert page.evaluate("scrollY") > 1500
     assert int(page.evaluate("document.documentElement.dataset.cvScene")) >= 1
-    # a swipe that starts on the booking screenshot, or on a feature's, scrolls the page too
-    for sel in (".cv-lens", '[data-shot="cockpit"]'):
-        page.evaluate(f"document.querySelector('{sel}').scrollIntoView({{ block: 'center' }})")
+    for key, sel in (("book", ".cv-lens"), ("with", ".cv-phone .cv-screen"), ("tips", ".cv-mapbox")):
+        _at(page, key, 0.3)
         page.wait_for_timeout(200)
-        box = page.locator(sel).bounding_box()
-        before = page.evaluate("scrollY")
-        cx, cy = box["x"] + box["width"] / 2, min(box["y"] + box["height"] / 2, 700)
+        x, y, w, h = _box(page, sel)
+        before, p0 = page.evaluate("scrollY"), page.evaluate(f"GA_COVER.progress('{key}')")
+        cx, cy = x + w / 2, min(y + h / 2, 700)
         _swipe(page, cdp, cx, cy, cx, cy - 300)
         assert page.evaluate("scrollY") > before + 150, sel
+        assert page.evaluate(f"GA_COVER.progress('{key}')") > p0, key
 
 
 @pytest.mark.parametrize("scheme", ["light", "dark"])
 @pytest.mark.parametrize("width", [1440, 1280, 1000, 800, 390, 320])
 def test_nothing_scrolls_sideways(cover, width, scheme):
-    page = cover({"width": width, "height": 844 if width < 760 else 900}, scheme, motion="reduce")
+    page = cover({"width": width, "height": 844 if width < 760 else 900}, scheme)
+    wide = "document.documentElement.scrollWidth <= document.documentElement.clientWidth"
+    for key in ("hero", "book", "head", "with", "tips", "trail", "creators", "end"):
+        for p in (0, 0.5, 0.9):
+            _at(page, key, p)
+            assert page.evaluate(wide), (width, key, p)
+    calm = cover({"width": width, "height": 844 if width < 760 else 900}, scheme, motion="reduce")
     for i in range(N):
-        _scroll_to_scene(page, i)
-        assert page.evaluate("document.documentElement.scrollWidth") <= page.evaluate("document.documentElement.clientWidth"), (width, i)
-    for i in range(3):
-        _to_beat(page, i)
-        assert page.evaluate("document.documentElement.scrollWidth") <= page.evaluate("document.documentElement.clientWidth"), (width, "beat", i)
+        _scroll_to_scene(calm, i)
+        assert calm.evaluate(wide), (width, "still", i)
 
 
 def test_a_phone_reads_16px_text_and_taps_48px_targets(cover):
     page = cover(PHONE, motion="reduce")
-    small = page.evaluate("""() => [...document.querySelectorAll('main p, main li, main b, main span, .cv-btn, .cv-foot p, .cv-foot nav a, .cv-ill b')]
-      .filter(e => e.getClientRects().length && e.textContent.trim() && !e.closest('.cv-eyebrow, .cv-steps, .cv-tag, .cv-hint'))
+    small = page.evaluate("""() => [...document.querySelectorAll('main p, main li, main b, main span, .cv-btn, .cv-foot p, .cv-foot nav a, .cv-ill b, .cv-last h2')]
+      .filter(e => e.getClientRects().length && e.textContent.trim() && !e.closest('.cv-eyebrow, .cv-steps, .cv-tag, .cv-hint, .cv-stamp, .cv-url'))
       .map(e => [e.textContent.trim().slice(0, 30), parseFloat(getComputedStyle(e).fontSize)]).filter(([, s]) => s < 16)""")
     assert small == []
     eyebrows = page.evaluate("() => [...document.querySelectorAll('.cv-eyebrow')].map(e => parseFloat(getComputedStyle(e).fontSize))")
@@ -250,7 +345,7 @@ def test_a_notch_never_covers_the_header_the_story_or_the_close(cover):
     page = cover({"width": 844, "height": 390}, motion="reduce", insets={"left": 47, "right": 47, "top": 0, "bottom": 21})
     clear = """sel => [...document.querySelectorAll(sel)].filter(e => e.getClientRects().length).map(e => { const r = e.getBoundingClientRect();
       return [e.className || e.tagName, Math.round(r.left), Math.round(r.right)]; })"""
-    boxes = page.evaluate(clear, ".cv-top > *, main h1, main h2, main h3, .cv-say, .cv-lens, .cv-frame, .cv-ill, .cv-close .pf-card, .cv-foot > *, .cv-foot nav a")
+    boxes = page.evaluate(clear, ".cv-top > *, main h1, main h2, main h3, .cv-say, .cv-lens, .cv-frame, .cv-ill, .cv-post, .cv-last, .cv-close .pf-card, .cv-foot > *, .cv-foot nav a")
     assert len(boxes) >= 30 and all(l >= 47 and r <= 844 - 47 for _, l, r in boxes), [b for b in boxes if b[1] < 47 or b[2] > 797]
 
 
@@ -276,16 +371,18 @@ def test_a_phone_shows_the_early_preview_label_beside_the_logo_and_sign_in(cover
             assert r0 <= l1 or r1 <= l0 or b0 <= t1 or b1 <= t0, boxes                  # never on top of one another
 
 
-@pytest.mark.parametrize("size", [(320, 568), (390, 844), (1280, 800)], ids=["320x568", "390x844", "1280x800"])
-def test_the_tours_words_clear_the_header(cover, size):
+@pytest.mark.parametrize("size", [(320, 568), (390, 844), (1280, 800), (1440, 900)], ids=["320x568", "390x844", "1280x800", "1440x900"])
+def test_each_stages_words_clear_the_header_and_its_screen_fits(cover, size):
     w, h = size
     page = cover({"width": w, "height": h})
-    for i in range(3):
-        _to_beat(page, i)
-        head = page.evaluate("Math.max(...[...document.querySelectorAll('.cv-top, .cv-top > *')].map((e) => e.getBoundingClientRect().bottom))")
-        beat = page.locator(f'.cv-beat[data-beat="{i}"]').bounding_box()
-        lens = page.locator(".cv-lens").bounding_box()
-        assert beat["y"] >= head - 0.5 and lens["y"] + lens["height"] <= h + 0.5 and lens["height"] >= 0.3 * h, (i, head, beat, lens)
+    head = page.evaluate("Math.max(...[...document.querySelectorAll('.cv-top, .cv-top > *')].map((e) => e.getBoundingClientRect().bottom))")
+    for key, p, screen in (("book", 0.5, ".cv-lens"), ("head", 0.3, ".cv-head .cv-deal"), ("with", 0.4, ".cv-with .cv-devices"), ("tips", 0.6, ".cv-mapbox"),
+                           ("trail", 0.6, ".cv-trail .cv-deal"), ("creators", 0.2, ".cv-creators .cv-deal")):
+        _at(page, key, p)
+        x, y, bw, bh = _box(page, f".cv-{key} h2")
+        assert y >= head - 0.5 and y + bh <= h, (key, head, y)
+        sx, sy, sw, sh = _box(page, screen)
+        assert sy + sh <= h + 0.5 and sh >= 0.25 * h and sx >= -0.5 and sx + sw <= w + 0.5, (key, sx, sy, sw, sh)
 
 
 CONTRAST = """sel => { const lin = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
@@ -302,17 +399,36 @@ CONTRAST = """sel => { const lin = (c) => { c /= 255; return c <= 0.03928 ? c / 
 @pytest.mark.parametrize("scheme", ["light", "dark"])
 def test_every_headline_and_its_words_read_at_full_strength(cover, scheme):
     page = cover(DESKTOP, scheme, motion="reduce")
-    ratios = page.evaluate(CONTRAST, "main h1, main h2, main h3, .cv-say, .cv-lede, .cv-eyebrow, .cv-beat, .cv-disc, .cv-cap, .cv-ill b, .cv-ill p, .cv-mute, .cv-stops li, .cv-fake-btn, .cv-foot p")
-    assert len(ratios) >= 40 and min(r for _, r in ratios) >= 4.5, sorted(ratios, key=lambda x: x[1])[:4]
+    ratios = page.evaluate(CONTRAST, "main h1, main h1 em, main h2, main h2 em, main h3, .cv-say, .cv-lede, .cv-eyebrow, .cv-beat, .cv-disc, .cv-cap, .cv-ill b, .cv-ill p, .cv-mute, "
+                                     ".cv-stops li, .cv-fake-btn, .cv-chip, .cv-big, .cv-bub, .cv-tip-n, .cv-last h2, .cv-last h2 em, .cv-credit, .cv-foot p")
+    assert len(ratios) >= 50 and min(r for _, r in ratios) >= 4.5, sorted(ratios, key=lambda x: x[1])[:4]
+
+
+@pytest.mark.parametrize("size", ["390", "1440"])
+def test_scrolling_the_booking_stage_four_times_slower_makes_no_long_task(cover, size):
+    """lessons 2026-10-09: CPU throttled 4x, a long-task observer, the booking stage (the heaviest camera) scrolled through by the wheel."""
+    page = cover(SIZES[size])
+    _at(page, "book", 0)
+    cdp = page.context.new_cdp_session(page)
+    cdp.send("Emulation.setCPUThrottlingRate", {"rate": 4})
+    page.evaluate("window.__lt = []; new PerformanceObserver((l) => l.getEntries().forEach((e) => window.__lt.push(e.duration))).observe({ entryTypes: ['longtask'] })")
+    end = page.evaluate("GA_COVER.yAt('book', 1)")
+    while page.evaluate("scrollY") < end - 5:
+        page.evaluate("window.scrollBy(0, 40)")
+        page.wait_for_timeout(16)
+    page.wait_for_timeout(300)
+    cdp.send("Emulation.setCPUThrottlingRate", {"rate": 1})
+    assert page.evaluate("window.__lt") == []
 
 
 def test_production_ignores_the_review_switch(cover, monkeypatch):
-    """?beat= holds the tour on a beat for the review tools; without data-debug (production) the scroll decides."""
-    page = cover(DESKTOP, query="?beat=2")
-    assert page.evaluate("GA_COVER.beat()") == 2
+    """?scene=1&p=0.5 holds the booking stage halfway for the review tools; without data-debug (production) the scroll decides."""
+    page = cover(DESKTOP, query="?scene=1&p=0.5")
+    page.wait_for_function("GA_COVER.progress('book') === 0.5")
     monkeypatch.setattr(cover_page, "debug", lambda: False)
-    page = cover(DESKTOP, query="?beat=2")
-    assert page.evaluate("GA_COVER.beat()") == 0 and page.evaluate("GA_COVER.debug") is False
+    page = cover(DESKTOP, query="?scene=1&p=0.5")
+    page.wait_for_timeout(300)
+    assert page.evaluate("GA_COVER.progress('book')") == 0 and page.evaluate("GA_COVER.debug") is False
 
 
 @pytest.mark.parametrize("label,path", [("Plan a trip", "/start"), ("See trips people shared", "/community")])
