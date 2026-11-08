@@ -1,0 +1,18 @@
+[
+  {
+    "file": "gitaway-take-a-trip-1080p.mp4",
+    "seconds": 87,
+    "frames": 2088,
+    "bytes": 167786021,
+    "full_decode": "passed",
+    "audio": "AAC stereo 48 kHz"
+  },
+  {
+    "file": "gitaway-take-a-trip-720p.mp4",
+    "seconds": 87,
+    "frames": 2088,
+    "bytes": 17671993,
+    "full_decode": "passed",
+    "audio": "AAC stereo 48 kHz"
+  }
+]

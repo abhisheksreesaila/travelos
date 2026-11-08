@@ -1,0 +1,67 @@
+[
+  {
+    "viewport": "1440x900",
+    "long_passage_and_sticky_frame": "passed",
+    "distinct_camera_positions": 14,
+    "cabin_dissolve": "passed",
+    "keyboard_moment_jumps": "passed",
+    "native_wheel": "passed",
+    "touch_targets": "passed",
+    "complete_pullback": "passed",
+    "canvas_edges": "covered",
+    "context_loss_short_poster": "passed",
+    "page_errors": []
+  },
+  {
+    "viewport": "728x730",
+    "long_passage_and_sticky_frame": "passed",
+    "distinct_camera_positions": 14,
+    "cabin_dissolve": "passed",
+    "keyboard_moment_jumps": "passed",
+    "native_wheel": "passed",
+    "touch_targets": "passed",
+    "complete_pullback": "passed",
+    "canvas_edges": "covered",
+    "context_loss_short_poster": "passed",
+    "page_errors": []
+  },
+  {
+    "viewport": "390x844",
+    "long_passage_and_sticky_frame": "passed",
+    "distinct_camera_positions": 14,
+    "cabin_dissolve": "passed",
+    "keyboard_moment_jumps": "passed",
+    "native_wheel": "passed",
+    "touch_targets": "passed",
+    "complete_pullback": "passed",
+    "canvas_edges": "covered",
+    "context_loss_short_poster": "passed",
+    "page_errors": []
+  },
+  {
+    "viewport": "320x740",
+    "long_passage_and_sticky_frame": "passed",
+    "distinct_camera_positions": 14,
+    "cabin_dissolve": "passed",
+    "keyboard_moment_jumps": "passed",
+    "native_wheel": "passed",
+    "touch_targets": "passed",
+    "complete_pullback": "passed",
+    "canvas_edges": "covered",
+    "context_loss_short_poster": "passed",
+    "page_errors": []
+  },
+  {
+    "viewport": "844x390",
+    "long_passage_and_sticky_frame": "passed",
+    "distinct_camera_positions": 14,
+    "cabin_dissolve": "passed",
+    "keyboard_moment_jumps": "passed",
+    "native_wheel": "passed",
+    "touch_targets": "passed",
+    "complete_pullback": "passed",
+    "canvas_edges": "covered",
+    "context_loss_short_poster": "passed",
+    "page_errors": []
+  }
+]
