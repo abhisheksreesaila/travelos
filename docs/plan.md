@@ -1349,3 +1349,12 @@ Security audit 2026-11-07, confirmed on gitaway.me: FastHTML's default headers m
 Brief: docs/briefs/free-and-polished.md "Season and weather you can feel" · Needs: F-203 weather, F-209/F-210 designs
 - [ ] a seasonal background from the destination and dates (hemisphere aware; wet or dry season in the tropics) on the cockpit, the shared trail, Where to? and the book of tickets, light and dark
 - [ ] gentle animated weather from the real forecast or labelled typical weather (wx.js), never invented; reduced motion is a still; text contrast holds
+
+## F-216 One view for booking: say it, see every site, book where you trust [parked]
+Brief: docs/briefs/unified-booking.md (draft) · Prototype: docs/design/booking-split/flow.html · Needs: founder's Stay22 account and API key; brief approved · Parked 2026-11-08 by the founder, to resurface later
+- [ ] the search is one sentence; every part is a dropdown, and a retyped plain-English sentence rewrites it (Claude)
+- [ ] stays from Stay22's Direct Travel API: live prices per site (Booking.com, Expedia, Hotels.com, Vrbo), map and list drawn by us; booking on that site
+- [ ] flights from Aviasales' price data behind one fare interface, labelled with their age and "about"; live fares plug in later (50,000 monthly users)
+- [ ] the trip shows a quote while choosing and the real price once booked (pasted confirmation, or a partner report matched by the link's tag)
+- [ ] we never become the seller: no booking API that makes cancellations or refunds ours
+- [ ] the cover's booking scene and a slimmer cover (one line per scene) follow the prototype
