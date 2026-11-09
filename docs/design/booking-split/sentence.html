@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PROTOTYPE 4 · Say it in a sentence · GitAway booking</title>
+<style>
+  :root { --bg:#eceae6; --card:#fff; --ink:#16161a; --soft:#6b6b73; --line:#dcd9d3;
+          --stay:#0a84ff; --fly:#bf5af2; --sun:#ff9f0a; --go:#30d158; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+         font:16px/1.45 Geist, ui-sans-serif, system-ui, sans-serif; }
+  .wrap { max-width:1180px; margin:0 auto; padding:28px 20px 80px; }
+  .proto { font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--soft); }
+  /* The sentence */
+  .sentence { background:var(--card); border-radius:22px; padding:26px 28px;
+              box-shadow:0 6px 24px rgb(0 0 0 / .06); margin:14px 0 18px; }
+  .sentence p { font-size:clamp(20px, 2.4vw, 30px); line-height:1.6; margin:0; font-weight:500; }
+  .chip { position:relative; display:inline-block; }
+  .chip select { appearance:none; font:inherit; color:var(--ink); background:none;
+                 border:0; border-bottom:2px dashed var(--ink); padding:0 2px; cursor:pointer; }
+  .chip select:focus { outline:none; border-bottom-style:solid; background:#f4f2ee; }
+  .retype { display:flex; gap:10px; margin-top:16px; }
+  .retype input { flex:1; font:inherit; padding:12px 14px; border:1px solid var(--line);
+                  border-radius:12px; background:#faf9f7; }
+  .retype button, .btn { font:inherit; border:0; border-radius:12px; padding:12px 16px;
+                  background:var(--ink); color:var(--bg); cursor:pointer; }
+  .heard { color:var(--soft); font-size:14px; margin-top:8px; min-height:1.4em; }
+  /* The board */
+  .board { display:grid; grid-template-columns:1fr 2fr 1fr; gap:16px; }
+  @media (max-width:900px) { .board { grid-template-columns:1fr; } }
+  .card { background:var(--card); border-radius:18px; padding:18px;
+          box-shadow:0 6px 24px rgb(0 0 0 / .05); }
+  .card h3 { margin:0 0 4px; font-size:15px; display:flex; align-items:center; gap:8px; }
+  .dot { width:10px; height:10px; border-radius:50%; display:inline-block; }
+  .src { font-size:12px; color:var(--soft); }
+  .tag { font-size:11px; padding:2px 7px; border-radius:6px; background:#fff3d6; color:#8a5a00;
+         text-transform:uppercase; letter-spacing:.05em; }
+  .tag.real { background:#dff7e6; color:#17703a; }
+  .big { font-size:28px; font-weight:600; margin:6px 0; }
+  a.out { display:block; margin-top:10px; padding:10px 12px; border-radius:10px;
+          border:1px solid var(--line); color:var(--ink); text-decoration:none; font-size:14px; }
+  a.out small { display:block; color:var(--soft); word-break:break-all; font-size:11px; }
+  /* The Stay22 stand-in */
+  .map { position:relative; height:300px; border-radius:14px; overflow:hidden; margin-top:10px;
+         background:linear-gradient(135deg,#dbe9f6,#e9f3e4); }
+  .pin { position:absolute; background:var(--card); border-radius:10px; padding:4px 8px;
+         font-size:13px; font-weight:600; box-shadow:0 3px 10px rgb(0 0 0 / .15); cursor:pointer; }
+  .pin.on { background:var(--ink); color:var(--bg); }
+  .park { position:absolute; left:46%; top:44%; font-size:12px; color:var(--soft); }
+  .park::before { content:""; position:absolute; left:-30px; top:-30px; width:80px; height:80px;
+                  border:2px dashed var(--stay); border-radius:50%; opacity:.5; }
+  .hotels { display:grid; gap:8px; margin-top:12px; }
+  .hotel { display:grid; grid-template-columns:1fr auto; gap:4px 12px; padding:10px 12px;
+           border:1px solid var(--line); border-radius:12px; }
+  .hotel.on { border-color:var(--ink); }
+  .why { font-size:13px; color:var(--soft); }
+  .brands { display:flex; gap:6px; flex-wrap:wrap; }
+  .brand { font-size:12px; padding:3px 8px; border-radius:8px; background:#f2f1ee; }
+  .brand b { font-weight:600; }
+  .total { border-top:1px solid var(--line); margin-top:12px; padding-top:12px; }
+  .row { display:flex; justify-content:space-between; font-size:14px; padding:2px 0; }
+  .note { margin-top:26px; font-size:14px; color:var(--soft); max-width:760px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="proto">Prototype 4 · Say it in a sentence · hotels are made up; the links are real searches</div>
+
+  <section class="sentence">
+    <p>
+      A family of <span class="chip"><select id="people">
+        <option value="2,0">2</option><option value="2,1">3</option><option value="2,2" selected>4</option><option value="2,3">5</option></select></span>,
+      flying from <span class="chip"><select id="from">
+        <option>SFO</option><option>LAX</option><option>JFK</option><option>ORD</option></select></span>
+      to <span class="chip"><select id="to">
+        <option value="MCO|Orlando|Disney World">Orlando</option>
+        <option value="LAX|Anaheim|Disneyland">Anaheim</option>
+        <option value="RNO|South Lake Tahoe|Heavenly">Lake Tahoe</option></select></span>,
+      <span class="chip"><select id="dates">
+        <option value="2026-12-12|2026-12-16">Dec 12–16</option>
+        <option value="2027-01-15|2027-01-19">Jan 15–19</option>
+        <option value="2027-03-20|2027-03-27">Mar 20–27</option></select></span>,
+      staying <span class="chip"><select id="near">
+        <option value="5">within 5 miles</option><option value="20" selected>within 20 miles</option><option value="40">anywhere nearby</option></select></span>
+      of <span id="landmark">Disney World</span>
+      with <span class="chip"><select id="meal">
+        <option value="breakfast" selected>breakfast</option><option value="kitchen">a kitchen</option><option value="any">whatever's there</option></select></span>,
+      under <span class="chip"><select id="budget">
+        <option value="2000">$2,000</option><option value="3000" selected>$3,000</option><option value="5000">$5,000</option><option value="0">any budget</option></select></span> all in.
+    </p>
+    <form class="retype" id="retype">
+      <input id="said" placeholder="Or just say it: “5 of us, near the park, with a pool, under 4k”">
+      <button>Use this</button>
+    </form>
+    <div class="heard" id="heard"></div>
+  </section>
+
+  <section class="board">
+    <div class="card">
+      <h3><span class="dot" style="background:var(--fly)"></span>Flights</h3>
+      <div class="src">Aviasales · real fares in the app <span class="tag">sample here</span></div>
+      <div class="big" id="fare">$1,184</div>
+      <div class="why" id="fareWhy">for 4, round trip, cheapest found</div>
+      <a class="out" id="flyLink" target="_blank" rel="noopener">Open on Aviasales <small></small></a>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--stay)"></span>Stays that match your sentence</h3>
+      <div class="src">Stay22 would draw this map and list, with live prices from Booking.com and Expedia <span class="tag">made up</span></div>
+      <div class="map" id="map"><span class="park" id="parkLabel">Disney World</span></div>
+      <div class="hotels" id="hotels"></div>
+      <a class="out" id="stayLink" target="_blank" rel="noopener">Or open the same search on Booking.com <small></small></a>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--sun)"></span>Everything beside it</h3>
+      <div class="row"><span>Weather</span><span id="wx">78° / 61°, typical</span></div>
+      <div class="row"><span>Airport to stay</span><span id="drive">24 min</span></div>
+      <div class="row"><span>Park from stay</span><span id="walk">12 min</span></div>
+      <div class="total">
+        <div class="row"><span>Flights</span><span id="tFly">$1,184</span></div>
+        <div class="row"><span>Stay</span><span id="tStay">$760</span></div>
+        <div class="row"><b>All in</b><b id="tAll">$1,944</b></div>
+        <div class="why" id="budgetSay">Under your $3,000, $1,056 to spare.</div>
+      </div>
+      <button class="btn" style="width:100%;margin-top:14px">Make this a trip</button>
+    </div>
+  </section>
+
+  <p class="note"><b>The idea:</b> the sentence is the filter. Every underlined word is a dropdown, so people still see the choices; or they retype it in plain English. Picking a hotel updates the drive, the walk and the total; booking always finishes on the partner's site. Flights and stays only link through three things (dates, distance, money), so those are what the side panel keeps in view.</p>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const money = n => "$" + n.toLocaleString("en-US");
+  // Made up hotels: [name, x%, y%, miles, nightly, breakfast, kitchen, why, cheaper brand]
+  const HOTELS = [
+    ["Lakeside Family Suites", 38, 30, 3,  190, true,  true,  "pool, 12 min to the park", ["Booking.com", 0]],
+    ["Palm Court Inn",         62, 58, 8,  142, true,  false, "cheapest with breakfast",  ["Expedia", 9]],
+    ["Grove Resort",           22, 66, 14, 238, true,  true,  "best rated, two bedrooms", ["Booking.com", 14]],
+    ["Sunrise Condos",         74, 24, 18, 165, false, true,  "full kitchen, quiet",      ["Vrbo", 0]],
+    ["Gateway Hotel",          84, 76, 31, 119, true,  false, "near the airport",         ["Expedia", 5]],
+  ];
+  const FARE = { SFO:296, LAX:241, JFK:318, ORD:274 };  // per person, made up
+  let pick = 0;
+
+  function nights() {
+    const [a, b] = $("dates").value.split("|");
+    return (new Date(b) - new Date(a)) / 864e5;
+  }
+  function people() { return $("people").value.split(",").map(Number); }
+
+  function draw() {
+    const [code, city, mark] = $("to").value.split("|");
+    const [ad, kids] = people(), n = ad + kids;
+    const [d1, d2] = $("dates").value.split("|");
+    const near = +$("near").value, meal = $("meal").value, budget = +$("budget").value;
+    $("landmark").textContent = mark; $("parkLabel").textContent = mark;
+
+    const fare = FARE[$("from").value] * n;
+    $("fare").textContent = money(fare);
+    $("fareWhy").textContent = `for ${n}, round trip, cheapest found`;
+    const ddmm = s => s.slice(8, 10) + s.slice(5, 7);
+    const fly = `https://www.aviasales.com/search/${$("from").value}${ddmm(d1)}${code}${ddmm(d2)}${ad}${kids || ""}`;
+    $("flyLink").href = fly; $("flyLink").querySelector("small").textContent = fly;
+
+    const ok = HOTELS.map((h, i) => ({ h, i })).filter(({ h }) =>
+      h[3] <= near && (meal === "any" || (meal === "breakfast" ? h[5] : h[6])));
+    if (!ok.some(o => o.i === pick)) pick = ok.length ? ok[0].i : -1;
+
+    $("map").querySelectorAll(".pin").forEach(p => p.remove());
+    $("hotels").innerHTML = ok.length ? "" : `<div class="why">Nothing matches that sentence. Try “anywhere nearby” or a different meal.</div>`;
+    ok.forEach(({ h, i }) => {
+      const pin = document.createElement("div");
+      pin.className = "pin" + (i === pick ? " on" : "");
+      pin.style.left = h[1] + "%"; pin.style.top = h[2] + "%";
+      pin.textContent = money(h[4]);
+      pin.onclick = () => { pick = i; draw(); };
+      $("map").append(pin);
+      const row = document.createElement("div");
+      row.className = "hotel" + (i === pick ? " on" : "");
+      const [brand, save] = h[8];
+      row.innerHTML = `<b>${h[0]}</b><b>${money(h[4])}<span class="why"> /night</span></b>
+        <span class="why">${h[7]} · ${h[3]} mi</span>
+        <span class="brands"><span class="brand"><b>${brand}</b>${save ? " · $" + save + " less" : ""}</span></span>`;
+      row.onclick = () => { pick = i; draw(); };
+      $("hotels").append(row);
+    });
+
+    const nf = new URLSearchParams({ ss: city, checkin: d1, checkout: d2,
+      group_adults: ad, group_children: kids, no_rooms: 1 });
+    if (meal === "breakfast") nf.set("nflt", "mealplan=1");
+    const stay = "https://www.booking.com/searchresults.html?" + nf;
+    $("stayLink").href = stay; $("stayLink").querySelector("small").textContent = stay;
+
+    const h = HOTELS[pick];
+    const stayCost = h ? h[4] * nights() : 0;
+    $("drive").textContent = h ? Math.round(10 + h[3] * 1.4) + " min" : "—";
+    $("walk").textContent = h ? Math.round(4 + h[3] * 2.6) + " min" : "—";
+    $("tFly").textContent = money(fare); $("tStay").textContent = h ? money(stayCost) : "—";
+    const all = fare + stayCost;
+    $("tAll").textContent = money(all);
+    $("budgetSay").textContent = !budget ? "No budget set."
+      : all <= budget ? `Under your ${money(budget)}, ${money(budget - all)} to spare.`
+      : `${money(all - budget)} over your ${money(budget)}. Try a cheaper stay or other dates.`;
+    $("wx").textContent = { MCO: "78° / 61°, typical", LAX: "68° / 50°, typical", RNO: "38° / 18°, snow likely" }[code];
+  }
+
+  // Plain English: a toy reader, enough to show the sentence rewriting itself.
+  $("retype").onsubmit = e => {
+    e.preventDefault();
+    const s = $("said").value.toLowerCase(), set = [];
+    const num = s.match(/(\d+)\s*(of us|people|adults)/);
+    if (num) { const v = { 2: "2,0", 3: "2,1", 4: "2,2", 5: "2,3" }[num[1]]; if (v) { $("people").value = v; set.push(num[1] + " people"); } }
+    if (/breakfast/.test(s)) { $("meal").value = "breakfast"; set.push("breakfast"); }
+    if (/kitchen/.test(s)) { $("meal").value = "kitchen"; set.push("a kitchen"); }
+    if (/near the park|walk/.test(s)) { $("near").value = "5"; set.push("within 5 miles"); }
+    const k = s.match(/under\s*\$?(\d+)\s*(k)?/);
+    if (k) { const v = +k[1] * (k[2] ? 1000 : 1); const b = [2000, 3000, 5000].find(x => x >= v) || 0; $("budget").value = b; set.push("under " + money(b || v)); }
+    if (/tahoe|ski/.test(s)) { $("to").value = "RNO|South Lake Tahoe|Heavenly"; set.push("Lake Tahoe"); }
+    if (/pool/.test(s)) set.push("pool (shown as a hotel note)");
+    $("heard").textContent = set.length ? "Heard: " + set.join(", ") + ". The sentence above changed to match." : "Didn't catch anything; the real one would ask Claude.";
+    draw();
+  };
+  document.querySelectorAll("select").forEach(s => s.onchange = draw);
+  draw();
+</script>
+</body>
+</html>

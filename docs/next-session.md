@@ -1,3 +1,8 @@
+# 2026-11-08 evening: booking concept (prototype only)
+- Concept agreed in talk, brief still draft: `docs/briefs/unified-booking.md` (sentence search; stays live via Stay22 API; flights = Aviasales recent prices, "about"; never the seller).
+- Prototype: `docs/design/booking-split/flow.html` (slim cover + booking view + hand-off + paste confirmation). Serve with `python -m http.server 6040` in that folder.
+- Founder: open a Stay22 account; approve the brief.
+
 # Overnight 2026-11-08 (on master, NOT pushed, NOT deployed)
 
 Built, reviewed and merged on local master:
