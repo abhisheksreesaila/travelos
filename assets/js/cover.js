@@ -1,7 +1,7 @@
-// The cover's conductor (cover v4, docs/decisions.md D-400..): a camera over the app's real screens, scroll by scroll.
+// The cover's conductor (cover v5, docs/decisions.md D-410.. over v4's D-400..): a camera over the app's real screens, scroll by scroll.
 // Each chapter is a stage (gitaway/pages/cover.py): a tall section whose screen stays (position: sticky) while the scroll passes under it. One
 // passive scroll listener asks for one frame; the frame reads scrollY once, turns it into each stage's progress p (0..1) and lets that stage's
-// director write transforms and opacity (never layout) and toggle classes for the moments that play on their own (a pin dropping, a counter, a
+// director write transforms and opacity (never layout) and toggle classes for the moments that play on their own (a pin dropping, the With you screen's loop, a
 // stamp: those run on the --motion-* tokens in cover.css). Native scroll is the source of truth: nothing here ever stops or steers it.
 // Without this script, under reduced motion (html.cv-calm) or on a screen under 560 px tall, every stage is a still (cover.css).
 (function () {
@@ -67,19 +67,6 @@
     els.forEach((e, i) => { e.style.transform = keep[i]; });
     s.mf = { sc: c.width / m.width, dx: c.left + c.width / 2 - (m.left + m.width / 2), dy: c.top + c.height / 2 - (m.top + m.height / 2) };
   }
-  // a counter plays on its own, on the tokens: three screen moves long
-  const DUR = (parseFloat(getComputedStyle(root).getPropertyValue('--motion-screen-dur')) || 1) * 3;
-  function count(el, on) {
-    if (!el) return;
-    const to = +el.dataset.to;
-    if (!on) { el.dataset.run = ''; el.textContent = '0'; return; }
-    if (el.dataset.run) return;
-    el.dataset.run = '1';
-    const t0 = performance.now();
-    const step = (t) => { const k = clamp((t - t0) / DUR, 0, 1); el.textContent = String(Math.round(to * (1 - (1 - k) ** 3))); if (k < 1 && el.dataset.run) requestAnimationFrame(step); };
-    requestAnimationFrame(step);
-  }
-
   /* ---------- the directors: one for each stage ---------- */
   const D = {};
 
@@ -96,16 +83,15 @@
     },
   };
 
-  // 1. book: the camera over the booking screen
+  // 1. book: the camera over the booking screen: the flight beside the stay, a glide over the weather and the drive, the whole page (D-413)
   const ASPECT = 960 / 817;                                     // the booking crop (cover.py BOOK_SIZE)
-  const ALL = [0, 0, 1, 1], MID = [0.12, 0, 0.88, 0.72];
+  const ALL = [0, 0, 1, 1];
   D.book = {
     init(s) {
-      s.lens = s.q('.cv-lens'); s.cam = s.q('.cv-cam'); s.img = s.q('.cv-cam img'); s.field = s.q('.cv-field');
-      s.spots = s.qa('.cv-spot'); s.rings = s.qa('.cv-ring'); s.calls = s.qa('.cv-call'); s.chips = s.qa('.cv-chip');
-      s.words = s.qa('.cv-beat'); s.steps = s.qa('.cv-steps li'); s.counts = s.calls.map((c) => c.querySelector('.cv-count'));
-      const d = s.lens.dataset; s.R = { all: ALL, mid: MID, fs: nums(d.camFs), fsPhone: nums(d.camFsPhone), wx: nums(d.camWx), drive: nums(d.camDrive) };
-      s.plan = [[0, 'all'], [0.1, 'all'], [0.22, 'fs'], [0.35, 'fs'], [0.4, 'mid'], [0.46, 'wx'], [0.53, 'wx'], [0.6, 'drive'], [0.67, 'drive'], [0.75, 'all'], [1, 'all']];
+      s.lens = s.q('.cv-lens'); s.cam = s.q('.cv-cam'); s.field = s.q('.cv-field');
+      s.spots = s.qa('.cv-spot'); s.words = s.qa('.cv-beat'); s.chips = s.q('.cv-partners');
+      const d = s.lens.dataset; s.R = { all: ALL, fs: nums(d.camFs), fsPhone: nums(d.camFsPhone), wx: nums(d.camWx), drive: nums(d.camDrive) };
+      s.plan = [[0, 'all'], [0.08, 'all'], [0.22, 'fs'], [0.38, 'fs'], [0.5, 'wx'], [0.56, 'wx'], [0.68, 'drive'], [0.72, 'drive'], [0.86, 'all'], [1, 'all']];
     },
     fit(s, r) {
       const W = s.LW, H = s.LH, IW = W, IH = W / ASPECT;
@@ -119,12 +105,6 @@
     measure(s) {
       s.LW = s.lens.clientWidth; s.LH = s.lens.clientHeight;
       s.keys = s.plan.map(([p, k]) => [p, s.R[k === 'fs' && layout === 'phone' ? 'fsPhone' : k]]);
-      const L = rel(s.lens, s.el.firstElementChild), [tx, ty, k] = this.fit(s, ALL), IW = s.LW;
-      s.fly = s.chips.map((c) => {
-        const [x, y, w, h] = nums(c.dataset.from), to = rel(c, s.el.firstElementChild);
-        const sx = L.x + tx + (x + w / 2) * IW * k, sy = L.y + ty + (y + h / 2) * (IW / ASPECT) * k;
-        return { dx: sx - (to.x + to.w / 2), dy: sy - (to.y + to.h / 2), sc: clamp((w * IW * k) / to.w, 0.5, 1.6) };
-      });
     },
     run(s, p) {
       let i = 0;
@@ -135,47 +115,41 @@
       const e = seg(p, 0, 0.1);
       put(s.lens, tf(0, (1 - e) * s.H * 0.16, 0.94 + 0.06 * e, (1 - e) * -2.5));
       put(s.field, tf((1 - e) * s.W * 0.08, (1 - e) * s.H * 0.1, 1, (1 - e) * 4), 1);
-      const focus = p >= 0.19 && p < 0.37 ? 'fs' : p >= 0.43 && p < 0.555 ? 'wx' : p >= 0.575 && p < 0.69 ? 'drive' : p >= 0.8 ? 'go' : '';
+      const focus = p >= 0.19 && p < 0.42 ? 'fs' : p >= 0.46 && p < 0.6 ? 'wx' : p >= 0.62 && p < 0.76 ? 'drive' : '';
       s.spots.forEach((l) => flag(l, l.dataset.spot === focus));
-      s.rings.forEach((l) => flag(l, focus === 'go'));
-      s.calls.forEach((c, j) => { const on = focus === (j ? 'drive' : 'wx'); flag(c, on); count(s.counts[j], on); });
-      const word = p < 0.13 ? '' : p < 0.38 ? '0' : p < 0.7 ? '1' : p < 0.79 ? 'all' : '2';
+      const word = p < 0.12 ? '' : p < 0.44 ? '0' : p < 0.8 ? '1' : '2';
       s.words.forEach((w) => flag(w, w.dataset.beat === word));
-      s.field.dataset.k = focus === 'wx' ? 'wx' : focus === 'drive' ? 'car' : word === 'all' ? 'stay' : focus === 'go' ? 'tix' : 'flight';
-      const step = word === '' || word === '0' ? 0 : word === '1' ? 1 : word === 'all' ? 2 : 3;
-      s.steps.forEach((d, j) => flag(d, j === step));
-      s.chips.forEach((c, j) => {
-        const f = s.fly[j], m = seg(p, 0.8 + j * 0.012, 0.88 + j * 0.012);
-        put(c, tf(f.dx * (1 - m), f.dy * (1 - m), lerp(f.sc, 1, m), (1 - m) * (j % 2 ? 10 : -10)), p < 0.8 ? 0 : clamp(m * 5, 0, 1));
-      });
+      flag(s.chips, word === '2');
+      s.field.dataset.k = focus === 'wx' ? 'wx' : focus === 'drive' ? 'car' : word === '2' ? 'stay' : 'flight';
     },
   };
 
   // 2. a head start: trips deal in, one is imported, it becomes Lena and Sam's trip
   D.head = {
     init(s) {
-      s.cards = s.qa('.cv-trip'); s.headr = s.q('.cv-ill-head'); s.pick = s.q('.cv-trip.pick'); s.btn = s.q('.cv-trip.pick .cv-fake-btn');
-      s.burst = s.q('.cv-burst'); s.stamp = s.q('.cv-stamp'); s.deal = s.q('.cv-deal'); s.morph = s.q('.cv-morph'); s.copy = s.q('.cv-copy');
+      s.cards = s.qa('.cv-trip'); s.headr = s.q('.cv-ill-head'); s.pick = s.q('.cv-trip.pick');
+      s.deal = s.q('.cv-deal'); s.morph = s.q('.cv-morph'); s.copy = s.q('.cv-copy');
     },
     measure(s) {
       morphFrom(s, s.pick);
     },
     run(s, p) {
-      s.cards.forEach((c, i) => { const d = seg(p, 0.02 + 0.07 * i, 0.18 + 0.07 * i); put(c, tf((1 - d) * s.W * 0.6, (1 - d) * s.H * 0.05, 1, (1 - d) * (7 + 3 * i)), d); });
+      s.cards.forEach((c, i) => { const d = seg(p, 0.02 + 0.06 * i, 0.2 + 0.06 * i); put(c, tf((1 - d) * s.W * 0.6, (1 - d) * s.H * 0.05, 1, (1 - d) * (7 + 3 * i)), d); });
       put(s.headr, '', seg(p, 0, 0.06));
-      flag(s.btn, p >= 0.4 && p < 0.46, 'pressed');
-      flag(s.pick, p >= 0.45, 'done');
-      flag(s.burst, p >= 0.45);
-      flag(s.stamp, p >= 0.48);
-      const m = seg(p, 0.58, 0.8), f = s.mf;
+      flag(s.pick, p >= 0.36, 'done');
+      const m = seg(p, 0.48, 0.76), f = s.mf;
       put(s.deal, tf(0, -m * s.H * 0.04, 1 - 0.1 * m), 1 - m);
       put(s.morph, tf(f.dx * (1 - m), f.dy * (1 - m), lerp(f.sc, 1, m)), clamp(m * 3, 0, 1));
-      if (layout === 'phone') put(s.copy, tf(0, -seg(p, 0.5, 0.62) * s.H * 0.08), 1 - seg(p, 0.5, 0.62));
+      if (layout === 'phone') put(s.copy, tf(0, -seg(p, 0.42, 0.54) * s.H * 0.08), 1 - seg(p, 0.42, 0.54));
       else put(s.copy, '', 1);
     },
   };
 
-  // 3. then it comes with you: the cockpit dives into a day, the day becomes Ask, then the family chat
+  // 3. then it comes with you: the cockpit dives into its open day; then the screen plays a short loop of the day, Ask and the family chat on
+  // its own (D-412: a GIF-like loop inside the screen, not a scroll step for every keystroke). The day is not tied to the scroll: once the cockpit
+  // is all but inside the day's ticket, the day plays in by itself in one short fade, so a scroll held halfway never shows the two half
+  // see-through at two sizes (v4's messy halfway).
+  const LOOP_AT = 0.5, LOOP_MS = (parseFloat(getComputedStyle(root).getPropertyValue('--motion-wiggle')) || 420) * 6;      // a frame of the loop: six wiggles
   D.with = {
     init(s) {
       const d = s.q('.cv-devices').dataset;
@@ -183,39 +157,48 @@
         const L = {}; scr.querySelectorAll('.cv-layer').forEach((l) => (L[l.dataset.layer] = l));
         return { lay, scr, L, r: nums(d[lay === 'wide' ? 'todayWide' : 'todayPhone']) };
       });
-      s.feats = s.qa('.cv-feat'); s.ask = s.q('.cv-ask'); s.typed = s.q('.cv-typed'); s.text = s.typed.dataset.text; s.bubs = s.qa('.cv-bub'); s.n = -1;
+      s.feats = s.qa('.cv-feat'); s.loop = d.loop.split(','); s.k = 0; s.timer = 0;
     },
     measure(s) {
       s.sets.forEach((x) => {
-        x.w = x.scr.clientWidth; x.h = x.scr.clientHeight;
-        const [rx, ry, rw, rh] = x.r, o = `${((rx + rw / 2) * 100).toFixed(2)}% ${((ry + rh / 2) * 100).toFixed(2)}%`;
-        x.L.cockpit.style.transformOrigin = x.L.day.style.transformOrigin = o;
+        const [rx, ry, rw, rh] = x.r;
+        x.L.cockpit.style.transformOrigin = `${((rx + rw / 2) * 100).toFixed(2)}% ${((ry + rh / 2) * 100).toFixed(2)}%`;
         x.kin = 1 / Math.max(rw, rh);
       });
     },
+    // the loop: one layer of the screen at a time, a short crossfade (cover.css) every few seconds, only while the stage is on screen
+    show(s, name) {
+      s.sets.forEach((x) => s.loop.forEach((n) => flag(x.L[n], n === name, 'cur')));
+      s.feats.forEach((e) => flag(e, e.dataset.feat === name));
+    },
+    tick(s) {
+      const on = s.seen && s.looping && film();
+      if (on && !s.timer) {
+        s.timer = setInterval(() => { s.k = (s.k + 1) % s.loop.length; this.show(s, s.loop[s.k]); }, LOOP_MS);
+      } else if (!on && s.timer) { clearInterval(s.timer); s.timer = 0; }
+    },
+    seen(s) { this.tick(s); },
     run(s, p) {
-      const z = seg(p, 0.18, 0.32), a = seg(p, 0.44, 0.5), f = seg(p, 0.7, 0.76);
+      const z = seg(p, 0.12, 0.4);
       s.sets.forEach((x) => {
         if (x.lay === 'wide' && layout === 'phone') return;
-        const L = x.L, r = x.r;
-        put(L.cockpit, z ? `scale(${lerp(1, x.kin, z).toFixed(4)})` : '', 1 - seg(p, 0.25, 0.32));
-        put(L.day, `scale(${lerp(Math.max(r[2], r[3]), 1, z).toFixed(4)})`, seg(p, 0.2, 0.27));
-        put(L.ask, tf(0, (1 - a) * x.h * 0.3), a);
-        put(L.family, tf((1 - f) * x.w * 0.35, 0), f);
+        put(x.L.cockpit, z ? `scale(${lerp(1, x.kin, z).toFixed(4)})` : '', 1);
+        flag(x.L.day, z >= 0.9, 'in');                 // the day arrives on its own, in one short fade, once the cockpit is inside its ticket
       });
-      const n = Math.round(lin(p, 0.52, 0.64) * s.text.length);
-      if (n !== s.n) { s.n = n; s.typed.textContent = s.text.slice(0, n); }
-      flag(s.ask, p >= 0.5 && p < 0.72);
-      flag(s.ask, n === s.text.length, 'sent');
-      s.bubs.forEach((b, i) => flag(b, p >= 0.78 + 0.06 * i));
-      const k = p < 0.27 ? 0 : p < 0.47 ? 1 : p < 0.72 ? 2 : 3;
-      s.feats.forEach((e, i) => flag(e, i === k));
+      const looping = p >= LOOP_AT;
+      if (looping !== s.looping) {
+        s.looping = looping;
+        s.k = looping ? 1 : 0;                         // the loop opens on Ask at once (the day was just seen), then the chat, then the day
+        this.show(s, s.loop[s.k]);
+        this.tick(s);
+      }
+      if (!looping) s.feats.forEach((e, i) => flag(e, i === (p < 0.3 ? 0 : 1)));
     },
   };
 
   // 4. things a search won't tell you: the roads draw themselves and the pins drop, each with its tip
   D.tips = {
-    init(s) { s.roads = s.qa('.cv-draw'); s.pins = s.qa('.cv-mpin'); s.cards = s.qa('.cv-tip'); s.at = [0.14, 0.3, 0.48, 0.7]; },
+    init(s) { s.roads = s.qa('.cv-draw'); s.pins = s.qa('.cv-mpin'); s.cards = s.qa('.cv-tip'); s.at = [0.14, 0.32, 0.5, 0.7]; },
     run(s, p) {
       const d = [lin(p, 0.04, 0.52), lin(p, 0.5, 0.74)];
       s.roads.forEach((r, i) => { const v = (1 - d[i]).toFixed(4); if (r.dataset.v !== v) { r.dataset.v = v; r.style.strokeDashoffset = v; } });
@@ -225,16 +208,12 @@
     },
   };
 
-  // 5. leave a trail: published, the thanks tick up, the hearts rise
+  // 5. leave a trail: the published trail slides in (its heart beats on its own, cover.css, only while it is on screen)
   D.trail = {
-    init(s) { s.card = s.q('.cv-trail .cv-deal'); s.stamp = s.q('.cv-stamp'); s.big = s.q('.cv-bigwrap'); s.cnt = s.q('.cv-count'); s.quote = s.q('.cv-quote'); s.copy = s.q('.cv-copy'); },
+    init(s) { s.card = s.q('.cv-trail .cv-deal'); },
     run(s, p) {
-      const e = seg(p, 0, 0.22);
+      const e = seg(p, 0, 0.35);
       put(s.card, tf((1 - e) * -s.W * 0.12, (1 - e) * s.H * 0.15, 0.92 + 0.08 * e, (1 - e) * -5), 0.2 + 0.8 * e);
-      flag(s.stamp, p >= 0.24);
-      flag(s.big, p >= 0.3);
-      count(s.cnt, p >= 0.3);
-      flag(s.quote, p >= 0.52);
     },
   };
 
@@ -245,24 +224,24 @@
       morphFrom(s, s.post);
     },
     run(s, p) {
-      const e = seg(p, 0, 0.2), m = seg(p, 0.36, 0.64), f = s.mf;
+      const e = seg(p, 0, 0.24), m = seg(p, 0.36, 0.66), f = s.mf;
       put(s.post, tf((1 - e) * s.W * 0.3, (1 - e) * s.H * 0.05, 1, (1 - e) * 8), e);
       put(s.deal, tf(0, 0, 1 - 0.15 * m, -6 * m), 1 - m);
-      put(s.morph, tf(f.dx * (1 - m), f.dy * (1 - m), lerp(f.sc, 1, m), (1 - m) * 6), clamp(m * 3, 0, 1));
-      flag(s.stamp, p >= 0.68);
+      put(s.morph, tf(f.dx * (1 - m), f.dy * (1 - m), lerp(f.sc, 1, m)), clamp(m * 3, 0, 1));
+      flag(s.stamp, p >= 0.7);
       if (layout === 'phone') put(s.copy, tf(0, -seg(p, 0.3, 0.42) * s.H * 0.06), 1 - seg(p, 0.3, 0.42));
       else put(s.copy, '', 1);
     },
   };
 
-  // the close: the beach opens out behind the line and the doors
+  // the close: the snowy forest opens out behind the line and the doors; the stickers arrive together
   D.end = {
-    init(s) { s.img = s.q('.cv-photo img'); s.last = s.q('.cv-last'); s.stk = s.qa('.cv-stk'); },
+    init(s) { s.img = s.q('.cv-photo img'); s.last = s.q('.cv-last'); s.stick = s.q('.cv-stick'); },
     run(s, p) {
       const e = seg(p, 0, 0.7);
       put(s.img, `scale(${lerp(1.3, 1, e).toFixed(4)})`);
       put(s.last, tf(0, (1 - e) * s.H * 0.12, 0.94 + 0.06 * e), 0.3 + 0.7 * e);
-      s.stk.forEach((k, i) => flag(k, p >= 0.25 + 0.06 * i));
+      flag(s.stick, p >= 0.3, 'stk-on');
     },
   };
 
@@ -292,6 +271,10 @@
   function frame() {
     ticking = false;
     const y = scrollY, on = film();
+    stages.forEach((s) => {                                    // on screen: what plays on its own (a loop, a beating heart) plays only then
+      const seen = on && y + vh > s.top && y < s.top + s.len + vh;
+      if (seen !== s.seen) { s.seen = seen; flag(s.el, seen, 'cv-seen'); if (s.d.seen) s.d.seen(s); }
+    });
     if (on) stages.forEach((s) => {
       if (y + vh < s.top - vh * 0.5 || y > s.top + s.len + vh * 1.5) return;          // far off screen: leave it as it is
       const p = held === s && hold !== null ? hold : clamp((y - s.top) / s.len, 0, 1);
@@ -344,7 +327,7 @@
   measure(); frame();
 
   const yAt = (key, p) => { const s = stages.find((x) => x.key === key); return s.top + s.len * p; };
-  const BEAT_P = [0.28, 0.49, 0.9];
+  const BEAT_P = [0.3, 0.6, 0.92];
   window.GA_COVER = {
     get layout() { return layout; }, get mode() { return mode; }, calm: CALM, debug: DEBUG, get film() { return film(); },
     progress: (key) => { const s = stages.find((x) => x.key === key); return s ? s.p : -1; },

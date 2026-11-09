@@ -43,7 +43,7 @@ def test_the_landing_javascript_fits_in_28_kb_gzipped(client, capsys):
 def test_the_landing_loads_no_3d_world(client):
     """No three.js, no world, no terrain, no stills: not as a script, a preload, a data-* address for a script to fetch later, or a picture."""
     html = client.get("/").text
-    for heavy in ("/assets/vendor/three", "/assets/js/cover/", "tahoe-", "/assets/cover/stills", "data-world", "data-three", "<canvas"):
+    for heavy in ("/assets/vendor/three", "/assets/js/cover/", "/assets/cover/tahoe-", "/assets/cover/stills", "data-world", "data-three", "<canvas"):
         assert heavy not in html, heavy
     cover_js = (ROOT / "assets/js/cover.js").read_text(encoding="utf-8")
     assert not re.search(r"three\.|/vendor/|three-0", cover_js) and "world.js" not in cover_js and "import(" not in cover_js and "modulepreload" not in cover_js

@@ -7,6 +7,15 @@ Both area photos are CC0 1.0 (public domain dedication; no attribution required,
 | santa-monica-beach-pier.jpg | Santa Monica State Beach and Pier | Andrek02 | https://commons.wikimedia.org/wiki/File:Santa_Monica_California_001.jpg |
 | venice-beach-los-angeles-hero.jpg | Venice Beach, Los Angeles | Blake Everett | https://commons.wikimedia.org/wiki/File:Venice_Beach,_Los_Angeles,_CA_01.jpg |
 
+## The cover's winter photos (cover v5, D-410)
+
+Both CC0 1.0 (Creative Commons Zero, public domain dedication; no attribution required), confirmed on the file pages on 2026-11-08, and credited anyway on the cover (on the photo and in the footer). Downloaded at full size and re-encoded as WebP (Pillow, LANCZOS, method 6); the phone's close is a 3:5 portrait cut round the path.
+
+| File | Shows | Author | Licence | Source |
+|---|---|---|---|---|
+| tahoe-winter-forest-1440.webp (1440 × 1012, q36), tahoe-winter-forest-phone-660.webp (660 × 1100, q42) | A snowy forest at Lake Tahoe (the cover's close) | Todd Diemer (first published on Unsplash, 2016) | CC0 1.0 | https://commons.wikimedia.org/wiki/File:Lake_Tahoe_winter_forest_(Unsplash).jpg |
+| tahoe-winter-heavenly-720.webp (720 × 300, a wide strip, q62) | South Lake Tahoe from the Heavenly observation deck, 17 February 2014 (the made-up blog post's picture) | Blake Everett | CC0 1.0 | https://commons.wikimedia.org/wiki/File:Lake_Tahoe,_California_02.jpg |
+
 ## Sample photos for the stay details (F-026)
 
 Generic hotel pictures from Wikimedia Commons, each confirmed CC0 1.0 or public domain on its file page. The app always captions them "Sample photo · <label>" and never presents them as the real hotel or room. Resized to 800 px wide, JPEG quality 80.
