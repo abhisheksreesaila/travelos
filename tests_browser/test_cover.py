@@ -1,8 +1,9 @@
-"""F-206, cover v4 (D-400 to D-406): the cover in a real browser. The opening shows at once in the visitor's day or night; each chapter is a stage
-whose screen stays while the scroll moves a camera over the app (the booking screen zooms to the flight beside the stay, the weather, the drive,
-pulls back, and its buttons fly out as partner chips; the trips deal in and one becomes Lena and Sam's; the cockpit dives into the day; the pins
-drop; the thanks tick up), on a laptop as on a phone (the calm desktop's exception, D-401); the moments that play on their own run on the motion
-tokens; a finger scrolls the whole story on a phone, starting on any screen; reduced motion, a short screen or no script give a still, readable
+"""F-206, cover v5 (D-410 on, over v4's D-400 to D-406): the cover in a real browser. The opening shows at once in the visitor's day or night;
+each chapter is a stage whose screen stays while the scroll moves a camera over the app (the booking screen zooms to the flight beside the stay,
+glides over the weather and the drive and pulls back, and where you book shows; the trips deal in and one becomes Lena and Sam's; the cockpit
+dives into the day, which arrives whole, never half see-through, then the screen loops through the day, Ask and the chat on its own, only while
+it is on screen; the pins drop), on a laptop as on a phone (the calm desktop's exception, D-401); the moments that play on their own run on the
+motion tokens; a finger scrolls the whole story on a phone, starting on any screen; reduced motion, a short screen or no script give a still, readable
 page; each screenshot loads only as it nears, in the visitor's layout and mode; the page never asks for three.js; nothing scrolls sideways from
 320 to 1440; a phone gets 16 px text and 48 px targets; a notch never covers anything; the words read at full strength in both modes; scrolling
 the booking stage on a CPU four times slower makes no long task; and production ignores the review switch."""
@@ -116,11 +117,11 @@ def test_scrolling_moves_the_story_through_every_scene(cover, size):
 
 @pytest.mark.parametrize("size", ["390", "1440"])
 def test_the_booking_stage_holds_its_screen_while_the_camera_zooms_pans_and_pulls_back(cover, size):
-    """On the phone and the laptop alike (D-401): zoom to the flight beside the stay, the weather (its number pops), the drive, the whole page,
-    then the four booking buttons glow and the partners' chips land."""
+    """On the phone and the laptop alike (D-401): zoom to the flight beside the stay, glide over the weather and the drive, pull back to the
+    whole page, where the partners show (D-413: three moves, no numbers, rings or chips flying)."""
     page = cover(SIZES[size])
     lenses, ks = [], {}
-    for p, word, spot in ((0.28, "0", "fs"), (0.49, "1", "wx"), (0.63, "1", "drive"), (0.74, "all", None), (0.95, "2", None)):
+    for p, word, spot in ((0.3, "0", "fs"), (0.52, "1", "wx"), (0.7, "1", "drive"), (0.95, "2", None)):
         _at(page, "book", p)
         page.wait_for_timeout(450)
         assert page.evaluate("GA_COVER.beat()") == word, p
@@ -129,27 +130,24 @@ def test_the_booking_stage_holds_its_screen_while_the_camera_zooms_pans_and_pull
         assert on == ([spot] if spot else []), (p, on)
         ks[p] = _scale(page, ".cv-cam")
         lenses.append(_box(page, ".cv-lens"))
-    assert ks[0.28] > 1.3 and ks[0.49] > 1.6 and ks[0.63] > 1.6 and ks[0.74] <= 1.01, ks
+        assert page.evaluate("getComputedStyle(document.querySelector('.cv-partners')).opacity") == ("1" if word == "2" else "0"), p
+    assert ks[0.3] > 1.3 and ks[0.52] > 1.6 and ks[0.7] > 1.6 and ks[0.95] <= 1.01, ks
     assert max(b[1] for b in lenses) - min(b[1] for b in lenses) <= 2 and max(b[0] for b in lenses) - min(b[0] for b in lenses) <= 2    # the screen stayed put
-    _at(page, "book", 0.49)
-    page.wait_for_function("document.querySelector('.cv-call[data-call=\"0\"] .cv-count').textContent === '43'")       # the number counts up to the screen's own
-    _at(page, "book", 0.97)
-    page.wait_for_timeout(450)
-    assert page.evaluate("[...document.querySelectorAll('.cv-ring')].every((r) => getComputedStyle(r).opacity === '1')")
-    chips = page.evaluate("[...document.querySelectorAll('.cv-chip')].map((c) => { const m = new DOMMatrix(getComputedStyle(c).transform); return [getComputedStyle(c).opacity, m.e, m.f, m.a]; })")
-    assert all(o == "1" and abs(x) < 0.5 and abs(y) < 0.5 and abs(a - 1) < 0.01 for o, x, y, a in chips), chips      # landed
+    chips = page.evaluate("[...document.querySelectorAll('.cv-chip')].map((c) => [c.classList.contains('soon'), c.textContent.trim()])")
+    assert [t for soon, t in chips if not soon] == ["AviasalesFlights", "KlookStays, cars, things to do"]
+    assert all(t.endswith("Soon") for soon, t in chips if soon) and len(chips) == 5
 
 
 def test_the_trips_deal_in_and_one_becomes_lena_and_sams(cover):
     page = cover(DESKTOP)
     _at(page, "head", 0.01)
     assert page.evaluate("getComputedStyle(document.querySelector('.cv-trip[data-k=\"2\"]')).opacity") == "0"
-    _at(page, "head", 0.36)
+    _at(page, "head", 0.34)
     assert page.evaluate("[...document.querySelectorAll('.cv-trip')].every((c) => getComputedStyle(c).opacity === '1')")
-    _at(page, "head", 0.52)
-    page.wait_for_timeout(500)
-    assert page.evaluate("document.querySelector('.cv-trip.pick').classList.contains('done') && getComputedStyle(document.querySelector('.cv-tripsfig .cv-stamp')).opacity === '1'")
+    _at(page, "head", 0.42)
+    assert page.evaluate("document.querySelector('.cv-trip.pick').classList.contains('done')")
     assert page.locator(".cv-trip.pick .cv-fb-b").is_visible()                      # Imported
+    assert page.locator(".cv-head .cv-stamp, .cv-burst").count() == 0                # one move, no stamp or burst on top of it
     _at(page, "head", 0.95)
     assert page.evaluate("getComputedStyle(document.querySelector('.cv-head .cv-morph')).opacity") == "1"
     assert page.evaluate("getComputedStyle(document.querySelector('.cv-head .cv-deal')).opacity") == "0"
@@ -157,25 +155,34 @@ def test_the_trips_deal_in_and_one_becomes_lena_and_sams(cover):
 
 
 @pytest.mark.parametrize("size", ["390", "1440"])
-def test_the_plan_comes_with_you_cockpit_day_ask_family(cover, size):
+def test_the_plan_comes_with_you_then_the_screen_loops_on_its_own(cover, size):
     page = cover(SIZES[size])
     scr = ".cv-phone" if size == "390" else ".cv-laptop"
-    for p, feat, layer in ((0.1, 0, "cockpit"), (0.38, 1, "day"), (0.66, 2, "ask"), (0.95, 3, "family")):
+    layer = lambda n: f"getComputedStyle(document.querySelector('{scr} [data-layer=\"{n}\"]')).opacity"      # noqa: E731
+    feat = lambda i: f"getComputedStyle(document.querySelectorAll('.cv-feat')[{i}]).opacity"                # noqa: E731
+    _at(page, "with", 0.1)
+    page.wait_for_timeout(450)
+    assert page.evaluate(feat(0)) == "1" and page.evaluate(layer("cockpit")) == "1" and page.evaluate(layer("day")) == "0"
+    # the dive: wherever the scroll stops, the day is either not there yet or whole (v4's messy halfway, two see-through screens, is gone)
+    for p in (0.2, 0.28, 0.33, 0.36, 0.39, 0.42):
         _at(page, "with", p)
         page.wait_for_timeout(450)
-        assert page.evaluate(f"getComputedStyle(document.querySelectorAll('.cv-feat')[{feat}]).opacity") == "1", p
-        assert page.evaluate(f"getComputedStyle(document.querySelector('{scr} [data-layer=\"{layer}\"]')).opacity") == "1", (p, layer)
-    _at(page, "with", 0.66)
-    assert page.locator(".cv-typed").inner_text() == cover_page.ASK_SAYS          # typed by the scroll, whole by now
-    _at(page, "with", 0.58)
-    typed = page.locator(".cv-typed").inner_text()
-    assert 0 < len(typed) < len(cover_page.ASK_SAYS) and cover_page.ASK_SAYS.startswith(typed)
-    _at(page, "with", 0.95)
-    page.wait_for_timeout(450)
-    assert page.evaluate("[...document.querySelectorAll('.cv-bub')].every((b) => getComputedStyle(b).opacity === '1')")
+        assert page.evaluate(layer("day")) in ("0", "1"), p
+    assert page.evaluate(layer("day")) == "1" and page.evaluate(feat(1)) == "1"
+    # then the screen plays Ask and the chat on its own, the words following, with no more scrolling
+    _at(page, "with", 0.7)
+    page.wait_for_function(f"{layer('ask')} === '1' && {feat(2)} === '1'")
+    page.wait_for_function(f"{layer('family')} === '1' && {feat(3)} === '1'", timeout=8000)
+    assert abs(page.evaluate("GA_COVER.progress('with')") - 0.7) < 0.01           # the loop played with no scrolling
+    # off screen it waits
+    _at(page, "tips", 0.9)
+    page.wait_for_timeout(200)
+    now = page.evaluate(f"[...document.querySelectorAll('{scr} .cv-layer.cur')].map((l) => l.dataset.layer).join()")
+    page.wait_for_timeout(3200)
+    assert page.evaluate(f"[...document.querySelectorAll('{scr} .cv-layer.cur')].map((l) => l.dataset.layer).join()") == now
 
 
-def test_the_pins_drop_with_their_tips_and_the_thanks_tick_up(cover):
+def test_the_pins_drop_with_their_tips_and_the_trail_slides_in(cover):
     page = cover(PHONE)
     _at(page, "tips", 0.2)
     page.wait_for_timeout(450)
@@ -185,22 +192,25 @@ def test_the_pins_drop_with_their_tips_and_the_thanks_tick_up(cover):
     page.wait_for_timeout(450)
     assert page.evaluate("[...document.querySelectorAll('.cv-mpin')].every((p) => p.classList.contains('on'))")
     assert page.evaluate("getComputedStyle(document.querySelector('.cv-tip[data-k=\"3\"]')).opacity") == "1"
-    _at(page, "trail", 0.1)
-    assert page.locator(".cv-trail .cv-count").inner_text() == "0"
+    heart = "getComputedStyle(document.querySelector('.cv-beat-heart')).animationPlayState"
+    assert page.evaluate(heart) == "paused"                                         # the trail's heart beats only while it is on screen
     _at(page, "trail", 0.6)
-    page.wait_for_function("document.querySelector('.cv-trail .cv-count').textContent === '12'")
+    assert page.evaluate(heart) == "running"
+    assert page.evaluate("getComputedStyle(document.querySelector('.cv-trail .cv-deal')).opacity") == "1"
+    assert page.locator(".cv-trail .cv-num").inner_text() == "12"
 
 
 def test_the_moments_move_only_on_the_motion_tokens(cover):
     page = cover(PHONE)
     tok = page.evaluate("""() => { const s = getComputedStyle(document.documentElement); return ['--motion-spring-dur', '--motion-spring', '--motion-screen-dur'].map((k) => s.getPropertyValue(k).trim()); }""")
     secs = lambda v: f"{float(v.rstrip('ms')) / 1000:g}s"      # noqa: E731
-    for sel in (".cv-stamp", ".cv-mpin-in", ".cv-bub", ".cv-call"):
+    for sel in (".cv-stamp", ".cv-mpin-in"):
         d, f = page.evaluate(f"(() => {{ const s = getComputedStyle(document.querySelector('{sel}')); return [s.transitionDuration, s.transitionTimingFunction]; }})()")
         assert d.split(", ")[0] == secs(tok[0]), (sel, d)
         nums = lambda s: [float(x) for x in re.findall(r"[\d.]+", s)]      # noqa: E731
         assert nums(f.split("),")[0]) == nums(tok[1]), (sel, f)
-    assert page.evaluate("getComputedStyle(document.querySelector('.cv-beat')).transitionDuration").split(", ")[0] == secs(tok[2])
+    for sel in (".cv-beat", ".cv-partners", '.cv-with [data-layer="ask"]', '.cv-with [data-layer="day"]'):
+        assert page.evaluate(f"getComputedStyle(document.querySelector('{sel}')).transitionDuration").split(", ")[0] == secs(tok[2]), sel
 
 
 @pytest.mark.parametrize("size", ["390", "1440"])
@@ -208,7 +218,7 @@ def test_reduced_motion_is_a_still_readable_page(cover, size):
     page = cover(SIZES[size], motion="reduce")
     assert page.evaluate("document.documentElement.classList.contains('cv-calm') && !document.documentElement.classList.contains('cv-film')")
     assert page.evaluate("[...document.querySelectorAll('.cv-stick')].every((s) => getComputedStyle(s).position !== 'sticky')")
-    hidden = page.evaluate("""() => [...document.querySelectorAll('.cv-beat, .cv-trip, .cv-tip, .cv-feat, .cv-bub, .cv-chip, .cv-quote, .cv-morph, .cv-last')]
+    hidden = page.evaluate("""() => [...document.querySelectorAll('.cv-beat, .cv-trip, .cv-tip, .cv-feat, .cv-chip, .cv-partners, .cv-quote, .cv-morph, .cv-last')]
       .filter((e) => getComputedStyle(e).opacity !== '1' || !e.getClientRects().length).map((e) => e.className)""")
     assert hidden == []
     assert page.evaluate("[...document.querySelectorAll('.cv-stage, .cv-stage *')].every((e) => !e.style.transform)")       # nothing moved
@@ -226,9 +236,9 @@ def test_a_short_screen_gets_the_still_too(cover):
 
 def test_without_the_script_every_word_and_picture_shows(cover):
     page = cover(PHONE, js=False)
-    assert page.evaluate("[...document.querySelectorAll('.cv-beat, .cv-trip, .cv-tip, .cv-feat, .cv-bub, .cv-chip, .cv-quote, .cv-morph')].every((e) => getComputedStyle(e).opacity === '1')")
-    assert page.locator(".cv-beat").count() == 4 and all(page.locator(".cv-beat").nth(k).is_visible() for k in range(4))
-    assert page.locator(".cv-typed").inner_text() == cover_page.ASK_SAYS
+    assert page.evaluate("[...document.querySelectorAll('.cv-beat, .cv-trip, .cv-tip, .cv-feat, .cv-chip, .cv-partners, .cv-quote, .cv-morph')].every((e) => getComputedStyle(e).opacity === '1')")
+    assert page.locator(".cv-beat").count() == 3 and all(page.locator(".cv-beat").nth(k).is_visible() for k in range(3))
+    assert page.locator(".cv-chip.soon").count() == 3
 
 
 @pytest.mark.parametrize("scheme", ["light", "dark"])
@@ -330,11 +340,13 @@ def test_nothing_scrolls_sideways(cover, width, scheme):
 def test_a_phone_reads_16px_text_and_taps_48px_targets(cover):
     page = cover(PHONE, motion="reduce")
     small = page.evaluate("""() => [...document.querySelectorAll('main p, main li, main b, main span, .cv-btn, .cv-foot p, .cv-foot nav a, .cv-ill b, .cv-last h2')]
-      .filter(e => e.getClientRects().length && e.textContent.trim() && !e.closest('.cv-eyebrow, .cv-steps, .cv-tag, .cv-hint, .cv-stamp, .cv-url'))
+      .filter(e => e.getClientRects().length && e.textContent.trim() && !e.closest('.cv-eyebrow, .cv-soon, .cv-tag, .cv-hint, .cv-stamp, .cv-url'))
       .map(e => [e.textContent.trim().slice(0, 30), parseFloat(getComputedStyle(e).fontSize)]).filter(([, s]) => s < 16)""")
     assert small == []
     eyebrows = page.evaluate("() => [...document.querySelectorAll('.cv-eyebrow')].map(e => parseFloat(getComputedStyle(e).fontSize))")
     assert len(eyebrows) == 4 and min(eyebrows) >= 13                                # all-caps labels only
+    soon = page.evaluate("() => [...document.querySelectorAll('.cv-soon')].map(e => [getComputedStyle(e).textTransform, parseFloat(getComputedStyle(e).fontSize)])")
+    assert len(soon) == 3 and all(t == "uppercase" and s >= 13 for t, s in soon), soon    # the partners' "Soon" is an all-caps label too
     targets = page.evaluate("""() => [...document.querySelectorAll('.cv-top a, .cv-ctas a, .cv-foot nav a, .cv-close .pf-card a')]
       .filter(e => e.getClientRects().length).map(e => [e.textContent.trim(), e.getBoundingClientRect().height])""")
     assert len(targets) >= 7 and all(h >= 48 for _, h in targets), targets
@@ -400,7 +412,7 @@ CONTRAST = """sel => { const lin = (c) => { c /= 255; return c <= 0.03928 ? c / 
 def test_every_headline_and_its_words_read_at_full_strength(cover, scheme):
     page = cover(DESKTOP, scheme, motion="reduce")
     ratios = page.evaluate(CONTRAST, "main h1, main h1 em, main h2, main h2 em, main h3, .cv-say, .cv-lede, .cv-eyebrow, .cv-beat, .cv-disc, .cv-cap, .cv-ill b, .cv-ill p, .cv-mute, "
-                                     ".cv-stops li, .cv-fake-btn, .cv-chip, .cv-big, .cv-bub, .cv-tip-n, .cv-last h2, .cv-last h2 em, .cv-credit, .cv-foot p")
+                                     ".cv-stops li, .cv-fake-btn, .cv-chip b, .cv-chip-what, .cv-chip-name, .cv-soon, .cv-big, .cv-tip-n, .cv-last h2, .cv-last h2 em, .cv-credit, .cv-foot p")
     assert len(ratios) >= 50 and min(r for _, r in ratios) >= 4.5, sorted(ratios, key=lambda x: x[1])[:4]
 
 

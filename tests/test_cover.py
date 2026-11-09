@@ -1,7 +1,7 @@
-"""F-206, cover v4 (D-400 on, over v3's D-380 to D-392): the signed-out landing is v3's sales story filmed as a camera over the app: "Take a trip.
+"""F-206, cover v5 (D-410 on, over v4's D-400 to D-406 and v3's D-380 to D-392): the signed-out landing is v3's sales story filmed as a camera over the app: "Take a trip.
 Leave a trail." and one button, then the three promises (book with everything in view; a head start, then it comes with you; leave a trail), each
 a stage painted with the app's real screens and, where the feature is not built yet, a drawn card that says it is made up; then the line again over
-a beach, the doors and the footer.
+a snowy Tahoe forest, the doors and the footer.
 
 What a stranger reads and in what order, where its buttons go, the screenshots behind each part, the booking stage's beats, spotlights, numbers
 and partners, the disclosure, what a search engine or a shared link sees, and that a signed-in person keeps the landing they had. The film itself
@@ -32,7 +32,7 @@ STORY = (
 )
 BEATS = ("A cheaper flight, a pricier cabin? See both at once and decide.",
          "The weather for your dates and the drive from the airport, right where you book.",
-         "Book on the sites you trust. Your bookings stay yours.")
+         "You book on the booking site itself. Your bookings stay yours.")
 FEATURES = {"cockpit": "Every day on one line.", "day": "Each day, to the hour.", "ask": "Change it by asking.", "family": "Everyone on the same page."}
 # scene -> its screenshots, in order (the opening and the tools that come with you draw a laptop and a phone: each shows its own layout)
 SHOTS = {0: ["cockpit", "cockpit"], 1: ["book"], 2: ["trail"], 3: ["cockpit", "day", "ask", "family"] * 2, 6: ["creators"]}
@@ -89,27 +89,41 @@ def test_the_opening_has_one_door_plan_a_trip(client):
     assert "cv-tabs" not in opening and "Fourteen tabs" not in opening and "homework" not in _text(opening)    # the fourteen tabs are gone (D-381)
 
 
-def test_the_booking_scene_is_three_beats_and_a_pullback_over_one_screenshot(client):
-    """One screen; the camera keys (flight beside stay, weather, drive) and the spotlights sit on the crop; the numbers that pop are the screen's own
-    (43°F highs, the 83 min drive: "1 h 23 min"); the partners' chips are the sites the booking buttons and links name."""
+def test_the_booking_scene_is_three_beats_over_one_screenshot(client):
+    """One screen; the camera keys (flight beside stay, weather, drive) and the spotlights sit on the crop; the third beat is the pullback, with
+    where you book beside it (cover v5, D-413: no numbers popping, no rings, no chips flying out)."""
     scene = _scenes(_cover(client))[1]
-    beats = re.findall(r'<p data-beat="(\w+)" class="cv-beat[^"]*">(.*?)</p>', scene, re.S)
-    assert [b for b, _ in beats] == ["0", "1", "all", "2"]
-    assert [_text(t).strip() for b, t in beats if b != "all"] == list(BEATS) and _text(beats[2][1]).strip() == "Everything in one view."
+    beats = re.findall(r'<p data-beat="(\w+)" class="cv-beat">(.*?)</p>', scene, re.S)
+    assert [b for b, _ in beats] == ["0", "1", "2"]
+    assert [_text(t).strip() for _, t in beats] == [BEATS[0], BEATS[1], "Everything in one view. " + BEATS[2]]
     assert len(re.findall(r'<picture\b', scene)) == 1                     # one screen; the camera moves over it
     spots = re.findall(r'<span data-spot="(\w+)" class="cv-spot" style="left:([\d.]+)%;top:([\d.]+)%;width:([\d.]+)%;height:([\d.]+)%"', scene)
-    rings = re.findall(r'<span class="cv-ring" style="left:([\d.]+)%;top:([\d.]+)%;width:([\d.]+)%;height:([\d.]+)%"', scene)
-    assert [k for k, *_ in spots] == ["fs", "wx", "drive"] and len(rings) == 4         # the four booking buttons glow
-    for x, y, w, h in [b for _, *b in spots] + rings:
+    assert [k for k, *_ in spots] == ["fs", "wx", "drive"]
+    for x, y, w, h in [b for _, *b in spots]:
         assert 0 <= float(x) and float(x) + float(w) <= 100.01 and 0 <= float(y) and float(y) + float(h) <= 100.01
     lens = re.search(r'<div[^>]*class="cv-lens"[^>]*>', scene).group(0)
     for k in ("fs", "fs-phone", "wx", "drive"):
         z = [float(v) for v in re.search(rf'data-cam-{k}="([^"]+)"', lens).group(1).split(",")]
         assert len(z) == 4 and z[0] + z[2] <= 1.001 and z[1] + z[3] <= 1.001, k
-    nums = re.findall(r'<span data-to="(\d+)" class="cv-count">', scene)
-    assert nums == ["43", "83"] and "Highs 43°F" in cover.ALT["book"].replace("typical weather", "Highs 43°F") and "1 h 23 min" in cover.ALT["book"]
-    chips = [_text(c).strip() for c in re.findall(r'<li data-from="[^"]+" class="cv-chip[^"]*">(.*?)</li>', scene, re.S)]
-    assert chips == ["Aviasales", "Expedia", "Airbnb", "Vrbo", "Expedia", "GetYourGuide"]
+    for gone in ("cv-ring", "cv-call", "cv-count", "cv-steps", "data-from"):
+        assert gone not in scene, gone
+    assert "1 h 23 min" in cover.ALT["book"]
+
+
+def test_the_cover_names_only_the_real_partners_as_live(client):
+    """Today GitAway's partners are Aviasales (flights) and Klook (stays, cars, things to do): only they show as live; Expedia, Booking.com and
+    more sites show muted with "Soon" (D-411). No other booking site's name appears anywhere else in the cover's words."""
+    html = _cover(client)
+    scene = _scenes(html)[1]
+    live = [_text(c).strip() for c in re.findall(r'<li class="cv-chip k-[a-z]+">(.*?)</li>', scene, re.S)]
+    soon = [_text(c).strip() for c in re.findall(r'<li class="cv-chip soon">(.*?)</li>', scene, re.S)]
+    assert live == ["Aviasales Flights", "Klook Stays, cars, things to do"]
+    assert soon == ["Expedia Soon", "Booking.com Soon", "More sites Soon"]
+    from gitaway.partners.registry import NAMES
+    rest = _text(re.sub(r'<li class="cv-chip soon">.*?</li>', "", html, flags=re.S))
+    for name in set(NAMES.values()) - {"Aviasales", "Klook"}:
+        assert name not in rest, name
+    assert "partner" not in _text(re.search(r"<footer.*?</footer>", html, re.S).group(0)).lower()
 
 
 def test_every_screenshot_is_real_on_disk_for_its_layout_and_mode(client):
@@ -142,19 +156,39 @@ def test_every_screenshot_is_real_on_disk_for_its_layout_and_mode(client):
 
 
 def test_the_screenshots_stay_light():
-    """One visitor downloads one layout in one mode: on a phone the booking crop and six phone screenshots; on a laptop the crop, the laptop's
-    screens (at 1440 on a sharp screen), the phone beside it and the close's beach."""
+    """One visitor downloads one layout in one mode: on a phone the booking crop, six phone screenshots, the close's portrait cut and the blog
+    post's picture; on a laptop the crop, the laptop's screens (at 1440 on a sharp screen), the phone beside it and the close's wide photo."""
     shots = ROOT / "assets/cover/shots"
     phone_set = ("cockpit", "trail", "day", "ask", "family", "creators")
     wide_set = ("cockpit", "trail", "day", "ask", "family", "creators")
-    beach = (ROOT / cover.CLOSE_PHOTO[0].lstrip("/")).stat().st_size
+    size = lambda src: (ROOT / src.lstrip("/")).stat().st_size      # noqa: E731
+    post = size(cover.POST_PHOTO[0])
     for mode in ("light", "dark"):
         book = (shots / f"book-wide-{mode}-1600.webp").stat().st_size
-        phone = book + sum((shots / f"{n}-phone-{mode}-600.webp").stat().st_size for n in phone_set) + beach
+        phone = book + sum((shots / f"{n}-phone-{mode}-600.webp").stat().st_size for n in phone_set) + size(cover.CLOSE_PHOTO[3]) + post
         assert phone <= 650_000, (mode, phone)
         for w, cap in ((960, 700_000), (1440, 1_000_000)):
-            wide = phone + sum((shots / f"{n}-wide-{mode}-{w}.webp").stat().st_size for n in wide_set) - (shots / f"trail-phone-{mode}-600.webp").stat().st_size - (shots / f"creators-phone-{mode}-600.webp").stat().st_size
+            wide = book + post + size(cover.CLOSE_PHOTO[0]) + sum((shots / f"{n}-wide-{mode}-{w}.webp").stat().st_size for n in wide_set) \
+                + sum((shots / f"{n}-phone-{mode}-600.webp").stat().st_size for n in ("cockpit", "day", "ask", "family"))
             assert wide <= cap, (w, mode, wide)
+
+
+def test_the_closing_photo_is_snowy_tahoe_and_credited(client):
+    """Tahoe is the example and it is winter: the close is a CC0 snowy forest at Lake Tahoe and the blog post's picture is South Lake Tahoe in
+    February (D-410), each recorded in assets/photos/CREDITS.md (source, author, licence) and credited on the cover; each file stays small."""
+    html = _cover(client)
+    close = _close(html)
+    credits = (ROOT / "assets/photos/CREDITS.md").read_text(encoding="utf-8")
+    for photo, by in ((cover.CLOSE_PHOTO, cover.CLOSE_PHOTO[5]), (cover.POST_PHOTO, cover.POST_PHOTO[4])):
+        for f in [f for f in photo if isinstance(f, str) and f.startswith("/assets/photos/")]:
+            assert (ROOT / f.lstrip("/")).is_file() and (ROOT / f.lstrip("/")).stat().st_size <= 400_000, f
+            row = next(line for line in credits.splitlines() if Path(f).name in line)
+            assert by in row and "CC0 1.0" in row and "https://commons.wikimedia.org/wiki/File:" in row, row
+            assert f in html, f
+        assert by in _text(re.search(r"<footer.*?</footer>", html, re.S).group(0))
+    assert re.search(rf'<source media="{re.escape(cover.PHONE_Q)}" srcset="{cover.CLOSE_PHOTO[3]}">', close)       # a phone gets its own portrait cut
+    assert f"{cover.CLOSE_PHOTO[4]} · photo {cover.CLOSE_PHOTO[5]}, CC0" in _text(close)
+    assert "venice" not in re.search(r'<div class="cv-photo">.*?</div>', close, re.S).group(0).lower()
 
 
 def test_the_screenshots_show_only_the_made_up_family():
@@ -193,9 +227,10 @@ def test_the_tools_that_come_with_you_each_have_a_headline_and_a_screen(client):
     assert [(n, _text(h).strip()) for n, h in arts] == list(FEATURES.items())
     for name in FEATURES:                                                  # each on the laptop's screen and the phone's
         assert len(re.findall(rf'<div data-layer="{name}" class="cv-layer">', scene)) == 2, name
-    assert cover.ASK_SAYS in _text(scene)                                  # the request Ask types, whole without the film
-    for who, line in cover.CHAT:
-        assert line in _text(scene)
+    assert "Move snowshoeing after lunch." in _text(scene)                 # Ask's own words, in the copy
+    assert re.search(r'data-loop="day,ask,family"', scene)                  # after the dive the screen loops through them on its own (D-412)
+    for gone in ("cv-typed", "cv-bub", "cv-ask"):                            # no request typing itself, no bubbles popping one by one
+        assert gone not in scene, gone
 
 
 @pytest.mark.parametrize("mode", ["1", "0"], ids=["showcase", "production"])

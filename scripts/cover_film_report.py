@@ -1,7 +1,7 @@
-"""The cover's film as frame strips for review (cover v4, D-400..): the page scrolled to set points of each stage, at 390 and 1440, light and dark,
-one contact sheet each in docs/report/cover-v4-<width>-<mode>.png, and with --video a short scroll-through recording of each size.
+"""The cover's film as frame strips for review (cover v4, D-400..; v5, D-410..): the page scrolled to set points of each stage, at 390 and 1440,
+light and dark, one contact sheet each in docs/report/cover-<tag>-<width>-<mode>.png, and with --video a short scroll-through recording of each size.
 
-    pixi run python scripts/cover_film_report.py [--base http://127.0.0.1:6034] [--video] [--only 390-light]
+    pixi run python scripts/cover_film_report.py [--base http://127.0.0.1:6034] [--tag v5] [--video] [--only 390-light]
 
 Frames scroll the real page (no ?p= hold), wait for the moments that play on their own to settle, and label each frame with its stage and point.
 """
@@ -15,9 +15,9 @@ from playwright.sync_api import sync_playwright
 REPO = Path(__file__).resolve().parent.parent
 OUT = REPO / "docs" / "report"
 SIZES = {"390": {"width": 390, "height": 844}, "1440": {"width": 1440, "height": 900}}
-POINTS = (("hero", 0), ("hero", 0.5), ("hero", 1), ("book", 0.06), ("book", 0.28), ("book", 0.49), ("book", 0.63), ("book", 0.74), ("book", 0.86), ("book", 0.97),
-          ("head", 0.2), ("head", 0.5), ("head", 0.9), ("with", 0.1), ("with", 0.26), ("with", 0.4), ("with", 0.62), ("with", 0.92),
-          ("tips", 0.35), ("tips", 0.95), ("trail", 0.7), ("creators", 0.2), ("creators", 0.9), ("end", 0.9))
+POINTS = (("hero", 0), ("hero", 0.5), ("hero", 1), ("book", 0.06), ("book", 0.3), ("book", 0.52), ("book", 0.7), ("book", 0.95),
+          ("head", 0.2), ("head", 0.42), ("head", 0.62), ("head", 0.9), ("with", 0.1), ("with", 0.27), ("with", 0.37), ("with", 0.45), ("with", 0.7), ("with", 0.95),
+          ("tips", 0.35), ("tips", 0.95), ("trail", 0.6), ("creators", 0.2), ("creators", 0.9), ("end", 0.9))
 SETTLED = """() => [...document.images].filter((im) => { const r = im.getBoundingClientRect(); return r.bottom > 0 && r.top < innerHeight && r.width > 2; })
   .every((im) => im.complete && im.naturalWidth > 0)"""
 
@@ -56,7 +56,7 @@ def sheet(images, cols):
     return board
 
 
-def video(browser, base, size, scheme):
+def video(browser, base, size, scheme, tag):
     vp = SIZES[size]
     phone = vp["width"] < 760
     ctx = browser.new_context(viewport=vp, color_scheme=scheme, is_mobile=phone, has_touch=phone, record_video_dir=str(OUT / "_video"), record_video_size=vp)
@@ -73,7 +73,7 @@ def video(browser, base, size, scheme):
     page.wait_for_timeout(600)
     path = page.video.path()
     ctx.close()
-    dest = OUT / f"cover-v4-{size}-{scheme}.webm"
+    dest = OUT / f"cover-{tag}-{size}-{scheme}.webm"
     Path(path).replace(dest)
     return dest
 
@@ -82,6 +82,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--base", default="http://127.0.0.1:6034")
     ap.add_argument("--video", action="store_true")
+    ap.add_argument("--tag", default="v5")
     ap.add_argument("--only", default="")
     a = ap.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
@@ -92,11 +93,11 @@ def main():
                 if a.only and a.only != f"{size}-{scheme}":
                     continue
                 ims = frames(browser, a.base, size, scheme)
-                path = OUT / f"cover-v4-{size}-{scheme}.png"
+                path = OUT / f"cover-{a.tag}-{size}-{scheme}.png"
                 sheet(ims, 8 if size == "390" else 4).save(path, optimize=True)
                 print(path)
                 if a.video and scheme == "light":
-                    print(video(browser, a.base, size, scheme))
+                    print(video(browser, a.base, size, scheme, a.tag))
         browser.close()
 
 
