@@ -1370,8 +1370,8 @@ Design: https://claude.ai/artifact/MHU9PzyCnVuHaKZ3TAQzDb (artboard "trip grid")
 - [x] everything works as plain links without the script; off the showcase both routes are a 404
 - [ ] the founder looks at it on a laptop and a phone
 
-## F-218 Real stays in the trip grid [blocked]
-Blocked: open a Stay22 account (hub.stay22.com), set its Direct Travel API key as `STAY22_API_KEY` on this machine, then say go. The first step is one real call to learn the answer's shape (docs/lessons.md).
+## F-218 Real stays in the trip grid [parked]
+Parked by D-424: LiteAPI replaces Stay22 (F-220).
 - [ ] `gridsource` reads stays with live prices per site from Stay22, cached and budgeted like the fare
 - [ ] flights by time from a real source, or the grid falls back to one "cheapest fare" column that says so
 - [ ] the grid opens off the showcase for a place with real stays; nothing invented is ever in a square
@@ -1383,3 +1383,57 @@ Needs: F-217 looked at by the founder · Decisions: D-421
 - [ ] the lowest fare under each day of the strip, from the fare cache
 - [ ] kinds of trip (beach, hike, snow): a tint and three sourced facts each
 - [ ] a model rewrites a loose sentence into the reader's words (D-417)
+
+# The trip matrix (brief: docs/briefs/unified-booking.md, approved 2026-11-12 · D-424)
+Headline "Compare the whole trip. Choose it together." One source, LiteAPI; prices are Preview and booking opens after the family test. Design first: the designer drafts the matrix, the place art and the cover before their build tickets start.
+
+## F-220 LiteAPI connection [todo]
+Brief: docs/briefs/unified-booking.md · Research: docs/research/liteapi-shapes.md · Needs: `LITEAPI_KEY` (sandbox set 2026-11-12)
+- [ ] `gitaway/liteapi.py`: hotel rates for a place, dates and party, and flight offers for legs and a party, behind one `TRANSPORT` the tests replace
+- [ ] answers are parsed from recorded real sandbox answers (no invented shapes); HTML descriptions stripped; opaque ids kept verbatim and never shown
+- [ ] one shared cache (stays and flights, ages shown) and a daily search budget per family and in total; over budget is said, never a silent blank
+- [ ] /admin says sandbox or live (by the key's prefix) and today's searches
+- [ ] `gridsource` reads stays and flights from it off the showcase; nothing invented is ever in a square
+
+## F-221 Design: the matrix, the place art, the cover [todo]
+Needs: none · Skill: designer (Stitch project 5068253051282871529)
+- [ ] the matrix across places and dates, phone and laptop, 2 or 3 options, in Direction A with translucency only on the floating islands
+- [ ] weather in the calendar and the place art for the first 10 places (a drawn set of our own)
+- [ ] the cover in three parts: Compare · Plan it together · Leave a trail others can follow (Bloggers and vloggers welcome); calm, few moves
+- [ ] the founder picks; the handoff is docs/design/trip-matrix.md
+
+## F-222 The matrix across places and dates [todo]
+Needs: F-220, F-221
+- [ ] the sentence reads "or nearby" and "give or take N days" by rules
+- [ ] squares fill in as answers arrive, cheapest first; far squares are searched when scrolled to
+- [ ] each square is the whole trip: flight + stay + airport drive, with Preview and the age of the price
+- [ ] the book button says "Booking opens soon" and saves the square to the trip
+
+## F-223 Weather in the calendar and the place's art [todo]
+Needs: F-221
+- [ ] each day of the strip wears its sky (forecast near, typical labelled far); rain said plainly
+- [ ] the first 10 places wear their art on the matrix and the trip
+
+## F-224 Choose it together [todo]
+Needs: F-222 · Decisions: the owner decides; friends heart without an account (brief)
+- [ ] hearts on squares with who (family members signed in; guests by first name through the owner's link)
+- [ ] a thread per square; the shortlist rises by hearts
+- [ ] the owner taps "This one" and it becomes the family's trip; everyone is told
+- [ ] the shared link is long, unguessable and can be turned off; nothing private is on it
+
+## F-225 Price watch on hearted squares [todo]
+Needs: F-224
+- [ ] a hearted square says when its price moved and by how much, from the cache refresh
+
+## F-226 The report and the Instagram card [todo]
+Needs: F-221
+- [ ] after planning, a fun report of what the family compared and found
+- [ ] a trip card image (the place's art, dates, route, a link back) shared through the phone's share sheet
+
+## F-227 The cover rebuilt [todo]
+Needs: F-221
+- [ ] three parts under the headline, calm on a laptop and smooth on a mid-range phone; real screens from the matrix
+
+## F-228 The family test [todo]
+Needs: F-222, F-224
+- [ ] 5 to 10 families plan with the matrix; success is someone finding an option they did not know about and changing their plan; then decide on booking
