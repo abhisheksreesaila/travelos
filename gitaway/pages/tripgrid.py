@@ -36,7 +36,8 @@ PETS = ("dog", "cat", "pet")
 MAX_COLUMNS = 12                                             # tripgrid.css has a column rule for each count up to this
 SAMPLE = "Sample prices. Nothing is booked."
 FINE = "Every booking happens on the partner's site, under their terms and their support. GitAway never takes payment."
-MISSING = {"place": "Say where to, like “to San Diego”.", "dates": "Say when, like “Dec 12 to 16”.", "party": f"GitAway plans for up to {catalog.MAX_TRAVELERS} travelers."}
+MISSING = {"place": "Say where to, like “to San Diego”.", "dates": "Say when, like “Dec 12 to 16”.", "party": f"GitAway plans for up to {catalog.MAX_TRAVELERS} travelers.",
+           "flex": f"Say give or take 0 to {tripsentence.MAX_FLEX} days, like “give or take 2 days”."}
 
 
 @dataclass(frozen=True)

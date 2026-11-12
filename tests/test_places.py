@@ -106,3 +106,29 @@ def test_start_remembers_the_place_of_saved_picks(client):
     sign_in(client, "ari")
     client.get(f"/plan?to=sd&{TRIP}")
     assert "SD with the kids" in client.get("/start").text
+
+
+# ---- F-222: a hand-made list of nearby places for "or nearby" ----
+
+def test_san_diego_is_near_los_angeles_and_orange_county():
+    from gitaway.partners import places
+    assert [p.name for p in places.nearby(places.resolve("San Diego"))] == ["Los Angeles", "Orange County"]
+    assert places.nearby(places.resolve("sd, CA")) == ()          # an unknown place has no nearby list
+    assert places.nearby(None) == ()
+
+
+def test_every_nearby_place_is_a_known_place_with_an_airport_and_never_itself():
+    from gitaway.partners import places
+    assert len(places.NEARBY) >= 10
+    for name, near in places.NEARBY.items():
+        here = places.resolve(name)
+        assert here.known and here.name == name and here.iata, name
+        assert 1 <= len(near) <= places.MAX_NEARBY and len(set(near)) == len(near), name
+        for other in places.nearby(here):
+            assert other.known and other.iata and other.name != name, (name, other.name)
+
+
+def test_orange_county_is_a_place():
+    from gitaway.partners import places
+    oc = places.resolve("Orange County")
+    assert (oc.known, oc.iata, oc.slug, oc.region) == (True, "SNA", "orangecounty", "California")

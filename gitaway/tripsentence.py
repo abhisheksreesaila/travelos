@@ -1,4 +1,5 @@
 """The search as one sentence (F-217): "A family of 4 with Grandma and the dog, SFO to Orlando, Dec 12 to 16, within 20 miles of Disney, under $3,000."
+F-222 adds two widenings for the trip matrix: "San Diego or nearby" (the places in partners/places.py NEARBY) and "Dec 12 to 16 give or take 2 days" (0 to MAX_FLEX).
 
     read(text, today)   an Ask: what the sentence says, part by part. Nothing is guessed: a part it could not read is left empty and named in `Ask.unread`
     write(ask)          the same Ask as one tidy sentence, so a retyped search comes back in the app's words
@@ -18,6 +19,7 @@ from gitaway.partners import places
 MAX_TEXT = 300
 MIN_BUDGET_CENTS, MAX_BUDGET_CENTS = 50_000, 2_000_000      # $500 to $20,000: the ends of the page's budget slider; outside them it is not read as a budget
 MAX_MILES = 200
+MAX_FLEX = 3                           # "give or take" reaches at most this many days either way (F-222): 7 start days at most
 KID_AGE = 8                            # the age a kid counts as when the sentence gives none: a child fare, a seat of their own
 _MONTHS = {m: i for i, names in enumerate((("jan", "january"), ("feb", "february"), ("mar", "march"), ("apr", "april"), ("may",), ("jun", "june"), ("jul", "july"), ("aug", "august"),
                                            ("sep", "sept", "september"), ("oct", "october"), ("nov", "november"), ("dec", "december")), 1) for m in names}
@@ -46,11 +48,16 @@ class Ask:
     budget_cents: int | None = None
     party_given: bool = False      # False: nobody said who is going, so `adults` is the usual two
     too_many: bool = False         # they named more travelers than a booking takes (catalog.MAX_TRAVELERS)
+    nearby: bool = False           # "or nearby": weigh the places near `place` too (F-222)
+    flex: int | None = None        # "give or take N days": 0 (exactly) to MAX_FLEX; None when they did not say
+    flex_unread: bool = False      # they said "give or take" with something it could not read ("a week", "5 days")
 
     @property
     def unread(self) -> tuple:
-        """What stops a search: the parts it cannot run without that the sentence did not give, and a party too big to book, in the order to say them."""
-        return tuple(name for name, have in (("place", self.place), ("dates", self.depart and self.return_), ("party", not self.too_many)) if not have)
+        """What stops a search: the parts it cannot run without that the sentence did not give, a party too big to book, and a "give or take" it could not read,
+        in the order to say them."""
+        return tuple(name for name, have in (("place", self.place), ("dates", self.depart and self.return_), ("party", not self.too_many), ("flex", not self.flex_unread))
+                     if not have)
 
     @property
     def travelers(self) -> int:
@@ -96,6 +103,34 @@ _WORDS = re.compile(rf"\b{_MON}\s+{_DAY}{_YEAR}{_TO}(?:{_MON}\s+)?{_DAY}\b{_YEAR
 _SLASH = re.compile(rf"\b(\d{{1,2}})/(\d{{1,2}})(?:/(\d{{4}}|\d{{2}}))?{_TO}(\d{{1,2}})/(\d{{1,2}})(?:/(\d{{4}}|\d{{2}}))?(?![\d/])", re.I)
 _ONE = re.compile(rf"\b{_MON}\s+{_DAY}\b{_YEAR}", re.I)
 _NIGHTS = re.compile(r"\bfor (\w+) nights?\b", re.I)
+
+
+_NEARBY = re.compile(r",?\s*\bor (?:somewhere )?(?:near ?by|close ?by)\b", re.I)
+_FLEX_SAID = re.compile(r"(?:\b(?:give or take|plus or minus|flexible by)\b|\+/-|±)", re.I)
+_FLEX = re.compile(r",?\s*(?:\b(?:give or take|plus or minus|flexible by)\b|\+/-|±)\s*(\w+)\s+days?\b", re.I)
+_EITHER = re.compile(r",?\s*\b(\w+) days? either way\b", re.I)
+_EXACT = re.compile(r",?\s*\bexact(?:ly| dates)\b", re.I)
+
+
+def _widen(raw):
+    """(nearby, flex or None, flex said but unread, the text with those words cut out): cut first, so "or near by" is never a stay near "by" and
+    "2 days" never a count of anything."""
+    raw, n = _NEARBY.subn(" ,", raw)
+    flex, unread = None, False
+    for pattern in (_FLEX, _EITHER):
+        m = pattern.search(raw)
+        if m:
+            n_days = _num(m.group(1))
+            flex, unread = (n_days, False) if n_days is not None and 0 <= n_days <= MAX_FLEX else (None, True)
+            raw = raw[:m.start()] + " ," + raw[m.end():]
+            break
+    else:
+        m = _EXACT.search(raw)
+        if m:
+            flex, raw = 0, raw[:m.start()] + " ," + raw[m.end():]
+        elif _FLEX_SAID.search(raw):
+            unread, raw = True, _FLEX_SAID.sub(" ,", raw)
+    return bool(n), flex, unread, raw
 
 
 def _dates(raw, today):
@@ -207,6 +242,7 @@ def _route(raw):
 def read(text, today=None) -> Ask:
     raw = " ".join(str(text or "").split())[:MAX_TEXT]
     today = today or catalog.today()
+    nearby, flex, flex_unread, raw = _widen(raw)
     (depart, return_), rest = _dates(raw, today)
     origin, place = _route(rest)
     adults, kid_ages, given, said, too_many = _party(rest.lower())
@@ -216,7 +252,7 @@ def read(text, today=None) -> Ask:
         depart = return_ = None
     return Ask(place=place, origin=origin, depart=depart, return_=return_, adults=adults, kid_ages=kid_ages, ages_given=given,
                senior=_senior_word(senior.group(1)) if senior else "", pet=_pet_word(pet.group(1)) if pet else "",
-               near=near, miles=miles, budget_cents=_budget(rest.lower()), party_given=said, too_many=too_many)
+               near=near, miles=miles, budget_cents=_budget(rest.lower()), party_given=said, too_many=too_many, nearby=nearby, flex=flex, flex_unread=flex_unread)
 
 
 def _senior_word(word) -> str:
@@ -248,16 +284,24 @@ def dates_words(ask) -> str:
     return f"{a:%b} {a.day} to " + (f"{b.day}" if (a.year, a.month) == (b.year, b.month) else f"{b:%b} {b.day}")
 
 
+def flex_words(ask) -> str:
+    if ask.flex is None:
+        return ""
+    return "exactly" if ask.flex == 0 else f"give or take {ask.flex} day{'s' if ask.flex != 1 else ''}"
+
+
 def parts(ask) -> list:
     """[(key, words)] in reading order; a part with nothing to say is left out."""
-    route = (f"{ask.origin} to {ask.place}" if ask.origin else f"to {ask.place}") if ask.place else ""
+    route = ((f"{ask.origin} to {ask.place}" if ask.origin else f"to {ask.place}") + (" or nearby" if ask.nearby else "")) if ask.place else ""
     near = (f"within {ask.miles} miles of {ask.near}" if ask.miles else f"near {ask.near}") if ask.near else ""
     budget = f"under {catalog.money(ask.budget_cents)}" if ask.budget_cents else ""
-    found = (("party", party_words(ask)), ("with", with_words(ask)), ("route", route), ("dates", dates_words(ask)), ("near", near), ("budget", budget))
+    found = (("party", party_words(ask)), ("with", with_words(ask)), ("route", route), ("dates", dates_words(ask)), ("flex", flex_words(ask) if ask.depart else ""),
+             ("near", near), ("budget", budget))
     return [(k, w) for k, w in found if w]
 
 
 def write(ask) -> str:
     found = dict(parts(ask))
     head = " ".join(w for w in (found.get("party"), found.get("with")) if w)
-    return ", ".join(w for w in (head, found.get("route"), found.get("dates"), found.get("near"), found.get("budget")) if w) + "."
+    dates = " ".join(w for w in (found.get("dates"), found.get("flex")) if w)
+    return ", ".join(w for w in (head, found.get("route"), dates, found.get("near"), found.get("budget")) if w) + "."

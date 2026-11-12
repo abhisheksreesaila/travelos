@@ -59,6 +59,7 @@ _TABLE = (
     (("jackson hole", "jackson", "teton village"), Place("Jackson Hole", "Jackson", "Wyoming", "JAC", True, (("Jackson Hole Mountain Resort", "https://www.jacksonhole.com/"),))),
     (("sun valley", "ketchum"), Place("Sun Valley", "Sun Valley", "Idaho", "SUN", True, (("Sun Valley", "https://www.sunvalley.com/"),))),
     (("disneyland", "disneyland resort", "disney land", "anaheim", "disney california adventure"), Place("Disneyland", "Anaheim", "California", "SNA", klook=True, focus="disney")),
+    (("orange county", "newport beach", "huntington beach", "laguna beach", "irvine"), Place("Orange County", "Newport Beach", "California", "SNA", klook=True)),
     (("los angeles", "la", "hollywood", "santa monica"), Place("Los Angeles", "Los Angeles", "California", "LAX", klook=True)),
     (("san diego",), Place("San Diego", "San Diego", "California", "SAN", klook=True)),
     (("san francisco", "sf"), Place("San Francisco", "San Francisco", "California", "SFO", klook=True)),
@@ -92,6 +93,30 @@ _TABLE = (
     (("anchorage",), Place("Anchorage", "Anchorage", "Alaska", "ANC")),
 )
 _ALIASES = {alias: place for aliases, place in _TABLE for alias in aliases}
+
+# F-222 "or nearby": a small hand-made list of places a family could weigh instead, or with, the one they named: a drive of about two and a half hours or
+# less, so two of them make one trip by car (gitaway/tripmatrix.py joins them). Islands and long drives are left out on purpose. Every name is in _TABLE.
+MAX_NEARBY = 2
+NEARBY = {
+    "San Diego": ("Los Angeles", "Orange County"),
+    "Los Angeles": ("Orange County", "Santa Barbara"),
+    "Orange County": ("Los Angeles", "San Diego"),
+    "Disneyland": ("Los Angeles", "San Diego"),
+    "Santa Barbara": ("Los Angeles",),
+    "Palm Springs": ("Orange County", "Los Angeles"),
+    "San Francisco": ("Napa", "Monterey"),
+    "Napa": ("San Francisco",),
+    "Monterey": ("San Francisco",),
+    "Lake Tahoe": ("Tahoe City",),
+    "Tahoe City": ("Lake Tahoe",),
+    "Las Vegas": ("Zion National Park",),
+    "Phoenix": ("Sedona",),
+    "Sedona": ("Phoenix", "Grand Canyon"),
+    "Grand Canyon": ("Sedona",),
+    "Denver": ("Breckenridge",),
+    "Breckenridge": ("Vail", "Denver"),
+    "Vail": ("Breckenridge",),
+}
 
 
 def clean_iata(text) -> str:
@@ -135,6 +160,13 @@ def _known(text):
     if state is None:
         return None
     return place if state == "" or state in (place.region, *place.states) else None
+
+
+def nearby(place) -> tuple:
+    """The known places near `place` (NEARBY), in the list's order; () for a place we do not know."""
+    if place is None or not place.known:
+        return ()
+    return tuple(resolve(name) for name in NEARBY.get(place.name, ()))
 
 
 def resolve(text, iata="") -> Place | None:

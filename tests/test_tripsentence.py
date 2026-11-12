@@ -143,3 +143,69 @@ def test_the_nights_form_reads_wherever_its_two_halves_are():
     assert (ask.origin, ask.place, ask.depart, ask.return_) == ("SFO", "San Diego", date(2026, 12, 12), date(2026, 12, 16))
     ask = ts.read("İstanbul lovers: SFO to San Diego, Dec 12 to 16", TODAY)             # a letter whose lower case is longer never shifts the cut
     assert (ask.origin, ask.place, ask.depart) == ("SFO", "San Diego", date(2026, 12, 12))
+
+
+# ---- F-222: "or nearby" and "give or take N days" ----
+
+MATRIX = "A family of 4, SFO to San Diego or nearby, Dec 12 to 16 give or take 2 days, under $3,000."
+
+
+def test_or_nearby_and_give_or_take_are_read_and_written_back():
+    ask = ts.read(MATRIX, TODAY)
+    assert (ask.origin, ask.place, ask.nearby, ask.flex) == ("SFO", "San Diego", True, 2)
+    assert (ask.depart, ask.return_, ask.budget_cents, ask.travelers) == (date(2026, 12, 12), date(2026, 12, 16), 300_000, 4)
+    assert ask.unread == ()
+    assert ts.write(ask) == MATRIX
+    assert ts.read(ts.write(ask), TODAY) == ask
+
+
+@pytest.mark.parametrize("words", ["to San Diego or nearby", "to San Diego or somewhere nearby", "to San Diego or near by, Dec 12 to 16", "to San Diego or close by",
+                                   "to San Diego, or nearby, Dec 12 to 16"])
+def test_or_nearby_in_the_forms_people_type(words):
+    ask = ts.read(words, TODAY)
+    assert (ask.place, ask.nearby, ask.near) == ("San Diego", True, "")
+
+
+def test_without_or_nearby_it_is_that_place_and_near_is_still_a_stay_near_something():
+    ask = ts.read("to San Diego near the zoo, Dec 12 to 16", TODAY)
+    assert (ask.place, ask.nearby, ask.near) == ("San Diego", False, "zoo")
+
+
+@pytest.mark.parametrize("words, flex", [
+    ("to Orlando, Dec 12 to 16 give or take 2 days", 2),
+    ("to Orlando, Dec 12 to 16, give or take a day", 1),
+    ("to Orlando, Dec 12 to 16 give or take 1 day", 1),
+    ("to Orlando, Dec 12 to 16 give or take three days", 3),
+    ("to Orlando, Dec 12 to 16 plus or minus 2 days", 2),
+    ("to Orlando, Dec 12 to 16 +/- 2 days", 2),
+    ("to Orlando, Dec 12 to 16 ± 2 days", 2),
+    ("to Orlando, Dec 12 to 16, 2 days either way", 2),
+    ("to Orlando, flexible by 3 days, Dec 12 to 16", 3),
+    ("to Orlando, Dec 12 to 16 exactly", 0),
+    ("to Orlando, Dec 12 to 16 give or take 0 days", 0),
+    ("to Orlando, Dec 12 to 16", None),
+])
+def test_give_or_take_in_the_forms_people_type(words, flex):
+    ask = ts.read(words, TODAY)
+    assert (ask.place, ask.depart, ask.return_, ask.flex) == ("Orlando", date(2026, 12, 12), date(2026, 12, 16), flex)
+    assert ask.unread == () and ask.budget_cents is None and ask.kid_ages == ()
+
+
+@pytest.mark.parametrize("words", ["to Orlando, Dec 12 to 16 give or take 5 days", "to Orlando, Dec 12 to 16 give or take a week", "to Orlando, Dec 12 to 16 give or take some days"])
+def test_a_give_or_take_it_cannot_read_is_named_never_guessed(words):
+    ask = ts.read(words, TODAY)
+    assert ask.flex is None and ask.unread == ("flex",)
+    assert ask.place == "Orlando" and ask.depart == date(2026, 12, 12)
+
+
+def test_exact_dates_and_one_day_are_written_in_words_that_read_back():
+    for words, said in (("to Orlando, Dec 12 to 16 exactly", "to Orlando, Dec 12 to 16 exactly."), ("to Orlando, Dec 12 to 16 give or take a day", "to Orlando, Dec 12 to 16 give or take 1 day.")):
+        ask = ts.read(words, TODAY)
+        assert ts.write(ask) == "2 adults, " + said
+        again = ts.read(ts.write(ask), TODAY)
+        assert (again.flex, again.depart, again.return_, again.place) == (ask.flex, ask.depart, ask.return_, ask.place)
+
+
+def test_the_new_parts_are_their_own_keys_for_the_page():
+    found = dict(ts.parts(ts.read(MATRIX, TODAY)))
+    assert found["route"] == "SFO to San Diego or nearby" and found["flex"] == "give or take 2 days" and found["dates"] == "Dec 12 to 16"
