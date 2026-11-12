@@ -1,36 +1,54 @@
-# One view for booking (draft)
+# The trip matrix: see every option, then decide together (draft)
 
 Status: draft, waiting on the founder
 
-> 2026-11-11: the founder kept booking links-only (D-415) and settled a new view on the design canvas, the trip grid (every flight against every stay). It is built on sample data as F-217 (docs/plan.md); real stays are F-218 and still wait on the Stay22 key below.
+> 2026-11-12: replaces the links-only draft of 2026-11-08. The founder chose one source, LiteAPI (Nuitée), for flights and stays: search first, booking after the test. It supersedes D-415's "no in-app booking" for search only; booking itself waits for the test below. The links-only lanes (F-198) stay as they are until then. F-217's trip grid is the start of this view.
 
 ## Why
-Booking a trip means a dozen tabs: hotels on one site, flights on another, filters in a sidebar, then guessing how it all adds up. GitAway should give one calm view of the choices with everything needed to decide beside them, and never own a booking.
+An agent answers the question you asked. The matrix shows you the question you should have asked: "San Diego was my plan, but LA is $300 and San Diego only $50 more, so let's do both." Nobody shows the **whole trip compared** (flight, stay, airport drive, weather, fit for the kids, one total) across **places and dates** in one view, and then lets the family decide together. Flight-only maps exist (Google Flights Explore, Kayak Explore); this does not.
 
-## What the founder decided (2026-11-08)
-- **We never sell.** No booking APIs that make us the seller (LiteAPI, Duffel, Expedia Rapid): cancellations, refunds and support would be ours. Booking always finishes on the partner's site.
-- **Convenience over commission.** The easiest view wins, even if it pays less. A known brand on the page (Booking.com, Expedia) is fine, even good.
-- **Filters are a sentence.** "A family of 4, SFO to Orlando, Dec 12–16, within 20 miles of Disney, with breakfast, under $3,000." Each underlined part is a dropdown; the sentence can be retyped in plain English. No filter sidebar.
+GitAway's core stays sharing, creators and the family trip. The matrix is the moment that makes people say "wow" and stay; booking comes along for the ride.
 
-## How it works
-1. **Now:** the sentence opens each partner's search with its filters set (Aviasales, Expedia, Booking, Airbnb, Klook), beside the parts we can really compute: the Aviasales fare (Data API v3, real), the airport drive, the weather, the running total.
-2. **Next:** hotels inside GitAway through **Stay22**: a map or list of hotels with live prices from Booking.com, Expedia and others side by side, booked on that site. Stay22 is an iframe widget (no API key), so we style around it, not inside it.
+## What the founder decided (2026-11-12)
+- **One source: LiteAPI** for flights and stays (more connections and friendlier for developers than Duffel; says it carries Southwest, to be confirmed by a real search). Aviasales' cached fares only if live search proves too slow (below).
+- **Search first, booking after the test.** Live prices, labelled **Preview**. The book button says **"Booking opens soon"** and offers to save the trip and tell them. Never take a card, never pretend to book, never send them to another site carrying LiteAPI's price.
+- **Joy over AI everywhere.** The page should feel alive and full of taste, not like a chat box doing search.
+- **Dense and useful.** Everything needed to decide sits beside the choice.
 
-## What we checked (2026-11-08)
-- Travelpayouts closed Hotellook (its hotel search) on 2025-10-20 and says no hotel brand offers it an API now. So hotel results won't come from Travelpayouts. Source: support.travelpayouts.com, "FAQ on the closure of Hotellook".
-- Stay22: iframe map, free, no API key (dev.stay22.com). Commission is locked 7 days after checkout and paid monthly. Its split is private (one blogger reports 30%). Booking.com and Expedia are partners; Vrbo is unconfirmed.
-- Our flight price uses Aviasales' Data API v3 (`prices_for_dates`), not the old Flights Search API that stopped on 2026-06-15.
+## What the family sees
+1. **The sentence** (built, F-217): "A family of 4, from SFO, San Diego or nearby, Dec 12 to 16 give or take 2 days, under $3,000." Each underlined part is a dropdown.
+2. **The matrix:** places and dates across, stays down, or flights against stays for one place; each square is the whole trip's total. Squares fill in as answers arrive. The best ones are marked by plain rules (cheapest, easiest for kids, best weather), never by a guess.
+3. **Weather in the calendar**: each day shows its sky (forecast when near, typical weather labelled "not a forecast yet" when far). Rain is said plainly.
+4. **The place has a face**: each destination wears its own art: a beach for San Diego, the Statue of Liberty skyline for New York, mountains and pines for Tahoe. A drawn set of our own, one per place in `places.py`'s table, never a photo passed off as a hotel, never generated per visit.
+5. **Living**: a creator's pick on a square ("Maya stayed here with her kids"), the family's votes and comments on squares, the weather moving in the sky.
+6. **Booking opens soon**: save the square to the trip; the cockpit, day plan and family chat pick it up like any trip.
+7. **The report**: after a planning session, a fun summary: "You compared 6 places and 41 stays; the cheapest week was Dec 14; you found LA + San Diego for $50 more."
+8. **Ready to post**: a trip card made for Instagram (the place's art, dates, the route, a link back to the trip), so sharing GitAway is one tap.
 
-## Knowing what they picked (checked 2026-11-08)
-- The map embed is an iframe from another site: GitAway cannot read it or see a click in it. No click events found in the docs.
-- So use Stay22's **Direct Travel API** instead (api.stay22.com, key from hub.stay22.com): live availability, prices and deep links for Booking.com, Vrbo, Expedia and Hotels.com. We draw the list and map ourselves, so we know which hotel was picked and can say "All in $1,944" (a quote before booking).
-- What was actually booked: a `campaign` tag per trip on every link, read back from Stay22's transaction reporting endpoint (exact fields unconfirmed: check `api.stay22.com/openapi.json`); or the family pastes the confirmation (`gitaway/confirmations.py`, built).
+## Look
+Direction A, omxqua: tiles stay opaque. Translucency only where the design taste allows it, the floating islands over the matrix (the top and side that already fold into islands on a laptop) and the phone's tab bar, readable over anything under them. Phone and laptop designed together.
 
-## Flights (checked 2026-11-08)
-- No free, live, search-only flight API is open to a small site. Aviasales live search needs 50,000 monthly users; Skyscanner and Kiwi are partner-gated; Amadeus Self-Service closed on 2026-07-17. Duffel is live but makes us the seller (no).
-- So: Aviasales' cached fares now (free, labelled with their age), behind one interface (a fare: price, airline, times, seen when, live or not, link) so a live source plugs in later without touching the page.
+## Speed: the matrix is many searches
+The arithmetic is trivial; the wait is the API (a live flight search takes seconds; 5 places × 5 date choices is 25 searches before stays). No GPU. Instead:
+- **Cache** every answer (flights a few hours, stays shorter), shared across families searching the same route and dates; say how old a price is.
+- **Fill as it arrives**: the squares appear one by one, the cheapest first.
+- **Search what matters**: search the nearest dates and the likeliest places first; only search a far square when the family scrolls to it or asks.
+- **If still slow**: Aviasales' cached fare calendar (one call for a whole month) picks which flight squares deserve a live search.
+- **Budget**: a daily search budget per family and in total, so a busy day cannot run up a bill or hit LiteAPI's rate limits.
 
-## Open
-- The founder signs up for Stay22 (an account only they can open).
-- Confirm on Stay22's dev docs: which brands show, how much of the widget's look we control, whether a list view (not only a map) exists.
-- Prototype: the sentence search, with the Stay22 map under it.
+## The test (about 2 weeks once keys are in)
+Show the matrix to 5 to 10 families, including the founder's and a friend's. Success: someone finds an option they did not know about and changes their plan. Then decide on booking through LiteAPI (hotels first) with the founder's friend who has done this, and Nuitée's written answer on who is the seller. If nobody does, the matrix stays a planning view and booking stays links.
+
+## What only the founder can do
+1. Open a LiteAPI account. The sandbox key is instant; the live key needs a card and payout details.
+2. Request production flight access (dashboard → Flights → Request access): use case "a family trip planner, search now, booking after a test".
+3. Put the key on the server as `LITEAPI_KEY` (a `sand_` key is the sandbox; the code tells them apart by that prefix and says which on /admin). Never in chat.
+4. Email Nuitée: who is the seller when Nuitée charges the card, and is Southwest bookable in production.
+
+## Not in this brief
+Booking itself, payments, cars (links as today), things to do (Klook links), the forwarding address for confirmations (its own brief).
+
+## Known facts (checked 2026-11-10 to 12)
+- LiteAPI flights: 600+ airlines through Travelport, Sabre, direct airline (NDC) and low-cost connections; 1% a booking (min €2, max €10), €25 a voluntary change; a 24/7 team handles changes and disruptions; partner markup allowed; the sandbox has only a test airline ("Nuitee Air"). Source: nuitee.com/connect/flights, docs.liteapi.travel.
+- LiteAPI stays: self-serve; search is free at a reasonable search-to-booking ratio; extra searches cost about €0.005. To confirm in writing: the limits when nothing is booked yet.
+- Travelpayouts closed Hotellook on 2025-10-20; Aviasales' cached fares (Data API v3) are free and labelled with their age.
