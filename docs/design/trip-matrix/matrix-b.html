@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trip matrix B · Place cards · F-221</title>
+<!-- Option B "Place cards": the place leads. The find is the one ink hero (the paired art, the route, the total, the hearts);
+     every other place is a card wearing its own art and December sky, with its five date windows as a row of small squares under the best total.
+     Motion: cards arrive in price order (phone: rise 12px + settle on --motion-spring, 280ms, 40ms apart; laptop: --motion-desk fade);
+     a tapped window square takes the ink outline and the card's big total cross-fades to it; clouds drift on the art. Sort chips re-order with a calm fade. -->
+<link rel="stylesheet" href="tm.css">
+<script src="icons.js"></script><script src="tm.js"></script><script src="art.js"></script>
+<style>
+  main { max-width: 1440px; margin: 0 auto; padding: 0 24px 24px; }
+  .lead { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; }
+  .lead .sentence { font-size: 26px; max-width: 820px; }
+  .tools { display: grid; justify-items: end; gap: 10px; }
+  .chips { display: flex; gap: 6px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: 999px; font: 600 13px/1 var(--font); background: var(--card); box-shadow: var(--sh1); color: var(--ink-2); white-space: nowrap; }
+  .chip.on { background: var(--ink); color: var(--paper); box-shadow: none; }
+  .meta { display: flex; gap: 10px; align-items: center; font: 600 13px/1 var(--font); white-space: nowrap; }
+
+  /* the find: the one ink hero */
+  .hero { margin-top: 16px; display: grid; grid-template-columns: 420px 1fr; background: var(--up-bg); color: var(--up-fg); border-radius: var(--r-widget); overflow: hidden; box-shadow: var(--sh2); min-height: 206px; }
+  .hero .art { position: relative; }
+  .hero .art .pa { position: absolute; inset: 0; }
+  .hero .art .pa + .pa { clip-path: polygon(60% 0, 100% 0, 100% 100%, 40% 100%); }
+  .hero .art .tag { position: absolute; left: 14px; top: 14px; z-index: 2; display: inline-flex; gap: 6px; align-items: center; height: 28px; padding: 0 12px; border-radius: 999px; background: #FFD43B; color: #17140A; font: 700 12px/1 var(--font); letter-spacing: .04em; text-transform: uppercase; }
+  .hero .bd { padding: 20px 24px; display: grid; grid-template-columns: 1fr auto; gap: 8px 24px; align-content: center; }
+  .hero h2 { font: 740 30px/1.08 var(--font); letter-spacing: -.04em; grid-column: 1; }
+  .hero h2 em { font-style: normal; color: var(--up-fg2); }
+  .route { grid-column: 1; display: flex; align-items: center; gap: 8px; margin-top: 6px; font: 600 13px/1 var(--font); color: var(--up-fg2); flex-wrap: wrap; }
+  .route .stop { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 999px; background: var(--up-tile); color: var(--up-fg); }
+  .route .seg { width: 28px; height: 2px; background: var(--up-line); border-radius: 1px; }
+  .route .k { width: 20px; height: 20px; border-radius: 6px; display: grid; place-items: center; color: #fff; }
+  .hero .tot { grid-column: 2; grid-row: 1 / 3; text-align: right; align-self: center; }
+  .hero .tot .n { font: 680 46px/1 var(--mono); letter-spacing: -.05em; }
+  .hero .tot .s { color: var(--up-fg2); font-size: 13px; margin-top: 6px; }
+  .hero .row { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; margin-top: 10px; padding-top: 12px; border-top: 1px solid var(--up-line); font-size: 13px; color: var(--up-fg2); }
+  .hero .row b { color: var(--up-fg); font-weight: 650; }
+  .hero .row .faces .face { box-shadow: 0 0 0 2px var(--up-bg); }
+  .hero .row .btn { height: 36px; }
+  .hero .row .go { margin-left: auto; background: var(--up-btn); color: var(--up-btn-fg); }
+  .hero .row .ghost { background: var(--up-tile); color: var(--up-fg); }
+
+  /* the place cards */
+  .cards { margin-top: 16px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+  .card { background: var(--card); border-radius: var(--r-widget); box-shadow: var(--sh1); overflow: hidden; display: grid; grid-template-rows: auto 1fr; }
+  .card .art { position: relative; height: 112px; }
+  .card .art .pa { position: absolute; inset: 0; }
+  .card .art .name { position: absolute; left: 14px; top: 12px; z-index: 2; font: 720 19px/1 var(--font); letter-spacing: -.03em; color: var(--ink); }
+  :root[data-mode="dark"] .card .art .name { color: #F5F5F7; }
+  @media (prefers-color-scheme: dark) { :root:not([data-mode="light"]) .card .art .name { color: #F5F5F7; } }
+  .card .art .sky { position: absolute; right: 10px; top: 10px; z-index: 2; display: inline-flex; gap: 5px; align-items: center; height: 26px; padding: 0 9px; border-radius: 999px; background: var(--card); box-shadow: var(--sh1); font: 600 12px/1 var(--font); }
+  .card .art .sky .i { color: var(--k-wx); }
+  .card .nm { font: 720 18px/1.1 var(--font); letter-spacing: -.03em; }
+  .card .bd { padding: 12px 14px 12px; display: grid; gap: 8px; align-content: start; }
+  .card .best { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .card .best .n { font: 680 28px/1 var(--mono); letter-spacing: -.05em; }
+  .card .best span { font-size: 12px; color: var(--ink-2); text-align: right; }
+  .card .sub { font-size: 12px; color: var(--ink-2); display: flex; justify-content: space-between; }
+  .wins { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+  .win { border-radius: 10px; background: var(--paper-2); padding: 6px 0 5px; display: grid; justify-items: center; gap: 3px; cursor: pointer; }
+  .win .d { font: 600 10px/1 var(--font); color: var(--ink-2); }
+  .win .v { font: 600 12px/1 var(--mono); letter-spacing: -.04em; }
+  .win.low .v { color: var(--ok-ink); }
+  .win.on { box-shadow: 0 0 0 2px var(--ink); background: var(--card); }
+  .win.wait { color: transparent; }
+  .win.asked .d { color: var(--ink); font-weight: 700; }
+  .card .marks { display: flex; gap: 6px; flex-wrap: wrap; min-height: 20px; }
+  .card .foot { display: flex; align-items: center; gap: 8px; padding-top: 8px; border-top: 1px solid var(--line); font-size: 12px; color: var(--ink-2); }
+  .card .foot .heart { margin-left: auto; }
+
+  /* the family rail under the cards */
+  .rail { margin-top: 14px; display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 14px; }
+  .tile { background: var(--card); border-radius: var(--r-card); box-shadow: var(--sh1); padding: 12px 16px; display: flex; gap: 12px; align-items: center; font-size: 13px; color: var(--ink-2); }
+  .tile b { color: var(--ink); font-weight: 650; }
+  .tile .btn { margin-left: auto; height: 34px; }
+
+  @media (max-width: 720px) {
+    main { padding: 0 16px 120px; }
+    .lead { display: block; } .lead .sentence { font-size: 22px; }
+    .tools { justify-items: start; margin-top: 12px; gap: 10px; }
+    .chips { overflow-x: auto; width: calc(100vw - 16px); padding-right: 16px; }
+    .chip { height: 40px; font-size: 14px; padding: 0 16px; }
+    .meta { font-size: 13px; }
+    .hero { grid-template-columns: 1fr; min-height: 0; }
+    .hero .art { height: 150px; }
+    .hero .bd { grid-template-columns: 1fr; padding: 16px; }
+    .hero .tot { grid-column: 1; grid-row: auto; text-align: left; margin-top: 4px; }
+    .hero h2 { font-size: 23px; }
+    .hero .tot .n { font-size: 30px; } .hero .tot .s { font-size: 13px; }
+    .hero .route { grid-column: 1 / -1; font-size: 14px; } .route .seg { width: 14px; }
+    .hero .row { flex-wrap: wrap; font-size: 14px; } .hero .row .btn { height: 48px; flex: 1; } .hero .row .go { margin-left: 0; }
+    .cards { grid-template-columns: 1fr; gap: 12px; }
+    .card .art { height: 120px; }
+    .card .best .n { font-size: 30px; } .card .best span, .card .sub, .card .foot { font-size: 14px; }
+    .win { padding: 9px 0 8px; min-height: 52px; } .win .d { font-size: 13px; } .win .v { font-size: 14px; }
+    .rail { grid-template-columns: 1fr; } .tile { font-size: 14px; }
+  }
+</style></head>
+<body>
+<div id="app"></div>
+<script>
+const { WINDOWS, PLACES, money, split, HEARTS, faces, wxIcon } = TM;
+const pick = {};   // the window each card shows (its cheapest by default)
+const lasd = PLACES.find(p => p.id === 'lasd');
+const rest = PLACES.filter(p => p.id !== 'lasd').sort((a, b) => Math.min(...a.t.filter(Boolean)) - Math.min(...b.t.filter(Boolean)));
+const k = n => (n / 1000).toFixed(2).replace(/0$/, '').replace('.', ',').replace(/^(\d),(\d)$/, '$1,$20').replace(/^(\d),(\d\d)$/, '$1,$20');
+
+function card(p, i) {
+  const vals = p.t.filter(x => x != null), min = Math.min(...vals), wi = pick[p.id] ?? p.t.indexOf(min), w = WINDOWS[wi], t = p.t[wi];
+  const hearts = Object.entries(HEARTS).filter(([key]) => key.startsWith(p.id + '-')).flatMap(([, v]) => v);
+  const marks = [...Object.values(p.marks || {}).flat(), ...(p.rowMark ? [p.rowMark] : [])];
+  const waiting = p.t.filter(x => x == null).length;
+  return `<article class="card arrive" style="animation-delay:${i * 40}ms"><div class="art"><div data-art="${p.art}" data-wx="${p.wx}"></div><span class="sky">${wxIcon(p.wx, 14)}${p.hi}°/${p.lo}°</span></div>` +
+    `<div class="bd"><div class="nm">${p.name}</div><div class="best"><span class="n">${money(t)}</span><span>${w.label}<br>${t === min ? 'its cheapest' : '+' + money(t - min) + ' vs its cheapest'}</span></div>` +
+    `<div class="sub"><span>${p.via} · ${p.door}</span><span>${waiting ? waiting + ' searching' : 'all 5 in'}</span></div>` +
+    `<div class="wins">${WINDOWS.map((x, j) => p.t[j] == null ? `<span class="win wait searching"><span class="d">${x.start}</span><span class="v">0,000</span></span>` :
+      `<button class="win tap ${j === wi ? 'on' : ''} ${p.t[j] === min ? 'low' : ''} ${x.asked ? 'asked' : ''}" data-p="${p.id}" data-i="${j}"><span class="d">Dec ${x.start}</span><span class="v">${p.t[j].toLocaleString('en-US')}</span></button>`).join('')}</div>` +
+    `<div class="marks">${marks.map(m => `<span class="mk">${m}</span>`).join('')}</div>` +
+    `<div class="foot">${hearts.length ? faces(hearts, 20) + `<span>${hearts.length} ${hearts.length > 1 ? 'hearts' : 'heart'}</span>` : '<span>No hearts yet</span>'}<span class="heart">${ic('heart', 18)}</span></div></div></article>`;
+}
+function draw() {
+  const [f, s, d] = split(lasd, 'd12');
+  document.getElementById('app').innerHTML = TM.status() + TM.topbar('Book') + `<main>
+  <div class="lead"><div class="sentence">${TM.SENTENCE}</div>
+    <div class="tools"><div class="meta"><span class="preview">28 of 30 in · Preview · 4 min ago</span><span class="sample">Sample prices</span></div>
+    <div class="chips"><span class="chip on">${ic('ledger', 14)}Cheapest</span><span class="chip">${ic('users', 14)}Easiest for kids</span><span class="chip">${ic('sun', 14)}Best weather</span><span class="chip">${ic('heart', 14)}Hearted</span></div></div></div>
+  <section class="hero"><div class="art"><div data-art="los-angeles" data-wx="sun"></div><div data-art="san-diego" data-wx="sun"></div><span class="tag">${ic('spark', 13)}Found</span></div>
+    <div class="bd"><h2>LA + San Diego. <em>$50 more than San Diego alone.</em></h2>
+      <div class="route"><span class="stop"><span class="k" style="background:var(--k-flight)">${ic('plane', 12)}</span>SFO → LAX</span><span class="seg"></span><span class="stop"><span class="k" style="background:var(--k-stay)">${ic('bed', 12)}</span>2 nights LA</span><span class="seg"></span><span class="stop"><span class="k" style="background:var(--k-car)">${ic('car', 12)}</span>coast, 2h</span><span class="seg"></span><span class="stop"><span class="k" style="background:var(--k-stay)">${ic('bed', 12)}</span>2 nights SD</span><span class="seg"></span><span class="stop"><span class="k" style="background:var(--k-flight)">${ic('plane', 12)}</span>SAN → SFO</span></div>
+      <div class="tot"><div class="n">$2,190</div><div class="s">Dec 12–16 · for 4<br>flights ${money(f)} · stay ${money(s)} · drive ${money(d)}</div></div>
+      <div class="row">${faces(HEARTS['lasd-d12'], 24)}<span><b>3 of you</b> and Sam (guest) like this · 67°/49° typical</span><button class="btn go tap">See it</button><button class="btn ghost tap">${ic('check', 15)}This one</button></div></div></section>
+  <section class="cards">${rest.map(card).join('')}</section>
+  <section class="rail only-laptop">
+    <div class="tile">${TM.face('maya', 30)}<span><b>Maya stayed in Mission Bay with her kids</b> in San Diego, Dec 2025. “Calm bay beach, the zoo is 15 minutes.”</span></div>
+    <div class="tile">${faces(['ana', 'dev', 'leela', 'arjun'], 26)}<span><b>Ask the family.</b> Everyone hearts from their phone; guests by first name.</span><button class="btn btn-flat tap">${ic('share', 14)}Share</button></div>
+    <div class="tile"><span class="kt" style="background:var(--paper-2);color:var(--ink)">${ic('lock', 16)}</span><span><b>Booking opens soon.</b> Save a square to the trip; we tell you when it opens.</span></div>
+  </section></main>` + TM.tabbar('Book');
+  TMArt.mount();
+  document.querySelectorAll('.win[data-p]').forEach(el => el.onclick = () => { pick[el.dataset.p] = +el.dataset.i; draw(); document.querySelectorAll('.arrive').forEach(x => x.style.animation = 'none'); });
+}
+draw();
+</script>
+</body></html>

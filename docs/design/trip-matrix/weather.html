@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Weather calendar · F-221</title>
+<link rel="stylesheet" href="tm.css">
+<script src="icons.js"></script><script src="tm.js"></script><script src="art.js"></script>
+<style>
+  main { max-width: 1360px; margin: 0 auto; padding: 4px 40px 24px; display: grid; grid-template-columns: minmax(0,1fr) 380px; gap: 22px; align-items: start; }
+  .hd { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: end; gap: 20px; }
+  h1 { font: 760 38px/1.05 var(--font); letter-spacing: -.045em; margin-top: 6px; } h1 em { font-style: normal; color: var(--ink-2); }
+  .strip { background: var(--card); border-radius: var(--r-widget); box-shadow: var(--sh1); padding: 16px 18px 18px; margin-bottom: 16px; }
+  .strip-h { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .strip-h b { font: 700 18px/1.2 var(--font); letter-spacing: -.02em; }
+  .strip-h .pa { width: 44px; height: 28px; border-radius: 8px; flex: none; }
+  .strip-h .tag { margin-left: auto; }
+  .tag { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 999px; font: 600 12px/1 var(--font); background: var(--paper-2); color: var(--ink-2); white-space: nowrap; }
+  .tag.dot { background: transparent; border: 1.5px dashed var(--line-2); }
+  .tag.fc { background: var(--k-wx-t); color: var(--k-wx-i); }
+  .days { display: flex; gap: 6px; position: relative; padding-top: 26px; }
+  .day { flex: 1 0 0; min-width: 0; border-radius: 16px; padding: 10px 4px 10px; display: grid; justify-items: center; gap: 4px; background: var(--card); border: 1.5px dashed var(--line-2); text-align: center; }
+  .day .dw { font: 600 11px/1 var(--font); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+  .day .dn { font: 700 18px/1 var(--font); letter-spacing: -.02em; }
+  .day .t { font: 600 12px/1 var(--mono); letter-spacing: -.04em; } .day .t span { color: var(--ink-2); font-weight: 500; }
+  .day .ch { font: 500 12px/1 var(--font); color: var(--ink-2); }
+  .day .i { color: var(--k-wx); }
+  .day.fc { border: 1.5px solid var(--line-2); background: var(--paper-2); }
+  .day.far { opacity: .55; }
+  .day.on { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+  .day.on .dw, .day.on .ch, .day.on .t span { color: var(--paper); opacity: .8; } .day.on .i { color: var(--paper); }
+  .day.wet .ch { color: var(--k-wx-i); font-weight: 650; }
+  .day.on.wet .ch { color: var(--paper); }
+  .bracket { position: absolute; top: 0; height: calc(100% + 6px); border: 2px solid var(--ink); border-radius: 20px; pointer-events: none; margin-top: -3px; }
+  .bracket span { position: absolute; top: 4px; left: 10px; font: 650 12px/1 var(--font); color: var(--ink); background: var(--card); padding: 0 4px; }
+  .note { font-size: 13px; color: var(--ink-2); margin-top: 12px; display: flex; gap: 14px; flex-wrap: wrap; }
+  .note b { color: var(--ink); font-weight: 600; }
+  .rainline { margin-top: 12px; display: flex; gap: 10px; align-items: center; background: var(--k-wx-t); color: var(--k-wx-i); border-radius: 14px; padding: 10px 12px; font: 600 14px/1.3 var(--font); }
+  .states { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .states .label { margin-right: 4px; }
+  .st { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 999px; background: var(--card); box-shadow: var(--sh1); font: 500 13px/1 var(--font); }
+  .st .i { color: var(--k-wx); } .st.typ { box-shadow: none; border: 1.5px dashed var(--line-2); } .st.none { color: var(--ink-2); } .st.none .i { color: var(--ink-3); }
+  /* the selected day: a panel on the laptop, a sheet on the phone */
+  .panel { background: var(--card); border-radius: var(--r-widget); box-shadow: var(--sh2); overflow: hidden; }
+  .panel .pa { height: 150px; }
+  .pbody { padding: 14px 18px 16px; }
+  .pbody .when { font: 700 20px/1.2 var(--font); letter-spacing: -.02em; display: flex; align-items: center; gap: 8px; }
+  .pbody .big { font: 760 26px/1.15 var(--font); letter-spacing: -.035em; margin: 8px 0 2px; }
+  .hours { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin: 14px 0; }
+  .hr { display: grid; justify-items: center; gap: 5px; padding: 8px 0; border-radius: 12px; background: var(--paper-2); font: 600 13px/1 var(--mono); }
+  .hr .h { font: 500 12px/1 var(--font); color: var(--ink-2); } .hr .i { color: var(--k-wx); } .hr .p { font: 500 11px/1 var(--font); color: var(--ink-2); }
+  .sun { display: flex; gap: 16px; font-size: 14px; color: var(--ink-2); } .sun b { color: var(--ink); font: 600 14px/1 var(--mono); }
+  .means { margin-top: 12px; border-radius: 16px; padding: 12px 14px; background: var(--paper-2); font-size: 14px; display: flex; gap: 10px; }
+  .means b { display: block; }
+  .credit { margin-top: 12px; font-size: 12px; color: var(--ink-2); }
+  .panel .hr, .panel .means { background: rgb(var(--state) / .06); }
+  @media (max-width: 720px) {
+    main { display: block; padding: 4px 16px 520px; }
+    .col { display: flex; flex-direction: column; } .th { order: -1; } .sd { order: 1; } .states { order: 2; margin-bottom: 16px; }
+    .hd .label { display: none; } h1 em { display: none; } .hd .sample { display: inline-block; margin-top: 6px; }
+    .hd { display: block; } h1 { font-size: 30px; }
+    .strip { padding: 14px 14px 16px; border-radius: 22px; }
+    .strip-h { flex-wrap: wrap; row-gap: 8px; } .strip-h b { font-size: 17px; flex: 1; } .strip-h .tag { margin-left: 0; order: 3; font-size: 13px; }
+    .days { overflow-x: auto; scrollbar-width: none; margin: 0 -14px; padding: 26px 14px 4px; }
+    .day { flex: 0 0 64px; }
+    .day .t, .day .ch { font-size: 13px; }
+    .note { font-size: 14px; }
+    .states .st { height: 36px; font-size: 14px; }
+    .scrim { position: fixed; inset: 0; background: rgba(10,10,20,.4); z-index: 35; }
+    .panel { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; border-radius: 26px 26px 0 0; box-shadow: var(--sh3); background: var(--card-2); height: 476px; overflow: auto; }
+    .panel .grab { position: absolute; top: 8px; left: 50%; margin-left: -20px; width: 40px; height: 5px; border-radius: 3px; background: rgba(255,255,255,.85); z-index: 2; }
+    .panel .pa { height: 92px; }
+    .x { position: absolute; top: 10px; right: 12px; z-index: 2; width: 36px; height: 36px; border-radius: 50%; background: var(--card); display: grid; place-items: center; box-shadow: var(--sh1); }
+    .pbody .when { font-size: 18px; } .pbody .big { font-size: 24px; }
+    .hours { grid-template-columns: repeat(6, 56px); overflow-x: auto; margin: 12px -18px; padding: 0 18px; }
+    .hr { font-size: 14px; } .hr .h, .hr .p { font-size: 13px; }
+    .means { font-size: 16px; } .sun { font-size: 16px; } .credit { font-size: 13px; }
+    .pbody .done { width: 100%; margin-top: 12px; }
+  }
+  @media (min-width: 721px) { .scrim, .grab, .done, .x { display: none; } }
+</style></head>
+<body>
+<div id="app"></div>
+<script>
+const D = TM.DAYS;
+const dayChip = (o) => `<div class="day ${o.cls || ''}"><span class="dw">${o.dow}</span><span class="dn">${o.d}</span>${TM.wxIcon(o.wx, 20)}<span class="t">${o.hi}°<span>/${o.lo}°</span></span><span class="ch">${o.ch}</span></div>`;
+const sd = D.map(x => dayChip({ ...x, ch: x.chance + '%', cls: (x.d < 10 || x.d > 18 ? 'far' : '') + (x.chance >= 20 ? ' wet' : '') })).join('');
+// Lake Tahoe, Nov 21 to 30 (Sat to Mon); as of Nov 14 MET Norway reaches about ten days, so Nov 21 to 23 are a forecast
+const TH = [
+  { d: 21, dow: 'Sat', wx: 'cloud', hi: 44, lo: 28, ch: 'Forecast', cls: 'fc' },
+  { d: 22, dow: 'Sun', wx: 'sun', hi: 47, lo: 27, ch: 'Forecast', cls: 'fc' },
+  { d: 23, dow: 'Mon', wx: 'rain', hi: 41, lo: 33, ch: 'Rain', cls: 'fc on wet' },
+  { d: 24, dow: 'Tue', wx: 'cloud', hi: 45, lo: 25, ch: '22%' },
+  { d: 25, dow: 'Wed', wx: 'sun', hi: 45, lo: 24, ch: '18%' },
+  { d: 26, dow: 'Thu', wx: 'snow', hi: 38, lo: 22, ch: 'Snow 40%', cls: 'wet' },
+  { d: 27, dow: 'Fri', wx: 'snow', hi: 37, lo: 21, ch: 'Snow 35%', cls: 'wet' },
+  { d: 28, dow: 'Sat', wx: 'cloud', hi: 42, lo: 22, ch: '24%' },
+  { d: 29, dow: 'Sun', wx: 'sun', hi: 44, lo: 23, ch: '16%' },
+  { d: 30, dow: 'Mon', wx: 'sun', hi: 44, lo: 23, ch: '15%' },
+];
+const HOURS = [['8a', 'cloud', 36, '40%'], ['10a', 'rain', 38, '80%'], ['12p', 'rain', 40, '90%'], ['2p', 'rain', 41, '90%'], ['4p', 'rain', 39, '75%'], ['6p', 'cloud', 35, '50%']];
+document.getElementById('app').innerHTML = TM.status() + TM.topbar('Trip') + `
+<main>
+  <div class="hd"><div><div class="label">F-221 · Weather in the calendar</div>
+    <h1>Each day wears its sky. <em>Rain is said plainly.</em></h1></div>
+    <span class="sample">Sample · as of Nov 14</span></div>
+  <div class="col">
+    <section class="strip sd">
+      <div class="strip-h"><div data-art="san-diego" data-wx="sun"></div><b>San Diego · Dec 8–20</b><span class="tag dot">Typical · not a forecast yet</span></div>
+      <div class="days" id="sd">${sd}<div class="bracket" id="br"><span>You asked · Dec 12–16</span></div></div>
+      <div class="note"><span><b>Dotted</b> = typical (NOAA normals), never a forecast</span><span><b>Lighter</b> = outside give or take 2 days</span><span>A forecast replaces it about 10 days out</span></div>
+    </section>
+    <section class="strip th">
+      <div class="strip-h"><div data-art="lake-tahoe" data-wx="snow"></div><b>Lake Tahoe · Nov 21–30</b><span class="tag fc">${ic('cloud', 14)}Forecast to Nov 23 · then typical</span></div>
+      <div class="days">${TH.map(dayChip).join('')}</div>
+      <div class="rainline">${ic('rain', 18)}Mon Nov 23: rain most of the day · 0.6 in. Thanksgiving: snow likely (typical, 40%).</div>
+    </section>
+    <div class="states"><span class="label">States</span>
+      <span class="st">${ic('sun', 15)}Forecast · solid</span><span class="st typ">${ic('sun', 15)}Typical · dotted</span>
+      <span class="st">${ic('rain', 15)}Rain · said in words</span><span class="st">${ic('snow', 15)}Snow · chance in words</span>
+      <span class="st typ none">${ic('cloud', 15)}No weather for this place yet</span></div>
+  </div>
+  <div class="scrim"></div>
+  <aside class="panel"><span class="grab"></span><button class="x tap" aria-label="Close">${ic('x', 16)}</button><div data-art="lake-tahoe" data-wx="rain"></div>
+    <div class="pbody">
+      <div class="when">Mon, Nov 23 <span class="tag fc">Forecast</span></div>
+      <div class="big">Rain most of the day · 0.6 in</div>
+      <div class="muted">41° / 33° at the lake · snow above 7,000 ft</div>
+      <div class="hours">${HOURS.map(([h, w, t, p]) => `<div class="hr"><span class="h">${h}</span>${TM.wxIcon(w, 18)}<span>${t}°</span><span class="p">${p}</span></div>`).join('')}</div>
+      <div class="sun"><span>Sunrise <b>6:44</b></span><span>Sunset <b>4:44</b></span><span>Wind <b>12 mph</b></span></div>
+      <div class="means"><span class="kt wx">${ic('rain', 16)}</span><span><b>What it means for you four</b>Rain jackets; the morning is driest. Move the lake walk to Sunday?</span></div>
+      <div class="credit">Forecast: MET Norway · Typical: NOAA 1991–2020 normals</div>
+    </div></aside>
+</main>` + TM.tabbar('Plan');
+TMArt.mount();
+// the ink bracket spans the asked days (Dec 12 to 16)
+function place() { const box = document.getElementById('sd'), ch = box.querySelectorAll('.day'), a = ch[4], b = ch[8], br = document.getElementById('br');
+  br.style.left = (a.offsetLeft - 4) + 'px'; br.style.width = (b.offsetLeft + b.offsetWidth - a.offsetLeft + 8) + 'px'; }
+place(); addEventListener('resize', place);
+</script>
+</body></html>

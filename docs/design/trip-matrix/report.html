@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trip report · F-221</title>
+<link rel="stylesheet" href="tm.css">
+<script src="icons.js"></script><script src="tm.js"></script><script src="art.js"></script>
+<style>
+  main { max-width: 1392px; margin: 0 auto; padding: 0 32px 20px; display: grid; grid-template-columns: minmax(0, 1fr) 452px; gap: 28px; align-items: start; }
+  .hd { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: end; }
+  h1 { font: 780 44px/1.02 var(--font); letter-spacing: -.05em; margin-top: 4px; } h1 em { font-style: normal; color: var(--ink-2); }
+  .bento { display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 158px; gap: 12px; }
+  .t { background: var(--card); border-radius: var(--r-widget); box-shadow: var(--sh1); padding: 16px 18px; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+  .t .label { margin-bottom: 6px; }
+  .n { font: 780 46px/1 var(--font); letter-spacing: -.05em; font-variant-numeric: tabular-nums; }
+  .t p { font-size: 14px; color: var(--ink-2); margin-top: 4px; } .t p b { color: var(--ink); font-weight: 650; }
+  .hero { grid-column: 1 / 3; grid-row: 1 / 3; background: var(--up-bg); color: var(--up-fg); box-shadow: var(--sh2); padding: 22px 24px; }
+  .hero .label { color: var(--up-fg2); }
+  .hero .n { font-size: 96px; letter-spacing: -.06em; margin-top: 6px; }
+  .hero h2 { font: 720 26px/1.15 var(--font); letter-spacing: -.035em; margin-top: 8px; max-width: 360px; }
+  .hero p { color: var(--up-fg2); font-size: 14px; }
+  .hero .mini { margin-top: auto; display: flex; gap: 8px; align-items: center; }
+  .hero .mini .pa { width: 92px; height: 46px; border-radius: 12px; }
+  .hero .mini .plus { font: 700 20px/1 var(--font); color: var(--up-fg2); }
+  .hero .mini span.fine { color: var(--up-fg2); margin-left: 6px; }
+  .places { grid-column: 3 / 5; }
+  .thumbs { display: flex; gap: 6px; margin-top: auto; }
+  .thumbs figure { flex: 1; } .thumbs .pa { height: 36px; border-radius: 9px; } .thumbs figcaption { font-size: 11px; color: var(--ink-2); margin-top: 4px; text-align: center; white-space: nowrap; }
+  .row { display: flex; align-items: baseline; gap: 10px; }
+  .cheap { grid-column: 3 / 5; } .cheap .n { white-space: nowrap; font-size: 40px; }
+  .bars { display: flex; gap: 8px; align-items: flex-end; height: 64px; margin-top: auto; }
+  .bars div { flex: 1; display: grid; gap: 4px; justify-items: center; font: 500 11px/1 var(--font); color: var(--ink-2); }
+  .bars i { display: block; width: 100%; border-radius: 6px 6px 3px 3px; background: var(--paper-2); }
+  .bars .on i { background: var(--ink); } .bars .on { color: var(--ink); font-weight: 650; }
+  .hearts { grid-column: 1 / 3; }
+  .hearts .faces { margin-top: auto; } .hearts .hv { position: absolute; right: 18px; bottom: 16px; display: flex; gap: 3px; color: #E5484D; }
+  .dots { display: grid; grid-template-columns: repeat(5, 10px); gap: 5px; margin-top: auto; }
+  .dots i { width: 10px; height: 10px; border-radius: 3px; background: var(--paper-2); } .dots i.on { background: var(--ink); } .dots i.s { background: var(--line-2); }
+  .msgs .i, .eve .i { color: var(--ink-2); }
+  .wxt { grid-column: 2 / 4; padding: 0; flex-direction: row; }
+  .wxt .pa { width: 46%; flex: none; }
+  .wxt .in { padding: 16px 18px; display: flex; flex-direction: column; }
+  .side .label { margin: 2px 0 10px; }
+  /* the Instagram card (1080 x 1350, drawn at 4:5) */
+  .ig { aspect-ratio: 4 / 5; border-radius: 22px; overflow: hidden; background: var(--card); box-shadow: var(--sh3); display: flex; flex-direction: column; }
+  .ig .pair { position: relative; flex: 0 0 50%; }
+  .ig .pair .pa { position: absolute; top: 0; bottom: 0; left: 0; width: 62%; }
+  .ig .pair .bw { position: absolute; inset: 0; filter: drop-shadow(-3px 0 0 var(--card)); }
+  .ig .pair .bw .pa { left: auto; right: 0; clip-path: polygon(34% 0, 100% 0, 100% 100%, 12% 100%); }
+  .ig .badge { position: absolute; left: 16px; top: 16px; display: inline-flex; gap: 6px; align-items: center; height: 30px; padding: 0 12px; border-radius: 999px; background: var(--card); box-shadow: var(--sh1); font: 600 12px/1 var(--font); }
+  .ig .body { flex: 1; padding: 18px 22px 18px; display: flex; flex-direction: column; }
+  .ig h3 { font: 780 34px/1 var(--font); letter-spacing: -.05em; }
+  .ig .when { font-size: 15px; color: var(--ink-2); margin-top: 6px; }
+  .ig .facts { font: 600 14px/1.3 var(--font); margin-top: 12px; }
+  .route { display: flex; align-items: center; gap: 6px; margin: 16px 0 0; font: 650 12px/1 var(--mono); }
+  .route .ap { display: grid; justify-items: center; gap: 4px; }
+  .route .ap::before { content: ""; width: 9px; height: 9px; border-radius: 50%; border: 2px solid var(--ink); background: var(--card); }
+  .route .seg { flex: 1; height: 2px; background: var(--k-flight); position: relative; margin-bottom: 14px; }
+  .route .seg.drive { background: repeating-linear-gradient(90deg, var(--k-car) 0 6px, transparent 6px 10px); }
+  .route .seg .i { position: absolute; left: 50%; top: -9px; margin-left: -9px; background: var(--card); padding: 0 1px; }
+  .route .seg .i { color: var(--k-flight); } .route .seg.drive .i { color: var(--k-car); }
+  .ig .foot { margin-top: auto; display: flex; align-items: center; gap: 10px; padding-top: 12px; border-top: 1px solid var(--line); }
+  .ig .foot .mark { font-size: 15px; } .ig .foot .mark i { width: 24px; height: 24px; }
+  .ig .foot .url { margin-left: auto; text-align: right; font: 600 13px/1.25 var(--font); } .ig .foot .url span { display: block; font: 500 12px/1.2 var(--font); color: var(--ink-2); }
+  .share { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+  .share .btn { height: 46px; }
+  .note { margin-top: 10px; font-size: 13px; color: var(--ink-2); text-align: center; }
+  @media (max-width: 720px) {
+    main { display: block; padding: 0 16px 120px; }
+    .hd { display: block; } h1 { font-size: 34px; } .hd .sample { display: inline-block; margin: 8px 0 12px; }
+    .bento { grid-template-columns: 1fr 1fr; grid-auto-rows: auto; gap: 10px; grid-auto-flow: dense; }
+    .thumbs { display: grid; grid-template-columns: repeat(3, 1fr); row-gap: 8px; }
+    .t { padding: 14px 14px; min-height: 140px; border-radius: 22px; }
+    .hero { grid-column: 1 / -1; grid-row: auto; min-height: 290px; }
+    .hero .n { font-size: 76px; } .hero h2 { font-size: 24px; } .hero p { font-size: 16px; }
+    .places, .cheap, .hearts { grid-column: 1 / -1; }
+    .wxt { grid-column: 1 / -1; min-height: 130px; }
+    .n { font-size: 40px; } .t p { font-size: 16px; }
+    .thumbs figcaption { font-size: 13px; } .thumbs { gap: 4px; } .thumbs figure { min-width: 0; }
+    .bars div { font-size: 13px; }
+    .side { margin-top: 26px; }
+    .ig h3 { font-size: 30px; } .ig .when { font-size: 16px; }
+    .share .btn { height: 52px; } .note { font-size: 14px; }
+  }
+</style></head>
+<body>
+<div id="app"></div>
+<script>
+const { PLACES, WINDOWS, faces, money } = TM;
+// average total for 4 per window across the places that answered (sample)
+const avg = WINDOWS.map((w, i) => { const v = PLACES.map(p => p.t[i]).filter(x => x != null); return Math.round(v.reduce((a, b) => a + b, 0) / v.length); });
+const lo = Math.min(...avg), hiV = Math.max(...avg);
+const bars = WINDOWS.map((w, i) => `<div class="${avg[i] === lo ? 'on' : ''}"><i style="height:${18 + (avg[i] - lo + 40) / (hiV - lo + 40) * 30}px"></i>${w.label.replace('Dec ', '').split('–')[0]}</div>`).join('');
+const dots = Array.from({ length: 30 }, (_, i) => `<i class="${i === 12 ? 'on' : i >= 28 ? 's' : ''}"></i>`).slice(0, 25).join('');
+document.getElementById('app').innerHTML = TM.status() + TM.topbar('Trip') + `
+<main>
+  <div class="hd"><div><div class="label">F-221 · The report · after four evenings of planning</div>
+    <h1>You did all this. <em>Here's what you found.</em></h1></div><span class="sample">Sample report</span></div>
+  <section class="bento">
+    <div class="t hero"><span class="label">The find</span><span class="n">+$50</span>
+      <h2>LA + San Diego for $50 more than San Diego alone.</h2><p>Two nights each, the coast drive between. Nobody asked for it; the matrix showed it.</p>
+      <div class="mini"><span data-art="los-angeles" data-wx="sun"></span><span class="plus">+</span><span data-art="san-diego" data-wx="sun"></span><span class="fine">Dec 12–16</span></div></div>
+    <div class="t places"><span class="label">Places compared</span><div class="row"><span class="n">6</span><p>beach towns, a city and a desert</p></div>
+      <div class="thumbs">${['san-diego', 'los-angeles', 'orange-county', 'palm-springs', 'santa-barbara'].map(a => `<figure><div data-art="${a}" data-wx="sun"></div><figcaption>${TMArt.META[a].name.replace('Santa Barbara', 'S. Barbara').replace('Orange County', 'O. County')}</figcaption></figure>`).join('')}<figure><div data-art="los-angeles" data-wx="sun"></div><figcaption>LA + SD</figcaption></figure></div></div>
+    <div class="t cheap"><span class="label">Cheapest start</span><div class="row"><span class="n">Dec 13</span><p>${money(lo)} on average for 4, ${money(hiV - lo)} under the dearest</p></div><div class="bars">${bars}</div></div>
+    <div class="t hearts"><span class="label">Hearted together</span><div class="row"><span class="n">9</span><p>squares hearted by <b>4 of you</b>, and Sam as a guest</p></div>
+      ${faces(['ana', 'dev', 'leela', 'arjun', 'sam'], 34)}<span class="hv">${ic('heart', 18)}${ic('heart', 18)}${ic('heart', 18)}</span></div>
+    <div class="t"><span class="label">Stays</span><span class="n">41</span><p>looked at, <b>12</b> with a pool</p></div>
+    <div class="t"><span class="label">Trip windows</span><span class="n">25</span><div class="dots">${dots}</div></div>
+    <div class="t msgs"><span class="label">Messages</span><span class="n">38</span><p>on 6 squares</p>${ic('chat', 22)}</div>
+    <div class="t wxt"><div data-art="palm-springs" data-wx="sun"></div><div class="in"><span class="label">Best weather</span><span class="n">71°</span><p><b>Palm Springs</b>, typical for mid December, rain 1 day in 20</p></div></div>
+    <div class="t eve"><span class="label">Together</span><span class="n">2h 10m</span><p>over 4 evenings</p></div>
+  </section>
+  <aside class="side"><div class="label">Ready to post · Instagram 1080 × 1350</div>
+    <div class="ig">
+      <div class="pair"><div data-art="los-angeles" data-wx="sun" data-fit="xMidYMid slice"></div><div class="bw"><div data-art="san-diego" data-wx="sun" data-fit="xMidYMid slice"></div></div>
+        <span class="badge">${ic('users', 14)}Planned together</span></div>
+      <div class="body"><h3>LA + San Diego</h3><div class="when">Dec 12–16 · family of 4</div>
+        <div class="facts">4 nights · 2 cities · 1 coast drive · 4 of us</div>
+        <div class="route"><span class="ap">SFO</span><span class="seg">${ic('plane', 16)}</span><span class="ap">LAX</span><span class="seg drive">${ic('car', 16)}</span><span class="ap">SAN</span><span class="seg">${ic('plane', 16)}</span><span class="ap">SFO</span></div>
+        <div class="foot">${TM.brand()}<span class="url">gitaway.me/t/ana-la-sd<span>Plan yours: open the trip</span></span></div></div>
+    </div>
+    <div class="share"><button class="btn btn-ink tap">${ic('share', 17)}Share</button><button class="btn btn-card tap">${ic('image', 17)}Save image</button></div>
+    <p class="note">Made for Instagram 1080 × 1350 · links back to the trip · no prices on it</p>
+  </aside>
+</main>` + TM.tabbar('Trip');
+TMArt.mount();
+</script>
+</body></html>

@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trip matrix · compare · F-221</title>
+<!-- One compare page: every screen and option, Stitch's draft beside Claude's live HTML, phone and laptop.
+     Tick Stitch, Claude, or both (= merge) per screen, option and device; picks stay in this browser (localStorage) and are summarised at the top. -->
+<link rel="stylesheet" href="tm.css">
+<script src="icons.js"></script><script src="tm.js"></script><script src="stitch/links.js"></script>
+<style>
+  body { background: var(--paper); }
+  .shell { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 28px; max-width: 1680px; margin: 0 auto; padding: 0 28px 80px; }
+  header.top2 { position: sticky; top: 0; z-index: 30; background: var(--paper); border-bottom: 1px solid var(--line); }
+  .bar { max-width: 1680px; margin: 0 auto; padding: 12px 28px; display: flex; align-items: center; gap: 16px; }
+  .bar h1 { font: 740 20px/1.1 var(--font); letter-spacing: -.03em; } .bar h1 em { font-style: normal; color: var(--ink-2); }
+  .seg { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--card); box-shadow: var(--sh1); margin-left: auto; }
+  .seg button { height: 32px; padding: 0 14px; border-radius: 999px; font: 600 13px/1 var(--font); color: var(--ink-2); }
+  .seg button.on { background: var(--ink); color: var(--paper); }
+  nav.toc { position: sticky; top: 76px; align-self: start; padding-top: 24px; display: grid; gap: 2px; }
+  nav.toc a { padding: 8px 12px; border-radius: 12px; font: 600 14px/1.2 var(--font); color: var(--ink-2); display: flex; justify-content: space-between; gap: 8px; }
+  nav.toc a.on { background: var(--card); color: var(--ink); box-shadow: var(--sh1); }
+  nav.toc a small { font: 600 11px/1.2 var(--mono); color: var(--ink-3); }
+  .picks { margin-top: 24px; background: var(--up-bg); color: var(--up-fg); border-radius: var(--r-widget); padding: 18px 22px; box-shadow: var(--sh2); }
+  .picks h2 { font: 720 20px/1.2 var(--font); letter-spacing: -.02em; }
+  .picks h2 em { font-style: normal; color: var(--up-fg2); }
+  .picks ul { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 6px 18px; margin-top: 12px; font-size: 13px; }
+  .picks li { display: flex; justify-content: space-between; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--up-line); color: var(--up-fg2); }
+  .picks li b { color: var(--up-fg); font-weight: 650; }
+  .picks .acts { display: flex; gap: 8px; margin-top: 14px; align-items: center; }
+  .picks .acts .btn { height: 34px; background: var(--up-btn); color: var(--up-btn-fg); }
+  .picks .acts .ghost { background: var(--up-tile); color: var(--up-fg); }
+  .picks .rec { margin-top: 12px; font-size: 13px; color: var(--up-fg2); } .picks .rec b { color: var(--up-fg); }
+  section.scr { margin-top: 44px; scroll-margin-top: 80px; }
+  section.scr > h2 { font: 760 30px/1.1 var(--font); letter-spacing: -.04em; }
+  section.scr > h2 em { font-style: normal; color: var(--ink-2); }
+  section.scr > p { color: var(--ink-2); max-width: 820px; margin-top: 6px; font-size: 15px; }
+  .opt { margin-top: 22px; background: var(--card); border-radius: var(--r-widget); box-shadow: var(--sh1); padding: 16px 18px 18px; }
+  .opt h3 { font: 700 18px/1.2 var(--font); letter-spacing: -.02em; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .opt h3 span { font: 500 14px/1.4 var(--font); color: var(--ink-2); letter-spacing: 0; }
+  .dev { margin-top: 14px; }
+  .dev .label { margin-bottom: 8px; display: block; }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+  .pair.phone { grid-template-columns: repeat(2, max-content); justify-content: start; gap: 28px; }
+  .frame { display: grid; gap: 8px; }
+  .frame .cap { display: flex; align-items: center; gap: 10px; font: 600 13px/1 var(--font); }
+  .frame .cap a { color: var(--ink-2); font-weight: 500; margin-left: auto; text-decoration: underline; text-underline-offset: 3px; }
+  .pick { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px 0 8px; border-radius: 999px; background: var(--paper-2); cursor: pointer; user-select: none; }
+  .pick input { appearance: none; width: 18px; height: 18px; border-radius: 6px; border: 2px solid var(--ink-3); display: grid; place-items: center; transition: transform var(--motion-quick); }
+  .pick input:active { transform: scale(.85); }
+  .pick input:checked { background: var(--ink); border-color: var(--ink); }
+  .pick input:checked::after { content: ""; width: 5px; height: 9px; border: solid var(--paper); border-width: 0 2px 2px 0; transform: rotate(45deg) translate(-1px, -1px); }
+  .pick.on { background: var(--ok-tint); color: var(--ok-ink); }
+  .vp { position: relative; overflow: hidden; border-radius: 16px; background: var(--paper-2); box-shadow: 0 0 0 1px var(--line); }
+  .vp iframe { position: absolute; left: 0; top: 0; border: 0; transform-origin: 0 0; background: var(--paper); }
+  .vp img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .vp.scroll { overflow-y: auto; } .vp.scroll img { height: auto; }
+  .vp .none { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 20px; color: var(--ink-2); font-size: 13px; }
+  .note { margin-top: 10px; font-size: 13px; color: var(--ink-2); }
+  @media (max-width: 1100px) { .shell { grid-template-columns: 1fr; } nav.toc { display: none; } .pair { grid-template-columns: 1fr; } }
+</style></head>
+<body>
+<header class="top2"><div class="bar"><span class="mark" id="mk"></span><h1>F-221 · The trip matrix <em>Stitch beside Claude, phone and laptop</em></h1>
+  <div class="seg" id="mode"><button data-m="light" class="on">Light</button><button data-m="dark">Dark</button></div></div></header>
+<div class="shell"><nav class="toc" id="toc"></nav><main id="main"></main></div>
+<script>
+document.getElementById('mk').outerHTML = TM.brand();
+// the screens: Claude's file per option, Stitch's screenshots per device (stitch/<key>-<device>.png) and its canvas link
+const STITCH = window.STITCH_LINKS || {};
+const SCREENS = [
+  { id: 'matrix', n: 1, title: 'The matrix', em: 'the whole trip, compared', p: 'The sentence on top; places and dates compared; every square the whole trip (flights + 4 nights + the airport drive) for 4; squares fill in cheapest first; one lit as the find; prices Preview with their age; hearts with faces; “Booking opens soon”.',
+    opts: [
+      { k: 'A', name: 'Grid', file: 'matrix-a.html', line: 'A calm table: places down, date windows across; the chosen place’s December sky on a date strip above; the square’s full panel beside it.' },
+      { k: 'B', name: 'Place cards', file: 'matrix-b.html', line: 'The place leads: the find as one ink hero with paired art and the route; each other place a card wearing its art, its five windows as small squares.' },
+      { k: 'C', name: 'Calendar lanes', file: 'matrix-c.html', line: 'The calendar is the axis: each place a lane of days wearing its own sky, the 4 nights a band across them, the total under each start day.' } ] },
+  { id: 'weather', n: 2, title: 'Weather in the calendar', em: 'each day wears its sky', p: 'Forecast when near (MET Norway), typical labelled “not a forecast yet” when far (NOAA normals), rain said plainly, never invented.',
+    opts: [{ k: '', name: 'Weather', file: 'weather.html', line: 'San Diego’s December strip (typical) and a near Lake Tahoe trip (forecast, rain on the 23rd), a day opened.' }] },
+  { id: 'art', n: 3, title: 'Place art', em: 'a drawn set of our own', p: 'Ten places in one flat, paper-cut style; the sky wears the weather; dark mode is the place at night. Inline SVG, fixed drawings, no photos, no emoji.',
+    opts: [{ k: '', name: 'Place art', file: 'art.html', line: 'The set, and how it sits behind the matrix, on the trip’s ticket, and under each kind of weather.' }] },
+  { id: 'together', n: 4, title: 'Choose it together', em: 'hearts, a thread, the owner’s “This one”', p: 'A square opened with its hearts (family and a guest), its own thread, the price watch, and the owner deciding.',
+    opts: [{ k: '', name: 'Together', file: 'together.html', line: 'The square’s sheet (phone) or panel (laptop), and the moment after “This one”.' }] },
+  { id: 'report', n: 5, title: 'The report and the Instagram card', em: 'you did all this', p: 'A fun, infographic report after planning; a 1080 × 1350 card with the place’s art and a link back, no prices.',
+    opts: [{ k: '', name: 'Report', file: 'report.html', line: 'Bento tiles with the find as the ink hero; the card beside it with Share and Save image.' }] },
+  { id: 'cover', n: 6, title: 'The cover', em: 'Compare the whole trip. Choose it together.', p: 'Three parts: Compare · Plan it together · Leave a trail others can follow (Bloggers and vloggers welcome). Calm, few moves, scroll-driven CSS, still under reduced motion. Scroll inside the frames.',
+    opts: [
+      { k: 'A', name: 'One stage', file: 'cover-a.html', line: 'One pinned product frame; three chapters scroll past beside it and the frame cross-fades between them.' },
+      { k: 'B', name: 'Editorial', file: 'cover-b.html', line: 'No pinning: a huge two-tone hero, then three tall art bands, each revealing once with a real product card.' },
+      { k: 'C', name: 'Postcards', file: 'cover-c.html', line: 'The three parts as three big postcards: a row that deals in on a laptop, a swipe row with the next one peeking on a phone.' } ] },
+];
+const DEV = { phone: { w: 390, h: 844, s: .62 }, laptop: { w: 1440, h: 900 } };
+let mode = (() => { try { return localStorage.getItem('f221-mode') || 'light'; } catch { return 'light'; } })();
+const load = () => { try { return JSON.parse(localStorage.getItem('f221-picks') || '{}'); } catch { return {}; } };
+const save = v => { try { localStorage.setItem('f221-picks', JSON.stringify(v)); } catch {} };
+let picks = load();
+
+function frame(sc, o, dev, eng) {
+  const key = `${sc.id}${o.k ? '-' + o.k.toLowerCase() : ''}`, id = `${key}:${dev}:${eng}`, on = !!picks[id];
+  const d = DEV[dev], cover = sc.id === 'cover';
+  let body;
+  if (eng === 'claude') body = `<div class="vp" data-dev="${dev}" style="aspect-ratio:${d.w}/${d.h}"><iframe loading="lazy" src="${o.file}?mode=${mode}" width="${d.w}" height="${d.h}" title="${sc.title} ${o.name} ${dev}"></iframe></div>`;
+  else body = `<div class="vp scroll" style="aspect-ratio:${d.w}/${d.h}"><img loading="lazy" src="stitch/${key}-${dev}.png" alt="Stitch draft: ${sc.title} ${o.name} ${dev}" onerror="this.outerHTML=this.dataset.miss"
+    data-miss="${(STITCH[`${key}-${dev}`] ? `<div class='none'><div><b style='font-size:15px;color:var(--ink)'>Stitch draft</b><br>The screenshot is on the Stitch canvas (the CLI cannot save it yet).<br><br><a class='btn btn-ink' target='_blank' href='${STITCH[`${key}-${dev}`]}'>Open in Stitch</a></div></div>` : `<div class='none'>No Stitch draft for this one.</div>`).replace(/"/g, '&quot;')}"></div>`;
+  const link = eng === 'claude' ? `<a href="${o.file}?mode=${mode}" target="_blank">Open</a>` : (STITCH[`${key}-${dev}`] ? `<a href="${STITCH[`${key}-${dev}`]}" target="_blank">Stitch canvas</a>` : '');
+  return `<div class="frame" ${dev === 'phone' ? `style="width:${Math.round(d.w * d.s)}px"` : ''}><div class="cap"><label class="pick ${on ? 'on' : ''}"><input type="checkbox" data-id="${id}" ${on ? 'checked' : ''}>${eng === 'claude' ? 'Claude' : 'Stitch'}</label>${link}</div>${body}</div>`;
+}
+function draw() {
+  const main = document.getElementById('main');
+  main.innerHTML = `<section class="picks" id="sum"></section>` + SCREENS.map(sc => `<section class="scr" id="s-${sc.id}"><h2>${sc.n}. ${sc.title}. <em>${sc.em}</em></h2><p>${sc.p}</p>` +
+    sc.opts.map(o => `<div class="opt"><h3>${o.k ? 'Option ' + o.k + ' · ' + o.name : o.name}<span>${o.line}</span></h3>` +
+      ['phone', 'laptop'].map(dev => `<div class="dev"><span class="label">${dev === 'phone' ? 'Phone · 390 × 844' : 'Laptop · 1440 × 900'}</span><div class="pair ${dev}">${frame(sc, o, dev, 'stitch')}${frame(sc, o, dev, 'claude')}</div></div>`).join('') + `</div>`).join('') + `</section>`).join('');
+  document.getElementById('toc').innerHTML = SCREENS.map(sc => `<a href="#s-${sc.id}" data-s="${sc.id}">${sc.n}. ${sc.title}<small>${sc.opts.length > 1 ? sc.opts.length + ' opts' : ''}</small></a>`).join('');
+  main.querySelectorAll('input[data-id]').forEach(c => c.onchange = () => { if (c.checked) picks[c.dataset.id] = 1; else delete picks[c.dataset.id]; save(picks); c.closest('.pick').classList.toggle('on', c.checked); summary(); });
+  fit(); summary(); spy();
+}
+function summary() {
+  const rows = [];
+  SCREENS.forEach(sc => sc.opts.forEach(o => ['phone', 'laptop'].forEach(dev => {
+    const key = `${sc.id}${o.k ? '-' + o.k.toLowerCase() : ''}`, s = picks[`${key}:${dev}:stitch`], c = picks[`${key}:${dev}:claude`];
+    if (s || c) rows.push({ t: `${sc.title}${o.k ? ' ' + o.k : ''} · ${dev}`, v: s && c ? 'Both (merge)' : s ? 'Stitch' : 'Claude' });
+  })));
+  document.getElementById('sum').innerHTML = `<h2>Your picks. <em>${rows.length ? rows.length + ' ticked' : 'Tick Stitch, Claude or both under each frame.'}</em></h2>` +
+    (rows.length ? `<ul>${rows.map(r => `<li><span>${r.t}</span><b>${r.v}</b></li>`).join('')}</ul>` : '') +
+    `<div class="rec"><b>Designer’s pick:</b> Matrix C (calendar lanes) on the laptop, with A’s panel for the square, and B’s place cards on the phone; cover B (no pinning, no jitter).</div>` +
+    `<div class="acts"><button class="btn tap" id="copy">${ic('clipboard', 14)}Copy picks</button><button class="btn ghost tap" id="clear">Clear</button><span id="copied" style="font-size:13px"></span></div>`;
+  document.getElementById('copy').onclick = () => { const t = rows.map(r => `${r.t}: ${r.v}`).join('\n') || 'No picks yet'; navigator.clipboard?.writeText(t).then(() => document.getElementById('copied').textContent = 'Copied'); };
+  document.getElementById('clear').onclick = () => { picks = {}; save(picks); draw(); };
+}
+// scale each live frame to its box (phone at .62; laptop to the column's half)
+function fit() { document.querySelectorAll('.vp[data-dev]').forEach(vp => { const d = DEV[vp.dataset.dev], f = vp.querySelector('iframe'); f.style.transform = `scale(${vp.clientWidth / d.w})`; }); }
+addEventListener('resize', fit);
+function spy() {
+  const links = [...document.querySelectorAll('#toc a')];
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) links.forEach(a => a.classList.toggle('on', a.dataset.s === e.target.id.slice(2))); }), { rootMargin: '-30% 0px -60% 0px' });
+  document.querySelectorAll('section.scr').forEach(s => io.observe(s));
+}
+document.querySelectorAll('#mode button').forEach(b => { b.classList.toggle('on', b.dataset.m === mode); b.onclick = () => { mode = b.dataset.m; try { localStorage.setItem('f221-mode', mode); } catch {} document.documentElement.dataset.mode = mode; document.querySelectorAll('#mode button').forEach(x => x.classList.toggle('on', x === b)); draw(); }; });
+document.documentElement.dataset.mode = mode;
+draw();
+</script>
+</body></html>

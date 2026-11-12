@@ -1,0 +1,167 @@
+{
+ "project": "5068253051282871529",
+ "design_system": "5524012603041697844",
+ "screens": [
+  {
+   "key": "art-laptop",
+   "id": "576bb77b88164f6482fad3c7d91fee2d",
+   "device": "DESKTOP",
+   "title": "GitAway \u2014 Place Illustrations & Trip Gallery (1440x900)",
+   "canvas": "https://stitch.google.com/projects/5068253051282871529?node-id=576bb77b88164f6482fad3c7d91fee2d"
+  },
+  {
+   "key": "art-phone",
+   "id": "0370d2a8f9eb41c8b190f031ee7112f8",
+   "device": "DESKTOP",
+   "title": "GitAway \u2014 Destination Gallery (Mobile 390px)",
+   "canvas": "https://stitch.google.com/projects/5068253051282871529?node-id=0370d2a8f9eb41c8b190f031ee7112f8"
+  },
+  {
+   "key": "cover-a-laptop",
+   "id": "9bb2105dbe044f1a87b602a4e4c86b21",
+   "device": "DESKTOP",
+   "title": "GitAway Landing \u2014 Compare the Whole Trip",
+   "canvas": "https://stitch.google.com/projects/5068253051282871529?node-id=9bb2105dbe044f1a87b602a4e4c86b21"
+  },
+  {
+   "key": "cover-a-phone",
+   "id": "b14a2574fd0a49e79613122d1a346bed",
+   "device": "DESKTOP",
+   "title": "GitAway Landing Page \u2014 Option A (One Screen, Three Chapters)",
+   "canvas": "https://stitch.google.com/projects/5068253051282871529?node-id=b14a2574fd0a49e79613122d1a346bed"
+  },
+  {
+   "key": "cover-b-laptop",
+   "id": "30d084d1e7a047adb803b79d9b22446c",
+   "device": "DESKTOP",
+   "title": "GitAway Landing \u2014 Editorial (Option B)",
+   "canvas": "https://stitch.google.com/projects/5068253051282871529?node-id=30d084d1e7a047adb803b79d9b22446c"
+  },
+  {
+   "key": "cover-b-phone",
+   "id": "c02e57dba77e4894aa4878111cfb8c05",
+   "device": "DESKTOP",
+   "title": "GitAway \u2014 Editorial Landing (Mobile 390px)",
+   "canvas": "https://stitch.google.com/projects/5068253051282871529?node-id=c02e57dba77e4894aa4878111cfb8c05"
+  },
+  {
+   "key": "cover-c-laptop",
+   "id": "60ec78c842914818bf6584056091b23b",
+   "device": "DESKTOP",
+   "title": "GitAway Landing \u2014 Postcards (Desktop 1440x900)",
+   "canvas": "https://stitch.google.com/projects/5068253051282871529?node-id=60ec78c842914818bf6584056091b23b"
+  },
+  {
+   "key": "cover-c-phone",
+   "id": "2735a6bfbe7e432b8f476cf79b355091",
+   "device": "MOBILE",
+   "title": "GitAway \u2014 Postcards Landing (Mobile 390px)",
+   "canvas": "https://stitch.google.com/projects/5068253051282871529?node-id=2735a6bfbe7e432b8f476cf79b355091"
+  },
+  {
+   "key": "matrix-a-laptop",
+   "id": "897cee99a58f4b4b8081334b7a84911f",
+   "device": "DESKTOP",
+   "title": "GitAway \u2014 Trip Matrix Grid (Desktop)",
+   "canvas": "https://stitch.google.com/projects/5068253051282871529?node-id=897cee99a58f4b4b8081334b7a84911f"
+  },
+  {
+   "key": "matrix-a-phone",
+   "id": "2b091028653e4333beaa90d3ecc84ca3",
+   "device": "MOBILE",
+   "title": "GitAway \u2014 Trip Matrix Grid (Mobile 390px)",
+   "canvas": "https://stitch.google.com/projects/5068253051282871529?node-id=2b091028653e4333beaa90d3ecc84ca3"
+  },
+  {
+   "key": "matrix-b-laptop",
+   "id": "41f0b4b56de846988bb8a525bfdc6e1f",
+   "device": "DESKTOP",
+   "title": "GitAway \u2014 Trip Matrix \"Place Cards\" (Desktop)",
+   "canvas": "https://stitch.google.com/projects/5068253051282871529?node-id=41f0b4b56de846988bb8a525bfdc6e1f"
+  },
+  {
+   "key": "matrix-b-phone",
+   "id": "56c3f1cd454e4768bff9fa600fd87f96",
+   "device": "MOBILE",
+   "title": "GitAway \u2014 Trip Matrix \"Place cards\" (Mobile 390px)",
+   "canvas": "https://stitch.google.com/projects/5068253051282871529?node-id=56c3f1cd454e4768bff9fa600fd87f96"
+  },
+  {
+   "key": "matrix-c-laptop",
+   "id": "20e3cf5ad50d4f6db2caf287b5c78279",
+   "device": "DESKTOP",
+   "title": "GitAway \u2014 Trip Matrix (Calendar Lanes)",
+   "canvas": "https://stitch.google.com/projects/5068253051282871529?node-id=20e3cf5ad50d4f6db2caf287b5c78279"
+  },
+  {
+   "key": "matrix-c-phone",
+   "id": "714b853493b4420baa8dbd2877b6af62",
+   "device": "MOBILE",
+   "title": "GitAway \u2014 Trip Matrix (Calendar Lanes)",
+   "canvas": "https://stitch.google.com/projects/5068253051282871529?node-id=714b853493b4420baa8dbd2877b6af62"
+  },
+  {
+   "key": "report-laptop",
+   "id": "ede4d736b9974e52912c338d143185cb",
+   "device": "DESKTOP",
+   "title": "GitAway \u2014 You did all this (End-of-Planning Report)",
+   "canvas": "https://stitch.google.com/projects/5068253051282871529?node-id=ede4d736b9974e52912c338d143185cb"
+  },
+  {
+   "key": "report-phone",
+   "id": "d29de855d77f47588b2ce16c04e08d2d",
+   "device": "DESKTOP",
+   "title": "GitAway \u2014 \"You did all this\" End-of-Planning Report",
+   "canvas": "https://stitch.google.com/projects/5068253051282871529?node-id=d29de855d77f47588b2ce16c04e08d2d"
+  },
+  {
+   "key": "together-laptop",
+   "id": "3df01d160bab4a98994da27aba7c69f8",
+   "device": "DESKTOP",
+   "title": "GitAway \u2014 Choose It Together: LA + San Diego Detail Sheet (1440x900)",
+   "canvas": "https://stitch.google.com/projects/5068253051282871529?node-id=3df01d160bab4a98994da27aba7c69f8"
+  },
+  {
+   "key": "together-phone",
+   "id": "40149c7ef30445d0a12b8006232a0315",
+   "device": "MOBILE",
+   "title": "GitAway \u2014 Choose it Together (Detail Sheet)",
+   "canvas": "https://stitch.google.com/projects/5068253051282871529?node-id=40149c7ef30445d0a12b8006232a0315"
+  },
+  {
+   "key": "weather-laptop",
+   "id": "6ce4980794574f7b833b09eed3d51b39",
+   "device": "DESKTOP",
+   "title": "GitAway \u2014 Lake Tahoe Weather Calendar (1440x900)",
+   "canvas": "https://stitch.google.com/projects/5068253051282871529?node-id=6ce4980794574f7b833b09eed3d51b39"
+  },
+  {
+   "key": "weather-phone",
+   "id": "1fa6b59cd7ac4daebe839cfa25be52d8",
+   "device": "DESKTOP",
+   "title": "GitAway \u2014 Weather in the Calendar (Lake Tahoe)",
+   "canvas": "https://stitch.google.com/projects/5068253051282871529?node-id=1fa6b59cd7ac4daebe839cfa25be52d8"
+  }
+ ],
+ "stray": [
+  "85d78ec9b79f4eb09ff76cf64190b382",
+  "ac5c9633d6024fd9b21a13c9a5c71e9c",
+  "589349bf691d41f1b064df1858c4550f",
+  "3cc7bbcde40b4c2280b2722e9c5911a5",
+  "130d49024f5e49c5a41606aaaf498ef7",
+  "2bb1b4f9da91429a8b9b3b3a5f3cfe40",
+  "0b906c379811427fa41b5d9c211a2a83",
+  "41bb18685f214e6fb808d557888a55c5",
+  "92aaaafbd6ba42bb8edb1840219cb375",
+  "7e6ac38488e34bcba38d01e52a09f0fa",
+  "92bd0540d9174d3bad512b85d367ada6",
+  "82fedfe950ab4eb68a8f893ca0fa3b39",
+  "c554f02ddaea41168b245761cbae0a94",
+  "36d8f2add0ab4e4ca9aa52727c0f43ac",
+  "cf46c2b90e704bbdb6c4bd34b5e9ba2c",
+  "ae3885137c224513ac4f2daa29f3bc63",
+  "a89a2c7a247c4aaa93d3b1fc2054b1f2",
+  "c72ad7e5a6a9447886528eb215384a5f",
+  "65dfa30e344a4d6f9756d54bc3cf0a3f"
+ ]
+}

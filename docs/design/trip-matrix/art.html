@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Place art · F-221</title>
+<link rel="stylesheet" href="tm.css">
+<script src="icons.js"></script><script src="tm.js"></script><script src="art.js"></script>
+<style>
+  main { max-width: 1320px; margin: 0 auto; padding: 12px 40px 60px; }
+  .hd { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin: 8px 0 22px; }
+  h1 { font: 760 42px/1.05 var(--font); letter-spacing: -.045em; } h1 em { font-style: normal; color: var(--ink-2); }
+  .lede { max-width: 560px; color: var(--ink-2); font-size: 15px; margin-top: 8px; }
+  .set { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+  .card { background: var(--card); border-radius: var(--r-card); box-shadow: var(--sh1); overflow: hidden; }
+  .card .pa { aspect-ratio: 2 / 1; }
+  .card .cap { padding: 10px 12px 12px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .card b { font: 650 15px/1.2 var(--font); letter-spacing: -.01em; } .card span { font-size: 12px; color: var(--ink-2); }
+  h2 { font: 720 22px/1.2 var(--font); letter-spacing: -.03em; margin: 40px 0 6px; } h2 em { font-style: normal; color: var(--ink-2); }
+  .uses { display: grid; grid-template-columns: 1.35fr 1fr 1fr; gap: 16px; margin-top: 14px; }
+  .use { background: var(--card); border-radius: var(--r-widget); box-shadow: var(--sh1); overflow: hidden; }
+  .use .lbl { padding: 12px 16px; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-2); }
+  .use .lbl b { color: var(--ink); font-weight: 650; }
+  /* 1: behind the matrix: a band that fades into the canvas; the sentence sits on the sky's top third */
+  .band { position: relative; height: 230px; background: var(--paper); }
+  .band .pa { position: absolute; inset: 0; -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 55%, transparent 100%); mask-image: linear-gradient(to bottom, #000 0, #000 55%, transparent 100%); opacity: .9; }
+  .band .over { position: relative; padding: 18px 20px; }
+  .band .sentence { font-size: 21px; max-width: 420px; }
+  .band .tile { position: absolute; left: 20px; right: 20px; bottom: 14px; background: var(--card); border-radius: 16px; box-shadow: var(--sh2); padding: 10px 12px; display: flex; gap: 10px; align-items: center; font-size: 13px; }
+  .band .tile .num { font: 650 18px/1 var(--mono); margin-left: auto; }
+  /* 2: on the trip: the ticket's top */
+  .ticket .pa { height: 132px; }
+  .ticket .body { padding: 14px 16px 6px; }
+  .ticket .t { font: 720 20px/1.15 var(--font); letter-spacing: -.03em; }
+  .ticket .s { color: var(--ink-2); font-size: 13px; margin-top: 4px; }
+  .perf { position: relative; height: 18px; margin: 6px 0; }
+  .perf::before { content: ""; position: absolute; left: 14px; right: 14px; top: 8px; border-top: 2px dashed var(--line-2); }
+  .perf::after, .perf i { content: ""; position: absolute; top: 0; width: 18px; height: 18px; border-radius: 50%; background: var(--paper); }
+  .perf::after { right: -9px; } .perf i { left: -9px; }
+  .ticket .row { display: flex; gap: 8px; padding: 0 16px 14px; align-items: center; }
+  /* 3: the sky follows the weather and the mode */
+  .skies { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 6px; }
+  .skies .pa { aspect-ratio: 2 / 1; border-radius: 14px; }
+  .skies figure { position: relative; } .skies figcaption { position: absolute; left: 8px; top: 8px; font: 600 11px/1 var(--font); background: var(--card); color: var(--ink); padding: 5px 8px; border-radius: 999px; box-shadow: var(--sh1); }
+  .rules { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 16px; }
+  .rule { background: var(--card); border-radius: var(--r-card); padding: 14px 16px; box-shadow: var(--sh1); font-size: 13px; color: var(--ink-2); }
+  .rule b { display: block; color: var(--ink); font-size: 14px; margin-bottom: 4px; }
+  @media (max-width: 720px) {
+    main { padding: 4px 16px 120px; }
+    .hd { display: block; } h1 { font-size: 34px; }
+    .set { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .card .cap { display: block; padding: 8px 10px 10px; } .card span { display: block; margin-top: 2px; }
+    .uses, .rules { grid-template-columns: 1fr; }
+    .band .sentence { font-size: 20px; }
+  }
+</style></head>
+<body>
+<div id="app"></div>
+<script>
+const { PLACES } = TMArt;
+document.getElementById('app').innerHTML = TM.status() + TM.topbar('Book') + `
+<main>
+  <div class="hd"><div><div class="label">F-221 · Place art · a drawn set of our own</div>
+    <h1>Every place has a face. <em>Drawn once, worn everywhere.</em></h1>
+    <p class="lede">Ten places in one flat, paper-cut style: one landmark, a sky that wears the weather, a night version for dark mode. Fixed drawings, never a photo, never made up per visit.</p></div>
+    <span class="sample only-laptop" style="white-space:nowrap">Sample set · 10 of places.py</span></div>
+  <section class="set">${PLACES.map(id => `<div class="card"><div data-art="${id}" data-wx="sun"></div><div class="cap"><b>${TMArt.META[id].name}</b><span>${TMArt.META[id].kind}</span></div></div>`).join('')}</section>
+
+  <h2>Where it sits. <em>Words never sit on the busy half.</em></h2>
+  <section class="uses">
+    <div class="use"><div class="band"><div data-art="san-diego" data-wx="sun"></div>
+      <div class="over"><div class="sentence">${TM.SENTENCE}</div></div>
+      <div class="tile"><span class="kt stay">${ic('bed', 16)}</span><span>Best so far · Dec 13–17<br><span class="preview">Preview · 4 min ago</span></span><span class="num">$2,080</span></div></div>
+      <div class="lbl"><b>Behind the matrix.</b> A band at the top fades into the canvas; the sentence sits on the sky (ink 7:1 on day skies, white on night ones). Tiles below stay opaque.</div></div>
+    <div class="use ticket"><div data-art="lake-tahoe" data-wx="snow"></div><div class="body"><div class="t">Lake Tahoe · Thanksgiving</div><div class="s">Nov 26–30 · 4 of you · snow likely Thursday</div></div><div class="perf"><i></i></div>
+      <div class="row">${TM.faces(['ana', 'dev', 'leela', 'arjun'], 26)}<span class="fine" style="margin-left:auto">Open the trip</span>${ic('chev-right', 16)}</div>
+      <div class="lbl"><b>On the trip.</b> The ticket's top on the cockpit and the trip card. Art above the perforation, words below it.</div></div>
+    <div class="use"><div class="skies">
+      <figure><div data-art="new-york" data-wx="sun"></div><figcaption>Sun</figcaption></figure>
+      <figure><div data-art="new-york" data-wx="cloud"></div><figcaption>Cloud</figcaption></figure>
+      <figure><div data-art="new-york" data-wx="rain"></div><figcaption>Rain</figcaption></figure>
+      <figure><div data-art="new-york" data-wx="snow"></div><figcaption>Snow</figcaption></figure></div>
+      <div class="lbl"><b>The sky is the weather.</b> The day you pick sets the sky; clouds drift (70 s a crossing), rain and snow fall; dark mode is the same place at night. Still under reduced motion.</div></div>
+  </section>
+  <section class="rules">
+    <div class="rule"><b>One style</b>Five layers (sky, far, mid, near, ground), one landmark, eight tones at most, no outlines.</div>
+    <div class="rule"><b>Kinds keep their colours</b>Art uses its own soft palette; kind colours never appear in it, so a flight tile is never confused with a sky.</div>
+    <div class="rule"><b>Legible by construction</b>Text goes on an opaque tile or on the sky's top third, which is drawn pale (day) or deep (night).</div>
+    <div class="rule"><b>Places without art</b>Fall back to their kind (beach, city, snow, desert, park) until drawn; never a stock photo.</div>
+  </section>
+</main>` + TM.tabbar('Book');
+TMArt.mount();
+</script>
+</body></html>

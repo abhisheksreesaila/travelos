@@ -1,0 +1,157 @@
+/* F-221 artboards: Direction A tokens (assets/css/tokens.css, light and dark) and the components the trip-matrix screens share.
+   Artboards are references to rebuild with the app's tokens (rem at the 12px desktop root, 16px phone); sizes here are design px.
+   Phone layout below 720px, laptop above; the compare page shows each file at 390 and 1440. ?mode=dark|light pins the mode. */
+@font-face { font-family: "Geist"; src: url("../../../assets/fonts/geist-variable.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: "Geist Mono"; src: url("../../../assets/fonts/geist-mono-variable.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+
+:root {
+  --font: "Geist", system-ui, sans-serif; --mono: "Geist Mono", ui-monospace, monospace;
+  --k-flight: #4338CA; --k-stay: #8B2FC9; --k-car: #15803D; --k-tix: #C2410C; --k-wx: #0369A1; --k-food: #C92A5E; --k-see: #0F766E; --k-ride: #FFD43B;
+  --r-field: 14px; --r-card: 20px; --r-widget: 26px;
+  --motion-spring: cubic-bezier(.3, 1.12, .4, 1); --motion-spring-dur: 380ms; --motion-ease: cubic-bezier(.25, .8, .25, 1); --motion-dur: 240ms;
+  --motion-desk: 140ms; --motion-quick: 160ms; --motion-settle-dur: 280ms;
+  color-scheme: light;
+  --paper: #F2F2F5; --card: #FFFFFF; --card-2: #FFFFFF; --paper-2: #EDEDF1;
+  --ink: #0B0B0D; --ink-2: #5C5C66; --ink-3: #62626B; --line: #E3E3E8; --line-2: #D7D7DE;
+  --accent: #0B0B0D; --on-accent: #FFFFFF; --state: 11 11 13;
+  --ok: #1F9D50; --ok-ink: #116A33; --ok-tint: #DDF3E4; --warn-tint: #FFF1C9; --warn-ink: #6B4A00;
+  --sh1: 0 1px 2px rgba(10,10,20,.06), 0 0 0 1px rgba(10,10,20,.04);
+  --sh2: 0 8px 24px rgba(10,10,20,.08), 0 0 0 1px rgba(10,10,20,.04);
+  --sh3: 0 18px 48px rgba(10,10,20,.16), 0 0 0 1px rgba(10,10,20,.05);
+  --k-flight-t: #E4E3FB; --k-flight-i: #2A2185; --k-stay-t: #F1E3FA; --k-stay-i: #5A1785; --k-car-t: #DDF3E4; --k-car-i: #0F5128;
+  --k-tix-t: #FCE6DA; --k-tix-i: #7A2906; --k-wx-t: #DBEFFA; --k-wx-i: #034769; --k-see-t: #D9F2EF; --k-see-i: #0B4D48; --k-food-t: #FBE1EA; --k-food-i: #7E1538;
+  --up-bg: #0B0B0D; --up-fg: #FFFFFF; --up-fg2: #C9C9D1; --up-line: #3A3A41; --up-tile: #26262B; --up-btn: #FFFFFF; --up-btn-fg: #0B0B0D;
+  --island: rgba(255,255,255,.80); --beacon-bg: #0B0B0D; --beacon-acc: #FFD43B;
+  --mark-bg: #0B0B0D; --mark-line: #FFFFFF; --mark-a: #8C8CFF; --mark-b: #D38CFF; --mark-c: #FF9A5C;
+  --shimmer: linear-gradient(100deg, transparent 20%, rgba(255,255,255,.7) 50%, transparent 80%);
+}
+:root[data-mode="dark"] {
+  color-scheme: dark;
+  --paper: #000000; --card: #1C1C1F; --card-2: #2A2A2E; --paper-2: #2A2A2E;
+  --ink: #F5F5F7; --ink-2: #A1A1AA; --ink-3: #98989F; --line: #2E2E33; --line-2: #3A3A40;
+  --accent: #F5F5F7; --on-accent: #0B0B0D; --state: 245 245 247;
+  --ok: #30C060; --ok-ink: #6EE7A0; --ok-tint: #123222; --warn-tint: #3A2E08; --warn-ink: #FFE08A;
+  --sh1: 0 1px 0 rgba(255,255,255,.05) inset, 0 1px 2px rgba(0,0,0,.6);
+  --sh2: 0 1px 0 rgba(255,255,255,.05) inset, 0 8px 24px rgba(0,0,0,.6);
+  --sh3: 0 1px 0 rgba(255,255,255,.06) inset, 0 18px 48px rgba(0,0,0,.75);
+  --k-flight-t: #1F1C4A; --k-flight-i: #CBC8FF; --k-stay-t: #2C1740; --k-stay-i: #E7CCFA; --k-car-t: #10301C; --k-car-i: #BFEBCD;
+  --k-tix-t: #3A1D10; --k-tix-i: #FFD3BD; --k-wx-t: #0C2A3B; --k-wx-i: #C3E6FA; --k-see-t: #0E2E2B; --k-see-i: #BCEBE5; --k-food-t: #3A1322; --k-food-i: #FFCCDC;
+  --up-bg: #F5F5F7; --up-fg: #0B0B0D; --up-fg2: #45454D; --up-line: #CFCFD6; --up-tile: #E2E2E8; --up-btn: #0B0B0D; --up-btn-fg: #FFFFFF;
+  --island: rgba(34,34,38,.80); --beacon-bg: #1C1C1F;
+  --mark-bg: #F5F5F7; --mark-line: #0B0B0D; --mark-a: #4338CA; --mark-b: #8B2FC9; --mark-c: #C2410C;
+  --shimmer: linear-gradient(100deg, transparent 20%, rgba(255,255,255,.08) 50%, transparent 80%);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-mode="light"]) {
+  color-scheme: dark;
+  --paper: #000000; --card: #1C1C1F; --card-2: #2A2A2E; --paper-2: #2A2A2E;
+  --ink: #F5F5F7; --ink-2: #A1A1AA; --ink-3: #98989F; --line: #2E2E33; --line-2: #3A3A40;
+  --accent: #F5F5F7; --on-accent: #0B0B0D; --state: 245 245 247;
+  --ok: #30C060; --ok-ink: #6EE7A0; --ok-tint: #123222; --warn-tint: #3A2E08; --warn-ink: #FFE08A;
+  --sh1: 0 1px 0 rgba(255,255,255,.05) inset, 0 1px 2px rgba(0,0,0,.6);
+  --sh2: 0 1px 0 rgba(255,255,255,.05) inset, 0 8px 24px rgba(0,0,0,.6);
+  --sh3: 0 1px 0 rgba(255,255,255,.06) inset, 0 18px 48px rgba(0,0,0,.75);
+  --k-flight-t: #1F1C4A; --k-flight-i: #CBC8FF; --k-stay-t: #2C1740; --k-stay-i: #E7CCFA; --k-car-t: #10301C; --k-car-i: #BFEBCD;
+  --k-tix-t: #3A1D10; --k-tix-i: #FFD3BD; --k-wx-t: #0C2A3B; --k-wx-i: #C3E6FA; --k-see-t: #0E2E2B; --k-see-i: #BCEBE5; --k-food-t: #3A1322; --k-food-i: #FFCCDC;
+  --up-bg: #F5F5F7; --up-fg: #0B0B0D; --up-fg2: #45454D; --up-line: #CFCFD6; --up-tile: #E2E2E8; --up-btn: #0B0B0D; --up-btn-fg: #FFFFFF;
+  --island: rgba(34,34,38,.80); --beacon-bg: #1C1C1F;
+  --mark-bg: #F5F5F7; --mark-line: #0B0B0D; --mark-a: #4338CA; --mark-b: #8B2FC9; --mark-c: #C2410C;
+  --shimmer: linear-gradient(100deg, transparent 20%, rgba(255,255,255,.08) 50%, transparent 80%);
+} }
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--paper); color: var(--ink); font: 400 16px/1.4 var(--font); -webkit-font-smoothing: antialiased; }
+body { min-height: 100vh; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+a { color: inherit; text-decoration: none; }
+.i { flex: none; display: block; }
+.mono, .num { font-family: var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.label { font: 600 12px/1 var(--font); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.fine { font-size: 13px; color: var(--ink-2); }
+.muted { color: var(--ink-2); }
+
+/* press feedback: every tappable thing squashes the same way */
+.tap { transition: transform var(--motion-quick) var(--motion-ease), background-color var(--motion-quick), box-shadow var(--motion-quick); }
+.tap:active { transform: scale(.96); }
+
+/* buttons: pills; filled = ink + sh1 (sh2 on hover); secondary = card pill + sh1; flat inside a panel */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 18px; border-radius: 999px; font: 600 14px/1 var(--font); white-space: nowrap; }
+.btn-ink { background: var(--accent); color: var(--on-accent); box-shadow: var(--sh1); }
+.btn-ink:hover { box-shadow: var(--sh2); transform: translateY(-1px); }
+.btn-card { background: var(--card); color: var(--ink); box-shadow: var(--sh1); }
+.btn-flat { background: var(--paper-2); color: var(--ink); }
+.btn-soon { background: var(--paper-2); color: var(--ink-2); border: 1px dashed var(--line-2); }
+
+/* the mark (layout.mark()) */
+.mark { display: inline-flex; align-items: center; gap: 8px; font: 750 19px/1 var(--font); letter-spacing: -.03em; }
+.mark i { width: 28px; height: 28px; border-radius: 8px; background: var(--mark-bg); display: grid; place-items: center; }
+.preview-pill { font: 600 11px/1 var(--font); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); padding: 6px 9px; border-radius: 999px; background: var(--paper-2); }
+
+/* laptop shell: top islands (brand · nav pill · Beacon), translucency only on the islands */
+.top { position: sticky; top: 0; z-index: 20; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; height: 64px; padding: 0 24px; }
+.top .l { display: flex; align-items: center; gap: 10px; }
+.top .r { display: flex; justify-content: flex-end; align-items: center; gap: 10px; }
+.navpill { display: flex; gap: 2px; padding: 4px; border-radius: 999px; background: var(--island); box-shadow: var(--sh2); backdrop-filter: blur(20px) saturate(170%); -webkit-backdrop-filter: blur(20px) saturate(170%); }
+.navpill a { height: 36px; display: inline-flex; align-items: center; gap: 6px; padding: 0 16px; border-radius: 999px; font: 600 14px/1 var(--font); color: var(--ink-2); }
+.navpill a.on { background: var(--ink); color: var(--paper); }
+.beacon { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px 0 12px; border-radius: 999px; background: var(--beacon-bg); color: #F4F4F6; font: 500 14px/1 var(--font); box-shadow: var(--sh2); }
+.beacon b { font: 650 13px/1 var(--mono); color: var(--beacon-acc); }
+.avatar { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font: 650 13px/1 var(--font); color: #fff; }
+
+/* faces: a family member or a guest */
+.face { width: 22px; height: 22px; border-radius: 50%; display: inline-grid; place-items: center; font: 650 10px/1 var(--font); color: #fff; box-shadow: 0 0 0 2px var(--card); flex: none; }
+.face.guest { background: var(--card) !important; color: var(--ink-2); box-shadow: 0 0 0 2px var(--card), inset 0 0 0 1.5px var(--ink-3); }
+.faces { display: inline-flex; align-items: center; }
+.faces .face + .face { margin-left: -6px; }
+.heart { color: #E5484D; }
+
+/* the phone shell: a status spacer, the floating tab bar (translucent island) */
+.phone-status { height: 47px; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 28px 8px; font: 600 16px/1 var(--font); }
+.tabbar { position: fixed; left: 12px; right: 12px; bottom: 16px; height: 68px; border-radius: 34px; display: grid; grid-template-columns: repeat(5, 1fr); align-items: center; padding: 0 6px; background: var(--island); box-shadow: var(--sh3); z-index: 30; backdrop-filter: blur(20px) saturate(170%); -webkit-backdrop-filter: blur(20px) saturate(170%); }
+.tabbar a { display: grid; justify-items: center; gap: 4px; font: 600 11px/1 var(--font); color: var(--ink-2); }
+.tabbar a.on { color: var(--ink); }
+.tabbar .ask { width: 52px; height: 52px; margin: 0 auto; border-radius: 50%; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; box-shadow: var(--sh2); }
+
+/* the sentence: the query you can change (underlined parts are menus) */
+.sentence { font: 700 30px/1.22 var(--font); letter-spacing: -.035em; color: var(--ink); text-wrap: balance; }
+.sentence .k { color: var(--ink); text-decoration: underline; text-decoration-thickness: 3px; text-underline-offset: 6px; text-decoration-color: var(--line-2); cursor: pointer; }
+.sentence .k:hover { text-decoration-color: var(--ink); }
+.sentence .soft { color: var(--ink-2); }
+
+/* kind tiles and breakdown rows */
+.kt { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; color: #fff; flex: none; }
+.kt.flight { background: var(--k-flight); } .kt.stay { background: var(--k-stay); } .kt.car { background: var(--k-car); } .kt.wx { background: var(--k-wx); } .kt.see { background: var(--k-see); }
+.bar3 { display: flex; height: 4px; border-radius: 2px; overflow: hidden; gap: 1.5px; }
+.bar3 i { display: block; } .bar3 .f { background: var(--k-flight); } .bar3 .s { background: var(--k-stay); } .bar3 .d { background: var(--k-car); }
+
+/* marks set by plain rules */
+.mk { display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px; border-radius: 999px; font: 600 11px/1 var(--font); white-space: nowrap; background: var(--paper-2); color: var(--ink); }
+.preview { display: inline-flex; align-items: center; gap: 5px; font: 500 12px/1 var(--font); color: var(--ink-2); }
+.preview::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--ok); }
+.sample { font: 600 11px/1 var(--font); letter-spacing: .06em; text-transform: uppercase; color: var(--warn-ink); background: var(--warn-tint); padding: 5px 8px; border-radius: 999px; }
+
+/* a square still searching: a calm shimmer (no shimmer under reduced motion) */
+.searching { position: relative; overflow: hidden; background: var(--paper-2) !important; color: transparent !important; }
+.searching::after { content: ""; position: absolute; inset: 0; background: var(--shimmer); background-size: 200% 100%; animation: shimmer 1.6s linear infinite; }
+@keyframes shimmer { from { background-position: 150% 0; } to { background-position: -50% 0; } }
+
+/* squares arrive: a short settle (phone: spring scale from .96; laptop: the calm fade) */
+@keyframes arrive { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes arrive-calm { from { opacity: 0; } to { opacity: 1; } }
+.arrive { animation: arrive var(--motion-settle-dur) var(--motion-spring) both; }
+@media (min-width: 1020px) { .arrive { animation: arrive-calm var(--motion-desk) var(--motion-ease) both; } }
+@media (prefers-reduced-motion: reduce) { .arrive { animation: arrive-calm 120ms linear both; } .searching::after { animation: none; } }
+
+/* the bottom sheet (phone) */
+.sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; background: var(--card-2); border-radius: 26px 26px 0 0; box-shadow: var(--sh3); padding: 10px 16px 24px; }
+.sheet .grab { width: 40px; height: 5px; border-radius: 3px; background: var(--line-2); margin: 0 auto 12px; }
+
+/* phone vs laptop */
+@media (min-width: 721px) { .only-phone { display: none !important; } }
+@media (max-width: 720px) {
+  .only-laptop { display: none !important; }
+  .sentence { font-size: 24px; line-height: 1.25; }
+  .btn { height: 48px; padding: 0 20px; font-size: 16px; }
+  .label { font-size: 13px; }
+  .fine { font-size: 14px; }
+  .preview { font-size: 14px; }
+}

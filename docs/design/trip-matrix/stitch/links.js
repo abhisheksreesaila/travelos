@@ -1,0 +1,24 @@
+/* F-221 Stitch drafts (project 5068253051282871529): canvas links per screen and device. stray = the first batch that ran without its prompt (delete only with the founder's yes). */
+window.STITCH_LINKS = {
+ "art-laptop": "https://stitch.google.com/projects/5068253051282871529?node-id=576bb77b88164f6482fad3c7d91fee2d",
+ "art-phone": "https://stitch.google.com/projects/5068253051282871529?node-id=0370d2a8f9eb41c8b190f031ee7112f8",
+ "cover-a-laptop": "https://stitch.google.com/projects/5068253051282871529?node-id=9bb2105dbe044f1a87b602a4e4c86b21",
+ "cover-a-phone": "https://stitch.google.com/projects/5068253051282871529?node-id=b14a2574fd0a49e79613122d1a346bed",
+ "cover-b-laptop": "https://stitch.google.com/projects/5068253051282871529?node-id=30d084d1e7a047adb803b79d9b22446c",
+ "cover-b-phone": "https://stitch.google.com/projects/5068253051282871529?node-id=c02e57dba77e4894aa4878111cfb8c05",
+ "cover-c-laptop": "https://stitch.google.com/projects/5068253051282871529?node-id=60ec78c842914818bf6584056091b23b",
+ "cover-c-phone": "https://stitch.google.com/projects/5068253051282871529?node-id=2735a6bfbe7e432b8f476cf79b355091",
+ "matrix-a-laptop": "https://stitch.google.com/projects/5068253051282871529?node-id=897cee99a58f4b4b8081334b7a84911f",
+ "matrix-a-phone": "https://stitch.google.com/projects/5068253051282871529?node-id=2b091028653e4333beaa90d3ecc84ca3",
+ "matrix-b-laptop": "https://stitch.google.com/projects/5068253051282871529?node-id=41f0b4b56de846988bb8a525bfdc6e1f",
+ "matrix-b-phone": "https://stitch.google.com/projects/5068253051282871529?node-id=56c3f1cd454e4768bff9fa600fd87f96",
+ "matrix-c-laptop": "https://stitch.google.com/projects/5068253051282871529?node-id=20e3cf5ad50d4f6db2caf287b5c78279",
+ "matrix-c-phone": "https://stitch.google.com/projects/5068253051282871529?node-id=714b853493b4420baa8dbd2877b6af62",
+ "report-laptop": "https://stitch.google.com/projects/5068253051282871529?node-id=ede4d736b9974e52912c338d143185cb",
+ "report-phone": "https://stitch.google.com/projects/5068253051282871529?node-id=d29de855d77f47588b2ce16c04e08d2d",
+ "together-laptop": "https://stitch.google.com/projects/5068253051282871529?node-id=3df01d160bab4a98994da27aba7c69f8",
+ "together-phone": "https://stitch.google.com/projects/5068253051282871529?node-id=40149c7ef30445d0a12b8006232a0315",
+ "weather-laptop": "https://stitch.google.com/projects/5068253051282871529?node-id=6ce4980794574f7b833b09eed3d51b39",
+ "weather-phone": "https://stitch.google.com/projects/5068253051282871529?node-id=1fa6b59cd7ac4daebe839cfa25be52d8"
+};
+window.STITCH_STRAY = ["85d78ec9b79f4eb09ff76cf64190b382", "ac5c9633d6024fd9b21a13c9a5c71e9c", "589349bf691d41f1b064df1858c4550f", "3cc7bbcde40b4c2280b2722e9c5911a5", "130d49024f5e49c5a41606aaaf498ef7", "2bb1b4f9da91429a8b9b3b3a5f3cfe40", "0b906c379811427fa41b5d9c211a2a83", "41bb18685f214e6fb808d557888a55c5", "92aaaafbd6ba42bb8edb1840219cb375", "7e6ac38488e34bcba38d01e52a09f0fa", "92bd0540d9174d3bad512b85d367ada6", "82fedfe950ab4eb68a8f893ca0fa3b39", "c554f02ddaea41168b245761cbae0a94", "36d8f2add0ab4e4ca9aa52727c0f43ac", "cf46c2b90e704bbdb6c4bd34b5e9ba2c", "ae3885137c224513ac4f2daa29f3bc63", "a89a2c7a247c4aaa93d3b1fc2054b1f2", "c72ad7e5a6a9447886528eb215384a5f", "65dfa30e344a4d6f9756d54bc3cf0a3f"];

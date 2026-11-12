@@ -1,0 +1,200 @@
+<!doctype html>
+<!-- F-221 cover, option C "Postcards": the three parts are three big postcards (place art on top, the product inside, a stamp corner).
+Motion: (transforms and opacity only; no JS scroll handlers)
+ 1. Hero: the sentence in the search bar types itself once on load: each word opacity 0 -> 1, 45 ms apart, 160 ms each (--motion-quick), ease; about 1 s in all. Nothing else in the hero moves.
+ 2. Laptop, the postcards deal in as the row arrives: translateY(80px) rotate(+-7deg) + opacity 0 -> their resting tilt (-2deg, 0, 2deg), view() entry 0%->60% for the first,
+    then 10%->70% and 20%->80% (stagger by range, not time), spring (linear() curve, 3% overshoot). After entry they are still.
+ 3. Laptop, the active postcard lifts: on hover or keyboard focus, translateY(-10px) rotate(0) and --sh3, 380 ms spring (--motion-spring); back on leave in 240 ms.
+ 4. Phone, the row swipes (scroll-snap, the next card peeks): each card scales .94 -> 1 -> .94 with opacity .75 -> 1 -> .75 on view(inline) cover 0%->50%->100%, linear,
+    so only the card under your finger moves; the three dots grow (scale 1 -> 1.35, opacity .35 -> 1) on the same inline timelines.
+ 5. The place art's clouds drift slowly (art.js, 70 s), the only continuous move.
+ Fallback (no animation-timeline): the cards sit at their resting tilt; the phone row still snaps; the dots stay static (the first one ink).
+ Reduced motion: no deal, lift, scale or typing; everything is at rest; the hover lift becomes a shadow change only. -->
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cover C · Postcards · F-221</title>
+<link rel="stylesheet" href="tm.css">
+<script src="icons.js"></script><script src="tm.js"></script><script src="art.js"></script>
+<style>
+  :root { --spring: linear(0, .071, .226, .407, .577, .72, .831, .911, .964, .997, 1.014, 1.021, 1.023, 1.02, 1.014, 1.009, 1.004, 1.002, 1); }
+  body { overflow-x: hidden; }
+  .hdr { display: flex; align-items: center; gap: 10px; height: 68px; padding: 0 28px; max-width: 1320px; margin: 0 auto; }
+  .hdr .sp { flex: 1; }
+  .btn-lg { height: 52px; padding: 0 26px; font-size: 16px; }
+  .hero { text-align: center; padding: 64px 24px 0; }
+  .hero h1 { font: 800 96px/.96 var(--font); letter-spacing: -.055em; }
+  .hero h1 span { color: var(--ink-2); display: block; }
+  .hero p { margin: 22px auto 0; font-size: 20px; color: var(--ink-2); max-width: 620px; }
+  .search { margin: 34px auto 0; max-width: 820px; background: var(--card); border-radius: 26px; box-shadow: var(--sh2); padding: 16px 16px 16px 24px; display: flex; gap: 14px; align-items: center; text-align: left; }
+  .search .i.lead { color: var(--ink-2); }
+  .search .ssent { flex: 1; font: 700 21px/1.3 var(--font); letter-spacing: -.025em; }
+  .search .go { height: 48px; padding: 0 20px; border-radius: 999px; background: var(--accent); color: var(--on-accent); display: inline-flex; align-items: center; gap: 8px; font: 650 15px/1 var(--font); flex: none; }
+  .ssent .k { text-decoration: underline; text-decoration-thickness: 2.5px; text-underline-offset: 5px; text-decoration-color: var(--line-2); }
+  .ssent .w { animation: type var(--motion-quick) var(--motion-ease) both; animation-delay: calc(300ms + var(--w) * 45ms); }
+  @keyframes type { from { opacity: 0; } to { opacity: 1; } }
+
+  .row-hd { text-align: center; margin-top: 110px; }
+  .row-hd .label { display: block; }
+  .row-hd h2 { font: 780 44px/1.05 var(--font); letter-spacing: -.045em; margin-top: 12px; }
+  .row-hd h2 em { font-style: normal; color: var(--ink-2); }
+  .cards { timeline-scope: --p1, --p2, --p3; }
+  .track { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; max-width: 1320px; margin: 40px auto 0; padding: 20px 32px 40px; }
+  .pc { --tilt: 0deg; position: relative; background: var(--card); border-radius: 28px; box-shadow: var(--sh2); overflow: hidden; display: grid; grid-template-rows: auto 1fr; transform: rotate(var(--tilt)); transition: transform var(--motion-spring-dur) var(--motion-spring), box-shadow var(--motion-dur) var(--motion-ease); outline: none; }
+  .pc:nth-child(1) { --tilt: -1deg; } .pc:nth-child(3) { --tilt: 1deg; }
+  .pc:hover, .pc:focus-visible { transform: translateY(-10px) rotate(0deg); box-shadow: var(--sh3); }
+  .pc > .art { height: 190px; position: relative; display: grid; grid-template-columns: 1fr; }
+  .pc > .art.duo { grid-template-columns: 1fr 1fr; }
+  .pc > .art .pa { position: relative; height: 100%; }
+  .stamp { position: absolute; top: 14px; right: 14px; width: 66px; height: 78px; background: var(--card); border-radius: 6px; box-shadow: var(--sh2); padding: 5px; display: grid; }
+  .stamp i { border: 1.5px dashed var(--line-2); border-radius: 3px; display: grid; place-items: center; align-content: center; gap: 2px; font-style: normal; }
+  .stamp b { font: 700 22px/1 var(--mono); letter-spacing: -.04em; }
+  .stamp span { font: 650 9px/1 var(--font); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+  .pmark { position: absolute; left: 16px; top: 16px; font: 600 12px/1 var(--mono); padding: 6px 9px; border-radius: 999px; background: var(--card); box-shadow: var(--sh1); }
+  .pc .body { padding: 20px 20px 22px; display: grid; gap: 12px; align-content: start; }
+  .pc h3 { font: 760 30px/1.02 var(--font); letter-spacing: -.045em; }
+  .pc h3 em { font-style: normal; color: var(--ink-2); }
+  .pc .sub { justify-self: start; font: 650 14px/1 var(--font); padding: 8px 12px; border-radius: 999px; background: var(--paper-2); }
+  .pc p { font-size: 15px; color: var(--ink-2); line-height: 1.45; }
+  .inner { background: var(--paper-2); border-radius: 20px; padding: 12px; display: grid; gap: 10px; }
+
+  /* product bits, compact */
+  .mx { display: grid; grid-template-columns: 92px repeat(3, 1fr); gap: 5px; align-items: center; }
+  .mx .hd { font: 600 11px/1.2 var(--font); letter-spacing: .04em; text-transform: uppercase; color: var(--ink-2); text-align: center; }
+  .mx .pl { font: 620 13px/1.15 var(--font); }
+  .mx .c { position: relative; height: 38px; border-radius: 11px; background: var(--card); display: grid; place-items: center; font: 600 13px/1 var(--mono); letter-spacing: -.02em; }
+  .mx .c.lit { background: var(--up-bg); color: var(--up-fg); box-shadow: var(--sh2); }
+  .mx .c .plus { position: absolute; top: -8px; right: -4px; font: 650 10px/1 var(--font); background: var(--card); color: var(--ink); padding: 3px 5px; border-radius: 999px; box-shadow: var(--sh2); }
+  .mx .c .hs { position: absolute; bottom: -7px; left: 3px; display: flex; } .mx .c .hs .hl + .hl { margin-left: -6px; }
+  .found { background: var(--up-bg); color: var(--up-fg); border-radius: 14px; padding: 10px 12px; font: 650 14px/1.3 var(--font); display: flex; gap: 10px; align-items: center; }
+  .found .num { margin-left: auto; font: 650 16px/1 var(--mono); }
+  .strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+  .day { border-radius: 10px; background: var(--card); padding: 6px 0; display: grid; justify-items: center; gap: 3px; font-size: 11px; color: var(--ink-2); }
+  .day b { font: 650 13px/1 var(--font); color: var(--ink); } .day .i { color: var(--k-wx); }
+  .typ { font-size: 12px; color: var(--ink-2); display: flex; gap: 6px; align-items: center; }
+  .hl { position: relative; display: inline-block; }
+  .hl .hb { position: absolute; right: -4px; bottom: -3px; width: 14px; height: 14px; border-radius: 50%; background: var(--card); box-shadow: var(--sh1); display: grid; place-items: center; color: #E5484D; }
+  .hl .hb .i { fill: currentColor; }
+  .sqrow { display: flex; align-items: center; gap: 10px; background: var(--card); border-radius: 14px; padding: 10px 12px; }
+  .sqrow b { font: 700 15px/1.2 var(--font); } .sqrow .num { margin-left: auto; font: 650 15px/1 var(--mono); }
+  .hearts { display: flex; gap: 8px; align-items: center; }
+  .bub { padding: 8px 12px; border-radius: 16px; font-size: 14px; line-height: 1.3; background: var(--card); display: flex; gap: 8px; align-items: center; justify-self: start; }
+  .bub .nm { font-weight: 650; }
+  .decide { display: flex; gap: 8px; align-items: center; }
+  .decide .btn { height: 40px; }
+  .ig { display: grid; grid-template-columns: 112px 1fr; gap: 12px; align-items: stretch; background: var(--card); border-radius: 16px; overflow: hidden; }
+  .ig .art { display: grid; grid-template-columns: 1fr 1fr; aspect-ratio: 4 / 5; } .ig .art .pa { position: relative; height: 100%; }
+  .ig .meta { padding: 12px 12px 12px 0; display: grid; gap: 4px; align-content: center; }
+  .ig .meta b { font: 760 19px/1.05 var(--font); letter-spacing: -.035em; }
+  .ig .meta .r { font: 500 11px/1.3 var(--mono); color: var(--ink-2); }
+  .ig .meta .lk { display: flex; align-items: center; gap: 6px; font: 650 12px/1.2 var(--font); margin-top: 2px; }
+  .crow { display: flex; gap: 10px; align-items: center; background: var(--card); border-radius: 14px; padding: 10px 12px; font: 620 14px/1.25 var(--font); }
+  .crow .mini { margin-left: auto; display: flex; gap: 4px; }
+  .crow .mini span { width: 18px; height: 18px; border-radius: 5px; background: var(--paper-2); }
+  .crow .mini span.lit { background: var(--up-bg); }
+
+  .dots { display: none; }
+  .close { text-align: center; padding: 120px 24px 110px; }
+  .close h2 { font: 800 72px/1 var(--font); letter-spacing: -.05em; } .close h2 span { color: var(--ink-2); display: block; }
+  .close p { margin: 20px auto 0; max-width: 520px; color: var(--ink-2); font-size: 18px; }
+  .close .cta { display: flex; justify-content: center; gap: 10px; margin-top: 26px; }
+  .foot { text-align: center; padding: 0 24px 40px; font-size: 14px; color: var(--ink-2); }
+
+  /* ---------- laptop: the deal ---------- */
+  @supports (animation-timeline: view()) { @media (min-width: 721px) {
+    .pc { animation: deal var(--spring) both; animation-timeline: view(); }
+    .pc:nth-child(1) { --from: -7deg; animation-range: entry 0% entry 60%; }
+    .pc:nth-child(2) { --from: 4deg; animation-range: entry 10% entry 70%; }
+    .pc:nth-child(3) { --from: 7deg; animation-range: entry 20% entry 80%; }
+    .pc:hover, .pc:focus-visible { animation: none; }
+  } }
+  @keyframes deal { from { opacity: 0; transform: translateY(80px) rotate(var(--from)); } to { opacity: 1; transform: rotate(var(--tilt)); } }
+
+  /* ---------- phone: one row, the next card peeks ---------- */
+  @media (max-width: 720px) {
+    .hdr { padding: 0 16px; height: 64px; } .hdr .start { display: none; }
+    .hero { padding: 28px 16px 0; }
+    .hero h1 { font-size: 46px; line-height: 1; } .hero p { font-size: 17px; margin-top: 16px; }
+    .search { margin-top: 24px; flex-direction: column; align-items: stretch; padding: 16px; border-radius: 22px; gap: 12px; }
+    .search .i.lead { display: none; }
+    .search .ssent { font-size: 19px; } .search .go { justify-content: center; height: 52px; font-size: 16px; }
+    .row-hd { margin-top: 72px; padding: 0 16px; } .row-hd h2 { font-size: 32px; }
+    .track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 12px; padding: 16px 16px 24px; margin-top: 18px; scrollbar-width: none; overscroll-behavior-x: contain; }
+    .track::-webkit-scrollbar { display: none; }
+    .pc { flex: 0 0 86%; scroll-snap-align: center; transform: none; --tilt: 0deg; }
+    .pc:hover { transform: none; box-shadow: var(--sh2); }
+    .pc:nth-child(1) { view-timeline: --p1 inline; } .pc:nth-child(2) { view-timeline: --p2 inline; } .pc:nth-child(3) { view-timeline: --p3 inline; }
+    .pc > .art { height: 150px; }
+    .pc h3 { font-size: 26px; } .pc p { font-size: 16px; }
+    .mx { grid-template-columns: 64px repeat(3, 1fr); gap: 4px; } .mx .pl { font-size: 13px; } .mx .c { font-size: 12.5px; height: 40px; letter-spacing: -.04em; }
+    .inner { padding: 10px; }
+    .bub { font-size: 16px; } .found { font-size: 15px; }
+    .decide .btn { height: 48px; }
+    .ig { grid-template-columns: 96px 1fr; }
+    .dots { display: flex; justify-content: center; gap: 10px; }
+    .dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--ink); opacity: .35; }
+    .dots i:first-child { opacity: 1; }
+    .close { padding: 80px 16px 72px; } .close h2 { font-size: 42px; } .close p { font-size: 17px; }
+    .close .cta { flex-direction: column; } .close .cta .btn { width: 100%; }
+  }
+  @supports (animation-timeline: view()) { @media (max-width: 720px) {
+    .pc { animation: focus linear both; animation-timeline: view(inline); }
+    .dots i { animation: dot linear both; } .dots i:nth-child(1) { animation-timeline: --p1; } .dots i:nth-child(2) { animation-timeline: --p2; } .dots i:nth-child(3) { animation-timeline: --p3; }
+  } }
+  @keyframes focus { 0% { transform: scale(.94); opacity: .75; } 50% { transform: none; opacity: 1; } 100% { transform: scale(.94); opacity: .75; } }
+  @keyframes dot { 0%, 15%, 85%, 100% { opacity: .35; transform: none; } 40%, 60% { opacity: 1; transform: scale(1.35); } }
+  @media (prefers-reduced-motion: reduce) {
+    .pc, .dots i, .ssent .w { animation: none !important; }
+    .pc, .pc:hover, .pc:focus-visible { transform: rotate(var(--tilt)); transition: box-shadow var(--motion-dur) var(--motion-ease); }
+  }
+</style></head>
+<body>
+<div id="app"></div>
+<script>
+const { money, PLACES, WINDOWS, face, DAYS, wxIcon } = TM;
+const P = id => PLACES.find(p => p.id === id);
+const KEYS = new Set([3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 17, 18, 20]);
+const sentence = () => `<div class="ssent">${'A family of 4, from SFO, San Diego or nearby, Dec 12 to 16 give or take 2 days, under $3,000.'.split(' ').map((w, i) => `<span class="w${KEYS.has(i) ? ' k' : ''}" style="--w:${i}">${w}</span>`).join(' ')}</div>`;
+const heartFace = (id, s = 22) => `<span class="hl">${face(id, s)}<span class="hb">${ic('heart', 9, 2)}</span></span>`;
+function matrix(rows, wins, hearts) {
+  let h = `<div class="mx"><span></span>` + wins.map(w => `<span class="hd">${WINDOWS.find(x => x.id === w).label}</span>`).join('');
+  rows.forEach(id => { const p = P(id); h += `<span class="pl">${p.id === 'lasd' ? 'LA + SD' : p.name}</span>`;
+    wins.forEach(w => { const t = p.t[WINDOWS.findIndex(x => x.id === w)], lit = p.discovery === w, hs = hearts ? (TM.HEARTS[p.id + '-' + w] || []) : [];
+      h += `<span class="c${lit ? ' lit' : ''}">${money(t)}${lit && !hearts ? '<span class="plus">+$50</span>' : ''}${hs.length ? `<span class="hs">${hs.map(f => heartFace(f, 18)).join('')}</span>` : ''}</span>`; }); });
+  return h + '</div>';
+}
+const strip = () => `<div class="strip">${DAYS.slice(4, 9).map(d => `<div class="day"><span>${d.dow}</span><b>${d.d}</b>${wxIcon(d.wx, 14)}<span>${d.hi}°</span></div>`).join('')}</div><div class="typ">${ic('sun', 13)}Typical for December, not a forecast yet</div>`;
+const stamp = (n, t) => `<span class="stamp"><i><b>${n}</b><span>${t}</span></i></span>`;
+
+const c1 = `<article class="pc" tabindex="0"><div class="art"><div data-art="san-diego" data-wx="sun"></div>${stamp('01', 'Compare')}<span class="pmark">Dec 12–16</span></div>
+  <div class="body"><h3>Compare the whole trip. <em>One total a square.</em></h3>
+  <div class="inner">${matrix(['sd', 'la', 'lasd'], ['d11', 'd12', 'd13'], false)}
+    <div class="found"><span>LA + San Diego, $50 more than San Diego alone</span><span class="num">$2,190</span></div>${strip()}</div>
+  <p>Flight, stay and the airport drive, added up. The calendar wears the weather. <span class="sample">Sample prices</span></p></div></article>`;
+const c2 = `<article class="pc" tabindex="0"><div class="art duo"><div data-art="los-angeles" data-wx="sun"></div><div data-art="new-york" data-wx="cloud"></div>${stamp('02', 'Together')}<span class="pmark">4 of you + 1</span></div>
+  <div class="body"><h3>Plan it together. <em>Hearts, then one decides.</em></h3>
+  <div class="inner"><div class="sqrow"><span><b>LA + San Diego</b><br><span class="fine">Dec 12–16</span></span><span class="num">$2,190</span></div>
+    <div class="hearts">${['ana', 'leela', 'dev', 'sam'].map(f => heartFace(f, 28)).join('')}<span class="fine">Sam is a guest</span></div>
+    <div class="bub">${face('leela', 20)}<span><span class="nm">Leela</span> The beach!!</span></div>
+    <div class="bub">${face('sam', 20)}<span><span class="nm">Sam</span> We could join for LA.</span></div>
+    <div class="decide"><button class="btn btn-ink tap">${ic('check', 15)}This one</button><span class="fine">Ana decides</span></div></div>
+  <p>Share a link; friends heart without an account. Everyone talks on the square.</p></div></article>`;
+const c3 = `<article class="pc" tabindex="0"><div class="art"><div data-art="lake-tahoe" data-wx="snow"></div>${stamp('03', 'Trail')}<span class="pmark">gitaway.me/t</span></div>
+  <div class="body"><h3>Leave a trail others can follow.</h3><span class="sub">Bloggers and vloggers welcome</span>
+  <div class="inner"><div class="ig"><div class="art"><span data-art="los-angeles"></span><span data-art="san-diego"></span></div>
+    <div class="meta"><span class="label">Family of 4</span><b>LA + San Diego</b><span class="r">SFO → LAX · drive · SAN → SFO</span><span class="lk">${ic('link', 12)}gitaway.me/t/ana-la-sd</span></div></div>
+    <div class="crow">${face('maya', 26)}<span>Maya's Tahoe trip<br><span class="fine">a matrix for her readers</span></span><span class="mini"><span></span><span class="lit"></span><span></span></span></div></div>
+  <p>Your trip becomes a card ready to post, with a link back.</p></div></article>`;
+
+document.getElementById('app').innerHTML = `
+<header class="hdr">${TM.brand()}<span class="preview-pill">Early preview</span><span class="sp"></span><a class="btn btn-card tap" href="#">Sign in</a><a class="btn btn-ink tap start" href="#">Start a trip</a></header>
+<section class="hero"><h1>Compare the whole trip. <span>Choose it together.</span></h1>
+  <p>Flights, stays and the drive, added up for every place and date you might go. Then the family hearts the one they love.</p>
+  <div class="search">${ic('spark', 20, 2).replace('class="i"', 'class="i lead"')}${sentence()}<a class="go tap" href="#">Compare ${ic('arrow-right', 16)}</a></div></section>
+<section class="cards"><div class="row-hd"><span class="label">Three parts, one trip</span><h2>Compare. Plan it together. <em>Leave a trail.</em></h2></div>
+  <div class="track">${c1}${c2}${c3}</div><div class="dots"><i></i><i></i><i></i></div></section>
+<section class="close"><h2>Compare the whole trip. <span>Choose it together.</span></h2>
+  <p>Search and compare today. Booking opens soon, after our first families have tried it.</p>
+  <div class="cta"><a class="btn btn-ink btn-lg tap" href="#">Start a trip</a><span class="btn btn-soon btn-lg">Booking opens soon</span></div></section>
+<p class="foot">Prices, families and trips on this page are samples, made up to show how it works.</p>`;
+TMArt.mount();
+</script>
+</body></html>

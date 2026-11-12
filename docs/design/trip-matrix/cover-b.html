@@ -1,0 +1,223 @@
+<!doctype html>
+<!-- F-221 cover, option B "Editorial": no pinning at all. A huge two-tone hero over a wide place-art band, then three tall sections,
+each a big place-art band (San Diego, New York, Lake Tahoe) with a real product card overlapping its bottom edge.
+Motion: (each section reveals once as it enters, on its own view() timeline; transforms and opacity only; nothing moves after a range ends)
+ 1. Section words: opacity 0 -> 1, view() entry 0%->45%, linear. Never translated (no parallax on text).
+ 2. Art band settles: scale 1.04 -> 1 and opacity .5 -> 1, view() entry 0%->70%, ease (--motion-ease). The clouds keep their slow drift (art.js, 70 s).
+ 3. Product card rises over the band's edge: translateY(56px) -> 0 + opacity 0 -> 1, view() entry 10%->80%, spring (linear() curve, 3% overshoot).
+ 4. Inside the Compare card only: squares fill in, opacity 0 -> 1, staggered 1.6% per square within view() entry 40%->100%; the lit square's caption follows.
+ Hero: still (no entrance animation; the first paint is the final frame).
+ Fallback (no animation-timeline): everything shows at rest, no observer needed.
+ Reduced motion: no scale or translate; the words, bands and cards fade only (same ranges). -->
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cover B · Editorial · F-221</title>
+<link rel="stylesheet" href="tm.css">
+<script src="icons.js"></script><script src="tm.js"></script><script src="art.js"></script>
+<style>
+  :root { --spring: linear(0, .071, .226, .407, .577, .72, .831, .911, .964, .997, 1.014, 1.021, 1.023, 1.02, 1.014, 1.009, 1.004, 1.002, 1); }
+  body { overflow-x: hidden; }
+  .hdr { display: flex; align-items: center; gap: 10px; height: 68px; padding: 0 28px; max-width: 1320px; margin: 0 auto; }
+  .hdr .sp { flex: 1; }
+  .btn-lg { height: 52px; padding: 0 26px; font-size: 16px; }
+  .hero { max-width: 1320px; margin: 0 auto; padding: 64px 40px 0; }
+  .hero h1 { font: 820 112px/.92 var(--font); letter-spacing: -.062em; }
+  .hero h1 span { color: var(--ink-2); display: block; }
+  .hero .row { display: flex; align-items: end; justify-content: space-between; gap: 40px; margin-top: 30px; }
+  .hero p { font-size: 21px; color: var(--ink-2); max-width: 560px; line-height: 1.45; }
+  .hero .cta { display: flex; gap: 10px; }
+  .hband { position: relative; height: 400px; margin: 48px auto 0; max-width: 1360px; border-radius: 36px; }
+  .hband > .pa { border-radius: 36px; }
+  .hband > .pa { position: absolute; inset: 0; }
+  .hband .say { position: absolute; left: 50%; bottom: -40px; transform: translateX(-50%); width: min(880px, calc(100% - 32px)); background: var(--card); border-radius: 26px; box-shadow: var(--sh3); padding: 22px 26px; display: flex; gap: 16px; align-items: center; }
+  .hband .say .ssent { flex: 1; }
+  .hband .say .go { width: 48px; height: 48px; border-radius: 50%; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; flex: none; }
+
+  .sec { padding-top: 150px; }
+  .sec .words { max-width: 1240px; margin: 0 auto; padding: 0 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: end; }
+  .sec .n { font: 600 13px/1 var(--mono); color: var(--ink-3); letter-spacing: .04em; }
+  .sec h2 { font: 800 72px/.98 var(--font); letter-spacing: -.052em; margin-top: 14px; }
+  .sec h2 em { font-style: normal; color: var(--ink-2); display: block; }
+  .sec p { font-size: 19px; color: var(--ink-2); line-height: 1.5; max-width: 500px; }
+  .sec .sub { display: inline-block; margin-top: 16px; font: 650 16px/1 var(--font); padding: 10px 14px; border-radius: 999px; background: var(--card); box-shadow: var(--sh1); }
+  .band { position: relative; height: 500px; margin: 44px auto 0; max-width: 1360px; border-radius: 36px; overflow: hidden; }
+  .band > .pa { position: absolute; inset: 0; }
+  .over { position: relative; max-width: 1080px; margin: -230px auto 0; padding: 0 24px; z-index: 1; }
+  .card { background: var(--card); border-radius: 30px; box-shadow: var(--sh3); padding: 26px; }
+  .fbar { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-2); margin-bottom: 14px; }
+  .fbar .sp { flex: 1; }
+  .fbar .sample { white-space: nowrap; }
+  .two { display: grid; grid-template-columns: 1.35fr 1fr; gap: 22px; align-items: start; }
+  .col { display: grid; gap: 14px; }
+
+  /* product bits (the same as the app's: matrix, sky strip, square, thread, trip card) */
+  .ssent { font: 700 24px/1.25 var(--font); letter-spacing: -.03em; }
+  .ssent .k { text-decoration: underline; text-decoration-thickness: 2.5px; text-underline-offset: 5px; text-decoration-color: var(--line-2); }
+  .mx { display: grid; grid-template-columns: 140px repeat(var(--n), 1fr); gap: 6px; align-items: center; }
+  .mx .hd { font: 600 12px/1.2 var(--font); letter-spacing: .04em; text-transform: uppercase; color: var(--ink-2); text-align: center; }
+  .mx .hd.ask { color: var(--ink); }
+  .mx .pl { display: flex; align-items: center; gap: 8px; font: 620 14px/1.15 var(--font); }
+  .th { width: 36px; height: 26px; border-radius: 8px; flex: none; overflow: hidden; position: relative; display: block; }
+  .th.duo { display: grid; grid-template-columns: 1fr 1fr; } .th.duo > .pa { position: relative; height: 100%; }
+  .mx .c { position: relative; height: 46px; border-radius: 13px; background: var(--paper-2); display: grid; place-items: center; font: 600 15px/1 var(--mono); letter-spacing: -.02em; }
+  .mx .c.lit { background: var(--up-bg); color: var(--up-fg); box-shadow: var(--sh2); }
+  .mx .c.low { box-shadow: inset 0 0 0 1.5px var(--ink); }
+  .mx .c.wait { color: transparent; }
+  .mx .c .plus { position: absolute; top: -8px; right: -4px; font: 650 11px/1 var(--font); background: var(--card); color: var(--ink); padding: 4px 6px; border-radius: 999px; box-shadow: var(--sh2); }
+  .disc { background: var(--up-bg); color: var(--up-fg); border-radius: 20px; padding: 16px 18px; display: grid; gap: 6px; }
+  .disc b { font: 700 20px/1.2 var(--font); letter-spacing: -.02em; }
+  .disc span { font-size: 14px; color: var(--up-fg2); }
+  .disc .num { font: 650 30px/1 var(--mono); }
+  .strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+  .day { border-radius: 12px; background: var(--paper-2); padding: 7px 0 8px; display: grid; justify-items: center; gap: 4px; font-size: 12px; color: var(--ink-2); }
+  .day b { font: 650 15px/1 var(--font); color: var(--ink); } .day .i { color: var(--k-wx); }
+  .day.in { background: var(--card); box-shadow: inset 0 0 0 1.5px var(--ink); }
+  .typ { font-size: 12px; color: var(--ink-2); display: flex; gap: 6px; align-items: center; }
+  .marks { display: flex; flex-wrap: wrap; gap: 6px; }
+  .sq { border-radius: 22px; background: var(--paper-2); overflow: hidden; }
+  .sq .art { height: 150px; display: grid; grid-template-columns: 1fr 1fr; } .sq .art .pa { position: relative; height: 100%; }
+  .sq .body { padding: 14px 16px; display: flex; align-items: center; gap: 10px; }
+  .sq .body b { font: 720 20px/1.2 var(--font); letter-spacing: -.02em; } .sq .body .num { margin-left: auto; font: 650 22px/1 var(--mono); }
+  .sq .rows { padding: 0 16px 14px; display: grid; gap: 8px; }
+  .sq .rw { display: flex; align-items: center; gap: 10px; font-size: 14px; } .sq .rw .num { margin-left: auto; font: 600 14px/1 var(--mono); }
+  .sq .rw .kt { width: 28px; height: 28px; border-radius: 9px; }
+  .hearts { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .hl { position: relative; display: inline-block; }
+  .hl .hb { position: absolute; right: -4px; bottom: -3px; width: 15px; height: 15px; border-radius: 50%; background: var(--card); box-shadow: var(--sh1); display: grid; place-items: center; color: #E5484D; }
+  .hl .hb .i, .heart .i { fill: currentColor; }
+  .thread { display: grid; gap: 6px; }
+  .bub { max-width: 88%; padding: 10px 14px; border-radius: 18px; font-size: 15px; line-height: 1.3; background: var(--paper-2); display: flex; gap: 8px; align-items: center; }
+  .bub .nm { font-weight: 650; }
+  .watch { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--warn-ink); background: var(--warn-tint); border-radius: 12px; padding: 9px 12px; }
+  .decide { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .ig { width: 100%; max-width: 320px; aspect-ratio: 4 / 5; border-radius: 22px; overflow: hidden; background: var(--card); box-shadow: var(--sh2); display: grid; grid-template-rows: 1fr auto; justify-self: center; }
+  .ig .art { display: grid; grid-template-columns: 1fr 1fr; } .ig .art .pa { position: relative; height: 100%; }
+  .ig .meta { padding: 14px 16px 16px; display: grid; gap: 4px; }
+  .ig .meta b { font: 780 24px/1.05 var(--font); letter-spacing: -.035em; }
+  .ig .meta .r { font: 500 12px/1.3 var(--mono); color: var(--ink-2); }
+  .ig .meta .lk { display: flex; align-items: center; gap: 6px; font: 650 13px/1 var(--font); margin-top: 4px; }
+  .crow { background: var(--paper-2); border-radius: 18px; padding: 14px; display: grid; gap: 10px; }
+  .crow .top { display: flex; gap: 10px; align-items: center; font: 650 15px/1.2 var(--font); }
+  .rmx { display: grid; grid-template-columns: 80px repeat(3, 1fr); gap: 5px; align-items: center; font-size: 12px; color: var(--ink-2); }
+  .rmx span.c { height: 34px; border-radius: 10px; background: var(--card); display: grid; place-items: center; font: 600 13px/1 var(--mono); color: var(--ink); }
+  .rmx span.c.lit { background: var(--up-bg); color: var(--up-fg); }
+  .rmx .h { text-align: center; text-transform: uppercase; letter-spacing: .04em; font-size: 11px; font-weight: 600; }
+
+  .close { text-align: center; padding: 160px 24px 110px; }
+  .close h2 { font: 820 88px/.95 var(--font); letter-spacing: -.055em; } .close h2 span { color: var(--ink-2); display: block; }
+  .close p { margin: 22px auto 0; max-width: 540px; color: var(--ink-2); font-size: 19px; }
+  .close .cta { display: flex; justify-content: center; gap: 10px; margin-top: 28px; }
+  .foot { text-align: center; padding: 0 24px 40px; font-size: 14px; color: var(--ink-2); }
+
+  /* ---------- reveal once as each section enters ---------- */
+  @supports (animation-timeline: view()) {
+    .sec .words { animation: fadein linear both; animation-timeline: view(); animation-range: entry 0% entry 45%; }
+    .band > .pa { animation: settle var(--motion-ease) both; animation-timeline: view(); animation-range: entry 0% entry 70%; }
+    .over .card { animation: rise var(--spring) both; animation-timeline: view(); animation-range: entry 10% entry 80%; }
+    .s1 .mx .c { animation: fadein linear both; animation-timeline: view(); animation-range: entry calc(40% + var(--i) * 1.6%) entry calc(52% + var(--i) * 1.6%); }
+    .s1 .disc { animation: fadein linear both; animation-timeline: view(); animation-range: entry 70% entry 100%; }
+  }
+  @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes settle { from { opacity: .5; transform: scale(1.04); } to { opacity: 1; transform: none; } }
+  @keyframes rise { from { opacity: 0; transform: translateY(56px); } to { opacity: 1; transform: none; } }
+  @keyframes fadeonly { from { opacity: 0; } to { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) {
+    .band > .pa, .over .card { animation-name: fadeonly !important; }
+  }
+
+  /* ---------- phone ---------- */
+  @media (max-width: 720px) {
+    .hdr { padding: 0 16px; height: 64px; } .hdr .start { display: none; }
+    .hero { padding: 26px 16px 0; }
+    .hero h1 { font-size: 54px; line-height: .94; }
+    .hero .row { display: grid; gap: 18px; margin-top: 18px; } .hero p { font-size: 17px; }
+    .hero .cta { flex-direction: column; } .hero .cta .btn { width: 100%; }
+    .hband { height: 240px; margin: 30px 12px 0; border-radius: 26px; } .hband > .pa { border-radius: 26px; }
+    .hband .say { bottom: -64px; padding: 14px 16px; border-radius: 22px; gap: 10px; }
+    .hband .say .ssent { font-size: 17px; } .hband .say .go { width: 48px; height: 48px; }
+    .sec { padding-top: 120px; }
+    .sec .words { grid-template-columns: 1fr; gap: 12px; padding: 0 16px; }
+    .sec h2 { font-size: 40px; } .sec p { font-size: 17px; }
+    .band { height: 280px; margin: 26px 12px 0; border-radius: 26px; }
+    .over { margin-top: -110px; padding: 0 12px; }
+    .card { padding: 16px; border-radius: 24px; }
+    .two { grid-template-columns: 1fr; gap: 14px; }
+    .ssent { font-size: 19px; }
+    .mx { grid-template-columns: 92px repeat(3, 1fr); gap: 5px; }
+    .mx .pl { font-size: 13px; } .mx .pl .th { display: none; }
+    .mx .c { height: 44px; font-size: 14px; }
+    .mx .wide { display: none; }
+    .disc b { font-size: 18px; } .disc .num { font-size: 26px; }
+    .day b { font-size: 14px; }
+    .sq .art { height: 110px; }
+    .bub { font-size: 16px; }
+    .decide .btn { width: 100%; }
+    .ig { max-width: 260px; }
+    .close { padding: 100px 16px 72px; } .close h2 { font-size: 44px; } .close p { font-size: 17px; }
+    .close .cta { flex-direction: column; } .close .cta .btn { width: 100%; }
+  }
+</style></head>
+<body>
+<div id="app"></div>
+<script>
+const { money, PLACES, WINDOWS, face, DAYS, wxIcon } = TM;
+const P = id => PLACES.find(p => p.id === id);
+const thumb = p => p.art2 ? `<span class="th duo"><span data-art="${p.art}"></span><span data-art="${p.art2}"></span></span>` : `<span class="th" data-art="${p.art}"></span>`;
+const KEYS = new Set([3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 17, 18, 20]);
+const sentence = () => `<div class="ssent">${'A family of 4, from SFO, San Diego or nearby, Dec 12 to 16 give or take 2 days, under $3,000.'.split(' ').map((w, i) => `<span class="${KEYS.has(i) ? 'k' : ''}">${w}</span>`).join(' ')}</div>`;
+const heartFace = (id, s = 24) => `<span class="hl">${face(id, s)}<span class="hb">${ic('heart', 10, 2)}</span></span>`;
+function matrix(rows, wins) {
+  const wide = id => !['d11', 'd12', 'd13'].includes(id) ? ' wide' : '';
+  let h = `<div class="mx" style="--n:${wins.length}"><span></span>` + wins.map(w => { const x = WINDOWS.find(y => y.id === w); return `<span class="hd${x.asked ? ' ask' : ''}${wide(w)}">${x.label}</span>`; }).join(''), k = 0;
+  rows.forEach(id => { const p = P(id); h += `<span class="pl">${thumb(p)}<span>${p.name}</span></span>`;
+    wins.forEach(w => { const t = p.t[WINDOWS.findIndex(x => x.id === w)], lit = p.discovery === w, low = p.id === 'ps' && w === 'd12';
+      h += `<span class="c${lit ? ' lit' : ''}${low ? ' low' : ''}${t == null ? ' wait searching' : ''}${wide(w)}" style="--i:${k++}">${t == null ? '—' : money(t)}${lit ? '<span class="plus">+$50</span>' : ''}</span>`; }); });
+  return h + '</div>';
+}
+const strip = () => `<div style="display:grid;gap:7px"><div class="strip">${DAYS.slice(4, 11).map(d => `<div class="day${d.d >= 12 && d.d <= 16 ? ' in' : ''}"><span>${d.dow}</span><b>${d.d}</b>${wxIcon(d.wx, 16)}<span>${d.hi}°</span></div>`).join('')}</div>
+  <div class="typ">${ic('sun', 14)}San Diego · typical for December, not a forecast yet</div></div>`;
+
+const compare = `<div class="card"><div class="fbar">${ic('spark', 14)}28 of 30 squares in · cheapest first<span class="sp"></span><span class="sample">Sample prices</span></div>
+  <div class="two"><div class="col">${matrix(['sd', 'la', 'lasd', 'ps', 'sb'], ['d11', 'd12', 'd13', 'd14'])}
+    <div class="marks"><span class="mk">${ic('star', 12)}Cheapest · Palm Springs</span><span class="mk">${ic('users', 12)}Easiest for kids · San Diego</span><span class="mk">${ic('sun', 12)}Best weather · Palm Springs</span></div></div>
+  <div class="col"><div class="disc"><span class="label" style="color:var(--up-fg2)">Found</span><b>LA + San Diego, $50 more than San Diego alone.</b><span>Two nights each, a 2-hour drive down the coast. Dec 12–16 for 4.</span><span class="num">$2,190</span><span class="preview" style="color:var(--up-fg2)">Preview · 4 min ago</span></div>${strip()}</div></div></div>`;
+const together = `<div class="card"><div class="fbar">${ic('users', 14)}Ana's family · 4 of you + 1 guest<span class="sp"></span><span class="preview">Preview · 4 min ago</span></div>
+  <div class="two"><div class="sq"><div class="art"><span data-art="los-angeles"></span><span data-art="san-diego"></span></div>
+    <div class="body"><span><b>LA + San Diego</b><br><span class="fine">Dec 12–16 · family of 4</span></span><span class="num">$2,190</span></div>
+    <div class="rows"><div class="rw"><span class="kt flight">${ic('plane', 14)}</span>SFO → LAX, SAN → SFO<span class="num">$612</span></div>
+      <div class="rw"><span class="kt stay">${ic('bed', 14)}</span>2 nights LA, 2 nights San Diego<span class="num">$1,428</span></div>
+      <div class="rw"><span class="kt car">${ic('car', 14)}</span>One-way car, the coast drive<span class="num">$150</span></div></div></div>
+  <div class="col"><div class="hearts">${['ana', 'leela', 'dev', 'sam'].map(f => heartFace(f, 32)).join('')}<span class="fine">3 of you + Sam (guest)</span></div>
+    <div class="thread"><div class="bub">${face('leela', 22)}<span><span class="nm">Leela</span> The beach!!</span></div>
+      <div class="bub">${face('dev', 22)}<span><span class="nm">Dev</span> Two hours of coast is fine.</span></div>
+      <div class="bub">${face('sam', 22)}<span><span class="nm">Sam</span> We could join for the LA part.</span></div></div>
+    <div class="watch">${ic('bell', 14)}Up $40 since Ana liked it</div>
+    <div class="decide"><button class="btn btn-ink tap">${ic('check', 16)}This one</button><span class="fine">Ana decides. Hearts are advice.</span></div></div></div></div>`;
+const trail = `<div class="card"><div class="fbar">${ic('share', 14)}Ready to post<span class="sp"></span><span class="sample">Sample trip</span></div>
+  <div class="two"><div class="ig"><div class="art"><span data-art="los-angeles"></span><span data-art="san-diego"></span></div>
+    <div class="meta"><span class="label">Family of 4 · Dec 12–16</span><b>LA + San Diego</b><span class="r">SFO → LAX · drive 2h · SAN → SFO</span><span class="lk">${ic('link', 13)}gitaway.me/t/ana-la-sd</span></div></div>
+  <div class="col"><div class="crow"><div class="top">${face('maya', 32)}<span>Maya's Tahoe weekend<br><span class="fine">A creator's trip, opened as a matrix for her readers</span></span></div>
+    <div class="rmx"><span></span><span class="h">Jan 9</span><span class="h">Jan 16</span><span class="h">Jan 23</span>
+      <span>From SFO</span><span class="c">$1,640</span><span class="c lit">$1,520</span><span class="c">$1,710</span>
+      <span>From LAX</span><span class="c">$1,880</span><span class="c">$1,790</span><span class="c">$1,940</span></div></div>
+    <div class="crow"><div class="top">${ic('link', 18)}<span>Every post links back<br><span class="fine">Readers plan the same trip for their own dates, in one tap</span></span></div></div>
+    <div class="decide"><button class="btn btn-card tap">${ic('share', 16)}Share the card</button><button class="btn btn-flat tap">${ic('link', 16)}Copy link</button></div></div></div></div>`;
+
+const sec = (cls, n, h, em, p, art, wx, card, sub = '') => `<section class="sec ${cls}"><div class="words"><div><span class="n">${n}</span><h2>${h}<em>${em}</em></h2>${sub}</div><p>${p}</p></div>
+  <div class="band"><div data-art="${art}" data-wx="${wx}"></div></div><div class="over">${card}</div></section>`;
+
+document.getElementById('app').innerHTML = `
+<header class="hdr">${TM.brand()}<span class="preview-pill">Early preview</span><span class="sp"></span><a class="btn btn-card tap" href="#">Sign in</a><a class="btn btn-ink tap start" href="#">Start a trip</a></header>
+<section class="hero"><h1>Compare the whole trip. <span>Choose it together.</span></h1>
+  <div class="row"><p>Flights, stays and the drive, added up for every place and date you might go. Then the family hearts the one they love.</p>
+  <div class="cta"><a class="btn btn-ink btn-lg tap" href="#">Start a trip</a><a class="btn btn-card btn-lg tap" href="#">See how it works</a></div></div></section>
+<div class="hband"><div data-art="orlando" data-wx="sun" data-fit="xMidYMid slice"></div><div class="say">${sentence()}<span class="go">${ic('arrow-right', 20)}</span></div></div>
+${sec('s1', '01 · Compare', 'Every place, every date.', 'One total each.', 'The flight, the stay and the airport drive are added up for every square. The calendar wears the weather, and the square you never thought to ask for lights up.', 'san-diego', 'sun', compare)}
+${sec('s2', '02 · Plan it together', 'Hearts, not group texts.', 'One person decides.', 'Share it with the family and the friends coming along, no account needed for a guest. Everyone hearts and talks on the square; the owner taps “This one”.', 'new-york', 'cloud', together)}
+${sec('s3', '03 · Leave a trail', 'Leave a trail', 'others can follow.', 'Your trip becomes a card ready to post, with a link back. A creator’s trip opens into a matrix of its own, so readers plan it for their dates.', 'lake-tahoe', 'snow', trail, '<span class="sub">Bloggers and vloggers welcome</span>')}
+<section class="close"><h2>Compare the whole trip. <span>Choose it together.</span></h2>
+  <p>Search and compare today. Booking opens soon, after our first families have tried it.</p>
+  <div class="cta"><a class="btn btn-ink btn-lg tap" href="#">Start a trip</a><span class="btn btn-soon btn-lg">Booking opens soon</span></div></section>
+<p class="foot">Prices, families and trips on this page are samples, made up to show how it works.</p>`;
+TMArt.mount();
+</script>
+</body></html>

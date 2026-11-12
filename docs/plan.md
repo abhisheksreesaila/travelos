@@ -1395,11 +1395,11 @@ Brief: docs/briefs/unified-booking.md · Research: docs/research/liteapi-shapes.
 - [ ] /admin says sandbox or live (by the key's prefix) and today's searches
 - [ ] `gridsource` reads stays and flights from it off the showcase; nothing invented is ever in a square
 
-## F-221 Design: the matrix, the place art, the cover [todo]
-Needs: none · Skill: designer (Stitch project 5068253051282871529)
-- [ ] the matrix across places and dates, phone and laptop, 2 or 3 options, in Direction A with translucency only on the floating islands
-- [ ] weather in the calendar and the place art for the first 10 places (a drawn set of our own)
-- [ ] the cover in three parts: Compare · Plan it together · Leave a trail others can follow (Bloggers and vloggers welcome); calm, few moves
+## F-221 Design: the matrix, the place art, the cover [review]
+Needs: none · Skill: designer (Stitch project 5068253051282871529) · Compare: docs/design/trip-matrix/compare.html · Handoff draft: docs/design/trip-matrix.md
+- [x] the matrix across places and dates, phone and laptop, 2 or 3 options, in Direction A with translucency only on the floating islands
+- [x] weather in the calendar and the place art for the first 10 places (a drawn set of our own)
+- [x] the cover in three parts: Compare · Plan it together · Leave a trail others can follow (Bloggers and vloggers welcome); calm, few moves
 - [ ] the founder picks; the handoff is docs/design/trip-matrix.md
 
 ## F-222 The matrix across places and dates [todo]

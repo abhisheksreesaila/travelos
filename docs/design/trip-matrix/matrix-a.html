@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trip matrix A · Grid · F-221</title>
+<!-- Option A "Grid": the matrix as a calm table. Places down, date windows across, every square the whole trip.
+     The selected place's December sky runs along a date strip over the table; the chosen square's panel sits beside it (laptop) or rises as a sheet (phone).
+     Motion: squares arrive cheapest first (phone: settle from .96 on --motion-spring, 280ms; laptop: --motion-desk fade); a tap moves the ink outline (no travel);
+     the panel cross-fades its content (--motion-desk). Prices update in place without bouncing. -->
+<link rel="stylesheet" href="tm.css">
+<script src="icons.js"></script><script src="tm.js"></script><script src="art.js"></script>
+<style>
+  .wrap { display: grid; grid-template-columns: minmax(0, 1fr) 392px; gap: 20px; padding: 4px 24px 24px; max-width: 1440px; margin: 0 auto; }
+  .lead { display: flex; gap: 24px; align-items: flex-start; justify-content: space-between; }
+  .lead .sentence { max-width: 760px; font-size: 26px; }
+  .live { display: grid; gap: 8px; justify-items: end; padding-top: 6px; white-space: nowrap; }
+  .prog { display: inline-flex; align-items: center; gap: 8px; font: 600 13px/1 var(--font); }
+  .prog svg circle { fill: none; stroke-width: 3; }
+  .prog .bg { stroke: var(--line); } .prog .fg { stroke: var(--ink); stroke-linecap: round; }
+
+  .find { margin-top: 14px; display: flex; align-items: center; gap: 14px; padding: 10px 10px 10px 16px; border-radius: 18px; background: var(--up-bg); color: var(--up-fg); box-shadow: var(--sh2); }
+  .find .spark { width: 34px; height: 34px; border-radius: 50%; background: var(--up-tile); display: grid; place-items: center; color: #FFD43B; }
+  .find b { font: 680 16px/1.2 var(--font); letter-spacing: -.01em; }
+  .find span { color: var(--up-fg2); font-size: 13px; }
+  .find .btn { margin-left: auto; background: var(--up-btn); color: var(--up-btn-fg); height: 36px; }
+
+  /* the date strip: each day wears its sky; the chosen window bracketed in ink */
+  .strip { margin-top: 12px; background: var(--card); border-radius: 18px; box-shadow: var(--sh1); padding: 8px 10px 8px; }
+  .strip .hd { display: flex; justify-content: space-between; align-items: center; padding: 0 4px 6px; }
+  .strip .hd b { font: 650 13px/1 var(--font); } .strip .hd span { font-size: 12px; color: var(--ink-2); }
+  .days { display: grid; grid-template-columns: repeat(13, 1fr); gap: 4px; position: relative; }
+  .day { border-radius: 12px; padding: 5px 0 6px; display: grid; justify-items: center; gap: 3px; border: 1.5px dotted var(--line-2); color: var(--ink); }
+  .day .dw { font: 600 11px/1 var(--font); color: var(--ink-2); text-transform: uppercase; letter-spacing: .05em; }
+  .day .dn { font: 680 15px/1 var(--font); }
+  .day .t { font: 500 11px/1 var(--mono); color: var(--ink-2); }
+  .day .i { color: var(--k-wx); } .day.cl .i { color: var(--ink-2); }
+  .day.in { background: var(--paper-2); border-style: solid; border-color: transparent; }
+  .bracket { position: absolute; top: -3px; bottom: -3px; border: 2px solid var(--ink); border-radius: 14px; pointer-events: none; transition: left var(--motion-desk) var(--motion-ease), width var(--motion-desk) var(--motion-ease); }
+  .bracket::after { content: attr(data-l); position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--paper); font: 650 11px/1 var(--font); padding: 4px 8px; border-radius: 999px; white-space: nowrap; }
+
+  /* the table */
+  .grid { margin-top: 12px; background: var(--card); border-radius: var(--r-widget); box-shadow: var(--sh1); padding: 6px; }
+  table { width: 100%; border-collapse: separate; border-spacing: 4px; table-layout: fixed; }
+  th { font-weight: 400; text-align: left; }
+  thead th { padding: 6px 8px 4px; vertical-align: bottom; }
+  thead .w b { display: block; font: 650 14px/1.1 var(--font); letter-spacing: -.01em; }
+  thead .w span { font-size: 12px; color: var(--ink-2); }
+  thead .w .ask { display: inline-block; margin-left: 6px; font: 650 10px/1 var(--font); letter-spacing: .06em; text-transform: uppercase; padding: 3px 6px; border-radius: 999px; background: var(--ink); color: var(--paper); vertical-align: 2px; }
+  .ph { width: 252px; }
+  .row-h { display: flex; align-items: center; gap: 10px; padding: 2px 6px 2px 2px; }
+  .row-h .pa { width: 64px; height: 44px; border-radius: 10px; flex: none; }
+  .row-h .pair { width: 64px; height: 44px; border-radius: 10px; flex: none; position: relative; overflow: hidden; }
+  .row-h .pair .pa { position: absolute; inset: 0; width: auto; height: auto; border-radius: 0; }
+  .row-h .pair .pa + .pa { clip-path: polygon(58% 0, 100% 0, 100% 100%, 42% 100%); }
+  .row-h b { display: block; font: 650 15px/1.15 var(--font); letter-spacing: -.01em; }
+  .row-h span { display: block; font-size: 12px; color: var(--ink-2); margin-top: 2px; white-space: nowrap; }
+  .row-h .wx { display: flex; align-items: center; gap: 4px; }
+  .row-h .wx .i { color: var(--k-wx); }
+  .rm { margin-left: 4px; }
+
+  .sq { position: relative; height: 64px; border-radius: 14px; background: var(--paper-2); padding: 8px 10px 8px; display: grid; grid-template-rows: auto 1fr auto; align-items: center; cursor: pointer; text-align: left; width: 100%; }
+  .sq:hover { background: rgb(var(--state) / .09); }
+  .sq .n { font: 650 19px/1 var(--mono); letter-spacing: -.03em; }
+  .sq .bar3 { width: 100%; }
+  .sq .tag { white-space: nowrap; font: 600 11px/1 var(--font); color: var(--ink-2); display: flex; gap: 4px; align-items: center; }
+  .sq .tag .i { color: var(--ink); }
+  .sq .mid { display: flex; align-items: center; justify-content: space-between; gap: 4px; min-height: 18px; }
+  .sq.wait::before { content: "Searching"; position: absolute; left: 10px; top: 10px; z-index: 1; font: 500 12px/1 var(--font); color: var(--ink-2); }
+  .sq.sel { box-shadow: 0 0 0 2px var(--ink); }
+  .sq.best .n { color: var(--ok-ink); }
+  .sq.lit { background: var(--up-bg); color: var(--up-fg); box-shadow: var(--sh2), 0 0 0 2px var(--up-bg); }
+  .sq.lit .cap { font: 600 11px/1 var(--font); color: var(--up-fg2); }
+    .sq.lit .who .face { box-shadow: 0 0 0 2px var(--up-bg); }
+  .sq.wait { cursor: default; }
+  .sq.wait .n, .sq.wait .bar3 { visibility: hidden; }
+  .foot { display: flex; gap: 16px; align-items: center; padding: 8px 10px 4px; font-size: 12px; color: var(--ink-2); }
+  .foot .key { display: inline-flex; align-items: center; gap: 6px; } .foot .key i { width: 14px; height: 4px; border-radius: 2px; display: inline-block; }
+
+  /* the square's panel */
+  .panel { position: sticky; top: 72px; align-self: start; background: var(--card); border-radius: var(--r-widget); box-shadow: var(--sh2); overflow: hidden; }
+  .panel .art { position: relative; height: 128px; }
+  .panel .art .pa { position: absolute; inset: 0; }
+  .panel .art .pa + .pa { clip-path: polygon(56% 0, 100% 0, 100% 100%, 44% 100%); }
+  .panel .art .chip { position: absolute; left: 12px; top: 12px; z-index: 2; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 999px; background: var(--card); box-shadow: var(--sh1); font: 600 12px/1 var(--font); }
+  .panel .bd { padding: 14px 18px 16px; }
+  .panel h3 { font: 720 22px/1.1 var(--font); letter-spacing: -.03em; }
+  .panel .sub { color: var(--ink-2); font-size: 13px; margin-top: 3px; }
+  .tot { display: flex; align-items: baseline; gap: 10px; margin-top: 12px; }
+  .tot .n { font: 680 40px/1 var(--mono); letter-spacing: -.05em; }
+  .tot .vs { font: 600 12px/1 var(--font); color: var(--ok-ink); background: var(--ok-tint); padding: 5px 8px; border-radius: 999px; }
+  .rows { margin-top: 12px; display: grid; gap: 2px; }
+  .brow { display: grid; grid-template-columns: 32px 1fr auto; gap: 10px; align-items: center; padding: 7px 0; border-top: 1px solid var(--line); }
+  .brow b { font: 600 14px/1.2 var(--font); } .brow span { display: block; font-size: 12px; color: var(--ink-2); margin-top: 2px; }
+  .brow .n { font: 600 15px/1 var(--mono); }
+  .note { display: flex; gap: 10px; align-items: center; margin-top: 10px; padding: 10px 12px; border-radius: 14px; background: var(--paper-2); font-size: 13px; }
+  .note b { font-weight: 650; }
+  .acts { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 12px; }
+  .acts .btn-soon { grid-column: 1 / -1; }
+
+  /* phone */
+  @media (max-width: 720px) {
+    .wrap { display: block; padding: 0 0 110px; }
+    .lead { display: block; padding: 4px 16px 0; }
+    .lead .sentence { font-size: 22px; }
+    .live { display: flex; justify-content: space-between; margin-top: 10px; padding: 0; }
+    .find { margin: 12px 16px 0; padding: 12px; align-items: flex-start; }
+    .find b { font-size: 17px; } .find span { font-size: 14px; display: block; margin-top: 4px; }
+    .find .btn { display: none; }
+    .panel, .foot { display: none; }
+    .strip { margin: 12px 16px 0; padding: 8px; overflow-x: auto; } .strip .hd { display: block; } .strip .hd span { display: block; margin-top: 3px; font-size: 13px; }
+    .days { grid-template-columns: repeat(13, 56px); } .day .dw { font-size: 12px; } .day .t { font-size: 12px; } .bracket::after { font-size: 12px; }
+    .grid { margin: 12px 0 0; border-radius: 0; box-shadow: none; background: transparent; padding: 0; overflow-x: auto; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; }
+    table { width: auto; border-spacing: 4px; table-layout: auto; }
+    .ph { position: sticky; left: 0; z-index: 2; width: 128px; min-width: 128px; background: var(--paper); }
+    tbody th { position: sticky; left: 0; z-index: 2; background: var(--paper); }
+    thead .w, tbody td { min-width: 98px; width: 98px; scroll-snap-align: start; }
+    thead .w b { font-size: 15px; } thead .w span { font-size: 13px; }
+    .row-h { padding-left: 12px; gap: 8px; flex-direction: column; align-items: flex-start; }
+    .row-h .pa, .row-h .pair { width: 112px; height: 30px; border-radius: 8px; }
+    .row-h b { font-size: 15px; } .row-h span { font-size: 13px; } .row-h .via, .rm { display: none !important; }
+    .sq .mid .faces .face + .face { margin-left: -9px; }
+    .sq { height: 74px; } .sq .n { font-size: 18px; }
+    .sq .tag { display: none; } .sq.lit .cap { font-size: 12px; }
+    .sheet-peek { position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; background: var(--card-2); border-radius: 22px 22px 0 0; box-shadow: var(--sh3); padding: 8px 16px 104px; display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; align-items: center; }
+    .sheet-peek::before { content: ""; grid-column: 1 / -1; justify-self: center; width: 40px; height: 5px; border-radius: 3px; background: var(--line-2); margin-bottom: 8px; }
+    .sheet-peek .l2 { display: flex; gap: 8px; align-items: center; grid-column: 1; font-size: 14px; color: var(--ink-2); }
+    .sheet-peek b { font: 650 16px/1.2 var(--font); } .sheet-peek span { font-size: 14px; color: var(--ink-2); }
+    .sheet-peek .n { margin-left: auto; font: 680 22px/1 var(--mono); }
+  }
+  @media (min-width: 721px) { .sheet-peek { display: none; } }
+</style></head>
+<body>
+<div id="app"></div>
+<script>
+const { WINDOWS, PLACES, money, split, HEARTS, faces, DAYS, wxIcon } = TM;
+let sel = { p: 'lasd', w: 'd12' };
+const all = PLACES.flatMap(p => p.t.map((t, i) => ({ p: p.id, w: WINDOWS[i].id, t }))).filter(x => x.t != null);
+const order = all.slice().sort((a, b) => a.t - b.t).map(x => x.p + x.w);   // cheapest first: the order squares arrive in
+const rowMin = p => Math.min(...p.t.filter(x => x != null));
+
+function rowHead(p) {
+  const art = p.art2 ? `<div class="pair"><div data-art="${p.art}" data-wx="${p.wx}"></div><div data-art="${p.art2}" data-wx="${p.wx}"></div></div>` : `<div data-art="${p.art}" data-wx="${p.wx}"></div>`;
+  return `<div class="row-h">${art}<div><b>${p.name}${p.rowMark ? `<span class="mk rm" style="display:inline-flex;vertical-align:1px">${p.rowMark}</span>` : ''}</b>` +
+    `<span class="via">${p.via.replace(' · ', ', ')} · ${p.door}</span><span class="wx">${wxIcon(p.wx, 13)}${p.hi}°/${p.lo}° typical${p.sub ? ' · ' + p.sub : ''}</span></div></div>`;
+}
+function square(p, w, i) {
+  const t = p.t[i]; const k = p.id + w.id;
+  if (t == null) return `<td><div class="sq wait searching" aria-label="Still searching"><span class="n">$0,000</span><span class="bar3"></span></div></td>`;
+  const [f, s, d] = split(p, w.id), lit = p.discovery === w.id, best = t === rowMin(p);
+  const hearts = HEARTS[p.id + '-' + w.id];
+  const marks = (p.marks && p.marks[w.id]) || [];
+  const delay = order.indexOf(k) * 45;
+  return `<td><button class="sq tap arrive ${lit ? 'lit' : ''} ${best && !lit ? 'best' : ''} ${sel.p === p.id && sel.w === w.id ? 'sel' : ''}" style="animation-delay:${delay}ms" data-p="${p.id}" data-w="${w.id}">` +
+    `<span class="n">${money(t)}</span><span class="mid">${lit ? '<span class="cap">+$50 vs San Diego</span>' : marks.length ? `<span class="tag">${marks[0]}</span>` : '<span></span>'}${hearts ? faces(hearts, 18) : ''}</span>` + (lit ? '<span></span>' : `<span class="bar3"><i class="f" style="flex:${f}"></i><i class="s" style="flex:${s}"></i><i class="d" style="flex:${d}"></i></span>`) +
+    `</button></td>`;
+}
+function stripDays(p) {
+  const w = WINDOWS.find(x => x.id === sel.w);
+  return DAYS.map(d => `<div class="day ${d.wx === 'cloud' ? 'cl' : ''} ${d.d >= w.start && d.d <= w.start + 4 ? 'in' : ''}"><span class="dw">${d.dow}</span><span class="dn">${d.d}</span>${wxIcon(d.wx, 16)}<span class="t">${d.hi}° ${d.chance}%</span></div>`).join('');
+}
+function panel() {
+  const p = PLACES.find(x => x.id === sel.p), wi = WINDOWS.findIndex(x => x.id === sel.w), w = WINDOWS[wi];
+  const [f, s, d] = split(p, w.id), t = p.t[wi], hearts = HEARTS[p.id + '-' + w.id] || [];
+  const art = `<div data-art="${p.art}" data-wx="${p.wx}"></div>` + (p.art2 ? `<div data-art="${p.art2}" data-wx="${p.wx}"></div>` : '');
+  const lasd = p.id === 'lasd';
+  return `<div class="art">${art}<span class="chip">${wxIcon(p.wx, 14)}${p.hi}°/${p.lo}° typical</span></div><div class="bd">` +
+    `<h3>${p.name} · ${w.label}</h3><div class="sub">${p.sub ? p.sub + ' · ' : ''}4 nights · family of 4 · ${w.dow}</div>` +
+    `<div class="tot"><span class="n">${money(t)}</span>${lasd ? '<span class="vs">+$50 vs San Diego alone</span>' : ''}</div><div style="margin-top:6px"><span class="preview">Preview · 4 min ago</span> <span class="sample" style="margin-left:6px">Sample</span></div>` +
+    `<div class="rows">` +
+    `<div class="brow"><span class="kt flight">${ic('plane', 16)}</span><div><b>Flights</b><span>${lasd ? 'SFO → LAX Sat 8:05 · SAN → SFO Wed 6:40 pm' : p.via + ' · nonstop both ways'}</span></div><span class="n">${money(f)}</span></div>` +
+    `<div class="brow"><span class="kt stay">${ic('bed', 16)}</span><div><b>Stay</b><span>${lasd ? '2 nights Santa Monica · 2 nights Mission Bay' : '4 nights, a family suite'}</span></div><span class="n">${money(s)}</span></div>` +
+    `<div class="brow"><span class="kt car">${ic('car', 16)}</span><div><b>Drive</b><span>${lasd ? 'Airport, then the coast to San Diego, 2h' : 'Airport and back'}</span></div><span class="n">${money(d)}</span></div></div>` +
+    `<div class="note">${TM.face('maya', 26)}<span><b>Maya stayed in Mission Bay with her kids.</b> “The bay beach is calm enough for a 7-year-old.”</span></div>` +
+    `<div class="note">${hearts.length ? faces(hearts, 22) : ''}<span>${hearts.length ? `<b>${hearts.filter(h => h !== 'sam').length} of you</b>${hearts.includes('sam') ? ' and Sam (guest)' : ''} like this` : 'No hearts yet'}</span><span style="margin-left:auto" class="heart">${ic('heart', 18)}</span></div>` +
+    `<div class="acts"><button class="btn btn-ink tap">${ic('check', 16)}This one</button><button class="btn btn-flat tap">${ic('share', 16)}Ask the family</button>` +
+    `<button class="btn btn-soon tap">Booking opens soon · save to the trip</button></div></div>`;
+}
+function draw() {
+  const p = PLACES.find(x => x.id === sel.p), wi = WINDOWS.findIndex(x => x.id === sel.w);
+  document.getElementById('app').innerHTML = TM.status() + TM.topbar('Book') + `<div class="wrap"><div>
+    <div class="lead"><div class="sentence">${TM.SENTENCE}</div>
+      <div class="live"><span class="prog"><svg width="18" height="18" viewBox="0 0 18 18"><circle class="bg" cx="9" cy="9" r="7"/><circle class="fg" cx="9" cy="9" r="7" stroke-dasharray="${44 * 28 / 30} 44" transform="rotate(-90 9 9)"/></svg>28 of 30 squares in · cheapest first</span><span class="sample">Sample prices</span></div></div>
+    <div class="find">${'<span class="spark">' + ic('spark', 18) + '</span>'}<div style="display:grid;gap:3px"><b>LA + San Diego is only $50 more than San Diego alone.</b><span>Fly into LA, two nights each, the coast drive is 2 hours. You asked for San Diego; this is both.</span></div><button class="btn tap" data-go>See it</button></div>
+    <div class="strip"><div class="hd"><b>${p.name} in December · the sky each day</b><span>Typical · not a forecast yet · NOAA normals</span></div><div class="days">${stripDays(p)}<div class="bracket" data-l="${WINDOWS[wi].label}"></div></div></div>
+    <div class="grid"><table><thead><tr><th class="ph"><span class="label">Place<span class="only-laptop"> · sky · door to door</span></span></th>${WINDOWS.map(w => `<th class="w"><b>${w.label}${w.asked ? '<span class="ask">Asked</span>' : ''}</b><span>${w.dow}</span></th>`).join('')}</tr></thead>
+    <tbody>${PLACES.map(p => `<tr><th>${rowHead(p)}</th>${WINDOWS.map((w, i) => square(p, w, i)).join('')}</tr>`).join('')}</tbody></table>
+    <div class="foot"><span>Each square: flights + 4 nights + the airport drive, for 4.</span><span class="key"><i style="background:var(--k-flight)"></i>Flight</span><span class="key"><i style="background:var(--k-stay)"></i>Stay</span><span class="key"><i style="background:var(--k-car)"></i>Drive</span><span style="margin-left:auto">Green = the cheapest in its row · marks follow plain rules</span></div></div>
+  </div><aside class="panel">${panel()}</aside></div>
+  <div class="sheet-peek"><b>LA + San Diego · Dec 12–16</b><span class="n" style="grid-row:2 / 4;grid-column:2">$2,190</span><span class="l2">${faces(HEARTS['lasd-d12'], 22)}3 of you and Sam like it</span></div>` + TM.tabbar('Book');
+  // the bracket spans the chosen window's five days on the strip
+  const days = document.querySelector('.days'), b = document.querySelector('.bracket');
+  if (days && b && days.offsetWidth) { const cells = days.querySelectorAll('.day'), st = WINDOWS[wi].start - 8, a = cells[st], z = cells[st + 4];
+    b.style.left = (a.offsetLeft - 3) + 'px'; b.style.width = (z.offsetLeft + z.offsetWidth - a.offsetLeft + 6) + 'px'; }
+  TMArt.mount();
+  document.querySelectorAll('.sq[data-p]').forEach(el => el.onclick = () => { sel = { p: el.dataset.p, w: el.dataset.w }; draw(); document.querySelectorAll('.arrive').forEach(x => x.style.animation = 'none'); });
+}
+draw();
+</script>
+</body></html>

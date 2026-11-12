@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Choose together · F-221</title>
+<link rel="stylesheet" href="tm.css">
+<script src="icons.js"></script><script src="tm.js"></script><script src="art.js"></script>
+<style>
+  main { max-width: 1392px; margin: 0 auto; padding: 0 24px 20px; display: grid; grid-template-columns: 470px minmax(0, 1fr); gap: 20px; align-items: start; }
+  .card { background: var(--card); border-radius: var(--r-widget); box-shadow: var(--sh1); }
+  /* the compact matrix */
+  .mx { padding: 16px 16px 12px; }
+  .mx .sentence { font-size: 17px; line-height: 1.35; letter-spacing: -.02em; margin-bottom: 12px; }
+  .mx .sentence .k { text-decoration-thickness: 2px; text-underline-offset: 4px; }
+  .mx table { width: 100%; border-collapse: separate; border-spacing: 3px; }
+  .mx th { font: 600 11px/1 var(--font); color: var(--ink-3); letter-spacing: .04em; text-align: center; padding: 4px 0; }
+  .mx th.asked { color: var(--ink); }
+  .mx td.pl { font: 600 13px/1.2 var(--font); white-space: nowrap; display: flex; align-items: center; gap: 7px; padding: 4px 4px 4px 0; }
+  .mx td.pl .pa { width: 30px; height: 20px; border-radius: 6px; flex: none; }
+  .mx td.c { height: 40px; border-radius: 10px; background: var(--paper-2); text-align: center; font: 600 13px/1 var(--font); font-variant-numeric: tabular-nums; position: relative; }
+  .mx td.c .faces { position: absolute; right: -5px; top: -6px; }
+  .mx td.c.lit { background: var(--ink); color: var(--paper); box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--ink); }
+  .mx td.c.searching { color: transparent; }
+  .mx .foot { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+  .after { margin-top: 14px; padding: 14px 16px; display: flex; gap: 12px; align-items: center; }
+  .after .ok { width: 36px; height: 36px; border-radius: 50%; background: var(--ok-tint); color: var(--ok-ink); display: grid; place-items: center; flex: none; }
+  .after b { display: block; font: 650 14px/1.3 var(--font); } .after span.fine { display: block; }
+  .cap { font: 600 11px/1 var(--font); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin: 16px 0 6px 4px; }
+  .link { margin-top: 10px; padding: 12px 16px; display: flex; gap: 10px; align-items: center; font-size: 13px; color: var(--ink-2); }
+  .switch { margin-left: auto; width: 40px; height: 24px; border-radius: 12px; background: var(--ok); position: relative; flex: none; }
+  .switch::after { content: ""; position: absolute; right: 3px; top: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; }
+  /* the opened square */
+  .sq { overflow: hidden; box-shadow: var(--sh2); }
+  .pair { position: relative; height: 168px; }
+  .pair .pa { position: absolute; inset: 0; }
+  .pair .bw { position: absolute; inset: 0; filter: drop-shadow(-3px 0 0 var(--card)); }
+  .pair > .pa { right: auto; width: 60%; }
+  .pair .bw .pa { left: auto; width: 60%; clip-path: polygon(30% 0, 100% 0, 100% 100%, 10% 100%); }
+  .pair .chips { position: absolute; left: 14px; top: 14px; display: flex; gap: 6px; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 11px; border-radius: 999px; background: var(--card); box-shadow: var(--sh1); font: 600 12px/1 var(--font); }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; }
+  .cols > div { padding: 16px 20px 18px; }
+  .cols > div + div { border-left: 1px solid var(--line); display: flex; flex-direction: column; }
+  .ttl { font: 760 26px/1.1 var(--font); letter-spacing: -.04em; } .ttl em { font-style: normal; color: var(--ink-2); }
+  .tot { display: flex; align-items: baseline; gap: 10px; margin: 10px 0 4px; flex-wrap: wrap; }
+  .tot .num { font: 750 38px/1 var(--font); letter-spacing: -.045em; font-variant-numeric: tabular-nums; } .tot .for { color: var(--ink-2); }
+  .delta { display: inline-flex; height: 24px; align-items: center; padding: 0 9px; border-radius: 999px; background: rgb(var(--state) / .07); font: 600 12px/1 var(--font); }
+  .rows { margin: 12px 0; display: grid; gap: 2px; }
+  .r { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+  .r .t { flex: 1; min-width: 0; font-size: 14px; } .r .t b { display: block; font-weight: 600; } .r .t span { font-size: 12px; color: var(--ink-2); }
+  .r .num { font: 650 15px/1 var(--font); font-variant-numeric: tabular-nums; }
+  .r + .r { border-top: 1px solid var(--line); }
+  .hearts { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 16px; background: var(--paper-2); font-size: 13px; }
+  .hearts b { font-weight: 650; } .hearts .heart { margin-left: auto; }
+  .watch { margin-top: 8px; display: flex; gap: 8px; align-items: center; font-size: 13px; padding: 8px 12px; border-radius: 12px; background: var(--warn-tint); color: var(--warn-ink); }
+  .acts { display: grid; gap: 8px; margin-top: 14px; }
+  .acts .btn { height: 46px; width: 100%; } .acts .btn-ink { font-size: 15px; }
+  .acts .fine { text-align: center; }
+  /* the thread on the square (iMessage-style) */
+  .th-h { display: flex; align-items: center; gap: 8px; font: 650 15px/1 var(--font); margin-bottom: 10px; } .th-h span { margin-left: auto; font: 500 12px/1 var(--font); color: var(--ink-2); }
+  .thread { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+  .div { text-align: center; font-size: 12px; color: var(--ink-3); margin: 8px 0 4px; }
+  .who { font-size: 12px; color: var(--ink-2); margin: 6px 0 0 40px; }
+  .run { display: flex; align-items: flex-end; gap: 8px; }
+  .msg { max-width: 76%; padding: 9px 13px; border-radius: 18px; font-size: 14px; line-height: 1.35; }
+  .them .msg { background: var(--paper-2); border-bottom-left-radius: 6px; }
+  .me { justify-content: flex-end; } .me .msg { background: var(--ink); color: var(--paper); border-bottom-right-radius: 6px; }
+  .compose { display: flex; gap: 8px; align-items: center; margin-top: 12px; }
+  .field { flex: 1; height: 42px; border-radius: 21px; border: 1px solid var(--line-2); padding: 0 14px; display: flex; align-items: center; color: var(--ink-3); font-size: 14px; }
+  .send { width: 42px; height: 42px; border-radius: 50%; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; flex: none; }
+  .hbtn { width: 42px; height: 42px; border-radius: 50%; background: var(--paper-2); display: grid; place-items: center; flex: none; }
+  .toast { display: none; }
+  @media (max-width: 720px) {
+    main { display: block; padding: 0 16px; }
+    .mx { box-shadow: none; padding: 8px 0; background: transparent; }
+    .mx .sentence { font-size: 20px; }
+    .left .after, .left .cap, .left .link { display: none; }
+    .scrim { position: fixed; inset: 0; background: rgba(10,10,20,.45); z-index: 35; }
+    .toast { display: flex; position: fixed; top: 52px; left: 12px; right: 12px; z-index: 45; gap: 10px; align-items: center; padding: 10px 14px; border-radius: 18px; background: var(--card-2); box-shadow: var(--sh2); font: 600 15px/1.25 var(--font); }
+    .toast .ok { width: 30px; height: 30px; border-radius: 50%; background: var(--ok-tint); color: var(--ok-ink); display: grid; place-items: center; flex: none; }
+    .toast small { display: block; font: 500 13px/1.2 var(--font); color: var(--ink-2); }
+    .sq { position: fixed; left: 0; right: 0; bottom: 0; top: 124px; z-index: 40; border-radius: 26px 26px 0 0; box-shadow: var(--sh3); background: var(--card-2); display: flex; flex-direction: column; }
+    .sq .scroll { overflow: auto; flex: 1; }
+    .grab { position: absolute; top: 8px; left: 50%; margin-left: -20px; width: 40px; height: 5px; border-radius: 3px; background: rgba(255,255,255,.9); z-index: 2; }
+    .pair { height: 120px; }
+    .pill { height: 30px; font-size: 13px; }
+    .cols { display: block; } .cols > div { padding: 14px 16px; } .cols > div + div { border-left: 0; border-top: 1px solid var(--line); }
+    .ttl { font-size: 26px; } .tot .num { font-size: 34px; }
+    .r .t { font-size: 16px; } .r .t span { font-size: 14px; } .r .num { font-size: 16px; }
+    .hearts, .watch { font-size: 15px; } .delta { font-size: 13px; height: 28px; }
+    .msg { font-size: 16px; } .who, .div { font-size: 13px; }
+    .field { height: 48px; font-size: 16px; } .send, .hbtn { width: 48px; height: 48px; }
+    .acts.desk { display: none; }
+    .dock { display: grid; grid-template-columns: 1fr 1.2fr; gap: 8px; padding: 10px 16px 26px; border-top: 1px solid var(--line); background: var(--card-2); }
+    .dock .btn { height: 52px; padding: 0 10px; font-size: 15px; }
+    .sq .rgb { background: rgb(var(--state) / .06); }
+  }
+  @media (min-width: 721px) { .scrim, .grab, .dock { display: none; } .sq .scroll { display: contents; } }
+</style></head>
+<body>
+<div id="app"></div>
+<script>
+const { PLACES, WINDOWS, money, HEARTS, faces, face } = TM;
+const rowsHtml = PLACES.map(p => `<tr><td class="pl"><span data-art="${p.art}" data-wx="${p.wx}"></span>${p.id === 'lasd' ? 'LA + SD' : p.name}</td>` +
+  WINDOWS.map((w, i) => { const v = p.t[i], k = p.id + '-' + w.id, h = HEARTS[k];
+    return v == null ? `<td class="c searching">—</td>` : `<td class="c ${p.discovery === w.id ? 'lit' : ''}">${money(v)}${h && p.discovery !== w.id ? faces(h.slice(0, 1), 16) : ''}</td>`; }).join('') + '</tr>').join('');
+const thread = `
+  <div class="div">Today 8:12 PM</div>
+  <div class="who">Leela</div><div class="run them">${face('leela', 32)}<div class="msg">the beach!!</div></div>
+  <div class="who">Dev</div><div class="run them">${face('dev', 32)}<div class="msg">2 hours of driving is fine</div></div>
+  <div class="who">Sam · guest</div><div class="run them">${face('sam', 32)}<div class="msg">we could join for the LA part</div></div>
+  <div class="div">8:31 PM</div>
+  <div class="run me"><div class="msg">Booking opens soon, so I'm saving it</div></div>`;
+document.getElementById('app').innerHTML = TM.status() + TM.topbar('Book') + `
+<div class="toast"><span class="ok">${ic('check', 16)}</span><span>LA + San Diego is the family's trip<small>After “This one” · everyone was told</small></span></div>
+<main>
+  <section class="left">
+    <div class="card mx"><div class="sentence">${TM.SENTENCE}</div>
+      <table><tr><th></th>${WINDOWS.map(w => `<th class="${w.asked ? 'asked' : ''}">${w.label.replace('Dec ', '')}</th>`).join('')}</tr>${rowsHtml}</table>
+      <div class="foot"><span class="preview">Preview · 4 min ago</span><span class="sample">Sample prices</span></div></div>
+    <div class="cap">After “This one”</div>
+    <div class="card after"><span class="ok">${ic('check', 18)}</span><span><b>LA + San Diego is the family's trip</b><span class="fine">Everyone was told · the cockpit, day plan and chat have it</span></span>${faces(['dev', 'leela', 'arjun'], 24)}</div>
+    <div class="card link">${ic('link', 16)}<span>Guests heart by first name through Ana's link · nothing private is on it</span><span class="switch" title="Link on"></span></div>
+  </section>
+  <div class="scrim"></div>
+  <section class="card sq"><span class="grab"></span>
+    <div class="scroll">
+    <div class="pair"><div data-art="los-angeles" data-wx="sun" data-fit="xMidYMid slice"></div><div class="bw"><div data-art="san-diego" data-wx="sun" data-fit="xMidYMid slice"></div></div>
+      <div class="chips"><span class="pill">${ic('calendar', 14)}Dec 12–16 · 4 nights</span><span class="pill">${ic('sun', 14)}67° / 49° typical</span></div></div>
+    <div class="cols">
+      <div>
+        <div class="ttl">LA + San Diego <em>2 nights each</em></div>
+        <div class="tot"><span class="num">${money(2190)}</span><span class="for">for 4, all in</span><span class="delta">+$50 vs San Diego alone</span></div>
+        <span class="preview">Preview · 4 min ago · sample</span>
+        <div class="rows">
+          <div class="r"><span class="kt flight">${ic('plane', 16)}</span><span class="t"><b>Flights</b><span>SFO → LAX Sat · SAN → SFO Wed</span></span><span class="num">${money(612)}</span></div>
+          <div class="r"><span class="kt stay">${ic('bed', 16)}</span><span class="t"><b>Stays</b><span>2 nights LA · 2 nights San Diego</span></span><span class="num">${money(1428)}</span></div>
+          <div class="r"><span class="kt car">${ic('car', 16)}</span><span class="t"><b>Drive</b><span>The coast, about 2h · one-way car</span></span><span class="num">${money(150)}</span></div>
+          <div class="r"><span class="kt wx">${ic('sun', 16)}</span><span class="t"><b>Weather</b><span>Typical 67° / 49° · 1 day in 6 rains</span></span></div>
+        </div>
+        <div class="hearts rgb">${faces(HEARTS['lasd-d12'], 28)}<span><b>3 of you like this</b><br>and Sam, a guest</span><span class="heart">${ic('heart', 20)}</span></div>
+        <div class="watch">${ic('bell', 15)}Up $40 since Ana liked it</div>
+        <div class="acts desk"><button class="btn btn-ink tap">${ic('check', 17)}This one</button><button class="btn btn-soon tap">Booking opens soon · Save to trip</button>
+          <span class="fine">You decide, Ana. Hearts are advice.</span></div>
+      </div>
+      <div>
+        <div class="th-h">${ic('chat', 17)}On this square<span>Family and guests</span></div>
+        <div class="thread">${thread}</div>
+        <div class="compose"><span class="field">Say something about this one</span><span class="hbtn heart">${ic('heart', 20)}</span><span class="send">${ic('arrow-right', 18)}</span></div>
+      </div>
+    </div>
+    </div>
+    <div class="dock"><button class="btn btn-soon tap">Opens soon · Save</button><button class="btn btn-ink tap">${ic('check', 17)}This one</button></div>
+  </section>
+</main>` + TM.tabbar('Book');
+TMArt.mount();
+</script>
+</body></html>

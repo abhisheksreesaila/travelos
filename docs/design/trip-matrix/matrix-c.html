@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trip matrix C · Calendar lanes · F-221</title>
+<!-- Option C "Calendar lanes": the calendar is the axis and the weather lives in it. Days Dec 8-20 run across; each place is a lane whose
+     days wear that place's sky; the trip (4 nights) is a band across its five days, and under each start day sits the total if you start then.
+     Tap a start price: the band slides there (phone: --motion-spring 380ms, the finger's thing moves; laptop: --motion-desk fade, no travel).
+     The chosen trip fills the bar at the bottom (laptop) or the sheet (phone); its content cross-fades. -->
+<link rel="stylesheet" href="tm.css">
+<script src="icons.js"></script><script src="tm.js"></script><script src="art.js"></script>
+<style>
+  main { max-width: 1440px; margin: 0 auto; padding: 0 24px 20px; }
+  .lead { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; }
+  .lead .sentence { font-size: 26px; max-width: 860px; }
+  .meta { display: grid; justify-items: end; gap: 8px; white-space: nowrap; font-size: 13px; color: var(--ink-2); }
+  .cal { margin-top: 14px; background: var(--card); border-radius: var(--r-widget); box-shadow: var(--sh1); padding: 6px 8px 8px; }
+  .scroller { overflow-x: auto; }
+  .axis, .lane { display: grid; grid-template-columns: 236px repeat(13, minmax(72px, 1fr)); column-gap: 4px; }
+  .axis { padding: 6px 0 6px; position: sticky; top: 0; }
+  .axis .h { padding: 0 6px; display: flex; align-items: flex-end; }
+  .axis .d { text-align: center; padding: 4px 0; border-radius: 10px; }
+  .axis .d b { display: block; font: 680 15px/1 var(--font); } .axis .d span { font: 600 11px/1 var(--font); color: var(--ink-2); text-transform: uppercase; letter-spacing: .05em; }
+  .axis .d.ask { background: var(--ink); color: var(--paper); } .axis .d.ask span { color: var(--paper); opacity: .8; }
+  .axis .d.we span { color: var(--ink); }
+  .lane { position: relative; padding: 5px 0; border-top: 1px solid var(--line); grid-template-rows: 44px 26px; row-gap: 3px; }
+  .lh { grid-row: 1 / 3; display: flex; align-items: center; gap: 10px; padding-right: 8px; }
+  .lh .thumb { width: 58px; height: 52px; border-radius: 12px; position: relative; overflow: hidden; flex: none; }
+  .lh .thumb .pa { position: absolute; inset: 0; }
+  .lh .thumb .pa + .pa { clip-path: polygon(60% 0, 100% 0, 100% 100%, 40% 100%); }
+  .lh b { display: block; font: 650 15px/1.15 var(--font); letter-spacing: -.01em; }
+  .lh span { display: block; font-size: 12px; color: var(--ink-2); margin-top: 2px; white-space: nowrap; }
+  .lh .n { font: 650 15px/1 var(--mono); color: var(--ink); margin-top: 5px; }
+  .sky { grid-row: 1; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border-radius: 10px; border: 1.5px dotted var(--line-2); }
+  .sky .i { color: var(--k-wx); } .sky.cl .i { color: var(--ink-2); }
+  .sky .t { font: 500 11px/1 var(--mono); color: var(--ink-2); }
+  .band { grid-row: 1; z-index: 0; border-radius: 12px; background: var(--paper-2); box-shadow: inset 0 0 0 2px var(--ink); margin: -3px -2px; transition: grid-column var(--motion-desk); }
+  .band::after { content: attr(data-l); position: absolute; right: 8px; top: -9px; font: 650 11px/1 var(--font); background: var(--ink); color: var(--paper); padding: 3px 7px; border-radius: 999px; white-space: nowrap; }
+  .band { position: relative; }
+  .lane.inband .sky { border-color: transparent; }
+  .lane.lit .band { background: var(--up-bg); box-shadow: var(--sh2); }
+  .lane.lit .band::after { background: #FFD43B; color: #17140A; }
+  .lane.lit .sky.in .i, .lane.lit .sky.in .t { color: var(--up-fg); }
+  .st { grid-row: 2; z-index: 1; border-radius: 999px; background: var(--paper-2); font: 600 12px/1 var(--mono); display: grid; place-items: center; letter-spacing: -.03em; color: var(--ink); cursor: pointer; }
+  .st.low { color: var(--ok-ink); }
+  .st.on { background: var(--ink); color: var(--paper); }
+  .lane.lit .st.on { background: #FFD43B; color: #17140A; }
+  .st.wait { color: transparent; }
+  .st .who { display: none; }
+  .legend { display: flex; gap: 18px; padding: 8px 6px 2px; font-size: 12px; color: var(--ink-2); align-items: center; }
+  .legend i { display: inline-block; vertical-align: -2px; margin-right: 6px; }
+  .legend .b1 { width: 22px; height: 12px; border-radius: 4px; box-shadow: inset 0 0 0 2px var(--ink); }
+  .legend .b2 { width: 14px; height: 14px; border-radius: 4px; border: 1.5px dotted var(--line-2); }
+
+  /* the chosen trip */
+  .chosen { margin-top: 12px; display: grid; grid-template-columns: 200px 1fr auto; gap: 18px; align-items: center; background: var(--card); border-radius: var(--r-widget); box-shadow: var(--sh2); padding: 10px 16px 10px 10px; }
+  .chosen .art { position: relative; height: 100px; border-radius: 18px; overflow: hidden; }
+  .chosen .art .pa { position: absolute; inset: 0; } .chosen .art .pa + .pa { clip-path: polygon(60% 0, 100% 0, 100% 100%, 40% 100%); }
+  .chosen h3 { font: 720 22px/1.1 var(--font); letter-spacing: -.03em; }
+  .chosen h3 em { font-style: normal; color: var(--ink-2); }
+  .chosen .parts { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .part { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px 0 4px; border-radius: 999px; background: var(--paper-2); font-size: 13px; }
+  .part .kt { width: 26px; height: 26px; border-radius: 50%; } .part b { font: 600 13px/1 var(--mono); }
+  .chosen .end { display: grid; justify-items: end; gap: 8px; }
+  .chosen .end .n { font: 680 38px/1 var(--mono); letter-spacing: -.05em; }
+  .chosen .btns { display: flex; gap: 8px; }
+
+  @media (max-width: 720px) {
+    main { padding: 0 0 120px; }
+    .lead { display: block; padding: 0 16px; } .lead .sentence { font-size: 22px; }
+    .meta { justify-items: start; margin-top: 10px; font-size: 14px; }
+    .cal { border-radius: 0; box-shadow: none; background: transparent; padding: 0; }
+    .axis, .lane { grid-template-columns: 112px repeat(13, 58px); }
+    .lh { position: sticky; left: 0; z-index: 3; background: var(--paper); flex-direction: column; align-items: flex-start; gap: 4px; padding-left: 12px; }
+    .axis .h { position: sticky; left: 0; z-index: 3; background: var(--paper); }
+    .lh .thumb { width: 88px; height: 28px; border-radius: 8px; }
+    .lh span:not(.n) { display: none; } .lh b { font-size: 14px; } .lh .n { margin-top: 0; font-size: 14px; }
+    .lane { grid-template-rows: 50px 34px; }
+    .sky .t { font-size: 12px; } .st { font-size: 13px; }
+    .axis .d b { font-size: 16px; } .axis .d span { font-size: 12px; }
+    .legend { display: none; }
+    .chosen { position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; border-radius: 22px 22px 0 0; box-shadow: var(--sh3); grid-template-columns: 1fr auto; padding: 8px 16px 104px; gap: 4px 12px; }
+    .chosen::before { content: ""; grid-column: 1 / -1; justify-self: center; width: 40px; height: 5px; border-radius: 3px; background: var(--line-2); margin-bottom: 6px; }
+    .chosen .art, .chosen .parts, .chosen .btns { display: none; }
+    .chosen h3 { font-size: 17px; } .chosen h3 em { display: none; } .chosen .end .n { font-size: 24px; }
+    .chosen .sub { font-size: 14px; color: var(--ink-2); }
+  }
+</style></head>
+<body>
+<div id="app"></div>
+<script>
+const { WINDOWS, PLACES, money, split, HEARTS, faces, wxIcon } = TM;
+const DAYS = Array.from({ length: 13 }, (_, i) => 8 + i), DOW = d => ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][d % 7];
+const start = {}; PLACES.forEach(p => { const v = p.t.filter(x => x != null); start[p.id] = p.discovery ? WINDOWS.findIndex(w => w.id === p.discovery) : p.t.indexOf(Math.min(...v)); });
+let chosen = 'lasd';
+// each place's typical sky for each day (sample: NOAA normals in the build): a small, fixed wobble around the place's December normal
+function sky(p, d) { const w = [0, -1, 0, 1, 0, -2, -1, 0, 1, 0, -2, -1, 0][d - 8]; const ch = (p.id === 'sb' ? 28 : 10) + ((d * 7 + p.name.length) % 5) * 4 - (p.id === 'ps' ? 8 : 0);
+  return { hi: p.hi + w, ch, wx: ch >= 22 ? 'cloud' : 'sun' }; }
+function lane(p) {
+  const si = start[p.id], s0 = WINDOWS[si].start, min = Math.min(...p.t.filter(x => x != null));
+  const art = `<div data-art="${p.art}" data-wx="${p.wx}"></div>` + (p.art2 ? `<div data-art="${p.art2}" data-wx="${p.wx}"></div>` : '');
+  const col = d => d - 8 + 2;
+  return `<div class="lane inband ${p.discovery ? 'lit' : ''}"><div class="lh"><div class="thumb">${art}</div><div><b>${p.name}</b><span>${p.via} · ${p.door}</span><span class="n">${money(p.t[si])}</span></div></div>` +
+    `<div class="band" style="grid-column:${col(s0)} / span 5" data-l="${p.discovery ? 'Found · +$50 vs San Diego' : '4 nights · ' + money(p.t[si])}"></div>` +
+    DAYS.map(d => { const k = sky(p, d), inn = d >= s0 && d <= s0 + 4; return `<div class="sky ${k.wx === 'cloud' ? 'cl' : ''} ${inn ? 'in' : ''}" style="grid-column:${col(d)}">${wxIcon(k.wx, 16)}<span class="t">${k.hi}° ${k.ch}%</span></div>`; }).join('') +
+    WINDOWS.map((w, j) => p.t[j] == null ? `<span class="st wait searching" style="grid-column:${col(w.start)}">0,000</span>` :
+      `<button class="st tap ${j === si ? 'on' : ''} ${p.t[j] === min ? 'low' : ''}" style="grid-column:${col(w.start)}" data-p="${p.id}" data-j="${j}">${p.t[j].toLocaleString('en-US')}</button>`).join('') + `</div>`;
+}
+function chosenBar() {
+  const p = PLACES.find(x => x.id === chosen), w = WINDOWS[start[p.id]], [f, s, d] = split(p, w.id), hearts = HEARTS[p.id + '-' + w.id] || [];
+  const art = `<div data-art="${p.art}" data-wx="${p.wx}"></div>` + (p.art2 ? `<div data-art="${p.art2}" data-wx="${p.wx}"></div>` : '');
+  return `<section class="chosen"><div class="art">${art}</div><div><h3>${p.name} · ${w.label} ${p.discovery ? '<em>· $50 more than San Diego alone</em>' : ''}</h3>` +
+    `<div class="sub">${hearts.length ? faces(hearts, 20) + ' ' : ''}${hearts.length ? (hearts.filter(h => h !== 'sam').length + ' of you' + (hearts.includes('sam') ? ' and Sam (guest)' : '') + ' like this') : 'No hearts yet'} · <span class="preview">Preview · 4 min ago</span></div>` +
+    `<div class="parts"><span class="part"><span class="kt flight">${ic('plane', 13)}</span>${p.discovery ? 'SFO → LAX · SAN → SFO' : p.via} <b>${money(f)}</b></span><span class="part"><span class="kt stay">${ic('bed', 13)}</span>${p.sub || '4 nights'} <b>${money(s)}</b></span><span class="part"><span class="kt car">${ic('car', 13)}</span>${p.discovery ? 'The coast, 2h' : 'Airport drive'} <b>${money(d)}</b></span>` +
+    `<span class="part"><span class="kt wx">${ic('sun', 13)}</span>${p.hi}°/${p.lo}° · rain ${p.rain}</span></div></div>` +
+    `<div class="end"><span class="n">${money(p.t[start[p.id]])}</span><div class="btns"><button class="btn btn-ink tap">${ic('check', 15)}This one</button><button class="btn btn-soon tap">Booking opens soon</button></div></div></section>`;
+}
+function draw() {
+  document.getElementById('app').innerHTML = TM.status() + TM.topbar('Book') + `<main>
+  <div class="lead"><div class="sentence">${TM.SENTENCE}</div><div class="meta"><span class="preview">28 of 30 in · cheapest first · Preview · 4 min ago</span><span class="sample">Sample prices</span></div></div>
+  <section class="cal"><div class="scroller"><div class="axis"><div class="h"><span class="label">Sky each day<span class="only-laptop"> · typical, not a forecast yet</span></span></div>${DAYS.map(d => `<div class="d ${d === 12 ? 'ask' : ''} ${['Sat', 'Sun'].includes(DOW(d)) ? 'we' : ''}"><span>${DOW(d)}</span><b>${d}</b></div>`).join('')}</div>
+    ${PLACES.map(lane).join('')}</div>
+    <div class="legend"><span><i class="b1"></i>Your 4 nights (tap a start price to move them)</span><span><i class="b2"></i>Typical sky · NOAA 1991–2020 normals</span><span>Under each start day: flights + stay + drive for 4 if you leave that day</span></div></section>
+  ${chosenBar()}</main>` + TM.tabbar('Book');
+  TMArt.mount();
+  const sc = document.querySelector('.scroller'); if (innerWidth <= 720 && !draw.done) { sc.scrollLeft = 2 * 62; draw.done = 1; }
+  document.querySelectorAll('.st[data-p]').forEach(el => el.onclick = () => { start[el.dataset.p] = +el.dataset.j; chosen = el.dataset.p; draw(); });
+}
+draw();
+</script>
+</body></html>
