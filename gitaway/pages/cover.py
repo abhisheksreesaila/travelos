@@ -12,7 +12,7 @@ The story of the brief (docs/briefs/unified-booking.md "The cover tells this sto
 
 No jitter by construction (D-427): the frame is CSS sticky; assets/js/cover.js only sets data-part on the stage from an IntersectionObserver and adds
 .go to a part the first time it shows. cover.css does the rest on the --motion-* tokens: the outgoing screen fades, the incoming one settles in on
-the Liquid spring and its small moments play once on the same springs (D-431). No script writes a transform, nothing reads layout while scrolling,
+the Liquid spring and its small moments play once on the same springs (D-435). No script writes a transform, nothing reads layout while scrolling,
 nothing moves with the scroll. Under reduced motion the screens swap with a plain fade, every moment at rest; on a screen under 600 px tall,
 without the script or with ?still, every part is a still beside (or under) its words. The made-up families, prices and trips are an illustration shown in production too (D-270,
 D-383), said in the first part, where the first of them appears, and in the footer.

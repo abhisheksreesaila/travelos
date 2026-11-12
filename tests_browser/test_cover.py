@@ -1,7 +1,7 @@
 """F-227, the cover rebuilt as one stage (docs/decisions.md D-426 on), in a real browser: the opening shows at once in the visitor's day or night;
 one product frame stays pinned (CSS sticky) while the three parts pass it, beside it on a laptop and under it on a phone; when the part changes the
 outgoing screen fades and the incoming one settles in on the Liquid spring, and each screen's moments (the words, the squares, the find lighting up,
-the hearts landing, the card forming) play once on the same springs (D-431); under reduced motion the frame still pins and the screens swap with a
+the hearts landing, the card forming) play once on the same springs (D-435); under reduced motion the frame still pins and the screens swap with a
 plain fade, every moment at rest; a short screen, ?still or no script get the still, each screen with its words; nothing follows the scroll (no
 frame asked for, no transform written while scrolling) and a CPU four times slower makes no long task; a finger scrolls it; nothing scrolls sideways
 from 320 to 1440; every word reads at 4.5:1 and a phone gets its type floor and 48 px targets, in both modes; a notch covers nothing."""
@@ -104,7 +104,7 @@ def test_the_frame_stays_pinned_while_the_parts_pass_and_swaps_its_screen(cover,
 
 @pytest.mark.parametrize("size", ["390", "1440"])
 def test_the_incoming_screen_settles_in_on_the_spring_and_the_outgoing_one_fades(cover, size):
-    """D-431: Liquid on the phone and the laptop alike (the cover's exception to the calm desktop, D-401), started by a class, on the tokens."""
+    """D-435: Liquid on the phone and the laptop alike (the cover's exception to the calm desktop, D-401), started by a class, on the tokens."""
     page = cover(SIZES[size])
     _show(page, 1)
     page.wait_for_timeout(500)

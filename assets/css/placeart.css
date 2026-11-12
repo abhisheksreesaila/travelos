@@ -1,0 +1,38 @@
+/* F-223: the place art (gitaway/placeart.py). A drawing carries its own colours; this file only swaps a day drawing to its night palette in dark
+   mode, sizes it, and moves its weather: clouds drift, rain and snow fall, Palm Springs' turbines turn, Orlando's fireworks bloom. All of it stops
+   under reduced motion. Times are the --motion-* tokens (a crossing of the sky is a long multiple of --motion-dur). */
+.pa-svg { display: block; width: 100%; height: 100%; }
+
+:root[data-mode="dark"] .pa-svg[data-sky="auto"] {
+  --pa-sky1: var(--pa-n-sky1) !important; --pa-sky2: var(--pa-n-sky2) !important; --pa-sun: var(--pa-n-sun) !important; --pa-far: var(--pa-n-far) !important;
+  --pa-mid: var(--pa-n-mid) !important; --pa-near: var(--pa-n-near) !important; --pa-water: var(--pa-n-water) !important; --pa-foam: var(--pa-n-foam) !important;
+  --pa-ground: var(--pa-n-ground) !important; --pa-ground2: var(--pa-n-ground2) !important; --pa-line: var(--pa-n-line) !important; --pa-acc: var(--pa-n-acc) !important;
+  --pa-leaf: var(--pa-n-leaf) !important; --pa-snow: var(--pa-n-snow) !important; --pa-cloud: var(--pa-n-cloud) !important;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-mode="light"]) .pa-svg[data-sky="auto"] {
+    --pa-sky1: var(--pa-n-sky1) !important; --pa-sky2: var(--pa-n-sky2) !important; --pa-sun: var(--pa-n-sun) !important; --pa-far: var(--pa-n-far) !important;
+    --pa-mid: var(--pa-n-mid) !important; --pa-near: var(--pa-n-near) !important; --pa-water: var(--pa-n-water) !important; --pa-foam: var(--pa-n-foam) !important;
+    --pa-ground: var(--pa-n-ground) !important; --pa-ground2: var(--pa-n-ground2) !important; --pa-line: var(--pa-n-line) !important; --pa-acc: var(--pa-n-acc) !important;
+    --pa-leaf: var(--pa-n-leaf) !important; --pa-snow: var(--pa-n-snow) !important; --pa-cloud: var(--pa-n-cloud) !important;
+  }
+}
+
+.pa-svg .pa-cl { animation: pa-drift calc(var(--motion-dur) * 292) linear infinite; }
+.pa-svg .pa-cl2 { animation: pa-drift calc(var(--motion-dur) * 396) linear infinite; }
+.pa-svg .pa-rn { animation: pa-rain calc(var(--motion-dur) * 3.75) linear infinite; }
+.pa-svg .pa-sn { animation: pa-snow calc(var(--motion-dur) * 29) linear infinite; }
+.pa-svg .pa-tb { animation: pa-spin calc(var(--motion-dur) * 37.5) linear infinite; }
+.pa-svg .pa-tb2 { animation-delay: calc(var(--motion-dur) * -8.33); }
+.pa-svg .pa-tb3 { animation-delay: calc(var(--motion-dur) * -16.67); }
+.pa-svg .pa-fw { animation: pa-burst calc(var(--motion-dur) * 18.75) var(--motion-ease) infinite; transform-box: fill-box; transform-origin: center; }
+.pa-svg .pa-fw2 { animation-delay: calc(var(--motion-dur) * -6.25); }
+.pa-svg .pa-fw3 { animation-delay: calc(var(--motion-dur) * -12.5); }
+/* moves are shares of the 480 x 240 drawing (transform-box: view-box), so they scale with it */
+.pa-svg .pa-cl, .pa-svg .pa-cl2, .pa-svg .pa-rn, .pa-svg .pa-sn { transform-box: view-box; }
+@keyframes pa-drift { from { transform: translateX(-6.25%); } 50% { transform: translateX(6.25%); } to { transform: translateX(-6.25%); } }
+@keyframes pa-rain { from { transform: translateY(-5%); } to { transform: translateY(5%); } }
+@keyframes pa-snow { from { transform: translateY(-8.333%); } to { transform: translateY(8.333%); } }
+@keyframes pa-spin { to { transform: rotate(360deg); } }
+@keyframes pa-burst { 0% { opacity: 0; transform: scale(.5); } 15% { opacity: 1; } 60% { opacity: .85; transform: scale(1); } 100% { opacity: 0; transform: scale(1.05); } }
+@media (prefers-reduced-motion: reduce) { .pa-svg * { animation: none !important; } }

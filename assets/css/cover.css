@@ -4,7 +4,7 @@
    Two ways to show the stage. The still (the rules outside the film block): each part's words with its own screen beside them (a laptop) or under
    them (under 1100px); it is what a screen under 600 px tall, ?still or a page without its script get. The film (html.cv-film, inside the block
    below): the frame is pinned with position: sticky, the parts' words scroll past, and data-part swaps the frame's three screens: the outgoing one
-   fades, the incoming one settles in on the Liquid spring (opacity and a small scale on the screen itself, D-431), and its small moments play once
+   fades, the incoming one settles in on the Liquid spring (opacity and a small scale on the screen itself, D-435), and its small moments play once
    on the same springs, on a laptop as on a phone (the cover's own exception to the calm desktop, D-401). Under reduced motion the frame still pins
    and the screens swap with a plain fade, every moment at rest. Every rule that hides something until the film reaches it lives in the film
    block, so nothing is ever hidden by a script that did not run, and nothing moves with the scroll but the scroll itself. */
