@@ -129,6 +129,20 @@ def _no_weather_network(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _no_liteapi_network(monkeypatch):
+    """No test reaches LiteAPI (F-220): no key, every call fails unless the test installs its own fake `liteapi.TRANSPORT`, and the cache starts empty."""
+    from gitaway import liteapi
+
+    def refuse(url, headers, body, timeout):
+        raise OSError("the network is off in tests")
+    monkeypatch.setattr(liteapi, "TRANSPORT", refuse)
+    monkeypatch.delenv("LITEAPI_KEY", raising=False)
+    liteapi.clear()
+    yield
+    liteapi.clear()
+
+
+@pytest.fixture(autouse=True)
 def _no_plan_worker():
     """A test that starts the app (a live server) starts the Plan it for me worker with it (planforme.start in on_startup), and it would go on building the paid orders of every later test
     before the test looks at them. Stop it before each test; a test that wants the worker calls `planforme.start` itself and stops it (F-193)."""

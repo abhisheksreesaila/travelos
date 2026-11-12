@@ -1,0 +1,19 @@
+{
+ "data": {
+  "id": "lp1f5cb",
+  "name": "Pacific Terrace Hotel",
+  "hotelDescription": "<p><strong>Beachfront Luxury at Pacific Terrace Hotel</strong></p><p><strong>Beachfront Bliss</strong>: Enjoy a beachfront outdoor pool, hot tub, and stunning ocean views in our island-inspired rooms.</p><p><strong>Luxurious Amenities</strong>: Indulge in terrycloth bathrobes, elegant dark wood furnishings, and tasteful tropical linens for a truly luxurious stay.</p><p><strong>Convenience at Your Fingertips</strong>: Take advantage of concierge services, charge back to the room options, gated underground parking, and a modern fitness center.</p><p>Experience the best of San Diego at Pacific Terrace Hotel. Book your stay now for a memorable beachfront getaway.</p>",
+  "main_photo": "https://static.cupid.travel/hotels/48543512.jpg",
+  "thumbnail": "https://static.cupid.travel/hotels/thumbnail/48543512.jpg",
+  "starRating": 4,
+  "rating": 9.4,
+  "reviewCount": 1063,
+  "location": {
+   "latitude": 32.799536,
+   "longitude": -117.257912
+  },
+  "address": "610 Diamond Street",
+  "city": "San Diego",
+  "country": "US"
+ }
+}
