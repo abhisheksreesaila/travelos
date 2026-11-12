@@ -1,5 +1,5 @@
 // The trip matrix (F-222). The page works as plain links (every square is a link to its own page); this adds four things on top.
-//   1. Loading like map tiles: only the squares in view (and a margin) are asked for, at most MAX_AT_ONCE at a time, the asked square first, then the nearest days and
+//   1. Loading like map tiles: only the squares in view (and a margin) are asked for, at most MAX_AT_ONCE at a time (2: LiteAPI's sandbox answered 429 to three squares' calls at once), the asked square first, then the nearest days and
 //      the likeliest places (gitaway/tripmatrix.py `order`); a square scrolled past before its turn is never asked for. A waiting square is a skeleton, never a number.
 //   2. The marks, with the same rules as gitaway/tripmatrix.py `marks` and `find` (change one, change the other: tests_browser/test_tripmatrix.py compares them):
 //      the cheapest start in a lane, over the budget, and the find, said in words with real totals only.
@@ -11,7 +11,7 @@
   if (!root || !raw) return;
   document.documentElement.setAttribute('data-liquid', '');
   var data = JSON.parse(raw.textContent);
-  var MAX_AT_ONCE = 3, SLOW_MS = 4000, MARGIN = '240px 120px';
+  var MAX_AT_ONCE = 2, SLOW_MS = 4000, MARGIN = '240px 120px';
   var known = {}, panels = {}, asked = {}, seen = {}, active = 0, timers = {};
   Object.keys(data.known).forEach(function (k) { known[k] = data.known[k]; });
   var wide = window.matchMedia('(min-width: 1020px)');
@@ -95,6 +95,7 @@
     drawFind(r.find);
     var n = Object.keys(known).length, count = document.getElementById('mx-count-n');
     if (count) count.textContent = String(n);
+    return r;
   }
   function drawFind(f) {
     var box = document.getElementById('mx-find');
@@ -152,9 +153,18 @@
     });
     var age = document.getElementById('mx-age');
     if (age && j.age && age.textContent === 'Preview') age.textContent = 'Preview · ' + j.age;
-    remark();
+    var r = remark();
     news_();
     if (opened === k) show(k, null, true);
+    else if (!opened && side) {      // nothing opened yet: the side follows the find, else the asked square (pages/tripmatrix.py `default_open`)
+      var a = lanes.filter(function (x) { return x.a; })[0], w = windows.filter(function (x) { return x.a; })[0] || windows[0];
+      var first = r.find ? r.find.key : (a && known[key(a.k, w.k)] ? key(a.k, w.k) : '');
+      var now = side.querySelector('[data-open]');
+      if (first && panels[first] && (!now || now.dataset.open !== first)) {
+        var inner = fill(side, first);
+        if (inner && M() && wide.matches) M().fade(inner);
+      }
+    }
   }
   function said(k, words) {
     known[k] = { c: null, s: 'failed' };

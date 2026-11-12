@@ -234,3 +234,8 @@ def test_the_sheet_fits_the_phone(matrix):
     expect(page.locator(".mx-sheet .mx-save")).to_be_visible()
     wide = page.evaluate("() => { const s = document.querySelector('.mx-sheet'); return [s.scrollWidth, s.clientWidth, Math.max(...[...s.querySelectorAll('.mx-r-n')].map(e => e.getBoundingClientRect().right))]; }")
     assert wide[0] <= wide[1] + 1 and wide[2] <= 390, wide
+
+
+def test_the_side_starts_on_the_find_once_it_is_known(matrix):
+    page = matrix(DESKTOP)
+    expect(page.locator("#mx-side .mx-p-h")).to_have_text("Los Angeles + San Diego · Dec 12 to 16")
