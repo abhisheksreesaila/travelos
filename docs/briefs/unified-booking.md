@@ -30,7 +30,7 @@ Headline (the founder's pick, 2026-11-12): **"The whole trip, compared. With the
 Three parts, each with its own beats, replacing the eight stages of cover v5:
 1. **Compare.** One sentence types itself ("A family of 4, from SFO, somewhere warm, Dec 12 to 16"); the matrix fills in and one square lights up ("LA + San Diego, $50 more than San Diego alone"); the calendar wears the weather, the place wears its art.
 2. **Plan it together.** Family votes land on squares, the chat beside them; the chosen square becomes the family's trip.
-3. **Leave a trail.** The trip becomes the Instagram-ready card; creators (travel bloggers, vloggers) welcome: their trips open into a matrix of their own for their readers.
+3. **Leave a trail others can follow.** Subtitle: "Bloggers and vloggers welcome." The trip becomes the Instagram-ready card; creators (travel bloggers, vloggers) welcome: their trips open into a matrix of their own for their readers.
 Close: the headline again, "Booking opens soon" said plainly.
 The cockpit and the creator tools leave the cover for their own pages. Fewer, calmer moves (cover v5 felt jittery to the founder); drafted in the designer before any code.
 
