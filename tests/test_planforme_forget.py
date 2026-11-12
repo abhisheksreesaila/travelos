@@ -1,13 +1,13 @@
 """F-193 (D-208): `forget-person` removes a person's Plan it for me orders (the intake, the dates, the kids' ages are personal) and their Stripe event rows; a stranger's stay.
 GitAway keeps no money record of its own beyond that: Stripe is the record of payments."""
 
-import shutil
 import sqlite3
 import sys
-import uuid
 from pathlib import Path
 
 import pytest
+
+from tests.datacopy import copy_data
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 import forget_person as fp  # noqa: E402
@@ -26,8 +26,7 @@ def orders(client):
     with pfm._db():      # the real tables are in the live community database before the folder is copied
         pass
     src = auth.data_dir()
-    dst = Path(f"{src}-copy-{uuid.uuid4().hex[:8]}")      # its own folder per test
-    shutil.copytree(src, dst)
+    dst = copy_data(src, (fid,))
     c = sqlite3.connect(dst / "community.db")
     for oid, owner in (("a" * 16, uid), ("b" * 16, uid), ("c" * 16, "someone-else")):
         c.execute("INSERT INTO plan_orders (id, owner_user, tenant_id, email, status, intake, amount_cents, result, created_at, updated_at) VALUES (?, ?, ?, ?, 'ready', ?, 2900, ?, 'n', 'n')",
