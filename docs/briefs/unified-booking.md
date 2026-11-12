@@ -25,6 +25,17 @@ GitAway's core stays sharing, creators and the family trip. The matrix is the mo
 7. **The report**: after a planning session, a fun summary: "You compared 6 places and 41 stays; the cheapest week was Dec 14; you found LA + San Diego for $50 more."
 8. **Ready to post**: a trip card made for Instagram (the place's art, dates, the route, a link back to the trip), so sharing GitAway is one tap.
 
+## Choose it together (draft, 2026-11-12)
+Built on what exists: families with roles and invitations (`members.py`), the family chat keyed per plan (`familychats.py`), friends as other families.
+1. **Share the matrix**: "Ask the family" shows it to every member; a link brings in friends coming along (another family).
+2. **Heart a square**: anyone, kids included, hearts what they like; the square shows who (faces or initials).
+3. **Talk on a square**: each square has its own short thread, the family chat keyed to that square.
+4. **The shortlist builds itself**: the most-hearted squares rise ("3 of you like LA + San Diego").
+5. **Prices keep watch**: a hearted square says when its price moved ("up $40 since Ana liked it").
+6. **One person decides**: the trip's owner taps "This one"; it becomes the family's trip and everyone is told.
+7. **Two families**: each picks its own flights, both vote on the shared stay, and the split comes along.
+Open for the founder: who decides (proposed: the owner, hearts are advice; a majority stalls two against two) and whether friends can heart without an account (proposed: look without signing in, one tap to sign in to heart or comment, so every heart has a name and the trip stays private).
+
 ## The cover tells this story (draft, 2026-11-12)
 Headline (the founder's pick, 2026-11-12): **"The whole trip, compared. With the people you're going with."** Lines about a trip "you didn't know you needed" or "to ask for" were dropped as easy to misread.
 Three parts, each with its own beats, replacing the eight stages of cover v5:
