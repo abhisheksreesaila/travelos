@@ -20,7 +20,7 @@
 // F-156, the laptop is calm: from 1020px up, and not the installed app (the same query as the desktop layouts), GA.motion.calm() is true and every helper above is a short opacity fade (--motion-desk)
 // instead of its spring: nothing grows out of what was tapped, nothing scales, travels or clips; flip, land, reflow and spring simply arrive. Callers do not branch on it: they call the same
 // open/close/settle/run and the helper decides by width. The phone and the installed app keep the liquid motion above, unchanged.
-// D-431, the one named exception: the trip matrix (/plan/matrix) sets data-liquid on <html>, and calm() is then false at every width.
+// D-439, the one named exception: the trip matrix (/plan/matrix) sets data-liquid on <html>, and calm() is then false at every width.
 (function () {
   var GA = window.GA = window.GA || {};
   if (GA.motion) return;
@@ -40,7 +40,7 @@
   function ease(name) { return css(EASES[name] || name) || 'ease-out'; }
   function rem() { return parseFloat(getComputedStyle(root).fontSize) || 16; }
   function reduced() { return reducedQ.matches; }
-  function calm() { return deskQ.matches && !root.hasAttribute('data-liquid'); }      // D-431: a page that sets data-liquid on <html> (the trip matrix only) keeps the liquid motion on a laptop too
+  function calm() { return deskQ.matches && !root.hasAttribute('data-liquid'); }      // D-439: a page that sets data-liquid on <html> (the trip matrix only) keeps the liquid motion on a laptop too
 
   function rectOf(o) {
     if (!o) return null;

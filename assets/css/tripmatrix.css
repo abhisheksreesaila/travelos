@@ -1,7 +1,7 @@
 /* The trip matrix (F-222): places down, start days across, each square the whole trip. Direction A: opaque tiles, one soft shadow, colour for kinds only, the find in ink.
    Phone and tablet: a card per place (option B), its start days as squares, the opened square in a sheet. From 1020px: calendar lanes (option C), each place a row
    of days, its nights a band, the total under each start day, and the opened square in the panel beside (option A's panel).
-   Motion is liquid at every width (D-431, the matrix's own exception to the calm desktop): a square settles into its answer (scale and opacity on the spring tokens),
+   Motion is liquid at every width (D-439, the matrix's own exception to the calm desktop): a square settles into its answer (scale and opacity on the spring tokens),
    the panel and the sheet grow out of the square tapped (GA.motion, assets/js/tripmatrix.js). Reduced motion: fades only. Sizes are rem off the one root. */
 .mx { padding: 0.75rem 1.25rem 6rem; display: grid; gap: 1rem; }
 .mx-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
@@ -121,6 +121,8 @@
 .mx-r-due { color: var(--warn-ink); }
 .mx-r-n { font-family: var(--font-mono); font-size: 1rem; font-weight: 650; }
 .mx-photo { grid-column: 2 / -1; width: 100%; height: 7rem; object-fit: cover; border-radius: 0.75rem; background: var(--paper-2); }
+.mx-p-sky .ss-strip { box-shadow: none; padding: 0; background: transparent; }
+.mx-p-sky .ss-days { gap: 0.25rem; }
 .mx-acts { display: grid; gap: 0.625rem; padding: 0.875rem 1rem; border-radius: var(--r-md); background: var(--paper-2); }
 .mx-soon { margin: 0; font-size: 1rem; line-height: 1.4; color: var(--ink-2); }
 .mx-soon-h { color: var(--ink); font-weight: 700; }
@@ -175,7 +177,14 @@
     font-size: max(var(--label-min), 0.75rem); font-weight: 650; white-space: nowrap; }
   .mx-band { position: relative; }
   .mx-lane.is-found .mx-band { background: var(--up-tile); }
-  .mx-sky { grid-row: 1; z-index: 1; min-width: 0; }
+  .mx-sky { grid-row: 1; z-index: 1; display: grid; justify-items: center; align-content: center; gap: 0.125rem; min-width: 0; margin: 0.25rem 0.125rem; padding: 0.25rem 0;
+    border-radius: 0.75rem; border: 0.0625rem dashed var(--hairline-2); background: var(--card); }
+  .mx-sky.is-fc { border-style: solid; background: var(--paper-2); }
+  .mx-sky-i { color: var(--k-wx); }
+  .mx-sky-t { font-family: var(--font-mono); font-size: max(var(--text-min), 0.875rem); font-weight: 600; color: var(--ink-2); }
+  .mx-sky-w { font-size: max(var(--label-min), 0.75rem); font-weight: 650; color: var(--k-wx-i); }
+  .mx-wx { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; margin: 0.375rem 0.5rem 0; }
+  .mx-wx-n { color: var(--ink-2); font-size: max(var(--text-min), 0.875rem); }
   .mx-lane > .mx-sq { grid-row: 2; z-index: 1; align-self: start; min-height: 2.75rem; border-radius: var(--r-pill); }
   .mx-lane { grid-template-rows: minmax(2.25rem, auto) auto; }
   .mx-legend { display: flex; align-items: center; gap: 0.5rem; margin: 0.5rem 0.5rem 0; color: var(--ink-2); font-size: max(var(--text-min), 0.875rem); }

@@ -59,7 +59,6 @@ _TABLE = (
     (("jackson hole", "jackson", "teton village"), Place("Jackson Hole", "Jackson", "Wyoming", "JAC", True, (("Jackson Hole Mountain Resort", "https://www.jacksonhole.com/"),))),
     (("sun valley", "ketchum"), Place("Sun Valley", "Sun Valley", "Idaho", "SUN", True, (("Sun Valley", "https://www.sunvalley.com/"),))),
     (("disneyland", "disneyland resort", "disney land", "anaheim", "disney california adventure"), Place("Disneyland", "Anaheim", "California", "SNA", klook=True, focus="disney")),
-    (("orange county", "newport beach", "huntington beach", "laguna beach", "irvine"), Place("Orange County", "Newport Beach", "California", "SNA", klook=True)),
     (("los angeles", "la", "hollywood", "santa monica"), Place("Los Angeles", "Los Angeles", "California", "LAX", klook=True)),
     (("san diego",), Place("San Diego", "San Diego", "California", "SAN", klook=True)),
     (("san francisco", "sf"), Place("San Francisco", "San Francisco", "California", "SFO", klook=True)),

@@ -16,7 +16,7 @@ from datetime import date, datetime, timedelta
 
 from gitaway.partners import places as places_
 
-NEARLY_CENTS = 15_000      # a nearby trip up to $150 more than the asked place on the same dates "nearly matches" it (D-427)
+NEARLY_CENTS = 15_000      # a nearby trip up to $150 more than the asked place on the same dates "nearly matches" it (D-435)
 MAX_FLEX = 3
 OK, OVER, FAILED, NONE, NO_SAMPLE = "ok", "over budget", "failed", "none", "no sample"
 SAID = {OVER: "Today’s price searches are used up. Back tomorrow.", FAILED: "Couldn’t search just now. Try again in a few minutes.",

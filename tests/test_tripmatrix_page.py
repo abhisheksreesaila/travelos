@@ -170,3 +170,21 @@ def test_save_keeps_the_square_on_the_familys_trip_with_the_price_read_again(sam
         assert len(familydb.rows(fam.db, "SELECT * FROM matrix_saves")) == 1            # saved twice: one row
     j = client.post("/plan/matrix/save", data=form, headers={"X-Matrix": "1"}).json()
     assert j["saved"].startswith("Saved to your trip")
+
+
+def test_each_place_wears_its_art_and_its_days_their_sky_with_the_credit(sample, client):
+    from gitaway import placeart
+    html = client.get(MATRIX).text
+    assert html.count(placeart.art("sandiego")[:60]) >= 2                                     # the lane's thumb and the phone's card
+    assert 'class="mx-art-i is-plain"' not in html.split('data-lane="sandiego"')[1].split("data-lane=")[0]
+    skies = re.findall(r'class="mx-sky (?:is-fc|is-typ)[^"]*"', html)
+    assert skies and all("is-typ" in c for c in skies)                                         # December is far: typical, dotted, never a forecast
+    assert "not a forecast" in unescape(html)                                                 # the normals' line, said once under the calendar
+
+
+def test_while_squares_wait_a_sourced_fact_about_the_place_sits_in_the_waiting_space(real, client):
+    from gitaway import placefacts
+    html = unescape(client.get(MATRIX).text)
+    facts = placefacts.facts("sandiego")
+    shown = next(f for f in facts if f.text in html)
+    assert f'href="{shown.source}"' in html and 'class="mx-fact"' in html and page.SLOW in html

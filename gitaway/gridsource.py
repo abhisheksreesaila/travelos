@@ -11,8 +11,8 @@ never an empty grid. The drive is not known yet (None) and nothing is booked yet
                                                                            (or two) and one start day. `peek`: only what is known without a call, else None.
 
 The matrix's squares come the same two ways: on the showcase the catalog (its places only; another place says it has no sample), its prices moved by the start
-day's weekday (SAMPLE_DAY, D-428) so the sample shows a cheapest start; off it LiteAPI: the cheapest flight, and the cheapest stay guests rate RATED or more
-(the cheapest of all when none is, D-429). `SQUARE` is what tests replace.
+day's weekday (SAMPLE_DAY, D-436) so the sample shows a cheapest start; off it LiteAPI: the cheapest flight, and the cheapest stay guests rate RATED or more
+(the cheapest of all when none is, D-437). `SQUARE` is what tests replace.
 """
 
 import re
@@ -119,7 +119,7 @@ def offers(trip, family=""):
 # ---- one square of the trip matrix (F-222) ------------------------------------------------------------------------------
 
 RATED = 8.0                  # out of 10: the stay a square shows is the cheapest guests rate this or more, when there is one
-SAMPLE_DAY = (0.98, 0.95, 0.96, 1.0, 1.06, 1.08, 1.03)      # Monday to Sunday: the sample's prices by the start day (showcase only, D-428)
+SAMPLE_DAY = (0.98, 0.95, 0.96, 1.0, 1.06, 1.08, 1.03)      # Monday to Sunday: the sample's prices by the start day (showcase only, D-436)
 
 
 def sample_day(cents: int, day) -> int:

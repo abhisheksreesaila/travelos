@@ -4,7 +4,7 @@
 //   2. The marks, with the same rules as gitaway/tripmatrix.py `marks` and `find` (change one, change the other: tests_browser/test_tripmatrix.py compares them):
 //      the cheapest start in a lane, over the budget, and the find, said in words with real totals only.
 //   3. While squares are searched, a fact about the place sits in the waiting space; a search that takes a while says so; both fade when the answers land.
-//   4. Opening a square: its panel (laptop) or sheet (phone) grows out of the square tapped and folds back into it. Liquid at every width (D-431): the page sets
+//   4. Opening a square: its panel (laptop) or sheet (phone) grows out of the square tapped and folds back into it. Liquid at every width (D-439): the page sets
 //      data-liquid on <html>, so GA.motion keeps its spring on a laptop too. Reduced motion: fades.
 (function () {
   var root = document.getElementById('mx'), raw = document.getElementById('mx-data');

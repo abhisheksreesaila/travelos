@@ -16,36 +16,22 @@ import hashlib
 import json
 from dataclasses import dataclass, replace
 from datetime import date, timedelta
-from pathlib import Path
 from urllib.parse import quote, urlencode
 
 from fasthtml.common import A, Aside, Button, Details, Div, Form, H1, H2, H3, Img, Input, Label, Link, NotStr, P, Script, Section, Span, Summary, to_xml
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import JSONResponse, RedirectResponse
 
-from gitaway import catalog, familydb, gridsource, importer, liteapi, session as ses, showcase, tripmatrix as tm, tripsentence, tripstart
+from gitaway import catalog, familydb, gridsource, importer, liteapi, placeart, placefacts, session as ses, showcase, tripmatrix as tm, tripsentence, tripstart, weather
 from gitaway.icons import icon
 from gitaway.layout import page
+from gitaway.pages import weather_ui
+from gitaway.pages.skystrip import WET, WORDS, sky_strip, weather_for
 from gitaway.partners import places
-
-try:      # the place art and its facts are F-223's (built beside this); without them the page shows a plain tint and no fact
-    from gitaway import placeart
-except ImportError:      # pragma: no cover - until F-223 lands
-    placeart = None
-try:
-    from gitaway import placefacts
-except ImportError:      # pragma: no cover
-    placefacts = None
-try:
-    from gitaway.pages.skystrip import sky_strip
-except ImportError:      # pragma: no cover
-    def sky_strip(place, days):
-        return None
 
 PATH = "/plan/matrix"
 TILE, SQUARE, SAVE = PATH + "/tile", PATH + "/square", PATH + "/save"
-ASSETS = Path(__file__).resolve().parent.parent.parent / "assets"
-HEAD = (*((Link(rel="stylesheet", href="/assets/css/placeart.css"),) if (ASSETS / "css" / "placeart.css").exists() else ()),
+HEAD = (Link(rel="stylesheet", href="/assets/css/placeart.css"), Link(rel="stylesheet", href="/assets/css/skystrip.css"),
         Link(rel="stylesheet", href="/assets/css/tripmatrix.css"), Script(src="/assets/js/tripmatrix.js", defer=True))
 DEFAULT_PLACE, DEFAULT_HOME, DEFAULT_FLEX, DEFAULT_NIGHTS, DEFAULT_KIDS = "San Diego", "SFO", 2, 4, (7, 10)
 LEAD_DAYS = 28                      # the default trip leaves on the first Saturday at least this far ahead
@@ -128,7 +114,7 @@ def ask_of(s: State) -> tripsentence.Ask:
 
 def from_sentence(q, s: State):
     """A retyped sentence: (the address it lands on, None), or (None, what is missing in words). An unsaid "give or take" or "or nearby" keeps the page's
-    widening (D-430); "exactly" narrows the dates, and the sentence's own menus narrow the places."""
+    widening (D-438); "exactly" narrows the dates, and the sentence's own menus narrow the places."""
     ask = tripsentence.read(q)
     if ask.unread:
         return None, [MISSING[x] for x in ask.unread]
@@ -189,8 +175,7 @@ def vs_words(diff, asked_name, combo) -> str:
 
 
 def _art(place, cls="mx-art"):
-    svg = placeart.art(place.slug) if placeart else None
-    kind = placeart.kind(place.slug) if placeart else None
+    svg, kind = placeart.art(place.slug), placeart.kind(place.slug)
     return Div(NotStr(svg) if svg else "", cls=cls + ("" if svg else " is-plain"), data_kind=kind or "", aria_hidden="true")
 
 
@@ -255,7 +240,7 @@ def panel(s: State, lane, w, sq, asked_sq=None, saved="", can_save=True):
     rows.append(Div(Span(icon("car", 16, 2.2), cls="mx-kt k-car"),
                     Div(P("Airport drive", cls="mx-r-h"), P(f"{sq.drive} min from {first.iata} to {first.name}" if sq.drive else f"From {first.iata}: no drive time yet", cls="mx-r-s")),
                     Span("", cls="mx-r-n"), cls="mx-row"))
-    sky = sky_strip(first, [w.depart + timedelta(days=i) for i in range(w.nights + 1)])
+    sky = sky_strip(first.name, weather_for(first.name, w.depart, w.return_), asked=(w.depart, w.return_))
     form = (Form(*[Input(type="hidden", name=n, value=str(v)) for n, v in params(s, lane=lane.key, w=w.key).items()],
                  Button(icon("check", 16, 2.4), "Save to trip", type="submit", cls="btn btn-ink mx-save"), method="post", action=SAVE, cls="mx-save-f")
             if can_save else "")
@@ -306,7 +291,7 @@ def sentence(s: State, typed="", problems=()):
 
 
 def fact_el(s: State, hidden):
-    found = tuple(placefacts.facts(s.place.slug) or ()) if placefacts else ()
+    found = placefacts.facts(s.place.slug)
     if not found:
         return ""
     fact = found[catalog.today().toordinal() % len(found)]
@@ -325,19 +310,34 @@ def find_el(s: State, found):
                cls="mx-find", id="mx-find", aria_live="polite", data_key=found.key)
 
 
-def lane_el(s: State, lane, windows, days, known, marks, home):
+def sky_cells(tw, days, col):
+    """A lane's row of days, each wearing its sky (a compact sky strip: gitaway/pages/skystrip.py draws the full one in the panel). Typical days are dotted,
+    forecast days solid, rain and snow said in a word; a day with no weather is left plain."""
+    by = {d.date: d for d in tw.days if d}
+    out = []
+    for d in days:
+        wx = by.get(d)
+        if wx is None:
+            continue
+        wet = wx.condition in WET
+        out.append(Div(icon(wx.condition if wx.condition in WORDS else "cloud", 16, cls="mx-sky-i"), Span(f"{wx.high_f}°", cls="mx-sky-t"),
+                       Span(WORDS[wx.condition], cls="mx-sky-w") if wet else "",
+                       cls="mx-sky" + (" is-fc" if wx.kind == weather.FORECAST else " is-typ") + (" is-wet" if wet else ""), style=f"grid-column: {col[d]}",
+                       aria_label=weather_ui.describe(wx), title=wx.word))
+    return out
+
+
+def lane_el(s: State, lane, windows, days, known, marks, home, skies):
     totals = [known[tm.key(lane.key, w.key)].cents for w in windows if tm.key(lane.key, w.key) in known and known[tm.key(lane.key, w.key)].ok]
     drive = next((sq.drive for k, sq in known.items() if k.startswith(lane.key + "|") and sq.drive), None)
     col = {d: i + 2 for i, d in enumerate(days)}
     band_w = band_window(lane, windows, known)
     via = f"{home} → {lane.places[0].iata}" + (f" · {lane.places[-1].iata} → {home}" if lane.combo else "")
-    sky = sky_strip(lane.places[0], days)
     kids = [Div(_arts(lane, "mx-thumb"), Div(P(lane.name, cls="mx-l-n"), P(via, cls="mx-l-s"),
                                                  P(f"{drive} min drive from {lane.places[0].iata}" if drive else "", cls="mx-l-s", data_lane_drive=lane.key, data_from=lane.places[0].iata),
                                                  P(f"from {tm.dollars(min(totals))}" if totals else "", cls="mx-l-best", data_lane_best=lane.key)), cls="mx-lh"),
             Div(cls="mx-band", data_band=lane.key, data_l=f"{band_w.nights} nights", style=f"grid-column: {col[band_w.depart]} / span {band_w.nights + 1}")]
-    if sky is not None:
-        kids.append(Div(sky, cls="mx-sky", style=f"grid-column: 2 / span {len(days)}"))
+    kids += sky_cells(skies[lane.places[0].name], days, col)
     for w in windows:
         k = tm.key(lane.key, w.key)
         kids.append(square_el(s, lane, w, known.get(k), marks.get(k, ()), style=f"grid-column: {col[w.depart]}"))
@@ -353,13 +353,17 @@ def band_window(lane, windows, known):
 
 def lanes_el(s: State, lanes, windows, known, marks):
     days = days_of(windows)
+    skies = {p.name: weather_for(p.name, days[0], days[-1]) for x in lanes for p in x.places[:1]}
+    notes = list(dict.fromkeys(text_href for tw in skies.values() for text_href in weather.notes(tw)))
     starts = {w.depart for w in windows}
     axis = Div(Div(Span("Each place, day by day", cls="mx-label"), cls="mx-ah"),
                *[Div(Span(f"{d:%a}", cls="mx-adw"), Span(str(d.day) if d.day != 1 and d != days[0] else f"{d:%b} {d.day}", cls="mx-adn"),
                      cls="mx-ad" + (" is-ask" if d == s.depart else "") + (" is-start" if d in starts else "")) for d in days], cls="mx-axis")
-    return Section(Div(axis, *[lane_el(s, x, windows, days, known, marks, s.home) for x in lanes], cls="mx-lanes", style=f"--mx-days: {len(days)}"),
+    return Section(Div(axis, *[lane_el(s, x, windows, days, known, marks, s.home, skies) for x in lanes], cls="mx-lanes", style=f"--mx-days: {len(days)}"),
                    P(Span(cls="mx-key-band"), "The nights of the cheapest start (or the one you opened). Under each start day: the flight and the stay for "
-                     f"{s.travelers}, all in.", cls="mx-legend"), cls="mx-cal", aria_label="Every place, every start day")
+                     f"{s.travelers}, all in.", cls="mx-legend"),
+                   Div(*[A(text, href=to, rel="noopener", cls="mx-wx-n") if to else Span(text, cls="mx-wx-n") for text, to in notes], cls="mx-wx") if notes else "",
+                   cls="mx-cal", aria_label="Every place, every start day")
 
 
 def card_el(s: State, lane, windows, known, marks):

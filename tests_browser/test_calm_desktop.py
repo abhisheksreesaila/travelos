@@ -12,7 +12,7 @@ from tests_browser.test_topbar import SAMPLE
 
 # The pages that keep the liquid motion on a laptop, each by name and decision (the cover's and the trip grid's islands, D-401 and D-420, move by their own
 # scroll-linked code and never ask GA.motion): a page joins only by setting data-liquid on <html> in its own script, and this list is the only place that allows it.
-LIQUID_EXCEPTIONS = {"tripmatrix.js": "D-431: the trip matrix, /plan/matrix (the founder: \"experience is the key … it has to be liquidy\")"}
+LIQUID_EXCEPTIONS = {"tripmatrix.js": "D-439: the trip matrix, /plan/matrix (the founder: \"experience is the key … it has to be liquidy\")"}
 
 MOVING = ("transform", "scale", "translate", "rotate", "filter", "clipPath", "clip-path", "offsetPath")
 
