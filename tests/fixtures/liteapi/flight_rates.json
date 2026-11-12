@@ -1,0 +1,3404 @@
+{
+ "data": [
+  {
+   "journeys": [
+    {
+     "cheapestOffer": {
+      "offerId": "AwJ2MQAAAABq92l1bRxTK3YsboVkZSKq_yEz-NopdutUvxS3z8kw-zIGZ_g_c9VOuNDxLHjygHfRGawueeWhG9rUJ9k5CpGtj_zdFHOxrii8FIjlAc3jxJnO6mdg6MB1606xdRDgYMzI7SfU3xSkVkP7NxL63IFKGXy0SzTGNOCvpsstKKdpTYwwrDQXVF5D4H-f8PXlP2dex1GZ_YBsYgyF-GzulROw4pbCmZvehwGJ-J5egZL5sqQe3xp64lxJWECDZuuk6TcHmnMjngq4BloG-bUF6pMad-zGGsTOYSJ4rnUCFvYOCOoU8SHe1XGhbbM3RR1SJ-0plSgk3SxpoW3_2cdv12IVPgx52HXfZCCg8kxjtRmCR3Rt8Mm2blviFst_dEL16lIQwSwv3c8hEEsrLpoqA5_HF_M=",
+      "searchId": "01a1d14d72567313919e6acea2c0292d",
+      "expiration": "2026-11-12T19:57:58.910Z",
+      "pricing": {
+       "display": {
+        "total": 114.84,
+        "currency": "USD",
+        "base": 0.5,
+        "fees": 0,
+        "taxes": 114.34,
+        "perPassenger": {
+         "adult": {
+          "base": 0.12,
+          "currency": "USD",
+          "fees": 0,
+          "taxes": 28.59,
+          "total": 28.71
+         },
+         "child": {
+          "base": 0.12,
+          "currency": "USD",
+          "fees": 0,
+          "taxes": 28.59,
+          "total": 28.71
+         },
+         "infant": {
+          "base": 0,
+          "currency": "USD",
+          "fees": 0,
+          "taxes": 0,
+          "total": 0
+         }
+        }
+       },
+       "converted": true
+      },
+      "baggage": {
+       "hasCarryOnBag": false,
+       "hasCheckedBag": false,
+       "included": [
+        {
+         "bagType": "personal",
+         "description": "One Personal Article",
+         "passengerType": "ALL",
+         "pieces": 1,
+         "pricing": {
+          "display": {
+           "amount": 0,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "size": "18X8X14IN 46X20X36CM",
+         "weightKg": null
+        }
+       ],
+       "paid": [
+        {
+         "bagType": "checked",
+         "description": "Checked Bag Under / Less Than 62In/ Linear",
+         "passengerType": "ALL",
+         "pieces": 1,
+         "pricing": {
+          "display": {
+           "amount": 38.82,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "size": "157CM",
+         "unit": "kg",
+         "weightKg": 18
+        }
+       ]
+      },
+      "fare": {
+       "family": "Basic Fare",
+       "mixedCabin": false,
+       "mixedFareFamily": false,
+       "seatsRemaining": 0
+      },
+      "seats": {
+       "seatReservation": {
+        "description": "Seat selection available for purchase",
+        "status": "chargeable"
+       }
+      },
+      "segmentAmenities": [
+       {
+        "aircraftType": "32Q",
+        "amenities": [
+         {
+          "available": false,
+          "category": "wifi",
+          "name": "Wi-Fi"
+         },
+         {
+          "available": false,
+          "category": "power",
+          "name": "Power"
+         },
+         {
+          "available": false,
+          "category": "entertainment",
+          "name": "Entertainment"
+         },
+         {
+          "available": true,
+          "category": "food",
+          "chargeable": true,
+          "name": "Premium Snack"
+         },
+         {
+          "available": true,
+          "category": "seat_comfort",
+          "details": "28\" pitch",
+          "name": "Below Average Legroom"
+         }
+        ],
+        "segmentKey": "e49bb2c6"
+       },
+       {
+        "aircraftType": "32Q",
+        "amenities": [
+         {
+          "available": false,
+          "category": "wifi",
+          "name": "Wi-Fi"
+         },
+         {
+          "available": false,
+          "category": "power",
+          "name": "Power"
+         },
+         {
+          "available": false,
+          "category": "entertainment",
+          "name": "Entertainment"
+         },
+         {
+          "available": true,
+          "category": "food",
+          "chargeable": true,
+          "name": "Premium Snack"
+         },
+         {
+          "available": true,
+          "category": "seat_comfort",
+          "details": "28\" pitch",
+          "name": "Below Average Legroom"
+         }
+        ],
+        "segmentKey": "5c6f0029"
+       }
+      ],
+      "segmentFares": [
+       {
+        "bookingCode": "Y",
+        "cabin": "Economy",
+        "fareBasisCode": "Y",
+        "fareFamily": "Basic Fare",
+        "seatsRemaining": 0,
+        "segmentKey": "e49bb2c6"
+       },
+       {
+        "bookingCode": "Y",
+        "cabin": "Economy",
+        "fareBasisCode": "Y",
+        "fareFamily": "Basic Fare",
+        "seatsRemaining": 0,
+        "segmentKey": "5c6f0029"
+       }
+      ],
+      "terms": {
+       "changeable": false,
+       "refundable": false,
+       "summary": [
+        {
+         "level": "danger",
+         "message": "Non-refundable"
+        },
+        {
+         "level": "danger",
+         "message": "Changes not allowed"
+        },
+        {
+         "level": "info",
+         "message": "Book by: 2026-11-12"
+        }
+       ]
+      },
+      "loyaltyProgramsSupported": true
+     },
+     "offers": [
+      {
+       "offerId": "AwJ2MQAAAABq92l1gTQgqgSW9aCY3QYJTrqtllDQ5RLupoWTashQWtuT6ivmB7g1rFyEiHk5rYpoCdxRnNmmlaOEpyvkeeIacWQTMjDmxa8KOx9jQ99NhY9PLu7cfTih4BKDOB4-_urvtjS0u5yfhH832alLN2JZs0FUwHiPwfo2d6XNZBQWGtwUSP_7fLPbckVNG6hkYHL4A6DbHAnD2u1SHC2RPaomonuUDh57yoS3bCZSz6hvPcpR1YNR_CaGTRy6-fxEgLwTfqv4x34se0Civbes-N927BgWhs3aKTiQpnGdxvm_jGRnZIDNCpTmwf7ig9XFjvMqQ8h9jjQoKto8b2wR_xUETOeoMtpfP9C-2mweKiRcJLGCCM5IPR5XcXt4qf2RiM6SrpMlr7o8Trk-5t42YNiLZcE=",
+       "searchId": "01a1d14d72567313919e6acea2c0292d",
+       "expiration": "2026-11-12T19:57:58.910Z",
+       "pricing": {
+        "display": {
+         "total": 114.84,
+         "currency": "USD",
+         "base": 0.5,
+         "fees": 0,
+         "taxes": 114.34,
+         "perPassenger": {
+          "adult": {
+           "base": 0.12,
+           "currency": "USD",
+           "fees": 0,
+           "taxes": 28.59,
+           "total": 28.71
+          },
+          "child": {
+           "base": 0.12,
+           "currency": "USD",
+           "fees": 0,
+           "taxes": 28.59,
+           "total": 28.71
+          },
+          "infant": {
+           "base": 0,
+           "currency": "USD",
+           "fees": 0,
+           "taxes": 0,
+           "total": 0
+          }
+         }
+        },
+        "converted": true
+       },
+       "baggage": {
+        "hasCarryOnBag": false,
+        "hasCheckedBag": false,
+        "included": [
+         {
+          "bagType": "personal",
+          "description": "One Personal Article",
+          "passengerType": "ALL",
+          "pieces": 1,
+          "pricing": {
+           "display": {
+            "amount": 0,
+            "currency": "USD"
+           },
+           "converted": true
+          },
+          "size": "18X8X14IN 46X20X36CM",
+          "weightKg": null
+         }
+        ],
+        "paid": [
+         {
+          "bagType": "checked",
+          "description": "Checked Bag Under / Less Than 62In/ Linear",
+          "passengerType": "ALL",
+          "pieces": 1,
+          "pricing": {
+           "display": {
+            "amount": 38.82,
+            "currency": "USD"
+           },
+           "converted": true
+          },
+          "size": "157CM",
+          "unit": "kg",
+          "weightKg": 18
+         }
+        ]
+       },
+       "fare": {
+        "family": "Basic Fare",
+        "mixedCabin": false,
+        "mixedFareFamily": false,
+        "seatsRemaining": 0
+       },
+       "seats": {
+        "seatReservation": {
+         "description": "Seat selection available for purchase",
+         "status": "chargeable"
+        }
+       },
+       "segmentAmenities": [
+        {
+         "aircraftType": "32Q",
+         "amenities": [
+          {
+           "available": false,
+           "category": "wifi",
+           "name": "Wi-Fi"
+          },
+          {
+           "available": false,
+           "category": "power",
+           "name": "Power"
+          },
+          {
+           "available": false,
+           "category": "entertainment",
+           "name": "Entertainment"
+          },
+          {
+           "available": true,
+           "category": "food",
+           "chargeable": true,
+           "name": "Premium Snack"
+          },
+          {
+           "available": true,
+           "category": "seat_comfort",
+           "details": "28\" pitch",
+           "name": "Below Average Legroom"
+          }
+         ],
+         "segmentKey": "e49bb2c6"
+        },
+        {
+         "aircraftType": "32Q",
+         "amenities": [
+          {
+           "available": false,
+           "category": "wifi",
+           "name": "Wi-Fi"
+          },
+          {
+           "available": false,
+           "category": "power",
+           "name": "Power"
+          },
+          {
+           "available": false,
+           "category": "entertainment",
+           "name": "Entertainment"
+          },
+          {
+           "available": true,
+           "category": "food",
+           "chargeable": true,
+           "name": "Premium Snack"
+          },
+          {
+           "available": true,
+           "category": "seat_comfort",
+           "details": "28\" pitch",
+           "name": "Below Average Legroom"
+          }
+         ],
+         "segmentKey": "5c6f0029"
+        }
+       ],
+       "segmentFares": [
+        {
+         "bookingCode": "Y",
+         "cabin": "Economy",
+         "fareBasisCode": "Y",
+         "fareFamily": "Basic Fare",
+         "seatsRemaining": 0,
+         "segmentKey": "e49bb2c6"
+        },
+        {
+         "bookingCode": "Y",
+         "cabin": "Economy",
+         "fareBasisCode": "Y",
+         "fareFamily": "Basic Fare",
+         "seatsRemaining": 0,
+         "segmentKey": "5c6f0029"
+        }
+       ],
+       "terms": {
+        "changeable": false,
+        "refundable": false,
+        "summary": [
+         {
+          "level": "danger",
+          "message": "Non-refundable"
+         },
+         {
+          "level": "danger",
+          "message": "Changes not allowed"
+         },
+         {
+          "level": "info",
+          "message": "Book by: 2026-11-12"
+         }
+        ]
+       },
+       "loyaltyProgramsSupported": true
+      }
+     ],
+     "isCheapest": true,
+     "journeyKey": "0066a9a93554c975",
+     "legDurations": [
+      {
+       "dayChange": 0,
+       "direction": "OUTBOUND",
+       "duration": {
+        "iso8601": "PT1H43M",
+        "minutes": 103
+       },
+       "overnightFlight": false
+      },
+      {
+       "dayChange": 0,
+       "direction": "INBOUND",
+       "duration": {
+        "iso8601": "PT1H55M",
+        "minutes": 115
+       },
+       "overnightFlight": false
+      }
+     ],
+     "parameters": {
+      "adults": 0,
+      "children": 0,
+      "infants": 0
+     },
+     "segments": [
+      {
+       "arrivalTime": "2026-12-12T18:16:00",
+       "carrier": {
+        "marketingCode": "F9",
+        "marketingLogo": "https://assets.nuitee.flights/static/images/airlines/F9.png",
+        "marketingName": "Frontier Airlines",
+        "operatingCode": "F9",
+        "operatingLogo": "https://assets.nuitee.flights/static/images/airlines/F9.png",
+        "operatingName": "Frontier Airlines"
+       },
+       "departureTime": "2026-12-12T16:33:00",
+       "originCode": "SFO",
+       "destinationCode": "SAN",
+       "direction": "OUTBOUND",
+       "duration": {
+        "iso8601": "PT1H43M",
+        "minutes": 103
+       },
+       "flight": {
+        "marketingNumber": "3382",
+        "operatingNumber": "3382"
+       },
+       "segmentKey": "e49bb2c6",
+       "originName": "San Francisco International Airport",
+       "destinationName": "San Diego International Airport",
+       "stopCount": 0
+      },
+      {
+       "arrivalTime": "2026-12-16T21:46:00",
+       "carrier": {
+        "marketingCode": "F9",
+        "marketingLogo": "https://assets.nuitee.flights/static/images/airlines/F9.png",
+        "marketingName": "Frontier Airlines",
+        "operatingCode": "F9",
+        "operatingLogo": "https://assets.nuitee.flights/static/images/airlines/F9.png",
+        "operatingName": "Frontier Airlines"
+       },
+       "departureTime": "2026-12-16T19:51:00",
+       "originCode": "SAN",
+       "destinationCode": "SFO",
+       "direction": "INBOUND",
+       "duration": {
+        "iso8601": "PT1H55M",
+        "minutes": 115
+       },
+       "flight": {
+        "marketingNumber": "3383",
+        "operatingNumber": "3383"
+       },
+       "segmentKey": "5c6f0029",
+       "originName": "San Diego International Airport",
+       "destinationName": "San Francisco International Airport",
+       "stopCount": 0
+      }
+     ],
+     "timestamp": "2026-11-12T19:47:57.493Z",
+     "totalDuration": {
+      "iso8601": "PT3H38M",
+      "minutes": 218
+     }
+    },
+    {
+     "cheapestOffer": {
+      "offerId": "AwJ2MQAAAABq92l1hrL8EnUFwioMBk5guePR7CrnkLBUZyxTUkRoQwz1cYhBj9Csiep2MVshyPteZr8rr57c33Db8BCvHxja9IJHo1R0GNYhN3s4TGqO5UXwKYNeNl6ttBMREAIYp5n8uu9nERtisNbN_kVrB761qefG-27wMy3SrUBvyririV3g83q8-RFUCOQ1w1k2o_uYFS-CXbbSu7OV-7pgVSA2DcO1uOQX-4x6MAS9tNsojYQG7-ampYmft1Jx60lSQOOCU8_DdcGaysWXxR3A0hO47LRh3JgfJEFgcQCi6pKqhejDcFc00bofffYiUB5qQgcXdTkVN9C5vt35XZpBbhbsyYXMf7IX2_d4c8_SSuLks6uYfMgrvP9cMeOL1CzyjssuHUnsM7DitZX4fNYSiubwlhc=",
+      "searchId": "01a1d14d72567313919e6acea2c0292d",
+      "expiration": "2026-11-12T19:57:56.165Z",
+      "pricing": {
+       "display": {
+        "total": 730.29,
+        "currency": "USD",
+        "base": 547.71,
+        "fees": 0,
+        "taxes": 182.58,
+        "perPassenger": {
+         "adult": {
+          "base": 156.49,
+          "currency": "USD",
+          "fees": 0,
+          "taxes": 52.16,
+          "total": 208.65
+         },
+         "child": {
+          "base": 117.36,
+          "currency": "USD",
+          "fees": 0,
+          "taxes": 39.13,
+          "total": 156.49
+         },
+         "infant": {
+          "base": 15.64,
+          "currency": "USD",
+          "fees": 0,
+          "taxes": 5.23,
+          "total": 20.87
+         }
+        }
+       },
+       "converted": true
+      },
+      "baggage": {
+       "hasCarryOnBag": false,
+       "hasCheckedBag": false,
+       "included": [
+        {
+         "bagType": "personal",
+         "description": "Personal item (backpack/handbag)",
+         "passengerType": "ALL",
+         "pieces": 1,
+         "pricing": {
+          "display": {
+           "amount": 0,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "size": "40x30x20cm",
+         "weightKg": 5
+        }
+       ],
+       "paid": [
+        {
+         "bagType": "cabin",
+         "description": "Carry-on bag",
+         "passengerType": "ALL",
+         "pieces": 1,
+         "pricing": {
+          "display": {
+           "amount": 33.94,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "weightKg": 8
+        },
+        {
+         "bagType": "checked",
+         "description": "Checked bag 23kg",
+         "passengerType": "ALL",
+         "pieces": 1,
+         "pricing": {
+          "display": {
+           "amount": 50.9,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "weightKg": 23
+        }
+       ]
+      },
+      "fare": {
+       "family": "Economy Light",
+       "mixedCabin": false,
+       "mixedFareFamily": false,
+       "seatsRemaining": 9
+      },
+      "seats": {
+       "extraRoom": {
+        "description": "Not available",
+        "status": "not-offered"
+       },
+       "seatReservation": {
+        "description": "Seat selection available for purchase",
+        "pricing": {
+         "display": {
+          "amount": 16.97,
+          "currency": "USD"
+         },
+         "converted": true
+        },
+        "status": "chargeable"
+       }
+      },
+      "segmentAmenities": [
+       {
+        "aircraftType": "Airbus A320neo",
+        "amenities": [
+         {
+          "available": true,
+          "category": "wifi",
+          "chargeable": true,
+          "details": "Available for purchase",
+          "name": "Wi-Fi"
+         },
+         {
+          "available": true,
+          "category": "power",
+          "chargeable": false,
+          "name": "USB Charging"
+         },
+         {
+          "available": true,
+          "category": "entertainment",
+          "chargeable": false,
+          "details": "Via personal device",
+          "name": "Streaming Entertainment"
+         },
+         {
+          "available": true,
+          "category": "food",
+          "chargeable": true,
+          "name": "Snack Box"
+         },
+         {
+          "available": true,
+          "category": "seat_comfort",
+          "chargeable": false,
+          "details": "31 inches",
+          "name": "Seat Pitch"
+         }
+        ],
+        "segmentKey": "e0b6f76e"
+       },
+       {
+        "aircraftType": "Airbus A320neo",
+        "amenities": [
+         {
+          "available": true,
+          "category": "wifi",
+          "chargeable": true,
+          "details": "Available for purchase",
+          "name": "Wi-Fi"
+         },
+         {
+          "available": true,
+          "category": "power",
+          "chargeable": false,
+          "name": "USB Charging"
+         },
+         {
+          "available": true,
+          "category": "entertainment",
+          "chargeable": false,
+          "details": "Via personal device",
+          "name": "Streaming Entertainment"
+         },
+         {
+          "available": true,
+          "category": "food",
+          "chargeable": true,
+          "name": "Snack Box"
+         },
+         {
+          "available": true,
+          "category": "seat_comfort",
+          "chargeable": false,
+          "details": "31 inches",
+          "name": "Seat Pitch"
+         }
+        ],
+        "segmentKey": "40687165"
+       }
+      ],
+      "segmentFares": [
+       {
+        "bookingCode": "L",
+        "cabin": "Economy",
+        "fareBasisCode": "LOWSFO",
+        "fareFamily": "Economy Light",
+        "seatsRemaining": 9,
+        "segmentKey": "e0b6f76e"
+       },
+       {
+        "bookingCode": "L",
+        "cabin": "Economy",
+        "fareBasisCode": "LOWSFO",
+        "fareFamily": "Economy Light",
+        "seatsRemaining": 9,
+        "segmentKey": "40687165"
+       }
+      ],
+      "terms": {
+       "changeable": false,
+       "refundable": false,
+       "summary": [
+        {
+         "level": "warning",
+         "message": "Non-refundable ticket"
+        },
+        {
+         "level": "danger",
+         "message": "Non-changeable ticket"
+        }
+       ]
+      }
+     },
+     "offers": [
+      {
+       "offerId": "AwJ2MQAAAABq92l1KaedEgt1i-UkvZ4l917PvnHoIsmpnst2vP4VwMdQO0RMywWxwO_Iqh_Z8jLGBlmFXXf94D6I8LM0SPnml1ZFcZ6X0FNrOSZFiGEH5jjuOztHryjQiBnLMxbHoQlZPojWjgxMBYpri1W5RMRYrPVAhiBH4X5bmi-ymVoF1vSL8BsCmdhncpzkrNm_5uay_egioqC0bprbOW6qrzrKK2iUcuFEvE3ESF_-Ebfk__yfs1_KRlxZpbjS2Pwy7UJcUXQlBxp8IzpE6oRKfSfOLr_sgfbPalGezTq-xs7sCuiLxU24uhuDUBFLyxaEvCuIP5t2o_-HjUNgdheiJkT9km47Mg48x48HD4UZOQ053EVaqE_Cb0raMesWfBNTuUm80kfiEBfCeJRnEmVJUtMNmGc=",
+       "searchId": "01a1d14d72567313919e6acea2c0292d",
+       "expiration": "2026-11-12T19:57:56.165Z",
+       "pricing": {
+        "display": {
+         "total": 730.29,
+         "currency": "USD",
+         "base": 547.71,
+         "fees": 0,
+         "taxes": 182.58,
+         "perPassenger": {
+          "adult": {
+           "base": 156.49,
+           "currency": "USD",
+           "fees": 0,
+           "taxes": 52.16,
+           "total": 208.65
+          },
+          "child": {
+           "base": 117.36,
+           "currency": "USD",
+           "fees": 0,
+           "taxes": 39.13,
+           "total": 156.49
+          },
+          "infant": {
+           "base": 15.64,
+           "currency": "USD",
+           "fees": 0,
+           "taxes": 5.23,
+           "total": 20.87
+          }
+         }
+        },
+        "converted": true
+       },
+       "baggage": {
+        "hasCarryOnBag": false,
+        "hasCheckedBag": false,
+        "included": [
+         {
+          "bagType": "personal",
+          "description": "Personal item (backpack/handbag)",
+          "passengerType": "ALL",
+          "pieces": 1,
+          "pricing": {
+           "display": {
+            "amount": 0,
+            "currency": "USD"
+           },
+           "converted": true
+          },
+          "size": "40x30x20cm",
+          "weightKg": 5
+         }
+        ],
+        "paid": [
+         {
+          "bagType": "cabin",
+          "description": "Carry-on bag",
+          "passengerType": "ALL",
+          "pieces": 1,
+          "pricing": {
+           "display": {
+            "amount": 33.94,
+            "currency": "USD"
+           },
+           "converted": true
+          },
+          "weightKg": 8
+         },
+         {
+          "bagType": "checked",
+          "description": "Checked bag 23kg",
+          "passengerType": "ALL",
+          "pieces": 1,
+          "pricing": {
+           "display": {
+            "amount": 50.9,
+            "currency": "USD"
+           },
+           "converted": true
+          },
+          "weightKg": 23
+         }
+        ]
+       },
+       "fare": {
+        "family": "Economy Light",
+        "mixedCabin": false,
+        "mixedFareFamily": false,
+        "seatsRemaining": 9
+       },
+       "seats": {
+        "extraRoom": {
+         "description": "Not available",
+         "status": "not-offered"
+        },
+        "seatReservation": {
+         "description": "Seat selection available for purchase",
+         "pricing": {
+          "display": {
+           "amount": 16.97,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "status": "chargeable"
+        }
+       },
+       "segmentAmenities": [
+        {
+         "aircraftType": "Airbus A320neo",
+         "amenities": [
+          {
+           "available": true,
+           "category": "wifi",
+           "chargeable": true,
+           "details": "Available for purchase",
+           "name": "Wi-Fi"
+          },
+          {
+           "available": true,
+           "category": "power",
+           "chargeable": false,
+           "name": "USB Charging"
+          },
+          {
+           "available": true,
+           "category": "entertainment",
+           "chargeable": false,
+           "details": "Via personal device",
+           "name": "Streaming Entertainment"
+          },
+          {
+           "available": true,
+           "category": "food",
+           "chargeable": true,
+           "name": "Snack Box"
+          },
+          {
+           "available": true,
+           "category": "seat_comfort",
+           "chargeable": false,
+           "details": "31 inches",
+           "name": "Seat Pitch"
+          }
+         ],
+         "segmentKey": "e0b6f76e"
+        },
+        {
+         "aircraftType": "Airbus A320neo",
+         "amenities": [
+          {
+           "available": true,
+           "category": "wifi",
+           "chargeable": true,
+           "details": "Available for purchase",
+           "name": "Wi-Fi"
+          },
+          {
+           "available": true,
+           "category": "power",
+           "chargeable": false,
+           "name": "USB Charging"
+          },
+          {
+           "available": true,
+           "category": "entertainment",
+           "chargeable": false,
+           "details": "Via personal device",
+           "name": "Streaming Entertainment"
+          },
+          {
+           "available": true,
+           "category": "food",
+           "chargeable": true,
+           "name": "Snack Box"
+          },
+          {
+           "available": true,
+           "category": "seat_comfort",
+           "chargeable": false,
+           "details": "31 inches",
+           "name": "Seat Pitch"
+          }
+         ],
+         "segmentKey": "40687165"
+        }
+       ],
+       "segmentFares": [
+        {
+         "bookingCode": "L",
+         "cabin": "Economy",
+         "fareBasisCode": "LOWSFO",
+         "fareFamily": "Economy Light",
+         "seatsRemaining": 9,
+         "segmentKey": "e0b6f76e"
+        },
+        {
+         "bookingCode": "L",
+         "cabin": "Economy",
+         "fareBasisCode": "LOWSFO",
+         "fareFamily": "Economy Light",
+         "seatsRemaining": 9,
+         "segmentKey": "40687165"
+        }
+       ],
+       "terms": {
+        "changeable": false,
+        "refundable": false,
+        "summary": [
+         {
+          "level": "warning",
+          "message": "Non-refundable ticket"
+         },
+         {
+          "level": "danger",
+          "message": "Non-changeable ticket"
+         }
+        ]
+       }
+      }
+     ],
+     "isCheapest": false,
+     "journeyKey": "77ed201f94ab308f",
+     "legDurations": [
+      {
+       "dayChange": 0,
+       "direction": "OUTBOUND",
+       "duration": {
+        "iso8601": "PT1H39M",
+        "minutes": 99
+       },
+       "overnightFlight": false
+      },
+      {
+       "dayChange": 0,
+       "direction": "INBOUND",
+       "duration": {
+        "iso8601": "PT1H39M",
+        "minutes": 99
+       },
+       "overnightFlight": false
+      }
+     ],
+     "parameters": {
+      "adults": 0,
+      "children": 0,
+      "infants": 0
+     },
+     "segments": [
+      {
+       "arrivalTime": "2026-12-12T17:29:00",
+       "carrier": {
+        "marketingCode": "ND",
+        "marketingLogo": "https://assets.nuitee.flights/static/images/airlines/ND.png",
+        "marketingName": "Nuitée Air",
+        "operatingCode": "ND",
+        "operatingLogo": "https://assets.nuitee.flights/static/images/airlines/ND.png",
+        "operatingName": "Nuitée Air"
+       },
+       "departureTime": "2026-12-12T15:50:00",
+       "originCode": "SFO",
+       "destinationCode": "SAN",
+       "direction": "OUTBOUND",
+       "duration": {
+        "iso8601": "PT1H39M",
+        "minutes": 99
+       },
+       "flight": {
+        "marketingNumber": "6278",
+        "operatingNumber": "6278"
+       },
+       "segmentKey": "e0b6f76e",
+       "originName": "San Francisco International Airport",
+       "destinationName": "San Diego International Airport",
+       "stopCount": 0
+      },
+      {
+       "arrivalTime": "2026-12-16T20:34:00",
+       "carrier": {
+        "marketingCode": "ND",
+        "marketingLogo": "https://assets.nuitee.flights/static/images/airlines/ND.png",
+        "marketingName": "Nuitée Air",
+        "operatingCode": "ND",
+        "operatingLogo": "https://assets.nuitee.flights/static/images/airlines/ND.png",
+        "operatingName": "Nuitée Air"
+       },
+       "departureTime": "2026-12-16T18:55:00",
+       "originCode": "SAN",
+       "destinationCode": "SFO",
+       "direction": "INBOUND",
+       "duration": {
+        "iso8601": "PT1H39M",
+        "minutes": 99
+       },
+       "flight": {
+        "marketingNumber": "3060",
+        "operatingNumber": "3060"
+       },
+       "segmentKey": "40687165",
+       "originName": "San Diego International Airport",
+       "destinationName": "San Francisco International Airport",
+       "stopCount": 0
+      }
+     ],
+     "timestamp": "2026-11-12T19:47:56.165Z",
+     "totalDuration": {
+      "iso8601": "PT3H18M",
+      "minutes": 198
+     }
+    },
+    {
+     "cheapestOffer": {
+      "offerId": "AwJ2MQAAAABq92l1km80OCtqUcmNnGM4228Ra3YZUU2JQ2BjqmxI6b0Mj_EdCJtedxO_3gTDmpEvVuRoc31SXdLZQuGQiUBE3909ddM6JLGJKD6BzJZ7gDJ0KqE_bM0Dcw22vn4VXoBRdc5Z3kpv2Yl6NJ7_OMis96pLqBVb32EnVxxNwJ0G26LmbWm0pgWjFbfAA1YWrtTKJrIm7oVpsJRT0ECt3XMfOowlwZ4KukzM5n4x4jTmtlIy2OjMFDce2GS8oS9WAS15z2Y1ScjC3PukBraOOzSIF7DD89yrx5oZXIEyv-XCv39DeDaP1RB65AYJrRmBUMS4GRhoJRl1AHM2Hib-FO4ixI1MlkVdiagVMt4lde0s3OsFaePvWmafNgxkkCfxpRHJTjL0V-M-5JQXRVsQMjoxGR8=",
+      "searchId": "01a1d14d72567313919e6acea2c0292d",
+      "expiration": "2026-11-12T19:53:25Z",
+      "pricing": {
+       "display": {
+        "total": 213.2,
+        "currency": "USD",
+        "base": 36,
+        "fees": 4,
+        "taxes": 173.2,
+        "perPassenger": {
+         "adult": {
+          "base": 9,
+          "currency": "USD",
+          "fees": 1,
+          "taxes": 43.3,
+          "total": 53.3
+         },
+         "child": {
+          "base": 9,
+          "currency": "USD",
+          "fees": 1,
+          "taxes": 43.3,
+          "total": 53.3
+         },
+         "infant": {
+          "base": 18.66,
+          "currency": "USD",
+          "fees": 0,
+          "taxes": 0,
+          "total": 18.66
+         }
+        }
+       },
+       "converted": false
+      },
+      "baggage": {
+       "hasCarryOnBag": false,
+       "hasCheckedBag": false,
+       "included": [
+        {
+         "bagType": "personal",
+         "description": "Personal item",
+         "passengerType": "ADT",
+         "pieces": 1,
+         "pricing": {
+          "display": {
+           "amount": 0,
+           "currency": "USD"
+          },
+          "converted": false
+         },
+         "size": "45*35*20cm",
+         "weightKg": null
+        },
+        {
+         "bagType": "personal",
+         "description": "Personal item",
+         "passengerType": "CHD",
+         "pieces": 1,
+         "pricing": {
+          "display": {
+           "amount": 0,
+           "currency": "USD"
+          },
+          "converted": false
+         },
+         "size": "45*35*20cm",
+         "weightKg": null
+        }
+       ],
+       "paid": [
+        {
+         "bagType": "checked",
+         "description": "Checked bag",
+         "passengerType": "ADT",
+         "pieces": 1,
+         "pricing": {
+          "display": {
+           "amount": 64.9,
+           "currency": "USD"
+          },
+          "converted": false
+         },
+         "unit": "kg",
+         "weightKg": 18
+        },
+        {
+         "bagType": "cabin",
+         "description": "Cabin bag",
+         "passengerType": "ADT",
+         "pieces": 1,
+         "pricing": {
+          "display": {
+           "amount": 63.92,
+           "currency": "USD"
+          },
+          "converted": false
+         },
+         "unit": "kg",
+         "weightKg": 15
+        },
+        {
+         "bagType": "checked",
+         "description": "Checked bag",
+         "passengerType": "ADT",
+         "pieces": 3,
+         "pricing": {
+          "display": {
+           "amount": 249.36,
+           "currency": "USD"
+          },
+          "converted": false
+         },
+         "unit": "kg",
+         "weightKg": 54
+        },
+        {
+         "bagType": "checked",
+         "description": "Checked bag",
+         "passengerType": "ADT",
+         "pieces": 2,
+         "pricing": {
+          "display": {
+           "amount": 133.8,
+           "currency": "USD"
+          },
+          "converted": false
+         },
+         "unit": "kg",
+         "weightKg": 36
+        },
+        {
+         "bagType": "checked",
+         "description": "Checked bag",
+         "passengerType": "ADT",
+         "pieces": 1,
+         "pricing": {
+          "display": {
+           "amount": 23.74,
+           "currency": "USD"
+          },
+          "converted": false
+         },
+         "unit": "kg",
+         "weightKg": 18
+        },
+        {
+         "bagType": "cabin",
+         "description": "Cabin bag",
+         "passengerType": "ADT",
+         "pieces": 1,
+         "pricing": {
+          "display": {
+           "amount": 18.27,
+           "currency": "USD"
+          },
+          "converted": false
+         },
+         "unit": "kg",
+         "weightKg": 15
+        },
+        {
+         "bagType": "checked",
+         "description": "Checked bag",
+         "passengerType": "ADT",
+         "pieces": 2,
+         "pricing": {
+          "display": {
+           "amount": 63.02,
+           "currency": "USD"
+          },
+          "converted": false
+         },
+         "unit": "kg",
+         "weightKg": 36
+        },
+        {
+         "bagType": "checked",
+         "description": "Checked bag",
+         "passengerType": "ADT",
+         "pieces": 3,
+         "pricing": {
+          "display": {
+           "amount": 144.26,
+           "currency": "USD"
+          },
+          "converted": false
+         },
+         "unit": "kg",
+         "weightKg": 54
+        },
+        {
+         "bagType": "checked",
+         "description": "Checked bag",
+         "passengerType": "ADT",
+         "pieces": 1,
+         "pricing": {
+          "display": {
+           "amount": 29.11,
+           "currency": "USD"
+          },
+          "converted": false
+         },
+         "unit": "kg",
+         "weightKg": 18
+        },
+        {
+         "bagType": "cabin",
+         "description": "Cabin bag",
+         "passengerType": "ADT",
+         "pieces": 1,
+         "pricing": {
+          "display": {
+           "amount": 19,
+           "currency": "USD"
+          },
+          "converted": false
+         },
+         "unit": "kg",
+         "weightKg": 15
+        },
+        {
+         "bagType": "checked",
+         "description": "Checked bag",
+         "passengerType": "ADT",
+         "pieces": 2,
+         "pricing": {
+          "display": {
+           "amount": 50.96,
+           "currency": "USD"
+          },
+          "converted": false
+         },
+         "unit": "kg",
+         "weightKg": 36
+        },
+        {
+         "bagType": "checked",
+         "description": "Checked bag",
+         "passengerType": "ADT",
+         "pieces": 3,
+         "pricing": {
+          "display": {
+           "amount": 106.41,
+           "currency": "USD"
+          },
+          "converted": false
+         },
+         "unit": "kg",
+         "weightKg": 54
+        }
+       ]
+      },
+      "fare": {
+       "family": "Basic Fare",
+       "mixedCabin": false,
+       "mixedFareFamily": false,
+       "seatsRemaining": 5
+      },
+      "seats": {
+       "seatReservation": {
+        "description": "Seat selection available for purchase",
+        "status": "chargeable"
+       }
+      },
+      "segmentAmenities": [
+       {
+        "aircraftType": "A321",
+        "amenities": [
+         {
+          "available": true,
+          "category": "seat_comfort",
+          "chargeable": true,
+          "name": "Seat Selection"
+         }
+        ],
+        "segmentKey": "e49bb2c6"
+       },
+       {
+        "aircraftType": "A320",
+        "amenities": [
+         {
+          "available": true,
+          "category": "seat_comfort",
+          "chargeable": true,
+          "name": "Seat Selection"
+         }
+        ],
+        "segmentKey": "a2c3270d"
+       },
+       {
+        "aircraftType": "A320",
+        "amenities": [
+         {
+          "available": true,
+          "category": "seat_comfort",
+          "chargeable": true,
+          "name": "Seat Selection"
+         }
+        ],
+        "segmentKey": "6c414750"
+       }
+      ],
+      "segmentFares": [
+       {
+        "bookingCode": "K",
+        "cabin": "Economy",
+        "fareBasisCode": "",
+        "fareFamily": "Basic Fare",
+        "seatsRemaining": 9,
+        "segmentKey": "e49bb2c6"
+       },
+       {
+        "bookingCode": "K",
+        "cabin": "Economy",
+        "fareBasisCode": "",
+        "fareFamily": "Basic Fare",
+        "seatsRemaining": 5,
+        "segmentKey": "a2c3270d"
+       },
+       {
+        "bookingCode": "Z",
+        "cabin": "Economy",
+        "fareBasisCode": "",
+        "fareFamily": "Basic Fare",
+        "seatsRemaining": 5,
+        "segmentKey": "6c414750"
+       }
+      ],
+      "terms": {
+       "changeable": true,
+       "refundable": true,
+       "summary": [
+        {
+         "level": "warning",
+         "message": "Refundable with penalty"
+        },
+        {
+         "level": "warning",
+         "message": "Refund fee: from 15.07 USD"
+        },
+        {
+         "level": "warning",
+         "message": "Refund issued as voucher only"
+        },
+        {
+         "level": "warning",
+         "message": "Changes allowed with penalty"
+        },
+        {
+         "level": "warning",
+         "message": "Change fee: from 15.07 USD"
+        }
+       ],
+       "hasChangeFee": true,
+       "hasRefundFee": true
+      },
+      "loyaltyProgramsSupported": false
+     },
+     "connections": [
+      {
+       "arrivalAirportCode": "LAS",
+       "arrivalAirportName": "Harry Reid International Airport",
+       "arrivalTime": "2026-12-16T10:32:00",
+       "changeAirport": false,
+       "departureAirportCode": "LAS",
+       "departureAirportName": "Harry Reid International Airport",
+       "departureTime": "2026-12-16T11:37:00",
+       "direction": "INBOUND",
+       "duration": {
+        "iso8601": "PT1H5M",
+        "minutes": 65
+       },
+       "overnight": false
+      }
+     ],
+     "offers": [
+      {
+       "offerId": "AwJ2MQAAAABq92l1A6oJOKASxdd2upeXWqpoYMV6ch_nKURai95Oq0yAqwGUELiJ3McfBDV6C2X5cyfXzNNJS70YAGlUca6OTAOXbMK8D9J-iF1uViCy_lplXrallvAslwp4QI66mU1j-RUeiUz5P2pFYTKHPWfMAuQJLcTpQ-LdqXCxZhZy9ZtdmJlr2ZwnmuY4d-j4STlOLricLejGFLOcQ3aY3udEFuyey1XI0Z3qQcnlMlRAlMZspTdjZd2l24x35vQtnlRQ7QonEXBq2NWlYp29b48qPWS20NYBdu5uQQqbeJj5_jhecKOGPY4jQriGvS2e-R9CSKltUrulaD-2d8hB8BGPXbWNRAXn6et9W7181HvWKe9_TJJ7K3l9Of6s_E800LB2bnYe6JaSSeiLYk6E7u94ozw=",
+       "searchId": "01a1d14d72567313919e6acea2c0292d",
+       "expiration": "2026-11-12T19:53:25Z",
+       "pricing": {
+        "display": {
+         "total": 213.2,
+         "currency": "USD",
+         "base": 36,
+         "fees": 4,
+         "taxes": 173.2,
+         "perPassenger": {
+          "adult": {
+           "base": 9,
+           "currency": "USD",
+           "fees": 1,
+           "taxes": 43.3,
+           "total": 53.3
+          },
+          "child": {
+           "base": 9,
+           "currency": "USD",
+           "fees": 1,
+           "taxes": 43.3,
+           "total": 53.3
+          },
+          "infant": {
+           "base": 18.66,
+           "currency": "USD",
+           "fees": 0,
+           "taxes": 0,
+           "total": 18.66
+          }
+         }
+        },
+        "converted": false
+       },
+       "baggage": {
+        "hasCarryOnBag": false,
+        "hasCheckedBag": false,
+        "included": [
+         {
+          "bagType": "personal",
+          "description": "Personal item",
+          "passengerType": "ADT",
+          "pieces": 1,
+          "pricing": {
+           "display": {
+            "amount": 0,
+            "currency": "USD"
+           },
+           "converted": false
+          },
+          "size": "45*35*20cm",
+          "weightKg": null
+         },
+         {
+          "bagType": "personal",
+          "description": "Personal item",
+          "passengerType": "CHD",
+          "pieces": 1,
+          "pricing": {
+           "display": {
+            "amount": 0,
+            "currency": "USD"
+           },
+           "converted": false
+          },
+          "size": "45*35*20cm",
+          "weightKg": null
+         }
+        ],
+        "paid": [
+         {
+          "bagType": "checked",
+          "description": "Checked bag",
+          "passengerType": "ADT",
+          "pieces": 1,
+          "pricing": {
+           "display": {
+            "amount": 64.9,
+            "currency": "USD"
+           },
+           "converted": false
+          },
+          "unit": "kg",
+          "weightKg": 18
+         },
+         {
+          "bagType": "cabin",
+          "description": "Cabin bag",
+          "passengerType": "ADT",
+          "pieces": 1,
+          "pricing": {
+           "display": {
+            "amount": 63.92,
+            "currency": "USD"
+           },
+           "converted": false
+          },
+          "unit": "kg",
+          "weightKg": 15
+         },
+         {
+          "bagType": "checked",
+          "description": "Checked bag",
+          "passengerType": "ADT",
+          "pieces": 3,
+          "pricing": {
+           "display": {
+            "amount": 249.36,
+            "currency": "USD"
+           },
+           "converted": false
+          },
+          "unit": "kg",
+          "weightKg": 54
+         },
+         {
+          "bagType": "checked",
+          "description": "Checked bag",
+          "passengerType": "ADT",
+          "pieces": 2,
+          "pricing": {
+           "display": {
+            "amount": 133.8,
+            "currency": "USD"
+           },
+           "converted": false
+          },
+          "unit": "kg",
+          "weightKg": 36
+         },
+         {
+          "bagType": "checked",
+          "description": "Checked bag",
+          "passengerType": "ADT",
+          "pieces": 1,
+          "pricing": {
+           "display": {
+            "amount": 23.74,
+            "currency": "USD"
+           },
+           "converted": false
+          },
+          "unit": "kg",
+          "weightKg": 18
+         },
+         {
+          "bagType": "cabin",
+          "description": "Cabin bag",
+          "passengerType": "ADT",
+          "pieces": 1,
+          "pricing": {
+           "display": {
+            "amount": 18.27,
+            "currency": "USD"
+           },
+           "converted": false
+          },
+          "unit": "kg",
+          "weightKg": 15
+         },
+         {
+          "bagType": "checked",
+          "description": "Checked bag",
+          "passengerType": "ADT",
+          "pieces": 2,
+          "pricing": {
+           "display": {
+            "amount": 63.02,
+            "currency": "USD"
+           },
+           "converted": false
+          },
+          "unit": "kg",
+          "weightKg": 36
+         },
+         {
+          "bagType": "checked",
+          "description": "Checked bag",
+          "passengerType": "ADT",
+          "pieces": 3,
+          "pricing": {
+           "display": {
+            "amount": 144.26,
+            "currency": "USD"
+           },
+           "converted": false
+          },
+          "unit": "kg",
+          "weightKg": 54
+         },
+         {
+          "bagType": "checked",
+          "description": "Checked bag",
+          "passengerType": "ADT",
+          "pieces": 1,
+          "pricing": {
+           "display": {
+            "amount": 29.11,
+            "currency": "USD"
+           },
+           "converted": false
+          },
+          "unit": "kg",
+          "weightKg": 18
+         },
+         {
+          "bagType": "cabin",
+          "description": "Cabin bag",
+          "passengerType": "ADT",
+          "pieces": 1,
+          "pricing": {
+           "display": {
+            "amount": 19,
+            "currency": "USD"
+           },
+           "converted": false
+          },
+          "unit": "kg",
+          "weightKg": 15
+         },
+         {
+          "bagType": "checked",
+          "description": "Checked bag",
+          "passengerType": "ADT",
+          "pieces": 2,
+          "pricing": {
+           "display": {
+            "amount": 50.96,
+            "currency": "USD"
+           },
+           "converted": false
+          },
+          "unit": "kg",
+          "weightKg": 36
+         },
+         {
+          "bagType": "checked",
+          "description": "Checked bag",
+          "passengerType": "ADT",
+          "pieces": 3,
+          "pricing": {
+           "display": {
+            "amount": 106.41,
+            "currency": "USD"
+           },
+           "converted": false
+          },
+          "unit": "kg",
+          "weightKg": 54
+         }
+        ]
+       },
+       "fare": {
+        "family": "Basic Fare",
+        "mixedCabin": false,
+        "mixedFareFamily": false,
+        "seatsRemaining": 5
+       },
+       "seats": {
+        "seatReservation": {
+         "description": "Seat selection available for purchase",
+         "status": "chargeable"
+        }
+       },
+       "segmentAmenities": [
+        {
+         "aircraftType": "A321",
+         "amenities": [
+          {
+           "available": true,
+           "category": "seat_comfort",
+           "chargeable": true,
+           "name": "Seat Selection"
+          }
+         ],
+         "segmentKey": "e49bb2c6"
+        },
+        {
+         "aircraftType": "A320",
+         "amenities": [
+          {
+           "available": true,
+           "category": "seat_comfort",
+           "chargeable": true,
+           "name": "Seat Selection"
+          }
+         ],
+         "segmentKey": "a2c3270d"
+        },
+        {
+         "aircraftType": "A320",
+         "amenities": [
+          {
+           "available": true,
+           "category": "seat_comfort",
+           "chargeable": true,
+           "name": "Seat Selection"
+          }
+         ],
+         "segmentKey": "6c414750"
+        }
+       ],
+       "segmentFares": [
+        {
+         "bookingCode": "K",
+         "cabin": "Economy",
+         "fareBasisCode": "",
+         "fareFamily": "Basic Fare",
+         "seatsRemaining": 9,
+         "segmentKey": "e49bb2c6"
+        },
+        {
+         "bookingCode": "K",
+         "cabin": "Economy",
+         "fareBasisCode": "",
+         "fareFamily": "Basic Fare",
+         "seatsRemaining": 5,
+         "segmentKey": "a2c3270d"
+        },
+        {
+         "bookingCode": "Z",
+         "cabin": "Economy",
+         "fareBasisCode": "",
+         "fareFamily": "Basic Fare",
+         "seatsRemaining": 5,
+         "segmentKey": "6c414750"
+        }
+       ],
+       "terms": {
+        "changeable": true,
+        "refundable": true,
+        "summary": [
+         {
+          "level": "warning",
+          "message": "Refundable with penalty"
+         },
+         {
+          "level": "warning",
+          "message": "Refund fee: from 15.07 USD"
+         },
+         {
+          "level": "warning",
+          "message": "Refund issued as voucher only"
+         },
+         {
+          "level": "warning",
+          "message": "Changes allowed with penalty"
+         },
+         {
+          "level": "warning",
+          "message": "Change fee: from 15.07 USD"
+         }
+        ],
+        "hasChangeFee": true,
+        "hasRefundFee": true
+       },
+       "loyaltyProgramsSupported": false
+      }
+     ],
+     "isCheapest": false,
+     "journeyKey": "cc518e6344884899",
+     "legDurations": [
+      {
+       "dayChange": 0,
+       "direction": "OUTBOUND",
+       "duration": {
+        "iso8601": "PT1H43M",
+        "minutes": 103
+       },
+       "overnightFlight": false
+      },
+      {
+       "dayChange": 0,
+       "direction": "INBOUND",
+       "duration": {
+        "iso8601": "PT4H30M",
+        "minutes": 270
+       },
+       "overnightFlight": false
+      }
+     ],
+     "parameters": {
+      "adults": 0,
+      "children": 0,
+      "infants": 0
+     },
+     "segments": [
+      {
+       "arrivalTime": "2026-12-12T18:16:00",
+       "carrier": {
+        "marketingCode": "F9",
+        "marketingLogo": "https://assets.nuitee.flights/static/images/airlines/F9.png",
+        "marketingName": "Frontier Airlines",
+        "operatingCode": "F9",
+        "operatingLogo": "https://assets.nuitee.flights/static/images/airlines/F9.png",
+        "operatingName": "Frontier Airlines"
+       },
+       "departureTime": "2026-12-12T16:33:00",
+       "originCode": "SFO",
+       "destinationCode": "SAN",
+       "direction": "OUTBOUND",
+       "duration": {
+        "iso8601": "PT1H43M",
+        "minutes": 103
+       },
+       "flight": {
+        "marketingNumber": "3382",
+        "operatingNumber": "3382"
+       },
+       "segmentKey": "e49bb2c6",
+       "originName": "San Francisco International Airport",
+       "destinationName": "San Diego International Airport",
+       "stopCount": 0
+      },
+      {
+       "arrivalTime": "2026-12-16T10:32:00",
+       "carrier": {
+        "marketingCode": "F9",
+        "marketingLogo": "https://assets.nuitee.flights/static/images/airlines/F9.png",
+        "marketingName": "Frontier Airlines",
+        "operatingCode": "F9",
+        "operatingLogo": "https://assets.nuitee.flights/static/images/airlines/F9.png",
+        "operatingName": "Frontier Airlines"
+       },
+       "departureTime": "2026-12-16T08:57:00",
+       "originCode": "SAN",
+       "destinationCode": "LAS",
+       "direction": "INBOUND",
+       "duration": {
+        "iso8601": "PT1H35M",
+        "minutes": 95
+       },
+       "flight": {
+        "marketingNumber": "1466",
+        "operatingNumber": "1466"
+       },
+       "segmentKey": "a2c3270d",
+       "originName": "San Diego International Airport",
+       "destinationName": "Harry Reid International Airport",
+       "stopCount": 0
+      },
+      {
+       "arrivalTime": "2026-12-16T13:27:00",
+       "carrier": {
+        "marketingCode": "F9",
+        "marketingLogo": "https://assets.nuitee.flights/static/images/airlines/F9.png",
+        "marketingName": "Frontier Airlines",
+        "operatingCode": "F9",
+        "operatingLogo": "https://assets.nuitee.flights/static/images/airlines/F9.png",
+        "operatingName": "Frontier Airlines"
+       },
+       "departureTime": "2026-12-16T11:37:00",
+       "originCode": "LAS",
+       "destinationCode": "SFO",
+       "direction": "INBOUND",
+       "duration": {
+        "iso8601": "PT1H50M",
+        "minutes": 110
+       },
+       "flight": {
+        "marketingNumber": "3801",
+        "operatingNumber": "3801"
+       },
+       "segmentKey": "6c414750",
+       "originName": "Harry Reid International Airport",
+       "destinationName": "San Francisco International Airport",
+       "stopCount": 0
+      }
+     ],
+     "timestamp": "2026-11-12T19:47:57.501Z",
+     "totalDuration": {
+      "iso8601": "PT6H13M",
+      "minutes": 373
+     }
+    },
+    {
+     "cheapestOffer": {
+      "offerId": "AwJ2MQAAAABq92l1T6WVW2nBZSbmkmSpzORvx80VYcsXPEPO2Iios1QqJoqVUHZX2cYKLLg5DQP41G8mqHES2epR0kfVARWqqVoDeuDNEeTOpxPof5rsYfPys0YlXAq16ZO-rU_CopxHdIGna_HZ8MyyOcmaPA_z2HUUP5YelyFyh1uq2lCRdw3D_6JYlJEwvEKiRyrVeOVdVjxqzBEQslF0WHEP6wouSXwzR1H6Jym_aLyqgXBmzpa3hPMYekBmjJrZF8sWwALfkbO19S5_NhN4FRhrdW-_6L7xa5BRlgC1lowQj1T4bm_EQ-tqLp6ejozmGpG3Hen2PzetoBdhvfXWI9Jt_b99zLQZ4Mh2-KmadZbaZ-4pnm48d6J3zvYC7OlsGWr8iEx24KVjQjeGNafZRB0S76EmokA=",
+      "searchId": "01a1d14d72567313919e6acea2c0292d",
+      "expiration": "2026-11-12T19:58:02.447Z",
+      "pricing": {
+       "display": {
+        "total": 675.65,
+        "currency": "USD",
+        "base": 438.91,
+        "fees": 0,
+        "taxes": 236.74,
+        "perPassenger": {
+         "adult": {
+          "base": 109.73,
+          "currency": "USD",
+          "fees": 0,
+          "taxes": 59.18,
+          "total": 168.91
+         },
+         "child": {
+          "base": 109.73,
+          "currency": "USD",
+          "fees": 0,
+          "taxes": 59.18,
+          "total": 168.91
+         },
+         "infant": {
+          "base": 0,
+          "currency": "USD",
+          "fees": 0,
+          "taxes": 0,
+          "total": 0
+         }
+        }
+       },
+       "converted": true
+      },
+      "baggage": {
+       "hasCarryOnBag": true,
+       "hasCheckedBag": false,
+       "included": [
+        {
+         "bagType": "cabin",
+         "description": "Cabin bag",
+         "passengerType": "ALL",
+         "pieces": 1,
+         "pricing": {
+          "display": {
+           "amount": 0,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "size": "45 LI 115 LCM",
+         "weightKg": null
+        }
+       ],
+       "paid": [
+        {
+         "bagType": "checked",
+         "description": "Checked bag",
+         "passengerType": "ALL",
+         "pieces": 1,
+         "pricing": {
+          "display": {
+           "amount": 46.38,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "unit": "kg",
+         "weightKg": 22.7
+        }
+       ]
+      },
+      "fare": {
+       "family": "Delta Main Basic",
+       "mixedCabin": false,
+       "mixedFareFamily": false,
+       "seatsRemaining": 9,
+       "features": [
+        {
+         "type": "priority_boarding",
+         "status": "not-offered",
+         "description": "Priority boarding not available",
+         "segments": [
+          {
+           "segmentKey": "0e873966",
+           "status": "not-offered",
+           "name": "PRIORITY BOARDING"
+          },
+          {
+           "segmentKey": "87e72a04",
+           "status": "not-offered",
+           "name": "PRIORITY BOARDING"
+          },
+          {
+           "segmentKey": "de28bb4c",
+           "status": "not-offered",
+           "name": "PRIORITY BOARDING"
+          },
+          {
+           "segmentKey": "967377e8",
+           "status": "not-offered",
+           "name": "PRIORITY BOARDING"
+          }
+         ]
+        },
+        {
+         "type": "priority_security",
+         "status": "not-offered",
+         "description": "Priority security not available",
+         "segments": [
+          {
+           "segmentKey": "0e873966",
+           "status": "not-offered",
+           "name": "PRIORITY SECURITY"
+          },
+          {
+           "segmentKey": "87e72a04",
+           "status": "not-offered",
+           "name": "PRIORITY SECURITY"
+          },
+          {
+           "segmentKey": "de28bb4c",
+           "status": "not-offered",
+           "name": "PRIORITY SECURITY"
+          },
+          {
+           "segmentKey": "967377e8",
+           "status": "not-offered",
+           "name": "PRIORITY SECURITY"
+          }
+         ]
+        },
+        {
+         "type": "priority_check_in",
+         "status": "not-offered",
+         "description": "Priority check-in not available",
+         "segments": [
+          {
+           "segmentKey": "0e873966",
+           "status": "not-offered",
+           "name": "DELTA ONE CHECK IN"
+          },
+          {
+           "segmentKey": "87e72a04",
+           "status": "not-offered",
+           "name": "DELTA ONE CHECK IN"
+          },
+          {
+           "segmentKey": "de28bb4c",
+           "status": "not-offered",
+           "name": "DELTA ONE CHECK IN"
+          },
+          {
+           "segmentKey": "967377e8",
+           "status": "not-offered",
+           "name": "DELTA ONE CHECK IN"
+          }
+         ]
+        },
+        {
+         "type": "lounge",
+         "status": "not-offered",
+         "description": "Lounge access not available",
+         "segments": [
+          {
+           "segmentKey": "0e873966",
+           "status": "not-offered",
+           "name": "EXECUTIVE LOUNGE"
+          },
+          {
+           "segmentKey": "87e72a04",
+           "status": "not-offered",
+           "name": "EXECUTIVE LOUNGE"
+          },
+          {
+           "segmentKey": "de28bb4c",
+           "status": "not-offered",
+           "name": "EXECUTIVE LOUNGE"
+          },
+          {
+           "segmentKey": "967377e8",
+           "status": "not-offered",
+           "name": "EXECUTIVE LOUNGE"
+          }
+         ]
+        },
+        {
+         "type": "mileage_accrual",
+         "status": "not-offered",
+         "description": "Mileage accrual not available",
+         "segments": [
+          {
+           "segmentKey": "0e873966",
+           "status": "not-offered",
+           "name": "BONUS MILES"
+          },
+          {
+           "segmentKey": "87e72a04",
+           "status": "not-offered",
+           "name": "BONUS MILES"
+          },
+          {
+           "segmentKey": "de28bb4c",
+           "status": "not-offered",
+           "name": "BONUS MILES"
+          },
+          {
+           "segmentKey": "967377e8",
+           "status": "not-offered",
+           "name": "BONUS MILES"
+          }
+         ]
+        }
+       ]
+      },
+      "seats": {
+       "seatReservation": {
+        "description": "Seat selection not available",
+        "status": "not-offered"
+       }
+      },
+      "segmentAmenities": [
+       {
+        "aircraftType": "32Q",
+        "amenities": [
+         {
+          "available": true,
+          "category": "wifi",
+          "chargeable": false,
+          "name": "Wi-Fi"
+         },
+         {
+          "available": true,
+          "category": "power",
+          "chargeable": false,
+          "name": "AC Power, USB-A"
+         },
+         {
+          "available": true,
+          "category": "entertainment",
+          "chargeable": false,
+          "name": "Seatback On-Demand"
+         },
+         {
+          "available": true,
+          "category": "food",
+          "chargeable": false,
+          "name": "Snack"
+         },
+         {
+          "available": true,
+          "category": "seat_comfort",
+          "details": "31\" pitch",
+          "name": "Standard Legroom"
+         }
+        ],
+        "segmentKey": "0e873966"
+       },
+       {
+        "aircraftType": "E7W",
+        "amenities": [
+         {
+          "available": true,
+          "category": "wifi",
+          "chargeable": true,
+          "name": "Wi-Fi"
+         },
+         {
+          "available": true,
+          "category": "power",
+          "chargeable": false,
+          "name": "AC Power, USB-A"
+         },
+         {
+          "available": false,
+          "category": "entertainment",
+          "name": "Entertainment"
+         },
+         {
+          "available": false,
+          "category": "food",
+          "name": "Food"
+         },
+         {
+          "available": true,
+          "category": "seat_comfort",
+          "details": "32\" pitch",
+          "name": "Above Average Legroom"
+         }
+        ],
+        "segmentKey": "87e72a04"
+       },
+       {
+        "aircraftType": "321",
+        "amenities": [
+         {
+          "available": true,
+          "category": "wifi",
+          "chargeable": false,
+          "name": "Wi-Fi"
+         },
+         {
+          "available": true,
+          "category": "power",
+          "chargeable": false,
+          "name": "AC Power, USB-A"
+         },
+         {
+          "available": true,
+          "category": "entertainment",
+          "chargeable": false,
+          "name": "Seatback On-Demand"
+         },
+         {
+          "available": true,
+          "category": "food",
+          "chargeable": false,
+          "name": "Snack"
+         },
+         {
+          "available": true,
+          "category": "seat_comfort",
+          "details": "31\" pitch",
+          "name": "Standard Legroom"
+         }
+        ],
+        "segmentKey": "de28bb4c"
+       },
+       {
+        "aircraftType": "321",
+        "amenities": [
+         {
+          "available": true,
+          "category": "wifi",
+          "chargeable": false,
+          "name": "Wi-Fi"
+         },
+         {
+          "available": true,
+          "category": "power",
+          "chargeable": false,
+          "name": "AC Power, USB-A"
+         },
+         {
+          "available": true,
+          "category": "entertainment",
+          "chargeable": false,
+          "name": "Seatback On-Demand"
+         },
+         {
+          "available": true,
+          "category": "food",
+          "chargeable": false,
+          "name": "Snack"
+         },
+         {
+          "available": true,
+          "category": "seat_comfort",
+          "details": "31\" pitch",
+          "name": "Standard Legroom"
+         }
+        ],
+        "segmentKey": "967377e8"
+       }
+      ],
+      "segmentFares": [
+       {
+        "bookingCode": "E",
+        "cabin": "Economy",
+        "fareBasisCode": "VAVSH3BC",
+        "fareFamily": "Delta Main Basic",
+        "seatsRemaining": 9,
+        "segmentKey": "0e873966"
+       },
+       {
+        "bookingCode": "E",
+        "cabin": "Economy",
+        "fareBasisCode": "VAVSH3BC",
+        "fareFamily": "Delta Main Basic",
+        "seatsRemaining": 9,
+        "segmentKey": "87e72a04"
+       },
+       {
+        "bookingCode": "E",
+        "cabin": "Economy",
+        "fareBasisCode": "VAVSH3BC",
+        "fareFamily": "Delta Main Basic",
+        "seatsRemaining": 9,
+        "segmentKey": "de28bb4c"
+       },
+       {
+        "bookingCode": "E",
+        "cabin": "Economy",
+        "fareBasisCode": "VAVSH3BC",
+        "fareFamily": "Delta Main Basic",
+        "seatsRemaining": 9,
+        "segmentKey": "967377e8"
+       }
+      ],
+      "terms": {
+       "changeable": true,
+       "refundable": false,
+       "summary": [
+        {
+         "level": "danger",
+         "message": "Non-refundable"
+        },
+        {
+         "level": "warning",
+         "message": "Changes allowed with penalty (fee varies)"
+        },
+        {
+         "level": "info",
+         "message": "Book by: 2026-11-12 23:59"
+        }
+       ],
+       "changeFee": {
+        "pricing": {
+         "display": {
+          "amount": 100.68,
+          "currency": "USD"
+         },
+         "converted": true
+        },
+        "applicability": "beforeDeparture",
+        "label": "Change fee"
+       },
+       "hasChangeFee": true
+      },
+      "loyaltyProgramsSupported": true
+     },
+     "connections": [
+      {
+       "arrivalAirportCode": "LAX",
+       "arrivalAirportName": "Los Angeles International Airport",
+       "arrivalTime": "2026-12-12T20:17:00",
+       "changeAirport": false,
+       "departureAirportCode": "LAX",
+       "departureAirportName": "Los Angeles International Airport",
+       "departureTime": "2026-12-12T21:58:00",
+       "direction": "OUTBOUND",
+       "duration": {
+        "iso8601": "PT1H41M",
+        "minutes": 101
+       },
+       "overnight": false
+      },
+      {
+       "arrivalAirportCode": "SLC",
+       "arrivalAirportName": "Salt Lake City International Airport",
+       "arrivalTime": "2026-12-16T22:15:00",
+       "changeAirport": false,
+       "departureAirportCode": "SLC",
+       "departureAirportName": "Salt Lake City International Airport",
+       "departureTime": "2026-12-16T22:45:00",
+       "direction": "INBOUND",
+       "duration": {
+        "iso8601": "PT30M",
+        "minutes": 30
+       },
+       "overnight": false
+      }
+     ],
+     "offers": [
+      {
+       "offerId": "AwJ2MQAAAABq92l1udAKEZc2u67nLTRTp0EDK14Bjwf9J2UiQb772HTP47XPZuztgFEg8E0KmEx14YsQvZkNS5-KPJ_w9fpDWkhpapF04xf4GsAEr2553wYQ1XkFu3C1sswXxcsnRKbSYZiB2Sgn1CTBME7SFTLp7g-bfGGWKYMyYrHCQIKr-3eQqpQvlv7wPSBRE0WCcximqIz-GLNlsslnnhI79g9Gk55OjKCz6q3p_wDsWcp5tDN3uS1O740LPHvQtKsyeyN5iPNUtzk8pom-2S0EuX9iPC0nqIQLFWUKhu5PNEwKvEq1ofWJR6guZncnphmnHCWaGnVP2ax4Rw6ZLju2SCHl7zPZnkxGPpAyOunRVx-Hm_eMgHVayb3incOK2MUXNA7ODRhctPg_saM1ra9lzLnB5_8=",
+       "searchId": "01a1d14d72567313919e6acea2c0292d",
+       "expiration": "2026-11-12T19:58:02.447Z",
+       "pricing": {
+        "display": {
+         "total": 675.65,
+         "currency": "USD",
+         "base": 438.91,
+         "fees": 0,
+         "taxes": 236.74,
+         "perPassenger": {
+          "adult": {
+           "base": 109.73,
+           "currency": "USD",
+           "fees": 0,
+           "taxes": 59.18,
+           "total": 168.91
+          },
+          "child": {
+           "base": 109.73,
+           "currency": "USD",
+           "fees": 0,
+           "taxes": 59.18,
+           "total": 168.91
+          },
+          "infant": {
+           "base": 0,
+           "currency": "USD",
+           "fees": 0,
+           "taxes": 0,
+           "total": 0
+          }
+         }
+        },
+        "converted": true
+       },
+       "baggage": {
+        "hasCarryOnBag": true,
+        "hasCheckedBag": false,
+        "included": [
+         {
+          "bagType": "cabin",
+          "description": "Cabin bag",
+          "passengerType": "ALL",
+          "pieces": 1,
+          "pricing": {
+           "display": {
+            "amount": 0,
+            "currency": "USD"
+           },
+           "converted": true
+          },
+          "size": "45 LI 115 LCM",
+          "weightKg": null
+         }
+        ],
+        "paid": [
+         {
+          "bagType": "checked",
+          "description": "Checked bag",
+          "passengerType": "ALL",
+          "pieces": 1,
+          "pricing": {
+           "display": {
+            "amount": 46.38,
+            "currency": "USD"
+           },
+           "converted": true
+          },
+          "unit": "kg",
+          "weightKg": 22.7
+         }
+        ]
+       },
+       "fare": {
+        "family": "Delta Main Basic",
+        "mixedCabin": false,
+        "mixedFareFamily": false,
+        "seatsRemaining": 9,
+        "features": [
+         {
+          "type": "priority_boarding",
+          "status": "not-offered",
+          "description": "Priority boarding not available",
+          "segments": [
+           {
+            "segmentKey": "0e873966",
+            "status": "not-offered",
+            "name": "PRIORITY BOARDING"
+           },
+           {
+            "segmentKey": "87e72a04",
+            "status": "not-offered",
+            "name": "PRIORITY BOARDING"
+           },
+           {
+            "segmentKey": "de28bb4c",
+            "status": "not-offered",
+            "name": "PRIORITY BOARDING"
+           },
+           {
+            "segmentKey": "967377e8",
+            "status": "not-offered",
+            "name": "PRIORITY BOARDING"
+           }
+          ]
+         },
+         {
+          "type": "priority_security",
+          "status": "not-offered",
+          "description": "Priority security not available",
+          "segments": [
+           {
+            "segmentKey": "0e873966",
+            "status": "not-offered",
+            "name": "PRIORITY SECURITY"
+           },
+           {
+            "segmentKey": "87e72a04",
+            "status": "not-offered",
+            "name": "PRIORITY SECURITY"
+           },
+           {
+            "segmentKey": "de28bb4c",
+            "status": "not-offered",
+            "name": "PRIORITY SECURITY"
+           },
+           {
+            "segmentKey": "967377e8",
+            "status": "not-offered",
+            "name": "PRIORITY SECURITY"
+           }
+          ]
+         },
+         {
+          "type": "priority_check_in",
+          "status": "not-offered",
+          "description": "Priority check-in not available",
+          "segments": [
+           {
+            "segmentKey": "0e873966",
+            "status": "not-offered",
+            "name": "DELTA ONE CHECK IN"
+           },
+           {
+            "segmentKey": "87e72a04",
+            "status": "not-offered",
+            "name": "DELTA ONE CHECK IN"
+           },
+           {
+            "segmentKey": "de28bb4c",
+            "status": "not-offered",
+            "name": "DELTA ONE CHECK IN"
+           },
+           {
+            "segmentKey": "967377e8",
+            "status": "not-offered",
+            "name": "DELTA ONE CHECK IN"
+           }
+          ]
+         },
+         {
+          "type": "lounge",
+          "status": "not-offered",
+          "description": "Lounge access not available",
+          "segments": [
+           {
+            "segmentKey": "0e873966",
+            "status": "not-offered",
+            "name": "EXECUTIVE LOUNGE"
+           },
+           {
+            "segmentKey": "87e72a04",
+            "status": "not-offered",
+            "name": "EXECUTIVE LOUNGE"
+           },
+           {
+            "segmentKey": "de28bb4c",
+            "status": "not-offered",
+            "name": "EXECUTIVE LOUNGE"
+           },
+           {
+            "segmentKey": "967377e8",
+            "status": "not-offered",
+            "name": "EXECUTIVE LOUNGE"
+           }
+          ]
+         },
+         {
+          "type": "mileage_accrual",
+          "status": "not-offered",
+          "description": "Mileage accrual not available",
+          "segments": [
+           {
+            "segmentKey": "0e873966",
+            "status": "not-offered",
+            "name": "BONUS MILES"
+           },
+           {
+            "segmentKey": "87e72a04",
+            "status": "not-offered",
+            "name": "BONUS MILES"
+           },
+           {
+            "segmentKey": "de28bb4c",
+            "status": "not-offered",
+            "name": "BONUS MILES"
+           },
+           {
+            "segmentKey": "967377e8",
+            "status": "not-offered",
+            "name": "BONUS MILES"
+           }
+          ]
+         }
+        ]
+       },
+       "seats": {
+        "seatReservation": {
+         "description": "Seat selection not available",
+         "status": "not-offered"
+        }
+       },
+       "segmentAmenities": [
+        {
+         "aircraftType": "32Q",
+         "amenities": [
+          {
+           "available": true,
+           "category": "wifi",
+           "chargeable": false,
+           "name": "Wi-Fi"
+          },
+          {
+           "available": true,
+           "category": "power",
+           "chargeable": false,
+           "name": "AC Power, USB-A"
+          },
+          {
+           "available": true,
+           "category": "entertainment",
+           "chargeable": false,
+           "name": "Seatback On-Demand"
+          },
+          {
+           "available": true,
+           "category": "food",
+           "chargeable": false,
+           "name": "Snack"
+          },
+          {
+           "available": true,
+           "category": "seat_comfort",
+           "details": "31\" pitch",
+           "name": "Standard Legroom"
+          }
+         ],
+         "segmentKey": "0e873966"
+        },
+        {
+         "aircraftType": "E7W",
+         "amenities": [
+          {
+           "available": true,
+           "category": "wifi",
+           "chargeable": true,
+           "name": "Wi-Fi"
+          },
+          {
+           "available": true,
+           "category": "power",
+           "chargeable": false,
+           "name": "AC Power, USB-A"
+          },
+          {
+           "available": false,
+           "category": "entertainment",
+           "name": "Entertainment"
+          },
+          {
+           "available": false,
+           "category": "food",
+           "name": "Food"
+          },
+          {
+           "available": true,
+           "category": "seat_comfort",
+           "details": "32\" pitch",
+           "name": "Above Average Legroom"
+          }
+         ],
+         "segmentKey": "87e72a04"
+        },
+        {
+         "aircraftType": "321",
+         "amenities": [
+          {
+           "available": true,
+           "category": "wifi",
+           "chargeable": false,
+           "name": "Wi-Fi"
+          },
+          {
+           "available": true,
+           "category": "power",
+           "chargeable": false,
+           "name": "AC Power, USB-A"
+          },
+          {
+           "available": true,
+           "category": "entertainment",
+           "chargeable": false,
+           "name": "Seatback On-Demand"
+          },
+          {
+           "available": true,
+           "category": "food",
+           "chargeable": false,
+           "name": "Snack"
+          },
+          {
+           "available": true,
+           "category": "seat_comfort",
+           "details": "31\" pitch",
+           "name": "Standard Legroom"
+          }
+         ],
+         "segmentKey": "de28bb4c"
+        },
+        {
+         "aircraftType": "321",
+         "amenities": [
+          {
+           "available": true,
+           "category": "wifi",
+           "chargeable": false,
+           "name": "Wi-Fi"
+          },
+          {
+           "available": true,
+           "category": "power",
+           "chargeable": false,
+           "name": "AC Power, USB-A"
+          },
+          {
+           "available": true,
+           "category": "entertainment",
+           "chargeable": false,
+           "name": "Seatback On-Demand"
+          },
+          {
+           "available": true,
+           "category": "food",
+           "chargeable": false,
+           "name": "Snack"
+          },
+          {
+           "available": true,
+           "category": "seat_comfort",
+           "details": "31\" pitch",
+           "name": "Standard Legroom"
+          }
+         ],
+         "segmentKey": "967377e8"
+        }
+       ],
+       "segmentFares": [
+        {
+         "bookingCode": "E",
+         "cabin": "Economy",
+         "fareBasisCode": "VAVSH3BC",
+         "fareFamily": "Delta Main Basic",
+         "seatsRemaining": 9,
+         "segmentKey": "0e873966"
+        },
+        {
+         "bookingCode": "E",
+         "cabin": "Economy",
+         "fareBasisCode": "VAVSH3BC",
+         "fareFamily": "Delta Main Basic",
+         "seatsRemaining": 9,
+         "segmentKey": "87e72a04"
+        },
+        {
+         "bookingCode": "E",
+         "cabin": "Economy",
+         "fareBasisCode": "VAVSH3BC",
+         "fareFamily": "Delta Main Basic",
+         "seatsRemaining": 9,
+         "segmentKey": "de28bb4c"
+        },
+        {
+         "bookingCode": "E",
+         "cabin": "Economy",
+         "fareBasisCode": "VAVSH3BC",
+         "fareFamily": "Delta Main Basic",
+         "seatsRemaining": 9,
+         "segmentKey": "967377e8"
+        }
+       ],
+       "terms": {
+        "changeable": true,
+        "refundable": false,
+        "summary": [
+         {
+          "level": "danger",
+          "message": "Non-refundable"
+         },
+         {
+          "level": "warning",
+          "message": "Changes allowed with penalty (fee varies)"
+         },
+         {
+          "level": "info",
+          "message": "Book by: 2026-11-12 23:59"
+         }
+        ],
+        "changeFee": {
+         "pricing": {
+          "display": {
+           "amount": 100.68,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "applicability": "beforeDeparture",
+         "label": "Change fee"
+        },
+        "hasChangeFee": true
+       },
+       "loyaltyProgramsSupported": true
+      }
+     ],
+     "isCheapest": false,
+     "journeyKey": "d5c7132a6c2f94d1",
+     "legDurations": [
+      {
+       "dayChange": 0,
+       "direction": "OUTBOUND",
+       "duration": {
+        "iso8601": "PT4H14M",
+        "minutes": 254
+       },
+       "overnightFlight": false
+      },
+      {
+       "dayChange": 0,
+       "direction": "INBOUND",
+       "duration": {
+        "iso8601": "PT4H50M",
+        "minutes": 290
+       },
+       "overnightFlight": false
+      }
+     ],
+     "parameters": {
+      "adults": 0,
+      "children": 0,
+      "infants": 0
+     },
+     "segments": [
+      {
+       "arrivalTime": "2026-12-12T20:17:00",
+       "carrier": {
+        "marketingCode": "DL",
+        "marketingLogo": "https://assets.nuitee.flights/static/images/airlines/DL.png",
+        "marketingName": "Delta Air Lines",
+        "operatingCode": "DL",
+        "operatingLogo": "https://assets.nuitee.flights/static/images/airlines/DL.png",
+        "operatingName": "Delta Air Lines"
+       },
+       "departureTime": "2026-12-12T18:43:00",
+       "originCode": "SFO",
+       "destinationCode": "LAX",
+       "direction": "OUTBOUND",
+       "duration": {
+        "iso8601": "PT1H34M",
+        "minutes": 94
+       },
+       "flight": {
+        "marketingNumber": "2793",
+        "operatingNumber": "2793"
+       },
+       "segmentKey": "0e873966",
+       "originName": "San Francisco International Airport",
+       "destinationName": "Los Angeles International Airport",
+       "stopCount": 0
+      },
+      {
+       "arrivalTime": "2026-12-12T22:57:00",
+       "carrier": {
+        "marketingCode": "DL",
+        "marketingLogo": "https://assets.nuitee.flights/static/images/airlines/DL.png",
+        "marketingName": "Delta Air Lines",
+        "operatingCode": "DL",
+        "operatingLogo": "https://assets.nuitee.flights/static/images/airlines/DL.png",
+        "operatingName": "Delta Air Lines"
+       },
+       "departureTime": "2026-12-12T21:58:00",
+       "originCode": "LAX",
+       "destinationCode": "SAN",
+       "direction": "OUTBOUND",
+       "duration": {
+        "iso8601": "PT59M",
+        "minutes": 59
+       },
+       "flight": {
+        "marketingNumber": "3746",
+        "operatingNumber": "3746"
+       },
+       "segmentKey": "87e72a04",
+       "originName": "Los Angeles International Airport",
+       "destinationName": "San Diego International Airport",
+       "stopCount": 0
+      },
+      {
+       "arrivalTime": "2026-12-16T22:15:00",
+       "carrier": {
+        "marketingCode": "DL",
+        "marketingLogo": "https://assets.nuitee.flights/static/images/airlines/DL.png",
+        "marketingName": "Delta Air Lines",
+        "operatingCode": "DL",
+        "operatingLogo": "https://assets.nuitee.flights/static/images/airlines/DL.png",
+        "operatingName": "Delta Air Lines"
+       },
+       "departureTime": "2026-12-16T19:09:00",
+       "originCode": "SAN",
+       "destinationCode": "SLC",
+       "direction": "INBOUND",
+       "duration": {
+        "iso8601": "PT2H6M",
+        "minutes": 126
+       },
+       "flight": {
+        "marketingNumber": "1252",
+        "operatingNumber": "1252"
+       },
+       "segmentKey": "de28bb4c",
+       "originName": "San Diego International Airport",
+       "destinationName": "Salt Lake City International Airport",
+       "stopCount": 0
+      },
+      {
+       "arrivalTime": "2026-12-16T23:59:00",
+       "carrier": {
+        "marketingCode": "DL",
+        "marketingLogo": "https://assets.nuitee.flights/static/images/airlines/DL.png",
+        "marketingName": "Delta Air Lines",
+        "operatingCode": "DL",
+        "operatingLogo": "https://assets.nuitee.flights/static/images/airlines/DL.png",
+        "operatingName": "Delta Air Lines"
+       },
+       "departureTime": "2026-12-16T22:45:00",
+       "originCode": "SLC",
+       "destinationCode": "SFO",
+       "direction": "INBOUND",
+       "duration": {
+        "iso8601": "PT2H14M",
+        "minutes": 134
+       },
+       "flight": {
+        "marketingNumber": "1091",
+        "operatingNumber": "1091"
+       },
+       "segmentKey": "967377e8",
+       "originName": "Salt Lake City International Airport",
+       "destinationName": "San Francisco International Airport",
+       "stopCount": 0
+      }
+     ],
+     "timestamp": "2026-11-12T19:48:00.889Z",
+     "totalDuration": {
+      "iso8601": "PT9H4M",
+      "minutes": 544
+     }
+    },
+    {
+     "cheapestOffer": {
+      "offerId": "AwJ2MQAAAABq92l1c-7RxxL6U56nnZvQ6v2RQU4Dg_thJJgzTAMKt7LkwJ2TXYwE7TCbvWzLDo3FGn6ZgafilhIzRjiIA_3eZIMJdE-Yha3C6MKe8hJeQAQthjobpyjqK3-TIPjqMQITL8ZDyMrWd4W8INP9siQQAarsZ4XsezEbH4gVdV2LM2Wp3NIKoqvrS2JPoLLG8mu8gtS1-bm1VuVngNfbJxWAZG6kewSwccOgDTbuYerOvDRlg5-pCmeexBeErntWL5ONySXP0qkKgXaJIvvSNmMrbur2SADrT3Ts6t3AV9zBPelXq7dm5pXZLd2ltkhE4B2wck6CbSVO-dRXTvR-hjW8_j3azZEGqzgarzz5tRpWoHoSMGzJDROQbSloxJRmujjiCcFam7O-cuc42bSdCweqeJU=",
+      "searchId": "01a1d14d72567313919e6acea2c0292d",
+      "expiration": "2026-11-12T19:58:00.182Z",
+      "pricing": {
+       "display": {
+        "total": 2644.08,
+        "currency": "USD",
+        "base": 2343.86,
+        "fees": 0,
+        "taxes": 300.22,
+        "perPassenger": {
+         "adult": {
+          "base": 585.97,
+          "currency": "USD",
+          "fees": 0,
+          "taxes": 75.06,
+          "total": 661.03
+         },
+         "child": {
+          "base": 585.97,
+          "currency": "USD",
+          "fees": 0,
+          "taxes": 75.06,
+          "total": 661.03
+         },
+         "infant": {
+          "base": 0,
+          "currency": "USD",
+          "fees": 0,
+          "taxes": 0,
+          "total": 0
+         }
+        }
+       },
+       "converted": true
+      },
+      "baggage": {
+       "hasCarryOnBag": true,
+       "hasCheckedBag": false,
+       "included": [
+        {
+         "bagType": "cabin",
+         "description": "Cabin bag",
+         "passengerType": "ALL",
+         "pieces": 1,
+         "pricing": {
+          "display": {
+           "amount": 0,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "weightKg": null
+        }
+       ]
+      },
+      "fare": {
+       "family": "Main Cabin",
+       "mixedCabin": false,
+       "mixedFareFamily": true,
+       "seatsRemaining": 7,
+       "features": [
+        {
+         "type": "priority_boarding",
+         "status": "chargeable",
+         "description": "Priority boarding available for a fee",
+         "segments": [
+          {
+           "segmentKey": "beb4a356",
+           "status": "chargeable"
+          },
+          {
+           "segmentKey": "46e44599",
+           "status": "chargeable"
+          }
+         ]
+        },
+        {
+         "type": "lounge",
+         "status": "not-offered",
+         "description": "Lounge access varies by flight",
+         "segments": [
+          {
+           "segmentKey": "beb4a356",
+           "status": "chargeable"
+          },
+          {
+           "segmentKey": "46e44599",
+           "status": "not-offered"
+          }
+         ]
+        },
+        {
+         "type": "mileage_accrual",
+         "status": "included",
+         "description": "Mileage accrual included",
+         "segments": [
+          {
+           "segmentKey": "beb4a356",
+           "status": "included"
+          },
+          {
+           "segmentKey": "46e44599",
+           "status": "included"
+          }
+         ]
+        }
+       ]
+      },
+      "seats": {
+       "seatReservation": {
+        "description": "Free seat selection included",
+        "status": "included"
+       }
+      },
+      "segmentAmenities": [
+       {
+        "aircraftType": "737",
+        "amenities": [
+         {
+          "available": true,
+          "category": "food",
+          "chargeable": true,
+          "name": "Meal"
+         },
+         {
+          "available": true,
+          "category": "wifi",
+          "chargeable": false,
+          "name": "Wi-Fi"
+         },
+         {
+          "available": true,
+          "category": "entertainment",
+          "chargeable": false,
+          "name": "In-Flight Entertainment"
+         }
+        ],
+        "segmentKey": "beb4a356"
+       }
+      ],
+      "segmentFares": [
+       {
+        "bookingCode": "V",
+        "cabin": "Economy",
+        "fareBasisCode": "VH4OAVMN",
+        "fareFamily": "Main Cabin",
+        "seatsRemaining": 7,
+        "segmentKey": "beb4a356"
+       },
+       {
+        "bookingCode": "H",
+        "cabin": "Economy",
+        "fareBasisCode": "HAA0OKEN",
+        "fareFamily": "Economy",
+        "seatsRemaining": 9,
+        "segmentKey": "46e44599"
+       }
+      ],
+      "terms": {
+       "changeable": true,
+       "refundable": false,
+       "summary": [
+        {
+         "level": "danger",
+         "message": "Non-refundable"
+        },
+        {
+         "level": "success",
+         "message": "Changes allowed"
+        }
+       ]
+      },
+      "loyaltyProgramsSupported": true
+     },
+     "offers": [
+      {
+       "offerId": "AwJ2MQAAAABq92l1oeJodf05RR1-MmVajB8sE3H9xPpxktdfrA3-WJy9RS_hNbi_zfKa_bJwsIiBnHGDbLTI69FcbOtmaNH_Kev1anpw6R0z4M4AmiCv01isV8IefU7IlQPDQ7marBR6_j2-cAQoq-mzw788aGe-0jWI6x9dvWvCXuMsQE62mQbfjkFMPPYBG2nAt_TW-yHkAJjVNo3CD2dU2xu2XaFczn8hnkWLzYMp8w3RfRDv8mRa-r42-0JIRV9KY4frae-rW1XICc9eDVne0msAKULJi6mcAVYv0M9pynD6nGhJ6jPLef5lMwKo3om1H6QnlqNrV39SQXQT1coda_QTZTNGHULVsybYb9nzKOfHHiaXtEnrEIQSCDRsW2OPvU9l91pdqG1giKscXE0nopaOOac9aNI=",
+       "searchId": "01a1d14d72567313919e6acea2c0292d",
+       "expiration": "2026-11-12T19:58:00.182Z",
+       "pricing": {
+        "display": {
+         "total": 2644.08,
+         "currency": "USD",
+         "base": 2343.86,
+         "fees": 0,
+         "taxes": 300.22,
+         "perPassenger": {
+          "adult": {
+           "base": 585.97,
+           "currency": "USD",
+           "fees": 0,
+           "taxes": 75.06,
+           "total": 661.03
+          },
+          "child": {
+           "base": 585.97,
+           "currency": "USD",
+           "fees": 0,
+           "taxes": 75.06,
+           "total": 661.03
+          },
+          "infant": {
+           "base": 0,
+           "currency": "USD",
+           "fees": 0,
+           "taxes": 0,
+           "total": 0
+          }
+         }
+        },
+        "converted": true
+       },
+       "baggage": {
+        "hasCarryOnBag": true,
+        "hasCheckedBag": false,
+        "included": [
+         {
+          "bagType": "cabin",
+          "description": "Cabin bag",
+          "passengerType": "ALL",
+          "pieces": 1,
+          "pricing": {
+           "display": {
+            "amount": 0,
+            "currency": "USD"
+           },
+           "converted": true
+          },
+          "weightKg": null
+         }
+        ]
+       },
+       "fare": {
+        "family": "Main Cabin",
+        "mixedCabin": false,
+        "mixedFareFamily": true,
+        "seatsRemaining": 7,
+        "features": [
+         {
+          "type": "priority_boarding",
+          "status": "chargeable",
+          "description": "Priority boarding available for a fee",
+          "segments": [
+           {
+            "segmentKey": "beb4a356",
+            "status": "chargeable"
+           },
+           {
+            "segmentKey": "46e44599",
+            "status": "chargeable"
+           }
+          ]
+         },
+         {
+          "type": "lounge",
+          "status": "not-offered",
+          "description": "Lounge access varies by flight",
+          "segments": [
+           {
+            "segmentKey": "beb4a356",
+            "status": "chargeable"
+           },
+           {
+            "segmentKey": "46e44599",
+            "status": "not-offered"
+           }
+          ]
+         },
+         {
+          "type": "mileage_accrual",
+          "status": "included",
+          "description": "Mileage accrual included",
+          "segments": [
+           {
+            "segmentKey": "beb4a356",
+            "status": "included"
+           },
+           {
+            "segmentKey": "46e44599",
+            "status": "included"
+           }
+          ]
+         }
+        ]
+       },
+       "seats": {
+        "seatReservation": {
+         "description": "Free seat selection included",
+         "status": "included"
+        }
+       },
+       "segmentAmenities": [
+        {
+         "aircraftType": "737",
+         "amenities": [
+          {
+           "available": true,
+           "category": "food",
+           "chargeable": true,
+           "name": "Meal"
+          },
+          {
+           "available": true,
+           "category": "wifi",
+           "chargeable": false,
+           "name": "Wi-Fi"
+          },
+          {
+           "available": true,
+           "category": "entertainment",
+           "chargeable": false,
+           "name": "In-Flight Entertainment"
+          }
+         ],
+         "segmentKey": "beb4a356"
+        }
+       ],
+       "segmentFares": [
+        {
+         "bookingCode": "V",
+         "cabin": "Economy",
+         "fareBasisCode": "VH4OAVMN",
+         "fareFamily": "Main Cabin",
+         "seatsRemaining": 7,
+         "segmentKey": "beb4a356"
+        },
+        {
+         "bookingCode": "H",
+         "cabin": "Economy",
+         "fareBasisCode": "HAA0OKEN",
+         "fareFamily": "Economy",
+         "seatsRemaining": 9,
+         "segmentKey": "46e44599"
+        }
+       ],
+       "terms": {
+        "changeable": true,
+        "refundable": false,
+        "summary": [
+         {
+          "level": "danger",
+          "message": "Non-refundable"
+         },
+         {
+          "level": "success",
+          "message": "Changes allowed"
+         }
+        ]
+       },
+       "loyaltyProgramsSupported": true
+      }
+     ],
+     "isCheapest": false,
+     "journeyKey": "03f0b2695295ee48",
+     "legDurations": [
+      {
+       "dayChange": 0,
+       "direction": "OUTBOUND",
+       "duration": {
+        "iso8601": "PT1H37M",
+        "minutes": 97
+       },
+       "overnightFlight": false
+      },
+      {
+       "dayChange": 0,
+       "direction": "INBOUND",
+       "duration": {
+        "iso8601": "PT1H44M",
+        "minutes": 104
+       },
+       "overnightFlight": false
+      }
+     ],
+     "parameters": {
+      "adults": 0,
+      "children": 0,
+      "infants": 0
+     },
+     "segments": [
+      {
+       "arrivalTime": "2026-12-12T15:49:00",
+       "carrier": {
+        "marketingCode": "AA",
+        "marketingLogo": "https://assets.nuitee.flights/static/images/airlines/AA.png",
+        "marketingName": "American Airlines",
+        "operatingCode": "AS",
+        "operatingLogo": "https://assets.nuitee.flights/static/images/airlines/AS.png",
+        "operatingName": "Alaska Airlines"
+       },
+       "departureTime": "2026-12-12T14:12:00",
+       "originCode": "SFO",
+       "destinationCode": "SAN",
+       "direction": "OUTBOUND",
+       "duration": {
+        "iso8601": "PT1H37M",
+        "minutes": 97
+       },
+       "flight": {
+        "marketingNumber": "9341",
+        "operatingNumber": "9341"
+       },
+       "segmentKey": "beb4a356",
+       "originName": "San Francisco International Airport",
+       "destinationName": "San Diego International Airport",
+       "stopCount": 0
+      },
+      {
+       "arrivalTime": "2026-12-16T21:25:00",
+       "carrier": {
+        "marketingCode": "UA",
+        "marketingLogo": "https://assets.nuitee.flights/static/images/airlines/UA.png",
+        "marketingName": "United Airlines",
+        "operatingCode": "UA",
+        "operatingLogo": "https://assets.nuitee.flights/static/images/airlines/UA.png",
+        "operatingName": "United Airlines"
+       },
+       "departureTime": "2026-12-16T19:41:00",
+       "originCode": "SAN",
+       "destinationCode": "SFO",
+       "direction": "INBOUND",
+       "duration": {
+        "iso8601": "PT1H44M",
+        "minutes": 104
+       },
+       "flight": {
+        "marketingNumber": "2278",
+        "operatingNumber": "2278"
+       },
+       "segmentKey": "46e44599",
+       "originName": "San Diego International Airport",
+       "destinationName": "San Francisco International Airport",
+       "stopCount": 0
+      }
+     ],
+     "timestamp": "2026-11-12T19:48:00.182Z",
+     "totalDuration": {
+      "iso8601": "PT3H21M",
+      "minutes": 201
+     }
+    }
+   ],
+   "sortMetadata": {
+    "best": {
+     "journeyKey": "0066a9a93554c975",
+     "offerId": "AwJ2MQAAAABq92l1bRxTK3YsboVkZSKq_yEz-NopdutUvxS3z8kw-zIGZ_g_c9VOuNDxLHjygHfRGawueeWhG9rUJ9k5CpGtj_zdFHOxrii8FIjlAc3jxJnO6mdg6MB1606xdRDgYMzI7SfU3xSkVkP7NxL63IFKGXy0SzTGNOCvpsstKKdpTYwwrDQXVF5D4H-f8PXlP2dex1GZ_YBsYgyF-GzulROw4pbCmZvehwGJ-J5egZL5sqQe3xp64lxJWECDZuuk6TcHmnMjngq4BloG-bUF6pMad-zGGsTOYSJ4rnUCFvYOCOoU8SHe1XGhbbM3RR1SJ-0plSgk3SxpoW3_2cdv12IVPgx52HXfZCCg8kxjtRmCR3Rt8Mm2blviFst_dEL16lIQwSwv3c8hEEsrLpoqA5_HF_M=",
+     "price": 114.84,
+     "currency": "USD"
+    },
+    "duration": {
+     "journeyKey": "77ed201f94ab308f",
+     "offerId": "AwJ2MQAAAABq92l1hrL8EnUFwioMBk5guePR7CrnkLBUZyxTUkRoQwz1cYhBj9Csiep2MVshyPteZr8rr57c33Db8BCvHxja9IJHo1R0GNYhN3s4TGqO5UXwKYNeNl6ttBMREAIYp5n8uu9nERtisNbN_kVrB761qefG-27wMy3SrUBvyririV3g83q8-RFUCOQ1w1k2o_uYFS-CXbbSu7OV-7pgVSA2DcO1uOQX-4x6MAS9tNsojYQG7-ampYmft1Jx60lSQOOCU8_DdcGaysWXxR3A0hO47LRh3JgfJEFgcQCi6pKqhejDcFc00bofffYiUB5qQgcXdTkVN9C5vt35XZpBbhbsyYXMf7IX2_d4c8_SSuLks6uYfMgrvP9cMeOL1CzyjssuHUnsM7DitZX4fNYSiubwlhc=",
+     "price": 730.29,
+     "currency": "USD"
+    },
+    "price": {
+     "journeyKey": "0066a9a93554c975",
+     "offerId": "AwJ2MQAAAABq92l1bRxTK3YsboVkZSKq_yEz-NopdutUvxS3z8kw-zIGZ_g_c9VOuNDxLHjygHfRGawueeWhG9rUJ9k5CpGtj_zdFHOxrii8FIjlAc3jxJnO6mdg6MB1606xdRDgYMzI7SfU3xSkVkP7NxL63IFKGXy0SzTGNOCvpsstKKdpTYwwrDQXVF5D4H-f8PXlP2dex1GZ_YBsYgyF-GzulROw4pbCmZvehwGJ-J5egZL5sqQe3xp64lxJWECDZuuk6TcHmnMjngq4BloG-bUF6pMad-zGGsTOYSJ4rnUCFvYOCOoU8SHe1XGhbbM3RR1SJ-0plSgk3SxpoW3_2cdv12IVPgx52HXfZCCg8kxjtRmCR3Rt8Mm2blviFst_dEL16lIQwSwv3c8hEEsrLpoqA5_HF_M=",
+     "price": 114.84,
+     "currency": "USD"
+    },
+    "stops": {
+     "journeyKey": "0066a9a93554c975",
+     "offerId": "AwJ2MQAAAABq92l1bRxTK3YsboVkZSKq_yEz-NopdutUvxS3z8kw-zIGZ_g_c9VOuNDxLHjygHfRGawueeWhG9rUJ9k5CpGtj_zdFHOxrii8FIjlAc3jxJnO6mdg6MB1606xdRDgYMzI7SfU3xSkVkP7NxL63IFKGXy0SzTGNOCvpsstKKdpTYwwrDQXVF5D4H-f8PXlP2dex1GZ_YBsYgyF-GzulROw4pbCmZvehwGJ-J5egZL5sqQe3xp64lxJWECDZuuk6TcHmnMjngq4BloG-bUF6pMad-zGGsTOYSJ4rnUCFvYOCOoU8SHe1XGhbbM3RR1SJ-0plSgk3SxpoW3_2cdv12IVPgx52HXfZCCg8kxjtRmCR3Rt8Mm2blviFst_dEL16lIQwSwv3c8hEEsrLpoqA5_HF_M=",
+     "price": 114.84,
+     "currency": "USD"
+    }
+   },
+   "searchId": "01a1d14d72567313919e6acea2c0292d",
+   "sessionId": "session_01a1d14d724fATAs0J453ef69eEHSCqureJp0Zz4"
+  }
+ ]
+}

@@ -21,7 +21,7 @@ from fasthtml.common import A, Button, Div, Form, H1, H2, H3, Input, Label, Li, 
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import RedirectResponse
 
-from gitaway import affiliate, catalog, community, creatordraft as cd, members, partners, planforme as pfm, reports, session as ses, showcase, stats
+from gitaway import affiliate, catalog, community, creatordraft as cd, liteapi, members, partners, planforme as pfm, reports, session as ses, showcase, stats
 from gitaway.icons import icon
 from gitaway.layout import page
 from gitaway.pages import creatorclaim as claims
@@ -188,11 +188,13 @@ def admin_page(drafted=()):
     orders = pfm.admin_rows()
     owed = pfm.refunds_due()
     pt = pfm.totals(orders, owed)
+    searches = liteapi.searches_today()
     cards = (("Creators", f"{len(people)} of {GOAL}", "ad-goal"), ("Live trips", str(live), "ad-live"), ("Reports", str(len(rep)), "ad-reports"), ("Estimated commission", catalog.money(total), "ad-commission"),
              ("Klook links not tracked", str(broken), "ad-klook-failures"),
              ("Plain links, no commission (7 days)", " · ".join(f"{lane} {n}" for lane, n in sorted(plain.items())) or "none", "ad-plain"),
              ("Plan it for me", f"{pt['paid']} paid · {catalog.money(pt['revenue_cents'])}", "ad-pfm"), ("Refunds due", f"{pt['refunds']} · {catalog.money(pt['refund_cents'])}", "ad-refunds"),
-             ("Agent cost", _dollars(pt["ai_cost_micros"]), "ad-pfm-cost"))
+             ("Agent cost", _dollars(pt["ai_cost_micros"]), "ad-pfm-cost"),
+             ("LiteAPI", f"{liteapi.mode()} · {searches} search{'es' if searches != 1 else ''} today", "ad-liteapi"))     # F-220: the key's kind, never the key
     fresh = sum(1 for r in rep if not r["seen"])
     return page("Admin", Main(
         Div(H1("Admin", cls="ad-title"),

@@ -1,0 +1,7 @@
+{
+ "error": {
+  "code": 4000,
+  "description": "you must search by either country code, latitude and longitude, placeId, lastUpdatedAt, IATA code, or hotelIds",
+  "message": "bad request"
+ }
+}

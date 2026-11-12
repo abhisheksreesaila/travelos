@@ -17,7 +17,7 @@ GRID = "/plan/grid?senior=Grandma&pet=dog"
 TIMES = ((360, 1015, 1), (425, 930, 0), (500, 1115, 1), (580, 1090, 0), (690, 1195, 0), (795, 1305, 0), (945, 110, 1), (1370, 425, 0))
 
 
-def big(trip):
+def big(trip, family=""):
     flights = tuple(Flight(f"bf{i}", f"Test Air {i}", "LAX", dep, arr, stops, 96_000 + i * 7_300, "1 stop" if stops else "Nonstop", overnight=arr < dep)
                     for i, (dep, arr, stops) in enumerate(TIMES, 1))
     stays = tuple(Stay(f"bh{i}", f"Test Stay {i}", "Town", "Two queens", 60_000 + i * 11_100, ("Pet friendly",) if i % 3 == 0 else ()) for i in range(1, 11))
