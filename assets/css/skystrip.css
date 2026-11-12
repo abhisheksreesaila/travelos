@@ -1,7 +1,7 @@
 /* F-223: the sky strip (gitaway/pages/skystrip.py), from docs/design/trip-matrix/weather.html. A forecast day is solid, a typical day dotted, a day
    with no weather plain; the asked days are ink. Colour means a kind: the weather blue (--k-wx) is the sky's only colour, never a day's.
    Rem is 12px on a laptop and 16px on a phone; every small size goes through --text-min or --label-min. */
-.ss-strip { background: var(--card); border-radius: var(--r-lg); box-shadow: var(--sh1); padding: 1.333rem 1.5rem 1.5rem; color: var(--ink); }
+.ss-strip { min-width: 0; max-width: 100%; background: var(--card); border-radius: var(--r-lg); box-shadow: var(--sh1); padding: 1.333rem 1.5rem 1.5rem; color: var(--ink); }
 .ss-head { display: flex; align-items: center; gap: 0.833rem; margin-bottom: 1rem; flex-wrap: wrap; }
 .ss-art { width: 3.667rem; height: 2.333rem; border-radius: 0.667rem; overflow: hidden; flex: none; }
 .ss-title { font: 700 max(var(--text-min), 1.5rem)/1.2 var(--font-body); letter-spacing: -0.02em; }

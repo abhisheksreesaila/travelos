@@ -81,3 +81,12 @@ def test_motion_only_moves_and_stops_under_reduced_motion():
     css = CSS.read_text(encoding="utf-8")
     assert "prefers-reduced-motion: reduce" in css
     assert not re.search(r"(?<![\w.-])\d*\.?\d+m?s\b", re.sub(r"/\*.*?\*/", "", css, flags=re.S)), "times come from the --motion-* tokens"
+
+
+def test_the_preview_shows_every_drawing_on_the_showcase_and_is_gone_in_production(client, monkeypatch):
+    monkeypatch.setenv("GITAWAY_SHOWCASE", "1")
+    r = client.get("/dev/placeart")
+    assert r.status_code == 200 and r.text.count('class="pa-svg"') == 2 * len(placeart.SLUGS) + len(placeart.WX) + 1   # and the Tahoe strip wears its own
+    assert "Typical, not a forecast yet" in r.text and "No weather for this place yet" in r.text
+    monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
+    assert client.get("/dev/placeart").status_code == 404
