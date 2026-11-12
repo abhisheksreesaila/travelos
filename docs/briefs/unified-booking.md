@@ -25,6 +25,16 @@ GitAway's core stays sharing, creators and the family trip. The matrix is the mo
 7. **The report**: after a planning session, a fun summary: "You compared 6 places and 41 stays; the cheapest week was Dec 14; you found LA + San Diego for $50 more."
 8. **Ready to post**: a trip card made for Instagram (the place's art, dates, the route, a link back to the trip), so sharing GitAway is one tap.
 
+## The cover tells this story (draft, 2026-11-12)
+Headline: **"Find the trip you didn't know you needed. Plan it together."** (draft; the founder rejected "See the trip you didn't know to ask for" as open to misreading.)
+Five beats, replacing the eight stages of cover v5:
+1. **Say it**: one sentence types itself ("A family of 4, from SFO, somewhere warm, Dec 12 to 16").
+2. **See what you didn't know**: the matrix fills in; one square lights up: "LA + San Diego, $50 more than San Diego alone."
+3. **Feel the place**: the calendar wears the weather, the place wears its art.
+4. **Decide together**: family votes land on squares, a creator's pick beside them.
+5. **Share it**: the trip becomes the Instagram-ready card. Close: "Plan it together. Booking opens soon."
+The cockpit and the creator tools leave the cover for their own pages. Fewer, calmer moves (cover v5 felt jittery to the founder); drafted in the designer before any code.
+
 ## Look
 Direction A, omxqua: tiles stay opaque. Translucency only where the design taste allows it, the floating islands over the matrix (the top and side that already fold into islands on a laptop) and the phone's tab bar, readable over anything under them. Phone and laptop designed together.
 
