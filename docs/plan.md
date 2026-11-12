@@ -1431,9 +1431,13 @@ Needs: F-221
 - [ ] after planning, a fun report of what the family compared and found
 - [ ] a trip card image (the place's art, dates, route, a link back) shared through the phone's share sheet
 
-## F-227 The cover rebuilt [todo]
+## F-227 The cover rebuilt [review]
 Needs: F-221
-- [ ] three parts under the headline, calm on a laptop and smooth on a mid-range phone; real screens from the matrix
+- [x] three parts under the headline (1 Compare, 2 Plan it together, 3 Leave a trail others can follow, "Bloggers and vloggers welcome"), the line again with "Booking opens soon" (D-426)
+- [x] cover A, one stage: a pinned frame (CSS sticky), the parts cross-fade through it, nothing scroll-linked; Liquid swaps and moments on the spring tokens, laptop too; reduced motion a plain fade (D-427, D-431)
+- [x] smooth on a mid-range phone: scripts/cover_fps.py at CPU 4x, 390 and 1440: 60 fps, no frame over 25 ms, no bursts, no long task; film strips docs/report/cover-f227-*.png; screenshots docs/design/trip-matrix/built-cover/
+- [x] the place art ported from art.js (scripts/cover_art.py, D-428); the made-up parts said in part 1 and the footer, the weather NOAA's (D-429)
+- [ ] real screens from the matrix: the frame's screens are drawn HTML from the artboard until F-222 ships; swap them at `cover.SCREENS` (D-430)
 
 ## F-228 The family test [todo]
 Needs: F-222, F-224

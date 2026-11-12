@@ -274,7 +274,7 @@ def page(footer_links, drive=()):
     """The whole cover document. `footer_links` are the landing's (home.footer_links); `drive` the Travelpayouts Drive tag when it is switched on (home._drive)."""
     from gitaway.itinerary_view import plan_for_me_card
     card = plan_for_me_card("Rather not plan it yourself?", "/plan-for-me", "pf-card cv-pf")
-    head = styles(Script(src="/assets/js/mode.js"), Link(rel="stylesheet", href="/assets/css/cover.css"),
+    head = styles(Link(rel="stylesheet", href="/assets/css/cover.css"),
                   *((Link(rel="stylesheet", href="/assets/css/planforme.css"),) if card else ()),
                   *seo_meta(f"GitAway · {TITLE}", LEDE, OG_IMAGE), *drive,
                   Script(NotStr(_boot())), Script(src="/assets/js/cover.js", defer=True))
