@@ -226,3 +226,11 @@ def test_it_reads_fits_and_is_easy_to_tap_in_light_and_dark(matrix, viewport, sc
             page.locator(".mx-card[data-lane='losangeles+sandiego'] .mx-sq").nth(2).click()
             page.wait_for_timeout(300)
             page.screenshot(path=str(SHOTS / f"matrix-sheet-390-{scheme}.png"))
+
+
+def test_the_sheet_fits_the_phone(matrix):
+    page = matrix(PHONE)
+    page.locator(".mx-card[data-lane='losangeles+sandiego'] .mx-sq").nth(2).click()
+    expect(page.locator(".mx-sheet .mx-save")).to_be_visible()
+    wide = page.evaluate("() => { const s = document.querySelector('.mx-sheet'); return [s.scrollWidth, s.clientWidth, Math.max(...[...s.querySelectorAll('.mx-r-n')].map(e => e.getBoundingClientRect().right))]; }")
+    assert wide[0] <= wide[1] + 1 and wide[2] <= 390, wide
