@@ -51,6 +51,7 @@ DEFAULT_PLACE, DEFAULT_HOME, DEFAULT_FLEX, DEFAULT_NIGHTS, DEFAULT_KIDS = "San D
 LEAD_DAYS = 28                      # the default trip leaves on the first Saturday at least this far ahead
 BUDGETS = (2_000, 2_500, 3_000, 4_000, 5_000)
 SAMPLE = "Sample prices"
+SLOW = "Flights take a few seconds to search. Each square fills in as its answer lands."
 FINE = "Prices are a preview from LiteAPI and change until booked. Booking opens soon: nothing is booked or paid here."
 SAMPLE_FINE = "Sample prices from GitAway's made-up catalog, moved by the day of the week. Nothing is booked or paid here."
 MISSING = {"place": "Say where to, like “to San Diego”.", "dates": "Say when, like “Dec 12 to 16”.", "party": f"GitAway plans for up to {catalog.MAX_TRAVELERS} travelers.",
@@ -279,7 +280,7 @@ def _chip(text, to, on):
 
 def sentence(s: State, typed="", problems=()):
     found = dict(tripsentence.parts(ask_of(s)))
-    out = [Span(found["party"] + ",", cls="mx-w")]
+    out = [Span(found["party"] + ",", cls="mx-word")]
     near = places.nearby(s.place)
     route = f"{s.home} to {s.place.name}" if s.home else f"to {s.place.name}"
     if near:
@@ -287,8 +288,8 @@ def sentence(s: State, typed="", problems=()):
                         Div(_chip(f"{s.place.name} or nearby", href(s, nb=""), s.nearby), _chip(f"Only {s.place.name}", href(s, nb="0"), not s.nearby), cls="mx-chips"),
                         P("Nearby: " + ", ".join(p.name for p in near) + ", and each of them with " + s.place.name + ".", cls="mx-pop-note")))
     else:
-        out.append(Span(route + ",", cls="mx-w"))
-    out.append(Span(found["dates"], cls="mx-w"))
+        out.append(Span(route + ",", cls="mx-word"))
+    out.append(Span(found["dates"], cls="mx-word"))
     out.append(_pop("flex", (found.get("flex") or "") + ",", P("Start days", cls="mx-pop-h"),
                     Div(*[_chip("Exactly" if n == 0 else f"± {n} day{'s' if n > 1 else ''}", href(s, x=n), s.flex == n) for n in range(tm.MAX_FLEX + 1)], cls="mx-chips")))
     out.append(_pop("budget", found.get("budget", "any budget") + ".", P("Your budget, all in", cls="mx-pop-h"),
@@ -321,7 +322,7 @@ def find_el(s: State, found):
     return Div(Span(icon("spark", 16, 2.2), "Found", cls="mx-found"),
                A(Span(found.words, cls="mx-find-w", id="mx-find-w"), Span(f" · {found.when}", cls="mx-find-d", id="mx-find-d"),
                  href=href(s, SQUARE, lane=found.lane, w=found.window), cls="mx-find-a", id="mx-find-a", data_open=found.key),
-               cls="mx-find", id="mx-find", aria_live="polite")
+               cls="mx-find", id="mx-find", aria_live="polite", data_key=found.key)
 
 
 def lane_el(s: State, lane, windows, days, known, marks, home):
@@ -332,15 +333,16 @@ def lane_el(s: State, lane, windows, days, known, marks, home):
     via = f"{home} → {lane.places[0].iata}" + (f" · {lane.places[-1].iata} → {home}" if lane.combo else "")
     sky = sky_strip(lane.places[0], days)
     kids = [Div(_arts(lane, "mx-thumb"), Div(P(lane.name, cls="mx-l-n"), P(via, cls="mx-l-s"),
-                                                 P(f"{drive} min drive from {lane.places[0].iata}" if drive else "", cls="mx-l-s", data_lane_drive=lane.key),
+                                                 P(f"{drive} min drive from {lane.places[0].iata}" if drive else "", cls="mx-l-s", data_lane_drive=lane.key, data_from=lane.places[0].iata),
                                                  P(f"from {tm.dollars(min(totals))}" if totals else "", cls="mx-l-best", data_lane_best=lane.key)), cls="mx-lh"),
-            Div(cls="mx-band", data_band=lane.key, style=f"grid-column: {col[band_w.depart]} / span {band_w.nights + 1}")]
+            Div(cls="mx-band", data_band=lane.key, data_l=f"{band_w.nights} nights", style=f"grid-column: {col[band_w.depart]} / span {band_w.nights + 1}")]
     if sky is not None:
         kids.append(Div(sky, cls="mx-sky", style=f"grid-column: 2 / span {len(days)}"))
     for w in windows:
         k = tm.key(lane.key, w.key)
         kids.append(square_el(s, lane, w, known.get(k), marks.get(k, ()), style=f"grid-column: {col[w.depart]}"))
-    return Div(*kids, cls="mx-lane" + (" is-asked" if lane.asked else "") + (" is-combo" if lane.combo else ""), data_lane=lane.key)
+    found = any("find" in marks.get(tm.key(lane.key, w.key), ()) for w in windows)
+    return Div(*kids, cls="mx-lane" + (" is-asked" if lane.asked else "") + (" is-combo" if lane.combo else "") + (" is-found" if found else ""), data_lane=lane.key)
 
 
 def band_window(lane, windows, known):
@@ -420,7 +422,7 @@ def matrix_page(s: State, family="", typed="", problems=()):
     waiting = len(known) < total
     body = Div(H1(f"Trips to {s.place.name}" + (" and nearby" if s.nearby and len(lanes) > 1 else ""), cls="mx-sr"),
                Div(sentence(s, typed, problems), meta, cls="mx-lead"),
-               Div(find_el(s, found), fact_el(s, hidden=not waiting), cls="mx-news", id="mx-news"),
+               Div(find_el(s, found), fact_el(s, hidden=not waiting), P(SLOW, cls="mx-slow", role="status"), cls="mx-news", id="mx-news"),
                stage, cards,
                Div(P(SAMPLE_FINE if meta_sample else FINE, cls="mx-foot-n"), cls="mx-foot"),
                Script(NotStr(page_data(s, lanes, windows, known)), type="application/json", id="mx-data"),
