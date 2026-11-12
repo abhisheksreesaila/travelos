@@ -1402,13 +1402,16 @@ Needs: none · Skill: designer (Stitch project 5068253051282871529) · Compare: 
 - [x] the cover in three parts: Compare · Plan it together · Leave a trail others can follow (Bloggers and vloggers welcome); calm, few moves
 - [x] the founder picks; the handoff is docs/design/trip-matrix.md
 
-## F-222 The matrix across places and dates [todo]
-Needs: F-220, F-221
-- [ ] the sentence reads "or nearby" and "give or take N days" by rules
-- [ ] squares fill in as answers arrive, cheapest first, like map tiles: only the squares in view (and a margin around them) are searched; a square not yet answered is a skeleton (the square's shape, a calm shimmer, no number), and a square scrolled past before its answer is not searched
-- [ ] while squares are still loading, the matrix's empty space tells a fun fact about the place being searched ("San Diego has about 70 miles of beaches"): a short hand-written list per place, each fact with its source, like `planfacts.py`; never written by a model on the fly; it fades out when the answers land
-- [ ] each square is the whole trip: flight + stay + airport drive, with Preview and the age of the price
-- [ ] the book button says "Booking opens soon" and saves the square to the trip
+## F-222 The matrix across places and dates [review]
+Needs: F-220, F-221 · Decisions: D-434 to D-442 · Design: docs/design/trip-matrix.md (laptop C with A's panel, phone B) · Built: docs/design/trip-matrix/built/
+- [x] the sentence reads "or nearby" and "give or take N days" by rules
+- [x] squares fill in as answers arrive, cheapest first, like map tiles: only the squares in view (and a margin around them) are searched; a square not yet answered is a skeleton (the square's shape, a calm shimmer, no number), and a square scrolled past before its answer is not searched
+- [x] while squares are still loading, the matrix's empty space tells a fun fact about the place being searched ("San Diego has about 70 miles of beaches"): a short hand-written list per place, each fact with its source, like `planfacts.py`; never written by a model on the fly; it fades out when the answers land
+- [x] each square is the whole trip: flight + stay + airport drive, with Preview and the age of the price
+- [x] the book button says "Booking opens soon" and saves the square to the trip
+- [x] liquid at every width (D-439): the panel and the sheet grow out of the square tapped; a slow search says so with the fact
+- [ ] the founder looks at it on a laptop and a phone, with the sandbox key off the showcase (`GITAWAY_SHOWCASE=0`)
+- [ ] one polite live sandbox search of an open-jaw flight (LAX in, SAN out) and of Newport Beach stays, turned into a recorded fixture (lessons 2026-11-07)
 
 ## F-223 Weather in the calendar and the place's art [review]
 Needs: F-221
