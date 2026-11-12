@@ -34,7 +34,7 @@ Built on what exists: families with roles and invitations (`members.py`), the fa
 5. **Prices keep watch**: a hearted square says when its price moved ("up $40 since Ana liked it").
 6. **One person decides**: the trip's owner taps "This one"; it becomes the family's trip and everyone is told.
 7. **Two families**: each picks its own flights, both vote on the shared stay, and the split comes along.
-Open for the founder: who decides (proposed: the owner, hearts are advice; a majority stalls two against two) and whether friends can heart without an account (proposed: look without signing in, one tap to sign in to heart or comment, so every heart has a name and the trip stays private).
+Decided by the founder (2026-11-12): **the owner decides**; hearts are advice. **Friends heart without an account**: the shared link (long, unguessable, the owner can turn it off) asks only for a first name, keeps one heart per person on that phone or laptop, and marks a guest's heart as a guest's. Comments from a guest are the same. Nothing private (bookings, confirmations, the family chat) is on the shared matrix.
 
 ## The cover tells this story (draft, 2026-11-12)
 Headline (the founder's pick, 2026-11-12): **"The whole trip, compared. With the people you're going with."** Lines about a trip "you didn't know you needed" or "to ask for" were dropped as easy to misread.
