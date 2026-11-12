@@ -1,6 +1,6 @@
 # The trip matrix: see every option, then decide together (draft)
 
-Status: draft, waiting on the founder
+Status: approved (the founder, 2026-11-12: "agree, let's build the whole story")
 
 > 2026-11-12: replaces the links-only draft of 2026-11-08. The founder chose one source, LiteAPI (Nuitée), for flights and stays: search first, booking after the test. It supersedes D-415's "no in-app booking" for search only; booking itself waits for the test below. The links-only lanes (F-198) stay as they are until then. F-217's trip grid is the start of this view.
 
@@ -37,7 +37,7 @@ Built on what exists: families with roles and invitations (`members.py`), the fa
 Decided by the founder (2026-11-12): **the owner decides**; hearts are advice. **Friends heart without an account**: the shared link (long, unguessable, the owner can turn it off) asks only for a first name, keeps one heart per person on that phone or laptop, and marks a guest's heart as a guest's. Comments from a guest are the same. Nothing private (bookings, confirmations, the family chat) is on the shared matrix.
 
 ## The cover tells this story (draft, 2026-11-12)
-Headline (the founder's pick, 2026-11-12): **"The whole trip, compared. With the people you're going with."** Lines about a trip "you didn't know you needed" or "to ask for" were dropped as easy to misread.
+Headline (the founder's pick, 2026-11-12): **"Compare the whole trip. Choose it together."** Lines about a trip "you didn't know you needed" or "to ask for" were dropped as easy to misread.
 Three parts, each with its own beats, replacing the eight stages of cover v5:
 1. **Compare.** One sentence types itself ("A family of 4, from SFO, somewhere warm, Dec 12 to 16"); the matrix fills in and one square lights up ("LA + San Diego, $50 more than San Diego alone"); the calendar wears the weather, the place wears its art.
 2. **Plan it together.** Family votes land on squares, the chat beside them; the chosen square becomes the family's trip.
