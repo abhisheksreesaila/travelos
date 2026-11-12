@@ -16,7 +16,7 @@ from gitaway import catalog
 from gitaway.partners import places
 
 MAX_TEXT = 300
-MAX_BUDGET_CENTS = 10_000_000          # a budget over $100,000 is a typo
+MIN_BUDGET_CENTS, MAX_BUDGET_CENTS = 50_000, 2_000_000      # $500 to $20,000: the ends of the page's budget slider; outside them it is not read as a budget
 MAX_MILES = 200
 KID_AGE = 8                            # the age a kid counts as when the sentence gives none: a child fare, a seat of their own
 _MONTHS = {m: i for i, names in enumerate((("jan", "january"), ("feb", "february"), ("mar", "march"), ("apr", "april"), ("may",), ("jun", "june"), ("jul", "july"), ("aug", "august"),
@@ -45,11 +45,12 @@ class Ask:
     miles: int | None = None       # how near, when they said
     budget_cents: int | None = None
     party_given: bool = False      # False: nobody said who is going, so `adults` is the usual two
+    too_many: bool = False         # they named more travelers than a booking takes (catalog.MAX_TRAVELERS)
 
     @property
     def unread(self) -> tuple:
-        """The parts a search cannot run without that the sentence did not give, in the order to ask for them."""
-        return tuple(name for name, have in (("place", self.place), ("dates", self.depart and self.return_)) if not have)
+        """What stops a search: the parts it cannot run without that the sentence did not give, and a party too big to book, in the order to say them."""
+        return tuple(name for name, have in (("place", self.place), ("dates", self.depart and self.return_), ("party", not self.too_many)) if not have)
 
     @property
     def travelers(self) -> int:
@@ -63,12 +64,13 @@ def _num(word) -> int | None:
     return _NUMS.get(word)
 
 
-def _on(month, day, today, after=None) -> date | None:
-    """The next `month day` on or after `today` (and after `after`, a trip's first day), or None for a day that month never has."""
+def _on(month, day, today, after=None, year=None) -> date | None:
+    """The next `month day` on or after `today` (and after `after`, a trip's first day), or None for a day that month never has. A typed `year` is taken at its
+    word: the day in that year, or None when that is in the past or not after `after`."""
     floor = after or today
-    for year in (floor.year, floor.year + 1):
+    for y in ((year,) if year else (floor.year, floor.year + 1)):
         try:
-            found = date(year, month, day)
+            found = date(y, month, day)
         except ValueError:
             continue
         if found >= today and (after is None or found > after):
@@ -76,40 +78,64 @@ def _on(month, day, today, after=None) -> date | None:
     return None
 
 
-def _dates(low, today):
-    """((depart, return) or (None, None), the text with the dates cut out). Cut out, so "Dec 12 to 16" is never read as a trip to a place called 16."""
-    def cut(m):
-        return low[:m.start()] + " , " + low[m.end():]
+def _year(text) -> int | None:
+    """A typed year: four digits, or two ("27" is 2027)."""
+    return (int(text) if len(text) == 4 else 2000 + int(text)) if text else None
 
-    m = re.search(rf"(\d{{4}})-(\d{{2}})-(\d{{2}}){_TO}(\d{{4}})-(\d{{2}})-(\d{{2}})", low)
+
+def _first_year(y1, y2, month1, month2) -> int | None:
+    """The year of a trip's first day when a year was typed: its own, else the return's (the one before it when the trip crosses New Year)."""
+    if y1 or not y2:
+        return _year(y1)
+    return _year(y2) - (1 if month2 < month1 else 0)
+
+
+_YEAR = r"(?:,?\s*(\d{4}))?"
+_ISO = re.compile(rf"(\d{{4}})-(\d{{2}})-(\d{{2}}){_TO}(\d{{4}})-(\d{{2}})-(\d{{2}})", re.I)
+_WORDS = re.compile(rf"\b{_MON}\s+{_DAY}{_YEAR}{_TO}(?:{_MON}\s+)?{_DAY}\b{_YEAR}", re.I)
+_SLASH = re.compile(rf"\b(\d{{1,2}})/(\d{{1,2}})(?:/(\d{{4}}|\d{{2}}))?{_TO}(\d{{1,2}})/(\d{{1,2}})(?:/(\d{{4}}|\d{{2}}))?(?![\d/])", re.I)
+_ONE = re.compile(rf"\b{_MON}\s+{_DAY}\b{_YEAR}", re.I)
+_NIGHTS = re.compile(r"\bfor (\w+) nights?\b", re.I)
+
+
+def _dates(raw, today):
+    """((depart, return) or (None, None), the text with the dates cut out). Cut out, so "Dec 12 to 16" is never read as a trip to a place called 16, and
+    the days of "12/20 to 12/24" are never read as kids' ages."""
+    def cut(*found):
+        out = raw
+        for m in sorted(found, key=lambda m: m.start(), reverse=True):
+            out = out[:m.start()] + " , " + out[m.end():]
+        return out
+
+    m = _ISO.search(raw)
     if m:
         try:
             a, b = date(*map(int, m.groups()[:3])), date(*map(int, m.groups()[3:]))
         except ValueError:
             return (None, None), cut(m)
         return ((a, b) if today <= a < b else (None, None)), cut(m)
-    m = re.search(rf"\b{_MON}\s+{_DAY}{_TO}(?:{_MON}\s+)?{_DAY}\b", low)
+    m = _WORDS.search(raw)
     if m:
-        a = _on(_MONTHS[m.group(1)], int(m.group(2)), today)
-        b = _on(_MONTHS[m.group(3) or m.group(1)], int(m.group(4)), today, a) if a else None
+        m1, d1, y1, m2, d2, y2 = m.groups()
+        mon1, mon2 = _MONTHS[m1.lower()], _MONTHS[(m2 or m1).lower()]
+        a = _on(mon1, int(d1), today, year=_first_year(y1, y2, mon1, mon2))
+        b = _on(mon2, int(d2), today, a, _year(y2)) if a else None
         return ((a, b) if a and b else (None, None)), cut(m)
-    m = re.search(rf"\b(\d{{1,2}})/(\d{{1,2}}){_TO}(\d{{1,2}})/(\d{{1,2}})\b", low)
+    m = _SLASH.search(raw)
     if m:
-        a = _on(int(m.group(1)), int(m.group(2)), today) if 1 <= int(m.group(1)) <= 12 else None
-        b = _on(int(m.group(3)), int(m.group(4)), today, a) if a and 1 <= int(m.group(3)) <= 12 else None
+        m1, d1, y1, m2, d2, y2 = m.groups()
+        a = _on(int(m1), int(d1), today, year=_first_year(y1, y2, int(m1), int(m2))) if 1 <= int(m1) <= 12 else None
+        b = _on(int(m2), int(d2), today, a, _year(y2)) if a and 1 <= int(m2) <= 12 else None
         return ((a, b) if a and b else (None, None)), cut(m)
-    m = re.search(rf"\b{_MON}\s+{_DAY}\b", low)
-    nights = re.search(r"\bfor (\w+) nights?\b", low)
+    m, nights = _ONE.search(raw), _NIGHTS.search(raw)
     if m and nights and _num(nights.group(1)):
-        a = _on(_MONTHS[m.group(1)], int(m.group(2)), today)
-        n = _num(nights.group(1))
-        low = cut(m)
-        return ((a, a + timedelta(days=n)) if a and 1 <= n <= catalog.MAX_NIGHTS else (None, None)), re.sub(r"\bfor \w+ nights?\b", " , ", low)
-    return (None, None), low
+        a, n = _on(_MONTHS[m.group(1).lower()], int(m.group(2)), today, year=_year(m.group(3))), _num(nights.group(1))
+        return ((a, a + timedelta(days=n)) if a and 1 <= n <= catalog.MAX_NIGHTS else (None, None)), cut(m, nights)
+    return (None, None), raw
 
 
 def _party(low):
-    """(adults, kid ages, were the ages given, did they say who is going)."""
+    """(adults, kid ages, were the ages given, did they say who is going, are they more than a booking takes). Read from the text with the dates cut out."""
     adults = kids = None
     m = re.search(r"\bfamily of (\w+)", low)
     if m and _num(m.group(1)):
@@ -136,17 +162,18 @@ def _party(low):
     else:
         kid_ages, given = (KID_AGE,) * (kids or 0), False
     if not 1 <= adults <= catalog.MAX_TRAVELERS or adults + len(kid_ages) > catalog.MAX_TRAVELERS:
-        return 2, (), False, False
-    return adults, kid_ages, given, said
+        return 2, (), False, False, True
+    return adults, kid_ages, given, said, False
 
 
 def _budget(low) -> int | None:
-    m = (re.search(r"\b(?:under|below|budget(?: of| is)?|max(?:imum)?(?: of)?|up to|less than|no more than)\s*\$?\s*(\d[\d,]*(?:\.\d+)?)\s*(k\b)?", low)
+    # a number with a unit after it is not money: "less than 600 miles from home", "up to 5 nights"
+    m = (re.search(r"\b(?:under|below|budget(?: of| is)?|max(?:imum)?(?: of)?|up to|less than|no more than)\s*\$?\s*(\d[\d,]*(?:\.\d+)?)(?![\d,.])\s*(k\b)?(?!\s*(?:miles?|mi|nights?|hours?|hrs?|days?|minutes?|min|kids?|adults?)\b)", low)
          or re.search(r"\$\s*(\d[\d,]*(?:\.\d+)?)\s*(k\b)?", low))
     if not m:
         return None
     cents = int(round(float(m.group(1).replace(",", "")) * (1000 if m.group(2) else 1) * 100))
-    return cents if 0 < cents <= MAX_BUDGET_CENTS else None
+    return cents if MIN_BUDGET_CENTS <= cents <= MAX_BUDGET_CENTS else None
 
 
 def _near(raw):
@@ -154,7 +181,7 @@ def _near(raw):
     if m:
         miles = int(m.group(1))
         return _tidy(m.group(2)), miles if 1 <= miles <= MAX_MILES else None
-    m = re.search(r"\b(?:near|close to|by) (?:the )?([^,.;]+)", raw, re.I)
+    m = re.search(r"\b(?:near|close to) (?:the )?([^,.;]+)", raw, re.I)
     return (_tidy(m.group(1)), None) if m else ("", None)
 
 
@@ -180,28 +207,16 @@ def _route(raw):
 def read(text, today=None) -> Ask:
     raw = " ".join(str(text or "").split())[:MAX_TEXT]
     today = today or catalog.today()
-    (depart, return_), rest = _dates(raw.lower(), today)
-    # the route is read from the typed capitals, so cut the same date words out of the original
-    kept = raw if len(rest) == len(raw) else _recut(raw, rest)
-    origin, place = _route(kept)
-    adults, kid_ages, given, said = _party(raw.lower())
+    (depart, return_), rest = _dates(raw, today)
+    origin, place = _route(rest)
+    adults, kid_ages, given, said, too_many = _party(rest.lower())
     senior, pet = _SENIOR.search(raw), _PET.search(raw)
-    near, miles = _near(kept)
+    near, miles = _near(rest)
     if depart and return_ and (return_ - depart).days > catalog.MAX_NIGHTS:
         depart = return_ = None
     return Ask(place=place, origin=origin, depart=depart, return_=return_, adults=adults, kid_ages=kid_ages, ages_given=given,
                senior=_senior_word(senior.group(1)) if senior else "", pet=_pet_word(pet.group(1)) if pet else "",
-               near=near, miles=miles, budget_cents=_budget(raw.lower()), party_given=said)
-
-
-def _recut(raw, rest) -> str:
-    """`raw` with the span `_dates` cut out of its lower-cased copy replaced by a comma: the two differ only inside that span."""
-    low = raw.lower()
-    start = next((i for i, (a, b) in enumerate(zip(low, rest)) if a != b), min(len(low), len(rest)))
-    tail = 0
-    while tail < min(len(low), len(rest)) - start and low[-1 - tail] == rest[-1 - tail]:
-        tail += 1
-    return raw[:start] + " , " + (raw[len(raw) - tail:] if tail else "")
+               near=near, miles=miles, budget_cents=_budget(rest.lower()), party_given=said, too_many=too_many)
 
 
 def _senior_word(word) -> str:

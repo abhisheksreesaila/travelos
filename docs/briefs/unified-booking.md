@@ -2,6 +2,8 @@
 
 Status: draft, waiting on the founder
 
+> 2026-11-11: the founder kept booking links-only (D-415) and settled a new view on the design canvas, the trip grid (every flight against every stay). It is built on sample data as F-217 (docs/plan.md); real stays are F-218 and still wait on the Stay22 key below.
+
 ## Why
 Booking a trip means a dozen tabs: hotels on one site, flights on another, filters in a sidebar, then guessing how it all adds up. GitAway should give one calm view of the choices with everything needed to decide beside them, and never own a booking.
 

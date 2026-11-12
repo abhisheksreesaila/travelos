@@ -56,7 +56,7 @@ def test_dates_it_cannot_read_are_left_empty_never_guessed(words):
     ("just me, to Reno", 1, (), False),
     ("family of five to Reno", 2, (8, 8, 8), False),
     ("to Reno", 2, (), False),
-    ("40 adults to Reno", 2, (), False),                                              # more than a booking takes: the usual two, and the party counts as not said
+    ("just the 2 of us, kids ages 5, 7, 12/20 to 12/24 to Reno", 2, (5, 7), True),    # the days of a date are never ages
 ])
 def test_who_is_going(words, adults, kids, given):
     ask = ts.read(words, TODAY)
@@ -67,7 +67,12 @@ def test_who_is_going(words, adults, kids, given):
 def test_nobody_said_who_is_going():
     assert ts.read("to Reno", TODAY).party_given is False
     assert ts.read("a couple to Reno", TODAY).party_given is True
-    assert ts.read("40 adults to Reno", TODAY).party_given is False
+
+
+@pytest.mark.parametrize("words", ["40 adults to Reno, Dec 12 to 16", "family of 12 to Reno, Dec 12 to 16", "6 adults and 4 kids to Reno, Dec 12 to 16"])
+def test_more_travelers_than_a_booking_takes_is_said_not_cut_down(words):
+    ask = ts.read(words, TODAY)
+    assert ask.too_many and ask.unread == ("party",)
 
 
 @pytest.mark.parametrize("words, cents", [("to Reno under $3,000", 300_000), ("to Reno, budget 2500", 250_000), ("to Reno for $3k", 300_000), ("to Reno, up to $1,999.50", 199_950),
@@ -104,3 +109,37 @@ def test_empty_and_odd_input():
     for words in ("", None, "   ", "12345", "to to to"):
         ask = ts.read(words, TODAY)
         assert "place" in ask.unread or ask.place
+
+
+@pytest.mark.parametrize("words, depart, ret", [
+    ("SFO to Orlando, Dec 12 to 16, 2027", date(2027, 12, 12), date(2027, 12, 16)),
+    ("to Orlando, Dec 12, 2027 to Dec 16, 2027", date(2027, 12, 12), date(2027, 12, 16)),
+    ("to Orlando, Dec 28 to Jan 3, 2028", date(2027, 12, 28), date(2028, 1, 3)),      # a year typed once, after a trip that crosses it, is the return's
+    ("to Orlando 12/12/2027 to 12/16/2027", date(2027, 12, 12), date(2027, 12, 16)),
+    ("to Orlando 12/12/27 - 12/16/27", date(2027, 12, 12), date(2027, 12, 16)),
+])
+def test_a_typed_year_is_taken_at_its_word(words, depart, ret):
+    ask = ts.read(words, TODAY)
+    assert (ask.depart, ask.return_, ask.place) == (depart, ret, "Orlando")
+
+
+@pytest.mark.parametrize("words", ["to Orlando, Dec 12 to 16, 2020", "to Orlando 12/12/2020 to 12/16/2020", "to Orlando, Oct 1 to 5, 2026"])
+def test_a_typed_year_in_the_past_is_not_moved_to_another_year(words):
+    assert "dates" in ts.read(words, TODAY).unread
+
+
+def test_by_myself_is_one_adult_and_not_a_place_to_be_near():
+    ask = ts.read("to San Diego, Dec 12 to 16, by myself", TODAY)
+    assert (ask.adults, ask.near, ask.place) == (1, "", "San Diego")
+
+
+@pytest.mark.parametrize("words", ["to Reno, less than 600 miles from home", "to Reno for up to 5 nights", "to Reno under $25,000", "to Reno under $300", "to Reno with under 3 kids"])
+def test_a_number_that_is_not_a_budget_is_not_read_as_one(words):
+    assert ts.read(words, TODAY).budget_cents is None
+
+
+def test_the_nights_form_reads_wherever_its_two_halves_are():
+    ask = ts.read("For 4 nights from SFO to San Diego on Dec 12", TODAY)
+    assert (ask.origin, ask.place, ask.depart, ask.return_) == ("SFO", "San Diego", date(2026, 12, 12), date(2026, 12, 16))
+    ask = ts.read("İstanbul lovers: SFO to San Diego, Dec 12 to 16", TODAY)             # a letter whose lower case is longer never shifts the cut
+    assert (ask.origin, ask.place, ask.depart) == ("SFO", "San Diego", date(2026, 12, 12))

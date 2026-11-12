@@ -12,4 +12,8 @@ run M3 tests/test_autopilot_contract.py -k m3_
 run M4 tests/test_autopilot_contract.py -k m4_
 run M5 tests_browser/test_autopilot_look.py tests/test_autopilot_contract.py -k "m5_"
 run M6 tests/ -k "not m1_ and not m2_ and not m3_ and not m4_ and not m5_ or m6_"
+run M7 tests/test_tripsentence.py
+run M8 tests/test_tripgrid.py
+run M9 tests/test_tripgrid_page.py
+run M10 tests_browser/test_tripgrid.py
 exit $fail

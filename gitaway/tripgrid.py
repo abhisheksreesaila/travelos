@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 BEFORE_FLIGHT = 150      # minutes from getting up to take-off
 BAGS = 45                # minutes from landing to leaving the airport
 EARLY = 5 * 60           # getting up before 5:00 AM is an early start
-LATE = 21 * 60           # reaching the door after 9:00 PM is past a kid's bedtime
+LATE = 21 * 60           # reaching the door after 9:00 PM is a late arrival; the verdict says the hour, never "bedtime"
 WHOS = ("kids", "senior", "pet")
 WHO_NAMES = {"kids": "Kids’ day", "senior": "Their day", "pet": "Pet’s day"}
 WORDS = ((0, "easy day"), (2, "fair day"), (5, "hard day"))
@@ -31,8 +31,7 @@ class Flight:
     depart_min: int      # minutes after midnight, at home
     arrive_min: int      # minutes after midnight, there; before depart_min means the next morning
     stops: int
-    cents: int           # for the whole party
-    each_cents: int      # a person
+    cents: int           # for the whole party (never divided: a kid's fare is not an adult's)
     stops_text: str = "Nonstop"
     overnight: bool = False   # lands the next day
 
@@ -121,34 +120,36 @@ def day(who, flight: Flight, stay: Stay, drive_min: int | None, clock_shift: int
         score += (3 if late else 0) + 2 * flight.stops
         third = ("Feels like", clock(door - clock_shift)) if clock_shift else ("Changes", str(flight.stops) if flight.stops else "None")
         if flight.overnight:
-            verdict = "A night on the plane. You arrive before the room is ready."
+            verdict = "A night on the plane: you land the next day."
         elif late:
-            verdict = "You reach the stay past bedtime" + (f", though it feels like {clock(door - clock_shift)} to the kids." if clock_shift > 0 else ".")
+            verdict = f"You get there at {clock(door)}" + (f", which feels like {clock(door - clock_shift)} to the kids." if clock_shift > 0 else ", late for the kids.")
+        elif early and flight.stops:
+            verdict = "A very early start and a change of planes."
         elif early:
-            verdict = "A very early start, then an easy rest of the day."
+            verdict = "A very early start, then no changes on the way."
         elif flight.stops:
             verdict = "A change of planes on the way, with the kids in tow."
         else:
-            verdict = "An easy day: a normal morning and there in good time."
+            verdict = "An easy day: a normal morning, no changes, there before evening."
         return Day(who, score, word(score), (("Up at", clock(up)), (where, clock(door)), third), verdict, allow)
     if who == "senior":
         score += (2 if late else 0) + 3 * flight.stops
         if flight.overnight:
             verdict = "A night on the plane is a lot to ask."
         elif flight.stops:
-            verdict = "A change of planes: ask the airline for help between gates when you book."
+            verdict = ("A very early start and a change of planes" if early else "A change of planes") + ": ask the airline for help between gates when you book."
         elif late:
-            verdict = "A late arrival, but no change of planes."
+            verdict = f"You get there at {clock(door)}, with no change of planes."
         elif early:
             verdict = "A very early start, and no change of planes."
         else:
-            verdict = "A gentle day: no change of planes and there in good time."
+            verdict = "A gentle day: no change of planes and there before evening."
         return Day(who, score, word(score), (("Changes", str(flight.stops) if flight.stops else "None"), ("Up at", clock(up)), (where, clock(door))), verdict,
                    "We do not know this stay's lifts or steps. Ask for a ground-floor or step-free room.")
     takes = PET_TAG in stay.tags
     score = (6 if not takes else 0) + 2 * flight.stops + (2 if flight.overnight else 0)
     verdict = (f"{stay.name} is not listed as taking pets. Ask before you book." if not takes
-               else ("The stay takes pets, but a change of planes is hard on an animal." if flight.stops else "The stay takes pets, and the flight is one hop."))
+               else ("The stay takes pets. There is a change of planes on the way." if flight.stops else "The stay takes pets, and the flight is one hop."))
     return Day(who, score, word(score), (("Stay", "Takes pets" if takes else "Ask first"), ("Changes", str(flight.stops) if flight.stops else "None"), (where, clock(door))), verdict,
                "We do not know this airline's rule for animals in the cabin. Ask the airline.")
 

@@ -6,7 +6,7 @@ from gitaway.tripgrid import Flight, Stay
 
 
 def flight(id="f", depart=8 * 60, arrive=14 * 60, stops=0, cents=100_000, overnight=False):
-    return Flight(id, f"Air {id}", "XXX", depart, arrive, stops, cents, cents // 4, "Nonstop" if not stops else f"{stops} stop", overnight)
+    return Flight(id, f"Air {id}", "XXX", depart, arrive, stops, cents, "Nonstop" if not stops else f"{stops} stop", overnight)
 
 
 def stay(id="s", cents=80_000, tags=()):
@@ -74,8 +74,10 @@ def test_how_each_square_is_drawn():
 def test_the_showcase_source_is_the_catalog_and_says_sample(monkeypatch):
     monkeypatch.setenv("GITAWAY_SHOWCASE", "1")
     trip = catalog.sample_trip("la")
-    flights, stays, drive_min, sample = gridsource.offers(trip)
-    assert sample is True and len(flights) == 5 and len(stays) == 3
+    found = gridsource.offers(trip)
+    flights, stays, drive_min = found.flights, found.stays, found.drive_min
+    assert found.sample is True and len(flights) == 5 and len(stays) == 3
+    assert found.book(flights[0]) == (("Book on Aviasales", "/go/f1?to=la"),) and found.book(stays[0])[0][0] == "Book on Klook"
     by = {o.id: o for o in catalog.offers("flight", trip)}
     assert all(f.cents == by[f.id].price_cents and f.depart_min == by[f.id].depart_min for f in flights)
     assert [f.stops for f in flights] == [0, 0, 0, 1, 0]
@@ -86,3 +88,28 @@ def test_off_the_showcase_there_is_no_source(monkeypatch):
     monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
     assert showcase.on() is False
     assert gridsource.offers(catalog.sample_trip("la")) is None
+
+
+def test_the_verdict_never_calls_a_hard_day_easy():
+    """Every mix of an early start, a late arrival, a change of planes and a night flight: the sentence under the facts agrees with the word above them."""
+    for dep in (4 * 60, 8 * 60):
+        for arr in (14 * 60, 22 * 60):
+            for stops in (0, 1):
+                for overnight in (False, True):
+                    for who in ("kids", "senior"):
+                        d = tripgrid.day(who, flight(depart=dep, arrive=arr, stops=stops, overnight=overnight), stay(), 30)
+                        if d.score:
+                            assert not any(w in d.verdict.lower() for w in ("easy", "gentle")), (who, dep, arr, stops, overnight, d.verdict)
+                        if stops and not overnight and arr < 21 * 60:
+                            assert "change of planes" in d.verdict, d.verdict
+    d = tripgrid.day("kids", flight(depart=6 * 60, stops=1), stay(), 30)
+    assert d.verdict == "A very early start and a change of planes." and d.word == "hard day"
+
+
+def test_a_verdict_states_only_what_the_flight_and_the_stay_say():
+    late = tripgrid.day("kids", flight(arrive=21 * 60), stay(), 30, clock_shift=180)
+    assert late.verdict == "You get there at 10:15 PM, which feels like 7:15 PM to the kids."
+    night = tripgrid.day("kids", flight(depart=23 * 60, arrive=7 * 60, overnight=True), stay(), 30)
+    assert night.verdict == "A night on the plane: you land the next day."
+    for d in (late, night, tripgrid.day("pet", flight(stops=1), stay(tags=("Pet friendly",)), 30)):
+        assert not any(w in d.verdict.lower() for w in ("bedtime", "room is ready", "hard on"))

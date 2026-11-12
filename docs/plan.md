@@ -1358,3 +1358,28 @@ Brief: docs/briefs/unified-booking.md (draft) · Prototype: docs/design/booking-
 - [ ] the trip shows a quote while choosing and the real price once booked (pasted confirmation, or a partner report matched by the link's tag)
 - [ ] we never become the seller: no booking API that makes cancellations or refunds ours
 - [ ] the cover's booking scene and a slimmer cover (one line per scene) follow the prototype
+
+## F-217 The trip grid: every flight against every stay [review]
+Design: https://claude.ai/artifact/MHU9PzyCnVuHaKZ3TAQzDb (artboard "trip grid") · Decisions: D-415 to D-423 · Needs: none (sample data on the showcase)
+- [x] the search is one sentence, read by rules that guess nothing; a retyped sentence lands on its plain address, and a part it cannot read is named
+- [x] flights across, stays down, each square the two prices added; the lowest is marked, a budget greys what is over it
+- [x] Ease ranks the squares by the first day of whoever is going (kids, an older traveler, a pet) from sourced facts only
+- [x] a strip of days with real typical weather moves the trip a day or a night at a time, never into the past
+- [x] looking at a square fills the panel beside the grid; a tap opens the trip: its flight and stay, where each is booked (the partner's site), and cheaper swaps
+- [x] on a laptop the search folds into an island going down and the panel into a rail going sideways; on a phone each stay is a card whose squares swipe
+- [x] everything works as plain links without the script; off the showcase both routes are a 404
+- [ ] the founder looks at it on a laptop and a phone
+
+## F-218 Real stays in the trip grid [blocked]
+Blocked: open a Stay22 account (hub.stay22.com), set its Direct Travel API key as `STAY22_API_KEY` on this machine, then say go. The first step is one real call to learn the answer's shape (docs/lessons.md).
+- [ ] `gridsource` reads stays with live prices per site from Stay22, cached and budgeted like the fare
+- [ ] flights by time from a real source, or the grid falls back to one "cheapest fare" column that says so
+- [ ] the grid opens off the showcase for a place with real stays; nothing invented is ever in a square
+
+## F-219 What the trip grid left out [todo]
+Needs: F-217 looked at by the founder · Decisions: D-421
+- [ ] family likes on a square (a table in the family's database; signed in)
+- [ ] a tip from a GitAway trip that stayed at the stay (needs F-212, F-213)
+- [ ] the lowest fare under each day of the strip, from the fare cache
+- [ ] kinds of trip (beach, hike, snow): a tint and three sourced facts each
+- [ ] a model rewrites a loose sentence into the reader's words (D-417)

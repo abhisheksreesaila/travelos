@@ -19,3 +19,15 @@ Branch `autopilot/booking-creators` (worktree `../travelos-autopilot`). Never de
 **Assumptions:** see `docs/decisions.md` D-01 onward.
 
 **Budget:** 80 agent turns per milestone, about 8 hours total.
+
+## Run 2: the trip grid (started 2026-11-11, on `master`; the founder: "the UI is good and settled, you can go for it")
+
+**End goal:** the booking interface settled on the design canvas (https://claude.ai/artifact/MHU9PzyCnVuHaKZ3TAQzDb, artboard "trip grid"), built in the app: the search is one sentence, every flight is weighed against every stay as one number a square, and booking finishes on the partner's site (D-415).
+
+- **M7 The sentence.** `gitaway/tripsentence.py` reads a typed search part by part with plain rules, guesses nothing, and writes it back (`tests/test_tripsentence.py`).
+- **M8 The sums.** `gitaway/tripgrid.py` adds each flight to each stay, works out the first day for kids, an older traveler and a pet from sourced facts only, and says which square is lowest and easiest; offers come through one seam, `gitaway/gridsource.py` (`tests/test_tripgrid.py`).
+- **M9 The pages.** `/plan/grid` and `/plan/grid/trip` work as plain links on the showcase, 404 off it, and send every booking to the partner (`tests/test_tripgrid_page.py`).
+- **M10 The feel.** In a browser at 1440 and 390: the grid leads, the search folds into an island going down and the panel into a rail going sideways, a tap opens either, looking at a square fills the panel, a change on the page draws what the server would, both modes read clearly, the phone never scrolls sideways (`tests_browser/test_tripgrid.py`).
+
+**Done means:** `scripts/check` prints PASS for M7 to M10 with M1 to M6 still passing, and `docs/report.md` has the screenshots.
+**Out of bounds, as before:** no deploy, no push, no paid services or sign-ups, no secrets read. Real hotel prices wait for the founder's key (F-218).

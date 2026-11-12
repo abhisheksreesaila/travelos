@@ -1,0 +1,206 @@
+/* The trip grid (F-217): flights across, stays down, each square the whole trip. Opaque surfaces, one soft shadow, colour for kinds only.
+   Phone and tablet first: each stay is a card whose squares swipe sideways. From 1020px it is one stage: the grid scrolls under the search and beside the
+   panel, and both fold into small islands as it scrolls (assets/js/tripgrid.js writes --tg-p and --tg-q, 0 open to 1 folded; D-420).
+   Sizes are rem off the one root (12px on a laptop, 16px on a phone). */
+@property --tg-p { syntax: "<number>"; inherits: true; initial-value: 0; }
+@property --tg-q { syntax: "<number>"; inherits: true; initial-value: 0; }
+.tg { padding: 0.75rem 1.25rem 2rem; }
+.tg-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.tg-stage { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+.tg-chrome { order: 0; }
+.tg-scroll { order: 1; }
+.tg-isle-l, .tg-side { display: none; }
+
+/* the search, as a sentence */
+.tg-open { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.625rem; }
+.tg-top { display: flex; flex-wrap: wrap; align-items: center; gap: 0.625rem; }
+.tg-sent { flex: 1 1 20rem; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 0 0.375rem; padding: 0.375rem 1.25rem; border-radius: 1.5rem; background: var(--card);
+  font-size: 1.25rem; font-weight: 600; letter-spacing: -0.01em; }
+.tg-tk { position: relative; }
+.tg-tok, .tg-pen { display: inline-flex; align-items: center; min-height: var(--target); cursor: pointer; list-style: none; border-radius: 0.5rem; }
+.tg-tok::-webkit-details-marker, .tg-pen::-webkit-details-marker { display: none; }
+.tg-tok { text-decoration: underline dotted; text-decoration-thickness: 0.125rem; text-underline-offset: 0.3125rem; }
+.tg-tok:hover, .tg-tk[open] > .tg-tok { text-decoration-style: solid; }
+.tg-pen { justify-content: center; width: var(--target); color: var(--ink-2); margin-left: auto; }
+.tg-edit { margin-left: auto; }
+.tg-pop { display: grid; gap: 0.75rem; margin: 0.25rem 0 0.75rem; padding: 1rem; border-radius: 1.25rem; background: var(--paper-2); font-size: 1rem; font-weight: 500; letter-spacing: 0; }
+.tg-pop-h { margin: 0; font-size: 1.125rem; font-weight: 700; }
+.tg-pop-note, .tg-note { margin: 0; color: var(--ink-2); font-size: 1rem; line-height: 1.4; text-wrap: pretty; }
+.tg-err { margin: 0; color: var(--danger); font-size: 1rem; font-weight: 650; }
+.tg-pop-edit label { display: grid; gap: 0.5rem; }
+.tg-pop-edit input { box-sizing: border-box; width: 100%; min-height: var(--target); padding: 0 1rem; border: 0; border-radius: var(--r-pill, 1rem); background: var(--card); color: var(--ink); font: inherit; }
+.tg-pop-edit input[aria-invalid="true"] { box-shadow: 0 0 0 0.1875rem var(--danger); }
+.tg-slide { display: flex; align-items: center; gap: 0.75rem; }
+.tg-slide input { flex: 1; min-width: 0; height: var(--target); accent-color: var(--ink); }
+.tg-pop-val { min-width: 4.5rem; font-size: 1.25rem; font-weight: 700; }
+.tg-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.tg-chip { display: inline-flex; align-items: center; justify-content: center; min-height: var(--target); padding: 0 1rem; border-radius: var(--r-pill, 1rem); background: var(--card); color: var(--ink);
+  font-size: 1rem; font-weight: 650; text-decoration: none; box-shadow: inset 0 0 0 1px var(--hairline); }
+.tg-chip.is-on { background: var(--ink); color: var(--on-ink); box-shadow: none; }
+.tg .tg-set { min-height: var(--target); }
+.tg-seg { display: inline-flex; padding: 0.25rem; border-radius: var(--r-pill, 1rem); background: var(--card); }
+.tg-seg-b { display: inline-flex; align-items: center; justify-content: center; min-width: 4.5rem; min-height: var(--target); padding: 0 1rem; border-radius: var(--r-pill, 1rem); color: var(--ink-2);
+  font-size: 1rem; font-weight: 700; text-decoration: none; }
+.tg-seg-b.is-on { background: var(--ink); color: var(--on-ink); }
+
+/* the days */
+.tg-dates { display: flex; flex-wrap: wrap; align-items: stretch; gap: 0.25rem; padding: 0.25rem; border-radius: 1.25rem; background: var(--card); }
+.tg-days { order: -1; flex: 1 1 100%; min-width: 0; display: flex; gap: 0.125rem; overflow-x: auto; scrollbar-width: none; }
+.tg-dates > .tg-rb { min-height: var(--target); }
+.tg-nights { margin-left: auto; }
+.tg-days::-webkit-scrollbar { display: none; }
+.tg-day { flex: 1 0 var(--target); display: grid; justify-items: center; align-content: center; gap: 0.0625rem; min-height: 4.5rem; border-radius: 1rem; color: var(--ink-2); text-decoration: none; line-height: 1.1; }
+.tg-dow, .tg-deg { font-size: max(var(--label-min), 0.9375rem); font-weight: 600; }
+.tg-num { font-size: 1.375rem; font-weight: 750; color: var(--ink); }
+.tg-day.is-in { background: var(--ink); color: var(--on-ink); }
+.tg-day.is-in .tg-num { color: var(--on-ink); }
+.tg-day.is-out { background: var(--paper-2); }
+.tg-rb { flex: none; display: grid; place-items: center; width: var(--target); border-radius: 1rem; background: var(--paper-2); color: var(--ink); }
+.tg-rb.is-off, .tg-ic.is-off { opacity: 0.35; }
+.tg-nights { display: grid; place-items: center; min-width: 5.5rem; font-size: 1rem; font-weight: 700; }
+
+/* the grid: on a phone a card a stay, its squares swiping sideways */
+.tg-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.25rem; }
+.tg-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.5rem; }
+.tg-row.tg-head { display: none; }
+.tg-cells { display: flex; gap: 0.5rem; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; padding: 0.125rem 0.125rem 0.375rem; }
+.tg-cells::-webkit-scrollbar { display: none; }
+.tg-fh, .tg-sh, .tg-cell { display: flex; flex-direction: column; justify-content: space-between; gap: 0.25rem; box-sizing: border-box; min-width: 0; padding: 0.75rem 1rem; border-radius: 1.125rem; text-decoration: none; }
+.tg-fh > span, .tg-sh > span { display: grid; min-width: 0; }
+.tg-fh { background: var(--k-flight-t); color: var(--k-flight-i); }
+.tg-fh.is-on { background: var(--k-flight); color: var(--k-on); }
+.tg-sh { background: var(--k-stay-t); color: var(--k-stay-i); }
+.tg-sh.is-on { background: var(--k-stay); color: var(--k-on); }
+.tg-sh .tg-sh-top { display: flex; justify-content: space-between; gap: 0.75rem; }
+.tg-sh-top > :first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tg-sh > .tg-h3 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+.tg-h1 { font-size: 1.25rem; font-weight: 750; letter-spacing: -0.01em; }
+.tg-h2, .tg-h3 { font-size: 1rem; line-height: 1.3; }
+.tg-b { font-weight: 700; }
+.tg-cell { flex: 0 0 10rem; justify-content: center; gap: 0.125rem; min-height: 6rem; scroll-snap-align: start; background: var(--card); color: var(--ink); box-shadow: var(--shadow-sm); }
+.tg-total { font-size: 1.75rem; font-weight: 750; letter-spacing: -0.02em; line-height: 1.1; }
+.tg-sub, .tg-when { font-size: 1rem; font-weight: 550; line-height: 1.25; }
+.tg-cell.is-best { background: var(--k-car-t); color: var(--k-car-i); box-shadow: inset 0 0 0 0.125rem var(--k-car); }
+.tg-grid[data-lens="ease"] .tg-cell.is-best { background: var(--k-tix-t); color: var(--k-tix-i); box-shadow: inset 0 0 0 0.125rem var(--k-tix); }
+.tg-cell.is-mine { background: var(--ink); color: var(--on-ink); box-shadow: none; }
+.tg-cell.is-bad { background: var(--paper-2); color: var(--ink-2); box-shadow: none; }
+.tg-sample { justify-self: start; margin: 0; padding: 0.25rem 0.625rem; border-radius: 0.5rem; background: var(--warn-tint); color: var(--warn-ink); font-size: max(var(--label-min), 0.9375rem); font-weight: 650; }
+.tg-k-f { color: var(--k-flight-i); }
+.tg-k-s { color: var(--k-stay-i); }
+
+/* cards: the panel and the chosen trip */
+.tg-card { display: grid; gap: 0.375rem; padding: 1rem 1.125rem; border-radius: 1.25rem; background: var(--card); min-width: 0; }
+.tg-card-h { display: flex; align-items: center; gap: 0.5rem; margin: 0; font-size: 1rem; font-weight: 700; }
+.tg-sum { background: var(--ink); color: var(--on-ink); }
+.tg-big { font-size: 2.75rem; font-weight: 750; letter-spacing: -0.03em; line-height: 1.05; }
+.tg-dim { font-size: 1rem; color: color-mix(in srgb, var(--on-ink) 74%, var(--ink)); }
+.tg-line { display: flex; align-items: center; gap: 0.625rem; font-size: 1.125rem; font-weight: 650; }
+.tg-line > span { color: var(--ink); }
+.tg-facts { display: flex; gap: 0.375rem; }
+.tg-fact { flex: 1 1 0; display: grid; gap: 0.125rem; justify-items: center; padding: 0.625rem 0.25rem; border-radius: 0.875rem; background: var(--paper-2); text-align: center; min-width: 0; }
+.tg-fk { font-size: max(var(--label-min), 0.9375rem); color: var(--ink-2); }
+.tg-fv { font-size: 1.125rem; font-weight: 750; }
+.tg-verdict { margin: 0.25rem 0 0; font-size: 1.0625rem; line-height: 1.4; text-wrap: pretty; }
+.tg .tg-go { min-height: 4rem; justify-content: center; gap: 0.5rem; font-size: 1.125rem; }
+.tg-foot { display: grid; gap: 0.25rem; margin-top: 1rem; }
+.tg-foot-n { margin: 0; color: var(--ink-2); font-size: 1rem; }
+.tg-foot-a { text-decoration: underline; }
+
+/* the chosen trip */
+.tg-review { display: grid; gap: 1rem; max-width: 96rem; margin-inline: auto; }
+.tg-rev-top { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.25rem; }
+.tg-rev-h { margin: 0; font-size: 2rem; letter-spacing: -0.03em; }
+.tg .tg-back { min-height: var(--target); gap: 0.375rem; }
+.tg-rev { display: grid; gap: 1rem; }
+.tg-rev-side { display: grid; gap: 0.75rem; align-content: start; }
+.tg-rev-card { align-content: start; gap: 0.625rem; }
+.tg-rev-big { margin: 0; font-size: 2.25rem; font-weight: 750; letter-spacing: -0.03em; line-height: 1.1; }
+.tg-kvs { display: grid; }
+.tg-kv { display: flex; justify-content: space-between; gap: 1rem; padding: 0.75rem 0; border-bottom: 1px solid var(--hairline); font-size: 1.125rem; }
+.tg-kv .tg-fk { font-size: 1.125rem; }
+.tg-kv .tg-fv { text-align: right; font-weight: 650; }
+.tg-books { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+.tg .tg-book { min-height: 4rem; gap: 0.5rem; }
+.tg-swap { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: var(--target); padding: 0.75rem 1rem; border-radius: 1rem; background: var(--paper-2); color: var(--ink);
+  font-size: 1.0625rem; text-decoration: none; }
+.tg-swap-s { flex: none; font-weight: 750; color: var(--k-car-i); }
+
+@media (min-width: 1020px) {
+  .tg-when, .tg-sample-top { display: none; }
+  .tg-rev { grid-template-columns: 1fr 1fr 27rem; align-items: start; }
+  /* the stage: the grid scrolls under the search and beside the panel */
+  .tg-stage { position: relative; display: block; overflow: hidden; height: max(42rem, calc(100dvh - 13rem)); --tg-open: 11rem; --tg-mini: 5rem; --tg-sidew: 23rem; --tg-rail: 6.5rem; --tg-fold: 10rem;
+    --tg-ch: calc(var(--tg-open) - var(--tg-p) * (var(--tg-open) - var(--tg-mini))); --tg-sw: calc(var(--tg-sidew) - var(--tg-q) * (var(--tg-sidew) - var(--tg-rail))); }
+  .tg-stage[data-glide] { transition: --tg-p var(--motion-screen-dur) var(--motion-zoom), --tg-q var(--motion-screen-dur) var(--motion-zoom); }
+  .tg-scroll { position: absolute; inset: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: none; }
+  .tg-scroll::-webkit-scrollbar { display: none; }
+  /* as wide as its columns need, and never narrower than the stage: a small grid fills the room beside the panel, a big one scrolls under it */
+  .tg-pad { box-sizing: border-box; width: calc(20rem + var(--tg-n, 5) * 13.5rem + var(--tg-sidew) + 0.5rem); min-width: 100%; padding: var(--tg-open) calc(var(--tg-sidew) + 0.5rem) 2rem 0; }
+  .tg-grid { grid-template-columns: 20rem repeat(var(--tg-n, 5), minmax(0, 1fr)); grid-template-rows: 10rem; grid-auto-rows: 8rem; gap: 0.5rem; }
+  .tg-pad[data-n="1"] { --tg-n: 1; } .tg-pad[data-n="2"] { --tg-n: 2; } .tg-pad[data-n="3"] { --tg-n: 3; } .tg-pad[data-n="4"] { --tg-n: 4; } .tg-pad[data-n="5"] { --tg-n: 5; } .tg-pad[data-n="6"] { --tg-n: 6; }
+  .tg-pad[data-n="7"] { --tg-n: 7; } .tg-pad[data-n="8"] { --tg-n: 8; } .tg-pad[data-n="9"] { --tg-n: 9; } .tg-pad[data-n="10"] { --tg-n: 10; } .tg-pad[data-n="11"] { --tg-n: 11; } .tg-pad[data-n="12"] { --tg-n: 12; }
+  .tg-row, .tg-row.tg-head, .tg-cells { display: contents; }
+  .tg-corner, .tg-fh { position: sticky; top: var(--tg-open); z-index: 2; }
+  .tg-stage.is-live .tg-corner, .tg-stage.is-live .tg-fh { top: var(--tg-mini); }
+  .tg-corner { left: 0; z-index: 3; display: grid; align-content: end; gap: 0.125rem; padding: 0.75rem 1rem; background: var(--ground); font-size: 1rem; font-weight: 650; }
+  .tg-corner-n { color: var(--ink-2); font-weight: 500; }
+  .tg-sh { position: sticky; left: 0; z-index: 2; }
+  /* a sticky tile rides over the squares: a canvas-coloured edge keeps them from showing in the gaps */
+  .tg-fh, .tg-sh { outline: 0.5rem solid var(--ground); }
+  .tg-fh:focus-visible, .tg-sh:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: -0.1875rem; }
+  .tg-cell { flex: initial; min-height: 0; transition: transform var(--motion-quick) var(--motion-ease), box-shadow var(--motion-quick) var(--motion-ease), background-color var(--motion-quick) var(--motion-ease); }
+  .tg-cell:hover, .tg-cell.is-look { transform: scale(1.04); z-index: 1; box-shadow: var(--sh2); }
+  .tg-cell.is-look:not(.is-mine) { box-shadow: inset 0 0 0 0.25rem var(--ink), var(--sh2); }
+  .tg-fh.is-look:not(.is-on) { box-shadow: inset 0 0 0 0.1875rem var(--k-flight); }
+  .tg-sh.is-look:not(.is-on) { box-shadow: inset 0 0 0 0.1875rem var(--k-stay); }
+
+  /* the top folds into an island as the grid scrolls down */
+  .tg-chrome { position: absolute; top: 0; left: 0; right: 0; z-index: 8; height: var(--tg-ch); overflow: hidden; background: var(--ground); }
+  .tg-stage[data-top="open"] .tg-chrome { overflow: visible; }
+  .tg-open { position: absolute; top: 0; left: 0; right: 0; grid-template-rows: 4.5rem 5.5rem; gap: 0.5rem; transform-origin: 50% 0; will-change: transform, opacity;
+    opacity: calc(1 - var(--tg-p) * 1.8); transform: translateY(calc(var(--tg-p) * -1.5rem)) scale(calc(1 - var(--tg-p) * 0.05)); }
+  .tg-stage[data-top="mini"] .tg-open { visibility: hidden; }
+  .tg-top, .tg-dates { flex-wrap: nowrap; }
+  .tg-days { order: 0; flex: 1 1 0; }
+  .tg-nights { margin-left: 0; }
+  .tg-sent { flex-wrap: nowrap; white-space: nowrap; height: 4.5rem; padding-block: 0; border-radius: var(--r-pill, 2.25rem); }
+  .tg-w { overflow: hidden; text-overflow: ellipsis; }
+  .tg-pop { position: absolute; top: calc(100% + 0.5rem); left: 0; z-index: 30; margin: 0; min-width: 25rem; white-space: normal; background: var(--card); box-shadow: var(--sh3); }
+  .tg-pop-edit { left: auto; right: 0; min-width: 40rem; }
+  .tg-seg { height: 4.5rem; box-sizing: border-box; align-items: center; }
+  .tg-isle-l { display: flex; justify-content: center; position: absolute; left: 0; right: 0; top: 0.375rem; pointer-events: none; will-change: transform, opacity;
+    opacity: calc(var(--tg-p) * 2.2 - 1.2); transform: scale(calc(0.84 + var(--tg-p) * 0.16)); }
+  .tg-stage[data-top="open"] .tg-isle-l { visibility: hidden; }
+  .tg-stage[data-top="mini"] .tg-isle-l { pointer-events: auto; }
+  .tg-isle { display: flex; align-items: center; gap: 0.25rem; padding: 0.25rem; border-radius: var(--r-pill, 2.25rem); background: var(--ink); color: var(--on-ink); box-shadow: var(--sh2); }
+  .tg-ic, .tg-isle-b { display: inline-flex; align-items: center; justify-content: center; gap: 0.375rem; min-width: var(--target); height: var(--target); padding: 0 0.5rem; border: 0; border-radius: var(--r-pill, 1rem);
+    background: none; color: var(--on-ink); font: inherit; font-size: 1.125rem; font-weight: 700; cursor: pointer; }
+  .tg-ic:hover, .tg-isle-b:hover { background: color-mix(in srgb, var(--on-ink) 16%, transparent); }
+  .tg-isle-x { font-weight: 500; color: color-mix(in srgb, var(--on-ink) 74%, var(--ink)); }
+  .tg-isle-chev { transform: rotate(90deg); }
+  .tg-seg-isle { height: auto; padding: 0.1875rem; background: color-mix(in srgb, var(--on-ink) 16%, var(--ink)); }
+  .tg-seg-isle .tg-seg-b { min-height: calc(var(--target) - 0.375rem); color: color-mix(in srgb, var(--on-ink) 74%, var(--ink)); }
+  .tg-seg-isle .tg-seg-b.is-on { background: var(--on-ink); color: var(--ink); }
+
+  /* the panel folds into a rail as the grid scrolls sideways */
+  .tg-side { display: block; position: absolute; top: var(--tg-ch); right: 0; bottom: 0; z-index: 7; width: var(--tg-sw); overflow: hidden; background: var(--ground); }
+  .tg-full { position: absolute; top: 0; left: 1rem; bottom: 0; width: calc(var(--tg-sidew) - 1rem); display: flex; flex-direction: column; gap: 0.625rem; overflow-y: auto; scrollbar-width: none; will-change: transform, opacity;
+    opacity: calc(1 - var(--tg-q) * 2); transform: translateX(calc(var(--tg-q) * 2rem)); }
+  .tg-full::-webkit-scrollbar { display: none; }
+  .tg-full > * { flex: none; }
+  .tg-stage[data-side="mini"] .tg-full { visibility: hidden; }
+  .tg .tg-go { margin-top: auto; }
+  .tg-mini { position: absolute; top: 0; right: 0; bottom: 0; width: calc(var(--tg-rail) - 1rem); display: flex; flex-direction: column; gap: 0.625rem; pointer-events: none; transform-origin: 100% 0; will-change: transform, opacity;
+    opacity: calc(var(--tg-q) * 2 - 1); transform: scale(calc(0.84 + var(--tg-q) * 0.16)); }
+  .tg-stage[data-side="open"] .tg-mini { visibility: hidden; }
+  .tg-stage[data-side="mini"] .tg-mini { pointer-events: auto; }
+  .tg-rail { display: grid; gap: 1.125rem; justify-items: center; padding: 1.25rem 0.25rem; border: 0; border-radius: 2.25rem; background: var(--ink); color: var(--on-ink); font: inherit; cursor: pointer; box-shadow: var(--sh2); }
+  .tg-rail-i { display: grid; justify-items: center; gap: 0.25rem; max-width: 100%; font-size: 1rem; font-weight: 650; line-height: 1.15; text-align: center; overflow-wrap: anywhere; }
+  .tg-rail-big { font-size: 1.125rem; font-weight: 750; }
+  .tg-rail-go { display: grid; place-items: center; width: 100%; aspect-ratio: 1; margin-top: auto; border-radius: 50%; background: var(--ink); color: var(--on-ink); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tg-stage[data-glide] { transition: none; }
+  .tg-cell { transition: none; }
+  .tg-cell:hover, .tg-cell.is-look { transform: none; }
+}
