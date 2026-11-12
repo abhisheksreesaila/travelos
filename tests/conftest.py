@@ -23,6 +23,17 @@ for _key in ("GITAWAY_VAPID_PUBLIC", "GITAWAY_VAPID_PRIVATE", "GITAWAY_VAPID_SUB
 os.environ["MET_NORWAY_TERMS_ACCEPTED"] = ""  # the real forecast is off in tests whatever a .env says; a test switches it on with its own fake MET (F-203)
 
 
+def pytest_sessionfinish(session, exitstatus):
+    """Throw the data folder away, and the per-test copies made beside it (test_forget_person, test_planforme_forget): each run left
+    about 800 MB in /tmp, and parallel runs filled it (2026-11-12). Errors are ignored: Windows may still hold a file open."""
+    import glob
+    import shutil
+    here = os.environ.get("GITAWAY_DATA_DIR", "")
+    if os.path.basename(here).startswith("gitaway-test-"):
+        for folder in [here, *glob.glob(f"{glob.escape(here)}-copy-*")]:
+            shutil.rmtree(folder, ignore_errors=True)
+
+
 @pytest.fixture(scope="session", autouse=True)
 def _fast_throwaway_sqlite():
     """The test databases are thrown away, so they need no rollback journal on disk and no fsync. On Windows each journal file
