@@ -1,0 +1,42 @@
+/* F-223: the sky strip (gitaway/pages/skystrip.py), from docs/design/trip-matrix/weather.html. A forecast day is solid, a typical day dotted, a day
+   with no weather plain; the asked days are ink. Colour means a kind: the weather blue (--k-wx) is the sky's only colour, never a day's.
+   Rem is 12px on a laptop and 16px on a phone; every small size goes through --text-min or --label-min. */
+.ss-strip { min-width: 0; max-width: 100%; background: var(--card); border-radius: var(--r-lg); box-shadow: var(--sh1); padding: 1.333rem 1.5rem 1.5rem; color: var(--ink); }
+.ss-head { display: flex; align-items: center; gap: 0.833rem; margin-bottom: 1rem; flex-wrap: wrap; }
+.ss-art { width: 3.667rem; height: 2.333rem; border-radius: 0.667rem; overflow: hidden; flex: none; }
+.ss-title { font: 700 max(var(--text-min), 1.5rem)/1.2 var(--font-body); letter-spacing: -0.02em; }
+.ss-tag { margin-left: auto; display: inline-flex; align-items: center; gap: 0.5rem; min-height: 2.167rem; padding: 0 0.833rem; border-radius: var(--r-pill);
+  font: 600 max(var(--text-min), 1rem)/1.2 var(--font-body); background: var(--paper-2); color: var(--ink-2); }
+.ss-tag-typ { background: transparent; border: 0.125rem dashed var(--hairline-2); border-style: dashed; }
+.ss-tag-fc { background: var(--k-wx-t); color: var(--k-wx-i); }
+
+.ss-days { list-style: none; margin: 0; padding: 0; display: flex; gap: 0.5rem; }
+.ss-day { flex: 1 0 0; min-width: 0; border-radius: 1.333rem; padding: 0.833rem 0.333rem; display: grid; justify-items: center; gap: 0.333rem; text-align: center;
+  background: var(--card); border: 0.125rem dashed var(--hairline-2); border-style: dashed;
+  transition: background-color var(--motion-quick) var(--motion-ease), border-color var(--motion-quick) var(--motion-ease); }
+.ss-day.ss-fc { border-style: solid; background: var(--paper-2); }
+.ss-day.ss-none { border-color: var(--line); }
+.ss-dw { font: 600 max(var(--label-min), 0.917rem)/1 var(--font-body); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); }
+.ss-dn { font: 700 max(var(--text-min), 1.5rem)/1 var(--font-body); letter-spacing: -0.02em; }
+.ss-i { color: var(--k-wx); }
+.ss-t { font: 600 max(var(--text-min), 1rem)/1 var(--font-mono); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+.ss-t span { color: var(--ink-2); font-weight: 500; }
+.ss-w { font: 500 max(var(--text-min), 1rem)/1.1 var(--font-body); color: var(--ink-2); }
+.ss-wet .ss-w { color: var(--k-wx-i); font-weight: 650; }
+.ss-day.ss-on { background: var(--ink); border-color: var(--ink); color: var(--on-ink); }
+.ss-on .ss-dw, .ss-on .ss-w, .ss-on .ss-t span, .ss-on .ss-i, .ss-on.ss-wet .ss-w { color: var(--on-ink); }
+
+.ss-wetline { margin: 1rem 0 0; display: flex; gap: 0.833rem; align-items: center; background: var(--k-wx-t); color: var(--k-wx-i); border-radius: 1.167rem;
+  padding: 0.833rem 1rem; font: 600 max(var(--text-min), 1.167rem)/1.3 var(--font-body); }
+.ss-notes { margin-top: 1rem; display: flex; flex-direction: column; gap: 0.333rem; }
+.ss-note { font-size: max(var(--text-min), 1.083rem); color: var(--ink-2); }
+a.ss-credit { color: var(--ink-2); text-decoration: underline; text-underline-offset: 0.167rem; }
+
+@media (max-width: 720px) {
+  .ss-strip { padding: 0.875rem 0.875rem 1rem; border-radius: var(--r-lg); }
+  .ss-tag { margin-left: 0; }
+  .ss-days { overflow-x: auto; scrollbar-width: none; margin: 0 -0.875rem; padding: 0 0.875rem 0.25rem; scroll-padding-inline: 0.875rem; scroll-snap-type: x proximity; }
+  .ss-day { flex: 0 0 4.5rem; scroll-snap-align: start; }
+  a.ss-credit { min-height: var(--target); display: flex; align-items: center; }
+}
+@media (prefers-reduced-motion: reduce) { .ss-day { transition: none; } }
