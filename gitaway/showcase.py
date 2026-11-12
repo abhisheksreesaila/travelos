@@ -24,7 +24,8 @@ HIDDEN = ("/share",  # the old one-tap demo share (F-022); real trips are publis
           "/rides",  # the simulated Uber (rides)
           "/sandbox",  # the stand-in partner checkout (M3): partners keep real bookings, there is nothing to stand in for
           "/creators/draft", "/creators/finish", "/creators/done",  # the paste-a-link import is simulated (F-023)
-          "/plan/quote", "/plan/explore", "/plan/grid")  # the invented catalog's prices and stay explorer (F-198: production shows only the honest lanes at /plan; /plan/pay already says booking is not open)
+          "/plan/quote", "/plan/explore")  # the invented catalog's prices and stay explorer (F-198: production shows only the honest lanes at /plan; /plan/pay already says booking is not open)
+LITEAPI_PAGES = ("/plan/grid", "/plan/matrix")   # the trip grid and the trip matrix (F-217, F-222): off the showcase they exist only with LITEAPI_KEY, the one real source of their prices
 # These exist off the showcase only once a real trip is published (F-181); then they list and fork real content alone.
 REAL = ("/community", "/discover", "/creators", "/forks", "/save", "/unsave", "/fork")
 REAL_ALWAYS = ("/creators/import", "/creators/settings", "/creators/drafts", "/creators/stats")   # (F-190: their drafts and a batch of their posts; F-192: their stats) a creator's import of their own post (F-183) exists off the showcase before anyone has published: it is how the first trip gets published
@@ -49,7 +50,10 @@ def community_open() -> bool:
 
 def _needs_keys(path: str) -> bool:
     """Pages that exist off the showcase only with real partner keys: /partners reads real statistics (TRAVELPAYOUTS_TOKEN), /go/... sends a
-    traveler to a real tracked link (TRAVELPAYOUTS_MARKER) and /plan-for-me sells only with STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET and an AI key (`planforme.offered`); without them there is nothing real to show or send anyone to."""
+    traveler to a real tracked link (TRAVELPAYOUTS_MARKER), /plan-for-me sells only with STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET and an AI key (`planforme.offered`), and the trip grid and
+    the trip matrix price only with LITEAPI_KEY (F-222); without them there is nothing real to show or send anyone to."""
+    if _under(path, LITEAPI_PAGES):
+        return not os.getenv("LITEAPI_KEY", "").strip()
     if path == "/partners" or path.startswith("/partners/"):
         return not os.getenv("TRAVELPAYOUTS_TOKEN", "").strip()
     if path == "/plan-for-me" or path.startswith("/plan-for-me/"):      # Plan it for me (F-193) is for sale only when `planforme.offered()`; the webhook is not here, it answers 503 without its own secret
