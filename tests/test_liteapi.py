@@ -248,3 +248,16 @@ def test_the_tests_never_reach_liteapi():
     with pytest.raises(OSError):
         liteapi.TRANSPORT("https://api.liteapi.travel/v3.0/hotels/rates", {}, b"{}", 1)
     assert liteapi.mode() == "off"
+
+
+def test_admin_says_which_liteapi_and_how_many_searches_today(client, monkeypatch, fake):
+    from tests.test_signin import sign_in
+    monkeypatch.setenv("GITAWAY_ADMIN_EMAILS", "ari.rivera@example.com")
+    sign_in(client, "ari")
+    stays()
+    flights()
+    stays()                                                        # kept: not a search
+    html = client.get("/admin").text
+    assert '<span class="ad-k">LiteAPI</span>' in html and '>sandbox · 2 searches today</span>' in html and KEY not in html
+    monkeypatch.delenv("LITEAPI_KEY")
+    assert ">off · 2 searches today</span>" in client.get("/admin").text
