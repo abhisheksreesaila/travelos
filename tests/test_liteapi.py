@@ -261,3 +261,81 @@ def test_admin_says_which_liteapi_and_how_many_searches_today(client, monkeypatc
     assert '<span class="ad-k">LiteAPI</span>' in html and '>sandbox · 2 searches today</span>' in html and KEY not in html
     monkeypatch.delenv("LITEAPI_KEY")
     assert ">off · 2 searches today</span>" in client.get("/admin").text
+
+
+# --- the trip grid's seam (gitaway/gridsource.py)
+
+def grid_trip(home="SFO"):
+    from gitaway import catalog
+    return catalog.parse_trip(home, "sd", "2026-12-12", "2026-12-16", "2", "7,10")
+
+
+def test_off_the_showcase_the_grid_reads_liteapi(fake, monkeypatch):
+    from gitaway import gridsource
+    monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
+    found = gridsource.offers(grid_trip(), family="t1")
+    assert found.sample is False and found.problem == "" and found.checked is not None
+    legs = {(u, b["legs"][0]["origin"], b["legs"][0]["destination"]) if b and "legs" in b else (u, b and b.get("cityName")) for u, _, b in fake.asked}
+    assert legs == {("https://api.liteapi.travel/v3.0/flights/rates", "SFO", "SAN"), ("https://api.liteapi.travel/v3.0/hotels/rates", "San Diego")}
+    f = found.flights[0]
+    assert (f.name, f.airport, f.depart_min, f.arrive_min, f.stops, f.cents, f.stops_text, f.overnight) == ("Frontier Airlines 3382", "SAN", 16 * 60 + 33, 18 * 60 + 16, 0, 11484, "Nonstop", False)
+    assert [x.stops_text for x in found.flights].count("1 stop") >= 1
+    s = found.stays[0]
+    assert s.name and s.cents == 59694 + 16000                    # the resort fee paid at the hotel is part of the whole trip, and the room says so
+    assert "Room only" in s.detail and "$160 of it paid at the hotel" in s.detail and s.rating
+    assert found.drive_min(f, s) is None and found.book(f) == ()   # no drive is guessed; booking opens later (F-222)
+    assert liteapi.searches_today() == 2
+
+
+def test_every_price_in_a_square_came_from_liteapi(fake, monkeypatch):
+    from gitaway import gridsource
+    monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
+    found = gridsource.offers(grid_trip())
+    real_f = {x.cents for x in liteapi.read_flights(answer("flight_rates.json"), datetime.now(timezone.utc))}
+    real_s = {x.cents + x.due_at_stay_cents for x in liteapi.read_stays(answer("hotel_rates.json"), datetime.now(timezone.utc))}
+    assert {f.cents for f in found.flights} <= real_f and {s.cents for s in found.stays} <= real_s
+
+
+def test_with_no_key_or_no_home_airport_the_grid_has_nothing(monkeypatch):
+    from gitaway import gridsource
+    monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
+    assert gridsource.offers(grid_trip()) is None                 # no key
+    monkeypatch.setenv("LITEAPI_KEY", KEY)
+    f = Fake()
+    monkeypatch.setattr(liteapi, "TRANSPORT", f)
+    assert gridsource.offers(grid_trip(home="")) is None and f.asked == []      # flying from the sample's San Francisco would be invented
+
+
+def test_on_the_showcase_the_grid_keeps_the_sample_even_with_a_key(fake, monkeypatch):
+    from gitaway import gridsource
+    monkeypatch.setenv("GITAWAY_SHOWCASE", "1")
+    assert gridsource.offers(grid_trip()).sample is True and fake.asked == []
+
+
+def test_over_budget_or_a_failure_is_said_not_shown_as_an_empty_grid(fake, monkeypatch):
+    from gitaway import gridsource
+    monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
+    monkeypatch.setattr(liteapi, "A_DAY", 0)
+    found = gridsource.offers(grid_trip())
+    assert found.flights == () and found.stays == () and "searches" in found.problem
+    monkeypatch.setattr(liteapi, "A_DAY", 100)
+    monkeypatch.setattr(liteapi, "TRANSPORT", Fake(status=503, body=b"{}"))
+    found = gridsource.offers(grid_trip())
+    assert found.flights == () and "did not come back" in found.problem
+
+
+def test_the_grid_page_says_the_problem(client, monkeypatch):
+    from gitaway import gridsource
+    monkeypatch.setenv("GITAWAY_SHOWCASE", "1")
+    monkeypatch.setattr(gridsource, "SOURCE", lambda trip, family="": gridsource.Found((), (), lambda f, s: None, lambda i: (), False, problem=gridsource.SPENT))
+    r = client.get("/plan/grid?to=sd&d=2026-12-12&r=2026-12-16&a=2&home=SFO")
+    assert r.status_code == 200 and gridsource.SPENT in r.text and "tg-scroll" not in r.text
+
+
+def test_nothing_found_is_said_too(monkeypatch):
+    from gitaway import gridsource
+    monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
+    monkeypatch.setenv("LITEAPI_KEY", KEY)
+    monkeypatch.setattr(liteapi, "TRANSPORT", Fake(body=json.dumps({"data": [], "hotels": []}).encode()))
+    found = gridsource.offers(grid_trip())
+    assert found.flights == () and found.stays == () and found.problem == gridsource.NONE

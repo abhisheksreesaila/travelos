@@ -1387,13 +1387,13 @@ Needs: F-217 looked at by the founder · Decisions: D-421
 # The trip matrix (brief: docs/briefs/unified-booking.md, approved 2026-11-12 · D-424)
 Headline "Compare the whole trip. Choose it together." One source, LiteAPI; prices are Preview and booking opens after the family test. Design first: the designer drafts the matrix, the place art and the cover before their build tickets start.
 
-## F-220 LiteAPI connection [todo]
-Brief: docs/briefs/unified-booking.md · Research: docs/research/liteapi-shapes.md · Needs: `LITEAPI_KEY` (sandbox set 2026-11-12)
-- [ ] `gitaway/liteapi.py`: hotel rates for a place, dates and party, and flight offers for legs and a party, behind one `TRANSPORT` the tests replace
-- [ ] answers are parsed from recorded real sandbox answers (no invented shapes); HTML descriptions stripped; opaque ids kept verbatim and never shown
-- [ ] one shared cache (stays and flights, ages shown) and a daily search budget per family and in total; over budget is said, never a silent blank
-- [ ] /admin says sandbox or live (by the key's prefix) and today's searches
-- [ ] `gridsource` reads stays and flights from it off the showcase; nothing invented is ever in a square
+## F-220 LiteAPI connection [review]
+Brief: docs/briefs/unified-booking.md · Research: docs/research/liteapi-shapes.md · Needs: `LITEAPI_KEY` (sandbox set 2026-11-12) · Decisions: D-425
+- [x] `gitaway/liteapi.py`: hotel rates for a place, dates and party, and flight offers for legs and a party, behind one `TRANSPORT` the tests replace
+- [x] answers are parsed from recorded real sandbox answers (no invented shapes); HTML descriptions stripped; opaque ids kept verbatim and never shown
+- [x] one shared cache (stays and flights, ages shown) and a daily search budget per family and in total; over budget is said, never a silent blank
+- [x] /admin says sandbox or live (by the key's prefix) and today's searches
+- [x] `gridsource` reads stays and flights from it off the showcase; nothing invented is ever in a square
 
 ## F-221 Design: the matrix, the place art, the cover [todo]
 Needs: none · Skill: designer (Stitch project 5068253051282871529)

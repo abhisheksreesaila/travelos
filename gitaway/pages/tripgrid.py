@@ -404,6 +404,11 @@ def trip_page(s: State, found):
     return page(f"Your trip to {s.trip.destination_name}", body, current="/plan", head=HEAD, noindex=True)
 
 
+def problem_page(found):
+    """No offers, and why (gitaway/gridsource.py: a spent budget, a search that failed, nothing found): said, never an empty grid."""
+    return page("The trip grid", Div(H1("The trip grid", cls="tg-h1"), P(found.problem, cls="tg-note", role="status", id="tg-problem"), cls="tg tg-review"), current="/plan", head=HEAD, noindex=True)
+
+
 def from_sentence(q, s: State):
     """A retyped sentence: (State at its plain address, None), or (None, a response) that says what is missing or sends an unknown place to the honest lanes."""
     ask = tripsentence.read(q)
@@ -426,7 +431,7 @@ def from_sentence(q, s: State):
 
 def register(app):
     @app.get(PATH)
-    def trip_grid(q: str = "", to: str = "", d: str = "", r: str = "", a: str = "", k: str = "", home: str = "", focus: str = "", f: str = "", h: str = "", b: str = "", lens: str = "",
+    def trip_grid(session, q: str = "", to: str = "", d: str = "", r: str = "", a: str = "", k: str = "", home: str = "", focus: str = "", f: str = "", h: str = "", b: str = "", lens: str = "",
                   who: str = "", senior: str = "", pet: str = "", near: str = "", mi: str = ""):
         s = state(to, d, r, a, k, home, focus, f, h, b, lens, who, senior, pet, near, mi)
         problems = ()
@@ -437,16 +442,20 @@ def register(app):
             if not isinstance(answer, list):
                 return answer
             problems = answer
-        found = gridsource.offers(s.trip)
+        found = gridsource.offers(s.trip, family=(session or {}).get("tenant_id", ""))
         if found is None:
             return showcase.not_found()
+        if found.problem:
+            return problem_page(found)
         return grid_page(s, found, typed=q if problems else "", problems=problems)
 
     @app.get(TRIP)
-    def trip_grid_trip(to: str = "", d: str = "", r: str = "", a: str = "", k: str = "", home: str = "", focus: str = "", f: str = "", h: str = "", b: str = "", lens: str = "", who: str = "",
+    def trip_grid_trip(session, to: str = "", d: str = "", r: str = "", a: str = "", k: str = "", home: str = "", focus: str = "", f: str = "", h: str = "", b: str = "", lens: str = "", who: str = "",
                        senior: str = "", pet: str = "", near: str = "", mi: str = ""):
         s = state(to, d, r, a, k, home, focus, f, h, b, lens, who, senior, pet, near, mi)
-        found = gridsource.offers(s.trip)
+        found = gridsource.offers(s.trip, family=(session or {}).get("tenant_id", ""))
         if found is None:
             return showcase.not_found()
+        if found.problem:
+            return problem_page(found)
         return trip_page(s, found)
