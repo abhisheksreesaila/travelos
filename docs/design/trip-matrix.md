@@ -1,3 +1,5 @@
+> **Picked by the founder, 2026-11-12:** matrix **C, calendar lanes** on the laptop (an opened square uses A's panel), **B, place cards** on the phone; cover **A, one stage** (one pinned frame, the three parts fade through it: build it with CSS sticky and opacity cross-fades only, no per-frame transforms, since cover v5's jitter came from scroll-driven transforms). The other screens as drawn. "Looks beautiful."
+
 # F-221 handoff (draft): the trip matrix, weather in the calendar, the place art, the cover
 
 Status: draft, waiting for the founder's picks on `docs/design/trip-matrix/compare.html`.
